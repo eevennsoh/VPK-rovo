@@ -271,20 +271,20 @@ test("experimental v2 scopes ContextResources to the left column and the Details
 	);
 	assert.match(
 		readBlockFile("experimental-v2/lib/layout-constants.ts"),
-		/export const METADATA_PANEL_WIDTH = "440px";/u,
+		/export const METADATA_PANEL_DEFAULT_WIDTH_PX = 440;[\s\S]*export const METADATA_PANEL_MIN_WIDTH_PX = 440;[\s\S]*export const METADATA_PANEL_MAX_WIDTH_PX = 720;/u,
 	);
 	assert.match(
 		layoutSource,
-		/"--metadata-panel-offset": metadataCollapsed \? "0px" : METADATA_PANEL_WIDTH/u,
+		/"--metadata-panel-offset": metadataCollapsed \? "0px" : `\$\{metadataPanelWidth\}px`/u,
 	);
 	assert.match(
 		layoutSource,
-		/@\[860px\]\/agentlayout:w-\[440px\][\s\S]*id="experimental-work-item-metadata-panel"/u,
+		/"--metadata-panel-width": `\$\{metadataPanelWidth\}px`[\s\S]*@\[860px\]\/agentlayout:w-\[var\(--metadata-panel-width\)\][\s\S]*id="experimental-work-item-metadata-panel"/u,
 	);
-	// Metadata panel is the column shell (overflow-hidden); body scroll lives in MetadataRail.
+	// The parent grid clips the positioning shell; body scroll lives in MetadataRail.
 	assert.match(
 		layoutSource,
-		/@\[860px\]\/agentlayout:overflow-hidden @\[860px\]\/agentlayout:pr-6 @\[860px\]\/agentlayout:pt-6 @\[860px\]\/agentlayout:\[grid-area:1\/1\]"[\s\S]*id="experimental-work-item-metadata-panel"/u,
+		/@\[860px\]\/agentlayout:overflow-visible @\[860px\]\/agentlayout:px-6 @\[860px\]\/agentlayout:pt-6 @\[860px\]\/agentlayout:\[grid-area:1\/1\]"[\s\S]*id="experimental-work-item-metadata-panel"/u,
 	);
 	assert.doesNotMatch(
 		layoutSource,

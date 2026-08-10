@@ -35,10 +35,18 @@ import type { SessionReplyInterceptor } from "@/components/blocks/jira-work-item
 import type { CodingAgentId } from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-actions";
 import type { WorkItemAutomationRule } from "@/components/blocks/jira-work-item/experimental-v2/components/automation-tab";
 import {
+	METADATA_PANEL_DEFAULT_WIDTH_PX,
+	METADATA_PANEL_MAX_WIDTH_PX,
+	METADATA_PANEL_MIN_WIDTH_PX,
+} from "@/components/blocks/jira-work-item/experimental-v2/lib/layout-constants";
+import {
 	getPullRequestIdentity,
 	selectPullRequestEntries,
 	type ActivitySessionThreadConfig,
 } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
+import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
+import { SidebarResizeHandle } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 
 interface ExperimentalV2JiraWorkItemBaseProps {
 	activitySessionThread?: ActivitySessionThreadConfig;
@@ -94,6 +102,44 @@ interface ExperimentalV2JiraWorkItemContentProps {
 	workItem: WorkItemData;
 }
 
+interface WorkItemSidePanelResizeHandleProps {
+	ariaLabel: string;
+	className?: string;
+	resize: ReturnType<typeof useSidebarResize>;
+	testId: string;
+}
+
+function WorkItemSidePanelResizeHandle({
+	ariaLabel,
+	className,
+	resize,
+	testId,
+}: Readonly<WorkItemSidePanelResizeHandleProps>) {
+	return (
+		<SidebarResizeHandle
+			aria-label={ariaLabel}
+			aria-orientation="vertical"
+			aria-valuemax={resize.maxWidth}
+			aria-valuemin={resize.minWidth}
+			aria-valuenow={resize.sidebarWidth}
+			className={cn(
+				"bottom-6! bg-transparent duration-normal ease-out-practical focus-visible:bg-bg-selected-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&>div]:h-16 [&>div]:origin-center [&>div]:transition-[opacity,background-color,scale] hover:[&>div]:scale-105 data-[active]:[&>div]:scale-105 focus-visible:[&>div]:scale-105 focus-visible:[&>div]:bg-bg-selected-bold focus-visible:[&>div]:opacity-100 [&>div]:duration-medium [&>div]:ease-out-practical motion-reduce:transition-none motion-reduce:[&>div]:scale-100 motion-reduce:[&>div]:transition-none",
+				className,
+			)}
+			data-active={resize.isResizing ? "" : undefined}
+			data-testid={testId}
+			onDoubleClick={resize.onResizeHandleDoubleClick}
+			onKeyDown={resize.onResizeHandleKeyDown}
+			onPointerDown={resize.onResizeHandlePointerDown}
+			onPointerEnter={resize.onResizeHandlePointerEnter}
+			onPointerLeave={resize.onResizeHandlePointerLeave}
+			role="separator"
+			side="left"
+			tabIndex={0}
+		/>
+	);
+}
+
 function ExperimentalV2JiraWorkItemContent({
 	activitySessionThread,
 	automationRules,
@@ -121,6 +167,13 @@ function ExperimentalV2JiraWorkItemContent({
 	const { activityEvents } = useJiraWorkItemMeta();
 	const { elapsedMs } = useJiraWorkItemState();
 	const agentChatOpen = chatSurface === "floating";
+	const metadataPanelResize = useSidebarResize({
+		defaultWidth: METADATA_PANEL_DEFAULT_WIDTH_PX,
+		direction: "rtl",
+		maxWidth: METADATA_PANEL_MAX_WIDTH_PX,
+		minWidth: METADATA_PANEL_MIN_WIDTH_PX,
+		minWidthResistance: true,
+	});
 	const pullRequestEntries = useMemo(() => (
 		selectPullRequestEntries(activityEvents, SESSION_EPOCH_MS + elapsedMs).map((entry) => {
 			if (!entry.pullRequest) return entry;
@@ -175,10 +228,22 @@ function ExperimentalV2JiraWorkItemContent({
 						pullRequestEntries={pullRequestEntries}
 						sidebar={<FloatingSessionSurface onSessionReply={onSessionReply} />}
 						sidebarOpen={agentChatOpen}
+						sidebarResizeHandle={(
+							<WorkItemSidePanelResizeHandle
+								ariaLabel="Resize agent chat panel"
+								className="top-0! bottom-0! left-0! bg-border group-hover/chat-panel:[&>div]:opacity-100"
+								resize={metadataPanelResize}
+								testId="jira-work-item-chat-resize-handle"
+							/>
+						)}
+						sidebarResizing={metadataPanelResize.isResizing}
+						sidebarWidth={metadataPanelResize.sidebarWidth}
 						workItemCode={workItem.code}
 						workItemTitle={workItem.title}
 					>
 						<ExperimentalWorkItemLayout
+							metadataPanelResizing={metadataPanelResize.isResizing}
+							metadataPanelWidth={metadataPanelResize.sidebarWidth}
 							header={(
 								<ContextHeader
 									descriptionViewMode={descriptionViewMode}
@@ -214,7 +279,7 @@ function ExperimentalV2JiraWorkItemContent({
 							metadata={(
 								<div
 									aria-hidden={agentChatOpen}
-									className="flex min-h-0 min-w-0 flex-1 flex-col"
+									className="group/metadata-resize relative flex min-h-0 min-w-0 flex-1 flex-col"
 									inert={agentChatOpen ? true : undefined}
 								>
 									<MetadataRail
@@ -228,6 +293,17 @@ function ExperimentalV2JiraWorkItemContent({
 										borderless
 										selectedPullRequestEntry={selectedPullRequestEntry}
 									/>
+									<div className="hidden @[860px]/agentlayout:contents">
+										{/* The description content ends 24px before the split while rail
+										content starts 36px after it (24px shell + 12px rail padding).
+										Shift the separator 6px right to sit at that visual midpoint. */}
+										<WorkItemSidePanelResizeHandle
+											ariaLabel="Resize details and activity panel"
+											className="top-[3.875rem]! left-[calc(-1.5rem+0.375rem)]! bg-transparent! hover:bg-transparent! data-[active]:bg-transparent! focus-visible:bg-transparent! focus-visible:ring-0 group-hover/metadata-panel:[&>div]:opacity-100"
+											resize={metadataPanelResize}
+											testId="jira-work-item-metadata-resize-handle"
+										/>
+									</div>
 								</div>
 							)}
 						/>

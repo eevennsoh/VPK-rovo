@@ -9,16 +9,9 @@ import {
 	ContextTitleBar,
 	WorkItemKeyCopy,
 } from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-bar";
-import { METADATA_PANEL_WIDTH } from "@/components/blocks/jira-work-item/experimental-v2/lib/layout-constants";
 import { ModalHeader } from "@/components/projects/jira/components/work-item-modal/modal-header";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
-
-// Keep the embedded chat overlay the same width as the metadata rail so rail
-// content cannot peek through beside the session panel.
-const SIDE_PANEL_STYLE = {
-	"--work-item-side-panel-width": METADATA_PANEL_WIDTH,
-} as CSSProperties;
 
 interface ExperimentalWorkItemDialogProps {
 	inlineSurface: "card" | "card-fill" | "fill";
@@ -31,6 +24,9 @@ interface ExperimentalWorkItemDialogProps {
 	blanketContent?: ReactNode;
 	sidebar: ReactNode;
 	sidebarOpen: boolean;
+	sidebarResizeHandle?: ReactNode;
+	sidebarResizing: boolean;
+	sidebarWidth: number;
 	pullRequestEntries?: readonly JiraActivityEventEntry[];
 }
 
@@ -59,11 +55,19 @@ export function ExperimentalWorkItemDialog({
 	blanketContent,
 	sidebar,
 	sidebarOpen,
+	sidebarResizeHandle,
+	sidebarResizing,
+	sidebarWidth,
 	pullRequestEntries,
 }: Readonly<ExperimentalWorkItemDialogProps>) {
 	const description = `Details, agent sessions, and activity for work item ${workItemCode}.`;
 	const fillsInlineContainer = presentation === "inline" && inlineSurface !== "card";
 	const isFlushInlineSurface = presentation === "inline" && inlineSurface === "fill";
+	// Metadata and embedded chat share this source of truth so resizing either
+	// surface is immediately reflected when switching between them.
+	const sidePanelStyle = {
+		"--work-item-side-panel-width": `${sidebarWidth}px`,
+	} as CSSProperties;
 	const content = (
 		<div
 			className="@container/workitemdialog relative grid h-full min-h-0 min-w-0 grid-cols-[minmax(0,1fr)] overflow-hidden"
@@ -71,7 +75,7 @@ export function ExperimentalWorkItemDialog({
 			// rather than the viewport (e.g. the embedded Rovo launcher), which
 			// resolve this node as their `offsetParent`.
 			data-jira-work-item-dialog-body
-			style={SIDE_PANEL_STYLE}
+			style={sidePanelStyle}
 		>
 			<div
 				className="grid h-full min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)]"
@@ -79,7 +83,9 @@ export function ExperimentalWorkItemDialog({
 			>
 				<div
 					className={cn(
-						"transition-[margin-right] duration-medium ease-in-out motion-reduce:transition-none",
+						sidebarResizing
+							? "transition-none"
+							: "transition-[margin-right] duration-medium ease-in-out motion-reduce:transition-none",
 						sidebarOpen
 							? "@[860px]/workitemdialog:mr-[var(--work-item-side-panel-width)]"
 							: null,
@@ -106,13 +112,18 @@ export function ExperimentalWorkItemDialog({
 			<div
 				aria-hidden={!sidebarOpen}
 				className={cn(
-					"absolute inset-y-0 right-0 z-30 w-full translate-x-full overflow-hidden transition-transform duration-medium ease-in-out will-change-transform motion-reduce:transition-none @[860px]/workitemdialog:w-[var(--work-item-side-panel-width)]",
+					"group/chat-panel absolute inset-y-0 right-0 z-30 w-full translate-x-full overflow-visible transition-transform duration-medium ease-in-out will-change-transform motion-reduce:transition-none @[860px]/workitemdialog:w-[var(--work-item-side-panel-width)]",
 					sidebarOpen ? "translate-x-0" : "pointer-events-none",
 				)}
 				data-jira-work-item-chat-column
 				inert={sidebarOpen ? undefined : true}
 			>
 				{sidebar}
+				{sidebarOpen ? (
+					<div className="hidden @[860px]/workitemdialog:contents">
+						{sidebarResizeHandle}
+					</div>
+				) : null}
 			</div>
 		</div>
 	);
