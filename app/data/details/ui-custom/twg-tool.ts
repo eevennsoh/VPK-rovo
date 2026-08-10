@@ -100,6 +100,11 @@ const sources: TwgToolSource[] = [
 			description: "Renders the banner as a button and calls this handler when no internal children are provided.",
 		},
 		{
+			name: "contentClassName",
+			type: "string",
+			description: "Additional classes applied to expanded content, useful for aligning nested reasoning content with the banner copy.",
+		},
+		{
 			name: "open",
 			type: "boolean",
 			description: "Controlled open state passed to the underlying Collapsible root.",
@@ -128,6 +133,10 @@ const sources: TwgToolSource[] = [
 	examples: [
 		{ title: "Single source", description: "Searching Teamwork Graph with one source in the icon stack.", demoSlug: "twg-tool-demo-single-source" },
 		{ title: "Multiple sources", description: "Progress row with Teamwork Graph, Confluence, Google Drive, and Jira sources.", demoSlug: "twg-tool-demo-multiple-sources" },
-		{ title: "Completed", description: "Completed state after reading six sources.", demoSlug: "twg-tool-demo-completed" },
+		{
+			title: "Without loader",
+			description: "TWG Tool banner without the nested Teamwork Graph loader.",
+			demoSlug: "twg-tool-demo-completed",
+		},
 	],
 };

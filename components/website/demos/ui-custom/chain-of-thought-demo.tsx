@@ -10,6 +10,7 @@ import {
 	ChainOfThoughtScenario,
 	ChainOfThoughtStep,
 } from "@/components/ui-custom/chain-of-thought";
+import { TwgTool, type TwgToolSource } from "@/components/ui-custom/twg-tool";
 import { renderResolvedToolIcon, resolveToolIcon } from "@/components/projects/shared/lib/tool-icon-resolver";
 import {
 	Tool,
@@ -65,6 +66,13 @@ const RECENT_WORK_SOURCES = [
 	"https://www.github.com/haydenbleasel",
 	"https://www.dribbble.com/haydenbleasel",
 ] as const;
+
+const TWG_TOOL_SOURCES = [
+	{ id: "twg", label: "Teamwork Graph", provider: "twg" },
+	{ id: "jira", label: "Jira", provider: "jira" },
+	{ id: "confluence", label: "Confluence", provider: "confluence" },
+	{ id: "figma", label: "Figma", provider: "twg", name: "figma" },
+] satisfies ReadonlyArray<TwgToolSource>;
 
 type ToolIconRow = {
 	category: string;
@@ -1447,6 +1455,68 @@ export function ChainOfThoughtDemoResearchRetrievalFlow() {
 					},
 				]}
 			/>
+		</ChainOfThoughtDemoFrame>
+	);
+}
+
+export function ChainOfThoughtDemoTwgToolCall() {
+	const twgIcon = renderResolvedToolIcon(
+		resolveToolIcon({ toolName: "twg.lookup_work_item_delivery_context" }),
+		{ className: "size-4" },
+	);
+
+	return (
+		<ChainOfThoughtDemoFrame>
+			<ChainOfThought defaultOpen className="w-full max-w-2xl">
+				<ChainOfThoughtHeader state="thinking" />
+				<ChainOfThoughtContent>
+					<ChainOfThoughtStep
+						description="Reading the current work item"
+						icon={SearchIcon}
+						label="Reading the current work item"
+						status="complete"
+					/>
+					<ChainOfThoughtStep
+						collapsible
+						defaultOpen
+						description={null}
+						iconRender={twgIcon}
+						iconContainerStyle={{ marginTop: 6 }}
+						label="Connecting work through Teamwork Graph"
+						status="complete"
+						headerRender={({ isOpen, toggleOpen }) => (
+							<TwgTool
+								chevronOpen={isOpen}
+								description="Found 4 relevant delivery signals across Jira, Confluence, and Figma."
+								onBannerClick={toggleOpen}
+								showChevron
+								showLoader={false}
+								sources={TWG_TOOL_SOURCES}
+								status="complete"
+								title="Connecting work through Teamwork Graph"
+							/>
+						)}
+					>
+						<div className="space-y-1 text-xs leading-5 text-text-subtle">
+							<p>Found a matching checkout-funnel research brief in Confluence.</p>
+							<p>Linked the work item to the latest checkout flow in Figma.</p>
+							<p>Resolved delivery ownership and implementation signals from Jira.</p>
+						</div>
+					</ChainOfThoughtStep>
+					<ChainOfThoughtStep
+						description="Checking product requirements"
+						icon={SearchIcon}
+						label="Checking product requirements"
+						status="active"
+					/>
+					<ChainOfThoughtStep
+						description="Queued until the connected delivery context is reviewed"
+						icon={AiSparkleIcon}
+						label="Drafting the improved description"
+						status="pending"
+					/>
+				</ChainOfThoughtContent>
+			</ChainOfThought>
 		</ChainOfThoughtDemoFrame>
 	);
 }

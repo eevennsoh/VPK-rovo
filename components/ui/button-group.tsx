@@ -36,8 +36,16 @@ const buttonGroupVariants = cva(
 				// left edge. Selected seam also matches `[data-selected]` for non-button
 				// shells (e.g. MetadataRailPanelSegment) that keep pressed chrome off
 				// nested label buttons.
+				//
+				// Default `before:inset-y-0` stays inside the padding box so a transparent
+				// stroke cannot punch holes in the previous segment's top/bottom borders.
+				// When the seam is painted (selected / focus-visible), stretch it by 1px
+				// (`-top-px` / `-bottom-px`) so it meets the outer corners — absolute
+				// children are positioned against the padding box, so inset-y-0 alone
+				// leaves ~1px gaps where selected top/bottom borders meet the missing
+				// left edge.
 				className:
-					"[&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-md! [&>[data-slot]~[data-slot]]:relative [&>[data-slot]~[data-slot]]:rounded-l-none [&>[data-slot]~[data-slot]]:border-l-0 [&>[data-slot]~[data-slot]]:before:pointer-events-none [&>[data-slot]~[data-slot]]:before:absolute [&>[data-slot]~[data-slot]]:before:inset-y-0 [&>[data-slot]~[data-slot]]:before:-left-px [&>[data-slot]~[data-slot]]:before:w-px [&>[data-slot]~[data-slot]]:before:bg-transparent [&>[data-slot]~[data-slot]]:before:content-[''] [&>[data-slot]~[data-slot]]:before:transition-[background-color] [&>[data-slot]~[data-slot]:focus-visible]:before:bg-ring [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true],[data-selected])]:before:bg-border-selected *:data-slot:rounded-r-none",
+					"[&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-md! [&>[data-slot]~[data-slot]]:relative [&>[data-slot]~[data-slot]]:rounded-l-none [&>[data-slot]~[data-slot]]:border-l-0 [&>[data-slot]~[data-slot]]:before:pointer-events-none [&>[data-slot]~[data-slot]]:before:absolute [&>[data-slot]~[data-slot]]:before:inset-y-0 [&>[data-slot]~[data-slot]]:before:-left-px [&>[data-slot]~[data-slot]]:before:w-px [&>[data-slot]~[data-slot]]:before:bg-transparent [&>[data-slot]~[data-slot]]:before:content-[''] [&>[data-slot]~[data-slot]]:before:transition-[background-color] [&>[data-slot]~[data-slot]:focus-visible]:before:-top-px [&>[data-slot]~[data-slot]:focus-visible]:before:-bottom-px [&>[data-slot]~[data-slot]:focus-visible]:before:bg-ring [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true],[data-selected])]:before:-top-px [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true],[data-selected])]:before:-bottom-px [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true],[data-selected])]:before:bg-border-selected *:data-slot:rounded-r-none",
 			},
 			{
 				variant: "connected",

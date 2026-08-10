@@ -23,6 +23,18 @@ const STUDIO_WRAPPER_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/studio/hooks/use-realtime-voice.ts"),
 	"utf8",
 );
+const SIDEBAR_CHAT_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/sidebar-chat/page.tsx"),
+	"utf8",
+);
+const ROVO_APP_SHELL_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/rovo/components/rovo-app-shell.tsx"),
+	"utf8",
+);
+const STUDIO_APP_SHELL_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/studio/components/rovo-app-shell.tsx"),
+	"utf8",
+);
 
 test("Rovo and Studio realtime voice hooks are thin policy wrappers over core", () => {
 	assert.match(
@@ -65,7 +77,7 @@ test("realtime voice core owns session policy dispatch", () => {
 	);
 	assert.match(
 		CORE_HOOK_SOURCE,
-		/const connect = useCallback\(\(options\?: RealtimeVoiceConnectOptions\) => \{[\s\S]*resolveRovoRealtimeVoiceSessionPolicy\(\{[\s\S]*explicitResponseOnly: options\?\.explicitResponseOnly,[\s\S]*mode: sessionPolicyMode,[\s\S]*transcriptionOnly: options\?\.transcriptionOnly,[\s\S]*\}\);/u,
+		/const connect = useCallback\(\(options\?: RealtimeVoiceConnectOptions\) => \{[\s\S]*resolveRovoRealtimeVoiceSessionPolicy\(\{[\s\S]*explicitResponseOnly: options\?\.explicitResponseOnly,[\s\S]*mode: sessionPolicyMode,[\s\S]*transcriptionOnly: browserTranscriptionOnly \|\| options\?\.transcriptionOnly,[\s\S]*\}\);/u,
 	);
 	assert.match(
 		CORE_HOOK_SOURCE,
@@ -93,4 +105,30 @@ test("realtime voice protocol and playback helpers stay outside the hook", () =>
 	assert.match(PROTOCOL_SOURCE, /export type ServerMessage/u);
 	assert.match(PLAYBACK_SOURCE, /export function createPlaybackQueue/u);
 	assert.match(PLAYBACK_SOURCE, /export function enqueueAudio/u);
+});
+
+test("dictation uses browser transcription without opening Realtime transport", () => {
+	assert.match(
+		CORE_HOOK_SOURCE,
+		/export interface RealtimeVoiceConnectOptions \{[\s\S]*browserTranscriptionOnly\?: boolean;[\s\S]*\}/u,
+	);
+	assert.match(
+		CORE_HOOK_SOURCE,
+		/const browserTranscriptionOnly = options\?\.browserTranscriptionOnly === true;[\s\S]*if \(browserTranscriptionOnly\) \{[\s\S]*setConnectionState\("connected"\);[\s\S]*setVoice\("listening"\);[\s\S]*startBrowserRecognition\(\);[\s\S]*return;[\s\S]*\}[\s\S]*connectWs\(\);/u,
+	);
+
+	for (const source of [
+		SIDEBAR_CHAT_SOURCE,
+		ROVO_APP_SHELL_SOURCE,
+		STUDIO_APP_SHELL_SOURCE,
+	]) {
+		assert.match(
+			source,
+			/realtime\.connect\(\{ browserTranscriptionOnly: true \}\);/u,
+		);
+		assert.doesNotMatch(
+			source,
+			/realtime\.connect\(\{ transcriptionOnly: true \}\);/u,
+		);
+	}
 });

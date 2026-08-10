@@ -1202,7 +1202,7 @@ export default function ChatPanel({
 		isDictationActiveRef.current = true;
 		dispatchDictation({ type: "start" });
 		setComposerFocusRequestKey((currentKey) => currentKey + 1);
-		realtime.connect({ transcriptionOnly: true });
+		realtime.connect({ browserTranscriptionOnly: true });
 	}, [realtime]);
 
 	const startRealtimeVoice = useCallback(() => {
@@ -1401,8 +1401,8 @@ export default function ChatPanel({
 			return ids;
 		}
 		let sawLaterUser = false;
-		for (let i = messages.length - 1; i >= 0; i--) {
-			const candidate = messages[i];
+		for (let i = rawUiMessages.length - 1; i >= 0; i--) {
+			const candidate = rawUiMessages[i];
 			if (candidate.role === "assistant" && sawLaterUser) {
 				ids.add(candidate.id);
 			}
@@ -1411,7 +1411,7 @@ export default function ChatPanel({
 			}
 		}
 		return ids;
-	}, [markAnsweredQuestionTraces, messages]);
+	}, [markAnsweredQuestionTraces, rawUiMessages]);
 
 	const activeQuestionCard = useMemo(() => (
 		isLocalConversationActive ? null : getLatestQuestionCardPayload(rawUiMessages)

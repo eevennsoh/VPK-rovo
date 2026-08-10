@@ -13,6 +13,15 @@ import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/
 interface AsxRovoOverlayProps {
 	chatContextBar?: ChatContextBarDescriptor | null;
 	externalThinkingMessageId?: string | null;
+	/**
+	 * Opt-in host element for the embedded launcher. When supplied the launcher
+	 * portals into that element and positions against it instead of the
+	 * viewport, so hosts that own a dialog surface can keep the button inside
+	 * their own bounds. Defaults to `document.body` (viewport-fixed).
+	 */
+	launcherContainer?: HTMLElement | null;
+	/** Right/bottom inset for the embedded launcher within `launcherContainer`. */
+	launcherPlacement?: { right: string; bottom: string };
 	onInterceptSubmit?: (text: string) => ChatSubmitInterceptOutcome;
 	onLauncherClick?: () => void;
 	onQuestionAnswer?: () => void;
@@ -23,6 +32,8 @@ interface AsxRovoOverlayProps {
 export function AsxRovoOverlay({
 	chatContextBar,
 	externalThinkingMessageId,
+	launcherContainer,
+	launcherPlacement,
 	onInterceptSubmit,
 	onLauncherClick,
 	onQuestionAnswer,
@@ -60,6 +71,7 @@ export function AsxRovoOverlay({
 						externalThinkingMessageId={externalThinkingMessageId}
 						hideComposerSourceAndModelControls
 						interceptClarificationAnswers={Boolean(onInterceptSubmit || onQuestionAnswer)}
+						markAnsweredQuestionTraces
 						onInterceptSubmit={onInterceptSubmit ?? (onQuestionAnswer ? handleQuestionAnswer : undefined)}
 						showAgentBackButton={false}
 						showAgentSelector={false}
@@ -74,16 +86,19 @@ export function AsxRovoOverlay({
 	);
 
 	if (placement === "embedded") {
+		const launcherHost = launcherContainer ?? portalRoot;
 		return (
 			<>
-				{portalRoot && chatSurface === null ? createPortal(
+				{launcherHost && chatSurface === null ? createPortal(
 					<FloatingRovoButton
 						ariaLabel="Open Rovo chat"
 						forceVisible
 						onButtonClick={onLauncherClick}
+						placement={launcherContainer ? launcherPlacement : undefined}
+						positioning={launcherContainer ? "container" : "viewport"}
 						product="home"
 					/>,
-					portalRoot,
+					launcherHost,
 				) : null}
 				{content}
 			</>

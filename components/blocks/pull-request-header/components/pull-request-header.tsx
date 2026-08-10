@@ -71,10 +71,14 @@ function statusLozengeVariant(
 
 function mergeStateLabel(mergeState: PullRequestHeaderMergeState): string {
 	switch (mergeState) {
+		case "checks-failed":
+			return "Checks failed";
 		case "checks-running":
 			return "Checks running";
 		case "merge-conflicts":
 			return "Merge conflicts";
+		case "review-required":
+			return "Review required";
 		case "ready":
 			return "Merge";
 		default: {
@@ -86,18 +90,26 @@ function mergeStateLabel(mergeState: PullRequestHeaderMergeState): string {
 
 function isMergePrimaryEnabled({
 	mergeState,
+	onChecksFailedClick,
 	onChecksRunningClick,
 	onMergeClick,
+	onReviewRequiredClick,
 }: Readonly<{
 	mergeState: PullRequestHeaderMergeState;
+	onChecksFailedClick?: () => void;
 	onChecksRunningClick?: () => void;
 	onMergeClick?: () => void;
+	onReviewRequiredClick?: () => void;
 }>): boolean {
 	switch (mergeState) {
 		case "ready":
 			return Boolean(onMergeClick);
+		case "checks-failed":
+			return Boolean(onChecksFailedClick);
 		case "checks-running":
 			return Boolean(onChecksRunningClick);
+		case "review-required":
+			return Boolean(onReviewRequiredClick);
 		case "merge-conflicts":
 			// No related primary action yet (conflicts UI is not wired).
 			return false;
@@ -236,7 +248,9 @@ export function PullRequestHeader({
 	defaultAutoMerge = DEFAULT_AUTO_MERGE,
 	onAutoMergeChange,
 	onMergeClick,
+	onChecksFailedClick,
 	onChecksRunningClick,
+	onReviewRequiredClick,
 	onConvertToDraftClick,
 	onClosePullRequestClick,
 	className,
@@ -296,8 +310,10 @@ export function PullRequestHeader({
 
 	const primaryEnabled = isMergePrimaryEnabled({
 		mergeState,
+		onChecksFailedClick,
 		onChecksRunningClick,
 		onMergeClick,
+		onReviewRequiredClick,
 	});
 	const resolvedScmProviderName =
 		scmProviderName ?? resolveScmProviderName(url);
@@ -309,8 +325,14 @@ export function PullRequestHeader({
 			case "ready":
 				onMergeClick?.();
 				return;
+			case "checks-failed":
+				onChecksFailedClick?.();
+				return;
 			case "checks-running":
 				onChecksRunningClick?.();
+				return;
+			case "review-required":
+				onReviewRequiredClick?.();
 				return;
 			case "merge-conflicts":
 				return;
@@ -371,66 +393,73 @@ export function PullRequestHeader({
 						className="w-full flex-wrap gap-2 sm:w-auto"
 						variant="separated"
 					>
-						<ButtonGroup variant="split">
-							<Button
-								disabled={!primaryEnabled}
-								onClick={handlePrimaryClick}
-								variant="outline"
-							>
-								{mergeState === "checks-running" ? (
-									<Spinner data-icon="inline-start" size="xs" />
-								) : null}
-								{mergeStateLabel(mergeState)}
-							</Button>
-							<DropdownMenu>
-								<DropdownMenuTrigger
-									render={
-										<Button
-											aria-label="Merge options"
-											size="icon"
-											variant="outline"
-										/>
-									}
+						{canMutatePullRequest ? (
+							<ButtonGroup variant="split">
+								<Button
+									disabled={!primaryEnabled}
+									onClick={handlePrimaryClick}
+									variant="outline"
 								>
-									<ChevronDownIcon label="" size="small" />
-								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end">
-									<DropdownMenuItem
-										closeOnClick={false}
-										disabled={!onAutoMergeChange}
-										elemAfter={
-											<Switch
-												checked={autoMergeEnabled}
-												disabled={!onAutoMergeChange}
-												label="Auto merge"
-												onCheckedChange={handleAutoMergeChange}
-												onClick={(event) => {
-													// Avoid double-toggle: Switch already flipped via
-													// onCheckedChange; don't also run item onSelect.
-													event.stopPropagation();
-												}}
-												onPointerDown={(event) => {
-													// Keep the menu open while toggling; Base UI treats a
-													// prevented press that starts inside the popup as
-													// intentional and suppresses the follow-up dismiss.
-													event.preventDefault();
-												}}
-												size="sm"
+									{mergeState === "checks-running" ? (
+										<Spinner data-icon="inline-start" size="xs" />
+									) : null}
+									{mergeStateLabel(mergeState)}
+								</Button>
+								<DropdownMenu>
+									<DropdownMenuTrigger
+										render={
+											<Button
+												aria-label="Merge options"
+												size="icon"
+												variant="outline"
 											/>
 										}
-										onSelect={(event) => {
-											event.preventDefault();
-											if (!onAutoMergeChange) {
-												return;
-											}
-											handleAutoMergeChange(!autoMergeEnabled);
-										}}
 									>
-										Auto merge
-									</DropdownMenuItem>
-								</DropdownMenuContent>
-							</DropdownMenu>
-						</ButtonGroup>
+										<ChevronDownIcon label="" size="small" />
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="end">
+										<DropdownMenuItem
+											closeOnClick={false}
+											disabled={!onAutoMergeChange}
+											elemAfter={
+												<Switch
+													checked={autoMergeEnabled}
+													disabled={!onAutoMergeChange}
+													label="Auto merge"
+													onCheckedChange={handleAutoMergeChange}
+													onClick={(event) => {
+														// Avoid double-toggle: Switch already flipped via
+														// onCheckedChange; don't also run item onSelect.
+														event.stopPropagation();
+													}}
+													onPointerDown={(event) => {
+														// Keep the menu open while toggling; Base UI treats a
+														// prevented press that starts inside the popup as
+														// intentional and suppresses the follow-up dismiss.
+														event.preventDefault();
+													}}
+													size="sm"
+												/>
+											}
+											onSelect={(event) => {
+												event.preventDefault();
+												if (!onAutoMergeChange) {
+													return;
+												}
+												handleAutoMergeChange(!autoMergeEnabled);
+											}}
+										>
+											Auto merge
+										</DropdownMenuItem>
+									</DropdownMenuContent>
+								</DropdownMenu>
+							</ButtonGroup>
+						) : (
+							<Button disabled variant="outline">
+								<MergeSuccessIcon label="" size="small" />
+								Merged
+							</Button>
+						)}
 						<ButtonGroup>
 							<DropdownMenu>
 								<DropdownMenuTrigger

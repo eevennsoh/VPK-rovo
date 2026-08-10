@@ -114,9 +114,10 @@ import AddIcon from "@atlaskit/icon/core/add";
 		{ name: "PromptInputSubmit", description: "Submit/stop button with chat status-aware icon states." },
 	],
 	examples: [
-		{ title: "Chat Composer style", description: "Rovo-style composer with the inline / (skills) and @ (mentions) palette, add menu, customize popover, reasoning selector, and live-chat action rail that reveals AI cursor while voice is active. Type / or @ in the input to open the palette.", demoSlug: "prompt-input-demo-chat-composer" },
-		{ title: "Floating bar", description: 'Uses variant="floating" for a minimal single-line input with elevated shadow, ideal for overlaying on content areas.', demoSlug: "prompt-input-demo-floating-bar" },
-		{ title: "Floating bar — experimental dark CTA", description: "The floating bar with the experimental dark/black CTA button (neutral-bold background, inverse icon) used in the Studio composer. The dark styling applies to both the submit and start-live-voice states; type to see the submit variant.", demoSlug: "prompt-input-demo-floating-bar-dark-cta" },
-		{ title: "Floating bar — text send only", description: "A text-only floating composer with no voice action. The up-arrow is always visible, disabled while the prompt is empty, and enabled once text is entered.", demoSlug: "prompt-input-demo-floating-bar-text-send" },
+		{ title: "Microphone + text send — default", description: "The default Rovo-style composer keeps dictation available and the send CTA visible. Send is disabled until text is ready; live chat is not enabled.", demoSlug: "prompt-input-demo-chat-composer" },
+		{ title: "Microphone + live chat — opt-in", description: "An explicit live-chat variant that retains dictation. With an empty prompt, the live chat CTA replaces the disabled send CTA; while live chat is active, the action rail also exposes the AI cursor control.", demoSlug: "prompt-input-demo-chat-composer-live-voice" },
+		{ title: "Microphone + live chat — compact", description: "A compact floating composer with both dictation and the opt-in live chat CTA.", demoSlug: "prompt-input-demo-floating-bar" },
+		{ title: "Microphone + live chat — compact dark CTA", description: "The compact live-chat composer with the experimental neutral-bold CTA treatment used in Studio.", demoSlug: "prompt-input-demo-floating-bar-dark-cta" },
+		{ title: "Microphone + text send — compact", description: "A compact text-send composer that keeps dictation available and the send CTA visible, disabled while the prompt is empty and enabled once text is entered.", demoSlug: "prompt-input-demo-floating-bar-text-send" },
 	],
 };

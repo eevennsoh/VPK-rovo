@@ -579,6 +579,7 @@ function ThinkingToolCallStep({
 			defaultOpen={tracePresentation?.forceOpen || isToolCallStepOpenByDefault(toolCall.state)}
 			open={tracePresentation?.forceOpen ? true : open}
 			onOpenChange={onOpenChange}
+			iconContainerStyle={tracePresentation?.iconContainerStyle}
 			iconRender={renderResolvedToolIcon(resolvedToolIcon, {
 				className: "size-4",
 			})}

@@ -1,6 +1,4 @@
 const assert = require("node:assert/strict");
-const fs = require("node:fs");
-const path = require("node:path");
 const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const test = require("node:test");
@@ -56,20 +54,21 @@ test("resolves the #1847 guest-checkout guided review fixture", async () => {
 	assert.ok(detail);
 	assert.equal(detail.identity, "eevensoh/vpk-rovo#1847");
 	assert.equal(detail.url, "https://github.com/eevensoh/vpk-rovo/pull/1847");
-	assert.equal(detail.authorName, "Venn");
-	assert.equal(detail.authorAvatarSrc, "/avatar-user/venn/venn.png");
+	assert.equal(detail.authorName, "Claude Code");
+	assert.equal(detail.authorAvatarSrc, "/avatar-agent/dev-agents/basic-coding-agent-template.svg");
 	assert.equal(detail.baseBranch, "main");
 	assert.equal(detail.headBranch, "feature/shop-4821-guest-checkout");
 	assert.deepEqual(detail.provider, { id: "github", name: "GitHub" });
-	assert.equal(detail.createdTime, "18 minutes ago");
+	assert.equal(detail.createdTime, "25 minutes ago");
 	assert.equal(detail.updatedTime, "2m ago");
-	assert.equal(detail.reviewDecision, "approved");
-	assert.equal(detail.mergeState, "ready");
+	assert.equal(detail.reviewDecision, "review-required");
+	assert.equal(detail.mergeState, "blocked");
 	assert.deepEqual(
 		detail.reviewers.map(({ name, status }) => ({ name, status })),
 		[
 			{ name: "Code Planner", status: "approved" },
 			{ name: "Unit Test Creator", status: "approved" },
+			{ name: "Venn", status: "pending" },
 		],
 	);
 	assert.deepEqual(detail.labels.map(({ name }) => name), ["checkout", "customer experience"]);
@@ -83,16 +82,16 @@ test("resolves the #1847 guest-checkout guided review fixture", async () => {
 	);
 	assert.deepEqual(
 		[...new Set(detail.commits.map((commit) => commit.author.name))],
-		["Venn", "Code Planner", "Unit Test Creator"],
+		["Claude Code", "Code Planner", "Unit Test Creator"],
 	);
 	assert.deepEqual(
 		detail.commits.map((commit) => ({ name: commit.author.name, kind: commit.author.kind })),
 		[
-			{ name: "Venn", kind: "person" },
+			{ name: "Claude Code", kind: "agent" },
 			{ name: "Code Planner", kind: "agent" },
-			{ name: "Venn", kind: "person" },
+			{ name: "Claude Code", kind: "agent" },
 			{ name: "Unit Test Creator", kind: "agent" },
-			{ name: "Venn", kind: "person" },
+			{ name: "Claude Code", kind: "agent" },
 			{ name: "Unit Test Creator", kind: "agent" },
 		],
 	);
@@ -110,7 +109,8 @@ test("resolves the #1847 guest-checkout guided review fixture", async () => {
 	assert.match(detail.description, /#### Summary\n\n- Lets shoppers complete checkout without creating an account\./u);
 	assert.match(detail.description, /#### Changes/u);
 	assert.match(detail.description, /#### Test plan/u);
-	assert.match(detail.description, /- \[ \] From cart or sign-in/u);
+	assert.match(detail.description, /- \[x\] From cart or sign-in/u);
+	assert.doesNotMatch(detail.description, /- \[ \] /u);
 	assert.equal(detail.guidedReview?.description, detail.description);
 	assert.equal(
 		detail.activity.find((activity) => activity.kind === "checks-completed")?.passed,
@@ -125,15 +125,42 @@ test("resolves the #1847 guest-checkout guided review fixture", async () => {
 		[
 			"opened",
 			"commits-pushed",
+			"review-submitted",
+			"commits-pushed",
+			"thread-resolved",
 			"checks-completed",
 			"comment-posted",
 			"review-submitted",
 			"review-submitted",
-			"review-submitted",
-			"thread-resolved",
-			"ready-to-merge",
 		],
 	);
+	assert.deepEqual(
+		detail.activity.map(({ occurredAtMs }) => occurredAtMs),
+		[...detail.activity.map(({ occurredAtMs }) => occurredAtMs)].sort((left, right) => left - right),
+	);
+	assert.deepEqual(
+		detail.activity
+			.filter((activity) => activity.kind === "commits-pushed")
+			.map(({ commitCount, headSha }) => ({ commitCount, headSha })),
+		[
+			{ commitCount: 4, headSha: "d34c112" },
+			{ commitCount: 2, headSha: "f8cc291" },
+		],
+	);
+	assert.deepEqual(
+		detail.commits.map(({ shortSha, timestamp }) => ({ shortSha, timestamp })),
+		[
+			{ shortSha: "5f02a91", timestamp: "24 minutes ago" },
+			{ shortSha: "91c73d4", timestamp: "22 minutes ago" },
+			{ shortSha: "a2f74c1", timestamp: "20 minutes ago" },
+			{ shortSha: "d34c112", timestamp: "18 minutes ago" },
+			{ shortSha: "8b4e6fa", timestamp: "14 minutes ago" },
+			{ shortSha: "f8cc291", timestamp: "12 minutes ago" },
+		],
+	);
+	const codexReview = detail.activity.find((activity) => activity.id === "codex-review");
+	assert.equal(codexReview?.detail?.body, "Codex reviewed commit d34c112 and posted this suggestion on the pull request.");
+	assert.equal(codexReview?.replies?.[0]?.timestamp, "13 minutes ago");
 	assert.deepEqual(
 		detail.guidedReview?.chapters.map((chapter) => chapter.title),
 		[
@@ -164,6 +191,30 @@ test("resolves the #1847 guest-checkout guided review fixture", async () => {
 	)));
 });
 
+test("an approved #1847 entry adds Venn approval and ready-to-merge evidence", async () => {
+	const { resolvePullRequestDetailData } = await loadDetailData();
+	const detail = resolvePullRequestDetailData(pullRequestEntry({
+		mergeState: "ready",
+		reviewDecision: "approved",
+	}));
+
+	assert.ok(detail);
+	assert.equal(detail.reviewDecision, "approved");
+	assert.equal(detail.mergeState, "ready");
+	assert.deepEqual(
+		detail.reviewers.map(({ name, status }) => ({ name, status })),
+		[
+			{ name: "Code Planner", status: "approved" },
+			{ name: "Unit Test Creator", status: "approved" },
+			{ name: "Venn", status: "approved" },
+		],
+	);
+	assert.deepEqual(detail.activity.slice(-2).map(({ kind }) => kind), [
+		"review-submitted",
+		"ready-to-merge",
+	]);
+});
+
 test("keeps URL identity while recognizing the repository fixture", async () => {
 	const { resolvePullRequestDetailData } = await loadDetailData();
 	const url = "https://github.com/eevensoh/vpk-rovo/pull/1847";
@@ -187,6 +238,17 @@ test("uses live SCM check state to block a guided pull request", async () => {
 	assert.equal(detail?.mergeState, "blocked");
 	assert.equal(detail?.reviewDecision, "review-required");
 	assert.deepEqual(detail?.checks, checks);
+	assert.deepEqual(
+		detail?.reviewers.map(({ name, status }) => ({ name, status })),
+		[
+			{ name: "Code Planner", status: "pending" },
+			{ name: "Unit Test Creator", status: "pending" },
+			{ name: "Venn", status: "pending" },
+		],
+	);
+	assert.match(detail?.description ?? "", /- \[ \] From cart or sign-in/u);
+	assert.doesNotMatch(detail?.description ?? "", /- \[x\] /u);
+	assert.equal(detail?.guidedReview?.description, detail?.description);
 	assert.deepEqual(detail?.activity.map(({ kind }) => kind), [
 		"opened",
 		"commits-pushed",
@@ -239,7 +301,7 @@ test("shows the checks spinner only while a check row is non-terminal", async ()
 	assert.ok(detail.checks.every((check) => typeof check.url === "string" && check.url.length > 0));
 
 	const settled = resolvePullRequestDetailData(pullRequestEntry());
-	assert.equal(settled?.mergeState, "ready");
+	assert.equal(settled?.mergeState, "blocked");
 	assert.equal(arePullRequestChecksInProgress(settled.checks), false);
 	assert.equal(arePullRequestChecksInProgress([{
 		id: "running",
@@ -350,7 +412,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		contextPanelSource,
-		/<PullRequestDetailView[\s\S]*scrollContainerRef=\{scrollContainerRef\}/u,
+		/<PullRequestDetailView[\s\S]*approvalState=\{pullRequestApprovalState\}[\s\S]*onApprove=\{onPullRequestApprove\}[\s\S]*scrollContainerRef=\{scrollContainerRef\}/u,
 	);
 	assert.match(
 		detailViewSource,
@@ -362,7 +424,10 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 		detailViewSource,
 		/Overview[\s\S]*\{review\.files\.length\} Files[\s\S]*text-text-success[\s\S]*\+\{data\.additions\}[\s\S]*text-text-danger[\s\S]*-\{data\.deletions\}[\s\S]*Guide/u,
 	);
-	assert.match(detailViewSource, /onFinish=\{\(\) => setActiveTab\("details"\)\}/u);
+	assert.match(
+		detailViewSource,
+		/<PullRequestGuide[\s\S]*approvalState=\{approvalState\}[\s\S]*onApprove=\{onApprove[\s\S]*\? \(\) => onApprove\(data\.identity\)[\s\S]*: undefined\}[\s\S]*onFinish=\{\(\) => setActiveTab\("details"\)\}/u,
+	);
 	assert.match(
 		headerSource,
 		/import \{ PullRequestHeader \} from "@\/components\/blocks\/pull-request-header"/u,
@@ -400,26 +465,29 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	assert.doesNotMatch(overviewSource, /pull-request-checks-heading|testGroups|groups passed/u);
 	assert.doesNotMatch(overviewSource, /bg-surface-raised|bg-bg-neutral/u);
 	assert.doesNotMatch(headerSource, /Back to description|onBack|ArrowLeftIcon/u);
+	assert.match(headerSource, /mergeState=\{mapPullRequestHeaderMergeState\(data\)\}/u);
 	assert.match(
 		headerSource,
-		/mergeState=\{mapPullRequestHeaderMergeState\(data\.mergeState\)\}/u,
-	);
-	assert.match(
-		headerSource,
-		/function mapPullRequestHeaderMergeState[\s\S]*case "conflicts":[\s\S]*return "merge-conflicts"[\s\S]*case "blocked":[\s\S]*return "checks-running"/u,
+		/function mapPullRequestHeaderMergeState[\s\S]*case "conflicts":[\s\S]*return "merge-conflicts"[\s\S]*case "blocked":[\s\S]*checks\.some[\s\S]*"failed"[\s\S]*return "checks-failed"[\s\S]*"running"[\s\S]*"queued"[\s\S]*return "checks-running"[\s\S]*reviewDecision === "review-required"[\s\S]*return "review-required"[\s\S]*return "ready"/u,
 	);
 	assert.match(headerSource, /const \[autoMerge, setAutoMerge\] = useState\(true\)/u);
+	assert.match(headerSource, /const isOpen = data\.status === "Open"/u);
+	assert.match(headerSource, /const mergeReady = isOpen && data\.mergeState === "ready"/u);
 	assert.match(
 		headerSource,
 		/requestExpandPullRequestSection|useMetadataRail/u,
 	);
 	assert.match(
 		headerSource,
-		/onChecksRunningClick=\{\(\) => \{[\s\S]*setPanelView\("details"\)[\s\S]*requestExpandPullRequestSection\(data\.identity, PULL_REQUEST_CHECKS_SECTION_ID\)/u,
+		/const openChecks = \(\) => \{[\s\S]*setPanelView\("details"\)[\s\S]*requestExpandPullRequestSection\(data\.identity, PULL_REQUEST_CHECKS_SECTION_ID\)[\s\S]*onChecksFailedClick=\{openChecks\}[\s\S]*onChecksRunningClick=\{openChecks\}/u,
 	);
-	assert.doesNotMatch(
+	assert.match(
 		headerSource,
-		/autoMerge=\{autoMerge\}[\s\S]*onAutoMergeChange=\{setAutoMerge\}[\s\S]*onMergeClick=\{\(\) => undefined\}[\s\S]*onChecksRunningClick=[\s\S]*onConvertToDraftClick=\{\(\) => undefined\}[\s\S]*onClosePullRequestClick=\{\(\) => undefined\}/u,
+		/onChecksFailedClick=\{openChecks\}[\s\S]*onChecksRunningClick=\{openChecks\}[\s\S]*onReviewRequiredClick=\{onGuideOpen\}/u,
+	);
+	assert.match(
+		headerSource,
+		/autoMerge=\{isOpen \? autoMerge : false\}[\s\S]*onAutoMergeChange=\{isOpen \? setAutoMerge : undefined\}[\s\S]*onMergeClick=\{mergeReady \? DEMO_MERGE : undefined\}/u,
 	);
 	assert.match(
 		headerSource,
@@ -439,7 +507,23 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	assert.match(guideSource, /data-jira-work-item-pull-request-guide-current-step/u);
 	assert.match(guideSource, /String\(currentStep \+ 1\)\.padStart\(2, "0"\)[\s\S]*String\(review\.chapters\.length\)\.padStart\(2, "0"\)/u);
 	assert.doesNotMatch(guideSource, /<button/u);
-	assert.match(guideSource, /isLast \? "Finish" : "Next"/u);
+	assert.match(guideSource, /visitedChapterIds[\s\S]*review\.chapters\.every/u);
+	assert.match(
+		guideSource,
+		/const selectChapter = \(index: number\) => \{[\s\S]*setVisitedChapterIds\(\(visited\) => new Set\(visited\)\.add\(nextChapter\.id\)\);[\s\S]*setCurrentStep\(index\);[\s\S]*onClick=\{\(\) => selectChapter\(Math\.max\(0, currentStep - 1\)\)\}[\s\S]*onClick=\{\(\) => selectChapter\(Math\.min\(review\.chapters\.length - 1, currentStep \+ 1\)\)\}/u,
+	);
+	assert.match(guideSource, /approvalState === "approved"[\s\S]*"Approved"[\s\S]*"Approve pull request"/u);
+	assert.match(guideSource, /disabled=\{approved \|\| !allChaptersVisited \|\| !onApprove\}/u);
+	assert.match(guideSource, /onClick=\{onApprove\}/u);
+	assert.match(
+		workItemSource,
+		/pullRequestApprovalStates\?: Readonly<Record<string, "available" \| "approved">>/u,
+	);
+	assert.match(workItemSource, /onPullRequestApprove\?: \(identity: string\) => void/u);
+	assert.match(
+		workItemSource,
+		/pullRequestApprovalStates\?\.\[identity\] !== "approved"[\s\S]*reviewDecision: "approved" as const,[\s\S]*mergeState: "ready" as const/u,
+	);
 	assert.match(filesSource, /import \{ CodeReviewFileBrowser \} from "@\/components\/blocks\/code-review"/u);
 	assert.match(filesSource, /<CodeReviewFileBrowser[\s\S]*files=\{review\.files\}/u);
 	assert.doesNotMatch(filesSource, /CodeList/u);

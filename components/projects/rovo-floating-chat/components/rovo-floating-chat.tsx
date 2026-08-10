@@ -25,6 +25,7 @@ interface RovoFloatingChatProps {
 	startRealtimeVoiceRequestKey?: number;
 	externalThinkingMessageId?: string | null;
 	interceptClarificationAnswers?: boolean;
+	markAnsweredQuestionTraces?: boolean;
 	showAgentBackButton?: boolean;
 	showAgentSelector?: boolean;
 	showChatHistory?: boolean;
@@ -46,6 +47,7 @@ export default function RovoFloatingChat({
 	startRealtimeVoiceRequestKey = 0,
 	externalThinkingMessageId,
 	interceptClarificationAnswers = false,
+	markAnsweredQuestionTraces = false,
 	showAgentBackButton = true,
 	showAgentSelector = true,
 	showChatHistory = true,
@@ -112,6 +114,7 @@ export default function RovoFloatingChat({
 					startRealtimeVoiceRequestKey={startRealtimeVoiceRequestKey}
 					externalThinkingMessageId={externalThinkingMessageId}
 					interceptClarificationAnswers={interceptClarificationAnswers}
+					markAnsweredQuestionTraces={markAnsweredQuestionTraces}
 					suppressCustomAgentTabs={suppressCustomAgentTabs}
 				/>
 			</div>

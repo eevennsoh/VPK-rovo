@@ -71,11 +71,15 @@ export function ContextHeader({
  */
 export function ContextPanel({
 	descriptionViewMode,
+	onPullRequestApprove,
+	pullRequestApprovalState,
 	scrollContainerRef,
 	selectedPullRequestEntry,
 	onDescriptionViewModeChange,
 }: Readonly<{
 	descriptionViewMode: EditorToolbarViewMode;
+	onPullRequestApprove?: (identity: string) => void;
+	pullRequestApprovalState?: "available" | "approved";
 	scrollContainerRef: RefObject<HTMLElement | null>;
 	selectedPullRequestEntry: JiraActivityEventEntry | null;
 	onDescriptionViewModeChange: (mode: EditorToolbarViewMode) => void;
@@ -88,8 +92,10 @@ export function ContextPanel({
 		<section aria-label="Work item context" className="flex flex-col">
 			{selectedPullRequestEntry ? (
 				<PullRequestDetailView
+					approvalState={pullRequestApprovalState}
 					entry={selectedPullRequestEntry}
 					key={selectedPullRequestKey}
+					onApprove={onPullRequestApprove}
 					scrollContainerRef={scrollContainerRef}
 				/>
 			) : (

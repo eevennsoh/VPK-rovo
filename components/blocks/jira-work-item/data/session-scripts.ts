@@ -45,6 +45,40 @@ export interface AgentSessionScript {
 }
 
 export const SESSION_SCRIPTS: Record<string, AgentSessionScript> = {
+	"shop-4821-improve-description": {
+		id: "shop-4821-improve-description",
+		title: "Improve description",
+		defaultCommand: "/Improve description",
+		runningPreview: "Reviewing the work item and drafting a clearer implementation-ready description…",
+		steps: [
+			{ id: "review", label: "Review the current work item", durationMs: 900 },
+			{ id: "draft", label: "Draft the improved description", durationMs: 1200 },
+		],
+		waitAfterIndex: 1,
+		waitingQuestion: {
+			id: "apply-improved-description",
+			label: "Would you like me to add this suggested output to the work item description?",
+			description: "The work item will not change until you confirm.",
+			kind: "single-select",
+			options: [
+				{
+					id: "apply-description",
+					label: "Add suggested description",
+					description: "Replace the current description with the improved version.",
+				},
+				{
+					id: "keep-description",
+					label: "Keep current description",
+					description: "Leave the work item unchanged.",
+				},
+			],
+		},
+		waitingPrompt: "The suggested description is ready. Would you like me to add it to the work item?",
+		waitingPreview: "Waiting for confirmation before updating the work item description.",
+		resumeMessage: "Thanks — I’ll apply your choice now.",
+		completionMessage: "The description suggestion has been resolved.",
+		completionPreview: "Description suggestion resolved.",
+	},
 	"compliance-matrix": {
 		id: "compliance-matrix",
 		title: "Map Acmecorp’s compliance requirements",

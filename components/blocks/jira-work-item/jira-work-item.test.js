@@ -212,7 +212,8 @@ test("the experimental surface reuses the Jira Issue floating Rovo chat", () => 
 	assert.match(sharedOverlaySource, /onButtonClick=\{onLauncherClick\}/u);
 	assert.match(sharedOverlaySource, /interceptClarificationAnswers=\{Boolean\(onInterceptSubmit \|\| onQuestionAnswer\)\}/u);
 	assert.match(sharedOverlaySource, /onInterceptSubmit=\{onInterceptSubmit \?\? \(onQuestionAnswer \? handleQuestionAnswer : undefined\)\}/u);
-	assert.equal((sessionScriptsSource.match(/waitAfterIndex:/gu) ?? []).length, 1);
+	assert.equal((sessionScriptsSource.match(/waitAfterIndex:/gu) ?? []).length, 2);
+	assert.match(sessionScriptsSource, /id: "shop-4821-improve-description"[\s\S]*label: "Add suggested description"[\s\S]*label: "Keep current description"/u);
 	assert.match(sessionScriptsSource, /waitingQuestion: \{[\s\S]*id: "pricing-seat-band"[\s\S]*label: "Assume 5,000 seats"[\s\S]*label: "Model a 5,000–10,000-seat range"/u);
 	assert.doesNotMatch(floatingSurfaceSource, /FloatingSession(?:Panel|Header|Transcript|Progress|Composer|Launcher)/u);
 	for (const fileName of [
@@ -1255,4 +1256,3 @@ test("empty work item launcher opens a general session; filled launcher reopens 
 	assert.ok(running.activeSessionId);
 	assert.equal(running.sessions.length, model.hydratePreset("running", TEST_WORK_ITEM).sessions.length); // reopened, not created
 });
-

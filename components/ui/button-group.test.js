@@ -56,6 +56,7 @@ test("later segments keep a transparent leading :before mounted for seam transit
 		":relative",
 		":before:pointer-events-none",
 		":before:absolute",
+		// Stay inside the padding box while transparent so neighbor borders stay intact.
 		":before:inset-y-0",
 		":before:-left-px",
 		":before:w-px",
@@ -86,6 +87,17 @@ test("selected segments after the first paint a leading stroke without changing 
 		"selected segment seam is missing :before:bg-border-selected",
 	);
 
+	// Opaque selected stroke must cover the full border-box height so top/bottom
+	// corners do not show neighbor border gaps (`inset-y-0` alone is short by 1px).
+	assert.ok(
+		BUTTON_GROUP_SOURCE.includes(`${SELECTED_SEGMENT_SELECTOR}:before:-top-px`),
+		"selected segment seam is missing :before:-top-px corner stretch",
+	);
+	assert.ok(
+		BUTTON_GROUP_SOURCE.includes(`${SELECTED_SEGMENT_SELECTOR}:before:-bottom-px`),
+		"selected segment seam is missing :before:-bottom-px corner stretch",
+	);
+
 	assert.ok(!BUTTON_GROUP_SOURCE.includes(`${SELECTED_SEGMENT_SELECTOR}:-ml-px`));
 	assert.ok(!BUTTON_GROUP_SOURCE.includes(`${SELECTED_SEGMENT_SELECTOR}:border-l`));
 });
@@ -94,6 +106,14 @@ test("focus-visible segments after the first paint a leading ring-colored stroke
 	assert.ok(
 		BUTTON_GROUP_SOURCE.includes(`${FOCUS_VISIBLE_SEGMENT_SELECTOR}:before:bg-ring`),
 		"focus-visible segment seam is missing :before:bg-ring",
+	);
+	assert.ok(
+		BUTTON_GROUP_SOURCE.includes(`${FOCUS_VISIBLE_SEGMENT_SELECTOR}:before:-top-px`),
+		"focus-visible segment seam is missing :before:-top-px corner stretch",
+	);
+	assert.ok(
+		BUTTON_GROUP_SOURCE.includes(`${FOCUS_VISIBLE_SEGMENT_SELECTOR}:before:-bottom-px`),
+		"focus-visible segment seam is missing :before:-bottom-px corner stretch",
 	);
 });
 

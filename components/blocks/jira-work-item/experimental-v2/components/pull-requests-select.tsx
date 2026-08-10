@@ -197,8 +197,8 @@ export function PullRequestsSelect({
 										{...item}
 										className={
 											selected
-												? "min-w-0 max-w-full w-full rounded-lg border-transparent group-data-[highlighted]/pr-option:bg-bg-selected-hovered"
-												: "min-w-0 max-w-full w-full rounded-lg border-transparent transition-[background-color] duration-normal ease-out-practical group-data-[highlighted]/pr-option:bg-surface-hovered"
+												? "pointer-events-none min-w-0 max-w-full w-full rounded-lg border-transparent group-data-[highlighted]/pr-option:bg-bg-selected-hovered"
+												: "pointer-events-none min-w-0 max-w-full w-full rounded-lg border-transparent transition-[background-color] duration-normal ease-out-practical group-data-[highlighted]/pr-option:bg-surface-hovered"
 										}
 										selected={selected}
 									/>

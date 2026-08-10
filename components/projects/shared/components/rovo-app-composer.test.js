@@ -9,8 +9,12 @@ const FLOATING_BODY_SOURCE = fs.readFileSync(path.join(__dirname, "composer-floa
 const FLOATING_COMPOSER_SOURCE = fs.readFileSync(path.join(__dirname, "floating-composer.tsx"), "utf8");
 const ROVO_COMPOSER_STYLES_SOURCE = fs.readFileSync(path.join(__dirname, "rovo-composer-styles.ts"), "utf8");
 const SEND_CONTROLS_SOURCE = fs.readFileSync(path.join(__dirname, "rovo-composer-send-controls.tsx"), "utf8");
+const PROMPT_INPUT_DEMO_SOURCE = fs.readFileSync(path.join(__dirname, "../../../website/demos/ui-custom/prompt-input-demo.tsx"), "utf8");
+const PROMPT_INPUT_VARIANTS_SOURCE = fs.readFileSync(path.join(__dirname, "../../../website/registry/ui-custom/variants-agent.ts"), "utf8");
+const PROMPT_INPUT_DETAILS_SOURCE = fs.readFileSync(path.join(process.cwd(), "app/data/details/ui-custom/prompt-input.ts"), "utf8");
 const LIVE_WAVEFORM_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-audio/live-waveform.tsx"), "utf8");
 const COMPOSER_EXTENSIONS_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rich-text-editor/composer-extensions.ts"), "utf8");
+const PROMPT_INPUT_DICTATION_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/prompt-input-dictation.tsx"), "utf8");
 const PROMPT_INPUT_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/prompt-input.tsx"), "utf8");
 const VISUAL_TRACE_AUTO_TAGGING_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rich-text-editor/use-composer-visual-trace-auto-tagging.ts"), "utf8");
 const RICH_TEXT_EDITOR_CSS = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rich-text-editor/rich-text-editor.css"), "utf8");
@@ -51,8 +55,64 @@ test("card composer can opt into a visible disabled submit affordance while empt
 	assert.match(CARD_BODY_SOURCE, /showSubmitWhenEmpty=\{showSubmitWhenEmpty\}/u);
 	assert.match(
 		SEND_CONTROLS_SOURCE,
-		/showSubmitWhenEmpty && !resolvedComposerBusy && !realtimeVoiceActive && !showBackgroundStop/u,
+		/showSubmitWhenEmpty && !resolvedComposerBusy && !resolvedRealtimeVoiceActive && !showBackgroundStop/u,
 	);
+	assert.match(
+		SEND_CONTROLS_SOURCE,
+		/idleAction === "submit"[\s\S]*<PromptInputSubmit[\s\S]*disabled=\{submitDisabled \|\| !canSubmit\}/u,
+	);
+});
+
+test("shared composer defaults live voice off while leaving dictation independent", () => {
+	assert.match(SEND_CONTROLS_SOURCE, /liveVoiceEnabled\?: boolean;/u);
+	assert.equal((SEND_CONTROLS_SOURCE.match(/liveVoiceEnabled = false/gu) ?? []).length, 2);
+	assert.match(SEND_CONTROLS_SOURCE, /const resolvedRealtimeVoiceActive = realtimeVoiceActive;/u);
+	assert.match(SEND_CONTROLS_SOURCE, /canStartDictation: Boolean\(onStartDictation\)/u);
+	assert.match(SEND_CONTROLS_SOURCE, /canStartRealtimeVoice: liveVoiceEnabled && Boolean\(onToggleRealtimeVoice\)/u);
+	assert.match(SEND_CONTROLS_SOURCE, /const shouldShowRealtimeVoiceStart = liveVoiceEnabled && idleAction === "voice-start"/u);
+	assert.match(SEND_CONTROLS_SOURCE, /const shouldShowRealtimeVoiceRail = resolvedRealtimeVoiceActive && Boolean\(onToggleClicky\);/u);
+	assert.match(SEND_CONTROLS_SOURCE, /if \(\(!liveVoiceEnabled && !realtimeVoiceActive\) \|\| !onToggleRealtimeVoice\) \{/u);
+	assert.match(SEND_CONTROLS_SOURCE, /\) : resolvedRealtimeVoiceActive \? \(/u);
+	assert.match(SEND_CONTROLS_SOURCE, /<PromptInputDictationControl/u);
+});
+
+test("Prompt Input demos expose the microphone plus text-send and live-chat matrix", () => {
+	assert.match(
+		PROMPT_INPUT_DEMO_SOURCE,
+		/function useDemoDictationControls\(\)[\s\S]*dictationState[\s\S]*handleStartDictation[\s\S]*handleStopDictation/u,
+	);
+	assert.match(PROMPT_INPUT_DEMO_SOURCE, /function ChatComposerDemo\(\{[\s\S]*liveVoiceEnabled = false/u);
+	assert.match(
+		PROMPT_INPUT_DEMO_SOURCE,
+		/<RovoComposerSendControls[\s\S]*dictationState=\{dictationState\}[\s\S]*liveVoiceEnabled=\{liveVoiceEnabled\}[\s\S]*onStartDictation=\{handleStartDictation\}[\s\S]*onStopDictation=\{handleStopDictation\}[\s\S]*showSubmitWhenEmpty=\{!liveVoiceEnabled\}/u,
+	);
+	assert.match(
+		PROMPT_INPUT_DEMO_SOURCE,
+		/export function PromptInputDemoChatComposer\(\) \{[\s\S]*return <ChatComposerDemo \/>;[\s\S]*export function PromptInputDemoChatComposerLiveVoice\(\) \{[\s\S]*return <ChatComposerDemo liveVoiceEnabled \/>;/u,
+	);
+	assert.match(
+		PROMPT_INPUT_DEMO_SOURCE,
+		/function FloatingBarDemo[\s\S]*<RovoComposerActionButton[\s\S]*dictationState=\{dictationState\}[\s\S]*liveVoiceEnabled[\s\S]*onStartDictation=\{handleStartDictation\}[\s\S]*onStopDictation=\{handleStopDictation\}/u,
+	);
+	const compactTextSendStart = PROMPT_INPUT_DEMO_SOURCE.indexOf("export function PromptInputDemoFloatingBarTextSend()");
+	assert.notEqual(compactTextSendStart, -1);
+	const compactTextSendSource = PROMPT_INPUT_DEMO_SOURCE.slice(compactTextSendStart);
+	assert.match(
+		compactTextSendSource,
+		/<RovoComposerActionButton[\s\S]*dictationState=\{dictationState\}[\s\S]*onStartDictation=\{handleStartDictation\}[\s\S]*onStopDictation=\{handleStopDictation\}[\s\S]*showSubmitWhenEmpty/u,
+	);
+	assert.doesNotMatch(compactTextSendSource, /liveVoiceEnabled/u);
+	assert.match(
+		PROMPT_INPUT_VARIANTS_SOURCE,
+		/"prompt-input-demo-chat-composer-live-voice"[\s\S]*PromptInputDemoChatComposerLiveVoice/u,
+	);
+	for (const slug of [
+		"prompt-input-demo-chat-composer",
+		"prompt-input-demo-chat-composer-live-voice",
+		"prompt-input-demo-floating-bar-text-send",
+	]) {
+		assert.match(PROMPT_INPUT_DETAILS_SOURCE, new RegExp(`demoSlug: "${slug}"`, "u"));
+	}
 });
 
 test("RovoAppComposer does not render the ambient response gradient around the composer", () => {
@@ -85,7 +145,7 @@ test("active voice controls do not use border beam visual effects", () => {
 	assert.doesNotMatch(FLOATING_BODY_SOURCE, /beamActive/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /BorderBeam|ACTIVE_VOICE_BEAM_PROPS/u);
 	assert.match(SEND_CONTROLS_SOURCE, /PromptInputDictationControl/u);
-	assert.match(PROMPT_INPUT_SOURCE, /aria-label="Stop dictation"/u);
+	assert.match(PROMPT_INPUT_DICTATION_SOURCE, /aria-label="Stop dictation"/u);
 	assert.match(SEND_CONTROLS_SOURCE, /aria-label="Stop live voice"/u);
 });
 
@@ -103,7 +163,7 @@ test("Rovo Cursor is gated behind active live voice in shared composer chrome", 
 	assert.match(FLOATING_BODY_SOURCE, /onToggleClicky=\{onToggleClicky\}/u);
 	assert.match(SEND_CONTROLS_SOURCE, /key="live-voice-active"/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /live-voice-cursor-active/u);
-	assert.match(SEND_CONTROLS_SOURCE, /const shouldShowRealtimeVoiceRail = realtimeVoiceActive && Boolean\(onToggleClicky\);/u);
+	assert.match(SEND_CONTROLS_SOURCE, /const shouldShowRealtimeVoiceRail = resolvedRealtimeVoiceActive && Boolean\(onToggleClicky\);/u);
 	assert.match(SEND_CONTROLS_SOURCE, /const ACTION_FRAME_CLASS_NAME = "flex h-9 shrink-0 items-center justify-center";/u);
 	assert.match(SEND_CONTROLS_SOURCE, /function ComposerActionFrame/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /shouldShowRegionPaintControl/u);
@@ -162,7 +222,7 @@ test("Rovo Cursor is gated behind active live voice in shared composer chrome", 
 	assert.match(SEND_CONTROLS_SOURCE, /className=\{cn\("flex h-full shrink-0 items-center", barCount === 4 \? "w-4" : "w-8"\)\}/u);
 	assert.match(SEND_CONTROLS_SOURCE, /barCount=\{barCount\}/u);
 	assert.equal((SEND_CONTROLS_SOURCE.match(/barCount=\{4\}/gu) ?? []).length, 2);
-	assert.match(PROMPT_INPUT_SOURCE, /barCount=\{8\}/u);
+	assert.match(PROMPT_INPUT_DICTATION_SOURCE, /barCount=\{8\}/u);
 	assert.match(LIVE_WAVEFORM_SOURCE, /barCount\?: number/u);
 	assert.match(LIVE_WAVEFORM_SOURCE, /barCount: fixedBarCount/u);
 	assert.match(LIVE_WAVEFORM_SOURCE, /const getBarCount = useCallback\([\s\S]*\(width: number\) =>/u);
@@ -321,7 +381,7 @@ test("composer plain Enter submits before Tiptap can split the paragraph", () =>
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /"Shift-Enter": insertHardBreak/u);
 	assert.match(PROMPT_INPUT_SOURCE, /const submitButton = form\.querySelector\([\s\S]*button\[type="submit"\][\s\S]*if \(submitButton\?\.disabled\)/u);
 	assert.match(SEND_CONTROLS_SOURCE, /key="dictation-active"[\s\S]*PromptInputDictationControl/u);
-	assert.match(PROMPT_INPUT_SOURCE, /aria-hidden="true"[\s\S]*disabled[\s\S]*type="submit"/u);
+	assert.match(PROMPT_INPUT_DICTATION_SOURCE, /aria-hidden="true"[\s\S]*disabled[\s\S]*type="submit"/u);
 });
 
 test("visual trace auto-tagging uses mention nodes and hides autocomplete while tracing", () => {

@@ -92,6 +92,24 @@
 	--typeset-leading: 1.6;
 	--typeset-flow: 1em;
 }
+
+/* Chat links must read as ADS text links. Typeset's default `a { color: inherit }`
+   makes markdown links look like body copy (and hides the hover underline). */
+.typeset-chat a {
+	color: var(--color-link);
+	font-weight: inherit;
+	text-decoration: none;
+}
+
+.typeset-chat a:hover {
+	color: var(--color-link);
+	text-decoration: underline;
+	text-decoration-color: currentColor;
+}
+
+.typeset-chat a:active {
+	color: var(--color-link-pressed);
+}
 .typeset-docs {
 	--typeset-font-body: var(--font-sans);
 	--typeset-font-heading: var(--font-sans);

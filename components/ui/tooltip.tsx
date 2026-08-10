@@ -1,6 +1,6 @@
 "use client"
 
-import type * as React from "react"
+import * as React from "react"
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip"
 
 import { cn } from "@/lib/utils"
@@ -24,8 +24,55 @@ function TooltipProvider({
 
 type TooltipProps = TooltipPrimitive.Root.Props
 
-function Tooltip(props: Readonly<TooltipProps>) {
-	return <TooltipPrimitive.Root data-slot="tooltip" {...props} />
+function Tooltip({
+	actionsRef,
+	defaultOpen = false,
+	onOpenChange,
+	open,
+	...props
+}: Readonly<TooltipProps>) {
+	const internalActionsRef = React.useRef<TooltipPrimitive.Root.Actions | null>(null)
+	const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen)
+	const isOpen = open ?? uncontrolledOpen
+
+	React.useImperativeHandle(actionsRef, () => ({
+		close: () => internalActionsRef.current?.close(),
+		unmount: () => internalActionsRef.current?.unmount(),
+	}))
+
+	const handleOpenChange = React.useCallback<
+		NonNullable<TooltipPrimitive.Root.Props["onOpenChange"]>
+	>((nextOpen, eventDetails) => {
+		if (open === undefined) {
+			setUncontrolledOpen(nextOpen)
+		}
+		onOpenChange?.(nextOpen, eventDetails)
+	}, [onOpenChange, open])
+
+	React.useEffect(() => {
+		if (!isOpen) {
+			return undefined
+		}
+
+		const handleScroll = () => internalActionsRef.current?.close()
+		window.addEventListener("scroll", handleScroll, {
+			capture: true,
+			passive: true,
+		})
+
+		return () => window.removeEventListener("scroll", handleScroll, true)
+	}, [isOpen])
+
+	return (
+		<TooltipPrimitive.Root
+			actionsRef={internalActionsRef}
+			data-slot="tooltip"
+			defaultOpen={defaultOpen}
+			onOpenChange={handleOpenChange}
+			open={open}
+			{...props}
+		/>
+	)
 }
 
 type TooltipTriggerProps = TooltipPrimitive.Trigger.Props

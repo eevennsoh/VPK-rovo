@@ -1491,7 +1491,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		setPrefillText(null);
 		setVoiceTranscript(baselineText);
 		setComposerFocusRequestKey((currentKey) => currentKey + 1);
-		realtime.connect({ transcriptionOnly: true });
+		realtime.connect({ browserTranscriptionOnly: true });
 	}, [realtime, resetRealtimeAssistantMessageState]);
 
 	const handleStopDictation = useCallback(() => {

@@ -337,6 +337,8 @@ function MarkdownAnchor({
 	...props
 }: Readonly<MarkdownAnchorProps>) {
 	void node;
+	// Drop Streamdown's baked-in link utilities; `.typeset-chat a` owns the ADS
+	// text-link chrome (blue, underline on hover).
 	void className;
 	const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
 		onClick?.(event);
@@ -365,7 +367,14 @@ function MarkdownAnchor({
 		}));
 	};
 
-		return <a aria-label={typeof props.children === "string" ? props.children : href} {...props} href={href} onClick={handleClick} />;
+	return (
+		<a
+			aria-label={typeof props.children === "string" ? props.children : href}
+			{...props}
+			href={href}
+			onClick={handleClick}
+		/>
+	);
 }
 
 /**

@@ -90,6 +90,81 @@ test("ASX awaiting-input chat playback exposes the same question as a chat quest
 	assert.equal(widget.data.payload.questions[0].required, true);
 });
 
+test("static result playback renders a completed transcript without replaying tools", async () => {
+	const { buildAsxAgentChatPlayback } = await loadHarness();
+	const playback = buildAsxAgentChatPlayback({
+		agentId: "rovo",
+		agentName: "Rovo",
+		issueKey: "SHOP-4821",
+		issueSummary: "Add guest checkout to the storefront",
+		playbackVariant: "static-result",
+		result: "Done — I added the approved description to SHOP-4821.",
+	}, "jira-description-complete", 0);
+
+	assert.equal(playback.frames.length, 1);
+	assert.equal(playback.frames[0].delayMs, 0);
+	assert.deepEqual(playback.frames[0].parts, [{
+		type: "text",
+		text: "Done — I added the approved description to SHOP-4821.",
+		state: "done",
+	}]);
+});
+
+test("Jira description playback uses a substantial tool trace and one Teamwork Graph call before awaiting input", async () => {
+	const { buildAsxAgentChatPlayback } = await loadHarness();
+	const playback = buildAsxAgentChatPlayback({
+		agentId: "rovo",
+		agentName: "Rovo",
+		issueKey: "SHOP-4821",
+		issueSummary: "Add guest checkout to the storefront",
+		playbackVariant: "jira-description-improvement",
+		question: {
+			id: "apply-improved-description",
+			label: "Would you like me to add this suggested output to the work item description?",
+			kind: "single-select",
+			options: [{ id: "apply", label: "Add suggested description" }],
+		},
+	}, "jira-description", 0);
+
+	assert.equal(playback.frames.length, 1);
+	const finalParts = playback.frames[0].parts;
+	const starts = finalParts.filter((part) => part.type === "data-thinking-event" && part.data.phase === "start");
+	const twgCalls = starts.filter((part) => part.data.toolName.startsWith("twg."));
+	const awaitingCall = starts.find((part) => part.data.toolName === "ask_user_questions");
+
+	assert.equal(starts.length, 5);
+	assert.equal(twgCalls.length, 1);
+	assert.equal(awaitingCall.data.label, "Confirming the description update");
+	assert.equal(finalParts.some((part) => part.type === "data-turn-complete"), true);
+	assert.equal(finalParts.some((part) => part.type === "data-widget-data" && part.data.type === "question-card"), true);
+});
+
+test("Jira description generation replays multiple tools before the confirmation question arrives", async () => {
+	const { buildAsxAgentChatPlayback } = await loadHarness();
+	const playback = buildAsxAgentChatPlayback({
+		agentId: "rovo",
+		agentName: "Rovo",
+		issueKey: "SHOP-4821",
+		issueSummary: "Add guest checkout to the storefront",
+		playbackVariant: "jira-description-improvement",
+	}, "jira-description-running", 0);
+
+	assert.equal(playback.frames.length >= 8, true);
+	assert.equal(playback.keepThinkingActiveAfterLastFrame, true);
+	const finalStarts = playback.frames.at(-1).parts.filter(
+		(part) => part.type === "data-thinking-event" && part.data.phase === "start",
+	);
+	assert.deepEqual(
+		finalStarts.map((part) => part.data.toolName),
+		[
+			"jira.read_work_item_context",
+			"twg.lookup_work_item_delivery_context",
+			"confluence.search_checkout_requirements",
+			"jira.draft_work_item_description",
+		],
+	);
+});
+
 test("ASX agent chat exposes persistent work-item context for the floating composer", async () => {
 	const { buildAsxAgentChatContextBar } = await loadHarness();
 	const contextBar = buildAsxAgentChatContextBar({
@@ -113,5 +188,6 @@ test("ASX chat hook selects the agent before opening and cancels stale playback 
 	assert.match(HOOK_SOURCE, /for \(const timer of timersRef\.current\)[\s\S]*window\.clearTimeout\(timer\);/u);
 	assert.match(HOOK_SOURCE, /useEffect\(\(\) => cancelPlayback, \[cancelPlayback\]\);/u);
 	assert.match(HOOK_SOURCE, /setChatContextBar\(buildAsxAgentChatContextBar\(scenario\)\);/u);
-	assert.match(HOOK_SOURCE, /setExternalThinkingMessageId\(scenario\.question \? null : playback\.assistantMessageId\);/u);
+	assert.match(HOOK_SOURCE, /setExternalThinkingMessageId\(playback\.assistantMessageId\);/u);
+	assert.match(HOOK_SOURCE, /!playback\.keepThinkingActiveAfterLastFrame/u);
 });

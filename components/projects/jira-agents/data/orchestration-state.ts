@@ -12,6 +12,29 @@ export type JiraAgentsOrchestrationStep =
 	| "consult"
 	| "complete";
 
+const CONSULT_READY_PREVIEW = "Code Planner's secure API contract and validation matrix are ready. I'm confirming the plan handoff before implementation begins in Build.";
+
+function createConsultReadyPlanState(
+	plan: Readonly<JiraWorkItemState>,
+	build: Readonly<JiraWorkItemState>,
+): JiraWorkItemState {
+	const completedPlanner = build.sessions.find((session) => session.agentId === "code-planner");
+	return {
+		...plan,
+		sessions: plan.sessions.map((session) => {
+			if (session.agentId === "code-planner" && completedPlanner) return completedPlanner;
+			if (session.agentId !== "claude-code") return session;
+			return {
+				...session,
+				previewText: CONSULT_READY_PREVIEW,
+				messages: session.messages.map((message, index) => index === session.messages.length - 1
+					? { ...message, content: CONSULT_READY_PREVIEW }
+					: message),
+			};
+		}),
+	};
+}
+
 /**
  * Route-owned snapshots for the prompt-driven orchestration reveal. Sessions
  * exist from the first step so the composer can immediately show the shared
@@ -21,13 +44,13 @@ export type JiraAgentsOrchestrationStep =
 export function createJiraAgentsOrchestrationState(
 	step: JiraAgentsOrchestrationStep,
 ): JiraWorkItemState {
-	if (step === "idle") return createJiraAgentsStoryState("brief");
-	if (step === "complete") return createJiraAgentsStoryState("working");
+	if (step === "idle") return createJiraAgentsStoryState("intake");
+	if (step === "complete") return createJiraAgentsStoryState("build");
 
-	const brief = createJiraAgentsStoryState("brief");
+	const intake = createJiraAgentsStoryState("intake", { descriptionImproved: true });
 	const plan = createJiraAgentsStoryState("plan");
-	const working = createJiraAgentsStoryState("working");
-	const stageState = step === "consult" ? working : plan;
+	const build = createJiraAgentsStoryState("build");
+	const stageState = step === "consult" ? createConsultReadyPlanState(plan, build) : plan;
 	const orchestrationComment = stageState.comments.find(
 		(comment) => comment.id === "story-channel-orchestration",
 	);
@@ -55,8 +78,8 @@ export function createJiraAgentsOrchestrationState(
 	return {
 		...stageState,
 		comments: showComment && stagedComment
-			? [...brief.comments, stagedComment]
-			: brief.comments,
-		staticEvents: showLeadActivity ? stageState.staticEvents : brief.staticEvents,
+			? [...intake.comments, stagedComment]
+			: intake.comments,
+		staticEvents: showLeadActivity ? stageState.staticEvents : intake.staticEvents,
 	};
 }

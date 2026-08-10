@@ -1,5 +1,4 @@
 import type { WorkItemData } from "@/app/contexts/context-work-item-modal";
-import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { AgentListItem, AgentListState } from "@/components/blocks/agent-list";
 import type {
 	AgentSession,
@@ -25,178 +24,68 @@ import type {
 	JiraForYouSection,
 	JiraForYouStatus,
 } from "@/components/projects/jira-for-you/jira-for-you-types";
-import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { JIRA_FOR_YOU_SECTIONS } from "@/components/projects/jira-for-you/data";
 import {
 	JIRA_DESIGN_KANBAN_AGENTS,
 	JIRA_DESIGN_KANBAN_COLUMNS,
 } from "@/components/projects/jira-golden-journeys/data/jira-design-work-items";
+import {
+	createJiraAgentsStoryContextResources,
+	IMPROVED_STORY_DESCRIPTION,
+	RAW_STORY_DESCRIPTION,
+} from "./story-context";
+import {
+	FAILED_PR_CHECKS,
+	PASSED_PR_CHECKS,
+	QUEUED_PR_CHECKS,
+	RERUNNING_PR_CHECKS,
+	RUNNING_PR_CHECKS,
+} from "./story-pull-request-checks";
+import {
+	CLAUDE_CODE,
+	CLAUDE_CODE_ACTOR,
+	CLAUDE_SESSION_TITLE_BY_CHAPTER,
+	CODE_PLANNER,
+	GITHUB_ACTOR,
+	HUMAN_ACTOR,
+	JIRA_AGENTS_DESCRIPTION_SKILL_SCRIPT_ID,
+	JIRA_AGENTS_DESCRIPTION_SKILL_SESSION_ID,
+	JIRA_AGENTS_STORY_ISSUE_KEY,
+	JIRA_AGENTS_STORY_ITEM_ID,
+	JIRA_AGENTS_STORY_WORK_ITEM_BASE,
+	ROVO,
+	ROVO_ACTOR,
+	STORY_AGENT_BY_ID,
+	STORY_CREATED_AT_MS,
+	STORY_EPOCH_MS,
+	STORY_STATUS_BY_CHAPTER,
+	VENN_ACTOR,
+	WORK_ITEM_STATUS_BY_CHAPTER,
+	type JiraAgentsDescriptionSkillPhase,
+	type JiraAgentsReviewStep,
+	type JiraAgentsStoryAgent,
+	type JiraAgentsStoryChapter,
+	type JiraAgentsStoryStateOptions,
+} from "./story-model";
 
-export type JiraAgentsStoryChapter =
-	| "brief"
-	| "plan"
-	| "working"
-	| "handoff"
-	| "fixing"
-	| "review"
-	| "done";
-
-export const JIRA_AGENTS_STORY_CHAPTERS = [
-	{ label: "Brief", value: "brief" },
-	{ label: "Plan", value: "plan" },
-	{ label: "Working", value: "working" },
-	{ label: "Handoff", value: "handoff" },
-	{ label: "Fixing", value: "fixing" },
-	{ label: "Review", value: "review" },
-	{ label: "Done", value: "done" },
-] as const satisfies readonly { label: string; value: JiraAgentsStoryChapter }[];
-
-export const JIRA_AGENTS_STORY_ITEM_ID = "shop-4821-guest-checkout";
-export const JIRA_AGENTS_STORY_ISSUE_KEY = "SHOP-4821";
-
-const STORY_EPOCH_MS = Date.UTC(2026, 7, 5, 2, 0, 0);
-/** Matches the `story-created` timeline event — one hour before the story clock. */
-const STORY_CREATED_AT_MS = STORY_EPOCH_MS - 3_600_000;
-
-const STORY_STATUS_BY_CHAPTER = {
-	brief: "To do",
-	plan: "In progress",
-	working: "In progress",
-	handoff: "In progress",
-	fixing: "In progress",
-	review: "In review",
-	done: "Done",
-} as const satisfies Record<JiraAgentsStoryChapter, JiraForYouStatus>;
-
-const WORK_ITEM_STATUS_BY_CHAPTER = {
-	brief: "To do",
-	plan: "In progress",
-	working: "In progress",
-	handoff: "In progress",
-	fixing: "In progress",
-	review: "In review",
-	done: "Done",
-} as const satisfies Record<JiraAgentsStoryChapter, string>;
-
-/** Status pill options for the guest-checkout work item (board workflow order). */
-export const JIRA_AGENTS_STATUS_PHASES = [
-	"To do",
-	"In progress",
-	"In review",
-	"Done",
-] as const satisfies readonly string[];
-
-type JiraAgentsStoryAgent = JiraForYouAgent & { brandName?: ThirdPartyLogoName };
-
-const CODE_PLANNER = {
-	id: "code-planner",
-	name: "Code Planner",
-	avatarSrc: "/avatar-agent/dev-agents/code-planner.svg",
-} satisfies JiraAgentsStoryAgent;
-
-const CLAUDE_CODE = {
-	id: "claude-code",
-	name: "Claude Code",
-	avatarSrc: "/avatar-agent/dev-agents/basic-coding-agent-template.svg",
-	brandName: "claude",
-} satisfies JiraAgentsStoryAgent;
-
-const STORY_AGENTS = [CODE_PLANNER, CLAUDE_CODE] as const;
-const STORY_AGENT_BY_ID = new Map(STORY_AGENTS.map((agent) => [agent.id, agent]));
-
-export const JIRA_AGENTS_STORY_COMPOSER_AGENTS: readonly AgentSelectorAgent[] = [
-	{
-		id: CLAUDE_CODE.id,
-		name: CLAUDE_CODE.name,
-		byline: "Coding agent by Anthropic",
-		brandName: "claude",
-	},
-	{
-		id: CODE_PLANNER.id,
-		name: CODE_PLANNER.name,
-		byline: "Designs the checkout architecture, API contract, and delivery plan",
-		avatarSrc: CODE_PLANNER.avatarSrc,
-	},
-];
-
-export function shouldStartJiraAgentsPlan(
-	chapter: JiraAgentsStoryChapter,
-	agentIds: readonly string[],
-): boolean {
-	if (chapter !== "brief") return false;
-	const mentionedAgentIds = new Set(agentIds);
-	return JIRA_AGENTS_STORY_COMPOSER_AGENTS.every((agent) => mentionedAgentIds.has(agent.id));
-}
-
-export const JIRA_AGENTS_STORY_WORK_ITEM_BASE: WorkItemData = {
-	code: JIRA_AGENTS_STORY_ISSUE_KEY,
-	title: "Add guest checkout to the storefront",
-	createdAtMs: STORY_CREATED_AT_MS,
-	description: [
-		"Checkout-funnel research shows that mandatory account creation is the largest avoidable source of abandonment for first-time shoppers. We need to remove that barrier without weakening pricing, inventory, payment, or order-creation controls.",
-		"",
-		"#### User outcome",
-		"As a first-time shopper, I can complete a purchase without registering so that I can place my order quickly and decide whether to create an account afterward.",
-		"",
-		"#### Scope",
-		"- Offer Continue as guest from the cart and sign-in step on desktop and mobile web.",
-		"- Collect email, delivery address, shipping method, and tokenized payment details.",
-		"- Recalculate prices, discounts, taxes, shipping, and inventory on the server before payment.",
-		"",
-		"#### Guest checkout flow",
-		"```mermaid",
-		"flowchart TD",
-		'\tcart["Cart / sign-in"] --> guest{"Continue as guest?"}',
-		'\tguest -->|yes| details["Email, address, shipping"]',
-		'\tguest -->|no| account["Sign in or create account"]',
-		'\tdetails --> payment["Tokenized payment"]',
-		'\tpayment --> validate{"Server validation"}',
-		'\tvalidate -->|ok| order["Create order"]',
-		'\tvalidate -->|recoverable error| details',
-		'\torder --> confirm["Confirmation"]',
-		"```",
-		"",
-		"#### Acceptance criteria",
-		"1. An eligible shopper can purchase without signing in or creating an account.",
-		"2. Server validation rejects stale pricing, unavailable inventory, invalid addresses, and unusable payment tokens before order creation.",
-		"3. Declined payments and recoverable validation errors do not clear safe customer input.",
-	].join("\n"),
-	status: "To do",
-	priority: "High",
-	assignee: {
-		name: "Jordan Lee",
-		avatarUrl: "/avatar-user/andrew-park/color/asow-dev-lime.png",
-	},
-	reporter: {
-		name: "Maya Chen",
-		avatarUrl: "/avatar-user/andrea-wilson/color/asow-service-yellow.png",
-	},
-	parent: { code: "SHOP-4800", title: "Reduce storefront checkout abandonment" },
-	labels: ["storefront", "checkout", "feature"],
-	startDate: "Aug 5, 2026",
-	dueDate: "Aug 19, 2026",
-};
-
-const HUMAN_ACTOR: StaticTimelineEvent["actor"] = {
-	id: "static-jordan-lee",
-	name: "Jordan Lee",
-	kind: "person",
-	avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
-};
-
-const CLAUDE_CODE_ACTOR: StaticTimelineEvent["actor"] = {
-	id: "static-claude-code",
-	name: CLAUDE_CODE.name,
-	kind: "agent",
-	brandName: CLAUDE_CODE.brandName,
-};
-
-const GITHUB_ACTOR: StaticTimelineEvent["actor"] = {
-	id: "static-github",
-	name: "GitHub",
-	kind: "app",
-	brandName: "github",
-};
+export {
+	JIRA_AGENTS_DESCRIPTION_SKILL_SCRIPT_ID,
+	JIRA_AGENTS_DESCRIPTION_SKILL_SESSION_ID,
+	JIRA_AGENTS_PULL_REQUEST_IDENTITY,
+	JIRA_AGENTS_STATUS_PHASES,
+	JIRA_AGENTS_STORY_CHAPTERS,
+	JIRA_AGENTS_STORY_COMPOSER_AGENTS,
+	JIRA_AGENTS_STORY_ISSUE_KEY,
+	JIRA_AGENTS_STORY_ITEM_ID,
+	JIRA_AGENTS_STORY_WORK_ITEM_BASE,
+	shouldStartJiraAgentsPlan,
+} from "./story-model";
+export type {
+	JiraAgentsDescriptionSkillPhase,
+	JiraAgentsReviewStep,
+	JiraAgentsStoryChapter,
+	JiraAgentsStoryStateOptions,
+} from "./story-model";
 
 function createStoryArtifactSession({
 	agent,
@@ -248,7 +137,7 @@ function statusEvent(
 	};
 }
 
-const BRIEF_EVENTS: readonly StaticTimelineEvent[] = [
+const INTAKE_EVENTS: readonly StaticTimelineEvent[] = [
 	{
 		id: "story-created",
 		kind: "event",
@@ -272,8 +161,20 @@ const BRIEF_EVENTS: readonly StaticTimelineEvent[] = [
 	},
 ];
 
+const DESCRIPTION_APPLIED_EVENT: StaticTimelineEvent = {
+	id: "story-description-applied",
+	kind: "event",
+	actor: ROVO_ACTOR,
+	icon: "linked",
+	segments: [{
+		type: "text",
+		text: "Added the approved implementation-ready description to SHOP-4821 after Venn confirmed the suggestion.",
+	}],
+	createdAtMs: STORY_EPOCH_MS - 2_520_000,
+};
+
 const PLAN_EVENTS: readonly StaticTimelineEvent[] = [
-	...BRIEF_EVENTS,
+	...INTAKE_EVENTS,
 	statusEvent("story-moved-in-progress", "To do", "In progress", STORY_EPOCH_MS - 3_000_000),
 	{
 		id: "story-lead-delegated",
@@ -291,7 +192,7 @@ const PLAN_EVENTS: readonly StaticTimelineEvent[] = [
 	},
 ];
 
-const WORKING_EVENTS: readonly StaticTimelineEvent[] = PLAN_EVENTS;
+const BUILD_EVENTS: readonly StaticTimelineEvent[] = PLAN_EVENTS;
 
 const HANDOFF_EVENT: StaticTimelineEvent = {
 	id: "story-changed-files",
@@ -321,54 +222,6 @@ const HANDOFF_EVENT: StaticTimelineEvent = {
 	createdAtMs: STORY_EPOCH_MS - 1_320_000,
 };
 
-const FAILED_PR_CHECKS = [
-	{
-		id: "lint-types",
-		name: "Lint and typecheck",
-		status: "failed",
-		details: "Failed after 42s · deliveryAddress may be null",
-		url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471001",
-	},
-	{
-		id: "unit-tests",
-		name: "Unit tests",
-		status: "passed",
-		details: "418 tests in 2m 46s",
-		url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471002",
-	},
-	{
-		id: "browser-tests",
-		name: "Guest checkout browser tests",
-		status: "passed",
-		details: "5 scenarios in 1m 32s",
-		url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471003",
-	},
-] as const;
-
-const PASSED_PR_CHECKS = [
-	{
-		id: "lint-types",
-		name: "Lint and typecheck",
-		status: "passed",
-		details: "Completed in 1m 18s",
-		url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471001",
-	},
-	{
-		id: "unit-tests",
-		name: "Unit tests",
-		status: "passed",
-		details: "418 tests in 2m 46s",
-		url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471002",
-	},
-	{
-		id: "browser-tests",
-		name: "Guest checkout browser tests",
-		status: "passed",
-		details: "5 scenarios in 1m 32s",
-		url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471003",
-	},
-] as const;
-
 const FAILED_CI_EVENT: StaticTimelineEvent = {
 	id: "story-ci-failed",
 	kind: "event",
@@ -383,124 +236,212 @@ const FAILED_CI_EVENT: StaticTimelineEvent = {
 	createdAtMs: STORY_EPOCH_MS - 1_140_000,
 };
 
-const FIXING_PR_EVENT: StaticTimelineEvent = {
-	id: "story-pr-fixing",
-	kind: "event",
-	actor: GITHUB_ACTOR,
-	icon: "linked",
-	segments: [],
-	pullRequest: {
-		number: 1847,
-		title: "Add guest checkout to the storefront",
-		status: "Open",
-		additions: 86,
-		deletions: 21,
-		repository: "eevensoh/vpk-rovo",
-		branch: "feature/guest-checkout",
-		targetBranch: "main",
-		url: "https://github.com/eevensoh/vpk-rovo/pull/1847",
-		authorName: "Venn",
-		createdAtMs: STORY_EPOCH_MS - 1_200_000,
-		updatedAtMs: STORY_EPOCH_MS - 1_140_000,
-		reviewDecision: "review-required",
-		mergeState: "blocked",
-		checks: FAILED_PR_CHECKS,
-	},
-	createdAtMs: STORY_EPOCH_MS - 1_200_000,
+type StoryPullRequestChecks = NonNullable<
+	NonNullable<Extract<StaticTimelineEvent, { kind: "event" }>["pullRequest"]>["checks"]
+>;
+
+function createPullRequestEvent({
+	checks,
+	id,
+	mergeState,
+	reviewDecision,
+	status = "Open",
+	updatedAtMs,
+}: {
+	checks?: StoryPullRequestChecks;
+	id: string;
+	mergeState: "ready" | "blocked" | "merged";
+	reviewDecision: "approved" | "review-required";
+	status?: "Open" | "Merged";
+	updatedAtMs: number;
+}): StaticTimelineEvent {
+	return {
+		id,
+		kind: "event",
+		actor: GITHUB_ACTOR,
+		icon: "linked",
+		segments: [],
+		pullRequest: {
+			number: 1847,
+			title: "Add guest checkout to the storefront",
+			status,
+			additions: 86,
+			deletions: 21,
+			repository: "eevensoh/vpk-rovo",
+			branch: "feature/shop-4821-guest-checkout",
+			targetBranch: "main",
+			url: "https://github.com/eevensoh/vpk-rovo/pull/1847",
+			authorName: CLAUDE_CODE.name,
+			createdAtMs: STORY_EPOCH_MS - 1_200_000,
+			updatedAtMs,
+			reviewDecision,
+			mergeState,
+			...(checks ? { checks } : {}),
+		},
+		createdAtMs: updatedAtMs,
+	};
+}
+
+const ACCEPTANCE_MATRIX_EVENT: StaticTimelineEvent = {
+	id: "story-regression-matrix",
+	kind: "changed-files",
+	actor: CLAUDE_CODE_ACTOR,
+	summary: "Acceptance matrix passed",
+	description: "Verified guest purchase, validation errors, inventory changes, declined payments, duplicate submissions, confirmation, and optional post-purchase account creation.",
+	branch: "#1847",
+	tag: { text: "18 checks passing", color: "green" },
+	sessionItem: createStoryArtifactSession({
+		id: "story-test-report",
+		title: "Acceptance matrix passed",
+		state: "complete",
+		agent: CLAUDE_CODE,
+		branch: "#1847",
+		elapsedSeconds: 438,
+	}),
+	outputs: [{
+		id: "acceptance-report",
+		title: "SHOP-4821 acceptance report",
+		source: "Test artifact",
+		owner: CLAUDE_CODE.name,
+		iconName: "page",
+	}],
+	createdAtMs: STORY_EPOCH_MS - 720_000,
 };
 
-const FIXING_EVENTS: readonly StaticTimelineEvent[] = [
-	...WORKING_EVENTS,
-	HANDOFF_EVENT,
-	FIXING_PR_EVENT,
-	FAILED_CI_EVENT,
-];
-
-const REVIEW_EVENTS: readonly StaticTimelineEvent[] = [
-	...WORKING_EVENTS,
-	HANDOFF_EVENT,
-	FAILED_CI_EVENT,
-	{
-		id: "story-regression-matrix",
-		kind: "changed-files",
-		actor: CLAUDE_CODE_ACTOR,
-		summary: "Acceptance matrix passed",
-		description: "Verified guest purchase, validation errors, inventory changes, declined payments, duplicate submissions, confirmation, and optional post-purchase account creation.",
-		branch: "#1847",
-		tag: { text: "18 checks passing", color: "green" },
-		sessionItem: createStoryArtifactSession({
-			id: "story-test-report",
-			title: "Acceptance matrix passed",
-			state: "complete",
-			agent: CLAUDE_CODE,
-			branch: "#1847",
-			elapsedSeconds: 438,
+function createReviewEvents(step: JiraAgentsReviewStep): readonly StaticTimelineEvent[] {
+	const checks = step === "queued"
+		? QUEUED_PR_CHECKS
+		: step === "running"
+			? RUNNING_PR_CHECKS
+			: FAILED_PR_CHECKS;
+	const updatedAtMs = step === "queued"
+		? STORY_EPOCH_MS - 1_200_000
+		: step === "running"
+			? STORY_EPOCH_MS - 1_170_000
+			: STORY_EPOCH_MS - 1_140_000;
+	return [
+		...BUILD_EVENTS,
+		HANDOFF_EVENT,
+		statusEvent("story-moved-review", "In progress", "In review", STORY_EPOCH_MS - 1_260_000),
+		createPullRequestEvent({
+			checks,
+			id: "story-pr-review",
+			mergeState: "blocked",
+			reviewDecision: "review-required",
+			updatedAtMs,
 		}),
-		outputs: [
-			{
-				id: "acceptance-report",
-				title: "SHOP-4821 acceptance report",
-				source: "Test artifact",
-				owner: CLAUDE_CODE.name,
-				iconName: "page",
-			},
-		],
-		createdAtMs: STORY_EPOCH_MS - 1_020_000,
-	},
-	{
-		id: "story-pr-opened",
-		kind: "event",
-		actor: GITHUB_ACTOR,
-		icon: "linked",
-		segments: [],
-		pullRequest: {
-			number: 1847,
-			title: "Add guest checkout to the storefront",
-			status: "Open",
-			additions: 86,
-			deletions: 21,
-			repository: "eevensoh/vpk-rovo",
-			branch: "feature/guest-checkout",
-			targetBranch: "main",
-			url: "https://github.com/eevensoh/vpk-rovo/pull/1847",
-			// Viewer is Venn (`JIRA_WORK_ITEM_CURRENT_USER`); "By me" sorts on authorName.
-			authorName: "Venn",
-			createdAtMs: STORY_EPOCH_MS - 1_200_000,
-			updatedAtMs: STORY_EPOCH_MS - 900_000,
-			reviewDecision: "approved",
-			mergeState: "ready",
-			checks: PASSED_PR_CHECKS,
-		},
-		createdAtMs: STORY_EPOCH_MS - 900_000,
-	},
-	statusEvent("story-moved-review", "In progress", "In review", STORY_EPOCH_MS - 840_000),
-];
+		...(step === "failed" ? [FAILED_CI_EVENT] : []),
+	];
+}
 
-const DONE_EVENTS: readonly StaticTimelineEvent[] = [
-	...REVIEW_EVENTS,
-	{
+function createFixEvents(repairComplete: boolean): readonly StaticTimelineEvent[] {
+	return [
+		...createReviewEvents("failed"),
+		statusEvent("story-moved-fix", "In review", "In progress", STORY_EPOCH_MS - 1_020_000),
+		{
+			id: "story-ci-repair",
+			kind: "changed-files",
+			actor: CLAUDE_CODE_ACTOR,
+			summary: repairComplete ? "Repaired the failed CI path" : "Repairing the failed CI path",
+			description: repairComplete
+				? "Narrowed the nullable delivery address before order creation and reran the failed lint and typecheck check to green while preserving the existing green unit and browser results."
+				: "Narrowed the nullable delivery address before order creation and is rerunning the failed lint and typecheck check while preserving the green unit and browser results.",
+			branch: "feature/shop-4821-guest-checkout",
+			tag: repairComplete
+				? { text: "CI rerun passed", color: "green" }
+				: { text: "CI rerun active", color: "blue" },
+			sessionItem: createStoryArtifactSession({
+				id: "story-ci-repair-session",
+				title: "Repair delivery-address validation",
+				state: repairComplete ? "complete" : "running",
+				agent: CLAUDE_CODE,
+				branch: "feature/shop-4821-guest-checkout",
+				elapsedSeconds: repairComplete ? 174 : 96,
+			}),
+			outputs: [],
+			createdAtMs: STORY_EPOCH_MS - 960_000,
+		},
+		createPullRequestEvent({
+			checks: repairComplete ? PASSED_PR_CHECKS : RERUNNING_PR_CHECKS,
+			id: "story-pr-fix-rerun",
+			mergeState: "blocked",
+			reviewDecision: "review-required",
+			updatedAtMs: STORY_EPOCH_MS - (repairComplete ? 780_000 : 900_000),
+		}),
+	];
+}
+
+function createApproveEvents(pullRequestApproved: boolean): readonly StaticTimelineEvent[] {
+	return [
+		...createFixEvents(true),
+		ACCEPTANCE_MATRIX_EVENT,
+		statusEvent("story-moved-approve", "In progress", "In review", STORY_EPOCH_MS - 660_000),
+		createPullRequestEvent({
+			checks: PASSED_PR_CHECKS,
+			id: "story-pr-approve",
+			mergeState: pullRequestApproved ? "ready" : "blocked",
+			reviewDecision: pullRequestApproved ? "approved" : "review-required",
+			updatedAtMs: STORY_EPOCH_MS - 600_000,
+		}),
+		...(pullRequestApproved ? [{
+			id: "story-venn-approved",
+			kind: "event" as const,
+			actor: VENN_ACTOR,
+			icon: "linked" as const,
+			segments: [
+				{ type: "text" as const, text: "approved " },
+				{ type: "code" as const, text: "PR #1847" },
+				{ type: "text" as const, text: " for production release" },
+			],
+			createdAtMs: STORY_EPOCH_MS - 540_000,
+		}] : []),
+	];
+}
+
+const RELEASE_EVENTS: readonly StaticTimelineEvent[] = [
+	...createApproveEvents(true),
+	createPullRequestEvent({
+		checks: PASSED_PR_CHECKS,
 		id: "story-pr-merged",
+		mergeState: "merged",
+		reviewDecision: "approved",
+		status: "Merged",
+		updatedAtMs: STORY_EPOCH_MS - 480_000,
+	}),
+	{
+		id: "story-release-feature-flag",
 		kind: "event",
 		actor: GITHUB_ACTOR,
 		icon: "linked",
-		segments: [],
-		pullRequest: {
-			number: 1847,
-			title: "Add guest checkout to the storefront",
-			status: "Merged",
-			additions: 86,
-			deletions: 21,
-			repository: "eevensoh/vpk-rovo",
-			branch: "feature/guest-checkout",
-			targetBranch: "main",
-			url: "https://github.com/eevensoh/vpk-rovo/pull/1847",
-			authorName: "Venn",
-			createdAtMs: STORY_EPOCH_MS - 1_200_000,
-			updatedAtMs: STORY_EPOCH_MS - 480_000,
-		},
-		createdAtMs: STORY_EPOCH_MS - 480_000,
+		segments: [
+			{ type: "text", text: "deployed to production behind " },
+			{ type: "code", text: "guest_checkout_v1" },
+			{ type: "text", text: " at 5% rollout" },
+		],
+		createdAtMs: STORY_EPOCH_MS - 360_000,
 	},
-	statusEvent("story-moved-done", "In review", "Done", STORY_EPOCH_MS - 240_000),
+	{
+		id: "story-release-smoke-telemetry",
+		kind: "event",
+		actor: CLAUDE_CODE_ACTOR,
+		icon: "linked",
+		segments: [
+			{ type: "text", text: "passed production smoke checks and confirmed healthy telemetry: guest completion increased 11.8%, payment failures held at 2.1%, duplicate orders remained at zero, and checkout support contacts stayed within baseline" },
+		],
+		createdAtMs: STORY_EPOCH_MS - 240_000,
+	},
+	{
+		id: "story-release-rollout-complete",
+		kind: "event",
+		actor: VENN_ACTOR,
+		icon: "linked",
+		segments: [
+			{ type: "text", text: "completed the feature-flag rollout to " },
+			{ type: "lozenge", text: "100%", variant: "success" },
+		],
+		createdAtMs: STORY_EPOCH_MS - 120_000,
+	},
+	statusEvent("story-moved-release", "In review", "Done", STORY_EPOCH_MS - 60_000),
 ];
 
 function createSession(
@@ -576,25 +517,118 @@ function createSession(
 	};
 }
 
-function createStorySessions(chapter: JiraAgentsStoryChapter): AgentSession[] {
-	if (chapter === "brief") return [];
+function getDescriptionSkillPhase(
+	chapter: JiraAgentsStoryChapter,
+	options: JiraAgentsStoryStateOptions,
+): JiraAgentsDescriptionSkillPhase {
+	if (options.descriptionSkillPhase) return options.descriptionSkillPhase;
+	if (options.descriptionImproved !== undefined) {
+		return options.descriptionImproved ? "applied" : "idle";
+	}
+	return chapter === "intake" ? "idle" : "applied";
+}
+
+function createDescriptionSkillSession(phase: Exclude<JiraAgentsDescriptionSkillPhase, "idle">): AgentSession {
+	const status: AgentSessionStatus = phase === "running"
+		? "running"
+		: phase === "awaiting-confirmation"
+			? "waiting"
+			: "completed";
+	const suggestion = [
+		"I reviewed the current work item and drafted a stronger description without changing it.",
+		"",
+		"I clarified the shopper outcome, added the missing delivery scope, made server-owned safeguards explicit, and turned the request into testable acceptance criteria.",
+		"",
+		"**Suggested description**",
+		"",
+		IMPROVED_STORY_DESCRIPTION,
+	].join("\n");
+	const previewText = phase === "running"
+		? "Reviewing the current description and drafting a clearer implementation-ready version."
+		: phase === "awaiting-confirmation"
+			? "The improved description is ready. Waiting for confirmation before updating the work item."
+			: phase === "dismissed"
+				? "Understood — I kept the current work item description unchanged. You can run Improve description again whenever you’re ready."
+				: "Done — I added the approved description to SHOP-4821. The original work item stayed unchanged until this confirmation.";
+	const session = createSession(ROVO, status, 0, {
+		title: "Improve description",
+		command: "/Improve description",
+		previewText,
+	});
+	const suggestionReady = phase !== "running";
+	const stepStatus = suggestionReady ? "complete" as const : "pending" as const;
+	return {
+		...session,
+		scriptId: JIRA_AGENTS_DESCRIPTION_SKILL_SCRIPT_ID,
+		scriptCursor: suggestionReady ? 2 : 0,
+		progress: suggestionReady ? 1 : 0,
+		steps: [
+			{
+				id: "review",
+				label: "Review the current work item",
+				status: suggestionReady ? "complete" : "active",
+			},
+			{
+				id: "draft",
+				label: "Draft the improved description",
+				status: stepStatus,
+			},
+		],
+		waitingOn: phase === "awaiting-confirmation" ? { kind: "user" } : undefined,
+		messages: [
+			session.messages[0],
+			{
+				...session.messages[1],
+				content: suggestionReady ? suggestion : previewText,
+			},
+			...(phase === "applied" || phase === "dismissed" ? [{
+				id: `${session.id}-${phase}`,
+				role: "agent" as const,
+				authorName: ROVO.name,
+				authorAvatarSrc: ROVO.avatarSrc,
+				content: previewText,
+				createdAtMs: STORY_EPOCH_MS - 2_580_000,
+			}] : []),
+		],
+	};
+}
+
+function createStorySessions(
+	chapter: JiraAgentsStoryChapter,
+	options: JiraAgentsStoryStateOptions,
+): AgentSession[] {
+	const descriptionSkillPhase = getDescriptionSkillPhase(chapter, options);
+	const descriptionSkillSession = descriptionSkillPhase === "idle"
+		? []
+		: [createDescriptionSkillSession(descriptionSkillPhase)];
+	if (chapter === "intake") return descriptionSkillSession;
 
 	const plannerStatus: AgentSessionStatus = chapter === "plan" ? "running" : "completed";
-	const claudeStatus: AgentSessionStatus = chapter === "done" ? "completed" : "running";
+	const claudeStatus: AgentSessionStatus = chapter === "release"
+		|| (chapter === "approve" && options.pullRequestApproved)
+		|| (chapter === "review" && options.reviewStep === "failed")
+		? "completed"
+		: chapter === "approve" || chapter === "review"
+			? "waiting"
+			: "running";
 	const completedChecklistItems = {
 		plan: 0,
-		working: 1,
+		build: 1,
 		handoff: 3,
-		fixing: 3,
-		review: 4,
-		done: 5,
-	} as const satisfies Record<Exclude<JiraAgentsStoryChapter, "brief">, number>;
+		review: options.reviewStep === "failed" ? 5 : 4,
+		fix: 5,
+		approve: options.pullRequestApproved ? 7 : 6,
+		release: 8,
+	} as const satisfies Record<Exclude<JiraAgentsStoryChapter, "intake">, number>;
 	const checklistLabels = [
 		"Consult Code Planner on the secure API and validation contract",
 		"Implement guest checkout end to end",
 		"Verify the final design and attach a screenshot",
-		"Open the pull request and fix its CI checks",
-		"Summarize the approved outcome",
+		"Open the pull request for automated CI review",
+		"Run CI and diagnose the actionable failure",
+		"Repair the failed path and rerun its failed check to green",
+		"Obtain Venn's required human approval in the PR guide",
+		"Merge, deploy behind the feature flag, and verify production rollout",
 	] as const;
 	const progressChecklist = checklistLabels.map((label, index) => ({
 		id: `story-claude-progress-${index + 1}`,
@@ -602,30 +636,47 @@ function createStorySessions(chapter: JiraAgentsStoryChapter): AgentSession[] {
 		completed: index < completedChecklistItems[chapter],
 	}));
 
-	const claude = createSession(CLAUDE_CODE, claudeStatus, 0, {
-		title: "Lead guest checkout implementation",
+	const claude = createSession(CLAUDE_CODE, claudeStatus, 1, {
+		title: CLAUDE_SESSION_TITLE_BY_CHAPTER[chapter],
 		command: "Take the lead on implementing guest checkout. Consult Code Planner on the secure API and validation contract first, then implement and verify the work.",
 		previewText: chapter === "plan"
 			? "I'm taking the lead on SHOP-4821. Code Planner, review this work item and define the secure API contract, server-owned validation rules, idempotency behavior, and recoverable error handling before I implement it."
-			: chapter === "working"
+			: chapter === "build"
 				? "Code Planner's contract is ready. I'm implementing the guest order service and storefront flow with server-owned pricing, inventory, payment validation, and idempotent order creation."
 				: chapter === "handoff"
-					? "Guest checkout is implemented. I've verified the final desktop and mobile flow and attached the final guest checkout design screenshot."
-					: chapter === "fixing"
-						? "PR #1847 is open, but it cannot be merged yet. The lint-and-typecheck job found a nullable delivery-address path, so I'm fixing that failure and rerunning all three CI checks before review."
-						: chapter === "review"
-							? "The CI failure is fixed. All three pipeline checks and all 18 acceptance checks pass, so PR #1847 is ready for review with the evidence attached."
-							: "Guest checkout is implemented and verified. Shoppers can continue as guests, recoverable failures preserve safe input, and the server owns pricing, inventory, payment validation, and idempotent order creation. PR #1847 is merged with all 18 acceptance checks passing; the final design screenshot is attached.",
+					? "Guest checkout is implemented and verified. I've attached the final desktop and mobile evidence and prepared PR #1847 for automated CI review."
+					: chapter === "review"
+						? options.reviewStep === "queued"
+							? "PR #1847 is open. GitHub Actions owns the automated review; its lint, typecheck, unit, and guest-checkout browser checks are queued."
+							: options.reviewStep === "running"
+								? "GitHub Actions is running lint and typecheck for PR #1847 while the remaining automated checks wait for CI capacity."
+								: "GitHub Actions blocked PR #1847. Lint and typecheck found a nullable delivery-address path; unit and browser coverage passed."
+						: chapter === "fix"
+							? "I repaired the nullable delivery-address path and am rerunning the failed lint and typecheck check; unit and browser coverage remain passed."
+							: chapter === "approve"
+								? options.pullRequestApproved
+									? "Venn approved PR #1847. All CI and acceptance evidence is complete, so the change is ready to merge and release."
+									: "All CI and 18 acceptance checks pass. PR #1847 is waiting for Venn's required human review before merge."
+				: "PR #1847 was approved by Venn and merged. Guest checkout deployed behind its production feature flag, passed production smoke checks, verified healthy telemetry, and completed rollout.",
 		progressChecklist,
-		imageAttachment: chapter === "handoff" || chapter === "fixing" || chapter === "review" || chapter === "done"
+		imageAttachment: chapter === "handoff" || chapter === "review" || chapter === "fix" || chapter === "approve" || chapter === "release"
 			? {
 				src: "/illustration/jira-agents/guest-checkout-final.png",
 				alt: "Final guest checkout design",
 				filename: "guest-checkout-final.png",
 			}
 			: undefined,
+		waitingOn: chapter === "approve" && !options.pullRequestApproved
+			? { kind: "user" }
+			: chapter === "review" && options.reviewStep !== "failed"
+				? {
+					kind: "agent",
+					agentId: "github-actions",
+					agentName: "GitHub Actions",
+				}
+				: undefined,
 	});
-	const planner = createSession(CODE_PLANNER, plannerStatus, 1, {
+	const planner = createSession(CODE_PLANNER, plannerStatus, 2, {
 		title: "Consult on the guest checkout contract",
 		commandAuthorName: CLAUDE_CODE.name,
 		command: "Review SHOP-4821 and define the secure request and response contract, server-owned validation rules, idempotency behavior, and recoverable error handling I should implement.",
@@ -634,7 +685,7 @@ function createStorySessions(chapter: JiraAgentsStoryChapter): AgentSession[] {
 			: "Reviewing the checkout requirements and preparing the API contract, validation matrix, and idempotency rules for Claude Code.",
 	});
 
-	return [claude, planner];
+	return [...descriptionSkillSession, claude, planner];
 }
 
 function activeAgentIds(sessions: readonly AgentSession[]): string[] {
@@ -653,20 +704,20 @@ function createStoryComments(
 		: [];
 	return [
 		{
-			id: "story-channel-brief",
+			id: "story-channel-intake",
 			authorName: "Jordan Lee",
 			authorAvatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
 			content: "Checkout-funnel research identifies mandatory registration as the largest avoidable drop-off for first-time shoppers. During rollout, track guest completion, payment failures, duplicate orders, and checkout-related support contacts.",
 			createdAtMs: STORY_EPOCH_MS - 3_240_000,
 			threadReplies: [{
-				id: "story-channel-brief-maya-reply",
+				id: "story-channel-intake-maya-reply",
 				authorName: "Maya Chen",
 				authorAvatarSrc: "/avatar-user/andrea-wilson/color/asow-service-yellow.png",
 				content: "Agreed. If the email already belongs to an account, let the shopper finish as a guest and offer sign-in or account linking only after the order is confirmed. That keeps this release focused and avoids pulling account recovery into checkout.",
 				createdAtMs: STORY_EPOCH_MS - 240_000,
 			}],
 		},
-		...(chapter === "brief" ? [] : [{
+		...(chapter === "intake" ? [] : [{
 			id: "story-channel-orchestration",
 			authorName: "Venn",
 			content: "@Claude Code take the lead on implementing guest checkout. Consult @Code Planner on the secure API and validation contract first, then implement and verify the work.",
@@ -678,22 +729,29 @@ function createStoryComments(
 	];
 }
 
-function storyEventsForChapter(chapter: JiraAgentsStoryChapter): readonly StaticTimelineEvent[] {
+function storyEventsForChapter(
+	chapter: JiraAgentsStoryChapter,
+	options: JiraAgentsStoryStateOptions,
+): readonly StaticTimelineEvent[] {
 	switch (chapter) {
-		case "brief":
-			return BRIEF_EVENTS;
+		case "intake":
+			return options.descriptionSkillPhase === "applied"
+				? [...INTAKE_EVENTS, DESCRIPTION_APPLIED_EVENT]
+				: INTAKE_EVENTS;
 		case "plan":
 			return PLAN_EVENTS;
-		case "working":
-			return WORKING_EVENTS;
+		case "build":
+			return BUILD_EVENTS;
 		case "handoff":
-			return [...WORKING_EVENTS, HANDOFF_EVENT];
-		case "fixing":
-			return FIXING_EVENTS;
+			return [...BUILD_EVENTS, HANDOFF_EVENT];
 		case "review":
-			return REVIEW_EVENTS;
-		case "done":
-			return DONE_EVENTS;
+			return createReviewEvents(options.reviewStep ?? "queued");
+		case "fix":
+			return createFixEvents(false);
+		case "approve":
+			return createApproveEvents(options.pullRequestApproved ?? false);
+		case "release":
+			return RELEASE_EVENTS;
 	}
 }
 
@@ -704,115 +762,53 @@ export function getJiraAgentsStoryStatus(chapter: JiraAgentsStoryChapter): JiraF
 export function getJiraAgentsStoryChapterForStatus(status: string): JiraAgentsStoryChapter | null {
 	switch (status) {
 		case "To do":
-			return "brief";
+			return "intake";
 		case "In progress":
-			return "working";
+			return "build";
 		case "Review":
 		case "In review":
 			return "review";
 		case "Done":
-			return "done";
+			return "release";
 		default:
 			return null;
 	}
 }
 
-export function createJiraAgentsStoryWorkItem(chapter: JiraAgentsStoryChapter): WorkItemData {
+export function createJiraAgentsStoryWorkItem(
+	chapter: JiraAgentsStoryChapter,
+	options: JiraAgentsStoryStateOptions = {},
+): WorkItemData {
+	const descriptionImproved = getDescriptionSkillPhase(chapter, options) === "applied";
 	return {
 		...JIRA_AGENTS_STORY_WORK_ITEM_BASE,
+		description: descriptionImproved ? IMPROVED_STORY_DESCRIPTION : RAW_STORY_DESCRIPTION,
 		status: WORK_ITEM_STATUS_BY_CHAPTER[chapter],
 	};
 }
 
-export function createJiraAgentsStoryState(chapter: JiraAgentsStoryChapter): JiraWorkItemState {
-	const workItem = createJiraAgentsStoryWorkItem(chapter);
-	const sessions = createStorySessions(chapter);
+export function createJiraAgentsStoryState(
+	chapter: JiraAgentsStoryChapter,
+	options: JiraAgentsStoryStateOptions = {},
+): JiraWorkItemState {
+	const descriptionSkillPhase = getDescriptionSkillPhase(chapter, options);
+	const resolvedOptions = {
+		...options,
+		descriptionImproved: descriptionSkillPhase === "applied",
+		descriptionSkillPhase,
+		reviewStep: options.reviewStep ?? "queued",
+	};
+	const workItem = createJiraAgentsStoryWorkItem(chapter, resolvedOptions);
+	const sessions = createStorySessions(chapter, resolvedOptions);
 	const preset: JiraWorkItemPreset = sessions.length > 0 ? "running" : "filled";
 	const base = hydratePreset(preset, workItem);
 
 	return {
 		...base,
 		preset,
-		contextResources: {
-			title: workItem.title,
-			description: workItem.description ?? "",
-			tldr: [
-				"Shoppers can complete a purchase without creating an account or signing in.",
-				"The server owns pricing, inventory, payment-token validation, and idempotent order creation.",
-				"Acceptance requires accessible delivery and payment forms, recoverable errors, one order per submission, confirmation, optional post-purchase registration, and a feature-flag rollout.",
-			],
-			nextSteps: [
-				{ id: "story-next-plan", label: "Plan the checkout architecture", command: "Define secure guest order creation and publish the OpenAPI contract." },
-				{ id: "story-next-implement", label: "Implement guest checkout", command: "Build the checkout service and storefront delivery, payment, and confirmation flows." },
-				{ id: "story-next-verify", label: "Run acceptance coverage", command: "Verify successful checkout, validation failures, payment errors, and duplicate submissions." },
-			],
-			attachments: [
-				{
-					id: "story-attachment-product-brief",
-					name: "guest-checkout-product-brief",
-					displayName: "Guest checkout product brief",
-					ext: "pdf",
-					date: "5 Aug 2026, 11:04 AM",
-					thumbnailKind: "document",
-					sourceLabel: "Product brief",
-				},
-				{
-					id: "story-attachment-wireframes",
-					name: "guest-checkout-wireframes",
-					displayName: "Guest checkout wireframes",
-					ext: "fig",
-					date: "5 Aug 2026, 11:12 AM",
-					thumbnailKind: "file",
-					sourceLabel: "Design spec",
-				},
-			],
-			subtasks: [
-				{
-					type: "Task",
-					key: "SHOP-4824",
-					summary: "Define guest checkout requirements and success metrics",
-					description: "Turn the checkout-abandonment research into a scoped requirement set: which steps a guest must complete, which validation errors are recoverable, and the conversion and error-rate targets the delivered flow has to hit.",
-					priority: "medium",
-					assignee: "Anthony Chen",
-					assigneeAvatarUrl: "/avatar-human/anthony-chen.png",
-					status: "done",
-				},
-				{
-					type: "Task",
-					key: "SHOP-4822",
-					summary: "Build guest checkout and order-creation API",
-					description: "Create a guest checkout API that recalculates inventory, pricing, discounts, tax, and shipping before payment. Use tokenized payments and an idempotency key so retries cannot create duplicate orders, and return recoverable validation errors without requiring an account.",
-					priority: "high",
-					assignee: "Priya Hansra",
-					assigneeAvatarUrl: "/avatar-human/priya-hansra.png",
-					status: chapter === "handoff" || chapter === "fixing" || chapter === "review" || chapter === "done" ? "done" : "inprogress",
-				},
-				{
-					type: "Story",
-					key: "SHOP-4823",
-					summary: "Build and integrate the storefront checkout flow",
-					description: "Add a responsive Continue as guest path from cart and sign-in through delivery, shipping, payment, and confirmation. Preserve safe shopper input after recoverable errors, meet keyboard and screen-reader requirements, and offer account creation only after the order succeeds.",
-					priority: "high",
-					assignee: "Veronica Rodriguez",
-					assigneeAvatarUrl: "/avatar-human/veronica-rodriguez.png",
-					status: chapter === "done" ? "done" : chapter === "handoff" || chapter === "fixing" || chapter === "review" ? "inprogress" : "todo",
-				},
-			],
-			linkedItems: [
-				{
-					id: "story-link-research",
-					key: "SHOP-4760",
-					summary: "Research checkout abandonment and guest conversion",
-					description: "Combine checkout-funnel analytics, session replays, and support themes to identify why first-time shoppers leave before payment. The completed research recommends removing mandatory registration while keeping pricing, inventory, payment, and order validation server-authoritative.",
-					type: "Task",
-					relationship: "relates to",
-					assignee: "Anthony Chen",
-					assigneeAvatarUrl: "/avatar-human/anthony-chen.png",
-					priority: "medium",
-					status: "done",
-				},
-			],
-		},
+		contextResources: createJiraAgentsStoryContextResources(chapter, workItem, {
+			descriptionImproved: descriptionSkillPhase === "applied",
+		}),
 		metadata: {
 			...base.metadata,
 			status: WORK_ITEM_STATUS_BY_CHAPTER[chapter],
@@ -828,8 +824,10 @@ export function createJiraAgentsStoryState(chapter: JiraAgentsStoryChapter): Jir
 		},
 		comments: createStoryComments(chapter, sessions),
 		sessions,
-		staticEvents: [...storyEventsForChapter(chapter)],
-		activeSessionId: null,
+		staticEvents: [...storyEventsForChapter(chapter, resolvedOptions)],
+		activeSessionId: chapter === "intake" && descriptionSkillPhase !== "idle"
+			? JIRA_AGENTS_DESCRIPTION_SKILL_SESSION_ID
+			: null,
 		composerPrefill: null,
 		elapsedMs: STORY_EPOCH_MS - SESSION_EPOCH_MS,
 		nextOrder: sessions.length,
@@ -929,10 +927,10 @@ function createJiraAgentsStoryCard(chapter: JiraAgentsStoryChapter): JiraKanbanC
 		...(activeSessions.length > 0
 			? { agentActivities: activeSessions.map(createBoardActivity) }
 			: {}),
-		...(chapter === "fixing" || chapter === "review" || chapter === "done"
+		...(chapter === "review" || chapter === "fix" || chapter === "approve" || chapter === "release"
 			? {
 				pullRequestNumber: 1847,
-				pullRequestStatus: chapter === "done" ? "merged" as const : "open" as const,
+				pullRequestStatus: chapter === "release" ? "merged" as const : "open" as const,
 			}
 			: {}),
 	};
