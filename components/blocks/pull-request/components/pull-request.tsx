@@ -196,7 +196,7 @@ export function PullRequest({
 	onActivate,
 	className,
 }: Readonly<PullRequestProps>) {
-	const activeSelected = Boolean(onActivate && selected);
+	const activeSelected = selected;
 	const body = (
 		<PullRequestCardBody
 			additions={additions}
@@ -219,7 +219,10 @@ export function PullRequest({
 			? "cursor-pointer text-left outline-none transition-[background-color,border-color] duration-normal ease-out-practical hover:bg-surface-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
 			: null,
 		activeSelected
-			? "border-border-selected bg-bg-selected text-text-selected hover:bg-bg-selected-hovered"
+			? "border-border-selected bg-bg-selected text-text-selected"
+			: null,
+		onActivate && activeSelected
+			? "hover:bg-bg-selected-hovered"
 			: null,
 		className,
 	);
@@ -242,9 +245,11 @@ export function PullRequest({
 
 	return (
 		<div
+			aria-current={selected ? "true" : undefined}
 			aria-label={`Pull request #${number}: ${title}`}
 			className={surfaceClassName}
 			data-pull-request={number}
+			data-selected={selected ? "true" : undefined}
 			role="group"
 		>
 			{body}

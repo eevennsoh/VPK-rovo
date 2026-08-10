@@ -60,14 +60,18 @@ test("PullRequest card reuses Avatar, Tag, Lozenge, BrandLogoMark, and RelativeT
 	assert.match(COMPONENT_SOURCE, /const _exhaustive: never = status/u);
 });
 
-test("PullRequest selectable mode uses a pressed button with selected surface tokens", () => {
+test("PullRequest selection styling works for read-only and interactive cards", () => {
 	assert.match(
 		COMPONENT_SOURCE,
 		/if \(onActivate\) \{[\s\S]*<button[\s\S]*aria-pressed=\{selected\}[\s\S]*onClick=\{onActivate\}[\s\S]*type="button"/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/onActivate && selected[\s\S]*border-border-selected bg-bg-selected/u,
+		/const activeSelected = selected;[\s\S]*activeSelected\s*\?\s*"border-border-selected bg-bg-selected text-text-selected"\s*:\s*null,[\s\S]*onActivate && activeSelected\s*\?\s*"hover:bg-bg-selected-hovered"/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/<div[\s\S]*aria-current=\{selected \? "true" : undefined\}[\s\S]*data-pull-request=\{number\}[\s\S]*data-selected=\{selected \? "true" : undefined\}[\s\S]*role="group"/u,
 	);
 	assert.match(COMPONENT_SOURCE, /border border-border bg-surface/u);
 	assert.match(
