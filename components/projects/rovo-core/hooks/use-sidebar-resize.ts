@@ -9,11 +9,33 @@ import { clamp } from "@/lib/utils";
 const COLLAPSE_THRESHOLD_OFFSET = 40;
 const COLLAPSE_VISUAL_MIN_WIDTH = 80;
 const KEYBOARD_RESIZE_STEP = 10;
+const MIN_WIDTH_RESISTANCE_RANGE = 40;
+
+export function getResistedMinimumWidth(rawWidth: number, startWidth: number, minWidth: number) {
+	const resistanceBoundary = Math.min(startWidth, minWidth + MIN_WIDTH_RESISTANCE_RANGE);
+	if (rawWidth >= resistanceBoundary) {
+		return rawWidth;
+	}
+
+	const availableWidth = resistanceBoundary - minWidth;
+	if (availableWidth <= 0) {
+		return minWidth;
+	}
+
+	const overdrag = resistanceBoundary - rawWidth;
+	return minWidth + availableWidth * Math.exp(-overdrag / MIN_WIDTH_RESISTANCE_RANGE);
+}
 
 interface UseSidebarResizeOptions {
 	defaultWidth: number;
 	maxWidth: number;
 	minWidth: number;
+	/**
+	 * Progressively resists pointer movement toward the minimum instead of
+	 * entering the collapse-preview range. The resisted width persists on
+	 * release, so the panel never snaps back from an overdrag.
+	 */
+	minWidthResistance?: boolean;
 	onCollapse?: () => void;
 	/**
 	 * Drag direction that grows the panel.
@@ -41,6 +63,7 @@ export function useSidebarResize({
 	defaultWidth,
 	maxWidth,
 	minWidth,
+	minWidthResistance = false,
 	onCollapse,
 	direction = "ltr",
 }: UseSidebarResizeOptions): UseSidebarResizeResult {
@@ -125,9 +148,23 @@ export function useSidebarResize({
 			return;
 		}
 
+		const getPointerWidth = (clientX: number) => {
+			const delta = (clientX - startXRef.current) * deltaSign;
+			const rawWidth = startWidthRef.current + delta;
+			const nextWidth = minWidthResistance
+				? getResistedMinimumWidth(rawWidth, startWidthRef.current, minWidth)
+				: rawWidth;
+			return clamp(Math.round(nextWidth), minWidth, maxWidth);
+		};
+
 		const handlePointerMove = (event: PointerEvent) => {
 			const delta = (event.clientX - startXRef.current) * deltaSign;
 			const rawWidth = startWidthRef.current + delta;
+			if (minWidthResistance) {
+				setSidebarWidth(getPointerWidth(event.clientX));
+				return;
+			}
+
 			const shouldCollapse = rawWidth < collapseThreshold;
 			willCollapseRef.current = shouldCollapse;
 			setWillCollapse(shouldCollapse);
@@ -140,7 +177,11 @@ export function useSidebarResize({
 		};
 
 		const handlePointerUp = (event: PointerEvent) => {
-			if (willCollapseRef.current && onCollapse) {
+			if (minWidthResistance) {
+				const finalWidth = getPointerWidth(event.clientX);
+				lastValidWidthRef.current = finalWidth;
+				setSidebarWidth(finalWidth);
+			} else if (willCollapseRef.current && onCollapse) {
 				setSidebarWidth(lastValidWidthRef.current);
 				onCollapse();
 			} else {
@@ -160,7 +201,7 @@ export function useSidebarResize({
 			document.removeEventListener("pointermove", handlePointerMove);
 			document.removeEventListener("pointerup", handlePointerUp);
 		};
-	}, [collapseThreshold, deltaSign, isResizing, maxWidth, minWidth, onCollapse]);
+	}, [collapseThreshold, deltaSign, isResizing, maxWidth, minWidth, minWidthResistance, onCollapse]);
 
 	useEffect(() => {
 		if (!isResizing && sidebarWidth >= minWidth) {

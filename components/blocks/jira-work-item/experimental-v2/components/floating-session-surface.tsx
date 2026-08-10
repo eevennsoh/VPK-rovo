@@ -81,7 +81,7 @@ export function FloatingSessionSurface() {
 	}, [actions, activeSession]);
 
 	return (
-		<div className="relative h-full min-h-0">
+		<div className="relative h-full min-h-0 [&_[data-rovo-chat-placement=embedded]]:border-l-0">
 			<AsxRovoOverlay
 				chatContextBar={chatContextBar}
 				externalThinkingMessageId={externalThinkingMessageId}
