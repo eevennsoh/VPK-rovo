@@ -86,9 +86,10 @@ test("PullRequestHeader animates meta collapse and honors reduced motion", () =>
 	assert.match(COMPONENT_SOURCE, /<AnimatePresence initial=\{false\}>/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/animate=\{\{ height: "auto", opacity: 1 \}\}/u,
+		/animate=\{\{ opacity: 1, transform: "translateY\(0px\)" \}\}/u,
 	);
-	assert.match(COMPONENT_SOURCE, /exit=\{\{[\s\S]*height: 0,[\s\S]*opacity: 0/u);
+	assert.match(COMPONENT_SOURCE, /exit=\{\{[\s\S]*opacity: 0,[\s\S]*transform: "translateY\(-4px\)"/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /height:\s*(?:0|"auto")/u);
 	assert.match(COMPONENT_SOURCE, /const shouldReduceMotion = useReducedMotion\(\) \?\? false/u);
 	assert.match(COMPONENT_SOURCE, /duration: 0\.2,[\s\S]*ease: \[0, 0\.4, 0, 1\]/u);
 	assert.match(COMPONENT_SOURCE, /duration: 0\.1,[\s\S]*ease: \[0\.6, 0, 0\.8, 0\.6\]/u);

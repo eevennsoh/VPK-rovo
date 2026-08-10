@@ -267,14 +267,14 @@ export function PullRequestHeader({
 				<AnimatePresence initial={false}>
 					{resolvedVariant === "expanded" ? (
 						<motion.div
-							animate={{ height: "auto", opacity: 1 }}
+							animate={{ opacity: 1, transform: "translateY(0px)" }}
 							className="overflow-hidden"
 							exit={{
-								height: 0,
 								opacity: 0,
+								transform: "translateY(-4px)",
 								transition: exitTransition,
 							}}
-							initial={{ height: 0, opacity: 0 }}
+							initial={{ opacity: 0, transform: "translateY(-4px)" }}
 							key="pull-request-header-meta"
 							transition={enterTransition}
 						>
