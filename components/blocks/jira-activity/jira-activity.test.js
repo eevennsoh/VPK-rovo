@@ -408,6 +408,14 @@ test("one-line activity events use 12px type without shrinking expanded agent ca
 	assert.match(COMMENT_SOURCE, /className="text-sm leading-5 text-text"/u);
 });
 
+test("one-line activity timestamps keep 6px spacing around the middot", () => {
+	assert.match(
+		EVENT_SOURCE,
+		/<span className="ml-1\.5 inline-flex items-center gap-1\.5 text-text-subtlest">[\s\S]*<span aria-hidden>·<\/span>[\s\S]*<span>\{entry\.timestamp\}<\/span>/u,
+	);
+	assert.doesNotMatch(EVENT_SOURCE, /> · \{entry\.timestamp\}</u);
+});
+
 test("event labels share the timeline node's 24px vertical alignment track", () => {
 	assert.match(NODE_SOURCE, /isCard \? "h-10" : "h-6"/u);
 	assert.match(EVENT_SOURCE, /<p className="flex h-6 items-center[^>]*>\s*<span>/u);

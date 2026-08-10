@@ -40,7 +40,10 @@ export function JiraActivityEvent({
 				)}
 				<JiraActivitySegments segments={entry.segments} />
 				{entry.showTimestamp === false ? null : (
-					<span className="text-text-subtlest"> · {entry.timestamp}</span>
+					<span className="ml-1.5 inline-flex items-center gap-1.5 text-text-subtlest">
+						<span aria-hidden>·</span>
+						<span>{entry.timestamp}</span>
+					</span>
 				)}
 			</span>
 		</p>

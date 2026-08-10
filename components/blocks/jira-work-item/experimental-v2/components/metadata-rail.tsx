@@ -300,7 +300,7 @@ export function MetadataRail({
 				data-jira-work-item-column-shell
 			>
 				<div
-					className="group relative shrink-0"
+					className="group relative z-10 shrink-0"
 					data-jira-work-item-column-chrome
 					data-scroll-fade-visible={showTopScrollMask ? "" : undefined}
 				>
