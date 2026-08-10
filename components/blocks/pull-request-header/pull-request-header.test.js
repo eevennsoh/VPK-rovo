@@ -57,9 +57,14 @@ test("PullRequestHeader exposes the detail header props contract", () => {
 	assert.match(TYPES_SOURCE, /autoMerge\?: boolean/u);
 	assert.match(TYPES_SOURCE, /defaultAutoMerge\?: boolean/u);
 	assert.match(TYPES_SOURCE, /onAutoMergeChange\?: \(enabled: boolean\) => void/u);
-	assert.match(TYPES_SOURCE, /onChatClick\?: \(\) => void/u);
+	assert.doesNotMatch(TYPES_SOURCE, /onChatClick/u);
 	assert.match(TYPES_SOURCE, /onMergeClick\?: \(\) => void/u);
+	assert.match(TYPES_SOURCE, /onChecksRunningClick\?: \(\) => void/u);
 	assert.match(TYPES_SOURCE, /onMoreActionsClick\?: \(\) => void/u);
+	assert.match(
+		TYPES_SOURCE,
+		/merge-conflicts` stays disabled/u,
+	);
 	assert.match(
 		TYPES_SOURCE,
 		/export interface PullRequestHeaderProps[\s\S]*number: number;[\s\S]*title: string;[\s\S]*status: PullRequestHeaderStatus;[\s\S]*baseBranch\?: string \| null;[\s\S]*headBranch\?: string \| null;[\s\S]*repository: string;/u,
@@ -83,6 +88,11 @@ test("PullRequestHeader resolves controlled and scroll-driven variants", () => {
 	);
 	assert.match(COMPONENT_SOURCE, /useSyncExternalStore/u);
 	assert.match(COMPONENT_SOURCE, /addEventListener\("scroll"/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/const getResolvedVariant = useCallback\([\s\S]*resolveVariant\(\{[\s\S]*collapseOffset,[\s\S]*const resolvedVariant = useSyncExternalStore\([\s\S]*getResolvedVariant/u,
+	);
+	assert.doesNotMatch(COMPONENT_SOURCE, /const getScrollTop|useSyncExternalStore\([\s\S]*getScrollTop/u);
 });
 
 test("PullRequestHeader animates meta collapse and honors reduced motion", () => {
@@ -90,7 +100,18 @@ test("PullRequestHeader animates meta collapse and honors reduced motion", () =>
 		COMPONENT_SOURCE,
 		/import \{ AnimatePresence, motion, useReducedMotion \} from "motion\/react"/u,
 	);
-	assert.match(COMPONENT_SOURCE, /<header[\s\S]*<motion\.div[\s\S]*layout/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/<motion\.header[\s\S]*layout=\{shouldReduceMotion \? false : true\}[\s\S]*<motion\.div[\s\S]*layout=\{shouldReduceMotion \? false : "position"\}/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/<motion\.div[\s\S]*className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"[\s\S]*layout=\{shouldReduceMotion \? false : "position"\}[\s\S]*transition=\{\{ layout: LAYOUT_TRANSITION \}\}/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/key="pull-request-header-meta"[\s\S]*className="flex flex-wrap items-center gap-x-2 gap-y-2 text-xs text-text-subtle"[\s\S]*layout=\{shouldReduceMotion \? false : "position"\}[\s\S]*transition=\{\{ layout: LAYOUT_TRANSITION \}\}/u,
+	);
 	assert.match(COMPONENT_SOURCE, /<AnimatePresence initial=\{false\}>/u);
 	assert.match(
 		COMPONENT_SOURCE,
@@ -108,31 +129,56 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.match(COMPONENT_SOURCE, /className=\{cn\("border-b border-border pb-4", className\)\}/u);
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/button"/u);
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/button-group"/u);
-	assert.match(COMPONENT_SOURCE, /variant="separated"/u);
+	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/spinner"/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/<ButtonGroup[\s\S]*variant="separated"[\s\S]*<ButtonGroup>[\s\S]*aria-label="Chat"[\s\S]*<ButtonGroup>[\s\S]*aria-label="Auto merge"[\s\S]*<\/ButtonGroup>[\s\S]*<ButtonGroup>[\s\S]*mergeStateLabel[\s\S]*<\/ButtonGroup>[\s\S]*<ButtonGroup>[\s\S]*aria-label="More actions"/u,
+		/mergeState === "checks-running" \?[\s\S]*<Spinner data-icon="inline-start" size="xs" \/>[\s\S]*: null/u,
 	);
-	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/toggle"/u);
+	assert.match(COMPONENT_SOURCE, /variant="separated"/u);
+	assert.match(COMPONENT_SOURCE, /variant="split"/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/<ButtonGroup[\s\S]*variant="separated"[\s\S]*<ButtonGroup variant="split">[\s\S]*mergeStateLabel[\s\S]*aria-label="Merge options"[\s\S]*Auto merge[\s\S]*<\/ButtonGroup>[\s\S]*<ButtonGroup>[\s\S]*aria-label="More actions"/u,
+	);
+	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/dropdown-menu"/u);
+	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/switch"/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /from "@\/components\/ui\/toggle"/u);
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/lozenge"/u);
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/tag"/u);
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/logo-mark"/u);
 	assert.match(COMPONENT_SOURCE, /BrandLogoMark[\s\S]*name="github"/u);
-	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/comment"/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/comment"/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /aria-label="Chat"/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /onChatClick/u);
+	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/chevron-down"/u);
+	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/merge-success"/u);
+	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/pull-request"/u);
 	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/show-more-horizontal"/u);
-	assert.match(COMPONENT_SOURCE, /className="w-full flex-wrap sm:w-auto"/u);
-	assert.match(COMPONENT_SOURCE, /disabled=\{!onChatClick\}/u);
-	assert.match(COMPONENT_SOURCE, /disabled=\{!onAutoMergeChange\}/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/disabled=\{!onMergeClick \|\| mergeState !== "ready"\}/u,
+		/inline-flex shrink-0 items-center gap-1[\s\S]*resolvedVariant === "compact" \? \([\s\S]*<CompactPullRequestStatusIcon status=\{status\} \/>[\s\S]*\) : null[\s\S]*#\{number\}/u,
 	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/case "Open":[\s\S]*text-icon-success[\s\S]*<PullRequestIcon[\s\S]*case "Merged":[\s\S]*text-icon-accent-purple[\s\S]*<MergeSuccessIcon/u,
+	);
+	assert.match(COMPONENT_SOURCE, /className="w-full flex-wrap gap-2 sm:w-auto"/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/disabled=\{!primaryEnabled\}/u,
+	);
+	assert.match(COMPONENT_SOURCE, /function isMergePrimaryEnabled/u);
+	assert.match(COMPONENT_SOURCE, /handlePrimaryClick/u);
+	assert.match(COMPONENT_SOURCE, /case "checks-running":[\s\S]*onChecksRunningClick/u);
+	assert.match(COMPONENT_SOURCE, /<ChevronDownIcon label="" size="small" \/>/u);
+	assert.match(COMPONENT_SOURCE, /<ShowMoreHorizontalIcon label="" size="small" \/>/u);
 	assert.match(COMPONENT_SOURCE, /disabled=\{!onMoreActionsClick\}/u);
-	assert.match(COMPONENT_SOURCE, /aria-label="Chat"/u);
-	assert.match(COMPONENT_SOURCE, /aria-label="Auto merge"/u);
+	assert.match(COMPONENT_SOURCE, /aria-label="Merge options"/u);
 	assert.match(COMPONENT_SOURCE, /aria-label="More actions"/u);
+	assert.match(COMPONENT_SOURCE, /label="Auto merge"/u);
 	assert.match(COMPONENT_SOURCE, /Auto merge/u);
-	assert.match(COMPONENT_SOURCE, /defaultPressed: defaultAutoMerge/u);
+	assert.match(COMPONENT_SOURCE, /closeOnClick=\{false\}/u);
+	assert.match(COMPONENT_SOURCE, /handleAutoMergeChange/u);
 	assert.match(COMPONENT_SOURCE, /DEFAULT_AUTO_MERGE = true/u);
 	assert.match(COMPONENT_SOURCE, /case "checks-running":[\s\S]*return "Checks running"/u);
 	assert.match(COMPONENT_SOURCE, /case "merge-conflicts":[\s\S]*return "Merge conflicts"/u);
@@ -185,6 +231,7 @@ test("Pull Request Header demo shows controlled and scroll-driven modes", () => 
 	assert.match(PAGE_SOURCE, /value=\{\[variant\]\}/u);
 	assert.match(PAGE_SOURCE, /mergeState="ready"/u);
 	assert.match(PAGE_SOURCE, /mergeState="checks-running"/u);
+	assert.match(PAGE_SOURCE, /onChecksRunningClick=\{\(\) => undefined\}/u);
 	assert.match(PAGE_SOURCE, /mergeState="merge-conflicts"/u);
 	assert.match(PAGE_SOURCE, /Checks running/u);
 	assert.match(PAGE_SOURCE, /Merge conflicts/u);
@@ -217,6 +264,7 @@ test("Pull Request Header block is registered in the website catalog", () => {
 	assert.match(BLOCK_DETAILS_SOURCE, /collapseOffset/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /mergeState/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /defaultAutoMerge/u);
+	assert.match(BLOCK_DETAILS_SOURCE, /onChecksRunningClick/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /onMoreActionsClick/u);
 	assert.doesNotMatch(BLOCK_DETAILS_SOURCE, /Open in GitHub/u);
 	assert.doesNotMatch(BLOCK_DETAILS_SOURCE, /authorName/u);

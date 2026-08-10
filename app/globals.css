@@ -487,16 +487,6 @@
 			opacity: 1;
 		}
 
-		/* Column chrome stays transparent at rest so the first field's focus halo
-		   can paint through its spacer. Add the semantic fill only once sticky. */
-		[data-jira-work-item-column-chrome-fill="overlay"] {
-			background: var(--ds-surface-overlay, #fff);
-		}
-
-		[data-jira-work-item-column-chrome-fill="input"] {
-			background: var(--ds-background-input, #fff);
-		}
-
 		[data-slot="jira-activity-header"] > :first-child {
 			position: relative;
 			background: inherit;

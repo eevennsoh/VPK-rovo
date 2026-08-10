@@ -114,6 +114,8 @@ export interface JiraActivityEventEntry extends JiraActivityEntryBase {
 			timestamp: string;
 			additions: number;
 			deletions: number;
+			/** SCM commit page URL for the short SHA. */
+			url?: string;
 		}[];
 		/** CI/check-run summaries returned by the connected SCM. */
 		checks?: readonly {
@@ -121,6 +123,8 @@ export interface JiraActivityEventEntry extends JiraActivityEntryBase {
 			name: string;
 			status: "passed" | "failed" | "running" | "queued";
 			details: string;
+			/** SCM check-run / Actions URL for the check details page. */
+			url?: string;
 		}[];
 	};
 }

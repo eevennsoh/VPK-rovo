@@ -6,7 +6,6 @@ import {
 	useRef,
 	type CSSProperties,
 	type ReactNode,
-	type Ref,
 	type RefObject,
 } from "react";
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "motion/react";
@@ -54,11 +53,11 @@ const REDUCED_MOTION_METADATA_PANEL_VARIANTS: Variants = {
 };
 
 /**
- * Wide-column body scroll mask. Sticky chrome owns the top seam, so the
+ * Wide-column body scroll mask. Fixed chrome owns the top seam, so the
  * scrollport only needs its progressive bottom mask.
  */
 function useColumnScrollMask() {
-	const { ref, showBottomScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
+	const { ref, showBottomScrollMask, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const style = useMemo(
 		() => buildScrollMaskStyle({
 			fadeTop: false,
@@ -66,29 +65,27 @@ function useColumnScrollMask() {
 		}),
 		[showBottomScrollMask],
 	);
-	return { ref, style } as const;
+	return { ref, showTopScrollMask, style } as const;
 }
 
 /**
- * Left-column shell: anchor chrome (ContextResources) is the first child of the
- * description scrollport. Its resting height keeps the same alignment while
- * leaving enough paint space above the first focusable field; on scroll it
- * sticks and receives a solid fill through the scroll-state query. Wide sticky
- * chrome uses z-20 over a body z-0 stacking context so description content
- * (including Streamdown mermaid sticky actions) cannot cover the resource row.
- * Narrow mode uses `contents` so chrome/body flatten into the page order flow
- * via `order`.
+ * Left-column shell: ContextResources is a sibling above the description
+ * scrollport, so the native scrollbar belongs only to the content beneath the
+ * controls. Narrow mode uses `contents` so chrome/body flatten into the page
+ * order flow via `order`.
  */
 function DescriptionColumnShell({
 	chrome,
 	children,
 	scrollRef,
+	showTopScrollMask,
 	style,
 	bodyStyle,
 }: Readonly<{
 	chrome: ReactNode;
 	children: ReactNode;
-	scrollRef: Ref<HTMLDivElement>;
+	scrollRef: (element: HTMLDivElement | null) => void;
+	showTopScrollMask: boolean;
 	style?: CSSProperties;
 	bodyStyle?: CSSProperties;
 }>) {
@@ -98,23 +95,18 @@ function DescriptionColumnShell({
 			data-jira-work-item-column-shell
 		>
 			<div
+				className="group order-1 contents @[860px]/agentlayout:relative @[860px]/agentlayout:block @[860px]/agentlayout:shrink-0 @[860px]/agentlayout:px-6"
+				data-jira-work-item-column-chrome
+				data-scroll-fade-visible={showTopScrollMask ? "" : undefined}
+			>
+				{chrome}
+			</div>
+			<div
 				ref={scrollRef}
 				className="order-2 contents @[860px]/agentlayout:relative @[860px]/agentlayout:block @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:px-6 @[860px]/agentlayout:pb-6"
 				data-jira-work-item-scroll-region
 				style={style}
 			>
-				{/*
-				 * Column chrome stacks above the body: sticky shell is z-20, and the
-				 * body is a z-0 stacking context so in-content sticky/z-index layers
-				 * (Streamdown mermaid/code actions at sticky top-2 z-10, title/meta)
-				 * cannot paint over the resource-row anchors or their scroll fade.
-				 */}
-				<div
-					className="order-1 shrink-0 @[860px]/agentlayout:sticky @[860px]/agentlayout:top-0 @[860px]/agentlayout:z-20 @[860px]/agentlayout:[container-type:scroll-state]"
-					data-jira-work-item-column-chrome
-				>
-					{chrome}
-				</div>
 				<div
 					className="order-2 relative z-0 min-w-0 @[860px]/agentlayout:mx-auto @[860px]/agentlayout:flex @[860px]/agentlayout:w-full @[860px]/agentlayout:flex-col @[860px]/agentlayout:gap-y-6"
 					data-jira-work-item-column-body
@@ -131,9 +123,9 @@ function DescriptionColumnShell({
  * Responsive layout for the experimental work item dialog body.
  *
  * Sits under the dialog header band (breadcrumbs + title). Wide
- * (container >= 860px): two columns with transparent-at-rest sticky chrome as
- * the first child of each flex-1 body scrollport, plus an optional left composer
- * footer. Left: ContextResources chrome + description scroll; right:
+ * (container >= 860px): two columns with fixed control chrome above separate
+ * body scrollports, plus an optional left composer footer. Left:
+ * ContextResources chrome + description scroll; right:
  * Details/Activity toggle chrome + metadata scroll (440px).
  * Toggle reveals via `group/metadata-rail` hover on the rail body (plus self
  * hover / `:focus-visible` on the toggle) — not body `:focus-within`.
@@ -164,7 +156,11 @@ export function ExperimentalWorkItemLayout({
 		ref: narrowScrollRef,
 		showBottomScrollMask: showNarrowBottomScrollMask,
 	} = useHasVerticalOverflow<HTMLDivElement>();
-	const { ref: leftScrollMaskRef, style: leftScrollMaskStyle } = useColumnScrollMask();
+	const {
+		ref: leftScrollMaskRef,
+		showTopScrollMask: showLeftTopScrollMask,
+		style: leftScrollMaskStyle,
+	} = useColumnScrollMask();
 	const leftScrollContainerRef = useRef<HTMLDivElement | null>(null);
 	const setLeftScrollContainerRef = useCallback((element: HTMLDivElement | null) => {
 		leftScrollContainerRef.current = element;
@@ -207,6 +203,7 @@ export function ExperimentalWorkItemLayout({
 							<DescriptionColumnShell
 								chrome={header}
 								scrollRef={setLeftScrollContainerRef}
+								showTopScrollMask={showLeftTopScrollMask}
 								style={leftScrollMaskStyle}
 								bodyStyle={innerColumnStyle}
 							>

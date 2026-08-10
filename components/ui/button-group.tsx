@@ -29,14 +29,15 @@ const buttonGroupVariants = cva(
 				variant: ["connected", "split"],
 				orientation: "horizontal",
 				// Later segments suppress their physical left border to avoid a double
-				// seam. Paint selected / focus-visible seams as an overlay so fixed and
-				// auto-width buttons keep identical closed/open geometry — without the
-				// overlay, focus-visible:border-ring is missing on the collapsed left edge.
+				// seam. Keep a transparent :before overlay always mounted so selected /
+				// focus-visible seam colors can transition in unison with Button's
+				// border-color (creating the pseudo only on select would snap). Without
+				// the overlay, focus-visible:border-ring is missing on the collapsed
+				// left edge. Selected seam also matches `[data-selected]` for non-button
+				// shells (e.g. MetadataRailPanelSegment) that keep pressed chrome off
+				// nested label buttons.
 				className:
-					// Selected seam also matches `[data-selected]` for non-button
-					// shells (e.g. MetadataRailPanelSegment) that keep pressed chrome
-					// off nested label buttons.
-					"[&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-md! [&>[data-slot]~[data-slot]]:rounded-l-none [&>[data-slot]~[data-slot]]:border-l-0 [&>[data-slot]~[data-slot]:focus-visible]:relative [&>[data-slot]~[data-slot]:focus-visible]:before:pointer-events-none [&>[data-slot]~[data-slot]:focus-visible]:before:absolute [&>[data-slot]~[data-slot]:focus-visible]:before:inset-y-0 [&>[data-slot]~[data-slot]:focus-visible]:before:-left-px [&>[data-slot]~[data-slot]:focus-visible]:before:w-px [&>[data-slot]~[data-slot]:focus-visible]:before:bg-ring [&>[data-slot]~[data-slot]:focus-visible]:before:content-[''] [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true],[data-selected])]:relative [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true],[data-selected])]:before:pointer-events-none [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true],[data-selected])]:before:absolute [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true],[data-selected])]:before:inset-y-0 [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true],[data-selected])]:before:-left-px [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true],[data-selected])]:before:w-px [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true],[data-selected])]:before:bg-border-selected [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true],[data-selected])]:before:content-[''] *:data-slot:rounded-r-none",
+					"[&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-md! [&>[data-slot]~[data-slot]]:relative [&>[data-slot]~[data-slot]]:rounded-l-none [&>[data-slot]~[data-slot]]:border-l-0 [&>[data-slot]~[data-slot]]:before:pointer-events-none [&>[data-slot]~[data-slot]]:before:absolute [&>[data-slot]~[data-slot]]:before:inset-y-0 [&>[data-slot]~[data-slot]]:before:-left-px [&>[data-slot]~[data-slot]]:before:w-px [&>[data-slot]~[data-slot]]:before:bg-transparent [&>[data-slot]~[data-slot]]:before:content-[''] [&>[data-slot]~[data-slot]]:before:transition-[background-color] [&>[data-slot]~[data-slot]:focus-visible]:before:bg-ring [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true],[data-selected])]:before:bg-border-selected *:data-slot:rounded-r-none",
 			},
 			{
 				variant: "connected",

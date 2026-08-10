@@ -322,15 +322,51 @@ const HANDOFF_EVENT: StaticTimelineEvent = {
 };
 
 const FAILED_PR_CHECKS = [
-	{ id: "lint-types", name: "Lint and typecheck", status: "failed", details: "Failed after 42s · deliveryAddress may be null" },
-	{ id: "unit-tests", name: "Unit tests", status: "passed", details: "418 tests in 2m 46s" },
-	{ id: "browser-tests", name: "Guest checkout browser tests", status: "passed", details: "5 scenarios in 1m 32s" },
+	{
+		id: "lint-types",
+		name: "Lint and typecheck",
+		status: "failed",
+		details: "Failed after 42s · deliveryAddress may be null",
+		url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471001",
+	},
+	{
+		id: "unit-tests",
+		name: "Unit tests",
+		status: "passed",
+		details: "418 tests in 2m 46s",
+		url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471002",
+	},
+	{
+		id: "browser-tests",
+		name: "Guest checkout browser tests",
+		status: "passed",
+		details: "5 scenarios in 1m 32s",
+		url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471003",
+	},
 ] as const;
 
 const PASSED_PR_CHECKS = [
-	{ id: "lint-types", name: "Lint and typecheck", status: "passed", details: "Completed in 1m 18s" },
-	{ id: "unit-tests", name: "Unit tests", status: "passed", details: "418 tests in 2m 46s" },
-	{ id: "browser-tests", name: "Guest checkout browser tests", status: "passed", details: "5 scenarios in 1m 32s" },
+	{
+		id: "lint-types",
+		name: "Lint and typecheck",
+		status: "passed",
+		details: "Completed in 1m 18s",
+		url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471001",
+	},
+	{
+		id: "unit-tests",
+		name: "Unit tests",
+		status: "passed",
+		details: "418 tests in 2m 46s",
+		url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471002",
+	},
+	{
+		id: "browser-tests",
+		name: "Guest checkout browser tests",
+		status: "passed",
+		details: "5 scenarios in 1m 32s",
+		url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471003",
+	},
 ] as const;
 
 const FAILED_CI_EVENT: StaticTimelineEvent = {

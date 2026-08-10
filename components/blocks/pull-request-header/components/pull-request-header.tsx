@@ -1,17 +1,26 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useState, useSyncExternalStore } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
-import CommentIcon from "@atlaskit/icon/core/comment";
+import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
+import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { BrandLogoMark } from "@/components/ui/logo-mark";
 import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
+import { Spinner } from "@/components/ui/spinner";
+import { Switch } from "@/components/ui/switch";
 import { Tag } from "@/components/ui/tag";
-import { Toggle } from "@/components/ui/toggle";
 import { cn } from "@/lib/utils";
 
 import type {
@@ -72,6 +81,67 @@ function mergeStateLabel(mergeState: PullRequestHeaderMergeState): string {
 	}
 }
 
+function isMergePrimaryEnabled({
+	mergeState,
+	onChecksRunningClick,
+	onMergeClick,
+}: Readonly<{
+	mergeState: PullRequestHeaderMergeState;
+	onChecksRunningClick?: () => void;
+	onMergeClick?: () => void;
+}>): boolean {
+	switch (mergeState) {
+		case "ready":
+			return Boolean(onMergeClick);
+		case "checks-running":
+			return Boolean(onChecksRunningClick);
+		case "merge-conflicts":
+			// No related primary action yet (conflicts UI is not wired).
+			return false;
+		default: {
+			const _exhaustive: never = mergeState;
+			return _exhaustive;
+		}
+	}
+}
+
+function CompactPullRequestStatusIcon({
+	status,
+}: Readonly<{ status: PullRequestHeaderStatus }>) {
+	switch (status) {
+		case "Open":
+			return (
+				<span
+					className="grid size-4 shrink-0 place-items-center text-icon-success"
+					title="Pull request open"
+				>
+					<PullRequestIcon
+						color="currentColor"
+						label="Pull request open"
+						size="small"
+					/>
+				</span>
+			);
+		case "Merged":
+			return (
+				<span
+					className="grid size-4 shrink-0 place-items-center text-icon-accent-purple"
+					title="Pull request merged"
+				>
+					<MergeSuccessIcon
+						color="currentColor"
+						label="Pull request merged"
+						size="small"
+					/>
+				</span>
+			);
+		default: {
+			const _exhaustive: never = status;
+			return _exhaustive;
+		}
+	}
+}
+
 /** Renders `folder/leaf` with parent path segments in subtlest text. */
 function BranchName({ name }: Readonly<{ name: string }>) {
 	const separatorIndex = name.lastIndexOf("/");
@@ -91,9 +161,9 @@ function BranchName({ name }: Readonly<{ name: string }>) {
 }
 
 /**
- * Full-width pull-request detail header: `#N` + title with Chat / Auto merge /
- * Merge / More actions group, plus a collapsible meta row for status,
- * repository, and branch direction.
+ * Full-width pull-request detail header: `#N` + title with a Merge split
+ * button (primary label + Auto merge menu) and More actions, plus a
+ * collapsible meta row for status, repository, and branch direction.
  */
 export function PullRequestHeader({
 	variant,
@@ -109,13 +179,16 @@ export function PullRequestHeader({
 	autoMerge,
 	defaultAutoMerge = DEFAULT_AUTO_MERGE,
 	onAutoMergeChange,
-	onChatClick,
 	onMergeClick,
+	onChecksRunningClick,
 	onMoreActionsClick,
 	className,
 	...props
 }: Readonly<PullRequestHeaderProps>) {
 	const shouldReduceMotion = useReducedMotion() ?? false;
+	const [uncontrolledAutoMerge, setUncontrolledAutoMerge] =
+		useState(defaultAutoMerge);
+	const autoMergeEnabled = autoMerge ?? uncontrolledAutoMerge;
 	const subscribeToScroll = useCallback(
 		(onStoreChange: () => void) => {
 			const scrollContainer = scrollContainerRef?.current;
@@ -131,17 +204,19 @@ export function PullRequestHeader({
 		},
 		[scrollContainerRef, variant],
 	);
-	const getScrollTop = useCallback(
-		() => scrollContainerRef?.current?.scrollTop ?? 0,
-		[scrollContainerRef],
+	const getResolvedVariant = useCallback(
+		() => resolveVariant({
+			variant,
+			scrollContainerRef,
+			collapseOffset,
+		}),
+		[collapseOffset, scrollContainerRef, variant],
 	);
-	useSyncExternalStore(subscribeToScroll, getScrollTop, () => 0);
-
-	const resolvedVariant = resolveVariant({
-		variant,
-		scrollContainerRef,
-		collapseOffset,
-	});
+	const resolvedVariant = useSyncExternalStore(
+		subscribeToScroll,
+		getResolvedVariant,
+		() => variant ?? "expanded",
+	);
 	const enterTransition = shouldReduceMotion
 		? INSTANT_TRANSITION
 		: META_ENTER_TRANSITION;
@@ -154,42 +229,70 @@ export function PullRequestHeader({
 			: null;
 	const titleSizeClass =
 		resolvedVariant === "compact" ? "text-sm" : "text-base";
-	const autoMergeToggleProps =
-		autoMerge !== undefined
-			? {
-					pressed: autoMerge,
-					onPressedChange: onAutoMergeChange,
-				}
-			: {
-					defaultPressed: defaultAutoMerge,
-					...(onAutoMergeChange
-						? { onPressedChange: onAutoMergeChange }
-						: {}),
-				};
+
+	const handleAutoMergeChange = (enabled: boolean) => {
+		if (autoMerge === undefined) {
+			setUncontrolledAutoMerge(enabled);
+		}
+		onAutoMergeChange?.(enabled);
+	};
+
+	const primaryEnabled = isMergePrimaryEnabled({
+		mergeState,
+		onChecksRunningClick,
+		onMergeClick,
+	});
+	const handlePrimaryClick = () => {
+		switch (mergeState) {
+			case "ready":
+				onMergeClick?.();
+				return;
+			case "checks-running":
+				onChecksRunningClick?.();
+				return;
+			case "merge-conflicts":
+				return;
+			default: {
+				const _exhaustive: never = mergeState;
+				return _exhaustive;
+			}
+		}
+	};
 
 	return (
-		<header
+		<motion.header
 			className={cn("border-b border-border pb-4", className)}
+			layout={shouldReduceMotion ? false : true}
+			transition={
+				shouldReduceMotion
+					? { layout: INSTANT_TRANSITION }
+					: { layout: LAYOUT_TRANSITION }
+			}
 			{...props}
 		>
 			<motion.div
-				layout
-				transition={
-					shouldReduceMotion
-						? { layout: INSTANT_TRANSITION }
-						: { layout: LAYOUT_TRANSITION }
-				}
+				layout={shouldReduceMotion ? false : "position"}
+				transition={{ layout: LAYOUT_TRANSITION }}
 			>
-				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+				<motion.div
+					className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+					layout={shouldReduceMotion ? false : "position"}
+					transition={{ layout: LAYOUT_TRANSITION }}
+				>
 					<div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-						<span
-							className={cn(
-								"shrink-0 font-normal text-text-subtlest",
-								TITLE_SIZE_TRANSITION,
-								titleSizeClass,
-							)}
-						>
-							#{number}
+						<span className="inline-flex shrink-0 items-center gap-1">
+							{resolvedVariant === "compact" ? (
+								<CompactPullRequestStatusIcon status={status} />
+							) : null}
+							<span
+								className={cn(
+									"shrink-0 font-normal text-text-subtlest",
+									TITLE_SIZE_TRANSITION,
+									titleSizeClass,
+								)}
+							>
+								#{number}
+							</span>
 						</span>
 						<h1
 							className={cn(
@@ -203,38 +306,68 @@ export function PullRequestHeader({
 					</div>
 					<ButtonGroup
 						aria-label="Pull request actions"
-						className="w-full flex-wrap sm:w-auto"
+						className="w-full flex-wrap gap-2 sm:w-auto"
 						variant="separated"
 					>
-						<ButtonGroup>
+						<ButtonGroup variant="split">
 							<Button
-								aria-label="Chat"
-								disabled={!onChatClick}
-								onClick={onChatClick}
-								size="icon"
+								disabled={!primaryEnabled}
+								onClick={handlePrimaryClick}
 								variant="outline"
 							>
-								<CommentIcon label="" />
-							</Button>
-						</ButtonGroup>
-						<ButtonGroup>
-							<Toggle
-								aria-label="Auto merge"
-								disabled={!onAutoMergeChange}
-								variant="outline"
-								{...autoMergeToggleProps}
-							>
-								Auto merge
-							</Toggle>
-						</ButtonGroup>
-						<ButtonGroup>
-							<Button
-								disabled={!onMergeClick || mergeState !== "ready"}
-								onClick={onMergeClick}
-								variant="outline"
-							>
+								{mergeState === "checks-running" ? (
+									<Spinner data-icon="inline-start" size="xs" />
+								) : null}
 								{mergeStateLabel(mergeState)}
 							</Button>
+							<DropdownMenu>
+								<DropdownMenuTrigger
+									render={
+										<Button
+											aria-label="Merge options"
+											size="icon"
+											variant="outline"
+										/>
+									}
+								>
+									<ChevronDownIcon label="" size="small" />
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									<DropdownMenuItem
+										closeOnClick={false}
+										disabled={!onAutoMergeChange}
+										elemAfter={
+											<Switch
+												checked={autoMergeEnabled}
+												disabled={!onAutoMergeChange}
+												label="Auto merge"
+												onCheckedChange={handleAutoMergeChange}
+												onClick={(event) => {
+													// Avoid double-toggle: Switch already flipped via
+													// onCheckedChange; don't also run item onSelect.
+													event.stopPropagation();
+												}}
+												onPointerDown={(event) => {
+													// Keep the menu open while toggling; Base UI treats a
+													// prevented press that starts inside the popup as
+													// intentional and suppresses the follow-up dismiss.
+													event.preventDefault();
+												}}
+												size="sm"
+											/>
+										}
+										onSelect={(event) => {
+											event.preventDefault();
+											if (!onAutoMergeChange) {
+												return;
+											}
+											handleAutoMergeChange(!autoMergeEnabled);
+										}}
+									>
+										Auto merge
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
 						</ButtonGroup>
 						<ButtonGroup>
 							<Button
@@ -244,52 +377,56 @@ export function PullRequestHeader({
 								size="icon"
 								variant="outline"
 							>
-								<ShowMoreHorizontalIcon label="" />
+								<ShowMoreHorizontalIcon label="" size="small" />
 							</Button>
 						</ButtonGroup>
 					</ButtonGroup>
-				</div>
+				</motion.div>
 				<AnimatePresence initial={false}>
 					{resolvedVariant === "expanded" ? (
 						<motion.div
 							animate={{ opacity: 1, transform: "translateY(0px)" }}
 							className="overflow-hidden"
-							exit={{
-								opacity: 0,
-								transform: "translateY(-4px)",
-								transition: exitTransition,
-							}}
-							initial={{ opacity: 0, transform: "translateY(-4px)" }}
-							key="pull-request-header-meta"
-							transition={enterTransition}
-						>
-							<div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-xs text-text-subtle">
-								<Lozenge variant={statusLozengeVariant(status)}>
-									{status}
-								</Lozenge>
-								<Tag
-									color="gray"
-									elemBefore={
-										<BrandLogoMark frame="chip" label="GitHub" name="github" />
-									}
-									maxWidth="14rem"
+								exit={{
+									opacity: 0,
+									transform: "translateY(-4px)",
+									transition: exitTransition,
+								}}
+								initial={{ opacity: 0, transform: "translateY(-4px)" }}
+								key="pull-request-header-meta"
+								transition={enterTransition}
+							>
+								<motion.div
+									className="flex flex-wrap items-center gap-x-2 gap-y-2 text-xs text-text-subtle"
+									layout={shouldReduceMotion ? false : "position"}
+									transition={{ layout: LAYOUT_TRANSITION }}
 								>
-									{repository}
-								</Tag>
-								{branchPair ? (
-									<span className="min-w-0 truncate">
-										<BranchName name={branchPair.headBranch} />
-										<span aria-hidden className="px-1 text-text-subtle">
-											→
+									<Lozenge variant={statusLozengeVariant(status)}>
+										{status}
+									</Lozenge>
+									<Tag
+										color="gray"
+										elemBefore={
+											<BrandLogoMark frame="chip" label="GitHub" name="github" />
+										}
+										maxWidth="14rem"
+									>
+										{repository}
+									</Tag>
+									{branchPair ? (
+										<span className="min-w-0 truncate">
+											<BranchName name={branchPair.headBranch} />
+											<span aria-hidden className="px-1 text-text-subtle">
+												→
+											</span>
+											<BranchName name={branchPair.baseBranch} />
 										</span>
-										<BranchName name={branchPair.baseBranch} />
-									</span>
-								) : null}
-							</div>
-						</motion.div>
-					) : null}
-				</AnimatePresence>
-			</motion.div>
-		</header>
+									) : null}
+								</motion.div>
+							</motion.div>
+						) : null}
+					</AnimatePresence>
+				</motion.div>
+		</motion.header>
 	);
 }

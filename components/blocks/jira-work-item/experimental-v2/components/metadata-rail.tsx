@@ -201,9 +201,8 @@ function mergePeople(...seed: readonly (WorkItemPerson | null | undefined)[]): W
  * Activity slots in the shared ActivityPanel from the composition root.
  *
  * Scroll ownership matches the left description column: toggle chrome
- * (`MetadataRailToggle`) is the first, sticky child of the flex-1 body
- * scrollport, with `px-3` matching ArtifactPane / Activity content. Keeping the
- * first field below that in-flow spacer lets its focus halo paint fully. The
+ * (`MetadataRailToggle`) is a fixed sibling above the flex-1 body scrollport,
+ * with `px-3` matching ArtifactPane / Activity content. The
  * toggle reveals on rail-body hover (not body focus-within). Activity count and
  * sort/filter publish through `ActivityRailChromeProvider` onto that toggle.
  */
@@ -280,7 +279,11 @@ export function MetadataRail({
 		});
 	}
 
-	const { ref: metadataBodyScrollRef, showBottomScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
+	const {
+		ref: metadataBodyScrollRef,
+		showBottomScrollMask,
+		showTopScrollMask,
+	} = useHasVerticalOverflow<HTMLDivElement>();
 	const metadataBodyScrollMaskStyle = useMemo(
 		() => buildScrollMaskStyle({
 			fadeTop: false,
@@ -291,34 +294,28 @@ export function MetadataRail({
 
 	return (
 		<ActivityRailChromeProvider setChrome={setActivityChrome}>
-			{/* Same sticky-chrome-inside-scrollport shell as the description column. */}
+			{/* Fixed chrome followed by a body-only scrollport, matching the left column. */}
 			<div
 				className="flex min-h-0 min-w-0 flex-1 flex-col"
 				data-jira-work-item-column-shell
 			>
+				<div
+					className="group relative shrink-0"
+					data-jira-work-item-column-chrome
+					data-scroll-fade-visible={showTopScrollMask ? "" : undefined}
+				>
+					<MetadataRailToggle context={pullRequestSelected ? "pull-request" : "work-item"} />
+					<StickyRowScrollFade
+						className="group-data-[scroll-fade-visible]:opacity-100"
+						data-slot="jira-work-item-metadata-rail-scroll-fade"
+					/>
+				</div>
 				<div
 					ref={metadataBodyScrollRef}
 					className="relative min-h-0 min-w-0 flex-1 overflow-y-auto @[860px]/agentlayout:pb-8"
 					data-jira-work-item-scroll-region
 					style={metadataBodyScrollMaskStyle}
 				>
-					{/*
-					 * Same chrome-above-body stacking as DescriptionColumnShell:
-					 * sticky shell z-20 + body z-0 so rail content cannot cover the
-					 * Details/Activity toggle or its StickyRowScrollFade.
-					 */}
-					<div
-						className="relative shrink-0 @[860px]/agentlayout:sticky @[860px]/agentlayout:top-0 @[860px]/agentlayout:z-20 @[860px]/agentlayout:[container-type:scroll-state]"
-						data-jira-work-item-column-chrome
-					>
-						<MetadataRailToggle context={pullRequestSelected ? "pull-request" : "work-item"} />
-						{/*
-						 * Soft-mask under sticky Details/Activity chrome while content
-						 * scrolls beneath — same StickyRowScrollFade contract as
-						 * ContextResources (opacity via scroll-state stuck:top).
-						 */}
-						<StickyRowScrollFade data-slot="jira-work-item-metadata-rail-scroll-fade" />
-					</div>
 					<div
 						className="relative z-0 flex min-w-0 flex-col gap-2"
 						data-jira-work-item-column-body

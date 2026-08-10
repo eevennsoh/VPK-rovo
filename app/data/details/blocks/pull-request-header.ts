@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const PULL_REQUEST_HEADER_DETAIL: ComponentDetail = {
 	description:
-		"Two-row pull-request detail header with expanded and compact variants. The title row stays visible with separated action groups (Chat · Auto merge + Merge · More actions); use `variant` or `scrollContainerRef` to collapse the status, repository, and branch meta row. Compact mode also shrinks the PR number and title to `text-sm`.",
+		"Two-row pull-request detail header with expanded and compact variants. The title row stays visible with a Merge split button (primary label + Auto merge menu) and More actions; use `variant` or `scrollContainerRef` to collapse the status, repository, and branch meta row. Compact mode also shrinks the PR number and title to `text-sm`.",
 	importStatement: `import { PullRequestHeader } from "@/components/blocks/pull-request-header";
 import type { PullRequestHeaderProps } from "@/components/blocks/pull-request-header";`,
 	usage: `import { useRef } from "react";
@@ -96,13 +96,13 @@ const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 			type: '"checks-running" | "merge-conflicts" | "ready"',
 			default: '"ready"',
 			description:
-				'Merge button label: `"checks-running"` → "Checks running", `"merge-conflicts"` → "Merge conflicts", `"ready"` → "Merge".',
+				'Merge split-button primary label: `"checks-running"` → "Checks running", `"merge-conflicts"` → "Merge conflicts", `"ready"` → "Merge". Primary enables for `ready` + `onMergeClick` or `checks-running` + `onChecksRunningClick`; `merge-conflicts` stays disabled (no related primary action yet). The chevron menu stays available for Auto merge.',
 		},
 		{
 			name: "autoMerge",
 			type: "boolean",
 			description:
-				"Controlled Auto merge toggle pressed state. Prefer with `onAutoMergeChange`.",
+				"Controlled Auto merge switch state in the merge options menu. Prefer with `onAutoMergeChange`.",
 		},
 		{
 			name: "defaultAutoMerge",
@@ -114,17 +114,20 @@ const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 		{
 			name: "onAutoMergeChange",
 			type: "(enabled: boolean) => void",
-			description: "Called when the Auto merge toggle changes.",
-		},
-		{
-			name: "onChatClick",
-			type: "() => void",
-			description: "Called when the Chat icon button is activated.",
+			description:
+				"Called when the Auto merge switch in the merge options menu changes.",
 		},
 		{
 			name: "onMergeClick",
 			type: "() => void",
-			description: "Called when the Merge button is activated.",
+			description:
+				"Called when the Merge primary action is activated (enabled only when `mergeState` is `ready`).",
+		},
+		{
+			name: "onChecksRunningClick",
+			type: "() => void",
+			description:
+				"Called when the Checks running primary is activated (enabled only when `mergeState` is `checks-running`). In the work-item PR detail, this expands the CI checks disclosure in the metadata rail.",
 		},
 		{
 			name: "onMoreActionsClick",

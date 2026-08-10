@@ -42,32 +42,46 @@ export function PullRequestDetailView({
 	}
 
 	const review = data.guidedReview;
+	const header = (
+		<PullRequestDetailHeader
+			data={data}
+			scrollContainerRef={scrollContainerRef}
+		/>
+	);
+
 	return (
 		<section
 			aria-label={`Pull request #${data.number}: ${data.title}`}
-			className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+			className="flex min-h-0 min-w-0 flex-1 flex-col"
 			data-jira-work-item-pull-request-detail
 		>
-			<PullRequestDetailHeader
-				data={data}
-				scrollContainerRef={scrollContainerRef}
-			/>
 			{review ? (
 				<Tabs
-					className="min-h-0 flex-1"
+					className="flex min-h-0 flex-1 flex-col"
 					onValueChange={(value) => setActiveTab(value as PullRequestDetailTab)}
 					value={activeTab}
 				>
-					<div className="shrink-0">
-						<TabsList aria-label="Pull request details" className="w-full justify-start" variant="line">
-							<TabsTrigger value="details">Overview</TabsTrigger>
-							<TabsTrigger value="code">Files {review.files.length}</TabsTrigger>
-							<TabsTrigger value="guide">Guide</TabsTrigger>
-						</TabsList>
+					{/*
+					 * Sticky stack inside the body-only left-column scrollport;
+					 * header + tabs stay anchored together below ContextResources.
+					 */}
+					<div className="sticky top-0 z-10 flex shrink-0 flex-col gap-4 bg-surface">
+						{header}
+						<div className="shrink-0">
+							<TabsList aria-label="Pull request details" className="w-full justify-start" variant="line">
+								<TabsTrigger value="details">Overview</TabsTrigger>
+								<TabsTrigger value="code">
+									<span>{review.files.length} Files</span>
+									<span className="inline-flex items-center gap-1 tabular-nums">
+										<span className="text-text-success">+{data.additions}</span>
+										<span className="text-text-danger">-{data.deletions}</span>
+									</span>
+								</TabsTrigger>
+								<TabsTrigger value="guide">Guide</TabsTrigger>
+							</TabsList>
+						</div>
 					</div>
-					<div
-						className="min-h-0 flex-1 py-5"
-					>
+					<div className="min-h-0 flex-1 py-5">
 						<TabsContent value="details">
 							<PullRequestOverview data={data} />
 						</TabsContent>
@@ -80,11 +94,14 @@ export function PullRequestDetailView({
 					</div>
 				</Tabs>
 			) : (
-				<div
-					className="min-h-0 flex-1 py-5"
-				>
-					<PullRequestOverview data={data} />
-				</div>
+				<>
+					<div className="sticky top-0 z-10 shrink-0 bg-surface">
+						{header}
+					</div>
+					<div className="min-h-0 flex-1 py-5">
+						<PullRequestOverview data={data} />
+					</div>
+				</>
 			)}
 		</section>
 	);

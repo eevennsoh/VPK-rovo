@@ -120,16 +120,11 @@ export function ContextResources({
 	const closeResourceAction = () => setActiveResourceAction(null);
 
 	return (
-		<div
-			className="@[860px]/agentlayout:pt-6"
-			data-jira-work-item-column-chrome-fill={hasPlanner ? "input" : "overlay"}
-		>
+		<div className="@[860px]/agentlayout:pt-6">
 			{/*
-			 * Sticky column chrome inside the description scrollport. Shared wide
-			 * pb-7 aligns description with Details; the parent receives a solid
-			 * fill only after its scroll-state container becomes stuck.
-			 * StickyRowScrollFade soft-masks content scrolling under this row
-			 * (opacity via @container scroll-state(stuck: top)).
+			 * Fixed column chrome above the description scrollport. Shared wide
+			 * pb-7 aligns description with Details. The shell publishes scroll
+			 * state through data-scroll-fade-visible for the soft edge below.
 			 */}
 			<div
 				className={cn(
@@ -230,10 +225,20 @@ export function ContextResources({
 						</div>
 					)}
 				</div>
-				<StickyRowScrollFade
-					className={hasPlanner ? "[&>div]:from-bg-input" : undefined}
-					data-slot="jira-work-item-resource-row-scroll-fade"
-				/>
+				{/*
+				 * Soft-mask under resources while description scrolls. Hidden when
+				 * a PR is open so it does not paint over the in-body sticky PR
+				 * header that sits just below this row.
+				 */}
+				{pullRequestSelected ? null : (
+					<StickyRowScrollFade
+						className={cn(
+							"group-data-[scroll-fade-visible]:opacity-100",
+							hasPlanner ? "[&>div]:from-bg-input" : undefined,
+						)}
+						data-slot="jira-work-item-resource-row-scroll-fade"
+					/>
+				)}
 			</div>
 			{outputs.length > 0 ? (
 				<div className="mt-1">

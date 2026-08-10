@@ -40,7 +40,7 @@ test("experimental v2 removes the description row and relocates Activity chrome 
 	);
 	// Left column no longer hosts Activity — only Context scrolls there.
 	assert.doesNotMatch(layoutSource, /activity: ReactNode|useHasActivity|\{activity\}/u);
-	// Sticky chrome owns the top seam; body masks stay bottom-only.
+	// Fixed chrome owns the top seam; body masks stay bottom-only.
 	assert.match(
 		layoutSource,
 		/function useColumnScrollMask\([\s\S]*buildScrollMaskStyle\(\{[\s\S]*fadeTop: false,[\s\S]*fadeBottom: showBottomScrollMask/u,
@@ -49,7 +49,7 @@ test("experimental v2 removes the description row and relocates Activity chrome 
 	assert.doesNotMatch(layoutSource, /showMetadataTopScrollMask|data-jira-work-item-metadata-scroll-mask|metadataScrollRef/u);
 	assert.match(
 		layoutSource,
-		/const \{ ref: leftScrollMaskRef, style: leftScrollMaskStyle \} = useColumnScrollMask\(\);[\s\S]*leftScrollContainerRef[\s\S]*leftScrollMaskRef\(element\)/u,
+		/ref: leftScrollMaskRef,[\s\S]*showTopScrollMask: showLeftTopScrollMask,[\s\S]*style: leftScrollMaskStyle,[\s\S]*useColumnScrollMask\(\)[\s\S]*leftScrollContainerRef[\s\S]*leftScrollMaskRef\(element\)/u,
 	);
 	assert.match(
 		readBlockFile("experimental-v2/components/metadata-rail.tsx"),
@@ -265,6 +265,10 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 		/useState<MetadataRailView>\("details"\)/u,
 	);
 	assert.match(
+		metadataRailContextSource,
+		/requestExpandPullRequestSection[\s\S]*pullRequestSectionExpandRequest/u,
+	);
+	assert.match(
 		readBlockFile("experimental-v2/lib/metadata-rail-view.ts"),
 		/export type MetadataRailView = "details" \| "activity"/u,
 	);
@@ -292,9 +296,9 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	);
 	assert.match(
 		metadataRailSource,
-		/data-jira-work-item-column-shell[\s\S]*data-jira-work-item-scroll-region[\s\S]*data-jira-work-item-column-chrome[\s\S]*<MetadataRailToggle context=\{pullRequestSelected \? "pull-request" : "work-item"\} \/>[\s\S]*data-jira-work-item-column-body[\s\S]*data-jira-work-item-metadata-rail-body/u,
+		/data-jira-work-item-column-shell[\s\S]*data-jira-work-item-column-chrome[\s\S]*<MetadataRailToggle context=\{pullRequestSelected \? "pull-request" : "work-item"\} \/>[\s\S]*data-jira-work-item-scroll-region[\s\S]*data-jira-work-item-column-body[\s\S]*data-jira-work-item-metadata-rail-body/u,
 	);
-	// Same sticky-top + bottom-only mask contract as the left scrollport.
+	// Same fixed-chrome + body-only scroll contract as the left column.
 	assert.match(
 		metadataRailSource,
 		/buildScrollMaskStyle\(\{[\s\S]*fadeTop: false,[\s\S]*fadeBottom: showBottomScrollMask/u,
@@ -303,11 +307,11 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 		metadataRailSource,
 		/relative min-h-0 min-w-0 flex-1 overflow-y-auto/u,
 	);
-	// Activity chrome lives in MetadataRailToggle; sticky soft-mask sits on the
-	// scroll-state chrome wrapper (body scrollport keeps bottom-only mask).
+	// Activity chrome lives in MetadataRailToggle; its soft mask follows body
+	// scroll state while the body scrollport keeps its bottom-only mask.
 	assert.match(
 		metadataRailSource,
-		/import \{ StickyRowScrollFade \} from "@\/components\/visual\/scroll-mask"[\s\S]*data-jira-work-item-column-chrome[\s\S]*<MetadataRailToggle[\s\S]*<StickyRowScrollFade data-slot="jira-work-item-metadata-rail-scroll-fade"/u,
+		/import \{ StickyRowScrollFade \} from "@\/components\/visual\/scroll-mask"[\s\S]*data-jira-work-item-column-chrome[\s\S]*<MetadataRailToggle[\s\S]*<StickyRowScrollFade[\s\S]*group-data-\[scroll-fade-visible\]:opacity-100[\s\S]*data-slot="jira-work-item-metadata-rail-scroll-fade"/u,
 	);
 	assert.doesNotMatch(
 		metadataRailSource,
@@ -347,13 +351,13 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 		/justify-between|activePanelView === "activity" && activityChrome/u,
 	);
 	assert.doesNotMatch(metadataRailToggleSource, /from "@\/components\/ui\/toggle-group"|<ToggleGroup[\s>]/u);
-	// Scrollport owns the sticky scroll-state container; toggle owns its fill.
+	// Toggle is fixed chrome; the sibling scrollport owns only body overflow.
 	assert.doesNotMatch(metadataRailToggleSource, /StickyRowScrollFade|sticky top-0|container-type:scroll-state/u);
 	assert.match(metadataRailToggleSource, /shrink-0 @\[860px\]\/agentlayout:pb-7/u);
-	assert.match(metadataRailToggleSource, /data-jira-work-item-column-chrome-fill="overlay"/u);
+	assert.doesNotMatch(metadataRailToggleSource, /data-jira-work-item-column-chrome-fill/u);
 	assert.match(
 		metadataRailSource,
-		/relative min-h-0 min-w-0 flex-1 overflow-y-auto[\s\S]*relative shrink-0 @\[860px\]\/agentlayout:sticky @\[860px\]\/agentlayout:top-0 @\[860px\]\/agentlayout:z-20 @\[860px\]\/agentlayout:\[container-type:scroll-state\][\s\S]*data-jira-work-item-column-chrome/u,
+		/data-jira-work-item-column-chrome[\s\S]*relative min-h-0 min-w-0 flex-1 overflow-y-auto[\s\S]*data-jira-work-item-scroll-region/u,
 	);
 	assert.match(
 		metadataRailSource,

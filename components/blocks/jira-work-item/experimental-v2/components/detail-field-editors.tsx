@@ -155,7 +155,7 @@ export function PersonLabel({
 	const isAgent = person.kind === "agent";
 	const fallbackText = person.name.slice(0, 2).toUpperCase();
 	return (
-		<span className="flex min-w-0 items-center gap-1">
+		<span className="flex min-w-0 items-center gap-2">
 			{isAgent ? (
 				<AgentAvatarVisual
 					avatarClassName="shrink-0"
@@ -181,10 +181,15 @@ export function PersonLabel({
 export function PriorityLabel({ value }: Readonly<{ value: PriorityValue }>) {
 	const IconComponent = PRIORITY_ICONS[value];
 	return (
-		<span className="flex min-w-0 items-center gap-1.5">
-			<span className={cn("flex shrink-0", PRIORITY_COLOR_CLASSES[value])}>
-				<IconComponent color="currentColor" label="" />
-			</span>
+		<span className="flex min-w-0 items-center gap-2">
+			<IconTile
+				aria-hidden
+				className={PRIORITY_COLOR_CLASSES[value]}
+				icon={<IconComponent color="currentColor" label="" />}
+				label=""
+				size="small"
+				variant="transparent"
+			/>
 			<span className="truncate text-sm text-text">{value}</span>
 		</span>
 	);

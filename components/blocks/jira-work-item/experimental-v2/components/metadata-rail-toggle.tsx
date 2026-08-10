@@ -147,7 +147,7 @@ function MetadataRailPanelSegment({
 /**
  * Details / Activity control for the metadata column.
  *
- * Sticky column chrome inside the rail body scrollport, matching left
+ * Fixed column chrome above the rail body scrollport, matching left
  * ContextResources. Horizontal `px-3` matches ArtifactPane /
  * Activity rail content. Remains opacity-hidden until the rail body is
  * hovered, or until this control itself is hovered / keyboard-focused
@@ -199,7 +199,6 @@ export function MetadataRailToggle({
 				"motion-reduce:transition-none",
 				className,
 			)}
-			data-jira-work-item-column-chrome-fill="overlay"
 			data-jira-work-item-metadata-rail-toggle
 		>
 			<div
