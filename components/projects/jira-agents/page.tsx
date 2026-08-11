@@ -145,7 +145,9 @@ function JiraAgentsWorkItemStage({
 					...(chapter === "build" ? { defaultRepliesExpanded: false } : {}),
 				}}
 				autoOpenPullRequestIdentity={
-					controller.chapter === "review" ? JIRA_AGENTS_PULL_REQUEST_IDENTITY : null
+					controller.chapter === "review" || controller.chapter === "fix"
+						? JIRA_AGENTS_PULL_REQUEST_IDENTITY
+						: null
 				}
 				automationRules={JIRA_AGENTS_AUTOMATION_RULES}
 				composerAgents={JIRA_AGENTS_STORY_COMPOSER_AGENTS}
@@ -158,6 +160,11 @@ function JiraAgentsWorkItemStage({
 				onAgentPromptSubmit={handleAgentPromptSubmit}
 				onOpenAgentChat={handleOpenAgentChat}
 				onPullRequestApprove={controller.approvePullRequest}
+				onPullRequestFix={
+					controller.chapter === "fix" && controller.fixStep === "failed"
+						? controller.fixPullRequestCheck
+						: undefined
+				}
 				onSessionReply={handleSessionReply}
 				onSkillInvoke={handleSkillInvoke}
 				presentation="inline"

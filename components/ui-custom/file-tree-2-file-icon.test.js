@@ -4,7 +4,11 @@ import test from "node:test";
 
 import { createFileTreeIconResolver } from "@pierre/trees";
 
-const source = readFileSync(new URL("./file-tree-2-file-icon.tsx", import.meta.url), "utf8");
+const componentSource = readFileSync(new URL("./file-tree-2-file-icon.tsx", import.meta.url), "utf8");
+const helpersSource = readFileSync(
+	new URL("./file-tree-2-file-icon-helpers.ts", import.meta.url),
+	"utf8",
+);
 
 test("FileTree2FileIcon resolves paths with the Pierre complete icon set", () => {
 	const resolver = createFileTreeIconResolver("complete");
@@ -12,8 +16,8 @@ test("FileTree2FileIcon resolves paths with the Pierre complete icon set", () =>
 	assert.equal(resolver.resolveIcon("file-tree-icon-file", "PhotoUploader.tsx").token, "react");
 	assert.equal(resolver.resolveIcon("file-tree-icon-file", "UserMenu.js").token, "javascript");
 	assert.equal(resolver.resolveIcon("file-tree-icon-file", "UserProfileDialog.ts").token, "typescript");
-	assert.match(source, /createFileTreeIconResolver\(icons\)/u);
-	assert.match(source, /resolveIcon\("file-tree-icon-file", path\)/u);
-	assert.match(source, /getBuiltInSpriteSheet/u);
-	assert.match(source, /fileTree2IconColorStyles/u);
+	assert.match(componentSource, /createFileTreeIconResolver\(icons\)/u);
+	assert.match(componentSource, /resolveIcon\("file-tree-icon-file", path\)/u);
+	assert.match(helpersSource, /getBuiltInSpriteSheet/u);
+	assert.match(helpersSource, /fileTree2IconColorStyles/u);
 });

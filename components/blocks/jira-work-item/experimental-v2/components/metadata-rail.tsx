@@ -212,12 +212,14 @@ export function MetadataRail({
 	automationRules = [],
 	borderless = false,
 	currentReviewerStatus,
+	onPullRequestFix,
 	selectedPullRequestEntry = null,
 }: Readonly<{
 	activity?: ReactNode;
 	automationRules?: readonly WorkItemAutomationRule[];
 	borderless?: boolean;
 	currentReviewerStatus?: PullRequestReviewer["status"];
+	onPullRequestFix?: () => void;
 	selectedPullRequestEntry?: JiraActivityEventEntry | null;
 }>) {
 	const {
@@ -383,6 +385,7 @@ export function MetadataRail({
 								currentReviewerStatus={currentReviewerStatus}
 								entry={selectedPullRequestEntry}
 								key={selectedPullRequestKey}
+								onFixCheck={onPullRequestFix}
 							/>
 						) : null}
 					</div>

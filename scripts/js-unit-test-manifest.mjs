@@ -34,6 +34,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter.test.js",
 		"components/blocks/jira-work-item/experimental-v2/lib/pull-request-activity-adapter.test.js",
 		"components/blocks/jira-work-item/experimental-v2/lib/pull-request-detail-data.test.js",
+		"components/blocks/jira-work-item/experimental-v2/lib/pull-request-detail-data-ui.test.js",
 		"components/blocks/jira-work-item/experimental-v2/lib/pull-request-review-submit.test.js",
 		"components/blocks/jira-work-item/experimental-v2/lib/pull-request-phases.test.js",
 		"components/blocks/smart-link/lib/pull-request-smart-link.test.js",

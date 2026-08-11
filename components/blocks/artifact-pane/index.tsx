@@ -33,6 +33,16 @@ export interface ArtifactPaneSectionItem {
 	headerAction?: Readonly<{
 		label: string;
 		onClick?: () => void;
+		/**
+		 * `icon` (default): settings gear revealed on header hover / keyboard focus.
+		 * `label`: compact text button using `label` as visible copy.
+		 */
+		appearance?: "icon" | "label";
+		/**
+		 * `hover` (default): reveal on header hover / keyboard focus-visible.
+		 * `open`: show only while the disclosure is expanded.
+		 */
+		reveal?: "hover" | "open";
 	}>;
 	id: string;
 	title: ReactNode;
@@ -139,26 +149,52 @@ function ArtifactPaneDisclosure({
 						<Icon render={<ChevronRightIcon label="" size="small" />} />
 					</motion.span>
 				</CollapsibleTrigger>
-				{headerAction ? (
-					<TooltipProvider>
-						<Tooltip>
-							<TooltipTrigger
-								render={
-									<Button
-										aria-label={headerAction.label}
-										className="pointer-events-none absolute top-1/2 right-8 -translate-y-1/2 opacity-0 transition-opacity duration-fast ease-out-practical group-hover/header:pointer-events-auto group-hover/header:opacity-100 group-has-[:focus-visible]/header:pointer-events-auto group-has-[:focus-visible]/header:opacity-100 motion-reduce:transition-none"
-										onClick={headerAction.onClick}
-										size="icon-compact"
-										type="button"
-										variant="ghost"
-									/>
-								}
-							>
-								<SettingsIcon label="" size="small" />
-							</TooltipTrigger>
-							<TooltipContent positionerClassName="z-[502]">{headerAction.label}</TooltipContent>
-						</Tooltip>
-					</TooltipProvider>
+				{headerAction && (headerAction.reveal !== "open" || open) ? (
+					headerAction.appearance === "label" ? (
+						<Button
+							aria-label={headerAction.label}
+							className={cn(
+								"absolute top-1/2 right-8 z-10 -translate-y-1/2",
+								headerAction.reveal === "open"
+									? null
+									: "pointer-events-none opacity-0 transition-opacity duration-fast ease-out-practical group-hover/header:pointer-events-auto group-hover/header:opacity-100 group-has-[:focus-visible]/header:pointer-events-auto group-has-[:focus-visible]/header:opacity-100 motion-reduce:transition-none",
+							)}
+							onClick={(event) => {
+								event.preventDefault();
+								event.stopPropagation();
+								headerAction.onClick?.();
+							}}
+							size="compact"
+							type="button"
+							variant="ghost"
+						>
+							{headerAction.label}
+						</Button>
+					) : (
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger
+									render={
+										<Button
+											aria-label={headerAction.label}
+											className="pointer-events-none absolute top-1/2 right-8 -translate-y-1/2 opacity-0 transition-opacity duration-fast ease-out-practical group-hover/header:pointer-events-auto group-hover/header:opacity-100 group-has-[:focus-visible]/header:pointer-events-auto group-has-[:focus-visible]/header:opacity-100 motion-reduce:transition-none"
+											onClick={(event) => {
+												event.preventDefault();
+												event.stopPropagation();
+												headerAction.onClick?.();
+											}}
+											size="icon-compact"
+											type="button"
+											variant="ghost"
+										/>
+									}
+								>
+									<SettingsIcon label="" size="small" />
+								</TooltipTrigger>
+								<TooltipContent positionerClassName="z-[502]">{headerAction.label}</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+					)
 				) : null}
 			</div>
 			<CollapsibleContent>

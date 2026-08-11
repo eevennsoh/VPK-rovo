@@ -270,7 +270,7 @@ test("Build chapter selection stages ready→implement→verify and reveals Clau
 	);
 });
 
-test("Review chapter auto-opens PR #1847 and stages CI from start through settling to failed", () => {
+test("Review and Fix chapters auto-open PR #1847; Review stages CI and Fix waits for the Fix click", () => {
 	const pageSource = readProjectFile("components/projects/jira-agents/page.tsx");
 	const controllerSource = readProjectFile("components/projects/jira-agents/use-hotfix-story.ts");
 	const compositionSource = readProjectFile(
@@ -282,7 +282,11 @@ test("Review chapter auto-opens PR #1847 and stages CI from start through settli
 
 	assert.match(
 		pageSource,
-		/autoOpenPullRequestIdentity=\{\s*controller\.chapter === "review" \? JIRA_AGENTS_PULL_REQUEST_IDENTITY : null\s*\}/u,
+		/autoOpenPullRequestIdentity=\{\s*controller\.chapter === "review" \|\| controller\.chapter === "fix"\s*\?\s*JIRA_AGENTS_PULL_REQUEST_IDENTITY\s*:\s*null\s*\}/u,
+	);
+	assert.match(
+		pageSource,
+		/onPullRequestFix=\{\s*controller\.chapter === "fix" && controller\.fixStep === "failed"\s*\?\s*controller\.fixPullRequestCheck\s*:\s*undefined\s*\}/u,
 	);
 	assert.match(
 		compositionSource,
@@ -295,6 +299,14 @@ test("Review chapter auto-opens PR #1847 and stages CI from start through settli
 	assert.match(
 		controllerSource,
 		/if \(shouldReduceMotion\) \{\s*setReviewStep\("failed"\);/u,
+	);
+	assert.match(
+		controllerSource,
+		/repairing: \{ next: "complete", delayMs: 2_000 \}/u,
+	);
+	assert.match(
+		controllerSource,
+		/fixPullRequestCheck = useCallback\(\(identity: string\) => \{[\s\S]*chapter !== "fix"[\s\S]*fixStep !== "failed"[\s\S]*setFixStep\(shouldReduceMotion \? "complete" : "repairing"\)/u,
 	);
 	assert.match(checksSource, /export const UNIT_PASSED_PR_CHECKS = \[/u);
 	assert.match(checksSource, /export const SETTLING_PR_CHECKS = \[/u);

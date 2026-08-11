@@ -160,13 +160,13 @@ test("the shared-channel story exposes seven selectable stages and canonical wor
 	const progression = [
 		["Build", 1],
 		["Review", 1],
-		["Fix", 1],
-		["Approve", 1],
+		["Fix", "needs-input"],
+		["Approve", "needs-input"],
 		["Release", 0],
 	] as const;
 	for (const [chapter, count] of progression) {
 		await selectChapter(page, chapter);
-		if (chapter === "Approve") {
+		if (count === "needs-input") {
 			await expect(page.getByRole("button", { name: "1 agent needs input" })).toBeVisible();
 		} else {
 			await expectWorkingAgents(page, count);
@@ -507,8 +507,16 @@ test("build through release expose the authored dependency chain and artifacts",
 	const replyGroup = page.getByRole("group", { name: "Replies" }).first();
 	await expect(replyGroup).toBeVisible();
 	await selectChapter(page, "Fix");
+	await expect(page.getByRole("button", { name: "1 agent needs input" })).toBeVisible();
+	const fixDetail = page.locator("[data-jira-work-item-pull-request-detail]");
+	await expect(fixDetail).toBeVisible();
+	await expect(page.getByRole("button", { name: "Fix Lint and typecheck" })).toBeVisible();
+	await expect(page.getByRole("button", { name: "Fix all" })).toBeVisible();
+	await page.getByRole("button", { name: "Fix all" }).click();
+	await expect(page.getByRole("button", { name: "1 agent working" })).toBeVisible();
+	await expect(page.getByRole("button", { name: "Fix all" })).toHaveCount(0);
+	await expect(page.getByRole("button", { name: "Fix Lint and typecheck" })).toHaveCount(0);
 	await showActivity(page);
-	await expectWorkingAgents(page, 1);
 	await expectEyesReaction(page, 0);
 	await expect(page.getByText(/blocked PR #1847 after/u)).toBeVisible();
 	await expect(page.getByText("Repair delivery-address validation", { exact: true })).toBeVisible();

@@ -17,6 +17,7 @@ import {
 	JIRA_AGENTS_PULL_REQUEST_IDENTITY,
 	type JiraAgentsBuildStep,
 	type JiraAgentsDescriptionSkillPhase,
+	type JiraAgentsFixStep,
 	type JiraAgentsReviewStep,
 	type JiraAgentsStoryChapter,
 } from "./data/hotfix-story";
@@ -59,6 +60,14 @@ const REVIEW_SEQUENCE = {
 	{ next: JiraAgentsReviewStep; delayMs: number }
 >;
 
+// Fix CI repair after the Fix click: rerunning → green.
+const FIX_SEQUENCE = {
+	repairing: { next: "complete", delayMs: 2_000 },
+} as const satisfies Record<
+	Exclude<JiraAgentsFixStep, "failed" | "complete">,
+	{ next: JiraAgentsFixStep; delayMs: number }
+>;
+
 const DESCRIPTION_SKILL_GENERATION_DELAY_MS = 4_000;
 
 export type JiraAgentsPullRequestApprovalState = "available" | "approved";
@@ -73,6 +82,8 @@ export interface JiraAgentsStoryController {
 	descriptionSkillPhase: JiraAgentsDescriptionSkillPhase;
 	descriptionImproved: boolean;
 	dismissDescriptionSuggestion: () => void;
+	fixPullRequestCheck: (identity: string) => void;
+	fixStep: JiraAgentsFixStep;
 	initialState: JiraWorkItemState;
 	invokeDescriptionSkill: () => void;
 	launchId: number;
@@ -98,6 +109,7 @@ export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 		Record<string, JiraAgentsPullRequestApprovalState>
 	>({});
 	const [reviewStep, setReviewStep] = useState<JiraAgentsReviewStep>("queued");
+	const [fixStep, setFixStep] = useState<JiraAgentsFixStep>("failed");
 	const [launchId, setLaunchId] = useState(0);
 	const [boardColumns, setBoardColumns] = useState<JiraKanbanColumnData[]>(
 		() => createJiraAgentsBoardColumns("intake"),
@@ -118,6 +130,8 @@ export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 			? { [JIRA_AGENTS_PULL_REQUEST_IDENTITY]: "available" }
 			: {});
 		setReviewStep("queued");
+		// Fix continues from Review's failed PR until the Fix click advances it.
+		setFixStep("failed");
 		setLaunchId((current) => current + 1);
 		setBoardColumns((current) => createJiraAgentsBoardColumns(nextChapter, current));
 	}, [chapter]);
@@ -158,6 +172,7 @@ export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 		setBuildStep("complete");
 		setPullRequestApprovalStates({});
 		setReviewStep("queued");
+		setFixStep("failed");
 		setLaunchId((current) => current + 1);
 		setBoardColumns((current) => createJiraAgentsBoardColumns("plan", current));
 	}, [chapter, descriptionImproved, orchestrationStep]);
@@ -174,7 +189,8 @@ export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 	// These timers reveal authored state snapshots rather than animating layout.
 	// Plan orchestration stops at "complete" — Build only starts when the user
 	// selects that chapter manually. Review CI keeps the same causal frames, but
-	// reduced motion jumps straight to the final failed checks.
+	// reduced motion jumps straight to the final failed checks. Fix waits for the
+	// Fix click, then stages rerunning → green (reduced motion jumps to green).
 	useEffect(() => {
 		if (!active || orchestrationStep === "idle" || orchestrationStep === "complete") {
 			return undefined;
@@ -214,6 +230,21 @@ export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 		return () => window.clearTimeout(timeoutId);
 	}, [active, chapter, reviewStep, shouldReduceMotion]);
 
+	useEffect(() => {
+		if (!active || chapter !== "fix" || fixStep !== "repairing") return undefined;
+		if (shouldReduceMotion) {
+			setFixStep("complete");
+			setLaunchId((current) => current + 1);
+			return undefined;
+		}
+		const transition = FIX_SEQUENCE[fixStep];
+		const timeoutId = window.setTimeout(() => {
+			setFixStep(transition.next);
+			setLaunchId((current) => current + 1);
+		}, transition.delayMs);
+		return () => window.clearTimeout(timeoutId);
+	}, [active, chapter, fixStep, shouldReduceMotion]);
+
 	const approvePullRequest = useCallback((identity: string) => {
 		if (
 			chapter !== "approve"
@@ -226,6 +257,17 @@ export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 		// so this refresh updates approval evidence without remounting the Guide.
 		setLaunchId((current) => current + 1);
 	}, [chapter, pullRequestApprovalStates]);
+
+	const fixPullRequestCheck = useCallback((identity: string) => {
+		if (
+			chapter !== "fix"
+			|| fixStep !== "failed"
+			|| identity !== JIRA_AGENTS_PULL_REQUEST_IDENTITY
+		) return;
+		// Reduced motion skips the rerunning beat and lands on green checks.
+		setFixStep(shouldReduceMotion ? "complete" : "repairing");
+		setLaunchId((current) => current + 1);
+	}, [chapter, fixStep, shouldReduceMotion]);
 
 	const updateBoardColumns = useCallback((nextColumns: readonly JiraKanbanColumnData[]) => {
 		const storyColumn = getJiraAgentsStoryColumn(nextColumns);
@@ -244,6 +286,7 @@ export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 				? { [JIRA_AGENTS_PULL_REQUEST_IDENTITY]: "available" }
 				: {});
 			setReviewStep("queued");
+			setFixStep("failed");
 			setLaunchId((current) => current + 1);
 		}
 	}, [chapter]);
@@ -255,11 +298,12 @@ export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 			? createJiraAgentsStoryState(chapter, {
 				buildStep: chapter === "build" ? buildStep : undefined,
 				descriptionSkillPhase,
+				fixStep: chapter === "fix" ? fixStep : undefined,
 				pullRequestApproved,
 				reviewStep,
 			})
 			: createJiraAgentsOrchestrationState(orchestrationStep),
-		[buildStep, chapter, descriptionSkillPhase, orchestrationStep, pullRequestApproved, reviewStep],
+		[buildStep, chapter, descriptionSkillPhase, fixStep, orchestrationStep, pullRequestApproved, reviewStep],
 	);
 	const sections = useMemo(() => createJiraAgentsWorkspaceSections(chapter), [chapter]);
 	const workItem = useMemo(
@@ -277,6 +321,8 @@ export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 		descriptionSkillPhase,
 		descriptionImproved,
 		dismissDescriptionSuggestion,
+		fixPullRequestCheck,
+		fixStep,
 		initialState,
 		invokeDescriptionSkill,
 		launchId,

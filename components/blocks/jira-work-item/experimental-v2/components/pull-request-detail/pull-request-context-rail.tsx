@@ -19,10 +19,12 @@ export function PullRequestContextRail({
 	activePanelView,
 	currentReviewerStatus,
 	entry,
+	onFixCheck,
 }: Readonly<{
 	activePanelView: MetadataRailView;
 	currentReviewerStatus?: PullRequestReviewer["status"];
 	entry: JiraActivityEventEntry;
+	onFixCheck?: () => void;
 }>) {
 	const resolved = resolvePullRequestDetailData(entry);
 	const data = resolved
@@ -46,7 +48,7 @@ export function PullRequestContextRail({
 				hidden={activePanelView !== "details"}
 				inert={activePanelView !== "details" ? true : undefined}
 			>
-				<PullRequestDetailsRail data={data} />
+				<PullRequestDetailsRail data={data} onFixCheck={onFixCheck} />
 			</div>
 			<div
 				hidden={activePanelView !== "activity"}

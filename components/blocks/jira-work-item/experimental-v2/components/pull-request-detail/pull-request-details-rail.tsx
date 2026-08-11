@@ -282,7 +282,13 @@ function CheckDetails({ check }: Readonly<{ check: PullRequestCheck }>) {
  * external-link icon expands on the far right via row hover (`group/check-row`).
  * The row itself opens `check.url` — the icon is not a separate hit target.
  */
-function FailedCheckActions({ check }: Readonly<{ check: PullRequestCheck }>) {
+function FailedCheckActions({
+	check,
+	onFix,
+}: Readonly<{
+	check: PullRequestCheck;
+	onFix?: () => void;
+}>) {
 	return (
 		<div
 			className="flex shrink-0 items-center"
@@ -293,6 +299,7 @@ function FailedCheckActions({ check }: Readonly<{ check: PullRequestCheck }>) {
 				onClick={(event) => {
 					event.preventDefault();
 					event.stopPropagation();
+					onFix?.();
 				}}
 				size="compact"
 				type="button"
@@ -326,7 +333,13 @@ function FailedCheckActions({ check }: Readonly<{ check: PullRequestCheck }>) {
 	);
 }
 
-function ChecksValue({ checks }: Readonly<{ checks: readonly PullRequestCheck[] }>) {
+function ChecksValue({
+	checks,
+	onFixCheck,
+}: Readonly<{
+	checks: readonly PullRequestCheck[];
+	onFixCheck?: () => void;
+}>) {
 	if (checks.length === 0) {
 		return <p className="text-xs text-text-subtle">No CI checks reported</p>;
 	}
@@ -374,7 +387,7 @@ function ChecksValue({ checks }: Readonly<{ checks: readonly PullRequestCheck[] 
 							</p>
 						</div>
 						{isFailed ? (
-							<FailedCheckActions check={check} />
+							<FailedCheckActions check={check} onFix={onFixCheck} />
 						) : (
 							<IconTile
 								aria-hidden
@@ -400,7 +413,13 @@ function ChecksValue({ checks }: Readonly<{ checks: readonly PullRequestCheck[] 
 }
 
 /** Provider-neutral pull-request metadata rendered in the shared artifact rail. */
-export function PullRequestDetailsRail({ data }: Readonly<{ data: PullRequestDetailData }>) {
+export function PullRequestDetailsRail({
+	data,
+	onFixCheck,
+}: Readonly<{
+	data: PullRequestDetailData;
+	onFixCheck?: () => void;
+}>) {
 	const {
 		consumePullRequestSectionExpandRequest,
 		pullRequestSectionExpandRequest,
@@ -492,7 +511,19 @@ export function PullRequestDetailsRail({ data }: Readonly<{ data: PullRequestDet
 						/>
 					),
 					count: checksCollapsedCount,
-					content: <ChecksValue checks={data.checks} />,
+					// Same shared Fix handler as per-row Fix; only when failed checks
+					// are actionable (handler present + at least one failed check).
+					...(onFixCheck && failedChecks > 0
+						? {
+							headerAction: {
+								appearance: "label" as const,
+								label: "Fix all",
+								onClick: onFixCheck,
+								reveal: "open" as const,
+							},
+						}
+						: {}),
+					content: <ChecksValue checks={data.checks} onFixCheck={onFixCheck} />,
 				},
 				{
 					id: "pull-request-commits",

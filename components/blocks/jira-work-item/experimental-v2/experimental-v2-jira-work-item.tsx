@@ -75,8 +75,8 @@ interface ExperimentalV2JiraWorkItemBaseProps {
 	automationRules?: readonly WorkItemAutomationRule[];
 	/**
 	 * When set, open this pull-request identity after each `stageKey` reset
-	 * (once per stage). Used by jira-agents Review to land on PR detail without
-	 * an extra click. Clearing the PR does not re-open until the next stage.
+	 * (once per stage). Used by jira-agents Review and Fix to land on PR detail
+	 * without an extra click. Clearing the PR does not re-open until the next stage.
 	 */
 	autoOpenPullRequestIdentity?: string | null;
 	composerAgents?: readonly AgentSelectorAgent[];
@@ -88,6 +88,8 @@ interface ExperimentalV2JiraWorkItemBaseProps {
 	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
 	onOpenAgentChat?: (agentId: string) => void;
 	onPullRequestApprove?: (identity: string) => void;
+	/** Host callback when a failed CI check's Fix button is clicked. */
+	onPullRequestFix?: (identity: string) => void;
 	onSessionReply?: SessionReplyInterceptor;
 	onSkillInvoke?: (skill: SkillsDirectorySkill) => boolean | void;
 	outputs?: readonly string[];
@@ -134,6 +136,7 @@ interface ExperimentalV2JiraWorkItemContentProps {
 	onClose: () => void;
 	onOpenAgentChat?: (agentId: string) => void;
 	onPullRequestApprove?: (identity: string) => void;
+	onPullRequestFix?: (identity: string) => void;
 	onSessionReply?: SessionReplyInterceptor;
 	onSkillInvoke?: (skill: SkillsDirectorySkill) => boolean | void;
 	open: boolean;
@@ -202,6 +205,7 @@ function ExperimentalV2JiraWorkItemContent({
 	onClose,
 	onOpenAgentChat,
 	onPullRequestApprove,
+	onPullRequestFix,
 	onSessionReply,
 	onSkillInvoke,
 	open,
@@ -328,6 +332,10 @@ function ExperimentalV2JiraWorkItemContent({
 		autoOpenedForStageRef.current = stageToken;
 		handlePullRequestSelect(entry);
 	}, [autoOpenPullRequestIdentity, handlePullRequestSelect, pullRequestEntries, stageKey]);
+	const handlePullRequestFix = useCallback(() => {
+		if (!selectedPullRequestIdentity || !onPullRequestFix) return;
+		onPullRequestFix(selectedPullRequestIdentity);
+	}, [onPullRequestFix, selectedPullRequestIdentity]);
 	const selectedPullRequestApprovalState = selectedPullRequestIdentity
 		? pullRequestApprovalStates?.[selectedPullRequestIdentity]
 		: undefined;
@@ -543,6 +551,7 @@ function ExperimentalV2JiraWorkItemContent({
 										automationRules={automationRules}
 										borderless
 										currentReviewerStatus={selectedPullRequestReviewerStatus}
+										onPullRequestFix={onPullRequestFix ? handlePullRequestFix : undefined}
 										selectedPullRequestEntry={selectedPullRequestEntry}
 									/>
 									<div className="hidden @[860px]/agentlayout:contents">
@@ -636,6 +645,7 @@ export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWor
 						onClose={onClose}
 						onOpenAgentChat={props.onOpenAgentChat}
 						onPullRequestApprove={props.onPullRequestApprove}
+						onPullRequestFix={props.onPullRequestFix}
 						onSessionReply={props.onSessionReply}
 						onSkillInvoke={props.onSkillInvoke}
 						open={open}
