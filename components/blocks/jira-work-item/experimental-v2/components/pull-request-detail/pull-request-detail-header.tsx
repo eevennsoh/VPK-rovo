@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type RefObject } from "react";
+import { useState, type ReactNode, type RefObject } from "react";
 
 import { PullRequestHeader } from "@/components/blocks/pull-request-header";
 import type { PullRequestHeaderMergeState } from "@/components/blocks/pull-request-header";
@@ -17,6 +17,7 @@ interface PullRequestDetailHeaderProps {
 	data: PullRequestDetailData;
 	onGuideOpen?: () => void;
 	scrollContainerRef: RefObject<HTMLElement | null>;
+	tabNavigation?: ReactNode;
 }
 
 /** Derives the actionable header state from mergeability, checks, and review. */
@@ -55,6 +56,7 @@ export function PullRequestDetailHeader({
 	data,
 	onGuideOpen,
 	scrollContainerRef,
+	tabNavigation,
 }: Readonly<PullRequestDetailHeaderProps>) {
 	const [autoMerge, setAutoMerge] = useState(true);
 	const { requestExpandPullRequestSection, setPanelView } = useMetadataRail();
@@ -70,6 +72,7 @@ export function PullRequestDetailHeader({
 			number={data.number}
 			title={data.title}
 			status={data.status}
+			tabNavigation={tabNavigation}
 			baseBranch={data.baseBranch}
 			headBranch={data.headBranch}
 			repository={data.repository}
@@ -80,12 +83,15 @@ export function PullRequestDetailHeader({
 			onAutoMergeChange={isOpen ? setAutoMerge : undefined}
 			onChecksFailedClick={openChecks}
 			onChecksRunningClick={openChecks}
+			onMergeConflictsClick={openChecks}
 			onConvertToDraftClick={() => undefined}
 			onMergeClick={mergeReady ? DEMO_MERGE : undefined}
 			onReviewRequiredClick={onGuideOpen}
 			onClosePullRequestClick={() => undefined}
 			scrollContainerRef={scrollContainerRef}
-			className="rounded-xl border p-4"
+			className={tabNavigation
+				? "rounded-xl border"
+				: "rounded-xl border p-4"}
 			data-jira-work-item-pull-request-detail-header
 			style={{ borderRadius: 12 }}
 		/>
