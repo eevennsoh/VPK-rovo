@@ -6,6 +6,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CodeList } from "@/components/ui-custom/code-list";
 import { cn } from "@/lib/utils";
 
+import {
+	CHAPTER_SCROLL_GAP_PX,
+	CHAPTER_SCROLL_LOCK_MS,
+	buildChapterJumpTarget,
+	getChapterContentTop,
+	resolveActiveChapterId,
+	shouldApplyScrollSpyUpdate,
+} from "../../lib/pull-request-guide-active-chapter";
 import type { PullRequestGuidedReview } from "../../lib/pull-request-detail-data";
 
 interface PullRequestGuideProps {
@@ -16,28 +24,6 @@ interface PullRequestGuideProps {
 }
 
 type MetricBarPolarity = "higherIsBetter" | "lowerIsBetter";
-
-const CHAPTER_SCROLL_GAP_PX = 24;
-
-function buildChapterJumpTarget(
-	scrollContainer: HTMLElement,
-	chapterElement: HTMLElement,
-): number {
-	const scrollContainerRect = scrollContainer.getBoundingClientRect();
-	const chapterRect = chapterElement.getBoundingClientRect();
-	const stickyHeaderBottom = scrollContainer
-		.querySelector<HTMLElement>("[data-jira-work-item-pull-request-detail-header]")
-		?.getBoundingClientRect().bottom ?? scrollContainerRect.top;
-	const targetTop =
-		scrollContainer.scrollTop +
-		(chapterRect.top - stickyHeaderBottom) -
-		CHAPTER_SCROLL_GAP_PX;
-
-	return Math.max(
-		0,
-		Math.min(targetTop, scrollContainer.scrollHeight - scrollContainer.clientHeight),
-	);
-}
 
 /**
  * Filled segment color: chart semantic defaults (danger / warning / success).
@@ -65,6 +51,12 @@ export function PullRequestGuide({
 	const shouldReduceMotion = Boolean(useReducedMotion());
 	const [activeChapterId, setActiveChapterId] = useState<string | null>(review.chapters[0]?.id ?? null);
 	const chapterRefs = useRef<Record<string, HTMLElement | null>>({});
+	const lockedChapterIdRef = useRef<string | null>(null);
+	const unlockTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const chapterIds = useMemo(
+		() => review.chapters.map((item) => item.id),
+		[review.chapters],
+	);
 	const timelineItems = useMemo(
 		() => review.chapters.map((item, index) => ({
 			id: item.id,
@@ -76,33 +68,49 @@ export function PullRequestGuide({
 
 	useEffect(() => {
 		const scrollContainer = scrollContainerRef.current;
-		const stickyHeaderHeight = scrollContainer
-			?.querySelector<HTMLElement>("[data-jira-work-item-pull-request-detail-header]")
-			?.getBoundingClientRect().height ?? 0;
-		// Scroll spy only updates the active chapter highlight — never reviewed state.
-		const observer = new IntersectionObserver(
-			(entries) => {
-				const visibleEntry = entries
-					.filter((entry) => entry.isIntersecting)
-					.sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0];
-				if (!visibleEntry) return;
-				const chapterId = visibleEntry.target.getAttribute("data-chapter-id");
-				if (!chapterId) return;
-				setActiveChapterId(chapterId);
-			},
-			{
-				root: scrollContainer,
-				rootMargin: `-${stickyHeaderHeight + CHAPTER_SCROLL_GAP_PX}px 0px -20%`,
-				threshold: [0.25, 0.4, 0.6],
-			},
-		);
+		if (!scrollContainer) return;
 
-		for (const section of Object.values(chapterRefs.current)) {
-			if (section) observer.observe(section);
+		const syncActiveChapterFromScroll = () => {
+			if (!shouldApplyScrollSpyUpdate(lockedChapterIdRef.current)) return;
+
+			const stickyHeaderHeight = scrollContainer
+				.querySelector<HTMLElement>("[data-jira-work-item-pull-request-detail-header]")
+				?.getBoundingClientRect().height ?? 0;
+			const nextActiveId = resolveActiveChapterId({
+				activationOffset: stickyHeaderHeight + CHAPTER_SCROLL_GAP_PX,
+				chapterIds,
+				getChapterTop: (chapterId) => {
+					const chapterElement = chapterRefs.current[chapterId];
+					if (!chapterElement) return null;
+					return getChapterContentTop(scrollContainer, chapterElement);
+				},
+				maxScrollTop: Math.max(0, scrollContainer.scrollHeight - scrollContainer.clientHeight),
+				scrollTop: scrollContainer.scrollTop,
+			});
+			if (!nextActiveId) return;
+			setActiveChapterId((current) => (current === nextActiveId ? current : nextActiveId));
+		};
+
+		syncActiveChapterFromScroll();
+		// Tabs/content can mount before chapter boxes have distinct tops; retry once after layout.
+		const readyFrame = window.requestAnimationFrame(() => {
+			syncActiveChapterFromScroll();
+		});
+		scrollContainer.addEventListener("scroll", syncActiveChapterFromScroll, { passive: true });
+		window.addEventListener("resize", syncActiveChapterFromScroll);
+
+		return () => {
+			window.cancelAnimationFrame(readyFrame);
+			scrollContainer.removeEventListener("scroll", syncActiveChapterFromScroll);
+			window.removeEventListener("resize", syncActiveChapterFromScroll);
+		};
+	}, [chapterIds, scrollContainerRef]);
+
+	useEffect(() => () => {
+		if (unlockTimeoutRef.current != null) {
+			clearTimeout(unlockTimeoutRef.current);
 		}
-
-		return () => observer.disconnect();
-	}, [review.chapters, scrollContainerRef]);
+	}, []);
 
 	const chapter = review.chapters.find((item) => item.id === activeChapterId) ?? review.chapters[0];
 	if (!chapter) return null;
@@ -112,12 +120,57 @@ export function PullRequestGuide({
 	const selectChapter = (chapterId: string) => {
 		const chapterElement = chapterRefs.current[chapterId];
 		const scrollContainer = scrollContainerRef.current;
+		lockedChapterIdRef.current = chapterId;
+		if (unlockTimeoutRef.current != null) {
+			clearTimeout(unlockTimeoutRef.current);
+		}
 		setActiveChapterId(chapterId);
-		if (!chapterElement || !scrollContainer) return;
+		if (!chapterElement || !scrollContainer) {
+			lockedChapterIdRef.current = null;
+			return;
+		}
+
+		const unlockSpy = () => {
+			if (lockedChapterIdRef.current !== chapterId) return;
+			lockedChapterIdRef.current = null;
+			const stickyHeaderHeight = scrollContainer
+				.querySelector<HTMLElement>("[data-jira-work-item-pull-request-detail-header]")
+				?.getBoundingClientRect().height ?? 0;
+			const nextActiveId = resolveActiveChapterId({
+				activationOffset: stickyHeaderHeight + CHAPTER_SCROLL_GAP_PX,
+				chapterIds,
+				getChapterTop: (id) => {
+					const element = chapterRefs.current[id];
+					if (!element) return null;
+					return getChapterContentTop(scrollContainer, element);
+				},
+				maxScrollTop: Math.max(0, scrollContainer.scrollHeight - scrollContainer.clientHeight),
+				scrollTop: scrollContainer.scrollTop,
+			});
+			if (nextActiveId) {
+				setActiveChapterId(nextActiveId);
+			}
+		};
+
 		scrollContainer.scrollTo({
 			top: buildChapterJumpTarget(scrollContainer, chapterElement),
 			behavior: shouldReduceMotion ? "auto" : "smooth",
 		});
+
+		const onScrollEnd = () => {
+			scrollContainer.removeEventListener("scrollend", onScrollEnd);
+			if (unlockTimeoutRef.current != null) {
+				clearTimeout(unlockTimeoutRef.current);
+				unlockTimeoutRef.current = null;
+			}
+			unlockSpy();
+		};
+		scrollContainer.addEventListener("scrollend", onScrollEnd);
+		unlockTimeoutRef.current = setTimeout(() => {
+			scrollContainer.removeEventListener("scrollend", onScrollEnd);
+			unlockTimeoutRef.current = null;
+			unlockSpy();
+		}, shouldReduceMotion ? 0 : CHAPTER_SCROLL_LOCK_MS);
 	};
 
 	return (

@@ -375,15 +375,18 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.doesNotMatch(guideSource, /padStart\(2,\s*"0"\)/u);
 	assert.doesNotMatch(guideSource, /\{index \+ 1\}\/\{review\.chapters\.length\}/u);
-	assert.match(guideSource, /IntersectionObserver/u);
+	assert.match(guideSource, /resolveActiveChapterId/u);
+	assert.match(guideSource, /shouldApplyScrollSpyUpdate/u);
+	assert.match(guideSource, /lockedChapterIdRef/u);
+	assert.doesNotMatch(guideSource, /IntersectionObserver/u);
 	// Regression: scroll spy / chapter jump must not auto-mark Reviewed — checkbox only.
 	assert.match(
 		guideSource,
-		/new IntersectionObserver\(\s*\(entries\) => \{[\s\S]*?setActiveChapterId\(chapterId\);\s*\},/u,
+		/const syncActiveChapterFromScroll = \(\) => \{[\s\S]*?setActiveChapterId\(\(current\) => \(current === nextActiveId \? current : nextActiveId\)\);/u,
 	);
 	assert.match(
 		guideSource,
-		/const selectChapter = \(chapterId: string\) => \{[\s\S]*?setActiveChapterId\(chapterId\);[\s\S]*?scrollContainer\.scrollTo\(/u,
+		/const selectChapter = \(chapterId: string\) => \{[\s\S]*?lockedChapterIdRef\.current = chapterId;[\s\S]*?setActiveChapterId\(chapterId\);[\s\S]*?scrollContainer\.scrollTo\(/u,
 	);
 	const reviewedChangeCalls = [...guideSource.matchAll(/onChapterReviewedChange\(/gu)];
 	assert.equal(
@@ -402,7 +405,11 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		guideSource,
-		/function buildChapterJumpTarget[\s\S]*scrollContainer\.scrollTop[\s\S]*chapterRect\.top - stickyHeaderBottom[\s\S]*CHAPTER_SCROLL_GAP_PX[\s\S]*scrollContainer\.scrollHeight - scrollContainer\.clientHeight/u,
+		/from "\.\.\/\.\.\/lib\/pull-request-guide-active-chapter"/u,
+	);
+	assert.match(
+		guideSource,
+		/CHAPTER_SCROLL_LOCK_MS|scrollend/u,
 	);
 	assert.doesNotMatch(guideSource, /scrollIntoView/u);
 	assert.doesNotMatch(guideSource, /Back<\/Button>|Next<\/Button>|Finish<\/Button>/u);
