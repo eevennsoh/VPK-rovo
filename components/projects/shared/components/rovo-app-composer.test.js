@@ -10,6 +10,7 @@ const FLOATING_COMPOSER_SOURCE = fs.readFileSync(path.join(__dirname, "floating-
 const ROVO_COMPOSER_STYLES_SOURCE = fs.readFileSync(path.join(__dirname, "rovo-composer-styles.ts"), "utf8");
 const SEND_CONTROLS_SOURCE = fs.readFileSync(path.join(__dirname, "rovo-composer-send-controls.tsx"), "utf8");
 const PROMPT_INPUT_DEMO_SOURCE = fs.readFileSync(path.join(__dirname, "../../../website/demos/ui-custom/prompt-input-demo.tsx"), "utf8");
+const PROMPT_INPUT_DEMO_VOICE_SOURCE = fs.readFileSync(path.join(__dirname, "../../../website/demos/ui-custom/prompt-input-demo-voice.ts"), "utf8");
 const PROMPT_INPUT_VARIANTS_SOURCE = fs.readFileSync(path.join(__dirname, "../../../website/registry/ui-custom/variants-agent.ts"), "utf8");
 const PROMPT_INPUT_DETAILS_SOURCE = fs.readFileSync(path.join(process.cwd(), "app/data/details/ui-custom/prompt-input.ts"), "utf8");
 const LIVE_WAVEFORM_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-audio/live-waveform.tsx"), "utf8");
@@ -76,15 +77,24 @@ test("shared composer defaults live voice off while leaving dictation independen
 	assert.match(SEND_CONTROLS_SOURCE, /<PromptInputDictationControl/u);
 });
 
-test("Prompt Input demos expose the microphone plus text-send and live-chat matrix", () => {
+test("Prompt Input demos run dictation and live chat through the realtime voice hook", () => {
 	assert.match(
 		PROMPT_INPUT_DEMO_SOURCE,
-		/function useDemoDictationControls\(\)[\s\S]*dictationState[\s\S]*handleStartDictation[\s\S]*handleStopDictation/u,
+		/import \{ usePromptInputDemoVoice \} from "@\/components\/website\/demos\/ui-custom\/prompt-input-demo-voice";/u,
 	);
+	assert.match(PROMPT_INPUT_DEMO_VOICE_SOURCE, /export function usePromptInputDemoVoice\(/u);
+	assert.match(PROMPT_INPUT_DEMO_VOICE_SOURCE, /connect\(\{ transcriptionOnly: true \}\);/u);
+	assert.match(PROMPT_INPUT_DEMO_VOICE_SOURCE, /connect\(\);/u);
+	assert.match(PROMPT_INPUT_DEMO_VOICE_SOURCE, /disconnect\(\);/u);
+	assert.match(PROMPT_INPUT_DEMO_SOURCE, /aria-live="polite"/u);
+	assert.match(PROMPT_INPUT_DEMO_SOURCE, /realtimeVoiceState=\{voice\.realtimeVoiceState\}/u);
+	assert.match(PROMPT_INPUT_DEMO_SOURCE, /micStream=\{voice\.micStream\}/u);
+	assert.doesNotMatch(PROMPT_INPUT_DEMO_VOICE_SOURCE, /setDictationState\("processing"\)/u);
+
 	assert.match(PROMPT_INPUT_DEMO_SOURCE, /function ChatComposerDemo\(\{[\s\S]*liveVoiceEnabled = false/u);
 	assert.match(
 		PROMPT_INPUT_DEMO_SOURCE,
-		/<RovoComposerSendControls[\s\S]*dictationState=\{dictationState\}[\s\S]*liveVoiceEnabled=\{liveVoiceEnabled\}[\s\S]*onStartDictation=\{handleStartDictation\}[\s\S]*onStopDictation=\{handleStopDictation\}[\s\S]*showSubmitWhenEmpty=\{!liveVoiceEnabled\}/u,
+		/<RovoComposerSendControls[\s\S]*dictationState=\{voice\.dictationState\}[\s\S]*liveVoiceEnabled=\{liveVoiceEnabled\}[\s\S]*onStartDictation=\{voice\.handleStartDictation\}[\s\S]*onStopDictation=\{voice\.handleStopDictation\}[\s\S]*showSubmitWhenEmpty=\{!liveVoiceEnabled\}/u,
 	);
 	assert.match(
 		PROMPT_INPUT_DEMO_SOURCE,
@@ -92,14 +102,14 @@ test("Prompt Input demos expose the microphone plus text-send and live-chat matr
 	);
 	assert.match(
 		PROMPT_INPUT_DEMO_SOURCE,
-		/function FloatingBarDemo[\s\S]*<RovoComposerActionButton[\s\S]*dictationState=\{dictationState\}[\s\S]*liveVoiceEnabled[\s\S]*onStartDictation=\{handleStartDictation\}[\s\S]*onStopDictation=\{handleStopDictation\}/u,
+		/function FloatingBarDemo[\s\S]*<RovoComposerActionButton[\s\S]*dictationState=\{voice\.dictationState\}[\s\S]*liveVoiceEnabled[\s\S]*onStartDictation=\{voice\.handleStartDictation\}[\s\S]*onStopDictation=\{voice\.handleStopDictation\}/u,
 	);
 	const compactTextSendStart = PROMPT_INPUT_DEMO_SOURCE.indexOf("export function PromptInputDemoFloatingBarTextSend()");
 	assert.notEqual(compactTextSendStart, -1);
 	const compactTextSendSource = PROMPT_INPUT_DEMO_SOURCE.slice(compactTextSendStart);
 	assert.match(
 		compactTextSendSource,
-		/<RovoComposerActionButton[\s\S]*dictationState=\{dictationState\}[\s\S]*onStartDictation=\{handleStartDictation\}[\s\S]*onStopDictation=\{handleStopDictation\}[\s\S]*showSubmitWhenEmpty/u,
+		/<RovoComposerActionButton[\s\S]*dictationState=\{voice\.dictationState\}[\s\S]*micStream=\{voice\.micStream\}[\s\S]*onStartDictation=\{voice\.handleStartDictation\}[\s\S]*onStopDictation=\{voice\.handleStopDictation\}[\s\S]*showSubmitWhenEmpty/u,
 	);
 	assert.doesNotMatch(compactTextSendSource, /liveVoiceEnabled/u);
 	assert.match(

@@ -1202,7 +1202,7 @@ export default function ChatPanel({
 		isDictationActiveRef.current = true;
 		dispatchDictation({ type: "start" });
 		setComposerFocusRequestKey((currentKey) => currentKey + 1);
-		realtime.connect({ browserTranscriptionOnly: true });
+		realtime.connect({ transcriptionOnly: true });
 	}, [realtime]);
 
 	const startRealtimeVoice = useCallback(() => {

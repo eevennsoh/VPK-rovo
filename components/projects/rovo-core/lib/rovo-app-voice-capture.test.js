@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const { loadRovoCoreModule } = require("../test-utils/load-rovo-core-module.cjs");
 
 const {
+	hasCompletedRovoAppVoiceBrowserFallbackTurn,
 	hasCompletedRovoAppVoiceTurn,
 	isRovoAppVoiceCaptureAvailable,
 	normalizeRovoAppVoiceTranscript,
@@ -139,6 +140,23 @@ test("normalizes transcripts before comparing voice completions", () => {
 	assert.equal(
 		normalizeRovoAppVoiceTranscript("  ship   it\ttoday  "),
 		"ship it today",
+	);
+});
+
+test("delayed server transcripts stay assigned to the browser-completed voice turn", () => {
+	assert.equal(
+		hasCompletedRovoAppVoiceBrowserFallbackTurn({
+			activeTurnId: 8,
+			browserFallbackCompletedTurnId: 8,
+		}),
+		true,
+	);
+	assert.equal(
+		hasCompletedRovoAppVoiceBrowserFallbackTurn({
+			activeTurnId: 9,
+			browserFallbackCompletedTurnId: 8,
+		}),
+		false,
 	);
 });
 

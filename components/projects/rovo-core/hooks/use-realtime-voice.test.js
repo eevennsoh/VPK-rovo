@@ -77,7 +77,7 @@ test("realtime voice core owns session policy dispatch", () => {
 	);
 	assert.match(
 		CORE_HOOK_SOURCE,
-		/const connect = useCallback\(\(options\?: RealtimeVoiceConnectOptions\) => \{[\s\S]*resolveRovoRealtimeVoiceSessionPolicy\(\{[\s\S]*explicitResponseOnly: options\?\.explicitResponseOnly,[\s\S]*mode: sessionPolicyMode,[\s\S]*transcriptionOnly: browserTranscriptionOnly \|\| options\?\.transcriptionOnly,[\s\S]*\}\);/u,
+		/const connect = useCallback\(\(options\?: RealtimeVoiceConnectOptions\) => \{[\s\S]*resolveRovoRealtimeVoiceSessionPolicy\(\{[\s\S]*explicitResponseOnly: options\?\.explicitResponseOnly,[\s\S]*mode: sessionPolicyMode,[\s\S]*transcriptionOnly: options\?\.transcriptionOnly,[\s\S]*\}\);/u,
 	);
 	assert.match(
 		CORE_HOOK_SOURCE,
@@ -107,14 +107,11 @@ test("realtime voice protocol and playback helpers stay outside the hook", () =>
 	assert.match(PLAYBACK_SOURCE, /export function enqueueAudio/u);
 });
 
-test("dictation uses browser transcription without opening Realtime transport", () => {
+test("dictation opens the Realtime transport in transcription-only mode", () => {
+	assert.doesNotMatch(CORE_HOOK_SOURCE, /browserTranscriptionOnly/u);
 	assert.match(
 		CORE_HOOK_SOURCE,
-		/export interface RealtimeVoiceConnectOptions \{[\s\S]*browserTranscriptionOnly\?: boolean;[\s\S]*\}/u,
-	);
-	assert.match(
-		CORE_HOOK_SOURCE,
-		/const browserTranscriptionOnly = options\?\.browserTranscriptionOnly === true;[\s\S]*if \(browserTranscriptionOnly\) \{[\s\S]*setConnectionState\("connected"\);[\s\S]*setVoice\("listening"\);[\s\S]*startBrowserRecognition\(\);[\s\S]*return;[\s\S]*\}[\s\S]*connectWs\(\);/u,
+		/startBrowserRecognition\(\);[\s\S]*setConnectionState\("connecting"\);[\s\S]*connectWs\(\);/u,
 	);
 
 	for (const source of [
@@ -124,11 +121,26 @@ test("dictation uses browser transcription without opening Realtime transport", 
 	]) {
 		assert.match(
 			source,
-			/realtime\.connect\(\{ browserTranscriptionOnly: true \}\);/u,
+			/realtime\.connect\(\{ transcriptionOnly: true \}\);/u,
 		);
 		assert.doesNotMatch(
 			source,
-			/realtime\.connect\(\{ transcriptionOnly: true \}\);/u,
+			/realtime\.connect\(\{ browserTranscriptionOnly: true \}\);/u,
 		);
 	}
+});
+
+test("browser fallback completion absorbs delayed server transcript events for the same turn", () => {
+	assert.match(
+		CORE_HOOK_SOURCE,
+		/browserFallbackCompletedTurnIdRef\.current =[\s\S]*markActiveSpeechTurnCompleted\(transcript\);/u,
+	);
+	assert.match(
+		CORE_HOOK_SOURCE,
+		/case "transcription_delta":[\s\S]*if \(hasCompletedActiveSpeechTurnWithBrowserFallback\(\)\) \{[\s\S]*break;[\s\S]*\}[\s\S]*pendingTranscriptRef\.current \+= message\.delta;/u,
+	);
+	assert.match(
+		CORE_HOOK_SOURCE,
+		/case "transcription_completed":[\s\S]*const browserFallbackAlreadyCompleted =[\s\S]*hasCompletedActiveSpeechTurnWithBrowserFallback\(\);[\s\S]*!browserFallbackAlreadyCompleted &&[\s\S]*onSpeechTranscriptCompletedRef\.current/u,
+	);
 });
