@@ -53,6 +53,10 @@ export function PullRequestGuide({
 	const chapterRefs = useRef<Record<string, HTMLElement | null>>({});
 	const lockedChapterIdRef = useRef<string | null>(null);
 	const unlockTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const pendingScrollEndRef = useRef<{
+		container: HTMLElement;
+		handler: () => void;
+	} | null>(null);
 	const chapterIds = useMemo(
 		() => review.chapters.map((item) => item.id),
 		[review.chapters],
@@ -109,6 +113,12 @@ export function PullRequestGuide({
 	useEffect(() => () => {
 		if (unlockTimeoutRef.current != null) {
 			clearTimeout(unlockTimeoutRef.current);
+			unlockTimeoutRef.current = null;
+		}
+		const pendingScrollEnd = pendingScrollEndRef.current;
+		if (pendingScrollEnd) {
+			pendingScrollEnd.container.removeEventListener("scrollend", pendingScrollEnd.handler);
+			pendingScrollEndRef.current = null;
 		}
 	}, []);
 
@@ -123,6 +133,12 @@ export function PullRequestGuide({
 		lockedChapterIdRef.current = chapterId;
 		if (unlockTimeoutRef.current != null) {
 			clearTimeout(unlockTimeoutRef.current);
+			unlockTimeoutRef.current = null;
+		}
+		const previousScrollEnd = pendingScrollEndRef.current;
+		if (previousScrollEnd) {
+			previousScrollEnd.container.removeEventListener("scrollend", previousScrollEnd.handler);
+			pendingScrollEndRef.current = null;
 		}
 		setActiveChapterId(chapterId);
 		if (!chapterElement || !scrollContainer) {
@@ -159,6 +175,9 @@ export function PullRequestGuide({
 
 		const onScrollEnd = () => {
 			scrollContainer.removeEventListener("scrollend", onScrollEnd);
+			if (pendingScrollEndRef.current?.handler === onScrollEnd) {
+				pendingScrollEndRef.current = null;
+			}
 			if (unlockTimeoutRef.current != null) {
 				clearTimeout(unlockTimeoutRef.current);
 				unlockTimeoutRef.current = null;
@@ -166,8 +185,12 @@ export function PullRequestGuide({
 			unlockSpy();
 		};
 		scrollContainer.addEventListener("scrollend", onScrollEnd);
+		pendingScrollEndRef.current = { container: scrollContainer, handler: onScrollEnd };
 		unlockTimeoutRef.current = setTimeout(() => {
 			scrollContainer.removeEventListener("scrollend", onScrollEnd);
+			if (pendingScrollEndRef.current?.handler === onScrollEnd) {
+				pendingScrollEndRef.current = null;
+			}
 			unlockTimeoutRef.current = null;
 			unlockSpy();
 		}, shouldReduceMotion ? 0 : CHAPTER_SCROLL_LOCK_MS);
