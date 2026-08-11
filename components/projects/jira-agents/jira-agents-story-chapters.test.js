@@ -192,7 +192,7 @@ test("Claude leads one evolving A2A thread with checklist and design evidence", 
 	assert.equal(
 		fix.staticEvents.some((event) => event.id === "story-ci-repair"),
 		false,
-		"Fix starts at Review end — repair waits for the Fix click",
+		"Fix starts at Review end — repair waits for the Fix chip submit",
 	);
 	assert.equal(approveClaude.status, "waiting");
 	assert.deepEqual(approveClaude.waitingOn, { kind: "user" });

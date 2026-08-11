@@ -72,6 +72,10 @@ const V2_ONLY_FILES = new Set([
 	"components/context-popover-parts.tsx",
 	// Shared Activity → chat comment-pill state (Code Review composerInputContext path).
 	"context-activity-chat-comments.tsx",
+	// Failing CI checks → activity composer chip (Fix / Fix all staging).
+	"context-failing-checks-composer.tsx",
+	"lib/failing-checks-composer-context.ts",
+	"lib/failing-checks-composer-context.test.js",
 	// Shared TipTap description surface used by WI ContextEditableDescription
 	// and PullRequestOverview — v1 keeps its own inline RichTextEditor wiring.
 	"components/context-description-editor.tsx",
@@ -913,25 +917,36 @@ test("activity comments reuse the Code Review composer-pill path on the sticky a
 	assert.match(contextSource, /return \[\.\.\.current, comment\]/u);
 
 	assert.match(activityComposerSource, /CommentsComposerChip/u);
-	assert.match(activityComposerSource, /inputContext=\{activityCommentsInputContext\}/u);
-	assert.match(activityComposerSource, /inputContextSubmitText=\{ACTIVITY_COMMENTS_PROMPT\}/u);
+	assert.match(activityComposerSource, /FailingChecksComposerChip/u);
+	assert.match(activityComposerSource, /inputContext=\{composerInputContext\}/u);
+	assert.match(activityComposerSource, /inputContextSubmitText=\{composerInputContextSubmitText\}/u);
 	assert.match(activityComposerSource, /subtitle: "Comment"/u);
 	assert.doesNotMatch(activityComposerSource, /subtitle: comment\.timestamp/u);
 	assert.match(activityComposerSource, /testId="activity-comments-chip"/u);
 	assert.match(activityComposerSource, /Discuss these activity comments\./u);
 	assert.match(activityComposerSource, /serializeActivityCommentsContext\(meta\.workItem, activityChatComments\)/u);
+	assert.match(activityComposerSource, /serializeFailingChecksContext\(failingChecks\)/u);
 	assert.match(activityComposerSource, /focusRequestKey/u);
 	assert.match(activityComposerSource, /removeActivityChatComments\(\)/u);
+	assert.match(activityComposerSource, /removeFailingChecks\(\)/u);
+	assert.match(compositionSource, /FailingChecksComposerProvider/u);
+	assert.match(compositionSource, /handlePullRequestFixStage/u);
+	assert.match(compositionSource, /onFailingChecksSubmit/u);
 
 	assert.match(floatingComposerSource, /inputContext\?: ReactNode/u);
 	assert.match(floatingComposerSource, /<PromptInputHeader/u);
 	assert.doesNotMatch(sessionSurfaceSource, /CommentsComposerChip/u);
 	assert.doesNotMatch(sessionSurfaceSource, /composerInputContext=/u);
 	assert.match(sharedChipSource, /export function CommentsComposerChip/u);
+	assert.match(sharedChipSource, /ComposerContextChip/u);
 	// Inset separators match DropdownMenuSeparator (`dropdownStyles.separator`:
 	// `bg-border mx-1 my-1 h-px`) — not full-bleed `divide-y`.
-	assert.match(sharedChipSource, /dropdownStyles\.separator/u);
-	assert.doesNotMatch(sharedChipSource, /divide-y/u);
+	const composerContextChipSource = fs.readFileSync(
+		path.join(BLOCK_DIR, "../../ui-custom/composer-context-chip.tsx"),
+		"utf8",
+	);
+	assert.match(composerContextChipSource, /dropdownStyles\.separator/u);
+	assert.doesNotMatch(composerContextChipSource, /divide-y/u);
 });
 
 test("experimental v2 opens the agent and skill pickers with the editor-palette search bar", () => {

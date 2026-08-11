@@ -393,7 +393,7 @@ function createStorySessions(
 	// Review keeps Claude non-completed for the whole CI beat (including the
 	// failed settle) so the composer "agents working" context pill stays up
 	// while the PR is open — completing here made the pill vanish ~3s in.
-	// Fix starts at Review's failed settle (needs Fix click), then runs repair.
+	// Fix starts at Review's failed settle (needs Fix chip submit), then runs repair.
 	const claudeStatus: AgentSessionStatus = chapter === "release"
 		|| (chapter === "approve" && options.pullRequestApproved)
 		? "completed"

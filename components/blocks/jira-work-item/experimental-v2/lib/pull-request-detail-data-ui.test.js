@@ -746,7 +746,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	assert.match(checksValueSource, /function FailedCheckActions/u);
 	assert.match(
 		checksValueSource,
-		/data-jira-work-item-failed-check-actions[\s\S]*aria-label=\{`Fix \$\{check\.name\}`\}[\s\S]*event\.stopPropagation\(\)[\s\S]*onFix\?\.\(\)[\s\S]*Fix\s*<\/Button>/u,
+		/data-jira-work-item-failed-check-actions[\s\S]*aria-label=\{`Fix \$\{check\.name\}`\}[\s\S]*event\.stopPropagation\(\)[\s\S]*onFix\?\.\(check\)[\s\S]*Fix\s*<\/Button>/u,
 	);
 	assert.match(
 		checksValueSource,
@@ -754,11 +754,11 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		checksValueSource,
-		/isFailed \? \(\s*<FailedCheckActions check=\{check\} onFix=\{onFixCheck\} \/>/u,
+		/isFailed \? \(\s*<FailedCheckActions[\s\S]*onFix=\{\(failedCheck\) => onFixCheck\?\.\(\[failedCheck\]\)\}/u,
 	);
 	assert.match(
 		railSource,
-		/onFixCheck && failedChecks > 0[\s\S]*headerAction: \{[\s\S]*appearance: "label"[\s\S]*label: "Fix all"[\s\S]*onClick: onFixCheck[\s\S]*reveal: "open"/u,
+		/onFixCheck && failedChecks > 0[\s\S]*headerAction: \{[\s\S]*appearance: "label"[\s\S]*label: "Fix all"[\s\S]*onClick: \(\) => onFixCheck\(failedCheckItems\)[\s\S]*reveal: "open"/u,
 	);
 	assert.match(
 		checksValueSource,

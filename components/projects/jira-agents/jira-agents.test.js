@@ -270,11 +270,14 @@ test("Build chapter selection stages ready→implement→verify and reveals Clau
 	);
 });
 
-test("Review and Fix chapters auto-open PR #1847; Review stages CI and Fix waits for the Fix click", () => {
+test("Review and Fix chapters auto-open PR #1847; Review stages CI and Fix waits for composer chip submit", () => {
 	const pageSource = readProjectFile("components/projects/jira-agents/page.tsx");
 	const controllerSource = readProjectFile("components/projects/jira-agents/use-hotfix-story.ts");
 	const compositionSource = readProjectFile(
 		"components/blocks/jira-work-item/experimental-v2/experimental-v2-jira-work-item.tsx",
+	);
+	const activityComposerSource = readProjectFile(
+		"components/blocks/jira-work-item/experimental-v2/components/activity-composer.tsx",
 	);
 	const checksSource = readProjectFile(
 		"components/projects/jira-agents/data/story-pull-request-checks.ts",
@@ -291,6 +294,31 @@ test("Review and Fix chapters auto-open PR #1847; Review stages CI and Fix waits
 	assert.match(
 		compositionSource,
 		/autoOpenPullRequestIdentity[\s\S]*autoOpenedForStageRef[\s\S]*handlePullRequestSelect\(entry\)/u,
+	);
+	// Fix / Fix all stages a composer chip; story repair runs on chip submit.
+	assert.match(
+		compositionSource,
+		/handlePullRequestFixStage[\s\S]*stageChecks\(/u,
+	);
+	assert.match(
+		compositionSource,
+		/onFailingChecksSubmit=\{\s*onPullRequestFix \? handlePullRequestFixSubmit : undefined\s*\}/u,
+	);
+	assert.match(
+		compositionSource,
+		/onPullRequestFix=\{onPullRequestFix \? handlePullRequestFixStage : undefined\}/u,
+	);
+	assert.match(
+		activityComposerSource,
+		/FailingChecksComposerChip/u,
+	);
+	assert.match(
+		activityComposerSource,
+		/onFailingChecksSubmit\?\.\(\)/u,
+	);
+	assert.match(
+		activityComposerSource,
+		/FAILING_CHECKS_COMPOSER_PROMPT/u,
 	);
 	assert.match(
 		controllerSource,

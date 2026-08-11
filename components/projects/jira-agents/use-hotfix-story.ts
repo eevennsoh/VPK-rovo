@@ -60,7 +60,7 @@ const REVIEW_SEQUENCE = {
 	{ next: JiraAgentsReviewStep; delayMs: number }
 >;
 
-// Fix CI repair after the Fix click: rerunning → green.
+// Fix CI repair after the Fix chip submit: repairing → green.
 const FIX_SEQUENCE = {
 	repairing: { next: "complete", delayMs: 2_000 },
 } as const satisfies Record<
@@ -130,7 +130,7 @@ export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 			? { [JIRA_AGENTS_PULL_REQUEST_IDENTITY]: "available" }
 			: {});
 		setReviewStep("queued");
-		// Fix continues from Review's failed PR until the Fix click advances it.
+		// Fix continues from Review's failed PR until the Fix chip submit advances it.
 		setFixStep("failed");
 		setLaunchId((current) => current + 1);
 		setBoardColumns((current) => createJiraAgentsBoardColumns(nextChapter, current));
@@ -190,7 +190,8 @@ export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 	// Plan orchestration stops at "complete" — Build only starts when the user
 	// selects that chapter manually. Review CI keeps the same causal frames, but
 	// reduced motion jumps straight to the final failed checks. Fix waits for the
-	// Fix click, then stages rerunning → green (reduced motion jumps to green).
+	// Fix click / Fix all stages a composer chip; submit then stages
+	// repairing → green (reduced motion jumps to green).
 	useEffect(() => {
 		if (!active || orchestrationStep === "idle" || orchestrationStep === "complete") {
 			return undefined;
@@ -264,7 +265,7 @@ export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 			|| fixStep !== "failed"
 			|| identity !== JIRA_AGENTS_PULL_REQUEST_IDENTITY
 		) return;
-		// Reduced motion skips the rerunning beat and lands on green checks.
+		// Reduced motion skips the repairing beat and lands on green checks.
 		setFixStep(shouldReduceMotion ? "complete" : "repairing");
 		setLaunchId((current) => current + 1);
 	}, [chapter, fixStep, shouldReduceMotion]);
