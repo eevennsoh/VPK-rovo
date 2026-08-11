@@ -305,11 +305,15 @@ test("PullRequestHeader owns optional bottom-edge tab navigation", () => {
 	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/resolvedVariant === "compact"[\s\S]*\? "px-\[clamp\(5rem,20%,14rem\)\]"[\s\S]*: "px-\[clamp\(4rem,15\.625%,11rem\)\]"/u,
+		/resolvedVariant === "compact"[\s\S]*\? "px-\[clamp\(1rem,calc\(25%-4rem\),14rem\)\]"[\s\S]*: "px-\[clamp\(1rem,calc\(20%-4rem\),11rem\)\]"/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,
 		/transition-\[padding-left,padding-right\] duration-medium ease-in-out motion-reduce:transition-none/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/overflow-x-auto overscroll-x-contain/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,

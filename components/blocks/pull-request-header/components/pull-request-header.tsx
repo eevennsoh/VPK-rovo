@@ -677,10 +677,10 @@ export function PullRequestHeader({
 			{tabNavigation ? (
 				<motion.div
 					className={cn(
-						"relative z-10 mt-4 shrink-0 transition-[padding-left,padding-right] duration-medium ease-in-out motion-reduce:transition-none [&_[data-slot=tabs-list]]:border-b-0",
+						"relative z-10 mt-4 shrink-0 overflow-x-auto overscroll-x-contain transition-[padding-left,padding-right] duration-medium ease-in-out motion-reduce:transition-none [&_[data-slot=tabs-list]]:border-b-0",
 						resolvedVariant === "compact"
-							? "px-[clamp(5rem,20%,14rem)]"
-							: "px-[clamp(4rem,15.625%,11rem)]",
+							? "px-[clamp(1rem,calc(25%-4rem),14rem)]"
+							: "px-[clamp(1rem,calc(20%-4rem),11rem)]",
 					)}
 					layout={shouldReduceMotion ? false : "position"}
 					transition={{ layout: LAYOUT_TRANSITION }}
