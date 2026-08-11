@@ -33,6 +33,16 @@ export interface ArtifactPaneSectionItem {
 	headerAction?: Readonly<{
 		label: string;
 		onClick?: () => void;
+		/**
+		 * `icon` (default): settings gear revealed on header hover / keyboard focus.
+		 * `label`: compact text button using `label` as visible copy.
+		 */
+		appearance?: "icon" | "label";
+		/**
+		 * `hover` (default): reveal on header hover / keyboard focus-visible.
+		 * `open`: show only while the disclosure is expanded.
+		 */
+		reveal?: "hover" | "open";
 	}>;
 	id: string;
 	title: ReactNode;
@@ -100,6 +110,12 @@ export function ArtifactPanePropertyRow({
 	);
 }
 
+const HEADER_ACTION_HOVER_REVEAL_CLASSNAME =
+	"pointer-events-none opacity-0 transition-opacity duration-fast ease-out-practical group-hover/header:pointer-events-auto group-hover/header:opacity-100 group-has-[:focus-visible]/header:pointer-events-auto group-has-[:focus-visible]/header:opacity-100 motion-reduce:transition-none";
+
+const HEADER_ACTION_HOVER_SLOT_CLASSNAME =
+	"grid shrink-0 grid-cols-[0fr] transition-[grid-template-columns] duration-fast ease-out-practical group-hover/header:grid-cols-[1fr] group-has-[:focus-visible]/header:grid-cols-[1fr] motion-reduce:transition-none";
+
 function ArtifactPaneDisclosure({
 	content,
 	count,
@@ -109,14 +125,68 @@ function ArtifactPaneDisclosure({
 	title,
 }: Readonly<Omit<ArtifactPaneSectionItem, "defaultOpen" | "id"> & { onOpenChange: (open: boolean) => void; open: boolean }>) {
 	const prefersReducedMotion = useReducedMotion();
+	const showHeaderAction = Boolean(headerAction && (headerAction.reveal !== "open" || open));
+	const headerActionAlwaysVisible = headerAction?.reveal === "open";
+
+	const headerActionControl = showHeaderAction && headerAction
+		? headerAction.appearance === "label"
+			? (
+				<Button
+					aria-label={headerAction.label}
+					className={cn(
+						"shrink-0",
+						headerActionAlwaysVisible ? null : HEADER_ACTION_HOVER_REVEAL_CLASSNAME,
+					)}
+					onClick={(event) => {
+						event.preventDefault();
+						event.stopPropagation();
+						headerAction.onClick?.();
+					}}
+					size="compact"
+					type="button"
+					variant="outline"
+				>
+					{headerAction.label}
+				</Button>
+			)
+			: (
+				<TooltipProvider>
+					<Tooltip>
+						<TooltipTrigger
+							render={
+								<Button
+									aria-label={headerAction.label}
+									className={cn(
+										"shrink-0",
+										headerActionAlwaysVisible ? null : HEADER_ACTION_HOVER_REVEAL_CLASSNAME,
+									)}
+									onClick={(event) => {
+										event.preventDefault();
+										event.stopPropagation();
+										headerAction.onClick?.();
+									}}
+									size="icon-compact"
+									type="button"
+									variant="ghost"
+								/>
+							}
+						>
+							<SettingsIcon label="" size="small" />
+						</TooltipTrigger>
+						<TooltipContent positionerClassName="z-[502]">{headerAction.label}</TooltipContent>
+					</Tooltip>
+				</TooltipProvider>
+			)
+		: null;
 
 	return (
 		<Collapsible onOpenChange={onOpenChange} open={open}>
-			<div className="group/header relative flex w-full items-center">
+			{/* Title left; trailing action + chevron share the far-right cluster (no absolute). */}
+			<div className="group/header flex w-full items-center gap-2 px-3 py-3">
 				<CollapsibleTrigger
 					render={
 						<button
-							className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+							className="flex min-w-0 flex-1 items-center gap-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
 							type="button"
 						/>
 					}
@@ -128,10 +198,32 @@ function ArtifactPaneDisclosure({
 						{title}
 						{!open && count !== undefined ? <CollapsedSectionCount count={count} /> : null}
 					</span>
+				</CollapsibleTrigger>
+				{headerActionControl ? (
+					headerActionAlwaysVisible ? (
+						headerActionControl
+					) : (
+						<div className={HEADER_ACTION_HOVER_SLOT_CLASSNAME}>
+							<div className="min-w-0 overflow-hidden pr-0.5">
+								{headerActionControl}
+							</div>
+						</div>
+					)
+				) : null}
+				<CollapsibleTrigger
+					render={
+						<button
+							aria-hidden
+							className="shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+							tabIndex={-1}
+							type="button"
+						/>
+					}
+				>
 					<motion.span
 						animate={{ rotate: open ? 90 : 0 }}
 						aria-hidden
-						className="shrink-0 text-icon-subtle opacity-0 transition-opacity duration-fast ease-out-practical group-hover/header:opacity-100 group-has-[:focus-visible]/header:opacity-100 motion-reduce:transition-none"
+						className="block text-icon-subtle opacity-0 transition-opacity duration-fast ease-out-practical group-hover/header:opacity-100 group-has-[:focus-visible]/header:opacity-100 motion-reduce:transition-none"
 						initial={false}
 						style={{ willChange: "transform" }}
 						transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.15, ease: [0.4, 1, 0.6, 1] }}
@@ -139,27 +231,6 @@ function ArtifactPaneDisclosure({
 						<Icon render={<ChevronRightIcon label="" size="small" />} />
 					</motion.span>
 				</CollapsibleTrigger>
-				{headerAction ? (
-					<TooltipProvider>
-						<Tooltip>
-							<TooltipTrigger
-								render={
-									<Button
-										aria-label={headerAction.label}
-										className="pointer-events-none absolute top-1/2 right-8 -translate-y-1/2 opacity-0 transition-opacity duration-fast ease-out-practical group-hover/header:pointer-events-auto group-hover/header:opacity-100 group-has-[:focus-visible]/header:pointer-events-auto group-has-[:focus-visible]/header:opacity-100 motion-reduce:transition-none"
-										onClick={headerAction.onClick}
-										size="icon-compact"
-										type="button"
-										variant="ghost"
-									/>
-								}
-							>
-								<SettingsIcon label="" size="small" />
-							</TooltipTrigger>
-							<TooltipContent positionerClassName="z-[502]">{headerAction.label}</TooltipContent>
-						</Tooltip>
-					</TooltipProvider>
-				) : null}
 			</div>
 			<CollapsibleContent>
 				<div className="px-3 pb-3">{content}</div>

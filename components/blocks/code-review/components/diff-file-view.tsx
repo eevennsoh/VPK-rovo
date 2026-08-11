@@ -1,9 +1,18 @@
 "use client";
 
+import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
+import CopyIcon from "@atlaskit/icon/core/copy";
 import type { DiffLineAnnotation, SelectedLineRange } from "@pierre/diffs";
 import { MultiFileDiff } from "@pierre/diffs/react";
-import { useMemo, useReducer, useRef, type PointerEvent } from "react";
+import { useMemo, useReducer, useRef, useState, type PointerEvent } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import {
+	FileTree2FileIcon,
+	FileTree2IconSprite,
+} from "@/components/ui-custom/file-tree-2-file-icon";
 import { useTheme } from "@/components/utils/theme-wrapper";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +27,7 @@ import {
 	normalizeInlineCommentLineRange,
 	resolveInlineCommentLineText,
 } from "../lib/inline-comments";
+import { DiffStats } from "./diff-stats";
 import {
 	InlineCommentAnnotation,
 	InlineCommentGutterButton,
@@ -29,6 +39,7 @@ interface DiffFileViewProps {
 	layout: DiffLayout;
 	className?: string;
 	readOnly?: boolean;
+	showFileHeader?: boolean;
 	drafts: readonly InlineCommentDraft[];
 	comments: readonly InlineReviewComment[];
 	onAddDraft: (anchor: InlineCommentAnchor) => void;
@@ -49,15 +60,22 @@ const DIFF_UNSAFE_CSS = `
 }
 
 [data-column-number]:has([data-gutter-utility-slot]) [data-gutter-utility-slot] {
+	inset-inline: 0;
+	justify-content: center;
+	translate: 0.5ch 0;
 	z-index: 5;
 }
 `;
+
+const FILE_HEADER_ACTION_CLASS_NAME =
+	"pointer-events-none opacity-0 transition-opacity duration-xxshort ease-out-practical group-hover/file-header:pointer-events-auto group-hover/file-header:opacity-100 group-focus-within/file-header:pointer-events-auto group-focus-within/file-header:opacity-100 focus-visible:opacity-100 motion-reduce:transition-none";
 
 export function DiffFileView({
 	file,
 	layout,
 	className,
 	readOnly = false,
+	showFileHeader = false,
 	drafts,
 	comments,
 	onAddDraft,
@@ -68,6 +86,7 @@ export function DiffFileView({
 	onUpdateDraft,
 }: Readonly<DiffFileViewProps>) {
 	const { actualTheme } = useTheme();
+	const [isCollapsed, setIsCollapsed] = useState(false);
 	const [selectionRevision, resetSelection] = useReducer((revision: number) => revision + 1, 0);
 	const lastCommittedSelection = useRef<Readonly<{
 		fileId: string;
@@ -181,6 +200,65 @@ export function DiffFileView({
 		selectionStartedFromGutter.current = false;
 		resetSelection();
 	};
+	const handleCopyPath = () => {
+		void navigator.clipboard?.writeText(file.path).catch(() => undefined);
+	};
+	const renderFileHeader = () => (
+		<div className="relative w-full min-w-0 bg-surface-sunken">
+			<FileTree2IconSprite />
+			<div
+				className={cn(
+					"group/file-header flex min-h-9 min-w-0 items-center gap-1 pl-1.5 pr-4 text-xs text-text",
+					// Collapsed rows rely on the parent stack's divide-y; keeping
+					// border-b here would stack into a double separator.
+					!isCollapsed ? "border-b border-border" : null,
+				)}
+				data-code-review-file-header={file.id}
+			>
+				<Button
+					aria-expanded={!isCollapsed}
+					aria-label={isCollapsed ? `Expand ${file.path}` : `Collapse ${file.path}`}
+					className="size-6 rounded-sm p-0 aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:text-text-subtle aria-expanded:hover:bg-bg-neutral-subtle-hovered aria-expanded:active:bg-bg-neutral-subtle-pressed"
+					onClick={() => setIsCollapsed((collapsed) => !collapsed)}
+					size="icon-compact"
+					variant="ghost"
+				>
+					<span className="relative inline-flex size-4 items-center justify-center">
+						<span className="absolute inset-0 inline-flex items-center justify-center group-hover/file-header:opacity-0 group-focus-within/file-header:opacity-0">
+							<FileTree2FileIcon path={file.path} />
+						</span>
+						<span className="absolute inset-0 inline-flex items-center justify-center opacity-0 group-hover/file-header:opacity-100 group-focus-within/file-header:opacity-100">
+							<Icon
+								aria-hidden
+								render={isCollapsed
+									? <ChevronRightIcon label="" size="small" />
+									: <ChevronDownIcon label="" size="small" />}
+							/>
+						</span>
+					</span>
+				</Button>
+				<div className="flex min-w-0 flex-1 items-center gap-1">
+					<span className="min-w-0 truncate" title={file.path}>{file.path}</span>
+					<Button
+						aria-label={`Copy path ${file.path}`}
+						className={cn("shrink-0", FILE_HEADER_ACTION_CLASS_NAME)}
+						onClick={handleCopyPath}
+						size="icon-compact"
+						title="Copy file path"
+						variant="ghost"
+					>
+						<Icon aria-hidden render={<CopyIcon label="" size="small" />} />
+					</Button>
+				</div>
+				<DiffStats additions={file.additions} deletions={file.deletions} />
+			</div>
+			{file.hunkHeader && !isCollapsed ? (
+				<div className="flex min-h-7 items-center border-b border-border px-3 font-mono text-xs text-text-subtle">
+					{file.hunkHeader}
+				</div>
+			) : null}
+		</div>
+	);
 
 	return (
 		<div className={cn("min-w-0", className)} onPointerCancelCapture={handlePointerCancel}>
@@ -188,7 +266,7 @@ export function DiffFileView({
 				key={`${file.id}:${layout}:${selectionRevision}`}
 				// disableFileHeader breaks light-mode rendering entirely (rows never mount);
 				// a null custom header removes the built-in header without that code path.
-				renderCustomHeader={() => null}
+				renderCustomHeader={showFileHeader ? renderFileHeader : () => null}
 				oldFile={{
 					name: file.path,
 					contents: file.oldContents,
@@ -201,6 +279,7 @@ export function DiffFileView({
 				}}
 				lineAnnotations={readOnly ? [] : lineAnnotations}
 				options={{
+					collapsed: showFileHeader && isCollapsed,
 					collapsedContextThreshold: 6,
 					diffStyle: layout,
 					enableGutterUtility: !readOnly,

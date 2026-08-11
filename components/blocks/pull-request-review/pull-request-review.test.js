@@ -56,14 +56,29 @@ test("PullRequestReview exposes the review composer props contract", () => {
 	);
 	assert.match(TYPES_SOURCE, /variant\?: PullRequestReviewVariant/u);
 	assert.match(TYPES_SOURCE, /defaultVariant\?: PullRequestReviewVariant/u);
+	assert.match(TYPES_SOURCE, /autoFocus\?: boolean/u);
 	assert.match(TYPES_SOURCE, /expandOnFocus\?: boolean/u);
 	assert.match(TYPES_SOURCE, /reviewedCount\?: number/u);
 	assert.match(TYPES_SOURCE, /reviewedTotal\?: number/u);
+	assert.match(TYPES_SOURCE, /commentCount\?: number/u);
+	assert.match(TYPES_SOURCE, /submitDisabled\?: boolean/u);
 	assert.match(
 		TYPES_SOURCE,
-		/onSubmit\?: \(submission: PullRequestReviewSubmission\) => void/u,
+		/onSubmit\?: \(submission: PullRequestReviewSubmission\) => boolean \| void/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/const accepted = onSubmit\?\.\(\{ body: value\.trim\(\), verdict: activeVerdict \}\);[\s\S]*if \(accepted === false\) return;[\s\S]*updateValue\(""\)/u,
 	);
 	assert.match(TYPES_SOURCE, /export interface PullRequestReviewSubmission \{[\s\S]*body: string;[\s\S]*verdict: PullRequestReviewVerdict;/u);
+});
+
+test("the review editor can take focus when a host opens the expanded surface", () => {
+	assert.match(COMPONENT_SOURCE, /autoFocus = false/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/<PromptInputTextarea[\s\S]*autoFocus=\{autoFocus\}/u,
+	);
 });
 
 test("compact and expanded render one composer subtree so the draft survives the transform", () => {
@@ -103,14 +118,31 @@ test("expanded pins the stacked FloatingComposer layout", () => {
 	assert.match(FLOATING_COMPOSER_SOURCE, /data-slot="floating-composer-row"/u);
 });
 
-test("submit gating matches SCM verdict semantics", () => {
-	// Approve / Request changes are themselves the review signal, so an empty
-	// body must stay submittable; only a bare Comment is blocked.
+test("submit enables when the editor has non-empty content", () => {
+	// Every verdict needs a trimmed body. Host `submitDisabled` is only a hard
+	// block — chapter progress must not keep Send off while the reviewer types.
 	assert.match(
 		COMPONENT_SOURCE,
-		/return verdict === "comment" \? body\.trim\(\)\.length > 0 : true;/u,
+		/function canSubmitReview\(body: string\): boolean \{\s*return body\.trim\(\)\.length > 0;\s*\}/u,
 	);
-	assert.match(COMPONENT_SOURCE, /<PromptInputSubmit disabled=\{!canSubmit\}/u);
+	assert.match(COMPONENT_SOURCE, /submitDisabled = false/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/const canSubmit = !submitDisabled && canSubmitReview\(value\);/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/<PromptInputSubmit[\s\S]*className=\{cn\("hover:opacity-90 active:opacity-80", EXPERIMENTAL_DARK_CTA_CLASS_NAME\)\}[\s\S]*disabled=\{!canSubmit\}/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/EXPERIMENTAL_DARK_CTA_CLASS_NAME =\s*"bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"/u,
+	);
+	assert.doesNotMatch(
+		COMPONENT_SOURCE,
+		/canSubmitReview\(value, activeVerdict\)/u,
+		"verdict must not gate Send — only content (and hard submitDisabled) does",
+	);
 });
 
 test("the verdict control is a radiogroup, not a tablist", () => {
@@ -183,6 +215,22 @@ test("the reviewed badge only renders when both counts are supplied", () => {
 	assert.doesNotMatch(COMPONENT_SOURCE, /hasReviewedProgress &&/u);
 });
 
+test("the comment badge pluralizes and hides at zero", () => {
+	assert.match(
+		COMPONENT_SOURCE,
+		/const hasCommentCount = commentCount !== undefined && commentCount > 0;/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/`\$\{commentCount\} \$\{commentCount === 1 \? "Comment" : "Comments"\}`/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/hasCommentCount \? \(\s*<Badge variant="neutral">\{commentBadgeLabel\}<\/Badge>\s*\) : null/u,
+	);
+	assert.doesNotMatch(COMPONENT_SOURCE, /hasCommentCount &&/u);
+});
+
 test("focus expansion yields to a controlled variant", () => {
 	assert.match(
 		COMPONENT_SOURCE,
@@ -209,16 +257,18 @@ test("compact can never submit a verdict the user cannot see", () => {
 	// The verdict control renders only when expanded. Resetting inside close()
 	// alone is not enough: a host flipping the controlled `variant` (as the demo
 	// page's Expanded/Compact toggle does) never calls close(), so a stale
-	// `approve` / `request-changes` would keep Send enabled on an empty draft and
-	// submit a hidden approval. Derive it at render so every collapse path is
-	// covered. Regression for PR #1324 review (P1).
+	// `approve` / `request-changes` would still reach the payload. Derive the
+	// effective verdict at render so every collapse path is covered.
 	assert.match(
 		COMPONENT_SOURCE,
 		/const activeVerdict: PullRequestReviewVerdict = isExpanded\s*\? verdict\s*: "comment";/u,
 		"the effective verdict must be derived from `isExpanded`, not just reset on dismiss",
 	);
-	// Both the gate and the payload must read the derived value, not the raw one.
-	assert.match(COMPONENT_SOURCE, /const canSubmit = canSubmitReview\(value, activeVerdict\);/u);
+	// Gate on content; payload must still read the derived verdict, not the raw one.
+	assert.match(
+		COMPONENT_SOURCE,
+		/const canSubmit = !submitDisabled && canSubmitReview\(value\);/u,
+	);
 	assert.match(
 		COMPONENT_SOURCE,
 		/onSubmit\?\.\(\{ body: value\.trim\(\), verdict: activeVerdict \}\)/u,

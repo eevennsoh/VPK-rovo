@@ -25,6 +25,17 @@ export interface ChangedFile {
 	inExplorer?: boolean;
 }
 
+/** Slim commit row for the changes-picker Commits submenu (matches PR rail shape). */
+export interface CodeReviewCommit {
+	id: string;
+	shortSha: string;
+	title: string;
+	additions: number;
+	deletions: number;
+	/** When set, selecting this commit filters the editor to these file ids. */
+	fileIds?: readonly string[];
+}
+
 export interface ExplorerNode {
 	id: string;
 	name: string;

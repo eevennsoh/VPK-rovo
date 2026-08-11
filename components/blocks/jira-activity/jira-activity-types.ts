@@ -36,7 +36,11 @@ export type JiraActivityEventIcon =
 	| "in-progress"
 	| "linked"
 	| "description"
-	| "teamwork-graph";
+	| "teamwork-graph"
+	| "commit"
+	| "pull-request"
+	/** Connected-app event glyph (e.g. GitHub checks / ready-to-merge). */
+	| "app";
 
 /**
  * A rich inline text run. Shared by event action lines and comment bodies so
@@ -50,7 +54,10 @@ export type JiraActivitySegment =
 	| { type: "user-mention"; text: string; avatarSrc?: string }
 	/** Hexagon agent mention chip for agents (e.g. Claude Code, Rovo). */
 	| { type: "agent-mention"; text: string; avatarSrc?: string; brandName?: ThirdPartyLogoName }
-	/** Square app mention chip for connected apps (e.g. GitHub). */
+	/**
+	 * Product mention chip for connected apps (e.g. GitHub). Renders a
+	 * `BrandLogoMark` product tag — not a hexagon agent avatar.
+	 */
 	| { type: "app-mention"; text: string; brandName?: ThirdPartyLogoName }
 	| {
 			type: "lozenge";
@@ -197,6 +204,16 @@ export interface JiraActivityCommentEntry extends JiraActivityEntryBase {
 	reactions?: readonly JiraActivityReaction[];
 	/** Render the reply composer under this comment. Defaults to `true`. */
 	allowReply?: boolean;
+	/**
+	 * PR review-thread resolve state. Only meaningful when `allowResolve` is true.
+	 * Resolved threads keep Reply but read as settled (muted body + Unresolve).
+	 */
+	resolved?: boolean;
+	/**
+	 * Show Resolve / Unresolve (SCM review discussion threads). Defaults to
+	 * `false` so Jira work-item comments stay reply/reaction-only.
+	 */
+	allowResolve?: boolean;
 	/** Optional Agent List summary for the expanded activity-card header. */
 	sessionItem?: AgentListItem;
 }

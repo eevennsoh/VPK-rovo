@@ -5,6 +5,7 @@ import type { RefObject } from "react";
 
 import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
+import type { InlineReviewComment } from "@/components/blocks/code-review/lib/inline-comments";
 import { ContextEditableDescription } from "@/components/blocks/jira-work-item/experimental-v2/components/context-editable-header";
 import { AiPlannerPanel, AiPlannerScope } from "@/components/blocks/jira-work-item/experimental-v2/components/ai-planner-panel";
 import { ContextResources } from "@/components/blocks/jira-work-item/experimental-v2/components/context-resources";
@@ -72,7 +73,9 @@ export function ContextHeader({
 export function ContextPanel({
 	descriptionViewMode,
 	onPullRequestChapterReviewedChange,
+	onPullRequestInlineCommentsChange,
 	pullRequestApprovalState,
+	pullRequestInlineComments,
 	pullRequestReviewedChapterIds,
 	scrollContainerRef,
 	selectedPullRequestEntry,
@@ -80,7 +83,12 @@ export function ContextPanel({
 }: Readonly<{
 	descriptionViewMode: EditorToolbarViewMode;
 	onPullRequestChapterReviewedChange?: (identity: string, chapterId: string, reviewed: boolean) => void;
+	onPullRequestInlineCommentsChange?: (
+		identity: string,
+		comments: readonly InlineReviewComment[],
+	) => void;
 	pullRequestApprovalState?: "available" | "approved";
+	pullRequestInlineComments?: readonly InlineReviewComment[];
 	pullRequestReviewedChapterIds?: ReadonlySet<string>;
 	scrollContainerRef: RefObject<HTMLElement | null>;
 	selectedPullRequestEntry: JiraActivityEventEntry | null;
@@ -96,8 +104,10 @@ export function ContextPanel({
 				<PullRequestDetailView
 					approvalState={pullRequestApprovalState}
 					entry={selectedPullRequestEntry}
+					initialInlineComments={pullRequestInlineComments}
 					key={selectedPullRequestKey}
 					onChapterReviewedChange={onPullRequestChapterReviewedChange}
+					onInlineCommentsChange={onPullRequestInlineCommentsChange}
 					reviewedChapterIds={pullRequestReviewedChapterIds}
 					scrollContainerRef={scrollContainerRef}
 				/>

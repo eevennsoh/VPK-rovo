@@ -114,7 +114,7 @@ import type { PullRequestReviewProps } from "@/components/blocks/pull-request-re
 			name: "onSubmit",
 			type: "(submission: { body: string; verdict: PullRequestReviewVerdict }) => void",
 			description:
-				"Called with the trimmed body and the active verdict. Send stays disabled for an empty `comment`; `approve` and `request-changes` submit with an empty body. The verdict applies only while expanded — a compact composer shows no verdict control, so it always submits `comment` rather than a selection the reviewer can no longer see.",
+				"Called with the trimmed body and the active verdict. Send stays disabled while the body is empty for every verdict. The verdict applies only while expanded — a compact composer shows no verdict control, so it always submits `comment` rather than a selection the reviewer can no longer see.",
 		},
 		{
 			name: "onClose",

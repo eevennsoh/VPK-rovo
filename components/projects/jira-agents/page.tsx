@@ -12,10 +12,12 @@ import type { WorkItemAutomationRule } from "@/components/blocks/jira-work-item/
 import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys/data/agent-chat-data";
 import { JIRA_AGENTS_GALLERY_ITEMS } from "./data/gallery-items";
 import {
+	JIRA_AGENTS_PULL_REQUEST_IDENTITY,
 	JIRA_AGENTS_STATUS_PHASES,
 	JIRA_AGENTS_STORY_COMPOSER_AGENTS,
 	shouldStartJiraAgentsPlan,
 } from "./data/hotfix-story";
+import { JiraAgentsComposerPrivacyToggle } from "./composer-privacy-toggle";
 import { JiraAgentsStoryControls } from "./story-controls";
 import { useJiraAgentsStory, type JiraAgentsStoryController } from "./use-hotfix-story";
 
@@ -142,9 +144,15 @@ function JiraAgentsWorkItemStage({
 					// Code Planner consultation reply expanded by default.
 					...(chapter === "build" ? { defaultRepliesExpanded: false } : {}),
 				}}
+				autoOpenPullRequestIdentity={
+					controller.chapter === "review" || controller.chapter === "fix"
+						? JIRA_AGENTS_PULL_REQUEST_IDENTITY
+						: null
+				}
 				automationRules={JIRA_AGENTS_AUTOMATION_RULES}
 				composerAgents={JIRA_AGENTS_STORY_COMPOSER_AGENTS}
 				composerDelivery="broadcast-active-agents"
+				composerToolsAfterAdd={<JiraAgentsComposerPrivacyToggle />}
 				initialPreset={controller.initialState.preset}
 				initialState={controller.initialState}
 				initialStateRevision={controller.launchId}
@@ -152,6 +160,11 @@ function JiraAgentsWorkItemStage({
 				onAgentPromptSubmit={handleAgentPromptSubmit}
 				onOpenAgentChat={handleOpenAgentChat}
 				onPullRequestApprove={controller.approvePullRequest}
+				onPullRequestFix={
+					controller.chapter === "fix" && controller.fixStep === "failed"
+						? controller.fixPullRequestCheck
+						: undefined
+				}
 				onSessionReply={handleSessionReply}
 				onSkillInvoke={handleSkillInvoke}
 				presentation="inline"

@@ -8,6 +8,7 @@ import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { AgentSession } from "@/components/blocks/jira-work-item/data/session-state";
 import { ActivityComposerAgentContextPill } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer-agent-context-pill";
 import { ActivityComposerSkillContextPill } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer-skill-context-pill";
+import { Badge } from "@/components/ui/badge";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AnimatedDots } from "@/components/ui-custom/animated-dots";
 import { ContextBarPill } from "@/components/ui-custom/context-bar";
@@ -18,6 +19,7 @@ import {
 	RichTextSuggestionMenu,
 	type RichTextSuggestionMenuItem,
 } from "@/components/ui-custom/rich-text-editor";
+
 
 const NEEDS_INPUT_STATUS_LABEL = "Needs input";
 
@@ -64,7 +66,11 @@ const WORKING_SESSION_ACTIVITY_SCRIPTS: Readonly<Record<string, readonly string[
 
 export interface ActivityComposerPrimaryAction {
 	ariaLabel: string;
+	/** Compact progress counter after the label (e.g. "2/3"). */
+	badge?: string;
 	disabled?: boolean;
+	/** Leading icon matching Assign agents / Use skills pills. */
+	icon?: ReactNode;
 	label: string;
 	onClick: () => void;
 }
@@ -313,9 +319,20 @@ export function ActivityComposerContextPills({
 								aria-label={primaryAction.ariaLabel}
 								className="motion-reduce:transition-none"
 								disabled={primaryAction.disabled}
+								icon={primaryAction.icon}
 								onClick={primaryAction.onClick}
 							>
 								{primaryAction.label}
+								{primaryAction.badge ? (
+									<Badge
+										aria-hidden
+										className="tabular-nums"
+										max={false}
+										variant="neutral"
+									>
+										{primaryAction.badge}
+									</Badge>
+								) : null}
 							</ContextBarPill>
 						</RevealingPill>
 					) : null}

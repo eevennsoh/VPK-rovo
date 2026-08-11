@@ -15,7 +15,21 @@ export type JiraAgentsStoryChapter =
 	| "approve"
 	| "release";
 
-export type JiraAgentsReviewStep = "queued" | "running" | "failed";
+/**
+ * Review CI reveal: start → widen → unit green → browser green → lint failure.
+ * Reduced motion jumps straight to `failed`.
+ */
+export type JiraAgentsReviewStep =
+	| "queued"
+	| "running"
+	| "unit-passed"
+	| "settling"
+	| "failed";
+/**
+ * Fix continues from Review's failed PR: await Fix chip submit → repair → green.
+ * Defaults to `failed` (same created-PR screen as Review end).
+ */
+export type JiraAgentsFixStep = "failed" | "repairing" | "complete";
 /**
  * Staged Build reveal from Plan end:
  * ready (orient) → implement+PR → verify+screenshot → former Handoff end state.
@@ -33,6 +47,8 @@ export interface JiraAgentsStoryStateOptions {
 	descriptionImproved?: boolean;
 	pullRequestApproved?: boolean;
 	reviewStep?: JiraAgentsReviewStep;
+	/** Fix-only progression after Review failure. Defaults to `failed`. */
+	fixStep?: JiraAgentsFixStep;
 	/** Build-only staged progression. Defaults to `complete` (former Handoff end). */
 	buildStep?: JiraAgentsBuildStep;
 }

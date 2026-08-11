@@ -1,12 +1,6 @@
 "use client";
 
 import {
-	createFileTreeIconResolver,
-	getBuiltInSpriteSheet,
-	type FileTreeBuiltInIconSet,
-	type FileTreeIcons,
-} from "@pierre/trees";
-import {
 	useEffect,
 	useMemo,
 	useRef,
@@ -22,7 +16,11 @@ import {
 	ChevronRightIcon,
 	SearchIcon,
 } from "@/components/ui/vpk-icons";
-import { cn } from "@/lib/utils";
+import {
+	FileTree2FileIcon,
+	FileTree2IconSprite,
+	type FileTree2Icons,
+} from "@/components/ui-custom/file-tree-2-file-icon";
 import {
 	createFileTree2Model,
 	getFileTree2MovePath,
@@ -31,8 +29,9 @@ import {
 	type FileTree2ItemType,
 	type FileTree2SearchMode,
 } from "@/components/ui-custom/file-tree-2-model";
+import { cn } from "@/lib/utils";
 
-export type FileTree2Icons = FileTreeIcons;
+export type { FileTree2Icons };
 
 export type FileTree2GitStatus = "added" | "deleted" | "ignored" | "modified" | "renamed" | "untracked";
 
@@ -68,6 +67,8 @@ export interface FileTree2Props extends Omit<HTMLAttributes<HTMLDivElement>, "on
 	searchable?: boolean;
 	searchMode?: FileTree2SearchMode;
 	searchPlaceholder?: string;
+	/** Controlled filter query. When set, drives filtering even if `searchable` is false. */
+	searchQuery?: string;
 	selectedPath?: string;
 }
 
@@ -81,77 +82,6 @@ const statusStyles: Record<Exclude<FileTree2GitStatus, "ignored">, { className: 
 
 const FILE_TREE_2_DRAG_MIME_TYPE = "application/x-file-tree-2-path";
 const FILE_TREE_2_ROOT_DROP_TARGET = "__file-tree-2-root__";
-
-const iconColorStyles: Record<string, string> = {
-	astro: "text-icon-accent-purple",
-	babel: "text-icon-accent-yellow",
-	bash: "text-icon-accent-green",
-	biome: "text-icon-accent-blue",
-	bootstrap: "text-icon-accent-purple",
-	browserslist: "text-icon-accent-yellow",
-	bun: "text-icon-accent-gray",
-	c: "text-icon-accent-blue",
-	claude: "text-icon-accent-orange",
-	cpp: "text-icon-accent-blue",
-	css: "text-icon-accent-purple",
-	database: "text-icon-accent-purple",
-	default: "text-icon-accent-gray",
-	docker: "text-icon-accent-blue",
-	eslint: "text-icon-accent-purple",
-	font: "text-icon-accent-gray",
-	git: "text-icon-accent-orange",
-	go: "text-icon-accent-teal",
-	graphql: "text-icon-accent-magenta",
-	html: "text-icon-accent-orange",
-	image: "text-icon-accent-magenta",
-	javascript: "text-icon-accent-yellow",
-	json: "text-icon-accent-orange",
-	markdown: "text-icon-accent-green",
-	mcp: "text-icon-accent-teal",
-	nextjs: "text-icon-accent-gray",
-	npm: "text-icon-accent-red",
-	oxc: "text-icon-accent-teal",
-	postcss: "text-icon-accent-red",
-	prettier: "text-icon-accent-teal",
-	python: "text-icon-accent-blue",
-	react: "text-icon-accent-teal",
-	ruby: "text-icon-accent-red",
-	rust: "text-icon-accent-orange",
-	sass: "text-icon-accent-magenta",
-	stylelint: "text-icon-accent-gray",
-	svelte: "text-icon-accent-red",
-	svg: "text-icon-accent-orange",
-	svgo: "text-icon-accent-green",
-	swift: "text-icon-accent-orange",
-	table: "text-icon-accent-teal",
-	tailwind: "text-icon-accent-teal",
-	terraform: "text-icon-accent-purple",
-	text: "text-icon-accent-gray",
-	typescript: "text-icon-accent-blue",
-	vite: "text-icon-accent-purple",
-	vscode: "text-icon-accent-blue",
-	vue: "text-icon-accent-green",
-	wasm: "text-icon-accent-purple",
-	webpack: "text-icon-accent-blue",
-	yml: "text-icon-accent-red",
-	zig: "text-icon-accent-orange",
-	zip: "text-icon-accent-orange",
-};
-
-function getIconSet(icons: FileTree2Icons | undefined): FileTreeBuiltInIconSet | "none" {
-	if (!icons) {
-		return "complete";
-	}
-	if (typeof icons === "string") {
-		return icons;
-	}
-	if (icons.set) {
-		return icons.set;
-	}
-	return icons.spriteSheet || icons.remap || icons.byFileName || icons.byFileNameContains || icons.byFileExtension
-		? "none"
-		: "complete";
-}
 
 function normalizePathSet(paths: Iterable<string>): Set<string> {
 	return new Set([...paths].map(normalizeFileTree2Path).filter(Boolean));
@@ -196,13 +126,10 @@ export function FileTree2({
 	searchable = false,
 	searchMode = "hide-non-matches",
 	searchPlaceholder = "Search files",
+	searchQuery: controlledSearchQuery,
 	selectedPath: controlledSelectedPath,
 	...props
 }: Readonly<FileTree2Props>) {
-	const iconResolver = useMemo(() => createFileTreeIconResolver(icons), [icons]);
-	const iconSet = getIconSet(icons);
-	const coloredIcons = typeof icons === "object" ? (icons.colored ?? true) : true;
-	const iconSpriteSheet = `${getBuiltInSpriteSheet(iconSet)}${typeof icons === "object" ? (icons.spriteSheet ?? "") : ""}`;
 	const model = useMemo(() => createFileTree2Model(items), [items]);
 	const itemsByPath = useMemo(
 		() => new Map(items.map((item) => [normalizeFileTree2Path(item.path), item])),
@@ -216,7 +143,8 @@ export function FileTree2({
 		defaultSelectedPath ? normalizeFileTree2Path(defaultSelectedPath) : undefined,
 	);
 	const [focusedPath, setFocusedPath] = useState<string>();
-	const [query, setQuery] = useState("");
+	const [internalQuery, setInternalQuery] = useState("");
+	const query = controlledSearchQuery ?? internalQuery;
 	const [draggedPath, setDraggedPath] = useState<string>();
 	const [dropTargetPath, setDropTargetPath] = useState<string>();
 	const draggedPathRef = useRef<string | undefined>(undefined);
@@ -389,7 +317,7 @@ export function FileTree2({
 			data-slot="file-tree-2"
 			{...props}
 		>
-			<div aria-hidden="true" className="absolute size-0 overflow-hidden" dangerouslySetInnerHTML={{ __html: iconSpriteSheet }} />
+			<FileTree2IconSprite icons={icons} />
 			{searchable ? (
 				<div className="relative border-b border-border px-2 py-2">
 					<SearchIcon className="pointer-events-none absolute left-4 top-1/2 z-10 size-4 -translate-y-1/2 text-icon-subtle" />
@@ -397,7 +325,7 @@ export function FileTree2({
 						aria-label="Search files"
 						className="pl-8"
 						isCompact
-						onChange={(event) => setQuery(event.target.value)}
+						onChange={(event) => setInternalQuery(event.target.value)}
 						placeholder={searchPlaceholder}
 						value={query}
 					/>
@@ -446,12 +374,6 @@ export function FileTree2({
 					const isIgnored = item?.status === "ignored";
 					const status = item?.status && item.status !== "ignored" ? statusStyles[item.status] : undefined;
 					const hasChangedDescendants = node.type === "folder" && changedAncestorPaths.has(node.path);
-					const resolvedIcon = node.type === "file"
-						? iconResolver.resolveIcon("file-tree-icon-file", node.path)
-						: undefined;
-					const resolvedIconColor = resolvedIcon?.token && coloredIcons
-						? iconColorStyles[resolvedIcon.token]
-						: "text-icon-subtle";
 					const isRowDraggable = isDraggablePath(node.path);
 					const isDropTarget = dropTargetPath === node.path;
 
@@ -558,15 +480,11 @@ export function FileTree2({
 								{node.type === "folder" ? (
 									<ChevronRightIcon className={cn("size-4 text-icon-subtle transition-transform duration-normal ease-out", isExpanded && "rotate-90")} size="small" />
 								) : (item?.icon ?? (
-									<svg
-										aria-hidden="true"
-										className={cn("size-4", resolvedIconColor, status?.className, isIgnored && "text-icon-disabled")}
-										data-icon-name={resolvedIcon?.name}
-										data-icon-token={resolvedIcon?.token}
-										viewBox={resolvedIcon?.viewBox ?? "0 0 16 16"}
-									>
-										<use href={`#${resolvedIcon?.name ?? "file-tree-icon-file"}`} />
-									</svg>
+									<FileTree2FileIcon
+										className={cn(status?.className, isIgnored && "text-icon-disabled")}
+										icons={icons}
+										path={node.path}
+									/>
 								))}
 							</span>
 							<span className={cn("min-w-0 flex-1 truncate", status?.className, isIgnored && "text-text-disabled")}>{node.name}</span>

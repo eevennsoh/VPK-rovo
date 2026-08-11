@@ -5,6 +5,7 @@ import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
+import { BrandLogoMark } from "@/components/ui/logo-mark";
 import { Lozenge } from "@/components/ui/lozenge";
 import { Tag } from "@/components/ui/tag";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
@@ -101,22 +102,27 @@ function SegmentContent({ segment }: Readonly<{ segment: JiraActivitySegment }>)
 				</Tag>
 			);
 		case "app-mention":
+			// Product tag (BrandLogoMark chip) — not a hexagon agent/app avatar.
+			// Matches PullRequest repo pills / Tag demos; GitHub inverts in dark mode.
 			return (
 				<Tag
 					className="mx-0.5 align-middle"
 					color="gray"
 					data-jira-activity-app-mention
 					elemBefore={
-						<span aria-hidden>
-							<AgentAvatarVisual
-								avatarClassName="after:border-0"
-								brandName={segment.brandName}
-								fallbackText={segment.text}
-								sizePx={16}
+						segment.brandName ? (
+							<BrandLogoMark
+								className={
+									segment.brandName === "github"
+										? "dark:invert [[data-color-mode=dark]_&]:invert"
+										: undefined
+								}
+								frame="chip"
+								label={segment.text}
+								name={segment.brandName}
 							/>
-						</span>
+						) : undefined
 					}
-					type="other"
 					variant="editor"
 				>
 					{segment.text}

@@ -72,6 +72,10 @@ const V2_ONLY_FILES = new Set([
 	"components/context-popover-parts.tsx",
 	// Shared Activity → chat comment-pill state (Code Review composerInputContext path).
 	"context-activity-chat-comments.tsx",
+	// Failing CI checks → activity composer chip (Fix / Fix all staging).
+	"context-failing-checks-composer.tsx",
+	"lib/failing-checks-composer-context.ts",
+	"lib/failing-checks-composer-context.test.js",
 	// Shared TipTap description surface used by WI ContextEditableDescription
 	// and PullRequestOverview — v1 keeps its own inline RichTextEditor wiring.
 	"components/context-description-editor.tsx",
@@ -95,6 +99,7 @@ const V2_ONLY_FILES = new Set([
 	"components/pull-request-detail/pull-request-context-rail.tsx",
 	"components/pull-request-detail/pull-request-details-rail.tsx",
 	"components/pull-request-detail/pull-request-activity-panel.tsx",
+	"components/pull-request-detail/pull-request-sticky-header-shell.tsx",
 	// v2 promotes `@Agent` runs in authored comment copy into mention chips; v1
 	// keeps comment bodies as a single plain-text segment.
 	"lib/activity-mention-segments.ts",
@@ -117,6 +122,13 @@ const V2_ONLY_FILES = new Set([
 	"lib/pull-request-phases.test.js",
 	"lib/pull-request-detail-data.ts",
 	"lib/pull-request-detail-data.test.js",
+	"lib/pull-request-detail-data-ui.test.js",
+	// Review submit: verdict → Approvers status + sonner toast copy.
+	"lib/pull-request-review-submit.ts",
+	"lib/pull-request-review-submit.test.js",
+	"lib/show-pull-request-review-toast.tsx",
+	// File-size split: initial reviewed-chapter seed lives outside the fixture module.
+	"lib/resolve-initial-reviewed-chapter-ids.ts",
 	"lib/pull-request-activity-adapter.ts",
 	"lib/pull-request-activity-adapter.test.js",
 	// Selected PR filter Tag status → icon/color map (open/merged/failed/draft).
@@ -157,7 +169,7 @@ test("experimental v2 resets stage-scoped view state only after the stage key ch
 	assert.match(compositionSource, /const previousStageKeyRef = useRef\(stageKey\);/u);
 	assert.match(
 		compositionSource,
-		/useLayoutEffect\(\(\) => \{[\s\S]*Object\.is\(previousStageKeyRef\.current, stageKey\)[\s\S]*return;[\s\S]*previousStageKeyRef\.current = stageKey;[\s\S]*setDescriptionViewMode\("rendered"\);[\s\S]*setSelectedPullRequestIdentity\(null\);[\s\S]*\}, \[stageKey\]\);/u,
+		/useLayoutEffect\(\(\) => \{[\s\S]*Object\.is\(previousStageKeyRef\.current, stageKey\)[\s\S]*return;[\s\S]*previousStageKeyRef\.current = stageKey;[\s\S]*setDescriptionViewMode\("rendered"\);[\s\S]*setSelectedPullRequestIdentity\(null\);[\s\S]*setPullRequestReviewByIdentity\(\{\}\);[\s\S]*setReviewComposerIdentity\(null\);[\s\S]*setPullRequestReviewerStatuses\(\{\}\);[\s\S]*\}, \[stageKey\]\);/u,
 	);
 });
 
@@ -173,7 +185,7 @@ test("experimental v2 opens the shared agent chat as a full-height sibling colum
 
 	assert.match(
 		compositionSource,
-		/const agentChatOpen = chatSurface === "floating";[\s\S]*sidebar=\{<FloatingSessionSurface onSessionReply=\{onSessionReply\} \/>\}[\s\S]*sidebarOpen=\{agentChatOpen\}[\s\S]*aria-hidden=\{agentChatOpen\}[\s\S]*className="group\/metadata-resize relative flex min-h-0 min-w-0 flex-1 flex-col"[\s\S]*inert=\{agentChatOpen \? true : undefined\}[\s\S]*<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*activitySessionThread=\{activitySessionThread\}[\s\S]*onOpenPullRequest=\{handlePullRequestSelect\}[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}[\s\S]*\/>/u,
+		/const agentChatOpen = chatSurface === "floating";[\s\S]*sidebar=\{<FloatingSessionSurface composerToolsAfterAdd=\{composerToolsAfterAdd\} onSessionReply=\{onSessionReply\} \/>\}[\s\S]*sidebarOpen=\{agentChatOpen\}[\s\S]*aria-hidden=\{agentChatOpen\}[\s\S]*className="group\/metadata-resize relative flex min-h-0 min-w-0 flex-1 flex-col"[\s\S]*inert=\{agentChatOpen \? true : undefined\}[\s\S]*<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*activitySessionThread=\{activitySessionThread\}[\s\S]*onOpenPullRequest=\{handlePullRequestSelect\}[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*currentReviewerStatus=\{selectedPullRequestReviewerStatus\}[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}[\s\S]*\/>/u,
 	);
 	assert.doesNotMatch(compositionSource, /blanketContent=\{[\s\S]*<FloatingSessionSurface/u);
 	assert.match(sessionSurfaceSource, /<AsxRovoOverlay[\s\S]*placement="embedded"/u);
@@ -234,7 +246,7 @@ test("experimental v2 metadata panel exposes a notch-only resize handle and chat
 	);
 	assert.match(
 		compositionSource,
-		/sidebar=\{<FloatingSessionSurface onSessionReply=\{onSessionReply\} \/>\}[\s\S]*sidebarResizeHandle=\{\([\s\S]*ariaLabel="Resize agent chat panel"[\s\S]*top-0![\s\S]*bottom-0![\s\S]*left-0![\s\S]*bg-border[\s\S]*group-hover\/chat-panel:\[&>div\]:opacity-100[\s\S]*resize=\{metadataPanelResize\}[\s\S]*testId="jira-work-item-chat-resize-handle"[\s\S]*sidebarResizing=\{metadataPanelResize\.isResizing\}[\s\S]*sidebarWidth=\{metadataPanelResize\.sidebarWidth\}/u,
+		/sidebar=\{<FloatingSessionSurface composerToolsAfterAdd=\{composerToolsAfterAdd\} onSessionReply=\{onSessionReply\} \/>\}[\s\S]*sidebarResizeHandle=\{\([\s\S]*ariaLabel="Resize agent chat panel"[\s\S]*top-0![\s\S]*bottom-0![\s\S]*left-0![\s\S]*bg-border[\s\S]*group-hover\/chat-panel:\[&>div\]:opacity-100[\s\S]*resize=\{metadataPanelResize\}[\s\S]*testId="jira-work-item-chat-resize-handle"[\s\S]*sidebarResizing=\{metadataPanelResize\.isResizing\}[\s\S]*sidebarWidth=\{metadataPanelResize\.sidebarWidth\}/u,
 	);
 	assert.match(
 		compositionSource,
@@ -466,6 +478,80 @@ test("experimental v2 working-agents menu includes waiting sessions without chan
 		/trailing: session\.status === "waiting"[\s\S]*\{session\.waitingOn\?\.kind === "user" \? NEEDS_INPUT_STATUS_LABEL : "Waiting"\}[\s\S]*: null/u,
 	);
 	assert.doesNotMatch(contextPillsSource, /<Spinner/u);
+});
+
+test("experimental v2 shows Submit review as the first context pill on guided PR review", () => {
+	const compositionSource = readBlockFile("experimental-v2/experimental-v2-jira-work-item.tsx");
+	const contextPillsSource = readBlockFile("experimental-v2/components/activity-composer-context-pills.tsx");
+	const composerSource = readBlockFile("experimental-v2/components/activity-composer.tsx");
+
+	// Visibility: selected PR + guided review progress only — not approval-state gated.
+	assert.match(
+		compositionSource,
+		/!selectedPullRequestIdentity[\s\S]*pullRequestReviewState\?\.identity !== selectedPullRequestIdentity[\s\S]*pullRequestReviewState\.total === 0/u,
+	);
+	assert.doesNotMatch(
+		compositionSource,
+		/!selectedPullRequestIdentity[\s\S]*!selectedPullRequestApprovalState[\s\S]*pullRequestReviewState/u,
+	);
+	assert.match(compositionSource, /label: approved \? "Review submitted" : "Submit review"/u);
+	assert.match(compositionSource, /badge: badgeCount > 0 \? String\(badgeCount\) : undefined/u);
+	assert.doesNotMatch(compositionSource, /badge: `\$\{reviewed\}\/\$\{total\}`/u);
+	assert.match(
+		compositionSource,
+		/const badgeCount = reviewedChapterIds\.size \+ inlineComments\.length/u,
+	);
+	assert.match(compositionSource, /import CommentIcon from "@atlaskit\/icon\/core\/comment"/u);
+	assert.match(
+		compositionSource,
+		/icon: <Icon aria-hidden render=\{<CommentIcon label="" size="small" \/>\} \/>/u,
+	);
+	assert.match(
+		compositionSource,
+		/disabled: approved \|\| !onPullRequestApprove/u,
+	);
+	assert.match(
+		compositionSource,
+		/submitDisabled: pullRequestReviewSubmitDisabled/u,
+	);
+	assert.match(
+		compositionSource,
+		/const pullRequestReviewSubmitDisabled = !onPullRequestApprove\s*\|\|\s*selectedPullRequestApprovalState === "approved"/u,
+	);
+	assert.doesNotMatch(
+		compositionSource,
+		/submitDisabled: !pullRequestReviewSubmissionAvailable/u,
+		"guided-review availability must not disable Send while the reviewer has a draft",
+	);
+	assert.match(compositionSource, /primaryAction=\{pullRequestReviewAction\}/u);
+	assert.match(composerSource, /primaryAction=\{primaryAction\}/u);
+	assert.match(
+		compositionSource,
+		/handlePullRequestInlineCommentsChange[\s\S]*inlineComments: comments/u,
+	);
+	assert.match(
+		compositionSource,
+		/commentCount: pullRequestReviewState\.inlineComments\.length/u,
+	);
+	assert.match(
+		composerSource,
+		/commentCount=\{pullRequestReview\.commentCount\}/u,
+	);
+	// Pill order: primaryAction (Submit review) first, then working agents, then Assign agents / Use skills.
+	assert.match(
+		contextPillsSource,
+		/\{primaryAction \? \([\s\S]*icon=\{primaryAction\.icon\}[\s\S]*\{primaryAction\.label\}[\s\S]*primaryAction\.badge \? \([\s\S]*<Badge[\s\S]*\{primaryAction\.badge\}[\s\S]*\) : null\}[\s\S]*\) : null\}[\s\S]*\{workingSessions\.length > 0[\s\S]*<ActivityComposerAgentContextPill[\s\S]*<ActivityComposerSkillContextPill/u,
+	);
+	assert.match(contextPillsSource, /from "@\/components\/ui\/badge"/u);
+	// Opening guided PR review must not drop the working-agents summary pill.
+	assert.match(
+		composerSource,
+		/const workingSessions = state\.sessions\.filter\(\(session\) => session\.status !== "completed"\);/u,
+	);
+	assert.match(
+		contextPillsSource,
+		/\{workingSessions\.length > 0 && onOpenAgentChat \? \([\s\S]*summaryLabel/u,
+	);
 });
 
 test("experimental v2 keeps comment-only composer delivery as the non-target default", () => {
@@ -831,25 +917,36 @@ test("activity comments reuse the Code Review composer-pill path on the sticky a
 	assert.match(contextSource, /return \[\.\.\.current, comment\]/u);
 
 	assert.match(activityComposerSource, /CommentsComposerChip/u);
-	assert.match(activityComposerSource, /inputContext=\{activityCommentsInputContext\}/u);
-	assert.match(activityComposerSource, /inputContextSubmitText=\{ACTIVITY_COMMENTS_PROMPT\}/u);
+	assert.match(activityComposerSource, /FailingChecksComposerChip/u);
+	assert.match(activityComposerSource, /inputContext=\{composerInputContext\}/u);
+	assert.match(activityComposerSource, /inputContextSubmitText=\{composerInputContextSubmitText\}/u);
 	assert.match(activityComposerSource, /subtitle: "Comment"/u);
 	assert.doesNotMatch(activityComposerSource, /subtitle: comment\.timestamp/u);
 	assert.match(activityComposerSource, /testId="activity-comments-chip"/u);
 	assert.match(activityComposerSource, /Discuss these activity comments\./u);
 	assert.match(activityComposerSource, /serializeActivityCommentsContext\(meta\.workItem, activityChatComments\)/u);
+	assert.match(activityComposerSource, /serializeFailingChecksContext\(failingChecks\)/u);
 	assert.match(activityComposerSource, /focusRequestKey/u);
 	assert.match(activityComposerSource, /removeActivityChatComments\(\)/u);
+	assert.match(activityComposerSource, /removeFailingChecks\(\)/u);
+	assert.match(compositionSource, /FailingChecksComposerProvider/u);
+	assert.match(compositionSource, /handlePullRequestFixStage/u);
+	assert.match(compositionSource, /onFailingChecksSubmit/u);
 
 	assert.match(floatingComposerSource, /inputContext\?: ReactNode/u);
 	assert.match(floatingComposerSource, /<PromptInputHeader/u);
 	assert.doesNotMatch(sessionSurfaceSource, /CommentsComposerChip/u);
 	assert.doesNotMatch(sessionSurfaceSource, /composerInputContext=/u);
 	assert.match(sharedChipSource, /export function CommentsComposerChip/u);
+	assert.match(sharedChipSource, /ComposerContextChip/u);
 	// Inset separators match DropdownMenuSeparator (`dropdownStyles.separator`:
 	// `bg-border mx-1 my-1 h-px`) — not full-bleed `divide-y`.
-	assert.match(sharedChipSource, /dropdownStyles\.separator/u);
-	assert.doesNotMatch(sharedChipSource, /divide-y/u);
+	const composerContextChipSource = fs.readFileSync(
+		path.join(BLOCK_DIR, "../../ui-custom/composer-context-chip.tsx"),
+		"utf8",
+	);
+	assert.match(composerContextChipSource, /dropdownStyles\.separator/u);
+	assert.doesNotMatch(composerContextChipSource, /divide-y/u);
 });
 
 test("experimental v2 opens the agent and skill pickers with the editor-palette search bar", () => {

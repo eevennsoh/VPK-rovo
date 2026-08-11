@@ -4,7 +4,7 @@ import { Extension, mergeAttributes, type Editor } from "@tiptap/core";
 import Color from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
 import Link from "@tiptap/extension-link";
-import { TaskItem, TaskList } from "@tiptap/extension-list";
+import { TaskList } from "@tiptap/extension-list";
 import Mention from "@tiptap/extension-mention";
 import {
 	Table,
@@ -25,6 +25,7 @@ import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palet
 import { RichTextCodeBlock } from "./code-block-node";
 import { FrontmatterNode } from "./frontmatter-node";
 import { RichTextMentionNodeView } from "./mention-node-view";
+import { RichTextTaskItem } from "./task-item-node";
 import {
 	createMentionTokenParser,
 	mentionMarkdownTokenizer,
@@ -547,7 +548,7 @@ export function createRichTextEditorExtensions(
 				class: "rich-text-task-list",
 			},
 		}),
-		TaskItem.configure({
+		RichTextTaskItem.configure({
 			nested: true,
 			HTMLAttributes: {
 				class: "rich-text-task-item",

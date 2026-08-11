@@ -1,7 +1,8 @@
 "use client";
 
+import CommentIcon from "@atlaskit/icon/core/comment";
 import { LayoutGroup } from "motion/react";
-import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { useRovoChat } from "@/app/contexts";
 import type { SkillsDirectorySkill } from "@/app/data/directory";
@@ -9,6 +10,7 @@ import { getAgentsWorkItemForCard } from "@/components/projects/jira/data/rfp-wo
 import { WorkItemModalProvider } from "@/app/contexts/context-work-item-modal";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
+import type { InlineReviewComment } from "@/components/blocks/code-review/lib/inline-comments";
 import type {
 	JiraWorkItemComposerDelivery,
 	JiraWorkItemPreset,
@@ -17,6 +19,10 @@ import type {
 import { SESSION_EPOCH_MS } from "@/components/blocks/jira-work-item/data/session-fixtures";
 import type { WorkItemData } from "@/app/contexts/context-work-item-modal";
 import { ActivityChatCommentsProvider } from "@/components/blocks/jira-work-item/experimental-v2/context-activity-chat-comments";
+import {
+	FailingChecksComposerProvider,
+	useFailingChecksComposer,
+} from "@/components/blocks/jira-work-item/experimental-v2/context-failing-checks-composer";
 import {
 	JiraWorkItemProvider,
 	useJiraWorkItemMeta,
@@ -32,8 +38,12 @@ import { ExperimentalWorkItemLayout } from "@/components/blocks/jira-work-item/e
 import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import { ContextHeader, ContextPanel } from "@/components/blocks/jira-work-item/experimental-v2/components/context-panel";
 import { ActivityPanel } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-panel";
-import { ActivityComposer } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer";
+import {
+	ActivityComposer,
+	type ActivityComposerPullRequestReview,
+} from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer";
 import type { ActivityComposerPrimaryAction } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer-context-pills";
+import type { PullRequestReviewSubmission } from "@/components/blocks/pull-request-review";
 import { MetadataRail } from "@/components/blocks/jira-work-item/experimental-v2/components/metadata-rail";
 import { FloatingSessionSurface } from "@/components/blocks/jira-work-item/experimental-v2/components/floating-session-surface";
 import type { SessionReplyInterceptor } from "@/components/blocks/jira-work-item/experimental-v2/components/floating-session-surface";
@@ -50,23 +60,45 @@ import {
 	type ActivitySessionThreadConfig,
 } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
 import {
-	resolveInitialReviewedChapterIds,
 	resolvePullRequestDetailData,
+	type PullRequestCheck,
+	type PullRequestReviewer,
 } from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-detail-data";
+import {
+	mapReviewVerdictToReviewerStatus,
+	PULL_REQUEST_REVIEW_TOASTER_ID,
+} from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-review-submit";
+import { showPullRequestReviewToast } from "@/components/blocks/jira-work-item/experimental-v2/lib/show-pull-request-review-toast";
+import { resolveInitialReviewedChapterIds } from "@/components/blocks/jira-work-item/experimental-v2/lib/resolve-initial-reviewed-chapter-ids";
 import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
+import { Icon } from "@/components/ui/icon";
 import { SidebarResizeHandle } from "@/components/ui/sidebar";
+import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 
 interface ExperimentalV2JiraWorkItemBaseProps {
 	activitySessionThread?: ActivitySessionThreadConfig;
 	automationRules?: readonly WorkItemAutomationRule[];
+	/**
+	 * When set, open this pull-request identity after each `stageKey` reset
+	 * (once per stage). Used by jira-agents Review and Fix to land on PR detail
+	 * without an extra click. Clearing the PR does not re-open until the next stage.
+	 */
+	autoOpenPullRequestIdentity?: string | null;
 	composerAgents?: readonly AgentSelectorAgent[];
+	/** Optional host-owned controls rendered immediately after the side-chat Add button. */
+	composerToolsAfterAdd?: ReactNode;
 	initialPreset: JiraWorkItemPreset;
 	initialState?: JiraWorkItemState;
 	initialStateRevision?: string | number;
 	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
 	onOpenAgentChat?: (agentId: string) => void;
 	onPullRequestApprove?: (identity: string) => void;
+	/**
+	 * Host callback when the activity composer submits with a staged failing-checks
+	 * chip (Fix / Fix all). Advances Fix-chapter storytelling — does not re-run CI.
+	 */
+	onPullRequestFix?: (identity: string) => void;
 	onSessionReply?: SessionReplyInterceptor;
 	onSkillInvoke?: (skill: SkillsDirectorySkill) => boolean | void;
 	outputs?: readonly string[];
@@ -104,13 +136,16 @@ const NOOP = () => undefined;
 
 interface ExperimentalV2JiraWorkItemContentProps {
 	activitySessionThread?: ActivitySessionThreadConfig;
+	autoOpenPullRequestIdentity?: string | null;
 	automationRules?: readonly WorkItemAutomationRule[];
 	composerAgents?: readonly AgentSelectorAgent[];
+	composerToolsAfterAdd?: ReactNode;
 	inlineSurface: "card" | "card-fill" | "fill";
 	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
 	onClose: () => void;
 	onOpenAgentChat?: (agentId: string) => void;
 	onPullRequestApprove?: (identity: string) => void;
+	onPullRequestFix?: (identity: string) => void;
 	onSessionReply?: SessionReplyInterceptor;
 	onSkillInvoke?: (skill: SkillsDirectorySkill) => boolean | void;
 	open: boolean;
@@ -124,6 +159,8 @@ interface ExperimentalV2JiraWorkItemContentProps {
 
 interface PullRequestReviewState {
 	identity: string;
+	/** Committed inline file comments from the Files / CodeReview surface. */
+	inlineComments: readonly InlineReviewComment[];
 	reviewedChapterIds: ReadonlySet<string>;
 	total: number;
 }
@@ -168,13 +205,16 @@ function WorkItemSidePanelResizeHandle({
 
 function ExperimentalV2JiraWorkItemContent({
 	activitySessionThread,
+	autoOpenPullRequestIdentity = null,
 	automationRules,
 	composerAgents,
+	composerToolsAfterAdd,
 	inlineSurface,
 	onAgentPromptSubmit,
 	onClose,
 	onOpenAgentChat,
 	onPullRequestApprove,
+	onPullRequestFix,
 	onSessionReply,
 	onSkillInvoke,
 	open,
@@ -188,9 +228,18 @@ function ExperimentalV2JiraWorkItemContent({
 	const composerLayoutGroupId = useId();
 	const [descriptionViewMode, setDescriptionViewMode] = useState<EditorToolbarViewMode>("rendered");
 	const [selectedPullRequestIdentity, setSelectedPullRequestIdentity] = useState<string | null>(null);
-	const [pullRequestReviewState, setPullRequestReviewState] = useState<PullRequestReviewState | null>(null);
+	const [pullRequestReviewByIdentity, setPullRequestReviewByIdentity] = useState<
+		Readonly<Record<string, PullRequestReviewState>>
+	>({});
+	const [reviewComposerIdentity, setReviewComposerIdentity] = useState<string | null>(null);
+	const [pullRequestReviewerStatuses, setPullRequestReviewerStatuses] = useState<
+		Readonly<Record<string, PullRequestReviewer["status"]>>
+	>({});
+	const [restoreActivityComposerFocus, setRestoreActivityComposerFocus] = useState(false);
 	const previousStageKeyRef = useRef(stageKey);
+	const autoOpenedForStageRef = useRef<string | null>(null);
 	const { setPanelView, setSuppressActivityPanelReveal } = useMetadataRail();
+	const { stageChecks, removeAll: removeFailingChecks } = useFailingChecksComposer();
 	const { chatSurface } = useRovoChat();
 	const { activityEvents } = useJiraWorkItemMeta();
 	const { elapsedMs } = useJiraWorkItemState();
@@ -206,17 +255,29 @@ function ExperimentalV2JiraWorkItemContent({
 		selectPullRequestEntries(activityEvents, SESSION_EPOCH_MS + elapsedMs).map((entry) => {
 			if (!entry.pullRequest) return entry;
 			const identity = getPullRequestIdentity(entry.pullRequest);
-			if (pullRequestApprovalStates?.[identity] !== "approved") return entry;
-			return {
-				...entry,
-				pullRequest: {
-					...entry.pullRequest,
-					reviewDecision: "approved" as const,
-					mergeState: "ready" as const,
-				},
-			};
+			if (pullRequestApprovalStates?.[identity] === "approved") {
+				return {
+					...entry,
+					pullRequest: {
+						...entry.pullRequest,
+						reviewDecision: "approved" as const,
+						mergeState: "ready" as const,
+					},
+				};
+			}
+			if (pullRequestReviewerStatuses[identity] === "changes-requested") {
+				return {
+					...entry,
+					pullRequest: {
+						...entry.pullRequest,
+						reviewDecision: "changes-requested" as const,
+						mergeState: "blocked" as const,
+					},
+				};
+			}
+			return entry;
 		})
-	), [activityEvents, elapsedMs, pullRequestApprovalStates]);
+	), [activityEvents, elapsedMs, pullRequestApprovalStates, pullRequestReviewerStatuses]);
 	useLayoutEffect(() => {
 		if (
 			stageKey === undefined
@@ -225,9 +286,13 @@ function ExperimentalV2JiraWorkItemContent({
 			return;
 		}
 		previousStageKeyRef.current = stageKey;
+		autoOpenedForStageRef.current = null;
 		setDescriptionViewMode("rendered");
 		setSelectedPullRequestIdentity(null);
-		setPullRequestReviewState(null);
+		setPullRequestReviewByIdentity({});
+		setReviewComposerIdentity(null);
+		setPullRequestReviewerStatuses({});
+		setRestoreActivityComposerFocus(false);
 	}, [stageKey]);
 	const selectedPullRequestEntry = useMemo(
 		() => pullRequestEntries.find((entry) => (
@@ -236,6 +301,9 @@ function ExperimentalV2JiraWorkItemContent({
 		)) ?? null,
 		[pullRequestEntries, selectedPullRequestIdentity],
 	);
+	const pullRequestReviewState = selectedPullRequestIdentity
+		? pullRequestReviewByIdentity[selectedPullRequestIdentity] ?? null
+		: null;
 	// Build/Plan revealActivityKey must not steal the rail away from PR Details.
 	useLayoutEffect(() => {
 		const suppressed = selectedPullRequestIdentity !== null;
@@ -246,64 +314,167 @@ function ExperimentalV2JiraWorkItemContent({
 	}, [selectedPullRequestIdentity, setSuppressActivityPanelReveal]);
 	// Shared by Activity PR titles and "Review pull request" — open the PR and
 	// land on Details (PR overview / details rail), not the Activity tab.
-	const handlePullRequestSelect = (entry: JiraActivityEventEntry) => {
+	const handlePullRequestSelect = useCallback((entry: JiraActivityEventEntry) => {
 		if (!entry.pullRequest) return;
 		const identity = getPullRequestIdentity(entry.pullRequest);
 		const guidedReview = resolvePullRequestDetailData(entry)?.guidedReview;
+		setReviewComposerIdentity(null);
+		setRestoreActivityComposerFocus(false);
 		setSelectedPullRequestIdentity(identity);
-		setPullRequestReviewState(guidedReview
-			? {
-				identity,
-				reviewedChapterIds: resolveInitialReviewedChapterIds(
-					guidedReview,
-					pullRequestApprovalStates?.[identity],
-				),
-				total: guidedReview.chapters.length,
-			}
-			: null);
+		// Retain chapter checks + inline comments when reopening the same PR.
+		setPullRequestReviewByIdentity((current) => {
+			if (!guidedReview) return current;
+			if (current[identity]) return current;
+			return {
+				...current,
+				[identity]: {
+					identity,
+					inlineComments: [],
+					reviewedChapterIds: resolveInitialReviewedChapterIds(
+						guidedReview,
+						pullRequestApprovalStates?.[identity],
+					),
+					total: guidedReview.chapters.length,
+				},
+			};
+		});
 		setPanelView("details");
-	};
+	}, [pullRequestApprovalStates, setPanelView]);
+	// jira-agents Review: open the guided PR once per stage so detail is default.
+	useLayoutEffect(() => {
+		if (!autoOpenPullRequestIdentity) return;
+		const stageToken = stageKey ?? "";
+		if (autoOpenedForStageRef.current === stageToken) return;
+		const entry = pullRequestEntries.find((candidate) => (
+			candidate.pullRequest
+			&& getPullRequestIdentity(candidate.pullRequest) === autoOpenPullRequestIdentity
+		));
+		if (!entry) return;
+		autoOpenedForStageRef.current = stageToken;
+		handlePullRequestSelect(entry);
+	}, [autoOpenPullRequestIdentity, handlePullRequestSelect, pullRequestEntries, stageKey]);
+	// Fix / Fix all stages a composer chip; story repair runs on submit.
+	const handlePullRequestFixStage = useCallback((checks: readonly PullRequestCheck[]) => {
+		if (!onPullRequestFix || checks.length === 0) return;
+		stageChecks(checks.map((check) => ({
+			id: check.id,
+			name: check.name,
+			details: check.details,
+		})));
+	}, [onPullRequestFix, stageChecks]);
+	const handlePullRequestFixSubmit = useCallback(() => {
+		if (!selectedPullRequestIdentity || !onPullRequestFix) return;
+		onPullRequestFix(selectedPullRequestIdentity);
+	}, [onPullRequestFix, selectedPullRequestIdentity]);
+	useEffect(() => {
+		if (!onPullRequestFix) {
+			removeFailingChecks();
+		}
+	}, [onPullRequestFix, removeFailingChecks]);
 	const selectedPullRequestApprovalState = selectedPullRequestIdentity
 		? pullRequestApprovalStates?.[selectedPullRequestIdentity]
 		: undefined;
 	const selectedPullRequestReviewedChapterIds = pullRequestReviewState?.identity === selectedPullRequestIdentity
 		? pullRequestReviewState.reviewedChapterIds
 		: undefined;
+	const pullRequestReviewSubmissionAvailable = Boolean(
+		onPullRequestApprove
+		&& selectedPullRequestApprovalState === "available"
+		&& pullRequestReviewState?.identity === selectedPullRequestIdentity
+		&& pullRequestReviewState.reviewedChapterIds.size === pullRequestReviewState.total,
+	);
+	// Only hard-block Send when approval is already done or the host cannot
+	// accept one. Chapter progress / "available" still gate the approve action
+	// in `handlePullRequestReviewSubmit` — not the CTA's enabled state — so a
+	// typed comment is never stuck behind guided-review prerequisites.
+	const pullRequestReviewSubmitDisabled = !onPullRequestApprove
+		|| selectedPullRequestApprovalState === "approved";
 	const handlePullRequestChapterReviewedChange = useCallback((
 		identity: string,
 		chapterId: string,
 		reviewed: boolean,
 	) => {
-		setPullRequestReviewState((current) => {
-			if (!current || current.identity !== identity) return current;
-			if (current.reviewedChapterIds.has(chapterId) === reviewed) return current;
-			const reviewedChapterIds = new Set(current.reviewedChapterIds);
+		setPullRequestReviewByIdentity((current) => {
+			const existing = current[identity];
+			if (!existing) return current;
+			if (existing.reviewedChapterIds.has(chapterId) === reviewed) return current;
+			const reviewedChapterIds = new Set(existing.reviewedChapterIds);
 			if (reviewed) {
 				reviewedChapterIds.add(chapterId);
 			} else {
 				reviewedChapterIds.delete(chapterId);
 			}
-			return { ...current, reviewedChapterIds };
+			return { ...current, [identity]: { ...existing, reviewedChapterIds } };
 		});
 	}, []);
+	const handlePullRequestInlineCommentsChange = useCallback((
+		identity: string,
+		comments: readonly InlineReviewComment[],
+	) => {
+		setPullRequestReviewByIdentity((current) => {
+			const existing = current[identity];
+			if (!existing) return current;
+			if (
+				existing.inlineComments.length === comments.length
+				&& existing.inlineComments.every((comment, index) => comment.id === comments[index]?.id)
+			) {
+				return current;
+			}
+			return { ...current, [identity]: { ...existing, inlineComments: comments } };
+		});
+	}, []);
+	const handlePullRequestReviewSubmit = useCallback((submission: PullRequestReviewSubmission) => {
+		if (!reviewComposerIdentity) return false;
+		// Approve still requires guided-chapter progress; Comment / Request changes
+		// dismiss and land a review without that gate.
+		if (submission.verdict === "approve" && !pullRequestReviewSubmissionAvailable) {
+			return false;
+		}
+
+		const reviewerStatus = mapReviewVerdictToReviewerStatus(submission.verdict);
+		setPullRequestReviewerStatuses((current) => ({
+			...current,
+			[reviewComposerIdentity]: reviewerStatus,
+		}));
+		if (submission.verdict === "approve") {
+			onPullRequestApprove?.(reviewComposerIdentity);
+		}
+		setReviewComposerIdentity(null);
+		setRestoreActivityComposerFocus(false);
+		showPullRequestReviewToast(submission.verdict);
+		return true;
+	}, [onPullRequestApprove, pullRequestReviewSubmissionAvailable, reviewComposerIdentity]);
+	const selectedPullRequestReviewerStatus = selectedPullRequestIdentity
+		? pullRequestReviewerStatuses[selectedPullRequestIdentity]
+		: undefined;
 	const pullRequestReviewAction = useMemo<ActivityComposerPrimaryAction | undefined>(() => {
+		// Guided PR detail only: show whenever a guided review is open (Guide tab).
+		// Opening the review composer is always available; host approval state and
+		// chapter progress gate its Send control instead of hiding the transition.
 		if (
 			!selectedPullRequestIdentity
-			|| !selectedPullRequestApprovalState
 			|| pullRequestReviewState?.identity !== selectedPullRequestIdentity
 			|| pullRequestReviewState.total === 0
 		) return undefined;
 
-		const { reviewedChapterIds, total } = pullRequestReviewState;
-		const reviewed = reviewedChapterIds.size;
+		const { inlineComments, reviewedChapterIds, total } = pullRequestReviewState;
+		// Badge = checked Reviewed chapters + inline file comments when that count exists.
+		const badgeCount = reviewedChapterIds.size + inlineComments.length;
 		const approved = selectedPullRequestApprovalState === "approved";
 		return {
 			ariaLabel: approved
 				? `Review submitted, ${total} of ${total} chapters reviewed`
-				: `Submit review, ${reviewed} of ${total} chapters reviewed`,
-			disabled: approved || reviewed !== total || !onPullRequestApprove,
-			label: approved ? `Review submitted ${total}/${total}` : `Submit review ${reviewed}/${total}`,
-			onClick: () => onPullRequestApprove?.(selectedPullRequestIdentity),
+				: badgeCount > 0
+					? `Submit review, ${badgeCount} checked`
+					: "Submit review",
+			badge: badgeCount > 0 ? String(badgeCount) : undefined,
+			disabled: approved || !onPullRequestApprove,
+			icon: <Icon aria-hidden render={<CommentIcon label="" size="small" />} />,
+			label: approved ? "Review submitted" : "Submit review",
+			onClick: () => {
+				setRestoreActivityComposerFocus(false);
+				setReviewComposerIdentity(selectedPullRequestIdentity);
+			},
 		};
 	}, [
 		onPullRequestApprove,
@@ -311,18 +482,48 @@ function ExperimentalV2JiraWorkItemContent({
 		selectedPullRequestApprovalState,
 		selectedPullRequestIdentity,
 	]);
+	const activePullRequestReview = useMemo<ActivityComposerPullRequestReview | undefined>(() => {
+		if (
+			!reviewComposerIdentity
+			|| reviewComposerIdentity !== selectedPullRequestIdentity
+			|| pullRequestReviewState?.identity !== reviewComposerIdentity
+		) return undefined;
+
+		return {
+			commentCount: pullRequestReviewState.inlineComments.length,
+			onClose: () => {
+				setRestoreActivityComposerFocus(true);
+				setReviewComposerIdentity(null);
+			},
+			onSubmit: handlePullRequestReviewSubmit,
+			reviewedCount: pullRequestReviewState.reviewedChapterIds.size,
+			reviewedTotal: pullRequestReviewState.total,
+			submitDisabled: pullRequestReviewSubmitDisabled,
+		};
+	}, [
+		handlePullRequestReviewSubmit,
+		pullRequestReviewState,
+		pullRequestReviewSubmitDisabled,
+		reviewComposerIdentity,
+		selectedPullRequestIdentity,
+	]);
+	const handlePullRequestClear = useCallback(() => {
+		setRestoreActivityComposerFocus(false);
+		setReviewComposerIdentity(null);
+		setSelectedPullRequestIdentity(null);
+	}, []);
 
 	return (
 		<PanelLayoutProvider>
-			<ActivityChatCommentsProvider>
-				<LayoutGroup id={composerLayoutGroupId}>
-					<ExperimentalWorkItemDialog
+			<Toaster id={PULL_REQUEST_REVIEW_TOASTER_ID} position="bottom-left" />
+			<LayoutGroup id={composerLayoutGroupId}>
+				<ExperimentalWorkItemDialog
 						inlineSurface={inlineSurface}
 						open={open}
 						onClose={onClose}
 						presentation={presentation}
 						pullRequestEntries={pullRequestEntries}
-						sidebar={<FloatingSessionSurface onSessionReply={onSessionReply} />}
+						sidebar={<FloatingSessionSurface composerToolsAfterAdd={composerToolsAfterAdd} onSessionReply={onSessionReply} />}
 						sidebarOpen={agentChatOpen}
 						sidebarResizeHandle={(
 							<WorkItemSidePanelResizeHandle
@@ -349,7 +550,7 @@ function ExperimentalV2JiraWorkItemContent({
 									pullRequestSelected={selectedPullRequestEntry !== null}
 									selectedPullRequestIdentity={selectedPullRequestIdentity}
 									onDescriptionViewModeChange={setDescriptionViewMode}
-									onPullRequestClear={() => setSelectedPullRequestIdentity(null)}
+									onPullRequestClear={handlePullRequestClear}
 									onPullRequestSelect={handlePullRequestSelect}
 								/>
 							)}
@@ -357,7 +558,9 @@ function ExperimentalV2JiraWorkItemContent({
 								<ContextPanel
 									descriptionViewMode={descriptionViewMode}
 									onPullRequestChapterReviewedChange={handlePullRequestChapterReviewedChange}
+									onPullRequestInlineCommentsChange={handlePullRequestInlineCommentsChange}
 									pullRequestApprovalState={selectedPullRequestApprovalState}
+									pullRequestInlineComments={pullRequestReviewState?.inlineComments}
 									pullRequestReviewedChapterIds={selectedPullRequestReviewedChapterIds}
 									scrollContainerRef={scrollContainerRef}
 									selectedPullRequestEntry={selectedPullRequestEntry}
@@ -367,9 +570,14 @@ function ExperimentalV2JiraWorkItemContent({
 							composer={(
 								<ActivityComposer
 									agents={composerAgents}
+									autoFocus={restoreActivityComposerFocus}
 									onAgentPromptSubmit={onAgentPromptSubmit}
+									onFailingChecksSubmit={
+										onPullRequestFix ? handlePullRequestFixSubmit : undefined
+									}
 									onOpenAgentChat={onOpenAgentChat}
 									primaryAction={pullRequestReviewAction}
+									pullRequestReview={activePullRequestReview}
 									onSkillInvoke={onSkillInvoke}
 								/>
 							)}
@@ -390,6 +598,8 @@ function ExperimentalV2JiraWorkItemContent({
 										)}
 										automationRules={automationRules}
 										borderless
+										currentReviewerStatus={selectedPullRequestReviewerStatus}
+										onPullRequestFix={onPullRequestFix ? handlePullRequestFixStage : undefined}
 										selectedPullRequestEntry={selectedPullRequestEntry}
 									/>
 									<div className="hidden @[860px]/agentlayout:contents">
@@ -408,7 +618,6 @@ function ExperimentalV2JiraWorkItemContent({
 						/>
 					</ExperimentalWorkItemDialog>
 				</LayoutGroup>
-			</ActivityChatCommentsProvider>
 		</PanelLayoutProvider>
 	);
 }
@@ -472,25 +681,32 @@ export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWor
 					revealActivityEntryId={props.revealActivityEntryId}
 					revealActivityKey={props.revealActivityKey}
 				>
-					<ExperimentalV2JiraWorkItemContent
-						activitySessionThread={props.activitySessionThread}
-						automationRules={props.automationRules}
-						composerAgents={props.composerAgents}
-						inlineSurface={inlineSurface}
-						onAgentPromptSubmit={props.onAgentPromptSubmit}
-						onClose={onClose}
-						onOpenAgentChat={props.onOpenAgentChat}
-						onPullRequestApprove={props.onPullRequestApprove}
-						onSessionReply={props.onSessionReply}
-						onSkillInvoke={props.onSkillInvoke}
-						open={open}
-						outputs={props.outputs}
-						presentation={presentation}
-						primaryCodingAgentId={props.primaryCodingAgentId}
-						pullRequestApprovalStates={props.pullRequestApprovalStates}
-						stageKey={props.stageKey}
-						workItem={workItem}
-					/>
+					<ActivityChatCommentsProvider>
+						<FailingChecksComposerProvider>
+							<ExperimentalV2JiraWorkItemContent
+								activitySessionThread={props.activitySessionThread}
+								autoOpenPullRequestIdentity={props.autoOpenPullRequestIdentity}
+								automationRules={props.automationRules}
+								composerAgents={props.composerAgents}
+								composerToolsAfterAdd={props.composerToolsAfterAdd}
+								inlineSurface={inlineSurface}
+								onAgentPromptSubmit={props.onAgentPromptSubmit}
+								onClose={onClose}
+								onOpenAgentChat={props.onOpenAgentChat}
+								onPullRequestApprove={props.onPullRequestApprove}
+								onPullRequestFix={props.onPullRequestFix}
+								onSessionReply={props.onSessionReply}
+								onSkillInvoke={props.onSkillInvoke}
+								open={open}
+								outputs={props.outputs}
+								presentation={presentation}
+								primaryCodingAgentId={props.primaryCodingAgentId}
+								pullRequestApprovalStates={props.pullRequestApprovalStates}
+								stageKey={props.stageKey}
+								workItem={workItem}
+							/>
+						</FailingChecksComposerProvider>
+					</ActivityChatCommentsProvider>
 				</MetadataRailProvider>
 			</JiraWorkItemProvider>
 		</WorkItemModalProvider>

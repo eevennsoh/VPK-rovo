@@ -380,8 +380,8 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	assert.match(compositionSource, /<LayoutGroup id=\{composerLayoutGroupId\}>/u);
 	assert.match(composerMotionSource, /layoutId=\{metadataLayoutAnimating \? undefined : "jira-work-item-composer"\}/u);
 	assert.match(composerMotionSource, /<LayoutGroup inherit="id">/u);
-	assert.match(composerMotionSource, /layout=\{metadataLayoutAnimating \? false : "position"\}/u);
-	assert.match(composerMotionSource, /layoutDependency=\{placement\}/u);
+	assert.match(composerMotionSource, /layout=\{metadataLayoutAnimating \? false : layout\}/u);
+	assert.match(composerMotionSource, /layoutDependency=\{layoutDependency \?\? placement\}/u);
 	assert.match(composerMotionSource, /duration: 0\.25,[\s\S]*ease: \[0\.4, 0, 0, 1\]/u);
 	assert.match(composerMotionSource, /useReducedMotion\(\)/u);
 	assert.match(composerMotionSource, /onLayoutAnimationStart[\s\S]*onLayoutAnimationComplete/u);

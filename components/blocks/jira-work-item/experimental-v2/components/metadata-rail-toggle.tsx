@@ -223,8 +223,14 @@ export function MetadataRailToggle({
 							activityChrome != null ? (
 								<JiraActivityViewControl
 									filter={activityChrome.filter}
+									filterMode={
+										activityChrome.filterMode === "work-item"
+											? "jira"
+											: activityChrome.filterMode === "pull-request"
+												? "pull-request"
+												: "sort-only"
+									}
 									menuAlign="start"
-									showAgentsOption={activityChrome.filterMode === "work-item"}
 									sortOrder={activityChrome.sortOrder}
 									trigger="chevron"
 									onFilterChange={activityChrome.onFilterChange}

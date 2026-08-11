@@ -245,3 +245,47 @@ test("toggleReaction treats a missing reaction list as empty", () => {
 		{ emoji: "👍", actorIds: ["u1"] },
 	]);
 });
+
+test("toggle-resolved flips allowResolve threads and ignores others", () => {
+	const state = {
+		entries: [
+			{
+				id: "c1",
+				kind: "comment",
+				actor: ACTOR,
+				timestamp: "1m",
+				body: [],
+				allowResolve: true,
+				resolved: false,
+			},
+			{
+				id: "c2",
+				kind: "comment",
+				actor: ACTOR,
+				timestamp: "1m",
+				body: [],
+				allowResolve: false,
+				resolved: false,
+			},
+		],
+	};
+
+	const resolved = jiraActivityReducer(state, {
+		type: "toggle-resolved",
+		entryId: "c1",
+	});
+	assert.equal(resolved.entries[0].resolved, true);
+	assert.equal(resolved.entries[1].resolved, false);
+
+	const unresolved = jiraActivityReducer(resolved, {
+		type: "toggle-resolved",
+		entryId: "c1",
+	});
+	assert.equal(unresolved.entries[0].resolved, false);
+
+	const ignored = jiraActivityReducer(state, {
+		type: "toggle-resolved",
+		entryId: "c2",
+	});
+	assert.equal(ignored, state);
+});

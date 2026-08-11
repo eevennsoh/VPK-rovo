@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState, type RefObject } from "react";
 
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
+import type { InlineReviewComment } from "@/components/blocks/code-review/lib/inline-comments";
 import {
 	Tabs,
 	TabsContent,
@@ -10,21 +11,22 @@ import {
 	TabsTrigger,
 } from "@/components/ui/tabs";
 
-import {
-	resolveInitialReviewedChapterIds,
-	resolvePullRequestDetailData,
-} from "../../lib/pull-request-detail-data";
+import { resolvePullRequestDetailData } from "../../lib/pull-request-detail-data";
+import { resolveInitialReviewedChapterIds } from "../../lib/resolve-initial-reviewed-chapter-ids";
 import { PullRequestDetailHeader } from "./pull-request-detail-header";
 import { PullRequestFiles } from "./pull-request-files";
 import { PullRequestGuide } from "./pull-request-guide";
 import { PullRequestOverview } from "./pull-request-overview";
+import { PullRequestStickyHeaderShell } from "./pull-request-sticky-header-shell";
 
 type PullRequestDetailTab = "details" | "code" | "guide";
 
 interface PullRequestDetailViewProps {
 	approvalState?: "available" | "approved";
 	entry: JiraActivityEventEntry;
+	initialInlineComments?: readonly InlineReviewComment[];
 	onChapterReviewedChange?: (identity: string, chapterId: string, reviewed: boolean) => void;
+	onInlineCommentsChange?: (identity: string, comments: readonly InlineReviewComment[]) => void;
 	reviewedChapterIds?: ReadonlySet<string>;
 	scrollContainerRef: RefObject<HTMLElement | null>;
 }
@@ -32,7 +34,9 @@ interface PullRequestDetailViewProps {
 export function PullRequestDetailView({
 	approvalState,
 	entry,
+	initialInlineComments,
 	onChapterReviewedChange,
+	onInlineCommentsChange,
 	reviewedChapterIds,
 	scrollContainerRef,
 }: Readonly<PullRequestDetailViewProps>) {
@@ -59,6 +63,10 @@ export function PullRequestDetailView({
 			return next;
 		});
 	}, [data, onChapterReviewedChange]);
+	const handleInlineCommentsChange = useCallback((comments: readonly InlineReviewComment[]) => {
+		if (!data || !onInlineCommentsChange) return;
+		onInlineCommentsChange(data.identity, comments);
+	}, [data, onInlineCommentsChange]);
 
 	if (!data) {
 		return (
@@ -113,33 +121,41 @@ export function PullRequestDetailView({
 					 * Sticky stack inside the body-only left-column scrollport;
 					 * header + tabs stay anchored together below ContextResources.
 					 */}
-					<div className="sticky top-0 z-10 shrink-0 bg-surface">
+					<PullRequestStickyHeaderShell scrollContainerRef={scrollContainerRef}>
 						{header}
-					</div>
-					<div className="min-h-0 flex-1 py-5">
+					</PullRequestStickyHeaderShell>
+					{/*
+					 * Top gap under the PR header lives on the sticky shell (`pb-6`)
+					 * so it stays opaque while code-review chrome sticks beneath it.
+					 */}
+					<div className="min-h-0 flex-1 pb-6">
 						<TabsContent value="details">
 							<PullRequestOverview data={data} />
 						</TabsContent>
 						<TabsContent value="guide">
 							<PullRequestGuide
 								onChapterReviewedChange={handleChapterReviewedChange}
-								onFinish={() => setActiveTab("details")}
 								review={review}
 								reviewedChapterIds={effectiveReviewedChapterIds}
-								showFinishAction={approvalState === undefined}
+								scrollContainerRef={scrollContainerRef}
 							/>
 						</TabsContent>
 						<TabsContent value="code">
-							<PullRequestFiles review={review} />
+							<PullRequestFiles
+								commits={data.commits}
+								initialInlineComments={initialInlineComments}
+								onInlineCommentsChange={handleInlineCommentsChange}
+								review={review}
+							/>
 						</TabsContent>
 					</div>
 				</Tabs>
 			) : (
 				<>
-					<div className="sticky top-0 z-10 shrink-0 bg-surface">
+					<PullRequestStickyHeaderShell scrollContainerRef={scrollContainerRef}>
 						{header}
-					</div>
-					<div className="min-h-0 flex-1 py-5">
+					</PullRequestStickyHeaderShell>
+					<div className="min-h-0 flex-1 pb-6">
 						<PullRequestOverview data={data} />
 					</div>
 				</>

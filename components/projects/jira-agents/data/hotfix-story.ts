@@ -26,7 +26,7 @@ import {
 } from "@/components/projects/jira-golden-journeys/data/jira-design-work-items";
 import type { ArtifactListItem } from "@/components/ui-custom/artifact-list";
 
-import { resolveBuildStep, storyEventsForChapter } from "./hotfix-story-events";
+import { resolveBuildStep, resolveFixStep, storyEventsForChapter } from "./hotfix-story-events";
 import {
 	createJiraAgentsStoryContextResources,
 	IMPROVED_STORY_DESCRIPTION,
@@ -68,6 +68,7 @@ export {
 export type {
 	JiraAgentsBuildStep,
 	JiraAgentsDescriptionSkillPhase,
+	JiraAgentsFixStep,
 	JiraAgentsReviewStep,
 	JiraAgentsStoryChapter,
 	JiraAgentsStoryStateOptions,
@@ -300,7 +301,8 @@ function buildChecklistCompletedCount(
 		case "review":
 			return options.reviewStep === "failed" ? 5 : 4;
 		case "fix":
-			return 5;
+			// failed/repairing: diagnosis done; complete: repair checklist item too.
+			return resolveFixStep(options) === "complete" ? 6 : 5;
 		case "approve":
 			return options.pullRequestApproved ? 7 : 6;
 		case "release":
@@ -328,14 +330,40 @@ function claudePreviewForChapter(
 					: buildStep === "verifying"
 						? "Guest checkout is implemented. I'm verifying the final desktop and mobile design and attaching screenshot evidence for open PR #1847."
 						: "Guest checkout is implemented and verified. I've attached the final desktop and mobile evidence and prepared PR #1847 for automated CI review.";
-		case "review":
-			return options.reviewStep === "queued"
-				? "PR #1847 is open. GitHub Actions owns the automated review; lint and typecheck has started while the unit and guest-checkout browser checks stay queued."
-				: options.reviewStep === "running"
-					? "GitHub Actions is running lint, typecheck, and unit tests for PR #1847 while the guest-checkout browser suite waits for CI capacity."
-					: "GitHub Actions blocked PR #1847. Lint and typecheck found a nullable delivery-address path; unit and browser coverage passed.";
-		case "fix":
-			return "I repaired the nullable delivery-address path and am rerunning the failed lint and typecheck check; unit and browser coverage remain passed.";
+		case "review": {
+			switch (options.reviewStep) {
+				case "queued":
+					return "PR #1847 is open. GitHub Actions owns the automated review; lint and typecheck has started while the unit and guest-checkout browser checks stay queued.";
+				case "running":
+					return "GitHub Actions is running lint, typecheck, and unit tests for PR #1847 while the guest-checkout browser suite waits for CI capacity.";
+				case "unit-passed":
+					return "Unit tests passed for PR #1847. Guest-checkout browser checks are still running while lint and typecheck continues.";
+				case "settling":
+					return "Unit and guest-checkout browser checks passed for PR #1847. Lint and typecheck is still running.";
+				case "failed":
+				case undefined:
+					return "GitHub Actions blocked PR #1847. Lint and typecheck found a nullable delivery-address path; unit and browser coverage passed.";
+				default: {
+					const _exhaustive: never = options.reviewStep;
+					return _exhaustive;
+				}
+			}
+		}
+		case "fix": {
+			const fixStep = resolveFixStep(options);
+			switch (fixStep) {
+				case "failed":
+					return "GitHub Actions blocked PR #1847. Lint and typecheck found a nullable delivery-address path; unit and browser coverage passed.";
+				case "repairing":
+					return "I repaired the nullable delivery-address path and am rerunning the failed lint and typecheck check; unit and browser coverage remain passed.";
+				case "complete":
+					return "I repaired the nullable delivery-address path and reran lint and typecheck to green; unit and browser coverage remain passed.";
+				default: {
+					const _exhaustive: never = fixStep;
+					return _exhaustive;
+				}
+			}
+		}
 		case "approve":
 			return options.pullRequestApproved
 				? "Venn approved PR #1847. All CI and acceptance evidence is complete, so the change is ready to merge and release."
@@ -360,12 +388,18 @@ function createStorySessions(
 	if (chapter === "intake") return descriptionSkillSession;
 
 	const buildStep = resolveBuildStep(options);
+	const fixStep = resolveFixStep(options);
 	const plannerStatus: AgentSessionStatus = chapter === "plan" ? "running" : "completed";
+	// Review keeps Claude non-completed for the whole CI beat (including the
+	// failed settle) so the composer "agents working" context pill stays up
+	// while the PR is open — completing here made the pill vanish ~3s in.
+	// Fix starts at Review's failed settle (needs Fix chip submit), then runs repair.
 	const claudeStatus: AgentSessionStatus = chapter === "release"
 		|| (chapter === "approve" && options.pullRequestApproved)
-		|| (chapter === "review" && options.reviewStep === "failed")
 		? "completed"
-		: chapter === "approve" || chapter === "review"
+		: chapter === "approve"
+			|| chapter === "review"
+			|| (chapter === "fix" && fixStep === "failed")
 			? "waiting"
 			: "running";
 	const checklistLabels = [
@@ -410,13 +444,17 @@ function createStorySessions(
 		imageAttachment: showDesignEvidence ? { ...GUEST_CHECKOUT_DESIGN_ATTACHMENT } : undefined,
 		waitingOn: chapter === "approve" && !options.pullRequestApproved
 			? { kind: "user" }
-			: chapter === "review" && options.reviewStep !== "failed"
-				? {
-					kind: "agent",
-					agentId: "github-actions",
-					agentName: "GitHub Actions",
-				}
-				: undefined,
+			: chapter === "fix" && fixStep === "failed"
+				? { kind: "user" }
+				: chapter === "review"
+					? options.reviewStep === "failed"
+						? { kind: "user" }
+						: {
+							kind: "agent",
+							agentId: "github-actions",
+							agentName: "GitHub Actions",
+						}
+					: undefined,
 	});
 	const planner = createSession(CODE_PLANNER, plannerStatus, 2, {
 		title: "Consult on the guest checkout contract",
@@ -503,6 +541,7 @@ export function createJiraAgentsStoryState(
 		buildStep: chapter === "build" ? resolveBuildStep(options) : undefined,
 		descriptionImproved: descriptionSkillPhase === "applied",
 		descriptionSkillPhase,
+		fixStep: chapter === "fix" ? resolveFixStep(options) : undefined,
 		reviewStep: options.reviewStep ?? "queued",
 	};
 	const workItem = createJiraAgentsStoryWorkItem(chapter, resolvedOptions);

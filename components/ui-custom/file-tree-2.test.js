@@ -15,6 +15,8 @@ test("File Tree 2 defaults to the complete colored icon set", () => {
 	assert.equal(resolver.resolveIcon("file-tree-icon-file", "package.json").token, "json");
 	assert.equal(resolver.resolveIcon("file-tree-icon-file", "README.md").token, "markdown");
 	assert.match(source, /icons = "complete"/u);
+	assert.match(source, /<FileTree2FileIcon/u);
+	assert.match(source, /<FileTree2IconSprite icons=\{icons\} \/>/u);
 });
 
 test("the complete sprite contains every documented built-in file icon", () => {
@@ -52,6 +54,12 @@ test("File Tree 2 enables validated directory and root drag targets", () => {
 
 test("File Tree 2 defaults search to hide non-matches", () => {
 	assert.match(source, /searchMode = "hide-non-matches"/u);
+});
+
+test("File Tree 2 accepts a controlled searchQuery for external search UIs", () => {
+	assert.match(source, /searchQuery\?: string/u);
+	assert.match(source, /searchQuery: controlledSearchQuery/u);
+	assert.match(source, /const query = controlledSearchQuery \?\? internalQuery/u);
 });
 
 test("File Tree 2 renders the complete Git status language", () => {

@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { token } from "@/lib/tokens";
 import { useRovoChat } from "@/app/contexts";
@@ -26,6 +27,8 @@ interface RovoFloatingChatProps {
 	sendPromptOptions?: SendPromptOptions;
 	/** One-turn composer pill context (Code Review / Activity comments). */
 	composerInputContext?: ComposerInputContext;
+	/** Optional host-owned controls rendered immediately after the Add menu trigger. */
+	composerToolsAfterAdd?: ReactNode;
 	onInterceptSubmit?: (text: string) => ChatSubmitInterceptOutcome;
 	onArtifactDialogOpen?: () => void;
 	preserveFloatingSurfaceOnArtifactDialogOpen?: boolean;
@@ -49,6 +52,7 @@ export default function RovoFloatingChat({
 	hideComposerSourceAndModelControls = false,
 	sendPromptOptions,
 	composerInputContext,
+	composerToolsAfterAdd,
 	onInterceptSubmit,
 	onArtifactDialogOpen,
 	preserveFloatingSurfaceOnArtifactDialogOpen = false,
@@ -115,6 +119,7 @@ export default function RovoFloatingChat({
 					hideComposerSourceAndModelControls={hideComposerSourceAndModelControls}
 					sendPromptOptions={sendPromptOptions}
 					composerInputContext={composerInputContext}
+					composerToolsAfterAdd={composerToolsAfterAdd}
 					onInterceptSubmit={onInterceptSubmit}
 					onSurfaceSwitch={onSurfaceSwitch}
 					chatContextBar={chatContextBar}

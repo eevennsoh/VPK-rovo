@@ -59,6 +59,11 @@ export interface JiraActivityProps {
 	/** Handles an inline reply externally instead of appending it to local timeline state. */
 	onSubmitReply?: (entry: JiraActivityCommentEntry, body: string) => void;
 	/**
+	 * Handles Resolve / Unresolve for review discussion threads. When omitted,
+	 * toggles are applied through the local reducer when `allowResolve` is set.
+	 */
+	onResolveComment?: (entry: JiraActivityCommentEntry) => void;
+	/**
 	 * Per-comment action row and composer disclosure.
 	 * - "none": no action row; the composer stays mounted (legacy behavior).
 	 * - "reactions": pills + Add reaction; the composer stays mounted.
@@ -112,6 +117,7 @@ export function JiraActivity({
 	onViewSession,
 	onOpenPullRequest,
 	onSubmitReply,
+	onResolveComment,
 	commentActions = "reply-and-reactions",
 	onToggleReaction,
 	className,
@@ -224,6 +230,17 @@ export function JiraActivity({
 		});
 	}
 
+	function handleResolveComment(entry: JiraActivityCommentEntry) {
+		if (onResolveComment) {
+			onResolveComment(entry);
+			return;
+		}
+		applyAction({
+			type: "toggle-resolved",
+			entryId: entry.id,
+		});
+	}
+
 	return (
 		<div className={cn("flex w-full min-w-0 flex-col gap-4", className)}>
 			{hideHeader ? null : (
@@ -304,6 +321,11 @@ export function JiraActivity({
 													: undefined
 											}
 											onViewSession={onViewSession}
+											onResolve={
+												entry.allowResolve
+													? () => handleResolveComment(entry)
+													: undefined
+											}
 											onSubmitReply={(body) => handleAddReply(entry, body)}
 											onToggleReaction={(emoji) => handleToggleReaction(entry, emoji)}
 											action={renderCommentAction?.(entry)}
@@ -358,6 +380,7 @@ export type {
 	JiraActivitySegment,
 	JiraActivitySortOrder,
 } from "./jira-activity-types";
+export type { JiraActivityViewFilterMode } from "./jira-activity-header";
 export {
 	jiraActivitySegmentsToPlainText,
 	serializeActivityCommentsContext,

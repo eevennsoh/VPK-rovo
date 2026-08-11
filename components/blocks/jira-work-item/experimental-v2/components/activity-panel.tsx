@@ -50,7 +50,8 @@ const ACTIVITY_REVEAL_SETTLE_MS = 2_000;
  */
 export type ActivityRailChrome = {
 	count: number;
-	filterMode: "work-item" | "sort-only";
+	/** work-item = Agents/Needs input/Comments; pull-request = Comments; sort-only = Latest/Oldest. */
+	filterMode: "work-item" | "pull-request" | "sort-only";
 	sortOrder: JiraActivitySortOrder;
 	filter: JiraActivityFilter;
 	onSortOrderChange: (next: JiraActivitySortOrder) => void;

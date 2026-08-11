@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/select";
 
 const TRIGGER_LABEL = "Review pull request";
+const SELECTED_TRIGGER_LABEL = "Review";
 
 const PULL_REQUEST_STATUS_ICONS: Record<
 	PullRequestStatusIconKind,
@@ -59,10 +60,10 @@ function findPullRequestEntry(
 }
 
 /**
- * ContextResources Select for pull requests. Trigger label stays generic;
- * each option is a Pull Request block card. The active filter is a removable
- * SelectTag inside the trigger (after the label). Selecting an option opens PR
- * detail in the description column.
+ * ContextResources Select for pull requests. Placeholder trigger says
+ * "Review pull request"; with a selection it shortens to "Review" beside the
+ * PR SelectTag. Each option is a Pull Request block card. Selecting an option
+ * opens PR detail in the description column.
  */
 export function PullRequestsSelect({
 	entries,
@@ -88,6 +89,9 @@ export function PullRequestsSelect({
 	const selectedPullRequest = selectedEntry?.pullRequest;
 	const selectedNumber = selectedPullRequest?.number;
 	const selectedTagLabel = typeof selectedNumber === "number" ? `#${selectedNumber}` : null;
+	const visibleTriggerLabel = selectedTagLabel
+		? SELECTED_TRIGGER_LABEL
+		: TRIGGER_LABEL;
 	const selectedStatusPresentation = selectedPullRequest
 		? getPullRequestStatusPresentation(selectedPullRequest.status)
 		: null;
@@ -133,7 +137,7 @@ export function PullRequestsSelect({
 						{() => (
 							<SelectTags>
 								<span className="truncate @max-[36rem]/resource-row:hidden">
-									{TRIGGER_LABEL}
+									{visibleTriggerLabel}
 								</span>
 								{selectedTagLabel && selectedStatusPresentation && SelectedStatusIcon ? (
 									<SelectTag
