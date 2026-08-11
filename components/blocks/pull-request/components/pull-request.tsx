@@ -198,8 +198,9 @@ export function PullRequest({
 	onActivate,
 	className,
 }: Readonly<PullRequestProps>) {
-	// Apply selected chrome whenever `selected` is set — including display-only
-	// cards inside SelectItem (no onActivate; the item owns activation).
+	// Apply selected chrome whenever `selected` is set (e.g. interactive list
+	// cards with onActivate). Dropdown options should omit `selected` and keep
+	// an idle surface — SelectItem owns activation; the trigger shows state.
 	const activeSelected = selected;
 	const body = (
 		<PullRequestCardBody

@@ -180,14 +180,12 @@ export function PullRequestsSelect({
 							const item = toPanelPullRequestProps(entry);
 							if (!pullRequest || !item) return null;
 							const identity = getPullRequestIdentity(pullRequest);
-							const selected = identity === selectedIdentity;
 							return (
 								<SelectItem
 									key={identity}
-									className="group/pr-option h-auto min-h-0 p-0 data-[highlighted]:bg-transparent data-selected:bg-transparent data-selected:data-[highlighted]:bg-transparent active:bg-transparent data-selected:active:bg-transparent"
+									className="group/pr-option h-auto min-h-0 p-0 data-[highlighted]:bg-transparent data-selected:bg-transparent data-selected:data-highlighted:bg-transparent data-selected:data-[highlighted]:bg-transparent active:bg-transparent data-selected:active:bg-transparent"
 									data-jira-work-item-pull-request-card={pullRequest.number}
 									data-jira-work-item-pull-request-identity={identity}
-									data-selected={selected ? "true" : undefined}
 									showIndicator={false}
 									textClassName="w-full min-w-0 whitespace-normal"
 									value={identity}
@@ -195,16 +193,13 @@ export function PullRequestsSelect({
 									{/*
 									 * SelectItem is an invisible activation shell — PullRequest
 									 * owns borderless surface + highlight (via group). Avoids a
-									 * padded “double box” around the card.
+									 * padded “double box” around the card. Do not pass
+									 * `selected` here: that paints blue selected chrome; the
+									 * trigger tag already shows the open PR.
 									 */}
 									<PullRequest
 										{...item}
-										className={
-											selected
-												? "pointer-events-none min-w-0 max-w-full w-full rounded-lg border-transparent group-data-[highlighted]/pr-option:bg-bg-selected-hovered"
-												: "pointer-events-none min-w-0 max-w-full w-full rounded-lg border-transparent transition-[background-color] duration-normal ease-out-practical group-data-[highlighted]/pr-option:bg-surface-hovered"
-										}
-										selected={selected}
+										className="pointer-events-none min-w-0 max-w-full w-full rounded-lg border-transparent transition-[background-color] duration-normal ease-out-practical group-data-[highlighted]/pr-option:bg-surface-hovered"
 									/>
 								</SelectItem>
 							);

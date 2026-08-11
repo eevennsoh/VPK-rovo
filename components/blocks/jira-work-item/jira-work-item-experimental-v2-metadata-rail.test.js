@@ -236,7 +236,11 @@ test("experimental v2 shows a read-only title-meta PR Tag and opens PRs from Con
 	);
 	assert.match(
 		pullRequestsSelectSource,
-		/<SelectItem[\s\S]*showIndicator=\{false\}[\s\S]*textClassName="w-full min-w-0 whitespace-normal"[\s\S]*<PullRequest[\s\S]*selected=\{selected\}/u,
+		/<SelectItem[\s\S]*showIndicator=\{false\}[\s\S]*textClassName="w-full min-w-0 whitespace-normal"[\s\S]*<PullRequest[\s\S]*group-data-\[highlighted\]\/pr-option:bg-surface-hovered/u,
+	);
+	assert.doesNotMatch(
+		pullRequestsSelectSource,
+		/<PullRequest[\s\S]*selected=\{/u,
 	);
 	assert.doesNotMatch(
 		pullRequestsSelectSource,
@@ -814,14 +818,23 @@ test("experimental v2 keeps pull-request selection transient at the composition 
 	);
 
 	// Select options are Pull Request block cards (display-only; SelectItem activates).
-	// No trailing checkmark — selection is shown on the card itself.
+	// No trailing checkmark / no blue selected chrome on the option card — the
+	// trigger tag shows the open PR; hover uses surface-hovered only.
 	assert.match(
 		pullRequestsSelectSource,
 		/<SelectContent[\s\S]*className="[^"]*rounded-xl p-1"[\s\S]*data-jira-work-item-resource-pull-requests-menu/u,
 	);
 	assert.match(
 		pullRequestsSelectSource,
-		/<SelectItem[\s\S]*group\/pr-option[\s\S]*data-\[highlighted\]:bg-transparent[\s\S]*data-jira-work-item-pull-request-card=\{pullRequest\.number\}[\s\S]*showIndicator=\{false\}[\s\S]*value=\{identity\}[\s\S]*<PullRequest[\s\S]*border-transparent[\s\S]*group-data-\[highlighted\]\/pr-option:bg-[\s\S]*selected=\{selected\}/u,
+		/<SelectItem[\s\S]*group\/pr-option[\s\S]*data-\[highlighted\]:bg-transparent[\s\S]*data-selected:bg-transparent[\s\S]*data-selected:data-highlighted:bg-transparent[\s\S]*data-jira-work-item-pull-request-card=\{pullRequest\.number\}[\s\S]*showIndicator=\{false\}[\s\S]*value=\{identity\}[\s\S]*<PullRequest[\s\S]*border-transparent[\s\S]*group-data-\[highlighted\]\/pr-option:bg-surface-hovered/u,
+	);
+	assert.doesNotMatch(
+		pullRequestsSelectSource,
+		/<PullRequest[\s\S]*selected=\{/u,
+	);
+	assert.doesNotMatch(
+		pullRequestsSelectSource,
+		/group-data-\[highlighted\]\/pr-option:bg-bg-selected/u,
 	);
 	assert.doesNotMatch(
 		pullRequestsSelectSource,
