@@ -93,6 +93,9 @@ const V2_ONLY_FILES = new Set([
 	"components/pull-request-sort-control.tsx",
 	"components/pull-request-detail/pull-request-files.tsx",
 	"components/pull-request-detail/pull-request-guide.tsx",
+	# Guided-review chapter jump + scroll-spy (v2 PR surface only).
+	"lib/pull-request-guide-active-chapter.ts",
+	"lib/pull-request-guide-active-chapter.test.js",
 	"components/pull-request-detail/pull-request-detail-header.tsx",
 	"components/pull-request-detail/pull-request-overview.tsx",
 	"components/pull-request-detail/pull-request-detail-view.tsx",
