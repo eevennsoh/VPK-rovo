@@ -2,7 +2,7 @@
 
 import CommentIcon from "@atlaskit/icon/core/comment";
 import { LayoutGroup } from "motion/react";
-import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { useRovoChat } from "@/app/contexts";
 import type { SkillsDirectorySkill } from "@/app/data/directory";
@@ -19,6 +19,10 @@ import type {
 import { SESSION_EPOCH_MS } from "@/components/blocks/jira-work-item/data/session-fixtures";
 import type { WorkItemData } from "@/app/contexts/context-work-item-modal";
 import { ActivityChatCommentsProvider } from "@/components/blocks/jira-work-item/experimental-v2/context-activity-chat-comments";
+import {
+	FailingChecksComposerProvider,
+	useFailingChecksComposer,
+} from "@/components/blocks/jira-work-item/experimental-v2/context-failing-checks-composer";
 import {
 	JiraWorkItemProvider,
 	useJiraWorkItemMeta,
@@ -57,6 +61,7 @@ import {
 } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
 import {
 	resolvePullRequestDetailData,
+	type PullRequestCheck,
 	type PullRequestReviewer,
 } from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-detail-data";
 import {
@@ -89,7 +94,10 @@ interface ExperimentalV2JiraWorkItemBaseProps {
 	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
 	onOpenAgentChat?: (agentId: string) => void;
 	onPullRequestApprove?: (identity: string) => void;
-	/** Host callback when a failed CI check's Fix button is clicked. */
+	/**
+	 * Host callback when the activity composer submits with a staged failing-checks
+	 * chip (Fix / Fix all). Advances Fix-chapter storytelling — does not re-run CI.
+	 */
 	onPullRequestFix?: (identity: string) => void;
 	onSessionReply?: SessionReplyInterceptor;
 	onSkillInvoke?: (skill: SkillsDirectorySkill) => boolean | void;
@@ -231,6 +239,7 @@ function ExperimentalV2JiraWorkItemContent({
 	const previousStageKeyRef = useRef(stageKey);
 	const autoOpenedForStageRef = useRef<string | null>(null);
 	const { setPanelView, setSuppressActivityPanelReveal } = useMetadataRail();
+	const { stageChecks, removeAll: removeFailingChecks } = useFailingChecksComposer();
 	const { chatSurface } = useRovoChat();
 	const { activityEvents } = useJiraWorkItemMeta();
 	const { elapsedMs } = useJiraWorkItemState();
@@ -344,10 +353,24 @@ function ExperimentalV2JiraWorkItemContent({
 		autoOpenedForStageRef.current = stageToken;
 		handlePullRequestSelect(entry);
 	}, [autoOpenPullRequestIdentity, handlePullRequestSelect, pullRequestEntries, stageKey]);
-	const handlePullRequestFix = useCallback(() => {
+	// Fix / Fix all stages a composer chip; story repair runs on submit.
+	const handlePullRequestFixStage = useCallback((checks: readonly PullRequestCheck[]) => {
+		if (!onPullRequestFix || checks.length === 0) return;
+		stageChecks(checks.map((check) => ({
+			id: check.id,
+			name: check.name,
+			details: check.details,
+		})));
+	}, [onPullRequestFix, stageChecks]);
+	const handlePullRequestFixSubmit = useCallback(() => {
 		if (!selectedPullRequestIdentity || !onPullRequestFix) return;
 		onPullRequestFix(selectedPullRequestIdentity);
 	}, [onPullRequestFix, selectedPullRequestIdentity]);
+	useEffect(() => {
+		if (!onPullRequestFix) {
+			removeFailingChecks();
+		}
+	}, [onPullRequestFix, removeFailingChecks]);
 	const selectedPullRequestApprovalState = selectedPullRequestIdentity
 		? pullRequestApprovalStates?.[selectedPullRequestIdentity]
 		: undefined;
@@ -492,10 +515,9 @@ function ExperimentalV2JiraWorkItemContent({
 
 	return (
 		<PanelLayoutProvider>
-			<ActivityChatCommentsProvider>
-				<Toaster id={PULL_REQUEST_REVIEW_TOASTER_ID} position="bottom-left" />
-				<LayoutGroup id={composerLayoutGroupId}>
-					<ExperimentalWorkItemDialog
+			<Toaster id={PULL_REQUEST_REVIEW_TOASTER_ID} position="bottom-left" />
+			<LayoutGroup id={composerLayoutGroupId}>
+				<ExperimentalWorkItemDialog
 						inlineSurface={inlineSurface}
 						open={open}
 						onClose={onClose}
@@ -550,6 +572,9 @@ function ExperimentalV2JiraWorkItemContent({
 									agents={composerAgents}
 									autoFocus={restoreActivityComposerFocus}
 									onAgentPromptSubmit={onAgentPromptSubmit}
+									onFailingChecksSubmit={
+										onPullRequestFix ? handlePullRequestFixSubmit : undefined
+									}
 									onOpenAgentChat={onOpenAgentChat}
 									primaryAction={pullRequestReviewAction}
 									pullRequestReview={activePullRequestReview}
@@ -574,7 +599,7 @@ function ExperimentalV2JiraWorkItemContent({
 										automationRules={automationRules}
 										borderless
 										currentReviewerStatus={selectedPullRequestReviewerStatus}
-										onPullRequestFix={onPullRequestFix ? handlePullRequestFix : undefined}
+										onPullRequestFix={onPullRequestFix ? handlePullRequestFixStage : undefined}
 										selectedPullRequestEntry={selectedPullRequestEntry}
 									/>
 									<div className="hidden @[860px]/agentlayout:contents">
@@ -593,7 +618,6 @@ function ExperimentalV2JiraWorkItemContent({
 						/>
 					</ExperimentalWorkItemDialog>
 				</LayoutGroup>
-			</ActivityChatCommentsProvider>
 		</PanelLayoutProvider>
 	);
 }
@@ -657,28 +681,32 @@ export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWor
 					revealActivityEntryId={props.revealActivityEntryId}
 					revealActivityKey={props.revealActivityKey}
 				>
-					<ExperimentalV2JiraWorkItemContent
-						activitySessionThread={props.activitySessionThread}
-						autoOpenPullRequestIdentity={props.autoOpenPullRequestIdentity}
-						automationRules={props.automationRules}
-						composerAgents={props.composerAgents}
-						composerToolsAfterAdd={props.composerToolsAfterAdd}
-						inlineSurface={inlineSurface}
-						onAgentPromptSubmit={props.onAgentPromptSubmit}
-						onClose={onClose}
-						onOpenAgentChat={props.onOpenAgentChat}
-						onPullRequestApprove={props.onPullRequestApprove}
-						onPullRequestFix={props.onPullRequestFix}
-						onSessionReply={props.onSessionReply}
-						onSkillInvoke={props.onSkillInvoke}
-						open={open}
-						outputs={props.outputs}
-						presentation={presentation}
-						primaryCodingAgentId={props.primaryCodingAgentId}
-						pullRequestApprovalStates={props.pullRequestApprovalStates}
-						stageKey={props.stageKey}
-						workItem={workItem}
-					/>
+					<ActivityChatCommentsProvider>
+						<FailingChecksComposerProvider>
+							<ExperimentalV2JiraWorkItemContent
+								activitySessionThread={props.activitySessionThread}
+								autoOpenPullRequestIdentity={props.autoOpenPullRequestIdentity}
+								automationRules={props.automationRules}
+								composerAgents={props.composerAgents}
+								composerToolsAfterAdd={props.composerToolsAfterAdd}
+								inlineSurface={inlineSurface}
+								onAgentPromptSubmit={props.onAgentPromptSubmit}
+								onClose={onClose}
+								onOpenAgentChat={props.onOpenAgentChat}
+								onPullRequestApprove={props.onPullRequestApprove}
+								onPullRequestFix={props.onPullRequestFix}
+								onSessionReply={props.onSessionReply}
+								onSkillInvoke={props.onSkillInvoke}
+								open={open}
+								outputs={props.outputs}
+								presentation={presentation}
+								primaryCodingAgentId={props.primaryCodingAgentId}
+								pullRequestApprovalStates={props.pullRequestApprovalStates}
+								stageKey={props.stageKey}
+								workItem={workItem}
+							/>
+						</FailingChecksComposerProvider>
+					</ActivityChatCommentsProvider>
 				</MetadataRailProvider>
 			</JiraWorkItemProvider>
 		</WorkItemModalProvider>

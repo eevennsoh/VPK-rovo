@@ -29,6 +29,7 @@ import {
 	type PullRequestReviewSubmission,
 } from "@/components/blocks/pull-request-review";
 import { useActivityChatComments } from "@/components/blocks/jira-work-item/experimental-v2/context-activity-chat-comments";
+import { useFailingChecksComposer } from "@/components/blocks/jira-work-item/experimental-v2/context-failing-checks-composer";
 import { useJiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
 import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental-v2/context-metadata-rail";
 import {
@@ -42,7 +43,12 @@ import {
 	findMentionedWorkingAgentSessions,
 	findSteeredWorkingSessions,
 } from "@/components/blocks/jira-work-item/experimental-v2/lib/activity-composer-session-routing";
+import {
+	FAILING_CHECKS_COMPOSER_PROMPT,
+	serializeFailingChecksContext,
+} from "@/components/blocks/jira-work-item/experimental-v2/lib/failing-checks-composer-context";
 import { CommentsComposerChip } from "@/components/ui-custom/comments-composer-chip";
+import { FailingChecksComposerChip } from "@/components/ui-custom/failing-checks-composer-chip";
 import {
 	RichTextSuggestionMenu,
 	type RichTextSuggestionMenuItem,
@@ -144,6 +150,7 @@ export function ActivityComposer({
 	agents,
 	autoFocus = false,
 	onAgentPromptSubmit,
+	onFailingChecksSubmit,
 	onOpenAgentChat,
 	primaryAction,
 	pullRequestReview,
@@ -152,6 +159,8 @@ export function ActivityComposer({
 	agents?: readonly AgentSelectorAgent[];
 	autoFocus?: boolean;
 	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
+	/** Advances Fix-chapter storytelling when a failing-checks chip is submitted. */
+	onFailingChecksSubmit?: () => void;
 	onOpenAgentChat?: (agentId: string) => void;
 	primaryAction?: ActivityComposerPrimaryAction;
 	pullRequestReview?: ActivityComposerPullRequestReview;
@@ -161,9 +170,14 @@ export function ActivityComposer({
 	const { requestRevealLatestActivity } = useMetadataRail();
 	const {
 		comments: activityChatComments,
-		focusRequestKey,
+		focusRequestKey: activityCommentsFocusKey,
 		removeAll: removeActivityChatComments,
 	} = useActivityChatComments();
+	const {
+		checks: failingChecks,
+		focusRequestKey: failingChecksFocusKey,
+		removeAll: removeFailingChecks,
+	} = useFailingChecksComposer();
 	const composerRootRef = useRef<HTMLDivElement>(null);
 	const shouldReduceMotion = Boolean(useReducedMotion());
 	const availableAgents = agents ?? ROVO_AGENT_SELECTOR_AGENTS;
@@ -177,9 +191,15 @@ export function ActivityComposer({
 	const [sessionTargetSelection, setSessionTargetSelection] = useState<SessionTargetSelection | null>(null);
 	const [selectedSessionTargetIndex, setSelectedSessionTargetIndex] = useState(0);
 	const hasActivityChatComments = activityChatComments.length > 0;
+	const hasFailingChecks = failingChecks.length > 0;
+	const focusRequestKey = activityCommentsFocusKey + failingChecksFocusKey;
 	const activityCommentsContext = useMemo(
 		() => serializeActivityCommentsContext(meta.workItem, activityChatComments),
 		[activityChatComments, meta.workItem],
+	);
+	const failingChecksContext = useMemo(
+		() => serializeFailingChecksContext(failingChecks),
+		[failingChecks],
 	);
 	const activityCommentsInputContext = hasActivityChatComments ? (
 		<CommentsComposerChip
@@ -193,7 +213,24 @@ export function ActivityComposer({
 			removeAllLabel="Remove all activity comments"
 			testId="activity-comments-chip"
 		/>
+	) : null;
+	const failingChecksInputContext = hasFailingChecks ? (
+		<FailingChecksComposerChip
+			checks={failingChecks}
+			onRemoveAll={removeFailingChecks}
+		/>
+	) : null;
+	const composerInputContext = hasActivityChatComments || hasFailingChecks ? (
+		<div className="flex min-w-0 flex-wrap items-center gap-1">
+			{failingChecksInputContext}
+			{activityCommentsInputContext}
+		</div>
 	) : undefined;
+	const composerInputContextSubmitText = hasFailingChecks
+		? FAILING_CHECKS_COMPOSER_PROMPT
+		: hasActivityChatComments
+			? ACTIVITY_COMMENTS_PROMPT
+			: undefined;
 
 	useEffect(() => {
 		if (focusRequestKey === 0) {
@@ -270,8 +307,12 @@ export function ActivityComposer({
 	const handleSubmit = (body: string) => {
 		const text = body.trim();
 		if (!text) return;
-		const promptWithActivityContext = activityCommentsContext
-			? `${text}\n\n${activityCommentsContext}`
+		const contextParts = [
+			activityCommentsContext,
+			failingChecksContext,
+		].filter(Boolean);
+		const promptWithActivityContext = contextParts.length > 0
+			? `${text}\n\n${contextParts.join("\n\n")}`
 			: text;
 		const mentionedAgentSessions = findMentionedWorkingAgentSessions(state.sessions, text);
 		const mentionedAgentSession = mentionedAgentSessions.length === 1 ? mentionedAgentSessions[0] : null;
@@ -315,6 +356,10 @@ export function ActivityComposer({
 			[...handledAgentIds, ...invokedAgents.map((agent) => agent.id)],
 			promptWithActivityContext,
 		);
+		if (hasFailingChecks) {
+			// Story repair path: chip submit advances Fix chapter (checks go green).
+			onFailingChecksSubmit?.();
+		}
 		if (handledAgentIds.size === 0 && invokedAgents.length === 0) {
 			if (meta.composerDelivery === "broadcast-active-agents") {
 				actions.broadcastComment(promptWithActivityContext);
@@ -327,6 +372,7 @@ export function ActivityComposer({
 			requestRevealLatestActivity();
 		}
 		removeActivityChatComments();
+		removeFailingChecks();
 		setDraft("");
 		setSessionTargetSelection(null);
 		setSelectedSessionTargetIndex(0);
@@ -401,8 +447,8 @@ export function ActivityComposer({
 								<JiraActivityComposer
 									autoFocus={autoFocus}
 									author={JIRA_WORK_ITEM_CURRENT_USER}
-									inputContext={activityCommentsInputContext}
-									inputContextSubmitText={ACTIVITY_COMMENTS_PROMPT}
+									inputContext={composerInputContext}
+									inputContextSubmitText={composerInputContextSubmitText}
 									mentionSources={mentionSources}
 									mentionSectionLabels={JIRA_WORK_ITEM_MENTION_LABELS}
 									onSubmit={handleSubmit}

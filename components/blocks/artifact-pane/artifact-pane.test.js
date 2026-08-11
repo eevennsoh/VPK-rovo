@@ -81,7 +81,7 @@ test("Artifact Pane owns independently collapsible sections", () => {
 	assert.match(BLOCK_SOURCE, /aria-label=\{headerAction\.label\}/u);
 	assert.match(BLOCK_SOURCE, /headerAction && \(headerAction\.reveal !== "open" \|\| open\)/u);
 	assert.match(BLOCK_SOURCE, /headerAction\.appearance === "label"/u);
-	assert.match(BLOCK_SOURCE, /size="compact"[\s\S]*variant="ghost"[\s\S]*\{headerAction\.label\}/u);
+	assert.match(BLOCK_SOURCE, /size="compact"[\s\S]*variant="outline"[\s\S]*\{headerAction\.label\}/u);
 	assert.match(BLOCK_SOURCE, /pointer-events-none absolute top-1\/2 right-8 -translate-y-1\/2 opacity-0 transition-opacity duration-fast ease-out-practical group-hover\/header:pointer-events-auto group-hover\/header:opacity-100 group-has-\[:focus-visible\]\/header:pointer-events-auto group-has-\[:focus-visible\]\/header:opacity-100 motion-reduce:transition-none/u);
 	assert.match(BLOCK_SOURCE, /<TooltipContent positionerClassName="z-\[502\]">\{headerAction\.label\}<\/TooltipContent>/u);
 	assert.doesNotMatch(BLOCK_SOURCE, /Chevron(?:Up|Down)Icon/u);

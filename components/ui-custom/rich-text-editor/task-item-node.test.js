@@ -30,17 +30,25 @@ test("rich text editor renders TipTap task items with VPK Checkbox NodeView", ()
 	assert.match(nodeViewSource, /data-type="taskItem"/u);
 });
 
-test("completed rich text task items use disabled text without strikethrough", () => {
+test("completed rich text task items use subtlest text without strikethrough", () => {
 	const cssSource = readProjectFile(
 		"components/ui-custom/rich-text-editor/rich-text-editor.css",
 	);
 
 	assert.match(
 		cssSource,
-		/\.tiptap-editor\s+\.rich-text-task-item\[data-checked="true"\]\s*>\s*div\s*\{[^}]*color:\s*var\(--ds-text-disabled/u,
+		/\.tiptap-editor\s+\.rich-text-task-item\[data-checked="true"\]\s*>\s*div\s*\{[^}]*color:\s*var\(--ds-text-subtlest/u,
+	);
+	assert.match(
+		cssSource,
+		/\.tiptap-editor\s+\.rich-text-task-item\[data-checked="true"\]\s*>\s*div\s+:is\(strong,\s*a,\s*\.editor-link,\s*code\)\s*\{[^}]*color:\s*inherit/u,
 	);
 	assert.doesNotMatch(
 		cssSource,
 		/\.tiptap-editor\s+\.rich-text-task-item\[data-checked="true"\]\s*>\s*div\s*\{[^}]*text-decoration:\s*line-through/u,
+	);
+	assert.doesNotMatch(
+		cssSource,
+		/\.tiptap-editor\s+\.rich-text-task-item\[data-checked="true"\]\s*>\s*div\s*\{[^}]*color:\s*var\(--ds-text-disabled/u,
 	);
 });

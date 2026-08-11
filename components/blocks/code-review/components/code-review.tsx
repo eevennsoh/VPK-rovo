@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 
 import type { RovoAgentProfile } from "@/app/data/directory/agents";
 import { RovoCanvas } from "@/components/blocks/rovo-canvas/page";
@@ -107,37 +107,46 @@ export function CodeReview({
 			? { drafts: EMPTY_INLINE_COMMENT_STATE.drafts, comments: initialInlineComments }
 			: EMPTY_INLINE_COMMENT_STATE
 	));
+	const inlineCommentsRef = useRef(inlineComments);
+	inlineCommentsRef.current = inlineComments;
 	const nextInlineCommentId = useRef(initialInlineComments?.length ?? 0);
+	const applyInlineComments = useCallback((
+		updater: (state: typeof EMPTY_INLINE_COMMENT_STATE) => typeof EMPTY_INLINE_COMMENT_STATE,
+	) => {
+		const previous = inlineCommentsRef.current;
+		const next = updater(previous);
+		inlineCommentsRef.current = next;
+		setInlineComments(next);
+		if (next.comments !== previous.comments) {
+			onInlineCommentsChange?.(next.comments);
+		}
+	}, [onInlineCommentsChange]);
 	const handleAddDraft = useCallback((anchor: InlineCommentAnchor) => {
 		nextInlineCommentId.current += 1;
-		setInlineComments((state) => createInlineCommentDraft(state, {
+		applyInlineComments((state) => createInlineCommentDraft(state, {
 			...anchor,
 			body: "",
 			id: `inline-comment-${nextInlineCommentId.current}`,
 		}));
-	}, []);
+	}, [applyInlineComments]);
 	const handleCancelDraft = useCallback((draftId: string) => {
-		setInlineComments((state) => cancelInlineCommentDraft(state, draftId));
-	}, []);
+		applyInlineComments((state) => cancelInlineCommentDraft(state, draftId));
+	}, [applyInlineComments]);
 	const handleCommitDraft = useCallback((draftId: string) => {
-		setInlineComments((state) => commitInlineCommentDraft(state, draftId));
-	}, []);
+		applyInlineComments((state) => commitInlineCommentDraft(state, draftId));
+	}, [applyInlineComments]);
 	const handleDeleteComment = useCallback((commentId: string) => {
-		setInlineComments((state) => removeInlineComment(state, commentId));
-	}, []);
+		applyInlineComments((state) => removeInlineComment(state, commentId));
+	}, [applyInlineComments]);
 	const handleUpdateComment = useCallback((commentId: string, body: string) => {
-		setInlineComments((state) => updateInlineComment(state, commentId, body));
-	}, []);
+		applyInlineComments((state) => updateInlineComment(state, commentId, body));
+	}, [applyInlineComments]);
 	const handleRemoveAllComments = useCallback(() => {
-		setInlineComments((state) => removeAllInlineComments(state));
-	}, []);
+		applyInlineComments((state) => removeAllInlineComments(state));
+	}, [applyInlineComments]);
 	const handleUpdateDraft = useCallback((draftId: string, body: string) => {
-		setInlineComments((state) => updateInlineCommentDraft(state, draftId, body));
-	}, []);
-
-	useEffect(() => {
-		onInlineCommentsChange?.(inlineComments.comments);
-	}, [inlineComments.comments, onInlineCommentsChange]);
+		applyInlineComments((state) => updateInlineCommentDraft(state, draftId, body));
+	}, [applyInlineComments]);
 
 	const editorPanel = (
 		<EditorPanel

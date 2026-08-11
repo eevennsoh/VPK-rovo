@@ -26,7 +26,7 @@ export type JiraAgentsReviewStep =
 	| "settling"
 	| "failed";
 /**
- * Fix continues from Review's failed PR: await Fix click → rerun → green.
+ * Fix continues from Review's failed PR: await Fix chip submit → repair → green.
  * Defaults to `failed` (same created-PR screen as Review end).
  */
 export type JiraAgentsFixStep = "failed" | "repairing" | "complete";

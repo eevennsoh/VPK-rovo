@@ -166,7 +166,7 @@ function ArtifactPaneDisclosure({
 							}}
 							size="compact"
 							type="button"
-							variant="ghost"
+							variant="outline"
 						>
 							{headerAction.label}
 						</Button>

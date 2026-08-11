@@ -129,7 +129,7 @@ test("agent comments support an inline read-only progress checklist", () => {
 	);
 	assert.match(
 		COMMENT_SOURCE,
-		/<span className=\{cn\("min-w-0 wrap-break-word", item\.completed \? "text-text-disabled" : null\)\}>/u,
+		/<span className=\{cn\("min-w-0 wrap-break-word", item\.completed \? "text-text-subtlest" : null\)\}>/u,
 	);
 });
 

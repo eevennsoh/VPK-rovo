@@ -196,8 +196,9 @@ test("code review owns comment state across files and diff layouts", () => {
 	assert.match(source, /onInlineCommentsChange\?: \(comments: readonly InlineReviewComment\[\]\) => void/u);
 	assert.match(
 		source,
-		/useEffect\(\(\) => \{\s*onInlineCommentsChange\?\.\(inlineComments\.comments\);\s*\}, \[inlineComments\.comments, onInlineCommentsChange\]\)/u,
+		/if \(next\.comments !== previous\.comments\) \{\s*onInlineCommentsChange\?\.\(next\.comments\);\s*\}/u,
 	);
+	assert.doesNotMatch(source, /useEffect\(\(\) => \{\s*onInlineCommentsChange/u);
 });
 
 test("code review sends committed comments as one-turn composer context", () => {

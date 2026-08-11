@@ -334,8 +334,17 @@
 }
 
 .tiptap-editor .rich-text-task-item[data-checked="true"] > div {
-	/* Match activity checklist: completed = disabled text, no strikethrough. */
-	color: var(--ds-text-disabled, #091e424f);
+	/* Match activity checklist: completed = subtlest text, no strikethrough. */
+	color: var(--ds-text-subtlest, #626f86);
+}
+
+/*
+ * Agent-instructions `strong` (and link/code marks) set an explicit text color
+ * that would otherwise keep bold labels like “Checkout as guest” prominent on
+ * completed tasks. Force checked-task marks to inherit the subtlest body color.
+ */
+.tiptap-editor .rich-text-task-item[data-checked="true"] > div :is(strong, a, .editor-link, code) {
+	color: inherit;
 }
 
 .tiptap-editor:focus {
