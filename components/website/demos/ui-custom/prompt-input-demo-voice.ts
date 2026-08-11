@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useRealtimeVoice } from "@/components/projects/rovo-core/hooks/use-realtime-voice";
 import type { RovoComposerDictationState } from "@/components/projects/shared/components/rovo-composer-send-controls";
@@ -49,7 +49,6 @@ export function usePromptInputDemoVoice({
 	prompt,
 }: Readonly<PromptInputDemoVoiceOptions>): PromptInputDemoVoiceControls {
 	const promptRef = useRef(prompt);
-	promptRef.current = prompt;
 	const dictationBaselineRef = useRef<string | null>(null);
 	const dictationCommittedTextRef = useRef<string | null>(null);
 	const isDictationActiveRef = useRef(false);
@@ -57,6 +56,10 @@ export function usePromptInputDemoVoice({
 	const [dictationTranscriptPreview, setDictationTranscriptPreview] = useState<string | null>(null);
 	const [clickyActive, setClickyActive] = useState(false);
 	const [localStatusMessage, setLocalStatusMessage] = useState<string | null>(null);
+
+	useEffect(() => {
+		promptRef.current = prompt;
+	}, [prompt]);
 
 	const updateDictationTranscript = useCallback((
 		payload: RealtimeTranscriptPayload,
