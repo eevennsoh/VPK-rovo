@@ -6,6 +6,7 @@ import {
 } from "@/components/ui-custom/comments-composer-chip";
 
 import type { InlineReviewComment } from "../lib/inline-comments";
+import { formatInlineCommentLineLabel } from "../lib/inline-comments";
 
 interface InlineCommentsComposerChipProps {
 	comments: readonly InlineReviewComment[];
@@ -16,7 +17,7 @@ function toChipItems(comments: readonly InlineReviewComment[]): CommentsComposer
 	return comments.map((comment) => ({
 		id: comment.id,
 		title: comment.filePath,
-		subtitle: `Line ${comment.lineNumber}`,
+		subtitle: formatInlineCommentLineLabel(comment),
 		body: comment.body,
 	}));
 }
