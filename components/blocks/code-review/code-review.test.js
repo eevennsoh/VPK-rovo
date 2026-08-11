@@ -105,7 +105,10 @@ test("code review extends Pierre gutter utilities and line annotations", () => {
 	assert.match(diffView, /<MultiFileDiff<InlineCommentAnnotationMetadata>/u);
 	assert.match(diffView, /lineAnnotations=\{readOnly \? \[\] : lineAnnotations\}/u);
 	assert.match(diffView, /enableGutterUtility: !readOnly/u);
+	assert.match(diffView, /enableLineSelection: !readOnly/u);
 	assert.match(diffView, /lineHoverHighlight: "both"/u);
+	assert.match(diffView, /onLineSelected: readOnly \? undefined : handleLineSelected/u);
+	assert.doesNotMatch(diffView, /onGutterUtilityClick/u);
 	assert.doesNotMatch(diffView, /onLineNumberClick/u);
 	assert.match(diffView, /renderAnnotation=\{readOnly \? undefined : \(\{ metadata \}\) => \(/u);
 	assert.match(
@@ -115,7 +118,11 @@ test("code review extends Pierre gutter utilities and line annotations", () => {
 	);
 	assert.match(diffView, /renderGutterUtility=\{readOnly \? undefined : \(getHoveredLine\) => \(/u);
 	assert.match(annotation, /aria-label="Add inline comment"/u);
-	assert.match(annotation, /onPointerDown=\{\(event\) => event\.stopPropagation\(\)\}/u);
+	assert.match(annotation, /event\.detail !== 0/u);
+	assert.match(annotation, /onPointerDown=\{handlePointerDown\}/u);
+	assert.doesNotMatch(annotation, /onPointerDown=\{\(event\) => event\.stopPropagation\(\)\}/u);
+	assert.match(diffView, /selectionStartedFromGutter/u);
+	assert.match(diffView, /new PointerEventConstructor\("pointerdown"/u);
 	assert.match(
 		diffView,
 		/\[data-column-number\]:has\(\[data-gutter-utility-slot\]\) \[data-line-number-content\]/u,
@@ -129,7 +136,7 @@ test("code review extends Pierre gutter utilities and line annotations", () => {
 	assert.match(annotation, /disabled=\{!canCommit\}/u);
 	assert.match(annotation, /className="min-w-0 bg-surface-raised px-3 pb-3 pt-2 font-sans text-text"/u);
 	assert.match(annotation, /className="mb-2 text-xs font-semibold text-text-subtlest"/u);
-	assert.match(annotation, /Comment on line \{lineNumber\}/u);
+	assert.match(annotation, /Comment on \{lineLabel\.toLowerCase\(\)\}/u);
 	assert.match(annotation, /aria-label=\{ariaLabel\}/u);
 	assert.match(annotation, /<PromptInputTextarea/u);
 	assert.match(annotation, /className="min-h-\[101px\] w-full rounded-xl/u);
@@ -179,7 +186,7 @@ test("code review sends committed comments as one-turn composer context", () => 
 	assert.match(rail, /contextDescription: inlineCommentsContext \|\| undefined/u);
 	assert.match(chip, /comments\.length === 1 \? "comment" : "comments"/u);
 	assert.doesNotMatch(chip, /PopoverTitle|Inline review comments/u);
-	assert.match(chip, /Line \{comment\.lineNumber\}/u);
+	assert.match(chip, /formatInlineCommentLineLabel\(comment\)/u);
 	assert.doesNotMatch(chip, /New|Old|side · line/u);
 	assert.match(chip, /Remove all inline comments/u);
 });
