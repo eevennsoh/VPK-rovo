@@ -1,7 +1,7 @@
 "use client";
 
 import { LayoutGroup } from "motion/react";
-import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { useRovoChat } from "@/app/contexts";
 import type { SkillsDirectorySkill } from "@/app/data/directory";
@@ -33,6 +33,7 @@ import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import { ContextHeader, ContextPanel } from "@/components/blocks/jira-work-item/experimental-v2/components/context-panel";
 import { ActivityPanel } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-panel";
 import { ActivityComposer } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer";
+import type { ActivityComposerPrimaryAction } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer-context-pills";
 import { MetadataRail } from "@/components/blocks/jira-work-item/experimental-v2/components/metadata-rail";
 import { FloatingSessionSurface } from "@/components/blocks/jira-work-item/experimental-v2/components/floating-session-surface";
 import type { SessionReplyInterceptor } from "@/components/blocks/jira-work-item/experimental-v2/components/floating-session-surface";
@@ -48,6 +49,10 @@ import {
 	selectPullRequestEntries,
 	type ActivitySessionThreadConfig,
 } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
+import {
+	resolveInitialReviewedChapterIds,
+	resolvePullRequestDetailData,
+} from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-detail-data";
 import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
 import { SidebarResizeHandle } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
@@ -117,6 +122,12 @@ interface ExperimentalV2JiraWorkItemContentProps {
 	workItem: WorkItemData;
 }
 
+interface PullRequestReviewState {
+	identity: string;
+	reviewedChapterIds: ReadonlySet<string>;
+	total: number;
+}
+
 interface WorkItemSidePanelResizeHandleProps {
 	ariaLabel: string;
 	className?: string;
@@ -177,6 +188,7 @@ function ExperimentalV2JiraWorkItemContent({
 	const composerLayoutGroupId = useId();
 	const [descriptionViewMode, setDescriptionViewMode] = useState<EditorToolbarViewMode>("rendered");
 	const [selectedPullRequestIdentity, setSelectedPullRequestIdentity] = useState<string | null>(null);
+	const [pullRequestReviewState, setPullRequestReviewState] = useState<PullRequestReviewState | null>(null);
 	const previousStageKeyRef = useRef(stageKey);
 	const { setPanelView, setSuppressActivityPanelReveal } = useMetadataRail();
 	const { chatSurface } = useRovoChat();
@@ -215,6 +227,7 @@ function ExperimentalV2JiraWorkItemContent({
 		previousStageKeyRef.current = stageKey;
 		setDescriptionViewMode("rendered");
 		setSelectedPullRequestIdentity(null);
+		setPullRequestReviewState(null);
 	}, [stageKey]);
 	const selectedPullRequestEntry = useMemo(
 		() => pullRequestEntries.find((entry) => (
@@ -236,12 +249,68 @@ function ExperimentalV2JiraWorkItemContent({
 	const handlePullRequestSelect = (entry: JiraActivityEventEntry) => {
 		if (!entry.pullRequest) return;
 		const identity = getPullRequestIdentity(entry.pullRequest);
+		const guidedReview = resolvePullRequestDetailData(entry)?.guidedReview;
 		setSelectedPullRequestIdentity(identity);
+		setPullRequestReviewState(guidedReview
+			? {
+				identity,
+				reviewedChapterIds: resolveInitialReviewedChapterIds(
+					guidedReview,
+					pullRequestApprovalStates?.[identity],
+				),
+				total: guidedReview.chapters.length,
+			}
+			: null);
 		setPanelView("details");
 	};
 	const selectedPullRequestApprovalState = selectedPullRequestIdentity
 		? pullRequestApprovalStates?.[selectedPullRequestIdentity]
 		: undefined;
+	const selectedPullRequestReviewedChapterIds = pullRequestReviewState?.identity === selectedPullRequestIdentity
+		? pullRequestReviewState.reviewedChapterIds
+		: undefined;
+	const handlePullRequestChapterReviewedChange = useCallback((
+		identity: string,
+		chapterId: string,
+		reviewed: boolean,
+	) => {
+		setPullRequestReviewState((current) => {
+			if (!current || current.identity !== identity) return current;
+			if (current.reviewedChapterIds.has(chapterId) === reviewed) return current;
+			const reviewedChapterIds = new Set(current.reviewedChapterIds);
+			if (reviewed) {
+				reviewedChapterIds.add(chapterId);
+			} else {
+				reviewedChapterIds.delete(chapterId);
+			}
+			return { ...current, reviewedChapterIds };
+		});
+	}, []);
+	const pullRequestReviewAction = useMemo<ActivityComposerPrimaryAction | undefined>(() => {
+		if (
+			!selectedPullRequestIdentity
+			|| !selectedPullRequestApprovalState
+			|| pullRequestReviewState?.identity !== selectedPullRequestIdentity
+			|| pullRequestReviewState.total === 0
+		) return undefined;
+
+		const { reviewedChapterIds, total } = pullRequestReviewState;
+		const reviewed = reviewedChapterIds.size;
+		const approved = selectedPullRequestApprovalState === "approved";
+		return {
+			ariaLabel: approved
+				? `Review submitted, ${total} of ${total} chapters reviewed`
+				: `Submit review, ${reviewed} of ${total} chapters reviewed`,
+			disabled: approved || reviewed !== total || !onPullRequestApprove,
+			label: approved ? `Review submitted ${total}/${total}` : `Submit review ${reviewed}/${total}`,
+			onClick: () => onPullRequestApprove?.(selectedPullRequestIdentity),
+		};
+	}, [
+		onPullRequestApprove,
+		pullRequestReviewState,
+		selectedPullRequestApprovalState,
+		selectedPullRequestIdentity,
+	]);
 
 	return (
 		<PanelLayoutProvider>
@@ -287,8 +356,9 @@ function ExperimentalV2JiraWorkItemContent({
 							context={(scrollContainerRef) => (
 								<ContextPanel
 									descriptionViewMode={descriptionViewMode}
-									onPullRequestApprove={onPullRequestApprove}
+									onPullRequestChapterReviewedChange={handlePullRequestChapterReviewedChange}
 									pullRequestApprovalState={selectedPullRequestApprovalState}
+									pullRequestReviewedChapterIds={selectedPullRequestReviewedChapterIds}
 									scrollContainerRef={scrollContainerRef}
 									selectedPullRequestEntry={selectedPullRequestEntry}
 									onDescriptionViewModeChange={setDescriptionViewMode}
@@ -299,6 +369,7 @@ function ExperimentalV2JiraWorkItemContent({
 									agents={composerAgents}
 									onAgentPromptSubmit={onAgentPromptSubmit}
 									onOpenAgentChat={onOpenAgentChat}
+									primaryAction={pullRequestReviewAction}
 									onSkillInvoke={onSkillInvoke}
 								/>
 							)}

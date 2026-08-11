@@ -1,4 +1,4 @@
-import type { RefObject } from "react";
+import type { ReactNode, RefObject } from "react";
 import type { HTMLMotionProps } from "motion/react";
 
 export type PullRequestHeaderStatus = "Open" | "Merged";
@@ -21,6 +21,11 @@ export interface PullRequestHeaderProps
 	scrollContainerRef?: RefObject<HTMLElement | null>;
 	/** Scroll distance in pixels before the header collapses. Defaults to 16. */
 	collapseOffset?: number;
+	/**
+	 * Tab navigation rendered on the header's bottom edge. Keep the matching
+	 * Tabs root outside this component so its panels can remain beside it.
+	 */
+	tabNavigation?: ReactNode;
 	/** Pull request number shown as subtle `#N` before the title. */
 	number: number;
 	/** Pull request title shown after the number. */
@@ -40,8 +45,7 @@ export interface PullRequestHeaderProps
 	 * "Review required", `"ready"` → the selected merge method label.
 	 * Defaults to `"ready"`.
 	 * Primary actions are enabled when their matching callback is available.
-	 * `merge-conflicts` stays disabled (no related primary action yet). The
-	 * chevron menu stays available for merge method + Auto merge.
+	 * The chevron menu stays available for merge method + Auto merge.
 	 */
 	mergeState?: PullRequestHeaderMergeState;
 	/** Controlled merge method selection (chevron menu radio group). */
@@ -65,6 +69,8 @@ export interface PullRequestHeaderProps
 	onChecksRunningClick?: () => void;
 	/** Called when the Checks failed primary is activated (`checks-failed` only). */
 	onChecksFailedClick?: () => void;
+	/** Called when the Merge conflicts primary is activated (`merge-conflicts` only). */
+	onMergeConflictsClick?: () => void;
 	/** Called when the Review required primary is activated (`review-required` only). */
 	onReviewRequiredClick?: () => void;
 	/**

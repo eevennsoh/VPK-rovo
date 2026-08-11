@@ -71,15 +71,17 @@ export function ContextHeader({
  */
 export function ContextPanel({
 	descriptionViewMode,
-	onPullRequestApprove,
+	onPullRequestChapterReviewedChange,
 	pullRequestApprovalState,
+	pullRequestReviewedChapterIds,
 	scrollContainerRef,
 	selectedPullRequestEntry,
 	onDescriptionViewModeChange,
 }: Readonly<{
 	descriptionViewMode: EditorToolbarViewMode;
-	onPullRequestApprove?: (identity: string) => void;
+	onPullRequestChapterReviewedChange?: (identity: string, chapterId: string, reviewed: boolean) => void;
 	pullRequestApprovalState?: "available" | "approved";
+	pullRequestReviewedChapterIds?: ReadonlySet<string>;
 	scrollContainerRef: RefObject<HTMLElement | null>;
 	selectedPullRequestEntry: JiraActivityEventEntry | null;
 	onDescriptionViewModeChange: (mode: EditorToolbarViewMode) => void;
@@ -95,7 +97,8 @@ export function ContextPanel({
 					approvalState={pullRequestApprovalState}
 					entry={selectedPullRequestEntry}
 					key={selectedPullRequestKey}
-					onApprove={onPullRequestApprove}
+					onChapterReviewedChange={onPullRequestChapterReviewedChange}
+					reviewedChapterIds={pullRequestReviewedChapterIds}
 					scrollContainerRef={scrollContainerRef}
 				/>
 			) : (
