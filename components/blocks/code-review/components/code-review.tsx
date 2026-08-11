@@ -108,7 +108,6 @@ export function CodeReview({
 			: EMPTY_INLINE_COMMENT_STATE
 	));
 	const inlineCommentsRef = useRef(inlineComments);
-	inlineCommentsRef.current = inlineComments;
 	const nextInlineCommentId = useRef(initialInlineComments?.length ?? 0);
 	const applyInlineComments = useCallback((
 		updater: (state: typeof EMPTY_INLINE_COMMENT_STATE) => typeof EMPTY_INLINE_COMMENT_STATE,
