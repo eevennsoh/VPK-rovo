@@ -272,6 +272,7 @@ export function JiraActivityComment({
 	actorsById,
 	onSubmitReply,
 	onToggleReaction,
+	onResolve,
 	onAddToChat,
 	onAddReplyToChat,
 	onViewSession,
@@ -283,6 +284,8 @@ export function JiraActivityComment({
 	actorsById: ReadonlyMap<string, JiraActivityActor>;
 	onSubmitReply: (body: string) => void;
 	onToggleReaction: (emoji: string) => void;
+	/** Toggle resolve on review discussion threads (`allowResolve`). */
+	onResolve?: () => void;
 	onAddToChat?: () => void;
 	onAddReplyToChat?: (reply: JiraActivityReply) => void;
 	onViewSession?: (item: AgentListItem) => void;
@@ -292,6 +295,8 @@ export function JiraActivityComment({
 	const replies = entry.replies ?? [];
 	const hasReplies = replies.length > 0;
 	const allowReply = entry.allowReply ?? true;
+	const allowResolve = Boolean(entry.allowResolve);
+	const resolved = Boolean(entry.resolved);
 	const collapsible = commentActions === "reply-and-reactions";
 	const [replyTarget, setReplyTarget] = useState<{
 		key: string;
@@ -363,8 +368,10 @@ export function JiraActivityComment({
 					? () => toggleReply(entry.id, entry.actor, replyButtonRef.current)
 					: undefined
 			}
+			onResolve={allowResolve && onResolve ? onResolve : undefined}
 			onToggleReaction={onToggleReaction}
 			reactions={reactionSummaries}
+			resolved={resolved}
 			replyComposerId={replyTarget?.key === entry.id ? composerId : undefined}
 			replyExpanded={replyTarget?.key === entry.id}
 			replyRef={replyButtonRef}
@@ -483,7 +490,18 @@ export function JiraActivityComment({
 			tag={entry.tag}
 			timestamp={entry.timestamp}
 		>
-			<JiraActivitySegments className="text-sm leading-5 text-text" segments={entry.body} />
+			{resolved ? (
+				<p className="mb-1 text-xs font-medium text-text-success">
+					Resolved
+				</p>
+			) : null}
+			<JiraActivitySegments
+				className={cn(
+					"text-sm leading-5",
+					resolved ? "text-text-subtlest" : "text-text",
+				)}
+				segments={entry.body}
+			/>
 			{entry.progressChecklist?.length ? (
 				<ul aria-label="Agent progress" className="mt-3 grid min-w-0 gap-1.5">
 					{entry.progressChecklist.map((item) => (

@@ -388,7 +388,7 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	// Pull requests are not a rail segment — interactive list is in ContextResources.
 	assert.match(
 		metadataRailToggleSource,
-		/data-jira-work-item-metadata-rail-toggle[\s\S]*data-jira-work-item-metadata-rail-toggle-content[\s\S]*<ButtonGroup[\s\S]*aria-label=\{context === "pull-request" \? "Pull request panel" : "Work item panel"\}[\s\S]*className="w-full"[\s\S]*MetadataRailPanelSegment[\s\S]*label="Details"[\s\S]*label="Activity"[\s\S]*activityChrome != null \? \([\s\S]*<JiraActivityViewControl[\s\S]*showAgentsOption=\{activityChrome\.filterMode === "work-item"\}[\s\S]*trigger="chevron"/u,
+		/data-jira-work-item-metadata-rail-toggle[\s\S]*data-jira-work-item-metadata-rail-toggle-content[\s\S]*<ButtonGroup[\s\S]*aria-label=\{context === "pull-request" \? "Pull request panel" : "Work item panel"\}[\s\S]*className="w-full"[\s\S]*MetadataRailPanelSegment[\s\S]*label="Details"[\s\S]*label="Activity"[\s\S]*activityChrome != null \? \([\s\S]*<JiraActivityViewControl[\s\S]*filterMode=\{\s*activityChrome\.filterMode === "work-item"\s*\? "jira"\s*: activityChrome\.filterMode === "pull-request"\s*\? "pull-request"\s*: "sort-only"\s*\}[\s\S]*trigger="chevron"/u,
 	);
 	assert.doesNotMatch(
 		metadataRailToggleSource,

@@ -524,6 +524,8 @@ export function PullRequestDetailsRail({
 								appearance: "label" as const,
 								label: "Fix all",
 								onClick: () => onFixCheck(failedCheckItems),
+								// Always visible when failures are actionable — not hover-reveal.
+								// Outline + stopPropagation live in ArtifactPane.
 								reveal: "open" as const,
 							},
 						}

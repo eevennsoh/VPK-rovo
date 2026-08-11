@@ -126,8 +126,13 @@ export function PullRequestGuide({
 			data-jira-work-item-pull-request-guide
 			data-jira-work-item-pull-request-guide-current-step={activeStep + 1}
 		>
-			{/* Full-column rail: available while either summary or chapters are in view. */}
-			<div className="absolute inset-y-0 -left-8 z-10 flex w-8 justify-center overflow-visible">
+			{/*
+			 * Full-column rail in the strip between scrollport `px-6` (24px) and
+			 * guide content (`px-2` / 8px). `-left-6` + `w-8` spans that 32px gutter
+			 * without overhanging past the scrollport padding (overflow would clip
+			 * a `-left-8` rail to the far left edge and detach it from content).
+			 */}
+			<div className="absolute inset-y-0 -left-6 z-10 flex w-8 justify-center overflow-visible">
 				<ChatTimelineNavigator
 					activeItemId={activeTimelineId}
 					appearance="surface"

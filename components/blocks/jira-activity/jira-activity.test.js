@@ -514,7 +514,11 @@ test("the header shows an activity count and a text-link sort control", () => {
 		/isChevron \? \([\s\S]*className=\{CHEVRON_TRIGGER_CLASS\}[\s\S]*size="icon-compact"[\s\S]*variant="ghost"/u,
 	);
 	assert.match(HEADER_SOURCE, /showAgentsOption = true/u);
-	assert.match(HEADER_SOURCE, /showAgentsOption[\s\S]*ACTIVITY_FILTER_VALUES\.map/u);
+	assert.match(HEADER_SOURCE, /filterMode\?: JiraActivityViewFilterMode/u);
+	assert.match(HEADER_SOURCE, /PULL_REQUEST_ACTIVITY_FILTER_VALUES/u);
+	assert.match(HEADER_SOURCE, /DropdownMenuSeparator/u);
+	assert.match(HEADER_SOURCE, /listedFilters\.map/u);
+	assert.match(HEADER_SOURCE, /case "pull-request":/u);
 	assert.match(HEADER_SOURCE, /showCount = true/u);
 	assert.match(HEADER_SOURCE, /showCount \? \(/u);
 	assert.match(INDEX_SOURCE, /hideHeader\?: boolean/u);
@@ -539,6 +543,10 @@ test("the header offers Agents, Needs input, and Comments filters", () => {
 	assert.match(
 		HEADER_SOURCE,
 		/"agents-only",\s*"needs-input",\s*"comments-only"/u,
+	);
+	assert.match(
+		HEADER_SOURCE,
+		/const PULL_REQUEST_ACTIVITY_FILTER_VALUES = \[\s*"comments-only",\s*\]/u,
 	);
 	assert.match(
 		HEADER_SOURCE,

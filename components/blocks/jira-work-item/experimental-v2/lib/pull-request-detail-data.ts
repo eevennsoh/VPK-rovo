@@ -120,7 +120,15 @@ export type PullRequestActivity =
 			body: string;
 			filePath?: string;
 			replies?: readonly PullRequestActivityReply[];
+			/** Opt into Reply on this review discussion thread. */
 			allowReply?: boolean;
+			/**
+			 * Opt into Resolve / Unresolve. Review discussion threads from
+			 * Submit review should set this so Activity mirrors SCM threads.
+			 */
+			allowResolve?: boolean;
+			/** Whether the review discussion thread is currently resolved. */
+			resolved?: boolean;
 			detail?: {
 				label: string;
 				body: string;
@@ -590,6 +598,9 @@ const GUIDED_REVIEW_ACTIVITY: readonly PullRequestActivity[] = [
 		body: "P2 · Narrow the nullable delivery address before creating the order. The current route can still forward an incomplete address after a recoverable validation failure.",
 		filePath: "backend/services/guest-order-service.js",
 		allowReply: true,
+		allowResolve: true,
+		// Matches the later `thread-resolved` event for this file.
+		resolved: true,
 		detail: {
 			label: "About Codex in GitHub",
 			body: "Codex reviewed commit d34c112 and posted this suggestion on the pull request.",
@@ -641,6 +652,19 @@ const GUIDED_REVIEW_ACTIVITY: readonly PullRequestActivity[] = [
 			label: "Review details",
 			body: "Reviewed by React Doctor for commit f8cc291.",
 		},
+	},
+	{
+		id: "priya-review-comment",
+		kind: "review-submitted",
+		actor: PRIYA_NARAYANAN,
+		occurredAtMs: Date.UTC(2026, 7, 10, 1, 53, 30),
+		timestamp: "6 minutes ago",
+		decision: "commented",
+		body: "Can we assert the recoverable validation path still returns the guest to the address step instead of creating a partial order?",
+		filePath: "tests/storefront/guest-checkout.spec.ts",
+		allowReply: true,
+		allowResolve: true,
+		resolved: false,
 	},
 	{
 		id: "code-planner-review",

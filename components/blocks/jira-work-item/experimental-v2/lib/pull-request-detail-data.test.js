@@ -158,6 +158,7 @@ test("resolves the #1847 guest-checkout guided review fixture", async () => {
 			"comment-posted",
 			"review-submitted",
 			"review-submitted",
+			"review-submitted",
 		],
 	);
 	const opened = detail.activity.find((activity) => activity.id === "opened");
@@ -177,6 +178,25 @@ test("resolves the #1847 guest-checkout guided review fixture", async () => {
 		detail.activity.find((activity) => activity.actor.name === "Claude Code")?.actor.brandName,
 		"claude",
 	);
+	const codexReview = detail.activity.find((activity) => activity.id === "codex-review");
+	assert.equal(codexReview?.kind, "review-submitted");
+	if (codexReview?.kind === "review-submitted") {
+		assert.equal(codexReview.allowReply, true);
+		assert.equal(codexReview.allowResolve, true);
+		assert.equal(codexReview.resolved, true);
+		assert.equal(
+			codexReview.detail?.body,
+			"Codex reviewed commit d34c112 and posted this suggestion on the pull request.",
+		);
+		assert.equal(codexReview.replies?.[0]?.timestamp, "13 minutes ago");
+	}
+	const priyaReview = detail.activity.find((activity) => activity.id === "priya-review-comment");
+	assert.equal(priyaReview?.kind, "review-submitted");
+	if (priyaReview?.kind === "review-submitted") {
+		assert.equal(priyaReview.allowReply, true);
+		assert.equal(priyaReview.allowResolve, true);
+		assert.equal(priyaReview.resolved, false);
+	}
 	assert.doesNotMatch(
 		readFileSync(MODULE_PATH, "utf8"),
 		/basic-coding-agent-template/u,
@@ -205,9 +225,6 @@ test("resolves the #1847 guest-checkout guided review fixture", async () => {
 			{ shortSha: "f8cc291", timestamp: "12 minutes ago" },
 		],
 	);
-	const codexReview = detail.activity.find((activity) => activity.id === "codex-review");
-	assert.equal(codexReview?.detail?.body, "Codex reviewed commit d34c112 and posted this suggestion on the pull request.");
-	assert.equal(codexReview?.replies?.[0]?.timestamp, "13 minutes ago");
 	assert.deepEqual(
 		detail.guidedReview?.chapters.map((chapter) => ({
 			title: chapter.title,

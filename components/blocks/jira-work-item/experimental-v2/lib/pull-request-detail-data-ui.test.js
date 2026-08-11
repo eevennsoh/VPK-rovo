@@ -240,7 +240,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	assert.doesNotMatch(guideSource, /group\/review-chapters/u);
 	assert.match(
 		guideSource,
-		/data-jira-work-item-pull-request-guide-current-step[\s\S]*absolute inset-y-0 -left-8[\s\S]*ChatTimelineNavigator[\s\S]*aria-label="Guided review summary"/u,
+		/data-jira-work-item-pull-request-guide-current-step[\s\S]*absolute inset-y-0 -left-6[\s\S]*ChatTimelineNavigator[\s\S]*aria-label="Guided review summary"/u,
 	);
 	assert.match(
 		guideSource,
@@ -328,7 +328,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 		/if \(filled <= 1\) return "bg-chart-danger";[\s\S]*if \(filled <= 3\) return "bg-chart-warning";[\s\S]*return "bg-chart-success";/u,
 	);
 	assert.match(guideSource, /metricBarFillClass\(metric\.filled, metric\.polarity\)/u);
-	assert.match(guideSource, /className="absolute inset-y-0 -left-8 z-10 flex w-8 justify-center overflow-visible"/u);
+	assert.match(guideSource, /className="absolute inset-y-0 -left-6 z-10 flex w-8 justify-center overflow-visible"/u);
 	assert.match(
 		guideSource,
 		/className="pointer-events-none sticky top-1\/2 h-fit -translate-y-1\/2 self-start/u,
@@ -795,4 +795,20 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.doesNotMatch(railSource, /GlobeIcon|label="Provider"/u);
 	assert.doesNotMatch(railSource, /Participants/u);
+});
+
+test("PR Activity menu offers Comments filter with review-thread reply and resolve", () => {
+	const activityPanelSource = readFileSync(
+		join(__dirname, "../components/pull-request-detail/pull-request-activity-panel.tsx"),
+		"utf8",
+	);
+
+	assert.match(activityPanelSource, /filterMode: "pull-request"/u);
+	assert.match(activityPanelSource, /useState<JiraActivityFilter>\("all"\)/u);
+	assert.match(activityPanelSource, /onFilterChange: setFilter/u);
+	assert.match(activityPanelSource, /filter=\{filter\}/u);
+	assert.match(activityPanelSource, /onResolveComment=/u);
+	assert.match(activityPanelSource, /type: "toggle-resolved"/u);
+	assert.match(activityPanelSource, /onSubmitReply=/u);
+	assert.match(activityPanelSource, /GUIDED_REVIEW_CURRENT_REVIEWER_ID/u);
 });

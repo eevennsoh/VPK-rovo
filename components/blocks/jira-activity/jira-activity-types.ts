@@ -204,6 +204,16 @@ export interface JiraActivityCommentEntry extends JiraActivityEntryBase {
 	reactions?: readonly JiraActivityReaction[];
 	/** Render the reply composer under this comment. Defaults to `true`. */
 	allowReply?: boolean;
+	/**
+	 * PR review-thread resolve state. Only meaningful when `allowResolve` is true.
+	 * Resolved threads keep Reply but read as settled (muted body + Unresolve).
+	 */
+	resolved?: boolean;
+	/**
+	 * Show Resolve / Unresolve (SCM review discussion threads). Defaults to
+	 * `false` so Jira work-item comments stay reply/reaction-only.
+	 */
+	allowResolve?: boolean;
 	/** Optional Agent List summary for the expanded activity-card header. */
 	sessionItem?: AgentListItem;
 }

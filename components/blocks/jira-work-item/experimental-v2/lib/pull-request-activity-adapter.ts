@@ -132,6 +132,8 @@ function adaptActivity(activity: PullRequestActivity): JiraActivityEntry {
 					body: reply.body,
 				})),
 				allowReply: activity.allowReply ?? false,
+				allowResolve: activity.allowResolve ?? false,
+				resolved: activity.resolved ?? false,
 			};
 		case "thread-resolved":
 			return {

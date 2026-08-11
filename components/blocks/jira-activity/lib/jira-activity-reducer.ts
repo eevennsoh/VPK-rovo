@@ -19,7 +19,8 @@ export interface JiraActivityState {
 export type JiraActivityAction =
 	| { type: "add-comment"; entry: JiraActivityCommentEntry }
 	| { type: "add-reply"; entryId: string; reply: JiraActivityReply }
-	| { type: "toggle-reaction"; entryId: string; emoji: string; actorId: string };
+	| { type: "toggle-reaction"; entryId: string; emoji: string; actorId: string }
+	| { type: "toggle-resolved"; entryId: string };
 
 /**
  * Adds or removes `actorId` from the `emoji` reaction, preserving reaction and
@@ -90,8 +91,25 @@ export function jiraActivityReducer(
 			// Return the same reference on a miss so React can bail out of the update.
 			return changed ? { entries } : state;
 		}
-		default:
-			return state;
+		case "toggle-resolved": {
+			let changed = false;
+			const entries = state.entries.map((entry) => {
+				if (
+					entry.id !== action.entryId
+					|| entry.kind !== "comment"
+					|| !entry.allowResolve
+				) {
+					return entry;
+				}
+				changed = true;
+				return { ...entry, resolved: !entry.resolved };
+			});
+			return changed ? { entries } : state;
+		}
+		default: {
+			const _exhaustive: never = action;
+			return _exhaustive;
+		}
 	}
 }
 

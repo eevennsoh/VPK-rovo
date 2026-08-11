@@ -221,6 +221,8 @@ test("preserves provider comments, review replies, and connected app branding", 
 			body: "Narrow the nullable address.",
 			filePath: "guest-order-service.js",
 			allowReply: true,
+			allowResolve: true,
+			resolved: true,
 			detail: { label: "About Codex in GitHub", body: "Automated review." },
 			replies: [{
 				id: "fixed",
@@ -239,8 +241,37 @@ test("preserves provider comments, review replies, and connected app branding", 
 	});
 	assert.equal(entries[1].actor.brandName, "openai-codex");
 	assert.equal(entries[1].allowReply, true);
+	assert.equal(entries[1].allowResolve, true);
+	assert.equal(entries[1].resolved, true);
 	assert.equal(entries[1].replies[0].actor.name, "Venn");
 	assert.equal(entries[1].replies[0].body, "Fixed in abc1234.");
+});
+
+test("maps unresolved review discussion threads with reply and resolve", async () => {
+	const { adaptPullRequestActivity } = await loadAdapter();
+	const [entry] = adaptPullRequestActivity([{
+		id: "priya-thread",
+		kind: "review-submitted",
+		actor: {
+			id: "priya-narayanan",
+			name: "Priya Narayanan",
+			kind: "person",
+		},
+		occurredAtMs: 100,
+		timestamp: "6 minutes ago",
+		decision: "commented",
+		body: "Can we assert the recoverable validation path?",
+		filePath: "tests/storefront/guest-checkout.spec.ts",
+		allowReply: true,
+		allowResolve: true,
+		resolved: false,
+	}]);
+
+	assert.equal(entry.kind, "comment");
+	assert.equal(entry.allowReply, true);
+	assert.equal(entry.allowResolve, true);
+	assert.equal(entry.resolved, false);
+	assert.deepEqual(entry.tag, { text: "Reviewed", color: "blue" });
 });
 
 test("changes the activity revision when provider payload values change", async () => {

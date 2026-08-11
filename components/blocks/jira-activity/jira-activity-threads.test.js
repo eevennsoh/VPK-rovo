@@ -108,8 +108,14 @@ test("the comment action row pairs Reply with the shared emoji reaction bar", ()
 	// Omitting `onReply` is how `allowReply: false` drops the button.
 	assert.match(COMMENT_ACTIONS_SOURCE, /onReply\?: \(\) => void;/u);
 	assert.match(COMMENT_ACTIONS_SOURCE, /onReply \? \(/u);
+	// Resolve is a subtle text control for SCM review threads.
+	assert.match(COMMENT_ACTIONS_SOURCE, /onResolve\?: \(\) => void;/u);
+	assert.match(COMMENT_ACTIONS_SOURCE, /resolved \? "Unresolve" : "Resolve"/u);
+	assert.match(COMMENT_ACTIONS_SOURCE, /aria-pressed=\{resolved\}/u);
 	assert.match(COMMENT_SOURCE, /<JiraActivityCommentActions/u);
 	assert.match(COMMENT_SOURCE, /footerActions=\{/u);
+	assert.match(COMMENT_SOURCE, /allowResolve && onResolve/u);
+	assert.match(COMMENT_SOURCE, /resolved \? "text-text-subtlest" : "text-text"/u);
 });
 
 test("thread replies share the parent card as inset gap-spaced rows with their own actions", () => {
