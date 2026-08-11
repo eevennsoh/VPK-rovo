@@ -4,6 +4,7 @@ import {
 	createContext,
 	use,
 	useEffect,
+	useEffectEvent,
 	useLayoutEffect,
 	useMemo,
 	useRef,
@@ -252,7 +253,17 @@ export function ActivityPanel({
 
 	const activityScrollBlock = sortOrder === "descending" ? "start" : "end";
 
-	function findActivityEntryElement(entryId: string): HTMLElement | null {
+	const scrollActivityEntryIntoView = useEffectEvent(
+		(target: HTMLElement, block: ScrollLogicalPosition = activityScrollBlock) => {
+			target.scrollIntoView({
+				behavior: shouldReduceMotion ? "auto" : "smooth",
+				block,
+				inline: "nearest",
+			});
+		},
+	);
+
+	const findActivityEntryElement = useEffectEvent((entryId: string): HTMLElement | null => {
 		const target = Array.from(
 			activityRootRef.current?.querySelectorAll<HTMLElement>("[data-jira-activity-entry-id]") ?? [],
 		).find((entry) => entry.dataset.jiraActivityEntryId === entryId) ?? null;
@@ -262,18 +273,7 @@ export function ActivityPanel({
 			return null;
 		}
 		return target;
-	}
-
-	function scrollActivityEntryIntoView(
-		target: HTMLElement,
-		block: ScrollLogicalPosition = activityScrollBlock,
-	) {
-		target.scrollIntoView({
-			behavior: shouldReduceMotion ? "auto" : "smooth",
-			block,
-			inline: "nearest",
-		});
-	}
+	});
 
 	useEffect(() => {
 		if (
@@ -314,11 +314,8 @@ export function ActivityPanel({
 	}, [
 		activityRevealRequest?.entryId,
 		activityRevealSignature,
-		activityScrollBlock,
 		autoScrollEnabled,
 		latestActivityEntryId,
-		shouldReduceMotion,
-		sortOrder,
 	]);
 
 	// Composer/agent-mention submits and chapter reveals open Activity via
@@ -379,8 +376,6 @@ export function ActivityPanel({
 		activityScrollBlock,
 		consumeActivityRevealRequest,
 		latestActivityEntryId,
-		shouldReduceMotion,
-		sortOrder,
 	]);
 
 	return (

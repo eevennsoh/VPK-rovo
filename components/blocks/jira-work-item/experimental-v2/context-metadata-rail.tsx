@@ -4,7 +4,6 @@ import {
 	createContext,
 	use,
 	useCallback,
-	useEffect,
 	useMemo,
 	useRef,
 	useState,
@@ -123,15 +122,28 @@ export function MetadataRailProvider({
 	const setSuppressActivityPanelReveal = useCallback((suppressed: boolean) => {
 		suppressActivityPanelRevealRef.current = suppressed;
 	}, []);
-	useEffect(() => {
-		if (revealActivityKey == null || revealActivityKey === "") return;
-		if (Object.is(previousRevealActivityKeyRef.current, revealActivityKey)) return;
-		// Consume the key even when suppressed so later build-step timers do not
-		// queue a delayed steal after the user opened a pull request.
-		previousRevealActivityKeyRef.current = revealActivityKey;
-		if (suppressActivityPanelRevealRef.current) return;
-		requestRevealLatestActivity(revealActivityEntryId ?? undefined);
-	}, [revealActivityEntryId, revealActivityKey, requestRevealLatestActivity]);
+	// Chapter/orchestration keys open Activity during render so the panel does not
+	// flash Details for a frame before the reveal effect would run.
+	const [trackedRevealActivityKey, setTrackedRevealActivityKey] = useState<
+		string | number | null | undefined
+	>(revealActivityKey);
+	if (!Object.is(trackedRevealActivityKey, revealActivityKey)) {
+		setTrackedRevealActivityKey(revealActivityKey);
+		if (
+			revealActivityKey != null
+			&& revealActivityKey !== ""
+			&& !Object.is(previousRevealActivityKeyRef.current, revealActivityKey)
+		) {
+			previousRevealActivityKeyRef.current = revealActivityKey;
+			if (!suppressActivityPanelRevealRef.current) {
+				setPanelView("activity");
+				setActivityRevealRequest((current) => ({
+					nonce: (current?.nonce ?? 0) + 1,
+					...(revealActivityEntryId ? { entryId: revealActivityEntryId } : {}),
+				}));
+			}
+		}
+	}
 	const value = useMemo<MetadataRailContextValue>(
 		() => ({
 			activePanelView: panelView,
