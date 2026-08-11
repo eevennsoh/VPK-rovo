@@ -142,6 +142,18 @@ test("range comments persist across files and layouts and attach to the composer
 	);
 	await expect(page.getByRole("button", { name: "Review 1 comment" })).toBeVisible();
 
+	const postCommitButton = await getGutterButton(page, "additions", 16);
+	await postCommitButton.click();
+	const postCommitEditor = page.getByRole("textbox", { name: "Comment on line 16" });
+	await expect(postCommitEditor).toHaveCount(1);
+	await postCommitEditor.press("Escape");
+
+	const postCancelButton = await getGutterButton(page, "additions", 17);
+	await postCancelButton.click();
+	const postCancelEditor = page.getByRole("textbox", { name: "Comment on line 17" });
+	await expect(postCancelEditor).toHaveCount(1);
+	await postCancelEditor.press("Escape");
+
 	await page.getByRole("treeitem", { name: /UserProfileDialog\.ts/u }).click();
 	await expect(page.getByRole("button", { name: "Close src/components/UserProfileDialog.ts" })).toBeVisible();
 	await page.getByRole("button", { name: "Split diff layout" }).click();

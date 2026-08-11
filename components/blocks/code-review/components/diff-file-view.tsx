@@ -116,6 +116,8 @@ export function DiffFileView({
 				normalizedRange.lineNumber,
 			),
 		});
+		lastCommittedSelection.current = null;
+		resetSelection();
 	};
 	const handleKeyboardAddComment = (side: InlineCommentSide, lineNumber: number) => {
 		const committedSelection = lastCommittedSelection.current;
