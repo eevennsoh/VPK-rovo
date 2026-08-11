@@ -24,6 +24,7 @@ type PullRequestDetailTab = "details" | "code" | "guide";
 interface PullRequestDetailViewProps {
 	approvalState?: "available" | "approved";
 	entry: JiraActivityEventEntry;
+	initialInlineComments?: readonly InlineReviewComment[];
 	onChapterReviewedChange?: (identity: string, chapterId: string, reviewed: boolean) => void;
 	onInlineCommentsChange?: (identity: string, comments: readonly InlineReviewComment[]) => void;
 	reviewedChapterIds?: ReadonlySet<string>;
@@ -33,6 +34,7 @@ interface PullRequestDetailViewProps {
 export function PullRequestDetailView({
 	approvalState,
 	entry,
+	initialInlineComments,
 	onChapterReviewedChange,
 	onInlineCommentsChange,
 	reviewedChapterIds,
@@ -141,6 +143,7 @@ export function PullRequestDetailView({
 						<TabsContent value="code">
 							<PullRequestFiles
 								commits={data.commits}
+								initialInlineComments={initialInlineComments}
 								onInlineCommentsChange={handleInlineCommentsChange}
 								review={review}
 							/>

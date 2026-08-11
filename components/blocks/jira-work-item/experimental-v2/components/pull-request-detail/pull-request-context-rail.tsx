@@ -4,6 +4,7 @@ import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import type { MetadataRailView } from "@/components/blocks/jira-work-item/experimental-v2/lib/metadata-rail-view";
 import {
 	resolvePullRequestDetailData,
+	type PullRequestCheck,
 	type PullRequestReviewer,
 } from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-detail-data";
 import { applyCurrentReviewerStatus } from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-review-submit";
@@ -24,7 +25,7 @@ export function PullRequestContextRail({
 	activePanelView: MetadataRailView;
 	currentReviewerStatus?: PullRequestReviewer["status"];
 	entry: JiraActivityEventEntry;
-	onFixCheck?: () => void;
+	onFixCheck?: (checks: readonly PullRequestCheck[]) => void;
 }>) {
 	const resolved = resolvePullRequestDetailData(entry);
 	const data = resolved

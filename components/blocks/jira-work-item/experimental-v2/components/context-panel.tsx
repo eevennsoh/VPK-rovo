@@ -75,6 +75,7 @@ export function ContextPanel({
 	onPullRequestChapterReviewedChange,
 	onPullRequestInlineCommentsChange,
 	pullRequestApprovalState,
+	pullRequestInlineComments,
 	pullRequestReviewedChapterIds,
 	scrollContainerRef,
 	selectedPullRequestEntry,
@@ -87,6 +88,7 @@ export function ContextPanel({
 		comments: readonly InlineReviewComment[],
 	) => void;
 	pullRequestApprovalState?: "available" | "approved";
+	pullRequestInlineComments?: readonly InlineReviewComment[];
 	pullRequestReviewedChapterIds?: ReadonlySet<string>;
 	scrollContainerRef: RefObject<HTMLElement | null>;
 	selectedPullRequestEntry: JiraActivityEventEntry | null;
@@ -102,6 +104,7 @@ export function ContextPanel({
 				<PullRequestDetailView
 					approvalState={pullRequestApprovalState}
 					entry={selectedPullRequestEntry}
+					initialInlineComments={pullRequestInlineComments}
 					key={selectedPullRequestKey}
 					onChapterReviewedChange={onPullRequestChapterReviewedChange}
 					onInlineCommentsChange={onPullRequestInlineCommentsChange}

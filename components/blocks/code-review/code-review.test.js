@@ -184,7 +184,10 @@ test("code review owns comment state across files and diff layouts", () => {
 		"components/blocks/code-review/components/code-review.tsx",
 	);
 
-	assert.match(source, /useState\(EMPTY_INLINE_COMMENT_STATE\)/u);
+	assert.match(
+		source,
+		/useState\(\(\) => \(\s*initialInlineComments && initialInlineComments\.length > 0\s*\? \{ drafts: EMPTY_INLINE_COMMENT_STATE\.drafts, comments: initialInlineComments \}\s*: EMPTY_INLINE_COMMENT_STATE\s*\)\)/u,
+	);
 	assert.match(source, /comments=\{inlineComments\.comments\}/u);
 	assert.match(source, /drafts=\{inlineComments\.drafts\}/u);
 	assert.match(source, /removeAllInlineComments/u);
@@ -259,7 +262,7 @@ test("code review renders expanded file changes with a collapsible navigation tr
 	);
 	assert.match(
 		editorPanel,
-		/<div className="min-w-0 shrink-0">\s*<EditorChangesPicker commits=\{commits\} files=\{files\} \/>\s*<\/div>/u,
+		/<div className="min-w-0 shrink-0">\s*<EditorChangesPicker[\s\S]*commits=\{commits\}[\s\S]*files=\{files\}[\s\S]*onScopeChange=\{setChangesScope\}[\s\S]*scope=\{changesScope\}[\s\S]*\/>\s*<\/div>/u,
 	);
 	assert.doesNotMatch(
 		editorPanel,
@@ -273,7 +276,7 @@ test("code review renders expanded file changes with a collapsible navigation tr
 		editorPanel,
 		/isExplorerVisible\s*\? <SidebarCollapseIcon label="" size="small" \/>\s*: <SidebarExpandIcon label="" size="small" \/>/u,
 	);
-	assert.match(editorPanel, /files\.map\(\(file\) => \(/u);
+	assert.match(editorPanel, /visibleFiles\.map\(\(file\) => \(/u);
 	assert.match(editorPanel, /data-code-review-file-id=\{file\.id\}/u);
 	assert.match(editorPanel, /showFileHeader/u);
 	assert.match(
@@ -409,7 +412,7 @@ test("embedded CodeReview reuses the full EditorPanel surface", () => {
 	assert.match(editorPanel, /data-code-review-editor-panel/u);
 	assert.match(editorPanel, /showSearch = true/u);
 	assert.match(editorPanel, /readOnly = false/u);
-	assert.match(editorPanel, /<EditorChangesPicker commits=\{commits\} files=\{files\} \/>/u);
+	assert.match(editorPanel, /<EditorChangesPicker[\s\S]*commits=\{commits\}[\s\S]*files=\{files\}[\s\S]*onScopeChange=\{setChangesScope\}[\s\S]*scope=\{changesScope\}/u);
 	assert.match(explorer, /showSearch = true/u);
 	assert.match(explorer, /\{showSearch \? \(/u);
 	assert.match(

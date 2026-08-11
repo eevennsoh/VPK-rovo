@@ -64,7 +64,11 @@ test("PullRequestReview exposes the review composer props contract", () => {
 	assert.match(TYPES_SOURCE, /submitDisabled\?: boolean/u);
 	assert.match(
 		TYPES_SOURCE,
-		/onSubmit\?: \(submission: PullRequestReviewSubmission\) => void/u,
+		/onSubmit\?: \(submission: PullRequestReviewSubmission\) => boolean \| void/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/const accepted = onSubmit\?\.\(\{ body: value\.trim\(\), verdict: activeVerdict \}\);[\s\S]*if \(accepted === false\) return;[\s\S]*updateValue\(""\)/u,
 	);
 	assert.match(TYPES_SOURCE, /export interface PullRequestReviewSubmission \{[\s\S]*body: string;[\s\S]*verdict: PullRequestReviewVerdict;/u);
 });

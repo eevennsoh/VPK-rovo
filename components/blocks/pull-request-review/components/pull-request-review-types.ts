@@ -69,12 +69,16 @@ export interface PullRequestReviewProps {
 	 * Called with the trimmed body and the active verdict. Send requires a
 	 * non-empty body for every verdict.
 	 *
+	 * Return `false` to reject the submission and keep the draft intact (for
+	 * example when Approve is gated on guided-chapter progress). Any other
+	 * return value clears the draft after the callback.
+	 *
 	 * The verdict applies only while expanded. A compact composer shows no
 	 * verdict control, so it always submits `comment` — a selection left from a
 	 * previous expansion never decides what Send does, however the collapse
 	 * happened.
 	 */
-	onSubmit?: (submission: PullRequestReviewSubmission) => void;
+	onSubmit?: (submission: PullRequestReviewSubmission) => boolean | void;
 	/** Called when the expanded card's dismiss control is activated. */
 	onClose?: () => void;
 	/** Called when the leading "+" control is activated. */

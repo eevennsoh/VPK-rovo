@@ -127,7 +127,8 @@ export function PullRequestReview({
 
 	function submit() {
 		if (!canSubmit) return;
-		onSubmit?.({ body: value.trim(), verdict: activeVerdict });
+		const accepted = onSubmit?.({ body: value.trim(), verdict: activeVerdict });
+		if (accepted === false) return;
 		updateValue("");
 	}
 

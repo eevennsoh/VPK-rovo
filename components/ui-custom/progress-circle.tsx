@@ -5,7 +5,7 @@
 // oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
 
 import { cva, type VariantProps } from "class-variance-authority";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 
 const VIEWBOX_SIZE = 24;
@@ -171,6 +171,13 @@ function ProgressCircle({
 	className,
 	...props
 }: Readonly<ProgressCircleProps>) {
+	const shouldReduceMotion = useReducedMotion() ?? false;
+	const statusExit = shouldReduceMotion
+		? undefined
+		: { opacity: 0, scale: 0.5 };
+	const statusExitTransition = shouldReduceMotion
+		? { duration: 0 }
+		: { duration: 0.15 };
 	const segmentList = segments ?? [];
 	const hasSegments = segmented && segmentList.length > 0;
 	const isIndeterminate = !hasSegments && value == null && !status;
@@ -302,8 +309,8 @@ function ProgressCircle({
 						viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}
 						fill="none"
 						className="size-full"
-						exit={{ opacity: 0, scale: 0.5 }}
-						transition={{ duration: 0.15 }}
+						exit={statusExit}
+						transition={statusExitTransition}
 					>
 						<SegmentArcs
 							segments={segmentList}
@@ -317,8 +324,8 @@ function ProgressCircle({
 						viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}
 						fill="none"
 						className="size-full"
-						exit={{ opacity: 0, scale: 0.5 }}
-						transition={{ duration: 0.15 }}
+						exit={statusExit}
+						transition={statusExitTransition}
 					>
 						{/* Outer ring (stays fixed) */}
 						<circle
@@ -342,8 +349,8 @@ function ProgressCircle({
 						viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}
 						fill="none"
 						className={cn("size-full", isIndeterminate && "animate-spin")}
-						exit={{ opacity: 0, scale: 0.5 }}
-						transition={{ duration: 0.15 }}
+						exit={statusExit}
+						transition={statusExitTransition}
 					>
 						{/* Track */}
 						<circle

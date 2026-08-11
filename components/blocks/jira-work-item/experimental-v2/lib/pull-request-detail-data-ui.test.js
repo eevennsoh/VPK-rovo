@@ -418,7 +418,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	assert.doesNotMatch(workItemSource, /badge: `\$\{reviewed\}\/\$\{total\}`/u);
 	assert.match(
 		workItemSource,
-		/const badgeCount = reviewedChapterIds\.size \+ inlineCommentCount/u,
+		/const badgeCount = reviewedChapterIds\.size \+ inlineComments\.length/u,
 	);
 	assert.match(
 		workItemSource,
@@ -439,15 +439,15 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		workItemSource,
-		/setPullRequestReviewState\(guidedReview[\s\S]*inlineCommentCount: 0,[\s\S]*reviewedChapterIds: resolveInitialReviewedChapterIds\([\s\S]*pullRequestApprovalStates\?\.\[identity\]/u,
+		/setPullRequestReviewByIdentity\(\(current\) => \{[\s\S]*if \(!guidedReview\) return current;[\s\S]*if \(current\[identity\]\) return current;[\s\S]*inlineComments: \[\],[\s\S]*reviewedChapterIds: resolveInitialReviewedChapterIds\([\s\S]*pullRequestApprovalStates\?\.\[identity\]/u,
 	);
 	assert.match(
 		workItemSource,
-		/handlePullRequestChapterReviewedChange[\s\S]*current\.identity !== identity[\s\S]*reviewedChapterIds\.add\(chapterId\)[\s\S]*reviewedChapterIds\.delete\(chapterId\)/u,
+		/handlePullRequestChapterReviewedChange[\s\S]*const existing = current\[identity\];[\s\S]*reviewedChapterIds\.add\(chapterId\)[\s\S]*reviewedChapterIds\.delete\(chapterId\)/u,
 	);
 	assert.match(
 		workItemSource,
-		/handlePullRequestInlineCommentsChange[\s\S]*current\.identity !== identity[\s\S]*inlineCommentCount: comments\.length/u,
+		/handlePullRequestInlineCommentsChange[\s\S]*const existing = current\[identity\];[\s\S]*inlineComments: comments/u,
 	);
 	assert.match(workItemSource, /<ActivityComposer[\s\S]*primaryAction=\{pullRequestReviewAction\}/u);
 	assert.match(activityComposerSource, /primaryAction=\{primaryAction\}/u);
@@ -457,7 +457,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		workItemSource,
-		/const activePullRequestReview[\s\S]*commentCount: pullRequestReviewState\.inlineCommentCount,[\s\S]*reviewedCount: pullRequestReviewState\.reviewedChapterIds\.size,[\s\S]*reviewedTotal: pullRequestReviewState\.total/u,
+		/const activePullRequestReview[\s\S]*commentCount: pullRequestReviewState\.inlineComments\.length,[\s\S]*reviewedCount: pullRequestReviewState\.reviewedChapterIds\.size,[\s\S]*reviewedTotal: pullRequestReviewState\.total/u,
 	);
 	assert.match(
 		workItemSource,
@@ -503,7 +503,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		workItemSource,
-		/const handlePullRequestReviewSubmit = useCallback\(\(submission: PullRequestReviewSubmission\) => \{[\s\S]*if \(!reviewComposerIdentity\) return;[\s\S]*if \(submission\.verdict === "approve" && !pullRequestReviewSubmissionAvailable\) return;[\s\S]*mapReviewVerdictToReviewerStatus\(submission\.verdict\)[\s\S]*setPullRequestReviewerStatuses[\s\S]*if \(submission\.verdict === "approve"\) \{[\s\S]*onPullRequestApprove\?\.\(reviewComposerIdentity\);[\s\S]*setReviewComposerIdentity\(null\)[\s\S]*showPullRequestReviewToast\(submission\.verdict\)/u,
+		/const handlePullRequestReviewSubmit = useCallback\(\(submission: PullRequestReviewSubmission\) => \{[\s\S]*if \(!reviewComposerIdentity\) return false;[\s\S]*if \(submission\.verdict === "approve" && !pullRequestReviewSubmissionAvailable\) \{[\s\S]*return false;[\s\S]*mapReviewVerdictToReviewerStatus\(submission\.verdict\)[\s\S]*setPullRequestReviewerStatuses[\s\S]*if \(submission\.verdict === "approve"\) \{[\s\S]*onPullRequestApprove\?\.\(reviewComposerIdentity\);[\s\S]*setReviewComposerIdentity\(null\)[\s\S]*showPullRequestReviewToast\(submission\.verdict\)[\s\S]*return true;/u,
 	);
 	assert.match(
 		workItemSource,

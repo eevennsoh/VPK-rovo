@@ -15,6 +15,10 @@ import type {
 	InlineCommentDraft,
 	InlineReviewComment,
 } from "../../lib/inline-comments";
+import {
+	filterChangedFilesByScope,
+	type ChangesScope,
+} from "../../lib/filter-changed-files-by-scope";
 import { DiffFileView } from "../diff-file-view";
 import { EditorChangesPicker } from "./editor-changes-picker";
 import { EditorDiffLayoutControls } from "./editor-diff-layout-controls";
@@ -88,13 +92,15 @@ export function EditorPanel({
 	onUpdateDraft = NOOP,
 }: Readonly<EditorPanelProps>) {
 	const [isExplorerVisible, setIsExplorerVisible] = useState(true);
+	const [changesScope, setChangesScope] = useState<ChangesScope>("all-changes");
+	const visibleFiles = filterChangedFilesByScope(files, commits, changesScope);
 	const [selectedFileId, setSelectedFileId] = useState(
-		() => files.find((file) => file.id === defaultSelectedFileId)?.id ?? files[0]?.id ?? "",
+		() => visibleFiles.find((file) => file.id === defaultSelectedFileId)?.id ?? visibleFiles[0]?.id ?? "",
 	);
 	const fileElements = useRef(new Map<string, HTMLElement>());
-	const effectiveSelectedFileId = files.some((file) => file.id === selectedFileId)
+	const effectiveSelectedFileId = visibleFiles.some((file) => file.id === selectedFileId)
 		? selectedFileId
-		: files[0]?.id ?? "";
+		: visibleFiles[0]?.id ?? "";
 	const handleFileSelect = (fileId: string) => {
 		setSelectedFileId(fileId);
 		fileElements.current.get(fileId)?.scrollIntoView({ block: "start" });
@@ -138,7 +144,12 @@ export function EditorPanel({
 						/>
 					</Button>
 					<div className="min-w-0 shrink-0">
-						<EditorChangesPicker commits={commits} files={files} />
+						<EditorChangesPicker
+							commits={commits}
+							files={files}
+							onScopeChange={setChangesScope}
+							scope={changesScope}
+						/>
 					</div>
 				</div>
 				<EditorDiffLayoutControls
@@ -161,7 +172,7 @@ export function EditorPanel({
 						className={expandContent ? EXPAND_STICKY_TREE_CLASS : undefined}
 						expandContent={expandContent}
 						explorerRootLabel={explorerRootLabel}
-						files={files}
+						files={visibleFiles}
 						id={FILE_TREE_ID}
 						includeDemoTree={false}
 						onFileSelect={handleFileSelect}
@@ -191,7 +202,7 @@ export function EditorPanel({
 								: undefined,
 						)}
 					>
-						{files.map((file) => (
+						{visibleFiles.map((file) => (
 							<section
 								key={file.id}
 								aria-label={`${file.path} changes`}
@@ -226,7 +237,7 @@ export function EditorPanel({
 								/>
 							</section>
 						))}
-						{files.length === 0 ? (
+						{visibleFiles.length === 0 ? (
 							<div className="grid min-h-48 place-items-center text-sm text-text-subtle">
 								No changed files.
 							</div>

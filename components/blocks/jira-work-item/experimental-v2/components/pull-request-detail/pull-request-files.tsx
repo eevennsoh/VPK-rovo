@@ -6,10 +6,12 @@ import type { PullRequestGuidedReview } from "../../lib/pull-request-detail-data
 
 export function PullRequestFiles({
 	commits,
+	initialInlineComments,
 	onInlineCommentsChange,
 	review,
 }: Readonly<{
 	commits?: readonly CodeReviewCommit[];
+	initialInlineComments?: readonly InlineReviewComment[];
 	onInlineCommentsChange?: (comments: readonly InlineReviewComment[]) => void;
 	review: PullRequestGuidedReview;
 }>) {
@@ -22,6 +24,7 @@ export function PullRequestFiles({
 				expandContent
 				explorerRootLabel="Guest checkout"
 				files={review.files}
+				initialInlineComments={initialInlineComments}
 				onInlineCommentsChange={onInlineCommentsChange}
 			/>
 		</section>

@@ -32,6 +32,8 @@ export interface CodeReviewCommit {
 	title: string;
 	additions: number;
 	deletions: number;
+	/** When set, selecting this commit filters the editor to these file ids. */
+	fileIds?: readonly string[];
 }
 
 export interface ExplorerNode {

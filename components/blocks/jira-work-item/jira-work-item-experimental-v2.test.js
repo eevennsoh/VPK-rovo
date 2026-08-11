@@ -118,6 +118,7 @@ const V2_ONLY_FILES = new Set([
 	"lib/pull-request-phases.test.js",
 	"lib/pull-request-detail-data.ts",
 	"lib/pull-request-detail-data.test.js",
+	"lib/pull-request-detail-data-ui.test.js",
 	// Review submit: verdict → Approvers status + sonner toast copy.
 	"lib/pull-request-review-submit.ts",
 	"lib/pull-request-review-submit.test.js",
@@ -164,7 +165,7 @@ test("experimental v2 resets stage-scoped view state only after the stage key ch
 	assert.match(compositionSource, /const previousStageKeyRef = useRef\(stageKey\);/u);
 	assert.match(
 		compositionSource,
-		/useLayoutEffect\(\(\) => \{[\s\S]*Object\.is\(previousStageKeyRef\.current, stageKey\)[\s\S]*return;[\s\S]*previousStageKeyRef\.current = stageKey;[\s\S]*setDescriptionViewMode\("rendered"\);[\s\S]*setSelectedPullRequestIdentity\(null\);[\s\S]*setPullRequestReviewState\(null\);[\s\S]*setReviewComposerIdentity\(null\);[\s\S]*setPullRequestReviewerStatuses\(\{\}\);[\s\S]*\}, \[stageKey\]\);/u,
+		/useLayoutEffect\(\(\) => \{[\s\S]*Object\.is\(previousStageKeyRef\.current, stageKey\)[\s\S]*return;[\s\S]*previousStageKeyRef\.current = stageKey;[\s\S]*setDescriptionViewMode\("rendered"\);[\s\S]*setSelectedPullRequestIdentity\(null\);[\s\S]*setPullRequestReviewByIdentity\(\{\}\);[\s\S]*setReviewComposerIdentity\(null\);[\s\S]*setPullRequestReviewerStatuses\(\{\}\);[\s\S]*\}, \[stageKey\]\);/u,
 	);
 });
 
@@ -494,7 +495,7 @@ test("experimental v2 shows Submit review as the first context pill on guided PR
 	assert.doesNotMatch(compositionSource, /badge: `\$\{reviewed\}\/\$\{total\}`/u);
 	assert.match(
 		compositionSource,
-		/const badgeCount = reviewedChapterIds\.size \+ inlineCommentCount/u,
+		/const badgeCount = reviewedChapterIds\.size \+ inlineComments\.length/u,
 	);
 	assert.match(compositionSource, /import CommentIcon from "@atlaskit\/icon\/core\/comment"/u);
 	assert.match(
@@ -522,11 +523,11 @@ test("experimental v2 shows Submit review as the first context pill on guided PR
 	assert.match(composerSource, /primaryAction=\{primaryAction\}/u);
 	assert.match(
 		compositionSource,
-		/handlePullRequestInlineCommentsChange[\s\S]*inlineCommentCount: comments\.length/u,
+		/handlePullRequestInlineCommentsChange[\s\S]*inlineComments: comments/u,
 	);
 	assert.match(
 		compositionSource,
-		/commentCount: pullRequestReviewState\.inlineCommentCount/u,
+		/commentCount: pullRequestReviewState\.inlineComments\.length/u,
 	);
 	assert.match(
 		composerSource,

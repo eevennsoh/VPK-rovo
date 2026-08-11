@@ -1,7 +1,6 @@
 "use client";
 
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
-import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -19,16 +18,15 @@ import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
 import type { ChangedFile, CodeReviewCommit } from "../../data/types";
+import {
+	canApplyChangesScope,
+	filterChangedFilesByScope,
+	isFixedChangesScope,
+	type ChangesScope,
+	type FixedChangesScope,
+} from "../../lib/filter-changed-files-by-scope";
 import { sumChangedFileDiffStats } from "../../lib/sum-changed-file-diff-stats";
 import { DiffStats } from "../diff-stats";
-
-type FixedChangesScope =
-	| "all-changes"
-	| "uncommitted"
-	| "staged"
-	| "unstaged"
-	| "all-commits";
-type ChangesScope = FixedChangesScope | `commit:${string}`;
 
 const CHANGES_SCOPE_LABELS: Record<FixedChangesScope, string> = {
 	"all-changes": "All changes",
@@ -39,10 +37,6 @@ const CHANGES_SCOPE_LABELS: Record<FixedChangesScope, string> = {
 };
 
 const EMPTY_COMMITS = [] as const satisfies readonly CodeReviewCommit[];
-
-function isFixedChangesScope(scope: ChangesScope): scope is FixedChangesScope {
-	return !scope.startsWith("commit:");
-}
 
 function resolveScopeLabel(
 	scope: ChangesScope,
@@ -87,22 +81,28 @@ function ScopeMenuLabel({
 interface EditorChangesPickerProps {
 	files: readonly ChangedFile[];
 	commits?: readonly CodeReviewCommit[];
+	scope: ChangesScope;
+	onScopeChange: (scope: ChangesScope) => void;
 	className?: string;
 }
 
 export function EditorChangesPicker({
 	files,
 	commits = EMPTY_COMMITS,
+	scope,
+	onScopeChange,
 	className,
 }: Readonly<EditorChangesPickerProps>) {
-	const [scope, setScope] = useState<ChangesScope>("all-changes");
-	const { additions, deletions } = sumChangedFileDiffStats(files);
-	const fileCount = files.length;
+	const visibleFiles = filterChangedFilesByScope(files, commits, scope);
+	const { additions, deletions } = sumChangedFileDiffStats(visibleFiles);
+	const fileCount = visibleFiles.length;
 	const fileCountLabel = `${fileCount} ${fileCount === 1 ? "file" : "files"}`;
 	const scopeLabel = resolveScopeLabel(scope, commits);
+	const allStats = sumChangedFileDiffStats(files);
 
 	const selectScope = (next: ChangesScope) => {
-		setScope(next);
+		if (!canApplyChangesScope(next, commits)) return;
+		onScopeChange(next);
 	};
 
 	return (
@@ -144,36 +144,39 @@ export function EditorChangesPicker({
 						selected={scope === "all-changes"}
 					>
 						<ScopeMenuLabel
-							additions={additions}
-							deletions={deletions}
+							additions={allStats.additions}
+							deletions={allStats.deletions}
 							emphasized={scope === "all-changes"}
 							label={CHANGES_SCOPE_LABELS["all-changes"]}
 						/>
 					</DropdownMenuItem>
 					<DropdownMenuItem
+						disabled={!canApplyChangesScope("uncommitted", commits)}
 						onSelect={() => selectScope("uncommitted")}
 						selected={scope === "uncommitted"}
 					>
 						<ScopeMenuLabel
-							additions={additions}
-							deletions={deletions}
+							additions={allStats.additions}
+							deletions={allStats.deletions}
 							emphasized={scope === "uncommitted"}
 							label={CHANGES_SCOPE_LABELS.uncommitted}
 						/>
 					</DropdownMenuItem>
 					<DropdownMenuItem
+						disabled={!canApplyChangesScope("staged", commits)}
 						onSelect={() => selectScope("staged")}
 						selected={scope === "staged"}
 					>
 						{CHANGES_SCOPE_LABELS.staged}
 					</DropdownMenuItem>
 					<DropdownMenuItem
+						disabled={!canApplyChangesScope("unstaged", commits)}
 						onSelect={() => selectScope("unstaged")}
 						selected={scope === "unstaged"}
 					>
 						<ScopeMenuLabel
-							additions={additions}
-							deletions={deletions}
+							additions={allStats.additions}
+							deletions={allStats.deletions}
 							emphasized={scope === "unstaged"}
 							label={CHANGES_SCOPE_LABELS.unstaged}
 						/>
@@ -183,15 +186,20 @@ export function EditorChangesPicker({
 						<DropdownMenuSubContent className="min-w-56 max-w-80">
 							{commits.map((commit) => {
 								const commitScope = `commit:${commit.id}` as const;
+								const commitFiles = filterChangedFilesByScope(files, commits, commitScope);
+								const commitStats = canApplyChangesScope(commitScope, commits)
+									? sumChangedFileDiffStats(commitFiles)
+									: { additions: commit.additions, deletions: commit.deletions };
 								return (
 									<DropdownMenuItem
+										disabled={!canApplyChangesScope(commitScope, commits)}
 										key={commit.id}
 										onSelect={() => selectScope(commitScope)}
 										selected={scope === commitScope}
 									>
 										<ScopeMenuLabel
-											additions={commit.additions}
-											deletions={commit.deletions}
+											additions={commitStats.additions}
+											deletions={commitStats.deletions}
 											emphasized={scope === commitScope}
 											label={`${commit.title} · ${commit.shortSha}`}
 										/>
@@ -200,6 +208,7 @@ export function EditorChangesPicker({
 							})}
 							{commits.length > 0 ? <DropdownMenuSeparator /> : null}
 							<DropdownMenuItem
+								disabled={!canApplyChangesScope("all-commits", commits)}
 								onSelect={() => selectScope("all-commits")}
 								selected={scope === "all-commits"}
 							>

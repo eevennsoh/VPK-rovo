@@ -287,7 +287,7 @@ function FailedCheckActions({
 	onFix,
 }: Readonly<{
 	check: PullRequestCheck;
-	onFix?: () => void;
+	onFix?: (check: PullRequestCheck) => void;
 }>) {
 	return (
 		<div
@@ -299,7 +299,7 @@ function FailedCheckActions({
 				onClick={(event) => {
 					event.preventDefault();
 					event.stopPropagation();
-					onFix?.();
+					onFix?.(check);
 				}}
 				size="compact"
 				type="button"
@@ -338,7 +338,7 @@ function ChecksValue({
 	onFixCheck,
 }: Readonly<{
 	checks: readonly PullRequestCheck[];
-	onFixCheck?: () => void;
+	onFixCheck?: (checks: readonly PullRequestCheck[]) => void;
 }>) {
 	if (checks.length === 0) {
 		return <p className="text-xs text-text-subtle">No CI checks reported</p>;
@@ -387,7 +387,10 @@ function ChecksValue({
 							</p>
 						</div>
 						{isFailed ? (
-							<FailedCheckActions check={check} onFix={onFixCheck} />
+							<FailedCheckActions
+								check={check}
+								onFix={(failedCheck) => onFixCheck?.([failedCheck])}
+							/>
 						) : (
 							<IconTile
 								aria-hidden
@@ -418,7 +421,7 @@ export function PullRequestDetailsRail({
 	onFixCheck,
 }: Readonly<{
 	data: PullRequestDetailData;
-	onFixCheck?: () => void;
+	onFixCheck?: (checks: readonly PullRequestCheck[]) => void;
 }>) {
 	const {
 		consumePullRequestSectionExpandRequest,
@@ -430,7 +433,8 @@ export function PullRequestDetailsRail({
 		() => new Set([PULL_REQUEST_CHECKS_SECTION_ID]),
 	);
 	const passedChecks = data.checks.filter((check) => check.status === "passed").length;
-	const failedChecks = data.checks.filter((check) => check.status === "failed").length;
+	const failedCheckItems = data.checks.filter((check) => check.status === "failed");
+	const failedChecks = failedCheckItems.length;
 	const checksInProgress = arePullRequestChecksInProgress(data.checks);
 	const checksCollapsedCount =
 		failedChecks > 0
@@ -513,12 +517,13 @@ export function PullRequestDetailsRail({
 					count: checksCollapsedCount,
 					// Same shared Fix handler as per-row Fix; only when failed checks
 					// are actionable (handler present + at least one failed check).
+					// Stages a composer chip — does not re-run CI immediately.
 					...(onFixCheck && failedChecks > 0
 						? {
 							headerAction: {
 								appearance: "label" as const,
 								label: "Fix all",
-								onClick: onFixCheck,
+								onClick: () => onFixCheck(failedCheckItems),
 								reveal: "open" as const,
 							},
 						}

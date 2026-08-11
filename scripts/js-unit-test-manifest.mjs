@@ -39,6 +39,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/jira-work-item/experimental-v2/lib/pull-request-phases.test.js",
 		"components/blocks/smart-link/lib/pull-request-smart-link.test.js",
 		"components/blocks/code-review/lib/create-code-review-tree-data.test.js",
+		"components/blocks/code-review/lib/filter-changed-files-by-scope.test.js",
 		"components/blocks/code-review/lib/sum-changed-file-diff-stats.test.js",
 		"components/visual/text-morphing/lib.test.js",
 		"components/visual/svg-tracing/lib.test.js",

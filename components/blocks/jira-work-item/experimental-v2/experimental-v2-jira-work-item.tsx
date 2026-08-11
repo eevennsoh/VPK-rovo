@@ -10,6 +10,7 @@ import { getAgentsWorkItemForCard } from "@/components/projects/jira/data/rfp-wo
 import { WorkItemModalProvider } from "@/app/contexts/context-work-item-modal";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
+import type { InlineReviewComment } from "@/components/blocks/code-review/lib/inline-comments";
 import type {
 	JiraWorkItemComposerDelivery,
 	JiraWorkItemPreset,
@@ -151,7 +152,7 @@ interface ExperimentalV2JiraWorkItemContentProps {
 interface PullRequestReviewState {
 	identity: string;
 	/** Committed inline file comments from the Files / CodeReview surface. */
-	inlineCommentCount: number;
+	inlineComments: readonly InlineReviewComment[];
 	reviewedChapterIds: ReadonlySet<string>;
 	total: number;
 }
@@ -219,7 +220,9 @@ function ExperimentalV2JiraWorkItemContent({
 	const composerLayoutGroupId = useId();
 	const [descriptionViewMode, setDescriptionViewMode] = useState<EditorToolbarViewMode>("rendered");
 	const [selectedPullRequestIdentity, setSelectedPullRequestIdentity] = useState<string | null>(null);
-	const [pullRequestReviewState, setPullRequestReviewState] = useState<PullRequestReviewState | null>(null);
+	const [pullRequestReviewByIdentity, setPullRequestReviewByIdentity] = useState<
+		Readonly<Record<string, PullRequestReviewState>>
+	>({});
 	const [reviewComposerIdentity, setReviewComposerIdentity] = useState<string | null>(null);
 	const [pullRequestReviewerStatuses, setPullRequestReviewerStatuses] = useState<
 		Readonly<Record<string, PullRequestReviewer["status"]>>
@@ -277,7 +280,7 @@ function ExperimentalV2JiraWorkItemContent({
 		autoOpenedForStageRef.current = null;
 		setDescriptionViewMode("rendered");
 		setSelectedPullRequestIdentity(null);
-		setPullRequestReviewState(null);
+		setPullRequestReviewByIdentity({});
 		setReviewComposerIdentity(null);
 		setPullRequestReviewerStatuses({});
 		setRestoreActivityComposerFocus(false);
@@ -289,6 +292,9 @@ function ExperimentalV2JiraWorkItemContent({
 		)) ?? null,
 		[pullRequestEntries, selectedPullRequestIdentity],
 	);
+	const pullRequestReviewState = selectedPullRequestIdentity
+		? pullRequestReviewByIdentity[selectedPullRequestIdentity] ?? null
+		: null;
 	// Build/Plan revealActivityKey must not steal the rail away from PR Details.
 	useLayoutEffect(() => {
 		const suppressed = selectedPullRequestIdentity !== null;
@@ -306,17 +312,23 @@ function ExperimentalV2JiraWorkItemContent({
 		setReviewComposerIdentity(null);
 		setRestoreActivityComposerFocus(false);
 		setSelectedPullRequestIdentity(identity);
-		setPullRequestReviewState(guidedReview
-			? {
-				identity,
-				inlineCommentCount: 0,
-				reviewedChapterIds: resolveInitialReviewedChapterIds(
-					guidedReview,
-					pullRequestApprovalStates?.[identity],
-				),
-				total: guidedReview.chapters.length,
-			}
-			: null);
+		// Retain chapter checks + inline comments when reopening the same PR.
+		setPullRequestReviewByIdentity((current) => {
+			if (!guidedReview) return current;
+			if (current[identity]) return current;
+			return {
+				...current,
+				[identity]: {
+					identity,
+					inlineComments: [],
+					reviewedChapterIds: resolveInitialReviewedChapterIds(
+						guidedReview,
+						pullRequestApprovalStates?.[identity],
+					),
+					total: guidedReview.chapters.length,
+				},
+			};
+		});
 		setPanelView("details");
 	}, [pullRequestApprovalStates, setPanelView]);
 	// jira-agents Review: open the guided PR once per stage so detail is default.
@@ -359,33 +371,42 @@ function ExperimentalV2JiraWorkItemContent({
 		chapterId: string,
 		reviewed: boolean,
 	) => {
-		setPullRequestReviewState((current) => {
-			if (!current || current.identity !== identity) return current;
-			if (current.reviewedChapterIds.has(chapterId) === reviewed) return current;
-			const reviewedChapterIds = new Set(current.reviewedChapterIds);
+		setPullRequestReviewByIdentity((current) => {
+			const existing = current[identity];
+			if (!existing) return current;
+			if (existing.reviewedChapterIds.has(chapterId) === reviewed) return current;
+			const reviewedChapterIds = new Set(existing.reviewedChapterIds);
 			if (reviewed) {
 				reviewedChapterIds.add(chapterId);
 			} else {
 				reviewedChapterIds.delete(chapterId);
 			}
-			return { ...current, reviewedChapterIds };
+			return { ...current, [identity]: { ...existing, reviewedChapterIds } };
 		});
 	}, []);
 	const handlePullRequestInlineCommentsChange = useCallback((
 		identity: string,
-		comments: readonly { id: string }[],
+		comments: readonly InlineReviewComment[],
 	) => {
-		setPullRequestReviewState((current) => {
-			if (!current || current.identity !== identity) return current;
-			if (current.inlineCommentCount === comments.length) return current;
-			return { ...current, inlineCommentCount: comments.length };
+		setPullRequestReviewByIdentity((current) => {
+			const existing = current[identity];
+			if (!existing) return current;
+			if (
+				existing.inlineComments.length === comments.length
+				&& existing.inlineComments.every((comment, index) => comment.id === comments[index]?.id)
+			) {
+				return current;
+			}
+			return { ...current, [identity]: { ...existing, inlineComments: comments } };
 		});
 	}, []);
 	const handlePullRequestReviewSubmit = useCallback((submission: PullRequestReviewSubmission) => {
-		if (!reviewComposerIdentity) return;
+		if (!reviewComposerIdentity) return false;
 		// Approve still requires guided-chapter progress; Comment / Request changes
 		// dismiss and land a review without that gate.
-		if (submission.verdict === "approve" && !pullRequestReviewSubmissionAvailable) return;
+		if (submission.verdict === "approve" && !pullRequestReviewSubmissionAvailable) {
+			return false;
+		}
 
 		const reviewerStatus = mapReviewVerdictToReviewerStatus(submission.verdict);
 		setPullRequestReviewerStatuses((current) => ({
@@ -398,6 +419,7 @@ function ExperimentalV2JiraWorkItemContent({
 		setReviewComposerIdentity(null);
 		setRestoreActivityComposerFocus(false);
 		showPullRequestReviewToast(submission.verdict);
+		return true;
 	}, [onPullRequestApprove, pullRequestReviewSubmissionAvailable, reviewComposerIdentity]);
 	const selectedPullRequestReviewerStatus = selectedPullRequestIdentity
 		? pullRequestReviewerStatuses[selectedPullRequestIdentity]
@@ -412,9 +434,9 @@ function ExperimentalV2JiraWorkItemContent({
 			|| pullRequestReviewState.total === 0
 		) return undefined;
 
-		const { inlineCommentCount, reviewedChapterIds, total } = pullRequestReviewState;
+		const { inlineComments, reviewedChapterIds, total } = pullRequestReviewState;
 		// Badge = checked Reviewed chapters + inline file comments when that count exists.
-		const badgeCount = reviewedChapterIds.size + inlineCommentCount;
+		const badgeCount = reviewedChapterIds.size + inlineComments.length;
 		const approved = selectedPullRequestApprovalState === "approved";
 		return {
 			ariaLabel: approved
@@ -445,7 +467,7 @@ function ExperimentalV2JiraWorkItemContent({
 		) return undefined;
 
 		return {
-			commentCount: pullRequestReviewState.inlineCommentCount,
+			commentCount: pullRequestReviewState.inlineComments.length,
 			onClose: () => {
 				setRestoreActivityComposerFocus(true);
 				setReviewComposerIdentity(null);
@@ -516,6 +538,7 @@ function ExperimentalV2JiraWorkItemContent({
 									onPullRequestChapterReviewedChange={handlePullRequestChapterReviewedChange}
 									onPullRequestInlineCommentsChange={handlePullRequestInlineCommentsChange}
 									pullRequestApprovalState={selectedPullRequestApprovalState}
+									pullRequestInlineComments={pullRequestReviewState?.inlineComments}
 									pullRequestReviewedChapterIds={selectedPullRequestReviewedChapterIds}
 									scrollContainerRef={scrollContainerRef}
 									selectedPullRequestEntry={selectedPullRequestEntry}

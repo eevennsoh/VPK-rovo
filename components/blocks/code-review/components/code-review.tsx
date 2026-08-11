@@ -54,6 +54,8 @@ export interface CodeReviewProps {
 	hideComposerSourceAndModelControls?: boolean;
 	/** Fired whenever committed inline comments change (not drafts). */
 	onInlineCommentsChange?: (comments: readonly InlineReviewComment[]) => void;
+	/** Seed committed inline comments when the surface remounts (e.g. reopening a PR). */
+	initialInlineComments?: readonly InlineReviewComment[];
 	onReviewSubmit?: (submission: Readonly<{
 		comments: readonly InlineReviewComment[];
 		prompt: string;
@@ -80,6 +82,7 @@ export function CodeReview({
 	agentProfile,
 	hideComposerSourceAndModelControls = false,
 	onInlineCommentsChange,
+	initialInlineComments,
 	onReviewSubmit,
 }: Readonly<CodeReviewProps>) {
 	const { additions, deletions } = files.reduce(
@@ -99,8 +102,12 @@ export function CodeReview({
 		onOpenChange?.(nextOpen);
 	};
 	const [editorLayout, setEditorLayout] = useState<DiffLayout>("unified");
-	const [inlineComments, setInlineComments] = useState(EMPTY_INLINE_COMMENT_STATE);
-	const nextInlineCommentId = useRef(0);
+	const [inlineComments, setInlineComments] = useState(() => (
+		initialInlineComments && initialInlineComments.length > 0
+			? { drafts: EMPTY_INLINE_COMMENT_STATE.drafts, comments: initialInlineComments }
+			: EMPTY_INLINE_COMMENT_STATE
+	));
+	const nextInlineCommentId = useRef(initialInlineComments?.length ?? 0);
 	const handleAddDraft = useCallback((anchor: InlineCommentAnchor) => {
 		nextInlineCommentId.current += 1;
 		setInlineComments((state) => createInlineCommentDraft(state, {
