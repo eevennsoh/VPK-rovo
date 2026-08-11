@@ -337,7 +337,7 @@ test("the floating activity composer reuses shared dictation via browser transcr
 	);
 	assert.match(
 		COMPOSER_DICTATION_SOURCE,
-		/realtime\.connect\(\{ browserTranscriptionOnly: true \}\)/u,
+		/realtime\.connect\(\{ transcriptionOnly: true \}\)/u,
 	);
 	assert.match(
 		COMPOSER_DICTATION_SOURCE,

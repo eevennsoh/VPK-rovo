@@ -35,7 +35,7 @@ export interface JiraActivityComposerDictation {
 
 /**
  * Browser-transcription dictation for the activity FloatingComposer.
- * Mirrors the Rovo/sidebar `browserTranscriptionOnly` start/stop path so the
+ * Mirrors the Rovo/sidebar `transcriptionOnly` start/stop path so the
  * shared `RovoComposerActionButton` mic behaves the same as other composers.
  */
 export function useJiraActivityComposerDictation({
@@ -134,7 +134,7 @@ export function useJiraActivityComposerDictation({
 		isDictationActiveRef.current = true;
 		setIsDictationActive(true);
 		setDictationTranscriptPreview(null);
-		realtime.connect({ browserTranscriptionOnly: true });
+		realtime.connect({ transcriptionOnly: true });
 	}, [realtime]);
 
 	const onStopDictation = useCallback(() => {
