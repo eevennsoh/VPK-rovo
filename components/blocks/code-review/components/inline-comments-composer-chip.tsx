@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 import type { InlineReviewComment } from "../lib/inline-comments";
+import { formatInlineCommentLineLabel } from "../lib/inline-comments";
 
 interface InlineCommentsComposerChipProps {
 	comments: readonly InlineReviewComment[];
@@ -52,7 +53,7 @@ export function InlineCommentsComposerChip({
 									{comment.filePath}
 								</div>
 								<div className="mt-0.5 text-xs text-text-subtle">
-									Line {comment.lineNumber}
+									{formatInlineCommentLineLabel(comment)}
 								</div>
 								<p className="mt-1 whitespace-pre-wrap break-words text-sm text-text">{comment.body}</p>
 							</li>
