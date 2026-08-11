@@ -10,13 +10,17 @@ export type JiraAgentsStoryChapter =
 	| "intake"
 	| "plan"
 	| "build"
-	| "handoff"
 	| "review"
 	| "fix"
 	| "approve"
 	| "release";
 
 export type JiraAgentsReviewStep = "queued" | "running" | "failed";
+/**
+ * Staged Build reveal from Plan end:
+ * ready (orient) → implement+PR → verify+screenshot → former Handoff end state.
+ */
+export type JiraAgentsBuildStep = "ready" | "implementing" | "verifying" | "complete";
 export type JiraAgentsDescriptionSkillPhase =
 	| "idle"
 	| "running"
@@ -29,13 +33,14 @@ export interface JiraAgentsStoryStateOptions {
 	descriptionImproved?: boolean;
 	pullRequestApproved?: boolean;
 	reviewStep?: JiraAgentsReviewStep;
+	/** Build-only staged progression. Defaults to `complete` (former Handoff end). */
+	buildStep?: JiraAgentsBuildStep;
 }
 
 export const JIRA_AGENTS_STORY_CHAPTERS = [
 	{ label: "Intake", value: "intake" },
 	{ label: "Plan", value: "plan" },
 	{ label: "Build", value: "build" },
-	{ label: "Handoff", value: "handoff" },
 	{ label: "Review", value: "review" },
 	{ label: "Fix", value: "fix" },
 	{ label: "Approve", value: "approve" },
@@ -54,7 +59,6 @@ export const STORY_STATUS_BY_CHAPTER = {
 	intake: "To do",
 	plan: "In progress",
 	build: "In progress",
-	handoff: "In progress",
 	review: "In review",
 	fix: "In progress",
 	approve: "In review",
@@ -65,7 +69,6 @@ export const WORK_ITEM_STATUS_BY_CHAPTER = {
 	intake: "To do",
 	plan: "In progress",
 	build: "In progress",
-	handoff: "In progress",
 	review: "In review",
 	fix: "In progress",
 	approve: "In review",
@@ -74,8 +77,7 @@ export const WORK_ITEM_STATUS_BY_CHAPTER = {
 
 export const CLAUDE_SESSION_TITLE_BY_CHAPTER = {
 	plan: "Plan guest checkout with Code Planner",
-	build: "Implement guest checkout end to end",
-	handoff: "Verify implementation and prepare the pull request",
+	build: "Verify implementation and prepare the pull request",
 	review: "Monitor automated CI review",
 	fix: "Repair the failed CI path and rerun checks",
 	approve: "Await Venn's guided human approval",
@@ -157,8 +159,8 @@ export const JIRA_AGENTS_STORY_WORK_ITEM_BASE: WorkItemData = {
 	status: "To do",
 	priority: "High",
 	assignee: {
-		name: "Jordan Lee",
-		avatarUrl: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+		name: "Venn",
+		avatarUrl: "/avatar-user/venn/venn.png",
 	},
 	reporter: {
 		name: "Maya Chen",
@@ -170,12 +172,15 @@ export const JIRA_AGENTS_STORY_WORK_ITEM_BASE: WorkItemData = {
 	dueDate: "Aug 19, 2026",
 };
 
-export const HUMAN_ACTOR: StaticTimelineEvent["actor"] = {
-	id: "static-jordan-lee",
-	name: "Jordan Lee",
+export const VENN_ACTOR: StaticTimelineEvent["actor"] = {
+	id: "static-venn",
+	name: "Venn",
 	kind: "person",
-	avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+	avatarSrc: "/avatar-user/venn/venn.png",
 };
+
+/** Primary human actor in the jira-agents story narrative (Venn). */
+export const HUMAN_ACTOR = VENN_ACTOR;
 
 export const CLAUDE_CODE_ACTOR: StaticTimelineEvent["actor"] = {
 	id: "static-claude-code",
@@ -189,11 +194,4 @@ export const GITHUB_ACTOR: StaticTimelineEvent["actor"] = {
 	name: "GitHub",
 	kind: "app",
 	brandName: "github",
-};
-
-export const VENN_ACTOR: StaticTimelineEvent["actor"] = {
-	id: "static-venn",
-	name: "Venn",
-	kind: "person",
-	avatarSrc: "/avatar-user/venn/venn.png",
 };

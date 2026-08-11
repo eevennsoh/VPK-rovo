@@ -8,11 +8,9 @@ import type {
 	JiraWorkItemState,
 	StaticTimelineEvent,
 } from "@/components/blocks/jira-work-item/data/session-state";
-import {
-	getAgentActivityActorId,
-	hydratePreset,
-} from "@/components/blocks/jira-work-item/data/session-state";
+import { hydratePreset } from "@/components/blocks/jira-work-item/data/session-state";
 import { SESSION_EPOCH_MS } from "@/components/blocks/jira-work-item/data/session-fixtures";
+import { statusLozengeSegment } from "@/components/blocks/jira-work-item/experimental-v2/components/detail-field-editor-data";
 import type {
 	JiraKanbanAgentData,
 	JiraKanbanCardData,
@@ -29,6 +27,8 @@ import {
 	JIRA_DESIGN_KANBAN_AGENTS,
 	JIRA_DESIGN_KANBAN_COLUMNS,
 } from "@/components/projects/jira-golden-journeys/data/jira-design-work-items";
+import type { ArtifactListItem } from "@/components/ui-custom/artifact-list";
+
 import {
 	createJiraAgentsStoryContextResources,
 	IMPROVED_STORY_DESCRIPTION,
@@ -37,9 +37,9 @@ import {
 import {
 	FAILED_PR_CHECKS,
 	PASSED_PR_CHECKS,
-	QUEUED_PR_CHECKS,
 	RERUNNING_PR_CHECKS,
 	RUNNING_PR_CHECKS,
+	STARTED_PR_CHECKS,
 } from "./story-pull-request-checks";
 import {
 	CLAUDE_CODE,
@@ -50,17 +50,19 @@ import {
 	HUMAN_ACTOR,
 	JIRA_AGENTS_DESCRIPTION_SKILL_SCRIPT_ID,
 	JIRA_AGENTS_DESCRIPTION_SKILL_SESSION_ID,
+	JIRA_AGENTS_STATUS_PHASES,
 	JIRA_AGENTS_STORY_ISSUE_KEY,
 	JIRA_AGENTS_STORY_ITEM_ID,
 	JIRA_AGENTS_STORY_WORK_ITEM_BASE,
 	ROVO,
-	ROVO_ACTOR,
 	STORY_AGENT_BY_ID,
 	STORY_CREATED_AT_MS,
 	STORY_EPOCH_MS,
 	STORY_STATUS_BY_CHAPTER,
 	VENN_ACTOR,
 	WORK_ITEM_STATUS_BY_CHAPTER,
+	JIRA_AGENTS_PULL_REQUEST_IDENTITY,
+	type JiraAgentsBuildStep,
 	type JiraAgentsDescriptionSkillPhase,
 	type JiraAgentsReviewStep,
 	type JiraAgentsStoryAgent,
@@ -81,6 +83,7 @@ export {
 	shouldStartJiraAgentsPlan,
 } from "./story-model";
 export type {
+	JiraAgentsBuildStep,
 	JiraAgentsDescriptionSkillPhase,
 	JiraAgentsReviewStep,
 	JiraAgentsStoryChapter,
@@ -125,13 +128,14 @@ function statusEvent(
 	return {
 		id,
 		kind: "event",
-		actor: HUMAN_ACTOR,
+		// Venn drives the SDLC status moves after intake setup.
+		actor: VENN_ACTOR,
 		icon: "status",
 		segments: [
 			{ type: "text", text: "moved from " },
-			{ type: "lozenge", text: from },
+			statusLozengeSegment(from, JIRA_AGENTS_STATUS_PHASES),
 			{ type: "transition-arrow" },
-			{ type: "lozenge", text: to },
+			statusLozengeSegment(to, JIRA_AGENTS_STATUS_PHASES),
 		],
 		createdAtMs,
 	};
@@ -153,9 +157,11 @@ const INTAKE_EVENTS: readonly StaticTimelineEvent[] = [
 		icon: "label",
 		segments: [
 			{ type: "text", text: "added " },
-			{ type: "label", text: "guest-checkout", color: "blue" },
-			{ type: "text", text: " and " },
-			{ type: "label", text: "feature", color: "purple" },
+			{ type: "label", text: "storefront", color: "blue" },
+			{ type: "text", text: " " },
+			{ type: "label", text: "checkout", color: "blue" },
+			{ type: "text", text: " " },
+			{ type: "label", text: "feature", color: "yellow" },
 		],
 		createdAtMs: STORY_EPOCH_MS - 3_480_000,
 	},
@@ -164,17 +170,19 @@ const INTAKE_EVENTS: readonly StaticTimelineEvent[] = [
 const DESCRIPTION_APPLIED_EVENT: StaticTimelineEvent = {
 	id: "story-description-applied",
 	kind: "event",
-	actor: ROVO_ACTOR,
-	icon: "linked",
-	segments: [{
-		type: "text",
-		text: "Added the approved implementation-ready description to SHOP-4821 after Venn confirmed the suggestion.",
-	}],
-	createdAtMs: STORY_EPOCH_MS - 2_520_000,
+	actor: VENN_ACTOR,
+	icon: "description",
+	// Actor renders as a user-mention chip via JiraActivityEvent (person → user).
+	segments: [{ type: "text", text: "updated the description" }],
+	// After intake description discussion, before move-to-in-progress /
+	// orchestration / agent sessions (oldest→newest top→bottom).
+	createdAtMs: STORY_EPOCH_MS - 3_120_000,
 };
 
 const PLAN_EVENTS: readonly StaticTimelineEvent[] = [
 	...INTAKE_EVENTS,
+	// Public trail after the private Improve description skill is accepted.
+	DESCRIPTION_APPLIED_EVENT,
 	statusEvent("story-moved-in-progress", "To do", "In progress", STORY_EPOCH_MS - 3_000_000),
 	{
 		id: "story-lead-delegated",
@@ -263,7 +271,7 @@ function createPullRequestEvent({
 		segments: [],
 		pullRequest: {
 			number: 1847,
-			title: "Add guest checkout to the storefront",
+			title: "Implement guest checkout without account creation",
 			status,
 			additions: 86,
 			deletions: 21,
@@ -271,7 +279,7 @@ function createPullRequestEvent({
 			branch: "feature/shop-4821-guest-checkout",
 			targetBranch: "main",
 			url: "https://github.com/eevensoh/vpk-rovo/pull/1847",
-			authorName: CLAUDE_CODE.name,
+			authorName: HUMAN_ACTOR.name,
 			createdAtMs: STORY_EPOCH_MS - 1_200_000,
 			updatedAtMs,
 			reviewDecision,
@@ -310,7 +318,7 @@ const ACCEPTANCE_MATRIX_EVENT: StaticTimelineEvent = {
 
 function createReviewEvents(step: JiraAgentsReviewStep): readonly StaticTimelineEvent[] {
 	const checks = step === "queued"
-		? QUEUED_PR_CHECKS
+		? STARTED_PR_CHECKS
 		: step === "running"
 			? RUNNING_PR_CHECKS
 			: FAILED_PR_CHECKS;
@@ -444,6 +452,61 @@ const RELEASE_EVENTS: readonly StaticTimelineEvent[] = [
 	statusEvent("story-moved-release", "In review", "Done", STORY_EPOCH_MS - 60_000),
 ];
 
+/**
+ * Story-clock offsets for agent sessions.
+ * Live (running / waiting) sessions sit near "now" so activity headers read as
+ * immediate ("Just now"); completed sessions keep a historical ~45m placement.
+ */
+function sessionClockOffsets(status: AgentSessionStatus, order: number): {
+	promptAtMs: number;
+	startedAtMs: number;
+	updateAtMs: number;
+} {
+	if (status === "completed") {
+		const startedAtMs = STORY_EPOCH_MS - 2_700_000 + order * 60_000;
+		return {
+			startedAtMs,
+			promptAtMs: startedAtMs,
+			updateAtMs: startedAtMs + 60_000,
+		};
+	}
+
+	// Within the last minute of the story clock, spaced by order so relative
+	// formatting yields "Just now" while preserving start order between agents.
+	const startedAtMs = STORY_EPOCH_MS - 45_000 + order * 15_000;
+	return {
+		startedAtMs,
+		promptAtMs: startedAtMs,
+		updateAtMs: startedAtMs + 10_000,
+	};
+}
+
+const GUEST_CHECKOUT_DESIGN_ATTACHMENT = {
+	src: "/illustration/jira-agents/guest-checkout-final.png",
+	alt: "Final guest checkout design",
+	filename: "guest-checkout-final.png",
+} as const;
+
+function createGuestCheckoutPrArtifact(status: "Open" | "Merged"): ArtifactListItem {
+	return {
+		id: "guest-checkout-pr",
+		title: "Implement guest checkout without account creation",
+		source: "Pull request",
+		logoName: "github",
+		href: JIRA_AGENTS_PULL_REQUEST_IDENTITY,
+		pullRequest: {
+			number: 1847,
+			status,
+			additions: 86,
+			deletions: 21,
+		},
+	};
+}
+
+function resolveBuildStep(options: JiraAgentsStoryStateOptions): JiraAgentsBuildStep {
+	return options.buildStep ?? "complete";
+}
+
 function createSession(
 	agent: JiraAgentsStoryAgent,
 	status: AgentSessionStatus,
@@ -452,6 +515,7 @@ function createSession(
 		command: string;
 		commandAuthorName?: string;
 		imageAttachment?: AgentSession["imageAttachment"];
+		outputs?: AgentSession["outputs"];
 		previewText: string;
 		progressChecklist?: AgentSession["progressChecklist"];
 		title: string;
@@ -461,6 +525,7 @@ function createSession(
 ): AgentSession {
 	const completed = status === "completed";
 	const waiting = status === "waiting";
+	const { startedAtMs, promptAtMs, updateAtMs } = sessionClockOffsets(status, order);
 	const steps = [
 		{ id: `${agent.id}-context`, label: "Read the shared work-item context", status: "complete" as const },
 		{
@@ -493,7 +558,7 @@ function createSession(
 				role: "human",
 				authorName: options.commandAuthorName ?? "Venn",
 				content: options.command,
-				createdAtMs: STORY_EPOCH_MS - 2_700_000 + order * 60_000,
+				createdAtMs: promptAtMs,
 			},
 			{
 				id: `story-session-${agent.id}-update`,
@@ -501,16 +566,19 @@ function createSession(
 				authorName: agent.name,
 				authorAvatarSrc: agent.avatarSrc,
 				content: options.previewText,
-				createdAtMs: STORY_EPOCH_MS - 2_640_000 + order * 60_000,
+				createdAtMs: updateAtMs,
 			},
 		],
-		startedAtMs: STORY_EPOCH_MS - 2_700_000 + order * 60_000,
+		startedAtMs,
 		scriptId: `shop-4821-${agent.id}`,
 		scriptCursor: completed ? 3 : 1,
 		stepElapsedMs: 0,
 		resumedFromWait: false,
 		order,
+		// Private skill runs stay out of the public Activity feed until published.
+		...(agent.id?.startsWith("skill:") ? { activityVisibility: "private" as const } : {}),
 		...(options.progressChecklist ? { progressChecklist: options.progressChecklist } : {}),
+		...(options.outputs ? { outputs: options.outputs } : {}),
 		...(options.imageAttachment ? { imageAttachment: options.imageAttachment } : {}),
 		...(options.waitingOn ? { waitingOn: options.waitingOn } : {}),
 		...(options.threadReplies ? { threadReplies: options.threadReplies } : {}),
@@ -593,6 +661,77 @@ function createDescriptionSkillSession(phase: Exclude<JiraAgentsDescriptionSkill
 	};
 }
 
+function buildChecklistCompletedCount(
+	chapter: Exclude<JiraAgentsStoryChapter, "intake">,
+	options: JiraAgentsStoryStateOptions,
+): number {
+	const buildStep = resolveBuildStep(options);
+	switch (chapter) {
+		case "plan":
+			// Early Plan / lead: Consult still open. Orchestration consult/complete
+			// marks item 1 via createConsultReadyPlanState (Plan-end handoff).
+			return 0;
+		case "build":
+			// Continues from Plan end (Consult checked):
+			// ready → Plan-end hold; implementing → Implement (+ PR);
+			// verifying/complete → Verify (+ screenshot).
+			return buildStep === "ready"
+				? 1
+				: buildStep === "implementing"
+					? 2
+					: 3;
+		case "review":
+			return options.reviewStep === "failed" ? 5 : 4;
+		case "fix":
+			return 5;
+		case "approve":
+			return options.pullRequestApproved ? 7 : 6;
+		case "release":
+			return 8;
+		default: {
+			const _exhaustive: never = chapter;
+			return _exhaustive;
+		}
+	}
+}
+
+function claudePreviewForChapter(
+	chapter: Exclude<JiraAgentsStoryChapter, "intake">,
+	options: JiraAgentsStoryStateOptions,
+): string {
+	const buildStep = resolveBuildStep(options);
+	switch (chapter) {
+		case "plan":
+			return "I'm taking the lead on SHOP-4821. Code Planner, review this work item and define the secure API contract, server-owned validation rules, idempotency behavior, and recoverable error handling before I implement it.";
+		case "build":
+			return buildStep === "ready"
+				? "Code Planner's secure API contract and validation matrix are ready. I'm confirming the plan handoff before implementation begins."
+				: buildStep === "implementing"
+					? "Code Planner's contract is ready. I'm implementing the guest order service and storefront flow with server-owned pricing, inventory, payment validation, and idempotent order creation."
+					: buildStep === "verifying"
+						? "Guest checkout is implemented. I'm verifying the final desktop and mobile design and attaching screenshot evidence for open PR #1847."
+						: "Guest checkout is implemented and verified. I've attached the final desktop and mobile evidence and prepared PR #1847 for automated CI review.";
+		case "review":
+			return options.reviewStep === "queued"
+				? "PR #1847 is open. GitHub Actions owns the automated review; lint and typecheck has started while the unit and guest-checkout browser checks stay queued."
+				: options.reviewStep === "running"
+					? "GitHub Actions is running lint, typecheck, and unit tests for PR #1847 while the guest-checkout browser suite waits for CI capacity."
+					: "GitHub Actions blocked PR #1847. Lint and typecheck found a nullable delivery-address path; unit and browser coverage passed.";
+		case "fix":
+			return "I repaired the nullable delivery-address path and am rerunning the failed lint and typecheck check; unit and browser coverage remain passed.";
+		case "approve":
+			return options.pullRequestApproved
+				? "Venn approved PR #1847. All CI and acceptance evidence is complete, so the change is ready to merge and release."
+				: "All CI and 18 acceptance checks pass. PR #1847 is waiting for Venn's required human review before merge.";
+		case "release":
+			return "PR #1847 was approved by Venn and merged. Guest checkout deployed behind its production feature flag, passed production smoke checks, verified healthy telemetry, and completed rollout.";
+		default: {
+			const _exhaustive: never = chapter;
+			return _exhaustive;
+		}
+	}
+}
+
 function createStorySessions(
 	chapter: JiraAgentsStoryChapter,
 	options: JiraAgentsStoryStateOptions,
@@ -603,6 +742,7 @@ function createStorySessions(
 		: [createDescriptionSkillSession(descriptionSkillPhase)];
 	if (chapter === "intake") return descriptionSkillSession;
 
+	const buildStep = resolveBuildStep(options);
 	const plannerStatus: AgentSessionStatus = chapter === "plan" ? "running" : "completed";
 	const claudeStatus: AgentSessionStatus = chapter === "release"
 		|| (chapter === "approve" && options.pullRequestApproved)
@@ -611,15 +751,6 @@ function createStorySessions(
 		: chapter === "approve" || chapter === "review"
 			? "waiting"
 			: "running";
-	const completedChecklistItems = {
-		plan: 0,
-		build: 1,
-		handoff: 3,
-		review: options.reviewStep === "failed" ? 5 : 4,
-		fix: 5,
-		approve: options.pullRequestApproved ? 7 : 6,
-		release: 8,
-	} as const satisfies Record<Exclude<JiraAgentsStoryChapter, "intake">, number>;
 	const checklistLabels = [
 		"Consult Code Planner on the secure API and validation contract",
 		"Implement guest checkout end to end",
@@ -630,42 +761,36 @@ function createStorySessions(
 		"Obtain Venn's required human approval in the PR guide",
 		"Merge, deploy behind the feature flag, and verify production rollout",
 	] as const;
+	const completedCount = buildChecklistCompletedCount(chapter, options);
 	const progressChecklist = checklistLabels.map((label, index) => ({
 		id: `story-claude-progress-${index + 1}`,
 		label,
-		completed: index < completedChecklistItems[chapter],
+		completed: index < completedCount,
 	}));
 
+	// Build staging from Plan end (Consult ✓, no artifacts):
+	// ready → hold; implementing → Implement ✓ + PR; verifying/complete → Verify ✓ + screenshot.
+	const showCodeArtifact = chapter === "build"
+		? buildStep !== "ready"
+		: chapter === "review" || chapter === "fix" || chapter === "approve" || chapter === "release";
+	const showDesignEvidence = chapter === "build"
+		? buildStep === "verifying" || buildStep === "complete"
+		: chapter === "review" || chapter === "fix" || chapter === "approve" || chapter === "release";
+	const claudeTitle = chapter === "build" && buildStep === "ready"
+		? CLAUDE_SESSION_TITLE_BY_CHAPTER.plan
+		: chapter === "build" && buildStep === "implementing"
+			? "Implement guest checkout end to end"
+			: CLAUDE_SESSION_TITLE_BY_CHAPTER[chapter];
+
 	const claude = createSession(CLAUDE_CODE, claudeStatus, 1, {
-		title: CLAUDE_SESSION_TITLE_BY_CHAPTER[chapter],
+		title: claudeTitle,
 		command: "Take the lead on implementing guest checkout. Consult Code Planner on the secure API and validation contract first, then implement and verify the work.",
-		previewText: chapter === "plan"
-			? "I'm taking the lead on SHOP-4821. Code Planner, review this work item and define the secure API contract, server-owned validation rules, idempotency behavior, and recoverable error handling before I implement it."
-			: chapter === "build"
-				? "Code Planner's contract is ready. I'm implementing the guest order service and storefront flow with server-owned pricing, inventory, payment validation, and idempotent order creation."
-				: chapter === "handoff"
-					? "Guest checkout is implemented and verified. I've attached the final desktop and mobile evidence and prepared PR #1847 for automated CI review."
-					: chapter === "review"
-						? options.reviewStep === "queued"
-							? "PR #1847 is open. GitHub Actions owns the automated review; its lint, typecheck, unit, and guest-checkout browser checks are queued."
-							: options.reviewStep === "running"
-								? "GitHub Actions is running lint and typecheck for PR #1847 while the remaining automated checks wait for CI capacity."
-								: "GitHub Actions blocked PR #1847. Lint and typecheck found a nullable delivery-address path; unit and browser coverage passed."
-						: chapter === "fix"
-							? "I repaired the nullable delivery-address path and am rerunning the failed lint and typecheck check; unit and browser coverage remain passed."
-							: chapter === "approve"
-								? options.pullRequestApproved
-									? "Venn approved PR #1847. All CI and acceptance evidence is complete, so the change is ready to merge and release."
-									: "All CI and 18 acceptance checks pass. PR #1847 is waiting for Venn's required human review before merge."
-				: "PR #1847 was approved by Venn and merged. Guest checkout deployed behind its production feature flag, passed production smoke checks, verified healthy telemetry, and completed rollout.",
+		previewText: claudePreviewForChapter(chapter, options),
 		progressChecklist,
-		imageAttachment: chapter === "handoff" || chapter === "review" || chapter === "fix" || chapter === "approve" || chapter === "release"
-			? {
-				src: "/illustration/jira-agents/guest-checkout-final.png",
-				alt: "Final guest checkout design",
-				filename: "guest-checkout-final.png",
-			}
+		outputs: showCodeArtifact
+			? [createGuestCheckoutPrArtifact(chapter === "release" ? "Merged" : "Open")]
 			: undefined,
+		imageAttachment: showDesignEvidence ? { ...GUEST_CHECKOUT_DESIGN_ATTACHMENT } : undefined,
 		waitingOn: chapter === "approve" && !options.pullRequestApproved
 			? { kind: "user" }
 			: chapter === "review" && options.reviewStep !== "failed"
@@ -688,25 +813,18 @@ function createStorySessions(
 	return [...descriptionSkillSession, claude, planner];
 }
 
-function activeAgentIds(sessions: readonly AgentSession[]): string[] {
-	return sessions
-		.filter((session) => session.status !== "completed")
-		.map((session) => session.agentId);
-}
-
 function createStoryComments(
 	chapter: JiraAgentsStoryChapter,
-	sessions: readonly AgentSession[],
+	_sessions: readonly AgentSession[],
 ): AgentSessionComment[] {
-	const showAcknowledgementReactions = chapter === "plan";
-	const actorIds = showAcknowledgementReactions
-		? activeAgentIds(sessions).map(getAgentActivityActorId)
-		: [];
+	// Eyes acknowledgement lives only in the staged orchestration reveal
+	// (reaction-1 / reaction-2). Once agents comment (lead+), reactions clear —
+	// static chapter snapshots never keep 👀 on the prompt.
 	return [
 		{
 			id: "story-channel-intake",
-			authorName: "Jordan Lee",
-			authorAvatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+			authorName: "Venn",
+			authorAvatarSrc: "/avatar-user/venn/venn.png",
 			content: "Checkout-funnel research identifies mandatory registration as the largest avoidable drop-off for first-time shoppers. During rollout, track guest completion, payment failures, duplicate orders, and checkout-related support contacts.",
 			createdAtMs: STORY_EPOCH_MS - 3_240_000,
 			threadReplies: [{
@@ -722,17 +840,35 @@ function createStoryComments(
 			authorName: "Venn",
 			content: "@Claude Code take the lead on implementing guest checkout. Consult @Code Planner on the secure API and validation contract first, then implement and verify the work.",
 			createdAtMs: STORY_EPOCH_MS - 2_940_000,
-			...(actorIds.length > 0
-				? { reactions: [{ emoji: "👀", actorIds }] }
-				: {}),
 		} satisfies AgentSessionComment]),
 	];
+}
+
+/**
+ * Build stages that already show the PR card artifact also surface work-item PR
+ * chrome (title meta, Review pull request resource, Activity Open #1847 entry).
+ *
+ * Match Review's PR-creation snapshot (Open #1847, +86/−21, first check started)
+ * but keep CI failure / running progression in Review. Timestamp sits after the
+ * live Claude session so the Open row appears below the tall Build agent card —
+ * the same after-agent placement Review shows once Claude is historical.
+ */
+function createBuildPullRequestEvent(): StaticTimelineEvent {
+	return createPullRequestEvent({
+		checks: STARTED_PR_CHECKS,
+		id: "story-pr-review",
+		mergeState: "blocked",
+		reviewDecision: "review-required",
+		// After Claude's live Build clock (order 1 → STORY_EPOCH_MS - 30_000).
+		updatedAtMs: STORY_EPOCH_MS - 12_000,
+	});
 }
 
 function storyEventsForChapter(
 	chapter: JiraAgentsStoryChapter,
 	options: JiraAgentsStoryStateOptions,
 ): readonly StaticTimelineEvent[] {
+	const buildStep = resolveBuildStep(options);
 	switch (chapter) {
 		case "intake":
 			return options.descriptionSkillPhase === "applied"
@@ -740,10 +876,15 @@ function storyEventsForChapter(
 				: INTAKE_EVENTS;
 		case "plan":
 			return PLAN_EVENTS;
-		case "build":
-			return BUILD_EVENTS;
-		case "handoff":
-			return [...BUILD_EVENTS, HANDOFF_EVENT];
+		case "build": {
+			// Plan-end orientation hold: no PR chrome yet.
+			// Later Build steps surface the Open #1847 snapshot after the live
+			// Claude session card. The changed-files / agent-output handoff card
+			// stays out of Build — Claude's live session already carries that
+			// implementation evidence; Review+ reintroduces HANDOFF_EVENT.
+			if (buildStep === "ready") return BUILD_EVENTS;
+			return [...BUILD_EVENTS, createBuildPullRequestEvent()];
+		}
 		case "review":
 			return createReviewEvents(options.reviewStep ?? "queued");
 		case "fix":
@@ -752,6 +893,10 @@ function storyEventsForChapter(
 			return createApproveEvents(options.pullRequestApproved ?? false);
 		case "release":
 			return RELEASE_EVENTS;
+		default: {
+			const _exhaustive: never = chapter;
+			return _exhaustive;
+		}
 	}
 }
 
@@ -794,6 +939,7 @@ export function createJiraAgentsStoryState(
 	const descriptionSkillPhase = getDescriptionSkillPhase(chapter, options);
 	const resolvedOptions = {
 		...options,
+		buildStep: chapter === "build" ? resolveBuildStep(options) : undefined,
 		descriptionImproved: descriptionSkillPhase === "applied",
 		descriptionSkillPhase,
 		reviewStep: options.reviewStep ?? "queued",
@@ -807,6 +953,7 @@ export function createJiraAgentsStoryState(
 		...base,
 		preset,
 		contextResources: createJiraAgentsStoryContextResources(chapter, workItem, {
+			buildStep: resolvedOptions.buildStep,
 			descriptionImproved: descriptionSkillPhase === "applied",
 		}),
 		metadata: {
@@ -915,11 +1062,11 @@ function createJiraAgentsStoryCard(chapter: JiraAgentsStoryChapter): JiraKanbanC
 		code: JIRA_AGENTS_STORY_ISSUE_KEY,
 		priority: "major",
 		assignee: {
-			id: "jordan-lee",
-			name: "Jordan Lee",
-			avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+			id: "venn",
+			name: "Venn",
+			avatarSrc: "/avatar-user/venn/venn.png",
 		},
-		avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+		avatarSrc: "/avatar-user/venn/venn.png",
 		tags: [
 			{ text: "Storefront", color: "blue" },
 			{ text: "Feature", color: "purple" },

@@ -1,6 +1,15 @@
 "use client";
 
-import { createContext, use, useCallback, useMemo, useState, type ReactNode } from "react";
+import {
+	createContext,
+	use,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+	type ReactNode,
+} from "react";
 
 import type { ActivityRailChrome } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-panel";
 import type { MetadataRailView } from "@/components/blocks/jira-work-item/experimental-v2/lib/metadata-rail-view";
@@ -10,6 +19,16 @@ export interface PullRequestSectionExpandRequest {
 	nonce: number;
 	pullRequestIdentity: string;
 	sectionId: string;
+}
+
+/** One-shot request to show Activity and scroll to a feed entry. */
+export interface ActivityRevealRequest {
+	nonce: number;
+	/**
+	 * When set, scroll this entry into view (e.g. Claude Code card header on
+	 * Build). Otherwise scroll to the newest feed row.
+	 */
+	entryId?: string;
 }
 
 interface MetadataRailContextValue {
@@ -24,12 +43,38 @@ interface MetadataRailContextValue {
 	requestExpandPullRequestSection: (pullRequestIdentity: string, sectionId: string) => void;
 	/** Acknowledge a handled request without clearing a newer request. */
 	consumePullRequestSectionExpandRequest: (nonce: number) => void;
+	/** Latest request to open Activity and scroll to a feed entry. */
+	activityRevealRequest: ActivityRevealRequest | null;
+	/**
+	 * Switch to Activity and ask the feed to scroll. Omit `entryId` to target
+	 * the newest row; pass one to anchor a specific entry (e.g. agent card).
+	 */
+	requestRevealLatestActivity: (entryId?: string) => void;
+	/** Acknowledge a handled activity reveal without clearing a newer request. */
+	consumeActivityRevealRequest: (nonce: number) => void;
+	/**
+	 * When true, `revealActivityKey` changes do not auto-switch the panel to
+	 * Activity (e.g. while a pull-request detail is open). Manual tab changes
+	 * and explicit `requestRevealLatestActivity` calls are unchanged.
+	 */
+	setSuppressActivityPanelReveal: (suppressed: boolean) => void;
 }
 
 const MetadataRailContext = createContext<MetadataRailContextValue | null>(null);
 
 interface MetadataRailProviderProps {
 	children: ReactNode;
+	/**
+	 * When this key changes to a non-null value, open Activity and scroll to the
+	 * latest entry (e.g. jira-agents Plan orchestration reveal), or to
+	 * `revealActivityEntryId` when that prop is set.
+	 */
+	revealActivityKey?: string | number | null;
+	/**
+	 * Optional Activity entry id to scroll into view when `revealActivityKey`
+	 * changes (e.g. `activity-story-session-claude-code` on Build).
+	 */
+	revealActivityEntryId?: string | null;
 }
 
 /**
@@ -42,11 +87,19 @@ interface MetadataRailProviderProps {
  */
 export function MetadataRailProvider({
 	children,
+	revealActivityKey = null,
+	revealActivityEntryId = null,
 }: Readonly<MetadataRailProviderProps>) {
 	const [panelView, setPanelView] = useState<MetadataRailView>("details");
 	const [activityChrome, setActivityChrome] = useState<ActivityRailChrome | null>(null);
 	const [pullRequestSectionExpandRequest, setPullRequestSectionExpandRequest] =
 		useState<PullRequestSectionExpandRequest | null>(null);
+	const [activityRevealRequest, setActivityRevealRequest] =
+		useState<ActivityRevealRequest | null>(null);
+	const previousRevealActivityKeyRef = useRef<string | number | null | undefined>(undefined);
+	// Ref so reveal-key effects can skip panel switches without re-subscribing
+	// when PR detail opens/closes mid-staging.
+	const suppressActivityPanelRevealRef = useRef(false);
 	const requestExpandPullRequestSection = useCallback((pullRequestIdentity: string, sectionId: string) => {
 		setPullRequestSectionExpandRequest((current) => ({
 			nonce: (current?.nonce ?? 0) + 1,
@@ -57,23 +110,53 @@ export function MetadataRailProvider({
 	const consumePullRequestSectionExpandRequest = useCallback((nonce: number) => {
 		setPullRequestSectionExpandRequest((current) => current?.nonce === nonce ? null : current);
 	}, []);
+	const requestRevealLatestActivity = useCallback((entryId?: string) => {
+		setPanelView("activity");
+		setActivityRevealRequest((current) => ({
+			nonce: (current?.nonce ?? 0) + 1,
+			...(entryId ? { entryId } : {}),
+		}));
+	}, []);
+	const consumeActivityRevealRequest = useCallback((nonce: number) => {
+		setActivityRevealRequest((current) => current?.nonce === nonce ? null : current);
+	}, []);
+	const setSuppressActivityPanelReveal = useCallback((suppressed: boolean) => {
+		suppressActivityPanelRevealRef.current = suppressed;
+	}, []);
+	useEffect(() => {
+		if (revealActivityKey == null || revealActivityKey === "") return;
+		if (Object.is(previousRevealActivityKeyRef.current, revealActivityKey)) return;
+		// Consume the key even when suppressed so later build-step timers do not
+		// queue a delayed steal after the user opened a pull request.
+		previousRevealActivityKeyRef.current = revealActivityKey;
+		if (suppressActivityPanelRevealRef.current) return;
+		requestRevealLatestActivity(revealActivityEntryId ?? undefined);
+	}, [revealActivityEntryId, revealActivityKey, requestRevealLatestActivity]);
 	const value = useMemo<MetadataRailContextValue>(
 		() => ({
 			activePanelView: panelView,
 			activityChrome,
+			activityRevealRequest,
+			consumeActivityRevealRequest,
 			consumePullRequestSectionExpandRequest,
 			panelView,
 			pullRequestSectionExpandRequest,
 			requestExpandPullRequestSection,
+			requestRevealLatestActivity,
 			setActivityChrome,
 			setPanelView,
+			setSuppressActivityPanelReveal,
 		}),
 		[
 			activityChrome,
+			activityRevealRequest,
+			consumeActivityRevealRequest,
 			consumePullRequestSectionExpandRequest,
 			panelView,
 			pullRequestSectionExpandRequest,
 			requestExpandPullRequestSection,
+			requestRevealLatestActivity,
+			setSuppressActivityPanelReveal,
 		],
 	);
 

@@ -237,10 +237,11 @@ export function ChatMessages({
 									onDeleteMessage={onDeleteMessage}
 									renderWidget={shouldShowWidgetSections ? renderWidget : undefined}
 								>
+									<ThreadMessage.Widget position="before-content" />
+									{/* Agent text first; chain-of-thought / tool calls follow beneath it. */}
+									<ThreadMessage.Content />
 									<ThreadMessage.Reasoning />
 									<ThreadMessage.ThinkingStatus />
-									<ThreadMessage.Widget position="before-content" />
-									<ThreadMessage.Content />
 									{shouldShowFeedback ? <ThreadMessage.Feedback /> : null}
 									{!isPureMode ? (
 										<>

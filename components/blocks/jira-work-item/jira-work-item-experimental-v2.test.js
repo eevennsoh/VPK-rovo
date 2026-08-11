@@ -70,6 +70,8 @@ const V2_ONLY_FILES = new Set([
 	"components/development-repository-picker.tsx",
 	"components/experimental-header-overflow-menu.tsx",
 	"components/context-popover-parts.tsx",
+	// Shared Activity → chat comment-pill state (Code Review composerInputContext path).
+	"context-activity-chat-comments.tsx",
 	// Shared TipTap description surface used by WI ContextEditableDescription
 	// and PullRequestOverview — v1 keeps its own inline RichTextEditor wiring.
 	"components/context-description-editor.tsx",
@@ -166,10 +168,14 @@ test("experimental v2 opens the shared agent chat as a full-height sibling colum
 
 	assert.match(
 		compositionSource,
-		/const agentChatOpen = chatSurface === "floating";[\s\S]*sidebar=\{<FloatingSessionSurface onSessionReply=\{onSessionReply\} \/>\}[\s\S]*sidebarOpen=\{agentChatOpen\}[\s\S]*aria-hidden=\{agentChatOpen\}[\s\S]*className="group\/metadata-resize relative flex min-h-0 min-w-0 flex-1 flex-col"[\s\S]*inert=\{agentChatOpen \? true : undefined\}[\s\S]*<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*activitySessionThread=\{activitySessionThread\}[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}[\s\S]*\/>/u,
+		/const agentChatOpen = chatSurface === "floating";[\s\S]*sidebar=\{<FloatingSessionSurface onSessionReply=\{onSessionReply\} \/>\}[\s\S]*sidebarOpen=\{agentChatOpen\}[\s\S]*aria-hidden=\{agentChatOpen\}[\s\S]*className="group\/metadata-resize relative flex min-h-0 min-w-0 flex-1 flex-col"[\s\S]*inert=\{agentChatOpen \? true : undefined\}[\s\S]*<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*activitySessionThread=\{activitySessionThread\}[\s\S]*onOpenPullRequest=\{handlePullRequestSelect\}[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}[\s\S]*\/>/u,
 	);
 	assert.doesNotMatch(compositionSource, /blanketContent=\{[\s\S]*<FloatingSessionSurface/u);
 	assert.match(sessionSurfaceSource, /<AsxRovoOverlay[\s\S]*placement="embedded"/u);
+	assert.match(
+		sessionSurfaceSource,
+		/function getSessionPlaybackVariant\([\s\S]*"claude-code-build"[\s\S]*completedCount >= 1 && completedCount <= 3[\s\S]*playbackVariant: getSessionPlaybackVariant\(activeSession\)/u,
+	);
 	assert.match(
 		sessionSurfaceSource,
 		/const interceptedOnApplyAfterResponse = intercepted\.onApplyAfterResponse;[\s\S]*onApplyAfterResponse: interceptedOnApplyAfterResponse[\s\S]*preserveCompletedSessionTranscript\(\);[\s\S]*await interceptedOnApplyAfterResponse\(\);/u,
@@ -427,6 +433,12 @@ test("experimental v2 working-agents menu includes waiting sessions without chan
 	assert.match(contextPillsSource, /brandName=\{session\.agentBrandName\}/u);
 	assert.match(contextPillsSource, /vpkLogo=\{session\.agentName === "Rovo" \? "rovo" : undefined\}/u);
 	assert.match(contextPillsSource, /<CyclingByline className="menu-row-title text-text-subtlest">/u);
+	assert.match(contextPillsSource, /import \{ AnimatedDots \} from "@\/components\/ui-custom\/animated-dots";/u);
+	assert.match(contextPillsSource, /const NEEDS_INPUT_STATUS_LABEL = "Needs input";/u);
+	assert.match(
+		contextPillsSource,
+		/needsUserInput \? \(\s*<span className="inline-flex min-w-0 items-baseline">\s*<Shimmer as="span">\{activity\}<\/Shimmer>\s*<AnimatedDots \/>\s*<\/span>\s*\) : activity/u,
+	);
 	assert.match(contextPillsSource, /className="mb-2 flex flex-wrap gap-2"/u);
 	assert.match(contextPillsSource, /WORKING_SESSION_ACTIVITY_STAGGER_MS \* \(sessionIndex \+ 1\)/u);
 	assert.match(contextPillsSource, /window\.setTimeout\([\s\S]*window\.setInterval\([\s\S]*setActivityCycleIndex\(\(index\) => index \+ 1\)/u);
@@ -446,7 +458,7 @@ test("experimental v2 working-agents menu includes waiting sessions without chan
 	);
 	assert.match(
 		contextPillsSource,
-		/trailing: session\.status === "waiting"[\s\S]*<span className="text-xs text-text-subtle">\{session\.waitingOn\?\.kind === "user" \? "Needs input" : "Waiting"\}<\/span>[\s\S]*: null/u,
+		/trailing: session\.status === "waiting"[\s\S]*\{session\.waitingOn\?\.kind === "user" \? NEEDS_INPUT_STATUS_LABEL : "Waiting"\}[\s\S]*: null/u,
 	);
 	assert.doesNotMatch(contextPillsSource, /<Spinner/u);
 });
@@ -473,6 +485,71 @@ test("experimental v2 keeps comment-only composer delivery as the non-target def
 	assert.match(
 		composerSource,
 		/meta\.composerDelivery === "broadcast-active-agents"[\s\S]*actions\.broadcastComment\(text\);[\s\S]*else \{[\s\S]*actions\.addComment\(text\);/u,
+	);
+});
+
+test("experimental v2 opens Activity and scrolls to the latest entry after agent-mention submit", () => {
+	const composerSource = readBlockFile("experimental-v2/components/activity-composer.tsx");
+	const activityPanelSource = readBlockFile("experimental-v2/components/activity-panel.tsx");
+	const metadataRailContextSource = readBlockFile("experimental-v2/context-metadata-rail.tsx");
+
+	assert.match(
+		composerSource,
+		/import \{ useMetadataRail \} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/context-metadata-rail"/u,
+	);
+	assert.match(composerSource, /const \{ requestRevealLatestActivity \} = useMetadataRail\(\);/u);
+	// Only agent mention / steer / invoke paths reveal Activity — plain comments stay put.
+	assert.match(
+		composerSource,
+		/if \(handledAgentIds\.size === 0 && invokedAgents\.length === 0\) \{[\s\S]*\} else \{[\s\S]*requestRevealLatestActivity\(\);/u,
+	);
+	assert.match(
+		metadataRailContextSource,
+		/requestRevealLatestActivity = useCallback\(\(entryId\?: string\) => \{[\s\S]*setPanelView\("activity"\)[\s\S]*setActivityRevealRequest/u,
+	);
+	assert.match(
+		activityPanelSource,
+		/import \{ useMetadataRail \} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/context-metadata-rail"/u,
+	);
+	assert.match(
+		activityPanelSource,
+		/activityRevealRequest[\s\S]*consumeActivityRevealRequest[\s\S]*useMetadataRail\(\)/u,
+	);
+	assert.match(
+		activityPanelSource,
+		/requestRevealLatestActivity/u,
+	);
+	assert.match(
+		activityPanelSource,
+		/target\.closest\("\[hidden\]"\)/u,
+		"reveal/auto-scroll must wait until the Activity tab is visible",
+	);
+	assert.match(
+		activityPanelSource,
+		/ACTIVITY_REVEAL_SETTLE_MS/u,
+		"reveal must stay open long enough for staged prompt comments to become latest",
+	);
+	assert.match(
+		activityPanelSource,
+		/preferredEntryId \? "start" : activityScrollBlock/u,
+		"targeted reveals pin the entry start (agent name); latest keeps sort-aware block",
+	);
+	assert.match(
+		activityPanelSource,
+		/activityRevealRequest\?\.entryId/u,
+		"auto-scroll must defer while a targeted reveal owns the viewport",
+	);
+	assert.match(
+		activityPanelSource,
+		/scrollActivityEntryIntoView\([\s\S]*consumeActivityRevealRequest\(nonce\)/u,
+	);
+	assert.match(
+		activityPanelSource,
+		/block,/u,
+	);
+	assert.match(
+		activityPanelSource,
+		/const activityScrollBlock = sortOrder === "descending" \? "start" : "end"/u,
 	);
 });
 
@@ -719,6 +796,55 @@ test("the activity panel gives reactions and human replies somewhere to land", (
 	// array, so streaming session updates keep flowing through untouched.
 	assert.match(activityPanelSource, /const entries = derivedEntries\.map\(\(entry\) => \{/u);
 	assert.doesNotMatch(activityPanelSource, /useState\(derivedEntries\)/u);
+});
+
+test("activity comments reuse the Code Review composer-pill path on the sticky activity composer", () => {
+	const activityPanelSource = readBlockFile("experimental-v2/components/activity-panel.tsx");
+	const activityComposerSource = readBlockFile("experimental-v2/components/activity-composer.tsx");
+	const sessionSurfaceSource = readBlockFile("experimental-v2/components/floating-session-surface.tsx");
+	const contextSource = readBlockFile("experimental-v2/context-activity-chat-comments.tsx");
+	const compositionSource = readBlockFile("experimental-v2/experimental-v2-jira-work-item.tsx");
+	const sharedChipSource = fs.readFileSync(
+		path.join(BLOCK_DIR, "../../ui-custom/comments-composer-chip.tsx"),
+		"utf8",
+	);
+	const floatingComposerSource = fs.readFileSync(
+		path.join(BLOCK_DIR, "../../projects/shared/components/floating-composer.tsx"),
+		"utf8",
+	);
+
+	assert.match(compositionSource, /ActivityChatCommentsProvider/u);
+	assert.match(activityPanelSource, /useActivityChatComments/u);
+	assert.match(activityPanelSource, /onAddCommentToChat=\{handleAddCommentToChat\}/u);
+	assert.match(activityPanelSource, /onAddReplyToChat=\{handleAddReplyToChat\}/u);
+	assert.match(activityPanelSource, /attachActivityCommentToComposer/u);
+	assert.match(activityPanelSource, /jiraActivitySegmentsToPlainText\(entry\.body\)/u);
+	assert.doesNotMatch(activityPanelSource, /openChat\("floating"\)/u);
+	assert.doesNotMatch(activityPanelSource, /actions\.openLatestOrCreateGeneralSession\(\)/u);
+
+	assert.match(contextSource, /focusRequestKey/u);
+	assert.match(contextSource, /return \[\.\.\.current, comment\]/u);
+
+	assert.match(activityComposerSource, /CommentsComposerChip/u);
+	assert.match(activityComposerSource, /inputContext=\{activityCommentsInputContext\}/u);
+	assert.match(activityComposerSource, /inputContextSubmitText=\{ACTIVITY_COMMENTS_PROMPT\}/u);
+	assert.match(activityComposerSource, /subtitle: "Comment"/u);
+	assert.doesNotMatch(activityComposerSource, /subtitle: comment\.timestamp/u);
+	assert.match(activityComposerSource, /testId="activity-comments-chip"/u);
+	assert.match(activityComposerSource, /Discuss these activity comments\./u);
+	assert.match(activityComposerSource, /serializeActivityCommentsContext\(meta\.workItem, activityChatComments\)/u);
+	assert.match(activityComposerSource, /focusRequestKey/u);
+	assert.match(activityComposerSource, /removeActivityChatComments\(\)/u);
+
+	assert.match(floatingComposerSource, /inputContext\?: ReactNode/u);
+	assert.match(floatingComposerSource, /<PromptInputHeader/u);
+	assert.doesNotMatch(sessionSurfaceSource, /CommentsComposerChip/u);
+	assert.doesNotMatch(sessionSurfaceSource, /composerInputContext=/u);
+	assert.match(sharedChipSource, /export function CommentsComposerChip/u);
+	// Inset separators match DropdownMenuSeparator (`dropdownStyles.separator`:
+	// `bg-border mx-1 my-1 h-px`) — not full-bleed `divide-y`.
+	assert.match(sharedChipSource, /dropdownStyles\.separator/u);
+	assert.doesNotMatch(sharedChipSource, /divide-y/u);
 });
 
 test("experimental v2 opens the agent and skill pickers with the editor-palette search bar", () => {

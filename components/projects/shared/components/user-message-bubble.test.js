@@ -78,6 +78,25 @@ test("sidebar and floating chat thread messages wire compact edit state", () => 
 	);
 });
 
+test("assistant bubbles render agent text before chain-of-thought and tool calls", () => {
+	const chatMessagesSource = fs.readFileSync(
+		path.join(__dirname, "chat-messages.tsx"),
+		"utf8",
+	);
+	assert.match(
+		SIDEBAR_MESSAGE_BUBBLE_SOURCE,
+		/<ThreadMessage\.Content \/>[\s\S]*<ThreadMessage\.Reasoning \/>[\s\S]*<ThreadMessage\.ThinkingStatus \/>/u,
+	);
+	assert.match(
+		chatMessagesSource,
+		/<ThreadMessage\.Content \/>[\s\S]*<ThreadMessage\.Reasoning \/>[\s\S]*<ThreadMessage\.ThinkingStatus \/>/u,
+	);
+	assert.doesNotMatch(
+		SIDEBAR_MESSAGE_BUBBLE_SOURCE,
+		/<ThreadMessage\.Reasoning \/>[\s\S]*<ThreadMessage\.ThinkingStatus[\s\S]*<ThreadMessage\.Content \/>/u,
+	);
+});
+
 test("compact chat edit uses AI SDK message replacement semantics", () => {
 	assert.match(
 		ROVO_CHAT_CONTEXT_SOURCE,

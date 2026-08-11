@@ -35,6 +35,7 @@ export type JiraActivityEventIcon =
 	| "delegated"
 	| "in-progress"
 	| "linked"
+	| "description"
 	| "teamwork-graph";
 
 /**
@@ -45,7 +46,12 @@ export type JiraActivitySegment =
 	| { type: "text"; text: string }
 	| { type: "code"; text: string }
 	| { type: "link"; text: string; href?: string }
+	/** Circular user mention chip for humans (e.g. Venn, Maya Chen). */
+	| { type: "user-mention"; text: string; avatarSrc?: string }
+	/** Hexagon agent mention chip for agents (e.g. Claude Code, Rovo). */
 	| { type: "agent-mention"; text: string; avatarSrc?: string; brandName?: ThirdPartyLogoName }
+	/** Square app mention chip for connected apps (e.g. GitHub). */
+	| { type: "app-mention"; text: string; brandName?: ThirdPartyLogoName }
 	| {
 			type: "lozenge";
 			text: string;
@@ -177,9 +183,16 @@ export interface JiraActivityCommentEntry extends JiraActivityEntryBase {
 	collapsible?: JiraActivityCollapsible;
 	/** Agent-owned progress steps, rendered as a compact read-only checklist. */
 	progressChecklist?: readonly JiraActivityProgressItem[];
+	/** Compact artifact rows (code/PR, docs) attached to the comment. */
+	outputs?: readonly ArtifactListItem[];
 	/** Optional generated image evidence attached to the comment. */
 	imageAttachment?: JiraActivityImageAttachment;
 	replies?: readonly JiraActivityReply[];
+	/**
+	 * Initial expand state for nested replies. Defaults to `true` (expanded).
+	 * Story chapters can collapse delegated-session replies so the lead card stays focused.
+	 */
+	defaultRepliesExpanded?: boolean;
 	/** Emoji reactions on this comment, in first-reacted order. */
 	reactions?: readonly JiraActivityReaction[];
 	/** Render the reply composer under this comment. Defaults to `true`. */

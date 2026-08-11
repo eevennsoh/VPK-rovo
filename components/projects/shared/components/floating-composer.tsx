@@ -8,6 +8,7 @@ import {
 	PromptInput,
 	PromptInputBody,
 	PromptInputButton,
+	PromptInputHeader,
 } from "@/components/ui-custom/prompt-input";
 import { composerPromptInputClassName } from "@/components/projects/shared/components/rovo-composer-styles";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,11 @@ export type FloatingComposerProps = Omit<
 	addButton?: ReactNode;
 	// Props forwarded to the default "+" button (ignored when `addButton` is provided).
 	addButtonProps?: ComponentProps<typeof PromptInputButton>;
+	/**
+	 * One-turn composer context (e.g. Activity / Code Review comment pills).
+	 * Renders above the editor row via PromptInputHeader, matching ChatComposer.
+	 */
+	inputContext?: ReactNode;
 };
 
 function observeResizeTargets(observer: ResizeObserver, ...targets: Element[]): void {
@@ -58,6 +64,7 @@ export function FloatingComposer({
 	addButtonProps,
 	children,
 	className,
+	inputContext,
 	...props
 }: Readonly<FloatingComposerProps>) {
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -65,6 +72,7 @@ export function FloatingComposer({
 	const textFieldRef = useRef<HTMLDivElement>(null);
 	const actionsRef = useRef<HTMLDivElement>(null);
 	const [isExpanded, setIsExpanded] = useState(false);
+	const hasInputContext = inputContext != null;
 
 	useEffect(() => {
 		const container = containerRef.current;
@@ -248,6 +256,11 @@ export function FloatingComposer({
 			)}
 			{...props}
 		>
+			{hasInputContext ? (
+				<PromptInputHeader className="px-0 pb-2 pt-0">
+					{inputContext}
+				</PromptInputHeader>
+			) : null}
 			<PromptInputBody>
 				<div
 					ref={containerRef}

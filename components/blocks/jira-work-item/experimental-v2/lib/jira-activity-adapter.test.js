@@ -398,6 +398,89 @@ test("composes visible delegated sessions as replies beneath one lead agent", as
 		[],
 	);
 	assert.equal(events.length, 3, "composition must not mutate the source timeline");
+
+	const presented = adapter.applyActivitySessionThreadPresentation(
+		[mappedEntry],
+		{ ...config, defaultRepliesExpanded: false },
+	);
+	assert.equal(presented[0].defaultRepliesExpanded, false);
+	assert.equal(
+		adapter.applyActivitySessionThreadPresentation([mappedEntry], config)[0].defaultRepliesExpanded,
+		undefined,
+		"omit defaultRepliesExpanded to keep Activity's expanded default",
+	);
+});
+
+test("status transition lozenges reuse the status dropdown tone map", async () => {
+	const adapter = await loadAdapter();
+	const [movedInProgress, movedDone, nonStatus] = adapter.mapActivityEventsToJiraEntries([
+		{
+			id: "story-moved-in-progress",
+			kind: "event",
+			actor: {
+				id: "jira-work-item-current-user",
+				name: "Venn",
+				kind: "person",
+			},
+			icon: "status",
+			segments: [
+				{ type: "text", text: "moved from " },
+				{ type: "lozenge", text: "To do" },
+				{ type: "transition-arrow" },
+				{ type: "lozenge", text: "In progress" },
+			],
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 5),
+		},
+		{
+			id: "story-moved-done",
+			kind: "event",
+			actor: {
+				id: "jira-work-item-current-user",
+				name: "Venn",
+				kind: "person",
+			},
+			icon: "status",
+			segments: [
+				{ type: "text", text: "moved from " },
+				{ type: "lozenge", text: "In review" },
+				{ type: "transition-arrow" },
+				{ type: "lozenge", text: "Done" },
+			],
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 6),
+		},
+		{
+			id: "non-status-lozenge",
+			kind: "event",
+			actor: {
+				id: "github",
+				name: "GitHub",
+				kind: "agent",
+			},
+			icon: "linked",
+			segments: [
+				{ type: "lozenge", text: "1 failed", variant: "danger" },
+			],
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 7),
+		},
+	]);
+
+	assert.deepEqual(
+		movedInProgress.segments.filter((segment) => segment.type === "lozenge"),
+		[
+			{ type: "lozenge", text: "To do", variant: "neutral" },
+			{ type: "lozenge", text: "In progress", variant: "information" },
+		],
+	);
+	assert.deepEqual(
+		movedDone.segments.filter((segment) => segment.type === "lozenge"),
+		[
+			{ type: "lozenge", text: "In review", variant: "information" },
+			{ type: "lozenge", text: "Done", variant: "success" },
+		],
+	);
+	assert.deepEqual(nonStatus.segments, [
+		{ type: "lozenge", text: "1 failed", variant: "danger" },
+	]);
 });
 
 test("maps agent activity to rich Jira comments with lifecycle tags", async () => {
@@ -521,13 +604,26 @@ test("maps the human session invoker onto AgentListItem.invokedBy", async () => 
 	});
 });
 
-test("maps an agent progress checklist and image proof into its Jira comment", async () => {
+test("maps an agent progress checklist, outputs, and image proof into its Jira comment", async () => {
 	const adapter = await loadAdapter();
 	const progressChecklist = [
 		{ id: "consult", label: "Consult Code Planner", completed: true },
 		{ id: "implement", label: "Implement guest checkout", completed: true },
 		{ id: "verify-design", label: "Verify the final design", completed: false },
 	];
+	const outputs = [{
+		id: "guest-checkout-pr",
+		title: "Add guest checkout to the storefront",
+		source: "Pull request",
+		logoName: "github",
+		href: "https://github.com/eevensoh/vpk-rovo/pull/1847",
+		pullRequest: {
+			number: 1847,
+			status: "Open",
+			additions: 86,
+			deletions: 21,
+		},
+	}];
 	const imageAttachment = {
 		src: "/jira-agents/guest-checkout-final.png",
 		alt: "Final guest checkout design",
@@ -549,12 +645,14 @@ test("maps an agent progress checklist and image proof into its Jira comment", a
 			commandPreview: "Take the lead on guest checkout",
 			responsePreview: "Implementing the approved guest checkout contract.",
 			progressChecklist,
+			outputs,
 			imageAttachment,
 			createdAtMs: Date.UTC(2026, 4, 12, 13, 20),
 		},
 	]);
 
 	assert.deepEqual(entry.progressChecklist, progressChecklist);
+	assert.deepEqual(entry.outputs, outputs);
 	assert.deepEqual(entry.imageAttachment, imageAttachment);
 });
 
@@ -985,4 +1083,80 @@ test("keeps delegated agents mentionable after their sessions fold into the lead
 			{ type: "agent-mention", text: "Unit Test Creator", avatarSrc: "/tests.png" },
 		],
 	);
+});
+
+test("parses @mentions on first paint when agent sessions are staged hidden from Activity", async () => {
+	const adapter = await loadAdapter();
+	const events = [
+		{
+			id: "story-channel-orchestration",
+			kind: "human",
+			author: { name: "Venn" },
+			content:
+				"@Claude Code take the lead on implementing guest checkout. Consult @Code Planner on the secure API and validation contract first, then implement and verify the work.",
+			createdAtMs: Date.UTC(2026, 4, 12, 9),
+		},
+		{
+			id: "activity-claude",
+			kind: "agent",
+			sessionId: "story-session-claude-code",
+			agentId: "claude-code",
+			agentName: "Claude Code",
+			agentBrandName: "claude",
+			status: "running",
+			title: "Implement guest checkout",
+			branch: "feature/guest-checkout",
+			elapsedSeconds: 10,
+			commandPreview: "Implement guest checkout",
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 1),
+		},
+		{
+			id: "activity-planner",
+			kind: "agent",
+			sessionId: "story-session-code-planner",
+			agentId: "code-planner",
+			agentName: "Code Planner",
+			agentAvatarSrc: "/planner.png",
+			status: "running",
+			title: "Plan the contract",
+			branch: "rovo/plan",
+			elapsedSeconds: 10,
+			commandPreview: "Plan the contract",
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 2),
+		},
+	];
+
+	// Jira Agents keeps agent cards hidden until the lead/consult steps, so the
+	// composed stream is only the human prompt — the same first-paint shape the
+	// Activity tab shows right after submit.
+	const composed = adapter.composeActivitySessionThread(events, {
+		parentSessionId: "story-session-claude-code",
+		childSessionIds: ["story-session-code-planner"],
+		visibleSessionIds: [],
+	});
+	assert.deepEqual(composed.map((event) => event.id), ["story-channel-orchestration"]);
+
+	const [commentWithoutSource] = adapter.mapActivityEventsToJiraEntries(composed);
+	assert.deepEqual(commentWithoutSource.body, [{
+		type: "text",
+		text: events[0].content,
+	}]);
+
+	const [comment] = adapter.mapActivityEventsToJiraEntries(
+		composed,
+		undefined,
+		events,
+	);
+	assert.deepEqual(comment.body, [
+		{ type: "agent-mention", text: "Claude Code", brandName: "claude" },
+		{
+			type: "text",
+			text: " take the lead on implementing guest checkout. Consult ",
+		},
+		{ type: "agent-mention", text: "Code Planner", avatarSrc: "/planner.png" },
+		{
+			type: "text",
+			text: " on the secure API and validation contract first, then implement and verify the work.",
+		},
+	]);
 });

@@ -24,6 +24,8 @@ export interface ArtifactListItem {
 	source: string;
 	/** Metadata owner label, e.g. "Vitafleet Team". */
 	owner?: string;
+	/** Optional open destination for consumers that route `onOpen` via URL. */
+	href?: string;
 	/** Pull-request metadata rendered inline in compact rows, matching the agent session flyout. */
 	pullRequest?: {
 		number: number;
@@ -155,9 +157,11 @@ function ArtifactListRow({
 	);
 	const compactPullRequestByline = item.pullRequest ? (
 		<span className="mt-0.5 flex w-full min-w-0 items-center gap-1 text-xs leading-4">
-			<Lozenge variant={item.pullRequest.status === "Merged" ? "discovery" : "success"}>
-				{item.pullRequest.status}
-			</Lozenge>
+			<span className="shrink-0">
+				<Lozenge variant={item.pullRequest.status === "Merged" ? "discovery" : "success"}>
+					{item.pullRequest.status}
+				</Lozenge>
+			</span>
 			<a
 				className="min-w-0 flex-1 truncate rounded-[3px] text-text no-underline decoration-current outline-none hover:underline focus-visible:underline"
 				href="#"
@@ -168,43 +172,63 @@ function ArtifactListRow({
 			</a>
 		</span>
 	) : null;
-	const defaultRowBody = (
-		<>
-			<ArtifactListLeadingTile item={item} variant={variant} />
-			<div className="min-w-0 flex-1">
-				<p className="truncate text-sm font-medium leading-5 text-text">{item.title}</p>
-				<p className="flex items-center gap-1 text-xs leading-4">
-					<span className="shrink-0 text-text-subtle">{item.source}</span>
-					{item.owner ? (
-						<>
-							<span aria-hidden="true" className="shrink-0 text-text-subtlest">·</span>
-							<span className="min-w-0 truncate text-text-subtle">{item.owner}</span>
-						</>
-					) : null}
-				</p>
+
+	const openAction = (
+		<div
+			className={cn(
+				// Collapse at rest so titles use the full row; expand on hover/focus
+				// without jumping the Open control into an absolute overlay (which
+				// the raised card's overflow would clip). Margin (not flex gap) so
+				// the slot leaves no empty space when width is 0fr.
+				"ml-0 grid shrink-0",
+				"grid-cols-[0fr] group-hover/artifact-row:ml-3 group-hover/artifact-row:grid-cols-[1fr]",
+				"group-focus-within/artifact-row:ml-3 group-focus-within/artifact-row:grid-cols-[1fr]",
+				"group-has-[:focus-visible]/artifact-row:ml-3 group-has-[:focus-visible]/artifact-row:grid-cols-[1fr]",
+			)}
+		>
+			<div className="min-w-0 overflow-hidden">
+				<Button
+					aria-label={item.pullRequest
+						? `Code changes: ${item.pullRequest.additions} additions, ${item.pullRequest.deletions} deletions`
+						: undefined}
+					className={cn(
+						"shrink-0 whitespace-nowrap",
+						// Instant reveal/hide; keep Button chrome transitions but drop opacity.
+						"pointer-events-none opacity-0 transition-[background-color,border-color,box-shadow,color]",
+						"group-hover/artifact-row:pointer-events-auto group-hover/artifact-row:opacity-100",
+						"group-focus-within/artifact-row:pointer-events-auto group-focus-within/artifact-row:opacity-100",
+						"focus-visible:pointer-events-auto focus-visible:opacity-100",
+					)}
+					variant="outline"
+					size={variant === "compact" ? "compact" : "default"}
+					type="button"
+					onClick={(event) => {
+						event.stopPropagation();
+						handleOpen();
+					}}
+				>
+					{item.pullRequest ? (
+						<span className="flex items-center gap-1">
+							<span className="text-text-success">+{item.pullRequest.additions}</span>
+							<span className="text-text-danger">-{item.pullRequest.deletions}</span>
+						</span>
+					) : openLabel}
+				</Button>
 			</div>
-		</>
-	);
-	const compactRowBody = (
-		<>
-			<ArtifactListLeadingTile item={item} variant={variant} />
-			<div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-				<p className="w-full truncate text-xs font-medium leading-4 text-text">{item.title}</p>
-				{compactPullRequestByline ?? compactMetadata}
-			</div>
-		</>
+		</div>
 	);
 
 	return (
 		<div
 			className={cn(
+				"group/artifact-row min-w-0 w-full",
 				variant === "compact"
-					? "flex min-h-12 items-center gap-3 px-3 py-2 transition-colors hover:bg-surface-hovered"
-					: "flex min-h-16 items-center gap-3 px-3 py-2 transition-colors hover:bg-surface-hovered",
+					? "flex min-h-12 items-center px-3 py-2 transition-colors hover:bg-surface-hovered"
+					: "flex min-h-16 items-center px-3 py-2 transition-colors hover:bg-surface-hovered",
 				!isLast && "border-b border-border",
 			)}
 		>
-			<div className="relative flex min-w-0 flex-1 items-center gap-3">
+			<div className="relative flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
 				{openOnRowClick ? (
 						<button
 							aria-label={`${openLabel} ${item.title}`}
@@ -213,28 +237,30 @@ function ArtifactListRow({
 							onClick={handleOpen}
 						/>
 				) : null}
-				{variant === "compact" ? compactRowBody : defaultRowBody}
+				<span className="shrink-0">
+					<ArtifactListLeadingTile item={item} variant={variant} />
+				</span>
+				{variant === "compact" ? (
+					<div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+						<p className="w-full truncate text-xs font-medium leading-4 text-text">{item.title}</p>
+						{compactPullRequestByline ?? compactMetadata}
+					</div>
+				) : (
+					<div className="min-w-0 flex-1 overflow-hidden">
+						<p className="truncate text-sm font-medium leading-5 text-text">{item.title}</p>
+						<p className="flex min-w-0 items-center gap-1 text-xs leading-4">
+							<span className="shrink-0 text-text-subtle">{item.source}</span>
+							{item.owner ? (
+								<>
+									<span aria-hidden="true" className="shrink-0 text-text-subtlest">·</span>
+									<span className="min-w-0 truncate text-text-subtle">{item.owner}</span>
+								</>
+							) : null}
+						</p>
+					</div>
+				)}
 			</div>
-			<Button
-				aria-label={item.pullRequest
-					? `Code changes: ${item.pullRequest.additions} additions, ${item.pullRequest.deletions} deletions`
-					: undefined}
-				className="ml-auto shrink-0 whitespace-nowrap"
-				variant="outline"
-				size={variant === "compact" ? "compact" : "default"}
-				type="button"
-				onClick={(event) => {
-					event.stopPropagation();
-					handleOpen();
-				}}
-			>
-				{item.pullRequest ? (
-					<span className="flex items-center gap-1">
-						<span className="text-text-success">+{item.pullRequest.additions}</span>
-						<span className="text-text-danger">-{item.pullRequest.deletions}</span>
-					</span>
-				) : openLabel}
-			</Button>
+			{openAction}
 		</div>
 	);
 }
@@ -250,7 +276,7 @@ export function ArtifactList({
 }: Readonly<ArtifactListProps>) {
 	return (
 		<div
-			className={cn("overflow-hidden rounded-lg bg-surface-raised", className)}
+			className={cn("min-w-0 max-w-full overflow-hidden rounded-lg bg-surface-raised", className)}
 			style={{ boxShadow: token("elevation.shadow.raised") }}
 			{...props}
 		>

@@ -14,6 +14,7 @@ import {
 	getJiraAgentsStoryChapterForStatus,
 	getJiraAgentsStoryColumn,
 	JIRA_AGENTS_PULL_REQUEST_IDENTITY,
+	type JiraAgentsBuildStep,
 	type JiraAgentsDescriptionSkillPhase,
 	type JiraAgentsReviewStep,
 	type JiraAgentsStoryChapter,
@@ -27,12 +28,23 @@ const ORCHESTRATION_SEQUENCE = {
 	"agents-working": { next: "comment", delayMs: 1_500 },
 	comment: { next: "reaction-1", delayMs: 1_200 },
 	"reaction-1": { next: "reaction-2", delayMs: 1_000 },
-	"reaction-2": { next: "lead", delayMs: 1_500 },
+	"reaction-2": { next: "lead", delayMs: 3_500 },
 	lead: { next: "consult", delayMs: 1_800 },
 	consult: { next: "complete", delayMs: 1_500 },
 } as const satisfies Record<
 	Exclude<JiraAgentsOrchestrationStep, "idle" | "complete">,
 	{ next: Exclude<JiraAgentsOrchestrationStep, "idle">; delayMs: number }
+>;
+
+// Demo-friendly staging from Plan end:
+// hold on Consult-ready frame → Implement+PR → Verify+screenshot → settle.
+const BUILD_SEQUENCE = {
+	ready: { next: "implementing", delayMs: 2_500 },
+	implementing: { next: "verifying", delayMs: 2_200 },
+	verifying: { next: "complete", delayMs: 2_400 },
+} as const satisfies Record<
+	Exclude<JiraAgentsBuildStep, "complete">,
+	{ next: JiraAgentsBuildStep; delayMs: number }
 >;
 
 const REVIEW_SEQUENCE = {
@@ -51,6 +63,7 @@ export interface JiraAgentsStoryController {
 	applyDescriptionSuggestion: () => void;
 	approvePullRequest: (identity: string) => void;
 	boardColumns: readonly JiraKanbanColumnData[];
+	buildStep: JiraAgentsBuildStep;
 	chapter: JiraAgentsStoryChapter;
 	chapterRevision: number;
 	descriptionSkillPhase: JiraAgentsDescriptionSkillPhase;
@@ -75,6 +88,7 @@ export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 	const [chapterRevision, setChapterRevision] = useState(0);
 	const [descriptionSkillPhase, setDescriptionSkillPhase] = useState<JiraAgentsDescriptionSkillPhase>("idle");
 	const [orchestrationStep, setOrchestrationStep] = useState<JiraAgentsOrchestrationStep>("idle");
+	const [buildStep, setBuildStep] = useState<JiraAgentsBuildStep>("complete");
 	const [pullRequestApprovalStates, setPullRequestApprovalStates] = useState<
 		Record<string, JiraAgentsPullRequestApprovalState>
 	>({});
@@ -88,7 +102,11 @@ export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 		if (nextChapter === chapter) {
 			setChapterRevision((current) => current + 1);
 		}
-		setOrchestrationStep("idle");
+		// Plan plays the staged Activity reveal (comment → 👀 → Claude → Code Planner).
+		setOrchestrationStep(nextChapter === "plan" ? "agents-working" : "idle");
+		// Build stages former Handoff work from Plan end:
+		// ready (orient) → implement → verify/screenshot → complete.
+		setBuildStep(nextChapter === "build" ? "ready" : "complete");
 		setChapter(nextChapter);
 		setDescriptionSkillPhase(nextChapter === "intake" ? "idle" : "applied");
 		setPullRequestApprovalStates(nextChapter === "approve"
@@ -132,6 +150,7 @@ export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 		if (chapter !== "intake" || !descriptionImproved || orchestrationStep !== "idle") return;
 		setChapter("plan");
 		setOrchestrationStep("agents-working");
+		setBuildStep("complete");
 		setPullRequestApprovalStates({});
 		setReviewStep("queued");
 		setLaunchId((current) => current + 1);
@@ -149,10 +168,10 @@ export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 
 	// These timers reveal authored state snapshots rather than animating layout,
 	// so reduced motion keeps the same causal orchestration and CI evidence.
+	// Plan orchestration stops at "complete" — Build only starts when the user
+	// selects that chapter manually.
 	useEffect(() => {
-		if (!active || orchestrationStep === "idle") return undefined;
-		if (orchestrationStep === "complete") {
-			selectChapter("build");
+		if (!active || orchestrationStep === "idle" || orchestrationStep === "complete") {
 			return undefined;
 		}
 
@@ -163,7 +182,17 @@ export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 		}, transition.delayMs);
 
 		return () => window.clearTimeout(timeoutId);
-	}, [active, orchestrationStep, selectChapter]);
+	}, [active, orchestrationStep]);
+
+	useEffect(() => {
+		if (!active || chapter !== "build" || buildStep === "complete") return undefined;
+		const transition = BUILD_SEQUENCE[buildStep];
+		const timeoutId = window.setTimeout(() => {
+			setBuildStep(transition.next);
+			setLaunchId((current) => current + 1);
+		}, transition.delayMs);
+		return () => window.clearTimeout(timeoutId);
+	}, [active, buildStep, chapter]);
 
 	useEffect(() => {
 		if (!active || chapter !== "review" || reviewStep === "failed") return undefined;
@@ -197,7 +226,8 @@ export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 
 		setBoardColumns(createJiraAgentsBoardColumns(resolvedChapter, nextColumns));
 		if (nextChapter && nextChapter !== chapter) {
-			setOrchestrationStep("idle");
+			setOrchestrationStep(nextChapter === "plan" ? "agents-working" : "idle");
+			setBuildStep(nextChapter === "build" ? "ready" : "complete");
 			setChapter(nextChapter);
 			setDescriptionSkillPhase(nextChapter === "intake" ? "idle" : "applied");
 			setPullRequestApprovalStates(nextChapter === "approve"
@@ -213,12 +243,13 @@ export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 	const initialState = useMemo(
 		() => orchestrationStep === "idle"
 			? createJiraAgentsStoryState(chapter, {
+				buildStep: chapter === "build" ? buildStep : undefined,
 				descriptionSkillPhase,
 				pullRequestApproved,
 				reviewStep,
 			})
 			: createJiraAgentsOrchestrationState(orchestrationStep),
-		[chapter, descriptionSkillPhase, orchestrationStep, pullRequestApproved, reviewStep],
+		[buildStep, chapter, descriptionSkillPhase, orchestrationStep, pullRequestApproved, reviewStep],
 	);
 	const sections = useMemo(() => createJiraAgentsWorkspaceSections(chapter), [chapter]);
 	const workItem = useMemo(
@@ -230,6 +261,7 @@ export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 		applyDescriptionSuggestion,
 		approvePullRequest,
 		boardColumns,
+		buildStep,
 		chapter,
 		chapterRevision,
 		descriptionSkillPhase,

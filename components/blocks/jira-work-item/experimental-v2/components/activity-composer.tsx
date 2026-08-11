@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useReducedMotion } from "motion/react";
 
 import AddIcon from "@atlaskit/icon/core/add";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
@@ -11,7 +12,13 @@ import {
 	mapAgentToMentionItem,
 } from "@/components/blocks/editor-palette/data/mention-sources";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
+import {
+	JiraActivityComposer,
+	serializeActivityCommentsContext,
+} from "@/components/blocks/jira-activity";
+import { useActivityChatComments } from "@/components/blocks/jira-work-item/experimental-v2/context-activity-chat-comments";
 import { useJiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
+import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental-v2/context-metadata-rail";
 import { ActivityComposerContextPills } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer-context-pills";
 import { JiraWorkItemComposerMotion } from "@/components/blocks/jira-work-item/experimental-v2/components/jira-work-item-composer-motion";
 import { JIRA_WORK_ITEM_CURRENT_USER } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
@@ -20,12 +27,14 @@ import {
 	findMentionedWorkingAgentSessions,
 	findSteeredWorkingSessions,
 } from "@/components/blocks/jira-work-item/experimental-v2/lib/activity-composer-session-routing";
-import { JiraActivityComposer } from "@/components/blocks/jira-activity";
+import { CommentsComposerChip } from "@/components/ui-custom/comments-composer-chip";
 import {
 	RichTextSuggestionMenu,
 	type RichTextSuggestionMenuItem,
 } from "@/components/ui-custom/rich-text-editor";
 import { Tag } from "@/components/ui/tag";
+
+const ACTIVITY_COMMENTS_PROMPT = "Discuss these activity comments.";
 
 const JIRA_WORK_ITEM_MENTION_LABELS = { subagent: "Agents" } as const;
 const JIRA_WORK_ITEM_SUGGESTION_VARIANT = { command: "flat", mention: "flat" } as const;
@@ -67,6 +76,14 @@ export function ActivityComposer({
 	onSkillInvoke?: (skill: SkillsDirectorySkill) => boolean | void;
 }>) {
 	const { state, actions, meta } = useJiraWorkItem();
+	const { requestRevealLatestActivity } = useMetadataRail();
+	const {
+		comments: activityChatComments,
+		focusRequestKey,
+		removeAll: removeActivityChatComments,
+	} = useActivityChatComments();
+	const composerRootRef = useRef<HTMLDivElement>(null);
+	const shouldReduceMotion = Boolean(useReducedMotion());
 	const availableAgents = agents ?? ROVO_AGENT_SELECTOR_AGENTS;
 	const mentionSources = useMemo(() => agents
 		? {
@@ -77,6 +94,44 @@ export function ActivityComposer({
 	const [draft, setDraft] = useState("");
 	const [sessionTargetSelection, setSessionTargetSelection] = useState<SessionTargetSelection | null>(null);
 	const [selectedSessionTargetIndex, setSelectedSessionTargetIndex] = useState(0);
+	const hasActivityChatComments = activityChatComments.length > 0;
+	const activityCommentsContext = useMemo(
+		() => serializeActivityCommentsContext(meta.workItem, activityChatComments),
+		[activityChatComments, meta.workItem],
+	);
+	const activityCommentsInputContext = hasActivityChatComments ? (
+		<CommentsComposerChip
+			comments={activityChatComments.map((comment) => ({
+				id: comment.id,
+				title: comment.actorName,
+				subtitle: "Comment",
+				body: comment.body,
+			}))}
+			onRemoveAll={removeActivityChatComments}
+			removeAllLabel="Remove all activity comments"
+			testId="activity-comments-chip"
+		/>
+	) : undefined;
+
+	useEffect(() => {
+		if (focusRequestKey === 0) {
+			return undefined;
+		}
+		const animationFrame = requestAnimationFrame(() => {
+			const dock = composerRootRef.current?.closest<HTMLElement>(
+				"[data-jira-work-item-composer-dock]",
+			) ?? composerRootRef.current;
+			dock?.scrollIntoView({
+				behavior: shouldReduceMotion ? "auto" : "smooth",
+				block: "nearest",
+			});
+			const field = composerRootRef.current?.querySelector<HTMLElement>(
+				"textarea, [contenteditable='true']",
+			);
+			field?.focus();
+		});
+		return () => cancelAnimationFrame(animationFrame);
+	}, [focusRequestKey, shouldReduceMotion]);
 	const mentionedWorkingAgentSessions = findMentionedWorkingAgentSessions(state.sessions, draft);
 	const mentionedWorkingAgentSession = mentionedWorkingAgentSessions.length === 1
 		? mentionedWorkingAgentSessions[0]
@@ -133,6 +188,9 @@ export function ActivityComposer({
 	const handleSubmit = (body: string) => {
 		const text = body.trim();
 		if (!text) return;
+		const promptWithActivityContext = activityCommentsContext
+			? `${text}\n\n${activityCommentsContext}`
+			: text;
 		const mentionedAgentSessions = findMentionedWorkingAgentSessions(state.sessions, text);
 		const mentionedAgentSession = mentionedAgentSessions.length === 1 ? mentionedAgentSessions[0] : null;
 		const shouldStartNewSession = Boolean(
@@ -151,13 +209,13 @@ export function ActivityComposer({
 					avatarSrc: mentionedAgentSession.agentAvatarSrc,
 				},
 				"prompt",
-				text,
+				promptWithActivityContext,
 			);
 			handledAgentIds.add(mentionedAgentSession.agentId);
 			handledAgentNames.add(mentionedAgentSession.agentName);
 		} else {
 			for (const steeredSession of steeredSessions) {
-				actions.replySession(steeredSession.id, text);
+				actions.replySession(steeredSession.id, promptWithActivityContext);
 				handledAgentIds.add(steeredSession.agentId);
 				handledAgentNames.add(steeredSession.agentName);
 			}
@@ -169,11 +227,11 @@ export function ActivityComposer({
 			handledAgentNames,
 		);
 		for (const invokedAgent of invokedAgents) {
-			actions.invokeAgent(invokedAgent, "prompt", text);
+			actions.invokeAgent(invokedAgent, "prompt", promptWithActivityContext);
 		}
 		onAgentPromptSubmit?.(
 			[...handledAgentIds, ...invokedAgents.map((agent) => agent.id)],
-			text,
+			promptWithActivityContext,
 		);
 		if (handledAgentIds.size === 0 && invokedAgents.length === 0) {
 			if (meta.composerDelivery === "broadcast-active-agents") {
@@ -181,7 +239,12 @@ export function ActivityComposer({
 			} else {
 				actions.addComment(text);
 			}
+		} else {
+			// Agent mention / assign-style submits land in Activity — open that
+			// rail tab and scroll to the newest entry so the result is visible.
+			requestRevealLatestActivity();
 		}
+		removeActivityChatComments();
 		setDraft("");
 		setSessionTargetSelection(null);
 		setSelectedSessionTargetIndex(0);
@@ -219,7 +282,7 @@ export function ActivityComposer({
 	};
 
 	return (
-		<div onKeyDownCapture={handleKeyDownCapture}>
+		<div onKeyDownCapture={handleKeyDownCapture} ref={composerRootRef}>
 			<ActivityComposerContextPills
 				onInvokeAgent={handleInvokeAgent}
 				onInvokeSkill={handleInvokeSkill}
@@ -230,6 +293,8 @@ export function ActivityComposer({
 				<JiraWorkItemComposerMotion placement="sticky">
 					<JiraActivityComposer
 						author={JIRA_WORK_ITEM_CURRENT_USER}
+						inputContext={activityCommentsInputContext}
+						inputContextSubmitText={ACTIVITY_COMMENTS_PROMPT}
 						mentionSources={mentionSources}
 						mentionSectionLabels={JIRA_WORK_ITEM_MENTION_LABELS}
 						onSubmit={handleSubmit}

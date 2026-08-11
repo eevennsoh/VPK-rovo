@@ -189,13 +189,26 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.match(COMPONENT_SOURCE, /label="Auto merge"/u);
 	assert.match(COMPONENT_SOURCE, /Auto merge/u);
 	assert.match(COMPONENT_SOURCE, /closeOnClick=\{false\}/u);
+	assert.match(COMPONENT_SOURCE, /handleMergeMethodChange/u);
 	assert.match(COMPONENT_SOURCE, /handleAutoMergeChange/u);
+	assert.match(COMPONENT_SOURCE, /DEFAULT_MERGE_METHOD: PullRequestHeaderMergeMethod = "squash"/u);
 	assert.match(COMPONENT_SOURCE, /DEFAULT_AUTO_MERGE = true/u);
 	assert.match(COMPONENT_SOURCE, /case "checks-failed":[\s\S]*return "Checks failed"/u);
 	assert.match(COMPONENT_SOURCE, /case "checks-running":[\s\S]*return "Checks running"/u);
 	assert.match(COMPONENT_SOURCE, /case "merge-conflicts":[\s\S]*return "Merge conflicts"/u);
 	assert.match(COMPONENT_SOURCE, /case "review-required":[\s\S]*return "Review required"/u);
-	assert.match(COMPONENT_SOURCE, /case "ready":[\s\S]*return "Merge"/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/function mergeMethodLabel[\s\S]*case "squash":[\s\S]*return "Squash and merge"[\s\S]*case "merge":[\s\S]*return "Create a merge commit"[\s\S]*case "rebase":[\s\S]*return "Rebase and merge"/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/case "ready":[\s\S]*return mergeMethodLabel\(mergeMethod\)/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/MERGE_METHOD_VALUES\.map\([\s\S]*DropdownMenuItem[\s\S]*selected=\{value === selectedMergeMethod\}[\s\S]*mergeMethodLabel/u,
+	);
 	assert.match(
 		COMPONENT_SOURCE,
 		/resolvedVariant === "compact" \? "text-sm" : "text-base"/u,
@@ -214,7 +227,11 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/<BranchName name=\{branchPair\.headBranch\} \/>[\s\S]*→[\s\S]*<BranchName name=\{branchPair\.baseBranch\} \/>/u,
+		/<span className="min-w-0 truncate">[\s\S]*<BranchName name=\{branchPair\.headBranch\} \/>[\s\S]*shrink-0 px-1 text-text-subtle[\s\S]*→[\s\S]*<span className="shrink-0">[\s\S]*<BranchName name=\{branchPair\.baseBranch\} \/>/u,
+	);
+	assert.doesNotMatch(
+		COMPONENT_SOURCE,
+		/<span className="min-w-0 truncate">\s*<BranchName name=\{branchPair\.headBranch\} \/>\s*<span aria-hidden className="px-1 text-text-subtle">/u,
 	);
 	assert.match(COMPONENT_SOURCE, /function resolveScmProviderName/u);
 	assert.match(
@@ -275,7 +292,7 @@ test("PullRequestHeader replaces merge controls with terminal merged state", () 
 	assert.match(COMPONENT_SOURCE, /const canMutatePullRequest = status === "Open"/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/\{canMutatePullRequest \? \([\s\S]*<ButtonGroup variant="split">[\s\S]*mergeStateLabel\(mergeState\)[\s\S]*aria-label="Merge options"[\s\S]*\) : \([\s\S]*<Button disabled[\s\S]*<MergeSuccessIcon[\s\S]*Merged[\s\S]*\)\}/u,
+		/\{canMutatePullRequest \? \([\s\S]*<ButtonGroup variant="split">[\s\S]*mergeStateLabel\(mergeState, selectedMergeMethod\)[\s\S]*aria-label="Merge options"[\s\S]*\) : \([\s\S]*<Button disabled[\s\S]*<MergeSuccessIcon[\s\S]*Merged[\s\S]*\)\}/u,
 	);
 });
 

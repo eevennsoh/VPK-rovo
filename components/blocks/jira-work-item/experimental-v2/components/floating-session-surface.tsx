@@ -37,6 +37,27 @@ function getSessionResult(session: AgentSession): string {
 }
 
 /**
+ * Demo chat playback for agent sessions. Improve-description keeps its own
+ * confirmation flow; Claude Code Build stays mid-implementation (consult done,
+ * implement/verify unfinished) so Activity can own checklist/PR progress while
+ * the side chat never settles on a verified/PR-ready completion.
+ */
+function getSessionPlaybackVariant(
+	session: AgentSession,
+): "claude-code-build" | "jira-description-improvement" | "static-result" | undefined {
+	if (session.scriptId === "shop-4821-improve-description") {
+		return session.status === "completed" ? "static-result" : "jira-description-improvement";
+	}
+	if (session.agentId !== "claude-code" || session.status !== "running") {
+		return undefined;
+	}
+	const completedCount = session.progressChecklist?.filter((item) => item.completed).length ?? 0;
+	// Build chapter range: consult checked (1) through verify (3). Plan is 0;
+	// Review+ is 4+.
+	return completedCount >= 1 && completedCount <= 3 ? "claude-code-build" : undefined;
+}
+
+/**
  * Right/bottom inset that parks the Rovo launcher on the dialog's bottom-right
  * corner using the same gutter as the activity composer — the wide composer
  * dock is `px-6 pb-6` and the metadata rail is `pr-6`, so 24px on both axes
@@ -48,6 +69,7 @@ const LAUNCHER_PLACEMENT = { right: "24px", bottom: "24px" } as const;
  * Bridges the block-local session model into the shared Jira Issue Rovo chat.
  * Jira Work Item owns the deterministic session lifecycle; the
  * existing Rovo surface owns all visible chat chrome, transcript, and composer.
+ * Activity "Add to chat" pills target the sticky activity composer instead.
  */
 export function FloatingSessionSurface({
 	onSessionReply,
@@ -84,11 +106,7 @@ export function FloatingSessionSurface({
 			issueKey: meta.workItem.code,
 			issueSummary: meta.workItem.title,
 			intro: getSessionQuestionIntro(activeSession),
-			playbackVariant: activeSession.scriptId === "shop-4821-improve-description"
-				? activeSession.status === "completed"
-					? "static-result"
-					: "jira-description-improvement"
-				: undefined,
+			playbackVariant: getSessionPlaybackVariant(activeSession),
 			question: getSessionQuestion(activeSession),
 			request: activeSession.command,
 			result: getSessionResult(activeSession),

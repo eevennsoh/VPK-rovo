@@ -45,6 +45,10 @@ import type {
  * (see {@link getSessionTitle}), adds animated dots, and shows a trailing info
  * icon; `complete` shows a solid title with no lifecycle indicator.
  *
+ * Activity headers that lead with the agent name move the needs-input treatment
+ * onto the metadata status ("Needs input" + shimmer + dots) instead of trailing
+ * dots after the agent identity.
+ *
  * The trailing indicator itself is rendered by {@link LifecycleIndicator};
  * `showLifecycle` only gates whether the row reserves that trailing slot.
  */
@@ -73,6 +77,9 @@ const STATE_META: Record<
 		showLifecycle: false,
 	},
 };
+
+/** Status copy for activity headers while a session is blocked on the viewer. */
+const NEEDS_INPUT_STATUS_LABEL = "Needs input";
 
 /**
  * Pull-request status → icon + color, matching the Jira queue card
@@ -251,8 +258,16 @@ export function AgentListActivityHeader({
 	const prMeta = item.prStatus ? PR_STATUS_META[item.prStatus] : null;
 	const PrIcon = prMeta?.Icon ?? null;
 	const title = leadWithAgentName ? item.agent.name : getSessionTitle(item);
-	const activityTimeTitle = item.state === "complete" ? "Last update" : "Agent runtime";
+	const needsInput = item.state === "needs-input";
+	const activityTimeTitle = item.state === "complete"
+		? "Last update"
+		: needsInput
+			? NEEDS_INPUT_STATUS_LABEL
+			: "Agent runtime";
 	const hasTrailingActions = Boolean(onView || action);
+	// When the title already leads with the agent name, keep dots off that line —
+	// the needs-input status in metadata owns the Rovo animated-dots indicator.
+	const showTitleDots = stateMeta.showDots && !leadWithAgentName;
 	// Revealed on hover/focus, but kept in the tab order: a `display: none`
 	// wrapper could never satisfy its own `:focus-visible` reveal condition.
 	// Width collapses via `0fr`/`1fr` so the lifecycle indicator sits flush
@@ -283,8 +298,8 @@ export function AgentListActivityHeader({
 					vpkLogo={item.agent.vpkLogo}
 				/>
 			)}
-			<div className="min-w-0 flex-1">
-				<div className="flex min-w-0 items-center">
+			<div className="min-w-0 flex-1 overflow-hidden">
+				<div className="flex min-w-0 items-center overflow-hidden">
 					{stateMeta.shimmerTitle && !leadWithAgentName ? (
 						<Shimmer
 							as="span"
@@ -299,9 +314,11 @@ export function AgentListActivityHeader({
 							{title}
 						</span>
 					)}
-					{stateMeta.showDots ? <AnimatedDots /> : null}
+					{showTitleDots ? <AnimatedDots /> : null}
 				</div>
-				<div className="flex min-w-0 items-center gap-1 text-xs leading-4 text-text-subtle">
+				{/* Fixed chips stay shrink-0; Working for… owns the ellipsis when
+				    hover actions expand and steal width from this flex-1 column. */}
+				<div className="flex min-w-0 items-center gap-1 overflow-hidden text-xs leading-4 text-text-subtle">
 					{metadataPrefix ? (
 						<>
 							{metadataPrefix}
@@ -317,9 +334,19 @@ export function AgentListActivityHeader({
 						<InvokerBy invoker={item.invokedBy} />
 					) : null}
 					{messageTimestamp && item.state !== "complete" ? <MetadataDot /> : null}
-					{!messageTimestamp || item.state !== "complete" ? (
+					{needsInput ? (
 						<span
-							className="shrink-0"
+							className="inline-flex min-w-0 shrink-0 items-baseline"
+							title={NEEDS_INPUT_STATUS_LABEL}
+						>
+							<Shimmer as="span" duration={1.4} spread={2}>
+								{NEEDS_INPUT_STATUS_LABEL}
+							</Shimmer>
+							<AnimatedDots />
+						</span>
+					) : !messageTimestamp || item.state !== "complete" ? (
+						<span
+							className="min-w-0 truncate"
 							title={activityTimeTitle}
 						>
 							{messageTimestamp ? "Working for " : null}
@@ -332,7 +359,7 @@ export function AgentListActivityHeader({
 					{leadWithAgentName ? null : (
 						<>
 							<MetadataDot />
-							<span className="truncate">{item.agent.name}</span>
+							<span className="min-w-0 truncate">{item.agent.name}</span>
 						</>
 					)}
 					{prMeta && PrIcon ? (
@@ -349,7 +376,7 @@ export function AgentListActivityHeader({
 				</div>
 			</div>
 			{stateMeta.showLifecycle || hasTrailingActions ? (
-				<div className="ml-auto flex shrink-0 items-center">
+				<div className="relative z-10 ml-auto flex shrink-0 items-center">
 					{stateMeta.showLifecycle ? <LifecycleIndicator state={item.state} /> : null}
 					{hasTrailingActions ? (
 						<div
@@ -361,7 +388,7 @@ export function AgentListActivityHeader({
 							<div className="min-w-0 overflow-hidden">
 								<div
 									className={cn(
-										"pointer-events-none flex shrink-0 items-center gap-2 pl-2 opacity-0 transition-opacity duration-normal ease-out-practical motion-reduce:transition-none",
+										"pointer-events-none flex shrink-0 items-center gap-1 pl-2 opacity-0 transition-opacity duration-normal ease-out-practical motion-reduce:transition-none",
 										actionVisibilityClass,
 									)}
 								>

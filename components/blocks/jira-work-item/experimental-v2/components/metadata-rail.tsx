@@ -312,7 +312,9 @@ export function MetadataRail({
 				</div>
 				<div
 					ref={metadataBodyScrollRef}
-					className="relative min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-none @[860px]/agentlayout:pb-8"
+					// overflow-x-hidden: body owns vertical scroll only; long activity
+					// lines must wrap/truncate via min-w-0 rather than grow a cross-axis bar.
+					className="relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-none @[860px]/agentlayout:pb-8"
 					data-jira-work-item-scroll-region
 					style={metadataBodyScrollMaskStyle}
 				>
@@ -364,7 +366,8 @@ export function MetadataRail({
 							<div
 								// overflow-visible: reply PromptInput shadows must paint past the
 								// padded content box; the rail scrollport still owns clipping.
-								className="overflow-visible px-3"
+								// min-w-0: this flex-col child must shrink so artifact titles truncate.
+								className="min-w-0 max-w-full overflow-visible px-3"
 								hidden={pullRequestSelected || activePanelView !== "activity"}
 								inert={pullRequestSelected || activePanelView !== "activity" ? true : undefined}
 							>

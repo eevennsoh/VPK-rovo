@@ -37,7 +37,7 @@ function pullRequestEntry(overrides = {}) {
 		segments: [],
 		pullRequest: {
 			number: 1847,
-			title: "Add guest checkout to the storefront",
+			title: "Implement guest checkout without account creation",
 			status: "Open",
 			additions: 86,
 			deletions: 21,
@@ -54,8 +54,9 @@ test("resolves the #1847 guest-checkout guided review fixture", async () => {
 	assert.ok(detail);
 	assert.equal(detail.identity, "eevensoh/vpk-rovo#1847");
 	assert.equal(detail.url, "https://github.com/eevensoh/vpk-rovo/pull/1847");
-	assert.equal(detail.authorName, "Claude Code");
-	assert.equal(detail.authorAvatarSrc, "/avatar-agent/dev-agents/basic-coding-agent-template.svg");
+	assert.equal(detail.authorName, "Venn");
+	assert.equal(detail.authorAvatarSrc, "/avatar-user/venn/venn.png");
+	assert.equal(detail.authorKind, "person");
 	assert.equal(detail.baseBranch, "main");
 	assert.equal(detail.headBranch, "feature/shop-4821-guest-checkout");
 	assert.deepEqual(detail.provider, { id: "github", name: "GitHub" });
@@ -63,14 +64,17 @@ test("resolves the #1847 guest-checkout guided review fixture", async () => {
 	assert.equal(detail.updatedTime, "2m ago");
 	assert.equal(detail.reviewDecision, "review-required");
 	assert.equal(detail.mergeState, "blocked");
+	// Approvers are people, not agents — every avatar is a human portrait.
 	assert.deepEqual(
 		detail.reviewers.map(({ name, status }) => ({ name, status })),
 		[
-			{ name: "Code Planner", status: "approved" },
-			{ name: "Unit Test Creator", status: "approved" },
+			{ name: "Maya Chen", status: "approved" },
+			{ name: "Jordan Lee", status: "approved" },
 			{ name: "Venn", status: "pending" },
 		],
 	);
+	assert.ok(detail.reviewers.every((reviewer) => reviewer.kind === "person"));
+	assert.ok(detail.reviewers.every((reviewer) => reviewer.avatarSrc?.startsWith("/avatar-user/")));
 	assert.deepEqual(detail.labels.map(({ name }) => name), ["checkout", "customer experience"]);
 	assert.equal(detail.commits.length, 6);
 	assert.ok(
@@ -81,20 +85,19 @@ test("resolves the #1847 guest-checkout guided review fixture", async () => {
 		),
 	);
 	assert.deepEqual(
-		[...new Set(detail.commits.map((commit) => commit.author.name))],
-		["Claude Code", "Code Planner", "Unit Test Creator"],
-	);
-	assert.deepEqual(
 		detail.commits.map((commit) => ({ name: commit.author.name, kind: commit.author.kind })),
 		[
-			{ name: "Claude Code", kind: "agent" },
-			{ name: "Code Planner", kind: "agent" },
-			{ name: "Claude Code", kind: "agent" },
-			{ name: "Unit Test Creator", kind: "agent" },
-			{ name: "Claude Code", kind: "agent" },
-			{ name: "Unit Test Creator", kind: "agent" },
+			{ name: "Venn", kind: "person" },
+			{ name: "Maya Chen", kind: "person" },
+			{ name: "Jordan Lee", kind: "person" },
+			{ name: "Priya Narayanan", kind: "person" },
+			{ name: "Sam Rivera", kind: "person" },
+			{ name: "Maya Chen", kind: "person" },
 		],
 	);
+	assert.ok(detail.commits.every((commit) => commit.author.kind === "person"));
+	assert.ok(detail.commits.every((commit) => commit.author.avatarSrc?.startsWith("/avatar-user/")));
+	assert.equal(new Set(detail.commits.map((commit) => commit.author.id)).size >= 4, true);
 	assert.deepEqual(
 		detail.checks.map(({ name, status }) => ({ name, status })),
 		[
@@ -103,8 +106,15 @@ test("resolves the #1847 guest-checkout guided review fixture", async () => {
 			{ name: "Guest checkout browser tests", status: "passed" },
 		],
 	);
-	assert.ok(detail.checks.every((check) => typeof check.url === "string" && check.url.includes("/actions/runs/")));
+	// Demo-only checks: no SCM URLs so rows never navigate to a real provider.
+	assert.ok(detail.checks.every((check) => !("url" in check)));
 	assert.equal(detail.guidedReview?.summary.length, 3);
+	assert.deepEqual(detail.guidedReview?.metrics, {
+		risk: { label: "Low", filled: 1 },
+		impact: { label: "Medium", filled: 2 },
+		reviewDepth: { label: "3/5", filled: 3 },
+		mergeConfidence: { label: "4/5", filled: 4 },
+	});
 	assert.match(detail.description, /^Adds a guest checkout path/u);
 	assert.match(detail.description, /#### Summary\n\n- Lets shoppers complete checkout without creating an account\./u);
 	assert.match(detail.description, /#### Changes/u);
@@ -204,8 +214,8 @@ test("an approved #1847 entry adds Venn approval and ready-to-merge evidence", a
 	assert.deepEqual(
 		detail.reviewers.map(({ name, status }) => ({ name, status })),
 		[
-			{ name: "Code Planner", status: "approved" },
-			{ name: "Unit Test Creator", status: "approved" },
+			{ name: "Maya Chen", status: "approved" },
+			{ name: "Jordan Lee", status: "approved" },
 			{ name: "Venn", status: "approved" },
 		],
 	);
@@ -241,8 +251,8 @@ test("uses live SCM check state to block a guided pull request", async () => {
 	assert.deepEqual(
 		detail?.reviewers.map(({ name, status }) => ({ name, status })),
 		[
-			{ name: "Code Planner", status: "pending" },
-			{ name: "Unit Test Creator", status: "pending" },
+			{ name: "Maya Chen", status: "pending" },
+			{ name: "Jordan Lee", status: "pending" },
 			{ name: "Venn", status: "pending" },
 		],
 	);
@@ -267,21 +277,18 @@ test("shows the checks spinner only while a check row is non-terminal", async ()
 			name: "Lint and typecheck",
 			status: "failed",
 			details: "Failed after 42s · deliveryAddress may be null",
-			url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471001",
 		},
 		{
 			id: "unit-tests",
 			name: "Unit tests",
 			status: "passed",
 			details: "418 tests in 2m 46s",
-			url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471002",
 		},
 		{
 			id: "browser-tests",
 			name: "Guest checkout browser tests",
 			status: "passed",
 			details: "5 scenarios in 1m 32s",
-			url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471003",
 		},
 	];
 	const detail = resolvePullRequestDetailData(pullRequestEntry({
@@ -298,7 +305,6 @@ test("shows the checks spinner only while a check row is non-terminal", async ()
 	);
 	assert.equal(detail.checks.length, 3);
 	assert.equal(arePullRequestChecksInProgress(detail.checks), false);
-	assert.ok(detail.checks.every((check) => typeof check.url === "string" && check.url.length > 0));
 
 	const settled = resolvePullRequestDetailData(pullRequestEntry());
 	assert.equal(settled?.mergeState, "blocked");
@@ -422,7 +428,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	assert.doesNotMatch(detailViewSource, /overflow-y-auto px-4 py-5 sm:px-6/u);
 	assert.match(
 		detailViewSource,
-		/Overview[\s\S]*\{review\.files\.length\} Files[\s\S]*text-text-success[\s\S]*\+\{data\.additions\}[\s\S]*text-text-danger[\s\S]*-\{data\.deletions\}[\s\S]*Guide/u,
+		/Overview[\s\S]*Guide[\s\S]*\{review\.files\.length\} Files[\s\S]*text-text-success[\s\S]*\+\{data\.additions\}[\s\S]*text-text-danger[\s\S]*-\{data\.deletions\}/u,
 	);
 	assert.match(
 		detailViewSource,
@@ -505,13 +511,22 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	assert.doesNotMatch(headerSource, /border-b border-border pb-4/u);
 	assert.match(guideSource, /data-jira-work-item-pull-request-guide/u);
 	assert.match(guideSource, /data-jira-work-item-pull-request-guide-current-step/u);
-	assert.match(guideSource, /String\(currentStep \+ 1\)\.padStart\(2, "0"\)[\s\S]*String\(review\.chapters\.length\)\.padStart\(2, "0"\)/u);
-	assert.doesNotMatch(guideSource, /<button/u);
-	assert.match(guideSource, /visitedChapterIds[\s\S]*review\.chapters\.every/u);
+	assert.match(guideSource, /data-jira-work-item-pull-request-guide-summary/u);
+	assert.match(guideSource, /ChatTimelineNavigator/u);
+	assert.match(guideSource, /review\.summary\.join\(" "\)/u);
 	assert.match(
 		guideSource,
-		/const selectChapter = \(index: number\) => \{[\s\S]*setVisitedChapterIds\(\(visited\) => new Set\(visited\)\.add\(nextChapter\.id\)\);[\s\S]*setCurrentStep\(index\);[\s\S]*onClick=\{\(\) => selectChapter\(Math\.max\(0, currentStep - 1\)\)\}[\s\S]*onClick=\{\(\) => selectChapter\(Math\.min\(review\.chapters\.length - 1, currentStep \+ 1\)\)\}/u,
+		/review\.metrics\.risk[\s\S]*review\.metrics\.impact[\s\S]*review\.metrics\.reviewDepth[\s\S]*review\.metrics\.mergeConfidence/u,
 	);
+	assert.match(guideSource, /visitedChapterIds[\s\S]*review\.chapters\.every/u);
+	assert.match(guideSource, /IntersectionObserver/u);
+	assert.match(guideSource, /scrollIntoView\(\{ behavior: "smooth", block: "start" \}\)/u);
+	assert.match(
+		guideSource,
+		/const selectChapter = \(chapterId: string\) => \{[\s\S]*setActiveChapterId\(chapterId\)[\s\S]*setVisitedChapterIds/u,
+	);
+	assert.doesNotMatch(guideSource, /Back<\/Button>|Next<\/Button>/u);
+	assert.doesNotMatch(guideSource, /<nav aria-label="Guided review chapters">/u);
 	assert.match(guideSource, /approvalState === "approved"[\s\S]*"Approved"[\s\S]*"Approve pull request"/u);
 	assert.match(guideSource, /disabled=\{approved \|\| !allChaptersVisited \|\| !onApprove\}/u);
 	assert.match(guideSource, /onClick=\{onApprove\}/u);
@@ -551,7 +566,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	assert.doesNotMatch(railSource, /id: "pull-request-reviewers"/u);
 	assert.match(
 		railSource,
-		/data-jira-work-item-pull-request-details[\s\S]*?label="Reviewers"[\s\S]*?<ReviewersValue reviewers=\{data\.reviewers\} \/>/u,
+		/data-jira-work-item-pull-request-details[\s\S]*?label="Approvers"[\s\S]*?<ApproversValue reviewers=\{data\.reviewers\} \/>/u,
 	);
 	assert.match(
 		railSource,
@@ -559,7 +574,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		railSource,
-		/function ReviewersValue[\s\S]*const isAgent = reviewer\.kind === "agent"[\s\S]*shape=\{isAgent \? "hexagon" : "circle"\}[\s\S]*size="default"[\s\S]*AvatarStatusIndicator status=\{avatarStatus\}/u,
+		/function ApproversValue[\s\S]*const isAgent = reviewer\.kind === "agent"[\s\S]*shape=\{isAgent \? "hexagon" : "circle"\}[\s\S]*size="default"[\s\S]*AvatarStatusIndicator status=\{avatarStatus\}/u,
 	);
 	assert.match(
 		railSource,
@@ -567,7 +582,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.doesNotMatch(
 		railSource,
-		/function ReviewersValue[\s\S]*size="sm"[\s\S]*AvatarStatusIndicator/u,
+		/function ApproversValue[\s\S]*size="sm"[\s\S]*AvatarStatusIndicator/u,
 	);
 	assert.doesNotMatch(railSource, /AvatarGroup|<AvatarGroup/u);
 	assert.doesNotMatch(railSource, /-space-x-/u);
@@ -673,7 +688,20 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	assert.match(railSource, /data-jira-work-item-pull-request-checks/u);
 	assert.match(
 		railSource,
-		/function ChecksValue[\s\S]*group\/check-row[\s\S]*<IconTile[\s\S]*StatusIcon[\s\S]*size="small"[\s\S]*variant="transparent"[\s\S]*check\.name[\s\S]*check\.details/u,
+		/function ChecksValue[\s\S]*group\/check-row[\s\S]*<IconTile[\s\S]*status\.renderIcon\(\)[\s\S]*size="small"[\s\S]*variant="transparent"[\s\S]*check\.name[\s\S]*<CheckDetails check=\{check\} \/>/u,
+	);
+	assert.match(
+		railSource,
+		/function RunningCheckDetails[\s\S]*ElapsedTime prefix="Running for " startedAtMs=\{startedAtMs\}/u,
+	);
+	assert.match(
+		railSource,
+		/function CheckDetails[\s\S]*check\.status !== "running"[\s\S]*parseRunningCheckElapsedSeconds\(check\.details\)[\s\S]*initialSeconds === null[\s\S]*<RunningCheckDetails initialSeconds=\{initialSeconds\} \/>/u,
+	);
+	assert.match(railSource, /from "@\/components\/ui\/elapsed-time"/u);
+	assert.match(
+		railSource,
+		/from "@\/components\/blocks\/jira-work-item\/experimental-v2\/lib\/pull-request-check-elapsed"/u,
 	);
 	assert.match(
 		railSource,
@@ -683,21 +711,34 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 		railSource,
 		/function ChecksValue[\s\S]*truncate text-sm text-text[\s\S]*truncate text-xs text-text-subtlest/u,
 	);
+	// A running check spins in place of a settled status glyph (subtle spinner color, not information blue).
 	assert.match(
 		railSource,
-		/function ChecksValue[\s\S]*checkUrl \? "cursor-pointer pe-7"/u,
+		/running: \{[\s\S]*iconClassName: "text-icon-subtle"[\s\S]*renderIcon: \(\) => <Spinner label="" size="sm" \/>/u,
+	);
+	assert.doesNotMatch(
+		railSource,
+		/running: \{[\s\S]*text-icon-information/u,
 	);
 	assert.match(
 		railSource,
-		/function ChecksValue[\s\S]*role=\{checkUrl \? "link" : undefined\}[\s\S]*tabIndex=\{checkUrl \? 0 : undefined\}[\s\S]*openScmUrl\(checkUrl\)[\s\S]*handleScmLinkKeyDown\(event, checkUrl\)/u,
+		/queued: \{[\s\S]*iconClassName: "text-icon-disabled"[\s\S]*TaskToDoIcon/u,
+	);
+	assert.doesNotMatch(railSource, /CheckCircleUncheckedIcon/u);
+	// Checks are demo-only: rows never navigate, so no link role, handlers, or button.
+	const checksValueSource = railSource.slice(
+		railSource.indexOf("function ChecksValue"),
+		railSource.indexOf("export function PullRequestDetailsRail"),
+	);
+	assert.doesNotMatch(checksValueSource, /openScmUrl|handleScmLinkKeyDown|role="link"|<Button/u);
+	assert.doesNotMatch(checksValueSource, /\bpe-7\b|absolute end-0|-translate-y-1\/2/u);
+	assert.match(
+		checksValueSource,
+		/<IconTile[\s\S]*shrink-0 text-icon-subtle[\s\S]*LinkExternalIcon[\s\S]*iconSize="small"[\s\S]*size="small"[\s\S]*variant="transparent"/u,
 	);
 	assert.match(
-		railSource,
-		/function ChecksValue[\s\S]*aria-label=\{`Open \$\{check\.name\} check details`\}[\s\S]*stopPropagation[\s\S]*openScmUrl\(checkUrl\)[\s\S]*LinkExternalIcon/u,
-	);
-	assert.match(
-		railSource,
-		/group-hover\/check-row:pointer-events-auto group-hover\/check-row:opacity-100[\s\S]*group-focus-within\/check-row:pointer-events-auto group-focus-within\/check-row:opacity-100/u,
+		checksValueSource,
+		/group-hover\/check-row:opacity-100/u,
 	);
 	assert.doesNotMatch(
 		railSource,
@@ -708,7 +749,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	assert.doesNotMatch(railSource, /label="Merge status"|MERGE_STATE|MergeSuccessIcon/u);
 	assert.match(
 		railSource,
-		/data-jira-work-item-pull-request-details[\s\S]*?label="Reviewers"[\s\S]*?label="Created"[\s\S]*?flex min-w-0 items-center gap-2[\s\S]*?PersonAvatar person=\{author\}[\s\S]*?label="Updated"[\s\S]*?label="Labels"[\s\S]*?<\/div>\s*\),\s*\},/u,
+		/data-jira-work-item-pull-request-details[\s\S]*?label="Approvers"[\s\S]*?label="Created"[\s\S]*?flex min-w-0 items-center gap-2[\s\S]*?PersonAvatar person=\{author\}[\s\S]*?label="Updated"[\s\S]*?label="Labels"[\s\S]*?<\/div>\s*\),\s*\},/u,
 	);
 	assert.doesNotMatch(railSource, /GlobeIcon|label="Provider"/u);
 	assert.doesNotMatch(railSource, /Participants/u);

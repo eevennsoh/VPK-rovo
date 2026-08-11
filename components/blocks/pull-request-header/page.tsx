@@ -122,6 +122,7 @@ export default function PullRequestHeaderPage() {
 
 export { PullRequestHeader } from "@/components/blocks/pull-request-header/components/pull-request-header";
 export type {
+	PullRequestHeaderMergeMethod,
 	PullRequestHeaderMergeState,
 	PullRequestHeaderProps,
 	PullRequestHeaderStatus,

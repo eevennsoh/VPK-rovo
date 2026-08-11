@@ -27,6 +27,7 @@ import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
 
 import type {
+	PullRequestHeaderMergeMethod,
 	PullRequestHeaderMergeState,
 	PullRequestHeaderProps,
 	PullRequestHeaderStatus,
@@ -37,7 +38,13 @@ import {
 } from "@/components/blocks/pull-request-header/components/pull-request-header-variant";
 
 const DEFAULT_MERGE_STATE: PullRequestHeaderMergeState = "ready";
+const DEFAULT_MERGE_METHOD: PullRequestHeaderMergeMethod = "squash";
 const DEFAULT_AUTO_MERGE = true;
+const MERGE_METHOD_VALUES = [
+	"squash",
+	"merge",
+	"rebase",
+] as const satisfies ReadonlyArray<PullRequestHeaderMergeMethod>;
 const META_ENTER_TRANSITION = {
 	duration: 0.2,
 	ease: [0, 0.4, 0, 1],
@@ -69,7 +76,25 @@ function statusLozengeVariant(
 	}
 }
 
-function mergeStateLabel(mergeState: PullRequestHeaderMergeState): string {
+function mergeMethodLabel(method: PullRequestHeaderMergeMethod): string {
+	switch (method) {
+		case "squash":
+			return "Squash and merge";
+		case "merge":
+			return "Create a merge commit";
+		case "rebase":
+			return "Rebase and merge";
+		default: {
+			const _exhaustive: never = method;
+			return _exhaustive;
+		}
+	}
+}
+
+function mergeStateLabel(
+	mergeState: PullRequestHeaderMergeState,
+	mergeMethod: PullRequestHeaderMergeMethod,
+): string {
 	switch (mergeState) {
 		case "checks-failed":
 			return "Checks failed";
@@ -80,7 +105,7 @@ function mergeStateLabel(mergeState: PullRequestHeaderMergeState): string {
 		case "review-required":
 			return "Review required";
 		case "ready":
-			return "Merge";
+			return mergeMethodLabel(mergeMethod);
 		default: {
 			const _exhaustive: never = mergeState;
 			return _exhaustive;
@@ -244,6 +269,9 @@ export function PullRequestHeader({
 	url,
 	scmProviderName,
 	mergeState = DEFAULT_MERGE_STATE,
+	mergeMethod,
+	defaultMergeMethod = DEFAULT_MERGE_METHOD,
+	onMergeMethodChange,
 	autoMerge,
 	defaultAutoMerge = DEFAULT_AUTO_MERGE,
 	onAutoMergeChange,
@@ -257,8 +285,11 @@ export function PullRequestHeader({
 	...props
 }: Readonly<PullRequestHeaderProps>) {
 	const shouldReduceMotion = useReducedMotion() ?? false;
+	const [uncontrolledMergeMethod, setUncontrolledMergeMethod] =
+		useState(defaultMergeMethod);
 	const [uncontrolledAutoMerge, setUncontrolledAutoMerge] =
 		useState(defaultAutoMerge);
+	const selectedMergeMethod = mergeMethod ?? uncontrolledMergeMethod;
 	const autoMergeEnabled = autoMerge ?? uncontrolledAutoMerge;
 	const subscribeToScroll = useCallback(
 		(onStoreChange: () => void) => {
@@ -300,6 +331,13 @@ export function PullRequestHeader({
 			: null;
 	const titleSizeClass =
 		resolvedVariant === "compact" ? "text-sm" : "text-base";
+
+	const handleMergeMethodChange = (method: PullRequestHeaderMergeMethod) => {
+		if (mergeMethod === undefined) {
+			setUncontrolledMergeMethod(method);
+		}
+		onMergeMethodChange?.(method);
+	};
 
 	const handleAutoMergeChange = (enabled: boolean) => {
 		if (autoMerge === undefined) {
@@ -403,7 +441,7 @@ export function PullRequestHeader({
 									{mergeState === "checks-running" ? (
 										<Spinner data-icon="inline-start" size="xs" />
 									) : null}
-									{mergeStateLabel(mergeState)}
+									{mergeStateLabel(mergeState, selectedMergeMethod)}
 								</Button>
 								<DropdownMenu>
 									<DropdownMenuTrigger
@@ -418,6 +456,18 @@ export function PullRequestHeader({
 										<ChevronDownIcon label="" size="small" />
 									</DropdownMenuTrigger>
 									<DropdownMenuContent align="end">
+										{MERGE_METHOD_VALUES.map((value) => (
+											<DropdownMenuItem
+												key={value}
+												onSelect={() => {
+													handleMergeMethodChange(value);
+												}}
+												selected={value === selectedMergeMethod}
+											>
+												{mergeMethodLabel(value)}
+											</DropdownMenuItem>
+										))}
+										<DropdownMenuSeparator />
 										<DropdownMenuItem
 											closeOnClick={false}
 											disabled={!onAutoMergeChange}
@@ -571,12 +621,17 @@ export function PullRequestHeader({
 										{repository}
 									</Tag>
 									{branchPair ? (
-										<span className="min-w-0 truncate">
-											<BranchName name={branchPair.headBranch} />
-											<span aria-hidden className="px-1 text-text-subtle">
+										<span className="inline-flex min-w-0 items-center overflow-hidden">
+											{/* Head truncates; base stays full (`main`, not `m…`). */}
+											<span className="min-w-0 truncate">
+												<BranchName name={branchPair.headBranch} />
+											</span>
+											<span aria-hidden className="shrink-0 px-1 text-text-subtle">
 												→
 											</span>
-											<BranchName name={branchPair.baseBranch} />
+											<span className="shrink-0">
+												<BranchName name={branchPair.baseBranch} />
+											</span>
 										</span>
 									) : null}
 								</motion.div>

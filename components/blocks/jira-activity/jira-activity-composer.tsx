@@ -9,6 +9,7 @@ import AttachmentIcon from "@atlaskit/icon/core/attachment";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
+import { RovoComposerActionButton } from "@/components/projects/shared/components/rovo-composer-send-controls";
 import { floatingComposerTextareaClassName } from "@/components/projects/shared/components/rovo-composer-styles";
 import { PromptInputTextarea } from "@/components/ui-custom/prompt-input";
 import type {
@@ -21,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 import type { JiraActivityActor } from "./jira-activity-types";
+import { useJiraActivityComposerDictation } from "./use-jira-activity-composer-dictation";
 
 /**
  * The two floating surfaces this composer serves. They share the prompt editor
@@ -88,6 +90,16 @@ export interface JiraActivityComposerProps {
 	suggestionVariant?: RichTextSuggestionVariantConfig;
 	/** Optional cue rendered immediately before the submit CTA. */
 	submitAccessory?: ReactNode;
+	/**
+	 * One-turn composer context pill(s) rendered inside the floating prompt
+	 * (Activity "Add to chat" / Code Review-style comment chips).
+	 */
+	inputContext?: ReactNode;
+	/**
+	 * Body used when the user submits with only `inputContext` and an empty
+	 * draft — same pattern as ChatComposer's `composerInputContext.submitText`.
+	 */
+	inputContextSubmitText?: string;
 	className?: string;
 }
 
@@ -110,12 +122,15 @@ export function JiraActivityComposer({
 	mentionSectionLabels,
 	suggestionVariant,
 	submitAccessory,
+	inputContext,
+	inputContextSubmitText,
 	className,
 }: Readonly<JiraActivityComposerProps>) {
 	const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue);
 	const value = controlledValue ?? uncontrolledValue;
 	const trimmed = value.trim();
-	const canSubmit = trimmed.length > 0;
+	const hasInputContext = inputContext != null;
+	const canSubmit = trimmed.length > 0 || hasInputContext;
 
 	function updateValue(nextValue: string) {
 		if (controlledValue === undefined) {
@@ -124,9 +139,23 @@ export function JiraActivityComposer({
 		onValueChange?.(nextValue);
 	}
 
+	const {
+		dictationState,
+		dictationTranscriptPreview,
+		micStream,
+		onStartDictation,
+		onStopDictation,
+	} = useJiraActivityComposerDictation({
+		onValueChange: updateValue,
+		value,
+	});
+
 	function submit() {
 		if (!canSubmit) return;
-		onSubmit(trimmed);
+		const body = trimmed || (hasInputContext ? (inputContextSubmitText ?? "").trim() : "");
+		if (!body) return;
+		onStopDictation();
+		onSubmit(body);
 		updateValue("");
 	}
 
@@ -185,18 +214,19 @@ export function JiraActivityComposer({
 			actions={
 				<>
 					{submitAccessory}
-					<Button
-						aria-label="Send"
-						className={cn(
-							"bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed",
-							surface.controlClassName,
-						)}
-						disabled={!canSubmit}
-						size="icon"
-						type="submit"
-					>
-						<ArrowUpIcon label="" size={surface.iconSize} />
-					</Button>
+					<RovoComposerActionButton
+						canSubmit={canSubmit}
+						composerStatus="ready"
+						dictationState={dictationState}
+						dictationTranscriptPreview={dictationTranscriptPreview}
+						experimentalDarkCta
+						micStream={micStream}
+						onStartDictation={onStartDictation}
+						onStop={onStopDictation}
+						onStopDictation={onStopDictation}
+						showSubmitWhenEmpty
+						submitButtonClassName={surface.controlClassName}
+					/>
 				</>
 			}
 			addButton={
@@ -213,6 +243,7 @@ export function JiraActivityComposer({
 			allowOverflow
 			aria-label={placeholder}
 			className={cn("w-full", surface.chrome, className)}
+			inputContext={inputContext}
 			onSubmit={submit}
 		>
 			<PromptInputTextarea

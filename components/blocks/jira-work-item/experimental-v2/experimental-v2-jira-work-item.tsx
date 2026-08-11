@@ -16,12 +16,16 @@ import type {
 } from "@/components/blocks/jira-work-item/data/session-state";
 import { SESSION_EPOCH_MS } from "@/components/blocks/jira-work-item/data/session-fixtures";
 import type { WorkItemData } from "@/app/contexts/context-work-item-modal";
+import { ActivityChatCommentsProvider } from "@/components/blocks/jira-work-item/experimental-v2/context-activity-chat-comments";
 import {
 	JiraWorkItemProvider,
 	useJiraWorkItemMeta,
 	useJiraWorkItemState,
 } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
-import { MetadataRailProvider } from "@/components/blocks/jira-work-item/experimental-v2/context-metadata-rail";
+import {
+	MetadataRailProvider,
+	useMetadataRail,
+} from "@/components/blocks/jira-work-item/experimental-v2/context-metadata-rail";
 import { PanelLayoutProvider } from "@/components/blocks/jira-work-item/experimental-v2/context-panel-layout";
 import { ExperimentalWorkItemDialog } from "@/components/blocks/jira-work-item/experimental-v2/components/experimental-work-item-dialog";
 import { ExperimentalWorkItemLayout } from "@/components/blocks/jira-work-item/experimental-v2/components/experimental-work-item-layout";
@@ -63,6 +67,17 @@ interface ExperimentalV2JiraWorkItemBaseProps {
 	outputs?: readonly string[];
 	primaryCodingAgentId?: CodingAgentId;
 	pullRequestApprovalStates?: Readonly<Record<string, "available" | "approved">>;
+	/**
+	 * When this key changes to a non-null value, open the Activity metadata tab
+	 * and scroll to the latest entry (e.g. jira-agents Plan orchestration), or
+	 * to `revealActivityEntryId` when that prop is set.
+	 */
+	revealActivityKey?: string | number | null;
+	/**
+	 * Optional Activity entry id to scroll into view when `revealActivityKey`
+	 * changes (e.g. Claude Code on Build).
+	 */
+	revealActivityEntryId?: string | null;
 	stageKey?: string;
 	/** Override status pill options (defaults to RFP board columns). */
 	statusPhases?: readonly string[];
@@ -163,6 +178,7 @@ function ExperimentalV2JiraWorkItemContent({
 	const [descriptionViewMode, setDescriptionViewMode] = useState<EditorToolbarViewMode>("rendered");
 	const [selectedPullRequestIdentity, setSelectedPullRequestIdentity] = useState<string | null>(null);
 	const previousStageKeyRef = useRef(stageKey);
+	const { setPanelView, setSuppressActivityPanelReveal } = useMetadataRail();
 	const { chatSurface } = useRovoChat();
 	const { activityEvents } = useJiraWorkItemMeta();
 	const { elapsedMs } = useJiraWorkItemState();
@@ -207,10 +223,21 @@ function ExperimentalV2JiraWorkItemContent({
 		)) ?? null,
 		[pullRequestEntries, selectedPullRequestIdentity],
 	);
+	// Build/Plan revealActivityKey must not steal the rail away from PR Details.
+	useLayoutEffect(() => {
+		const suppressed = selectedPullRequestIdentity !== null;
+		setSuppressActivityPanelReveal(suppressed);
+		return () => {
+			setSuppressActivityPanelReveal(false);
+		};
+	}, [selectedPullRequestIdentity, setSuppressActivityPanelReveal]);
+	// Shared by Activity PR titles and "Review pull request" — open the PR and
+	// land on Details (PR overview / details rail), not the Activity tab.
 	const handlePullRequestSelect = (entry: JiraActivityEventEntry) => {
 		if (!entry.pullRequest) return;
 		const identity = getPullRequestIdentity(entry.pullRequest);
 		setSelectedPullRequestIdentity(identity);
+		setPanelView("details");
 	};
 	const selectedPullRequestApprovalState = selectedPullRequestIdentity
 		? pullRequestApprovalStates?.[selectedPullRequestIdentity]
@@ -218,7 +245,7 @@ function ExperimentalV2JiraWorkItemContent({
 
 	return (
 		<PanelLayoutProvider>
-			<MetadataRailProvider>
+			<ActivityChatCommentsProvider>
 				<LayoutGroup id={composerLayoutGroupId}>
 					<ExperimentalWorkItemDialog
 						inlineSurface={inlineSurface}
@@ -286,6 +313,7 @@ function ExperimentalV2JiraWorkItemContent({
 										activity={(
 											<ActivityPanel
 												activitySessionThread={activitySessionThread}
+												onOpenPullRequest={handlePullRequestSelect}
 												railChromeEnabled={selectedPullRequestEntry === null}
 											/>
 										)}
@@ -309,7 +337,7 @@ function ExperimentalV2JiraWorkItemContent({
 						/>
 					</ExperimentalWorkItemDialog>
 				</LayoutGroup>
-			</MetadataRailProvider>
+			</ActivityChatCommentsProvider>
 		</PanelLayoutProvider>
 	);
 }
@@ -368,25 +396,31 @@ export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWor
 				statusPhases={props.statusPhases}
 				workItem={workItem}
 			>
-				<ExperimentalV2JiraWorkItemContent
-					activitySessionThread={props.activitySessionThread}
-					automationRules={props.automationRules}
-					composerAgents={props.composerAgents}
-					inlineSurface={inlineSurface}
-					onAgentPromptSubmit={props.onAgentPromptSubmit}
-					onClose={onClose}
-					onOpenAgentChat={props.onOpenAgentChat}
-					onPullRequestApprove={props.onPullRequestApprove}
-					onSessionReply={props.onSessionReply}
-					onSkillInvoke={props.onSkillInvoke}
-					open={open}
-					outputs={props.outputs}
-					presentation={presentation}
-					primaryCodingAgentId={props.primaryCodingAgentId}
-					pullRequestApprovalStates={props.pullRequestApprovalStates}
-					stageKey={props.stageKey}
-					workItem={workItem}
-				/>
+				{/* Above content so pull-request select can switch the rail to Details. */}
+				<MetadataRailProvider
+					revealActivityEntryId={props.revealActivityEntryId}
+					revealActivityKey={props.revealActivityKey}
+				>
+					<ExperimentalV2JiraWorkItemContent
+						activitySessionThread={props.activitySessionThread}
+						automationRules={props.automationRules}
+						composerAgents={props.composerAgents}
+						inlineSurface={inlineSurface}
+						onAgentPromptSubmit={props.onAgentPromptSubmit}
+						onClose={onClose}
+						onOpenAgentChat={props.onOpenAgentChat}
+						onPullRequestApprove={props.onPullRequestApprove}
+						onSessionReply={props.onSessionReply}
+						onSkillInvoke={props.onSkillInvoke}
+						open={open}
+						outputs={props.outputs}
+						presentation={presentation}
+						primaryCodingAgentId={props.primaryCodingAgentId}
+						pullRequestApprovalStates={props.pullRequestApprovalStates}
+						stageKey={props.stageKey}
+						workItem={workItem}
+					/>
+				</MetadataRailProvider>
 			</JiraWorkItemProvider>
 		</WorkItemModalProvider>
 	);

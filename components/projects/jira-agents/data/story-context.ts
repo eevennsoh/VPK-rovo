@@ -1,7 +1,7 @@
 import type { WorkItemData } from "@/app/contexts/context-work-item-modal";
 import type { JiraWorkItemState } from "@/components/blocks/jira-work-item/data/session-state";
 
-import type { JiraAgentsStoryChapter } from "./hotfix-story";
+import type { JiraAgentsBuildStep, JiraAgentsStoryChapter } from "./hotfix-story";
 
 export const RAW_STORY_DESCRIPTION = [
 	"Checkout-funnel research shows that mandatory account creation is a major source of abandonment for first-time shoppers.",
@@ -65,10 +65,10 @@ const [RESEARCH_LINKED_ITEM] = STORY_LINKED_REFERENCES;
 /**
  * Renders one issue as a text-link reference line.
  *
- * The key + summary become a markdown link so the work item description and
- * chat suggestion both show them as text links. Hash hrefs match the metadata
- * rail's `#shop-…` targets and avoid leaking a full Atlassian browse URL when
- * a surface fails to resolve markdown.
+	 * The key + summary become a markdown link so the work item description and
+	 * chat suggestion both show them as text links. Hash hrefs match the metadata
+	 * rail's `#shop-…` targets and avoid leaking a full Atlassian browse URL when
+	 * a surface fails to resolve markdown.
  */
 function storyIssueReferenceLine(reference: StoryIssueReference): string {
 	const label = `${reference.key} ${reference.summary}`;
@@ -115,10 +115,19 @@ export const IMPROVED_STORY_DESCRIPTION = [
 export function createJiraAgentsStoryContextResources(
 	chapter: JiraAgentsStoryChapter,
 	workItem: WorkItemData,
-	options: Readonly<{ descriptionImproved?: boolean }> = {},
+	options: Readonly<{
+		buildStep?: JiraAgentsBuildStep;
+		descriptionImproved?: boolean;
+	}> = {},
 ): JiraWorkItemState["contextResources"] {
-	const implementationComplete = chapter !== "intake" && chapter !== "plan" && chapter !== "build";
-	const implementationInProgress = chapter === "build";
+	const buildStep = options.buildStep ?? "complete";
+	// Build's complete step is the former Handoff end state (implementation done).
+	// `ready` mirrors Plan end (Consult done, implementation not started yet).
+	const implementationComplete = chapter !== "intake"
+		&& chapter !== "plan"
+		&& (chapter !== "build" || buildStep === "complete");
+	const implementationInProgress = chapter === "build"
+		&& (buildStep === "implementing" || buildStep === "verifying");
 	// Applying the Improve description suggestion is what introduces the delivery
 	// breakdown: the improved description links these issues, so the rail has to
 	// show them from the same moment rather than waiting for the plan chapter.

@@ -1,5 +1,6 @@
 import AddIcon from "@atlaskit/icon/core/add";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
+import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import BranchIcon from "@atlaskit/icon/core/branch";
 import ProjectStatusIcon from "@atlaskit/icon/core/project-status";
 import StopwatchIcon from "@atlaskit/icon/core/stopwatch";
@@ -22,6 +23,7 @@ const EVENT_ICON: Record<JiraActivityEventIcon, typeof AddIcon> = {
 	delegated: AiAgentIcon,
 	"in-progress": ProjectStatusIcon,
 	linked: BranchIcon,
+	description: AlignTextLeftIcon,
 	"teamwork-graph": TeamworkGraphIcon,
 };
 
@@ -88,10 +90,12 @@ function EventGlyph({ icon }: Readonly<{ icon: JiraActivityEventIcon }>) {
  * clearance above/below, matching event glyphs in `h-6`) so the spine — a
  * sibling that only starts after the track — never sits flush on the icon.
  * That structural break is the timeline gap; opaque spine covers must not
- * stack on top of it. The avatar optically centers with the stacked
- * name/timestamp header. Content stays in the un-offset text column; the
- * in-thread reply composer pulls back across this slot to share the avatar
- * edge. Spine lifted from `components/ui/progress-tracker.tsx`.
+ * stack on top of it. Event copy beside this track uses `min-h-6` so mention
+ * chips can grow past 24px without changing this icon track. The avatar
+ * optically centers with the stacked name/timestamp header. Content stays in
+ * the un-offset text column; the in-thread reply composer pulls back across
+ * this slot to share the avatar edge. Spine lifted from
+ * `components/ui/progress-tracker.tsx`.
  */
 export function JiraActivityNode({
 	actor,

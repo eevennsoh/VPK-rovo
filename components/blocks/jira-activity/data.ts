@@ -58,9 +58,9 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 		timestamp: "14min ago",
 		segments: [
 			{ type: "text", text: "added " },
-			{ type: "lozenge", text: "Bug", variant: "danger" },
+			{ type: "label", text: "Bug", color: "red" },
 			{ type: "text", text: " and " },
-			{ type: "lozenge", text: "UI Polish", variant: "success" },
+			{ type: "label", text: "UI Polish", color: "green" },
 		],
 	},
 	{

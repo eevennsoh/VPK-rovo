@@ -188,6 +188,7 @@ function instantiateSession(params: {
 	}
 
 	const completeCount = steps.filter((step) => step.status === "complete").length;
+	const isPrivateSkill = params.agent.id.startsWith("skill:");
 
 	return {
 		id: params.id,
@@ -208,6 +209,8 @@ function instantiateSession(params: {
 		stepElapsedMs: 0,
 		resumedFromWait: params.resumedFromWait ?? false,
 		order: params.order,
+		// Skill runs are private until their output is published to the work item.
+		...(isPrivateSkill ? { activityVisibility: "private" as const } : {}),
 	};
 }
 
@@ -778,47 +781,50 @@ export function selectActivityEvents(state: Readonly<JiraWorkItemState>): Activi
 	// Agent-to-agent prompts reuse `role: "human"` with the upstream agent name;
 	// only surface a person invoker when the prompt author is not another session agent.
 	const sessionAgentNames = new Set(state.sessions.map((session) => session.agentName));
-	const agentEvents: ActivityEvent[] = state.sessions.map((session) => {
-		const lastAgentMessage = [...session.messages].reverse().find((message) => message.role === "agent");
-		const promptMessage = session.messages.find((message) => message.role === "human");
-		const humanInvoker = promptMessage && !sessionAgentNames.has(promptMessage.authorName)
-			? promptMessage
-			: undefined;
-		const script = SESSION_SCRIPTS[session.scriptId] ?? SESSION_SCRIPTS["general-assist"];
-		return {
-			id: `activity-${session.id}`,
-			kind: "agent",
-			sessionId: session.id,
-			agentId: session.agentId,
-			agentName: session.agentName,
-			agentAvatarSrc: session.agentAvatarSrc,
-			agentBrandName: session.agentBrandName,
-			status: session.status,
-			title: session.title ?? script.title,
-			branch: `rovo/${session.scriptId}`,
-			elapsedSeconds: Math.max(
-				0,
-				Math.floor((SESSION_EPOCH_MS + state.elapsedMs - session.startedAtMs) / 1000),
-			),
-			commandPreview: session.command,
-			responsePreview: lastAgentMessage?.content ?? session.previewText,
-			createdAtMs: session.startedAtMs,
-			...(humanInvoker
-				? {
-					invokedBy: {
-						name: humanInvoker.authorName,
-						...(humanInvoker.authorAvatarSrc
-							? { avatarSrc: humanInvoker.authorAvatarSrc }
-							: {}),
-					},
-				}
-				: {}),
-			waitingOn: session.waitingOn,
-			threadReplies: session.threadReplies,
-			progressChecklist: session.progressChecklist,
-			imageAttachment: session.imageAttachment,
-		};
-	});
+	const agentEvents: ActivityEvent[] = state.sessions
+		.filter((session) => session.activityVisibility !== "private")
+		.map((session) => {
+			const lastAgentMessage = [...session.messages].reverse().find((message) => message.role === "agent");
+			const promptMessage = session.messages.find((message) => message.role === "human");
+			const humanInvoker = promptMessage && !sessionAgentNames.has(promptMessage.authorName)
+				? promptMessage
+				: undefined;
+			const script = SESSION_SCRIPTS[session.scriptId] ?? SESSION_SCRIPTS["general-assist"];
+			return {
+				id: `activity-${session.id}`,
+				kind: "agent",
+				sessionId: session.id,
+				agentId: session.agentId,
+				agentName: session.agentName,
+				agentAvatarSrc: session.agentAvatarSrc,
+				agentBrandName: session.agentBrandName,
+				status: session.status,
+				title: session.title ?? script.title,
+				branch: `rovo/${session.scriptId}`,
+				elapsedSeconds: Math.max(
+					0,
+					Math.floor((SESSION_EPOCH_MS + state.elapsedMs - session.startedAtMs) / 1000),
+				),
+				commandPreview: session.command,
+				responsePreview: lastAgentMessage?.content ?? session.previewText,
+				createdAtMs: session.startedAtMs,
+				...(humanInvoker
+					? {
+						invokedBy: {
+							name: humanInvoker.authorName,
+							...(humanInvoker.authorAvatarSrc
+								? { avatarSrc: humanInvoker.authorAvatarSrc }
+								: {}),
+						},
+					}
+					: {}),
+				waitingOn: session.waitingOn,
+				threadReplies: session.threadReplies,
+				progressChecklist: session.progressChecklist,
+				outputs: session.outputs,
+				imageAttachment: session.imageAttachment,
+			};
+		});
 	return [...state.staticEvents, ...humanEvents, ...agentEvents].sort((a, b) => a.createdAtMs - b.createdAtMs);
 }
 

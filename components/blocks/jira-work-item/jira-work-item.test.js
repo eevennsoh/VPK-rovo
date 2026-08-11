@@ -496,9 +496,12 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	assert.match(activityComposerSource, /actions\.invokeAgent\([\s\S]*id: mentionedAgentSession\.agentId[\s\S]*"prompt",[\s\S]*text/u);
 	assert.match(activityComposerSource, /submitAccessory=\{startsNewSession \? \([\s\S]*<Tag[\s\S]*onRemove=\{\(\) => chooseSessionTarget\("continue"\)\}[\s\S]*New session/u);
 	assert.match(jiraActivityComposerSource, /submitAccessory\?: ReactNode;/u);
-	// The accessory renders immediately before the disabled-aware submit CTA,
-	// which is the shared VPK Button (not a prompt-input primitive).
-	assert.match(jiraActivityComposerSource, /\{submitAccessory\}[\s\S]*<Button[\s\S]*disabled=\{!canSubmit\}[\s\S]*type="submit"/u);
+	// The accessory renders immediately before the shared action rail (dictation
+	// mic + disabled-aware submit), not a local submit Button.
+	assert.match(
+		jiraActivityComposerSource,
+		/\{submitAccessory\}[\s\S]*<RovoComposerActionButton[\s\S]*canSubmit=\{canSubmit\}[\s\S]*showSubmitWhenEmpty/u,
+	);
 	assert.match(activityComposerSource, /value=\{draft\}/u);
 	assert.doesNotMatch(activityComposerSource, /import \{ FloatingComposer \}|PromptInputTextarea|RovoComposerActionButton/u);
 	assert.doesNotMatch(activityComposerSource, /ActivitySuggestionMenu|TRAILING_TOKEN|buildItems/u);
@@ -1081,7 +1084,7 @@ test("Details renders 24px assignee/reporter avatars and a stacked Agents group"
 	assert.match(editorSource, /shown\.map\(\(member\) => \([\s\S]*<AgentAvatar key=\{member\.id\} member=\{member\} \/>/u);
 });
 
-test("an invoked skill is immediately visible in Activity and remains steerable", async () => {
+test("an invoked skill stays private in Activity while remaining steerable", async () => {
 	const model = await loadSessionModel();
 	let state = model.hydratePreset("empty", TEST_WORK_ITEM);
 	state = model.jiraWorkItemReducer(state, {
@@ -1092,21 +1095,24 @@ test("an invoked skill is immediately visible in Activity and remains steerable"
 		title: "Summarize comments",
 	});
 
-	const [event] = model.selectActivityEvents(state);
-	assert.equal(event.kind, "agent");
-	assert.equal(event.agentId, "skill:summarize-comments");
-	assert.equal(event.agentName, "Rovo");
-	assert.equal(event.title, "Summarize comments");
-	assert.equal(event.commandPreview, "/Summarize comments");
-	assert.equal(event.status, "running");
-	assert.deepEqual(event.invokedBy, { name: "You" });
+	const skillSession = state.sessions[0];
+	assert.equal(skillSession.activityVisibility, "private");
+	assert.equal(skillSession.agentId, "skill:summarize-comments");
+	assert.equal(skillSession.title, "Summarize comments");
+	assert.equal(skillSession.command, "/Summarize comments");
+	assert.equal(skillSession.status, "running");
+	// Private skill runs stay out of the shared Activity feed.
+	assert.equal(
+		model.selectActivityEvents(state).filter((event) => event.kind === "agent").length,
+		0,
+	);
 
 	state = model.jiraWorkItemReducer(state, {
 		type: "reply-session",
-		sessionId: event.sessionId,
+		sessionId: skillSession.id,
 		text: "/Summarize comments Focus on unresolved decisions.",
 	});
-	assert.equal(state.activeSessionId, event.sessionId);
+	assert.equal(state.activeSessionId, skillSession.id);
 	assert.ok(state.sessions[0].messages.some((message) => message.content.includes("Focus on unresolved decisions.")));
 });
 

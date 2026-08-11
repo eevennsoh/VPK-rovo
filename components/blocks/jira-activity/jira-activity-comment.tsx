@@ -2,25 +2,18 @@
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 
-import Image from "next/image";
-
 import GrowVerticalIcon from "@atlaskit/icon/core/grow-vertical";
 
 import type { AgentListItem } from "@/components/blocks/agent-list";
-import {
-	Attachment,
-	AttachmentContent,
-	AttachmentDescription,
-	AttachmentMedia,
-	AttachmentTitle,
-	AttachmentTrigger,
-} from "@/components/ui/attachment";
 import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { ArtifactList, type ArtifactListItem } from "@/components/ui-custom/artifact-list";
 import type { RichTextMentionItem } from "@/components/ui-custom/rich-text-editor";
+import { cn } from "@/lib/utils";
 
+import { JiraActivityAddToChatButton } from "./jira-activity-add-to-chat-button";
 import { JiraActivityCard } from "./jira-activity-card";
 import { JiraActivityCommentActions } from "./jira-activity-comment-actions";
 import { JiraActivityComposer } from "./jira-activity-composer";
@@ -28,6 +21,7 @@ import { JiraActivitySegments } from "./jira-activity-segments";
 import type {
 	JiraActivityActor,
 	JiraActivityCommentEntry,
+	JiraActivityImageAttachment,
 	JiraActivityReaction,
 	JiraActivityReply,
 } from "./jira-activity-types";
@@ -41,6 +35,31 @@ function initialsOf(name: string): string {
 			.map((word) => word[0]?.toUpperCase())
 			.join("") || "?"
 	);
+}
+
+function imageAttachmentArtifact(attachment: JiraActivityImageAttachment): ArtifactListItem {
+	return {
+		id: attachment.filename,
+		title: attachment.filename,
+		// ArtifactList `source` is the object-type byline (e.g. "Confluence page").
+		source: "Image",
+		// Compact ArtifactList logo tiles are 24×24 — fill that tile with the
+		// generated screenshot so activity evidence matches output rows.
+		logoSrc: attachment.src,
+		href: attachment.href ?? attachment.src,
+	};
+}
+
+function commentArtifactItems(entry: JiraActivityCommentEntry): ArtifactListItem[] {
+	return [
+		...(entry.outputs ?? []),
+		...(entry.imageAttachment ? [imageAttachmentArtifact(entry.imageAttachment)] : []),
+	];
+}
+
+function openCommentArtifact(item: ArtifactListItem) {
+	if (!item.href) return;
+	window.open(item.href, "_blank", "noopener,noreferrer");
 }
 
 function getReplyMention(actor: JiraActivityActor): RichTextMentionItem {
@@ -161,6 +180,7 @@ function ThreadReplyCard({
 	allowReply,
 	replyComposerId,
 	replySelected,
+	onAddToChat,
 	onViewSession,
 }: Readonly<{
 	reply: JiraActivityReply;
@@ -171,6 +191,7 @@ function ThreadReplyCard({
 	allowReply: boolean;
 	replyComposerId?: string;
 	replySelected: boolean;
+	onAddToChat?: () => void;
 	onViewSession?: (item: AgentListItem) => void;
 }>) {
 	const [reactions, setReactions] = useState<readonly JiraActivityReaction[]>(reply.reactions ?? []);
@@ -200,9 +221,14 @@ function ThreadReplyCard({
 		...reactionActorNames(reaction, actorsById),
 	}));
 
+	const addToChatAction = onAddToChat ? (
+		<JiraActivityAddToChatButton onClick={onAddToChat} />
+	) : null;
+
 	return (
 		<div className="pt-3 pl-6">
 			<JiraActivityCard
+				action={addToChatAction ?? undefined}
 				agentName={reply.actor.name}
 				className="rounded-none"
 				activityGroup="activity-reply"
@@ -246,6 +272,8 @@ export function JiraActivityComment({
 	actorsById,
 	onSubmitReply,
 	onToggleReaction,
+	onAddToChat,
+	onAddReplyToChat,
 	onViewSession,
 	action,
 	commentActions = "reply-and-reactions",
@@ -255,6 +283,8 @@ export function JiraActivityComment({
 	actorsById: ReadonlyMap<string, JiraActivityActor>;
 	onSubmitReply: (body: string) => void;
 	onToggleReaction: (emoji: string) => void;
+	onAddToChat?: () => void;
+	onAddReplyToChat?: (reply: JiraActivityReply) => void;
 	onViewSession?: (item: AgentListItem) => void;
 	action?: ReactNode;
 	commentActions?: "none" | "reactions" | "reply-and-reactions";
@@ -268,7 +298,7 @@ export function JiraActivityComment({
 		actor: JiraActivityActor;
 	} | null>(null);
 	const [replyDraft, setReplyDraft] = useState("");
-	const [repliesExpanded, setRepliesExpanded] = useState(true);
+	const [repliesExpanded, setRepliesExpanded] = useState(entry.defaultRepliesExpanded ?? true);
 	const composerId = useId();
 	const repliesId = useId();
 	const composerVisible = allowReply && (!collapsible || replyTarget !== null);
@@ -299,7 +329,7 @@ export function JiraActivityComment({
 		setReplyDraft("");
 	}
 
-	const repliesToggleLabel = repliesExpanded ? "Collapse nested comments" : "Expand nested comments";
+	const repliesToggleLabel = repliesExpanded ? "Hide all replies" : "Show all replies";
 	const repliesToggle = hasReplies ? (
 		<Button
 			aria-controls={repliesId}
@@ -315,9 +345,14 @@ export function JiraActivityComment({
 			<GrowVerticalIcon label="" />
 		</Button>
 	) : null;
-	const headerAction = action || repliesToggle ? (
-		<div className="flex shrink-0 items-center gap-2">
+	const addToChatAction = onAddToChat ? (
+		<JiraActivityAddToChatButton onClick={onAddToChat} />
+	) : null;
+	// Far-right: optional consumer action, Add to chat, then expand/collapse.
+	const headerAction = action || repliesToggle || addToChatAction ? (
+		<div className="flex shrink-0 items-center gap-1">
 			{action}
+			{addToChatAction}
 			{repliesToggle}
 		</div>
 	) : undefined;
@@ -339,6 +374,7 @@ export function JiraActivityComment({
 		<CollapsedThreadSummary onExpand={() => setRepliesExpanded(true)} replies={replies} />
 	) : null;
 	const replyMention = replyTarget ? getReplyMention(replyTarget.actor) : undefined;
+	const artifactItems = commentArtifactItems(entry);
 
 	// Only the collapse direction is handled here. Opening is covered by the
 	// composer's own `autoFocus`: the comment variant is a contentEditable tiptap
@@ -417,7 +453,7 @@ export function JiraActivityComment({
 				hasReplies ? (
 					<div
 						aria-label="Replies"
-						className="grid gap-2"
+						className={cn("grid gap-2", repliesExpanded ? null : "hidden")}
 						hidden={!repliesExpanded}
 						id={repliesId}
 						role="group"
@@ -429,6 +465,11 @@ export function JiraActivityComment({
 								currentUser={currentUser}
 								actorsById={actorsById}
 								key={reply.id}
+								onAddToChat={
+									onAddReplyToChat
+										? () => onAddReplyToChat(reply)
+										: undefined
+								}
 								onReply={(button) => toggleReply(reply.id, reply.actor, button)}
 								onViewSession={onViewSession}
 								reply={reply}
@@ -444,45 +485,31 @@ export function JiraActivityComment({
 		>
 			<JiraActivitySegments className="text-sm leading-5 text-text" segments={entry.body} />
 			{entry.progressChecklist?.length ? (
-				<ul aria-label="Agent progress" className="mt-3 grid gap-1.5">
+				<ul aria-label="Agent progress" className="mt-3 grid min-w-0 gap-1.5">
 					{entry.progressChecklist.map((item) => (
 						<li className="flex min-w-0 items-start gap-2 text-sm leading-5 text-text" key={item.id}>
 							<Checkbox
 								aria-label={`${item.label}: ${item.completed ? "complete" : "incomplete"}`}
 								checked={item.completed}
-								className="mt-0.5 disabled:opacity-100"
+								className="mt-0.5 shrink-0 disabled:opacity-100"
 								disabled
 							/>
-							<span className={item.completed ? "text-text-subtle" : undefined}>{item.label}</span>
+							<span className={cn("min-w-0 wrap-break-word", item.completed ? "text-text-subtle" : null)}>
+								{item.label}
+							</span>
 						</li>
 					))}
 				</ul>
 			) : null}
-			{entry.imageAttachment ? (
-				<Attachment className="mt-3 w-full max-w-sm" size="sm">
-					<AttachmentMedia variant="image">
-						<Image
-							alt={entry.imageAttachment.alt}
-							height={160}
-							src={entry.imageAttachment.src}
-							width={160}
-						/>
-					</AttachmentMedia>
-					<AttachmentContent>
-						<AttachmentTitle>{entry.imageAttachment.filename}</AttachmentTitle>
-						<AttachmentDescription>Final design screenshot</AttachmentDescription>
-					</AttachmentContent>
-					<AttachmentTrigger
-						render={
-							<a
-								aria-label={`Preview ${entry.imageAttachment.filename}`}
-								href={entry.imageAttachment.href ?? entry.imageAttachment.src}
-								rel="noreferrer"
-								target="_blank"
-							/>
-						}
-					/>
-				</Attachment>
+			{artifactItems.length > 0 ? (
+				<ArtifactList
+					className="mt-3 min-w-0 max-w-full border border-border bg-transparent shadow-none"
+					items={artifactItems}
+					onOpen={openCommentArtifact}
+					openLabel="Open"
+					style={{ boxShadow: "none" }}
+					variant="compact"
+				/>
 			) : null}
 		</JiraActivityCard>
 	);

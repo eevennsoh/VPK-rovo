@@ -19,6 +19,12 @@ test("experimental v2 removes the description row and relocates Activity chrome 
 	const layoutSource = readBlockFile("experimental-v2/components/experimental-work-item-layout.tsx");
 	assert.match(activityPanelSource, /useSetActivityRailChrome/u);
 	assert.match(activityPanelSource, /hideHeader=\{hideHeader\}/u);
+	// Activity root shrinks in the metadata flex column so long cards don't grow a cross-axis bar.
+	assert.match(
+		activityPanelSource,
+		/<div ref=\{activityRootRef\} className="min-w-0 max-w-full" data-jira-work-item-activity>/u,
+	);
+	assert.match(activityPanelSource, /className="min-w-0 gap-2"/u);
 	assert.match(
 		activityPanelSource,
 		/headerClassName=\{\s*hideHeader\s*\?\s*undefined\s*:\s*"sticky top-0 z-10 flex min-h-8 items-center bg-surface-overlay \[container-type:scroll-state\]"/u,
@@ -173,7 +179,7 @@ test("experimental v2 shows a read-only title-meta PR Tag and opens PRs from Con
 	// Composition wires PR entries into the dialog title Tag and ContextHeader Select.
 	assert.match(
 		compositionSource,
-		/<MetadataRailProvider>/u,
+		/<MetadataRailProvider[\s\S]*revealActivityEntryId=\{props\.revealActivityEntryId\}[\s\S]*revealActivityKey=\{props\.revealActivityKey\}/u,
 	);
 	assert.doesNotMatch(compositionSource, /MetadataRailProvider pullRequestCount=/u);
 	assert.match(
@@ -269,6 +275,40 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 		/requestExpandPullRequestSection[\s\S]*pullRequestSectionExpandRequest/u,
 	);
 	assert.match(
+		metadataRailContextSource,
+		/requestRevealLatestActivity[\s\S]*activityRevealRequest/u,
+	);
+	assert.match(
+		metadataRailContextSource,
+		/const requestRevealLatestActivity = useCallback\(\(entryId\?: string\) => \{[\s\S]*setPanelView\("activity"\)[\s\S]*setActivityRevealRequest/u,
+	);
+	assert.match(
+		metadataRailContextSource,
+		/entryId\?: string/u,
+	);
+	assert.match(
+		metadataRailContextSource,
+		/revealActivityEntryId(?:\s*=\s*null)?/u,
+	);
+	// revealActivityKey must not steal Details while a PR is open — consume the
+	// key but skip requestRevealLatestActivity when suppress is set.
+	assert.match(
+		metadataRailContextSource,
+		/setSuppressActivityPanelReveal/u,
+	);
+	assert.match(
+		metadataRailContextSource,
+		/suppressActivityPanelRevealRef/u,
+	);
+	assert.match(
+		metadataRailContextSource,
+		/previousRevealActivityKeyRef\.current = revealActivityKey;[\s\S]*if \(suppressActivityPanelRevealRef\.current\) return;[\s\S]*requestRevealLatestActivity\(revealActivityEntryId \?\? undefined\)/u,
+	);
+	assert.match(
+		metadataRailContextSource,
+		/consumeActivityRevealRequest/u,
+	);
+	assert.match(
 		readBlockFile("experimental-v2/lib/metadata-rail-view.ts"),
 		/export type MetadataRailView = "details" \| "activity"/u,
 	);
@@ -278,9 +318,17 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	);
 	assert.match(
 		compositionSource,
-		/<MetadataRailProvider>/u,
+		/<MetadataRailProvider[\s\S]*revealActivityEntryId=\{props\.revealActivityEntryId\}[\s\S]*revealActivityKey=\{props\.revealActivityKey\}/u,
 	);
 	assert.doesNotMatch(compositionSource, /MetadataRailProvider pullRequestCount=/u);
+	assert.match(
+		metadataRailContextSource,
+		/revealActivityKey(?:\s*=\s*null)?/u,
+	);
+	assert.match(
+		metadataRailContextSource,
+		/revealActivityEntryId(?:\s*=\s*null)?/u,
+	);
 	assert.match(
 		metadataRailSource,
 		/import \{ useMetadataRail \} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/context-metadata-rail"/u,
@@ -305,7 +353,7 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	);
 	assert.match(
 		metadataRailSource,
-		/relative min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-none/u,
+		/relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-none/u,
 	);
 	// Activity chrome lives in MetadataRailToggle; its soft mask follows body
 	// scroll state while the body scrollport keeps its bottom-only mask.
@@ -357,7 +405,7 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	assert.doesNotMatch(metadataRailToggleSource, /data-jira-work-item-column-chrome-fill/u);
 	assert.match(
 		metadataRailSource,
-		/data-jira-work-item-column-chrome[\s\S]*relative min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-none[\s\S]*data-jira-work-item-scroll-region/u,
+		/data-jira-work-item-column-chrome[\s\S]*relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-none[\s\S]*data-jira-work-item-scroll-region/u,
 	);
 	assert.match(
 		metadataRailSource,
@@ -585,7 +633,7 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	);
 	assert.match(
 		metadataRailSource,
-		/activity != null \? \(\s*<div[\s\S]*?className="overflow-visible px-3"[\s\S]*?hidden=\{pullRequestSelected \|\| activePanelView !== "activity"\}[\s\S]*inert=\{pullRequestSelected \|\| activePanelView !== "activity" \? true : undefined\}[\s\S]*\{activity\}/u,
+		/activity != null \? \(\s*<div[\s\S]*?className="min-w-0 max-w-full overflow-visible px-3"[\s\S]*?hidden=\{pullRequestSelected \|\| activePanelView !== "activity"\}[\s\S]*inert=\{pullRequestSelected \|\| activePanelView !== "activity" \? true : undefined\}[\s\S]*\{activity\}/u,
 	);
 	assert.doesNotMatch(
 		metadataRailSource,
@@ -646,7 +694,7 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	);
 	assert.match(
 		compositionSource,
-		/<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*activitySessionThread=\{activitySessionThread\}[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}/u,
+		/<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*activitySessionThread=\{activitySessionThread\}[\s\S]*onOpenPullRequest=\{handlePullRequestSelect\}[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}/u,
 	);
 	// Activity lives only in the metadata rail Details/Activity toggle — not under description.
 	assert.equal(
@@ -662,6 +710,7 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 
 test("experimental v2 keeps pull-request selection transient at the composition layer", () => {
 	const adapterSource = readBlockFile("experimental-v2/lib/jira-activity-adapter.ts");
+	const activityPanelSource = readBlockFile("experimental-v2/components/activity-panel.tsx");
 	const compositionSource = readBlockFile("experimental-v2/experimental-v2-jira-work-item.tsx");
 	const contextPanelSource = readBlockFile("experimental-v2/components/context-panel.tsx");
 	const contextResourcesSource = readBlockFile("experimental-v2/components/context-resources.tsx");
@@ -678,7 +727,14 @@ test("experimental v2 keeps pull-request selection transient at the composition 
 		compositionSource,
 		/useState<string \| null>\(null\)[\s\S]*selectPullRequestEntries\(activityEvents, SESSION_EPOCH_MS \+ elapsedMs\)[\s\S]*pullRequestEntries\.find\([\s\S]*getPullRequestIdentity\(entry\.pullRequest\) === selectedPullRequestIdentity/u,
 	);
-	assert.match(compositionSource, /setSelectedPullRequestIdentity\(identity\);/u);
+	assert.match(
+		compositionSource,
+		/setSelectedPullRequestIdentity\(identity\);[\s\S]*setPanelView\("details"\);/u,
+	);
+	assert.match(
+		compositionSource,
+		/const \{ setPanelView, setSuppressActivityPanelReveal \} = useMetadataRail\(\);/u,
+	);
 	assert.match(compositionSource, /<JiraWorkItemProvider[\s\S]*initialStateRevision=\{props\.initialStateRevision\}/u);
 	assert.match(compositionSource, /setSelectedPullRequestIdentity\(null\);[\s\S]*\}, \[stageKey\]\);/u);
 	assert.match(compositionSource, /<ExperimentalV2JiraWorkItemContent[\s\S]*stageKey=\{props\.stageKey\}/u);
@@ -701,7 +757,7 @@ test("experimental v2 keeps pull-request selection transient at the composition 
 	);
 	assert.match(
 		compositionSource,
-		/<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}[\s\S]*\/>/u,
+		/<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*onOpenPullRequest=\{handlePullRequestSelect\}[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}[\s\S]*\/>/u,
 	);
 	assert.doesNotMatch(
 		compositionSource,
@@ -718,6 +774,34 @@ test("experimental v2 keeps pull-request selection transient at the composition 
 	assert.match(
 		contextResourcesSource,
 		/<PullRequestsSelect[\s\S]*entries=\{pullRequestEntries\}[\s\S]*selectedIdentity=\{selectedPullRequestIdentity\}[\s\S]*onClearSelection=\{onPullRequestClear\}[\s\S]*onSelectEntry=\{onPullRequestSelect\}/u,
+	);
+	// Activity PR title rows reuse the same select handler as Review pull request,
+	// and that handler switches the metadata rail to Details (not Activity).
+	assert.match(
+		activityPanelSource,
+		/onOpenPullRequest\?: \(entry: JiraActivityEventEntry\) => void/u,
+	);
+	assert.match(
+		activityPanelSource,
+		/<JiraActivity[\s\S]*onOpenPullRequest=\{onOpenPullRequest\}/u,
+	);
+	assert.match(
+		compositionSource,
+		/const handlePullRequestSelect = \(entry: JiraActivityEventEntry\) => \{[\s\S]*setSelectedPullRequestIdentity\(identity\);[\s\S]*setPanelView\("details"\);[\s\S]*\};/u,
+	);
+	// Opening a PR suppresses Build/Plan reveal-driven Activity switches so the
+	// Details + PR overview surface stays put through subsequent build timers.
+	assert.match(
+		compositionSource,
+		/const \{ setPanelView, setSuppressActivityPanelReveal \} = useMetadataRail\(\);/u,
+	);
+	assert.match(
+		compositionSource,
+		/useLayoutEffect\(\(\) => \{[\s\S]*const suppressed = selectedPullRequestIdentity !== null;[\s\S]*setSuppressActivityPanelReveal\(suppressed\);[\s\S]*return \(\) => \{[\s\S]*setSuppressActivityPanelReveal\(false\);[\s\S]*\};[\s\S]*\}, \[selectedPullRequestIdentity, setSuppressActivityPanelReveal\]\);/u,
+	);
+	assert.match(
+		compositionSource,
+		/onPullRequestSelect=\{handlePullRequestSelect\}[\s\S]*onOpenPullRequest=\{handlePullRequestSelect\}/u,
 	);
 
 	// Select options are Pull Request block cards (display-only; SelectItem activates).

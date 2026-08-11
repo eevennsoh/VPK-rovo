@@ -10,6 +10,8 @@ export type PullRequestHeaderMergeState =
 	| "merge-conflicts"
 	| "review-required"
 	| "ready";
+/** Merge strategy selected in the merge options chevron menu. */
+export type PullRequestHeaderMergeMethod = "squash" | "merge" | "rebase";
 
 export interface PullRequestHeaderProps
 	extends Omit<HTMLMotionProps<"header">, "children"> {
@@ -35,12 +37,19 @@ export interface PullRequestHeaderProps
 	 * Merge split-button primary label state.
 	 * `"checks-failed"` → "Checks failed", `"checks-running"` → "Checks running",
 	 * `"merge-conflicts"` → "Merge conflicts", `"review-required"` →
-	 * "Review required", `"ready"` → "Merge". Defaults to `"ready"`.
+	 * "Review required", `"ready"` → the selected merge method label.
+	 * Defaults to `"ready"`.
 	 * Primary actions are enabled when their matching callback is available.
 	 * `merge-conflicts` stays disabled (no related primary action yet). The
-	 * chevron menu stays available for Auto merge.
+	 * chevron menu stays available for merge method + Auto merge.
 	 */
 	mergeState?: PullRequestHeaderMergeState;
+	/** Controlled merge method selection (chevron menu radio group). */
+	mergeMethod?: PullRequestHeaderMergeMethod;
+	/** Uncontrolled merge method default. Defaults to `"squash"`. */
+	defaultMergeMethod?: PullRequestHeaderMergeMethod;
+	/** Called when a merge method radio option is selected. */
+	onMergeMethodChange?: (method: PullRequestHeaderMergeMethod) => void;
 	/** Controlled Auto merge switch state (menu option). */
 	autoMerge?: boolean;
 	/** Uncontrolled Auto merge default. Defaults to `true` (on). */
