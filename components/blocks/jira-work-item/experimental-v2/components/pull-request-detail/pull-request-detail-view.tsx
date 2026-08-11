@@ -71,11 +71,29 @@ export function PullRequestDetailView({
 		);
 	}
 
+	const tabNavigation = review ? (
+		<TabsList
+			aria-label="Pull request details"
+			className="w-full justify-start"
+			variant="line"
+		>
+			<TabsTrigger value="details">Overview</TabsTrigger>
+			<TabsTrigger value="guide">Guide</TabsTrigger>
+			<TabsTrigger value="code">
+				<span>{review.files.length} Files</span>
+				<span className="inline-flex items-center gap-1 tabular-nums">
+					<span className="text-text-success">+{data.additions}</span>
+					<span className="text-text-danger">-{data.deletions}</span>
+				</span>
+			</TabsTrigger>
+		</TabsList>
+	) : undefined;
 	const header = (
 		<PullRequestDetailHeader
 			data={data}
 			onGuideOpen={review ? () => setActiveTab("guide") : undefined}
 			scrollContainerRef={scrollContainerRef}
+			tabNavigation={tabNavigation}
 		/>
 	);
 
@@ -95,21 +113,8 @@ export function PullRequestDetailView({
 					 * Sticky stack inside the body-only left-column scrollport;
 					 * header + tabs stay anchored together below ContextResources.
 					 */}
-					<div className="sticky top-0 z-10 flex shrink-0 flex-col gap-4 bg-surface">
+					<div className="sticky top-0 z-10 shrink-0 bg-surface">
 						{header}
-						<div className="shrink-0">
-							<TabsList aria-label="Pull request details" className="w-full justify-start" variant="line">
-								<TabsTrigger value="details">Overview</TabsTrigger>
-								<TabsTrigger value="guide">Guide</TabsTrigger>
-								<TabsTrigger value="code">
-									<span>{review.files.length} Files</span>
-									<span className="inline-flex items-center gap-1 tabular-nums">
-										<span className="text-text-success">+{data.additions}</span>
-										<span className="text-text-danger">-{data.deletions}</span>
-									</span>
-								</TabsTrigger>
-							</TabsList>
-						</div>
 					</div>
 					<div className="min-h-0 flex-1 py-5">
 						<TabsContent value="details">

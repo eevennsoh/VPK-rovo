@@ -9,9 +9,11 @@ import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
+import StatusErrorIcon from "@atlaskit/icon/core/status-error";
 
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
+import { Icon } from "@/components/ui/icon";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -117,12 +119,14 @@ function isMergePrimaryEnabled({
 	mergeState,
 	onChecksFailedClick,
 	onChecksRunningClick,
+	onMergeConflictsClick,
 	onMergeClick,
 	onReviewRequiredClick,
 }: Readonly<{
 	mergeState: PullRequestHeaderMergeState;
 	onChecksFailedClick?: () => void;
 	onChecksRunningClick?: () => void;
+	onMergeConflictsClick?: () => void;
 	onMergeClick?: () => void;
 	onReviewRequiredClick?: () => void;
 }>): boolean {
@@ -136,8 +140,7 @@ function isMergePrimaryEnabled({
 		case "review-required":
 			return Boolean(onReviewRequiredClick);
 		case "merge-conflicts":
-			// No related primary action yet (conflicts UI is not wired).
-			return false;
+			return Boolean(onMergeConflictsClick);
 		default: {
 			const _exhaustive: never = mergeState;
 			return _exhaustive;
@@ -260,6 +263,7 @@ export function PullRequestHeader({
 	variant,
 	scrollContainerRef,
 	collapseOffset = DEFAULT_COLLAPSE_OFFSET,
+	tabNavigation,
 	number,
 	title,
 	status,
@@ -278,10 +282,12 @@ export function PullRequestHeader({
 	onMergeClick,
 	onChecksFailedClick,
 	onChecksRunningClick,
+	onMergeConflictsClick,
 	onReviewRequiredClick,
 	onConvertToDraftClick,
 	onClosePullRequestClick,
 	className,
+	style,
 	...props
 }: Readonly<PullRequestHeaderProps>) {
 	const shouldReduceMotion = useReducedMotion() ?? false;
@@ -350,6 +356,7 @@ export function PullRequestHeader({
 		mergeState,
 		onChecksFailedClick,
 		onChecksRunningClick,
+		onMergeConflictsClick,
 		onMergeClick,
 		onReviewRequiredClick,
 	});
@@ -373,6 +380,7 @@ export function PullRequestHeader({
 				onReviewRequiredClick?.();
 				return;
 			case "merge-conflicts":
+				onMergeConflictsClick?.();
 				return;
 			default: {
 				const _exhaustive: never = mergeState;
@@ -383,16 +391,30 @@ export function PullRequestHeader({
 
 	return (
 		<motion.header
-			className={cn("border-b border-border pb-4", className)}
+			className={cn(
+				"border-border",
+				tabNavigation
+					? "pt-4"
+					: "border-b pb-4",
+				className,
+			)}
 			layout={shouldReduceMotion ? false : true}
 			transition={
 				shouldReduceMotion
 					? { layout: INSTANT_TRANSITION }
 					: { layout: LAYOUT_TRANSITION }
 			}
+			style={tabNavigation
+				? {
+					...style,
+					borderBottomLeftRadius: 6,
+					borderBottomRightRadius: 6,
+				}
+				: style}
 			{...props}
 		>
 			<motion.div
+				className={tabNavigation ? "px-4" : undefined}
 				layout={shouldReduceMotion ? false : "position"}
 				transition={{ layout: LAYOUT_TRANSITION }}
 			>
@@ -440,6 +462,19 @@ export function PullRequestHeader({
 								>
 									{mergeState === "checks-running" ? (
 										<Spinner data-icon="inline-start" size="xs" />
+									) : null}
+									{mergeState === "merge-conflicts" ? (
+										<Icon
+											className="text-icon-danger!"
+											data-icon="inline-start"
+											render={
+												<StatusErrorIcon
+													color="currentColor"
+													label=""
+													size="small"
+												/>
+											}
+										/>
 									) : null}
 									{mergeStateLabel(mergeState, selectedMergeMethod)}
 								</Button>
@@ -589,7 +624,7 @@ export function PullRequestHeader({
 						</ButtonGroup>
 					</ButtonGroup>
 				</motion.div>
-				<AnimatePresence initial={false}>
+				<AnimatePresence initial={false} mode="popLayout">
 					{resolvedVariant === "expanded" ? (
 						<motion.div
 							animate={{ opacity: 1, transform: "translateY(0px)" }}
@@ -639,6 +674,20 @@ export function PullRequestHeader({
 						) : null}
 					</AnimatePresence>
 				</motion.div>
+			{tabNavigation ? (
+				<motion.div
+					className={cn(
+						"relative z-10 mt-4 shrink-0 transition-[padding-left,padding-right] duration-medium ease-in-out motion-reduce:transition-none [&_[data-slot=tabs-list]]:border-b-0",
+						resolvedVariant === "compact"
+							? "px-[clamp(5rem,20%,14rem)]"
+							: "px-[clamp(4rem,15.625%,11rem)]",
+					)}
+					layout={shouldReduceMotion ? false : "position"}
+					transition={{ layout: LAYOUT_TRANSITION }}
+				>
+					{tabNavigation}
+				</motion.div>
+			) : null}
 		</motion.header>
 	);
 }

@@ -418,13 +418,13 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		detailViewSource,
-		/sticky top-0 z-10 flex shrink-0 flex-col gap-4 bg-surface/u,
+		/sticky top-0 z-10 shrink-0 bg-surface/u,
 	);
 	assert.match(
 		detailViewSource,
-		/sticky top-0 z-10 flex shrink-0 flex-col gap-4 bg-surface[\s\S]*<TabsList/u,
+		/const tabNavigation = review \? \([\s\S]*<TabsList[\s\S]*<PullRequestDetailHeader[\s\S]*tabNavigation=\{tabNavigation\}/u,
 	);
-	assert.match(detailViewSource, /className="shrink-0"/u);
+	assert.doesNotMatch(detailViewSource, /sticky top-0 z-10[^"\n]*gap-4/u);
 	assert.doesNotMatch(detailViewSource, /shrink-0 px-4 sm:px-6/u);
 	assert.match(detailViewSource, /min-h-0 flex-1 py-5/u);
 	assert.doesNotMatch(detailViewSource, /overflow-hidden|overflow-y-auto|useRef<HTMLDivElement/u);
@@ -482,6 +482,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 		headerSource,
 		/<PullRequestHeader[\s\S]*number=\{data\.number\}[\s\S]*title=\{data\.title\}[\s\S]*status=\{data\.status\}/u,
 	);
+	assert.match(headerSource, /tabNavigation=\{tabNavigation\}/u);
 	assert.doesNotMatch(headerSource, /px-4 py-4 sm:px-6/u);
 	assert.match(overviewSource, /rounded-lg border border-border p-4/u);
 	assert.match(
@@ -516,11 +517,11 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		headerSource,
-		/const openChecks = \(\) => \{[\s\S]*setPanelView\("details"\)[\s\S]*requestExpandPullRequestSection\(data\.identity, PULL_REQUEST_CHECKS_SECTION_ID\)[\s\S]*onChecksFailedClick=\{openChecks\}[\s\S]*onChecksRunningClick=\{openChecks\}/u,
+		/const openChecks = \(\) => \{[\s\S]*setPanelView\("details"\)[\s\S]*requestExpandPullRequestSection\(data\.identity, PULL_REQUEST_CHECKS_SECTION_ID\)[\s\S]*onChecksFailedClick=\{openChecks\}[\s\S]*onChecksRunningClick=\{openChecks\}[\s\S]*onMergeConflictsClick=\{openChecks\}/u,
 	);
 	assert.match(
 		headerSource,
-		/onChecksFailedClick=\{openChecks\}[\s\S]*onChecksRunningClick=\{openChecks\}[\s\S]*onReviewRequiredClick=\{onGuideOpen\}/u,
+		/onChecksFailedClick=\{openChecks\}[\s\S]*onChecksRunningClick=\{openChecks\}[\s\S]*onMergeConflictsClick=\{openChecks\}[\s\S]*onReviewRequiredClick=\{onGuideOpen\}/u,
 	);
 	assert.match(
 		headerSource,
@@ -537,7 +538,10 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	assert.doesNotMatch(headerSource, /authorName=\{data\.authorName\}/u);
 	assert.doesNotMatch(headerSource, /additions=\{data\.additions\}/u);
 	assert.doesNotMatch(headerSource, /onMoreActionsClick/u);
-	assert.match(headerSource, /className="rounded-xl border p-4"/u);
+	assert.match(
+		headerSource,
+		/className=\{tabNavigation[\s\S]*\? "rounded-xl border"[\s\S]*: "rounded-xl border p-4"\}/u,
+	);
 	assert.match(headerSource, /style=\{\{ borderRadius: 12 \}\}/u);
 	assert.doesNotMatch(headerSource, /border-b border-border pb-4/u);
 	assert.match(guideSource, /data-jira-work-item-pull-request-guide/u);

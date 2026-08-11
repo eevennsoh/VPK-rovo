@@ -53,6 +53,7 @@ test("PullRequestHeader exposes the detail header props contract", () => {
 		/scrollContainerRef\?: RefObject<HTMLElement \| null>/u,
 	);
 	assert.match(TYPES_SOURCE, /collapseOffset\?: number/u);
+	assert.match(TYPES_SOURCE, /tabNavigation\?: ReactNode/u);
 	assert.match(TYPES_SOURCE, /mergeState\?: PullRequestHeaderMergeState/u);
 	assert.match(TYPES_SOURCE, /autoMerge\?: boolean/u);
 	assert.match(TYPES_SOURCE, /defaultAutoMerge\?: boolean/u);
@@ -61,16 +62,13 @@ test("PullRequestHeader exposes the detail header props contract", () => {
 	assert.match(TYPES_SOURCE, /onMergeClick\?: \(\) => void/u);
 	assert.match(TYPES_SOURCE, /onChecksFailedClick\?: \(\) => void/u);
 	assert.match(TYPES_SOURCE, /onChecksRunningClick\?: \(\) => void/u);
+	assert.match(TYPES_SOURCE, /onMergeConflictsClick\?: \(\) => void/u);
 	assert.match(TYPES_SOURCE, /onReviewRequiredClick\?: \(\) => void/u);
 	assert.match(TYPES_SOURCE, /url\?: string/u);
 	assert.match(TYPES_SOURCE, /scmProviderName\?: string/u);
 	assert.match(TYPES_SOURCE, /onConvertToDraftClick\?: \(\) => void/u);
 	assert.match(TYPES_SOURCE, /onClosePullRequestClick\?: \(\) => void/u);
 	assert.doesNotMatch(TYPES_SOURCE, /onMoreActionsClick/u);
-	assert.match(
-		TYPES_SOURCE,
-		/merge-conflicts` stays disabled/u,
-	);
 	assert.match(
 		TYPES_SOURCE,
 		/export interface PullRequestHeaderProps[\s\S]*number: number;[\s\S]*title: string;[\s\S]*status: PullRequestHeaderStatus;[\s\S]*baseBranch\?: string \| null;[\s\S]*headBranch\?: string \| null;[\s\S]*repository: string;/u,
@@ -117,7 +115,10 @@ test("PullRequestHeader animates meta collapse and honors reduced motion", () =>
 		COMPONENT_SOURCE,
 		/key="pull-request-header-meta"[\s\S]*className="flex flex-wrap items-center gap-x-2 gap-y-2 text-xs text-text-subtle"[\s\S]*layout=\{shouldReduceMotion \? false : "position"\}[\s\S]*transition=\{\{ layout: LAYOUT_TRANSITION \}\}/u,
 	);
-	assert.match(COMPONENT_SOURCE, /<AnimatePresence initial=\{false\}>/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/<AnimatePresence initial=\{false\} mode="popLayout">/u,
+	);
 	assert.match(
 		COMPONENT_SOURCE,
 		/animate=\{\{ opacity: 1, transform: "translateY\(0px\)" \}\}/u,
@@ -131,7 +132,10 @@ test("PullRequestHeader animates meta collapse and honors reduced motion", () =>
 });
 
 test("PullRequestHeader uses a two-row title and meta layout with action group", () => {
-	assert.match(COMPONENT_SOURCE, /className=\{cn\("border-b border-border pb-4", className\)\}/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/tabNavigation[\s\S]*\? "pt-4"[\s\S]*: "border-b pb-4"/u,
+	);
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/button"/u);
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/button-group"/u);
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/spinner"/u);
@@ -161,6 +165,7 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/merge-success"/u);
 	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/pull-request"/u);
 	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/show-more-horizontal"/u);
+	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/status-error"/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/link-external"/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/file"/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/cross"/u);
@@ -181,7 +186,12 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.match(COMPONENT_SOURCE, /handlePrimaryClick/u);
 	assert.match(COMPONENT_SOURCE, /case "checks-failed":[\s\S]*onChecksFailedClick/u);
 	assert.match(COMPONENT_SOURCE, /case "checks-running":[\s\S]*onChecksRunningClick/u);
+	assert.match(COMPONENT_SOURCE, /case "merge-conflicts":[\s\S]*onMergeConflictsClick/u);
 	assert.match(COMPONENT_SOURCE, /case "review-required":[\s\S]*onReviewRequiredClick/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/mergeState === "merge-conflicts" \? \([\s\S]*<Icon[\s\S]*className="text-icon-danger!"[\s\S]*data-icon="inline-start"[\s\S]*render=\{[\s\S]*<StatusErrorIcon/u,
+	);
 	assert.match(COMPONENT_SOURCE, /<ChevronDownIcon label="" size="small" \/>/u);
 	assert.match(COMPONENT_SOURCE, /<ShowMoreHorizontalIcon label="" size="small" \/>/u);
 	assert.match(COMPONENT_SOURCE, /aria-label="Merge options"/u);
@@ -288,6 +298,41 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.doesNotMatch(COMPONENT_SOURCE, /data-jira-work-item-pull-request-detail-header/u);
 });
 
+test("PullRequestHeader owns optional bottom-edge tab navigation", () => {
+	assert.match(
+		COMPONENT_SOURCE,
+		/className=\{tabNavigation \? "px-4" : undefined\}[\s\S]*\{tabNavigation \? \([\s\S]*className=\{cn\([\s\S]*"relative z-10 mt-4 shrink-0[\s\S]*\{tabNavigation\}/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/resolvedVariant === "compact"[\s\S]*\? "px-\[clamp\(5rem,20%,14rem\)\]"[\s\S]*: "px-\[clamp\(4rem,15\.625%,11rem\)\]"/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/transition-\[padding-left,padding-right\] duration-medium ease-in-out motion-reduce:transition-none/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/\[&_\[data-slot=tabs-list\]\]:border-b-0/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/"relative z-10 mt-4 shrink-0/u,
+	);
+	assert.doesNotMatch(
+		COMPONENT_SOURCE,
+		/tabNavigation[\s\S]*\? "overflow-hidden pt-4"/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/style=\{tabNavigation[\s\S]*borderBottomLeftRadius: 6,[\s\S]*borderBottomRightRadius: 6/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/tabNavigation \? \([\s\S]*layout=\{shouldReduceMotion \? false : "position"\}[\s\S]*transition=\{\{ layout: LAYOUT_TRANSITION \}\}/u,
+	);
+});
+
 test("PullRequestHeader replaces merge controls with terminal merged state", () => {
 	assert.match(COMPONENT_SOURCE, /const canMutatePullRequest = status === "Open"/u);
 	assert.match(
@@ -331,6 +376,18 @@ test("Pull Request Header demo shows controlled and scroll-driven modes", () => 
 		/h-full min-h-\[360px\] w-full overflow-y-auto/u,
 	);
 	assert.match(PAGE_SOURCE, /DEMO_PULL_REQUEST_HEADER/u);
+	assert.match(
+		PAGE_SOURCE,
+		/import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs"/u,
+	);
+	assert.match(
+		PAGE_SOURCE,
+		/function DemoPullRequestHeader[\s\S]*<Tabs defaultValue="details">[\s\S]*tabNavigation=\{<DemoPullRequestTabs \/>\}/u,
+	);
+	assert.match(
+		PAGE_SOURCE,
+		/Overview[\s\S]*Guide[\s\S]*4 Files[\s\S]*text-text-success[\s\S]*\+86[\s\S]*text-text-danger[\s\S]*-21/u,
+	);
 	assert.match(PAGE_SOURCE, />Merge</u);
 	assert.match(PAGE_SOURCE, /value=\{\[variant\]\}/u);
 	assert.match(PAGE_SOURCE, /mergeState="ready"/u);
@@ -340,6 +397,7 @@ test("Pull Request Header demo shows controlled and scroll-driven modes", () => 
 	assert.match(PAGE_SOURCE, /onClosePullRequestClick=\{\(\) => undefined\}/u);
 	assert.doesNotMatch(PAGE_SOURCE, /onMoreActionsClick/u);
 	assert.match(PAGE_SOURCE, /mergeState="merge-conflicts"/u);
+	assert.match(PAGE_SOURCE, /onMergeConflictsClick=\{\(\) => undefined\}/u);
 	assert.match(PAGE_SOURCE, /Checks running/u);
 	assert.match(PAGE_SOURCE, /Merge conflicts/u);
 	assert.doesNotMatch(PAGE_SOURCE, /Merge button label/u);
