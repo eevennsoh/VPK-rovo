@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type RefObject } from "react";
+import { useCallback, useMemo, useState, type RefObject } from "react";
 
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import {
@@ -21,24 +21,32 @@ type PullRequestDetailTab = "details" | "code" | "guide";
 interface PullRequestDetailViewProps {
 	approvalState?: "available" | "approved";
 	entry: JiraActivityEventEntry;
-	onReviewProgressChange?: (identity: string, reviewed: number, total: number) => void;
+	onChapterReviewedChange?: (identity: string, chapterId: string, reviewed: boolean) => void;
+	reviewedChapterIds?: ReadonlySet<string>;
 	scrollContainerRef: RefObject<HTMLElement | null>;
 }
 
 export function PullRequestDetailView({
 	approvalState,
 	entry,
-	onReviewProgressChange,
+	onChapterReviewedChange,
+	reviewedChapterIds,
 	scrollContainerRef,
 }: Readonly<PullRequestDetailViewProps>) {
 	const [activeTab, setActiveTab] = useState<PullRequestDetailTab>("details");
 	const data = useMemo(() => resolvePullRequestDetailData(entry), [entry]);
 	const review = data?.guidedReview;
-	const [reviewedChapterIds, setReviewedChapterIds] = useState<ReadonlySet<string>>(
+	const [localReviewedChapterIds, setLocalReviewedChapterIds] = useState<ReadonlySet<string>>(
 		() => new Set(review?.chapters[0] ? [review.chapters[0].id] : []),
 	);
+	const effectiveReviewedChapterIds = reviewedChapterIds ?? localReviewedChapterIds;
 	const handleChapterReviewedChange = useCallback((chapterId: string, reviewed: boolean) => {
-		setReviewedChapterIds((current) => {
+		if (data && onChapterReviewedChange) {
+			onChapterReviewedChange(data.identity, chapterId, reviewed);
+			return;
+		}
+		setLocalReviewedChapterIds((current) => {
+			if (current.has(chapterId) === reviewed) return current;
 			const next = new Set(current);
 			if (reviewed) {
 				next.add(chapterId);
@@ -47,16 +55,7 @@ export function PullRequestDetailView({
 			}
 			return next;
 		});
-	}, []);
-
-	useEffect(() => {
-		if (!data || !review) return;
-		onReviewProgressChange?.(
-			data.identity,
-			review.chapters.filter((chapter) => reviewedChapterIds.has(chapter.id)).length,
-			review.chapters.length,
-		);
-	}, [data, onReviewProgressChange, review, reviewedChapterIds]);
+	}, [data, onChapterReviewedChange]);
 
 	if (!data) {
 		return (
@@ -118,7 +117,7 @@ export function PullRequestDetailView({
 								onChapterReviewedChange={handleChapterReviewedChange}
 								onFinish={() => setActiveTab("details")}
 								review={review}
-								reviewedChapterIds={reviewedChapterIds}
+								reviewedChapterIds={effectiveReviewedChapterIds}
 								showFinishAction={approvalState === undefined}
 							/>
 						</TabsContent>

@@ -426,7 +426,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		contextPanelSource,
-		/<PullRequestDetailView[\s\S]*approvalState=\{pullRequestApprovalState\}[\s\S]*onReviewProgressChange=\{onPullRequestReviewProgressChange\}[\s\S]*scrollContainerRef=\{scrollContainerRef\}/u,
+		/<PullRequestDetailView[\s\S]*approvalState=\{pullRequestApprovalState\}[\s\S]*onChapterReviewedChange=\{onPullRequestChapterReviewedChange\}[\s\S]*reviewedChapterIds=\{pullRequestReviewedChapterIds\}[\s\S]*scrollContainerRef=\{scrollContainerRef\}/u,
 	);
 	assert.match(
 		detailViewSource,
@@ -440,7 +440,12 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		detailViewSource,
-		/<PullRequestGuide[\s\S]*onChapterReviewedChange=\{handleChapterReviewedChange\}[\s\S]*reviewedChapterIds=\{reviewedChapterIds\}[\s\S]*showFinishAction=\{approvalState === undefined\}/u,
+		/<PullRequestGuide[\s\S]*onChapterReviewedChange=\{handleChapterReviewedChange\}[\s\S]*reviewedChapterIds=\{effectiveReviewedChapterIds\}[\s\S]*showFinishAction=\{approvalState === undefined\}/u,
+	);
+	assert.doesNotMatch(detailViewSource, /useEffect|onReviewProgressChange/u);
+	assert.match(
+		detailViewSource,
+		/const effectiveReviewedChapterIds = reviewedChapterIds \?\? localReviewedChapterIds/u,
 	);
 	assert.match(
 		headerSource,
@@ -551,6 +556,14 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 		/label: approved \? `Review submitted \$\{total\}\/\$\{total\}` : `Submit review \$\{reviewed\}\/\$\{total\}`/u,
 	);
 	assert.match(workItemSource, /disabled: approved \|\| reviewed !== total \|\| !onPullRequestApprove/u);
+	assert.match(
+		workItemSource,
+		/setPullRequestReviewState\(guidedReview[\s\S]*reviewedChapterIds: new Set/u,
+	);
+	assert.match(
+		workItemSource,
+		/handlePullRequestChapterReviewedChange[\s\S]*current\.identity !== identity[\s\S]*reviewedChapterIds\.add\(chapterId\)[\s\S]*reviewedChapterIds\.delete\(chapterId\)/u,
+	);
 	assert.match(workItemSource, /<ActivityComposer[\s\S]*primaryAction=\{pullRequestReviewAction\}/u);
 	assert.match(activityComposerSource, /primaryAction=\{primaryAction\}/u);
 	assert.match(

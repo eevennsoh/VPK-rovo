@@ -119,9 +119,9 @@ interface ExperimentalV2JiraWorkItemContentProps {
 	workItem: WorkItemData;
 }
 
-interface PullRequestReviewProgress {
+interface PullRequestReviewState {
 	identity: string;
-	reviewed: number;
+	reviewedChapterIds: ReadonlySet<string>;
 	total: number;
 }
 
@@ -185,7 +185,7 @@ function ExperimentalV2JiraWorkItemContent({
 	const composerLayoutGroupId = useId();
 	const [descriptionViewMode, setDescriptionViewMode] = useState<EditorToolbarViewMode>("rendered");
 	const [selectedPullRequestIdentity, setSelectedPullRequestIdentity] = useState<string | null>(null);
-	const [pullRequestReviewProgress, setPullRequestReviewProgress] = useState<PullRequestReviewProgress | null>(null);
+	const [pullRequestReviewState, setPullRequestReviewState] = useState<PullRequestReviewState | null>(null);
 	const previousStageKeyRef = useRef(stageKey);
 	const { setPanelView, setSuppressActivityPanelReveal } = useMetadataRail();
 	const { chatSurface } = useRovoChat();
@@ -224,7 +224,7 @@ function ExperimentalV2JiraWorkItemContent({
 		previousStageKeyRef.current = stageKey;
 		setDescriptionViewMode("rendered");
 		setSelectedPullRequestIdentity(null);
-		setPullRequestReviewProgress(null);
+		setPullRequestReviewState(null);
 	}, [stageKey]);
 	const selectedPullRequestEntry = useMemo(
 		() => pullRequestEntries.find((entry) => (
@@ -248,10 +248,10 @@ function ExperimentalV2JiraWorkItemContent({
 		const identity = getPullRequestIdentity(entry.pullRequest);
 		const guidedReview = resolvePullRequestDetailData(entry)?.guidedReview;
 		setSelectedPullRequestIdentity(identity);
-		setPullRequestReviewProgress(guidedReview
+		setPullRequestReviewState(guidedReview
 			? {
 				identity,
-				reviewed: guidedReview.chapters[0] ? 1 : 0,
+				reviewedChapterIds: new Set(guidedReview.chapters[0] ? [guidedReview.chapters[0].id] : []),
 				total: guidedReview.chapters.length,
 			}
 			: null);
@@ -260,28 +260,36 @@ function ExperimentalV2JiraWorkItemContent({
 	const selectedPullRequestApprovalState = selectedPullRequestIdentity
 		? pullRequestApprovalStates?.[selectedPullRequestIdentity]
 		: undefined;
-	const handlePullRequestReviewProgressChange = useCallback((
+	const selectedPullRequestReviewedChapterIds = pullRequestReviewState?.identity === selectedPullRequestIdentity
+		? pullRequestReviewState.reviewedChapterIds
+		: undefined;
+	const handlePullRequestChapterReviewedChange = useCallback((
 		identity: string,
-		reviewed: number,
-		total: number,
+		chapterId: string,
+		reviewed: boolean,
 	) => {
-		setPullRequestReviewProgress((current) => (
-			current?.identity === identity
-			&& current.reviewed === reviewed
-			&& current.total === total
-				? current
-				: { identity, reviewed, total }
-		));
+		setPullRequestReviewState((current) => {
+			if (!current || current.identity !== identity) return current;
+			if (current.reviewedChapterIds.has(chapterId) === reviewed) return current;
+			const reviewedChapterIds = new Set(current.reviewedChapterIds);
+			if (reviewed) {
+				reviewedChapterIds.add(chapterId);
+			} else {
+				reviewedChapterIds.delete(chapterId);
+			}
+			return { ...current, reviewedChapterIds };
+		});
 	}, []);
 	const pullRequestReviewAction = useMemo<ActivityComposerPrimaryAction | undefined>(() => {
 		if (
 			!selectedPullRequestIdentity
 			|| !selectedPullRequestApprovalState
-			|| pullRequestReviewProgress?.identity !== selectedPullRequestIdentity
-			|| pullRequestReviewProgress.total === 0
+			|| pullRequestReviewState?.identity !== selectedPullRequestIdentity
+			|| pullRequestReviewState.total === 0
 		) return undefined;
 
-		const { reviewed, total } = pullRequestReviewProgress;
+		const { reviewedChapterIds, total } = pullRequestReviewState;
+		const reviewed = reviewedChapterIds.size;
 		const approved = selectedPullRequestApprovalState === "approved";
 		return {
 			ariaLabel: approved
@@ -293,7 +301,7 @@ function ExperimentalV2JiraWorkItemContent({
 		};
 	}, [
 		onPullRequestApprove,
-		pullRequestReviewProgress,
+		pullRequestReviewState,
 		selectedPullRequestApprovalState,
 		selectedPullRequestIdentity,
 	]);
@@ -342,8 +350,9 @@ function ExperimentalV2JiraWorkItemContent({
 							context={(scrollContainerRef) => (
 								<ContextPanel
 									descriptionViewMode={descriptionViewMode}
-									onPullRequestReviewProgressChange={handlePullRequestReviewProgressChange}
+									onPullRequestChapterReviewedChange={handlePullRequestChapterReviewedChange}
 									pullRequestApprovalState={selectedPullRequestApprovalState}
+									pullRequestReviewedChapterIds={selectedPullRequestReviewedChapterIds}
 									scrollContainerRef={scrollContainerRef}
 									selectedPullRequestEntry={selectedPullRequestEntry}
 									onDescriptionViewModeChange={setDescriptionViewMode}
