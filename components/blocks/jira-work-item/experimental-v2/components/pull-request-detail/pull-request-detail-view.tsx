@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type RefObject } from "react";
+import { useCallback, useMemo, useState, type RefObject } from "react";
 
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import {
@@ -10,7 +10,10 @@ import {
 	TabsTrigger,
 } from "@/components/ui/tabs";
 
-import { resolvePullRequestDetailData } from "../../lib/pull-request-detail-data";
+import {
+	resolveInitialReviewedChapterIds,
+	resolvePullRequestDetailData,
+} from "../../lib/pull-request-detail-data";
 import { PullRequestDetailHeader } from "./pull-request-detail-header";
 import { PullRequestFiles } from "./pull-request-files";
 import { PullRequestGuide } from "./pull-request-guide";
@@ -21,18 +24,41 @@ type PullRequestDetailTab = "details" | "code" | "guide";
 interface PullRequestDetailViewProps {
 	approvalState?: "available" | "approved";
 	entry: JiraActivityEventEntry;
-	onApprove?: (identity: string) => void;
+	onChapterReviewedChange?: (identity: string, chapterId: string, reviewed: boolean) => void;
+	reviewedChapterIds?: ReadonlySet<string>;
 	scrollContainerRef: RefObject<HTMLElement | null>;
 }
 
 export function PullRequestDetailView({
 	approvalState,
 	entry,
-	onApprove,
+	onChapterReviewedChange,
+	reviewedChapterIds,
 	scrollContainerRef,
 }: Readonly<PullRequestDetailViewProps>) {
 	const [activeTab, setActiveTab] = useState<PullRequestDetailTab>("details");
-	const data = resolvePullRequestDetailData(entry);
+	const data = useMemo(() => resolvePullRequestDetailData(entry), [entry]);
+	const review = data?.guidedReview;
+	const [localReviewedChapterIds, setLocalReviewedChapterIds] = useState<ReadonlySet<string>>(
+		() => resolveInitialReviewedChapterIds(review, approvalState),
+	);
+	const effectiveReviewedChapterIds = reviewedChapterIds ?? localReviewedChapterIds;
+	const handleChapterReviewedChange = useCallback((chapterId: string, reviewed: boolean) => {
+		if (data && onChapterReviewedChange) {
+			onChapterReviewedChange(data.identity, chapterId, reviewed);
+			return;
+		}
+		setLocalReviewedChapterIds((current) => {
+			if (current.has(chapterId) === reviewed) return current;
+			const next = new Set(current);
+			if (reviewed) {
+				next.add(chapterId);
+			} else {
+				next.delete(chapterId);
+			}
+			return next;
+		});
+	}, [data, onChapterReviewedChange]);
 
 	if (!data) {
 		return (
@@ -45,7 +71,6 @@ export function PullRequestDetailView({
 		);
 	}
 
-	const review = data.guidedReview;
 	const header = (
 		<PullRequestDetailHeader
 			data={data}
@@ -92,12 +117,11 @@ export function PullRequestDetailView({
 						</TabsContent>
 						<TabsContent value="guide">
 							<PullRequestGuide
-								approvalState={approvalState}
-								onApprove={onApprove
-									? () => onApprove(data.identity)
-									: undefined}
+								onChapterReviewedChange={handleChapterReviewedChange}
 								onFinish={() => setActiveTab("details")}
 								review={review}
+								reviewedChapterIds={effectiveReviewedChapterIds}
+								showFinishAction={approvalState === undefined}
 							/>
 						</TabsContent>
 						<TabsContent value="code">

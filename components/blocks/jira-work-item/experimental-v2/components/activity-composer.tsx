@@ -19,7 +19,10 @@ import {
 import { useActivityChatComments } from "@/components/blocks/jira-work-item/experimental-v2/context-activity-chat-comments";
 import { useJiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
 import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental-v2/context-metadata-rail";
-import { ActivityComposerContextPills } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer-context-pills";
+import {
+	ActivityComposerContextPills,
+	type ActivityComposerPrimaryAction,
+} from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer-context-pills";
 import { JiraWorkItemComposerMotion } from "@/components/blocks/jira-work-item/experimental-v2/components/jira-work-item-composer-motion";
 import { JIRA_WORK_ITEM_CURRENT_USER } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
 import {
@@ -68,11 +71,13 @@ export function ActivityComposer({
 	agents,
 	onAgentPromptSubmit,
 	onOpenAgentChat,
+	primaryAction,
 	onSkillInvoke,
 }: Readonly<{
 	agents?: readonly AgentSelectorAgent[];
 	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
 	onOpenAgentChat?: (agentId: string) => void;
+	primaryAction?: ActivityComposerPrimaryAction;
 	onSkillInvoke?: (skill: SkillsDirectorySkill) => boolean | void;
 }>) {
 	const { state, actions, meta } = useJiraWorkItem();
@@ -287,6 +292,7 @@ export function ActivityComposer({
 				onInvokeAgent={handleInvokeAgent}
 				onInvokeSkill={handleInvokeSkill}
 				onOpenAgentChat={onOpenAgentChat ? handleOpenWorkingSession : undefined}
+				primaryAction={primaryAction}
 				workingSessions={workingSessions}
 			/>
 			<div className="relative" data-jira-work-item-composer-state="sticky">
