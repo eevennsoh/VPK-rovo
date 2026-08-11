@@ -384,6 +384,14 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 		join(__dirname, "../experimental-v2-jira-work-item.tsx"),
 		"utf8",
 	);
+	const activityComposerSource = readFileSync(
+		join(__dirname, "../components/activity-composer.tsx"),
+		"utf8",
+	);
+	const contextPillsSource = readFileSync(
+		join(__dirname, "../components/activity-composer-context-pills.tsx"),
+		"utf8",
+	);
 
 	assert.match(detailViewSource, /data-jira-work-item-pull-request-detail/u);
 	assert.match(
@@ -418,7 +426,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		contextPanelSource,
-		/<PullRequestDetailView[\s\S]*approvalState=\{pullRequestApprovalState\}[\s\S]*onApprove=\{onPullRequestApprove\}[\s\S]*scrollContainerRef=\{scrollContainerRef\}/u,
+		/<PullRequestDetailView[\s\S]*approvalState=\{pullRequestApprovalState\}[\s\S]*onReviewProgressChange=\{onPullRequestReviewProgressChange\}[\s\S]*scrollContainerRef=\{scrollContainerRef\}/u,
 	);
 	assert.match(
 		detailViewSource,
@@ -432,7 +440,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		detailViewSource,
-		/<PullRequestGuide[\s\S]*approvalState=\{approvalState\}[\s\S]*onApprove=\{onApprove[\s\S]*\? \(\) => onApprove\(data\.identity\)[\s\S]*: undefined\}[\s\S]*onFinish=\{\(\) => setActiveTab\("details"\)\}/u,
+		/<PullRequestGuide[\s\S]*onChapterReviewedChange=\{handleChapterReviewedChange\}[\s\S]*reviewedChapterIds=\{reviewedChapterIds\}[\s\S]*showFinishAction=\{approvalState === undefined\}/u,
 	);
 	assert.match(
 		headerSource,
@@ -514,11 +522,18 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	assert.match(guideSource, /data-jira-work-item-pull-request-guide-summary/u);
 	assert.match(guideSource, /ChatTimelineNavigator/u);
 	assert.match(guideSource, /review\.summary\.join\(" "\)/u);
+	assert.match(guideSource, /font: token\("font\.heading\.xlarge"\)[\s\S]*fontWeight: token\("font\.weight\.regular"\)/u);
+	assert.match(guideSource, /grid grid-cols-1 gap-4 sm:grid-cols-2/u);
+	assert.match(guideSource, /rounded-lg bg-surface-sunken p-3/u);
+	assert.match(guideSource, /font-mono text-\[2rem\] leading-8 font-normal/u);
+	assert.match(guideSource, /className="absolute -left-6 top-0 z-10"/u);
+	assert.doesNotMatch(guideSource, /lg:grid-cols-\[15rem_minmax\(0,1fr\)\]/u);
 	assert.match(
 		guideSource,
 		/review\.metrics\.risk[\s\S]*review\.metrics\.impact[\s\S]*review\.metrics\.reviewDepth[\s\S]*review\.metrics\.mergeConfidence/u,
 	);
-	assert.match(guideSource, /visitedChapterIds[\s\S]*review\.chapters\.every/u);
+	assert.match(guideSource, /<Checkbox[\s\S]*checked=\{reviewed\}[\s\S]*onCheckedChange=\{\(checked\) => onChapterReviewedChange\(item\.id, checked === true\)\}/u);
+	assert.match(guideSource, />\s*Reviewed\s*<\/label>/u);
 	assert.match(guideSource, /IntersectionObserver/u);
 	assert.match(
 		guideSource,
@@ -526,13 +541,22 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		guideSource,
-		/const selectChapter = \(chapterId: string\) => \{[\s\S]*setActiveChapterId\(chapterId\)[\s\S]*setVisitedChapterIds/u,
+		/const selectChapter = \(chapterId: string\) => \{[\s\S]*setActiveChapterId\(chapterId\)[\s\S]*onChapterReviewedChange\(chapterId, true\)/u,
 	);
 	assert.doesNotMatch(guideSource, /Back<\/Button>|Next<\/Button>/u);
 	assert.doesNotMatch(guideSource, /<nav aria-label="Guided review chapters">/u);
-	assert.match(guideSource, /approvalState === "approved"[\s\S]*"Approved"[\s\S]*"Approve pull request"/u);
-	assert.match(guideSource, /disabled=\{approved \|\| !allChaptersVisited \|\| !onApprove\}/u);
-	assert.match(guideSource, /onClick=\{onApprove\}/u);
+	assert.doesNotMatch(guideSource, /Approve pull request|onApprove|allChaptersVisited/u);
+	assert.match(
+		workItemSource,
+		/label: approved \? `Review submitted \$\{total\}\/\$\{total\}` : `Submit review \$\{reviewed\}\/\$\{total\}`/u,
+	);
+	assert.match(workItemSource, /disabled: approved \|\| reviewed !== total \|\| !onPullRequestApprove/u);
+	assert.match(workItemSource, /<ActivityComposer[\s\S]*primaryAction=\{pullRequestReviewAction\}/u);
+	assert.match(activityComposerSource, /primaryAction=\{primaryAction\}/u);
+	assert.match(
+		contextPillsSource,
+		/\{primaryAction \? \([\s\S]*<ContextBarPill[\s\S]*\{primaryAction\.label\}[\s\S]*\) : null\}[\s\S]*\{workingSessions\.length/u,
+	);
 	assert.match(
 		workItemSource,
 		/pullRequestApprovalStates\?: Readonly<Record<string, "available" \| "approved">>/u,

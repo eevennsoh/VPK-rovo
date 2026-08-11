@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useState, type RefObject } from "react";
 
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import {
@@ -21,18 +21,42 @@ type PullRequestDetailTab = "details" | "code" | "guide";
 interface PullRequestDetailViewProps {
 	approvalState?: "available" | "approved";
 	entry: JiraActivityEventEntry;
-	onApprove?: (identity: string) => void;
+	onReviewProgressChange?: (identity: string, reviewed: number, total: number) => void;
 	scrollContainerRef: RefObject<HTMLElement | null>;
 }
 
 export function PullRequestDetailView({
 	approvalState,
 	entry,
-	onApprove,
+	onReviewProgressChange,
 	scrollContainerRef,
 }: Readonly<PullRequestDetailViewProps>) {
 	const [activeTab, setActiveTab] = useState<PullRequestDetailTab>("details");
-	const data = resolvePullRequestDetailData(entry);
+	const data = useMemo(() => resolvePullRequestDetailData(entry), [entry]);
+	const review = data?.guidedReview;
+	const [reviewedChapterIds, setReviewedChapterIds] = useState<ReadonlySet<string>>(
+		() => new Set(review?.chapters[0] ? [review.chapters[0].id] : []),
+	);
+	const handleChapterReviewedChange = useCallback((chapterId: string, reviewed: boolean) => {
+		setReviewedChapterIds((current) => {
+			const next = new Set(current);
+			if (reviewed) {
+				next.add(chapterId);
+			} else {
+				next.delete(chapterId);
+			}
+			return next;
+		});
+	}, []);
+
+	useEffect(() => {
+		if (!data || !review) return;
+		onReviewProgressChange?.(
+			data.identity,
+			review.chapters.filter((chapter) => reviewedChapterIds.has(chapter.id)).length,
+			review.chapters.length,
+		);
+	}, [data, onReviewProgressChange, review, reviewedChapterIds]);
 
 	if (!data) {
 		return (
@@ -45,7 +69,6 @@ export function PullRequestDetailView({
 		);
 	}
 
-	const review = data.guidedReview;
 	const header = (
 		<PullRequestDetailHeader
 			data={data}
@@ -92,12 +115,11 @@ export function PullRequestDetailView({
 						</TabsContent>
 						<TabsContent value="guide">
 							<PullRequestGuide
-								approvalState={approvalState}
-								onApprove={onApprove
-									? () => onApprove(data.identity)
-									: undefined}
+								onChapterReviewedChange={handleChapterReviewedChange}
 								onFinish={() => setActiveTab("details")}
 								review={review}
+								reviewedChapterIds={reviewedChapterIds}
+								showFinishAction={approvalState === undefined}
 							/>
 						</TabsContent>
 						<TabsContent value="code">

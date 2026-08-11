@@ -62,10 +62,18 @@ const WORKING_SESSION_ACTIVITY_SCRIPTS: Readonly<Record<string, readonly string[
 	],
 };
 
+export interface ActivityComposerPrimaryAction {
+	ariaLabel: string;
+	disabled?: boolean;
+	label: string;
+	onClick: () => void;
+}
+
 interface ActivityComposerContextPillsProps {
 	onInvokeAgent: (agent: Pick<AgentSelectorAgent, "id" | "name" | "avatarSrc" | "brandName">) => void;
 	onInvokeSkill: (skill: SkillsDirectorySkill) => void;
 	onOpenAgentChat?: (agentId: string, sessionId: string) => void;
+	primaryAction?: ActivityComposerPrimaryAction;
 	workingSessions: readonly AgentSession[];
 }
 
@@ -256,6 +264,7 @@ export function ActivityComposerContextPills({
 	onInvokeAgent,
 	onInvokeSkill,
 	onOpenAgentChat,
+	primaryAction,
 	workingSessions,
 }: Readonly<ActivityComposerContextPillsProps>) {
 	const shouldReduceMotion = Boolean(useReducedMotion());
@@ -298,6 +307,18 @@ export function ActivityComposerContextPills({
 				/>
 			) : (
 				<>
+					{primaryAction ? (
+						<RevealingPill>
+							<ContextBarPill
+								aria-label={primaryAction.ariaLabel}
+								className="motion-reduce:transition-none"
+								disabled={primaryAction.disabled}
+								onClick={primaryAction.onClick}
+							>
+								{primaryAction.label}
+							</ContextBarPill>
+						</RevealingPill>
+					) : null}
 					{workingSessions.length > 0 && onOpenAgentChat ? (
 						<RevealingPill>
 							<ContextBarPill
