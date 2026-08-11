@@ -14,6 +14,10 @@ const VERDICT_SOURCE = fs.readFileSync(
 	path.join(DIR, "components", "pull-request-review-verdict.tsx"),
 	"utf8",
 );
+const VERDICT_DATA_SOURCE = fs.readFileSync(
+	path.join(DIR, "data", "pull-request-review-verdicts.ts"),
+	"utf8",
+);
 const TYPES_SOURCE = fs.readFileSync(
 	path.join(DIR, "components", "pull-request-review-types.ts"),
 	"utf8",
@@ -121,8 +125,33 @@ test("the verdict control is a radiogroup, not a tablist", () => {
 	assert.match(VERDICT_SOURCE, /event\.key === "ArrowRight" \|\| event\.key === "ArrowDown"/u);
 	assert.match(VERDICT_SOURCE, /event\.key === "ArrowLeft" \|\| event\.key === "ArrowUp"/u);
 	for (const label of ["Comment", "Approve", "Request changes"]) {
-		assert.ok(VERDICT_SOURCE.includes(`label: "${label}"`), `missing verdict "${label}"`);
+		assert.ok(
+			VERDICT_DATA_SOURCE.includes(`label: "${label}"`),
+			`missing verdict "${label}"`,
+		);
 	}
+});
+
+test("the verdict control file exports a component and nothing else", () => {
+	// Mixing a component and a constant in one module defeats Fast Refresh state
+	// preservation (react-doctor/only-export-components), so the option list
+	// lives in data/. Regression for PR #1324 review.
+	assert.doesNotMatch(
+		VERDICT_SOURCE,
+		/export const PULL_REQUEST_REVIEW_VERDICTS/u,
+		"move the verdict option list to data/, do not re-colocate it",
+	);
+	assert.equal(
+		(VERDICT_SOURCE.match(/^export /gmu) ?? []).length,
+		1,
+		"the verdict control module must have exactly one export (the component)",
+	);
+	assert.match(VERDICT_SOURCE, /^export function PullRequestReviewVerdictControl/mu);
+	assert.match(VERDICT_DATA_SOURCE, /export const PULL_REQUEST_REVIEW_VERDICTS/u);
+	assert.match(
+		INDEX_SOURCE,
+		/export \{ PULL_REQUEST_REVIEW_VERDICTS \} from "@\/components\/blocks\/pull-request-review\/data\/pull-request-review-verdicts"/u,
+	);
 });
 
 test("the verdict control uses token classes and honors reduced motion", () => {

@@ -2,18 +2,10 @@
 
 import { useRef, type KeyboardEvent } from "react";
 
+import { PULL_REQUEST_REVIEW_VERDICTS } from "@/components/blocks/pull-request-review/data/pull-request-review-verdicts";
 import { cn } from "@/lib/utils";
 
 import type { PullRequestReviewVerdict } from "./pull-request-review-types";
-
-export const PULL_REQUEST_REVIEW_VERDICTS: ReadonlyArray<{
-	value: PullRequestReviewVerdict;
-	label: string;
-}> = [
-	{ value: "comment", label: "Comment" },
-	{ value: "approve", label: "Approve" },
-	{ value: "request-changes", label: "Request changes" },
-];
 
 /**
  * A verdict picker is a single-select choice that decides what Submit does — it

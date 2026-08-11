@@ -1,9 +1,7 @@
 export { default } from "@/components/blocks/pull-request-review/page";
 export { PullRequestReview } from "@/components/blocks/pull-request-review/components/pull-request-review";
-export {
-	PullRequestReviewVerdictControl,
-	PULL_REQUEST_REVIEW_VERDICTS,
-} from "@/components/blocks/pull-request-review/components/pull-request-review-verdict";
+export { PullRequestReviewVerdictControl } from "@/components/blocks/pull-request-review/components/pull-request-review-verdict";
+export { PULL_REQUEST_REVIEW_VERDICTS } from "@/components/blocks/pull-request-review/data/pull-request-review-verdicts";
 export type {
 	PullRequestReviewProps,
 	PullRequestReviewSubmission,
