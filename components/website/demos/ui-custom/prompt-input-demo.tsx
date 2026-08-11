@@ -309,6 +309,7 @@ export function PromptInputDemoFloatingBarTextSend() {
 						dictationState={voice.dictationState}
 						dictationTranscriptPreview={voice.dictationTranscriptPreview}
 						experimentalDarkCta
+						micStream={voice.micStream}
 						onStartDictation={voice.handleStartDictation}
 						onStop={voice.handleStop}
 						onStopDictation={voice.handleStopDictation}

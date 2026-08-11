@@ -9,6 +9,7 @@ import {
 	reduceRealtimeAssistantTextDelta,
 } from "@/components/projects/rovo-core/lib/rovo-app-realtime-assistant-state";
 import {
+	hasCompletedRovoAppVoiceBrowserFallbackTurn,
 	hasCompletedRovoAppVoiceTurn,
 	isRovoAppVoiceCaptureAvailable,
 	normalizeRovoAppVoiceTranscript,
@@ -247,6 +248,7 @@ export function useRealtimeVoice({
 	const isAwaitingSpeechResponseRef = useRef(false);
 	const activeSpeechTurnIdRef = useRef<number | null>(null);
 	const lastSpeechTurnIdRef = useRef(0);
+	const browserFallbackCompletedTurnIdRef = useRef<number | null>(null);
 	const completedSpeechTurnRef = useRef<{
 		transcript: string;
 		turnId: number;
@@ -383,6 +385,14 @@ export function useRealtimeVoice({
 		});
 	}, []);
 
+	const hasCompletedActiveSpeechTurnWithBrowserFallback = useCallback(() => {
+		return hasCompletedRovoAppVoiceBrowserFallbackTurn({
+			activeTurnId: activeSpeechTurnIdRef.current,
+			browserFallbackCompletedTurnId:
+				browserFallbackCompletedTurnIdRef.current,
+		});
+	}, []);
+
 	const markActiveSpeechTurnCompleted = useCallback((transcript: string) => {
 		const turnId = ensureActiveSpeechTurn();
 		if (turnId === null) {
@@ -398,6 +408,7 @@ export function useRealtimeVoice({
 
 	const resetSpeechTurnTracking = useCallback(() => {
 		activeSpeechTurnIdRef.current = null;
+		browserFallbackCompletedTurnIdRef.current = null;
 		completedSpeechTurnRef.current = null;
 		clearBrowserTranscriptCompletionTimer();
 	}, [clearBrowserTranscriptCompletionTimer]);
@@ -511,7 +522,8 @@ export function useRealtimeVoice({
 				return;
 			}
 
-			markActiveSpeechTurnCompleted(transcript);
+			browserFallbackCompletedTurnIdRef.current =
+				markActiveSpeechTurnCompleted(transcript);
 			pendingTranscriptRef.current = "";
 			setCurrentTranscript(transcript);
 			onSpeechTranscriptCompletedRef.current?.({
@@ -1155,6 +1167,9 @@ export function useRealtimeVoice({
 					) {
 						break;
 					}
+					if (hasCompletedActiveSpeechTurnWithBrowserFallback()) {
+						break;
+					}
 					if (pendingTranscriptRef.current === "" && !hasReceivedServerDeltaRef.current) {
 						markSpeechTurnStarted();
 					}
@@ -1189,7 +1204,12 @@ export function useRealtimeVoice({
 					) {
 						break;
 					}
-					if (!isAwaitingSpeechResponseRef.current) {
+					const browserFallbackAlreadyCompleted =
+						hasCompletedActiveSpeechTurnWithBrowserFallback();
+					if (
+						!browserFallbackAlreadyCompleted &&
+						!isAwaitingSpeechResponseRef.current
+					) {
 						markSpeechTurnStarted();
 					}
 					const fullTranscript = message.transcript;
@@ -1197,7 +1217,10 @@ export function useRealtimeVoice({
 					hasReceivedServerDeltaRef.current = false;
 					setCurrentTranscript(fullTranscript);
 					ensureActiveSpeechTurn();
-					if (!hasCompletedActiveSpeechTurn(fullTranscript)) {
+					if (
+						!browserFallbackAlreadyCompleted &&
+						!hasCompletedActiveSpeechTurn(fullTranscript)
+					) {
 						markActiveSpeechTurnCompleted(fullTranscript);
 						onSpeechTranscriptCompletedRef.current?.({
 							transcript: fullTranscript,
@@ -1338,6 +1361,7 @@ export function useRealtimeVoice({
 			ensureOutputWaveformSampling,
 			ensureActiveSpeechTurn,
 			hasCompletedActiveSpeechTurn,
+			hasCompletedActiveSpeechTurnWithBrowserFallback,
 			injectContext,
 			markActiveSpeechTurnCompleted,
 			markSpeechResponseStarted,

@@ -129,3 +129,18 @@ test("dictation opens the Realtime transport in transcription-only mode", () => 
 		);
 	}
 });
+
+test("browser fallback completion absorbs delayed server transcript events for the same turn", () => {
+	assert.match(
+		CORE_HOOK_SOURCE,
+		/browserFallbackCompletedTurnIdRef\.current =[\s\S]*markActiveSpeechTurnCompleted\(transcript\);/u,
+	);
+	assert.match(
+		CORE_HOOK_SOURCE,
+		/case "transcription_delta":[\s\S]*if \(hasCompletedActiveSpeechTurnWithBrowserFallback\(\)\) \{[\s\S]*break;[\s\S]*\}[\s\S]*pendingTranscriptRef\.current \+= message\.delta;/u,
+	);
+	assert.match(
+		CORE_HOOK_SOURCE,
+		/case "transcription_completed":[\s\S]*const browserFallbackAlreadyCompleted =[\s\S]*hasCompletedActiveSpeechTurnWithBrowserFallback\(\);[\s\S]*!browserFallbackAlreadyCompleted &&[\s\S]*onSpeechTranscriptCompletedRef\.current/u,
+	);
+});

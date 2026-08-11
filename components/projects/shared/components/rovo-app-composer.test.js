@@ -109,7 +109,7 @@ test("Prompt Input demos run dictation and live chat through the realtime voice 
 	const compactTextSendSource = PROMPT_INPUT_DEMO_SOURCE.slice(compactTextSendStart);
 	assert.match(
 		compactTextSendSource,
-		/<RovoComposerActionButton[\s\S]*dictationState=\{voice\.dictationState\}[\s\S]*onStartDictation=\{voice\.handleStartDictation\}[\s\S]*onStopDictation=\{voice\.handleStopDictation\}[\s\S]*showSubmitWhenEmpty/u,
+		/<RovoComposerActionButton[\s\S]*dictationState=\{voice\.dictationState\}[\s\S]*micStream=\{voice\.micStream\}[\s\S]*onStartDictation=\{voice\.handleStartDictation\}[\s\S]*onStopDictation=\{voice\.handleStopDictation\}[\s\S]*showSubmitWhenEmpty/u,
 	);
 	assert.doesNotMatch(compactTextSendSource, /liveVoiceEnabled/u);
 	assert.match(
