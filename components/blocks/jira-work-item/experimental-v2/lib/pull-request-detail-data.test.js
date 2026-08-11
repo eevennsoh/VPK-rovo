@@ -201,6 +201,24 @@ test("resolves the #1847 guest-checkout guided review fixture", async () => {
 	)));
 });
 
+test("restores every reviewed chapter when an approved pull request reopens", async () => {
+	const {
+		resolveInitialReviewedChapterIds,
+		resolvePullRequestDetailData,
+	} = await loadDetailData();
+	const review = resolvePullRequestDetailData(pullRequestEntry())?.guidedReview;
+
+	assert.ok(review);
+	assert.deepEqual(
+		[...resolveInitialReviewedChapterIds(review)],
+		[review.chapters[0].id],
+	);
+	assert.deepEqual(
+		[...resolveInitialReviewedChapterIds(review, "approved")],
+		review.chapters.map((chapter) => chapter.id),
+	);
+});
+
 test("an approved #1847 entry adds Venn approval and ready-to-merge evidence", async () => {
 	const { resolvePullRequestDetailData } = await loadDetailData();
 	const detail = resolvePullRequestDetailData(pullRequestEntry({
@@ -558,7 +576,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	assert.match(workItemSource, /disabled: approved \|\| reviewed !== total \|\| !onPullRequestApprove/u);
 	assert.match(
 		workItemSource,
-		/setPullRequestReviewState\(guidedReview[\s\S]*reviewedChapterIds: new Set/u,
+		/setPullRequestReviewState\(guidedReview[\s\S]*reviewedChapterIds: resolveInitialReviewedChapterIds\([\s\S]*pullRequestApprovalStates\?\.\[identity\]/u,
 	);
 	assert.match(
 		workItemSource,

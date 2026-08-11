@@ -143,6 +143,15 @@ export interface PullRequestGuidedReview {
 	files: readonly PullRequestReviewFile[];
 }
 
+export function resolveInitialReviewedChapterIds(
+	review: PullRequestGuidedReview | null | undefined,
+	approvalState?: "available" | "approved",
+): ReadonlySet<string> {
+	if (!review) return new Set();
+	const chapters = approvalState === "approved" ? review.chapters : review.chapters.slice(0, 1);
+	return new Set(chapters.map((chapter) => chapter.id));
+}
+
 export type PullRequestReviewFile = ChangedFile & CodeListItem;
 
 export interface PullRequestDetailData {

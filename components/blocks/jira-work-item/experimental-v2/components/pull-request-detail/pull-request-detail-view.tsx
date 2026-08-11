@@ -10,7 +10,10 @@ import {
 	TabsTrigger,
 } from "@/components/ui/tabs";
 
-import { resolvePullRequestDetailData } from "../../lib/pull-request-detail-data";
+import {
+	resolveInitialReviewedChapterIds,
+	resolvePullRequestDetailData,
+} from "../../lib/pull-request-detail-data";
 import { PullRequestDetailHeader } from "./pull-request-detail-header";
 import { PullRequestFiles } from "./pull-request-files";
 import { PullRequestGuide } from "./pull-request-guide";
@@ -37,7 +40,7 @@ export function PullRequestDetailView({
 	const data = useMemo(() => resolvePullRequestDetailData(entry), [entry]);
 	const review = data?.guidedReview;
 	const [localReviewedChapterIds, setLocalReviewedChapterIds] = useState<ReadonlySet<string>>(
-		() => new Set(review?.chapters[0] ? [review.chapters[0].id] : []),
+		() => resolveInitialReviewedChapterIds(review, approvalState),
 	);
 	const effectiveReviewedChapterIds = reviewedChapterIds ?? localReviewedChapterIds;
 	const handleChapterReviewedChange = useCallback((chapterId: string, reviewed: boolean) => {

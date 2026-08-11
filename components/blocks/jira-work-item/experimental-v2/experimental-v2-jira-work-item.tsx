@@ -49,7 +49,10 @@ import {
 	selectPullRequestEntries,
 	type ActivitySessionThreadConfig,
 } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
-import { resolvePullRequestDetailData } from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-detail-data";
+import {
+	resolveInitialReviewedChapterIds,
+	resolvePullRequestDetailData,
+} from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-detail-data";
 import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
 import { SidebarResizeHandle } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
@@ -251,7 +254,10 @@ function ExperimentalV2JiraWorkItemContent({
 		setPullRequestReviewState(guidedReview
 			? {
 				identity,
-				reviewedChapterIds: new Set(guidedReview.chapters[0] ? [guidedReview.chapters[0].id] : []),
+				reviewedChapterIds: resolveInitialReviewedChapterIds(
+					guidedReview,
+					pullRequestApprovalStates?.[identity],
+				),
 				total: guidedReview.chapters.length,
 			}
 			: null);
