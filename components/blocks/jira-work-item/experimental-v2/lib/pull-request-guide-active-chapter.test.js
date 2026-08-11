@@ -89,6 +89,31 @@ test("resolveActiveChapterId stays on the first chapter when tops are unmeasured
 	);
 });
 
+test("resolveActiveChapterId reads each chapter top once per evaluation", async () => {
+	const { resolveActiveChapterId } = await loadActiveChapter();
+	const tops = {
+		"start-guest-checkout": 100,
+		"server-owned-order": 400,
+		"recover-and-verify": 900,
+	};
+	let readCount = 0;
+
+	assert.equal(
+		resolveActiveChapterId({
+			activationOffset: 80,
+			chapterIds: Object.keys(tops),
+			getChapterTop: (id) => {
+				readCount += 1;
+				return tops[id] ?? null;
+			},
+			maxScrollTop: 1200,
+			scrollTop: 840,
+		}),
+		"recover-and-verify",
+	);
+	assert.equal(readCount, Object.keys(tops).length);
+});
+
 test("shouldApplyScrollSpyUpdate ignores spy while a chapter jump is locked", async () => {
 	const { shouldApplyScrollSpyUpdate } = await loadActiveChapter();
 	assert.equal(shouldApplyScrollSpyUpdate(null), true);
