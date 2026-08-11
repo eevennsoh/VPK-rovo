@@ -134,14 +134,21 @@ test("Conversation can keep the auto-hidden scrollbar from revealing", () => {
 	);
 });
 
-test("Conversation only fades the bottom edge when content is hidden below", () => {
-	// The bottom fade must be gated on isAtBottom so it never covers the last
-	// message (e.g. the greeting) when the conversation fits or is scrolled down.
+test("Conversation only fades edges when overflow is actually scrolled", () => {
+	// Bottom fade requires real overflow with content still hidden below.
 	assert.match(
 		CONVERSATION_SOURCE,
-		/const maskImage = context\?\.isAtBottom\s*\?\s*undefined\s*:\s*"linear-gradient\(to bottom, black 92%, transparent 100%\)"/,
+		/const maskImage = context\?\.showBottomScrollMask\s*\?\s*"linear-gradient\(to bottom, black 92%, transparent 100%\)"\s*:\s*undefined/,
 	);
 	assert.match(CONVERSATION_SOURCE, /maskImage,\s+WebkitMaskImage: maskImage,/);
+	assert.match(CONVERSATION_SOURCE, /getVerticalOverflowState/);
+	assert.match(CONVERSATION_SOURCE, /showTopScrollMask/);
+	assert.match(CONVERSATION_SOURCE, /showBottomScrollMask/);
+	// Top fade under chrome stays off until the thread has been scrolled from the top.
+	assert.match(
+		CONVERSATION_SOURCE,
+		/<StickyRowScrollFade[\s\S]*className=\{cn\("top-0 z-10", showTopScrollMask \? "opacity-100" : null\)\}[\s\S]*data-slot="conversation-top-scroll-fade"/,
+	);
 	// Guard against reverting to an always-on mask in the inline style object.
 	assert.doesNotMatch(
 		CONVERSATION_SOURCE,

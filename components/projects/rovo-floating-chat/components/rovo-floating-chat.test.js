@@ -391,6 +391,11 @@ test("RovoFloatingChat forwards send prompt options to the shared chat panel", a
 	assert.match(ROVO_FLOATING_CHAT_SOURCE, /sendPromptOptions=\{sendPromptOptions\}/u);
 });
 
+test("RovoFloatingChat forwards composer input context to the shared chat panel", () => {
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /composerInputContext\?: ComposerInputContext;/u);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /composerInputContext=\{composerInputContext\}/u);
+});
+
 test("RovoFloatingChat forwards deterministic submit interception to the shared chat panel", async () => {
 	const harness = await loadRovoFloatingChatHarness();
 	const markup = harness.renderFloatingChatWithIntercept();
@@ -470,10 +475,17 @@ test("Floating chat panel receives a bounded max-height without forcing empty-st
 });
 
 test("Floating chat keeps chrome and composer outside the scrollable message viewport", () => {
-	assert.match(FLOATING_CHAT_HEADER_SOURCE, /className="flex shrink-0 items-center justify-between px-3 py-3"/);
+	assert.match(FLOATING_CHAT_HEADER_SOURCE, /className="relative z-10 flex shrink-0 items-center justify-between px-3 py-3"/);
 	assert.match(CHAT_PANEL_SOURCE, /<Conversation\s+className="min-h-0 min-w-0 flex-1"/);
 	assert.match(CHAT_PANEL_SOURCE, /<div className="min-w-0 shrink-0">[\s\S]*<ChatComposer/);
 	assert.match(CHAT_PANEL_SOURCE, /<div className="shrink-0">[\s\S]*<ChatHeader/);
+});
+
+test("Floating chat header does not force an always-on scroll fade", () => {
+	// Conversation owns the top/bottom scroll masks and only reveals them when
+	// the thread overflows and the user has scrolled away from an edge.
+	assert.doesNotMatch(FLOATING_CHAT_HEADER_SOURCE, /StickyRowScrollFade/u);
+	assert.doesNotMatch(FLOATING_CHAT_HEADER_SOURCE, /floating-chat-header-scroll-fade/u);
 });
 
 test("Shared ChatPanel renders the Rovo-style conversation body and scroll button", () => {

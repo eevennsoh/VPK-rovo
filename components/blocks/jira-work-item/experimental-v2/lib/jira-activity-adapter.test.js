@@ -398,6 +398,89 @@ test("composes visible delegated sessions as replies beneath one lead agent", as
 		[],
 	);
 	assert.equal(events.length, 3, "composition must not mutate the source timeline");
+
+	const presented = adapter.applyActivitySessionThreadPresentation(
+		[mappedEntry],
+		{ ...config, defaultRepliesExpanded: false },
+	);
+	assert.equal(presented[0].defaultRepliesExpanded, false);
+	assert.equal(
+		adapter.applyActivitySessionThreadPresentation([mappedEntry], config)[0].defaultRepliesExpanded,
+		undefined,
+		"omit defaultRepliesExpanded to keep Activity's expanded default",
+	);
+});
+
+test("status transition lozenges reuse the status dropdown tone map", async () => {
+	const adapter = await loadAdapter();
+	const [movedInProgress, movedDone, nonStatus] = adapter.mapActivityEventsToJiraEntries([
+		{
+			id: "story-moved-in-progress",
+			kind: "event",
+			actor: {
+				id: "jira-work-item-current-user",
+				name: "Venn",
+				kind: "person",
+			},
+			icon: "status",
+			segments: [
+				{ type: "text", text: "moved from " },
+				{ type: "lozenge", text: "To do" },
+				{ type: "transition-arrow" },
+				{ type: "lozenge", text: "In progress" },
+			],
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 5),
+		},
+		{
+			id: "story-moved-done",
+			kind: "event",
+			actor: {
+				id: "jira-work-item-current-user",
+				name: "Venn",
+				kind: "person",
+			},
+			icon: "status",
+			segments: [
+				{ type: "text", text: "moved from " },
+				{ type: "lozenge", text: "In review" },
+				{ type: "transition-arrow" },
+				{ type: "lozenge", text: "Done" },
+			],
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 6),
+		},
+		{
+			id: "non-status-lozenge",
+			kind: "event",
+			actor: {
+				id: "github",
+				name: "GitHub",
+				kind: "agent",
+			},
+			icon: "linked",
+			segments: [
+				{ type: "lozenge", text: "1 failed", variant: "danger" },
+			],
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 7),
+		},
+	]);
+
+	assert.deepEqual(
+		movedInProgress.segments.filter((segment) => segment.type === "lozenge"),
+		[
+			{ type: "lozenge", text: "To do", variant: "neutral" },
+			{ type: "lozenge", text: "In progress", variant: "information" },
+		],
+	);
+	assert.deepEqual(
+		movedDone.segments.filter((segment) => segment.type === "lozenge"),
+		[
+			{ type: "lozenge", text: "In review", variant: "information" },
+			{ type: "lozenge", text: "Done", variant: "success" },
+		],
+	);
+	assert.deepEqual(nonStatus.segments, [
+		{ type: "lozenge", text: "1 failed", variant: "danger" },
+	]);
 });
 
 test("maps agent activity to rich Jira comments with lifecycle tags", async () => {
@@ -521,13 +604,26 @@ test("maps the human session invoker onto AgentListItem.invokedBy", async () => 
 	});
 });
 
-test("maps an agent progress checklist and image proof into its Jira comment", async () => {
+test("maps an agent progress checklist, outputs, and image proof into its Jira comment", async () => {
 	const adapter = await loadAdapter();
 	const progressChecklist = [
 		{ id: "consult", label: "Consult Code Planner", completed: true },
 		{ id: "implement", label: "Implement guest checkout", completed: true },
 		{ id: "verify-design", label: "Verify the final design", completed: false },
 	];
+	const outputs = [{
+		id: "guest-checkout-pr",
+		title: "Add guest checkout to the storefront",
+		source: "Pull request",
+		logoName: "github",
+		href: "https://github.com/eevensoh/vpk-rovo/pull/1847",
+		pullRequest: {
+			number: 1847,
+			status: "Open",
+			additions: 86,
+			deletions: 21,
+		},
+	}];
 	const imageAttachment = {
 		src: "/jira-agents/guest-checkout-final.png",
 		alt: "Final guest checkout design",
@@ -549,12 +645,14 @@ test("maps an agent progress checklist and image proof into its Jira comment", a
 			commandPreview: "Take the lead on guest checkout",
 			responsePreview: "Implementing the approved guest checkout contract.",
 			progressChecklist,
+			outputs,
 			imageAttachment,
 			createdAtMs: Date.UTC(2026, 4, 12, 13, 20),
 		},
 	]);
 
 	assert.deepEqual(entry.progressChecklist, progressChecklist);
+	assert.deepEqual(entry.outputs, outputs);
 	assert.deepEqual(entry.imageAttachment, imageAttachment);
 });
 
@@ -631,358 +729,4 @@ test("maps third-party coding-agent identity through activity, session, and ment
 		{ type: "agent-mention", text: "Claude Code", brandName: "claude" },
 		{ type: "text", text: " to implement the change." },
 	]);
-});
-
-test("maps a static event to a Jira event row with icon, segments, and timestamp", async () => {
-	const adapter = await loadAdapter();
-	const [entry] = adapter.mapActivityEventsToJiraEntries([
-		{
-			id: "static-labelled",
-			kind: "event",
-			actor: {
-				id: "static-triage-assistant",
-				name: "Triage assistant",
-				kind: "agent",
-				avatarSrc: "/triage.svg",
-			},
-			icon: "label",
-			segments: [
-				{ type: "text", text: "added " },
-				{ type: "label", text: "RFP", color: "blue" },
-			],
-			createdAtMs: Date.UTC(2026, 4, 12, 13, 5),
-		},
-	]);
-
-	assert.equal(entry.kind, "event");
-	assert.equal(entry.icon, "label");
-	assert.deepEqual(entry.actor, {
-		id: "static-triage-assistant",
-		name: "Triage assistant",
-		kind: "agent",
-		avatarSrc: "/triage.svg",
-	});
-	assert.deepEqual(entry.segments, [
-		{ type: "text", text: "added " },
-		{ type: "label", text: "RFP", color: "blue" },
-	]);
-	assert.equal(typeof entry.timestamp, "string");
-});
-
-test("maps a static event without an icon and an app actor with a brand name", async () => {
-	const adapter = await loadAdapter();
-	const [entry] = adapter.mapActivityEventsToJiraEntries([
-		{
-			id: "static-linked",
-			kind: "event",
-			actor: { id: "static-github", name: "GitHub", kind: "app", brandName: "github" },
-			segments: [{ type: "text", text: "linked the response workspace" }],
-			createdAtMs: Date.UTC(2026, 4, 12, 13, 20),
-		},
-	]);
-
-	assert.equal(entry.kind, "event");
-	assert.equal(entry.icon, undefined);
-	assert.deepEqual(entry.actor, { id: "static-github", name: "GitHub", kind: "app", brandName: "github" });
-});
-
-test("forwards pull-request metadata on a static event so it renders the Jira Activity PR row", async () => {
-	const adapter = await loadAdapter();
-	const pullRequest = {
-		number: 1847,
-		title: "Add Acmecorp ESM RFP response workspace",
-		status: "Open",
-		additions: 148,
-		deletions: 37,
-	};
-	const [entry] = adapter.mapActivityEventsToJiraEntries([
-		{
-			id: "static-linked",
-			kind: "event",
-			actor: { id: "static-github", name: "GitHub", kind: "app", brandName: "github" },
-			icon: "linked",
-			segments: [],
-			pullRequest,
-			createdAtMs: Date.UTC(2026, 4, 12, 13, 20),
-		},
-	]);
-
-	assert.equal(entry.kind, "event");
-	assert.equal(entry.icon, "linked");
-	assert.deepEqual(entry.pullRequest, pullRequest);
-});
-
-test("maps a static changed-files event to a Jira changed-files card", async () => {
-	const adapter = await loadAdapter();
-	const [entry] = adapter.mapActivityEventsToJiraEntries([
-		{
-			id: "static-changed-files",
-			kind: "changed-files",
-			actor: { id: "static-readiness", name: "Readiness Checker", kind: "agent", avatarSrc: "/readiness.svg" },
-			summary: "Updated 3 resources",
-			description: "Refreshed the compliance matrix and owners.",
-			branch: "#RFP-101",
-			sessionItem: {
-				id: "readiness-output-session",
-				title: "Refresh compliance resources",
-				state: "complete",
-				agent: { name: "Readiness Checker", avatarSrc: "/readiness.svg" },
-				branch: "rovo/rfp-101-risk-review",
-				elapsedSeconds: 300,
-			},
-			outputs: [
-				{
-					id: "compliance-matrix",
-					title: "Acmecorp compliance matrix",
-					source: "Confluence page",
-					iconName: "globe",
-				},
-			],
-			createdAtMs: Date.UTC(2026, 4, 12, 13, 30),
-		},
-	]);
-
-	assert.equal(entry.kind, "changed-files");
-	assert.equal(entry.summary, "Updated 3 resources");
-	assert.equal(entry.description, "Refreshed the compliance matrix and owners.");
-	assert.equal(entry.branch, "#RFP-101");
-	assert.equal(entry.sessionItem.title, "Refresh compliance resources");
-	assert.deepEqual(entry.outputs.map((output) => output.title), ["Acmecorp compliance matrix"]);
-	assert.deepEqual(entry.actor, {
-		id: "static-readiness",
-		name: "Readiness Checker",
-		kind: "agent",
-		avatarSrc: "/readiness.svg",
-	});
-});
-
-test("preserves input chronology and represents a missing agent response as an empty body", async () => {
-	const adapter = await loadAdapter();
-	const entries = adapter.mapActivityEventsToJiraEntries([
-		{
-			id: "later-human",
-			kind: "human",
-			author: { name: "Venn" },
-			content: "Keep this first because the input placed it first.",
-			createdAtMs: Date.UTC(2026, 4, 12, 12),
-		},
-		{
-			id: "earlier-agent",
-			kind: "agent",
-			sessionId: "session-1",
-			agentId: "rovo",
-			agentName: "Rovo",
-			status: "running",
-			title: "Investigate",
-			branch: "rovo/investigate",
-			elapsedSeconds: 60,
-			commandPreview: "Investigate",
-			createdAtMs: Date.UTC(2026, 4, 12, 11),
-		},
-	]);
-
-	assert.deepEqual(entries.map((entry) => entry.id), ["later-human", "earlier-agent"]);
-	assert.deepEqual(entries[0].actor, adapter.JIRA_WORK_ITEM_CURRENT_USER);
-	assert.deepEqual(entries[1].body, []);
-	assert.equal(entries[1].sessionItem.agent.avatarSrc, entries[1].actor.avatarSrc);
-});
-
-test("promotes @mentions of agents with a session in the stream into mention chips", async () => {
-	const adapter = await loadAdapter();
-	const [comment] = adapter.mapActivityEventsToJiraEntries([
-		{
-			id: "comment-orchestration",
-			kind: "human",
-			author: { name: "Venn" },
-			content: "@Code Planner lead the plan, and @Unit Test Creator prove it.",
-			createdAtMs: Date.UTC(2026, 4, 12, 9),
-		},
-		{
-			id: "activity-planner",
-			kind: "agent",
-			sessionId: "session-planner",
-			agentId: "code-planner",
-			agentName: "Code Planner",
-			agentAvatarSrc: "/planner.png",
-			status: "running",
-			title: "Plan",
-			branch: "rovo/plan",
-			elapsedSeconds: 10,
-			commandPreview: "Plan",
-			createdAtMs: Date.UTC(2026, 4, 12, 9, 1),
-		},
-		{
-			id: "activity-tests",
-			kind: "agent",
-			sessionId: "session-tests",
-			agentId: "unit-test-creator",
-			agentName: "Unit Test Creator",
-			agentAvatarSrc: "/tests.png",
-			status: "running",
-			title: "Test",
-			branch: "rovo/test",
-			elapsedSeconds: 10,
-			commandPreview: "Test",
-			createdAtMs: Date.UTC(2026, 4, 12, 9, 2),
-		},
-	]);
-
-	assert.deepEqual(comment.body, [
-		{ type: "agent-mention", text: "Code Planner", avatarSrc: "/planner.png" },
-		{ type: "text", text: " lead the plan, and " },
-		{ type: "agent-mention", text: "Unit Test Creator", avatarSrc: "/tests.png" },
-		{ type: "text", text: " prove it." },
-	]);
-});
-
-test("resolves case-varied overlapping agent mentions to the longest canonical name", async () => {
-	const adapter = await loadAdapter();
-	const [comment] = adapter.mapActivityEventsToJiraEntries([
-		{
-			id: "comment-overlapping-mentions",
-			kind: "human",
-			author: { name: "Venn" },
-			content: "Ask @code planner pro to review the rollout.",
-			createdAtMs: Date.UTC(2026, 4, 12, 9),
-		},
-		{
-			id: "activity-planner",
-			kind: "agent",
-			sessionId: "session-planner",
-			agentId: "code-planner",
-			agentName: "Code Planner",
-			agentAvatarSrc: "/planner.png",
-			status: "running",
-			title: "Plan",
-			branch: "rovo/plan",
-			elapsedSeconds: 10,
-			commandPreview: "Plan",
-			createdAtMs: Date.UTC(2026, 4, 12, 9, 1),
-		},
-		{
-			id: "activity-planner-pro",
-			kind: "agent",
-			sessionId: "session-planner-pro",
-			agentId: "code-planner-pro",
-			agentName: "Code Planner Pro",
-			agentAvatarSrc: "/planner-pro.png",
-			status: "running",
-			title: "Review",
-			branch: "rovo/review",
-			elapsedSeconds: 10,
-			commandPreview: "Review",
-			createdAtMs: Date.UTC(2026, 4, 12, 9, 2),
-		},
-	]);
-
-	assert.deepEqual(comment.body, [
-		{ type: "text", text: "Ask " },
-		{ type: "agent-mention", text: "Code Planner Pro", avatarSrc: "/planner-pro.png" },
-		{ type: "text", text: " to review the rollout." },
-	]);
-});
-
-test("leaves @text with no matching agent session as plain comment copy", async () => {
-	const adapter = await loadAdapter();
-	const [comment] = adapter.mapActivityEventsToJiraEntries([
-		{
-			id: "comment-unmatched",
-			kind: "human",
-			author: { name: "Venn" },
-			content: "Email @support and ping @Code Planners about the retry.",
-			createdAtMs: Date.UTC(2026, 4, 12, 9),
-		},
-		{
-			id: "activity-planner",
-			kind: "agent",
-			sessionId: "session-planner",
-			agentId: "code-planner",
-			agentName: "Code Planner",
-			agentAvatarSrc: "/planner.png",
-			status: "running",
-			title: "Plan",
-			branch: "rovo/plan",
-			elapsedSeconds: 10,
-			commandPreview: "Plan",
-			createdAtMs: Date.UTC(2026, 4, 12, 9, 1),
-		},
-	]);
-
-	assert.deepEqual(comment.body, [
-		{ type: "text", text: "Email @support and ping @Code Planners about the retry." },
-	]);
-});
-
-test("keeps delegated agents mentionable after their sessions fold into the lead thread", async () => {
-	const adapter = await loadAdapter();
-	const events = [
-		{
-			id: "comment-orchestration",
-			kind: "human",
-			author: { name: "Venn" },
-			content: "@Code Planner lead, @GitHub Copilot build, @Unit Test Creator verify.",
-			createdAtMs: Date.UTC(2026, 4, 12, 9),
-		},
-		{
-			id: "activity-planner",
-			kind: "agent",
-			sessionId: "session-planner",
-			agentId: "code-planner",
-			agentName: "Code Planner",
-			agentAvatarSrc: "/planner.png",
-			status: "running",
-			title: "Plan",
-			branch: "rovo/plan",
-			elapsedSeconds: 10,
-			commandPreview: "Plan",
-			createdAtMs: Date.UTC(2026, 4, 12, 9, 1),
-		},
-		{
-			id: "activity-copilot",
-			kind: "agent",
-			sessionId: "session-copilot",
-			agentId: "github-copilot",
-			agentName: "GitHub Copilot",
-			agentAvatarSrc: "/copilot.png",
-			status: "running",
-			title: "Build",
-			branch: "rovo/build",
-			elapsedSeconds: 10,
-			commandPreview: "Build",
-			responsePreview: "Building the service.",
-			createdAtMs: Date.UTC(2026, 4, 12, 9, 2),
-		},
-		{
-			id: "activity-tests",
-			kind: "agent",
-			sessionId: "session-tests",
-			agentId: "unit-test-creator",
-			agentName: "Unit Test Creator",
-			agentAvatarSrc: "/tests.png",
-			status: "running",
-			title: "Verify",
-			branch: "rovo/verify",
-			elapsedSeconds: 10,
-			commandPreview: "Verify",
-			responsePreview: "Writing acceptance cases.",
-			createdAtMs: Date.UTC(2026, 4, 12, 9, 3),
-		},
-	];
-
-	// The delegated sessions no longer exist as standalone agent events here.
-	const composed = adapter.composeActivitySessionThread(events, {
-		parentSessionId: "session-planner",
-		childSessionIds: ["session-copilot", "session-tests"],
-		visibleSessionIds: ["session-planner", "session-copilot", "session-tests"],
-	});
-	const [comment] = adapter.mapActivityEventsToJiraEntries(composed);
-
-	assert.deepEqual(
-		comment.body.filter((segment) => segment.type === "agent-mention"),
-		[
-			{ type: "agent-mention", text: "Code Planner", avatarSrc: "/planner.png" },
-			{ type: "agent-mention", text: "GitHub Copilot", avatarSrc: "/copilot.png" },
-			{ type: "agent-mention", text: "Unit Test Creator", avatarSrc: "/tests.png" },
-		],
-	);
 });

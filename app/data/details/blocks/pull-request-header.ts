@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const PULL_REQUEST_HEADER_DETAIL: ComponentDetail = {
 	description:
-		"Two-row pull-request detail header with expanded and compact variants. The title row stays visible with a Merge split button (primary label + Auto merge menu) and a More actions menu (Copy link, Open in {SCM}, Convert to draft, Close pull request); use `variant` or `scrollContainerRef` to collapse the status, repository, and branch meta row. Compact mode also shrinks the PR number and title to `text-sm`.",
+		"Two-row pull-request detail header with expanded and compact variants. The title row stays visible with a Merge split button (primary label + merge method / Auto merge menu) and a More actions menu (Copy link, Open in {SCM}, Convert to draft, Close pull request); use `variant` or `scrollContainerRef` to collapse the status, repository, and branch meta row. Compact mode also shrinks the PR number and title to `text-sm`.",
 	importStatement: `import { PullRequestHeader } from "@/components/blocks/pull-request-header";
 import type { PullRequestHeaderProps } from "@/components/blocks/pull-request-header";`,
 	usage: `import { useRef } from "react";
@@ -20,6 +20,7 @@ const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   headBranch="feature/guest-checkout"
   repository="eevensoh/vpk-rovo"
   mergeState="ready"
+  defaultMergeMethod="squash"
   defaultAutoMerge
   variant="compact"
 />
@@ -96,7 +97,26 @@ const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 			type: '"checks-running" | "merge-conflicts" | "ready"',
 			default: '"ready"',
 			description:
-				'Merge split-button primary label: `"checks-running"` → "Checks running", `"merge-conflicts"` → "Merge conflicts", `"ready"` → "Merge". Primary enables for `ready` + `onMergeClick` or `checks-running` + `onChecksRunningClick`; `merge-conflicts` stays disabled (no related primary action yet). The chevron menu stays available for Auto merge.',
+				'Merge split-button primary label: `"checks-running"` → "Checks running", `"merge-conflicts"` → "Merge conflicts", `"ready"` → the selected merge method label. Primary enables for `ready` + `onMergeClick` or `checks-running` + `onChecksRunningClick`; `merge-conflicts` stays disabled (no related primary action yet). The chevron menu stays available for merge method + Auto merge.',
+		},
+		{
+			name: "mergeMethod",
+			type: '"squash" | "merge" | "rebase"',
+			description:
+				"Controlled merge method radio selection in the merge options menu. Prefer with `onMergeMethodChange`.",
+		},
+		{
+			name: "defaultMergeMethod",
+			type: '"squash" | "merge" | "rebase"',
+			default: '"squash"',
+			description:
+				'Uncontrolled merge method default. `"squash"` unless overridden.',
+		},
+		{
+			name: "onMergeMethodChange",
+			type: "(method: \"squash\" | \"merge\" | \"rebase\") => void",
+			description:
+				"Called when a merge method radio option is selected in the merge options menu.",
 		},
 		{
 			name: "autoMerge",

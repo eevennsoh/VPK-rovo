@@ -49,6 +49,11 @@ const JIRA_AGENTS_CHILD_SESSION_IDS = ["story-session-code-planner"] as const;
 function getVisibleOrchestrationSessionIds(
 	controller: JiraAgentsStoryController,
 ): readonly string[] {
+	// Build keeps Claude Code's Activity card expanded in the lead-thread View
+	// (parent + nested Code Planner reply) so checklist/artifacts stay visible.
+	if (controller.chapter === "build") {
+		return [JIRA_AGENTS_LEAD_SESSION_ID, ...JIRA_AGENTS_CHILD_SESSION_IDS];
+	}
 	switch (controller.orchestrationStep) {
 		case "agents-working":
 		case "comment":
@@ -133,6 +138,9 @@ function JiraAgentsWorkItemStage({
 					parentSessionId: JIRA_AGENTS_LEAD_SESSION_ID,
 					childSessionIds: JIRA_AGENTS_CHILD_SESSION_IDS,
 					visibleSessionIds,
+					// Build focuses Claude's checklist/artifacts; Plan keeps the
+					// Code Planner consultation reply expanded by default.
+					...(chapter === "build" ? { defaultRepliesExpanded: false } : {}),
 				}}
 				automationRules={JIRA_AGENTS_AUTOMATION_RULES}
 				composerAgents={JIRA_AGENTS_STORY_COMPOSER_AGENTS}
@@ -148,6 +156,22 @@ function JiraAgentsWorkItemStage({
 				onSkillInvoke={handleSkillInvoke}
 				presentation="inline"
 				pullRequestApprovalStates={controller.pullRequestApprovalStates}
+				revealActivityEntryId={
+					controller.chapter === "build" && controller.buildStep !== "complete"
+						? controller.buildStep === "ready"
+							// Orient on Claude during the Plan-end hold.
+							? `activity-${JIRA_AGENTS_LEAD_SESSION_ID}`
+							// Once the PR is created, show Review's Open #1847 snapshot.
+							: "story-pr-review"
+						: null
+				}
+				revealActivityKey={
+					controller.orchestrationStep !== "idle"
+						? `${controller.orchestrationStep}:${controller.launchId}`
+						: controller.chapter === "build" && controller.buildStep !== "complete"
+							? `${controller.buildStep}:${controller.launchId}`
+							: null
+				}
 				stageKey={`${chapter}:${chapterRevision}`}
 				statusPhases={JIRA_AGENTS_STATUS_PHASES}
 				workItem={controller.workItem}

@@ -51,28 +51,8 @@ function loadOrchestrationModule() {
 	return orchestrationModulePromise;
 }
 
-let stateModulePromise;
-function loadStateModule() {
-	if (!stateModulePromise) {
-		stateModulePromise = esbuild
-			.build({
-				entryPoints: [path.join(process.cwd(), "components/blocks/jira-work-item/data/session-state.ts")],
-				bundle: true,
-				format: "cjs",
-				loader: { ".css": "empty" },
-				platform: "node",
-				tsconfig: path.join(process.cwd(), "tsconfig.json"),
-				write: false,
-			})
-			.then((result) => loadCjsModuleFromText(
-				result.outputFiles[0].text,
-				"jira-agents-session-state-harness.cjs",
-			));
-	}
-	return stateModulePromise;
-}
 
-test("Jira Agents composes the eight-stage software delivery story without changing the gallery", () => {
+test("Jira Agents composes the seven-stage software delivery story without changing the gallery", () => {
 	const pageSource = readProjectFile("components/projects/jira-agents/page.tsx");
 	const controlsSource = readProjectFile("components/projects/jira-agents/story-controls.tsx");
 	const controllerSource = readProjectFile("components/projects/jira-agents/use-hotfix-story.ts");
@@ -135,7 +115,14 @@ test("submitting the complete @mentioned agent team starts the staged orchestrat
 	assert.equal(story.shouldStartJiraAgentsPlan("plan", completeTeam, true), false);
 	assert.match(pageSource, /shouldStartJiraAgentsPlan\(chapter, agentIds, descriptionImproved\)[\s\S]*startOrchestration\(\)/u);
 	assert.doesNotMatch(pageSource, /shouldStartJiraAgentsPlan\(chapter, agentIds, descriptionImproved\)[\s\S]*selectChapter\("plan"\)/u);
-	assert.match(controllerSource, /if \(!active \|\| orchestrationStep === "idle"\) return undefined;/u);
+	assert.match(
+		controllerSource,
+		/if \(!active \|\| orchestrationStep === "idle" \|\| orchestrationStep === "complete"\) \{\s*return undefined;\s*\}/u,
+	);
+	assert.doesNotMatch(
+		controllerSource,
+		/if \(orchestrationStep === "complete"\) \{\s*selectChapter\("build"\);/u,
+	);
 	assert.match(controllerSource, /return \(\) => window\.clearTimeout\(timeoutId\);/u);
 });
 
@@ -148,20 +135,139 @@ test("the orchestration reveal acknowledges the prompt, then removes reactions a
 		"reaction-2",
 		"lead",
 		"consult",
+		"complete",
 	];
 	const states = steps.map((step) => orchestration.createJiraAgentsOrchestrationState(step));
+	const complete = states.at(-1);
+	const completePlanner = complete.sessions.find((session) => session.agentId === "code-planner");
+	const completeClaude = complete.sessions.find((session) => session.agentId === "claude-code");
 
 	assert.deepEqual(states.map((state) => state.sessions.length), steps.map(() => 3));
 	assert.deepEqual(states.map((state) => state.sessions.filter(
 		(session) => session.status !== "completed",
-	).length), [2, 2, 2, 2, 2, 1]);
+	).length), [2, 2, 2, 2, 2, 1, 1]);
 	assert.deepEqual(states.map((state) => {
 		const comment = state.comments.find((candidate) => candidate.id === "story-channel-orchestration");
 		return comment?.reactions?.[0]?.actorIds.length ?? (comment ? 0 : -1);
-	}), [-1, 0, 1, 2, 2, 0]);
+	}), [-1, 0, 1, 2, 0, 0, 0]);
 	assert.deepEqual(states.map((state) => state.staticEvents.some(
 		(event) => event.id === "story-lead-delegated",
-	)), [false, false, false, false, true, true]);
+	)), [false, false, false, false, true, true, true]);
+	// Terminal Plan complete keeps the consult-ready plan snapshot (not Build).
+	assert.equal(completePlanner.status, "completed");
+	assert.equal(completeClaude.status, "running");
+	assert.match(completeClaude.previewText, /confirming the plan handoff before implementation begins in Build/u);
+	assert.equal(
+		complete.staticEvents.some((event) => event.id === "story-changed-files"),
+		false,
+	);
+	// Once Code Planner's consultation reply is visible, Consult is checked.
+	const consult = states[steps.indexOf("consult")];
+	const lead = states[steps.indexOf("lead")];
+	const leadClaude = lead.sessions.find((session) => session.agentId === "claude-code");
+	const consultClaude = consult.sessions.find((session) => session.agentId === "claude-code");
+	assert.equal(leadClaude.progressChecklist.filter((item) => item.completed).length, 0);
+	assert.equal(consultClaude.progressChecklist.filter((item) => item.completed).length, 1);
+	assert.equal(completeClaude.progressChecklist.filter((item) => item.completed).length, 1);
+	assert.equal(
+		completeClaude.progressChecklist[0]?.label,
+		"Consult Code Planner on the secure API and validation contract",
+	);
+	assert.equal(completeClaude.progressChecklist[0]?.completed, true);
+	assert.equal(completeClaude.outputs, undefined);
+	assert.equal(completeClaude.imageAttachment, undefined);
+});
+
+test("Plan chapter selection starts the staged orchestration and reveals Activity", () => {
+	const pageSource = readProjectFile("components/projects/jira-agents/page.tsx");
+	const controllerSource = readProjectFile("components/projects/jira-agents/use-hotfix-story.ts");
+
+	assert.match(
+		controllerSource,
+		/setOrchestrationStep\(nextChapter === "plan" \? "agents-working" : "idle"\)/u,
+	);
+	assert.match(
+		controllerSource,
+		/setBuildStep\(nextChapter === "build" \? "ready" : "complete"\)/u,
+	);
+	assert.match(
+		controllerSource,
+		/const BUILD_SEQUENCE = \{[\s\S]*ready: \{ next: "implementing", delayMs: 2_500 \}[\s\S]*implementing: \{ next: "verifying", delayMs: 2_200 \}[\s\S]*verifying: \{ next: "complete", delayMs: 2_400 \}/u,
+	);
+	assert.match(
+		controllerSource,
+		/if \(!active \|\| chapter !== "build" \|\| buildStep === "complete"\) return undefined;/u,
+	);
+	assert.match(
+		controllerSource,
+		/"agents-working": \{ next: "comment"/u,
+	);
+	assert.match(
+		controllerSource,
+		/"reaction-2": \{ next: "lead", delayMs: 3_500 \}/u,
+	);
+	assert.match(
+		controllerSource,
+		/lead: \{ next: "consult"/u,
+	);
+	assert.match(
+		pageSource,
+		/revealActivityKey=\{\s*controller\.orchestrationStep !== "idle"\s*\?\s*`\$\{controller\.orchestrationStep\}:\$\{controller\.launchId\}`\s*:\s*controller\.chapter === "build" && controller\.buildStep !== "complete"\s*\?\s*`\$\{controller\.buildStep\}:\$\{controller\.launchId\}`\s*:\s*null\s*\}/u,
+	);
+	assert.match(pageSource, /composerDelivery="broadcast-active-agents"/u);
+});
+
+test("Build chapter selection stages ready→implement→verify and reveals Claude Activity", () => {
+	const pageSource = readProjectFile("components/projects/jira-agents/page.tsx");
+	const controllerSource = readProjectFile("components/projects/jira-agents/use-hotfix-story.ts");
+	const metadataRailContextSource = readProjectFile(
+		"components/blocks/jira-work-item/experimental-v2/context-metadata-rail.tsx",
+	);
+
+	// Selecting Build starts from Plan-end hold, then stages implement → verify.
+	assert.match(
+		controllerSource,
+		/setBuildStep\(nextChapter === "build" \? "ready" : "complete"\)/u,
+	);
+	assert.match(
+		controllerSource,
+		/ready: \{ next: "implementing", delayMs: 2_500 \}/u,
+	);
+	assert.match(
+		controllerSource,
+		/if \(!active \|\| chapter !== "build" \|\| buildStep === "complete"\) return undefined;/u,
+	);
+	// Activity opens for each build step via revealActivityKey (mirrors Plan
+	// orchestration) — unless a PR is selected, which suppresses the panel switch.
+	assert.match(
+		pageSource,
+		/controller\.chapter === "build" && controller\.buildStep !== "complete"\s*\?\s*`\$\{controller\.buildStep\}:\$\{controller\.launchId\}`/u,
+	);
+	assert.match(
+		metadataRailContextSource,
+		/if \(revealActivityKey != null && revealActivityKey !== "" && !suppressActivityPanelReveal\) \{/u,
+	);
+	// Build orients on Claude at ready, then reveals the PR-creation snapshot once
+	// Open #1847 exists (implementing / verifying).
+	assert.match(
+		pageSource,
+		/revealActivityEntryId=\{\s*controller\.chapter === "build" && controller\.buildStep !== "complete"\s*\?\s*controller\.buildStep === "ready"[\s\S]*?`activity-\$\{JIRA_AGENTS_LEAD_SESSION_ID\}`[\s\S]*?:\s*"story-pr-review"\s*:\s*null\s*\}/u,
+	);
+	// Build forces the Claude Code lead-thread View (parent + nested Code Planner).
+	assert.match(
+		pageSource,
+		/if \(controller\.chapter === "build"\) \{\s*return \[JIRA_AGENTS_LEAD_SESSION_ID, \.\.\.JIRA_AGENTS_CHILD_SESSION_IDS\];\s*\}/u,
+	);
+	// Build collapses the Code Planner reply by default; Plan keeps it expanded.
+	assert.match(
+		pageSource,
+		/\.\.\.\(chapter === "build" \? \{ defaultRepliesExpanded: false \} : \{\}\)/u,
+	);
+	// Plan reveal remains the primary key while orchestration is active.
+	assert.match(
+		pageSource,
+		/controller\.orchestrationStep !== "idle"\s*\?\s*`\$\{controller\.orchestrationStep\}:\$\{controller\.launchId\}`/u,
+	);
 });
 
 test("the lead activity shows the custom planner and Claude Code as mention tags", async () => {
@@ -212,7 +318,7 @@ test("Jira Agents seeds checkout automation rows without changing the shared emp
 	assert.match(compositionSource, /automationRules\?: readonly WorkItemAutomationRule\[\];/u);
 	assert.match(
 		compositionSource,
-		/<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*activitySessionThread=\{activitySessionThread\}[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}[\s\S]*\/>/u,
+		/<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*activitySessionThread=\{activitySessionThread\}[\s\S]*onOpenPullRequest=\{handlePullRequestSelect\}[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}[\s\S]*\/>/u,
 	);
 	assert.match(automationSource, /rules = \[\]/u);
 });
@@ -238,7 +344,6 @@ test("the software delivery chapters preserve the scripted status and agent-work
 		"intake",
 		"plan",
 		"build",
-		"handoff",
 		"review",
 		"fix",
 		"approve",
@@ -250,13 +355,13 @@ test("the software delivery chapters preserve the scripted status and agent-work
 	);
 	assert.deepEqual(
 		chapters.map((chapter) => story.getJiraAgentsStoryStatus(chapter)),
-		["To do", "In progress", "In progress", "In progress", "In review", "In progress", "In review", "Done"],
+		["To do", "In progress", "In progress", "In review", "In progress", "In review", "Done"],
 	);
 	assert.deepEqual(
 		chapters.map((chapter) => story.createJiraAgentsStoryState(chapter).sessions.filter(
 			(session) => session.status !== "completed",
 		).length),
-		[0, 2, 1, 1, 1, 1, 1, 0],
+		[0, 2, 1, 1, 1, 1, 0],
 	);
 	assert.deepEqual(
 		chapters.map((chapter) => {
@@ -265,7 +370,7 @@ test("the software delivery chapters preserve the scripted status and agent-work
 			);
 			return comment?.reactions?.[0]?.actorIds.length ?? 0;
 		}),
-		[0, 2, 0, 0, 0, 0, 0, 0],
+		[0, 0, 0, 0, 0, 0, 0],
 	);
 });
 
@@ -436,7 +541,6 @@ test("child work-item statuses follow the delivery chapters", async () => {
 		[
 			[],
 			["done", "todo", "todo"],
-			["done", "inprogress", "inprogress"],
 			["done", "done", "done"],
 			["done", "done", "done"],
 			["done", "done", "done"],
@@ -444,317 +548,14 @@ test("child work-item statuses follow the delivery chapters", async () => {
 			["done", "done", "done"],
 		],
 	);
-});
-
-test("Claude leads one evolving A2A thread with checklist and design evidence", async () => {
-	const story = await loadStoryModule();
-	const plan = story.createJiraAgentsStoryState("plan");
-	const build = story.createJiraAgentsStoryState("build");
-	const handoff = story.createJiraAgentsStoryState("handoff");
-	const review = story.createJiraAgentsStoryState("review");
-	const fix = story.createJiraAgentsStoryState("fix");
-	const approve = story.createJiraAgentsStoryState("approve");
-	const release = story.createJiraAgentsStoryState("release");
-	const planClaude = plan.sessions.find((session) => session.agentId === "claude-code");
-	const planPlanner = plan.sessions.find((session) => session.agentId === "code-planner");
-	const buildClaude = build.sessions.find((session) => session.agentId === "claude-code");
-	const buildPlanner = build.sessions.find((session) => session.agentId === "code-planner");
-	const handoffClaude = handoff.sessions.find((session) => session.agentId === "claude-code");
-	const reviewClaude = review.sessions.find((session) => session.agentId === "claude-code");
-	const fixClaude = fix.sessions.find((session) => session.agentId === "claude-code");
-	const approveClaude = approve.sessions.find((session) => session.agentId === "claude-code");
-	const releaseClaude = release.sessions.find((session) => session.agentId === "claude-code");
-
-	assert.equal(planClaude.agentId, "claude-code");
-	assert.equal(planClaude.status, "running");
-	assert.equal(planPlanner.status, "running");
-	assert.equal(planPlanner.messages[0].authorName, "Claude Code");
-	assert.match(planClaude.previewText, /Code Planner, review this work item/u);
-	assert.equal(planClaude.progressChecklist.filter((item) => item.completed).length, 0);
-	assert.equal(buildClaude.status, "running");
-	assert.equal(buildPlanner.status, "completed");
-	assert.match(buildPlanner.previewText, /Consultation complete/u);
-	assert.equal(buildClaude.progressChecklist.filter((item) => item.completed).length, 1);
-	assert.equal(build.comments.find(
-		(comment) => comment.id === "story-channel-orchestration",
-	).reactions, undefined);
-	assert.equal(handoffClaude.status, "running");
-	assert.equal(handoffClaude.progressChecklist.filter((item) => item.completed).length, 3);
-	assert.deepEqual(handoffClaude.imageAttachment, {
-		src: "/illustration/jira-agents/guest-checkout-final.png",
-		alt: "Final guest checkout design",
-		filename: "guest-checkout-final.png",
-	});
-	assert.equal(reviewClaude.status, "waiting");
-	assert.deepEqual(reviewClaude.waitingOn, {
-		kind: "agent",
-		agentId: "github-actions",
-		agentName: "GitHub Actions",
-	});
-	assert.equal(reviewClaude.progressChecklist.filter((item) => item.completed).length, 4);
-	assert.equal(fixClaude.status, "running");
-	assert.equal(fixClaude.progressChecklist.filter((item) => item.completed).length, 5);
-	assert.match(fixClaude.previewText, /nullable delivery-address[\s\S]*rerunning the failed lint and typecheck check[\s\S]*unit and browser coverage remain passed/u);
-	const fixingPr = fix.staticEvents.find((event) => event.id === "story-pr-fix-rerun");
-	assert.equal(fixingPr.pullRequest.mergeState, "blocked");
-	assert.equal(fixingPr.pullRequest.checks.filter((check) => check.status === "running").length, 1);
-	assert.equal(fixingPr.pullRequest.checks.filter((check) => check.status === "passed").length, 2);
-	assert.equal(approveClaude.status, "waiting");
-	assert.deepEqual(approveClaude.waitingOn, { kind: "user" });
-	assert.equal(approveClaude.progressChecklist.filter((item) => item.completed).length, 6);
-	const openedPr = approve.staticEvents.find((event) => event.id === "story-pr-approve");
-	const mergedPr = release.staticEvents.find((event) => event.id === "story-pr-merged");
-	assert.ok(openedPr?.pullRequest);
-	assert.ok(mergedPr?.pullRequest);
-	assert.equal(openedPr.pullRequest.authorName, "Claude Code");
-	assert.equal(mergedPr.pullRequest.authorName, "Claude Code");
-	assert.equal(openedPr.pullRequest.reviewDecision, "review-required");
-	assert.ok(openedPr.pullRequest.checks.every((check) => check.status === "passed"));
-	assert.equal(openedPr.pullRequest.branch, "feature/shop-4821-guest-checkout");
-	assert.equal(openedPr.pullRequest.targetBranch, "main");
-	assert.equal(mergedPr.pullRequest.targetBranch, "main");
-	assert.equal(typeof openedPr.pullRequest.createdAtMs, "number");
-	assert.equal(typeof openedPr.pullRequest.updatedAtMs, "number");
-	assert.equal(mergedPr.pullRequest.createdAtMs, openedPr.pullRequest.createdAtMs);
-	assert.ok(mergedPr.pullRequest.updatedAtMs > mergedPr.pullRequest.createdAtMs);
-	assert.equal(releaseClaude.progressChecklist.filter((item) => item.completed).length, 8);
-	assert.match(releaseClaude.previewText, /approved by Venn and merged[\s\S]*feature flag[\s\S]*production smoke checks[\s\S]*healthy telemetry[\s\S]*rollout/u);
-	assert.ok(release.sessions.every((session) => session.status === "completed"));
-});
-
-test("Review moves deterministically from queued to running to failed and Fix preserves repair evidence", async () => {
-	const story = await loadStoryModule();
-	const reviewSteps = ["queued", "running", "failed"];
-	const reviewStates = reviewSteps.map((reviewStep) => (
-		story.createJiraAgentsStoryState("review", { reviewStep })
-	));
-	const reviewPullRequests = reviewStates.map((state) => (
-		state.staticEvents.find(
-			(event) => event.id === "story-pr-review",
-		)?.pullRequest
-	));
-
 	assert.deepEqual(
-		reviewPullRequests.map((pullRequest) => pullRequest.checks.map((check) => check.status)),
-		[
-			["queued", "queued", "queued"],
-			["running", "queued", "queued"],
-			["failed", "passed", "passed"],
-		],
+		story.createJiraAgentsStoryState("build", { buildStep: "ready" })
+			.contextResources.subtasks.map((item) => item.status),
+		["done", "todo", "todo"],
 	);
-	assert.ok(reviewPullRequests.every((pullRequest) => pullRequest.mergeState === "blocked"));
-	assert.ok(reviewPullRequests.every((pullRequest) => pullRequest.reviewDecision === "review-required"));
 	assert.deepEqual(
-		reviewStates.map((state) => {
-			const claude = state.sessions.find((session) => session.agentId === "claude-code");
-			return { status: claude.status, waitingOn: claude.waitingOn ?? null };
-		}),
-		[
-			{
-				status: "waiting",
-				waitingOn: { kind: "agent", agentId: "github-actions", agentName: "GitHub Actions" },
-			},
-			{
-				status: "waiting",
-				waitingOn: { kind: "agent", agentId: "github-actions", agentName: "GitHub Actions" },
-			},
-			{ status: "completed", waitingOn: null },
-		],
+		story.createJiraAgentsStoryState("build", { buildStep: "implementing" })
+			.contextResources.subtasks.map((item) => item.status),
+		["done", "inprogress", "inprogress"],
 	);
-	const failedReview = story.createJiraAgentsStoryState("review", { reviewStep: "failed" });
-	assert.ok(failedReview.staticEvents.some((event) => event.id === "story-ci-failed"));
-
-	const fix = story.createJiraAgentsStoryState("fix");
-	const repair = fix.staticEvents.find((event) => event.id === "story-ci-repair");
-	const rerun = fix.staticEvents.find((event) => event.id === "story-pr-fix-rerun")?.pullRequest;
-	assert.equal(repair.summary, "Repairing the failed CI path");
-	assert.match(repair.description, /nullable delivery address[\s\S]*rerunning/u);
-	assert.deepEqual(rerun.checks.map((check) => check.status), ["running", "passed", "passed"]);
-});
-
-test("Approve requires Venn after green checks and Release records merge, rollout, smoke, and telemetry", async () => {
-	const story = await loadStoryModule();
-	const available = story.createJiraAgentsStoryState("approve");
-	const approved = story.createJiraAgentsStoryState("approve", { pullRequestApproved: true });
-	const availablePullRequest = available.staticEvents.find(
-		(event) => event.id === "story-pr-approve",
-	)?.pullRequest;
-	const approvedPullRequest = approved.staticEvents.find(
-		(event) => event.id === "story-pr-approve",
-	)?.pullRequest;
-	const approvedClaude = approved.sessions.find((session) => session.agentId === "claude-code");
-	const completedRepair = approved.staticEvents.find((event) => event.id === "story-ci-repair");
-
-	assert.ok(availablePullRequest.checks.every((check) => check.status === "passed"));
-	assert.equal(availablePullRequest.reviewDecision, "review-required");
-	assert.equal(availablePullRequest.mergeState, "blocked");
-	assert.equal(availablePullRequest.authorName, "Claude Code");
-	assert.equal(story.JIRA_AGENTS_PULL_REQUEST_IDENTITY, availablePullRequest.url);
-	assert.equal(approvedPullRequest.reviewDecision, "approved");
-	assert.equal(approvedPullRequest.mergeState, "ready");
-	assert.equal(approvedClaude.status, "completed");
-	assert.equal(approvedClaude.waitingOn, undefined);
-	assert.match(approvedClaude.previewText, /Venn approved PR #1847[\s\S]*ready to merge and release/u);
-	assert.match(
-		completedRepair.description,
-		/reran the failed lint and typecheck check to green[\s\S]*preserving the existing green unit and browser results/u,
-	);
-	assert.doesNotMatch(completedRepair.description, /reran lint, typecheck, unit, and browser/u);
-	assert.ok(approvedClaude.progressChecklist.some(
-		(item) => item.label === "Repair the failed path and rerun its failed check to green" && item.completed,
-	));
-	assert.deepEqual(
-		available.staticEvents
-			.filter((event) => ["story-ci-repair", "story-pr-fix-rerun", "story-pr-approve"].includes(event.id))
-			.map((event) => event.id),
-		["story-ci-repair", "story-pr-fix-rerun", "story-pr-approve"],
-	);
-	assert.ok(approved.staticEvents.some((event) => event.id === "story-venn-approved"));
-
-	const release = story.createJiraAgentsStoryState("release");
-	assert.deepEqual(
-		release.staticEvents.filter((event) => event.id.startsWith("story-release-")).map((event) => event.id),
-		[
-			"story-release-feature-flag",
-			"story-release-smoke-telemetry",
-			"story-release-rollout-complete",
-		],
-	);
-	const mergedPullRequest = release.staticEvents.find(
-		(event) => event.id === "story-pr-merged",
-	)?.pullRequest;
-	assert.ok(mergedPullRequest);
-	assert.deepEqual(mergedPullRequest.checks, approvedPullRequest.checks);
-	assert.ok(mergedPullRequest.checks.every((check) => check.status === "passed"));
-	assert.equal(release.metadata.status, "Done");
-});
-
-test("the authored artifact and pull-request chronology is complete and renderable", async () => {
-	const story = await loadStoryModule();
-	const release = story.createJiraAgentsStoryState("release");
-	const artifactEvents = release.staticEvents.filter((event) => event.kind === "changed-files");
-
-	assert.deepEqual(
-		release.staticEvents
-			.filter((event) => [
-				"story-changed-files",
-				"story-ci-repair",
-				"story-pr-fix-rerun",
-				"story-regression-matrix",
-				"story-pr-approve",
-				"story-pr-merged",
-			].includes(event.id))
-			.map((event) => event.id),
-		[
-			"story-changed-files",
-			"story-ci-repair",
-			"story-pr-fix-rerun",
-			"story-regression-matrix",
-			"story-pr-approve",
-			"story-pr-merged",
-		],
-	);
-	assert.ok(artifactEvents.every((event) => event.sessionItem));
-	assert.deepEqual(
-		artifactEvents.flatMap((event) => event.outputs.map((output) => output.title)),
-		[
-			"Guest checkout implementation",
-			"SHOP-4821 acceptance report",
-		],
-	);
-});
-
-test("the orchestration timeline and live broadcasts remain chronological", async () => {
-	const [story, stateModel] = await Promise.all([loadStoryModule(), loadStateModule()]);
-	const build = story.createJiraAgentsStoryState("build");
-	const handoff = story.createJiraAgentsStoryState("handoff");
-	const prompt = build.comments.find((comment) => comment.id === "story-channel-orchestration");
-	const leadClaim = build.staticEvents.find((event) => event.id === "story-lead-delegated");
-	const implementation = handoff.staticEvents.find((event) => event.id === "story-changed-files");
-	const claude = build.sessions.find((session) => session.agentId === "claude-code");
-	const codePlanner = build.sessions.find((session) => session.agentId === "code-planner");
-
-	assert.ok(prompt.createdAtMs < leadClaim.createdAtMs);
-	assert.ok(leadClaim.createdAtMs < claude.startedAtMs);
-	assert.ok(claude.startedAtMs < codePlanner.startedAtMs);
-	assert.ok(codePlanner.startedAtMs < implementation.createdAtMs);
-
-	const broadcast = stateModel.jiraWorkItemReducer(build, {
-		type: "broadcast-comment",
-		text: "Keep guest checkout fast and do not create an account before purchase.",
-	});
-	const events = stateModel.selectActivityEvents(broadcast);
-	assert.equal(events.at(-1).kind, "human");
-	assert.equal(events.at(-1).content, "Keep guest checkout fast and do not create an account before purchase.");
-	assert.equal(
-		broadcast.sessions.find((session) => session.agentId === "claude-code").status,
-		"running",
-	);
-});
-
-test("SHOP-4821 is one shared route-owned item across board, list, and detail data", async () => {
-	const story = await loadStoryModule();
-	const chapters = story.JIRA_AGENTS_STORY_CHAPTERS.map((chapter) => chapter.value);
-
-	for (const chapter of chapters) {
-		const columns = story.createJiraAgentsBoardColumns(chapter);
-		const expectedStatus = story.getJiraAgentsStoryStatus(chapter);
-		const targetColumn = columns.find((column) => column.title === expectedStatus);
-		const storyCards = columns.flatMap((column) => column.cards).filter(
-			(card) => card.code === "SHOP-4821",
-		);
-		const sections = story.createJiraAgentsWorkspaceSections(chapter);
-		const storyItems = sections.flatMap((section) => section.items).filter(
-			(item) => item.issueKey === "SHOP-4821",
-		);
-
-		assert.equal(storyCards.length, 1);
-		assert.equal(targetColumn.cards[0].code, "SHOP-4821");
-		assert.equal(storyItems.length, 1);
-		assert.equal(storyItems[0].jiraStatus, expectedStatus);
-	}
-
-	assert.equal(story.getJiraAgentsStoryChapterForStatus("To do"), "intake");
-	assert.equal(story.getJiraAgentsStoryChapterForStatus("In progress"), "build");
-	assert.equal(story.getJiraAgentsStoryChapterForStatus("Review"), "review");
-	assert.equal(story.getJiraAgentsStoryChapterForStatus("In review"), "review");
-	assert.equal(story.getJiraAgentsStoryChapterForStatus("Done"), "release");
-
-	const build = story.createJiraAgentsBoardColumns("build");
-	const unrelatedCard = build.find((column) => column.cards.some((card) => card.code !== "SHOP-4821")).cards.find(
-		(card) => card.code !== "SHOP-4821",
-	);
-	const withLocalEdit = build.map((column) => ({
-		...column,
-		cards: column.cards.map((card) => card.code === unrelatedCard.code
-			? { ...card, title: "Locally edited board card" }
-			: card),
-	}));
-	const review = story.createJiraAgentsBoardColumns("review", withLocalEdit);
-	const preserved = review.flatMap((column) => column.cards).find((card) => card.code === unrelatedCard.code);
-
-	assert.equal(preserved.title, "Locally edited board card");
-	assert.equal(story.getJiraAgentsStoryColumn(review), "In review");
-});
-
-test("agent session copy reads as a full comment, never a truncated preview", async () => {
-	const story = await loadStoryModule();
-	const chapters = ["intake", "plan", "build", "handoff", "review", "fix", "approve", "release"];
-
-	for (const chapter of chapters) {
-		for (const session of story.createJiraAgentsStoryState(chapter).sessions) {
-			assert.doesNotMatch(
-				session.previewText ?? "",
-				/(?:…|\.\.\.)\s*$/u,
-				`${chapter}/${session.agentName} preview text is truncated`,
-			);
-			for (const reply of session.threadReplies ?? []) {
-				assert.doesNotMatch(
-					reply.content,
-					/(?:…|\.\.\.)\s*$/u,
-					`${chapter}/${session.agentName} thread reply is truncated`,
-				);
-			}
-		}
-	}
 });

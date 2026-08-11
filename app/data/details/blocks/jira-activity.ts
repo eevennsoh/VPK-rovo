@@ -53,6 +53,18 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 			description: "Renders an optional trailing action in each comment card header.",
 		},
 		{
+			name: "onAddCommentToChat",
+			type: "(entry: JiraActivityCommentEntry) => void",
+			description:
+				'Shows an outlined "Add to chat" control on each comment card header, left of expand/collapse. Callers typically open the agent chat and attach the comment as a composer pill.',
+		},
+		{
+			name: "onAddReplyToChat",
+			type: "(reply: JiraActivityReply, entry: JiraActivityCommentEntry) => void",
+			description:
+				'Same as `onAddCommentToChat` for nested reply cards.',
+		},
+		{
 			name: "commentActions",
 			type: '"none" | "reactions" | "reply-and-reactions"',
 			default: '"reply-and-reactions"',
@@ -139,7 +151,7 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 					name: "timestamp",
 					type: "string",
 					description:
-						"Fixed sent timestamp; active session headers append `Working for …`, while plain headers show it alone.",
+						"Fixed sent timestamp; running session headers append `Working for …`, needs-input headers append shimmering `Needs input` with trailing animated dots, and plain headers show the timestamp alone.",
 				},
 				{
 					name: "headerAvatar",

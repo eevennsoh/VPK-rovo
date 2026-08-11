@@ -54,8 +54,6 @@ export interface PullRequestCheck {
 	name: string;
 	status: "passed" | "failed" | "running" | "queued";
 	details: string;
-	/** SCM check-run / Actions URL opened from the CI checks rail row. */
-	url?: string;
 }
 
 export type PullRequestReviewDecision =
@@ -133,6 +131,12 @@ export type PullRequestActivity =
 
 export interface PullRequestGuidedReview {
 	summary: readonly string[];
+	metrics: Readonly<{
+		risk: { label: string; filled: number };
+		impact: { label: string; filled: number };
+		reviewDepth: { label: string; filled: number };
+		mergeConfidence: { label: string; filled: number };
+	}>;
 	/** Full markdown body for the Overview TipTap description editor. */
 	description: string;
 	chapters: readonly PullRequestGuideChapter[];
@@ -298,6 +302,12 @@ const GUIDED_REVIEW: PullRequestGuidedReview = {
 		"Keeps privileged order creation on the server behind a dedicated guest-order route.",
 		"Preserves checkout details after recoverable errors and verifies the full guest flow.",
 	],
+	metrics: {
+		risk: { label: "Low", filled: 1 },
+		impact: { label: "Medium", filled: 2 },
+		reviewDepth: { label: "3/5", filled: 3 },
+		mergeConfidence: { label: "4/5", filled: 4 },
+	},
 	description: `Adds a guest checkout path so shoppers can finish purchase without creating an account, while keeping privileged commerce work on the server.
 
 #### Summary
@@ -363,6 +373,34 @@ const VENN: PullRequestActivityActor = {
 	avatarSrc: "/avatar-user/venn/venn.png",
 };
 
+const MAYA_CHEN: PullRequestActivityActor = {
+	id: "maya-chen",
+	name: "Maya Chen",
+	kind: "person",
+	avatarSrc: "/avatar-user/andrea-wilson/color/asow-service-yellow.png",
+};
+
+const JORDAN_LEE: PullRequestActivityActor = {
+	id: "jordan-lee",
+	name: "Jordan Lee",
+	kind: "person",
+	avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+};
+
+const PRIYA_NARAYANAN: PullRequestActivityActor = {
+	id: "priya-narayanan",
+	name: "Priya Narayanan",
+	kind: "person",
+	avatarSrc: "/avatar-user/priya-hansra/color/asow-service-yellow.png",
+};
+
+const SAM_RIVERA: PullRequestActivityActor = {
+	id: "sam-rivera",
+	name: "Sam Rivera",
+	kind: "person",
+	avatarSrc: "/avatar-user/raul-gonzalez/color/asow-strategy-orange.png",
+};
+
 const CLAUDE_CODE: PullRequestActivityActor = {
 	id: "claude-code",
 	name: "Claude Code",
@@ -404,12 +442,13 @@ const CODEX: PullRequestActivityActor = {
 
 const GUIDED_REVIEW_REPO_COMMIT_URL = "https://github.com/eevensoh/vpk-rovo/commit";
 
+/** Demo commits use people portraits only — agent tiles stay out of this rail. */
 const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 	{
 		id: "5f02a91",
 		shortSha: "5f02a91",
 		title: "Add the guest checkout storefront flow",
-		author: CLAUDE_CODE,
+		author: VENN,
 		timestamp: "24 minutes ago",
 		additions: 34,
 		deletions: 8,
@@ -419,7 +458,7 @@ const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 		id: "91c73d4",
 		shortSha: "91c73d4",
 		title: "Keep guest order creation server-owned",
-		author: CODE_PLANNER,
+		author: MAYA_CHEN,
 		timestamp: "22 minutes ago",
 		additions: 24,
 		deletions: 6,
@@ -429,7 +468,7 @@ const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 		id: "a2f74c1",
 		shortSha: "a2f74c1",
 		title: "Preserve checkout drafts after recoverable failures",
-		author: CLAUDE_CODE,
+		author: JORDAN_LEE,
 		timestamp: "20 minutes ago",
 		additions: 18,
 		deletions: 4,
@@ -439,7 +478,7 @@ const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 		id: "d34c112",
 		shortSha: "d34c112",
 		title: "Cover declined payments and idempotent retries",
-		author: UNIT_TEST_CREATOR,
+		author: PRIYA_NARAYANAN,
 		timestamp: "18 minutes ago",
 		additions: 10,
 		deletions: 3,
@@ -449,7 +488,7 @@ const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 		id: "8b4e6fa",
 		shortSha: "8b4e6fa",
 		title: "Fix nullable delivery-address validation in CI",
-		author: CLAUDE_CODE,
+		author: SAM_RIVERA,
 		timestamp: "14 minutes ago",
 		additions: 7,
 		deletions: 2,
@@ -459,7 +498,7 @@ const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 		id: "f8cc291",
 		shortSha: "f8cc291",
 		title: "Tighten checkout keyboard coverage",
-		author: UNIT_TEST_CREATOR,
+		author: MAYA_CHEN,
 		timestamp: "12 minutes ago",
 		additions: 5,
 		deletions: 1,
@@ -473,21 +512,18 @@ const GUIDED_REVIEW_CHECKS: readonly PullRequestCheck[] = [
 		name: "Lint and typecheck",
 		status: "passed",
 		details: "Completed in 1m 18s",
-		url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471001",
 	},
 	{
 		id: "unit-tests",
 		name: "Unit tests",
 		status: "passed",
 		details: "418 tests in 2m 46s",
-		url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471002",
 	},
 	{
 		id: "browser-tests",
 		name: "Guest checkout browser tests",
 		status: "passed",
 		details: "5 scenarios in 1m 32s",
-		url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471003",
 	},
 ];
 
@@ -610,17 +646,18 @@ const GUIDED_REVIEW_ACTIVITY: readonly PullRequestActivity[] = [
 	},
 ];
 
+/** Human approvers: teammates sign off once CI is green, Venn gives the final call. */
 function resolveGuidedReviewReviewers(
 	checks: readonly PullRequestCheck[],
 	reviewDecision: PullRequestReviewDecision,
 ): readonly PullRequestReviewer[] {
-	const automatedReviewStatus = checks.length > 0
+	const teamApprovalStatus = checks.length > 0
 		&& checks.every((check) => check.status === "passed")
 		? "approved"
 		: "pending";
 	return [
-		{ ...CODE_PLANNER, status: automatedReviewStatus },
-		{ ...UNIT_TEST_CREATOR, status: automatedReviewStatus },
+		{ ...MAYA_CHEN, status: teamApprovalStatus },
+		{ ...JORDAN_LEE, status: teamApprovalStatus },
 		{
 			...VENN,
 			status: reviewDecision === "approved" ? "approved" : "pending",
@@ -739,9 +776,9 @@ export function resolvePullRequestDetailData(
 		description: guidedReview?.description ?? "",
 		repository,
 		status: pullRequest.status,
-		authorName: isGuidedReview ? CLAUDE_CODE.name : (pullRequest.authorName ?? "Unknown author"),
-		authorAvatarSrc: isGuidedReview ? (CLAUDE_CODE.avatarSrc ?? undefined) : undefined,
-		authorKind: isGuidedReview ? CLAUDE_CODE.kind : "person",
+		authorName: isGuidedReview ? VENN.name : (pullRequest.authorName ?? "Unknown author"),
+		authorAvatarSrc: isGuidedReview ? (VENN.avatarSrc ?? undefined) : undefined,
+		authorKind: isGuidedReview ? VENN.kind : "person",
 		baseBranch: guidedReview ? "main" : null,
 		headBranch: guidedReview ? "feature/shop-4821-guest-checkout" : null,
 		additions: pullRequest.additions,

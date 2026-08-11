@@ -8,7 +8,9 @@ import {
   DownloadIcon,
 } from "@/components/ui/vpk-icons"
 
+import { getVerticalOverflowState } from "@/components/hooks/use-has-vertical-overflow"
 import { Button } from "@/components/ui/button"
+import { StickyRowScrollFade } from "@/components/visual/scroll-mask"
 import { token } from "@/lib/tokens"
 import { cn } from "@/lib/utils"
 
@@ -42,6 +44,10 @@ export interface ConversationContextValue {
 	scrollRef: RefObject<HTMLDivElement | null>
 	contentRef: RefObject<HTMLDivElement | null>
 	isAtBottom: boolean
+	/** True only when the thread overflows and content is scrolled past the top edge. */
+	showTopScrollMask: boolean
+	/** True only when the thread overflows and content remains hidden below. */
+	showBottomScrollMask: boolean
 	scrollToBottom: (options?: ScrollToBottomOptions) => Promise<void>
 }
 
@@ -106,6 +112,8 @@ export function Conversation({
 	const scrollRef = useRef<HTMLDivElement>(null)
 	const contentRef = useRef<HTMLDivElement>(null)
 	const [isAtBottom, setIsAtBottom] = useState(true)
+	const [showTopScrollMask, setShowTopScrollMask] = useState(false)
+	const [showBottomScrollMask, setShowBottomScrollMask] = useState(false)
 	const hasInitializedScrollRef = useRef(false)
 	const lastKnownScrollHeightRef = useRef(0)
 	const lastUserScrollIntentAtRef = useRef(0)
@@ -133,18 +141,31 @@ export function Conversation({
 		return defaultTargetTop
 	}, [getDefaultTargetTop, resolvedFollowMode, targetScrollTop])
 
-	const updateIsAtBottom = useCallback(() => {
+	const updateScrollMaskState = useCallback(() => {
 		const scrollElement = scrollRef.current
 		if (!scrollElement) {
+			setIsAtBottom(true)
+			setShowTopScrollMask(false)
+			setShowBottomScrollMask(false)
 			return true
 		}
 
+		const overflowState = getVerticalOverflowState({
+			clientHeight: scrollElement.clientHeight,
+			maxHeight: Number.POSITIVE_INFINITY,
+			scrollHeight: scrollElement.scrollHeight,
+			scrollTop: scrollElement.scrollTop,
+		})
 		const actualBottomTop = getDefaultTargetTop(scrollElement)
 		const distanceFromActualBottom = Math.abs(scrollElement.scrollTop - actualBottomTop)
 		const nextIsAtBottom = distanceFromActualBottom <= DEFAULT_SCROLL_THRESHOLD_PX
 		setIsAtBottom(nextIsAtBottom)
+		setShowTopScrollMask(overflowState.showTopScrollMask)
+		setShowBottomScrollMask(overflowState.showBottomScrollMask)
 		return nextIsAtBottom
 	}, [getDefaultTargetTop])
+
+	const updateIsAtBottom = updateScrollMaskState
 
 	const scrollToBottom = useCallback(
 		async (options?: ScrollToBottomOptions) => {
@@ -178,9 +199,11 @@ export function Conversation({
 			scrollRef,
 			contentRef,
 			isAtBottom,
+			showTopScrollMask,
+			showBottomScrollMask,
 			scrollToBottom,
 		}),
-		[isAtBottom, scrollToBottom]
+		[isAtBottom, scrollToBottom, showBottomScrollMask, showTopScrollMask]
 	)
 
 	useEffect(() => {
@@ -324,6 +347,11 @@ export function Conversation({
 				role={role}
 				{...props}
 			>
+				{/* Soft edge under fixed header chrome; only when overflow is scrolled from the top. */}
+				<StickyRowScrollFade
+					className={cn("top-0 z-10", showTopScrollMask ? "opacity-100" : null)}
+					data-slot="conversation-top-scroll-fade"
+				/>
 				{children}
 			</div>
 		</ConversationContext>
@@ -375,12 +403,11 @@ export function ConversationContent({
 		}
 	}, [context?.scrollRef, revealScrollbarOnScroll])
 
-	// Only fade the bottom edge when there is hidden content below (i.e. the
-	// user is scrolled up). When the conversation fits or is scrolled to the
-	// bottom, the fade would otherwise cover the last message (e.g. the greeting).
-	const maskImage = context?.isAtBottom
-		? undefined
-		: "linear-gradient(to bottom, black 92%, transparent 100%)"
+	// Only fade the bottom edge when overflow exists and content remains hidden
+	// below. A short thread (or one scrolled to the bottom) stays unmasked.
+	const maskImage = context?.showBottomScrollMask
+		? "linear-gradient(to bottom, black 92%, transparent 100%)"
+		: undefined
 
 	return (
 		<div

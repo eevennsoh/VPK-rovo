@@ -91,24 +91,32 @@
 	--typeset-font-mono: var(--font-mono);
 	--typeset-leading: 1.6;
 	--typeset-flow: 1em;
-}
 
-/* Chat links must read as ADS text links. Typeset's default `a { color: inherit }`
-   makes markdown links look like body copy (and hides the hover underline). */
-.typeset-chat a {
-	color: var(--color-link);
-	font-weight: inherit;
-	text-decoration: none;
-}
+	/*
+	   Nest link chrome here — Tailwind/Lightning drops sibling
+	   `.typeset-chat a` rules from the built stylesheet, which left
+	   typeset's `a { color: inherit; text-decoration-line: underline }`
+	   winning (dark underlined body copy). Nested `& a` survives the
+	   pipeline. MarkdownAnchor also applies `text-link` utilities.
+	*/
+	& a,
+	& :where([data-streamdown="link"]) {
+		color: var(--color-link);
+		font-weight: inherit;
+		text-decoration: none;
+	}
 
-.typeset-chat a:hover {
-	color: var(--color-link);
-	text-decoration: underline;
-	text-decoration-color: currentColor;
-}
+	& a:hover,
+	& :where([data-streamdown="link"]:hover) {
+		color: var(--color-link);
+		text-decoration: underline;
+		text-decoration-color: currentColor;
+	}
 
-.typeset-chat a:active {
-	color: var(--color-link-pressed);
+	& a:active,
+	& :where([data-streamdown="link"]:active) {
+		color: var(--color-link-pressed);
+	}
 }
 .typeset-docs {
 	--typeset-font-body: var(--font-sans);

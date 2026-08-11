@@ -165,6 +165,126 @@ test("Jira description generation replays multiple tools before the confirmation
 	);
 });
 
+test("Claude Code Build playback puts agent text before tools and stays mid-work", async () => {
+	const { buildAsxAgentChatPlayback } = await loadHarness();
+	const playback = buildAsxAgentChatPlayback({
+		agentId: "claude-code",
+		agentName: "Claude Code",
+		issueKey: "SHOP-4821",
+		issueSummary: "Add guest checkout to the storefront",
+		playbackVariant: "claude-code-build",
+		request: "Take the lead on implementing guest checkout. Consult Code Planner on the secure API and validation contract first, then implement and verify the work.",
+		result: "Guest checkout is implemented and verified.",
+	}, "claude-build", 0);
+
+	assert.equal(playback.frames.length >= 30, true);
+	assert.equal(playback.keepThinkingActiveAfterLastFrame, true);
+	assert.match(playback.userMessage.parts[0].text, /Take the lead on implementing guest checkout/u);
+
+	const finalParts = playback.frames.at(-1).parts;
+	assert.equal(finalParts[0].type, "text");
+	assert.match(finalParts[0].text, /taking the lead on \*\*SHOP-4821\*\*/iu);
+	assert.equal(
+		finalParts.findIndex((part) => part.type === "data-thinking-event")
+			> finalParts.findIndex((part) => part.type === "text"),
+		true,
+	);
+
+	const starts = finalParts.filter((part) => part.type === "data-thinking-event" && part.data.phase === "start");
+	const results = finalParts.filter((part) => part.type === "data-thinking-event" && part.data.phase === "result");
+	const openValidation = starts.find((part) => part.data.toolName === "bash");
+	const progressCheckpoint = starts.find((part) => part.data.toolName === "update_todo");
+	const doneTexts = finalParts.filter((part) => part.type === "text" && part.state === "done");
+	const statusesForValidation = finalParts.filter(
+		(part) => part.type === "data-thinking-status" && part.data.toolCallId === openValidation.data.toolCallId,
+	);
+	const statusesPerCompletedTool = starts
+		.filter((part) => part.data.toolCallId !== openValidation.data.toolCallId
+			&& part.data.toolCallId !== progressCheckpoint.data.toolCallId)
+		.map((part) => finalParts.filter(
+			(status) => status.type === "data-thinking-status" && status.data.toolCallId === part.data.toolCallId,
+		).length);
+
+	assert.equal(starts.length, results.length + 2);
+	assert.equal(openValidation.data.label, "Running a command");
+	assert.equal(progressCheckpoint.data.permissionScenario, "progress-checkpoint");
+	assert.equal(results.some((part) => part.data.toolCallId === openValidation.data.toolCallId), false);
+	assert.equal(results.some((part) => part.data.toolCallId === progressCheckpoint.data.toolCallId), false);
+	assert.equal(finalParts.some((part) => part.type === "data-turn-complete"), false);
+	assert.equal(
+		doneTexts.some((part) => /implemented and verified|PR #1847|prepared PR/iu.test(part.text)),
+		false,
+	);
+	assert.equal(statusesForValidation.length >= 3, true);
+	assert.equal(statusesPerCompletedTool.every((count) => count >= 3), true);
+	assert.match(
+		statusesForValidation.at(-1).data.content,
+		/still in progress|holding before verify/iu,
+	);
+	assert.deepEqual(
+		starts.map((part) => part.data.toolName),
+		[
+			"jira.read_work_item",
+			"twg.lookup_work_item_delivery_context",
+			"open_files",
+			"create_file",
+			"find_and_replace_code",
+			"expand_code_chunks",
+			"create_file",
+			"update_todo",
+			"bash",
+		],
+	);
+	// Parent labels stay generic; specific work detail lives in status bylines.
+	assert.deepEqual(
+		starts.map((part) => part.data.label),
+		[
+			"Reading the work item",
+			"Connecting delivery context",
+			"Opening files",
+			"Creating files",
+			"Editing code",
+			"Inspecting code",
+			"Creating files",
+			"Updating todos",
+			"Running a command",
+		],
+	);
+	assert.match(
+		statusesForValidation[0].data.content,
+		/lint|typecheck|guest-checkout/iu,
+	);
+	// Distinct native tool names → distinct icons in tool-icon-resolver (not all wrenches).
+	assert.equal(new Set(starts.map((part) => part.data.toolName)).size >= 7, true);
+
+	// Tool entrances use varied delays (not a uniform tick); byline cycles stay shorter.
+	const delays = playback.frames.map((frame) => frame.delayMs);
+	assert.equal(delays[0], 0);
+	const nonZeroDelays = delays.slice(1);
+	assert.equal(new Set(nonZeroDelays).size >= 6, true);
+	assert.equal(Math.min(...nonZeroDelays) >= 400, true);
+	assert.equal(Math.max(...nonZeroDelays) >= 1_900, true);
+	const toolEntranceDelays = playback.frames
+		.map((frame, index) => ({ frame, index }))
+		.filter(({ frame, index }) => {
+			if (index === 0) {
+				return false;
+			}
+			const previousStarts = playback.frames[index - 1].parts.filter(
+				(part) => part.type === "data-thinking-event" && part.data.phase === "start",
+			).length;
+			const currentStarts = frame.parts.filter(
+				(part) => part.type === "data-thinking-event" && part.data.phase === "start",
+			).length;
+			return currentStarts > previousStarts;
+		})
+		.map(({ frame }) => frame.delayMs);
+	assert.equal(toolEntranceDelays.length, 9);
+	assert.equal(new Set(toolEntranceDelays).size >= 7, true);
+	assert.equal(toolEntranceDelays.some((delay) => delay <= 600), true);
+	assert.equal(toolEntranceDelays.some((delay) => delay >= 1_900), true);
+});
+
 test("ASX agent chat exposes persistent work-item context for the floating composer", async () => {
 	const { buildAsxAgentChatContextBar } = await loadHarness();
 	const contextBar = buildAsxAgentChatContextBar({

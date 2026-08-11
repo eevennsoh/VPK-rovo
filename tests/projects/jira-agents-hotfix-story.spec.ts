@@ -13,7 +13,6 @@ const CHAPTERS = [
 	"Intake",
 	"Plan",
 	"Build",
-	"Handoff",
 	"Review",
 	"Fix",
 	"Approve",
@@ -97,7 +96,7 @@ async function expectEyesReaction(page: Page, count: number): Promise<void> {
 	await expect(entry.getByRole("button", { name: `${count} reacted with eyes` })).toBeVisible();
 }
 
-test("the shared-channel story exposes eight selectable stages and canonical working counts", async ({ page }) => {
+test("the shared-channel story exposes seven selectable stages and canonical working counts", async ({ page }) => {
 	await openWorkItem(page);
 	const description = page.getByRole("textbox", { name: "Work item description" });
 	await expect(description).toContainText("mandatory account creation is a major source of abandonment");
@@ -160,7 +159,6 @@ test("the shared-channel story exposes eight selectable stages and canonical wor
 
 	const progression = [
 		["Build", 1],
-		["Handoff", 1],
 		["Review", 1],
 		["Fix", 1],
 		["Approve", 1],
@@ -174,8 +172,11 @@ test("the shared-channel story exposes eight selectable stages and canonical wor
 			await expectWorkingAgents(page, count);
 		}
 		await expectEyesReaction(page, 0);
-		if (chapter === "Handoff") {
-			await expect(page.getByRole("button", { exact: true, name: "Subtasks" })).toBeVisible();
+		if (chapter === "Build") {
+			// Build: ready hold → implement → verify → former Handoff complete (~7s).
+			await expect(page.getByRole("button", { name: "Subtasks 3/3" })).toBeVisible({
+				timeout: 12_000,
+			});
 			await expect(page.getByRole("link", {
 				name: "SHOP-4823: Build and integrate the storefront checkout flow Done",
 			})).toBeVisible();
@@ -191,18 +192,18 @@ test("PR #1847 requires every guide chapter before Venn can approve it in place"
 	const pullRequestSelector = page.getByRole("combobox", { name: "Review pull request" });
 	await pullRequestSelector.click();
 	await page.getByRole("option", {
-		name: "Pull request #1847: Add guest checkout to the storefront",
+		name: "Pull request #1847: Implement guest checkout without account creation",
 	}).click();
 	await expect(description).toHaveCount(0);
 	const detail = page.locator("[data-jira-work-item-pull-request-detail]");
 	await expect(detail).toBeVisible();
 	await expect(detail.getByRole("heading", {
-		name: "Add guest checkout to the storefront",
+		name: "Implement guest checkout without account creation",
 	})).toBeVisible();
 	await expect(detail.getByText("main", { exact: true })).toBeVisible();
 	await expect(detail.getByText("feature/shop-4821-guest-checkout", { exact: true })).toBeVisible();
 	const reviewers = page.locator("[data-jira-work-item-pull-request-reviewers]");
-	await expect(reviewers).toHaveAccessibleName(/Reviewers:.*Venn \(Pending\)/u);
+	await expect(reviewers).toHaveAccessibleName(/Approvers:.*Venn \(Pending\)/u);
 	const ciChecks = page.getByRole("button", { name: "CI checks 3/3 passed" });
 	await expect(ciChecks).toBeVisible();
 	await expect(page.getByText("Review required", { exact: true }).first()).toBeVisible();
@@ -231,7 +232,7 @@ test("PR #1847 requires every guide chapter before Venn can approve it in place"
 	await expect(guide.getByRole("button", { name: "Approved", exact: true })).toBeDisabled();
 	await expect(detail.getByRole("tab", { name: "Guide" })).toHaveAttribute("aria-selected", "true");
 	await expect(detail.getByRole("button", { name: "Merge", exact: true })).toBeVisible();
-	await expect(reviewers).toHaveAccessibleName(/Reviewers:.*Venn \(Approved\)/u);
+	await expect(reviewers).toHaveAccessibleName(/Approvers:.*Venn \(Approved\)/u);
 
 	await detail.getByRole("tab", { name: /Files/u }).click();
 	const filesPanel = detail.getByRole("tabpanel", { name: /Files/u });
@@ -260,7 +261,7 @@ test("PR #1847 requires every guide chapter before Venn can approve it in place"
 
 	await pullRequestSelector.click();
 	await page.getByRole("option", {
-		name: "Pull request #1847: Add guest checkout to the storefront",
+		name: "Pull request #1847: Implement guest checkout without account creation",
 	}).click();
 	await expect(detail).toBeVisible();
 	await selectChapter(page, "Release");
@@ -363,7 +364,7 @@ test("Intake requires Improve description before the complete team can advance t
 	expect(await workItemDescription.innerText()).not.toBe(rawDescription);
 	await agentChat.getByRole("button", { name: "Close" }).click();
 	await showActivity(page);
-	await expect(page.getByText(/Added the approved implementation-ready description/u)).toBeVisible();
+	await expect(page.getByText(/updated the description/u)).toBeVisible();
 
 	await submitSharedComposer(
 		page,
@@ -372,7 +373,15 @@ test("Intake requires Improve description before the complete team can advance t
 
 	await expect(chapterButton(page, "Plan")).toHaveAttribute("aria-pressed", "true");
 	await expectWorkingAgents(page, 2);
-	await expect(chapterButton(page, "Build")).toHaveAttribute("aria-pressed", "true", { timeout: 15_000 });
+	// Plan orchestration finishes in place; Build only starts on manual chapter click.
+	await expect(page.getByText(/confirming the plan handoff before implementation begins in Build/u)).toBeVisible({
+		timeout: 15_000,
+	});
+	await expect(chapterButton(page, "Plan")).toHaveAttribute("aria-pressed", "true");
+	await expect(chapterButton(page, "Build")).toHaveAttribute("aria-pressed", "false");
+
+	await selectChapter(page, "Build");
+	await expect(chapterButton(page, "Build")).toHaveAttribute("aria-pressed", "true");
 	await expectWorkingAgents(page, 1);
 
 	await selectChapter(page, "Intake");
@@ -424,7 +433,7 @@ test("a comment with nested replies can collapse and restore its entire thread f
 	await openWorkItem(page);
 	await showActivity(page);
 
-	const collapseButton = page.getByRole("button", { name: "Collapse nested comments" });
+	const collapseButton = page.getByRole("button", { name: "Hide all replies" });
 	await expect(collapseButton).toHaveCount(1);
 	const activityCard = page.locator('[class~="group/activity-card"]').filter({ has: collapseButton }).first();
 	await activityCard.hover();
@@ -436,7 +445,7 @@ test("a comment with nested replies can collapse and restore its entire thread f
 	await expect(replies).toBeVisible();
 
 	await collapseButton.click();
-	const expandButton = page.getByRole("button", { name: "Expand nested comments" });
+	const expandButton = page.getByRole("button", { name: "Show all replies" });
 	await expect(expandButton).toHaveAttribute("aria-expanded", "false");
 	await expect(replies).toBeHidden();
 	const threadSummary = page.getByRole("button", { name: "View all comments, 1 reply" });
@@ -458,28 +467,43 @@ test("Review advances queued to running to failed and reselecting resets it to q
 		'[data-jira-activity-entry-id="activity-story-session-claude-code"]',
 	);
 
-	await expect(claudeEntry).toContainText("checks are queued");
+	await expect(claudeEntry).toContainText("lint and typecheck has started");
 	await page.clock.fastForward(900);
-	await expect(claudeEntry).toContainText("running lint and typecheck");
+	await expect(claudeEntry).toContainText("running lint, typecheck, and unit tests");
 	await page.clock.fastForward(1_500);
 	await expect(claudeEntry).toContainText("nullable delivery-address path");
 	await showActivity(page);
 	await expect(page.getByText(/blocked PR #1847 after/u)).toBeVisible();
 
 	await selectChapter(page, "Review");
-	await expect(claudeEntry).toContainText("checks are queued");
+	await expect(claudeEntry).toContainText("lint and typecheck has started");
 });
 
-test("handoff through release expose the authored dependency chain and artifacts", async ({ page }) => {
+test("build through release expose the authored dependency chain and artifacts", async ({ page }) => {
+	await page.clock.install();
 	await openWorkItem(page);
 
-	await selectChapter(page, "Handoff");
+	await selectChapter(page, "Build");
 	await expectWorkingAgents(page, 1);
 	await expectEyesReaction(page, 0);
+	// ready 2.5s + implementing 2.2s + verifying 2.4s
+	await page.clock.fastForward(7_200);
 	await expect(page.getByRole("button", { name: "Subtasks 3/3" })).toBeVisible();
 	await showActivity(page);
-	await expect(page.getByText("Implemented guest checkout end to end", { exact: true })).toBeVisible();
-	await expect(page.getByText("Guest checkout implementation", { exact: true })).toBeVisible();
+	// Build keeps the live Claude session + Open #1847 snapshot — not the
+	// redundant changed-files / agent-output handoff card (Review+ still has it).
+	await expect(page.locator('[data-jira-activity-entry-id="story-changed-files"]')).toHaveCount(0);
+	const claudeEntry = page.locator(
+		'[data-jira-activity-entry-id="activity-story-session-claude-code"]',
+	);
+	const prEntry = page.locator('[data-jira-activity-entry-id="story-pr-review"]');
+	await expect(claudeEntry).toContainText("Verify implementation and prepare the pull request");
+	await expect(page.getByText("guest-checkout-final.png", { exact: true })).toBeVisible();
+	await expect(page.getByText("Add guest checkout to the storefront", { exact: true }).first()).toBeVisible();
+	await expect(prEntry).toBeVisible();
+	const claudeBox = await claudeEntry.boundingBox();
+	const prBox = await prEntry.boundingBox();
+	expect(claudeBox && prBox && claudeBox.y < prBox.y).toBeTruthy();
 	const replyGroup = page.getByRole("group", { name: "Replies" }).first();
 	await expect(replyGroup).toBeVisible();
 	await selectChapter(page, "Fix");

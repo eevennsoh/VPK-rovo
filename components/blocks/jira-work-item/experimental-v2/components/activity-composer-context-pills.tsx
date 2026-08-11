@@ -9,6 +9,7 @@ import type { AgentSession } from "@/components/blocks/jira-work-item/data/sessi
 import { ActivityComposerAgentContextPill } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer-agent-context-pill";
 import { ActivityComposerSkillContextPill } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer-skill-context-pill";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { AnimatedDots } from "@/components/ui-custom/animated-dots";
 import { ContextBarPill } from "@/components/ui-custom/context-bar";
 import { PixelLoader } from "@/components/ui-custom/pixel-loader";
 import { CyclingByline } from "@/components/ui-custom/chain-of-thought";
@@ -17,6 +18,8 @@ import {
 	RichTextSuggestionMenu,
 	type RichTextSuggestionMenuItem,
 } from "@/components/ui-custom/rich-text-editor";
+
+const NEEDS_INPUT_STATUS_LABEL = "Needs input";
 
 const PILL_GROUP_VARIANTS = {
 	hidden: {},
@@ -73,7 +76,7 @@ function getWorkingSessionActivity(
 	if (session.status === "waiting") {
 		return session.waitingOn?.kind === "agent"
 			? `Waiting for ${session.waitingOn.agentName}`
-			: "Needs input";
+			: NEEDS_INPUT_STATUS_LABEL;
 	}
 
 	const script = WORKING_SESSION_ACTIVITY_SCRIPTS[session.agentId];
@@ -123,7 +126,12 @@ function WorkingSessionActivityByline({
 
 	return (
 		<CyclingByline className="menu-row-title text-text-subtlest">
-			{needsUserInput ? <Shimmer as="span">{activity}</Shimmer> : activity}
+			{needsUserInput ? (
+				<span className="inline-flex min-w-0 items-baseline">
+					<Shimmer as="span">{activity}</Shimmer>
+					<AnimatedDots />
+				</span>
+			) : activity}
 		</CyclingByline>
 	);
 }
@@ -159,7 +167,11 @@ function WorkingSessionsList({
 			/>
 		),
 		trailing: session.status === "waiting"
-			? <span className="text-xs text-text-subtle">{session.waitingOn?.kind === "user" ? "Needs input" : "Waiting"}</span>
+			? (
+				<span className="text-xs text-text-subtle">
+					{session.waitingOn?.kind === "user" ? NEEDS_INPUT_STATUS_LABEL : "Waiting"}
+				</span>
+			)
 			: null,
 	}));
 

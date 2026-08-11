@@ -7,7 +7,12 @@ import type { SendPromptOptions } from "@/app/contexts";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 import type { ChatSurfaceSwitchHandler } from "@/components/projects/shared/components/chat-surface-switcher";
 import ChatPanel from "@/components/projects/sidebar-chat/page";
-import type { ChatPanelCustomAgentTabs, ChatPanelGreetingProps, ChatSubmitInterceptOutcome } from "@/components/projects/sidebar-chat/page";
+import type {
+	ChatPanelCustomAgentTabs,
+	ChatPanelGreetingProps,
+	ChatSubmitInterceptOutcome,
+	ComposerInputContext,
+} from "@/components/projects/sidebar-chat/page";
 import { ChatHistoryDrawer } from "@/components/projects/sidebar-chat/components/chat-history-drawer";
 import FloatingChatHeader from "./floating-chat-header";
 
@@ -19,6 +24,8 @@ interface RovoFloatingChatProps {
 	customAgentTabs?: ChatPanelCustomAgentTabs;
 	hideComposerSourceAndModelControls?: boolean;
 	sendPromptOptions?: SendPromptOptions;
+	/** One-turn composer pill context (Code Review / Activity comments). */
+	composerInputContext?: ComposerInputContext;
 	onInterceptSubmit?: (text: string) => ChatSubmitInterceptOutcome;
 	onArtifactDialogOpen?: () => void;
 	preserveFloatingSurfaceOnArtifactDialogOpen?: boolean;
@@ -41,6 +48,7 @@ export default function RovoFloatingChat({
 	customAgentTabs,
 	hideComposerSourceAndModelControls = false,
 	sendPromptOptions,
+	composerInputContext,
 	onInterceptSubmit,
 	onArtifactDialogOpen,
 	preserveFloatingSurfaceOnArtifactDialogOpen = false,
@@ -106,6 +114,7 @@ export default function RovoFloatingChat({
 					customAgentTabs={customAgentTabs}
 					hideComposerSourceAndModelControls={hideComposerSourceAndModelControls}
 					sendPromptOptions={sendPromptOptions}
+					composerInputContext={composerInputContext}
 					onInterceptSubmit={onInterceptSubmit}
 					onSurfaceSwitch={onSurfaceSwitch}
 					chatContextBar={chatContextBar}

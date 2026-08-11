@@ -176,6 +176,9 @@ test("code review sends committed comments as one-turn composer context", () => 
 	const chip = readProjectFile(
 		"components/blocks/code-review/components/inline-comments-composer-chip.tsx",
 	);
+	const sharedChip = readProjectFile(
+		"components/ui-custom/comments-composer-chip.tsx",
+	);
 
 	assert.match(rail, /serializeInlineCommentsContext\(workItem, comments\)/u);
 	assert.match(rail, /composerInputContext=\{hasInlineComments \? \{/u);
@@ -184,11 +187,13 @@ test("code review sends committed comments as one-turn composer context", () => 
 	assert.match(rail, /onReviewSubmit\?\.\(\{ comments, prompt: INLINE_REVIEW_PROMPT \}\);/u);
 	assert.match(rail, /onRemoveAllComments\(\);/u);
 	assert.match(rail, /contextDescription: inlineCommentsContext \|\| undefined/u);
-	assert.match(chip, /comments\.length === 1 \? "comment" : "comments"/u);
-	assert.doesNotMatch(chip, /PopoverTitle|Inline review comments/u);
-	assert.match(chip, /formatInlineCommentLineLabel\(comment\)/u);
-	assert.doesNotMatch(chip, /New|Old|side · line/u);
+	assert.match(chip, /CommentsComposerChip/u);
+	assert.match(chip, /subtitle: formatInlineCommentLineLabel\(comment\)/u);
 	assert.match(chip, /Remove all inline comments/u);
+	assert.match(chip, /testId="inline-comments-chip"/u);
+	assert.match(sharedChip, /comments\.length === 1 \? "comment" : "comments"/u);
+	assert.doesNotMatch(sharedChip, /PopoverTitle|Inline review comments/u);
+	assert.doesNotMatch(chip, /New|Old|side · line/u);
 });
 
 test("code review orchestrator defaults the editor to unified layout", () => {

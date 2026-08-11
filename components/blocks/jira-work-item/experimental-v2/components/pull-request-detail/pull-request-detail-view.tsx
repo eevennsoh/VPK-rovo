@@ -75,6 +75,7 @@ export function PullRequestDetailView({
 						<div className="shrink-0">
 							<TabsList aria-label="Pull request details" className="w-full justify-start" variant="line">
 								<TabsTrigger value="details">Overview</TabsTrigger>
+								<TabsTrigger value="guide">Guide</TabsTrigger>
 								<TabsTrigger value="code">
 									<span>{review.files.length} Files</span>
 									<span className="inline-flex items-center gap-1 tabular-nums">
@@ -82,16 +83,12 @@ export function PullRequestDetailView({
 										<span className="text-text-danger">-{data.deletions}</span>
 									</span>
 								</TabsTrigger>
-								<TabsTrigger value="guide">Guide</TabsTrigger>
 							</TabsList>
 						</div>
 					</div>
 					<div className="min-h-0 flex-1 py-5">
 						<TabsContent value="details">
 							<PullRequestOverview data={data} />
-						</TabsContent>
-						<TabsContent value="code">
-							<PullRequestFiles review={review} />
 						</TabsContent>
 						<TabsContent value="guide">
 							<PullRequestGuide
@@ -102,6 +99,9 @@ export function PullRequestDetailView({
 								onFinish={() => setActiveTab("details")}
 								review={review}
 							/>
+						</TabsContent>
+						<TabsContent value="code">
+							<PullRequestFiles review={review} />
 						</TabsContent>
 					</div>
 				</Tabs>

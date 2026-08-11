@@ -16,13 +16,16 @@ import { ArtifactList, type ArtifactListItem } from "@/components/ui-custom/arti
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Tag } from "@/components/ui/tag";
-import { cn } from "@/lib/utils";
 
 import type { JiraActivityChangedFilesEntry } from "./jira-activity-types";
 
 /**
  * Agent output card using compact Artifact List rows. Legacy summary-only
  * entries retain the original single code-change row as a fallback.
+ *
+ * Activity-feed chrome matches {@link JiraActivityCard}: transparent, borderless
+ * shell with the artifact list as a nested attachment. The `jira-issue` variant
+ * keeps denser padded chrome for hover-card surfaces.
  */
 export function JiraActivityChangedFiles({
 	entry,
@@ -56,71 +59,78 @@ export function JiraActivityChangedFiles({
 					label: "Failed",
 				}
 			: null;
-
-		return (
-			<div
-				className={cn(
-					// Transparent — agent output chrome matches comment cards over the feed surface.
-					"group/activity-card w-full bg-transparent",
-					isJiraIssue ? "rounded-xl" : "overflow-hidden rounded-lg border border-border",
+		const header = (
+			<AgentListActivityHeader
+				action={(
+					<Button
+						aria-label={`${viewActionLabel} ${sessionItem.agent.name}`}
+						className="shrink-0 gap-1"
+						onClick={() => onView?.(sessionItem)}
+						size="compact"
+						type="button"
+						variant="outline"
+					>
+						{viewActionLabel}
+						{viewActionLabel === "Open" ? <LinkExternalIcon label="" size="small" /> : null}
+					</Button>
 				)}
-			>
-				<div className="grid gap-4 p-3">
-					<AgentListActivityHeader
-						action={(
-							<Button
-								aria-label={`${viewActionLabel} ${sessionItem.agent.name}`}
-								className="shrink-0 gap-1"
-								onClick={() => onView?.(sessionItem)}
-								size="compact"
-								type="button"
-								variant="outline"
-							>
-								{viewActionLabel}
-								{viewActionLabel === "Open" ? <LinkExternalIcon label="" size="small" /> : null}
-							</Button>
-						)}
-						hideAvatar={hideLeadAvatar}
-						item={sessionItem}
-						metadataPrefix={statusPresentation ? (
-							<span className="flex shrink-0 items-center gap-1 text-text">
-								<Icon
-									aria-hidden
-									className={statusPresentation.iconClassName}
-									render={statusPresentation.icon}
-								/>
-								{statusPresentation.label}
-							</span>
-						) : undefined}
-						timeFallback={entry.timestamp}
-					/>
-					{entry.description ? (
-						<p className="text-sm leading-5 text-text">{entry.description}</p>
+				hideAvatar={hideLeadAvatar}
+				item={sessionItem}
+				metadataPrefix={statusPresentation ? (
+					<span className="flex shrink-0 items-center gap-1 text-text">
+						<Icon
+							aria-hidden
+							className={statusPresentation.iconClassName}
+							render={statusPresentation.icon}
+						/>
+						{statusPresentation.label}
+					</span>
+				) : undefined}
+				timeFallback={entry.timestamp}
+			/>
+		);
+		const description = entry.description ? (
+			<p className="text-sm leading-5 text-text">{entry.description}</p>
+		) : null;
+		const outputs = entry.outputs.length > 0 ? (
+			<ArtifactList
+				className={isJiraIssue
+					? "mx-3 rounded-lg"
+					// Attachment-style nested list under borderless comment chrome.
+					: "border border-border bg-transparent shadow-none"}
+				items={entry.outputs}
+				onOpen={onOutputOpen}
+				openLabel={outputOpenLabel}
+				style={isJiraIssue ? undefined : { boxShadow: "none" }}
+				variant="compact"
+			/>
+		) : null;
+
+		if (isJiraIssue) {
+			return (
+				<div className="group/activity-card w-full rounded-xl bg-transparent">
+					<div className="grid gap-4 p-3">
+						{header}
+						{description}
+					</div>
+					{outputs}
+					{footer ? (
+						<div className={entry.outputs.length > 0 ? "p-3" : "px-3 pb-3 pt-0"}>
+							{footer}
+						</div>
 					) : null}
 				</div>
+			);
+		}
 
-				{entry.outputs.length > 0 ? (
-					<ArtifactList
-						className={isJiraIssue
-							? "mx-3 rounded-lg"
-							// Flush footer — transparent over the feed; kill raised fill/shadow from ArtifactList.
-							: "rounded-none border-x-0 border-b-0 border-t border-border bg-transparent shadow-none"}
-						items={entry.outputs}
-						onOpen={onOutputOpen}
-						openLabel={outputOpenLabel}
-						style={isJiraIssue ? undefined : { boxShadow: "none" }}
-						variant="compact"
-					/>
-				) : null}
-				{footer ? (
-					<div
-						className={isJiraIssue
-							? entry.outputs.length > 0 ? "p-3" : "px-3 pb-3 pt-0"
-							: undefined}
-					>
-						{footer}
-					</div>
-				) : null}
+		return (
+			<div className="group/activity-card w-full overflow-visible rounded-xl bg-transparent">
+				<div className="grid gap-3">
+					{header}
+					{description}
+					{outputs}
+					{footer}
+				</div>
 			</div>
 		);
 	}

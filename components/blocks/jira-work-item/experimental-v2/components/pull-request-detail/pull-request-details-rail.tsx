@@ -1,19 +1,19 @@
 "use client";
 
-import { useEffect, useState, type KeyboardEvent, type MouseEvent } from "react";
+import { useEffect, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 
 import CalendarIcon from "@atlaskit/icon/core/calendar";
 import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
-import CheckCircleUncheckedIcon from "@atlaskit/icon/core/check-circle-unchecked";
 import CopyIcon from "@atlaskit/icon/core/copy";
 import LinkExternalIcon from "@atlaskit/icon/core/link-external";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import StatusErrorIcon from "@atlaskit/icon/core/status-error";
-import StatusWarningIcon from "@atlaskit/icon/core/status-warning";
 import TagIcon from "@atlaskit/icon/core/tag";
+import TaskToDoIcon from "@atlaskit/icon/core/task-to-do";
 
 import { ArtifactPane, ArtifactPanePropertyRow } from "@/components/blocks/artifact-pane";
 import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental-v2/context-metadata-rail";
+import { parseRunningCheckElapsedSeconds } from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-check-elapsed";
 import {
 	arePullRequestChecksInProgress,
 	type PullRequestCheck,
@@ -30,6 +30,7 @@ import {
 	type AvatarStatus,
 } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { ElapsedTime } from "@/components/ui/elapsed-time";
 import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
@@ -64,12 +65,32 @@ const REVIEWER_STATUS = {
 	pending: { label: "Pending", tone: "neutral" },
 } as const;
 
-const CHECK_STATUS = {
-	passed: { label: "Passed", icon: CheckCircleIcon, iconClassName: "text-icon-success" },
-	failed: { label: "Failed", icon: StatusErrorIcon, iconClassName: "text-icon-danger" },
-	running: { label: "Running", icon: StatusWarningIcon, iconClassName: "text-icon-information" },
-	queued: { label: "Queued", icon: CheckCircleUncheckedIcon, iconClassName: "text-icon-subtle" },
-} as const;
+/** A running check spins like the section title; settled ones use a status icon. */
+const CHECK_STATUS: Record<
+	PullRequestCheck["status"],
+	{ label: string; iconClassName: string; renderIcon: () => ReactNode }
+> = {
+	passed: {
+		label: "Passed",
+		iconClassName: "text-icon-success",
+		renderIcon: () => <CheckCircleIcon color="currentColor" label="" size="small" />,
+	},
+	failed: {
+		label: "Failed",
+		iconClassName: "text-icon-danger",
+		renderIcon: () => <StatusErrorIcon color="currentColor" label="" size="small" />,
+	},
+	running: {
+		label: "Running",
+		iconClassName: "text-icon-subtle",
+		renderIcon: () => <Spinner label="" size="sm" />,
+	},
+	queued: {
+		label: "Queued",
+		iconClassName: "text-icon-disabled",
+		renderIcon: () => <TaskToDoIcon color="currentColor" label="" size="small" />,
+	},
+};
 
 function reviewerAvatarStatus(status: PullRequestReviewer["status"]): AvatarStatus | null {
 	switch (status) {
@@ -97,14 +118,14 @@ function PersonAvatar({ person, size = "sm" }: Readonly<{ person: PullRequestPer
 	);
 }
 
-function ReviewersValue({ reviewers }: Readonly<{ reviewers: readonly PullRequestReviewer[] }>) {
+function ApproversValue({ reviewers }: Readonly<{ reviewers: readonly PullRequestReviewer[] }>) {
 	if (reviewers.length === 0) {
-		return <span className="text-text-subtle">No reviewers requested</span>;
+		return <span className="text-text-subtle">No approvers requested</span>;
 	}
 
 	return (
 		<div
-			aria-label={`Reviewers: ${reviewers
+			aria-label={`Approvers: ${reviewers
 				.map((reviewer) => `${reviewer.name} (${REVIEWER_STATUS[reviewer.status].label})`)
 				.join(", ")}`}
 			className="flex items-center gap-1"
@@ -237,6 +258,23 @@ function ChecksSectionTitle({
 	);
 }
 
+/** Live "Running for Ns" subtitle; starts from a parsed fixture offset, then ticks while mounted. */
+function RunningCheckDetails({ initialSeconds }: Readonly<{ initialSeconds: number }>) {
+	const [startedAtMs] = useState(() => Date.now() - initialSeconds * 1000);
+	return <ElapsedTime prefix="Running for " startedAtMs={startedAtMs} />;
+}
+
+function CheckDetails({ check }: Readonly<{ check: PullRequestCheck }>) {
+	if (check.status !== "running") {
+		return check.details;
+	}
+	const initialSeconds = parseRunningCheckElapsedSeconds(check.details);
+	if (initialSeconds === null) {
+		return check.details;
+	}
+	return <RunningCheckDetails initialSeconds={initialSeconds} />;
+}
+
 function ChecksValue({ checks }: Readonly<{ checks: readonly PullRequestCheck[] }>) {
 	if (checks.length === 0) {
 		return <p className="text-xs text-text-subtle">No CI checks reported</p>;
@@ -246,69 +284,41 @@ function ChecksValue({ checks }: Readonly<{ checks: readonly PullRequestCheck[] 
 		<ul className="flex flex-col" data-jira-work-item-pull-request-checks>
 			{checks.map((check) => {
 				const status = CHECK_STATUS[check.status];
-				const StatusIcon = status.icon;
-				const checkUrl = check.url;
 				return (
 					<li
-						className={cn(
-							"group/check-row relative -mx-2 flex w-[calc(100%+1rem)] min-w-0 items-center gap-3 rounded-md px-2 py-2 transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered motion-reduce:transition-none",
-							checkUrl ? "cursor-pointer pe-7" : null,
-						)}
+						className="group/check-row -mx-2 flex w-[calc(100%+1rem)] min-w-0 items-center gap-3 rounded-md px-2 py-2 transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered motion-reduce:transition-none"
 						key={check.id}
-						role={checkUrl ? "link" : undefined}
-						tabIndex={checkUrl ? 0 : undefined}
-						onClick={
-							checkUrl
-								? () => {
-										openScmUrl(checkUrl);
-									}
-								: undefined
-						}
-						onKeyDown={
-							checkUrl
-								? (event) => {
-										handleScmLinkKeyDown(event, checkUrl);
-									}
-								: undefined
-						}
 					>
 						<IconTile
 							aria-hidden
 							as="span"
 							className={status.iconClassName}
-							icon={<StatusIcon color="currentColor" label="" size="small" />}
+							icon={status.renderIcon()}
 							label=""
 							size="small"
 							variant="transparent"
 						/>
 						<div className="min-w-0 flex-1">
 							<p className="truncate text-sm text-text">{check.name}</p>
-							<p className="truncate text-xs text-text-subtlest">{check.details}</p>
+							<p className="truncate text-xs text-text-subtlest">
+								<CheckDetails check={check} />
+							</p>
 						</div>
-						{checkUrl ? (
-							<Button
-								aria-label={`Open ${check.name} check details`}
-								className={cn(
-									"absolute end-0 top-1/2 z-10 size-6 min-h-0 min-w-0 -translate-y-1/2 p-0 text-icon-subtle hover:bg-transparent hover:text-icon",
-									"pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical",
-									"group-hover/check-row:pointer-events-auto group-hover/check-row:opacity-100",
-									"group-focus-within/check-row:pointer-events-auto group-focus-within/check-row:opacity-100",
-									"focus-visible:pointer-events-auto focus-visible:opacity-100",
-									"focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none",
-									"motion-reduce:transition-none",
-								)}
-								size="icon-compact"
-								type="button"
-								variant="ghost"
-								onClick={(event) => {
-									event.preventDefault();
-									event.stopPropagation();
-									openScmUrl(checkUrl);
-								}}
-							>
-								<Icon aria-hidden className="size-4" render={<LinkExternalIcon label="" size="small" />} />
-							</Button>
-						) : null}
+						<IconTile
+							aria-hidden
+							as="span"
+							className={cn(
+								"shrink-0 text-icon-subtle",
+								"opacity-0 transition-opacity duration-normal ease-out-practical",
+								"group-hover/check-row:opacity-100",
+								"motion-reduce:transition-none",
+							)}
+							icon={<LinkExternalIcon color="currentColor" label="" size="small" />}
+							iconSize="small"
+							label=""
+							size="small"
+							variant="transparent"
+						/>
 					</li>
 				);
 			})}
@@ -367,8 +377,8 @@ export function PullRequestDetailsRail({ data }: Readonly<{ data: PullRequestDet
 					title: "Details",
 					content: (
 						<div className="flex flex-col gap-2" data-jira-work-item-pull-request-details>
-							<ArtifactPanePropertyRow editable={false} icon={<PeopleGroupIcon label="" size="small" />} label="Reviewers">
-								<ReviewersValue reviewers={data.reviewers} />
+							<ArtifactPanePropertyRow editable={false} icon={<PeopleGroupIcon label="" size="small" />} label="Approvers">
+								<ApproversValue reviewers={data.reviewers} />
 							</ArtifactPanePropertyRow>
 							<ArtifactPanePropertyRow editable={false} icon={<CalendarIcon label="" size="small" />} label="Created">
 								<span className="flex min-w-0 items-center gap-2">
