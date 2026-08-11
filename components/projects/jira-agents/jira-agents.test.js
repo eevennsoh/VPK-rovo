@@ -245,7 +245,7 @@ test("Build chapter selection stages ready→implement→verify and reveals Clau
 	);
 	assert.match(
 		metadataRailContextSource,
-		/if \(!suppressActivityPanelRevealRef\.current\) \{/u,
+		/if \(revealActivityKey != null && revealActivityKey !== "" && !suppressActivityPanelReveal\) \{/u,
 	);
 	// Build orients on Claude at ready, then reveals the PR-creation snapshot once
 	// Open #1847 exists (implementing / verifying).
