@@ -10,17 +10,22 @@ import type {
 } from "./pull-request-detail-data";
 
 function adaptActor(actor: PullRequestActivityActor): JiraActivityActor {
-	const brandName = actor.kind === "app"
+	const appBrandName = actor.kind === "app"
 		? actor.id === "codex"
-			? "openai-codex"
-			: actor.id.startsWith("github") ? "github" : undefined
+			? "openai-codex" as const
+			: actor.id.startsWith("github") ? "github" as const : undefined
 		: undefined;
+	const brandName = actor.brandName ?? appBrandName;
 	return {
 		id: actor.id,
 		name: actor.name,
 		kind: actor.kind,
-		avatarSrc: actor.avatarSrc,
-		brandName,
+		// Prefer brand marks over template avatars (e.g. Claude Code → `claude`).
+		...(brandName
+			? { brandName }
+			: actor.avatarSrc
+				? { avatarSrc: actor.avatarSrc }
+				: {}),
 	};
 }
 
@@ -62,6 +67,9 @@ function adaptActivity(activity: PullRequestActivity): JiraActivityEntry {
 			return {
 				...base,
 				kind: "event",
+				// Open-PR rows use the pull-request glyph; the actor still appears
+				// as an inline mention Tag in the action line.
+				icon: "pull-request",
 				segments: [
 					{ type: "text", text: "opened the pull request from " },
 					{ type: "code", text: activity.headBranch },
@@ -73,6 +81,9 @@ function adaptActivity(activity: PullRequestActivity): JiraActivityEntry {
 			return {
 				...base,
 				kind: "event",
+				// Commit/push rows use the commit glyph in the gutter; the actor
+				// still appears as an inline mention Tag in the action line.
+				icon: "commit",
 				segments: [
 					{ type: "text", text: `pushed ${activity.commitCount} commits ending in ` },
 					{ type: "code", text: activity.headSha },
@@ -82,6 +93,9 @@ function adaptActivity(activity: PullRequestActivity): JiraActivityEntry {
 			return {
 				...base,
 				kind: "event",
+				// Connected-app rows use the ADS app glyph; the GitHub product
+				// mark stays on the inline mention Tag.
+				icon: "app",
 				segments: [
 					{ type: "text", text: "completed checks: " },
 					{
@@ -132,6 +146,7 @@ function adaptActivity(activity: PullRequestActivity): JiraActivityEntry {
 			return {
 				...base,
 				kind: "event",
+				icon: "app",
 				segments: [
 					{ type: "text", text: "marked the pull request " },
 					{ type: "lozenge", text: "Ready to merge", variant: "success" },

@@ -40,6 +40,7 @@ import {
 import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental-v2/context-metadata-rail";
 import { CONNECTED_REPOSITORY_COUNT } from "@/components/blocks/jira-work-item/experimental-v2/lib/development-repositories";
 import { getPullRequestIdentity } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
+import type { PullRequestReviewer } from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-detail-data";
 import { SmartLink, type SmartLinkItem } from "@/components/blocks/smart-link";
 import { SMART_LINK_MODAL_ACTIONS } from "@/components/blocks/smart-link/data/smart-link-actions";
 import { ProgressCircle } from "@/components/ui-custom/progress-circle";
@@ -210,11 +211,13 @@ export function MetadataRail({
 	activity,
 	automationRules = [],
 	borderless = false,
+	currentReviewerStatus,
 	selectedPullRequestEntry = null,
 }: Readonly<{
 	activity?: ReactNode;
 	automationRules?: readonly WorkItemAutomationRule[];
 	borderless?: boolean;
+	currentReviewerStatus?: PullRequestReviewer["status"];
 	selectedPullRequestEntry?: JiraActivityEventEntry | null;
 }>) {
 	const {
@@ -377,6 +380,7 @@ export function MetadataRail({
 						{selectedPullRequestEntry ? (
 							<PullRequestContextRail
 								activePanelView={activePanelView}
+								currentReviewerStatus={currentReviewerStatus}
 								entry={selectedPullRequestEntry}
 								key={selectedPullRequestKey}
 							/>

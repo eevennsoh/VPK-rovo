@@ -36,7 +36,11 @@ export type JiraActivityEventIcon =
 	| "in-progress"
 	| "linked"
 	| "description"
-	| "teamwork-graph";
+	| "teamwork-graph"
+	| "commit"
+	| "pull-request"
+	/** Connected-app event glyph (e.g. GitHub checks / ready-to-merge). */
+	| "app";
 
 /**
  * A rich inline text run. Shared by event action lines and comment bodies so
@@ -50,7 +54,10 @@ export type JiraActivitySegment =
 	| { type: "user-mention"; text: string; avatarSrc?: string }
 	/** Hexagon agent mention chip for agents (e.g. Claude Code, Rovo). */
 	| { type: "agent-mention"; text: string; avatarSrc?: string; brandName?: ThirdPartyLogoName }
-	/** Square app mention chip for connected apps (e.g. GitHub). */
+	/**
+	 * Product mention chip for connected apps (e.g. GitHub). Renders a
+	 * `BrandLogoMark` product tag — not a hexagon agent avatar.
+	 */
 	| { type: "app-mention"; text: string; brandName?: ThirdPartyLogoName }
 	| {
 			type: "lozenge";

@@ -214,19 +214,19 @@ test("PR #1847 requires every guide chapter before Venn can approve it in place"
 	await detail.getByRole("button", { name: "Review required" }).click();
 	await expect(detail.getByRole("tab", { name: "Guide" })).toHaveAttribute("aria-selected", "true");
 	const guide = detail.locator("[data-jira-work-item-pull-request-guide]");
-	await expect(guide.getByText("01 / 03", { exact: true })).toBeVisible();
+	await expect(guide.getByText("1 / 3", { exact: true })).toBeVisible();
 	await expect(guide.getByRole("heading", { name: "Start a guest checkout" })).toBeVisible();
 	await expect(guide.getByRole("button", { name: "Back", exact: true })).toBeDisabled();
 	const approveButton = guide.getByRole("button", { name: "Approve pull request", exact: true });
 	await expect(approveButton).toBeDisabled();
 	await guide.getByRole("button", { name: "Next", exact: true }).click();
-	await expect(guide.getByText("02 / 03", { exact: true })).toBeVisible();
+	await expect(guide.getByText("2 / 3", { exact: true })).toBeVisible();
 	await expect(approveButton).toBeDisabled();
 	await expect(guide.getByRole("heading", {
 		name: "Keep order creation server-owned",
 	})).toBeVisible();
 	await guide.getByRole("button", { name: "Next", exact: true }).click();
-	await expect(guide.getByText("03 / 03", { exact: true })).toBeVisible();
+	await expect(guide.getByText("3 / 3", { exact: true })).toBeVisible();
 	await expect(approveButton).toBeEnabled();
 	await approveButton.click();
 	await expect(guide.getByRole("button", { name: "Approved", exact: true })).toBeDisabled();

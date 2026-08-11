@@ -1,7 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { useReducedMotion } from "motion/react";
+import {
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+	type KeyboardEvent,
+	type ReactNode,
+	type Ref,
+} from "react";
+import { AnimatePresence, motion, useReducedMotion, type Transition, type Variants } from "motion/react";
 
 import AddIcon from "@atlaskit/icon/core/add";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
@@ -16,6 +24,10 @@ import {
 	JiraActivityComposer,
 	serializeActivityCommentsContext,
 } from "@/components/blocks/jira-activity";
+import {
+	PullRequestReview,
+	type PullRequestReviewSubmission,
+} from "@/components/blocks/pull-request-review";
 import { useActivityChatComments } from "@/components/blocks/jira-work-item/experimental-v2/context-activity-chat-comments";
 import { useJiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
 import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental-v2/context-metadata-rail";
@@ -39,6 +51,25 @@ import { Tag } from "@/components/ui/tag";
 
 const ACTIVITY_COMMENTS_PROMPT = "Discuss these activity comments.";
 
+const COMPOSER_CONTENT_LAYOUT_TRANSITION = {
+	duration: 0.25,
+	ease: [0.4, 0, 0, 1],
+} satisfies Transition; // duration-slow + ease-in-out
+
+const COMPOSER_CONTENT_VARIANTS = {
+	hidden: {
+		opacity: 0,
+		transition: {
+			duration: 0.1,
+			ease: [0.6, 0, 0.8, 0.6],
+		}, // duration-fast + ease-in
+	},
+	visible: {
+		opacity: 1,
+		transition: COMPOSER_CONTENT_LAYOUT_TRANSITION,
+	},
+} satisfies Variants;
+
 const JIRA_WORK_ITEM_MENTION_LABELS = { subagent: "Agents" } as const;
 const JIRA_WORK_ITEM_SUGGESTION_VARIANT = { command: "flat", mention: "flat" } as const;
 const SESSION_TARGET_MENU_ITEMS = [
@@ -61,6 +92,48 @@ interface SessionTargetSelection {
 	choice: SessionTargetChoice;
 }
 
+export interface ActivityComposerPullRequestReview {
+	/** Committed inline file comments; omit or 0 to hide the Comment(s) badge. */
+	commentCount?: number;
+	onClose: () => void;
+	onSubmit: (submission: PullRequestReviewSubmission) => void;
+	reviewedCount: number;
+	reviewedTotal: number;
+	submitDisabled: boolean;
+}
+
+function ComposerTransitionItem({
+	children,
+	ref,
+	shouldReduceMotion,
+}: Readonly<{
+	children: ReactNode;
+	ref?: Ref<HTMLDivElement>;
+	shouldReduceMotion: boolean;
+}>) {
+	const [isAnimating, setIsAnimating] = useState(false);
+
+	return (
+		<motion.div
+			animate="visible"
+			className="w-full"
+			exit={shouldReduceMotion ? undefined : "hidden"}
+			initial={shouldReduceMotion ? false : "hidden"}
+			layout={shouldReduceMotion ? false : "position"}
+			onAnimationComplete={() => setIsAnimating(false)}
+			onAnimationStart={() => setIsAnimating(true)}
+			ref={ref}
+			style={isAnimating && !shouldReduceMotion
+				? { willChange: "transform, opacity" }
+				: undefined}
+			transition={shouldReduceMotion ? { duration: 0 } : COMPOSER_CONTENT_LAYOUT_TRANSITION}
+			variants={COMPOSER_CONTENT_VARIANTS}
+		>
+			{children}
+		</motion.div>
+	);
+}
+
 /**
  * Unified comment/command composer. Reuses the Jira Activity prompt surface while
  * configuring its shared editor palette for direct people, team, and agent picks.
@@ -69,15 +142,19 @@ interface SessionTargetSelection {
  */
 export function ActivityComposer({
 	agents,
+	autoFocus = false,
 	onAgentPromptSubmit,
 	onOpenAgentChat,
 	primaryAction,
+	pullRequestReview,
 	onSkillInvoke,
 }: Readonly<{
 	agents?: readonly AgentSelectorAgent[];
+	autoFocus?: boolean;
 	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
 	onOpenAgentChat?: (agentId: string) => void;
 	primaryAction?: ActivityComposerPrimaryAction;
+	pullRequestReview?: ActivityComposerPullRequestReview;
 	onSkillInvoke?: (skill: SkillsDirectorySkill) => boolean | void;
 }>) {
 	const { state, actions, meta } = useJiraWorkItem();
@@ -288,41 +365,69 @@ export function ActivityComposer({
 
 	return (
 		<div onKeyDownCapture={handleKeyDownCapture} ref={composerRootRef}>
-			<ActivityComposerContextPills
-				onInvokeAgent={handleInvokeAgent}
-				onInvokeSkill={handleInvokeSkill}
-				onOpenAgentChat={onOpenAgentChat ? handleOpenWorkingSession : undefined}
-				primaryAction={primaryAction}
-				workingSessions={workingSessions}
-			/>
+			{pullRequestReview ? null : (
+				<ActivityComposerContextPills
+					onInvokeAgent={handleInvokeAgent}
+					onInvokeSkill={handleInvokeSkill}
+					onOpenAgentChat={onOpenAgentChat ? handleOpenWorkingSession : undefined}
+					primaryAction={primaryAction}
+					workingSessions={workingSessions}
+				/>
+			)}
 			<div className="relative" data-jira-work-item-composer-state="sticky">
-				<JiraWorkItemComposerMotion placement="sticky">
-					<JiraActivityComposer
-						author={JIRA_WORK_ITEM_CURRENT_USER}
-						inputContext={activityCommentsInputContext}
-						inputContextSubmitText={ACTIVITY_COMMENTS_PROMPT}
-						mentionSources={mentionSources}
-						mentionSectionLabels={JIRA_WORK_ITEM_MENTION_LABELS}
-						onSubmit={handleSubmit}
-						onValueChange={handlePromptChange}
-						placeholder="Comment, @mention an agent, or / for skills"
-						submitAccessory={startsNewSession ? (
-							<Tag
-								className="self-center"
-								color="gray"
-								onRemove={() => chooseSessionTarget("continue")}
-								removeButtonLabel="Continue in existing session instead"
-								shape="rounded"
-							>
-								New session
-							</Tag>
-						) : null}
-						suggestionVariant={JIRA_WORK_ITEM_SUGGESTION_VARIANT}
-						value={draft}
-						variant="comment"
-					/>
+				<JiraWorkItemComposerMotion
+					layout
+					layoutDependency={Boolean(pullRequestReview)}
+					placement="sticky"
+				>
+					<AnimatePresence initial={false} mode="popLayout">
+						{pullRequestReview ? (
+							<ComposerTransitionItem key="pull-request-review" shouldReduceMotion={shouldReduceMotion}>
+								<PullRequestReview
+									autoFocus
+									commentCount={pullRequestReview.commentCount}
+									defaultVerdict="approve"
+									expandOnFocus={false}
+									onClose={pullRequestReview.onClose}
+									onSubmit={pullRequestReview.onSubmit}
+									reviewedCount={pullRequestReview.reviewedCount}
+									reviewedTotal={pullRequestReview.reviewedTotal}
+									submitDisabled={pullRequestReview.submitDisabled}
+									variant="expanded"
+								/>
+							</ComposerTransitionItem>
+						) : (
+							<ComposerTransitionItem key="activity" shouldReduceMotion={shouldReduceMotion}>
+								<JiraActivityComposer
+									autoFocus={autoFocus}
+									author={JIRA_WORK_ITEM_CURRENT_USER}
+									inputContext={activityCommentsInputContext}
+									inputContextSubmitText={ACTIVITY_COMMENTS_PROMPT}
+									mentionSources={mentionSources}
+									mentionSectionLabels={JIRA_WORK_ITEM_MENTION_LABELS}
+									onSubmit={handleSubmit}
+									onValueChange={handlePromptChange}
+									placeholder="Comment, @mention an agent, or / for skills"
+									submitAccessory={startsNewSession ? (
+										<Tag
+											className="self-center"
+											color="gray"
+											onRemove={() => chooseSessionTarget("continue")}
+											removeButtonLabel="Continue in existing session instead"
+											shape="rounded"
+										>
+											New session
+										</Tag>
+									) : null}
+									suggestionVariant={JIRA_WORK_ITEM_SUGGESTION_VARIANT}
+									value={draft}
+									variant="comment"
+								/>
+							</ComposerTransitionItem>
+						)}
+					</AnimatePresence>
 				</JiraWorkItemComposerMotion>
-				{showSessionTargetMenu ? (
+				{showSessionTargetMenu && !pullRequestReview ? (
 					<div
 						className="absolute inset-x-0 bottom-full z-20 mb-2"
 						data-jira-work-item-session-target-menu

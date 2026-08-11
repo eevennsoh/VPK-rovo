@@ -60,7 +60,7 @@ test("Jira Agents composes the seven-stage software delivery story without chang
 	const gallerySource = readProjectFile("components/blocks/gallery/components/gallery.tsx");
 
 	assert.match(pageSource, /<JiraAgentsStoryControls controller=\{storyController\} \/>/u);
-	assert.match(pageSource, /<ExperimentalV2JiraWorkItem[\s\S]*automationRules=\{JIRA_AGENTS_AUTOMATION_RULES\}[\s\S]*composerAgents=\{JIRA_AGENTS_STORY_COMPOSER_AGENTS\}[\s\S]*composerDelivery="broadcast-active-agents"[\s\S]*initialState=\{controller\.initialState\}[\s\S]*statusPhases=\{JIRA_AGENTS_STATUS_PHASES\}[\s\S]*workItem=\{controller\.workItem\}/u);
+	assert.match(pageSource, /<ExperimentalV2JiraWorkItem[\s\S]*automationRules=\{JIRA_AGENTS_AUTOMATION_RULES\}[\s\S]*composerAgents=\{JIRA_AGENTS_STORY_COMPOSER_AGENTS\}[\s\S]*composerDelivery="broadcast-active-agents"[\s\S]*composerToolsAfterAdd=\{<JiraAgentsComposerPrivacyToggle \/>\}[\s\S]*initialState=\{controller\.initialState\}[\s\S]*statusPhases=\{JIRA_AGENTS_STATUS_PHASES\}[\s\S]*workItem=\{controller\.workItem\}/u);
 	assert.match(pageSource, /onAgentPromptSubmit=\{handleAgentPromptSubmit\}/u);
 	assert.match(pageSource, /initialStateRevision=\{controller\.launchId\}/u);
 	assert.match(pageSource, /stageKey=\{`\$\{chapter\}:\$\{chapterRevision\}`\}/u);
@@ -267,6 +267,44 @@ test("Build chapter selection stages ready→implement→verify and reveals Clau
 	assert.match(
 		pageSource,
 		/controller\.orchestrationStep !== "idle"\s*\?\s*`\$\{controller\.orchestrationStep\}:\$\{controller\.launchId\}`/u,
+	);
+});
+
+test("Review chapter auto-opens PR #1847 and stages CI from start through settling to failed", () => {
+	const pageSource = readProjectFile("components/projects/jira-agents/page.tsx");
+	const controllerSource = readProjectFile("components/projects/jira-agents/use-hotfix-story.ts");
+	const compositionSource = readProjectFile(
+		"components/blocks/jira-work-item/experimental-v2/experimental-v2-jira-work-item.tsx",
+	);
+	const checksSource = readProjectFile(
+		"components/projects/jira-agents/data/story-pull-request-checks.ts",
+	);
+
+	assert.match(
+		pageSource,
+		/autoOpenPullRequestIdentity=\{\s*controller\.chapter === "review" \? JIRA_AGENTS_PULL_REQUEST_IDENTITY : null\s*\}/u,
+	);
+	assert.match(
+		compositionSource,
+		/autoOpenPullRequestIdentity[\s\S]*autoOpenedForStageRef[\s\S]*handlePullRequestSelect\(entry\)/u,
+	);
+	assert.match(
+		controllerSource,
+		/queued: \{ next: "running", delayMs: 1_200 \}[\s\S]*running: \{ next: "unit-passed", delayMs: 1_500 \}[\s\S]*"unit-passed": \{ next: "settling", delayMs: 1_300 \}[\s\S]*settling: \{ next: "failed", delayMs: 1_600 \}/u,
+	);
+	assert.match(
+		controllerSource,
+		/if \(shouldReduceMotion\) \{\s*setReviewStep\("failed"\);/u,
+	);
+	assert.match(checksSource, /export const UNIT_PASSED_PR_CHECKS = \[/u);
+	assert.match(checksSource, /export const SETTLING_PR_CHECKS = \[/u);
+	assert.match(
+		checksSource,
+		/UNIT_PASSED_PR_CHECKS = \[[\s\S]*status: "running"[\s\S]*status: "passed"[\s\S]*status: "running"/u,
+	);
+	assert.match(
+		checksSource,
+		/SETTLING_PR_CHECKS = \[[\s\S]*status: "running"[\s\S]*status: "passed"[\s\S]*status: "passed"/u,
 	);
 });
 
@@ -516,6 +554,30 @@ test("Improve description confirmation keeps the answered card in the visible tr
 	assert.doesNotMatch(pageSource, /visibility: "hidden"/u);
 	assert.match(pageSource, /Done — I added the approved description to SHOP-4821/u);
 	assert.match(pageSource, /Understood — I kept the current work item description unchanged/u);
+});
+
+test("Jira Agents side chat mounts a privacy visibility toggle next to Add", () => {
+	const pageSource = readProjectFile("components/projects/jira-agents/page.tsx");
+	const toggleSource = readProjectFile("components/projects/jira-agents/composer-privacy-toggle.tsx");
+	const composerSource = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
+
+	assert.match(pageSource, /composerToolsAfterAdd=\{<JiraAgentsComposerPrivacyToggle \/>\}/u);
+	assert.match(toggleSource, /EyeOpenIcon/u);
+	assert.match(toggleSource, /EyeOpenStrikethroughIcon/u);
+	assert.match(toggleSource, /Private to you/u);
+	assert.match(toggleSource, /Visible to space/u);
+	assert.match(
+		toggleSource,
+		/isPrivate \? \(\s*<EyeOpenIcon label="" \/>\s*\) : \(\s*<EyeOpenStrikethroughIcon label="" \/>\s*\)/u,
+	);
+	assert.match(
+		toggleSource,
+		/content: isPrivate \? "Private to you" : "Visible to space"/u,
+	);
+	// Both privacy states are valid — no toggle pressed/selected chrome.
+	assert.doesNotMatch(toggleSource, /aria-pressed/u);
+	// Shared composer stays a slot — privacy chrome lives only in jira-agents.
+	assert.doesNotMatch(composerSource, /Private to you|Visible to space|EyeOpenStrikethroughIcon/u);
 });
 
 test("Jira Agents addresses authored story activity as Venn", async () => {

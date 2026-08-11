@@ -90,8 +90,8 @@ export function PullRequestDetailHeader({
 			onClosePullRequestClick={() => undefined}
 			scrollContainerRef={scrollContainerRef}
 			className={tabNavigation
-				? "rounded-xl border"
-				: "rounded-xl border p-4"}
+				? "rounded-xl border bg-surface"
+				: "rounded-xl border bg-surface p-4"}
 			data-jira-work-item-pull-request-detail-header
 			style={{ borderRadius: 12 }}
 		/>

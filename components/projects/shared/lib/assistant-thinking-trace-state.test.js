@@ -653,6 +653,18 @@ test("assistant thinking trace suppresses auto-open for question-card tool state
 	);
 });
 
+test("assistant thinking trace adds top spacing when it follows preceding message content", () => {
+	const source = fs.readFileSync(
+		path.join(__dirname, "../components/assistant-thinking-trace.tsx"),
+		"utf8",
+	);
+
+	assert.match(
+		source,
+		/className=\{cn\("mb-0 \[:not\(:first-child\)\]:mt-2", className\)\}/u,
+	);
+});
+
 test("assistant thinking trace uses a rainbow spinner + shimmer + dots for response generation", () => {
 	const source = fs.readFileSync(
 		path.join(__dirname, "../components/assistant-thinking-trace.tsx"),

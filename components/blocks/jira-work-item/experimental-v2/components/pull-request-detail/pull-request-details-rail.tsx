@@ -195,15 +195,17 @@ function CommitsValue({ commits }: Readonly<{ commits: readonly PullRequestCommi
 								</span>
 							</div>
 							<div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-text-subtlest">
-								<span className="flex min-w-0 items-center gap-1">
+								<span className="flex min-w-0 items-center gap-1.5">
 									<PersonAvatar person={commit.author} size="xs" />
 									<span className="min-w-0 truncate">{commit.author.name}</span>
 								</span>
 								<span aria-hidden>·</span>
 								<span className="shrink-0">{commit.timestamp}</span>
 								<span aria-hidden>·</span>
-								<span className="inline-flex shrink-0 items-center gap-0.5">
-									<code className="font-mono text-text-subtlest">{commit.shortSha}</code>
+								<span className="inline-flex shrink-0 items-center gap-1.5">
+									<code className="cursor-pointer font-mono text-text-subtlest hover:underline">
+										{commit.shortSha}
+									</code>
 									<Button
 										aria-label={`Copy commit ${commit.shortSha}`}
 										className={cn(
@@ -275,6 +277,55 @@ function CheckDetails({ check }: Readonly<{ check: PullRequestCheck }>) {
 	return <RunningCheckDetails initialSeconds={initialSeconds} />;
 }
 
+/**
+ * Failed-check trailing actions: Fix is the only interactive control. A decorative
+ * external-link icon expands on the far right via row hover (`group/check-row`).
+ * The row itself opens `check.url` — the icon is not a separate hit target.
+ */
+function FailedCheckActions({ check }: Readonly<{ check: PullRequestCheck }>) {
+	return (
+		<div
+			className="flex shrink-0 items-center"
+			data-jira-work-item-failed-check-actions
+		>
+			<Button
+				aria-label={`Fix ${check.name}`}
+				onClick={(event) => {
+					event.preventDefault();
+					event.stopPropagation();
+				}}
+				size="compact"
+				type="button"
+				variant="outline"
+			>
+				Fix
+			</Button>
+			{/* Margin on the inner icon so a collapsed 0fr slot leaves no gap after Fix. */}
+			<div
+				aria-hidden
+				className={cn(
+					"grid shrink-0 grid-cols-[0fr] transition-[grid-template-columns] duration-normal ease-out-practical motion-reduce:transition-none",
+					"group-hover/check-row:grid-cols-[1fr]",
+					"group-focus-within/check-row:grid-cols-[1fr]",
+				)}
+			>
+				<div className="min-w-0 overflow-hidden">
+					<IconTile
+						aria-hidden
+						as="span"
+						className="ml-1 shrink-0 text-icon-subtle"
+						icon={<LinkExternalIcon color="currentColor" label="" size="small" />}
+						iconSize="small"
+						label=""
+						size="small"
+						variant="transparent"
+					/>
+				</div>
+			</div>
+		</div>
+	);
+}
+
 function ChecksValue({ checks }: Readonly<{ checks: readonly PullRequestCheck[] }>) {
 	if (checks.length === 0) {
 		return <p className="text-xs text-text-subtle">No CI checks reported</p>;
@@ -284,10 +335,28 @@ function ChecksValue({ checks }: Readonly<{ checks: readonly PullRequestCheck[] 
 		<ul className="flex flex-col" data-jira-work-item-pull-request-checks>
 			{checks.map((check) => {
 				const status = CHECK_STATUS[check.status];
+				const isFailed = check.status === "failed";
+				const checkUrl = check.url;
 				return (
 					<li
-						className="group/check-row -mx-2 flex w-[calc(100%+1rem)] min-w-0 items-center gap-3 rounded-md px-2 py-2 transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered motion-reduce:transition-none"
+						className="group/check-row -mx-2 flex w-[calc(100%+1rem)] min-w-0 cursor-pointer items-center gap-3 rounded-md px-2 py-2 transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered motion-reduce:transition-none"
 						key={check.id}
+						role={checkUrl ? "link" : undefined}
+						tabIndex={checkUrl ? 0 : undefined}
+						onClick={
+							checkUrl
+								? () => {
+										openScmUrl(checkUrl);
+									}
+								: undefined
+						}
+						onKeyDown={
+							checkUrl
+								? (event) => {
+										handleScmLinkKeyDown(event, checkUrl);
+									}
+								: undefined
+						}
 					>
 						<IconTile
 							aria-hidden
@@ -304,21 +373,25 @@ function ChecksValue({ checks }: Readonly<{ checks: readonly PullRequestCheck[] 
 								<CheckDetails check={check} />
 							</p>
 						</div>
-						<IconTile
-							aria-hidden
-							as="span"
-							className={cn(
-								"shrink-0 text-icon-subtle",
-								"opacity-0 transition-opacity duration-normal ease-out-practical",
-								"group-hover/check-row:opacity-100",
-								"motion-reduce:transition-none",
-							)}
-							icon={<LinkExternalIcon color="currentColor" label="" size="small" />}
-							iconSize="small"
-							label=""
-							size="small"
-							variant="transparent"
-						/>
+						{isFailed ? (
+							<FailedCheckActions check={check} />
+						) : (
+							<IconTile
+								aria-hidden
+								as="span"
+								className={cn(
+									"shrink-0 text-icon-subtle",
+									"opacity-0 transition-opacity duration-normal ease-out-practical",
+									"group-hover/check-row:opacity-100",
+									"motion-reduce:transition-none",
+								)}
+								icon={<LinkExternalIcon color="currentColor" label="" size="small" />}
+								iconSize="small"
+								label=""
+								size="small"
+								variant="transparent"
+							/>
+						)}
 					</li>
 				);
 			})}
@@ -332,9 +405,18 @@ export function PullRequestDetailsRail({ data }: Readonly<{ data: PullRequestDet
 		consumePullRequestSectionExpandRequest,
 		pullRequestSectionExpandRequest,
 	} = useMetadataRail();
-	const [openSectionIds, setOpenSectionIds] = useState<ReadonlySet<string>>(() => new Set());
+	// Review lands on PR Details with CI checks open — the chapter's primary
+	// beat — instead of a collapsed · summary that needs a header click.
+	const [openSectionIds, setOpenSectionIds] = useState<ReadonlySet<string>>(
+		() => new Set([PULL_REQUEST_CHECKS_SECTION_ID]),
+	);
 	const passedChecks = data.checks.filter((check) => check.status === "passed").length;
+	const failedChecks = data.checks.filter((check) => check.status === "failed").length;
 	const checksInProgress = arePullRequestChecksInProgress(data.checks);
+	const checksCollapsedCount =
+		failedChecks > 0
+			? `${passedChecks}/${data.checks.length} passed ${failedChecks} failed`
+			: `${passedChecks}/${data.checks.length} passed`;
 	const author: PullRequestPerson = {
 		id: "pull-request-author",
 		name: data.authorName,
@@ -401,6 +483,7 @@ export function PullRequestDetailsRail({ data }: Readonly<{ data: PullRequestDet
 				},
 				{
 					id: PULL_REQUEST_CHECKS_SECTION_ID,
+					defaultOpen: true,
 					title: (
 						<ChecksSectionTitle
 							inProgress={checksInProgress}
@@ -408,7 +491,7 @@ export function PullRequestDetailsRail({ data }: Readonly<{ data: PullRequestDet
 							total={data.checks.length}
 						/>
 					),
-					count: `${passedChecks}/${data.checks.length} passed`,
+					count: checksCollapsedCount,
 					content: <ChecksValue checks={data.checks} />,
 				},
 				{

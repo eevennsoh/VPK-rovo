@@ -396,6 +396,11 @@ test("RovoFloatingChat forwards composer input context to the shared chat panel"
 	assert.match(ROVO_FLOATING_CHAT_SOURCE, /composerInputContext=\{composerInputContext\}/u);
 });
 
+test("RovoFloatingChat forwards composer tools after Add to the shared chat panel", () => {
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /composerToolsAfterAdd\?: ReactNode;/u);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /composerToolsAfterAdd=\{composerToolsAfterAdd\}/u);
+});
+
 test("RovoFloatingChat forwards deterministic submit interception to the shared chat panel", async () => {
 	const harness = await loadRovoFloatingChatHarness();
 	const markup = harness.renderFloatingChatWithIntercept();

@@ -494,7 +494,7 @@ export function JiraActivityComment({
 								className="mt-0.5 shrink-0 disabled:opacity-100"
 								disabled
 							/>
-							<span className={cn("min-w-0 wrap-break-word", item.completed ? "text-text-subtle" : null)}>
+							<span className={cn("min-w-0 wrap-break-word", item.completed ? "text-text-disabled" : null)}>
 								{item.label}
 							</span>
 						</li>

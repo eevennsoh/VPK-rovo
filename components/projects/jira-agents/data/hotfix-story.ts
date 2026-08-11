@@ -328,12 +328,25 @@ function claudePreviewForChapter(
 					: buildStep === "verifying"
 						? "Guest checkout is implemented. I'm verifying the final desktop and mobile design and attaching screenshot evidence for open PR #1847."
 						: "Guest checkout is implemented and verified. I've attached the final desktop and mobile evidence and prepared PR #1847 for automated CI review.";
-		case "review":
-			return options.reviewStep === "queued"
-				? "PR #1847 is open. GitHub Actions owns the automated review; lint and typecheck has started while the unit and guest-checkout browser checks stay queued."
-				: options.reviewStep === "running"
-					? "GitHub Actions is running lint, typecheck, and unit tests for PR #1847 while the guest-checkout browser suite waits for CI capacity."
-					: "GitHub Actions blocked PR #1847. Lint and typecheck found a nullable delivery-address path; unit and browser coverage passed.";
+		case "review": {
+			switch (options.reviewStep) {
+				case "queued":
+					return "PR #1847 is open. GitHub Actions owns the automated review; lint and typecheck has started while the unit and guest-checkout browser checks stay queued.";
+				case "running":
+					return "GitHub Actions is running lint, typecheck, and unit tests for PR #1847 while the guest-checkout browser suite waits for CI capacity.";
+				case "unit-passed":
+					return "Unit tests passed for PR #1847. Guest-checkout browser checks are still running while lint and typecheck continues.";
+				case "settling":
+					return "Unit and guest-checkout browser checks passed for PR #1847. Lint and typecheck is still running.";
+				case "failed":
+				case undefined:
+					return "GitHub Actions blocked PR #1847. Lint and typecheck found a nullable delivery-address path; unit and browser coverage passed.";
+				default: {
+					const _exhaustive: never = options.reviewStep;
+					return _exhaustive;
+				}
+			}
+		}
 		case "fix":
 			return "I repaired the nullable delivery-address path and am rerunning the failed lint and typecheck check; unit and browser coverage remain passed.";
 		case "approve":
@@ -361,9 +374,11 @@ function createStorySessions(
 
 	const buildStep = resolveBuildStep(options);
 	const plannerStatus: AgentSessionStatus = chapter === "plan" ? "running" : "completed";
+	// Review keeps Claude non-completed for the whole CI beat (including the
+	// failed settle) so the composer "agents working" context pill stays up
+	// while the PR is open — completing here made the pill vanish ~3s in.
 	const claudeStatus: AgentSessionStatus = chapter === "release"
 		|| (chapter === "approve" && options.pullRequestApproved)
-		|| (chapter === "review" && options.reviewStep === "failed")
 		? "completed"
 		: chapter === "approve" || chapter === "review"
 			? "waiting"
@@ -410,12 +425,14 @@ function createStorySessions(
 		imageAttachment: showDesignEvidence ? { ...GUEST_CHECKOUT_DESIGN_ATTACHMENT } : undefined,
 		waitingOn: chapter === "approve" && !options.pullRequestApproved
 			? { kind: "user" }
-			: chapter === "review" && options.reviewStep !== "failed"
-				? {
-					kind: "agent",
-					agentId: "github-actions",
-					agentName: "GitHub Actions",
-				}
+			: chapter === "review"
+				? options.reviewStep === "failed"
+					? { kind: "user" }
+					: {
+						kind: "agent",
+						agentId: "github-actions",
+						agentName: "GitHub Actions",
+					}
 				: undefined,
 	});
 	const planner = createSession(CODE_PLANNER, plannerStatus, 2, {

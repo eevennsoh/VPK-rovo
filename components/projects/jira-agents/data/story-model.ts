@@ -15,7 +15,16 @@ export type JiraAgentsStoryChapter =
 	| "approve"
 	| "release";
 
-export type JiraAgentsReviewStep = "queued" | "running" | "failed";
+/**
+ * Review CI reveal: start → widen → unit green → browser green → lint failure.
+ * Reduced motion jumps straight to `failed`.
+ */
+export type JiraAgentsReviewStep =
+	| "queued"
+	| "running"
+	| "unit-passed"
+	| "settling"
+	| "failed";
 /**
  * Staged Build reveal from Plan end:
  * ready (orient) → implement+PR → verify+screenshot → former Handoff end state.

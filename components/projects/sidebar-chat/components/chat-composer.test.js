@@ -585,8 +585,13 @@ test("compact chat plus menu reuses the Rovo app attachment actions", () => {
 	const uploadItemIndex = rovoAddMenu.indexOf("<PromptInputActionAddAttachments");
 
 	assert.match(sidebarComposer, /addMenuItemsBefore\?: ReactNode;/u);
+	assert.match(sidebarComposer, /composerToolsAfterAdd\?: ReactNode;/u);
 	assert.match(sidebarComposer, /RovoAppComposerAddMenu/u);
 	assert.match(sidebarComposer, /itemsBefore=\{addMenuItemsBefore\}/u);
+	assert.match(
+		sidebarComposer,
+		/<PromptInputActionMenuTrigger aria-label="Add"[\s\S]*<\/PromptInputActionMenu>[\s\S]*\{composerToolsAfterAdd\}/u,
+	);
 	assert.match(sidebarComposer, /PendingAttachments/u);
 	assert.match(sidebarComposer, /usePromptInputAttachments/u);
 	assert.match(rovoAddMenu, /itemsBefore\?: ReactNode;/u);
@@ -595,6 +600,7 @@ test("compact chat plus menu reuses the Rovo app attachment actions", () => {
 	assert.ok(customItemsIndex > -1);
 	assert.ok(uploadItemIndex > customItemsIndex);
 	assert.doesNotMatch(sidebarComposer, /UploadIcon/u);
+	assert.doesNotMatch(sidebarComposer, /EyeOpenIcon|Private to you|Visible to space/u);
 });
 
 test("compact chat submits add-menu files through the shared Rovo thread queue", () => {

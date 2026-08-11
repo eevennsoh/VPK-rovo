@@ -104,7 +104,7 @@ function DescriptionColumnShell({
 			</div>
 			<div
 				ref={scrollRef}
-				className="order-2 contents @[860px]/agentlayout:relative @[860px]/agentlayout:block @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:overscroll-y-none @[860px]/agentlayout:px-6 @[860px]/agentlayout:pb-6"
+				className="order-2 contents has-[[data-jira-work-item-pull-request-detail-header]]:[overflow-anchor:none] @[860px]/agentlayout:relative @[860px]/agentlayout:block @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:overscroll-y-none @[860px]/agentlayout:px-6 @[860px]/agentlayout:pb-6"
 				data-jira-work-item-scroll-region
 				style={style}
 			>

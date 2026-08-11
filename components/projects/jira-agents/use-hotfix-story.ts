@@ -1,5 +1,6 @@
 "use client";
 
+import { useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { WorkItemData } from "@/app/contexts/context-work-item-modal";
@@ -47,9 +48,12 @@ const BUILD_SEQUENCE = {
 	{ next: JiraAgentsBuildStep; delayMs: number }
 >;
 
+// Review CI: start → widen → unit green → browser green → lint failure.
 const REVIEW_SEQUENCE = {
-	queued: { next: "running", delayMs: 900 },
-	running: { next: "failed", delayMs: 1_500 },
+	queued: { next: "running", delayMs: 1_200 },
+	running: { next: "unit-passed", delayMs: 1_500 },
+	"unit-passed": { next: "settling", delayMs: 1_300 },
+	settling: { next: "failed", delayMs: 1_600 },
 } as const satisfies Record<
 	Exclude<JiraAgentsReviewStep, "failed">,
 	{ next: JiraAgentsReviewStep; delayMs: number }
@@ -84,6 +88,7 @@ export interface JiraAgentsStoryController {
 }
 
 export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
+	const shouldReduceMotion = useReducedMotion() ?? false;
 	const [chapter, setChapter] = useState<JiraAgentsStoryChapter>("intake");
 	const [chapterRevision, setChapterRevision] = useState(0);
 	const [descriptionSkillPhase, setDescriptionSkillPhase] = useState<JiraAgentsDescriptionSkillPhase>("idle");
@@ -166,10 +171,10 @@ export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 		return () => window.clearTimeout(timeoutId);
 	}, [active, chapter, descriptionSkillPhase]);
 
-	// These timers reveal authored state snapshots rather than animating layout,
-	// so reduced motion keeps the same causal orchestration and CI evidence.
+	// These timers reveal authored state snapshots rather than animating layout.
 	// Plan orchestration stops at "complete" — Build only starts when the user
-	// selects that chapter manually.
+	// selects that chapter manually. Review CI keeps the same causal frames, but
+	// reduced motion jumps straight to the final failed checks.
 	useEffect(() => {
 		if (!active || orchestrationStep === "idle" || orchestrationStep === "complete") {
 			return undefined;
@@ -196,13 +201,18 @@ export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 
 	useEffect(() => {
 		if (!active || chapter !== "review" || reviewStep === "failed") return undefined;
+		if (shouldReduceMotion) {
+			setReviewStep("failed");
+			setLaunchId((current) => current + 1);
+			return undefined;
+		}
 		const transition = REVIEW_SEQUENCE[reviewStep];
 		const timeoutId = window.setTimeout(() => {
 			setReviewStep(transition.next);
 			setLaunchId((current) => current + 1);
 		}, transition.delayMs);
 		return () => window.clearTimeout(timeoutId);
-	}, [active, chapter, reviewStep]);
+	}, [active, chapter, reviewStep, shouldReduceMotion]);
 
 	const approvePullRequest = useCallback((identity: string) => {
 		if (

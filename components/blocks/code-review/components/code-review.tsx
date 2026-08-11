@@ -1,15 +1,16 @@
 "use client";
 
-import { useCallback, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { RovoAgentProfile } from "@/app/data/directory/agents";
 import { RovoCanvas } from "@/components/blocks/rovo-canvas/page";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
-import { CHANGED_FILES, EDITOR_FILE } from "../data/changed-files";
+import { CHANGED_FILES } from "../data/changed-files";
 import { CODE_REVIEW_WORK_ITEM } from "../data/work-item";
-import type { ChangedFile, CodeReviewWorkItem, DiffLayout } from "../data/types";
+import type { ChangedFile, CodeReviewCommit, CodeReviewWorkItem, DiffLayout } from "../data/types";
 import {
 	EMPTY_INLINE_COMMENT_STATE,
 	cancelInlineCommentDraft,
@@ -32,7 +33,14 @@ import { EditorPanel } from "./editor/editor-panel";
 export interface CodeReviewProps {
 	workItem?: CodeReviewWorkItem;
 	files?: readonly ChangedFile[];
+	/** PR commits for the changes-picker Commits submenu; omit on canvas demos. */
+	commits?: readonly CodeReviewCommit[];
 	explorerRootLabel?: string;
+	defaultSelectedFileId?: string;
+	/** Render the editor surface inline (no RovoCanvas chrome). */
+	embedded?: boolean;
+	/** Grow with content for parent scrollports; used by embedded work-item embeds. */
+	expandContent?: boolean;
 	className?: string;
 	open?: boolean;
 	defaultOpen?: boolean;
@@ -44,6 +52,8 @@ export interface CodeReviewProps {
 	agentVariant?: CodeReviewAgentVariant;
 	agentProfile?: RovoAgentProfile;
 	hideComposerSourceAndModelControls?: boolean;
+	/** Fired whenever committed inline comments change (not drafts). */
+	onInlineCommentsChange?: (comments: readonly InlineReviewComment[]) => void;
 	onReviewSubmit?: (submission: Readonly<{
 		comments: readonly InlineReviewComment[];
 		prompt: string;
@@ -53,7 +63,11 @@ export interface CodeReviewProps {
 export function CodeReview({
 	workItem = CODE_REVIEW_WORK_ITEM,
 	files = CHANGED_FILES,
+	commits,
 	explorerRootLabel,
+	defaultSelectedFileId,
+	embedded = false,
+	expandContent = false,
 	className,
 	open,
 	defaultOpen = false,
@@ -65,9 +79,9 @@ export function CodeReview({
 	agentVariant = "custom",
 	agentProfile,
 	hideComposerSourceAndModelControls = false,
+	onInlineCommentsChange,
 	onReviewSubmit,
 }: Readonly<CodeReviewProps>) {
-	const isDefaultFileSet = files === CHANGED_FILES;
 	const { additions, deletions } = files.reduce(
 		(totals, file) => ({
 			additions: totals.additions + file.additions,
@@ -75,9 +89,6 @@ export function CodeReview({
 		}),
 		{ additions: 0, deletions: 0 },
 	);
-	// The bundled EDITOR_FILE ("ipc.mp.test.ts") is a fixture-only demo tab, distinct
-	// from the default CHANGED_FILES set; custom `files` drive the editor entirely on their own.
-	const editorFiles = isDefaultFileSet ? [...files, EDITOR_FILE] : files;
 	const [internalOpen, setInternalOpen] = useState(defaultOpen);
 	const isControlled = open !== undefined;
 	const isCanvasOpen = open ?? internalOpen;
@@ -90,11 +101,6 @@ export function CodeReview({
 	const [editorLayout, setEditorLayout] = useState<DiffLayout>("unified");
 	const [inlineComments, setInlineComments] = useState(EMPTY_INLINE_COMMENT_STATE);
 	const nextInlineCommentId = useRef(0);
-	const [editorFileId, setEditorFileId] = useState(
-		() => (editorFiles.find((file) => file.inExplorer) ?? editorFiles[0])?.id ?? EDITOR_FILE.id,
-	);
-	const selectedEditorFile =
-		editorFiles.find((file) => file.id === editorFileId) ?? editorFiles[0] ?? EDITOR_FILE;
 	const handleAddDraft = useCallback((anchor: InlineCommentAnchor) => {
 		nextInlineCommentId.current += 1;
 		setInlineComments((state) => createInlineCommentDraft(state, {
@@ -121,6 +127,65 @@ export function CodeReview({
 	const handleUpdateDraft = useCallback((draftId: string, body: string) => {
 		setInlineComments((state) => updateInlineCommentDraft(state, draftId, body));
 	}, []);
+
+	useEffect(() => {
+		onInlineCommentsChange?.(inlineComments.comments);
+	}, [inlineComments.comments, onInlineCommentsChange]);
+
+	const editorPanel = (
+		<EditorPanel
+			comments={inlineComments.comments}
+			commits={commits}
+			defaultSelectedFileId={defaultSelectedFileId}
+			drafts={inlineComments.drafts}
+			expandContent={expandContent}
+			explorerRootLabel={explorerRootLabel}
+			files={files}
+			layout={editorLayout}
+			onAddDraft={handleAddDraft}
+			onCancelDraft={handleCancelDraft}
+			onCommitDraft={handleCommitDraft}
+			onDeleteComment={handleDeleteComment}
+			onUpdateComment={handleUpdateComment}
+			onLayoutChange={setEditorLayout}
+			onUpdateDraft={handleUpdateDraft}
+		/>
+	);
+
+	if (embedded) {
+		if (files.length === 0) {
+			return (
+				<div
+					className={cn(
+						"flex min-w-0 items-center justify-center rounded-md border border-border bg-surface px-4 py-8 text-sm text-text-subtle",
+						className,
+					)}
+					data-code-review-embedded
+				>
+					No changed files.
+				</div>
+			);
+		}
+
+		return (
+			<section
+				aria-label="Changed files review"
+				className={cn(
+					"min-w-0 rounded-md border border-border bg-surface",
+					/*
+					 * expandContent sticks toolbar/tree in a parent scrollport —
+					 * overflow-hidden would trap sticky inside this shell. Corner
+					 * bleed is handled via rounded-[inherit] on EditorPanel chrome.
+					 */
+					expandContent ? undefined : "overflow-hidden",
+					className,
+				)}
+				data-code-review-embedded
+			>
+				{editorPanel}
+			</section>
+		);
+	}
 
 	return (
 		<>
@@ -154,25 +219,7 @@ export function CodeReview({
 						id: "code",
 						label: "Code",
 						toolbar: "none",
-						content: (
-							<EditorPanel
-								comments={inlineComments.comments}
-								drafts={inlineComments.drafts}
-								explorerRootLabel={explorerRootLabel}
-								file={selectedEditorFile}
-								files={editorFiles}
-								layout={editorLayout}
-								onAddDraft={handleAddDraft}
-								onCancelDraft={handleCancelDraft}
-								onCommitDraft={handleCommitDraft}
-								onDeleteComment={handleDeleteComment}
-								onUpdateComment={handleUpdateComment}
-								onFileSelect={setEditorFileId}
-								onLayoutChange={setEditorLayout}
-								onUpdateDraft={handleUpdateDraft}
-								selectedFileId={editorFileId}
-							/>
-						),
+						content: editorPanel,
 					},
 				]}
 				rightRail={

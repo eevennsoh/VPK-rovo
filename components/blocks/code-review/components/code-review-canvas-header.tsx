@@ -34,7 +34,13 @@ export function CodeReviewCanvasHeader({
 				label={`${workItem.key}: ${workItem.title}`}
 				metadata={
 					<span className="flex min-w-0 items-center gap-1">
-						<GithubLogo aria-hidden borderless label="" size="xxsmall" />
+						<GithubLogo
+							aria-hidden
+							borderless
+							className="dark:invert [[data-color-mode=dark]_&]:invert"
+							label=""
+							size="xxsmall"
+						/>
 						<MetadataPathLink segmented title={workItem.repoName}>
 							<MetadataPathValue path={workItem.repoName} />
 						</MetadataPathLink>

@@ -13,7 +13,6 @@ import StatusErrorIcon from "@atlaskit/icon/core/status-error";
 
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-import { Icon } from "@/components/ui/icon";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -115,6 +114,46 @@ function mergeStateLabel(
 	}
 }
 
+/** Leading status icon for the merge primary — matches PR rail CI check icons. */
+function mergeStateLeadingIcon(mergeState: PullRequestHeaderMergeState) {
+	switch (mergeState) {
+		case "checks-failed":
+			return (
+				<span
+					className="grid size-4 shrink-0 place-items-center text-icon-danger"
+					data-icon="inline-start"
+				>
+					<StatusErrorIcon color="currentColor" label="" size="small" />
+				</span>
+			);
+		case "checks-running":
+			return (
+				<span
+					className="grid size-4 shrink-0 place-items-center"
+					data-icon="inline-start"
+				>
+					<Spinner size="xs" />
+				</span>
+			);
+		case "merge-conflicts":
+			return (
+				<span
+					className="grid size-4 shrink-0 place-items-center text-icon-danger"
+					data-icon="inline-start"
+				>
+					<MergeFailureIcon color="currentColor" label="" size="small" />
+				</span>
+			);
+		case "review-required":
+		case "ready":
+			return null;
+		default: {
+			const _exhaustive: never = mergeState;
+			return _exhaustive;
+		}
+	}
+}
+
 function isMergePrimaryEnabled({
 	mergeState,
 	onChecksFailedClick,
@@ -189,7 +228,14 @@ function ScmProviderMark({ name }: Readonly<{ name: string }>) {
 		return <BrandLogoMark frame="chip" label={name} name="gitlab" />;
 	}
 	if (normalizedName.includes("github")) {
-		return <BrandLogoMark frame="chip" label={name} name="github" />;
+		return (
+			<BrandLogoMark
+				className="dark:invert [[data-color-mode=dark]_&]:invert"
+				frame="chip"
+				label={name}
+				name="github"
+			/>
+		);
 	}
 
 	return (
@@ -404,13 +450,7 @@ export function PullRequestHeader({
 					? { layout: INSTANT_TRANSITION }
 					: { layout: LAYOUT_TRANSITION }
 			}
-			style={tabNavigation
-				? {
-					...style,
-					borderBottomLeftRadius: 6,
-					borderBottomRightRadius: 6,
-				}
-				: style}
+			style={style}
 			{...props}
 		>
 			<motion.div
@@ -423,7 +463,7 @@ export function PullRequestHeader({
 					layout={shouldReduceMotion ? false : "position"}
 					transition={{ layout: LAYOUT_TRANSITION }}
 				>
-					<div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+					<div className="flex min-w-0 flex-nowrap items-center gap-x-2 gap-y-1 sm:flex-1">
 						<span className="inline-flex shrink-0 items-center gap-1">
 							{resolvedVariant === "compact" ? (
 								<CompactPullRequestStatusIcon status={status} />
@@ -440,7 +480,7 @@ export function PullRequestHeader({
 						</span>
 						<h1
 							className={cn(
-								"min-w-0 font-medium text-text",
+								"min-w-0 flex-1 truncate font-medium text-text",
 								TITLE_SIZE_TRANSITION,
 								titleSizeClass,
 							)}
@@ -450,7 +490,7 @@ export function PullRequestHeader({
 					</div>
 					<ButtonGroup
 						aria-label="Pull request actions"
-						className="w-full flex-wrap gap-2 sm:w-auto"
+						className="w-full flex-wrap gap-2 sm:w-auto sm:shrink-0"
 						variant="separated"
 					>
 						{canMutatePullRequest ? (
@@ -460,22 +500,7 @@ export function PullRequestHeader({
 									onClick={handlePrimaryClick}
 									variant="outline"
 								>
-									{mergeState === "checks-running" ? (
-										<Spinner data-icon="inline-start" size="xs" />
-									) : null}
-									{mergeState === "merge-conflicts" ? (
-										<Icon
-											className="text-icon-danger!"
-											data-icon="inline-start"
-											render={
-												<StatusErrorIcon
-													color="currentColor"
-													label=""
-													size="small"
-												/>
-											}
-										/>
-									) : null}
+									{mergeStateLeadingIcon(mergeState)}
 									{mergeStateLabel(mergeState, selectedMergeMethod)}
 								</Button>
 								<DropdownMenu>
@@ -511,6 +536,11 @@ export function PullRequestHeader({
 													checked={autoMergeEnabled}
 													disabled={!onAutoMergeChange}
 													label="Auto merge"
+													// Keep the Switch out of the menu's tabbable set.
+													// Otherwise FloatingFocusManager's initialFocus lands on
+													// it (menuitems are tabIndex -1 until highlighted), which
+													// falsely highlights Auto merge on pointer open.
+													tabIndex={-1}
 													onCheckedChange={handleAutoMergeChange}
 													onClick={(event) => {
 														// Avoid double-toggle: Switch already flipped via
@@ -649,7 +679,12 @@ export function PullRequestHeader({
 									<Tag
 										color="gray"
 										elemBefore={
-											<BrandLogoMark frame="chip" label="GitHub" name="github" />
+											<BrandLogoMark
+												className="dark:invert [[data-color-mode=dark]_&]:invert"
+												frame="chip"
+												label="GitHub"
+												name="github"
+											/>
 										}
 										maxWidth="14rem"
 									>
@@ -677,9 +712,13 @@ export function PullRequestHeader({
 			{tabNavigation ? (
 				<motion.div
 					className={cn(
-						"relative z-10 mt-4 shrink-0 overflow-x-auto overscroll-x-contain transition-[padding-left,padding-right] duration-medium ease-in-out motion-reduce:transition-none [&_[data-slot=tabs-list]]:border-b-0",
+						// Pull the strip 1px over the header's bottom border so the
+						// shared line-tab indicator (`after:h-0.5` / 2px) sits on that
+						// grey rule. Keep the after fully inside this box (`after:bottom-0`)
+						// — `overflow-x-auto` would otherwise clip a negative bottom offset.
+						"relative z-10 -mb-px mt-4 shrink-0 overflow-x-auto overscroll-x-contain transition-[padding-left,padding-right] duration-medium ease-in-out motion-reduce:transition-none [&_[data-slot=tabs-list]]:border-b-0 [&_[data-slot=tabs-trigger]]:after:bottom-0",
 						resolvedVariant === "compact"
-							? "px-[clamp(1rem,calc(25%-4rem),14rem)]"
+							? "px-[clamp(1rem,calc(30%-4rem),16rem)]"
 							: "px-[clamp(1rem,calc(20%-4rem),11rem)]",
 					)}
 					layout={shouldReduceMotion ? false : "position"}

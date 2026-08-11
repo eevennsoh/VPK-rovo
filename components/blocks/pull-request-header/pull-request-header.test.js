@@ -141,8 +141,9 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/spinner"/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/mergeState === "checks-running" \?[\s\S]*<Spinner data-icon="inline-start" size="xs" \/>[\s\S]*: null/u,
+		/function mergeStateLeadingIcon[\s\S]*case "checks-failed":[\s\S]*grid size-4 shrink-0 place-items-center text-icon-danger[\s\S]*<StatusErrorIcon[\s\S]*case "checks-running":[\s\S]*grid size-4 shrink-0 place-items-center[\s\S]*<Spinner size="xs" \/>[\s\S]*case "merge-conflicts":[\s\S]*grid size-4 shrink-0 place-items-center text-icon-danger[\s\S]*<MergeFailureIcon/u,
 	);
+	assert.match(COMPONENT_SOURCE, /\{mergeStateLeadingIcon\(mergeState\)\}/u);
 	assert.match(COMPONENT_SOURCE, /variant="separated"/u);
 	assert.match(COMPONENT_SOURCE, /variant="split"/u);
 	assert.match(
@@ -155,7 +156,10 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/lozenge"/u);
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/tag"/u);
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/logo-mark"/u);
-	assert.match(COMPONENT_SOURCE, /BrandLogoMark[\s\S]*name="github"/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/BrandLogoMark[\s\S]*className="dark:invert \[\[data-color-mode=dark\]_&\]:invert"[\s\S]*name="github"/u,
+	);
 	assert.doesNotMatch(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/comment"/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /aria-label="Chat"/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /onChatClick/u);
@@ -177,7 +181,10 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 		COMPONENT_SOURCE,
 		/case "Open":[\s\S]*text-icon-success[\s\S]*<PullRequestIcon[\s\S]*case "Merged":[\s\S]*text-icon-accent-purple[\s\S]*<MergeSuccessIcon/u,
 	);
-	assert.match(COMPONENT_SOURCE, /className="w-full flex-wrap gap-2 sm:w-auto"/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/className="w-full flex-wrap gap-2 sm:w-auto sm:shrink-0"/u,
+	);
 	assert.match(
 		COMPONENT_SOURCE,
 		/disabled=\{!primaryEnabled\}/u,
@@ -188,16 +195,16 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.match(COMPONENT_SOURCE, /case "checks-running":[\s\S]*onChecksRunningClick/u);
 	assert.match(COMPONENT_SOURCE, /case "merge-conflicts":[\s\S]*onMergeConflictsClick/u);
 	assert.match(COMPONENT_SOURCE, /case "review-required":[\s\S]*onReviewRequiredClick/u);
-	assert.match(
-		COMPONENT_SOURCE,
-		/mergeState === "merge-conflicts" \? \([\s\S]*<Icon[\s\S]*className="text-icon-danger!"[\s\S]*data-icon="inline-start"[\s\S]*render=\{[\s\S]*<StatusErrorIcon/u,
-	);
 	assert.match(COMPONENT_SOURCE, /<ChevronDownIcon label="" size="small" \/>/u);
 	assert.match(COMPONENT_SOURCE, /<ShowMoreHorizontalIcon label="" size="small" \/>/u);
 	assert.match(COMPONENT_SOURCE, /aria-label="Merge options"/u);
 	assert.match(COMPONENT_SOURCE, /aria-label="More actions"/u);
 	assert.match(COMPONENT_SOURCE, /label="Auto merge"/u);
 	assert.match(COMPONENT_SOURCE, /Auto merge/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/label="Auto merge"[\s\S]*tabIndex=\{-1\}/u,
+	);
 	assert.match(COMPONENT_SOURCE, /closeOnClick=\{false\}/u);
 	assert.match(COMPONENT_SOURCE, /handleMergeMethodChange/u);
 	assert.match(COMPONENT_SOURCE, /handleAutoMergeChange/u);
@@ -233,6 +240,10 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.match(COMPONENT_SOURCE, /sm:items-center sm:justify-between/u);
 	assert.match(
 		COMPONENT_SOURCE,
+		/className="flex min-w-0 flex-nowrap items-center gap-x-2 gap-y-1 sm:flex-1"[\s\S]*className=\{cn\([\s\S]*"min-w-0 flex-1 truncate font-medium text-text"/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
 		/function BranchName[\s\S]*lastIndexOf\("\/"\)[\s\S]*text-text-subtlest/u,
 	);
 	assert.match(
@@ -259,7 +270,10 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.match(COMPONENT_SOURCE, /function ScmProviderMark/u);
 	assert.match(COMPONENT_SOURCE, /AtlassianLogoMark[\s\S]*name="bitbucket"/u);
 	assert.match(COMPONENT_SOURCE, /BrandLogoMark[\s\S]*name="gitlab"/u);
-	assert.match(COMPONENT_SOURCE, /BrandLogoMark[\s\S]*name="github"/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/BrandLogoMark[\s\S]*className="dark:invert \[\[data-color-mode=dark\]_&\]:invert"[\s\S]*name="github"/u,
+	);
 	assert.match(
 		COMPONENT_SOURCE,
 		/elemBefore=\{<ScmProviderMark name=\{resolvedScmProviderName\} \/>\}[\s\S]*\{openInScmLabel\}/u,
@@ -301,11 +315,11 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 test("PullRequestHeader owns optional bottom-edge tab navigation", () => {
 	assert.match(
 		COMPONENT_SOURCE,
-		/className=\{tabNavigation \? "px-4" : undefined\}[\s\S]*\{tabNavigation \? \([\s\S]*className=\{cn\([\s\S]*"relative z-10 mt-4 shrink-0[\s\S]*\{tabNavigation\}/u,
+		/className=\{tabNavigation \? "px-4" : undefined\}[\s\S]*\{tabNavigation \? \([\s\S]*className=\{cn\([\s\S]*"relative z-10 -mb-px mt-4 shrink-0[\s\S]*\{tabNavigation\}/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/resolvedVariant === "compact"[\s\S]*\? "px-\[clamp\(1rem,calc\(25%-4rem\),14rem\)\]"[\s\S]*: "px-\[clamp\(1rem,calc\(20%-4rem\),11rem\)\]"/u,
+		/resolvedVariant === "compact"[\s\S]*\? "px-\[clamp\(1rem,calc\(30%-4rem\),16rem\)\]"[\s\S]*: "px-\[clamp\(1rem,calc\(20%-4rem\),11rem\)\]"/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,
@@ -321,15 +335,23 @@ test("PullRequestHeader owns optional bottom-edge tab navigation", () => {
 	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/"relative z-10 mt-4 shrink-0/u,
+		/-mb-px[\s\S]*\[&_\[data-slot=tabs-trigger\]\]:after:bottom-0/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/"relative z-10 -mb-px mt-4 shrink-0/u,
 	);
 	assert.doesNotMatch(
 		COMPONENT_SOURCE,
 		/tabNavigation[\s\S]*\? "overflow-hidden pt-4"/u,
 	);
+	assert.doesNotMatch(
+		COMPONENT_SOURCE,
+		/borderBottomLeftRadius:\s*6|borderBottomRightRadius:\s*6/u,
+	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/style=\{tabNavigation[\s\S]*borderBottomLeftRadius: 6,[\s\S]*borderBottomRightRadius: 6/u,
+		/style=\{style\}/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,

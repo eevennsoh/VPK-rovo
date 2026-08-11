@@ -1,6 +1,7 @@
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import type { ChangedFile } from "@/components/blocks/code-review";
 import type { CodeListItem } from "@/components/ui-custom/code-list";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import type { TagColor } from "@/components/ui/tag";
 
 import { getPullRequestIdentity } from "./jira-activity-adapter";
@@ -54,6 +55,8 @@ export interface PullRequestCheck {
 	name: string;
 	status: "passed" | "failed" | "running" | "queued";
 	details: string;
+	/** Optional CI provider run URL opened from the failed-check external-link control. */
+	url?: string;
 }
 
 export type PullRequestReviewDecision =
@@ -66,6 +69,8 @@ export type PullRequestMergeState = "ready" | "blocked" | "conflicts" | "merged"
 
 export interface PullRequestActivityActor extends PullRequestPerson {
 	kind: "person" | "agent" | "app";
+	/** Third-party brand mark for agents/apps (e.g. Claude Code → `claude`). */
+	brandName?: ThirdPartyLogoName;
 }
 
 export interface PullRequestActivityReply {
@@ -129,13 +134,21 @@ export type PullRequestActivity =
 			kind: "ready-to-merge";
 		});
 
+export interface PullRequestGuideMetric {
+	label: string;
+	/** Filled segment count on the 1–5 bar (also drives bar color). */
+	filled: number;
+	/** Short blurb shown in place of the score on card hover/focus. */
+	description: string;
+}
+
 export interface PullRequestGuidedReview {
 	summary: readonly string[];
 	metrics: Readonly<{
-		risk: { label: string; filled: number };
-		impact: { label: string; filled: number };
-		reviewDepth: { label: string; filled: number };
-		mergeConfidence: { label: string; filled: number };
+		risk: PullRequestGuideMetric;
+		impact: PullRequestGuideMetric;
+		reviewDepth: PullRequestGuideMetric;
+		mergeConfidence: PullRequestGuideMetric;
 	}>;
 	/** Full markdown body for the Overview TipTap description editor. */
 	description: string;
@@ -143,16 +156,9 @@ export interface PullRequestGuidedReview {
 	files: readonly PullRequestReviewFile[];
 }
 
-export function resolveInitialReviewedChapterIds(
-	review: PullRequestGuidedReview | null | undefined,
-	approvalState?: "available" | "approved",
-): ReadonlySet<string> {
-	if (!review) return new Set();
-	const chapters = approvalState === "approved" ? review.chapters : review.chapters.slice(0, 1);
-	return new Set(chapters.map((chapter) => chapter.id));
-}
-
 export type PullRequestReviewFile = ChangedFile & CodeListItem;
+
+export { resolveInitialReviewedChapterIds } from "./resolve-initial-reviewed-chapter-ids";
 
 export interface PullRequestDetailData {
 	identity: string;
@@ -312,10 +318,26 @@ const GUIDED_REVIEW: PullRequestGuidedReview = {
 		"Preserves checkout details after recoverable errors and verifies the full guest flow.",
 	],
 	metrics: {
-		risk: { label: "Low", filled: 1 },
-		impact: { label: "Medium", filled: 2 },
-		reviewDepth: { label: "3/5", filled: 3 },
-		mergeConfidence: { label: "4/5", filled: 4 },
+		risk: {
+			label: "Low",
+			filled: 1,
+			description: "Contained to guest checkout entry and the dedicated guest-order route.",
+		},
+		impact: {
+			label: "High",
+			filled: 5,
+			description: "Affects the shared checkout path for all shoppers without accounts.",
+		},
+		reviewDepth: {
+			label: "3/5",
+			filled: 3,
+			description: "Spans storefront flow, guest-order API, and recovery coverage.",
+		},
+		mergeConfidence: {
+			label: "4/5",
+			filled: 4,
+			description: "Browser suite and recoverable-error checks support a safe merge.",
+		},
 	},
 	description: `Adds a guest checkout path so shoppers can finish purchase without creating an account, while keeping privileged commerce work on the server.
 
@@ -343,19 +365,22 @@ const GUIDED_REVIEW: PullRequestGuidedReview = {
 		{
 			id: "start-guest-checkout",
 			title: "Start a guest checkout",
-			description: "Follow the new storefront path from the guest choice through validated delivery details.",
-			fileIds: ["guest-checkout-flow"],
+			description:
+				"Follow the new storefront path from the guest choice through validated delivery details. Confirm GuestCheckoutForm replaces the account-required entry and submits through createGuestOrder. Check that delivery and contact fields stay populated when restoreCheckoutDraft runs after a recoverable failure.",
+			fileIds: ["guest-checkout-flow", "guest-orders-route"],
 		},
 		{
 			id: "server-owned-order",
 			title: "Keep order creation server-owned",
-			description: "Review the narrow API boundary and the service that owns privileged commerce calls.",
+			description:
+				"Review the narrow API boundary and the service that owns privileged commerce calls. POST /guest-orders should accept only cart, delivery, and email, then delegate to guestOrderService.create. Confirm guest orders set customerMode: \"guest\" and return a recovery token instead of creating orders from the raw request body.",
 			fileIds: ["guest-orders-route", "guest-order-service"],
 		},
 		{
 			id: "recover-and-verify",
 			title: "Recover safely and verify the flow",
-			description: "Check recoverable-error behavior and the browser test that completes a guest order.",
+			description:
+				"Check recoverable-error behavior and the browser test that completes a guest order. Declined payments and validation errors should keep safe checkout fields populated so the shopper can retry. Walk the Playwright path from Checkout as guest through confirmation, and confirm a failed retry does not create a duplicate order.",
 			fileIds: ["guest-checkout-flow", "guest-checkout-spec"],
 		},
 	],
@@ -400,7 +425,7 @@ const PRIYA_NARAYANAN: PullRequestActivityActor = {
 	id: "priya-narayanan",
 	name: "Priya Narayanan",
 	kind: "person",
-	avatarSrc: "/avatar-user/priya-hansra/color/asow-service-yellow.png",
+	avatarSrc: "/avatar-user/priya-hansra/color/asow-strategy-orange.png",
 };
 
 const SAM_RIVERA: PullRequestActivityActor = {
@@ -414,7 +439,7 @@ const CLAUDE_CODE: PullRequestActivityActor = {
 	id: "claude-code",
 	name: "Claude Code",
 	kind: "agent",
-	avatarSrc: "/avatar-agent/dev-agents/basic-coding-agent-template.svg",
+	brandName: "claude",
 };
 
 const CODE_PLANNER: PullRequestActivityActor = {
@@ -540,7 +565,7 @@ const GUIDED_REVIEW_ACTIVITY: readonly PullRequestActivity[] = [
 	{
 		id: "opened",
 		kind: "opened",
-		actor: CLAUDE_CODE,
+		actor: VENN,
 		occurredAtMs: Date.UTC(2026, 7, 10, 1, 35),
 		timestamp: "25 minutes ago",
 		baseBranch: "main",
@@ -655,22 +680,23 @@ const GUIDED_REVIEW_ACTIVITY: readonly PullRequestActivity[] = [
 	},
 ];
 
-/** Human approvers: teammates sign off once CI is green, Venn gives the final call. */
+/**
+ * Human approvers: teammates stay pending until a review lands, even when CI is
+ * green. A fully approved PR (host approval / reviewDecision) marks the team
+ * approved. Author does not approve their own work.
+ */
 function resolveGuidedReviewReviewers(
 	checks: readonly PullRequestCheck[],
 	reviewDecision: PullRequestReviewDecision,
 ): readonly PullRequestReviewer[] {
-	const teamApprovalStatus = checks.length > 0
-		&& checks.every((check) => check.status === "passed")
+	const checksReady = checks.length > 0
+		&& checks.every((check) => check.status === "passed");
+	const teamApprovalStatus = reviewDecision === "approved" && checksReady
 		? "approved"
 		: "pending";
 	return [
-		{ ...MAYA_CHEN, status: teamApprovalStatus },
+		{ ...PRIYA_NARAYANAN, status: teamApprovalStatus },
 		{ ...JORDAN_LEE, status: teamApprovalStatus },
-		{
-			...VENN,
-			status: reviewDecision === "approved" ? "approved" : "pending",
-		},
 	];
 }
 

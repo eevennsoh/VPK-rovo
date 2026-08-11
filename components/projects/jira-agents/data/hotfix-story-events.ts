@@ -7,7 +7,9 @@ import {
 	PASSED_PR_CHECKS,
 	RERUNNING_PR_CHECKS,
 	RUNNING_PR_CHECKS,
+	SETTLING_PR_CHECKS,
 	STARTED_PR_CHECKS,
+	UNIT_PASSED_PR_CHECKS,
 } from "./story-pull-request-checks";
 import {
 	CLAUDE_CODE,
@@ -252,27 +254,55 @@ const ACCEPTANCE_MATRIX_EVENT: StaticTimelineEvent = {
 	createdAtMs: STORY_EPOCH_MS - 720_000,
 };
 
+function reviewChecksForStep(step: JiraAgentsReviewStep) {
+	switch (step) {
+		case "queued":
+			return STARTED_PR_CHECKS;
+		case "running":
+			return RUNNING_PR_CHECKS;
+		case "unit-passed":
+			return UNIT_PASSED_PR_CHECKS;
+		case "settling":
+			return SETTLING_PR_CHECKS;
+		case "failed":
+			return FAILED_PR_CHECKS;
+		default: {
+			const _exhaustive: never = step;
+			return _exhaustive;
+		}
+	}
+}
+
+function reviewUpdatedAtMsForStep(step: JiraAgentsReviewStep): number {
+	switch (step) {
+		case "queued":
+			return STORY_EPOCH_MS - 1_200_000;
+		case "running":
+			return STORY_EPOCH_MS - 1_170_000;
+		case "unit-passed":
+			return STORY_EPOCH_MS - 1_160_000;
+		case "settling":
+			return STORY_EPOCH_MS - 1_155_000;
+		case "failed":
+			return STORY_EPOCH_MS - 1_140_000;
+		default: {
+			const _exhaustive: never = step;
+			return _exhaustive;
+		}
+	}
+}
+
 function createReviewEvents(step: JiraAgentsReviewStep): readonly StaticTimelineEvent[] {
-	const checks = step === "queued"
-		? STARTED_PR_CHECKS
-		: step === "running"
-			? RUNNING_PR_CHECKS
-			: FAILED_PR_CHECKS;
-	const updatedAtMs = step === "queued"
-		? STORY_EPOCH_MS - 1_200_000
-		: step === "running"
-			? STORY_EPOCH_MS - 1_170_000
-			: STORY_EPOCH_MS - 1_140_000;
 	return [
 		...BUILD_EVENTS,
 		HANDOFF_EVENT,
 		statusEvent("story-moved-review", "In progress", "In review", STORY_EPOCH_MS - 1_260_000),
 		createPullRequestEvent({
-			checks,
+			checks: reviewChecksForStep(step),
 			id: "story-pr-review",
 			mergeState: "blocked",
 			reviewDecision: "review-required",
-			updatedAtMs,
+			updatedAtMs: reviewUpdatedAtMsForStep(step),
 		}),
 		...(step === "failed" ? [FAILED_CI_EVENT] : []),
 	];

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { useRovoChat } from "@/app/contexts";
 import { useJiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
@@ -72,8 +72,10 @@ const LAUNCHER_PLACEMENT = { right: "24px", bottom: "24px" } as const;
  * Activity "Add to chat" pills target the sticky activity composer instead.
  */
 export function FloatingSessionSurface({
+	composerToolsAfterAdd,
 	onSessionReply,
 }: Readonly<{
+	composerToolsAfterAdd?: ReactNode;
 	onSessionReply?: SessionReplyInterceptor;
 }>) {
 	const { actions, meta } = useJiraWorkItem();
@@ -167,6 +169,7 @@ export function FloatingSessionSurface({
 		>
 			<AsxRovoOverlay
 				chatContextBar={chatContextBar}
+				composerToolsAfterAdd={composerToolsAfterAdd}
 				externalThinkingMessageId={externalThinkingMessageId}
 				launcherContainer={launcherContainer}
 				launcherPlacement={LAUNCHER_PLACEMENT}

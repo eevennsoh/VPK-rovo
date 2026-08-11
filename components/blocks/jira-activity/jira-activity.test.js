@@ -73,7 +73,6 @@ test("activity events render actor prefixes as mention chips by actor kind", () 
 	assert.match(SEGMENTS_SOURCE, /data-jira-activity-app-mention/u);
 	assert.match(SEGMENTS_SOURCE, /type="user"/u);
 	assert.match(SEGMENTS_SOURCE, /type="agent"/u);
-	assert.match(SEGMENTS_SOURCE, /type="other"/u);
 	assert.match(actorMentionSource, /case "person":/u);
 	assert.match(actorMentionSource, /type: "user-mention"/u);
 	assert.match(actorMentionSource, /case "agent":/u);
@@ -82,6 +81,31 @@ test("activity events render actor prefixes as mention chips by actor kind", () 
 	assert.match(actorMentionSource, /type: "app-mention"/u);
 	assert.match(EVENT_SOURCE, /mentionSegmentForActor\(entry\.actor\)/u);
 	assert.doesNotMatch(EVENT_SOURCE, /font-medium text-text">\{entry\.actor\.name\}/u);
+});
+
+test("app mentions render as product BrandLogoMark tags, not hexagon agent avatars", () => {
+	// Agent chips keep AgentAvatarVisual + type="agent"; product/app chips use
+	// BrandLogoMark (same pattern as PullRequest repo pills) without type="other".
+	assert.match(
+		SEGMENTS_SOURCE,
+		/case "agent-mention":[\s\S]*?<AgentAvatarVisual[\s\S]*?type="agent"/u,
+	);
+	assert.match(
+		SEGMENTS_SOURCE,
+		/case "app-mention":[\s\S]*?<BrandLogoMark[\s\S]*?frame="chip"[\s\S]*?name=\{segment\.brandName\}/u,
+	);
+	assert.match(
+		SEGMENTS_SOURCE,
+		/segment\.brandName === "github"[\s\S]*dark:invert \[\[data-color-mode=dark\]_&\]:invert/u,
+	);
+	assert.doesNotMatch(
+		SEGMENTS_SOURCE,
+		/case "app-mention":[\s\S]*?<AgentAvatarVisual/u,
+	);
+	assert.doesNotMatch(
+		SEGMENTS_SOURCE,
+		/case "app-mention":[\s\S]*?type="other"/u,
+	);
 });
 
 test("agent comments support an inline read-only progress checklist", () => {
@@ -105,7 +129,7 @@ test("agent comments support an inline read-only progress checklist", () => {
 	);
 	assert.match(
 		COMMENT_SOURCE,
-		/<span className=\{cn\("min-w-0 wrap-break-word", item\.completed \? "text-text-subtle" : null\)\}>/u,
+		/<span className=\{cn\("min-w-0 wrap-break-word", item\.completed \? "text-text-disabled" : null\)\}>/u,
 	);
 });
 
@@ -278,6 +302,46 @@ test("delegated events use the ADS agent icon", () => {
 	);
 	assert.match(NODE_SOURCE, /delegated: AiAgentIcon/u);
 	assert.doesNotMatch(NODE_SOURCE, /ShortcutIcon|PersonAssigneeIcon/u);
+});
+
+test("commit, pull-request, and app events map to ADS SCM/app glyphs", () => {
+	assert.match(TYPES_SOURCE, /\| "commit"/u);
+	assert.match(TYPES_SOURCE, /\| "pull-request"/u);
+	assert.match(TYPES_SOURCE, /\| "app"/u);
+	assert.match(
+		NODE_SOURCE,
+		/import CommitIcon from "@atlaskit\/icon\/core\/commit"/u,
+	);
+	assert.match(
+		NODE_SOURCE,
+		/import PullRequestIcon from "@atlaskit\/icon\/core\/pull-request"/u,
+	);
+	assert.match(
+		NODE_SOURCE,
+		/import AppIcon from "@atlaskit\/icon\/core\/app"/u,
+	);
+	assert.match(NODE_SOURCE, /commit: CommitIcon/u);
+	assert.match(NODE_SOURCE, /"pull-request": PullRequestIcon/u);
+	assert.match(NODE_SOURCE, /app: AppIcon/u);
+});
+
+test("event rows prefer EventGlyph over ActorGlyph whenever icon is set", () => {
+	// Commit/push gutters must not fall through to AgentAvatarVisual.
+	assert.match(
+		NODE_SOURCE,
+		/icon !== undefined \? \(\s*<EventGlyph icon=\{icon\} \/>\s*\) : \(\s*<ActorGlyph/u,
+	);
+	assert.match(NODE_SOURCE, /commit: CommitIcon/u);
+	assert.match(
+		NODE_SOURCE,
+		/function ActorGlyph[\s\S]*?<AgentAvatarVisual[\s\S]*?function EventGlyph/u,
+	);
+	const eventGlyph = NODE_SOURCE.match(
+		/function EventGlyph\([\s\S]*?\n\}\n/u,
+	)?.[0];
+	assert.ok(eventGlyph, "EventGlyph function should be present");
+	assert.match(eventGlyph, /EVENT_ICON\[icon\]/u);
+	assert.doesNotMatch(eventGlyph, /AgentAvatarVisual/u);
 });
 
 test("the Medium priority event uses the Agent Sessions priority icon treatment", () => {

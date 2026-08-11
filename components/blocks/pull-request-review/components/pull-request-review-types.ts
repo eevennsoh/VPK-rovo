@@ -16,12 +16,14 @@ export type PullRequestReviewVerdict = "comment" | "approve" | "request-changes"
 export type PullRequestReviewVariant = "compact" | "expanded";
 
 export interface PullRequestReviewSubmission {
-	/** Trimmed comment body. Empty only when `verdict` alone carries the review. */
+	/** Trimmed comment body. Always non-empty when Send is enabled. */
 	body: string;
 	verdict: PullRequestReviewVerdict;
 }
 
 export interface PullRequestReviewProps {
+	/** Focus the review editor when the expanded review is opened by another control. */
+	autoFocus?: boolean;
 	/**
 	 * Controlled presentation. When provided it wins over focus-driven expansion,
 	 * so a host that owns the open/closed state can drive both directions.
@@ -44,6 +46,11 @@ export interface PullRequestReviewProps {
 	 */
 	reviewedCount?: number;
 	reviewedTotal?: number;
+	/**
+	 * Committed inline diff comments for this review. Rendered as an "N Comment(s)"
+	 * lozenge beside Reviewed; omitted when undefined or 0.
+	 */
+	commentCount?: number;
 	placeholder?: string;
 	/** Controlled draft body. Omit to let the block own its draft. */
 	value?: string;
@@ -54,8 +61,13 @@ export interface PullRequestReviewProps {
 	defaultVerdict?: PullRequestReviewVerdict;
 	onVerdictChange?: (verdict: PullRequestReviewVerdict) => void;
 	/**
-	 * Called with the trimmed body and the active verdict. `approve` and
-	 * `request-changes` submit with an empty body; `comment` requires text.
+	 * Hard-disable Send (e.g. review already submitted). Do not use this for
+	 * chapter progress — a non-empty draft should still enable the CTA.
+	 */
+	submitDisabled?: boolean;
+	/**
+	 * Called with the trimmed body and the active verdict. Send requires a
+	 * non-empty body for every verdict.
 	 *
 	 * The verdict applies only while expanded. A compact composer shows no
 	 * verdict control, so it always submits `comment` — a selection left from a

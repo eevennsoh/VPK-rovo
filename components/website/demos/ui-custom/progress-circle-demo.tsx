@@ -1,8 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { ProgressCircle } from "@/components/ui-custom/progress-circle";
+import {
+	ProgressCircle,
+	type ProgressCircleSegment,
+} from "@/components/ui-custom/progress-circle";
+import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+
+/** Sample Checks-style status groups: lime / danger / pending track. */
+const CHECK_SEGMENTS: readonly ProgressCircleSegment[] = [
+	{ status: "passed", weight: 5 },
+	{ status: "failed", weight: 1 },
+	{ status: "pending", weight: 2 },
+];
 
 export default function ProgressCircleDemo() {
 	return (
@@ -20,6 +32,23 @@ export default function ProgressCircleDemo() {
 			<div className="flex items-center gap-6">
 				<ProgressCircle status="error" size="lg" />
 				<ProgressCircle status="info" size="lg" />
+			</div>
+			<div className="flex items-center gap-6">
+				<ProgressCircle
+					animated={false}
+					label="CI checks"
+					segmented
+					segments={CHECK_SEGMENTS}
+					size="lg"
+				/>
+				<ProgressCircle
+					animated={false}
+					label="CI checks filled"
+					segmented
+					segments={CHECK_SEGMENTS}
+					size="lg"
+					variant="filled"
+				/>
 			</div>
 		</div>
 	);
@@ -108,6 +137,45 @@ export function ProgressCircleDemoStatus() {
 			<ProgressCircle status="info" size="sm" />
 			<ProgressCircle status="info" />
 			<ProgressCircle status="info" size="lg" />
+		</div>
+	);
+}
+
+export function ProgressCircleDemoSegmented() {
+	const [segmented, setSegmented] = useState(true);
+
+	return (
+		<div className="flex w-full max-w-xs flex-col gap-4">
+			<div className="flex items-center gap-2">
+				<Switch
+					checked={segmented}
+					id="progress-circle-segmented"
+					label="Segmented mode"
+					onCheckedChange={setSegmented}
+				/>
+				<Label htmlFor="progress-circle-segmented">
+					{segmented ? "Segmented" : "Continuous"}
+				</Label>
+			</div>
+			<div className="flex items-center gap-6">
+				<ProgressCircle
+					animated={false}
+					label={segmented ? "CI checks" : "Progress"}
+					segmented={segmented}
+					segments={CHECK_SEGMENTS}
+					size="lg"
+					value={segmented ? undefined : 75}
+				/>
+				<ProgressCircle
+					animated={false}
+					label={segmented ? "CI checks filled" : "Progress filled"}
+					segmented={segmented}
+					segments={CHECK_SEGMENTS}
+					size="lg"
+					value={segmented ? undefined : 75}
+					variant="filled"
+				/>
+			</div>
 		</div>
 	);
 }

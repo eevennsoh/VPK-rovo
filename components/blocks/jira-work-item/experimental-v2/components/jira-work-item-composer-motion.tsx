@@ -16,6 +16,8 @@ const REDUCED_MOTION_TRANSITION = { duration: 0 } satisfies Transition;
 interface JiraWorkItemComposerMotionProps {
 	children: ReactNode;
 	className?: string;
+	layout?: true | "position" | "size" | "preserve-aspect";
+	layoutDependency?: unknown;
 	placement: "planner" | "sticky";
 }
 
@@ -23,6 +25,8 @@ interface JiraWorkItemComposerMotionProps {
 export function JiraWorkItemComposerMotion({
 	children,
 	className,
+	layout = "position",
+	layoutDependency,
 	placement,
 }: Readonly<JiraWorkItemComposerMotionProps>) {
 	const shouldReduceMotion = Boolean(useReducedMotion());
@@ -33,8 +37,8 @@ export function JiraWorkItemComposerMotion({
 		<LayoutGroup inherit="id">
 			<motion.div
 				className={cn("min-w-0", className)}
-				layout={metadataLayoutAnimating ? false : "position"}
-				layoutDependency={placement}
+				layout={metadataLayoutAnimating ? false : layout}
+				layoutDependency={layoutDependency ?? placement}
 				layoutId={metadataLayoutAnimating ? undefined : "jira-work-item-composer"}
 				onLayoutAnimationStart={() => setIsAnimating(true)}
 				onLayoutAnimationComplete={() => setIsAnimating(false)}

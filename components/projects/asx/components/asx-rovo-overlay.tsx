@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence } from "motion/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 import { useRovoChat } from "@/app/contexts";
@@ -27,6 +27,8 @@ interface AsxRovoOverlayProps {
 	/** Right/bottom inset for the embedded launcher within `launcherContainer`. */
 	launcherPlacement?: { right: string; bottom: string };
 	composerInputContext?: ComposerInputContext;
+	/** Optional host-owned controls rendered immediately after the Add menu trigger. */
+	composerToolsAfterAdd?: ReactNode;
 	sendPromptOptions?: SendPromptOptions;
 	onInterceptSubmit?: (text: string) => ChatSubmitInterceptOutcome;
 	onLauncherClick?: () => void;
@@ -41,6 +43,7 @@ export function AsxRovoOverlay({
 	launcherContainer,
 	launcherPlacement,
 	composerInputContext,
+	composerToolsAfterAdd,
 	sendPromptOptions,
 	onInterceptSubmit,
 	onLauncherClick,
@@ -77,6 +80,7 @@ export function AsxRovoOverlay({
 						key="floating-chat"
 						chatContextBar={chatContextBar}
 						composerInputContext={composerInputContext}
+						composerToolsAfterAdd={composerToolsAfterAdd}
 						externalThinkingMessageId={externalThinkingMessageId}
 						hideComposerSourceAndModelControls
 						interceptClarificationAnswers={Boolean(onInterceptSubmit || onQuestionAnswer)}

@@ -22,13 +22,13 @@ import type {
 } from "./pull-request-review-types";
 import { PullRequestReviewVerdictControl } from "./pull-request-review-verdict";
 
-/**
- * `comment` is the only verdict that needs prose — an approval or a
- * change request is itself the signal, and every SCM lets a reviewer submit
- * one with an empty body.
- */
-function canSubmitReview(body: string, verdict: PullRequestReviewVerdict): boolean {
-	return verdict === "comment" ? body.trim().length > 0 : true;
+/** Match RovoComposerActionButton's `experimentalDarkCta` (black CTA, not brand blue). */
+const EXPERIMENTAL_DARK_CTA_CLASS_NAME =
+	"bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed";
+
+/** Send stays off until the reviewer has typed a non-empty comment body. */
+function canSubmitReview(body: string): boolean {
+	return body.trim().length > 0;
 }
 
 /**
@@ -46,6 +46,7 @@ function canSubmitReview(body: string, verdict: PullRequestReviewVerdict): boole
  * wraps (the compact default).
  */
 export function PullRequestReview({
+	autoFocus = false,
 	className,
 	defaultValue = "",
 	defaultVariant = "compact",
@@ -59,8 +60,10 @@ export function PullRequestReview({
 	onVariantChange,
 	onVerdictChange,
 	placeholder = "Leave a comment...",
+	commentCount,
 	reviewedCount,
 	reviewedTotal,
+	submitDisabled = false,
 	title = "Review",
 	value: controlledValue,
 	variant: controlledVariant,
@@ -87,9 +90,18 @@ export function PullRequestReview({
 	const activeVerdict: PullRequestReviewVerdict = isExpanded
 		? verdict
 		: "comment";
-	const canSubmit = canSubmitReview(value, activeVerdict);
+	/**
+	 * Content alone enables Send. Host `submitDisabled` is reserved for hard
+	 * blocks (already approved / no handler) — not chapter progress — so a
+	 * typed draft never sits behind an unrelated gate.
+	 */
+	const canSubmit = !submitDisabled && canSubmitReview(value);
 	const hasReviewedProgress =
 		reviewedCount !== undefined && reviewedTotal !== undefined;
+	const hasCommentCount = commentCount !== undefined && commentCount > 0;
+	const commentBadgeLabel = hasCommentCount
+		? `${commentCount} ${commentCount === 1 ? "Comment" : "Comments"}`
+		: null;
 
 	function updateValue(nextValue: string) {
 		if (controlledValue === undefined) {
@@ -136,6 +148,9 @@ export function PullRequestReview({
 			{hasReviewedProgress ? (
 				<Badge variant="neutral">{`${reviewedCount}/${reviewedTotal} Reviewed`}</Badge>
 			) : null}
+			{hasCommentCount ? (
+				<Badge variant="neutral">{commentBadgeLabel}</Badge>
+			) : null}
 			<Button
 				aria-label="Close review"
 				className="ml-auto"
@@ -167,7 +182,11 @@ export function PullRequestReview({
 							value={verdict}
 						/>
 					) : null}
-					<PromptInputSubmit disabled={!canSubmit} status="ready" />
+					<PromptInputSubmit
+						className={cn("hover:opacity-90 active:opacity-80", EXPERIMENTAL_DARK_CTA_CLASS_NAME)}
+						disabled={!canSubmit}
+						status="ready"
+					/>
 				</>
 			}
 			addButtonProps={{ onClick: onAddClick }}
@@ -192,6 +211,7 @@ export function PullRequestReview({
 		>
 			<PromptInputTextarea
 				aria-label={placeholder}
+				autoFocus={autoFocus}
 				autoResize
 				className={cn(floatingComposerTextareaClassName, "text-sm leading-5")}
 				enableDirectoryAutocomplete={false}

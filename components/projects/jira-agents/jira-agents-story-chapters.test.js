@@ -209,9 +209,9 @@ test("Claude leads one evolving A2A thread with checklist and design evidence", 
 	assert.ok(release.sessions.every((session) => session.status === "completed"));
 });
 
-test("Review moves deterministically from queued to running to failed and Fix preserves repair evidence", async () => {
+test("Review moves deterministically from queued through settling to failed and Fix preserves repair evidence", async () => {
 	const story = await loadStoryModule();
-	const reviewSteps = ["queued", "running", "failed"];
+	const reviewSteps = ["queued", "running", "unit-passed", "settling", "failed"];
 	const reviewStates = reviewSteps.map((reviewStep) => (
 		story.createJiraAgentsStoryState("review", { reviewStep })
 	));
@@ -221,12 +221,14 @@ test("Review moves deterministically from queued to running to failed and Fix pr
 		)?.pullRequest
 	));
 
-	// CI picks up the first job as the PR opens, then widens before it fails.
+	// CI picks up the first job as the PR opens, widens, lands unit then browser, then fails lint.
 	assert.deepEqual(
 		reviewPullRequests.map((pullRequest) => pullRequest.checks.map((check) => check.status)),
 		[
 			["running", "queued", "queued"],
 			["running", "running", "queued"],
+			["running", "passed", "running"],
+			["running", "passed", "passed"],
 			["failed", "passed", "passed"],
 		],
 	);
@@ -246,7 +248,17 @@ test("Review moves deterministically from queued to running to failed and Fix pr
 				status: "waiting",
 				waitingOn: { kind: "agent", agentId: "github-actions", agentName: "GitHub Actions" },
 			},
-			{ status: "completed", waitingOn: null },
+			{
+				status: "waiting",
+				waitingOn: { kind: "agent", agentId: "github-actions", agentName: "GitHub Actions" },
+			},
+			{
+				status: "waiting",
+				waitingOn: { kind: "agent", agentId: "github-actions", agentName: "GitHub Actions" },
+			},
+			// Failed settle keeps Claude waiting (needs input) so the composer
+			// working-agents pill never drops while Review's PR is open.
+			{ status: "waiting", waitingOn: { kind: "user" } },
 		],
 	);
 	const failedReview = story.createJiraAgentsStoryState("review", { reviewStep: "failed" });
