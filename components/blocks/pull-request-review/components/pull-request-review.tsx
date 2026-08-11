@@ -76,7 +76,18 @@ export function PullRequestReview({
 	const variant = controlledVariant ?? uncontrolledVariant;
 	const verdict = controlledVerdict ?? uncontrolledVerdict;
 	const isExpanded = variant === "expanded";
-	const canSubmit = canSubmitReview(value, verdict);
+	/**
+	 * The verdict control renders only in the expanded card, so while compact
+	 * there is no verdict on screen — and a selection left over from a previous
+	 * expansion must never decide what Send does. Deriving here (rather than
+	 * resetting in the dismiss handler) covers every collapse path, including a
+	 * host flipping the controlled `variant` without touching this component's
+	 * handlers. A compact composer always submits a plain comment.
+	 */
+	const activeVerdict: PullRequestReviewVerdict = isExpanded
+		? verdict
+		: "comment";
+	const canSubmit = canSubmitReview(value, activeVerdict);
 	const hasReviewedProgress =
 		reviewedCount !== undefined && reviewedTotal !== undefined;
 
@@ -104,14 +115,14 @@ export function PullRequestReview({
 
 	function submit() {
 		if (!canSubmit) return;
-		onSubmit?.({ body: value.trim(), verdict });
+		onSubmit?.({ body: value.trim(), verdict: activeVerdict });
 		updateValue("");
 	}
 
 	function close() {
-		// The verdict control only exists in the expanded card, so a verdict left
-		// selected here would survive as invisible state that silently changes what
-		// the compact bar's Send does. The draft stays — it is still on screen.
+		// The dismiss gesture discards the pending verdict as well as collapsing.
+		// `activeVerdict` already stops a stale selection from reaching Send, so
+		// this is about the next expansion starting clean, not about safety.
 		updateVerdict(defaultVerdict);
 		updateVariant("compact");
 		onClose?.();

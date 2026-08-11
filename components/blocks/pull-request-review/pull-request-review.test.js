@@ -107,7 +107,6 @@ test("submit gating matches SCM verdict semantics", () => {
 		/return verdict === "comment" \? body\.trim\(\)\.length > 0 : true;/u,
 	);
 	assert.match(COMPONENT_SOURCE, /<PromptInputSubmit disabled=\{!canSubmit\}/u);
-	assert.match(COMPONENT_SOURCE, /onSubmit\?\.\(\{ body: value\.trim\(\), verdict \}\)/u);
 });
 
 test("the verdict control is a radiogroup, not a tablist", () => {
@@ -169,17 +168,40 @@ test("focus expansion yields to a controlled variant", () => {
 test("the dismiss control collapses the card and notifies the host", () => {
 	assert.match(COMPONENT_SOURCE, /function close\(\) \{[\s\S]*updateVariant\("compact"\);\s*onClose\?\.\(\);/u);
 	assert.match(COMPONENT_SOURCE, /aria-label="Close review"/u);
-});
-
-test("dismissing resets the verdict so compact cannot submit a hidden one", () => {
-	// The verdict control renders only in the expanded card. Left selected, it
-	// would survive collapse as invisible state that silently changes what the
-	// compact bar's Send submits.
+	// The dismiss gesture also discards the pending selection so the next
+	// expansion starts clean.
 	assert.match(
 		COMPONENT_SOURCE,
 		/function close\(\) \{[\s\S]*updateVerdict\(defaultVerdict\);[\s\S]*updateVariant\("compact"\);/u,
-		"close() must reset the verdict before collapsing",
 	);
+});
+
+test("compact can never submit a verdict the user cannot see", () => {
+	// The verdict control renders only when expanded. Resetting inside close()
+	// alone is not enough: a host flipping the controlled `variant` (as the demo
+	// page's Expanded/Compact toggle does) never calls close(), so a stale
+	// `approve` / `request-changes` would keep Send enabled on an empty draft and
+	// submit a hidden approval. Derive it at render so every collapse path is
+	// covered. Regression for PR #1324 review (P1).
+	assert.match(
+		COMPONENT_SOURCE,
+		/const activeVerdict: PullRequestReviewVerdict = isExpanded\s*\? verdict\s*: "comment";/u,
+		"the effective verdict must be derived from `isExpanded`, not just reset on dismiss",
+	);
+	// Both the gate and the payload must read the derived value, not the raw one.
+	assert.match(COMPONENT_SOURCE, /const canSubmit = canSubmitReview\(value, activeVerdict\);/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/onSubmit\?\.\(\{ body: value\.trim\(\), verdict: activeVerdict \}\)/u,
+	);
+	assert.doesNotMatch(
+		COMPONENT_SOURCE,
+		/onSubmit\?\.\(\{ body: value\.trim\(\), verdict \}\)/u,
+		"submitting the raw verdict reopens the hidden-verdict hole",
+	);
+	// Effect-free derivation: syncing this through useEffect would violate
+	// `.agents/rules/gotchas-react.md` and still render one stale frame.
+	assert.doesNotMatch(COMPONENT_SOURCE, /useEffect/u);
 });
 
 test("demo data seeds the fully-reviewed state from the design", () => {

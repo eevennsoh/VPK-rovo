@@ -56,6 +56,11 @@ export interface PullRequestReviewProps {
 	/**
 	 * Called with the trimmed body and the active verdict. `approve` and
 	 * `request-changes` submit with an empty body; `comment` requires text.
+	 *
+	 * The verdict applies only while expanded. A compact composer shows no
+	 * verdict control, so it always submits `comment` — a selection left from a
+	 * previous expansion never decides what Send does, however the collapse
+	 * happened.
 	 */
 	onSubmit?: (submission: PullRequestReviewSubmission) => void;
 	/** Called when the expanded card's dismiss control is activated. */
