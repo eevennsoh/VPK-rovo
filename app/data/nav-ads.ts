@@ -38,6 +38,7 @@ const ADS_BLOCK_SLUGS = new Set([
 	"smart-link",
 	"pull-request",
 	"pull-request-header",
+	"pull-request-review",
 	"question-card",
 	"approval-card",
 	"terminal-switch",

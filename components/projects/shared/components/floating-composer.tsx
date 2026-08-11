@@ -31,6 +31,13 @@ export type FloatingComposerProps = Omit<
 	 * Renders above the editor row via PromptInputHeader, matching ChatComposer.
 	 */
 	inputContext?: ReactNode;
+	/**
+	 * `auto` (default) measures the draft and only stacks once the text would wrap
+	 * at compact-row width. `stacked` pins the editor to its own row regardless of
+	 * content — for surfaces whose expanded state always reserves a full-width
+	 * editor above the control row (e.g. the Pull Request Review card).
+	 */
+	layout?: "auto" | "stacked";
 };
 
 function observeResizeTargets(observer: ResizeObserver, ...targets: Element[]): void {
@@ -65,16 +72,24 @@ export function FloatingComposer({
 	children,
 	className,
 	inputContext,
+	layout = "auto",
 	...props
 }: Readonly<FloatingComposerProps>) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const addButtonRef = useRef<HTMLDivElement>(null);
 	const textFieldRef = useRef<HTMLDivElement>(null);
 	const actionsRef = useRef<HTMLDivElement>(null);
-	const [isExpanded, setIsExpanded] = useState(false);
+	const [isMeasuredExpanded, setIsMeasuredExpanded] = useState(false);
+	const isExpanded = layout === "stacked" || isMeasuredExpanded;
 	const hasInputContext = inputContext != null;
 
 	useEffect(() => {
+		// `stacked` is a caller-pinned layout, so the probe would only burn frames
+		// measuring a decision that cannot change the rendered rows.
+		if (layout === "stacked") {
+			return () => undefined;
+		}
+
 		const container = containerRef.current;
 		const addButtonContainer = addButtonRef.current;
 		const textFieldContainer = textFieldRef.current;
@@ -133,7 +148,7 @@ export function FloatingComposer({
 
 			const fieldText = getComposerPlainText(field);
 			if (fieldText.trim().length === 0) {
-				setIsExpanded(false);
+				setIsMeasuredExpanded(false);
 				return;
 			}
 
@@ -147,7 +162,7 @@ export function FloatingComposer({
 					gap * 2,
 			);
 			if (compactFieldWidth <= 0) {
-				setIsExpanded(true);
+				setIsMeasuredExpanded(true);
 				return;
 			}
 
@@ -177,7 +192,7 @@ export function FloatingComposer({
 			document.body.appendChild(probe);
 			const lineCount = getDistinctLineCount(probe);
 			document.body.removeChild(probe);
-			setIsExpanded(lineCount > 1);
+			setIsMeasuredExpanded(lineCount > 1);
 		};
 
 		const scheduleMeasure = () => {
@@ -228,7 +243,7 @@ export function FloatingComposer({
 			resizeObserver.disconnect();
 			mutationObserver.disconnect();
 		};
-	}, []);
+	}, [layout]);
 
 	const addButtonNode = addButton ?? (
 		<PromptInputButton
@@ -265,6 +280,7 @@ export function FloatingComposer({
 				<div
 					ref={containerRef}
 					className="flex w-full flex-wrap items-center gap-2"
+					data-slot="floating-composer-row"
 				>
 					<div
 						ref={addButtonRef}
