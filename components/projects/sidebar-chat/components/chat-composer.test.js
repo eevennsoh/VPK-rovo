@@ -552,7 +552,7 @@ test("sidebar chat and Rovo app composers use the shared Auto plus CTA controls"
 	assert.match(sidebarPanel, /dictationCommittedTextRef\.current = nextText;/u);
 	assert.doesNotMatch(sidebarPanel, /setPrompt\(transcriptText\)/u);
 	assert.doesNotMatch(sidebarPanel, /transcriptToPreserve/u);
-	assert.match(sidebarPanel, /realtime\.connect\(\{ browserTranscriptionOnly: true \}\);/u);
+	assert.match(sidebarPanel, /realtime\.connect\(\{ transcriptionOnly: true \}\);/u);
 	assert.match(sidebarPanel, /experimentalDarkCta/u);
 	assert.match(rovoShell, /experimentalDarkCta/u);
 	assert.match(rovoShell, /appendDictationTranscript\(dictationCommittedTextRef\.current \?\? dictationBaselineRef\.current \?\? "", transcript\)/u);

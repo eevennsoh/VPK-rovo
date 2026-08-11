@@ -119,8 +119,6 @@ export interface UseRealtimeVoiceOptions {
 }
 
 export interface RealtimeVoiceConnectOptions {
-	/** Use browser SpeechRecognition without opening the Realtime transport. */
-	browserTranscriptionOnly?: boolean;
 	transcriptionOnly?: boolean;
 	explicitResponseOnly?: boolean;
 }
@@ -1520,11 +1518,10 @@ export function useRealtimeVoice({
 		if (activeRef.current) {
 			return;
 		}
-		const browserTranscriptionOnly = options?.browserTranscriptionOnly === true;
 		const sessionPolicy = resolveRovoRealtimeVoiceSessionPolicy({
 			explicitResponseOnly: options?.explicitResponseOnly,
 			mode: sessionPolicyMode,
-			transcriptionOnly: browserTranscriptionOnly || options?.transcriptionOnly,
+			transcriptionOnly: options?.transcriptionOnly,
 		});
 		transcriptionOnlyModeRef.current = sessionPolicy.transcriptionOnly;
 		explicitResponseOnlyModeRef.current = sessionPolicy.explicitResponseOnly;
@@ -1547,13 +1544,6 @@ export function useRealtimeVoice({
 		setOutputWaveformBars([]);
 		syncCaptureAvailability();
 
-		if (browserTranscriptionOnly) {
-			setConnectionState("connected");
-			setVoice("listening");
-			startBrowserRecognition();
-			return;
-		}
-
 		startBrowserRecognition(); // start listening immediately when the tab is eligible
 		setConnectionState("connecting");
 		connectWs();
@@ -1563,7 +1553,6 @@ export function useRealtimeVoice({
 		resetAssistantTextStream,
 		resolveCaptureAvailability,
 		sessionPolicyMode,
-		setVoice,
 		startBrowserRecognition,
 		stopOutputWaveformSampling,
 		syncCaptureAvailability,

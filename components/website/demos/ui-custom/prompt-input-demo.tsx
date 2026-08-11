@@ -15,8 +15,8 @@ import { FloatingComposer } from "@/components/projects/shared/components/floati
 import {
 	RovoComposerActionButton,
 	RovoComposerSendControls,
-	type RovoComposerDictationState,
 } from "@/components/projects/shared/components/rovo-composer-send-controls";
+import { usePromptInputDemoVoice } from "@/components/website/demos/ui-custom/prompt-input-demo-voice";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
 import {
 	PromptInput,
@@ -54,16 +54,12 @@ function DemoFrame({ children, className }: Readonly<DemoFrameProps>) {
 	);
 }
 
-function useDemoDictationControls() {
-	const [dictationState, setDictationState] = useState<RovoComposerDictationState>("idle");
-	const handleStartDictation = useCallback(() => setDictationState("processing"), []);
-	const handleStopDictation = useCallback(() => setDictationState("idle"), []);
-
-	return {
-		dictationState,
-		handleStartDictation,
-		handleStopDictation,
-	};
+function DemoVoiceStatus({ message }: Readonly<{ message: string | null }>) {
+	return message ? (
+		<p aria-live="polite" className="mt-2 text-xs text-text-danger">
+			{message}
+		</p>
+	) : null;
 }
 
 export default function PromptInputDemo() {
@@ -84,13 +80,7 @@ function ChatComposerDemo({
 	const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
 	const [isCustomizeMenuOpen, setIsCustomizeMenuOpen] = useState(false);
 	const [isAutoMenuOpen, setIsAutoMenuOpen] = useState(false);
-	const [clickyActive, setClickyActive] = useState(false);
-	const [realtimeVoiceActive, setRealtimeVoiceActive] = useState(false);
-	const {
-		dictationState,
-		handleStartDictation,
-		handleStopDictation,
-	} = useDemoDictationControls();
+	const voice = usePromptInputDemoVoice({ prompt, onPromptChange: setPrompt });
 
 	const handleCustomizeMenuOpenChange = useCallback((open: boolean) => {
 		setIsCustomizeMenuOpen(open);
@@ -101,20 +91,6 @@ function ChatComposerDemo({
 		setIsAutoMenuOpen(open);
 		if (open) setIsCustomizeMenuOpen(false);
 	}, []);
-
-	const handleStop = useCallback(async () => {}, []);
-	const handleToggleRealtimeVoice = useCallback(() => {
-		if (realtimeVoiceActive) {
-			setClickyActive(false);
-		}
-		setRealtimeVoiceActive(!realtimeVoiceActive);
-	}, [realtimeVoiceActive]);
-	const handleToggleClicky = useCallback(() => {
-		if (!clickyActive) {
-			setRealtimeVoiceActive(true);
-		}
-		setClickyActive(!clickyActive);
-	}, [clickyActive]);
 
 	const canSubmit = prompt.trim().length > 0;
 
@@ -212,20 +188,23 @@ function ChatComposerDemo({
 								className="flex-1"
 								companyKnowledgeEnabled={companyKnowledgeEnabled}
 								composerStatus="ready"
-								clickyActive={clickyActive}
-								dictationState={dictationState}
+								clickyActive={voice.clickyActive}
+								dictationState={voice.dictationState}
+								dictationTranscriptPreview={voice.dictationTranscriptPreview}
 								liveVoiceEnabled={liveVoiceEnabled}
+								micStream={voice.micStream}
 								onCompanyKnowledgeChange={setCompanyKnowledgeEnabled}
 								onOpenChange={handleAutoMenuOpenChange}
 								onReasoningChange={setSelectedReasoning}
-								onStartDictation={handleStartDictation}
-								onStop={handleStop}
-								onStopDictation={handleStopDictation}
-								onToggleClicky={handleToggleClicky}
-								onToggleRealtimeVoice={handleToggleRealtimeVoice}
+								onStartDictation={voice.handleStartDictation}
+								onStop={voice.handleStop}
+								onStopDictation={voice.handleStopDictation}
+								onToggleClicky={voice.handleToggleClicky}
+								onToggleRealtimeVoice={voice.handleToggleRealtimeVoice}
 								onWebResultsChange={setWebResultsEnabled}
 								open={isAutoMenuOpen}
-								realtimeVoiceActive={realtimeVoiceActive}
+								realtimeVoiceActive={voice.realtimeVoiceActive}
+								realtimeVoiceState={voice.realtimeVoiceState}
 								selectedReasoning={selectedReasoning}
 								showSubmitWhenEmpty={!liveVoiceEnabled}
 								webResultsEnabled={webResultsEnabled}
@@ -235,6 +214,7 @@ function ChatComposerDemo({
 
 					<style>{textareaCSS}</style>
 				</div>
+				<DemoVoiceStatus message={voice.statusMessage} />
 			</div>
 		</DemoFrame>
 	);
@@ -256,31 +236,7 @@ interface FloatingBarDemoProps {
 
 function FloatingBarDemo({ experimentalDarkCta = false }: Readonly<FloatingBarDemoProps>) {
 	const [prompt, setPrompt] = useState("");
-	const [realtimeVoiceActive, setRealtimeVoiceActive] = useState(false);
-	const [clickyActive, setClickyActive] = useState(false);
-	const {
-		dictationState,
-		handleStartDictation,
-		handleStopDictation,
-	} = useDemoDictationControls();
-
-	const handleToggleRealtimeVoice = useCallback(() => {
-		if (realtimeVoiceActive) {
-			setClickyActive(false);
-		}
-		setRealtimeVoiceActive(!realtimeVoiceActive);
-	}, [realtimeVoiceActive]);
-
-	const handleStop = useCallback(() => {
-		setRealtimeVoiceActive(false);
-		setClickyActive(false);
-	}, []);
-	const handleToggleClicky = useCallback(() => {
-		if (!clickyActive) {
-			setRealtimeVoiceActive(true);
-		}
-		setClickyActive(!clickyActive);
-	}, [clickyActive]);
+	const voice = usePromptInputDemoVoice({ prompt, onPromptChange: setPrompt });
 
 	const canSubmit = Boolean(prompt.trim());
 
@@ -298,16 +254,19 @@ function FloatingBarDemo({ experimentalDarkCta = false }: Readonly<FloatingBarDe
 					<RovoComposerActionButton
 						canSubmit={canSubmit}
 						composerStatus="ready"
-						dictationState={dictationState}
+						dictationState={voice.dictationState}
+						dictationTranscriptPreview={voice.dictationTranscriptPreview}
 						experimentalDarkCta={experimentalDarkCta}
 						liveVoiceEnabled
-						clickyActive={clickyActive}
-						onStartDictation={handleStartDictation}
-						onStop={handleStop}
-						onStopDictation={handleStopDictation}
-						onToggleClicky={handleToggleClicky}
-						onToggleRealtimeVoice={handleToggleRealtimeVoice}
-						realtimeVoiceActive={realtimeVoiceActive}
+						clickyActive={voice.clickyActive}
+						micStream={voice.micStream}
+						onStartDictation={voice.handleStartDictation}
+						onStop={voice.handleStop}
+						onStopDictation={voice.handleStopDictation}
+						onToggleClicky={voice.handleToggleClicky}
+						onToggleRealtimeVoice={voice.handleToggleRealtimeVoice}
+						realtimeVoiceActive={voice.realtimeVoiceActive}
+						realtimeVoiceState={voice.realtimeVoiceState}
 					/>
 				}
 			>
@@ -322,6 +281,7 @@ function FloatingBarDemo({ experimentalDarkCta = false }: Readonly<FloatingBarDe
 			</FloatingComposer>
 
 			<style>{textareaCSS}</style>
+			<DemoVoiceStatus message={voice.statusMessage} />
 		</DemoFrame>
 	);
 }
@@ -336,12 +296,7 @@ export function PromptInputDemoFloatingBarDarkCta() {
 
 export function PromptInputDemoFloatingBarTextSend() {
 	const [prompt, setPrompt] = useState("");
-	const {
-		dictationState,
-		handleStartDictation,
-		handleStopDictation,
-	} = useDemoDictationControls();
-	const handleStop = useCallback(() => {}, []);
+	const voice = usePromptInputDemoVoice({ prompt, onPromptChange: setPrompt });
 	const canSubmit = prompt.trim().length > 0;
 
 	return (
@@ -351,11 +306,12 @@ export function PromptInputDemoFloatingBarTextSend() {
 					<RovoComposerActionButton
 						canSubmit={canSubmit}
 						composerStatus="ready"
-						dictationState={dictationState}
+						dictationState={voice.dictationState}
+						dictationTranscriptPreview={voice.dictationTranscriptPreview}
 						experimentalDarkCta
-						onStartDictation={handleStartDictation}
-						onStop={handleStop}
-						onStopDictation={handleStopDictation}
+						onStartDictation={voice.handleStartDictation}
+						onStop={voice.handleStop}
+						onStopDictation={voice.handleStopDictation}
 						showSubmitWhenEmpty
 					/>
 				}
@@ -378,6 +334,7 @@ export function PromptInputDemoFloatingBarTextSend() {
 			</FloatingComposer>
 
 			<style>{textareaCSS}</style>
+			<DemoVoiceStatus message={voice.statusMessage} />
 		</DemoFrame>
 	);
 }
