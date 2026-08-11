@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useReducedMotion } from "motion/react";
 
 import { ChatTimelineNavigator } from "@/components/blocks/chat-timeline";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ export function PullRequestGuide({
 	review,
 	onFinish,
 }: Readonly<PullRequestGuideProps>) {
+	const shouldReduceMotion = Boolean(useReducedMotion());
 	const [activeChapterId, setActiveChapterId] = useState<string | null>(review.chapters[0]?.id ?? null);
 	const [visitedChapterIds, setVisitedChapterIds] = useState<ReadonlySet<string>>(
 		() => new Set(review.chapters[0] ? [review.chapters[0].id] : []),
@@ -73,7 +75,10 @@ export function PullRequestGuide({
 		const chapterElement = chapterRefs.current[chapterId];
 		setActiveChapterId(chapterId);
 		setVisitedChapterIds((visited) => new Set(visited).add(chapterId));
-		chapterElement?.scrollIntoView({ behavior: "smooth", block: "start" });
+		chapterElement?.scrollIntoView({
+			behavior: shouldReduceMotion ? "auto" : "smooth",
+			block: "start",
+		});
 	};
 
 	return (

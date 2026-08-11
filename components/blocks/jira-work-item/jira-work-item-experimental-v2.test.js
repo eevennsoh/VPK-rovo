@@ -107,6 +107,11 @@ const V2_ONLY_FILES = new Set([
 	// Connected-repo fixtures / helpers live outside the picker component file
 	// so Fast Refresh can treat that module as components-only.
 	"lib/development-repositories.ts",
+	// File-size split: static adapter fixtures/tests stay v2-only.
+	"lib/jira-activity-adapter-static.test.js",
+	// Live CI elapsed clock helpers for the PR details rail.
+	"lib/pull-request-check-elapsed.test.js",
+	"lib/pull-request-check-elapsed.ts",
 	// Phase-section model for the Pull requests resource dropdown.
 	"lib/pull-request-phases.ts",
 	"lib/pull-request-phases.test.js",
@@ -484,7 +489,7 @@ test("experimental v2 keeps comment-only composer delivery as the non-target def
 	);
 	assert.match(
 		composerSource,
-		/meta\.composerDelivery === "broadcast-active-agents"[\s\S]*actions\.broadcastComment\(text\);[\s\S]*else \{[\s\S]*actions\.addComment\(text\);/u,
+		/meta\.composerDelivery === "broadcast-active-agents"[\s\S]*actions\.broadcastComment\(promptWithActivityContext\);[\s\S]*else \{[\s\S]*actions\.addComment\(promptWithActivityContext\);/u,
 	);
 });
 

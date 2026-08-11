@@ -95,9 +95,8 @@ export function MetadataRailProvider({
 		useState<PullRequestSectionExpandRequest | null>(null);
 	const [activityRevealRequest, setActivityRevealRequest] =
 		useState<ActivityRevealRequest | null>(null);
-	const previousRevealActivityKeyRef = useRef<string | number | null | undefined>(undefined);
-	// Ref so reveal-key effects can skip panel switches without re-subscribing
-	// when PR detail opens/closes mid-staging.
+	// Ref so reveal-key handling can skip panel switches without re-subscribing
+	// when PR detail opens/closes mid-staging. Written only from event handlers.
 	const suppressActivityPanelRevealRef = useRef(false);
 	const requestExpandPullRequestSection = useCallback((pullRequestIdentity: string, sectionId: string) => {
 		setPullRequestSectionExpandRequest((current) => ({
@@ -119,29 +118,24 @@ export function MetadataRailProvider({
 	const consumeActivityRevealRequest = useCallback((nonce: number) => {
 		setActivityRevealRequest((current) => current?.nonce === nonce ? null : current);
 	}, []);
+	const [suppressActivityPanelReveal, setSuppressActivityPanelRevealState] = useState(false);
 	const setSuppressActivityPanelReveal = useCallback((suppressed: boolean) => {
 		suppressActivityPanelRevealRef.current = suppressed;
+		setSuppressActivityPanelRevealState(suppressed);
 	}, []);
 	// Chapter/orchestration keys open Activity during render so the panel does not
-	// flash Details for a frame before the reveal effect would run.
+	// flash Details. Track the previous key in state (not a ref) so render stays pure.
 	const [trackedRevealActivityKey, setTrackedRevealActivityKey] = useState<
 		string | number | null | undefined
 	>(revealActivityKey);
 	if (!Object.is(trackedRevealActivityKey, revealActivityKey)) {
 		setTrackedRevealActivityKey(revealActivityKey);
-		if (
-			revealActivityKey != null
-			&& revealActivityKey !== ""
-			&& !Object.is(previousRevealActivityKeyRef.current, revealActivityKey)
-		) {
-			previousRevealActivityKeyRef.current = revealActivityKey;
-			if (!suppressActivityPanelRevealRef.current) {
-				setPanelView("activity");
-				setActivityRevealRequest((current) => ({
-					nonce: (current?.nonce ?? 0) + 1,
-					...(revealActivityEntryId ? { entryId: revealActivityEntryId } : {}),
-				}));
-			}
+		if (revealActivityKey != null && revealActivityKey !== "" && !suppressActivityPanelReveal) {
+			setPanelView("activity");
+			setActivityRevealRequest((current) => ({
+				nonce: (current?.nonce ?? 0) + 1,
+				...(revealActivityEntryId ? { entryId: revealActivityEntryId } : {}),
+			}));
 		}
 	}
 	const value = useMemo<MetadataRailContextValue>(

@@ -300,9 +300,10 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 		metadataRailContextSource,
 		/suppressActivityPanelRevealRef/u,
 	);
+	// Render-time key sync (no ref.current writes); suppress via state + ref setter.
 	assert.match(
 		metadataRailContextSource,
-		/previousRevealActivityKeyRef\.current = revealActivityKey;[\s\S]*if \(suppressActivityPanelRevealRef\.current\) return;[\s\S]*requestRevealLatestActivity\(revealActivityEntryId \?\? undefined\)/u,
+		/trackedRevealActivityKey[\s\S]*setTrackedRevealActivityKey\(revealActivityKey\)[\s\S]*!suppressActivityPanelReveal[\s\S]*setPanelView\("activity"\)[\s\S]*revealActivityEntryId/u,
 	);
 	assert.match(
 		metadataRailContextSource,

@@ -520,7 +520,10 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(guideSource, /visitedChapterIds[\s\S]*review\.chapters\.every/u);
 	assert.match(guideSource, /IntersectionObserver/u);
-	assert.match(guideSource, /scrollIntoView\(\{ behavior: "smooth", block: "start" \}\)/u);
+	assert.match(
+		guideSource,
+		/scrollIntoView\(\{[\s\S]*behavior: shouldReduceMotion \? "auto" : "smooth",[\s\S]*block: "start"/u,
+	);
 	assert.match(
 		guideSource,
 		/const selectChapter = \(chapterId: string\) => \{[\s\S]*setActiveChapterId\(chapterId\)[\s\S]*setVisitedChapterIds/u,

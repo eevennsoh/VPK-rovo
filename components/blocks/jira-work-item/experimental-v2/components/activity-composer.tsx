@@ -235,9 +235,9 @@ export function ActivityComposer({
 		);
 		if (handledAgentIds.size === 0 && invokedAgents.length === 0) {
 			if (meta.composerDelivery === "broadcast-active-agents") {
-				actions.broadcastComment(text);
+				actions.broadcastComment(promptWithActivityContext);
 			} else {
-				actions.addComment(text);
+				actions.addComment(promptWithActivityContext);
 			}
 		} else {
 			// Agent mention / assign-style submits land in Activity — open that

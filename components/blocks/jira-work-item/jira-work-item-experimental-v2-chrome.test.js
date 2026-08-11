@@ -73,10 +73,10 @@ test("experimental v2 places Status and Reported by under the title", () => {
 		/className=\{cn\("min-w-0 truncate", PERSON_LABEL_TEXT_CLASS\[size\]\)\}/u,
 	);
 	assert.match(personLabelSource, /size = "sm"/u);
-	// PersonLabel avatar→name gap is 4px (gap-1); PriorityLabel keeps 8px (gap-2).
+	// PersonLabel avatar→name gap matches PriorityLabel at 8px (gap-2).
 	assert.match(
 		personLabelSource,
-		/export function PersonLabel\([\s\S]*className="flex min-w-0 items-center gap-1"/u,
+		/export function PersonLabel\([\s\S]*className="flex min-w-0 items-center gap-2"/u,
 	);
 	assert.match(
 		personLabelSource,
