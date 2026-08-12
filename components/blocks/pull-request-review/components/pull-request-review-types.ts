@@ -22,6 +22,8 @@ export interface PullRequestReviewSubmission {
 }
 
 export interface PullRequestReviewProps {
+	/** Accessible name for the review form landmark. Defaults to `title`. */
+	ariaLabel?: string;
 	/** Focus the review editor when the expanded review is opened by another control. */
 	autoFocus?: boolean;
 	/**

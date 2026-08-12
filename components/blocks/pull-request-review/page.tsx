@@ -41,6 +41,7 @@ export default function PullRequestReviewPage() {
 					</div>
 					<PullRequestReview
 						{...DEMO_PULL_REQUEST_REVIEW}
+						ariaLabel="Controlled pull request review"
 						onClose={() => setVariant("compact")}
 						onSubmit={setLastSubmission}
 						onVariantChange={setVariant}
@@ -62,7 +63,10 @@ export default function PullRequestReviewPage() {
 						review card when the composer takes focus; the dismiss control
 						collapses it again.
 					</p>
-					<PullRequestReview {...DEMO_PULL_REQUEST_REVIEW} />
+					<PullRequestReview
+						{...DEMO_PULL_REQUEST_REVIEW}
+						ariaLabel="Focus-expanding pull request review"
+					/>
 				</section>
 
 				<section className="flex flex-col gap-3">
@@ -74,6 +78,7 @@ export default function PullRequestReviewPage() {
 						lozenge drops out of the heading row.
 					</p>
 					<PullRequestReview
+						ariaLabel="Pull request review without progress"
 						defaultVariant="expanded"
 						placeholder="Leave a comment..."
 					/>
@@ -89,6 +94,7 @@ export default function PullRequestReviewPage() {
 					</p>
 					<PullRequestReview
 						{...DEMO_PULL_REQUEST_REVIEW}
+						ariaLabel="Compact pull request review"
 						expandOnFocus={false}
 					/>
 				</section>
