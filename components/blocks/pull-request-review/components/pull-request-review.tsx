@@ -46,6 +46,7 @@ function canSubmitReview(body: string): boolean {
  * wraps (the compact default).
  */
 export function PullRequestReview({
+	ariaLabel,
 	autoFocus = false,
 	className,
 	defaultValue = "",
@@ -191,7 +192,7 @@ export function PullRequestReview({
 				</>
 			}
 			addButtonProps={{ onClick: onAddClick }}
-			aria-label={title}
+			aria-label={ariaLabel ?? title}
 			className={cn(
 				"w-full",
 				// Expanded reads as a card rather than a bar: a wider gutter, a
