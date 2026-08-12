@@ -240,6 +240,8 @@ interface ChatPanelProps {
 	onClose: () => void;
 	onBackToRovo?: () => void;
 	addMenuItemsBefore?: ReactNode;
+	/** Optional host-owned controls rendered immediately after the Add menu trigger. */
+	composerToolsAfterAdd?: ReactNode;
 	sendPromptOptions?: SendPromptOptions;
 	enableSmartWidgets?: boolean;
 	cards?: ChatPanelCardsProps;
@@ -490,6 +492,7 @@ export default function ChatPanel({
 	onClose,
 	onBackToRovo,
 	addMenuItemsBefore,
+	composerToolsAfterAdd,
 	sendPromptOptions,
 	enableSmartWidgets = false,
 	cards,
@@ -1401,8 +1404,8 @@ export default function ChatPanel({
 			return ids;
 		}
 		let sawLaterUser = false;
-		for (let i = messages.length - 1; i >= 0; i--) {
-			const candidate = messages[i];
+		for (let i = rawUiMessages.length - 1; i >= 0; i--) {
+			const candidate = rawUiMessages[i];
 			if (candidate.role === "assistant" && sawLaterUser) {
 				ids.add(candidate.id);
 			}
@@ -1411,7 +1414,7 @@ export default function ChatPanel({
 			}
 		}
 		return ids;
-	}, [markAnsweredQuestionTraces, messages]);
+	}, [markAnsweredQuestionTraces, rawUiMessages]);
 
 	const activeQuestionCard = useMemo(() => (
 		isLocalConversationActive ? null : getLatestQuestionCardPayload(rawUiMessages)
@@ -1904,6 +1907,7 @@ export default function ChatPanel({
 						hasInFlightTurn={hasInFlightTurn}
 						queuedPrompts={queuedPrompts}
 						addMenuItemsBefore={addMenuItemsBefore}
+						composerToolsAfterAdd={composerToolsAfterAdd}
 						experimentalDarkCta
 						containerClassName={composerContainerClassName}
 						hideAiCursor={hideAiCursor}

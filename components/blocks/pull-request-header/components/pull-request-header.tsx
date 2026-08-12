@@ -9,6 +9,7 @@ import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
+import StatusErrorIcon from "@atlaskit/icon/core/status-error";
 
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -27,6 +28,7 @@ import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
 
 import type {
+	PullRequestHeaderMergeMethod,
 	PullRequestHeaderMergeState,
 	PullRequestHeaderProps,
 	PullRequestHeaderStatus,
@@ -37,7 +39,13 @@ import {
 } from "@/components/blocks/pull-request-header/components/pull-request-header-variant";
 
 const DEFAULT_MERGE_STATE: PullRequestHeaderMergeState = "ready";
+const DEFAULT_MERGE_METHOD: PullRequestHeaderMergeMethod = "squash";
 const DEFAULT_AUTO_MERGE = true;
+const MERGE_METHOD_VALUES = [
+	"squash",
+	"merge",
+	"rebase",
+] as const satisfies ReadonlyArray<PullRequestHeaderMergeMethod>;
 const META_ENTER_TRANSITION = {
 	duration: 0.2,
 	ease: [0, 0.4, 0, 1],
@@ -69,14 +77,76 @@ function statusLozengeVariant(
 	}
 }
 
-function mergeStateLabel(mergeState: PullRequestHeaderMergeState): string {
+function mergeMethodLabel(method: PullRequestHeaderMergeMethod): string {
+	switch (method) {
+		case "squash":
+			return "Squash and merge";
+		case "merge":
+			return "Create a merge commit";
+		case "rebase":
+			return "Rebase and merge";
+		default: {
+			const _exhaustive: never = method;
+			return _exhaustive;
+		}
+	}
+}
+
+function mergeStateLabel(
+	mergeState: PullRequestHeaderMergeState,
+	mergeMethod: PullRequestHeaderMergeMethod,
+): string {
 	switch (mergeState) {
+		case "checks-failed":
+			return "Checks failed";
 		case "checks-running":
 			return "Checks running";
 		case "merge-conflicts":
 			return "Merge conflicts";
+		case "review-required":
+			return "Review required";
 		case "ready":
-			return "Merge";
+			return mergeMethodLabel(mergeMethod);
+		default: {
+			const _exhaustive: never = mergeState;
+			return _exhaustive;
+		}
+	}
+}
+
+/** Leading status icon for the merge primary — matches PR rail CI check icons. */
+function mergeStateLeadingIcon(mergeState: PullRequestHeaderMergeState) {
+	switch (mergeState) {
+		case "checks-failed":
+			return (
+				<span
+					className="grid size-4 shrink-0 place-items-center text-icon-danger"
+					data-icon="inline-start"
+				>
+					<StatusErrorIcon color="currentColor" label="" size="small" />
+				</span>
+			);
+		case "checks-running":
+			return (
+				<span
+					className="grid size-4 shrink-0 place-items-center"
+					data-icon="inline-start"
+				>
+					<Spinner size="xs" />
+				</span>
+			);
+		case "merge-conflicts":
+			return (
+				<span
+					className="grid size-4 shrink-0 place-items-center text-icon-danger"
+					data-icon="inline-start"
+				>
+					<MergeFailureIcon color="currentColor" label="" size="small" />
+				</span>
+			);
+		case "review-required":
+		case "ready":
+			return null;
 		default: {
 			const _exhaustive: never = mergeState;
 			return _exhaustive;
@@ -86,21 +156,30 @@ function mergeStateLabel(mergeState: PullRequestHeaderMergeState): string {
 
 function isMergePrimaryEnabled({
 	mergeState,
+	onChecksFailedClick,
 	onChecksRunningClick,
+	onMergeConflictsClick,
 	onMergeClick,
+	onReviewRequiredClick,
 }: Readonly<{
 	mergeState: PullRequestHeaderMergeState;
+	onChecksFailedClick?: () => void;
 	onChecksRunningClick?: () => void;
+	onMergeConflictsClick?: () => void;
 	onMergeClick?: () => void;
+	onReviewRequiredClick?: () => void;
 }>): boolean {
 	switch (mergeState) {
 		case "ready":
 			return Boolean(onMergeClick);
+		case "checks-failed":
+			return Boolean(onChecksFailedClick);
 		case "checks-running":
 			return Boolean(onChecksRunningClick);
+		case "review-required":
+			return Boolean(onReviewRequiredClick);
 		case "merge-conflicts":
-			// No related primary action yet (conflicts UI is not wired).
-			return false;
+			return Boolean(onMergeConflictsClick);
 		default: {
 			const _exhaustive: never = mergeState;
 			return _exhaustive;
@@ -149,7 +228,14 @@ function ScmProviderMark({ name }: Readonly<{ name: string }>) {
 		return <BrandLogoMark frame="chip" label={name} name="gitlab" />;
 	}
 	if (normalizedName.includes("github")) {
-		return <BrandLogoMark frame="chip" label={name} name="github" />;
+		return (
+			<BrandLogoMark
+				className="dark:invert [[data-color-mode=dark]_&]:invert"
+				frame="chip"
+				label={name}
+				name="github"
+			/>
+		);
 	}
 
 	return (
@@ -223,6 +309,7 @@ export function PullRequestHeader({
 	variant,
 	scrollContainerRef,
 	collapseOffset = DEFAULT_COLLAPSE_OFFSET,
+	tabNavigation,
 	number,
 	title,
 	status,
@@ -232,19 +319,29 @@ export function PullRequestHeader({
 	url,
 	scmProviderName,
 	mergeState = DEFAULT_MERGE_STATE,
+	mergeMethod,
+	defaultMergeMethod = DEFAULT_MERGE_METHOD,
+	onMergeMethodChange,
 	autoMerge,
 	defaultAutoMerge = DEFAULT_AUTO_MERGE,
 	onAutoMergeChange,
 	onMergeClick,
+	onChecksFailedClick,
 	onChecksRunningClick,
+	onMergeConflictsClick,
+	onReviewRequiredClick,
 	onConvertToDraftClick,
 	onClosePullRequestClick,
 	className,
+	style,
 	...props
 }: Readonly<PullRequestHeaderProps>) {
 	const shouldReduceMotion = useReducedMotion() ?? false;
+	const [uncontrolledMergeMethod, setUncontrolledMergeMethod] =
+		useState(defaultMergeMethod);
 	const [uncontrolledAutoMerge, setUncontrolledAutoMerge] =
 		useState(defaultAutoMerge);
+	const selectedMergeMethod = mergeMethod ?? uncontrolledMergeMethod;
 	const autoMergeEnabled = autoMerge ?? uncontrolledAutoMerge;
 	const subscribeToScroll = useCallback(
 		(onStoreChange: () => void) => {
@@ -287,6 +384,13 @@ export function PullRequestHeader({
 	const titleSizeClass =
 		resolvedVariant === "compact" ? "text-sm" : "text-base";
 
+	const handleMergeMethodChange = (method: PullRequestHeaderMergeMethod) => {
+		if (mergeMethod === undefined) {
+			setUncontrolledMergeMethod(method);
+		}
+		onMergeMethodChange?.(method);
+	};
+
 	const handleAutoMergeChange = (enabled: boolean) => {
 		if (autoMerge === undefined) {
 			setUncontrolledAutoMerge(enabled);
@@ -296,8 +400,11 @@ export function PullRequestHeader({
 
 	const primaryEnabled = isMergePrimaryEnabled({
 		mergeState,
+		onChecksFailedClick,
 		onChecksRunningClick,
+		onMergeConflictsClick,
 		onMergeClick,
+		onReviewRequiredClick,
 	});
 	const resolvedScmProviderName =
 		scmProviderName ?? resolveScmProviderName(url);
@@ -309,10 +416,17 @@ export function PullRequestHeader({
 			case "ready":
 				onMergeClick?.();
 				return;
+			case "checks-failed":
+				onChecksFailedClick?.();
+				return;
 			case "checks-running":
 				onChecksRunningClick?.();
 				return;
+			case "review-required":
+				onReviewRequiredClick?.();
+				return;
 			case "merge-conflicts":
+				onMergeConflictsClick?.();
 				return;
 			default: {
 				const _exhaustive: never = mergeState;
@@ -323,16 +437,24 @@ export function PullRequestHeader({
 
 	return (
 		<motion.header
-			className={cn("border-b border-border pb-4", className)}
+			className={cn(
+				"border-border",
+				tabNavigation
+					? "pt-4"
+					: "border-b pb-4",
+				className,
+			)}
 			layout={shouldReduceMotion ? false : true}
 			transition={
 				shouldReduceMotion
 					? { layout: INSTANT_TRANSITION }
 					: { layout: LAYOUT_TRANSITION }
 			}
+			style={style}
 			{...props}
 		>
 			<motion.div
+				className={tabNavigation ? "px-4" : undefined}
 				layout={shouldReduceMotion ? false : "position"}
 				transition={{ layout: LAYOUT_TRANSITION }}
 			>
@@ -341,7 +463,7 @@ export function PullRequestHeader({
 					layout={shouldReduceMotion ? false : "position"}
 					transition={{ layout: LAYOUT_TRANSITION }}
 				>
-					<div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+					<div className="flex min-w-0 flex-nowrap items-center gap-x-2 gap-y-1 sm:flex-1">
 						<span className="inline-flex shrink-0 items-center gap-1">
 							{resolvedVariant === "compact" ? (
 								<CompactPullRequestStatusIcon status={status} />
@@ -358,7 +480,7 @@ export function PullRequestHeader({
 						</span>
 						<h1
 							className={cn(
-								"min-w-0 font-medium text-text",
+								"min-w-0 flex-1 truncate font-medium text-text",
 								TITLE_SIZE_TRANSITION,
 								titleSizeClass,
 							)}
@@ -368,69 +490,91 @@ export function PullRequestHeader({
 					</div>
 					<ButtonGroup
 						aria-label="Pull request actions"
-						className="w-full flex-wrap gap-2 sm:w-auto"
+						className="w-full flex-wrap gap-2 sm:w-auto sm:shrink-0"
 						variant="separated"
 					>
-						<ButtonGroup variant="split">
-							<Button
-								disabled={!primaryEnabled}
-								onClick={handlePrimaryClick}
-								variant="outline"
-							>
-								{mergeState === "checks-running" ? (
-									<Spinner data-icon="inline-start" size="xs" />
-								) : null}
-								{mergeStateLabel(mergeState)}
-							</Button>
-							<DropdownMenu>
-								<DropdownMenuTrigger
-									render={
-										<Button
-											aria-label="Merge options"
-											size="icon"
-											variant="outline"
-										/>
-									}
+						{canMutatePullRequest ? (
+							<ButtonGroup variant="split">
+								<Button
+									disabled={!primaryEnabled}
+									onClick={handlePrimaryClick}
+									variant="outline"
 								>
-									<ChevronDownIcon label="" size="small" />
-								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end">
-									<DropdownMenuItem
-										closeOnClick={false}
-										disabled={!onAutoMergeChange}
-										elemAfter={
-											<Switch
-												checked={autoMergeEnabled}
-												disabled={!onAutoMergeChange}
-												label="Auto merge"
-												onCheckedChange={handleAutoMergeChange}
-												onClick={(event) => {
-													// Avoid double-toggle: Switch already flipped via
-													// onCheckedChange; don't also run item onSelect.
-													event.stopPropagation();
-												}}
-												onPointerDown={(event) => {
-													// Keep the menu open while toggling; Base UI treats a
-													// prevented press that starts inside the popup as
-													// intentional and suppresses the follow-up dismiss.
-													event.preventDefault();
-												}}
-												size="sm"
+									{mergeStateLeadingIcon(mergeState)}
+									{mergeStateLabel(mergeState, selectedMergeMethod)}
+								</Button>
+								<DropdownMenu>
+									<DropdownMenuTrigger
+										render={
+											<Button
+												aria-label="Merge options"
+												size="icon"
+												variant="outline"
 											/>
 										}
-										onSelect={(event) => {
-											event.preventDefault();
-											if (!onAutoMergeChange) {
-												return;
-											}
-											handleAutoMergeChange(!autoMergeEnabled);
-										}}
 									>
-										Auto merge
-									</DropdownMenuItem>
-								</DropdownMenuContent>
-							</DropdownMenu>
-						</ButtonGroup>
+										<ChevronDownIcon label="" size="small" />
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="end">
+										{MERGE_METHOD_VALUES.map((value) => (
+											<DropdownMenuItem
+												key={value}
+												onSelect={() => {
+													handleMergeMethodChange(value);
+												}}
+												selected={value === selectedMergeMethod}
+											>
+												{mergeMethodLabel(value)}
+											</DropdownMenuItem>
+										))}
+										<DropdownMenuSeparator />
+										<DropdownMenuItem
+											closeOnClick={false}
+											disabled={!onAutoMergeChange}
+											elemAfter={
+												<Switch
+													checked={autoMergeEnabled}
+													disabled={!onAutoMergeChange}
+													label="Auto merge"
+													// Keep the Switch out of the menu's tabbable set.
+													// Otherwise FloatingFocusManager's initialFocus lands on
+													// it (menuitems are tabIndex -1 until highlighted), which
+													// falsely highlights Auto merge on pointer open.
+													tabIndex={-1}
+													onCheckedChange={handleAutoMergeChange}
+													onClick={(event) => {
+														// Avoid double-toggle: Switch already flipped via
+														// onCheckedChange; don't also run item onSelect.
+														event.stopPropagation();
+													}}
+													onPointerDown={(event) => {
+														// Keep the menu open while toggling; Base UI treats a
+														// prevented press that starts inside the popup as
+														// intentional and suppresses the follow-up dismiss.
+														event.preventDefault();
+													}}
+													size="sm"
+												/>
+											}
+											onSelect={(event) => {
+												event.preventDefault();
+												if (!onAutoMergeChange) {
+													return;
+												}
+												handleAutoMergeChange(!autoMergeEnabled);
+											}}
+										>
+											Auto merge
+										</DropdownMenuItem>
+									</DropdownMenuContent>
+								</DropdownMenu>
+							</ButtonGroup>
+						) : (
+							<Button disabled variant="outline">
+								<MergeSuccessIcon label="" size="small" />
+								Merged
+							</Button>
+						)}
 						<ButtonGroup>
 							<DropdownMenu>
 								<DropdownMenuTrigger
@@ -510,7 +654,7 @@ export function PullRequestHeader({
 						</ButtonGroup>
 					</ButtonGroup>
 				</motion.div>
-				<AnimatePresence initial={false}>
+				<AnimatePresence initial={false} mode="popLayout">
 					{resolvedVariant === "expanded" ? (
 						<motion.div
 							animate={{ opacity: 1, transform: "translateY(0px)" }}
@@ -535,19 +679,29 @@ export function PullRequestHeader({
 									<Tag
 										color="gray"
 										elemBefore={
-											<BrandLogoMark frame="chip" label="GitHub" name="github" />
+											<BrandLogoMark
+												className="dark:invert [[data-color-mode=dark]_&]:invert"
+												frame="chip"
+												label="GitHub"
+												name="github"
+											/>
 										}
 										maxWidth="14rem"
 									>
 										{repository}
 									</Tag>
 									{branchPair ? (
-										<span className="min-w-0 truncate">
-											<BranchName name={branchPair.headBranch} />
-											<span aria-hidden className="px-1 text-text-subtle">
+										<span className="inline-flex min-w-0 items-center overflow-hidden">
+											{/* Head truncates; base stays full (`main`, not `m…`). */}
+											<span className="min-w-0 truncate">
+												<BranchName name={branchPair.headBranch} />
+											</span>
+											<span aria-hidden className="shrink-0 px-1 text-text-subtle">
 												→
 											</span>
-											<BranchName name={branchPair.baseBranch} />
+											<span className="shrink-0">
+												<BranchName name={branchPair.baseBranch} />
+											</span>
 										</span>
 									) : null}
 								</motion.div>
@@ -555,6 +709,24 @@ export function PullRequestHeader({
 						) : null}
 					</AnimatePresence>
 				</motion.div>
+			{tabNavigation ? (
+				<motion.div
+					className={cn(
+						// Pull the strip 1px over the header's bottom border so the
+						// shared line-tab indicator (`after:h-0.5` / 2px) sits on that
+						// grey rule. Keep the after fully inside this box (`after:bottom-0`)
+						// — `overflow-x-auto` would otherwise clip a negative bottom offset.
+						"relative z-10 -mb-px mt-4 shrink-0 overflow-x-auto overscroll-x-contain transition-[padding-left,padding-right] duration-medium ease-in-out motion-reduce:transition-none [&_[data-slot=tabs-list]]:border-b-0 [&_[data-slot=tabs-trigger]]:after:bottom-0",
+						resolvedVariant === "compact"
+							? "px-[clamp(1rem,calc(30%-4rem),16rem)]"
+							: "px-[clamp(1rem,calc(20%-4rem),11rem)]",
+					)}
+					layout={shouldReduceMotion ? false : "position"}
+					transition={{ layout: LAYOUT_TRANSITION }}
+				>
+					{tabNavigation}
+				</motion.div>
+			) : null}
 		</motion.header>
 	);
 }

@@ -28,3 +28,11 @@ test("tooltip content keeps the shared portal positioner layer hook", () => {
 		/className=\{cn\("isolate z-\[200\]", positionerClassName\)\}/u,
 	);
 });
+
+test("tooltip closes when a window or nested container scrolls", () => {
+	assert.match(source, /const internalActionsRef = React\.useRef<TooltipPrimitive\.Root\.Actions \| null>\(null\)/u);
+	assert.match(source, /if \(!isOpen\) \{[\s\S]*return undefined[\s\S]*\}/u);
+	assert.match(source, /window\.addEventListener\("scroll", handleScroll, \{[\s\S]*capture: true,[\s\S]*passive: true,[\s\S]*\}\)/u);
+	assert.match(source, /internalActionsRef\.current\?\.close\(\)/u);
+	assert.match(source, /window\.removeEventListener\("scroll", handleScroll, true\)/u);
+});

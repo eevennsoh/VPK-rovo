@@ -44,6 +44,7 @@ export type TwgToolProps = Omit<ComponentProps<typeof Collapsible>, "children"> 
 	showLoader?: boolean;
 	chevronOpen?: boolean;
 	onBannerClick?: () => void;
+	contentClassName?: string;
 	children?: ReactNode;
 };
 
@@ -93,6 +94,7 @@ export function TwgTool({
 	chevronOpen,
 	loader,
 	onBannerClick,
+	contentClassName,
 	showChevron = true,
 	showLoader = true,
 	sources = [],
@@ -103,6 +105,7 @@ export function TwgTool({
 	const hasExpandableContent = children != null && showChevron;
 	const shouldRenderButtonBanner = !hasExpandableContent && onBannerClick != null;
 	const shouldRotateChevron = chevronOpen ?? false;
+	const bannerPaddingClassName = showLoader ? "pl-1" : "";
 	const bannerContent = (
 		<>
 			{showLoader ? (
@@ -149,7 +152,7 @@ export function TwgTool({
 		>
 			{hasExpandableContent ? (
 				<CollapsibleTrigger
-					className="relative flex h-12 min-w-0 flex-1 items-center justify-between gap-3 overflow-hidden rounded-lg bg-surface-sunken pl-1 pr-2 text-left outline-none transition-colors hover:bg-surface-raised-hovered focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3"
+					className={cn("relative flex h-12 min-w-0 flex-1 items-center justify-between gap-3 overflow-hidden rounded-lg bg-surface-sunken pr-2 text-left outline-none transition-colors hover:bg-surface-raised-hovered focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3", bannerPaddingClassName)}
 				>
 					<TwgToolBannerBackground />
 					{bannerContent}
@@ -157,7 +160,7 @@ export function TwgTool({
 			) : shouldRenderButtonBanner ? (
 				<button
 					aria-expanded={chevronOpen}
-					className="relative flex h-12 min-w-0 flex-1 items-center justify-between gap-3 overflow-hidden rounded-lg bg-surface-sunken pl-1 pr-2 text-left outline-none transition-colors hover:bg-surface-raised-hovered focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3"
+					className={cn("relative flex h-12 min-w-0 flex-1 items-center justify-between gap-3 overflow-hidden rounded-lg bg-surface-sunken pr-2 text-left outline-none transition-colors hover:bg-surface-raised-hovered focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3", bannerPaddingClassName)}
 					onClick={onBannerClick}
 					type="button"
 				>
@@ -166,7 +169,7 @@ export function TwgTool({
 				</button>
 			) : (
 				<div
-					className="relative flex h-12 min-w-0 flex-1 items-center justify-between gap-3 overflow-hidden rounded-lg bg-surface-sunken pl-1 pr-2"
+					className={cn("relative flex h-12 min-w-0 flex-1 items-center justify-between gap-3 overflow-hidden rounded-lg bg-surface-sunken pr-2", bannerPaddingClassName)}
 				>
 					<TwgToolBannerBackground />
 					{bannerContent}
@@ -175,8 +178,9 @@ export function TwgTool({
 			{hasExpandableContent ? (
 				<CollapsibleContent
 					className={cn(
-						"mt-2 overflow-hidden text-xs leading-5 text-text-subtle",
-						"h-(--collapsible-panel-height) outline-none transition-[height,opacity] duration-medium ease-out data-starting-style:h-0 data-starting-style:opacity-0 data-ending-style:h-0 data-ending-style:opacity-0"
+						"mt-2 pl-12 overflow-hidden text-xs leading-5 text-text-subtle",
+						"h-(--collapsible-panel-height) outline-none transition-[height,opacity] duration-medium ease-out data-starting-style:h-0 data-starting-style:opacity-0 data-ending-style:h-0 data-ending-style:opacity-0",
+						contentClassName,
 					)}
 				>
 					{children}

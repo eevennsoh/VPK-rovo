@@ -38,16 +38,29 @@ export function SkillTagDemoDefault() {
 
 export function SkillTagDemoColors() {
 	return (
-		<div className="flex flex-wrap items-center gap-2">
-			<SkillTag color="default">Default</SkillTag>
-			<SkillTag color="marketplace">Marketplace</SkillTag>
-			<SkillTag color="platform">Platform</SkillTag>
-			<SkillTag color="custom">Custom</SkillTag>
-			<SkillTag color="teamwork">Teamwork</SkillTag>
-			<SkillTag color="software">Software</SkillTag>
-			<SkillTag color="strategy">Strategy</SkillTag>
-			<SkillTag color="service">Service</SkillTag>
-			<SkillTag color="product">Product</SkillTag>
+		<div className="flex flex-col gap-3">
+			<div className="flex flex-wrap items-center gap-2" data-slot="skill-tag-colors-neutral">
+				<SkillTag color="default">Default</SkillTag>
+				<SkillTag color="marketplace">Marketplace</SkillTag>
+				<SkillTag color="platform">Platform</SkillTag>
+				<SkillTag color="custom">Custom</SkillTag>
+				<SkillTag color="teamwork">Teamwork</SkillTag>
+				<SkillTag color="software">Software</SkillTag>
+				<SkillTag color="strategy">Strategy</SkillTag>
+				<SkillTag color="service">Service</SkillTag>
+				<SkillTag color="product">Product</SkillTag>
+			</div>
+			<div className="flex flex-wrap items-center gap-2 rounded-xl bg-primary px-4 py-3" data-slot="skill-tag-colors-on-colored">
+				<SkillTag color="default" variant="on-colored">Default</SkillTag>
+				<SkillTag color="marketplace" variant="on-colored">Marketplace</SkillTag>
+				<SkillTag color="platform" variant="on-colored">Platform</SkillTag>
+				<SkillTag color="custom" variant="on-colored">Custom</SkillTag>
+				<SkillTag color="teamwork" variant="on-colored">Teamwork</SkillTag>
+				<SkillTag color="software" variant="on-colored">Software</SkillTag>
+				<SkillTag color="strategy" variant="on-colored">Strategy</SkillTag>
+				<SkillTag color="service" variant="on-colored">Service</SkillTag>
+				<SkillTag color="product" variant="on-colored">Product</SkillTag>
+			</div>
 		</div>
 	);
 }

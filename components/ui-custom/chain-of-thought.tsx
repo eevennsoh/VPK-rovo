@@ -4,7 +4,7 @@
 
 // oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
 
-import type { ComponentProps, ComponentType, ReactNode } from "react";
+import type { ComponentProps, ComponentType, CSSProperties, ReactNode } from "react";
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
 
 import { useControllableState } from "@/hooks/use-controllable-state";
@@ -247,6 +247,8 @@ export type ChainOfThoughtStepProps = ComponentProps<"div"> & MotionProps & {
 	entranceDelay?: number;
 	icon?: ComponentType<NewCoreIconProps>;
 	iconRender?: ReactNode;
+	iconContainerClassName?: string;
+	iconContainerStyle?: CSSProperties;
 	label: ReactNode;
 	description?: ReactNode;
 	status?: "complete" | "active" | "pending";
@@ -322,6 +324,8 @@ export const ChainOfThoughtStep = memo(
 		className,
 		icon: IconComponent = NodeIcon,
 		iconRender,
+		iconContainerClassName,
+		iconContainerStyle,
 		label,
 		description,
 		status = "complete",
@@ -399,7 +403,7 @@ export const ChainOfThoughtStep = memo(
 			<motion.div
 				className={cn(
 					"group/cot-step transition-all duration-medium ease-out data-starting-style:opacity-0 data-starting-style:-translate-y-2",
-					"flex gap-2 text-sm",
+					"flex items-stretch gap-2 text-sm",
 					stepStatusStyles[status],
 					className
 				)}
@@ -412,7 +416,10 @@ export const ChainOfThoughtStep = memo(
 				}}
 				{...props}
 			>
-				<div className="relative mt-0.5">
+				<div
+					className={cn("relative mt-0.5 self-stretch", iconContainerClassName)}
+					style={iconContainerStyle}
+				>
 					<ChainOfThoughtIconSlot shimmer={iconShimmer ?? status === "active"}>
 						{iconNode}
 					</ChainOfThoughtIconSlot>
@@ -425,12 +432,25 @@ export const ChainOfThoughtStep = memo(
 						)}
 					/>
 				</div>
-				<div className="flex-1 space-y-2 overflow-hidden">
+				{/*
+				  Expandable steps keep a closed panel mounted (`--collapsible-panel-height:
+				  auto` at rest). Parent `space-y-2` would leave an 8px margin under the
+				  header after collapse, and panel `pt-2` also resolves to 8px when height
+				  is auto. Only apply header→content spacing while open.
+				*/}
+				<div
+					className={cn(
+						"min-w-0 flex-1",
+						hasExpandableContent
+							? isOpen && "space-y-2"
+							: children != null && "space-y-2",
+					)}
+				>
 					{stepHeader}
 					{hasExpandableContent ? (
 						<Collapsible onOpenChange={handleOpenChange} open={isOpen}>
 							<CollapsibleContent
-								className="space-y-2 overflow-hidden h-(--collapsible-panel-height) transition-[height,opacity] ease-out duration-medium data-starting-style:h-0 data-starting-style:opacity-0 data-ending-style:h-0 data-ending-style:opacity-0"
+								className="space-y-2 overflow-hidden has-[:focus-visible]:overflow-visible h-(--collapsible-panel-height) transition-[height,opacity] ease-out duration-medium data-starting-style:h-0 data-starting-style:opacity-0 data-ending-style:h-0 data-ending-style:opacity-0"
 							>
 								{children}
 							</CollapsibleContent>
@@ -478,7 +498,7 @@ export const ChainOfThoughtContent = memo(
 		<CollapsibleContent
 			className={cn(
 				"mt-2 space-y-3",
-				"outline-none overflow-hidden h-(--collapsible-panel-height) transition-[height,opacity] ease-out duration-medium data-starting-style:h-0 data-starting-style:opacity-0 data-ending-style:h-0 data-ending-style:opacity-0",
+				"outline-none overflow-hidden has-[:focus-visible]:overflow-visible h-(--collapsible-panel-height) transition-[height,opacity] ease-out duration-medium data-starting-style:h-0 data-starting-style:opacity-0 data-ending-style:h-0 data-ending-style:opacity-0",
 				className
 			)}
 			{...props}

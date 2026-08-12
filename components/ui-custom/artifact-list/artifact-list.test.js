@@ -33,7 +33,7 @@ test("Artifact List card uses the raised-surface elevation skin from Figma", () 
 		"components/ui-custom/artifact-list/components/artifact-list.tsx",
 	);
 
-	assert.match(source, /overflow-hidden rounded-lg bg-surface-raised/u);
+	assert.match(source, /min-w-0 max-w-full overflow-hidden rounded-lg bg-surface-raised/u);
 	assert.match(source, /boxShadow: token\("elevation\.shadow\.raised"\)/u);
 });
 
@@ -42,7 +42,11 @@ test("Artifact List rows are at least 64px, hover to surface-hovered, and the la
 		"components/ui-custom/artifact-list/components/artifact-list.tsx",
 	);
 
-	assert.match(source, /flex min-h-16 items-center gap-3 px-3 py-2 transition-colors hover:bg-surface-hovered/u);
+	assert.match(source, /flex min-h-16 items-center px-3 py-2 transition-colors hover:bg-surface-hovered/u);
+	// Icon/text gap lives on the content cluster; the Open slot uses margin on reveal.
+	assert.match(source, /group\/artifact-row min-w-0 w-full/u);
+	assert.match(source, /relative flex min-w-0 flex-1 items-center gap-3 overflow-hidden/u);
+	assert.match(source, /<span className="shrink-0">\s*<ArtifactListLeadingTile/u);
 	// Every row except the last draws a bottom border.
 	assert.match(source, /!isLast && "border-b border-border"/u);
 	assert.match(source, /isLast=\{index === items\.length - 1\}/u);
@@ -87,21 +91,40 @@ test("Artifact List keeps the compact row structure and uses flyout metadata for
 
 	assert.match(source, /const compactPullRequestByline = item\.pullRequest \? \(/u);
 	assert.match(source, /<span className="mt-0\.5 flex w-full min-w-0 items-center gap-1 text-xs leading-4">/u);
-	assert.match(source, /<Lozenge variant=\{item\.pullRequest\.status === "Merged" \? "discovery" : "success"\}>[\s\S]*\{item\.pullRequest\.status\}/u);
+	assert.match(
+		source,
+		/<span className="shrink-0">\s*<Lozenge variant=\{item\.pullRequest\.status === "Merged" \? "discovery" : "success"\}>[\s\S]*\{item\.pullRequest\.status\}/u,
+	);
 	assert.match(source, /<a[\s\S]*no-underline decoration-current outline-none hover:underline focus-visible:underline[\s\S]*href="#[\s\S]*event\.preventDefault\(\)[\s\S]*#\{item\.pullRequest\.number\}: \{item\.title\}[\s\S]*<\/a>/u);
 	assert.match(source, /<p className="w-full truncate text-xs font-medium leading-4 text-text">\{item\.title\}<\/p>[\s\S]*\{compactPullRequestByline \?\? compactMetadata\}/u);
 	assert.match(source, /aria-label=\{item\.pullRequest[\s\S]*`Code changes: \$\{item\.pullRequest\.additions\} additions, \$\{item\.pullRequest\.deletions\} deletions`/u);
 	assert.match(source, /\{item\.pullRequest \? \([\s\S]*text-text-success[\s\S]*text-text-danger[\s\S]*\) : openLabel\}/u);
 });
 
-test("Artifact List Open button is a stable trailing action and stays keyboard-reachable", () => {
+test("Artifact List Open button reveals on row hover/focus and stays keyboard-reachable", () => {
 	const source = readProjectFile(
 		"components/ui-custom/artifact-list/components/artifact-list.tsx",
 	);
 
-	// The row renders the action as an in-flow trailing column so it cannot be
-	// clipped by the raised card's overflow boundary.
-	assert.match(source, /<Button[\s\S]*className="ml-auto shrink-0 whitespace-nowrap"[\s\S]*variant="outline"[\s\S]*size=\{variant === "compact" \? "compact" : "default"\}[\s\S]*type="button"[\s\S]*event\.stopPropagation\(\);[\s\S]*handleOpen\(\);/u);
+	// In-flow trailing column collapses at rest (0fr) and expands on hover/focus so
+	// the raised card's overflow never clips an absolute overlay.
+	assert.match(source, /group\/artifact-row/u);
+	assert.match(
+		source,
+		/grid-cols-\[0fr\] group-hover\/artifact-row:ml-3 group-hover\/artifact-row:grid-cols-\[1fr\]/u,
+	);
+	assert.match(
+		source,
+		/group-focus-within\/artifact-row:ml-3 group-focus-within\/artifact-row:grid-cols-\[1fr\]/u,
+	);
+	assert.match(
+		source,
+		/group-has-\[:focus-visible\]\/artifact-row:ml-3 group-has-\[:focus-visible\]\/artifact-row:grid-cols-\[1fr\]/u,
+	);
+	assert.match(
+		source,
+		/<Button[\s\S]*pointer-events-none opacity-0[\s\S]*group-hover\/artifact-row:pointer-events-auto group-hover\/artifact-row:opacity-100[\s\S]*group-focus-within\/artifact-row:pointer-events-auto group-focus-within\/artifact-row:opacity-100[\s\S]*focus-visible:pointer-events-auto focus-visible:opacity-100[\s\S]*variant="outline"[\s\S]*size=\{variant === "compact" \? "compact" : "default"\}[\s\S]*type="button"[\s\S]*event\.stopPropagation\(\);[\s\S]*handleOpen\(\);/u,
+	);
 	assert.match(source, /openOnRowClick \? \([\s\S]*<button[\s\S]*type="button"[\s\S]*onClick=\{handleOpen\}/u);
 	assert.match(source, /openOnRowClick\?: boolean;/u);
 	assert.doesNotMatch(source, /role=\{openOnRowClick \? "button"/u);
@@ -109,13 +132,14 @@ test("Artifact List Open button is a stable trailing action and stays keyboard-r
 	assert.doesNotMatch(source, /<HoverRevealActions/u);
 });
 
-test("Artifact List text shrinks beside the trailing action at compact widths", () => {
+test("Artifact List text expands into the action slot at rest", () => {
 	const source = readProjectFile(
 		"components/ui-custom/artifact-list/components/artifact-list.tsx",
 	);
 
-	assert.match(source, /className="min-w-0 flex-1"/u);
-	assert.match(source, /className="ml-auto shrink-0 whitespace-nowrap"/u);
+	assert.match(source, /className="min-w-0 flex-1 overflow-hidden"/u);
+	assert.match(source, /ml-0 grid shrink-0/u);
+	assert.match(source, /grid-cols-\[0fr\]/u);
 	assert.doesNotMatch(source, /pr-\[92px\]/u);
 	assert.doesNotMatch(source, /group-hover\/hover-reveal-row:pr-\[72px\]/u);
 });
@@ -140,11 +164,11 @@ test("Artifact List compact variant shares default shell chrome, keeps denser ro
 
 	assert.match(source, /variant\?: "default" \| "compact";/u);
 	// Shared raised shell; compact keeps denser min-h-12 rows (not default min-h-16).
-	assert.match(source, /overflow-hidden rounded-lg bg-surface-raised/u);
+	assert.match(source, /min-w-0 max-w-full overflow-hidden rounded-lg bg-surface-raised/u);
 	assert.doesNotMatch(source, /border border-border bg-surface/u);
-	assert.match(source, /variant === "compact"[\s\S]*flex min-h-12 items-center gap-3 px-3 py-2 transition-colors hover:bg-surface-hovered/u);
-	assert.match(source, /flex min-h-16 items-center gap-3 px-3 py-2 transition-colors hover:bg-surface-hovered/u);
-	assert.match(source, /relative flex min-w-0 flex-1 items-center gap-3/u);
+	assert.match(source, /variant === "compact"[\s\S]*flex min-h-12 items-center px-3 py-2 transition-colors hover:bg-surface-hovered/u);
+	assert.match(source, /flex min-h-16 items-center px-3 py-2 transition-colors hover:bg-surface-hovered/u);
+	assert.match(source, /relative flex min-w-0 flex-1 items-center gap-3 overflow-hidden/u);
 	assert.doesNotMatch(source, /grid size-8 shrink-0 place-items-center/u);
 	assert.match(source, /size=\{variant === "compact" \? "small" : "medium"\}/u);
 	assert.match(source, /flex min-w-0 flex-1 flex-col overflow-hidden/u);

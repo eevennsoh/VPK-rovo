@@ -97,8 +97,8 @@ test("the leading tile renders the agent or VPK identity at the selected density
 test("the metadata line uses elapsed runtime, agent name, and asx PR-status colors", () => {
 	assert.match(CARD_SOURCE, /function AgentListTime[\s\S]*item\.state === "complete" \? \([\s\S]*<RelativeTime[\s\S]*\) : \([\s\S]*<ElapsedTime startedAtMs=\{item\.startedAtMs \?\? seededStartedAtMs\}/u);
 	assert.equal((CARD_SOURCE.match(/<AgentListTime\b/gu) ?? []).length, 2);
-	assert.match(CARD_SOURCE, /<span className="truncate">\{item\.agent\.name\}<\/span>/u);
 	assert.match(CARD_SOURCE, /<span className="min-w-0 truncate">\{item\.agent\.name\}<\/span>/u);
+	assert.doesNotMatch(CARD_SOURCE, /<span className="truncate">\{item\.agent\.name\}<\/span>/u);
 	assert.doesNotMatch(CARD_SOURCE, /<span className="truncate">\{item\.branch\}<\/span>/u);
 	assert.match(CARD_SOURCE, /created:\s*\{[\s\S]*?text-icon-success/);
 	assert.match(CARD_SOURCE, /merged:\s*\{[\s\S]*?text-icon-accent-purple/);
@@ -220,7 +220,7 @@ test("exports a session activity header whose optional View action requires a ha
 	assert.match(CARD_SOURCE, /title=\{item\.state === "complete" \? "Last update" : "Agent runtime"\}/u);
 	assert.match(
 		CARD_SOURCE,
-		/"pointer-events-none flex shrink-0 items-center gap-2 pl-2 opacity-0[\s\S]*actionVisibilityClass[\s\S]*\{onView \? \(\s*<Button onClick=\{\(\) => onView\(item\)\}[\s\S]*View[\s\S]*<\/Button>/u,
+		/"pointer-events-none flex shrink-0 items-center gap-1 pl-2 opacity-0[\s\S]*actionVisibilityClass[\s\S]*\{onView \? \(\s*<Button onClick=\{\(\) => onView\(item\)\}[\s\S]*View[\s\S]*<\/Button>/u,
 	);
 	assert.doesNotMatch(DETAIL_SOURCE, /Activity card/u);
 });
@@ -231,7 +231,7 @@ test("activity-header lifecycle indicators sit flush right until hover actions e
 	// View / collapse controls expand on hover or keyboard focus.
 	assert.match(
 		CARD_SOURCE,
-		/stateMeta\.showLifecycle \|\| hasTrailingActions \? \([\s\S]*className="ml-auto flex shrink-0 items-center"/u,
+		/stateMeta\.showLifecycle \|\| hasTrailingActions \? \([\s\S]*className="relative z-10 ml-auto flex shrink-0 items-center"/u,
 	);
 	assert.match(
 		CARD_SOURCE,
@@ -250,8 +250,8 @@ test("activity-header actions stay focusable while hidden so keyboard users can 
 	);
 	// `display: none` would drop the controls from the tab order, and a hidden
 	// descendant can never satisfy the `:focus-visible` reveal condition itself.
-	assert.doesNotMatch(CARD_SOURCE, /"hidden -ml-1 shrink-0 items-center gap-2/u);
-	assert.doesNotMatch(CARD_SOURCE, /"hidden flex shrink-0 items-center gap-2 pl-2/u);
+	assert.doesNotMatch(CARD_SOURCE, /"hidden -ml-1 shrink-0 items-center gap-1/u);
+	assert.doesNotMatch(CARD_SOURCE, /"hidden flex shrink-0 items-center gap-1 pl-2/u);
 	assert.match(CARD_SOURCE, /actionVisibilityClass[\s\S]*group-has-\[:focus-visible\]\/activity-card:opacity-100/u);
 	assert.match(CARD_SOURCE, /actionVisibilityClass[\s\S]*group-has-\[:focus-visible\]\/activity-card:pointer-events-auto/u);
 });
@@ -289,6 +289,51 @@ test("the session activity header separates message time from active runtime", (
 	assert.match(
 		CARD_SOURCE,
 		/\{messageTimestamp \? "Working for " : null\}\s*<AgentListTime fallback=\{timeFallback\} item=\{item\} \/>/u,
+	);
+});
+
+test("activity-header Working for truncates when hover actions expand", () => {
+	// Title/meta live in a shrinking overflow-hidden column; actions stay shrink-0
+	// with a stacking context so overflowing meta cannot steal their clicks.
+	assert.match(CARD_SOURCE, /className="min-w-0 flex-1 overflow-hidden"/u);
+	assert.match(
+		CARD_SOURCE,
+		/className="flex min-w-0 items-center gap-1 overflow-hidden text-xs leading-4 text-text-subtle"/u,
+	);
+	assert.match(
+		CARD_SOURCE,
+		/className="min-w-0 truncate"\s*title=\{activityTimeTitle\}/u,
+	);
+	assert.doesNotMatch(
+		CARD_SOURCE,
+		/className="shrink-0"\s*title=\{activityTimeTitle\}/u,
+	);
+	assert.match(
+		CARD_SOURCE,
+		/className="relative z-10 ml-auto flex shrink-0 items-center"/u,
+	);
+	assert.match(
+		CARD_SOURCE,
+		/"pointer-events-none flex shrink-0 items-center gap-1 pl-2 opacity-0/u,
+	);
+});
+
+test("needs-input activity headers shimmer Needs input with trailing Rovo dots instead of Working for", () => {
+	assert.match(CARD_SOURCE, /const NEEDS_INPUT_STATUS_LABEL = "Needs input";/u);
+	assert.match(CARD_SOURCE, /const needsInput = item\.state === "needs-input";/u);
+	assert.match(
+		CARD_SOURCE,
+		/const showTitleDots = stateMeta\.showDots && !leadWithAgentName;/u,
+	);
+	assert.match(CARD_SOURCE, /\{showTitleDots \? <AnimatedDots \/> : null\}/u);
+	assert.match(
+		CARD_SOURCE,
+		/needsInput \? \(\s*<span[\s\S]*title=\{NEEDS_INPUT_STATUS_LABEL\}[\s\S]*<Shimmer as="span" duration=\{1\.4\} spread=\{2\}>[\s\S]*\{NEEDS_INPUT_STATUS_LABEL\}[\s\S]*<\/Shimmer>\s*<AnimatedDots \/>/u,
+	);
+	// Running sessions still surface the Working for duration; needs-input does not.
+	assert.match(
+		CARD_SOURCE,
+		/needsInput \? \([\s\S]*\) : !messageTimestamp \|\| item\.state !== "complete" \? \([\s\S]*\{messageTimestamp \? "Working for " : null\}/u,
 	);
 });
 

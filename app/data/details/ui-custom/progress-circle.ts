@@ -2,19 +2,40 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const PROGRESS_CIRCLE_DETAIL: ComponentDetail = {
 	description:
-		"Circular SVG progress indicator with percentage text, indeterminate spinner, and completed check icon states. Useful for inline progress indicators in task lists and status displays.",
+		"Circular SVG progress indicator with percentage text, indeterminate spinner, completed check icon, and segmented status-group arcs (e.g. CI checks). Useful for inline progress indicators in task lists and status displays.",
 	usage: `import { ProgressCircle } from "@/components/ui-custom/progress-circle";
 
 <ProgressCircle value={65} />
 <ProgressCircle />                       {/* indeterminate / spinning */}
 <ProgressCircle value={100} />           {/* completed / check icon */}
-<ProgressCircle variant="filled" value={65} /> {/* filled pie-wedge style */}`,
+<ProgressCircle variant="filled" value={65} /> {/* filled pie-wedge style */}
+<ProgressCircle
+  segmented
+  segments={[
+    { status: "passed", weight: 5 },
+    { status: "failed", weight: 1 },
+    { status: "pending", weight: 2 },
+  ]}
+/>`,
 	props: [
 		{
 			name: "value",
 			type: "number | null",
 			description:
-				"Progress value from 0 to 100. Pass null or omit for indeterminate (spinning) state. At 100, renders a check icon.",
+				"Progress value from 0 to 100. Pass null or omit for indeterminate (spinning) state. At 100, renders a check icon. Ignored while segmented rendering is active.",
+		},
+		{
+			name: "segmented",
+			type: "boolean",
+			default: "false",
+			description:
+				"Toggle segmented ring mode. When true and segments is non-empty, renders status-group arcs (lime / danger / pending) with gaps instead of continuous progress.",
+		},
+		{
+			name: "segments",
+			type: 'readonly ProgressCircleSegment[]',
+			description:
+				'Status-group data for segmented mode — `{ status: "passed" | "failed" | "pending", weight?: number }`. Prefer one weighted entry per status. Ignored unless segmented is true.',
 		},
 		{
 			name: "variant",
@@ -86,6 +107,12 @@ export const PROGRESS_CIRCLE_DETAIL: ComponentDetail = {
 			title: "Status",
 			description: "Error and info status icons for steps that can't be completed.",
 			demoSlug: "progress-circle-demo-status",
+		},
+		{
+			title: "Segmented",
+			description:
+				"Checks-style status-group arcs (passed / failed / pending). Toggle segmented mode on and off.",
+			demoSlug: "progress-circle-demo-segmented",
 		},
 	],
 };

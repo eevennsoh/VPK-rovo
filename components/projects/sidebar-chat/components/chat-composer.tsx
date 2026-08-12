@@ -43,10 +43,13 @@ interface ChatComposerProps {
 	hasInFlightTurn: boolean;
 	queuedPrompts: ReadonlyArray<QueuedPromptItem>;
 	addMenuItemsBefore?: ReactNode;
+	/** Optional host-owned controls rendered immediately after the Add menu trigger. */
+	composerToolsAfterAdd?: ReactNode;
 	experimentalDarkCta?: boolean;
 	hideAiCursor?: boolean;
 	hideAiDisclaimer?: boolean;
 	hideSourceAndModelControls?: boolean;
+	liveVoiceEnabled?: boolean;
 	micStream?: MediaStream | null;
 	dictationState?: RovoComposerDictationState;
 	dictationTranscriptPreview?: string | null;
@@ -96,6 +99,7 @@ interface ChatComposerSendControlsProps {
 	experimentalDarkCta?: boolean;
 	hideReasoningSelector?: boolean;
 	isComposerBusy: boolean;
+	liveVoiceEnabled: boolean;
 	clickyActive: boolean;
 	micStream: MediaStream | null;
 	onCompanyKnowledgeChange: (value: boolean) => void;
@@ -145,6 +149,7 @@ function ChatComposerSendControls({
 	experimentalDarkCta = false,
 	hideReasoningSelector = false,
 	isComposerBusy,
+	liveVoiceEnabled,
 	clickyActive,
 	micStream,
 	onCompanyKnowledgeChange,
@@ -178,6 +183,7 @@ function ChatComposerSendControls({
 			experimentalDarkCta={experimentalDarkCta}
 			hideReasoningSelector={hideReasoningSelector}
 			isComposerBusy={isComposerBusy}
+			liveVoiceEnabled={liveVoiceEnabled}
 			clickyActive={clickyActive}
 			micStream={micStream}
 			onCompanyKnowledgeChange={onCompanyKnowledgeChange}
@@ -193,13 +199,14 @@ function ChatComposerSendControls({
 			realtimeVoiceState={realtimeVoiceState}
 			screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 			selectedReasoning={selectedReasoning}
+			showSubmitWhenEmpty={!liveVoiceEnabled}
 			webResultsEnabled={webResultsEnabled}
 			onWebResultsChange={onWebResultsChange}
 		/>
 	);
 }
 
-export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, addMenuItemsBefore, experimentalDarkCta = false, hideAiCursor = false, hideAiDisclaimer = false, hideSourceAndModelControls = false, micStream = null, dictationState = "idle", dictationTranscriptPreview = null, focusRequestKey, autoFocus = false, clickyActive = false, onPromptChange, onStartDictation, onStopDictation, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, realtimeVoiceState = "idle", screenAssistantTargetPrefix, selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, composerContextBar, composerSurfaceHeader, composerSurfaceHeaderTooltip, composerInputContext, hasComposerInputContext = false, directoryAutocompleteListVisible = false, prefillMentionRequest, placeholder = "Ask, @mention, or / for skills", mentionSources, onContextBarOpenChange, onDirectoryAutocompleteChange, onDirectoryAutocompleteControllerChange }: Readonly<ChatComposerProps>): React.ReactElement {
+export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, addMenuItemsBefore, composerToolsAfterAdd, experimentalDarkCta = false, hideAiCursor = false, hideAiDisclaimer = false, hideSourceAndModelControls = false, liveVoiceEnabled = false, micStream = null, dictationState = "idle", dictationTranscriptPreview = null, focusRequestKey, autoFocus = false, clickyActive = false, onPromptChange, onStartDictation, onStopDictation, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, realtimeVoiceState = "idle", screenAssistantTargetPrefix, selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, composerContextBar, composerSurfaceHeader, composerSurfaceHeaderTooltip, composerInputContext, hasComposerInputContext = false, directoryAutocompleteListVisible = false, prefillMentionRequest, placeholder = "Ask, @mention, or / for skills", mentionSources, onContextBarOpenChange, onDirectoryAutocompleteChange, onDirectoryAutocompleteControllerChange }: Readonly<ChatComposerProps>): React.ReactElement {
 	const [localSelectedReasoning, setLocalSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
 	const [webResultsEnabled, setWebResultsEnabled] = useState(false);
 	const [companyKnowledgeEnabled, setCompanyKnowledgeEnabled] = useState(true);
@@ -339,6 +346,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 									/>
 								</PromptInputActionMenuContent>
 							</PromptInputActionMenu>
+							{composerToolsAfterAdd}
 
 							<AnimatePresence initial={false} mode="popLayout">
 								{hideSourceAndModelControls ? null : (
@@ -379,6 +387,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 							experimentalDarkCta={experimentalDarkCta}
 							hideReasoningSelector={hideSourceAndModelControls}
 							isComposerBusy={isComposerBusy}
+							liveVoiceEnabled={liveVoiceEnabled}
 							clickyActive={!hideAiCursor && clickyActive}
 							micStream={micStream}
 							onCompanyKnowledgeChange={setCompanyKnowledgeEnabled}

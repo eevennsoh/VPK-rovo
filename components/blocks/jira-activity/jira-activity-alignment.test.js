@@ -15,11 +15,13 @@ const AGENT_LIST_CARD_SOURCE = readFileSync(
 );
 
 test("compact activity labels share the timeline node's 24px alignment track", () => {
-	// Card avatars use h-10 (4px clearance around size-8); events stay on h-6.
+	// Card avatars use h-10 (4px clearance around size-8); event glyphs stay on
+	// h-6. Event copy uses min-h-6 + leading-5 + py-0.5 so h-5 mention chips are not clipped.
 	assert.match(NODE_SOURCE, /isCard \? "h-10" : "h-6"/u);
-	assert.match(EVENT_SOURCE, /className="flex h-6 items-center text-xs leading-4 text-text-subtle"/u);
-	assert.match(EVENT_SOURCE, /className="flex h-6 min-w-0 items-center gap-2 text-xs leading-4"/u);
-	assert.match(EVENT_SOURCE, /<p className="flex h-6 items-center[^>]*>\s*<span>/u);
+	assert.match(EVENT_SOURCE, /className="flex min-h-6 min-w-0 items-center py-0\.5 text-xs leading-5 text-text-subtle"/u);
+	assert.match(EVENT_SOURCE, /className="flex min-h-6 min-w-0 items-center gap-2 py-0\.5 text-xs leading-5"/u);
+	assert.match(EVENT_SOURCE, /<p className="flex min-h-6 min-w-0 items-center[^>]*>\s*<span className="min-w-0">/u);
+	assert.doesNotMatch(EVENT_SOURCE, /className="flex h-6 /u);
 	assert.doesNotMatch(INDEX_SOURCE, /entry\.kind === "event" && "pt-0\.5"/u);
 });
 
@@ -74,7 +76,7 @@ test("rich activity cards leave a 4px gap in the connector above and below", () 
 	// Structural interruption only: card avatars sit in h-10 (32px → 4px above/below);
 	// the spine is a sibling that starts after the track. No opaque spine covers —
 	// those stacked with the track clearance and left an 8px orphan gap above icons.
-	assert.match(INDEX_SOURCE, /li[\s\S]*className="flex gap-2"/u);
+	assert.match(INDEX_SOURCE, /li[\s\S]*className="flex min-w-0 gap-2"/u);
 	assert.match(NODE_SOURCE, /isCard \? "h-10" : "h-6"/u);
 	assert.match(NODE_SOURCE, /className="min-h-4 w-px flex-1 bg-border"/u);
 	assert.doesNotMatch(INDEX_SOURCE, /absolute -top-1 left-3\.5 h-1 w-1/u);
@@ -84,6 +86,7 @@ test("rich activity cards leave a 4px gap in the connector above and below", () 
 
 test("card boundaries keep richer spacing between entry types", () => {
 	// Padding separates card/event clusters; spine breaks stay on the node track.
+	// Event→event is pb-2 (8px); card↔event pb-5; card→card pb-6.
 	assert.match(INDEX_SOURCE, /const isCardEntry = entry\.kind !== "event"/u);
 	assert.match(
 		INDEX_SOURCE,
@@ -91,9 +94,10 @@ test("card boundaries keep richer spacing between entry types", () => {
 	);
 	assert.match(
 		INDEX_SOURCE,
-		/isCardEntry && isNextEntryCard[\s\S]*\? "pb-6"[\s\S]*isCardEntry \|\| isNextEntryCard \? "pb-5" : "pb-3"/u,
+		/isCardEntry && isNextEntryCard[\s\S]*\? "pb-6"[\s\S]*isCardEntry \|\| isNextEntryCard[\s\S]*\? "pb-5"[\s\S]*: "pb-2"/u,
 	);
 	assert.match(INDEX_SOURCE, /entry\.kind === "comment" \? "pb-4" : "pb-3"/u);
+	assert.match(INDEX_SOURCE, /hideHeader \? "pt-1" : null/u);
 	assert.match(INDEX_SOURCE, /"min-w-0 flex-1"/u);
 	assert.doesNotMatch(INDEX_SOURCE, /overflow-visible/u);
 });

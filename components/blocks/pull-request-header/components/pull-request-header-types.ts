@@ -1,13 +1,17 @@
-import type { RefObject } from "react";
+import type { ReactNode, RefObject } from "react";
 import type { HTMLMotionProps } from "motion/react";
 
 export type PullRequestHeaderStatus = "Open" | "Merged";
 export type PullRequestHeaderVariant = "expanded" | "compact";
 /** Controls the Merge split-button primary label in the title-row action group. */
 export type PullRequestHeaderMergeState =
+	| "checks-failed"
 	| "checks-running"
 	| "merge-conflicts"
+	| "review-required"
 	| "ready";
+/** Merge strategy selected in the merge options chevron menu. */
+export type PullRequestHeaderMergeMethod = "squash" | "merge" | "rebase";
 
 export interface PullRequestHeaderProps
 	extends Omit<HTMLMotionProps<"header">, "children"> {
@@ -17,6 +21,11 @@ export interface PullRequestHeaderProps
 	scrollContainerRef?: RefObject<HTMLElement | null>;
 	/** Scroll distance in pixels before the header collapses. Defaults to 16. */
 	collapseOffset?: number;
+	/**
+	 * Tab navigation rendered on the header's bottom edge. Keep the matching
+	 * Tabs root outside this component so its panels can remain beside it.
+	 */
+	tabNavigation?: ReactNode;
 	/** Pull request number shown as subtle `#N` before the title. */
 	number: number;
 	/** Pull request title shown after the number. */
@@ -31,13 +40,20 @@ export interface PullRequestHeaderProps
 	repository: string;
 	/**
 	 * Merge split-button primary label state.
-	 * `"checks-running"` → "Checks running", `"merge-conflicts"` → "Merge conflicts",
-	 * `"ready"` → "Merge". Defaults to `"ready"`.
-	 * Primary is enabled when `ready` + `onMergeClick`, or `checks-running` +
-	 * `onChecksRunningClick`. `merge-conflicts` stays disabled (no related primary
-	 * action yet). The chevron menu stays available for Auto merge.
+	 * `"checks-failed"` → "Checks failed", `"checks-running"` → "Checks running",
+	 * `"merge-conflicts"` → "Merge conflicts", `"review-required"` →
+	 * "Review required", `"ready"` → the selected merge method label.
+	 * Defaults to `"ready"`.
+	 * Primary actions are enabled when their matching callback is available.
+	 * The chevron menu stays available for merge method + Auto merge.
 	 */
 	mergeState?: PullRequestHeaderMergeState;
+	/** Controlled merge method selection (chevron menu radio group). */
+	mergeMethod?: PullRequestHeaderMergeMethod;
+	/** Uncontrolled merge method default. Defaults to `"squash"`. */
+	defaultMergeMethod?: PullRequestHeaderMergeMethod;
+	/** Called when a merge method radio option is selected. */
+	onMergeMethodChange?: (method: PullRequestHeaderMergeMethod) => void;
 	/** Controlled Auto merge switch state (menu option). */
 	autoMerge?: boolean;
 	/** Uncontrolled Auto merge default. Defaults to `true` (on). */
@@ -51,6 +67,12 @@ export interface PullRequestHeaderProps
 	 * Consumers typically expand the CI checks disclosure in the metadata rail.
 	 */
 	onChecksRunningClick?: () => void;
+	/** Called when the Checks failed primary is activated (`checks-failed` only). */
+	onChecksFailedClick?: () => void;
+	/** Called when the Merge conflicts primary is activated (`merge-conflicts` only). */
+	onMergeConflictsClick?: () => void;
+	/** Called when the Review required primary is activated (`review-required` only). */
+	onReviewRequiredClick?: () => void;
 	/**
 	 * Pull request URL used by More actions → Copy link and Open in {SCM}.
 	 * Those items stay disabled when omitted.

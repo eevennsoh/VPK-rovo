@@ -579,6 +579,7 @@ function ThinkingToolCallStep({
 			defaultOpen={tracePresentation?.forceOpen || isToolCallStepOpenByDefault(toolCall.state)}
 			open={tracePresentation?.forceOpen ? true : open}
 			onOpenChange={onOpenChange}
+			iconContainerStyle={tracePresentation?.iconContainerStyle}
 			iconRender={renderResolvedToolIcon(resolvedToolIcon, {
 				className: "size-4",
 			})}
@@ -776,7 +777,11 @@ export function AssistantThinkingTrace({
 	}
 
 	return (
-		<ChainOfThought className={cn("mb-0", className)} open={state.isOpen} onOpenChange={state.onOpenChange}>
+		<ChainOfThought
+			className={cn("mb-0 [:not(:first-child)]:mt-2", className)}
+			open={state.isOpen}
+			onOpenChange={state.onOpenChange}
+		>
 			<ChainOfThoughtHeader
 				state={state.reasoningPhase === "completed" ? "completed" : state.reasoningPhase === "thinking" ? "thinking" : "preload"}
 				duration={state.reasoningPhase === "completed" ? state.reasoningDuration : undefined}

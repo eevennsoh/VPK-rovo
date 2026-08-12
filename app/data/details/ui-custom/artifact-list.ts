@@ -1,7 +1,7 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const ARTIFACT_LIST_DETAIL: ComponentDetail = {
-	description: "A card listing worked-on artifacts and smart links. The default variant uses 64px stacked-metadata rows on a raised surface; the compact variant uses 48px inline-metadata rows on a bordered surface.",
+	description: "A card listing worked-on artifacts and smart links. The default variant uses 64px stacked-metadata rows on a raised surface; the compact variant uses 48px stacked title/metadata rows. Each row's Open (or PR diff) action reveals on hover or keyboard focus.",
 	importStatement: `import { ArtifactList } from "@/components/ui-custom/artifact-list";`,
 	usage: `import { ArtifactList } from "@/components/ui-custom/artifact-list";
 import type { ArtifactListItem } from "@/components/ui-custom/artifact-list";

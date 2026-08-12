@@ -95,6 +95,7 @@ const NATIVE_TOOL_ICONS = new Map<string, (props: NewCoreIconProps) => ReactNode
 	[normalizeToken("jira.inspect_board_column")!, WorkItemsIcon],
 	[normalizeToken("teamwork_graph.search")!, TeamworkGraphIcon],
 	[normalizeToken("teamwork_graph.link_knowledge")!, TeamworkGraphIcon],
+	[normalizeToken("twg.lookup_work_item_delivery_context")!, TeamworkGraphIcon],
 	[normalizeToken("rfp.map")!, ListChecklistIcon],
 	[normalizeToken("rfp.map_requirements")!, ListChecklistIcon],
 	[normalizeToken("rfp.check")!, TaskToDoIcon],

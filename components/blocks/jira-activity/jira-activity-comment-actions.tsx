@@ -18,14 +18,20 @@ export interface JiraActivityCommentActionsProps {
 	onReply?: () => void;
 	replyExpanded?: boolean;
 	replyComposerId?: string;
-	/** Lets the comment restore focus to Reply when the composer collapses. */
+	/** Lets the comment restore focus to the Reply button when the composer collapses. */
 	replyRef?: Ref<HTMLButtonElement>;
+	/**
+	 * SCM review-thread resolve. Omit when the entry did not opt in with
+	 * `allowResolve`. Label flips to Unresolve when already resolved.
+	 */
+	onResolve?: () => void;
+	resolved?: boolean;
 }
 
 /**
  * The always-visible action row under a comment's body: Reply plus the shared
  * reaction bar. Stateless — the comment owns the disclosure and the reducer
- * owns the toggle.
+ * owns the toggle. Resolve is a subtle text control for PR review threads.
  */
 export function JiraActivityCommentActions({
 	reactions,
@@ -34,28 +40,47 @@ export function JiraActivityCommentActions({
 	replyExpanded,
 	replyComposerId,
 	replyRef,
+	onResolve,
+	resolved = false,
 }: Readonly<JiraActivityCommentActionsProps>) {
+	const resolveLabel = resolved ? "Unresolve" : "Resolve";
+
 	return (
 		<EmojiReactionBar
 			aria-label="Comment actions"
 			leading={
-				onReply ? (
-					<Button
-						aria-controls={replyComposerId}
-						// The shared Button base maps aria-expanded to the selected token
-						// set, so the open composer is reflected without extra styling.
-						aria-expanded={replyExpanded}
-						aria-label="Reply"
-						className="rounded-sm"
-						onClick={onReply}
-						ref={replyRef}
-						size="icon-compact"
-						type="button"
-						variant="ghost"
-					>
-						<ReplyLeftIcon color="currentColor" label="" />
-					</Button>
-				) : null
+				<>
+					{onReply ? (
+						<Button
+							aria-controls={replyComposerId}
+							// The shared Button base maps aria-expanded to the selected token
+							// set, so the open composer is reflected without extra styling.
+							aria-expanded={replyExpanded}
+							aria-label="Reply"
+							className="rounded-sm"
+							onClick={onReply}
+							ref={replyRef}
+							size="icon-compact"
+							type="button"
+							variant="ghost"
+						>
+							<ReplyLeftIcon color="currentColor" label="" />
+						</Button>
+					) : null}
+					{onResolve ? (
+						<Button
+							aria-label={resolveLabel}
+							aria-pressed={resolved}
+							className="h-auto rounded-sm px-1.5 text-xs font-normal text-text-subtlest hover:text-text-subtle"
+							onClick={onResolve}
+							size="compact"
+							type="button"
+							variant="ghost"
+						>
+							{resolveLabel}
+						</Button>
+					) : null}
+				</>
 			}
 			onToggleReaction={onToggleReaction}
 			reactions={reactions}

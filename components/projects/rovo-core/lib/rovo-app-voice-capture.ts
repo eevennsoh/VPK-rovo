@@ -32,6 +32,11 @@ export interface RovoAppCompletedVoiceTurnInput {
 	transcript: string;
 }
 
+export interface RovoAppBrowserFallbackTurnInput {
+	activeTurnId: number | null;
+	browserFallbackCompletedTurnId: number | null;
+}
+
 export function isRovoAppVoiceCaptureAvailable({
 	hasFocus,
 	visibilityState,
@@ -88,6 +93,16 @@ export function shouldProcessRovoAppVoiceTranscriptionDelta({
 
 export function normalizeRovoAppVoiceTranscript(transcript: string): string {
 	return collapseWhitespace(transcript);
+}
+
+export function hasCompletedRovoAppVoiceBrowserFallbackTurn({
+	activeTurnId,
+	browserFallbackCompletedTurnId,
+}: Readonly<RovoAppBrowserFallbackTurnInput>): boolean {
+	return (
+		activeTurnId !== null &&
+		activeTurnId === browserFallbackCompletedTurnId
+	);
 }
 
 export function shouldStartNewRovoAppVoiceTurn({

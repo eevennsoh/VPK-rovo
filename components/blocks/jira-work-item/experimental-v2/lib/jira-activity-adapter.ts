@@ -21,6 +21,7 @@ import type { AgentListItem } from "@/components/blocks/agent-list";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { getDeterministicAgentAvatarSrc } from "@/lib/agent-avatars";
 
+import { statusVariant } from "@/components/blocks/jira-work-item/experimental-v2/components/detail-field-editor-data";
 import {
 	toActivityMentionSegments,
 	type ActivityMentionTarget,
@@ -42,6 +43,12 @@ export interface ActivitySessionThreadConfig {
 	parentSessionId: string;
 	childSessionIds: readonly string[];
 	visibleSessionIds: readonly string[];
+	/**
+	 * Initial expand state for nested replies on the lead session card.
+	 * Omit to keep the Activity default (expanded). Build collapses the
+	 * Code Planner consultation so the Claude checklist stays focused.
+	 */
+	defaultRepliesExpanded?: boolean;
 }
 
 export function composeActivitySessionThread(
@@ -87,6 +94,27 @@ export function composeActivitySessionThread(
 			threadReplies: [...(event.threadReplies ?? []), ...childReplies]
 				.sort((left, right) => left.createdAtMs - right.createdAtMs),
 		}];
+	});
+}
+
+/**
+ * Stamps lead-thread presentation defaults (e.g. collapsed nested replies)
+ * onto mapped Activity entries after session composition.
+ */
+export function applyActivitySessionThreadPresentation(
+	entries: readonly JiraActivityEntry[],
+	config?: Readonly<ActivitySessionThreadConfig>,
+): JiraActivityEntry[] {
+	if (!config || config.defaultRepliesExpanded === undefined) return [...entries];
+
+	return entries.map((entry) => {
+		if (entry.kind !== "comment") return entry;
+		if (entry.sessionItem?.id !== config.parentSessionId) return entry;
+		if (!(entry.replies && entry.replies.length > 0)) return entry;
+		return {
+			...entry,
+			defaultRepliesExpanded: config.defaultRepliesExpanded,
+		};
 	});
 }
 
@@ -277,6 +305,7 @@ function mapAgentEvent(
 		},
 		allowReply: event.status !== "completed",
 		...(event.progressChecklist ? { progressChecklist: event.progressChecklist } : {}),
+		...(event.outputs ? { outputs: event.outputs } : {}),
 		...(event.imageAttachment ? { imageAttachment: event.imageAttachment } : {}),
 		...(event.threadReplies
 			? {
@@ -311,6 +340,18 @@ function staticActor(actor: Readonly<StaticTimelineActor>): JiraActivityActor {
 	};
 }
 
+function withStatusLozengeVariants(
+	segments: StaticEventActivityEvent["segments"],
+): StaticEventActivityEvent["segments"] {
+	return segments.map((segment) => {
+		if (segment.type !== "lozenge") return segment;
+		return {
+			...segment,
+			variant: statusVariant(segment.text),
+		};
+	});
+}
+
 function mapStaticEvent(
 	event: Readonly<StaticEventActivityEvent>,
 	referenceTimeMs?: number,
@@ -323,7 +364,10 @@ function mapStaticEvent(
 		...(event.icon ? { icon: event.icon } : {}),
 		...(event.showActor === undefined ? {} : { showActor: event.showActor }),
 		...(event.showTimestamp === undefined ? {} : { showTimestamp: event.showTimestamp }),
-		segments: event.segments,
+		// Status transitions share the dropdown's statusVariant tone map.
+		segments: event.icon === "status"
+			? withStatusLozengeVariants(event.segments)
+			: event.segments,
 		...(event.pullRequest ? { pullRequest: event.pullRequest } : {}),
 	};
 }
@@ -396,13 +440,29 @@ function collectMentionTargets(events: readonly ActivityEvent[]): ActivityMentio
 	return [...targetsByName.values()];
 }
 
+/**
+ * Mention roster for authored copy. Prefer the uncomposed session source when
+ * callers stage Activity visibility (`composeActivitySessionThread` with an
+ * empty/partial `visibleSessionIds`): agent cards can stay hidden while
+ * `@Agent` chips on the just-submitted comment still resolve immediately.
+ */
+function resolveMentionTargets(
+	events: readonly ActivityEvent[],
+	sessionSourceEvents?: readonly ActivityEvent[],
+): ActivityMentionTarget[] {
+	if (!sessionSourceEvents || sessionSourceEvents === events) {
+		return collectMentionTargets(events);
+	}
+	return collectMentionTargets([...sessionSourceEvents, ...events]);
+}
+
 /** Convert the already-chronological Jira Work Item activity stream for Jira Activity. */
 export function mapActivityEventsToJiraEntries(
 	events: readonly ActivityEvent[],
 	referenceTimeMs?: number,
 	sessionSourceEvents?: readonly ActivityEvent[],
 ): JiraActivityEntry[] {
-	const mentionTargets = collectMentionTargets(events);
+	const mentionTargets = resolveMentionTargets(events, sessionSourceEvents);
 	const sessionLookup = createAgentSessionLookup(sessionSourceEvents ?? events);
 	return events.map((event) => {
 		switch (event.kind) {

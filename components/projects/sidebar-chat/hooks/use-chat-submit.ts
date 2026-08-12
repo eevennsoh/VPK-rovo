@@ -25,8 +25,11 @@ export interface ChatSubmitInterceptOutcome {
 	assistantPartStages?: readonly ChatSubmitInterceptStage[];
 	delayMs?: number;
 	onApply?: () => Promise<void> | void;
+	/** Apply the intercepted action after the final assistant response is committed. */
+	onApplyAfterResponse?: () => Promise<void> | void;
 	pendingAssistantParts?: RovoUIMessage["parts"];
 	getPendingAssistantParts?: (context: { startedAt: Date }) => RovoUIMessage["parts"];
+	userMetadata?: RovoMessageMetadata;
 }
 
 interface UseChatSubmitReturn {
@@ -130,6 +133,7 @@ export function useChatSubmit({
 			getAssistantParts,
 			getPendingAssistantParts,
 			onApply,
+			onApplyAfterResponse,
 			pendingAssistantParts,
 			promptText,
 			delayMs,
@@ -141,6 +145,7 @@ export function useChatSubmit({
 			getAssistantParts?: (context: { startedAt: Date }) => RovoUIMessage["parts"];
 			getPendingAssistantParts?: (context: { startedAt: Date }) => RovoUIMessage["parts"];
 			onApply?: () => Promise<void> | void;
+			onApplyAfterResponse?: () => Promise<void> | void;
 			pendingAssistantParts?: RovoUIMessage["parts"];
 			promptText: string;
 			delayMs?: number;
@@ -217,6 +222,7 @@ export function useChatSubmit({
 					];
 					replaceMessages([...baseMessages, userMessage, ...assistantMessages]);
 				}
+				await onApplyAfterResponse?.();
 			} finally {
 				setLocalThinkingAssistantMessageId(null);
 			}
@@ -261,9 +267,13 @@ export function useChatSubmit({
 				getAssistantParts: outcome.getAssistantParts,
 				getPendingAssistantParts: outcome.getPendingAssistantParts,
 				onApply: outcome.onApply,
+				onApplyAfterResponse: outcome.onApplyAfterResponse,
 				pendingAssistantParts: outcome.pendingAssistantParts,
 				promptText,
-				userMetadata: options?.userMetadata,
+				userMetadata: {
+					...options?.userMetadata,
+					...outcome.userMetadata,
+				},
 			});
 			return true;
 		},

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { useRovoChat } from "@/app/contexts";
 import { useJiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
@@ -8,6 +8,12 @@ import type { AgentSession } from "@/components/blocks/jira-work-item/data/sessi
 import { SESSION_SCRIPTS } from "@/components/blocks/jira-work-item/data/session-scripts";
 import { AsxRovoOverlay } from "@/components/projects/asx/components/asx-rovo-overlay";
 import { useAsxAgentChatDemo } from "@/components/projects/asx/hooks/use-asx-agent-chat-demo";
+import type { ChatSubmitInterceptOutcome } from "@/components/projects/sidebar-chat/page";
+
+export type SessionReplyInterceptor = (
+	session: AgentSession,
+	text: string,
+) => ChatSubmitInterceptOutcome;
 
 function getSessionQuestion(session: AgentSession) {
 	if (session.status !== "waiting") return undefined;
@@ -31,27 +37,78 @@ function getSessionResult(session: AgentSession): string {
 }
 
 /**
+ * Demo chat playback for agent sessions. Improve-description keeps its own
+ * confirmation flow; Claude Code Build stays mid-implementation (consult done,
+ * implement/verify unfinished) so Activity can own checklist/PR progress while
+ * the side chat never settles on a verified/PR-ready completion.
+ */
+function getSessionPlaybackVariant(
+	session: AgentSession,
+): "claude-code-build" | "jira-description-improvement" | "static-result" | undefined {
+	if (session.scriptId === "shop-4821-improve-description") {
+		return session.status === "completed" ? "static-result" : "jira-description-improvement";
+	}
+	if (session.agentId !== "claude-code" || session.status !== "running") {
+		return undefined;
+	}
+	const completedCount = session.progressChecklist?.filter((item) => item.completed).length ?? 0;
+	// Build chapter range: consult checked (1) through verify (3). Plan is 0;
+	// Review+ is 4+.
+	return completedCount >= 1 && completedCount <= 3 ? "claude-code-build" : undefined;
+}
+
+/**
+ * Right/bottom inset that parks the Rovo launcher on the dialog's bottom-right
+ * corner using the same gutter as the activity composer — the wide composer
+ * dock is `px-6 pb-6` and the metadata rail is `pr-6`, so 24px on both axes
+ * lines the button up with the prompt input's edges.
+ */
+const LAUNCHER_PLACEMENT = { right: "24px", bottom: "24px" } as const;
+
+/**
  * Bridges the block-local session model into the shared Jira Issue Rovo chat.
  * Jira Work Item owns the deterministic session lifecycle; the
  * existing Rovo surface owns all visible chat chrome, transcript, and composer.
+ * Activity "Add to chat" pills target the sticky activity composer instead.
  */
-export function FloatingSessionSurface() {
+export function FloatingSessionSurface({
+	composerToolsAfterAdd,
+	onSessionReply,
+}: Readonly<{
+	composerToolsAfterAdd?: ReactNode;
+	onSessionReply?: SessionReplyInterceptor;
+}>) {
 	const { actions, meta } = useJiraWorkItem();
 	const { chatSurface } = useRovoChat();
 	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useAsxAgentChatDemo();
-	const openedSessionIdRef = useRef<string | null>(null);
+	const openedSessionStateRef = useRef<string | null>(null);
 	const previousChatSurfaceRef = useRef(chatSurface);
+	const rootRef = useRef<HTMLDivElement | null>(null);
+	// The launcher renders while the chat panel is closed, and this surface sits
+	// in the dialog's `inert` side-panel slot — so host the button on the dialog
+	// body instead. That element is `relative`, so it also becomes the button's
+	// `offsetParent` for container positioning.
+	const [launcherContainer, setLauncherContainer] = useState<HTMLElement | null>(null);
 	const activeSession = meta.activeSession;
 
 	useEffect(() => {
-		if (!activeSession || openedSessionIdRef.current === activeSession.id) return;
-		openedSessionIdRef.current = activeSession.id;
+		setLauncherContainer(
+			rootRef.current?.closest<HTMLElement>("[data-jira-work-item-dialog-body]") ?? null,
+		);
+	}, []);
+
+	useEffect(() => {
+		if (!activeSession) return;
+		const sessionStateKey = `${activeSession.id}:${activeSession.status}`;
+		if (openedSessionStateRef.current === sessionStateKey) return;
+		openedSessionStateRef.current = sessionStateKey;
 		openAgentChat({
 			agentId: activeSession.agentId,
 			agentName: activeSession.agentName,
 			issueKey: meta.workItem.code,
 			issueSummary: meta.workItem.title,
 			intro: getSessionQuestionIntro(activeSession),
+			playbackVariant: getSessionPlaybackVariant(activeSession),
 			question: getSessionQuestion(activeSession),
 			request: activeSession.command,
 			result: getSessionResult(activeSession),
@@ -62,13 +119,38 @@ export function FloatingSessionSurface() {
 		const previousChatSurface = previousChatSurfaceRef.current;
 		previousChatSurfaceRef.current = chatSurface;
 		if (previousChatSurface === "floating" && chatSurface === null) {
-			openedSessionIdRef.current = null;
+			openedSessionStateRef.current = null;
 			actions.openSession(null);
 		}
 	}, [actions, chatSurface]);
 
 	const handleInterceptSubmit = useCallback((text: string) => {
 		if (!activeSession) return { handled: false };
+		const intercepted = onSessionReply?.(activeSession, text);
+		if (intercepted?.handled) {
+			const interceptedOnApply = intercepted.onApply;
+			const interceptedOnApplyAfterResponse = intercepted.onApplyAfterResponse;
+			const preserveCompletedSessionTranscript = () => {
+				if (activeSession.scriptId === "shop-4821-improve-description") {
+					openedSessionStateRef.current = `${activeSession.id}:completed`;
+				}
+			};
+			return {
+				...intercepted,
+				onApply: interceptedOnApply
+					? async () => {
+						preserveCompletedSessionTranscript();
+						await interceptedOnApply();
+					}
+					: undefined,
+				onApplyAfterResponse: interceptedOnApplyAfterResponse
+					? async () => {
+						preserveCompletedSessionTranscript();
+						await interceptedOnApplyAfterResponse();
+					}
+					: undefined,
+			};
+		}
 		const script = SESSION_SCRIPTS[activeSession.scriptId] ?? SESSION_SCRIPTS["general-assist"];
 		return {
 			handled: true,
@@ -78,13 +160,19 @@ export function FloatingSessionSurface() {
 			delayMs: 0,
 			onApply: () => actions.replySession(activeSession.id, text),
 		};
-	}, [actions, activeSession]);
+	}, [actions, activeSession, onSessionReply]);
 
 	return (
-		<div className="relative h-full min-h-0 [&_[data-rovo-chat-placement=embedded]]:border-l-0">
+		<div
+			className="relative h-full min-h-0 [&_[data-rovo-chat-placement=embedded]]:border-l-0"
+			ref={rootRef}
+		>
 			<AsxRovoOverlay
 				chatContextBar={chatContextBar}
+				composerToolsAfterAdd={composerToolsAfterAdd}
 				externalThinkingMessageId={externalThinkingMessageId}
+				launcherContainer={launcherContainer}
+				launcherPlacement={LAUNCHER_PLACEMENT}
 				onInterceptSubmit={handleInterceptSubmit}
 				onLauncherClick={actions.openLatestOrCreateGeneralSession}
 				placement="embedded"

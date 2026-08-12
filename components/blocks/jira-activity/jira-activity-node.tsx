@@ -1,7 +1,11 @@
 import AddIcon from "@atlaskit/icon/core/add";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
+import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
+import AppIcon from "@atlaskit/icon/core/app";
 import BranchIcon from "@atlaskit/icon/core/branch";
+import CommitIcon from "@atlaskit/icon/core/commit";
 import ProjectStatusIcon from "@atlaskit/icon/core/project-status";
+import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import StopwatchIcon from "@atlaskit/icon/core/stopwatch";
 import TagIcon from "@atlaskit/icon/core/tag";
 import TeamworkGraphIcon from "@atlaskit/icon-lab/core/teamwork-graph";
@@ -22,7 +26,11 @@ const EVENT_ICON: Record<JiraActivityEventIcon, typeof AddIcon> = {
 	delegated: AiAgentIcon,
 	"in-progress": ProjectStatusIcon,
 	linked: BranchIcon,
+	description: AlignTextLeftIcon,
 	"teamwork-graph": TeamworkGraphIcon,
+	commit: CommitIcon,
+	"pull-request": PullRequestIcon,
+	app: AppIcon,
 };
 
 function initialsOf(name: string): string {
@@ -88,10 +96,12 @@ function EventGlyph({ icon }: Readonly<{ icon: JiraActivityEventIcon }>) {
  * clearance above/below, matching event glyphs in `h-6`) so the spine — a
  * sibling that only starts after the track — never sits flush on the icon.
  * That structural break is the timeline gap; opaque spine covers must not
- * stack on top of it. The avatar optically centers with the stacked
- * name/timestamp header. Content stays in the un-offset text column; the
- * in-thread reply composer pulls back across this slot to share the avatar
- * edge. Spine lifted from `components/ui/progress-tracker.tsx`.
+ * stack on top of it. Event copy beside this track uses `min-h-6` so mention
+ * chips can grow past 24px without changing this icon track. The avatar
+ * optically centers with the stacked name/timestamp header. Content stays in
+ * the un-offset text column; the in-thread reply composer pulls back across
+ * this slot to share the avatar edge. Spine lifted from
+ * `components/ui/progress-tracker.tsx`.
  */
 export function JiraActivityNode({
 	actor,
@@ -116,9 +126,15 @@ export function JiraActivityNode({
 					isCard ? "h-10" : "h-6",
 				)}
 			>
+				{/*
+				 * Event rows: prefer the semantic EventGlyph whenever `icon` is set
+				 * (commit / pull-request / app / …). ActorGlyph (incl. hexagon
+				 * AgentAvatarVisual) is only the fallback when no icon is provided.
+				 * Card rows always use the actor avatar in the larger track.
+				 */}
 				{isCard ? (
 					<ActorGlyph actor={actor} sizePx={32} />
-				) : icon ? (
+				) : icon !== undefined ? (
 					<EventGlyph icon={icon} />
 				) : (
 					<ActorGlyph actor={actor} sizePx={16} />

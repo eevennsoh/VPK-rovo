@@ -70,6 +70,12 @@ const V2_ONLY_FILES = new Set([
 	"components/development-repository-picker.tsx",
 	"components/experimental-header-overflow-menu.tsx",
 	"components/context-popover-parts.tsx",
+	// Shared Activity → chat comment-pill state (Code Review composerInputContext path).
+	"context-activity-chat-comments.tsx",
+	// Failing CI checks → activity composer chip (Fix / Fix all staging).
+	"context-failing-checks-composer.tsx",
+	"lib/failing-checks-composer-context.ts",
+	"lib/failing-checks-composer-context.test.js",
 	// Shared TipTap description surface used by WI ContextEditableDescription
 	// and PullRequestOverview — v1 keeps its own inline RichTextEditor wiring.
 	"components/context-description-editor.tsx",
@@ -87,12 +93,16 @@ const V2_ONLY_FILES = new Set([
 	"components/pull-request-sort-control.tsx",
 	"components/pull-request-detail/pull-request-files.tsx",
 	"components/pull-request-detail/pull-request-guide.tsx",
+	// Guided-review chapter jump + scroll-spy (v2 PR surface only).
+	"lib/pull-request-guide-active-chapter.ts",
+	"lib/pull-request-guide-active-chapter.test.js",
 	"components/pull-request-detail/pull-request-detail-header.tsx",
 	"components/pull-request-detail/pull-request-overview.tsx",
 	"components/pull-request-detail/pull-request-detail-view.tsx",
 	"components/pull-request-detail/pull-request-context-rail.tsx",
 	"components/pull-request-detail/pull-request-details-rail.tsx",
 	"components/pull-request-detail/pull-request-activity-panel.tsx",
+	"components/pull-request-detail/pull-request-sticky-header-shell.tsx",
 	// v2 promotes `@Agent` runs in authored comment copy into mention chips; v1
 	// keeps comment bodies as a single plain-text segment.
 	"lib/activity-mention-segments.ts",
@@ -105,11 +115,23 @@ const V2_ONLY_FILES = new Set([
 	// Connected-repo fixtures / helpers live outside the picker component file
 	// so Fast Refresh can treat that module as components-only.
 	"lib/development-repositories.ts",
+	// File-size split: static adapter fixtures/tests stay v2-only.
+	"lib/jira-activity-adapter-static.test.js",
+	// Live CI elapsed clock helpers for the PR details rail.
+	"lib/pull-request-check-elapsed.test.js",
+	"lib/pull-request-check-elapsed.ts",
 	// Phase-section model for the Pull requests resource dropdown.
 	"lib/pull-request-phases.ts",
 	"lib/pull-request-phases.test.js",
 	"lib/pull-request-detail-data.ts",
 	"lib/pull-request-detail-data.test.js",
+	"lib/pull-request-detail-data-ui.test.js",
+	// Review submit: verdict → Approvers status + sonner toast copy.
+	"lib/pull-request-review-submit.ts",
+	"lib/pull-request-review-submit.test.js",
+	"lib/show-pull-request-review-toast.tsx",
+	// File-size split: initial reviewed-chapter seed lives outside the fixture module.
+	"lib/resolve-initial-reviewed-chapter-ids.ts",
 	"lib/pull-request-activity-adapter.ts",
 	"lib/pull-request-activity-adapter.test.js",
 	// Selected PR filter Tag status → icon/color map (open/merged/failed/draft).
@@ -134,11 +156,24 @@ test("experimental v2 exists with a distinctly named composition root", () => {
 
 	const compositionSource = readBlockFile("experimental-v2/experimental-v2-jira-work-item.tsx");
 	assert.match(compositionSource, /export function ExperimentalV2JiraWorkItem\(/u);
+	assert.match(compositionSource, /stageKey\?: string;/u);
+	assert.match(compositionSource, /<ExperimentalV2JiraWorkItemContent[\s\S]*stageKey=\{props\.stageKey\}/u);
+	assert.doesNotMatch(compositionSource, /<ExperimentalV2JiraWorkItemContent[\s\S]*key=\{props\.initialStateRevision\}/u);
 	assert.match(compositionSource, /export default ExperimentalV2JiraWorkItem;/u);
 	assert.match(compositionSource, /export type ExperimentalV2JiraWorkItemProps/u);
 	// The v1 root filename must not linger in v2 — both roots are imported side
 	// by side by the block index, so their names have to stay distinct.
 	assert.equal(fs.existsSync(path.join(V2_DIR, "experimental-jira-work-item.tsx")), false);
+});
+
+test("experimental v2 resets stage-scoped view state only after the stage key changes", () => {
+	const compositionSource = readBlockFile("experimental-v2/experimental-v2-jira-work-item.tsx");
+
+	assert.match(compositionSource, /const previousStageKeyRef = useRef\(stageKey\);/u);
+	assert.match(
+		compositionSource,
+		/useLayoutEffect\(\(\) => \{[\s\S]*Object\.is\(previousStageKeyRef\.current, stageKey\)[\s\S]*return;[\s\S]*previousStageKeyRef\.current = stageKey;[\s\S]*setDescriptionViewMode\("rendered"\);[\s\S]*setSelectedPullRequestIdentity\(null\);[\s\S]*setPullRequestReviewByIdentity\(\{\}\);[\s\S]*setReviewComposerIdentity\(null\);[\s\S]*setPullRequestReviewerStatuses\(\{\}\);[\s\S]*\}, \[stageKey\]\);/u,
+	);
 });
 
 test("experimental v2 opens the shared agent chat as a full-height sibling column", () => {
@@ -153,10 +188,18 @@ test("experimental v2 opens the shared agent chat as a full-height sibling colum
 
 	assert.match(
 		compositionSource,
-		/const agentChatOpen = chatSurface === "floating";[\s\S]*sidebar=\{<FloatingSessionSurface \/>\}[\s\S]*sidebarOpen=\{agentChatOpen\}[\s\S]*aria-hidden=\{agentChatOpen\}[\s\S]*className="group\/metadata-resize relative flex min-h-0 min-w-0 flex-1 flex-col"[\s\S]*inert=\{agentChatOpen \? true : undefined\}[\s\S]*<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*activitySessionThread=\{activitySessionThread\}[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}[\s\S]*\/>/u,
+		/const agentChatOpen = chatSurface === "floating";[\s\S]*sidebar=\{<FloatingSessionSurface composerToolsAfterAdd=\{composerToolsAfterAdd\} onSessionReply=\{onSessionReply\} \/>\}[\s\S]*sidebarOpen=\{agentChatOpen\}[\s\S]*aria-hidden=\{agentChatOpen\}[\s\S]*className="group\/metadata-resize relative flex min-h-0 min-w-0 flex-1 flex-col"[\s\S]*inert=\{agentChatOpen \? true : undefined\}[\s\S]*<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*activitySessionThread=\{activitySessionThread\}[\s\S]*onOpenPullRequest=\{handlePullRequestSelect\}[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*currentReviewerStatus=\{selectedPullRequestReviewerStatus\}[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}[\s\S]*\/>/u,
 	);
 	assert.doesNotMatch(compositionSource, /blanketContent=\{[\s\S]*<FloatingSessionSurface/u);
 	assert.match(sessionSurfaceSource, /<AsxRovoOverlay[\s\S]*placement="embedded"/u);
+	assert.match(
+		sessionSurfaceSource,
+		/function getSessionPlaybackVariant\([\s\S]*"claude-code-build"[\s\S]*completedCount >= 1 && completedCount <= 3[\s\S]*playbackVariant: getSessionPlaybackVariant\(activeSession\)/u,
+	);
+	assert.match(
+		sessionSurfaceSource,
+		/const interceptedOnApplyAfterResponse = intercepted\.onApplyAfterResponse;[\s\S]*onApplyAfterResponse: interceptedOnApplyAfterResponse[\s\S]*preserveCompletedSessionTranscript\(\);[\s\S]*await interceptedOnApplyAfterResponse\(\);/u,
+	);
 	assert.doesNotMatch(sessionSurfaceSource, /children|createPortal|portalToViewport/u);
 	assert.match(sharedOverlaySource, /placement === "embedded"/u);
 	assert.match(
@@ -185,6 +228,11 @@ test("experimental v2 opens the shared agent chat as a full-height sibling colum
 		/className="grid h-full min-h-0 min-w-0 grid-rows-\[auto_minmax\(0,1fr\)\]"[\s\S]*data-jira-work-item-main-column/u,
 	);
 	assert.match(layoutSource, /\{metadataCollapsed \? null : \(/u);
+	assert.match(
+		layoutSource,
+		/sticky bottom-0 z-10 bg-surface-overlay[\s\S]*@\[860px\]\/agentlayout:bg-transparent[\s\S]*data-jira-work-item-composer-dock/u,
+	);
+	assert.match(layoutSource, /from-transparent to-surface-overlay/u);
 });
 
 test("experimental v2 metadata panel exposes a notch-only resize handle and chat-only divider", () => {
@@ -201,7 +249,7 @@ test("experimental v2 metadata panel exposes a notch-only resize handle and chat
 	);
 	assert.match(
 		compositionSource,
-		/sidebar=\{<FloatingSessionSurface \/>\}[\s\S]*sidebarResizeHandle=\{\([\s\S]*ariaLabel="Resize agent chat panel"[\s\S]*top-0![\s\S]*bottom-0![\s\S]*left-0![\s\S]*bg-border[\s\S]*group-hover\/chat-panel:\[&>div\]:opacity-100[\s\S]*resize=\{metadataPanelResize\}[\s\S]*testId="jira-work-item-chat-resize-handle"[\s\S]*sidebarResizing=\{metadataPanelResize\.isResizing\}[\s\S]*sidebarWidth=\{metadataPanelResize\.sidebarWidth\}/u,
+		/sidebar=\{<FloatingSessionSurface composerToolsAfterAdd=\{composerToolsAfterAdd\} onSessionReply=\{onSessionReply\} \/>\}[\s\S]*sidebarResizeHandle=\{\([\s\S]*ariaLabel="Resize agent chat panel"[\s\S]*top-0![\s\S]*bottom-0![\s\S]*left-0![\s\S]*bg-border[\s\S]*group-hover\/chat-panel:\[&>div\]:opacity-100[\s\S]*resize=\{metadataPanelResize\}[\s\S]*testId="jira-work-item-chat-resize-handle"[\s\S]*sidebarResizing=\{metadataPanelResize\.isResizing\}[\s\S]*sidebarWidth=\{metadataPanelResize\.sidebarWidth\}/u,
 	);
 	assert.match(
 		compositionSource,
@@ -403,22 +451,110 @@ test("experimental v2 working-agents menu includes waiting sessions without chan
 	assert.match(contextPillsSource, /inlineMetadata: \([\s\S]*<WorkingSessionActivityByline[\s\S]*sessionIndex=\{sessionIndex\}/u);
 	assert.match(contextPillsSource, /<AgentAvatarVisual[\s\S]*sizePx=\{24\}/u);
 	assert.match(contextPillsSource, /brandName=\{session\.agentBrandName\}/u);
+	assert.match(contextPillsSource, /vpkLogo=\{session\.agentName === "Rovo" \? "rovo" : undefined\}/u);
 	assert.match(contextPillsSource, /<CyclingByline className="menu-row-title text-text-subtlest">/u);
+	assert.match(contextPillsSource, /import \{ AnimatedDots \} from "@\/components\/ui-custom\/animated-dots";/u);
+	assert.match(contextPillsSource, /const NEEDS_INPUT_STATUS_LABEL = "Needs input";/u);
+	assert.match(
+		contextPillsSource,
+		/needsUserInput \? \(\s*<span className="inline-flex min-w-0 items-baseline">\s*<Shimmer as="span">\{activity\}<\/Shimmer>\s*<AnimatedDots \/>\s*<\/span>\s*\) : activity/u,
+	);
 	assert.match(contextPillsSource, /className="mb-2 flex flex-wrap gap-2"/u);
 	assert.match(contextPillsSource, /WORKING_SESSION_ACTIVITY_STAGGER_MS \* \(sessionIndex \+ 1\)/u);
 	assert.match(contextPillsSource, /window\.setTimeout\([\s\S]*window\.setInterval\([\s\S]*setActivityCycleIndex\(\(index\) => index \+ 1\)/u);
 	assert.match(contextPillsSource, /window\.clearTimeout\(timeoutId\);[\s\S]*window\.clearInterval\(intervalId\);/u);
 	assert.doesNotMatch(contextPillsSource, /Math\.random/u);
-	assert.match(contextPillsSource, /\{workingSessions\.length\} \{workingSessions\.length === 1 \? "agent" : "agents"\} working/u);
 	assert.match(
 		contextPillsSource,
-		/<ContextBarPill[\s\S]*icon=\{\([\s\S]*<PixelLoader[\s\S]*className="size-3 justify-center"[\s\S]*pattern="diagonal-top-left"[\s\S]*shape="dot"[\s\S]*size="small"/u,
+		/const needsInputCount = workingSessions\.filter\(\(session\) => \([\s\S]*session\.status === "waiting" && session\.waitingOn\?\.kind === "user"[\s\S]*const summaryCount = needsInputCount > 0 \? needsInputCount : workingSessions\.length;[\s\S]*const summaryLabel = needsInputCount > 0[\s\S]*"agent needs" : "agents need"[\s\S]*"agent" : "agents"\} working`/u,
 	);
 	assert.match(
 		contextPillsSource,
-		/trailing: session\.status === "waiting"[\s\S]*<span className="text-xs text-text-subtle">Waiting<\/span>[\s\S]*: null/u,
+		/needsInputCount > 0 \? \([\s\S]*<Shimmer as="span">\{summaryLabel\}<\/Shimmer>[\s\S]*\) : summaryLabel/u,
+	);
+	assert.match(
+		contextPillsSource,
+		/<ContextBarPill[\s\S]*aria-label=\{summaryLabel\}[\s\S]*icon=\{\([\s\S]*<PixelLoader[\s\S]*className="size-3 justify-center"[\s\S]*pattern=\{needsInputCount > 0 \? "breathing" : "diagonal-top-left"\}[\s\S]*shape="dot"[\s\S]*size="small"/u,
+	);
+	assert.match(
+		contextPillsSource,
+		/trailing: session\.status === "waiting"[\s\S]*\{session\.waitingOn\?\.kind === "user" \? NEEDS_INPUT_STATUS_LABEL : "Waiting"\}[\s\S]*: null/u,
 	);
 	assert.doesNotMatch(contextPillsSource, /<Spinner/u);
+});
+
+test("experimental v2 shows Submit review as the first context pill on guided PR review", () => {
+	const compositionSource = readBlockFile("experimental-v2/experimental-v2-jira-work-item.tsx");
+	const contextPillsSource = readBlockFile("experimental-v2/components/activity-composer-context-pills.tsx");
+	const composerSource = readBlockFile("experimental-v2/components/activity-composer.tsx");
+
+	// Visibility: selected PR + guided review progress only — not approval-state gated.
+	assert.match(
+		compositionSource,
+		/!selectedPullRequestIdentity[\s\S]*pullRequestReviewState\?\.identity !== selectedPullRequestIdentity[\s\S]*pullRequestReviewState\.total === 0/u,
+	);
+	assert.doesNotMatch(
+		compositionSource,
+		/!selectedPullRequestIdentity[\s\S]*!selectedPullRequestApprovalState[\s\S]*pullRequestReviewState/u,
+	);
+	assert.match(compositionSource, /label: approved \? "Review submitted" : "Submit review"/u);
+	assert.match(compositionSource, /badge: badgeCount > 0 \? String\(badgeCount\) : undefined/u);
+	assert.doesNotMatch(compositionSource, /badge: `\$\{reviewed\}\/\$\{total\}`/u);
+	assert.match(
+		compositionSource,
+		/const badgeCount = reviewedChapterIds\.size \+ inlineComments\.length/u,
+	);
+	assert.match(compositionSource, /import CommentIcon from "@atlaskit\/icon\/core\/comment"/u);
+	assert.match(
+		compositionSource,
+		/icon: <Icon aria-hidden render=\{<CommentIcon label="" size="small" \/>\} \/>/u,
+	);
+	assert.match(
+		compositionSource,
+		/disabled: approved \|\| !onPullRequestApprove/u,
+	);
+	assert.match(
+		compositionSource,
+		/submitDisabled: pullRequestReviewSubmitDisabled/u,
+	);
+	assert.match(
+		compositionSource,
+		/const pullRequestReviewSubmitDisabled = !onPullRequestApprove\s*\|\|\s*selectedPullRequestApprovalState === "approved"/u,
+	);
+	assert.doesNotMatch(
+		compositionSource,
+		/submitDisabled: !pullRequestReviewSubmissionAvailable/u,
+		"guided-review availability must not disable Send while the reviewer has a draft",
+	);
+	assert.match(compositionSource, /primaryAction=\{pullRequestReviewAction\}/u);
+	assert.match(composerSource, /primaryAction=\{primaryAction\}/u);
+	assert.match(
+		compositionSource,
+		/handlePullRequestInlineCommentsChange[\s\S]*inlineComments: comments/u,
+	);
+	assert.match(
+		compositionSource,
+		/commentCount: pullRequestReviewState\.inlineComments\.length/u,
+	);
+	assert.match(
+		composerSource,
+		/commentCount=\{pullRequestReview\.commentCount\}/u,
+	);
+	// Pill order: primaryAction (Submit review) first, then working agents, then Assign agents / Use skills.
+	assert.match(
+		contextPillsSource,
+		/\{primaryAction \? \([\s\S]*icon=\{primaryAction\.icon\}[\s\S]*\{primaryAction\.label\}[\s\S]*primaryAction\.badge \? \([\s\S]*<Badge[\s\S]*\{primaryAction\.badge\}[\s\S]*\) : null\}[\s\S]*\) : null\}[\s\S]*\{workingSessions\.length > 0[\s\S]*<ActivityComposerAgentContextPill[\s\S]*<ActivityComposerSkillContextPill/u,
+	);
+	assert.match(contextPillsSource, /from "@\/components\/ui\/badge"/u);
+	// Opening guided PR review must not drop the working-agents summary pill.
+	assert.match(
+		composerSource,
+		/const workingSessions = state\.sessions\.filter\(\(session\) => session\.status !== "completed"\);/u,
+	);
+	assert.match(
+		contextPillsSource,
+		/\{workingSessions\.length > 0 && onOpenAgentChat \? \([\s\S]*summaryLabel/u,
+	);
 });
 
 test("experimental v2 keeps comment-only composer delivery as the non-target default", () => {
@@ -442,7 +578,72 @@ test("experimental v2 keeps comment-only composer delivery as the non-target def
 	);
 	assert.match(
 		composerSource,
-		/meta\.composerDelivery === "broadcast-active-agents"[\s\S]*actions\.broadcastComment\(text\);[\s\S]*else \{[\s\S]*actions\.addComment\(text\);/u,
+		/meta\.composerDelivery === "broadcast-active-agents"[\s\S]*actions\.broadcastComment\(promptWithActivityContext\);[\s\S]*else \{[\s\S]*actions\.addComment\(promptWithActivityContext\);/u,
+	);
+});
+
+test("experimental v2 opens Activity and scrolls to the latest entry after agent-mention submit", () => {
+	const composerSource = readBlockFile("experimental-v2/components/activity-composer.tsx");
+	const activityPanelSource = readBlockFile("experimental-v2/components/activity-panel.tsx");
+	const metadataRailContextSource = readBlockFile("experimental-v2/context-metadata-rail.tsx");
+
+	assert.match(
+		composerSource,
+		/import \{ useMetadataRail \} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/context-metadata-rail"/u,
+	);
+	assert.match(composerSource, /const \{ requestRevealLatestActivity \} = useMetadataRail\(\);/u);
+	// Only agent mention / steer / invoke paths reveal Activity — plain comments stay put.
+	assert.match(
+		composerSource,
+		/if \(handledAgentIds\.size === 0 && invokedAgents\.length === 0\) \{[\s\S]*\} else \{[\s\S]*requestRevealLatestActivity\(\);/u,
+	);
+	assert.match(
+		metadataRailContextSource,
+		/requestRevealLatestActivity = useCallback\(\(entryId\?: string\) => \{[\s\S]*setPanelView\("activity"\)[\s\S]*setActivityRevealRequest/u,
+	);
+	assert.match(
+		activityPanelSource,
+		/import \{ useMetadataRail \} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/context-metadata-rail"/u,
+	);
+	assert.match(
+		activityPanelSource,
+		/activityRevealRequest[\s\S]*consumeActivityRevealRequest[\s\S]*useMetadataRail\(\)/u,
+	);
+	assert.match(
+		activityPanelSource,
+		/requestRevealLatestActivity/u,
+	);
+	assert.match(
+		activityPanelSource,
+		/target\.closest\("\[hidden\]"\)/u,
+		"reveal/auto-scroll must wait until the Activity tab is visible",
+	);
+	assert.match(
+		activityPanelSource,
+		/ACTIVITY_REVEAL_SETTLE_MS/u,
+		"reveal must stay open long enough for staged prompt comments to become latest",
+	);
+	assert.match(
+		activityPanelSource,
+		/preferredEntryId \? "start" : activityScrollBlock/u,
+		"targeted reveals pin the entry start (agent name); latest keeps sort-aware block",
+	);
+	assert.match(
+		activityPanelSource,
+		/activityRevealRequest\?\.entryId/u,
+		"auto-scroll must defer while a targeted reveal owns the viewport",
+	);
+	assert.match(
+		activityPanelSource,
+		/scrollActivityEntryIntoView\([\s\S]*consumeActivityRevealRequest\(nonce\)/u,
+	);
+	assert.match(
+		activityPanelSource,
+		/block,/u,
+	);
+	assert.match(
+		activityPanelSource,
+		/const activityScrollBlock = sortOrder === "descending" \? "start" : "end"/u,
 	);
 });
 
@@ -689,6 +890,66 @@ test("the activity panel gives reactions and human replies somewhere to land", (
 	// array, so streaming session updates keep flowing through untouched.
 	assert.match(activityPanelSource, /const entries = derivedEntries\.map\(\(entry\) => \{/u);
 	assert.doesNotMatch(activityPanelSource, /useState\(derivedEntries\)/u);
+});
+
+test("activity comments reuse the Code Review composer-pill path on the sticky activity composer", () => {
+	const activityPanelSource = readBlockFile("experimental-v2/components/activity-panel.tsx");
+	const activityComposerSource = readBlockFile("experimental-v2/components/activity-composer.tsx");
+	const sessionSurfaceSource = readBlockFile("experimental-v2/components/floating-session-surface.tsx");
+	const contextSource = readBlockFile("experimental-v2/context-activity-chat-comments.tsx");
+	const compositionSource = readBlockFile("experimental-v2/experimental-v2-jira-work-item.tsx");
+	const sharedChipSource = fs.readFileSync(
+		path.join(BLOCK_DIR, "../../ui-custom/comments-composer-chip.tsx"),
+		"utf8",
+	);
+	const floatingComposerSource = fs.readFileSync(
+		path.join(BLOCK_DIR, "../../projects/shared/components/floating-composer.tsx"),
+		"utf8",
+	);
+
+	assert.match(compositionSource, /ActivityChatCommentsProvider/u);
+	assert.match(activityPanelSource, /useActivityChatComments/u);
+	assert.match(activityPanelSource, /onAddCommentToChat=\{handleAddCommentToChat\}/u);
+	assert.match(activityPanelSource, /onAddReplyToChat=\{handleAddReplyToChat\}/u);
+	assert.match(activityPanelSource, /attachActivityCommentToComposer/u);
+	assert.match(activityPanelSource, /jiraActivitySegmentsToPlainText\(entry\.body\)/u);
+	assert.doesNotMatch(activityPanelSource, /openChat\("floating"\)/u);
+	assert.doesNotMatch(activityPanelSource, /actions\.openLatestOrCreateGeneralSession\(\)/u);
+
+	assert.match(contextSource, /focusRequestKey/u);
+	assert.match(contextSource, /return \[\.\.\.current, comment\]/u);
+
+	assert.match(activityComposerSource, /CommentsComposerChip/u);
+	assert.match(activityComposerSource, /FailingChecksComposerChip/u);
+	assert.match(activityComposerSource, /inputContext=\{composerInputContext\}/u);
+	assert.match(activityComposerSource, /inputContextSubmitText=\{composerInputContextSubmitText\}/u);
+	assert.match(activityComposerSource, /subtitle: "Comment"/u);
+	assert.doesNotMatch(activityComposerSource, /subtitle: comment\.timestamp/u);
+	assert.match(activityComposerSource, /testId="activity-comments-chip"/u);
+	assert.match(activityComposerSource, /Discuss these activity comments\./u);
+	assert.match(activityComposerSource, /serializeActivityCommentsContext\(meta\.workItem, activityChatComments\)/u);
+	assert.match(activityComposerSource, /serializeFailingChecksContext\(failingChecks\)/u);
+	assert.match(activityComposerSource, /focusRequestKey/u);
+	assert.match(activityComposerSource, /removeActivityChatComments\(\)/u);
+	assert.match(activityComposerSource, /removeFailingChecks\(\)/u);
+	assert.match(compositionSource, /FailingChecksComposerProvider/u);
+	assert.match(compositionSource, /handlePullRequestFixStage/u);
+	assert.match(compositionSource, /onFailingChecksSubmit/u);
+
+	assert.match(floatingComposerSource, /inputContext\?: ReactNode/u);
+	assert.match(floatingComposerSource, /<PromptInputHeader/u);
+	assert.doesNotMatch(sessionSurfaceSource, /CommentsComposerChip/u);
+	assert.doesNotMatch(sessionSurfaceSource, /composerInputContext=/u);
+	assert.match(sharedChipSource, /export function CommentsComposerChip/u);
+	assert.match(sharedChipSource, /ComposerContextChip/u);
+	// Inset separators match DropdownMenuSeparator (`dropdownStyles.separator`:
+	// `bg-border mx-1 my-1 h-px`) — not full-bleed `divide-y`.
+	const composerContextChipSource = fs.readFileSync(
+		path.join(BLOCK_DIR, "../../ui-custom/composer-context-chip.tsx"),
+		"utf8",
+	);
+	assert.match(composerContextChipSource, /dropdownStyles\.separator/u);
+	assert.doesNotMatch(composerContextChipSource, /divide-y/u);
 });
 
 test("experimental v2 opens the agent and skill pickers with the editor-palette search bar", () => {

@@ -9,6 +9,13 @@ export const UI_CUSTOM_AGENT_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"prompt-input-demo-chat-composer-live-voice": dynamic(
+		() =>
+			import("../../demos/ui-custom/prompt-input-demo").then((mod) => ({
+				default: mod.PromptInputDemoChatComposerLiveVoice,
+			})),
+		{ ssr: false },
+	),
 	"prompt-input-demo-floating-bar": dynamic(
 		() =>
 			import("../../demos/ui-custom/prompt-input-demo").then((mod) => ({

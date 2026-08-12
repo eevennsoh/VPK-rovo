@@ -155,8 +155,16 @@ export interface AgentSession {
 	threadReplies?: readonly AgentSessionThreadReply[];
 	/** Scripted progress that an agent updates in place on its lead activity comment. */
 	progressChecklist?: readonly AgentSessionProgressItem[];
+	/** Compact artifact rows (code/PR, docs) on the agent's lead activity comment. */
+	outputs?: readonly ArtifactListItem[];
 	/** Optional visual proof attached to the agent's lead activity comment. */
 	imageAttachment?: AgentSessionImageAttachment;
+	/**
+	 * Public Activity feed visibility. Private skill invocations stay out of the
+	 * shared feed until their output is published (e.g. added to the work item).
+	 * Omitted / `"public"` keeps the session-derived activity card.
+	 */
+	activityVisibility?: "private" | "public";
 }
 
 export interface AgentSessionComment {
@@ -236,6 +244,7 @@ export interface AgentActivityEvent {
 	waitingOn?: AgentSessionWaitingOn;
 	threadReplies?: readonly AgentSessionThreadReply[];
 	progressChecklist?: readonly AgentSessionProgressItem[];
+	outputs?: readonly ArtifactListItem[];
 	imageAttachment?: AgentSessionImageAttachment;
 }
 

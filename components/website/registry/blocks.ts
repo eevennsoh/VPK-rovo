@@ -88,6 +88,10 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 		() => import("../demos/blocks/pull-request-header-demo"),
 		{ ssr: false },
 	),
+	"pull-request-review": dynamic(
+		() => import("../demos/blocks/pull-request-review-demo"),
+		{ ssr: false },
+	),
 	"emoji-picker": dynamic(() => import("../demos/blocks/emoji-picker-demo"), {
 		ssr: false,
 	}),

@@ -45,7 +45,7 @@ test("PullRequestHeader exposes the detail header props contract", () => {
 	);
 	assert.match(
 		TYPES_SOURCE,
-		/export type PullRequestHeaderMergeState =[\s\S]*"checks-running"[\s\S]*"merge-conflicts"[\s\S]*"ready"/u,
+		/export type PullRequestHeaderMergeState =[\s\S]*"checks-failed"[\s\S]*"checks-running"[\s\S]*"merge-conflicts"[\s\S]*"review-required"[\s\S]*"ready"/u,
 	);
 	assert.match(TYPES_SOURCE, /variant\?: PullRequestHeaderVariant/u);
 	assert.match(
@@ -53,22 +53,22 @@ test("PullRequestHeader exposes the detail header props contract", () => {
 		/scrollContainerRef\?: RefObject<HTMLElement \| null>/u,
 	);
 	assert.match(TYPES_SOURCE, /collapseOffset\?: number/u);
+	assert.match(TYPES_SOURCE, /tabNavigation\?: ReactNode/u);
 	assert.match(TYPES_SOURCE, /mergeState\?: PullRequestHeaderMergeState/u);
 	assert.match(TYPES_SOURCE, /autoMerge\?: boolean/u);
 	assert.match(TYPES_SOURCE, /defaultAutoMerge\?: boolean/u);
 	assert.match(TYPES_SOURCE, /onAutoMergeChange\?: \(enabled: boolean\) => void/u);
 	assert.doesNotMatch(TYPES_SOURCE, /onChatClick/u);
 	assert.match(TYPES_SOURCE, /onMergeClick\?: \(\) => void/u);
+	assert.match(TYPES_SOURCE, /onChecksFailedClick\?: \(\) => void/u);
 	assert.match(TYPES_SOURCE, /onChecksRunningClick\?: \(\) => void/u);
+	assert.match(TYPES_SOURCE, /onMergeConflictsClick\?: \(\) => void/u);
+	assert.match(TYPES_SOURCE, /onReviewRequiredClick\?: \(\) => void/u);
 	assert.match(TYPES_SOURCE, /url\?: string/u);
 	assert.match(TYPES_SOURCE, /scmProviderName\?: string/u);
 	assert.match(TYPES_SOURCE, /onConvertToDraftClick\?: \(\) => void/u);
 	assert.match(TYPES_SOURCE, /onClosePullRequestClick\?: \(\) => void/u);
 	assert.doesNotMatch(TYPES_SOURCE, /onMoreActionsClick/u);
-	assert.match(
-		TYPES_SOURCE,
-		/merge-conflicts` stays disabled/u,
-	);
 	assert.match(
 		TYPES_SOURCE,
 		/export interface PullRequestHeaderProps[\s\S]*number: number;[\s\S]*title: string;[\s\S]*status: PullRequestHeaderStatus;[\s\S]*baseBranch\?: string \| null;[\s\S]*headBranch\?: string \| null;[\s\S]*repository: string;/u,
@@ -115,7 +115,10 @@ test("PullRequestHeader animates meta collapse and honors reduced motion", () =>
 		COMPONENT_SOURCE,
 		/key="pull-request-header-meta"[\s\S]*className="flex flex-wrap items-center gap-x-2 gap-y-2 text-xs text-text-subtle"[\s\S]*layout=\{shouldReduceMotion \? false : "position"\}[\s\S]*transition=\{\{ layout: LAYOUT_TRANSITION \}\}/u,
 	);
-	assert.match(COMPONENT_SOURCE, /<AnimatePresence initial=\{false\}>/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/<AnimatePresence initial=\{false\} mode="popLayout">/u,
+	);
 	assert.match(
 		COMPONENT_SOURCE,
 		/animate=\{\{ opacity: 1, transform: "translateY\(0px\)" \}\}/u,
@@ -129,14 +132,18 @@ test("PullRequestHeader animates meta collapse and honors reduced motion", () =>
 });
 
 test("PullRequestHeader uses a two-row title and meta layout with action group", () => {
-	assert.match(COMPONENT_SOURCE, /className=\{cn\("border-b border-border pb-4", className\)\}/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/tabNavigation[\s\S]*\? "pt-4"[\s\S]*: "border-b pb-4"/u,
+	);
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/button"/u);
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/button-group"/u);
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/spinner"/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/mergeState === "checks-running" \?[\s\S]*<Spinner data-icon="inline-start" size="xs" \/>[\s\S]*: null/u,
+		/function mergeStateLeadingIcon[\s\S]*case "checks-failed":[\s\S]*grid size-4 shrink-0 place-items-center text-icon-danger[\s\S]*<StatusErrorIcon[\s\S]*case "checks-running":[\s\S]*grid size-4 shrink-0 place-items-center[\s\S]*<Spinner size="xs" \/>[\s\S]*case "merge-conflicts":[\s\S]*grid size-4 shrink-0 place-items-center text-icon-danger[\s\S]*<MergeFailureIcon/u,
 	);
+	assert.match(COMPONENT_SOURCE, /\{mergeStateLeadingIcon\(mergeState\)\}/u);
 	assert.match(COMPONENT_SOURCE, /variant="separated"/u);
 	assert.match(COMPONENT_SOURCE, /variant="split"/u);
 	assert.match(
@@ -149,7 +156,10 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/lozenge"/u);
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/tag"/u);
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/logo-mark"/u);
-	assert.match(COMPONENT_SOURCE, /BrandLogoMark[\s\S]*name="github"/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/BrandLogoMark[\s\S]*className="dark:invert \[\[data-color-mode=dark\]_&\]:invert"[\s\S]*name="github"/u,
+	);
 	assert.doesNotMatch(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/comment"/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /aria-label="Chat"/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /onChatClick/u);
@@ -159,6 +169,7 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/merge-success"/u);
 	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/pull-request"/u);
 	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/show-more-horizontal"/u);
+	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/status-error"/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/link-external"/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/file"/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/cross"/u);
@@ -170,26 +181,51 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 		COMPONENT_SOURCE,
 		/case "Open":[\s\S]*text-icon-success[\s\S]*<PullRequestIcon[\s\S]*case "Merged":[\s\S]*text-icon-accent-purple[\s\S]*<MergeSuccessIcon/u,
 	);
-	assert.match(COMPONENT_SOURCE, /className="w-full flex-wrap gap-2 sm:w-auto"/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/className="w-full flex-wrap gap-2 sm:w-auto sm:shrink-0"/u,
+	);
 	assert.match(
 		COMPONENT_SOURCE,
 		/disabled=\{!primaryEnabled\}/u,
 	);
 	assert.match(COMPONENT_SOURCE, /function isMergePrimaryEnabled/u);
 	assert.match(COMPONENT_SOURCE, /handlePrimaryClick/u);
+	assert.match(COMPONENT_SOURCE, /case "checks-failed":[\s\S]*onChecksFailedClick/u);
 	assert.match(COMPONENT_SOURCE, /case "checks-running":[\s\S]*onChecksRunningClick/u);
+	assert.match(COMPONENT_SOURCE, /case "merge-conflicts":[\s\S]*onMergeConflictsClick/u);
+	assert.match(COMPONENT_SOURCE, /case "review-required":[\s\S]*onReviewRequiredClick/u);
 	assert.match(COMPONENT_SOURCE, /<ChevronDownIcon label="" size="small" \/>/u);
 	assert.match(COMPONENT_SOURCE, /<ShowMoreHorizontalIcon label="" size="small" \/>/u);
 	assert.match(COMPONENT_SOURCE, /aria-label="Merge options"/u);
 	assert.match(COMPONENT_SOURCE, /aria-label="More actions"/u);
 	assert.match(COMPONENT_SOURCE, /label="Auto merge"/u);
 	assert.match(COMPONENT_SOURCE, /Auto merge/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/label="Auto merge"[\s\S]*tabIndex=\{-1\}/u,
+	);
 	assert.match(COMPONENT_SOURCE, /closeOnClick=\{false\}/u);
+	assert.match(COMPONENT_SOURCE, /handleMergeMethodChange/u);
 	assert.match(COMPONENT_SOURCE, /handleAutoMergeChange/u);
+	assert.match(COMPONENT_SOURCE, /DEFAULT_MERGE_METHOD: PullRequestHeaderMergeMethod = "squash"/u);
 	assert.match(COMPONENT_SOURCE, /DEFAULT_AUTO_MERGE = true/u);
+	assert.match(COMPONENT_SOURCE, /case "checks-failed":[\s\S]*return "Checks failed"/u);
 	assert.match(COMPONENT_SOURCE, /case "checks-running":[\s\S]*return "Checks running"/u);
 	assert.match(COMPONENT_SOURCE, /case "merge-conflicts":[\s\S]*return "Merge conflicts"/u);
-	assert.match(COMPONENT_SOURCE, /case "ready":[\s\S]*return "Merge"/u);
+	assert.match(COMPONENT_SOURCE, /case "review-required":[\s\S]*return "Review required"/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/function mergeMethodLabel[\s\S]*case "squash":[\s\S]*return "Squash and merge"[\s\S]*case "merge":[\s\S]*return "Create a merge commit"[\s\S]*case "rebase":[\s\S]*return "Rebase and merge"/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/case "ready":[\s\S]*return mergeMethodLabel\(mergeMethod\)/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/MERGE_METHOD_VALUES\.map\([\s\S]*DropdownMenuItem[\s\S]*selected=\{value === selectedMergeMethod\}[\s\S]*mergeMethodLabel/u,
+	);
 	assert.match(
 		COMPONENT_SOURCE,
 		/resolvedVariant === "compact" \? "text-sm" : "text-base"/u,
@@ -204,11 +240,19 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.match(COMPONENT_SOURCE, /sm:items-center sm:justify-between/u);
 	assert.match(
 		COMPONENT_SOURCE,
+		/className="flex min-w-0 flex-nowrap items-center gap-x-2 gap-y-1 sm:flex-1"[\s\S]*className=\{cn\([\s\S]*"min-w-0 flex-1 truncate font-medium text-text"/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
 		/function BranchName[\s\S]*lastIndexOf\("\/"\)[\s\S]*text-text-subtlest/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/<BranchName name=\{branchPair\.headBranch\} \/>[\s\S]*→[\s\S]*<BranchName name=\{branchPair\.baseBranch\} \/>/u,
+		/<span className="min-w-0 truncate">[\s\S]*<BranchName name=\{branchPair\.headBranch\} \/>[\s\S]*shrink-0 px-1 text-text-subtle[\s\S]*→[\s\S]*<span className="shrink-0">[\s\S]*<BranchName name=\{branchPair\.baseBranch\} \/>/u,
+	);
+	assert.doesNotMatch(
+		COMPONENT_SOURCE,
+		/<span className="min-w-0 truncate">\s*<BranchName name=\{branchPair\.headBranch\} \/>\s*<span aria-hidden className="px-1 text-text-subtle">/u,
 	);
 	assert.match(COMPONENT_SOURCE, /function resolveScmProviderName/u);
 	assert.match(
@@ -226,7 +270,10 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.match(COMPONENT_SOURCE, /function ScmProviderMark/u);
 	assert.match(COMPONENT_SOURCE, /AtlassianLogoMark[\s\S]*name="bitbucket"/u);
 	assert.match(COMPONENT_SOURCE, /BrandLogoMark[\s\S]*name="gitlab"/u);
-	assert.match(COMPONENT_SOURCE, /BrandLogoMark[\s\S]*name="github"/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/BrandLogoMark[\s\S]*className="dark:invert \[\[data-color-mode=dark\]_&\]:invert"[\s\S]*name="github"/u,
+	);
 	assert.match(
 		COMPONENT_SOURCE,
 		/elemBefore=\{<ScmProviderMark name=\{resolvedScmProviderName\} \/>\}[\s\S]*\{openInScmLabel\}/u,
@@ -265,6 +312,61 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.doesNotMatch(COMPONENT_SOURCE, /data-jira-work-item-pull-request-detail-header/u);
 });
 
+test("PullRequestHeader owns optional bottom-edge tab navigation", () => {
+	assert.match(
+		COMPONENT_SOURCE,
+		/className=\{tabNavigation \? "px-4" : undefined\}[\s\S]*\{tabNavigation \? \([\s\S]*className=\{cn\([\s\S]*"relative z-10 -mb-px mt-4 shrink-0[\s\S]*\{tabNavigation\}/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/resolvedVariant === "compact"[\s\S]*\? "px-\[clamp\(1rem,calc\(30%-4rem\),16rem\)\]"[\s\S]*: "px-\[clamp\(1rem,calc\(20%-4rem\),11rem\)\]"/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/transition-\[padding-left,padding-right\] duration-medium ease-in-out motion-reduce:transition-none/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/overflow-x-auto overscroll-x-contain/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/\[&_\[data-slot=tabs-list\]\]:border-b-0/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/-mb-px[\s\S]*\[&_\[data-slot=tabs-trigger\]\]:after:bottom-0/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/"relative z-10 -mb-px mt-4 shrink-0/u,
+	);
+	assert.doesNotMatch(
+		COMPONENT_SOURCE,
+		/tabNavigation[\s\S]*\? "overflow-hidden pt-4"/u,
+	);
+	assert.doesNotMatch(
+		COMPONENT_SOURCE,
+		/borderBottomLeftRadius:\s*6|borderBottomRightRadius:\s*6/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/style=\{style\}/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/tabNavigation \? \([\s\S]*layout=\{shouldReduceMotion \? false : "position"\}[\s\S]*transition=\{\{ layout: LAYOUT_TRANSITION \}\}/u,
+	);
+});
+
+test("PullRequestHeader replaces merge controls with terminal merged state", () => {
+	assert.match(COMPONENT_SOURCE, /const canMutatePullRequest = status === "Open"/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/\{canMutatePullRequest \? \([\s\S]*<ButtonGroup variant="split">[\s\S]*mergeStateLabel\(mergeState, selectedMergeMethod\)[\s\S]*aria-label="Merge options"[\s\S]*\) : \([\s\S]*<Button disabled[\s\S]*<MergeSuccessIcon[\s\S]*Merged[\s\S]*\)\}/u,
+	);
+});
+
 test("resolveScmProviderName maps common hosts", () => {
 	assert.match(
 		COMPONENT_SOURCE,
@@ -300,6 +402,18 @@ test("Pull Request Header demo shows controlled and scroll-driven modes", () => 
 		/h-full min-h-\[360px\] w-full overflow-y-auto/u,
 	);
 	assert.match(PAGE_SOURCE, /DEMO_PULL_REQUEST_HEADER/u);
+	assert.match(
+		PAGE_SOURCE,
+		/import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs"/u,
+	);
+	assert.match(
+		PAGE_SOURCE,
+		/function DemoPullRequestHeader[\s\S]*<Tabs defaultValue="details">[\s\S]*tabNavigation=\{<DemoPullRequestTabs \/>\}/u,
+	);
+	assert.match(
+		PAGE_SOURCE,
+		/Overview[\s\S]*Guide[\s\S]*4 Files[\s\S]*text-text-success[\s\S]*\+86[\s\S]*text-text-danger[\s\S]*-21/u,
+	);
 	assert.match(PAGE_SOURCE, />Merge</u);
 	assert.match(PAGE_SOURCE, /value=\{\[variant\]\}/u);
 	assert.match(PAGE_SOURCE, /mergeState="ready"/u);
@@ -309,6 +423,7 @@ test("Pull Request Header demo shows controlled and scroll-driven modes", () => 
 	assert.match(PAGE_SOURCE, /onClosePullRequestClick=\{\(\) => undefined\}/u);
 	assert.doesNotMatch(PAGE_SOURCE, /onMoreActionsClick/u);
 	assert.match(PAGE_SOURCE, /mergeState="merge-conflicts"/u);
+	assert.match(PAGE_SOURCE, /onMergeConflictsClick=\{\(\) => undefined\}/u);
 	assert.match(PAGE_SOURCE, /Checks running/u);
 	assert.match(PAGE_SOURCE, /Merge conflicts/u);
 	assert.doesNotMatch(PAGE_SOURCE, /Merge button label/u);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
 import {
 	TwgTool,
@@ -93,6 +93,8 @@ function ExpandedSearchResults({
 			label="Evaluating sources"
 			description="Ranking sources by recency and authority"
 			status="complete"
+			collapsible
+			defaultOpen
 		>
 			<ChainOfThoughtSearchResults>
 				{results.map((result) => (
@@ -105,93 +107,113 @@ function ExpandedSearchResults({
 	);
 }
 
+function TwgToolDemoFrame({ children }: Readonly<{ children: ReactNode }>) {
+	return (
+		<div className="flex min-h-full w-full items-center justify-center p-4">
+			{children}
+		</div>
+	);
+}
+
 export default function TwgToolDemo() {
 	const [replayKey, setReplayKey] = useState(0);
 
 	return (
-		<div className="flex w-full max-w-3xl flex-col gap-4">
-			<div className="flex justify-end">
-				<Button
-					aria-label="Replay TWG source stack animation"
-					onClick={() => setReplayKey((currentKey) => currentKey + 1)}
-					size="default"
-					variant="outline"
-				>
-					<RefreshIcon label="" size="small" />
-					Replay
-				</Button>
+		<TwgToolDemoFrame>
+			<div className="flex w-full max-w-3xl flex-col gap-4">
+				<div className="flex justify-end">
+					<Button
+						aria-label="Replay TWG source stack animation"
+						onClick={() => setReplayKey((currentKey) => currentKey + 1)}
+						size="default"
+						variant="outline"
+					>
+						<RefreshIcon label="" size="small" />
+						Replay
+					</Button>
+				</div>
+				<div key={replayKey} className="flex flex-col gap-8">
+					<TwgTool
+						description={<InlineSource source={TWG_SOURCE}>Upper arm strain repair</InlineSource>}
+						sources={[TWG_SOURCE]}
+						defaultOpen={false}
+					>
+						<ExpandedSearchResults />
+					</TwgTool>
+					<TwgTool
+						description={<InlineSource source={CONFLUENCE_SOURCE}>Kerb collision post-incident analysis</InlineSource>}
+						sources={[TWG_SOURCE, CONFLUENCE_SOURCE]}
+						defaultOpen={false}
+					>
+						<ExpandedSearchResults />
+					</TwgTool>
+					<TwgTool
+						description={<InlineSource source={DRIVE_SOURCE}>Upper arm faring refinement</InlineSource>}
+						sources={[TWG_SOURCE, CONFLUENCE_SOURCE, DRIVE_SOURCE]}
+						defaultOpen={false}
+					>
+						<ExpandedSearchResults />
+					</TwgTool>
+					<TwgTool
+						description="Read through 6 sources"
+						sources={ALL_SOURCES}
+						status="complete"
+						showLoader={false}
+						contentClassName="pl-2"
+						defaultOpen
+					>
+						<ExpandedSearchResults />
+					</TwgTool>
+				</div>
 			</div>
-			<div key={replayKey} className="flex flex-col gap-8">
-				<TwgTool
-					description={<InlineSource source={TWG_SOURCE}>Upper arm strain repair</InlineSource>}
-					sources={[TWG_SOURCE]}
-					defaultOpen={false}
-				>
-					<ExpandedSearchResults />
-				</TwgTool>
-				<TwgTool
-					description={<InlineSource source={CONFLUENCE_SOURCE}>Kerb collision post-incident analysis</InlineSource>}
-					sources={[TWG_SOURCE, CONFLUENCE_SOURCE]}
-					defaultOpen={false}
-				>
-					<ExpandedSearchResults />
-				</TwgTool>
-				<TwgTool
-					description={<InlineSource source={DRIVE_SOURCE}>Upper arm faring refinement</InlineSource>}
-					sources={[TWG_SOURCE, CONFLUENCE_SOURCE, DRIVE_SOURCE]}
-					defaultOpen={false}
-				>
-					<ExpandedSearchResults />
-				</TwgTool>
-				<TwgTool
-					description="Read through 6 sources"
-					sources={ALL_SOURCES}
-					status="complete"
-					defaultOpen
-				>
-					<ExpandedSearchResults />
-				</TwgTool>
-			</div>
-		</div>
+		</TwgToolDemoFrame>
 	);
 }
 
 export function TwgToolDemoSingleSource() {
 	return (
-		<TwgTool
-			className="w-full max-w-2xl"
-			description={<InlineSource source={TWG_SOURCE}>Upper arm strain repair</InlineSource>}
-			sources={[TWG_SOURCE]}
-			defaultOpen
-		>
-			<ExpandedSearchResults />
-		</TwgTool>
+		<TwgToolDemoFrame>
+			<TwgTool
+				className="w-full max-w-2xl"
+				description={<InlineSource source={TWG_SOURCE}>Upper arm strain repair</InlineSource>}
+				sources={[TWG_SOURCE]}
+				defaultOpen
+			>
+				<ExpandedSearchResults />
+			</TwgTool>
+		</TwgToolDemoFrame>
 	);
 }
 
 export function TwgToolDemoMultipleSources() {
 	return (
-		<TwgTool
-			className="w-full max-w-2xl"
-			description={<InlineSource source={DRIVE_SOURCE}>Upper arm faring refinement</InlineSource>}
-			sources={[TWG_SOURCE, CONFLUENCE_SOURCE, DRIVE_SOURCE, JIRA_SOURCE]}
-			defaultOpen
-		>
-			<ExpandedSearchResults />
-		</TwgTool>
+		<TwgToolDemoFrame>
+			<TwgTool
+				className="w-full max-w-2xl"
+				description={<InlineSource source={DRIVE_SOURCE}>Upper arm faring refinement</InlineSource>}
+				sources={[TWG_SOURCE, CONFLUENCE_SOURCE, DRIVE_SOURCE, JIRA_SOURCE]}
+				defaultOpen
+			>
+				<ExpandedSearchResults />
+			</TwgTool>
+		</TwgToolDemoFrame>
 	);
 }
 
 export function TwgToolDemoCompleted() {
 	return (
-		<TwgTool
-			className="w-full max-w-2xl"
-			description="Read through 6 sources"
-			sources={ALL_SOURCES}
-			status="complete"
-			defaultOpen
-		>
-			<ExpandedSearchResults />
-		</TwgTool>
+		<TwgToolDemoFrame>
+			<TwgTool
+				className="w-full max-w-2xl"
+				description="Read through 6 sources"
+				sources={ALL_SOURCES}
+				status="complete"
+				showLoader={false}
+				contentClassName="pl-2"
+				defaultOpen
+			>
+				<ExpandedSearchResults />
+			</TwgTool>
+		</TwgToolDemoFrame>
 	);
 }

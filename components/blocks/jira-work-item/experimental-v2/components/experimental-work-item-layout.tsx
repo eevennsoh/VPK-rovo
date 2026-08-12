@@ -104,7 +104,7 @@ function DescriptionColumnShell({
 			</div>
 			<div
 				ref={scrollRef}
-				className="order-2 contents @[860px]/agentlayout:relative @[860px]/agentlayout:block @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:overscroll-y-none @[860px]/agentlayout:px-6 @[860px]/agentlayout:pb-6"
+				className="order-2 contents has-[[data-jira-work-item-pull-request-detail-header]]:[overflow-anchor:none] @[860px]/agentlayout:relative @[860px]/agentlayout:block @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:overscroll-y-none @[860px]/agentlayout:px-6 @[860px]/agentlayout:pb-6"
 				data-jira-work-item-scroll-region
 				style={style}
 			>
@@ -219,7 +219,7 @@ export function ExperimentalWorkItemLayout({
 							</DescriptionColumnShell>
 							{showStickyComposer ? (
 								<div
-									className="order-5 min-w-0 sticky bottom-0 z-10 bg-transparent px-4 pt-3 pb-4 @[860px]/agentlayout:static @[860px]/agentlayout:shrink-0 @[860px]/agentlayout:px-0 @[860px]/agentlayout:pt-4 @[860px]/agentlayout:pb-6"
+									className="order-5 min-w-0 sticky bottom-0 z-10 bg-surface-overlay px-4 pt-3 pb-4 @[860px]/agentlayout:static @[860px]/agentlayout:shrink-0 @[860px]/agentlayout:bg-transparent @[860px]/agentlayout:px-0 @[860px]/agentlayout:pt-4 @[860px]/agentlayout:pb-6"
 									data-jira-work-item-composer-dock
 								>
 									{showNarrowBottomScrollMask ? (
@@ -232,7 +232,7 @@ export function ExperimentalWorkItemLayout({
 											{NARROW_BOTTOM_SCROLL_MASK_BLUR_LAYERS.map((layerStyle, index) => (
 												<div key={index} style={layerStyle} />
 											))}
-											<div className="absolute inset-0 bg-linear-to-b from-transparent to-background" />
+											<div className="absolute inset-0 bg-linear-to-b from-transparent to-surface-overlay" />
 										</div>
 									) : null}
 									<div

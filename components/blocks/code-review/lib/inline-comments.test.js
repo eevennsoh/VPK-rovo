@@ -23,6 +23,7 @@ function createDraft(id, overrides = {}) {
 		fileId: "profile",
 		filePath: "src/profile.ts",
 		side: "additions",
+		startLineNumber: 2,
 		lineNumber: 2,
 		lineText: "return name.trim();",
 		body: "",
@@ -114,14 +115,28 @@ test("committed inline comments can be updated without changing their anchor", a
 	assert.equal(updateInlineComment(updated, "comment-1", "   "), updated);
 });
 
-test("line text resolution uses one-based old and new source lines", async () => {
-	const { resolveInlineCommentLineText } = await model;
+test("line text resolution normalizes and joins one-based source ranges", async () => {
+	const {
+		formatInlineCommentLineLabel,
+		normalizeInlineCommentLineRange,
+		resolveInlineCommentLineText,
+	} = await model;
 	const file = createFile();
 
 	assert.equal(resolveInlineCommentLineText(file, "deletions", 1), "const name = 'old';");
 	assert.equal(resolveInlineCommentLineText(file, "additions", 2), "return name.trim();");
+	assert.equal(
+		resolveInlineCommentLineText(file, "additions", 2, 1),
+		"const name = 'new';\nreturn name.trim();",
+	);
 	assert.equal(resolveInlineCommentLineText(file, "additions", 0), "");
 	assert.equal(resolveInlineCommentLineText(file, "additions", 99), "");
+	assert.deepEqual(normalizeInlineCommentLineRange(8, 3), {
+		startLineNumber: 3,
+		lineNumber: 8,
+	});
+	assert.equal(formatInlineCommentLineLabel({ startLineNumber: 3, lineNumber: 8 }), "Lines 3 - 8");
+	assert.equal(normalizeInlineCommentLineRange(0, 3), null);
 });
 
 test("AI context serialization is deterministic and preserves creation order", async () => {
@@ -138,8 +153,9 @@ test("AI context serialization is deterministic and preserves creation order", a
 		createDraft("comment-2", {
 			body: "Keep the old behavior covered.",
 			side: "deletions",
-			lineNumber: 1,
-			lineText: "const name = 'old';",
+			startLineNumber: 1,
+			lineNumber: 2,
+			lineText: "const name = 'old';\nreturn name;",
 		}),
 	];
 
@@ -161,8 +177,8 @@ test("AI context serialization is deterministic and preserves creation order", a
 			"Comment 2:",
 			"File: src/profile.ts",
 			"Side: old",
-			"Line: 1",
-			"Exact code line: \"const name = 'old';\"",
+			"Lines: 1-2",
+			"Exact code block: \"const name = 'old';\\nreturn name;\"",
 			"Review comment: Keep the old behavior covered.",
 		].join("\n"),
 	);

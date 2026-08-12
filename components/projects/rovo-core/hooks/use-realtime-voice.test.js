@@ -23,6 +23,18 @@ const STUDIO_WRAPPER_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/studio/hooks/use-realtime-voice.ts"),
 	"utf8",
 );
+const SIDEBAR_CHAT_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/sidebar-chat/page.tsx"),
+	"utf8",
+);
+const ROVO_APP_SHELL_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/rovo/components/rovo-app-shell.tsx"),
+	"utf8",
+);
+const STUDIO_APP_SHELL_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/studio/components/rovo-app-shell.tsx"),
+	"utf8",
+);
 
 test("Rovo and Studio realtime voice hooks are thin policy wrappers over core", () => {
 	assert.match(
@@ -93,4 +105,42 @@ test("realtime voice protocol and playback helpers stay outside the hook", () =>
 	assert.match(PROTOCOL_SOURCE, /export type ServerMessage/u);
 	assert.match(PLAYBACK_SOURCE, /export function createPlaybackQueue/u);
 	assert.match(PLAYBACK_SOURCE, /export function enqueueAudio/u);
+});
+
+test("dictation opens the Realtime transport in transcription-only mode", () => {
+	assert.doesNotMatch(CORE_HOOK_SOURCE, /browserTranscriptionOnly/u);
+	assert.match(
+		CORE_HOOK_SOURCE,
+		/startBrowserRecognition\(\);[\s\S]*setConnectionState\("connecting"\);[\s\S]*connectWs\(\);/u,
+	);
+
+	for (const source of [
+		SIDEBAR_CHAT_SOURCE,
+		ROVO_APP_SHELL_SOURCE,
+		STUDIO_APP_SHELL_SOURCE,
+	]) {
+		assert.match(
+			source,
+			/realtime\.connect\(\{ transcriptionOnly: true \}\);/u,
+		);
+		assert.doesNotMatch(
+			source,
+			/realtime\.connect\(\{ browserTranscriptionOnly: true \}\);/u,
+		);
+	}
+});
+
+test("browser fallback completion absorbs delayed server transcript events for the same turn", () => {
+	assert.match(
+		CORE_HOOK_SOURCE,
+		/browserFallbackCompletedTurnIdRef\.current =[\s\S]*markActiveSpeechTurnCompleted\(transcript\);/u,
+	);
+	assert.match(
+		CORE_HOOK_SOURCE,
+		/case "transcription_delta":[\s\S]*if \(hasCompletedActiveSpeechTurnWithBrowserFallback\(\)\) \{[\s\S]*break;[\s\S]*\}[\s\S]*pendingTranscriptRef\.current \+= message\.delta;/u,
+	);
+	assert.match(
+		CORE_HOOK_SOURCE,
+		/case "transcription_completed":[\s\S]*const browserFallbackAlreadyCompleted =[\s\S]*hasCompletedActiveSpeechTurnWithBrowserFallback\(\);[\s\S]*!browserFallbackAlreadyCompleted &&[\s\S]*onSpeechTranscriptCompletedRef\.current/u,
+	);
 });

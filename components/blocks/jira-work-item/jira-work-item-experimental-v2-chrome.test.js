@@ -73,7 +73,7 @@ test("experimental v2 places Status and Reported by under the title", () => {
 		/className=\{cn\("min-w-0 truncate", PERSON_LABEL_TEXT_CLASS\[size\]\)\}/u,
 	);
 	assert.match(personLabelSource, /size = "sm"/u);
-	// Assignee / priority value rows share an 8px (gap-2) icon→text gap.
+	// PersonLabel avatar→name gap matches PriorityLabel at 8px (gap-2).
 	assert.match(
 		personLabelSource,
 		/export function PersonLabel\([\s\S]*className="flex min-w-0 items-center gap-2"/u,
@@ -219,6 +219,12 @@ test("experimental v2 scopes ContextResources to the left column and the Details
 		layoutSource,
 		/data-jira-work-item-column-shell[\s\S]*data-jira-work-item-column-chrome[\s\S]*data-scroll-fade-visible=\{showTopScrollMask \? "" : undefined\}[\s\S]*\{chrome\}[\s\S]*@\[860px\]\/agentlayout:overflow-y-auto @\[860px\]\/agentlayout:overscroll-y-none[\s\S]*data-jira-work-item-scroll-region[\s\S]*data-jira-work-item-column-body/u,
 	);
+	// A collapsing sticky PR header must not let browser scroll anchoring push
+	// scrollTop back across its collapse threshold and retrigger the transition.
+	assert.match(
+		layoutSource,
+		/has-\[\[data-jira-work-item-pull-request-detail-header\]\]:\[overflow-anchor:none\]/u,
+	);
 	assert.match(
 		layoutSource,
 		/flex h-full min-h-0 min-w-0 flex-col gap-6 overflow-y-auto overscroll-y-none/u,
@@ -235,7 +241,7 @@ test("experimental v2 scopes ContextResources to the left column and the Details
 	);
 	assert.match(
 		layoutSource,
-		/data-jira-work-item-column-chrome[\s\S]*order-2 contents @\[860px\]\/agentlayout:relative @\[860px\]\/agentlayout:block[\s\S]*@\[860px\]\/agentlayout:overflow-y-auto @\[860px\]\/agentlayout:overscroll-y-none @\[860px\]\/agentlayout:px-6 @\[860px\]\/agentlayout:pb-6"[\s\S]*data-jira-work-item-scroll-region/u,
+		/data-jira-work-item-column-chrome[\s\S]*order-2 contents[^"]* @\[860px\]\/agentlayout:relative @\[860px\]\/agentlayout:block[\s\S]*@\[860px\]\/agentlayout:overflow-y-auto @\[860px\]\/agentlayout:overscroll-y-none @\[860px\]\/agentlayout:px-6 @\[860px\]\/agentlayout:pb-6"[\s\S]*data-jira-work-item-scroll-region/u,
 	);
 	assert.match(
 		contextResourcesSource,

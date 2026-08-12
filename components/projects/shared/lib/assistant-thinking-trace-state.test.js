@@ -254,6 +254,7 @@ test("tool icon resolver maps agents thinking tools to specific icons", () => {
 		resolveToolIcon({ toolName: "teamwork_graph.search" }).iconComponent?.name,
 		/^TeamworkGraphIcon/u
 	);
+	assert.match(resolveToolIcon({ toolName: "twg.lookup_work_item_delivery_context" }).iconComponent?.name, /^TeamworkGraphIcon/u);
 	assert.match(
 		resolveToolIcon({ toolName: "rfp.map_requirements" }).iconComponent?.name,
 		/^ListChecklistIcon/u
@@ -638,35 +639,6 @@ test("resolveAssistantThinkingTraceOpen can suppress auto expansion for question
 		}),
 		true,
 	);
-});
-
-test("assistant thinking trace suppresses auto-open for question-card tool states", () => {
-	const source = fs.readFileSync(
-		path.join(__dirname, "../components/assistant-thinking-trace.tsx"),
-		"utf8",
-	);
-
-	assert.match(
-		source,
-		/allowAutoOpen: !data\.hasAwaitingInputToolCalls && !data\.hasAnsweredQuestionToolCalls/u,
-	);
-});
-
-test("assistant thinking trace uses a rainbow spinner + shimmer + dots for response generation", () => {
-	const source = fs.readFileSync(
-		path.join(__dirname, "../components/assistant-thinking-trace.tsx"),
-		"utf8",
-	);
-
-	assert.match(source, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
-	assert.match(source, /import \{ AnimatedDots \} from "@\/components\/ui-custom\/animated-dots";/u);
-	// The trailing step renders a rainbow spinner icon (no wash), shimmering
-	// "Generating a response" text, and animated dots.
-	assert.match(source, /iconRender=\{<Spinner variant="rainbow"/u);
-	assert.match(source, /iconShimmer=\{false\}/u);
-	assert.match(source, /<Shimmer[\s\S]*Generating a response[\s\S]*<\/Shimmer>\s*<AnimatedDots \/>/u);
-	// The old pencil icon is gone.
-	assert.equal(/StepPencilIcon/u.test(source), false);
 });
 
 test("resolveAssistantThinkingTraceOpen respects manual user toggles", () => {

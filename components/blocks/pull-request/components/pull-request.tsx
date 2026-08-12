@@ -49,11 +49,11 @@ function statusLozengeVariant(
 function BranchName({ name }: Readonly<{ name: string }>) {
 	const slashIndex = name.indexOf("/");
 	if (slashIndex === -1) {
-		return <span className="truncate text-text">{name}</span>;
+		return <span className="min-w-0 truncate text-text">{name}</span>;
 	}
 
 	return (
-		<span className="truncate">
+		<span className="min-w-0 truncate">
 			<span className="text-text-subtlest">{name.slice(0, slashIndex + 1)}</span>
 			<span className="text-text">{name.slice(slashIndex + 1)}</span>
 		</span>
@@ -104,6 +104,7 @@ function PullRequestBranchPath({
 			}
 			className="inline-flex min-w-0 shrink items-center gap-1 overflow-hidden text-xs leading-5"
 		>
+			{/* Source truncates; target/base stays full (`main`, not `m…`). */}
 			{branch ? <BranchName name={branch} /> : null}
 			{branch && targetBranch ? (
 				<span className="inline-flex size-3 shrink-0 items-center justify-center text-icon-subtle">
@@ -111,7 +112,7 @@ function PullRequestBranchPath({
 				</span>
 			) : null}
 			{targetBranch ? (
-				<span className="truncate text-text">{targetBranch}</span>
+				<span className="shrink-0 text-text">{targetBranch}</span>
 			) : null}
 		</span>
 	);
@@ -197,8 +198,9 @@ export function PullRequest({
 	onActivate,
 	className,
 }: Readonly<PullRequestProps>) {
-	// Apply selected chrome whenever `selected` is set — including display-only
-	// cards inside SelectItem (no onActivate; the item owns activation).
+	// Apply selected chrome whenever `selected` is set (e.g. interactive list
+	// cards with onActivate). Dropdown options should omit `selected` and keep
+	// an idle surface — SelectItem owns activation; the trigger shows state.
 	const activeSelected = selected;
 	const body = (
 		<PullRequestCardBody

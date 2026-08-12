@@ -40,6 +40,7 @@ import {
 import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental-v2/context-metadata-rail";
 import { CONNECTED_REPOSITORY_COUNT } from "@/components/blocks/jira-work-item/experimental-v2/lib/development-repositories";
 import { getPullRequestIdentity } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
+import type { PullRequestCheck, PullRequestReviewer } from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-detail-data";
 import { SmartLink, type SmartLinkItem } from "@/components/blocks/smart-link";
 import { SMART_LINK_MODAL_ACTIONS } from "@/components/blocks/smart-link/data/smart-link-actions";
 import { ProgressCircle } from "@/components/ui-custom/progress-circle";
@@ -210,11 +211,15 @@ export function MetadataRail({
 	activity,
 	automationRules = [],
 	borderless = false,
+	currentReviewerStatus,
+	onPullRequestFix,
 	selectedPullRequestEntry = null,
 }: Readonly<{
 	activity?: ReactNode;
 	automationRules?: readonly WorkItemAutomationRule[];
 	borderless?: boolean;
+	currentReviewerStatus?: PullRequestReviewer["status"];
+	onPullRequestFix?: (checks: readonly PullRequestCheck[]) => void;
 	selectedPullRequestEntry?: JiraActivityEventEntry | null;
 }>) {
 	const {
@@ -312,7 +317,9 @@ export function MetadataRail({
 				</div>
 				<div
 					ref={metadataBodyScrollRef}
-					className="relative min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-none @[860px]/agentlayout:pb-8"
+					// overflow-x-hidden: body owns vertical scroll only; long activity
+					// lines must wrap/truncate via min-w-0 rather than grow a cross-axis bar.
+					className="relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-none @[860px]/agentlayout:pb-8"
 					data-jira-work-item-scroll-region
 					style={metadataBodyScrollMaskStyle}
 				>
@@ -364,7 +371,8 @@ export function MetadataRail({
 							<div
 								// overflow-visible: reply PromptInput shadows must paint past the
 								// padded content box; the rail scrollport still owns clipping.
-								className="overflow-visible px-3"
+								// min-w-0: this flex-col child must shrink so artifact titles truncate.
+								className="min-w-0 max-w-full overflow-visible px-3"
 								hidden={pullRequestSelected || activePanelView !== "activity"}
 								inert={pullRequestSelected || activePanelView !== "activity" ? true : undefined}
 							>
@@ -374,8 +382,10 @@ export function MetadataRail({
 						{selectedPullRequestEntry ? (
 							<PullRequestContextRail
 								activePanelView={activePanelView}
+								currentReviewerStatus={currentReviewerStatus}
 								entry={selectedPullRequestEntry}
 								key={selectedPullRequestKey}
+								onFixCheck={onPullRequestFix}
 							/>
 						) : null}
 					</div>

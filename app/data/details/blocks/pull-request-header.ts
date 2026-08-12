@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const PULL_REQUEST_HEADER_DETAIL: ComponentDetail = {
 	description:
-		"Two-row pull-request detail header with expanded and compact variants. The title row stays visible with a Merge split button (primary label + Auto merge menu) and a More actions menu (Copy link, Open in {SCM}, Convert to draft, Close pull request); use `variant` or `scrollContainerRef` to collapse the status, repository, and branch meta row. Compact mode also shrinks the PR number and title to `text-sm`.",
+		"Pull-request detail header with expanded and compact variants plus an optional bottom-edge tab-navigation slot. The title row stays visible with a Merge split button (primary label + merge method / Auto merge menu) and a More actions menu (Copy link, Open in {SCM}, Convert to draft, Close pull request); use `variant` or `scrollContainerRef` to collapse the status, repository, and branch meta row while keeping the tabs anchored. Compact mode also shrinks the PR number and title to `text-sm`.",
 	importStatement: `import { PullRequestHeader } from "@/components/blocks/pull-request-header";
 import type { PullRequestHeaderProps } from "@/components/blocks/pull-request-header";`,
 	usage: `import { useRef } from "react";
@@ -20,6 +20,7 @@ const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   headBranch="feature/guest-checkout"
   repository="eevensoh/vpk-rovo"
   mergeState="ready"
+  defaultMergeMethod="squash"
   defaultAutoMerge
   variant="compact"
 />
@@ -36,6 +37,12 @@ const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 		examplesContentWidth: "full",
 	},
 	props: [
+		{
+			name: "tabNavigation",
+			type: "ReactNode",
+			description:
+				"Tab list rendered on the header's bottom edge. Keep the owning Tabs root outside the header so related panels can remain beside it.",
+		},
 		{
 			name: "variant",
 			type: '"expanded" | "compact"',
@@ -96,7 +103,26 @@ const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 			type: '"checks-running" | "merge-conflicts" | "ready"',
 			default: '"ready"',
 			description:
-				'Merge split-button primary label: `"checks-running"` → "Checks running", `"merge-conflicts"` → "Merge conflicts", `"ready"` → "Merge". Primary enables for `ready` + `onMergeClick` or `checks-running` + `onChecksRunningClick`; `merge-conflicts` stays disabled (no related primary action yet). The chevron menu stays available for Auto merge.',
+				'Merge split-button primary label: `"checks-running"` → "Checks running", `"merge-conflicts"` → "Merge conflicts", `"ready"` → the selected merge method label. Primary actions enable when their matching callback is available. The chevron menu stays available for merge method + Auto merge.',
+		},
+		{
+			name: "mergeMethod",
+			type: '"squash" | "merge" | "rebase"',
+			description:
+				"Controlled merge method radio selection in the merge options menu. Prefer with `onMergeMethodChange`.",
+		},
+		{
+			name: "defaultMergeMethod",
+			type: '"squash" | "merge" | "rebase"',
+			default: '"squash"',
+			description:
+				'Uncontrolled merge method default. `"squash"` unless overridden.',
+		},
+		{
+			name: "onMergeMethodChange",
+			type: "(method: \"squash\" | \"merge\" | \"rebase\") => void",
+			description:
+				"Called when a merge method radio option is selected in the merge options menu.",
 		},
 		{
 			name: "autoMerge",
@@ -128,6 +154,12 @@ const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 			type: "() => void",
 			description:
 				"Called when the Checks running primary is activated (enabled only when `mergeState` is `checks-running`). In the work-item PR detail, this expands the CI checks disclosure in the metadata rail.",
+		},
+		{
+			name: "onMergeConflictsClick",
+			type: "() => void",
+			description:
+				"Called when the Merge conflicts primary is activated. Jira PR detail uses it to switch to Details and expand the CI checks section.",
 		},
 		{
 			name: "url",

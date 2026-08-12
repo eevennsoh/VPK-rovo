@@ -824,7 +824,14 @@ function FloatingRovoButtonSurface({
 	// dragged it. Until then every re-measure (mount, onboarding expand/collapse,
 	// viewport/container resize) re-anchors to the default corner instead of
 	// snapping to the nearest grid cell, so it never drifts on its own.
+	//
+	// The ref drives the measurement callbacks; the state drives `surfaceStyle`.
+	// Before the first drag the surface is pinned with CSS `right`/`bottom` so a
+	// live window/container resize keeps it glued to the corner every frame —
+	// re-measuring `left`/`top` through React state cannot keep up with a
+	// continuous drag of the window edge and visibly lags behind.
 	const hasUserDraggedRef = useRef(false);
+	const [hasUserDragged, setHasUserDragged] = useState(false);
 	const dragPointerStartRef = useRef<FloatingRovoButtonDragStart | null>(null);
 	const suppressDragClickStateRef = useLazyRef<FloatingRovoButtonClickSuppressionState>(() =>
 		createInitialClickSuppressionState(),
@@ -840,7 +847,11 @@ function FloatingRovoButtonSurface({
 		? { duration: 0 }
 		: { duration: 0.28, ease: "linear" as const };
 	const surfaceStyle: MotionStyle = {
-		...(dragOrigin
+		// Un-dragged: pin with CSS so the browser re-anchors the corner on every
+		// resize frame. Dragged: use the measured origin the drag math owns.
+		// Both resolve to the same pixel (EDGE_GAP === DEFAULT_BUTTON_* === 24),
+		// so promoting to `left`/`top` at drag start does not jump.
+		...(dragOrigin && hasUserDragged
 			? {
 					left: dragOrigin.left,
 					top: dragOrigin.top,
@@ -1046,6 +1057,8 @@ function FloatingRovoButtonSurface({
 		const handleResize = () => {
 			// A resize never moves the button off the default corner unless the
 			// user has dragged it — then we keep it on the nearest grid cell.
+			// While un-dragged the corner is held by CSS, so this only refreshes
+			// the measured origin and constraints the drag math reads later.
 			if (hasUserDraggedRef.current) {
 				snapToNearestGridTarget();
 			} else {
@@ -1055,10 +1068,25 @@ function FloatingRovoButtonSurface({
 
 		window.addEventListener("resize", handleResize);
 
+		// `positioning="container"` hosts resize without a window resize (side
+		// panel opening, rail collapsing), which would otherwise leave the
+		// measured origin stale and make the first drag jump.
+		const coordinateSpace = positioning === "container"
+			? surfaceRef.current?.offsetParent
+			: null;
+		const observer = coordinateSpace instanceof HTMLElement && typeof ResizeObserver !== "undefined"
+			? new ResizeObserver(handleResize)
+			: null;
+
+		if (observer && coordinateSpace instanceof HTMLElement) {
+			observer.observe(coordinateSpace);
+		}
+
 		return () => {
 			window.removeEventListener("resize", handleResize);
+			observer?.disconnect();
 		};
-	}, [anchorToDefaultTarget, dragOrigin, snapToNearestGridTarget]);
+	}, [anchorToDefaultTarget, dragOrigin, positioning, snapToNearestGridTarget]);
 
 	const handleDragPointerDown = useCallback((event: ReactPointerEvent<HTMLElement>) => {
 		if (onboardingOpen || !dragOrigin) {
@@ -1111,6 +1139,7 @@ function FloatingRovoButtonSurface({
 		// The user has intentionally moved the button; from now on resizes and
 		// onboarding toggles snap to the nearest grid cell instead of re-homing.
 		hasUserDraggedRef.current = true;
+		setHasUserDragged(true);
 		armDragClickSuppression();
 		setIsDragging(true);
 		buttonX.set(clampFloatingRovoButtonValue(start.offsetX + deltaX, dragConstraints.left, dragConstraints.right));

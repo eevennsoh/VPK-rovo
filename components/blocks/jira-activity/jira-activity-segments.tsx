@@ -3,29 +3,31 @@ import * as React from "react";
 import ArrowRightIcon from "@atlaskit/icon/core/arrow-right";
 import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
-import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
-import { Tag, type TagColor } from "@/components/ui/tag";
+import { BrandLogoMark } from "@/components/ui/logo-mark";
+import { Lozenge } from "@/components/ui/lozenge";
+import { Tag } from "@/components/ui/tag";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 import type { JiraActivitySegment } from "./jira-activity-types";
 
-const CHIP_BASE = "rounded-xs px-1 font-mono text-[0.8125rem] leading-5 align-middle";
-const LABEL_LOZENGE_VARIANT: Partial<Record<
-	TagColor,
-	NonNullable<LozengeProps["variant"]>
->> = {
-	red: "danger",
-	green: "success",
-	blue: "information",
-	yellow: "warning",
-	purple: "discovery",
-	teal: "accent-teal",
-	orange: "accent-orange",
-	lime: "accent-lime",
-	gray: "neutral",
-};
+// ADS code family (Atlassian Mono) at body-small 12px / 16px — matches event copy.
+const CHIP_BASE = "rounded-xs px-1 text-xs leading-4 align-middle";
+const CHIP_FONT_STYLE = { fontFamily: token("font.family.code") } as const;
+
+function initialsOf(name: string): string {
+	return (
+		name
+			.split(" ")
+			.filter(Boolean)
+			.slice(0, 2)
+			.map((word) => word[0]?.toUpperCase())
+			.join("") || "?"
+	);
+}
 
 function SegmentContent({ segment }: Readonly<{ segment: JiraActivitySegment }>) {
 	switch (segment.type) {
@@ -33,7 +35,12 @@ function SegmentContent({ segment }: Readonly<{ segment: JiraActivitySegment }>)
 			return segment.text;
 		case "code":
 			return (
-				<code className={cn(CHIP_BASE, "bg-bg-neutral text-text")}>{segment.text}</code>
+				<code
+					className={cn(CHIP_BASE, "bg-bg-neutral text-text")}
+					style={CHIP_FONT_STYLE}
+				>
+					{segment.text}
+				</code>
 			);
 		case "link":
 			return (
@@ -44,9 +51,32 @@ function SegmentContent({ segment }: Readonly<{ segment: JiraActivitySegment }>)
 						"focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none",
 					)}
 					href={segment.href ?? "#"}
+					style={CHIP_FONT_STYLE}
 				>
 					{segment.text}
 				</a>
+			);
+		case "user-mention":
+			return (
+				<Tag
+					className="mx-0.5 align-middle"
+					color="gray"
+					data-jira-activity-user-mention
+					elemBefore={
+						<span aria-hidden>
+							<Avatar size="xs">
+								{segment.avatarSrc ? (
+									<AvatarImage alt="" src={segment.avatarSrc} />
+								) : null}
+								<AvatarFallback>{initialsOf(segment.text)}</AvatarFallback>
+							</Avatar>
+						</span>
+					}
+					type="user"
+					variant="editor"
+				>
+					{segment.text}
+				</Tag>
 			);
 		case "agent-mention":
 			return (
@@ -71,6 +101,33 @@ function SegmentContent({ segment }: Readonly<{ segment: JiraActivitySegment }>)
 					{segment.text}
 				</Tag>
 			);
+		case "app-mention":
+			// Product tag (BrandLogoMark chip) — not a hexagon agent/app avatar.
+			// Matches PullRequest repo pills / Tag demos; GitHub inverts in dark mode.
+			return (
+				<Tag
+					className="mx-0.5 align-middle"
+					color="gray"
+					data-jira-activity-app-mention
+					elemBefore={
+						segment.brandName ? (
+							<BrandLogoMark
+								className={
+									segment.brandName === "github"
+										? "dark:invert [[data-color-mode=dark]_&]:invert"
+										: undefined
+								}
+								frame="chip"
+								label={segment.text}
+								name={segment.brandName}
+							/>
+						) : undefined
+					}
+					variant="editor"
+				>
+					{segment.text}
+				</Tag>
+			);
 		case "lozenge":
 			return (
 				<Lozenge className="align-middle" variant={segment.variant ?? "neutral"}>
@@ -79,12 +136,13 @@ function SegmentContent({ segment }: Readonly<{ segment: JiraActivitySegment }>)
 			);
 		case "label":
 			return (
-				<Lozenge
+				<Tag
 					className="align-middle"
-					variant={LABEL_LOZENGE_VARIANT[segment.color] ?? "neutral"}
+					color={segment.color}
+					data-jira-activity-label
 				>
 					{segment.text}
-				</Lozenge>
+				</Tag>
 			);
 		case "tag":
 			return (
@@ -111,6 +169,10 @@ function SegmentContent({ segment }: Readonly<{ segment: JiraActivitySegment }>)
 					<span>{segment.text}</span>
 				</span>
 			);
+		default: {
+			const _exhaustive: never = segment;
+			throw new Error(`Unhandled activity segment: ${JSON.stringify(_exhaustive)}`);
+		}
 	}
 }
 

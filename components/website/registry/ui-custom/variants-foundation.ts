@@ -87,6 +87,13 @@ export const UI_CUSTOM_FOUNDATION_VARIANT_DEMOS: Record<string, ComponentType> =
 		() => import("../../demos/ui-custom/progress-circle-demo").then((mod) => ({ default: mod.ProgressCircleDemoStatus })),
 		{ ssr: false },
 	),
+	"progress-circle-demo-segmented": dynamic(
+		() =>
+			import("../../demos/ui-custom/progress-circle-demo").then((mod) => ({
+				default: mod.ProgressCircleDemoSegmented,
+			})),
+		{ ssr: false },
+	),
 	"progress-rovo-demo-default": dynamic(() => import("../../demos/ui-custom/progress-rovo/progress-rovo-demo-default"), { ssr: false }),
 	"progress-rovo-demo-completed": dynamic(() => import("../../demos/ui-custom/progress-rovo/progress-rovo-demo-completed"), { ssr: false }),
 	"progress-rovo-demo-determinate": dynamic(() => import("../../demos/ui-custom/progress-rovo/progress-rovo-demo-determinate"), { ssr: false }),

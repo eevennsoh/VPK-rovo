@@ -42,6 +42,18 @@ export function statusVariant(
 	return "information";
 }
 
+/** Activity-feed status chip using the same tone map as the status dropdown. */
+export function statusLozengeSegment(
+	status: string,
+	phases: readonly string[] = STATUS_PHASES,
+): { type: "lozenge"; text: string; variant: LozengeVariant } {
+	return {
+		type: "lozenge",
+		text: status,
+		variant: statusVariant(status, phases),
+	};
+}
+
 export function filterMetadataSearchItems(
 	items: readonly RichTextSuggestionMenuItem[],
 	query: string,

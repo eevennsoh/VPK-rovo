@@ -17,7 +17,9 @@ import type {
 	JiraActivityActor,
 	JiraActivityCommentEntry,
 	JiraActivityEntry,
+	JiraActivityEventEntry,
 	JiraActivityFilter,
+	JiraActivityReply,
 	JiraActivitySortOrder,
 } from "./jira-activity-types";
 import { filterJiraActivityEntries } from "./lib/jira-activity-filter";
@@ -42,10 +44,25 @@ export interface JiraActivityProps {
 	composer?: ReactNode | null;
 	/** Optional trailing action for each comment card. */
 	renderCommentAction?: (entry: JiraActivityCommentEntry) => ReactNode;
+	/**
+	 * Adds a comment to the sticky work-item activity composer as a pill (Code
+	 * Review `CommentsComposerChip` / multi-comment path). Renders the "Add to
+	 * chat" control left of expand/collapse.
+	 */
+	onAddCommentToChat?: (entry: JiraActivityCommentEntry) => void;
+	/** Same as `onAddCommentToChat` for nested reply cards. */
+	onAddReplyToChat?: (reply: JiraActivityReply, entry: JiraActivityCommentEntry) => void;
 	/** Opens the rich agent-session summary shown by an agent comment. */
 	onViewSession?: (item: AgentListItem) => void;
+	/** Opens in-app pull-request detail for compact Activity PR rows. */
+	onOpenPullRequest?: (entry: JiraActivityEventEntry) => void;
 	/** Handles an inline reply externally instead of appending it to local timeline state. */
 	onSubmitReply?: (entry: JiraActivityCommentEntry, body: string) => void;
+	/**
+	 * Handles Resolve / Unresolve for review discussion threads. When omitted,
+	 * toggles are applied through the local reducer when `allowResolve` is set.
+	 */
+	onResolveComment?: (entry: JiraActivityCommentEntry) => void;
 	/**
 	 * Per-comment action row and composer disclosure.
 	 * - "none": no action row; the composer stays mounted (legacy behavior).
@@ -95,8 +112,12 @@ export function JiraActivity({
 	actors = [],
 	composer,
 	renderCommentAction,
+	onAddCommentToChat,
+	onAddReplyToChat,
 	onViewSession,
+	onOpenPullRequest,
 	onSubmitReply,
+	onResolveComment,
 	commentActions = "reply-and-reactions",
 	onToggleReaction,
 	className,
@@ -209,8 +230,19 @@ export function JiraActivity({
 		});
 	}
 
+	function handleResolveComment(entry: JiraActivityCommentEntry) {
+		if (onResolveComment) {
+			onResolveComment(entry);
+			return;
+		}
+		applyAction({
+			type: "toggle-resolved",
+			entryId: entry.id,
+		});
+	}
+
 	return (
-		<div className={cn("flex w-full flex-col gap-4", className)}>
+		<div className={cn("flex w-full min-w-0 flex-col gap-4", className)}>
 			{hideHeader ? null : (
 				<div className={headerClassName} data-slot="jira-activity-header">
 					<JiraActivityHeader
@@ -229,20 +261,28 @@ export function JiraActivity({
 			)}
 
 			{collapsed ? null : (
-				<ol aria-label="Activity timeline" className="flex flex-col">
+				<ol
+					aria-label="Activity timeline"
+					// Rail mode omits the sticky header; a little top pad keeps the
+					// first mention chip clear of the metadata scrollport clip edge.
+					className={cn("flex flex-col", hideHeader ? "pt-1" : null)}
+				>
 					{orderedEntries.map((entry, index) => {
 						const isLast = index === orderedEntries.length - 1;
 						const isCardEntry = entry.kind !== "event";
 						const isNextEntryCard = orderedEntries[index + 1]?.kind !== "event" && !isLast;
+						// Event→event uses pb-2 (8px). Card↔event stays pb-5; card→card pb-6.
 						const spacingClassName = isLast
 							? entry.kind === "comment" ? "pb-4" : "pb-3"
 							: isCardEntry && isNextEntryCard
 								? "pb-6"
-								: isCardEntry || isNextEntryCard ? "pb-5" : "pb-3";
+								: isCardEntry || isNextEntryCard
+									? "pb-5"
+									: "pb-2";
 
 						return (
 							<li
-								className="flex gap-2"
+								className="flex min-w-0 gap-2"
 								data-jira-activity-entry-id={entry.id}
 								key={entry.id}
 							>
@@ -258,14 +298,34 @@ export function JiraActivity({
 									size={isCardEntry ? "card" : "event"}
 								/>
 								<div className={cn("min-w-0 flex-1", spacingClassName)}>
-									{entry.kind === "event" ? <JiraActivityEvent entry={entry} /> : null}
+									{entry.kind === "event" ? (
+										<JiraActivityEvent
+											entry={entry}
+											onOpenPullRequest={onOpenPullRequest}
+										/>
+									) : null}
 									{entry.kind === "comment" ? (
 										<JiraActivityComment
 											actorsById={actorsById}
 											commentActions={commentActions}
 											currentUser={currentUser}
 											entry={entry}
+											onAddReplyToChat={
+												onAddReplyToChat
+													? (reply) => onAddReplyToChat(reply, entry)
+													: undefined
+											}
+											onAddToChat={
+												onAddCommentToChat
+													? () => onAddCommentToChat(entry)
+													: undefined
+											}
 											onViewSession={onViewSession}
+											onResolve={
+												entry.allowResolve
+													? () => handleResolveComment(entry)
+													: undefined
+											}
 											onSubmitReply={(body) => handleAddReply(entry, body)}
 											onToggleReaction={(emoji) => handleToggleReaction(entry, emoji)}
 											action={renderCommentAction?.(entry)}
@@ -320,3 +380,9 @@ export type {
 	JiraActivitySegment,
 	JiraActivitySortOrder,
 } from "./jira-activity-types";
+export type { JiraActivityViewFilterMode } from "./jira-activity-header";
+export {
+	jiraActivitySegmentsToPlainText,
+	serializeActivityCommentsContext,
+	type ActivityChatCommentContext,
+} from "./lib/jira-activity-comment-text";

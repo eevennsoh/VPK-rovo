@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { token } from "@/lib/tokens";
 import { useRovoChat } from "@/app/contexts";
@@ -7,7 +8,12 @@ import type { SendPromptOptions } from "@/app/contexts";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 import type { ChatSurfaceSwitchHandler } from "@/components/projects/shared/components/chat-surface-switcher";
 import ChatPanel from "@/components/projects/sidebar-chat/page";
-import type { ChatPanelCustomAgentTabs, ChatPanelGreetingProps, ChatSubmitInterceptOutcome } from "@/components/projects/sidebar-chat/page";
+import type {
+	ChatPanelCustomAgentTabs,
+	ChatPanelGreetingProps,
+	ChatSubmitInterceptOutcome,
+	ComposerInputContext,
+} from "@/components/projects/sidebar-chat/page";
 import { ChatHistoryDrawer } from "@/components/projects/sidebar-chat/components/chat-history-drawer";
 import FloatingChatHeader from "./floating-chat-header";
 
@@ -19,12 +25,17 @@ interface RovoFloatingChatProps {
 	customAgentTabs?: ChatPanelCustomAgentTabs;
 	hideComposerSourceAndModelControls?: boolean;
 	sendPromptOptions?: SendPromptOptions;
+	/** One-turn composer pill context (Code Review / Activity comments). */
+	composerInputContext?: ComposerInputContext;
+	/** Optional host-owned controls rendered immediately after the Add menu trigger. */
+	composerToolsAfterAdd?: ReactNode;
 	onInterceptSubmit?: (text: string) => ChatSubmitInterceptOutcome;
 	onArtifactDialogOpen?: () => void;
 	preserveFloatingSurfaceOnArtifactDialogOpen?: boolean;
 	startRealtimeVoiceRequestKey?: number;
 	externalThinkingMessageId?: string | null;
 	interceptClarificationAnswers?: boolean;
+	markAnsweredQuestionTraces?: boolean;
 	showAgentBackButton?: boolean;
 	showAgentSelector?: boolean;
 	showChatHistory?: boolean;
@@ -40,12 +51,15 @@ export default function RovoFloatingChat({
 	customAgentTabs,
 	hideComposerSourceAndModelControls = false,
 	sendPromptOptions,
+	composerInputContext,
+	composerToolsAfterAdd,
 	onInterceptSubmit,
 	onArtifactDialogOpen,
 	preserveFloatingSurfaceOnArtifactDialogOpen = false,
 	startRealtimeVoiceRequestKey = 0,
 	externalThinkingMessageId,
 	interceptClarificationAnswers = false,
+	markAnsweredQuestionTraces = false,
 	showAgentBackButton = true,
 	showAgentSelector = true,
 	showChatHistory = true,
@@ -104,6 +118,8 @@ export default function RovoFloatingChat({
 					customAgentTabs={customAgentTabs}
 					hideComposerSourceAndModelControls={hideComposerSourceAndModelControls}
 					sendPromptOptions={sendPromptOptions}
+					composerInputContext={composerInputContext}
+					composerToolsAfterAdd={composerToolsAfterAdd}
 					onInterceptSubmit={onInterceptSubmit}
 					onSurfaceSwitch={onSurfaceSwitch}
 					chatContextBar={chatContextBar}
@@ -112,6 +128,7 @@ export default function RovoFloatingChat({
 					startRealtimeVoiceRequestKey={startRealtimeVoiceRequestKey}
 					externalThinkingMessageId={externalThinkingMessageId}
 					interceptClarificationAnswers={interceptClarificationAnswers}
+					markAnsweredQuestionTraces={markAnsweredQuestionTraces}
 					suppressCustomAgentTabs={suppressCustomAgentTabs}
 				/>
 			</div>

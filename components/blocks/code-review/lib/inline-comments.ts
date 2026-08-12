@@ -6,6 +6,7 @@ export interface InlineCommentAnchor {
 	fileId: string;
 	filePath: string;
 	side: InlineCommentSide;
+	startLineNumber: number;
 	lineNumber: number;
 	lineText: string;
 }
@@ -117,14 +118,48 @@ export function removeAllInlineComments(state: InlineCommentState): InlineCommen
 export function resolveInlineCommentLineText(
 	file: ChangedFile,
 	side: InlineCommentSide,
-	lineNumber: number,
+	startLineNumber: number,
+	lineNumber = startLineNumber,
 ): string {
-	if (!Number.isInteger(lineNumber) || lineNumber < 1) {
+	const range = normalizeInlineCommentLineRange(startLineNumber, lineNumber);
+	if (!range) {
 		return "";
 	}
 
 	const contents = side === "additions" ? file.newContents : file.oldContents;
-	return contents.split(/\r?\n/u)[lineNumber - 1] ?? "";
+	const lines = contents.split(/\r?\n/u);
+	if (range.lineNumber > lines.length) {
+		return "";
+	}
+
+	return lines.slice(range.startLineNumber - 1, range.lineNumber).join("\n");
+}
+
+export function normalizeInlineCommentLineRange(
+	startLineNumber: number,
+	lineNumber: number,
+): Pick<InlineCommentAnchor, "startLineNumber" | "lineNumber"> | null {
+	if (
+		!Number.isInteger(startLineNumber)
+		|| !Number.isInteger(lineNumber)
+		|| startLineNumber < 1
+		|| lineNumber < 1
+	) {
+		return null;
+	}
+
+	return {
+		startLineNumber: Math.min(startLineNumber, lineNumber),
+		lineNumber: Math.max(startLineNumber, lineNumber),
+	};
+}
+
+export function formatInlineCommentLineLabel(
+	comment: Pick<InlineCommentAnchor, "startLineNumber" | "lineNumber">,
+): string {
+	return comment.startLineNumber === comment.lineNumber
+		? `Line ${comment.lineNumber}`
+		: `Lines ${comment.startLineNumber} - ${comment.lineNumber}`;
 }
 
 function getSideLabel(side: InlineCommentSide): "new" | "old" {
@@ -139,14 +174,20 @@ export function serializeInlineCommentsContext(
 		return "";
 	}
 
-	const serializedComments = comments.map((comment, index) => [
-		`Comment ${index + 1}:`,
-		`File: ${comment.filePath}`,
-		`Side: ${getSideLabel(comment.side)}`,
-		`Line: ${comment.lineNumber}`,
-		`Exact code line: ${JSON.stringify(comment.lineText)}`,
-		`Review comment: ${comment.body}`,
-	].join("\n")).join("\n\n");
+	const serializedComments = comments.map((comment, index) => {
+		const isRange = comment.startLineNumber !== comment.lineNumber;
+
+		return [
+			`Comment ${index + 1}:`,
+			`File: ${comment.filePath}`,
+			`Side: ${getSideLabel(comment.side)}`,
+			isRange
+				? `Lines: ${comment.startLineNumber}-${comment.lineNumber}`
+				: `Line: ${comment.lineNumber}`,
+			`${isRange ? "Exact code block" : "Exact code line"}: ${JSON.stringify(comment.lineText)}`,
+			`Review comment: ${comment.body}`,
+		].join("\n");
+	}).join("\n\n");
 
 	return [
 		"Inline code review comments (local prompt context):",

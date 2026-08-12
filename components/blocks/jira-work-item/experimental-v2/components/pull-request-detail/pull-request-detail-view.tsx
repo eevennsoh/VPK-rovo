@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, type RefObject } from "react";
+import { useCallback, useMemo, useState, type RefObject } from "react";
 
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
+import type { InlineReviewComment } from "@/components/blocks/code-review/lib/inline-comments";
 import {
 	Tabs,
 	TabsContent,
@@ -11,24 +12,61 @@ import {
 } from "@/components/ui/tabs";
 
 import { resolvePullRequestDetailData } from "../../lib/pull-request-detail-data";
+import { resolveInitialReviewedChapterIds } from "../../lib/resolve-initial-reviewed-chapter-ids";
 import { PullRequestDetailHeader } from "./pull-request-detail-header";
 import { PullRequestFiles } from "./pull-request-files";
 import { PullRequestGuide } from "./pull-request-guide";
 import { PullRequestOverview } from "./pull-request-overview";
+import { PullRequestStickyHeaderShell } from "./pull-request-sticky-header-shell";
 
 type PullRequestDetailTab = "details" | "code" | "guide";
 
 interface PullRequestDetailViewProps {
+	approvalState?: "available" | "approved";
 	entry: JiraActivityEventEntry;
+	initialInlineComments?: readonly InlineReviewComment[];
+	onChapterReviewedChange?: (identity: string, chapterId: string, reviewed: boolean) => void;
+	onInlineCommentsChange?: (identity: string, comments: readonly InlineReviewComment[]) => void;
+	reviewedChapterIds?: ReadonlySet<string>;
 	scrollContainerRef: RefObject<HTMLElement | null>;
 }
 
 export function PullRequestDetailView({
+	approvalState,
 	entry,
+	initialInlineComments,
+	onChapterReviewedChange,
+	onInlineCommentsChange,
+	reviewedChapterIds,
 	scrollContainerRef,
 }: Readonly<PullRequestDetailViewProps>) {
 	const [activeTab, setActiveTab] = useState<PullRequestDetailTab>("details");
-	const data = resolvePullRequestDetailData(entry);
+	const data = useMemo(() => resolvePullRequestDetailData(entry), [entry]);
+	const review = data?.guidedReview;
+	const [localReviewedChapterIds, setLocalReviewedChapterIds] = useState<ReadonlySet<string>>(
+		() => resolveInitialReviewedChapterIds(review, approvalState),
+	);
+	const effectiveReviewedChapterIds = reviewedChapterIds ?? localReviewedChapterIds;
+	const handleChapterReviewedChange = useCallback((chapterId: string, reviewed: boolean) => {
+		if (data && onChapterReviewedChange) {
+			onChapterReviewedChange(data.identity, chapterId, reviewed);
+			return;
+		}
+		setLocalReviewedChapterIds((current) => {
+			if (current.has(chapterId) === reviewed) return current;
+			const next = new Set(current);
+			if (reviewed) {
+				next.add(chapterId);
+			} else {
+				next.delete(chapterId);
+			}
+			return next;
+		});
+	}, [data, onChapterReviewedChange]);
+	const handleInlineCommentsChange = useCallback((comments: readonly InlineReviewComment[]) => {
+		if (!data || !onInlineCommentsChange) return;
+		onInlineCommentsChange(data.identity, comments);
+	}, [data, onInlineCommentsChange]);
 
 	if (!data) {
 		return (
@@ -41,11 +79,29 @@ export function PullRequestDetailView({
 		);
 	}
 
-	const review = data.guidedReview;
+	const tabNavigation = review ? (
+		<TabsList
+			aria-label="Pull request details"
+			className="w-full justify-start"
+			variant="line"
+		>
+			<TabsTrigger value="details">Overview</TabsTrigger>
+			<TabsTrigger value="guide">Guide</TabsTrigger>
+			<TabsTrigger value="code">
+				<span>{review.files.length} Files</span>
+				<span className="inline-flex items-center gap-1 tabular-nums">
+					<span className="text-text-success">+{data.additions}</span>
+					<span className="text-text-danger">-{data.deletions}</span>
+				</span>
+			</TabsTrigger>
+		</TabsList>
+	) : undefined;
 	const header = (
 		<PullRequestDetailHeader
 			data={data}
+			onGuideOpen={review ? () => setActiveTab("guide") : undefined}
 			scrollContainerRef={scrollContainerRef}
+			tabNavigation={tabNavigation}
 		/>
 	);
 
@@ -65,40 +121,41 @@ export function PullRequestDetailView({
 					 * Sticky stack inside the body-only left-column scrollport;
 					 * header + tabs stay anchored together below ContextResources.
 					 */}
-					<div className="sticky top-0 z-10 flex shrink-0 flex-col gap-4 bg-surface">
+					<PullRequestStickyHeaderShell scrollContainerRef={scrollContainerRef}>
 						{header}
-						<div className="shrink-0">
-							<TabsList aria-label="Pull request details" className="w-full justify-start" variant="line">
-								<TabsTrigger value="details">Overview</TabsTrigger>
-								<TabsTrigger value="code">
-									<span>{review.files.length} Files</span>
-									<span className="inline-flex items-center gap-1 tabular-nums">
-										<span className="text-text-success">+{data.additions}</span>
-										<span className="text-text-danger">-{data.deletions}</span>
-									</span>
-								</TabsTrigger>
-								<TabsTrigger value="guide">Guide</TabsTrigger>
-							</TabsList>
-						</div>
-					</div>
-					<div className="min-h-0 flex-1 py-5">
+					</PullRequestStickyHeaderShell>
+					{/*
+					 * Top gap under the PR header lives on the sticky shell (`pb-6`)
+					 * so it stays opaque while code-review chrome sticks beneath it.
+					 */}
+					<div className="min-h-0 flex-1 pb-6">
 						<TabsContent value="details">
 							<PullRequestOverview data={data} />
 						</TabsContent>
-						<TabsContent value="code">
-							<PullRequestFiles review={review} />
-						</TabsContent>
 						<TabsContent value="guide">
-							<PullRequestGuide review={review} onFinish={() => setActiveTab("details")} />
+							<PullRequestGuide
+								onChapterReviewedChange={handleChapterReviewedChange}
+								review={review}
+								reviewedChapterIds={effectiveReviewedChapterIds}
+								scrollContainerRef={scrollContainerRef}
+							/>
+						</TabsContent>
+						<TabsContent value="code">
+							<PullRequestFiles
+								commits={data.commits}
+								initialInlineComments={initialInlineComments}
+								onInlineCommentsChange={handleInlineCommentsChange}
+								review={review}
+							/>
 						</TabsContent>
 					</div>
 				</Tabs>
 			) : (
 				<>
-					<div className="sticky top-0 z-10 shrink-0 bg-surface">
+					<PullRequestStickyHeaderShell scrollContainerRef={scrollContainerRef}>
 						{header}
-					</div>
-					<div className="min-h-0 flex-1 py-5">
+					</PullRequestStickyHeaderShell>
+					<div className="min-h-0 flex-1 pb-6">
 						<PullRequestOverview data={data} />
 					</div>
 				</>

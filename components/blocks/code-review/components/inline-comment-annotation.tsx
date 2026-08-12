@@ -6,7 +6,7 @@ import {
 	useState,
 	type KeyboardEvent,
 	type MouseEvent,
-	type PointerEvent,
+	type PointerEvent as ReactPointerEvent,
 	type ReactNode,
 } from "react";
 
@@ -24,6 +24,7 @@ import type {
 	InlineCommentSide,
 	InlineReviewComment,
 } from "../lib/inline-comments";
+import { formatInlineCommentLineLabel } from "../lib/inline-comments";
 
 export type InlineCommentAnnotationMetadata =
 	| { kind: "draft"; draft: InlineCommentDraft }
@@ -32,27 +33,49 @@ export type InlineCommentAnnotationMetadata =
 interface InlineCommentGutterButtonProps {
 	getHoveredLine: () => GetHoveredLineResult<"diff"> | undefined;
 	onAddComment: (side: InlineCommentSide, lineNumber: number) => void;
+	onPointerSelect: (
+		event: ReactPointerEvent<HTMLButtonElement>,
+		line: GetHoveredLineResult<"diff">,
+	) => void;
 }
 
 export function InlineCommentGutterButton({
 	getHoveredLine,
 	onAddComment,
+	onPointerSelect,
 }: Readonly<InlineCommentGutterButtonProps>) {
 	const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
 		event.stopPropagation();
+		const PointerEventConstructor = event.currentTarget.ownerDocument.defaultView?.PointerEvent;
+		const pointerType = PointerEventConstructor && event.nativeEvent instanceof PointerEventConstructor
+			? event.nativeEvent.pointerType
+			: "";
+		if (
+			event.detail !== 0
+			|| pointerType.length > 0
+		) {
+			return;
+		}
+
 		const hoveredLine = getHoveredLine();
 		if (hoveredLine) {
 			onAddComment(hoveredLine.side, hoveredLine.lineNumber);
+		}
+	};
+	const handlePointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
+		const hoveredLine = getHoveredLine();
+		if (hoveredLine) {
+			onPointerSelect(event, hoveredLine);
 		}
 	};
 
 	return (
 		<Button
 			aria-label="Add inline comment"
-			className="relative z-10 mr-2 size-5 rounded-sm border-0 bg-surface-overlay p-0 text-icon-subtle shadow-2xl hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed"
+			className="relative z-10 size-5 rounded-sm border-0 bg-surface-overlay p-0 text-icon-subtle shadow-2xl hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed"
 			data-testid="inline-comment-gutter-button"
 			onClick={handleClick}
-			onPointerDown={(event) => event.stopPropagation()}
+			onPointerDown={handlePointerDown}
 			size="icon-compact"
 			title="Add inline comment"
 		>
@@ -74,7 +97,7 @@ interface InlineCommentEditorSurfaceProps {
 	children: ReactNode;
 	editorKey?: string;
 	kind: "comment" | "draft";
-	lineNumber: number;
+	lineLabel: string;
 	onChange: (body: string) => void;
 	onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void;
 	onSubmit: () => void;
@@ -86,7 +109,7 @@ function InlineCommentEditorSurface({
 	children,
 	editorKey,
 	kind,
-	lineNumber,
+	lineLabel,
 	onChange,
 	onKeyDown,
 	onSubmit,
@@ -96,10 +119,10 @@ function InlineCommentEditorSurface({
 			className="min-w-0 bg-surface-raised px-3 pb-3 pt-2 font-sans text-text"
 			data-inline-comment-kind={kind}
 			onKeyDown={onKeyDown}
-			onPointerDown={(event: PointerEvent<HTMLDivElement>) => event.stopPropagation()}
+			onPointerDown={(event: ReactPointerEvent<HTMLDivElement>) => event.stopPropagation()}
 		>
 			<div className="mb-2 text-xs font-semibold text-text-subtlest">
-				Comment on line {lineNumber}
+				Comment on {lineLabel.toLowerCase()}
 			</div>
 			<PromptInput
 				className="min-h-[101px] w-full rounded-xl border border-border bg-surface px-3 pb-3 pt-4"
@@ -133,20 +156,22 @@ function InlineCommentDraftEditor({
 	onCommit,
 }: Readonly<InlineCommentDraftEditorProps>) {
 	const canCommit = draft.body.trim().length > 0;
+	const lineLabel = formatInlineCommentLineLabel(draft);
 
 	const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
 		if (event.key === "Escape") {
 			event.preventDefault();
+			event.stopPropagation();
 			onCancel(draft.id);
 		}
 	};
 
 	return (
 		<InlineCommentEditorSurface
-			ariaLabel={`Comment on line ${draft.lineNumber}`}
+			ariaLabel={`Comment on ${lineLabel.toLowerCase()}`}
 			body={draft.body}
 			kind="draft"
-			lineNumber={draft.lineNumber}
+			lineLabel={lineLabel}
 			onChange={(body) => onChange(draft.id, body)}
 			onKeyDown={handleKeyDown}
 			onSubmit={() => {
@@ -175,6 +200,7 @@ function InlineCommentView({
 	onUpdate,
 }: Readonly<InlineCommentViewProps>) {
 	const [body, setBody] = useState(comment.body);
+	const lineLabel = formatInlineCommentLineLabel(comment);
 	const trimmedBody = body.trim();
 	const isEditing = body !== comment.body;
 	const canUpdate = isEditing && trimmedBody.length > 0;
@@ -189,17 +215,18 @@ function InlineCommentView({
 	const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
 		if (event.key === "Escape" && isEditing) {
 			event.preventDefault();
+			event.stopPropagation();
 			handleCancel();
 		}
 	};
 
 	return (
 		<InlineCommentEditorSurface
-			ariaLabel={`Comment on line ${comment.lineNumber}`}
+			ariaLabel={`Comment on ${lineLabel.toLowerCase()}`}
 			body={body}
 			editorKey={comment.body}
 			kind="comment"
-			lineNumber={comment.lineNumber}
+			lineLabel={lineLabel}
 			onChange={setBody}
 			onKeyDown={handleKeyDown}
 			onSubmit={handleUpdate}
@@ -215,7 +242,7 @@ function InlineCommentView({
 				</>
 			) : (
 				<Button
-					aria-label={`Delete comment on ${comment.filePath}, line ${comment.lineNumber}`}
+					aria-label={`Delete comment on ${comment.filePath}, ${lineLabel.toLowerCase()}`}
 					onClick={() => onDelete(comment.id)}
 					type="button"
 					variant="outline"

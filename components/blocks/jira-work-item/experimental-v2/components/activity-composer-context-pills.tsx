@@ -8,14 +8,20 @@ import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { AgentSession } from "@/components/blocks/jira-work-item/data/session-state";
 import { ActivityComposerAgentContextPill } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer-agent-context-pill";
 import { ActivityComposerSkillContextPill } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer-skill-context-pill";
+import { Badge } from "@/components/ui/badge";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { AnimatedDots } from "@/components/ui-custom/animated-dots";
 import { ContextBarPill } from "@/components/ui-custom/context-bar";
 import { PixelLoader } from "@/components/ui-custom/pixel-loader";
 import { CyclingByline } from "@/components/ui-custom/chain-of-thought";
+import { Shimmer } from "@/components/ui-custom/shimmer";
 import {
 	RichTextSuggestionMenu,
 	type RichTextSuggestionMenuItem,
 } from "@/components/ui-custom/rich-text-editor";
+
+
+const NEEDS_INPUT_STATUS_LABEL = "Needs input";
 
 const PILL_GROUP_VARIANTS = {
 	hidden: {},
@@ -58,10 +64,22 @@ const WORKING_SESSION_ACTIVITY_SCRIPTS: Readonly<Record<string, readonly string[
 	],
 };
 
+export interface ActivityComposerPrimaryAction {
+	ariaLabel: string;
+	/** Compact progress counter after the label (e.g. "2/3"). */
+	badge?: string;
+	disabled?: boolean;
+	/** Leading icon matching Assign agents / Use skills pills. */
+	icon?: ReactNode;
+	label: string;
+	onClick: () => void;
+}
+
 interface ActivityComposerContextPillsProps {
 	onInvokeAgent: (agent: Pick<AgentSelectorAgent, "id" | "name" | "avatarSrc" | "brandName">) => void;
 	onInvokeSkill: (skill: SkillsDirectorySkill) => void;
-	onOpenAgentChat?: (agentId: string) => void;
+	onOpenAgentChat?: (agentId: string, sessionId: string) => void;
+	primaryAction?: ActivityComposerPrimaryAction;
 	workingSessions: readonly AgentSession[];
 }
 
@@ -72,7 +90,7 @@ function getWorkingSessionActivity(
 	if (session.status === "waiting") {
 		return session.waitingOn?.kind === "agent"
 			? `Waiting for ${session.waitingOn.agentName}`
-			: "Waiting for you";
+			: NEEDS_INPUT_STATUS_LABEL;
 	}
 
 	const script = WORKING_SESSION_ACTIVITY_SCRIPTS[session.agentId];
@@ -96,6 +114,8 @@ function WorkingSessionActivityByline({
 	const shouldReduceMotion = Boolean(useReducedMotion());
 	const [activityCycleIndex, setActivityCycleIndex] = useState(0);
 	const cycleDelayMs = WORKING_SESSION_ACTIVITY_STAGGER_MS * (sessionIndex + 1);
+	const needsUserInput = session.status === "waiting" && session.waitingOn?.kind === "user";
+	const activity = getWorkingSessionActivity(session, activityCycleIndex);
 
 	useEffect(() => {
 		if (shouldReduceMotion || session.status === "waiting") {
@@ -120,7 +140,12 @@ function WorkingSessionActivityByline({
 
 	return (
 		<CyclingByline className="menu-row-title text-text-subtlest">
-			{getWorkingSessionActivity(session, activityCycleIndex)}
+			{needsUserInput ? (
+				<span className="inline-flex min-w-0 items-baseline">
+					<Shimmer as="span">{activity}</Shimmer>
+					<AnimatedDots />
+				</span>
+			) : activity}
 		</CyclingByline>
 	);
 }
@@ -131,7 +156,7 @@ function WorkingSessionsList({
 	sessions,
 }: Readonly<{
 	onClose: (restoreFocus: boolean) => void;
-	onOpenAgentChat: (agentId: string) => void;
+	onOpenAgentChat: (agentId: string, sessionId: string) => void;
 	sessions: readonly AgentSession[];
 }>) {
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -152,10 +177,15 @@ function WorkingSessionsList({
 				brandName={session.agentBrandName}
 				fallbackText={session.agentName}
 				sizePx={24}
+				vpkLogo={session.agentName === "Rovo" ? "rovo" : undefined}
 			/>
 		),
 		trailing: session.status === "waiting"
-			? <span className="text-xs text-text-subtle">Waiting</span>
+			? (
+				<span className="text-xs text-text-subtle">
+					{session.waitingOn?.kind === "user" ? NEEDS_INPUT_STATUS_LABEL : "Waiting"}
+				</span>
+			)
 			: null,
 	}));
 
@@ -163,7 +193,7 @@ function WorkingSessionsList({
 		const session = sessions.find((candidate) => candidate.id === item.id);
 		if (!session) return;
 		onClose(false);
-		onOpenAgentChat(session.agentId);
+		onOpenAgentChat(session.agentId, session.id);
 	};
 
 	useEffect(() => {
@@ -240,12 +270,20 @@ export function ActivityComposerContextPills({
 	onInvokeAgent,
 	onInvokeSkill,
 	onOpenAgentChat,
+	primaryAction,
 	workingSessions,
 }: Readonly<ActivityComposerContextPillsProps>) {
 	const shouldReduceMotion = Boolean(useReducedMotion());
 	const workingTriggerRef = useRef<HTMLButtonElement>(null);
 	const shouldRestoreWorkingTriggerFocusRef = useRef(false);
 	const [showWorkingSessions, setShowWorkingSessions] = useState(false);
+	const needsInputCount = workingSessions.filter((session) => (
+		session.status === "waiting" && session.waitingOn?.kind === "user"
+	)).length;
+	const summaryCount = needsInputCount > 0 ? needsInputCount : workingSessions.length;
+	const summaryLabel = needsInputCount > 0
+		? `${summaryCount} ${summaryCount === 1 ? "agent needs" : "agents need"} input`
+		: `${summaryCount} ${summaryCount === 1 ? "agent" : "agents"} working`;
 
 	useEffect(() => {
 		if (!showWorkingSessions && shouldRestoreWorkingTriggerFocusRef.current) {
@@ -275,15 +313,38 @@ export function ActivityComposerContextPills({
 				/>
 			) : (
 				<>
+					{primaryAction ? (
+						<RevealingPill>
+							<ContextBarPill
+								aria-label={primaryAction.ariaLabel}
+								className="motion-reduce:transition-none"
+								disabled={primaryAction.disabled}
+								icon={primaryAction.icon}
+								onClick={primaryAction.onClick}
+							>
+								{primaryAction.label}
+								{primaryAction.badge ? (
+									<Badge
+										aria-hidden
+										className="tabular-nums"
+										max={false}
+										variant="neutral"
+									>
+										{primaryAction.badge}
+									</Badge>
+								) : null}
+							</ContextBarPill>
+						</RevealingPill>
+					) : null}
 					{workingSessions.length > 0 && onOpenAgentChat ? (
 						<RevealingPill>
 							<ContextBarPill
-								aria-label={`${workingSessions.length} agents working`}
+								aria-label={summaryLabel}
 								className="motion-reduce:transition-none"
 								icon={(
 									<PixelLoader
 										className="size-3 justify-center"
-										pattern="diagonal-top-left"
+										pattern={needsInputCount > 0 ? "breathing" : "diagonal-top-left"}
 										shape="dot"
 										size="small"
 									/>
@@ -291,7 +352,9 @@ export function ActivityComposerContextPills({
 								onClick={() => setShowWorkingSessions(true)}
 								ref={workingTriggerRef}
 							>
-								{workingSessions.length} {workingSessions.length === 1 ? "agent" : "agents"} working
+								{needsInputCount > 0 ? (
+									<Shimmer as="span">{summaryLabel}</Shimmer>
+								) : summaryLabel}
 							</ContextBarPill>
 						</RevealingPill>
 					) : null}

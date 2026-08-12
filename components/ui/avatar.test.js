@@ -231,8 +231,9 @@ test("agent avatars share one hexagon contract across 1P, 2P, and 3P visuals", (
 	assert.doesNotMatch(ENTITY_CARD_AGENT_SOURCE, /Brand-identity agent.*no hexagon/);
 });
 
-test("avatar docs demonstrate 1P, 2P, and 3P agent tiers", () => {
+test("avatar docs demonstrate Rovo, 1P, 2P, and 3P agent tiers", () => {
 	assert.match(AVATAR_DEMO_SOURCE, /export function AvatarDemoAgentTiers\(\)/);
+	assert.match(AVATAR_DEMO_SOURCE, /label: "Rovo"[\s\S]*<AgentAvatarVisual label="Rovo agent" sizePx=\{40\} vpkLogo="rovo"/);
 	assert.match(AVATAR_DEMO_SOURCE, /avatarSrc="\/avatar-agent\/teamwork-agents\/customer-insights\.svg"/);
 	assert.match(AVATAR_DEMO_SOURCE, /avatarSrc="\/2p\/appfire\.png"/);
 	assert.match(AVATAR_DEMO_SOURCE, /brandName="slack"/);

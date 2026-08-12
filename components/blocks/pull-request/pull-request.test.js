@@ -59,6 +59,19 @@ test("PullRequest card reuses Avatar, Tag, Lozenge, BrandLogoMark, and ArrowRigh
 		COMPONENT_SOURCE,
 		/flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden/u,
 	);
+	// Source/head is the flexible truncating part; target/base never truncates.
+	assert.match(
+		COMPONENT_SOURCE,
+		/function BranchName[\s\S]*min-w-0 truncate(?: text-text)?/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/targetBranch \? \(\s*<span className="shrink-0 text-text">\{targetBranch\}<\/span>/u,
+	);
+	assert.doesNotMatch(
+		COMPONENT_SOURCE,
+		/targetBranch \? \(\s*<span className="truncate text-text">\{targetBranch\}<\/span>/u,
+	);
 	assert.match(COMPONENT_SOURCE, /shrink-0 text-text-subtlest">#\{number\}/u);
 	assert.match(COMPONENT_SOURCE, /case "Open":[\s\S]*return "success"/u);
 	assert.match(COMPONENT_SOURCE, /case "Merged":[\s\S]*return "discovery"/u);

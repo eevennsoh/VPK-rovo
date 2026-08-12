@@ -19,6 +19,12 @@ test("experimental v2 removes the description row and relocates Activity chrome 
 	const layoutSource = readBlockFile("experimental-v2/components/experimental-work-item-layout.tsx");
 	assert.match(activityPanelSource, /useSetActivityRailChrome/u);
 	assert.match(activityPanelSource, /hideHeader=\{hideHeader\}/u);
+	// Activity root shrinks in the metadata flex column so long cards don't grow a cross-axis bar.
+	assert.match(
+		activityPanelSource,
+		/<div ref=\{activityRootRef\} className="min-w-0 max-w-full" data-jira-work-item-activity>/u,
+	);
+	assert.match(activityPanelSource, /className="min-w-0 gap-2"/u);
 	assert.match(
 		activityPanelSource,
 		/headerClassName=\{\s*hideHeader\s*\?\s*undefined\s*:\s*"sticky top-0 z-10 flex min-h-8 items-center bg-surface-overlay \[container-type:scroll-state\]"/u,
@@ -173,7 +179,7 @@ test("experimental v2 shows a read-only title-meta PR Tag and opens PRs from Con
 	// Composition wires PR entries into the dialog title Tag and ContextHeader Select.
 	assert.match(
 		compositionSource,
-		/<MetadataRailProvider>/u,
+		/<MetadataRailProvider[\s\S]*revealActivityEntryId=\{props\.revealActivityEntryId\}[\s\S]*revealActivityKey=\{props\.revealActivityKey\}/u,
 	);
 	assert.doesNotMatch(compositionSource, /MetadataRailProvider pullRequestCount=/u);
 	assert.match(
@@ -186,23 +192,27 @@ test("experimental v2 shows a read-only title-meta PR Tag and opens PRs from Con
 	);
 	assert.match(
 		compositionSource,
-		/<ContextHeader[\s\S]*pullRequestEntries=\{pullRequestEntries\}[\s\S]*selectedPullRequestIdentity=\{selectedPullRequestIdentity\}[\s\S]*onPullRequestClear=\{\(\) => setSelectedPullRequestIdentity\(null\)\}[\s\S]*onPullRequestSelect=\{handlePullRequestSelect\}/u,
+		/<ContextHeader[\s\S]*pullRequestEntries=\{pullRequestEntries\}[\s\S]*selectedPullRequestIdentity=\{selectedPullRequestIdentity\}[\s\S]*onPullRequestClear=\{handlePullRequestClear\}[\s\S]*onPullRequestSelect=\{handlePullRequestSelect\}/u,
 	);
 	assert.match(
 		contextResourcesSource,
 		/<PullRequestsSelect[\s\S]*entries=\{pullRequestEntries\}[\s\S]*selectedIdentity=\{selectedPullRequestIdentity\}[\s\S]*onClearSelection=\{onPullRequestClear\}[\s\S]*onSelectEntry=\{onPullRequestSelect\}/u,
 	);
 
-	// Resources Select keeps a fixed trigger label; active filter uses shared
-	// SelectTag inside SelectTrigger `tags` (non-button host). Under the
-	// resource-row container (< 36rem) the label hides; icon/tag/chevron stay.
+	// Resources Select: placeholder "Review pull request", selected "Review" +
+	// SelectTag. Under the resource-row container (< 36rem) the label hides;
+	// icon/tag/chevron stay.
 	assert.match(
 		pullRequestsSelectSource,
-		/const TRIGGER_LABEL = "Review pull request"/u,
+		/const TRIGGER_LABEL = "Review pull request"[\s\S]*const SELECTED_TRIGGER_LABEL = "Review"/u,
 	);
 	assert.match(
 		pullRequestsSelectSource,
-		/<SelectTrigger[\s\S]*aria-label=\{TRIGGER_LABEL\}[\s\S]*className="gap-2 font-medium data-placeholder:text-text-subtle data-placeholder:\[&_svg\]:text-icon-subtle @max-\[36rem\]\/resource-row:gap-1\.5"[\s\S]*data-jira-work-item-resource-pull-requests[\s\S]*tags[\s\S]*<SelectValue[\s\S]*<SelectTags[\s\S]*className="truncate @max-\[36rem\]\/resource-row:hidden"[\s\S]*\{TRIGGER_LABEL\}[\s\S]*selectedTagLabel && selectedStatusPresentation && SelectedStatusIcon \? \([\s\S]*<SelectTag[\s\S]*aria-label=\{`\$\{selectedStatusPresentation\.label\} pull request \$\{selectedTagLabel\}`\}[\s\S]*color=\{selectedStatusPresentation\.tagColor\}[\s\S]*data-jira-work-item-resource-pull-request-filter[\s\S]*elemBefore=\{[\s\S]*SelectedStatusIcon[\s\S]*onRemove=\{onClearSelection\}[\s\S]*<\/SelectTrigger>/u,
+		/const visibleTriggerLabel = selectedTagLabel[\s\S]*\? SELECTED_TRIGGER_LABEL[\s\S]*: TRIGGER_LABEL/u,
+	);
+	assert.match(
+		pullRequestsSelectSource,
+		/<SelectTrigger[\s\S]*aria-label=\{TRIGGER_LABEL\}[\s\S]*className="gap-2 font-medium data-placeholder:text-text-subtle data-placeholder:\[&_svg\]:text-icon-subtle @max-\[36rem\]\/resource-row:gap-1\.5"[\s\S]*data-jira-work-item-resource-pull-requests[\s\S]*tags[\s\S]*<SelectValue[\s\S]*<SelectTags[\s\S]*className="truncate @max-\[36rem\]\/resource-row:hidden"[\s\S]*\{visibleTriggerLabel\}[\s\S]*selectedTagLabel && selectedStatusPresentation && SelectedStatusIcon \? \([\s\S]*<SelectTag[\s\S]*aria-label=\{`\$\{selectedStatusPresentation\.label\} pull request \$\{selectedTagLabel\}`\}[\s\S]*color=\{selectedStatusPresentation\.tagColor\}[\s\S]*data-jira-work-item-resource-pull-request-filter[\s\S]*elemBefore=\{[\s\S]*SelectedStatusIcon[\s\S]*onRemove=\{onClearSelection\}[\s\S]*<\/SelectTrigger>/u,
 	);
 	assert.match(
 		pullRequestsSelectSource,
@@ -226,7 +236,11 @@ test("experimental v2 shows a read-only title-meta PR Tag and opens PRs from Con
 	);
 	assert.match(
 		pullRequestsSelectSource,
-		/<SelectItem[\s\S]*showIndicator=\{false\}[\s\S]*textClassName="w-full min-w-0 whitespace-normal"[\s\S]*<PullRequest[\s\S]*selected=\{selected\}/u,
+		/<SelectItem[\s\S]*showIndicator=\{false\}[\s\S]*textClassName="w-full min-w-0 whitespace-normal"[\s\S]*<PullRequest[\s\S]*group-data-\[highlighted\]\/pr-option:bg-surface-hovered/u,
+	);
+	assert.doesNotMatch(
+		pullRequestsSelectSource,
+		/<PullRequest[\s\S]*selected=\{/u,
 	);
 	assert.doesNotMatch(
 		pullRequestsSelectSource,
@@ -269,6 +283,41 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 		/requestExpandPullRequestSection[\s\S]*pullRequestSectionExpandRequest/u,
 	);
 	assert.match(
+		metadataRailContextSource,
+		/requestRevealLatestActivity[\s\S]*activityRevealRequest/u,
+	);
+	assert.match(
+		metadataRailContextSource,
+		/const requestRevealLatestActivity = useCallback\(\(entryId\?: string\) => \{[\s\S]*setPanelView\("activity"\)[\s\S]*setActivityRevealRequest/u,
+	);
+	assert.match(
+		metadataRailContextSource,
+		/entryId\?: string/u,
+	);
+	assert.match(
+		metadataRailContextSource,
+		/revealActivityEntryId(?:\s*=\s*null)?/u,
+	);
+	// revealActivityKey must not steal Details while a PR is open — consume the
+	// key but skip requestRevealLatestActivity when suppress is set.
+	assert.match(
+		metadataRailContextSource,
+		/setSuppressActivityPanelReveal/u,
+	);
+	assert.match(
+		metadataRailContextSource,
+		/suppressActivityPanelRevealRef/u,
+	);
+	// Render-time key sync (no ref.current writes); suppress via state + ref setter.
+	assert.match(
+		metadataRailContextSource,
+		/trackedRevealActivityKey[\s\S]*setTrackedRevealActivityKey\(revealActivityKey\)[\s\S]*!suppressActivityPanelReveal[\s\S]*setPanelView\("activity"\)[\s\S]*revealActivityEntryId/u,
+	);
+	assert.match(
+		metadataRailContextSource,
+		/consumeActivityRevealRequest/u,
+	);
+	assert.match(
 		readBlockFile("experimental-v2/lib/metadata-rail-view.ts"),
 		/export type MetadataRailView = "details" \| "activity"/u,
 	);
@@ -278,9 +327,17 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	);
 	assert.match(
 		compositionSource,
-		/<MetadataRailProvider>/u,
+		/<MetadataRailProvider[\s\S]*revealActivityEntryId=\{props\.revealActivityEntryId\}[\s\S]*revealActivityKey=\{props\.revealActivityKey\}/u,
 	);
 	assert.doesNotMatch(compositionSource, /MetadataRailProvider pullRequestCount=/u);
+	assert.match(
+		metadataRailContextSource,
+		/revealActivityKey(?:\s*=\s*null)?/u,
+	);
+	assert.match(
+		metadataRailContextSource,
+		/revealActivityEntryId(?:\s*=\s*null)?/u,
+	);
 	assert.match(
 		metadataRailSource,
 		/import \{ useMetadataRail \} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/context-metadata-rail"/u,
@@ -305,7 +362,7 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	);
 	assert.match(
 		metadataRailSource,
-		/relative min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-none/u,
+		/relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-none/u,
 	);
 	// Activity chrome lives in MetadataRailToggle; its soft mask follows body
 	// scroll state while the body scrollport keeps its bottom-only mask.
@@ -335,7 +392,7 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	// Pull requests are not a rail segment — interactive list is in ContextResources.
 	assert.match(
 		metadataRailToggleSource,
-		/data-jira-work-item-metadata-rail-toggle[\s\S]*data-jira-work-item-metadata-rail-toggle-content[\s\S]*<ButtonGroup[\s\S]*aria-label=\{context === "pull-request" \? "Pull request panel" : "Work item panel"\}[\s\S]*className="w-full"[\s\S]*MetadataRailPanelSegment[\s\S]*label="Details"[\s\S]*label="Activity"[\s\S]*activityChrome != null \? \([\s\S]*<JiraActivityViewControl[\s\S]*showAgentsOption=\{activityChrome\.filterMode === "work-item"\}[\s\S]*trigger="chevron"/u,
+		/data-jira-work-item-metadata-rail-toggle[\s\S]*data-jira-work-item-metadata-rail-toggle-content[\s\S]*<ButtonGroup[\s\S]*aria-label=\{context === "pull-request" \? "Pull request panel" : "Work item panel"\}[\s\S]*className="w-full"[\s\S]*MetadataRailPanelSegment[\s\S]*label="Details"[\s\S]*label="Activity"[\s\S]*activityChrome != null \? \([\s\S]*<JiraActivityViewControl[\s\S]*filterMode=\{\s*activityChrome\.filterMode === "work-item"\s*\? "jira"\s*: activityChrome\.filterMode === "pull-request"\s*\? "pull-request"\s*: "sort-only"\s*\}[\s\S]*trigger="chevron"/u,
 	);
 	assert.doesNotMatch(
 		metadataRailToggleSource,
@@ -357,7 +414,7 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	assert.doesNotMatch(metadataRailToggleSource, /data-jira-work-item-column-chrome-fill/u);
 	assert.match(
 		metadataRailSource,
-		/data-jira-work-item-column-chrome[\s\S]*relative min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-none[\s\S]*data-jira-work-item-scroll-region/u,
+		/data-jira-work-item-column-chrome[\s\S]*relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-none[\s\S]*data-jira-work-item-scroll-region/u,
 	);
 	assert.match(
 		metadataRailSource,
@@ -585,7 +642,7 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	);
 	assert.match(
 		metadataRailSource,
-		/activity != null \? \(\s*<div[\s\S]*?className="overflow-visible px-3"[\s\S]*?hidden=\{pullRequestSelected \|\| activePanelView !== "activity"\}[\s\S]*inert=\{pullRequestSelected \|\| activePanelView !== "activity" \? true : undefined\}[\s\S]*\{activity\}/u,
+		/activity != null \? \(\s*<div[\s\S]*?className="min-w-0 max-w-full overflow-visible px-3"[\s\S]*?hidden=\{pullRequestSelected \|\| activePanelView !== "activity"\}[\s\S]*inert=\{pullRequestSelected \|\| activePanelView !== "activity" \? true : undefined\}[\s\S]*\{activity\}/u,
 	);
 	assert.doesNotMatch(
 		metadataRailSource,
@@ -646,7 +703,7 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	);
 	assert.match(
 		compositionSource,
-		/<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*activitySessionThread=\{activitySessionThread\}[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}/u,
+		/<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*activitySessionThread=\{activitySessionThread\}[\s\S]*onOpenPullRequest=\{handlePullRequestSelect\}[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*currentReviewerStatus=\{selectedPullRequestReviewerStatus\}[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}/u,
 	);
 	// Activity lives only in the metadata rail Details/Activity toggle — not under description.
 	assert.equal(
@@ -662,6 +719,7 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 
 test("experimental v2 keeps pull-request selection transient at the composition layer", () => {
 	const adapterSource = readBlockFile("experimental-v2/lib/jira-activity-adapter.ts");
+	const activityPanelSource = readBlockFile("experimental-v2/components/activity-panel.tsx");
 	const compositionSource = readBlockFile("experimental-v2/experimental-v2-jira-work-item.tsx");
 	const contextPanelSource = readBlockFile("experimental-v2/components/context-panel.tsx");
 	const contextResourcesSource = readBlockFile("experimental-v2/components/context-resources.tsx");
@@ -680,12 +738,16 @@ test("experimental v2 keeps pull-request selection transient at the composition 
 	);
 	assert.match(
 		compositionSource,
-		/setSelectedPullRequestIdentity\(\(currentIdentity\) => \([\s\S]*currentIdentity === identity \? null : identity/u,
+		/setSelectedPullRequestIdentity\(identity\);[\s\S]*setPanelView\("details"\);/u,
 	);
 	assert.match(
 		compositionSource,
-		/<JiraWorkItemProvider[\s\S]*<ExperimentalV2JiraWorkItemContent[\s\S]*key=\{props\.initialStateRevision\}/u,
+		/const \{ setPanelView, setSuppressActivityPanelReveal \} = useMetadataRail\(\);/u,
 	);
+	assert.match(compositionSource, /<JiraWorkItemProvider[\s\S]*initialStateRevision=\{props\.initialStateRevision\}/u);
+	assert.match(compositionSource, /setSelectedPullRequestIdentity\(null\);[\s\S]*\}, \[stageKey\]\);/u);
+	assert.match(compositionSource, /<ExperimentalV2JiraWorkItemContent[\s\S]*stageKey=\{props\.stageKey\}/u);
+	assert.doesNotMatch(compositionSource, /<ExperimentalV2JiraWorkItemContent[\s\S]*key=\{props\.initialStateRevision\}/u);
 	assert.doesNotMatch(persistedStateSource, /selectedPullRequest|pullRequestIdentity/u);
 
 	// Dialog title bar gets PR entries for the read-only Tag; ContextHeader gets
@@ -700,11 +762,11 @@ test("experimental v2 keeps pull-request selection transient at the composition 
 	);
 	assert.match(
 		compositionSource,
-		/<ContextHeader[\s\S]*pullRequestEntries=\{pullRequestEntries\}[\s\S]*pullRequestSelected=\{selectedPullRequestEntry !== null\}[\s\S]*selectedPullRequestIdentity=\{selectedPullRequestIdentity\}[\s\S]*onPullRequestClear=\{\(\) => setSelectedPullRequestIdentity\(null\)\}[\s\S]*onPullRequestSelect=\{handlePullRequestSelect\}/u,
+		/<ContextHeader[\s\S]*pullRequestEntries=\{pullRequestEntries\}[\s\S]*pullRequestSelected=\{selectedPullRequestEntry !== null\}[\s\S]*selectedPullRequestIdentity=\{selectedPullRequestIdentity\}[\s\S]*onPullRequestClear=\{handlePullRequestClear\}[\s\S]*onPullRequestSelect=\{handlePullRequestSelect\}/u,
 	);
 	assert.match(
 		compositionSource,
-		/<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}[\s\S]*\/>/u,
+		/<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*onOpenPullRequest=\{handlePullRequestSelect\}[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*currentReviewerStatus=\{selectedPullRequestReviewerStatus\}[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}[\s\S]*\/>/u,
 	);
 	assert.doesNotMatch(
 		compositionSource,
@@ -712,7 +774,7 @@ test("experimental v2 keeps pull-request selection transient at the composition 
 	);
 	assert.match(
 		metadataRailSource,
-		/const PullRequestContextRail = dynamic\([\s\S]*pull-request-context-rail[\s\S]*selectedPullRequestEntry \? \([\s\S]*activePanelView=\{activePanelView\}[\s\S]*entry=\{selectedPullRequestEntry\}[\s\S]*key=\{selectedPullRequestKey\}/u,
+		/const PullRequestContextRail = dynamic\([\s\S]*pull-request-context-rail[\s\S]*selectedPullRequestEntry \? \([\s\S]*activePanelView=\{activePanelView\}[\s\S]*currentReviewerStatus=\{currentReviewerStatus\}[\s\S]*entry=\{selectedPullRequestEntry\}[\s\S]*key=\{selectedPullRequestKey\}/u,
 	);
 	assert.doesNotMatch(
 		metadataRailSource,
@@ -722,16 +784,57 @@ test("experimental v2 keeps pull-request selection transient at the composition 
 		contextResourcesSource,
 		/<PullRequestsSelect[\s\S]*entries=\{pullRequestEntries\}[\s\S]*selectedIdentity=\{selectedPullRequestIdentity\}[\s\S]*onClearSelection=\{onPullRequestClear\}[\s\S]*onSelectEntry=\{onPullRequestSelect\}/u,
 	);
+	// Activity PR title rows reuse the same select handler as Review pull request,
+	// and that handler switches the metadata rail to Details (not Activity).
+	assert.match(
+		activityPanelSource,
+		/onOpenPullRequest\?: \(entry: JiraActivityEventEntry\) => void/u,
+	);
+	assert.match(
+		activityPanelSource,
+		/<JiraActivity[\s\S]*onOpenPullRequest=\{onOpenPullRequest\}/u,
+	);
+	assert.match(
+		compositionSource,
+		/const handlePullRequestSelect = useCallback\(\(entry: JiraActivityEventEntry\) => \{[\s\S]*setSelectedPullRequestIdentity\(identity\);[\s\S]*setPanelView\("details"\);[\s\S]*\}, \[pullRequestApprovalStates, setPanelView\]\);/u,
+	);
+	assert.match(
+		compositionSource,
+		/autoOpenPullRequestIdentity[\s\S]*autoOpenedForStageRef\.current === stageToken[\s\S]*handlePullRequestSelect\(entry\)/u,
+	);
+	// Opening a PR suppresses Build/Plan reveal-driven Activity switches so the
+	// Details + PR overview surface stays put through subsequent build timers.
+	assert.match(
+		compositionSource,
+		/const \{ setPanelView, setSuppressActivityPanelReveal \} = useMetadataRail\(\);/u,
+	);
+	assert.match(
+		compositionSource,
+		/useLayoutEffect\(\(\) => \{[\s\S]*const suppressed = selectedPullRequestIdentity !== null;[\s\S]*setSuppressActivityPanelReveal\(suppressed\);[\s\S]*return \(\) => \{[\s\S]*setSuppressActivityPanelReveal\(false\);[\s\S]*\};[\s\S]*\}, \[selectedPullRequestIdentity, setSuppressActivityPanelReveal\]\);/u,
+	);
+	assert.match(
+		compositionSource,
+		/onPullRequestSelect=\{handlePullRequestSelect\}[\s\S]*onOpenPullRequest=\{handlePullRequestSelect\}/u,
+	);
 
 	// Select options are Pull Request block cards (display-only; SelectItem activates).
-	// No trailing checkmark — selection is shown on the card itself.
+	// No trailing checkmark / no blue selected chrome on the option card — the
+	// trigger tag shows the open PR; hover uses surface-hovered only.
 	assert.match(
 		pullRequestsSelectSource,
 		/<SelectContent[\s\S]*className="[^"]*rounded-xl p-1"[\s\S]*data-jira-work-item-resource-pull-requests-menu/u,
 	);
 	assert.match(
 		pullRequestsSelectSource,
-		/<SelectItem[\s\S]*group\/pr-option[\s\S]*data-\[highlighted\]:bg-transparent[\s\S]*data-jira-work-item-pull-request-card=\{pullRequest\.number\}[\s\S]*showIndicator=\{false\}[\s\S]*value=\{identity\}[\s\S]*<PullRequest[\s\S]*border-transparent[\s\S]*group-data-\[highlighted\]\/pr-option:bg-[\s\S]*selected=\{selected\}/u,
+		/<SelectItem[\s\S]*group\/pr-option[\s\S]*data-\[highlighted\]:bg-transparent[\s\S]*data-selected:bg-transparent[\s\S]*data-selected:data-highlighted:bg-transparent[\s\S]*data-jira-work-item-pull-request-card=\{pullRequest\.number\}[\s\S]*showIndicator=\{false\}[\s\S]*value=\{identity\}[\s\S]*<PullRequest[\s\S]*border-transparent[\s\S]*group-data-\[highlighted\]\/pr-option:bg-surface-hovered/u,
+	);
+	assert.doesNotMatch(
+		pullRequestsSelectSource,
+		/<PullRequest[\s\S]*selected=\{/u,
+	);
+	assert.doesNotMatch(
+		pullRequestsSelectSource,
+		/group-data-\[highlighted\]\/pr-option:bg-bg-selected/u,
 	);
 	assert.doesNotMatch(
 		pullRequestsSelectSource,

@@ -68,12 +68,106 @@ test("adapts provider-neutral activity oldest first without mutating its input",
 		"pull-request-ready",
 	]);
 	assert.deepEqual(activity.map(({ id }) => id), ["ready", "opened", "checks"]);
+	assert.equal(entries[0].actor.kind, "person");
+	assert.equal(entries[0].actor.name, "Venn");
+	assert.equal(entries[0].icon, "pull-request");
+	assert.deepEqual(entries[0].segments, [
+		{ type: "text", text: "opened the pull request from " },
+		{ type: "code", text: "feature/checkout" },
+		{ type: "text", text: " into " },
+		{ type: "code", text: "main" },
+	]);
 	assert.equal(entries[1].actor.brandName, "github");
+	assert.equal(entries[1].icon, "app");
 	assert.deepEqual(entries[1].segments.at(-1), {
 		type: "lozenge",
 		text: "18/18 passed",
 		variant: "success",
 	});
+	assert.equal(entries[2].icon, "app");
+});
+
+test("maps every SCM event kind to a gutter EventGlyph icon", async () => {
+	const { adaptPullRequestActivity } = await loadAdapter();
+	const entries = adaptPullRequestActivity([
+		{
+			id: "opened",
+			kind: "opened",
+			actor: VENN,
+			occurredAtMs: 1,
+			timestamp: "a",
+			baseBranch: "main",
+			headBranch: "feature/x",
+		},
+		{
+			id: "push",
+			kind: "commits-pushed",
+			actor: {
+				id: "claude-code",
+				name: "Claude Code",
+				kind: "agent",
+				brandName: "claude",
+			},
+			occurredAtMs: 2,
+			timestamp: "b",
+			commitCount: 4,
+			headSha: "d34c112",
+		},
+		{
+			id: "checks",
+			kind: "checks-completed",
+			actor: GITHUB,
+			occurredAtMs: 3,
+			timestamp: "c",
+			passed: 1,
+			total: 1,
+		},
+		{
+			id: "ready",
+			kind: "ready-to-merge",
+			actor: GITHUB,
+			occurredAtMs: 4,
+			timestamp: "d",
+		},
+	]);
+
+	assert.deepEqual(
+		entries.map(({ kind, icon }) => ({ kind, icon })),
+		[
+			{ kind: "event", icon: "pull-request" },
+			{ kind: "event", icon: "commit" },
+			{ kind: "event", icon: "app" },
+			{ kind: "event", icon: "app" },
+		],
+	);
+});
+
+test("prefers agent brand marks over template avatars", async () => {
+	const { adaptPullRequestActivity } = await loadAdapter();
+	const [entry] = adaptPullRequestActivity([{
+		id: "push",
+		kind: "commits-pushed",
+		actor: {
+			id: "claude-code",
+			name: "Claude Code",
+			kind: "agent",
+			brandName: "claude",
+			avatarSrc: "/avatar-agent/dev-agents/basic-coding-agent-template.svg",
+		},
+		occurredAtMs: 100,
+		timestamp: "18 minutes ago",
+		commitCount: 4,
+		headSha: "d34c112",
+	}]);
+
+	assert.deepEqual(entry.actor, {
+		id: "claude-code",
+		name: "Claude Code",
+		kind: "agent",
+		brandName: "claude",
+	});
+	// Gutter uses the commit glyph; actor branding stays for the inline Tag.
+	assert.equal(entry.icon, "commit");
 });
 
 test("moves review discussion into read-only Jira Activity comments", async () => {
@@ -127,6 +221,8 @@ test("preserves provider comments, review replies, and connected app branding", 
 			body: "Narrow the nullable address.",
 			filePath: "guest-order-service.js",
 			allowReply: true,
+			allowResolve: true,
+			resolved: true,
 			detail: { label: "About Codex in GitHub", body: "Automated review." },
 			replies: [{
 				id: "fixed",
@@ -145,8 +241,37 @@ test("preserves provider comments, review replies, and connected app branding", 
 	});
 	assert.equal(entries[1].actor.brandName, "openai-codex");
 	assert.equal(entries[1].allowReply, true);
+	assert.equal(entries[1].allowResolve, true);
+	assert.equal(entries[1].resolved, true);
 	assert.equal(entries[1].replies[0].actor.name, "Venn");
 	assert.equal(entries[1].replies[0].body, "Fixed in abc1234.");
+});
+
+test("maps unresolved review discussion threads with reply and resolve", async () => {
+	const { adaptPullRequestActivity } = await loadAdapter();
+	const [entry] = adaptPullRequestActivity([{
+		id: "priya-thread",
+		kind: "review-submitted",
+		actor: {
+			id: "priya-narayanan",
+			name: "Priya Narayanan",
+			kind: "person",
+		},
+		occurredAtMs: 100,
+		timestamp: "6 minutes ago",
+		decision: "commented",
+		body: "Can we assert the recoverable validation path?",
+		filePath: "tests/storefront/guest-checkout.spec.ts",
+		allowReply: true,
+		allowResolve: true,
+		resolved: false,
+	}]);
+
+	assert.equal(entry.kind, "comment");
+	assert.equal(entry.allowReply, true);
+	assert.equal(entry.allowResolve, true);
+	assert.equal(entry.resolved, false);
+	assert.deepEqual(entry.tag, { text: "Reviewed", color: "blue" });
 });
 
 test("changes the activity revision when provider payload values change", async () => {

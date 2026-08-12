@@ -14,7 +14,7 @@ import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 interface ExperimentalWorkItemDialogProps {
-	inlineSurface: "card" | "fill";
+	inlineSurface: "card" | "card-fill" | "fill";
 	open: boolean;
 	onClose: () => void;
 	presentation: "modal" | "inline";
@@ -61,7 +61,8 @@ export function ExperimentalWorkItemDialog({
 	pullRequestEntries,
 }: Readonly<ExperimentalWorkItemDialogProps>) {
 	const description = `Details, agent sessions, and activity for work item ${workItemCode}.`;
-	const fillsInlineContainer = presentation === "inline" && inlineSurface === "fill";
+	const fillsInlineContainer = presentation === "inline" && inlineSurface !== "card";
+	const isFlushInlineSurface = presentation === "inline" && inlineSurface === "fill";
 	// Metadata and embedded chat share this source of truth so resizing either
 	// surface is immediately reflected when switching between them.
 	const sidePanelStyle = {
@@ -70,6 +71,10 @@ export function ExperimentalWorkItemDialog({
 	const content = (
 		<div
 			className="@container/workitemdialog relative grid h-full min-h-0 min-w-0 grid-cols-[minmax(0,1fr)] overflow-hidden"
+			// Positioned ancestor for surfaces that must sit inside the dialog
+			// rather than the viewport (e.g. the embedded Rovo launcher), which
+			// resolve this node as their `offsetParent`.
+			data-jira-work-item-dialog-body
 			style={sidePanelStyle}
 		>
 			<div
@@ -124,8 +129,8 @@ export function ExperimentalWorkItemDialog({
 	);
 	const surfaceStyle = {
 		backgroundColor: token("elevation.surface.overlay"),
-		borderRadius: fillsInlineContainer ? 0 : token("radius.xlarge"),
-		boxShadow: fillsInlineContainer ? "none" : token("elevation.shadow.overlay"),
+		borderRadius: isFlushInlineSurface ? 0 : token("radius.xlarge"),
+		boxShadow: isFlushInlineSurface ? "none" : token("elevation.shadow.overlay"),
 		display: "grid",
 		gridTemplateColumns: "minmax(0, 1fr)",
 		gridTemplateRows: "minmax(0, 1fr)",
@@ -133,8 +138,8 @@ export function ExperimentalWorkItemDialog({
 	} as const;
 
 	if (presentation === "inline") {
-		// Inline hosts can keep the existing content-height card or opt into a
-		// flush surface that fills the host's available width and height.
+		// Inline hosts can keep the existing content-height card, stretch that
+		// modal-like card to the available height, or use a flush fill surface.
 		return (
 			<>
 				<section

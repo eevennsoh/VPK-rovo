@@ -8,6 +8,7 @@ import {
 	DropdownMenuContent,
 	DropdownMenuRadioGroup,
 	DropdownMenuRadioItem,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
@@ -27,10 +28,15 @@ const SORT_MENU_LABELS: Record<JiraActivitySortOrder, string> = {
 	descending: "Latest",
 };
 
-/** Activity-only filters (gated by `showAgentsOption` so PR sort stays Latest/Oldest). */
-const ACTIVITY_FILTER_VALUES = [
+/** Full work-item Activity filters (Agents / Needs input / Comments). */
+const JIRA_ACTIVITY_FILTER_VALUES = [
 	"agents-only",
 	"needs-input",
+	"comments-only",
+] as const satisfies readonly Exclude<JiraActivityFilter, "all">[];
+
+/** SCM PR Activity filters — Comments only (All via Latest/Oldest selection). */
+const PULL_REQUEST_ACTIVITY_FILTER_VALUES = [
 	"comments-only",
 ] as const satisfies readonly Exclude<JiraActivityFilter, "all">[];
 
@@ -46,10 +52,30 @@ const FILTER_MENU_LABELS: Record<Exclude<JiraActivityFilter, "all">, string> = {
 	"comments-only": "Comments",
 };
 
-function isActivityFilterValue(
+export type JiraActivityViewFilterMode = "jira" | "pull-request" | "sort-only";
+
+function filterValuesForMode(
+	mode: JiraActivityViewFilterMode,
+): readonly Exclude<JiraActivityFilter, "all">[] {
+	switch (mode) {
+		case "jira":
+			return JIRA_ACTIVITY_FILTER_VALUES;
+		case "pull-request":
+			return PULL_REQUEST_ACTIVITY_FILTER_VALUES;
+		case "sort-only":
+			return [];
+		default: {
+			const _exhaustive: never = mode;
+			return _exhaustive;
+		}
+	}
+}
+
+function isListedActivityFilter(
 	value: string,
+	listed: readonly Exclude<JiraActivityFilter, "all">[],
 ): value is Exclude<JiraActivityFilter, "all"> {
-	return (ACTIVITY_FILTER_VALUES as readonly string[]).includes(value);
+	return (listed as readonly string[]).includes(value);
 }
 
 const TEXT_LINK_TRIGGER_CLASS =
@@ -74,8 +100,13 @@ function stopTriggerPropagation(event: { stopPropagation(): void }): void {
 /**
  * Dropdown that chooses timeline order or an activity filter.
  * Extracted so rail consumers can relocate it beside a Details/Activity toggle.
- * Pass `showAgentsOption={false}` for surfaces where activity filters do not
- * apply — only Latest/Oldest remain (Agents, Needs input, Comments omitted).
+ *
+ * Prefer `filterMode`:
+ * - `jira` — Latest / Oldest + Agents / Needs input / Comments
+ * - `pull-request` — Latest / Oldest + Comments (SCM Activity)
+ * - `sort-only` — Latest / Oldest only
+ *
+ * `showAgentsOption={false}` remains as a legacy alias for `sort-only`.
  *
  * `trigger="label"` is the text-link chrome used in headers; `trigger="chevron"`
  * is the inset ghost icon control for segmented toggle groups (label click
@@ -89,6 +120,7 @@ export function JiraActivityViewControl({
 	onFilterChange,
 	menuAlign = "start",
 	showAgentsOption = true,
+	filterMode: controlledFilterMode,
 	trigger = "label",
 	onOpenChange,
 }: Readonly<{
@@ -99,10 +131,15 @@ export function JiraActivityViewControl({
 	/** Menu alignment relative to the trigger. Prefer `end` when the control sits on the far right. */
 	menuAlign?: "start" | "end";
 	/**
-	 * When false, omit activity filters (Agents / Needs input / Comments).
-	 * Pull requests sort uses Latest/Oldest only (or a dedicated PR control).
+	 * @deprecated Prefer `filterMode`. When `filterMode` is omitted, `false`
+	 * maps to `sort-only` and `true` maps to `jira`.
 	 */
 	showAgentsOption?: boolean;
+	/**
+	 * Which filter items appear under Latest/Oldest.
+	 * Pull-request Activity uses `pull-request` (Comments only).
+	 */
+	filterMode?: JiraActivityViewFilterMode;
 	/** `label` = text-link trigger; `chevron` = inset ghost icon in a panel segment. */
 	trigger?: "label" | "chevron";
 	/**
@@ -112,13 +149,17 @@ export function JiraActivityViewControl({
 	pressed?: boolean;
 	onOpenChange?: (open: boolean) => void;
 }>) {
+	const filterMode = controlledFilterMode
+		?? (showAgentsOption ? "jira" : "sort-only");
+	const listedFilters = filterValuesForMode(filterMode);
+	const filtersEnabled = listedFilters.length > 0;
 	const filterActive =
-		showAgentsOption && filter !== "all" && isActivityFilterValue(filter);
+		filtersEnabled && filter !== "all" && isListedActivityFilter(filter, listedFilters);
 	const activeLabel = filterActive
 		? FILTER_TRIGGER_LABELS[filter]
 		: SORT_TRIGGER_LABELS[sortOrder];
 	const isChevron = trigger === "chevron";
-	const chevronLabel = showAgentsOption
+	const chevronLabel = filtersEnabled
 		? `Sort and filter activities (${activeLabel})`
 		: `Sort pull request activity (${activeLabel})`;
 	const triggerButton = isChevron ? (
@@ -154,11 +195,11 @@ export function JiraActivityViewControl({
 			>
 				<DropdownMenuRadioGroup
 					onValueChange={(value) => {
-						if (showAgentsOption && isActivityFilterValue(value)) {
+						if (filtersEnabled && isListedActivityFilter(value, listedFilters)) {
 							onFilterChange(value);
 							return;
 						}
-						if (showAgentsOption) {
+						if (filtersEnabled) {
 							onFilterChange("all");
 						}
 						onSortOrderChange(value as JiraActivitySortOrder);
@@ -171,13 +212,16 @@ export function JiraActivityViewControl({
 					<DropdownMenuRadioItem value="ascending">
 						{SORT_MENU_LABELS.ascending}
 					</DropdownMenuRadioItem>
-					{showAgentsOption
-						? ACTIVITY_FILTER_VALUES.map((value) => (
+					{filtersEnabled ? (
+						<>
+							<DropdownMenuSeparator />
+							{listedFilters.map((value) => (
 								<DropdownMenuRadioItem key={value} value={value}>
 									{FILTER_MENU_LABELS[value]}
 								</DropdownMenuRadioItem>
-							))
-						: null}
+							))}
+						</>
+					) : null}
 				</DropdownMenuRadioGroup>
 			</DropdownMenuContent>
 		</DropdownMenu>

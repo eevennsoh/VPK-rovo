@@ -75,3 +75,9 @@ test("compact chat forwards opt-in add menu items without changing defaults", ()
 	assert.match(CHAT_PANEL_SOURCE, /addMenuItemsBefore,/);
 	assert.match(CHAT_PANEL_SOURCE, /addMenuItemsBefore=\{addMenuItemsBefore\}/);
 });
+
+test("compact chat forwards opt-in composer tools after Add without changing defaults", () => {
+	assert.match(CHAT_PANEL_SOURCE, /composerToolsAfterAdd\?: ReactNode;/);
+	assert.match(CHAT_PANEL_SOURCE, /composerToolsAfterAdd,/);
+	assert.match(CHAT_PANEL_SOURCE, /composerToolsAfterAdd=\{composerToolsAfterAdd\}/);
+});

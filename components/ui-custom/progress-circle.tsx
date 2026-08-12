@@ -5,7 +5,7 @@
 // oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
 
 import { cva, type VariantProps } from "class-variance-authority";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 
 const VIEWBOX_SIZE = 24;
@@ -37,6 +37,12 @@ function sectorPath(cx: number, cy: number, r: number, angleDeg: number): string
 /** Fraction of the ring shown during the indeterminate spin. */
 const INDETERMINATE_ARC = 0.25;
 
+/**
+ * Gap between status-group arcs, as a fraction of the full circumference (each gap).
+ * Only applied when there are 2+ groups — a single status fills the ring with no gap.
+ */
+const SEGMENT_GAP_RATIO = 0.06;
+
 const progressCircleVariants = cva(
 	"relative inline-flex shrink-0 items-center justify-center",
 	{
@@ -59,11 +65,32 @@ const progressCircleVariants = cva(
 	},
 );
 
+export type ProgressCircleSegmentStatus = "passed" | "failed" | "pending";
+
+export interface ProgressCircleSegment {
+	status: ProgressCircleSegmentStatus;
+	/** Relative share of the ring. Defaults to 1. Aggregate same-status checks into one weighted arc. */
+	weight?: number;
+}
+
 export interface ProgressCircleProps
 	extends Omit<React.ComponentProps<"div">, "children">,
 		VariantProps<typeof progressCircleVariants> {
 	/** Progress value from 0 to 100. Pass `null` or omit for indeterminate (spinning) state. */
 	value?: number | null;
+	/**
+	 * Toggle segmented ring mode (lime/failed/pending arcs with gaps).
+	 * When `true` and `segments` is non-empty, renders status-group arcs instead of a continuous
+	 * progress ring. Defaults to `false` so continuous progress remains the default.
+	 * (`variant` still controls outline vs filled chrome; this is an independent mode toggle.)
+	 */
+	segmented?: boolean;
+	/**
+	 * Status-group data for `segmented` mode. Prefer one weighted entry per status (not one per check).
+	 * Ignored unless `segmented` is `true`. Continuous `value` / complete-check behavior is skipped
+	 * while segmented rendering is active.
+	 */
+	segments?: readonly ProgressCircleSegment[];
 	/** Status overlay — replaces the progress ring with an icon. */
 	status?: "error" | "info";
 	/** Accessible label for the progress indicator. */
@@ -72,23 +99,103 @@ export interface ProgressCircleProps
 	animated?: boolean;
 	/** When `false`, renders the full ring at value>=100 instead of the checkmark icon. Useful for animated fill→check transitions. Defaults to `true`. */
 	showCompleteIcon?: boolean;
+	/** Class for the outline track ring behind the progress arc. Defaults to `text-border`. */
+	trackClassName?: string;
+}
+
+function segmentStrokeClassName(status: ProgressCircleSegmentStatus): string {
+	switch (status) {
+		case "passed":
+			return "text-icon-accent-lime";
+		case "failed":
+			return "text-icon-danger";
+		case "pending":
+			return "text-border";
+		default: {
+			const _exhaustive: never = status;
+			return _exhaustive;
+		}
+	}
+}
+
+/** Proportional status-group arcs; gaps only when 2+ groups (single status fills the ring). */
+function SegmentArcs({
+	segments,
+	weights,
+	totalWeight,
+}: Readonly<{
+	segments: readonly ProgressCircleSegment[];
+	weights: readonly number[];
+	totalWeight: number;
+}>) {
+	const gapCount = segments.length > 1 ? segments.length : 0;
+	const gapLength = gapCount > 0 ? CIRCUMFERENCE * SEGMENT_GAP_RATIO : 0;
+	const drawableLength = Math.max(0, CIRCUMFERENCE - gapCount * gapLength);
+	let offset = 0;
+
+	return segments.map((segment, index) => {
+		const weight = weights[index] ?? 0;
+		const arcLength = totalWeight > 0 ? drawableLength * (weight / totalWeight) : 0;
+		const circle = (
+			<circle
+				key={`${segment.status}-${index}`}
+				cx={CENTER}
+				cy={CENTER}
+				r={RADIUS}
+				fill="none"
+				strokeWidth={STROKE_WIDTH}
+				stroke="currentColor"
+				strokeLinecap="butt"
+				strokeDasharray={`${arcLength} ${CIRCUMFERENCE - arcLength}`}
+				strokeDashoffset={-offset}
+				transform={`rotate(-90 ${CENTER} ${CENTER})`}
+				className={segmentStrokeClassName(segment.status)}
+			/>
+		);
+		offset += arcLength + (gapCount > 0 ? gapLength : 0);
+		return circle;
+	});
 }
 
 function ProgressCircle({
 	value,
+	segmented = false,
+	segments,
 	size = "default",
 	variant = "outline",
 	status,
 	label = "Progress",
 	animated = true,
 	showCompleteIcon = true,
+	trackClassName,
 	className,
 	...props
 }: Readonly<ProgressCircleProps>) {
-	const isIndeterminate = value == null && !status;
-	const isComplete = !status && !isIndeterminate && value != null && value >= 100 && showCompleteIcon;
+	const shouldReduceMotion = useReducedMotion() ?? false;
+	const statusExit = shouldReduceMotion
+		? undefined
+		: { opacity: 0, scale: 0.5 };
+	const statusExitTransition = shouldReduceMotion
+		? { duration: 0 }
+		: { duration: 0.15 };
+	const segmentList = segments ?? [];
+	const hasSegments = segmented && segmentList.length > 0;
+	const isIndeterminate = !hasSegments && value == null && !status;
+	const isComplete =
+		!hasSegments
+		&& !status
+		&& !isIndeterminate
+		&& value != null
+		&& value >= 100
+		&& showCompleteIcon;
 	const clampedValue = isIndeterminate ? 0 : Math.min(100, Math.max(0, value ?? 0));
 	const isFilled = variant === "filled";
+	const segmentWeights = segmentList.map((segment) => Math.max(0, segment.weight ?? 1));
+	const totalSegmentWeight = segmentWeights.reduce((sum, weight) => sum + weight, 0);
+	const passedSegmentWeight = segmentList.reduce((sum, segment, index) => {
+		if (segment.status !== "passed") return sum;
+		return sum + (segmentWeights[index] ?? 0);
+	}, 0);
 
 	const dashOffset = isIndeterminate
 		? CIRCUMFERENCE * (1 - INDETERMINATE_ARC)
@@ -97,13 +204,20 @@ function ProgressCircle({
 		? INDETERMINATE_ARC * 360
 		: (clampedValue / 100) * 360;
 
+	const ariaValueNow = hasSegments
+		? passedSegmentWeight
+		: isIndeterminate
+			? undefined
+			: clampedValue;
+	const ariaValueMax = hasSegments ? totalSegmentWeight : 100;
+
 	return (
 		<div
 			data-slot="progress-circle"
 			role="progressbar"
-			aria-valuenow={isIndeterminate ? undefined : clampedValue}
+			aria-valuenow={ariaValueNow}
 			aria-valuemin={0}
-			aria-valuemax={100}
+			aria-valuemax={ariaValueMax}
 			aria-label={label}
 			className={cn(progressCircleVariants({ size, variant }), className)}
 			{...props}
@@ -189,14 +303,29 @@ function ProgressCircle({
 							/>
 						)}
 					</motion.svg>
+				) : hasSegments ? (
+					<motion.svg
+						key="segments"
+						viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}
+						fill="none"
+						className="size-full"
+						exit={statusExit}
+						transition={statusExitTransition}
+					>
+						<SegmentArcs
+							segments={segmentList}
+							totalWeight={totalSegmentWeight}
+							weights={segmentWeights}
+						/>
+					</motion.svg>
 				) : isFilled ? (
 					<motion.svg
 						key="filled"
 						viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}
 						fill="none"
 						className="size-full"
-						exit={{ opacity: 0, scale: 0.5 }}
-						transition={{ duration: 0.15 }}
+						exit={statusExit}
+						transition={statusExitTransition}
 					>
 						{/* Outer ring (stays fixed) */}
 						<circle
@@ -220,8 +349,8 @@ function ProgressCircle({
 						viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}
 						fill="none"
 						className={cn("size-full", isIndeterminate && "animate-spin")}
-						exit={{ opacity: 0, scale: 0.5 }}
-						transition={{ duration: 0.15 }}
+						exit={statusExit}
+						transition={statusExitTransition}
 					>
 						{/* Track */}
 						<circle
@@ -230,7 +359,7 @@ function ProgressCircle({
 							r={RADIUS}
 							strokeWidth={STROKE_WIDTH}
 							stroke="currentColor"
-							className="text-border"
+							className={cn("text-border", trackClassName)}
 						/>
 						{/* Indicator */}
 						<motion.circle

@@ -34,6 +34,7 @@ AI usage guidance:
 - Start staged AI workflows with a preload/thinking header so the morphing Rovo shape, shimmer label, and animated dots have time to read.
 - Reveal specific step labels only when that work begins.
 - Match labels to the domain: automation flows should mention triggers, schedules, delivery, and saving; research flows should mention search, source evaluation, and synthesis.
+- Render Teamwork Graph calls with TwgTool, showing the connected Jira, Confluence, and Figma source stack alongside a concise delivery-context summary.
 - Never use placeholder labels such as "Reading agent brief" unless that is literally the work being performed.`,
 	demoLayout: {
 		previewContentWidth: "full",
@@ -98,6 +99,7 @@ AI usage guidance:
 		{ title: "Studio agent generation flow", description: "Canonical staged agent-generation recipe: brief, clarification, tools, instructions, and save.", demoSlug: "chain-of-thought-demo-studio-agent-generation-flow" },
 		{ title: "Automation trigger flow", description: "Automation-specific recipe with preload, existing-rule review, schedule setup, Slack delivery, and save.", demoSlug: "chain-of-thought-demo-automation-trigger-flow" },
 		{ title: "Research retrieval flow", description: "Search/retrieval recipe with source lookup, source-fit evaluation, and synthesis.", demoSlug: "chain-of-thought-demo-research-retrieval-flow" },
+		{ title: "TWG tool call", description: "Teamwork Graph delivery-context step with connected Jira, Confluence, and Figma evidence.", demoSlug: "chain-of-thought-demo-twg-tool-call" },
 		{ title: "Tool-call details flow", description: "Completed trace with collapsed tool rows that expose parameters and results.", demoSlug: "chain-of-thought-demo-tool-call-details-flow" },
 		{ title: "Tool icon table", description: "Reference table showing the resolved icon or logo used for native tools, Atlassian/VPK servers, 3P MCP servers, and fallback cases.", demoSlug: "chain-of-thought-demo-tool-icon-table" },
 	],

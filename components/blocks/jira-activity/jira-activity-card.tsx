@@ -109,17 +109,21 @@ export function JiraActivityCard({
 	return (
 		<div
 			className={cn(
+				// Hover/focus group wraps the full card (header, body, replies) so
+				// header actions stay interactive while the pointer is anywhere on
+				// the thread — including nested replies and the collapse control.
+				activityGroupClass,
 				// Visible so Avatar hover scale (1.12) is not clipped on the flush edge.
 				// Transparent — comment chrome is borderless and inherits the feed surface.
-				"w-full overflow-visible bg-transparent",
+				// min-w-0 keeps long checklist / artifact rows inside the metadata rail.
+				"w-full min-w-0 overflow-visible bg-transparent",
 				hasExpandedLayout ? "rounded-xl" : "rounded-lg",
 				className,
 			)}
 		>
 			<div
 				className={cn(
-					activityGroupClass,
-					"grid",
+					"grid min-w-0",
 					hasExpandedLayout ? "gap-3" : "gap-2",
 				)}
 			>
@@ -135,7 +139,7 @@ export function JiraActivityCard({
 							messageTimestamp={timestamp}
 							onView={onView}
 						/>
-						<div className="text-sm leading-5 text-text">{children}</div>
+						<div className="min-w-0 text-sm leading-5 text-text">{children}</div>
 					</>
 				) : (
 					<>
@@ -152,13 +156,13 @@ export function JiraActivityCard({
 						>
 							{hideLeadAvatar ? null : headerAvatar}
 							{hasStackedHeader ? (
-								<div className="min-w-0 flex-1">
-									<div className="flex min-w-0 items-center">
+								<div className="min-w-0 flex-1 overflow-hidden">
+									<div className="flex min-w-0 items-center overflow-hidden">
 										<span className="min-w-0 truncate text-sm font-medium text-text">
 											{agentName}
 										</span>
 									</div>
-									<div className="flex min-w-0 items-center gap-1 text-xs leading-4 text-text-subtle">
+									<div className="flex min-w-0 items-center gap-1 overflow-hidden text-xs leading-4 text-text-subtle">
 										<span className="shrink-0">{timestamp}</span>
 										{tag ? <Tag color={tag.color ?? "gray"}>{tag.text}</Tag> : null}
 									</div>
@@ -173,7 +177,7 @@ export function JiraActivityCard({
 							{action ? (
 								<div
 									className={cn(
-										"pointer-events-none flex shrink-0 items-center gap-2 opacity-0 transition-opacity duration-normal ease-out-practical motion-reduce:transition-none",
+										"relative z-10 pointer-events-none flex shrink-0 items-center gap-1 opacity-0 transition-opacity duration-normal ease-out-practical motion-reduce:transition-none",
 										actionVisibilityClass,
 									)}
 								>

@@ -1,6 +1,7 @@
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import type { ChangedFile } from "@/components/blocks/code-review";
 import type { CodeListItem } from "@/components/ui-custom/code-list";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import type { TagColor } from "@/components/ui/tag";
 
 import { getPullRequestIdentity } from "./jira-activity-adapter";
@@ -54,7 +55,7 @@ export interface PullRequestCheck {
 	name: string;
 	status: "passed" | "failed" | "running" | "queued";
 	details: string;
-	/** SCM check-run / Actions URL opened from the CI checks rail row. */
+	/** Optional CI provider run URL opened from the failed-check external-link control. */
 	url?: string;
 }
 
@@ -68,6 +69,8 @@ export type PullRequestMergeState = "ready" | "blocked" | "conflicts" | "merged"
 
 export interface PullRequestActivityActor extends PullRequestPerson {
 	kind: "person" | "agent" | "app";
+	/** Third-party brand mark for agents/apps (e.g. Claude Code → `claude`). */
+	brandName?: ThirdPartyLogoName;
 }
 
 export interface PullRequestActivityReply {
@@ -117,7 +120,15 @@ export type PullRequestActivity =
 			body: string;
 			filePath?: string;
 			replies?: readonly PullRequestActivityReply[];
+			/** Opt into Reply on this review discussion thread. */
 			allowReply?: boolean;
+			/**
+			 * Opt into Resolve / Unresolve. Review discussion threads from
+			 * Submit review should set this so Activity mirrors SCM threads.
+			 */
+			allowResolve?: boolean;
+			/** Whether the review discussion thread is currently resolved. */
+			resolved?: boolean;
 			detail?: {
 				label: string;
 				body: string;
@@ -131,8 +142,22 @@ export type PullRequestActivity =
 			kind: "ready-to-merge";
 		});
 
+export interface PullRequestGuideMetric {
+	label: string;
+	/** Filled segment count on the 1–5 bar (also drives bar color). */
+	filled: number;
+	/** Short blurb shown in place of the score on card hover/focus. */
+	description: string;
+}
+
 export interface PullRequestGuidedReview {
 	summary: readonly string[];
+	metrics: Readonly<{
+		risk: PullRequestGuideMetric;
+		impact: PullRequestGuideMetric;
+		reviewDepth: PullRequestGuideMetric;
+		mergeConfidence: PullRequestGuideMetric;
+	}>;
 	/** Full markdown body for the Overview TipTap description editor. */
 	description: string;
 	chapters: readonly PullRequestGuideChapter[];
@@ -140,6 +165,8 @@ export interface PullRequestGuidedReview {
 }
 
 export type PullRequestReviewFile = ChangedFile & CodeListItem;
+
+export { resolveInitialReviewedChapterIds } from "./resolve-initial-reviewed-chapter-ids";
 
 export interface PullRequestDetailData {
 	identity: string;
@@ -151,6 +178,7 @@ export interface PullRequestDetailData {
 	status: "Open" | "Merged";
 	authorName: string;
 	authorAvatarSrc?: string;
+	authorKind: "person" | "agent" | "app";
 	baseBranch: string | null;
 	headBranch: string | null;
 	additions: number;
@@ -297,6 +325,28 @@ const GUIDED_REVIEW: PullRequestGuidedReview = {
 		"Keeps privileged order creation on the server behind a dedicated guest-order route.",
 		"Preserves checkout details after recoverable errors and verifies the full guest flow.",
 	],
+	metrics: {
+		risk: {
+			label: "Low",
+			filled: 1,
+			description: "Contained to guest checkout entry and the dedicated guest-order route.",
+		},
+		impact: {
+			label: "High",
+			filled: 5,
+			description: "Affects the shared checkout path for all shoppers without accounts.",
+		},
+		reviewDepth: {
+			label: "3/5",
+			filled: 3,
+			description: "Spans storefront flow, guest-order API, and recovery coverage.",
+		},
+		mergeConfidence: {
+			label: "4/5",
+			filled: 4,
+			description: "Browser suite and recoverable-error checks support a safe merge.",
+		},
+	},
 	description: `Adds a guest checkout path so shoppers can finish purchase without creating an account, while keeping privileged commerce work on the server.
 
 #### Summary
@@ -323,30 +373,81 @@ const GUIDED_REVIEW: PullRequestGuidedReview = {
 		{
 			id: "start-guest-checkout",
 			title: "Start a guest checkout",
-			description: "Follow the new storefront path from the guest choice through validated delivery details.",
-			fileIds: ["guest-checkout-flow"],
+			description:
+				"Follow the new storefront path from the guest choice through validated delivery details. Confirm GuestCheckoutForm replaces the account-required entry and submits through createGuestOrder. Check that delivery and contact fields stay populated when restoreCheckoutDraft runs after a recoverable failure.",
+			fileIds: ["guest-checkout-flow", "guest-orders-route"],
 		},
 		{
 			id: "server-owned-order",
 			title: "Keep order creation server-owned",
-			description: "Review the narrow API boundary and the service that owns privileged commerce calls.",
+			description:
+				"Review the narrow API boundary and the service that owns privileged commerce calls. POST /guest-orders should accept only cart, delivery, and email, then delegate to guestOrderService.create. Confirm guest orders set customerMode: \"guest\" and return a recovery token instead of creating orders from the raw request body.",
 			fileIds: ["guest-orders-route", "guest-order-service"],
 		},
 		{
 			id: "recover-and-verify",
 			title: "Recover safely and verify the flow",
-			description: "Check recoverable-error behavior and the browser test that completes a guest order.",
+			description:
+				"Check recoverable-error behavior and the browser test that completes a guest order. Declined payments and validation errors should keep safe checkout fields populated so the shopper can retry. Walk the Playwright path from Checkout as guest through confirmation, and confirm a failed retry does not create a duplicate order.",
 			fileIds: ["guest-checkout-flow", "guest-checkout-spec"],
 		},
 	],
 	files: GUIDED_REVIEW_FILES,
 };
 
+const COMPLETED_GUIDED_REVIEW: PullRequestGuidedReview = {
+	...GUIDED_REVIEW,
+	description: GUIDED_REVIEW.description.replaceAll("- [ ] ", "- [x] "),
+};
+
+function resolveGuidedReview(
+	checks: readonly PullRequestCheck[],
+): PullRequestGuidedReview {
+	return checks.length > 0 && checks.every((check) => check.status === "passed")
+		? COMPLETED_GUIDED_REVIEW
+		: GUIDED_REVIEW;
+}
+
 const VENN: PullRequestActivityActor = {
 	id: "venn",
 	name: "Venn",
 	kind: "person",
 	avatarSrc: "/avatar-user/venn/venn.png",
+};
+
+const MAYA_CHEN: PullRequestActivityActor = {
+	id: "maya-chen",
+	name: "Maya Chen",
+	kind: "person",
+	avatarSrc: "/avatar-user/andrea-wilson/color/asow-service-yellow.png",
+};
+
+const JORDAN_LEE: PullRequestActivityActor = {
+	id: "jordan-lee",
+	name: "Jordan Lee",
+	kind: "person",
+	avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+};
+
+const PRIYA_NARAYANAN: PullRequestActivityActor = {
+	id: "priya-narayanan",
+	name: "Priya Narayanan",
+	kind: "person",
+	avatarSrc: "/avatar-user/priya-hansra/color/asow-strategy-orange.png",
+};
+
+const SAM_RIVERA: PullRequestActivityActor = {
+	id: "sam-rivera",
+	name: "Sam Rivera",
+	kind: "person",
+	avatarSrc: "/avatar-user/raul-gonzalez/color/asow-strategy-orange.png",
+};
+
+const CLAUDE_CODE: PullRequestActivityActor = {
+	id: "claude-code",
+	name: "Claude Code",
+	kind: "agent",
+	brandName: "claude",
 };
 
 const CODE_PLANNER: PullRequestActivityActor = {
@@ -383,13 +484,14 @@ const CODEX: PullRequestActivityActor = {
 
 const GUIDED_REVIEW_REPO_COMMIT_URL = "https://github.com/eevensoh/vpk-rovo/commit";
 
+/** Demo commits use people portraits only — agent tiles stay out of this rail. */
 const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 	{
 		id: "5f02a91",
 		shortSha: "5f02a91",
 		title: "Add the guest checkout storefront flow",
 		author: VENN,
-		timestamp: "17 minutes ago",
+		timestamp: "24 minutes ago",
 		additions: 34,
 		deletions: 8,
 		url: `${GUIDED_REVIEW_REPO_COMMIT_URL}/5f02a91`,
@@ -398,8 +500,8 @@ const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 		id: "91c73d4",
 		shortSha: "91c73d4",
 		title: "Keep guest order creation server-owned",
-		author: CODE_PLANNER,
-		timestamp: "15 minutes ago",
+		author: MAYA_CHEN,
+		timestamp: "22 minutes ago",
 		additions: 24,
 		deletions: 6,
 		url: `${GUIDED_REVIEW_REPO_COMMIT_URL}/91c73d4`,
@@ -408,8 +510,8 @@ const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 		id: "a2f74c1",
 		shortSha: "a2f74c1",
 		title: "Preserve checkout drafts after recoverable failures",
-		author: VENN,
-		timestamp: "12 minutes ago",
+		author: JORDAN_LEE,
+		timestamp: "20 minutes ago",
 		additions: 18,
 		deletions: 4,
 		url: `${GUIDED_REVIEW_REPO_COMMIT_URL}/a2f74c1`,
@@ -418,8 +520,8 @@ const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 		id: "d34c112",
 		shortSha: "d34c112",
 		title: "Cover declined payments and idempotent retries",
-		author: UNIT_TEST_CREATOR,
-		timestamp: "10 minutes ago",
+		author: PRIYA_NARAYANAN,
+		timestamp: "18 minutes ago",
 		additions: 10,
 		deletions: 3,
 		url: `${GUIDED_REVIEW_REPO_COMMIT_URL}/d34c112`,
@@ -428,8 +530,8 @@ const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 		id: "8b4e6fa",
 		shortSha: "8b4e6fa",
 		title: "Fix nullable delivery-address validation in CI",
-		author: VENN,
-		timestamp: "5 minutes ago",
+		author: SAM_RIVERA,
+		timestamp: "14 minutes ago",
 		additions: 7,
 		deletions: 2,
 		url: `${GUIDED_REVIEW_REPO_COMMIT_URL}/8b4e6fa`,
@@ -438,8 +540,8 @@ const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 		id: "f8cc291",
 		shortSha: "f8cc291",
 		title: "Tighten checkout keyboard coverage",
-		author: UNIT_TEST_CREATOR,
-		timestamp: "3 minutes ago",
+		author: MAYA_CHEN,
+		timestamp: "12 minutes ago",
 		additions: 5,
 		deletions: 1,
 		url: `${GUIDED_REVIEW_REPO_COMMIT_URL}/f8cc291`,
@@ -452,21 +554,18 @@ const GUIDED_REVIEW_CHECKS: readonly PullRequestCheck[] = [
 		name: "Lint and typecheck",
 		status: "passed",
 		details: "Completed in 1m 18s",
-		url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471001",
 	},
 	{
 		id: "unit-tests",
 		name: "Unit tests",
 		status: "passed",
 		details: "418 tests in 2m 46s",
-		url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471002",
 	},
 	{
 		id: "browser-tests",
 		name: "Guest checkout browser tests",
 		status: "passed",
 		details: "5 scenarios in 1m 32s",
-		url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471003",
 	},
 ];
 
@@ -475,19 +574,62 @@ const GUIDED_REVIEW_ACTIVITY: readonly PullRequestActivity[] = [
 		id: "opened",
 		kind: "opened",
 		actor: VENN,
-		occurredAtMs: Date.UTC(2026, 7, 10, 1, 42),
-		timestamp: "18 minutes ago",
+		occurredAtMs: Date.UTC(2026, 7, 10, 1, 35),
+		timestamp: "25 minutes ago",
 		baseBranch: "main",
 		headBranch: "feature/shop-4821-guest-checkout",
 	},
 	{
-		id: "commits-pushed",
+		id: "initial-commits-pushed",
 		kind: "commits-pushed",
-		actor: VENN,
-		occurredAtMs: Date.UTC(2026, 7, 10, 1, 48),
-		timestamp: "12 minutes ago",
-		commitCount: GUIDED_REVIEW_COMMITS.length,
-		headSha: GUIDED_REVIEW_COMMITS.at(-1)?.shortSha ?? "f8cc291",
+		actor: CLAUDE_CODE,
+		occurredAtMs: Date.UTC(2026, 7, 10, 1, 42),
+		timestamp: "18 minutes ago",
+		commitCount: 4,
+		headSha: "d34c112",
+	},
+	{
+		id: "codex-review",
+		kind: "review-submitted",
+		actor: CODEX,
+		occurredAtMs: Date.UTC(2026, 7, 10, 1, 44),
+		timestamp: "16 minutes ago",
+		decision: "commented",
+		body: "P2 · Narrow the nullable delivery address before creating the order. The current route can still forward an incomplete address after a recoverable validation failure.",
+		filePath: "backend/services/guest-order-service.js",
+		allowReply: true,
+		allowResolve: true,
+		// Matches the later `thread-resolved` event for this file.
+		resolved: true,
+		detail: {
+			label: "About Codex in GitHub",
+			body: "Codex reviewed commit d34c112 and posted this suggestion on the pull request.",
+		},
+		replies: [
+			{
+				id: "codex-review-fix",
+				actor: CLAUDE_CODE,
+				timestamp: "13 minutes ago",
+				body: "Fixed in 8b4e6fa. Delivery-address validation now narrows before order creation, and lint, typecheck, and the guest-checkout browser tests pass.",
+			},
+		],
+	},
+	{
+		id: "fix-commits-pushed",
+		kind: "commits-pushed",
+		actor: CLAUDE_CODE,
+		occurredAtMs: Date.UTC(2026, 7, 10, 1, 49),
+		timestamp: "11 minutes ago",
+		commitCount: 2,
+		headSha: "f8cc291",
+	},
+	{
+		id: "thread-resolved",
+		kind: "thread-resolved",
+		actor: CLAUDE_CODE,
+		occurredAtMs: Date.UTC(2026, 7, 10, 1, 50),
+		timestamp: "10 minutes ago",
+		filePath: "backend/services/guest-order-service.js",
 	},
 	{
 		id: "checks-completed",
@@ -512,6 +654,19 @@ const GUIDED_REVIEW_ACTIVITY: readonly PullRequestActivity[] = [
 		},
 	},
 	{
+		id: "priya-review-comment",
+		kind: "review-submitted",
+		actor: PRIYA_NARAYANAN,
+		occurredAtMs: Date.UTC(2026, 7, 10, 1, 53, 30),
+		timestamp: "6 minutes ago",
+		decision: "commented",
+		body: "Can we assert the recoverable validation path still returns the guest to the address step instead of creating a partial order?",
+		filePath: "tests/storefront/guest-checkout.spec.ts",
+		allowReply: true,
+		allowResolve: true,
+		resolved: false,
+	},
+	{
 		id: "code-planner-review",
 		kind: "review-submitted",
 		actor: CODE_PLANNER,
@@ -522,59 +677,52 @@ const GUIDED_REVIEW_ACTIVITY: readonly PullRequestActivity[] = [
 		filePath: "backend/services/guest-order-service.js",
 	},
 	{
-		id: "codex-review",
-		kind: "review-submitted",
-		actor: CODEX,
-		occurredAtMs: Date.UTC(2026, 7, 10, 1, 55),
-		timestamp: "5 minutes ago",
-		decision: "commented",
-		body: "P2 · Narrow the nullable delivery address before creating the order. The current route can still forward an incomplete address after a recoverable validation failure.",
-		filePath: "backend/services/guest-order-service.js",
-		allowReply: true,
-		detail: {
-			label: "About Codex in GitHub",
-			body: "Codex reviewed commit f8cc291 and posted this suggestion on the pull request.",
-		},
-		replies: [
-			{
-				id: "codex-review-fix",
-				actor: VENN,
-				timestamp: "3 minutes ago",
-				body: "Fixed in 8b4e6fa. Delivery-address validation now narrows before order creation, and lint, typecheck, and the guest-checkout browser tests pass.",
-			},
-		],
-	},
-	{
 		id: "unit-test-creator-review",
 		kind: "review-submitted",
 		actor: UNIT_TEST_CREATOR,
-		occurredAtMs: Date.UTC(2026, 7, 10, 1, 56),
-		timestamp: "4 minutes ago",
+		occurredAtMs: Date.UTC(2026, 7, 10, 1, 55),
+		timestamp: "5 minutes ago",
 		decision: "approved",
 		body: "The browser flow covers guest selection, safe input recovery, server validation, and the final confirmation state.",
 		filePath: "tests/storefront/guest-checkout.spec.ts",
 	},
 	{
-		id: "thread-resolved",
-		kind: "thread-resolved",
+		id: "venn-review",
+		kind: "review-submitted",
 		actor: VENN,
-		occurredAtMs: Date.UTC(2026, 7, 10, 1, 57),
-		timestamp: "3 minutes ago",
-		filePath: "backend/services/guest-order-service.js",
+		occurredAtMs: Date.UTC(2026, 7, 10, 1, 58),
+		timestamp: "2 minutes ago",
+		decision: "approved",
+		body: "I reviewed every guided chapter. The implementation, CI evidence, and automated reviews are ready to merge.",
 	},
 	{
 		id: "ready-to-merge",
 		kind: "ready-to-merge",
 		actor: GITHUB,
-		occurredAtMs: Date.UTC(2026, 7, 10, 1, 58),
-		timestamp: "2 minutes ago",
+		occurredAtMs: Date.UTC(2026, 7, 10, 1, 59),
+		timestamp: "1 minute ago",
 	},
 ];
 
-const GUIDED_REVIEW_REVIEWERS: readonly PullRequestReviewer[] = [
-	{ ...CODE_PLANNER, status: "approved" },
-	{ ...UNIT_TEST_CREATOR, status: "approved" },
-];
+/**
+ * Human approvers: teammates stay pending until a review lands, even when CI is
+ * green. A fully approved PR (host approval / reviewDecision) marks the team
+ * approved. Author does not approve their own work.
+ */
+function resolveGuidedReviewReviewers(
+	checks: readonly PullRequestCheck[],
+	reviewDecision: PullRequestReviewDecision,
+): readonly PullRequestReviewer[] {
+	const checksReady = checks.length > 0
+		&& checks.every((check) => check.status === "passed");
+	const teamApprovalStatus = reviewDecision === "approved" && checksReady
+		? "approved"
+		: "pending";
+	return [
+		{ ...PRIYA_NARAYANAN, status: teamApprovalStatus },
+		{ ...JORDAN_LEE, status: teamApprovalStatus },
+	];
+}
 
 const GUIDED_REVIEW_LABELS: readonly PullRequestLabel[] = [
 	{ id: "checkout", name: "checkout", color: "blue" },
@@ -594,7 +742,7 @@ function resolvePullRequestProvider(url: string | undefined): PullRequestProvide
 
 function resolveGuidedReviewActivity(
 	checks: readonly PullRequestCheck[],
-	mergeState: PullRequestMergeState,
+	reviewDecision: PullRequestReviewDecision,
 ): readonly PullRequestActivity[] {
 	const passed = checks.filter((check) => check.status === "passed").length;
 	const checkActivityTemplate = GUIDED_REVIEW_ACTIVITY.find(
@@ -609,13 +757,21 @@ function resolveGuidedReviewActivity(
 		total: checks.length,
 	};
 
-	if (mergeState === "blocked") {
+	if (checks.some((check) => check.status === "failed")) {
 		return [GUIDED_REVIEW_ACTIVITY[0], GUIDED_REVIEW_ACTIVITY[1], checkActivity];
 	}
+	if (checks.some((check) => check.status === "running" || check.status === "queued")) {
+		return [GUIDED_REVIEW_ACTIVITY[0], GUIDED_REVIEW_ACTIVITY[1]];
+	}
 
-	return GUIDED_REVIEW_ACTIVITY.map((activity) => (
-		activity.kind === "checks-completed" ? checkActivity : activity
-	));
+	return GUIDED_REVIEW_ACTIVITY
+		.filter((activity) => (
+			reviewDecision === "approved"
+			|| (activity.id !== "venn-review" && activity.kind !== "ready-to-merge")
+		))
+		.map((activity) => (
+			activity.kind === "checks-completed" ? checkActivity : activity
+		));
 }
 
 /**
@@ -634,11 +790,16 @@ function resolveMergeState(
 	status: "Open" | "Merged",
 	explicit: PullRequestMergeState | undefined,
 	checks: readonly PullRequestCheck[],
+	reviewDecision: PullRequestReviewDecision,
 	isGuidedReview: boolean,
 ): PullRequestMergeState {
 	if (status === "Merged") return "merged";
-	if (explicit) return explicit;
+	if (explicit === "conflicts") return "conflicts";
 	if (checks.some((check) => check.status !== "passed")) return "blocked";
+	if (reviewDecision === "changes-requested" || reviewDecision === "review-required") {
+		return "blocked";
+	}
+	if (explicit) return explicit;
 	return isGuidedReview ? "ready" : "blocked";
 }
 
@@ -653,19 +814,18 @@ export function resolvePullRequestDetailData(
 	const repositoryIdentity = pullRequest.repository
 		? `${pullRequest.repository}#${pullRequest.number}`
 		: `#${pullRequest.number}`;
-	const guidedReview = identity === GUIDED_REVIEW_PULL_REQUEST_IDENTITY
-		|| repositoryIdentity === GUIDED_REVIEW_PULL_REQUEST_IDENTITY
-		? GUIDED_REVIEW
-		: null;
+	const isGuidedReview = identity === GUIDED_REVIEW_PULL_REQUEST_IDENTITY
+		|| repositoryIdentity === GUIDED_REVIEW_PULL_REQUEST_IDENTITY;
 	const url = pullRequest.url ?? fallbackPullRequestUrl(pullRequest.repository ?? "", pullRequest.number);
-	const isGuidedReview = guidedReview !== null;
 	const commits = pullRequest.commits ?? (isGuidedReview ? GUIDED_REVIEW_COMMITS : []);
 	const checks = pullRequest.checks ?? (isGuidedReview ? GUIDED_REVIEW_CHECKS : []);
-	const reviewDecision = pullRequest.reviewDecision ?? (isGuidedReview ? "approved" : "not-required");
+	const guidedReview = isGuidedReview ? resolveGuidedReview(checks) : null;
+	const reviewDecision = pullRequest.reviewDecision ?? (isGuidedReview ? "review-required" : "not-required");
 	const mergeState = resolveMergeState(
 		pullRequest.status,
 		pullRequest.mergeState,
 		checks,
+		reviewDecision,
 		isGuidedReview,
 	);
 	return {
@@ -675,22 +835,23 @@ export function resolvePullRequestDetailData(
 		description: guidedReview?.description ?? "",
 		repository,
 		status: pullRequest.status,
-		authorName: pullRequest.authorName ?? (isGuidedReview ? VENN.name : "Unknown author"),
+		authorName: isGuidedReview ? VENN.name : (pullRequest.authorName ?? "Unknown author"),
 		authorAvatarSrc: isGuidedReview ? (VENN.avatarSrc ?? undefined) : undefined,
+		authorKind: isGuidedReview ? VENN.kind : "person",
 		baseBranch: guidedReview ? "main" : null,
 		headBranch: guidedReview ? "feature/shop-4821-guest-checkout" : null,
 		additions: pullRequest.additions,
 		deletions: pullRequest.deletions,
 		provider: resolvePullRequestProvider(url),
-		reviewers: isGuidedReview ? GUIDED_REVIEW_REVIEWERS : [],
+		reviewers: isGuidedReview ? resolveGuidedReviewReviewers(checks, reviewDecision) : [],
 		labels: isGuidedReview ? GUIDED_REVIEW_LABELS : [],
 		commits,
 		checks,
-		createdTime: isGuidedReview ? "18 minutes ago" : entry.timestamp,
+		createdTime: isGuidedReview ? "25 minutes ago" : entry.timestamp,
 		updatedTime: entry.timestamp,
 		reviewDecision,
 		mergeState,
-		activity: isGuidedReview ? resolveGuidedReviewActivity(checks, mergeState) : [],
+		activity: isGuidedReview ? resolveGuidedReviewActivity(checks, reviewDecision) : [],
 		url,
 		guidedReview,
 	};

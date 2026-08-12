@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/select";
 
 const TRIGGER_LABEL = "Review pull request";
+const SELECTED_TRIGGER_LABEL = "Review";
 
 const PULL_REQUEST_STATUS_ICONS: Record<
 	PullRequestStatusIconKind,
@@ -59,10 +60,10 @@ function findPullRequestEntry(
 }
 
 /**
- * ContextResources Select for pull requests. Trigger label stays generic;
- * each option is a Pull Request block card. The active filter is a removable
- * SelectTag inside the trigger (after the label). Selecting an option opens PR
- * detail in the description column.
+ * ContextResources Select for pull requests. Placeholder trigger says
+ * "Review pull request"; with a selection it shortens to "Review" beside the
+ * PR SelectTag. Each option is a Pull Request block card. Selecting an option
+ * opens PR detail in the description column.
  */
 export function PullRequestsSelect({
 	entries,
@@ -88,6 +89,9 @@ export function PullRequestsSelect({
 	const selectedPullRequest = selectedEntry?.pullRequest;
 	const selectedNumber = selectedPullRequest?.number;
 	const selectedTagLabel = typeof selectedNumber === "number" ? `#${selectedNumber}` : null;
+	const visibleTriggerLabel = selectedTagLabel
+		? SELECTED_TRIGGER_LABEL
+		: TRIGGER_LABEL;
 	const selectedStatusPresentation = selectedPullRequest
 		? getPullRequestStatusPresentation(selectedPullRequest.status)
 		: null;
@@ -133,7 +137,7 @@ export function PullRequestsSelect({
 						{() => (
 							<SelectTags>
 								<span className="truncate @max-[36rem]/resource-row:hidden">
-									{TRIGGER_LABEL}
+									{visibleTriggerLabel}
 								</span>
 								{selectedTagLabel && selectedStatusPresentation && SelectedStatusIcon ? (
 									<SelectTag
@@ -176,14 +180,12 @@ export function PullRequestsSelect({
 							const item = toPanelPullRequestProps(entry);
 							if (!pullRequest || !item) return null;
 							const identity = getPullRequestIdentity(pullRequest);
-							const selected = identity === selectedIdentity;
 							return (
 								<SelectItem
 									key={identity}
-									className="group/pr-option h-auto min-h-0 p-0 data-[highlighted]:bg-transparent data-selected:bg-transparent data-selected:data-[highlighted]:bg-transparent active:bg-transparent data-selected:active:bg-transparent"
+									className="group/pr-option h-auto min-h-0 p-0 data-[highlighted]:bg-transparent data-selected:bg-transparent data-selected:data-highlighted:bg-transparent data-selected:data-[highlighted]:bg-transparent active:bg-transparent data-selected:active:bg-transparent"
 									data-jira-work-item-pull-request-card={pullRequest.number}
 									data-jira-work-item-pull-request-identity={identity}
-									data-selected={selected ? "true" : undefined}
 									showIndicator={false}
 									textClassName="w-full min-w-0 whitespace-normal"
 									value={identity}
@@ -191,16 +193,13 @@ export function PullRequestsSelect({
 									{/*
 									 * SelectItem is an invisible activation shell — PullRequest
 									 * owns borderless surface + highlight (via group). Avoids a
-									 * padded “double box” around the card.
+									 * padded “double box” around the card. Do not pass
+									 * `selected` here: that paints blue selected chrome; the
+									 * trigger tag already shows the open PR.
 									 */}
 									<PullRequest
 										{...item}
-										className={
-											selected
-												? "min-w-0 max-w-full w-full rounded-lg border-transparent group-data-[highlighted]/pr-option:bg-bg-selected-hovered"
-												: "min-w-0 max-w-full w-full rounded-lg border-transparent transition-[background-color] duration-normal ease-out-practical group-data-[highlighted]/pr-option:bg-surface-hovered"
-										}
-										selected={selected}
+										className="pointer-events-none min-w-0 max-w-full w-full rounded-lg border-transparent transition-[background-color] duration-normal ease-out-practical group-data-[highlighted]/pr-option:bg-surface-hovered"
 									/>
 								</SelectItem>
 							);

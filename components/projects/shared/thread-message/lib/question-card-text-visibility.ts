@@ -176,6 +176,16 @@ function compactLines(lines: string[]): string[] {
 	return compacted;
 }
 
+function getMarkdownFenceMarker(line: string): string | null {
+	return line.match(/^[ \t]{0,3}(`{3,}|~{3,})/u)?.[1] ?? null;
+}
+
+function closesMarkdownFence(line: string, marker: string): boolean {
+	const trimmedLine = line.trim();
+	return trimmedLine.length >= marker.length
+		&& Array.from(trimmedLine).every((character) => character === marker[0]);
+}
+
 export function isTranslationClarificationQuestionCard(
 	payload: unknown,
 	messageText?: string
@@ -220,7 +230,23 @@ export function sanitizeQuestionCardMessageText({
 	const lines = normalizedMessageText.split(/\r?\n/);
 	const dedupeKeys = new Set<string>();
 	const sanitizedLines: string[] = [];
+	let activeFenceMarker: string | null = null;
 	for (const line of lines) {
+		if (activeFenceMarker) {
+			sanitizedLines.push(line);
+			if (closesMarkdownFence(line, activeFenceMarker)) {
+				activeFenceMarker = null;
+			}
+			continue;
+		}
+
+		const fenceMarker = getMarkdownFenceMarker(line);
+		if (fenceMarker) {
+			activeFenceMarker = fenceMarker;
+			sanitizedLines.push(line);
+			continue;
+		}
+
 		const trimmedLine = line.trim();
 		if (!trimmedLine) {
 			sanitizedLines.push("");

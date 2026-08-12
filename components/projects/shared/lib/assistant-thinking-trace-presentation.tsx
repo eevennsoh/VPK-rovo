@@ -1,12 +1,17 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
+import type { ChainOfThoughtStepHeaderRenderContext } from "@/components/ui-custom/chain-of-thought";
 import { TwgTool, type TwgToolSource } from "@/components/ui-custom/twg-tool";
 import type {
 	ThinkingNarrationDetailRow,
 	ThinkingToolCallSummary,
 } from "@/lib/rovo-ui-messages";
 import { getThinkingToolByline } from "@/components/projects/shared/lib/thinking-tool-display";
+import { cn } from "@/lib/utils";
 
 export type ToolStepStatus = "complete" | "active" | "pending";
+
+/** TWG tool CoT rail spacing — custom override, not a shared CoT default. */
+export const TWG_TOOL_ICON_CONTAINER_STYLE = { marginTop: 6 } as const satisfies CSSProperties;
 
 export interface ResolveAssistantThinkingToolPresentationOptions {
 	detailRows: readonly ThinkingNarrationDetailRow[] | undefined;
@@ -17,7 +22,8 @@ export interface ResolveAssistantThinkingToolPresentationOptions {
 
 export interface AssistantThinkingToolTracePresentation {
 	forceOpen?: boolean;
-	headerRender?: () => ReactNode;
+	headerRender?: (context: ChainOfThoughtStepHeaderRenderContext) => ReactNode;
+	iconContainerStyle?: CSSProperties;
 	detailRender?: () => ReactNode;
 }
 
@@ -34,6 +40,7 @@ interface TwgToolTraceHeaderConfig {
 
 interface NarrationRowsTraceDetailConfig {
 	type: "narration-rows";
+	className?: string;
 }
 
 type AssistantThinkingToolTraceHeaderConfig = TwgToolTraceHeaderConfig;
@@ -60,6 +67,23 @@ const STUDIO_AUTOMATION_TWG_SOURCES = [
 ] satisfies ReadonlyArray<TwgToolSource>;
 
 export const STUDIO_AUTOMATION_THINKING_TOOL_TRACE_PRESENTATION_REGISTRY = {
+	"twg.lookup_work_item_delivery_context": {
+		header: {
+			type: "twg-tool",
+			title: "Connecting work through Teamwork Graph",
+			fallbackDescription: "Correlating the work item with product research, design context, and delivery ownership.",
+			sources: [
+				{ id: "twg", label: "Teamwork Graph", provider: "twg" },
+				{ id: "jira", label: "Jira", provider: "jira" },
+				{ id: "confluence", label: "Confluence", provider: "confluence" },
+				{ id: "figma", label: "Figma", provider: "twg", name: "figma" },
+			],
+		},
+		detail: {
+			type: "narration-rows",
+			className: "pl-2",
+		},
+	},
 	"twg.search_work_patterns": {
 		forceOpen: true,
 		header: {
@@ -193,6 +217,11 @@ export const STUDIO_AUTOMATION_THINKING_TOOL_TRACE_PRESENTATION_REGISTRY = {
 export const DEFAULT_ASSISTANT_THINKING_TOOL_TRACE_PRESENTATION_REGISTRY =
 	STUDIO_AUTOMATION_THINKING_TOOL_TRACE_PRESENTATION_REGISTRY;
 
+export function isTwgToolCall(toolName: string): boolean {
+	const registry = DEFAULT_ASSISTANT_THINKING_TOOL_TRACE_PRESENTATION_REGISTRY as AssistantThinkingToolTracePresentationRegistry;
+	return registry[toolName]?.header?.type === "twg-tool";
+}
+
 function getLatestThinkingDetailRowContent(
 	detailRows: readonly ThinkingNarrationDetailRow[] | undefined,
 ): string | null {
@@ -225,14 +254,16 @@ function getToolTracePresentationByline({
 }
 
 function TraceNarrationRowsDetail({
+	className,
 	detailRows,
 }: Readonly<{
+	className?: string;
 	detailRows: readonly ThinkingNarrationDetailRow[] | undefined;
 }>): ReactNode {
 	const rows = (detailRows ?? []).filter((row) => row.content.trim().length > 0);
 
 	return (
-		<div className="space-y-1 text-xs leading-5 text-text-subtle">
+		<div className={cn("space-y-1 text-xs leading-5 text-text-subtle", className)}>
 			{rows.map((row, index) => (
 				<p key={`${index}-${row.content}`}>
 					{row.content}
@@ -250,12 +281,14 @@ function TraceNarrationRowsDetail({
 function buildToolTraceHeader({
 	detailRows,
 	header,
+	interactive = true,
 	narration,
 	status,
 	toolCall,
 }: ResolveAssistantThinkingToolPresentationOptions & {
 	header: AssistantThinkingToolTraceHeaderConfig;
-}): () => ReactNode {
+	interactive?: boolean;
+}): (context: ChainOfThoughtStepHeaderRenderContext) => ReactNode {
 	switch (header.type) {
 		case "twg-tool": {
 			const description = getToolTracePresentationByline({
@@ -265,10 +298,13 @@ function buildToolTraceHeader({
 				toolCall,
 			});
 
-			const renderHeader = () => (
+			const renderHeader = ({ isOpen, toggleOpen }: ChainOfThoughtStepHeaderRenderContext) => (
 				<TwgTool
+					chevronOpen={interactive ? isOpen : undefined}
 					description={description}
-					showChevron={false}
+					onBannerClick={interactive ? toggleOpen : undefined}
+					showLoader={false}
+					showChevron={interactive}
 					sources={header.sources}
 					status={status}
 					title={header.title}
@@ -289,7 +325,9 @@ function buildToolTraceDetail({
 }>): () => ReactNode {
 	switch (detail.type) {
 		case "narration-rows": {
-			const renderDetail = () => <TraceNarrationRowsDetail detailRows={detailRows} />;
+			const renderDetail = () => (
+				<TraceNarrationRowsDetail className={detail.className} detailRows={detailRows} />
+			);
 			renderDetail.displayName = "ToolTraceDetailRender";
 			return renderDetail;
 		}
@@ -307,10 +345,13 @@ export function createAssistantThinkingToolTracePresentationResolver(
 
 		return {
 			forceOpen: entry.forceOpen,
+			iconContainerStyle:
+				entry.header?.type === "twg-tool" ? TWG_TOOL_ICON_CONTAINER_STYLE : undefined,
 			headerRender: entry.header
 				? buildToolTraceHeader({
 					...options,
 					header: entry.header,
+					interactive: !entry.forceOpen,
 				})
 				: undefined,
 			detailRender: entry.detail

@@ -375,6 +375,8 @@ export function useQuestionCard({
 			if (isSubmitting) return;
 
 			const isCustomInputFocused = document.activeElement === customInputRef.current;
+			const isOptionButtonFocused = document.activeElement instanceof HTMLButtonElement
+				&& document.activeElement.closest('[data-slot="question-card-option"]') !== null;
 			switch (event.key) {
 				case "Tab": {
 					// Focus cycle: card options → custom input → footer button → card options
@@ -462,8 +464,9 @@ export function useQuestionCard({
 						return;
 					}
 
-					// Allow native button activation when footer button (Skip/Next/Submit) is focused
-					if (document.activeElement === footerButtonRef.current) {
+					// Preserve native activation for an explicitly focused option or footer
+					// button. Card-level Enter handles only the virtual arrow-key focus.
+					if (isOptionButtonFocused || document.activeElement === footerButtonRef.current) {
 						break;
 					}
 

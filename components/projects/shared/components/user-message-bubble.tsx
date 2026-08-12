@@ -14,6 +14,7 @@ import {
 import { AnswerCard } from "@/components/blocks/answer-card/components/answer-card";
 import { Button } from "@/components/ui/button";
 import { InlineEdit } from "@/components/ui/inline-edit";
+import { SkillTag } from "@/components/ui-custom/skill-tag";
 import type { RovoMessageMetadata } from "@/lib/rovo-ui-messages";
 import type { FileUIPart } from "ai";
 import DeleteIcon from "@atlaskit/icon/core/delete";
@@ -28,6 +29,14 @@ interface UserMessageBubbleProps {
 	onStartEdit?: () => void;
 	onCancelEdit?: () => void;
 	showPromptActions?: boolean;
+}
+
+const SKILL_INVOCATION_LABELS = new Map([
+	["/Improve description", "Improve description"],
+]);
+
+function getSkillInvocationLabel(messageText: string): string | undefined {
+	return SKILL_INVOCATION_LABELS.get(messageText.trim());
 }
 
 function getClarificationSummaryRows(
@@ -67,6 +76,7 @@ export function UserMessageBubble({
 	const showClarificationSummary = isDismissed || clarificationSummaryRows.length > 0;
 	const canShowPromptActions = showPromptActions && messageText.trim().length > 0;
 	const canEditPrompt = canShowPromptActions && !showClarificationSummary && Boolean(onEdit && onStartEdit);
+	const skillInvocationLabel = getSkillInvocationLabel(messageText);
 
 	return (
 		<div className="group/user-msg relative w-full">
@@ -128,9 +138,13 @@ export function UserMessageBubble({
 				) : (
 					<>
 						<MessageContent>
-							<MessageResponse plain className="font-medium text-inherit [&>*+*]:mt-3">
-								{messageText}
-							</MessageResponse>
+							{skillInvocationLabel ? (
+								<SkillTag variant="on-colored">{skillInvocationLabel}</SkillTag>
+							) : (
+								<MessageResponse plain className="font-medium text-inherit [&>*+*]:mt-3">
+									{messageText}
+								</MessageResponse>
+							)}
 						</MessageContent>
 						{canShowPromptActions ? (
 							<MessageActions reveal="hover" className="justify-end text-text-subtle">

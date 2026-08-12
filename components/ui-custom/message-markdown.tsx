@@ -337,6 +337,9 @@ function MarkdownAnchor({
 	...props
 }: Readonly<MarkdownAnchorProps>) {
 	void node;
+	// Drop Streamdown's baked-in `text-primary underline` utilities and own ADS
+	// text-link chrome here (blue, no underline until hover). Also backed by
+	// nested `.typeset-chat & a` rules in globals.css.
 	void className;
 	const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
 		onClick?.(event);
@@ -365,7 +368,15 @@ function MarkdownAnchor({
 		}));
 	};
 
-		return <a aria-label={typeof props.children === "string" ? props.children : href} {...props} href={href} onClick={handleClick} />;
+	return (
+		<a
+			aria-label={typeof props.children === "string" ? props.children : href}
+			className="text-link no-underline hover:underline active:text-link-pressed"
+			{...props}
+			href={href}
+			onClick={handleClick}
+		/>
+	);
 }
 
 /**

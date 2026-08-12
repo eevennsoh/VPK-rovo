@@ -18,6 +18,13 @@ import SearchIcon from "@atlaskit/icon/core/search"
 				"Collection variant. Controls both slash bar color and icon color. Maps to Figma collection names.",
 		},
 		{
+			name: "variant",
+			type: '"default" | "on-colored"',
+			default: '"default"',
+			description:
+				"Surface treatment. Use on-colored when the tag sits on a brand or other colored surface; it uses background inverse subtle for contrast, such as a Rovo user message bubble.",
+		},
+		{
 			name: "icon",
 			type: "ReactNode",
 			description:

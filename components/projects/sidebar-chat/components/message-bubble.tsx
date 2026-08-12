@@ -163,10 +163,11 @@ export default function MessageBubble({
 			renderWidget={renderWidget}
 			getWidgetPosition={getWidgetPosition}
 		>
+			<ThreadMessage.Widget position="before-content" />
+			{/* Agent text first; chain-of-thought / tool calls follow beneath it. */}
+			<ThreadMessage.Content />
 			<ThreadMessage.Reasoning />
 			{showThinkingStatusSection ? <ThreadMessage.ThinkingStatus /> : null}
-			<ThreadMessage.Widget position="before-content" />
-			<ThreadMessage.Content />
 			<ThreadMessage.Feedback />
 			<ThreadMessage.Tools />
 			<ThreadMessage.ToolFirstWarning />
