@@ -143,9 +143,9 @@
 }
 
 .tiptap-editor .rich-text-mermaid-block-selected {
-	outline: 2px solid var(--ds-border-selected, #388bff);
+	outline: 2px solid var(--color-border-selected);
 	outline-offset: 2px;
-	border-radius: 6px;
+	border-radius: var(--radius-md);
 }
 
 .tiptap-editor .rich-text-mermaid-diagram {
