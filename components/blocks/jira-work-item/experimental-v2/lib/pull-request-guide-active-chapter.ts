@@ -102,7 +102,3 @@ export function resolveActiveChapterId(options: {
 
 	return activeId;
 }
-
-export function shouldApplyScrollSpyUpdate(lockedChapterId: string | null): boolean {
-	return lockedChapterId == null;
-}

@@ -376,7 +376,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	assert.doesNotMatch(guideSource, /padStart\(2,\s*"0"\)/u);
 	assert.doesNotMatch(guideSource, /\{index \+ 1\}\/\{review\.chapters\.length\}/u);
 	assert.match(guideSource, /resolveActiveChapterId/u);
-	assert.match(guideSource, /shouldApplyScrollSpyUpdate/u);
+	assert.match(guideSource, /if \(lockedChapterIdRef\.current != null\) return;/u);
 	assert.match(guideSource, /lockedChapterIdRef/u);
 	assert.doesNotMatch(guideSource, /IntersectionObserver/u);
 	// Regression: scroll spy / chapter jump must not auto-mark Reviewed — checkbox only.
