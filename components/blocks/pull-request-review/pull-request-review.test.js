@@ -46,6 +46,7 @@ const BLOCK_DETAILS_SOURCE = readDetailCategorySource("blocks");
 const REGISTRY_SOURCE = readWebsiteRegistrySource();
 
 test("PullRequestReview exposes the review composer props contract", () => {
+	assert.match(TYPES_SOURCE, /ariaLabel\?: string/u);
 	assert.match(
 		TYPES_SOURCE,
 		/export type PullRequestReviewVerdict =\s*"comment" \| "approve" \| "request-changes"/u,
@@ -71,6 +72,16 @@ test("PullRequestReview exposes the review composer props contract", () => {
 		/const accepted = onSubmit\?\.\(\{ body: value\.trim\(\), verdict: activeVerdict \}\);[\s\S]*if \(accepted === false\) return;[\s\S]*updateValue\(""\)/u,
 	);
 	assert.match(TYPES_SOURCE, /export interface PullRequestReviewSubmission \{[\s\S]*body: string;[\s\S]*verdict: PullRequestReviewVerdict;/u);
+});
+
+test("the preview gives each review form landmark a unique accessible name", () => {
+	assert.match(COMPONENT_SOURCE, /aria-label=\{ariaLabel \?\? title\}/u);
+
+	const landmarkLabels = [...PAGE_SOURCE.matchAll(/ariaLabel="([^"]+)"/gu)].map(
+		([, label]) => label,
+	);
+	assert.equal(landmarkLabels.length, 4);
+	assert.equal(new Set(landmarkLabels).size, landmarkLabels.length);
 });
 
 test("the review editor can take focus when a host opens the expanded surface", () => {
