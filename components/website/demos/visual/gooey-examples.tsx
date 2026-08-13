@@ -1,86 +1,38 @@
 "use client";
 
-import AddIcon from "@atlaskit/icon/core/add";
-import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
-import EmailIcon from "@atlaskit/icon/core/email";
 import Image from "next/image";
-import { useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
+import { CheckIcon, EmailIcon, FileIcon, FolderIcon, ImageIcon, PlusIcon } from "@/components/ui/vpk-icons";
 import { Gooey } from "@/components/visual/gooey";
 import { cn } from "@/lib/utils";
 
+import { GOOEY_SOURCE_SHADOW, useGooeyDemoDrag, type GooeyDemoDragPosition } from "./gooey-demo-utils";
+
 const PRIMARY_FILL = "var(--color-primary)";
 const SURFACE_FILL = "var(--color-surface)";
-const LIQUID_SHADOW = "0 8px 22px rgba(9, 30, 66, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.35)";
+const GOOEY_PILL_SHADOW = [
+	"0 1px 3px light-dark(rgba(0, 0, 0, 0.11), rgba(0, 0, 0, 0.5))",
+	"0 1px 1px light-dark(rgba(0, 0, 0, 0.07), rgba(0, 0, 0, 0.35))",
+].join(", ");
 
-type DragPosition = Readonly<{ x: number; y: number }>;
-
-function useDraggable(initial: DragPosition) {
-	const [position, setPosition] = useState(initial);
-	const [dragging, setDragging] = useState(false);
-	const originRef = useRef({ pointerX: 0, pointerY: 0, x: initial.x, y: initial.y });
-
-	function onPointerDown(event: PointerEvent<HTMLElement>) {
-		event.currentTarget.setPointerCapture(event.pointerId);
-		originRef.current = {
-			pointerX: event.clientX,
-			pointerY: event.clientY,
-			x: position.x,
-			y: position.y,
-		};
-		setDragging(true);
-	}
-
-	function onPointerMove(event: PointerEvent<HTMLElement>) {
-		if (!dragging) return;
-		setPosition({
-			x: originRef.current.x + event.clientX - originRef.current.pointerX,
-			y: originRef.current.y + event.clientY - originRef.current.pointerY,
-		});
-	}
-
-	function onPointerEnd(event: PointerEvent<HTMLElement>) {
-		if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-			event.currentTarget.releasePointerCapture(event.pointerId);
-		}
-		setDragging(false);
-	}
-
-	function onKeyDown(event: KeyboardEvent<HTMLElement>) {
-		const amount = event.shiftKey ? 10 : 2;
-		const delta = {
-			ArrowLeft: { x: -amount, y: 0 },
-			ArrowRight: { x: amount, y: 0 },
-			ArrowUp: { x: 0, y: -amount },
-			ArrowDown: { x: 0, y: amount },
-		}[event.key];
-		if (!delta) return;
-		event.preventDefault();
-		setPosition((current) => ({ x: current.x + delta.x, y: current.y + delta.y }));
-	}
-
-	return {
-		position,
-		dragging,
-		bind: {
-			onPointerDown,
-			onPointerMove,
-			onPointerUp: onPointerEnd,
-			onPointerCancel: onPointerEnd,
-			onKeyDown,
-		},
-	};
-}
+const GOOEY_THUMB_SHADOW = [
+	"0 0 0 1px light-dark(transparent, rgba(255, 255, 255, 0.04)) inset",
+	"0 1px 0 0 light-dark(transparent, rgba(255, 255, 255, 0.03)) inset",
+	"0 0 0 1px light-dark(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.06))",
+	"0 1px 5px light-dark(rgba(0, 0, 0, 0.08), transparent)",
+	"0 2px 6px 0 light-dark(transparent, rgba(0, 0, 0, 0.05))",
+	"0 4px 42px 0 light-dark(transparent, rgba(0, 0, 0, 0.24))",
+].join(", ");
 
 function ExampleStage({ label, children, className }: Readonly<{ label: string; children: ReactNode; className?: string }>) {
 	return (
 		<section
 			aria-label={label}
 			className={cn(
-				"relative flex h-[280px] w-full max-w-[294px] items-center justify-center overflow-hidden rounded-[10px] bg-bg-neutral-subtle p-4",
+				"relative flex min-h-[352px] w-full flex-1 self-stretch items-center justify-center overflow-visible rounded-[10px] bg-bg-neutral-subtle p-0 sm:p-6",
 				className,
 			)}
 		>
@@ -89,14 +41,15 @@ function ExampleStage({ label, children, className }: Readonly<{ label: string; 
 	);
 }
 
-function MenuButton({ label, disabled, children, onClick }: Readonly<{ label: string; disabled?: boolean; children: ReactNode; onClick?: () => void }>) {
+function MenuButton({ label, disabled, expanded, children, onClick }: Readonly<{ label: string; disabled?: boolean; expanded?: boolean; children: ReactNode; onClick?: () => void }>) {
 	return (
 		<button
 			type="button"
 			aria-label={label}
+			aria-expanded={expanded}
 			disabled={disabled}
 			onClick={onClick}
-			className="flex size-11 items-center justify-center rounded-full text-primary-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none"
+			className="flex size-10 items-center justify-center rounded-full text-primary-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none"
 		>
 			{children}
 		</button>
@@ -106,36 +59,44 @@ function MenuButton({ label, disabled, children, onClick }: Readonly<{ label: st
 export function GooeyMorphMenuExample() {
 	const [open, setOpen] = useState(false);
 	const items = [
-		{ label: "Create", x: -72, y: -44, icon: <AddIcon label="" /> },
-		{ label: "Email", x: 0, y: -82, icon: <EmailIcon label="" /> },
-		{ label: "Confirm", x: 72, y: -44, icon: <CheckMarkIcon label="" /> },
+		{ label: "New file", x: -54, y: -34, icon: <FileIcon size="small" aria-hidden /> },
+		{ label: "Add image", x: 0, y: -64, icon: <ImageIcon size="small" aria-hidden /> },
+		{ label: "New folder", x: 54, y: -34, icon: <FolderIcon size="small" aria-hidden /> },
 	];
 
 	return (
 		<ExampleStage label="Morph plus menu">
 			<Gooey
 				fill={PRIMARY_FILL}
-				shadow={LIQUID_SHADOW}
-				className="relative h-44 w-56"
+				shadow={GOOEY_SOURCE_SHADOW}
+				className="relative h-[140px] w-[200px]"
 			>
 				{items.map((item, index) => (
 					<Gooey.Item
 						key={item.label}
 						x={open ? item.x : 0}
 						y={open ? item.y : 0}
-						scale={open ? 1 : 0.35}
 						delay={open ? index * 45 : (items.length - index) * 25}
 						transition="bouncy"
-						style={{ position: "absolute", left: 90, top: 108 }}
+						style={{ position: "absolute", left: 80, top: 80 }}
 					>
-						<MenuButton label={item.label} disabled={!open}>
-							<Icon render={item.icon} label="" />
+						<MenuButton label={item.label} disabled={!open} onClick={() => setOpen(false)}>
+							<span
+								aria-hidden="true"
+								style={{ transitionDelay: open ? `${120 + index * 45}ms` : "0ms" }}
+								className={cn(
+									"flex items-center justify-center transition-[opacity,filter] duration-normal ease-out-practical motion-reduce:transition-none",
+									open ? "opacity-100 blur-none" : "opacity-0 blur-[2px]",
+								)}
+							>
+								{item.icon}
+							</span>
 						</MenuButton>
 					</Gooey.Item>
 				))}
-				<Gooey.Item style={{ position: "absolute", left: 90, top: 108 }}>
-					<MenuButton label={open ? "Close menu" : "Open menu"} onClick={() => setOpen((current) => !current)}>
-						<span aria-hidden="true" className={cn("text-2xl leading-none transition-transform duration-normal motion-reduce:transition-none", open ? "rotate-45" : "rotate-0")}>+</span>
+				<Gooey.Item style={{ position: "absolute", left: 80, top: 80 }}>
+					<MenuButton label={open ? "Close menu" : "Open menu"} expanded={open} onClick={() => setOpen((current) => !current)}>
+						<PlusIcon aria-hidden className={cn("transition-transform duration-normal ease-in-out motion-reduce:transition-none", open ? "rotate-45" : "rotate-0")} />
 					</MenuButton>
 				</Gooey.Item>
 			</Gooey>
@@ -150,7 +111,7 @@ export function GooeyMorphEmailExample() {
 
 	return (
 		<ExampleStage label="Morph email input">
-			<Gooey fill={SURFACE_FILL} shadow={LIQUID_SHADOW} className="h-20 w-64">
+			<Gooey fill={SURFACE_FILL} shadow={GOOEY_SOURCE_SHADOW} className="h-20 w-full max-w-64">
 				<Gooey.Item morph={{ shape: true, speed: 1.15, bounce: 0.35, contentBlur: 3 }}>
 					<form
 						onSubmit={(event) => {
@@ -158,12 +119,12 @@ export function GooeyMorphEmailExample() {
 							setSubmitted(true);
 						}}
 						className={cn(
-							"absolute left-1/2 top-1/2 flex h-12 -translate-x-1/2 -translate-y-1/2 items-center overflow-hidden rounded-full bg-surface transition-[width] duration-slower ease-in-out motion-reduce:transition-none",
+							"absolute left-1/2 top-1/2 flex h-12 -translate-x-1/2 -translate-y-1/2 items-center overflow-hidden rounded-full transition-[width] duration-slower ease-in-out motion-reduce:transition-none",
 							expanded ? "w-60" : "w-12",
 						)}
 					>
 						<button type="button" aria-label="Compose email" onClick={() => setExpanded(true)} className="flex size-12 shrink-0 items-center justify-center text-icon-brand">
-							<Icon render={<EmailIcon label="" />} label="" />
+							<EmailIcon size="small" aria-hidden />
 						</button>
 						<Input
 							type="email"
@@ -178,7 +139,7 @@ export function GooeyMorphEmailExample() {
 							className="border-0 px-0 focus-visible:ring-0"
 						/>
 						<Button type="submit" size="icon" shape="circle" aria-label="Submit email" className="mr-1 size-10 shrink-0">
-							<Icon render={<CheckMarkIcon label="" />} label="" />
+							<CheckIcon size="small" aria-hidden />
 						</Button>
 					</form>
 				</Gooey.Item>
@@ -195,11 +156,12 @@ const AVATARS = [
 ];
 
 export function GooeyMorphAvatarExample() {
-	const drag = useDraggable({ x: 0, y: 0 });
+	const [position, setPosition] = useState<GooeyDemoDragPosition>({ x: 0, y: 0 });
+	const drag = useGooeyDemoDrag(position, setPosition, { minX: -24, maxX: 144, minY: -48, maxY: 48 });
 
 	return (
 		<ExampleStage label="Morph avatar group with dissolve">
-			<Gooey fill={SURFACE_FILL} blur={7} shadow={LIQUID_SHADOW} className="relative h-36 w-64">
+			<Gooey fill={SURFACE_FILL} blur={7} shadow={GOOEY_SOURCE_SHADOW} className="relative h-36 w-full max-w-64">
 				{AVATARS.map((avatar, index) => {
 					const draggable = index === 0;
 					return (
@@ -214,9 +176,9 @@ export function GooeyMorphAvatarExample() {
 								aria-label={draggable ? `Drag ${avatar.alt}; arrow keys also move it` : avatar.alt}
 								{...(draggable ? drag.bind : {})}
 								style={{ transform: `translate(${index * 66 + (draggable ? drag.position.x : 0)}px, ${draggable ? drag.position.y : 0}px)` }}
-								className="absolute left-7 top-10 size-16 touch-none rounded-full bg-surface p-1 shadow-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+								className="absolute left-7 top-10 size-16 touch-none rounded-full p-1 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
 							>
-								<Image src={avatar.src} alt={avatar.alt} width={56} height={56} className="size-14 rounded-full object-cover" />
+								<Image src={avatar.src} alt={avatar.alt} width={56} height={56} draggable={false} className="pointer-events-none size-14 select-none rounded-full object-cover [outline:1px_solid_var(--color-border)] [outline-offset:-1px]" />
 							</button>
 						</Gooey.Item>
 					);
@@ -228,26 +190,27 @@ export function GooeyMorphAvatarExample() {
 }
 
 export function GooeyMorphCardsExample() {
-	const drag = useDraggable({ x: 0, y: 0 });
+	const [position, setPosition] = useState<GooeyDemoDragPosition>({ x: 0, y: 0 });
+	const drag = useGooeyDemoDrag(position, setPosition, { minX: -24, maxX: 112, minY: -16, maxY: 72 });
 
 	return (
 		<ExampleStage label="Morph melting cards">
-			<Gooey fill={SURFACE_FILL} blur={8} shadow={LIQUID_SHADOW} className="relative h-48 w-64">
+			<Gooey fill={SURFACE_FILL} blur={8} shadow={GOOEY_SOURCE_SHADOW} className="relative h-48 w-full max-w-64">
 				<Gooey.Item observe dissolve={{ active: drag.dragging, strength: 0.9, gravity: 72, fadeMs: 280 }} morph={{ advanced: { blobInset: 2, bridgeGrow: 8 } }}>
 					<button
 						type="button"
 						aria-label="Drag first card; arrow keys also move it"
 						{...drag.bind}
 						style={{ transform: `translate(${drag.position.x}px, ${drag.position.y}px)` }}
-						className="absolute left-4 top-4 z-10 w-32 touch-none overflow-hidden rounded-xl bg-surface p-2 text-left shadow-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+						className="absolute left-4 top-4 z-10 w-32 touch-none overflow-hidden rounded-xl p-2 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
 					>
-						<Image src="/avatar-human/bradley-phillips.png" alt="Bradley Phillips" width={112} height={70} className="h-[70px] w-28 rounded-lg object-cover" />
+						<Image src="/avatar-human/bradley-phillips.png" alt="Bradley Phillips" width={112} height={70} draggable={false} className="pointer-events-none h-[70px] w-28 select-none rounded-lg object-cover" />
 						<span className="mt-2 block text-xs font-medium text-text">Design review</span>
 					</button>
 				</Gooey.Item>
 				<Gooey.Item observe>
-					<article className="absolute bottom-4 right-3 w-32 overflow-hidden rounded-xl bg-surface p-2 shadow-sm">
-						<Image src="/avatar-human/florence-applebee.png" alt="Florence Applebee" width={112} height={70} className="h-[70px] w-28 rounded-lg object-cover" />
+					<article className="absolute bottom-4 right-3 w-32 overflow-hidden rounded-xl p-2">
+						<Image src="/avatar-human/florence-applebee.png" alt="Florence Applebee" width={112} height={70} draggable={false} className="pointer-events-none h-[70px] w-28 select-none rounded-lg object-cover" />
 						<span className="mt-2 block text-xs font-medium text-text">Ready to merge</span>
 					</article>
 				</Gooey.Item>
@@ -263,7 +226,7 @@ export function GooeyMoveTabsExample() {
 
 	return (
 		<ExampleStage label="Move gooey tabs">
-			<Gooey fill={PRIMARY_FILL} blur={5} shadow="0 5px 14px rgba(9, 30, 66, 0.2)" className="relative h-16 w-[246px] rounded-full bg-bg-neutral p-1">
+			<Gooey fill={PRIMARY_FILL} blur={5} shadow={GOOEY_PILL_SHADOW} className="relative h-16 w-full max-w-[246px] rounded-full bg-bg-neutral p-1">
 				<Gooey.Item effect="move" move={{ springiness: 0.55, wobble: 0.62, stretch: 0.44, trail: 0.72 }} style={{ position: "absolute", left: 4, top: 4 }}>
 					<span style={{ transform: `translateX(${active * 79}px)` }} className="block h-14 w-[75px] rounded-full transition-transform duration-slower ease-in-out motion-reduce:transition-none" />
 				</Gooey.Item>
@@ -279,18 +242,21 @@ export function GooeyMoveTabsExample() {
 
 export function GooeyMoveSliderExample() {
 	const [value, setValue] = useState(48);
-	const travel = 184;
+	const travel = 188;
 
 	return (
 		<ExampleStage label="Move liquid-rubber slider">
-			<div className="w-60">
+			<div className="w-full max-w-60">
 				<div className="mb-4 flex items-baseline justify-between"><span className="text-sm font-medium text-text">Intensity</span><output className="text-xs text-text-subtle">{value}%</output></div>
-				<Gooey fill={PRIMARY_FILL} blur={5} className="relative h-12 w-60">
-					<Gooey.Item observe>
-						<span className="absolute left-3 top-[21px] h-1.5 w-[208px] rounded-full bg-primary" />
-					</Gooey.Item>
-					<Gooey.Item effect="move" move={{ springiness: 0.7, wobble: 0.72, stretch: 0.7, trail: 0.82 }} style={{ position: "absolute", left: 12, top: 10 }}>
-						<span style={{ transform: `translateX(${(value / 100) * travel}px)` }} className="block size-7 rounded-full bg-primary shadow-sm transition-transform duration-slower ease-in-out motion-reduce:transition-none" />
+				<Gooey fill={PRIMARY_FILL} blur={5} shadow={GOOEY_THUMB_SHADOW} className="relative h-20 w-full">
+					<span aria-hidden="true" data-gooey-slider-track="" className="absolute inset-x-[14px] top-[38px] h-2 rounded-sm bg-primary" />
+					<Gooey.Item effect="move" move={{ springiness: 0.5, stretch: 0.6, trail: 0.35 }} style={{ position: "absolute", left: 14, top: 30 }}>
+						<span
+							aria-hidden="true"
+							data-gooey-slider-thumb=""
+							style={{ transform: `translateX(${(value / 100) * travel}px)` }}
+							className="block size-6 rounded-full"
+						/>
 					</Gooey.Item>
 					<input
 						type="range"
@@ -299,7 +265,7 @@ export function GooeyMoveSliderExample() {
 						max={100}
 						value={value}
 						onChange={(event) => setValue(Number(event.currentTarget.value))}
-						className="absolute inset-x-3 top-2 z-10 h-8 cursor-pointer opacity-0"
+						className="absolute inset-x-[14px] top-6 z-10 h-10 cursor-pointer opacity-0"
 					/>
 				</Gooey>
 			</div>

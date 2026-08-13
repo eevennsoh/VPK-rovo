@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import { GUI } from "@/components/utils/gui";
 import {
@@ -15,6 +15,7 @@ import {
 	type CornerRadii,
 	type Transition,
 } from "@/components/visual/gooey";
+import { cn } from "@/lib/utils";
 
 import {
 	GooeyMorphAvatarExample,
@@ -24,6 +25,7 @@ import {
 	GooeyMoveSliderExample,
 	GooeyMoveTabsExample,
 } from "./gooey-examples";
+import { GOOEY_SOURCE_SHADOW, useGooeyDemoDrag } from "./gooey-demo-utils";
 
 type NumberKey =
 	| "blur" | "contrast" | "filterPadding"
@@ -44,12 +46,41 @@ type NumberKey =
 type BooleanKey = "observe" | "morphShape" | "dissolveEnabled" | "dissolveActive";
 type StringKey = "fill" | "shadow" | "effect" | "radiusMode" | "transitionMode" | "transitionEase" | "cornerEase" | "warpStyle" | "itemClassName" | "itemStyle" | "childrenText";
 type PlaygroundConfig = Record<NumberKey, number> & Record<BooleanKey, boolean> & Record<StringKey, string>;
+type HeroBounds = Readonly<{ minX: number; maxX: number; minY: number; maxY: number }>;
+
+const HERO_INITIAL_BOUNDS: HeroBounds = { minX: -112, maxX: 64, minY: -48, maxY: 40 };
+const HERO_EDGE_PADDING = 12;
+const HERO_ITEM_WIDTH = 128;
+const HERO_ITEM_HEIGHT = 80;
+const HERO_ITEM_LEFT_OFFSET = -20;
+
+function getHeroBounds(width: number, height: number, scale: number): HeroBounds {
+	const scaleDeltaX = HERO_ITEM_WIDTH * (scale - 1) / 2;
+	const scaleDeltaY = HERO_ITEM_HEIGHT * (scale - 1) / 2;
+	const rawMinX = HERO_EDGE_PADDING - (width / 2 + HERO_ITEM_LEFT_OFFSET - scaleDeltaX);
+	const rawMaxX = width - HERO_EDGE_PADDING - (width / 2 + HERO_ITEM_LEFT_OFFSET + HERO_ITEM_WIDTH + scaleDeltaX);
+	const rawMinY = HERO_EDGE_PADDING - (height / 2 - HERO_ITEM_HEIGHT / 2 - scaleDeltaY);
+	const rawMaxY = height - HERO_EDGE_PADDING - (height / 2 + HERO_ITEM_HEIGHT / 2 + scaleDeltaY);
+	const fallbackX = (rawMinX + rawMaxX) / 2;
+	const fallbackY = (rawMinY + rawMaxY) / 2;
+
+	return {
+		minX: rawMinX <= rawMaxX ? rawMinX : fallbackX,
+		maxX: rawMinX <= rawMaxX ? rawMaxX : fallbackX,
+		minY: rawMinY <= rawMaxY ? rawMinY : fallbackY,
+		maxY: rawMinY <= rawMaxY ? rawMaxY : fallbackY,
+	};
+}
+
+function clampToRange(value: number, min: number, max: number) {
+	return Math.min(max, Math.max(min, value));
+}
 
 const DEFAULT_CONFIG: PlaygroundConfig = {
 	blur: GOOEY_DEFAULTS.blur,
 	contrast: GOOEY_DEFAULTS.contrast,
-	fill: GOOEY_DEFAULTS.fill,
-	shadow: "0 10px 24px rgba(9, 30, 66, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.35)",
+	fill: "var(--color-surface)",
+	shadow: GOOEY_SOURCE_SHADOW,
 	filterPadding: GOOEY_DEFAULTS.filterPadding,
 	effect: "morph",
 	x: 36,
@@ -176,9 +207,50 @@ function parseStyle(value: string): CSSProperties {
 
 export default function GooeyDemo() {
 	const [config, setConfig] = useState<PlaygroundConfig>(DEFAULT_CONFIG);
+	const [heroBounds, setHeroBounds] = useState<HeroBounds>(HERO_INITIAL_BOUNDS);
+	const heroRootRef = useRef<HTMLDivElement>(null);
 	const setNumber = (key: NumberKey) => (value: number) => setConfig((current) => ({ ...current, [key]: value }));
 	const setBoolean = (key: BooleanKey) => (value: boolean) => setConfig((current) => ({ ...current, [key]: value }));
 	const setString = (key: StringKey) => (value: string) => setConfig((current) => ({ ...current, [key]: value }));
+	const heroDrag = useGooeyDemoDrag(
+		{ x: config.x, y: config.y },
+		(position) => setConfig((current) => ({ ...current, x: position.x, y: position.y })),
+		heroBounds,
+	);
+
+	useEffect(() => {
+		const root = heroRootRef.current;
+		if (!root) return;
+
+		const measure = () => {
+			const width = root.clientWidth;
+			const height = root.clientHeight;
+			if (width === 0 || height === 0) return;
+			const nextBounds = getHeroBounds(width, height, config.scale);
+			setHeroBounds((current) => (
+				current.minX === nextBounds.minX
+				&& current.maxX === nextBounds.maxX
+				&& current.minY === nextBounds.minY
+				&& current.maxY === nextBounds.maxY
+					? current
+					: nextBounds
+			));
+			setConfig((current) => {
+				const x = clampToRange(current.x, nextBounds.minX, nextBounds.maxX);
+				const y = clampToRange(current.y, nextBounds.minY, nextBounds.maxY);
+				return x === current.x && y === current.y ? current : { ...current, x, y };
+			});
+		};
+
+		measure();
+		const frame = requestAnimationFrame(measure);
+		const observer = new ResizeObserver(measure);
+		observer.observe(root);
+		return () => {
+			cancelAnimationFrame(frame);
+			observer.disconnect();
+		};
+	}, [config.scale]);
 
 	const transition = useMemo<Transition>(() => {
 		if (config.transitionMode === "custom-spring") return { stiffness: config.transitionStiffness, damping: config.transitionDamping, mass: config.transitionMass };
@@ -220,17 +292,36 @@ export default function GooeyDemo() {
 		advanced: { stiffness: config.moveStiffness, damping: config.moveDamping, stretch: config.rawMoveStretch, tail: config.moveTail },
 	};
 	const copiedValues = { root: { blur: config.blur, contrast: config.contrast, fill: config.fill, shadow: config.shadow, filterPadding: config.filterPadding }, item: { effect: config.effect, morph, move, dissolve, x: config.x, y: config.y, scale: config.scale, transition, delay: config.delay, observe: config.observe, radius, className: config.itemClassName, style: itemStyle, children: config.childrenText } };
+	const activeTransition: Transition = heroDrag.dragging ? { duration: 0, ease: "linear" } : transition;
 
 	function renderNumberControls(definitions: readonly NumberControlDefinition[]) {
 		return definitions.map((control) => <GUI.Control key={control.key} id={`gooey-${control.key}`} label={control.label} value={config[control.key]} defaultValue={DEFAULT_CONFIG[control.key]} min={control.min} max={control.max} step={control.step} unit={control.unit} onChange={setNumber(control.key)} />);
 	}
 
 	return (
-		<div className="flex w-full max-w-5xl flex-col gap-6">
-			<div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-				<div className="flex min-h-[360px] items-center justify-center overflow-hidden rounded-xl bg-bg-neutral-subtle p-8">
-					<Gooey blur={config.blur} contrast={config.contrast} fill={config.fill} shadow={config.shadow} filterPadding={config.filterPadding} className="relative h-44 w-80">
-						<Gooey.Item observe radius={radius}><span className="absolute left-8 top-14 block size-20 rounded-3xl bg-surface" /></Gooey.Item>
+		<div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+			<div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+				<Gooey
+					ref={heroRootRef}
+					data-gooey-playground-root=""
+					blur={config.blur}
+					contrast={config.contrast}
+					fill={config.fill}
+					shadow={config.shadow}
+					filterPadding={config.filterPadding}
+					className="min-h-[360px] w-full overflow-visible rounded-xl bg-bg-neutral-subtle"
+				>
+						<Gooey.Item observe radius={radius}>
+							<button
+								type="button"
+								aria-label="Reset Gooey item position"
+								onClick={() => setConfig((current) => ({ ...current, x: DEFAULT_CONFIG.x, y: DEFAULT_CONFIG.y, scale: DEFAULT_CONFIG.scale }))}
+								style={{ left: "calc(50% - 116px)", top: "calc(50% - 40px)" }}
+								className="absolute flex size-20 items-center justify-center rounded-3xl text-xs font-medium text-text-subtle outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+							>
+								Reset
+							</button>
+						</Gooey.Item>
 						<Gooey.Item
 							effect={config.effect as "morph" | "move"}
 							morph={morph}
@@ -239,20 +330,31 @@ export default function GooeyDemo() {
 							x={config.x}
 							y={config.y}
 							scale={config.scale}
-							transition={transition}
+							transition={activeTransition}
 							delay={config.delay}
 							observe={config.observe}
 							radius={radius}
 							className={config.itemClassName}
-							style={{ position: "absolute", left: 124, top: 56, ...itemStyle }}
+							style={{ position: "absolute", left: "calc(50% - 20px)", top: "calc(50% - 40px)", ...itemStyle }}
 						>
-							<button type="button" style={observed ? { transform: `translate(${config.x}px, ${config.y}px) scale(${config.scale})`, transition: "transform var(--duration-slower) var(--ease-in-out)" } : undefined} className="flex h-20 w-32 items-center gap-2 rounded-3xl bg-surface p-3 text-sm font-semibold text-text shadow-sm outline-none transition-transform motion-reduce:transition-none focus-visible:ring-3 focus-visible:ring-ring/50">
-								<Image src="/avatar-human/mia-mcdougall.png" alt="" width={40} height={40} className="size-10 rounded-full object-cover" />
-								{config.childrenText}
+							<button
+								type="button"
+								aria-label="Drag or activate Gooey item; arrow keys also move it"
+								{...heroDrag.bind}
+								style={observed ? { transform: `translate(${config.x}px, ${config.y}px) scale(${config.scale})` } : undefined}
+								className={cn(
+									"flex h-20 w-32 touch-none items-center gap-2 rounded-3xl p-3 text-sm font-semibold text-text outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+									heroDrag.dragging ? "cursor-grabbing" : "cursor-grab",
+								)}
+							>
+								<Image src="/avatar-human/mia-mcdougall.png" alt="" width={40} height={40} draggable={false} className="pointer-events-none size-10 select-none rounded-full object-cover" />
+								<span className="flex flex-col items-start leading-tight">
+									<span>{config.childrenText}</span>
+									<span className="text-[11px] font-normal text-text-subtle">Drag me</span>
+								</span>
 							</button>
 						</Gooey.Item>
-					</Gooey>
-				</div>
+				</Gooey>
 
 				<GUI.Panel title="Gooey controls" values={copiedValues}>
 					<GUI.Section title="Root" borderTop={false}>
@@ -264,7 +366,7 @@ export default function GooeyDemo() {
 					</GUI.Section>
 					<GUI.Section title="Item">
 						<GUI.Select id="gooey-effect" label="Effect" value={config.effect} defaultValue="morph" options={[{ label: "Morph", value: "morph" }, { label: "Move", value: "move" }]} onChange={setString("effect")} />
-						{renderNumberControls([{ key: "x", label: "X", min: -160, max: 160, step: 1, unit: "px" }, { key: "y", label: "Y", min: -120, max: 120, step: 1, unit: "px" }, { key: "scale", label: "Scale", min: 0.1, max: 2, step: 0.01 }, { key: "delay", label: "Delay", min: 0, max: 2000, step: 10, unit: "ms" }])}
+						{renderNumberControls([{ key: "x", label: "X", min: heroBounds.minX, max: heroBounds.maxX, step: 1, unit: "px" }, { key: "y", label: "Y", min: heroBounds.minY, max: heroBounds.maxY, step: 1, unit: "px" }, { key: "scale", label: "Scale", min: 0.1, max: 2, step: 0.01 }, { key: "delay", label: "Delay", min: 0, max: 2000, step: 10, unit: "ms" }])}
 						<GUI.Toggle id="gooey-observe" label="Observe" checked={config.observe} onChange={setBoolean("observe")} />
 						<GUI.Select id="gooey-radius-mode" label="Radius mode" value={config.radiusMode} defaultValue="uniform" options={[{ label: "Uniform", value: "uniform" }, { label: "Corners", value: "corners" }]} onChange={setString("radiusMode")} />
 						{config.radiusMode === "uniform" ? renderNumberControls([{ key: "radius", label: "Radius", min: 0, max: 100, step: 1, unit: "px" }]) : renderNumberControls([{ key: "radiusTL", label: "Top left radius", min: 0, max: 100, step: 1 }, { key: "radiusTR", label: "Top right radius", min: 0, max: 100, step: 1 }, { key: "radiusBR", label: "Bottom right radius", min: 0, max: 100, step: 1 }, { key: "radiusBL", label: "Bottom left radius", min: 0, max: 100, step: 1 }])}
