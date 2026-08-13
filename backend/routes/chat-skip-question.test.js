@@ -2,7 +2,7 @@
 
 const assert = require("node:assert/strict");
 const http = require("node:http");
-const test = require("node:test");
+const { before, test } = require("node:test");
 const express = require("express");
 
 const {
@@ -12,6 +12,11 @@ const {
 	normalizeRequestOrigin,
 	registerChatSkipQuestionRoutes,
 } = require("./chat-skip-question");
+const { loadAiSdk } = require("../lib/ai-sdk-runtime");
+
+before(async () => {
+	await loadAiSdk();
+});
 
 async function withServer(overrides, run) {
 	const app = express();

@@ -3,7 +3,7 @@ const express = require("express");
 const { mkdtempSync, mkdirSync, rmSync, writeFileSync } = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const test = require("node:test");
+const { before, test } = require("node:test");
 
 const {
 	collectRuntimeRouteStackRoutes,
@@ -21,6 +21,11 @@ const {
 	registerBackendAppRoutes,
 } = require("../app");
 const ts = require("typescript");
+const { loadAiSdk } = require("../lib/ai-sdk-runtime");
+
+before(async () => {
+	await loadAiSdk();
+});
 
 function parseExpression(source) {
 	const sourceFile = ts.createSourceFile(

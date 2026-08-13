@@ -1,7 +1,4 @@
-const {
-	createUIMessageStream,
-	pipeUIMessageStreamToResponse,
-} = require("ai");
+const { getAiSdk } = require("./ai-sdk-runtime");
 const {
 	buildQuestionMetaFromQuestionCardPayload,
 } = require("./ai-gateway-deferred-tools");
@@ -482,6 +479,10 @@ function handleStudioAutomationDiscoveryChatTurn({
 	res,
 	stageTrace,
 }) {
+	const {
+		createUIMessageStream,
+		pipeUIMessageStreamToResponse,
+	} = getAiSdk();
 	const turn = resolveStudioAutomationDiscoveryTurn({
 		chatSdkSource,
 		clarificationSubmission,

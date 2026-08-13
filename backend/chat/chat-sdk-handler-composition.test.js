@@ -1,7 +1,12 @@
 "use strict";
 
 const assert = require("node:assert/strict");
-const test = require("node:test");
+const { before, test } = require("node:test");
+const { loadAiSdk } = require("../lib/ai-sdk-runtime");
+
+before(async () => {
+	await loadAiSdk();
+});
 
 const {
 	CHAT_SDK_HANDLER_DEPENDENCY_GROUPS,
