@@ -213,6 +213,18 @@ test("the expanded card entrance is reduced-motion safe", () => {
 	);
 });
 
+test("the expanded Review heading uses the 16px ADS small heading token", () => {
+	assert.match(
+		COMPONENT_SOURCE,
+		/<h2 className="text-text" style=\{\{ font: token\("font\.heading\.small"\) \}\}>/u,
+	);
+	assert.doesNotMatch(
+		COMPONENT_SOURCE,
+		/font\.heading\.medium/u,
+		"Review title must stay at heading.small (16px), not heading.medium (20px)",
+	);
+});
+
 test("the reviewed badge only renders when both counts are supplied", () => {
 	assert.match(
 		COMPONENT_SOURCE,

@@ -745,7 +745,10 @@ test("experimental v2 keeps pull-request selection transient at the composition 
 		/const \{ setPanelView, setSuppressActivityPanelReveal \} = useMetadataRail\(\);/u,
 	);
 	assert.match(compositionSource, /<JiraWorkItemProvider[\s\S]*initialStateRevision=\{props\.initialStateRevision\}/u);
-	assert.match(compositionSource, /setSelectedPullRequestIdentity\(null\);[\s\S]*\}, \[stageKey\]\);/u);
+	assert.match(
+		compositionSource,
+		/setSelectedPullRequestIdentity\(null\);[\s\S]*\}, \[removeFailingChecks, stageKey\]\);/u,
+	);
 	assert.match(compositionSource, /<ExperimentalV2JiraWorkItemContent[\s\S]*stageKey=\{props\.stageKey\}/u);
 	assert.doesNotMatch(compositionSource, /<ExperimentalV2JiraWorkItemContent[\s\S]*key=\{props\.initialStateRevision\}/u);
 	assert.doesNotMatch(persistedStateSource, /selectedPullRequest|pullRequestIdentity/u);
@@ -796,7 +799,7 @@ test("experimental v2 keeps pull-request selection transient at the composition 
 	);
 	assert.match(
 		compositionSource,
-		/const handlePullRequestSelect = useCallback\(\(entry: JiraActivityEventEntry\) => \{[\s\S]*setSelectedPullRequestIdentity\(identity\);[\s\S]*setPanelView\("details"\);[\s\S]*\}, \[pullRequestApprovalStates, setPanelView\]\);/u,
+		/const handlePullRequestSelect = useCallback\(\(entry: JiraActivityEventEntry\) => \{[\s\S]*if \(!guidedReview\) return;[\s\S]*setSelectedPullRequestIdentity\(identity\);[\s\S]*setPanelView\("details"\);[\s\S]*\}, \[pullRequestApprovalStates, setPanelView\]\);/u,
 	);
 	assert.match(
 		compositionSource,

@@ -15,9 +15,8 @@ interface PullRequestStickyHeaderShellProps {
  * Sticky PR header wrapper that publishes measured header + scrollport heights
  * for Files-tab code-review sticky offsets.
  *
- * `pb-6` (space-300 / 24px) is part of this sticky chrome — not empty space
- * between two sticky layers — so diffs cannot paint through the gap under the
- * header. Measured `--pull-request-detail-header-height` includes that padding.
+ * Files-tab code-review chrome uses the measured height to sit directly below
+ * this header without leaving a blank clipping zone between the sticky layers.
  */
 export function PullRequestStickyHeaderShell({
 	children,
@@ -59,7 +58,7 @@ export function PullRequestStickyHeaderShell({
 	}, [scrollContainerRef]);
 
 	return (
-		<div className="sticky top-0 z-10 shrink-0 bg-surface pb-6" ref={stickyHeaderRef}>
+		<div className="sticky top-0 z-10 shrink-0 bg-surface" ref={stickyHeaderRef}>
 			{children}
 		</div>
 	);

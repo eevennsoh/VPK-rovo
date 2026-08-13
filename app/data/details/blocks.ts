@@ -41,6 +41,7 @@ import { SMART_LINK_DETAIL } from "./blocks/smart-link";
 import { PULL_REQUEST_DETAIL } from "./blocks/pull-request";
 import { PULL_REQUEST_HEADER_DETAIL } from "./blocks/pull-request-header";
 import { PULL_REQUEST_REVIEW_DETAIL } from "./blocks/pull-request-review";
+import { PULL_REQUEST_FIX_DETAIL } from "./blocks/pull-request-fix";
 import { EMOJI_PICKER_DETAIL } from "./blocks/emoji-picker";
 import { ROVO_CANVAS_DETAIL } from "./blocks/rovo-canvas";
 import { DASHBOARD_DETAIL } from "./blocks/dashboard";
@@ -144,6 +145,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"pull-request": PULL_REQUEST_DETAIL,
 	"pull-request-header": PULL_REQUEST_HEADER_DETAIL,
 	"pull-request-review": PULL_REQUEST_REVIEW_DETAIL,
+	"pull-request-fix": PULL_REQUEST_FIX_DETAIL,
 	"emoji-picker": EMOJI_PICKER_DETAIL,
 	"rovo-canvas": ROVO_CANVAS_DETAIL,
 	dashboard: DASHBOARD_DETAIL,

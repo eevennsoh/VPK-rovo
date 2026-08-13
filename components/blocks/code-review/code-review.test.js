@@ -100,6 +100,7 @@ test("code review diff restores the top inset above hunk content", () => {
 	);
 
 	assert.match(diffView, /DIFF_UNSAFE_CSS/u);
+	assert.match(diffView, /--diffs-font-size: 12px/u);
 	assert.match(diffView, /diffs-gap-inline/u);
 	assert.match(diffView, /unsafeCSS: DIFF_UNSAFE_CSS/u);
 });
@@ -251,6 +252,7 @@ test("code review renders expanded file changes with a collapsible navigation tr
 	assert.doesNotMatch(codeReview, /EDITOR_FILE|editorFileId|selectedEditorFile/u);
 	assert.match(editorPanel, /EditorChangesPicker/u);
 	assert.match(editorPanel, /files=\{files\}/u);
+	assert.match(editorPanel, /useState\(false\)/u);
 	assert.doesNotMatch(editorPanel, />Changes</u);
 	assert.match(editorPanel, /aria-label=\{isExplorerVisible \? "Hide file tree" : "Show file tree"\}/u);
 	assert.match(editorPanel, /aria-expanded=\{isExplorerVisible\}/u);
@@ -433,6 +435,7 @@ test("embedded CodeReview expands EditorPanel without nested scrolling", () => {
 	const explorer = readProjectFile(
 		"components/blocks/code-review/components/editor/editor-explorer.tsx",
 	);
+	const globalStyles = readProjectFile("app/globals.css");
 	const pullRequestFiles = readProjectFile(
 		"components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-files.tsx",
 	);
@@ -448,7 +451,7 @@ test("embedded CodeReview expands EditorPanel without nested scrolling", () => {
 	);
 	assert.match(
 		editorPanel,
-		/EXPAND_STICKY_TOOLBAR_CLASS[\s\S]*sticky z-\[9\] top-\[var\(--pull-request-detail-header-height,0px\)\] rounded-t-\[inherit\]/u,
+		/EXPAND_STICKY_TOOLBAR_CLASS[\s\S]*sticky z-\[9\] top-\[var\(--pull-request-detail-header-height,0px\)\] rounded-t-\[inherit\] \[container-type:scroll-state\]/u,
 	);
 	assert.match(
 		editorPanel,
@@ -457,7 +460,15 @@ test("embedded CodeReview expands EditorPanel without nested scrolling", () => {
 	assert.match(editorPanel, /className=\{expandContent \? EXPAND_STICKY_TREE_CLASS : undefined\}/u);
 	assert.match(
 		editorPanel,
-		/expandContent \? EXPAND_STICKY_TOOLBAR_CLASS : undefined/u,
+		/expandContent \? EXPAND_STICKY_TOOLBAR_CLASS : "bg-surface-sunken"/u,
+	);
+	assert.match(
+		editorPanel,
+		/rounded-\[inherit\] bg-surface-sunken[\s\S]*data-code-review-sticky-toolbar-surface/u,
+	);
+	assert.match(
+		globalStyles,
+		/@container scroll-state\(stuck: top\)[\s\S]*\[data-code-review-sticky-toolbar-surface\][\s\S]*border-start-start-radius: 0;[\s\S]*border-start-end-radius: 0;/u,
 	);
 	assert.match(
 		editorPanel,

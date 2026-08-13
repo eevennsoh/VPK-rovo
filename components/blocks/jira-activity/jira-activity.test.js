@@ -25,6 +25,10 @@ const COMMENT_SOURCE = fs.readFileSync(
 	path.join(__dirname, "jira-activity-comment.tsx"),
 	"utf8",
 );
+const IMAGE_PREVIEW_DIALOG_SOURCE = fs.readFileSync(
+	path.join(__dirname, "jira-activity-image-preview-dialog.tsx"),
+	"utf8",
+);
 const TYPES_SOURCE = fs.readFileSync(
 	path.join(__dirname, "jira-activity-types.ts"),
 	"utf8",
@@ -56,8 +60,14 @@ const VARIANT_REGISTRY_SOURCE = fs.readFileSync(
 
 test("agent mention chips use canonical agent identity without a visible at-sign", () => {
 	assert.match(SEGMENTS_SOURCE, /brandName=\{segment\.brandName\}/u);
-	assert.match(SEGMENTS_SOURCE, />\s*\{segment\.text\}\s*<\/Tag>/u);
-	assert.doesNotMatch(SEGMENTS_SOURCE, /@\{segment\.text\}/u);
+	assert.match(
+		SEGMENTS_SOURCE,
+		/case "agent-mention":[\s\S]*?>\s*\{segment\.text\}\s*<\/Tag>[\s\S]*?case "app-mention":/u,
+	);
+	assert.doesNotMatch(
+		SEGMENTS_SOURCE,
+		/case "agent-mention":[\s\S]*?@\{segment\.text\}[\s\S]*?case "app-mention":/u,
+	);
 });
 
 test("activity events render actor prefixes as mention chips by actor kind", () => {
@@ -93,6 +103,10 @@ test("app mentions render as product BrandLogoMark tags, not hexagon agent avata
 	assert.match(
 		SEGMENTS_SOURCE,
 		/case "app-mention":[\s\S]*?<BrandLogoMark[\s\S]*?frame="chip"[\s\S]*?name=\{segment\.brandName\}/u,
+	);
+	assert.match(
+		SEGMENTS_SOURCE,
+		/case "app-mention":[\s\S]*?>\s*@\{segment\.text\}\s*<\/Tag>/u,
 	);
 	assert.match(
 		SEGMENTS_SOURCE,
@@ -161,10 +175,18 @@ test("agent comments render outputs and image evidence as compact Artifact List 
 		COMMENT_SOURCE,
 		/<ArtifactList[\s\S]*className="mt-3 min-w-0 max-w-full border border-border bg-transparent shadow-none"[\s\S]*items=\{artifactItems\}[\s\S]*variant="compact"/u,
 	);
+	assert.match(COMMENT_SOURCE, /entry\.imageAttachment\?\.filename === item\.id/u);
+	assert.match(COMMENT_SOURCE, /setPreviewAttachment\(entry\.imageAttachment\)/u);
+	assert.match(COMMENT_SOURCE, /onOpen=\{handleOpenArtifact\}/u);
 	assert.match(
 		COMMENT_SOURCE,
 		/function openCommentArtifact[\s\S]*window\.open\(item\.href, "_blank", "noopener,noreferrer"\)/u,
 	);
+	assert.match(COMMENT_SOURCE, /<JiraActivityImagePreviewDialog/u);
+	assert.match(IMAGE_PREVIEW_DIALOG_SOURCE, /<Dialog open=\{attachment !== null\}/u);
+	assert.match(IMAGE_PREVIEW_DIALOG_SOURCE, /sm:max-w-6xl/u);
+	assert.match(IMAGE_PREVIEW_DIALOG_SOURCE, /rounded-lg border border-border bg-surface-sunken/u);
+	assert.match(IMAGE_PREVIEW_DIALOG_SOURCE, /<Image[\s\S]*alt=\{attachment\.alt\}[\s\S]*src=\{attachment\.src\}/u);
 });
 
 test("sample feed covers all three entry kinds", () => {
@@ -516,7 +538,7 @@ test("the header shows an activity count and a text-link sort control", () => {
 	assert.match(HEADER_SOURCE, /showAgentsOption = true/u);
 	assert.match(HEADER_SOURCE, /filterMode\?: JiraActivityViewFilterMode/u);
 	assert.match(HEADER_SOURCE, /PULL_REQUEST_ACTIVITY_FILTER_VALUES/u);
-	assert.match(HEADER_SOURCE, /DropdownMenuSeparator/u);
+	assert.doesNotMatch(HEADER_SOURCE, /DropdownMenuSeparator/u);
 	assert.match(HEADER_SOURCE, /listedFilters\.map/u);
 	assert.match(HEADER_SOURCE, /case "pull-request":/u);
 	assert.match(HEADER_SOURCE, /showCount = true/u);
@@ -660,6 +682,8 @@ test("Jira Activity owns the shared activity card used by agent comments", () =>
 	assert.match(CARD_SOURCE, /<AgentListActivityHeader/u);
 	assert.match(CARD_SOURCE, /<AgentListActivityHeader[\s\S]*leadWithAgentName/u);
 	assert.match(CARD_SOURCE, /messageTimestamp=\{timestamp\}/u);
+	assert.match(CARD_SOURCE, /timestampMeta\?: ReactNode/u);
+	assert.match(CARD_SOURCE, /<span className="shrink-0">\{timestamp\}<\/span>[\s\S]*\{timestampMeta\}/u);
 	assert.match(CARD_SOURCE, /activityGroupClass[\s\S]*group\/activity-card/u);
 	// Hover group wraps the outer card (header + body + replies), not only the body grid.
 	assert.match(

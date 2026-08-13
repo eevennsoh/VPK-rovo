@@ -68,7 +68,7 @@ async function submitSharedComposer(page: Page, text: string): Promise<void> {
 	await sharedComposer(page).fill(text);
 	await page
 		.locator("[data-jira-work-item-composer-dock]")
-		.getByRole("button", { name: "Send" })
+		.getByRole("button", { name: "Submit", exact: true })
 		.click();
 }
 
@@ -79,6 +79,7 @@ async function expectWorkingAgents(page: Page, count: number): Promise<void> {
 
 	if (count === 0) {
 		await expect(page.getByRole("button", { name: /^\d+ agents? working$/u })).toHaveCount(0);
+		await expect(page.getByRole("button", { name: /^\d+ agents? needs? input$/u })).toHaveCount(0);
 		return;
 	}
 
@@ -160,17 +161,15 @@ test("the shared-channel story exposes seven selectable stages and canonical wor
 	const progression = [
 		["Build", 1],
 		["Review", 1],
-		["Fix", "needs-input"],
-		["Approve", "needs-input"],
+		// Fix-failed stays "working" (waiting on CI) — same as Review.
+		// Approve lands ready-to-merge with sessions completed (no pill).
+		["Fix", 1],
+		["Approve", 0],
 		["Release", 0],
 	] as const;
 	for (const [chapter, count] of progression) {
 		await selectChapter(page, chapter);
-		if (count === "needs-input") {
-			await expect(page.getByRole("button", { name: "1 agent needs input" })).toBeVisible();
-		} else {
-			await expectWorkingAgents(page, count);
-		}
+		await expectWorkingAgents(page, count);
 		await expectEyesReaction(page, 0);
 		if (chapter === "Build") {
 			// Build: ready hold → implement → verify → former Handoff complete (~7s).
@@ -184,16 +183,12 @@ test("the shared-channel story exposes seven selectable stages and canonical wor
 	}
 });
 
-test("PR #1847 requires every guide chapter before Venn can approve it in place", async ({ page }) => {
+test("Approve auto-opens PR #1847 with human approvals and ready-to-merge evidence", async ({ page }) => {
 	await openWorkItem(page);
 	const description = page.getByRole("textbox", { name: "Work item description" });
 
 	await selectChapter(page, "Approve");
-	const pullRequestSelector = page.getByRole("combobox", { name: "Review pull request" });
-	await pullRequestSelector.click();
-	await page.getByRole("option", {
-		name: "Pull request #1847: Implement guest checkout without account creation",
-	}).click();
+	// Approve lands on the PR detail surface (same auto-open as Review / Fix).
 	await expect(description).toHaveCount(0);
 	const detail = page.locator("[data-jira-work-item-pull-request-detail]");
 	await expect(detail).toBeVisible();
@@ -202,37 +197,55 @@ test("PR #1847 requires every guide chapter before Venn can approve it in place"
 	})).toBeVisible();
 	await expect(detail.getByText("main", { exact: true })).toBeVisible();
 	await expect(detail.getByText("feature/shop-4821-guest-checkout", { exact: true })).toBeVisible();
+
+	// Agent work is done — no waiting-on-user composer pill.
+	await expect(page.getByRole("button", { name: "1 agent needs input" })).toHaveCount(0);
+
 	const reviewers = page.locator("[data-jira-work-item-pull-request-reviewers]");
-	await expect(reviewers).toHaveAccessibleName(/Approvers:.*Venn \(Pending\)/u);
-	const ciChecks = page.getByRole("button", { name: "CI checks 3/3 passed" });
+	await expect(reviewers).toHaveAccessibleName(
+		/Approvers: Priya Narayanan \(Approved\), Jordan Lee \(Approved\)/u,
+	);
+	await expect(page.getByText("Require approval", { exact: true })).toHaveCount(0);
+	await expect(detail.getByRole("button", { name: "Merge", exact: true })).toBeVisible();
+	// Ready-to-merge must not seed Guide chapter checks onto Submit review's badge.
+	await expect(page.getByRole("button", { name: "Submit review", exact: true })).toBeVisible();
+	await expect(page.getByRole("button", { name: "Submit review, 3 checked" })).toHaveCount(0);
+
+	const ciChecks = page.getByRole("button", { name: "CI checks", exact: true });
 	await expect(ciChecks).toBeVisible();
-	await expect(page.getByText("Review required", { exact: true }).first()).toBeVisible();
 	await ciChecks.click();
 	await expect(page.locator("[data-jira-work-item-pull-request-checks]")).toContainText(
 		"Lint and typecheck",
 	);
-	await detail.getByRole("button", { name: "Review required" }).click();
-	await expect(detail.getByRole("tab", { name: "Guide" })).toHaveAttribute("aria-selected", "true");
-	const guide = detail.locator("[data-jira-work-item-pull-request-guide]");
-	await expect(guide.getByText("1 / 3", { exact: true })).toBeVisible();
-	await expect(guide.getByRole("heading", { name: "Start a guest checkout" })).toBeVisible();
-	await expect(guide.getByRole("button", { name: "Back", exact: true })).toBeDisabled();
-	const approveButton = guide.getByRole("button", { name: "Approve pull request", exact: true });
-	await expect(approveButton).toBeDisabled();
-	await guide.getByRole("button", { name: "Next", exact: true }).click();
-	await expect(guide.getByText("2 / 3", { exact: true })).toBeVisible();
-	await expect(approveButton).toBeDisabled();
-	await expect(guide.getByRole("heading", {
-		name: "Keep order creation server-owned",
-	})).toBeVisible();
-	await guide.getByRole("button", { name: "Next", exact: true }).click();
-	await expect(guide.getByText("3 / 3", { exact: true })).toBeVisible();
-	await expect(approveButton).toBeEnabled();
-	await approveButton.click();
-	await expect(guide.getByRole("button", { name: "Approved", exact: true })).toBeDisabled();
-	await expect(detail.getByRole("tab", { name: "Guide" })).toHaveAttribute("aria-selected", "true");
-	await expect(detail.getByRole("button", { name: "Merge", exact: true })).toBeVisible();
-	await expect(reviewers).toHaveAccessibleName(/Approvers:.*Venn \(Approved\)/u);
+
+	await showActivity(page);
+	const pullRequestActivity = page.locator("[data-jira-work-item-pull-request-activity]");
+	for (const approval of [
+		{
+			id: "priya-review",
+			name: "Priya Narayanan",
+			body: "The guest checkout implementation and validation evidence are ready to merge.",
+		},
+		{
+			id: "jordan-review",
+			name: "Jordan Lee",
+			body: "The pull request has the required human approval.",
+		},
+	] as const) {
+		const humanApproval = pullRequestActivity.locator(
+			`[data-jira-activity-entry-id="pull-request-${approval.id}"]`,
+		);
+		await humanApproval.evaluate((element) => {
+			element.scrollIntoView({ block: "nearest", inline: "nearest" });
+		});
+		await expect(humanApproval).toBeVisible();
+		await expect(humanApproval).toContainText(approval.name);
+		await expect(humanApproval).toContainText("Approved");
+		await expect(humanApproval).toContainText(`Approved this pull request. ${approval.body}`);
+	}
+	await expect(pullRequestActivity.locator(
+		'[data-jira-activity-entry-id="pull-request-ready-to-merge"]',
+	)).toContainText("Ready to merge");
 
 	await detail.getByRole("tab", { name: /Files/u }).click();
 	const filesPanel = detail.getByRole("tabpanel", { name: /Files/u });
@@ -246,28 +259,41 @@ test("PR #1847 requires every guide chapter before Venn can approve it in place"
 		{ exact: true },
 	)).toBeVisible();
 
+	const pullRequestSelector = page.getByRole("combobox", { name: "Review pull request" });
 	await pullRequestSelector.getByRole("button", { name: "Remove Open pull request #1847" }).click();
 	await expect(description).toBeVisible();
 	await expect(description).toContainText("Acceptance criteria");
 
-	await pullRequestSelector.focus();
-	await page.keyboard.press("Enter");
-	await page.keyboard.press("ArrowDown");
-	await page.keyboard.press("Enter");
-	await expect(detail).toBeVisible();
-	await pullRequestSelector.getByRole("button", { name: "Remove Open pull request #1847" }).click();
-	await expect(description).toBeVisible();
-	await expect(description).toContainText("Acceptance criteria");
-
-	await pullRequestSelector.click();
-	await page.getByRole("option", {
-		name: "Pull request #1847: Implement guest checkout without account creation",
-	}).click();
-	await expect(detail).toBeVisible();
 	await selectChapter(page, "Release");
 	await expect(detail).toHaveCount(0);
 	await expect(description).toBeVisible();
 	await expect(description).toContainText("Acceptance criteria");
+});
+
+test("a submitted human review is added to PR Activity", async ({ page }) => {
+	await openWorkItem(page);
+	await selectChapter(page, "Review");
+
+	await page.getByRole("button", { name: "Submit review", exact: true }).click();
+	const reviewForm = page.getByRole("form", { name: "Review" });
+	await reviewForm.getByRole("textbox", { name: "Leave a comment..." }).fill(
+		"Please preserve the delivery draft before this pull request is merged.",
+	);
+	await reviewForm.getByRole("radio", { name: "Request changes" }).click();
+	await reviewForm.getByRole("button", { name: "Submit", exact: true }).click();
+
+	await showActivity(page);
+	const humanReview = page.locator(
+		'[data-jira-activity-entry-id="pull-request-submitted-review-1"]',
+	);
+	await humanReview.scrollIntoViewIfNeeded();
+	await expect(humanReview).toBeVisible();
+	await expect(humanReview).toContainText("Priya Narayanan");
+	await expect(humanReview).toContainText("Just now");
+	await expect(humanReview).toContainText("Changes requested");
+	await expect(humanReview).toContainText(
+		"Requested changes. Please preserve the delivery draft before this pull request is merged.",
+	);
 });
 
 test("Plan shows the working agent mentions followed by a Started working label", async ({ page }) => {
@@ -459,6 +485,26 @@ test("a comment with nested replies can collapse and restore its entire thread f
 	await expect(replies).toBeVisible();
 });
 
+test("collapsed resolved review threads expose their status before the summary separator", async ({ page }) => {
+	await openWorkItem(page);
+	await selectChapter(page, "Approve");
+	await showActivity(page);
+
+	const thread = page.locator(
+		'[data-jira-activity-entry-id="pull-request-delivery-address-review-thread"]',
+	);
+	const summary = thread.getByRole("button", { name: "View all comments, 1 reply" });
+	const summaryRow = summary.locator("..");
+
+	await expect(summary).toBeVisible();
+	await expect(summaryRow.locator(':scope > [data-slot="lozenge"]')).toHaveText("Resolved");
+	await expect(summaryRow.locator(':scope > [data-slot="lozenge"]')).toHaveAttribute(
+		"data-variant",
+		"success",
+	);
+	await expect(summaryRow.locator(':scope > span[aria-hidden="true"]')).toHaveText("·");
+});
+
 test("Review advances queued to running to failed and reselecting resets it to queued", async ({ page }) => {
 	await page.clock.install();
 	await openWorkItem(page);
@@ -479,6 +525,34 @@ test("Review advances queued to running to failed and reselecting resets it to q
 	await expect(claudeEntry).toContainText("lint and typecheck has started");
 });
 
+test("image evidence opens in a large modal without creating a browser tab", async ({ page }) => {
+	await page.clock.install();
+	await openWorkItem(page);
+	await selectChapter(page, "Build");
+	await page.clock.fastForward(2_500);
+	await page.clock.fastForward(2_200);
+	await page.clock.fastForward(2_400);
+	await page.getByRole("button", { exact: true, name: "Details" }).click();
+	await showActivity(page);
+
+	const claudeEntry = page.locator(
+		'[data-jira-activity-entry-id="activity-story-session-claude-code"]',
+	);
+	const pageCountBeforePreview = page.context().pages().length;
+	const imageArtifactRow = claudeEntry
+		.getByText("guest-checkout-final.png", { exact: true })
+		.locator("xpath=ancestor::div[contains(@class, 'group/artifact-row')]");
+	await imageArtifactRow.hover();
+	await imageArtifactRow.getByRole("button", { name: "Open", exact: true }).click();
+
+	const imagePreview = page.getByRole("dialog", { name: "guest-checkout-final.png" });
+	await expect(imagePreview).toBeVisible();
+	await expect(imagePreview.getByRole("img", { name: "Final guest checkout design" })).toBeVisible();
+	expect(page.context().pages()).toHaveLength(pageCountBeforePreview);
+	await imagePreview.getByRole("button", { name: "Close" }).click();
+	await expect(imagePreview).toHaveCount(0);
+});
+
 test("build through release expose the authored dependency chain and artifacts", async ({ page }) => {
 	await page.clock.install();
 	await openWorkItem(page);
@@ -486,8 +560,12 @@ test("build through release expose the authored dependency chain and artifacts",
 	await selectChapter(page, "Build");
 	await expectWorkingAgents(page, 1);
 	await expectEyesReaction(page, 0);
-	// ready 2.5s + implementing 2.2s + verifying 2.4s
-	await page.clock.fastForward(7_200);
+	// Stepwise: React schedules each Build timeout from the prior step's effect.
+	await page.clock.fastForward(2_500); // ready → implementing
+	await page.clock.fastForward(2_200); // implementing → verifying
+	await page.clock.fastForward(2_400); // verifying → complete
+	// Build auto-reveals Activity; Subtasks live on Details.
+	await page.getByRole("button", { exact: true, name: "Details" }).click();
 	await expect(page.getByRole("button", { name: "Subtasks 3/3" })).toBeVisible();
 	await showActivity(page);
 	// Build keeps the live Claude session + Open #1847 snapshot — not the
@@ -497,7 +575,9 @@ test("build through release expose the authored dependency chain and artifacts",
 		'[data-jira-activity-entry-id="activity-story-session-claude-code"]',
 	);
 	const prEntry = page.locator('[data-jira-activity-entry-id="story-pr-review"]');
-	await expect(claudeEntry).toContainText("Verify implementation and prepare the pull request");
+	await expect(claudeEntry).toContainText(
+		"Guest checkout is implemented and verified",
+	);
 	await expect(page.getByText("guest-checkout-final.png", { exact: true })).toBeVisible();
 	await expect(page.getByText("Add guest checkout to the storefront", { exact: true }).first()).toBeVisible();
 	await expect(prEntry).toBeVisible();
@@ -507,15 +587,40 @@ test("build through release expose the authored dependency chain and artifacts",
 	const replyGroup = page.getByRole("group", { name: "Replies" }).first();
 	await expect(replyGroup).toBeVisible();
 	await selectChapter(page, "Fix");
-	await expect(page.getByRole("button", { name: "1 agent needs input" })).toBeVisible();
+	// Fix-failed matches Review: waiting on CI / agents working — not needs input.
+	await expect(page.getByRole("button", { name: "1 agent working" })).toBeVisible();
 	const fixDetail = page.locator("[data-jira-work-item-pull-request-detail]");
 	await expect(fixDetail).toBeVisible();
 	await expect(page.getByRole("button", { name: "Fix Lint and typecheck" })).toBeVisible();
 	await expect(page.getByRole("button", { name: "Fix all" })).toBeVisible();
+	// Fix all opens PullRequestFix with the demo agent prompt prefilled; story
+	// repair advances on that card's submit. Pill stays "working" until then.
 	await page.getByRole("button", { name: "Fix all" }).click();
-	await expect(page.getByRole("button", { name: "1 agent working" })).toBeVisible();
+	const composerDock = page.locator("[data-jira-work-item-composer-dock]");
+	const fixComposer = composerDock.getByRole("textbox", { name: "write your instruction..." });
+	await expect(fixComposer).toBeVisible();
+	await expect(composerDock.getByRole("heading", { name: "Fix" })).toBeVisible();
+	await expect(composerDock.getByText("Lint and typecheck", { exact: true })).toBeVisible();
+	await expect(fixComposer).toHaveValue(/## Pull request fix:/u);
+	await expect(fixComposer).toHaveValue(/## My request:/u);
+	// Story fixture has one failed check, so Fix all still uses the single-check lead.
+	await expect(fixComposer).toHaveValue(/failing check "Lint and typecheck"/u);
+	await expect(page.getByTestId("failing-checks-chip")).toHaveCount(0);
+	// Expanded PullRequestFix replaces the activity bar (and hides context pills),
+	// matching Submit review — Fix all remains on the PR Checks rail.
+	await expect(page.getByRole("button", { name: "Fix all" })).toBeVisible();
+	// AnimatePresence may briefly keep the exiting activity form; target Fix.
+	await composerDock.getByRole("form", { name: "Fix" }).getByRole("button", { name: "Submit", exact: true }).click();
+	await expect(page.getByRole("button", { name: "2 agents working" })).toBeVisible();
 	await expect(page.getByRole("button", { name: "Fix all" })).toHaveCount(0);
 	await expect(page.getByRole("button", { name: "Fix Lint and typecheck" })).toHaveCount(0);
+	// PR detail stays open on Fix — assert the check rerun, then leave the PR so
+	// work-item Activity can show the failed settle + repair session card.
+	await expect(page.getByText("Rerunning after delivery-address repair", { exact: true })).toBeVisible();
+	await page.clock.fastForward(8_000);
+	await expect(page.getByRole("button", { name: "1 agent working" })).toBeVisible();
+	await expect(page.getByText(/Rerun completed in/u)).toBeVisible();
+	await page.getByRole("button", { name: "Remove Open pull request #1847" }).click();
 	await showActivity(page);
 	await expectEyesReaction(page, 0);
 	await expect(page.getByText(/blocked PR #1847 after/u)).toBeVisible();
@@ -527,7 +632,7 @@ test("build through release expose the authored dependency chain and artifacts",
 	await expectEyesReaction(page, 0);
 	await expect(page.getByText("Acceptance matrix passed", { exact: true })).toBeVisible();
 	await expect(page.getByText("SHOP-4821 acceptance report", { exact: true })).toBeVisible();
-	await expect(page.getByText("Merged", { exact: true })).toBeVisible();
+	await expect(page.getByText("Merged", { exact: true }).first()).toBeVisible();
 	await expect(page.getByText(/deployed to production behind/u)).toBeVisible();
 	await expect(page.getByText("guest_checkout_v1", { exact: true })).toBeVisible();
 	await expect(page.getByText(/passed production smoke checks and confirmed healthy telemetry/u)).toBeVisible();

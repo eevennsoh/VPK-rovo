@@ -89,6 +89,8 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	assert.doesNotMatch(detailViewSource, /shrink-0 px-4 sm:px-6/u);
 	assert.match(detailViewSource, /min-h-0 flex-1 pb-6/u);
 	assert.doesNotMatch(detailViewSource, /min-h-0 flex-1 py-6/u);
+	assert.match(detailViewSource, /<TabsContent className="pt-6" value="code">/u);
+	assert.doesNotMatch(detailViewSource, /<TabsContent className="pt-6" value="details">/u);
 	assert.match(
 		detailViewSource,
 		/<PullRequestStickyHeaderShell scrollContainerRef=\{scrollContainerRef\}>/u,
@@ -100,8 +102,9 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		stickyHeaderShellSource,
-		/className="sticky top-0 z-10 shrink-0 bg-surface pb-6"/u,
+		/className="sticky top-0 z-10 shrink-0 bg-surface"/u,
 	);
+	assert.doesNotMatch(stickyHeaderShellSource, /pb-6/u);
 	assert.match(
 		stickyHeaderShellSource,
 		/--pull-request-detail-header-height[\s\S]*--pull-request-detail-scrollport-height[\s\S]*ResizeObserver/u,
@@ -118,15 +121,15 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	assert.doesNotMatch(layoutSource, /pinColumnChrome/u);
 	assert.match(
 		workItemSource,
-		/context=\{\(scrollContainerRef\) => \([\s\S]*<ContextPanel[\s\S]*scrollContainerRef=\{scrollContainerRef\}/u,
+		/context=\{\(scrollContainerRef\) => \([\s\S]*<ContextPanel[\s\S]*scrollContainerRef=\{scrollContainerRef\}[\s\S]*submitReviewAction=\{pullRequestSubmitReviewAction\}/u,
 	);
 	assert.match(
 		contextPanelSource,
-		/<PullRequestDetailView[\s\S]*approvalState=\{pullRequestApprovalState\}[\s\S]*onChapterReviewedChange=\{onPullRequestChapterReviewedChange\}[\s\S]*onInlineCommentsChange=\{onPullRequestInlineCommentsChange\}[\s\S]*reviewedChapterIds=\{pullRequestReviewedChapterIds\}[\s\S]*scrollContainerRef=\{scrollContainerRef\}/u,
+		/<PullRequestDetailView[\s\S]*approvalState=\{pullRequestApprovalState\}[\s\S]*onChapterReviewedChange=\{onPullRequestChapterReviewedChange\}[\s\S]*onInlineCommentsChange=\{onPullRequestInlineCommentsChange\}[\s\S]*reviewedChapterIds=\{pullRequestReviewedChapterIds\}[\s\S]*scrollContainerRef=\{scrollContainerRef\}[\s\S]*submitReviewAction=\{submitReviewAction\}/u,
 	);
 	assert.match(
 		detailViewSource,
-		/<PullRequestDetailHeader[\s\S]*scrollContainerRef=\{scrollContainerRef\}/u,
+		/<PullRequestDetailHeader[\s\S]*scrollContainerRef=\{scrollContainerRef\}[\s\S]*submitReviewAction=\{submitReviewAction\}/u,
 	);
 	assert.doesNotMatch(detailViewSource, /ref=\{scrollContainerRef\}/u);
 	assert.doesNotMatch(detailViewSource, /overflow-y-auto px-4 py-5 sm:px-6/u);
@@ -162,6 +165,10 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 		/<PullRequestHeader[\s\S]*number=\{data\.number\}[\s\S]*title=\{data\.title\}[\s\S]*status=\{data\.status\}/u,
 	);
 	assert.match(headerSource, /tabNavigation=\{tabNavigation\}/u);
+	assert.match(
+		headerSource,
+		/submitReviewAction=\{isOpen \? submitReviewAction : undefined\}/u,
+	);
 	assert.doesNotMatch(headerSource, /px-4 py-4 sm:px-6/u);
 	assert.match(overviewSource, /rounded-lg border border-border p-4/u);
 	assert.match(
@@ -419,26 +426,34 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	assert.doesNotMatch(guideSource, /Approve pull request|onApprove|allChaptersVisited/u);
 	assert.match(
 		workItemSource,
-		/label: approved \? "Review submitted" : "Submit review"/u,
+		/label: "Submit review"/u,
 	);
-	assert.match(workItemSource, /badge: badgeCount > 0 \? String\(badgeCount\) : undefined/u);
-	assert.doesNotMatch(workItemSource, /badge: `\$\{reviewed\}\/\$\{total\}`/u);
+	assert.doesNotMatch(workItemSource, /Review submitted/u);
 	assert.match(
 		workItemSource,
-		/const badgeCount = reviewedChapterIds\.size \+ inlineComments\.length/u,
+		/const checkedCount = reviewedChapterIds\.size \+ inlineComments\.length/u,
 	);
 	assert.match(
+		workItemSource,
+		/badge: checkedCount > 0 \? String\(checkedCount\) : undefined/u,
+	);
+	assert.doesNotMatch(workItemSource, /badge: badgeCount/u);
+	assert.doesNotMatch(
 		workItemSource,
 		/icon: <Icon aria-hidden render=\{<CommentIcon label="" size="small" \/>\} \/>/u,
 	);
-	assert.match(workItemSource, /import CommentIcon from "@atlaskit\/icon\/core\/comment"/u);
+	assert.doesNotMatch(workItemSource, /import CommentIcon from "@atlaskit\/icon\/core\/comment"/u);
 	assert.match(
 		workItemSource,
-		/disabled: approved \|\| !onPullRequestApprove/u,
+		/disabled: !onPullRequestApprove,/u,
 	);
 	assert.match(
 		workItemSource,
 		/selectedPullRequestApprovalState === "available"[\s\S]*reviewedChapterIds\.size === pullRequestReviewState\.total/u,
+	);
+	assert.match(
+		workItemSource,
+		/!selectedPullRequestIdentity[\s\S]*selectedPullRequestEntry\?\.pullRequest\?\.status !== "Open"[\s\S]*pullRequestReviewState\?\.identity !== selectedPullRequestIdentity[\s\S]*pullRequestReviewState\.total === 0/u,
 	);
 	assert.doesNotMatch(
 		workItemSource,
@@ -446,7 +461,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		workItemSource,
-		/setPullRequestReviewByIdentity\(\(current\) => \{[\s\S]*if \(!guidedReview\) return current;[\s\S]*if \(current\[identity\]\) return current;[\s\S]*inlineComments: \[\],[\s\S]*reviewedChapterIds: resolveInitialReviewedChapterIds\([\s\S]*pullRequestApprovalStates\?\.\[identity\]/u,
+		/const guidedReview = detail\?\.guidedReview;[\s\S]*if \(!guidedReview\) return;[\s\S]*setPullRequestReviewByIdentity\(\(current\) => \{[\s\S]*if \(current\[identity\]\) return current;[\s\S]*inlineComments: \[\],[\s\S]*reviewedChapterIds: resolveInitialReviewedChapterIds\([\s\S]*pullRequestApprovalStates\?\.\[identity\]/u,
 	);
 	assert.match(
 		workItemSource,
@@ -456,8 +471,9 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 		workItemSource,
 		/handlePullRequestInlineCommentsChange[\s\S]*const existing = current\[identity\];[\s\S]*inlineComments: comments/u,
 	);
-	assert.match(workItemSource, /<ActivityComposer[\s\S]*primaryAction=\{pullRequestReviewAction\}/u);
-	assert.match(activityComposerSource, /primaryAction=\{primaryAction\}/u);
+	assert.match(workItemSource, /submitReviewAction=\{pullRequestSubmitReviewAction\}/u);
+	assert.doesNotMatch(workItemSource, /primaryAction=\{pullRequestReviewAction\}/u);
+	assert.doesNotMatch(activityComposerSource, /primaryAction=\{primaryAction\}/u);
 	assert.match(
 		workItemSource,
 		/onClick: \(\) => \{[\s\S]*setReviewComposerIdentity\(selectedPullRequestIdentity\)/u,
@@ -468,7 +484,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		workItemSource,
-		/<ActivityComposer[\s\S]*autoFocus=\{restoreActivityComposerFocus\}[\s\S]*pullRequestReview=\{activePullRequestReview\}/u,
+		/<ActivityComposer[\s\S]*autoFocus=\{restoreActivityComposerFocus\}[\s\S]*pullRequestFix=\{activePullRequestFix\}[\s\S]*pullRequestReview=\{activePullRequestReview\}/u,
 	);
 	assert.match(
 		activityComposerSource,
@@ -476,11 +492,27 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		activityComposerSource,
+		/<PullRequestFix[\s\S]*checkName=\{pullRequestFix\.checkName\}[\s\S]*defaultValue=\{pullRequestFix\.defaultValue\}[\s\S]*variant="expanded"/u,
+	);
+	assert.match(
+		activityComposerSource,
 		/submitDisabled=\{pullRequestReview\.submitDisabled\}/u,
 	);
 	assert.match(
 		activityComposerSource,
-		/<JiraWorkItemComposerMotion[\s\S]*layout[\s\S]*layoutDependency=\{Boolean\(pullRequestReview\)\}/u,
+		/<JiraWorkItemComposerMotion[\s\S]*layout[\s\S]*layoutDependency=\{hasExpandedPullRequestComposer\}/u,
+	);
+	assert.match(
+		workItemSource,
+		/const activePullRequestFix[\s\S]*checkName: fixComposer\.checkName,[\s\S]*defaultValue: fixComposer\.defaultValue,[\s\S]*onSubmit: handlePullRequestFixSubmit/u,
+	);
+	assert.match(
+		workItemSource,
+		/onPullRequestFix\?\.\(selectedPullRequestIdentity, submission\.agentId\)/u,
+	);
+	assert.match(
+		workItemSource,
+		/handlePullRequestFixOpen[\s\S]*buildPullRequestFixComposerPrompt[\s\S]*setFixComposer\(\{\s*checkName: resolvePullRequestFixCheckName\(checks\),\s*defaultValue,\s*\}\)/u,
 	);
 	assert.match(
 		activityComposerSource,
@@ -490,11 +522,12 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 		composerMotionSource,
 		/layout=\{metadataLayoutAnimating \? false : layout\}[\s\S]*layoutDependency=\{layoutDependency \?\? placement\}/u,
 	);
+	assert.doesNotMatch(contextPillsSource, /primaryAction/u);
+	assert.doesNotMatch(contextPillsSource, /from "@\/components\/ui\/badge"/u);
 	assert.match(
 		contextPillsSource,
-		/\{primaryAction \? \([\s\S]*<ContextBarPill[\s\S]*icon=\{primaryAction\.icon\}[\s\S]*\{primaryAction\.label\}[\s\S]*primaryAction\.badge \? \([\s\S]*<Badge[\s\S]*\{primaryAction\.badge\}[\s\S]*\) : null\}[\s\S]*\) : null\}[\s\S]*\{workingSessions\.length/u,
+		/\{workingSessions\.length > 0 && onOpenAgentChat \? \([\s\S]*summaryLabel/u,
 	);
-	assert.match(contextPillsSource, /from "@\/components\/ui\/badge"/u);
 	assert.match(
 		workItemSource,
 		/pullRequestApprovalStates\?: Readonly<Record<string, "available" \| "approved">>/u,
@@ -679,6 +712,12 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 		/arePullRequestChecksInProgress/u,
 	);
 	assert.match(railSource, /from "@\/components\/ui\/spinner"/u);
+	// The CI title reserves the compact action height before Fix all appears,
+	// so running -> failed does not grow the disclosure header by 4px.
+	assert.match(
+		railSource,
+		/function ChecksSectionTitle[\s\S]*<span className="flex min-h-6 items-center gap-1\.5">[\s\S]*CI checks/u,
+	);
 	assert.match(
 		railSource,
 		/function ChecksSectionTitle[\s\S]*inProgress \? \([\s\S]*<Spinner size="xs" \/>[\s\S]*\) : \([\s\S]*<ProgressCircle[\s\S]*aria-hidden[\s\S]*animated=\{false\}[\s\S]*size="xs"[\s\S]*value=\{total > 0 \? Math\.round\(\(passed \/ total\) \* 100\) : 0\}[\s\S]*variant="outline"/u,
@@ -763,9 +802,15 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 		checksValueSource,
 		/isFailed \? \(\s*<FailedCheckActions[\s\S]*onFix=\{\(failedCheck\) => onFixCheck\?\.\(\[failedCheck\]\)\}/u,
 	);
+	// Fix all mirrors per-row Fix: visible for any failed check, even when the
+	// host has not wired onFixCheck yet (e.g. Review chapter before Fix).
 	assert.match(
 		railSource,
-		/onFixCheck && failedChecks > 0[\s\S]*headerAction: \{[\s\S]*appearance: "label"[\s\S]*label: "Fix all"[\s\S]*onClick: \(\) => onFixCheck\(failedCheckItems\)[\s\S]*reveal: "open"/u,
+		/failedChecks > 0[\s\S]*headerAction: \{[\s\S]*appearance: "label"[\s\S]*label: "Fix all"[\s\S]*onClick: \(\) => onFixCheck\?\.\(failedCheckItems\)[\s\S]*reveal: "open"/u,
+	);
+	assert.doesNotMatch(
+		railSource,
+		/onFixCheck && failedChecks > 0[\s\S]*headerAction: \{[\s\S]*label: "Fix all"/u,
 	);
 	assert.match(
 		checksValueSource,
@@ -817,5 +862,10 @@ test("PR Activity menu offers Comments filter with review-thread reply and resol
 	assert.match(activityPanelSource, /onResolveComment=/u);
 	assert.match(activityPanelSource, /type: "toggle-resolved"/u);
 	assert.match(activityPanelSource, /onSubmitReply=/u);
-	assert.match(activityPanelSource, /GUIDED_REVIEW_CURRENT_REVIEWER_ID/u);
+	assert.match(activityPanelSource, /GUIDED_REVIEW_CURRENT_REVIEWER/u);
+	assert.match(activityPanelSource, /useActivityChatComments/u);
+	assert.match(activityPanelSource, /jiraActivitySegmentsToPlainText\(entry\.body\)/u);
+	assert.match(activityPanelSource, /onAddCommentToChat=/u);
+	assert.match(activityPanelSource, /onAddReplyToChat=/u);
+	assert.match(activityPanelSource, /addActivityChatComment\(/u);
 });

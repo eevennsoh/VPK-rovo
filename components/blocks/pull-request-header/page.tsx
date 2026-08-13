@@ -162,5 +162,6 @@ export type {
 	PullRequestHeaderMergeState,
 	PullRequestHeaderProps,
 	PullRequestHeaderStatus,
+	PullRequestHeaderSubmitReviewAction,
 	PullRequestHeaderVariant,
 } from "@/components/blocks/pull-request-header/components/pull-request-header-types";

@@ -13,6 +13,19 @@ export type PullRequestHeaderMergeState =
 /** Merge strategy selected in the merge options chevron menu. */
 export type PullRequestHeaderMergeMethod = "squash" | "merge" | "rebase";
 
+/**
+ * Optional Submit review control rendered after the merge split button.
+ * Hosts (guided PR detail) supply this when a review composer can open.
+ */
+export interface PullRequestHeaderSubmitReviewAction {
+	ariaLabel: string;
+	/** Checked chapters + inline comments; rendered as an end-slot Badge when set. */
+	badge?: string;
+	disabled?: boolean;
+	label: string;
+	onClick: () => void;
+}
+
 export interface PullRequestHeaderProps
 	extends Omit<HTMLMotionProps<"header">, "children"> {
 	/** Controlled presentation. Overrides scroll-driven collapse when provided. */
@@ -42,8 +55,8 @@ export interface PullRequestHeaderProps
 	 * Merge split-button primary label state.
 	 * `"checks-failed"` → "Checks failed", `"checks-running"` → "Checks running",
 	 * `"merge-conflicts"` → "Merge conflicts", `"review-required"` →
-	 * "Review required", `"ready"` → the selected merge method label.
-	 * Defaults to `"ready"`.
+	 * "Require approval", `"ready"` → "Merge" (method still chosen in the
+	 * chevron menu). Defaults to `"ready"`.
 	 * Primary actions are enabled when their matching callback is available.
 	 * The chevron menu stays available for merge method + Auto merge.
 	 */
@@ -71,8 +84,14 @@ export interface PullRequestHeaderProps
 	onChecksFailedClick?: () => void;
 	/** Called when the Merge conflicts primary is activated (`merge-conflicts` only). */
 	onMergeConflictsClick?: () => void;
-	/** Called when the Review required primary is activated (`review-required` only). */
+	/** Called when the Require approval primary is activated (`review-required` only). */
 	onReviewRequiredClick?: () => void;
+	/**
+	 * Optional Submit review button after the merge split control.
+	 * Omitted when guided review is unavailable for the open PR.
+	 * Hidden entirely when `status` is `"Merged"` (header shows Revert PR instead).
+	 */
+	submitReviewAction?: PullRequestHeaderSubmitReviewAction;
 	/**
 	 * Pull request URL used by More actions → Copy link and Open in {SCM}.
 	 * Those items stay disabled when omitted.
@@ -85,12 +104,12 @@ export interface PullRequestHeaderProps
 	scmProviderName?: string;
 	/**
 	 * Called when More actions → Convert to draft is selected.
-	 * Item stays disabled for merged PRs or when omitted (pass a no-op stub to enable for demos).
+	 * Item is omitted for merged PRs; stays disabled when omitted (pass a no-op stub to enable for demos).
 	 */
 	onConvertToDraftClick?: () => void;
 	/**
 	 * Called when More actions → Close pull request is selected.
-	 * Item stays disabled for merged PRs or when omitted (pass a no-op stub to enable for demos).
+	 * Item is omitted for merged PRs; stays disabled when omitted (pass a no-op stub to enable for demos).
 	 */
 	onClosePullRequestClick?: () => void;
 }

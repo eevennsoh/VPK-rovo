@@ -270,9 +270,24 @@ export function JiraActivity({
 					{orderedEntries.map((entry, index) => {
 						const isLast = index === orderedEntries.length - 1;
 						const isCardEntry = entry.kind !== "event";
-						const isNextEntryCard = orderedEntries[index + 1]?.kind !== "event" && !isLast;
-						// Event→event uses pb-2 (8px). Card↔event stays pb-5; card→card pb-6.
-						const spacingClassName = isLast
+						const isNestedComment = entry.kind === "comment" && Boolean(entry.parentId);
+						const nextEntry = orderedEntries[index + 1];
+						const isNextEntryCard = nextEntry?.kind !== "event" && !isLast;
+						const isNextEntryThreadContinuation = nextEntry?.kind === "comment"
+							&& (
+								nextEntry.parentId === entry.id
+								|| (
+									entry.kind === "comment"
+									&& entry.parentId != null
+									&& nextEntry.parentId === entry.parentId
+								)
+							);
+						// A nested review comment belongs to its parent card, and adjacent
+						// nested siblings belong to the same thread group. Keep both seams
+						// flush; each child owns the shared pt-3/pl-6 treatment.
+						const spacingClassName = isNextEntryThreadContinuation
+							? null
+							: isLast
 							? entry.kind === "comment" ? "pb-4" : "pb-3"
 							: isCardEntry && isNextEntryCard
 								? "pb-6"
@@ -284,6 +299,9 @@ export function JiraActivity({
 							<li
 								className="flex min-w-0 gap-2"
 								data-jira-activity-entry-id={entry.id}
+								data-jira-activity-parent-id={
+									entry.kind === "comment" ? entry.parentId : undefined
+								}
 								key={entry.id}
 							>
 								{/*
@@ -291,13 +309,29 @@ export function JiraActivity({
 								 * the connector only starts below that track, so each node gets a
 								 * clean 4px break without opaque color-matching covers.
 								 */}
-								<JiraActivityNode
-									actor={entry.actor}
-									icon={entry.kind === "event" ? entry.icon : undefined}
-									isLast={isLast}
-									size={isCardEntry ? "card" : "event"}
-								/>
-								<div className={cn("min-w-0 flex-1", spacingClassName)}>
+								{isNestedComment ? (
+									<div
+										aria-hidden
+										className="flex w-8 shrink-0 justify-center"
+										data-jira-activity-spine-continuation
+									>
+										<div className="w-px self-stretch bg-border" />
+									</div>
+								) : (
+									<JiraActivityNode
+										actor={entry.actor}
+										icon={entry.kind === "event" ? entry.icon : undefined}
+										isLast={isLast}
+										size={isCardEntry ? "card" : "event"}
+									/>
+								)}
+								<div
+									className={cn(
+										"min-w-0 flex-1",
+										spacingClassName,
+										isNestedComment ? "pt-3 pl-6" : null,
+									)}
+								>
 									{entry.kind === "event" ? (
 										<JiraActivityEvent
 											entry={entry}

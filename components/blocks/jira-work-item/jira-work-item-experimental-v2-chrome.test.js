@@ -143,6 +143,10 @@ test("experimental v2 reveals description mode tabs across the description scope
 		contextResourcesSource,
 		/<div className="pointer-events-none ml-auto shrink-0 flex items-center gap-2 opacity-0 transition-opacity duration-normal ease-out group-hover\/description-scope:pointer-events-auto group-hover\/description-scope:opacity-100 group-has-\[:focus-visible\]\/description-scope:pointer-events-auto group-has-\[:focus-visible\]\/description-scope:opacity-100 motion-reduce:transition-none">[\s\S]*aria-label="Copy work item as markdown"[\s\S]*navigator\.clipboard\.writeText\(markdown\)[\s\S]*<CopyIcon label="" size="small" \/>[\s\S]*Copy work item as markdown[\s\S]*<EditorToolbarModeTabs[\s\S]*mode=\{descriptionViewMode\}[\s\S]*onModeChange=\{onDescriptionViewModeChange\}/u,
 	);
+	assert.match(
+		contextResourcesSource,
+		/<TooltipTrigger\s+delay=\{0\}[\s\S]*aria-label="Copy work item as markdown"/u,
+	);
 	// Details/Activities toggle lives in the metadata rail, not the left-column resources row.
 	assert.doesNotMatch(contextResourcesSource, /MetadataRailToggle/u);
 	assert.doesNotMatch(contextResourcesSource, /size="compact"/u);

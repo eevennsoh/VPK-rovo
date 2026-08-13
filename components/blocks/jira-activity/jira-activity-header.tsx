@@ -8,7 +8,6 @@ import {
 	DropdownMenuContent,
 	DropdownMenuRadioGroup,
 	DropdownMenuRadioItem,
-	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
@@ -212,16 +211,13 @@ export function JiraActivityViewControl({
 					<DropdownMenuRadioItem value="ascending">
 						{SORT_MENU_LABELS.ascending}
 					</DropdownMenuRadioItem>
-					{filtersEnabled ? (
-						<>
-							<DropdownMenuSeparator />
-							{listedFilters.map((value) => (
-								<DropdownMenuRadioItem key={value} value={value}>
-									{FILTER_MENU_LABELS[value]}
-								</DropdownMenuRadioItem>
-							))}
-						</>
-					) : null}
+					{filtersEnabled
+						? listedFilters.map((value) => (
+							<DropdownMenuRadioItem key={value} value={value}>
+								{FILTER_MENU_LABELS[value]}
+							</DropdownMenuRadioItem>
+						))
+						: null}
 				</DropdownMenuRadioGroup>
 			</DropdownMenuContent>
 		</DropdownMenu>

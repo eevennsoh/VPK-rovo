@@ -241,7 +241,7 @@ function ChecksSectionTitle({
 	total,
 }: Readonly<{ inProgress: boolean; passed: number; total: number }>) {
 	return (
-		<>
+		<span className="flex min-h-6 items-center gap-1.5">
 			CI checks
 			{inProgress ? (
 				<span aria-hidden>
@@ -256,7 +256,7 @@ function ChecksSectionTitle({
 					variant="outline"
 				/>
 			)}
-		</>
+		</span>
 	);
 }
 
@@ -515,17 +515,18 @@ export function PullRequestDetailsRail({
 						/>
 					),
 					count: checksCollapsedCount,
-					// Same shared Fix handler as per-row Fix; only when failed checks
-					// are actionable (handler present + at least one failed check).
-					// Stages a composer chip — does not re-run CI immediately.
-					...(onFixCheck && failedChecks > 0
+					// Match per-row Fix visibility: show whenever any check failed.
+					// Do not gate on onFixCheck — the host may omit the story callback
+					// outside the Fix chapter while failed rows still render Fix.
+					// Staging / story advance stay optional via onFixCheck?.
+					...(failedChecks > 0
 						? {
 							headerAction: {
 								appearance: "label" as const,
 								label: "Fix all",
-								onClick: () => onFixCheck(failedCheckItems),
-								// Always visible when failures are actionable — not hover-reveal.
-								// Outline + stopPropagation live in ArtifactPane.
+								onClick: () => onFixCheck?.(failedCheckItems),
+								// Always visible when failures exist — not hover-reveal.
+								// Far-right + chevron slide live in ArtifactPane.
 								reveal: "open" as const,
 							},
 						}

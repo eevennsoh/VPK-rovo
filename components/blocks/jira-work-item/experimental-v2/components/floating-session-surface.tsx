@@ -44,9 +44,13 @@ function getSessionResult(session: AgentSession): string {
  */
 function getSessionPlaybackVariant(
 	session: AgentSession,
-): "claude-code-build" | "jira-description-improvement" | "static-result" | undefined {
+): "claude-code-build" | "jira-description-improvement" | "ci-fix" | "static-result" | undefined {
 	if (session.scriptId === "shop-4821-improve-description") {
 		return session.status === "completed" ? "static-result" : "jira-description-improvement";
+	}
+	// Selected Fix agent (Codex by default) — same CI-repair CoT for every picker id.
+	if (session.scriptId === "shop-4821-ci-fix" && session.status === "running") {
+		return "ci-fix";
 	}
 	if (session.agentId !== "claude-code" || session.status !== "running") {
 		return undefined;

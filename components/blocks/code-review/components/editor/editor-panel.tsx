@@ -29,15 +29,14 @@ const EMPTY_ITEMS = [] as const;
 const EMPTY_COMMITS = [] as const satisfies readonly CodeReviewCommit[];
 const NOOP = () => {};
 /**
- * Sticky under PR sticky shell. Header-height CSS var already includes the
- * opaque space-300 (`pb-6`) gap — do not add another spacing(6) here or diffs
- * paint through between header and toolbar.
+ * Sticky directly under the PR sticky shell. The measured header height excludes
+ * content spacing so rows cannot disappear inside a blank zone above the toolbar.
  *
  * `rounded-t-[inherit]` matches the embedded shell’s `rounded-md` — that shell
  * cannot use overflow-hidden or sticky would be trapped.
  */
 const EXPAND_STICKY_TOOLBAR_CLASS =
-	"sticky z-[9] top-[var(--pull-request-detail-header-height,0px)] rounded-t-[inherit]";
+	"sticky z-[9] top-[var(--pull-request-detail-header-height,0px)] rounded-t-[inherit] [container-type:scroll-state]";
 /**
  * Sticky under toolbar (h-9 / space-900); scrolls internally when taller than the
  * scrollport. `rounded-bl-[inherit]` covers the card’s bottom-left when the tree
@@ -45,7 +44,7 @@ const EXPAND_STICKY_TOOLBAR_CLASS =
  */
 const EXPAND_STICKY_TREE_CLASS =
 	"sticky z-[8] self-start top-[calc(var(--pull-request-detail-header-height,0px)+(--spacing(9)))] max-h-[calc(var(--pull-request-detail-scrollport-height,100dvh)-var(--pull-request-detail-header-height,0px)-(--spacing(9)))] overflow-y-auto rounded-bl-[inherit]";
-/** Keep file anchors clear of sticky PR header (incl. gap) + toolbar. */
+/** Keep file anchors clear of the sticky PR header + toolbar. */
 const EXPAND_FILE_SCROLL_MARGIN_CLASS =
 	"scroll-mt-[calc(var(--pull-request-detail-header-height,0px)+(--spacing(9)))]";
 
@@ -91,7 +90,7 @@ export function EditorPanel({
 	onLayoutChange,
 	onUpdateDraft = NOOP,
 }: Readonly<EditorPanelProps>) {
-	const [isExplorerVisible, setIsExplorerVisible] = useState(true);
+	const [isExplorerVisible, setIsExplorerVisible] = useState(false);
 	const [changesScope, setChangesScope] = useState<ChangesScope>("all-changes");
 	const visibleFiles = filterChangedFilesByScope(files, commits, changesScope);
 	const [selectedFileId, setSelectedFileId] = useState(
@@ -118,10 +117,17 @@ export function EditorPanel({
 		>
 			<div
 				className={cn(
-					"flex h-9 shrink-0 items-center border-b border-border bg-surface-sunken px-1.5",
-					expandContent ? EXPAND_STICKY_TOOLBAR_CLASS : undefined,
+					"relative isolate flex h-9 shrink-0 items-center border-b border-border px-1.5",
+					expandContent ? EXPAND_STICKY_TOOLBAR_CLASS : "bg-surface-sunken",
 				)}
 			>
+				{expandContent ? (
+					<div
+						aria-hidden
+						className="pointer-events-none absolute inset-0 -z-10 rounded-[inherit] bg-surface-sunken"
+						data-code-review-sticky-toolbar-surface
+					/>
+				) : null}
 				{/* gap-1 (space-050); picker wrapped — Menu.Root is a fragment */}
 				<div
 					className="flex items-center gap-1"

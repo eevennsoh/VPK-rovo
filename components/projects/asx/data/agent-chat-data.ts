@@ -15,7 +15,7 @@ export interface AsxAgentChatScenario {
 	issueKey: string;
 	issueSummary: string;
 	intro?: string;
-	playbackVariant?: "claude-code-build" | "jira-description-improvement" | "static-result";
+	playbackVariant?: "claude-code-build" | "jira-description-improvement" | "ci-fix" | "static-result";
 	question?: QuestionCardQuestion;
 	request?: string;
 	result?: string;
@@ -352,6 +352,96 @@ function buildJiraDescriptionPlayback(
 		})),
 		keepThinkingActiveAfterLastFrame: true,
 	};
+}
+
+function buildCiFixPlayback(
+	_scenario: AsxAgentChatScenario,
+	runId: string,
+	now: number,
+): Pick<AsxAgentChatPlayback, "frames"> {
+	const parts: RovoUIMessage["parts"] = [];
+	const frames: AsxAgentChatPlaybackFrame[] = [];
+	const timestamp = (offsetMs: number) => new Date(now + offsetMs).toISOString();
+	const tools = [
+		{
+			id: `inspect-pr-${runId}`,
+			toolName: "bash",
+			label: "Inspecting the pull request",
+			content: "Using gh to inspect PR #1847 and its failed lint and typecheck check.",
+			input: { command: "gh pr checks 1847 && gh run view --log-failed" },
+			output: { failedCheck: "Lint and typecheck", status: "failed" },
+			outputPreview: "Found the failed lint and typecheck check on PR #1847.",
+		},
+		{
+			id: `read-annotation-${runId}`,
+			toolName: "expand_code_chunks",
+			label: "Reading the lint annotation",
+			content: "Reading the failing annotation and the order-creation call site.",
+			input: { path: "packages/orders/src/guest-order-service.ts", annotation: "deliveryAddress may be null" },
+			output: { line: 118, diagnostic: "deliveryAddress may be null" },
+			outputPreview: "The order path accepts a nullable deliveryAddress without narrowing it.",
+		},
+		{
+			id: `patch-address-${runId}`,
+			toolName: "find_and_replace_code",
+			label: "Repairing address validation",
+			content: "Narrowing deliveryAddress before order creation while preserving the existing validation response.",
+			input: { path: "packages/orders/src/guest-order-service.ts", symbol: "deliveryAddress" },
+			output: { status: "updated", filesChanged: 1 },
+			outputPreview: "deliveryAddress is now narrowed before the order is created.",
+		},
+		{
+			id: `validate-fix-${runId}`,
+			toolName: "bash",
+			label: "Running focused validation",
+			content: "Running the narrow lint and typecheck validation for the repaired order path.",
+			input: { command: "pnpm lint --filter guest-orders && pnpm typecheck" },
+			output: { lint: "passed", typecheck: "passed" },
+			outputPreview: "Focused lint and typecheck validation passed.",
+		},
+		{
+			id: `push-fix-${runId}`,
+			toolName: "bash",
+			label: "Pushing the repair",
+			content: "Committing the nullability repair, pushing it, and confirming GitHub started the check rerun.",
+			input: { command: "git commit -m 'fix guest delivery address narrowing' && git push && gh pr checks 1847" },
+			output: { pushed: true, checkStatus: "running" },
+			outputPreview: "Repair pushed; GitHub is rerunning lint and typecheck.",
+		},
+	] as const;
+
+	tools.forEach((tool, index) => {
+		const offsetMs = index * 600;
+		parts.push(
+			createThinkingStatus({
+				content: tool.content,
+				label: tool.label,
+				timestamp: timestamp(offsetMs),
+				toolCallId: tool.id,
+			}),
+			createThinkingEvent({
+				input: tool.input,
+				label: tool.label,
+				phase: "start",
+				timestamp: timestamp(offsetMs),
+				toolCallId: tool.id,
+				toolName: tool.toolName,
+			}),
+		);
+		frames.push({ delayMs: index === 0 ? 0 : 300, parts: [...parts] });
+		parts.push(createThinkingEvent({
+			label: tool.label,
+			output: tool.output,
+			outputPreview: tool.outputPreview,
+			phase: "result",
+			timestamp: timestamp(offsetMs + 300),
+			toolCallId: tool.id,
+			toolName: tool.toolName,
+		}));
+		frames.push({ delayMs: 300, parts: [...parts] });
+	});
+
+	return { frames };
 }
 
 /**
@@ -737,7 +827,10 @@ export function buildAsxAgentChatPlayback(
 	const claudeCodeBuildPlayback = scenario.playbackVariant === "claude-code-build"
 		? buildClaudeCodeBuildPlayback(scenario, runId, now)
 		: null;
-	const specializedPlayback = jiraDescriptionPlayback ?? claudeCodeBuildPlayback;
+	const ciFixPlayback = scenario.playbackVariant === "ci-fix"
+		? buildCiFixPlayback(scenario, runId, now)
+		: null;
+	const specializedPlayback = jiraDescriptionPlayback ?? claudeCodeBuildPlayback ?? ciFixPlayback;
 	const staticResultParts = scenario.playbackVariant === "static-result"
 		? [{ type: "text" as const, text: result, state: "done" as const }]
 		: null;

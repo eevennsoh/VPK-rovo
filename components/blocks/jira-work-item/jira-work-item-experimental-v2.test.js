@@ -72,7 +72,7 @@ const V2_ONLY_FILES = new Set([
 	"components/context-popover-parts.tsx",
 	// Shared Activity → chat comment-pill state (Code Review composerInputContext path).
 	"context-activity-chat-comments.tsx",
-	// Failing CI checks → activity composer chip (Fix / Fix all staging).
+	// Failing CI checks → activity composer chip (legacy staging helpers).
 	"context-failing-checks-composer.tsx",
 	"lib/failing-checks-composer-context.ts",
 	"lib/failing-checks-composer-context.test.js",
@@ -172,7 +172,7 @@ test("experimental v2 resets stage-scoped view state only after the stage key ch
 	assert.match(compositionSource, /const previousStageKeyRef = useRef\(stageKey\);/u);
 	assert.match(
 		compositionSource,
-		/useLayoutEffect\(\(\) => \{[\s\S]*Object\.is\(previousStageKeyRef\.current, stageKey\)[\s\S]*return;[\s\S]*previousStageKeyRef\.current = stageKey;[\s\S]*setDescriptionViewMode\("rendered"\);[\s\S]*setSelectedPullRequestIdentity\(null\);[\s\S]*setPullRequestReviewByIdentity\(\{\}\);[\s\S]*setReviewComposerIdentity\(null\);[\s\S]*setPullRequestReviewerStatuses\(\{\}\);[\s\S]*\}, \[stageKey\]\);/u,
+		/useLayoutEffect\(\(\) => \{[\s\S]*Object\.is\(previousStageKeyRef\.current, stageKey\)[\s\S]*return;[\s\S]*previousStageKeyRef\.current = stageKey;[\s\S]*setDescriptionViewMode\("rendered"\);[\s\S]*setSelectedPullRequestIdentity\(null\);[\s\S]*setPullRequestReviewByIdentity\(\{\}\);[\s\S]*setReviewComposerIdentity\(null\);[\s\S]*setFixComposer\(null\);[\s\S]*setPullRequestReviewerStatuses\(\{\}\);[\s\S]*removeFailingChecks\(\);[\s\S]*\}, \[removeFailingChecks, stageKey\]\);/u,
 	);
 });
 
@@ -195,6 +195,10 @@ test("experimental v2 opens the shared agent chat as a full-height sibling colum
 	assert.match(
 		sessionSurfaceSource,
 		/function getSessionPlaybackVariant\([\s\S]*"claude-code-build"[\s\S]*completedCount >= 1 && completedCount <= 3[\s\S]*playbackVariant: getSessionPlaybackVariant\(activeSession\)/u,
+	);
+	assert.match(
+		sessionSurfaceSource,
+		/shop-4821-ci-fix" && session\.status === "running"[\s\S]*return "ci-fix"/u,
 	);
 	assert.match(
 		sessionSurfaceSource,
@@ -446,6 +450,10 @@ test("experimental v2 working-agents menu includes waiting sessions without chan
 	assert.match(contextPillsSource, /`Waiting for \$\{session\.waitingOn\.agentName\}`/u);
 	assert.match(contextPillsSource, /"code-planner": \[[\s\S]*"Plan the guest checkout architecture"/u);
 	assert.match(contextPillsSource, /"claude-code": \[[\s\S]*"Implement and verify guest checkout"/u);
+	assert.match(
+		contextPillsSource,
+		/session\.scriptId === "shop-4821-ci-fix"[\s\S]*CI_REPAIR_ACTIVITY_SCRIPT/u,
+	);
 	assert.doesNotMatch(contextPillsSource, /"github-copilot":|"unit-test-creator":/u);
 	assert.match(contextPillsSource, /label: session\.agentName,/u);
 	assert.match(contextPillsSource, /inlineMetadata: \([\s\S]*<WorkingSessionActivityByline[\s\S]*sessionIndex=\{sessionIndex\}/u);
@@ -481,170 +489,6 @@ test("experimental v2 working-agents menu includes waiting sessions without chan
 		/trailing: session\.status === "waiting"[\s\S]*\{session\.waitingOn\?\.kind === "user" \? NEEDS_INPUT_STATUS_LABEL : "Waiting"\}[\s\S]*: null/u,
 	);
 	assert.doesNotMatch(contextPillsSource, /<Spinner/u);
-});
-
-test("experimental v2 shows Submit review as the first context pill on guided PR review", () => {
-	const compositionSource = readBlockFile("experimental-v2/experimental-v2-jira-work-item.tsx");
-	const contextPillsSource = readBlockFile("experimental-v2/components/activity-composer-context-pills.tsx");
-	const composerSource = readBlockFile("experimental-v2/components/activity-composer.tsx");
-
-	// Visibility: selected PR + guided review progress only — not approval-state gated.
-	assert.match(
-		compositionSource,
-		/!selectedPullRequestIdentity[\s\S]*pullRequestReviewState\?\.identity !== selectedPullRequestIdentity[\s\S]*pullRequestReviewState\.total === 0/u,
-	);
-	assert.doesNotMatch(
-		compositionSource,
-		/!selectedPullRequestIdentity[\s\S]*!selectedPullRequestApprovalState[\s\S]*pullRequestReviewState/u,
-	);
-	assert.match(compositionSource, /label: approved \? "Review submitted" : "Submit review"/u);
-	assert.match(compositionSource, /badge: badgeCount > 0 \? String\(badgeCount\) : undefined/u);
-	assert.doesNotMatch(compositionSource, /badge: `\$\{reviewed\}\/\$\{total\}`/u);
-	assert.match(
-		compositionSource,
-		/const badgeCount = reviewedChapterIds\.size \+ inlineComments\.length/u,
-	);
-	assert.match(compositionSource, /import CommentIcon from "@atlaskit\/icon\/core\/comment"/u);
-	assert.match(
-		compositionSource,
-		/icon: <Icon aria-hidden render=\{<CommentIcon label="" size="small" \/>\} \/>/u,
-	);
-	assert.match(
-		compositionSource,
-		/disabled: approved \|\| !onPullRequestApprove/u,
-	);
-	assert.match(
-		compositionSource,
-		/submitDisabled: pullRequestReviewSubmitDisabled/u,
-	);
-	assert.match(
-		compositionSource,
-		/const pullRequestReviewSubmitDisabled = !onPullRequestApprove\s*\|\|\s*selectedPullRequestApprovalState === "approved"/u,
-	);
-	assert.doesNotMatch(
-		compositionSource,
-		/submitDisabled: !pullRequestReviewSubmissionAvailable/u,
-		"guided-review availability must not disable Send while the reviewer has a draft",
-	);
-	assert.match(compositionSource, /primaryAction=\{pullRequestReviewAction\}/u);
-	assert.match(composerSource, /primaryAction=\{primaryAction\}/u);
-	assert.match(
-		compositionSource,
-		/handlePullRequestInlineCommentsChange[\s\S]*inlineComments: comments/u,
-	);
-	assert.match(
-		compositionSource,
-		/commentCount: pullRequestReviewState\.inlineComments\.length/u,
-	);
-	assert.match(
-		composerSource,
-		/commentCount=\{pullRequestReview\.commentCount\}/u,
-	);
-	// Pill order: primaryAction (Submit review) first, then working agents, then Assign agents / Use skills.
-	assert.match(
-		contextPillsSource,
-		/\{primaryAction \? \([\s\S]*icon=\{primaryAction\.icon\}[\s\S]*\{primaryAction\.label\}[\s\S]*primaryAction\.badge \? \([\s\S]*<Badge[\s\S]*\{primaryAction\.badge\}[\s\S]*\) : null\}[\s\S]*\) : null\}[\s\S]*\{workingSessions\.length > 0[\s\S]*<ActivityComposerAgentContextPill[\s\S]*<ActivityComposerSkillContextPill/u,
-	);
-	assert.match(contextPillsSource, /from "@\/components\/ui\/badge"/u);
-	// Opening guided PR review must not drop the working-agents summary pill.
-	assert.match(
-		composerSource,
-		/const workingSessions = state\.sessions\.filter\(\(session\) => session\.status !== "completed"\);/u,
-	);
-	assert.match(
-		contextPillsSource,
-		/\{workingSessions\.length > 0 && onOpenAgentChat \? \([\s\S]*summaryLabel/u,
-	);
-});
-
-test("experimental v2 keeps comment-only composer delivery as the non-target default", () => {
-	const compositionSource = readBlockFile("experimental-v2/experimental-v2-jira-work-item.tsx");
-	const contextSource = readBlockFile("experimental-v2/context-jira-work-item.tsx");
-	const composerSource = readBlockFile("experimental-v2/components/activity-composer.tsx");
-
-	assert.match(contextSource, /composerDelivery = "comment"/u);
-	assert.match(compositionSource, /composerAgents\?: readonly AgentSelectorAgent\[\];/u);
-	assert.match(compositionSource, /<ActivityComposer[\s\S]*agents=\{composerAgents\}/u);
-	assert.match(composerSource, /const availableAgents = agents \?\? ROVO_AGENT_SELECTOR_AGENTS;/u);
-	assert.match(composerSource, /agents[\s\S]*subagent: agents\.map\(mapAgentToMentionItem\)[\s\S]*: EDITOR_PALETTE_MENTION_SOURCES/u);
-	assert.match(
-		composerSource,
-		/findMentionedAvailableAgents\([\s\S]*handledAgentIds,[\s\S]*handledAgentNames,[\s\S]*for \(const invokedAgent of invokedAgents\)[\s\S]*actions\.invokeAgent/u,
-	);
-	assert.match(
-		composerSource,
-		/onAgentPromptSubmit\?\.\([\s\S]*\.\.\.handledAgentIds,[\s\S]*\.\.\.invokedAgents\.map\(\(agent\) => agent\.id\)/u,
-		"composer should report both active and newly invoked mentioned agents to orchestration callbacks",
-	);
-	assert.match(
-		composerSource,
-		/meta\.composerDelivery === "broadcast-active-agents"[\s\S]*actions\.broadcastComment\(promptWithActivityContext\);[\s\S]*else \{[\s\S]*actions\.addComment\(promptWithActivityContext\);/u,
-	);
-});
-
-test("experimental v2 opens Activity and scrolls to the latest entry after agent-mention submit", () => {
-	const composerSource = readBlockFile("experimental-v2/components/activity-composer.tsx");
-	const activityPanelSource = readBlockFile("experimental-v2/components/activity-panel.tsx");
-	const metadataRailContextSource = readBlockFile("experimental-v2/context-metadata-rail.tsx");
-
-	assert.match(
-		composerSource,
-		/import \{ useMetadataRail \} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/context-metadata-rail"/u,
-	);
-	assert.match(composerSource, /const \{ requestRevealLatestActivity \} = useMetadataRail\(\);/u);
-	// Only agent mention / steer / invoke paths reveal Activity — plain comments stay put.
-	assert.match(
-		composerSource,
-		/if \(handledAgentIds\.size === 0 && invokedAgents\.length === 0\) \{[\s\S]*\} else \{[\s\S]*requestRevealLatestActivity\(\);/u,
-	);
-	assert.match(
-		metadataRailContextSource,
-		/requestRevealLatestActivity = useCallback\(\(entryId\?: string\) => \{[\s\S]*setPanelView\("activity"\)[\s\S]*setActivityRevealRequest/u,
-	);
-	assert.match(
-		activityPanelSource,
-		/import \{ useMetadataRail \} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/context-metadata-rail"/u,
-	);
-	assert.match(
-		activityPanelSource,
-		/activityRevealRequest[\s\S]*consumeActivityRevealRequest[\s\S]*useMetadataRail\(\)/u,
-	);
-	assert.match(
-		activityPanelSource,
-		/requestRevealLatestActivity/u,
-	);
-	assert.match(
-		activityPanelSource,
-		/target\.closest\("\[hidden\]"\)/u,
-		"reveal/auto-scroll must wait until the Activity tab is visible",
-	);
-	assert.match(
-		activityPanelSource,
-		/ACTIVITY_REVEAL_SETTLE_MS/u,
-		"reveal must stay open long enough for staged prompt comments to become latest",
-	);
-	assert.match(
-		activityPanelSource,
-		/preferredEntryId \? "start" : activityScrollBlock/u,
-		"targeted reveals pin the entry start (agent name); latest keeps sort-aware block",
-	);
-	assert.match(
-		activityPanelSource,
-		/activityRevealRequest\?\.entryId/u,
-		"auto-scroll must defer while a targeted reveal owns the viewport",
-	);
-	assert.match(
-		activityPanelSource,
-		/scrollActivityEntryIntoView\([\s\S]*consumeActivityRevealRequest\(nonce\)/u,
-	);
-	assert.match(
-		activityPanelSource,
-		/block,/u,
-	);
-	assert.match(
-		activityPanelSource,
-		/const activityScrollBlock = sortOrder === "descending" \? "start" : "end"/u,
-	);
 });
 
 test("experimental v2 running-agents menu dismisses after focus leaves its wrapper", () => {
@@ -864,92 +708,6 @@ test("the block index resolves both experimental surfaces from one map", () => {
 	assert.match(indexSource, /const ExperimentalSurface = EXPERIMENTAL_SURFACES\[surface\];/u);
 	// One shared view owns the open/close plumbing for every experimental variant.
 	assert.equal((indexSource.match(/function JiraWorkItemExperimentalView/gu) ?? []).length, 1);
-});
-
-test("the activity panel gives reactions and human replies somewhere to land", () => {
-	const activityPanelSource = readBlockFile("experimental-v2/components/activity-panel.tsx");
-	const adapterSource = readBlockFile("experimental-v2/lib/jira-activity-adapter.ts");
-
-	// The timeline is controlled here (entries derive from meta.activityEvents),
-	// so JiraActivity's built-in reducer can never apply a reaction: without an
-	// explicit callback both branches of `applyAction` are inert and every
-	// reaction click would be a silent no-op.
-	assert.match(activityPanelSource, /onToggleReaction=\{handleToggleReaction\}/u);
-	assert.match(activityPanelSource, /toggleReaction\(entry\.reactions \?\? \[\], emoji, JIRA_WORK_ITEM_CURRENT_USER\.id\)/u);
-	assert.match(activityPanelSource, /const reactionActors = useMemo\(\(\) => \{/u);
-	assert.match(activityPanelSource, /actors=\{reactionActors\}/u);
-
-	// Human comments now expose Reply (allowReply flipped to true), but they have
-	// no session to route into — their drafts must be kept rather than dropped.
-	assert.match(adapterSource, /allowReply: true,/u);
-	assert.match(activityPanelSource, /onSubmitReply=\{handleSubmitReply\}/u);
-	assert.match(activityPanelSource, /actions\.replySession\(event\.sessionId, body\)/u);
-	assert.match(activityPanelSource, /setLocalReplies\(\(previous\) => \(\{/u);
-
-	// Local state is overlaid per entry id rather than replacing the derived
-	// array, so streaming session updates keep flowing through untouched.
-	assert.match(activityPanelSource, /const entries = derivedEntries\.map\(\(entry\) => \{/u);
-	assert.doesNotMatch(activityPanelSource, /useState\(derivedEntries\)/u);
-});
-
-test("activity comments reuse the Code Review composer-pill path on the sticky activity composer", () => {
-	const activityPanelSource = readBlockFile("experimental-v2/components/activity-panel.tsx");
-	const activityComposerSource = readBlockFile("experimental-v2/components/activity-composer.tsx");
-	const sessionSurfaceSource = readBlockFile("experimental-v2/components/floating-session-surface.tsx");
-	const contextSource = readBlockFile("experimental-v2/context-activity-chat-comments.tsx");
-	const compositionSource = readBlockFile("experimental-v2/experimental-v2-jira-work-item.tsx");
-	const sharedChipSource = fs.readFileSync(
-		path.join(BLOCK_DIR, "../../ui-custom/comments-composer-chip.tsx"),
-		"utf8",
-	);
-	const floatingComposerSource = fs.readFileSync(
-		path.join(BLOCK_DIR, "../../projects/shared/components/floating-composer.tsx"),
-		"utf8",
-	);
-
-	assert.match(compositionSource, /ActivityChatCommentsProvider/u);
-	assert.match(activityPanelSource, /useActivityChatComments/u);
-	assert.match(activityPanelSource, /onAddCommentToChat=\{handleAddCommentToChat\}/u);
-	assert.match(activityPanelSource, /onAddReplyToChat=\{handleAddReplyToChat\}/u);
-	assert.match(activityPanelSource, /attachActivityCommentToComposer/u);
-	assert.match(activityPanelSource, /jiraActivitySegmentsToPlainText\(entry\.body\)/u);
-	assert.doesNotMatch(activityPanelSource, /openChat\("floating"\)/u);
-	assert.doesNotMatch(activityPanelSource, /actions\.openLatestOrCreateGeneralSession\(\)/u);
-
-	assert.match(contextSource, /focusRequestKey/u);
-	assert.match(contextSource, /return \[\.\.\.current, comment\]/u);
-
-	assert.match(activityComposerSource, /CommentsComposerChip/u);
-	assert.match(activityComposerSource, /FailingChecksComposerChip/u);
-	assert.match(activityComposerSource, /inputContext=\{composerInputContext\}/u);
-	assert.match(activityComposerSource, /inputContextSubmitText=\{composerInputContextSubmitText\}/u);
-	assert.match(activityComposerSource, /subtitle: "Comment"/u);
-	assert.doesNotMatch(activityComposerSource, /subtitle: comment\.timestamp/u);
-	assert.match(activityComposerSource, /testId="activity-comments-chip"/u);
-	assert.match(activityComposerSource, /Discuss these activity comments\./u);
-	assert.match(activityComposerSource, /serializeActivityCommentsContext\(meta\.workItem, activityChatComments\)/u);
-	assert.match(activityComposerSource, /serializeFailingChecksContext\(failingChecks\)/u);
-	assert.match(activityComposerSource, /focusRequestKey/u);
-	assert.match(activityComposerSource, /removeActivityChatComments\(\)/u);
-	assert.match(activityComposerSource, /removeFailingChecks\(\)/u);
-	assert.match(compositionSource, /FailingChecksComposerProvider/u);
-	assert.match(compositionSource, /handlePullRequestFixStage/u);
-	assert.match(compositionSource, /onFailingChecksSubmit/u);
-
-	assert.match(floatingComposerSource, /inputContext\?: ReactNode/u);
-	assert.match(floatingComposerSource, /<PromptInputHeader/u);
-	assert.doesNotMatch(sessionSurfaceSource, /CommentsComposerChip/u);
-	assert.doesNotMatch(sessionSurfaceSource, /composerInputContext=/u);
-	assert.match(sharedChipSource, /export function CommentsComposerChip/u);
-	assert.match(sharedChipSource, /ComposerContextChip/u);
-	// Inset separators match DropdownMenuSeparator (`dropdownStyles.separator`:
-	// `bg-border mx-1 my-1 h-px`) — not full-bleed `divide-y`.
-	const composerContextChipSource = fs.readFileSync(
-		path.join(BLOCK_DIR, "../../ui-custom/composer-context-chip.tsx"),
-		"utf8",
-	);
-	assert.match(composerContextChipSource, /dropdownStyles\.separator/u);
-	assert.doesNotMatch(composerContextChipSource, /divide-y/u);
 });
 
 test("experimental v2 opens the agent and skill pickers with the editor-palette search bar", () => {

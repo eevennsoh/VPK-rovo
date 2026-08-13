@@ -11,6 +11,7 @@ import { AiPlannerPanel, AiPlannerScope } from "@/components/blocks/jira-work-it
 import { ContextResources } from "@/components/blocks/jira-work-item/experimental-v2/components/context-resources";
 import type { CodingAgentId } from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-actions";
 import { getPullRequestIdentity } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
+import type { PullRequestHeaderSubmitReviewAction } from "@/components/blocks/pull-request-header";
 
 const PullRequestDetailView = dynamic(
 	() => import("@/components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-detail-view")
@@ -79,6 +80,7 @@ export function ContextPanel({
 	pullRequestReviewedChapterIds,
 	scrollContainerRef,
 	selectedPullRequestEntry,
+	submitReviewAction,
 	onDescriptionViewModeChange,
 }: Readonly<{
 	descriptionViewMode: EditorToolbarViewMode;
@@ -92,6 +94,7 @@ export function ContextPanel({
 	pullRequestReviewedChapterIds?: ReadonlySet<string>;
 	scrollContainerRef: RefObject<HTMLElement | null>;
 	selectedPullRequestEntry: JiraActivityEventEntry | null;
+	submitReviewAction?: PullRequestHeaderSubmitReviewAction;
 	onDescriptionViewModeChange: (mode: EditorToolbarViewMode) => void;
 }>) {
 	const selectedPullRequestKey = selectedPullRequestEntry?.pullRequest
@@ -110,6 +113,7 @@ export function ContextPanel({
 					onInlineCommentsChange={onPullRequestInlineCommentsChange}
 					reviewedChapterIds={pullRequestReviewedChapterIds}
 					scrollContainerRef={scrollContainerRef}
+					submitReviewAction={submitReviewAction}
 				/>
 			) : (
 				<AiPlannerScope header={<AiPlannerPanel />}>

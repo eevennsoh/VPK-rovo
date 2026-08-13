@@ -8,22 +8,16 @@ import {
 	type JiraActivityFilter,
 	type JiraActivitySortOrder,
 } from "@/components/blocks/jira-activity";
+import { jiraActivitySegmentsToPlainText } from "@/components/blocks/jira-activity/lib/jira-activity-comment-text";
 import { jiraActivityReducer } from "@/components/blocks/jira-activity/lib/jira-activity-reducer";
 import { useSetActivityRailChrome } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-panel";
+import { useActivityChatComments } from "@/components/blocks/jira-work-item/experimental-v2/context-activity-chat-comments";
 import {
 	adaptPullRequestActivity,
 	getPullRequestActivityRevision,
 } from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-activity-adapter";
 import type { PullRequestActivity } from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-detail-data";
-import { GUIDED_REVIEW_CURRENT_REVIEWER_ID } from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-review-submit";
-
-/** Signed-in guided-review reviewer (Priya) for Activity Reply authorship. */
-const PULL_REQUEST_ACTIVITY_CURRENT_USER = {
-	id: GUIDED_REVIEW_CURRENT_REVIEWER_ID,
-	name: "Priya Narayanan",
-	kind: "person" as const,
-	avatarSrc: "/avatar-user/priya-hansra/color/asow-strategy-orange.png",
-};
+import { GUIDED_REVIEW_CURRENT_REVIEWER } from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-review-submit";
 
 /**
  * SCM Activity timeline for the pull-request rail. Reuses Jira Activity's
@@ -36,6 +30,7 @@ export function PullRequestActivityPanel({
 	activity: readonly PullRequestActivity[];
 }>) {
 	const setActivityRailChrome = useSetActivityRailChrome();
+	const { addComment: addActivityChatComment } = useActivityChatComments();
 	const [sortOrder, setSortOrder] = useState<JiraActivitySortOrder>("ascending");
 	const [filter, setFilter] = useState<JiraActivityFilter>("all");
 	const adaptedEntries = useMemo(() => adaptPullRequestActivity(activity), [activity]);
@@ -67,11 +62,27 @@ export function PullRequestActivityPanel({
 			<JiraActivity
 				className="gap-2"
 				composer={null}
-				currentUser={PULL_REQUEST_ACTIVITY_CURRENT_USER}
+				currentUser={GUIDED_REVIEW_CURRENT_REVIEWER}
 				entries={entries}
 				filter={filter}
 				hideHeader
 				key={activityKey}
+				onAddCommentToChat={(entry) => {
+					addActivityChatComment({
+						id: entry.id,
+						actorName: entry.actor.name,
+						timestamp: entry.timestamp,
+						body: jiraActivitySegmentsToPlainText(entry.body),
+					});
+				}}
+				onAddReplyToChat={(reply) => {
+					addActivityChatComment({
+						id: reply.id,
+						actorName: reply.actor.name,
+						timestamp: reply.timestamp,
+						body: reply.body,
+					});
+				}}
 				onEntriesChange={setEntries}
 				onResolveComment={(entry) => {
 					setEntries((current) => (
@@ -90,7 +101,7 @@ export function PullRequestActivityPanel({
 								entryId: entry.id,
 								reply: {
 									id: crypto.randomUUID(),
-									actor: PULL_REQUEST_ACTIVITY_CURRENT_USER,
+									actor: GUIDED_REVIEW_CURRENT_REVIEWER,
 									timestamp: "Just now",
 									body,
 								},
