@@ -3,6 +3,9 @@
 	"version": "0.1.0",
 	"private": true,
 	"packageManager": "pnpm@11.18.0+sha512.33d83c77da82f49fba836925c6f1b841181ec3132b670639bd012f7075f5c7cf634c5f870147c19aae7478fac01df09d8892e880454896edd23ee9b33757563c",
+	"engines": {
+		"node": ">=22"
+	},
 	"scripts": {
 		"dev": "node scripts/check-workspace-deps.js --command \"pnpm run dev\" concurrently next express --bin concurrently && concurrently --kill-others-on-fail -n backend,frontend -c yellow,green \"CI=true pnpm run dev:backend\" \"CI=true pnpm run dev:frontend\"",
 		"build": "next build --webpack",
@@ -70,7 +73,7 @@
 		"symphony": "./scripts/symphony.sh"
 	},
 	"dependencies": {
-		"@ai-sdk/react": "^3.0.211",
+		"@ai-sdk/react": "^4.0.58",
 		"@atlaskit/icon": "^36.0.0",
 		"@atlaskit/icon-lab": "^7.0.0",
 		"@atlaskit/logo": "^21.0.0",
@@ -151,7 +154,7 @@
 		"@web-kits/audio": "^0.1.0",
 		"@xyflow/react": "^12.11.1",
 		"agent-browser": "^0.32.3",
-		"ai": "^6.0.209",
+		"ai": "^7.0.55",
 		"ansi-to-react": "^6.2.6",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",

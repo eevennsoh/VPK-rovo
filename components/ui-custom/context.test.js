@@ -26,3 +26,9 @@ test("Context number formatters are reused across render helpers", () => {
 	assert.match(renderHelpers, /COMPACT_NUMBER_FORMATTER\.format\(usedTokens\)/);
 	assert.match(renderHelpers, /USD_FORMATTER\.format\(costUSD \?\? 0\)/);
 });
+
+test("Context reads AI SDK v7 reasoning and cache token detail fields", () => {
+	assert.match(SOURCE, /usage\?\.outputTokenDetails\.reasoningTokens \?\? 0/u);
+	assert.match(SOURCE, /usage\?\.inputTokenDetails\.cacheReadTokens \?\? 0/u);
+	assert.doesNotMatch(SOURCE, /usage\?\.(?:reasoningTokens|cachedInputTokens)/u);
+});

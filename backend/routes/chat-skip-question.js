@@ -1,10 +1,7 @@
 "use strict";
 
 const express = require("express");
-const {
-	createUIMessageStream,
-	pipeUIMessageStreamToResponse,
-} = require("ai");
+const { getAiSdk } = require("../lib/ai-sdk-runtime");
 
 const { createRouteDecisionPart } = require("../lib/route-decision");
 
@@ -53,6 +50,10 @@ function createChatSkipQuestionRouter({
 	requireFunction("buildUserMessage", buildUserMessage);
 	requireFunction("createRouteDecision", createRouteDecision);
 	requireFunction("streamChatViaRovo", streamChatViaRovo);
+	const {
+		createUIMessageStream,
+		pipeUIMessageStreamToResponse,
+	} = getAiSdk();
 
 	const router = express.Router();
 

@@ -1,9 +1,6 @@
 "use strict";
 
-const {
-	createUIMessageStream: defaultCreateUIMessageStream,
-	createUIMessageStreamResponse: defaultCreateUIMessageStreamResponse,
-} = require("ai");
+const { getAiSdk } = require("./ai-sdk-runtime");
 const {
 	inferRovoAppArtifactKindFromContent,
 } = require("./rovo-app-artifact-kind");
@@ -27,8 +24,8 @@ function requireFunction(name, value) {
 }
 
 function createRovoAppArtifactToolResponseStreamer({
-	createUIMessageStream = defaultCreateUIMessageStream,
-	createUIMessageStreamResponse = defaultCreateUIMessageStreamResponse,
+	createUIMessageStream,
+	createUIMessageStreamResponse,
 	generateAndPersistRovoAppArtifact = defaultGenerateAndPersistRovoAppArtifact,
 	generateRovoAppArtifactText,
 	generateRovoAppArtifactTitleFromContent,
@@ -40,6 +37,12 @@ function createRovoAppArtifactToolResponseStreamer({
 	rovoAppDocumentManager,
 	rovoAppThreadManager,
 } = {}) {
+	if (!createUIMessageStream || !createUIMessageStreamResponse) {
+		const aiSdk = getAiSdk();
+		createUIMessageStream ||= aiSdk.createUIMessageStream;
+		createUIMessageStreamResponse ||= aiSdk.createUIMessageStreamResponse;
+	}
+
 	requireFunction("createUIMessageStream", createUIMessageStream);
 	requireFunction("createUIMessageStreamResponse", createUIMessageStreamResponse);
 	requireFunction("generateAndPersistRovoAppArtifact", generateAndPersistRovoAppArtifact);
