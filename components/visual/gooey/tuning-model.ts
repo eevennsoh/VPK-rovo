@@ -98,6 +98,17 @@ export const MOVE_TUNING_DEFAULTS = {
 	trail: 0.575,
 } as const satisfies Readonly<MoveTuning>;
 
+/**
+ * `<Gooey>` root filter defaults. Lives here rather than in `gooey-root.tsx` so
+ * that module exports only its component and Fast Refresh can preserve state.
+ */
+export const GOOEY_DEFAULTS = {
+	blur: 6,
+	contrast: 18,
+	fill: "#fff",
+	filterPadding: 24,
+} as const;
+
 export const DISSOLVE_DEFAULTS = {
 	blur: 8,
 	warp: 26,

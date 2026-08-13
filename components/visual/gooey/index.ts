@@ -8,7 +8,7 @@ import { GooeyItem } from "./gooey-item";
  */
 export const Gooey = Object.assign(GooeyRoot, { Item: GooeyItem });
 
-export { GOOEY_DEFAULTS } from "./gooey-root";
+export { GOOEY_DEFAULTS } from "./tuning-model";
 export type { GooeyProps } from "./gooey-root";
 export type { GooeyEffect, GooeyItemProps } from "./gooey-item";
 export {

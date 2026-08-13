@@ -13,6 +13,7 @@ import { GooFilterPrimitives } from './filter'
 import { useIsoLayoutEffect } from './hooks'
 import { ObserveEngine } from './observer'
 import { parseShadow } from './shadow'
+import { GOOEY_DEFAULTS } from './tuning-model'
 
 export interface GooeyProps extends HTMLAttributes<HTMLDivElement> {
 	/** React 19 regular ref for the root div. */
@@ -29,13 +30,6 @@ export interface GooeyProps extends HTMLAttributes<HTMLDivElement> {
   /** Extra filter-region slack in px for blobs travelling outside the group box. Default 24. */
   filterPadding?: number
 }
-
-export const GOOEY_DEFAULTS = {
-	blur: 6,
-	contrast: 18,
-	fill: "#fff",
-	filterPadding: 24,
-} as const;
 
 /** Gooey group: renders the silhouette SVG layer (goo filter + shadow chain)
  *  behind its children. Children stay crisp; <Gooey.Item> mirrors each piece's
