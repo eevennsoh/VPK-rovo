@@ -43,8 +43,96 @@ test("all six upstream compositions are registered and documented", () => {
 		assert.ok(DETAIL.includes(`title: "${title}"`), title);
 		assert.ok(EXAMPLES.includes(`export function ${exportName}`), exportName);
 	}
-	assert.ok(EXAMPLES.includes('h-[280px]'));
-	assert.ok(EXAMPLES.includes('max-w-[294px]'));
+	assert.match(
+		EXAMPLES,
+		/min-h-\[352px\] w-full flex-1 self-stretch items-center justify-center overflow-visible/u,
+	);
+	assert.match(EXAMPLES, /p-0 sm:p-6/u);
+	assert.match(EXAMPLES, /h-20 w-full max-w-64/u);
+	assert.match(EXAMPLES, /h-16 w-full max-w-\[246px\]/u);
+	assert.match(EXAMPLES, /w-full max-w-60/u);
+	assert.doesNotMatch(EXAMPLES, /max-w-\[294px\]/u);
+});
+
+test("morph menu hides converged satellite icons and uses VPK icons", () => {
+	assert.match(EXAMPLES, /from "@\/components\/ui\/vpk-icons"/u);
+	assert.doesNotMatch(EXAMPLES, /@atlaskit\/icon/u);
+	for (const icon of ["FileIcon", "ImageIcon", "FolderIcon", "PlusIcon"]) {
+		assert.ok(EXAMPLES.includes(icon), icon);
+	}
+	assert.match(EXAMPLES, /open \? "opacity-100 blur-none" : "opacity-0 blur-\[2px\]"/u);
+	assert.doesNotMatch(EXAMPLES, /scale=\{open \? 1 : 0\.35\}/u);
+	assert.match(EXAMPLES, /x: -54, y: -34/u);
+	assert.match(EXAMPLES, /x: 0, y: -64/u);
+	assert.match(EXAMPLES, /x: 54, y: -34/u);
+});
+
+test("move slider has one liquid-owned thumb surface", () => {
+	assert.match(EXAMPLES, /data-gooey-slider-track=""/u);
+	assert.match(EXAMPLES, /data-gooey-slider-thumb=""/u);
+	assert.match(EXAMPLES, /move=\{\{ springiness: 0\.5, stretch: 0\.6, trail: 0\.35 \}\}/u);
+	assert.match(EXAMPLES, /const travel = 188/u);
+	assert.match(EXAMPLES, /data-gooey-slider-thumb=""[\s\S]*?className="block size-6 rounded-full"/u);
+	assert.doesNotMatch(EXAMPLES, /data-gooey-slider-thumb=""[\s\S]*?bg-primary transition-transform/u);
+	assert.doesNotMatch(EXAMPLES, /<Gooey\.Item observe>\s*<span[^>]*data-gooey-slider-track/u);
+});
+
+test("hero and draggable examples expose pointer, reset, and keyboard interaction", () => {
+	assert.match(DEMO, /useGooeyDemoDrag\(/u);
+	assert.match(DEMO, /aria-label="Reset Gooey item position"/u);
+	assert.match(DEMO, /aria-label="Drag or activate Gooey item; arrow keys also move it"/u);
+	assert.match(DEMO, /\{\.\.\.heroDrag\.bind\}/u);
+	assert.match(DEMO, /ref=\{heroRootRef\}/u);
+	assert.match(DEMO, /data-gooey-playground-root=""/u);
+	assert.match(DEMO, /className="min-h-\[360px\] w-full overflow-visible rounded-xl bg-bg-neutral-subtle"/u);
+	assert.doesNotMatch(DEMO, /grid min-w-0 items-start/u);
+	assert.doesNotMatch(DEMO, /className="absolute inset-4 sm:inset-8"/u);
+	assert.doesNotMatch(DEMO, /current\.x >= 0 \? -72 : 36/u);
+	assert.equal((DEMO.match(/top: "calc\(50% - 40px\)"/gu) || []).length, 2);
+	assert.doesNotMatch(DEMO, /h-44 w-full max-w-80/u);
+	assert.match(EXAMPLES, /setPointerCapture\(event\.pointerId\)/u);
+	assert.match(EXAMPLES, /onKeyDown/u);
+	assert.match(EXAMPLES, /clampPosition/u);
+});
+
+test("images never intercept native dragging from Gooey drag targets", () => {
+	for (const source of [DEMO, EXAMPLES]) {
+		const imageCount = (source.match(/<Image\b/gu) || []).length;
+		assert.ok(imageCount > 0);
+		assert.equal((source.match(/draggable=\{false\}/gu) || []).length, imageCount);
+		assert.equal((source.match(/className="[^"]*pointer-events-none[^"]*select-none[^"]*object-cover[^"]*"/gu) || []).length, imageCount);
+	}
+});
+
+test("hero drag bounds follow the available preview size", () => {
+	assert.match(DEMO, /if \(width === 0 \|\| height === 0\) return/u);
+	assert.match(DEMO, /requestAnimationFrame\(measure\)/u);
+	assert.match(DEMO, /new ResizeObserver\(measure\)/u);
+	assert.match(DEMO, /observer\.observe\(root\)/u);
+	assert.match(DEMO, /observer\.disconnect\(\)/u);
+	assert.match(DEMO, /getHeroBounds\(width, height, config\.scale\)/u);
+	assert.match(DEMO, /min: heroBounds\.minX, max: heroBounds\.maxX/u);
+	assert.match(DEMO, /min: heroBounds\.minY, max: heroBounds\.maxY/u);
+});
+
+test("liquid borders and elevation belong to the merged Gooey silhouette", () => {
+	assert.match(EXAMPLES, /export const GOOEY_SOURCE_SHADOW = \[/u);
+	assert.match(EXAMPLES, /0 0 0 1px rgba\(0, 0, 0, 0\.06\)/u);
+	assert.match(DEMO, /fill: "var\(--color-surface\)"/u);
+	assert.match(DEMO, /shadow: GOOEY_SOURCE_SHADOW/u);
+	assert.match(EXAMPLES, /shadow=\{GOOEY_SOURCE_SHADOW\}/u);
+	assert.match(EXAMPLES, /shadow=\{GOOEY_THUMB_SHADOW\}/u);
+	assert.doesNotMatch(DEMO, /shadow-sm/u);
+	assert.doesNotMatch(EXAMPLES, /shadow-sm/u);
+	assert.doesNotMatch(DEMO, /bg-surface/u);
+	assert.doesNotMatch(EXAMPLES, /bg-surface/u);
+	assert.doesNotMatch(DEMO, /Reset Gooey item position"[\s\S]*?className="[^"]*z-10/u);
+});
+
+test("pointer dragging bypasses transition inertia while preserving configured transitions", () => {
+	assert.match(DEMO, /heroDrag\.dragging \? \{ duration: 0, ease: "linear" \} : transition/u);
+	assert.match(DEMO, /transition=\{activeTransition\}/u);
+	assert.doesNotMatch(DEMO, /transition: "transform var\(--duration-slower\)/u);
 });
 
 test("playground exposes the complete root, item, transition, morph, evolve, move, and dissolve surface", () => {
