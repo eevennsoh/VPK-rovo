@@ -29,6 +29,7 @@ function loadAdapter() {
 
 const VENN = { id: "venn", name: "Venn", kind: "person" };
 const GITHUB = { id: "github", name: "GitHub", kind: "app" };
+const CODEX = { id: "codex", name: "Codex", kind: "app" };
 
 test("adapts provider-neutral activity oldest first without mutating its input", async () => {
 	const { adaptPullRequestActivity } = await loadAdapter();
@@ -170,6 +171,25 @@ test("prefers agent brand marks over template avatars", async () => {
 	assert.equal(entry.icon, "commit");
 });
 
+test("uses singular commit copy for one pushed commit", async () => {
+	const { adaptPullRequestActivity } = await loadAdapter();
+	const [entry] = adaptPullRequestActivity([{
+		id: "fix-push",
+		kind: "commits-pushed",
+		actor: { id: "codex", name: "Codex", kind: "app" },
+		occurredAtMs: 100,
+		timestamp: "11 minutes ago",
+		commitCount: 1,
+		headSha: "8b4e6fa",
+	}]);
+
+	assert.equal(entry.kind, "event");
+	assert.deepEqual(entry.segments[0], {
+		type: "text",
+		text: "pushed 1 commit ending in ",
+	});
+});
+
 test("moves review discussion into read-only Jira Activity comments", async () => {
 	const { adaptPullRequestActivity } = await loadAdapter();
 	const [entry] = adaptPullRequestActivity([{
@@ -190,9 +210,10 @@ test("moves review discussion into read-only Jira Activity comments", async () =
 
 	assert.equal(entry.kind, "comment");
 	assert.equal(entry.allowReply, false);
-	assert.deepEqual(entry.tag, { text: "Approved", color: "green" });
+	assert.equal(entry.tag, undefined);
+	assert.deepEqual(entry.statusLozenge, { text: "Approved", variant: "success" });
 	assert.deepEqual(entry.body, [
-		{ type: "text", text: "approved this pull request. Order creation stays server-owned." },
+		{ type: "text", text: "Approved this pull request. Order creation stays server-owned." },
 		{ type: "text", text: " Reviewed " },
 		{ type: "link", text: "backend/services/guest-order-service.js" },
 	]);
@@ -243,15 +264,66 @@ test("preserves provider comments, review replies, and connected app branding", 
 	assert.equal(entries[1].allowReply, true);
 	assert.equal(entries[1].allowResolve, true);
 	assert.equal(entries[1].resolved, true);
+	assert.deepEqual(entries[1].statusLozenge, {
+		text: "Reviewed",
+		variant: "information",
+	});
+	assert.deepEqual(entries[1].body[0], {
+		type: "text",
+		text: "Reviewed this pull request. Narrow the nullable address.",
+	});
 	assert.equal(entries[1].replies[0].actor.name, "Venn");
 	assert.equal(entries[1].replies[0].body, "Fixed in abc1234.");
+});
+
+test("maps review decisions to semantic activity lozenges", async () => {
+	const { adaptPullRequestActivity } = await loadAdapter();
+	const entries = adaptPullRequestActivity([
+		{
+			id: "approved",
+			kind: "review-submitted",
+			actor: VENN,
+			occurredAtMs: 1,
+			timestamp: "3 minutes ago",
+			decision: "approved",
+			body: "Looks good.",
+		},
+		{
+			id: "reviewed",
+			kind: "review-submitted",
+			actor: VENN,
+			occurredAtMs: 2,
+			timestamp: "2 minutes ago",
+			decision: "commented",
+			body: "Left a note.",
+		},
+		{
+			id: "changes",
+			kind: "review-submitted",
+			actor: VENN,
+			occurredAtMs: 3,
+			timestamp: "1 minute ago",
+			decision: "changes-requested",
+			body: "Please revise.",
+		},
+	]);
+
+	assert.deepEqual(
+		entries.map(({ statusLozenge }) => statusLozenge),
+		[
+			{ text: "Approved", variant: "success" },
+			{ text: "Reviewed", variant: "information" },
+			{ text: "Changes requested", variant: "danger" },
+		],
+	);
 });
 
 test("maps unresolved review discussion threads with reply and resolve", async () => {
 	const { adaptPullRequestActivity } = await loadAdapter();
 	const [entry] = adaptPullRequestActivity([{
 		id: "priya-thread",
-		kind: "review-submitted",
+		kind: "review-comment",
+		parentActivityId: "automated-review",
 		actor: {
 			id: "priya-narayanan",
 			name: "Priya Narayanan",
@@ -259,7 +331,6 @@ test("maps unresolved review discussion threads with reply and resolve", async (
 		},
 		occurredAtMs: 100,
 		timestamp: "6 minutes ago",
-		decision: "commented",
 		body: "Can we assert the recoverable validation path?",
 		filePath: "tests/storefront/guest-checkout.spec.ts",
 		allowReply: true,
@@ -268,10 +339,74 @@ test("maps unresolved review discussion threads with reply and resolve", async (
 	}]);
 
 	assert.equal(entry.kind, "comment");
+	assert.equal(entry.parentId, "pull-request-automated-review");
 	assert.equal(entry.allowReply, true);
 	assert.equal(entry.allowResolve, true);
 	assert.equal(entry.resolved, false);
-	assert.deepEqual(entry.tag, { text: "Reviewed", color: "blue" });
+	assert.equal(entry.tag, undefined);
+	assert.deepEqual(entry.body, [
+		{ type: "text", text: "Can we assert the recoverable validation path?" },
+		{ type: "text", text: " Commented on " },
+		{ type: "link", text: "tests/storefront/guest-checkout.spec.ts" },
+	]);
+});
+
+test("groups sibling review threads under one review summary with independent state", async () => {
+	const { adaptPullRequestActivity } = await loadAdapter();
+	const entries = adaptPullRequestActivity([
+		{
+			id: "automated-review",
+			kind: "review-submitted",
+			actor: GITHUB,
+			occurredAtMs: 100,
+			timestamp: "7 minutes ago",
+			decision: "commented",
+			body: "Found two review comments.",
+			allowReply: false,
+			allowResolve: false,
+		},
+		{
+			id: "thread-a",
+			kind: "review-comment",
+			parentActivityId: "automated-review",
+			actor: CODEX,
+			occurredAtMs: 110,
+			timestamp: "6 minutes ago",
+			body: "First thread.",
+			filePath: "first.ts",
+			resolved: true,
+			replies: [{
+				id: "thread-a-fix",
+				actor: VENN,
+				timestamp: "4 minutes ago",
+				body: "Fixed in abc1234.",
+			}],
+		},
+		{
+			id: "thread-b",
+			kind: "review-comment",
+			parentActivityId: "automated-review",
+			actor: CODEX,
+			occurredAtMs: 120,
+			timestamp: "5 minutes ago",
+			body: "Second thread.",
+			filePath: "second.ts",
+			resolved: false,
+		},
+	]);
+
+	assert.equal(entries[0].allowReply, false);
+	assert.equal(entries[0].allowResolve, false);
+	assert.equal(entries[0].actor.name, "GitHub");
+	assert.ok(entries.slice(1).every(({ actor }) => actor.name === "Codex"));
+	assert.equal(entries[1].replies[0].actor.name, "Venn");
+	assert.deepEqual(
+		entries.slice(1).map(({ parentId, resolved }) => ({ parentId, resolved })),
+		[
+			{ parentId: "pull-request-automated-review", resolved: true },
+			{ parentId: "pull-request-automated-review", resolved: false },
+		],
+	);
 });
 
 test("changes the activity revision when provider payload values change", async () => {

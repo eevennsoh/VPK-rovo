@@ -8,6 +8,7 @@ import type { AgentListItem } from "@/components/blocks/agent-list";
 import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Lozenge } from "@/components/ui/lozenge";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { ArtifactList, type ArtifactListItem } from "@/components/ui-custom/artifact-list";
 import type { RichTextMentionItem } from "@/components/ui-custom/rich-text-editor";
@@ -17,6 +18,7 @@ import { JiraActivityAddToChatButton } from "./jira-activity-add-to-chat-button"
 import { JiraActivityCard } from "./jira-activity-card";
 import { JiraActivityCommentActions } from "./jira-activity-comment-actions";
 import { JiraActivityComposer } from "./jira-activity-composer";
+import { JiraActivityImagePreviewDialog } from "./jira-activity-image-preview-dialog";
 import { JiraActivitySegments } from "./jira-activity-segments";
 import type {
 	JiraActivityActor,
@@ -129,9 +131,11 @@ function reactionActorNames(
 function CollapsedThreadSummary({
 	onExpand,
 	replies,
+	resolved,
 }: Readonly<{
 	onExpand: () => void;
 	replies: readonly JiraActivityReply[];
+	resolved: boolean;
 }>) {
 	const actors = [...new Map(replies.map((reply) => [reply.actor.id, reply.actor])).values()];
 	const replyCountLabel = `${replies.length} ${replies.length === 1 ? "reply" : "replies"}`;
@@ -139,6 +143,7 @@ function CollapsedThreadSummary({
 
 	return (
 		<div className="flex min-w-0 items-center gap-2">
+			{resolved ? <Lozenge variant="success">Resolved</Lozenge> : null}
 			<span aria-hidden className="text-text-subtlest">·</span>
 			<AvatarGroup
 				className="shrink-0 -space-x-1 *:data-[slot=avatar]:ring-1!"
@@ -150,7 +155,7 @@ function CollapsedThreadSummary({
 			</AvatarGroup>
 			<Button
 				aria-label={`View all comments, ${replyCountLabel}`}
-				className="group/thread-summary h-auto min-w-0 gap-2 px-0 text-xs font-normal text-text hover:underline"
+				className="group/thread-summary h-auto min-w-0 gap-1.5 px-0 text-xs font-normal text-text hover:underline"
 				onClick={onExpand}
 				type="button"
 				variant="link"
@@ -158,6 +163,7 @@ function CollapsedThreadSummary({
 				<span className="shrink-0 text-text-subtle">{replyCountLabel}</span>
 				{latestTimestamp ? (
 					<>
+						<span aria-hidden className="shrink-0 text-text-subtlest">·</span>
 						<span className="truncate text-text-subtlest group-hover/thread-summary:hidden group-focus-visible/thread-summary:hidden">
 							{latestTimestamp}
 						</span>
@@ -166,6 +172,26 @@ function CollapsedThreadSummary({
 						</span>
 					</>
 				) : null}
+			</Button>
+		</div>
+	);
+}
+
+function ReopenThreadAction({
+	onReopen,
+}: Readonly<{
+	onReopen: () => void;
+}>) {
+	return (
+		<div className="flex min-w-0 items-center gap-2">
+			<Button
+				aria-label="Reopen"
+				className="h-auto px-0 text-xs text-text-subtle"
+				onClick={onReopen}
+				type="button"
+				variant="link"
+			>
+				Reopen
 			</Button>
 		</div>
 	);
@@ -182,6 +208,10 @@ function ThreadReplyCard({
 	replySelected,
 	onAddToChat,
 	onViewSession,
+	resolved,
+	indented,
+	showResolvedStatus,
+	onReopen,
 }: Readonly<{
 	reply: JiraActivityReply;
 	currentUser: JiraActivityActor;
@@ -193,6 +223,10 @@ function ThreadReplyCard({
 	replySelected: boolean;
 	onAddToChat?: () => void;
 	onViewSession?: (item: AgentListItem) => void;
+	resolved: boolean;
+	indented: boolean;
+	showResolvedStatus: boolean;
+	onReopen?: () => void;
 }>) {
 	const [reactions, setReactions] = useState<readonly JiraActivityReaction[]>(reply.reactions ?? []);
 	const replyButtonRef = useRef<HTMLButtonElement>(null);
@@ -226,7 +260,7 @@ function ThreadReplyCard({
 	) : null;
 
 	return (
-		<div className="pt-3 pl-6">
+		<div className={cn("pt-3", indented ? "pl-6" : null)}>
 			<JiraActivityCard
 				action={addToChatAction ?? undefined}
 				agentName={reply.actor.name}
@@ -237,7 +271,9 @@ function ThreadReplyCard({
 				item={reply.sessionItem}
 				onView={onViewSession}
 				footerActions={
-					commentActions === "none" ? undefined : (
+					resolved ? (
+						onReopen ? <ReopenThreadAction onReopen={onReopen} /> : undefined
+					) : commentActions === "none" ? undefined : (
 						<JiraActivityCommentActions
 							onReply={
 								commentActions === "reply-and-reactions" && allowReply
@@ -253,6 +289,9 @@ function ThreadReplyCard({
 					)
 				}
 				timestamp={reply.timestamp}
+				timestampMeta={
+					showResolvedStatus ? <Lozenge variant="success">Resolved</Lozenge> : undefined
+				}
 			>
 				<div className="text-sm leading-5 text-text">{reply.body}</div>
 			</JiraActivityCard>
@@ -297,13 +336,17 @@ export function JiraActivityComment({
 	const allowReply = entry.allowReply ?? true;
 	const allowResolve = Boolean(entry.allowResolve);
 	const resolved = Boolean(entry.resolved);
+	const nested = Boolean(entry.parentId);
 	const collapsible = commentActions === "reply-and-reactions";
 	const [replyTarget, setReplyTarget] = useState<{
 		key: string;
 		actor: JiraActivityActor;
 	} | null>(null);
 	const [replyDraft, setReplyDraft] = useState("");
-	const [repliesExpanded, setRepliesExpanded] = useState(entry.defaultRepliesExpanded ?? true);
+	const [previewAttachment, setPreviewAttachment] = useState<JiraActivityImageAttachment | null>(null);
+	const [repliesExpanded, setRepliesExpanded] = useState(
+		entry.defaultRepliesExpanded ?? !nested,
+	);
 	const composerId = useId();
 	const repliesId = useId();
 	const composerVisible = allowReply && (!collapsible || replyTarget !== null);
@@ -332,6 +375,22 @@ export function JiraActivityComment({
 		}
 		setReplyTarget({ key, actor });
 		setReplyDraft("");
+	}
+
+	function handleResolveToggle() {
+		if (!resolved) {
+			setReplyTarget(null);
+			setReplyDraft("");
+		}
+		onResolve?.();
+	}
+
+	function handleOpenArtifact(item: ArtifactListItem) {
+		if (entry.imageAttachment?.filename === item.id) {
+			setPreviewAttachment(entry.imageAttachment);
+			return;
+		}
+		openCommentArtifact(item);
 	}
 
 	const repliesToggleLabel = repliesExpanded ? "Hide all replies" : "Show all replies";
@@ -368,20 +427,29 @@ export function JiraActivityComment({
 					? () => toggleReply(entry.id, entry.actor, replyButtonRef.current)
 					: undefined
 			}
-			onResolve={allowResolve && onResolve ? onResolve : undefined}
+			onResolve={!resolved && allowResolve && onResolve ? handleResolveToggle : undefined}
 			onToggleReaction={onToggleReaction}
 			reactions={reactionSummaries}
-			resolved={resolved}
 			replyComposerId={replyTarget?.key === entry.id ? composerId : undefined}
 			replyExpanded={replyTarget?.key === entry.id}
 			replyRef={replyButtonRef}
 		/>
 	);
 	const collapsedThreadSummary = hasReplies && !repliesExpanded ? (
-		<CollapsedThreadSummary onExpand={() => setRepliesExpanded(true)} replies={replies} />
+		<CollapsedThreadSummary
+			onExpand={() => setRepliesExpanded(true)}
+			replies={replies}
+			resolved={resolved}
+		/>
 	) : null;
 	const replyMention = replyTarget ? getReplyMention(replyTarget.actor) : undefined;
 	const artifactItems = commentArtifactItems(entry);
+	const reviewStatus = entry.statusLozenge ? (
+		<Lozenge variant={entry.statusLozenge.variant}>{entry.statusLozenge.text}</Lozenge>
+	) : null;
+	const parentResolvedStatus = resolved && !hasReplies ? (
+		<Lozenge variant="success">Resolved</Lozenge>
+	) : null;
 
 	// Only the collapse direction is handled here. Opening is covered by the
 	// composer's own `autoFocus`: the comment variant is a contentEditable tiptap
@@ -396,11 +464,13 @@ export function JiraActivityComment({
 		<JiraActivityCard
 			action={headerAction}
 			agentName={entry.actor.name}
+			className={nested ? "rounded-none" : undefined}
 			// Timeline node owns the size-8 avatar; nested replies keep pl-6. The
 			// flush composer pulls back across w-8 + gap-2 so it lines up with the
 			// parent avatar, not the indented reply column.
-			hideLeadAvatar
-			headerLayout={entry.actor.kind === "person" ? "stacked" : "inline"}
+			headerAvatar={nested ? <ActivityActorAvatar actor={entry.actor} /> : undefined}
+			hideLeadAvatar={!nested}
+			headerLayout="stacked"
 			item={entry.sessionItem}
 			onView={onViewSession}
 			details={
@@ -465,7 +535,7 @@ export function JiraActivityComment({
 						id={repliesId}
 						role="group"
 					>
-						{replies.map((reply) => (
+						{replies.map((reply, index) => (
 							<ThreadReplyCard
 								allowReply={allowReply}
 								commentActions={commentActions}
@@ -473,8 +543,11 @@ export function JiraActivityComment({
 								actorsById={actorsById}
 								key={reply.id}
 								onAddToChat={
-									onAddReplyToChat
-										? () => onAddReplyToChat(reply)
+									onAddReplyToChat ? () => onAddReplyToChat(reply) : undefined
+								}
+								onReopen={
+									resolved && index === replies.length - 1 && allowResolve && onResolve
+										? handleResolveToggle
 										: undefined
 								}
 								onReply={(button) => toggleReply(reply.id, reply.actor, button)}
@@ -482,6 +555,9 @@ export function JiraActivityComment({
 								reply={reply}
 								replyComposerId={composerId}
 								replySelected={replyTarget?.key === reply.id}
+								resolved={resolved}
+								indented={!nested}
+								showResolvedStatus={resolved && index === replies.length - 1}
 							/>
 						))}
 					</div>
@@ -489,17 +565,17 @@ export function JiraActivityComment({
 			}
 			tag={entry.tag}
 			timestamp={entry.timestamp}
+			timestampMeta={
+				reviewStatus || parentResolvedStatus ? (
+					<>
+						{reviewStatus}
+						{parentResolvedStatus}
+					</>
+				) : undefined
+			}
 		>
-			{resolved ? (
-				<p className="mb-1 text-xs font-medium text-text-success">
-					Resolved
-				</p>
-			) : null}
 			<JiraActivitySegments
-				className={cn(
-					"text-sm leading-5",
-					resolved ? "text-text-subtlest" : "text-text",
-				)}
+				className="text-sm leading-5 text-text"
 				segments={entry.body}
 			/>
 			{entry.progressChecklist?.length ? (
@@ -523,12 +599,18 @@ export function JiraActivityComment({
 				<ArtifactList
 					className="mt-3 min-w-0 max-w-full border border-border bg-transparent shadow-none"
 					items={artifactItems}
-					onOpen={openCommentArtifact}
+					onOpen={handleOpenArtifact}
 					openLabel="Open"
 					style={{ boxShadow: "none" }}
 					variant="compact"
 				/>
 			) : null}
+			<JiraActivityImagePreviewDialog
+				attachment={previewAttachment}
+				onOpenChange={(open) => {
+					if (!open) setPreviewAttachment(null);
+				}}
+			/>
 		</JiraActivityCard>
 	);
 }

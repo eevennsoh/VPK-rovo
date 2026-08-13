@@ -152,13 +152,10 @@ test("resolves the #1847 guest-checkout guided review fixture", async () => {
 			"opened",
 			"commits-pushed",
 			"review-submitted",
+			"review-comment",
+			"review-comment",
 			"commits-pushed",
-			"thread-resolved",
 			"checks-completed",
-			"comment-posted",
-			"review-submitted",
-			"review-submitted",
-			"review-submitted",
 		],
 	);
 	const opened = detail.activity.find((activity) => activity.id === "opened");
@@ -178,25 +175,30 @@ test("resolves the #1847 guest-checkout guided review fixture", async () => {
 		detail.activity.find((activity) => activity.actor.name === "Claude Code")?.actor.brandName,
 		"claude",
 	);
-	const codexReview = detail.activity.find((activity) => activity.id === "codex-review");
-	assert.equal(codexReview?.kind, "review-submitted");
-	if (codexReview?.kind === "review-submitted") {
-		assert.equal(codexReview.allowReply, true);
-		assert.equal(codexReview.allowResolve, true);
-		assert.equal(codexReview.resolved, true);
-		assert.equal(
-			codexReview.detail?.body,
-			"Codex reviewed commit d34c112 and posted this suggestion on the pull request.",
-		);
-		assert.equal(codexReview.replies?.[0]?.timestamp, "13 minutes ago");
+	const fixPush = detail.activity.find((activity) => activity.id === "fix-commits-pushed");
+	assert.equal(fixPush?.kind, "commits-pushed");
+	assert.equal(fixPush?.actor.name, "Codex");
+	const reviewSummary = detail.activity.find((activity) => activity.id === "github-actions-review");
+	assert.equal(reviewSummary?.kind, "review-submitted");
+	assert.equal(reviewSummary?.actor.name, "github-actions");
+	assert.equal(reviewSummary?.allowReply, false);
+	assert.equal(reviewSummary?.allowResolve, false);
+	const reviewThreads = detail.activity.filter(
+		(activity) => activity.kind === "review-comment",
+	);
+	assert.deepEqual(
+		reviewThreads.map(({ id }) => id),
+		["delivery-address-review-thread", "checkout-draft-review-thread"],
+	);
+	for (const reviewThread of reviewThreads) {
+		assert.equal(reviewThread.parentActivityId, "github-actions-review");
+		assert.equal(reviewThread.actor.name, "Codex");
+		assert.equal(reviewThread.allowReply, true);
+		assert.equal(reviewThread.allowResolve, true);
+		assert.equal(reviewThread.resolved, true);
+		assert.equal(reviewThread.replies?.[0]?.actor.name, "Venn");
 	}
-	const priyaReview = detail.activity.find((activity) => activity.id === "priya-review-comment");
-	assert.equal(priyaReview?.kind, "review-submitted");
-	if (priyaReview?.kind === "review-submitted") {
-		assert.equal(priyaReview.allowReply, true);
-		assert.equal(priyaReview.allowResolve, true);
-		assert.equal(priyaReview.resolved, false);
-	}
+	assert.ok(detail.activity.every((activity) => activity.kind !== "thread-resolved"));
 	assert.doesNotMatch(
 		readFileSync(MODULE_PATH, "utf8"),
 		/basic-coding-agent-template/u,
@@ -211,7 +213,7 @@ test("resolves the #1847 guest-checkout guided review fixture", async () => {
 			.map(({ commitCount, headSha }) => ({ commitCount, headSha })),
 		[
 			{ commitCount: 4, headSha: "d34c112" },
-			{ commitCount: 2, headSha: "f8cc291" },
+			{ commitCount: 1, headSha: "8b4e6fa" },
 		],
 	);
 	assert.deepEqual(
@@ -282,7 +284,7 @@ test("resolves the #1847 guest-checkout guided review fixture", async () => {
 	)));
 });
 
-test("guided review starts with no chapters checked; approved restores every chapter", async () => {
+test("guided review starts with no chapters checked, including when already approved", async () => {
 	const {
 		resolveInitialReviewedChapterIds,
 		resolvePullRequestDetailData,
@@ -298,18 +300,19 @@ test("guided review starts with no chapters checked; approved restores every cha
 		[...resolveInitialReviewedChapterIds(review, "available")],
 		[],
 	);
+	// Approved merge evidence must not pre-check Guide chapters (Submit review badge).
 	assert.deepEqual(
 		[...resolveInitialReviewedChapterIds(review, "approved")],
-		review.chapters.map((chapter) => chapter.id),
+		[],
 	);
-	// Initial seed is a pure function of review + approval — not scroll/visibility.
+	// Initial seed is stable — not scroll/visibility.
 	assert.deepEqual(
 		[...resolveInitialReviewedChapterIds(review)],
 		[...resolveInitialReviewedChapterIds(review)],
 	);
 });
 
-test("an approved #1847 entry adds Venn approval and ready-to-merge evidence", async () => {
+test("an approved #1847 entry adds teammate approvals and ready-to-merge evidence", async () => {
 	const { resolvePullRequestDetailData } = await loadDetailData();
 	const detail = resolvePullRequestDetailData(pullRequestEntry({
 		mergeState: "ready",
@@ -326,10 +329,41 @@ test("an approved #1847 entry adds Venn approval and ready-to-merge evidence", a
 			{ name: "Jordan Lee", status: "approved" },
 		],
 	);
-	assert.deepEqual(detail.activity.slice(-2).map(({ kind }) => kind), [
+	assert.deepEqual(detail.activity.slice(-3).map(({ kind }) => kind), [
+		"review-submitted",
 		"review-submitted",
 		"ready-to-merge",
 	]);
+	assert.deepEqual(
+		detail.activity.slice(-3, -1).map(({ actor, decision }) => ({
+			actorKind: actor.kind,
+			decision,
+			name: actor.name,
+		})),
+		[
+			{ actorKind: "person", decision: "approved", name: "Priya Narayanan" },
+			{ actorKind: "person", decision: "approved", name: "Jordan Lee" },
+		],
+	);
+});
+
+test("changes-requested #1847 marks Priya with a declined Approvers badge", async () => {
+	const { resolvePullRequestDetailData } = await loadDetailData();
+	const detail = resolvePullRequestDetailData(pullRequestEntry({
+		mergeState: "blocked",
+		reviewDecision: "changes-requested",
+	}));
+
+	assert.ok(detail);
+	assert.equal(detail.reviewDecision, "changes-requested");
+	assert.equal(detail.mergeState, "blocked");
+	assert.deepEqual(
+		detail.reviewers.map(({ name, status }) => ({ name, status })),
+		[
+			{ name: "Priya Narayanan", status: "changes-requested" },
+			{ name: "Jordan Lee", status: "pending" },
+		],
+	);
 });
 
 test("keeps URL identity while recognizing the repository fixture", async () => {
@@ -368,11 +402,59 @@ test("uses live SCM check state to block a guided pull request", async () => {
 	assert.deepEqual(detail?.activity.map(({ kind }) => kind), [
 		"opened",
 		"commits-pushed",
+		"review-submitted",
+		"review-comment",
+		"review-comment",
 		"checks-completed",
 	]);
+	const failedThreads = detail?.activity.filter(
+		(activity) => activity.kind === "review-comment",
+	);
+	assert.equal(failedThreads?.length, 2);
+	assert.ok(failedThreads?.every((thread) => thread.resolved === false));
+	assert.ok(failedThreads?.every((thread) => thread.replies === undefined));
 	assert.equal(detail?.activity.at(-1)?.kind, "checks-completed");
 	assert.equal(detail?.activity.at(-1)?.passed, 1);
 	assert.equal(detail?.activity.at(-1)?.total, 2);
+});
+
+test("a fix rerun retains the review thread and adds the repair push before checks settle", async () => {
+	const { resolvePullRequestDetailData } = await loadDetailData();
+	const detail = resolvePullRequestDetailData(pullRequestEntry({
+		checks: [
+			{
+				id: "lint-types",
+				name: "Lint and typecheck",
+				status: "running",
+				details: "Rerunning after delivery-address repair",
+			},
+			{
+				id: "unit-tests",
+				name: "Unit tests",
+				status: "passed",
+				details: "418 tests",
+			},
+		],
+		reviewDecision: "review-required",
+	}));
+
+	assert.deepEqual(detail?.activity.map(({ kind }) => kind), [
+		"opened",
+		"commits-pushed",
+		"review-submitted",
+		"review-comment",
+		"review-comment",
+		"commits-pushed",
+	]);
+	const rerunThreads = detail?.activity.filter(
+		(activity) => activity.kind === "review-comment",
+	);
+	assert.equal(rerunThreads?.length, 2);
+	assert.ok(rerunThreads?.every((thread) => thread.resolved === true));
+	assert.ok(rerunThreads?.every((thread) => thread.actor.name === "Codex"));
+	assert.ok(rerunThreads?.every((thread) => thread.replies?.[0]?.actor.name === "Venn"));
+	assert.equal(detail?.activity.at(-1)?.actor.name, "Codex");
+	assert.equal(detail?.activity.at(-1)?.id, "fix-commits-pushed");
 });
 
 test("shows the checks spinner only while a check row is non-terminal", async () => {
@@ -448,4 +530,3 @@ test("recognizes provider-neutral pull request URLs", async () => {
 
 	assert.deepEqual(detail?.provider, { id: "bitbucket", name: "Bitbucket" });
 });
-

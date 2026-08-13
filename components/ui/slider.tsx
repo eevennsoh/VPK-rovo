@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 export type SliderProps = SliderPrimitive.Root.Props;
 
-function Slider({ className, defaultValue, value, min = 0, max = 100, ...props }: Readonly<SliderProps>) {
+function Slider({ className, defaultValue, value, min = 0, max = 100, "aria-label": ariaLabel, ...props }: Readonly<SliderProps>) {
 	const values = React.useMemo(() => {
 		if (Array.isArray(value)) return value;
 		if (typeof value === "number") return [value];
@@ -18,6 +18,7 @@ function Slider({ className, defaultValue, value, min = 0, max = 100, ...props }
 
 	return (
 		<SliderPrimitive.Root
+			aria-label={ariaLabel}
 			className={cn("w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-auto", className)}
 			data-slot="slider"
 			defaultValue={defaultValue}
@@ -36,6 +37,7 @@ function Slider({ className, defaultValue, value, min = 0, max = 100, ...props }
 				</SliderPrimitive.Track>
 				{Array.from({ length: values.length }, (_, index) => (
 					<SliderPrimitive.Thumb
+						aria-label={ariaLabel && values.length > 1 ? `${ariaLabel} ${index + 1}` : ariaLabel}
 						data-slot="slider-thumb"
 						key={index}
 						className="relative z-10 block size-4 shrink-0 cursor-pointer select-none rounded-full bg-bg-neutral-bold outline-2 outline-offset-2 outline-transparent transition-[background-color,outline-color] duration-medium ease-in-out after:absolute after:-inset-3 hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed focus-visible:outline-ring disabled:pointer-events-none disabled:bg-bg-disabled"

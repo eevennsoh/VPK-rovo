@@ -42,7 +42,7 @@ test("spine nodes and comment avatars share one vertical center axis via the nod
 	assert.match(COMMENT_SOURCE, /hideLeadAvatar/u);
 	assert.match(
 		COMMENT_SOURCE,
-		/<div className="pt-3 pl-6">\s*<JiraActivityCard[\s\S]*headerAvatar=\{<ActivityActorAvatar actor=\{reply\.actor\} \/>\}/u,
+		/<div className=\{cn\("pt-3", indented \? "pl-6" : null\)\}>\s*<JiraActivityCard[\s\S]*headerAvatar=\{<ActivityActorAvatar actor=\{reply\.actor\} \/>\}/u,
 	);
 	assert.match(CARD_SOURCE, /hideLeadAvatar\?: boolean/u);
 	assert.match(CARD_SOURCE, /hideAvatar=\{hideLeadAvatar\}/u);
@@ -59,7 +59,10 @@ test("snapshot events and comment copy share the content column left edge", () =
 	// Content starts after w-8 + gap-2 (x=40). No event padding and no card
 	// offset, so event copy shares that edge with names. The in-thread reply
 	// composer deliberately pulls back across the node+gap to the avatar edge.
-	assert.match(INDEX_SOURCE, /className=\{cn\("min-w-0 flex-1", spacingClassName\)\}/u);
+	assert.match(
+		INDEX_SOURCE,
+		/className=\{cn\([\s\S]*?"min-w-0 flex-1"[\s\S]*?spacingClassName[\s\S]*?isNestedComment \? "pt-3 pl-6" : null/u,
+	);
 	assert.match(NODE_SOURCE, /className="flex w-8 shrink-0 flex-col items-center"/u);
 	assert.doesNotMatch(INDEX_SOURCE, /entry\.kind === "event" \? "px-/u);
 	assert.match(INDEX_SOURCE, /hideLeadAvatar/u);
@@ -69,7 +72,7 @@ test("snapshot events and comment copy share the content column left edge", () =
 		COMMENT_SOURCE,
 		/className="-ml-10 w-\[calc\(100%\+2\.5rem\)\]"\s+id=\{composerId\}\s*>/u,
 	);
-	assert.match(COMMENT_SOURCE, /<div className="pt-3 pl-6">\s*<JiraActivityCard/u);
+	assert.match(COMMENT_SOURCE, /<div className=\{cn\("pt-3", indented \? "pl-6" : null\)\}>\s*<JiraActivityCard/u);
 });
 
 test("rich activity cards leave a 4px gap in the connector above and below", () => {
@@ -84,13 +87,22 @@ test("rich activity cards leave a 4px gap in the connector above and below", () 
 	assert.doesNotMatch(INDEX_SOURCE, /bottom-5|bottom-4/u);
 });
 
-test("card boundaries keep richer spacing between entry types", () => {
+test("card boundaries keep richer spacing between independent entry types", () => {
 	// Padding separates card/event clusters; spine breaks stay on the node track.
-	// Event→event is pb-2 (8px); card↔event pb-5; card→card pb-6.
+	// Parent→nested comment and adjacent nested siblings stay flush; independent
+	// event→event is pb-2 (8px), card↔event pb-5, and card→card pb-6.
 	assert.match(INDEX_SOURCE, /const isCardEntry = entry\.kind !== "event"/u);
 	assert.match(
 		INDEX_SOURCE,
-		/const isNextEntryCard = orderedEntries\[index \+ 1\]\?\.kind !== "event" && !isLast/u,
+		/const nextEntry = orderedEntries\[index \+ 1\]/u,
+	);
+	assert.match(
+		INDEX_SOURCE,
+		/const isNextEntryThreadContinuation = nextEntry\?\.kind === "comment"[\s\S]*?nextEntry\.parentId === entry\.id[\s\S]*?entry\.parentId != null[\s\S]*?nextEntry\.parentId === entry\.parentId/u,
+	);
+	assert.match(
+		INDEX_SOURCE,
+		/const spacingClassName = isNextEntryThreadContinuation[\s\S]*?\? null[\s\S]*?: isLast/u,
 	);
 	assert.match(
 		INDEX_SOURCE,

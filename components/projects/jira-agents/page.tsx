@@ -145,7 +145,9 @@ function JiraAgentsWorkItemStage({
 					...(chapter === "build" ? { defaultRepliesExpanded: false } : {}),
 				}}
 				autoOpenPullRequestIdentity={
-					controller.chapter === "review" || controller.chapter === "fix"
+					controller.chapter === "review"
+						|| controller.chapter === "fix"
+						|| controller.chapter === "approve"
 						? JIRA_AGENTS_PULL_REQUEST_IDENTITY
 						: null
 				}

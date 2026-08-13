@@ -110,6 +110,8 @@ export interface JiraActivityEventEntry extends JiraActivityEntryBase {
 		 * signed-in viewer for the Pull requests "By me" sort.
 		 */
 		authorName?: string;
+		/** Optional avatar for the PR author on Pull Request list/select rows. */
+		authorAvatarSrc?: string;
 		/** Provider-normalized review outcome for contextual PR details. */
 		reviewDecision?: "approved" | "changes-requested" | "review-required" | "not-required";
 		/** Provider-normalized mergeability for contextual PR details. */
@@ -183,8 +185,15 @@ export interface JiraActivityReaction {
 /** A comment card with a rich body, optional collapsible, and replies. */
 export interface JiraActivityCommentEntry extends JiraActivityEntryBase {
 	kind: "comment";
+	/** Optional parent activity for inline review comments nested under a review summary. */
+	parentId?: string;
 	/** Optional trailing tag on the header, e.g. "Automation". */
 	tag?: { text: string; color?: TagColor };
+	/** Optional semantic review decision shown as a lozenge beside the timestamp. */
+	statusLozenge?: {
+		text: string;
+		variant: NonNullable<LozengeProps["variant"]>;
+	};
 	body: readonly JiraActivitySegment[];
 	/** Optional collapsible detail section (e.g. "Investigation"). */
 	collapsible?: JiraActivityCollapsible;
@@ -196,8 +205,8 @@ export interface JiraActivityCommentEntry extends JiraActivityEntryBase {
 	imageAttachment?: JiraActivityImageAttachment;
 	replies?: readonly JiraActivityReply[];
 	/**
-	 * Initial expand state for nested replies. Defaults to `true` (expanded).
-	 * Story chapters can collapse delegated-session replies so the lead card stays focused.
+	 * Initial expand state for replies. Top-level comments default to expanded;
+	 * comments with a `parentId` default to collapsed so only one nested level is visible.
 	 */
 	defaultRepliesExpanded?: boolean;
 	/** Emoji reactions on this comment, in first-reacted order. */
@@ -206,7 +215,7 @@ export interface JiraActivityCommentEntry extends JiraActivityEntryBase {
 	allowReply?: boolean;
 	/**
 	 * PR review-thread resolve state. Only meaningful when `allowResolve` is true.
-	 * Resolved threads keep Reply but read as settled (muted body + Unresolve).
+	 * Resolved threads hide reply/reaction controls and label the latest reply timestamp.
 	 */
 	resolved?: boolean;
 	/**

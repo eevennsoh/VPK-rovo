@@ -51,6 +51,10 @@ interface DiffFileViewProps {
 }
 
 const DIFF_UNSAFE_CSS = `
+:host {
+	--diffs-font-size: 12px;
+}
+
 [data-diffs-header] ~ [data-diff] [data-code] {
 	padding-top: var(--diffs-gap-inline, var(--diffs-gap-fallback));
 }

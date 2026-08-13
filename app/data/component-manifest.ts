@@ -383,6 +383,7 @@ export const BLOCK_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	blockComponent("pull-request", "Pull Request"),
 	blockComponent("pull-request-header", "Pull Request Header"),
 	blockComponent("pull-request-review", "Pull Request Review"),
+	blockComponent("pull-request-fix", "Pull Request Fix"),
 	blockComponent("emoji-picker", "Emoji Picker"),
 	blockComponent("task-progress", "Task Progress"),
 	blockComponent("triggers", "Triggers"),
@@ -637,6 +638,7 @@ export const UTILITY_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 ]);
 
 export const VISUAL_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
+	visualComponent("gooey", "Gooey", "@/components/visual/gooey"),
 	visualComponent("typography", "Typography", "@/lib/tokens"),
 	visualComponent("color", "Color", "@/app/tailwind-theme.css\n@/app/shadcn-theme.css"),
 	visualComponent("shadow", "Shadow", "@/lib/tokens"),

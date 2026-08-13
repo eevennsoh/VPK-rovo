@@ -233,7 +233,7 @@ function SelectItem({
 			) : null}
 			<SelectPrimitive.ItemText
 				className={cn(
-					"flex min-w-0 flex-1 gap-2 whitespace-nowrap",
+					"flex min-w-0 flex-1 items-center gap-2 whitespace-nowrap",
 					textClassName,
 				)}
 			>

@@ -28,14 +28,15 @@ import {
 	PullRequestReview,
 	type PullRequestReviewSubmission,
 } from "@/components/blocks/pull-request-review";
+import {
+	PullRequestFix,
+	type PullRequestFixSubmission,
+} from "@/components/blocks/pull-request-fix";
 import { useActivityChatComments } from "@/components/blocks/jira-work-item/experimental-v2/context-activity-chat-comments";
 import { useFailingChecksComposer } from "@/components/blocks/jira-work-item/experimental-v2/context-failing-checks-composer";
 import { useJiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
 import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental-v2/context-metadata-rail";
-import {
-	ActivityComposerContextPills,
-	type ActivityComposerPrimaryAction,
-} from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer-context-pills";
+import { ActivityComposerContextPills } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer-context-pills";
 import { JiraWorkItemComposerMotion } from "@/components/blocks/jira-work-item/experimental-v2/components/jira-work-item-composer-motion";
 import { JIRA_WORK_ITEM_CURRENT_USER } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
 import {
@@ -108,6 +109,19 @@ export interface ActivityComposerPullRequestReview {
 	submitDisabled: boolean;
 }
 
+export interface ActivityComposerPullRequestFix {
+	/** Failing CI check name (or aggregate label) shown beside the Fix heading. */
+	checkName: string;
+	/**
+	 * Demo agent prompt pasted when Fix / Fix all opens the card. Empty/omitted
+	 * keeps the placeholder for a manually opened composer.
+	 */
+	defaultValue?: string;
+	onClose: () => void;
+	onSubmit: (submission: PullRequestFixSubmission) => boolean | void;
+	submitDisabled?: boolean;
+}
+
 function ComposerTransitionItem({
 	children,
 	ref,
@@ -152,7 +166,7 @@ export function ActivityComposer({
 	onAgentPromptSubmit,
 	onFailingChecksSubmit,
 	onOpenAgentChat,
-	primaryAction,
+	pullRequestFix,
 	pullRequestReview,
 	onSkillInvoke,
 }: Readonly<{
@@ -162,7 +176,8 @@ export function ActivityComposer({
 	/** Advances Fix-chapter storytelling when a failing-checks chip is submitted. */
 	onFailingChecksSubmit?: () => void;
 	onOpenAgentChat?: (agentId: string) => void;
-	primaryAction?: ActivityComposerPrimaryAction;
+	/** Expanded PullRequestFix card (Fix / Fix all); replaces the activity prompt. */
+	pullRequestFix?: ActivityComposerPullRequestFix;
 	pullRequestReview?: ActivityComposerPullRequestReview;
 	onSkillInvoke?: (skill: SkillsDirectorySkill) => boolean | void;
 }>) {
@@ -176,9 +191,12 @@ export function ActivityComposer({
 	const {
 		checks: failingChecks,
 		focusRequestKey: failingChecksFocusKey,
+		promptPrefill: failingChecksPromptPrefill,
 		removeAll: removeFailingChecks,
 	} = useFailingChecksComposer();
 	const composerRootRef = useRef<HTMLDivElement>(null);
+	const appliedFailingChecksPrefillKeyRef = useRef(0);
+	const appliedFailingChecksPrefillTextRef = useRef<string | null>(null);
 	const shouldReduceMotion = Boolean(useReducedMotion());
 	const availableAgents = agents ?? ROVO_AGENT_SELECTOR_AGENTS;
 	const mentionSources = useMemo(() => agents
@@ -227,10 +245,37 @@ export function ActivityComposer({
 		</div>
 	) : undefined;
 	const composerInputContextSubmitText = hasFailingChecks
-		? FAILING_CHECKS_COMPOSER_PROMPT
+		? (failingChecksPromptPrefill ?? FAILING_CHECKS_COMPOSER_PROMPT)
 		: hasActivityChatComments
 			? ACTIVITY_COMMENTS_PROMPT
 			: undefined;
+
+	useEffect(() => {
+		if (failingChecksFocusKey === 0) {
+			return;
+		}
+		if (
+			!failingChecksPromptPrefill
+			|| appliedFailingChecksPrefillKeyRef.current === failingChecksFocusKey
+		) {
+			return;
+		}
+		appliedFailingChecksPrefillKeyRef.current = failingChecksFocusKey;
+		appliedFailingChecksPrefillTextRef.current = failingChecksPromptPrefill;
+		setDraft(failingChecksPromptPrefill);
+	}, [failingChecksFocusKey, failingChecksPromptPrefill]);
+
+	useEffect(() => {
+		if (hasFailingChecks) {
+			return;
+		}
+		const stagedPrefill = appliedFailingChecksPrefillTextRef.current;
+		if (!stagedPrefill) {
+			return;
+		}
+		appliedFailingChecksPrefillTextRef.current = null;
+		setDraft((current) => (current === stagedPrefill ? "" : current));
+	}, [hasFailingChecks]);
 
 	useEffect(() => {
 		if (focusRequestKey === 0) {
@@ -409,21 +454,22 @@ export function ActivityComposer({
 		}
 	};
 
+	const hasExpandedPullRequestComposer = Boolean(pullRequestReview || pullRequestFix);
+
 	return (
 		<div onKeyDownCapture={handleKeyDownCapture} ref={composerRootRef}>
-			{pullRequestReview ? null : (
+			{hasExpandedPullRequestComposer ? null : (
 				<ActivityComposerContextPills
 					onInvokeAgent={handleInvokeAgent}
 					onInvokeSkill={handleInvokeSkill}
 					onOpenAgentChat={onOpenAgentChat ? handleOpenWorkingSession : undefined}
-					primaryAction={primaryAction}
 					workingSessions={workingSessions}
 				/>
 			)}
 			<div className="relative" data-jira-work-item-composer-state="sticky">
 				<JiraWorkItemComposerMotion
 					layout
-					layoutDependency={Boolean(pullRequestReview)}
+					layoutDependency={hasExpandedPullRequestComposer}
 					placement="sticky"
 				>
 					<AnimatePresence initial={false} mode="popLayout">
@@ -439,6 +485,22 @@ export function ActivityComposer({
 									reviewedCount={pullRequestReview.reviewedCount}
 									reviewedTotal={pullRequestReview.reviewedTotal}
 									submitDisabled={pullRequestReview.submitDisabled}
+									variant="expanded"
+								/>
+							</ComposerTransitionItem>
+						) : pullRequestFix ? (
+							<ComposerTransitionItem
+								key={`pull-request-fix-${pullRequestFix.checkName}`}
+								shouldReduceMotion={shouldReduceMotion}
+							>
+								<PullRequestFix
+									autoFocus
+									checkName={pullRequestFix.checkName}
+									defaultValue={pullRequestFix.defaultValue}
+									expandOnFocus={false}
+									onClose={pullRequestFix.onClose}
+									onSubmit={pullRequestFix.onSubmit}
+									submitDisabled={pullRequestFix.submitDisabled}
 									variant="expanded"
 								/>
 							</ComposerTransitionItem>
@@ -473,7 +535,7 @@ export function ActivityComposer({
 						)}
 					</AnimatePresence>
 				</JiraWorkItemComposerMotion>
-				{showSessionTargetMenu && !pullRequestReview ? (
+				{showSessionTargetMenu && !hasExpandedPullRequestComposer ? (
 					<div
 						className="absolute inset-x-0 bottom-full z-20 mb-2"
 						data-jira-work-item-session-target-menu

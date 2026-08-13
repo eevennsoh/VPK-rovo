@@ -165,6 +165,36 @@ test("Jira description generation replays multiple tools before the confirmation
 	);
 });
 
+test("CI repair playback inspects, patches, validates, and pushes the failed check", async () => {
+	const { buildAsxAgentChatPlayback } = await loadHarness();
+	const playback = buildAsxAgentChatPlayback({
+		agentId: "codex",
+		agentName: "Codex",
+		issueKey: "SHOP-4821",
+		issueSummary: "Add guest checkout to the storefront",
+		playbackVariant: "ci-fix",
+		request: "Use gh to inspect and fix failing check \"Lint and typecheck\".",
+	}, "ci-fix", 0);
+
+	assert.equal(playback.frames.length, 10);
+	const finalParts = playback.frames.at(-1).parts;
+	const starts = finalParts.filter(
+		(part) => part.type === "data-thinking-event" && part.data.phase === "start",
+	);
+	const results = finalParts.filter(
+		(part) => part.type === "data-thinking-event" && part.data.phase === "result",
+	);
+
+	assert.deepEqual(
+		starts.map((part) => part.data.toolName),
+		["bash", "expand_code_chunks", "find_and_replace_code", "bash", "bash"],
+	);
+	assert.equal(results.length, starts.length);
+	assert.match(starts[0].data.input.command, /gh pr checks 1847/u);
+	assert.equal(starts[1].data.input.annotation, "deliveryAddress may be null");
+	assert.match(results.at(-1).data.outputPreview, /GitHub is rerunning lint and typecheck/u);
+});
+
 test("Claude Code Build playback puts agent text before tools and stays mid-work", async () => {
 	const { buildAsxAgentChatPlayback } = await loadHarness();
 	const playback = buildAsxAgentChatPlayback({

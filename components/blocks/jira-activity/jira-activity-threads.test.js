@@ -43,13 +43,43 @@ test("controlled timelines can route inline agent replies to their owning sessio
 	assert.match(INDEX_SOURCE, /onSubmitReply=\{\(body\) => handleAddReply\(entry, body\)\}/u);
 });
 
-test("human comments keep the stacked identity header and the flush composer geometry", () => {
-	assert.match(COMMENT_SOURCE, /import \{ Avatar, AvatarFallback, AvatarGroup, AvatarImage \}/u);
-	assert.match(COMMENT_SOURCE, /entry\.actor\.kind === "person"/u);
+test("inline review comments keep one reply level and continue the parent timeline spine", () => {
+	assert.match(INDEX_SOURCE, /const isNestedComment = entry\.kind === "comment" && Boolean\(entry\.parentId\);/u);
+	assert.match(INDEX_SOURCE, /data-jira-activity-parent-id=/u);
+	assert.match(
+		INDEX_SOURCE,
+		/isNestedComment \? \(\s*<div[\s\S]*?className="flex w-8 shrink-0 justify-center"[\s\S]*?data-jira-activity-spine-continuation[\s\S]*?<div className="w-px self-stretch bg-border" \/>/u,
+	);
+	assert.match(INDEX_SOURCE, /isNestedComment \? "pt-3 pl-6" : null/u);
+	assert.match(COMMENT_SOURCE, /const nested = Boolean\(entry\.parentId\);/u);
 	assert.match(
 		COMMENT_SOURCE,
-		/headerLayout=\{entry\.actor\.kind === "person" \? "stacked" : "inline"\}/u,
+		/headerAvatar=\{nested \? <ActivityActorAvatar actor=\{entry\.actor\} \/> : undefined\}/u,
 	);
+	assert.match(COMMENT_SOURCE, /hideLeadAvatar=\{!nested\}/u);
+	assert.match(COMMENT_SOURCE, /<ThreadReplyCard[\s\S]*indented=\{!nested\}/u);
+	assert.match(COMMENT_SOURCE, /<ThreadReplyCard[\s\S]*indented=\{!nested\}/u);
+});
+
+test("plain comments share the stacked identity header and the flush composer geometry", () => {
+	assert.match(COMMENT_SOURCE, /import \{ Avatar, AvatarFallback, AvatarGroup, AvatarImage \}/u);
+	assert.match(COMMENT_SOURCE, /headerLayout="stacked"/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /entry\.actor\.kind === "person" \? "stacked" : "inline"/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /const headerTag = resolved/u);
+	assert.match(COMMENT_SOURCE, /tag=\{entry\.tag\}/u);
+	assert.match(
+		COMMENT_SOURCE,
+		/import \{ Lozenge \} from "@\/components\/ui\/lozenge";[\s\S]*showResolvedStatus \? <Lozenge variant="success">Resolved<\/Lozenge>/u,
+	);
+	assert.match(
+		COMMENT_SOURCE,
+		/function ReopenThreadAction[\s\S]*aria-label="Reopen"[\s\S]*className="h-auto px-0 text-xs text-text-subtle"[\s\S]*variant="link"[\s\S]*>\s*Reopen\s*<\/Button>/u,
+	);
+	assert.doesNotMatch(
+		COMMENT_SOURCE,
+		/aria-label="Reopen"[\s\S]*className="[^"]*(?:px-[1-9]|font-normal)/u,
+	);
+	assert.doesNotMatch(COMMENT_SOURCE, />\s*Resolved\s*<\/p>/u);
 	assert.match(
 		COMMENT_SOURCE,
 		/<Avatar aria-hidden size=\{sizePx === 16 \? "xs" : "default"\}>/u,
@@ -71,6 +101,19 @@ test("human comments keep the stacked identity header and the flush composer geo
 	assert.doesNotMatch(COMMENT_SOURCE, /overflow-visible px-1\.5 pt-1 pb-3/u);
 });
 
+test("only the latest third-level reply owns Reopen", () => {
+	assert.match(
+		COMMENT_SOURCE,
+		/onReopen=\{\s*resolved && index === replies\.length - 1 && allowResolve && onResolve[\s\S]*\? handleResolveToggle[\s\S]*: undefined\s*\}/u,
+	);
+	assert.match(
+		COMMENT_SOURCE,
+		/resolved \? \(\s*onReopen \? <ReopenThreadAction onReopen=\{onReopen\} \/> : undefined/u,
+	);
+	assert.doesNotMatch(COMMENT_SOURCE, /\bfollowsReplies\b/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /<ReopenThreadAction[^>]*indented=/u);
+});
+
 test("the activity card hosts the action row in the body grid, not the footer", () => {
 	// `action` is a header slot, so the reply/reaction row gets its own slot that
 	// lands last in the body grid and inherits the card's gap for both geometries.
@@ -85,7 +128,7 @@ test("the activity card hosts the action row in the body grid, not the footer", 
 	assert.doesNotMatch(CARD_SOURCE, /className="grid gap-3 overflow-visible"/u);
 });
 
-test("the comment action row pairs Reply with the shared emoji reaction bar", () => {
+test("parent comments keep Reply and reactions while resolved threads label the latest reply", () => {
 	assert.match(
 		COMMENT_ACTIONS_SOURCE,
 		/import ReplyLeftIcon from "@atlaskit\/icon-lab\/core\/reply-left";/u,
@@ -108,19 +151,35 @@ test("the comment action row pairs Reply with the shared emoji reaction bar", ()
 	// Omitting `onReply` is how `allowReply: false` drops the button.
 	assert.match(COMMENT_ACTIONS_SOURCE, /onReply\?: \(\) => void;/u);
 	assert.match(COMMENT_ACTIONS_SOURCE, /onReply \? \(/u);
-	// Resolve is a subtle text control for SCM review threads.
+	// Resolve is a subtle text control for active SCM review threads; resolved
+	// state belongs beside the latest reply timestamp, with Reopen owned by that reply.
 	assert.match(COMMENT_ACTIONS_SOURCE, /onResolve\?: \(\) => void;/u);
-	assert.match(COMMENT_ACTIONS_SOURCE, /resolved \? "Unresolve" : "Resolve"/u);
-	assert.match(COMMENT_ACTIONS_SOURCE, /aria-pressed=\{resolved\}/u);
+	assert.doesNotMatch(COMMENT_ACTIONS_SOURCE, /Reopen|Unresolve|aria-pressed/u);
+	assert.match(COMMENT_ACTIONS_SOURCE, /aria-label="Resolve"/u);
+	assert.match(
+		COMMENT_ACTIONS_SOURCE,
+		/<EmojiReactionBar[\s\S]*trailing=\{[\s\S]*aria-label="Resolve"[\s\S]*className="h-auto px-0 text-xs text-text-subtle"[\s\S]*variant="link"/u,
+	);
+	assert.doesNotMatch(
+		COMMENT_ACTIONS_SOURCE,
+		/aria-label="Resolve"[\s\S]*className="[^"]*(?:px-[1-9]|font-normal)/u,
+	);
 	assert.match(COMMENT_SOURCE, /<JiraActivityCommentActions/u);
 	assert.match(COMMENT_SOURCE, /footerActions=\{/u);
-	assert.match(COMMENT_SOURCE, /allowResolve && onResolve/u);
-	assert.match(COMMENT_SOURCE, /resolved \? "text-text-subtlest" : "text-text"/u);
+	assert.match(COMMENT_SOURCE, /const commentActionControls = commentActions === "none" \? null/u);
+	assert.match(COMMENT_SOURCE, /!resolved && allowResolve && onResolve \? handleResolveToggle/u);
+	assert.match(
+		COMMENT_SOURCE,
+		/replies\.map\(\(reply, index\) => \([\s\S]*onReopen=\{[\s\S]*index === replies\.length - 1[\s\S]*showResolvedStatus=\{resolved && index === replies\.length - 1\}/u,
+	);
+	assert.match(COMMENT_SOURCE, /parentResolvedStatus = resolved && !hasReplies/u);
+	assert.match(COMMENT_SOURCE, /className="text-sm leading-5 text-text"/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /resolved \? "text-text-subtlest" : "text-text"/u);
 });
 
-test("thread replies share the parent card as inset gap-spaced rows with their own actions", () => {
+test("active thread replies have actions while only the latest resolved reply can reopen", () => {
 	assert.match(COMMENT_SOURCE, /function ThreadReplyCard/u);
-	assert.match(COMMENT_SOURCE, /<div className="pt-3 pl-6">\s*<JiraActivityCard[\s\S]*className="rounded-none"/u);
+	assert.match(COMMENT_SOURCE, /<div className=\{cn\("pt-3", indented \? "pl-6" : null\)\}>\s*<JiraActivityCard[\s\S]*className="rounded-none"/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /className="rounded-none border-0"/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /<div className="pl-6">/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /<div className="pl-3">/u);
@@ -129,9 +188,15 @@ test("thread replies share the parent card as inset gap-spaced rows with their o
 	assert.match(COMMENT_SOURCE, /item=\{reply\.sessionItem\}/u);
 	assert.match(COMMENT_SOURCE, /onView=\{onViewSession\}/u);
 	assert.match(COMMENT_SOURCE, /<JiraActivityCommentActions[\s\S]*onToggleReaction=\{toggleReaction\}/u);
+	assert.match(
+		COMMENT_SOURCE,
+		/resolved \? \(\s*onReopen \? <ReopenThreadAction onReopen=\{onReopen\} \/> : undefined\s*\) : commentActions === "none" \? undefined/u,
+	);
 	assert.match(COMMENT_SOURCE, /\? \(\) => onReply\(replyButtonRef\.current\)/u);
 	assert.match(COMMENT_SOURCE, /<ThreadReplyCard[\s\S]*allowReply=\{allowReply\}/u);
-	assert.match(COMMENT_SOURCE, /replies=\{[\s\S]*hasReplies \? \([\s\S]*aria-label="Replies"[\s\S]*className=\{cn\("grid gap-2", repliesExpanded \? null : "hidden"\)\}[\s\S]*role="group"[\s\S]*replies\.map\(\(reply\) => \([\s\S]*<ThreadReplyCard/u);
+	assert.match(COMMENT_SOURCE, /<ThreadReplyCard[\s\S]*resolved=\{resolved\}/u);
+	assert.match(COMMENT_SOURCE, /<ThreadReplyCard[\s\S]*showResolvedStatus=\{resolved && index === replies\.length - 1\}/u);
+	assert.match(COMMENT_SOURCE, /replies=\{[\s\S]*aria-label="Replies"[\s\S]*className=\{cn\("grid gap-2", repliesExpanded \? null : "hidden"\)\}[\s\S]*role="group"[\s\S]*replies\.map\(\(reply, index\) => \([\s\S]*<ThreadReplyCard/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /divide-y divide-border/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /before:-top-3|before:left-4|before:w-px|ml-8/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /import \{ Comment \} from "@\/components\/ui\/comment";/u);
@@ -163,7 +228,10 @@ test("a thread owns one bottom reply composer and targets the clicked author", (
 
 test("comments with nested replies expose one shared header control to collapse the thread", () => {
 	assert.match(COMMENT_SOURCE, /import GrowVerticalIcon from "@atlaskit\/icon\/core\/grow-vertical"/u);
-	assert.match(COMMENT_SOURCE, /const \[repliesExpanded, setRepliesExpanded\] = useState\(entry\.defaultRepliesExpanded \?\? true\)/u);
+	assert.match(
+		COMMENT_SOURCE,
+		/const \[repliesExpanded, setRepliesExpanded\] = useState\(\s*entry\.defaultRepliesExpanded \?\? !nested,\s*\)/u,
+	);
 	assert.match(COMMENT_SOURCE, /const hasReplies = replies\.length > 0/u);
 	assert.match(COMMENT_SOURCE, /repliesExpanded \? "Hide all replies" : "Show all replies"/u);
 	assert.match(COMMENT_SOURCE, /aria-controls=\{repliesId\}[\s\S]*aria-expanded=\{repliesExpanded\}[\s\S]*size="icon-compact"[\s\S]*variant="outline"[\s\S]*<GrowVerticalIcon label="" \/>/u);
@@ -206,6 +274,10 @@ test("agent session cards keep header actions and replies toggle on the shared h
 
 test("collapsed threads show a Slack-like participant, count, and timestamp summary", () => {
 	assert.match(COMMENT_SOURCE, /function CollapsedThreadSummary/u);
+	assert.match(
+		COMMENT_SOURCE,
+		/\{resolved \? <Lozenge variant="success">Resolved<\/Lozenge> : null\}\s*<span aria-hidden className="text-text-subtlest">·<\/span>/u,
+	);
 	assert.match(COMMENT_SOURCE, /new Map\(replies\.map\(\(reply\) => \[reply\.actor\.id, reply\.actor\]\)\)/u);
 	assert.match(COMMENT_SOURCE, /<AvatarGroup[\s\S]*Reply participants:[\s\S]*actors\.slice\(0, 3\)\.map/u);
 	assert.match(COMMENT_SOURCE, /sizePx=\{16\}/u);
@@ -213,12 +285,20 @@ test("collapsed threads show a Slack-like participant, count, and timestamp summ
 	assert.match(COMMENT_SOURCE, /text-xs font-normal text-text hover:underline/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /font-medium text-link[\s\S]*replyCountLabel/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /hover:no-underline/u);
+	assert.match(COMMENT_SOURCE, /group\/thread-summary h-auto min-w-0 gap-1\.5/u);
 	assert.match(COMMENT_SOURCE, /shrink-0 text-text-subtle">\{replyCountLabel\}/u);
+	assert.match(
+		COMMENT_SOURCE,
+		/shrink-0 text-text-subtle">\{replyCountLabel\}<\/span>\s*\{latestTimestamp \? \(\s*<>\s*<span aria-hidden className="shrink-0 text-text-subtlest">·<\/span>/u,
+	);
 	assert.match(COMMENT_SOURCE, /truncate text-text-subtlest group-hover\/thread-summary:hidden[\s\S]*latestTimestamp/u);
 	assert.match(COMMENT_SOURCE, /group-hover\/thread-summary:hidden[\s\S]*latestTimestamp/u);
 	assert.match(COMMENT_SOURCE, /group-hover\/thread-summary:inline[\s\S]*View all comments/u);
 	assert.match(COMMENT_SOURCE, /collapsedThreadSummary = hasReplies && !repliesExpanded/u);
-	assert.match(COMMENT_SOURCE, /<CollapsedThreadSummary onExpand=\{\(\) => setRepliesExpanded\(true\)\} replies=\{replies\} \/>/u);
+	assert.match(
+		COMMENT_SOURCE,
+		/<CollapsedThreadSummary[\s\S]*onExpand=\{\(\) => setRepliesExpanded\(true\)\}[\s\S]*replies=\{replies\}[\s\S]*resolved=\{resolved\}/u,
+	);
 });
 
 test("Reply discloses the single thread composer, defaulting to reply-and-reactions", () => {
@@ -238,6 +318,10 @@ test("Reply discloses the single thread composer, defaulting to reply-and-reacti
 	assert.match(
 		COMMENT_SOURCE,
 		/const composerVisible = allowReply && \(!collapsible \|\| replyTarget !== null\);/u,
+	);
+	assert.match(
+		COMMENT_SOURCE,
+		/function handleResolveToggle\(\) \{\s*if \(!resolved\) \{\s*setReplyTarget\(null\);\s*setReplyDraft\(""\);\s*\}\s*onResolve\?\.\(\);\s*\}/u,
 	);
 	// The composer only mounts when visible, and aria-controls never dangles.
 	assert.match(

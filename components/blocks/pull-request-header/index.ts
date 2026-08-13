@@ -6,6 +6,7 @@ export type {
 	PullRequestHeaderMergeState,
 	PullRequestHeaderProps,
 	PullRequestHeaderStatus,
+	PullRequestHeaderSubmitReviewAction,
 	PullRequestHeaderVariant,
 } from "@/components/blocks/pull-request-header/components/pull-request-header-types";
 export { DEMO_PULL_REQUEST_HEADER } from "@/components/blocks/pull-request-header/data/demo-pull-request-header";

@@ -1,6 +1,10 @@
 import type { WorkItemData } from "@/app/contexts/context-work-item-modal";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { StaticTimelineEvent } from "@/components/blocks/jira-work-item/data/session-state";
+import {
+	DEFAULT_PULL_REQUEST_FIX_AGENT_ID,
+	type PullRequestFixAgentId,
+} from "@/components/blocks/pull-request-fix";
 import type { JiraForYouAgent, JiraForYouStatus } from "@/components/projects/jira-for-you/jira-for-you-types";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { ROVO_LOGO_DATA_URI } from "@/components/ui/data/rovo-logo";
@@ -26,7 +30,7 @@ export type JiraAgentsReviewStep =
 	| "settling"
 	| "failed";
 /**
- * Fix continues from Review's failed PR: await Fix chip submit → repair → green.
+ * Fix continues from Review's failed PR: await PullRequestFix submit → repair → green.
  * Defaults to `failed` (same created-PR screen as Review end).
  */
 export type JiraAgentsFixStep = "failed" | "repairing" | "complete";
@@ -49,6 +53,11 @@ export interface JiraAgentsStoryStateOptions {
 	reviewStep?: JiraAgentsReviewStep;
 	/** Fix-only progression after Review failure. Defaults to `failed`. */
 	fixStep?: JiraAgentsFixStep;
+	/**
+	 * Coding agent selected in PullRequestFix (defaults to Codex). Drives the
+	 * CI-repair session, activity actor, and lead waitingOn during Fix.
+	 */
+	fixAgentId?: PullRequestFixAgentId;
 	/** Build-only staged progression. Defaults to `complete` (former Handoff end). */
 	buildStep?: JiraAgentsBuildStep;
 }
@@ -108,7 +117,19 @@ export const JIRA_AGENTS_STATUS_PHASES = [
 	"Done",
 ] as const satisfies readonly string[];
 
-export type JiraAgentsStoryAgent = JiraForYouAgent & { brandName?: ThirdPartyLogoName };
+/**
+ * A story agent needs exactly one avatar source, not necessarily an SVG path:
+ * third-party coding agents render from `brandName` via the shared logo set, so
+ * they opt out of `JiraForYouAgent`'s required `avatarSrc` rather than carrying
+ * a placeholder path. Agents that have both (Claude Code) keep both.
+ */
+export type JiraAgentsStoryAgent = Omit<JiraForYouAgent, "avatarSrc" | "id"> & {
+	/** Required here, unlike the directory type: session and actor ids derive from it. */
+	id: string;
+} & (
+		| { avatarSrc: string; brandName?: ThirdPartyLogoName }
+		| { avatarSrc?: string; brandName: ThirdPartyLogoName }
+	);
 
 export const CODE_PLANNER = {
 	id: "code-planner",
@@ -129,17 +150,89 @@ export const ROVO = {
 	avatarSrc: ROVO_LOGO_DATA_URI,
 } satisfies JiraAgentsStoryAgent;
 
+export const ROVO_DEV = {
+	id: "rovo",
+	name: "Rovo",
+	avatarSrc: ROVO_LOGO_DATA_URI,
+} satisfies JiraAgentsStoryAgent;
+
+/** PullRequestFix picker agents mapped into story session / activity shapes. */
+export const FIX_CODEX = {
+	id: "codex",
+	name: "Codex",
+	brandName: "openai-codex",
+} satisfies JiraAgentsStoryAgent;
+
+export const FIX_CURSOR = {
+	id: "cursor",
+	name: "Cursor",
+	brandName: "cursor",
+} satisfies JiraAgentsStoryAgent;
+
+export const FIX_GEMINI = {
+	id: "gemini",
+	name: "Gemini",
+	brandName: "google-gemini",
+} satisfies JiraAgentsStoryAgent;
+
+export const FIX_GITHUB_COPILOT = {
+	id: "github-copilot",
+	name: "GitHub Copilot",
+	brandName: "github-copilot",
+} satisfies JiraAgentsStoryAgent;
+
+export const FIX_ROVO_CLI = {
+	id: "rovo-cli",
+	name: "Rovo",
+	avatarSrc: ROVO_LOGO_DATA_URI,
+} satisfies JiraAgentsStoryAgent;
+
 export const ROVO_ACTOR: StaticTimelineEvent["actor"] = {
 	id: "static-rovo",
-	name: ROVO.name,
+	name: ROVO_DEV.name,
 	kind: "agent",
-	avatarSrc: ROVO.avatarSrc,
+	avatarSrc: ROVO_DEV.avatarSrc,
 };
 
 export const JIRA_AGENTS_DESCRIPTION_SKILL_SESSION_ID = "story-session-skill:improve-description";
 export const JIRA_AGENTS_DESCRIPTION_SKILL_SCRIPT_ID = "shop-4821-improve-description";
+/** Distinct from the lead Claude session so Claude can also be the repair agent. */
+export const JIRA_AGENTS_CI_REPAIR_SESSION_ID = "story-session-ci-repair";
+export const JIRA_AGENTS_CI_REPAIR_SCRIPT_ID = "shop-4821-ci-fix";
 
-export const STORY_AGENTS = [CODE_PLANNER, CLAUDE_CODE] as const;
+export const DEFAULT_JIRA_AGENTS_FIX_AGENT_ID: PullRequestFixAgentId =
+	DEFAULT_PULL_REQUEST_FIX_AGENT_ID;
+
+const FIX_AGENTS_BY_ID: ReadonlyMap<PullRequestFixAgentId, JiraAgentsStoryAgent> = new Map<
+	PullRequestFixAgentId,
+	JiraAgentsStoryAgent
+>([
+	["claude-code", CLAUDE_CODE],
+	["codex", FIX_CODEX],
+	["cursor", FIX_CURSOR],
+	["gemini", FIX_GEMINI],
+	["github-copilot", FIX_GITHUB_COPILOT],
+	["rovo-cli", FIX_ROVO_CLI],
+]);
+
+/** Resolve the PullRequestFix coding agent used for the CI-repair beat. */
+export function resolveFixAgent(
+	options: Pick<JiraAgentsStoryStateOptions, "fixAgentId"> = {},
+): JiraAgentsStoryAgent {
+	return FIX_AGENTS_BY_ID.get(options.fixAgentId ?? DEFAULT_JIRA_AGENTS_FIX_AGENT_ID)
+		?? FIX_CODEX;
+}
+
+export function createFixAgentActor(agent: JiraAgentsStoryAgent): StaticTimelineEvent["actor"] {
+	return {
+		id: `static-fix-${agent.id}`,
+		name: agent.name,
+		kind: "agent",
+		...(agent.brandName ? { brandName: agent.brandName } : { avatarSrc: agent.avatarSrc }),
+	};
+}
+
+export const STORY_AGENTS = [CODE_PLANNER, CLAUDE_CODE, ROVO_DEV] as const;
 export const STORY_AGENT_BY_ID = new Map(STORY_AGENTS.map((agent) => [agent.id, agent]));
 
 export const JIRA_AGENTS_STORY_COMPOSER_AGENTS: readonly AgentSelectorAgent[] = [

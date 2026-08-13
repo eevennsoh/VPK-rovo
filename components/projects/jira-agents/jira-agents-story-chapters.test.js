@@ -49,6 +49,53 @@ function loadStateModule() {
 	return stateModulePromise;
 }
 
+let pullRequestChromeModulePromise;
+function loadPullRequestChromeModules() {
+	if (!pullRequestChromeModulePromise) {
+		pullRequestChromeModulePromise = Promise.all([
+			esbuild
+				.build({
+					entryPoints: [
+						path.join(
+							process.cwd(),
+							"components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter.ts",
+						),
+					],
+					bundle: true,
+					format: "cjs",
+					loader: { ".css": "empty" },
+					platform: "node",
+					tsconfig: path.join(process.cwd(), "tsconfig.json"),
+					write: false,
+				})
+				.then((result) => loadCjsModuleFromText(
+					result.outputFiles[0].text,
+					"jira-agents-story-chapters-pr-adapter-harness.cjs",
+				)),
+			esbuild
+				.build({
+					entryPoints: [
+						path.join(
+							process.cwd(),
+							"components/blocks/jira-work-item/experimental-v2/lib/pull-request-phases.ts",
+						),
+					],
+					bundle: true,
+					format: "cjs",
+					loader: { ".css": "empty" },
+					platform: "node",
+					tsconfig: path.join(process.cwd(), "tsconfig.json"),
+					write: false,
+				})
+				.then((result) => loadCjsModuleFromText(
+					result.outputFiles[0].text,
+					"jira-agents-story-chapters-pr-phases-harness.cjs",
+				)),
+		]);
+	}
+	return pullRequestChromeModulePromise;
+}
+
 test("Claude leads one evolving A2A thread with checklist and design evidence", async () => {
 	const story = await loadStoryModule();
 	const plan = story.createJiraAgentsStoryState("plan");
@@ -180,7 +227,11 @@ test("Claude leads one evolving A2A thread with checklist and design evidence", 
 	});
 	assert.equal(reviewClaude.progressChecklist.filter((item) => item.completed).length, 4);
 	assert.equal(fixClaude.status, "waiting");
-	assert.deepEqual(fixClaude.waitingOn, { kind: "user" });
+	assert.deepEqual(fixClaude.waitingOn, {
+		kind: "agent",
+		agentId: "github-actions",
+		agentName: "GitHub Actions",
+	});
 	assert.equal(fixClaude.progressChecklist.filter((item) => item.completed).length, 5);
 	assert.match(fixClaude.previewText, /blocked PR #1847[\s\S]*nullable delivery-address path[\s\S]*unit and browser coverage passed/u);
 	const fixingPr = fix.staticEvents.find((event) => event.id === "story-pr-review");
@@ -192,15 +243,24 @@ test("Claude leads one evolving A2A thread with checklist and design evidence", 
 	assert.equal(
 		fix.staticEvents.some((event) => event.id === "story-ci-repair"),
 		false,
-		"Fix starts at Review end — repair waits for the Fix chip submit",
+		"Fix starts at Review end — repair waits for PullRequestFix submit",
 	);
 	assert.equal(approveClaude.status, "waiting");
 	assert.deepEqual(approveClaude.waitingOn, { kind: "user" });
 	assert.equal(approveClaude.progressChecklist.filter((item) => item.completed).length, 6);
+	assert.equal(
+		approveClaude.progressChecklist[6]?.label,
+		"Obtain the required human approval in the PR guide",
+	);
+	assert.doesNotMatch(approveClaude.progressChecklist[6]?.label ?? "", /Venn/u);
 	const openedPr = approve.staticEvents.find((event) => event.id === "story-pr-approve");
 	const mergedPr = release.staticEvents.find((event) => event.id === "story-pr-merged");
+	const followUpMergedPr = release.staticEvents.find(
+		(event) => event.id === "story-pr-merged-follow-up",
+	);
 	assert.ok(openedPr?.pullRequest);
 	assert.ok(mergedPr?.pullRequest);
+	assert.ok(followUpMergedPr?.pullRequest);
 	assert.equal(openedPr.pullRequest.authorName, "Venn");
 	assert.equal(mergedPr.pullRequest.authorName, "Venn");
 	assert.equal(openedPr.pullRequest.reviewDecision, "review-required");
@@ -212,6 +272,26 @@ test("Claude leads one evolving A2A thread with checklist and design evidence", 
 	assert.equal(typeof openedPr.pullRequest.updatedAtMs, "number");
 	assert.equal(mergedPr.pullRequest.createdAtMs, openedPr.pullRequest.createdAtMs);
 	assert.ok(mergedPr.pullRequest.updatedAtMs > mergedPr.pullRequest.createdAtMs);
+	assert.equal(followUpMergedPr.pullRequest.number, 1848);
+	assert.equal(followUpMergedPr.pullRequest.status, "Merged");
+	assert.equal(followUpMergedPr.pullRequest.authorName, "Priya Hansra");
+	assert.equal(followUpMergedPr.pullRequest.authorAvatarSrc, "/avatar-human/priya-hansra.png");
+	assert.equal(followUpMergedPr.pullRequest.repository, "shop/checkout-api");
+	assert.notEqual(
+		followUpMergedPr.pullRequest.repository,
+		mergedPr.pullRequest.repository,
+		"Follow-up merged PR uses a distinct repo from #1847",
+	);
+	assert.notEqual(
+		followUpMergedPr.pullRequest.authorName,
+		mergedPr.pullRequest.authorName,
+		"Follow-up merged PR uses a distinct author from #1847",
+	);
+	assert.equal(followUpMergedPr.pullRequest.branch, "fix/shop-4821-guest-email-validation");
+	assert.equal(followUpMergedPr.pullRequest.targetBranch, "main");
+	assert.equal(followUpMergedPr.pullRequest.additions, 24);
+	assert.equal(followUpMergedPr.pullRequest.deletions, 6);
+	assert.match(followUpMergedPr.pullRequest.title, /guest checkout email validation/u);
 	assert.equal(releaseClaude.progressChecklist.filter((item) => item.completed).length, 8);
 	assert.match(releaseClaude.previewText, /approved by Venn and merged[\s\S]*feature flag[\s\S]*production smoke checks[\s\S]*healthy telemetry[\s\S]*rollout/u);
 	assert.ok(release.sessions.every((session) => session.status === "completed"));
@@ -264,41 +344,130 @@ test("Review moves deterministically from queued through settling to failed and 
 				status: "waiting",
 				waitingOn: { kind: "agent", agentId: "github-actions", agentName: "GitHub Actions" },
 			},
-			// Failed settle keeps Claude waiting (needs input) so the composer
-			// working-agents pill never drops while Review's PR is open.
-			{ status: "waiting", waitingOn: { kind: "user" } },
+			// Failed settle still waits on GitHub Actions so Review keeps the
+			// "agents working" story; Fix-failed matches until chip submit repairs.
+			{
+				status: "waiting",
+				waitingOn: { kind: "agent", agentId: "github-actions", agentName: "GitHub Actions" },
+			},
 		],
 	);
 	const failedReview = story.createJiraAgentsStoryState("review", { reviewStep: "failed" });
 	assert.ok(failedReview.staticEvents.some((event) => event.id === "story-ci-failed"));
+	const failedReviewClaude = failedReview.sessions.find((session) => session.agentId === "claude-code");
+	assert.equal(failedReviewClaude.status, "waiting");
+	assert.deepEqual(failedReviewClaude.waitingOn, {
+		kind: "agent",
+		agentId: "github-actions",
+		agentName: "GitHub Actions",
+	});
 
 	const fixFailed = story.createJiraAgentsStoryState("fix");
+	assert.equal(
+		fixFailed.sessions.filter((session) => session.status !== "completed").length,
+		1,
+		"Fix-failed keeps only Claude working",
+	);
+	assert.equal(
+		fixFailed.sessions.some((session) => session.id === story.JIRA_AGENTS_CI_REPAIR_SESSION_ID),
+		false,
+		"CI repair session starts only after the Fix composer submit",
+	);
+	assert.deepEqual(
+		fixFailed.sessions.find((session) => session.agentId === "claude-code").waitingOn,
+		{ kind: "agent", agentId: "github-actions", agentName: "GitHub Actions" },
+		"Fix-failed keeps agents-working until Approve (human review) needs input",
+	);
 	const fixFailedPr = fixFailed.staticEvents.find((event) => event.id === "story-pr-review")?.pullRequest;
 	assert.deepEqual(fixFailedPr.checks.map((check) => check.status), ["failed", "passed", "passed"]);
 	assert.equal(fixFailed.staticEvents.some((event) => event.id === "story-ci-repair"), false);
 	assert.equal(fixFailed.staticEvents.some((event) => event.id === "story-moved-fix"), true);
 
 	const fixRepairing = story.createJiraAgentsStoryState("fix", { fixStep: "repairing" });
+	const repairingLead = fixRepairing.sessions.find(
+		(session) => session.id === "story-session-claude-code",
+	);
+	const repairingAgent = fixRepairing.sessions.find(
+		(session) => session.id === story.JIRA_AGENTS_CI_REPAIR_SESSION_ID,
+	);
 	const repair = fixRepairing.staticEvents.find((event) => event.id === "story-ci-repair");
 	const rerun = fixRepairing.staticEvents.find((event) => event.id === "story-pr-fix-rerun")?.pullRequest;
+	assert.equal(repairingLead.status, "running");
+	assert.deepEqual(repairingLead.waitingOn, {
+		kind: "agent",
+		agentId: "codex",
+		agentName: "Codex",
+	});
+	assert.equal(repairingAgent.status, "running");
+	assert.equal(repairingAgent.agentId, "codex");
+	assert.equal(repairingAgent.agentName, "Codex");
+	assert.equal(repairingAgent.scriptId, story.JIRA_AGENTS_CI_REPAIR_SCRIPT_ID);
+	assert.equal(
+		fixRepairing.sessions.filter((session) => session.status !== "completed").length,
+		2,
+		"Fix-repairing exposes lead Claude and default Codex repair as working",
+	);
+	assert.match(repairingAgent.previewText, /gh[\s\S]*deliveryAddress[\s\S]*lint and typecheck/u);
+	assert.ok(repairingAgent.progressChecklist.every((item) => !item.completed));
 	assert.equal(repair.summary, "Repairing the failed CI path");
 	assert.match(repair.description, /nullable delivery address[\s\S]*rerunning/u);
+	assert.equal(repair.actor.name, "Codex");
+	assert.equal(repair.sessionItem.agent.id, "codex");
 	assert.deepEqual(rerun.checks.map((check) => check.status), ["running", "passed", "passed"]);
 
 	const fixComplete = story.createJiraAgentsStoryState("fix", { fixStep: "complete" });
+	const completedRepairSession = fixComplete.sessions.find(
+		(session) => session.id === story.JIRA_AGENTS_CI_REPAIR_SESSION_ID,
+	);
 	const completedRepair = fixComplete.staticEvents.find((event) => event.id === "story-ci-repair");
 	const completedRerun = fixComplete.staticEvents.find((event) => event.id === "story-pr-fix-rerun")?.pullRequest;
+	assert.equal(completedRepairSession.status, "completed");
+	assert.equal(completedRepairSession.agentId, "codex");
+	assert.ok(completedRepairSession.progressChecklist.every((item) => item.completed));
+	assert.match(completedRepairSession.previewText, /CI is green[\s\S]*committed[\s\S]*pushed/u);
+	assert.equal(
+		fixComplete.sessions.filter((session) => session.status !== "completed").length,
+		1,
+		"Fix-complete returns to only Claude working",
+	);
 	assert.equal(completedRepair.summary, "Repaired the failed CI path");
+	assert.equal(completedRepair.actor.name, "Codex");
 	assert.ok(completedRerun.checks.every((check) => check.status === "passed"));
 	assert.equal(
-		fixComplete.sessions.find((session) => session.agentId === "claude-code")
+		fixComplete.sessions.find((session) => session.id === "story-session-claude-code")
 			.progressChecklist.filter((item) => item.completed).length,
 		6,
 	);
+
+	const claudeRepairing = story.createJiraAgentsStoryState("fix", {
+		fixStep: "repairing",
+		fixAgentId: "claude-code",
+	});
+	const claudeRepair = claudeRepairing.sessions.find(
+		(session) => session.id === story.JIRA_AGENTS_CI_REPAIR_SESSION_ID,
+	);
+	const claudeRepairEvent = claudeRepairing.staticEvents.find(
+		(event) => event.id === "story-ci-repair",
+	);
+	assert.equal(claudeRepair.agentId, "claude-code");
+	assert.equal(claudeRepair.agentName, "Claude Code");
+	assert.notEqual(claudeRepair.id, "story-session-claude-code");
+	assert.deepEqual(
+		claudeRepairing.sessions.find((session) => session.id === "story-session-claude-code").waitingOn,
+		{ kind: "agent", agentId: "claude-code", agentName: "Claude Code" },
+	);
+	assert.equal(
+		claudeRepairing.sessions.filter((session) => session.status !== "completed").length,
+		2,
+		"Claude as Fix agent still yields a distinct repair session beside the lead",
+	);
+	assert.equal(claudeRepairEvent.actor.name, "Claude Code");
+	assert.equal(claudeRepairEvent.sessionItem.agent.id, "claude-code");
 });
 
-test("Approve requires Venn after green checks and Release records merge, rollout, smoke, and telemetry", async () => {
+test("Approve fixture can wait for approval; pullRequestApproved lands ready-to-merge for Release evidence", async () => {
 	const story = await loadStoryModule();
+	// Pre-approval fixture (explicit false / omitted) — controller still starts Approve approved.
 	const available = story.createJiraAgentsStoryState("approve");
 	const approved = story.createJiraAgentsStoryState("approve", { pullRequestApproved: true });
 	const availablePullRequest = available.staticEvents.find(
@@ -309,6 +478,8 @@ test("Approve requires Venn after green checks and Release records merge, rollou
 	)?.pullRequest;
 	const approvedClaude = approved.sessions.find((session) => session.agentId === "claude-code");
 	const completedRepair = approved.staticEvents.find((event) => event.id === "story-ci-repair");
+	assert.equal(completedRepair.actor.name, "Codex");
+	assert.equal(completedRepair.sessionItem.agent.id, "codex");
 
 	assert.ok(availablePullRequest.checks.every((check) => check.status === "passed"));
 	assert.equal(availablePullRequest.reviewDecision, "review-required");
@@ -352,6 +523,20 @@ test("Approve requires Venn after green checks and Release records merge, rollou
 	assert.deepEqual(mergedPullRequest.checks, approvedPullRequest.checks);
 	assert.ok(mergedPullRequest.checks.every((check) => check.status === "passed"));
 	assert.equal(release.metadata.status, "Done");
+	const releaseMergedPullRequests = release.staticEvents.filter(
+		(event) => event.pullRequest?.status === "Merged",
+	);
+	assert.deepEqual(
+		releaseMergedPullRequests.map((event) => event.pullRequest.number),
+		[1847, 1848],
+		"Release lists both merged guest-checkout PRs for the select and title-meta count",
+	);
+	const [adapter, phases] = await loadPullRequestChromeModules();
+	const releasePullRequestEntries = adapter.selectPullRequestEntries(release.staticEvents);
+	assert.deepEqual(
+		phases.summarizePullRequestTagMetrics(releasePullRequestEntries),
+		[{ value: "2 Merged", color: "purple" }],
+	);
 });
 
 test("the authored artifact and pull-request chronology is complete and renderable", async () => {
@@ -368,6 +553,7 @@ test("the authored artifact and pull-request chronology is complete and renderab
 				"story-regression-matrix",
 				"story-pr-approve",
 				"story-pr-merged",
+				"story-pr-merged-follow-up",
 			].includes(event.id))
 			.map((event) => event.id),
 		[
@@ -377,6 +563,7 @@ test("the authored artifact and pull-request chronology is complete and renderab
 			"story-regression-matrix",
 			"story-pr-approve",
 			"story-pr-merged",
+			"story-pr-merged-follow-up",
 		],
 	);
 	assert.ok(artifactEvents.every((event) => event.sessionItem));

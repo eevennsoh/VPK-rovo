@@ -125,7 +125,7 @@ function SegmentContent({ segment }: Readonly<{ segment: JiraActivitySegment }>)
 					}
 					variant="editor"
 				>
-					{segment.text}
+					@{segment.text}
 				</Tag>
 			);
 		case "lozenge":

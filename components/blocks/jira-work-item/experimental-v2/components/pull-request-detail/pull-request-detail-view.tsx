@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState, type RefObject } from "react";
 
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import type { InlineReviewComment } from "@/components/blocks/code-review/lib/inline-comments";
+import type { PullRequestHeaderSubmitReviewAction } from "@/components/blocks/pull-request-header";
 import {
 	Tabs,
 	TabsContent,
@@ -29,6 +30,7 @@ interface PullRequestDetailViewProps {
 	onInlineCommentsChange?: (identity: string, comments: readonly InlineReviewComment[]) => void;
 	reviewedChapterIds?: ReadonlySet<string>;
 	scrollContainerRef: RefObject<HTMLElement | null>;
+	submitReviewAction?: PullRequestHeaderSubmitReviewAction;
 }
 
 export function PullRequestDetailView({
@@ -39,6 +41,7 @@ export function PullRequestDetailView({
 	onInlineCommentsChange,
 	reviewedChapterIds,
 	scrollContainerRef,
+	submitReviewAction,
 }: Readonly<PullRequestDetailViewProps>) {
 	const [activeTab, setActiveTab] = useState<PullRequestDetailTab>("details");
 	const data = useMemo(() => resolvePullRequestDetailData(entry), [entry]);
@@ -101,6 +104,7 @@ export function PullRequestDetailView({
 			data={data}
 			onGuideOpen={review ? () => setActiveTab("guide") : undefined}
 			scrollContainerRef={scrollContainerRef}
+			submitReviewAction={submitReviewAction}
 			tabNavigation={tabNavigation}
 		/>
 	);
@@ -124,10 +128,6 @@ export function PullRequestDetailView({
 					<PullRequestStickyHeaderShell scrollContainerRef={scrollContainerRef}>
 						{header}
 					</PullRequestStickyHeaderShell>
-					{/*
-					 * Top gap under the PR header lives on the sticky shell (`pb-6`)
-					 * so it stays opaque while code-review chrome sticks beneath it.
-					 */}
 					<div className="min-h-0 flex-1 pb-6">
 						<TabsContent value="details">
 							<PullRequestOverview data={data} />
@@ -140,7 +140,7 @@ export function PullRequestDetailView({
 								scrollContainerRef={scrollContainerRef}
 							/>
 						</TabsContent>
-						<TabsContent value="code">
+						<TabsContent className="pt-6" value="code">
 							<PullRequestFiles
 								commits={data.commits}
 								initialInlineComments={initialInlineComments}

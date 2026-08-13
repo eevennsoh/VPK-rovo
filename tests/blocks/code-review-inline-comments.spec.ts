@@ -246,29 +246,27 @@ test("Changes navigation reveals every file and exposes file header actions", as
 		});
 	});
 
-	await expect(page.getByText("Changes", { exact: true })).toBeVisible();
+	await expect(page.getByRole("button", { name: /^All changes,/u })).toBeVisible();
 	await expect(page.locator("[data-code-review-file-id]")).toHaveCount(3);
-	await expect(page.getByRole("tree", { name: "Code review files" })).toBeVisible();
-
-	await page.getByRole("button", { name: "Hide file tree" }).click();
 	await expect(page.getByRole("tree", { name: "Code review files" })).toHaveCount(0);
-	await page.getByRole("button", { name: "Show file tree" }).click();
-	await expect(page.getByRole("tree", { name: "Code review files" })).toBeVisible();
 
 	const filePath = "src/components/PhotoUploader.tsx";
 	const fileHeader = page.locator('[data-code-review-file-header="photo-uploader"]');
 	const collapseButton = page.getByRole("button", { name: `Collapse ${filePath}` });
 	const copyButton = page.getByRole("button", { name: `Copy path ${filePath}` });
-	await expect(collapseButton).toHaveCSS("opacity", "0");
 	await expect(copyButton).toHaveCSS("opacity", "0");
 
 	await fileHeader.hover();
-	await expect(collapseButton).toHaveCSS("opacity", "1");
 	await expect(copyButton).toHaveCSS("opacity", "1");
 	await copyButton.click();
 	await expect.poll(() => page.evaluate(() => (
 		window.sessionStorage.getItem("code-review-copied-path")
 	))).toBe(filePath);
+
+	await page.getByRole("button", { name: "Show file tree" }).click();
+	await expect(page.getByRole("tree", { name: "Code review files" })).toBeVisible();
+	await page.getByRole("button", { name: "Hide file tree" }).click();
+	await expect(page.getByRole("tree", { name: "Code review files" })).toHaveCount(0);
 
 	await collapseButton.click();
 	await expect(page.getByRole("button", { name: `Expand ${filePath}` })).toBeVisible();

@@ -1,12 +1,11 @@
 /**
  * Seed guided-review progress when opening a PR.
- * Unapproved: nothing checked. Approved: every chapter (restore completed review).
+ * Always starts unchecked — approval evidence lives on Approvers / merge state,
+ * not as stale Guide chapter checkmarks (which would inflate Submit review's badge).
  */
 export function resolveInitialReviewedChapterIds(
-	review: { readonly chapters: readonly { readonly id: string }[] } | null | undefined,
-	approvalState?: "available" | "approved",
+	_review?: { readonly chapters: readonly { readonly id: string }[] } | null,
+	_approvalState?: "available" | "approved",
 ): ReadonlySet<string> {
-	if (!review) return new Set();
-	if (approvalState !== "approved") return new Set();
-	return new Set(review.chapters.map((chapter) => chapter.id));
+	return new Set();
 }

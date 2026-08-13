@@ -27,23 +27,19 @@ function resolvePullRequestAuthor(entry: JiraActivityEventEntry): PullRequestAut
 		(entry.actor.kind === "person" ? entry.actor.name : undefined);
 	if (!name) return undefined;
 
-	if (name === JIRA_WORK_ITEM_CURRENT_USER.name) {
-		return {
-			name,
-			...(JIRA_WORK_ITEM_CURRENT_USER.avatarSrc
-				? { avatarUrl: JIRA_WORK_ITEM_CURRENT_USER.avatarSrc }
-				: {}),
-		};
-	}
+	const avatarUrl =
+		pullRequest.authorAvatarSrc
+		?? (name === JIRA_WORK_ITEM_CURRENT_USER.name
+			? JIRA_WORK_ITEM_CURRENT_USER.avatarSrc
+			: undefined)
+		?? (entry.actor.kind === "person" && entry.actor.name === name
+			? entry.actor.avatarSrc
+			: undefined);
 
-	if (entry.actor.kind === "person" && entry.actor.name === name) {
-		return {
-			name,
-			...(entry.actor.avatarSrc ? { avatarUrl: entry.actor.avatarSrc } : {}),
-		};
-	}
-
-	return { name };
+	return {
+		name,
+		...(avatarUrl ? { avatarUrl } : {}),
+	};
 }
 
 /** Maps a PR activity entry to Pull Request block props for list/Select rows. */

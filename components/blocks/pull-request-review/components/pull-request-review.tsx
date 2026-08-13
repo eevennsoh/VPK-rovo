@@ -144,7 +144,7 @@ export function PullRequestReview({
 
 	const reviewHeader = isExpanded ? (
 		<div className="flex w-full items-center gap-2">
-			<h2 className="text-text" style={{ font: token("font.heading.medium") }}>
+			<h2 className="text-text" style={{ font: token("font.heading.small") }}>
 				{title}
 			</h2>
 			{hasReviewedProgress ? (
