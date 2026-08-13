@@ -18,15 +18,14 @@ import {
 import { cn } from "@/lib/utils";
 
 import {
-	GOOEY_SOURCE_SHADOW,
 	GooeyMorphAvatarExample,
 	GooeyMorphCardsExample,
 	GooeyMorphEmailExample,
 	GooeyMorphMenuExample,
 	GooeyMoveSliderExample,
 	GooeyMoveTabsExample,
-	useGooeyDemoDrag,
 } from "./gooey-examples";
+import { GOOEY_SOURCE_SHADOW, useGooeyDemoDrag } from "./gooey-demo-utils";
 
 type NumberKey =
 	| "blur" | "contrast" | "filterPadding"

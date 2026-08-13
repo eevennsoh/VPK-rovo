@@ -11,6 +11,7 @@ const DETAIL = fs.readFileSync(path.join(ROOT, "app/data/details/visual/gooey.ts
 const REGISTRY = fs.readFileSync(path.join(ROOT, "components/website/registry/visual.ts"), "utf8");
 const DEMO = fs.readFileSync(path.join(__dirname, "gooey-demo.tsx"), "utf8");
 const EXAMPLES = fs.readFileSync(path.join(__dirname, "gooey-examples.tsx"), "utf8");
+const UTILS = fs.readFileSync(path.join(__dirname, "gooey-demo-utils.ts"), "utf8");
 const INDEX = fs.readFileSync(path.join(ROOT, "components/visual/gooey/index.ts"), "utf8");
 const ROOT_SOURCE = fs.readFileSync(path.join(ROOT, "components/visual/gooey/gooey-root.tsx"), "utf8");
 const VARIANT_REGISTRY = REGISTRY.slice(REGISTRY.indexOf("export const VISUAL_VARIANT_DEMOS"));
@@ -90,9 +91,15 @@ test("hero and draggable examples expose pointer, reset, and keyboard interactio
 	assert.doesNotMatch(DEMO, /current\.x >= 0 \? -72 : 36/u);
 	assert.equal((DEMO.match(/top: "calc\(50% - 40px\)"/gu) || []).length, 2);
 	assert.doesNotMatch(DEMO, /h-44 w-full max-w-80/u);
-	assert.match(EXAMPLES, /setPointerCapture\(event\.pointerId\)/u);
-	assert.match(EXAMPLES, /onKeyDown/u);
-	assert.match(EXAMPLES, /clampPosition/u);
+	assert.match(UTILS, /setPointerCapture\(event\.pointerId\)/u);
+	assert.match(UTILS, /onKeyDown/u);
+	assert.match(UTILS, /clampPosition/u);
+});
+
+test("Gooey component modules keep Fast Refresh exports component-only", () => {
+	assert.doesNotMatch(EXAMPLES, /export const GOOEY_SOURCE_SHADOW|export function useGooeyDemoDrag/u);
+	assert.match(UTILS, /export const GOOEY_SOURCE_SHADOW = \[/u);
+	assert.match(UTILS, /export function useGooeyDemoDrag/u);
 });
 
 test("images never intercept native dragging from Gooey drag targets", () => {
@@ -116,8 +123,8 @@ test("hero drag bounds follow the available preview size", () => {
 });
 
 test("liquid borders and elevation belong to the merged Gooey silhouette", () => {
-	assert.match(EXAMPLES, /export const GOOEY_SOURCE_SHADOW = \[/u);
-	assert.match(EXAMPLES, /0 0 0 1px rgba\(0, 0, 0, 0\.06\)/u);
+	assert.match(UTILS, /export const GOOEY_SOURCE_SHADOW = \[/u);
+	assert.match(UTILS, /0 0 0 1px rgba\(0, 0, 0, 0\.06\)/u);
 	assert.match(DEMO, /fill: "var\(--color-surface\)"/u);
 	assert.match(DEMO, /shadow: GOOEY_SOURCE_SHADOW/u);
 	assert.match(EXAMPLES, /shadow=\{GOOEY_SOURCE_SHADOW\}/u);

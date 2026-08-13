@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,20 +9,10 @@ import { CheckIcon, EmailIcon, FileIcon, FolderIcon, ImageIcon, PlusIcon } from 
 import { Gooey } from "@/components/visual/gooey";
 import { cn } from "@/lib/utils";
 
+import { GOOEY_SOURCE_SHADOW, useGooeyDemoDrag, type GooeyDemoDragPosition } from "./gooey-demo-utils";
+
 const PRIMARY_FILL = "var(--color-primary)";
 const SURFACE_FILL = "var(--color-surface)";
-/** Pinned upstream "Figma soft" surface treatment. Every layer is rendered
- * from the merged SVG silhouette so its ring and elevation morph with the goo.
- * `light-dark()` follows VPK's document color-scheme without duplicating DOM
- * borders on the interactive children. */
-export const GOOEY_SOURCE_SHADOW = [
-	"0 0 0 1px light-dark(transparent, rgba(255, 255, 255, 0.04)) inset",
-	"0 1px 0 0 light-dark(transparent, rgba(255, 255, 255, 0.03)) inset",
-	"0 0 0 1px rgba(0, 0, 0, 0.06)",
-	"0 2px 6px 0 rgba(0, 0, 0, 0.05)",
-	"0 4px 42px 0 light-dark(rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.24))",
-].join(", ");
-
 const GOOEY_PILL_SHADOW = [
 	"0 1px 3px light-dark(rgba(0, 0, 0, 0.11), rgba(0, 0, 0, 0.5))",
 	"0 1px 1px light-dark(rgba(0, 0, 0, 0.07), rgba(0, 0, 0, 0.35))",
@@ -36,95 +26,6 @@ const GOOEY_THUMB_SHADOW = [
 	"0 2px 6px 0 light-dark(transparent, rgba(0, 0, 0, 0.05))",
 	"0 4px 42px 0 light-dark(transparent, rgba(0, 0, 0, 0.24))",
 ].join(", ");
-
-type DragPosition = Readonly<{ x: number; y: number }>;
-type DragBounds = Readonly<{ minX: number; maxX: number; minY: number; maxY: number }>;
-
-function clampPosition(position: DragPosition, bounds?: DragBounds): DragPosition {
-	if (!bounds) return position;
-	return {
-		x: Math.min(bounds.maxX, Math.max(bounds.minX, position.x)),
-		y: Math.min(bounds.maxY, Math.max(bounds.minY, position.y)),
-	};
-}
-
-export function useGooeyDemoDrag(
-	position: DragPosition,
-	onPositionChange: (position: DragPosition) => void,
-	bounds?: DragBounds,
-	onActivate?: () => void,
-) {
-	const [dragging, setDragging] = useState(false);
-	const draggingRef = useRef(false);
-	const movedRef = useRef(false);
-	const originRef = useRef({ pointerX: 0, pointerY: 0, x: position.x, y: position.y });
-
-	function onPointerDown(event: PointerEvent<HTMLElement>) {
-		event.currentTarget.setPointerCapture(event.pointerId);
-		draggingRef.current = true;
-		movedRef.current = false;
-		originRef.current = {
-			pointerX: event.clientX,
-			pointerY: event.clientY,
-			x: position.x,
-			y: position.y,
-		};
-		setDragging(true);
-	}
-
-	function onPointerMove(event: PointerEvent<HTMLElement>) {
-		if (!draggingRef.current) return;
-		const pointerDeltaX = event.clientX - originRef.current.pointerX;
-		const pointerDeltaY = event.clientY - originRef.current.pointerY;
-		if (Math.abs(pointerDeltaX) > 2 || Math.abs(pointerDeltaY) > 2) movedRef.current = true;
-		onPositionChange(clampPosition({
-			x: originRef.current.x + pointerDeltaX,
-			y: originRef.current.y + pointerDeltaY,
-		}, bounds));
-	}
-
-	function onPointerEnd(event: PointerEvent<HTMLElement>) {
-		if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-			event.currentTarget.releasePointerCapture(event.pointerId);
-		}
-		draggingRef.current = false;
-		setDragging(false);
-	}
-
-	function onClick() {
-		if (movedRef.current) {
-			movedRef.current = false;
-			return;
-		}
-		onActivate?.();
-	}
-
-	function onKeyDown(event: KeyboardEvent<HTMLElement>) {
-		const amount = event.shiftKey ? 10 : 2;
-		const delta = {
-			ArrowLeft: { x: -amount, y: 0 },
-			ArrowRight: { x: amount, y: 0 },
-			ArrowUp: { x: 0, y: -amount },
-			ArrowDown: { x: 0, y: amount },
-		}[event.key];
-		if (!delta) return;
-		event.preventDefault();
-		onPositionChange(clampPosition({ x: position.x + delta.x, y: position.y + delta.y }, bounds));
-	}
-
-	return {
-		position,
-		dragging,
-		bind: {
-			onClick,
-			onPointerDown,
-			onPointerMove,
-			onPointerUp: onPointerEnd,
-			onPointerCancel: onPointerEnd,
-			onKeyDown,
-		},
-	};
-}
 
 function ExampleStage({ label, children, className }: Readonly<{ label: string; children: ReactNode; className?: string }>) {
 	return (
@@ -255,7 +156,7 @@ const AVATARS = [
 ];
 
 export function GooeyMorphAvatarExample() {
-	const [position, setPosition] = useState<DragPosition>({ x: 0, y: 0 });
+	const [position, setPosition] = useState<GooeyDemoDragPosition>({ x: 0, y: 0 });
 	const drag = useGooeyDemoDrag(position, setPosition, { minX: -24, maxX: 144, minY: -48, maxY: 48 });
 
 	return (
@@ -289,7 +190,7 @@ export function GooeyMorphAvatarExample() {
 }
 
 export function GooeyMorphCardsExample() {
-	const [position, setPosition] = useState<DragPosition>({ x: 0, y: 0 });
+	const [position, setPosition] = useState<GooeyDemoDragPosition>({ x: 0, y: 0 });
 	const drag = useGooeyDemoDrag(position, setPosition, { minX: -24, maxX: 112, minY: -16, maxY: 72 });
 
 	return (
