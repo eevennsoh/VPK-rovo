@@ -95,6 +95,7 @@ test("morph menu hides converged satellite icons and uses VPK icons", () => {
 test("move slider has one liquid-owned thumb surface", () => {
 	assert.match(EXAMPLES, /data-gooey-slider-track=""/u);
 	assert.match(EXAMPLES, /data-gooey-slider-thumb=""/u);
+	assert.match(EXAMPLES, /has-\[:focus-visible\]:outline-2 has-\[:focus-visible\]:outline-offset-2 has-\[:focus-visible\]:outline-border-focused/u);
 	assert.match(EXAMPLES, /move=\{\{ springiness: 0\.5, stretch: 0\.6, trail: 0\.35 \}\}/u);
 	assert.match(EXAMPLES, /const travel = 188/u);
 	assert.match(EXAMPLES, /data-gooey-slider-thumb=""[\s\S]*?className="block size-6 rounded-full"/u);
