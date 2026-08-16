@@ -269,6 +269,10 @@ function streamStudioAutomationDiscoveryQuestionCard({
 	requestOrigin,
 	round = "initial",
 }) {
+	const {
+		createUIMessageStream,
+		pipeUIMessageStreamToResponse,
+	} = getAiSdk();
 	const toolCallId = createDeferredToolCallId(
 		STUDIO_AUTOMATION_DISCOVERY_QUESTION_TOOL_NAME
 	);
@@ -320,6 +324,10 @@ function streamStudioAutomationDiscoveryResult({
 	res,
 	phase = "generation",
 }) {
+	const {
+		createUIMessageStream,
+		pipeUIMessageStreamToResponse,
+	} = getAiSdk();
 	const stream = createUIMessageStream({
 		execute: async ({ writer }) => {
 			writer.write({
@@ -479,10 +487,6 @@ function handleStudioAutomationDiscoveryChatTurn({
 	res,
 	stageTrace,
 }) {
-	const {
-		createUIMessageStream,
-		pipeUIMessageStreamToResponse,
-	} = getAiSdk();
 	const turn = resolveStudioAutomationDiscoveryTurn({
 		chatSdkSource,
 		clarificationSubmission,
