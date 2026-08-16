@@ -12,7 +12,6 @@ import {
 	buildChapterJumpTarget,
 	getChapterContentTop,
 	resolveActiveChapterId,
-	shouldApplyScrollSpyUpdate,
 } from "../../lib/pull-request-guide-active-chapter";
 import type { PullRequestGuidedReview } from "../../lib/pull-request-detail-data";
 
@@ -75,7 +74,7 @@ export function PullRequestGuide({
 		if (!scrollContainer) return;
 
 		const syncActiveChapterFromScroll = () => {
-			if (!shouldApplyScrollSpyUpdate(lockedChapterIdRef.current)) return;
+			if (lockedChapterIdRef.current != null) return;
 
 			const stickyHeaderHeight = scrollContainer
 				.querySelector<HTMLElement>("[data-jira-work-item-pull-request-detail-header]")
