@@ -4,14 +4,7 @@ let aiSdk;
 let aiSdkPromise;
 
 function loadAiSdk() {
-	if (!aiSdkPromise) {
-		aiSdkPromise = import("ai").then((module) => {
-			aiSdk = module;
-			return module;
-		});
-	}
-
-	return aiSdkPromise;
+	return aiSdkPromise ??= import("ai").then((module) => (aiSdk = module));
 }
 
 function getAiSdk() {
