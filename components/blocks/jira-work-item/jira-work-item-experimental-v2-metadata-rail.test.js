@@ -33,8 +33,9 @@ test("experimental v2 removes the description row and relocates Activity chrome 
 	assert.match(activityPanelSource, /setActivityRailChrome\(\{[\s\S]*count: entries\.length/u);
 	assert.match(
 		activityPanelSource,
-		/mapActivityEventsToJiraEntries\(meta\.activityEvents, activityReferenceTimeMs\)/u,
+		/mapActivityEventsToJiraEntries\(composedActivityEvents, activityReferenceTimeMs, meta\.activityEvents\)/u,
 	);
+	assert.match(activityPanelSource, /collectActivityActors\(meta\.activityEvents\)/u);
 	assert.match(contextDescriptionEditorSource, /showToolbar=\{false\}/u);
 	assert.doesNotMatch(
 		contextDescriptionEditorSource,

@@ -390,6 +390,49 @@ function mapStaticChangedFiles(
 	};
 }
 
+/** Collect reaction-directory actors without building the full rendered timeline. */
+export function collectActivityActors(
+	events: readonly ActivityEvent[],
+): JiraActivityActor[] {
+	const actorsById = new Map<string, JiraActivityActor>();
+	const addActor = (actor: JiraActivityActor) => actorsById.set(actor.id, actor);
+
+	for (const event of events) {
+		if (event.kind === "human") {
+			addActor(humanActor(event));
+			for (const reply of event.threadReplies ?? []) {
+				addActor(humanAuthorActor({
+					name: reply.authorName,
+					avatarUrl: reply.authorAvatarSrc,
+				}));
+			}
+			continue;
+		}
+
+		if (event.kind === "agent") {
+			addActor(agentActor({
+				id: event.agentId,
+				name: event.agentName,
+				avatarSrc: event.agentAvatarSrc,
+				brandName: event.agentBrandName,
+			}));
+			for (const reply of event.threadReplies ?? []) {
+				addActor(agentActor({
+					id: reply.agentId,
+					name: reply.agentName,
+					avatarSrc: reply.agentAvatarSrc,
+					brandName: reply.agentBrandName,
+				}));
+			}
+			continue;
+		}
+
+		addActor(staticActor(event.actor));
+	}
+
+	return [...actorsById.values()];
+}
+
 /**
  * Mentionable agents for authored comment copy, derived from the same stream
  * being mapped. Deriving it here keeps callers from hand-maintaining a parallel
