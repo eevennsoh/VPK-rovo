@@ -3,7 +3,6 @@ export {
 	getPulseDriverConfig,
 	sizePresets,
 	sizeThemePresets,
-	themeColors,
 } from "./styles-generated";
 
 export type {
