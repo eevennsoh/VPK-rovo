@@ -15,7 +15,6 @@ import { useReducedMotion } from "motion/react";
 
 import { JiraActivity } from "@/components/blocks/jira-activity";
 import type {
-	JiraActivityActor,
 	JiraActivityCommentEntry,
 	JiraActivityEventEntry,
 	JiraActivityFilter,
@@ -31,6 +30,7 @@ import { useJiraWorkItem } from "@/components/blocks/jira-work-item/experimental
 import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental-v2/context-metadata-rail";
 import {
 	applyActivitySessionThreadPresentation,
+	collectActivityActors,
 	composeActivitySessionThread,
 	JIRA_WORK_ITEM_CURRENT_USER,
 	mapActivityEventsToJiraEntries,
@@ -132,18 +132,10 @@ export function ActivityPanel({
 		() => composeActivitySessionThread(meta.activityEvents, activitySessionThread),
 		[activitySessionThread, meta.activityEvents],
 	);
-	const reactionActors = useMemo(() => {
-		const actorDirectory = new Map<string, JiraActivityActor>();
-		for (const entry of mapActivityEventsToJiraEntries(meta.activityEvents, activityReferenceTimeMs)) {
-			actorDirectory.set(entry.actor.id, entry.actor);
-			if (entry.kind === "comment") {
-				for (const reply of entry.replies ?? []) {
-					actorDirectory.set(reply.actor.id, reply.actor);
-				}
-			}
-		}
-		return [...actorDirectory.values()];
-	}, [activityReferenceTimeMs, meta.activityEvents]);
+	const reactionActors = useMemo(
+		() => collectActivityActors(meta.activityEvents),
+		[meta.activityEvents],
+	);
 	const derivedEntries = useMemo(
 		() => applyActivitySessionThreadPresentation(
 			mapActivityEventsToJiraEntries(composedActivityEvents, activityReferenceTimeMs, meta.activityEvents),

@@ -204,7 +204,12 @@ test("the activity panel gives reactions and human replies somewhere to land", (
 	// reaction click would be a silent no-op.
 	assert.match(activityPanelSource, /onToggleReaction=\{handleToggleReaction\}/u);
 	assert.match(activityPanelSource, /toggleReaction\(entry\.reactions \?\? \[\], emoji, JIRA_WORK_ITEM_CURRENT_USER\.id\)/u);
-	assert.match(activityPanelSource, /const reactionActors = useMemo\(\(\) => \{/u);
+	assert.match(activityPanelSource, /collectActivityActors\(meta\.activityEvents\)/u);
+	assert.doesNotMatch(
+		activityPanelSource,
+		/mapActivityEventsToJiraEntries\(meta\.activityEvents, activityReferenceTimeMs\)/u,
+		"reaction actors must not rebuild the complete rendered timeline on every 400ms tick",
+	);
 	assert.match(activityPanelSource, /actors=\{reactionActors\}/u);
 
 	// Human comments now expose Reply (allowReply flipped to true), but they have

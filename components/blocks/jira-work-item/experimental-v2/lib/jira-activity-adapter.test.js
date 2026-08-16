@@ -65,6 +65,72 @@ test("maps human activity to a replyable Jira comment", async () => {
 	});
 });
 
+test("collects reaction actors without mapping rendered activity entries", async () => {
+	const adapter = await loadAdapter();
+	const events = [
+		{
+			id: "comment-1",
+			kind: "human",
+			author: { name: "Jordan Lee", avatarUrl: "/jordan.png" },
+			content: "Please review this.",
+			createdAtMs: 1,
+			threadReplies: [
+				{
+					id: "reply-1",
+					authorName: "Venn",
+					authorAvatarSrc: "/venn.png",
+					content: "On it.",
+					createdAtMs: 2,
+				},
+			],
+		},
+		{
+			id: "agent-1",
+			kind: "agent",
+			sessionId: "session-1",
+			agentId: "claude-code",
+			agentName: "Claude Code",
+			agentBrandName: "claude",
+			status: "completed",
+			title: "Reviewed checkout",
+			elapsedSeconds: 12,
+			commandPreview: "Review checkout",
+			createdAtMs: 3,
+			threadReplies: [
+				{
+					id: "agent-reply-1",
+					agentId: "code-planner",
+					agentName: "Code Planner",
+					content: "Plan ready.",
+					createdAtMs: 4,
+				},
+			],
+		},
+		{
+			id: "event-1",
+			kind: "event",
+			actor: { id: "github", name: "GitHub", kind: "app", brandName: "github" },
+			segments: [],
+			createdAtMs: 5,
+		},
+	];
+
+	const actorsFromEntries = new Map();
+	for (const entry of adapter.mapActivityEventsToJiraEntries(events)) {
+		actorsFromEntries.set(entry.actor.id, entry.actor);
+		if (entry.kind === "comment") {
+			for (const reply of entry.replies ?? []) {
+				actorsFromEntries.set(reply.actor.id, reply.actor);
+			}
+		}
+	}
+
+	assert.deepEqual(
+		adapter.collectActivityActors(events),
+		[...actorsFromEntries.values()],
+	);
+});
+
 test("maps activity timestamps relative to the supplied story clock", async () => {
 	const adapter = await loadAdapter();
 	const referenceTimeMs = Date.UTC(2026, 4, 12, 9, 9);
