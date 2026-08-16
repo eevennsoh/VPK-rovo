@@ -40,7 +40,11 @@ import {
 import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental-v2/context-metadata-rail";
 import { CONNECTED_REPOSITORY_COUNT } from "@/components/blocks/jira-work-item/experimental-v2/lib/development-repositories";
 import { getPullRequestIdentity } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
-import type { PullRequestCheck, PullRequestReviewer } from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-detail-data";
+import type {
+	PullRequestActivity,
+	PullRequestCheck,
+	PullRequestReviewer,
+} from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-detail-data";
 import { SmartLink, type SmartLinkItem } from "@/components/blocks/smart-link";
 import { SMART_LINK_MODAL_ACTIONS } from "@/components/blocks/smart-link/data/smart-link-actions";
 import { ProgressCircle } from "@/components/ui-custom/progress-circle";
@@ -214,6 +218,7 @@ export function MetadataRail({
 	currentReviewerStatus,
 	onPullRequestFix,
 	selectedPullRequestEntry = null,
+	submittedReviewActivity = [],
 }: Readonly<{
 	activity?: ReactNode;
 	automationRules?: readonly WorkItemAutomationRule[];
@@ -221,6 +226,7 @@ export function MetadataRail({
 	currentReviewerStatus?: PullRequestReviewer["status"];
 	onPullRequestFix?: (checks: readonly PullRequestCheck[]) => void;
 	selectedPullRequestEntry?: JiraActivityEventEntry | null;
+	submittedReviewActivity?: readonly PullRequestActivity[];
 }>) {
 	const {
 		activePanelView,
@@ -386,6 +392,7 @@ export function MetadataRail({
 								entry={selectedPullRequestEntry}
 								key={selectedPullRequestKey}
 								onFixCheck={onPullRequestFix}
+								submittedReviewActivity={submittedReviewActivity}
 							/>
 						) : null}
 					</div>

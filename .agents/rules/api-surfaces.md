@@ -47,7 +47,7 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 164; runtim
 | `POST` | `/api/browser-workspaces/:workspaceId/tabs/:tabIndex/activate` | yes | `backend/routes/browser-workspaces.js:252` |
 | `POST` | `/api/chat-cancel` | no | `backend/routes/chat-control.js:42` |
 | `POST` | `/api/chat-sdk` | no | `backend/routes/chat-sdk.js:17` |
-| `POST` | `/api/chat-sdk/skip-question` | no | `backend/routes/chat-skip-question.js:59` |
+| `POST` | `/api/chat-sdk/skip-question` | no | `backend/routes/chat-skip-question.js:60` |
 | `POST` | `/api/chat-title` | no | `backend/routes/ai-utilities.js:181` |
 | `GET` | `/api/checkpoints` | no | `backend/routes/rovo-app.js:267` |
 | `POST` | `/api/checkpoints` | yes | `backend/routes/rovo-app.js:280` |

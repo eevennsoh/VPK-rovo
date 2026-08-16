@@ -29,13 +29,21 @@ function loadModule() {
 
 test("maps review verdicts to Approvers status and toast copy", async () => {
 	const {
+		GUIDED_REVIEW_CURRENT_REVIEWER,
 		GUIDED_REVIEW_CURRENT_REVIEWER_ID,
 		applyCurrentReviewerStatus,
+		createSubmittedPullRequestReviewActivity,
 		mapReviewVerdictToReviewerStatus,
 		mapReviewVerdictToToastCopy,
 	} = await loadModule();
 
 	assert.equal(GUIDED_REVIEW_CURRENT_REVIEWER_ID, "priya-narayanan");
+	assert.deepEqual(GUIDED_REVIEW_CURRENT_REVIEWER, {
+		id: "priya-narayanan",
+		name: "Priya Narayanan",
+		kind: "person",
+		avatarSrc: "/avatar-user/priya-hansra/color/asow-strategy-orange.png",
+	});
 	assert.equal(mapReviewVerdictToReviewerStatus("approve"), "approved");
 	assert.equal(mapReviewVerdictToReviewerStatus("request-changes"), "changes-requested");
 	assert.equal(mapReviewVerdictToReviewerStatus("comment"), "commented");
@@ -45,7 +53,7 @@ test("maps review verdicts to Approvers status and toast copy", async () => {
 		title: "Approved",
 	});
 	assert.deepEqual(mapReviewVerdictToToastCopy("request-changes"), {
-		appearance: "error",
+		appearance: "success",
 		title: "Changes requested",
 	});
 	assert.deepEqual(mapReviewVerdictToToastCopy("comment"), {
@@ -65,4 +73,48 @@ test("maps review verdicts to Approvers status and toast copy", async () => {
 		],
 	);
 	assert.equal(applyCurrentReviewerStatus(reviewers, undefined), reviewers);
+
+	assert.deepEqual(
+		["comment", "approve", "request-changes"].map((verdict, index) => (
+			createSubmittedPullRequestReviewActivity(
+				{ body: `Review ${index + 1}`, verdict },
+				{ id: `review-${index + 1}`, occurredAtMs: index + 1 },
+			)
+		)),
+		[
+			{
+				id: "review-1",
+				occurredAtMs: 1,
+				kind: "review-submitted",
+				actor: GUIDED_REVIEW_CURRENT_REVIEWER,
+				timestamp: "Just now",
+				decision: "commented",
+				body: "Review 1",
+				allowReply: false,
+				allowResolve: false,
+			},
+			{
+				id: "review-2",
+				occurredAtMs: 2,
+				kind: "review-submitted",
+				actor: GUIDED_REVIEW_CURRENT_REVIEWER,
+				timestamp: "Just now",
+				decision: "approved",
+				body: "Review 2",
+				allowReply: false,
+				allowResolve: false,
+			},
+			{
+				id: "review-3",
+				occurredAtMs: 3,
+				kind: "review-submitted",
+				actor: GUIDED_REVIEW_CURRENT_REVIEWER,
+				timestamp: "Just now",
+				decision: "changes-requested",
+				body: "Review 3",
+				allowReply: false,
+				allowResolve: false,
+			},
+		],
+	);
 });

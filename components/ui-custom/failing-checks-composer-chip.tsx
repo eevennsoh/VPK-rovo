@@ -40,7 +40,11 @@ export function FailingChecksComposerChip({
 	return (
 		<ComposerContextChip
 			countLabel={countLabel}
-			icon={<StatusErrorIcon label="" size="small" />}
+			icon={
+				<span className="text-icon-danger">
+					<StatusErrorIcon color="currentColor" label="" size="small" />
+				</span>
+			}
 			items={toChipItems(checks)}
 			onRemoveAll={onRemoveAll}
 			removeAllLabel="Remove all failing checks"

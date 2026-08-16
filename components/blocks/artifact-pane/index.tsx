@@ -116,6 +116,31 @@ const HEADER_ACTION_HOVER_REVEAL_CLASSNAME =
 const HEADER_ACTION_HOVER_SLOT_CLASSNAME =
 	"grid shrink-0 grid-cols-[0fr] transition-[grid-template-columns] duration-fast ease-out-practical group-hover/header:grid-cols-[1fr] group-has-[:focus-visible]/header:grid-cols-[1fr] motion-reduce:transition-none";
 
+/**
+ * Chevron expands from 0fr on header hover — same slide-for-trailing-icon
+ * language as failed check-row Fix (`group/check-row`). Collapsed 0fr means
+ * always-visible header actions (e.g. Fix all) sit flush right.
+ */
+const HEADER_CHEVRON_HOVER_SLOT_CLASSNAME =
+	"grid shrink-0 grid-cols-[0fr] transition-[grid-template-columns] duration-normal ease-out-practical group-hover/header:grid-cols-[1fr] group-has-[:focus-visible]/header:grid-cols-[1fr] motion-reduce:transition-none";
+
+/** `reveal: "open"` actions keep a 0fr slot when collapsed so Fix all doesn't pop out of the trailing cluster. */
+const HEADER_ACTION_OPEN_REVEAL_SLOT_CLASSNAME =
+	"grid shrink-0 transition-[grid-template-columns] duration-normal ease-in-out motion-reduce:transition-none";
+
+/**
+ * Collapsed summary (`· 2/3 passed…`) keeps a grid slot so open↔closed doesn't
+ * reflow the title row while content height is animating.
+ */
+const COLLAPSED_COUNT_SLOT_CLASSNAME =
+	"grid min-w-0 transition-[grid-template-columns,opacity] duration-normal ease-in-out motion-reduce:transition-none";
+
+const DISCLOSURE_CONTENT_CLASSNAME =
+	"overflow-hidden has-[:focus-visible]:overflow-visible h-(--collapsible-panel-height) transition-[height,opacity] duration-normal ease-in-out motion-reduce:transition-none data-starting-style:h-0 data-starting-style:opacity-0 data-ending-style:h-0 data-ending-style:opacity-0";
+
+const SECTION_SEPARATOR_SLOT_CLASSNAME =
+	"grid transition-[grid-template-rows] duration-normal ease-in-out motion-reduce:transition-none";
+
 function ArtifactPaneDisclosure({
 	content,
 	count,
@@ -125,17 +150,21 @@ function ArtifactPaneDisclosure({
 	title,
 }: Readonly<Omit<ArtifactPaneSectionItem, "defaultOpen" | "id"> & { onOpenChange: (open: boolean) => void; open: boolean }>) {
 	const prefersReducedMotion = useReducedMotion();
-	const showHeaderAction = Boolean(headerAction && (headerAction.reveal !== "open" || open));
-	const headerActionAlwaysVisible = headerAction?.reveal === "open";
+	const headerActionOpenReveal = headerAction?.reveal === "open";
+	// Keep `reveal: "open"` actions mounted (0fr when collapsed) so collapse doesn't
+	// fight the hover chevron slot by unmounting Fix all in the same frame.
+	const showHeaderAction = Boolean(headerAction);
+	const headerActionHoverReveal = Boolean(headerAction && !headerActionOpenReveal);
 
 	const headerActionControl = showHeaderAction && headerAction
 		? headerAction.appearance === "label"
 			? (
 				<Button
+					aria-hidden={headerActionOpenReveal && !open ? true : undefined}
 					aria-label={headerAction.label}
 					className={cn(
 						"shrink-0",
-						headerActionAlwaysVisible ? null : HEADER_ACTION_HOVER_REVEAL_CLASSNAME,
+						headerActionHoverReveal ? HEADER_ACTION_HOVER_REVEAL_CLASSNAME : null,
 					)}
 					onClick={(event) => {
 						event.preventDefault();
@@ -143,6 +172,7 @@ function ArtifactPaneDisclosure({
 						headerAction.onClick?.();
 					}}
 					size="compact"
+					tabIndex={headerActionOpenReveal && !open ? -1 : undefined}
 					type="button"
 					variant="outline"
 				>
@@ -155,10 +185,11 @@ function ArtifactPaneDisclosure({
 						<TooltipTrigger
 							render={
 								<Button
+									aria-hidden={headerActionOpenReveal && !open ? true : undefined}
 									aria-label={headerAction.label}
 									className={cn(
 										"shrink-0",
-										headerActionAlwaysVisible ? null : HEADER_ACTION_HOVER_REVEAL_CLASSNAME,
+										headerActionHoverReveal ? HEADER_ACTION_HOVER_REVEAL_CLASSNAME : null,
 									)}
 									onClick={(event) => {
 										event.preventDefault();
@@ -166,6 +197,7 @@ function ArtifactPaneDisclosure({
 										headerAction.onClick?.();
 									}}
 									size="icon-compact"
+									tabIndex={headerActionOpenReveal && !open ? -1 : undefined}
 									type="button"
 									variant="ghost"
 								/>
@@ -181,7 +213,9 @@ function ArtifactPaneDisclosure({
 
 	return (
 		<Collapsible onOpenChange={onOpenChange} open={open}>
-			{/* Title left; trailing action + chevron share the far-right cluster (no absolute). */}
+			{/* Title left; trailing action + chevron share a far-right cluster (no absolute).
+			    Chevron width collapses to 0 until hover so Fix all / label actions align
+			    flush right like check-row Fix, then slide left as the chevron expands. */}
 			<div className="group/header flex w-full items-center gap-2 px-3 py-3">
 				<CollapsibleTrigger
 					render={
@@ -196,43 +230,71 @@ function ArtifactPaneDisclosure({
 						style={{ font: token("font.heading.xxsmall") }}
 					>
 						{title}
-						{!open && count !== undefined ? <CollapsedSectionCount count={count} /> : null}
+						{count !== undefined ? (
+							<span
+								aria-hidden={open ? true : undefined}
+								className={cn(
+									COLLAPSED_COUNT_SLOT_CLASSNAME,
+									open ? "grid-cols-[0fr] opacity-0" : "grid-cols-[1fr] opacity-100",
+								)}
+							>
+								<span className="flex min-w-0 items-center gap-1.5 overflow-hidden">
+									<CollapsedSectionCount count={count} />
+								</span>
+							</span>
+						) : null}
 					</span>
 				</CollapsibleTrigger>
-				{headerActionControl ? (
-					headerActionAlwaysVisible ? (
-						headerActionControl
-					) : (
-						<div className={HEADER_ACTION_HOVER_SLOT_CLASSNAME}>
-							<div className="min-w-0 overflow-hidden pr-0.5">
-								{headerActionControl}
+				<div className="flex shrink-0 items-center">
+					{headerActionControl ? (
+						headerActionOpenReveal ? (
+							<div
+								className={cn(
+									HEADER_ACTION_OPEN_REVEAL_SLOT_CLASSNAME,
+									open ? "grid-cols-[1fr]" : "grid-cols-[0fr]",
+								)}
+							>
+								<div className="min-w-0 overflow-hidden">
+									{headerActionControl}
+								</div>
 							</div>
+						) : (
+							<div className={HEADER_ACTION_HOVER_SLOT_CLASSNAME}>
+								<div className="min-w-0 overflow-hidden">
+									{headerActionControl}
+								</div>
+							</div>
+						)
+					) : null}
+					{/* Margin on the inner chevron so a collapsed 0fr slot leaves no gap after Fix all. */}
+					<div className={HEADER_CHEVRON_HOVER_SLOT_CLASSNAME}>
+						<div className="min-w-0 overflow-hidden">
+							<CollapsibleTrigger
+								render={
+									<button
+										aria-hidden
+										className="ml-2 shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+										tabIndex={-1}
+										type="button"
+									/>
+								}
+							>
+								<motion.span
+									animate={{ rotate: open ? 90 : 0 }}
+									aria-hidden
+									className="block text-icon-subtle"
+									initial={false}
+									style={{ willChange: "transform" }}
+									transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.15, ease: [0.4, 0, 0, 1] }}
+								>
+									<Icon render={<ChevronRightIcon label="" size="small" />} />
+								</motion.span>
+							</CollapsibleTrigger>
 						</div>
-					)
-				) : null}
-				<CollapsibleTrigger
-					render={
-						<button
-							aria-hidden
-							className="shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-							tabIndex={-1}
-							type="button"
-						/>
-					}
-				>
-					<motion.span
-						animate={{ rotate: open ? 90 : 0 }}
-						aria-hidden
-						className="block text-icon-subtle opacity-0 transition-opacity duration-fast ease-out-practical group-hover/header:opacity-100 group-has-[:focus-visible]/header:opacity-100 motion-reduce:transition-none"
-						initial={false}
-						style={{ willChange: "transform" }}
-						transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.15, ease: [0.4, 1, 0.6, 1] }}
-					>
-						<Icon render={<ChevronRightIcon label="" size="small" />} />
-					</motion.span>
-				</CollapsibleTrigger>
+					</div>
+				</div>
 			</div>
-			<CollapsibleContent>
+			<CollapsibleContent className={DISCLOSURE_CONTENT_CLASSNAME}>
 				<div className="px-3 pb-3">{content}</div>
 			</CollapsibleContent>
 		</Collapsible>
@@ -305,9 +367,19 @@ export function ArtifactPane({
 
 				return (
 					<Fragment key={section.id}>
-						{showSeparators && index > 0 && (open || previousOpen) ? (
-							<div className="px-3 py-1.5">
-								<Separator />
+						{showSeparators && index > 0 ? (
+							<div
+								aria-hidden={open || previousOpen ? undefined : true}
+								className={cn(
+									SECTION_SEPARATOR_SLOT_CLASSNAME,
+									open || previousOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+								)}
+							>
+								<div className="overflow-hidden">
+									<div className="px-3 py-1.5">
+										<Separator />
+									</div>
+								</div>
 							</div>
 						) : null}
 						<div

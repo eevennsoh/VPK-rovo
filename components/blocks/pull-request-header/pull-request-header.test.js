@@ -64,6 +64,11 @@ test("PullRequestHeader exposes the detail header props contract", () => {
 	assert.match(TYPES_SOURCE, /onChecksRunningClick\?: \(\) => void/u);
 	assert.match(TYPES_SOURCE, /onMergeConflictsClick\?: \(\) => void/u);
 	assert.match(TYPES_SOURCE, /onReviewRequiredClick\?: \(\) => void/u);
+	assert.match(
+		TYPES_SOURCE,
+		/export interface PullRequestHeaderSubmitReviewAction[\s\S]*ariaLabel: string;[\s\S]*badge\?: string;[\s\S]*disabled\?: boolean;[\s\S]*label: string;[\s\S]*onClick: \(\) => void;/u,
+	);
+	assert.match(TYPES_SOURCE, /submitReviewAction\?: PullRequestHeaderSubmitReviewAction/u);
 	assert.match(TYPES_SOURCE, /url\?: string/u);
 	assert.match(TYPES_SOURCE, /scmProviderName\?: string/u);
 	assert.match(TYPES_SOURCE, /onConvertToDraftClick\?: \(\) => void/u);
@@ -141,15 +146,20 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/spinner"/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/function mergeStateLeadingIcon[\s\S]*case "checks-failed":[\s\S]*grid size-4 shrink-0 place-items-center text-icon-danger[\s\S]*<StatusErrorIcon[\s\S]*case "checks-running":[\s\S]*grid size-4 shrink-0 place-items-center[\s\S]*<Spinner size="xs" \/>[\s\S]*case "merge-conflicts":[\s\S]*grid size-4 shrink-0 place-items-center text-icon-danger[\s\S]*<MergeFailureIcon/u,
+		/function mergeStateLeadingIcon[\s\S]*case "checks-failed":[\s\S]*grid size-4 shrink-0 place-items-center text-icon-danger[\s\S]*<StatusErrorIcon[\s\S]*case "checks-running":[\s\S]*grid size-4 shrink-0 place-items-center[\s\S]*<Spinner size="xs" \/>[\s\S]*case "merge-conflicts":[\s\S]*grid size-4 shrink-0 place-items-center text-icon-danger[\s\S]*<MergeFailureIcon[\s\S]*case "review-required":[\s\S]*grid size-4 shrink-0 place-items-center text-icon-information[\s\S]*<StatusInformationIcon[\s\S]*case "ready":[\s\S]*grid size-4 shrink-0 place-items-center text-icon-success[\s\S]*<StatusSuccessIcon/u,
 	);
 	assert.match(COMPONENT_SOURCE, /\{mergeStateLeadingIcon\(mergeState\)\}/u);
 	assert.match(COMPONENT_SOURCE, /variant="separated"/u);
 	assert.match(COMPONENT_SOURCE, /variant="split"/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/<ButtonGroup[\s\S]*variant="separated"[\s\S]*<ButtonGroup variant="split">[\s\S]*mergeStateLabel[\s\S]*aria-label="Merge options"[\s\S]*Auto merge[\s\S]*<\/ButtonGroup>[\s\S]*<ButtonGroup>[\s\S]*aria-label="More actions"/u,
+		/<ButtonGroup[\s\S]*variant="separated"[\s\S]*<ButtonGroup variant="split">[\s\S]*mergeStateLabel[\s\S]*aria-label="Merge options"[\s\S]*Auto merge[\s\S]*<\/ButtonGroup>[\s\S]*canMutatePullRequest && submitReviewAction \? \([\s\S]*\{submitReviewAction\.label\}[\s\S]*\) : null[\s\S]*<ButtonGroup>[\s\S]*aria-label="More actions"/u,
 	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/canMutatePullRequest && submitReviewAction \? \([\s\S]*aria-label=\{submitReviewAction\.ariaLabel\}[\s\S]*disabled=\{submitReviewAction\.disabled\}[\s\S]*onClick=\{submitReviewAction\.onClick\}[\s\S]*variant="outline"[\s\S]*\{submitReviewAction\.label\}[\s\S]*submitReviewAction\.badge \? \([\s\S]*<Badge[\s\S]*\{submitReviewAction\.badge\}/u,
+	);
+	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/badge"/u);
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/dropdown-menu"/u);
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/switch"/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /from "@\/components\/ui\/toggle"/u);
@@ -170,6 +180,10 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/pull-request"/u);
 	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/show-more-horizontal"/u);
 	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/status-error"/u);
+	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/status-information"/u);
+	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/status-success"/u);
+	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/undo"/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/check-circle"/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/link-external"/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/file"/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/cross"/u);
@@ -213,14 +227,14 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.match(COMPONENT_SOURCE, /case "checks-failed":[\s\S]*return "Checks failed"/u);
 	assert.match(COMPONENT_SOURCE, /case "checks-running":[\s\S]*return "Checks running"/u);
 	assert.match(COMPONENT_SOURCE, /case "merge-conflicts":[\s\S]*return "Merge conflicts"/u);
-	assert.match(COMPONENT_SOURCE, /case "review-required":[\s\S]*return "Review required"/u);
+	assert.match(COMPONENT_SOURCE, /case "review-required":[\s\S]*return "Require approval"/u);
 	assert.match(
 		COMPONENT_SOURCE,
 		/function mergeMethodLabel[\s\S]*case "squash":[\s\S]*return "Squash and merge"[\s\S]*case "merge":[\s\S]*return "Create a merge commit"[\s\S]*case "rebase":[\s\S]*return "Rebase and merge"/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/case "ready":[\s\S]*return mergeMethodLabel\(mergeMethod\)/u,
+		/case "ready":[\s\S]*return "Merge"/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,
@@ -261,7 +275,7 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/Copy link[\s\S]*DropdownMenuSeparator[\s\S]*Convert to draft[\s\S]*Close pull request/u,
+		/Copy link[\s\S]*canMutatePullRequest \? \([\s\S]*DropdownMenuSeparator[\s\S]*Convert to draft[\s\S]*Close pull request[\s\S]*\) : null/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,
@@ -298,11 +312,11 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.match(COMPONENT_SOURCE, /const canMutatePullRequest = status === "Open"/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/disabled=\{!canMutatePullRequest \|\| !onConvertToDraftClick\}/u,
+		/disabled=\{!onConvertToDraftClick\}/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/disabled=\{!canMutatePullRequest \|\| !onClosePullRequestClick\}/u,
+		/disabled=\{!onClosePullRequestClick\}/u,
 	);
 	assert.doesNotMatch(COMPONENT_SOURCE, /onMoreActionsClick/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /from "@\/components\/ui\/avatar"/u);
@@ -359,11 +373,19 @@ test("PullRequestHeader owns optional bottom-edge tab navigation", () => {
 	);
 });
 
-test("PullRequestHeader replaces merge controls with terminal merged state", () => {
+test("PullRequestHeader replaces merge controls with Revert PR when merged", () => {
 	assert.match(COMPONENT_SOURCE, /const canMutatePullRequest = status === "Open"/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/\{canMutatePullRequest \? \([\s\S]*<ButtonGroup variant="split">[\s\S]*mergeStateLabel\(mergeState, selectedMergeMethod\)[\s\S]*aria-label="Merge options"[\s\S]*\) : \([\s\S]*<Button disabled[\s\S]*<MergeSuccessIcon[\s\S]*Merged[\s\S]*\)\}/u,
+		/\{canMutatePullRequest \? \([\s\S]*<ButtonGroup variant="split">[\s\S]*mergeStateLabel\(mergeState\)[\s\S]*aria-label="Merge options"[\s\S]*\) : \([\s\S]*aria-label="Revert pull request"[\s\S]*<UndoIcon[\s\S]*Revert PR[\s\S]*\)\}/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/canMutatePullRequest && submitReviewAction \? \(/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/canMutatePullRequest \? \([\s\S]*Convert to draft[\s\S]*Close pull request[\s\S]*\) : null/u,
 	);
 });
 
@@ -436,6 +458,7 @@ test("Pull Request Header demo shows controlled and scroll-driven modes", () => 
 test("Pull Request Header block is registered in the website catalog", () => {
 	assert.match(INDEX_SOURCE, /export \{ PullRequestHeader \}/u);
 	assert.match(INDEX_SOURCE, /PullRequestHeaderMergeState/u);
+	assert.match(INDEX_SOURCE, /PullRequestHeaderSubmitReviewAction/u);
 	assert.match(INDEX_SOURCE, /DEMO_PULL_REQUEST_HEADER/u);
 	assert.match(DEMO_SOURCE, /from "@\/components\/blocks\/pull-request-header\/page"/u);
 	assert.match(

@@ -198,6 +198,7 @@ export function ContextResources({
 						<div className="pointer-events-none ml-auto shrink-0 flex items-center gap-2 opacity-0 transition-opacity duration-normal ease-out group-hover/description-scope:pointer-events-auto group-hover/description-scope:opacity-100 group-has-[:focus-visible]/description-scope:pointer-events-auto group-has-[:focus-visible]/description-scope:opacity-100 motion-reduce:transition-none">
 							<Tooltip>
 								<TooltipTrigger
+									delay={0}
 									render={
 										<Button
 											aria-label="Copy work item as markdown"

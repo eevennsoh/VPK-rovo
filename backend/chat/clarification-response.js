@@ -1,9 +1,6 @@
 "use strict";
 
-const {
-	createUIMessageStream: defaultCreateUIMessageStream,
-	pipeUIMessageStreamToResponse: defaultPipeUIMessageStreamToResponse,
-} = require("ai");
+const { getAiSdk } = require("../lib/ai-sdk-runtime");
 const {
 	adaptClarificationAnswers: adaptClarificationAnswersCore,
 } = require("../lib/ask-user-questions-adapter");
@@ -106,12 +103,18 @@ function getToolCallIdFromClarificationSubmission(clarificationSubmission) {
 
 function createClarificationResponseHelpers({
 	clarificationWidgetType = DEFAULT_CLARIFICATION_WIDGET_TYPE,
-	createUIMessageStream = defaultCreateUIMessageStream,
-	pipeUIMessageStreamToResponse = defaultPipeUIMessageStreamToResponse,
+	createUIMessageStream,
+	pipeUIMessageStreamToResponse,
 	requestUserInputQuestionMetaStore,
 	now = Date.now,
 	toIsoString = () => new Date().toISOString(),
 } = {}) {
+	if (!createUIMessageStream || !pipeUIMessageStreamToResponse) {
+		const aiSdk = getAiSdk();
+		createUIMessageStream ||= aiSdk.createUIMessageStream;
+		pipeUIMessageStreamToResponse ||= aiSdk.pipeUIMessageStreamToResponse;
+	}
+
 	const resolvedClarificationWidgetType =
 		getNonEmptyString(clarificationWidgetType) ||
 		DEFAULT_CLARIFICATION_WIDGET_TYPE;

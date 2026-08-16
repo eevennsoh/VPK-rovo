@@ -21,6 +21,8 @@ export interface JiraActivityCardProps {
 	timestamp?: string;
 	/** Optional status tag shown in the activity-card header. */
 	tag?: { text: string; color?: TagColor };
+	/** Optional metadata rendered immediately after the plain-header timestamp. */
+	timestampMeta?: ReactNode;
 	/** Optional trailing header action supplied by the consuming surface. */
 	action?: ReactNode;
 	/** Optional leading identity shown in the plain activity-card header. */
@@ -59,6 +61,7 @@ export function JiraActivityCard({
 	agentName,
 	timestamp,
 	tag,
+	timestampMeta,
 	action,
 	headerAvatar,
 	hideLeadAvatar = false,
@@ -164,6 +167,7 @@ export function JiraActivityCard({
 									</div>
 									<div className="flex min-w-0 items-center gap-1 overflow-hidden text-xs leading-4 text-text-subtle">
 										<span className="shrink-0">{timestamp}</span>
+										{timestampMeta}
 										{tag ? <Tag color={tag.color ?? "gray"}>{tag.text}</Tag> : null}
 									</div>
 								</div>
@@ -171,6 +175,7 @@ export function JiraActivityCard({
 								<div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-sm leading-5">
 									<span className="font-medium text-text">{agentName}</span>
 									<span className="text-text-subtle">{timestamp}</span>
+									{timestampMeta}
 									{tag ? <Tag color={tag.color ?? "gray"}>{tag.text}</Tag> : null}
 								</div>
 							)}

@@ -40,10 +40,10 @@ function adaptDetail(detail: { label: string; body: string } | undefined) {
 
 function reviewBody(activity: Extract<PullRequestActivity, { kind: "review-submitted" }>): JiraActivitySegment[] {
 	const decision = activity.decision === "approved"
-		? "approved this pull request. "
+		? "Approved this pull request. "
 		: activity.decision === "changes-requested"
-			? "requested changes. "
-			: "reviewed this pull request. ";
+			? "Requested changes. "
+			: "Reviewed this pull request. ";
 	return [
 		{ type: "text", text: decision + activity.body },
 		...(activity.filePath
@@ -53,6 +53,30 @@ function reviewBody(activity: Extract<PullRequestActivity, { kind: "review-submi
 				]
 			: []),
 	];
+}
+
+function reviewCommentBody(
+	activity: Extract<PullRequestActivity, { kind: "review-comment" }>,
+): JiraActivitySegment[] {
+	return [
+		{ type: "text", text: activity.body },
+		{ type: "text", text: " Commented on " },
+		{ type: "link", text: activity.filePath },
+	];
+}
+
+function adaptReplies(replies: readonly {
+	id: string;
+	actor: PullRequestActivityActor;
+	timestamp: string;
+	body: string;
+}[] | undefined) {
+	return replies?.map((reply) => ({
+		id: reply.id,
+		actor: adaptActor(reply.actor),
+		timestamp: reply.timestamp,
+		body: reply.body,
+	}));
 }
 
 function adaptActivity(activity: PullRequestActivity): JiraActivityEntry {
@@ -85,7 +109,10 @@ function adaptActivity(activity: PullRequestActivity): JiraActivityEntry {
 				// still appears as an inline mention Tag in the action line.
 				icon: "commit",
 				segments: [
-					{ type: "text", text: `pushed ${activity.commitCount} commits ending in ` },
+					{
+						type: "text",
+						text: `pushed ${activity.commitCount} ${activity.commitCount === 1 ? "commit" : "commits"} ending in `,
+					},
 					{ type: "code", text: activity.headSha },
 				],
 			};
@@ -118,21 +145,27 @@ function adaptActivity(activity: PullRequestActivity): JiraActivityEntry {
 			return {
 				...base,
 				kind: "comment",
-				tag: activity.decision === "approved"
-					? { text: "Approved", color: "green" }
+				statusLozenge: activity.decision === "approved"
+					? { text: "Approved", variant: "success" }
 					: activity.decision === "changes-requested"
-						? { text: "Changes requested", color: "red" }
-						: { text: "Reviewed", color: "blue" },
+						? { text: "Changes requested", variant: "danger" }
+						: { text: "Reviewed", variant: "information" },
 				body: reviewBody(activity),
 				collapsible: adaptDetail(activity.detail),
-				replies: activity.replies?.map((reply) => ({
-					id: reply.id,
-					actor: adaptActor(reply.actor),
-					timestamp: reply.timestamp,
-					body: reply.body,
-				})),
+				replies: adaptReplies(activity.replies),
 				allowReply: activity.allowReply ?? false,
 				allowResolve: activity.allowResolve ?? false,
+				resolved: activity.resolved ?? false,
+			};
+		case "review-comment":
+			return {
+				...base,
+				kind: "comment",
+				parentId: `pull-request-${activity.parentActivityId}`,
+				body: reviewCommentBody(activity),
+				replies: adaptReplies(activity.replies),
+				allowReply: activity.allowReply ?? true,
+				allowResolve: activity.allowResolve ?? true,
 				resolved: activity.resolved ?? false,
 			};
 		case "thread-resolved":

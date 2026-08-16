@@ -21,6 +21,8 @@ import {
 	STORY_CREATED_AT_MS,
 	STORY_EPOCH_MS,
 	VENN_ACTOR,
+	createFixAgentActor,
+	resolveFixAgent,
 	type JiraAgentsBuildStep,
 	type JiraAgentsFixStep,
 	type JiraAgentsReviewStep,
@@ -188,18 +190,36 @@ type StoryPullRequestChecks = NonNullable<
 >;
 
 function createPullRequestEvent({
+	additions = 86,
+	authorAvatarSrc,
+	authorName = HUMAN_ACTOR.name,
+	branch = "feature/shop-4821-guest-checkout",
 	checks,
+	createdAtMs = STORY_EPOCH_MS - 1_200_000,
+	deletions = 21,
 	id,
 	mergeState,
+	number = 1847,
+	repository = "eevensoh/vpk-rovo",
 	reviewDecision,
 	status = "Open",
+	title = "Implement guest checkout without account creation",
 	updatedAtMs,
 }: {
+	additions?: number;
+	authorAvatarSrc?: string;
+	authorName?: string;
+	branch?: string;
 	checks?: StoryPullRequestChecks;
+	createdAtMs?: number;
+	deletions?: number;
 	id: string;
 	mergeState: "ready" | "blocked" | "merged";
+	number?: number;
+	repository?: string;
 	reviewDecision: "approved" | "review-required";
 	status?: "Open" | "Merged";
+	title?: string;
 	updatedAtMs: number;
 }): StaticTimelineEvent {
 	return {
@@ -209,17 +229,18 @@ function createPullRequestEvent({
 		icon: "linked",
 		segments: [],
 		pullRequest: {
-			number: 1847,
-			title: "Implement guest checkout without account creation",
+			number,
+			title,
 			status,
-			additions: 86,
-			deletions: 21,
-			repository: "eevensoh/vpk-rovo",
-			branch: "feature/shop-4821-guest-checkout",
+			additions,
+			deletions,
+			repository,
+			branch,
 			targetBranch: "main",
-			url: "https://github.com/eevensoh/vpk-rovo/pull/1847",
-			authorName: HUMAN_ACTOR.name,
-			createdAtMs: STORY_EPOCH_MS - 1_200_000,
+			url: `https://github.com/${repository}/pull/${number}`,
+			authorName,
+			...(authorAvatarSrc ? { authorAvatarSrc } : {}),
+			createdAtMs,
 			updatedAtMs,
 			reviewDecision,
 			mergeState,
@@ -309,7 +330,10 @@ function createReviewEvents(step: JiraAgentsReviewStep): readonly StaticTimeline
 	];
 }
 
-function createFixEvents(fixStep: JiraAgentsFixStep): readonly StaticTimelineEvent[] {
+function createFixEvents(
+	fixStep: JiraAgentsFixStep,
+	options: Pick<JiraAgentsStoryStateOptions, "fixAgentId"> = {},
+): readonly StaticTimelineEvent[] {
 	// Continue from Review's failed PR settle; status returns to In progress.
 	const reviewEnd: readonly StaticTimelineEvent[] = [
 		...createReviewEvents("failed"),
@@ -319,12 +343,13 @@ function createFixEvents(fixStep: JiraAgentsFixStep): readonly StaticTimelineEve
 		return reviewEnd;
 	}
 	const repairComplete = fixStep === "complete";
+	const fixAgent = resolveFixAgent(options);
 	return [
 		...reviewEnd,
 		{
 			id: "story-ci-repair",
 			kind: "changed-files",
-			actor: CLAUDE_CODE_ACTOR,
+			actor: createFixAgentActor(fixAgent),
 			summary: repairComplete ? "Repaired the failed CI path" : "Repairing the failed CI path",
 			description: repairComplete
 				? "Narrowed the nullable delivery address before order creation and reran the failed lint and typecheck check to green while preserving the existing green unit and browser results."
@@ -337,7 +362,7 @@ function createFixEvents(fixStep: JiraAgentsFixStep): readonly StaticTimelineEve
 				id: "story-ci-repair-session",
 				title: "Repair delivery-address validation",
 				state: repairComplete ? "complete" : "running",
-				agent: CLAUDE_CODE,
+				agent: fixAgent,
 				branch: "feature/shop-4821-guest-checkout",
 				elapsedSeconds: repairComplete ? 174 : 96,
 			}),
@@ -390,6 +415,25 @@ const RELEASE_EVENTS: readonly StaticTimelineEvent[] = [
 		reviewDecision: "approved",
 		status: "Merged",
 		updatedAtMs: STORY_EPOCH_MS - 480_000,
+	}),
+	// List-only follow-up PR for Release metrics / select — no guided-review detail.
+	// Distinct author/repo from #1847 so the Release select rows stay visually distinct.
+	createPullRequestEvent({
+		additions: 24,
+		authorAvatarSrc: "/avatar-human/priya-hansra.png",
+		authorName: "Priya Hansra",
+		branch: "fix/shop-4821-guest-email-validation",
+		checks: PASSED_PR_CHECKS,
+		createdAtMs: STORY_EPOCH_MS - 420_000,
+		deletions: 6,
+		id: "story-pr-merged-follow-up",
+		mergeState: "merged",
+		number: 1848,
+		repository: "shop/checkout-api",
+		reviewDecision: "approved",
+		status: "Merged",
+		title: "Harden guest checkout email validation",
+		updatedAtMs: STORY_EPOCH_MS - 400_000,
 	}),
 	{
 		id: "story-release-feature-flag",
@@ -479,7 +523,7 @@ export function storyEventsForChapter(
 		case "review":
 			return createReviewEvents(options.reviewStep ?? "queued");
 		case "fix":
-			return createFixEvents(resolveFixStep(options));
+			return createFixEvents(resolveFixStep(options), options);
 		case "approve":
 			return createApproveEvents(options.pullRequestApproved ?? false);
 		case "release":

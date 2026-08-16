@@ -1,9 +1,6 @@
 "use strict";
 
-const {
-	createUIMessageStream,
-	pipeUIMessageStreamToResponse,
-} = require("ai");
+const { getAiSdk } = require("../lib/ai-sdk-runtime");
 const {
 	WORK_ITEM_REPORT_REQUEST_START,
 	buildWorkItemReportRequestContext,
@@ -332,6 +329,10 @@ const FALLBACK_AGENT_CREATION_QUESTION_INPUT = {
 const STUDIO_AGENT_GATEWAY_FALLBACK_TIMEOUT_MS = 12_000;
 
 function buildChatSdkHandlerCompositionDependencies(dependencies = {}) {
+	const {
+		createUIMessageStream,
+		pipeUIMessageStreamToResponse,
+	} = getAiSdk();
 	const {
 		CLARIFICATION_CUSTOM_OPTION_PLACEHOLDER,
 		CLARIFICATION_MAX_PRESET_OPTIONS,

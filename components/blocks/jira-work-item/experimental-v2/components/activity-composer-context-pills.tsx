@@ -8,7 +8,6 @@ import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { AgentSession } from "@/components/blocks/jira-work-item/data/session-state";
 import { ActivityComposerAgentContextPill } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer-agent-context-pill";
 import { ActivityComposerSkillContextPill } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer-skill-context-pill";
-import { Badge } from "@/components/ui/badge";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AnimatedDots } from "@/components/ui-custom/animated-dots";
 import { ContextBarPill } from "@/components/ui-custom/context-bar";
@@ -48,6 +47,12 @@ const PILL_REVEAL_VARIANTS = {
 const WORKING_SESSION_ACTIVITY_CYCLE_MS = 2_200;
 const WORKING_SESSION_ACTIVITY_STAGGER_MS = 480;
 
+const CI_REPAIR_ACTIVITY_SCRIPT = [
+	"Inspect the failed PR checks",
+	"Patch delivery-address nullability",
+	"Rerun lint and typecheck",
+] as const;
+
 const WORKING_SESSION_ACTIVITY_SCRIPTS: Readonly<Record<string, readonly string[]>> = {
 	"code-planner": [
 		"Plan the guest checkout architecture",
@@ -64,22 +69,10 @@ const WORKING_SESSION_ACTIVITY_SCRIPTS: Readonly<Record<string, readonly string[
 	],
 };
 
-export interface ActivityComposerPrimaryAction {
-	ariaLabel: string;
-	/** Compact progress counter after the label (e.g. "2/3"). */
-	badge?: string;
-	disabled?: boolean;
-	/** Leading icon matching Assign agents / Use skills pills. */
-	icon?: ReactNode;
-	label: string;
-	onClick: () => void;
-}
-
 interface ActivityComposerContextPillsProps {
 	onInvokeAgent: (agent: Pick<AgentSelectorAgent, "id" | "name" | "avatarSrc" | "brandName">) => void;
 	onInvokeSkill: (skill: SkillsDirectorySkill) => void;
 	onOpenAgentChat?: (agentId: string, sessionId: string) => void;
-	primaryAction?: ActivityComposerPrimaryAction;
 	workingSessions: readonly AgentSession[];
 }
 
@@ -93,7 +86,9 @@ function getWorkingSessionActivity(
 			: NEEDS_INPUT_STATUS_LABEL;
 	}
 
-	const script = WORKING_SESSION_ACTIVITY_SCRIPTS[session.agentId];
+	const script = session.scriptId === "shop-4821-ci-fix"
+		? CI_REPAIR_ACTIVITY_SCRIPT
+		: WORKING_SESSION_ACTIVITY_SCRIPTS[session.agentId];
 	if (!script?.length) return session.title ?? "Working";
 
 	return script[cycleIndex % script.length];
@@ -270,7 +265,6 @@ export function ActivityComposerContextPills({
 	onInvokeAgent,
 	onInvokeSkill,
 	onOpenAgentChat,
-	primaryAction,
 	workingSessions,
 }: Readonly<ActivityComposerContextPillsProps>) {
 	const shouldReduceMotion = Boolean(useReducedMotion());
@@ -313,29 +307,6 @@ export function ActivityComposerContextPills({
 				/>
 			) : (
 				<>
-					{primaryAction ? (
-						<RevealingPill>
-							<ContextBarPill
-								aria-label={primaryAction.ariaLabel}
-								className="motion-reduce:transition-none"
-								disabled={primaryAction.disabled}
-								icon={primaryAction.icon}
-								onClick={primaryAction.onClick}
-							>
-								{primaryAction.label}
-								{primaryAction.badge ? (
-									<Badge
-										aria-hidden
-										className="tabular-nums"
-										max={false}
-										variant="neutral"
-									>
-										{primaryAction.badge}
-									</Badge>
-								) : null}
-							</ContextBarPill>
-						</RevealingPill>
-					) : null}
 					{workingSessions.length > 0 && onOpenAgentChat ? (
 						<RevealingPill>
 							<ContextBarPill

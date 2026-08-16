@@ -51,7 +51,11 @@ test("Artifact Pane owns independently collapsible sections", () => {
 	assert.match(BLOCK_SOURCE, /<span className=\{COLLAPSED_COUNT_CLASS_NAME\}>\{count\}<\/span>/u);
 	assert.doesNotMatch(BLOCK_SOURCE, /return `· \$\{count\}`/u);
 	assert.doesNotMatch(BLOCK_SOURCE, /labeled counts[\s\S]*stay verbatim|render as provided/u);
-	assert.match(BLOCK_SOURCE, /!open && count !== undefined \? <CollapsedSectionCount count=\{count\} \/> : null/u);
+	// Collapsed count stays mounted in a 0fr→1fr slot so open↔closed doesn't reflow the title.
+	assert.match(BLOCK_SOURCE, /count !== undefined \? \([\s\S]*CollapsedSectionCount count=\{count\}/u);
+	assert.match(BLOCK_SOURCE, /COLLAPSED_COUNT_SLOT_CLASSNAME =[\s\S]*grid min-w-0 transition-\[grid-template-columns,opacity\]/u);
+	assert.match(BLOCK_SOURCE, /open \? "grid-cols-\[0fr\] opacity-0" : "grid-cols-\[1fr\] opacity-100"/u);
+	assert.doesNotMatch(BLOCK_SOURCE, /!open && count !== undefined \? <CollapsedSectionCount count=\{count\} \/> : null/u);
 	assert.match(BLOCK_SOURCE, /className="flex min-w-0 items-center gap-1\.5 text-text-subtle/u);
 	assert.match(BLOCK_SOURCE, /openSectionIds\?: ReadonlySet<string>/u);
 	assert.match(BLOCK_SOURCE, /onOpenSectionIdsChange\?: \(openSectionIds: ReadonlySet<string>\) => void/u);
@@ -66,32 +70,49 @@ test("Artifact Pane owns independently collapsible sections", () => {
 	);
 	assert.match(BLOCK_SOURCE, /new Set\(sections\.filter\(\(section\) => section\.defaultOpen\)/u);
 	assert.match(BLOCK_SOURCE, /showSeparators = true/u);
-	assert.match(BLOCK_SOURCE, /showSeparators && index > 0 && \(open \|\| previousOpen\) \? \([\s\S]*className="px-3 py-1\.5"[\s\S]*<Separator \/>/u);
+	// Separators stay mounted and collapse via grid-rows so they don't snap with content height.
+	assert.match(BLOCK_SOURCE, /showSeparators && index > 0 \? \([\s\S]*SECTION_SEPARATOR_SLOT_CLASSNAME[\s\S]*open \|\| previousOpen \? "grid-rows-\[1fr\]" : "grid-rows-\[0fr\]"[\s\S]*className="px-3 py-1\.5"[\s\S]*<Separator \/>/u);
+	assert.doesNotMatch(BLOCK_SOURCE, /showSeparators && index > 0 && \(open \|\| previousOpen\)/u);
 	assert.match(BLOCK_SOURCE, /import ChevronRightIcon from "@atlaskit\/icon\/core\/chevron-right"/u);
 	assert.match(BLOCK_SOURCE, /import \{ motion, useReducedMotion \} from "motion\/react"/u);
 	assert.match(BLOCK_SOURCE, /const prefersReducedMotion = useReducedMotion\(\);/u);
 	assert.match(BLOCK_SOURCE, /<motion\.span[\s\S]*animate=\{\{ rotate: open \? 90 : 0 \}\}/u);
 	assert.match(BLOCK_SOURCE, /initial=\{false\}/u);
 	assert.match(BLOCK_SOURCE, /style=\{\{ willChange: "transform" \}\}/u);
-	assert.match(BLOCK_SOURCE, /prefersReducedMotion \? \{ duration: 0 \} : \{ duration: 0\.15, ease: \[0\.4, 1, 0\.6, 1\] \}/u);
+	assert.match(BLOCK_SOURCE, /prefersReducedMotion \? \{ duration: 0 \} : \{ duration: 0\.15, ease: \[0\.4, 0, 0, 1\] \}/u);
 	assert.match(BLOCK_SOURCE, /<ChevronRightIcon label="" size="small" \/>/u);
 	assert.match(BLOCK_SOURCE, /headerAction\?: Readonly<\{[\s\S]*label: string;[\s\S]*onClick\?: \(\) => void;[\s\S]*appearance\?: "icon" \| "label";[\s\S]*reveal\?: "hover" \| "open";/u);
 	assert.match(BLOCK_SOURCE, /className="group\/header flex w-full items-center gap-2 px-3 py-3"/u);
 	assert.match(BLOCK_SOURCE, /<SettingsIcon label="" size="small" \/>/u);
 	assert.match(BLOCK_SOURCE, /aria-label=\{headerAction\.label\}/u);
-	assert.match(BLOCK_SOURCE, /showHeaderAction = Boolean\(headerAction && \(headerAction\.reveal !== "open" \|\| open\)\)/u);
+	assert.match(BLOCK_SOURCE, /showHeaderAction = Boolean\(headerAction\)/u);
+	assert.match(BLOCK_SOURCE, /headerActionOpenReveal = headerAction\?\.reveal === "open"/u);
 	assert.match(BLOCK_SOURCE, /headerAction\.appearance === "label"/u);
 	assert.match(BLOCK_SOURCE, /size="compact"[\s\S]*variant="outline"[\s\S]*\{headerAction\.label\}/u);
 	assert.match(BLOCK_SOURCE, /HEADER_ACTION_HOVER_REVEAL_CLASSNAME =[\s\S]*pointer-events-none opacity-0 transition-opacity duration-fast ease-out-practical group-hover\/header:pointer-events-auto group-hover\/header:opacity-100 group-has-\[:focus-visible\]\/header:pointer-events-auto group-has-\[:focus-visible\]\/header:opacity-100 motion-reduce:transition-none/u);
 	assert.match(BLOCK_SOURCE, /HEADER_ACTION_HOVER_SLOT_CLASSNAME =[\s\S]*grid shrink-0 grid-cols-\[0fr\][\s\S]*group-hover\/header:grid-cols-\[1fr\][\s\S]*group-has-\[:focus-visible\]\/header:grid-cols-\[1fr\]/u);
-	assert.match(BLOCK_SOURCE, /headerActionAlwaysVisible \? null : HEADER_ACTION_HOVER_REVEAL_CLASSNAME/u);
-	assert.match(BLOCK_SOURCE, /headerActionAlwaysVisible \? \(\s*headerActionControl\s*\) : \(\s*<div className=\{HEADER_ACTION_HOVER_SLOT_CLASSNAME\}>/u);
+	// Chevron uses 0fr→1fr expand (not opacity) so always-visible Fix all sits flush
+	// right, then slides left on hover — same language as check-row Fix.
+	assert.match(BLOCK_SOURCE, /HEADER_CHEVRON_HOVER_SLOT_CLASSNAME =[\s\S]*grid shrink-0 grid-cols-\[0fr\][\s\S]*duration-normal[\s\S]*group-hover\/header:grid-cols-\[1fr\][\s\S]*group-has-\[:focus-visible\]\/header:grid-cols-\[1fr\]/u);
+	// reveal:"open" Fix all stays mounted in a 0fr slot when collapsed (no unmount pop).
+	assert.match(BLOCK_SOURCE, /HEADER_ACTION_OPEN_REVEAL_SLOT_CLASSNAME =[\s\S]*grid shrink-0 transition-\[grid-template-columns\] duration-normal ease-in-out/u);
+	assert.match(BLOCK_SOURCE, /headerActionHoverReveal \? HEADER_ACTION_HOVER_REVEAL_CLASSNAME : null/u);
+	assert.match(BLOCK_SOURCE, /headerActionOpenReveal \? \(\s*<div[\s\S]*HEADER_ACTION_OPEN_REVEAL_SLOT_CLASSNAME[\s\S]*open \? "grid-cols-\[1fr\]" : "grid-cols-\[0fr\]"/u);
+	assert.match(BLOCK_SOURCE, /className="flex shrink-0 items-center"[\s\S]*HEADER_CHEVRON_HOVER_SLOT_CLASSNAME/u);
+	// Disclosure body uses Base UI panel height CSS vars (no snap open/close).
+	assert.match(BLOCK_SOURCE, /COLLAPSED_COUNT_SLOT_CLASSNAME =[\s\S]*transition-\[grid-template-columns,opacity\] duration-normal ease-in-out/u);
+	assert.match(BLOCK_SOURCE, /DISCLOSURE_CONTENT_CLASSNAME =[\s\S]*h-\(--collapsible-panel-height\)[\s\S]*transition-\[height,opacity\] duration-normal ease-in-out[\s\S]*data-starting-style:h-0[\s\S]*data-ending-style:h-0[\s\S]*motion-reduce:transition-none/u);
+	assert.doesNotMatch(BLOCK_SOURCE, /data-ending-style:duration-fast|data-ending-style:ease-in/u);
+	assert.match(BLOCK_SOURCE, /SECTION_SEPARATOR_SLOT_CLASSNAME =[\s\S]*transition-\[grid-template-rows\] duration-normal ease-in-out/u);
+	assert.match(BLOCK_SOURCE, /<CollapsibleContent className=\{DISCLOSURE_CONTENT_CLASSNAME\}>/u);
+	assert.match(BLOCK_SOURCE, /className="ml-2 shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"/u);
 	assert.doesNotMatch(BLOCK_SOURCE, /absolute top-1\/2 right-8/u);
 	assert.match(BLOCK_SOURCE, /<TooltipContent positionerClassName="z-\[502\]">\{headerAction\.label\}<\/TooltipContent>/u);
 	assert.doesNotMatch(BLOCK_SOURCE, /Chevron(?:Up|Down)Icon/u);
 	assert.match(BLOCK_SOURCE, /flex min-w-0 flex-1 items-center gap-1\.5/u);
 	assert.match(BLOCK_SOURCE, /focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/u);
-	assert.match(BLOCK_SOURCE, /opacity-0 transition-opacity duration-fast ease-out-practical group-hover\/header:opacity-100 group-has-\[:focus-visible\]\/header:opacity-100 motion-reduce:transition-none/u);
+	// Chevron visibility is width-collapse, not opacity fade (avoids reserved gap after Fix all).
+	assert.doesNotMatch(BLOCK_SOURCE, /motion\.span[\s\S]*opacity-0 transition-opacity[\s\S]*group-hover\/header:opacity-100/u);
 	assert.match(BLOCK_SOURCE, /text-text-subtle group-hover\/header:text-text group-has-\[:focus-visible\]\/header:text-text/u);
 	// Regression: header actions revealed on :focus-within stayed visible after the
 	// pointer left, because clicking the disclosure button keeps DOM focus inside

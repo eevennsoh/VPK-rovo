@@ -1,11 +1,16 @@
 const assert = require("node:assert/strict");
-const test = require("node:test");
+const { before, test } = require("node:test");
 const { loadRovoCoreModule } = require("../test-utils/load-rovo-core-module.cjs");
 
-const {
-	createUIMessageStream,
-	createUIMessageStreamResponse,
-} = require("ai");
+let createUIMessageStream;
+let createUIMessageStreamResponse;
+
+before(async () => {
+	({
+		createUIMessageStream,
+		createUIMessageStreamResponse,
+	} = await import("ai"));
+});
 
 const {
 	isRovoAppDelegationAbortError,

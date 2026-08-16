@@ -1,11 +1,17 @@
 "use strict";
 
 const assert = require("node:assert/strict");
-const test = require("node:test");
-const {
-	createUIMessageStream,
-	pipeUIMessageStreamToResponse,
-} = require("ai");
+const { before, test } = require("node:test");
+
+let createUIMessageStream;
+let pipeUIMessageStreamToResponse;
+
+before(async () => {
+	({
+		createUIMessageStream,
+		pipeUIMessageStreamToResponse,
+	} = await import("ai"));
+});
 
 const {
 	createCapturedResponse,

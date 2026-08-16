@@ -53,6 +53,7 @@ import { BORDER_BEAM_DETAIL } from "./visual/border-beam";
 import { INK_WASH_DETAIL } from "./visual/ink-wash";
 import { LIQUID_METAL_DETAIL } from "./visual/liquid-metal";
 import { NOISE_DETAIL } from "./visual/noise";
+import { GOOEY_DETAIL } from "./visual/gooey";
 
 const SHADER_LAB_V2_EFFECT_TYPES = new Set<ShaderLabRuntimeEffectType>([
 	"chromatic-aberration",
@@ -208,6 +209,7 @@ export const VISUAL_DETAILS: Record<string, ComponentDetail> = {
 	"ink-wash": INK_WASH_DETAIL,
 	"liquid-metal": LIQUID_METAL_DETAIL,
 	noise: NOISE_DETAIL,
+	gooey: GOOEY_DETAIL,
 	...PAPER_SHADER_DETAILS,
 	...SHADER_LAB_LAYER_DETAILS,
 	...SHADER_LAB_V2_EFFECT_DETAILS,

@@ -40,16 +40,10 @@ export function getChapterContentTop(
 	return scrollContainer.scrollTop + (chapterRect.top - scrollContainerRect.top);
 }
 
-export function areChapterTopsReady(
-	chapterIds: readonly string[],
-	getChapterTop: (chapterId: string) => number | null,
-): boolean {
-	if (chapterIds.length === 0) return false;
-	const tops: number[] = [];
-	for (const chapterId of chapterIds) {
-		const top = getChapterTop(chapterId);
+function areResolvedChapterTopsReady(tops: readonly (number | null)[]): boolean {
+	if (tops.length === 0) return false;
+	for (const top of tops) {
 		if (top == null) return false;
-		tops.push(top);
 	}
 	// Before layout settles, every section can report the same top (often 0).
 	// Treating that as "all crossed" would incorrectly select the last chapter.
@@ -66,6 +60,13 @@ export function areChapterTopsReady(
 	return true;
 }
 
+export function areChapterTopsReady(
+	chapterIds: readonly string[],
+	getChapterTop: (chapterId: string) => number | null,
+): boolean {
+	return areResolvedChapterTopsReady(chapterIds.map(getChapterTop));
+}
+
 export function resolveActiveChapterId(options: {
 	activationOffset: number;
 	chapterIds: readonly string[];
@@ -75,7 +76,8 @@ export function resolveActiveChapterId(options: {
 }): string | null {
 	const { activationOffset, chapterIds, getChapterTop, maxScrollTop, scrollTop } = options;
 	if (chapterIds.length === 0) return null;
-	if (!areChapterTopsReady(chapterIds, getChapterTop)) {
+	const chapterTops = chapterIds.map(getChapterTop);
+	if (!areResolvedChapterTopsReady(chapterTops)) {
 		return chapterIds[0] ?? null;
 	}
 
@@ -90,8 +92,8 @@ export function resolveActiveChapterId(options: {
 	}
 
 	let activeId = chapterIds[0] ?? null;
-	for (const chapterId of chapterIds) {
-		const top = getChapterTop(chapterId);
+	for (const [index, chapterId] of chapterIds.entries()) {
+		const top = chapterTops[index];
 		if (top == null) continue;
 		if (top - scrollTop <= activationOffset) {
 			activeId = chapterId;

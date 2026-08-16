@@ -3,7 +3,10 @@
 import { useState, type ReactNode, type RefObject } from "react";
 
 import { PullRequestHeader } from "@/components/blocks/pull-request-header";
-import type { PullRequestHeaderMergeState } from "@/components/blocks/pull-request-header";
+import type {
+	PullRequestHeaderMergeState,
+	PullRequestHeaderSubmitReviewAction,
+} from "@/components/blocks/pull-request-header";
 import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental-v2/context-metadata-rail";
 
 import type {
@@ -17,6 +20,7 @@ interface PullRequestDetailHeaderProps {
 	data: PullRequestDetailData;
 	onGuideOpen?: () => void;
 	scrollContainerRef: RefObject<HTMLElement | null>;
+	submitReviewAction?: PullRequestHeaderSubmitReviewAction;
 	tabNavigation?: ReactNode;
 }
 
@@ -56,6 +60,7 @@ export function PullRequestDetailHeader({
 	data,
 	onGuideOpen,
 	scrollContainerRef,
+	submitReviewAction,
 	tabNavigation,
 }: Readonly<PullRequestDetailHeaderProps>) {
 	const [autoMerge, setAutoMerge] = useState(true);
@@ -89,6 +94,7 @@ export function PullRequestDetailHeader({
 			onReviewRequiredClick={onGuideOpen}
 			onClosePullRequestClick={() => undefined}
 			scrollContainerRef={scrollContainerRef}
+			submitReviewAction={isOpen ? submitReviewAction : undefined}
 			className={tabNavigation
 				? "rounded-xl border bg-surface"
 				: "rounded-xl border bg-surface p-4"}

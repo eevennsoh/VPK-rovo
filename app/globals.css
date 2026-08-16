@@ -509,6 +509,11 @@
 
 @supports (container-type: scroll-state) {
 	@container scroll-state(stuck: top) {
+		[data-code-review-sticky-toolbar-surface] {
+			border-start-start-radius: 0;
+			border-start-end-radius: 0;
+		}
+
 		[data-sticky-row-scroll-fade] {
 			opacity: 1;
 		}

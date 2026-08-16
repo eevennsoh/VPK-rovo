@@ -228,7 +228,7 @@
 					{
 						"method": "POST",
 						"path": "/api/chat-sdk/skip-question",
-						"source": "backend/routes/chat-skip-question.js:59",
+						"source": "backend/routes/chat-skip-question.js:60",
 						"runtimeAdmin": false
 					}
 				]
@@ -5323,7 +5323,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 418,
+			"manifestEntryCount": 420,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5365,7 +5365,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 101,
+				"entryCount": 102,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5714,6 +5714,12 @@
 						"slug": "pull-request",
 						"name": "Pull Request",
 						"importPath": "@/components/blocks/pull-request"
+					},
+					{
+						"category": "blocks",
+						"slug": "pull-request-fix",
+						"name": "Pull Request Fix",
+						"importPath": "@/components/blocks/pull-request-fix"
 					},
 					{
 						"category": "blocks",
@@ -7291,7 +7297,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 99,
+				"entryCount": 100,
 				"entries": [
 					{
 						"category": "visual",
@@ -7418,6 +7424,12 @@
 						"slug": "glass-tabs",
 						"name": "Glass Tabs",
 						"importPath": "@/components/visual/glass-tabs"
+					},
+					{
+						"category": "visual",
+						"slug": "gooey",
+						"name": "Gooey",
+						"importPath": "@/components/visual/gooey"
 					},
 					{
 						"category": "visual",

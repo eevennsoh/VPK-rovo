@@ -1,9 +1,6 @@
 "use strict";
 
-const {
-	createUIMessageStream: defaultCreateUIMessageStream,
-	pipeUIMessageStreamToResponse: defaultPipeUIMessageStreamToResponse,
-} = require("ai");
+const { getAiSdk } = require("../lib/ai-sdk-runtime");
 const {
 	DEFAULT_RECOVERY_TIMEOUT_MS: DEFAULT_ROVO_PORT_RECOVERY_TIMEOUT_MS,
 } = require("../lib/rovo-port-recovery");
@@ -116,15 +113,22 @@ function createChatSdkServerComposition({
 	constants = {},
 	createClarificationResponseHelpers = defaultCreateClarificationResponseHelpers,
 	createServerChatSdkHandler = defaultCreateServerChatSdkHandler,
-	createUIMessageStream = defaultCreateUIMessageStream,
-	pipeUIMessageStreamToResponse = defaultPipeUIMessageStreamToResponse,
+	createUIMessageStream,
+	pipeUIMessageStreamToResponse,
 	waitForTurnTimeoutMs,
 } = {}) {
+	requireNumber("waitForTurnTimeoutMs", waitForTurnTimeoutMs);
+
+	if (!createUIMessageStream || !pipeUIMessageStreamToResponse) {
+		const aiSdk = getAiSdk();
+		createUIMessageStream ||= aiSdk.createUIMessageStream;
+		pipeUIMessageStreamToResponse ||= aiSdk.pipeUIMessageStreamToResponse;
+	}
+
 	requireFunction("createClarificationResponseHelpers", createClarificationResponseHelpers);
 	requireFunction("createServerChatSdkHandler", createServerChatSdkHandler);
 	requireFunction("createUIMessageStream", createUIMessageStream);
 	requireFunction("pipeUIMessageStreamToResponse", pipeUIMessageStreamToResponse);
-	requireNumber("waitForTurnTimeoutMs", waitForTurnTimeoutMs);
 
 	const resolvedConstants = {
 		...CHAT_SDK_SERVER_DEFAULTS,

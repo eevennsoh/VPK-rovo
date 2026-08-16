@@ -270,7 +270,7 @@ test("Build chapter selection stages ready→implement→verify and reveals Clau
 	);
 });
 
-test("Review and Fix chapters auto-open PR #1847; Review stages CI and Fix waits for composer chip submit", () => {
+test("Review, Fix, and Approve chapters auto-open PR #1847; Approve lands ready-to-merge", () => {
 	const pageSource = readProjectFile("components/projects/jira-agents/page.tsx");
 	const controllerSource = readProjectFile("components/projects/jira-agents/use-hotfix-story.ts");
 	const compositionSource = readProjectFile(
@@ -285,7 +285,12 @@ test("Review and Fix chapters auto-open PR #1847; Review stages CI and Fix waits
 
 	assert.match(
 		pageSource,
-		/autoOpenPullRequestIdentity=\{\s*controller\.chapter === "review" \|\| controller\.chapter === "fix"\s*\?\s*JIRA_AGENTS_PULL_REQUEST_IDENTITY\s*:\s*null\s*\}/u,
+		/autoOpenPullRequestIdentity=\{\s*controller\.chapter === "review"\s*\|\| controller\.chapter === "fix"\s*\|\| controller\.chapter === "approve"\s*\?\s*JIRA_AGENTS_PULL_REQUEST_IDENTITY\s*:\s*null\s*\}/u,
+	);
+	// Approve chapter controller lands ready-to-merge (approvals already satisfied).
+	assert.match(
+		controllerSource,
+		/setPullRequestApprovalStates\(nextChapter === "approve"\s*\?\s*\{\s*\[JIRA_AGENTS_PULL_REQUEST_IDENTITY\]: "approved"\s*\}\s*:\s*\{\}\)/u,
 	);
 	assert.match(
 		pageSource,
@@ -295,30 +300,39 @@ test("Review and Fix chapters auto-open PR #1847; Review stages CI and Fix waits
 		compositionSource,
 		/autoOpenPullRequestIdentity[\s\S]*autoOpenedForStageRef[\s\S]*handlePullRequestSelect\(entry\)/u,
 	);
-	// Fix / Fix all stages a composer chip; story repair runs on chip submit.
+	// Fix / Fix all opens PullRequestFix with the demo agent prompt prefilled;
+	// story repair runs on that card's submit.
 	assert.match(
 		compositionSource,
-		/handlePullRequestFixStage[\s\S]*stageChecks\(/u,
-	);
-	assert.match(
-		compositionSource,
-		/onFailingChecksSubmit=\{\s*onPullRequestFix \? handlePullRequestFixSubmit : undefined\s*\}/u,
+		/handlePullRequestFixOpen[\s\S]*buildPullRequestFixComposerPrompt[\s\S]*setFixComposer\(\{\s*checkName: resolvePullRequestFixCheckName\(checks\),\s*defaultValue,\s*\}\)/u,
 	);
 	assert.match(
 		compositionSource,
-		/onPullRequestFix=\{onPullRequestFix \? handlePullRequestFixStage : undefined\}/u,
+		/pullRequestFix=\{activePullRequestFix\}/u,
+	);
+	assert.match(
+		compositionSource,
+		/onPullRequestFix=\{handlePullRequestFixOpen\}/u,
+	);
+	assert.doesNotMatch(
+		compositionSource,
+		/stageChecks\(|onFailingChecksSubmit/u,
 	);
 	assert.match(
 		activityComposerSource,
-		/FailingChecksComposerChip/u,
+		/PullRequestFix/u,
 	);
 	assert.match(
 		activityComposerSource,
-		/onFailingChecksSubmit\?\.\(\)/u,
+		/checkName=\{pullRequestFix\.checkName\}/u,
 	);
 	assert.match(
 		activityComposerSource,
-		/FAILING_CHECKS_COMPOSER_PROMPT/u,
+		/defaultValue=\{pullRequestFix\.defaultValue\}/u,
+	);
+	assert.match(
+		activityComposerSource,
+		/key=\{`pull-request-fix-\$\{pullRequestFix\.checkName\}`\}/u,
 	);
 	assert.match(
 		controllerSource,
@@ -330,11 +344,11 @@ test("Review and Fix chapters auto-open PR #1847; Review stages CI and Fix waits
 	);
 	assert.match(
 		controllerSource,
-		/repairing: \{ next: "complete", delayMs: 2_000 \}/u,
+		/repairing: \{ next: "complete", delayMs: 8_000 \}/u,
 	);
 	assert.match(
 		controllerSource,
-		/fixPullRequestCheck = useCallback\(\(identity: string\) => \{[\s\S]*chapter !== "fix"[\s\S]*fixStep !== "failed"[\s\S]*setFixStep\(shouldReduceMotion \? "complete" : "repairing"\)/u,
+		/fixPullRequestCheck = useCallback\(\(\s*identity: string,\s*agentId: PullRequestFixAgentId = DEFAULT_PULL_REQUEST_FIX_AGENT_ID,\s*\) => \{[\s\S]*chapter !== "fix"[\s\S]*fixStep !== "failed"[\s\S]*setFixAgentId\(agentId\)[\s\S]*setFixStep\(shouldReduceMotion \? "complete" : "repairing"\)/u,
 	);
 	assert.match(checksSource, /export const UNIT_PASSED_PR_CHECKS = \[/u);
 	assert.match(checksSource, /export const SETTLING_PR_CHECKS = \[/u);

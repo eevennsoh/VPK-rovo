@@ -36,12 +36,15 @@ import {
 	CLAUDE_CODE,
 	CLAUDE_SESSION_TITLE_BY_CHAPTER,
 	CODE_PLANNER,
+	JIRA_AGENTS_CI_REPAIR_SCRIPT_ID,
+	JIRA_AGENTS_CI_REPAIR_SESSION_ID,
 	JIRA_AGENTS_DESCRIPTION_SKILL_SCRIPT_ID,
 	JIRA_AGENTS_DESCRIPTION_SKILL_SESSION_ID,
 	JIRA_AGENTS_STORY_ISSUE_KEY,
 	JIRA_AGENTS_STORY_ITEM_ID,
 	JIRA_AGENTS_STORY_WORK_ITEM_BASE,
 	ROVO,
+	resolveFixAgent,
 	STORY_AGENT_BY_ID,
 	STORY_EPOCH_MS,
 	STORY_STATUS_BY_CHAPTER,
@@ -54,6 +57,8 @@ import {
 } from "./story-model";
 
 export {
+	JIRA_AGENTS_CI_REPAIR_SCRIPT_ID,
+	JIRA_AGENTS_CI_REPAIR_SESSION_ID,
 	JIRA_AGENTS_DESCRIPTION_SKILL_SCRIPT_ID,
 	JIRA_AGENTS_DESCRIPTION_SKILL_SESSION_ID,
 	JIRA_AGENTS_PULL_REQUEST_IDENTITY,
@@ -351,13 +356,14 @@ function claudePreviewForChapter(
 		}
 		case "fix": {
 			const fixStep = resolveFixStep(options);
+			const fixAgent = resolveFixAgent(options);
 			switch (fixStep) {
 				case "failed":
 					return "GitHub Actions blocked PR #1847. Lint and typecheck found a nullable delivery-address path; unit and browser coverage passed.";
 				case "repairing":
-					return "I repaired the nullable delivery-address path and am rerunning the failed lint and typecheck check; unit and browser coverage remain passed.";
+					return `${fixAgent.name} is repairing the nullable delivery-address path and rerunning the failed lint and typecheck check; unit and browser coverage remain passed.`;
 				case "complete":
-					return "I repaired the nullable delivery-address path and reran lint and typecheck to green; unit and browser coverage remain passed.";
+					return `${fixAgent.name} repaired the nullable delivery-address path and reran lint and typecheck to green; unit and browser coverage remain passed.`;
 				default: {
 					const _exhaustive: never = fixStep;
 					return _exhaustive;
@@ -389,11 +395,16 @@ function createStorySessions(
 
 	const buildStep = resolveBuildStep(options);
 	const fixStep = resolveFixStep(options);
+	const fixAgent = resolveFixAgent(options);
 	const plannerStatus: AgentSessionStatus = chapter === "plan" ? "running" : "completed";
-	// Review keeps Claude non-completed for the whole CI beat (including the
-	// failed settle) so the composer "agents working" context pill stays up
-	// while the PR is open — completing here made the pill vanish ~3s in.
-	// Fix starts at Review's failed settle (needs Fix chip submit), then runs repair.
+	// Review + Fix-failed keep Claude waiting on GitHub Actions so the composer
+	// stays on "agents working" through the open failed-PR beat. Completing here
+	// made the pill vanish ~3s into Review; flipping either chapter to
+	// waiting-on-user made the pill say "needs input" while Fix/Fix all is still
+	// the CTA. The Approve tab controller starts pullRequestApproved, so the
+	// live demo completes Claude; fixtures can still pass false for the
+	// pre-approval beat. PullRequestFix submit advances failed → repairing →
+	// complete.
 	const claudeStatus: AgentSessionStatus = chapter === "release"
 		|| (chapter === "approve" && options.pullRequestApproved)
 		? "completed"
@@ -409,7 +420,7 @@ function createStorySessions(
 		"Open the pull request for automated CI review",
 		"Run CI and diagnose the actionable failure",
 		"Repair the failed path and rerun its failed check to green",
-		"Obtain Venn's required human approval in the PR guide",
+		"Obtain the required human approval in the PR guide",
 		"Merge, deploy behind the feature flag, and verify production rollout",
 	] as const;
 	const completedCount = buildChecklistCompletedCount(chapter, options);
@@ -444,17 +455,19 @@ function createStorySessions(
 		imageAttachment: showDesignEvidence ? { ...GUEST_CHECKOUT_DESIGN_ATTACHMENT } : undefined,
 		waitingOn: chapter === "approve" && !options.pullRequestApproved
 			? { kind: "user" }
-			: chapter === "fix" && fixStep === "failed"
-				? { kind: "user" }
-				: chapter === "review"
-					? options.reviewStep === "failed"
-						? { kind: "user" }
-						: {
-							kind: "agent",
-							agentId: "github-actions",
-							agentName: "GitHub Actions",
-						}
-					: undefined,
+			: chapter === "fix" && fixStep === "repairing"
+				? {
+					kind: "agent",
+					agentId: fixAgent.id,
+					agentName: fixAgent.name,
+				}
+			: (chapter === "review" || (chapter === "fix" && fixStep === "failed"))
+				? {
+					kind: "agent",
+					agentId: "github-actions",
+					agentName: "GitHub Actions",
+				}
+				: undefined,
 	});
 	const planner = createSession(CODE_PLANNER, plannerStatus, 2, {
 		title: "Consult on the guest checkout contract",
@@ -464,8 +477,49 @@ function createStorySessions(
 			? "Consultation complete. Use a server-owned guest-order endpoint that recalculates pricing, discounts, tax, shipping, and inventory. Require an idempotency key and return field-safe errors for address, inventory, and payment failures. The OpenAPI contract and validation matrix are ready."
 			: "Reviewing the checkout requirements and preparing the API contract, validation matrix, and idempotency rules for Claude Code.",
 	});
+	// Distinct session id from the lead Claude session so selecting Claude (or
+	// any picker agent) still yields two working agents (lead + repair).
+	const ciRepair = chapter === "fix" && fixStep !== "failed"
+		? createSession(fixAgent, fixStep === "complete" ? "completed" : "running", 3, {
+			title: "Repair delivery-address validation",
+			commandAuthorName: CLAUDE_CODE.name,
+			command: "Use gh to inspect the failing lint and typecheck check, repair the nullable deliveryAddress path, run focused validation, then commit and push the fix.",
+			previewText: fixStep === "complete"
+				? "CI is green. I narrowed deliveryAddress before order creation, ran the focused lint and typecheck validation, committed the repair, and pushed it to PR #1847."
+				: "Inspecting PR #1847 with gh and narrowing deliveryAddress before order creation, then I’ll run the focused lint and typecheck check and push the repair.",
+			progressChecklist: [
+				{
+					id: "ci-repair-inspect",
+					label: "Inspect the failed check and lint annotation with gh",
+					completed: fixStep === "complete",
+				},
+				{
+					id: "ci-repair-patch",
+					label: "Narrow deliveryAddress before order creation",
+					completed: fixStep === "complete",
+				},
+				{
+					id: "ci-repair-validate",
+					label: "Run focused validation, commit, and push",
+					completed: fixStep === "complete",
+				},
+			],
+		})
+		: null;
+	const ciRepairSession = ciRepair
+		? {
+			...ciRepair,
+			id: JIRA_AGENTS_CI_REPAIR_SESSION_ID,
+			scriptId: JIRA_AGENTS_CI_REPAIR_SCRIPT_ID,
+		}
+		: null;
 
-	return [...descriptionSkillSession, claude, planner];
+	return [
+		...descriptionSkillSession,
+		claude,
+		planner,
+		...(ciRepairSession ? [ciRepairSession] : []),
+	];
 }
 
 function createStoryComments(

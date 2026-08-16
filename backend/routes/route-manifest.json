@@ -137,7 +137,7 @@
 			"method": "POST",
 			"path": "/api/chat-sdk/skip-question",
 			"runtimeAdmin": false,
-			"source": "backend/routes/chat-skip-question.js:59"
+			"source": "backend/routes/chat-skip-question.js:60"
 		},
 		{
 			"method": "POST",

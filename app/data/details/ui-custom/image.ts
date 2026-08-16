@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const IMAGE_DETAIL: ComponentDetail = {
 	description:
-		"Renders AI-generated images from the AI SDK's Experimental_GeneratedImage type. Converts base64-encoded image data into a responsive img element with data URI source.",
+		"Renders AI-generated images from the AI SDK's GeneratedFile type. Converts base64-encoded image data into a responsive img element with data URI source.",
 	usage: `import { Image } from "@/components/ui-custom/image";
 
 <Image

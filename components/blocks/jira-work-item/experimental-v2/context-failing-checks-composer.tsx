@@ -13,12 +13,22 @@ import type { FailingChecksComposerChipItem } from "@/components/ui-custom/faili
 
 export type FailingCheckComposerItem = FailingChecksComposerChipItem;
 
+export interface StageFailingChecksOptions {
+	/** Demo agent prompt to populate the activity composer draft. */
+	prompt?: string;
+}
+
 type FailingChecksComposerContextValue = {
 	checks: readonly FailingCheckComposerItem[];
 	/** Increments on each successful stage so the sticky activity composer can focus. */
 	focusRequestKey: number;
+	/** Last prompt staged with Fix / Fix all (for draft + empty-submit fallback). */
+	promptPrefill: string | null;
 	/** Merge failing checks into the composer chip (dedupe by id). */
-	stageChecks: (checks: readonly FailingCheckComposerItem[]) => void;
+	stageChecks: (
+		checks: readonly FailingCheckComposerItem[],
+		options?: StageFailingChecksOptions,
+	) => void;
 	removeAll: () => void;
 };
 
@@ -33,8 +43,12 @@ export function FailingChecksComposerProvider({
 }: Readonly<{ children: ReactNode }>) {
 	const [checks, setChecks] = useState<readonly FailingCheckComposerItem[]>([]);
 	const [focusRequestKey, setFocusRequestKey] = useState(0);
+	const [promptPrefill, setPromptPrefill] = useState<string | null>(null);
 
-	const stageChecks = useCallback((nextChecks: readonly FailingCheckComposerItem[]) => {
+	const stageChecks = useCallback((
+		nextChecks: readonly FailingCheckComposerItem[],
+		options?: StageFailingChecksOptions,
+	) => {
 		if (nextChecks.length === 0) {
 			return;
 		}
@@ -45,16 +59,20 @@ export function FailingChecksComposerProvider({
 			}
 			return [...byId.values()];
 		});
+		if (typeof options?.prompt === "string" && options.prompt.trim()) {
+			setPromptPrefill(options.prompt);
+		}
 		setFocusRequestKey((current) => current + 1);
 	}, []);
 
 	const removeAll = useCallback(() => {
 		setChecks([]);
+		setPromptPrefill(null);
 	}, []);
 
 	const value = useMemo(
-		() => ({ checks, focusRequestKey, stageChecks, removeAll }),
-		[checks, focusRequestKey, removeAll, stageChecks],
+		() => ({ checks, focusRequestKey, promptPrefill, stageChecks, removeAll }),
+		[checks, focusRequestKey, promptPrefill, removeAll, stageChecks],
 	);
 
 	return (

@@ -35,36 +35,42 @@ const {
 const {
 	registerBackendWebSocketRelays,
 } = require("./realtime/ws-relay");
+const { loadAiSdk } = require("./lib/ai-sdk-runtime");
 
 console.log("[STARTUP] Dependencies loaded");
 
-const {
-	app,
-	port,
-	serverReadyDependencies,
-	shutdownRuntime,
-	webSocketRelayDependencies,
-} = createBackendRuntimeComposition();
+let shutdownRuntime = () => {};
 
-const publicPath = path.join(__dirname, "public");
-registerStaticExportServing(app, {
-	expressImpl: express,
-	publicPath,
-});
+async function startServer() {
+	await loadAiSdk();
 
-console.log("[STARTUP] All routes registered, starting HTTP server...");
+	const runtime = createBackendRuntimeComposition();
+	shutdownRuntime = runtime.shutdownRuntime;
 
-const server = app.listen(port, "0.0.0.0", async () => {
-	await logBackendServerReady(serverReadyDependencies);
-});
+	const publicPath = path.join(__dirname, "public");
+	registerStaticExportServing(runtime.app, {
+		expressImpl: express,
+		publicPath,
+	});
 
-// Handle any startup errors
-server.on("error", (err) => {
-	console.error("Server error:", err);
+	console.log("[STARTUP] All routes registered, starting HTTP server...");
+
+	const server = runtime.app.listen(runtime.port, "0.0.0.0", async () => {
+		await logBackendServerReady(runtime.serverReadyDependencies);
+	});
+
+	server.on("error", (err) => {
+		console.error("Server error:", err);
+		process.exit(1);
+	});
+
+	registerBackendWebSocketRelays(server, runtime.webSocketRelayDependencies);
+}
+
+void startServer().catch((error) => {
+	console.error("[STARTUP] Failed to initialize backend runtime:", error);
 	process.exit(1);
 });
-
-registerBackendWebSocketRelays(server, webSocketRelayDependencies);
 
 // Handle uncaught exceptions
 process.on("uncaughtException", (err) => {

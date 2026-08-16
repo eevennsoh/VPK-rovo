@@ -46,6 +46,7 @@ const BLOCK_DETAILS_SOURCE = readDetailCategorySource("blocks");
 const REGISTRY_SOURCE = readWebsiteRegistrySource();
 
 test("PullRequestReview exposes the review composer props contract", () => {
+	assert.match(TYPES_SOURCE, /ariaLabel\?: string/u);
 	assert.match(
 		TYPES_SOURCE,
 		/export type PullRequestReviewVerdict =\s*"comment" \| "approve" \| "request-changes"/u,
@@ -71,6 +72,16 @@ test("PullRequestReview exposes the review composer props contract", () => {
 		/const accepted = onSubmit\?\.\(\{ body: value\.trim\(\), verdict: activeVerdict \}\);[\s\S]*if \(accepted === false\) return;[\s\S]*updateValue\(""\)/u,
 	);
 	assert.match(TYPES_SOURCE, /export interface PullRequestReviewSubmission \{[\s\S]*body: string;[\s\S]*verdict: PullRequestReviewVerdict;/u);
+});
+
+test("the preview gives each review form landmark a unique accessible name", () => {
+	assert.match(COMPONENT_SOURCE, /aria-label=\{ariaLabel \?\? title\}/u);
+
+	const landmarkLabels = [...PAGE_SOURCE.matchAll(/ariaLabel="([^"]+)"/gu)].map(
+		([, label]) => label,
+	);
+	assert.equal(landmarkLabels.length, 4);
+	assert.equal(new Set(landmarkLabels).size, landmarkLabels.length);
 });
 
 test("the review editor can take focus when a host opens the expanded surface", () => {
@@ -199,6 +210,18 @@ test("the expanded card entrance is reduced-motion safe", () => {
 	assert.match(
 		COMPONENT_SOURCE,
 		/animate-in fade-in-0 duration-medium ease-out motion-reduce:animate-none/u,
+	);
+});
+
+test("the expanded Review heading uses the 16px ADS small heading token", () => {
+	assert.match(
+		COMPONENT_SOURCE,
+		/<h2 className="text-text" style=\{\{ font: token\("font\.heading\.small"\) \}\}>/u,
+	);
+	assert.doesNotMatch(
+		COMPONENT_SOURCE,
+		/font\.heading\.medium/u,
+		"Review title must stay at heading.small (16px), not heading.medium (20px)",
 	);
 });
 

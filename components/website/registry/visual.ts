@@ -2,6 +2,7 @@ import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 
 export const VISUAL_DEMOS: Record<string, ComponentType> = {
+	gooey: dynamic(() => import("../demos/visual/gooey-demo"), { ssr: false }),
 	typography: dynamic(() => import("../demos/visual/typography-demo"), {
 		ssr: false,
 	}),
@@ -296,6 +297,30 @@ export const VISUAL_DEMOS: Record<string, ComponentType> = {
 };
 
 export const VISUAL_VARIANT_DEMOS: Record<string, ComponentType> = {
+	"gooey-morph-menu": dynamic(
+		() => import("../demos/visual/gooey-demo").then((mod) => ({ default: mod.GooeyMorphMenuExample })),
+		{ ssr: false },
+	),
+	"gooey-morph-email": dynamic(
+		() => import("../demos/visual/gooey-demo").then((mod) => ({ default: mod.GooeyMorphEmailExample })),
+		{ ssr: false },
+	),
+	"gooey-morph-avatars": dynamic(
+		() => import("../demos/visual/gooey-demo").then((mod) => ({ default: mod.GooeyMorphAvatarExample })),
+		{ ssr: false },
+	),
+	"gooey-morph-cards": dynamic(
+		() => import("../demos/visual/gooey-demo").then((mod) => ({ default: mod.GooeyMorphCardsExample })),
+		{ ssr: false },
+	),
+	"gooey-move-tabs": dynamic(
+		() => import("../demos/visual/gooey-demo").then((mod) => ({ default: mod.GooeyMoveTabsExample })),
+		{ ssr: false },
+	),
+	"gooey-move-slider": dynamic(
+		() => import("../demos/visual/gooey-demo").then((mod) => ({ default: mod.GooeyMoveSliderExample })),
+		{ ssr: false },
+	),
 	"thinking-orbs-demo-working": dynamic(
 		() =>
 			import("../demos/visual/thinking-orbs-demo").then((mod) => ({

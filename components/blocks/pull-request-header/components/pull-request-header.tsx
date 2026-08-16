@@ -10,7 +10,11 @@ import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import StatusErrorIcon from "@atlaskit/icon/core/status-error";
+import StatusInformationIcon from "@atlaskit/icon/core/status-information";
+import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
+import UndoIcon from "@atlaskit/icon/core/undo";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
@@ -92,10 +96,7 @@ function mergeMethodLabel(method: PullRequestHeaderMergeMethod): string {
 	}
 }
 
-function mergeStateLabel(
-	mergeState: PullRequestHeaderMergeState,
-	mergeMethod: PullRequestHeaderMergeMethod,
-): string {
+function mergeStateLabel(mergeState: PullRequestHeaderMergeState): string {
 	switch (mergeState) {
 		case "checks-failed":
 			return "Checks failed";
@@ -104,9 +105,10 @@ function mergeStateLabel(
 		case "merge-conflicts":
 			return "Merge conflicts";
 		case "review-required":
-			return "Review required";
+			return "Require approval";
 		case "ready":
-			return mergeMethodLabel(mergeMethod);
+			// Primary stays a short "Merge"; the chevron menu still picks the method.
+			return "Merge";
 		default: {
 			const _exhaustive: never = mergeState;
 			return _exhaustive;
@@ -145,8 +147,23 @@ function mergeStateLeadingIcon(mergeState: PullRequestHeaderMergeState) {
 				</span>
 			);
 		case "review-required":
+			return (
+				<span
+					className="grid size-4 shrink-0 place-items-center text-icon-information"
+					data-icon="inline-start"
+				>
+					<StatusInformationIcon color="currentColor" label="" size="small" />
+				</span>
+			);
 		case "ready":
-			return null;
+			return (
+				<span
+					className="grid size-4 shrink-0 place-items-center text-icon-success"
+					data-icon="inline-start"
+				>
+					<StatusSuccessIcon color="currentColor" label="" size="small" />
+				</span>
+			);
 		default: {
 			const _exhaustive: never = mergeState;
 			return _exhaustive;
@@ -330,6 +347,7 @@ export function PullRequestHeader({
 	onChecksRunningClick,
 	onMergeConflictsClick,
 	onReviewRequiredClick,
+	submitReviewAction,
 	onConvertToDraftClick,
 	onClosePullRequestClick,
 	className,
@@ -501,7 +519,7 @@ export function PullRequestHeader({
 									variant="outline"
 								>
 									{mergeStateLeadingIcon(mergeState)}
-									{mergeStateLabel(mergeState, selectedMergeMethod)}
+									{mergeStateLabel(mergeState)}
 								</Button>
 								<DropdownMenu>
 									<DropdownMenuTrigger
@@ -570,11 +588,31 @@ export function PullRequestHeader({
 								</DropdownMenu>
 							</ButtonGroup>
 						) : (
-							<Button disabled variant="outline">
-								<MergeSuccessIcon label="" size="small" />
-								Merged
+							<Button aria-label="Revert pull request" variant="outline">
+								<UndoIcon label="" size="small" />
+								Revert PR
 							</Button>
 						)}
+						{canMutatePullRequest && submitReviewAction ? (
+							<Button
+								aria-label={submitReviewAction.ariaLabel}
+								disabled={submitReviewAction.disabled}
+								onClick={submitReviewAction.onClick}
+								variant="outline"
+							>
+								{submitReviewAction.label}
+								{submitReviewAction.badge ? (
+									<Badge
+										aria-hidden
+										className="tabular-nums"
+										max={false}
+										variant="neutral"
+									>
+										{submitReviewAction.badge}
+									</Badge>
+								) : null}
+							</Button>
+						) : null}
 						<ButtonGroup>
 							<DropdownMenu>
 								<DropdownMenuTrigger
@@ -613,42 +651,46 @@ export function PullRequestHeader({
 									>
 										{openInScmLabel}
 									</DropdownMenuItem>
-									<DropdownMenuSeparator />
-									<DropdownMenuItem
-										disabled={!canMutatePullRequest || !onConvertToDraftClick}
-										elemBefore={
-											<span className="text-icon-subtle">
-												<PullRequestIcon
-													color="currentColor"
-													label=""
-													size="small"
-												/>
-											</span>
-										}
-										onSelect={() => {
-											onConvertToDraftClick?.();
-										}}
-									>
-										Convert to draft
-									</DropdownMenuItem>
-									<DropdownMenuItem
-										disabled={!canMutatePullRequest || !onClosePullRequestClick}
-										elemBefore={
-											<span className="text-icon-danger">
-												<MergeFailureIcon
-													color="currentColor"
-													label=""
-													size="small"
-												/>
-											</span>
-										}
-										onSelect={() => {
-											onClosePullRequestClick?.();
-										}}
-										variant="destructive"
-									>
-										Close pull request
-									</DropdownMenuItem>
+									{canMutatePullRequest ? (
+										<>
+											<DropdownMenuSeparator />
+											<DropdownMenuItem
+												disabled={!onConvertToDraftClick}
+												elemBefore={
+													<span className="text-icon-subtle">
+														<PullRequestIcon
+															color="currentColor"
+															label=""
+															size="small"
+														/>
+													</span>
+												}
+												onSelect={() => {
+													onConvertToDraftClick?.();
+												}}
+											>
+												Convert to draft
+											</DropdownMenuItem>
+											<DropdownMenuItem
+												disabled={!onClosePullRequestClick}
+												elemBefore={
+													<span className="text-icon-danger">
+														<MergeFailureIcon
+															color="currentColor"
+															label=""
+															size="small"
+														/>
+													</span>
+												}
+												onSelect={() => {
+													onClosePullRequestClick?.();
+												}}
+												variant="destructive"
+											>
+												Close pull request
+											</DropdownMenuItem>
+										</>
+									) : null}
 								</DropdownMenuContent>
 							</DropdownMenu>
 						</ButtonGroup>

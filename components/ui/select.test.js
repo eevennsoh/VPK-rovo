@@ -24,7 +24,7 @@ test("SelectItem renders the selected check mark as a trailing affordance", () =
 	);
 	assert.match(
 		SELECT_SOURCE,
-		/<SelectPrimitive\.ItemText\n\t\t\t\tclassName=\{cn\(\n\t\t\t\t\t"flex min-w-0 flex-1 gap-2 whitespace-nowrap",\n\t\t\t\t\ttextClassName,\n\t\t\t\t\)\}/,
+		/<SelectPrimitive\.ItemText\n\t\t\t\tclassName=\{cn\(\n\t\t\t\t\t"flex min-w-0 flex-1 items-center gap-2 whitespace-nowrap",\n\t\t\t\t\ttextClassName,\n\t\t\t\t\)\}/,
 	);
 	assert.doesNotMatch(
 		SELECT_SOURCE,
@@ -113,7 +113,7 @@ test("SelectItem supports textClassName for rich multi-line option content", () 
 	);
 	assert.match(
 		SELECT_SOURCE,
-		/<SelectPrimitive\.ItemText\n\t\t\t\tclassName=\{cn\(\n\t\t\t\t\t"flex min-w-0 flex-1 gap-2 whitespace-nowrap",\n\t\t\t\t\ttextClassName,\n\t\t\t\t\)\}/,
+		/<SelectPrimitive\.ItemText\n\t\t\t\tclassName=\{cn\(\n\t\t\t\t\t"flex min-w-0 flex-1 items-center gap-2 whitespace-nowrap",\n\t\t\t\t\ttextClassName,\n\t\t\t\t\)\}/,
 	);
 	assert.match(
 		SELECT_SOURCE,

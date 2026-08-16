@@ -12,7 +12,7 @@ Next.js 16 (React 19, Tailwind CSS v4) + Express backend with AI SDK (Vercel), A
 - Frontend edits live mainly in `components/projects/`, `components/blocks/`, `components/arts/`, `components/ui-custom/`, `components/ui-audio/`, `components/visual/`, `components/website/`, and `app/`.
 - Backend/API ownership: `backend/app.js` composes Express; `backend/server.js` owns startup/static serving/listen/WebSockets; `backend/routes/*.js`, `backend/chat/*.js`, `backend/services/*`, and `backend/middleware/*` own their domains; `app/api/**/route.ts` owns dev proxies and route adapters.
 - Validate every change with `pnpm run lint` and `pnpm run typecheck`; UI changes also need visual and accessibility checks.
-- Default to `agent-browser` (`npx agent-browser`) for browser testing and verification; load its skill first and keep artifacts under ignored `output/agent-browser/`. If unavailable or blocked, use Playwright CLI after loading its skill.
+- For browser verification after editing code served by the local Next.js app, load and follow `next-dev-loop`; it owns the `/_next/mcp` plus `agent-browser` runtime cross-check. For browser work that is not verifying a Next.js edit, default to `agent-browser` (`npx agent-browser`) and load its skill first. Keep artifacts under ignored `output/agent-browser/`. If `agent-browser` is unavailable or blocked, use Playwright CLI after loading its skill.
 - Symphony browser evidence is the exception: use `vpk-symphony` so issue evidence lands under ignored `output/playwright/` per `WORKFLOW.md` and `.agents/docs/symphony.md`.
 
 ## Documentation Index
