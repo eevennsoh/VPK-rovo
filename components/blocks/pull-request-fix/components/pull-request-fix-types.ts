@@ -73,7 +73,7 @@ export interface PullRequestFixProps {
 	submitDisabled?: boolean;
 	/**
 	 * Called with the trimmed body and the selected coding agent. Send requires
-	 * a non-empty body.
+	 * a non-empty body and stays disabled when this callback is omitted.
 	 *
 	 * Return `false` to reject the submission and keep the draft intact. Any
 	 * other return value clears the draft after the callback.

@@ -88,7 +88,7 @@ test("PullRequestFix exposes the fix composer props contract", () => {
 	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/const accepted = onSubmit\?\.\(\{ body: value\.trim\(\), agentId \}\);[\s\S]*if \(accepted === false\) return;[\s\S]*updateValue\(""\)/u,
+		/if \(!onSubmit\) return;[\s\S]*const accepted = onSubmit\(\{ body: value\.trim\(\), agentId \}\);[\s\S]*if \(accepted === false\) return;[\s\S]*updateValue\(""\)/u,
 	);
 	assert.match(
 		TYPES_SOURCE,
@@ -143,9 +143,10 @@ test("expanded pins the stacked FloatingComposer layout", () => {
 	assert.match(FLOATING_COMPOSER_SOURCE, /data-slot="floating-composer-row"/u);
 });
 
-test("submit enables when the editor has non-empty content", () => {
+test("submit requires a handler and non-empty editor content", () => {
 	// Host `submitDisabled` is only a hard block — chapter progress must not
-	// keep Send off while the reviewer types.
+	// keep Send off while the reviewer types. Without a handler, Send must stay
+	// disabled so the optional callback cannot silently discard the draft.
 	assert.match(
 		COMPONENT_SOURCE,
 		/function canSubmitFix\(body: string\): boolean \{\s*return body\.trim\(\)\.length > 0;\s*\}/u,
@@ -153,7 +154,7 @@ test("submit enables when the editor has non-empty content", () => {
 	assert.match(COMPONENT_SOURCE, /submitDisabled = false/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/const canSubmit = !submitDisabled && canSubmitFix\(value\);/u,
+		/const canSubmit = Boolean\(onSubmit\) && !submitDisabled && canSubmitFix\(value\);/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,

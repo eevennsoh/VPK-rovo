@@ -108,7 +108,7 @@ import type { PullRequestFixProps } from "@/components/blocks/pull-request-fix";
 			name: "onSubmit",
 			type: "(submission: { body: string; agentId: PullRequestFixAgentId }) => void",
 			description:
-				"Called with the trimmed body and the selected coding agent. Send stays disabled while the body is empty.",
+				"Called with the trimmed body and the selected coding agent. Send stays disabled while the body is empty or this callback is omitted.",
 		},
 		{
 			name: "onClose",
