@@ -1,10 +1,17 @@
-const test = require("node:test");
+const { before, test } = require("node:test");
 const assert = require("node:assert/strict");
 
-const {
-	createUIMessageStream,
-	createUIMessageStreamResponse,
-} = require("ai");
+const { loadAiSdk } = require("./ai-sdk-runtime");
+
+let createUIMessageStream;
+let createUIMessageStreamResponse;
+
+before(async () => {
+	({
+		createUIMessageStream,
+		createUIMessageStreamResponse,
+	} = await loadAiSdk());
+});
 
 const {
 	collectUiMessagesFromResponseStream,

@@ -1,9 +1,6 @@
 "use strict";
 
-const {
-	createUIMessageStream: defaultCreateUIMessageStream,
-	pipeUIMessageStreamToResponse: defaultPipeUIMessageStreamToResponse,
-} = require("ai");
+const { getAiSdk } = require("./ai-sdk-runtime");
 const {
 	RFP_DEMO_REPORT_PREVIEW_SUMMARY,
 	RFP_DEMO_REPORT_TITLE,
@@ -130,15 +127,21 @@ function buildAgentsRfpDemoReportPreviewFields(variant) {
 function createAgentsRfpDemoChatStreamOwner({
 	agentsRfpDemoStateManager,
 	buildQuestionMetaFromQuestionCardPayload = defaultBuildQuestionMetaFromQuestionCardPayload,
-	createUIMessageStream = defaultCreateUIMessageStream,
+	createUIMessageStream,
 	generateTextViaGateway,
 	generateWorkItemVpkHtmlReport = defaultGenerateWorkItemVpkHtmlReport,
-	pipeUIMessageStreamToResponse = defaultPipeUIMessageStreamToResponse,
+	pipeUIMessageStreamToResponse,
 	requestUserInputQuestionMetaStore,
 	rovoAppDocumentManager,
 	rovoAppThreadManager,
 	waitForTraceDelay = waitForAgentsRfpDemoTraceDelay,
 } = {}) {
+	if (!createUIMessageStream || !pipeUIMessageStreamToResponse) {
+		const aiSdk = getAiSdk();
+		createUIMessageStream ||= aiSdk.createUIMessageStream;
+		pipeUIMessageStreamToResponse ||= aiSdk.pipeUIMessageStreamToResponse;
+	}
+
 	requireFunction("agentsRfpDemoStateManager.readState", agentsRfpDemoStateManager?.readState);
 	requireFunction("agentsRfpDemoStateManager.writeState", agentsRfpDemoStateManager?.writeState);
 	requireFunction("buildQuestionMetaFromQuestionCardPayload", buildQuestionMetaFromQuestionCardPayload);

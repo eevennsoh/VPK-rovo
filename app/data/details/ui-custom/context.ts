@@ -50,7 +50,7 @@ export const CONTEXT_DETAIL: ComponentDetail = {
 		{
 			name: "usage",
 			type: "LanguageModelUsage",
-			description: "AI SDK usage object with inputTokens, outputTokens, reasoningTokens, and cachedInputTokens breakdown.",
+			description: "AI SDK usage object with input/output totals plus reasoning and cache details.",
 		},
 		{
 			name: "modelId",

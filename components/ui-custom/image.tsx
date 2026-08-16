@@ -1,11 +1,11 @@
 /* eslint-disable @next/next/no-img-element -- These component primitives render arbitrary preview/avatar/image payloads where Next Image sizing/loading would change the public API. */
 /* eslint-disable @typescript-eslint/no-unused-vars -- These underscored compatibility props and inferred generic placeholders are intentionally retained for API shape. */
 
-import type { Experimental_GeneratedImage } from "ai";
+import type { GeneratedFile } from "ai";
 
 import { cn } from "@/lib/utils";
 
-export interface ImageProps extends Experimental_GeneratedImage {
+export interface ImageProps extends GeneratedFile {
 	className?: string;
 	alt?: string;
 }

@@ -1,9 +1,4 @@
-const {
-	JsonToSseTransformStream,
-	parseJsonEventStream,
-	readUIMessageStream,
-	uiMessageChunkSchema,
-} = require("ai");
+const { getAiSdk } = require("./ai-sdk-runtime");
 
 function unwrapUiMessageChunk(result) {
 	if (result && typeof result === "object") {
@@ -27,6 +22,7 @@ function unwrapUiMessageChunk(result) {
 }
 
 function toUiMessageChunkStream(stream) {
+	const { parseJsonEventStream, uiMessageChunkSchema } = getAiSdk();
 	return parseJsonEventStream({
 		schema: uiMessageChunkSchema,
 		stream,
@@ -127,6 +123,7 @@ function createUiMessageChunkSseStream({
 	routeDecisionToSuppress,
 	stream,
 }) {
+	const { JsonToSseTransformStream } = getAiSdk();
 	return createTappedChunkStream(stream, {
 		onChunk,
 		routeDecisionToSuppress,
@@ -151,6 +148,7 @@ async function collectUiMessagesFromResponseStream({
 	routeDecisionToSuppress,
 	stream,
 }) {
+	const { readUIMessageStream } = getAiSdk();
 	const messages = Array.isArray(initialMessages) ? [...initialMessages] : [];
 
 	try {

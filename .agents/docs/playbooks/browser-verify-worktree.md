@@ -15,8 +15,8 @@ Use the stable Portless URL printed as `https://...localhost`. Fall back to `.de
 
 ## Browser Tooling
 
-1. Load the `agent-browser` skill before using browser automation.
-2. Use `npx agent-browser` for screenshots, UI probes, public pages, and unauthenticated checks.
+1. After editing code served by the local Next.js app, load and follow `next-dev-loop` for the `/_next/mcp` plus `agent-browser` runtime cross-check.
+2. For browser work that is not verifying a Next.js edit, load the `agent-browser` skill and use `npx agent-browser` for screenshots, UI probes, public pages, and unauthenticated checks.
 3. Put ad-hoc artifacts under `output/agent-browser/`.
 4. Use Playwright CLI only when `agent-browser` is unavailable or blocked.
 

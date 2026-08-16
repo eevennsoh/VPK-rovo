@@ -27,8 +27,6 @@ const SAMPLE_USAGE: LanguageModelUsage = {
 		textTokens: 1_720,
 		reasoningTokens: 1_560,
 	},
-	reasoningTokens: 1_560,
-	cachedInputTokens: 4_200,
 };
 
 export default function ContextDemo() {

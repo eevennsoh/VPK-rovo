@@ -1,4 +1,4 @@
-const test = require("node:test");
+const { before, test } = require("node:test");
 const assert = require("node:assert/strict");
 
 const { createCapturedResponse } = require("./in-process-http");
@@ -16,10 +16,15 @@ test("createCapturedResponse.waitForHeaders resolves after headers are flushed",
 	assert.equal(response.getHeader("content-type"), "text/event-stream");
 });
 
-const {
-	createUIMessageStream,
-	pipeUIMessageStreamToResponse,
-} = require("ai");
+let createUIMessageStream;
+let pipeUIMessageStreamToResponse;
+
+before(async () => {
+	({
+		createUIMessageStream,
+		pipeUIMessageStreamToResponse,
+	} = await import("ai"));
+});
 
 const {
 	createInProcessRequest,
