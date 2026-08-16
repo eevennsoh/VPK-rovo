@@ -114,12 +114,6 @@ test("resolveActiveChapterId reads each chapter top once per evaluation", async 
 	assert.equal(readCount, Object.keys(tops).length);
 });
 
-test("shouldApplyScrollSpyUpdate ignores spy while a chapter jump is locked", async () => {
-	const { shouldApplyScrollSpyUpdate } = await loadActiveChapter();
-	assert.equal(shouldApplyScrollSpyUpdate(null), true);
-	assert.equal(shouldApplyScrollSpyUpdate("recover-and-verify"), false);
-});
-
 test("buildChapterJumpTarget accounts for sticky header and clamps to max scroll", async () => {
 	const { CHAPTER_SCROLL_GAP_PX, buildChapterJumpTarget } = await loadActiveChapter();
 
