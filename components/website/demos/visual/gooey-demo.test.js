@@ -3,6 +3,13 @@ const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 
+const esbuild = require("esbuild");
+const React = require("react");
+const { parseHTML } = require("linkedom");
+const { createRoot } = require("react-dom/client");
+
+const { loadCjsModuleFromText } = require(path.join(process.cwd(), "scripts/lib/esbuild-cjs-loader.js"));
+
 const ROOT = path.join(__dirname, "../../../..");
 const COMPONENTS = fs.readFileSync(path.join(ROOT, "app/data/components.ts"), "utf8");
 const MANIFEST = fs.readFileSync(path.join(ROOT, "app/data/component-manifest.ts"), "utf8");
@@ -15,6 +22,23 @@ const UTILS = fs.readFileSync(path.join(__dirname, "gooey-demo-utils.ts"), "utf8
 const INDEX = fs.readFileSync(path.join(ROOT, "components/visual/gooey/index.ts"), "utf8");
 const ROOT_SOURCE = fs.readFileSync(path.join(ROOT, "components/visual/gooey/gooey-root.tsx"), "utf8");
 const VARIANT_REGISTRY = REGISTRY.slice(REGISTRY.indexOf("export const VISUAL_VARIANT_DEMOS"));
+
+function loadUseGooeyDemoDrag() {
+	const entryPoint = path.join(__dirname, "gooey-demo-utils.ts");
+	const result = esbuild.buildSync({
+		entryPoints: [entryPoint],
+		bundle: true,
+		external: ["react"],
+		format: "cjs",
+		logLevel: "silent",
+		platform: "node",
+		tsconfig: path.join(ROOT, "tsconfig.json"),
+		write: false,
+	});
+
+	return loadCjsModuleFromText(result.outputFiles[0].text, "gooey-demo-drag-harness.cjs")
+		.useGooeyDemoDrag;
+}
 
 test("Gooey is a top-level Visual component with local source attribution", () => {
 	for (const source of [COMPONENTS, MANIFEST]) {
@@ -71,6 +95,7 @@ test("morph menu hides converged satellite icons and uses VPK icons", () => {
 test("move slider has one liquid-owned thumb surface", () => {
 	assert.match(EXAMPLES, /data-gooey-slider-track=""/u);
 	assert.match(EXAMPLES, /data-gooey-slider-thumb=""/u);
+	assert.match(EXAMPLES, /has-\[:focus-visible\]:outline-2 has-\[:focus-visible\]:outline-offset-2 has-\[:focus-visible\]:outline-border-focused/u);
 	assert.match(EXAMPLES, /move=\{\{ springiness: 0\.5, stretch: 0\.6, trail: 0\.35 \}\}/u);
 	assert.match(EXAMPLES, /const travel = 188/u);
 	assert.match(EXAMPLES, /data-gooey-slider-thumb=""[\s\S]*?className="block size-6 rounded-full"/u);
@@ -94,6 +119,85 @@ test("hero and draggable examples expose pointer, reset, and keyboard interactio
 	assert.match(UTILS, /setPointerCapture\(event\.pointerId\)/u);
 	assert.match(UTILS, /onKeyDown/u);
 	assert.match(UTILS, /clampPosition/u);
+});
+
+test("Gooey drag clamps movement and does not activate after a cancelled pointer drag", async () => {
+	const { window } = parseHTML("<!doctype html><html><body><div id='app'></div></body></html>");
+	const originalGlobals = {
+		document: globalThis.document,
+		Event: globalThis.Event,
+		HTMLElement: globalThis.HTMLElement,
+		Node: globalThis.Node,
+		window: globalThis.window,
+		actEnvironment: globalThis.IS_REACT_ACT_ENVIRONMENT,
+	};
+	Object.assign(globalThis, {
+		document: window.document,
+		Event: window.Event,
+		HTMLElement: window.HTMLElement,
+		Node: window.Node,
+		window,
+		IS_REACT_ACT_ENVIRONMENT: true,
+	});
+
+	const useGooeyDemoDrag = loadUseGooeyDemoDrag();
+	let drag = null;
+	let activationCount = 0;
+	const capturedPointers = [];
+	const releasedPointers = [];
+	const dragTarget = {
+		hasPointerCapture: (pointerId) => capturedPointers.includes(pointerId),
+		releasePointerCapture: (pointerId) => releasedPointers.push(pointerId),
+		setPointerCapture: (pointerId) => capturedPointers.push(pointerId),
+	};
+
+	function Probe() {
+		const [position, setPosition] = React.useState({ x: 10, y: 10 });
+		drag = useGooeyDemoDrag(
+			position,
+			setPosition,
+			{ minX: 0, maxX: 20, minY: 0, maxY: 20 },
+			() => {
+				activationCount += 1;
+			},
+		);
+		return null;
+	}
+
+	const root = createRoot(window.document.getElementById("app"));
+	try {
+		await React.act(async () => {
+			root.render(React.createElement(Probe));
+		});
+		await React.act(async () => {
+			drag.bind.onPointerDown({
+				clientX: 100,
+				clientY: 100,
+				currentTarget: dragTarget,
+				pointerId: 7,
+			});
+			drag.bind.onPointerMove({ clientX: 130, clientY: 70 });
+		});
+		assert.deepEqual(drag.position, { x: 20, y: 0 });
+		assert.equal(drag.dragging, true);
+		assert.deepEqual(capturedPointers, [7]);
+
+		await React.act(async () => {
+			drag.bind.onPointerCancel({ currentTarget: dragTarget, pointerId: 7 });
+		});
+		assert.equal(drag.dragging, false);
+		assert.deepEqual(releasedPointers, [7]);
+
+		drag.bind.onClick();
+		assert.equal(activationCount, 0, "the click following a drag must be ignored");
+		drag.bind.onClick();
+		assert.equal(activationCount, 1, "the next independent click still activates the item");
+	} finally {
+		await React.act(async () => {
+			root.unmount();
+		});
+		Object.assign(globalThis, originalGlobals);
+	}
 });
 
 test("Gooey component modules keep Fast Refresh exports component-only", () => {

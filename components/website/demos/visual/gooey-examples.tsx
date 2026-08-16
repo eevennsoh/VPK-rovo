@@ -248,7 +248,12 @@ export function GooeyMoveSliderExample() {
 		<ExampleStage label="Move liquid-rubber slider">
 			<div className="w-full max-w-60">
 				<div className="mb-4 flex items-baseline justify-between"><span className="text-sm font-medium text-text">Intensity</span><output className="text-xs text-text-subtle">{value}%</output></div>
-				<Gooey fill={PRIMARY_FILL} blur={5} shadow={GOOEY_THUMB_SHADOW} className="relative h-20 w-full">
+				<Gooey
+					fill={PRIMARY_FILL}
+					blur={5}
+					shadow={GOOEY_THUMB_SHADOW}
+					className="relative h-20 w-full has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-border-focused"
+				>
 					<span aria-hidden="true" data-gooey-slider-track="" className="absolute inset-x-[14px] top-[38px] h-2 rounded-sm bg-primary" />
 					<Gooey.Item effect="move" move={{ springiness: 0.5, stretch: 0.6, trail: 0.35 }} style={{ position: "absolute", left: 14, top: 30 }}>
 						<span
