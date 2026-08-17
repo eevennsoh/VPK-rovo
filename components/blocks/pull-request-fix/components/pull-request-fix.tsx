@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { type MouseEvent, useRef, useState } from "react";
 
 import CrossIcon from "@atlaskit/icon/core/cross";
 
@@ -74,6 +74,8 @@ export function PullRequestFix({
 		useState<PullRequestFixVariant>(defaultVariant);
 	const [uncontrolledAgentId, setUncontrolledAgentId] =
 		useState<PullRequestFixAgentId>(defaultAgentId);
+	const editorRef = useRef<HTMLTextAreaElement>(null);
+	const skipNextFocusExpansionRef = useRef(false);
 
 	const value = controlledValue ?? uncontrolledValue;
 	const variant = controlledVariant ?? uncontrolledVariant;
@@ -115,6 +117,14 @@ export function PullRequestFix({
 		onAgentChange?.(nextAgentId);
 	}
 
+	function handleEditorFocus() {
+		if (skipNextFocusExpansionRef.current) {
+			skipNextFocusExpansionRef.current = false;
+			return;
+		}
+		updateVariant("expanded");
+	}
+
 	function submit() {
 		if (!canSubmit) return;
 		if (!onSubmit) return;
@@ -123,9 +133,19 @@ export function PullRequestFix({
 		updateValue("");
 	}
 
-	function close() {
+	function close(event: MouseEvent<HTMLButtonElement>) {
 		updateVariant("compact");
 		onClose?.();
+		if (event.detail !== 0) return;
+		window.requestAnimationFrame(() => {
+			// A controlled host may unmount this composer or move focus elsewhere.
+			// Restore only when collapsing removed the focused close button and the
+			// compact composer is still mounted.
+			if (document.activeElement === document.body && editorRef.current) {
+				skipNextFocusExpansionRef.current = true;
+				editorRef.current.focus();
+			}
+		});
 	}
 
 	const fixHeader = isExpanded ? (
@@ -206,10 +226,11 @@ export function PullRequestFix({
 				onChange={(event) => updateValue(event.currentTarget.value)}
 				onFocus={
 					expandOnFocus && controlledVariant === undefined
-						? () => updateVariant("expanded")
+						? handleEditorFocus
 						: undefined
 				}
 				placeholder={placeholder}
+				ref={editorRef}
 				rows={1}
 				value={value}
 			/>

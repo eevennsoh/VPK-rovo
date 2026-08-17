@@ -317,8 +317,22 @@ test("focus expansion yields to a controlled variant", () => {
 });
 
 test("the dismiss control collapses the card and notifies the host", () => {
-	assert.match(COMPONENT_SOURCE, /function close\(\) \{[\s\S]*updateVariant\("compact"\);\s*onClose\?\.\(\);/u);
+	assert.match(COMPONENT_SOURCE, /function close\(event: MouseEvent<HTMLButtonElement>\) \{[\s\S]*updateVariant\("compact"\);\s*onClose\?\.\(\);/u);
 	assert.match(COMPONENT_SOURCE, /aria-label="Close fix"/u);
+	assert.match(COMPONENT_SOURCE, /const editorRef = useRef<HTMLTextAreaElement>\(null\);/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/function handleEditorFocus\(\) \{[\s\S]*skipNextFocusExpansionRef\.current = false;[\s\S]*return;[\s\S]*updateVariant\("expanded"\);/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/if \(event\.detail !== 0\) return;[\s\S]*window\.requestAnimationFrame\(\(\) => \{[\s\S]*document\.activeElement === document\.body && editorRef\.current[\s\S]*skipNextFocusExpansionRef\.current = true;[\s\S]*editorRef\.current\.focus\(\);/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/<PromptInputTextarea[\s\S]*ref=\{editorRef\}/u,
+	);
+	assert.match(COMPONENT_SOURCE, /onFocus=\{[\s\S]*\? handleEditorFocus[\s\S]*: undefined/u);
 });
 
 test("the agent picker renders only while expanded beside Send", () => {
