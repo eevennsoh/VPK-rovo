@@ -80,11 +80,12 @@ export function PullRequestFix({
 	const agentId = controlledAgentId ?? uncontrolledAgentId;
 	const isExpanded = variant === "expanded";
 	/**
-	 * Content alone enables Send. Host `submitDisabled` is reserved for hard
-	 * blocks (already approved / no handler) — not chapter progress — so a
-	 * typed draft never sits behind an unrelated gate.
+	 * A submission handler plus content enables Send. Host `submitDisabled` is
+	 * reserved for other hard blocks (for example, already approved) — not
+	 * chapter progress — so a handled typed draft never sits behind an
+	 * unrelated gate.
 	 */
-	const canSubmit = !submitDisabled && canSubmitFix(value);
+	const canSubmit = Boolean(onSubmit) && !submitDisabled && canSubmitFix(value);
 	const trimmedCheckName = checkName?.trim() ?? "";
 	const hasCheckName = trimmedCheckName.length > 0;
 	const hasCommentCount = commentCount !== undefined && commentCount > 0;
@@ -116,7 +117,8 @@ export function PullRequestFix({
 
 	function submit() {
 		if (!canSubmit) return;
-		const accepted = onSubmit?.({ body: value.trim(), agentId });
+		if (!onSubmit) return;
+		const accepted = onSubmit({ body: value.trim(), agentId });
 		if (accepted === false) return;
 		updateValue("");
 	}
