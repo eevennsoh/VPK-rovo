@@ -54,6 +54,8 @@ const DEFAULT_MESSAGES: Record<AgentStatesState, string> = {
 };
 
 const DEFAULT_INITIAL_ELAPSED_SECONDS = 45;
+// Agent States previews the shared control states without starting a media session.
+const startPreviewDictation = () => undefined;
 
 function getAgentInitial(name: string): string {
 	return name.trim()[0]?.toUpperCase() ?? "A";
@@ -98,6 +100,8 @@ export function AgentStatesComposer({
 					clickyActive={clickyActive}
 					composerStatus="ready"
 					experimentalDarkCta
+					liveVoiceEnabled
+					onStartDictation={startPreviewDictation}
 					onStop={handleStop}
 					onToggleClicky={handleToggleClicky}
 					onToggleRealtimeVoice={handleToggleRealtimeVoice}
@@ -111,7 +115,7 @@ export function AgentStatesComposer({
 			}
 			allowOverflow
 			aria-label="Reply to agent"
-			className={cn("shadow-md", className)}
+			className={className}
 			onSubmit={handleSubmit}
 		>
 			<PromptInputTextarea

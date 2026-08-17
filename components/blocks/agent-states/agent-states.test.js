@@ -39,7 +39,13 @@ test("Agent States demo exposes distinct content for each state", () => {
 });
 
 test("compact agent surfaces use their intended elevation treatment", () => {
-	assert.match(SOURCE, /\bshadow-md\b/u);
+	assert.match(SOURCE, /className=\{className\}/u);
+	assert.doesNotMatch(SOURCE, /\bborder-0\b/u);
+	assert.doesNotMatch(SOURCE, /\bshadow-md\b/u);
+	assert.match(
+		SOURCE,
+		/<RovoComposerActionButton[\s\S]*experimentalDarkCta[\s\S]*liveVoiceEnabled[\s\S]*onStartDictation=\{startPreviewDictation\}/u,
+	);
 	assert.match(
 		AGENT_PROFILE_SOURCE,
 		/surface === "overlay" \? "shadow-2xl" : "shadow-sm"/u,
