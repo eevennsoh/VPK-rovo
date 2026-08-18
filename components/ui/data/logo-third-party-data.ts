@@ -62,7 +62,7 @@ export const THIRD_PARTY_LOGO_MANIFEST = [
 	{ name: "google-gemini", label: "Gemini", localAsset: true },
 	{ name: "google-sheets", label: "Google Sheets", packageIcon: { entrypoint: "google-sheets", exportName: "GoogleSheetsIcon" } },
 	{ name: "google-slides", label: "Google Slides", packageIcon: { entrypoint: "google-slides", exportName: "GoogleSlidesIcon" } },
-	{ name: "hubspot", label: "HubSpot", packageIcon: { entrypoint: "hubspot", exportName: "HubspotIcon" }, localAsset: true },
+	{ name: "hubspot", label: "HubSpot", packageIcon: { entrypoint: "hubspot", exportName: "HubSpotIcon" }, localAsset: true },
 	{ name: "hugging-face", label: "Hugging Face", packageIcon: { entrypoint: "hugging-face", exportName: "HuggingFaceIcon" } },
 	{ name: "identity-now", label: "Identity Now", packageIcon: { entrypoint: "identity-now", exportName: "IdentityNowIcon" } },
 	{ name: "intercom", label: "Intercom", packageIcon: { entrypoint: "intercom", exportName: "IntercomIcon" } },

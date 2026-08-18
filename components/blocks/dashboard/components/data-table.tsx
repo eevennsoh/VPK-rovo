@@ -23,19 +23,27 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import {
-  type ColumnDef,
+	columnFacetingFeature,
+	columnFilteringFeature,
+	columnVisibilityFeature,
+	createColumnHelper,
+	createFacetedRowModel,
+	createFacetedUniqueValues,
+	createFilteredRowModel,
+	createPaginatedRowModel,
+	createSortedRowModel,
+	filterFns,
   type ColumnFiltersState,
+	type ColumnVisibilityState,
   type Row,
   type SortingState,
-  type VisibilityState,
   flexRender,
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
+	rowPaginationFeature,
+	rowSelectionFeature,
+	rowSortingFeature,
+	sortFns,
+	tableFeatures,
+	useTable,
 } from "@tanstack/react-table"
 import {
   CheckCircle2Icon,
@@ -127,6 +135,26 @@ export const schema = z.object({
   reviewer: z.string(),
 })
 
+type DataTableRow = z.infer<typeof schema>
+
+const dataTableFeatures = tableFeatures({
+	columnVisibilityFeature,
+	columnFilteringFeature,
+	filteredRowModel: createFilteredRowModel(),
+	filterFns,
+	columnFacetingFeature,
+	facetedRowModel: createFacetedRowModel(),
+	facetedUniqueValues: createFacetedUniqueValues(),
+	rowSortingFeature,
+	sortedRowModel: createSortedRowModel(),
+	sortFns,
+	rowPaginationFeature,
+	paginatedRowModel: createPaginatedRowModel(),
+	rowSelectionFeature,
+})
+
+const dataTableColumnHelper = createColumnHelper<typeof dataTableFeatures, DataTableRow>()
+
 function showSaveToast(header: string) {
   const loadingToastId = toast.custom(
     (id) => (
@@ -174,7 +202,7 @@ function DragHandle({ id }: { id: number }) {
   )
 }
 
-const columns: ColumnDef<z.infer<typeof schema>>[] = [
+const columns = dataTableColumnHelper.columns([
   {
     id: "drag",
     header: () => null,
@@ -348,9 +376,9 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
       </DropdownMenu>
     ),
   },
-]
+])
 
-function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
+function DraggableRow({ row }: { row: Row<typeof dataTableFeatures, DataTableRow> }) {
   const { transform, transition, setNodeRef, isDragging } = useSortable({
     id: row.original.id,
   })
@@ -383,7 +411,7 @@ export function DataTable({
   const [data, setData] = useState(() => initialData)
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] =
-    useState<VisibilityState>({})
+    useState<ColumnVisibilityState>({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(
     []
   )
@@ -404,7 +432,8 @@ export function DataTable({
     [data]
   )
 
-  const table = useReactTable({
+	const table = useTable({
+		features: dataTableFeatures,
     data,
     columns,
     state: {
@@ -421,12 +450,6 @@ export function DataTable({
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
   })
 
   function handleDragEnd(event: DragEndEvent) {
@@ -589,14 +612,14 @@ export function DataTable({
                 Rows per page
               </Label>
               <Select
-                value={`${table.getState().pagination.pageSize}`}
+				value={`${table.state.pagination.pageSize}`}
                 onValueChange={(value) => {
                   table.setPageSize(Number(value))
                 }}
               >
                 <SelectTrigger className="w-20" id="rows-per-page">
                   <SelectValue
-                    placeholder={table.getState().pagination.pageSize}
+					placeholder={table.state.pagination.pageSize}
                   />
                 </SelectTrigger>
                 <SelectContent side="top">
@@ -609,7 +632,7 @@ export function DataTable({
               </Select>
             </div>
             <div className="flex w-fit items-center justify-center text-sm font-medium">
-              Page {table.getState().pagination.pageIndex + 1} of{" "}
+			Page {table.state.pagination.pageIndex + 1} of{" "}
               {table.getPageCount()}
             </div>
             <div className="ml-auto flex items-center gap-2 lg:ml-0">

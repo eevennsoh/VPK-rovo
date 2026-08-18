@@ -12,7 +12,6 @@ const nextConfig: NextConfig = {
 	}),
 
 	experimental: {
-		viewTransition: true,
 		// Rewrite named barrel imports to deep paths at build time so only the
 		// used symbols ship to the client. recharts (~86 files) and the motion
 		// package (~175 files) are NOT in Next's default optimizePackageImports

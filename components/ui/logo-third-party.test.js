@@ -127,6 +127,27 @@ test("every brand name has a display label", async () => {
 	}
 });
 
+test("package-backed logo exports match the installed package entrypoints", async () => {
+	const { THIRD_PARTY_LOGO_MANIFEST } = await loadLogoThirdPartyData();
+	const packageRoot = path.dirname(require.resolve("@atlassian/logo-third-party/package.json"));
+
+	for (const entry of THIRD_PARTY_LOGO_MANIFEST) {
+		if (!entry.packageIcon) {
+			continue;
+		}
+
+		const declaration = readFileSync(
+			path.join(packageRoot, "dist", "types", "entry-points", `${entry.packageIcon.entrypoint}.d.ts`),
+			"utf8",
+		);
+		assert.match(
+			declaration,
+			new RegExp(`export declare function ${entry.packageIcon.exportName}\\b`, "u"),
+			`missing ${entry.packageIcon.exportName} from ${entry.packageIcon.entrypoint}`,
+		);
+	}
+});
+
 test("thirdPartyLogoSrc resolves the canonical 24px asset path", async () => {
 	const { thirdPartyLogoSrc } = await loadLogoThirdPartyData();
 

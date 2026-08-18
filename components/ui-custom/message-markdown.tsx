@@ -151,13 +151,7 @@ type MarkdownAnchorProps = ComponentProps<"a"> & { node?: unknown };
 
 type MarkdownInlineCodeProps = ComponentProps<"code"> & { node?: unknown };
 
-type MarkdownCodeBlockProps = ComponentProps<"code"> & {
-	node?: {
-		properties?: {
-			metastring?: unknown;
-		};
-	};
-};
+type MarkdownCodeBlockProps = ComponentProps<"code"> & ExtraProps;
 
 const CODE_LANGUAGE_PATTERN = /language-([^\s]+)/u;
 const CODE_TITLE_PATTERN =

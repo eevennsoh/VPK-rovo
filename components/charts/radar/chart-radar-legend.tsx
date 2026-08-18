@@ -49,7 +49,7 @@ export function ChartRadarLegend() {
 						<PolarGrid />
 						<Radar dataKey="desktop" fill="var(--color-desktop)" fillOpacity={0.6} />
 						<Radar dataKey="mobile" fill="var(--color-mobile)" />
-						<ChartLegend className="mt-8" content={<ChartLegendContent />} />
+						<ChartLegend content={<ChartLegendContent className="mt-8" />} />
 					</RadarChart>
 				</ChartContainer>
 			</CardContent>

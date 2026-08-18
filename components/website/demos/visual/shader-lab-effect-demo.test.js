@@ -46,6 +46,7 @@ const PATTERN_DEMO_SOURCE = fs.readFileSync(
 
 const SHADER_LAB_EFFECT_COUNTS = {
 	bloom: 6,
+	"blob-tracking": 23,
 	"circuit-bent": 14,
 	"directional-blur": 5,
 	"chromatic-aberration": 4,

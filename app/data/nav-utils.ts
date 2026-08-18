@@ -95,6 +95,7 @@ export const VISUAL_GROUPS: Record<string, string[]> = {
 	shaders: [
 		"ascii",
 		"bloom",
+		"blob-tracking",
 		"circuit-bent",
 		"custom-shader",
 		"directional-blur",
