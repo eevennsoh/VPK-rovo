@@ -47,6 +47,9 @@ export const VISUAL_DEMOS: Record<string, ComponentType> = {
 	bloom: dynamic(() => import("../demos/visual/bloom-demo"), {
 		ssr: false,
 	}),
+	"blob-tracking": dynamic(() => import("../demos/visual/blob-tracking-demo"), {
+		ssr: false,
+	}),
 	"circuit-bent": dynamic(() => import("../demos/visual/circuit-bent-demo"), {
 		ssr: false,
 	}),

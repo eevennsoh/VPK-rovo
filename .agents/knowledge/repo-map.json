@@ -5323,7 +5323,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 420,
+			"manifestEntryCount": 421,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -7297,7 +7297,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 100,
+				"entryCount": 101,
 				"entries": [
 					{
 						"category": "visual",
@@ -7310,6 +7310,12 @@
 						"slug": "bands",
 						"name": "Bands",
 						"importPath": "@/components/website/demos/visual/shaders/bands"
+					},
+					{
+						"category": "visual",
+						"slug": "blob-tracking",
+						"name": "Blob Tracking",
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
 					},
 					{
 						"category": "visual",

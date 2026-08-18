@@ -657,6 +657,7 @@ export const VISUAL_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	visualComponent("text-morphing", "Text Morphing", "@/components/visual/text-morphing"),
 	visualComponent("ascii", "ASCII", "@/components/website/demos/visual/shaders/ascii"),
 	visualComponent("bloom", "Bloom", "@/components/website/demos/visual/shader-lab-effect-demo"),
+	visualComponent("blob-tracking", "Blob Tracking", "@/components/website/demos/visual/shader-lab-effect-demo"),
 	visualComponent("circuit-bent", "Circuit Bent", "@/components/website/demos/visual/shader-lab-effect-demo"),
 	visualComponent("custom-shader", "Custom Shader", "@/components/website/demos/visual/shader-lab-effect-demo"),
 	visualComponent("directional-blur", "Directional Blur", "@/components/website/demos/visual/shader-lab-effect-demo"),

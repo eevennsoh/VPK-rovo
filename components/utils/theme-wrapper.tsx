@@ -10,7 +10,7 @@ import {
 	isTheme,
 	type Theme,
 } from "@/components/utils/theme-storage";
-import { setGlobalTheme } from "@atlaskit/tokens";
+import { setGlobalTheme } from "@atlaskit/tokens/set-global-theme";
 import DevicesIcon from "@atlaskit/icon/core/devices";
 import ThemeIcon from "@atlaskit/icon/core/theme";
 import { Button } from "@/components/ui/button";
