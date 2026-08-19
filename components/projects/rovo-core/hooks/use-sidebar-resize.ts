@@ -78,12 +78,11 @@ export function useSidebarResize({
 	const willCollapseRef = useRef(false);
 	const collapseThreshold = minWidth - COLLAPSE_THRESHOLD_OFFSET;
 
+	// Re-clamp the committed width when the bounds change so a shrinking
+	// container cannot strand the panel outside them. The updater stays pure;
+	// `lastValidWidthRef` is synced by the committed-width effect below.
 	useEffect(() => {
-		setSidebarWidth((currentWidth) => {
-			const nextWidth = clamp(currentWidth, minWidth, maxWidth);
-			lastValidWidthRef.current = nextWidth;
-			return nextWidth;
-		});
+		setSidebarWidth((currentWidth) => clamp(currentWidth, minWidth, maxWidth));
 	}, [maxWidth, minWidth]);
 
 	const onResizeHandlePointerEnter = useCallback(() => {
