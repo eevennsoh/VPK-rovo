@@ -416,8 +416,8 @@ test("Jira Golden Journeys v3 seeds checkout automation rows without changing th
 });
 
 test("the shared Jira Design workspace accepts route-owned board, list, and detail data", () => {
-	const stageSource = readProjectFile("components/projects/jira-golden-journeys/components/for-you-stage.tsx");
-	const dataSource = readProjectFile("components/projects/jira-golden-journeys/data/jira-design-work-items.ts");
+	const stageSource = readProjectFile("components/projects/jira-golden-journeys-v1/components/for-you-stage.tsx");
+	const dataSource = readProjectFile("components/projects/jira-golden-journeys-v1/data/jira-design-work-items.ts");
 
 	assert.match(stageSource, /boardColumns\?: readonly JiraKanbanColumnData\[\];/u);
 	assert.match(stageSource, /sections\?: readonly JiraForYouSection\[\];/u);

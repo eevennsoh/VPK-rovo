@@ -16,13 +16,13 @@ import { AGENT_SESSION_FLYOUT_SESSIONS } from "@/components/blocks/agent-session
 import { cn } from "@/lib/utils";
 
 /**
- * The `/asx` queue session flyout showcase. The compact session list feeds the
+ * The `/jira-golden-journeys-v0` queue session flyout showcase. The compact session list feeds the
  * shared `JiraSessionFlyoutSurface` — the exact rich, direction-aware flyout
  * used by the live Jira product sidebar.
  */
 
 export interface AgentSessionFlyoutProps {
-	/** Sessions to render in the compact list. Defaults to the `/asx` queue seeds. */
+	/** Sessions to render in the compact list. Defaults to the `/jira-golden-journeys-v0` queue seeds. */
 	sessions?: readonly JiraSidebarSessionItem[];
 	/** Additional classes applied to the outer session list. */
 	className?: string;

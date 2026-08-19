@@ -23,7 +23,7 @@ import { JIRA_FOR_YOU_SECTIONS } from "@/components/projects/jira-for-you/data";
 import {
 	JIRA_DESIGN_KANBAN_AGENTS,
 	JIRA_DESIGN_KANBAN_COLUMNS,
-} from "@/components/projects/jira-golden-journeys/data/jira-design-work-items";
+} from "@/components/projects/jira-golden-journeys-v1/data/jira-design-work-items";
 import type { ArtifactListItem } from "@/components/ui-custom/artifact-list";
 
 import { resolveBuildStep, resolveFixStep, storyEventsForChapter } from "./hotfix-story-events";

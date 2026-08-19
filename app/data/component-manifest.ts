@@ -596,13 +596,13 @@ export const BLOCK_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 
 export const PROJECT_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	projectComponent("admin", "Admin"),
-	projectComponent("asx", "ASX"),
 	projectComponent("confluence", "Confluence"),
 	projectComponent("html", "HTML"),
 	projectComponent("jira", "Jira"),
-	projectComponent("jira-agents", "Jira Agents"),
 	projectComponent("jira-for-you", "Jira For You"),
-	projectComponent("jira-golden-journeys", "Jira Golden Journeys"),
+	projectComponent("jira-golden-journeys-v0", "Jira Golden Journeys v0"),
+	projectComponent("jira-golden-journeys-v1", "Jira Golden Journeys v1"),
+	projectComponent("jira-golden-journeys-v2", "Jira Golden Journeys v2"),
 	projectComponent("jira-golden-journeys-v3", "Jira Golden Journeys v3"),
 	projectComponent("jira-queue", "Jira Queue"),
 	projectComponent("rovo", "Rovo"),

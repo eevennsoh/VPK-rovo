@@ -9,7 +9,7 @@ import { Gallery, type GalleryItem } from "@/components/blocks/gallery";
 import type { AgentSession } from "@/components/blocks/jira-work-item/data/session-state";
 import { ExperimentalV2JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v2/experimental-v2-jira-work-item";
 import type { WorkItemAutomationRule } from "@/components/blocks/jira-work-item/experimental-v2/components/automation-tab";
-import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys/data/agent-chat-data";
+import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v1/data/agent-chat-data";
 import { JIRA_GOLDEN_JOURNEYS_V3_GALLERY_ITEMS } from "./data/gallery-items";
 import {
 	JIRA_GOLDEN_JOURNEYS_V3_PULL_REQUEST_IDENTITY,

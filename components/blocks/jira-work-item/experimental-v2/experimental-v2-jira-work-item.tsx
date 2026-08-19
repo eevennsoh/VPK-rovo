@@ -88,7 +88,7 @@ interface ExperimentalV2JiraWorkItemBaseProps {
 	automationRules?: readonly WorkItemAutomationRule[];
 	/**
 	 * When set, open this pull-request identity after each `stageKey` reset
-	 * (once per stage). Used by jira-agents Review and Fix to land on PR detail
+	 * (once per stage). Used by jira-golden-journeys-v2 Review and Fix to land on PR detail
 	 * without an extra click. Clearing the PR does not re-open until the next stage.
 	 */
 	autoOpenPullRequestIdentity?: string | null;
@@ -113,7 +113,7 @@ interface ExperimentalV2JiraWorkItemBaseProps {
 	pullRequestApprovalStates?: Readonly<Record<string, "available" | "approved">>;
 	/**
 	 * When this key changes to a non-null value, open the Activity metadata tab
-	 * and scroll to the latest entry (e.g. jira-agents Plan orchestration), or
+	 * and scroll to the latest entry (e.g. jira-golden-journeys-v2 Plan orchestration), or
 	 * to `revealActivityEntryId` when that prop is set.
 	 */
 	revealActivityKey?: string | number | null;
@@ -381,7 +381,7 @@ function ExperimentalV2JiraWorkItemContent({
 		});
 		setPanelView("details");
 	}, [pullRequestApprovalStates, setPanelView]);
-	// jira-agents Review: open the guided PR once per stage so detail is default.
+	// jira-golden-journeys-v2 Review: open the guided PR once per stage so detail is default.
 	useLayoutEffect(() => {
 		if (!autoOpenPullRequestIdentity) return;
 		const stageToken = stageKey ?? "";
