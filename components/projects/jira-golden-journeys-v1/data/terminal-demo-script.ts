@@ -1,4 +1,5 @@
 import type { TerminalBeat, TerminalWorkItem } from "../lib/terminal-demo-state";
+import type { TerminalStoryDefinition } from "../lib/terminal-story-definition";
 
 export const JIRA_CLI_TITLE = "Teamwork Graph";
 export const JIRA_CLI_WORKSPACE = "Jira Golden Journeys v1 · work available to start";
@@ -284,3 +285,26 @@ export const TERMINAL_DEMO_BEATS: readonly TerminalBeat[] = [
 		],
 	},
 ];
+
+export const JIRA_GOLDEN_JOURNEYS_V1_TERMINAL_STORY = {
+	beats: TERMINAL_DEMO_BEATS,
+	initialHint: TERMINAL_INITIAL_HINT,
+	finishedHint: "demo complete · R to restart",
+	getIssueUrl: getJiraIssueUrl,
+	frameAriaLabel: "Split the terminal to open Jira",
+	dashboard: {
+		title: JIRA_CLI_TITLE,
+		workspace: JIRA_CLI_WORKSPACE,
+		footerHints: JIRA_CLI_FOOTER_HINTS,
+		shellPrompt: TERMINAL_SHELL_PROMPT,
+	},
+	claude: {
+		cwd: "~/dev/jira-golden-journeys-v1",
+	},
+	statusBar: {
+		sessionName: "jira-golden-journeys-v1",
+		singleWindowLabel: "0:claude*",
+		splitWindowLabel: "0:twg 1:claude*",
+		clock: "14:32",
+	},
+} as const satisfies TerminalStoryDefinition;

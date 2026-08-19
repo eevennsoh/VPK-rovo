@@ -20,7 +20,11 @@ async function loadTerminalStateHarness() {
 					getOrderedItemKeys,
 					getVisibleOutputLines,
 				} from "./components/projects/jira-golden-journeys-v1/lib/terminal-demo-state";
-				export { getJiraIssueUrl, TERMINAL_DEMO_BEATS } from "./components/projects/jira-golden-journeys-v1/data/terminal-demo-script";
+				export {
+					getJiraIssueUrl,
+					JIRA_GOLDEN_JOURNEYS_V1_TERMINAL_STORY,
+					TERMINAL_DEMO_BEATS,
+				} from "./components/projects/jira-golden-journeys-v1/data/terminal-demo-script";
 			`,
 			loader: "ts",
 			resolveDir: process.cwd(),
@@ -42,6 +46,10 @@ const TERMINAL_HOOK_SOURCE = fs.readFileSync(
 );
 const TERMINAL_JIRA_PANE_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/jira-golden-journeys-v1/components/terminal-stage-jira-pane.tsx"),
+	"utf8",
+);
+const TERMINAL_STAGE_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/jira-golden-journeys-v1/components/terminal-stage.tsx"),
 	"utf8",
 );
 
@@ -232,12 +240,28 @@ test("Jira dashboard keeps shortcuts without restoring its dispatch box", async 
 	const harness = await loadTerminalStateHarness();
 
 	assert.equal(harness.getJiraIssueUrl("JGP-198"), "https://jira-golden-journeys-v1.atlassian.net/browse/JGP-198");
-	assert.match(TERMINAL_JIRA_PANE_SOURCE, /\{JIRA_CLI_FOOTER_HINTS\}/u);
+	assert.match(TERMINAL_JIRA_PANE_SOURCE, /\{story\.dashboard\.footerHints\}/u);
 	assert.doesNotMatch(TERMINAL_JIRA_PANE_SOURCE, /JIRA_CLI_DISPATCH_PLACEHOLDER/u);
 	assert.match(
 		TERMINAL_HOOK_SOURCE,
-		/window\.open\(getJiraIssueUrl\(selectedKey\), "_blank", "noopener,noreferrer"\);/u,
+		/window\.open\(story\.getIssueUrl\(selectedKey\), "_blank", "noopener,noreferrer"\);/u,
 	);
+});
+
+test("v1 remains the default terminal story and preserves its chrome", async () => {
+	const harness = await loadTerminalStateHarness();
+	const story = harness.JIRA_GOLDEN_JOURNEYS_V1_TERMINAL_STORY;
+
+	assert.equal(story.beats, harness.TERMINAL_DEMO_BEATS);
+	assert.equal(story.dashboard.title, "Teamwork Graph");
+	assert.equal(story.claude.cwd, "~/dev/jira-golden-journeys-v1");
+	assert.equal(story.statusBar.sessionName, "jira-golden-journeys-v1");
+	assert.equal(story.statusBar.splitWindowLabel, "0:twg 1:claude*");
+	assert.equal(story.finishedHint, "demo complete · R to restart");
+	assert.equal(story.layout, undefined);
+	assert.match(TERMINAL_HOOK_SOURCE, /options\?\.story \?\? JIRA_GOLDEN_JOURNEYS_V1_TERMINAL_STORY/u);
+	assert.match(TERMINAL_STAGE_SOURCE, /story\.layout === "claude-only"/u);
+	assert.match(TERMINAL_STAGE_SOURCE, /isClaudeOnly \? "claude-only" : "dual-pane"/u);
 });
 
 test("Jira dashboard compositor hints are removed in reduced motion", () => {
