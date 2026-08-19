@@ -128,6 +128,28 @@ export default function TopNavigation({
 	children,
 }: Readonly<TopNavigationProps>) {
 	const nav = useTopNavigation();
+	const [navigationContainer, setNavigationContainer] = useState<HTMLElement | null>(null);
+	const [containerWidth, setContainerWidth] = useState(0);
+
+	useEffect(() => {
+		if (!navigationContainer) return;
+
+		const updateContainerWidth = () => {
+			setContainerWidth(navigationContainer.getBoundingClientRect().width);
+		};
+
+		updateContainerWidth();
+		if (typeof ResizeObserver === "undefined") {
+			window.addEventListener("resize", updateContainerWidth);
+			return () => window.removeEventListener("resize", updateContainerWidth);
+		}
+
+		const resizeObserver = new ResizeObserver(updateContainerWidth);
+		resizeObserver.observe(navigationContainer);
+		return () => resizeObserver.disconnect();
+	}, [navigationContainer]);
+
+	const responsiveWidth = containerWidth || nav.windowWidth;
 
 	// The chrome owns its own sidebar open state (decoupled from the demo's
 	// `context-sidebar`) so the resizable shell works standalone.
@@ -153,7 +175,7 @@ export default function TopNavigation({
 	// it expands the field (and focuses it) for the search session.
 	const [isSearchIconExpanded, setIsSearchIconExpanded] = useState(false);
 	const isSearchCollapsible =
-		nav.windowWidth > 0 && nav.windowWidth < TOP_NAV_SEARCH_ICON_BREAKPOINT_PX;
+		responsiveWidth > 0 && responsiveWidth < TOP_NAV_SEARCH_ICON_BREAKPOINT_PX;
 	const showSearchField = !isSearchCollapsible || isSearchIconExpanded;
 	useEffect(() => {
 		if (!isSearchCollapsible) {
@@ -166,7 +188,7 @@ export default function TopNavigation({
 	// existing breakpoint it returns to the responsive left-aligned layout.
 	const isPersistentSidebarVisible = variant === "header" ? nav.isVisible : sidebarOpen;
 	const centerSearch = !isPersistentSidebarVisible
-		&& (nav.windowWidth === 0 || nav.windowWidth >= TOP_NAV_SEARCH_CENTER_BREAKPOINT_PX);
+		&& (responsiveWidth === 0 || responsiveWidth >= TOP_NAV_SEARCH_CENTER_BREAKPOINT_PX);
 
 	const handleExpandSearchIcon = useCallback(() => {
 		setIsSearchIconExpanded(true);
@@ -275,7 +297,7 @@ export default function TopNavigation({
 					<Button
 						aria-label="Search"
 						size="icon"
-						variant="ghost"
+						variant="outline"
 						onClick={handleExpandSearchIcon}
 					>
 						<SearchIcon label="" color={token("color.icon.subtle")} />
@@ -290,7 +312,7 @@ export default function TopNavigation({
 	const rightCluster = (
 		<RightNavigation
 			product={product}
-			windowWidth={nav.windowWidth}
+			windowWidth={responsiveWidth}
 			hideRovoAction={hideRovoAction}
 			forceShowRovoAction={forceShowRovoAction}
 			isChatOpen={nav.isSidebarChatOpen}
@@ -305,6 +327,7 @@ export default function TopNavigation({
 	if (variant === "header") {
 		return (
 			<header
+				ref={setNavigationContainer}
 				className={cn(
 					"relative flex shrink-0 items-center gap-2 px-3",
 					centerSearch && "justify-end",
@@ -320,7 +343,7 @@ export default function TopNavigation({
 				<div style={{ flex: "0 1 auto", minWidth: 0 }}>
 					<LeftNavigation
 						product={product}
-						windowWidth={nav.windowWidth}
+						windowWidth={responsiveWidth}
 						isVisible={nav.isVisible}
 						isAppSwitcherOpen={nav.isAppSwitcherOpen}
 						separatorLineOffsetPx={TOP_NAV_LEFT_SECTION_WIDTH_PX - TOP_NAV_PADDING_PX}
@@ -435,6 +458,7 @@ export default function TopNavigation({
 			<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 				{/* Top navigation bar */}
 				<div
+					ref={setNavigationContainer}
 					className={cn(
 						"relative flex shrink-0 items-center gap-2 border-b px-3 transition-[padding] duration-medium ease-in-out",
 						centerSearch && "justify-end",

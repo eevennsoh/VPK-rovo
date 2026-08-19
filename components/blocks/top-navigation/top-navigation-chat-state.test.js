@@ -116,6 +116,18 @@ test("top navigation collapses the search to an icon button on very narrow viewp
 	assert.match(TOP_NAVIGATION_SOURCE, /TOP_NAV_SEARCH_ICON_BREAKPOINT_PX/);
 	assert.match(TOP_NAVIGATION_SOURCE, /isSearchCollapsible/);
 	assert.match(TOP_NAVIGATION_SOURCE, /handleExpandSearchIcon/);
+	assert.match(
+		TOP_NAVIGATION_SOURCE,
+		/<Button[\s\S]*aria-label="Search"[\s\S]*size="icon"[\s\S]*variant="outline"/u,
+	);
+});
+
+test("top navigation sizes responsive search chrome from its rendered container", () => {
+	assert.match(TOP_NAVIGATION_SOURCE, /new ResizeObserver/);
+	assert.match(TOP_NAVIGATION_SOURCE, /const responsiveWidth = containerWidth \|\| nav\.windowWidth;/u);
+	assert.match(TOP_NAVIGATION_SOURCE, /responsiveWidth < TOP_NAV_SEARCH_ICON_BREAKPOINT_PX/u);
+	assert.match(TOP_NAVIGATION_SOURCE, /windowWidth=\{responsiveWidth\}/u);
+	assert.match(TOP_NAVIGATION_SOURCE, /ref=\{setNavigationContainer\}/u);
 });
 
 test("top navigation block omits the theme toggle (matches the Figma cluster)", () => {
