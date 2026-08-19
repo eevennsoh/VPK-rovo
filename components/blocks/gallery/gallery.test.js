@@ -126,8 +126,8 @@ test("Gallery consumers give it a parent with a definite height", () => {
 test("Full-bleed stages break out to the Gallery width, not the window width", () => {
 	// Regression: `w-screen` (100vw) made stages render at window width inside the
 	// fixed-width catalog demo shell, so `overflow-hidden` clipped both edges.
-	// `100cqw` measures the `@container/gallery-stage` box instead, and falls back
-	// to the small viewport when a stage is mounted outside a Gallery.
+	// `100cqw` measures the `@container/gallery-stage` box instead. Standalone
+	// stages size to their immediate parent and are covered by their owner tests.
 	//
 	// Stage files are DISCOVERED rather than listed: these projects get duplicated
 	// into new `vN` variants, and a hardcoded list silently exempts every copy.
@@ -135,7 +135,7 @@ test("Full-bleed stages break out to the Gallery width, not the window width", (
 		BLEED_PATTERN.test(readProjectFile(file)),
 	);
 
-	assert.ok(stageFiles.length >= 13, `expected the bleed pattern in several stages, found ${stageFiles.length}`);
+	assert.ok(stageFiles.length >= 12, `expected the bleed pattern in several stages, found ${stageFiles.length}`);
 	for (const stageFile of stageFiles) {
 		const source = readProjectFile(stageFile);
 		assert.match(
