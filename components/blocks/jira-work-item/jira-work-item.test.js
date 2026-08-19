@@ -115,7 +115,7 @@ test("the experimental surface reuses the Jira Issue floating Rovo chat", () => 
 	const dialogSource = readBlockFile("experimental/components/experimental-work-item-dialog.tsx");
 	const floatingSurfaceSource = readBlockFile("experimental/components/floating-session-surface.tsx");
 	const sessionScriptsSource = readBlockFile("data/session-scripts.ts");
-	const sharedOverlaySource = readProjectFile("components/projects/asx/components/asx-rovo-overlay.tsx");
+	const sharedOverlaySource = readProjectFile("components/projects/jira-golden-journeys-v0/components/jira-golden-journeys-v0-rovo-overlay.tsx");
 	assert.match(compositionSource, /<JiraWorkItemProvider/u);
 	assert.match(
 		compositionSource,
@@ -125,7 +125,7 @@ test("the experimental surface reuses the Jira Issue floating Rovo chat", () => 
 		dialogSource,
 		/<\/Dialog\.Popup>\s*\{open \? blanketContent : null\}\s*<\/Dialog\.Portal>/u,
 	);
-	assert.match(floatingSurfaceSource, /import \{ AsxRovoOverlay \} from "@\/components\/projects\/asx\/components\/asx-rovo-overlay";/u);
+	assert.match(floatingSurfaceSource, /import \{ AsxRovoOverlay \} from "@\/components\/projects\/jira-golden-journeys-v0\/components\/jira-golden-journeys-v0-rovo-overlay";/u);
 	assert.match(floatingSurfaceSource, /useAsxAgentChatDemo\(\)/u);
 	assert.match(floatingSurfaceSource, /question: getSessionQuestion\(activeSession\)/u);
 	assert.match(floatingSurfaceSource, /intro: getSessionQuestionIntro\(activeSession\)/u);

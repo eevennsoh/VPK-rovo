@@ -182,7 +182,7 @@ test("experimental v2 opens the shared agent chat as a full-height sibling colum
 	const layoutSource = readBlockFile("experimental-v2/components/experimental-work-item-layout.tsx");
 	const sessionSurfaceSource = readBlockFile("experimental-v2/components/floating-session-surface.tsx");
 	const sharedOverlaySource = fs.readFileSync(
-		path.join(BLOCK_DIR, "../../projects/asx/components/asx-rovo-overlay.tsx"),
+		path.join(BLOCK_DIR, "../../projects/jira-golden-journeys-v0/components/jira-golden-journeys-v0-rovo-overlay.tsx"),
 		"utf8",
 	);
 

@@ -53,9 +53,9 @@ test("nested Jira previews open right by default while Queue Details overrides t
 	assert.match(artifactsSource, /<SmartLink align="center" alignOffset=\{0\}[\s\S]*side="left"/u);
 });
 
-// The block delegates to the shared body and reuses the /asx seeds rather than
+// The block delegates to the shared body and reuses the /jira-golden-journeys-v0 seeds rather than
 // re-declaring its own flyout body or placeholder lifecycle copy.
-test("block delegates to the shared flyout body and reuses /asx data", () => {
+test("block delegates to the shared flyout body and reuses /jira-golden-journeys-v0 data", () => {
 	const source = readBlockFile("components/agent-session-flyout.tsx");
 	const dataSource = readRepoFile(FLYOUT_DEMO_DATA_PATH);
 	assert.match(
@@ -134,9 +134,9 @@ test("demo presents the four sessions as one uninterrupted chat-history list", (
 	assert.doesNotMatch(source, /gap-8/u);
 });
 
-// The four /asx seeds must cover the states shown in the flyout screenshots and
+// The four /jira-golden-journeys-v0 seeds must cover the states shown in the flyout screenshots and
 // carry the PR metadata the flyout renders for local sessions.
-test("/asx seeds provide the four expected states with PR fields", () => {
+test("/jira-golden-journeys-v0 seeds provide the four expected states with PR fields", () => {
 	const seeds = readRepoFile("components/projects/jira-queue/data/queue-sessions.ts");
 
 	for (const status of ["awaiting-input", "running", "pr-open", "merged"]) {

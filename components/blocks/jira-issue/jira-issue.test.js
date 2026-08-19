@@ -405,9 +405,9 @@ test("Jira issue agent activity demo is registered in docs and variant registry"
 	assert.match(PAGE_SOURCE, /id: "dependency-mapper"[\s\S]*labels: DEPENDENCY_MAPPER_LABELS,[\s\S]*cycleIntervalMs: 6800,[\s\S]*cycleIntervalJitterMs: 2200/);
 	assert.match(PAGE_SOURCE, /const JIRA_ISSUE_AWAITING_INPUT_ACTIVITIES = \[[\s\S]*\.\.\.JIRA_ISSUE_AGENT_ACTIVITIES\[0\],[\s\S]*label: "Waiting for input"[\s\S]*state: "awaiting-input"[\s\S]*JIRA_ISSUE_AGENT_ACTIVITIES\[1\]/);
 	assert.match(PAGE_SOURCE, /import \{ RovoChatProvider \} from "@\/app\/contexts";/);
-	assert.match(PAGE_SOURCE, /import \{ ASX_CHAT_AGENT_PROFILES \} from "@\/components\/projects\/asx\/data\/agent-chat-data";/);
-	assert.match(PAGE_SOURCE, /import \{ AsxRovoOverlay \} from "@\/components\/projects\/asx\/components\/asx-rovo-overlay";/);
-	assert.match(PAGE_SOURCE, /import \{ useAsxAgentChatDemo \} from "@\/components\/projects\/asx\/hooks\/use-asx-agent-chat-demo";/);
+	assert.match(PAGE_SOURCE, /import \{ ASX_CHAT_AGENT_PROFILES \} from "@\/components\/projects\/jira-golden-journeys-v0\/data\/agent-chat-data";/);
+	assert.match(PAGE_SOURCE, /import \{ AsxRovoOverlay \} from "@\/components\/projects\/jira-golden-journeys-v0\/components\/jira-golden-journeys-v0-rovo-overlay";/);
+	assert.match(PAGE_SOURCE, /import \{ useAsxAgentChatDemo \} from "@\/components\/projects\/jira-golden-journeys-v0\/hooks\/use-jira-golden-journeys-v0-agent-chat-demo";/);
 	assert.match(PAGE_SOURCE, /import \{[\s\S]*JiraIssue,[\s\S]*type JiraIssueAgentActivity,[\s\S]*type JiraIssueCompletedAgentRun,[\s\S]*type JiraIssueGenerativeActionRequest,[\s\S]*\} from "@\/components\/blocks\/jira-issue";/);
 	// The demo drops into the floating chat with the activity's agent already
 	// selected (matching ASX), not a blank vanilla Rovo chat.
