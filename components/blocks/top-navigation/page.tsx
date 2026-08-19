@@ -5,6 +5,7 @@
 import {
 	useCallback,
 	useEffect,
+	useRef,
 	useState,
 	type CSSProperties,
 	type ReactNode,
@@ -34,6 +35,7 @@ import {
 	TOP_NAV_SEARCH_ICON_BREAKPOINT_PX,
 	TOP_NAV_SEARCH_MAX_WIDTH_PX,
 	TOP_NAV_SEARCH_MIN_WIDTH_PX,
+	TOP_NAV_SIDEBAR_PIN_RELEASE_BREAKPOINT_PX,
 } from "./layout-constants";
 import SearchIcon from "@atlaskit/icon/core/search";
 
@@ -154,6 +156,21 @@ export default function TopNavigation({
 	// The chrome owns its own sidebar open state (decoupled from the demo's
 	// `context-sidebar`) so the resizable shell works standalone.
 	const [sidebarOpen, setSidebarOpen] = useState(defaultSidebarOpen);
+	const didAutoReleaseShellSidebarRef = useRef(false);
+	useEffect(() => {
+		if (responsiveWidth === 0) return;
+
+		const isSmallContainer = responsiveWidth < TOP_NAV_SIDEBAR_PIN_RELEASE_BREAKPOINT_PX;
+		if (isSmallContainer) {
+			setSidebarOpen((current) => {
+				if (current) didAutoReleaseShellSidebarRef.current = true;
+				return false;
+			});
+		} else if (didAutoReleaseShellSidebarRef.current) {
+			didAutoReleaseShellSidebarRef.current = false;
+			setSidebarOpen(true);
+		}
+	}, [responsiveWidth]);
 
 	const sidebarResize = useSidebarResize({
 		defaultWidth: ROVO_APP_SEPARATOR_LINE_OFFSET_PX,
