@@ -5,6 +5,7 @@ const { test } = require("node:test");
 
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const STAGE_SOURCE = readFileSync(join(__dirname, "components/work-item-stage.tsx"), "utf8");
+const HEADER_SOURCE = readFileSync(join(__dirname, "components/gallery-header-controls.tsx"), "utf8");
 const DIALOG_SOURCE = readFileSync(
 	join(__dirname, "../../blocks/jira-work-item/experimental/components/experimental-work-item-dialog.tsx"),
 	"utf8",
@@ -24,21 +25,21 @@ const CONTROLLER_SOURCE = readFileSync(
 
 test("ASX Work item opens the experimental Agent Sessions design from its state buttons", () => {
 	assert.match(PAGE_SOURCE, /item\.id === "work-item"[\s\S]*<WorkItemStage controller=\{workItemController\} \/>/u);
-	assert.match(PAGE_SOURCE, /<WorkItemControls controller=\{workItemController\} \/>/u);
-	assert.match(PAGE_SOURCE, /topBarCenter=\{topBarCenter\}/u);
+	assert.match(PAGE_SOURCE, /<JiraGoldenJourneysV0HeaderControls \{\.\.\.headerControlProps\} \/>/u);
+	assert.match(PAGE_SOURCE, /topBarCenterCompact=/u);
 	assert.match(STAGE_SOURCE, /<ExperimentalJiraWorkItem/u);
 	assert.match(STAGE_SOURCE, /const selectPreset = useCallback[\s\S]*setPreset\(nextPreset\);/u);
 	assert.match(STAGE_SOURCE, /setLaunchId\(\(currentLaunchId\) => currentLaunchId \+ 1\);/u);
 	assert.match(STAGE_SOURCE, /<ExperimentalJiraWorkItem[\s\S]*key=\{controller\.launchId\}/u);
 	assert.match(STAGE_SOURCE, /presentation="inline"/u);
 	assert.doesNotMatch(STAGE_SOURCE, /isOpen|setIsOpen|onClose=/u);
-	assert.match(STAGE_SOURCE, /aria-label="Open a work item state"/u);
-	assert.match(STAGE_SOURCE, /<ButtonGroup[\s\S]*variant="connected"/u);
-	assert.match(STAGE_SOURCE, /size="compact"/u);
+	assert.match(HEADER_SOURCE, /WORK_ITEM_STATES\.map\(\(option\) =>/u);
+	assert.match(HEADER_SOURCE, /<ButtonGroup[\s\S]*variant="connected"/u);
+	assert.match(HEADER_SOURCE, /size="compact"/u);
 	assert.match(STAGE_SOURCE, /useState<JiraWorkItemExperimentalPreset>\("blank"\)/u);
-	assert.match(STAGE_SOURCE, /aria-pressed=\{controller\.preset === option\.value\}/u);
-	assert.match(STAGE_SOURCE, /aria-pressed:z-10/u);
-	assert.match(STAGE_SOURCE, /border-l!/u);
+	assert.match(HEADER_SOURCE, /selected: option\.value === workItemController\.preset/u);
+	assert.match(HEADER_SOURCE, /aria-pressed:z-10/u);
+	assert.match(HEADER_SOURCE, /border-l!/u);
 	assert.doesNotMatch(STAGE_SOURCE, /<button/u);
 	assert.doesNotMatch(STAGE_SOURCE, /Open work item/u);
 });
@@ -69,5 +70,6 @@ test("ASX Work item can jump between all requested presets", () => {
 		/label: "Empty", value: "blank"[\s\S]*label: "Suggestions", value: "empty"[\s\S]*label: "Running", value: "running"[\s\S]*label: "Done", value: "filled"/u,
 	);
 	assert.doesNotMatch(STAGE_SOURCE, /controls=/u);
+	assert.match(HEADER_SOURCE, /workItemController\.selectPreset\(option\.value\)/u);
 	assert.doesNotMatch(CONTROLLER_SOURCE, /hydrate-preset", preset: initialPreset/u);
 });

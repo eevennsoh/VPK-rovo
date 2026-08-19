@@ -4,10 +4,8 @@ import { useCallback, useState } from "react";
 
 import type { JiraWorkItemExperimentalPreset } from "@/components/blocks/jira-work-item";
 import { ExperimentalJiraWorkItem } from "@/components/blocks/jira-work-item/experimental/experimental-jira-work-item";
-import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 
-const WORK_ITEM_STATES: readonly {
+export const WORK_ITEM_STATES: readonly {
 	label: string;
 	value: JiraWorkItemExperimentalPreset;
 }[] = [
@@ -33,32 +31,6 @@ export function useWorkItemStageController(): WorkItemStageController {
 	}, []);
 
 	return { preset, launchId, selectPreset };
-}
-
-export function WorkItemControls({
-	controller,
-}: Readonly<{ controller: WorkItemStageController }>): React.ReactElement {
-	return (
-		<ButtonGroup
-			variant="connected"
-			aria-label="Open a work item state"
-			className="[&>[data-slot]~[data-slot]]:-ml-px [&>[data-slot]~[data-slot]]:border-l!"
-		>
-			{WORK_ITEM_STATES.map((option) => (
-				<Button
-					key={option.value}
-					type="button"
-					variant="outline"
-					size="compact"
-					aria-pressed={controller.preset === option.value}
-					onClick={() => controller.selectPreset(option.value)}
-					className="aria-pressed:z-10"
-				>
-					{option.label}
-				</Button>
-			))}
-		</ButtonGroup>
-	);
 }
 
 /** The experimental Agent Sessions work-item design with deterministic preset jumps. */

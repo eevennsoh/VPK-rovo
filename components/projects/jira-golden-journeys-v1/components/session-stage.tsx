@@ -6,6 +6,7 @@ import ChevronLeftIcon from "@atlaskit/icon/core/chevron-left";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -95,8 +96,45 @@ function activeRunIndex(runs: readonly SectionRun[], index: number): number {
 	return active;
 }
 
-/** Left/right screen navigator rendered in the gallery top bar (`topBarCenter`). */
+/** Connected section-run selector rendered in the wide Gallery top bar. */
 export function SessionScreenControls({
+	screens,
+	controller,
+}: Readonly<{
+	screens: readonly SessionScreen[];
+	controller: ScreenNavigatorController;
+}>): React.ReactElement {
+	const { index, goTo } = controller;
+	const runs = sectionRuns(screens);
+	const activeRun = activeRunIndex(runs, index);
+
+	return (
+		<div className="scrollbar-none max-w-[calc(100vw-12rem)] overflow-x-auto">
+			<ButtonGroup
+				aria-label="Open a Jira Golden Journeys section"
+				className="w-max [&>[data-slot]~[data-slot]]:-ml-px [&>[data-slot]~[data-slot]]:border-l!"
+				variant="connected"
+			>
+				{runs.map((run, runIndex) => (
+					<Button
+						aria-pressed={runIndex === activeRun}
+						className="aria-pressed:z-10"
+						key={run.startIndex}
+						onClick={() => goTo(run.startIndex)}
+						size="compact"
+						type="button"
+						variant="outline"
+					>
+						{runIndex === activeRun ? sectionLabel(screens, index) : run.label}
+					</Button>
+				))}
+			</ButtonGroup>
+		</div>
+	);
+}
+
+/** Screen-level previous/dropdown/next navigator rendered below the large breakpoint. */
+export function CompactSessionScreenControls({
 	screens,
 	controller,
 }: Readonly<{

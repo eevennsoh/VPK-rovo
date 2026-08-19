@@ -89,6 +89,22 @@ export function createInitialTerminalDemoState(): TerminalDemoState {
 	};
 }
 
+/**
+ * Map reducer beats to visible Terminal screens. The untouched, unsplit frame
+ * is itself screen one; each scripted beat then produces one additional visual
+ * screen. `progressLabel` adds one to the zero-based position for display.
+ */
+export function getTerminalScreenProgress(
+	beatIndex: number,
+	beatCount: number,
+): Readonly<{ position: number; count: number }> {
+	const count = Math.max(beatCount + 1, 1);
+	return {
+		position: Math.min(Math.max(beatIndex + 1, 0), count - 1),
+		count,
+	};
+}
+
 export function applyBoardEvent(
 	items: readonly TerminalWorkItem[],
 	event: TerminalBoardEvent,

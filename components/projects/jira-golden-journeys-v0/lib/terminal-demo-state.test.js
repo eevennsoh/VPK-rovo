@@ -18,6 +18,7 @@ async function loadTerminalStateHarness() {
 					getBoardCounts,
 					getBoardSections,
 					getOrderedItemKeys,
+					getTerminalScreenProgress,
 				} from "./components/projects/jira-golden-journeys-v0/lib/terminal-demo-state";
 				export { getJiraIssueUrl, TERMINAL_DEMO_BEATS } from "./components/projects/jira-golden-journeys-v0/data/terminal-demo-script";
 			`,
@@ -49,6 +50,10 @@ const TERMINAL_PAGE_SOURCE = fs.readFileSync(
 );
 const TERMINAL_STAGE_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/jira-golden-journeys-v0/components/terminal-stage.tsx"),
+	"utf8",
+);
+const GALLERY_HEADER_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/jira-golden-journeys-v0/components/gallery-header-controls.tsx"),
 	"utf8",
 );
 const TERMINAL_CHROME_SOURCE = fs.readFileSync(
@@ -96,6 +101,43 @@ test("Terminal owns a dark default that the Gallery theme control can cycle", ()
 	assert.match(TERMINAL_PAGE_SOURCE, /theme=\{isTerminal \? terminalTheme : undefined\}/u);
 	assert.match(TERMINAL_PAGE_SOURCE, /onThemeCycle=\{isTerminal \? handleTerminalThemeCycle : undefined\}/u);
 	assert.match(TERMINAL_PAGE_SOURCE, /"data-color-mode": terminalTheme/u);
+});
+
+test("Terminal exposes one progress-labelled header section with compact stepping", () => {
+	assert.match(GALLERY_HEADER_SOURCE, /label: "Terminal"/u);
+	assert.match(GALLERY_HEADER_SOURCE, /getTerminalScreenProgress\(/u);
+	assert.match(GALLERY_HEADER_SOURCE, /previous: terminalController\.state\.beatIndex >= 0 \? terminalController\.stepBack : null/u);
+	assert.match(GALLERY_HEADER_SOURCE, /next: terminalController\.state\.finished \? null : terminalController\.advance/u);
+	assert.match(GALLERY_HEADER_SOURCE, /aria-label="Previous section step"/u);
+	assert.match(GALLERY_HEADER_SOURCE, /aria-label="Jump to section"/u);
+	assert.match(GALLERY_HEADER_SOURCE, /aria-label="Next section step"/u);
+	assert.doesNotMatch(TERMINAL_STAGE_SOURCE, /export function TerminalControls/u);
+});
+
+test("Terminal header counts the initial and split frames as distinct visual screens", async () => {
+	const harness = await loadTerminalStateHarness();
+	const reducer = harness.createTerminalDemoReducer(harness.TERMINAL_DEMO_BEATS);
+	const beatCount = harness.TERMINAL_DEMO_BEATS.length;
+	let state = harness.createInitialTerminalDemoState();
+
+	assert.deepEqual(harness.getTerminalScreenProgress(state.beatIndex, beatCount), {
+		position: 0,
+		count: beatCount + 1,
+	});
+
+	state = reducer(state, { type: "begin-beat" });
+	state = reducer(state, { type: "commit-step" });
+	assert.equal(state.split, true);
+	assert.deepEqual(harness.getTerminalScreenProgress(state.beatIndex, beatCount), {
+		position: 1,
+		count: beatCount + 1,
+	});
+
+	const final = playThroughScript(harness);
+	assert.deepEqual(harness.getTerminalScreenProgress(final.beatIndex, beatCount), {
+		position: beatCount,
+		count: beatCount + 1,
+	});
 });
 
 test("Terminal frame follows semantic theme tokens without fixed zinc overrides", () => {
