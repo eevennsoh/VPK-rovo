@@ -70,7 +70,7 @@ test("Each card defines its own ordered set of screens to navigate", () => {
 	assert.doesNotMatch(SCREENS_SOURCE, /global-5|section: "List"|design: "jira-list"/u);
 	assert.match(
 		FOR_YOU_STAGE_SOURCE,
-		/function JiraShellStage[\s\S]*relative left-1\/2 h-full min-h-0 w-screen -translate-x-1\/2 overflow-hidden/u,
+		/function JiraShellStage[\s\S]*relative left-1\/2 h-full min-h-0 w-\[100cqw\] -translate-x-1\/2 overflow-hidden/u,
 	);
 	assert.doesNotMatch(SCREENS_SOURCE, /design: "work-item"|completed-timeline/u);
 	assert.doesNotMatch(STAGE_SOURCE, /WorkItemStage|workItemController|design === "work-item"/u);
@@ -169,7 +169,7 @@ test("Global For you fills the stage with the complete Jira shell", () => {
 		/<JiraForYouShell[\s\S]*shellHeight="parent"[\s\S]*showConversationHeaderBorder=\{false\}\s*>/u,
 	);
 	assert.match(FOR_YOU_STAGE_SOURCE, /return <JiraShellStage \/>;/u);
-	assert.match(FOR_YOU_STAGE_SOURCE, /h-full min-h-0 w-screen/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /h-full min-h-0 w-\[100cqw\]/u);
 	assert.doesNotMatch(FOR_YOU_STAGE_SOURCE, /dockOpen|pb-56|pb-8/u);
 	assert.doesNotMatch(FOR_YOU_STAGE_SOURCE, /JGP_FOR_YOU_SECTIONS|JgpRovoOverlay|JiraForYouPage/u);
 	assert.match(ASX_PAGE_SOURCE, /<ForYouStageLayout dockOpen=\{dockOpen\} onItemClick=\{handleItemClick\} \/>/u);

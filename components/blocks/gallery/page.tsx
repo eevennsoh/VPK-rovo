@@ -126,7 +126,9 @@ export default function Page(): React.ReactElement {
 	const [screen, setScreen] = useState(0);
 
 	return (
-		<div className="relative min-h-dvh w-full bg-surface">
+		// Definite height: Gallery is `h-full`, so a `min-h-*` parent would let it
+		// collapse to content height.
+		<div className="relative h-dvh w-full bg-surface">
 			<Gallery
 				items={DEMO_GALLERY_ITEMS}
 				title="Gallery"

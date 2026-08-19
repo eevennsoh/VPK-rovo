@@ -45,16 +45,16 @@ import {
 
 function ListStage(): React.ReactElement {
 	return (
-		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 flex-col justify-center px-8 pb-28">
+		<div className="relative left-1/2 flex h-full min-h-0 w-[100cqw] -translate-x-1/2 flex-col justify-center px-8 pb-28">
 			<JiraListPage />
 		</div>
 	);
 }
 
 // The "For you" feed reads best as a constrained column, but the SCROLL should
-// belong to the viewport, not the column — so the stage breaks out to full width
-// (`w-screen`, the same trick the List/Queue stages use) and owns the
-// `overflow-y-auto`, keeping the scrollbar on the viewport edge. The feed itself
+// belong to the stage, not the column — so the stage breaks out to the full
+// Gallery width (`w-[100cqw]`, the same trick the List/Queue stages use) and owns
+// the `overflow-y-auto`, keeping the scrollbar on the stage edge. The feed itself
 // stays a centered `max-w-3xl` column inside the scroll area.
 //
 // Bottom clearance is only needed while the pinned dock is showing. Open, the

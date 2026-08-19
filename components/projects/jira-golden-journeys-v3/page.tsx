@@ -134,7 +134,7 @@ function JiraGoldenJourneysV3WorkItemStage({
 	}, [applyDescriptionSuggestion, descriptionSkillPhase, dismissDescriptionSuggestion]);
 
 	return (
-		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 items-start justify-center overflow-hidden px-8 pt-4 pb-4">
+		<div className="relative left-1/2 flex h-full min-h-0 w-[100cqw] -translate-x-1/2 items-start justify-center overflow-hidden px-8 pt-4 pb-4">
 			<ExperimentalV2JiraWorkItem
 				activitySessionThread={{
 					parentSessionId: JIRA_GOLDEN_JOURNEYS_V3_LEAD_SESSION_ID,

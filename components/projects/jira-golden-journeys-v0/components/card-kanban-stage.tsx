@@ -180,7 +180,7 @@ export function CardKanbanStage({ controller }: Readonly<CardKanbanStageProps>):
 	}, [setActiveIndex, setExternalInteractionActive]);
 
 	return (
-		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 flex-col px-8">
+		<div className="relative left-1/2 flex h-full min-h-0 w-[100cqw] -translate-x-1/2 flex-col px-8">
 			<div className="flex flex-1 flex-col items-center justify-center pb-28">
 				{/* Tight wrapper so hover/focus only pauses the cycle over the card. */}
 				<div className="flex flex-col items-center" {...pauseHandlers}>
