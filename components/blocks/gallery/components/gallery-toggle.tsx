@@ -26,6 +26,8 @@ export type GalleryTheme = "light" | "dark" | "system";
 export interface GalleryToggleProps {
 	title: string;
 	centerContent?: ReactNode;
+	/** Compact alternative to centerContent, shown below the large viewport breakpoint. */
+	compactCenterContent?: ReactNode;
 	showBottomBorder: boolean;
 	open: boolean;
 	/** Hides the open/close gallery control when the bottom picker is unavailable. */
@@ -78,6 +80,7 @@ function GalleryControlSquircle({ children }: Readonly<{ children: ReactNode }>)
 export function GalleryToggle({
 	title,
 	centerContent,
+	compactCenterContent,
 	showBottomBorder,
 	open,
 	showOpenToggle = true,
@@ -105,8 +108,15 @@ export function GalleryToggle({
 			<Heading size="xsmall" className="truncate justify-self-start">
 				{title}
 			</Heading>
-			{centerContent ? (
-				<div className="min-w-0 justify-self-center">{centerContent}</div>
+			{centerContent || compactCenterContent ? (
+				<div className="min-w-0 justify-self-center">
+					{compactCenterContent ? (
+						<>
+							<div className="hidden lg:block">{centerContent}</div>
+							<div className="lg:hidden">{compactCenterContent}</div>
+						</>
+					) : centerContent}
+				</div>
 			) : (
 				<div aria-hidden />
 			)}

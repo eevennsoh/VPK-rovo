@@ -16,7 +16,11 @@ import {
 	useScreenNavigator,
 	type ScreenNavigatorController,
 } from "./hooks/use-screen-navigator";
-import { SessionScreenControls, SessionStage } from "./components/session-stage";
+import {
+	CompactSessionScreenControls,
+	SessionScreenControls,
+	SessionStage,
+} from "./components/session-stage";
 
 // ---------------------------------------------------------------------------
 // JGP — Jira Golden Journeys v1
@@ -150,6 +154,12 @@ export default function JgpPage(): React.ReactElement {
 					onThemeCycle={isTerminalSection ? handleTerminalThemeCycle : undefined}
 					topBarCenter={(
 						<SessionScreenControls
+							screens={activeCard.screens}
+							controller={activeCard.controller}
+						/>
+					)}
+					topBarCenterCompact={(
+						<CompactSessionScreenControls
 							screens={activeCard.screens}
 							controller={activeCard.controller}
 						/>

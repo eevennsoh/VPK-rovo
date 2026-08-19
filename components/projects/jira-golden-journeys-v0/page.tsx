@@ -18,15 +18,18 @@ import { ASX_GALLERY_ITEMS } from "./data/gallery-items";
 import { ASX_CARD_KANBAN_STATES } from "./data/card-kanban-data";
 import { AgentSessionStage } from "./components/agent-session-stage";
 import { AsxRovoOverlay } from "./components/jira-golden-journeys-v0-rovo-overlay";
-import { CardKanbanControls, CardKanbanStage } from "./components/card-kanban-stage";
+import { CardKanbanStage } from "./components/card-kanban-stage";
+import {
+	JiraGoldenJourneysV0CompactHeaderControls,
+	JiraGoldenJourneysV0HeaderControls,
+} from "./components/gallery-header-controls";
 import { KanbanStage } from "./components/kanban-stage";
 import { QueueStage } from "@/components/projects/jira-queue/components/queue-stage";
 import { RovoStage } from "./components/rovo-stage";
-import { TerminalControls, TerminalStage } from "./components/terminal-stage";
+import { TerminalStage } from "./components/terminal-stage";
 import { useTerminalDemo, type TerminalDemoController } from "./hooks/use-terminal-demo";
 import {
 	useWorkItemStageController,
-	WorkItemControls,
 	WorkItemStage,
 	type WorkItemStageController,
 } from "./components/work-item-stage";
@@ -156,14 +159,12 @@ function AsxGallery(): React.ReactElement {
 	const handleTerminalThemeCycle = useCallback(() => {
 		setTerminalTheme((current) => (current === "dark" ? "light" : "dark"));
 	}, []);
-	const topBarCenter =
-		selectedId === "card" ? (
-			<CardKanbanControls controller={cardKanbanController} />
-		) : selectedId === "work-item" ? (
-			<WorkItemControls controller={workItemController} />
-		) : selectedId === "terminal" ? (
-			<TerminalControls controller={terminalController} />
-		) : null;
+	const headerControlProps = {
+		selectedId,
+		cardKanbanController,
+		terminalController,
+		workItemController,
+	};
 
 	// Terminal owns a local dark default while still allowing Gallery's theme
 	// control to switch the entire subtree, including the terminal frame.
@@ -187,7 +188,10 @@ function AsxGallery(): React.ReactElement {
 				onOpenChange={setDockOpen}
 				theme={isTerminal ? terminalTheme : undefined}
 				onThemeCycle={isTerminal ? handleTerminalThemeCycle : undefined}
-				topBarCenter={topBarCenter}
+				topBarCenter={<JiraGoldenJourneysV0HeaderControls {...headerControlProps} />}
+				topBarCenterCompact={(
+					<JiraGoldenJourneysV0CompactHeaderControls {...headerControlProps} />
+				)}
 				showTopBarBorder={selectedId === "queue"}
 				onReset={handleReset}
 				renderSelectedItem={(item) =>

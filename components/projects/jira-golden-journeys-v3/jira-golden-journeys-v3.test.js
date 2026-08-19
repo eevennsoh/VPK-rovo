@@ -52,7 +52,7 @@ function loadOrchestrationModule() {
 }
 
 
-test("Jira Golden Journeys v3 composes the seven-stage software delivery story without changing the gallery", () => {
+test("Jira Golden Journeys v3 composes the seven-stage story with responsive gallery controls", () => {
 	const pageSource = readProjectFile("components/projects/jira-golden-journeys-v3/page.tsx");
 	const controlsSource = readProjectFile("components/projects/jira-golden-journeys-v3/story-controls.tsx");
 	const controllerSource = readProjectFile("components/projects/jira-golden-journeys-v3/use-hotfix-story.ts");
@@ -60,6 +60,7 @@ test("Jira Golden Journeys v3 composes the seven-stage software delivery story w
 	const gallerySource = readProjectFile("components/blocks/gallery/components/gallery.tsx");
 
 	assert.match(pageSource, /<JiraGoldenJourneysV3StoryControls controller=\{storyController\} \/>/u);
+	assert.match(pageSource, /<JiraGoldenJourneysV3CompactStoryControls controller=\{storyController\} \/>/u);
 	assert.match(pageSource, /<ExperimentalV2JiraWorkItem[\s\S]*automationRules=\{JIRA_GOLDEN_JOURNEYS_V3_AUTOMATION_RULES\}[\s\S]*composerAgents=\{JIRA_GOLDEN_JOURNEYS_V3_STORY_COMPOSER_AGENTS\}[\s\S]*composerDelivery="broadcast-active-agents"[\s\S]*composerToolsAfterAdd=\{<JiraGoldenJourneysV3ComposerPrivacyToggle \/>\}[\s\S]*initialState=\{controller\.initialState\}[\s\S]*statusPhases=\{JIRA_GOLDEN_JOURNEYS_V3_STATUS_PHASES\}[\s\S]*workItem=\{controller\.workItem\}/u);
 	assert.match(pageSource, /onAgentPromptSubmit=\{handleAgentPromptSubmit\}/u);
 	assert.match(pageSource, /initialStateRevision=\{controller\.launchId\}/u);
@@ -75,6 +76,9 @@ test("Jira Golden Journeys v3 composes the seven-stage software delivery story w
 	assert.match(pageSource, /inlineSurface="card-fill"/u);
 	assert.match(controlsSource, /JIRA_GOLDEN_JOURNEYS_V3_STORY_CHAPTERS\.map/u);
 	assert.match(controlsSource, /aria-label="Open a software delivery story chapter"/u);
+	assert.match(controlsSource, /aria-label="Jump to chapter"/u);
+	assert.match(controlsSource, /aria-label="Previous chapter"/u);
+	assert.match(controlsSource, /aria-label="Next chapter"/u);
 	assert.match(controllerSource, /setLaunchId\(\(current\) => current \+ 1\);/u);
 	assert.match(controllerSource, /getJiraGoldenJourneysV3StoryChapterForStatus\(storyColumn\)/u);
 	const approvePullRequestSource = controllerSource.match(

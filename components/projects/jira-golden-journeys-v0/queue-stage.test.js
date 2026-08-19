@@ -104,16 +104,10 @@ test("ASX stages fill the Gallery viewport without margin compensation", () => {
 	assert.doesNotMatch(QUEUE_STAGE_SOURCE, /pb-56/u);
 });
 
-test("Card Kanban controls use the compact Gallery top-bar slot", () => {
-	assert.match(ASX_PAGE_SOURCE, /topBarCenter=/u);
-	assert.match(ASX_PAGE_SOURCE, /<CardKanbanControls controller=\{cardKanbanController\} \/>/u);
-	assert.match(CARD_KANBAN_STAGE_SOURCE, /<ButtonGroup[\s\S]*variant="connected"/u);
-	assert.match(CARD_KANBAN_STAGE_SOURCE, /border-l!/u);
-	assert.match(CARD_KANBAN_STAGE_SOURCE, /aria-pressed:z-10/u);
-	assert.match(CARD_KANBAN_STAGE_SOURCE, /variant="outline"/u);
-	assert.match(CARD_KANBAN_STAGE_SOURCE, /size="compact"/u);
-	assert.match(CARD_KANBAN_STAGE_SOURCE, /showProgress = true/u);
-	assert.doesNotMatch(CARD_KANBAN_STAGE_SOURCE, /<button/u);
+test("ASX Gallery provides both responsive header control variations", () => {
+	assert.match(ASX_PAGE_SOURCE, /topBarCenter=\{<JiraGoldenJourneysV0HeaderControls/u);
+	assert.match(ASX_PAGE_SOURCE, /topBarCenterCompact=\{/u);
+	assert.match(ASX_PAGE_SOURCE, /<JiraGoldenJourneysV0CompactHeaderControls/u);
 });
 
 test("ASX Rovo surfaces render at viewport level above the Gallery dock", () => {

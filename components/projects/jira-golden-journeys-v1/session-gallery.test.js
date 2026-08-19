@@ -137,6 +137,7 @@ test("Active terminal output reuses the reduced-motion-safe ASCII working glyph"
 test("Page wires the session stage + top-bar screen navigator per card", () => {
 	assert.match(PAGE_SOURCE, /title="Jira Golden Journeys v1"/u);
 	assert.match(PAGE_SOURCE, /<SessionScreenControls\s+screens=\{activeCard\.screens\}\s+controller=\{activeCard\.controller\}\s+\/>/u);
+	assert.match(PAGE_SOURCE, /topBarCenterCompact=\{\([\s\S]*<CompactSessionScreenControls\s+screens=\{activeCard\.screens\}\s+controller=\{activeCard\.controller\}\s+\/>/u);
 	assert.match(
 		PAGE_SOURCE,
 		/<SessionStage[\s\S]*controller=\{card\.controller\}[\s\S]*screens=\{card\.screens\}[\s\S]*\/>/u,
@@ -145,6 +146,27 @@ test("Page wires the session stage + top-bar screen navigator per card", () => {
 	assert.match(PAGE_SOURCE, /open=\{dockOpen\}/u);
 	assert.match(PAGE_SOURCE, /onOpenChange=\{setDockOpen\}/u);
 	assert.doesNotMatch(PAGE_SOURCE, /onReset=\{handleReset\}|controller\.reset\(\)/u);
+});
+
+test("Wide Gallery controls collapse automated screens into connected section-run buttons", () => {
+	assert.match(STAGE_SOURCE, /import \{ ButtonGroup \} from "@\/components\/ui\/button-group";/u);
+	assert.match(STAGE_SOURCE, /const startsNewRun =\s*i === 0 \|\| !screen\?\.section \|\| screen\.section !== previous\?\.section;/u);
+	assert.match(STAGE_SOURCE, /if \(startsNewRun\) \{\s*runs\.push/u);
+	assert.match(STAGE_SOURCE, /aria-label="Open a Jira Golden Journeys section"/u);
+	assert.match(STAGE_SOURCE, /variant="connected"/u);
+	assert.match(STAGE_SOURCE, /runs\.map\(\(run, runIndex\) =>/u);
+	assert.match(STAGE_SOURCE, /aria-pressed=\{runIndex === activeRun\}/u);
+	assert.match(STAGE_SOURCE, /runIndex === activeRun \? sectionLabel\(screens, index\) : run\.label/u);
+	assert.match(STAGE_SOURCE, /if \(total === 1\) return section;/u);
+	assert.match(STAGE_SOURCE, /return `\$\{section\} \\u00b7 \$\{position\} of \$\{total\}`;/u);
+});
+
+test("Compact Gallery controls preserve previous, section menu, and next navigation", () => {
+	assert.match(STAGE_SOURCE, /export function CompactSessionScreenControls/u);
+	assert.match(STAGE_SOURCE, /aria-label="Previous screen"/u);
+	assert.match(STAGE_SOURCE, /aria-label="Jump to section"/u);
+	assert.match(STAGE_SOURCE, /aria-label="Next screen"/u);
+	assert.match(STAGE_SOURCE, /onSelect=\{\(\) => goTo\(run\.startIndex\)\}/u);
 });
 
 test("Jira shell screens show the gallery top-bar divider", () => {
