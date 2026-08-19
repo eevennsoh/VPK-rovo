@@ -55,8 +55,9 @@ import type { CodingAgentId } from "@/components/blocks/jira-work-item/experimen
 import type { WorkItemAutomationRule } from "@/components/blocks/jira-work-item/experimental-v2/components/automation-tab";
 import {
 	METADATA_PANEL_DEFAULT_WIDTH_PX,
-	METADATA_PANEL_MAX_WIDTH_PX,
+	METADATA_PANEL_FALLBACK_MAX_WIDTH_PX,
 	METADATA_PANEL_MIN_WIDTH_PX,
+	resolveMetadataPanelMaxWidth,
 } from "@/components/blocks/jira-work-item/experimental-v2/lib/layout-constants";
 import {
 	getPullRequestIdentity,
@@ -270,10 +271,16 @@ function ExperimentalV2JiraWorkItemContent({
 	const { activityEvents } = useJiraWorkItemMeta();
 	const { elapsedMs } = useJiraWorkItemState();
 	const agentChatOpen = chatSurface === "floating";
+	const [metadataPanelMaxWidth, setMetadataPanelMaxWidth] = useState(
+		METADATA_PANEL_FALLBACK_MAX_WIDTH_PX,
+	);
+	const handleDialogBodyWidthChange = useCallback((width: number) => {
+		setMetadataPanelMaxWidth(resolveMetadataPanelMaxWidth(width));
+	}, []);
 	const metadataPanelResize = useSidebarResize({
 		defaultWidth: METADATA_PANEL_DEFAULT_WIDTH_PX,
 		direction: "rtl",
-		maxWidth: METADATA_PANEL_MAX_WIDTH_PX,
+		maxWidth: metadataPanelMaxWidth,
 		minWidth: METADATA_PANEL_MIN_WIDTH_PX,
 		minWidthResistance: true,
 	});
@@ -607,6 +614,7 @@ function ExperimentalV2JiraWorkItemContent({
 				<ExperimentalWorkItemDialog
 						inlineSurface={inlineSurface}
 						open={open}
+						onBodyWidthChange={handleDialogBodyWidthChange}
 						onClose={onClose}
 						presentation={presentation}
 						pullRequestEntries={pullRequestEntries}
