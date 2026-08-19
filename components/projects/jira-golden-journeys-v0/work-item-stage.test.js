@@ -6,6 +6,7 @@ const { test } = require("node:test");
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const STAGE_SOURCE = readFileSync(join(__dirname, "components/work-item-stage.tsx"), "utf8");
 const HEADER_SOURCE = readFileSync(join(__dirname, "components/gallery-header-controls.tsx"), "utf8");
+const STATE_SOURCE = readFileSync(join(__dirname, "data/work-item-states.ts"), "utf8");
 const DIALOG_SOURCE = readFileSync(
 	join(__dirname, "../../blocks/jira-work-item/experimental/components/experimental-work-item-dialog.tsx"),
 	"utf8",
@@ -66,7 +67,7 @@ test("ASX Work item portals its local Rovo surface to viewport coordinates", () 
 
 test("ASX Work item can jump between all requested presets", () => {
 	assert.match(
-		STAGE_SOURCE,
+		STATE_SOURCE,
 		/label: "Empty", value: "blank"[\s\S]*label: "Suggestions", value: "empty"[\s\S]*label: "Running", value: "running"[\s\S]*label: "Done", value: "filled"/u,
 	);
 	assert.doesNotMatch(STAGE_SOURCE, /controls=/u);

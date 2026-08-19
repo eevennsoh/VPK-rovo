@@ -17,7 +17,8 @@ import type { TerminalDemoController } from "../hooks/use-terminal-demo";
 import { getTerminalScreenProgress } from "../lib/terminal-demo-state";
 import { ASX_CARD_KANBAN_STATES } from "../data/card-kanban-data";
 import { ASX_GALLERY_ITEMS } from "../data/gallery-items";
-import { WORK_ITEM_STATES, type WorkItemStageController } from "./work-item-stage";
+import { WORK_ITEM_STATES } from "../data/work-item-states";
+import type { WorkItemStageController } from "./work-item-stage";
 
 interface GalleryHeaderControlsProps {
 	selectedId: string;
