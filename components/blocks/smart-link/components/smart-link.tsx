@@ -4,9 +4,11 @@
 
 // oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
 
-import { cloneElement, isValidElement, useId, useState, type ComponentProps, type ReactElement } from "react";
-import Image from "next/image";
+import { useId, useState, type ComponentProps, type ReactElement } from "react";
+import AngleBracketsIcon from "@atlaskit/icon/core/angle-brackets";
+import ArrowRightIcon from "@atlaskit/icon/core/arrow-right";
 import CrossIcon from "@atlaskit/icon/core/cross";
+import FilesIcon from "@atlaskit/icon/core/files";
 import PageIcon from "@atlaskit/icon/core/page";
 import PriorityHighestIcon from "@atlaskit/icon/core/priority-highest";
 import PriorityHighIcon from "@atlaskit/icon/core/priority-high";
@@ -28,25 +30,31 @@ import {
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
-import { AtlassianLogo, CustomLogo, type LogoProps } from "@/components/ui/logo";
-import { BrandLogoMark } from "@/components/ui/logo-mark";
-import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import { Lozenge, LozengeDropdownTrigger, type LozengeProps } from "@/components/ui/lozenge";
+import { Tag } from "@/components/ui/tag";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
+
+import {
+	cloneIcon,
+	getInitials,
+	renderVisual,
+	SmartLinkPreviewMedia,
+	statusIconTone,
+	toneClasses,
+} from "@/components/blocks/smart-link/components/smart-link-visuals";
 
 import type {
 	SmartLinkAction,
 	SmartLinkAvatar,
+	SmartLinkBranchPath,
 	SmartLinkCardProps,
 	SmartLinkItem,
 	SmartLinkMetadata,
-	SmartLinkPreviewImage,
 	SmartLinkPriority,
 	SmartLinkProps,
 	SmartLinkProvider,
 	SmartLinkSize,
-	SmartLinkTone,
 	SmartLinkVisual,
 } from "@/components/blocks/smart-link/components/smart-link-types";
 
@@ -54,6 +62,7 @@ export type {
 	SmartLinkAction,
 	SmartLinkAppearance,
 	SmartLinkAvatar,
+	SmartLinkBranchPath,
 	SmartLinkCardProps,
 	SmartLinkItem,
 	SmartLinkMetadata,
@@ -66,45 +75,6 @@ export type {
 	SmartLinkVariant,
 	SmartLinkVisual,
 } from "@/components/blocks/smart-link/components/smart-link-types";
-
-type SmartLinkVisualSize = "trigger" | "card" | "footer";
-type AtlaskitIconSize = "small" | "medium";
-type SmartLinkIconTileSize = NonNullable<ComponentProps<typeof IconTile>["size"]>;
-type SmartLinkIconTileVariant = NonNullable<ComponentProps<typeof IconTile>["variant"]>;
-
-const toneClasses: Record<SmartLinkTone, string> = {
-	neutral: "bg-bg-neutral text-icon-subtle",
-	information: "bg-bg-information-subtler text-icon-information",
-	discovery: "bg-bg-discovery-subtler text-icon-discovery",
-	magenta: "bg-bg-accent-magenta-subtler text-icon-accent-magenta",
-	warning: "bg-bg-warning text-icon-warning",
-};
-
-const toneIconTileVariants: Record<SmartLinkTone, SmartLinkIconTileVariant> = {
-	neutral: "gray",
-	information: "blue",
-	discovery: "purple",
-	magenta: "magenta",
-	warning: "yellow",
-};
-
-const visualLogoSizes: Record<SmartLinkVisualSize, NonNullable<LogoProps["size"]>> = {
-	trigger: "xxsmall",
-	card: "small",
-	footer: "xxsmall",
-};
-
-const visualIconSizes: Record<SmartLinkVisualSize, AtlaskitIconSize> = {
-	trigger: "small",
-	card: "medium",
-	footer: "small",
-};
-
-const visualIconTileSizes: Record<SmartLinkVisualSize, SmartLinkIconTileSize> = {
-	trigger: "xxsmall",
-	card: "small",
-	footer: "xxsmall",
-};
 
 // Inline chip geometry per size. `small` keeps the original VPK Tag metrics
 // (12px label on a 20px pill); `large` scales the label to 16px on a 28px pill
@@ -140,128 +110,6 @@ const triggerStatusPaddingClasses: Record<SmartLinkSize, string> = {
 	large: "pe-[3px]", // 3px pad + 1px border = 4px, matching the 4px top/bottom gap
 };
 
-// Goal chips tint their leading icon to match the trailing status lozenge tone
-// (e.g. an "On track"/success goal renders a green target), so the icon and
-// score lozenge read as one status signal. Keyed by the item's status variant.
-const goalIconToneClasses: Record<NonNullable<LozengeProps["variant"]>, string> = {
-	neutral: "text-icon-subtle",
-	success: "text-icon-success",
-	danger: "text-icon-danger",
-	information: "text-icon-information",
-	discovery: "text-icon-discovery",
-	warning: "text-icon-warning",
-	"accent-red": "text-icon-accent-red",
-	"accent-orange": "text-icon-accent-orange",
-	"accent-yellow": "text-icon-accent-yellow",
-	"accent-lime": "text-icon-accent-lime",
-	"accent-green": "text-icon-accent-green",
-	"accent-teal": "text-icon-accent-teal",
-	"accent-blue": "text-icon-accent-blue",
-	"accent-purple": "text-icon-accent-purple",
-	"accent-magenta": "text-icon-accent-magenta",
-	"accent-gray": "text-icon-accent-gray",
-};
-
-const previewToneClasses: Record<SmartLinkTone, string> = {
-	neutral: "bg-bg-neutral text-text",
-	information: "bg-blue-700 text-white",
-	discovery: "bg-purple-700 text-white",
-	magenta: "bg-bg-accent-magenta-subtler text-text-accent-magenta-bolder",
-	warning: "bg-bg-warning text-text-warning-bolder",
-};
-
-function cloneIcon(icon: ReactElement, iconSize?: AtlaskitIconSize, className?: string) {
-	if (!isValidElement(icon)) {
-		return icon;
-	}
-
-	const iconElement = icon as ReactElement<{ color?: string; label?: string; className?: string; size?: AtlaskitIconSize }>;
-
-	return cloneElement(iconElement, {
-		color: "currentColor",
-		label: "",
-		size: iconSize,
-		className: cn(className, iconElement.props.className),
-	});
-}
-
-function renderVisual(visual: SmartLinkVisual, size: SmartLinkVisualSize = "card", iconClassName?: string) {
-	const logoSize = visualLogoSizes[size];
-	const iconSize = visualIconSizes[size];
-	const iconTileElement = size === "trigger" ? "span" : "div";
-
-	if (visual.kind === "atlassian") {
-		return <AtlassianLogo name={visual.name} label="" size={logoSize} withUsageBorder />;
-	}
-
-	if (visual.kind === "third-party") {
-		return size === "trigger" ? (
-			<BrandLogoMark frame="chip" name={visual.name} label="" />
-		) : (
-			<LogoThirdParty name={visual.name} size={logoSize} />
-		);
-	}
-
-	if (visual.kind === "image") {
-		return size === "trigger" ? (
-			<BrandLogoMark frame="chip" src={visual.src} label={visual.alt} />
-		) : (
-			<CustomLogo src={visual.src} label={visual.alt} size={logoSize} />
-		);
-	}
-
-	if (visual.kind === "avatar") {
-		// Project references use a rounded-square avatar in the front slot (chip and
-		// card), matching how project avatars render across the app.
-		return (
-			<Avatar shape="square" size={size === "card" ? "sm" : "xs"}>
-				<AvatarImage alt={visual.alt} src={visual.src} />
-				<AvatarFallback>{getInitials(visual.alt)}</AvatarFallback>
-			</Avatar>
-		);
-	}
-
-	if (visual.kind === "icon") {
-		return (
-			<IconTile
-				as={iconTileElement}
-				aria-hidden
-				className={iconClassName}
-				icon={<Icon aria-hidden render={cloneIcon(visual.icon, iconSize)} />}
-				label=""
-				size={visualIconTileSizes[size]}
-				variant="transparent"
-			/>
-		);
-	}
-
-	if (visual.kind === "text") {
-		const tileSize = size === "trigger" || size === "footer" ? "size-4 text-[11px]" : "size-6 text-xs";
-		return (
-			<span
-				className={cn(
-					"inline-flex shrink-0 items-center justify-center rounded-sm font-bold leading-none",
-					tileSize,
-					toneClasses[visual.tone ?? "neutral"],
-				)}
-			>
-				{visual.label}
-			</span>
-		);
-	}
-
-	return (
-		<IconTile
-			as={iconTileElement}
-			aria-hidden
-			icon={<Icon aria-hidden render={cloneIcon(visual.icon, iconSize)} />}
-			label=""
-			size={visualIconTileSizes[size]}
-			variant={toneIconTileVariants[visual.tone ?? "neutral"]}
-		/>
-	);
-}
-
 type SmartLinkTriggerBaseProps = {
 	item: SmartLinkItem;
 	open: boolean;
@@ -295,10 +143,7 @@ function SmartLinkTrigger({
 	...props
 }: Readonly<SmartLinkTriggerProps>) {
 	const status = showStatus ? item.status : undefined;
-	// A goal chip's leading target icon takes the status lozenge tone so the icon
-	// and score badge read as one signal (e.g. green target + "On track" 0.7).
-	const goalIconTone =
-		item.variant === "goal" && status ? goalIconToneClasses[status.variant ?? "neutral"] : null;
+	const iconTone = statusIconTone(item.variant, status);
 	const triggerClassName = cn(
 		// Extends the VPK Tag visual contract: the small size keeps the same
 		// compact pill metrics (h-5, text-xs/leading-4, rounded-sm) so the
@@ -328,7 +173,7 @@ function SmartLinkTrigger({
 					triggerVisualClasses[size],
 				)}
 			>
-				{renderVisual(item.icon, "trigger", goalIconTone ?? undefined)}
+				{renderVisual(item.icon, "trigger", iconTone)}
 			</span>
 			<span
 				className={cn(
@@ -420,15 +265,6 @@ function SmartLinkAvatarStack({
 			) : null}
 		</div>
 	);
-}
-
-function getInitials(name: string) {
-	return name
-		.split(/\s+/u)
-		.map((part) => part[0])
-		.join("")
-		.slice(0, 2)
-		.toUpperCase();
 }
 
 const priorityPresentations: Record<SmartLinkPriority, { icon: ReactElement; label: string }> = {
@@ -545,7 +381,7 @@ function MetadataPill({ metadata }: Readonly<{ metadata: SmartLinkMetadata }>) {
 		return (
 			<Lozenge
 				className="pr-0.5"
-				icon={metadata.icon ? <Icon render={cloneIcon(metadata.icon, "small")} aria-hidden /> : undefined}
+				elemBefore={metadata.icon ? <Icon render={cloneIcon(metadata.icon, "small")} aria-hidden /> : undefined}
 				variant={variant}
 			>
 				{metadata.label}
@@ -569,16 +405,88 @@ function MetadataPill({ metadata }: Readonly<{ metadata: SmartLinkMetadata }>) {
 	);
 }
 
-function SmartLinkCodeStats({
-	codeStats,
-}: Readonly<{ codeStats: NonNullable<SmartLinkItem["codeStats"]> }>) {
+function codeStatsFileLabel(files: number) {
+	return `${files} ${files === 1 ? "file" : "files"}`;
+}
+
+/**
+ * Pull-request diff stats in their own row beneath the description: file count
+ * and added/removed line counts, each behind its own glyph.
+ *
+ * Each group is `role="img"` so its `aria-label` survives — `aria-label` is
+ * prohibited on the implicit `generic` role, and without a role assistive tech
+ * drops the label and reads the bare "+86 -21" fragments instead.
+ */
+function SmartLinkCodeStatsRow({ item }: Readonly<{ item: SmartLinkItem }>) {
+	const codeStats = item.codeStats;
+	if (!codeStats) {
+		return null;
+	}
+
+	const fileLabel = codeStats.files != null ? codeStatsFileLabel(codeStats.files) : null;
+
+	return (
+		<div className="flex flex-wrap items-center gap-3 px-4 pt-1 pb-2 text-sm leading-5">
+			{fileLabel ? (
+				<span
+					aria-label={`${fileLabel} changed`}
+					className="inline-flex items-center gap-1 text-text-subtle"
+					role="img"
+				>
+					<Icon aria-hidden className="text-icon-subtle" render={<FilesIcon label="" size="small" />} />
+					{fileLabel}
+				</span>
+			) : null}
+			<span
+				aria-label={`${codeStats.additions} additions, ${codeStats.deletions} deletions`}
+				className="inline-flex items-center gap-1 tabular-nums"
+				role="img"
+			>
+				<Icon aria-hidden className="text-icon-subtle" render={<AngleBracketsIcon label="" size="small" />} />
+				{/* The counts read as one +/- pair, so they sit tighter than the icon gap. */}
+				<span className="inline-flex items-center gap-0.5">
+					<span className="text-text-success">+{codeStats.additions}</span>
+					<span className="text-text-danger">-{codeStats.deletions}</span>
+				</span>
+			</span>
+		</div>
+	);
+}
+
+/** First path segment stays subtle (`feature/…`); the remainder uses body text. */
+function SmartLinkBranchName({ name }: Readonly<{ name: string }>) {
+	const slashIndex = name.indexOf("/");
+	if (slashIndex === -1) {
+		return <span className="min-w-0 truncate text-text">{name}</span>;
+	}
+
+	return (
+		<span className="min-w-0 truncate">
+			<span className="text-text-subtlest">{name.slice(0, slashIndex + 1)}</span>
+			<span className="text-text">{name.slice(slashIndex + 1)}</span>
+		</span>
+	);
+}
+
+/** `source → target`, mirroring the pull-request block's branch path. */
+function SmartLinkBranchPathLabel({ branchPath }: Readonly<{ branchPath: SmartLinkBranchPath }>) {
+	const { branch, targetBranch } = branchPath;
+	if (!branch && !targetBranch) {
+		return null;
+	}
+
 	return (
 		<span
-			aria-label={`Code changes: ${codeStats.additions} additions, ${codeStats.deletions} deletions`}
-			className="inline-flex items-center gap-1 text-sm leading-5"
+			aria-label={branch && targetBranch ? `${branch} into ${targetBranch}` : (branch ?? targetBranch)}
+			className="inline-flex min-w-0 shrink items-center gap-1 overflow-hidden text-sm leading-5"
+			role="img"
 		>
-			<span className="text-text-success">+{codeStats.additions}</span>
-			<span className="text-text-danger">-{codeStats.deletions}</span>
+			{/* Source truncates; target stays full (`main`, not `m…`). */}
+			{branch ? <SmartLinkBranchName name={branch} /> : null}
+			{branch && targetBranch ? (
+				<Icon aria-hidden className="shrink-0 text-icon-subtle" render={<ArrowRightIcon label="" size="small" />} />
+			) : null}
+			{targetBranch ? <span className="shrink-0 text-text">{targetBranch}</span> : null}
 		</span>
 	);
 }
@@ -592,30 +500,43 @@ function SmartLinkMetadataRow({ item }: Readonly<{ item: SmartLinkItem }>) {
 	const hasMetadata = Boolean(metadataItems?.length);
 	const hasIssueDetails = item.assignee || item.priority;
 	const hasAuthorDetails = item.author || item.date;
-	const hasCodeStats = Boolean(item.codeStats);
+	const branchPath = item.branchPath;
+	const hasBranchPath = Boolean(branchPath?.branch || branchPath?.targetBranch);
 
 	if (
 		!item.avatars?.length &&
 		!hasMetadata &&
 		!hasIssueDetails &&
 		!hasAuthorDetails &&
-		!hasCodeStats &&
+		!hasBranchPath &&
+		!item.repository &&
 		!item.dueDate
 	) {
 		return null;
 	}
 
+	// Pull requests use this row as a single-line context strip — author avatar,
+	// repo tag, then `source → target`. The author's name and the `·` separators
+	// give up their space so the branch path can truncate instead of wrapping.
+	const isBranchContext = hasBranchPath;
+
 	return (
-		<div className="flex min-w-0 flex-wrap items-center gap-2 text-sm leading-5 text-text-subtle">
+		<div
+			className={cn(
+				"flex min-w-0 items-center gap-2 text-sm leading-5 text-text-subtle",
+				isBranchContext ? "flex-nowrap overflow-hidden" : "flex-wrap",
+			)}
+		>
 			<SmartLinkAvatarStack avatars={item.avatars} overflow={item.avatarOverflow} />
 			{item.assignee ? <SmartLinkAssigneeAvatar assignee={item.assignee} /> : null}
 			{item.author ? (
-				<span className="inline-flex min-w-0 items-center gap-2">
+				<span className="inline-flex min-w-0 shrink-0 items-center gap-2">
+					{/* The avatar carries `label={name}`, so hiding the text keeps the name for AT. */}
 					<SmartLinkAssigneeAvatar assignee={item.author} />
-					<span className="truncate">Created by {item.author.name}</span>
+					{isBranchContext ? null : <span className="truncate">Created by {item.author.name}</span>}
 				</span>
 			) : null}
-			{item.author && item.date ? <span aria-hidden>·</span> : null}
+			{item.author && item.date && !isBranchContext ? <span aria-hidden>·</span> : null}
 			{item.date ? <span className="truncate">{item.date}</span> : null}
 			{metadataItems?.map((metadata, index) => (
 				<span className="inline-flex items-center gap-2" key={`${metadata.label}-${index}`}>
@@ -625,7 +546,18 @@ function SmartLinkMetadataRow({ item }: Readonly<{ item: SmartLinkItem }>) {
 					<MetadataPill metadata={metadata} />
 				</span>
 			))}
-			{item.codeStats ? <SmartLinkCodeStats codeStats={item.codeStats} /> : null}
+			{item.repository ? (
+				<Tag
+					// Tag defaults to `self-start`, which fights the row's `items-center`.
+					className="shrink-0 self-center"
+					color="gray"
+					elemBefore={item.provider.logo ? renderVisual(item.provider.logo, "trigger") : undefined}
+					maxWidth="9rem"
+				>
+					{item.repository}
+				</Tag>
+			) : null}
+			{hasBranchPath && branchPath ? <SmartLinkBranchPathLabel branchPath={branchPath} /> : null}
 			{item.priority ? <SmartLinkPriorityIndicator priority={item.priority} /> : null}
 			{item.dueDate ? (
 				<span className="inline-flex h-5 items-center rounded-sm border border-border-bold bg-surface px-1.5 text-xs leading-4 text-text">
@@ -647,33 +579,6 @@ function SmartLinkEngagementRow({ item }: Readonly<{ item: SmartLinkItem }>) {
 			{engagement.map((metadata, index) => (
 				<MetadataPill key={`engagement-${index}`} metadata={metadata} />
 			))}
-		</div>
-	);
-}
-
-function SmartLinkPreviewMedia({ image }: Readonly<{ image: SmartLinkPreviewImage }>) {
-	if (image.kind === "image" && image.src) {
-		return (
-			<div className="relative h-[180px] w-full overflow-hidden bg-bg-neutral">
-				<Image
-					alt={image.alt ?? ""}
-					className="object-cover"
-					fill
-					src={image.src}
-					sizes="400px"
-				/>
-			</div>
-		);
-	}
-
-	return (
-		<div
-			className={cn(
-				"flex h-[180px] w-full items-center justify-center px-8 text-center text-4xl font-bold leading-none",
-				previewToneClasses[image.tone ?? "neutral"],
-			)}
-		>
-			{image.title}
 		</div>
 	);
 }
@@ -780,9 +685,12 @@ function SmartLinkFooter({
 	onActionSelect?: (action: SmartLinkAction, item: SmartLinkItem) => void;
 	showActionButtons: boolean;
 }>) {
-	const footerActions = showActionButtons
-		? actions?.filter((action) => action.id !== "copy-link")
-		: undefined;
+	// Pull-request cards keep the footer as a quiet provenance strip: their actions
+	// stay in the flyout rather than being repeated as a block-card button.
+	const footerActions =
+		showActionButtons && item.variant !== "pull-request"
+			? actions?.filter((action) => action.id !== "copy-link")
+			: undefined;
 	const hasActions = Boolean(footerActions?.length);
 
 	return (
@@ -835,7 +743,7 @@ export function SmartLinkCard({
 			{item.previewImage ? <SmartLinkPreviewMedia image={item.previewImage} /> : null}
 			<div className="flex flex-col gap-2 px-4 pt-4 pb-2">
 				<div className="flex min-w-0 items-center gap-2">
-					<span className="inline-flex shrink-0 items-center">{renderVisual(item.icon, "card")}</span>
+					<span className="inline-flex shrink-0 items-center">{renderVisual(item.icon, "card", statusIconTone(item.variant, item.status))}</span>
 					{onActivate ? (
 						<button
 							aria-pressed={selected}
@@ -864,6 +772,7 @@ export function SmartLinkCard({
 					<p className="line-clamp-3 text-sm leading-5 text-text">{item.description}</p>
 				</div>
 			) : null}
+			<SmartLinkCodeStatsRow item={item} />
 			<SmartLinkEngagementRow item={item} />
 			{showFlyoutActions ? (
 				<div className="flex w-full flex-col py-1">
