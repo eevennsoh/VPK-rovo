@@ -143,7 +143,11 @@ function SmartLinkTrigger({
 	...props
 }: Readonly<SmartLinkTriggerProps>) {
 	const status = showStatus ? item.status : undefined;
-	const iconTone = statusIconTone(item.variant, status);
+	// A goal chip's tint matches its *visible* score lozenge, so it follows
+	// `status`. A pull request's glyph encodes Open/Merged on its own, so it keeps
+	// its tone even when the chip hides the lozenge — the same source the block
+	// card uses (`item.status`), which keeps the glyph consistent everywhere.
+	const iconTone = statusIconTone(item.variant, item.variant === "goal" ? status : item.status);
 	const triggerClassName = cn(
 		// Extends the VPK Tag visual contract: the small size keeps the same
 		// compact pill metrics (h-5, text-xs/leading-4, rounded-sm) so the

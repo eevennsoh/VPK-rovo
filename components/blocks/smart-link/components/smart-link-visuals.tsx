@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/only-export-components -- This module intentionally exports colocated component API, variant contracts, context contracts, or metadata used by consumers.
+
 // How a smart link paints its visuals: the front-slot glyph (logo, tile, avatar,
 // or text mark), the tone lookups those slots read from, and the card's preview
 // media. Kept out of `smart-link.tsx` so that file owns composition and behavior

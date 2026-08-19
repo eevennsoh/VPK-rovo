@@ -249,6 +249,12 @@ test("the pull-request front slot is a status-tinted pull-request glyph", () => 
 	assert.match(VISUALS_SOURCE, /variant !== "goal" && variant !== "pull-request"/u);
 	assert.match(VISUALS_SOURCE, /success: "text-icon-success",/u);
 	assert.match(COMPONENT_SOURCE, /\{renderVisual\(item\.icon, "trigger", iconTone\)\}/u);
+	// The chip must not gate the PR glyph's tone on lozenge visibility — the
+	// default `<SmartLink item={item} />` hides the lozenge but still shows state.
+	assert.match(
+		COMPONENT_SOURCE,
+		/statusIconTone\(item\.variant, item\.variant === "goal" \? status : item\.status\)/u,
+	);
 });
 
 test("the pull-request number prefixes the title", () => {
