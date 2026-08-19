@@ -18,7 +18,10 @@ import {
 	shouldStartJiraGoldenJourneysV3Plan,
 } from "./data/hotfix-story";
 import { JiraGoldenJourneysV3ComposerPrivacyToggle } from "./composer-privacy-toggle";
-import { JiraGoldenJourneysV3StoryControls } from "./story-controls";
+import {
+	JiraGoldenJourneysV3CompactStoryControls,
+	JiraGoldenJourneysV3StoryControls,
+} from "./story-controls";
 import { useJiraGoldenJourneysV3Story, type JiraGoldenJourneysV3StoryController } from "./use-hotfix-story";
 
 const JIRA_GOLDEN_JOURNEYS_V3_AUTOMATION_RULES = [
@@ -221,6 +224,11 @@ export default function JiraGoldenJourneysV3Page(): React.ReactElement {
 					topBarCenter={
 						selectedId === "work-item"
 							? <JiraGoldenJourneysV3StoryControls controller={storyController} />
+							: null
+					}
+					topBarCenterCompact={
+						selectedId === "work-item"
+							? <JiraGoldenJourneysV3CompactStoryControls controller={storyController} />
 							: null
 					}
 				/>

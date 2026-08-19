@@ -77,6 +77,8 @@ export interface GalleryProps {
 	title?: string;
 	/** Optional content centered in the Gallery control bar, such as a compact button group. */
 	topBarCenter?: ReactNode;
+	/** Optional compact center control shown below the large viewport breakpoint. */
+	topBarCenterCompact?: ReactNode;
 	/** Shows a 1px semantic border below the Gallery control bar. */
 	showTopBarBorder?: boolean;
 	/** Positions selected content below the 48px top bar; the bottom dock remains an overlay. */
@@ -105,6 +107,7 @@ export function Gallery({
 	items,
 	title = "Gallery",
 	topBarCenter,
+	topBarCenterCompact,
 	showTopBarBorder = false,
 	stagePosition = "top",
 	open,
@@ -233,6 +236,7 @@ export function Gallery({
 			<GalleryToggle
 				title={title}
 				centerContent={topBarCenter}
+				compactCenterContent={topBarCenterCompact}
 				showBottomBorder={showTopBarBorder}
 				open={isOpen}
 				showOpenToggle={showCarouselPicker}
