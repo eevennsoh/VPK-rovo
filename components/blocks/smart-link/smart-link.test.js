@@ -8,8 +8,9 @@ const { readWebsiteRegistrySource } = require(process.cwd() + "/components/websi
 const DIR = __dirname;
 const COMPONENT_SOURCE = fs.readFileSync(path.join(DIR, "components", "smart-link.tsx"), "utf8");
 const TYPES_SOURCE = fs.readFileSync(path.join(DIR, "components", "smart-link-types.ts"), "utf8");
+const VISUALS_SOURCE = fs.readFileSync(path.join(DIR, "components", "smart-link-visuals.tsx"), "utf8");
 const DATA_SOURCE = fs.readFileSync(path.join(DIR, "data", "demo-smart-links.tsx"), "utf8");
-const PULL_REQUEST_HELPER_SOURCE = fs.readFileSync(path.join(DIR, "lib", "pull-request-smart-link.ts"), "utf8");
+const PULL_REQUEST_HELPER_SOURCE = fs.readFileSync(path.join(DIR, "lib", "pull-request-smart-link.tsx"), "utf8");
 const DEMO_SOURCE = fs.readFileSync(path.join(process.cwd(), "components", "website", "demos", "blocks", "smart-link-demo.tsx"), "utf8");
 const PAGE_SOURCE = fs.readFileSync(path.join(DIR, "page.tsx"), "utf8");
 const INDEX_SOURCE = fs.readFileSync(path.join(DIR, "index.ts"), "utf8");
@@ -151,11 +152,116 @@ test("catalog details and registry expose smart-link demos", () => {
 test("SmartLink owns the pull-request variant with code stats in the flyout", () => {
 	assert.match(TYPES_SOURCE, /\| "pull-request"/u);
 	assert.match(TYPES_SOURCE, /codeStats\?: \{[\s\S]*additions: number;[\s\S]*deletions: number;/u);
-	assert.match(COMPONENT_SOURCE, /function SmartLinkCodeStats/u);
+	assert.match(TYPES_SOURCE, /codeStats\?: \{\s*files\?: number;/u);
+	assert.match(COMPONENT_SOURCE, /function SmartLinkCodeStatsRow/u);
 	assert.match(COMPONENT_SOURCE, /text-text-success[\s\S]*\+\{codeStats\.additions\}/u);
 	assert.match(COMPONENT_SOURCE, /text-text-danger[\s\S]*-\{codeStats\.deletions\}/u);
 	assert.match(INDEX_SOURCE, /toPullRequestSmartLink/u);
 	assert.match(DEMO_SOURCE, /export function SmartLinkDemoPullRequest\(\)/u);
+});
+
+test("pull-request code stats sit in their own row under the description", () => {
+	// `N files` pluralizes, and each stat group carries its own glyph.
+	assert.match(COMPONENT_SOURCE, /function codeStatsFileLabel\(files: number\) \{[\s\S]*files === 1 \? "file" : "files"/u);
+	assert.match(COMPONENT_SOURCE, /import FilesIcon from "@atlaskit\/icon\/core\/files";/u);
+	assert.match(COMPONENT_SOURCE, /import AngleBracketsIcon from "@atlaskit\/icon\/core\/angle-brackets";/u);
+	assert.match(COMPONENT_SOURCE, /<FilesIcon label="" size="small" \/>/u);
+	assert.match(COMPONENT_SOURCE, /<AngleBracketsIcon label="" size="small" \/>/u);
+	// The row renders between the description and the engagement row.
+	assert.match(
+		COMPONENT_SOURCE,
+		/line-clamp-3 text-sm leading-5 text-text[\s\S]*?<SmartLinkCodeStatsRow item=\{item\} \/>\s*<SmartLinkEngagementRow item=\{item\} \/>/u,
+	);
+	// The row is the only renderer, and the footer no longer competes with it.
+	assert.equal((COMPONENT_SOURCE.match(/<SmartLinkCodeStatsRow/gu) ?? []).length, 1);
+	assert.doesNotMatch(COMPONENT_SOURCE, /showActionButtons && !codeStats/u);
+	// `aria-label` is prohibited on the implicit `generic` role, so without an
+	// explicit `role` assistive tech drops the label and reads "+86 -21" bare.
+	assert.match(COMPONENT_SOURCE, /aria-label=\{`\$\{codeStats\.additions\} additions, \$\{codeStats\.deletions\} deletions`\}[\s\S]*?role="img"/u);
+	assert.match(COMPONENT_SOURCE, /aria-label=\{`\$\{fileLabel\} changed`\}[\s\S]*?role="img"/u);
+	// The +/- counts read as one pair, so they sit tighter (2px) than the icon gap.
+	assert.match(
+		COMPONENT_SOURCE,
+		/<span className="inline-flex items-center gap-0\.5">\s*<span className="text-text-success">/u,
+	);
+});
+
+test("pull-request cards keep their footer free of action buttons", () => {
+	// Actions stay in the flyout rather than repeating as a block-card button.
+	assert.match(COMPONENT_SOURCE, /showActionButtons && item\.variant !== "pull-request"/u);
+});
+
+test("the pull-request metadata row is a single-line repo and branch context strip", () => {
+	assert.match(TYPES_SOURCE, /export interface SmartLinkBranchPath \{\s*branch\?: string;\s*targetBranch\?: string;/u);
+	assert.match(TYPES_SOURCE, /branchPath\?: SmartLinkBranchPath;/u);
+	assert.match(TYPES_SOURCE, /repository\?: string;/u);
+	assert.match(COMPONENT_SOURCE, /import ArrowRightIcon from "@atlaskit\/icon\/core\/arrow-right";/u);
+	assert.match(COMPONENT_SOURCE, /function SmartLinkBranchPathLabel/u);
+	// Source branch truncates behind a subtle `prefix/`; the target stays whole.
+	assert.match(COMPONENT_SOURCE, /function SmartLinkBranchName[\s\S]*?name\.slice\(0, slashIndex \+ 1\)[\s\S]*?name\.slice\(slashIndex \+ 1\)/u);
+	assert.match(COMPONENT_SOURCE, /\{targetBranch \? <span className="shrink-0 text-text">\{targetBranch\}<\/span> : null\}/u);
+	assert.match(COMPONENT_SOURCE, /aria-label=\{branch && targetBranch \? `\$\{branch\} into \$\{targetBranch\}`/u);
+	assert.match(COMPONENT_SOURCE, /<SmartLinkBranchPathLabel branchPath=\{branchPath\} \/>/u);
+	assert.match(PULL_REQUEST_HELPER_SOURCE, /branchPath:\s*input\.branch \|\| input\.targetBranch/u);
+	assert.match(PULL_REQUEST_HELPER_SOURCE, /repository: input\.repository,/u);
+	assert.match(DATA_SOURCE, /branch: "feature\/shop-4821-guest-checkout"/u);
+	assert.match(DATA_SOURCE, /targetBranch: "main"/u);
+
+	// Avatar + repo tag + branch path share one line; the branch truncates to fit.
+	assert.match(COMPONENT_SOURCE, /isBranchContext \? "flex-nowrap overflow-hidden" : "flex-wrap"/u);
+	// The author's name gives up its space — the avatar's `label` still names them.
+	assert.match(
+		COMPONENT_SOURCE,
+		/\{isBranchContext \? null : <span className="truncate">Created by \{item\.author\.name\}<\/span>\}/u,
+	);
+	assert.match(COMPONENT_SOURCE, /\{item\.author && item\.date && !isBranchContext \? <span aria-hidden>·<\/span> : null\}/u);
+	// The repo uses Tag with the provider logo; Tag's own `self-start` is overridden
+	// so it centers against the avatar and branch text on the same line.
+	assert.match(COMPONENT_SOURCE, /<Tag[\s\S]*?className="shrink-0 self-center"[\s\S]*?elemBefore=\{item\.provider\.logo \? renderVisual\(item\.provider\.logo, "trigger"\) : undefined\}[\s\S]*?\{item\.repository\}/u);
+});
+
+test("the pull-request status lozenge trails the title like every other card", () => {
+	// One title row for every variant: visual, title, then the trailing status.
+	assert.match(
+		COMPONENT_SOURCE,
+		/<span className="inline-flex shrink-0 items-center">\{renderVisual\(item\.icon, "card", statusIconTone\(item\.variant, item\.status\)\)\}<\/span>[\s\S]*?\{item\.status \? \(\s*<span className="shrink-0">\s*<SmartLinkStatusDropdown status=\{item\.status\} \/>/u,
+	);
+	// The leading-placement split and its lozenge glyph are gone with it.
+	assert.doesNotMatch(TYPES_SOURCE, /placement\?: "leading" \| "trailing";/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /leadingStatus|trailingStatus|statusPlacement/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /elemBefore=\{status\.icon/u);
+	// Deprecated Lozenge `icon` prop must not creep back in either.
+	assert.doesNotMatch(COMPONENT_SOURCE, /\n\t+icon=\{(?:status|metadata)\.icon/u);
+});
+
+test("the pull-request front slot is a status-tinted pull-request glyph", () => {
+	// A transparent icon tile holding the PR glyph replaces the GitHub logo; the
+	// tint follows the status tone so it matches the lozenge (green Open).
+	assert.match(PULL_REQUEST_HELPER_SOURCE, /import PullRequestIcon from "@atlaskit\/icon\/core\/pull-request";/u);
+	assert.match(PULL_REQUEST_HELPER_SOURCE, /icon: \{ kind: "icon", icon: <PullRequestIcon label="" \/> \}/u);
+	assert.match(PULL_REQUEST_HELPER_SOURCE, /label: "Open", variant: "success"/u);
+	// GitHub still identifies the provider for the footer and the repo tag.
+	assert.match(PULL_REQUEST_HELPER_SOURCE, /provider: \{ name: "GitHub", logo: \{ kind: "third-party", name: "github" \} \}/u);
+	// `kind: "icon"` routes through the transparent IconTile branch.
+	assert.match(VISUALS_SOURCE, /if \(visual\.kind === "icon"\)[\s\S]*?variant="transparent"/u);
+	// Goals and pull requests share one variant→tone map.
+	assert.match(VISUALS_SOURCE, /const statusIconToneClasses: Record<NonNullable<LozengeProps\["variant"\]>, string>/u);
+	assert.match(VISUALS_SOURCE, /variant !== "goal" && variant !== "pull-request"/u);
+	assert.match(VISUALS_SOURCE, /success: "text-icon-success",/u);
+	assert.match(COMPONENT_SOURCE, /\{renderVisual\(item\.icon, "trigger", iconTone\)\}/u);
+	// The chip must not gate the PR glyph's tone on lozenge visibility — the
+	// default `<SmartLink item={item} />` hides the lozenge but still shows state.
+	assert.match(
+		COMPONENT_SOURCE,
+		/statusIconTone\(item\.variant, item\.variant === "goal" \? status : item\.status\)/u,
+	);
+});
+
+test("the pull-request number prefixes the title", () => {
+	assert.match(PULL_REQUEST_HELPER_SOURCE, /title: `#\$\{input\.number\}: \$\{input\.title\}`/u);
+	// No metadata `suffix` affordance remains now the number lives in the title.
+	assert.doesNotMatch(TYPES_SOURCE, /suffix\?: string;/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /metadata\.suffix/u);
 });
 
 test("SmartLink owns its removable overlay variant", () => {
@@ -171,7 +277,15 @@ test("SmartLink owns its removable overlay variant", () => {
 	assert.match(COMPONENT_SOURCE, /<CrossIcon label="" size="small" color="currentColor" \/>/u);
 	assert.match(DEMO_SOURCE, /export function SmartLinkDemoRemovableOverlay\(\)[\s\S]*onRemove=\{\(\) => setItems[\s\S]*removeVariant="overlay"/u);
 	assert.match(DEMO_SOURCE, /SmartLinkDemoRemovableOverlay\(\)[\s\S]*SMART_LINK_STATUS_EXAMPLES\[0\][\s\S]*removeVariant="overlay"[\s\S]*showStatus=\{item\.id === SMART_LINK_STATUS_EXAMPLES\[0\]\.id\}/u);
-	assert.doesNotMatch(COMPONENT_SOURCE, /from "@\/components\/ui\/tag"/u);
+	// The inline chip stays bespoke — it owns the removable mask geometry, so it
+	// must not be rebuilt on Tag. Elsewhere (the metadata row's repo pill) Tag is
+	// the right primitive, so scope the guard to the trigger rather than the file.
+	const triggerSource = COMPONENT_SOURCE.slice(
+		COMPONENT_SOURCE.indexOf("function SmartLinkTrigger"),
+		COMPONENT_SOURCE.indexOf("function SmartLinkAvatarStack"),
+	);
+	assert.ok(triggerSource.length > 0, "SmartLinkTrigger source slice resolved");
+	assert.doesNotMatch(triggerSource, /<Tag[\s/>]/u);
 });
 
 test("SmartLink implementation uses semantic tokens instead of raw ds variable utilities", () => {
@@ -181,19 +295,19 @@ test("SmartLink implementation uses semantic tokens instead of raw ds variable u
 });
 
 test("SmartLink visual rendering uses shared icon and logo primitives", () => {
-	assert.match(COMPONENT_SOURCE, /import \{ IconTile \} from "@\/components\/ui\/icon-tile";/u);
-	assert.match(COMPONENT_SOURCE, /import \{ AtlassianLogo, CustomLogo,[\s\S]*type LogoProps \} from "@\/components\/ui\/logo";/u);
-	assert.match(COMPONENT_SOURCE, /import \{ BrandLogoMark \} from "@\/components\/ui\/logo-mark";/u);
-	assert.match(COMPONENT_SOURCE, /<AtlassianLogo[\s\S]*withUsageBorder/u);
-	assert.match(COMPONENT_SOURCE, /<BrandLogoMark frame="chip" src=\{visual\.src\} label=\{visual\.alt\} \/>/u);
-	assert.match(COMPONENT_SOURCE, /<CustomLogo src=\{visual\.src\} label=\{visual\.alt\} size=\{logoSize\} \/>/u);
-	assert.match(COMPONENT_SOURCE, /if \(visual\.kind === "icon"\)[\s\S]*<IconTile[\s\S]*variant="transparent"/u);
-	assert.match(COMPONENT_SOURCE, /<IconTile[\s\S]*size=\{visualIconTileSizes\[size\]\}[\s\S]*variant=\{toneIconTileVariants\[visual\.tone \?\? "neutral"\]\}/u);
-	assert.match(COMPONENT_SOURCE, /size: iconSize/u);
-	assert.doesNotMatch(COMPONENT_SOURCE, /height=\{imageSize\}/u);
-	assert.doesNotMatch(COMPONENT_SOURCE, /width=\{imageSize\}/u);
+	assert.match(VISUALS_SOURCE, /import \{ IconTile \} from "@\/components\/ui\/icon-tile";/u);
+	assert.match(VISUALS_SOURCE, /import \{ AtlassianLogo, CustomLogo,[\s\S]*type LogoProps \} from "@\/components\/ui\/logo";/u);
+	assert.match(VISUALS_SOURCE, /import \{ BrandLogoMark \} from "@\/components\/ui\/logo-mark";/u);
+	assert.match(VISUALS_SOURCE, /<AtlassianLogo[\s\S]*withUsageBorder/u);
+	assert.match(VISUALS_SOURCE, /<BrandLogoMark frame="chip" src=\{visual\.src\} label=\{visual\.alt\} \/>/u);
+	assert.match(VISUALS_SOURCE, /<CustomLogo src=\{visual\.src\} label=\{visual\.alt\} size=\{logoSize\} \/>/u);
+	assert.match(VISUALS_SOURCE, /if \(visual\.kind === "icon"\)[\s\S]*<IconTile[\s\S]*variant="transparent"/u);
+	assert.match(VISUALS_SOURCE, /<IconTile[\s\S]*size=\{visualIconTileSizes\[size\]\}[\s\S]*variant=\{toneIconTileVariants\[visual\.tone \?\? "neutral"\]\}/u);
+	assert.match(VISUALS_SOURCE, /size: iconSize/u);
+	assert.doesNotMatch(VISUALS_SOURCE, /height=\{imageSize\}/u);
+	assert.doesNotMatch(VISUALS_SOURCE, /width=\{imageSize\}/u);
 	assert.match(COMPONENT_SOURCE, /className="flex min-w-0 items-center gap-2"/u);
-	assert.match(COMPONENT_SOURCE, /<span className="inline-flex shrink-0 items-center">\{renderVisual\(item\.icon, "card"\)\}<\/span>/u);
+	assert.match(COMPONENT_SOURCE, /<span className="inline-flex shrink-0 items-center">\{renderVisual\(item\.icon, "card", statusIconTone\(item\.variant, item\.status\)\)\}<\/span>/u);
 });
 
 test("the Jira work-item demo uses a blue work-item icon tile with rich card controls", () => {
@@ -202,6 +316,6 @@ test("the Jira work-item demo uses a blue work-item icon tile with rich card con
 });
 
 test("SmartLink trigger icon tiles render as inline spans", () => {
-	assert.match(COMPONENT_SOURCE, /const iconTileElement = size === "trigger" \? "span" : "div";/u);
-	assert.equal((COMPONENT_SOURCE.match(/as=\{iconTileElement\}/gu) ?? []).length, 2);
+	assert.match(VISUALS_SOURCE, /const iconTileElement = size === "trigger" \? "span" : "div";/u);
+	assert.equal((VISUALS_SOURCE.match(/as=\{iconTileElement\}/gu) ?? []).length, 2);
 });

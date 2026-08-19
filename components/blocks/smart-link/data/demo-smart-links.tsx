@@ -232,9 +232,12 @@ export const SMART_LINK_DEMO_ITEMS = [
 		number: 1847,
 		title: "Add guest checkout to the storefront",
 		status: "Open",
+		files: 6,
 		additions: 86,
 		deletions: 21,
 		repository: "eevensoh/vpk-rovo",
+		branch: "feature/shop-4821-guest-checkout",
+		targetBranch: "main",
 		author: { name: "eevensoh", src: "/avatar-user/venn/venn.png" },
 		description:
 			"## Summary - Add experimental-v2 pull requests panel with phase sorting, plus activity filtering and guest checkout for the storefront.",
