@@ -98,3 +98,8 @@ test("the Queue scroll viewport fills the available space while its content stay
 	assert.match(WORKSPACE_SOURCE, /className="mx-auto w-full max-w-\[800px\] px-3"/u);
 	assert.doesNotMatch(WORKSPACE_SOURCE, /DOMMatrixReadOnly|ResizeObserver|chatBodyShift/u);
 });
+
+test("the standalone Queue stage sizes to its immediate preview container", () => {
+	assert.match(STAGE_SOURCE, /className="relative h-full min-h-0 w-full overflow-hidden isolate"/u);
+	assert.doesNotMatch(STAGE_SOURCE, /100cqw|w-screen|left-1\/2|-translate-x-1\/2/u);
+});
