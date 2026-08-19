@@ -347,6 +347,30 @@ test("an approved #1847 entry adds teammate approvals and ready-to-merge evidenc
 	);
 });
 
+test("explicit reviewer state preserves a partial approval and its activity", async () => {
+	const { resolvePullRequestDetailData } = await loadDetailData();
+	const detail = resolvePullRequestDetailData(pullRequestEntry({
+		reviewDecision: "review-required",
+		reviewers: [
+			{ id: "priya-narayanan", name: "Priya Narayanan", status: "approved" },
+			{ id: "jordan-lee", name: "Jordan Lee", status: "pending" },
+		],
+	}));
+
+	assert.deepEqual(
+		detail?.reviewers.map(({ name, status }) => ({ name, status })),
+		[
+			{ name: "Priya Narayanan", status: "approved" },
+			{ name: "Jordan Lee", status: "pending" },
+		],
+	);
+	assert.deepEqual(
+		detail?.activity.filter((activity) => activity.id === "priya-review")
+			.map((activity) => activity.actor.name),
+		["Priya Narayanan"],
+	);
+});
+
 test("changes-requested #1847 marks Priya with a declined Approvers badge", async () => {
 	const { resolvePullRequestDetailData } = await loadDetailData();
 	const detail = resolvePullRequestDetailData(pullRequestEntry({

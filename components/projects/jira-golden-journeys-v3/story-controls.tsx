@@ -13,11 +13,16 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { JIRA_GOLDEN_JOURNEYS_V3_STORY_CHAPTERS } from "./data/hotfix-story";
+import { JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_STEP_COUNT } from "./data/terminal-story";
 import type { JiraGoldenJourneysV3StoryController } from "./use-hotfix-story";
 
 export function JiraGoldenJourneysV3StoryControls({
 	controller,
-}: Readonly<{ controller: JiraGoldenJourneysV3StoryController }>): React.ReactElement {
+	terminalStep,
+}: Readonly<{
+	controller: JiraGoldenJourneysV3StoryController;
+	terminalStep: number;
+}>): React.ReactElement {
 	return (
 		<div className="scrollbar-none max-w-[calc(100vw-12rem)] overflow-x-auto">
 			<ButtonGroup
@@ -35,7 +40,9 @@ export function JiraGoldenJourneysV3StoryControls({
 						type="button"
 						variant="outline"
 					>
-						{option.label}
+						{option.value === "terminal"
+							? `${option.label} · ${terminalStep} of ${JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_STEP_COUNT}`
+							: option.label}
 					</Button>
 				))}
 			</ButtonGroup>

@@ -6,54 +6,30 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { WorkItemData } from "@/app/contexts/context-work-item-modal";
 import type { JiraWorkItemState } from "@/components/blocks/jira-work-item/data/session-state";
 import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
-import {
-	DEFAULT_PULL_REQUEST_FIX_AGENT_ID,
-	type PullRequestFixAgentId,
-} from "@/components/blocks/pull-request-fix";
 import type { JiraForYouSection } from "@/components/projects/jira-for-you/jira-for-you-types";
+
 import {
 	createJiraGoldenJourneysV3BoardColumns,
+	createJiraGoldenJourneysV3ReviewerApprovals,
 	createJiraGoldenJourneysV3StoryState,
 	createJiraGoldenJourneysV3StoryWorkItem,
 	createJiraGoldenJourneysV3WorkspaceSections,
+	evaluateJiraGoldenJourneysV3MergeGate,
 	getJiraGoldenJourneysV3StoryChapterForStatus,
 	getJiraGoldenJourneysV3StoryColumn,
-	JIRA_GOLDEN_JOURNEYS_V3_PULL_REQUEST_IDENTITY,
-	type JiraGoldenJourneysV3BuildStep,
-	type JiraGoldenJourneysV3DescriptionSkillPhase,
+	JIRA_GOLDEN_JOURNEYS_V3_REQUIRED_APPROVAL_COUNT,
+	resolveJiraGoldenJourneysV3MergeStatus,
+	type JiraGoldenJourneysV3ApprovalStep,
+	type JiraGoldenJourneysV3CiStatus,
 	type JiraGoldenJourneysV3FixStep,
+	type JiraGoldenJourneysV3MergeGate,
+	type JiraGoldenJourneysV3MergeStatus,
+	type JiraGoldenJourneysV3ReviewerApproval,
 	type JiraGoldenJourneysV3ReviewStep,
 	type JiraGoldenJourneysV3StoryChapter,
+	type JiraGoldenJourneysV3StoryStateOptions,
 } from "./data/hotfix-story";
-import {
-	createJiraGoldenJourneysV3OrchestrationState,
-	type JiraGoldenJourneysV3OrchestrationStep,
-} from "./data/orchestration-state";
 
-const ORCHESTRATION_SEQUENCE = {
-	"agents-working": { next: "comment", delayMs: 1_500 },
-	comment: { next: "reaction-1", delayMs: 1_200 },
-	"reaction-1": { next: "reaction-2", delayMs: 1_000 },
-	"reaction-2": { next: "lead", delayMs: 3_500 },
-	lead: { next: "consult", delayMs: 1_800 },
-	consult: { next: "complete", delayMs: 1_500 },
-} as const satisfies Record<
-	Exclude<JiraGoldenJourneysV3OrchestrationStep, "idle" | "complete">,
-	{ next: Exclude<JiraGoldenJourneysV3OrchestrationStep, "idle">; delayMs: number }
->;
-
-// Demo-friendly staging from Plan end:
-// hold on Consult-ready frame → Implement+PR → Verify+screenshot → settle.
-const BUILD_SEQUENCE = {
-	ready: { next: "implementing", delayMs: 2_500 },
-	implementing: { next: "verifying", delayMs: 2_200 },
-	verifying: { next: "complete", delayMs: 2_400 },
-} as const satisfies Record<
-	Exclude<JiraGoldenJourneysV3BuildStep, "complete">,
-	{ next: JiraGoldenJourneysV3BuildStep; delayMs: number }
->;
-
-// Review CI: start → widen → unit green → browser green → lint failure.
 const REVIEW_SEQUENCE = {
 	queued: { next: "running", delayMs: 1_200 },
 	running: { next: "unit-passed", delayMs: 1_500 },
@@ -64,303 +40,292 @@ const REVIEW_SEQUENCE = {
 	{ next: JiraGoldenJourneysV3ReviewStep; delayMs: number }
 >;
 
-// Fix CI repair after PullRequestFix submit: repairing → green.
-// ~8s keeps the CI spinner / rerunning beat visible in demos.
 const FIX_SEQUENCE = {
-	repairing: { next: "complete", delayMs: 8_000 },
+	repairing: { next: "complete", delayMs: 4_000 },
 } as const satisfies Record<
 	Exclude<JiraGoldenJourneysV3FixStep, "failed" | "complete">,
 	{ next: JiraGoldenJourneysV3FixStep; delayMs: number }
 >;
 
-const DESCRIPTION_SKILL_GENERATION_DELAY_MS = 4_000;
-
-export type JiraGoldenJourneysV3PullRequestApprovalState = "available" | "approved";
+const APPROVAL_DELAY_MS = 1_600;
+const AUTO_MERGE_DELAY_MS = 1_200;
 
 export interface JiraGoldenJourneysV3StoryController {
-	applyDescriptionSuggestion: () => void;
-	approvePullRequest: (identity: string) => void;
+	approvalCount: number;
+	approvalStep: JiraGoldenJourneysV3ApprovalStep;
+	approvals: readonly JiraGoldenJourneysV3ReviewerApproval[];
+	autoFixEnabled: boolean;
+	autoMergeEnabled: boolean;
 	boardColumns: readonly JiraKanbanColumnData[];
-	buildStep: JiraGoldenJourneysV3BuildStep;
 	chapter: JiraGoldenJourneysV3StoryChapter;
 	chapterRevision: number;
-	descriptionSkillPhase: JiraGoldenJourneysV3DescriptionSkillPhase;
-	descriptionImproved: boolean;
-	dismissDescriptionSuggestion: () => void;
-	fixPullRequestCheck: (identity: string, agentId?: PullRequestFixAgentId) => void;
+	ciStatus: JiraGoldenJourneysV3CiStatus;
 	fixStep: JiraGoldenJourneysV3FixStep;
 	initialState: JiraWorkItemState;
-	invokeDescriptionSkill: () => void;
 	launchId: number;
-	orchestrationStep: JiraGoldenJourneysV3OrchestrationStep;
-	pullRequestApprovalStates: Readonly<Record<string, JiraGoldenJourneysV3PullRequestApprovalState>>;
+	mergeGate: JiraGoldenJourneysV3MergeGate;
+	mergeStatus: JiraGoldenJourneysV3MergeStatus;
+	pullRequestMerged: boolean;
+	requiredApprovalCount: number;
 	resetCurrentChapter: () => void;
+	resetStory: () => void;
 	reviewStep: JiraGoldenJourneysV3ReviewStep;
 	sections: readonly JiraForYouSection[];
 	selectChapter: (chapter: JiraGoldenJourneysV3StoryChapter) => void;
-	startOrchestration: () => void;
+	setAutoFixEnabled: (enabled: boolean) => void;
+	setAutoMergeEnabled: (enabled: boolean) => void;
+	toggleAutoFix: () => void;
+	toggleAutoMerge: () => void;
 	updateBoardColumns: (columns: readonly JiraKanbanColumnData[]) => void;
 	workItem: WorkItemData;
 }
 
 export function useJiraGoldenJourneysV3Story(active = true): JiraGoldenJourneysV3StoryController {
 	const shouldReduceMotion = useReducedMotion() ?? false;
-	const [chapter, setChapter] = useState<JiraGoldenJourneysV3StoryChapter>("intake");
+	const [chapter, setChapter] = useState<JiraGoldenJourneysV3StoryChapter>("terminal");
 	const [chapterRevision, setChapterRevision] = useState(0);
-	const [descriptionSkillPhase, setDescriptionSkillPhase] = useState<JiraGoldenJourneysV3DescriptionSkillPhase>("idle");
-	const [orchestrationStep, setOrchestrationStep] = useState<JiraGoldenJourneysV3OrchestrationStep>("idle");
-	const [buildStep, setBuildStep] = useState<JiraGoldenJourneysV3BuildStep>("complete");
-	const [pullRequestApprovalStates, setPullRequestApprovalStates] = useState<
-		Record<string, JiraGoldenJourneysV3PullRequestApprovalState>
-	>({});
 	const [reviewStep, setReviewStep] = useState<JiraGoldenJourneysV3ReviewStep>("queued");
 	const [fixStep, setFixStep] = useState<JiraGoldenJourneysV3FixStep>("failed");
-	const [fixAgentId, setFixAgentId] = useState<PullRequestFixAgentId>(
-		DEFAULT_PULL_REQUEST_FIX_AGENT_ID,
-	);
+	const [approvalStep, setApprovalStep] = useState<JiraGoldenJourneysV3ApprovalStep>(0);
+	const [ciStatus, setCiStatus] = useState<JiraGoldenJourneysV3CiStatus>("running");
+	const [autoFixEnabled, setAutoFixEnabled] = useState(false);
+	const [autoMergeEnabled, setAutoMergeEnabled] = useState(false);
+	const [pullRequestMerged, setPullRequestMerged] = useState(false);
 	const [launchId, setLaunchId] = useState(0);
 	const [boardColumns, setBoardColumns] = useState<JiraKanbanColumnData[]>(
-		() => createJiraGoldenJourneysV3BoardColumns("intake"),
+		() => createJiraGoldenJourneysV3BoardColumns("terminal"),
 	);
+
+	const restartChapter = useCallback((targetChapter: JiraGoldenJourneysV3StoryChapter) => {
+		switch (targetChapter) {
+			case "terminal":
+				break;
+			case "build":
+				setReviewStep("queued");
+				setFixStep("failed");
+				setApprovalStep(0);
+				setCiStatus("running");
+				setPullRequestMerged(false);
+				break;
+			case "review":
+				setReviewStep("queued");
+				setFixStep("failed");
+				setApprovalStep(0);
+				setCiStatus("running");
+				setPullRequestMerged(false);
+				break;
+			case "fix":
+				setFixStep("failed");
+				setApprovalStep(0);
+				setCiStatus("failed");
+				setPullRequestMerged(false);
+				break;
+			case "approve":
+				setApprovalStep(0);
+				setPullRequestMerged(false);
+				break;
+			case "release":
+				// Release is a read-only reveal of the merge rule result. It must not
+				// change CI, approvals, automation settings, or merge state.
+				break;
+		}
+		setChapterRevision((current) => current + 1);
+		setLaunchId((current) => current + 1);
+	}, []);
 
 	const selectChapter = useCallback((nextChapter: JiraGoldenJourneysV3StoryChapter) => {
 		if (nextChapter === chapter) {
-			setChapterRevision((current) => current + 1);
+			restartChapter(nextChapter);
+			return;
 		}
-		// Plan plays the staged Activity reveal (comment → 👀 → Claude → Code Planner).
-		setOrchestrationStep(nextChapter === "plan" ? "agents-working" : "idle");
-		// Build stages former Handoff work from Plan end:
-		// ready (orient) → implement → verify/screenshot → complete.
-		setBuildStep(nextChapter === "build" ? "ready" : "complete");
+
+		// Navigating back to an authored pre-merge chapter invalidates later
+		// workflow evidence. Forward navigation preserves the facts already earned.
+		if (nextChapter === "build" || nextChapter === "review") {
+			restartChapter(nextChapter);
+		} else if (nextChapter === "fix") {
+			setFixStep(ciStatus === "passed" ? "complete" : "failed");
+			setApprovalStep(0);
+			if (ciStatus !== "passed") setCiStatus("failed");
+			setPullRequestMerged(false);
+		} else if (nextChapter === "approve" && chapter !== "approve") {
+			setApprovalStep(0);
+			setPullRequestMerged(false);
+		}
+
 		setChapter(nextChapter);
-		setDescriptionSkillPhase(nextChapter === "intake" ? "idle" : "applied");
-		// Approve lands ready-to-merge: teammate approvals + CI are already green.
-		setPullRequestApprovalStates(nextChapter === "approve"
-			? { [JIRA_GOLDEN_JOURNEYS_V3_PULL_REQUEST_IDENTITY]: "approved" }
-			: {});
-		setReviewStep("queued");
-		// Fix continues from Review's failed PR until PullRequestFix submit advances it.
-		setFixStep("failed");
-		setFixAgentId(DEFAULT_PULL_REQUEST_FIX_AGENT_ID);
 		setLaunchId((current) => current + 1);
 		setBoardColumns((current) => createJiraGoldenJourneysV3BoardColumns(nextChapter, current));
-	}, [chapter]);
+	}, [chapter, ciStatus, restartChapter]);
 
 	const resetCurrentChapter = useCallback(() => {
-		selectChapter(chapter);
-	}, [chapter, selectChapter]);
+		restartChapter(chapter);
+	}, [chapter, restartChapter]);
 
-	const invokeDescriptionSkill = useCallback(() => {
-		if (
-			chapter !== "intake"
-			|| descriptionSkillPhase === "running"
-			|| descriptionSkillPhase === "awaiting-confirmation"
-			|| descriptionSkillPhase === "applied"
-		) return;
-		setDescriptionSkillPhase("running");
-		setLaunchId((current) => current + 1);
-	}, [chapter, descriptionSkillPhase]);
-
-	const applyDescriptionSuggestion = useCallback(() => {
-		if (chapter !== "intake" || descriptionSkillPhase !== "awaiting-confirmation") return;
-		setDescriptionSkillPhase("applied");
-		setLaunchId((current) => current + 1);
-	}, [chapter, descriptionSkillPhase]);
-
-	const dismissDescriptionSuggestion = useCallback(() => {
-		if (chapter !== "intake" || descriptionSkillPhase !== "awaiting-confirmation") return;
-		setDescriptionSkillPhase("dismissed");
-		setLaunchId((current) => current + 1);
-	}, [chapter, descriptionSkillPhase]);
-
-	const descriptionImproved = descriptionSkillPhase === "applied";
-
-	const startOrchestration = useCallback(() => {
-		if (chapter !== "intake" || !descriptionImproved || orchestrationStep !== "idle") return;
-		setChapter("plan");
-		setOrchestrationStep("agents-working");
-		setBuildStep("complete");
-		setPullRequestApprovalStates({});
+	const resetStory = useCallback(() => {
+		setChapter("terminal");
+		setChapterRevision((current) => current + 1);
 		setReviewStep("queued");
 		setFixStep("failed");
-		setFixAgentId(DEFAULT_PULL_REQUEST_FIX_AGENT_ID);
+		setApprovalStep(0);
+		setCiStatus("running");
+		setAutoFixEnabled(false);
+		setAutoMergeEnabled(false);
+		setPullRequestMerged(false);
 		setLaunchId((current) => current + 1);
-		setBoardColumns((current) => createJiraGoldenJourneysV3BoardColumns("plan", current));
-	}, [chapter, descriptionImproved, orchestrationStep]);
+		setBoardColumns(createJiraGoldenJourneysV3BoardColumns("terminal"));
+	}, []);
 
-	useEffect(() => {
-		if (!active || chapter !== "intake" || descriptionSkillPhase !== "running") return undefined;
-		const timeoutId = window.setTimeout(() => {
-			setDescriptionSkillPhase("awaiting-confirmation");
-			setLaunchId((current) => current + 1);
-		}, DESCRIPTION_SKILL_GENERATION_DELAY_MS);
-		return () => window.clearTimeout(timeoutId);
-	}, [active, chapter, descriptionSkillPhase]);
+	const toggleAutoFix = useCallback(() => {
+		setAutoFixEnabled((current) => !current);
+	}, []);
 
-	// These timers reveal authored state snapshots rather than animating layout.
-	// Plan orchestration stops at "complete" — Build only starts when the user
-	// selects that chapter manually. Review CI keeps the same causal frames, but
-	// reduced motion jumps straight to the final failed checks. Fix waits for
-	// PullRequestFix submit, then stages repairing → green (reduced motion
-	// jumps to green).
-	useEffect(() => {
-		if (!active || orchestrationStep === "idle" || orchestrationStep === "complete") {
-			return undefined;
-		}
-
-		const transition = ORCHESTRATION_SEQUENCE[orchestrationStep];
-		const timeoutId = window.setTimeout(() => {
-			setOrchestrationStep(transition.next);
-			setLaunchId((current) => current + 1);
-		}, transition.delayMs);
-
-		return () => window.clearTimeout(timeoutId);
-	}, [active, orchestrationStep]);
-
-	useEffect(() => {
-		if (!active || chapter !== "build" || buildStep === "complete") return undefined;
-		const transition = BUILD_SEQUENCE[buildStep];
-		const timeoutId = window.setTimeout(() => {
-			setBuildStep(transition.next);
-			setLaunchId((current) => current + 1);
-		}, transition.delayMs);
-		return () => window.clearTimeout(timeoutId);
-	}, [active, buildStep, chapter]);
+	const toggleAutoMerge = useCallback(() => {
+		setAutoMergeEnabled((current) => !current);
+	}, []);
 
 	useEffect(() => {
 		if (!active || chapter !== "review" || reviewStep === "failed") return undefined;
 		if (shouldReduceMotion) {
 			setReviewStep("failed");
+			setCiStatus("failed");
 			setLaunchId((current) => current + 1);
 			return undefined;
 		}
 		const transition = REVIEW_SEQUENCE[reviewStep];
 		const timeoutId = window.setTimeout(() => {
 			setReviewStep(transition.next);
+			if (transition.next === "failed") setCiStatus("failed");
 			setLaunchId((current) => current + 1);
 		}, transition.delayMs);
 		return () => window.clearTimeout(timeoutId);
 	}, [active, chapter, reviewStep, shouldReduceMotion]);
 
 	useEffect(() => {
+		if (!active || chapter !== "fix" || !autoFixEnabled || fixStep !== "failed") return;
+		setFixStep(shouldReduceMotion ? "complete" : "repairing");
+		setCiStatus(shouldReduceMotion ? "passed" : "repairing");
+		setLaunchId((current) => current + 1);
+	}, [active, autoFixEnabled, chapter, fixStep, shouldReduceMotion]);
+
+	useEffect(() => {
 		if (!active || chapter !== "fix" || fixStep !== "repairing") return undefined;
-		if (shouldReduceMotion) {
-			setFixStep("complete");
-			setLaunchId((current) => current + 1);
-			return undefined;
-		}
 		const transition = FIX_SEQUENCE[fixStep];
 		const timeoutId = window.setTimeout(() => {
 			setFixStep(transition.next);
+			setCiStatus("passed");
 			setLaunchId((current) => current + 1);
 		}, transition.delayMs);
 		return () => window.clearTimeout(timeoutId);
-	}, [active, chapter, fixStep, shouldReduceMotion]);
+	}, [active, chapter, fixStep]);
 
-	const approvePullRequest = useCallback((identity: string) => {
-		if (
-			chapter !== "approve"
-			|| identity !== JIRA_GOLDEN_JOURNEYS_V3_PULL_REQUEST_IDENTITY
-			|| pullRequestApprovalStates[identity] !== "available"
-		) return;
-		setPullRequestApprovalStates((current) => ({ ...current, [identity]: "approved" }));
-		// Rehydrate the work-item session snapshot so Claude resolves its
-		// waiting-on-user state. PR detail owns Guide progress by stable identity,
-		// so this refresh updates approval evidence without remounting the Guide.
-		setLaunchId((current) => current + 1);
-	}, [chapter, pullRequestApprovalStates]);
+	useEffect(() => {
+		if (!active || chapter !== "approve" || ciStatus !== "passed" || approvalStep === 2) {
+			return undefined;
+		}
+		if (shouldReduceMotion) {
+			setApprovalStep(2);
+			setLaunchId((current) => current + 1);
+			return undefined;
+		}
+		const timeoutId = window.setTimeout(() => {
+			setApprovalStep((current) => current === 0 ? 1 : 2);
+			setLaunchId((current) => current + 1);
+		}, APPROVAL_DELAY_MS);
+		return () => window.clearTimeout(timeoutId);
+	}, [active, approvalStep, chapter, ciStatus, shouldReduceMotion]);
 
-	const fixPullRequestCheck = useCallback((
-		identity: string,
-		agentId: PullRequestFixAgentId = DEFAULT_PULL_REQUEST_FIX_AGENT_ID,
-	) => {
-		if (
-			chapter !== "fix"
-			|| fixStep !== "failed"
-			|| identity !== JIRA_GOLDEN_JOURNEYS_V3_PULL_REQUEST_IDENTITY
-		) return;
-		setFixAgentId(agentId);
-		// Reduced motion skips the repairing beat and lands on green checks.
-		setFixStep(shouldReduceMotion ? "complete" : "repairing");
-		setLaunchId((current) => current + 1);
-	}, [chapter, fixStep, shouldReduceMotion]);
+	const mergeGate = useMemo(
+		() => evaluateJiraGoldenJourneysV3MergeGate(ciStatus, approvalStep),
+		[approvalStep, ciStatus],
+	);
+
+	useEffect(() => {
+		if (!active || !autoMergeEnabled || !mergeGate.canMerge || pullRequestMerged) return undefined;
+		if (shouldReduceMotion) {
+			setPullRequestMerged(true);
+			setLaunchId((current) => current + 1);
+			return undefined;
+		}
+		const timeoutId = window.setTimeout(() => {
+			setPullRequestMerged(true);
+			setLaunchId((current) => current + 1);
+		}, AUTO_MERGE_DELAY_MS);
+		return () => window.clearTimeout(timeoutId);
+	}, [active, autoMergeEnabled, mergeGate.canMerge, pullRequestMerged, shouldReduceMotion]);
 
 	const updateBoardColumns = useCallback((nextColumns: readonly JiraKanbanColumnData[]) => {
 		const storyColumn = getJiraGoldenJourneysV3StoryColumn(nextColumns);
 		const nextChapter = storyColumn
 			? getJiraGoldenJourneysV3StoryChapterForStatus(storyColumn)
 			: null;
-		const resolvedChapter = nextChapter ?? chapter;
+		setBoardColumns(createJiraGoldenJourneysV3BoardColumns(nextChapter ?? chapter, nextColumns));
+		if (nextChapter && nextChapter !== chapter) selectChapter(nextChapter);
+	}, [chapter, selectChapter]);
 
-		setBoardColumns(createJiraGoldenJourneysV3BoardColumns(resolvedChapter, nextColumns));
-		if (nextChapter && nextChapter !== chapter) {
-			setOrchestrationStep(nextChapter === "plan" ? "agents-working" : "idle");
-			setBuildStep(nextChapter === "build" ? "ready" : "complete");
-			setChapter(nextChapter);
-			setDescriptionSkillPhase(nextChapter === "intake" ? "idle" : "applied");
-			// Approve lands ready-to-merge (same default as the chapter picker).
-			setPullRequestApprovalStates(nextChapter === "approve"
-				? { [JIRA_GOLDEN_JOURNEYS_V3_PULL_REQUEST_IDENTITY]: "approved" }
-				: {});
-			setReviewStep("queued");
-			setFixStep("failed");
-			setFixAgentId(DEFAULT_PULL_REQUEST_FIX_AGENT_ID);
-			setLaunchId((current) => current + 1);
-		}
-	}, [chapter]);
-
-	const pullRequestApproved =
-		pullRequestApprovalStates[JIRA_GOLDEN_JOURNEYS_V3_PULL_REQUEST_IDENTITY] === "approved";
+	const approvals = useMemo(
+		() => createJiraGoldenJourneysV3ReviewerApprovals(approvalStep),
+		[approvalStep],
+	);
+	const mergeStatus = resolveJiraGoldenJourneysV3MergeStatus({
+		approvalCount: approvalStep,
+		autoMergeEnabled,
+		ciStatus,
+		pullRequestMerged,
+	});
+	const stateOptions = useMemo<JiraGoldenJourneysV3StoryStateOptions>(() => ({
+		approvalStep,
+		autoFixEnabled,
+		autoMergeEnabled,
+		ciStatus,
+		fixStep,
+		pullRequestMerged,
+		reviewStep,
+	}), [
+		approvalStep,
+		autoFixEnabled,
+		autoMergeEnabled,
+		ciStatus,
+		fixStep,
+		pullRequestMerged,
+		reviewStep,
+	]);
 	const initialState = useMemo(
-		() => orchestrationStep === "idle"
-			? createJiraGoldenJourneysV3StoryState(chapter, {
-				buildStep: chapter === "build" ? buildStep : undefined,
-				descriptionSkillPhase,
-				fixAgentId: chapter === "fix" ? fixAgentId : undefined,
-				fixStep: chapter === "fix" ? fixStep : undefined,
-				pullRequestApproved,
-				reviewStep,
-			})
-			: createJiraGoldenJourneysV3OrchestrationState(orchestrationStep),
-		[
-			buildStep,
-			chapter,
-			descriptionSkillPhase,
-			fixAgentId,
-			fixStep,
-			orchestrationStep,
-			pullRequestApproved,
-			reviewStep,
-		],
+		() => createJiraGoldenJourneysV3StoryState(chapter, stateOptions),
+		[chapter, stateOptions],
+	);
+	const workItem = useMemo(
+		() => createJiraGoldenJourneysV3StoryWorkItem(chapter, stateOptions),
+		[chapter, stateOptions],
 	);
 	const sections = useMemo(() => createJiraGoldenJourneysV3WorkspaceSections(chapter), [chapter]);
-	const workItem = useMemo(
-		() => createJiraGoldenJourneysV3StoryWorkItem(chapter, { descriptionSkillPhase }),
-		[chapter, descriptionSkillPhase],
-	);
 
 	return {
-		applyDescriptionSuggestion,
-		approvePullRequest,
+		approvalCount: approvalStep,
+		approvalStep,
+		approvals,
+		autoFixEnabled,
+		autoMergeEnabled,
 		boardColumns,
-		buildStep,
 		chapter,
 		chapterRevision,
-		descriptionSkillPhase,
-		descriptionImproved,
-		dismissDescriptionSuggestion,
-		fixPullRequestCheck,
+		ciStatus,
 		fixStep,
 		initialState,
-		invokeDescriptionSkill,
 		launchId,
-		orchestrationStep,
-		pullRequestApprovalStates,
+		mergeGate,
+		mergeStatus,
+		pullRequestMerged,
+		requiredApprovalCount: JIRA_GOLDEN_JOURNEYS_V3_REQUIRED_APPROVAL_COUNT,
 		resetCurrentChapter,
+		resetStory,
 		reviewStep,
 		sections,
 		selectChapter,
-		startOrchestration,
+		setAutoFixEnabled,
+		setAutoMergeEnabled,
+		toggleAutoFix,
+		toggleAutoMerge,
 		updateBoardColumns,
 		workItem,
 	};
