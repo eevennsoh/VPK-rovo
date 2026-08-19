@@ -66,7 +66,7 @@ export function WorkItemStage({
 	controller,
 }: Readonly<{ controller: WorkItemStageController }>): React.ReactElement {
 	return (
-		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 items-start justify-center overflow-hidden px-8 pt-4 pb-4">
+		<div className="relative left-1/2 flex h-full min-h-0 w-[100cqw] -translate-x-1/2 items-start justify-center overflow-hidden px-8 pt-4 pb-4">
 			<ExperimentalJiraWorkItem
 				key={controller.launchId}
 				initialPreset={controller.preset}

@@ -30,8 +30,8 @@ import { AsxRovoOverlay } from "./jira-golden-journeys-v0-rovo-overlay";
  * stage when the Kanban card is selected.
  *
  * Layout intent: the Gallery viewport is the container. The board breaks out of
- * the stage's centered `max-w-3xl` column to span the full viewport width
- * (`left-1/2 -translate-x-1/2 w-screen`) and fills the available stage height.
+ * the stage's centered `max-w-3xl` column to span the full Gallery width
+ * (`left-1/2 -translate-x-1/2 w-[100cqw]`) and fills the available stage height.
  * The pinned dock floats over the board's lower portion via its backdrop blur
  * (the gallery's "content flows under the dock" effect). Columns flow to fill
  * the width and scroll their own cards.
@@ -116,7 +116,7 @@ export function KanbanStage(): React.ReactElement {
 	}, [pendingChatQuestion]);
 
 	return (
-		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 flex-col px-8 [&>div]:flex [&>div]:min-h-0 [&>div]:flex-col [&>div>section]:flex [&>div>section]:min-h-0">
+		<div className="relative left-1/2 flex h-full min-h-0 w-[100cqw] -translate-x-1/2 flex-col px-8 [&>div]:flex [&>div]:min-h-0 [&>div]:flex-col [&>div>section]:flex [&>div>section]:min-h-0">
 			<JiraKanbanBoardHeader
 				assignees={assignees}
 				onSelectedAssigneeIdsChange={handleAssigneeFilterChange}

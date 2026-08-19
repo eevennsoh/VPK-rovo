@@ -22,7 +22,7 @@ export function ForYouStageLayout({
 	tabs,
 }: Readonly<ForYouStageLayoutProps>): React.ReactElement {
 	return (
-		<div className="relative left-1/2 h-full min-h-0 w-screen -translate-x-1/2 overflow-y-auto">
+		<div className="relative left-1/2 h-full min-h-0 w-[100cqw] -translate-x-1/2 overflow-y-auto">
 			<div className={cn("mx-auto w-full max-w-3xl px-6", dockOpen ? "pb-56" : "pb-8")}>
 				<JiraForYouPage onItemClick={onItemClick} onView={onView} sections={sections} tabs={tabs} />
 			</div>

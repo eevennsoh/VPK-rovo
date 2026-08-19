@@ -56,7 +56,7 @@ export function TerminalStage({
 	return (
 		// Use semantic surfaces throughout the frame so the route-owned Terminal
 		// theme controls the demo itself as well as the surrounding Gallery chrome.
-		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 items-center justify-center px-8">
+		<div className="relative left-1/2 flex h-full min-h-0 w-[100cqw] -translate-x-1/2 items-center justify-center px-8">
 			<div
 				role={awaitingClick ? "button" : undefined}
 				tabIndex={awaitingClick ? 0 : undefined}

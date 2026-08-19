@@ -214,7 +214,22 @@ export function Gallery({
 	}, [shouldReduceMotion, visualState.exiting]);
 
 	return (
-		<div className={cn("flex h-dvh min-h-0 flex-col overflow-hidden", className)}>
+		// `h-full` (never a viewport-height class) so the Gallery fills whatever box it
+		// is mounted in — the standalone route sizes that box to the viewport, while the
+		// catalog demo shell sizes it to a fixed preview height. Consumers must give this
+		// element a parent with a definite height.
+		//
+		// `@container/gallery-stage` publishes that box width as the container-query
+		// basis for full-bleed stages, which break out of GallerySelectedStage's
+		// `max-w-3xl` column with `left-1/2 w-[100cqw] -translate-x-1/2`. Using `100cqw`
+		// rather than `100vw` keeps the breakout the width of the Gallery instead of the
+		// window, so stages stay inside the demo shell instead of being clipped by it.
+		<div
+			className={cn(
+				"@container/gallery-stage flex h-full min-h-0 flex-col overflow-hidden",
+				className,
+			)}
+		>
 			<GalleryToggle
 				title={title}
 				centerContent={topBarCenter}

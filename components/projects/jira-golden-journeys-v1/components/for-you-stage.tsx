@@ -34,7 +34,7 @@ export function JiraShellStage({
 	defaultSidebarOpen,
 }: Readonly<JiraShellStageProps>): React.ReactElement {
 	return (
-		<div className="relative left-1/2 h-full min-h-0 w-screen -translate-x-1/2 overflow-hidden">
+		<div className="relative left-1/2 h-full min-h-0 w-[100cqw] -translate-x-1/2 overflow-hidden">
 			<JiraForYouShell
 				defaultSelectedSidebarItem={defaultSelectedSidebarItem}
 				defaultSidebarOpen={defaultSidebarOpen}
