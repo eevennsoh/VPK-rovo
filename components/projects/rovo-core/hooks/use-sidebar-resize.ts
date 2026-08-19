@@ -78,6 +78,14 @@ export function useSidebarResize({
 	const willCollapseRef = useRef(false);
 	const collapseThreshold = minWidth - COLLAPSE_THRESHOLD_OFFSET;
 
+	useEffect(() => {
+		setSidebarWidth((currentWidth) => {
+			const nextWidth = clamp(currentWidth, minWidth, maxWidth);
+			lastValidWidthRef.current = nextWidth;
+			return nextWidth;
+		});
+	}, [maxWidth, minWidth]);
+
 	const onResizeHandlePointerEnter = useCallback(() => {
 		setIsResizeHandleHovered(true);
 	}, []);

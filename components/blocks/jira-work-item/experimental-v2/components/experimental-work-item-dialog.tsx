@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, type ReactNode } from "react";
+import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { Dialog } from "@base-ui/react/dialog";
 
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
@@ -27,6 +27,7 @@ interface ExperimentalWorkItemDialogProps {
 	sidebarResizeHandle?: ReactNode;
 	sidebarResizing: boolean;
 	sidebarWidth: number;
+	onBodyWidthChange?: (width: number) => void;
 	pullRequestEntries?: readonly JiraActivityEventEntry[];
 }
 
@@ -58,8 +59,10 @@ export function ExperimentalWorkItemDialog({
 	sidebarResizeHandle,
 	sidebarResizing,
 	sidebarWidth,
+	onBodyWidthChange,
 	pullRequestEntries,
 }: Readonly<ExperimentalWorkItemDialogProps>) {
+	const dialogBodyRef = useRef<HTMLDivElement | null>(null);
 	const description = `Details, agent sessions, and activity for work item ${workItemCode}.`;
 	const fillsInlineContainer = presentation === "inline" && inlineSurface !== "card";
 	const isFlushInlineSurface = presentation === "inline" && inlineSurface === "fill";
@@ -68,8 +71,24 @@ export function ExperimentalWorkItemDialog({
 	const sidePanelStyle = {
 		"--work-item-side-panel-width": `${sidebarWidth}px`,
 	} as CSSProperties;
+	useLayoutEffect(() => {
+		const dialogBody = dialogBodyRef.current;
+		if (!dialogBody || !onBodyWidthChange) {
+			return;
+		}
+
+		const syncBodyWidth = () => onBodyWidthChange(dialogBody.clientWidth);
+		syncBodyWidth();
+		if (typeof ResizeObserver === "undefined") {
+			return;
+		}
+		const resizeObserver = new ResizeObserver(syncBodyWidth);
+		resizeObserver.observe(dialogBody);
+		return () => resizeObserver.disconnect();
+	}, [onBodyWidthChange]);
 	const content = (
 		<div
+			ref={dialogBodyRef}
 			className="@container/workitemdialog relative grid h-full min-h-0 min-w-0 grid-cols-[minmax(0,1fr)] overflow-hidden"
 			// Positioned ancestor for surfaces that must sit inside the dialog
 			// rather than the viewport (e.g. the embedded Rovo launcher), which

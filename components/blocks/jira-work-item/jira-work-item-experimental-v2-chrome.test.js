@@ -281,7 +281,7 @@ test("experimental v2 scopes ContextResources to the left column and the Details
 	);
 	assert.match(
 		readBlockFile("experimental-v2/lib/layout-constants.ts"),
-		/export const METADATA_PANEL_DEFAULT_WIDTH_PX = 440;[\s\S]*export const METADATA_PANEL_MIN_WIDTH_PX = 440;[\s\S]*export const METADATA_PANEL_MAX_WIDTH_PX = 720;/u,
+		/export const METADATA_PANEL_DEFAULT_WIDTH_PX = 440;[\s\S]*export const METADATA_PANEL_MIN_WIDTH_PX = 440;[\s\S]*export const METADATA_PANEL_FALLBACK_MAX_WIDTH_PX = 720;[\s\S]*export const DESCRIPTION_PANEL_MIN_WIDTH_PX = METADATA_PANEL_MIN_WIDTH_PX;[\s\S]*return Math\.max\(METADATA_PANEL_MIN_WIDTH_PX, dialogWidth - DESCRIPTION_PANEL_MIN_WIDTH_PX\);/u,
 	);
 	assert.match(
 		layoutSource,

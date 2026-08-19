@@ -245,7 +245,7 @@ test("experimental v2 metadata panel exposes a notch-only resize handle and chat
 
 	assert.match(
 		compositionSource,
-		/useSidebarResize\(\{[\s\S]*defaultWidth: METADATA_PANEL_DEFAULT_WIDTH_PX,[\s\S]*direction: "rtl",[\s\S]*maxWidth: METADATA_PANEL_MAX_WIDTH_PX,[\s\S]*minWidth: METADATA_PANEL_MIN_WIDTH_PX,[\s\S]*minWidthResistance: true,[\s\S]*<ExperimentalWorkItemLayout[\s\S]*metadataPanelResizing=\{metadataPanelResize\.isResizing\}[\s\S]*metadataPanelWidth=\{metadataPanelResize\.sidebarWidth\}/u,
+		/setMetadataPanelMaxWidth\(resolveMetadataPanelMaxWidth\(width\)\)[\s\S]*useSidebarResize\(\{[\s\S]*defaultWidth: METADATA_PANEL_DEFAULT_WIDTH_PX,[\s\S]*direction: "rtl",[\s\S]*maxWidth: metadataPanelMaxWidth,[\s\S]*minWidth: METADATA_PANEL_MIN_WIDTH_PX,[\s\S]*minWidthResistance: true,[\s\S]*onBodyWidthChange=\{handleDialogBodyWidthChange\}[\s\S]*<ExperimentalWorkItemLayout[\s\S]*metadataPanelResizing=\{metadataPanelResize\.isResizing\}[\s\S]*metadataPanelWidth=\{metadataPanelResize\.sidebarWidth\}/u,
 	);
 	assert.match(
 		compositionSource,
