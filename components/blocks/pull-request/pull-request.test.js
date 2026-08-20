@@ -26,13 +26,14 @@ const REGISTRY_SOURCE = readWebsiteRegistrySource();
 
 test("PullRequest exposes the compact card props contract", () => {
 	assert.match(TYPES_SOURCE, /export type PullRequestStatus = "Open" \| "Merged"/u);
+	assert.match(TYPES_SOURCE, /export type PullRequestVariant = "compact" \| "spacious"/u);
 	assert.match(
 		TYPES_SOURCE,
 		/export interface PullRequestAuthor \{[\s\S]*name: string;[\s\S]*avatarUrl\?: string;/u,
 	);
 	assert.match(
 		TYPES_SOURCE,
-		/export interface PullRequestProps \{[\s\S]*number: number;[\s\S]*title: string;[\s\S]*status: PullRequestStatus;[\s\S]*author\?: PullRequestAuthor;[\s\S]*repository\?: string;[\s\S]*branch\?: string;[\s\S]*targetBranch\?: string;[\s\S]*additions: number;[\s\S]*deletions: number;[\s\S]*timestampMs\?: number;[\s\S]*relativeTime\?: string;[\s\S]*selected\?: boolean;[\s\S]*onActivate\?: \(\) => void;/u,
+		/export interface PullRequestProps \{[\s\S]*variant\?: PullRequestVariant;[\s\S]*number: number;[\s\S]*title: string;[\s\S]*status: PullRequestStatus;[\s\S]*author\?: PullRequestAuthor;[\s\S]*repository\?: string;[\s\S]*branch\?: string;[\s\S]*targetBranch\?: string;[\s\S]*additions: number;[\s\S]*deletions: number;[\s\S]*filesChanged\?: number;[\s\S]*timestampMs\?: number;[\s\S]*relativeTime\?: string;[\s\S]*selected\?: boolean;[\s\S]*onActivate\?: \(\) => void;/u,
 	);
 });
 
@@ -46,7 +47,8 @@ test("PullRequest card reuses Avatar, Tag, Lozenge, BrandLogoMark, and ArrowRigh
 		COMPONENT_SOURCE,
 		/BrandLogoMark[\s\S]*className="dark:invert \[\[data-color-mode=dark\]_&\]:invert"[\s\S]*name="github"/u,
 	);
-	assert.match(COMPONENT_SOURCE, /size="sm"/u);
+	// Compact keeps the 24px avatar by default; spacious opts down to 16px.
+	assert.match(COMPONENT_SOURCE, /function PullRequestAuthorAvatar\([\s\S]*size = "sm",/u);
 	assert.match(COMPONENT_SOURCE, /text-text-success">\+\{additions\}/u);
 	assert.match(COMPONENT_SOURCE, /text-text-danger">-\{deletions\}/u);
 	assert.match(
@@ -98,10 +100,44 @@ test("PullRequest selection styling works for read-only and interactive cards", 
 	assert.doesNotMatch(COMPONENT_SOURCE, /bg-\[#|text-\[#|purple-500|Open preview modal/u);
 });
 
+test("PullRequest spacious variant rearranges the same data into three rows", () => {
+	// Density is opt-in: existing compact callsites keep working untouched.
+	assert.match(COMPONENT_SOURCE, /variant = "compact"/u);
+	assert.match(COMPONENT_SOURCE, /const isSpacious = variant === "spacious"/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/isSpacious\s*\?\s*"flex-col items-stretch gap-2 rounded-xl border border-border p-3"/u,
+	);
+	assert.match(COMPONENT_SOURCE, /data-variant=\{variant\}/u);
+	// Both densities render through one shared set of leaf parts.
+	assert.match(COMPONENT_SOURCE, /function PullRequestCompactBody/u);
+	assert.match(COMPONENT_SOURCE, /function PullRequestSpaciousBody/u);
+	assert.match(COMPONENT_SOURCE, /function PullRequestStatusLozenge/u);
+	assert.match(COMPONENT_SOURCE, /function PullRequestRepositoryTag/u);
+	// Spacious leads with a glyph-bearing lozenge and closes with an author footer.
+	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/pull-request"/u);
+	assert.match(COMPONENT_SOURCE, /<PullRequestStatusLozenge status=\{status\} withIcon \/>/u);
+	assert.match(COMPONENT_SOURCE, /PullRequestAuthorAvatar author=\{author\} size="xs"/u);
+	assert.match(COMPONENT_SOURCE, /Created by \{author\.name\}/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/\{filesChanged\} \{filesChanged === 1 \? "file" : "files"\}/u,
+	);
+});
+
 test("Pull Request demos include source → target branch paths", () => {
 	assert.match(DATA_SOURCE, /targetBranch: "main"/u);
 	assert.match(DATA_SOURCE, /branch: "rovo\/rfp-103-response-validation"/u);
+	assert.match(DATA_SOURCE, /filesChanged: 6/u);
 	assert.doesNotMatch(DATA_SOURCE, /number:\s*902/u);
+});
+
+test("Pull Request demo page offers a compact / spacious density toggle", () => {
+	assert.match(PAGE_SOURCE, /useState<PullRequestVariant>\("compact"\)/u);
+	assert.match(PAGE_SOURCE, /<ToggleGroupItem value="compact">Compact<\/ToggleGroupItem>/u);
+	assert.match(PAGE_SOURCE, /<ToggleGroupItem value="spacious">Spacious<\/ToggleGroupItem>/u);
+	assert.match(PAGE_SOURCE, /variant=\{variant\}/u);
+	assert.match(INDEX_SOURCE, /PullRequestVariant/u);
 });
 
 test("Pull Request demo page centers the card list in the preview shell", () => {
