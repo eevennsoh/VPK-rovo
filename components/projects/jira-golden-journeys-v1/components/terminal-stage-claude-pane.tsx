@@ -7,6 +7,7 @@ import {
 	type TerminalBeatStep,
 	type TerminalPaneState,
 } from "../lib/terminal-demo-state";
+import type { TerminalStoryDefinition } from "../lib/terminal-story-definition";
 import { BlinkCursor, StateGlyph, TerminalLineView } from "./terminal-stage-chrome";
 
 // ---------------------------------------------------------------------------
@@ -64,12 +65,14 @@ interface TerminalStageClaudePaneProps {
 	pane: TerminalPaneState;
 	activeStep: TerminalBeatStep | null;
 	revealCount: number;
+	story: TerminalStoryDefinition;
 }
 
 export function TerminalStageClaudePane({
 	pane,
 	activeStep,
 	revealCount,
+	story,
 }: Readonly<TerminalStageClaudePaneProps>): React.ReactElement {
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const isTyping = activeStep?.kind === "type" && activeStep.pane === "right";
@@ -93,7 +96,7 @@ export function TerminalStageClaudePane({
 					<div className="min-w-0">
 						<p className="text-[#D97757]">✻ Welcome to Claude Code!</p>
 						<p className="text-text-subtlest">Claude Code · /help for help</p>
-						<p className="text-text-subtlest">cwd: ~/dev/jira-golden-journeys-v1</p>
+						<p className="text-text-subtlest">cwd: {story.claude.cwd}</p>
 					</div>
 				</div>
 				<div className="flex flex-col gap-1">
