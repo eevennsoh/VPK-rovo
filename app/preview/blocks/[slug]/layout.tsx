@@ -6,6 +6,7 @@ const CHAT_CAPABLE_BLOCK_PREVIEWS = new Set([
 	"jira-work-item-demo-standard",
 	"jira-work-item-demo-experimental",
 	"jira-work-item-demo-experimental-v2",
+	"jira-work-item-demo-experimental-v3",
 	"terminal-switch",
 ]);
 

@@ -1,7 +1,7 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const JIRA_WORK_ITEM_DETAIL: ComponentDetail = {
-	description: "Jira work-item surface with a standard current-state variant, an opt-in experimental variant that adds work-item-scoped agent/chat sessions, empty/filled context, and concurrent mock agents, plus an experimental v2 fork of that surface for independent iteration.",
+	description: "Jira work-item surface with a standard current-state variant, an opt-in experimental variant that adds work-item-scoped agent/chat sessions, empty/filled context, and concurrent mock agents, plus experimental v2 and v3 forks of that surface for independent iteration.",
 	importStatement: `import JiraWorkItem from "@/components/blocks/jira-work-item";`,
 	usage: `import JiraWorkItem from "@/components/blocks/jira-work-item";
 
@@ -42,6 +42,21 @@ export const JIRA_WORK_ITEM_DETAIL: ComponentDetail = {
 			description: "Experimental v2 seeded with the running preset: several work-item-scoped agents progressing concurrently on a deterministic metronome, with live status pills and progress.",
 			demoSlug: "jira-work-item-demo-experimental-v2-running",
 		},
+		{
+			title: "Experimental v3 · Filled context",
+			description: "Experimental v3 session: a standalone fork of the experimental v2 surface that starts identical to v2 and diverges independently. Shares the session/planner model, owns its own component tree.",
+			demoSlug: "jira-work-item-demo-experimental-v3",
+		},
+		{
+			title: "Experimental v3 · Empty context",
+			description: "Experimental v3 empty-context preset with the same automatic deterministic AI Planner pass, natural-language refinement, and single explicit confirmation action as v2.",
+			demoSlug: "jira-work-item-demo-experimental-v3-empty",
+		},
+		{
+			title: "Experimental v3 · Multiple agents running",
+			description: "Experimental v3 seeded with the running preset: several work-item-scoped agents progressing concurrently on a deterministic metronome, with live status pills and progress.",
+			demoSlug: "jira-work-item-demo-experimental-v3-running",
+		},
 	],
 	props: [
 		{
@@ -57,9 +72,9 @@ export const JIRA_WORK_ITEM_DETAIL: ComponentDetail = {
 		},
 		{
 			name: "variant",
-			type: "\"default\" | \"experimental\" | \"experimental-v2\"",
+			type: "\"default\" | \"experimental\" | \"experimental-v2\" | \"experimental-v3\"",
 			default: "\"default\"",
-			description: "Opt-in layout variation. The default variant keeps the current Jira sessions surface; experimental-v2 is an independent fork of the experimental surface.",
+			description: "Opt-in layout variation. The default variant keeps the current Jira sessions surface; experimental-v2 is an independent fork of the experimental surface, and experimental-v3 is an independent fork of v2.",
 		},
 		{
 			name: "initialExperimentalPreset",
