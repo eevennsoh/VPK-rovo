@@ -713,6 +713,7 @@ function resolvePullRequestProvider(url: string | undefined): PullRequestProvide
 function resolveGuidedReviewActivity(
 	checks: readonly PullRequestCheck[],
 	reviewDecision: PullRequestReviewDecision,
+	reviewers: readonly PullRequestReviewer[],
 ): readonly PullRequestActivity[] {
 	const passed = checks.filter((check) => check.status === "passed").length;
 	const checkActivityTemplate = GUIDED_REVIEW_ACTIVITY.find(
@@ -788,12 +789,12 @@ function resolveGuidedReviewActivity(
 	const fixedActivity = fixPushActivity
 		? [...baseActivity, ...fixedReviewActivity, fixPushActivity, checkActivity]
 		: [...baseActivity, ...fixedReviewActivity, checkActivity];
-	if (reviewDecision !== "approved") return fixedActivity;
-
 	const approvalActivity = GUIDED_REVIEW_ACTIVITY.filter((activity) => (
-		activity.id === "priya-review"
-		|| activity.id === "jordan-review"
-		|| activity.kind === "ready-to-merge"
+		(activity.id === "priya-review"
+			&& reviewers.some((reviewer) => reviewer.id === "priya-narayanan" && reviewer.status === "approved"))
+		|| (activity.id === "jordan-review"
+			&& reviewers.some((reviewer) => reviewer.id === "jordan-lee" && reviewer.status === "approved"))
+		|| (activity.kind === "ready-to-merge" && reviewDecision === "approved")
 	));
 	return [...fixedActivity, ...approvalActivity];
 }
@@ -845,6 +846,9 @@ export function resolvePullRequestDetailData(
 	const checks = pullRequest.checks ?? (isGuidedReview ? GUIDED_REVIEW_CHECKS : []);
 	const guidedReview = isGuidedReview ? resolveGuidedReview(checks) : null;
 	const reviewDecision = pullRequest.reviewDecision ?? (isGuidedReview ? "review-required" : "not-required");
+	const reviewers = isGuidedReview
+		? (pullRequest.reviewers ?? resolveGuidedReviewReviewers(checks, reviewDecision))
+		: [];
 	const mergeState = resolveMergeState(
 		pullRequest.status,
 		pullRequest.mergeState,
@@ -869,7 +873,7 @@ export function resolvePullRequestDetailData(
 		additions: pullRequest.additions,
 		deletions: pullRequest.deletions,
 		provider: resolvePullRequestProvider(url),
-		reviewers: isGuidedReview ? resolveGuidedReviewReviewers(checks, reviewDecision) : [],
+		reviewers,
 		labels: isGuidedReview ? GUIDED_REVIEW_LABELS : [],
 		commits,
 		checks,
@@ -877,7 +881,7 @@ export function resolvePullRequestDetailData(
 		updatedTime: entry.timestamp,
 		reviewDecision,
 		mergeState,
-		activity: isGuidedReview ? resolveGuidedReviewActivity(checks, reviewDecision) : [],
+		activity: isGuidedReview ? resolveGuidedReviewActivity(checks, reviewDecision, reviewers) : [],
 		url,
 		guidedReview,
 	};

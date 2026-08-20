@@ -7,6 +7,7 @@ import { useState } from "react";
 
 import { Gallery, DEMO_GALLERY_ITEMS } from "@/components/blocks/gallery";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -16,10 +17,9 @@ import {
 
 // The Gallery demo doubles as a live reference for the props around the top bar:
 //   - `title`            → the label at the far left of the control row
-//   - `topBarCenter`     → arbitrary compact controls dropped into the exact
-//                          center of the bar (here: a section-jump dropdown with
-//                          prev/next steppers, mirroring how the real
-//                          experiences drive the slot)
+//   - `topBarCenter`     → the full connected step group at large viewports
+//   - `topBarCenterCompact` → a section dropdown with prev/next steppers below
+//                             the large breakpoint
 //   - `showTopBarBorder` → optional 1px semantic divider under the bar; omitted
 //                          here (defaults to false) so the header is borderless
 //   - `stagePosition`    → "center" so a single-line placeholder sits in the
@@ -35,12 +35,46 @@ const DEMO_SECTIONS = [
 ] as const;
 const DEMO_SCREEN_COUNT = DEMO_SECTIONS.reduce((total, section) => total + section.count, 0);
 
+/** Full section treatment used when the Gallery header has enough horizontal room. */
+function DemoSectionControls({
+	index,
+	onIndexChange,
+}: Readonly<{
+	index: number;
+	onIndexChange: (nextIndex: number) => void;
+}>): React.ReactElement {
+	const activeSection = activeSectionIndex(index);
+
+	return (
+		<ButtonGroup
+			aria-label="Open a gallery demo section"
+			className="[&>[data-slot]~[data-slot]]:-ml-px [&>[data-slot]~[data-slot]]:border-l!"
+			variant="connected"
+		>
+			{DEMO_SECTIONS.map((section, sectionIndex) => (
+				<Button
+					aria-pressed={activeSection === sectionIndex}
+					className="aria-pressed:z-10"
+					key={section.label}
+					onClick={() => onIndexChange(section.startIndex)}
+					size="compact"
+					type="button"
+					variant="outline"
+				>
+					{activeSection === sectionIndex ? sectionLabel(index) : section.label}
+				</Button>
+			))}
+		</ButtonGroup>
+	);
+}
+
 /** Position label like `Terminal · 2 of 4`, counted within the active section. */
 function sectionLabel(index: number): string {
 	const section = DEMO_SECTIONS.find(
 		(candidate) => index >= candidate.startIndex && index < candidate.startIndex + candidate.count,
 	);
 	if (!section) return `Screen ${index + 1} of ${DEMO_SCREEN_COUNT}`;
+	if (section.count === 1) return section.label;
 	// U+00B7 MIDDLE DOT between the section name and its position.
 	return `${section.label} \u00b7 ${index - section.startIndex + 1} of ${section.count}`;
 }
@@ -121,8 +155,8 @@ function DemoScreenControls({
 }
 
 export default function Page(): React.ReactElement {
-	// A tiny screen index drives the center-slot controls so the top-bar
-	// dropdown/steppers are live in the demo rather than static decoration.
+	// A tiny screen index drives both responsive center-slot variations so the
+	// full step group and compact dropdown/steppers stay in sync.
 	const [screen, setScreen] = useState(0);
 
 	return (
@@ -133,7 +167,10 @@ export default function Page(): React.ReactElement {
 				items={DEMO_GALLERY_ITEMS}
 				title="Gallery"
 				stagePosition="center"
-				topBarCenter={<DemoScreenControls index={screen} onIndexChange={setScreen} />}
+				topBarCenter={<DemoSectionControls index={screen} onIndexChange={setScreen} />}
+				topBarCenterCompact={(
+					<DemoScreenControls index={screen} onIndexChange={setScreen} />
+				)}
 				renderSelectedItem={(item) => (
 					<h1 className="text-center font-semibold text-4xl tracking-tight text-text sm:text-6xl">
 						{item.title}

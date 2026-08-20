@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { motion } from "motion/react";
 
 import { ROVO_AGENT_ID } from "@/app/data/directory";
 import {
@@ -24,8 +23,6 @@ import {
 } from "@/components/projects/jira-golden-journeys-v0/data/kanban-data";
 import type { UseAutoCycleResult } from "@/components/projects/jira-golden-journeys-v0/hooks/use-auto-cycle";
 import { useAsxAgentChatDemo } from "@/components/projects/jira-golden-journeys-v0/hooks/use-jira-golden-journeys-v0-agent-chat-demo";
-import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import { AsxRovoOverlay } from "./jira-golden-journeys-v0-rovo-overlay";
 
 /**
@@ -45,50 +42,6 @@ import { AsxRovoOverlay } from "./jira-golden-journeys-v0-rovo-overlay";
  * `max-w-3xl` column to span the full viewport and fills the Gallery's available
  * stage height while the pinned dock floats over the lower portion.
  */
-interface CardKanbanControlsProps {
-	controller: UseAutoCycleResult;
-	showProgress?: boolean;
-}
-
-export function CardKanbanControls({
-	controller,
-	showProgress = true,
-}: Readonly<CardKanbanControlsProps>): React.ReactElement {
-	const { activeIndex, setActiveIndex, progress, cycleRunning, pauseHandlers } = controller;
-
-	return (
-		<ButtonGroup
-			variant="connected"
-			{...pauseHandlers}
-		>
-			{ASX_CARD_KANBAN_STATES.map((option, index) => {
-				const isActive = index === activeIndex;
-				const showProgressFill = showProgress && isActive && cycleRunning;
-				return (
-					<Button
-						key={option.value}
-						type="button"
-						variant="outline"
-						size="compact"
-						aria-pressed={isActive}
-						onClick={() => setActiveIndex(index)}
-						className="relative isolate overflow-hidden aria-pressed:-ml-px aria-pressed:border-l! aria-pressed:z-10"
-					>
-						<span className="relative z-[2]">{option.label}</span>
-						{showProgressFill ? (
-							<motion.span
-								aria-hidden
-								className="pointer-events-none absolute inset-0 z-[1] origin-left bg-bg-selected-hovered"
-								style={{ scaleX: progress, willChange: "transform" }}
-							/>
-						) : null}
-					</Button>
-				);
-			})}
-		</ButtonGroup>
-	);
-}
-
 interface CardKanbanStageProps {
 	controller: UseAutoCycleResult;
 }

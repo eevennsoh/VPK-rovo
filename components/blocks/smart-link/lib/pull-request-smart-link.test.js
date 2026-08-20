@@ -4,7 +4,7 @@ const test = require("node:test");
 const esbuild = require("esbuild");
 const { loadCjsModuleFromText } = require(process.cwd() + "/scripts/lib/esbuild-cjs-loader.js");
 
-const HELPER_PATH = path.join(__dirname, "pull-request-smart-link.ts");
+const HELPER_PATH = path.join(__dirname, "pull-request-smart-link.tsx");
 
 let helperPromise;
 function loadHelper() {
@@ -34,21 +34,38 @@ test("toPullRequestSmartLink builds the pull-request SmartLink model", async () 
 		number: 1847,
 		title: "Add guest checkout to the storefront",
 		status: "Open",
+		files: 6,
 		additions: 86,
 		deletions: 21,
 		repository: "eevensoh/vpk-rovo",
+		branch: "feature/shop-4821-guest-checkout",
+		targetBranch: "main",
 		author: { name: "Venn", src: "/avatar-user/venn/venn.png" },
 	});
 
 	assert.equal(item.variant, "pull-request");
+	// The number prefixes the title so every surface — card, flyout, inline chip —
+	// identifies the PR, not just the ones that render the metadata row.
 	assert.equal(item.title, "#1847: Add guest checkout to the storefront");
 	assert.equal(item.href, "https://github.com/eevensoh/vpk-rovo/pull/1847");
 	assert.equal(item.provider.name, "GitHub");
 	assert.deepEqual(item.provider.logo, { kind: "third-party", name: "github" });
-	assert.deepEqual(item.icon, { kind: "third-party", name: "github" });
-	assert.deepEqual(item.status, { label: "Open", variant: "information" });
-	assert.deepEqual(item.codeStats, { additions: 86, deletions: 21 });
-	assert.deepEqual(item.metadata, [{ label: "eevensoh/vpk-rovo" }]);
+	// The front slot is the pull-request glyph; GitHub stays the provider.
+	assert.equal(item.icon.kind, "icon");
+	assert.ok(item.icon.icon, "front slot carries a pull-request glyph");
+	assert.equal(item.status.label, "Open");
+	assert.equal(item.status.variant, "success");
+	// The lozenge trails the title as a bare label, like every other card.
+	assert.equal(item.status.placement, undefined);
+	assert.equal(item.status.icon, undefined);
+	assert.deepEqual(item.codeStats, { files: 6, additions: 86, deletions: 21 });
+	assert.deepEqual(item.branchPath, {
+		branch: "feature/shop-4821-guest-checkout",
+		targetBranch: "main",
+	});
+	// The repo renders as its own provider-logo tag, not a generic metadata pill.
+	assert.equal(item.repository, "eevensoh/vpk-rovo");
+	assert.equal(item.metadata, undefined);
 	assert.deepEqual(item.author, { name: "Venn", src: "/avatar-user/venn/venn.png" });
 	assert.ok(item.actions?.some((action) => action.id === "copy-link"));
 });
@@ -67,7 +84,10 @@ test("toPullRequestSmartLink prefers an explicit href and maps Merged status", a
 	});
 
 	assert.equal(item.href, "https://example.com/pr/9");
-	assert.deepEqual(item.status, { label: "Merged", variant: "discovery" });
+	assert.equal(item.status.label, "Merged");
+	assert.equal(item.status.variant, "discovery");
+	assert.equal(item.status.placement, undefined);
+	assert.equal(item.status.icon, undefined);
 });
 
 test("toPullRequestSmartLink falls back to a hash href without repository", async () => {
@@ -82,5 +102,10 @@ test("toPullRequestSmartLink falls back to a hash href without repository", asyn
 	});
 
 	assert.equal(item.href, "#pull-request-3");
+	// The number already prefixes the title, so a repo-less PR has no context row.
 	assert.equal(item.metadata, undefined);
+	assert.equal(item.repository, undefined);
+	assert.equal(item.branchPath, undefined);
+	assert.equal(item.title, "#3: Draft");
+	assert.equal(item.codeStats.files, undefined);
 });

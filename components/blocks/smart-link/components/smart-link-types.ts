@@ -52,6 +52,12 @@ export interface SmartLinkMetadata {
 	metricVariant?: LozengeProps["variant"];
 }
 
+/** Source branch merging into its target (e.g. `feature/checkout` → `main`). */
+export interface SmartLinkBranchPath {
+	branch?: string;
+	targetBranch?: string;
+}
+
 export interface SmartLinkAvatar {
 	name: string;
 	src?: string;
@@ -99,11 +105,16 @@ export interface SmartLinkItem {
 		options?: ReadonlyArray<{ label: string; variant?: LozengeProps["variant"] }>;
 	};
 	dueDate?: string;
-	/** Diff stats rendered on pull-request flyout cards (+additions / -deletions). */
+	/** Diff stats rendered in their own row beneath the description (N files / +additions / -deletions). */
 	codeStats?: {
+		files?: number;
 		additions: number;
 		deletions: number;
 	};
+	/** Owner/name path rendered as a provider-logo tag (e.g. `eevensoh/vpk-rovo`). */
+	repository?: string;
+	/** Rendered in the metadata row as `source → target` (pull requests). */
+	branchPath?: SmartLinkBranchPath;
 	actions?: ReadonlyArray<SmartLinkAction>;
 }
 

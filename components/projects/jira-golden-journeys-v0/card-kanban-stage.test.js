@@ -4,6 +4,7 @@ const { join } = require("node:path");
 const { test } = require("node:test");
 
 const STAGE_SOURCE = readFileSync(join(__dirname, "components/card-kanban-stage.tsx"), "utf8");
+const HEADER_SOURCE = readFileSync(join(__dirname, "components/gallery-header-controls.tsx"), "utf8");
 const AUTO_CYCLE_SOURCE = readFileSync(join(__dirname, "hooks/use-auto-cycle.ts"), "utf8");
 const ASX_PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const DATA_SOURCE = readFileSync(join(__dirname, "data/card-kanban-data.ts"), "utf8");
@@ -11,10 +12,13 @@ const JIRA_ISSUE_SOURCE = readFileSync(join(__dirname, "../../blocks/jira-issue/
 const AGENT_ACTIVITY_SOURCE = readFileSync(join(__dirname, "../../blocks/jira-issue/agent-activity.tsx"), "utf8");
 const COMPLETED_RUNS_SOURCE = readFileSync(join(__dirname, "../../blocks/jira-issue/completed-agent-runs.tsx"), "utf8");
 
-test("Card Kanban uses shared separators and restores only the selected left border", () => {
-	assert.match(STAGE_SOURCE, /<ButtonGroup\s+variant="connected"\s+\{\.\.\.pauseHandlers\}/u);
-	assert.doesNotMatch(STAGE_SOURCE, /<ButtonGroup[^>]*className=/u);
-	assert.match(STAGE_SOURCE, /className="relative isolate overflow-hidden aria-pressed:-ml-px aria-pressed:border-l! aria-pressed:z-10"/u);
+test("Card Kanban collapses its automated states into one progress-labelled header section", () => {
+	assert.match(HEADER_SOURCE, /selectedId === "card"/u);
+	assert.match(HEADER_SOURCE, /label: "Card kanban"/u);
+	assert.match(HEADER_SOURCE, /count = ASX_CARD_KANBAN_STATES\.length/u);
+	assert.match(HEADER_SOURCE, /isAutomatedSequence \|\| state\.count === 1/u);
+	assert.match(HEADER_SOURCE, /progressLabel\(state\.label, state\.position, state\.count\)/u);
+	assert.doesNotMatch(STAGE_SOURCE, /export function CardKanbanControls/u);
 });
 
 test("Card Kanban keeps auto-cycling paused while a portalled agent flyout is open", () => {
@@ -23,9 +27,9 @@ test("Card Kanban keeps auto-cycling paused while a portalled agent flyout is op
 	assert.match(AUTO_CYCLE_SOURCE, /setExternalInteractionActive: \(active: boolean\) => void;/u);
 	assert.match(AUTO_CYCLE_SOURCE, /wrapperInteractingRef\.current \|\| externalInteractingRef\.current/u);
 	assert.match(JIRA_ISSUE_SOURCE, /onAgentActivityOpenChange\?: \(open: boolean\) => void;/u);
-	assert.match(JIRA_ISSUE_SOURCE, /onOpenChange=\{onAgentActivityOpenChange\}/u);
+	assert.match(JIRA_ISSUE_SOURCE, /onOpenChange=\{handleAgentActivityOpenChange\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<HoverCard onOpenChange=\{onOpenChange\}>/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /<HoverCard onOpenChange=\{onOpenChange\}>/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /<HoverCard[\s\S]*onOpenChange\?\.\(open\)/u);
 });
 
 test("Card Kanban restarts its progression when the gallery re-enters it", () => {

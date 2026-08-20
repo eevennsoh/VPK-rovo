@@ -14,19 +14,13 @@ import {
 	type TerminalPaneState,
 	type TerminalWorkItem,
 } from "../lib/terminal-demo-state";
-import {
-	JIRA_CLI_FOOTER_HINTS,
-	JIRA_CLI_TITLE,
-	JIRA_CLI_WORKSPACE,
-	TERMINAL_SHELL_PROMPT,
-} from "../data/terminal-demo-script";
+import type { TerminalStoryDefinition } from "../lib/terminal-story-definition";
 import { foldBoardPreview } from "../hooks/use-terminal-demo";
 import { BlinkCursor, PrLabel, StateGlyph, TerminalLineView } from "./terminal-stage-chrome";
 
 // ---------------------------------------------------------------------------
-// Left pane — the TwG connected-work dashboard. Before `twg start-work`
-// resolves it's a plain shell (prompt + boot transcript); once the
-// reducer flips `dashboardVisible` it fades into the sectioned board.
+// Left pane — the configured Jira/TwG dashboard. It begins as a plain shell;
+// once the reducer flips `dashboardVisible` it fades into the sectioned board.
 // ---------------------------------------------------------------------------
 
 const DASHBOARD_FADE_TRANSITION: Transition = { duration: 0.2, ease: [0, 0.4, 0, 1] }; // duration-medium + ease-out (bold)
@@ -88,7 +82,13 @@ function JiraShellView({
 	pane,
 	activeStep,
 	revealCount,
-}: Readonly<{ pane: TerminalPaneState; activeStep: TerminalBeatStep | null; revealCount: number }>): React.ReactElement {
+	story,
+}: Readonly<{
+	pane: TerminalPaneState;
+	activeStep: TerminalBeatStep | null;
+	revealCount: number;
+	story: TerminalStoryDefinition;
+}>): React.ReactElement {
 	const isTyping = activeStep?.kind === "type" && activeStep.pane === "left";
 	const displayedDraft = isTyping ? activeStep.text.slice(0, revealCount) : pane.promptDraft;
 	const inFlightLines = getVisibleOutputLines(activeStep, "left", revealCount);
@@ -104,7 +104,7 @@ function JiraShellView({
 				))}
 			</div>
 			<div className={cn("flex items-center gap-2", pane.transcript.length > 0 ? "mt-1" : null)}>
-				<span className="text-text-subtlest">{TERMINAL_SHELL_PROMPT}</span>
+				<span className="text-text-subtlest">{story.dashboard.shellPrompt}</span>
 				<span>{displayedDraft}</span>
 				<BlinkCursor />
 			</div>
@@ -119,6 +119,7 @@ interface TerminalStageJiraPaneProps {
 	activeStep: TerminalBeatStep | null;
 	revealCount: number;
 	selectedKey: string | null;
+	story: TerminalStoryDefinition;
 }
 
 export function TerminalStageJiraPane({
@@ -128,6 +129,7 @@ export function TerminalStageJiraPane({
 	activeStep,
 	revealCount,
 	selectedKey,
+	story,
 }: Readonly<TerminalStageJiraPaneProps>): React.ReactElement {
 	const shouldReduceMotion = useReducedMotion();
 	const scrollRef = useRef<HTMLDivElement>(null);
@@ -143,7 +145,7 @@ export function TerminalStageJiraPane({
 	}, [pane.transcript.length, rowCount]);
 
 	if (!dashboardVisible) {
-		return <JiraShellView pane={pane} activeStep={activeStep} revealCount={revealCount} />;
+		return <JiraShellView pane={pane} activeStep={activeStep} revealCount={revealCount} story={story} />;
 	}
 
 	return (
@@ -155,8 +157,8 @@ export function TerminalStageJiraPane({
 			className="flex h-full flex-col overflow-hidden"
 		>
 			<div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-				<p className="font-semibold text-blue-400">{JIRA_CLI_TITLE}</p>
-				<p className="mb-1 text-text-subtlest">{JIRA_CLI_WORKSPACE}</p>
+				<p className="font-semibold text-blue-400">{story.dashboard.title}</p>
+				<p className="mb-1 text-text-subtlest">{story.dashboard.workspace}</p>
 				<p className="mb-3 text-text-subtle">
 					<span className={COUNT_TONE_CLASS.awaiting}>{counts.awaiting} awaiting input</span>
 					{" · "}
@@ -169,7 +171,7 @@ export function TerminalStageJiraPane({
 				))}
 			</div>
 			<p className="shrink-0 border-t border-border px-4 py-2 text-[11px] text-text-subtlest">
-				{JIRA_CLI_FOOTER_HINTS}
+				{story.dashboard.footerHints}
 			</p>
 		</motion.div>
 	);

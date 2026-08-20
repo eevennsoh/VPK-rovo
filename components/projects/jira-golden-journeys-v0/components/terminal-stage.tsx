@@ -4,7 +4,6 @@ import type { KeyboardEvent } from "react";
 import { useReducedMotion } from "motion/react";
 
 import { cn } from "@/lib/utils";
-import { Kbd } from "@/components/ui/kbd";
 import type { TerminalDemoController } from "../hooks/use-terminal-demo";
 import { TmuxStatusBar } from "./terminal-stage-chrome";
 import { TerminalStageClaudePane } from "./terminal-stage-claude-pane";
@@ -23,21 +22,6 @@ import { TerminalStageJiraPane } from "./terminal-stage-jira-pane";
 // `page.tsx`), so there's no dedicated restart button here — `r`/`R` still
 // restarts from the keyboard.
 // ---------------------------------------------------------------------------
-
-export function TerminalControls({
-	controller,
-}: Readonly<{ controller: TerminalDemoController }>): React.ReactElement {
-	const currentBeat = Math.min(controller.state.beatIndex + 1, controller.beatCount);
-	return (
-		<div className="flex items-center gap-3 text-sm text-text">
-			<Kbd>left</Kbd>
-			<span>
-				Beat {currentBeat} — {controller.beatCount}
-			</span>
-			<Kbd>right</Kbd>
-		</div>
-	);
-}
 
 export function TerminalStage({
 	controller,

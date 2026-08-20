@@ -349,11 +349,26 @@ test("Gallery controls reserve an in-flow row with compact button geometry", () 
 	assert.match(toggleSource, /flex shrink-0 items-center gap-1 justify-self-end/u);
 	assert.match(gallerySource, /title = "Gallery"/u);
 	assert.match(gallerySource, /topBarCenter\?: ReactNode/u);
+	assert.match(gallerySource, /topBarCenterCompact\?: ReactNode/u);
 	assert.match(gallerySource, /centerContent=\{topBarCenter\}/u);
+	assert.match(gallerySource, /compactCenterContent=\{topBarCenterCompact\}/u);
 	assert.match(gallerySource, /showTopBarBorder = false/u);
 	assert.match(gallerySource, /showBottomBorder=\{showTopBarBorder\}/u);
 	assert.match(toggleSource, /showBottomBorder \? "border-b border-border" : null/u);
 	assert.match(toggleSource, /GALLERY_CONTROL_ICON_CLASS_NAME = "size-3/u);
 	assert.doesNotMatch(toggleSource, /fixed top-4 right-4/u);
 	assert.doesNotMatch(toggleSource, /boxShadow|elevation\.shadow/u);
+});
+
+test("Gallery swaps a section group for compact controls on smaller viewports", () => {
+	const demoSource = readProjectFile("components/blocks/gallery/page.tsx");
+	const toggleSource = readProjectFile("components/blocks/gallery/components/gallery-toggle.tsx");
+
+	assert.match(demoSource, /topBarCenter=\{<DemoSectionControls/u);
+	assert.match(demoSource, /topBarCenterCompact=/u);
+	assert.match(demoSource, /activeSection === sectionIndex \? sectionLabel\(index\) : section\.label/u);
+	assert.match(demoSource, /if \(section\.count === 1\) return section\.label;/u);
+	assert.doesNotMatch(demoSource, /DEMO_STEPS/u);
+	assert.match(toggleSource, /className="hidden lg:block"/u);
+	assert.match(toggleSource, /className="lg:hidden"/u);
 });

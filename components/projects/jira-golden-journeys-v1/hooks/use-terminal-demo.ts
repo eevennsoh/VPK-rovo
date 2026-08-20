@@ -13,14 +13,11 @@ import {
 	type TerminalDemoState,
 	type TerminalWorkItem,
 } from "../lib/terminal-demo-state";
-import {
-	getJiraIssueUrl,
-	TERMINAL_DEMO_BEATS,
-	TERMINAL_INITIAL_HINT,
-} from "../data/terminal-demo-script";
+import { JIRA_GOLDEN_JOURNEYS_V1_TERMINAL_STORY } from "../data/terminal-demo-script";
+import type { TerminalStoryDefinition } from "../lib/terminal-story-definition";
 
 // ---------------------------------------------------------------------------
-// useTerminalDemo — presenter-paced controller for the JGP Terminal stage.
+// useTerminalDemo — presenter-paced controller for a configured Terminal story.
 //
 // The reducer (owned by ../lib/terminal-demo-state) only ever applies a
 // step's *final* effect via `commit-step`. Everything in-between — chars
@@ -39,6 +36,7 @@ type TimerHandle = number;
 
 export interface TerminalDemoController {
 	state: TerminalDemoState;
+	story: TerminalStoryDefinition;
 	activeStep: TerminalBeatStep | null;
 	revealCount: number;
 	beatCount: number;
@@ -51,8 +49,6 @@ export interface TerminalDemoController {
 	handleFrameClick: () => void;
 	restart: () => void;
 }
-
-const terminalDemoReducer = createTerminalDemoReducer(TERMINAL_DEMO_BEATS);
 
 // The demo's window-level key handler must not steal keys from a focused
 // interactive control: Space/Enter on a focused button (top-bar Restart, the
@@ -89,6 +85,8 @@ export function foldBoardPreview(
 }
 
 export interface UseTerminalDemoOptions {
+	/** Story beats and route-specific terminal chrome. Defaults to the v1 story. */
+	story?: TerminalStoryDefinition;
 	/**
 	 * Begin from this fully settled, 1-indexed beat. Defaults to 0 (the initial
 	 * terminal). Used by post-review screens to preserve the preceding screen
@@ -111,11 +109,14 @@ export function useTerminalDemo(
 ): TerminalDemoController {
 	const keyboardEnabled = options?.keyboard ?? true;
 	const initialSettledBeat = options?.initialSettledBeat ?? 0;
+	const story = options?.story ?? JIRA_GOLDEN_JOURNEYS_V1_TERMINAL_STORY;
+	const beats = story.beats;
 	const shouldReduceMotion = useReducedMotion();
+	const terminalDemoReducer = useMemo(() => createTerminalDemoReducer(beats), [beats]);
 	const [state, dispatch] = useReducer(terminalDemoReducer, initialSettledBeat, (beatNumber) => {
 		if (beatNumber <= 0) return createInitialTerminalDemoState();
-		const throughIndex = Math.min(beatNumber, TERMINAL_DEMO_BEATS.length) - 1;
-		return foldBeats(TERMINAL_DEMO_BEATS, throughIndex);
+		const throughIndex = Math.min(beatNumber, beats.length) - 1;
+		return foldBeats(beats, throughIndex);
 	});
 	const [revealCount, setRevealCount] = useState(0);
 	const [rawSelectedKey, setRawSelectedKey] = useState<string | null>(null);
@@ -141,15 +142,15 @@ export function useTerminalDemo(
 
 	const activeStep = useMemo<TerminalBeatStep | null>(() => {
 		if (state.settled || state.finished) return null;
-		return TERMINAL_DEMO_BEATS[state.beatIndex]?.steps[state.stepIndex] ?? null;
-	}, [state.settled, state.finished, state.beatIndex, state.stepIndex]);
+		return beats[state.beatIndex]?.steps[state.stepIndex] ?? null;
+	}, [beats, state.settled, state.finished, state.beatIndex, state.stepIndex]);
 
 	// Step driver: animates the CURRENT step (revealCount 0 → N), then
 	// commits it. Keyed on (beatIndex, stepIndex, settled) so it re-runs once
 	// per step and stops entirely once a beat settles.
 	useEffect(() => {
 		if (!enabled || shouldReduceMotion || state.settled || state.finished) return;
-		const step = TERMINAL_DEMO_BEATS[state.beatIndex]?.steps[state.stepIndex];
+		const step = beats[state.beatIndex]?.steps[state.stepIndex];
 		if (!step) return;
 
 		setRevealCount(0);
@@ -204,6 +205,7 @@ export function useTerminalDemo(
 		return () => clearAllTimers();
 	}, [
 		enabled,
+		beats,
 		shouldReduceMotion,
 		state.beatIndex,
 		state.stepIndex,
@@ -268,8 +270,8 @@ export function useTerminalDemo(
 		// `beatIndex` only advances on `begin-beat`, so while settled it still
 		// points at the beat that just finished (-1 before anything has run).
 		// The trigger that gates a click affordance belongs to the NEXT beat.
-		return TERMINAL_DEMO_BEATS[state.beatIndex + 1]?.trigger === "click";
-	}, [enabled, state.finished, state.settled, state.beatIndex]);
+		return beats[state.beatIndex + 1]?.trigger === "click";
+	}, [beats, enabled, state.finished, state.settled, state.beatIndex]);
 
 	const handleFrameClick = useCallback(() => {
 		if (!awaitingClick) return;
@@ -307,7 +309,7 @@ export function useTerminalDemo(
 			}
 			if (event.key === "Enter" && state.dashboardVisible && selectedKey !== null) {
 				event.preventDefault();
-				window.open(getJiraIssueUrl(selectedKey), "_blank", "noopener,noreferrer");
+				window.open(story.getIssueUrl(selectedKey), "_blank", "noopener,noreferrer");
 				return;
 			}
 			if (event.key === "r" || event.key === "R") {
@@ -325,6 +327,7 @@ export function useTerminalDemo(
 		moveSelection,
 		state.dashboardVisible,
 		selectedKey,
+		story,
 	]);
 
 	// Disabling the stage (card switched away) must stop every pending timer.
@@ -335,21 +338,22 @@ export function useTerminalDemo(
 	useEffect(() => () => clearAllTimers(), [clearAllTimers]);
 
 	const statusHint = useMemo(() => {
-		if (state.finished) return "demo complete · R to restart";
+		if (state.finished) return story.finishedHint;
 		if (!state.settled) return "✽ running…";
 		// `beatIndex` (still) points at the beat that just settled — its `hint`
 		// is written forward-looking (e.g. "→ next: …"), so this reads as the
 		// current status. Before anything has run (-1) fall back to the
 		// pre-story hint.
-		if (state.beatIndex < 0) return TERMINAL_INITIAL_HINT;
-		return TERMINAL_DEMO_BEATS[state.beatIndex]?.hint ?? TERMINAL_INITIAL_HINT;
-	}, [state.finished, state.settled, state.beatIndex]);
+		if (state.beatIndex < 0) return story.initialHint;
+		return beats[state.beatIndex]?.hint ?? story.initialHint;
+	}, [beats, state.finished, state.settled, state.beatIndex, story.finishedHint, story.initialHint]);
 
 	return {
 		state,
+		story,
 		activeStep,
 		revealCount,
-		beatCount: TERMINAL_DEMO_BEATS.length,
+		beatCount: beats.length,
 		awaitingClick,
 		statusHint,
 		selectedKey,
