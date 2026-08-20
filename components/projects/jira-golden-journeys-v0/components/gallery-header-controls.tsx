@@ -102,7 +102,7 @@ function resolveHeaderState({
 		label,
 		position: 0,
 		count: 1,
-		options: [{ label, select: () => undefined, selected: true }],
+		options: [],
 		previous: null,
 		next: null,
 	};
@@ -162,31 +162,35 @@ export function JiraGoldenJourneysV0CompactHeaderControls(
 			>
 				<ChevronLeftIcon label="" size="small" />
 			</Button>
-			<DropdownMenu>
-				<DropdownMenuTrigger
-					render={
-						<button
-							aria-label="Jump to section"
-							className="mr-2 flex items-center gap-1 rounded-sm px-1 py-0.5 tabular-nums text-text outline-none hover:text-text-subtle focus-visible:ring-2 focus-visible:ring-ring/50"
-							type="button"
-						/>
-					}
-				>
-					<span>{activeLabel}</span>
-					<ChevronDownIcon label="" size="small" />
-				</DropdownMenuTrigger>
-				<DropdownMenuContent align="center" portalled={false}>
-					{state.options.map((option) => (
-						<DropdownMenuItem
-							key={option.label}
-							onSelect={option.select}
-							selected={option.selected}
-						>
-							{option.label}
-						</DropdownMenuItem>
-					))}
-				</DropdownMenuContent>
-			</DropdownMenu>
+			{state.options.length > 0 ? (
+				<DropdownMenu>
+					<DropdownMenuTrigger
+						render={
+							<button
+								aria-label="Jump to section"
+								className="mr-2 flex items-center gap-1 rounded-sm px-1 py-0.5 tabular-nums text-text outline-none hover:text-text-subtle focus-visible:ring-2 focus-visible:ring-ring/50"
+								type="button"
+							/>
+						}
+					>
+						<span>{activeLabel}</span>
+						<ChevronDownIcon label="" size="small" />
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="center" portalled={false}>
+						{state.options.map((option) => (
+							<DropdownMenuItem
+								key={option.label}
+								onSelect={option.select}
+								selected={option.selected}
+							>
+								{option.label}
+							</DropdownMenuItem>
+						))}
+					</DropdownMenuContent>
+				</DropdownMenu>
+			) : (
+				<span className="mr-2 px-1 py-0.5 tabular-nums">{activeLabel}</span>
+			)}
 			<Button
 				aria-label="Next section step"
 				disabled={state.next === null}

@@ -54,6 +54,10 @@ const GALLERY_SELECTED_STAGE_SOURCE = fs.readFileSync(
 	path.join(__dirname, "../../blocks/gallery/components/gallery-selected-stage.tsx"),
 	"utf8",
 );
+const GALLERY_HEADER_SOURCE = fs.readFileSync(
+	path.join(__dirname, "components/gallery-header-controls.tsx"),
+	"utf8",
+);
 const JIRA_SIDEBAR_SOURCE = fs.readFileSync(
 	path.join(__dirname, "../../blocks/product-sidebar/variants/jira.tsx"),
 	"utf8",
@@ -108,6 +112,12 @@ test("ASX Gallery provides both responsive header control variations", () => {
 	assert.match(ASX_PAGE_SOURCE, /topBarCenter=\{<JiraGoldenJourneysV0HeaderControls/u);
 	assert.match(ASX_PAGE_SOURCE, /topBarCenterCompact=\{/u);
 	assert.match(ASX_PAGE_SOURCE, /<JiraGoldenJourneysV0CompactHeaderControls/u);
+});
+
+test("ASX static gallery sections do not expose a no-op compact selector", () => {
+	assert.match(GALLERY_HEADER_SOURCE, /options: \[\]/u);
+	assert.match(GALLERY_HEADER_SOURCE, /state\.options\.length > 0 \? \(/u);
+	assert.doesNotMatch(GALLERY_HEADER_SOURCE, /select: \(\) => undefined/u);
 });
 
 test("ASX Rovo surfaces render at viewport level above the Gallery dock", () => {
