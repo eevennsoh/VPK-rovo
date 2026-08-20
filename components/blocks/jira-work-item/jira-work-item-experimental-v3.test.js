@@ -159,6 +159,30 @@ test("the v3 section nav pins in narrow mode and tracks the active scroller", ()
 		/getComputedStyle\(wideScrollContainer\)\.display !== "contents"/u,
 	);
 	assert.match(navigationSource, /new ResizeObserver\(syncActiveScroller\)/u);
+
+	// Regression: the nav pins at `top-0` with a higher z-index than the
+	// pull-request header. Below 860px both are in the same scrollport, so the
+	// header must not also pin or the nav covers its title and actions.
+	const stickyShellSource = readBlockFile(
+		"experimental-v3/components/pull-request-detail/pull-request-sticky-header-shell.tsx",
+	);
+	assert.match(stickyShellSource, /@\[860px\]\/agentlayout:sticky @\[860px\]\/agentlayout:top-0/u);
+	assert.doesNotMatch(stickyShellSource, /"sticky top-0/u);
+
+	// Regression: the block's docs page mounts three v3 examples at once, so
+	// fixed section ids would make `aria-labelledby` ambiguous and point every
+	// anchor at the first demo.
+	assert.match(navigationSource, /const instanceId = useId\(\)/u);
+	assert.match(
+		readBlockFile("experimental-v3/lib/work-item-section-tabs.ts"),
+		/workItemSectionElementId\(\s*instanceId: string,\s*sectionId: WorkItemSectionId,\s*\): string \{\s*return `work-item-section-\$\{instanceId\}-\$\{sectionId\}`/u,
+	);
+
+	// Render must stay pure — the shared spy closes over its id list rather than
+	// mirroring it into a ref that render would have to mutate.
+	const spyHookSource = readBlockFile("experimental-v3/hooks/use-scroll-spy-sections.ts");
+	assert.match(spyHookSource, /\}, \[sectionIds, stickyHeaderSelector\]\);/u);
+	assert.doesNotMatch(spyHookSource, /sectionIdsRef/u);
 });
 
 test("experimental v3 shares the session/planner data layer", () => {

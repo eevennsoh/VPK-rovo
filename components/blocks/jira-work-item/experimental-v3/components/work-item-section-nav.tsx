@@ -1,7 +1,6 @@
 "use client";
 
 import { useSectionNavigation } from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
-import { workItemSectionElementId } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-section-tabs";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +35,7 @@ const NAV_LINK_CLASS = cn(
  * activation, focus order, and a working no-JS fallback for free.
  */
 export function WorkItemSectionNav() {
-	const { activeSectionId, activityCount, sections, selectSection } = useSectionNavigation();
+	const { activeSectionId, activityCount, sectionElementId, sections, selectSection } = useSectionNavigation();
 	if (sections.length === 0) return null;
 
 	return (
@@ -59,7 +58,7 @@ export function WorkItemSectionNav() {
 						<a
 							aria-current={section.id === activeSectionId ? "location" : undefined}
 							className={NAV_LINK_CLASS}
-							href={`#${workItemSectionElementId(section.id)}`}
+							href={`#${sectionElementId(section.id)}`}
 							onClick={(event) => {
 								event.preventDefault();
 								selectSection(section.id);

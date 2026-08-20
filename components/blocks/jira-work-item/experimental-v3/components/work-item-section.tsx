@@ -3,11 +3,7 @@
 import type { ReactNode } from "react";
 
 import { useSectionNavigation } from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
-import {
-	workItemSectionElementId,
-	workItemSectionHeadingId,
-	type WorkItemSectionId,
-} from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-section-tabs";
+import { type WorkItemSectionId } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-section-tabs";
 import { cn } from "@/lib/utils";
 
 /**
@@ -34,13 +30,14 @@ export function WorkItemSection({
 	id: WorkItemSectionId;
 	label: string;
 }>) {
-	const { registerSection } = useSectionNavigation();
+	const { registerSection, sectionElementId, sectionHeadingId } = useSectionNavigation();
+	const headingId = sectionHeadingId(id);
 	return (
 		<section
-			aria-labelledby={workItemSectionHeadingId(id)}
+			aria-labelledby={headingId}
 			className={cn("min-w-0 scroll-mt-6", className)}
 			data-work-item-section-id={id}
-			id={workItemSectionElementId(id)}
+			id={sectionElementId(id)}
 			ref={(node) => {
 				registerSection(id, node);
 			}}
@@ -52,14 +49,14 @@ export function WorkItemSection({
 							"min-w-0 truncate text-xs leading-4 font-semibold text-text-subtlest",
 							headingVisible ? null : "sr-only",
 						)}
-						id={workItemSectionHeadingId(id)}
+						id={headingId}
 					>
 						{label}
 					</h2>
 					{headingAction}
 				</div>
 			) : (
-				<h2 className="sr-only" id={workItemSectionHeadingId(id)}>
+				<h2 className="sr-only" id={headingId}>
 					{label}
 				</h2>
 			)}

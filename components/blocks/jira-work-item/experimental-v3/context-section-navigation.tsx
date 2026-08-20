@@ -5,6 +5,7 @@ import {
 	use,
 	useCallback,
 	useEffect,
+	useId,
 	useMemo,
 	useState,
 	type ReactNode,
@@ -13,6 +14,8 @@ import {
 import { useScrollSpySections } from "@/components/blocks/jira-work-item/experimental-v3/hooks/use-scroll-spy-sections";
 import {
 	areSectionTabsEqual,
+	workItemSectionElementId,
+	workItemSectionHeadingId,
 	type WorkItemSectionId,
 	type WorkItemSectionTab,
 } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-section-tabs";
@@ -22,6 +25,9 @@ interface SectionNavigationValue {
 	activityCount: number | null;
 	activeSectionId: WorkItemSectionId | null;
 	registerSection: (sectionId: WorkItemSectionId, node: HTMLElement | null) => void;
+	/** Instance-namespaced DOM ids, so co-mounted demos cannot collide. */
+	sectionElementId: (sectionId: WorkItemSectionId) => string;
+	sectionHeadingId: (sectionId: WorkItemSectionId) => string;
 	/**
 	 * The element that actually scrolls at the current breakpoint. Consumers that
 	 * run their own scroll-linked behaviour (the guided-review chapter spy) should
@@ -52,6 +58,7 @@ const NO_SECTIONS: readonly WorkItemSectionTab[] = [];
  */
 export function SectionNavigationProvider({ children }: Readonly<{ children: ReactNode }>) {
 	const [sections, setSectionsState] = useState(NO_SECTIONS);
+	const instanceId = useId();
 	const [activityCount, setActivityCount] = useState<number | null>(null);
 	const [wideScrollContainer, setWideScrollContainer] = useState<HTMLElement | null>(null);
 	const [narrowScrollContainer, setNarrowScrollContainer] = useState<HTMLElement | null>(null);
@@ -90,18 +97,29 @@ export function SectionNavigationProvider({ children }: Readonly<{ children: Rea
 		sectionIds,
 	});
 
+	const sectionElementId = useCallback(
+		(sectionId: WorkItemSectionId) => workItemSectionElementId(instanceId, sectionId),
+		[instanceId],
+	);
+	const sectionHeadingId = useCallback(
+		(sectionId: WorkItemSectionId) => workItemSectionHeadingId(instanceId, sectionId),
+		[instanceId],
+	);
+
 	const value = useMemo<SectionNavigationValue>(() => ({
 		activityCount,
 		activeSectionId: activeId as WorkItemSectionId | null,
 		registerSection,
 		scrollContainer,
+		sectionElementId,
+		sectionHeadingId,
 		sections,
 		selectSection,
 		setActivityCount,
 		setNarrowScrollContainer,
 		setSections,
 		setWideScrollContainer,
-	}), [activeId, activityCount, registerSection, scrollContainer, sections, selectSection, setSections]);
+	}), [activeId, activityCount, registerSection, scrollContainer, sectionElementId, sectionHeadingId, sections, selectSection, setSections]);
 
 	return <SectionNavigationContext value={value}>{children}</SectionNavigationContext>;
 }

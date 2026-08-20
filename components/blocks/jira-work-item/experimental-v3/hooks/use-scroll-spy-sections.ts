@@ -71,11 +71,9 @@ export function useScrollSpySections({
 		container: HTMLElement;
 		handler: () => void;
 	} | null>(null);
-	const sectionIdsRef = useRef(sectionIds);
-	sectionIdsRef.current = sectionIds;
-	// Effects track membership, not array identity, so callers need not memoize.
-	const sectionIdsKey = sectionIds.join(" ");
-
+	// No ref mirror: render must stay pure, so this closes over `sectionIds`
+	// directly and re-creates when the set changes. Both callers memoize their
+	// id array, so identity is stable between real changes.
 	const resolveActiveId = useCallback((container: HTMLElement) => {
 		const activationOffset =
 			resolveStickyHeaderBottom(container, stickyHeaderSelector) -
@@ -83,7 +81,7 @@ export function useScrollSpySections({
 			CHAPTER_SCROLL_GAP_PX;
 		return resolveActiveChapterId({
 			activationOffset,
-			chapterIds: sectionIdsRef.current,
+			chapterIds: sectionIds,
 			getChapterTop: (sectionId) => {
 				const element = sectionRefs.current[sectionId];
 				if (!element) return null;
@@ -92,7 +90,7 @@ export function useScrollSpySections({
 			maxScrollTop: Math.max(0, container.scrollHeight - container.clientHeight),
 			scrollTop: container.scrollTop,
 		});
-	}, [stickyHeaderSelector]);
+	}, [sectionIds, stickyHeaderSelector]);
 
 	const clearPendingUnlock = useCallback(() => {
 		if (unlockTimeoutRef.current != null) {
@@ -127,17 +125,17 @@ export function useScrollSpySections({
 			scrollContainer.removeEventListener("scroll", syncActiveFromScroll);
 			window.removeEventListener("resize", syncActiveFromScroll);
 		};
-	}, [resolveActiveId, scrollContainer, sectionIdsKey]);
+	}, [resolveActiveId, scrollContainer]);
 
 	// Drop refs for sections that no longer exist (Guide/Files after a PR closes).
 	useEffect(() => {
-		const liveIds = new Set(sectionIdsRef.current);
+		const liveIds = new Set(sectionIds);
 		for (const sectionId of Object.keys(sectionRefs.current)) {
 			if (!liveIds.has(sectionId)) {
 				delete sectionRefs.current[sectionId];
 			}
 		}
-	}, [sectionIdsKey]);
+	}, [sectionIds]);
 
 	useEffect(() => clearPendingUnlock, [clearPendingUnlock]);
 

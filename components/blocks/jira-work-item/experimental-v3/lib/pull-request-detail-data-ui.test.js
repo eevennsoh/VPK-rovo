@@ -113,10 +113,13 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 		join(__dirname, "../components/pull-request-detail/pull-request-sticky-header-shell.tsx"),
 		"utf8",
 	);
+	// Wide-only sticky: in narrow mode this band and the section nav share one
+	// scrollport, and two `top-0` bands would overlap.
 	assert.match(
 		stickyHeaderShellSource,
-		/className="sticky top-0 z-10 shrink-0 bg-surface"/u,
+		/className="z-10 shrink-0 bg-surface @\[860px\]\/agentlayout:sticky @\[860px\]\/agentlayout:top-0"/u,
 	);
+	assert.doesNotMatch(stickyHeaderShellSource, /"sticky top-0/u);
 	assert.doesNotMatch(stickyHeaderShellSource, /pb-6/u);
 	assert.match(
 		stickyHeaderShellSource,

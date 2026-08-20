@@ -72,11 +72,23 @@ export function areSectionTabsEqual(
 	});
 }
 
-/** Stable DOM id so the nav can anchor to a section with a real `href`. */
-export function workItemSectionElementId(sectionId: WorkItemSectionId): string {
-	return `work-item-section-${sectionId}`;
+/**
+ * Stable DOM id so the nav can anchor to a section with a real `href`.
+ *
+ * Namespaced per provider instance: the block's documentation page mounts
+ * several v3 examples at once, and fixed ids would make `aria-labelledby`
+ * ambiguous and point every anchor at the first demo's sections.
+ */
+export function workItemSectionElementId(
+	instanceId: string,
+	sectionId: WorkItemSectionId,
+): string {
+	return `work-item-section-${instanceId}-${sectionId}`;
 }
 
-export function workItemSectionHeadingId(sectionId: WorkItemSectionId): string {
-	return `work-item-section-heading-${sectionId}`;
+export function workItemSectionHeadingId(
+	instanceId: string,
+	sectionId: WorkItemSectionId,
+): string {
+	return `work-item-section-heading-${instanceId}-${sectionId}`;
 }
