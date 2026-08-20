@@ -58,6 +58,27 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"jira-work-item-demo-experimental-v3": dynamic(
+		() =>
+			import("../demos/blocks/jira-work-item-demo").then((mod) => ({
+				default: mod.JiraWorkItemDemoExperimentalV3,
+			})),
+		{ ssr: false },
+	),
+	"jira-work-item-demo-experimental-v3-empty": dynamic(
+		() =>
+			import("../demos/blocks/jira-work-item-demo").then((mod) => ({
+				default: mod.JiraWorkItemDemoExperimentalV3Empty,
+			})),
+		{ ssr: false },
+	),
+	"jira-work-item-demo-experimental-v3-running": dynamic(
+		() =>
+			import("../demos/blocks/jira-work-item-demo").then((mod) => ({
+				default: mod.JiraWorkItemDemoExperimentalV3Running,
+			})),
+		{ ssr: false },
+	),
 	"agent-evaluation-demo-filled": dynamic(
 		() =>
 			import("../demos/blocks/agent-evaluation-demo").then((mod) => ({

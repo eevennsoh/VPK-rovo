@@ -10,18 +10,20 @@ import FloatingRovoButton from "@/components/projects/shared/components/floating
 import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data/session-state";
 import { ExperimentalJiraWorkItem } from "@/components/blocks/jira-work-item/experimental/experimental-jira-work-item";
 import { ExperimentalV2JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v2/experimental-v2-jira-work-item";
+import { ExperimentalV3JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v3/experimental-v3-jira-work-item";
 
-export type JiraWorkItemVariant = "default" | "experimental" | "experimental-v2";
+export type JiraWorkItemVariant = "default" | "experimental" | "experimental-v2" | "experimental-v3";
 export type JiraWorkItemExperimentalPreset = JiraWorkItemPreset;
 
 /**
  * Experimental surfaces keyed by variant. `experimental-v2` is a full fork of
- * the v1 tree (`experimental-v2/`) so the two can diverge independently; both
- * share the session/planner model under `data/`.
+ * the v1 tree and `experimental-v3` is a full fork of v2, so each can diverge
+ * independently; all three share the session/planner model under `data/`.
  */
 const EXPERIMENTAL_SURFACES = {
 	experimental: ExperimentalJiraWorkItem,
 	"experimental-v2": ExperimentalV2JiraWorkItem,
+	"experimental-v3": ExperimentalV3JiraWorkItem,
 } as const;
 
 type ExperimentalVariant = keyof typeof EXPERIMENTAL_SURFACES;
