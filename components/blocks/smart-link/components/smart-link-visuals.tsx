@@ -7,7 +7,7 @@
 // media. Kept out of `smart-link.tsx` so that file owns composition and behavior
 // while this one owns presentation — and so neither crosses the file-size budget.
 
-import { cloneElement, isValidElement, type ComponentProps, type ReactElement } from "react";
+import { cloneElement, type ComponentProps, type ReactElement } from "react";
 import Image from "next/image";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -110,10 +110,6 @@ export function statusIconTone(
 }
 
 export function cloneIcon(icon: ReactElement, iconSize?: AtlaskitIconSize, className?: string) {
-	if (!isValidElement(icon)) {
-		return icon;
-	}
-
 	const iconElement = icon as ReactElement<{ color?: string; label?: string; className?: string; size?: AtlaskitIconSize }>;
 
 	return cloneElement(iconElement, {
