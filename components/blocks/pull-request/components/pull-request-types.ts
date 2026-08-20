@@ -1,11 +1,20 @@
 export type PullRequestStatus = "Open" | "Merged";
 
+/**
+ * Card density. `compact` is the single-row list card (avatar leads, title and
+ * metadata stack beside it). `spacious` is the three-row summary card: status +
+ * title, then repo + branch path, then an author/diff footer.
+ */
+export type PullRequestVariant = "compact" | "spacious";
+
 export interface PullRequestAuthor {
 	name: string;
 	avatarUrl?: string;
 }
 
 export interface PullRequestProps {
+	/** Layout density. Defaults to the compact list card. */
+	variant?: PullRequestVariant;
 	/** Pull request number (shown as `#1306` in subtle text). */
 	number: number;
 	/** Pull request title (shown after the number). */
@@ -22,6 +31,11 @@ export interface PullRequestProps {
 	targetBranch?: string;
 	additions: number;
 	deletions: number;
+	/**
+	 * Number of changed files, rendered as `N files` in the spacious footer.
+	 * Ignored by the compact card, which has no room for the metric.
+	 */
+	filesChanged?: number;
 	/**
 	 * Absolute timestamp (ms). Reserved for callers that already track PR age;
 	 * the compact card no longer renders a relative-time label.

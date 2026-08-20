@@ -1,6 +1,7 @@
 "use client";
 
 import ArrowRightIcon from "@atlaskit/icon/core/arrow-right";
+import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
@@ -19,6 +20,7 @@ export type {
 	PullRequestAuthor,
 	PullRequestProps,
 	PullRequestStatus,
+	PullRequestVariant,
 } from "@/components/blocks/pull-request/components/pull-request-types";
 
 function getInitials(name: string): string {
@@ -62,9 +64,10 @@ function BranchName({ name }: Readonly<{ name: string }>) {
 
 function PullRequestAuthorAvatar({
 	author,
-}: Readonly<{ author: PullRequestAuthor }>) {
+	size = "sm",
+}: Readonly<{ author: PullRequestAuthor; size?: "xs" | "sm" }>) {
 	return (
-		<Avatar label={author.name} size="sm" shape="circle">
+		<Avatar label={author.name} size={size} shape="circle">
 			{author.avatarUrl ? (
 				<AvatarImage alt={author.name} src={author.avatarUrl} />
 			) : null}
@@ -76,16 +79,64 @@ function PullRequestAuthorAvatar({
 function PullRequestDiffStats({
 	additions,
 	deletions,
-}: Readonly<{ additions: number; deletions: number }>) {
+	className,
+}: Readonly<{ additions: number; deletions: number; className?: string }>) {
 	return (
 		<span
 			aria-label={`${additions} additions, ${deletions} deletions`}
-			className="inline-flex shrink-0 items-center gap-1 text-xs font-medium tabular-nums leading-4"
+			className={cn(
+				"inline-flex shrink-0 items-center gap-1 text-xs font-medium tabular-nums leading-4",
+				className,
+			)}
 			role="group"
 		>
 			<span className="text-text-success">+{additions}</span>
 			<span className="text-text-danger">-{deletions}</span>
 		</span>
+	);
+}
+
+/** Status lozenge. The spacious card leads with it, so it also carries a glyph. */
+function PullRequestStatusLozenge({
+	status,
+	withIcon = false,
+}: Readonly<{ status: PullRequestStatus; withIcon?: boolean }>) {
+	return (
+		<Lozenge
+			elemBefore={
+				withIcon ? (
+					<Icon aria-hidden render={<PullRequestIcon label="" size="small" />} />
+				) : undefined
+			}
+			size="compact"
+			variant={statusLozengeVariant(status)}
+		>
+			{status}
+		</Lozenge>
+	);
+}
+
+/** GitHub-marked repository pill, shared by both densities. */
+function PullRequestRepositoryTag({
+	repository,
+}: Readonly<{ repository?: string }>) {
+	if (!repository) return null;
+
+	return (
+		<Tag
+			color="gray"
+			elemBefore={
+				<BrandLogoMark
+					className="dark:invert [[data-color-mode=dark]_&]:invert"
+					frame="chip"
+					label="GitHub"
+					name="github"
+				/>
+			}
+			maxWidth="9rem"
+		>
+			{repository}
+		</Tag>
 	);
 }
 
@@ -118,7 +169,7 @@ function PullRequestBranchPath({
 	);
 }
 
-function PullRequestCardBody({
+function PullRequestCompactBody({
 	number,
 	title,
 	status,
@@ -154,25 +205,8 @@ function PullRequestCardBody({
 					<PullRequestDiffStats additions={additions} deletions={deletions} />
 				</div>
 				<div className="flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden">
-					<Lozenge size="compact" variant={statusLozengeVariant(status)}>
-						{status}
-					</Lozenge>
-					{repository ? (
-						<Tag
-							color="gray"
-							elemBefore={
-								<BrandLogoMark
-									className="dark:invert [[data-color-mode=dark]_&]:invert"
-									frame="chip"
-									label="GitHub"
-									name="github"
-								/>
-							}
-							maxWidth="9rem"
-						>
-							{repository}
-						</Tag>
-					) : null}
+					<PullRequestStatusLozenge status={status} />
+					<PullRequestRepositoryTag repository={repository} />
 					<PullRequestBranchPath branch={branch} targetBranch={targetBranch} />
 				</div>
 			</div>
@@ -181,10 +215,10 @@ function PullRequestCardBody({
 }
 
 /**
- * Compact pull-request summary card: author avatar, split `#N` + title, diff
- * stats, status lozenge, repo pill, and `source → target` branch path.
+ * Spacious body: status + `#N` + title on row one, repo pill + branch path on
+ * row two, and an author / changed-files / diff footer on row three.
  */
-export function PullRequest({
+function PullRequestSpaciousBody({
 	number,
 	title,
 	status,
@@ -194,6 +228,80 @@ export function PullRequest({
 	targetBranch,
 	additions,
 	deletions,
+	filesChanged,
+}: Readonly<
+	Pick<
+		PullRequestProps,
+		| "number"
+		| "title"
+		| "status"
+		| "author"
+		| "repository"
+		| "branch"
+		| "targetBranch"
+		| "additions"
+		| "deletions"
+		| "filesChanged"
+	>
+>) {
+	return (
+		<>
+			<div className="flex min-w-0 items-center gap-2">
+				<PullRequestStatusLozenge status={status} withIcon />
+				<span className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden text-sm font-medium leading-5">
+					<span className="shrink-0 text-text-subtlest">#{number}</span>
+					<span className="min-w-0 truncate text-text">{title}</span>
+				</span>
+			</div>
+			<div className="flex min-w-0 flex-nowrap items-center gap-1.5 overflow-hidden">
+				<PullRequestRepositoryTag repository={repository} />
+				<PullRequestBranchPath branch={branch} targetBranch={targetBranch} />
+			</div>
+			<div className="flex min-w-0 items-center gap-2">
+				{author ? (
+					<span className="flex min-w-0 items-center gap-1.5 text-xs leading-4 text-text-subtle">
+						<PullRequestAuthorAvatar author={author} size="xs" />
+						<span className="min-w-0 truncate">Created by {author.name}</span>
+					</span>
+				) : null}
+				{/* `ms-auto` keeps the metrics trailing-aligned even without an author. */}
+				<span className="ms-auto flex shrink-0 items-center gap-1.5">
+					{filesChanged != null ? (
+						<span className="text-xs leading-4 text-text-subtle tabular-nums">
+							{filesChanged} {filesChanged === 1 ? "file" : "files"}
+						</span>
+					) : null}
+					<PullRequestDiffStats
+						additions={additions}
+						deletions={deletions}
+						className="font-normal"
+					/>
+				</span>
+			</div>
+		</>
+	);
+}
+
+/**
+ * Pull-request summary card in two densities.
+ *
+ * - `compact`: one row — author avatar, split `#N` + title, diff stats, then a
+ *   metadata line of status lozenge, repo pill, and `source → target` path.
+ * - `spacious`: three rows — status lozenge (with glyph) + `#N` + title, then
+ *   repo pill + branch path, then an author / changed-files / diff footer.
+ */
+export function PullRequest({
+	variant = "compact",
+	number,
+	title,
+	status,
+	author,
+	repository,
+	branch,
+	targetBranch,
+	additions,
+	deletions,
+	filesChanged,
 	selected = false,
 	onActivate,
 	className,
@@ -202,8 +310,22 @@ export function PullRequest({
 	// cards with onActivate). Dropdown options should omit `selected` and keep
 	// an idle surface — SelectItem owns activation; the trigger shows state.
 	const activeSelected = selected;
-	const body = (
-		<PullRequestCardBody
+	const isSpacious = variant === "spacious";
+	const body = isSpacious ? (
+		<PullRequestSpaciousBody
+			additions={additions}
+			author={author}
+			branch={branch}
+			deletions={deletions}
+			filesChanged={filesChanged}
+			number={number}
+			repository={repository}
+			status={status}
+			targetBranch={targetBranch}
+			title={title}
+		/>
+	) : (
+		<PullRequestCompactBody
 			additions={additions}
 			author={author}
 			branch={branch}
@@ -217,7 +339,10 @@ export function PullRequest({
 	);
 
 	const surfaceClassName = cn(
-		"flex w-full min-w-0 items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-text",
+		"flex w-full min-w-0 text-text",
+		isSpacious
+			? "flex-col items-stretch gap-2 rounded-xl border border-border p-3"
+			: "items-center gap-2 rounded-lg border border-border px-3 py-1.5",
 		onActivate
 			? "cursor-pointer text-left outline-none transition-[background-color,border-color] duration-normal ease-out-practical hover:bg-surface-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
 			: null,
@@ -238,6 +363,7 @@ export function PullRequest({
 				className={surfaceClassName}
 				data-pull-request={number}
 				data-selected={selected ? "true" : undefined}
+				data-variant={variant}
 				onClick={onActivate}
 				type="button"
 			>
@@ -253,6 +379,7 @@ export function PullRequest({
 			className={surfaceClassName}
 			data-pull-request={number}
 			data-selected={selected ? "true" : undefined}
+			data-variant={variant}
 			role="group"
 		>
 			{body}
