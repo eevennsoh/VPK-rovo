@@ -47,7 +47,6 @@ import {
 import { RovoAppHermesSkillDraftBar } from "@/components/projects/rovo-core/components/rovo-app-hermes-skill-draft-bar";
 import type { AgentConfigView } from "@/components/projects/studio/components/rovo-app-agent-config-panel";
 import { RovoCursorOnboardingTour } from "@/components/projects/studio/components/rovo-cursor-onboarding-tour";
-import { AgentTestPanel } from "@/components/blocks/agent-test";
 import { useAgentOnboardingTour } from "@/components/projects/studio/hooks/use-agent-onboarding-tour";
 import { RovoAppShellPaneLayoutCore as RovoAppShellPaneLayout } from "@/components/projects/rovo-core/components/rovo-app-shell-pane-layout";
 import { RovoAppSidebar } from "@/components/projects/studio/components/rovo-app-sidebar";
@@ -199,6 +198,10 @@ import { ROVO_DIRECTORY_AGENT_PROFILES, getRovoAgentPromptContext, isRovoAgentPr
 
 const RovoAppAgentConfigPanel = dynamic(
 	() => import("@/components/projects/studio/components/rovo-app-agent-config-panel").then((module) => module.RovoAppAgentConfigPanel),
+	{ ssr: true },
+);
+const AgentTestPanel = dynamic(
+	() => import("@/components/blocks/agent-test").then((module) => module.AgentTestPanel),
 	{ ssr: true },
 );
 

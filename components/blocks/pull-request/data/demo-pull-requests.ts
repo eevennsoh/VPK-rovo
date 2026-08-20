@@ -15,6 +15,7 @@ export const DEMO_PULL_REQUESTS: readonly PullRequestProps[] = [
 		targetBranch: "main",
 		additions: 86,
 		deletions: 21,
+		filesChanged: 6,
 		relativeTime: "2hr ago",
 	},
 	{
@@ -30,6 +31,7 @@ export const DEMO_PULL_REQUESTS: readonly PullRequestProps[] = [
 		targetBranch: "main",
 		additions: 148,
 		deletions: 37,
+		filesChanged: 12,
 		relativeTime: "yesterday",
 	},
 ];
