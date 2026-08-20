@@ -5,6 +5,7 @@ import { useReducedMotion } from "motion/react";
 
 import { cn } from "@/lib/utils";
 import type { TerminalBoardStatus, TerminalLine, TerminalSpan } from "../lib/terminal-demo-state";
+import type { TerminalStoryDefinition } from "../lib/terminal-story-definition";
 
 // ---------------------------------------------------------------------------
 // Shared terminal-stage atoms — tone spans, animated status glyphs, blink
@@ -115,7 +116,8 @@ export function PrLabel({
 export function TmuxStatusBar({
 	split,
 	statusHint,
-}: Readonly<{ split: boolean; statusHint: string }>): React.ReactElement {
+	story,
+}: Readonly<{ split: boolean; statusHint: string; story: TerminalStoryDefinition }>): React.ReactElement {
 	const leading = statusHint.charAt(0);
 	const pulseGlyph = leading === "→" || leading === "✽";
 	const glyph = pulseGlyph ? leading : "";
@@ -124,15 +126,15 @@ export function TmuxStatusBar({
 	return (
 		<div className="flex h-6 shrink-0 items-center justify-between border-t border-border bg-bg-neutral-subtle px-3 text-xs text-text-subtle">
 			<div className="flex items-center gap-3">
-				<span className="text-green-400">[jira-golden-journeys-v1]</span>
-				<span>{split ? "0:twg 1:claude*" : "0:claude*"}</span>
+				<span className="text-green-400">[{story.statusBar.sessionName}]</span>
+				<span>{split ? story.statusBar.splitWindowLabel : story.statusBar.singleWindowLabel}</span>
 			</div>
 			<div className="flex items-center gap-3">
 				<span>
 					<span className="animate-pulse motion-reduce:animate-none">{glyph}</span>
 					{rest}
 				</span>
-				<span>14:32</span>
+				<span>{story.statusBar.clock}</span>
 			</div>
 		</div>
 	);

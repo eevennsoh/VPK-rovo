@@ -2,12 +2,13 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const PULL_REQUEST_DETAIL: ComponentDetail = {
 	description:
-		"Compact pull-request summary card with author avatar, split `#N` + title, diff stats, status lozenge, repo pill, and `source → target` branch path. Built for selectable lists such as the Jira work-item Pull requests select.",
+		"Pull-request summary card in two densities. `compact` is a single-row list card (author avatar, split `#N` + title, diff stats, status lozenge, repo pill, `source → target` branch path) built for selectable lists such as the Jira work-item Pull requests select. `spacious` rearranges the same data into three rows: status lozenge + title, repo pill + branch path, then an author / changed-files / diff footer.",
 	importStatement: `import { PullRequest } from "@/components/blocks/pull-request";
 import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 	usage: `import { PullRequest } from "@/components/blocks/pull-request";
 
 <PullRequest
+  variant="spacious"
   number={1306}
   title="Add guest checkout to the storefront"
   status="Open"
@@ -17,6 +18,7 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
   targetBranch="main"
   additions={86}
   deletions={21}
+  filesChanged={6}
   selected
   onActivate={() => {}}
 />`,
@@ -25,6 +27,13 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 		examplesContentWidth: "full",
 	},
 	props: [
+		{
+			name: "variant",
+			type: '"compact" | "spacious"',
+			default: '"compact"',
+			description:
+				"Card density. `compact` keeps everything on one row; `spacious` splits the same data across three rows.",
+		},
 		{
 			name: "number",
 			type: "number",
@@ -74,6 +83,12 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 			type: "number",
 			required: true,
 			description: "Lines deleted, shown in danger red as `-N`.",
+		},
+		{
+			name: "filesChanged",
+			type: "number",
+			description:
+				"Number of changed files, rendered as `N files` in the spacious footer. Ignored by the compact card.",
 		},
 		{
 			name: "timestampMs",
