@@ -161,16 +161,14 @@ export default function TopNavigation({
 		if (responsiveWidth === 0) return;
 
 		const isSmallContainer = responsiveWidth < TOP_NAV_SIDEBAR_PIN_RELEASE_BREAKPOINT_PX;
-		if (isSmallContainer) {
-			setSidebarOpen((current) => {
-				if (current) didAutoReleaseShellSidebarRef.current = true;
-				return false;
-			});
+		if (isSmallContainer && sidebarOpen) {
+			didAutoReleaseShellSidebarRef.current = true;
+			setSidebarOpen(false);
 		} else if (didAutoReleaseShellSidebarRef.current) {
 			didAutoReleaseShellSidebarRef.current = false;
 			setSidebarOpen(true);
 		}
-	}, [responsiveWidth]);
+	}, [responsiveWidth, sidebarOpen]);
 
 	const sidebarResize = useSidebarResize({
 		defaultWidth: ROVO_APP_SEPARATOR_LINE_OFFSET_PX,

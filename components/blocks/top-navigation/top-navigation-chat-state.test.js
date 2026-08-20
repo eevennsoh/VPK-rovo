@@ -136,7 +136,10 @@ test("standalone top navigation releases its pinned shell sidebar in small conta
 		/responsiveWidth < TOP_NAV_SIDEBAR_PIN_RELEASE_BREAKPOINT_PX/u,
 	);
 	assert.match(TOP_NAVIGATION_SOURCE, /didAutoReleaseShellSidebarRef/u);
-	assert.match(TOP_NAVIGATION_SOURCE, /setSidebarOpen\(\(current\) =>/u);
+	assert.match(TOP_NAVIGATION_SOURCE, /isSmallContainer && sidebarOpen/u);
+	assert.match(TOP_NAVIGATION_SOURCE, /didAutoReleaseShellSidebarRef\.current = true;\s+setSidebarOpen\(false\)/u);
+	assert.match(TOP_NAVIGATION_SOURCE, /\[responsiveWidth, sidebarOpen\]/u);
+	assert.doesNotMatch(TOP_NAVIGATION_SOURCE, /setSidebarOpen\(\(current\) =>/u);
 });
 
 test("top navigation block omits the theme toggle (matches the Figma cluster)", () => {
