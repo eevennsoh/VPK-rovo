@@ -9,6 +9,20 @@ function readProjectFile(relativePath) {
 	return fs.readFileSync(path.join(process.cwd(), relativePath), "utf8");
 }
 
+// Matches the full-bleed stage breakout in either unit, so the assertions below
+// can find every bleed site and then require the container-relative one.
+const BLEED_PATTERN = /left-1\/2[^"]*w-(?:screen|\[100cqw\])[^"]*-translate-x-1\/2/u;
+
+function listSourceFiles(relativeDir) {
+	return fs
+		.readdirSync(path.join(process.cwd(), relativeDir), { withFileTypes: true })
+		.flatMap((entry) => {
+			const entryPath = `${relativeDir}/${entry.name}`;
+			if (entry.isDirectory()) return listSourceFiles(entryPath);
+			return entry.isFile() && entry.name.endsWith(".tsx") ? [entryPath] : [];
+		});
+}
+
 test("Gallery is registered as a website block in both catalog files", () => {
 	assert.match(
 		readProjectFile("app/data/components.ts"),
@@ -73,12 +87,15 @@ test("Gallery is now an in-page selector instead of a lightbox morph", () => {
 	);
 });
 
-test("Gallery owns one viewport without document scrolling", () => {
+test("Gallery fills its container without document scrolling", () => {
 	const gallerySource = readProjectFile("components/blocks/gallery/components/gallery.tsx");
 	const stageSource = readProjectFile("components/blocks/gallery/components/gallery-selected-stage.tsx");
 	const indexSource = readProjectFile("components/blocks/gallery/index.ts");
 
-	assert.match(gallerySource, /flex h-dvh min-h-0 flex-col overflow-hidden/u);
+	assert.match(gallerySource, /@container\/gallery-stage flex h-full min-h-0 flex-col overflow-hidden/u);
+	// `h-dvh` would size the Gallery to the window rather than to the box it is
+	// mounted in, which overflows the fixed-height catalog demo shell.
+	assert.doesNotMatch(gallerySource, /h-dvh/u);
 	assert.doesNotMatch(gallerySource, /STAGE_SCROLL_OFFSET|previousSelectedIdRef|scrollIntoView/u);
 	assert.match(stageSource, /flex min-h-0[^\n]*flex-1/u);
 	assert.match(gallerySource, /stagePosition = "top"/u);
@@ -88,6 +105,46 @@ test("Gallery owns one viewport without document scrolling", () => {
 	assert.match(stageSource, /position === "center"[\s\S]*items-center justify-center[\s\S]*items-stretch justify-start/u);
 	assert.match(indexSource, /GalleryStagePosition/u);
 	assert.doesNotMatch(stageSource, /pt-20|pb-80|min-h-\[calc\(100dvh/u);
+});
+
+test("Gallery consumers give it a parent with a definite height", () => {
+	// Gallery is `h-full`, so a `min-h-*` parent lets it collapse to content height.
+	const consumers = ["components/blocks/gallery/page.tsx", ...listSourceFiles("components/projects")].filter(
+		(file) => /<Gallery\b/u.test(readProjectFile(file)),
+	);
+
+	assert.ok(consumers.length >= 4, `expected several Gallery consumers, found ${consumers.length}`);
+	for (const consumer of consumers) {
+		assert.match(
+			readProjectFile(consumer),
+			/className="relative h-dvh w-full/u,
+			`${consumer} must wrap Gallery in a parent with a definite height`,
+		);
+	}
+});
+
+test("Full-bleed stages break out to the Gallery width, not the window width", () => {
+	// Regression: `w-screen` (100vw) made stages render at window width inside the
+	// fixed-width catalog demo shell, so `overflow-hidden` clipped both edges.
+	// `100cqw` measures the `@container/gallery-stage` box instead. Standalone
+	// stages size to their immediate parent and are covered by their owner tests.
+	//
+	// Stage files are DISCOVERED rather than listed: these projects get duplicated
+	// into new `vN` variants, and a hardcoded list silently exempts every copy.
+	const stageFiles = listSourceFiles("components/projects").filter((file) =>
+		BLEED_PATTERN.test(readProjectFile(file)),
+	);
+
+	assert.ok(stageFiles.length >= 12, `expected the bleed pattern in several stages, found ${stageFiles.length}`);
+	for (const stageFile of stageFiles) {
+		const source = readProjectFile(stageFile);
+		assert.match(
+			source,
+			/left-1\/2[^"]*w-\[100cqw\][^"]*-translate-x-1\/2/u,
+			`${stageFile} must bleed with w-[100cqw]`,
+		);
+		assert.doesNotMatch(source, /\bw-screen\b/u, `${stageFile} must not bleed to the window width`);
+	}
 });
 
 test("Gallery collapses the bottom carousel picker when there is only one card", () => {
@@ -292,11 +349,26 @@ test("Gallery controls reserve an in-flow row with compact button geometry", () 
 	assert.match(toggleSource, /flex shrink-0 items-center gap-1 justify-self-end/u);
 	assert.match(gallerySource, /title = "Gallery"/u);
 	assert.match(gallerySource, /topBarCenter\?: ReactNode/u);
+	assert.match(gallerySource, /topBarCenterCompact\?: ReactNode/u);
 	assert.match(gallerySource, /centerContent=\{topBarCenter\}/u);
+	assert.match(gallerySource, /compactCenterContent=\{topBarCenterCompact\}/u);
 	assert.match(gallerySource, /showTopBarBorder = false/u);
 	assert.match(gallerySource, /showBottomBorder=\{showTopBarBorder\}/u);
 	assert.match(toggleSource, /showBottomBorder \? "border-b border-border" : null/u);
 	assert.match(toggleSource, /GALLERY_CONTROL_ICON_CLASS_NAME = "size-3/u);
 	assert.doesNotMatch(toggleSource, /fixed top-4 right-4/u);
 	assert.doesNotMatch(toggleSource, /boxShadow|elevation\.shadow/u);
+});
+
+test("Gallery swaps a section group for compact controls on smaller viewports", () => {
+	const demoSource = readProjectFile("components/blocks/gallery/page.tsx");
+	const toggleSource = readProjectFile("components/blocks/gallery/components/gallery-toggle.tsx");
+
+	assert.match(demoSource, /topBarCenter=\{<DemoSectionControls/u);
+	assert.match(demoSource, /topBarCenterCompact=/u);
+	assert.match(demoSource, /activeSection === sectionIndex \? sectionLabel\(index\) : section\.label/u);
+	assert.match(demoSource, /if \(section\.count === 1\) return section\.label;/u);
+	assert.doesNotMatch(demoSource, /DEMO_STEPS/u);
+	assert.match(toggleSource, /className="hidden lg:block"/u);
+	assert.match(toggleSource, /className="lg:hidden"/u);
 });

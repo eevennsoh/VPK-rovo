@@ -7,14 +7,6 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 			previewHeight: "fixed",
 		},
 	},
-	"asx": {
-		description: "Agent Sessions Experience — a gallery of agent-session design patterns. Each dock card is a pattern; selecting one reveals its design in the stage (the Kanban card shows the Jira Kanban board). New patterns are added as cards over time.",
-		importStatement: `import AsxPage from "@/components/projects/asx";`,
-		demoLayout: {
-			previewHeight: "fixed",
-			previewContentWidth: "full",
-		},
-	},
 	"confluence": {
 		description: "A document editing interface inspired by Confluence with rich text editing, bubble menus, and collaboration features.",
 		demoLayout: {
@@ -34,14 +26,6 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 			previewHeight: "fixed",
 		},
 	},
-	"jira-agents": {
-		description: "A Jira Agents gallery with a Work Item stage for the software delivery story.",
-		importStatement: `import JiraAgentsPage from "@/components/projects/jira-agents";`,
-		demoLayout: {
-			previewHeight: "fixed",
-			previewContentWidth: "full",
-		},
-	},
 	"jira-for-you": {
 		description: "A personalized Jira workspace that combines assigned and recent work, agent sessions, work-item conversation, source and output details, and full Jira product chrome.",
 		importStatement: `import { JiraForYouWorkspace } from "@/components/projects/jira-for-you";`,
@@ -50,16 +34,40 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 			previewContentWidth: "full",
 		},
 	},
-	"jira-golden-journeys": {
-		description: "Jira Golden Journeys — a gallery of agent-session design patterns. Each dock card is a pattern; selecting one reveals its design in the stage (the Kanban card shows the Jira Kanban board). New patterns are added as cards over time.",
-		importStatement: `import JgpPage from "@/components/projects/jira-golden-journeys";`,
+	"jira-golden-journeys-v0": {
+		description: "Jira Golden Journeys v0 — a gallery of agent-session design patterns. Each dock card is a pattern; selecting one reveals its design in the stage (the Kanban card shows the Jira Kanban board). New patterns are added as cards over time.",
+		importStatement: `import JiraGoldenJourneysV0Page from "@/components/projects/jira-golden-journeys-v0";`,
+		demoLayout: {
+			previewHeight: "fixed",
+			previewContentWidth: "full",
+		},
+	},
+	"jira-golden-journeys-v1": {
+		description: "Jira Golden Journeys v1 — a gallery of agent-session design patterns. Each dock card is a pattern; selecting one reveals its design in the stage (the Kanban card shows the Jira Kanban board). New patterns are added as cards over time.",
+		importStatement: `import JiraGoldenJourneysV1Page from "@/components/projects/jira-golden-journeys-v1";`,
+		demoLayout: {
+			previewHeight: "fixed",
+			previewContentWidth: "full",
+		},
+	},
+	"jira-golden-journeys-v2": {
+		description: "A Jira Golden Journeys v2 gallery with a Work Item stage for the software delivery story.",
+		importStatement: `import JiraGoldenJourneysV2Page from "@/components/projects/jira-golden-journeys-v2";`,
+		demoLayout: {
+			previewHeight: "fixed",
+			previewContentWidth: "full",
+		},
+	},
+	"jira-golden-journeys-v3": {
+		description: "A Jira Golden Journeys v3 gallery with a Work Item stage for the software delivery story.",
+		importStatement: `import JiraGoldenJourneysV3Page from "@/components/projects/jira-golden-journeys-v3";`,
 		demoLayout: {
 			previewHeight: "fixed",
 			previewContentWidth: "full",
 		},
 	},
 	"jira-queue": {
-		description: "A Jira agent-session queue — a project sidebar of running, awaiting, and completed agent sessions beside a conversation workspace with a detail panel of sources and outputs. Harvested from the ASX gallery's Queue pattern as a standalone surface.",
+		description: "A Jira agent-session queue — a project sidebar of running, awaiting, and completed agent sessions beside a conversation workspace with a detail panel of sources and outputs.",
 		importStatement: `import JiraQueuePage from "@/components/projects/jira-queue";`,
 		demoLayout: {
 			previewHeight: "fixed",

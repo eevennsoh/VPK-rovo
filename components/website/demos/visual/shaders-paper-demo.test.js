@@ -66,7 +66,7 @@ function getPaperShaderGroupBody() {
 }
 
 test("Shaders Paper dependency is declared", () => {
-	assert.match(PACKAGE_SOURCE, /"@paper-design\/shaders-react": "\^0\.0\.76"/u);
+	assert.match(PACKAGE_SOURCE, /"@paper-design\/shaders-react": "\^0\.0\.80"/u);
 });
 
 test("Shaders Paper catalog wiring covers every shader route", () => {

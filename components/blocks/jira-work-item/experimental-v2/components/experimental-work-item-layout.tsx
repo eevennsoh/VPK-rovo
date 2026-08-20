@@ -128,7 +128,7 @@ function DescriptionColumnShell({
  * body scrollports, plus an optional left composer footer. Left:
  * ContextResources chrome + description scroll; right:
  * Details/Activity toggle chrome + resizable metadata scroll (440px default
- * and minimum, 720px maximum).
+ * and minimum, capped by the matching 440px description-column minimum).
  * Toggle reveals via `group/metadata-rail` hover on the rail body (plus self
  * hover / `:focus-visible` on the toggle) — not body `:focus-within`.
  *

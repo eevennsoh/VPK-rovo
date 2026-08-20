@@ -12,9 +12,9 @@ import {
 	type JiraIssueGenerativeActionRequest,
 } from "@/components/blocks/jira-issue";
 import { QUESTION_CARD_SINGLE_SELECT_DEMO } from "@/components/blocks/question-card/data/questions";
-import { ASX_CHAT_AGENT_PROFILES } from "@/components/projects/asx/data/agent-chat-data";
-import { AsxRovoOverlay } from "@/components/projects/asx/components/asx-rovo-overlay";
-import { useAsxAgentChatDemo } from "@/components/projects/asx/hooks/use-asx-agent-chat-demo";
+import { ASX_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v0/data/agent-chat-data";
+import { AsxRovoOverlay } from "@/components/projects/jira-golden-journeys-v0/components/jira-golden-journeys-v0-rovo-overlay";
+import { useAsxAgentChatDemo } from "@/components/projects/jira-golden-journeys-v0/hooks/use-jira-golden-journeys-v0-agent-chat-demo";
 import { Button } from "@/components/ui/button";
 import { getDeterministicAgentAvatarSrc } from "@/lib/agent-avatars";
 

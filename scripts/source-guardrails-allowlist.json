@@ -107,13 +107,6 @@
 			"type": "eslint-disable"
 		},
 		{
-			"filePath": "components/blocks/data-table/components/data-table.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "// eslint-disable-next-line react-hooks/incompatible-library",
-			"type": "eslint-disable"
-		},
-		{
 			"filePath": "components/blocks/product-sidebar/data/confluence-navigation.ts",
 			"occurrence": 1,
 			"reason": "existing baseline",

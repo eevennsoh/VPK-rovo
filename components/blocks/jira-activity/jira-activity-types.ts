@@ -114,6 +114,13 @@ export interface JiraActivityEventEntry extends JiraActivityEntryBase {
 		authorAvatarSrc?: string;
 		/** Provider-normalized review outcome for contextual PR details. */
 		reviewDecision?: "approved" | "changes-requested" | "review-required" | "not-required";
+		/** Provider-normalized reviewer states when individual approvals are available. */
+		reviewers?: readonly {
+			id: string;
+			name: string;
+			avatarSrc?: string;
+			status: "approved" | "changes-requested" | "commented" | "pending";
+		}[];
 		/** Provider-normalized mergeability for contextual PR details. */
 		mergeState?: "ready" | "blocked" | "conflicts" | "merged";
 		/** Commit summaries returned by the connected SCM. */

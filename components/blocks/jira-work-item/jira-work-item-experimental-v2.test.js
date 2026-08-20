@@ -182,7 +182,7 @@ test("experimental v2 opens the shared agent chat as a full-height sibling colum
 	const layoutSource = readBlockFile("experimental-v2/components/experimental-work-item-layout.tsx");
 	const sessionSurfaceSource = readBlockFile("experimental-v2/components/floating-session-surface.tsx");
 	const sharedOverlaySource = fs.readFileSync(
-		path.join(BLOCK_DIR, "../../projects/asx/components/asx-rovo-overlay.tsx"),
+		path.join(BLOCK_DIR, "../../projects/jira-golden-journeys-v0/components/jira-golden-journeys-v0-rovo-overlay.tsx"),
 		"utf8",
 	);
 
@@ -245,7 +245,7 @@ test("experimental v2 metadata panel exposes a notch-only resize handle and chat
 
 	assert.match(
 		compositionSource,
-		/useSidebarResize\(\{[\s\S]*defaultWidth: METADATA_PANEL_DEFAULT_WIDTH_PX,[\s\S]*direction: "rtl",[\s\S]*maxWidth: METADATA_PANEL_MAX_WIDTH_PX,[\s\S]*minWidth: METADATA_PANEL_MIN_WIDTH_PX,[\s\S]*minWidthResistance: true,[\s\S]*<ExperimentalWorkItemLayout[\s\S]*metadataPanelResizing=\{metadataPanelResize\.isResizing\}[\s\S]*metadataPanelWidth=\{metadataPanelResize\.sidebarWidth\}/u,
+		/setMetadataPanelMaxWidth\(resolveMetadataPanelMaxWidth\(width\)\)[\s\S]*useSidebarResize\(\{[\s\S]*defaultWidth: METADATA_PANEL_DEFAULT_WIDTH_PX,[\s\S]*direction: "rtl",[\s\S]*maxWidth: metadataPanelMaxWidth,[\s\S]*minWidth: METADATA_PANEL_MIN_WIDTH_PX,[\s\S]*minWidthResistance: true,[\s\S]*onBodyWidthChange=\{handleDialogBodyWidthChange\}[\s\S]*<ExperimentalWorkItemLayout[\s\S]*metadataPanelResizing=\{metadataPanelResize\.isResizing\}[\s\S]*metadataPanelWidth=\{metadataPanelResize\.sidebarWidth\}/u,
 	);
 	assert.match(
 		compositionSource,

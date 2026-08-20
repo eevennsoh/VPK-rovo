@@ -3,20 +3,28 @@ import type { ComponentType } from "react";
 
 export const PROJECT_DEMOS: Record<string, ComponentType> = {
 	admin: dynamic(() => import("../demos/projects/admin-demo"), { ssr: false }),
-	asx: dynamic(() => import("../demos/projects/asx-demo"), { ssr: false }),
 	confluence: dynamic(() => import("../demos/projects/confluence-demo"), {
 		ssr: false,
 	}),
 	html: dynamic(() => import("../demos/projects/html-demo"), { ssr: false }),
 	jira: dynamic(() => import("../demos/projects/jira-demo"), { ssr: false }),
-	"jira-agents": dynamic(() => import("../demos/projects/jira-agents-demo"), {
-		ssr: false,
-	}),
 	"jira-for-you": dynamic(() => import("../demos/projects/jira-for-you-demo"), {
 		ssr: false,
 	}),
-	"jira-golden-journeys": dynamic(
-		() => import("../demos/projects/jira-golden-journeys-demo"),
+	"jira-golden-journeys-v0": dynamic(
+		() => import("../demos/projects/jira-golden-journeys-v0-demo"),
+		{ ssr: false },
+	),
+	"jira-golden-journeys-v1": dynamic(
+		() => import("../demos/projects/jira-golden-journeys-v1-demo"),
+		{ ssr: false },
+	),
+	"jira-golden-journeys-v2": dynamic(
+		() => import("../demos/projects/jira-golden-journeys-v2-demo"),
+		{ ssr: false },
+	),
+	"jira-golden-journeys-v3": dynamic(
+		() => import("../demos/projects/jira-golden-journeys-v3-demo"),
 		{ ssr: false },
 	),
 	"jira-queue": dynamic(() => import("../demos/projects/jira-queue-demo"), {

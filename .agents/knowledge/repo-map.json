@@ -3644,8 +3644,8 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 88,
-			"pageCount": 64
+			"ownerImportCount": 89,
+			"pageCount": 65
 		},
 		"pages": [
 			{
@@ -3886,22 +3886,6 @@
 						]
 					}
 				],
-				"routePath": "/asx",
-				"shellOwnerCount": 0,
-				"shellOwners": [],
-				"source": "app/asx/page.tsx"
-			},
-			{
-				"ownerCount": 1,
-				"owners": [
-					{
-						"importPath": "@/components/website/demo-registry-loader",
-						"source": "components/website/demo-registry-loader",
-						"symbols": [
-							"loadDemoComponent"
-						]
-					}
-				],
 				"routePath": "/awake",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
@@ -4022,10 +4006,10 @@
 						]
 					}
 				],
-				"routePath": "/jira-agents",
+				"routePath": "/jira-golden-journeys-v0",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
-				"source": "app/jira-agents/page.tsx"
+				"source": "app/jira-golden-journeys-v0/page.tsx"
 			},
 			{
 				"ownerCount": 1,
@@ -4038,10 +4022,42 @@
 						]
 					}
 				],
-				"routePath": "/jira-golden-journeys",
+				"routePath": "/jira-golden-journeys-v1",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
-				"source": "app/jira-golden-journeys/page.tsx"
+				"source": "app/jira-golden-journeys-v1/page.tsx"
+			},
+			{
+				"ownerCount": 1,
+				"owners": [
+					{
+						"importPath": "@/components/website/demo-registry-loader",
+						"source": "components/website/demo-registry-loader",
+						"symbols": [
+							"loadDemoComponent"
+						]
+					}
+				],
+				"routePath": "/jira-golden-journeys-v2",
+				"shellOwnerCount": 0,
+				"shellOwners": [],
+				"source": "app/jira-golden-journeys-v2/page.tsx"
+			},
+			{
+				"ownerCount": 1,
+				"owners": [
+					{
+						"importPath": "@/components/website/demo-registry-loader",
+						"source": "components/website/demo-registry-loader",
+						"symbols": [
+							"loadDemoComponent"
+						]
+					}
+				],
+				"routePath": "/jira-golden-journeys-v3",
+				"shellOwnerCount": 0,
+				"shellOwners": [],
+				"source": "app/jira-golden-journeys-v3/page.tsx"
 			},
 			{
 				"ownerCount": 1,
@@ -5323,7 +5339,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 420,
+			"manifestEntryCount": 422,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5983,19 +5999,13 @@
 			},
 			{
 				"category": "projects",
-				"entryCount": 15,
+				"entryCount": 16,
 				"entries": [
 					{
 						"category": "projects",
 						"slug": "admin",
 						"name": "Admin",
 						"importPath": "@/components/projects/admin"
-					},
-					{
-						"category": "projects",
-						"slug": "asx",
-						"name": "ASX",
-						"importPath": "@/components/projects/asx"
 					},
 					{
 						"category": "projects",
@@ -6017,21 +6027,33 @@
 					},
 					{
 						"category": "projects",
-						"slug": "jira-agents",
-						"name": "Jira Agents",
-						"importPath": "@/components/projects/jira-agents"
-					},
-					{
-						"category": "projects",
 						"slug": "jira-for-you",
 						"name": "Jira For You",
 						"importPath": "@/components/projects/jira-for-you"
 					},
 					{
 						"category": "projects",
-						"slug": "jira-golden-journeys",
-						"name": "Jira Golden Journeys",
-						"importPath": "@/components/projects/jira-golden-journeys"
+						"slug": "jira-golden-journeys-v0",
+						"name": "Jira Golden Journeys v0",
+						"importPath": "@/components/projects/jira-golden-journeys-v0"
+					},
+					{
+						"category": "projects",
+						"slug": "jira-golden-journeys-v1",
+						"name": "Jira Golden Journeys v1",
+						"importPath": "@/components/projects/jira-golden-journeys-v1"
+					},
+					{
+						"category": "projects",
+						"slug": "jira-golden-journeys-v2",
+						"name": "Jira Golden Journeys v2",
+						"importPath": "@/components/projects/jira-golden-journeys-v2"
+					},
+					{
+						"category": "projects",
+						"slug": "jira-golden-journeys-v3",
+						"name": "Jira Golden Journeys v3",
+						"importPath": "@/components/projects/jira-golden-journeys-v3"
 					},
 					{
 						"category": "projects",
@@ -7297,7 +7319,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 100,
+				"entryCount": 101,
 				"entries": [
 					{
 						"category": "visual",
@@ -7310,6 +7332,12 @@
 						"slug": "bands",
 						"name": "Bands",
 						"importPath": "@/components/website/demos/visual/shaders/bands"
+					},
+					{
+						"category": "visual",
+						"slug": "blob-tracking",
+						"name": "Blob Tracking",
+						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
 					},
 					{
 						"category": "visual",

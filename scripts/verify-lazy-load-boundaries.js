@@ -17,12 +17,22 @@ const DEFAULT_ROUTE_SHELL_FILES = [
 
 const DEFAULT_DEFERRED_MODULE_RULES = [
 	{
-		entryFile: "components/projects/jira-agents/page.tsx",
+		entryFile: "components/projects/jira-golden-journeys-v2/page.tsx",
 		reason: "the Jira pull request review subtree must stay out of the initial project bundle",
 		targetFile: "components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-detail-view.tsx",
 	},
 	{
-		entryFile: "components/projects/jira-agents/page.tsx",
+		entryFile: "components/projects/jira-golden-journeys-v2/page.tsx",
+		reason: "the contextual pull request rail must stay out of the initial project bundle",
+		targetFile: "components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-context-rail.tsx",
+	},
+	{
+		entryFile: "components/projects/jira-golden-journeys-v3/page.tsx",
+		reason: "the Jira pull request review subtree must stay out of the initial project bundle",
+		targetFile: "components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-detail-view.tsx",
+	},
+	{
+		entryFile: "components/projects/jira-golden-journeys-v3/page.tsx",
 		reason: "the contextual pull request rail must stay out of the initial project bundle",
 		targetFile: "components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-context-rail.tsx",
 	},

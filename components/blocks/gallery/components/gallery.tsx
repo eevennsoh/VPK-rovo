@@ -77,6 +77,8 @@ export interface GalleryProps {
 	title?: string;
 	/** Optional content centered in the Gallery control bar, such as a compact button group. */
 	topBarCenter?: ReactNode;
+	/** Optional compact center control shown below the large viewport breakpoint. */
+	topBarCenterCompact?: ReactNode;
 	/** Shows a 1px semantic border below the Gallery control bar. */
 	showTopBarBorder?: boolean;
 	/** Positions selected content below the 48px top bar; the bottom dock remains an overlay. */
@@ -105,6 +107,7 @@ export function Gallery({
 	items,
 	title = "Gallery",
 	topBarCenter,
+	topBarCenterCompact,
 	showTopBarBorder = false,
 	stagePosition = "top",
 	open,
@@ -214,10 +217,26 @@ export function Gallery({
 	}, [shouldReduceMotion, visualState.exiting]);
 
 	return (
-		<div className={cn("flex h-dvh min-h-0 flex-col overflow-hidden", className)}>
+		// `h-full` (never a viewport-height class) so the Gallery fills whatever box it
+		// is mounted in — the standalone route sizes that box to the viewport, while the
+		// catalog demo shell sizes it to a fixed preview height. Consumers must give this
+		// element a parent with a definite height.
+		//
+		// `@container/gallery-stage` publishes that box width as the container-query
+		// basis for full-bleed stages, which break out of GallerySelectedStage's
+		// `max-w-3xl` column with `left-1/2 w-[100cqw] -translate-x-1/2`. Using `100cqw`
+		// rather than `100vw` keeps the breakout the width of the Gallery instead of the
+		// window, so stages stay inside the demo shell instead of being clipped by it.
+		<div
+			className={cn(
+				"@container/gallery-stage flex h-full min-h-0 flex-col overflow-hidden",
+				className,
+			)}
+		>
 			<GalleryToggle
 				title={title}
 				centerContent={topBarCenter}
+				compactCenterContent={topBarCenterCompact}
 				showBottomBorder={showTopBarBorder}
 				open={isOpen}
 				showOpenToggle={showCarouselPicker}

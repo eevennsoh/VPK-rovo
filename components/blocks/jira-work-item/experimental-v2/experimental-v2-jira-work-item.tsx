@@ -55,8 +55,9 @@ import type { CodingAgentId } from "@/components/blocks/jira-work-item/experimen
 import type { WorkItemAutomationRule } from "@/components/blocks/jira-work-item/experimental-v2/components/automation-tab";
 import {
 	METADATA_PANEL_DEFAULT_WIDTH_PX,
-	METADATA_PANEL_MAX_WIDTH_PX,
+	METADATA_PANEL_FALLBACK_MAX_WIDTH_PX,
 	METADATA_PANEL_MIN_WIDTH_PX,
+	resolveMetadataPanelMaxWidth,
 } from "@/components/blocks/jira-work-item/experimental-v2/lib/layout-constants";
 import {
 	getPullRequestIdentity,
@@ -87,11 +88,13 @@ interface ExperimentalV2JiraWorkItemBaseProps {
 	automationRules?: readonly WorkItemAutomationRule[];
 	/**
 	 * When set, open this pull-request identity after each `stageKey` reset
-	 * (once per stage). Used by jira-agents Review and Fix to land on PR detail
+	 * (once per stage). Used by jira-golden-journeys-v2 Review and Fix to land on PR detail
 	 * without an extra click. Clearing the PR does not re-open until the next stage.
 	 */
 	autoOpenPullRequestIdentity?: string | null;
 	composerAgents?: readonly AgentSelectorAgent[];
+	/** Optional host-owned row rendered in place of the activity composer's standard context pills. */
+	composerContextBar?: ReactNode;
 	/** Optional host-owned controls rendered immediately after the side-chat Add button. */
 	composerToolsAfterAdd?: ReactNode;
 	initialPreset: JiraWorkItemPreset;
@@ -112,7 +115,7 @@ interface ExperimentalV2JiraWorkItemBaseProps {
 	pullRequestApprovalStates?: Readonly<Record<string, "available" | "approved">>;
 	/**
 	 * When this key changes to a non-null value, open the Activity metadata tab
-	 * and scroll to the latest entry (e.g. jira-agents Plan orchestration), or
+	 * and scroll to the latest entry (e.g. jira-golden-journeys-v2 Plan orchestration), or
 	 * to `revealActivityEntryId` when that prop is set.
 	 */
 	revealActivityKey?: string | number | null;
@@ -145,6 +148,7 @@ interface ExperimentalV2JiraWorkItemContentProps {
 	autoOpenPullRequestIdentity?: string | null;
 	automationRules?: readonly WorkItemAutomationRule[];
 	composerAgents?: readonly AgentSelectorAgent[];
+	composerContextBar?: ReactNode;
 	composerToolsAfterAdd?: ReactNode;
 	inlineSurface: "card" | "card-fill" | "fill";
 	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
@@ -229,6 +233,7 @@ function ExperimentalV2JiraWorkItemContent({
 	autoOpenPullRequestIdentity = null,
 	automationRules,
 	composerAgents,
+	composerContextBar,
 	composerToolsAfterAdd,
 	inlineSurface,
 	onAgentPromptSubmit,
@@ -270,10 +275,16 @@ function ExperimentalV2JiraWorkItemContent({
 	const { activityEvents } = useJiraWorkItemMeta();
 	const { elapsedMs } = useJiraWorkItemState();
 	const agentChatOpen = chatSurface === "floating";
+	const [metadataPanelMaxWidth, setMetadataPanelMaxWidth] = useState(
+		METADATA_PANEL_FALLBACK_MAX_WIDTH_PX,
+	);
+	const handleDialogBodyWidthChange = useCallback((width: number) => {
+		setMetadataPanelMaxWidth(resolveMetadataPanelMaxWidth(width));
+	}, []);
 	const metadataPanelResize = useSidebarResize({
 		defaultWidth: METADATA_PANEL_DEFAULT_WIDTH_PX,
 		direction: "rtl",
-		maxWidth: METADATA_PANEL_MAX_WIDTH_PX,
+		maxWidth: metadataPanelMaxWidth,
 		minWidth: METADATA_PANEL_MIN_WIDTH_PX,
 		minWidthResistance: true,
 	});
@@ -374,7 +385,7 @@ function ExperimentalV2JiraWorkItemContent({
 		});
 		setPanelView("details");
 	}, [pullRequestApprovalStates, setPanelView]);
-	// jira-agents Review: open the guided PR once per stage so detail is default.
+	// jira-golden-journeys-v2 Review: open the guided PR once per stage so detail is default.
 	useLayoutEffect(() => {
 		if (!autoOpenPullRequestIdentity) return;
 		const stageToken = stageKey ?? "";
@@ -607,6 +618,7 @@ function ExperimentalV2JiraWorkItemContent({
 				<ExperimentalWorkItemDialog
 						inlineSurface={inlineSurface}
 						open={open}
+						onBodyWidthChange={handleDialogBodyWidthChange}
 						onClose={onClose}
 						presentation={presentation}
 						pullRequestEntries={pullRequestEntries}
@@ -659,6 +671,7 @@ function ExperimentalV2JiraWorkItemContent({
 								<ActivityComposer
 									agents={composerAgents}
 									autoFocus={restoreActivityComposerFocus}
+									composerContextBar={composerContextBar}
 									onAgentPromptSubmit={onAgentPromptSubmit}
 									onOpenAgentChat={onOpenAgentChat}
 									pullRequestFix={activePullRequestFix}
@@ -774,6 +787,7 @@ export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWor
 								autoOpenPullRequestIdentity={props.autoOpenPullRequestIdentity}
 								automationRules={props.automationRules}
 								composerAgents={props.composerAgents}
+								composerContextBar={props.composerContextBar}
 								composerToolsAfterAdd={props.composerToolsAfterAdd}
 								inlineSurface={inlineSurface}
 								onAgentPromptSubmit={props.onAgentPromptSubmit}

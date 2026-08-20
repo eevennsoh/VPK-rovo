@@ -74,8 +74,11 @@ test("pointer cancellation restores the committed width and ends the resize", as
 
 	const useSidebarResize = loadUseSidebarResize();
 	let resize = null;
+	let setMaxWidth = null;
 	function Probe() {
-		resize = useSidebarResize({ defaultWidth: 440, maxWidth: 720, minWidth: 440 });
+		const [maxWidth, setProbeMaxWidth] = React.useState(720);
+		setMaxWidth = setProbeMaxWidth;
+		resize = useSidebarResize({ defaultWidth: 440, maxWidth, minWidth: 440 });
 		return null;
 	}
 
@@ -103,6 +106,24 @@ test("pointer cancellation restores the committed width and ends the resize", as
 		});
 		assert.equal(resize.sidebarWidth, 440);
 		assert.equal(resize.isResizing, false);
+
+		await React.act(async () => {
+			setMaxWidth(1000);
+		});
+		await React.act(async () => {
+			resize.onResizeHandleKeyDown({
+				key: "End",
+				preventDefault() {},
+				stopPropagation() {},
+			});
+		});
+		assert.equal(resize.maxWidth, 1000);
+		assert.equal(resize.sidebarWidth, 1000);
+
+		await React.act(async () => {
+			setMaxWidth(800);
+		});
+		assert.equal(resize.sidebarWidth, 800);
 	} finally {
 		await React.act(async () => {
 			root.unmount();
