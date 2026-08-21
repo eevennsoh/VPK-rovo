@@ -8005,7 +8005,7 @@
 	},
 	"skills": {
 		"summary": {
-			"localSkillCount": 16
+			"localSkillCount": 17
 		},
 		"localSkills": [
 			{
@@ -8103,6 +8103,12 @@
 				"name": "vpk-tunnel",
 				"path": ".agents/skills/vpk-tunnel/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-tunnel"
+			},
+			{
+				"description": "Drive the VPK web app (catalog, docs, theme, Studio shell) in a real browser and capture proof. Use when proving a UI or routing change works, checking a live route, verifying user-facing behavior, or when the user says vpk-verify or /vpk-verify.",
+				"name": "vpk-verify",
+				"path": ".agents/skills/vpk-verify/SKILL.md",
+				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-verify"
 			}
 		]
 	},
