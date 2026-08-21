@@ -394,6 +394,12 @@ function validateSkillDirectory(skillDir) {
 			path: skillPath,
 			type: "skill-name-format",
 		});
+	} else if (!frontmatterName.startsWith("vpk-")) {
+		failures.push({
+			message: `Skill name must start with "vpk-": ${frontmatterName}`,
+			path: skillPath,
+			type: "skill-name-prefix",
+		});
 	} else if (frontmatterName !== skillName) {
 		failures.push({
 			message: `Skill name "${frontmatterName}" must match folder "${skillName}".`,

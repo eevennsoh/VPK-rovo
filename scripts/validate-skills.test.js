@@ -50,7 +50,7 @@ const COMPLETE_SKILL_BODY = [
 	"",
 	"## Validation",
 	"",
-	"`node scripts/validate-skills.js --target .agents/skills/example-skill`.",
+	"`node scripts/validate-skills.js --target .agents/skills/vpk-example-skill`.",
 	"",
 	"## Generated Artifacts",
 	"",
@@ -99,7 +99,7 @@ test("parseFrontmatter accepts block descriptions", () => {
 test("collectSkillDirectories treats an individual skill folder as a target", () => {
 	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-validate-skills-single-"));
 	try {
-		const skillDir = writeSkill(cwd, "example-skill");
+		const skillDir = writeSkill(cwd, "vpk-example-skill");
 		assert.deepEqual(collectSkillDirectories(skillDir), {
 			failures: [],
 			skillDirs: [skillDir],
@@ -113,11 +113,11 @@ test("collectSkillDirectories treats an individual skill folder as a target", ()
 test("collectSkillDirectories ignores generated skill index at the root", () => {
 	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-validate-skills-index-root-"));
 	try {
-		writeSkill(cwd, "example-skill");
+		writeSkill(cwd, "vpk-example-skill");
 		writeFileSync(path.join(cwd, DEFAULT_TARGET, "INDEX.md"), "# Generated\n");
 		const report = createSkillValidationReport({ checkIndex: false, cwd });
 		assert.deepEqual(report.warnings, []);
-		assert.deepEqual(report.skills.map((skill) => skill.name), ["example-skill"]);
+		assert.deepEqual(report.skills.map((skill) => skill.name), ["vpk-example-skill"]);
 	} finally {
 		rmSync(cwd, { recursive: true, force: true });
 	}
@@ -126,14 +126,14 @@ test("collectSkillDirectories ignores generated skill index at the root", () => 
 test("createSkillValidationReport validates repo-local skill shape", () => {
 	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-validate-skills-good-"));
 	try {
-		writeSkill(cwd, "example-skill");
+		writeSkill(cwd, "vpk-example-skill");
 		const report = createSkillValidationReport({ checkIndex: false, cwd });
 		assert.deepEqual(report.failures, []);
 		assert.deepEqual(report.warnings, []);
 		assert.deepEqual(report.skills, [{
 			description: "Example skill.",
-			name: "example-skill",
-			path: ".agents/skills/example-skill",
+			name: "vpk-example-skill",
+			path: ".agents/skills/vpk-example-skill",
 			relatedDocs: [],
 		}]);
 	} finally {
@@ -145,7 +145,7 @@ test("createSkillValidationReport passes a minimal name+description skill with n
 	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-validate-skills-minimal-"));
 	const originalLog = console.log;
 	try {
-		writeSkill(cwd, "example-skill", "# Example\n\nUse this skill.\n");
+		writeSkill(cwd, "vpk-example-skill", "# Example\n\nUse this skill.\n");
 		const report = createSkillValidationReport({ checkIndex: false, cwd });
 		assert.deepEqual(report.failures, []);
 		assert.deepEqual(report.warnings, []);
@@ -160,7 +160,7 @@ test("createSkillValidationReport passes a minimal name+description skill with n
 test("collectReferenceDocs and index rows expose local reference docs", () => {
 	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-validate-skills-related-docs-"));
 	try {
-		const skillDir = writeSkill(cwd, "example-skill");
+		const skillDir = writeSkill(cwd, "vpk-example-skill");
 		const referencesDir = path.join(skillDir, "references");
 		mkdirSync(referencesDir, { recursive: true });
 		writeFileSync(path.join(referencesDir, "guide.md"), "# Guide\n");
@@ -174,13 +174,13 @@ test("collectReferenceDocs and index rows expose local reference docs", () => {
 
 		const report = createSkillValidationReport({ checkIndex: false, cwd });
 		assert.deepEqual(report.skills[0].relatedDocs, [
-			".agents/skills/example-skill/references/guide.md",
-			".agents/skills/example-skill/references/patterns.md",
+			".agents/skills/vpk-example-skill/references/guide.md",
+			".agents/skills/vpk-example-skill/references/patterns.md",
 		]);
 		assert.equal(formatRelatedDocsCell({
 			path: skillDir,
 			relatedDocs: collectReferenceDocs(skillDir),
-		}, path.join(cwd, DEFAULT_TARGET)), "[`guide`](example-skill/references/guide.md), [`patterns`](example-skill/references/patterns.md)");
+		}, path.join(cwd, DEFAULT_TARGET)), "[`guide`](vpk-example-skill/references/guide.md), [`patterns`](vpk-example-skill/references/patterns.md)");
 	} finally {
 		rmSync(cwd, { recursive: true, force: true });
 	}
@@ -189,7 +189,7 @@ test("collectReferenceDocs and index rows expose local reference docs", () => {
 test("validateSkills checks local Markdown links in skill entrypoints", () => {
 	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-validate-skills-links-"));
 	try {
-		const skillDir = writeSkill(cwd, "example-skill", [
+		const skillDir = writeSkill(cwd, "vpk-example-skill", [
 			"# Example",
 			"",
 			"Read [Guide](references/guide.md), [Scripts](scripts/), [Anchor](#example), and [External](https://example.com).",
@@ -210,7 +210,7 @@ test("validateSkills checks local Markdown links in skill entrypoints", () => {
 
 		writeFileSync(path.join(skillDir, "SKILL.md"), [
 			"---",
-			"name: example-skill",
+			"name: vpk-example-skill",
 			"description: Example skill.",
 			"---",
 			"",
@@ -231,7 +231,7 @@ test("validateSkills checks local Markdown links in skill entrypoints", () => {
 test("formatRelatedDocsCell summarizes larger reference folders", () => {
 	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-validate-skills-related-docs-many-"));
 	try {
-		const skillDir = writeSkill(cwd, "example-skill");
+		const skillDir = writeSkill(cwd, "vpk-example-skill");
 		const referencesDir = path.join(skillDir, "references");
 		mkdirSync(referencesDir, { recursive: true });
 		const docs = ["a.md", "b.md", "c.md", "d.md"].map((fileName) => path.join(referencesDir, fileName));
@@ -242,7 +242,7 @@ test("formatRelatedDocsCell summarizes larger reference folders", () => {
 		assert.equal(formatRelatedDocsCell({
 			path: skillDir,
 			relatedDocs: docs,
-		}, path.join(cwd, DEFAULT_TARGET)), "[`references/`](example-skill/references/) (4 docs)");
+		}, path.join(cwd, DEFAULT_TARGET)), "[`references/`](vpk-example-skill/references/) (4 docs)");
 	} finally {
 		rmSync(cwd, { recursive: true, force: true });
 	}
@@ -264,9 +264,9 @@ test("createSkillValidationReport catches missing entrypoints", () => {
 test("createSkillValidationReport catches malformed frontmatter", () => {
 	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-validate-skills-bad-"));
 	try {
-		const skillDir = path.join(cwd, DEFAULT_TARGET, "example-skill");
+		const skillDir = path.join(cwd, DEFAULT_TARGET, "vpk-example-skill");
 		mkdirSync(skillDir, { recursive: true });
-		writeFileSync(path.join(skillDir, "SKILL.md"), "---\nname: other-skill\n---\n\n# Example\n");
+		writeFileSync(path.join(skillDir, "SKILL.md"), "---\nname: vpk-other-skill\n---\n\n# Example\n");
 		const report = createSkillValidationReport({ checkIndex: false, cwd });
 		assert.deepEqual(report.failures.map((failure) => failure.type), [
 			"skill-name-folder-mismatch",
@@ -277,10 +277,26 @@ test("createSkillValidationReport catches malformed frontmatter", () => {
 	}
 });
 
+test("createSkillValidationReport catches names that omit the vpk- prefix", () => {
+	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-validate-skills-prefix-"));
+	try {
+		const skillDir = path.join(cwd, DEFAULT_TARGET, "verify-app");
+		mkdirSync(skillDir, { recursive: true });
+		writeFileSync(path.join(skillDir, "SKILL.md"), "---\nname: verify-app\ndescription: Example skill.\n---\n\n# Example\n\nUse this skill.\n");
+		const report = createSkillValidationReport({ checkIndex: false, cwd });
+		assert.deepEqual(report.failures.map((failure) => failure.type), [
+			"skill-name-prefix",
+		]);
+		assert.match(report.failures[0].message, /must start with "vpk-"/u);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
 test("createSkillValidationReport allows legacy root files with warnings", () => {
 	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-validate-skills-warning-"));
 	try {
-		writeSkill(cwd, "example-skill");
+		writeSkill(cwd, "vpk-example-skill");
 		writeFileSync(path.join(cwd, DEFAULT_TARGET, "README.md"), "Legacy note.\n");
 		const report = createSkillValidationReport({ checkIndex: false, cwd });
 		assert.equal(report.failures.length, 0);
@@ -294,11 +310,11 @@ test("createSkillValidationReport allows legacy root files with warnings", () =>
 test("writeSkillIndex generates the expected local skills index", () => {
 	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-validate-skills-index-"));
 	try {
-		const skillDir = writeSkill(cwd, "example-skill");
+		const skillDir = writeSkill(cwd, "vpk-example-skill");
 		const result = writeSkillIndex({ cwd });
 		const expected = buildSkillIndexText([{
 			description: "Example skill.",
-			name: "example-skill",
+			name: "vpk-example-skill",
 			path: skillDir,
 			relatedDocs: [],
 		}], { cwd });
@@ -317,7 +333,7 @@ test("writeSkillIndex generates the expected local skills index", () => {
 test("createSkillValidationReport reports stale generated skill index", () => {
 	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-validate-skills-stale-index-"));
 	try {
-		writeSkill(cwd, "example-skill");
+		writeSkill(cwd, "vpk-example-skill");
 		writeFileSync(path.join(cwd, DEFAULT_TARGET, "INDEX.md"), "# Stale\n");
 		const report = createSkillValidationReport({ cwd });
 		assert.equal(report.failures.length, 1);
