@@ -94,7 +94,6 @@ export function PullRequestDetailHeader({
 			submitReviewAction={isOpen ? submitReviewAction : undefined}
 			className="rounded-xl border bg-surface p-4"
 			data-jira-work-item-pull-request-detail-header
-			style={{ borderRadius: 12 }}
 		/>
 	);
 }

@@ -251,7 +251,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	assert.doesNotMatch(headerSource, /additions=\{data\.additions\}/u);
 	assert.doesNotMatch(headerSource, /onMoreActionsClick/u);
 	assert.match(headerSource, /className="rounded-xl border bg-surface p-4"/u);
-	assert.match(headerSource, /style=\{\{ borderRadius: 12 \}\}/u);
+	assert.doesNotMatch(headerSource, /style=\{\{ borderRadius: 12 \}\}/u);
 	assert.doesNotMatch(headerSource, /border-b border-border pb-4/u);
 	assert.match(guideSource, /data-jira-work-item-pull-request-guide/u);
 	assert.match(guideSource, /data-jira-work-item-pull-request-guide-current-step/u);
