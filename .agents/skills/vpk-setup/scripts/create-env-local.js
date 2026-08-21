@@ -102,6 +102,11 @@ const preservedRealtimeApiKey = getEnvValueFromText(existingEnvText, 'OPENAI_REA
 const resolvedGoogleGatewayUrl = isGoogleGatewayUrl(preservedGoogleUrl)
 	? preservedGoogleUrl
 	: DEFAULT_GOOGLE_GATEWAY_URL;
+const preservedCloudId = getEnvValueFromText(existingEnvText, 'AI_GATEWAY_CLOUD_ID');
+const resolvedCloudId =
+	typeof preservedCloudId === 'string' && /^(internal|external)-dummy-/i.test(preservedCloudId.trim())
+		? preservedCloudId.trim()
+		: `internal-dummy-${useCaseId}`;
 const resolvedRovoSiteUrl =
 	typeof preservedRovoSiteUrl === 'string' && preservedRovoSiteUrl.trim().length > 0
 		? preservedRovoSiteUrl.trim()
@@ -162,7 +167,7 @@ ${preservedOpenAiCompatibleSttBaseUrl ? `OPENAI_COMPATIBLE_STT_BASE_URL=${preser
 ${preservedOpenAiCompatibleSttApiKey ? `OPENAI_COMPATIBLE_STT_API_KEY=${preservedOpenAiCompatibleSttApiKey}` : '# OPENAI_COMPATIBLE_STT_API_KEY='}
 
 AI_GATEWAY_USE_CASE_ID=${useCaseId}
-AI_GATEWAY_CLOUD_ID=local-testing
+AI_GATEWAY_CLOUD_ID=${resolvedCloudId}
 AI_GATEWAY_USER_ID=${email}
 
 # ASAP Credentials (Required for AI Gateway-backed routes and production)

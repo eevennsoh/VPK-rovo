@@ -1,5 +1,10 @@
 "use strict";
 
+const {
+	describeGatewayCloudIdKind,
+	resolveGatewayCloudId,
+} = require("./lib/ai-gateway-helpers");
+
 function requireFunction(name, value) {
 	if (typeof value !== "function") {
 		throw new Error(`logBackendServerReady requires ${name}`);
@@ -75,6 +80,11 @@ async function logBackendServerReady({
 	});
 	const chatBackendLabel = describeChatBackend(llmRouting);
 	logger.log(`\n🤖 Chat Backend: ${chatBackendLabel}`);
+	logger.log(
+		`  AI_GATEWAY_CLOUD_ID: ${envVars.AI_GATEWAY_CLOUD_ID ? "SET" : "MISSING"} ` +
+			`(${describeGatewayCloudIdKind(envVars.AI_GATEWAY_CLOUD_ID)}, ` +
+			`resolved ${describeGatewayCloudIdKind(resolveGatewayCloudId(envVars))})`,
+	);
 	const rovoPool = getRovoPool();
 	if (rovoReady && rovoPool) {
 		const poolStatus = rovoPool.getStatus();

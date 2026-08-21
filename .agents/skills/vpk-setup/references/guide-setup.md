@@ -219,7 +219,7 @@ You should see: `Saved asap key successfully`
 ```
 AI_GATEWAY_URL=https://ai-gateway.us-east-1.staging.atl-paas.net/v1/openai/v1/chat/completions
 AI_GATEWAY_USE_CASE_ID=your-use-case-id
-AI_GATEWAY_CLOUD_ID=local-testing
+AI_GATEWAY_CLOUD_ID=internal-dummy-your-use-case-id
 AI_GATEWAY_USER_ID=your-email@atlassian.com
 ASAP_KID=your-use-case-id/YOUR-TIMESTAMP
 ASAP_ISSUER=your-use-case-id

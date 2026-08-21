@@ -4,7 +4,7 @@ function classifyAIGatewayFailureStage(error) {
 	const message = error instanceof Error ? error.message : String(error ?? "");
 
 	if (
-		/AI Gateway URL is not configured|Server configuration error|AI_GATEWAY_URL|AI_GATEWAY_USE_CASE_ID|AI_GATEWAY_CLOUD_ID|AI_GATEWAY_USER_ID/i.test(message)
+		/AI Gateway URL is not configured|Server configuration error|AI_GATEWAY_URL|AI_GATEWAY_USE_CASE_ID|AI_GATEWAY_CLOUD_ID|AI_GATEWAY_USER_ID|CloudID is invalid or not provisioned/i.test(message)
 	) {
 		return "config";
 	}

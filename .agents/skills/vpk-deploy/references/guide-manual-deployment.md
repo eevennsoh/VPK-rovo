@@ -22,7 +22,7 @@ ASAP_ISSUER=$(cat .asap-config | jq -r '.issuer')
 
 atlas micros stash set -s $SERVICE_NAME -e $ENV -k AI_GATEWAY_URL -v "$AI_GATEWAY_URL"
 atlas micros stash set -s $SERVICE_NAME -e $ENV -k AI_GATEWAY_USE_CASE_ID -v "caid-proto"
-atlas micros stash set -s $SERVICE_NAME -e $ENV -k AI_GATEWAY_CLOUD_ID -v "local-testing"
+atlas micros stash set -s $SERVICE_NAME -e $ENV -k AI_GATEWAY_CLOUD_ID -v "internal-dummy-caid-proto"
 atlas micros stash set -s $SERVICE_NAME -e $ENV -k AI_GATEWAY_USER_ID -v "$AI_GATEWAY_USER_ID"
 
 # ASAP_PRIVATE_KEY requires JSON file approach (handles multiline correctly)
@@ -88,7 +88,7 @@ All 7 variables that must be set for deployment:
 |----------|--------|-------------|
 | `AI_GATEWAY_URL` | `.env.local` | AI Gateway endpoint |
 | `AI_GATEWAY_USE_CASE_ID` | Hardcoded | Usually `caid-proto` |
-| `AI_GATEWAY_CLOUD_ID` | Hardcoded | Usually `local-testing` |
+| `AI_GATEWAY_CLOUD_ID` | Hardcoded | Staging dummy `internal-dummy-<use-case-id>` |
 | `AI_GATEWAY_USER_ID` | `git config user.email` | Your Atlassian email |
 | `ASAP_PRIVATE_KEY` | `.asap-config` | RSA private key (use JSON file method) |
 | `ASAP_KID` | `.asap-config` | Key ID |

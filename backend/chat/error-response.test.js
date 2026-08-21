@@ -17,6 +17,10 @@ test("classifyAIGatewayFailureStage preserves config, auth, stream, and request 
 		"config",
 	);
 	assert.equal(
+		classifyAIGatewayFailureStage(new Error("CloudID is invalid or not provisioned in the staging environment.")),
+		"config",
+	);
+	assert.equal(
 		classifyAIGatewayFailureStage(new Error("status 401 Authorization failed")),
 		"auth",
 	);
