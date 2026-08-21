@@ -4,6 +4,13 @@ const assert = require("node:assert/strict");
 const {
 	fetchGatewayWithRateLimitRetry,
 	parseRetryAfterMs,
+	resolveGatewayCloudId,
+	describeGatewayCloudIdError,
+	getGatewayHeaders,
+	getAIGatewayConfigReport,
+	describeGatewayCloudIdKind,
+	isDummyGatewayCloudId,
+	isStagingAiGatewayUrl,
 } = require("./ai-gateway-helpers");
 
 function makeResponse(status, headers = {}) {
@@ -82,4 +89,106 @@ test("parseRetryAfterMs handles seconds, missing, and garbage values", () => {
 	assert.equal(parseRetryAfterMs(null), null);
 	assert.equal(parseRetryAfterMs("not-a-date"), null);
 	assert.equal(parseRetryAfterMs("0"), 0);
+});
+
+const STAGING_BEDROCK_URL =
+	"https://ai-gateway.us-east-1.staging.atl-paas.net/v1/bedrock/model/anthropic.claude-sonnet-5/invoke-with-response-stream";
+const PROD_BEDROCK_URL =
+	"https://ai-gateway.us-east-1.prod.atl-paas.net/v1/bedrock/model/anthropic.claude-sonnet-5/invoke-with-response-stream";
+
+test("describeGatewayCloudIdKind labels dummy, uuid, local-testing, and missing values", () => {
+	assert.equal(describeGatewayCloudIdKind("internal-dummy-rad-venn-prototype"), "DUMMY");
+	assert.equal(describeGatewayCloudIdKind("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), "UUID");
+	assert.equal(describeGatewayCloudIdKind("local-testing"), "LOCAL_TESTING");
+	assert.equal(describeGatewayCloudIdKind(""), "MISSING");
+	assert.equal(describeGatewayCloudIdKind("hello"), "OTHER");
+});
+
+test("isStagingAiGatewayUrl and isDummyGatewayCloudId recognize staging hosts and dummy CloudIDs", () => {
+	assert.equal(isStagingAiGatewayUrl(STAGING_BEDROCK_URL), true);
+	assert.equal(isStagingAiGatewayUrl(PROD_BEDROCK_URL), false);
+	assert.equal(isDummyGatewayCloudId("internal-dummy-rad-venn-prototype"), true);
+	assert.equal(isDummyGatewayCloudId("external-dummy-batch-1337"), true);
+	assert.equal(isDummyGatewayCloudId("local-testing"), false);
+	assert.equal(isDummyGatewayCloudId("a436116f-02ce-4520-8fbb-7301462a1674"), false);
+});
+
+test("resolveGatewayCloudId remaps staging tenant UUIDs and local-testing to the Proximity dummy", () => {
+	assert.equal(
+		resolveGatewayCloudId({
+			AI_GATEWAY_URL: STAGING_BEDROCK_URL,
+			AI_GATEWAY_USE_CASE_ID: "rad-venn-prototype",
+			AI_GATEWAY_CLOUD_ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+		}),
+		"internal-dummy-rad-venn-prototype",
+	);
+	assert.equal(
+		resolveGatewayCloudId({
+			AI_GATEWAY_URL: STAGING_BEDROCK_URL,
+			AI_GATEWAY_USE_CASE_ID: "rad-venn-prototype",
+			AI_GATEWAY_CLOUD_ID: "local-testing",
+		}),
+		"internal-dummy-rad-venn-prototype",
+	);
+	assert.equal(
+		resolveGatewayCloudId({
+			AI_GATEWAY_URL: STAGING_BEDROCK_URL,
+			AI_GATEWAY_USE_CASE_ID: "rad-venn-prototype",
+		}),
+		"internal-dummy-rad-venn-prototype",
+	);
+});
+
+test("resolveGatewayCloudId keeps dummy CloudIDs and production tenant CloudIDs", () => {
+	assert.equal(
+		resolveGatewayCloudId({
+			AI_GATEWAY_URL: STAGING_BEDROCK_URL,
+			AI_GATEWAY_USE_CASE_ID: "rad-venn-prototype",
+			AI_GATEWAY_CLOUD_ID: "internal-dummy-custom",
+		}),
+		"internal-dummy-custom",
+	);
+	assert.equal(
+		resolveGatewayCloudId({
+			AI_GATEWAY_URL: PROD_BEDROCK_URL,
+			AI_GATEWAY_USE_CASE_ID: "rad-venn-prototype",
+			AI_GATEWAY_CLOUD_ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+		}),
+		"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+	);
+});
+
+test("getGatewayHeaders sends the resolved staging dummy CloudID", () => {
+	const headers = getGatewayHeaders(
+		{
+			AI_GATEWAY_URL: STAGING_BEDROCK_URL,
+			AI_GATEWAY_USE_CASE_ID: "rad-venn-prototype",
+			AI_GATEWAY_CLOUD_ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+			AI_GATEWAY_USER_ID: "user@example.com",
+		},
+		"token",
+		true,
+	);
+
+	assert.equal(headers["X-Atlassian-CloudId"], "internal-dummy-rad-venn-prototype");
+	assert.equal(headers["X-Atlassian-UseCaseId"], "rad-venn-prototype");
+});
+
+test("getAIGatewayConfigReport reports CloudID kinds without values", () => {
+	const report = getAIGatewayConfigReport({
+		AI_GATEWAY_URL: STAGING_BEDROCK_URL,
+		AI_GATEWAY_USE_CASE_ID: "rad-venn-prototype",
+		AI_GATEWAY_CLOUD_ID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+	});
+	assert.equal(report.AI_GATEWAY_CLOUD_ID, "SET");
+	assert.equal(report.AI_GATEWAY_CLOUD_ID_KIND, "UUID");
+	assert.equal(report.AI_GATEWAY_CLOUD_ID_RESOLVED_KIND, "DUMMY");
+});
+
+test("describeGatewayCloudIdError explains the staging dummy CloudID workaround", () => {
+	assert.match(
+		describeGatewayCloudIdError('{"message":"CloudID is invalid or not provisioned in the staging environment."}'),
+		/internal-dummy-<use-case-id>/u,
+	);
+	assert.equal(describeGatewayCloudIdError("other failure"), "other failure");
 });

@@ -16,6 +16,13 @@ const GATEWAY_RETRYABLE_STATUSES = new Set([429, 503]);
 const DEFAULT_GATEWAY_MAX_ATTEMPTS = 4;
 const DEFAULT_GATEWAY_BASE_DELAY_MS = 750;
 const MAX_GATEWAY_RETRY_DELAY_MS = 8000;
+const STAGING_DUMMY_CLOUD_ID_PREFIX = "internal-dummy-";
+const FALLBACK_STAGING_DUMMY_CLOUD_ID = "internal-dummy-vpk-local";
+const LEGACY_LOCAL_TESTING_CLOUD_ID = "local-testing";
+const TENANT_CLOUD_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const DUMMY_CLOUD_ID_PATTERN = /^(internal|external)-dummy-/i;
+
+let hasWarnedStagingCloudIdRemap = false;
 
 function sleep(ms) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
@@ -92,13 +99,33 @@ function getEnvVars() {
 	};
 }
 
+function describeGatewayCloudIdKind(value) {
+	const trimmed = typeof value === "string" ? value.trim() : "";
+	if (!trimmed) {
+		return "MISSING";
+	}
+	if (isDummyGatewayCloudId(trimmed)) {
+		return "DUMMY";
+	}
+	if (trimmed === LEGACY_LOCAL_TESTING_CLOUD_ID) {
+		return "LOCAL_TESTING";
+	}
+	if (looksLikeTenantCloudId(trimmed)) {
+		return "UUID";
+	}
+	return "OTHER";
+}
+
 function getAIGatewayConfigReport(envVars = getEnvVars()) {
 	const realtimeConfig = getRealtimeConfig();
+	const resolvedCloudId = resolveGatewayCloudId(envVars);
 	return {
 		AI_GATEWAY_URL: envVars.AI_GATEWAY_URL ? "SET" : "MISSING",
 		AI_GATEWAY_URL_GOOGLE: envVars.AI_GATEWAY_URL_GOOGLE ? "SET" : "MISSING",
 		AI_GATEWAY_USE_CASE_ID: envVars.AI_GATEWAY_USE_CASE_ID ? "SET" : "MISSING",
 		AI_GATEWAY_CLOUD_ID: envVars.AI_GATEWAY_CLOUD_ID ? "SET" : "MISSING",
+		AI_GATEWAY_CLOUD_ID_KIND: describeGatewayCloudIdKind(envVars.AI_GATEWAY_CLOUD_ID),
+		AI_GATEWAY_CLOUD_ID_RESOLVED_KIND: describeGatewayCloudIdKind(resolvedCloudId),
 		AI_GATEWAY_USER_ID: envVars.AI_GATEWAY_USER_ID ? "SET" : "MISSING",
 		ASAP_ISSUER: process.env.ASAP_ISSUER ? "SET" : "MISSING",
 		ASAP_KID: process.env.ASAP_KID ? "SET" : "MISSING",
@@ -111,6 +138,77 @@ function getAIGatewayConfigReport(envVars = getEnvVars()) {
 
 function hasGatewayUrlConfigured(envVars = getEnvVars()) {
 	return Boolean(envVars.AI_GATEWAY_URL || envVars.AI_GATEWAY_URL_GOOGLE);
+}
+
+function isStagingAiGatewayUrl(url) {
+	return typeof url === "string" && /\.staging\.atl-paas\.net/i.test(url);
+}
+
+function isDummyGatewayCloudId(value) {
+	return DUMMY_CLOUD_ID_PATTERN.test(String(value || "").trim());
+}
+
+function looksLikeTenantCloudId(value) {
+	return TENANT_CLOUD_ID_PATTERN.test(String(value || "").trim());
+}
+
+function buildStagingDummyCloudId(useCaseId) {
+	const trimmed = typeof useCaseId === "string" ? useCaseId.trim() : "";
+	return trimmed ? `${STAGING_DUMMY_CLOUD_ID_PREFIX}${trimmed}` : FALLBACK_STAGING_DUMMY_CLOUD_ID;
+}
+
+function shouldReplaceStagingCloudId(configured) {
+	return !configured
+		|| configured === LEGACY_LOCAL_TESTING_CLOUD_ID
+		|| looksLikeTenantCloudId(configured);
+}
+
+/**
+ * Staging AI Gateway rejects tenant CloudIDs that are not provisioned there,
+ * including the old `local-testing` alias. Local/dev (and Proximity) use a
+ * dummy CloudID of the form `internal-dummy-<use-case-id>`.
+ *
+ * Production gateway URLs keep a real provisioned CloudID unchanged.
+ */
+function resolveGatewayCloudId(envVars = {}) {
+	const configured = typeof envVars.AI_GATEWAY_CLOUD_ID === "string"
+		? envVars.AI_GATEWAY_CLOUD_ID.trim()
+		: "";
+
+	if (isDummyGatewayCloudId(configured)) {
+		return configured;
+	}
+
+	const gatewayUrl = envVars.AI_GATEWAY_URL || envVars.AI_GATEWAY_URL_GOOGLE || "";
+	if (!isStagingAiGatewayUrl(gatewayUrl)) {
+		return configured;
+	}
+
+	if (!shouldReplaceStagingCloudId(configured)) {
+		return configured;
+	}
+
+	const resolved = buildStagingDummyCloudId(envVars.AI_GATEWAY_USE_CASE_ID);
+	if (!hasWarnedStagingCloudIdRemap) {
+		hasWarnedStagingCloudIdRemap = true;
+		console.warn(
+			"[AI_GATEWAY] Staging CloudID is missing, `local-testing`, or a tenant UUID. " +
+				`Using ${resolved}. Set AI_GATEWAY_CLOUD_ID=internal-dummy-<use-case-id> in .env.local to match Proximity.`,
+		);
+	}
+	return resolved;
+}
+
+function describeGatewayCloudIdError(errorText) {
+	const text = String(errorText || "");
+	if (!/CloudID is invalid or not provisioned/i.test(text)) {
+		return text;
+	}
+
+	return (
+		`${text.trim()} Staging AI Gateway rejects tenant UUIDs and \`local-testing\`. ` +
+		"Set AI_GATEWAY_CLOUD_ID=internal-dummy-<use-case-id> (same dummy CloudID Proximity uses), then restart."
+	);
 }
 
 function base64UrlEncode(value) {
@@ -217,7 +315,7 @@ function getGatewayHeaders(envVars, token, stream = false) {
 		"Content-Type": "application/json",
 		Authorization: `bearer ${token}`,
 		"X-Atlassian-UseCaseId": envVars.AI_GATEWAY_USE_CASE_ID,
-		"X-Atlassian-CloudId": envVars.AI_GATEWAY_CLOUD_ID,
+		"X-Atlassian-CloudId": resolveGatewayCloudId(envVars),
 		"X-Atlassian-UserId": envVars.AI_GATEWAY_USER_ID,
 	};
 
@@ -399,7 +497,7 @@ async function streamBedrockGatewayManualSse({ gatewayUrl, envVars, system, prom
 
 	if (!response.ok) {
 		const errorText = await response.text();
-		throw new Error(`AI Gateway Bedrock error ${response.status}: ${errorText.slice(0, 300)}`);
+		throw new Error(`AI Gateway Bedrock error ${response.status}: ${describeGatewayCloudIdError(errorText).slice(0, 400)}`);
 	}
 
 	const reader = response.body?.getReader();
@@ -523,7 +621,7 @@ async function streamGoogleGatewayManualSse({
 
 	if (!response.ok) {
 		const errorText = await response.text();
-		throw new Error(`AI Gateway Google error ${response.status}: ${errorText.slice(0, 300)}`);
+		throw new Error(`AI Gateway Google error ${response.status}: ${describeGatewayCloudIdError(errorText).slice(0, 400)}`);
 	}
 
 	const reader = response.body?.getReader();
@@ -616,6 +714,11 @@ module.exports = {
 	getEnvVars,
 	getAIGatewayConfigReport,
 	hasGatewayUrlConfigured,
+	isStagingAiGatewayUrl,
+	isDummyGatewayCloudId,
+	describeGatewayCloudIdKind,
+	resolveGatewayCloudId,
+	describeGatewayCloudIdError,
 	getAuthToken,
 	detectEndpointType,
 	getGatewayHeaders,

@@ -170,7 +170,7 @@ LOCAL_WHISPER_BIN=whisper
 # OPENAI_COMPATIBLE_STT_API_KEY=
 
 AI_GATEWAY_USE_CASE_ID=your-use-case-id
-AI_GATEWAY_CLOUD_ID=local-testing
+AI_GATEWAY_CLOUD_ID=internal-dummy-your-use-case-id
 AI_GATEWAY_USER_ID=your-email@atlassian.com
 
 # ASAP Credentials
@@ -207,7 +207,7 @@ OPENAI_REALTIME_VOICE=alloy
 | `AI_GATEWAY_URL` | Yes | Default model endpoint (Bedrock/OpenAI/Google) |
 | `AI_GATEWAY_URL_GOOGLE` | Yes | Google endpoint for `provider: "google"` requests + TTS route |
 | `AI_GATEWAY_USE_CASE_ID` | Yes | Your AI Gateway use case ID |
-| `AI_GATEWAY_CLOUD_ID` | Yes | Cloud ID (use `local-testing` for local dev) |
+| `AI_GATEWAY_CLOUD_ID` | Yes | Cloud ID. For staging/local, use `internal-dummy-<use-case-id>` (Proximity's dummy CloudID). Tenant UUIDs and `local-testing` are rejected by staging AI Gateway. |
 | `AI_GATEWAY_USER_ID` | Yes | Your Atlassian email |
 | `OPENAI_MODEL` | Optional | GPT model ID (default: `gpt-5.6-terra`) |
 | `GOOGLE_IMAGE_MODEL` | Yes | Gemini image model (default: `gemini-3-pro-image-preview`) |

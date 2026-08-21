@@ -13,7 +13,7 @@
  */
 
 const WebSocket = require("ws");
-const { getRealtimeConfig, getAuthToken, getEnvVars } = require("./ai-gateway-helpers");
+const { getRealtimeConfig, getAuthToken, getEnvVars, resolveGatewayCloudId } = require("./ai-gateway-helpers");
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -549,7 +549,7 @@ class RealtimeSession {
 				Authorization: `bearer ${token}`,
 				"OpenAI-Beta": "realtime=v1",
 				"X-Atlassian-UseCaseId": envVars.AI_GATEWAY_USE_CASE_ID,
-				"X-Atlassian-CloudId": envVars.AI_GATEWAY_CLOUD_ID,
+				"X-Atlassian-CloudId": resolveGatewayCloudId(envVars),
 				"X-Atlassian-UserId": envVars.AI_GATEWAY_USER_ID,
 			};
 			this._log("REALTIME", `Connecting via AI Gateway: ${config.wsUrl} (model: ${config.model})`);

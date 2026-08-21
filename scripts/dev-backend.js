@@ -169,6 +169,10 @@ const run = async () => {
 				console.log(
 					`Backend dev server is already running for this worktree on port ${recordedPort}. Reusing existing process.`
 				);
+				console.warn(
+					"[dev-backend] Reuse does not reload .env.local or backend code. " +
+						`Stop the process listening on ${recordedPort} before starting if you changed CloudID, ASAP, or gateway helpers.`
+				);
 				return;
 			}
 			console.warn(
