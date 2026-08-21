@@ -206,7 +206,7 @@ atlas micros stash set -s $SERVICE_NAME -e $ENV \
 
 atlas micros stash set -s $SERVICE_NAME -e $ENV \
   -k AI_GATEWAY_CLOUD_ID \
-  -v "local-testing"
+  -v "internal-dummy-your-use-case-id"
 
 # REPLACE with YOUR email
 atlas micros stash set -s $SERVICE_NAME -e $ENV \
