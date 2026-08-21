@@ -32,7 +32,7 @@ function ExampleStage({ label, children, className }: Readonly<{ label: string; 
 		<section
 			aria-label={label}
 			className={cn(
-				"relative flex min-h-[352px] w-full flex-1 self-stretch items-center justify-center overflow-visible rounded-[10px] bg-bg-neutral-subtle p-0 sm:p-6",
+				"relative flex min-h-[352px] w-full flex-1 self-stretch items-center justify-center overflow-visible rounded-lg bg-bg-neutral-subtle p-0 sm:p-6",
 				className,
 			)}
 		>
