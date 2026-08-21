@@ -94,6 +94,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/ui-custom/pixel-loader/pixel-loader.test.js",
 		".agents/skills/vpk-build/scripts/scaffold-target.test.js",
 		".agents/skills/vpk-system-clean/scripts/vpk-system-clean.test.js",
+		".agents/skills/vpk-verify/scripts/control-vpk.test.js",
 		"components/blocks/work-item-widget/work-item-widget.test.js",
 	],
 	"source-contract": [
