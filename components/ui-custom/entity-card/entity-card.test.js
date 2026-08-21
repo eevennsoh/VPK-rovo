@@ -304,8 +304,8 @@ test("tool variant uses an app-logo tile with tool and teammate counts", () => {
 test("knowledge variant renders app identity, a publisher byline, and star/teammate stats", () => {
 	assert.match(KNOWLEDGE_SOURCE, /data-slot="entity-card-knowledge"/u);
 	assert.match(KNOWLEDGE_SOURCE, /title=\{name\}/u);
-	assert.match(KNOWLEDGE_SOURCE, /byline=\{bylinePublisher \? <EntityCardByline publisher=\{bylinePublisher\} verified=\{verified\} \/> : undefined\}/u);
-	assert.match(KNOWLEDGE_SOURCE, /const bylinePublisher = publisher \?\? providerName/u);
+	assert.match(KNOWLEDGE_SOURCE, /byline=\{publisher \? <EntityCardByline publisher=\{publisher\} verified=\{verified\} \/> : undefined\}/u);
+	assert.doesNotMatch(KNOWLEDGE_SOURCE, /providerName/u);
 	assert.match(KNOWLEDGE_SOURCE, /@atlaskit\/icon\/core\/star-unstarred/u);
 	assert.match(KNOWLEDGE_SOURCE, /@atlaskit\/icon\/core\/people-group/u);
 	assert.match(KNOWLEDGE_SOURCE, /formatCompact\(starCount\)/u);

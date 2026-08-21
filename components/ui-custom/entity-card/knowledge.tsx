@@ -24,11 +24,6 @@ export interface EntityCardKnowledgeProps {
 	publisher?: string;
 	/** Renders the verified checkmark beside the publisher byline. */
 	verified?: boolean;
-	/**
-	 * @deprecated Use `publisher`. Retained for back-compat — falls back to the
-	 * byline publisher when `publisher` is omitted.
-	 */
-	providerName?: string;
 	starCount?: number;
 	teammateCount?: number;
 	icon?: ReactNode;
@@ -52,7 +47,6 @@ export function EntityCardKnowledge({
 	description,
 	publisher,
 	verified = false,
-	providerName,
 	starCount,
 	teammateCount,
 	icon,
@@ -64,7 +58,6 @@ export function EntityCardKnowledge({
 	selectLabel,
 	className,
 }: Readonly<EntityCardKnowledgeProps>) {
-	const bylinePublisher = publisher ?? providerName;
 	const showStars = typeof starCount === "number";
 	const showTeammates = typeof teammateCount === "number";
 
@@ -74,7 +67,7 @@ export function EntityCardKnowledge({
 				<EntityCardHeader
 					added={added}
 					onAddedChange={onAddedChange}
-					byline={bylinePublisher ? <EntityCardByline publisher={bylinePublisher} verified={verified} /> : undefined}
+					byline={publisher ? <EntityCardByline publisher={publisher} verified={verified} /> : undefined}
 					onSelectedChange={onSelectedChange}
 					selectLabel={selectLabel}
 					selectable={selectable}
