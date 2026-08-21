@@ -39,10 +39,13 @@ export function buildChapterJumpTarget(
 ): number {
 	const chapterRect = chapterElement.getBoundingClientRect();
 	const stickyHeaderBottom = resolveStickyHeaderBottom(scrollContainer, stickyHeaderSelector);
-	const targetTop =
+	// Element scrolling floors fractional targets in Chromium. Round toward the
+	// section so it cannot settle a subpixel below the spy's activation line.
+	const targetTop = Math.ceil(
 		scrollContainer.scrollTop +
 		(chapterRect.top - stickyHeaderBottom) -
-		CHAPTER_SCROLL_GAP_PX;
+		CHAPTER_SCROLL_GAP_PX,
+	);
 
 	return Math.max(
 		0,

@@ -67,6 +67,7 @@ export function useScrollSpySections({
 	const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 	const lockedIdRef = useRef<string | null>(null);
 	const unlockTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const settleFrameRef = useRef<number | null>(null);
 	const pendingScrollEndRef = useRef<{
 		container: HTMLElement;
 		handler: () => void;
@@ -93,6 +94,10 @@ export function useScrollSpySections({
 	}, [sectionIds, stickyHeaderSelector]);
 
 	const clearPendingUnlock = useCallback(() => {
+		if (settleFrameRef.current != null) {
+			window.cancelAnimationFrame(settleFrameRef.current);
+			settleFrameRef.current = null;
+		}
 		if (unlockTimeoutRef.current != null) {
 			clearTimeout(unlockTimeoutRef.current);
 			unlockTimeoutRef.current = null;
@@ -155,11 +160,29 @@ export function useScrollSpySections({
 
 		const unlockSpy = () => {
 			if (lockedIdRef.current !== sectionId) return;
-			lockedIdRef.current = null;
 			const nextActiveId = resolveActiveId(scrollContainer);
-			if (nextActiveId) {
-				setActiveId(nextActiveId);
+			if (nextActiveId === sectionId) {
+				lockedIdRef.current = null;
+				setActiveId(sectionId);
+				return;
 			}
+
+			// The scrollport can finish before an ancestor's entry transform. Recompute
+			// once against the settled visual geometry while the selected id is still
+			// locked, then let the spy resolve the corrected position next frame.
+			scrollContainer.scrollTo({
+				top: buildChapterJumpTarget(scrollContainer, sectionElement, stickyHeaderSelector),
+				behavior: "auto",
+			});
+			settleFrameRef.current = window.requestAnimationFrame(() => {
+				settleFrameRef.current = null;
+				if (lockedIdRef.current !== sectionId) return;
+				lockedIdRef.current = null;
+				const settledActiveId = resolveActiveId(scrollContainer);
+				if (settledActiveId) {
+					setActiveId(settledActiveId);
+				}
+			});
 		};
 
 		scrollContainer.scrollTo({
