@@ -112,15 +112,49 @@ function resolveOrigin(frontendPort) {
 	return `http://127.0.0.1:${frontendPort}`;
 }
 
+function resolveAgentBrowserBin(repoRoot = REPO_ROOT) {
+	let packageJsonPath;
+	try {
+		packageJsonPath = require.resolve("agent-browser/package.json", { paths: [repoRoot] });
+	} catch {
+		throw new Error(
+			"agent-browser is not installed in this worktree. Run `pnpm install` from the repo root.",
+		);
+	}
+	const pkg = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+	const binField = pkg.bin;
+	const relativeBin = typeof binField === "string"
+		? binField
+		: binField && typeof binField === "object"
+			? binField["agent-browser"]
+			: undefined;
+	if (typeof relativeBin !== "string" || relativeBin.length === 0) {
+		throw new Error("agent-browser package.json is missing a bin.agent-browser entry.");
+	}
+	const binPath = path.resolve(path.dirname(packageJsonPath), relativeBin);
+	if (!fs.existsSync(binPath)) {
+		throw new Error(
+			`agent-browser bin is missing at ${binPath}. Run \`pnpm install\` from the repo root.`,
+		);
+	}
+	return binPath;
+}
+
+function runAgentBrowser(args, options = {}) {
+	return spawnSync(resolveAgentBrowserBin(), args, {
+		cwd: REPO_ROOT,
+		...options,
+	});
+}
+
 function browserSessionId() {
-	const result = spawnSync(
-		"agent-browser",
+	const result = runAgentBrowser(
 		["session", "id", "--scope", "worktree", "--prefix", SESSION_PREFIX],
-		{ cwd: REPO_ROOT, encoding: "utf8" },
+		{ encoding: "utf8" },
 	);
 	if (result.status !== 0) {
 		throw new Error(
-			result.stderr?.trim() || "agent-browser session id failed. Install with: npm i -g agent-browser && agent-browser install",
+			result.stderr?.trim() || "agent-browser session id failed. Run `pnpm install` from the repo root, then retry.",
 		);
 	}
 	return result.stdout.trim();
@@ -133,10 +167,7 @@ function closeBrowserSessionBestEffort() {
 	} catch {
 		return;
 	}
-	spawnSync("agent-browser", ["--session", session, "close"], {
-		cwd: REPO_ROOT,
-		stdio: "ignore",
-	});
+	runAgentBrowser(["--session", session, "close"], { stdio: "ignore" });
 }
 
 function readState() {
@@ -274,8 +305,7 @@ async function main() {
 			process.exit(1);
 		}
 		const session = browserSessionId();
-		const result = spawnSync("agent-browser", ["--session", session, ...forwarded], {
-			cwd: REPO_ROOT,
+		const result = runAgentBrowser(["--session", session, ...forwarded], {
 			stdio: "inherit",
 			env: {
 				...process.env,
@@ -289,7 +319,14 @@ async function main() {
 	usage(1);
 }
 
-main().catch((error) => {
-	process.stderr.write(`${error.stack || error.message}\n`);
-	process.exit(1);
-});
+if (require.main === module) {
+	main().catch((error) => {
+		process.stderr.write(`${error.stack || error.message}\n`);
+		process.exit(1);
+	});
+}
+
+module.exports = {
+	resolveAgentBrowserBin,
+	runAgentBrowser,
+};
