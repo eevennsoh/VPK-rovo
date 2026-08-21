@@ -1,0 +1,284 @@
+#!/usr/bin/env node
+"use strict";
+
+const { spawnSync } = require("node:child_process");
+const fs = require("node:fs");
+const http = require("node:http");
+const https = require("node:https");
+const path = require("node:path");
+
+const REPO_ROOT = path.resolve(__dirname, "../../../../");
+const FRONTEND_PORT_FILE = path.join(REPO_ROOT, ".dev-frontend-port");
+const BACKEND_PORT_FILE = path.join(REPO_ROOT, ".dev-backend-port");
+const RUN_DIR = path.join(REPO_ROOT, "output/vpk-verify/.run");
+const STATE_FILE = path.join(RUN_DIR, "state.json");
+const EVIDENCE_DIR = path.join(REPO_ROOT, "output/agent-browser/vpk-verify");
+const SESSION_PREFIX = "vpk-verify";
+
+const { loadPortlessRoutes, findPortlessUrl } = require(
+	path.join(REPO_ROOT, "scripts/lib/portless-routes.js"),
+);
+
+function usage(exitCode = 1) {
+	process.stderr.write(`Usage: control-vpk <command>
+
+Commands:
+  url                 Print this worktree's origin (Portless, else localhost).
+  doctor              Read-only health check. Exit 0 if the frontend is ours and serving.
+  doctor --require-backend
+                      Also require GET /api/health JSON status=OK.
+  launch              Reuse a healthy stack, or start pnpm run dev:tmux:start.
+  cleanup             Close the vpk-verify browser session. Stop tmux only if launch started it.
+  session             Print the worktree-scoped agent-browser session id.
+  evidence-dir        Print the proof artifact directory.
+  browser [--] <args> Run agent-browser with the vpk-verify session injected.
+
+`);
+	process.exit(exitCode);
+}
+
+function readTrimmed(file) {
+	try {
+		return fs.readFileSync(file, "utf8").trim();
+	} catch {
+		return "";
+	}
+}
+
+function portListening(port) {
+	if (!port) return false;
+	const result = spawnSync(
+		"lsof",
+		["-nP", `-iTCP:${port}`, "-sTCP:LISTEN"],
+		{ stdio: "ignore" },
+	);
+	return result.status === 0;
+}
+
+function request(url, { timeoutMs = 4000, rejectUnauthorized = false } = {}) {
+	return new Promise((resolve) => {
+		let settled = false;
+		const finish = (value) => {
+			if (settled) return;
+			settled = true;
+			resolve(value);
+		};
+		let parsed;
+		try {
+			parsed = new URL(url);
+		} catch (error) {
+			finish({ ok: false, status: 0, error: error.message, body: "" });
+			return;
+		}
+		const lib = parsed.protocol === "https:" ? https : http;
+		const req = lib.request(
+			{
+				protocol: parsed.protocol,
+				hostname: parsed.hostname,
+				port: parsed.port || undefined,
+				path: `${parsed.pathname}${parsed.search}`,
+				method: "GET",
+				rejectUnauthorized,
+				headers: { accept: "application/json, text/html;q=0.8" },
+			},
+			(res) => {
+				const chunks = [];
+				res.on("data", (chunk) => chunks.push(chunk));
+				res.on("end", () => {
+					finish({
+						ok: (res.statusCode ?? 0) >= 200 && (res.statusCode ?? 0) < 400,
+						status: res.statusCode ?? 0,
+						error: "",
+						body: Buffer.concat(chunks).toString("utf8"),
+					});
+				});
+			},
+		);
+		req.setTimeout(timeoutMs, () => {
+			req.destroy();
+			finish({ ok: false, status: 0, error: "timeout", body: "" });
+		});
+		req.on("error", (error) => {
+			finish({ ok: false, status: 0, error: error.message, body: "" });
+		});
+		req.end();
+	});
+}
+
+function resolveOrigin(frontendPort) {
+	if (!frontendPort) return "";
+	const portlessUrl = findPortlessUrl(loadPortlessRoutes(), frontendPort);
+	if (portlessUrl) return portlessUrl;
+	return `http://127.0.0.1:${frontendPort}`;
+}
+
+function browserSessionId() {
+	const result = spawnSync(
+		"agent-browser",
+		["session", "id", "--scope", "worktree", "--prefix", SESSION_PREFIX],
+		{ cwd: REPO_ROOT, encoding: "utf8" },
+	);
+	if (result.status !== 0) {
+		throw new Error(
+			result.stderr?.trim() || "agent-browser session id failed. Install with: npm i -g agent-browser && agent-browser install",
+		);
+	}
+	return result.stdout.trim();
+}
+
+function readState() {
+	try {
+		return JSON.parse(fs.readFileSync(STATE_FILE, "utf8"));
+	} catch {
+		return {};
+	}
+}
+
+function writeState(patch) {
+	fs.mkdirSync(RUN_DIR, { recursive: true });
+	const next = { ...readState(), ...patch };
+	fs.writeFileSync(STATE_FILE, `${JSON.stringify(next, null, "\t")}\n`);
+	return next;
+}
+
+async function collectDoctor() {
+	const frontendPort = readTrimmed(FRONTEND_PORT_FILE);
+	const backendPort = readTrimmed(BACKEND_PORT_FILE);
+	const origin = resolveOrigin(frontendPort);
+	const frontendListening = portListening(frontendPort);
+	const backendListening = portListening(backendPort);
+	const home = origin ? await request(`${origin}/`) : { ok: false, status: 0, error: "no origin", body: "" };
+	const health = origin
+		? await request(`${origin}/api/health`)
+		: { ok: false, status: 0, error: "no origin", body: "" };
+	let healthJson = null;
+	try {
+		healthJson = JSON.parse(health.body);
+	} catch {
+		healthJson = null;
+	}
+	const backendOk = healthJson?.status === "OK";
+	const ok = Boolean(frontendPort && frontendListening && origin && home.ok);
+	return {
+		ok,
+		worktree: REPO_ROOT,
+		origin,
+		frontendPort: frontendPort || null,
+		frontendListening,
+		frontendStatus: home.status,
+		backendPort: backendPort || null,
+		backendListening,
+		backendStatus: health.status,
+		backendOk,
+		healthError: healthJson?.error || health.error || null,
+		tmux: "vpk-dev-<worktree> via pnpm run dev:tmux:status",
+	};
+}
+
+function printDoctor(report) {
+	process.stdout.write(`${JSON.stringify(report, null, "\t")}\n`);
+}
+
+function runPnpm(args, { stdio = "inherit" } = {}) {
+	const result = spawnSync("pnpm", args, { cwd: REPO_ROOT, stdio });
+	if (result.status !== 0) {
+		process.exit(result.status ?? 1);
+	}
+}
+
+async function main() {
+	const argv = process.argv.slice(2);
+	const command = argv[0];
+	if (!command || command === "-h" || command === "--help") {
+		usage(command ? 0 : 1);
+	}
+
+	if (command === "url") {
+		const origin = resolveOrigin(readTrimmed(FRONTEND_PORT_FILE));
+		if (!origin) {
+			process.stderr.write("No origin. Run `control-vpk launch` in this worktree.\n");
+			process.exit(1);
+		}
+		process.stdout.write(`${origin}\n`);
+		return;
+	}
+
+	if (command === "evidence-dir") {
+		process.stdout.write(`${EVIDENCE_DIR}\n`);
+		return;
+	}
+
+	if (command === "session") {
+		process.stdout.write(`${browserSessionId()}\n`);
+		return;
+	}
+
+	if (command === "doctor") {
+		const report = await collectDoctor();
+		printDoctor(report);
+		const requireBackend = argv.includes("--require-backend");
+		if (!report.ok) process.exit(1);
+		if (requireBackend && !report.backendOk) process.exit(1);
+		return;
+	}
+
+	if (command === "launch") {
+		const before = await collectDoctor();
+		if (before.ok) {
+			writeState({ launchedByVerify: Boolean(readState().launchedByVerify) });
+			printDoctor({ ...before, reused: true });
+			return;
+		}
+		runPnpm(["run", "dev:tmux:start"]);
+		writeState({ launchedByVerify: true });
+		const after = await collectDoctor();
+		printDoctor({ ...after, reused: false, launchedByVerify: true });
+		if (!after.ok) process.exit(1);
+		return;
+	}
+
+	if (command === "cleanup") {
+		const state = readState();
+		try {
+			const session = browserSessionId();
+			spawnSync("agent-browser", ["--session", session, "close"], {
+				cwd: REPO_ROOT,
+				stdio: "ignore",
+			});
+		} catch {}
+		if (state.launchedByVerify) {
+			runPnpm(["run", "dev:tmux:stop"]);
+		} else {
+			process.stderr.write("Did not start this worktree's stack; leaving it running.\n");
+		}
+		fs.rmSync(RUN_DIR, { recursive: true, force: true });
+		process.stdout.write(`Evidence kept at ${EVIDENCE_DIR}\n`);
+		return;
+	}
+
+	if (command === "browser") {
+		const forwarded = argv.slice(1).filter((arg) => arg !== "--");
+		if (forwarded.length === 0) {
+			process.stderr.write("control-vpk browser requires agent-browser arguments.\n");
+			process.exit(1);
+		}
+		const session = browserSessionId();
+		const result = spawnSync("agent-browser", ["--session", session, ...forwarded], {
+			cwd: REPO_ROOT,
+			stdio: "inherit",
+			env: {
+				...process.env,
+				AGENT_BROWSER_SESSION: session,
+				AGENT_BROWSER_RESTORE: session,
+			},
+		});
+		process.exit(result.status ?? 1);
+	}
+
+	usage(1);
+}
+
+main().catch((error) => {
+	process.stderr.write(`${error.stack || error.message}\n`);
+	process.exit(1);
+});
