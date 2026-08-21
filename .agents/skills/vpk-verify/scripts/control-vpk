@@ -241,10 +241,15 @@ async function main() {
 			printDoctor({ ...before, reused: true });
 			return;
 		}
+		const alreadyListening = before.frontendListening;
 		runPnpm(["run", "dev:tmux:start"]);
-		writeState({ launchedByVerify: true });
+		writeState({ launchedByVerify: !alreadyListening });
 		const after = await collectDoctor();
-		printDoctor({ ...after, reused: false, launchedByVerify: true });
+		printDoctor({
+			...after,
+			reused: alreadyListening,
+			launchedByVerify: !alreadyListening,
+		});
 		if (!after.ok) process.exit(1);
 		return;
 	}
