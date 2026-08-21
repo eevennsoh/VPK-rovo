@@ -55,7 +55,7 @@ function portListening(port) {
 	return result.status === 0;
 }
 
-function request(url, { timeoutMs = 4000, rejectUnauthorized = false } = {}) {
+function requestWorktreeOrigin(url, { timeoutMs = 4000 } = {}) {
 	return new Promise((resolve) => {
 		let settled = false;
 		const finish = (value) => {
@@ -78,7 +78,7 @@ function request(url, { timeoutMs = 4000, rejectUnauthorized = false } = {}) {
 				port: parsed.port || undefined,
 				path: `${parsed.pathname}${parsed.search}`,
 				method: "GET",
-				rejectUnauthorized,
+				rejectUnauthorized: false,
 				headers: { accept: "application/json, text/html;q=0.8" },
 			},
 			(res) => {
@@ -126,6 +126,19 @@ function browserSessionId() {
 	return result.stdout.trim();
 }
 
+function closeBrowserSessionBestEffort() {
+	let session = "";
+	try {
+		session = browserSessionId();
+	} catch {
+		return;
+	}
+	spawnSync("agent-browser", ["--session", session, "close"], {
+		cwd: REPO_ROOT,
+		stdio: "ignore",
+	});
+}
+
 function readState() {
 	try {
 		return JSON.parse(fs.readFileSync(STATE_FILE, "utf8"));
@@ -147,9 +160,9 @@ async function collectDoctor() {
 	const origin = resolveOrigin(frontendPort);
 	const frontendListening = portListening(frontendPort);
 	const backendListening = portListening(backendPort);
-	const home = origin ? await request(`${origin}/`) : { ok: false, status: 0, error: "no origin", body: "" };
+	const home = origin ? await requestWorktreeOrigin(`${origin}/`) : { ok: false, status: 0, error: "no origin", body: "" };
 	const health = origin
-		? await request(`${origin}/api/health`)
+		? await requestWorktreeOrigin(`${origin}/api/health`)
 		: { ok: false, status: 0, error: "no origin", body: "" };
 	let healthJson = null;
 	try {
@@ -171,7 +184,6 @@ async function collectDoctor() {
 		backendStatus: health.status,
 		backendOk,
 		healthError: healthJson?.error || health.error || null,
-		tmux: "vpk-dev-<worktree> via pnpm run dev:tmux:status",
 	};
 }
 
@@ -239,13 +251,7 @@ async function main() {
 
 	if (command === "cleanup") {
 		const state = readState();
-		try {
-			const session = browserSessionId();
-			spawnSync("agent-browser", ["--session", session, "close"], {
-				cwd: REPO_ROOT,
-				stdio: "ignore",
-			});
-		} catch {}
+		closeBrowserSessionBestEffort();
 		if (state.launchedByVerify) {
 			runPnpm(["run", "dev:tmux:stop"]);
 		} else {
