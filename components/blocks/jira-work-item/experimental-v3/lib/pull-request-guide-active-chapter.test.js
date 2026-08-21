@@ -194,3 +194,26 @@ test("buildChapterJumpTarget falls back to the scrollport top with no sticky ban
 		120 + (300 - 24) - CHAPTER_SCROLL_GAP_PX,
 	);
 });
+
+test("buildChapterJumpTarget rounds fractional targets toward the selected chapter", async () => {
+	const { CHAPTER_SCROLL_GAP_PX, buildChapterJumpTarget } = await loadActiveChapter();
+	const scrollContainer = {
+		clientHeight: 500,
+		scrollHeight: 2000,
+		scrollTop: 0,
+		getBoundingClientRect: () => ({ top: 204, bottom: 704, left: 0, right: 400 }),
+		querySelectorAll: () => [],
+	};
+	const chapterElement = {
+		getBoundingClientRect: () => ({ top: 346.4375, bottom: 500, left: 0, right: 400 }),
+	};
+
+	assert.equal(
+		buildChapterJumpTarget(scrollContainer, chapterElement),
+		Math.ceil(
+			346.4375 -
+			204 -
+			CHAPTER_SCROLL_GAP_PX,
+		),
+	);
+});

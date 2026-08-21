@@ -610,7 +610,7 @@ function ExperimentalV3JiraWorkItemContent({
 
 	return (
 		<PanelLayoutProvider>
-			<SectionNavigationProvider>
+			<SectionNavigationProvider active={open}>
 			<Toaster id={PULL_REQUEST_REVIEW_TOASTER_ID} position="bottom-left" />
 			<LayoutGroup id={composerLayoutGroupId}>
 				<ExperimentalWorkItemDialog

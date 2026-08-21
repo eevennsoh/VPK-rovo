@@ -56,7 +56,13 @@ const NO_SECTIONS: readonly WorkItemSectionTab[] = [];
  * chrome while the sections render inside the scrollport — DOM siblings with no
  * parent/child data path between them.
  */
-export function SectionNavigationProvider({ children }: Readonly<{ children: ReactNode }>) {
+export function SectionNavigationProvider({
+	active,
+	children,
+}: Readonly<{
+	active: boolean;
+	children: ReactNode;
+}>) {
 	const [sections, setSectionsState] = useState(NO_SECTIONS);
 	const instanceId = useId();
 	const [activityCount, setActivityCount] = useState<number | null>(null);
@@ -69,7 +75,9 @@ export function SectionNavigationProvider({ children }: Readonly<{ children: Rea
 	}, []);
 
 	useEffect(() => {
-		if (!wideScrollContainer || !narrowScrollContainer) {
+		// Modal content stays mounted while hidden. Re-resolve when it opens so a
+		// zero-width closed layout cannot leave the narrow scrollport selected.
+		if (!active || !wideScrollContainer || !narrowScrollContainer) {
 			setWideScrollerActive(false);
 			return;
 		}
@@ -88,7 +96,7 @@ export function SectionNavigationProvider({ children }: Readonly<{ children: Rea
 		const observer = new ResizeObserver(syncActiveScroller);
 		observer.observe(narrowScrollContainer);
 		return () => observer.disconnect();
-	}, [narrowScrollContainer, wideScrollContainer]);
+	}, [active, narrowScrollContainer, wideScrollContainer]);
 
 	const scrollContainer = wideScrollerActive ? wideScrollContainer : narrowScrollContainer;
 	const sectionIds = useMemo(() => sections.map((section) => section.id), [sections]);

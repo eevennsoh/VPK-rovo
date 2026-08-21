@@ -159,6 +159,12 @@ test("the v3 section nav pins in narrow mode and tracks the active scroller", ()
 		/getComputedStyle\(wideScrollContainer\)\.display !== "contents"/u,
 	);
 	assert.match(navigationSource, /new ResizeObserver\(syncActiveScroller\)/u);
+	assert.match(navigationSource, /if \(!active \|\| !wideScrollContainer \|\| !narrowScrollContainer\)/u);
+	assert.match(navigationSource, /\[active, narrowScrollContainer, wideScrollContainer\]/u);
+	assert.match(
+		readBlockFile("experimental-v3/experimental-v3-jira-work-item.tsx"),
+		/<SectionNavigationProvider active=\{open\}>/u,
+	);
 
 	// Regression: the nav pins at `top-0` with a higher z-index than the
 	// pull-request header. Below 860px both are in the same scrollport, so the
