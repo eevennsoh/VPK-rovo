@@ -60,6 +60,15 @@ test("every Jira chapter continues one stable Claude session", async () => {
 	}
 });
 
+test("non-terminal chapters select Claude for the embedded chat while Terminal stays closed", async () => {
+	const story = await loadStoryModule();
+	assert.equal(story.createJiraGoldenJourneysV3StoryState("terminal").activeSessionId, null);
+	for (const chapter of ["build", "review", "fix", "approve", "release"]) {
+		const state = story.createJiraGoldenJourneysV3StoryState(chapter);
+		assert.equal(state.activeSessionId, state.sessions[0].id);
+	}
+});
+
 test("Build starts with linked PR #1847, running CI, and Claude's handoff", async () => {
 	const story = await loadStoryModule();
 	const build = story.createJiraGoldenJourneysV3StoryState("build", { ciStatus: "running" });

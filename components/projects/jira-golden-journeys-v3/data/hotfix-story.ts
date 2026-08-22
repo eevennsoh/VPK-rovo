@@ -318,7 +318,7 @@ export function createJiraGoldenJourneysV3StoryState(
 		comments: createStoryComments(chapter),
 		sessions,
 		staticEvents: [...storyEventsForChapter(chapter, options)],
-		activeSessionId: null,
+		activeSessionId: sessions[0]?.id ?? null,
 		composerPrefill: null,
 		elapsedMs: STORY_EPOCH_MS - SESSION_EPOCH_MS,
 		nextOrder: sessions.length,
