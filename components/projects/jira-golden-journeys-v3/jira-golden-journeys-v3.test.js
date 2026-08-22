@@ -33,6 +33,7 @@ test("the route resets chat before mounting each story chapter and keeps the flo
 	);
 	assert.doesNotMatch(pageSource, /const \{ closeChat, resetChat \} = useRovoChat\(\)/u);
 	assert.doesNotMatch(pageSource, /closeChat\(\);[\s\S]*resetChat\(\);/u);
+	assert.match(pageSource, /preserveActiveSessionOnHydration/u);
 });
 
 test("the responsive gallery keeps both desktop and compact story controls", () => {

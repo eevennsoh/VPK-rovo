@@ -167,6 +167,7 @@ function JiraGoldenJourneysV3WorkItemStage({
 				initialPreset={controller.initialState.preset}
 				initialState={controller.initialState}
 				initialStateRevision={controller.launchId}
+				preserveActiveSessionOnHydration
 				inlineSurface="card-fill"
 				presentation="inline"
 				revealActivityEntryId={getRevealActivityEntryId(controller)}
