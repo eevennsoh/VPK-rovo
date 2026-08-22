@@ -337,6 +337,22 @@ test("experimental v3 does not render a closed-state floating Rovo launcher", ()
 	assert.doesNotMatch(sessionSurfaceSource, /data-jira-work-item-dialog-body/u);
 });
 
+test("experimental v3 can preserve a dismissed chat across authored snapshot hydration", () => {
+	const compositionSource = readBlockFile("experimental-v3/experimental-v3-jira-work-item.tsx");
+	const contextSource = readBlockFile("experimental-v3/context-jira-work-item.tsx");
+	const controllerSource = readBlockFile("experimental-v3/use-jira-work-item-controller.ts");
+	assert.match(
+		compositionSource,
+		/preserveActiveSessionOnHydration=\{props\.preserveActiveSessionOnHydration\}/u,
+	);
+	assert.match(contextSource, /preserveActiveSessionOnHydration/u);
+	assert.match(controllerSource, /preserveActiveSessionOnHydration = false/u);
+	assert.match(
+		controllerSource,
+		/activeSessionId: preserveActiveSessionOnHydration[\s\S]*\? state\.activeSessionId[\s\S]*: initialState\.activeSessionId/u,
+	);
+});
+
 test("experimental v3 shares the session/planner data layer", () => {
 	assert.match(
 		readBlockFile("experimental-v3/experimental-v3-jira-work-item.tsx"),

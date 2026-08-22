@@ -82,6 +82,7 @@ export function useJiraWorkItemController(
 	active = true,
 	initialState?: JiraWorkItemState,
 	initialStateRevision?: string | number,
+	preserveActiveSessionOnHydration = false,
 ): JiraWorkItemController {
 	const [state, dispatch] = useReducer(jiraWorkItemReducer, { initialState, preset: initialPreset, workItem }, initState);
 	const previousInitialStateRevisionRef = useRef(initialStateRevision);
@@ -100,8 +101,18 @@ export function useJiraWorkItemController(
 			return;
 		}
 		previousInitialStateRevisionRef.current = initialStateRevision;
-		if (initialState) dispatch({ type: "hydrate-state", state: initialState });
-	}, [initialState, initialStateRevision]);
+		if (initialState) {
+			dispatch({
+				type: "hydrate-state",
+				state: {
+					...initialState,
+					activeSessionId: preserveActiveSessionOnHydration
+						? state.activeSessionId
+						: initialState.activeSessionId,
+				},
+			});
+		}
+	}, [initialState, initialStateRevision, preserveActiveSessionOnHydration, state.activeSessionId]);
 
 	// Metronome: while the surface is active (open) AND a session or planner task
 	// is processing, advance the pure timer engine on a fixed cadence. Gating on

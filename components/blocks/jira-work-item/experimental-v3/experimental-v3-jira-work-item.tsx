@@ -102,6 +102,8 @@ interface ExperimentalV3JiraWorkItemBaseProps {
 	initialPreset: JiraWorkItemPreset;
 	initialState?: JiraWorkItemState;
 	initialStateRevision?: string | number;
+	/** Preserve an explicit user dismissal while an authored snapshot updates in place. */
+	preserveActiveSessionOnHydration?: boolean;
 	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
 	onOpenAgentChat?: (agentId: string) => void;
 	onPullRequestApprove?: (identity: string) => void;
@@ -779,6 +781,7 @@ export function ExperimentalV3JiraWorkItem(props: Readonly<ExperimentalV3JiraWor
 				initialPreset={initialPreset}
 				initialState={initialState}
 				initialStateRevision={props.initialStateRevision}
+				preserveActiveSessionOnHydration={props.preserveActiveSessionOnHydration}
 				statusPhases={props.statusPhases}
 				workItem={workItem}
 			>
