@@ -66,6 +66,52 @@ test("maps a static event to a Jira event row with icon, segments, and timestamp
 	assert.equal(typeof entry.timestamp, "string");
 });
 
+test("splits leftover set-priority text into a priority segment", async () => {
+	const adapter = await loadAdapter();
+	const [highEntry] = adapter.mapActivityEventsToJiraEntries([
+		{
+			id: "static-assigned",
+			kind: "event",
+			actor: { id: "jordan", name: "Jordan Lee", kind: "person" },
+			segments: [{ type: "text", text: "self-assigned the issue and set priority to High" }],
+			createdAtMs: Date.UTC(2026, 4, 12, 13, 12),
+		},
+	]);
+	assert.deepEqual(highEntry.segments, [
+		{ type: "text", text: "self-assigned the issue and set priority to " },
+		{ type: "priority", text: "High" },
+	]);
+
+	const [highestEntry] = adapter.mapActivityEventsToJiraEntries([
+		{
+			id: "static-priority-highest",
+			kind: "event",
+			actor: { id: "jordan", name: "Jordan Lee", kind: "person" },
+			segments: [{ type: "text", text: "set priority to Highest" }],
+			createdAtMs: Date.UTC(2026, 4, 12, 13, 13),
+		},
+	]);
+	assert.deepEqual(highestEntry.segments, [
+		{ type: "text", text: "set priority to " },
+		{ type: "priority", text: "Highest" },
+	]);
+
+	const structured = [
+		{ type: "text", text: "self-assigned the issue and set priority to " },
+		{ type: "priority", text: "Low" },
+	];
+	const [structuredEntry] = adapter.mapActivityEventsToJiraEntries([
+		{
+			id: "static-priority-low",
+			kind: "event",
+			actor: { id: "jordan", name: "Jordan Lee", kind: "person" },
+			segments: structured,
+			createdAtMs: Date.UTC(2026, 4, 12, 13, 14),
+		},
+	]);
+	assert.deepEqual(structuredEntry.segments, structured);
+});
+
 test("maps a static event without an icon and an app actor with a brand name", async () => {
 	const adapter = await loadAdapter();
 	const [entry] = adapter.mapActivityEventsToJiraEntries([

@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
+import { activityActorVpkLogo } from "./jira-activity-actor-mention";
 import type { JiraActivityActor, JiraActivityEventIcon } from "./jira-activity-types";
 
 // All ADS core icons share one signature, so `typeof AddIcon` types the whole map.
@@ -74,7 +75,7 @@ function ActorGlyph({
 			fallbackText={initialsOf(actor.name)}
 			label={actor.name}
 			sizePx={sizePx}
-			vpkLogo={actor.vpkLogo}
+			vpkLogo={activityActorVpkLogo(actor)}
 		/>
 	);
 }

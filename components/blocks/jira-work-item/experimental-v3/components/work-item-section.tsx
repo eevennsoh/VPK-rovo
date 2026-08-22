@@ -35,7 +35,11 @@ export function WorkItemSection({
 	return (
 		<section
 			aria-labelledby={headingId}
-			className={cn("min-w-0 scroll-mt-6", className)}
+			className={cn(
+				"min-w-0 scroll-mt-6",
+				id === "activity" ? "group/activity" : null,
+				className,
+			)}
 			data-work-item-section-id={id}
 			id={sectionElementId(id)}
 			ref={(node) => {

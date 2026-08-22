@@ -77,8 +77,11 @@ function isListedActivityFilter(
 	return (listed as readonly string[]).includes(value);
 }
 
+const ACTIVITY_SORT_TRIGGER_REVEAL_CLASS =
+	"pointer-events-none opacity-0 transition-opacity duration-normal ease-out group-hover/activity:pointer-events-auto group-hover/activity:opacity-100 group-focus-within/activity:pointer-events-auto group-focus-within/activity:opacity-100 group-has-[:focus-visible]/activity:pointer-events-auto group-has-[:focus-visible]/activity:opacity-100 aria-expanded:pointer-events-auto aria-expanded:opacity-100 motion-reduce:transition-none";
+
 const TEXT_LINK_TRIGGER_CLASS =
-	"h-auto gap-1 border-0 bg-transparent px-0 text-xs font-normal text-text-subtlest [&_svg]:text-icon-subtlest hover:bg-transparent hover:text-text-subtlest hover:underline focus-visible:ring-0 aria-expanded:bg-transparent aria-expanded:text-text-subtlest aria-expanded:underline";
+	`h-auto gap-1 border-0 bg-transparent px-0 text-xs font-normal text-text-subtlest [&_svg]:text-icon-subtlest hover:bg-transparent hover:text-text-subtlest hover:underline focus-visible:ring-0 aria-expanded:bg-transparent aria-expanded:text-text-subtlest aria-expanded:underline ${ACTIVITY_SORT_TRIGGER_REVEAL_CLASS}`;
 
 /**
  * Inset ghost chevron for panel segments. `my-1 me-1` keeps the 4px shell
@@ -244,25 +247,19 @@ export function JiraActivityHeader({
 	showCount?: boolean;
 }>) {
 	return (
-		<div className="flex items-center gap-3">
-			<div className="flex shrink-0 items-center gap-2 text-xs">
-				{showCount ? (
-					<>
-						<span className="font-semibold text-text-subtlest">
-							{count} {count === 1 ? "Activity" : "Activities"}
-						</span>
-						<span aria-hidden className="text-text-subtlest">
-							·
-						</span>
-					</>
-				) : null}
-				<JiraActivityViewControl
-					filter={filter}
-					onFilterChange={onFilterChange}
-					onSortOrderChange={onSortOrderChange}
-					sortOrder={sortOrder}
-				/>
-			</div>
+		<div className="flex w-full min-w-0 items-center justify-between gap-2">
+			{showCount ? (
+				<span className="min-w-0 truncate text-xs font-semibold text-text-subtlest">
+					{count} {count === 1 ? "Activity" : "Activities"}
+				</span>
+			) : null}
+			<JiraActivityViewControl
+				filter={filter}
+				menuAlign="end"
+				onFilterChange={onFilterChange}
+				onSortOrderChange={onSortOrderChange}
+				sortOrder={sortOrder}
+			/>
 		</div>
 	);
 }

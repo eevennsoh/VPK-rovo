@@ -16,7 +16,6 @@ import {
 	EditorToolbarModeTabs,
 	type EditorToolbarViewMode,
 } from "@/components/blocks/editor-toolbar";
-import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import { AttachmentsPopover } from "@/components/blocks/jira-work-item/experimental-v3/components/attachments-popover";
 import {
 	ContextTitleActions,
@@ -24,7 +23,6 @@ import {
 } from "@/components/blocks/jira-work-item/experimental-v3/components/context-title-actions";
 import { StatusPill } from "@/components/blocks/jira-work-item/experimental-v3/components/detail-field-editors";
 import { LinkedWorkItemsPopover } from "@/components/blocks/jira-work-item/experimental-v3/components/linked-work-items-popover";
-import { PullRequestsSelect } from "@/components/blocks/jira-work-item/experimental-v3/components/pull-requests-select";
 import { SubtasksPopover } from "@/components/blocks/jira-work-item/experimental-v3/components/subtasks-popover";
 import {
 	useJiraWorkItemActions,
@@ -60,34 +58,16 @@ interface ContextResourcesProps {
 	descriptionViewMode: EditorToolbarViewMode;
 	outputs?: readonly string[];
 	primaryCodingAgentId?: CodingAgentId;
-	pullRequestEntries: readonly JiraActivityEventEntry[];
-	pullRequestSelected: boolean;
-	selectedPullRequestIdentity: string | null;
+	showDescriptionTools: boolean;
 	onDescriptionViewModeChange: (mode: EditorToolbarViewMode) => void;
-	onPullRequestSelect: (entry: JiraActivityEventEntry) => void;
-	onPullRequestClear: () => void;
 }
 
-/**
- * The work item's single control row, in the dialog header band beneath the
- * title.
- *
- * Order matches the design: status, pull requests, coding agent, then the plus
- * menu. The plus menu launches the existing Attachments, Subtasks, and
- * linked-work-item popovers; filled values render as conditional sections in
- * the metadata rail. Pull requests open from a Select that carries both the
- * open/merged metrics and, once one is chosen, a removable Tag.
- */
 export function ContextResources({
 	descriptionViewMode,
 	outputs = [],
 	primaryCodingAgentId,
-	pullRequestEntries,
-	pullRequestSelected,
-	selectedPullRequestIdentity,
+	showDescriptionTools,
 	onDescriptionViewModeChange,
-	onPullRequestSelect,
-	onPullRequestClear,
 }: Readonly<ContextResourcesProps>) {
 	const { contextResources, metadata, planner } = useJiraWorkItemState();
 	const { workItem } = useJiraWorkItemMeta();
@@ -147,14 +127,6 @@ export function ContextResources({
 						onChange={(next) => actions.updateMetadata({ status: next })}
 						value={metadata.status}
 					/>
-					{pullRequestEntries.length > 0 ? (
-						<PullRequestsSelect
-							entries={pullRequestEntries}
-							selectedIdentity={selectedPullRequestIdentity}
-							onClearSelection={onPullRequestClear}
-							onSelectEntry={onPullRequestSelect}
-						/>
-					) : null}
 					<ContextTitleActions primaryAgentId={primaryCodingAgentId} />
 					<div className="relative inline-flex">
 						<DropdownMenu>
@@ -202,7 +174,7 @@ export function ContextResources({
 							),
 						)}
 					</div>
-					{pullRequestSelected ? null : (
+					{showDescriptionTools ? (
 						<div className="pointer-events-none ml-auto shrink-0 flex items-center gap-2 opacity-0 transition-opacity duration-normal ease-out group-hover/description-scope:pointer-events-auto group-hover/description-scope:opacity-100 group-has-[:focus-visible]/description-scope:pointer-events-auto group-has-[:focus-visible]/description-scope:opacity-100 motion-reduce:transition-none">
 							<Tooltip>
 								<TooltipTrigger
@@ -232,7 +204,7 @@ export function ContextResources({
 								onModeChange={onDescriptionViewModeChange}
 							/>
 						</div>
-					)}
+					) : null}
 				</div>
 			</div>
 			{outputs.length > 0 ? (

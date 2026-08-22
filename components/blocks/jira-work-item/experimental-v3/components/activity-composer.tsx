@@ -163,6 +163,7 @@ function ComposerTransitionItem({
 export function ActivityComposer({
 	agents,
 	autoFocus = false,
+	composerContextBar,
 	onAgentPromptSubmit,
 	onFailingChecksSubmit,
 	onOpenAgentChat,
@@ -172,6 +173,7 @@ export function ActivityComposer({
 }: Readonly<{
 	agents?: readonly AgentSelectorAgent[];
 	autoFocus?: boolean;
+	composerContextBar?: ReactNode;
 	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
 	/** Advances Fix-chapter storytelling when a failing-checks chip is submitted. */
 	onFailingChecksSubmit?: () => void;
@@ -459,12 +461,14 @@ export function ActivityComposer({
 	return (
 		<div onKeyDownCapture={handleKeyDownCapture} ref={composerRootRef}>
 			{hasExpandedPullRequestComposer ? null : (
-				<ActivityComposerContextPills
-					onInvokeAgent={handleInvokeAgent}
-					onInvokeSkill={handleInvokeSkill}
-					onOpenAgentChat={onOpenAgentChat ? handleOpenWorkingSession : undefined}
-					workingSessions={workingSessions}
-				/>
+				composerContextBar !== undefined ? composerContextBar : (
+					<ActivityComposerContextPills
+						onInvokeAgent={handleInvokeAgent}
+						onInvokeSkill={handleInvokeSkill}
+						onOpenAgentChat={onOpenAgentChat ? handleOpenWorkingSession : undefined}
+						workingSessions={workingSessions}
+					/>
+				)
 			)}
 			<div className="relative" data-jira-work-item-composer-state="sticky">
 				<JiraWorkItemComposerMotion

@@ -12,6 +12,19 @@ const MODEL_PATH = "components/projects/jira-golden-journeys-v3/data/story-model
 const STORY_PATH = "components/projects/jira-golden-journeys-v3/data/hotfix-story.ts";
 const EVENTS_PATH = "components/projects/jira-golden-journeys-v3/data/hotfix-story-events.ts";
 
+test("the work-item stage mounts experimental-v3 inline, not the v2 shell", () => {
+	const pageSource = readProjectFile("components/projects/jira-golden-journeys-v3/page.tsx");
+	assert.match(
+		pageSource,
+		/import \{ ExperimentalV3JiraWorkItem \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/experimental-v3-jira-work-item"/u,
+	);
+	assert.match(pageSource, /<ExperimentalV3JiraWorkItem[\s\S]*presentation="inline"/u);
+	assert.match(pageSource, /workItem=\{controller\.workItem\}/u);
+	assert.match(pageSource, /initialState=\{controller\.initialState\}/u);
+	assert.doesNotMatch(pageSource, /ExperimentalV2JiraWorkItem/u);
+	assert.doesNotMatch(pageSource, /variant="experimental-v2"/u);
+});
+
 test("the responsive gallery keeps both desktop and compact story controls", () => {
 	const pageSource = readProjectFile("components/projects/jira-golden-journeys-v3/page.tsx");
 	const controlsSource = readProjectFile("components/projects/jira-golden-journeys-v3/story-controls.tsx");

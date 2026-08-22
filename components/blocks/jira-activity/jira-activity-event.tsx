@@ -1,20 +1,53 @@
-import { Lozenge } from "@/components/ui/lozenge";
+import AutomationIcon from "@atlaskit/icon/core/automation";
+
+import { Icon } from "@/components/ui/icon";
+import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
 import { cn } from "@/lib/utils";
 
 import { mentionSegmentForActor } from "./jira-activity-actor-mention";
 import { JiraActivitySegments } from "./jira-activity-segments";
-import type { JiraActivityEventEntry } from "./jira-activity-types";
+import type { JiraActivityEventEntry, JiraActivitySegment } from "./jira-activity-types";
 
-/**
- * Compact event row: actor mention chip, the action segments, then a middot
- * and relative timestamp. Rendered inside the timeline's content column,
- * beside the spine node.
- *
- * Use `min-h-6` (not fixed `h-6`) so editor mention Tags (`h-5`) and wrapped
- * multi-line copy stay fully visible — a fixed 24px track clips chip tops.
- * `py-0.5` keeps chips off the row edge; `leading-5` matches the 20px chip
- * line box. The spine glyph stays on the node's separate `h-6` icon track.
- */
+const AUTOMATION_TAG_TEXT = "Automation";
+
+type PullRequestStatus = NonNullable<JiraActivityEventEntry["pullRequest"]>["status"];
+
+function pullRequestStatusLozengeVariant(
+	status: PullRequestStatus,
+): NonNullable<LozengeProps["variant"]> {
+	switch (status) {
+		case "Open":
+			return "success";
+		case "Merged":
+			return "discovery";
+		default: {
+			const _exhaustive: never = status;
+			throw new Error(`Unhandled pull request status: ${_exhaustive}`);
+		}
+	}
+}
+
+function isAutomationSegment(segment: JiraActivitySegment): boolean {
+	return segment.type === "tag" && segment.text === AUTOMATION_TAG_TEXT;
+}
+
+function visibleEventSegments(
+	segments: readonly JiraActivitySegment[],
+): JiraActivitySegment[] {
+	const visible = segments.filter((segment) => !isAutomationSegment(segment));
+	const last = visible.at(-1);
+	if (last?.type !== "text") {
+		return visible;
+	}
+
+	const trimmed = last.text.trimEnd();
+	if (trimmed.length === 0) {
+		return visible.slice(0, -1);
+	}
+
+	return [...visible.slice(0, -1), { type: "text", text: trimmed }];
+}
+
 export function JiraActivityEvent({
 	entry,
 	onOpenPullRequest,
@@ -29,7 +62,7 @@ export function JiraActivityEvent({
 
 		return (
 			<div className="flex min-h-6 min-w-0 items-center gap-2 py-0.5 text-xs leading-5">
-				<Lozenge variant={status === "Merged" ? "discovery" : "success"}>{status}</Lozenge>
+				<Lozenge variant={pullRequestStatusLozengeVariant(status)}>{status}</Lozenge>
 				<span className="flex min-w-0 items-center gap-1">
 					{onOpenPullRequest ? (
 						<button
@@ -58,18 +91,36 @@ export function JiraActivityEvent({
 		);
 	}
 
+	const isAutomated = entry.segments.some(isAutomationSegment);
+
 	return (
-		<p className="flex min-h-6 min-w-0 items-center py-0.5 text-xs leading-5 text-text-subtle">
+		<p className="flex min-h-6 min-w-0 items-center py-0.5 text-xs leading-5 text-text-subtlest">
 			<span className="min-w-0">
 				{entry.showActor === false ? null : (
 					<>
-						<JiraActivitySegments segments={[mentionSegmentForActor(entry.actor)]} />{" "}
+						<JiraActivitySegments
+							appearance="plain"
+							segments={[mentionSegmentForActor(entry.actor)]}
+						/>{" "}
 					</>
 				)}
-				<JiraActivitySegments segments={entry.segments} />
+				<JiraActivitySegments
+					appearance="plain"
+					segments={visibleEventSegments(entry.segments)}
+				/>
 				{entry.showTimestamp === false ? null : (
 					<span className="ml-1.5 inline-flex items-center gap-1.5 text-text-subtlest">
 						<span aria-hidden>·</span>
+						{isAutomated ? (
+							<>
+								<Icon
+									aria-hidden
+									className="size-3 shrink-0 text-text-subtlest [&_svg]:size-3!"
+									render={<AutomationIcon color="currentColor" label="" size="small" />}
+								/>
+								<span className="sr-only">Automation</span>
+							</>
+						) : null}
 						<span>{entry.timestamp}</span>
 					</span>
 				)}

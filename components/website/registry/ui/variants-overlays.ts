@@ -109,6 +109,13 @@ export const UI_OVERLAY_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"tabs-demo-line-full-width": dynamic(
+		() =>
+			import("../../demos/ui/tabs-demo").then((mod) => ({
+				default: mod.TabsDemoLineFullWidth,
+			})),
+		{ ssr: false },
+	),
 	"tabs-demo-vertical": dynamic(
 		() =>
 			import("../../demos/ui/tabs-demo").then((mod) => ({

@@ -2,12 +2,9 @@
 
 import { useMemo } from "react";
 
-import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
-import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
-import PullRequestIcon from "@atlaskit/icon/core/pull-request";
-
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import { toPanelPullRequestProps } from "@/components/blocks/jira-work-item/experimental-v3/components/pull-requests-panel";
+import { NAV_LINK_CLASS } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-section-nav";
 import {
 	getPullRequestIdentity,
 	JIRA_WORK_ITEM_CURRENT_USER,
@@ -17,34 +14,35 @@ import {
 	sortPullRequestEntries,
 	summarizePullRequestTagMetrics,
 } from "@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-phases";
-import {
-	getPullRequestStatusPresentation,
-	type PullRequestStatusIconKind,
-} from "@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-status-presentation";
 import { PullRequest } from "@/components/blocks/pull-request";
-import { Icon } from "@/components/ui/icon";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import {
 	Select,
 	SelectContent,
 	SelectGroup,
 	SelectItem,
-	SelectTag,
-	SelectTags,
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import type { TagColor, TagTrailingMetric } from "@/components/ui/tag";
+import { cn } from "@/lib/utils";
 
-const TRIGGER_LABEL = "Review pull request";
-const SELECTED_TRIGGER_LABEL = "Review";
+const TRIGGER_LABEL = "Pull request";
 
-const PULL_REQUEST_STATUS_ICONS: Record<
-	PullRequestStatusIconKind,
-	typeof PullRequestIcon
+const PULL_REQUEST_METRIC_BADGE_VARIANT: Partial<
+	Record<TagColor, NonNullable<BadgeProps["variant"]>>
 > = {
-	"pull-request": PullRequestIcon,
-	"merge-success": MergeSuccessIcon,
-	"merge-failure": MergeFailureIcon,
+	lime: "success",
 };
+
+function pullRequestMetricBadgeVariant(
+	metric: TagTrailingMetric,
+): NonNullable<BadgeProps["variant"]> {
+	if (typeof metric !== "object" || metric.color == null) {
+		return "neutral";
+	}
+	return PULL_REQUEST_METRIC_BADGE_VARIANT[metric.color] ?? "neutral";
+}
 
 function findPullRequestEntry(
 	entries: readonly JiraActivityEventEntry[],
@@ -60,49 +58,25 @@ function findPullRequestEntry(
 	)) ?? null;
 }
 
-/**
- * The control row's Select for pull requests. With nothing selected the trigger
- * reads "Review pull request" and carries the open/merged metric tags that used
- * to sit in a separate read-only Tag under the title; with a selection it
- * shortens to "Review" beside a removable PR tag. Each option is a Pull Request
- * block card, and choosing one opens PR detail in the description column.
- */
 export function PullRequestsSelect({
 	entries,
 	selectedIdentity,
 	onSelectEntry,
-	onClearSelection,
 }: Readonly<{
 	entries: readonly JiraActivityEventEntry[];
 	selectedIdentity: string | null;
 	onSelectEntry: (entry: JiraActivityEventEntry) => void;
-	onClearSelection: () => void;
 }>) {
 	const orderedEntries = useMemo(
 		() => sortPullRequestEntries(entries, DEFAULT_PULL_REQUEST_SORT_MODE, JIRA_WORK_ITEM_CURRENT_USER.name),
 		[entries],
 	);
-	// Open/merged counts, shown only while nothing is selected — once a PR is
-	// chosen its own tag occupies the trigger.
 	const metrics = useMemo(() => summarizePullRequestTagMetrics(entries), [entries]);
 
 	if (orderedEntries.length === 0) {
 		return null;
 	}
 
-	const selectedEntry = findPullRequestEntry(orderedEntries, selectedIdentity);
-	const selectedPullRequest = selectedEntry?.pullRequest;
-	const selectedNumber = selectedPullRequest?.number;
-	const selectedTagLabel = typeof selectedNumber === "number" ? `#${selectedNumber}` : null;
-	const visibleTriggerLabel = selectedTagLabel
-		? SELECTED_TRIGGER_LABEL
-		: TRIGGER_LABEL;
-	const selectedStatusPresentation = selectedPullRequest
-		? getPullRequestStatusPresentation(selectedPullRequest.status)
-		: null;
-	const SelectedStatusIcon = selectedStatusPresentation
-		? PULL_REQUEST_STATUS_ICONS[selectedStatusPresentation.iconKind]
-		: null;
 	const metricsLabel = metrics
 		.map((metric) => (typeof metric === "object" ? metric.value : metric))
 		.join(", ");
@@ -112,7 +86,7 @@ export function PullRequestsSelect({
 
 	return (
 		<div
-			className="inline-flex min-w-0 items-center"
+			className="inline-flex h-full min-w-0 items-stretch"
 			data-jira-work-item-resource-pull-requests-control
 		>
 			<Select
@@ -128,63 +102,34 @@ export function PullRequestsSelect({
 				}}
 			>
 				<SelectTrigger
+					aria-current={selectedIdentity ? "location" : undefined}
 					aria-label={triggerAriaLabel}
-					// Empty selects get `data-placeholder` (subtlest by default). Keep
-					// outline-button grey so this chrome control matches "Open in Claude".
-					// Under `@container/resource-row` < 36rem the label hides; icon +
-					// optional SelectTag + chevron remain (name via aria-label).
-					className="gap-2 font-medium data-placeholder:text-text-subtle data-placeholder:[&_svg]:text-icon-subtle @max-[36rem]/resource-row:gap-1.5"
+					className={cn(
+						NAV_LINK_CLASS,
+						"data-placeholder:text-text-subtle [&>:last-child]:hidden",
+					)}
 					data-jira-work-item-resource-pull-requests
-					tags
+					variant="none"
 				>
-					<span
-						aria-hidden
-						className="inline-flex size-4 shrink-0 items-center justify-center"
-						data-icon="inline-start"
-					>
-						<Icon render={<PullRequestIcon label="" size="small" />} />
-					</span>
 					<SelectValue className="min-w-0">
 						{() => (
-							<SelectTags>
-								<span className="truncate @max-[36rem]/resource-row:hidden">
-									{visibleTriggerLabel}
+							<>
+								<span className="truncate">
+									{TRIGGER_LABEL}
 								</span>
-								{selectedTagLabel && selectedStatusPresentation && SelectedStatusIcon ? (
-									<SelectTag
-										aria-label={`${selectedStatusPresentation.label} pull request ${selectedTagLabel}`}
-										color={selectedStatusPresentation.tagColor}
-										data-jira-work-item-resource-pull-request-filter
-										elemBefore={(
-											<Icon
-												aria-hidden
-												render={(
-													<SelectedStatusIcon
-														color="currentColor"
-														label=""
-														size="small"
-													/>
-												)}
-											/>
-										)}
-										onRemove={onClearSelection}
-										removeButtonLabel={`Remove ${selectedStatusPresentation.label} pull request`}
-									>
-										{selectedTagLabel}
-									</SelectTag>
-								) : metrics.map((metric) => {
+								{metrics.map((metric) => {
 									const value = typeof metric === "object" ? metric.value : metric;
 									return (
-										<SelectTag
-											color={typeof metric === "object" ? metric.color : undefined}
+										<Badge
 											data-jira-work-item-resource-pull-request-metric
 											key={value}
+											variant={pullRequestMetricBadgeVariant(metric)}
 										>
 											{value}
-										</SelectTag>
+										</Badge>
 									);
 								})}
-							</SelectTags>
+							</>
 						)}
 					</SelectValue>
 				</SelectTrigger>
@@ -212,13 +157,6 @@ export function PullRequestsSelect({
 									textClassName="w-full min-w-0 whitespace-normal"
 									value={identity}
 								>
-									{/*
-									 * SelectItem is an invisible activation shell — PullRequest
-									 * owns borderless surface + highlight (via group). Avoids a
-									 * padded “double box” around the card. Do not pass
-									 * `selected` here: that paints blue selected chrome; the
-									 * trigger tag already shows the open PR.
-									 */}
 									<PullRequest
 										{...item}
 										className="pointer-events-none min-w-0 max-w-full w-full rounded-lg border-transparent transition-[background-color] duration-normal ease-out-practical group-data-[highlighted]/pr-option:bg-surface-hovered"

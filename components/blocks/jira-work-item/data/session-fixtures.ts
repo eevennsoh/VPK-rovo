@@ -14,6 +14,8 @@ import type {
 	NextStep,
 	StaticTimelineEvent,
 } from "@/components/blocks/jira-work-item/data/session-state";
+import { STOREFRONT_PLATFORM_PROJECT } from "@/components/blocks/jira-work-item/data/metadata-fixtures";
+import { IMPROVED_STORY_DESCRIPTION } from "@/components/projects/jira-golden-journeys-v2/data/story-context";
 
 /**
  * Fixed base epoch for deterministic display timestamps. Never derive time from
@@ -23,8 +25,8 @@ import type {
 export const SESSION_EPOCH_MS = Date.UTC(2026, 5, 8, 16, 0, 0); // Jun 8 2026, 16:00 UTC
 
 const FILLED_TITLE = "Acmecorp: Prepare for bid recommendation for ESM RFP";
-const FILLED_DESCRIPTION =
-	"Acmecorp is evaluating Atlassian as a replacement for its current service-management and work-management stack.\n\n• Consolidate regional IT, asset, knowledge, reporting, and business workflows.\n• Clarify CMDB and procurement requirements into must-haves, differentiators, and owners.\n• Map requirements to Atlassian strengths and flag product, legal, security, deal desk, or partner reviews.";
+const FILLED_DESCRIPTION = IMPROVED_STORY_DESCRIPTION;
+export const FILLED_ATLASSIAN_PROJECT = STOREFRONT_PLATFORM_PROJECT.id;
 
 const FILLED_TLDR = [
 	"Acmecorp wants to consolidate fragmented regional tools into one enterprise service-management operating model.",
@@ -168,7 +170,10 @@ export const FILLED_STATIC_EVENTS: StaticTimelineEvent[] = [
 		id: "static-assigned",
 		kind: "event",
 		actor: JORDAN,
-		segments: [{ type: "text", text: "self-assigned the issue and set priority to High" }],
+		segments: [
+			{ type: "text", text: "self-assigned the issue and set priority to " },
+			{ type: "priority", text: "High" },
+		],
 		createdAtMs: SESSION_EPOCH_MS - 4_680_000, // −78min
 	},
 	{

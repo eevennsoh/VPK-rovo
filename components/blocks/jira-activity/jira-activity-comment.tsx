@@ -14,6 +14,7 @@ import { ArtifactList, type ArtifactListItem } from "@/components/ui-custom/arti
 import type { RichTextMentionItem } from "@/components/ui-custom/rich-text-editor";
 import { cn } from "@/lib/utils";
 
+import { activityActorVpkLogo } from "./jira-activity-actor-mention";
 import { JiraActivityAddToChatButton } from "./jira-activity-add-to-chat-button";
 import { JiraActivityCard } from "./jira-activity-card";
 import { JiraActivityCommentActions } from "./jira-activity-comment-actions";
@@ -113,7 +114,7 @@ function ActivityActorAvatar({
 			fallbackText={initialsOf(actor.name)}
 			label={actor.name}
 			sizePx={sizePx}
-			vpkLogo={actor.vpkLogo}
+			vpkLogo={activityActorVpkLogo(actor)}
 		/>
 	);
 }

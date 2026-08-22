@@ -111,7 +111,7 @@ export function ContextTitleBar({
 }: Readonly<{ controlRow?: ReactNode }> = {}) {
 	return (
 		<div
-			className="group/description-scope min-w-0 self-stretch px-6 pb-4"
+			className="group/description-scope min-w-0 self-stretch px-6 pb-2"
 			data-jira-work-item-title-block
 			data-jira-work-item-title-column
 		>

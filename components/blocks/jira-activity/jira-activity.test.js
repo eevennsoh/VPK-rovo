@@ -7,6 +7,10 @@ const {
 	JIRA_ACTIVITY_ENTRIES,
 	JIRA_ACTIVITY_CURRENT_USER,
 } = require("./data.ts");
+const {
+	activityActorVpkLogo,
+	mentionSegmentForActor,
+} = require("./jira-activity-actor-mention.ts");
 
 const INDEX_SOURCE = fs.readFileSync(path.join(__dirname, "index.tsx"), "utf8");
 const HEADER_SOURCE = fs.readFileSync(
@@ -93,6 +97,94 @@ test("activity events render actor prefixes as mention chips by actor kind", () 
 	assert.doesNotMatch(EVENT_SOURCE, /font-medium text-text">\{entry\.actor\.name\}/u);
 });
 
+test("activity events flatten pill chrome to plain text", () => {
+	assert.match(SEGMENTS_SOURCE, /appearance\?: "chip" \| "plain"/u);
+	assert.match(SEGMENTS_SOURCE, /appearance = "chip"/u);
+	assert.match(
+		EVENT_SOURCE,
+		/<JiraActivitySegments\s+appearance="plain"\s+segments=\{\[mentionSegmentForActor\(entry\.actor\)\]\}/u,
+	);
+	assert.match(
+		EVENT_SOURCE,
+		/<JiraActivitySegments\s+appearance="plain"\s+segments=\{visibleEventSegments\(entry\.segments\)\}/u,
+	);
+	assert.match(EVENT_SOURCE, /<Lozenge variant=\{pullRequestStatusLozengeVariant\(status\)\}>\{status\}<\/Lozenge>/u);
+	assert.doesNotMatch(EVENT_SOURCE, /<span className="text-text">\{status\}<\/span>/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /appearance="plain"/u);
+
+	const plainBranch = SEGMENTS_SOURCE.match(
+		/if \(appearance === "plain"\) \{[\s\S]*?\n\t\}/u,
+	)?.[0];
+	assert.ok(plainBranch, "plain appearance branch should be present");
+	assert.match(plainBranch, /case "lozenge":/u);
+	assert.match(plainBranch, /case "label":/u);
+	assert.match(plainBranch, /case "tag":/u);
+	assert.doesNotMatch(plainBranch, /case "user-mention":/u);
+	assert.doesNotMatch(plainBranch, /case "agent-mention":/u);
+	assert.match(plainBranch, /case "app-mention":/u);
+	assert.doesNotMatch(plainBranch, /case "priority":/u);
+	assert.match(plainBranch, /className="text-text"/u);
+	assert.doesNotMatch(plainBranch, /<Lozenge/u);
+	assert.doesNotMatch(plainBranch, /<Tag/u);
+	assert.doesNotMatch(plainBranch, /<Avatar/u);
+	assert.doesNotMatch(plainBranch, /<BrandLogoMark/u);
+});
+
+test("plain event appearance keeps person and agent names as mention chips", () => {
+	const plainBranch = SEGMENTS_SOURCE.match(
+		/if \(appearance === "plain"\) \{[\s\S]*?\n\t\}/u,
+	)?.[0];
+	assert.ok(plainBranch, "plain appearance branch should be present");
+	assert.doesNotMatch(plainBranch, /case "user-mention":/u);
+	assert.doesNotMatch(plainBranch, /case "agent-mention":/u);
+	assert.match(
+		SEGMENTS_SOURCE,
+		/case "user-mention":[\s\S]*data-jira-activity-user-mention[\s\S]*<Avatar[\s\S]*type="user"[\s\S]*variant="editor"/u,
+	);
+	assert.match(
+		SEGMENTS_SOURCE,
+		/case "agent-mention":[\s\S]*data-jira-activity-agent-mention[\s\S]*<AgentAvatarVisual[\s\S]*type="agent"[\s\S]*variant="editor"/u,
+	);
+	assert.match(EVENT_SOURCE, /mentionSegmentForActor\(entry\.actor\)/u);
+	assert.doesNotMatch(EVENT_SOURCE, /Triage assistant|Rovo/u);
+});
+
+test("automation events move the Automation tag onto a 12px timestamp icon", () => {
+	assert.match(EVENT_SOURCE, /function isAutomationSegment/u);
+	assert.match(EVENT_SOURCE, /segment\.type === "tag" && segment\.text === AUTOMATION_TAG_TEXT/u);
+	assert.match(EVENT_SOURCE, /visibleEventSegments\(entry\.segments\)/u);
+	assert.match(
+		EVENT_SOURCE,
+		/import AutomationIcon from "@atlaskit\/icon\/core\/automation"/u,
+	);
+	assert.match(
+		EVENT_SOURCE,
+		/className="size-3 shrink-0 text-text-subtlest \[&_svg\]:size-3!"/u,
+	);
+	assert.match(
+		EVENT_SOURCE,
+		/render=\{<AutomationIcon color="currentColor" label="" size="small" \/>\}/u,
+	);
+	assert.match(EVENT_SOURCE, /<span className="sr-only">Automation<\/span>/u);
+	assert.doesNotMatch(
+		EVENT_SOURCE,
+		/<JiraActivitySegments[\s\S]*appearance="plain"[\s\S]*segments=\{entry\.segments\}/u,
+	);
+
+	const automatedEvents = JIRA_ACTIVITY_ENTRIES.filter(
+		(entry) =>
+			entry.kind === "event" &&
+			entry.segments.some((segment) => segment.type === "tag" && segment.text === "Automation"),
+	);
+	assert.deepEqual(
+		automatedEvents.map((entry) => entry.id),
+		["sla", "delegated", "moved-progress"],
+	);
+	assert.ok(
+		automatedEvents.every((entry) => entry.segments.at(-1)?.type === "tag"),
+	);
+});
+
 test("app mentions render as product BrandLogoMark tags, not hexagon agent avatars", () => {
 	// Agent chips keep AgentAvatarVisual + type="agent"; product/app chips use
 	// BrandLogoMark (same pattern as PullRequest repo pills) without type="other".
@@ -114,7 +206,7 @@ test("app mentions render as product BrandLogoMark tags, not hexagon agent avata
 	);
 	assert.doesNotMatch(
 		SEGMENTS_SOURCE,
-		/case "app-mention":[\s\S]*?<AgentAvatarVisual/u,
+		/case "app-mention":\s*\/\/ Product tag[\s\S]*?<AgentAvatarVisual/u,
 	);
 	assert.doesNotMatch(
 		SEGMENTS_SOURCE,
@@ -264,6 +356,84 @@ test("the current user is a person with an avatar (authors comments/replies)", (
 	assert.equal(JIRA_ACTIVITY_CURRENT_USER.avatarSrc, "/avatar-user/venn/venn.png");
 });
 
+test("Rovo mentions use the official RovoColorIcon mark, not hexagon agent art", () => {
+	const rovoEntries = JIRA_ACTIVITY_ENTRIES.filter((entry) => entry.actor.name === "Rovo");
+	assert.ok(rovoEntries.length > 0, "sample feed should include Rovo rows");
+	for (const entry of rovoEntries) {
+		assert.equal(entry.actor.vpkLogo, "rovo");
+		assert.equal(entry.actor.avatarSrc, undefined);
+		assert.deepEqual(mentionSegmentForActor(entry.actor), {
+			type: "agent-mention",
+			text: "Rovo",
+			vpkLogo: "rovo",
+		});
+	}
+
+	const dataSource = fs.readFileSync(path.join(__dirname, "data.ts"), "utf8");
+	assert.doesNotMatch(dataSource, /jira-theme-analyzer/u);
+	assert.match(SEGMENTS_SOURCE, /import \{ RovoColorIcon \} from "@\/components\/ui\/logo"/u);
+
+	const rovoBranch = SEGMENTS_SOURCE.match(
+		/segment\.vpkLogo === "rovo" \? \([\s\S]*?\) : \(/u,
+	)?.[0];
+	assert.ok(rovoBranch, "Rovo mention branch should be present");
+	assert.match(rovoBranch, /<RovoColorIcon/u);
+	assert.match(rovoBranch, /<IconTile/u);
+	assert.doesNotMatch(rovoBranch, /<AgentAvatarVisual/u);
+	assert.doesNotMatch(rovoBranch, /hexagon/u);
+});
+
+test("non-Rovo agent spines keep hexagon art, not the Rovo product mark", () => {
+	const progressEntries = JIRA_ACTIVITY_ENTRIES.filter(
+		(entry) => entry.sessionItem?.agent.name === "Progress tracker",
+	);
+	assert.ok(progressEntries.length >= 2, "expected Progress tracker session cards");
+	for (const entry of progressEntries) {
+		assert.equal(entry.actor.name, "Progress tracker");
+		assert.notEqual(entry.actor.vpkLogo, "rovo");
+		assert.equal(
+			entry.actor.avatarSrc,
+			"/avatar-agent/teamwork-agents/progress-tracker.svg",
+		);
+		assert.equal(activityActorVpkLogo(entry.actor), undefined);
+		assert.deepEqual(mentionSegmentForActor(entry.actor), {
+			type: "agent-mention",
+			text: "Progress tracker",
+			avatarSrc: "/avatar-agent/teamwork-agents/progress-tracker.svg",
+		});
+	}
+
+	for (const entry of JIRA_ACTIVITY_ENTRIES) {
+		if (entry.actor.kind !== "agent" || entry.actor.name === "Rovo") continue;
+		assert.notEqual(entry.actor.vpkLogo, "rovo");
+		assert.equal(activityActorVpkLogo(entry.actor), undefined);
+		assert.notEqual(mentionSegmentForActor(entry.actor).vpkLogo, "rovo");
+	}
+
+	assert.equal(
+		activityActorVpkLogo({
+			id: "progress-tracker",
+			kind: "agent",
+			name: "Progress tracker",
+			vpkLogo: "rovo",
+		}),
+		undefined,
+	);
+	assert.equal(
+		activityActorVpkLogo({
+			id: "rovo-dev",
+			kind: "agent",
+			name: "Rovo",
+		}),
+		"rovo",
+	);
+
+	assert.match(NODE_SOURCE, /vpkLogo=\{activityActorVpkLogo\(actor\)\}/u);
+	assert.match(COMMENT_SOURCE, /vpkLogo=\{activityActorVpkLogo\(actor\)\}/u);
+	assert.doesNotMatch(NODE_SOURCE, /RovoColorIcon/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /RovoColorIcon/u);
+});
+
 test("the comment entry has a rich body and a collapsible section", () => {
 	// The rich session comment is agent-authored; a human snapshot comment also
 	// exists in the feed, so target the agent comment specifically.
@@ -370,8 +540,25 @@ test("the Medium priority event uses the Agent Sessions priority icon treatment"
 	const assigned = JIRA_ACTIVITY_ENTRIES.find((entry) => entry.id === "assigned");
 	assert.equal(assigned.kind, "event");
 	assert.deepEqual(assigned.segments.at(-1), { type: "priority", text: "Medium" });
+	assert.match(
+		TYPES_SOURCE,
+		/export type JiraActivityPriority = "Highest" \| "High" \| "Medium" \| "Low" \| "Lowest"/u,
+	);
+	assert.match(TYPES_SOURCE, /type: "priority"; text: JiraActivityPriority/u);
+	assert.match(SEGMENTS_SOURCE, /PriorityHighestIcon/u);
+	assert.match(SEGMENTS_SOURCE, /PriorityHighIcon/u);
 	assert.match(SEGMENTS_SOURCE, /PriorityMediumIcon/u);
-	assert.match(SEGMENTS_SOURCE, /className="text-icon-warning"/u);
+	assert.match(SEGMENTS_SOURCE, /PriorityLowIcon/u);
+	assert.match(SEGMENTS_SOURCE, /PriorityLowestIcon/u);
+	assert.match(SEGMENTS_SOURCE, /Highest: "text-icon-danger"/u);
+	assert.match(SEGMENTS_SOURCE, /High: "text-icon-danger"/u);
+	assert.match(SEGMENTS_SOURCE, /Medium: "text-icon-warning"/u);
+	assert.match(SEGMENTS_SOURCE, /Low: "text-icon-information"/u);
+	assert.match(SEGMENTS_SOURCE, /Lowest: "text-icon-information"/u);
+	assert.match(
+		SEGMENTS_SOURCE,
+		/case "priority":[\s\S]*<span className="text-text">\{segment\.text\}<\/span>/u,
+	);
 });
 
 test("inline code chips use the ADS code family at 12px", () => {
@@ -454,7 +641,7 @@ test("Jira Activity exposes controlled entries and replaceable composer contract
 	assert.match(INDEX_SOURCE, /onFilterChange\?: \(next: JiraActivityFilter\) => void/u);
 	assert.match(INDEX_SOURCE, /data-jira-activity-entry-id=\{entry\.id\}/u);
 	// Timeline rows shrink inside narrow rails so artifact titles can truncate.
-	assert.match(INDEX_SOURCE, /className=\{cn\("flex w-full min-w-0 flex-col gap-4", className\)\}/u);
+	assert.match(INDEX_SOURCE, /className=\{cn\("group\/activity flex w-full min-w-0 flex-col gap-4", className\)\}/u);
 	assert.match(INDEX_SOURCE, /className="flex min-w-0 gap-2"/u);
 });
 
@@ -507,6 +694,14 @@ test("the header shows an activity count and a text-link sort control", () => {
 	// Sort trigger is a borderless text link, not a bordered pill.
 	assert.match(HEADER_SOURCE, /hover:underline/u);
 	assert.match(HEADER_SOURCE, /text-text-subtlest \[&_svg\]:text-icon-subtlest/u);
+	assert.match(HEADER_SOURCE, /ACTIVITY_SORT_TRIGGER_REVEAL_CLASS/u);
+	assert.match(HEADER_SOURCE, /pointer-events-none opacity-0/u);
+	assert.match(HEADER_SOURCE, /group-hover\/activity:opacity-100/u);
+	assert.match(HEADER_SOURCE, /group-focus-within\/activity:opacity-100/u);
+	assert.match(HEADER_SOURCE, /group-has-\[:focus-visible\]\/activity:opacity-100/u);
+	assert.match(HEADER_SOURCE, /aria-expanded:opacity-100/u);
+	assert.match(HEADER_SOURCE, /motion-reduce:transition-none/u);
+	assert.doesNotMatch(HEADER_SOURCE, /display:\s*none/u);
 	// Its portal clears the work-item dialog's z-index.
 	assert.match(HEADER_SOURCE, /positionerClassName="z-\[502\]"/u);
 	// View/sort control is extractable for rail relocation; count can be omitted.
@@ -543,6 +738,12 @@ test("the header shows an activity count and a text-link sort control", () => {
 	assert.match(HEADER_SOURCE, /case "pull-request":/u);
 	assert.match(HEADER_SOURCE, /showCount = true/u);
 	assert.match(HEADER_SOURCE, /showCount \? \(/u);
+	assert.match(HEADER_SOURCE, /flex w-full min-w-0 items-center justify-between gap-2/u);
+	assert.match(HEADER_SOURCE, /menuAlign="end"/u);
+	assert.doesNotMatch(
+		HEADER_SOURCE,
+		/\{count === 1 \? "Activity" : "Activities"\}[\s\S]*<span aria-hidden[\s\S]*·/u,
+	);
 	assert.match(INDEX_SOURCE, /hideHeader\?: boolean/u);
 	assert.match(INDEX_SOURCE, /hideHeader = false/u);
 	assert.match(INDEX_SOURCE, /hideHeader \? null : \(/u);
@@ -603,7 +804,7 @@ test("Jira Activity supports externally controlled collapse state", () => {
 });
 
 test("one-line activity events use 12px type without shrinking expanded agent cards", () => {
-	assert.match(EVENT_SOURCE, /className="flex min-h-6 min-w-0 items-center py-0\.5 text-xs leading-5 text-text-subtle"/u);
+	assert.match(EVENT_SOURCE, /className="flex min-h-6 min-w-0 items-center py-0\.5 text-xs leading-5 text-text-subtlest"/u);
 	assert.match(EVENT_SOURCE, /className="flex min-h-6 min-w-0 items-center gap-2 py-0\.5 text-xs leading-5"/u);
 	assert.doesNotMatch(EVENT_SOURCE, /className="flex h-6 /u);
 	assert.match(COMMENT_SOURCE, /className="text-sm leading-5 text-text"/u);
@@ -613,6 +814,10 @@ test("one-line activity timestamps keep 6px spacing around the middot", () => {
 	assert.match(
 		EVENT_SOURCE,
 		/<span className="ml-1\.5 inline-flex items-center gap-1\.5 text-text-subtlest">[\s\S]*<span aria-hidden>·<\/span>[\s\S]*<span>\{entry\.timestamp\}<\/span>/u,
+	);
+	assert.match(
+		EVENT_SOURCE,
+		/<span aria-hidden>·<\/span>[\s\S]*AutomationIcon[\s\S]*<span>\{entry\.timestamp\}<\/span>/u,
 	);
 	assert.doesNotMatch(EVENT_SOURCE, /> · \{entry\.timestamp\}</u);
 });
@@ -642,7 +847,12 @@ test("the linked event uses the Jira Queue pull-request row", () => {
 		updatedAtMs: Date.UTC(2026, 4, 12, 13, 58),
 	});
 	assert.doesNotMatch(EVENT_SOURCE, /created pull request/u);
-	assert.match(EVENT_SOURCE, /variant=\{status === "Merged" \? "discovery" : "success"\}/u);
+	assert.match(EVENT_SOURCE, /function pullRequestStatusLozengeVariant/u);
+	assert.match(EVENT_SOURCE, /case "Open":\s*return "success"/u);
+	assert.match(EVENT_SOURCE, /case "Merged":\s*return "discovery"/u);
+	assert.match(EVENT_SOURCE, /const _exhaustive: never = status/u);
+	assert.match(EVENT_SOURCE, /<Lozenge variant=\{pullRequestStatusLozengeVariant\(status\)\}>\{status\}<\/Lozenge>/u);
+	assert.doesNotMatch(EVENT_SOURCE, /<span className="text-text">\{status\}<\/span>/u);
 	assert.match(EVENT_SOURCE, /className="flex min-w-0 items-center gap-1"/u);
 	assert.match(EVENT_SOURCE, /className="flex shrink-0 items-center gap-1"/u);
 	assert.match(EVENT_SOURCE, /className="text-text-success">\+\{additions\}/u);

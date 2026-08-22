@@ -18,7 +18,7 @@ test("compact activity labels share the timeline node's 24px alignment track", (
 	// Card avatars use h-10 (4px clearance around size-8); event glyphs stay on
 	// h-6. Event copy uses min-h-6 + leading-5 + py-0.5 so h-5 mention chips are not clipped.
 	assert.match(NODE_SOURCE, /isCard \? "h-10" : "h-6"/u);
-	assert.match(EVENT_SOURCE, /className="flex min-h-6 min-w-0 items-center py-0\.5 text-xs leading-5 text-text-subtle"/u);
+	assert.match(EVENT_SOURCE, /className="flex min-h-6 min-w-0 items-center py-0\.5 text-xs leading-5 text-text-subtlest"/u);
 	assert.match(EVENT_SOURCE, /className="flex min-h-6 min-w-0 items-center gap-2 py-0\.5 text-xs leading-5"/u);
 	assert.match(EVENT_SOURCE, /<p className="flex min-h-6 min-w-0 items-center[^>]*>\s*<span className="min-w-0">/u);
 	assert.doesNotMatch(EVENT_SOURCE, /className="flex h-6 /u);

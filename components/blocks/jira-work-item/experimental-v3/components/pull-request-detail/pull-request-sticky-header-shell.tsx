@@ -58,10 +58,6 @@ export function PullRequestStickyHeaderShell({
 	}, [scrollContainerRef]);
 
 	return (
-		// Wide only. Below 860px the column chrome flattens into the page
-		// scroller, so this band and the section nav would both pin at top:0 of
-		// the same scrollport and the nav's higher z-index would cover this
-		// header's title and actions. One pinned band per scrollport.
 		<div className="z-10 shrink-0 bg-surface @[860px]/agentlayout:sticky @[860px]/agentlayout:top-0" ref={stickyHeaderRef}>
 			{children}
 		</div>

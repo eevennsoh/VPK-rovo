@@ -27,7 +27,14 @@ const ROVO_DEV: JiraActivityActor = {
 	id: "rovo-dev",
 	name: "Rovo",
 	kind: "agent",
-	avatarSrc: "/avatar-agent/teamwork-agents/jira-theme-analyzer.svg",
+	vpkLogo: "rovo",
+};
+
+const PROGRESS_TRACKER: JiraActivityActor = {
+	id: "progress-tracker",
+	name: "Progress tracker",
+	kind: "agent",
+	avatarSrc: "/avatar-agent/teamwork-agents/progress-tracker.svg",
 };
 
 const GITHUB: JiraActivityActor = {
@@ -119,7 +126,7 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 	{
 		id: "root-cause",
 		kind: "comment",
-		actor: ROVO_DEV,
+		actor: PROGRESS_TRACKER,
 		timestamp: "6min ago",
 		tag: { text: "Waiting for you", color: "yellow" },
 		body: [
@@ -183,7 +190,7 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 	{
 		id: "changed-files",
 		kind: "changed-files",
-		actor: ROVO_DEV,
+		actor: PROGRESS_TRACKER,
 		timestamp: "5min",
 		summary: "Changed 2 files",
 		description:

@@ -753,6 +753,38 @@ test("maps skill activity to the canonical VPK Rovo logo", async () => {
 	});
 });
 
+test("promotes @Rovo mentions to the canonical VPK logo segment", async () => {
+	const adapter = await loadAdapter();
+	const [comment] = adapter.mapActivityEventsToJiraEntries([
+		{
+			id: "comment-rovo",
+			kind: "human",
+			author: { name: "Venn" },
+			content: "Ask @Rovo to follow up.",
+			createdAtMs: Date.UTC(2026, 4, 12, 9),
+		},
+		{
+			id: "activity-skill-1",
+			kind: "agent",
+			sessionId: "session-skill-1",
+			agentId: "skill:improve-description",
+			agentName: "Rovo",
+			status: "running",
+			title: "Improve description",
+			branch: "rovo/risk-review",
+			elapsedSeconds: 0,
+			commandPreview: "/Improve description",
+			responsePreview: "Reviewing the current description…",
+			createdAtMs: Date.UTC(2026, 4, 12, 13, 30),
+		},
+	]);
+
+	assert.deepEqual(
+		comment.body.filter((segment) => segment.type === "agent-mention"),
+		[{ type: "agent-mention", text: "Rovo", vpkLogo: "rovo" }],
+	);
+});
+
 test("maps third-party coding-agent identity through activity, session, and mention surfaces", async () => {
 	const adapter = await loadAdapter();
 	const [comment, claudeEntry] = adapter.mapActivityEventsToJiraEntries([

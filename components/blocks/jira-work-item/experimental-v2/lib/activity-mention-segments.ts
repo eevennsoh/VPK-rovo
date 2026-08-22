@@ -6,6 +6,7 @@ export interface ActivityMentionTarget {
 	name: string;
 	avatarSrc?: string;
 	brandName?: ThirdPartyLogoName;
+	vpkLogo?: "rovo";
 }
 
 /**
@@ -68,8 +69,12 @@ export function toActivityMentionSegments(
 		segments.push({
 			type: "agent-mention",
 			text: target.name,
-			...(target.avatarSrc ? { avatarSrc: target.avatarSrc } : {}),
-			...(target.brandName ? { brandName: target.brandName } : {}),
+			...(target.vpkLogo
+				? { vpkLogo: target.vpkLogo }
+				: {
+					...(target.avatarSrc ? { avatarSrc: target.avatarSrc } : {}),
+					...(target.brandName ? { brandName: target.brandName } : {}),
+				}),
 		});
 
 		cursor = searchIndex + 1 + target.name.length;

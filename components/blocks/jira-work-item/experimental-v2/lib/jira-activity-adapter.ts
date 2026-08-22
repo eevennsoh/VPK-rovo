@@ -16,6 +16,8 @@ import type {
 	JiraActivityCommentEntry,
 	JiraActivityEntry,
 	JiraActivityEventEntry,
+	JiraActivityPriority,
+	JiraActivitySegment,
 } from "@/components/blocks/jira-activity";
 import type { AgentListItem } from "@/components/blocks/agent-list";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
@@ -352,6 +354,38 @@ function withStatusLozengeVariants(
 	});
 }
 
+function isJiraActivityPriority(value: string): value is JiraActivityPriority {
+	switch (value) {
+		case "Highest":
+		case "High":
+		case "Medium":
+		case "Low":
+		case "Lowest":
+			return true;
+		default:
+			return false;
+	}
+}
+
+const SET_PRIORITY_MARKER = "set priority to ";
+
+function withPrioritySegments(
+	segments: StaticEventActivityEvent["segments"],
+): JiraActivitySegment[] {
+	return segments.flatMap((segment): JiraActivitySegment[] => {
+		if (segment.type !== "text") return [segment];
+		const markerIndex = segment.text.lastIndexOf(SET_PRIORITY_MARKER);
+		if (markerIndex === -1) return [segment];
+		const prefix = segment.text.slice(0, markerIndex + SET_PRIORITY_MARKER.length);
+		const priorityText = segment.text.slice(markerIndex + SET_PRIORITY_MARKER.length);
+		if (!isJiraActivityPriority(priorityText)) return [segment];
+		return [
+			{ type: "text", text: prefix },
+			{ type: "priority", text: priorityText },
+		];
+	});
+}
+
 function mapStaticEvent(
 	event: Readonly<StaticEventActivityEvent>,
 	referenceTimeMs?: number,
@@ -365,9 +399,11 @@ function mapStaticEvent(
 		...(event.showActor === undefined ? {} : { showActor: event.showActor }),
 		...(event.showTimestamp === undefined ? {} : { showTimestamp: event.showTimestamp }),
 		// Status transitions share the dropdown's statusVariant tone map.
-		segments: event.icon === "status"
-			? withStatusLozengeVariants(event.segments)
-			: event.segments,
+		segments: withPrioritySegments(
+			event.icon === "status"
+				? withStatusLozengeVariants(event.segments)
+				: event.segments,
+		),
 		...(event.pullRequest ? { pullRequest: event.pullRequest } : {}),
 	};
 }
@@ -451,8 +487,12 @@ function collectMentionTargets(events: readonly ActivityEvent[]): ActivityMentio
 		if (!name || targetsByName.has(name)) return;
 		targetsByName.set(name, {
 			name,
-			...(actor.avatarSrc ? { avatarSrc: actor.avatarSrc } : {}),
-			...(actor.brandName ? { brandName: actor.brandName } : {}),
+			...(actor.vpkLogo
+				? { vpkLogo: actor.vpkLogo }
+				: {
+					...(actor.avatarSrc ? { avatarSrc: actor.avatarSrc } : {}),
+					...(actor.brandName ? { brandName: actor.brandName } : {}),
+				}),
 		});
 	}
 

@@ -42,6 +42,7 @@ import {
 } from "@/components/blocks/jira-work-item/data/session-scripts";
 import { reduceBroadcastComment } from "@/components/blocks/jira-work-item/data/shared-channel-state";
 import {
+	FILLED_ATLASSIAN_PROJECT,
 	FILLED_COMMENTS,
 	FILLED_STATIC_EVENTS,
 	PRESET_AGENTS,
@@ -888,7 +889,10 @@ export function createFilledPresetState(workItem: Readonly<WorkItemData>): JiraW
 		contextResources: { ...contextResources, title: workItem.title },
 		metadata: withOutputContributors(
 			withSessionContributors(
-				withAssigneeContributor(seedMetadataDraft(workItem)),
+				withAssigneeContributor({
+					...seedMetadataDraft(workItem),
+					atlassianProject: FILLED_ATLASSIAN_PROJECT,
+				}),
 				[completed],
 			),
 			FILLED_STATIC_EVENTS,
@@ -942,7 +946,10 @@ export function createRunningPresetState(workItem: Readonly<WorkItemData>): Jira
 		contextResources: { ...contextResources, title: workItem.title },
 		metadata: withOutputContributors(
 			withSessionContributors(
-				withAssigneeContributor(seedMetadataDraft(workItem)),
+				withAssigneeContributor({
+					...seedMetadataDraft(workItem),
+					atlassianProject: FILLED_ATLASSIAN_PROJECT,
+				}),
 				sessions,
 			),
 			FILLED_STATIC_EVENTS,
