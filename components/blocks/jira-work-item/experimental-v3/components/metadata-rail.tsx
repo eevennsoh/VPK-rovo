@@ -33,6 +33,7 @@ import {
 	useJiraWorkItemMeta,
 	useJiraWorkItemState,
 } from "@/components/blocks/jira-work-item/experimental-v3/context-jira-work-item";
+import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental-v3/context-metadata-rail";
 import { CONNECTED_REPOSITORY_COUNT } from "@/components/blocks/jira-work-item/experimental-v3/lib/development-repositories";
 import { getPullRequestIdentity } from "@/components/blocks/jira-work-item/experimental-v3/lib/jira-activity-adapter";
 import type {
@@ -220,6 +221,12 @@ export function MetadataRail({
 	const { workItem } = useJiraWorkItemMeta();
 	const { contextResources, metadata: draft } = useJiraWorkItemState();
 	const actions = useJiraWorkItemActions();
+	const {
+		detailsShowMore,
+		openSectionIds,
+		setDetailsShowMore,
+		setOpenSectionIds,
+	} = useMetadataRail();
 	const pullRequestSelected = selectedPullRequestEntry !== null;
 	const selectedPullRequestKey = selectedPullRequestEntry?.pullRequest
 		? getPullRequestIdentity(selectedPullRequestEntry.pullRequest)
@@ -325,6 +332,8 @@ export function MetadataRail({
 						<ArtifactPane
 							aria-label="Work item details"
 							borderless={borderless}
+							onOpenSectionIdsChange={setOpenSectionIds}
+							openSectionIds={openSectionIds}
 							// Drop first-section pt-1.5 so Details top-aligns with description
 							// after both column chromes share the same pb-7. overflow-visible
 							// is the borderless ArtifactPane default (focus-ring clearance).
@@ -333,7 +342,15 @@ export function MetadataRail({
 							sections={[
 								{
 									collapsible: false,
-									content: <DetailsTab draft={draft} onChange={actions.updateMetadata} people={people} />,
+									content: (
+										<DetailsTab
+											draft={draft}
+											onChange={actions.updateMetadata}
+											people={people}
+											showMore={detailsShowMore}
+											onShowMoreChange={setDetailsShowMore}
+										/>
+									),
 									defaultOpen: true,
 									id: "details",
 									title: "Details",

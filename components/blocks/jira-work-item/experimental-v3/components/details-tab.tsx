@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
 import CalendarIcon from "@atlaskit/icon/core/calendar";
 import EpicIcon from "@atlaskit/icon/core/epic";
 import PersonIcon from "@atlaskit/icon/core/person";
@@ -30,14 +28,16 @@ export type MetadataDraft = AgentPlannerMetadata;
 export function DetailsTab({
 	draft,
 	onChange,
+	onShowMoreChange,
 	people,
+	showMore,
 }: Readonly<{
 	draft: MetadataDraft;
 	onChange: (patch: Partial<MetadataDraft>) => void;
+	onShowMoreChange: (showMore: boolean) => void;
 	people: readonly WorkItemPerson[];
+	showMore: boolean;
 }>) {
-	const [showMore, setShowMore] = useState(false);
-
 	return (
 		<div className="flex flex-col gap-2">
 			{/* Status and pull requests live in the control row above the section nav. */}
@@ -95,7 +95,7 @@ export function DetailsTab({
 			) : null}
 			<button
 				className="mt-1 self-start text-xs leading-5 text-text-subtle underline-offset-2 hover:underline focus-visible:underline"
-				onClick={() => setShowMore((current) => !current)}
+				onClick={() => onShowMoreChange(!showMore)}
 				type="button"
 			>
 				{showMore ? "See less" : "See more"}

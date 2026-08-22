@@ -11,12 +11,8 @@ interface PanelLayoutContextValue {
 	metadataCollapsed: boolean;
 	/** Whether the left-column geometry is moving between expanded and collapsed layouts. */
 	metadataLayoutAnimating: boolean;
-	/** Whether the title actions are exiting before the layout state changes. */
-	metadataTogglePending: boolean;
-	/** Request a metadata-column toggle after the title actions finish exiting. */
+	/** Toggle the metadata column and begin its layout transition. */
 	toggleMetadata: () => void;
-	/** Apply the requested layout state once the title-action exit completes. */
-	completeMetadataToggle: () => void;
 }
 
 const PanelLayoutContext = createContext<PanelLayoutContextValue | null>(null);
@@ -40,17 +36,10 @@ export function PanelLayoutProvider({
 }: Readonly<PanelLayoutProviderProps>) {
 	const [metadataCollapsed, setMetadataCollapsed] = useState(defaultMetadataCollapsed);
 	const [metadataLayoutAnimating, setMetadataLayoutAnimating] = useState(false);
-	const [metadataTogglePending, setMetadataTogglePending] = useState(false);
 	const toggleMetadata = useCallback(() => {
-		setMetadataTogglePending(true);
-	}, []);
-	const completeMetadataToggle = useCallback(() => {
-		if (!metadataTogglePending) return;
-
 		setMetadataLayoutAnimating(true);
 		setMetadataCollapsed((collapsed) => !collapsed);
-		setMetadataTogglePending(false);
-	}, [metadataTogglePending]);
+	}, []);
 
 	useEffect(() => {
 		if (!metadataLayoutAnimating) return;
@@ -63,17 +52,13 @@ export function PanelLayoutProvider({
 	}, [metadataCollapsed, metadataLayoutAnimating]);
 	const value = useMemo<PanelLayoutContextValue>(
 		() => ({
-			completeMetadataToggle,
 			metadataCollapsed,
 			metadataLayoutAnimating,
-			metadataTogglePending,
 			toggleMetadata,
 		}),
 		[
-			completeMetadataToggle,
 			metadataCollapsed,
 			metadataLayoutAnimating,
-			metadataTogglePending,
 			toggleMetadata,
 		],
 	);

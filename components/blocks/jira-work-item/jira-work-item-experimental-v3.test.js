@@ -74,6 +74,58 @@ test("experimental v3 is isolated from v1 and v2", () => {
 	}
 });
 
+test("experimental v3 can collapse its metadata rail and preview it while collapsed", () => {
+	const actionsSource = readBlockFile("experimental-v3/components/experimental-breadcrumb-actions.tsx");
+	const panelLayoutSource = readBlockFile("experimental-v3/context-panel-layout.tsx");
+
+	assert.doesNotMatch(actionsSource, /aria-pressed/u);
+	assert.match(actionsSource, /aria-controls="experimental-work-item-metadata-panel"/u);
+	assert.match(actionsSource, /aria-expanded=\{!metadataCollapsed\}/u);
+	assert.match(actionsSource, /metadataCollapsed \? "Show metadata panel" : "Hide metadata panel"/u);
+	assert.match(actionsSource, /disabled=\{metadataLayoutAnimating\}/u);
+	assert.match(actionsSource, /onClick=\{toggleMetadata\}/u);
+	assert.match(
+		actionsSource,
+		/import \{ MetadataRail \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/components\/metadata-rail"/u,
+	);
+	assert.match(actionsSource, /open=\{metadataCollapsed && metadataPreviewOpen\}/u);
+	assert.match(actionsSource, /eventDetails\.reason === "trigger-press"/u);
+	assert.match(actionsSource, /openOnHover=\{metadataCollapsed\}/u);
+	assert.match(actionsSource, /delay=\{120\}/u);
+	assert.match(actionsSource, /closeDelay=\{80\}/u);
+	assert.match(actionsSource, /aria-label="Work item details preview"/u);
+	assert.match(actionsSource, /<MetadataRail borderless \/>/u);
+	assert.match(actionsSource, /positionerClassName="z-\[600\]"/u);
+	assert.match(
+		actionsSource,
+		/<ExperimentalHeaderOverflowMenu \/>[\s\S]*<Popover[\s\S]*aria-label="Collapse"/u,
+	);
+	assert.match(
+		panelLayoutSource,
+		/const toggleMetadata = useCallback\(\(\) => \{[\s\S]*setMetadataLayoutAnimating\(true\);[\s\S]*setMetadataCollapsed\(\(collapsed\) => !collapsed\);[\s\S]*\}, \[\]\);/u,
+	);
+	assert.doesNotMatch(panelLayoutSource, /metadataTogglePending|completeMetadataToggle/u);
+});
+
+test("experimental v3 preserves metadata disclosures across docked and preview rails", () => {
+	const detailsSource = readBlockFile("experimental-v3/components/details-tab.tsx");
+	const metadataRailSource = readBlockFile("experimental-v3/components/metadata-rail.tsx");
+	const metadataRailContextSource = readBlockFile("experimental-v3/context-metadata-rail.tsx");
+
+	assert.doesNotMatch(detailsSource, /useState/u);
+	assert.match(detailsSource, /showMore: boolean;/u);
+	assert.match(detailsSource, /onShowMoreChange: \(showMore: boolean\) => void;/u);
+	assert.match(detailsSource, /onClick=\{\(\) => onShowMoreChange\(!showMore\)\}/u);
+	assert.match(metadataRailContextSource, /const \[detailsShowMore, setDetailsShowMore\] = useState\(false\);/u);
+	assert.match(
+		metadataRailContextSource,
+		/const \[openSectionIds, setOpenSectionIds\] = useState<ReadonlySet<string>>\(\(\) => new Set\(\)\);/u,
+	);
+	assert.match(metadataRailSource, /<DetailsTab[\s\S]*showMore=\{detailsShowMore\}[\s\S]*onShowMoreChange=\{setDetailsShowMore\}/u);
+	assert.match(metadataRailSource, /<ArtifactPane[\s\S]*openSectionIds=\{openSectionIds\}/u);
+	assert.match(metadataRailSource, /<ArtifactPane[\s\S]*onOpenSectionIdsChange=\{setOpenSectionIds\}/u);
+});
+
 test("the v3 surface has one section nav, not a rail toggle plus a PR tab strip", () => {
 	// v3's divergence: Description / Activity / Insights (+ Guide / Files under
 	// a guided PR) became a single scroll-linked nav in the left column,
