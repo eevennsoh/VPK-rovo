@@ -683,6 +683,7 @@ function ExperimentalV3JiraWorkItemContent({
 									composerContextBar={composerContextBar}
 									onAgentPromptSubmit={onAgentPromptSubmit}
 									onOpenAgentChat={onOpenAgentChat}
+									onSectionSelect={selectedPullRequestIdentity ? handlePullRequestClear : undefined}
 									pullRequestFix={activePullRequestFix}
 									pullRequestReview={activePullRequestReview}
 									onSkillInvoke={onSkillInvoke}

@@ -306,7 +306,7 @@ test("PR select is an adjunct, never a section", () => {
 	);
 	const contextPillsSource = readBlockFile("experimental-v3/components/activity-composer-context-pills.tsx");
 	assert.match(contextPillsSource, /justify-between/u);
-	assert.match(contextPillsSource, /selectSection\("insights"\)/u);
+	assert.match(contextPillsSource, /onSectionSelect\?\.\(\);\s*selectSection\("insights"\)/u);
 	assert.match(contextPillsSource, /setNewInsightsDismissed\(true\)/u);
 	assert.match(
 		readBlockFile("experimental-v3/components/activity-composer-new-insights-pill.tsx"),
@@ -325,7 +325,7 @@ test("PR select is an adjunct, never a section", () => {
 	);
 	assert.match(
 		compositionSource,
-		/onSectionSelect=\{selectedPullRequestIdentity \? handlePullRequestClear : undefined\}/u,
+		/<WorkItemSectionNav[\s\S]*onSectionSelect=\{selectedPullRequestIdentity \? handlePullRequestClear : undefined\}[\s\S]*<ActivityComposer[\s\S]*onSectionSelect=\{selectedPullRequestIdentity \? handlePullRequestClear : undefined\}/u,
 	);
 	assert.doesNotMatch(compositionSource, /showDescriptionTools|descriptionViewMode|onDescriptionViewModeChange/u);
 });

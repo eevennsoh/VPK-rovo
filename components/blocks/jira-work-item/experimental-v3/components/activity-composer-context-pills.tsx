@@ -82,6 +82,8 @@ interface ActivityComposerContextPillsProps {
 	onInvokeAgent: (agent: Pick<AgentSelectorAgent, "id" | "name" | "avatarSrc" | "brandName">) => void;
 	onInvokeSkill: (skill: SkillsDirectorySkill) => void;
 	onOpenAgentChat?: (agentId: string, sessionId: string) => void;
+	/** Same PR-clear transition the section nav uses before changing surfaces. */
+	onSectionSelect?: () => void;
 	workingSessions: readonly AgentSession[];
 }
 
@@ -275,6 +277,7 @@ export function ActivityComposerContextPills({
 	onInvokeAgent,
 	onInvokeSkill,
 	onOpenAgentChat,
+	onSectionSelect,
 	workingSessions,
 }: Readonly<ActivityComposerContextPillsProps>) {
 	const shouldReduceMotion = Boolean(useReducedMotion());
@@ -361,6 +364,7 @@ export function ActivityComposerContextPills({
 								<ActivityComposerNewInsightsPill
 									count={resolvedNewInsightsCount}
 									onSelect={() => {
+										onSectionSelect?.();
 										selectSection("insights");
 										setNewInsightsDismissed(true);
 									}}
