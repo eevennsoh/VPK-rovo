@@ -85,6 +85,7 @@ test("preset initialization: blank/empty/filled/running set up the two dimension
 	assert.equal(empty.planner.status, "searching");
 	assert.equal(empty.metadata.status, "RFP Intake");
 	assert.equal(empty.metadata.priority, null);
+	assert.equal(empty.metadata.atlassianProject, null);
 
 	const filled = model.hydratePreset("filled", TEST_WORK_ITEM);
 	assert.equal(model.selectContextStatus(filled), "filled");
@@ -94,6 +95,7 @@ test("preset initialization: blank/empty/filled/running set up the two dimension
 		"meeting-insights-reporter",
 		"readiness-checker",
 	]);
+	assert.equal(filled.metadata.atlassianProject, "storefront-platform");
 	assert.equal(filled.planner.status, "inactive");
 
 	const running = model.hydratePreset("running", TEST_WORK_ITEM);
@@ -106,6 +108,7 @@ test("preset initialization: blank/empty/filled/running set up the two dimension
 		"response-reviewer",
 		"feedback-analyzer",
 	]);
+	assert.equal(running.metadata.atlassianProject, "storefront-platform");
 	assert.equal(running.planner.status, "inactive");
 });
 
@@ -152,7 +155,7 @@ test("empty preset planner searches in phases and prefills the normal form when 
 	state = model.jiraWorkItemReducer(state, { type: "tick", deltaMs: 1200 });
 	assert.equal(state.planner.status, "ready");
 	assert.equal(model.countPendingPlannerFields(state.planner), 12);
-	assert.match(state.contextResources.description, /Acmecorp is evaluating Atlassian/u);
+	assert.match(state.contextResources.description, /Checkout-funnel research shows that mandatory account creation is the largest avoidable source/u);
 	assert.equal(state.metadata.assignee.name, "Maya Chen");
 	assert.equal(state.metadata.atlassianProject, "esm-rfp-response");
 });
@@ -161,7 +164,7 @@ test("Confirm all preserves prefilled values and Reject all clears them", async 
 	const model = await loadSessionModel();
 	let state = model.hydratePreset("empty", TEST_WORK_ITEM);
 	state = model.jiraWorkItemReducer(state, { type: "settle-running" });
-	assert.match(state.contextResources.description, /Acmecorp is evaluating Atlassian/u);
+	assert.match(state.contextResources.description, /Checkout-funnel research shows that mandatory account creation is the largest avoidable source/u);
 	assert.equal(state.metadata.reporter.name, "Jordan Lee");
 	state = model.jiraWorkItemReducer(state, { type: "apply-planner-proposal" });
 	assert.equal(state.planner.status, "applied");
@@ -231,7 +234,7 @@ test("planner refinement stages deterministic deltas and reset restarts search",
 	assert.equal(model.countPendingPlannerFields(unapplied.planner), 12);
 	unapplied = model.jiraWorkItemReducer(unapplied, { type: "settle-running" });
 	unapplied = model.jiraWorkItemReducer(unapplied, { type: "apply-planner-proposal" });
-	assert.match(unapplied.contextResources.description, /Acmecorp is evaluating Atlassian/u);
+	assert.match(unapplied.contextResources.description, /Checkout-funnel research shows that mandatory account creation is the largest avoidable source/u);
 
 	state = model.jiraWorkItemReducer(state, { type: "refine-planner-proposal", prompt: "Assign Maya Chen" });
 	assert.equal(model.countPendingPlannerFields(state.planner), 0);

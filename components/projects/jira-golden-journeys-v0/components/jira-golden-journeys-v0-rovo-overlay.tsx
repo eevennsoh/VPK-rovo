@@ -34,6 +34,8 @@ interface AsxRovoOverlayProps {
 	onLauncherClick?: () => void;
 	onQuestionAnswer?: () => void;
 	placement?: "embedded" | "floating";
+	/** Closed-state FloatingRovoButton. `"hidden"` still renders RovoFloatingChat when open. */
+	launcher?: "auto" | "hidden";
 }
 
 /** Keeps ASX Rovo surfaces in their requested viewport or embedded stacking context. */
@@ -49,9 +51,11 @@ export function AsxRovoOverlay({
 	onLauncherClick,
 	onQuestionAnswer,
 	placement = "floating",
+	launcher = "auto",
 }: Readonly<AsxRovoOverlayProps>): React.ReactNode {
 	const { chatSurface } = useRovoChat();
 	const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
+	const showClosedLauncher = launcher === "auto" && chatSurface === null;
 
 	useEffect(() => {
 		setPortalRoot(document.body);
@@ -66,7 +70,7 @@ export function AsxRovoOverlay({
 
 	const content = (
 		<>
-			{chatSurface === null && placement === "floating" ? (
+			{showClosedLauncher && placement === "floating" ? (
 				<FloatingRovoButton
 					ariaLabel="Open Rovo chat"
 					forceVisible
@@ -103,7 +107,7 @@ export function AsxRovoOverlay({
 		const launcherHost = launcherContainer ?? portalRoot;
 		return (
 			<>
-				{launcherHost && chatSurface === null ? createPortal(
+				{launcherHost && showClosedLauncher ? createPortal(
 					<FloatingRovoButton
 						ariaLabel="Open Rovo chat"
 						forceVisible

@@ -19,6 +19,7 @@ import {
 } from "@/components/blocks/jira-work-item/experimental-v3/context-panel-layout-motion";
 import { usePanelLayout } from "@/components/blocks/jira-work-item/experimental-v3/context-panel-layout";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
+import { StickyRowScrollFade } from "@/components/visual/scroll-mask";
 import {
 	buildScrollMaskBlurLayerStyles,
 	buildScrollMaskStyle,
@@ -27,7 +28,6 @@ import {
 import { cn } from "@/lib/utils";
 
 interface ExperimentalWorkItemLayoutProps {
-	header: ReactNode;
 	context: (scrollContainerRef: RefObject<HTMLDivElement | null>) => ReactNode;
 	metadata: ReactNode;
 	metadataPanelResizing: boolean;
@@ -71,29 +71,30 @@ function useColumnScrollMask() {
 }
 
 /**
- * Left-column shell: ContextResources is a sibling above the description
- * scrollport, so the native scrollbar belongs only to the content beneath the
- * controls. Narrow mode uses `contents` so chrome/body flatten into the page
- * order flow via `order`.
+ * Left-column shell. The chrome box stays zero-height and positioned so the
+ * scrollport-owned top fade's `top-full` still resolves against that seam.
+ * Narrow mode uses `contents` so the body flattens into the page order flow
+ * via `order`.
  */
 function DescriptionColumnShell({
-	chrome,
 	children,
 	scrollRef,
 	showTopScrollMask,
 	style,
 	bodyStyle,
 }: Readonly<{
-	chrome: ReactNode;
 	children: ReactNode;
 	scrollRef: (element: HTMLDivElement | null) => void;
 	showTopScrollMask: boolean;
 	style?: CSSProperties;
 	bodyStyle?: CSSProperties;
 }>) {
+	const { planner } = useJiraWorkItemState();
+	const hasPlanner = planner.status !== "inactive" && planner.status !== "applied";
+
 	return (
 		<div
-			className="order-2 contents @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:flex-col"
+			className="order-2 contents has-[[data-jira-work-item-pull-request-detail-header]]:[&_[data-sticky-row-scroll-fade]]:hidden @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:flex-col"
 			data-jira-work-item-column-shell
 		>
 			<div
@@ -101,11 +102,17 @@ function DescriptionColumnShell({
 				data-jira-work-item-column-chrome
 				data-scroll-fade-visible={showTopScrollMask ? "" : undefined}
 			>
-				{chrome}
+				<StickyRowScrollFade
+					className={cn(
+						"group-data-[scroll-fade-visible]:opacity-100",
+						hasPlanner ? "[&>div]:from-bg-input" : undefined,
+					)}
+					data-slot="jira-work-item-resource-row-scroll-fade"
+				/>
 			</div>
 			<div
 				ref={scrollRef}
-				className="order-2 contents has-[[data-jira-work-item-pull-request-detail-header]]:[overflow-anchor:none] @[860px]/agentlayout:relative @[860px]/agentlayout:block @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:overscroll-y-none @[860px]/agentlayout:px-6 @[860px]/agentlayout:pb-6"
+				className="order-2 contents has-[[data-jira-work-item-pull-request-detail-header]]:[overflow-anchor:none] @[860px]/agentlayout:relative @[860px]/agentlayout:block @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:overscroll-y-none @[860px]/agentlayout:px-6 @[860px]/agentlayout:pt-6 @[860px]/agentlayout:pb-6"
 				data-jira-work-item-scroll-region
 				style={style}
 			>
@@ -124,10 +131,9 @@ function DescriptionColumnShell({
 /**
  * Responsive layout for the experimental work item dialog body.
  *
- * Sits under the dialog header band (breadcrumbs + title). Wide
- * (container >= 860px): two columns with fixed control chrome above separate
- * body scrollports, plus an optional left composer footer. Left:
- * ContextResources chrome + description scroll; right:
+ * Sits under the dialog header band (breadcrumbs + title + section nav). Wide
+ * (container >= 860px): two columns with separate body scrollports, plus an
+ * optional left composer footer. Left: description scroll; right:
  * Details/Activity toggle chrome + resizable metadata scroll (440px default
  * and minimum, capped by the matching 440px description-column minimum).
  * Toggle reveals via `group/metadata-rail` hover on the rail body (plus self
@@ -145,7 +151,6 @@ function DescriptionColumnShell({
  * body width rather than the screen.
  */
 export function ExperimentalWorkItemLayout({
-	header,
 	context,
 	metadata,
 	metadataPanelResizing,
@@ -218,7 +223,6 @@ export function ExperimentalWorkItemLayout({
 							transition={contentLayoutTransition}
 						>
 							<DescriptionColumnShell
-								chrome={header}
 								scrollRef={setLeftScrollContainerRef}
 								showTopScrollMask={showLeftTopScrollMask}
 								style={leftScrollMaskStyle}

@@ -83,7 +83,7 @@ export function ArtifactPanePropertyRow({
 }: Readonly<{ children: ReactNode; editable?: boolean; icon: ReactNode; label: string }>) {
 	return (
 		<div className="grid min-h-8 min-w-0 grid-cols-[16px_84px_minmax(0,1fr)] items-center gap-2 text-xs leading-5">
-			<span aria-hidden className="grid size-4 place-items-center text-icon-subtle">
+			<span aria-hidden className="grid size-4 place-items-center text-icon-subtlest">
 				{icon}
 			</span>
 			<span className="text-text-subtlest">{label}</span>

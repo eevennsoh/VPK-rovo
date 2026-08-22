@@ -28,9 +28,15 @@ export const LABEL_OPTIONS: readonly string[] = [
 	"security-review",
 ];
 
+export const STOREFRONT_PLATFORM_PROJECT = {
+	id: "storefront-platform",
+	name: "Storefront Platform",
+	team: "Commerce",
+} as const;
+
 /** Candidate Atlassian projects for the empty "Atlassian Project" row picker. */
 export const PROJECT_OPTIONS: readonly { id: string; name: string; team: string }[] = [
-	{ id: "storefront-platform", name: "Storefront Platform", team: "Commerce" },
+	STOREFRONT_PLATFORM_PROJECT,
 	{ id: "rovo-brand-council", name: "Rovo Brand Council", team: "Brand" },
 	{ id: "esm-rfp-response", name: "Enterprise RFP Response", team: "Sales" },
 	{ id: "assets-cmdb", name: "Assets & CMDB readiness", team: "Platform" },

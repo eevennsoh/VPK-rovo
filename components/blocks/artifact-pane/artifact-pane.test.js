@@ -131,6 +131,8 @@ test("Artifact Pane owns independently collapsible sections", () => {
 test("Artifact Pane property rows follow the Jira Session Flyout layout pattern", () => {
 	assert.match(BLOCK_SOURCE, /export function ArtifactPanePropertyRow\(/u);
 	assert.match(BLOCK_SOURCE, /editable = true/u);
+	assert.match(BLOCK_SOURCE, /<span aria-hidden className="grid size-4 place-items-center text-icon-subtlest">/u);
+	assert.doesNotMatch(BLOCK_SOURCE, /<span aria-hidden className="grid size-4 place-items-center text-icon-subtle">/u);
 	assert.match(BLOCK_SOURCE, /className="grid min-h-8 min-w-0[^"]*items-center/u);
 	assert.match(BLOCK_SOURCE, /"flex min-h-8 min-w-0 items-center text-text/u);
 	assert.doesNotMatch(BLOCK_SOURCE, /(?:grid|flex) (?:h|min-h)-6 min-w-0/u);

@@ -301,26 +301,6 @@ export function PersonRowField({
 	);
 }
 
-/**
- * Read-only person value (e.g. Reporter, which can't be reassigned). Renders the
- * same flat value line as the interactive picker's trigger — carrying the
- * `detail-value-trigger` slot so the FloatingField expand/float mechanics still
- * apply — but as a non-interactive element with no popover.
- */
-export function PersonReadOnlyValue({
-	value,
-	placeholder,
-}: Readonly<{ value: AgentPlannerAssignee | null; placeholder: string }>) {
-	return (
-		<div
-			className="-mx-2 flex w-full min-w-0 max-w-full items-center gap-2 rounded-md px-2 py-0.5 text-left text-sm"
-			data-slot="detail-value-trigger"
-		>
-			{value ? <PersonLabel person={value} /> : <span className="text-sm text-text-subtlest">{placeholder}</span>}
-		</div>
-	);
-}
-
 export function DateRowField({
 	ariaLabel,
 	placeholder,

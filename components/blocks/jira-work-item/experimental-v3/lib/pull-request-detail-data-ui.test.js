@@ -113,8 +113,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 		join(__dirname, "../components/pull-request-detail/pull-request-sticky-header-shell.tsx"),
 		"utf8",
 	);
-	// Wide-only sticky: in narrow mode this band and the section nav share one
-	// scrollport, and two `top-0` bands would overlap.
+	// Wide-only sticky. Narrow pinning is unchanged in this chrome-ownership pass.
 	assert.match(
 		stickyHeaderShellSource,
 		/className="z-10 shrink-0 bg-surface @\[860px\]\/agentlayout:sticky @\[860px\]\/agentlayout:top-0"/u,
@@ -892,6 +891,8 @@ test("PR Activity menu offers Comments filter with review-thread reply and resol
 	// The feed moved out of the rail into the left column's Activity section, so
 	// it renders its own heading control instead of publishing rail chrome.
 	assert.match(activityPanelSource, /<WorkItemSection[\s\S]*id="activity"/u);
+	assert.match(activityPanelSource, /<JiraActivityViewControl/u);
+	assert.doesNotMatch(activityPanelSource, /Show oldest|ACTIVITY_SORT_TRIGGER_REVEAL_CLASS/u);
 	assert.match(activityPanelSource, /usePublishActivityCount\(entries\.length\)/u);
 	assert.doesNotMatch(activityPanelSource, /useSetActivityRailChrome|px-3/u);
 	assert.match(activityPanelSource, /filterMode="pull-request"/u);

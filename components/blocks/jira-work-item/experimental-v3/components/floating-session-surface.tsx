@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, type ReactNode } from "react";
 
 import { useRovoChat } from "@/app/contexts";
 import { useJiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v3/context-jira-work-item";
@@ -62,14 +62,6 @@ function getSessionPlaybackVariant(
 }
 
 /**
- * Right/bottom inset that parks the Rovo launcher on the dialog's bottom-right
- * corner using the same gutter as the activity composer — the wide composer
- * dock is `px-6 pb-6` and the metadata rail is `pr-6`, so 24px on both axes
- * lines the button up with the prompt input's edges.
- */
-const LAUNCHER_PLACEMENT = { right: "24px", bottom: "24px" } as const;
-
-/**
  * Bridges the block-local session model into the shared Jira Issue Rovo chat.
  * Jira Work Item owns the deterministic session lifecycle; the
  * existing Rovo surface owns all visible chat chrome, transcript, and composer.
@@ -87,19 +79,7 @@ export function FloatingSessionSurface({
 	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useAsxAgentChatDemo();
 	const openedSessionStateRef = useRef<string | null>(null);
 	const previousChatSurfaceRef = useRef(chatSurface);
-	const rootRef = useRef<HTMLDivElement | null>(null);
-	// The launcher renders while the chat panel is closed, and this surface sits
-	// in the dialog's `inert` side-panel slot — so host the button on the dialog
-	// body instead. That element is `relative`, so it also becomes the button's
-	// `offsetParent` for container positioning.
-	const [launcherContainer, setLauncherContainer] = useState<HTMLElement | null>(null);
 	const activeSession = meta.activeSession;
-
-	useEffect(() => {
-		setLauncherContainer(
-			rootRef.current?.closest<HTMLElement>("[data-jira-work-item-dialog-body]") ?? null,
-		);
-	}, []);
 
 	useEffect(() => {
 		if (!activeSession) return;
@@ -167,18 +147,13 @@ export function FloatingSessionSurface({
 	}, [actions, activeSession, onSessionReply]);
 
 	return (
-		<div
-			className="relative h-full min-h-0 [&_[data-rovo-chat-placement=embedded]]:border-l-0"
-			ref={rootRef}
-		>
+		<div className="relative h-full min-h-0 [&_[data-rovo-chat-placement=embedded]]:border-l-0">
 			<AsxRovoOverlay
 				chatContextBar={chatContextBar}
 				composerToolsAfterAdd={composerToolsAfterAdd}
 				externalThinkingMessageId={externalThinkingMessageId}
-				launcherContainer={launcherContainer}
-				launcherPlacement={LAUNCHER_PLACEMENT}
+				launcher="hidden"
 				onInterceptSubmit={handleInterceptSubmit}
-				onLauncherClick={actions.openLatestOrCreateGeneralSession}
 				placement="embedded"
 			/>
 		</div>

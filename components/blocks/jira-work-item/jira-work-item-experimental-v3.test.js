@@ -96,6 +96,7 @@ test("the v3 surface has one section nav, not a rail toggle plus a PR tab strip"
 	// Links + aria-current, never ARIA tabs: on a stacked page every section is
 	// on screen at once, so tab semantics would misdescribe the surface.
 	assert.match(navSource, /<nav\b/u);
+	assert.match(navSource, /href=\{`#\$\{sectionElementId\(section\.id\)\}`\}/u);
 	assert.match(navSource, /aria-current=\{section\.id === activeSectionId \? "location" : undefined\}/u);
 	assert.doesNotMatch(navSource, /role="tab"|aria-selected=|aria-controls=|<TabsTrigger/u);
 
@@ -109,9 +110,14 @@ test("the v3 control row is consolidated and Reporter moved back to Details", ()
 	const resourcesSource = readBlockFile("experimental-v3/components/context-resources.tsx");
 	assert.match(
 		resourcesSource,
-		/<StatusPill[\s\S]*<PullRequestsSelect[\s\S]*<ContextTitleActions[\s\S]*aria-label="Add to work item"/u,
-		"control row order must be status, pull requests, coding agent, then the plus menu",
+		/<StatusPill[\s\S]*<ContextTitleActions[\s\S]*aria-label="Add to work item"/u,
+		"control row order must be status, coding agent, then the plus menu",
 	);
+	assert.doesNotMatch(
+		resourcesSource,
+		/PullRequestsSelect|pullRequestEntries|selectedPullRequestIdentity|onPullRequestSelect|onPullRequestClear|pullRequestSelected/u,
+	);
+	assert.match(resourcesSource, /showDescriptionTools/u);
 
 	// The read-only pull-request Tag dissolved into the interactive Select.
 	assert.match(
@@ -122,34 +128,76 @@ test("the v3 control row is consolidated and Reporter moved back to Details", ()
 	const detailsTabSource = readBlockFile("experimental-v3/components/details-tab.tsx");
 	assert.match(
 		detailsTabSource,
-		/label="Reporter">[\s\S]*<PersonReadOnlyValue placeholder="Unassigned" value=\{draft\.reporter \?\? null\} \/>/u,
+		/label="Reporter">[\s\S]*<PersonRowField[\s\S]*ariaLabel="Change reporter"[\s\S]*onChange=\{\(person\) => onChange\(\{ reporter: person \}\)\}[\s\S]*value=\{draft\.reporter\}/u,
+	);
+	assert.match(
+		detailsTabSource,
+		/import \{ ArtifactProjectField \} from "@\/components\/blocks\/artifact-pane\/artifact-project-field";/u,
+	);
+	assert.match(
+		detailsTabSource,
+		/<ArtifactProjectField onChange=\{\(id\) => onChange\(\{ atlassianProject: id \}\)\} value=\{draft\.atlassianProject\} \/>/u,
 	);
 
 	const titleBarSource = readBlockFile("experimental-v3/components/context-title-bar.tsx");
 	assert.doesNotMatch(titleBarSource, /<StatusPill|<ContextTitleMeta|<PersonLabel/u);
+	assert.match(
+		titleBarSource,
+		/group\/description-scope[\s\S]*<ContextEditableTitle \/>[\s\S]*\{controlRow\}/u,
+	);
 });
 
-test("the v3 section nav pins in narrow mode and tracks the active scroller", () => {
+test("the v3 dialog owns one fixed chrome row", () => {
+	const dialogSource = readBlockFile("experimental-v3/components/experimental-work-item-dialog.tsx");
+	assert.match(dialogSource, /grid-rows-\[auto_minmax\(0,1fr\)\]/u);
+	assert.match(
+		dialogSource,
+		/data-jira-work-item-header-band[\s\S]*<ContextTitleBar controlRow=\{controlRow\} \/>[\s\S]*\{navigation\}/u,
+	);
+	assert.doesNotMatch(dialogSource, /position:\s*sticky|sticky top-0/u);
+
 	const navSource = readBlockFile("experimental-v3/components/work-item-section-nav.tsx");
-	// Narrow flattens the column chrome into the page scroller, so the nav has to
-	// pin itself; wide already has it as a fixed sibling above the scrollport.
-	assert.match(navSource, /sticky top-0/u);
-	assert.match(navSource, /@\[860px\]\/agentlayout:static/u);
 	assert.match(navSource, /data-work-item-section-nav/u);
+	assert.match(navSource, /data-work-item-header-navigation/u);
+	assert.match(navSource, /className="@container\/resource-row border-b border-border"/u);
+	assert.match(navSource, /className="flex items-center px-6"/u);
+	assert.doesNotMatch(navSource, /ml-auto/u);
+	assert.match(navSource, /from "@\/components\/ui\/tabs"/u);
+	assert.match(navSource, /tabsLineIndicatorClass/u);
+	assert.match(navSource, /tabsLineListOverflowClass/u);
+	assert.match(navSource, /className=\{cn\("min-w-0", tabsLineListOverflowClass\)\}/u);
+	assert.doesNotMatch(navSource, /NAV_LIST_CLASS = "[^"]*border-b/u);
+	assert.doesNotMatch(navSource, /sticky top-0/u);
+	assert.doesNotMatch(navSource, /@\[860px\]\/agentlayout:static/u);
+	assert.doesNotMatch(navSource, /-mx-6 -mt-6 px-6 pt-6/u);
+
+	const compositionSource = readBlockFile("experimental-v3/experimental-v3-jira-work-item.tsx");
+	assert.match(
+		compositionSource,
+		/navigation=\{\([\s\S]*<WorkItemSectionNav[\s\S]*endControl=\{\([\s\S]*<PullRequestsSelect/u,
+	);
+	assert.doesNotMatch(compositionSource, /header=\{|<ContextHeader/u);
 
 	const layoutSource = readBlockFile("experimental-v3/components/experimental-work-item-layout.tsx");
+	assert.doesNotMatch(layoutSource, /header: ReactNode|chrome: ReactNode|chrome=\{header\}/u);
+	assert.match(layoutSource, /<StickyRowScrollFade/u);
+	assert.match(layoutSource, /data-jira-work-item-column-chrome/u);
+	assert.match(
+		layoutSource,
+		/data-jira-work-item-column-chrome[\s\S]*@\[860px\]\/agentlayout:overflow-y-auto @\[860px\]\/agentlayout:overscroll-y-none @\[860px\]\/agentlayout:px-6 @\[860px\]\/agentlayout:pt-6 @\[860px\]\/agentlayout:pb-6"[\s\S]*data-jira-work-item-scroll-region/u,
+	);
 	assert.match(layoutSource, /setWideScrollContainer\(element\)/u);
 	assert.match(layoutSource, /setNarrowScrollContainer\(element\)/u);
 
-	// Regression: a sticky element pins within its containing block, so every
-	// ancestor between the nav and the page scroller must be `display: contents`
-	// in narrow mode. When ContextHeader was a plain `shrink-0` block the nav
-	// stuck inside that header-height box and scrolled off with it.
 	const contextPanelSource = readBlockFile("experimental-v3/components/context-panel.tsx");
+	assert.doesNotMatch(contextPanelSource, /ContextHeader|data-jira-work-item-context-header|WorkItemSectionNav/u);
+
+	const spyHookSource = readBlockFile("experimental-v3/hooks/use-scroll-spy-sections.ts");
 	assert.match(
-		contextPanelSource,
-		/className="contents @\[860px\]\/agentlayout:block @\[860px\]\/agentlayout:shrink-0"[\s\S]*data-jira-work-item-context-header/u,
+		spyHookSource,
+		/export const SCROLL_SPY_STICKY_HEADER_SELECTOR =\s*"\[data-jira-work-item-pull-request-detail-header\]"/u,
 	);
+	assert.doesNotMatch(spyHookSource, /data-work-item-section-nav/u);
 
 	// Read the applied style rather than mirroring the breakpoint in JS, so the
 	// resolver cannot drift from the container query that drives it.
@@ -166,9 +214,6 @@ test("the v3 section nav pins in narrow mode and tracks the active scroller", ()
 		/<SectionNavigationProvider active=\{open\}>/u,
 	);
 
-	// Regression: the nav pins at `top-0` with a higher z-index than the
-	// pull-request header. Below 860px both are in the same scrollport, so the
-	// header must not also pin or the nav covers its title and actions.
 	const stickyShellSource = readBlockFile(
 		"experimental-v3/components/pull-request-detail/pull-request-sticky-header-shell.tsx",
 	);
@@ -184,11 +229,63 @@ test("the v3 section nav pins in narrow mode and tracks the active scroller", ()
 		/workItemSectionElementId\(\s*instanceId: string,\s*sectionId: WorkItemSectionId,\s*\): string \{\s*return `work-item-section-\$\{instanceId\}-\$\{sectionId\}`/u,
 	);
 
-	// Render must stay pure — the shared spy closes over its id list rather than
-	// mirroring it into a ref that render would have to mutate.
-	const spyHookSource = readBlockFile("experimental-v3/hooks/use-scroll-spy-sections.ts");
 	assert.match(spyHookSource, /\}, \[sectionIds, stickyHeaderSelector\]\);/u);
 	assert.doesNotMatch(spyHookSource, /sectionIdsRef/u);
+});
+
+test("PR select is an adjunct, never a section", () => {
+	const navSource = readBlockFile("experimental-v3/components/work-item-section-nav.tsx");
+	assert.match(
+		navSource,
+		/<\/nav>\s*\) : null\}\s*\{endControl != null \? \([\s\S]*data-work-item-navigation-end-control/u,
+	);
+	assert.match(navSource, /className=\{cn\("flex h-8 shrink-0", tabsLineListOverflowClass\)\}/u);
+	assert.match(navSource, /onSectionSelect\?\.\(\);/u);
+
+	const selectSource = readBlockFile("experimental-v3/components/pull-requests-select.tsx");
+	assert.match(selectSource, /NAV_LINK_CLASS/u);
+	assert.match(selectSource, /variant="none"/u);
+	assert.match(selectSource, /const TRIGGER_LABEL = "Pull request"/u);
+	assert.match(selectSource, /aria-current=\{selectedIdentity \? "location" : undefined\}/u);
+	assert.match(selectSource, /<Badge[\s\S]*data-jira-work-item-resource-pull-request-metric[\s\S]*variant=\{pullRequestMetricBadgeVariant\(metric\)\}/u);
+	assert.match(selectSource, /lime: "success"/u);
+	assert.doesNotMatch(selectSource, /"1 Open"/u);
+	assert.match(
+		navSource,
+		/<Badge>\{activityCount\}<\/Badge>/u,
+	);
+	assert.doesNotMatch(selectSource, /Review pull request/u);
+	assert.doesNotMatch(selectSource, /PullRequestIcon|@atlaskit\/icon\/core\/pull-request/u);
+	assert.doesNotMatch(selectSource, /@max-\[36rem\]\/resource-row:hidden/u);
+	assert.doesNotMatch(selectSource, /data-variant=default|variant="default"|SelectTag/u);
+
+	const sectionTabsSource = readBlockFile("experimental-v3/lib/work-item-section-tabs.ts");
+	assert.match(
+		sectionTabsSource,
+		/export type WorkItemSectionId = "description" \| "activity" \| "guide" \| "files"/u,
+	);
+	assert.doesNotMatch(sectionTabsSource, /pull-request/u);
+
+	const compositionSource = readBlockFile("experimental-v3/experimental-v3-jira-work-item.tsx");
+	assert.match(
+		compositionSource,
+		/<WorkItemSectionNav[\s\S]*endControl=\{\([\s\S]*<PullRequestsSelect[\s\S]*entries=\{pullRequestEntries\}/u,
+	);
+	assert.match(
+		compositionSource,
+		/onSectionSelect=\{selectedPullRequestIdentity \? handlePullRequestClear : undefined\}/u,
+	);
+	assert.match(
+		compositionSource,
+		/showDescriptionTools=\{selectedPullRequestEntry === null\}/u,
+	);
+});
+
+test("experimental v3 does not render a closed-state floating Rovo launcher", () => {
+	const sessionSurfaceSource = readBlockFile("experimental-v3/components/floating-session-surface.tsx");
+	assert.match(sessionSurfaceSource, /<AsxRovoOverlay[\s\S]*launcher="hidden"/u);
+	assert.doesNotMatch(sessionSurfaceSource, /launcherContainer|LAUNCHER_PLACEMENT|onLauncherClick/u);
+	assert.doesNotMatch(sessionSurfaceSource, /data-jira-work-item-dialog-body/u);
 });
 
 test("experimental v3 shares the session/planner data layer", () => {
@@ -202,6 +299,30 @@ test("experimental v3 shares the session/planner data layer", () => {
 	);
 	// No forked copy of the model lives under v3.
 	assert.equal(fs.existsSync(path.join(V3_DIR, "data")), false);
+
+	const fixturesSource = readBlockFile("data/session-fixtures.ts");
+	const sessionStateSource = readBlockFile("data/session-state.ts");
+	assert.match(fixturesSource, /export const FILLED_ATLASSIAN_PROJECT = STOREFRONT_PLATFORM_PROJECT\.id/u);
+	assert.equal(
+		(sessionStateSource.match(/atlassianProject: FILLED_ATLASSIAN_PROJECT/gu) ?? []).length,
+		2,
+	);
+});
+
+test("Activity sort hover-reveals from the section group, not a local copy", () => {
+	const sectionSource = readBlockFile("experimental-v3/components/work-item-section.tsx");
+	const activityPanelSource = readBlockFile("experimental-v3/components/activity-panel.tsx");
+	const headerSource = fs.readFileSync(
+		path.join(BLOCK_DIR, "../jira-activity/jira-activity-header.tsx"),
+		"utf8",
+	);
+
+	assert.match(sectionSource, /id === "activity" \? "group\/activity"/u);
+	assert.match(activityPanelSource, /<JiraActivityViewControl/u);
+	assert.match(activityPanelSource, /hideHeader/u);
+	assert.doesNotMatch(activityPanelSource, /Show oldest|ACTIVITY_SORT_TRIGGER_REVEAL_CLASS/u);
+	assert.match(headerSource, /ACTIVITY_SORT_TRIGGER_REVEAL_CLASS/u);
+	assert.match(headerSource, /group-hover\/activity:opacity-100/u);
 });
 
 test("the v3 lib test suite is registered so it actually runs in CI", () => {

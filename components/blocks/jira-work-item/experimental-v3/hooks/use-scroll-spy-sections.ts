@@ -13,15 +13,12 @@ import {
 } from "@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-guide-active-chapter";
 
 /**
- * Sticky bands that can pin above stacked content inside the left-column
- * scrollport. Both are matched in one selector because the query is scoped to
- * the scroll container: wide mode keeps the section nav outside the scrollport
- * (column chrome), so only the pull-request header can match; narrow mode
- * flattens the chrome into the scroll flow, so both can. One selector therefore
- * measures correctly in every mode/breakpoint combination without branching.
+ * Sticky band that can pin above stacked content inside the left-column
+ * scrollport. The section nav lives in the dialog header band, outside every
+ * scrollport, so only the pull-request detail header can offset the spy.
  */
 export const SCROLL_SPY_STICKY_HEADER_SELECTOR =
-	"[data-work-item-section-nav],[data-jira-work-item-pull-request-detail-header]";
+	"[data-jira-work-item-pull-request-detail-header]";
 
 interface UseScrollSpySectionsOptions {
 	/**

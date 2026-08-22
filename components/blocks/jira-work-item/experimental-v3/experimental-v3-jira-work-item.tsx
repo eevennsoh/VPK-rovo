@@ -36,8 +36,10 @@ import { SectionNavigationProvider } from "@/components/blocks/jira-work-item/ex
 import { ExperimentalWorkItemDialog } from "@/components/blocks/jira-work-item/experimental-v3/components/experimental-work-item-dialog";
 import { ExperimentalWorkItemLayout } from "@/components/blocks/jira-work-item/experimental-v3/components/experimental-work-item-layout";
 import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
-import { ContextHeader, ContextPanel } from "@/components/blocks/jira-work-item/experimental-v3/components/context-panel";
+import { ContextPanel } from "@/components/blocks/jira-work-item/experimental-v3/components/context-panel";
 import { ContextResources } from "@/components/blocks/jira-work-item/experimental-v3/components/context-resources";
+import { PullRequestsSelect } from "@/components/blocks/jira-work-item/experimental-v3/components/pull-requests-select";
+import { WorkItemSectionNav } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-section-nav";
 import { ActivityPanel } from "@/components/blocks/jira-work-item/experimental-v3/components/activity-panel";
 import {
 	ActivityComposer,
@@ -95,6 +97,8 @@ interface ExperimentalV3JiraWorkItemBaseProps {
 	 */
 	autoOpenPullRequestIdentity?: string | null;
 	composerAgents?: readonly AgentSelectorAgent[];
+	/** Optional host-owned row rendered in place of the activity composer's standard context pills. */
+	composerContextBar?: ReactNode;
 	/** Optional host-owned controls rendered immediately after the side-chat Add button. */
 	composerToolsAfterAdd?: ReactNode;
 	initialPreset: JiraWorkItemPreset;
@@ -148,6 +152,7 @@ interface ExperimentalV3JiraWorkItemContentProps {
 	autoOpenPullRequestIdentity?: string | null;
 	automationRules?: readonly WorkItemAutomationRule[];
 	composerAgents?: readonly AgentSelectorAgent[];
+	composerContextBar?: ReactNode;
 	composerToolsAfterAdd?: ReactNode;
 	inlineSurface: "card" | "card-fill" | "fill";
 	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
@@ -232,6 +237,7 @@ function ExperimentalV3JiraWorkItemContent({
 	autoOpenPullRequestIdentity = null,
 	automationRules,
 	composerAgents,
+	composerContextBar,
 	composerToolsAfterAdd,
 	inlineSurface,
 	onAgentPromptSubmit,
@@ -619,12 +625,20 @@ function ExperimentalV3JiraWorkItemContent({
 								descriptionViewMode={descriptionViewMode}
 								outputs={outputs}
 								primaryCodingAgentId={primaryCodingAgentId}
-								pullRequestEntries={pullRequestEntries}
-								pullRequestSelected={selectedPullRequestEntry !== null}
-								selectedPullRequestIdentity={selectedPullRequestIdentity}
+								showDescriptionTools={selectedPullRequestEntry === null}
 								onDescriptionViewModeChange={setDescriptionViewMode}
-								onPullRequestClear={handlePullRequestClear}
-								onPullRequestSelect={handlePullRequestSelect}
+							/>
+						)}
+						navigation={(
+							<WorkItemSectionNav
+								endControl={(
+									<PullRequestsSelect
+										entries={pullRequestEntries}
+										selectedIdentity={selectedPullRequestIdentity}
+										onSelectEntry={handlePullRequestSelect}
+									/>
+								)}
+								onSectionSelect={selectedPullRequestIdentity ? handlePullRequestClear : undefined}
 							/>
 						)}
 						inlineSurface={inlineSurface}
@@ -650,7 +664,6 @@ function ExperimentalV3JiraWorkItemContent({
 						<ExperimentalWorkItemLayout
 							metadataPanelResizing={metadataPanelResize.isResizing}
 							metadataPanelWidth={metadataPanelResize.sidebarWidth}
-							header={<ContextHeader pullRequestSelected={selectedPullRequestEntry !== null} />}
 							context={(scrollContainerRef) => (
 								<ContextPanel
 									activity={(
@@ -676,6 +689,7 @@ function ExperimentalV3JiraWorkItemContent({
 								<ActivityComposer
 									agents={composerAgents}
 									autoFocus={restoreActivityComposerFocus}
+									composerContextBar={composerContextBar}
 									onAgentPromptSubmit={onAgentPromptSubmit}
 									onOpenAgentChat={onOpenAgentChat}
 									pullRequestFix={activePullRequestFix}
@@ -788,6 +802,7 @@ export function ExperimentalV3JiraWorkItem(props: Readonly<ExperimentalV3JiraWor
 								autoOpenPullRequestIdentity={props.autoOpenPullRequestIdentity}
 								automationRules={props.automationRules}
 								composerAgents={props.composerAgents}
+								composerContextBar={props.composerContextBar}
 								composerToolsAfterAdd={props.composerToolsAfterAdd}
 								inlineSurface={inlineSurface}
 								onAgentPromptSubmit={props.onAgentPromptSubmit}

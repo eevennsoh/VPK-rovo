@@ -17,7 +17,6 @@ import { ArtifactProjectField } from "@/components/blocks/artifact-pane/artifact
 import type { AgentPlannerMetadata } from "@/components/blocks/jira-work-item/data/planner-state";
 import {
 	DateRowField,
-	PersonReadOnlyValue,
 	PersonRowField,
 	PriorityRowField,
 } from "@/components/blocks/jira-work-item/experimental-v3/components/detail-field-editors";
@@ -52,7 +51,13 @@ export function DetailsTab({
 				/>
 			</ArtifactPanePropertyRow>
 			<ArtifactPanePropertyRow icon={<PersonIcon label="" size="small" />} label="Reporter">
-				<PersonReadOnlyValue placeholder="Unassigned" value={draft.reporter ?? null} />
+				<PersonRowField
+					ariaLabel="Change reporter"
+					onChange={(person) => onChange({ reporter: person })}
+					people={people}
+					placeholder="Unassigned"
+					value={draft.reporter}
+				/>
 			</ArtifactPanePropertyRow>
 			<ArtifactPanePropertyRow icon={<PriorityMediumIcon label="" size="small" />} label="Priority">
 				<PriorityRowField onChange={(next) => onChange({ priority: next })} value={draft.priority} />

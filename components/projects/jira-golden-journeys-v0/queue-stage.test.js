@@ -126,6 +126,8 @@ test("ASX Rovo surfaces render at viewport level above the Gallery dock", () => 
 	assert.match(ROVO_OVERLAY_SOURCE, /createPortal/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /document\.body/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /<FloatingRovoButton/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /launcher = "auto"/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /const showClosedLauncher = launcher === "auto" && chatSurface === null;/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /<RovoFloatingChat/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /chatContextBar=\{chatContextBar\}/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /hideComposerSourceAndModelControls/u);
