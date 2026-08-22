@@ -49,6 +49,11 @@ export const TABS_DETAIL: ComponentDetail = {
         demoSlug: "tabs-demo-line",
       },
       {
+        title: "Line full width",
+        description: "Line tabs whose grey separator spans the list.",
+        demoSlug: "tabs-demo-line-full-width",
+      },
+      {
         title: "Vertical",
         description: "Vertically-oriented tabs.",
         demoSlug: "tabs-demo-vertical",

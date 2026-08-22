@@ -21,7 +21,7 @@ test("TabsList exposes default and compact sizes with inset pill treatment", () 
 	assert.match(SOURCE, /variant: "default",\s*size: "default",\s*className: "p-\[3px\]"/u);
 	assert.match(SOURCE, /variant: "default",\s*size: "compact",\s*className: "p-0\.5"/u);
 	assert.match(SOURCE, /data-size=\{size\}/u);
-	assert.match(SOURCE, /tabsListVariants\(\{ variant, size \}\)/u);
+	assert.match(SOURCE, /tabsListVariants\(\{ variant, size, fullWidth \}\)/u);
 });
 
 test("Tabs compact size scales trigger padding and un-sized icons", () => {
@@ -33,4 +33,47 @@ test("Tabs docs register the compact variant demo", () => {
 	assert.match(DEMO_SOURCE, /export function TabsDemoCompact\(\)[\s\S]*<TabsList size="compact">/u);
 	assert.match(REGISTRY_SOURCE, /"tabs-demo-compact"[\s\S]*default: mod\.TabsDemoCompact/u);
 	assert.match(DETAILS_SOURCE, /title: "Compact"[\s\S]*demoSlug: "tabs-demo-compact"/u);
+});
+
+test("line variant selected after sits on the grey rule", () => {
+	assert.match(
+		SOURCE,
+		/const tabsLineIndicatorClass =\s*"after:inset-x-0 after:-bottom-px after:h-0\.5 after:bg-border-selected"/u,
+	);
+	assert.match(SOURCE, /tabsLineIndicatorClass/u);
+	assert.match(
+		SOURCE,
+		/line: `gap-0 bg-transparent shadow-\[inset_0_-1px_0_0_var\(--color-border\)\] \$\{tabsLineListOverflowClass\}`/u,
+	);
+	assert.doesNotMatch(SOURCE, /line: `gap-0 bg-transparent border-b border-border/u);
+});
+
+test("fullWidth line list owns the grey rule on a non-w-fit owner", () => {
+	assert.match(SOURCE, /fullWidth: \{\s*true: "w-full",\s*false: "w-fit",\s*\}/u);
+	assert.match(
+		SOURCE,
+		/line: `gap-0 bg-transparent shadow-\[inset_0_-1px_0_0_var\(--color-border\)\] \$\{tabsLineListOverflowClass\}`/u,
+	);
+	assert.doesNotMatch(
+		SOURCE,
+		/group\/tabs-list text-text-subtle inline-flex w-fit items-center/u,
+	);
+});
+
+test("line list overflow box does not clip the selected after", () => {
+	assert.match(SOURCE, /const tabsLineListOverflowClass = "overflow-x-auto -mb-px pb-px"/u);
+	assert.match(
+		SOURCE,
+		/line: `gap-0 bg-transparent shadow-\[inset_0_-1px_0_0_var\(--color-border\)\] \$\{tabsLineListOverflowClass\}`/u,
+	);
+	assert.doesNotMatch(SOURCE, /line: `gap-0 bg-transparent border-b border-border/u);
+});
+
+test("Tabs docs register the line fullWidth demo", () => {
+	assert.match(
+		DEMO_SOURCE,
+		/export function TabsDemoLineFullWidth\(\)[\s\S]*<TabsList fullWidth variant="line">/u,
+	);
+	assert.match(REGISTRY_SOURCE, /"tabs-demo-line-full-width"[\s\S]*default: mod\.TabsDemoLineFullWidth/u);
+	assert.match(DETAILS_SOURCE, /title: "Line full width"[\s\S]*demoSlug: "tabs-demo-line-full-width"/u);
 });

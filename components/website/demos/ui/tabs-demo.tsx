@@ -154,6 +154,18 @@ export function TabsDemoLine() {
 	);
 }
 
+export function TabsDemoLineFullWidth() {
+	return (
+		<Tabs className="w-full" defaultValue="overview">
+			<TabsList fullWidth variant="line">
+				<TabsTrigger value="overview">Overview</TabsTrigger>
+				<TabsTrigger value="analytics">Analytics</TabsTrigger>
+				<TabsTrigger value="reports">Reports</TabsTrigger>
+			</TabsList>
+		</Tabs>
+	);
+}
+
 export function TabsDemoMultiple() {
 	return (
 		<Tabs defaultValue="overview">

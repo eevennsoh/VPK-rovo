@@ -29,17 +29,26 @@ function Tabs({
 	)
 }
 
+const tabsLineListOverflowClass = "overflow-x-auto -mb-px pb-px"
+
+const tabsLineIndicatorClass =
+	"after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-border-selected"
+
 const tabsListVariants = cva(
-	"group/tabs-list text-text-subtle inline-flex w-fit items-center justify-center group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col",
+	"group/tabs-list text-text-subtle inline-flex items-center justify-center group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col",
 	{
 		variants: {
 			variant: {
 				default: "rounded-md bg-muted",
-				line: "gap-0 bg-transparent border-b border-border",
+				line: `gap-0 bg-transparent shadow-[inset_0_-1px_0_0_var(--color-border)] ${tabsLineListOverflowClass}`,
 			},
 			size: {
 				default: "group-data-horizontal/tabs:h-8",
 				compact: "group-data-horizontal/tabs:h-6",
+			},
+			fullWidth: {
+				true: "w-full",
+				false: "w-fit",
 			},
 		},
 		compoundVariants: [
@@ -57,6 +66,7 @@ const tabsListVariants = cva(
 		defaultVariants: {
 			variant: "default",
 			size: "default",
+			fullWidth: false,
 		},
 	}
 )
@@ -69,6 +79,7 @@ function TabsList({
 	className,
 	variant = "default",
 	size = "default",
+	fullWidth = false,
 	...props
 }: Readonly<TabsListProps>) {
 	return (
@@ -76,7 +87,7 @@ function TabsList({
 			data-slot="tabs-list"
 			data-size={size}
 			data-variant={variant}
-			className={cn(tabsListVariants({ variant, size }), className)}
+			className={cn(tabsListVariants({ variant, size, fullWidth }), className)}
 			{...props}
 		/>
 	)
@@ -95,7 +106,8 @@ function TabsTrigger({ className, ...props }: Readonly<TabsTriggerProps>) {
 				// Line variant states — selected uses blue text (ADS text.selected)
 				"group-data-[variant=line]/tabs-list:bg-transparent group-data-[variant=line]/tabs-list:hover:bg-bg-neutral-subtle-hovered group-data-[variant=line]/tabs-list:hover:rounded-t-md group-data-[variant=line]/tabs-list:active:bg-bg-neutral-subtle-pressed group-data-[variant=line]/tabs-list:active:rounded-t-md group-data-[variant=line]/tabs-list:data-active:bg-transparent group-data-[variant=line]/tabs-list:data-active:text-text-selected",
 				// Selected indicator (underline for line variant)
-				"after:content-[''] after:pointer-events-none after:bg-border-selected after:absolute after:opacity-0 after:transition-opacity group-data-horizontal/tabs:after:inset-x-0 group-data-horizontal/tabs:after:-bottom-px group-data-horizontal/tabs:after:h-0.5 group-data-vertical/tabs:after:inset-y-0 group-data-vertical/tabs:after:right-0 group-data-vertical/tabs:after:w-0.5 group-data-[variant=line]/tabs-list:data-active:after:opacity-100",
+				"after:content-[''] after:pointer-events-none after:absolute after:opacity-0 after:transition-opacity group-data-vertical/tabs:after:inset-x-auto group-data-vertical/tabs:after:bottom-auto group-data-vertical/tabs:after:h-auto group-data-vertical/tabs:after:inset-y-0 group-data-vertical/tabs:after:right-0 group-data-vertical/tabs:after:w-0.5 group-data-[variant=line]/tabs-list:data-active:after:opacity-100",
+				tabsLineIndicatorClass,
 				className
 			)}
 			{...props}
@@ -137,6 +149,8 @@ export {
 	TabsList,
 	TabsTrigger,
 	// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
+	tabsLineIndicatorClass,
+	tabsLineListOverflowClass,
 	tabsListVariants,
 	type TabsProps,
 	type TabsListProps,
