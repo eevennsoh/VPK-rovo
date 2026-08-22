@@ -51,6 +51,7 @@ interface JiraWorkItemProviderProps {
 	active?: boolean;
 	initialState?: JiraWorkItemState;
 	initialStateRevision?: string | number;
+	preserveActiveSessionOnHydration?: boolean;
 	composerDelivery?: JiraWorkItemComposerDelivery;
 	statusPhases?: readonly string[];
 }
@@ -60,6 +61,7 @@ export function JiraWorkItemProvider({
 	initialPreset,
 	initialState,
 	initialStateRevision,
+	preserveActiveSessionOnHydration = false,
 	workItem,
 	active = true,
 	composerDelivery = "comment",
@@ -71,6 +73,7 @@ export function JiraWorkItemProvider({
 		active,
 		initialState,
 		initialStateRevision,
+		preserveActiveSessionOnHydration,
 	);
 
 	const meta = useMemo<JiraWorkItemMeta>(
