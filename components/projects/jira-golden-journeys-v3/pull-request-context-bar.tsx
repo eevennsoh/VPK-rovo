@@ -126,7 +126,7 @@ export function PullRequestContextBar({
 	return (
 		<ContextBar
 			aria-label={`Pull request #1847. ${ciPresentation.label}. ${approvalsCurrent} of ${approvalsRequired} approvals. ${mergePresentation.label}.`}
-			className="mb-2 w-full max-w-[calc(100vw-7rem)] gap-2 overflow-hidden px-2 py-0 sm:max-w-full"
+			className="mb-2 w-full max-w-[calc(100vw-7rem)] gap-2 overflow-hidden px-2.5 py-0 sm:max-w-full"
 			data-approvals-current={approvalsCurrent}
 			data-approvals-required={approvalsRequired}
 			data-auto-fix-enabled={autoFixEnabled}

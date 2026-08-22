@@ -35,7 +35,6 @@ import { PanelLayoutProvider } from "@/components/blocks/jira-work-item/experime
 import { SectionNavigationProvider } from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
 import { ExperimentalWorkItemDialog } from "@/components/blocks/jira-work-item/experimental-v3/components/experimental-work-item-dialog";
 import { ExperimentalWorkItemLayout } from "@/components/blocks/jira-work-item/experimental-v3/components/experimental-work-item-layout";
-import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import { ContextPanel } from "@/components/blocks/jira-work-item/experimental-v3/components/context-panel";
 import { ContextResources } from "@/components/blocks/jira-work-item/experimental-v3/components/context-resources";
 import { PullRequestsSelect } from "@/components/blocks/jira-work-item/experimental-v3/components/pull-requests-select";
@@ -255,7 +254,6 @@ function ExperimentalV3JiraWorkItemContent({
 	workItem,
 }: Readonly<ExperimentalV3JiraWorkItemContentProps>) {
 	const composerLayoutGroupId = useId();
-	const [descriptionViewMode, setDescriptionViewMode] = useState<EditorToolbarViewMode>("rendered");
 	const [selectedPullRequestIdentity, setSelectedPullRequestIdentity] = useState<string | null>(null);
 	const [pullRequestReviewByIdentity, setPullRequestReviewByIdentity] = useState<
 		Readonly<Record<string, PullRequestReviewState>>
@@ -327,7 +325,6 @@ function ExperimentalV3JiraWorkItemContent({
 		}
 		previousStageKeyRef.current = stageKey;
 		autoOpenedForStageRef.current = null;
-		setDescriptionViewMode("rendered");
 		setSelectedPullRequestIdentity(null);
 		setPullRequestReviewByIdentity({});
 		setReviewComposerIdentity(null);
@@ -621,11 +618,8 @@ function ExperimentalV3JiraWorkItemContent({
 				<ExperimentalWorkItemDialog
 						controlRow={(
 							<ContextResources
-								descriptionViewMode={descriptionViewMode}
 								outputs={outputs}
 								primaryCodingAgentId={primaryCodingAgentId}
-								showDescriptionTools={selectedPullRequestEntry === null}
-								onDescriptionViewModeChange={setDescriptionViewMode}
 							/>
 						)}
 						navigation={(
@@ -671,7 +665,6 @@ function ExperimentalV3JiraWorkItemContent({
 											onOpenPullRequest={handlePullRequestSelect}
 										/>
 									)}
-									descriptionViewMode={descriptionViewMode}
 									onPullRequestChapterReviewedChange={handlePullRequestChapterReviewedChange}
 									onPullRequestInlineCommentsChange={handlePullRequestInlineCommentsChange}
 									pullRequestApprovalState={selectedPullRequestApprovalState}
@@ -681,7 +674,6 @@ function ExperimentalV3JiraWorkItemContent({
 									selectedPullRequestEntry={selectedPullRequestEntry}
 									submittedReviewActivity={selectedSubmittedReviewActivity}
 									submitReviewAction={pullRequestSubmitReviewAction}
-									onDescriptionViewModeChange={setDescriptionViewMode}
 								/>
 							)}
 							composer={(

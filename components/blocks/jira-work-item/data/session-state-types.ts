@@ -171,6 +171,7 @@ export interface AgentSessionComment {
 	id: string;
 	authorName: string;
 	authorAvatarSrc?: string;
+	authorBrandName?: ThirdPartyLogoName;
 	content: string;
 	createdAtMs: number;
 	/** Seeded reactions, typically active agents acknowledging a channel prompt. */
@@ -211,7 +212,7 @@ export interface JiraWorkItemState {
 export interface HumanActivityEvent {
 	id: string;
 	kind: "human";
-	author: { name: string; avatarUrl?: string };
+	author: { name: string; avatarUrl?: string; brandName?: ThirdPartyLogoName };
 	content: string;
 	createdAtMs: number;
 	reactions?: readonly AgentSessionReaction[];

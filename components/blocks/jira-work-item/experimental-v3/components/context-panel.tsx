@@ -1,12 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { ReactNode, RefObject } from "react";
+import { useLayoutEffect, type ReactNode, type RefObject } from "react";
 
-import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import type { InlineReviewComment } from "@/components/blocks/code-review/lib/inline-comments";
+import { InsightsPanel } from "@/components/blocks/jira-work-item/experimental-v3/components/insights-panel";
 import { WorkItemBody } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-body";
+import { useSectionNavigation } from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
 import { getPullRequestIdentity } from "@/components/blocks/jira-work-item/experimental-v3/lib/jira-activity-adapter";
 import type { PullRequestActivity } from "@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-detail-data";
 import type { PullRequestHeaderSubmitReviewAction } from "@/components/blocks/pull-request-header";
@@ -18,7 +19,6 @@ const PullRequestDetailView = dynamic(
 
 export function ContextPanel({
 	activity,
-	descriptionViewMode,
 	onPullRequestChapterReviewedChange,
 	onPullRequestInlineCommentsChange,
 	pullRequestApprovalState,
@@ -28,11 +28,9 @@ export function ContextPanel({
 	selectedPullRequestEntry,
 	submittedReviewActivity,
 	submitReviewAction,
-	onDescriptionViewModeChange,
 }: Readonly<{
 	/** Pre-wrapped in its own `WorkItemSection` by the activity panel. */
 	activity: ReactNode;
-	descriptionViewMode: EditorToolbarViewMode;
 	onPullRequestChapterReviewedChange?: (identity: string, chapterId: string, reviewed: boolean) => void;
 	onPullRequestInlineCommentsChange?: (
 		identity: string,
@@ -46,11 +44,17 @@ export function ContextPanel({
 	/** Reviews submitted this session, appended to the pull request's feed. */
 	submittedReviewActivity?: readonly PullRequestActivity[];
 	submitReviewAction?: PullRequestHeaderSubmitReviewAction;
-	onDescriptionViewModeChange: (mode: EditorToolbarViewMode) => void;
 }>) {
+	const { clearInsights, insightsSelected } = useSectionNavigation();
 	const selectedPullRequestKey = selectedPullRequestEntry?.pullRequest
 		? getPullRequestIdentity(selectedPullRequestEntry.pullRequest)
 		: selectedPullRequestEntry?.id;
+
+	useLayoutEffect(() => {
+		if (selectedPullRequestEntry) {
+			clearInsights();
+		}
+	}, [clearInsights, selectedPullRequestEntry]);
 
 	return (
 		<section aria-label="Work item context" className="flex flex-col">
@@ -67,12 +71,10 @@ export function ContextPanel({
 					submittedReviewActivity={submittedReviewActivity}
 					submitReviewAction={submitReviewAction}
 				/>
+			) : insightsSelected ? (
+				<InsightsPanel />
 			) : (
-				<WorkItemBody
-					activity={activity}
-					viewMode={descriptionViewMode}
-					onViewModeChange={onDescriptionViewModeChange}
-				/>
+				<WorkItemBody activity={activity} />
 			)}
 		</section>
 	);

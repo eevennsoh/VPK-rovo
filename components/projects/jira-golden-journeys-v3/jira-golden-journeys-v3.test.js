@@ -102,5 +102,6 @@ test("v3 source removes the old planning, skill, repair-picker, and deployment n
 		.join("\n");
 	assert.doesNotMatch(source, /Code Planner|descriptionSkill|Improve description|PullRequestFix|fixAgentId|CI_REPAIR_SESSION/u);
 	assert.doesNotMatch(source, /feature-flag rollout|production smoke|healthy telemetry|PR #1848/u);
+	assert.doesNotMatch(source, /basic-coding-agent-template/u);
 	assert.equal((source.match(/id: "claude-code"/gu) ?? []).length, 1);
 });

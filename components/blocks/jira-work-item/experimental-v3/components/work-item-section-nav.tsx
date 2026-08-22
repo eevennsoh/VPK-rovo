@@ -3,7 +3,6 @@
 import type { ReactNode } from "react";
 
 import { useSectionNavigation } from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
-import { Badge } from "@/components/ui/badge";
 import {
 	tabsLineIndicatorClass,
 	tabsLineListOverflowClass,
@@ -48,7 +47,7 @@ export function WorkItemSectionNav({
 			className="@container/resource-row border-b border-border"
 			data-work-item-header-navigation
 		>
-			<div className="flex items-center px-6">
+			<div className="flex items-center px-3">
 				{sections.length > 0 ? (
 					<nav
 						aria-label="Work item sections"
@@ -70,7 +69,13 @@ export function WorkItemSectionNav({
 									>
 										<span>{section.label}</span>
 										{section.id === "activity" && activityCount != null ? (
-											<Badge>{activityCount}</Badge>
+											<span
+												className={cn(
+													section.id === activeSectionId ? "text-text-selected" : "text-text-subtlest",
+												)}
+											>
+												{activityCount}
+											</span>
 										) : null}
 										{section.diff ? (
 											<span className="inline-flex items-center gap-1 tabular-nums">

@@ -14,6 +14,7 @@ import {
 import { useScrollSpySections } from "@/components/blocks/jira-work-item/experimental-v3/hooks/use-scroll-spy-sections";
 import {
 	areSectionTabsEqual,
+	isScrollAnchoredSectionId,
 	workItemSectionElementId,
 	workItemSectionHeadingId,
 	type WorkItemSectionId,
@@ -24,6 +25,9 @@ interface SectionNavigationValue {
 	/** Count pill on the Activity tab. Null until a panel publishes one. */
 	activityCount: number | null;
 	activeSectionId: WorkItemSectionId | null;
+	/** True while Insights has replaced the Description/Activity body. */
+	insightsSelected: boolean;
+	clearInsights: () => void;
 	registerSection: (sectionId: WorkItemSectionId, node: HTMLElement | null) => void;
 	/** Instance-namespaced DOM ids, so co-mounted demos cannot collide. */
 	sectionElementId: (sectionId: WorkItemSectionId) => string;
@@ -65,6 +69,7 @@ export function SectionNavigationProvider({
 }>) {
 	const [sections, setSectionsState] = useState(NO_SECTIONS);
 	const instanceId = useId();
+	const [insightsSelected, setInsightsSelected] = useState(false);
 	const [activityCount, setActivityCount] = useState<number | null>(null);
 	const [wideScrollContainer, setWideScrollContainer] = useState<HTMLElement | null>(null);
 	const [narrowScrollContainer, setNarrowScrollContainer] = useState<HTMLElement | null>(null);
@@ -99,11 +104,26 @@ export function SectionNavigationProvider({
 	}, [active, narrowScrollContainer, wideScrollContainer]);
 
 	const scrollContainer = wideScrollerActive ? wideScrollContainer : narrowScrollContainer;
-	const sectionIds = useMemo(() => sections.map((section) => section.id), [sections]);
+	const sectionIds = useMemo(
+		() => sections.filter((section) => isScrollAnchoredSectionId(section.id)).map((section) => section.id),
+		[sections],
+	);
 	const { activeId, registerSection, selectSection } = useScrollSpySections({
 		scrollContainer,
 		sectionIds,
 	});
+	const clearInsights = useCallback(() => {
+		setInsightsSelected(false);
+	}, []);
+	const selectSectionWithSurface = useCallback((sectionId: WorkItemSectionId) => {
+		if (sectionId === "insights") {
+			setInsightsSelected(true);
+			scrollContainer?.scrollTo({ top: 0 });
+			return;
+		}
+		setInsightsSelected(false);
+		selectSection(sectionId);
+	}, [scrollContainer, selectSection]);
 
 	const sectionElementId = useCallback(
 		(sectionId: WorkItemSectionId) => workItemSectionElementId(instanceId, sectionId),
@@ -116,18 +136,20 @@ export function SectionNavigationProvider({
 
 	const value = useMemo<SectionNavigationValue>(() => ({
 		activityCount,
-		activeSectionId: activeId as WorkItemSectionId | null,
+		activeSectionId: insightsSelected ? "insights" : activeId as WorkItemSectionId | null,
+		clearInsights,
+		insightsSelected,
 		registerSection,
 		scrollContainer,
 		sectionElementId,
 		sectionHeadingId,
 		sections,
-		selectSection,
+		selectSection: selectSectionWithSurface,
 		setActivityCount,
 		setNarrowScrollContainer,
 		setSections,
 		setWideScrollContainer,
-	}), [activeId, activityCount, registerSection, scrollContainer, sectionElementId, sectionHeadingId, sections, selectSection, setSections]);
+	}), [activeId, activityCount, clearInsights, insightsSelected, registerSection, scrollContainer, sectionElementId, sectionHeadingId, sections, selectSectionWithSurface, setSections]);
 
 	return <SectionNavigationContext value={value}>{children}</SectionNavigationContext>;
 }

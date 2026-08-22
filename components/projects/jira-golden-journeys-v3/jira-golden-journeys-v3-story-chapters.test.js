@@ -71,6 +71,25 @@ test("Build starts with linked PR #1847, running CI, and Claude's handoff", asyn
 	assert.match(build.comments[0].content, /PR #1847 is open[\s\S]*CI is running[\s\S]*Priya Narayanan[\s\S]*Jordan Lee/u);
 });
 
+test("Claude Code activity actors use the brand mark, not the coding-agent template", async () => {
+	const story = await loadStoryModule();
+	const build = story.createJiraGoldenJourneysV3StoryState("build", { ciStatus: "running" });
+	assert.equal(build.sessions[0].agentBrandName, "claude");
+	assert.equal(build.sessions[0].agentAvatarSrc, undefined);
+	assert.equal(build.comments[0].authorBrandName, "claude");
+	assert.equal(build.comments[0].authorAvatarSrc, undefined);
+	assert.doesNotMatch(JSON.stringify(build), /basic-coding-agent-template/u);
+
+	const claudeStaticActors = build.staticEvents
+		.filter((event) => event.actor.name === "Claude Code")
+		.map((event) => event.actor);
+	assert.ok(claudeStaticActors.length > 0);
+	for (const actor of claudeStaticActors) {
+		assert.equal(actor.brandName, "claude");
+		assert.equal(actor.avatarSrc, undefined);
+	}
+});
+
 test("Review deterministically ends with one lint and typecheck failure", async () => {
 	const story = await loadStoryModule();
 	const steps = ["queued", "running", "unit-passed", "settling", "failed"];

@@ -47,9 +47,9 @@ interface PullRequestDetailViewProps {
  * nav rather than owning a second tab strip.
  *
  * Description (the PR overview) and Activity (the review conversation) are the
- * same two sections a work item has; Guide and Files are appended only when the
- * review is guided. A pull request without a guided review keeps the two shared
- * sections instead of falling back to a bare overview.
+ * same scroll sections a work item has; Insights is a body swap on the shared
+ * nav, not a stacked PR section. Guide and Files are appended only when the
+ * review is guided.
  */
 export function PullRequestDetailView({
 	approvalState,

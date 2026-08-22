@@ -101,17 +101,13 @@ export function WorkItemKeyCopy() {
  * work item's control row beneath it. Owns the header-band horizontal padding
  * so the title Input is not nested in extra `min-w-0` shells. Full-width of the
  * chrome column — the two-column body starts beneath this band.
- *
- * Carries `group/description-scope` because the control row's hover-revealed
- * description toolbar reveals off that group, and the row now sits here rather
- * than inside the left column where the layout declares it.
  */
 export function ContextTitleBar({
 	controlRow,
 }: Readonly<{ controlRow?: ReactNode }> = {}) {
 	return (
 		<div
-			className="group/description-scope min-w-0 self-stretch px-6 pb-2"
+			className="min-w-0 self-stretch px-6 pb-4"
 			data-jira-work-item-title-block
 			data-jira-work-item-title-column
 		>

@@ -152,7 +152,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	// the work item has — and Guide/Files append only for a guided review.
 	assert.match(
 		sectionTabsSource,
-		/id: "description", label: "Description"[\s\S]*id: "activity", label: "Activity"[\s\S]*if \(!guidedReview\) return tabs[\s\S]*id: "guide", label: "Guide"[\s\S]*Files/u,
+		/id: "description", label: "Description"[\s\S]*id: "activity", label: "Activity"[\s\S]*id: "insights", label: "Insights"[\s\S]*if \(!guidedReview\) return tabs[\s\S]*id: "guide", label: "Guide"[\s\S]*Files/u,
 	);
 	assert.doesNotMatch(sectionTabsSource, /"Overview"/u);
 	assert.match(

@@ -2,6 +2,10 @@
 
 import { Fragment } from "react";
 
+import {
+	useJiraWorkItemMeta,
+	useJiraWorkItemState,
+} from "@/components/blocks/jira-work-item/experimental-v3/context-jira-work-item";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +23,8 @@ import {
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
+type OverflowMenuAction = "copy-markdown";
+
 type OverflowMenuEntry = Readonly<{
 	label: string;
 	/** Single-key Jira accelerator, rendered as a trailing keycap. */
@@ -32,6 +38,8 @@ type OverflowMenuEntry = Readonly<{
 	chevron?: boolean;
 	/** Nested destinations. Presence turns the row into a submenu trigger. */
 	submenu?: readonly string[];
+	/** Wired action. Unset rows are presentational placeholders. */
+	action?: OverflowMenuAction;
 }>;
 
 /**
@@ -56,8 +64,19 @@ const OVERFLOW_MENU_GROUPS: readonly (readonly OverflowMenuEntry[])[] = [
 	[{ label: "Classify work item" }],
 	[{ label: "Clone" }, { label: "Move" }, { label: "Add parent" }],
 	[{ label: "Connect Slack channel" }],
-	[{ label: "Print" }, { label: "Export to", submenu: ["Excel", "Word", "XML"] }],
+	[
+		{ label: "Copy work item as markdown", action: "copy-markdown" },
+		{ label: "Print" },
+		{ label: "Export to", submenu: ["Excel", "Word", "XML"] },
+	],
 ];
+
+/** Same markdown payload the description-row Copy button used to write. */
+function copyWorkItemAsMarkdown(workItemCode: string, title: string, descriptionMarkdown: string) {
+	const description = descriptionMarkdown.trim();
+	const markdown = `# ${workItemCode}: ${title}${description ? `\n\n${description}` : ""}`;
+	void navigator.clipboard.writeText(markdown);
+}
 
 /** Trailing slot for a row: a keycap, a count badge, a chevron, or nothing. */
 function overflowMenuItemElemAfter(entry: OverflowMenuEntry) {
@@ -72,12 +91,36 @@ function overflowMenuItemElemAfter(entry: OverflowMenuEntry) {
 	return entry.chevron ? <ChevronRightIcon label="" size="small" /> : undefined;
 }
 
+function overflowMenuItemOnSelect(
+	action: OverflowMenuAction | undefined,
+	copyWorkItemAsMarkdownHandler: () => void,
+): (() => void) | undefined {
+	if (action === undefined) {
+		return undefined;
+	}
+
+	switch (action) {
+		case "copy-markdown":
+			return copyWorkItemAsMarkdownHandler;
+		default: {
+			const _exhaustive: never = action;
+			return _exhaustive;
+		}
+	}
+}
+
 /**
  * Overflow ("…") menu for the experimental v3 work-item header. The dialog
  * paints at z-[500]/[501], so the positioners are lifted above it the same way
  * the Open in menu does — otherwise the popup mounts behind the modal surface.
  */
 export function ExperimentalHeaderOverflowMenu() {
+	const { contextResources } = useJiraWorkItemState();
+	const { workItem } = useJiraWorkItemMeta();
+	const handleCopyWorkItemAsMarkdown = () => {
+		copyWorkItemAsMarkdown(workItem.code, contextResources.title, contextResources.description);
+	};
+
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger
@@ -113,7 +156,11 @@ export function ExperimentalHeaderOverflowMenu() {
 										</DropdownMenuSubContent>
 									</DropdownMenuSub>
 								) : (
-									<DropdownMenuItem key={entry.label} elemAfter={overflowMenuItemElemAfter(entry)}>
+									<DropdownMenuItem
+										key={entry.label}
+										elemAfter={overflowMenuItemElemAfter(entry)}
+										onSelect={overflowMenuItemOnSelect(entry.action, handleCopyWorkItemAsMarkdown)}
+									>
 										{entry.label}
 									</DropdownMenuItem>
 								),

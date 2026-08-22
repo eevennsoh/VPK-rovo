@@ -120,7 +120,6 @@ export type JiraGoldenJourneysV3StoryAgent = Omit<JiraForYouAgent, "avatarSrc" |
 export const CLAUDE_CODE = {
 	id: "claude-code",
 	name: "Claude Code",
-	avatarSrc: "/avatar-agent/dev-agents/basic-coding-agent-template.svg",
 	brandName: "claude",
 } satisfies JiraGoldenJourneysV3StoryAgent;
 
