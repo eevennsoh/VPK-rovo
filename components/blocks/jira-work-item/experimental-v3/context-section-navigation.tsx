@@ -175,13 +175,13 @@ export function usePublishSections(next: readonly WorkItemSectionTab[]): void {
 }
 
 /**
- * Publishes the Activity tab's count from whichever activity panel is mounted,
- * clearing it on unmount so a stale count cannot outlive its panel.
+ * Publishes the Activity tab's count from whichever activity panel is mounted.
+ * Keep the last value on unmount so a body swap (Insights) does not blank the
+ * tab number while Description/Activity are off-screen.
  */
 export function usePublishActivityCount(count: number): void {
 	const { setActivityCount } = useSectionNavigation();
 	useEffect(() => {
 		setActivityCount(count);
-		return () => setActivityCount(null);
 	}, [count, setActivityCount]);
 }

@@ -289,6 +289,14 @@ test("PR select is an adjunct, never a section", () => {
 		/selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView[\s\S]*insightsSelected \? \([\s\S]*<InsightsPanel[\s\S]*<WorkItemBody/u,
 	);
 	assert.match(
+		readBlockFile("experimental-v3/context-section-navigation.tsx"),
+		/export function usePublishActivityCount\(count: number\): void \{\s*const \{ setActivityCount \} = useSectionNavigation\(\);\s*useEffect\(\(\) => \{\s*setActivityCount\(count\);\s*\}, \[count, setActivityCount\]\);/u,
+	);
+	assert.doesNotMatch(
+		readBlockFile("experimental-v3/context-section-navigation.tsx"),
+		/return \(\) => setActivityCount\(null\)/u,
+	);
+	assert.match(
 		readBlockFile("experimental-v3/components/insights-panel.tsx"),
 		/data-work-item-insights-panel/u,
 	);
