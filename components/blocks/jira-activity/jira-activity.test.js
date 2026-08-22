@@ -631,6 +631,8 @@ test("Jira Activity exposes controlled entries and replaceable composer contract
 	assert.match(INDEX_SOURCE, /onEntriesChange\?: \(entries: readonly JiraActivityEntry\[\]\) => void/u);
 	assert.match(INDEX_SOURCE, /composer\?: ReactNode \| null/u);
 	assert.match(INDEX_SOURCE, /renderCommentAction\?: \(entry:/u);
+	assert.match(INDEX_SOURCE, /renderEntry\?: \(entry: JiraActivityEntry\) => ReactNode \| undefined/u);
+	assert.match(INDEX_SOURCE, /activeEntryId\?: string/u);
 	assert.match(INDEX_SOURCE, /onAddCommentToChat\?: \(entry: JiraActivityCommentEntry\) => void/u);
 	assert.match(INDEX_SOURCE, /onAddReplyToChat\?: \(reply: JiraActivityReply, entry: JiraActivityCommentEntry\) => void/u);
 	assert.match(INDEX_SOURCE, /onViewSession\?: \(item: AgentListItem\) => void/u);
@@ -640,6 +642,11 @@ test("Jira Activity exposes controlled entries and replaceable composer contract
 	assert.match(INDEX_SOURCE, /defaultFilter\?: JiraActivityFilter/u);
 	assert.match(INDEX_SOURCE, /onFilterChange\?: \(next: JiraActivityFilter\) => void/u);
 	assert.match(INDEX_SOURCE, /data-jira-activity-entry-id=\{entry\.id\}/u);
+	assert.match(INDEX_SOURCE, /aria-current=\{entry\.id === activeEntryId \? "step" : undefined\}/u);
+	assert.match(INDEX_SOURCE, /data-active=\{entry\.id === activeEntryId \? "" : undefined\}/u);
+	assert.match(INDEX_SOURCE, /const customEntry = renderEntry\?\.\(entry\);/u);
+	assert.match(INDEX_SOURCE, /const defaultEntry = entry\.kind === "event"/u);
+	assert.match(INDEX_SOURCE, /customEntry !== undefined \? customEntry : defaultEntry/u);
 	// Timeline rows shrink inside narrow rails so artifact titles can truncate.
 	assert.match(INDEX_SOURCE, /className=\{cn\("group\/activity flex w-full min-w-0 flex-col gap-4", className\)\}/u);
 	assert.match(INDEX_SOURCE, /className="flex min-w-0 gap-2"/u);

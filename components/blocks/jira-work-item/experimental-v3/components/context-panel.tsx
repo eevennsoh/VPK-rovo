@@ -1,12 +1,15 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useLayoutEffect, type ReactNode, type RefObject } from "react";
+import { useCallback, useLayoutEffect, type ReactNode, type RefObject } from "react";
 
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import type { InlineReviewComment } from "@/components/blocks/code-review/lib/inline-comments";
+import type { JiraInsightSource } from "@/components/blocks/jira-insights";
 import { InsightsPanel } from "@/components/blocks/jira-work-item/experimental-v3/components/insights-panel";
 import { WorkItemBody } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-body";
+import { useJiraWorkItemActions } from "@/components/blocks/jira-work-item/experimental-v3/context-jira-work-item";
+import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental-v3/context-metadata-rail";
 import { useSectionNavigation } from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
 import { getPullRequestIdentity } from "@/components/blocks/jira-work-item/experimental-v3/lib/jira-activity-adapter";
 import type { PullRequestActivity } from "@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-detail-data";
@@ -19,6 +22,8 @@ const PullRequestDetailView = dynamic(
 
 export function ContextPanel({
 	activity,
+	hasInsights,
+	onOpenPullRequestIdentity,
 	onPullRequestChapterReviewedChange,
 	onPullRequestInlineCommentsChange,
 	pullRequestApprovalState,
@@ -31,6 +36,8 @@ export function ContextPanel({
 }: Readonly<{
 	/** Pre-wrapped in its own `WorkItemSection` by the activity panel. */
 	activity: ReactNode;
+	hasInsights: boolean;
+	onOpenPullRequestIdentity?: (identity: string) => void;
 	onPullRequestChapterReviewedChange?: (identity: string, chapterId: string, reviewed: boolean) => void;
 	onPullRequestInlineCommentsChange?: (
 		identity: string,
@@ -45,7 +52,9 @@ export function ContextPanel({
 	submittedReviewActivity?: readonly PullRequestActivity[];
 	submitReviewAction?: PullRequestHeaderSubmitReviewAction;
 }>) {
-	const { clearInsights, insightsSelected } = useSectionNavigation();
+	const { clearInsights, insightsSelected, selectSection } = useSectionNavigation();
+	const actions = useJiraWorkItemActions();
+	const { requestRevealLatestActivity } = useMetadataRail();
 	const selectedPullRequestKey = selectedPullRequestEntry?.pullRequest
 		? getPullRequestIdentity(selectedPullRequestEntry.pullRequest)
 		: selectedPullRequestEntry?.id;
@@ -55,6 +64,25 @@ export function ContextPanel({
 			clearInsights();
 		}
 	}, [clearInsights, selectedPullRequestEntry]);
+
+	const handleInsightSourceSelect = useCallback((source: JiraInsightSource) => {
+		if (source.kind === "work-item-section") {
+			selectSection(source.sectionId);
+			return;
+		}
+		if (source.kind === "activity-entry") {
+			selectSection("activity");
+			requestRevealLatestActivity(source.entryId);
+			return;
+		}
+		if (source.kind === "agent-session") {
+			actions.openSession(source.sessionId);
+			return;
+		}
+		if (source.kind === "pull-request") {
+			onOpenPullRequestIdentity?.(source.identity);
+		}
+	}, [actions, onOpenPullRequestIdentity, requestRevealLatestActivity, selectSection]);
 
 	return (
 		<section aria-label="Work item context" className="flex flex-col">
@@ -72,7 +100,7 @@ export function ContextPanel({
 					submitReviewAction={submitReviewAction}
 				/>
 			) : insightsSelected ? (
-				<InsightsPanel />
+				<InsightsPanel hasInsights={hasInsights} onSourceSelect={handleInsightSourceSelect} />
 			) : (
 				<WorkItemBody activity={activity} />
 			)}

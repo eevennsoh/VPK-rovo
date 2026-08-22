@@ -62,6 +62,7 @@ export interface JiraGoldenJourneysV3StoryController {
 	ciStatus: JiraGoldenJourneysV3CiStatus;
 	fixStep: JiraGoldenJourneysV3FixStep;
 	initialState: JiraWorkItemState;
+	insightsRevision: number;
 	launchId: number;
 	mergeGate: JiraGoldenJourneysV3MergeGate;
 	mergeStatus: JiraGoldenJourneysV3MergeStatus;
@@ -91,6 +92,7 @@ export function useJiraGoldenJourneysV3Story(active = true): JiraGoldenJourneysV
 	const [autoFixEnabled, setAutoFixEnabled] = useState(false);
 	const [autoMergeEnabled, setAutoMergeEnabled] = useState(false);
 	const [pullRequestMerged, setPullRequestMerged] = useState(false);
+	const [insightsRevision, setInsightsRevision] = useState(0);
 	const [launchId, setLaunchId] = useState(0);
 	const [boardColumns, setBoardColumns] = useState<JiraKanbanColumnData[]>(
 		() => createJiraGoldenJourneysV3BoardColumns("terminal"),
@@ -172,6 +174,7 @@ export function useJiraGoldenJourneysV3Story(active = true): JiraGoldenJourneysV
 		setAutoFixEnabled(false);
 		setAutoMergeEnabled(false);
 		setPullRequestMerged(false);
+		setInsightsRevision((current) => current + 1);
 		setLaunchId((current) => current + 1);
 		setBoardColumns(createJiraGoldenJourneysV3BoardColumns("terminal"));
 	}, []);
@@ -312,6 +315,7 @@ export function useJiraGoldenJourneysV3Story(active = true): JiraGoldenJourneysV
 		ciStatus,
 		fixStep,
 		initialState,
+		insightsRevision,
 		launchId,
 		mergeGate,
 		mergeStatus,

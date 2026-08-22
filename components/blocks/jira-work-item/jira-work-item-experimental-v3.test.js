@@ -288,25 +288,32 @@ test("PR select is an adjunct, never a section", () => {
 		readBlockFile("experimental-v3/components/context-panel.tsx"),
 		/selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView[\s\S]*insightsSelected \? \([\s\S]*<InsightsPanel[\s\S]*<WorkItemBody/u,
 	);
+	const sectionNavigationSource = readBlockFile("experimental-v3/context-section-navigation.tsx");
 	assert.match(
-		readBlockFile("experimental-v3/context-section-navigation.tsx"),
+		sectionNavigationSource,
 		/export function usePublishActivityCount\(count: number\): void \{\s*const \{ setActivityCount \} = useSectionNavigation\(\);\s*useEffect\(\(\) => \{\s*setActivityCount\(count\);\s*\}, \[count, setActivityCount\]\);/u,
 	);
 	assert.doesNotMatch(
-		readBlockFile("experimental-v3/context-section-navigation.tsx"),
+		sectionNavigationSource,
 		/return \(\) => setActivityCount\(null\)/u,
 	);
+	assert.match(sectionNavigationSource, /pendingSectionId/u);
+	assert.match(sectionNavigationSource, /window\.requestAnimationFrame\(\(\) => \{/u);
+	assert.match(sectionNavigationSource, /selectSection\(pendingSectionId\)/u);
 	assert.match(
 		readBlockFile("experimental-v3/components/insights-panel.tsx"),
 		/data-work-item-insights-panel/u,
 	);
-	assert.doesNotMatch(
+	assert.match(
 		readBlockFile("experimental-v3/components/insights-panel.tsx"),
-		/Summary|Key decisions|Sources|coming soon|chart/u,
+		/<JiraInsightsContent onSourceSelect=\{onSourceSelect\} \/>/u,
 	);
 	const contextPillsSource = readBlockFile("experimental-v3/components/activity-composer-context-pills.tsx");
 	assert.match(contextPillsSource, /justify-between/u);
-	assert.match(contextPillsSource, /onSectionSelect\?\.\(\);\s*selectSection\("insights"\)/u);
+	assert.match(
+		contextPillsSource,
+		/onSectionSelect\?\.\(\);[\s\S]*onNewInsightsSelect\?\.\(\);[\s\S]*selectSection\("insights"\)/u,
+	);
 	assert.match(contextPillsSource, /setNewInsightsDismissed\(true\)/u);
 	assert.match(
 		readBlockFile("experimental-v3/components/activity-composer-new-insights-pill.tsx"),
@@ -325,9 +332,34 @@ test("PR select is an adjunct, never a section", () => {
 	);
 	assert.match(
 		compositionSource,
-		/<WorkItemSectionNav[\s\S]*onSectionSelect=\{selectedPullRequestIdentity \? handlePullRequestClear : undefined\}[\s\S]*<ActivityComposer[\s\S]*onSectionSelect=\{selectedPullRequestIdentity \? handlePullRequestClear : undefined\}/u,
+		/<WorkItemSectionNav[\s\S]*onSectionSelect=\{selectedPullRequestIdentity \? handlePullRequestClear : undefined\}[\s\S]*<InsightsAwareComposer[\s\S]*onSectionSelect=\{selectedPullRequestIdentity \? handlePullRequestClear : undefined\}/u,
 	);
+	assert.match(compositionSource, /insightsSnapshot\?: JiraInsightsSnapshot/u);
+	assert.match(compositionSource, /const insightsSnapshot = props\.insightsSnapshot \?\? EMPTY_JIRA_INSIGHTS_SNAPSHOT/u);
+	assert.match(compositionSource, /<JiraInsightsProvider snapshot=\{insightsSnapshot\}>/u);
+	assert.match(compositionSource, /function InsightsAwareComposer/u);
+	assert.match(compositionSource, /insightsSelected && hasInsights/u);
+	assert.match(compositionSource, /<JiraInsightsScrubber \/>/u);
+	assert.match(compositionSource, /newInsightsCount=\{hasInsights \? unreadCheckpointIds\.length : undefined\}/u);
+	assert.match(compositionSource, /onNewInsightsSelect=\{hasInsights \? selectLatestUnread : undefined\}/u);
 	assert.doesNotMatch(compositionSource, /showDescriptionTools|descriptionViewMode|onDescriptionViewModeChange/u);
+});
+
+test("experimental v3 insight sources reuse work-item, session, activity, and pull-request owners", () => {
+	const contextSource = readBlockFile("experimental-v3/components/context-panel.tsx");
+	const composerSource = readBlockFile("experimental-v3/components/activity-composer.tsx");
+	const pillsSource = readBlockFile("experimental-v3/components/activity-composer-context-pills.tsx");
+
+	assert.match(contextSource, /source\.kind === "work-item-section"/u);
+	assert.match(contextSource, /source\.kind === "activity-entry"/u);
+	assert.match(contextSource, /requestRevealLatestActivity\(source\.entryId\)/u);
+	assert.match(contextSource, /source\.kind === "agent-session"/u);
+	assert.match(contextSource, /actions\.openSession\(source\.sessionId\)/u);
+	assert.match(contextSource, /source\.kind === "pull-request"/u);
+	assert.match(contextSource, /onOpenPullRequestIdentity\?\.\(source\.identity\)/u);
+	assert.match(composerSource, /newInsightsCount\?: number/u);
+	assert.match(composerSource, /onNewInsightsSelect\?: \(\) => void/u);
+	assert.match(pillsSource, /onNewInsightsSelect\?\.\(\);[\s\S]*selectSection\("insights"\)/u);
 });
 
 test("experimental v3 does not render a closed-state floating Rovo launcher", () => {

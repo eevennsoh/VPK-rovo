@@ -79,6 +79,8 @@ interface ActivityComposerContextPillsProps {
 	 * from context (2 on filled / Golden Journeys, 0 on empty). Pass 0 to hide.
 	 */
 	newInsightsCount?: number;
+	/** Marks the current insight notification read before the Insights body mounts. */
+	onNewInsightsSelect?: () => void;
 	onInvokeAgent: (agent: Pick<AgentSelectorAgent, "id" | "name" | "avatarSrc" | "brandName">) => void;
 	onInvokeSkill: (skill: SkillsDirectorySkill) => void;
 	onOpenAgentChat?: (agentId: string, sessionId: string) => void;
@@ -276,6 +278,7 @@ export function ActivityComposerContextPills({
 	newInsightsCount,
 	onInvokeAgent,
 	onInvokeSkill,
+	onNewInsightsSelect,
 	onOpenAgentChat,
 	onSectionSelect,
 	workingSessions,
@@ -289,7 +292,7 @@ export function ActivityComposerContextPills({
 	const [newInsightsDismissed, setNewInsightsDismissed] = useState(false);
 	const resolvedNewInsightsCount = resolveNewInsightsCount(contextResources, newInsightsCount);
 	const showNewInsightsPill = resolvedNewInsightsCount > 0
-		&& !newInsightsDismissed
+		&& (!newInsightsDismissed || onNewInsightsSelect != null)
 		&& activeSectionId !== "insights"
 		&& !showWorkingSessions;
 	const needsInputCount = workingSessions.filter((session) => (
@@ -365,8 +368,9 @@ export function ActivityComposerContextPills({
 									count={resolvedNewInsightsCount}
 									onSelect={() => {
 										onSectionSelect?.();
+										onNewInsightsSelect?.();
 										selectSection("insights");
-										setNewInsightsDismissed(true);
+										if (!onNewInsightsSelect) setNewInsightsDismissed(true);
 									}}
 								/>
 							</RevealingPill>

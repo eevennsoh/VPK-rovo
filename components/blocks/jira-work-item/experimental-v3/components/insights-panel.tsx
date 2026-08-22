@@ -1,5 +1,6 @@
 "use client";
 
+import { JiraInsightsContent, type JiraInsightSource } from "@/components/blocks/jira-insights";
 import {
 	usePublishSections,
 	useSectionNavigation,
@@ -8,11 +9,14 @@ import { buildWorkItemSectionTabs } from "@/components/blocks/jira-work-item/exp
 
 const WORK_ITEM_SECTION_TABS = buildWorkItemSectionTabs({ guidedReview: null });
 
-/**
- * Insights body swap. Empty on purpose — the tab is selectable and replaces
- * Description/Activity; the briefing itself is designed later.
- */
-export function InsightsPanel() {
+/** Insights body swap: a sourced briefing when the host supplies insight data. */
+export function InsightsPanel({
+	hasInsights,
+	onSourceSelect,
+}: Readonly<{
+	hasInsights: boolean;
+	onSourceSelect?: (source: JiraInsightSource) => void;
+}>) {
 	const { sectionElementId, sectionHeadingId } = useSectionNavigation();
 	usePublishSections(WORK_ITEM_SECTION_TABS);
 	const headingId = sectionHeadingId("insights");
@@ -27,6 +31,7 @@ export function InsightsPanel() {
 			<h2 className="sr-only" id={headingId}>
 				Insights
 			</h2>
+			{hasInsights ? <JiraInsightsContent onSourceSelect={onSourceSelect} /> : null}
 		</section>
 	);
 }

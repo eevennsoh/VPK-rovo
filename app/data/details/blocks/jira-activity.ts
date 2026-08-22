@@ -53,6 +53,16 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 			description: "Renders an optional trailing action in each comment card header.",
 		},
 		{
+			name: "renderEntry",
+			type: "(entry: JiraActivityEntry) => ReactNode | undefined",
+			description: "Optionally replaces one entry body while retaining Jira Activity ordering, filtering, and timeline structure.",
+		},
+		{
+			name: "activeEntryId",
+			type: "string",
+			description: "Marks one timeline row as the current step with aria-current and a data-active hook.",
+		},
+		{
 			name: "onAddCommentToChat",
 			type: "(entry: JiraActivityCommentEntry) => void",
 			description:
