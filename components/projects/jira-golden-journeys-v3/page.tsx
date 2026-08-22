@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { RovoChatProvider, useRovoChat } from "@/app/contexts/context-rovo-chat";
 import { Gallery, type GalleryItem } from "@/components/blocks/gallery";
-import { ExperimentalV2JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v2/experimental-v2-jira-work-item";
+import { ExperimentalV3JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v3/experimental-v3-jira-work-item";
 import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v1/data/agent-chat-data";
 import { useTerminalDemo } from "@/components/projects/jira-golden-journeys-v1/hooks/use-terminal-demo";
 
@@ -153,7 +153,7 @@ function JiraGoldenJourneysV3WorkItemStage({
 
 	return (
 		<div className="relative left-1/2 flex h-full min-h-0 w-[100cqw] -translate-x-1/2 items-start justify-center overflow-hidden px-8 pt-4 pb-4">
-			<ExperimentalV2JiraWorkItem
+			<ExperimentalV3JiraWorkItem
 				activitySessionThread={{
 					parentSessionId: JIRA_GOLDEN_JOURNEYS_V3_CLAUDE_SESSION_ID,
 					childSessionIds: [],

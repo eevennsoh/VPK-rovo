@@ -164,7 +164,7 @@ test("rules-gated delivery repairs CI, stages both approvals, and merges before 
 	await expect(bar.locator("[data-approvals-summary]")).toHaveCount(0);
 	await expect(bar.locator("[data-merge-state-label]")).toHaveCount(0);
 
-	await page.getByRole("button", { exact: true, name: "Activity" }).click();
+	await page.getByRole("navigation", { name: "Work item sections" }).getByRole("link", { name: /^Activity/ }).click();
 	const handoff = page.locator(
 		"[data-jira-activity-entry-id='story-channel-claude-pr-handoff']",
 	);
