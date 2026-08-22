@@ -70,12 +70,6 @@ function useColumnScrollMask() {
 	return { ref, showTopScrollMask, style } as const;
 }
 
-/**
- * Left-column shell. The chrome box stays zero-height and positioned so the
- * scrollport-owned top fade's `top-full` still resolves against that seam.
- * Narrow mode uses `contents` so the body flattens into the page order flow
- * via `order`.
- */
 function DescriptionColumnShell({
 	children,
 	scrollRef,
@@ -128,28 +122,6 @@ function DescriptionColumnShell({
 	);
 }
 
-/**
- * Responsive layout for the experimental work item dialog body.
- *
- * Sits under the dialog header band (breadcrumbs + title + section nav). Wide
- * (container >= 860px): two columns with separate body scrollports, plus an
- * optional left composer footer. Left: description scroll; right:
- * Details/Activity toggle chrome + resizable metadata scroll (440px default
- * and minimum, capped by the matching 440px description-column minimum).
- * Toggle reveals via `group/metadata-rail` hover on the rail body (plus self
- * hover / `:focus-visible` on the toggle) — not body `:focus-within`.
- *
- * Narrow (< 860px): the columns collapse (`display: contents`) into a single
- * scroll flow ordered Resources -> Context -> Metadata -> Composer via `order`.
- * The composer becomes `sticky bottom-0` on a translucent, blurred dock so it
- * stays visible at the bottom of the single scroll. That outer scrollport owns
- * a matching progressive bottom mask while more content remains below. The same
- * order values also keep each wide column stacked correctly, so no slot is
- * rendered twice.
- *
- * Container-query driven (not viewport) so it reacts to the dialog's actual
- * body width rather than the screen.
- */
 export function ExperimentalWorkItemLayout({
 	context,
 	metadata,

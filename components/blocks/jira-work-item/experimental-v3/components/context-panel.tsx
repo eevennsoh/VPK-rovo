@@ -16,16 +16,6 @@ const PullRequestDetailView = dynamic(
 		.then((module) => module.PullRequestDetailView),
 );
 
-/**
- * Body of the experimental work item: one continuous scroll flow whose sections
- * are the anchor targets for the section nav in the dialog header band.
- *
- * Selecting a pull request swaps the whole stack for the pull-request one,
- * which keeps the same leading Description and Activity sections and appends
- * Guide and Files when the review is guided. While a plan awaits confirmation,
- * a one-shot highlighted scope and elevated floating prompt connect the
- * refinement controls to the fields Rovo populated.
- */
 export function ContextPanel({
 	activity,
 	descriptionViewMode,

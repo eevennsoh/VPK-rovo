@@ -113,7 +113,6 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 		join(__dirname, "../components/pull-request-detail/pull-request-sticky-header-shell.tsx"),
 		"utf8",
 	);
-	// Wide-only sticky. Narrow pinning is unchanged in this chrome-ownership pass.
 	assert.match(
 		stickyHeaderShellSource,
 		/className="z-10 shrink-0 bg-surface @\[860px\]\/agentlayout:sticky @\[860px\]\/agentlayout:top-0"/u,

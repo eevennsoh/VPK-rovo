@@ -34,7 +34,6 @@ interface AsxRovoOverlayProps {
 	onLauncherClick?: () => void;
 	onQuestionAnswer?: () => void;
 	placement?: "embedded" | "floating";
-	/** Closed-state FloatingRovoButton. `"hidden"` still renders RovoFloatingChat when open. */
 	launcher?: "auto" | "hidden";
 }
 

@@ -48,14 +48,6 @@ function visibleEventSegments(
 	return [...visible.slice(0, -1), { type: "text", text: trimmed }];
 }
 
-/**
- * Compact event row: actor name, the action segments, then a middot
- * and relative timestamp. Rendered inside the timeline's content column,
- * beside the spine node.
- *
- * Use `min-h-6` (not fixed `h-6`) so wrapped multi-line copy stays fully
- * visible. The spine glyph stays on the node's separate `h-6` icon track.
- */
 export function JiraActivityEvent({
 	entry,
 	onOpenPullRequest,

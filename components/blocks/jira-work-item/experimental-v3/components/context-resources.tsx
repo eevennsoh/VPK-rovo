@@ -58,19 +58,10 @@ interface ContextResourcesProps {
 	descriptionViewMode: EditorToolbarViewMode;
 	outputs?: readonly string[];
 	primaryCodingAgentId?: CodingAgentId;
-	/** Whether copy/view-mode controls apply to the body currently shown. */
 	showDescriptionTools: boolean;
 	onDescriptionViewModeChange: (mode: EditorToolbarViewMode) => void;
 }
 
-/**
- * The work item's single control row, in the dialog header band beneath the
- * title.
- *
- * Order matches the design: status, coding agent, then the plus menu. The plus
- * menu launches the existing Attachments, Subtasks, and linked-work-item
- * popovers; filled values render as conditional sections in the metadata rail.
- */
 export function ContextResources({
 	descriptionViewMode,
 	outputs = [],

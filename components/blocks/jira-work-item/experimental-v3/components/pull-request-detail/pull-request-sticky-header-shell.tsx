@@ -58,8 +58,6 @@ export function PullRequestStickyHeaderShell({
 	}, [scrollContainerRef]);
 
 	return (
-		// Pins in wide mode. Narrow pinning is intentionally unchanged in this
-		// chrome-ownership pass.
 		<div className="z-10 shrink-0 bg-surface @[860px]/agentlayout:sticky @[860px]/agentlayout:top-0" ref={stickyHeaderRef}>
 			{children}
 		</div>

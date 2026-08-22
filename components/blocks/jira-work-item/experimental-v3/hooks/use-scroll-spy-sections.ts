@@ -12,11 +12,6 @@ import {
 	resolveStickyHeaderBottom,
 } from "@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-guide-active-chapter";
 
-/**
- * Sticky band that can pin above stacked content inside the left-column
- * scrollport. The section nav lives in the dialog header band, outside every
- * scrollport, so only the pull-request detail header can offset the spy.
- */
 export const SCROLL_SPY_STICKY_HEADER_SELECTOR =
 	"[data-jira-work-item-pull-request-detail-header]";
 

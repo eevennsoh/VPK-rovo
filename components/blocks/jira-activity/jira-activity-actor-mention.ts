@@ -1,9 +1,5 @@
 import type { JiraActivityActor, JiraActivitySegment } from "./jira-activity-types";
 
-/**
- * Product mark for spine/header glyphs and mention chips. Only the Rovo
- * product actor uses `vpkLogo: "rovo"`; subagents keep hexagon art.
- */
 export function activityActorVpkLogo(
 	actor: Pick<JiraActivityActor, "id" | "kind" | "name">,
 ): "rovo" | undefined {

@@ -23,10 +23,6 @@ export const NAV_LINK_CLASS = cn(
 );
 
 interface WorkItemSectionNavProps {
-	/**
-	 * A non-navigation control that sits immediately after the section links.
-	 * It is never inserted into the nav list or given link/tab semantics.
-	 */
 	endControl?: ReactNode;
 	onSectionSelect?: () => void;
 }
@@ -39,9 +35,6 @@ interface WorkItemSectionNavProps {
  * on screen at once and the control only moves the scroll position, so
  * `aria-current="location"` describes it truthfully. Anchors also give keyboard
  * activation, focus order, and a working no-JS fallback for free.
- *
- * The dialog `auto` row pins this row. An optional `endControl` sits beside the
- * landmark, never inside it, in the same row as the section links.
  */
 export function WorkItemSectionNav({
 	endControl,

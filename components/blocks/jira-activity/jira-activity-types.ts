@@ -54,7 +54,6 @@ export type JiraActivitySegment =
 	| { type: "link"; text: string; href?: string }
 	/** Circular user mention chip for humans (e.g. Venn, Maya Chen). */
 	| { type: "user-mention"; text: string; avatarSrc?: string }
-	/** Hexagon agent mention chip, or the Rovo product mark when `vpkLogo` is set. */
 	| {
 			type: "agent-mention";
 			text: string;

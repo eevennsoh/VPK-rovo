@@ -173,7 +173,6 @@ export function ActivityComposer({
 }: Readonly<{
 	agents?: readonly AgentSelectorAgent[];
 	autoFocus?: boolean;
-	/** Host-owned row rendered in place of the standard agent and skill context pills. */
 	composerContextBar?: ReactNode;
 	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
 	/** Advances Fix-chapter storytelling when a failing-checks chip is submitted. */

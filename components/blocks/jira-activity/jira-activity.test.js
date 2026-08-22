@@ -694,7 +694,6 @@ test("the header shows an activity count and a text-link sort control", () => {
 	// Sort trigger is a borderless text link, not a bordered pill.
 	assert.match(HEADER_SOURCE, /hover:underline/u);
 	assert.match(HEADER_SOURCE, /text-text-subtlest \[&_svg\]:text-icon-subtlest/u);
-	// Hidden at rest; section hover, focus-within, and an open menu reveal it.
 	assert.match(HEADER_SOURCE, /ACTIVITY_SORT_TRIGGER_REVEAL_CLASS/u);
 	assert.match(HEADER_SOURCE, /pointer-events-none opacity-0/u);
 	assert.match(HEADER_SOURCE, /group-hover\/activity:opacity-100/u);

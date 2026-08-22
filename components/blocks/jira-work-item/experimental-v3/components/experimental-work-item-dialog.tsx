@@ -22,7 +22,6 @@ interface ExperimentalWorkItemDialogProps {
 	children: ReactNode;
 	/** Work-item control row, rendered under the title inside the header band. */
 	controlRow?: ReactNode;
-	/** Section navigation row at the bottom of the fixed header band. */
 	navigation?: ReactNode;
 	blanketContent?: ReactNode;
 	sidebar: ReactNode;
@@ -33,22 +32,6 @@ interface ExperimentalWorkItemDialogProps {
 	onBodyWidthChange?: (width: number) => void;
 }
 
-/**
- * Accessible dialog shell for the experimental Jira Work Item work item.
- *
- * Composes low-level Base UI Dialog primitives (Root/Portal/Backdrop/Popup/
- * Title/Description) so modal geometry can mirror Rovo Canvas (`inset-4` even
- * viewport inset, `h-auto w-auto max-w-none`) while keeping Base UI's built-in
- * role=dialog, aria-modal, focus containment, focus restoration, and
- * Escape-to-close. The chrome header band stacks `ModalHeader` breadcrumbs
- * (work-item key + epic trail + ⋯ / collapse / close) with the editable
- * `ContextTitleBar` and optional `navigation` so breadcrumbs, title, actions,
- * and section links read as one band above the two-column body. The `auto`
- * grid row is the pin.
- * Parent/current breadcrumb trail hover-reveals (`breadcrumbRevealOnHover`);
- * the work-item key and header actions stay visible. The accessible name is
- * supplied by the sr-only Dialog.Title/Description.
- */
 export function ExperimentalWorkItemDialog({
 	inlineSurface,
 	open,

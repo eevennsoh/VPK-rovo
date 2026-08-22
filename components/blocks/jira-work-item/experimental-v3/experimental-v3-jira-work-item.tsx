@@ -97,7 +97,6 @@ interface ExperimentalV3JiraWorkItemBaseProps {
 	 */
 	autoOpenPullRequestIdentity?: string | null;
 	composerAgents?: readonly AgentSelectorAgent[];
-	/** Optional host-owned row rendered in place of the activity composer's standard context pills. */
 	composerContextBar?: ReactNode;
 	/** Optional host-owned controls rendered immediately after the side-chat Add button. */
 	composerToolsAfterAdd?: ReactNode;
