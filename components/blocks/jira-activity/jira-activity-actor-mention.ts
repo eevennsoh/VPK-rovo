@@ -1,6 +1,20 @@
 import type { JiraActivityActor, JiraActivitySegment } from "./jira-activity-types";
 
 /**
+ * Product mark for spine/header glyphs and mention chips. Only the Rovo
+ * product actor uses `vpkLogo: "rovo"`; subagents keep hexagon art.
+ */
+export function activityActorVpkLogo(
+	actor: Pick<JiraActivityActor, "id" | "kind" | "name">,
+): "rovo" | undefined {
+	if (actor.kind !== "agent") return undefined;
+	if (actor.name === "Rovo" || actor.id === "rovo" || actor.id === "rovo-dev") {
+		return "rovo";
+	}
+	return undefined;
+}
+
+/**
  * Maps a timeline actor to the matching inline mention segment so event
  * prefixes and authored mention chips share one segment model.
  */
@@ -12,13 +26,19 @@ export function mentionSegmentForActor(actor: JiraActivityActor): JiraActivitySe
 				text: actor.name,
 				...(actor.avatarSrc ? { avatarSrc: actor.avatarSrc } : {}),
 			};
-		case "agent":
+		case "agent": {
+			const vpkLogo = activityActorVpkLogo(actor);
 			return {
 				type: "agent-mention",
 				text: actor.name,
-				...(actor.avatarSrc ? { avatarSrc: actor.avatarSrc } : {}),
-				...(actor.brandName ? { brandName: actor.brandName } : {}),
+				...(vpkLogo
+					? { vpkLogo }
+					: {
+						...(actor.avatarSrc ? { avatarSrc: actor.avatarSrc } : {}),
+						...(actor.brandName ? { brandName: actor.brandName } : {}),
+					}),
 			};
+		}
 		case "app":
 			return {
 				type: "app-mention",

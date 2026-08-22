@@ -42,6 +42,8 @@ export type JiraActivityEventIcon =
 	/** Connected-app event glyph (e.g. GitHub checks / ready-to-merge). */
 	| "app";
 
+export type JiraActivityPriority = "Highest" | "High" | "Medium" | "Low" | "Lowest";
+
 /**
  * A rich inline text run. Shared by event action lines and comment bodies so
  * the code/link/lozenge/tag styling lives in one renderer.
@@ -52,8 +54,14 @@ export type JiraActivitySegment =
 	| { type: "link"; text: string; href?: string }
 	/** Circular user mention chip for humans (e.g. Venn, Maya Chen). */
 	| { type: "user-mention"; text: string; avatarSrc?: string }
-	/** Hexagon agent mention chip for agents (e.g. Claude Code, Rovo). */
-	| { type: "agent-mention"; text: string; avatarSrc?: string; brandName?: ThirdPartyLogoName }
+	/** Hexagon agent mention chip, or the Rovo product mark when `vpkLogo` is set. */
+	| {
+			type: "agent-mention";
+			text: string;
+			avatarSrc?: string;
+			brandName?: ThirdPartyLogoName;
+			vpkLogo?: "rovo";
+		}
 	/**
 	 * Product mention chip for connected apps (e.g. GitHub). Renders a
 	 * `BrandLogoMark` product tag — not a hexagon agent avatar.
@@ -67,7 +75,7 @@ export type JiraActivitySegment =
 	| { type: "label"; text: string; color: TagColor }
 	| { type: "tag"; text: string; color?: TagColor }
 	| { type: "transition-arrow" }
-	| { type: "priority"; text: "Medium" };
+	| { type: "priority"; text: JiraActivityPriority };
 
 interface JiraActivityEntryBase {
 	id: string;

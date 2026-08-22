@@ -242,7 +242,7 @@ export function JiraActivity({
 	}
 
 	return (
-		<div className={cn("flex w-full min-w-0 flex-col gap-4", className)}>
+		<div className={cn("group/activity flex w-full min-w-0 flex-col gap-4", className)}>
 			{hideHeader ? null : (
 				<div className={headerClassName} data-slot="jira-activity-header">
 					<JiraActivityHeader
@@ -409,6 +409,7 @@ export type {
 	JiraActivityEventEntry,
 	JiraActivityEventIcon,
 	JiraActivityFilter,
+	JiraActivityPriority,
 	JiraActivityReaction,
 	JiraActivityReply,
 	JiraActivitySegment,
