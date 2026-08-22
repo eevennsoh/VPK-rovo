@@ -1,14 +1,18 @@
 /**
  * Section tabs for the work-item surface.
  *
- * One tab bar serves both modes. Description and Activity are always present —
- * a pull request's overview section is the same thing as the work item's
- * description, and its review conversation is the same thing as the work item's
- * activity, so they share tabs rather than coexisting as separate controls.
- * Guide and Files are extras that only a guided review can supply.
+ * One tab bar serves both modes. Description, Activity, and Insights are
+ * always present. Description and Activity are scroll-anchored in the work-item
+ * body; Insights is a body swap, not another stacked section. Guide and Files
+ * are extras that only a guided review can supply.
  */
 
-export type WorkItemSectionId = "description" | "activity" | "guide" | "files";
+export type WorkItemSectionId = "description" | "activity" | "insights" | "guide" | "files";
+
+/** Insights replaces the body; it is not a scroll-spy target. */
+export function isScrollAnchoredSectionId(sectionId: WorkItemSectionId): boolean {
+	return sectionId !== "insights";
+}
 
 export interface WorkItemSectionDiffStat {
 	additions: number;
@@ -25,8 +29,8 @@ export interface WorkItemSectionTab {
 export interface BuildWorkItemSectionTabsInput {
 	/**
 	 * Null for the work item, and also for a pull request without a guided
-	 * review — such a PR still gets Description and Activity, it just has no
-	 * chapters to guide through and no reviewable file set.
+	 * review — such a PR still gets Description, Activity, and Insights, it
+	 * just has no chapters to guide through and no reviewable file set.
 	 */
 	guidedReview: (WorkItemSectionDiffStat & { fileCount: number }) | null;
 }
@@ -42,6 +46,7 @@ export function buildWorkItemSectionTabs({
 	const tabs: WorkItemSectionTab[] = [
 		{ id: "description", label: "Description" },
 		{ id: "activity", label: "Activity" },
+		{ id: "insights", label: "Insights" },
 	];
 	if (!guidedReview) return tabs;
 	tabs.push({ id: "guide", label: "Guide" });

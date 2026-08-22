@@ -167,6 +167,7 @@ export function ActivityComposer({
 	onAgentPromptSubmit,
 	onFailingChecksSubmit,
 	onOpenAgentChat,
+	onSectionSelect,
 	pullRequestFix,
 	pullRequestReview,
 	onSkillInvoke,
@@ -178,6 +179,7 @@ export function ActivityComposer({
 	/** Advances Fix-chapter storytelling when a failing-checks chip is submitted. */
 	onFailingChecksSubmit?: () => void;
 	onOpenAgentChat?: (agentId: string) => void;
+	onSectionSelect?: () => void;
 	/** Expanded PullRequestFix card (Fix / Fix all); replaces the activity prompt. */
 	pullRequestFix?: ActivityComposerPullRequestFix;
 	pullRequestReview?: ActivityComposerPullRequestReview;
@@ -466,6 +468,7 @@ export function ActivityComposer({
 						onInvokeAgent={handleInvokeAgent}
 						onInvokeSkill={handleInvokeSkill}
 						onOpenAgentChat={onOpenAgentChat ? handleOpenWorkingSession : undefined}
+						onSectionSelect={onSectionSelect}
 						workingSessions={workingSessions}
 					/>
 				)

@@ -12,10 +12,8 @@ import {
 import {
 	DEFAULT_PULL_REQUEST_SORT_MODE,
 	sortPullRequestEntries,
-	summarizePullRequestTagMetrics,
 } from "@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-phases";
 import { PullRequest } from "@/components/blocks/pull-request";
-import { Badge, type BadgeProps } from "@/components/ui/badge";
 import {
 	Select,
 	SelectContent,
@@ -24,25 +22,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import type { TagColor, TagTrailingMetric } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
 
-const TRIGGER_LABEL = "Pull request";
-
-const PULL_REQUEST_METRIC_BADGE_VARIANT: Partial<
-	Record<TagColor, NonNullable<BadgeProps["variant"]>>
-> = {
-	lime: "success",
-};
-
-function pullRequestMetricBadgeVariant(
-	metric: TagTrailingMetric,
-): NonNullable<BadgeProps["variant"]> {
-	if (typeof metric !== "object" || metric.color == null) {
-		return "neutral";
-	}
-	return PULL_REQUEST_METRIC_BADGE_VARIANT[metric.color] ?? "neutral";
-}
+const TRIGGER_LABEL = "Pull requests";
 
 function findPullRequestEntry(
 	entries: readonly JiraActivityEventEntry[],
@@ -71,18 +53,15 @@ export function PullRequestsSelect({
 		() => sortPullRequestEntries(entries, DEFAULT_PULL_REQUEST_SORT_MODE, JIRA_WORK_ITEM_CURRENT_USER.name),
 		[entries],
 	);
-	const metrics = useMemo(() => summarizePullRequestTagMetrics(entries), [entries]);
+	const pullRequestCount = orderedEntries.length;
 
-	if (orderedEntries.length === 0) {
+	if (pullRequestCount === 0) {
 		return null;
 	}
 
-	const metricsLabel = metrics
-		.map((metric) => (typeof metric === "object" ? metric.value : metric))
-		.join(", ");
-	const triggerAriaLabel = selectedIdentity || !metricsLabel
+	const triggerAriaLabel = selectedIdentity
 		? TRIGGER_LABEL
-		: `${TRIGGER_LABEL}. ${metricsLabel}`;
+		: `${TRIGGER_LABEL}. ${pullRequestCount}`;
 
 	return (
 		<div
@@ -117,18 +96,13 @@ export function PullRequestsSelect({
 								<span className="truncate">
 									{TRIGGER_LABEL}
 								</span>
-								{metrics.map((metric) => {
-									const value = typeof metric === "object" ? metric.value : metric;
-									return (
-										<Badge
-											data-jira-work-item-resource-pull-request-metric
-											key={value}
-											variant={pullRequestMetricBadgeVariant(metric)}
-										>
-											{value}
-										</Badge>
-									);
-								})}
+								<span
+									className={cn(
+										selectedIdentity ? "text-text-selected" : "text-text-subtlest",
+									)}
+								>
+									{pullRequestCount}
+								</span>
 							</>
 						)}
 					</SelectValue>

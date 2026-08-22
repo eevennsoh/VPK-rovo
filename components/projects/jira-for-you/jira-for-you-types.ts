@@ -1,3 +1,5 @@
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
+
 export type JiraForYouIssueType = "task" | "bug" | "subtask" | "epic" | "story";
 export type JiraForYouStatus = "Review" | "In progress" | "In review" | "To do" | "Done";
 
@@ -7,7 +9,9 @@ export interface JiraForYouAgent {
 	/** Display name, used for the avatar accessible label. */
 	name: string;
 	/** Absolute path to the agent avatar SVG under `public/`. */
-	avatarSrc: string;
+	avatarSrc?: string;
+	/** Third-party brand mark when the agent has no 1P avatar art. */
+	brandName?: ThirdPartyLogoName;
 }
 
 export interface JiraForYouItem {

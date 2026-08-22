@@ -1,6 +1,5 @@
 "use client";
 
-import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import { isPlannerProcessing } from "@/components/blocks/jira-work-item/data/planner-state";
 import {
 	useJiraWorkItemActions,
@@ -48,13 +47,7 @@ export function ContextEditableTitle() {
  * planner hug behavior. Pull request overview uses the same shared surface with
  * PR description content.
  */
-export function ContextEditableDescription({
-	viewMode,
-	onViewModeChange,
-}: Readonly<{
-	viewMode: EditorToolbarViewMode;
-	onViewModeChange: (mode: EditorToolbarViewMode) => void;
-}>) {
+export function ContextEditableDescription() {
 	const { contextResources, planner } = useJiraWorkItemState();
 	const actions = useJiraWorkItemActions();
 	// While the Teamwork Graph planner is running, drop the editor's min-height so
@@ -65,9 +58,8 @@ export function ContextEditableDescription({
 			aria-label="Work item description"
 			hugContent={isProcessing}
 			value={contextResources.description}
-			viewMode={viewMode}
+			viewMode="rendered"
 			onMarkdownChange={(value) => actions.editContextText("description", value)}
-			onViewModeChange={onViewModeChange}
 		/>
 	);
 }

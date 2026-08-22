@@ -22,7 +22,7 @@ export function WorkItemSection({
 	id,
 	label,
 }: Readonly<{
-	children: ReactNode;
+	children?: ReactNode;
 	className?: string;
 	/** Trailing control on the heading row, e.g. Activity's filter/sort menu. */
 	headingAction?: ReactNode;

@@ -15,7 +15,6 @@ import type {
 	StaticTimelineEvent,
 } from "@/components/blocks/jira-work-item/data/session-state";
 import { STOREFRONT_PLATFORM_PROJECT } from "@/components/blocks/jira-work-item/data/metadata-fixtures";
-import { IMPROVED_STORY_DESCRIPTION } from "@/components/projects/jira-golden-journeys-v2/data/story-context";
 
 /**
  * Fixed base epoch for deterministic display timestamps. Never derive time from
@@ -25,7 +24,41 @@ import { IMPROVED_STORY_DESCRIPTION } from "@/components/projects/jira-golden-jo
 export const SESSION_EPOCH_MS = Date.UTC(2026, 5, 8, 16, 0, 0); // Jun 8 2026, 16:00 UTC
 
 const FILLED_TITLE = "Acmecorp: Prepare for bid recommendation for ESM RFP";
-const FILLED_DESCRIPTION = IMPROVED_STORY_DESCRIPTION;
+const FILLED_DESCRIPTION = [
+	"Acmecorp is evaluating Atlassian as a replacement for its current service-management and work-management stack. We need a bid/no-bid recommendation before committing to a full ESM RFP response.",
+	"",
+	"#### Opportunity",
+	"Acmecorp wants to consolidate fragmented regional tools into one enterprise service-management operating model. Deal size is multi-thousand users; budget qualification is still pending before a full bid.",
+	"",
+	"#### Scope",
+	"- Clarify CMDB and procurement requirements into must-haves, differentiators, and owners.",
+	"- Map requirements to Atlassian strengths across JSM, Assets/CMDB, Rovo, and security/compliance.",
+	"- Flag product, legal, security, deal desk, or partner reviews before drafting a customer-facing package.",
+	"",
+	"#### Qualification flow",
+	"```mermaid",
+	"flowchart TD",
+	'\tintake["RFP intake"] --> qualify{"Budget and stakeholder access?"}',
+	'\tqualify -->|yes| matrix["Requirement compliance matrix"]',
+	'\tqualify -->|no| nobid["No-bid recommendation"]',
+	'\tmatrix --> validate["Assets, CMDB, and security answers"]',
+	'\tvalidate --> recommend["Bid / no-bid recommendation"]',
+	"```",
+	"",
+	"#### Acceptance criteria",
+	"1. Every mandatory Acmecorp response section has a named owner on the compliance matrix.",
+	"2. Budget, stakeholder access, and campaign fit are confirmed before a full response is committed.",
+	"3. Assets, CMDB, HAM/SAM, GRC, and data residency answers are validated with product and legal owners.",
+	"",
+	"#### Delivery breakdown",
+	"- [RFP-110 Collect Acmecorp RFP source documents](#rfp-110) — gathers the inbound packet this qualification is derived from.",
+	"- [RFP-111 Confirm Acmecorp mandatory response sections](#rfp-111) — scopes must-haves, differentiators, and owners.",
+	"- [RFP-112 Map Acmecorp reviewers and decision owners](#rfp-112) — names the bid/no-bid reviewers before drafting.",
+	"",
+	"#### Related work",
+	"- [RFP-100 Enterprise RFP Response](#rfp-100) — parent epic for this qualification.",
+	"- [RFP-102 Northstar Bank supplier packet review](#rfp-102) — related supplier-packet review on the same response program.",
+].join("\n");
 export const FILLED_ATLASSIAN_PROJECT = STOREFRONT_PLATFORM_PROJECT.id;
 
 const FILLED_TLDR = [

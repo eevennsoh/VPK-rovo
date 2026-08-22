@@ -181,7 +181,7 @@ test("merged presentation remains explicit and the flexible branch owns truncati
 	assert.match(html, />2\/2 approved</u);
 	assert.match(html, />Merged</u);
 	assert.match(SOURCE, /className="min-w-0 flex-1 truncate text-sm text-text-subtle" title=\{branch\}/u);
-	assert.match(SOURCE, /max-w-\[calc\(100vw-7rem\)\][\s\S]*overflow-hidden[\s\S]*sm:max-w-full/u);
+	assert.match(SOURCE, /max-w-\[calc\(100vw-7rem\)\][\s\S]*overflow-hidden px-2\.5 py-0 sm:max-w-full/u);
 	assert.match(SOURCE, /focus-visible:ring-3[\s\S]*motion-reduce:transition-none/u);
 });
 

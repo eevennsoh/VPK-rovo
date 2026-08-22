@@ -7,15 +7,10 @@ import AttachmentIcon from "@atlaskit/icon/core/attachment";
 import BranchIcon from "@atlaskit/icon/core/branch";
 import ChildWorkItemsIcon from "@atlaskit/icon/core/child-work-items";
 import CommitIcon from "@atlaskit/icon/core/commit";
-import CopyIcon from "@atlaskit/icon/core/copy";
 import FileIcon from "@atlaskit/icon/core/file";
 import LinkIcon from "@atlaskit/icon/core/link";
 
 import { AgentFilledSummaryRow } from "@/components/blocks/agent/components/agent-summary-row";
-import {
-	EditorToolbarModeTabs,
-	type EditorToolbarViewMode,
-} from "@/components/blocks/editor-toolbar";
 import { AttachmentsPopover } from "@/components/blocks/jira-work-item/experimental-v3/components/attachments-popover";
 import {
 	ContextTitleActions,
@@ -26,7 +21,6 @@ import { LinkedWorkItemsPopover } from "@/components/blocks/jira-work-item/exper
 import { SubtasksPopover } from "@/components/blocks/jira-work-item/experimental-v3/components/subtasks-popover";
 import {
 	useJiraWorkItemActions,
-	useJiraWorkItemMeta,
 	useJiraWorkItemState,
 } from "@/components/blocks/jira-work-item/experimental-v3/context-jira-work-item";
 import { Button } from "@/components/ui/button";
@@ -38,7 +32,6 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 type ContextResourceActionId = "attachments" | "subtasks" | "linkedItems";
@@ -55,22 +48,15 @@ interface ContextResourceAction {
 }
 
 interface ContextResourcesProps {
-	descriptionViewMode: EditorToolbarViewMode;
 	outputs?: readonly string[];
 	primaryCodingAgentId?: CodingAgentId;
-	showDescriptionTools: boolean;
-	onDescriptionViewModeChange: (mode: EditorToolbarViewMode) => void;
 }
 
 export function ContextResources({
-	descriptionViewMode,
 	outputs = [],
 	primaryCodingAgentId,
-	showDescriptionTools,
-	onDescriptionViewModeChange,
 }: Readonly<ContextResourcesProps>) {
-	const { contextResources, metadata, planner } = useJiraWorkItemState();
-	const { workItem } = useJiraWorkItemMeta();
+	const { metadata, planner } = useJiraWorkItemState();
 	const actions = useJiraWorkItemActions();
 	const hasPlanner = planner.status !== "inactive" && planner.status !== "applied";
 	const [activeResourceAction, setActiveResourceAction] = useState<ContextResourceActionId | null>(null);
@@ -174,37 +160,6 @@ export function ContextResources({
 							),
 						)}
 					</div>
-					{showDescriptionTools ? (
-						<div className="pointer-events-none ml-auto shrink-0 flex items-center gap-2 opacity-0 transition-opacity duration-normal ease-out group-hover/description-scope:pointer-events-auto group-hover/description-scope:opacity-100 group-has-[:focus-visible]/description-scope:pointer-events-auto group-has-[:focus-visible]/description-scope:opacity-100 motion-reduce:transition-none">
-							<Tooltip>
-								<TooltipTrigger
-									delay={0}
-									render={
-										<Button
-											aria-label="Copy work item as markdown"
-											size="icon"
-											type="button"
-											variant="outline"
-											onClick={() => {
-												const description = contextResources.description.trim();
-												const markdown = `# ${workItem.code}: ${contextResources.title}${description ? `\n\n${description}` : ""}`;
-												void navigator.clipboard.writeText(markdown);
-											}}
-										/>
-									}
-								>
-									<CopyIcon label="" size="small" />
-								</TooltipTrigger>
-								<TooltipContent positionerClassName="z-[502]">
-									Copy work item as markdown
-								</TooltipContent>
-							</Tooltip>
-							<EditorToolbarModeTabs
-								mode={descriptionViewMode}
-								onModeChange={onDescriptionViewModeChange}
-							/>
-						</div>
-					) : null}
 				</div>
 			</div>
 			{outputs.length > 0 ? (

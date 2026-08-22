@@ -773,7 +773,11 @@ export function selectActivityEvents(state: Readonly<JiraWorkItemState>): Activi
 	const humanEvents: ActivityEvent[] = state.comments.map((comment) => ({
 		id: comment.id,
 		kind: "human",
-		author: { name: comment.authorName, avatarUrl: comment.authorAvatarSrc },
+		author: {
+			name: comment.authorName,
+			...(comment.authorAvatarSrc ? { avatarUrl: comment.authorAvatarSrc } : {}),
+			...(comment.authorBrandName ? { brandName: comment.authorBrandName } : {}),
+		},
 		content: comment.content,
 		createdAtMs: comment.createdAtMs,
 		reactions: comment.reactions,

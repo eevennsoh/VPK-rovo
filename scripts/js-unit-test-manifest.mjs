@@ -47,6 +47,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/jira-work-item/experimental-v3/lib/pull-request-detail-data-ui.test.js",
 		"components/blocks/jira-work-item/experimental-v3/lib/pull-request-review-submit.test.js",
 		"components/blocks/jira-work-item/experimental-v3/lib/pull-request-phases.test.js",
+		"components/blocks/jira-work-item/experimental-v3/lib/new-insights-count.test.js",
 		"components/blocks/jira-work-item/experimental-v3/lib/work-item-section-tabs.test.js",
 		"components/blocks/smart-link/lib/pull-request-smart-link.test.js",
 		"components/blocks/code-review/lib/create-code-review-tree-data.test.js",

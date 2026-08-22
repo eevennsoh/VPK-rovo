@@ -186,6 +186,7 @@ function AgentAvatarCluster({
 			{agents.map((agent) => (
 				<AgentAvatarVisual
 					avatarSrc={agent.avatarSrc}
+					brandName={agent.brandName}
 					fallbackText={agent.name.slice(0, 2)}
 					key={agent.name}
 					label={agent.name}

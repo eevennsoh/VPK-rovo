@@ -146,6 +146,15 @@ function actorIdFromName(name: string): string {
 }
 
 function humanAuthorActor(author: Readonly<HumanActivityEvent["author"]>): JiraActivityActor {
+	if (author.brandName) {
+		return {
+			id: actorIdFromName(author.name),
+			name: author.name,
+			kind: "agent",
+			brandName: author.brandName,
+		};
+	}
+
 	if (author.name === JIRA_WORK_ITEM_CURRENT_USER.name) {
 		return author.avatarUrl
 			? { ...JIRA_WORK_ITEM_CURRENT_USER, avatarSrc: author.avatarUrl }
@@ -337,8 +346,12 @@ function staticActor(actor: Readonly<StaticTimelineActor>): JiraActivityActor {
 		id: actor.id,
 		name: actor.name,
 		kind: actor.kind,
-		...(actor.avatarSrc ? { avatarSrc: actor.avatarSrc } : {}),
-		...(actor.brandName ? { brandName: actor.brandName as ThirdPartyLogoName } : {}),
+		// Prefer brand marks over template avatars (e.g. Claude Code → `claude`).
+		...(actor.brandName
+			? { brandName: actor.brandName as ThirdPartyLogoName }
+			: actor.avatarSrc
+				? { avatarSrc: actor.avatarSrc }
+				: {}),
 	};
 }
 

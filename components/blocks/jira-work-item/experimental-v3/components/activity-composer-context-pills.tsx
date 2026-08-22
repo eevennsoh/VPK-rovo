@@ -7,7 +7,11 @@ import type { SkillsDirectorySkill } from "@/app/data/directory";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { AgentSession } from "@/components/blocks/jira-work-item/data/session-state";
 import { ActivityComposerAgentContextPill } from "@/components/blocks/jira-work-item/experimental-v3/components/activity-composer-agent-context-pill";
+import { ActivityComposerNewInsightsPill } from "@/components/blocks/jira-work-item/experimental-v3/components/activity-composer-new-insights-pill";
 import { ActivityComposerSkillContextPill } from "@/components/blocks/jira-work-item/experimental-v3/components/activity-composer-skill-context-pill";
+import { useJiraWorkItemState } from "@/components/blocks/jira-work-item/experimental-v3/context-jira-work-item";
+import { useSectionNavigation } from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
+import { resolveNewInsightsCount } from "@/components/blocks/jira-work-item/experimental-v3/lib/new-insights-count";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AnimatedDots } from "@/components/ui-custom/animated-dots";
 import { ContextBarPill } from "@/components/ui-custom/context-bar";
@@ -70,9 +74,16 @@ const WORKING_SESSION_ACTIVITY_SCRIPTS: Readonly<Record<string, readonly string[
 };
 
 interface ActivityComposerContextPillsProps {
+	/**
+	 * Optional override for the far-right "new insights" pill. Omit to derive
+	 * from context (2 on filled / Golden Journeys, 0 on empty). Pass 0 to hide.
+	 */
+	newInsightsCount?: number;
 	onInvokeAgent: (agent: Pick<AgentSelectorAgent, "id" | "name" | "avatarSrc" | "brandName">) => void;
 	onInvokeSkill: (skill: SkillsDirectorySkill) => void;
 	onOpenAgentChat?: (agentId: string, sessionId: string) => void;
+	/** Same PR-clear transition the section nav uses before changing surfaces. */
+	onSectionSelect?: () => void;
 	workingSessions: readonly AgentSession[];
 }
 
@@ -262,15 +273,25 @@ function RevealingPill({ children }: Readonly<{ children: ReactNode }>) {
 
 /** Context shortcuts revealed after the planner review composer becomes sticky. */
 export function ActivityComposerContextPills({
+	newInsightsCount,
 	onInvokeAgent,
 	onInvokeSkill,
 	onOpenAgentChat,
+	onSectionSelect,
 	workingSessions,
 }: Readonly<ActivityComposerContextPillsProps>) {
 	const shouldReduceMotion = Boolean(useReducedMotion());
+	const { contextResources } = useJiraWorkItemState();
+	const { activeSectionId, selectSection } = useSectionNavigation();
 	const workingTriggerRef = useRef<HTMLButtonElement>(null);
 	const shouldRestoreWorkingTriggerFocusRef = useRef(false);
 	const [showWorkingSessions, setShowWorkingSessions] = useState(false);
+	const [newInsightsDismissed, setNewInsightsDismissed] = useState(false);
+	const resolvedNewInsightsCount = resolveNewInsightsCount(contextResources, newInsightsCount);
+	const showNewInsightsPill = resolvedNewInsightsCount > 0
+		&& !newInsightsDismissed
+		&& activeSectionId !== "insights"
+		&& !showWorkingSessions;
 	const needsInputCount = workingSessions.filter((session) => (
 		session.status === "waiting" && session.waitingOn?.kind === "user"
 	)).length;
@@ -294,7 +315,7 @@ export function ActivityComposerContextPills({
 	return (
 		<motion.div
 			animate="visible"
-			className="mb-2 flex flex-wrap gap-2"
+			className="mb-2 flex flex-wrap items-center justify-between gap-2"
 			data-jira-work-item-context-pills
 			initial={shouldReduceMotion ? false : "hidden"}
 			variants={PILL_GROUP_VARIANTS}
@@ -307,34 +328,50 @@ export function ActivityComposerContextPills({
 				/>
 			) : (
 				<>
-					{workingSessions.length > 0 && onOpenAgentChat ? (
+					<div className="flex min-w-0 flex-wrap items-center gap-2">
+						{workingSessions.length > 0 && onOpenAgentChat ? (
+							<RevealingPill>
+								<ContextBarPill
+									aria-label={summaryLabel}
+									className="motion-reduce:transition-none"
+									icon={(
+										<PixelLoader
+											className="size-3 justify-center"
+											pattern={needsInputCount > 0 ? "breathing" : "diagonal-top-left"}
+											shape="dot"
+											size="small"
+										/>
+									)}
+									onClick={() => setShowWorkingSessions(true)}
+									ref={workingTriggerRef}
+								>
+									{needsInputCount > 0 ? (
+										<Shimmer as="span">{summaryLabel}</Shimmer>
+									) : summaryLabel}
+								</ContextBarPill>
+							</RevealingPill>
+						) : null}
 						<RevealingPill>
-							<ContextBarPill
-								aria-label={summaryLabel}
-								className="motion-reduce:transition-none"
-								icon={(
-									<PixelLoader
-										className="size-3 justify-center"
-										pattern={needsInputCount > 0 ? "breathing" : "diagonal-top-left"}
-										shape="dot"
-										size="small"
-									/>
-								)}
-								onClick={() => setShowWorkingSessions(true)}
-								ref={workingTriggerRef}
-							>
-								{needsInputCount > 0 ? (
-									<Shimmer as="span">{summaryLabel}</Shimmer>
-								) : summaryLabel}
-							</ContextBarPill>
+							<ActivityComposerAgentContextPill onInvokeAgent={onInvokeAgent} />
 						</RevealingPill>
+						<RevealingPill>
+							<ActivityComposerSkillContextPill onInvokeSkill={onInvokeSkill} />
+						</RevealingPill>
+					</div>
+					{showNewInsightsPill ? (
+						<div className="shrink-0">
+							<RevealingPill>
+								<ActivityComposerNewInsightsPill
+									count={resolvedNewInsightsCount}
+									onSelect={() => {
+										onSectionSelect?.();
+										selectSection("insights");
+										setNewInsightsDismissed(true);
+									}}
+								/>
+							</RevealingPill>
+						</div>
 					) : null}
-					<RevealingPill>
-						<ActivityComposerAgentContextPill onInvokeAgent={onInvokeAgent} />
-					</RevealingPill>
-					<RevealingPill>
-						<ActivityComposerSkillContextPill onInvokeSkill={onInvokeSkill} />
-					</RevealingPill>
 				</>
 			)}
 		</motion.div>

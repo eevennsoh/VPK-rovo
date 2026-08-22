@@ -75,9 +75,10 @@ test("experimental v3 is isolated from v1 and v2", () => {
 });
 
 test("the v3 surface has one section nav, not a rail toggle plus a PR tab strip", () => {
-	// v3's divergence: Description / Activity (+ Guide / Files under a guided PR)
-	// became a single scroll-linked nav in the left column, replacing both the
-	// metadata rail's Details/Activity toggle and the pull-request tab strip.
+	// v3's divergence: Description / Activity / Insights (+ Guide / Files under
+	// a guided PR) became a single scroll-linked nav in the left column,
+	// replacing both the metadata rail's Details/Activity toggle and the
+	// pull-request tab strip.
 	assert.equal(fs.existsSync(path.join(V3_DIR, "components/metadata-rail-toggle.tsx")), false);
 	assert.equal(fs.existsSync(path.join(V3_DIR, "components/context-title-meta.tsx")), false);
 	assert.equal(fs.existsSync(path.join(V3_DIR, "lib/metadata-rail-view.ts")), false);
@@ -117,12 +118,15 @@ test("the v3 control row is consolidated and Reporter moved back to Details", ()
 		resourcesSource,
 		/PullRequestsSelect|pullRequestEntries|selectedPullRequestIdentity|onPullRequestSelect|onPullRequestClear|pullRequestSelected/u,
 	);
-	assert.match(resourcesSource, /showDescriptionTools/u);
+	assert.doesNotMatch(
+		resourcesSource,
+		/showDescriptionTools|Copy work item as markdown|EditorToolbarModeTabs|aria-label="Copy work item as markdown"/u,
+	);
 
 	// The read-only pull-request Tag dissolved into the interactive Select.
 	assert.match(
 		readBlockFile("experimental-v3/components/pull-requests-select.tsx"),
-		/summarizePullRequestTagMetrics/u,
+		/span[\s\S]*className=\{cn\(\s*selectedIdentity \? "text-text-selected" : "text-text-subtlest",\s*\)\}[\s\S]*\{pullRequestCount\}/u,
 	);
 
 	const detailsTabSource = readBlockFile("experimental-v3/components/details-tab.tsx");
@@ -143,7 +147,11 @@ test("the v3 control row is consolidated and Reporter moved back to Details", ()
 	assert.doesNotMatch(titleBarSource, /<StatusPill|<ContextTitleMeta|<PersonLabel/u);
 	assert.match(
 		titleBarSource,
-		/group\/description-scope[\s\S]*<ContextEditableTitle \/>[\s\S]*\{controlRow\}/u,
+		/className="min-w-0 self-stretch px-6 pb-4"/u,
+	);
+	assert.match(
+		titleBarSource,
+		/<ContextEditableTitle \/>[\s\S]*\{controlRow\}/u,
 	);
 });
 
@@ -160,7 +168,7 @@ test("the v3 dialog owns one fixed chrome row", () => {
 	assert.match(navSource, /data-work-item-section-nav/u);
 	assert.match(navSource, /data-work-item-header-navigation/u);
 	assert.match(navSource, /className="@container\/resource-row border-b border-border"/u);
-	assert.match(navSource, /className="flex items-center px-6"/u);
+	assert.match(navSource, /className="flex items-center px-3"/u);
 	assert.doesNotMatch(navSource, /ml-auto/u);
 	assert.match(navSource, /from "@\/components\/ui\/tabs"/u);
 	assert.match(navSource, /tabsLineIndicatorClass/u);
@@ -245,15 +253,19 @@ test("PR select is an adjunct, never a section", () => {
 	const selectSource = readBlockFile("experimental-v3/components/pull-requests-select.tsx");
 	assert.match(selectSource, /NAV_LINK_CLASS/u);
 	assert.match(selectSource, /variant="none"/u);
-	assert.match(selectSource, /const TRIGGER_LABEL = "Pull request"/u);
+	assert.match(selectSource, /const TRIGGER_LABEL = "Pull requests"/u);
 	assert.match(selectSource, /aria-current=\{selectedIdentity \? "location" : undefined\}/u);
-	assert.match(selectSource, /<Badge[\s\S]*data-jira-work-item-resource-pull-request-metric[\s\S]*variant=\{pullRequestMetricBadgeVariant\(metric\)\}/u);
-	assert.match(selectSource, /lime: "success"/u);
+	assert.match(
+		selectSource,
+		/<span[\s\S]*className=\{cn\(\s*selectedIdentity \? "text-text-selected" : "text-text-subtlest",\s*\)\}[\s\S]*\{pullRequestCount\}/u,
+	);
+	assert.doesNotMatch(selectSource, /<Badge|pullRequestMetricBadgeVariant|lime: "success"|summarizePullRequestTagMetrics/u);
 	assert.doesNotMatch(selectSource, /"1 Open"/u);
 	assert.match(
 		navSource,
-		/<Badge>\{activityCount\}<\/Badge>/u,
+		/<span[\s\S]*className=\{cn\(\s*section\.id === activeSectionId \? "text-text-selected" : "text-text-subtlest",\s*\)\}[\s\S]*\{activityCount\}/u,
 	);
+	assert.doesNotMatch(navSource, /<Badge>\{activityCount\}<\/Badge>/u);
 	assert.doesNotMatch(selectSource, /Review pull request/u);
 	assert.doesNotMatch(selectSource, /PullRequestIcon|@atlaskit\/icon\/core\/pull-request/u);
 	assert.doesNotMatch(selectSource, /@max-\[36rem\]\/resource-row:hidden/u);
@@ -262,7 +274,47 @@ test("PR select is an adjunct, never a section", () => {
 	const sectionTabsSource = readBlockFile("experimental-v3/lib/work-item-section-tabs.ts");
 	assert.match(
 		sectionTabsSource,
-		/export type WorkItemSectionId = "description" \| "activity" \| "guide" \| "files"/u,
+		/export type WorkItemSectionId = "description" \| "activity" \| "insights" \| "guide" \| "files"/u,
+	);
+	assert.match(
+		sectionTabsSource,
+		/id: "description", label: "Description"[\s\S]*id: "activity", label: "Activity"[\s\S]*id: "insights", label: "Insights"/u,
+	);
+	assert.doesNotMatch(
+		readBlockFile("experimental-v3/components/work-item-body.tsx"),
+		/id="insights"/u,
+	);
+	assert.match(
+		readBlockFile("experimental-v3/components/context-panel.tsx"),
+		/selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView[\s\S]*insightsSelected \? \([\s\S]*<InsightsPanel[\s\S]*<WorkItemBody/u,
+	);
+	assert.match(
+		readBlockFile("experimental-v3/context-section-navigation.tsx"),
+		/export function usePublishActivityCount\(count: number\): void \{\s*const \{ setActivityCount \} = useSectionNavigation\(\);\s*useEffect\(\(\) => \{\s*setActivityCount\(count\);\s*\}, \[count, setActivityCount\]\);/u,
+	);
+	assert.doesNotMatch(
+		readBlockFile("experimental-v3/context-section-navigation.tsx"),
+		/return \(\) => setActivityCount\(null\)/u,
+	);
+	assert.match(
+		readBlockFile("experimental-v3/components/insights-panel.tsx"),
+		/data-work-item-insights-panel/u,
+	);
+	assert.doesNotMatch(
+		readBlockFile("experimental-v3/components/insights-panel.tsx"),
+		/Summary|Key decisions|Sources|coming soon|chart/u,
+	);
+	const contextPillsSource = readBlockFile("experimental-v3/components/activity-composer-context-pills.tsx");
+	assert.match(contextPillsSource, /justify-between/u);
+	assert.match(contextPillsSource, /onSectionSelect\?\.\(\);\s*selectSection\("insights"\)/u);
+	assert.match(contextPillsSource, /setNewInsightsDismissed\(true\)/u);
+	assert.match(
+		readBlockFile("experimental-v3/components/activity-composer-new-insights-pill.tsx"),
+		/data-jira-work-item-new-insights-pill/u,
+	);
+	assert.match(
+		readBlockFile("experimental-v3/components/activity-composer-new-insights-pill.tsx"),
+		/@atlaskit\/icon\/core\/lightbulb/u,
 	);
 	assert.doesNotMatch(sectionTabsSource, /pull-request/u);
 
@@ -273,12 +325,9 @@ test("PR select is an adjunct, never a section", () => {
 	);
 	assert.match(
 		compositionSource,
-		/onSectionSelect=\{selectedPullRequestIdentity \? handlePullRequestClear : undefined\}/u,
+		/<WorkItemSectionNav[\s\S]*onSectionSelect=\{selectedPullRequestIdentity \? handlePullRequestClear : undefined\}[\s\S]*<ActivityComposer[\s\S]*onSectionSelect=\{selectedPullRequestIdentity \? handlePullRequestClear : undefined\}/u,
 	);
-	assert.match(
-		compositionSource,
-		/showDescriptionTools=\{selectedPullRequestEntry === null\}/u,
-	);
+	assert.doesNotMatch(compositionSource, /showDescriptionTools|descriptionViewMode|onDescriptionViewModeChange/u);
 });
 
 test("experimental v3 does not render a closed-state floating Rovo launcher", () => {
@@ -323,6 +372,41 @@ test("Activity sort hover-reveals from the section group, not a local copy", () 
 	assert.doesNotMatch(activityPanelSource, /Show oldest|ACTIVITY_SORT_TRIGGER_REVEAL_CLASS/u);
 	assert.match(headerSource, /ACTIVITY_SORT_TRIGGER_REVEAL_CLASS/u);
 	assert.match(headerSource, /group-hover\/activity:opacity-100/u);
+});
+
+test("experimental v3 header Actions menu copies the work item as markdown", () => {
+	const overflowMenuSource = readBlockFile(
+		"experimental-v3/components/experimental-header-overflow-menu.tsx",
+	);
+	const descriptionSource = readBlockFile(
+		"experimental-v3/components/context-editable-header.tsx",
+	);
+
+	assert.match(
+		overflowMenuSource,
+		/\[\{ label: "Permission" \}, \{ label: "Watch", count: 1 \}, \{ label: "Share" \}\]/u,
+	);
+	assert.match(
+		overflowMenuSource,
+		/\{ label: "Copy work item as markdown", action: "copy-markdown" \}/u,
+	);
+	assert.match(
+		overflowMenuSource,
+		/\{ label: "Copy work item as markdown", action: "copy-markdown" \},[\s\S]*\{ label: "Print" \},[\s\S]*\{ label: "Export to", submenu: \["Excel", "Word", "XML"\] \}/u,
+	);
+	assert.match(overflowMenuSource, /aria-label="Actions"/u);
+	assert.match(
+		overflowMenuSource,
+		/const markdown = `# \$\{workItemCode\}: \$\{title\}\$\{description \? `\\n\\n\$\{description\}` : ""\}`;/u,
+	);
+	assert.match(overflowMenuSource, /navigator\.clipboard\.writeText\(markdown\)/u);
+	assert.match(overflowMenuSource, /case "copy-markdown":/u);
+	assert.doesNotMatch(
+		readBlockFile("experimental-v3/components/context-resources.tsx"),
+		/Copy work item as markdown|EditorToolbarModeTabs/u,
+	);
+	assert.match(descriptionSource, /viewMode="rendered"/u);
+	assert.doesNotMatch(descriptionSource, /onViewModeChange/u);
 });
 
 test("the v3 lib test suite is registered so it actually runs in CI", () => {

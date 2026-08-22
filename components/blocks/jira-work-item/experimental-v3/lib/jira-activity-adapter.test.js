@@ -828,3 +828,28 @@ test("maps third-party coding-agent identity through activity, session, and ment
 		{ type: "text", text: " to implement the change." },
 	]);
 });
+
+test("maps a Claude Code channel comment to the brand mark instead of a template avatar", async () => {
+	const adapter = await loadAdapter();
+	const [entry] = adapter.mapActivityEventsToJiraEntries([
+		{
+			id: "comment-claude-handoff",
+			kind: "human",
+			author: {
+				name: "Claude Code",
+				brandName: "claude",
+				avatarUrl: "/avatar-agent/dev-agents/basic-coding-agent-template.svg",
+			},
+			content: "PR #1847 is open.",
+			createdAtMs: Date.UTC(2026, 4, 12, 13, 30),
+		},
+	]);
+
+	assert.deepEqual(entry.actor, {
+		id: "jira-work-item-person-claude-code",
+		name: "Claude Code",
+		kind: "agent",
+		brandName: "claude",
+	});
+	assert.equal(entry.actor.avatarSrc, undefined);
+});
