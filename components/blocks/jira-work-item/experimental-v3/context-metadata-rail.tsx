@@ -28,6 +28,12 @@ export interface ActivityRevealRequest {
 }
 
 interface MetadataRailContextValue {
+	/** Whether the extended Details fields are visible across rail presentations. */
+	detailsShowMore: boolean;
+	/** Controlled open section ids shared by the docked rail and hover preview. */
+	openSectionIds: ReadonlySet<string>;
+	setDetailsShowMore: (showMore: boolean) => void;
+	setOpenSectionIds: (openSectionIds: ReadonlySet<string>) => void;
 	/** Latest request to expand a pull-request details-rail section. */
 	pullRequestSectionExpandRequest: PullRequestSectionExpandRequest | null;
 	/** Ask one PR details rail to open a collapsible section. */
@@ -72,16 +78,17 @@ interface MetadataRailProviderProps {
 /**
  * Cross-surface request bus for the metadata rail and the activity feed.
  *
- * Since the rail became Details-only and Activity moved into the left column's
- * section nav, this no longer owns any view state — only one-shot requests:
- * "scroll the feed here" and "expand that rail section" (e.g. CI checks from
- * the pull-request header's "Checks running" primary).
+ * Activity moved into the left column's section nav, so this owns only the
+ * disclosure state that must survive rail presentation changes plus one-shot
+ * requests such as "scroll the feed here" and "expand that rail section".
  */
 export function MetadataRailProvider({
 	children,
 	revealActivityKey = null,
 	revealActivityEntryId = null,
 }: Readonly<MetadataRailProviderProps>) {
+	const [detailsShowMore, setDetailsShowMore] = useState(false);
+	const [openSectionIds, setOpenSectionIds] = useState<ReadonlySet<string>>(() => new Set());
 	const [pullRequestSectionExpandRequest, setPullRequestSectionExpandRequest] =
 		useState<PullRequestSectionExpandRequest | null>(null);
 	const [activityRevealRequest, setActivityRevealRequest] =
@@ -133,18 +140,26 @@ export function MetadataRailProvider({
 			activityRevealRequest,
 			consumeActivityRevealRequest,
 			consumePullRequestSectionExpandRequest,
+			detailsShowMore,
+			openSectionIds,
 			pullRequestSectionExpandRequest,
 			requestExpandPullRequestSection,
 			requestRevealLatestActivity,
+			setDetailsShowMore,
+			setOpenSectionIds,
 			setSuppressActivityPanelReveal,
 		}),
 		[
 			activityRevealRequest,
 			consumeActivityRevealRequest,
 			consumePullRequestSectionExpandRequest,
+			detailsShowMore,
+			openSectionIds,
 			pullRequestSectionExpandRequest,
 			requestExpandPullRequestSection,
 			requestRevealLatestActivity,
+			setDetailsShowMore,
+			setOpenSectionIds,
 			setSuppressActivityPanelReveal,
 		],
 	);

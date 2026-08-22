@@ -107,6 +107,25 @@ test("experimental v3 can collapse its metadata rail and preview it while collap
 	assert.doesNotMatch(panelLayoutSource, /metadataTogglePending|completeMetadataToggle/u);
 });
 
+test("experimental v3 preserves metadata disclosures across docked and preview rails", () => {
+	const detailsSource = readBlockFile("experimental-v3/components/details-tab.tsx");
+	const metadataRailSource = readBlockFile("experimental-v3/components/metadata-rail.tsx");
+	const metadataRailContextSource = readBlockFile("experimental-v3/context-metadata-rail.tsx");
+
+	assert.doesNotMatch(detailsSource, /useState/u);
+	assert.match(detailsSource, /showMore: boolean;/u);
+	assert.match(detailsSource, /onShowMoreChange: \(showMore: boolean\) => void;/u);
+	assert.match(detailsSource, /onClick=\{\(\) => onShowMoreChange\(!showMore\)\}/u);
+	assert.match(metadataRailContextSource, /const \[detailsShowMore, setDetailsShowMore\] = useState\(false\);/u);
+	assert.match(
+		metadataRailContextSource,
+		/const \[openSectionIds, setOpenSectionIds\] = useState<ReadonlySet<string>>\(\(\) => new Set\(\)\);/u,
+	);
+	assert.match(metadataRailSource, /<DetailsTab[\s\S]*showMore=\{detailsShowMore\}[\s\S]*onShowMoreChange=\{setDetailsShowMore\}/u);
+	assert.match(metadataRailSource, /<ArtifactPane[\s\S]*openSectionIds=\{openSectionIds\}/u);
+	assert.match(metadataRailSource, /<ArtifactPane[\s\S]*onOpenSectionIdsChange=\{setOpenSectionIds\}/u);
+});
+
 test("the v3 surface has one section nav, not a rail toggle plus a PR tab strip", () => {
 	// v3's divergence: Description / Activity / Insights (+ Guide / Files under
 	// a guided PR) became a single scroll-linked nav in the left column,
