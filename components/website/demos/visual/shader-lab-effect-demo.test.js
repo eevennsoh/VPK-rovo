@@ -23,6 +23,14 @@ const CHROMATIC_ABERRATION_DEMO_SOURCE = fs.readFileSync(
 	path.join(__dirname, "chromatic-aberration-demo.tsx"),
 	"utf8",
 );
+const CHROMATIC_ABERRATION_SHADER_SOURCE = fs.readFileSync(
+	path.join(__dirname, "shaders/chromatic-aberration.tsx"),
+	"utf8",
+);
+const CHROMATIC_ABERRATION_CONFIG_SOURCE = fs.readFileSync(
+	path.join(__dirname, "shaders/chromatic-aberration-config.ts"),
+	"utf8",
+);
 const CHROMATIC_ABERRATION_V2_DEMO_SOURCE = fs.readFileSync(
 	path.join(__dirname, "chromatic-aberration-v2-demo.tsx"),
 	"utf8",
@@ -178,6 +186,59 @@ test("original VPK visual shaders keep the base routes", () => {
 
 	assert.match(CHROMATIC_ABERRATION_DEMO_SOURCE, /from "\.\/shaders\/chromatic-aberration"/);
 	assert.match(FLUTED_GLASS_DEMO_SOURCE, /from "\.\/shaders\/fluted-glass"/);
+});
+
+test("Chromatic preserves straight source alpha", () => {
+	assert.match(CHROMATIC_ABERRATION_SHADER_SOURCE, /fragColor = vec4\(color\.rgb, color\.a\);/);
+	assert.match(CHROMATIC_ABERRATION_SHADER_SOURCE, /getContext\("webgl2", \{ antialias: false, alpha: true, premultipliedAlpha: false \}\)/);
+});
+
+test("Chromatic Aberration accepts image and video texture media", () => {
+	assert.ok(fs.existsSync(path.join(ROOT, "public/3p/framer/chromatic-aberration-default.png")));
+	assert.match(CHROMATIC_ABERRATION_CONFIG_SOURCE, /DEFAULT_CHROMATIC_ABERRATION_MEDIA_SRC = "\/3p\/framer\/chromatic-aberration-default\.png"/);
+	assert.match(CHROMATIC_ABERRATION_SHADER_SOURCE, /mediaSrc\?: string;/);
+	assert.match(CHROMATIC_ABERRATION_SHADER_SOURCE, /mediaType\?: "image" \| "video";/);
+	assert.match(CHROMATIC_ABERRATION_SHADER_SOURCE, /video\.HAVE_CURRENT_DATA/);
+	assert.match(CHROMATIC_ABERRATION_DEMO_SOURCE, /accept="image\/\*,video\/\*"/);
+	assert.match(CHROMATIC_ABERRATION_DEMO_SOURCE, /mediaType=\{mediaType\}/);
+});
+
+test("Chromatic Aberration exposes the complete Framer control contract", () => {
+	for (const option of [
+		'{ value: "radial", label: "Radial" }',
+		'{ value: "uniform", label: "Uniform" }',
+		'{ value: "edges", label: "Edges" }',
+	]) {
+		assert.ok(CHROMATIC_ABERRATION_DEMO_SOURCE.includes(option), option);
+	}
+
+	for (const [id, defaultValue, min, max, step] of [
+		["ca-zoom", 0.5, 0.25, 1.5, 0.01],
+		["ca-focus-x", 0.5, 0, 1, 0.01],
+		["ca-focus-y", 0.5, 0, 1, 0.01],
+		["ca-radius", 60, 0, 180, 0.5],
+		["ca-angle", 90, 0, 360, 1],
+		["ca-edge-amount", 100, 0, 200, 1],
+		["ca-edges", 1, 0, 2, 0.01],
+		["ca-falloff", 3, 0, 6, 0.1],
+		["ca-swirl", 0, -10, 10, 0.1],
+		["ca-dispersion", 0.5, 0, 1, 0.01],
+		["ca-speed", 1, 0.1, 5, 0.01],
+	]) {
+		const controlSource = CHROMATIC_ABERRATION_DEMO_SOURCE.slice(
+			CHROMATIC_ABERRATION_DEMO_SOURCE.indexOf(`id="${id}"`),
+		);
+		assert.ok(controlSource.startsWith(`id="${id}"`), id);
+		assert.match(controlSource, new RegExp(`defaultValue=\\{${defaultValue}\\}[\\s\\S]*?min=\\{${min}\\}[\\s\\S]*?max=\\{${max}\\}[\\s\\S]*?step=\\{${step.toString().replace(".", "\\.")}\\}`), id);
+	}
+
+	assert.match(CHROMATIC_ABERRATION_DEMO_SOURCE, /id="ca-symmetry"[\s\S]*?\{ value: "point", label: "Point" \}[\s\S]*?\{ value: "mirror", label: "Mirror" \}/);
+	assert.match(CHROMATIC_ABERRATION_DEMO_SOURCE, /id="ca-animate"[\s\S]*?\{ value: "off", label: "Off" \}[\s\S]*?\{ value: "pulse", label: "Pulse" \}/);
+	assert.match(CHROMATIC_ABERRATION_DEMO_SOURCE, /id="ca-animation-amount"[\s\S]*?defaultValue=\{0\.5\}[\s\S]*?min=\{0\}[\s\S]*?max=\{1\}[\s\S]*?step=\{0\.01\}/);
+	assert.match(CHROMATIC_ABERRATION_DEMO_SOURCE, /\{mode === "radial" \? \(/);
+	assert.match(CHROMATIC_ABERRATION_DEMO_SOURCE, /\{mode === "uniform" \? \(/);
+	assert.match(CHROMATIC_ABERRATION_DEMO_SOURCE, /\{mode === "edges" \? \(/);
+	assert.match(CHROMATIC_ABERRATION_DEMO_SOURCE, /\{animate === "pulse" \? \(/);
 });
 
 test("Pattern Tile uses a non-shader route and source module", () => {
