@@ -568,6 +568,12 @@ async function loadContextBarPullRequestHarness() {
 						(checks ?? []).map((check) => React.createElement("li", { key: check.id, "data-ci-check": check.id }, check.name, " ", check.details)),
 					);
 				}
+			`,
+		],
+		[
+			"@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-detail-data",
+			`
+				export function arePullRequestChecksInProgress() { return false; }
 				export function pullRequestChecksTitleState(checks) {
 					return {
 						inProgress: true,
@@ -575,12 +581,6 @@ async function loadContextBarPullRequestHarness() {
 						total: checks.length,
 					};
 				}
-			`,
-		],
-		[
-			"@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-detail-data",
-			`
-				export function arePullRequestChecksInProgress() { return false; }
 			`,
 		],
 		[

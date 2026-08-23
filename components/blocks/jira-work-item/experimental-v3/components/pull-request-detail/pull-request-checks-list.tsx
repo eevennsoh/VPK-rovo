@@ -8,10 +8,7 @@ import StatusErrorIcon from "@atlaskit/icon/core/status-error";
 import TaskToDoIcon from "@atlaskit/icon/core/task-to-do";
 
 import { parseRunningCheckElapsedSeconds } from "@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-check-elapsed";
-import {
-	arePullRequestChecksInProgress,
-	type PullRequestCheck,
-} from "@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-detail-data";
+import type { PullRequestCheck } from "@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-detail-data";
 import { Button } from "@/components/ui/button";
 import { ElapsedTime } from "@/components/ui/elapsed-time";
 import { IconTile } from "@/components/ui/icon-tile";
@@ -309,13 +306,4 @@ export function PullRequestChecksList({
 			)}
 		</ul>
 	);
-}
-
-export function pullRequestChecksTitleState(checks: readonly PullRequestCheck[]) {
-	const passed = checks.filter((check) => check.status === "passed").length;
-	return {
-		inProgress: arePullRequestChecksInProgress(checks),
-		passed,
-		total: checks.length,
-	};
 }

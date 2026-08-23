@@ -1,0 +1,50 @@
+import type { PullRequestCheck } from "@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-detail-data";
+
+export type ContextBarPullRequestCiStatus = "pending" | "running" | "failed" | "passed";
+export type ContextBarPullRequestMergeState = "disabled" | "blocked" | "queued" | "merged";
+export type ContextBarPullRequestCiCheck = PullRequestCheck;
+
+export interface ContextBarPullRequestCi {
+	status: ContextBarPullRequestCiStatus;
+	checks: readonly ContextBarPullRequestCiCheck[];
+	summary: string;
+	autoFixEnabled: boolean;
+	autoMergeEnabled: boolean;
+	onAutoFixChange: (enabled: boolean) => void;
+	onAutoMergeChange: (enabled: boolean) => void;
+	onFixCheck?: (checks: readonly ContextBarPullRequestCiCheck[]) => void;
+}
+
+const CI_STATUS_PRESENTATION = {
+	pending: { dotClassName: "bg-border-bold", label: "CI pending" },
+	running: { dotClassName: "bg-bg-warning", label: "CI running" },
+	failed: { dotClassName: "bg-bg-danger", label: "CI failed" },
+	passed: { dotClassName: "bg-bg-success", label: "CI passed" },
+} satisfies Record<ContextBarPullRequestCiStatus, { dotClassName: string; label: string }>;
+
+const MERGE_STATE_PRESENTATION = {
+	disabled: {
+		className: "bg-bg-neutral text-text-subtle",
+		label: "Auto-merge off",
+	},
+	blocked: {
+		className: "bg-bg-danger-subtler text-text-danger-bolder",
+		label: "Auto-merge blocked",
+	},
+	queued: {
+		className: "bg-bg-warning-subtler text-text-warning-bolder",
+		label: "Auto-merge queued",
+	},
+	merged: {
+		className: "bg-bg-success-subtler text-text-success-bolder",
+		label: "Merged",
+	},
+} satisfies Record<ContextBarPullRequestMergeState, { className: string; label: string }>;
+
+export function contextBarPullRequestCiPresentation(status: ContextBarPullRequestCiStatus) {
+	return CI_STATUS_PRESENTATION[status];
+}
+
+export function contextBarPullRequestMergePresentation(state: ContextBarPullRequestMergeState) {
+	return MERGE_STATE_PRESENTATION[state];
+}

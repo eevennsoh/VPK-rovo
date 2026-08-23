@@ -5,9 +5,8 @@ import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import {
 	ChecksSectionTitle,
 	PullRequestChecksList,
-	pullRequestChecksTitleState,
 } from "@/components/blocks/jira-work-item/experimental-v3/components/pull-request-detail/pull-request-checks-list";
-import type { PullRequestCheck } from "@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-detail-data";
+import { pullRequestChecksTitleState } from "@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-detail-data";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -21,54 +20,19 @@ import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
-export type ContextBarPullRequestCiStatus = "pending" | "running" | "failed" | "passed";
-export type ContextBarPullRequestMergeState = "disabled" | "blocked" | "queued" | "merged";
-export type ContextBarPullRequestCiCheck = PullRequestCheck;
+import {
+	contextBarPullRequestCiPresentation,
+	contextBarPullRequestMergePresentation,
+	type ContextBarPullRequestCi,
+	type ContextBarPullRequestMergeState,
+} from "./context-bar-pull-request-ci-model";
 
-export interface ContextBarPullRequestCi {
-	status: ContextBarPullRequestCiStatus;
-	checks: readonly ContextBarPullRequestCiCheck[];
-	summary: string;
-	autoFixEnabled: boolean;
-	autoMergeEnabled: boolean;
-	onAutoFixChange: (enabled: boolean) => void;
-	onAutoMergeChange: (enabled: boolean) => void;
-	onFixCheck?: (checks: readonly ContextBarPullRequestCiCheck[]) => void;
-}
-
-const CI_STATUS_PRESENTATION = {
-	pending: { dotClassName: "bg-border-bold", label: "CI pending" },
-	running: { dotClassName: "bg-bg-warning", label: "CI running" },
-	failed: { dotClassName: "bg-bg-danger", label: "CI failed" },
-	passed: { dotClassName: "bg-bg-success", label: "CI passed" },
-} satisfies Record<ContextBarPullRequestCiStatus, { dotClassName: string; label: string }>;
-
-const MERGE_STATE_PRESENTATION = {
-	disabled: {
-		className: "bg-bg-neutral text-text-subtle",
-		label: "Auto-merge off",
-	},
-	blocked: {
-		className: "bg-bg-danger-subtler text-text-danger-bolder",
-		label: "Auto-merge blocked",
-	},
-	queued: {
-		className: "bg-bg-warning-subtler text-text-warning-bolder",
-		label: "Auto-merge queued",
-	},
-	merged: {
-		className: "bg-bg-success-subtler text-text-success-bolder",
-		label: "Merged",
-	},
-} satisfies Record<ContextBarPullRequestMergeState, { className: string; label: string }>;
-
-export function contextBarPullRequestCiPresentation(status: ContextBarPullRequestCiStatus) {
-	return CI_STATUS_PRESENTATION[status];
-}
-
-export function contextBarPullRequestMergePresentation(state: ContextBarPullRequestMergeState) {
-	return MERGE_STATE_PRESENTATION[state];
-}
+export type {
+	ContextBarPullRequestCi,
+	ContextBarPullRequestCiCheck,
+	ContextBarPullRequestCiStatus,
+	ContextBarPullRequestMergeState,
+} from "./context-bar-pull-request-ci-model";
 
 function suppressMenuDismissal(event: { preventDefault: () => void }) {
 	event.preventDefault();
@@ -113,7 +77,7 @@ export function ContextBarPullRequestCiMenu({
 }: Readonly<{
 	ci: ContextBarPullRequestCi;
 }>) {
-	const presentation = CI_STATUS_PRESENTATION[ci.status];
+	const presentation = contextBarPullRequestCiPresentation(ci.status);
 	const isRunning = ci.status === "running";
 	const checksTitle = pullRequestChecksTitleState(ci.checks);
 
@@ -184,7 +148,7 @@ export function ContextBarPullRequestAutomation({
 }>) {
 	const mergePresentation = mergeState === undefined
 		? null
-		: MERGE_STATE_PRESENTATION[mergeState];
+		: contextBarPullRequestMergePresentation(mergeState);
 	const showApprovals = !compact && approvalsCurrent !== undefined && approvalsRequired !== undefined;
 
 	return (

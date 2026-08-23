@@ -15,13 +15,13 @@ import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
+import { ContextBarPullRequestAutomation } from "./context-bar-pull-request-ci";
 import {
-	ContextBarPullRequestAutomation,
 	contextBarPullRequestCiPresentation,
 	contextBarPullRequestMergePresentation,
 	type ContextBarPullRequestCi,
 	type ContextBarPullRequestMergeState,
-} from "./context-bar-pull-request-ci";
+} from "./context-bar-pull-request-ci-model";
 
 export type ContextBarPullRequestStatus = PullRequestStatus;
 export type {
@@ -29,7 +29,7 @@ export type {
 	ContextBarPullRequestCiCheck,
 	ContextBarPullRequestCiStatus,
 	ContextBarPullRequestMergeState,
-} from "./context-bar-pull-request-ci";
+} from "./context-bar-pull-request-ci-model";
 
 export interface ContextBarPullRequestProps extends Omit<ComponentProps<"div">, "children"> {
 	number: number;

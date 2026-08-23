@@ -51,6 +51,10 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 		join(__dirname, "../components/pull-request-detail/pull-request-checks-list.tsx"),
 		"utf8",
 	);
+	const detailDataSource = readFileSync(
+		join(__dirname, "./pull-request-detail-data.ts"),
+		"utf8",
+	);
 	const railAndChecksSource = `${railSource}\n${checksListSource}`;
 	const contextRailSource = readFileSync(
 		join(__dirname, "../components/pull-request-detail/pull-request-context-rail.tsx"),
@@ -745,9 +749,10 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	assert.match(railSource, /data-jira-work-item-pull-request-commits/u);
 	assert.doesNotMatch(railSource, /data-jira-work-item-pull-request-commits[\s\S]*divide-y|divide-y divide-border/u);
 	assert.match(
-		railAndChecksSource,
-		/arePullRequestChecksInProgress/u,
+		detailDataSource,
+		/export function arePullRequestChecksInProgress|export function pullRequestChecksTitleState/u,
 	);
+	assert.doesNotMatch(checksListSource, /arePullRequestChecksInProgress|pullRequestChecksTitleState/u);
 	assert.match(checksListSource, /from "@\/components\/ui\/spinner"/u);
 	assert.match(railSource, /from "\.\/pull-request-checks-list"/u);
 	// Title is "CI checks" + muted passed/total (Attachments count chrome). No
