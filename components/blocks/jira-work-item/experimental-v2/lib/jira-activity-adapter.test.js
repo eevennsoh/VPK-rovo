@@ -670,6 +670,36 @@ test("maps the human session invoker onto AgentListItem.invokedBy", async () => 
 	});
 });
 
+test("maps a human comment progress checklist into the same Agent progress contract", async () => {
+	const adapter = await loadAdapter();
+	const progressChecklist = [
+		{ id: "story-claude-progress-1", label: "Implement SHOP-4821 in the local terminal", completed: true },
+		{ id: "story-claude-progress-2", label: "Run focused local checks", completed: true },
+		{ id: "story-claude-progress-3", label: "Open PR #1847 and request Priya and Jordan", completed: false },
+	];
+	const outputs = [{
+		id: "story-changed-files",
+		title: "Changed 12 files",
+		source: "Agent output",
+		owner: "feature/shop-4821-guest-checkout",
+		iconName: "ai-chat",
+	}];
+	const [entry] = adapter.mapActivityEventsToJiraEntries([
+		{
+			id: "story-channel-claude-pr-handoff",
+			kind: "human",
+			author: { name: "Claude Code", brandName: "claude" },
+			content: "Focused local checks pass, so the work is ready for a pull request.",
+			progressChecklist,
+			outputs,
+			createdAtMs: Date.UTC(2026, 4, 12, 13, 20),
+		},
+	]);
+
+	assert.deepEqual(entry.progressChecklist, progressChecklist);
+	assert.deepEqual(entry.outputs, outputs);
+});
+
 test("maps an agent progress checklist, outputs, and image proof into its Jira comment", async () => {
 	const adapter = await loadAdapter();
 	const progressChecklist = [

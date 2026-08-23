@@ -48,6 +48,7 @@ const WORK_ITEM_LIFECYCLE_EVENTS: readonly StaticTimelineEvent[] = [
 		id: "story-assigned",
 		kind: "event",
 		actor: PRIYA_NARAYANAN_ACTOR,
+		icon: "assigned",
 		segments: [
 			{ type: "text", text: "assigned the work item to " },
 			{ type: "user-mention", text: VENN_ACTOR.name, avatarSrc: VENN_ACTOR.avatarSrc },
@@ -62,7 +63,7 @@ const WORK_ITEM_LIFECYCLE_EVENTS: readonly StaticTimelineEvent[] = [
 		showActor: false,
 		showTimestamp: false,
 		segments: [
-			{ type: "agent-mention", text: CLAUDE_CODE_ACTOR.name, brandName: "claude" },
+			{ type: "agent-mention", text: "Claude", brandName: "claude" },
 			{ type: "text", text: " Started working" },
 		],
 		createdAtMs: STORY_EPOCH_MS - 1_560_000,
@@ -107,7 +108,7 @@ function createPullRequestEvent({
 		id: "story-pr-review",
 		kind: "event",
 		actor: GITHUB_ACTOR,
-		icon: "linked",
+		icon: "pull-request",
 		segments: [],
 		pullRequest: {
 			number: 1847,
@@ -132,22 +133,11 @@ function createPullRequestEvent({
 	};
 }
 
-const IMPLEMENTATION_EVENT: Extract<StaticTimelineEvent, { kind: "changed-files" }> = {
-	id: "story-changed-files",
-	kind: "changed-files",
-	actor: CLAUDE_CODE_ACTOR,
-	summary: "Changed 12 files",
-	description: "Implemented guest checkout with server-owned pricing, inventory, payment validation, and idempotent order creation.",
-	branch: "feature/shop-4821-guest-checkout",
-	tag: { text: "Implementation complete", color: "green" },
-	createdAtMs: STORY_EPOCH_MS - 1_320_000,
-};
-
 const FAILED_CI_EVENT: StaticTimelineEvent = {
 	id: "story-ci-failed",
 	kind: "event",
 	actor: GITHUB_ACTOR,
-	icon: "linked",
+	icon: "pull-request",
 	segments: [
 		{ type: "text", text: "blocked PR #1847 after " },
 		{ type: "code", text: "lint-and-typecheck" },
@@ -172,7 +162,7 @@ const CI_PASSED_EVENT: StaticTimelineEvent = {
 	id: "story-ci-passed",
 	kind: "event",
 	actor: GITHUB_ACTOR,
-	icon: "linked",
+	icon: "pull-request",
 	segments: [
 		{ type: "text", text: "completed the rerun for PR #1847 with " },
 		{ type: "lozenge", text: "3 checks passed", variant: "success" },
@@ -208,6 +198,31 @@ function checksForCiStatus(status: JiraGoldenJourneysV3CiStatus): StoryPullReque
 	}
 }
 
+/** Same check rows the work-item PR rail shows for this chapter/state. */
+export function resolveJiraGoldenJourneysV3PullRequestChecks(
+	chapter: JiraGoldenJourneysV3StoryChapter,
+	options: JiraGoldenJourneysV3StoryStateOptions,
+): StoryPullRequestChecks {
+	switch (chapter) {
+		case "terminal":
+		case "build":
+			return STARTED_PR_CHECKS;
+		case "review":
+			return checksForReviewStep(options.reviewStep ?? "queued");
+		case "fix":
+			if (options.fixStep === "repairing") {
+				return RERUNNING_PR_CHECKS;
+			}
+			if (options.fixStep === "complete") {
+				return PASSED_PR_CHECKS;
+			}
+			return FAILED_PR_CHECKS;
+		case "approve":
+		case "release":
+			return checksForCiStatus(options.ciStatus ?? "running");
+	}
+}
+
 function createReviewEvents(step: JiraGoldenJourneysV3ReviewStep): readonly StaticTimelineEvent[] {
 	const prEvent = createPullRequestEvent({
 		checks: checksForReviewStep(step),
@@ -216,8 +231,8 @@ function createReviewEvents(step: JiraGoldenJourneysV3ReviewStep): readonly Stat
 		updatedAtMs: STORY_EPOCH_MS - (step === "failed" ? 1_060_000 : 1_180_000),
 	});
 	return withWorkItemLifecycle(step === "failed"
-		? [IMPLEMENTATION_EVENT, prEvent, FAILED_CI_EVENT]
-		: [IMPLEMENTATION_EVENT, prEvent]);
+		? [prEvent, FAILED_CI_EVENT]
+		: [prEvent]);
 }
 
 function createFixEvents(step: JiraGoldenJourneysV3FixStep): readonly StaticTimelineEvent[] {
@@ -233,7 +248,6 @@ function createFixEvents(step: JiraGoldenJourneysV3FixStep): readonly StaticTime
 		updatedAtMs: STORY_EPOCH_MS - (step === "complete" ? 820_000 : 900_000),
 	});
 	return withWorkItemLifecycle([
-		IMPLEMENTATION_EVENT,
 		prEvent,
 		FAILED_CI_EVENT,
 		...(step === "failed" ? [] : [REPAIR_EVENT]),
@@ -280,7 +294,7 @@ const MERGED_EVENT: StaticTimelineEvent = {
 	id: "story-pr-merged",
 	kind: "event",
 	actor: GITHUB_ACTOR,
-	icon: "linked",
+	icon: "pull-request",
 	segments: [
 		{ type: "text", text: "automatically merged PR #1847 after CI and 2 required approvals passed" },
 		{ type: "lozenge", text: "Merged", variant: "success" },
@@ -296,9 +310,6 @@ function createApproveEvents(
 	const approved = approvalStep === 2 && ciStatus === "passed";
 	const merged = options.pullRequestMerged === true;
 	return withWorkItemLifecycle([
-		merged
-			? { ...IMPLEMENTATION_EVENT, tag: { text: "PR #1847 merged", color: "purple" } }
-			: IMPLEMENTATION_EVENT,
 		createPullRequestEvent({
 			checks: checksForCiStatus(ciStatus),
 			mergeState: merged ? "merged" : approved ? "ready" : "blocked",
@@ -324,13 +335,6 @@ function createReleaseEvents(options: JiraGoldenJourneysV3StoryStateOptions): re
 	const merged = options.pullRequestMerged === true;
 	const ready = approvalStep === 2 && ciStatus === "passed";
 	return withWorkItemLifecycle([
-		{
-			...IMPLEMENTATION_EVENT,
-			tag: {
-				text: merged ? "PR #1847 merged" : "PR #1847 open",
-				color: merged ? "purple" as const : "green" as const,
-			},
-		},
 		createPullRequestEvent({
 			checks: checksForCiStatus(ciStatus),
 			mergeState: merged ? "merged" : ready ? "ready" : "blocked",
@@ -359,7 +363,6 @@ export function storyEventsForChapter(
 			return [];
 		case "build":
 			return withWorkItemLifecycle([
-				IMPLEMENTATION_EVENT,
 				createPullRequestEvent({
 					checks: STARTED_PR_CHECKS,
 					mergeState: "blocked",

@@ -8,6 +8,7 @@ import ProjectStatusIcon from "@atlaskit/icon/core/project-status";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import StopwatchIcon from "@atlaskit/icon/core/stopwatch";
 import TagIcon from "@atlaskit/icon/core/tag";
+import PersonAssigneeIcon from "@atlaskit/icon-lab/core/person-assignee";
 import TeamworkGraphIcon from "@atlaskit/icon-lab/core/teamwork-graph";
 
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
@@ -21,6 +22,7 @@ import type { JiraActivityActor, JiraActivityEventIcon } from "./jira-activity-t
 // All ADS core icons share one signature, so `typeof AddIcon` types the whole map.
 const EVENT_ICON: Record<JiraActivityEventIcon, typeof AddIcon> = {
 	created: AddIcon,
+	assigned: PersonAssigneeIcon,
 	label: TagIcon,
 	sla: StopwatchIcon,
 	status: ProjectStatusIcon,

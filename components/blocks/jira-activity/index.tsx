@@ -320,7 +320,11 @@ export function JiraActivity({
 								) : (
 									<JiraActivityNode
 										actor={entry.actor}
-										icon={entry.kind === "event" ? entry.icon : undefined}
+										icon={
+											entry.kind === "event"
+												? (entry.pullRequest ? "pull-request" : entry.icon)
+												: undefined
+										}
 										isLast={isLast}
 										size={isCardEntry ? "card" : "event"}
 									/>

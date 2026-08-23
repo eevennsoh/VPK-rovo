@@ -329,6 +329,20 @@ export const UI_CUSTOM_MEDIA_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"context-bar-demo-create-pull-request": dynamic(
+		() =>
+			import("../../demos/ui-custom/context-bar-demo").then((mod) => ({
+				default: mod.ContextBarDemoCreatePullRequest,
+			})),
+		{ ssr: false },
+	),
+	"context-bar-demo-pull-request": dynamic(
+		() =>
+			import("../../demos/ui-custom/context-bar-demo").then((mod) => ({
+				default: mod.ContextBarDemoPullRequest,
+			})),
+		{ ssr: false },
+	),
 	"environment-variables-demo-with-copy": dynamic(
 		() =>
 			import("../../demos/ui-custom/environment-variables-demo").then((mod) => ({

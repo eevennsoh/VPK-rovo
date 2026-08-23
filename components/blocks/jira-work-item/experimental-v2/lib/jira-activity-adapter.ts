@@ -260,6 +260,8 @@ function mapHumanEvent(
 		timestamp: formatSessionTimestamp(event.createdAtMs, referenceTimeMs),
 		body: toActivityMentionSegments(event.content, mentionTargets),
 		...(event.reactions ? { reactions: event.reactions } : {}),
+		...(event.progressChecklist ? { progressChecklist: event.progressChecklist } : {}),
+		...(event.outputs ? { outputs: event.outputs } : {}),
 		...(event.threadReplies
 			? {
 				replies: event.threadReplies.map((reply) => ({

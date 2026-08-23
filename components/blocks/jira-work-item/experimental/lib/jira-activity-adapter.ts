@@ -70,6 +70,8 @@ function mapHumanEvent(event: Readonly<HumanActivityEvent>): JiraActivityComment
 		actor: humanActor(event),
 		timestamp: formatSessionTimestamp(event.createdAtMs),
 		body: [{ type: "text", text: event.content }],
+		...(event.progressChecklist ? { progressChecklist: event.progressChecklist } : {}),
+		...(event.outputs ? { outputs: event.outputs } : {}),
 		...(event.threadReplies
 			? {
 				replies: event.threadReplies.map((reply) => ({

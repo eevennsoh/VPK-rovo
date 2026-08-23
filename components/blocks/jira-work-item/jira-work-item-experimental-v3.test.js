@@ -280,7 +280,7 @@ test("the v3 dialog owns one fixed chrome row", () => {
 	assert.match(navigationSource, /\[active, narrowScrollContainer, wideScrollContainer\]/u);
 	assert.match(
 		dialogSource,
-		/<motion\.div[\s\S]*data-jira-work-item-header-band[\s\S]*layout=\{headerLayout\}[\s\S]*<ContextTitleBar controlRow=\{controlRow\} \/>/u,
+		/<motion\.div[\s\S]*animate=\{headerHeight == null[\s\S]*data-jira-work-item-header-band[\s\S]*<ContextTitleBar controlRow=\{controlRow\} \/>/u,
 	);
 	assert.match(
 		readBlockFile("experimental-v3/experimental-v3-jira-work-item.tsx"),
@@ -304,6 +304,50 @@ test("the v3 dialog owns one fixed chrome row", () => {
 
 	assert.match(spyHookSource, /\}, \[sectionIds, stickyHeaderSelector\]\);/u);
 	assert.doesNotMatch(spyHookSource, /sectionIdsRef/u);
+});
+
+test("v3 header collapse control stays static and does not toggle header mode", () => {
+	const navigationSource = readBlockFile("experimental-v3/context-section-navigation.tsx");
+	const headerActionsSource = readBlockFile(
+		"experimental-v3/components/experimental-breadcrumb-actions.tsx",
+	);
+
+	assert.match(headerActionsSource, /<Button aria-label="Collapse" size="icon" variant="ghost">/u);
+	assert.match(headerActionsSource, /<ShrinkDiagonalIcon label="" \/>/u);
+	assert.doesNotMatch(
+		headerActionsSource,
+		/<Button aria-label="Collapse"[\s\S]*onClick=/u,
+	);
+	assert.doesNotMatch(
+		headerActionsSource,
+		/<Button aria-label="Collapse"[\s\S]*aria-expanded=/u,
+	);
+	assert.doesNotMatch(headerActionsSource, /Expand header|Collapse header/u);
+	assert.doesNotMatch(headerActionsSource, /toggleHeaderVariant/u);
+	assert.doesNotMatch(navigationSource, /toggleHeaderVariant|headerVariantOverride/u);
+});
+
+test("compact header motion drives the surrounding grid from measured height", () => {
+	const dialogSource = readBlockFile("experimental-v3/components/experimental-work-item-dialog.tsx");
+
+	assert.match(dialogSource, /const \[headerHeight, setHeaderHeight\] = useState<number \| null>\(null\)/u);
+	assert.match(dialogSource, /const headerContentRef = useRef<HTMLDivElement \| null>\(null\)/u);
+	assert.match(dialogSource, /const headerVariant = useWorkItemHeaderVariant\(\)/u);
+	assert.match(
+		dialogSource,
+		/const syncHeaderHeight = \(\) => \{[\s\S]*headerContent\.offsetHeight[\s\S]*setHeaderHeight/u,
+	);
+	assert.match(dialogSource, /const resizeObserver = new ResizeObserver\(syncHeaderHeight\)/u);
+	assert.match(dialogSource, /\}, \[headerVariant\]\);/u);
+	assert.match(
+		dialogSource,
+		/<motion\.div[\s\S]*animate=\{headerHeight == null \? undefined : \{ height: headerHeight \}\}[\s\S]*data-jira-work-item-header-band/u,
+	);
+	assert.match(dialogSource, /ref=\{headerContentRef\}[\s\S]*data-jira-work-item-header-content/u);
+	assert.match(
+		dialogSource,
+		/transition=\{\{ height: shouldReduceMotion \? \{ duration: 0 \} : HEADER_LAYOUT_TRANSITION \}\}/u,
+	);
 });
 
 test("PR select shares the section navigation list without becoming a section", () => {

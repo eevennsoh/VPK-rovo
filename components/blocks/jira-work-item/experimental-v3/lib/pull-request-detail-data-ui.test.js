@@ -47,6 +47,11 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 		join(__dirname, "../components/pull-request-detail/pull-request-details-rail.tsx"),
 		"utf8",
 	);
+	const checksListSource = readFileSync(
+		join(__dirname, "../components/pull-request-detail/pull-request-checks-list.tsx"),
+		"utf8",
+	);
+	const railAndChecksSource = `${railSource}\n${checksListSource}`;
 	const contextRailSource = readFileSync(
 		join(__dirname, "../components/pull-request-detail/pull-request-context-rail.tsx"),
 		"utf8",
@@ -669,7 +674,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 		/data-jira-work-item-pull-request-commits[\s\S]*group -mx-2 flex w-\[calc\(100%\+1rem\)\] min-w-0 flex-col rounded-md px-2 py-2 transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered motion-reduce:transition-none[\s\S]*commitUrl \? "cursor-pointer"/u,
 	);
 	const commitsValueSource = railSource.match(
-		/function CommitsValue[\s\S]*?(?=function ChecksSectionTitle)/u,
+		/function CommitsValue[\s\S]*?(?=export function PullRequestDetailsRail)/u,
 	)?.[0] ?? "";
 	assert.ok(commitsValueSource.length > 0);
 	assert.match(
@@ -740,86 +745,112 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	assert.match(railSource, /data-jira-work-item-pull-request-commits/u);
 	assert.doesNotMatch(railSource, /data-jira-work-item-pull-request-commits[\s\S]*divide-y|divide-y divide-border/u);
 	assert.match(
-		railSource,
+		railAndChecksSource,
 		/arePullRequestChecksInProgress/u,
 	);
-	assert.match(railSource, /from "@\/components\/ui\/spinner"/u);
-	// The CI title reserves the compact action height before Fix all appears,
-	// so running -> failed does not grow the disclosure header by 4px.
+	assert.match(checksListSource, /from "@\/components\/ui\/spinner"/u);
+	assert.match(railSource, /from "\.\/pull-request-checks-list"/u);
+	// Title is "CI checks" + muted passed/total (Attachments count chrome). No
+	// header spinner, progress circle, or "2/3 passed 1 failed" prose.
+	assert.match(
+		checksListSource,
+		/function ChecksSectionTitle[\s\S]*<span className="flex min-h-6 items-center gap-1\.5">[\s\S]*CI checks[\s\S]*total > 0 \? \(\s*<span className="shrink-0 text-xs font-normal text-text-subtlest">[\s\S]*\{passed\}\/\{total\}/u,
+	);
+	assert.doesNotMatch(
+		checksListSource,
+		/function ChecksSectionTitle[\s\S]*<Spinner size="xs"/u,
+	);
+	assert.doesNotMatch(checksListSource, /from "@\/components\/ui-custom\/progress-circle"/u);
+	assert.doesNotMatch(railAndChecksSource, /trackClassName=\{failed > 0 \? "text-icon-danger" : undefined\}/u);
+	assert.doesNotMatch(railAndChecksSource, /checksToProgressSegments|segmented/u);
+	assert.doesNotMatch(railSource, /arePullRequestChecksInProgress/u);
 	assert.match(
 		railSource,
-		/function ChecksSectionTitle[\s\S]*<span className="flex min-h-6 items-center gap-1\.5">[\s\S]*CI checks/u,
+		/ChecksSectionTitle[\s\S]*passed=\{passedChecks\}[\s\S]*total=\{data\.checks\.length\}/u,
+	);
+	assert.doesNotMatch(railSource, /inProgress=\{checksInProgress\}|showStatus=/u);
+	assert.doesNotMatch(railSource, /checksCollapsedCount|2\/3 passed|1 failed/u);
+	assert.match(railSource, /title: "Commits",\s*count: data\.commits\.length,/u);
+	assert.match(checksListSource, /data-jira-work-item-pull-request-checks/u);
+	assert.match(railSource, /<PullRequestChecksList checks=\{data\.checks\} onFixCheck=\{onFixCheck\} \/>/u);
+	assert.match(
+		checksListSource,
+		/function CheckStatusIcon[\s\S]*<IconTile[\s\S]*status\.renderIcon\(\)[\s\S]*size="small"[\s\S]*variant="transparent"/u,
 	);
 	assert.match(
-		railSource,
-		/function ChecksSectionTitle[\s\S]*inProgress \? \([\s\S]*<Spinner size="xs" \/>[\s\S]*\) : \([\s\S]*<ProgressCircle[\s\S]*aria-hidden[\s\S]*animated=\{false\}[\s\S]*size="xs"[\s\S]*value=\{total > 0 \? Math\.round\(\(passed \/ total\) \* 100\) : 0\}[\s\S]*variant="outline"/u,
-	);
-	assert.doesNotMatch(railSource, /trackClassName=\{failed > 0 \? "text-icon-danger" : undefined\}/u);
-	assert.doesNotMatch(railSource, /checksToProgressSegments|segmented/u);
-	assert.match(
-		railSource,
-		/const checksInProgress = arePullRequestChecksInProgress\(data\.checks\);/u,
+		checksListSource,
+		/function CheckRow[\s\S]*rich-text-command-menu-item[\s\S]*rich-text-command-menu-avatar[\s\S]*<CheckStatusIcon[\s\S]*rich-text-command-menu-copy[\s\S]*menu-row-title[\s\S]*check\.name[\s\S]*menu-row-byline[\s\S]*<CheckDetails check=\{check\} \/>/u,
 	);
 	assert.match(
-		railSource,
-		/ChecksSectionTitle[\s\S]*inProgress=\{checksInProgress\}[\s\S]*passed=\{passedChecks\}[\s\S]*total=\{data\.checks\.length\}/u,
-	);
-	// Labeled collapsed count; ArtifactPane CollapsedSectionCount owns the · sibling + gap-1.5.
-	// Failures are appended when present (e.g. "2/3 passed 1 failed").
-	assert.match(
-		railSource,
-		/const checksCollapsedCount =\s*failedChecks > 0\s*\?\s*`\$\{passedChecks\}\/\$\{data\.checks\.length\} passed \$\{failedChecks\} failed`\s*:\s*`\$\{passedChecks\}\/\$\{data\.checks\.length\} passed`;/u,
-	);
-	assert.match(railSource, /count: checksCollapsedCount,/u);
-	assert.match(railSource, /data-jira-work-item-pull-request-checks/u);
-	assert.match(
-		railSource,
-		/function ChecksValue[\s\S]*group\/check-row[\s\S]*<IconTile[\s\S]*status\.renderIcon\(\)[\s\S]*size="small"[\s\S]*variant="transparent"[\s\S]*check\.name[\s\S]*<CheckDetails check=\{check\} \/>/u,
+		checksListSource,
+		/function CheckMenuRow[\s\S]*<CheckRow check=\{check\} onFixCheck=\{onFixCheck\} \/>/u,
 	);
 	assert.match(
-		railSource,
+		checksListSource,
+		/function CheckRailRow[\s\S]*<CheckRow bleed check=\{check\} onFixCheck=\{onFixCheck\} \/>/u,
+	);
+	assert.match(
+		checksListSource,
 		/function RunningCheckDetails[\s\S]*ElapsedTime prefix="Running for " startedAtMs=\{startedAtMs\}/u,
 	);
 	assert.match(
-		railSource,
+		checksListSource,
 		/function CheckDetails[\s\S]*check\.status !== "running"[\s\S]*parseRunningCheckElapsedSeconds\(check\.details\)[\s\S]*initialSeconds === null[\s\S]*<RunningCheckDetails initialSeconds=\{initialSeconds\} \/>/u,
 	);
-	assert.match(railSource, /from "@\/components\/ui\/elapsed-time"/u);
+	assert.match(checksListSource, /from "@\/components\/ui\/elapsed-time"/u);
 	assert.match(
-		railSource,
+		checksListSource,
 		/from "@\/components\/blocks\/jira-work-item\/experimental-v3\/lib\/pull-request-check-elapsed"/u,
 	);
 	assert.match(
-		railSource,
-		/function ChecksValue[\s\S]*group\/check-row[\s\S]*-mx-2[\s\S]*w-\[calc\(100%\+1rem\)\][\s\S]*cursor-pointer[\s\S]*gap-3[\s\S]*rounded-md[\s\S]*px-2 py-2[\s\S]*hover:bg-bg-neutral-subtle-hovered[\s\S]*motion-reduce:transition-none/u,
+		checksListSource,
+		/function CheckRow[\s\S]*rich-text-command-menu-item hover:bg-bg-neutral-subtle-hovered![\s\S]*menu-row-title[\s\S]*menu-row-byline/u,
 	);
 	assert.match(
-		railSource,
-		/function ChecksValue[\s\S]*role=\{checkUrl \? "link" : undefined\}[\s\S]*tabIndex=\{checkUrl \? 0 : undefined\}[\s\S]*openScmUrl\(checkUrl\)[\s\S]*handleScmLinkKeyDown\(event, checkUrl\)/u,
+		checksListSource,
+		/bleed \? "-mx-2 w-\[calc\(100%\+1rem\)\]!" : undefined/u,
+	);
+	const checkRowSource = checksListSource.slice(
+		checksListSource.indexOf("function CheckRow"),
+		checksListSource.indexOf("function CheckMenuRow"),
+	);
+	const checkMenuRowSource = checksListSource.slice(
+		checksListSource.indexOf("function CheckMenuRow"),
+		checksListSource.indexOf("function CheckRailRow"),
+	);
+	assert.doesNotMatch(checkRowSource, /px-2 py-2|gap-3|rounded-md|truncate text-sm text-text/u);
+	assert.doesNotMatch(checkMenuRowSource, /-mx-2/u);
+	assert.match(
+		checksListSource,
+		/import "@\/components\/ui-custom\/rich-text-editor\/rich-text-editor.css"/u,
 	);
 	assert.match(
-		railSource,
-		/function ChecksValue[\s\S]*truncate text-sm text-text[\s\S]*truncate text-xs text-text-subtlest/u,
+		checksListSource,
+		/function checkRowLinkProps[\s\S]*role: checkUrl \? \("link" as const\) : undefined[\s\S]*tabIndex: checkUrl \? 0 : undefined[\s\S]*openScmUrl\(checkUrl\)[\s\S]*handleScmLinkKeyDown\(event, checkUrl\)/u,
+	);
+	assert.match(
+		checksListSource,
+		/function CheckRow[\s\S]*menu-row-title[\s\S]*menu-row-byline[\s\S]*<CheckDetails check=\{check\} \/>/u,
 	);
 	// A running check spins in place of a settled status glyph (subtle spinner color, not information blue).
 	assert.match(
-		railSource,
+		checksListSource,
 		/running: \{[\s\S]*iconClassName: "text-icon-subtle"[\s\S]*renderIcon: \(\) => <Spinner label="" size="sm" \/>/u,
 	);
 	assert.doesNotMatch(
-		railSource,
+		checksListSource,
 		/running: \{[\s\S]*text-icon-information/u,
 	);
 	assert.match(
-		railSource,
+		checksListSource,
 		/queued: \{[\s\S]*iconClassName: "text-icon-disabled"[\s\S]*TaskToDoIcon/u,
 	);
-	assert.doesNotMatch(railSource, /CheckCircleUncheckedIcon/u);
+	assert.doesNotMatch(railAndChecksSource, /CheckCircleUncheckedIcon/u);
 	// Failed rows: Fix is the only nested control (stopPropagation); decorative
 	// external icon expands on row hover. The check `<li>` is the url hit target.
-	const checksValueSource = railSource.slice(
-		railSource.indexOf("function FailedCheckActions"),
-		railSource.indexOf("export function PullRequestDetailsRail"),
+	const checksValueSource = checksListSource.slice(
+		checksListSource.indexOf("function FailedCheckActions"),
+		checksListSource.indexOf("export function PullRequestChecksList"),
 	);
 	assert.match(checksValueSource, /function FailedCheckActions/u);
 	assert.match(
@@ -831,8 +862,8 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 		/grid-cols-\[0fr\][\s\S]*group-hover\/check-row:grid-cols-\[1fr\][\s\S]*group-focus-within\/check-row:grid-cols-\[1fr\]/u,
 	);
 	assert.match(
-		checksValueSource,
-		/isFailed \? \(\s*<FailedCheckActions[\s\S]*onFix=\{\(failedCheck\) => onFixCheck\?\.\(\[failedCheck\]\)\}/u,
+		checksListSource,
+		/function CheckRowTrailing[\s\S]*check\.status === "failed"[\s\S]*<FailedCheckActions[\s\S]*onFix=\{\(failedCheck\) => onFixCheck\?\.\(\[failedCheck\]\)\}/u,
 	);
 	// Fix all mirrors per-row Fix: visible for any failed check, even when the
 	// host has not wired onFixCheck yet (e.g. Review chapter before Fix).
@@ -863,12 +894,12 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	// Passing/running/queued rows still use the non-interactive hover IconTile.
 	assert.match(
-		checksValueSource,
+		checksListSource,
 		/<IconTile[\s\S]*shrink-0 text-icon-subtle[\s\S]*opacity-0[\s\S]*group-hover\/check-row:opacity-100[\s\S]*LinkExternalIcon[\s\S]*iconSize="small"[\s\S]*size="small"[\s\S]*variant="transparent"/u,
 	);
 	assert.doesNotMatch(
-		railSource,
-		/function ChecksValue[\s\S]*Lozenge|function ChecksValue[\s\S]*status\.tone/u,
+		checksListSource,
+		/function PullRequestChecksList[\s\S]*Lozenge|function PullRequestChecksList[\s\S]*status\.tone/u,
 	);
 	assert.doesNotMatch(railSource, /from "@\/components\/ui\/lozenge"/u);
 	assert.match(railSource, /<ArtifactPane[\s\S]*showSeparators=\{false\}/u);

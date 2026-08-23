@@ -269,6 +269,8 @@ function mapHumanEvent(
 		timestamp: formatSessionTimestamp(event.createdAtMs, referenceTimeMs),
 		body: toActivityMentionSegments(event.content, mentionTargets),
 		...(event.reactions ? { reactions: event.reactions } : {}),
+		...(event.progressChecklist ? { progressChecklist: event.progressChecklist } : {}),
+		...(event.outputs ? { outputs: event.outputs } : {}),
 		...(event.threadReplies
 			? {
 				replies: event.threadReplies.map((reply) => ({
@@ -408,7 +410,11 @@ function mapStaticEvent(
 		kind: "event",
 		actor: staticActor(event.actor),
 		timestamp: formatSessionTimestamp(event.createdAtMs, referenceTimeMs),
-		...(event.icon ? { icon: event.icon } : {}),
+		...(event.pullRequest
+			? { icon: "pull-request" }
+			: event.icon
+				? { icon: event.icon }
+				: {}),
 		...(event.showActor === undefined ? {} : { showActor: event.showActor }),
 		...(event.showTimestamp === undefined ? {} : { showTimestamp: event.showTimestamp }),
 		// Status transitions share the dropdown's statusVariant tone map.

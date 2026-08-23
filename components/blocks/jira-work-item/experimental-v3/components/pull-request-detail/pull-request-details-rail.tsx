@@ -1,21 +1,15 @@
 "use client";
 
-import { useEffect, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useState, type KeyboardEvent, type MouseEvent } from "react";
 
 import CalendarIcon from "@atlaskit/icon/core/calendar";
-import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
 import CopyIcon from "@atlaskit/icon/core/copy";
-import LinkExternalIcon from "@atlaskit/icon/core/link-external";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
-import StatusErrorIcon from "@atlaskit/icon/core/status-error";
 import TagIcon from "@atlaskit/icon/core/tag";
-import TaskToDoIcon from "@atlaskit/icon/core/task-to-do";
 
 import { ArtifactPane, ArtifactPanePropertyRow } from "@/components/blocks/artifact-pane";
 import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental-v3/context-metadata-rail";
-import { parseRunningCheckElapsedSeconds } from "@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-check-elapsed";
 import {
-	arePullRequestChecksInProgress,
 	type PullRequestCheck,
 	type PullRequestCommit,
 	type PullRequestDetailData,
@@ -30,13 +24,11 @@ import {
 	type AvatarStatus,
 } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { ElapsedTime } from "@/components/ui/elapsed-time";
 import { Icon } from "@/components/ui/icon";
-import { IconTile } from "@/components/ui/icon-tile";
-import { Spinner } from "@/components/ui/spinner";
 import { Tag, TagGroup } from "@/components/ui/tag";
-import { ProgressCircle } from "@/components/ui-custom/progress-circle";
 import { cn } from "@/lib/utils";
+
+import { ChecksSectionTitle, PullRequestChecksList } from "./pull-request-checks-list";
 
 function copyCommitSha(event: MouseEvent<HTMLButtonElement>, sha: string) {
 	event.preventDefault();
@@ -64,33 +56,6 @@ const REVIEWER_STATUS = {
 	commented: { label: "Commented", tone: "information" },
 	pending: { label: "Pending", tone: "neutral" },
 } as const;
-
-/** A running check spins like the section title; settled ones use a status icon. */
-const CHECK_STATUS: Record<
-	PullRequestCheck["status"],
-	{ label: string; iconClassName: string; renderIcon: () => ReactNode }
-> = {
-	passed: {
-		label: "Passed",
-		iconClassName: "text-icon-success",
-		renderIcon: () => <CheckCircleIcon color="currentColor" label="" size="small" />,
-	},
-	failed: {
-		label: "Failed",
-		iconClassName: "text-icon-danger",
-		renderIcon: () => <StatusErrorIcon color="currentColor" label="" size="small" />,
-	},
-	running: {
-		label: "Running",
-		iconClassName: "text-icon-subtle",
-		renderIcon: () => <Spinner label="" size="sm" />,
-	},
-	queued: {
-		label: "Queued",
-		iconClassName: "text-icon-disabled",
-		renderIcon: () => <TaskToDoIcon color="currentColor" label="" size="small" />,
-	},
-};
 
 function reviewerAvatarStatus(status: PullRequestReviewer["status"]): AvatarStatus | null {
 	switch (status) {
@@ -235,186 +200,6 @@ function CommitsValue({ commits }: Readonly<{ commits: readonly PullRequestCommi
 	);
 }
 
-function ChecksSectionTitle({
-	inProgress,
-	passed,
-	total,
-}: Readonly<{ inProgress: boolean; passed: number; total: number }>) {
-	return (
-		<span className="flex min-h-6 items-center gap-1.5">
-			CI checks
-			{inProgress ? (
-				<span aria-hidden>
-					<Spinner size="xs" />
-				</span>
-			) : (
-				<ProgressCircle
-					aria-hidden
-					animated={false}
-					size="xs"
-					value={total > 0 ? Math.round((passed / total) * 100) : 0}
-					variant="outline"
-				/>
-			)}
-		</span>
-	);
-}
-
-/** Live "Running for Ns" subtitle; starts from a parsed fixture offset, then ticks while mounted. */
-function RunningCheckDetails({ initialSeconds }: Readonly<{ initialSeconds: number }>) {
-	const [startedAtMs] = useState(() => Date.now() - initialSeconds * 1000);
-	return <ElapsedTime prefix="Running for " startedAtMs={startedAtMs} />;
-}
-
-function CheckDetails({ check }: Readonly<{ check: PullRequestCheck }>) {
-	if (check.status !== "running") {
-		return check.details;
-	}
-	const initialSeconds = parseRunningCheckElapsedSeconds(check.details);
-	if (initialSeconds === null) {
-		return check.details;
-	}
-	return <RunningCheckDetails initialSeconds={initialSeconds} />;
-}
-
-/**
- * Failed-check trailing actions: Fix is the only interactive control. A decorative
- * external-link icon expands on the far right via row hover (`group/check-row`).
- * The row itself opens `check.url` — the icon is not a separate hit target.
- */
-function FailedCheckActions({
-	check,
-	onFix,
-}: Readonly<{
-	check: PullRequestCheck;
-	onFix?: (check: PullRequestCheck) => void;
-}>) {
-	return (
-		<div
-			className="flex shrink-0 items-center"
-			data-jira-work-item-failed-check-actions
-		>
-			<Button
-				aria-label={`Fix ${check.name}`}
-				onClick={(event) => {
-					event.preventDefault();
-					event.stopPropagation();
-					onFix?.(check);
-				}}
-				size="compact"
-				type="button"
-				variant="outline"
-			>
-				Fix
-			</Button>
-			{/* Margin on the inner icon so a collapsed 0fr slot leaves no gap after Fix. */}
-			<div
-				aria-hidden
-				className={cn(
-					"grid shrink-0 grid-cols-[0fr] transition-[grid-template-columns] duration-normal ease-out-practical motion-reduce:transition-none",
-					"group-hover/check-row:grid-cols-[1fr]",
-					"group-focus-within/check-row:grid-cols-[1fr]",
-				)}
-			>
-				<div className="min-w-0 overflow-hidden">
-					<IconTile
-						aria-hidden
-						as="span"
-						className="ml-1 shrink-0 text-icon-subtle"
-						icon={<LinkExternalIcon color="currentColor" label="" size="small" />}
-						iconSize="small"
-						label=""
-						size="small"
-						variant="transparent"
-					/>
-				</div>
-			</div>
-		</div>
-	);
-}
-
-function ChecksValue({
-	checks,
-	onFixCheck,
-}: Readonly<{
-	checks: readonly PullRequestCheck[];
-	onFixCheck?: (checks: readonly PullRequestCheck[]) => void;
-}>) {
-	if (checks.length === 0) {
-		return <p className="text-xs text-text-subtle">No CI checks reported</p>;
-	}
-
-	return (
-		<ul className="flex flex-col" data-jira-work-item-pull-request-checks>
-			{checks.map((check) => {
-				const status = CHECK_STATUS[check.status];
-				const isFailed = check.status === "failed";
-				const checkUrl = check.url;
-				return (
-					<li
-						className="group/check-row -mx-2 flex w-[calc(100%+1rem)] min-w-0 cursor-pointer items-center gap-3 rounded-md px-2 py-2 transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered motion-reduce:transition-none"
-						key={check.id}
-						role={checkUrl ? "link" : undefined}
-						tabIndex={checkUrl ? 0 : undefined}
-						onClick={
-							checkUrl
-								? () => {
-										openScmUrl(checkUrl);
-									}
-								: undefined
-						}
-						onKeyDown={
-							checkUrl
-								? (event) => {
-										handleScmLinkKeyDown(event, checkUrl);
-									}
-								: undefined
-						}
-					>
-						<IconTile
-							aria-hidden
-							as="span"
-							className={status.iconClassName}
-							icon={status.renderIcon()}
-							label=""
-							size="small"
-							variant="transparent"
-						/>
-						<div className="min-w-0 flex-1">
-							<p className="truncate text-sm text-text">{check.name}</p>
-							<p className="truncate text-xs text-text-subtlest">
-								<CheckDetails check={check} />
-							</p>
-						</div>
-						{isFailed ? (
-							<FailedCheckActions
-								check={check}
-								onFix={(failedCheck) => onFixCheck?.([failedCheck])}
-							/>
-						) : (
-							<IconTile
-								aria-hidden
-								as="span"
-								className={cn(
-									"shrink-0 text-icon-subtle",
-									"opacity-0 transition-opacity duration-normal ease-out-practical",
-									"group-hover/check-row:opacity-100",
-									"motion-reduce:transition-none",
-								)}
-								icon={<LinkExternalIcon color="currentColor" label="" size="small" />}
-								iconSize="small"
-								label=""
-								size="small"
-								variant="transparent"
-							/>
-						)}
-					</li>
-				);
-			})}
-		</ul>
-	);
-}
-
 /** Provider-neutral pull-request metadata rendered in the shared artifact rail. */
 export function PullRequestDetailsRail({
 	data,
@@ -428,18 +213,13 @@ export function PullRequestDetailsRail({
 		pullRequestSectionExpandRequest,
 	} = useMetadataRail();
 	// Review lands on PR Details with CI checks open — the chapter's primary
-	// beat — instead of a collapsed · summary that needs a header click.
+	// beat — instead of a collapsed count summary that needs a header click.
 	const [openSectionIds, setOpenSectionIds] = useState<ReadonlySet<string>>(
 		() => new Set([PULL_REQUEST_CHECKS_SECTION_ID]),
 	);
 	const passedChecks = data.checks.filter((check) => check.status === "passed").length;
 	const failedCheckItems = data.checks.filter((check) => check.status === "failed");
 	const failedChecks = failedCheckItems.length;
-	const checksInProgress = arePullRequestChecksInProgress(data.checks);
-	const checksCollapsedCount =
-		failedChecks > 0
-			? `${passedChecks}/${data.checks.length} passed ${failedChecks} failed`
-			: `${passedChecks}/${data.checks.length} passed`;
 	const author: PullRequestPerson = {
 		id: "pull-request-author",
 		name: data.authorName,
@@ -509,12 +289,10 @@ export function PullRequestDetailsRail({
 					defaultOpen: true,
 					title: (
 						<ChecksSectionTitle
-							inProgress={checksInProgress}
 							passed={passedChecks}
 							total={data.checks.length}
 						/>
 					),
-					count: checksCollapsedCount,
 					// Match per-row Fix visibility: show whenever any check failed.
 					// Do not gate on onFixCheck — the host may omit the story callback
 					// outside the Fix chapter while failed rows still render Fix.
@@ -531,7 +309,7 @@ export function PullRequestDetailsRail({
 							},
 						}
 						: {}),
-					content: <ChecksValue checks={data.checks} onFixCheck={onFixCheck} />,
+					content: <PullRequestChecksList checks={data.checks} onFixCheck={onFixCheck} />,
 				},
 				{
 					id: "pull-request-commits",
