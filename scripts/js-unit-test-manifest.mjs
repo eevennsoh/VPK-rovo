@@ -115,6 +115,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/projects/jira-agents/jira-agents.test.js",
 		"components/projects/jira-for-you/jira-for-you.test.js",
 		"components/blocks/jira-activity/jira-activity-alignment.test.js",
+		"components/blocks/jira-activity/jira-activity-event-row.test.js",
 		"components/blocks/jira-activity/jira-activity.test.js",
 		"components/blocks/jira-insights/components/jira-insights-editorial-pane.test.js",
 		"components/blocks/jira-insights/components/jira-insights-timeline-rail.test.js",

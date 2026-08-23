@@ -678,7 +678,7 @@ test("Jira Activity exposes controlled entries and replaceable composer contract
 	assert.match(INDEX_SOURCE, /customEntry !== undefined \? customEntry : defaultEntry/u);
 	// Timeline rows shrink inside narrow rails so artifact titles can truncate.
 	assert.match(INDEX_SOURCE, /className=\{cn\("group\/activity flex w-full min-w-0 flex-col gap-4", className\)\}/u);
-	assert.match(INDEX_SOURCE, /className="flex min-w-0 gap-2"/u);
+	assert.match(INDEX_SOURCE, /className="group\/activity-event flex min-w-0 gap-2"/u);
 });
 
 test("activity comments expose an outlined Add to chat control left of expand/collapse", () => {
@@ -846,33 +846,6 @@ test("Jira Activity supports externally controlled collapse state", () => {
 	// Timeline and composer are gated behind the collapsed flag.
 	assert.match(INDEX_SOURCE, /\{collapsed \? null : \(\s*<ol/u);
 	assert.match(INDEX_SOURCE, /count=\{visibleEntries\.length\}/u);
-});
-
-test("one-line activity events use 12px type without shrinking expanded agent cards", () => {
-	assert.match(EVENT_SOURCE, /className="flex min-h-6 min-w-0 items-center py-0\.5 text-xs leading-5 text-text-subtlest"/u);
-	assert.match(EVENT_SOURCE, /className="flex min-h-6 min-w-0 items-center gap-2 py-0\.5 text-xs leading-5"/u);
-	assert.doesNotMatch(EVENT_SOURCE, /className="flex h-6 /u);
-	assert.match(COMMENT_SOURCE, /className="text-sm leading-5 text-text"/u);
-});
-
-test("one-line activity timestamps keep 6px spacing around the middot", () => {
-	assert.match(
-		EVENT_SOURCE,
-		/<span className="ml-1\.5 inline-flex items-center gap-1\.5 text-text-subtlest">[\s\S]*<span aria-hidden>·<\/span>[\s\S]*<span>\{entry\.timestamp\}<\/span>/u,
-	);
-	assert.match(
-		EVENT_SOURCE,
-		/<span aria-hidden>·<\/span>[\s\S]*AutomationIcon[\s\S]*<span>\{entry\.timestamp\}<\/span>/u,
-	);
-	assert.doesNotMatch(EVENT_SOURCE, /> · \{entry\.timestamp\}</u);
-});
-
-test("event labels share the timeline node's 24px vertical alignment track", () => {
-	assert.match(NODE_SOURCE, /isCard \? "h-10" : "h-6"/u);
-	assert.match(EVENT_SOURCE, /<p className="flex min-h-6 min-w-0 items-center py-0\.5[^>]*>\s*<span className="min-w-0">/u);
-	assert.doesNotMatch(EVENT_SOURCE, /className="flex h-6 /u);
-	assert.match(INDEX_SOURCE, /hideHeader \? "pt-1" : null/u);
-	assert.doesNotMatch(INDEX_SOURCE, /entry\.kind === "event" && "pt-0\.5"/u);
 });
 
 test("the linked event uses the Jira Queue pull-request row", () => {

@@ -163,7 +163,8 @@ test("Build preserves the reported-to-pull-request activity lifecycle", async ()
 	});
 	assert.equal(lifecycle[2].actor.name, "Claude Code");
 	assert.equal(lifecycle[2].showActor, false);
-	assert.equal(lifecycle[2].showTimestamp, false);
+	assert.equal(lifecycle[2].showTimestamp, undefined);
+	assert.equal(lifecycle[2].createdAtMs, lifecycle[3].createdAtMs - 120_000);
 	assert.deepEqual(lifecycle[2].segments, [
 		{ type: "agent-mention", text: "Claude", brandName: "claude" },
 		{ type: "text", text: " Started working" },

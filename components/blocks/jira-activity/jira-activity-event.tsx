@@ -109,20 +109,23 @@ export function JiraActivityEvent({
 					segments={visibleEventSegments(entry.segments)}
 				/>
 				{entry.showTimestamp === false ? null : (
-					<span className="ml-1.5 inline-flex items-center gap-1.5 text-text-subtlest">
-						<span aria-hidden>·</span>
-						{isAutomated ? (
-							<>
+					<>
+						{isAutomated ? <span className="sr-only">Automation</span> : null}
+						<span className="sr-only">{entry.timestamp}</span>
+						<span
+							aria-hidden
+							className="ml-1.5 hidden shrink-0 items-center gap-1.5 text-text-subtlest group-hover/activity-event:inline-flex group-focus-within/activity-event:inline-flex group-has-[:focus-visible]/activity-event:inline-flex"
+						>
+							<span>·</span>
+							{isAutomated ? (
 								<Icon
-									aria-hidden
 									className="size-3 shrink-0 text-text-subtlest [&_svg]:size-3!"
 									render={<AutomationIcon color="currentColor" label="" size="small" />}
 								/>
-								<span className="sr-only">Automation</span>
-							</>
-						) : null}
-						<span>{entry.timestamp}</span>
-					</span>
+							) : null}
+							<span>{entry.timestamp}</span>
+						</span>
+					</>
 				)}
 			</span>
 		</p>
