@@ -29,6 +29,28 @@ test("Tabs compact size scales trigger padding and un-sized icons", () => {
 	assert.match(SOURCE, /group-data-\[size=compact\]\/tabs-list:\[&_svg:not\(\[class\*='size-'\]\)\]:size-3/u);
 });
 
+test("Tabs exposes the experimental Jira navigation variant", () => {
+	assert.match(SOURCE, /const tabsExperimentalListClass = "gap-4 bg-transparent"/u);
+	assert.match(SOURCE, /const tabsExperimentalTriggerClass = cn\([\s\S]*px-0 text-xs font-medium leading-4/u);
+	assert.match(SOURCE, /border-x-\[6px\] border-x-transparent px-0/u);
+	assert.doesNotMatch(SOURCE, /"hover:rounded-md hover:bg-bg-neutral-subtle-hovered/u);
+	assert.match(SOURCE, /hover:rounded-md[\s\S]*active:rounded-md/u);
+	assert.match(SOURCE, /group-data-\[header-variant=compact\]\/work-item-navigation:hover:rounded-b-none/u);
+	assert.match(SOURCE, /experimental: tabsExperimentalListClass/u);
+	assert.match(SOURCE, /group-data-\[variant=experimental\]\/tabs-list:px-0!/u);
+	assert.match(SOURCE, /group-data-\[variant=experimental\]\/tabs-list:border-x-\[6px\]!/u);
+	assert.match(SOURCE, /data-active:text-text[\s\S]*aria-\[current=location\]:text-text/u);
+	assert.match(SOURCE, /after:bg-bg-neutral-bold/u);
+	assert.match(SOURCE, /group-data-\[variant=experimental\]\/tabs-list:data-active:text-text/u);
+	assert.match(SOURCE, /group-data-\[variant=experimental\]\/tabs-list:after:bg-bg-neutral-bold/u);
+	assert.doesNotMatch(
+		SOURCE,
+		/group-data-\[variant=experimental\]\/tabs-list:hover:rounded-md group-data-\[variant=experimental\]\/tabs-list:hover:bg-bg-neutral-subtle-hovered/u,
+	);
+	assert.match(SOURCE, /group-data-\[variant=experimental\]\/tabs-list:data-active:after:opacity-100/u);
+	assert.match(SOURCE, /group-data-\[variant=line\]\/tabs-list:data-active:text-text-selected/u);
+});
+
 test("Tabs docs register the compact variant demo", () => {
 	assert.match(DEMO_SOURCE, /export function TabsDemoCompact\(\)[\s\S]*<TabsList size="compact">/u);
 	assert.match(REGISTRY_SOURCE, /"tabs-demo-compact"[\s\S]*default: mod\.TabsDemoCompact/u);

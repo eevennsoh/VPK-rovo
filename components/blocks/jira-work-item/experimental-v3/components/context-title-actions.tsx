@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import CopyIcon from "@atlaskit/icon/core/copy";
 
-import { useJiraWorkItemMeta } from "@/components/blocks/jira-work-item/experimental-v3/context-jira-work-item";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
@@ -15,6 +14,9 @@ import {
 	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { RovoColorIcon, type LogoSize } from "@/components/ui/logo";
@@ -74,12 +76,12 @@ const CODING_AGENTS: readonly CodingAgent[] = [
  * in the modal header.
  */
 export function ContextTitleActions({
-	primaryAgentId,
-}: Readonly<{ primaryAgentId?: CodingAgentId }>) {
-	const { initialPreset } = useJiraWorkItemMeta();
-	const [selectedAgentId, setSelectedAgentId] = useState<CodingAgentId | null>(
-		primaryAgentId ?? (initialPreset === "blank" ? null : "claude-code"),
-	);
+	onSelectedAgentIdChange,
+	selectedAgentId,
+}: Readonly<{
+	onSelectedAgentIdChange: (agentId: CodingAgentId) => void;
+	selectedAgentId: CodingAgentId | null;
+}>) {
 	const primaryCodingAgent = selectedAgentId
 		? CODING_AGENTS.find((agent) => agent.id === selectedAgentId)
 		: undefined;
@@ -131,7 +133,7 @@ export function ContextTitleActions({
 								<DropdownMenuItem
 									elemBefore={<span aria-hidden className="inline-flex items-center justify-center leading-none">{agent.logo}</span>}
 									key={agent.id}
-									onSelect={() => setSelectedAgentId(agent.id)}
+									onSelect={() => onSelectedAgentIdChange(agent.id)}
 								>
 									{agent.label}
 								</DropdownMenuItem>
@@ -141,7 +143,6 @@ export function ContextTitleActions({
 					<div className="sticky bottom-0 bg-surface-overlay px-1 pb-1">
 						<DropdownMenuSeparator className="mt-0" />
 						<DropdownMenuItem
-							className="gap-0.5"
 							elemBefore={<CopyIcon label="" size="small" />}
 						>
 							Copy prompt
@@ -150,5 +151,44 @@ export function ContextTitleActions({
 				</DropdownMenuContent>
 			</DropdownMenu>
 		</ButtonGroup>
+	);
+}
+
+export function ContextTitleActionsSubmenu({
+	onSelectedAgentIdChange,
+}: Readonly<{
+	onSelectedAgentIdChange: (agentId: CodingAgentId) => void;
+}>) {
+	return (
+		<DropdownMenuSub>
+			<DropdownMenuSubTrigger className="gap-3">
+				<span aria-hidden className="inline-flex size-6 shrink-0 items-center justify-center text-icon-subtle [&_svg]:size-4">
+					<CodeIcon aria-hidden size="small" />
+				</span>
+				<span>Open in</span>
+			</DropdownMenuSubTrigger>
+			<DropdownMenuSubContent
+				className="max-h-[var(--available-height)]"
+				positionerClassName="z-[503]"
+			>
+				<DropdownMenuGroup>
+					{CODING_AGENTS.map((agent) => (
+						<DropdownMenuItem
+							elemBefore={<span aria-hidden className="inline-flex items-center justify-center leading-none">{agent.logo}</span>}
+							key={agent.id}
+							onSelect={() => onSelectedAgentIdChange(agent.id)}
+						>
+							{agent.label}
+						</DropdownMenuItem>
+					))}
+				</DropdownMenuGroup>
+				<DropdownMenuSeparator />
+				<DropdownMenuItem
+					elemBefore={<CopyIcon label="" size="small" />}
+				>
+					Copy prompt
+				</DropdownMenuItem>
+			</DropdownMenuSubContent>
+		</DropdownMenuSub>
 	);
 }

@@ -33,6 +33,7 @@ function readProjectFile(relativePath) {
 test("Artifact Pane owns independently collapsible sections", () => {
 	assert.match(BLOCK_SOURCE, /export function ArtifactPane\(/u);
 	assert.match(BLOCK_SOURCE, /sections: readonly ArtifactPaneSectionItem\[\];/u);
+	assert.match(BLOCK_SOURCE, /showCountSeparators\?: boolean;/u);
 	assert.match(BLOCK_SOURCE, /showSeparators\?: boolean;/u);
 	assert.match(BLOCK_SOURCE, /borderless \? "overflow-visible bg-transparent" : "overflow-hidden border border-border"/u);
 	assert.match(
@@ -44,19 +45,24 @@ test("Artifact Pane owns independently collapsible sections", () => {
 		/style=\{\{ backgroundColor: token\("elevation\.surface"\), \.\.\.style \}\}/u,
 	);
 	assert.match(BLOCK_SOURCE, /<Collapsible onOpenChange=\{onOpenChange\} open=\{open\}>/u);
-	assert.match(BLOCK_SOURCE, /function CollapsedSectionCount\(\{ count \}: Readonly<\{ count: number \| string \}>\)/u);
+	assert.match(BLOCK_SOURCE, /function CollapsedSectionCount\(\{[\s\S]*showSeparator,[\s\S]*count: number \| string; showSeparator: boolean/u);
 	// All counts (numbers, ratios, labeled like "2/3 passed") use separate · + value siblings.
 	assert.doesNotMatch(BLOCK_SOURCE, /typeof count === "number" \|\| \/\^\\d\+\(\?:\\\/\\d\+\)\?\$\/u\.test\(count\)/u);
-	assert.match(BLOCK_SOURCE, /<span aria-hidden className=\{COLLAPSED_COUNT_CLASS_NAME\}>[\s\S]*·[\s\S]*<\/span>/u);
+	assert.match(BLOCK_SOURCE, /showSeparator \? \([\s\S]*<span aria-hidden className=\{COLLAPSED_COUNT_CLASS_NAME\}>[\s\S]*·[\s\S]*<\/span>[\s\S]*\) : null/u);
 	assert.match(BLOCK_SOURCE, /<span className=\{COLLAPSED_COUNT_CLASS_NAME\}>\{count\}<\/span>/u);
+	assert.match(BLOCK_SOURCE, /className="flex min-w-0 items-center gap-1\.5 text-xs font-medium leading-4 text-text-subtle/u);
+	assert.match(BLOCK_SOURCE, /data-slot="artifact-pane-section-title"/u);
+	assert.doesNotMatch(BLOCK_SOURCE, /font\.heading\.xxsmall/u);
 	assert.doesNotMatch(BLOCK_SOURCE, /return `· \$\{count\}`/u);
 	assert.doesNotMatch(BLOCK_SOURCE, /labeled counts[\s\S]*stay verbatim|render as provided/u);
 	// Collapsed count stays mounted in a 0fr→1fr slot so open↔closed doesn't reflow the title.
-	assert.match(BLOCK_SOURCE, /count !== undefined \? \([\s\S]*CollapsedSectionCount count=\{count\}/u);
+	assert.match(
+		BLOCK_SOURCE,
+		/count !== undefined \? \([\s\S]*<CollapsedSectionCount[\s\S]*count=\{count\}[\s\S]*showSeparator=\{showCountSeparator\}/u,
+	);
 	assert.match(BLOCK_SOURCE, /COLLAPSED_COUNT_SLOT_CLASSNAME =[\s\S]*grid min-w-0 transition-\[grid-template-columns,opacity\]/u);
 	assert.match(BLOCK_SOURCE, /open \? "grid-cols-\[0fr\] opacity-0" : "grid-cols-\[1fr\] opacity-100"/u);
 	assert.doesNotMatch(BLOCK_SOURCE, /!open && count !== undefined \? <CollapsedSectionCount count=\{count\} \/> : null/u);
-	assert.match(BLOCK_SOURCE, /className="flex min-w-0 items-center gap-1\.5 text-text-subtle/u);
 	assert.match(BLOCK_SOURCE, /openSectionIds\?: ReadonlySet<string>/u);
 	assert.match(BLOCK_SOURCE, /onOpenSectionIdsChange\?: \(openSectionIds: ReadonlySet<string>\) => void/u);
 	assert.match(BLOCK_SOURCE, /const isControlled = openSectionIdsProp !== undefined/u);
@@ -69,6 +75,8 @@ test("Artifact Pane owns independently collapsible sections", () => {
 		/const next = apply\(uncontrolledOpenSectionIds\);[\s\S]*setUncontrolledOpenSectionIds\(next\);[\s\S]*onOpenSectionIdsChange\?\.\(next\)/u,
 	);
 	assert.match(BLOCK_SOURCE, /new Set\(sections\.filter\(\(section\) => section\.defaultOpen\)/u);
+	assert.match(BLOCK_SOURCE, /showCountSeparators = true/u);
+	assert.match(BLOCK_SOURCE, /showCountSeparator=\{showCountSeparators\}/u);
 	assert.match(BLOCK_SOURCE, /showSeparators = true/u);
 	// Separators stay mounted and collapse via grid-rows so they don't snap with content height.
 	assert.match(BLOCK_SOURCE, /showSeparators && index > 0 \? \([\s\S]*SECTION_SEPARATOR_SLOT_CLASSNAME[\s\S]*open \|\| previousOpen \? "grid-rows-\[1fr\]" : "grid-rows-\[0fr\]"[\s\S]*className="px-3 py-1\.5"[\s\S]*<Separator \/>/u);

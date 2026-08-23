@@ -8,6 +8,7 @@ import {
 import { ContextDescriptionEditor } from "@/components/blocks/jira-work-item/experimental-v3/components/context-description-editor";
 import {
 	CONTEXT_TITLE_FONT_STYLE,
+	CONTEXT_TITLE_COMPACT_FONT_STYLE,
 	CONTEXT_TITLE_READ_VIEW_CLASS_NAME,
 } from "@/components/blocks/jira-work-item/experimental-v3/components/inline-edit-treatment";
 import { Input } from "@/components/ui/input";
@@ -20,7 +21,7 @@ import { cn } from "@/lib/utils";
  * type — no InlineEdit read-view button, confirm/cancel, or hover-to-reveal
  * chrome. Commits on every keystroke via `editContextText`.
  */
-export function ContextEditableTitle() {
+export function ContextEditableTitle({ compact = false }: Readonly<{ compact?: boolean }>) {
 	const { contextResources } = useJiraWorkItemState();
 	const actions = useJiraWorkItemActions();
 	return (
@@ -28,11 +29,12 @@ export function ContextEditableTitle() {
 			aria-label="Work item title"
 			className={cn(
 				CONTEXT_TITLE_READ_VIEW_CLASS_NAME,
-				"w-full min-w-0 rounded-none text-text focus-visible:ring-0",
+				"w-full min-w-0 rounded-none font-medium! text-text transition-[font-size,line-height] duration-medium ease-in-out motion-reduce:transition-none focus-visible:ring-0",
+				compact ? "min-h-8" : "min-h-[2.75rem]",
 			)}
 			data-jira-work-item-title
 			placeholder="Add a title"
-			style={CONTEXT_TITLE_FONT_STYLE}
+			style={compact ? CONTEXT_TITLE_COMPACT_FONT_STYLE : CONTEXT_TITLE_FONT_STYLE}
 			value={contextResources.title}
 			variant="none"
 			onChange={(event) => actions.editContextText("title", event.currentTarget.value)}

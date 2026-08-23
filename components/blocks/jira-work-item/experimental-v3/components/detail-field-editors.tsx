@@ -196,7 +196,15 @@ export function PriorityLabel({ value }: Readonly<{ value: PriorityValue }>) {
 }
 
 /** Status pill for the Details header bar (video's "To Do ▾"). */
-export function StatusPill({ value, onChange }: Readonly<{ value: string; onChange: (next: string) => void }>) {
+export function StatusPill({
+	compact = false,
+	value,
+	onChange,
+}: Readonly<{
+	compact?: boolean;
+	value: string;
+	onChange: (next: string) => void;
+}>) {
 	const { statusPhases } = useJiraWorkItemMeta();
 	const phases = statusPhases ?? STATUS_PHASES;
 
@@ -206,8 +214,11 @@ export function StatusPill({ value, onChange }: Readonly<{ value: string; onChan
 				render={
 					<LozengeDropdownTrigger
 						aria-label={`Change status. Current status: ${value}`}
-						className="data-popup-open:border-ring data-popup-open:ring-3 data-popup-open:ring-ring/50"
-						size="spacious"
+						className={cn(
+							"data-popup-open:border-ring data-popup-open:ring-3 data-popup-open:ring-ring/50",
+							compact ? "h-6" : undefined,
+						)}
+						size={compact ? "compact" : "spacious"}
 						variant={statusVariant(value, phases)}
 					/>
 				}

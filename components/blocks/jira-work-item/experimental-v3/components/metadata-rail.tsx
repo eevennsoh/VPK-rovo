@@ -343,6 +343,7 @@ export function MetadataRail({
 							// after both column chromes share the same pb-7. overflow-visible
 							// is the borderless ArtifactPane default (focus-ring clearance).
 							className="[&>div:first-child]:pt-0"
+							showCountSeparators={false}
 							showSeparators={false}
 							sections={[
 								{
