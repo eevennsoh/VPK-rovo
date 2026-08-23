@@ -396,7 +396,7 @@ export function ActivityPanel({
 			headingAction={(
 				<JiraActivityViewControl
 					filter={effectiveFilter}
-					filterMode="jira"
+					filterMode="jira-insights"
 					menuAlign="end"
 					onFilterChange={handleFilterChange}
 					onSortOrderChange={setSortOrder}

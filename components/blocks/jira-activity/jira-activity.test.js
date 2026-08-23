@@ -762,7 +762,7 @@ test("the header shows an activity count and a text-link sort control", () => {
 	);
 });
 
-test("the header offers Agents, Needs input, Comments, and Insights filters", () => {
+test("the header offers Insights only to insight-aware Jira consumers", () => {
 	const expectedAgentCards = JIRA_ACTIVITY_ENTRIES.filter(
 		(entry) =>
 			entry.actor.kind === "agent" &&
@@ -774,7 +774,11 @@ test("the header offers Agents, Needs input, Comments, and Insights filters", ()
 	);
 	assert.match(
 		HEADER_SOURCE,
-		/"agents-only",\s*"needs-input",\s*"comments-only",\s*"insights-only"/u,
+		/const JIRA_ACTIVITY_FILTER_VALUES = \[\s*"agents-only",\s*"needs-input",\s*"comments-only",\s*\]/u,
+	);
+	assert.match(
+		HEADER_SOURCE,
+		/const JIRA_ACTIVITY_INSIGHTS_FILTER_VALUES = \[\s*\.\.\.JIRA_ACTIVITY_FILTER_VALUES,\s*"insights-only",\s*\]/u,
 	);
 	assert.match(
 		HEADER_SOURCE,

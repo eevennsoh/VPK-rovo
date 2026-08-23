@@ -535,6 +535,7 @@ test("experimental v3 uses one chronological Activity feed for activity and insi
 	assert.match(activityPanelSource, /mergeJiraActivityEntriesWithInsights/u);
 	assert.match(activityPanelSource, /createdAtMs: createdAtByEntryId\.get\(entry\.id\)/u);
 	assert.match(activityPanelSource, /const effectiveFilter = insightsSelected \? "insights-only" : filter/u);
+	assert.match(activityPanelSource, /filterMode="jira-insights"/u);
 	assert.match(activityPanelSource, /activeEntryId=\{activeCheckpointId \?\? undefined\}/u);
 	assert.match(activityPanelSource, /renderEntry=\{renderActivityEntry\}/u);
 	assert.match(activityPanelSource, /<JiraInsightsCheckpoint/u);
