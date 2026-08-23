@@ -197,7 +197,7 @@ export const CONTEXT_BAR_DETAIL: ComponentDetail = {
 		{
 			name: "onCreate / onCreateDraft / onCreateManually",
 			type: "() => void / () => void / () => void",
-			description: "ContextBarCreatePullRequest only. Split-button actions: create a ready PR, create a draft, or create one manually. Selecting a menu item updates the primary action.",
+			description: "ContextBarCreatePullRequest only. Split-button actions: create a ready PR, create a draft, or create one manually. Selecting a menu item updates the primary action; omitting a callback disables its action.",
 		},
 	],
 	subComponents: [
