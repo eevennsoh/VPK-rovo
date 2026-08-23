@@ -178,6 +178,10 @@ export interface AgentSessionComment {
 	reactions?: readonly AgentSessionReaction[];
 	/** Authored colleague replies rendered beneath the channel comment. */
 	threadReplies?: readonly HumanActivityThreadReply[];
+	/** Published agent progress, rendered with the same Agent progress checklist as session cards. */
+	progressChecklist?: readonly AgentSessionProgressItem[];
+	/** Compact artifact rows (code/PR, docs) attached to the published comment. */
+	outputs?: readonly ArtifactListItem[];
 }
 
 export interface JiraWorkItemContextResources {
@@ -217,6 +221,10 @@ export interface HumanActivityEvent {
 	createdAtMs: number;
 	reactions?: readonly AgentSessionReaction[];
 	threadReplies?: readonly HumanActivityThreadReply[];
+	/** Published agent progress, rendered with the same Agent progress checklist as session cards. */
+	progressChecklist?: readonly AgentSessionProgressItem[];
+	/** Compact artifact rows (code/PR, docs) attached to the published comment. */
+	outputs?: readonly ArtifactListItem[];
 }
 
 export interface AgentActivityEvent {

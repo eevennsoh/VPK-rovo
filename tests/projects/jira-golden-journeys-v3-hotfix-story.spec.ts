@@ -176,9 +176,7 @@ async function openMetadataRail(page: Page): Promise<void> {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.setViewportSize({ width: 1920, height: 1080 });
 	await openBuild(page);
-	const agentChat = page.getByRole("region", { name: "Agent chat" });
-	await expect(agentChat).toBeVisible();
-	await agentChat.getByRole("button", { name: "Close" }).click();
+	await expect(page.getByRole("region", { name: "Agent chat" })).toHaveCount(0);
 	await expect(page.getByRole("button", { name: "Change assignee" })).toBeVisible();
 }
 
@@ -187,11 +185,11 @@ async function setAutomation(
 	settings: Readonly<{ autoFix: boolean; autoMerge: boolean }>,
 ): Promise<void> {
 	await page.locator("[data-ci-automation-trigger]").click();
-	const autoFix = page.getByRole("menuitemcheckbox", {
-		name: "Auto-fix CI & address comments",
+	const autoFix = page.getByRole("switch", {
+		name: /Auto-fix CI & address comments/u,
 	});
-	const autoMerge = page.getByRole("menuitemcheckbox", {
-		name: "Auto-merge when ready",
+	const autoMerge = page.getByRole("switch", {
+		name: /Auto-merge when ready/u,
 	});
 	if ((await autoFix.getAttribute("aria-checked")) !== String(settings.autoFix)) {
 		await autoFix.click();
@@ -319,6 +317,8 @@ test("Terminal tells the local Claude-to-PR story and waits for the presenter to
 	await expect(page.getByRole("region", {
 		name: "Add guest checkout to the storefront",
 	})).toBeVisible();
+	await expect(page.getByRole("region", { name: "Agent chat" })).toHaveCount(0);
+	await expect(page.getByRole("button", { name: "Change assignee" })).toBeVisible();
 });
 
 test("rules-gated delivery repairs CI, stages both approvals, and merges before Release", async ({
@@ -342,8 +342,12 @@ test("rules-gated delivery repairs CI, stages both approvals, and merges before 
 	const handoff = page.locator(
 		"[data-jira-activity-entry-id='story-channel-claude-pr-handoff']",
 	);
-	await expect(handoff).toContainText("PR #1847 is open for SHOP-4821");
-	await expect(handoff).toContainText("Priya Narayanan and Jordan Lee");
+	await expect(page.locator("[data-jira-activity-entry-id='story-changed-files']")).toHaveCount(0);
+	await expect(handoff).toContainText("Implemented guest checkout for SHOP-4821");
+	await expect(handoff).toContainText("Implement guest checkout without account creation");
+	await expect(handoff).toContainText("guest-checkout-final.png");
+	await expect(handoff).not.toContainText("Changed 12 files");
+	await expect(handoff).toContainText("Open PR #1847 and request Priya and Jordan");
 	await expect(page.getByRole("link", {
 		name: "#1847: Implement guest checkout without account creation",
 	})).toBeVisible();
@@ -476,8 +480,8 @@ test("the PR bar is keyboard operable and contained at a narrow viewport", async
 	const trigger = page.locator("[data-ci-automation-trigger]");
 	await trigger.focus();
 	await page.keyboard.press("Enter");
-	const autoFix = page.getByRole("menuitemcheckbox", {
-		name: "Auto-fix CI & address comments",
+	const autoFix = page.getByRole("switch", {
+		name: /Auto-fix CI & address comments/u,
 	});
 	await expect(autoFix).toBeVisible();
 	await autoFix.focus();

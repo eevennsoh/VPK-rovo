@@ -60,13 +60,26 @@ test("every Jira chapter continues one stable Claude session", async () => {
 	}
 });
 
-test("non-terminal chapters select Claude for the embedded chat while Terminal stays closed", async () => {
+test("Build and Terminal keep the embedded chat closed while later chapters select Claude", async () => {
 	const story = await loadStoryModule();
+	const build = story.createJiraGoldenJourneysV3StoryState("build");
 	assert.equal(story.createJiraGoldenJourneysV3StoryState("terminal").activeSessionId, null);
-	for (const chapter of ["build", "review", "fix", "approve", "release"]) {
+	assert.equal(build.activeSessionId, null);
+	assert.equal(build.sessions[0].id, "story-session-claude-code");
+	for (const chapter of ["review", "fix", "approve", "release"]) {
 		const state = story.createJiraGoldenJourneysV3StoryState(chapter);
 		assert.equal(state.activeSessionId, state.sessions[0].id);
 	}
+});
+
+test("Build PR activity uses the pull-request glyph, not BranchIcon", async () => {
+	const story = await loadStoryModule();
+	const build = story.createJiraGoldenJourneysV3StoryState("build");
+	const prEvent = build.staticEvents.find((event) => event.pullRequest);
+	assert.ok(prEvent, "Build should include the Open #1847 snapshot");
+	assert.equal(prEvent.icon, "pull-request");
+	assert.equal(prEvent.pullRequest.status, "Open");
+	assert.equal(prEvent.pullRequest.number, 1847);
 });
 
 test("Build starts with linked PR #1847, running CI, and Claude's work summary", async () => {
@@ -78,6 +91,37 @@ test("Build starts with linked PR #1847, running CI, and Claude's work summary",
 	assert.equal(pullRequest.branch, "feature/shop-4821-guest-checkout");
 	assert.deepEqual(pullRequest.checks.map((check) => check.status), ["running", "queued", "queued"]);
 	assert.match(build.comments[0].content, /Implemented guest checkout[\s\S]*local checks pass[\s\S]*ready for a pull request/u);
+	assert.deepEqual(
+		build.comments[0].progressChecklist.map((item) => [item.label, item.completed]),
+		[
+			["Implement SHOP-4821 in the local terminal", true],
+			["Run focused local checks", true],
+			["Open PR #1847 and request Priya and Jordan", false],
+		],
+	);
+	assert.deepEqual(
+		build.comments[0].progressChecklist.map((item) => item.id),
+		build.sessions[0].progressChecklist.slice(0, 3).map((item) => item.id),
+	);
+	assert.deepEqual(
+		build.comments[0].outputs.map((item) => [item.id, item.title, item.source, item.logoName, item.logoSrc]),
+		[
+			["guest-checkout-pr", "Implement guest checkout without account creation", "Pull request", "github", undefined],
+			[
+				"guest-checkout-final.png",
+				"guest-checkout-final.png",
+				"Image",
+				undefined,
+				"/illustration/jira-golden-journeys-v3/guest-checkout-final.png",
+			],
+		],
+	);
+	assert.deepEqual(build.comments[0].outputs[0].pullRequest, {
+		number: 1847,
+		status: "Open",
+		additions: 86,
+		deletions: 21,
+	});
 });
 
 test("Build preserves the reported-to-pull-request activity lifecycle", async () => {
@@ -111,6 +155,7 @@ test("Build preserves the reported-to-pull-request activity lifecycle", async ()
 	);
 	assert.equal(lifecycle[0].actor.name, "Maya Chen");
 	assert.equal(lifecycle[1].actor.name, "Priya Narayanan");
+	assert.equal(lifecycle[1].icon, "assigned");
 	assert.deepEqual(lifecycle[1].segments.at(-1), {
 		type: "user-mention",
 		text: "Venn",
@@ -120,7 +165,7 @@ test("Build preserves the reported-to-pull-request activity lifecycle", async ()
 	assert.equal(lifecycle[2].showActor, false);
 	assert.equal(lifecycle[2].showTimestamp, false);
 	assert.deepEqual(lifecycle[2].segments, [
-		{ type: "agent-mention", text: "Claude Code", brandName: "claude" },
+		{ type: "agent-mention", text: "Claude", brandName: "claude" },
 		{ type: "text", text: " Started working" },
 	]);
 	assert.deepEqual(
@@ -129,11 +174,17 @@ test("Build preserves the reported-to-pull-request activity lifecycle", async ()
 	);
 	assert.equal(lifecycle[4].authorBrandName, "claude");
 	assert.match(lifecycle[4].content, /Implemented guest checkout[\s\S]*local checks pass/u);
+	assert.equal(lifecycle[4].progressChecklist.filter((item) => item.completed).length, 2);
+	assert.equal(lifecycle[4].progressChecklist.length, 3);
+	assert.deepEqual(
+		lifecycle[4].outputs.map((item) => item.title),
+		["Implement guest checkout without account creation", "guest-checkout-final.png"],
+	);
 	assert.equal(lifecycle[5].actor.name, "GitHub");
 	assert.equal(lifecycle[5].pullRequest.number, 1847);
 	assert.equal(
-		build.staticEvents.find((event) => event.id === "story-changed-files").tag.text,
-		"Implementation complete",
+		build.staticEvents.some((event) => event.id === "story-changed-files"),
+		false,
 	);
 	assert.equal(build.sessions[0].activityVisibility, "private");
 	assert.equal(
@@ -321,6 +372,18 @@ test("Release only reveals persisted merge state and never invents a merge", asy
 		pullRequestMerged: true,
 	}).status, "Done");
 	assert.ok(merged.staticEvents.some((event) => event.id === "story-pr-merged"));
-	assert.equal(merged.staticEvents.find((event) => event.id === "story-changed-files").tag.text, "PR #1847 merged");
+	assert.equal(
+		merged.staticEvents.some((event) => event.id === "story-changed-files"),
+		false,
+	);
+	assert.deepEqual(
+		merged.comments[0].outputs.map((item) => item.title),
+		["Implement guest checkout without account creation", "guest-checkout-final.png"],
+	);
 	assert.doesNotMatch(merged.sessions[0].previewText, /deploy|feature flag|telemetry|production/u);
+	assert.equal(merged.sessions[0].progressChecklist.filter((item) => item.completed).length, 6);
+	assert.deepEqual(
+		merged.comments[0].progressChecklist.map((item) => item.completed),
+		[true, true, false],
+	);
 });

@@ -98,6 +98,7 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 		id: "assigned",
 		kind: "event",
 		actor: VENN,
+		icon: "assigned",
 		timestamp: "11min ago",
 		segments: [
 			{ type: "text", text: "self-assigned the issue and set priority to " },
@@ -243,7 +244,7 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 		id: "linked",
 		kind: "event",
 		actor: GITHUB,
-		icon: "linked",
+		icon: "pull-request",
 		timestamp: "2min ago",
 		segments: [],
 		pullRequest: {

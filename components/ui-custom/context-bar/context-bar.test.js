@@ -12,6 +12,22 @@ const CONTEXT_BAR_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/ui-custom/context-bar/context-bar.tsx"),
 	"utf8",
 );
+const CONTEXT_BAR_PR_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/ui-custom/context-bar/context-bar-pull-request.tsx"),
+	"utf8",
+);
+const CONTEXT_BAR_PR_CI_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/ui-custom/context-bar/context-bar-pull-request-ci.tsx"),
+	"utf8",
+);
+const CONTEXT_BAR_CREATE_PR_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/ui-custom/context-bar/context-bar-create-pull-request.tsx"),
+	"utf8",
+);
+const CONTEXT_BAR_INDEX_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/ui-custom/context-bar/index.ts"),
+	"utf8",
+);
 
 test("all context-bar surfaces share the 40px minimum-height contract", () => {
 	assert.match(CONTEXT_BAR_SOURCE, /const CONTEXT_BAR_HEIGHT_CLASS = "min-h-10";/u);
@@ -413,4 +429,526 @@ test("computeContextBarOverflow always reserves the overflow button when asked",
 	// must not collapse to 0 just because the trigger is always present.
 	// 100 + gap(8) + overflow(32) = 140 ≤ 150 → the one item stays visible.
 	assert.equal(computeContextBarOverflow([100], 150, 32, 8, true), 1);
+});
+
+async function loadContextBarPullRequestHarness() {
+	const mockModules = new Map([
+		[
+			"@/components/ui/tag",
+			`
+				import React from "react";
+				export function Tag(props) {
+					return React.createElement("span", { "data-slot": "tag" }, props.children);
+				}
+			`,
+		],
+		[
+			"@/components/ui/icon",
+			`
+				import React from "react";
+				export function Icon(props) {
+					return React.createElement("span", { "data-slot": "icon" }, props.render);
+				}
+			`,
+		],
+		[
+			"@/components/ui/icon-tile",
+			`
+				import React from "react";
+				export function IconTile(props) {
+					return React.createElement("div", { "data-slot": "icon-tile" }, props.icon);
+				}
+			`,
+		],
+		[
+			"@atlaskit/icon/core/cross",
+			`
+				import React from "react";
+				export default function CrossIcon(props) {
+					return React.createElement("svg", { "data-icon": "cross", "data-size": props.size });
+				}
+			`,
+		],
+		[
+			"@atlaskit/icon/core/show-more-horizontal",
+			`
+				import React from "react";
+				export default function ShowMoreHorizontalIcon() {
+					return React.createElement("svg", { "data-icon": "show-more-horizontal" });
+				}
+			`,
+		],
+		[
+			"@atlaskit/icon/core/pull-request",
+			`
+				import React from "react";
+				export default function PullRequestIcon() {
+					return React.createElement("svg", { "data-icon": "pull-request" });
+				}
+			`,
+		],
+		[
+			"motion/react",
+			`
+				import React from "react";
+				export const motion = new Proxy({}, { get: () => (props) => React.createElement("div", props, props.children) });
+				export function AnimatePresence(props) { return React.createElement(React.Fragment, null, props.children); }
+				export function MotionConfig(props) { return React.createElement(React.Fragment, null, props.children); }
+				export function useReducedMotion() { return false; }
+			`,
+		],
+		[
+			"@/components/ui/dropdown-menu",
+			`
+				import React from "react";
+				export function DropdownMenu(props) { return React.createElement(React.Fragment, null, props.children); }
+				export function DropdownMenuTrigger({ render, children, ...props }) {
+					const trigger = render ?? React.createElement("button");
+					return React.cloneElement(trigger, props, trigger.props.children ?? children);
+				}
+				export function DropdownMenuContent({ positionerClassName, ...props }) { return React.createElement("div", props, props.children); }
+				export function DropdownMenuGroup(props) { return React.createElement("div", props, props.children); }
+				export function DropdownMenuItem({ children, elemBefore, elemAfter, selected, onSelect, closeOnClick, ...props }) {
+					return React.createElement("div", { role: "menuitem", "data-selected": selected, onClick: onSelect, ...props }, elemBefore, children, elemAfter);
+				}
+				export function DropdownMenuLabel(props) { return React.createElement("div", props, props.children); }
+				export function DropdownMenuSeparator() { return React.createElement("hr"); }
+				export function DropdownMenuCheckboxItem({ checked, onCheckedChange, ...props }) {
+					return React.createElement("div", { ...props, role: "menuitemcheckbox", "aria-checked": checked }, props.children);
+				}
+			`,
+		],
+		[
+			"@/components/ui/switch",
+			`
+				import React from "react";
+				export function Switch({ checked, onCheckedChange, size, ...props }) {
+					return React.createElement("button", {
+						...props,
+						role: "switch",
+						"aria-checked": checked,
+						"data-size": size,
+						"data-slot": "switch",
+						onClick: () => onCheckedChange?.(!checked),
+					});
+				}
+			`,
+		],
+		[
+			"@/components/ui-custom/hover-reveal-row",
+			`
+				import React from "react";
+				export const hoverRevealRowClassName = "group/hover-reveal-row relative";
+				export function HoverRevealLabel(props) {
+					return React.createElement("span", { "data-hover-reveal-label": true }, props.children);
+				}
+				export function HoverRevealActions(props) {
+					return React.createElement("div", { "data-hover-reveal-actions": true, "data-toggle-parked": props.toggleParked }, props.toggle, props.action);
+				}
+			`,
+		],
+		[
+			"@/components/blocks/pull-request/components/pull-request-checks-list",
+			`
+				import React from "react";
+				export function ChecksSectionTitle({ passed = 0, total = 0 }) {
+					return React.createElement(
+						"span",
+						{ "data-ci-checks-title": true },
+						"CI checks",
+						total > 0
+							? React.createElement("span", { className: "shrink-0 text-xs font-normal text-text-subtlest" }, passed + "/" + total)
+							: null,
+					);
+				}
+				export function PullRequestChecksList({ checks }) {
+					return React.createElement(
+						"ul",
+						{ "data-jira-work-item-pull-request-checks": true },
+						(checks ?? []).map((check) => React.createElement("li", { key: check.id, "data-ci-check": check.id }, check.name, " ", check.details)),
+					);
+				}
+			`,
+		],
+		[
+			"@/components/blocks/pull-request/lib/pull-request-checks-title",
+			`
+				export function pullRequestChecksTitleState(checks) {
+					return {
+						inProgress: true,
+						passed: (checks ?? []).filter((check) => check.status === "passed").length,
+						total: checks.length,
+					};
+				}
+			`,
+		],
+		[
+			"@/components/ui/spinner",
+			`
+				import React from "react";
+				export function Spinner({ label, size, ...props }) {
+					return React.createElement("svg", { ...props, "aria-label": label, "data-size": size, "data-slot": "spinner" });
+				}
+			`,
+		],
+		[
+			"@atlaskit/icon/core/chevron-down",
+			`
+				import React from "react";
+				export default function ChevronDownIcon() {
+					return React.createElement("svg", { "data-icon": "chevron-down" });
+				}
+			`,
+		],
+		[
+			"@/components/ui/lozenge",
+			`
+				import React from "react";
+				export function Lozenge({ children, elemBefore, variant, ...props }) {
+					return React.createElement("span", { ...props, "data-slot": "lozenge", "data-variant": variant }, elemBefore, children);
+				}
+			`,
+		],
+		[
+			"@/lib/tokens",
+			`
+				export function token(name) { return name === "elevation.shadow.overlay" ? "overlay-elevation-shadow" : name; }
+			`,
+		],
+		[
+			"@/components/ui/hover-card",
+			`
+				import React from "react";
+				export function HoverCard(props) { return React.createElement("div", { "data-hover-card": true }, props.children); }
+				export function HoverCardTrigger({ render, children, delay, closeDelay, ...props }) {
+					const trigger = render ?? React.createElement("span");
+					return React.cloneElement(trigger, props, trigger.props.children ?? children);
+				}
+				export function HoverCardContent({ align, positionerClassName, side, sideOffset, ...props }) {
+					return React.createElement("div", { "data-hover-card-content": true, ...props });
+				}
+			`,
+		],
+		[
+			"@/components/blocks/pull-request",
+			`
+				import React from "react";
+				export function PullRequest({ variant, number, title, status, className }) {
+					return React.createElement("div", { className, "data-pull-request": number, "data-status": status, "data-variant": variant }, "#" + number + " " + title);
+				}
+			`,
+		],
+		[
+			"@/components/ui/button",
+			`
+				import React from "react";
+				export function Button({ children, size, variant, ...props }) {
+					return React.createElement("button", { "data-size": size, "data-variant": variant, type: "button", ...props }, children);
+				}
+			`,
+		],
+		[
+			"@/components/ui/button-group",
+			`
+				import React from "react";
+				export function ButtonGroup({ children, variant, ...props }) {
+					return React.createElement("div", { role: "group", "data-variant": variant, ...props }, children);
+				}
+			`,
+		],
+		[
+			"@atlaskit/icon/core/shortcut",
+			`
+				import React from "react";
+				export default function ShortcutIcon() {
+					return React.createElement("svg", { "data-icon": "shortcut" });
+				}
+			`,
+		],
+	]);
+
+	const result = await esbuild.build({
+		stdin: {
+			contents: `
+				import React from "react";
+				import { renderToStaticMarkup } from "react-dom/server";
+				import { ContextBarCreatePullRequest } from "./components/ui-custom/context-bar/context-bar-create-pull-request.tsx";
+				import { ContextBarPullRequest } from "./components/ui-custom/context-bar/context-bar-pull-request.tsx";
+
+				export function renderCreatePullRequestBar(overrides = {}) {
+					return renderToStaticMarkup(
+						React.createElement(ContextBarCreatePullRequest, {
+							additions: 86,
+							branch: "feature/guest-checkout",
+							deletions: 21,
+							onCreate: () => {},
+							onCreateDraft: () => {},
+							onDismiss: () => {},
+							repository: "acme/app",
+							...overrides,
+						}),
+					);
+				}
+
+				export function renderPullRequestBar(overrides = {}) {
+					return renderToStaticMarkup(
+						React.createElement(ContextBarPullRequest, {
+							additions: 86,
+							approvalsCurrent: 1,
+							approvalsRequired: 2,
+							author: { avatarUrl: "/avatar.png", name: "Ada" },
+							branch: "feature/guest-checkout",
+							ci: {
+								autoFixEnabled: false,
+								autoMergeEnabled: true,
+								checks: [
+									{ id: "lint-types", name: "Lint and typecheck", status: "running", details: "Running for 1m 42s" },
+									{ id: "unit-tests", name: "Unit tests", status: "passed", details: "418 tests in 2m 46s" },
+									{ id: "browser-tests", name: "Guest checkout browser tests", status: "queued", details: "Waiting for CI" },
+								],
+								onAutoFixChange: () => {},
+								onAutoMergeChange: () => {},
+								status: "running",
+								summary: "3 CI checks",
+							},
+							deletions: 21,
+							filesChanged: 12,
+							href: "https://github.com/acme/app/pull/42",
+							mergeState: "queued",
+							number: 42,
+							onDismiss: () => {},
+							repository: "acme/app",
+							status: "Open",
+							targetBranch: "main",
+							title: "Add guest checkout",
+							...overrides,
+						}),
+					);
+				}
+			`,
+			loader: "tsx",
+			resolveDir: process.cwd(),
+			sourcefile: "context-bar-pull-request-harness.tsx",
+		},
+		bundle: true,
+		format: "cjs",
+		platform: "node",
+		tsconfig: path.join(process.cwd(), "tsconfig.json"),
+		write: false,
+		plugins: [
+			{
+				name: "context-bar-pr-test-mocks",
+				setup(build) {
+					build.onResolve({ filter: /.*/ }, (args) => {
+						if (!mockModules.has(args.path)) {
+							return undefined;
+						}
+						return { path: args.path, namespace: "context-bar-pr-test-mock" };
+					});
+					build.onLoad({ filter: /.*/, namespace: "context-bar-pr-test-mock" }, (args) => ({
+						contents: mockModules.get(args.path),
+						loader: "tsx",
+						resolveDir: process.cwd(),
+					}));
+				},
+			},
+		],
+	});
+
+	return loadCjsModuleFromText(result.outputFiles[0].text);
+}
+
+test("ContextBarPullRequest is a generic PR variation of ContextBar", () => {
+	assert.match(CONTEXT_BAR_PR_SOURCE, /export function ContextBarPullRequest\(/u);
+	assert.match(CONTEXT_BAR_PR_SOURCE, /<ContextBar/u);
+	assert.match(CONTEXT_BAR_PR_SOURCE, /max-w-\[calc\(100vw-7rem\)\][\s\S]*overflow-hidden px-2\.5 py-0 sm:max-w-full/u);
+	assert.match(CONTEXT_BAR_PR_SOURCE, /className="min-w-0 flex-1 truncate text-sm text-text-subtle" title=\{branch\}/u);
+	assert.match(CONTEXT_BAR_PR_SOURCE, /variant="spacious"/u);
+	assert.match(CONTEXT_BAR_PR_SOURCE, /token\("elevation.shadow.overlay"\)/u);
+	assert.match(CONTEXT_BAR_PR_SOURCE, /className="w-auto overflow-hidden rounded-xl border-0 bg-surface-overlay p-0 text-text shadow-none"/u);
+	assert.match(CONTEXT_BAR_PR_SOURCE, /hover:underline[\s\S]*data-pr-number-link/u);
+	assert.doesNotMatch(CONTEXT_BAR_PR_SOURCE, /SHOP-4821|1847|jira-golden-journeys/u);
+	assert.doesNotMatch(
+		CONTEXT_BAR_PR_SOURCE.slice(
+			CONTEXT_BAR_PR_SOURCE.indexOf("function PullRequestNumberLink"),
+			CONTEXT_BAR_PR_SOURCE.indexOf("export function ContextBarPullRequest"),
+		),
+		/hover:text-/u,
+	);
+
+	assert.match(CONTEXT_BAR_DEMO_SOURCE, /export function ContextBarDemoPullRequest/u);
+	assert.match(CONTEXT_BAR_DEMO_SOURCE, /DEMO_PULL_REQUESTS\[0\]/u);
+	assert.match(CONTEXT_BAR_DEMO_SOURCE, /ci=\{\{/u);
+	assert.doesNotMatch(CONTEXT_BAR_DEMO_SOURCE, /SHOP-4821|#1847/u);
+
+	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /data-ci-automation-trigger/u);
+	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /Auto-fix CI & address comments/u);
+	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /Auto-merge when ready/u);
+	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /PullRequestChecksList/u);
+	assert.doesNotMatch(CONTEXT_BAR_PR_CI_SOURCE, /jira-work-item\/experimental-v3/u);
+	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /density="menu"/u);
+	assert.match(
+		fs.readFileSync(
+			path.join(process.cwd(), "components/blocks/pull-request/components/pull-request-checks-list.tsx"),
+			"utf8",
+		),
+		/function CheckRow[\s\S]*rich-text-command-menu-item[\s\S]*menu-row-title[\s\S]*menu-row-byline/u,
+	);
+	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /ChecksSectionTitle/u);
+	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /pullRequestChecksTitleState/u);
+	assert.match(
+		CONTEXT_BAR_PR_CI_SOURCE,
+		/<ChecksSectionTitle passed=\{checksTitle\.passed\} total=\{checksTitle\.total\} \/>/u,
+	);
+	assert.doesNotMatch(CONTEXT_BAR_PR_CI_SOURCE, /showStatus=/u);
+	assert.doesNotMatch(CONTEXT_BAR_PR_CI_SOURCE, /HoverReveal|hoverRevealRowClassName/u);
+	assert.doesNotMatch(CONTEXT_BAR_PR_CI_SOURCE, /text-text-disabled/u);
+	assert.doesNotMatch(CONTEXT_BAR_PR_CI_SOURCE, /selected=\{checked\}/u);
+	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /elemAfter=\{\(/u);
+	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /onSelect=\{\(\) => \{\s*onCheckedChange\(!checked\);\s*\}\}/u);
+	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /checked=\{checked\}[\s\S]*onCheckedChange=\{onCheckedChange\}/u);
+	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /focus-visible:ring-3[\s\S]*motion-reduce:transition-none/u);
+	assert.doesNotMatch(CONTEXT_BAR_PR_CI_SOURCE, /SHOP-4821|1847|jira-golden-journeys/u);
+	assert.match(CONTEXT_BAR_PR_SOURCE, /ci === undefined \? null : \(/u);
+	assert.match(CONTEXT_BAR_PR_SOURCE, /<ContextBarPullRequestAutomation/u);
+});
+
+test("ContextBarPullRequest renders a hoverable PR number and spacious overlay card", async () => {
+	const harness = await loadContextBarPullRequestHarness();
+	const markup = harness.renderPullRequestBar();
+
+	assert.match(markup, /data-pr-context-bar/u);
+	assert.match(markup, /data-pr-number="42"/u);
+	assert.match(markup, /rounded-xl/u);
+	assert.match(markup, /bg-bg-neutral/u);
+	assert.match(
+		markup,
+		/<a class="shrink-0 text-sm no-underline decoration-current outline-none hover:underline[^"]* text-text-success" data-pr-number-link="true" href="https:\/\/github.com\/acme\/app\/pull\/42">#42<\/a>/u,
+	);
+	assert.doesNotMatch(markup, /<a class="[^"]*hover:text-[^"]*" data-pr-number-link/u);
+	assert.match(markup, /data-slot="lozenge" data-variant="success"[^>]*>.*Open<\/span>/u);
+	assert.match(markup, /feature\//u);
+	assert.match(markup, /guest-checkout/u);
+	assert.match(markup, /\+86/u);
+	assert.match(markup, /−21/u);
+	assert.match(markup, />CI</u);
+	assert.match(markup, /data-pull-request="42" data-status="Open" data-variant="spacious"/u);
+	assert.match(markup, /#42 Add guest checkout/u);
+	assert.match(
+		markup,
+		/data-hover-card-content="true" class="w-auto overflow-hidden rounded-xl border-0 bg-surface-overlay p-0 text-text shadow-none" style="box-shadow:overlay-elevation-shadow"/u,
+	);
+	assert.match(markup, /class="border-0" data-pull-request="42"/u);
+	assert.match(markup, /aria-label="Dismiss pull request context"/u);
+});
+
+test("ContextBarPullRequest can hide the status lozenge and show the repository", async () => {
+	const harness = await loadContextBarPullRequestHarness();
+	const markup = harness.renderPullRequestBar({
+		branch: "hotfix/tax",
+		number: 9,
+		href: "https://github.com/acme/app/pull/9",
+		showRepository: true,
+		showStatusLozenge: false,
+		status: "Merged",
+		title: "Fix tax rounding",
+	});
+
+	assert.doesNotMatch(markup, /data-slot="lozenge"/u);
+	assert.match(markup, /data-icon="pull-request"/u);
+	assert.match(markup, /acme\/app/u);
+	assert.match(markup, /hotfix\/tax/u);
+	assert.match(markup, /font-medium text-text-selected/u);
+	assert.match(markup, /data-pull-request="9" data-status="Merged" data-variant="spacious"/u);
+});
+
+test("ContextBarPullRequest owns the CI checks menu", async () => {
+	const harness = await loadContextBarPullRequestHarness();
+	const markup = harness.renderPullRequestBar();
+
+	assert.match(markup, /data-ci-status="running"/u);
+	assert.match(markup, /aria-label="CI running\. 3 CI checks\. Configure CI automation"/u);
+	assert.match(markup, /aria-label="CI running" data-size="xs" data-slot="spinner"/u);
+	assert.match(markup, />CI checks</u);
+	assert.match(markup, />1\/3</u);
+	assert.match(markup, /data-jira-work-item-pull-request-checks/u);
+	assert.match(markup, /Lint and typecheck/u);
+	assert.match(markup, /Running for 1m 42s/u);
+	assert.match(markup, /Unit tests/u);
+	assert.match(markup, /Guest checkout browser tests/u);
+	assert.match(markup, /data-auto-fix-setting="true"/u);
+	assert.match(markup, /data-auto-merge-setting="true"/u);
+	assert.doesNotMatch(markup, /data-auto-fix-setting="true"[^>]*data-selected="true"|data-selected="true"[^>]*data-auto-fix-setting="true"/u);
+	assert.doesNotMatch(markup, /data-auto-merge-setting="true"[^>]*data-selected="true"|data-selected="true"[^>]*data-auto-merge-setting="true"/u);
+	assert.match(markup, /role="switch"[^>]*aria-label="Enable Auto-fix CI &amp; address comments"[^>]*aria-checked="false"|aria-label="Enable Auto-fix CI &amp; address comments"[^>]*role="switch"[^>]*aria-checked="false"/u);
+	assert.match(markup, /Auto-fix CI &amp; address comments/u);
+	assert.match(markup, /Auto-merge when ready/u);
+	assert.doesNotMatch(markup, /data-approvals-summary/u);
+	assert.doesNotMatch(markup, /data-merge-state-label/u);
+
+	const reviewMarkup = harness.renderPullRequestBar({
+		ci: {
+			autoFixEnabled: true,
+			autoMergeEnabled: false,
+			checks: [
+				{ id: "lint-types", name: "Lint and typecheck", status: "failed", details: "Failed after 42s · deliveryAddress may be null" },
+				{ id: "unit-tests", name: "Unit tests", status: "passed", details: "418 tests in 2m 46s" },
+			],
+			onAutoFixChange: () => {},
+			onAutoMergeChange: () => {},
+			status: "failed",
+			summary: "1 failed, 1 passed",
+		},
+		mergeState: "blocked",
+	});
+	assert.match(reviewMarkup, /data-ci-status="failed"/u);
+	assert.match(reviewMarkup, /data-approvals-summary/u);
+	assert.match(reviewMarkup, />1\/2 approved</u);
+	assert.match(reviewMarkup, />Auto-merge blocked</u);
+	assert.match(reviewMarkup, /font-medium text-text-selected/u);
+});
+
+test("ContextBarCreatePullRequest is the pre-PR variation of ContextBar", () => {
+	assert.match(CONTEXT_BAR_CREATE_PR_SOURCE, /export function ContextBarCreatePullRequest\(/u);
+	assert.match(CONTEXT_BAR_CREATE_PR_SOURCE, /<ContextBar/u);
+	assert.match(CONTEXT_BAR_CREATE_PR_SOURCE, /max-w-\[calc\(100vw-7rem\)\][\s\S]*overflow-hidden px-2\.5 py-0 sm:max-w-full/u);
+	assert.match(CONTEXT_BAR_CREATE_PR_SOURCE, /data-create-pr-context-bar/u);
+	assert.match(CONTEXT_BAR_CREATE_PR_SOURCE, /variant="split"/u);
+	assert.match(CONTEXT_BAR_CREATE_PR_SOURCE, /"Create PR"/u);
+	assert.match(CONTEXT_BAR_CREATE_PR_SOURCE, /Create draft PR/u);
+	assert.match(CONTEXT_BAR_CREATE_PR_SOURCE, /Manually create PR/u);
+	assert.match(CONTEXT_BAR_CREATE_PR_SOURCE, /selected=\{mode === "open"\}/u);
+	assert.match(CONTEXT_BAR_CREATE_PR_SOURCE, /selected=\{mode === "draft"\}/u);
+	assert.match(CONTEXT_BAR_CREATE_PR_SOURCE, /selected=\{mode === "manual"\}/u);
+	assert.match(CONTEXT_BAR_CREATE_PR_SOURCE, /onSelect=\{\(\) => onModeChange\("manual"\)\}/u);
+	assert.doesNotMatch(CONTEXT_BAR_CREATE_PR_SOURCE, /window\.open|compareHref/u);
+	assert.doesNotMatch(CONTEXT_BAR_CREATE_PR_SOURCE, /data-pr-number|data-ci-status/u);
+	assert.match(CONTEXT_BAR_INDEX_SOURCE, /ContextBarCreatePullRequest/u);
+	assert.match(CONTEXT_BAR_DEMO_SOURCE, /export function ContextBarDemoCreatePullRequest/u);
+	assert.match(CONTEXT_BAR_DEMO_SOURCE, /<ContextBarCreatePullRequest/u);
+	assert.doesNotMatch(CONTEXT_BAR_CREATE_PR_SOURCE, /SHOP-4821|1847|jira-golden-journeys/u);
+});
+
+test("ContextBarCreatePullRequest renders branch, diff stats, and a Create PR split button", async () => {
+	const harness = await loadContextBarPullRequestHarness();
+	const markup = harness.renderCreatePullRequestBar();
+
+	assert.match(markup, /data-create-pr-context-bar/u);
+	assert.match(markup, /data-create-pr-mode="open"/u);
+	assert.match(markup, /aria-label="Unpublished branch feature\/guest-checkout\. 86 additions and 21 deletions\. Create PR ready"/u);
+	assert.match(markup, /title="acme\/app feature\/guest-checkout"/u);
+	assert.match(markup, />app</u);
+	assert.match(markup, /feature\/guest-checkout/u);
+	assert.match(markup, /\+86/u);
+	assert.match(markup, /−21/u);
+	assert.match(markup, /role="group"[^>]*aria-label="Create pull request"/u);
+	assert.match(markup, />Create PR</u);
+	assert.match(markup, />Create draft PR</u);
+	assert.match(markup, />Manually create PR</u);
+	assert.match(markup, /data-selected="true"/u);
+	assert.match(markup, /data-icon="shortcut"/u);
+	assert.match(markup, /aria-label="More pull request actions"/u);
+	assert.doesNotMatch(markup, /data-pr-number/u);
+	assert.doesNotMatch(markup, /data-ci-status/u);
+	assert.doesNotMatch(markup, /data-slot="lozenge"/u);
 });

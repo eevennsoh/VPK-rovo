@@ -203,6 +203,7 @@ export const FILLED_STATIC_EVENTS: StaticTimelineEvent[] = [
 		id: "static-assigned",
 		kind: "event",
 		actor: JORDAN,
+		icon: "assigned",
 		segments: [
 			{ type: "text", text: "self-assigned the issue and set priority to " },
 			{ type: "priority", text: "High" },

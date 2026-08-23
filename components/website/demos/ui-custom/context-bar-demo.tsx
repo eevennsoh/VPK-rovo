@@ -7,12 +7,15 @@ import PageIcon from "@atlaskit/icon/core/page";
 import PersonIcon from "@atlaskit/icon/core/person";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import { useState } from "react";
+import { DEMO_PULL_REQUESTS } from "@/components/blocks/pull-request";
 import {
 	AnimatedCollapsibleContextBar,
 	CollapsibleContextBar,
 	ContextBar,
+	ContextBarCreatePullRequest,
 	ContextBarLead,
 	ContextBarPill,
+	ContextBarPullRequest,
 	ContextBarTag,
 	ContextBarTagGroup,
 	ContextBarTrigger,
@@ -194,6 +197,75 @@ export function ContextBarDemoMultiPill() {
 	return (
 		<div className="w-full max-w-md p-8">
 			<ContextBarTagGroup items={pills} overflowAriaLabel="Show more actions" />
+		</div>
+	);
+}
+
+export function ContextBarDemoCreatePullRequest() {
+	const item = DEMO_PULL_REQUESTS[0];
+	if (!item) {
+		return null;
+	}
+
+	const branch = item.branch ?? "main";
+	const repository = item.repository ?? "vpk-rovo";
+
+	return (
+		<div className="w-full max-w-xl p-8">
+			<ContextBarCreatePullRequest
+				additions={item.additions}
+				branch={branch}
+				deletions={item.deletions}
+				onCreate={() => undefined}
+				onCreateDraft={() => undefined}
+				onCreateManually={() => undefined}
+				onDismiss={() => undefined}
+				repository={repository}
+			/>
+		</div>
+	);
+}
+
+export function ContextBarDemoPullRequest() {
+	const item = DEMO_PULL_REQUESTS[0];
+	const [autoFixEnabled, setAutoFixEnabled] = useState(false);
+	const [autoMergeEnabled, setAutoMergeEnabled] = useState(true);
+	if (!item) {
+		return null;
+	}
+
+	return (
+		<div className="w-full max-w-xl p-8">
+			<ContextBarPullRequest
+				additions={item.additions}
+				approvalsCurrent={1}
+				approvalsRequired={2}
+				author={item.author}
+				branch={item.branch ?? "main"}
+				ci={{
+					autoFixEnabled,
+					autoMergeEnabled,
+					checks: [
+						{ id: "lint-types", name: "Lint and typecheck", status: "running", details: "Running for 1m 42s" },
+						{ id: "unit-tests", name: "Unit tests", status: "passed", details: "418 tests in 2m 46s" },
+						{ id: "browser-tests", name: "Guest checkout browser tests", status: "queued", details: "Waiting for CI" },
+					],
+					onAutoFixChange: setAutoFixEnabled,
+					onAutoMergeChange: setAutoMergeEnabled,
+					status: "running",
+					summary: "3 CI checks",
+				}}
+				deletions={item.deletions}
+				filesChanged={item.filesChanged}
+				href={`https://github.com/${item.repository}/pull/${item.number}`}
+				mergeState="queued"
+				number={item.number}
+				onDismiss={() => undefined}
+				repository={item.repository}
+				status={item.status}
+				targetBranch={item.targetBranch}
+				title={item.title}
+			/>
 		</div>
 	);
 }

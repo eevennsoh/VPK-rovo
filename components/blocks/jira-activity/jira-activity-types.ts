@@ -29,6 +29,7 @@ export interface JiraActivityActor {
  */
 export type JiraActivityEventIcon =
 	| "created"
+	| "assigned"
 	| "label"
 	| "sla"
 	| "status"

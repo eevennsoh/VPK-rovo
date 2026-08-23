@@ -343,6 +343,24 @@ test("golden journeys v3 title compaction does not mix font shorthand and fontWe
 	expect(fontStyleWarnings).toEqual([]);
 });
 
+test("golden journeys v3 header collapse control stays static", async ({ page }) => {
+	await page.goto(JIRA_GOLDEN_JOURNEYS_V3_URL, { waitUntil: "domcontentloaded" });
+	await page.getByRole("button", { name: "Start Claude working on SHOP-4821" }).click();
+	await page.getByRole("button", { name: "Build" }).click();
+	await page.waitForTimeout(700);
+
+	const header = page.locator("[data-jira-work-item-title-block]");
+	const collapse = page.getByRole("button", { exact: true, name: "Collapse" });
+	await expect(collapse).toBeVisible();
+	await expect(collapse).not.toHaveAttribute("aria-expanded");
+
+	const variantBeforeClick = await header.getAttribute("data-header-variant");
+	await collapse.click();
+	await expect(header).toHaveAttribute("data-header-variant", variantBeforeClick ?? "expanded");
+	await expect(page.getByRole("button", { exact: true, name: "Expand header" })).toHaveCount(0);
+	await expect(page.getByRole("button", { exact: true, name: "Collapse header" })).toHaveCount(0);
+});
+
 test("v3 header compacts the status and Add controls only after scrolling", async ({ page }) => {
 	await page.goto(JIRA_WORK_ITEM_V3_URL, { waitUntil: "domcontentloaded" });
 	await page.getByRole("button", { name: "Open work item" }).click();

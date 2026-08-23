@@ -493,7 +493,20 @@ test("delegated events use the ADS agent icon", () => {
 		/import AiAgentIcon from "@atlaskit\/icon\/core\/ai-agent"/u,
 	);
 	assert.match(NODE_SOURCE, /delegated: AiAgentIcon/u);
-	assert.doesNotMatch(NODE_SOURCE, /ShortcutIcon|PersonAssigneeIcon/u);
+	assert.doesNotMatch(NODE_SOURCE, /ShortcutIcon/u);
+	assert.doesNotMatch(NODE_SOURCE, /delegated: PersonAssigneeIcon/u);
+});
+
+test("assigned events use the ADS person-assignee icon", () => {
+	assert.match(
+		NODE_SOURCE,
+		/import PersonAssigneeIcon from "@atlaskit\/icon-lab\/core\/person-assignee";/u,
+	);
+	assert.match(NODE_SOURCE, /assigned: PersonAssigneeIcon/u);
+	assert.match(TYPES_SOURCE, /\| "assigned"/u);
+	const assigned = JIRA_ACTIVITY_ENTRIES.find((entry) => entry.id === "assigned");
+	assert.equal(assigned.kind, "event");
+	assert.equal(assigned.icon, "assigned");
 });
 
 test("commit, pull-request, and app events map to ADS SCM/app glyphs", () => {
@@ -515,6 +528,22 @@ test("commit, pull-request, and app events map to ADS SCM/app glyphs", () => {
 	assert.match(NODE_SOURCE, /commit: CommitIcon/u);
 	assert.match(NODE_SOURCE, /"pull-request": PullRequestIcon/u);
 	assert.match(NODE_SOURCE, /app: AppIcon/u);
+});
+
+test("PR activity nodes use PullRequestIcon, not BranchIcon", () => {
+	const prEntries = JIRA_ACTIVITY_ENTRIES.filter(
+		(entry) => entry.kind === "event" && entry.pullRequest,
+	);
+	assert.ok(prEntries.length > 0, "expected a pull-request activity row");
+	for (const entry of prEntries) {
+		assert.equal(entry.icon, "pull-request");
+	}
+	assert.match(NODE_SOURCE, /"pull-request": PullRequestIcon/u);
+	assert.match(NODE_SOURCE, /linked: BranchIcon/u);
+	assert.match(
+		INDEX_SOURCE,
+		/entry\.kind === "event"\s*\? \(entry\.pullRequest \? "pull-request" : entry\.icon\)\s*: undefined/u,
+	);
 });
 
 test("event rows prefer EventGlyph over ActorGlyph whenever icon is set", () => {
@@ -833,6 +862,7 @@ test("event labels share the timeline node's 24px vertical alignment track", () 
 test("the linked event uses the Jira Queue pull-request row", () => {
 	const linked = JIRA_ACTIVITY_ENTRIES.find((entry) => entry.id === "linked");
 	assert.equal(linked.kind, "event");
+	assert.equal(linked.icon, "pull-request");
 	assert.deepEqual(linked.pullRequest, {
 		number: 1847,
 		title: "Fix threaded comment highlight bottom corners",
@@ -906,7 +936,12 @@ test("Jira Activity owns the shared activity card used by agent comments", () =>
 	// Overflow stays visible so Avatar's hover scale is not clipped on the flush card edge.
 	// min-w-0 keeps checklist / artifact content from forcing a horizontal rail scrollbar.
 	assert.match(CARD_SOURCE, /"w-full min-w-0 overflow-visible bg-transparent"/u);
-	assert.match(CARD_SOURCE, /<div className="min-w-0 text-sm leading-5 text-text">\{children\}<\/div>/u);
+	assert.match(
+		CARD_SOURCE,
+		/const body = \(\s*<div className="min-w-0 text-sm leading-5 text-text">\{children\}<\/div>\s*\);/u,
+	);
+	assert.match(CARD_SOURCE, /\{body\}/u);
+	assert.doesNotMatch(CARD_SOURCE, /<\/div>\s*\{children\}/u);
 	assert.doesNotMatch(CARD_SOURCE, /"w-full overflow-visible bg-surface"/u);
 	assert.doesNotMatch(CARD_SOURCE, /"w-full overflow-hidden bg-surface"/u);
 	assert.doesNotMatch(CARD_SOURCE, /border border-border|border-t border-border|showFooterBorder/u);

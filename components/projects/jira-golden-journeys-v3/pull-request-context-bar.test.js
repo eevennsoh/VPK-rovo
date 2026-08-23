@@ -16,12 +16,53 @@ async function loadHarness() {
 		[
 			"@/components/ui-custom/context-bar",
 			`
+				export { ContextBarPullRequest } from "./components/ui-custom/context-bar/context-bar-pull-request.tsx";
+			`,
+		],
+		[
+			"@/components/ui/tag",
+			`
 				import React from "react";
-				export function ContextBar({ dismissLabel, onDismiss, showDismissPlaceholder, ...props }) {
-					return React.createElement("div", props, props.children, onDismiss
-						? React.createElement("button", { "aria-label": dismissLabel, onClick: onDismiss, type: "button" }, "Dismiss")
-						: null);
+				export function Tag(props) {
+					return React.createElement("span", { "data-slot": "tag" }, props.children);
 				}
+			`,
+		],
+		[
+			"@/components/ui/icon-tile",
+			`
+				import React from "react";
+				export function IconTile(props) {
+					return React.createElement("div", { "data-slot": "icon-tile" }, props.icon);
+				}
+			`,
+		],
+		[
+			"@atlaskit/icon/core/cross",
+			`
+				import React from "react";
+				export default function CrossIcon() {
+					return React.createElement("svg", { "data-icon": "cross" });
+				}
+			`,
+		],
+		[
+			"@atlaskit/icon/core/show-more-horizontal",
+			`
+				import React from "react";
+				export default function ShowMoreHorizontalIcon() {
+					return React.createElement("svg", { "data-icon": "show-more-horizontal" });
+				}
+			`,
+		],
+		[
+			"motion/react",
+			`
+				import React from "react";
+				export const motion = new Proxy({}, { get: () => (props) => React.createElement("div", props, props.children) });
+				export function AnimatePresence(props) { return React.createElement(React.Fragment, null, props.children); }
+				export function MotionConfig(props) { return React.createElement(React.Fragment, null, props.children); }
+				export function useReducedMotion() { return false; }
 			`,
 		],
 		[
@@ -33,9 +74,76 @@ async function loadHarness() {
 				export function DropdownMenuContent({ positionerClassName, ...props }) { return React.createElement("div", props, props.children); }
 				export function DropdownMenuGroup(props) { return React.createElement("div", props, props.children); }
 				export function DropdownMenuLabel(props) { return React.createElement("div", props, props.children); }
+				export function DropdownMenuItem({ children, elemBefore, elemAfter, selected, onSelect, closeOnClick, ...props }) {
+					return React.createElement("div", { role: "menuitem", "data-selected": selected, onClick: onSelect, ...props }, elemBefore, children, elemAfter);
+				}
 				export function DropdownMenuSeparator() { return React.createElement("hr"); }
 				export function DropdownMenuCheckboxItem({ checked, onCheckedChange, ...props }) {
 					return React.createElement("div", { ...props, role: "menuitemcheckbox", "aria-checked": checked }, props.children);
+				}
+			`,
+		],
+		[
+			"@/components/ui/switch",
+			`
+				import React from "react";
+				export function Switch({ checked, onCheckedChange, size, ...props }) {
+					return React.createElement("button", {
+						...props,
+						role: "switch",
+						"aria-checked": checked,
+						"data-size": size,
+						"data-slot": "switch",
+						onClick: () => onCheckedChange?.(!checked),
+					});
+				}
+			`,
+		],
+		[
+			"@/components/ui-custom/hover-reveal-row",
+			`
+				import React from "react";
+				export const hoverRevealRowClassName = "group/hover-reveal-row relative";
+				export function HoverRevealLabel(props) {
+					return React.createElement("span", { "data-hover-reveal-label": true }, props.children);
+				}
+				export function HoverRevealActions(props) {
+					return React.createElement("div", { "data-hover-reveal-actions": true }, props.toggle, props.action);
+				}
+			`,
+		],
+		[
+			"@/components/blocks/pull-request/components/pull-request-checks-list",
+			`
+				import React from "react";
+				export function ChecksSectionTitle({ passed = 0, total = 0 }) {
+					return React.createElement(
+						"span",
+						null,
+						"CI checks",
+						total > 0
+							? React.createElement("span", { className: "shrink-0 text-xs font-normal text-text-subtlest" }, passed + "/" + total)
+							: null,
+					);
+				}
+				export function PullRequestChecksList({ checks }) {
+					return React.createElement(
+						"ul",
+						{ "data-jira-work-item-pull-request-checks": true },
+						(checks ?? []).map((check) => React.createElement("li", { key: check.id }, check.name, " ", check.details)),
+					);
+				}
+			`,
+		],
+		[
+			"@/components/blocks/pull-request/lib/pull-request-checks-title",
+			`
+				export function pullRequestChecksTitleState(checks) {
+					return {
+						inProgress: true,
+						passed: (checks ?? []).filter((check) => check.status === "passed").length,
+						total: checks.length,
+					};
 				}
 			`,
 		],
@@ -71,6 +179,35 @@ async function loadHarness() {
 			`,
 		],
 		[
+			"@/lib/tokens",
+			`
+				export function token(name) { return name === "elevation.shadow.overlay" ? "overlay-elevation-shadow" : name; }
+			`,
+		],
+		[
+			"@/components/ui/hover-card",
+			`
+				import React from "react";
+				export function HoverCard(props) { return React.createElement("div", { "data-hover-card": true }, props.children); }
+				export function HoverCardTrigger({ render, children, delay, closeDelay, ...props }) {
+					const trigger = render ?? React.createElement("span");
+					return React.cloneElement(trigger, props, trigger.props.children ?? children);
+				}
+				export function HoverCardContent({ align, positionerClassName, side, sideOffset, ...props }) {
+					return React.createElement("div", { "data-hover-card-content": true, ...props });
+				}
+			`,
+		],
+		[
+			"@/components/blocks/pull-request",
+			`
+				import React from "react";
+				export function PullRequest({ variant, number, title, status, className }) {
+					return React.createElement("div", { className, "data-pull-request": number, "data-status": status, "data-variant": variant }, "#" + number + " " + title);
+				}
+			`,
+		],
+		[
 			"@atlaskit/icon/core/chevron-down",
 			`
 				import React from "react";
@@ -102,9 +239,25 @@ async function loadHarness() {
 						autoFixEnabled,
 						autoMergeEnabled,
 						branch: "feature/shop-4821-guest-checkout-with-a-very-long-name",
-						ciCounts: { failed: ciStatus === "failed" ? 1 : 0, inProgress: ciStatus === "running" ? 2 : 0, passed: ciStatus === "passed" ? 12 : 2, skipped: 1 },
+						ciChecks: ciStatus === "failed"
+							? [
+								{ id: "lint-types", name: "Lint and typecheck", status: "failed", details: "Failed after 42s · deliveryAddress may be null" },
+								{ id: "unit-tests", name: "Unit tests", status: "passed", details: "418 tests in 2m 46s" },
+								{ id: "browser-tests", name: "Guest checkout browser tests", status: "passed", details: "5 scenarios in 1m 32s" },
+							]
+							: ciStatus === "passed"
+								? [
+									{ id: "lint-types", name: "Lint and typecheck", status: "passed", details: "Rerun completed in 1m 18s" },
+									{ id: "unit-tests", name: "Unit tests", status: "passed", details: "418 tests in 2m 46s" },
+									{ id: "browser-tests", name: "Guest checkout browser tests", status: "passed", details: "5 scenarios in 1m 32s" },
+								]
+								: [
+									{ id: "lint-types", name: "Lint and typecheck", status: "running", details: "Running for 6s" },
+									{ id: "unit-tests", name: "Unit tests", status: "queued", details: "Queued" },
+									{ id: "browser-tests", name: "Guest checkout browser tests", status: "queued", details: "Queued" },
+								],
 						ciStatus,
-						ciSummary: "15 CI checks",
+						ciSummary: "3 CI checks",
 						deletions: 21,
 						mergeState,
 						onAutoFixChange: () => {},
@@ -160,16 +313,22 @@ test("disabled auto-merge stays distinct from a blocked enabled rule", async () 
 	assert.doesNotMatch(html, /data-merge-state-label/u);
 });
 
-test("the CI menu exposes monitoring counts and controlled checkbox items", async () => {
+test("the CI menu exposes shared check rows and always-visible automation toggles", async () => {
 	const harness = await loadHarness();
 	const html = harness.renderBar("running", "queued", false, true);
-	assert.match(html, /aria-label="CI running\. 15 CI checks\. Configure CI automation"/u);
-	assert.match(html, />CI monitoring</u);
-	assert.match(html, /data-ci-count="in-progress"/u);
-	assert.match(html, /data-auto-fix-setting="true" role="menuitemcheckbox" aria-checked="false"/u);
-	assert.match(html, /data-auto-merge-setting="true" role="menuitemcheckbox" aria-checked="true"/u);
-	assert.match(html, />Auto-fix CI &amp; address comments</u);
-	assert.match(html, />Auto-merge when ready</u);
+	assert.match(html, /aria-label="CI running\. 3 CI checks\. Configure CI automation"/u);
+	assert.match(html, />CI checks</u);
+	assert.match(html, />0\/3</u);
+	assert.match(html, /data-jira-work-item-pull-request-checks/u);
+	assert.match(html, /Lint and typecheck/u);
+	assert.match(html, /Running for 6s/u);
+	assert.match(html, /data-auto-fix-setting="true"/u);
+	assert.match(html, /data-auto-merge-setting="true"/u);
+	assert.doesNotMatch(html, /data-auto-fix-setting="true"[^>]*data-selected="true"|data-selected="true"[^>]*data-auto-fix-setting="true"/u);
+	assert.doesNotMatch(html, /data-auto-merge-setting="true"[^>]*data-selected="true"|data-selected="true"[^>]*data-auto-merge-setting="true"/u);
+	assert.match(html, /role="switch"[^>]*aria-checked="false"|aria-checked="false"[^>]*role="switch"/u);
+	assert.match(html, /Auto-fix CI &amp; address comments/u);
+	assert.match(html, /Auto-merge when ready/u);
 	assert.match(html, />Auto-merge queued</u);
 });
 
@@ -180,20 +339,59 @@ test("merged presentation remains explicit and the flexible branch owns truncati
 	assert.match(html, /data-merge-state="merged"/u);
 	assert.match(html, />2\/2 approved</u);
 	assert.match(html, />Merged</u);
-	assert.match(SOURCE, /className="min-w-0 flex-1 truncate text-sm text-text-subtle" title=\{branch\}/u);
-	assert.match(SOURCE, /max-w-\[calc\(100vw-7rem\)\][\s\S]*overflow-hidden px-2\.5 py-0 sm:max-w-full/u);
-	assert.match(SOURCE, /focus-visible:ring-3[\s\S]*motion-reduce:transition-none/u);
+	assert.match(SOURCE, /<ContextBarPullRequest/u);
+	assert.match(SOURCE, /ci=\{\{/u);
+	assert.doesNotMatch(SOURCE, /data-ci-automation-trigger/u);
+	assert.doesNotMatch(SOURCE, /DropdownMenu/u);
 });
 
-test("automation callbacks are wired directly to the controlled menu items", () => {
-	assert.match(SOURCE, /checked=\{autoFixEnabled\}[\s\S]*data-auto-fix-setting[\s\S]*onCheckedChange=\{onAutoFixChange\}/u);
-	assert.match(SOURCE, /checked=\{autoMergeEnabled\}[\s\S]*data-auto-merge-setting[\s\S]*onCheckedChange=\{onAutoMergeChange\}/u);
+test("automation callbacks are passed through to the shared CI menu", () => {
+	assert.match(SOURCE, /onAutoFixChange,/u);
+	assert.match(SOURCE, /onAutoMergeChange,/u);
+	assert.match(SOURCE, /autoFixEnabled,/u);
+	assert.match(SOURCE, /autoMergeEnabled,/u);
+	assert.doesNotMatch(SOURCE, /data-auto-fix-setting/u);
+	assert.doesNotMatch(SOURCE, /Auto-fix CI/u);
 });
 
 test("the PR strip exposes a labeled dismiss action", async () => {
 	const harness = await loadHarness();
 	const html = harness.renderBar("running", "disabled");
-	assert.match(html, /<button aria-label="Dismiss pull request context" type="button">Dismiss<\/button>/u);
+	assert.match(html, /aria-label="Dismiss pull request context"/u);
 	assert.match(SOURCE, /dismissLabel="Dismiss pull request context"/u);
 	assert.match(SOURCE, /onDismiss=\{onDismiss\}/u);
+});
+
+test("the PR number is a hoverable link that reveals the spacious pull-request card", async () => {
+	const harness = await loadHarness();
+	const runningHtml = harness.renderBar("running", "disabled");
+	assert.match(
+		runningHtml,
+		/<a class="shrink-0 text-sm no-underline decoration-current outline-none hover:underline[^"]* text-text-success" data-pr-number-link="true" href="https:\/\/github.com\/eevensoh\/vpk-rovo\/pull\/1847">#1847<\/a>/u,
+	);
+	assert.match(runningHtml, /data-pull-request="1847" data-status="Open" data-variant="spacious"/u);
+	assert.match(runningHtml, /#1847 Implement guest checkout without account creation/u);
+	assert.doesNotMatch(runningHtml, /<a class="[^"]*hover:text-[^"]*" data-pr-number-link/u);
+
+	const mergedHtml = harness.renderBar("passed", "merged");
+	assert.match(mergedHtml, /font-medium text-text-selected/u);
+	assert.match(mergedHtml, /data-pull-request="1847" data-status="Merged" data-variant="spacious"/u);
+
+	assert.match(SOURCE, /ContextBarPullRequest,[\s\S]*from "@\/components\/ui-custom\/context-bar"/u);
+	assert.match(SOURCE, /href=\{JIRA_GOLDEN_JOURNEYS_V3_PULL_REQUEST_IDENTITY\}/u);
+	assert.match(SOURCE, /number=\{JIRA_GOLDEN_JOURNEYS_V3_PULL_REQUEST_NUMBER\}/u);
+	assert.match(SOURCE, /title=\{STORY_PULL_REQUEST_TITLE\}/u);
+	assert.doesNotMatch(SOURCE, /function PullRequestNumberLink/u);
+	assert.doesNotMatch(SOURCE, /variant="spacious"/u);
+	assert.doesNotMatch(SOURCE, /showStatusLozenge/u);
+});
+
+test("the adapter still renders the shared PR hover surface", async () => {
+	const harness = await loadHarness();
+	const html = harness.renderBar("running", "disabled");
+	assert.match(
+		html,
+		/data-hover-card-content="true" class="w-auto overflow-hidden rounded-xl border-0 bg-surface-overlay p-0 text-text shadow-none" style="box-shadow:overlay-elevation-shadow"/u,
+	);
+	assert.match(html, /class="border-0" data-pull-request="1847" data-status="Open" data-variant="spacious"/u);
 });
