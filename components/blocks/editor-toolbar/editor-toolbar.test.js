@@ -65,6 +65,23 @@ test("RichTextEditorToolbar remains as a compatibility wrapper", () => {
 	assert.match(richToolbarSource, /<EditorToolbar[\s\S]*controlsClassName="px-2 py-1"/u);
 });
 
+test("rich text floating toolbars follow the editor scroll container", () => {
+	const richToolbarSource = readProjectFile("components/ui-custom/rich-text-editor/toolbar.tsx");
+
+	assert.match(
+		richToolbarSource,
+		/function resolveEditorScrollTarget\(editor: Editor\): HTMLElement \| Window \| undefined/u,
+	);
+	assert.equal(
+		(richToolbarSource.match(/const menuOptions = useEditorMenuOptions\(editor\);/gu) ?? []).length,
+		2,
+	);
+	assert.equal(
+		(richToolbarSource.match(/options=\{menuOptions\}/gu) ?? []).length,
+		2,
+	);
+});
+
 test("hover-reveal toolbars stay visible while the editor has focus", () => {
 	const globalCss = readProjectFile("app/globals.css");
 	const richTextEditorSource = readProjectFile("components/ui-custom/rich-text-editor/rich-text-editor.tsx");
