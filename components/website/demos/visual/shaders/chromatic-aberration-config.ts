@@ -1,4 +1,4 @@
-export const DEFAULT_CHROMATIC_ABERRATION_MEDIA_SRC = "/3p/framer/chromatic-aberration-default.png";
+export const DEFAULT_CHROMATIC_ABERRATION_MEDIA_SRC = "/illustration/chromatic-aberration-default.png";
 
 export type ChromaticMode = "radial" | "uniform" | "edges";
 export type ChromaticSymmetry = "point" | "mirror";

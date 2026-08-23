@@ -194,8 +194,8 @@ test("Chromatic preserves straight source alpha", () => {
 });
 
 test("Chromatic Aberration accepts image and video texture media", () => {
-	assert.ok(fs.existsSync(path.join(ROOT, "public/3p/framer/chromatic-aberration-default.png")));
-	assert.match(CHROMATIC_ABERRATION_CONFIG_SOURCE, /DEFAULT_CHROMATIC_ABERRATION_MEDIA_SRC = "\/3p\/framer\/chromatic-aberration-default\.png"/);
+	assert.ok(fs.existsSync(path.join(ROOT, "public/illustration/chromatic-aberration-default.png")));
+	assert.match(CHROMATIC_ABERRATION_CONFIG_SOURCE, /DEFAULT_CHROMATIC_ABERRATION_MEDIA_SRC = "\/illustration\/chromatic-aberration-default\.png"/);
 	assert.match(CHROMATIC_ABERRATION_SHADER_SOURCE, /mediaSrc\?: string;/);
 	assert.match(CHROMATIC_ABERRATION_SHADER_SOURCE, /mediaType\?: "image" \| "video";/);
 	assert.match(CHROMATIC_ABERRATION_SHADER_SOURCE, /media\.HAVE_CURRENT_DATA/);
