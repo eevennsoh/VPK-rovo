@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useLayoutEffect, useMemo, useState, type ReactNode } from "react";
 import type { Editor } from "@tiptap/react";
 import { BubbleMenu, FloatingMenu } from "@tiptap/react/menus";
 
@@ -14,8 +14,48 @@ import { RovoColorIcon } from "@/components/ui/logo";
 
 export type RichTextEditorToolbarProps = EditorToolbarProps;
 
+const SCROLLABLE_OVERFLOW_VALUES = new Set(["auto", "scroll"]);
+
 function getRichTextEditorMenuAppendTarget(): HTMLElement {
 	return document.body;
+}
+
+function resolveEditorScrollTarget(editor: Editor): HTMLElement | Window | undefined {
+	const ownerWindow = editor.view.dom.ownerDocument.defaultView;
+	if (!ownerWindow) {
+		return undefined;
+	}
+
+	let ancestor = editor.view.dom.parentElement;
+	let nearestScrollTarget: HTMLElement | undefined;
+
+	while (ancestor) {
+		const { overflowY } = ownerWindow.getComputedStyle(ancestor);
+		if (SCROLLABLE_OVERFLOW_VALUES.has(overflowY)) {
+			nearestScrollTarget ??= ancestor;
+			const canScrollVertically = ancestor.scrollHeight > ancestor.clientHeight;
+			if (canScrollVertically) {
+				return ancestor;
+			}
+		}
+
+		ancestor = ancestor.parentElement;
+	}
+
+	return nearestScrollTarget ?? ownerWindow;
+}
+
+function useEditorMenuOptions(editor: Editor) {
+	const [scrollTarget, setScrollTarget] = useState<HTMLElement | Window>();
+
+	useLayoutEffect(() => {
+		setScrollTarget(resolveEditorScrollTarget(editor));
+	}, [editor]);
+
+	return useMemo(
+		() => scrollTarget ? { scrollTarget } : undefined,
+		[scrollTarget],
+	);
 }
 
 interface RichTextEditorBubbleMenuProps {
@@ -72,11 +112,17 @@ export function RichTextEditorBubbleMenu({
 	leadingSlot,
 	onAskRovo,
 }: Readonly<RichTextEditorBubbleMenuProps>) {
+	const menuOptions = useEditorMenuOptions(editor);
+	if (!menuOptions) {
+		return null;
+	}
+
 	return (
 		<BubbleMenu
 			appendTo={getRichTextEditorMenuAppendTarget}
 			editor={editor}
 			className="z-[1000] flex items-stretch rounded-lg bg-popover text-popover-foreground shadow-2xl"
+			options={menuOptions}
 			shouldShow={({ editor: activeEditor, from, to }) =>
 				activeEditor.isEditable && from !== to
 			}
@@ -104,11 +150,17 @@ export function RichTextEditorFloatingMenu({
 	editor,
 	leadingSlot,
 }: Readonly<RichTextEditorFloatingMenuProps>) {
+	const menuOptions = useEditorMenuOptions(editor);
+	if (!menuOptions) {
+		return null;
+	}
+
 	return (
 		<FloatingMenu
 			appendTo={getRichTextEditorMenuAppendTarget}
 			editor={editor}
 			className="z-[1000] flex items-stretch rounded-lg bg-popover text-popover-foreground shadow-2xl"
+			options={menuOptions}
 		>
 			<EditorToolbar
 				editor={editor}
