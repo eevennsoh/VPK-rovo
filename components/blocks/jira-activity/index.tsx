@@ -343,7 +343,7 @@ export function JiraActivity({
 						return (
 							<li
 								aria-current={entry.id === activeEntryId ? "step" : undefined}
-								className="flex min-w-0 gap-2"
+								className="group/activity-event flex min-w-0 gap-2"
 								data-active={entry.id === activeEntryId ? "" : undefined}
 								data-jira-activity-entry-id={entry.id}
 								data-jira-activity-parent-id={

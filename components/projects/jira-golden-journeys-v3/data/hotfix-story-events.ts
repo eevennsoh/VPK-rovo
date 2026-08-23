@@ -61,7 +61,6 @@ const WORK_ITEM_LIFECYCLE_EVENTS: readonly StaticTimelineEvent[] = [
 		actor: CLAUDE_CODE_ACTOR,
 		icon: "delegated",
 		showActor: false,
-		showTimestamp: false,
 		segments: [
 			{ type: "agent-mention", text: "Claude", brandName: "claude" },
 			{ type: "text", text: " Started working" },

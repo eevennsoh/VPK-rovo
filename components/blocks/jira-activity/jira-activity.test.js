@@ -678,7 +678,7 @@ test("Jira Activity exposes controlled entries and replaceable composer contract
 	assert.match(INDEX_SOURCE, /customEntry !== undefined \? customEntry : defaultEntry/u);
 	// Timeline rows shrink inside narrow rails so artifact titles can truncate.
 	assert.match(INDEX_SOURCE, /className=\{cn\("group\/activity flex w-full min-w-0 flex-col gap-4", className\)\}/u);
-	assert.match(INDEX_SOURCE, /className="flex min-w-0 gap-2"/u);
+	assert.match(INDEX_SOURCE, /className="group\/activity-event flex min-w-0 gap-2"/u);
 });
 
 test("activity comments expose an outlined Add to chat control left of expand/collapse", () => {
@@ -858,13 +858,26 @@ test("one-line activity events use 12px type without shrinking expanded agent ca
 test("one-line activity timestamps keep 6px spacing around the middot", () => {
 	assert.match(
 		EVENT_SOURCE,
-		/<span className="ml-1\.5 inline-flex items-center gap-1\.5 text-text-subtlest">[\s\S]*<span aria-hidden>·<\/span>[\s\S]*<span>\{entry\.timestamp\}<\/span>/u,
+		/<span[\s\S]*className="ml-1\.5 hidden shrink-0 items-center gap-1\.5 text-text-subtlest group-hover\/activity-event:inline-flex[\s\S]*<span>·<\/span>[\s\S]*<span>\{entry\.timestamp\}<\/span>/u,
 	);
 	assert.match(
 		EVENT_SOURCE,
-		/<span aria-hidden>·<\/span>[\s\S]*AutomationIcon[\s\S]*<span>\{entry\.timestamp\}<\/span>/u,
+		/<span>·<\/span>[\s\S]*AutomationIcon[\s\S]*<span>\{entry\.timestamp\}<\/span>/u,
 	);
 	assert.doesNotMatch(EVENT_SOURCE, /> · \{entry\.timestamp\}</u);
+});
+
+test("one-line activity timestamps stay hidden until the event row is hovered or focused", () => {
+	assert.match(INDEX_SOURCE, /className="group\/activity-event flex min-w-0 gap-2"/u);
+	assert.match(
+		EVENT_SOURCE,
+		/className="ml-1\.5 hidden shrink-0 items-center gap-1\.5 text-text-subtlest group-hover\/activity-event:inline-flex group-focus-within\/activity-event:inline-flex group-has-\[:focus-visible\]\/activity-event:inline-flex"/u,
+	);
+	assert.match(EVENT_SOURCE, /<span className="sr-only">\{entry\.timestamp\}<\/span>/u);
+	assert.doesNotMatch(
+		EVENT_SOURCE,
+		/<span className="ml-1\.5 inline-flex items-center gap-1\.5 text-text-subtlest">/u,
+	);
 });
 
 test("event labels share the timeline node's 24px vertical alignment track", () => {
