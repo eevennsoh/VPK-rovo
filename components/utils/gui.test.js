@@ -98,6 +98,10 @@ test("GUI.Select owns enriched option metadata and default resets", () => {
 
 test("GUI.ImageInput and GUI.SwatchGroup cover shared upload and multi-swatch controls", () => {
 	assert.match(GUI_SOURCE, /accept = "image\/\*"/);
+	assert.match(GUI_SOURCE, /previewType\?: "image" \| "video";/);
+	assert.match(GUI_SOURCE, /previewType === "video"/);
+	assert.match(GUI_SOURCE, /VideoIcon/);
+	assert.doesNotMatch(GUI_SOURCE, /previewType === "video" \? \(\n\t\t\t\t\t<video/);
 	assert.match(GUI_SOURCE, /onFile\?: \(file: File\) => void \| Promise<void>;/);
 	assert.match(GUI_SOURCE, /onClear\?: \(\) => void;/);
 	assert.match(GUI_SOURCE, /URL\.createObjectURL\(file\)/);
