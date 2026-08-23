@@ -4,8 +4,6 @@ import type { JiraWorkItemState } from "@/components/blocks/jira-work-item/data/
 import type { JiraGoldenJourneysV3StoryChapter } from "./story-model";
 
 export const RAW_STORY_DESCRIPTION = [
-	"Checkout-funnel research shows that mandatory account creation is a major source of abandonment for first-time shoppers.",
-	"",
 	"#### User outcome",
 	"As a first-time shopper, I want to complete a purchase without creating an account so that I can place my order quickly.",
 	"",

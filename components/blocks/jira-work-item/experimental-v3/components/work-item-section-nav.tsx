@@ -2,22 +2,23 @@
 
 import type { ReactNode } from "react";
 
-import { useSectionNavigation } from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
+import {
+	useSectionNavigation,
+	useWorkItemHeaderVariant,
+} from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
 import { FOCUS_RING_CLIP_GUTTER } from "@/components/ui/focus-ring";
-import { tabsLineIndicatorClass } from "@/components/ui/tabs";
+import {
+	tabsExperimentalListClass,
+	tabsExperimentalTriggerClass,
+} from "@/components/ui/tabs-experimental";
 import { cn } from "@/lib/utils";
 
-const NAV_LIST_CLASS = "flex h-8 w-fit items-stretch justify-start text-text-subtle";
-
-export const NAV_LINK_CLASS = cn(
-	"relative inline-flex h-full items-center justify-center gap-1.5 whitespace-nowrap rounded-sm px-3 text-sm font-medium text-text-subtle no-underline",
-	"transition-[background-color,border-radius,color] duration-normal ease-out-practical motion-reduce:transition-none",
-	"hover:rounded-t-md hover:bg-bg-neutral-subtle-hovered active:rounded-t-md active:bg-bg-neutral-subtle-pressed",
-	"focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-	"after:pointer-events-none after:absolute after:opacity-0 after:transition-opacity after:content-[''] motion-reduce:after:transition-none",
-	tabsLineIndicatorClass,
-	"aria-[current=location]:text-text-selected aria-[current=location]:after:opacity-100",
+const NAV_LIST_CLASS = cn(
+	"flex h-8 w-fit items-stretch justify-start text-text-subtle",
+	tabsExperimentalListClass,
 );
+
+const NAV_LINK_CLASS = tabsExperimentalTriggerClass;
 
 interface WorkItemSectionNavProps {
 	endControl?: ReactNode;
@@ -38,69 +39,70 @@ export function WorkItemSectionNav({
 	onSectionSelect,
 }: Readonly<WorkItemSectionNavProps>) {
 	const { activeSectionId, activityCount, sectionElementId, sections, selectSection } = useSectionNavigation();
+	const variant = useWorkItemHeaderVariant();
 	if (sections.length === 0 && endControl == null) return null;
 
 	return (
 		<div
-			className="@container/resource-row border-b border-border"
+			className={cn(
+				"group/work-item-navigation @container/resource-row border-b transition-colors duration-normal ease-out-practical motion-reduce:transition-none",
+				variant === "compact" ? "border-border-disabled" : "border-transparent",
+			)}
+			data-header-variant={variant}
 			data-work-item-header-navigation
 		>
-			<div className="flex items-center px-3">
-				{sections.length > 0 ? (
-					<nav
-						aria-label="Work item sections"
-						className={cn(
-							"box-content min-w-0 overflow-x-auto",
-							FOCUS_RING_CLIP_GUTTER,
-						)}
-						data-work-item-section-nav
-					>
-						<ul className={NAV_LIST_CLASS}>
-							{sections.map((section) => (
-								<li className="flex" key={section.id}>
-									<a
-										aria-current={section.id === activeSectionId ? "location" : undefined}
-										className={NAV_LINK_CLASS}
-										href={`#${sectionElementId(section.id)}`}
-										onClick={(event) => {
-											event.preventDefault();
-											onSectionSelect?.();
-											selectSection(section.id);
-										}}
-									>
-										<span>{section.label}</span>
-										{section.id === "activity" && activityCount != null ? (
-											<span
-												className={cn(
-													section.id === activeSectionId ? "text-text-selected" : "text-text-subtlest",
-												)}
-											>
-												{activityCount}
-											</span>
-										) : null}
-										{section.diff ? (
-											<span className="inline-flex items-center gap-1 tabular-nums">
-												<span className="text-text-success">+{section.diff.additions}</span>
-												<span className="text-text-danger">-{section.diff.deletions}</span>
-											</span>
-										) : null}
-									</a>
-								</li>
-							))}
-						</ul>
-					</nav>
-				) : null}
-				{endControl != null ? (
-					<div
-						className={cn(
-							"box-content flex h-8 shrink-0 overflow-x-auto",
-							FOCUS_RING_CLIP_GUTTER,
-						)}
-						data-work-item-navigation-end-control
-					>
-						{endControl}
-					</div>
-				) : null}
+			<div className="flex items-center gap-1 px-4.5">
+				<nav
+					aria-label="Work item sections"
+					className={cn(
+						"box-content min-w-0 overflow-x-auto overflow-y-hidden",
+						FOCUS_RING_CLIP_GUTTER,
+					)}
+					data-work-item-section-nav
+				>
+					<ul className={NAV_LIST_CLASS}>
+						{sections.map((section) => (
+							<li className="flex" key={section.id}>
+								<a
+									aria-current={section.id === activeSectionId ? "location" : undefined}
+									className={NAV_LINK_CLASS}
+									href={`#${sectionElementId(section.id)}`}
+									onClick={(event) => {
+										event.preventDefault();
+										onSectionSelect?.();
+										selectSection(section.id);
+									}}
+								>
+									<span>{section.label}</span>
+									{section.id === "activity" && activityCount != null ? (
+										<span
+											className={cn(
+												"shrink-0 text-xs font-normal",
+												section.id === activeSectionId ? "text-text" : "text-text-subtlest",
+											)}
+										>
+											{activityCount}
+										</span>
+									) : null}
+									{section.diff ? (
+										<span className="inline-flex items-center gap-1 tabular-nums">
+											<span className="text-text-success">+{section.diff.additions}</span>
+											<span className="text-text-danger">-{section.diff.deletions}</span>
+										</span>
+									) : null}
+								</a>
+							</li>
+						))}
+						{endControl != null ? (
+							<li
+								className="flex h-8 shrink-0"
+								data-work-item-navigation-end-control
+							>
+								{endControl}
+							</li>
+						) : null}
+					</ul>
+				</nav>
 			</div>
 		</div>
 	);

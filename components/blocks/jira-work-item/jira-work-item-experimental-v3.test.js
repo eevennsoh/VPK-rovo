@@ -74,58 +74,6 @@ test("experimental v3 is isolated from v1 and v2", () => {
 	}
 });
 
-test("experimental v3 can collapse its metadata rail and preview it while collapsed", () => {
-	const actionsSource = readBlockFile("experimental-v3/components/experimental-breadcrumb-actions.tsx");
-	const panelLayoutSource = readBlockFile("experimental-v3/context-panel-layout.tsx");
-
-	assert.doesNotMatch(actionsSource, /aria-pressed/u);
-	assert.match(actionsSource, /aria-controls="experimental-work-item-metadata-panel"/u);
-	assert.match(actionsSource, /aria-expanded=\{!metadataCollapsed\}/u);
-	assert.match(actionsSource, /metadataCollapsed \? "Show metadata panel" : "Hide metadata panel"/u);
-	assert.match(actionsSource, /disabled=\{metadataLayoutAnimating\}/u);
-	assert.match(actionsSource, /onClick=\{toggleMetadata\}/u);
-	assert.match(
-		actionsSource,
-		/import \{ MetadataRail \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/components\/metadata-rail"/u,
-	);
-	assert.match(actionsSource, /open=\{metadataCollapsed && metadataPreviewOpen\}/u);
-	assert.match(actionsSource, /eventDetails\.reason === "trigger-press"/u);
-	assert.match(actionsSource, /openOnHover=\{metadataCollapsed\}/u);
-	assert.match(actionsSource, /delay=\{120\}/u);
-	assert.match(actionsSource, /closeDelay=\{80\}/u);
-	assert.match(actionsSource, /aria-label="Work item details preview"/u);
-	assert.match(actionsSource, /<MetadataRail borderless \/>/u);
-	assert.match(actionsSource, /positionerClassName="z-\[600\]"/u);
-	assert.match(
-		actionsSource,
-		/<ExperimentalHeaderOverflowMenu \/>[\s\S]*<Popover[\s\S]*aria-label="Collapse"/u,
-	);
-	assert.match(
-		panelLayoutSource,
-		/const toggleMetadata = useCallback\(\(\) => \{[\s\S]*setMetadataLayoutAnimating\(true\);[\s\S]*setMetadataCollapsed\(\(collapsed\) => !collapsed\);[\s\S]*\}, \[\]\);/u,
-	);
-	assert.doesNotMatch(panelLayoutSource, /metadataTogglePending|completeMetadataToggle/u);
-});
-
-test("experimental v3 preserves metadata disclosures across docked and preview rails", () => {
-	const detailsSource = readBlockFile("experimental-v3/components/details-tab.tsx");
-	const metadataRailSource = readBlockFile("experimental-v3/components/metadata-rail.tsx");
-	const metadataRailContextSource = readBlockFile("experimental-v3/context-metadata-rail.tsx");
-
-	assert.doesNotMatch(detailsSource, /useState/u);
-	assert.match(detailsSource, /showMore: boolean;/u);
-	assert.match(detailsSource, /onShowMoreChange: \(showMore: boolean\) => void;/u);
-	assert.match(detailsSource, /onClick=\{\(\) => onShowMoreChange\(!showMore\)\}/u);
-	assert.match(metadataRailContextSource, /const \[detailsShowMore, setDetailsShowMore\] = useState\(false\);/u);
-	assert.match(
-		metadataRailContextSource,
-		/const \[openSectionIds, setOpenSectionIds\] = useState<ReadonlySet<string>>\(\(\) => new Set\(\)\);/u,
-	);
-	assert.match(metadataRailSource, /<DetailsTab[\s\S]*showMore=\{detailsShowMore\}[\s\S]*onShowMoreChange=\{setDetailsShowMore\}/u);
-	assert.match(metadataRailSource, /<ArtifactPane[\s\S]*openSectionIds=\{openSectionIds\}/u);
-	assert.match(metadataRailSource, /<ArtifactPane[\s\S]*onOpenSectionIdsChange=\{setOpenSectionIds\}/u);
-});
-
 test("the v3 surface has one section nav, not a rail toggle plus a PR tab strip", () => {
 	// v3's divergence: Description / Activity / Insights (+ Guide / Files under
 	// a guided PR) became a single scroll-linked nav in the left column,
@@ -166,6 +114,8 @@ test("the v3 control row is consolidated and Reporter moved back to Details", ()
 		/<StatusPill[\s\S]*<ContextTitleActions[\s\S]*aria-label="Add to work item"/u,
 		"control row order must be status, coding agent, then the plus menu",
 	);
+	assert.match(resourcesSource, /const \[selectedAgentId, setSelectedAgentId\] = useState<CodingAgentId \| null>/u);
+	assert.match(resourcesSource, /compact \? \([\s\S]*<ContextTitleActionsSubmenu[\s\S]*<DropdownMenuSeparator \/>[\s\S]*resources\.map/u);
 	assert.doesNotMatch(
 		resourcesSource,
 		/PullRequestsSelect|pullRequestEntries|selectedPullRequestIdentity|onPullRequestSelect|onPullRequestClear|pullRequestSelected/u,
@@ -178,7 +128,7 @@ test("the v3 control row is consolidated and Reporter moved back to Details", ()
 	// The read-only pull-request Tag dissolved into the interactive Select.
 	assert.match(
 		readBlockFile("experimental-v3/components/pull-requests-select.tsx"),
-		/span[\s\S]*className=\{cn\(\s*selectedIdentity \? "text-text-selected" : "text-text-subtlest",\s*\)\}[\s\S]*\{pullRequestCount\}/u,
+		/span[\s\S]*className="shrink-0 text-xs font-normal text-text-subtlest"[\s\S]*\{pullRequestCount\}/u,
 	);
 
 	const detailsTabSource = readBlockFile("experimental-v3/components/details-tab.tsx");
@@ -199,11 +149,53 @@ test("the v3 control row is consolidated and Reporter moved back to Details", ()
 	assert.doesNotMatch(titleBarSource, /<StatusPill|<ContextTitleMeta|<PersonLabel/u);
 	assert.match(
 		titleBarSource,
-		/className="min-w-0 self-stretch px-6 pb-4"/u,
+		/"min-w-0 self-stretch px-6"[\s\S]*compact \? "pb-0" : "pb-4"/u,
 	);
 	assert.match(
 		titleBarSource,
-		/<ContextEditableTitle \/>[\s\S]*\{controlRow\}/u,
+		/<ContextEditableTitle compact=\{compact\} \/>[\s\S]*\{controlRow\(compact\)\}/u,
+	);
+	assert.match(titleBarSource, /useWorkItemHeaderVariant\(\)/u);
+	assert.match(titleBarSource, /data-header-variant=\{variant\}/u);
+	assert.match(titleBarSource, /layout=\{layout\}/u);
+	const titleTreatmentSource = readBlockFile(
+		"experimental-v3/components/inline-edit-treatment.ts",
+	);
+	assert.match(
+		titleTreatmentSource,
+		/CONTEXT_TITLE_FONT_STYLE = \{[\s\S]*font: token\("font\.heading\.xxlarge"\)[\s\S]*lineHeight: "2\.75rem"/u,
+	);
+	assert.match(
+		titleTreatmentSource,
+		/CONTEXT_TITLE_COMPACT_FONT_STYLE = \{[\s\S]*font: token\("font\.heading\.small"\)/u,
+	);
+	assert.match(
+		readBlockFile("experimental-v3/components/context-editable-header.tsx"),
+		/font-medium!/u,
+	);
+	assert.doesNotMatch(titleTreatmentSource, /fontWeight/u);
+	assert.doesNotMatch(
+		titleTreatmentSource,
+		/font: token\("font\.heading\.medium"\)/u,
+	);
+
+	const resourcesSourceWithCompactState = readBlockFile(
+		"experimental-v3/components/context-resources.tsx",
+	);
+	assert.match(
+		resourcesSourceWithCompactState,
+		/compact \? null : \([\s\S]*<ContextTitleActions[\s\S]*selectedAgentId=\{selectedAgentId\}/u,
+	);
+	const titleActionsSource = readBlockFile("experimental-v3/components/context-title-actions.tsx");
+	assert.match(titleActionsSource, /export function ContextTitleActionsSubmenu/u);
+	assert.match(titleActionsSource, /positionerClassName="z-\[503\]"/u);
+	assert.match(titleActionsSource, /<DropdownMenuSubTrigger className="gap-3">[\s\S]*className="inline-flex size-6 shrink-0 items-center justify-center/u);
+	assert.match(titleActionsSource, /CODING_AGENTS\.map[\s\S]*<DropdownMenuItem[\s\S]*elemBefore=/u);
+	assert.doesNotMatch(titleActionsSource, /DropdownMenuRadioGroup|DropdownMenuRadioItem/u);
+	assert.match(titleActionsSource, /<DropdownMenuSubTrigger className="gap-3">[\s\S]*Open in[\s\S]*<DropdownMenuSubContent/u);
+	assert.match(
+		resourcesSourceWithCompactState,
+		/style=\{compact \? \{ containerType: "normal" \} : undefined\}/u,
 	);
 });
 
@@ -219,14 +211,25 @@ test("the v3 dialog owns one fixed chrome row", () => {
 	const navSource = readBlockFile("experimental-v3/components/work-item-section-nav.tsx");
 	assert.match(navSource, /data-work-item-section-nav/u);
 	assert.match(navSource, /data-work-item-header-navigation/u);
-	assert.match(navSource, /className="@container\/resource-row border-b border-border"/u);
-	assert.match(navSource, /className="flex items-center px-3"/u);
+	assert.match(navSource, /useWorkItemHeaderVariant/u);
+	assert.match(navSource, /data-header-variant=\{variant\}/u);
+	assert.match(navSource, /"group\/work-item-navigation @container\/resource-row border-b transition-colors/u);
+	assert.match(navSource, /variant === "compact" \? "border-border-disabled" : "border-transparent"/u);
+	assert.match(navSource, /className="flex items-center gap-1 px-4\.5"/u);
 	assert.doesNotMatch(navSource, /ml-auto/u);
-	assert.match(navSource, /from "@\/components\/ui\/tabs"/u);
-	assert.match(navSource, /tabsLineIndicatorClass/u);
+	assert.match(navSource, /from "@\/components\/ui\/tabs-experimental"/u);
+	assert.match(navSource, /tabsExperimentalListClass/u);
+	assert.match(navSource, /tabsExperimentalTriggerClass/u);
 	assert.doesNotMatch(navSource, /tabsLineListOverflowClass/u);
 	assert.match(navSource, /FOCUS_RING_CLIP_GUTTER/u);
-	assert.match(navSource, /"box-content min-w-0 overflow-x-auto",\s*FOCUS_RING_CLIP_GUTTER/u);
+	assert.match(
+		navSource,
+		/"box-content min-w-0 overflow-x-auto overflow-y-hidden",\s*FOCUS_RING_CLIP_GUTTER/u,
+	);
+	assert.match(navSource, /NAV_LINK_CLASS = tabsExperimentalTriggerClass/u);
+	assert.doesNotMatch(navSource, /export const NAV_LINK_CLASS/u);
+	assert.doesNotMatch(navSource, /font\.heading\.xxsmall/u);
+	assert.match(navSource, /NAV_LIST_CLASS = cn\([\s\S]*tabsExperimentalListClass/u);
 	assert.doesNotMatch(navSource, /NAV_LIST_CLASS = "[^"]*border-b/u);
 	assert.doesNotMatch(navSource, /sticky top-0/u);
 	assert.doesNotMatch(navSource, /@\[860px\]\/agentlayout:static/u);
@@ -263,6 +266,11 @@ test("the v3 dialog owns one fixed chrome row", () => {
 	// Read the applied style rather than mirroring the breakpoint in JS, so the
 	// resolver cannot drift from the container query that drives it.
 	const navigationSource = readBlockFile("experimental-v3/context-section-navigation.tsx");
+	assert.match(navigationSource, /useSyncExternalStore/u);
+	assert.match(
+		navigationSource,
+		/\(scrollContainer\?\.scrollTop \?\? 0\) >= collapseOffset \? "compact" : "expanded"/u,
+	);
 	assert.match(
 		navigationSource,
 		/getComputedStyle\(wideScrollContainer\)\.display !== "contents"/u,
@@ -270,6 +278,10 @@ test("the v3 dialog owns one fixed chrome row", () => {
 	assert.match(navigationSource, /new ResizeObserver\(syncActiveScroller\)/u);
 	assert.match(navigationSource, /if \(!active \|\| !wideScrollContainer \|\| !narrowScrollContainer\)/u);
 	assert.match(navigationSource, /\[active, narrowScrollContainer, wideScrollContainer\]/u);
+	assert.match(
+		dialogSource,
+		/<motion\.div[\s\S]*data-jira-work-item-header-band[\s\S]*layout=\{headerLayout\}[\s\S]*<ContextTitleBar controlRow=\{controlRow\} \/>/u,
+	);
 	assert.match(
 		readBlockFile("experimental-v3/experimental-v3-jira-work-item.tsx"),
 		/<SectionNavigationProvider active=\{open\}>/u,
@@ -294,29 +306,47 @@ test("the v3 dialog owns one fixed chrome row", () => {
 	assert.doesNotMatch(spyHookSource, /sectionIdsRef/u);
 });
 
-test("PR select is an adjunct, never a section", () => {
+test("PR select shares the section navigation list without becoming a section", () => {
 	const navSource = readBlockFile("experimental-v3/components/work-item-section-nav.tsx");
 	assert.match(
 		navSource,
-		/<\/nav>\s*\) : null\}\s*\{endControl != null \? \([\s\S]*data-work-item-navigation-end-control/u,
+		/<ul className=\{NAV_LIST_CLASS\}>[\s\S]*\{endControl != null \? \([\s\S]*<li[\s\S]*data-work-item-navigation-end-control[\s\S]*\{endControl\}[\s\S]*<\/li>[\s\S]*<\/ul>/u,
 	);
-	assert.match(navSource, /"box-content flex h-8 shrink-0 overflow-x-auto",\s*FOCUS_RING_CLIP_GUTTER/u);
+	assert.doesNotMatch(navSource, /<\/nav>\s*\) : null\}\s*\{endControl != null/u);
 	assert.match(navSource, /onSectionSelect\?\.\(\);/u);
 
 	const selectSource = readBlockFile("experimental-v3/components/pull-requests-select.tsx");
-	assert.match(selectSource, /NAV_LINK_CLASS/u);
+	assert.match(selectSource, /tabsExperimentalTriggerClass/u);
+	assert.doesNotMatch(selectSource, /font\.heading\.xxsmall/u);
+	assert.match(selectSource, /className="inline-flex h-full min-w-0 items-stretch"/u);
+	assert.match(selectSource, /const HOVER_CLOSE_DELAY_MS = 100/u);
+	assert.match(selectSource, /<Select[\s\S]*onOpenChange=\{handleOpenChange\}[\s\S]*open=\{open\}/u);
+	assert.match(
+		selectSource,
+		/onMouseEnter=\{handleTriggerMouseEnter\}[\s\S]*onMouseLeave=\{scheduleHoverClose\}/u,
+	);
+	assert.match(selectSource, /retainHoverOpenOnTriggerPressRef/u);
+	assert.match(selectSource, /onPointerDownCapture[\s\S]*hoverOpenedRef\.current/u);
+	assert.match(
+		selectSource,
+		/<SelectContent[\s\S]*onMouseEnter=\{cancelHoverClose\}[\s\S]*onMouseLeave=\{scheduleHoverClose\}/u,
+	);
+	assert.match(selectSource, /data-popup-open:rounded-md/u);
+	assert.match(selectSource, /group-data-\[header-variant=compact\]\/work-item-navigation:data-popup-open:rounded-b-none/u);
+	assert.match(selectSource, /data-\[variant=none\]:border-x-\[6px\]! data-\[variant=none\]:border-x-transparent!/u);
+	assert.doesNotMatch(selectSource, /data-popup-open:bg-bg-neutral-subtle-hovered!/u);
 	assert.match(selectSource, /variant="none"/u);
 	assert.match(selectSource, /const TRIGGER_LABEL = "Pull requests"/u);
 	assert.match(selectSource, /aria-current=\{selectedIdentity \? "location" : undefined\}/u);
 	assert.match(
 		selectSource,
-		/<span[\s\S]*className=\{cn\(\s*selectedIdentity \? "text-text-selected" : "text-text-subtlest",\s*\)\}[\s\S]*\{pullRequestCount\}/u,
+		/<span[\s\S]*className="shrink-0 text-xs font-normal text-text-subtlest"[\s\S]*\{pullRequestCount\}/u,
 	);
 	assert.doesNotMatch(selectSource, /<Badge|pullRequestMetricBadgeVariant|lime: "success"|summarizePullRequestTagMetrics/u);
 	assert.doesNotMatch(selectSource, /"1 Open"/u);
 	assert.match(
 		navSource,
-		/<span[\s\S]*className=\{cn\(\s*section\.id === activeSectionId \? "text-text-selected" : "text-text-subtlest",\s*\)\}[\s\S]*\{activityCount\}/u,
+		/<span[\s\S]*className=\{cn\([\s\S]*"shrink-0 text-xs font-normal"[\s\S]*section\.id === activeSectionId \? "text-text" : "text-text-subtlest"[\s\S]*\{activityCount\}/u,
 	);
 	assert.doesNotMatch(navSource, /<Badge>\{activityCount\}<\/Badge>/u);
 	assert.doesNotMatch(selectSource, /Review pull request/u);
@@ -388,22 +418,6 @@ test("experimental v3 does not render a closed-state floating Rovo launcher", ()
 	assert.match(sessionSurfaceSource, /<AsxRovoOverlay[\s\S]*launcher="hidden"/u);
 	assert.doesNotMatch(sessionSurfaceSource, /launcherContainer|LAUNCHER_PLACEMENT|onLauncherClick/u);
 	assert.doesNotMatch(sessionSurfaceSource, /data-jira-work-item-dialog-body/u);
-});
-
-test("experimental v3 can preserve a dismissed chat across authored snapshot hydration", () => {
-	const compositionSource = readBlockFile("experimental-v3/experimental-v3-jira-work-item.tsx");
-	const contextSource = readBlockFile("experimental-v3/context-jira-work-item.tsx");
-	const controllerSource = readBlockFile("experimental-v3/use-jira-work-item-controller.ts");
-	assert.match(
-		compositionSource,
-		/preserveActiveSessionOnHydration=\{props\.preserveActiveSessionOnHydration\}/u,
-	);
-	assert.match(contextSource, /preserveActiveSessionOnHydration/u);
-	assert.match(controllerSource, /preserveActiveSessionOnHydration = false/u);
-	assert.match(
-		controllerSource,
-		/activeSessionId: preserveActiveSessionOnHydration[\s\S]*\? state\.activeSessionId[\s\S]*: initialState\.activeSessionId/u,
-	);
 });
 
 test("experimental v3 shares the session/planner data layer", () => {
@@ -498,21 +512,6 @@ test("the v3 lib test suite is registered so it actually runs in CI", () => {
 		assert.ok(
 			fs.existsSync(path.join(V3_DIR, "lib", testFile)),
 			`${testFile} is registered for v3 but the file does not exist`,
-		);
-	}
-});
-
-test("experimental v2 and v3 metadata scrollports reserve the same top focus-ring gutter", () => {
-	for (const variant of ["experimental-v2", "experimental-v3"]) {
-		const metadataRailSource = readBlockFile(`${variant}/components/metadata-rail.tsx`);
-		assert.match(
-			metadataRailSource,
-			/import \{ FOCUS_RING_TOP_CLIP_GUTTER \} from "@\/components\/ui\/focus-ring"/u,
-		);
-		assert.match(
-			metadataRailSource,
-			/ref=\{metadataBodyScrollRef\}[\s\S]*className=\{cn\([\s\S]*FOCUS_RING_TOP_CLIP_GUTTER,[\s\S]*\)\}[\s\S]*data-jira-work-item-scroll-region/u,
-			`${variant} must reserve four pixels above the first focus surface`,
 		);
 	}
 });

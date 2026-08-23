@@ -187,10 +187,12 @@ export function ExperimentalWorkItemLayout({
 						className="contents @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:flex-col @[860px]/agentlayout:[grid-area:1/1] @[860px]/agentlayout:[margin-right:var(--metadata-panel-offset)] motion-reduce:transition-none"
 						style={contentStyle}
 					>
+						{/* Only metadata width changes may project the column and docked composer. */}
 						<motion.div
 							className="contents @[860px]/agentlayout:mx-auto @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:w-full @[860px]/agentlayout:flex-1 @[860px]/agentlayout:flex-col motion-reduce:transition-none"
 							data-jira-work-item-content-column
 							layout={shouldReduceMotion || metadataPanelResizing ? false : "position"}
+							layoutDependency={metadataCollapsed}
 							style={contentColumnStyle}
 							transition={contentLayoutTransition}
 						>

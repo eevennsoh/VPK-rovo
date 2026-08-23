@@ -618,12 +618,13 @@ function ExperimentalV3JiraWorkItemContent({
 			<Toaster id={PULL_REQUEST_REVIEW_TOASTER_ID} position="bottom-left" />
 			<LayoutGroup id={composerLayoutGroupId}>
 				<ExperimentalWorkItemDialog
-						controlRow={(
-							<ContextResources
-								outputs={outputs}
-								primaryCodingAgentId={primaryCodingAgentId}
-							/>
-						)}
+					controlRow={(compact) => (
+						<ContextResources
+							compact={compact}
+							outputs={outputs}
+							primaryCodingAgentId={primaryCodingAgentId}
+						/>
+					)}
 						navigation={(
 							<WorkItemSectionNav
 								endControl={(

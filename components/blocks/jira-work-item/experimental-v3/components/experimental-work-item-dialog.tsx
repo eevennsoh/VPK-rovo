@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { Dialog } from "@base-ui/react/dialog";
+import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 
 import { ExperimentalBreadcrumbActions } from "@/components/blocks/jira-work-item/experimental-v3/components/experimental-breadcrumb-actions";
 import {
@@ -12,6 +13,11 @@ import { ModalHeader } from "@/components/projects/jira/components/work-item-mod
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
+const HEADER_LAYOUT_TRANSITION = {
+	duration: 0.2,
+	ease: [0.4, 0, 0, 1],
+} as const; // duration-medium + ease-in-out
+
 interface ExperimentalWorkItemDialogProps {
 	inlineSurface: "card" | "card-fill" | "fill";
 	open: boolean;
@@ -21,7 +27,7 @@ interface ExperimentalWorkItemDialogProps {
 	workItemTitle: string;
 	children: ReactNode;
 	/** Work-item control row, rendered under the title inside the header band. */
-	controlRow?: ReactNode;
+	controlRow?: (compact: boolean) => ReactNode;
 	navigation?: ReactNode;
 	blanketContent?: ReactNode;
 	sidebar: ReactNode;
@@ -51,6 +57,9 @@ export function ExperimentalWorkItemDialog({
 	onBodyWidthChange,
 }: Readonly<ExperimentalWorkItemDialogProps>) {
 	const dialogBodyRef = useRef<HTMLDivElement | null>(null);
+	const shouldReduceMotion = useReducedMotion() ?? false;
+	const headerLayout = shouldReduceMotion ? false : true;
+	const headerPositionLayout = shouldReduceMotion ? false : "position";
 	const description = `Details, agent sessions, and activity for work item ${workItemCode}.`;
 	const fillsInlineContainer = presentation === "inline" && inlineSurface !== "card";
 	const isFlushInlineSurface = presentation === "inline" && inlineSurface === "fill";
@@ -87,32 +96,49 @@ export function ExperimentalWorkItemDialog({
 			<div
 				className="grid h-full min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)]"
 				data-jira-work-item-main-column
-			>
-				<div
-					className={cn(
-						sidebarResizing
-							? "transition-none"
-							: "transition-[margin-right] duration-medium ease-in-out motion-reduce:transition-none",
-						sidebarOpen
-							? "@[860px]/workitemdialog:mr-[var(--work-item-side-panel-width)]"
-							: null,
-					)}
-					data-jira-work-item-header-column
-					data-jira-work-item-header-band
 				>
-					<ModalHeader
-						actions={<ExperimentalBreadcrumbActions />}
-						actionsClassName="gap-1"
-						breadcrumbLeadingContent={<WorkItemKeyCopy />}
-						breadcrumbRevealOnHover
-						closeButtonDisabled={presentation === "inline"}
-						closeButtonVariant="ghost"
-						paddingBottom={0}
-						paddingTop={token("space.150")}
-					/>
-					<ContextTitleBar controlRow={controlRow} />
-					{navigation}
-				</div>
+				{/* Keep scroll-driven header projection out of the body/composer group. */}
+				<LayoutGroup inherit={false}>
+					<motion.div
+						className={cn(
+							sidebarResizing
+								? "transition-none"
+								: "transition-[margin-right] duration-medium ease-in-out motion-reduce:transition-none",
+							sidebarOpen
+								? "@[860px]/workitemdialog:mr-[var(--work-item-side-panel-width)]"
+								: null,
+						)}
+						data-jira-work-item-header-column
+						data-jira-work-item-header-band
+						layout={headerLayout}
+						transition={{ layout: HEADER_LAYOUT_TRANSITION }}
+					>
+						<motion.div
+							layout={headerPositionLayout}
+							transition={{ layout: HEADER_LAYOUT_TRANSITION }}
+						>
+							<ModalHeader
+								actions={<ExperimentalBreadcrumbActions />}
+								actionsClassName="gap-1"
+								breadcrumbLeadingContent={<WorkItemKeyCopy />}
+								breadcrumbRevealOnHover
+								closeButtonDisabled={presentation === "inline"}
+								closeButtonVariant="ghost"
+								paddingBottom={0}
+								paddingTop={token("space.150")}
+							/>
+						</motion.div>
+						<ContextTitleBar controlRow={controlRow} />
+						{navigation ? (
+							<motion.div
+								layout={headerPositionLayout}
+								transition={{ layout: HEADER_LAYOUT_TRANSITION }}
+							>
+								{navigation}
+							</motion.div>
+						) : null}
+					</motion.div>
+				</LayoutGroup>
 				<div style={{ minHeight: 0, minWidth: 0, display: "grid", overflow: "hidden" }}>
 					{children}
 				</div>
