@@ -38,6 +38,7 @@ const TIMELINE_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
 	hour: "numeric",
 	minute: "2-digit",
 	month: "short",
+	timeZone: "Australia/Sydney",
 });
 
 export interface JiraInsightsTimelineRailProps {

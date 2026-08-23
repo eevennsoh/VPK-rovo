@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 const TIME_FORMATTER = new Intl.DateTimeFormat("en-US", {
 	hour: "numeric",
 	minute: "2-digit",
+	timeZone: "Australia/Sydney",
 });
 
 function formatJiraInsightTime(capturedAtMs: number): string {

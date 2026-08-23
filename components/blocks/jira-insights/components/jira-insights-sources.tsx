@@ -42,7 +42,7 @@ export function JiraInsightsSources({
 				<Button
 					key={source.id}
 					nativeButton={false}
-					render={<a href={source.href} rel="noreferrer" target="_blank" />}
+					render={<a aria-label={source.label} href={source.href} rel="noreferrer" target="_blank" />}
 					size="compact"
 					variant="outline"
 				>

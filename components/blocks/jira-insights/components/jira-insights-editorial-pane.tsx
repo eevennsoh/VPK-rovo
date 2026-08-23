@@ -12,8 +12,14 @@ import { Heading } from "@/components/ui/heading";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
-const DATE_FORMATTER = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
-const TIME_FORMATTER = new Intl.DateTimeFormat("en-US", { timeStyle: "short" });
+const DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
+	dateStyle: "medium",
+	timeZone: "Australia/Sydney",
+});
+const TIME_FORMATTER = new Intl.DateTimeFormat("en-US", {
+	timeStyle: "short",
+	timeZone: "Australia/Sydney",
+});
 
 function EditorialMetadata({
 	category,

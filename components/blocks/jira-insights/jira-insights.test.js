@@ -52,7 +52,18 @@ test("sources use VPK controls and semantic external links", () => {
 	assert.match(sourcesSource, /source\.kind === "external-link"/u);
 	assert.match(sourcesSource, /nativeButton=\{false\}/u);
 	assert.match(sourcesSource, /target="_blank"/u);
+	assert.match(sourcesSource, /aria-label=\{source\.label\}/u);
 	assert.match(sourcesSource, /onSourceSelect\?\.\(source\)/u);
+});
+
+test("Jira Insights timestamps use one explicit timezone across SSR and the browser", () => {
+	for (const relativePath of [
+		"components/jira-insights-checkpoint.tsx",
+		"components/jira-insights-editorial-pane.tsx",
+		"components/jira-insights-timeline-rail.tsx",
+	]) {
+		assert.match(readBlockFile(relativePath), /timeZone: "Australia\/Sydney"/u);
+	}
 });
 
 test("Jira Insights is registered as a documented block demo", () => {
