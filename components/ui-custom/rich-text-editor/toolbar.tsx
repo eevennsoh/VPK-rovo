@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useLayoutEffect, useMemo, useState, type ReactNode } from "react";
 import type { Editor } from "@tiptap/react";
 import { BubbleMenu, FloatingMenu } from "@tiptap/react/menus";
 
@@ -27,29 +27,35 @@ function resolveEditorScrollTarget(editor: Editor): HTMLElement | Window | undef
 	}
 
 	let ancestor = editor.view.dom.parentElement;
+	let nearestScrollTarget: HTMLElement | undefined;
 
 	while (ancestor) {
 		const { overflowY } = ownerWindow.getComputedStyle(ancestor);
 		if (SCROLLABLE_OVERFLOW_VALUES.has(overflowY)) {
-			return ancestor;
+			nearestScrollTarget ??= ancestor;
+			const canScrollVertically = ancestor.scrollHeight > ancestor.clientHeight;
+			if (canScrollVertically) {
+				return ancestor;
+			}
 		}
 
 		ancestor = ancestor.parentElement;
 	}
 
-	return ownerWindow;
+	return nearestScrollTarget ?? ownerWindow;
 }
 
 function useEditorMenuOptions(editor: Editor) {
-	const [scrollTarget, setScrollTarget] = useState<HTMLElement | Window | undefined>(
-		editor.view.dom.ownerDocument.defaultView ?? undefined,
-	);
+	const [scrollTarget, setScrollTarget] = useState<HTMLElement | Window>();
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		setScrollTarget(resolveEditorScrollTarget(editor));
 	}, [editor]);
 
-	return useMemo(() => ({ scrollTarget }), [scrollTarget]);
+	return useMemo(
+		() => scrollTarget ? { scrollTarget } : undefined,
+		[scrollTarget],
+	);
 }
 
 interface RichTextEditorBubbleMenuProps {
@@ -107,6 +113,9 @@ export function RichTextEditorBubbleMenu({
 	onAskRovo,
 }: Readonly<RichTextEditorBubbleMenuProps>) {
 	const menuOptions = useEditorMenuOptions(editor);
+	if (!menuOptions) {
+		return null;
+	}
 
 	return (
 		<BubbleMenu
@@ -142,6 +151,9 @@ export function RichTextEditorFloatingMenu({
 	leadingSlot,
 }: Readonly<RichTextEditorFloatingMenuProps>) {
 	const menuOptions = useEditorMenuOptions(editor);
+	if (!menuOptions) {
+		return null;
+	}
 
 	return (
 		<FloatingMenu

@@ -72,10 +72,23 @@ test("rich text floating toolbars follow the editor scroll container", () => {
 		richToolbarSource,
 		/function resolveEditorScrollTarget\(editor: Editor\): HTMLElement \| Window \| undefined/u,
 	);
+	assert.match(
+		richToolbarSource,
+		/const canScrollVertically = ancestor\.scrollHeight > ancestor\.clientHeight;/u,
+	);
 	assert.equal(
 		(richToolbarSource.match(/const menuOptions = useEditorMenuOptions\(editor\);/gu) ?? []).length,
 		2,
 	);
+	assert.match(
+		richToolbarSource,
+		/function useEditorMenuOptions\(editor: Editor\) \{[\s\S]*useLayoutEffect\(\(\) => \{[\s\S]*setScrollTarget\(resolveEditorScrollTarget\(editor\)\);/u,
+	);
+	assert.equal(
+		(richToolbarSource.match(/if \(!menuOptions\) \{\s*return null;\s*\}/gu) ?? []).length,
+		2,
+	);
+	assert.doesNotMatch(richToolbarSource, /\buseEffect\b/u);
 	assert.equal(
 		(richToolbarSource.match(/options=\{menuOptions\}/gu) ?? []).length,
 		2,
