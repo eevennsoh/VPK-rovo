@@ -48,7 +48,9 @@ import type {
 import { SmartLink, type SmartLinkItem } from "@/components/blocks/smart-link";
 import { SMART_LINK_MODAL_ACTIONS } from "@/components/blocks/smart-link/data/smart-link-actions";
 import { ProgressCircle } from "@/components/ui-custom/progress-circle";
+import { FOCUS_RING_TOP_CLIP_GUTTER } from "@/components/ui/focus-ring";
 import { StickyRowScrollFade } from "@/components/visual/scroll-mask";
+import { cn } from "@/lib/utils";
 
 const PullRequestContextRail = dynamic(
 	() => import("@/components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-context-rail")
@@ -325,7 +327,10 @@ export function MetadataRail({
 					ref={metadataBodyScrollRef}
 					// overflow-x-hidden: body owns vertical scroll only; long activity
 					// lines must wrap/truncate via min-w-0 rather than grow a cross-axis bar.
-					className="relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-none @[860px]/agentlayout:pb-8"
+					className={cn(
+						"relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-none @[860px]/agentlayout:pb-8",
+						FOCUS_RING_TOP_CLIP_GUTTER,
+					)}
 					data-jira-work-item-scroll-region
 					style={metadataBodyScrollMaskStyle}
 				>

@@ -155,6 +155,17 @@ test("Artifact Pane property rows follow the Jira Session Flyout layout pattern"
 	assert.match(BLOCK_SOURCE, /\[&>button\]:px-2!/u);
 });
 
+test("Artifact Pane header action slots expose descendant-owned focus indicators", () => {
+	assert.match(
+		BLOCK_SOURCE,
+		/headerActionOpenReveal \? \([\s\S]*className="min-w-0 overflow-hidden has-\[:focus-visible\]:overflow-visible"[\s\S]*\{headerActionControl\}/u,
+	);
+	assert.match(
+		BLOCK_SOURCE,
+		/HEADER_ACTION_HOVER_SLOT_CLASSNAME[\s\S]*className="min-w-0 overflow-hidden has-\[:focus-visible\]:overflow-visible"[\s\S]*\{headerActionControl\}/u,
+	);
+});
+
 test("Artifact Pane remains standalone from the Jira work-item metadata rail", () => {
 	assert.doesNotMatch(METADATA_RAIL_SOURCE, /components\/blocks\/artifact-pane/u);
 	assert.match(METADATA_RAIL_SOURCE, /<Tabs defaultValue="details">/u);

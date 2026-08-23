@@ -224,8 +224,9 @@ test("the v3 dialog owns one fixed chrome row", () => {
 	assert.doesNotMatch(navSource, /ml-auto/u);
 	assert.match(navSource, /from "@\/components\/ui\/tabs"/u);
 	assert.match(navSource, /tabsLineIndicatorClass/u);
-	assert.match(navSource, /tabsLineListOverflowClass/u);
-	assert.match(navSource, /className=\{cn\("min-w-0", tabsLineListOverflowClass\)\}/u);
+	assert.doesNotMatch(navSource, /tabsLineListOverflowClass/u);
+	assert.match(navSource, /FOCUS_RING_CLIP_GUTTER/u);
+	assert.match(navSource, /"box-content min-w-0 overflow-x-auto",\s*FOCUS_RING_CLIP_GUTTER/u);
 	assert.doesNotMatch(navSource, /NAV_LIST_CLASS = "[^"]*border-b/u);
 	assert.doesNotMatch(navSource, /sticky top-0/u);
 	assert.doesNotMatch(navSource, /@\[860px\]\/agentlayout:static/u);
@@ -299,7 +300,7 @@ test("PR select is an adjunct, never a section", () => {
 		navSource,
 		/<\/nav>\s*\) : null\}\s*\{endControl != null \? \([\s\S]*data-work-item-navigation-end-control/u,
 	);
-	assert.match(navSource, /className=\{cn\("flex h-8 shrink-0", tabsLineListOverflowClass\)\}/u);
+	assert.match(navSource, /"box-content flex h-8 shrink-0 overflow-x-auto",\s*FOCUS_RING_CLIP_GUTTER/u);
 	assert.match(navSource, /onSectionSelect\?\.\(\);/u);
 
 	const selectSource = readBlockFile("experimental-v3/components/pull-requests-select.tsx");
@@ -497,6 +498,21 @@ test("the v3 lib test suite is registered so it actually runs in CI", () => {
 		assert.ok(
 			fs.existsSync(path.join(V3_DIR, "lib", testFile)),
 			`${testFile} is registered for v3 but the file does not exist`,
+		);
+	}
+});
+
+test("experimental v2 and v3 metadata scrollports reserve the same top focus-ring gutter", () => {
+	for (const variant of ["experimental-v2", "experimental-v3"]) {
+		const metadataRailSource = readBlockFile(`${variant}/components/metadata-rail.tsx`);
+		assert.match(
+			metadataRailSource,
+			/import \{ FOCUS_RING_TOP_CLIP_GUTTER \} from "@\/components\/ui\/focus-ring"/u,
+		);
+		assert.match(
+			metadataRailSource,
+			/ref=\{metadataBodyScrollRef\}[\s\S]*className=\{cn\([\s\S]*FOCUS_RING_TOP_CLIP_GUTTER,[\s\S]*\)\}[\s\S]*data-jira-work-item-scroll-region/u,
+			`${variant} must reserve four pixels above the first focus surface`,
 		);
 	}
 });

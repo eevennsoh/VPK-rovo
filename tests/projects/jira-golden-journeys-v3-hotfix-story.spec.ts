@@ -17,6 +17,120 @@ function contextBar(page: Page): Locator {
 	return page.locator("[data-pr-context-bar][data-pr-number='1847']");
 }
 
+type FocusClip = Readonly<{
+	clippedEdges: readonly string[];
+	clippingAncestor: string;
+	overflowX: string;
+	overflowY: string;
+}>;
+
+async function expectFocusIndicatorNotClipped(
+	page: Page,
+	indicatorOwner: Locator,
+	focusTargetSelector?: string,
+): Promise<void> {
+	await page.keyboard.press("Tab");
+	const result = await indicatorOwner.evaluate(async (element, selector) => {
+		const focusTarget = selector
+			? element.querySelector<HTMLElement>(selector)
+			: element as HTMLElement;
+		if (!focusTarget) throw new Error(`Missing focus target: ${selector}`);
+		focusTarget.focus();
+		await new Promise((resolve) => window.setTimeout(resolve, 200));
+		function splitShadows(value: string): string[] {
+			const shadows: string[] = [];
+			let current = "";
+			let parenthesisDepth = 0;
+			for (const character of value) {
+				if (character === "(") parenthesisDepth += 1;
+				if (character === ")") parenthesisDepth -= 1;
+				if (character === "," && parenthesisDepth === 0) {
+					shadows.push(current);
+					current = "";
+					continue;
+				}
+				current += character;
+			}
+			if (current) shadows.push(current);
+			return shadows;
+		}
+
+		const style = getComputedStyle(element);
+		const outlineOutset = style.outlineStyle === "none"
+			? 0
+			: Math.max(0, parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset));
+		const outsets = {
+			top: outlineOutset,
+			right: outlineOutset,
+			bottom: outlineOutset,
+			left: outlineOutset,
+		};
+		for (const shadow of splitShadows(style.boxShadow)) {
+			if (shadow.includes("inset")) continue;
+			const lengths = (shadow.match(/-?(?:\d+\.?\d*|\.\d+)px/gu) ?? [])
+				.map((length) => Number.parseFloat(length));
+			const [offsetX = 0, offsetY = 0, blur = 0, spread = 0] = lengths;
+			outsets.top = Math.max(outsets.top, spread + blur - offsetY);
+			outsets.right = Math.max(outsets.right, spread + blur + offsetX);
+			outsets.bottom = Math.max(outsets.bottom, spread + blur + offsetY);
+			outsets.left = Math.max(outsets.left, spread + blur - offsetX);
+		}
+
+		const clips: FocusClip[] = [];
+		const controlRect = element.getBoundingClientRect();
+		const clippedOverflowValues = new Set(["auto", "clip", "hidden", "scroll"]);
+		let ancestor = element.parentElement;
+		while (ancestor) {
+			const ancestorStyle = getComputedStyle(ancestor);
+			const clipsX = clippedOverflowValues.has(ancestorStyle.overflowX)
+				|| ancestorStyle.contain.includes("paint")
+				|| ancestorStyle.clipPath !== "none";
+			const clipsY = clippedOverflowValues.has(ancestorStyle.overflowY)
+				|| ancestorStyle.contain.includes("paint")
+				|| ancestorStyle.clipPath !== "none";
+			if (clipsX || clipsY) {
+				const ancestorRect = ancestor.getBoundingClientRect();
+				const innerLeft = ancestorRect.left + parseFloat(ancestorStyle.borderLeftWidth);
+				const innerRight = ancestorRect.right - parseFloat(ancestorStyle.borderRightWidth);
+				const innerTop = ancestorRect.top + parseFloat(ancestorStyle.borderTopWidth);
+				const innerBottom = ancestorRect.bottom - parseFloat(ancestorStyle.borderBottomWidth);
+				const clippedEdges = [
+					clipsX && controlRect.left - outsets.left < innerLeft ? "left" : null,
+					clipsX && controlRect.right + outsets.right > innerRight ? "right" : null,
+					clipsY && controlRect.top - outsets.top < innerTop ? "top" : null,
+					clipsY && controlRect.bottom + outsets.bottom > innerBottom ? "bottom" : null,
+				].filter((edge): edge is string => edge !== null);
+				if (clippedEdges.length > 0) {
+					clips.push({
+						clippedEdges,
+						clippingAncestor: ancestor.getAttribute("data-jira-work-item-scroll-region") !== null
+							? "[data-jira-work-item-scroll-region]"
+							: `${ancestor.tagName.toLowerCase()}.${ancestor.className}`,
+						overflowX: ancestorStyle.overflowX,
+						overflowY: ancestorStyle.overflowY,
+					});
+				}
+			}
+			ancestor = ancestor.parentElement;
+		}
+
+		return {
+			clips,
+			focused: document.activeElement === focusTarget,
+			focusVisible: focusTarget.matches(":focus-visible"),
+			outsets,
+		};
+	}, focusTargetSelector);
+
+	expect(result.focused).toBe(true);
+	expect(result.focusVisible).toBe(true);
+	expect(result.outsets.top).toBeGreaterThan(0);
+	expect(result.outsets.right).toBeGreaterThan(0);
+	expect(result.outsets.bottom).toBeGreaterThan(0);
+	expect(result.outsets.left).toBeGreaterThan(0);
+	expect(result.clips).toEqual([]);
+}
+
 async function openStory(page: Page): Promise<void> {
 	await page.goto(JIRA_GOLDEN_JOURNEYS_V3_URL, { waitUntil: "domcontentloaded" });
 	await expect(page.getByRole("heading", { name: "Jira Golden Journeys v3" })).toBeVisible();
@@ -58,6 +172,16 @@ async function openBuild(page: Page): Promise<Locator> {
 	return contextBar(page);
 }
 
+async function openMetadataRail(page: Page): Promise<void> {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.setViewportSize({ width: 1920, height: 1080 });
+	await openBuild(page);
+	const agentChat = page.getByRole("region", { name: "Agent chat" });
+	await expect(agentChat).toBeVisible();
+	await agentChat.getByRole("button", { name: "Close" }).click();
+	await expect(page.getByRole("button", { name: "Change assignee" })).toBeVisible();
+}
+
 async function setAutomation(
 	page: Page,
 	settings: Readonly<{ autoFix: boolean; autoMerge: boolean }>,
@@ -79,6 +203,56 @@ async function setAutomation(
 	await expect(autoMerge).toHaveAttribute("aria-checked", String(settings.autoMerge));
 	await page.keyboard.press("Escape");
 }
+
+test("the desktop chapter control keeps its keyboard focus indicator clear of the gallery scrollport", async ({
+	page,
+}) => {
+	await openStory(page);
+	await expectFocusIndicatorNotClipped(page, chapterButton(page, "Build"));
+});
+
+test("the metadata rail keeps field focus indicators clear of its body scrollport", async ({
+	page,
+}) => {
+	await openMetadataRail(page);
+	const assignee = page.getByRole("button", { name: "Change assignee" });
+	await expectFocusIndicatorNotClipped(page, assignee.locator(".."), "button");
+});
+
+test("ArtifactPane header actions keep their keyboard focus indicators clear of reveal slots", async ({
+	page,
+}) => {
+	await openMetadataRail(page);
+	const manageAutomations = page.getByRole("button", { name: "Manage automations" });
+	await expect(manageAutomations).toBeAttached();
+	await expectFocusIndicatorNotClipped(page, manageAutomations);
+});
+
+test("the PR context-bar CI trigger keeps its keyboard focus indicator clear of the content lane", async ({
+	page,
+}) => {
+	await openBuild(page);
+	await expectFocusIndicatorNotClipped(page, page.locator("[data-ci-automation-trigger]"));
+});
+
+test("work-item navigation keeps section and pull-request focus indicators clear", async ({
+	page,
+}) => {
+	await openBuild(page);
+	await expectFocusIndicatorNotClipped(page, page.getByRole("link", { name: "Description" }));
+	await expectFocusIndicatorNotClipped(page, page.getByRole("combobox", { name: "Pull requests. 1" }));
+});
+
+test("activity actions keep session and artifact focus indicators clear of reveal slots", async ({
+	page,
+}) => {
+	await openBuild(page);
+	await expectFocusIndicatorNotClipped(page, page.getByRole("button", { name: "View" }).first());
+	await expectFocusIndicatorNotClipped(
+		page,
+		page.getByRole("button", { name: "Code changes: 86 additions, 21 deletions" }),
+	);
+});
 
 test("Terminal tells the local Claude-to-PR story and waits for the presenter to choose Build", async ({
 	page,

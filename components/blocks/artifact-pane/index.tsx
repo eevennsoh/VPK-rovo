@@ -254,13 +254,13 @@ function ArtifactPaneDisclosure({
 									open ? "grid-cols-[1fr]" : "grid-cols-[0fr]",
 								)}
 							>
-								<div className="min-w-0 overflow-hidden">
+								<div className="min-w-0 overflow-hidden has-[:focus-visible]:overflow-visible">
 									{headerActionControl}
 								</div>
 							</div>
 						) : (
 							<div className={HEADER_ACTION_HOVER_SLOT_CLASSNAME}>
-								<div className="min-w-0 overflow-hidden">
+								<div className="min-w-0 overflow-hidden has-[:focus-visible]:overflow-visible">
 									{headerActionControl}
 								</div>
 							</div>

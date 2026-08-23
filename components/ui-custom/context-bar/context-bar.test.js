@@ -22,6 +22,13 @@ test("all context-bar surfaces share the 40px minimum-height contract", () => {
 	assert.match(CONTEXT_BAR_SOURCE, /const OVERFLOW_BUTTON_CLASS =\s*"[^"]*size-10/u);
 });
 
+test("ContextBar exposes descendant focus indicators beyond its truncation lane", () => {
+	assert.match(
+		CONTEXT_BAR_SOURCE,
+		/className="flex min-w-0 flex-1 items-center gap-1\.5 overflow-hidden has-\[:focus-visible\]:overflow-visible"/u,
+	);
+});
+
 async function loadContextBarHarness() {
 	const mockModules = new Map([
 		[

@@ -31,3 +31,13 @@ export const FOCUS_RING_HAS_VISIBLE =
 /** Held open while a descendant trigger's popover is showing. */
 export const FOCUS_RING_POPUP_OPEN =
 	"has-[[data-popup-open]]:ring-3 has-[[data-popup-open]]:ring-ring/50 has-[[data-popup-open]]:ring-offset-1 has-[[data-popup-open]]:ring-offset-ring";
+
+/**
+ * Four pixels of compensated clearance for an outward focus indicator inside
+ * a clip or scroll owner. Matching negative margin keeps surrounding geometry
+ * unchanged while the padding moves the clipping boundary beyond the ring.
+ */
+export const FOCUS_RING_CLIP_GUTTER = "-m-1 p-1";
+
+/** Top-edge-only form for vertical scrollports whose other edges already clear the ring. */
+export const FOCUS_RING_TOP_CLIP_GUTTER = "-mt-1 pt-1";

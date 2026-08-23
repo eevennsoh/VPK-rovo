@@ -46,6 +46,26 @@ test("the responsive gallery keeps both desktop and compact story controls", () 
 	assert.match(controlsSource, /aria-label="Next chapter"/u);
 });
 
+test("every Jira Golden Journeys header scroller reserves the shared focus-ring gutter", () => {
+	const focusRingSource = readProjectFile("components/ui/focus-ring.ts");
+	assert.match(focusRingSource, /export const FOCUS_RING_CLIP_GUTTER = "-m-1 p-1"/u);
+
+	for (const sourcePath of [
+		"components/projects/jira-golden-journeys-v0/components/gallery-header-controls.tsx",
+		"components/projects/jira-golden-journeys-v1/components/session-stage.tsx",
+		"components/projects/jira-golden-journeys-v2/story-controls.tsx",
+		"components/projects/jira-golden-journeys-v3/story-controls.tsx",
+	]) {
+		const source = readProjectFile(sourcePath);
+		assert.match(source, /import \{ FOCUS_RING_CLIP_GUTTER \} from "@\/components\/ui\/focus-ring"/u);
+		assert.match(
+			source,
+			/"scrollbar-none max-w-\[calc\(100vw-12rem\)\] overflow-x-auto",\s*FOCUS_RING_CLIP_GUTTER/u,
+			sourcePath,
+		);
+	}
+});
+
 test("the controller starts at Terminal with both automation settings disabled", () => {
 	const source = readProjectFile(CONTROLLER_PATH);
 	assert.match(source, /useState<JiraGoldenJourneysV3StoryChapter>\("terminal"\)/u);

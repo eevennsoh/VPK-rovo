@@ -186,7 +186,7 @@ function ArtifactListRow({
 				"group-has-[:focus-visible]/artifact-row:ml-3 group-has-[:focus-visible]/artifact-row:grid-cols-[1fr]",
 			)}
 		>
-			<div className="min-w-0 overflow-hidden">
+			<div className="min-w-0 overflow-hidden has-[:focus-visible]:overflow-visible">
 				<Button
 					aria-label={item.pullRequest
 						? `Code changes: ${item.pullRequest.additions} additions, ${item.pullRequest.deletions} deletions`

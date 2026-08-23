@@ -3,10 +3,8 @@
 import type { ReactNode } from "react";
 
 import { useSectionNavigation } from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
-import {
-	tabsLineIndicatorClass,
-	tabsLineListOverflowClass,
-} from "@/components/ui/tabs";
+import { FOCUS_RING_CLIP_GUTTER } from "@/components/ui/focus-ring";
+import { tabsLineIndicatorClass } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 const NAV_LIST_CLASS = "flex h-8 w-fit items-stretch justify-start text-text-subtle";
@@ -51,7 +49,10 @@ export function WorkItemSectionNav({
 				{sections.length > 0 ? (
 					<nav
 						aria-label="Work item sections"
-						className={cn("min-w-0", tabsLineListOverflowClass)}
+						className={cn(
+							"box-content min-w-0 overflow-x-auto",
+							FOCUS_RING_CLIP_GUTTER,
+						)}
 						data-work-item-section-nav
 					>
 						<ul className={NAV_LIST_CLASS}>
@@ -91,7 +92,10 @@ export function WorkItemSectionNav({
 				) : null}
 				{endControl != null ? (
 					<div
-						className={cn("flex h-8 shrink-0", tabsLineListOverflowClass)}
+						className={cn(
+							"box-content flex h-8 shrink-0 overflow-x-auto",
+							FOCUS_RING_CLIP_GUTTER,
+						)}
 						data-work-item-navigation-end-control
 					>
 						{endControl}
