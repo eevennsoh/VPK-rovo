@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { Gallery, type GalleryItem } from "@/components/blocks/gallery";
@@ -9,6 +9,7 @@ import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journ
 import { useTerminalDemo } from "@/components/projects/jira-golden-journeys-v1/hooks/use-terminal-demo";
 
 import { JIRA_GOLDEN_JOURNEYS_V3_GALLERY_ITEMS } from "./data/gallery-items";
+import { createJiraGoldenJourneysV3InsightsSnapshot } from "./data/jira-insights";
 import {
 	JIRA_GOLDEN_JOURNEYS_V3_CLAUDE_SESSION_ID,
 	JIRA_GOLDEN_JOURNEYS_V3_STATUS_PHASES,
@@ -150,6 +151,26 @@ function JiraGoldenJourneysV3WorkItemStage({
 	onDismissPullRequestContext: () => void;
 	showPullRequestContext: boolean;
 }>): React.ReactElement {
+	const insightsSnapshot = useMemo(() => createJiraGoldenJourneysV3InsightsSnapshot(
+		controller.chapter,
+		{
+			approvalStep: controller.approvalStep,
+			ciStatus: controller.ciStatus,
+			fixStep: controller.fixStep,
+			pullRequestMerged: controller.pullRequestMerged,
+			reviewStep: controller.reviewStep,
+		},
+		controller.insightsRevision,
+	), [
+		controller.approvalStep,
+		controller.chapter,
+		controller.ciStatus,
+		controller.fixStep,
+		controller.insightsRevision,
+		controller.pullRequestMerged,
+		controller.reviewStep,
+	]);
+
 	return (
 		<div className="relative left-1/2 flex h-full min-h-0 w-[100cqw] -translate-x-1/2 items-start justify-center overflow-hidden px-8 pt-4 pb-4">
 			<ExperimentalV3JiraWorkItem
@@ -172,6 +193,7 @@ function JiraGoldenJourneysV3WorkItemStage({
 				initialPreset={controller.initialState.preset}
 				initialState={controller.initialState}
 				initialStateRevision={controller.launchId}
+				insightsSnapshot={insightsSnapshot}
 				preserveActiveSessionOnHydration
 				inlineSurface="card-fill"
 				presentation="inline"

@@ -23,10 +23,17 @@ for (const tree of TREES) {
 
 	test(`${tree} host-owned bar replaces only the standard context-pill row`, () => {
 		assert.match(composerSource, /composerContextBar\?: ReactNode;/u);
-		assert.match(
-			composerSource,
-			/hasExpandedPullRequestComposer \? null : \([\s\S]*composerContextBar !== undefined \? composerContextBar : \([\s\S]*<ActivityComposerContextPills/u,
-		);
+		if (tree === "experimental-v3") {
+			assert.match(
+				composerSource,
+				/hasExpandedPullRequestComposer \? null : \([\s\S]*<ActivityComposerContextPills[\s\S]*contextBar=\{composerContextBar\}/u,
+			);
+		} else {
+			assert.match(
+				composerSource,
+				/hasExpandedPullRequestComposer \? null : \([\s\S]*composerContextBar !== undefined \? composerContextBar : \([\s\S]*<ActivityComposerContextPills/u,
+			);
+		}
 		assert.match(composerSource, /onInvokeAgent=\{handleInvokeAgent\}/u);
 		assert.match(composerSource, /onInvokeSkill=\{handleInvokeSkill\}/u);
 	});

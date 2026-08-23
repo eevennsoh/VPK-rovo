@@ -5339,7 +5339,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 422,
+			"manifestEntryCount": 423,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5381,7 +5381,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 102,
+				"entryCount": 103,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5634,6 +5634,12 @@
 						"slug": "jira-epic",
 						"name": "Jira Epic",
 						"importPath": "@/components/blocks/jira-epic"
+					},
+					{
+						"category": "blocks",
+						"slug": "jira-insights",
+						"name": "Jira Insights",
+						"importPath": "@/components/blocks/jira-insights"
 					},
 					{
 						"category": "blocks",

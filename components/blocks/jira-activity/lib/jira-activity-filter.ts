@@ -39,6 +39,8 @@ export function matchesJiraActivityFilter(
 			return activityEntryNeedsInput(entry);
 		case "comments-only":
 			return entry.kind === "comment";
+		case "insights-only":
+			return entry.category === "insight";
 		default: {
 			const _exhaustive: never = filter;
 			return _exhaustive;

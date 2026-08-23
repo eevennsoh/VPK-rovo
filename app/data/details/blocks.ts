@@ -94,6 +94,7 @@ import { CHATBOT_DETAIL } from "./blocks/chatbot";
 import { JIRA_EPIC_DETAIL } from "./blocks/jira-epic";
 import { AGENT_LIST_DETAIL } from "./blocks/agent-list";
 import { JIRA_ACTIVITY_DETAIL } from "./blocks/jira-activity";
+import { JIRA_INSIGHTS_DETAIL } from "./blocks/jira-insights";
 import { JIRA_ISSUE_DETAIL } from "./blocks/jira-issue";
 import { JIRA_LIST_DETAIL } from "./blocks/jira-list";
 import { JIRA_KANBAN_DETAIL } from "./blocks/jira-kanban";
@@ -198,6 +199,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"jira-epic": JIRA_EPIC_DETAIL,
 	"agent-list": AGENT_LIST_DETAIL,
 	"jira-activity": JIRA_ACTIVITY_DETAIL,
+	"jira-insights": JIRA_INSIGHTS_DETAIL,
 	"jira-issue": JIRA_ISSUE_DETAIL,
 	"jira-list": JIRA_LIST_DETAIL,
 	"jira-kanban": JIRA_KANBAN_DETAIL,

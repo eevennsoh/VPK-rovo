@@ -27,11 +27,17 @@ const SORT_MENU_LABELS: Record<JiraActivitySortOrder, string> = {
 	descending: "Latest",
 };
 
-/** Full work-item Activity filters (Agents / Needs input / Comments). */
+/** Standard work-item Activity filters. */
 const JIRA_ACTIVITY_FILTER_VALUES = [
 	"agents-only",
 	"needs-input",
 	"comments-only",
+] as const satisfies readonly Exclude<JiraActivityFilter, "all">[];
+
+/** Insight-aware work-item filters used only by consumers that supply insight rows. */
+const JIRA_ACTIVITY_INSIGHTS_FILTER_VALUES = [
+	...JIRA_ACTIVITY_FILTER_VALUES,
+	"insights-only",
 ] as const satisfies readonly Exclude<JiraActivityFilter, "all">[];
 
 /** SCM PR Activity filters — Comments only (All via Latest/Oldest selection). */
@@ -43,15 +49,17 @@ const FILTER_TRIGGER_LABELS: Record<Exclude<JiraActivityFilter, "all">, string> 
 	"agents-only": "Show agents",
 	"needs-input": "Show needs input",
 	"comments-only": "Show comments",
+	"insights-only": "Show insights",
 };
 
 const FILTER_MENU_LABELS: Record<Exclude<JiraActivityFilter, "all">, string> = {
 	"agents-only": "Agents",
 	"needs-input": "Needs input",
 	"comments-only": "Comments",
+	"insights-only": "Insights",
 };
 
-export type JiraActivityViewFilterMode = "jira" | "pull-request" | "sort-only";
+export type JiraActivityViewFilterMode = "jira" | "jira-insights" | "pull-request" | "sort-only";
 
 function filterValuesForMode(
 	mode: JiraActivityViewFilterMode,
@@ -59,6 +67,8 @@ function filterValuesForMode(
 	switch (mode) {
 		case "jira":
 			return JIRA_ACTIVITY_FILTER_VALUES;
+		case "jira-insights":
+			return JIRA_ACTIVITY_INSIGHTS_FILTER_VALUES;
 		case "pull-request":
 			return PULL_REQUEST_ACTIVITY_FILTER_VALUES;
 		case "sort-only":
@@ -105,6 +115,7 @@ function stopTriggerPropagation(event: { stopPropagation(): void }): void {
  *
  * Prefer `filterMode`:
  * - `jira` — Latest / Oldest + Agents / Needs input / Comments
+ * - `jira-insights` — Jira filters + Insights for consumers that supply insight rows
  * - `pull-request` — Latest / Oldest + Comments (SCM Activity)
  * - `sort-only` — Latest / Oldest only
  *

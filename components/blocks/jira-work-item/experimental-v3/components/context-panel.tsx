@@ -19,6 +19,7 @@ const PullRequestDetailView = dynamic(
 
 export function ContextPanel({
 	activity,
+	hasInsights,
 	onPullRequestChapterReviewedChange,
 	onPullRequestInlineCommentsChange,
 	pullRequestApprovalState,
@@ -31,6 +32,7 @@ export function ContextPanel({
 }: Readonly<{
 	/** Pre-wrapped in its own `WorkItemSection` by the activity panel. */
 	activity: ReactNode;
+	hasInsights: boolean;
 	onPullRequestChapterReviewedChange?: (identity: string, chapterId: string, reviewed: boolean) => void;
 	onPullRequestInlineCommentsChange?: (
 		identity: string,
@@ -72,7 +74,7 @@ export function ContextPanel({
 					submitReviewAction={submitReviewAction}
 				/>
 			) : insightsSelected ? (
-				<InsightsPanel />
+				<InsightsPanel activity={activity} hasInsights={hasInsights} />
 			) : (
 				<WorkItemBody activity={activity} />
 			)}

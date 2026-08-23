@@ -660,6 +660,8 @@ test("Jira Activity exposes controlled entries and replaceable composer contract
 	assert.match(INDEX_SOURCE, /onEntriesChange\?: \(entries: readonly JiraActivityEntry\[\]\) => void/u);
 	assert.match(INDEX_SOURCE, /composer\?: ReactNode \| null/u);
 	assert.match(INDEX_SOURCE, /renderCommentAction\?: \(entry:/u);
+	assert.match(INDEX_SOURCE, /renderEntry\?: \(entry: JiraActivityEntry\) => ReactNode \| undefined/u);
+	assert.match(INDEX_SOURCE, /activeEntryId\?: string/u);
 	assert.match(INDEX_SOURCE, /onAddCommentToChat\?: \(entry: JiraActivityCommentEntry\) => void/u);
 	assert.match(INDEX_SOURCE, /onAddReplyToChat\?: \(reply: JiraActivityReply, entry: JiraActivityCommentEntry\) => void/u);
 	assert.match(INDEX_SOURCE, /onViewSession\?: \(item: AgentListItem\) => void/u);
@@ -669,6 +671,11 @@ test("Jira Activity exposes controlled entries and replaceable composer contract
 	assert.match(INDEX_SOURCE, /defaultFilter\?: JiraActivityFilter/u);
 	assert.match(INDEX_SOURCE, /onFilterChange\?: \(next: JiraActivityFilter\) => void/u);
 	assert.match(INDEX_SOURCE, /data-jira-activity-entry-id=\{entry\.id\}/u);
+	assert.match(INDEX_SOURCE, /aria-current=\{entry\.id === activeEntryId \? "step" : undefined\}/u);
+	assert.match(INDEX_SOURCE, /data-active=\{entry\.id === activeEntryId \? "" : undefined\}/u);
+	assert.match(INDEX_SOURCE, /const customEntry = renderEntry\?\.\(entry\);/u);
+	assert.match(INDEX_SOURCE, /const defaultEntry = entry\.kind === "event"/u);
+	assert.match(INDEX_SOURCE, /customEntry !== undefined \? customEntry : defaultEntry/u);
 	// Timeline rows shrink inside narrow rails so artifact titles can truncate.
 	assert.match(INDEX_SOURCE, /className=\{cn\("group\/activity flex w-full min-w-0 flex-col gap-4", className\)\}/u);
 	assert.match(INDEX_SOURCE, /className="flex min-w-0 gap-2"/u);
@@ -712,11 +719,13 @@ test("the header shows an activity count and a text-link sort control", () => {
 	assert.match(HEADER_SOURCE, /"agents-only": "Show agents"/u);
 	assert.match(HEADER_SOURCE, /"needs-input": "Show needs input"/u);
 	assert.match(HEADER_SOURCE, /"comments-only": "Show comments"/u);
+	assert.match(HEADER_SOURCE, /"insights-only": "Show insights"/u);
 	assert.match(HEADER_SOURCE, /ascending: "Oldest"/u);
 	assert.match(HEADER_SOURCE, /descending: "Latest"/u);
 	assert.match(HEADER_SOURCE, /"agents-only": "Agents"/u);
 	assert.match(HEADER_SOURCE, /"needs-input": "Needs input"/u);
 	assert.match(HEADER_SOURCE, /"comments-only": "Comments"/u);
+	assert.match(HEADER_SOURCE, /"insights-only": "Insights"/u);
 	assert.doesNotMatch(HEADER_SOURCE, /Show (?:latest|oldest) first|Agents only|Show agents only/u);
 	// Compact menu: override default min-w-56 so short labels hug content.
 	assert.match(HEADER_SOURCE, /className="w-auto min-w-0"/u);
@@ -782,7 +791,7 @@ test("the header shows an activity count and a text-link sort control", () => {
 	);
 });
 
-test("the header offers Agents, Needs input, and Comments filters", () => {
+test("the header offers Insights only to insight-aware Jira consumers", () => {
 	const expectedAgentCards = JIRA_ACTIVITY_ENTRIES.filter(
 		(entry) =>
 			entry.actor.kind === "agent" &&
@@ -794,7 +803,11 @@ test("the header offers Agents, Needs input, and Comments filters", () => {
 	);
 	assert.match(
 		HEADER_SOURCE,
-		/"agents-only",\s*"needs-input",\s*"comments-only"/u,
+		/const JIRA_ACTIVITY_FILTER_VALUES = \[\s*"agents-only",\s*"needs-input",\s*"comments-only",\s*\]/u,
+	);
+	assert.match(
+		HEADER_SOURCE,
+		/const JIRA_ACTIVITY_INSIGHTS_FILTER_VALUES = \[\s*\.\.\.JIRA_ACTIVITY_FILTER_VALUES,\s*"insights-only",\s*\]/u,
 	);
 	assert.match(
 		HEADER_SOURCE,
@@ -806,6 +819,9 @@ test("the header offers Agents, Needs input, and Comments filters", () => {
 	);
 	assert.match(TYPES_SOURCE, /\| "needs-input"/u);
 	assert.match(TYPES_SOURCE, /\| "comments-only"/u);
+	assert.match(TYPES_SOURCE, /\| "insights-only"/u);
+	assert.match(TYPES_SOURCE, /category\?: "insight"/u);
+	assert.match(TYPES_SOURCE, /createdAtMs\?: number/u);
 	assert.match(INDEX_SOURCE, /filterJiraActivityEntries\(entries, filter\)/u);
 	assert.match(INDEX_SOURCE, /count=\{visibleEntries\.length\}/u);
 	// Sample feed seeds a waiting agent comment for the Needs input filter.

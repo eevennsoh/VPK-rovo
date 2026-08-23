@@ -21,6 +21,9 @@ test("the work-item stage mounts experimental-v3 inline, not the v2 shell", () =
 	assert.match(pageSource, /<ExperimentalV3JiraWorkItem[\s\S]*presentation="inline"/u);
 	assert.match(pageSource, /workItem=\{controller\.workItem\}/u);
 	assert.match(pageSource, /initialState=\{controller\.initialState\}/u);
+	assert.match(pageSource, /createJiraGoldenJourneysV3InsightsSnapshot/u);
+	assert.match(pageSource, /insightsSnapshot=\{insightsSnapshot\}/u);
+	assert.match(pageSource, /controller\.insightsRevision/u);
 	assert.doesNotMatch(pageSource, /ExperimentalV2JiraWorkItem/u);
 	assert.doesNotMatch(pageSource, /variant="experimental-v2"/u);
 });
@@ -83,6 +86,10 @@ test("Reset owns the full story reset while chapter replay preserves settings", 
 	assert.match(resetStory, /setAutoMergeEnabled\(false\)/u);
 	assert.match(resetStory, /setApprovalStep\(0\)/u);
 	assert.match(resetStory, /setPullRequestMerged\(false\)/u);
+	assert.match(source, /const \[insightsRevision, setInsightsRevision\] = useState\(0\)/u);
+	assert.match(resetStory, /setInsightsRevision\(\(current\) => current \+ 1\)/u);
+	assert.doesNotMatch(restartChapter, /setInsightsRevision/u);
+	assert.match(source, /insightsRevision,/u);
 	assert.doesNotMatch(restartChapter, /setAutoFixEnabled|setAutoMergeEnabled/u);
 	assert.match(source, /const resetCurrentChapter = useCallback\(\(\) => \{\s*restartChapter\(chapter\);/u);
 });

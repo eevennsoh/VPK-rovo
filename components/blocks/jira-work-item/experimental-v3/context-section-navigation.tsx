@@ -74,6 +74,7 @@ export function SectionNavigationProvider({
 	const [sections, setSectionsState] = useState(NO_SECTIONS);
 	const instanceId = useId();
 	const [insightsSelected, setInsightsSelected] = useState(false);
+	const [pendingSectionId, setPendingSectionId] = useState<WorkItemSectionId | null>(null);
 	const [activityCount, setActivityCount] = useState<number | null>(null);
 	const [wideScrollContainer, setWideScrollContainer] = useState<HTMLElement | null>(null);
 	const [narrowScrollContainer, setNarrowScrollContainer] = useState<HTMLElement | null>(null);
@@ -121,13 +122,23 @@ export function SectionNavigationProvider({
 	}, []);
 	const selectSectionWithSurface = useCallback((sectionId: WorkItemSectionId) => {
 		if (sectionId === "insights") {
+			setPendingSectionId(null);
 			setInsightsSelected(true);
 			scrollContainer?.scrollTo({ top: 0 });
 			return;
 		}
 		setInsightsSelected(false);
-		selectSection(sectionId);
-	}, [scrollContainer, selectSection]);
+		setPendingSectionId(sectionId);
+	}, [scrollContainer]);
+
+	useEffect(() => {
+		if (insightsSelected || pendingSectionId == null) return;
+		const frame = window.requestAnimationFrame(() => {
+			selectSection(pendingSectionId);
+			setPendingSectionId((current) => current === pendingSectionId ? null : current);
+		});
+		return () => window.cancelAnimationFrame(frame);
+	}, [insightsSelected, pendingSectionId, selectSection]);
 
 	const sectionElementId = useCallback(
 		(sectionId: WorkItemSectionId) => workItemSectionElementId(instanceId, sectionId),

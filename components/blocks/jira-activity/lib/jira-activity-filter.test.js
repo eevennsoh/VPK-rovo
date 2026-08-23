@@ -159,3 +159,30 @@ test("comments-only matching is kind-based", () => {
 		false,
 	);
 });
+
+test("insights-only keeps only activity entries tagged as insights", () => {
+	const insight = {
+		id: "insight-1",
+		kind: "event",
+		actor: AGENT,
+		timestamp: "now",
+		segments: [],
+		category: "insight",
+		createdAtMs: 200,
+	};
+	const regular = {
+		id: "event-1",
+		kind: "event",
+		actor: PERSON,
+		timestamp: "now",
+		segments: [{ type: "text", text: "moved" }],
+		createdAtMs: 100,
+	};
+
+	assert.equal(matchesJiraActivityFilter(insight, "insights-only"), true);
+	assert.equal(matchesJiraActivityFilter(regular, "insights-only"), false);
+	assert.deepEqual(
+		filterJiraActivityEntries([regular, insight], "insights-only"),
+		[insight],
+	);
+});
