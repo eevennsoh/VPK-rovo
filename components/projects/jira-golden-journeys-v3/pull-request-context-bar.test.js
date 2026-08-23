@@ -113,7 +113,7 @@ async function loadHarness() {
 			`,
 		],
 		[
-			"@/components/blocks/jira-work-item/experimental-v3/components/pull-request-detail/pull-request-checks-list",
+			"@/components/blocks/pull-request/components/pull-request-checks-list",
 			`
 				import React from "react";
 				export function ChecksSectionTitle({ passed = 0, total = 0 }) {
@@ -136,9 +136,8 @@ async function loadHarness() {
 			`,
 		],
 		[
-			"@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-detail-data",
+			"@/components/blocks/pull-request/lib/pull-request-checks-title",
 			`
-				export function arePullRequestChecksInProgress() { return false; }
 				export function pullRequestChecksTitleState(checks) {
 					return {
 						inProgress: true,

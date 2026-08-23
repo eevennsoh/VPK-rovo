@@ -1,4 +1,4 @@
-import type { PullRequestCheck } from "@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-detail-data";
+import type { PullRequestCheck } from "@/components/blocks/pull-request/components/pull-request-checks-list";
 
 export type ContextBarPullRequestCiStatus = "pending" | "running" | "failed" | "passed";
 export type ContextBarPullRequestMergeState = "disabled" | "blocked" | "queued" | "merged";

@@ -548,7 +548,7 @@ async function loadContextBarPullRequestHarness() {
 			`,
 		],
 		[
-			"@/components/blocks/jira-work-item/experimental-v3/components/pull-request-detail/pull-request-checks-list",
+			"@/components/blocks/pull-request/components/pull-request-checks-list",
 			`
 				import React from "react";
 				export function ChecksSectionTitle({ passed = 0, total = 0 }) {
@@ -571,9 +571,8 @@ async function loadContextBarPullRequestHarness() {
 			`,
 		],
 		[
-			"@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-detail-data",
+			"@/components/blocks/pull-request/lib/pull-request-checks-title",
 			`
-				export function arePullRequestChecksInProgress() { return false; }
 				export function pullRequestChecksTitleState(checks) {
 					return {
 						inProgress: true,
@@ -786,10 +785,11 @@ test("ContextBarPullRequest is a generic PR variation of ContextBar", () => {
 	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /Auto-fix CI & address comments/u);
 	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /Auto-merge when ready/u);
 	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /PullRequestChecksList/u);
+	assert.doesNotMatch(CONTEXT_BAR_PR_CI_SOURCE, /jira-work-item\/experimental-v3/u);
 	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /density="menu"/u);
 	assert.match(
 		fs.readFileSync(
-			path.join(process.cwd(), "components/blocks/jira-work-item/experimental-v3/components/pull-request-detail/pull-request-checks-list.tsx"),
+			path.join(process.cwd(), "components/blocks/pull-request/components/pull-request-checks-list.tsx"),
 			"utf8",
 		),
 		/function CheckRow[\s\S]*rich-text-command-menu-item[\s\S]*menu-row-title[\s\S]*menu-row-byline/u,
@@ -805,6 +805,7 @@ test("ContextBarPullRequest is a generic PR variation of ContextBar", () => {
 	assert.doesNotMatch(CONTEXT_BAR_PR_CI_SOURCE, /text-text-disabled/u);
 	assert.doesNotMatch(CONTEXT_BAR_PR_CI_SOURCE, /selected=\{checked\}/u);
 	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /elemAfter=\{\(/u);
+	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /onSelect=\{\(\) => \{\s*onCheckedChange\(!checked\);\s*\}\}/u);
 	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /checked=\{checked\}[\s\S]*onCheckedChange=\{onCheckedChange\}/u);
 	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /focus-visible:ring-3[\s\S]*motion-reduce:transition-none/u);
 	assert.doesNotMatch(CONTEXT_BAR_PR_CI_SOURCE, /SHOP-4821|1847|jira-golden-journeys/u);

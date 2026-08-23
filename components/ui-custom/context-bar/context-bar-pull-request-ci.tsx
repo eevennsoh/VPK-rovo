@@ -5,8 +5,8 @@ import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import {
 	ChecksSectionTitle,
 	PullRequestChecksList,
-} from "@/components/blocks/jira-work-item/experimental-v3/components/pull-request-detail/pull-request-checks-list";
-import { pullRequestChecksTitleState } from "@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-detail-data";
+} from "@/components/blocks/pull-request/components/pull-request-checks-list";
+import { pullRequestChecksTitleState } from "@/components/blocks/pull-request/lib/pull-request-checks-title";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -55,6 +55,9 @@ function CiAutomationToggleRow({
 			className="text-text [&>span:last-child]:h-auto [&_[data-slot=switch]]:pointer-events-auto [&_[data-slot=switch]_svg]:size-full"
 			data-auto-fix-setting={setting === "auto-fix" ? true : undefined}
 			data-auto-merge-setting={setting === "auto-merge" ? true : undefined}
+			onSelect={() => {
+				onCheckedChange(!checked);
+			}}
 			elemAfter={(
 				<Switch
 					aria-label={`${checked ? "Disable" : "Enable"} ${label}`}

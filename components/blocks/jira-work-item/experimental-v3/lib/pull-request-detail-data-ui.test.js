@@ -48,7 +48,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 		"utf8",
 	);
 	const checksListSource = readFileSync(
-		join(__dirname, "../components/pull-request-detail/pull-request-checks-list.tsx"),
+		join(__dirname, "../../../pull-request/components/pull-request-checks-list.tsx"),
 		"utf8",
 	);
 	const detailDataSource = readFileSync(
@@ -754,7 +754,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.doesNotMatch(checksListSource, /arePullRequestChecksInProgress|pullRequestChecksTitleState/u);
 	assert.match(checksListSource, /from "@\/components\/ui\/spinner"/u);
-	assert.match(railSource, /from "\.\/pull-request-checks-list"/u);
+	assert.match(railSource, /from "@\/components\/blocks\/pull-request\/components\/pull-request-checks-list"/u);
 	// Title is "CI checks" + muted passed/total (Attachments count chrome). No
 	// header spinner, progress circle, or "2/3 passed 1 failed" prose.
 	assert.match(
@@ -805,7 +805,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	assert.match(checksListSource, /from "@\/components\/ui\/elapsed-time"/u);
 	assert.match(
 		checksListSource,
-		/from "@\/components\/blocks\/jira-work-item\/experimental-v3\/lib\/pull-request-check-elapsed"/u,
+		/from "@\/components\/blocks\/pull-request\/lib\/pull-request-check-elapsed"/u,
 	);
 	assert.match(
 		checksListSource,

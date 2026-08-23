@@ -28,7 +28,7 @@ import { Icon } from "@/components/ui/icon";
 import { Tag, TagGroup } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
 
-import { ChecksSectionTitle, PullRequestChecksList } from "./pull-request-checks-list";
+import { ChecksSectionTitle, PullRequestChecksList } from "@/components/blocks/pull-request/components/pull-request-checks-list";
 
 function copyCommitSha(event: MouseEvent<HTMLButtonElement>, sha: string) {
 	event.preventDefault();

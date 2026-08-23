@@ -15,6 +15,7 @@ import {
 	JIRA_GOLDEN_JOURNEYS_V3_STORY_COMPOSER_AGENTS,
 	resolveJiraGoldenJourneysV3PullRequestChecks,
 } from "./data/hotfix-story";
+import type { JiraGoldenJourneysV3CiStatus } from "./data/story-model";
 import {
 	PullRequestContextBar,
 	type PullRequestContextBarCiCheck,
@@ -37,6 +38,7 @@ import {
 function summarizeCiChecks(
 	checks: readonly PullRequestContextBarCiCheck[],
 	status: PullRequestContextBarCiStatus,
+	storyCiStatus: JiraGoldenJourneysV3CiStatus,
 ): string {
 	const failed = checks.filter((check) => check.status === "failed").length;
 	const passed = checks.filter((check) => check.status === "passed").length;
@@ -45,6 +47,9 @@ function summarizeCiChecks(
 	)).length;
 	if (failed > 0) {
 		return `${failed} failed, ${passed} passed`;
+	}
+	if (storyCiStatus === "repairing" && inProgress > 0) {
+		return `${passed} passed, ${inProgress} rerunning`;
 	}
 	if (status === "running" && inProgress > 0 && passed > 0) {
 		return `${passed} passed, ${inProgress} in progress`;
@@ -79,7 +84,7 @@ function getCiPresentation(
 	return {
 		checks,
 		status,
-		summary: summarizeCiChecks(checks, status),
+		summary: summarizeCiChecks(checks, status, controller.ciStatus),
 	};
 }
 

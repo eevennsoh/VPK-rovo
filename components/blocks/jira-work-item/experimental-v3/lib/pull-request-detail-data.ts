@@ -809,14 +809,7 @@ export function arePullRequestChecksInProgress(
 	return checks.some((check) => check.status === "running" || check.status === "queued");
 }
 
-export function pullRequestChecksTitleState(checks: readonly PullRequestCheck[]) {
-	const passed = checks.filter((check) => check.status === "passed").length;
-	return {
-		inProgress: arePullRequestChecksInProgress(checks),
-		passed,
-		total: checks.length,
-	};
-}
+export { pullRequestChecksTitleState } from "@/components/blocks/pull-request/lib/pull-request-checks-title";
 
 /** Keep merge status aligned with the rail CI checklist when SCM omits mergeState. */
 function resolveMergeState(

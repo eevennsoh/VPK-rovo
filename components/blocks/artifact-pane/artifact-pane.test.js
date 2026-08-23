@@ -140,7 +140,7 @@ test("Artifact Pane disclosure triggers have no unicode middle-dot in visible or
 		"components/blocks/jira-work-item/experimental-v3/components/pull-request-detail/pull-request-details-rail.tsx",
 	);
 	const v3ChecksListSource = readProjectFile(
-		"components/blocks/jira-work-item/experimental-v3/components/pull-request-detail/pull-request-checks-list.tsx",
+		"components/blocks/pull-request/components/pull-request-checks-list.tsx",
 	);
 	const v3MetadataRailSource = readProjectFile(
 		"components/blocks/jira-work-item/experimental-v3/components/metadata-rail.tsx",

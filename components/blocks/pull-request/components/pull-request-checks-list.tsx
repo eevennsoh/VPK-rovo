@@ -7,14 +7,21 @@ import LinkExternalIcon from "@atlaskit/icon/core/link-external";
 import StatusErrorIcon from "@atlaskit/icon/core/status-error";
 import TaskToDoIcon from "@atlaskit/icon/core/task-to-do";
 
-import { parseRunningCheckElapsedSeconds } from "@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-check-elapsed";
-import type { PullRequestCheck } from "@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-detail-data";
+import { parseRunningCheckElapsedSeconds } from "@/components/blocks/pull-request/lib/pull-request-check-elapsed";
 import { Button } from "@/components/ui/button";
 import { ElapsedTime } from "@/components/ui/elapsed-time";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import { cn } from "@/lib/utils";
+
+export interface PullRequestCheck {
+	id: string;
+	name: string;
+	status: "passed" | "failed" | "running" | "queued";
+	details: string;
+	url?: string;
+}
 
 function openScmUrl(url: string) {
 	window.open(url, "_blank", "noopener,noreferrer");
