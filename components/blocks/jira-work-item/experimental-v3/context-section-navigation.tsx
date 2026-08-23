@@ -8,6 +8,7 @@ import {
 	useId,
 	useMemo,
 	useState,
+	useSyncExternalStore,
 	type ReactNode,
 } from "react";
 
@@ -50,6 +51,9 @@ interface SectionNavigationValue {
 const SectionNavigationContext = createContext<SectionNavigationValue | null>(null);
 
 const NO_SECTIONS: readonly WorkItemSectionTab[] = [];
+const DEFAULT_HEADER_COLLAPSE_OFFSET = 16;
+
+export type WorkItemHeaderVariant = "expanded" | "compact";
 
 /**
  * Owns the single section tab bar shared by the work item and pull-request
@@ -171,6 +175,29 @@ export function useSectionNavigation(): SectionNavigationValue {
 		throw new Error("useSectionNavigation must be used within a SectionNavigationProvider");
 	}
 	return value;
+}
+
+/**
+ * Resolves the work-item header's discrete scroll state from the active wide or
+ * narrow body scroller. `useSyncExternalStore` lets React skip re-renders while
+ * scrolling within a state; only crossing the collapse threshold updates it.
+ */
+export function useWorkItemHeaderVariant(
+	collapseOffset = DEFAULT_HEADER_COLLAPSE_OFFSET,
+): WorkItemHeaderVariant {
+	const { scrollContainer } = useSectionNavigation();
+	const subscribe = useCallback((onStoreChange: () => void) => {
+		if (!scrollContainer) return () => undefined;
+
+		scrollContainer.addEventListener("scroll", onStoreChange, { passive: true });
+		return () => scrollContainer.removeEventListener("scroll", onStoreChange);
+	}, [scrollContainer]);
+	const getSnapshot = useCallback(
+		() => (scrollContainer?.scrollTop ?? 0) >= collapseOffset ? "compact" : "expanded",
+		[collapseOffset, scrollContainer],
+	);
+
+	return useSyncExternalStore(subscribe, getSnapshot, () => "expanded");
 }
 
 /**

@@ -34,6 +34,7 @@ import {
 	useJiraWorkItemMeta,
 	useJiraWorkItemState,
 } from "@/components/blocks/jira-work-item/experimental-v3/context-jira-work-item";
+import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental-v3/context-metadata-rail";
 import { useSectionNavigation } from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
 import { CONNECTED_REPOSITORY_COUNT } from "@/components/blocks/jira-work-item/experimental-v3/lib/development-repositories";
 import { getPullRequestIdentity } from "@/components/blocks/jira-work-item/experimental-v3/lib/jira-activity-adapter";
@@ -44,7 +45,9 @@ import type {
 import { SmartLink, type SmartLinkItem } from "@/components/blocks/smart-link";
 import { SMART_LINK_MODAL_ACTIONS } from "@/components/blocks/smart-link/data/smart-link-actions";
 import { ProgressCircle } from "@/components/ui-custom/progress-circle";
+import { FOCUS_RING_TOP_CLIP_GUTTER } from "@/components/ui/focus-ring";
 import { StickyRowScrollFade } from "@/components/visual/scroll-mask";
+import { cn } from "@/lib/utils";
 
 const PullRequestContextRail = dynamic(
 	() => import("@/components/blocks/jira-work-item/experimental-v3/components/pull-request-detail/pull-request-context-rail")
@@ -223,6 +226,12 @@ export function MetadataRail({
 	const { contextResources, metadata: draft } = useJiraWorkItemState();
 	const actions = useJiraWorkItemActions();
 	const { insightsSelected } = useSectionNavigation();
+	const {
+		detailsShowMore,
+		openSectionIds,
+		setDetailsShowMore,
+		setOpenSectionIds,
+	} = useMetadataRail();
 	const pullRequestSelected = selectedPullRequestEntry !== null;
 	const selectedPullRequestKey = selectedPullRequestEntry?.pullRequest
 		? getPullRequestIdentity(selectedPullRequestEntry.pullRequest)
@@ -311,7 +320,10 @@ export function MetadataRail({
 				ref={metadataBodyScrollRef}
 				// overflow-x-hidden: body owns vertical scroll only; long lines must
 				// wrap/truncate via min-w-0 rather than grow a cross-axis bar.
-				className="relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-none @[860px]/agentlayout:pb-8"
+				className={cn(
+					"relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-none @[860px]/agentlayout:pb-8",
+					FOCUS_RING_TOP_CLIP_GUTTER,
+				)}
 				data-jira-work-item-scroll-region
 				style={metadataBodyScrollMaskStyle}
 			>
@@ -328,15 +340,26 @@ export function MetadataRail({
 						<ArtifactPane
 							aria-label="Work item details"
 							borderless={borderless}
+							onOpenSectionIdsChange={setOpenSectionIds}
+							openSectionIds={openSectionIds}
 							// Drop first-section pt-1.5 so Details top-aligns with description
 							// after both column chromes share the same pb-7. overflow-visible
 							// is the borderless ArtifactPane default (focus-ring clearance).
 							className="[&>div:first-child]:pt-0"
+							showCountSeparators={false}
 							showSeparators={false}
 							sections={[
 								{
 									collapsible: false,
-									content: <DetailsTab draft={draft} onChange={actions.updateMetadata} people={people} />,
+									content: (
+										<DetailsTab
+											draft={draft}
+											onChange={actions.updateMetadata}
+											people={people}
+											showMore={detailsShowMore}
+											onShowMoreChange={setDetailsShowMore}
+										/>
+									),
 									defaultOpen: true,
 									id: "details",
 									title: "Details",

@@ -1,17 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { motion, useReducedMotion } from "motion/react";
 
 import LinkIcon from "@atlaskit/icon/core/link";
 import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 
 import { ContextEditableTitle } from "@/components/blocks/jira-work-item/experimental-v3/components/context-editable-header";
 import { useJiraWorkItemMeta } from "@/components/blocks/jira-work-item/experimental-v3/context-jira-work-item";
+import { useWorkItemHeaderVariant } from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
 import { Icon } from "@/components/ui/icon";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 const COPIED_STATE_DURATION_MS = 1800;
+const HEADER_LAYOUT_TRANSITION = {
+	duration: 0.2,
+	ease: [0.4, 0, 0, 1],
+} as const; // duration-medium + ease-in-out
 
 /** Compact breadcrumb control for copying the stable work-item key. */
 export function WorkItemKeyCopy() {
@@ -97,22 +103,55 @@ export function WorkItemKeyCopy() {
 }
 
 /**
- * Editable title in the dialog header band (under breadcrumbs), with the
- * work item's control row beneath it. Owns the header-band horizontal padding
- * so the title Input is not nested in extra `min-w-0` shells. Full-width of the
- * chrome column — the two-column body starts beneath this band.
+ * Editable title in the dialog header band. Expanded mode places the control
+ * row beneath the title; compact mode keeps status + Add inline before it.
+ * Owns the header-band padding so the two-column body starts beneath this band.
  */
 export function ContextTitleBar({
 	controlRow,
-}: Readonly<{ controlRow?: ReactNode }> = {}) {
+}: Readonly<{ controlRow?: (compact: boolean) => ReactNode }> = {}) {
+	const shouldReduceMotion = useReducedMotion() ?? false;
+	const variant = useWorkItemHeaderVariant();
+	const compact = variant === "compact";
+	const layout = shouldReduceMotion ? false : "position";
+
 	return (
-		<div
-			className="min-w-0 self-stretch px-6 pb-4"
+		<motion.div
+			className={cn(
+				"min-w-0 self-stretch px-6",
+				compact ? "pb-0" : "pb-4",
+			)}
+			data-header-variant={variant}
 			data-jira-work-item-title-block
 			data-jira-work-item-title-column
+			layout={layout}
+			transition={{ layout: HEADER_LAYOUT_TRANSITION }}
 		>
-			<ContextEditableTitle />
-			{controlRow}
-		</div>
+			<motion.div
+				className={cn(
+					"flex min-w-0",
+					compact ? "items-center gap-2" : "flex-col",
+				)}
+				layout={layout}
+				transition={{ layout: HEADER_LAYOUT_TRANSITION }}
+			>
+				<motion.div
+					className={cn("min-w-0", compact ? "order-2 flex-1" : "order-1")}
+					layout={layout}
+					transition={{ layout: HEADER_LAYOUT_TRANSITION }}
+				>
+					<ContextEditableTitle compact={compact} />
+				</motion.div>
+				{controlRow ? (
+					<motion.div
+						className={compact ? "order-1 shrink-0" : "order-2"}
+						layout={layout}
+						transition={{ layout: HEADER_LAYOUT_TRANSITION }}
+					>
+						{controlRow(compact)}
+					</motion.div>
+				) : null}
+			</motion.div>
+		</motion.div>
 	);
 }

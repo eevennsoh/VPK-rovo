@@ -132,6 +132,17 @@ test("Artifact List Open button reveals on row hover/focus and stays keyboard-re
 	assert.doesNotMatch(source, /<HoverRevealActions/u);
 });
 
+test("Artifact List action slots expose their button-owned focus indicators", () => {
+	const source = readProjectFile(
+		"components/ui-custom/artifact-list/components/artifact-list.tsx",
+	);
+
+	assert.match(
+		source,
+		/className="min-w-0 overflow-hidden has-\[:focus-visible\]:overflow-visible"[\s\S]*Code changes:/u,
+	);
+});
+
 test("Artifact List text expands into the action slot at rest", () => {
 	const source = readProjectFile(
 		"components/ui-custom/artifact-list/components/artifact-list.tsx",

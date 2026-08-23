@@ -24,9 +24,9 @@ export interface ArtifactPaneSectionItem {
 	 */
 	collapsible?: boolean;
 	/**
-	 * Collapsed summary rendered after the title as separate `·` and value siblings
-	 * (parent `gap-1.5` = 6px). Accepts plain numbers, ratios (`"1/3"`), and labeled
-	 * strings (e.g. `"2/3 passed"`, `"3 open"`).
+	 * Collapsed summary rendered after the title as separate optional `·` and value
+	 * siblings (parent `gap-1.5` = 6px). Accepts plain numbers, ratios (`"1/3"`),
+	 * and labeled strings (e.g. `"2/3 passed"`, `"3 open"`).
 	 */
 	count?: number | string;
 	defaultOpen?: boolean;
@@ -58,18 +58,25 @@ export interface ArtifactPaneProps extends Omit<ComponentProps<"section">, "chil
 	/** Called when a disclosure opens or closes (controlled or uncontrolled). */
 	onOpenSectionIdsChange?: (openSectionIds: ReadonlySet<string>) => void;
 	sections: readonly ArtifactPaneSectionItem[];
+	/** Show the middle-dot sibling before collapsed counts. Defaults to true. */
+	showCountSeparators?: boolean;
 	showSeparators?: boolean;
 }
 
 const COLLAPSED_COUNT_CLASS_NAME = "shrink-0 text-xs font-normal text-text-subtlest";
 
-/** Separate `·` + value siblings so parent `gap-1.5` owns the 6px title→sep→count gaps. */
-function CollapsedSectionCount({ count }: Readonly<{ count: number | string }>) {
+/** Optional `·` + value siblings; parent `gap-1.5` owns their spacing. */
+function CollapsedSectionCount({
+	count,
+	showSeparator,
+}: Readonly<{ count: number | string; showSeparator: boolean }>) {
 	return (
 		<>
-			<span aria-hidden className={COLLAPSED_COUNT_CLASS_NAME}>
-				·
-			</span>
+			{showSeparator ? (
+				<span aria-hidden className={COLLAPSED_COUNT_CLASS_NAME}>
+					·
+				</span>
+			) : null}
 			<span className={COLLAPSED_COUNT_CLASS_NAME}>{count}</span>
 		</>
 	);
@@ -147,8 +154,13 @@ function ArtifactPaneDisclosure({
 	headerAction,
 	onOpenChange,
 	open,
+	showCountSeparator,
 	title,
-}: Readonly<Omit<ArtifactPaneSectionItem, "defaultOpen" | "id"> & { onOpenChange: (open: boolean) => void; open: boolean }>) {
+}: Readonly<Omit<ArtifactPaneSectionItem, "defaultOpen" | "id"> & {
+	onOpenChange: (open: boolean) => void;
+	open: boolean;
+	showCountSeparator: boolean;
+}>) {
 	const prefersReducedMotion = useReducedMotion();
 	const headerActionOpenReveal = headerAction?.reveal === "open";
 	// Keep `reveal: "open"` actions mounted (0fr when collapsed) so collapse doesn't
@@ -226,8 +238,8 @@ function ArtifactPaneDisclosure({
 					}
 				>
 					<span
-						className="flex min-w-0 items-center gap-1.5 text-text-subtle group-hover/header:text-text group-has-[:focus-visible]/header:text-text"
-						style={{ font: token("font.heading.xxsmall") }}
+						className="flex min-w-0 items-center gap-1.5 text-xs font-medium leading-4 text-text-subtle group-hover/header:text-text group-has-[:focus-visible]/header:text-text"
+						data-slot="artifact-pane-section-title"
 					>
 						{title}
 						{count !== undefined ? (
@@ -239,7 +251,10 @@ function ArtifactPaneDisclosure({
 								)}
 							>
 								<span className="flex min-w-0 items-center gap-1.5 overflow-hidden">
-									<CollapsedSectionCount count={count} />
+									<CollapsedSectionCount
+										count={count}
+										showSeparator={showCountSeparator}
+									/>
 								</span>
 							</span>
 						) : null}
@@ -254,13 +269,13 @@ function ArtifactPaneDisclosure({
 									open ? "grid-cols-[1fr]" : "grid-cols-[0fr]",
 								)}
 							>
-								<div className="min-w-0 overflow-hidden">
+								<div className="min-w-0 overflow-hidden has-[:focus-visible]:overflow-visible">
 									{headerActionControl}
 								</div>
 							</div>
 						) : (
 							<div className={HEADER_ACTION_HOVER_SLOT_CLASSNAME}>
-								<div className="min-w-0 overflow-hidden">
+								<div className="min-w-0 overflow-hidden has-[:focus-visible]:overflow-visible">
 									{headerActionControl}
 								</div>
 							</div>
@@ -313,6 +328,7 @@ export function ArtifactPane({
 	openSectionIds: openSectionIdsProp,
 	onOpenSectionIdsChange,
 	sections,
+	showCountSeparators = true,
 	showSeparators = true,
 	style,
 	...props
@@ -395,6 +411,7 @@ export function ArtifactPane({
 									headerAction={section.headerAction}
 									onOpenChange={(nextOpen) => setSectionOpen(section.id, nextOpen)}
 									open={open}
+									showCountSeparator={showCountSeparators}
 									title={section.title}
 								/>
 							) : (

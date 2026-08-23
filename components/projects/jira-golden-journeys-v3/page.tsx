@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
-import { RovoChatProvider, useRovoChat } from "@/app/contexts/context-rovo-chat";
+import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { Gallery, type GalleryItem } from "@/components/blocks/gallery";
 import { ExperimentalV3JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v3/experimental-v3-jira-work-item";
 import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v1/data/agent-chat-data";
@@ -146,7 +146,6 @@ function JiraGoldenJourneysV3WorkItemStage({
 	onDismissPullRequestContext: () => void;
 	showPullRequestContext: boolean;
 }>): React.ReactElement {
-	const { closeChat, resetChat } = useRovoChat();
 	const insightsSnapshot = useMemo(() => createJiraGoldenJourneysV3InsightsSnapshot(
 		controller.chapter,
 		{
@@ -166,10 +165,6 @@ function JiraGoldenJourneysV3WorkItemStage({
 		controller.pullRequestMerged,
 		controller.reviewStep,
 	]);
-	useEffect(() => {
-		closeChat();
-		resetChat();
-	}, [controller.chapter, controller.chapterRevision, closeChat, resetChat]);
 
 	return (
 		<div className="relative left-1/2 flex h-full min-h-0 w-[100cqw] -translate-x-1/2 items-start justify-center overflow-hidden px-8 pt-4 pb-4">
@@ -194,6 +189,7 @@ function JiraGoldenJourneysV3WorkItemStage({
 				initialState={controller.initialState}
 				initialStateRevision={controller.launchId}
 				insightsSnapshot={insightsSnapshot}
+				preserveActiveSessionOnHydration
 				inlineSurface="card-fill"
 				presentation="inline"
 				revealActivityEntryId={getRevealActivityEntryId(controller)}
@@ -259,7 +255,10 @@ export default function JiraGoldenJourneysV3Page(): React.ReactElement {
 		: {};
 
 	return (
-		<RovoChatProvider agentProfiles={JGP_CHAT_AGENT_PROFILES}>
+		<RovoChatProvider
+			agentProfiles={JGP_CHAT_AGENT_PROFILES}
+			key={`${storyController.chapter}:${storyController.chapterRevision}`}
+		>
 			<div className="relative h-dvh w-full overflow-hidden bg-surface" {...subtreeThemeProps}>
 				<Gallery
 					items={JIRA_GOLDEN_JOURNEYS_V3_GALLERY_ITEMS}

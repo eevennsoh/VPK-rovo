@@ -7,6 +7,7 @@ const { readWebsiteRegistrySource } = require(process.cwd() + "/components/websi
 
 const ROOT = join(__dirname, "..", "..");
 const SOURCE = readFileSync(join(__dirname, "tabs.tsx"), "utf8");
+const EXPERIMENTAL_SOURCE = readFileSync(join(__dirname, "tabs-experimental.ts"), "utf8");
 const DEMO_SOURCE = readFileSync(
 	join(ROOT, "components", "website", "demos", "ui", "tabs-demo.tsx"),
 	"utf8",
@@ -27,6 +28,28 @@ test("TabsList exposes default and compact sizes with inset pill treatment", () 
 test("Tabs compact size scales trigger padding and un-sized icons", () => {
 	assert.match(SOURCE, /group-data-\[size=compact\]\/tabs-list:px-2/u);
 	assert.match(SOURCE, /group-data-\[size=compact\]\/tabs-list:\[&_svg:not\(\[class\*='size-'\]\)\]:size-3/u);
+});
+
+test("Tabs exposes the experimental Jira navigation variant", () => {
+	assert.match(EXPERIMENTAL_SOURCE, /tabsExperimentalListClass = "gap-4 bg-transparent"/u);
+	assert.match(EXPERIMENTAL_SOURCE, /tabsExperimentalTriggerClass = cn\([\s\S]*px-0 text-xs font-medium leading-4/u);
+	assert.match(EXPERIMENTAL_SOURCE, /border-x-\[6px\] border-x-transparent px-0/u);
+	assert.doesNotMatch(EXPERIMENTAL_SOURCE, /"hover:rounded-md hover:bg-bg-neutral-subtle-hovered/u);
+	assert.match(EXPERIMENTAL_SOURCE, /hover:rounded-md[\s\S]*active:rounded-md/u);
+	assert.match(EXPERIMENTAL_SOURCE, /group-data-\[header-variant=compact\]\/work-item-navigation:hover:rounded-b-none/u);
+	assert.match(SOURCE, /experimental: tabsExperimentalListClass/u);
+	assert.match(SOURCE, /group-data-\[variant=experimental\]\/tabs-list:px-0!/u);
+	assert.match(SOURCE, /group-data-\[variant=experimental\]\/tabs-list:border-x-\[6px\]!/u);
+	assert.match(EXPERIMENTAL_SOURCE, /data-active:text-text[\s\S]*aria-\[current=location\]:text-text/u);
+	assert.match(EXPERIMENTAL_SOURCE, /after:bg-bg-neutral-bold/u);
+	assert.match(SOURCE, /group-data-\[variant=experimental\]\/tabs-list:data-active:text-text/u);
+	assert.match(SOURCE, /group-data-\[variant=experimental\]\/tabs-list:after:bg-bg-neutral-bold/u);
+	assert.doesNotMatch(
+		SOURCE,
+		/group-data-\[variant=experimental\]\/tabs-list:hover:rounded-md group-data-\[variant=experimental\]\/tabs-list:hover:bg-bg-neutral-subtle-hovered/u,
+	);
+	assert.match(SOURCE, /group-data-\[variant=experimental\]\/tabs-list:data-active:after:opacity-100/u);
+	assert.match(SOURCE, /group-data-\[variant=line\]\/tabs-list:data-active:text-text-selected/u);
 });
 
 test("Tabs docs register the compact variant demo", () => {
