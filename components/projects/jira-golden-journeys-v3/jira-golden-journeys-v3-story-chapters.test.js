@@ -69,7 +69,7 @@ test("non-terminal chapters select Claude for the embedded chat while Terminal s
 	}
 });
 
-test("Build starts with linked PR #1847, running CI, and Claude's handoff", async () => {
+test("Build starts with linked PR #1847, running CI, and Claude's work summary", async () => {
 	const story = await loadStoryModule();
 	const build = story.createJiraGoldenJourneysV3StoryState("build", { ciStatus: "running" });
 	const pullRequest = pullRequestFor(build);
@@ -77,7 +77,71 @@ test("Build starts with linked PR #1847, running CI, and Claude's handoff", asyn
 	assert.equal(pullRequest.status, "Open");
 	assert.equal(pullRequest.branch, "feature/shop-4821-guest-checkout");
 	assert.deepEqual(pullRequest.checks.map((check) => check.status), ["running", "queued", "queued"]);
-	assert.match(build.comments[0].content, /PR #1847 is open[\s\S]*CI is running[\s\S]*Priya Narayanan[\s\S]*Jordan Lee/u);
+	assert.match(build.comments[0].content, /Implemented guest checkout[\s\S]*local checks pass[\s\S]*ready for a pull request/u);
+});
+
+test("Build preserves the reported-to-pull-request activity lifecycle", async () => {
+	const story = await loadStoryModule();
+	const build = story.createJiraGoldenJourneysV3StoryState("build", { ciStatus: "running" });
+	const lifecycleIds = new Set([
+		"story-reported",
+		"story-assigned",
+		"story-started-with-claude",
+		"story-moved-in-progress",
+		"story-channel-claude-pr-handoff",
+		"story-pr-review",
+	]);
+	const lifecycle = [
+		...build.staticEvents,
+		...build.comments,
+	]
+		.filter((event) => lifecycleIds.has(event.id))
+		.sort((left, right) => left.createdAtMs - right.createdAtMs);
+
+	assert.deepEqual(
+		lifecycle.map((event) => event.id),
+		[
+			"story-reported",
+			"story-assigned",
+			"story-started-with-claude",
+			"story-moved-in-progress",
+			"story-channel-claude-pr-handoff",
+			"story-pr-review",
+		],
+	);
+	assert.equal(lifecycle[0].actor.name, "Maya Chen");
+	assert.equal(lifecycle[1].actor.name, "Priya Narayanan");
+	assert.deepEqual(lifecycle[1].segments.at(-1), {
+		type: "user-mention",
+		text: "Venn",
+		avatarSrc: "/avatar-user/venn/venn.png",
+	});
+	assert.equal(lifecycle[2].actor.name, "Claude Code");
+	assert.equal(lifecycle[2].showActor, false);
+	assert.equal(lifecycle[2].showTimestamp, false);
+	assert.deepEqual(lifecycle[2].segments, [
+		{ type: "agent-mention", text: "Claude Code", brandName: "claude" },
+		{ type: "text", text: " Started working" },
+	]);
+	assert.deepEqual(
+		lifecycle[3].segments.filter((segment) => segment.type === "lozenge").map((segment) => segment.text),
+		["To do", "In progress"],
+	);
+	assert.equal(lifecycle[4].authorBrandName, "claude");
+	assert.match(lifecycle[4].content, /Implemented guest checkout[\s\S]*local checks pass/u);
+	assert.equal(lifecycle[5].actor.name, "GitHub");
+	assert.equal(lifecycle[5].pullRequest.number, 1847);
+	assert.equal(
+		build.staticEvents.find((event) => event.id === "story-changed-files").tag.text,
+		"Implementation complete",
+	);
+	assert.equal(build.sessions[0].activityVisibility, "private");
+	assert.equal(
+		[...build.staticEvents, ...build.comments]
+			.sort((left, right) => left.createdAtMs - right.createdAtMs)
+			.at(-1).id,
+		"story-pr-review",
+	);
 });
 
 test("Claude Code activity actors use the brand mark, not the coding-agent template", async () => {
