@@ -10,7 +10,7 @@ const TIME_FORMATTER = new Intl.DateTimeFormat("en-US", {
 	minute: "2-digit",
 });
 
-export function formatJiraInsightTime(capturedAtMs: number): string {
+function formatJiraInsightTime(capturedAtMs: number): string {
 	return TIME_FORMATTER.format(new Date(capturedAtMs));
 }
 

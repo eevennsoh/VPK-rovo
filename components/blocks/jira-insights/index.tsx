@@ -24,7 +24,12 @@ export function JiraInsights({ className, onSourceSelect, snapshot }: Readonly<J
 }
 
 export { JiraInsightsContent } from "@/components/blocks/jira-insights/components/jira-insights-content";
+export { JiraInsightsEditorialPane } from "@/components/blocks/jira-insights/components/jira-insights-editorial-pane";
 export { JiraInsightsScrubber } from "@/components/blocks/jira-insights/components/jira-insights-scrubber";
+export {
+	JiraInsightsTimelineRail,
+	type JiraInsightsTimelineRailProps,
+} from "@/components/blocks/jira-insights/components/jira-insights-timeline-rail";
 export {
 	JiraInsightsProvider,
 	useJiraInsights,

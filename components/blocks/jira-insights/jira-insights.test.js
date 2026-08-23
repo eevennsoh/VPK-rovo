@@ -14,6 +14,8 @@ test("Jira Insights exposes a standalone block and split provider/content/scrubb
 	assert.match(indexSource, /JiraInsightsProvider/u);
 	assert.match(indexSource, /JiraInsightsContent/u);
 	assert.match(indexSource, /JiraInsightsScrubber/u);
+	assert.match(indexSource, /JiraInsightsTimelineRail/u);
+	assert.match(indexSource, /JiraInsightsEditorialPane/u);
 	assert.match(indexSource, /JiraInsightCheckpoint/u);
 	assert.match(indexSource, /JiraInsightSource/u);
 	assert.match(indexSource, /JiraInsightsSnapshot/u);
@@ -33,16 +35,14 @@ test("the decision timeline reuses Jira Activity and synchronizes visible checkp
 	assert.match(contentSource, /aria-labelledby=\{decisionsHeadingId\}/u);
 });
 
-test("the docked scrubber uses the shared Slider with discrete accessible values", () => {
+test("the docked scrubber delegates selection to the horizontal decision rail", () => {
 	const scrubberSource = readBlockFile("components/jira-insights-scrubber.tsx");
 
-	assert.match(scrubberSource, /import \{ Slider \} from "@\/components\/ui\/slider"/u);
+	assert.match(scrubberSource, /JiraInsightsTimelineRail/u);
 	assert.match(scrubberSource, /data-jira-insights-scrubber/u);
-	assert.match(scrubberSource, /aria-label="Decision timeline"/u);
-	assert.match(scrubberSource, /aria-valuetext=\{activeValueText\}/u);
-	assert.match(scrubberSource, /onValueChange=\{handleValueChange\}/u);
-	assert.match(scrubberSource, /max=\{checkpoints\.length - 1\}/u);
-	assert.match(scrubberSource, /step=\{1\}/u);
+	assert.match(scrubberSource, /activeCheckpointId=\{activeCheckpointId\}/u);
+	assert.match(scrubberSource, /checkpoints=\{checkpoints\}/u);
+	assert.match(scrubberSource, /onCheckpointSelect=\{selectCheckpoint\}/u);
 });
 
 test("sources use VPK controls and semantic external links", () => {

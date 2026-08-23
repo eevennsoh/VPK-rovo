@@ -690,11 +690,13 @@ test("the header shows an activity count and a text-link sort control", () => {
 	assert.match(HEADER_SOURCE, /"agents-only": "Show agents"/u);
 	assert.match(HEADER_SOURCE, /"needs-input": "Show needs input"/u);
 	assert.match(HEADER_SOURCE, /"comments-only": "Show comments"/u);
+	assert.match(HEADER_SOURCE, /"insights-only": "Show insights"/u);
 	assert.match(HEADER_SOURCE, /ascending: "Oldest"/u);
 	assert.match(HEADER_SOURCE, /descending: "Latest"/u);
 	assert.match(HEADER_SOURCE, /"agents-only": "Agents"/u);
 	assert.match(HEADER_SOURCE, /"needs-input": "Needs input"/u);
 	assert.match(HEADER_SOURCE, /"comments-only": "Comments"/u);
+	assert.match(HEADER_SOURCE, /"insights-only": "Insights"/u);
 	assert.doesNotMatch(HEADER_SOURCE, /Show (?:latest|oldest) first|Agents only|Show agents only/u);
 	// Compact menu: override default min-w-56 so short labels hug content.
 	assert.match(HEADER_SOURCE, /className="w-auto min-w-0"/u);
@@ -760,7 +762,7 @@ test("the header shows an activity count and a text-link sort control", () => {
 	);
 });
 
-test("the header offers Agents, Needs input, and Comments filters", () => {
+test("the header offers Agents, Needs input, Comments, and Insights filters", () => {
 	const expectedAgentCards = JIRA_ACTIVITY_ENTRIES.filter(
 		(entry) =>
 			entry.actor.kind === "agent" &&
@@ -772,7 +774,7 @@ test("the header offers Agents, Needs input, and Comments filters", () => {
 	);
 	assert.match(
 		HEADER_SOURCE,
-		/"agents-only",\s*"needs-input",\s*"comments-only"/u,
+		/"agents-only",\s*"needs-input",\s*"comments-only",\s*"insights-only"/u,
 	);
 	assert.match(
 		HEADER_SOURCE,
@@ -784,6 +786,9 @@ test("the header offers Agents, Needs input, and Comments filters", () => {
 	);
 	assert.match(TYPES_SOURCE, /\| "needs-input"/u);
 	assert.match(TYPES_SOURCE, /\| "comments-only"/u);
+	assert.match(TYPES_SOURCE, /\| "insights-only"/u);
+	assert.match(TYPES_SOURCE, /category\?: "insight"/u);
+	assert.match(TYPES_SOURCE, /createdAtMs\?: number/u);
 	assert.match(INDEX_SOURCE, /filterJiraActivityEntries\(entries, filter\)/u);
 	assert.match(INDEX_SOURCE, /count=\{visibleEntries\.length\}/u);
 	// Sample feed seeds a waiting agent comment for the Needs input filter.

@@ -467,17 +467,16 @@ export function ActivityComposer({
 	return (
 		<div onKeyDownCapture={handleKeyDownCapture} ref={composerRootRef}>
 			{hasExpandedPullRequestComposer ? null : (
-				composerContextBar !== undefined ? composerContextBar : (
-					<ActivityComposerContextPills
-						newInsightsCount={newInsightsCount}
-						onInvokeAgent={handleInvokeAgent}
-						onInvokeSkill={handleInvokeSkill}
-						onNewInsightsSelect={onNewInsightsSelect}
-						onOpenAgentChat={onOpenAgentChat ? handleOpenWorkingSession : undefined}
-						onSectionSelect={onSectionSelect}
-						workingSessions={workingSessions}
-					/>
-				)
+				<ActivityComposerContextPills
+					contextBar={composerContextBar}
+					newInsightsCount={newInsightsCount}
+					onInvokeAgent={handleInvokeAgent}
+					onInvokeSkill={handleInvokeSkill}
+					onNewInsightsSelect={onNewInsightsSelect}
+					onOpenAgentChat={onOpenAgentChat ? handleOpenWorkingSession : undefined}
+					onSectionSelect={onSectionSelect}
+					workingSessions={workingSessions}
+				/>
 			)}
 			<div className="relative" data-jira-work-item-composer-state="sticky">
 				<JiraWorkItemComposerMotion

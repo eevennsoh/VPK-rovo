@@ -302,11 +302,15 @@ test("PR select is an adjunct, never a section", () => {
 	assert.match(sectionNavigationSource, /selectSection\(pendingSectionId\)/u);
 	assert.match(
 		readBlockFile("experimental-v3/components/insights-panel.tsx"),
-		/data-work-item-insights-panel/u,
+		/hasInsights \? activity : null/u,
+	);
+	assert.doesNotMatch(
+		readBlockFile("experimental-v3/components/insights-panel.tsx"),
+		/JiraInsightsContent|onSourceSelect|data-work-item-insights-panel|<section/u,
 	);
 	assert.match(
-		readBlockFile("experimental-v3/components/insights-panel.tsx"),
-		/<JiraInsightsContent onSourceSelect=\{onSourceSelect\} \/>/u,
+		readBlockFile("experimental-v3/components/context-panel.tsx"),
+		/<InsightsPanel activity=\{activity\} hasInsights=\{hasInsights\} \/>/u,
 	);
 	const contextPillsSource = readBlockFile("experimental-v3/components/activity-composer-context-pills.tsx");
 	assert.match(contextPillsSource, /justify-between/u);
@@ -336,30 +340,65 @@ test("PR select is an adjunct, never a section", () => {
 	);
 	assert.match(compositionSource, /insightsSnapshot\?: JiraInsightsSnapshot/u);
 	assert.match(compositionSource, /const insightsSnapshot = props\.insightsSnapshot \?\? EMPTY_JIRA_INSIGHTS_SNAPSHOT/u);
-	assert.match(compositionSource, /<JiraInsightsProvider snapshot=\{insightsSnapshot\}>/u);
+	assert.match(
+		compositionSource,
+		/<SectionNavigationProvider active=\{open\}>[\s\S]*<WorkItemInsightsProvider[\s\S]*snapshot=\{insightsSnapshot\}/u,
+	);
+	assert.match(compositionSource, /<JiraInsightsProvider onSourceSelect=\{handleInsightSourceSelect\} snapshot=\{snapshot\}>/u);
 	assert.match(compositionSource, /function InsightsAwareComposer/u);
 	assert.match(compositionSource, /insightsSelected && hasInsights/u);
-	assert.match(compositionSource, /<JiraInsightsScrubber \/>/u);
+	assert.match(compositionSource, /activityEvents\.flatMap/u);
+	assert.match(compositionSource, /<JiraInsightsScrubber activityTimestamps=\{activityTimestamps\} \/>/u);
 	assert.match(compositionSource, /newInsightsCount=\{hasInsights \? unreadCheckpointIds\.length : undefined\}/u);
 	assert.match(compositionSource, /onNewInsightsSelect=\{hasInsights \? selectLatestUnread : undefined\}/u);
 	assert.doesNotMatch(compositionSource, /showDescriptionTools|descriptionViewMode|onDescriptionViewModeChange/u);
 });
 
 test("experimental v3 insight sources reuse work-item, session, activity, and pull-request owners", () => {
-	const contextSource = readBlockFile("experimental-v3/components/context-panel.tsx");
+	const compositionSource = readBlockFile("experimental-v3/experimental-v3-jira-work-item.tsx");
 	const composerSource = readBlockFile("experimental-v3/components/activity-composer.tsx");
 	const pillsSource = readBlockFile("experimental-v3/components/activity-composer-context-pills.tsx");
 
-	assert.match(contextSource, /source\.kind === "work-item-section"/u);
-	assert.match(contextSource, /source\.kind === "activity-entry"/u);
-	assert.match(contextSource, /requestRevealLatestActivity\(source\.entryId\)/u);
-	assert.match(contextSource, /source\.kind === "agent-session"/u);
-	assert.match(contextSource, /actions\.openSession\(source\.sessionId\)/u);
-	assert.match(contextSource, /source\.kind === "pull-request"/u);
-	assert.match(contextSource, /onOpenPullRequestIdentity\?\.\(source\.identity\)/u);
+	assert.match(compositionSource, /source\.kind === "work-item-section"/u);
+	assert.match(compositionSource, /source\.kind === "activity-entry"/u);
+	assert.match(compositionSource, /requestRevealLatestActivity\(source\.entryId\)/u);
+	assert.match(compositionSource, /source\.kind === "agent-session"/u);
+	assert.match(compositionSource, /actions\.openSession\(source\.sessionId\)/u);
+	assert.match(compositionSource, /source\.kind === "pull-request"/u);
+	assert.match(compositionSource, /onOpenPullRequestIdentity\?\.\(source\.identity\)/u);
+	assert.match(compositionSource, /const \{ onSourceSelect \} = useJiraInsights\(\)/u);
+	assert.match(compositionSource, /<ActivityPanel \{\.\.\.props\} onInsightSourceSelect=\{onSourceSelect\} \/>/u);
+	assert.doesNotMatch(
+		readBlockFile("experimental-v3/components/context-panel.tsx"),
+		/JiraInsightSource|handleInsightSourceSelect/u,
+	);
 	assert.match(composerSource, /newInsightsCount\?: number/u);
 	assert.match(composerSource, /onNewInsightsSelect\?: \(\) => void/u);
+	assert.match(composerSource, /contextBar=\{composerContextBar\}/u);
+	assert.match(pillsSource, /contextBar !== undefined \? \([\s\S]*flex-1">\{contextBar\}/u);
 	assert.match(pillsSource, /onNewInsightsSelect\?\.\(\);[\s\S]*selectSection\("insights"\)/u);
+});
+
+test("experimental v3 shares one insight selection between the filtered feed and editorial rail", () => {
+	const metadataSource = readBlockFile("experimental-v3/components/metadata-rail.tsx");
+	const contextSource = readBlockFile("experimental-v3/components/context-panel.tsx");
+
+	assert.match(metadataSource, /useSectionNavigation\(\)/u);
+	assert.match(metadataSource, /hidden=\{pullRequestSelected \|\| insightsSelected\}/u);
+	assert.match(metadataSource, /inert=\{pullRequestSelected \|\| insightsSelected \? true : undefined\}/u);
+	assert.match(
+		metadataSource,
+		/!pullRequestSelected && insightsSelected \? \([\s\S]*<JiraInsightsEditorialPane/u,
+	);
+	assert.match(
+		metadataSource,
+		/selectedPullRequestEntry \? \([\s\S]*<PullRequestContextRail/u,
+	);
+	assert.doesNotMatch(metadataSource, /useState/u);
+	assert.match(
+		contextSource,
+		/selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView[\s\S]*insightsSelected \? \([\s\S]*<InsightsPanel activity=\{activity\}/u,
+	);
 });
 
 test("experimental v3 does not render a closed-state floating Rovo launcher", () => {
@@ -404,6 +443,19 @@ test("Activity sort hover-reveals from the section group, not a local copy", () 
 	assert.doesNotMatch(activityPanelSource, /Show oldest|ACTIVITY_SORT_TRIGGER_REVEAL_CLASS/u);
 	assert.match(headerSource, /ACTIVITY_SORT_TRIGGER_REVEAL_CLASS/u);
 	assert.match(headerSource, /group-hover\/activity:opacity-100/u);
+});
+
+test("experimental v3 uses one chronological Activity feed for activity and insights", () => {
+	const activityPanelSource = readBlockFile("experimental-v3/components/activity-panel.tsx");
+
+	assert.match(activityPanelSource, /useJiraInsights\(\)/u);
+	assert.match(activityPanelSource, /mergeJiraActivityEntriesWithInsights/u);
+	assert.match(activityPanelSource, /createdAtMs: createdAtByEntryId\.get\(entry\.id\)/u);
+	assert.match(activityPanelSource, /const effectiveFilter = insightsSelected \? "insights-only" : filter/u);
+	assert.match(activityPanelSource, /activeEntryId=\{activeCheckpointId \?\? undefined\}/u);
+	assert.match(activityPanelSource, /renderEntry=\{renderActivityEntry\}/u);
+	assert.match(activityPanelSource, /<JiraInsightsCheckpoint/u);
+	assert.match(activityPanelSource, /id=\{insightsSelected \? "insights" : "activity"\}/u);
 });
 
 test("experimental v3 header Actions menu copies the work item as markdown", () => {

@@ -19,6 +19,7 @@ import {
 } from "@/app/contexts/context-work-item-modal";
 import { ArtifactPane, type ArtifactPaneSectionItem } from "@/components/blocks/artifact-pane";
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
+import { JiraInsightsEditorialPane } from "@/components/blocks/jira-insights/components/jira-insights-editorial-pane";
 import { getAttachmentLabel } from "@/components/blocks/jira-work-item/data/context-fixtures";
 import { METADATA_PEOPLE } from "@/components/blocks/jira-work-item/data/metadata-people";
 import type { ContextLinkedItem } from "@/components/blocks/jira-work-item/data/session-state";
@@ -33,6 +34,7 @@ import {
 	useJiraWorkItemMeta,
 	useJiraWorkItemState,
 } from "@/components/blocks/jira-work-item/experimental-v3/context-jira-work-item";
+import { useSectionNavigation } from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
 import { CONNECTED_REPOSITORY_COUNT } from "@/components/blocks/jira-work-item/experimental-v3/lib/development-repositories";
 import { getPullRequestIdentity } from "@/components/blocks/jira-work-item/experimental-v3/lib/jira-activity-adapter";
 import type {
@@ -220,6 +222,7 @@ export function MetadataRail({
 	const { workItem } = useJiraWorkItemMeta();
 	const { contextResources, metadata: draft } = useJiraWorkItemState();
 	const actions = useJiraWorkItemActions();
+	const { insightsSelected } = useSectionNavigation();
 	const pullRequestSelected = selectedPullRequestEntry !== null;
 	const selectedPullRequestKey = selectedPullRequestEntry?.pullRequest
 		? getPullRequestIdentity(selectedPullRequestEntry.pullRequest)
@@ -319,8 +322,8 @@ export function MetadataRail({
 				>
 					{/* Kept mounted so collapsible section state survives opening a PR. */}
 					<div
-						hidden={pullRequestSelected}
-						inert={pullRequestSelected ? true : undefined}
+						hidden={pullRequestSelected || insightsSelected}
+						inert={pullRequestSelected || insightsSelected ? true : undefined}
 					>
 						<ArtifactPane
 							aria-label="Work item details"
@@ -356,6 +359,9 @@ export function MetadataRail({
 							]}
 						/>
 					</div>
+					{!pullRequestSelected && insightsSelected ? (
+						<JiraInsightsEditorialPane />
+					) : null}
 					{selectedPullRequestEntry ? (
 						<PullRequestContextRail
 							currentReviewerStatus={currentReviewerStatus}

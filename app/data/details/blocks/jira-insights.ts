@@ -35,12 +35,22 @@ import { JIRA_INSIGHTS_DEMO_SNAPSHOT } from "@/components/blocks/jira-insights/d
 		},
 		{
 			name: "JiraInsightsContent",
-			description: "Renders the summary and newest-first decision timeline.",
+			description: "Standalone summary and Jira Activity-backed decision timeline composition.",
 			props: [],
 		},
 		{
 			name: "JiraInsightsScrubber",
-			description: "Renders the discrete oldest-to-newest checkpoint scrubber for a dock or standalone layout.",
+			description: "Connects provider selection to the horizontal Activity/decision timeline rail.",
+			props: [],
+		},
+		{
+			name: "JiraInsightsTimelineRail",
+			description: "Scrollable horizontal chronology with Activity ticks, decision landmarks, hover tooltips, drag, wheel, and keyboard navigation.",
+			props: [],
+		},
+		{
+			name: "JiraInsightsEditorialPane",
+			description: "Selected-decision editorial summary with adjacent navigation, sources, and metadata.",
 			props: [],
 		},
 	],

@@ -13,6 +13,7 @@ import {
 	JiraInsightsProvider,
 	JiraInsightsScrubber,
 	useJiraInsights,
+	type JiraInsightSource,
 	type JiraInsightsSnapshot,
 } from "@/components/blocks/jira-insights";
 import { EMPTY_JIRA_INSIGHTS_SNAPSHOT } from "@/components/blocks/jira-insights/data";
@@ -31,6 +32,7 @@ import {
 } from "@/components/blocks/jira-work-item/experimental-v3/context-failing-checks-composer";
 import {
 	JiraWorkItemProvider,
+	useJiraWorkItemActions,
 	useJiraWorkItemMeta,
 	useJiraWorkItemState,
 } from "@/components/blocks/jira-work-item/experimental-v3/context-jira-work-item";
@@ -164,6 +166,7 @@ interface ExperimentalV3JiraWorkItemContentProps {
 	composerContextBar?: ReactNode;
 	composerToolsAfterAdd?: ReactNode;
 	hasInsights: boolean;
+	insightsSnapshot: JiraInsightsSnapshot;
 	inlineSurface: "card" | "card-fill" | "fill";
 	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
 	onClose: () => void;
@@ -246,17 +249,70 @@ function InsightsAwareComposer({
 	hasInsights,
 	...composerProps
 }: Readonly<ComponentProps<typeof ActivityComposer> & { hasInsights: boolean }>) {
+	const { activityEvents } = useJiraWorkItemMeta();
 	const { insightsSelected } = useSectionNavigation();
 	const { selectLatestUnread, unreadCheckpointIds } = useJiraInsights();
+	const activityTimestamps = useMemo(
+		() => activityEvents.flatMap((entry) => (
+			entry.createdAtMs == null ? [] : [entry.createdAtMs]
+		)),
+		[activityEvents],
+	);
 
 	return insightsSelected && hasInsights ? (
-		<JiraInsightsScrubber />
+		<JiraInsightsScrubber activityTimestamps={activityTimestamps} />
 	) : (
 		<ActivityComposer
 			{...composerProps}
 			newInsightsCount={hasInsights ? unreadCheckpointIds.length : undefined}
 			onNewInsightsSelect={hasInsights ? selectLatestUnread : undefined}
 		/>
+	);
+}
+
+function InsightsAwareActivityPanel(
+	props: Readonly<ComponentProps<typeof ActivityPanel>>,
+) {
+	const { onSourceSelect } = useJiraInsights();
+
+	return <ActivityPanel {...props} onInsightSourceSelect={onSourceSelect} />;
+}
+
+function WorkItemInsightsProvider({
+	children,
+	onOpenPullRequestIdentity,
+	snapshot,
+}: Readonly<{
+	children: ReactNode;
+	onOpenPullRequestIdentity?: (identity: string) => void;
+	snapshot: JiraInsightsSnapshot;
+}>) {
+	const actions = useJiraWorkItemActions();
+	const { requestRevealLatestActivity } = useMetadataRail();
+	const { selectSection } = useSectionNavigation();
+	const handleInsightSourceSelect = useCallback((source: JiraInsightSource) => {
+		if (source.kind === "work-item-section") {
+			selectSection(source.sectionId);
+			return;
+		}
+		if (source.kind === "activity-entry") {
+			selectSection("activity");
+			requestRevealLatestActivity(source.entryId);
+			return;
+		}
+		if (source.kind === "agent-session") {
+			actions.openSession(source.sessionId);
+			return;
+		}
+		if (source.kind === "pull-request") {
+			onOpenPullRequestIdentity?.(source.identity);
+		}
+	}, [actions, onOpenPullRequestIdentity, requestRevealLatestActivity, selectSection]);
+
+	return (
+		<JiraInsightsProvider onSourceSelect={handleInsightSourceSelect} snapshot={snapshot}>
+			{children}
+		</JiraInsightsProvider>
 	);
 }
 
@@ -268,6 +324,7 @@ function ExperimentalV3JiraWorkItemContent({
 	composerContextBar,
 	composerToolsAfterAdd,
 	hasInsights,
+	insightsSnapshot,
 	inlineSurface,
 	onAgentPromptSubmit,
 	onClose,
@@ -651,115 +708,119 @@ function ExperimentalV3JiraWorkItemContent({
 	return (
 		<PanelLayoutProvider>
 			<SectionNavigationProvider active={open}>
-			<Toaster id={PULL_REQUEST_REVIEW_TOASTER_ID} position="bottom-left" />
-			<LayoutGroup id={composerLayoutGroupId}>
-				<ExperimentalWorkItemDialog
-						controlRow={(
-							<ContextResources
-								outputs={outputs}
-								primaryCodingAgentId={primaryCodingAgentId}
-							/>
-						)}
-						navigation={(
-							<WorkItemSectionNav
-								endControl={(
-									<PullRequestsSelect
-										entries={pullRequestEntries}
-										selectedIdentity={selectedPullRequestIdentity}
-										onSelectEntry={handlePullRequestSelect}
-									/>
-								)}
-								onSectionSelect={selectedPullRequestIdentity ? handlePullRequestClear : undefined}
-							/>
-						)}
-						inlineSurface={inlineSurface}
-						open={open}
-						onBodyWidthChange={handleDialogBodyWidthChange}
-						onClose={onClose}
-						presentation={presentation}
-						sidebar={<FloatingSessionSurface composerToolsAfterAdd={composerToolsAfterAdd} onSessionReply={onSessionReply} />}
-						sidebarOpen={agentChatOpen}
-						sidebarResizeHandle={(
-							<WorkItemSidePanelResizeHandle
-								ariaLabel="Resize agent chat panel"
-								className="top-0! bottom-0! left-0! bg-border group-hover/chat-panel:[&>div]:opacity-100"
-								resize={metadataPanelResize}
-								testId="jira-work-item-chat-resize-handle"
-							/>
-						)}
-						sidebarResizing={metadataPanelResize.isResizing}
-						sidebarWidth={metadataPanelResize.sidebarWidth}
-						workItemCode={workItem.code}
-						workItemTitle={workItem.title}
-					>
-						<ExperimentalWorkItemLayout
-							metadataPanelResizing={metadataPanelResize.isResizing}
-							metadataPanelWidth={metadataPanelResize.sidebarWidth}
-							context={(scrollContainerRef) => (
-								<ContextPanel
-									activity={(
-										<ActivityPanel
-											activitySessionThread={activitySessionThread}
-											onOpenPullRequest={handlePullRequestSelect}
+				<WorkItemInsightsProvider
+					onOpenPullRequestIdentity={handlePullRequestIdentitySelect}
+					snapshot={insightsSnapshot}
+				>
+					<Toaster id={PULL_REQUEST_REVIEW_TOASTER_ID} position="bottom-left" />
+					<LayoutGroup id={composerLayoutGroupId}>
+						<ExperimentalWorkItemDialog
+							controlRow={(
+								<ContextResources
+									outputs={outputs}
+									primaryCodingAgentId={primaryCodingAgentId}
+								/>
+							)}
+							navigation={(
+								<WorkItemSectionNav
+									endControl={(
+										<PullRequestsSelect
+											entries={pullRequestEntries}
+											selectedIdentity={selectedPullRequestIdentity}
+											onSelectEntry={handlePullRequestSelect}
 										/>
 									)}
-									hasInsights={hasInsights}
-									onOpenPullRequestIdentity={handlePullRequestIdentitySelect}
-									onPullRequestChapterReviewedChange={handlePullRequestChapterReviewedChange}
-									onPullRequestInlineCommentsChange={handlePullRequestInlineCommentsChange}
-									pullRequestApprovalState={selectedPullRequestApprovalState}
-									pullRequestInlineComments={pullRequestReviewState?.inlineComments}
-									pullRequestReviewedChapterIds={selectedPullRequestReviewedChapterIds}
-									scrollContainerRef={scrollContainerRef}
-									selectedPullRequestEntry={selectedPullRequestEntry}
-									submittedReviewActivity={selectedSubmittedReviewActivity}
-									submitReviewAction={pullRequestSubmitReviewAction}
-								/>
-							)}
-							composer={(
-								<InsightsAwareComposer
-									agents={composerAgents}
-									autoFocus={restoreActivityComposerFocus}
-									composerContextBar={composerContextBar}
-									hasInsights={hasInsights}
-									onAgentPromptSubmit={onAgentPromptSubmit}
-									onOpenAgentChat={onOpenAgentChat}
 									onSectionSelect={selectedPullRequestIdentity ? handlePullRequestClear : undefined}
-									pullRequestFix={activePullRequestFix}
-									pullRequestReview={activePullRequestReview}
-									onSkillInvoke={onSkillInvoke}
 								/>
 							)}
-							fillContainer={inlineSurface !== "card"}
-							metadata={(
-								<div
-									aria-hidden={agentChatOpen}
-									className="group/metadata-resize relative flex min-h-0 min-w-0 flex-1 flex-col"
-									inert={agentChatOpen ? true : undefined}
-								>
-									<MetadataRail
-										automationRules={automationRules}
-										borderless
-										currentReviewerStatus={selectedPullRequestReviewerStatus}
-										onPullRequestFix={handlePullRequestFixOpen}
-										selectedPullRequestEntry={selectedPullRequestEntry}
-									/>
-									<div className="hidden @[860px]/agentlayout:contents">
-										{/* The description content ends 24px before the split while rail
-										content starts 36px after it (24px shell + 12px rail padding).
-										Shift the separator 6px right to sit at that visual midpoint. */}
-										<WorkItemSidePanelResizeHandle
-											ariaLabel="Resize details and activity panel"
-											className="top-[3.875rem]! left-[calc(-1.5rem+0.375rem)]! bg-transparent! hover:bg-transparent! data-[active]:bg-transparent! focus-visible:bg-transparent! focus-visible:ring-0 group-hover/metadata-panel:[&>div]:opacity-100"
-											resize={metadataPanelResize}
-											testId="jira-work-item-metadata-resize-handle"
-										/>
-									</div>
-								</div>
+							inlineSurface={inlineSurface}
+							open={open}
+							onBodyWidthChange={handleDialogBodyWidthChange}
+							onClose={onClose}
+							presentation={presentation}
+							sidebar={<FloatingSessionSurface composerToolsAfterAdd={composerToolsAfterAdd} onSessionReply={onSessionReply} />}
+							sidebarOpen={agentChatOpen}
+							sidebarResizeHandle={(
+								<WorkItemSidePanelResizeHandle
+									ariaLabel="Resize agent chat panel"
+									className="top-0! bottom-0! left-0! bg-border group-hover/chat-panel:[&>div]:opacity-100"
+									resize={metadataPanelResize}
+									testId="jira-work-item-chat-resize-handle"
+								/>
 							)}
-						/>
-					</ExperimentalWorkItemDialog>
-				</LayoutGroup>
+							sidebarResizing={metadataPanelResize.isResizing}
+							sidebarWidth={metadataPanelResize.sidebarWidth}
+							workItemCode={workItem.code}
+							workItemTitle={workItem.title}
+						>
+							<ExperimentalWorkItemLayout
+								context={(scrollContainerRef) => (
+									<ContextPanel
+										activity={(
+											<InsightsAwareActivityPanel
+												activitySessionThread={activitySessionThread}
+												onOpenPullRequest={handlePullRequestSelect}
+											/>
+										)}
+										hasInsights={hasInsights}
+										onPullRequestChapterReviewedChange={handlePullRequestChapterReviewedChange}
+										onPullRequestInlineCommentsChange={handlePullRequestInlineCommentsChange}
+										pullRequestApprovalState={selectedPullRequestApprovalState}
+										pullRequestInlineComments={pullRequestReviewState?.inlineComments}
+										pullRequestReviewedChapterIds={selectedPullRequestReviewedChapterIds}
+										scrollContainerRef={scrollContainerRef}
+										selectedPullRequestEntry={selectedPullRequestEntry}
+										submittedReviewActivity={selectedSubmittedReviewActivity}
+										submitReviewAction={pullRequestSubmitReviewAction}
+									/>
+								)}
+								composer={(
+									<InsightsAwareComposer
+										agents={composerAgents}
+										autoFocus={restoreActivityComposerFocus}
+										composerContextBar={composerContextBar}
+										hasInsights={hasInsights}
+										onAgentPromptSubmit={onAgentPromptSubmit}
+										onOpenAgentChat={onOpenAgentChat}
+										onSectionSelect={selectedPullRequestIdentity ? handlePullRequestClear : undefined}
+										onSkillInvoke={onSkillInvoke}
+										pullRequestFix={activePullRequestFix}
+										pullRequestReview={activePullRequestReview}
+									/>
+								)}
+								fillContainer={inlineSurface !== "card"}
+								metadata={(
+									<div
+										aria-hidden={agentChatOpen}
+										className="group/metadata-resize relative flex min-h-0 min-w-0 flex-1 flex-col"
+										inert={agentChatOpen ? true : undefined}
+									>
+										<MetadataRail
+											automationRules={automationRules}
+											borderless
+											currentReviewerStatus={selectedPullRequestReviewerStatus}
+											onPullRequestFix={handlePullRequestFixOpen}
+											selectedPullRequestEntry={selectedPullRequestEntry}
+										/>
+										<div className="hidden @[860px]/agentlayout:contents">
+											{/* The description content ends 24px before the split while rail
+											content starts 36px after it (24px shell + 12px rail padding).
+											Shift the separator 6px right to sit at that visual midpoint. */}
+											<WorkItemSidePanelResizeHandle
+												ariaLabel="Resize details and activity panel"
+												className="top-[3.875rem]! left-[calc(-1.5rem+0.375rem)]! bg-transparent! hover:bg-transparent! data-[active]:bg-transparent! focus-visible:bg-transparent! focus-visible:ring-0 group-hover/metadata-panel:[&>div]:opacity-100"
+												resize={metadataPanelResize}
+												testId="jira-work-item-metadata-resize-handle"
+											/>
+										</div>
+									</div>
+								)}
+								metadataPanelResizing={metadataPanelResize.isResizing}
+								metadataPanelWidth={metadataPanelResize.sidebarWidth}
+							/>
+						</ExperimentalWorkItemDialog>
+					</LayoutGroup>
+				</WorkItemInsightsProvider>
 			</SectionNavigationProvider>
 		</PanelLayoutProvider>
 	);
@@ -831,32 +892,31 @@ export function ExperimentalV3JiraWorkItem(props: Readonly<ExperimentalV3JiraWor
 				>
 					<ActivityChatCommentsProvider>
 						<FailingChecksComposerProvider>
-							<JiraInsightsProvider snapshot={insightsSnapshot}>
-								<ExperimentalV3JiraWorkItemContent
-									activitySessionThread={props.activitySessionThread}
-									autoOpenPullRequestIdentity={props.autoOpenPullRequestIdentity}
-									automationRules={props.automationRules}
-									composerAgents={props.composerAgents}
-									composerContextBar={props.composerContextBar}
-									composerToolsAfterAdd={props.composerToolsAfterAdd}
-									hasInsights={props.insightsSnapshot != null}
-									inlineSurface={inlineSurface}
-									onAgentPromptSubmit={props.onAgentPromptSubmit}
-									onClose={onClose}
-									onOpenAgentChat={props.onOpenAgentChat}
-									onPullRequestApprove={props.onPullRequestApprove}
-									onPullRequestFix={props.onPullRequestFix}
-									onSessionReply={props.onSessionReply}
-									onSkillInvoke={props.onSkillInvoke}
-									open={open}
-									outputs={props.outputs}
-									presentation={presentation}
-									primaryCodingAgentId={props.primaryCodingAgentId}
-									pullRequestApprovalStates={props.pullRequestApprovalStates}
-									stageKey={props.stageKey}
-									workItem={workItem}
-								/>
-							</JiraInsightsProvider>
+							<ExperimentalV3JiraWorkItemContent
+								activitySessionThread={props.activitySessionThread}
+								autoOpenPullRequestIdentity={props.autoOpenPullRequestIdentity}
+								automationRules={props.automationRules}
+								composerAgents={props.composerAgents}
+								composerContextBar={props.composerContextBar}
+								composerToolsAfterAdd={props.composerToolsAfterAdd}
+								hasInsights={props.insightsSnapshot != null}
+								insightsSnapshot={insightsSnapshot}
+								inlineSurface={inlineSurface}
+								onAgentPromptSubmit={props.onAgentPromptSubmit}
+								onClose={onClose}
+								onOpenAgentChat={props.onOpenAgentChat}
+								onPullRequestApprove={props.onPullRequestApprove}
+								onPullRequestFix={props.onPullRequestFix}
+								onSessionReply={props.onSessionReply}
+								onSkillInvoke={props.onSkillInvoke}
+								open={open}
+								outputs={props.outputs}
+								presentation={presentation}
+								primaryCodingAgentId={props.primaryCodingAgentId}
+								pullRequestApprovalStates={props.pullRequestApprovalStates}
+								stageKey={props.stageKey}
+								workItem={workItem}
+							/>
 						</FailingChecksComposerProvider>
 					</ActivityChatCommentsProvider>
 				</MetadataRailProvider>
