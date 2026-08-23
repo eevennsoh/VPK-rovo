@@ -782,6 +782,8 @@ export function selectActivityEvents(state: Readonly<JiraWorkItemState>): Activi
 		createdAtMs: comment.createdAtMs,
 		reactions: comment.reactions,
 		threadReplies: comment.threadReplies,
+		...(comment.progressChecklist ? { progressChecklist: comment.progressChecklist } : {}),
+		...(comment.outputs ? { outputs: comment.outputs } : {}),
 	}));
 	// Agent-to-agent prompts reuse `role: "human"` with the upstream agent name;
 	// only surface a person invoker when the prompt author is not another session agent.

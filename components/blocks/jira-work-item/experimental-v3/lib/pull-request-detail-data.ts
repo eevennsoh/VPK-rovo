@@ -809,6 +809,8 @@ export function arePullRequestChecksInProgress(
 	return checks.some((check) => check.status === "running" || check.status === "queued");
 }
 
+export { pullRequestChecksTitleState } from "@/components/blocks/pull-request/lib/pull-request-checks-title";
+
 /** Keep merge status aligned with the rail CI checklist when SCM omits mergeState. */
 function resolveMergeState(
 	status: "Open" | "Merged",

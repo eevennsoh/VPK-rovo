@@ -428,7 +428,7 @@ export function PullRequestDetailsRail({
 		pullRequestSectionExpandRequest,
 	} = useMetadataRail();
 	// Review lands on PR Details with CI checks open — the chapter's primary
-	// beat — instead of a collapsed · summary that needs a header click.
+	// beat — instead of a collapsed count summary that needs a header click.
 	const [openSectionIds, setOpenSectionIds] = useState<ReadonlySet<string>>(
 		() => new Set([PULL_REQUEST_CHECKS_SECTION_ID]),
 	);

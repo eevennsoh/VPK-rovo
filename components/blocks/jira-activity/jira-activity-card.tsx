@@ -103,6 +103,11 @@ export function JiraActivityCard({
 	const activityGroupClass = activityGroup === "activity-reply"
 		? "group/activity-reply"
 		: "group/activity-card";
+	// One body owner for session cards and plain comments: copy, checklist, and
+	// artifacts share text-sm / leading-5, with mt-3 between in-body blocks.
+	const body = (
+		<div className="min-w-0 text-sm leading-5 text-text">{children}</div>
+	);
 	// Revealed on hover, but kept in layout and in the tab order: a `display: none`
 	// wrapper could never satisfy its own `:focus-visible` reveal condition.
 	const actionVisibilityClass = activityGroup === "activity-reply"
@@ -142,7 +147,7 @@ export function JiraActivityCard({
 							messageTimestamp={timestamp}
 							onView={onView}
 						/>
-						<div className="min-w-0 text-sm leading-5 text-text">{children}</div>
+						{body}
 					</>
 				) : (
 					<>
@@ -191,7 +196,7 @@ export function JiraActivityCard({
 							) : null}
 						</div>
 
-						{children}
+						{body}
 					</>
 				)}
 				{detailsContent}
