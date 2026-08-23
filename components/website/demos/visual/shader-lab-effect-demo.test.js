@@ -198,9 +198,16 @@ test("Chromatic Aberration accepts image and video texture media", () => {
 	assert.match(CHROMATIC_ABERRATION_CONFIG_SOURCE, /DEFAULT_CHROMATIC_ABERRATION_MEDIA_SRC = "\/3p\/framer\/chromatic-aberration-default\.png"/);
 	assert.match(CHROMATIC_ABERRATION_SHADER_SOURCE, /mediaSrc\?: string;/);
 	assert.match(CHROMATIC_ABERRATION_SHADER_SOURCE, /mediaType\?: "image" \| "video";/);
-	assert.match(CHROMATIC_ABERRATION_SHADER_SOURCE, /video\.HAVE_CURRENT_DATA/);
+	assert.match(CHROMATIC_ABERRATION_SHADER_SOURCE, /media\.HAVE_CURRENT_DATA/);
 	assert.match(CHROMATIC_ABERRATION_DEMO_SOURCE, /accept="image\/\*,video\/\*"/);
 	assert.match(CHROMATIC_ABERRATION_DEMO_SOURCE, /mediaType=\{mediaType\}/);
+});
+
+test("Chromatic keeps media alive across controls and redraws late images", () => {
+	assert.match(CHROMATIC_ABERRATION_SHADER_SOURCE, /const mediaRef = useRef<HTMLImageElement \| HTMLVideoElement \| null>\(null\);/);
+	assert.match(CHROMATIC_ABERRATION_SHADER_SOURCE, /const renderRef = useRef<\(\) => void>\(\(\) => undefined\);/);
+	assert.match(CHROMATIC_ABERRATION_SHADER_SOURCE, /nextImage\.onload = \(\) => renderRef\.current\(\);/);
+	assert.match(CHROMATIC_ABERRATION_SHADER_SOURCE, /\}, \[resolvedMediaSrc, resolvedMediaType\]\);/);
 });
 
 test("Chromatic Aberration exposes the complete Framer control contract", () => {

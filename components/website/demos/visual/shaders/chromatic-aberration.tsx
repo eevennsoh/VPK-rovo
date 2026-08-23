@@ -190,6 +190,8 @@ export default function ChromaticAberration({
 	const modeValue = mode === "radial" ? 0 : mode === "uniform" ? 1 : 2;
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const animRef = useRef<number>(0);
+	const mediaRef = useRef<HTMLImageElement | HTMLVideoElement | null>(null);
+	const renderRef = useRef<() => void>(() => undefined);
 	const reduced = useReducedMotion();
 	const [inView, setInView] = useState(false);
 	const [tabVisible, setTabVisible] = useState(
@@ -214,6 +216,50 @@ export default function ChromaticAberration({
 
 	const shouldAnimate = !reduced && inView && tabVisible;
 	const shouldRenderContinuously = shouldAnimate && (animate === "pulse" || resolvedMediaType === "video");
+
+	useEffect(() => {
+		if (resolvedMediaType === "video") {
+			const nextVideo = document.createElement("video");
+			mediaRef.current = nextVideo;
+			nextVideo.crossOrigin = "anonymous";
+			nextVideo.loop = true;
+			nextVideo.muted = true;
+			nextVideo.playsInline = true;
+			nextVideo.preload = "auto";
+			nextVideo.onloadeddata = () => renderRef.current();
+			nextVideo.src = resolvedMediaSrc;
+			nextVideo.load();
+
+			return () => {
+				nextVideo.onloadeddata = null;
+				nextVideo.pause();
+				nextVideo.removeAttribute("src");
+				nextVideo.load();
+				if (mediaRef.current === nextVideo) mediaRef.current = null;
+			};
+		}
+
+		const nextImage = new Image();
+		mediaRef.current = nextImage;
+		nextImage.crossOrigin = "anonymous";
+		nextImage.onload = () => renderRef.current();
+		nextImage.src = resolvedMediaSrc;
+
+		return () => {
+			nextImage.onload = null;
+			if (mediaRef.current === nextImage) mediaRef.current = null;
+		};
+	}, [resolvedMediaSrc, resolvedMediaType]);
+
+	useEffect(() => {
+		const media = mediaRef.current;
+		if (!(media instanceof HTMLVideoElement)) return;
+		if (shouldAnimate) {
+			void media.play().catch(() => undefined);
+		} else {
+			media.pause();
+		}
+	}, [resolvedMediaSrc, resolvedMediaType, shouldAnimate]);
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
@@ -287,13 +333,23 @@ export default function ChromaticAberration({
 			new Uint8Array([0, 0, 0, 0]),
 		);
 
-		let image: HTMLImageElement | null = null;
-		let video: HTMLVideoElement | null = null;
 		const start = performance.now();
-		const render = () => {
-			if (video && video.readyState >= video.HAVE_CURRENT_DATA) {
+		const uploadReadyMedia = () => {
+			const media = mediaRef.current;
+			if (media instanceof HTMLImageElement) {
+				if (!media.complete || media.naturalWidth === 0) return;
 				gl.bindTexture(gl.TEXTURE_2D, tex);
-				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, media);
+			} else if (media instanceof HTMLVideoElement && media.readyState >= media.HAVE_CURRENT_DATA) {
+				gl.bindTexture(gl.TEXTURE_2D, tex);
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, media);
+			}
+		};
+		const render = () => {
+			const media = mediaRef.current;
+			if (media instanceof HTMLVideoElement && media.readyState >= media.HAVE_CURRENT_DATA) {
+				gl.bindTexture(gl.TEXTURE_2D, tex);
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, media);
 			}
 
 			const dpr = window.devicePixelRatio || 1;
@@ -312,52 +368,22 @@ export default function ChromaticAberration({
 				animRef.current = requestAnimationFrame(render);
 			}
 		};
-		const resizeObserver = new ResizeObserver(() => {
+		renderRef.current = () => {
+			uploadReadyMedia();
 			if (!shouldRenderContinuously) render();
+		};
+		const resizeObserver = new ResizeObserver(() => {
+			if (!shouldRenderContinuously) renderRef.current();
 		});
 		resizeObserver.observe(canvas);
 
-		if (resolvedMediaSrc && resolvedMediaType === "video") {
-			const nextVideo = document.createElement("video");
-			video = nextVideo;
-			nextVideo.crossOrigin = "anonymous";
-			nextVideo.loop = true;
-			nextVideo.muted = true;
-			nextVideo.playsInline = true;
-			nextVideo.preload = "auto";
-			nextVideo.onloadeddata = () => {
-				if (shouldRenderContinuously) {
-					void nextVideo.play().catch(() => undefined);
-				} else {
-					render();
-				}
-			};
-			nextVideo.src = resolvedMediaSrc;
-			nextVideo.load();
-		} else if (resolvedMediaSrc) {
-			const nextImage = new Image();
-			image = nextImage;
-			nextImage.crossOrigin = "anonymous";
-			nextImage.onload = () => {
-				gl.bindTexture(gl.TEXTURE_2D, tex);
-				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, nextImage);
-				if (!shouldAnimate) render();
-			};
-			nextImage.src = resolvedMediaSrc;
-		}
-
+		uploadReadyMedia();
 		render();
 
 		return () => {
+			renderRef.current = () => undefined;
 			resizeObserver.disconnect();
 			cancelAnimationFrame(animRef.current);
-			if (image) image.onload = null;
-			if (video) {
-				video.onloadeddata = null;
-				video.pause();
-				video.removeAttribute("src");
-				video.load();
-			}
 			gl.deleteTexture(tex);
 			gl.deleteBuffer(buf);
 			gl.deleteProgram(prog);
@@ -365,8 +391,6 @@ export default function ChromaticAberration({
 			gl.deleteShader(fragmentShader);
 		};
 	}, [
-		resolvedMediaSrc,
-		resolvedMediaType,
 		modeValue,
 		zoom,
 		focusX,
