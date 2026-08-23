@@ -187,10 +187,12 @@ test("v3 section navigation links use 12px type", async ({ page }) => {
 
 	const pullRequestsList = page.getByRole("listbox", { name: "Pull requests" });
 	await expect(pullRequestsList).toBeVisible();
+	await pullRequests.click();
+	await expect(pullRequestsList).toBeVisible();
 	await page.getByRole("option").first().hover();
 	await page.waitForTimeout(150);
 	await expect(pullRequestsList).toBeVisible();
-	await title.hover();
+	await page.keyboard.press("Escape");
 	await expect(pullRequestsList).toBeHidden();
 
 	await sectionScrollport.evaluate((element) => element.scrollTo({ top: 48 }));

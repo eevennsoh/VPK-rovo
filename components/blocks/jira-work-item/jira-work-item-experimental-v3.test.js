@@ -325,6 +325,8 @@ test("PR select shares the section navigation list without becoming a section", 
 		selectSource,
 		/onMouseEnter=\{handleTriggerMouseEnter\}[\s\S]*onMouseLeave=\{scheduleHoverClose\}/u,
 	);
+	assert.match(selectSource, /retainHoverOpenOnTriggerPressRef/u);
+	assert.match(selectSource, /onPointerDownCapture[\s\S]*hoverOpenedRef\.current/u);
 	assert.match(
 		selectSource,
 		/<SelectContent[\s\S]*onMouseEnter=\{cancelHoverClose\}[\s\S]*onMouseLeave=\{scheduleHoverClose\}/u,

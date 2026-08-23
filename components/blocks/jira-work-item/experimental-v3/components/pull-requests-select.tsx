@@ -57,6 +57,7 @@ export function PullRequestsSelect({
 	const pullRequestCount = orderedEntries.length;
 	const [open, setOpen] = useState(false);
 	const hoverOpenedRef = useRef(false);
+	const retainHoverOpenOnTriggerPressRef = useRef(false);
 	const hoverCloseTimeoutRef = useRef<number | null>(null);
 	const cancelHoverClose = useCallback(() => {
 		if (hoverCloseTimeoutRef.current === null) return;
@@ -85,6 +86,12 @@ export function PullRequestsSelect({
 		? TRIGGER_LABEL
 		: `${TRIGGER_LABEL}. ${pullRequestCount}`;
 	const handleOpenChange = (nextOpen: boolean) => {
+		if (!nextOpen && retainHoverOpenOnTriggerPressRef.current) {
+			retainHoverOpenOnTriggerPressRef.current = false;
+			hoverOpenedRef.current = false;
+			cancelHoverClose();
+			return;
+		}
 		if (!nextOpen) {
 			hoverOpenedRef.current = false;
 			cancelHoverClose();
@@ -128,6 +135,9 @@ export function PullRequestsSelect({
 					data-jira-work-item-resource-pull-requests
 					onMouseEnter={handleTriggerMouseEnter}
 					onMouseLeave={scheduleHoverClose}
+					onPointerDownCapture={() => {
+						retainHoverOpenOnTriggerPressRef.current = hoverOpenedRef.current;
+					}}
 					variant="none"
 				>
 					<SelectValue className="min-w-0">
