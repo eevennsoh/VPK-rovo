@@ -217,7 +217,7 @@ test("the v3 dialog owns one fixed chrome row", () => {
 	assert.match(navSource, /variant === "compact" \? "border-border-disabled" : "border-transparent"/u);
 	assert.match(navSource, /className="flex items-center gap-1 px-4\.5"/u);
 	assert.doesNotMatch(navSource, /ml-auto/u);
-	assert.match(navSource, /from "@\/components\/ui\/tabs"/u);
+	assert.match(navSource, /from "@\/components\/ui\/tabs-experimental"/u);
 	assert.match(navSource, /tabsExperimentalListClass/u);
 	assert.match(navSource, /tabsExperimentalTriggerClass/u);
 	assert.doesNotMatch(navSource, /tabsLineListOverflowClass/u);
@@ -227,6 +227,7 @@ test("the v3 dialog owns one fixed chrome row", () => {
 		/"box-content min-w-0 overflow-x-auto overflow-y-hidden",\s*FOCUS_RING_CLIP_GUTTER/u,
 	);
 	assert.match(navSource, /NAV_LINK_CLASS = tabsExperimentalTriggerClass/u);
+	assert.doesNotMatch(navSource, /export const NAV_LINK_CLASS/u);
 	assert.doesNotMatch(navSource, /font\.heading\.xxsmall/u);
 	assert.match(navSource, /NAV_LIST_CLASS = cn\([\s\S]*tabsExperimentalListClass/u);
 	assert.doesNotMatch(navSource, /NAV_LIST_CLASS = "[^"]*border-b/u);
@@ -315,7 +316,7 @@ test("PR select shares the section navigation list without becoming a section", 
 	assert.match(navSource, /onSectionSelect\?\.\(\);/u);
 
 	const selectSource = readBlockFile("experimental-v3/components/pull-requests-select.tsx");
-	assert.match(selectSource, /NAV_LINK_CLASS/u);
+	assert.match(selectSource, /tabsExperimentalTriggerClass/u);
 	assert.doesNotMatch(selectSource, /font\.heading\.xxsmall/u);
 	assert.match(selectSource, /className="inline-flex h-full min-w-0 items-stretch"/u);
 	assert.match(selectSource, /const HOVER_CLOSE_DELAY_MS = 100/u);

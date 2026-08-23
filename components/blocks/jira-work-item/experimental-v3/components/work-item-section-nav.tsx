@@ -10,7 +10,7 @@ import { FOCUS_RING_CLIP_GUTTER } from "@/components/ui/focus-ring";
 import {
 	tabsExperimentalListClass,
 	tabsExperimentalTriggerClass,
-} from "@/components/ui/tabs";
+} from "@/components/ui/tabs-experimental";
 import { cn } from "@/lib/utils";
 
 const NAV_LIST_CLASS = cn(
@@ -18,7 +18,7 @@ const NAV_LIST_CLASS = cn(
 	tabsExperimentalListClass,
 );
 
-export const NAV_LINK_CLASS = tabsExperimentalTriggerClass;
+const NAV_LINK_CLASS = tabsExperimentalTriggerClass;
 
 interface WorkItemSectionNavProps {
 	endControl?: ReactNode;

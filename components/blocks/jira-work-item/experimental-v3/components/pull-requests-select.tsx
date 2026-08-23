@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import { toPanelPullRequestProps } from "@/components/blocks/jira-work-item/experimental-v3/components/pull-requests-panel";
-import { NAV_LINK_CLASS } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-section-nav";
 import {
 	getPullRequestIdentity,
 	JIRA_WORK_ITEM_CURRENT_USER,
@@ -22,6 +21,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { tabsExperimentalTriggerClass } from "@/components/ui/tabs-experimental";
 import { cn } from "@/lib/utils";
 
 const TRIGGER_LABEL = "Pull requests";
@@ -122,7 +122,7 @@ export function PullRequestsSelect({
 					aria-current={selectedIdentity ? "location" : undefined}
 					aria-label={triggerAriaLabel}
 					className={cn(
-						NAV_LINK_CLASS,
+						tabsExperimentalTriggerClass,
 						"data-placeholder:text-text-subtle data-placeholder:hover:text-text data-[variant=none]:border-x-[6px]! data-[variant=none]:border-x-transparent! data-popup-open:rounded-md group-data-[header-variant=compact]/work-item-navigation:data-popup-open:rounded-b-none data-popup-open:text-text! [&>:last-child]:hidden",
 					)}
 					data-jira-work-item-resource-pull-requests
