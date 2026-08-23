@@ -79,7 +79,7 @@ test("rich activity cards leave a 4px gap in the connector above and below", () 
 	// Structural interruption only: card avatars sit in h-10 (32px → 4px above/below);
 	// the spine is a sibling that starts after the track. No opaque spine covers —
 	// those stacked with the track clearance and left an 8px orphan gap above icons.
-	assert.match(INDEX_SOURCE, /li[\s\S]*className="flex min-w-0 gap-2"/u);
+	assert.match(INDEX_SOURCE, /li[\s\S]*className="group\/activity-event flex min-w-0 gap-2"/u);
 	assert.match(NODE_SOURCE, /isCard \? "h-10" : "h-6"/u);
 	assert.match(NODE_SOURCE, /className="min-h-4 w-px flex-1 bg-border"/u);
 	assert.doesNotMatch(INDEX_SOURCE, /absolute -top-1 left-3\.5 h-1 w-1/u);
