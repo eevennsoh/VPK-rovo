@@ -6,6 +6,8 @@ import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
+import { FOCUS_RING_CLIP_GUTTER } from "@/components/ui/focus-ring";
+import { cn } from "@/lib/utils";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -24,7 +26,12 @@ export function JiraGoldenJourneysV3StoryControls({
 	terminalStep: number;
 }>): React.ReactElement {
 	return (
-		<div className="scrollbar-none max-w-[calc(100vw-12rem)] overflow-x-auto">
+		<div
+			className={cn(
+				"scrollbar-none max-w-[calc(100vw-12rem)] overflow-x-auto",
+				FOCUS_RING_CLIP_GUTTER,
+			)}
+		>
 			<ButtonGroup
 				aria-label="Open a software delivery story chapter"
 				className="w-max [&>[data-slot]~[data-slot]]:-ml-px [&>[data-slot]~[data-slot]]:border-l!"

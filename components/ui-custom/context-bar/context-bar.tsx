@@ -98,7 +98,7 @@ export function ContextBar({
 			data-context-bar
 			{...props}
 		>
-			<div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">{children}</div>
+			<div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden has-[:focus-visible]:overflow-visible">{children}</div>
 			{onDismiss ? (
 				<button
 					aria-label={dismissLabel}

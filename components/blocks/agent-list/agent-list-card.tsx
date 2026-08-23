@@ -385,7 +385,7 @@ export function AgentListActivityHeader({
 								actionWidthClass,
 							)}
 						>
-							<div className="min-w-0 overflow-hidden">
+							<div className="min-w-0 overflow-hidden has-[:focus-visible]:overflow-visible">
 								<div
 									className={cn(
 										"pointer-events-none flex shrink-0 items-center gap-1 pl-2 opacity-0 transition-opacity duration-normal ease-out-practical motion-reduce:transition-none",

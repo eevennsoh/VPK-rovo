@@ -1,4 +1,6 @@
 const assert = require("node:assert/strict");
+const { readFileSync } = require("node:fs");
+const path = require("node:path");
 const test = require("node:test");
 
 async function loadSectionTabs() {
@@ -74,4 +76,15 @@ test("section tab equality and IDs preserve render stability and instance-scoped
 		workItemSectionHeadingId("demo-b", "files"),
 		"work-item-section-heading-demo-b-files",
 	);
+});
+
+test("section navigation scroll lanes reserve focus-ring clearance", () => {
+	const navigationSource = readFileSync(
+		path.join(__dirname, "..", "components", "work-item-section-nav.tsx"),
+		"utf8",
+	);
+	assert.equal((navigationSource.match(/FOCUS_RING_CLIP_GUTTER/gu) ?? []).length, 3);
+	assert.equal((navigationSource.match(/overflow-x-auto/gu) ?? []).length, 2);
+	assert.match(navigationSource, /"box-content min-w-0 overflow-x-auto",\s*FOCUS_RING_CLIP_GUTTER/u);
+	assert.match(navigationSource, /"box-content flex h-8 shrink-0 overflow-x-auto",\s*FOCUS_RING_CLIP_GUTTER/u);
 });

@@ -256,6 +256,13 @@ repo's semantic Tailwind classes whenever a class exists.
 - **Focus anatomy:** Focusable controls must keep a visible focused treatment:
   a 2px focused border or ring, a small offset or gap from the component box,
   and a ring radius that follows the component's own radius.
+- **Focus clearance:** No scrollport, clipping ancestor, animated reveal slot,
+  or adjacent control may cut off that treatment. Reserve at least 4px around
+  VPK's outward focus indicators. When layout geometry must stay fixed, expand
+  the clipping boundary with matching negative margin and internal padding
+  (for example, `-m-1 p-1`); for a collapsing reveal wrapper, retain clipping
+  at rest and expose overflow while a descendant is `:focus-visible`. A raised
+  `z-index` solves sibling overlap only—it cannot repair ancestor clipping.
 - **Touch targets:** Interactive controls should keep at least a 32px target in
   touch contexts, even when the visible glyph is smaller.
 

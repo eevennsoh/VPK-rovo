@@ -282,7 +282,10 @@ test("ChatContextBar stays presentational and delegates dismissal to props", asy
 	// Content wrapper + truncating chip classes now come from the primitive but
 	// must still appear in the rendered output, and a non-dismissible bar must
 	// not render an interactive control.
-	assert.match(markup, /class="flex min-w-0 flex-1 items-center gap-1\.5 overflow-hidden"/);
+	assert.match(
+		markup,
+		/class="flex min-w-0 flex-1 items-center gap-1\.5 overflow-hidden has-\[:focus-visible\]:overflow-visible"/,
+	);
 	assert.match(markup, /data-class="min-w-0 max-w-full shrink overflow-hidden"/);
 	assert.match(markup, /data-icon="cross" data-size="small"/);
 	assert.doesNotMatch(markup, /<button/);
