@@ -11,7 +11,7 @@ tools: [
   "mcp__ads-mcp__ads_get_a11y_guidelines",
   "mcp__ads-mcp__ads_suggest_a11y_fixes",
 ]
-skills: ["vpk-design", "agent-browser"]
+skills: ["vpk-design", "vpk-verify", "agent-browser"]
 model: haiku
 memory: project
 color: yellow
@@ -27,27 +27,20 @@ This agent is spawned by the orchestrator as Agent 3 in the Figma-to-code pipeli
 
 ### Browser Automation
 
-Use `/agent-browser` and the `npx agent-browser` CLI for browser interactions. Load the agent-browser skill before using the CLI so command patterns match the installed version.
+Use `vpk-verify` and its `control-vpk` wrapper for browser interactions. Load the agent-browser skill before using the wrapper so command patterns match the installed version. This keeps the browser session and cleanup scoped to the current worktree.
 
 | Action | Command |
 | --- | --- |
-| Open URL | `npx agent-browser open [url]` |
-| Navigate | `npx agent-browser navigate [url]` |
-| Interactive snapshot | `npx agent-browser snapshot -i` |
-| Full snapshot | `npx agent-browser snapshot` |
-| Screenshot viewport | `npx agent-browser screenshot [filename]` |
-| Screenshot full page | `npx agent-browser screenshot --full [filename]` |
-| Evaluate JS | `npx agent-browser eval "[js code]"` |
-| Click element | `npx agent-browser click @ref` |
-| Close browser | `npx agent-browser close` |
+| Launch or reuse worktree | `control-vpk launch` |
+| Check worktree ownership | `control-vpk doctor` |
+| Open URL | `control-vpk browser open [url]` |
+| Interactive snapshot | `control-vpk browser snapshot -i` |
+| Screenshot viewport | `control-vpk browser screenshot [filename]` |
+| Evaluate proof | `control-vpk browser eval --stdin` |
+| Click named element | `control-vpk browser find role button click --name [name]` |
+| Scoped cleanup | `control-vpk cleanup` |
 
-Use session isolation when multiple agents or worktrees are active:
-
-```bash
-npx agent-browser --session [name] [command]
-```
-
-Workflow pattern: snapshot, identify refs, act, snapshot again.
+In commands below, `control-vpk` means `.agents/skills/vpk-verify/scripts/control-vpk`. Workflow pattern: doctor, snapshot, act through an accessible name, snapshot again.
 
 ### Pipeline Role
 
@@ -70,37 +63,56 @@ You receive:
 
 #### Step 0: Resolve Target URL Reliably
 
-Prefer this worktree's stable Portless URL. Run `pnpm ports` and use the `https://<...>.localhost` URL it prints for the current worktree. This avoids stale or recycled ports.
-
-Fallback: if no Portless route is shown, read `.dev-frontend-port` and use `http://localhost:<port>`.
+Run `control-vpk launch`, require `control-vpk doctor` to report `"ok": true`, and set `ORIGIN="$(control-vpk url)"`. The harness selects this worktree's Portless URL and falls back to its `.dev-frontend-port`; do not choose a URL by sight from `pnpm ports`.
 
 #### Step 1: Navigate to Component
 
-Use the Portless URL when available. Otherwise use the port from `.dev-frontend-port`.
-
 ```bash
-npx agent-browser open "http://localhost:[port]/[route]"
+control-vpk browser open "$ORIGIN/[route]"
 ```
 
 #### Step 2: Capture Implementation Screenshots
 
-Light mode:
+Read and save the current user-facing theme button name before changing anything. Reach modes only by clicking the header/gallery theme control described by `vpk-verify`'s `switch-theme` recipe. Never set storage, classes, `data-theme`, `data-color-mode`, `style.colorScheme`, or ADS CSS variables directly.
+
+Light mode (click the currently named control until its accessible name reports Light):
 
 ```bash
-npx agent-browser eval "const root = document.documentElement; localStorage.setItem('ui-theme', 'light'); root.classList.remove('dark', 'light'); root.classList.add('light'); root.style.colorScheme = 'light'; root.setAttribute('data-theme', 'light:light'); location.reload();"
-npx agent-browser snapshot -i
-npx agent-browser screenshot output/agent-browser/implementation-light.png
+control-vpk browser snapshot -i
+control-vpk browser screenshot output/agent-browser/vpk-verify/figma-validation/implementation-light.png
 ```
 
-Dark mode:
+Dark mode (from Light, click that same control once and confirm its accessible name reports Dark):
 
 ```bash
-npx agent-browser eval "const root = document.documentElement; localStorage.setItem('ui-theme', 'dark'); root.classList.remove('dark', 'light'); root.classList.add('dark'); root.style.colorScheme = 'dark'; root.setAttribute('data-theme', 'light:dark'); location.reload();"
-npx agent-browser snapshot -i
-npx agent-browser screenshot output/agent-browser/implementation-dark.png
+control-vpk browser snapshot -i
+control-vpk browser screenshot output/agent-browser/vpk-verify/figma-validation/implementation-dark.png
 ```
 
-Wait for the page to render after each reload. Use `snapshot -i` to verify expected content is loaded before taking screenshots.
+For each screenshot, record this proof with `control-vpk browser eval --stdin`:
+
+```js
+(() => {
+  const control = [...document.querySelectorAll("button")].find((button) =>
+    /^(?:Light|Dark|System) theme$|^Cycle theme, current theme: /u.test(
+      button.getAttribute("aria-label") ?? "",
+    ),
+  );
+  if (!(control instanceof HTMLButtonElement)) throw new Error("Missing theme control");
+  const owner = control.closest("[data-color-mode]");
+  if (!(owner instanceof HTMLElement)) throw new Error("Missing nearest color-mode owner");
+  const style = getComputedStyle(owner);
+  return {
+    controlName: control.getAttribute("aria-label"),
+    colorMode: owner.getAttribute("data-color-mode"),
+    dataTheme: owner.getAttribute("data-theme"),
+    surfaceToken: style.getPropertyValue("--ds-surface").trim(),
+    textToken: style.getPropertyValue("--ds-text").trim(),
+  };
+})()
+```
+
+The accessible theme name, nearest-owner `data-color-mode`, and non-empty ADS token values must agree. Restore the original theme by cycling the same user-facing control until the saved button name returns, then run `control-vpk cleanup` after all validation artifacts are captured.
 
 #### Step 3: Run Scoped Accessibility Scan
 
@@ -110,7 +122,7 @@ If the scan reports a material issue, fetch the relevant topic from `ads_get_a11
 
 #### Step 4: Fallback If Browser Automation Fails
 
-If agent-browser launch or navigation fails:
+If a non-navigation command reports a stale session, reopen the exact feature entrypoint and revalidate its route marker before continuing. If browser-starting `open`/`connect` remains stale after its one scoped retry, or agent-browser is timed out, missing, or assertion-failed:
 
 1. Mark validation as degraded.
 2. Run server-render sanity checks at the route and confirm expected text or structure is present.
@@ -213,7 +225,7 @@ Common issues to flag:
 | Color mismatch | Background, text, or border color is wrong |
 | Missing label | Icon lacks an accessibility label |
 | Wrong spacing | Gap between elements is incorrect |
-| Theme mismatch | Dark mode class, data-theme, and color-scheme are not all applied |
+| Theme mismatch | User-facing theme name, `data-color-mode`, or resolved ADS token values disagree |
 
 ### Output Requirements
 
@@ -304,5 +316,5 @@ conversation_starters:
 ## Maintenance Notes
 
 - Keep this prompt aligned with `.agents/skills/vpk-design/SKILL.md` Phase 3.
-- `agent-browser` is an installed global skill/CLI dependency for browser evidence; if it is unavailable, use the degraded validation path and make that limitation explicit.
+- `vpk-verify` owns worktree/session selection, timeout recovery, and cleanup; if it hands off to Playwright, use the degraded validation path and make that limitation explicit.
 - MCP accessibility tools are runtime-dependent; unavailable tools should downgrade evidence, not block a useful validation report.

@@ -20,6 +20,7 @@ const layoutModule = import("./layout.ts");
 const paramsModule = import("./params.ts");
 const rendererModule = import("./renderer.ts");
 const storeModule = import("./store.ts");
+const workflowLabelStrategyModule = import("./workflow-label-strategy.ts");
 
 function node(id, title, kind, connectionCount = 0, overrides = {}) {
 	return {
@@ -343,7 +344,7 @@ test("drawNeuralGraph keeps radial tree branches visible when decorative rays ar
 });
 
 test("getRadialLabelNodes keeps workflow tree labels visible without labeling every evidence leaf on mobile", async () => {
-	const { getRadialLabelNodes } = await rendererModule;
+	const { getRadialLabelNodes } = await workflowLabelStrategyModule;
 	const workflowNode = (id, title, type, x) => {
 		const base = layoutNode(id, x);
 		return {

@@ -217,7 +217,7 @@ export function AgentCardMoreButton({ label, active = false, className, onClick 
 			aria-label={label}
 			aria-pressed={active || undefined}
 			className={cn(
-				"size-6 shrink-0 cursor-pointer opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100",
+				"size-6 shrink-0 cursor-pointer opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-has-[:focus-visible]/card:opacity-100",
 				active && "opacity-100",
 				className,
 			)}

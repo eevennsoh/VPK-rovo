@@ -295,7 +295,7 @@ test("JiraList gives every data column an accessible ellipsis action", () => {
 	assert.match(SOURCE, /className="group\/column-header flex min-w-0 items-center gap-2"/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /More actions for \$\{label\}/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /<ShowMoreHorizontalIcon/u);
-	assert.match(COLUMN_CONTROLS_SOURCE, /group-hover\/column-header:opacity-100 group-focus-within\/column-header:opacity-100/u);
+	assert.match(COLUMN_CONTROLS_SOURCE, /group-hover\/column-header:opacity-100 group-has-\[:focus-visible\]\/column-header:opacity-100/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /<TooltipContent>\{actionLabel\}<\/TooltipContent>/u);
 });
 
@@ -331,13 +331,13 @@ test("JiraList reveals copy link only beside the focused or hovered issue key", 
 	assert.match(issueKeyGroupSource, /transition-\[max-width,opacity\] duration-normal ease-out-practical/u);
 	assert.match(issueKeyGroupSource, /group-hover\/issue-key:max-w-7/u);
 	assert.match(issueKeyGroupSource, /group-hover\/issue-key:opacity-100/u);
-	assert.match(issueKeyGroupSource, /group-focus-within\/issue-key:max-w-7/u);
-	assert.match(issueKeyGroupSource, /group-focus-within\/issue-key:opacity-100/u);
+	assert.match(issueKeyGroupSource, /group-has-\[:focus-visible\]\/issue-key:max-w-7/u);
+	assert.match(issueKeyGroupSource, /group-has-\[:focus-visible\]\/issue-key:opacity-100/u);
 	assert.doesNotMatch(issueKeyGroupSource, /group-hover\/row:(?:max-w|opacity|pointer-events)/u);
 	assert.match(issueKeyGroupSource, /isCopiedRow && "pointer-events-auto max-w-7 opacity-100"/u);
 	assert.match(issueKeyGroupSource, /translate-x-1 scale-95 transition-\[translate,scale\]/u);
 	assert.match(issueKeyGroupSource, /group-hover\/issue-key:translate-x-0/u);
-	assert.match(issueKeyGroupSource, /group-focus-within\/issue-key:scale-100/u);
+	assert.match(issueKeyGroupSource, /group-has-\[:focus-visible\]\/issue-key:scale-100/u);
 	assert.match(issueKeyGroupSource, /motion-reduce:transition-none/u);
 	assert.match(
 		issueKeyGroupSource,

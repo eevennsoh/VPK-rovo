@@ -88,7 +88,7 @@ function isListedActivityFilter(
 }
 
 const ACTIVITY_SORT_TRIGGER_REVEAL_CLASS =
-	"pointer-events-none opacity-0 transition-opacity duration-normal ease-out group-hover/activity:pointer-events-auto group-hover/activity:opacity-100 group-focus-within/activity:pointer-events-auto group-focus-within/activity:opacity-100 group-has-[:focus-visible]/activity:pointer-events-auto group-has-[:focus-visible]/activity:opacity-100 aria-expanded:pointer-events-auto aria-expanded:opacity-100 motion-reduce:transition-none";
+	"pointer-events-none opacity-0 transition-opacity duration-normal ease-out group-hover/activity:pointer-events-auto group-hover/activity:opacity-100 group-has-[:focus-visible]/activity:pointer-events-auto group-has-[:focus-visible]/activity:opacity-100 aria-expanded:pointer-events-auto aria-expanded:opacity-100 motion-reduce:transition-none";
 
 const TEXT_LINK_TRIGGER_CLASS =
 	`h-auto gap-1 border-0 bg-transparent px-0 text-xs font-normal text-text-subtlest [&_svg]:text-icon-subtlest hover:bg-transparent hover:text-text-subtlest hover:underline focus-visible:ring-0 aria-expanded:bg-transparent aria-expanded:text-text-subtlest aria-expanded:underline ${ACTIVITY_SORT_TRIGGER_REVEAL_CLASS}`;

@@ -1,5 +1,10 @@
 import { expect, test } from "@playwright/test";
 
+import {
+	activateAndWaitForScrollSettlement,
+	clickWhenControlReenables,
+} from "@/tests/helpers/jira-interaction-contracts";
+
 const JIRA_WORK_ITEM_URL = `${
 	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
 }/preview/blocks/jira-work-item-demo-experimental`;
@@ -19,23 +24,9 @@ test("rapid metadata toggles settle with visible title actions", async ({ page }
 	const toggle = page.getByRole("button", { name: /metadata panel/u });
 	await expect(toggle).toHaveAccessibleName("Hide metadata panel");
 
-	const toggleBackAsSoonAsEnabled = toggle.evaluate(
-		(button) => new Promise<void>((resolve) => {
-			if (!(button instanceof HTMLButtonElement)) {
-				throw new Error("Expected the metadata disclosure to render as a button.");
-			}
-			const observer = new MutationObserver(() => {
-				if (button.getAttribute("aria-label") !== "Show metadata panel" || button.disabled) return;
-
-				observer.disconnect();
-				button.click();
-				resolve();
-			});
-			observer.observe(button, {
-				attributeFilter: ["aria-label", "disabled"],
-				attributes: true,
-			});
-		}),
+	const toggleBackAsSoonAsEnabled = clickWhenControlReenables(
+		toggle,
+		"Show metadata panel",
 	);
 
 	await toggle.click();
@@ -61,19 +52,19 @@ test("opening v3 resolves section links to the visible desktop scrollport", asyn
 	await expect(sectionNav).toBeVisible();
 	await expect(sectionScrollport).toHaveCSS("overflow-y", "auto");
 
-	const scrollSettled = sectionScrollport.evaluate((element) => new Promise<void>((resolve) => {
-		element.addEventListener("scrollend", () => resolve(), { once: true });
-	}));
 	await activityLink.focus();
 	await expect(activityLink).toBeFocused();
-	await page.keyboard.press("Enter");
-	await scrollSettled;
-	await page.waitForTimeout(700);
+	const scroll = await activateAndWaitForScrollSettlement(
+		sectionScrollport,
+		() => page.keyboard.press("Enter"),
+	);
 
 	await expect(activityLink).toHaveAttribute("aria-current", "location");
 	const activityCount = activityLink.locator("span").last();
 	await expect.poll(() => activityCount.evaluate((element) => getComputedStyle(element).color))
 		.toBe(await activityLink.evaluate((element) => getComputedStyle(element).color));
+	expect(scroll.timedOut).toBe(false);
+	expect(scroll.scrollEvents).toBeGreaterThan(0);
 	await expect.poll(() => sectionScrollport.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
 });
 

@@ -25,6 +25,7 @@ import CrossIcon from "@atlaskit/icon/core/cross";
 import ImageIcon from "@atlaskit/icon/core/image";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
 import UndoIcon from "@atlaskit/icon/core/undo";
+import VideoIcon from "@atlaskit/icon/core/video";
 import { useLazyRef } from "@/lib/use-lazy-ref";
 
 import { Icon } from "@/components/ui/icon";
@@ -1248,6 +1249,7 @@ export type GUIImageInputProps = Readonly<{
 	previewAlt?: string;
 	placeholder?: string;
 	accept?: string;
+	previewType?: "image" | "video";
 	objectFit?: "contain" | "cover";
 	previewClassName?: string;
 	uploadLabel?: string;
@@ -1268,6 +1270,7 @@ export function GUIImageInput({
 	previewAlt = "Uploaded image",
 	placeholder,
 	accept = "image/*",
+	previewType = "image",
 	objectFit = "cover",
 	previewClassName,
 	uploadLabel = "Upload",
@@ -1316,7 +1319,17 @@ export function GUIImageInput({
 				) : null}
 			</div>
 			<div className="flex items-center gap-2">
-				{value ? (
+				{value && previewType === "video" ? (
+					<div
+						aria-hidden
+						className={cn(
+							"flex size-9 shrink-0 items-center justify-center rounded border border-border bg-bg-neutral text-icon-subtle",
+							previewClassName,
+						)}
+					>
+						<GUIIcon render={<VideoIcon label="" size="small" />} />
+					</div>
+				) : value ? (
 					<Image
 						src={value}
 						alt={previewAlt}

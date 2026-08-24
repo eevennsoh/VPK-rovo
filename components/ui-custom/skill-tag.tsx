@@ -145,7 +145,7 @@ function SkillTag({
 			<span
 				className={cn(
 					"relative z-[1] min-w-0 skew-x-12 truncate whitespace-nowrap",
-					shouldShowOverlayScrim && "group-hover/skill-tag:[mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-focus-within/skill-tag:[mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-hover/skill-tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-focus-within/skill-tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)]"
+					shouldShowOverlayScrim && "group-hover/skill-tag:[mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-has-[:focus-visible]/skill-tag:[mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-hover/skill-tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-has-[:focus-visible]/skill-tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)]"
 				)}
 				data-slot="skill-tag-label"
 			>
@@ -155,7 +155,7 @@ function SkillTag({
 			{shouldShowOverlayScrim ? (
 				<span
 					aria-hidden
-					className={cn("pointer-events-none absolute inset-y-0 end-0 z-[2] w-12 rounded-r-sm bg-linear-to-l from-55% to-transparent opacity-0 transition-opacity duration-fast ease-out group-hover/skill-tag:opacity-100 group-focus-within/skill-tag:opacity-100", overlayScrimClassName)}
+					className={cn("pointer-events-none absolute inset-y-0 end-0 z-[2] w-12 rounded-r-sm bg-linear-to-l from-55% to-transparent opacity-0 transition-opacity duration-fast ease-out group-hover/skill-tag:opacity-100 group-has-[:focus-visible]/skill-tag:opacity-100", overlayScrimClassName)}
 					data-slot="skill-tag-overlay-scrim"
 				/>
 			) : null}
@@ -173,7 +173,7 @@ function SkillTag({
 							"inline-flex size-3.5 shrink-0 skew-x-12 items-center justify-center rounded-xs transition-[opacity,background-color,color] duration-fast ease-out",
 							overlaySurfaceClassName,
 							overlayControl.isOverlay
-								? "pointer-events-none absolute end-1 top-1/2 z-[3] -translate-y-1/2 opacity-0 group-hover/skill-tag:pointer-events-auto group-hover/skill-tag:opacity-100 group-focus-within/skill-tag:pointer-events-auto group-focus-within/skill-tag:opacity-100"
+								? "pointer-events-none absolute end-1 top-1/2 z-[3] -translate-y-1/2 opacity-0 group-hover/skill-tag:pointer-events-auto group-hover/skill-tag:opacity-100 group-has-[:focus-visible]/skill-tag:pointer-events-auto group-has-[:focus-visible]/skill-tag:opacity-100"
 								: "opacity-100",
 						)}
 						data-slot={overlayControl.slot}

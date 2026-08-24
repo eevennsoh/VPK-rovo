@@ -5,7 +5,6 @@ import {
 	use,
 	useCallback,
 	useMemo,
-	useRef,
 	useState,
 	type ReactNode,
 } from "react";
@@ -93,9 +92,6 @@ export function MetadataRailProvider({
 		useState<PullRequestSectionExpandRequest | null>(null);
 	const [activityRevealRequest, setActivityRevealRequest] =
 		useState<ActivityRevealRequest | null>(null);
-	// Ref so reveal-key handling can skip requests without re-subscribing when PR
-	// detail opens/closes mid-staging. Written only from event handlers.
-	const suppressActivityPanelRevealRef = useRef(false);
 	const requestExpandPullRequestSection = useCallback((pullRequestIdentity: string, sectionId: string) => {
 		setPullRequestSectionExpandRequest((current) => ({
 			nonce: (current?.nonce ?? 0) + 1,
@@ -117,7 +113,6 @@ export function MetadataRailProvider({
 	}, []);
 	const [suppressActivityPanelReveal, setSuppressActivityPanelRevealState] = useState(false);
 	const setSuppressActivityPanelReveal = useCallback((suppressed: boolean) => {
-		suppressActivityPanelRevealRef.current = suppressed;
 		setSuppressActivityPanelRevealState(suppressed);
 	}, []);
 	// Chapter/orchestration keys request the scroll during render so the feed does

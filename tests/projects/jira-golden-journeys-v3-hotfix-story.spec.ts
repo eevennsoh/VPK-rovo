@@ -1,5 +1,10 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
+import {
+	probeFocusIndicatorClearance,
+	probeNearestOwnerContainment,
+} from "@/tests/helpers/jira-interaction-contracts";
+
 const JIRA_GOLDEN_JOURNEYS_V3_URL = (
 	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
 ) + "/jira-golden-journeys-v3";
@@ -17,117 +22,23 @@ function contextBar(page: Page): Locator {
 	return page.locator("[data-pr-context-bar][data-pr-number='1847']");
 }
 
-type FocusClip = Readonly<{
-	clippedEdges: readonly string[];
-	clippingAncestor: string;
-	overflowX: string;
-	overflowY: string;
-}>;
-
 async function expectFocusIndicatorNotClipped(
 	page: Page,
 	indicatorOwner: Locator,
 	focusTargetSelector?: string,
 ): Promise<void> {
-	await page.keyboard.press("Tab");
-	const result = await indicatorOwner.evaluate(async (element, selector) => {
-		const focusTarget = selector
-			? element.querySelector<HTMLElement>(selector)
-			: element as HTMLElement;
-		if (!focusTarget) throw new Error(`Missing focus target: ${selector}`);
-		focusTarget.focus();
-		await new Promise((resolve) => window.setTimeout(resolve, 200));
-		function splitShadows(value: string): string[] {
-			const shadows: string[] = [];
-			let current = "";
-			let parenthesisDepth = 0;
-			for (const character of value) {
-				if (character === "(") parenthesisDepth += 1;
-				if (character === ")") parenthesisDepth -= 1;
-				if (character === "," && parenthesisDepth === 0) {
-					shadows.push(current);
-					current = "";
-					continue;
-				}
-				current += character;
-			}
-			if (current) shadows.push(current);
-			return shadows;
-		}
-
-		const style = getComputedStyle(element);
-		const outlineOutset = style.outlineStyle === "none"
-			? 0
-			: Math.max(0, parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset));
-		const outsets = {
-			top: outlineOutset,
-			right: outlineOutset,
-			bottom: outlineOutset,
-			left: outlineOutset,
-		};
-		for (const shadow of splitShadows(style.boxShadow)) {
-			if (shadow.includes("inset")) continue;
-			const lengths = (shadow.match(/-?(?:\d+\.?\d*|\.\d+)px/gu) ?? [])
-				.map((length) => Number.parseFloat(length));
-			const [offsetX = 0, offsetY = 0, blur = 0, spread = 0] = lengths;
-			outsets.top = Math.max(outsets.top, spread + blur - offsetY);
-			outsets.right = Math.max(outsets.right, spread + blur + offsetX);
-			outsets.bottom = Math.max(outsets.bottom, spread + blur + offsetY);
-			outsets.left = Math.max(outsets.left, spread + blur - offsetX);
-		}
-
-		const clips: FocusClip[] = [];
-		const controlRect = element.getBoundingClientRect();
-		const clippedOverflowValues = new Set(["auto", "clip", "hidden", "scroll"]);
-		let ancestor = element.parentElement;
-		while (ancestor) {
-			const ancestorStyle = getComputedStyle(ancestor);
-			const clipsX = clippedOverflowValues.has(ancestorStyle.overflowX)
-				|| ancestorStyle.contain.includes("paint")
-				|| ancestorStyle.clipPath !== "none";
-			const clipsY = clippedOverflowValues.has(ancestorStyle.overflowY)
-				|| ancestorStyle.contain.includes("paint")
-				|| ancestorStyle.clipPath !== "none";
-			if (clipsX || clipsY) {
-				const ancestorRect = ancestor.getBoundingClientRect();
-				const innerLeft = ancestorRect.left + parseFloat(ancestorStyle.borderLeftWidth);
-				const innerRight = ancestorRect.right - parseFloat(ancestorStyle.borderRightWidth);
-				const innerTop = ancestorRect.top + parseFloat(ancestorStyle.borderTopWidth);
-				const innerBottom = ancestorRect.bottom - parseFloat(ancestorStyle.borderBottomWidth);
-				const clippedEdges = [
-					clipsX && controlRect.left - outsets.left < innerLeft ? "left" : null,
-					clipsX && controlRect.right + outsets.right > innerRight ? "right" : null,
-					clipsY && controlRect.top - outsets.top < innerTop ? "top" : null,
-					clipsY && controlRect.bottom + outsets.bottom > innerBottom ? "bottom" : null,
-				].filter((edge): edge is string => edge !== null);
-				if (clippedEdges.length > 0) {
-					clips.push({
-						clippedEdges,
-						clippingAncestor: ancestor.getAttribute("data-jira-work-item-scroll-region") !== null
-							? "[data-jira-work-item-scroll-region]"
-							: `${ancestor.tagName.toLowerCase()}.${ancestor.className}`,
-						overflowX: ancestorStyle.overflowX,
-						overflowY: ancestorStyle.overflowY,
-					});
-				}
-			}
-			ancestor = ancestor.parentElement;
-		}
-
-		return {
-			clips,
-			focused: document.activeElement === focusTarget,
-			focusVisible: focusTarget.matches(":focus-visible"),
-			outsets,
-		};
-	}, focusTargetSelector);
+	const result = await probeFocusIndicatorClearance(page, indicatorOwner, focusTargetSelector);
 
 	expect(result.focused).toBe(true);
 	expect(result.focusVisible).toBe(true);
-	expect(result.outsets.top).toBeGreaterThan(0);
-	expect(result.outsets.right).toBeGreaterThan(0);
-	expect(result.outsets.bottom).toBeGreaterThan(0);
-	expect(result.outsets.left).toBeGreaterThan(0);
+	expect(result.visibleIndicator).toBe(true);
+	expect(result.indicatorPlacement).not.toBe("none");
+	if (result.indicatorPlacement === "outset") {
+		expect(result.outsets.top).toBeGreaterThan(0);
+		expect(result.outsets.right).toBeGreaterThan(0);
+		expect(result.outsets.bottom).toBeGreaterThan(0);
+		expect(result.outsets.left).toBeGreaterThan(0);
+	}
 	expect(result.clips).toEqual([]);
 }
 
@@ -209,6 +120,119 @@ test("the desktop chapter control keeps its keyboard focus indicator clear of th
 	await expectFocusIndicatorNotClipped(page, chapterButton(page, "Build"));
 });
 
+test("the focus-clearance probe reports a deliberately clipped fixture", async ({ page }) => {
+	await page.setContent(`
+		<style>
+			#clip { width: 48px; height: 32px; overflow: hidden; }
+			#clipped { width: 48px; height: 32px; }
+			#clipped:focus-visible { outline: 4px solid blue; outline-offset: 4px; }
+		</style>
+		<div id="clip"><button id="clipped">Focus</button></div>
+	`);
+
+	const result = await probeFocusIndicatorClearance(page, page.locator("#clipped"));
+	expect(result.indicatorPlacement).toBe("outset");
+	expect(result.visibleIndicator).toBe(true);
+	expect(result.clips).not.toEqual([]);
+	expect(result.clips[0].clippedEdges).toEqual(["top", "right", "bottom", "left"]);
+});
+
+test("the focus-clearance probe does not mistake a resting shadow for a focus indicator", async ({
+	page,
+}) => {
+	await page.setContent(`
+		<style>
+			#resting-shadow {
+				box-shadow: 0 0 0 4px rgb(255 0 0);
+				outline: none;
+			}
+			#resting-shadow:focus-visible { outline: none; }
+		</style>
+		<button id="resting-shadow">Focus</button>
+	`);
+
+	const result = await probeFocusIndicatorClearance(page, page.locator("#resting-shadow"));
+	expect(result.focused).toBe(true);
+	expect(result.focusVisible).toBe(true);
+	expect(result.focusSpecificDelta).toBe(false);
+	expect(result.indicatorPlacement).toBe("none");
+	expect(result.visibleIndicator).toBe(false);
+});
+
+test("the containment probe reports owner and document overflow independently", async ({ page }) => {
+	await page.setContent(`
+		<style>
+			html, body { margin: 0; width: 100%; overflow-x: clip; }
+			#owner { width: 100px; overflow-x: auto; }
+			#subject { width: 200px; height: 20px; }
+		</style>
+		<div id="owner"><div id="subject">Subject</div></div>
+	`);
+
+	const result = await probeNearestOwnerContainment(page.locator("#subject"));
+	expect(result.owner).toBe("#owner");
+	expect(result.containmentKnown).toBe(true);
+	expect(result.ownerHorizontalOverflow).toBe(100);
+	expect(result.documentHorizontalOverflow).toBe(0);
+});
+
+test("the containment probe finds clipping owners before the viewport", async ({ page }) => {
+	await page.setContent(`
+		<style>
+			html, body { margin: 0; width: 100%; }
+			.owner { width: 100px; height: 32px; }
+			#hidden-owner { overflow: hidden; }
+			#clip-owner { overflow: clip; }
+			#paint-owner { contain: paint; }
+			#clip-path-owner { clip-path: inset(0); }
+			.subject { width: 200px; height: 20px; }
+		</style>
+		<div id="hidden-owner" class="owner"><div id="hidden-subject" class="subject"></div></div>
+		<div id="clip-owner" class="owner"><div id="clip-subject" class="subject"></div></div>
+		<div id="paint-owner" class="owner"><div id="paint-subject" class="subject"></div></div>
+		<div id="clip-path-owner" class="owner"><div id="clip-path-subject" class="subject"></div></div>
+	`);
+
+	for (const overflow of ["hidden", "clip", "paint", "clip-path"] as const) {
+		const result = await probeNearestOwnerContainment(
+			page.locator(`#${overflow}-subject`),
+		);
+		expect(result.owner).toBe(`#${overflow}-owner`);
+		expect(result.ownerHorizontalOverflow).toBe(100);
+		expect(result.documentHorizontalOverflow).toBe(0);
+		expect(result.containmentKnown).toBe(overflow !== "clip-path");
+		expect(result.contained).toBe(false);
+	}
+});
+
+test("the containment probe does not claim arbitrary clip-path geometry is contained", async ({
+	page,
+}) => {
+	await page.setContent(`
+		<style>
+			#shape-owner {
+				position: relative;
+				width: 100px;
+				height: 100px;
+				clip-path: circle(1px at 50% 50%);
+			}
+			#shape-subject {
+				position: absolute;
+				top: 40px;
+				left: 40px;
+				width: 20px;
+				height: 20px;
+			}
+		</style>
+		<div id="shape-owner"><div id="shape-subject"></div></div>
+	`);
+
+	const result = await probeNearestOwnerContainment(page.locator("#shape-subject"));
+	expect(result.owner).toBe("#shape-owner");
+	expect(result.containmentKnown).toBe(false);
+	expect(result.contained).toBe(false);
+});
+
 test("the metadata rail keeps field focus indicators clear of its body scrollport", async ({
 	page,
 }) => {
@@ -250,6 +274,29 @@ test("activity actions keep session and artifact focus indicators clear of revea
 		page,
 		page.getByRole("button", { name: "Code changes: 86 additions, 21 deletions" }),
 	);
+});
+
+test("activity sort reveal closes after pointer use and remains keyboard discoverable", async ({
+	page,
+}) => {
+	await openBuild(page);
+	const activityHeading = page.getByRole("heading", { name: "Activity", exact: true });
+	const sort = page.getByRole("button", { name: /^Show (?:latest|oldest)$/u });
+
+	await expect(sort).toHaveCSS("opacity", "0");
+	await activityHeading.hover();
+	await expect(sort).toHaveCSS("opacity", "1");
+	await sort.click();
+	await page.getByRole("menuitemradio", { name: "Latest" }).click();
+	await page.mouse.click(1, 1);
+	await page.mouse.move(0, 0);
+	await expect(sort).toHaveAttribute("aria-expanded", "false");
+	await expect(sort).toHaveCSS("opacity", "0");
+
+	await page.keyboard.press("Tab");
+	await sort.focus();
+	await expect(sort).toBeFocused();
+	await expect(sort).toHaveCSS("opacity", "1");
 });
 
 test("Terminal tells the local Claude-to-PR story and waits for the presenter to choose Build", async ({
@@ -488,21 +535,18 @@ test("the PR bar is keyboard operable and contained at a narrow viewport", async
 	await page.keyboard.press("Space");
 	await expect(autoFix).toHaveAttribute("aria-checked", "true");
 
+	const containment = await probeNearestOwnerContainment(bar);
 	const geometry = await bar.evaluate((element) => {
-		const rect = element.getBoundingClientRect();
 		const branch = element.querySelector<HTMLElement>(
 			"[title='feature/shop-4821-guest-checkout']",
 		);
 		return {
-			left: rect.left,
-			right: rect.right,
 			textOverflow: branch ? getComputedStyle(branch).textOverflow : null,
-			viewportWidth: window.innerWidth,
-			pageScrollWidth: document.documentElement.scrollWidth,
 		};
 	});
-	expect(geometry.left).toBeGreaterThanOrEqual(0);
-	expect(geometry.right).toBeLessThanOrEqual(geometry.viewportWidth);
-	expect(geometry.pageScrollWidth).toBe(geometry.viewportWidth);
+	expect(containment.containmentKnown).toBe(true);
+	expect(containment.contained).toBe(true);
+	expect(containment.ownerHorizontalOverflow).toBe(0);
+	expect(containment.documentHorizontalOverflow).toBe(0);
 	expect(geometry.textOverflow).toBe("ellipsis");
 });

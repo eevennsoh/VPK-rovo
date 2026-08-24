@@ -9,11 +9,11 @@ package/install changes with a logo-asset harvest in one branch or PR.
 - **Lane A — package/install hygiene:** direct dependencies, catalog families,
   overrides, advisories, and evidence-backed removals. This lane uses the repo
   `.npmrc`, pnpm lockfile, trust policy, and minimum-release-age rules.
-- **Lane B — Atlassian SVG logo harvest:** visual-asset freshness via `npm pack`
-  outside the repo. Use this for `@atlassian/logo-third-party` by default when a
-  fresh repo-registry probe cannot install the target. For `@atlaskit/logo`, try
-  Lane A first and use Lane B only when registry, release-age, trust, or lockfile
-  policy blocks the package bump.
+- **Lane B — third-party SVG fallback harvest:** visual-asset freshness via
+  `npm pack` outside the repo. Use it only when a current local-fallback brand
+  under `public/3p/<brand>/` needs package-sourced artwork and a normal package
+  update is blocked or not the goal. `@atlaskit/logo` has no current
+  `public/1p` destination contract; do not invent one during a sweep.
 
 Select the lane from current evidence, not a previous run's registry result. If
 both lanes have plausible work, choose the higher-confidence single candidate
@@ -46,6 +46,9 @@ official notes, peer ranges, advisories, and migrations. Prove the exact target
 resolves through the repo registry with a dry scratch install/add; an outdated
 row alone is not reachability evidence. Registry 404, `NO_MATCHING_VERSION`,
 private-auth uncertainty, or unexplained tarball-source changes are stop signals.
+The tracked registry is npmjs for public packages and `@atlaskit/*`; only the
+internal `@atlassian/*` scope uses `atlassian-npm`. Do not route public package
+tarballs through `npm-remote`.
 
 ### Apply one narrow change
 
@@ -77,10 +80,12 @@ After the scoped install/update/removal, run:
 corepack pnpm run verify:lockfile
 ```
 
-It must report `Verified pnpm-lock.yaml`. Rewrite only verifier-reported package
-URLs that belong on `npm-remote`; preserve the explicitly allowed
-`@atlassian/logo-third-party` tarball source. Then run the focused package or
-touched-surface check followed by the main skill's `corepack pnpm run ci:pr`.
+It must report `Verified pnpm-lock.yaml`. Public package tarballs must use
+`registry.npmjs.org`; preserve the verifier's narrowly allowed
+`@atlassian/logo-third-party` internal tarball source. Never hand-edit an
+unexplained lockfile URL: rerun the scoped install against the correct registry
+and review the resulting lockfile. Then run the focused package or
+touched-surface check followed by the main skill's validation contract.
 
 Use `[Automation] Dependency hygiene: <summary>` and request the existing
 `automation`, `codex`, and `dependencies` labels. Add before/after versions or
@@ -89,33 +94,38 @@ risk, lockfile verification, and any trust-policy decision to the normal PR
 evidence. Dependency PRs are serialized because they usually touch
 `pnpm-lock.yaml`; any overlapping dependency PR is a no-PR stop condition.
 
-## Lane B — Atlassian SVG logo harvest
+## Lane B — third-party SVG fallback harvest
 
 Use this lane only for visual-asset freshness without an install-graph change.
 It should not modify package manifests or `pnpm-lock.yaml`.
 
 The repository has no committed logo-harvest command. Do not infer or invoke
-one. Use the manual path and note a durable harvester only as a possible
-follow-up:
+one. The live local-fallback contract is nested
+`public/3p/<brand>/{16,20,24,32,16-borderless}.svg` plus
+`components/ui/data/logo-third-party-data.ts`; most brands render directly from
+`@atlassian/logo-third-party` and need no vendored copy. Use the manual path only
+for a proven local-fallback brand:
 
 1. Create a temporary directory outside the repo and run `npm pack` there so
    user-level `atlassian-npm` authentication applies instead of repo `.npmrc`:
 
    ```bash
-   npm pack @atlaskit/logo@latest
-   npm pack @atlassian/logo-third-party@latest
+	 npm pack @atlassian/logo-third-party@latest
    ```
 
-2. Extract the SVG string literals from package artifacts. Preserve CSS custom
-   property defaults so assets render standalone and remain themeable.
-3. Normalize names and update `public/1p/<brand>-{icon,logo}.svg` and
-   `public/3p/<brand>.svg`; strip index/entry-point artifacts.
-4. Update the existing VPK logo demos that consume the harvested assets.
-5. Produce a precise added/changed/removed brand diff against the current
-   `public/` assets.
+2. Extract the required SVG variants from the package artifact. Preserve CSS
+   custom-property defaults so assets render standalone and remain themeable.
+3. Normalize the brand id and update only its existing nested
+   `public/3p/<brand>/` size files. Add `16-borderless.svg` only when the package
+   exposes a borderless mark and the VPK tile contract needs it.
+4. Update `THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES` and the existing logo demo only
+   when the local-fallback set changes.
+5. Run `components/ui/logo-third-party.test.js` and produce a precise
+   added/changed/removed file diff. Stop rather than creating `public/1p` or a
+   flat `public/3p/<brand>.svg` convention.
 
-Run focused asset/demo checks, lint and typecheck, then the main skill's
-`corepack pnpm run ci:pr`. Use `$agent-browser` only when rendered demo proof is
+Run focused asset/demo checks, then the main skill's validation contract. Use
+`$agent-browser` only when rendered demo proof is
 needed; spot-check representative logos, including light/dark theming where it
 matters. Confirm the final diff contains no manifest or lockfile changes.
 

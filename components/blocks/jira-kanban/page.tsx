@@ -32,7 +32,6 @@ export interface JiraKanbanPageProps {
 	compactHeader?: boolean;
 	onBoardColumnsChange?: (columns: readonly JiraKanbanColumnData[]) => void;
 	onCardClick?: (card: JiraKanbanCardData, columnTitle: string) => void;
-	showScrollAffordance?: boolean;
 	viewTabs?: ReactNode;
 }
 
@@ -49,7 +48,6 @@ export default function JiraKanbanPage({
 	compactHeader = false,
 	onBoardColumnsChange,
 	onCardClick,
-	showScrollAffordance,
 	viewTabs,
 }: Readonly<JiraKanbanPageProps>) {
 	const [localBoardColumns, setLocalBoardColumns] = useState<JiraKanbanColumnData[]>(
@@ -242,7 +240,6 @@ export default function JiraKanbanPage({
 						onStatusChange: handleSelectedCardsStatusChange,
 						selectedAgentIds,
 					}}
-					showScrollAffordance={showScrollAffordance}
 				/>
 			</div>
 		</div>
