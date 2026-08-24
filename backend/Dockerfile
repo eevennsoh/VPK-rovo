@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.7
+
 FROM node:24-alpine
 
 WORKDIR /app
@@ -5,10 +7,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY backend/package.json ./backend/package.json
-RUN corepack enable && \
-    corepack prepare pnpm@11.1.2 --activate && \
+RUN --mount=type=secret,id=npmrc,target=/root/.npmrc,required=false \
+    corepack enable && \
     pnpm install --prod --frozen-lockfile --config.strict-dep-builds=false
 
 COPY backend ./backend

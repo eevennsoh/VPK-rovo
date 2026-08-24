@@ -1,108 +1,133 @@
 #!/bin/bash
 set -euo pipefail
 
-echo "🔍 Pre-deployment Checks"
-echo ""
+CHECK_RUNTIME=true
+if [ "${1:-}" = "--check-only" ]; then
+  CHECK_RUNTIME=false
+elif [ -n "${1:-}" ]; then
+  echo "Usage: $0 [--check-only]"
+  exit 2
+fi
 
 ERRORS=0
 
-# Check for backend package-lock.json
-echo "📦 Checking backend dependencies..."
-if [ ! -f backend/package-lock.json ]; then
-    echo "⚠️  Missing backend/package-lock.json"
-    echo "   Run: cd backend && npm install && cd .."
-    ERRORS=$((ERRORS + 1))
-else
-    echo "✅ backend/package-lock.json exists"
-    
-    # Check if package-lock.json has pnpm symlinks (common issue)
-    if grep -q '"link": true' backend/package-lock.json 2>/dev/null; then
-        echo "❌ backend/package-lock.json contains pnpm symlinks"
-        echo "   This will cause 'Cannot find module' errors in Docker"
-        echo "   Fix: cd backend && rm -rf node_modules package-lock.json && npm install"
-        ERRORS=$((ERRORS + 1))
-    else
-        echo "✅ backend/package-lock.json has proper npm format"
-    fi
-fi
+pass() {
+  echo "✅ $1"
+}
 
-# Check Node version in Dockerfile
+fail() {
+  echo "❌ $1"
+  ERRORS=$((ERRORS + 1))
+}
+
+require_file() {
+  if [ -f "$1" ]; then
+    pass "$1 exists"
+  else
+    fail "$1 is missing"
+  fi
+}
+
+echo "🔍 Pre-deployment checks"
 echo ""
-echo "🐳 Checking Dockerfile configuration..."
-if [ -f backend/Dockerfile ]; then
-    NODE_VERSION=$(grep -E "^FROM node:" backend/Dockerfile | head -1 | grep -oE "node:[0-9]+" | grep -oE "[0-9]+" || echo "0")
-    if [ "$NODE_VERSION" -lt 20 ]; then
-        echo "⚠️  Dockerfile uses Node $NODE_VERSION, but Next.js 16+ requires Node 20+"
-        echo "   Update backend/Dockerfile: FROM node:20-alpine"
-        ERRORS=$((ERRORS + 1))
-    else
-        echo "✅ Dockerfile uses Node $NODE_VERSION"
-    fi
+
+echo "📦 Checking pnpm workspace inputs..."
+require_file package.json
+require_file pnpm-lock.yaml
+require_file pnpm-workspace.yaml
+require_file backend/package.json
+
+if grep -q '"packageManager": "pnpm@' package.json 2>/dev/null; then
+  pass "package.json pins pnpm through packageManager"
 else
-    echo "⚠️  backend/Dockerfile not found"
-    ERRORS=$((ERRORS + 1))
+  fail "package.json must pin pnpm through packageManager"
 fi
 
-# Check next.config.ts has export support
+if grep -q '"build:export": "node scripts/build-static-export.mjs"' package.json 2>/dev/null; then
+  pass "package.json exposes the canonical build:export wrapper"
+else
+  fail "package.json must expose build:export through scripts/build-static-export.mjs"
+fi
+
 echo ""
-echo "⚙️  Checking next.config.ts..."
-if [ -f next.config.ts ]; then
-    if grep -q "NEXT_OUTPUT" next.config.ts; then
-        echo "✅ next.config.ts has NEXT_OUTPUT export configuration"
-    else
-        echo "⚠️  next.config.ts missing NEXT_OUTPUT export configuration"
-        echo "   Add conditional export support for production builds:"
-        echo '   ...(process.env.NEXT_OUTPUT === "export" && { output: "export" }),'
-        ERRORS=$((ERRORS + 1))
-    fi
+echo "🐳 Checking runtime image contract..."
+require_file backend/Dockerfile
+if grep -Eq '^FROM node:24([.-]|$)' backend/Dockerfile 2>/dev/null; then
+  pass "backend/Dockerfile uses Node 24"
 else
-    echo "⚠️  next.config.ts not found"
-    ERRORS=$((ERRORS + 1))
+  fail "backend/Dockerfile must use Node 24"
 fi
 
-# Check required ASAP environment variables for production
+if grep -Eq '^COPY out +\./backend/public$' backend/Dockerfile 2>/dev/null; then
+  pass "backend/Dockerfile packages the prebuilt static export"
+else
+  fail "backend/Dockerfile must copy prebuilt out/ into backend/public"
+fi
+
+if grep -Eq '^RUN --mount=type=secret,id=npmrc,target=/root/\.npmrc,required=false' backend/Dockerfile 2>/dev/null \
+    && grep -q 'pnpm install --prod --frozen-lockfile' backend/Dockerfile 2>/dev/null; then
+  pass "backend/Dockerfile consumes the optional npmrc secret during pnpm install"
+else
+  fail "backend/Dockerfile must consume npmrc as an optional BuildKit secret during pnpm install"
+fi
+
 echo ""
-echo "🔐 Checking environment variables..."
-if [ -z "${ASAP_PRIVATE_KEY:-}" ] || [ -z "${ASAP_KID:-}" ] || [ -z "${ASAP_ISSUER:-}" ]; then
-    echo "⚠️  Missing ASAP credentials for production deployment"
-    echo "   Required: ASAP_PRIVATE_KEY, ASAP_KID, ASAP_ISSUER"
-    echo "   Note: These are set on Micros, not locally. Ensure they're configured."
+echo "⚙️  Checking static-export wrapper..."
+require_file scripts/build-static-export.mjs
+require_file next.config.ts
+require_file .agents/skills/vpk-deploy/scripts/deploy-lib.sh
+if grep -q 'NEXT_OUTPUT' next.config.ts 2>/dev/null; then
+  pass "next.config.ts supports wrapper-controlled static export"
 else
-    echo "✅ ASAP credentials present"
+  fail "next.config.ts must support the NEXT_OUTPUT export mode"
 fi
 
-# Check AI Gateway configuration
-if [ -z "${AI_GATEWAY_URL:-}" ]; then
-    echo "⚠️  Missing AI_GATEWAY_URL (may be set on Micros)"
+for deploy_script in \
+  .agents/skills/vpk-deploy/scripts/deploy.sh \
+  scripts/dev-deploy-fast.sh; do
+  require_file "$deploy_script"
+  export_line=$(grep -n -m1 'corepack pnpm run build:export' "$deploy_script" 2>/dev/null | cut -d: -f1 || true)
+  docker_line=$(grep -n -m1 'vpk_build_image' "$deploy_script" 2>/dev/null | cut -d: -f1 || true)
+  if [ -n "$export_line" ] && [ -n "$docker_line" ] && [ "$export_line" -lt "$docker_line" ]; then
+    pass "$deploy_script exports before Docker packaging"
+  else
+    fail "$deploy_script must run build:export before Docker packaging"
+  fi
+done
+
+if [ -f out/index.html ]; then
+  pass "out/index.html is present"
 else
-    echo "✅ AI_GATEWAY_URL set"
+  echo "ℹ️  out/ is not built yet; deploy scripts run corepack pnpm run build:export before Docker packaging"
 fi
 
-if [ -z "${AI_GATEWAY_USE_CASE_ID:-}" ]; then
-    echo "⚠️  Missing AI_GATEWAY_USE_CASE_ID (may be set on Micros)"
-else
-    echo "✅ AI_GATEWAY_USE_CASE_ID set"
-fi
-
-# Check Docker is running
 echo ""
-echo "🐋 Checking Docker..."
-if docker ps > /dev/null 2>&1; then
-    echo "✅ Docker is running"
+echo "🔐 Checking local deployment hints..."
+if [ -f .deploy.local ]; then
+  pass ".deploy.local exists"
 else
-    echo "⚠️  Docker is not running or not accessible"
-    echo "   Start Docker Desktop before deploying"
-    ERRORS=$((ERRORS + 1))
+  echo "ℹ️  .deploy.local is absent; it is required only for pnpm run deploy:micros"
 fi
 
-# Summary
+if [ "$CHECK_RUNTIME" = true ]; then
+  echo ""
+  echo "🐋 Checking Docker..."
+  if ! command -v docker >/dev/null 2>&1; then
+    fail "docker is not installed"
+  elif docker info >/dev/null 2>&1; then
+    pass "Docker is running"
+  else
+    fail "Docker is not running or not accessible"
+  fi
+else
+  echo "ℹ️  --check-only skips the Docker daemon check"
+fi
+
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-if [ $ERRORS -gt 0 ]; then
-    echo "❌ Pre-deployment checks found $ERRORS issue(s)"
-    echo "   Fix the issues above before deploying"
-    exit 1
-else
-    echo "✅ All pre-deployment checks passed"
-    echo "   Ready to deploy!"
+if [ "$ERRORS" -gt 0 ]; then
+  echo "❌ Pre-deployment checks found $ERRORS issue(s)"
+  exit 1
 fi
+
+pass "Pre-deployment checks passed"
