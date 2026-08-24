@@ -182,7 +182,6 @@ export function JiraDesignWorkspaceStage({
 									onItemActivate(item);
 								}
 							}}
-							showScrollAffordance={false}
 							viewTabs={<JiraDesignViewTabs activeView="board" onViewChange={onViewChange} />}
 						/>
 					) : (

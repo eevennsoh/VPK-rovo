@@ -1,15 +1,22 @@
 "use client";
 
 import { useCallback, useMemo, useState, type ReactNode } from "react";
+import type {
+	JiraKanbanAgentData,
+	JiraKanbanCardData,
+	JiraKanbanCardSelectModifiers,
+	JiraKanbanColumnData,
+} from "../index";
+import { createJiraKanbanColumns } from "../jira-kanban-data";
+import { ExperimentalJiraKanban } from "./experimental-jira-kanban";
+import { ExperimentalJiraKanbanBoardHeader } from "./experimental-board-header";
+import { ExperimentalPulse } from "./pulse/experimental-pulse";
 import {
-	JiraKanban,
-	type JiraKanbanAgentData,
-	type JiraKanbanCardData,
-	type JiraKanbanCardSelectModifiers,
-	type JiraKanbanColumnData,
-} from "./index";
-import { createJiraKanbanColumns } from "./jira-kanban-data";
-import { JiraKanbanBoardHeader } from "./board-header";
+	PulseModeToggle,
+	PulseRosterFacepile,
+	type ExperimentalJiraKanbanMode,
+} from "./pulse/components/pulse-mode-controls";
+import { PULSE_TIMELINE } from "./pulse/data/pulse-timeline";
 import {
 	createJiraKanbanSelectionState,
 	filterJiraKanbanColumnsByAssignee,
@@ -18,13 +25,20 @@ import {
 	moveJiraKanbanCardsToColumn,
 	selectJiraKanbanCard,
 	updateJiraKanbanCardAgentAssignment,
-} from "./state";
+} from "../state";
 import { BOARD_AGENTS } from "@/components/projects/jira/data/board-agents";
 import { BOARD_COLUMNS } from "@/components/projects/jira/data/board-data";
 
 const DEFAULT_CREATED_COLUMN_AGENT_ID = "readiness-checker";
 
-export interface JiraKanbanPageProps {
+/**
+ * Experimental Jira Kanban page.
+ *
+ * Standalone fork of `components/blocks/jira-kanban/page.tsx`. It owns its own
+ * board and header components so the experimental variant can diverge without
+ * touching the default variant, while reusing the shared board state helpers.
+ */
+export interface ExperimentalJiraKanbanPageProps {
 	activeCardCode?: string;
 	agents?: readonly JiraKanbanAgentData[];
 	ariaLabel?: string;
@@ -40,16 +54,16 @@ interface DraggedCardState {
 	sourceColumnTitle: string;
 }
 
-export default function JiraKanbanPage({
+export default function ExperimentalJiraKanbanPage({
 	activeCardCode,
 	agents = BOARD_AGENTS,
-	ariaLabel = "RFP board columns. Scroll horizontally to review all statuses.",
+	ariaLabel = "Experimental RFP board columns. Scroll horizontally to review all statuses.",
 	boardColumns: controlledBoardColumns,
 	compactHeader = false,
 	onBoardColumnsChange,
 	onCardClick,
 	viewTabs,
-}: Readonly<JiraKanbanPageProps>) {
+}: Readonly<ExperimentalJiraKanbanPageProps>) {
 	const [localBoardColumns, setLocalBoardColumns] = useState<JiraKanbanColumnData[]>(
 		() => createJiraKanbanColumns(BOARD_COLUMNS),
 	);
@@ -66,6 +80,21 @@ export default function JiraKanbanPage({
 		setLocalBoardColumns([...nextColumns]);
 	}, [boardColumns, controlledBoardColumns, onBoardColumnsChange]);
 	const [columnAgentAssignments, setColumnAgentAssignments] = useState<Record<string, string[]>>({});
+	const [mode, setMode] = useState<ExperimentalJiraKanbanMode>("board");
+	// Owned here, not inside Pulse: the board header's facepile is the primary
+	// way in and out of the filter, and it lives above the mode switch.
+	const [pulseMemberId, setPulseMemberId] = useState<string | null>(null);
+	// Commitments live above the mode switch: Pulse unmounts when it is toggled
+	// off, and a requested action or a captured note is something the reader
+	// decided, not view state that may quietly reset with the subtree.
+	const [requestedActionIds, setRequestedActionIds] = useState<ReadonlySet<string>>(() => new Set<string>());
+	const [capturedLooseWorkIds, setCapturedLooseWorkIds] = useState<ReadonlySet<string>>(() => new Set<string>());
+	const handleRequestAction = useCallback((action: { id: string }) => {
+		setRequestedActionIds((current) => new Set(current).add(action.id));
+	}, []);
+	const handleCaptureLooseWork = useCallback((item: { id: string }) => {
+		setCapturedLooseWorkIds((current) => new Set(current).add(item.id));
+	}, []);
 	const [draggedCard, setDraggedCard] = useState<DraggedCardState | null>(null);
 	const [selection, setSelection] = useState(createJiraKanbanSelectionState);
 	const [assignedAgentIdsByCard, setAssignedAgentIdsByCard] = useState<Record<string, string[]>>({});
@@ -208,40 +237,67 @@ export default function JiraKanbanPage({
 		});
 	};
 
+	const isPulse = mode === "pulse";
+
 	return (
 		<div className="flex h-full min-h-[640px] flex-col rounded-lg bg-surface">
-			<JiraKanbanBoardHeader
+			<ExperimentalJiraKanbanBoardHeader
 				assignees={assignees}
 				compact={compactHeader}
 				onSelectedAssigneeIdsChange={handleAssigneeFilterChange}
 				selectedAssigneeIds={selectedAssigneeIds}
+				disableAssigneeFilter={isPulse}
+				facepile={isPulse ? (
+					<PulseRosterFacepile
+						members={PULSE_TIMELINE.members}
+						onSelectedMemberIdChange={setPulseMemberId}
+						selectedMemberId={pulseMemberId}
+					/>
+				) : undefined}
+				modeToggle={
+					<PulseModeToggle
+						active={isPulse}
+						onToggle={() => setMode(isPulse ? "board" : "pulse")}
+					/>
+				}
 				viewTabs={viewTabs}
 			/>
-			<div className="flex min-h-0 min-w-0 flex-1">
-				<JiraKanban
-					activeCardCode={activeCardCode}
-					agents={agents}
-					ariaLabel={ariaLabel}
-					assignedAgentIdsByColumn={columnAgentAssignments}
-					boardColumns={filteredBoardColumns}
-					draggedCardCode={draggedCard?.card.code ?? null}
-					selectedCardCodes={selection.selectedCardCodes}
-					onCardClick={handleCardClick}
-					onCardSelect={handleCardSelect}
-					onCardDragStart={handleCardDragStart}
-					onCardDrop={handleCardDrop}
-					onCardDragEnd={handleCardDragEnd}
-					onCreateAgent={handleCreateColumnAgent}
-					onToggleColumnAgent={handleToggleColumnAgent}
-					paddingTop={0}
-					selectionToolbar={{
-						onAgentAssignmentChange: handleSelectedCardsAgentAssignmentChange,
-						onClearSelection: () => setSelection(createJiraKanbanSelectionState()),
-						onStatusChange: handleSelectedCardsStatusChange,
-						selectedAgentIds,
-					}}
+			{isPulse ? (
+				<ExperimentalPulse
+					capturedLooseWorkIds={capturedLooseWorkIds}
+					onCaptureLooseWork={handleCaptureLooseWork}
+					onRequestAction={handleRequestAction}
+					onSelectedMemberIdChange={setPulseMemberId}
+					requestedActionIds={requestedActionIds}
+					selectedMemberId={pulseMemberId}
 				/>
-			</div>
+			) : (
+				<div className="flex min-h-0 min-w-0 flex-1">
+					<ExperimentalJiraKanban
+						activeCardCode={activeCardCode}
+						agents={agents}
+						ariaLabel={ariaLabel}
+						assignedAgentIdsByColumn={columnAgentAssignments}
+						boardColumns={filteredBoardColumns}
+						draggedCardCode={draggedCard?.card.code ?? null}
+						selectedCardCodes={selection.selectedCardCodes}
+						onCardClick={handleCardClick}
+						onCardSelect={handleCardSelect}
+						onCardDragStart={handleCardDragStart}
+						onCardDrop={handleCardDrop}
+						onCardDragEnd={handleCardDragEnd}
+						onCreateAgent={handleCreateColumnAgent}
+						onToggleColumnAgent={handleToggleColumnAgent}
+						paddingTop={0}
+						selectionToolbar={{
+							onAgentAssignmentChange: handleSelectedCardsAgentAssignmentChange,
+							onClearSelection: () => setSelection(createJiraKanbanSelectionState()),
+							onStatusChange: handleSelectedCardsStatusChange,
+							selectedAgentIds,
+						}}
+					/>
+				</div>
+			)}
 		</div>
 	);
 }

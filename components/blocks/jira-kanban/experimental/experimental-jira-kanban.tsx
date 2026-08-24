@@ -9,33 +9,19 @@ import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import AddIcon from "@atlaskit/icon/core/add";
 
-import {
-	JiraIssue,
-	type JiraIssueAgentActivity,
-	type JiraIssueAgentActivityMode,
-	type JiraIssueCompletedAgentRun,
-	type JiraIssueGenerativeActionRequest,
-	type JiraIssuePriority,
-	type JiraIssuePullRequestStatus,
-	type JiraIssueTag,
-} from "@/components/blocks/jira-issue";
+import { JiraIssue } from "@/components/blocks/jira-issue";
 import {
 	mapAgentToMentionItem,
 	mapSkillToMentionItem,
 } from "@/components/blocks/editor-palette/data/mention-sources";
 import { AgentSelector } from "@/components/blocks/agent-selector";
 import { JiraToolbar } from "@/components/blocks/jira-toolbar";
-import type { SkillsDirectorySkill } from "@/app/data/directory";
-import type { QuestionCardAnswers } from "@/components/blocks/question-card/types";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
-import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import {
 	Avatar,
 	AvatarFallback,
 	AvatarGroup,
 	AvatarImage,
-	type AvatarProps,
-	type AvatarUnassignedKind,
 } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,60 +36,27 @@ import { getMentionChildItems } from "@/components/ui-custom/rich-text-editor";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-export type JiraKanbanPriority = JiraIssuePriority;
+import type {
+	JiraKanbanAgentData,
+	JiraKanbanCardData,
+	JiraKanbanCardMoveAnimation,
+	JiraKanbanCardSelectModifiers,
+	JiraKanbanColumnData,
+	JiraKanbanProps,
+} from "../index";
 
-export type JiraKanbanCardTag = JiraIssueTag;
+/**
+ * Experimental Jira Kanban board.
+ *
+ * A standalone fork of `components/blocks/jira-kanban/index.tsx` that starts
+ * identical to the default variant and is free to diverge from it. The data
+ * contracts (`JiraKanban*` types, `state.ts`, `jira-kanban-data.ts`) stay
+ * shared so both variants remain interchangeable inside an owning surface.
+ */
+export type ExperimentalJiraKanbanProps = JiraKanbanProps;
 
 const JIRA_KANBAN_CARD_MOVE: Transition = { duration: 0.6, ease: [0.4, 0, 0, 1] }; // duration-slowest + ease-in-out
 const JIRA_KANBAN_CARD_DEPART: Transition = { duration: 0.4, ease: [0.6, 0, 0.8, 0.6] }; // duration-slower + ease-in
-
-export interface JiraKanbanAssigneeData {
-	id: string;
-	name: string;
-	avatarSrc: string;
-}
-
-export interface JiraKanbanCardData {
-	title: string;
-	code: string;
-	tags: JiraKanbanCardTag[];
-	priority: JiraKanbanPriority;
-	avatarSrc?: string;
-	avatarShape?: NonNullable<AvatarProps["shape"]>;
-	avatarUnassignedKind?: AvatarUnassignedKind;
-	avatarPulse?: boolean;
-	assignee?: JiraKanbanAssigneeData;
-	agentActivities?: readonly JiraIssueAgentActivity[];
-	agentActivityMode?: JiraIssueAgentActivityMode;
-	agentDoneRuns?: readonly JiraIssueCompletedAgentRun[];
-	pullRequestNumber?: number;
-	pullRequestStatus?: JiraIssuePullRequestStatus;
-}
-
-export interface JiraKanbanColumnData {
-	title: string;
-	count: number;
-	cards: JiraKanbanCardData[];
-}
-
-export interface JiraKanbanAgentData {
-	id: string;
-	name: string;
-	byline: string;
-	avatarSrc?: string;
-	/** When set, renders the upstream `@atlassian/logo-third-party` mark (3P brands). */
-	brandName?: ThirdPartyLogoName;
-}
-
-export interface JiraKanbanCardSelectModifiers {
-	shiftKey: boolean;
-	metaOrCtrlKey: boolean;
-}
-
-export interface JiraKanbanCardMoveAnimation {
-	cardCode: string;
-	phase: "departing" | "arriving";
-}
 
 function getJiraKanbanCardScale(
 	phase: JiraKanbanCardMoveAnimation["phase"] | undefined,
@@ -111,84 +64,6 @@ function getJiraKanbanCardScale(
 	if (phase === "arriving") return 0.9;
 	if (phase === "departing") return 0.96;
 	return 1;
-}
-
-export interface JiraKanbanSelectionToolbarConfig {
-	agents?: readonly JiraKanbanAgentData[];
-	className?: string;
-	defaultPinnedAgentIds?: readonly string[];
-	defaultPinnedSkillIds?: readonly string[];
-	onAgentAssignmentChange: (agentId: string, assigned: boolean) => void;
-	onBrowseAgents?: () => void;
-	onClearSelection: () => void;
-	onCreateAgent?: () => void;
-	onDelete?: () => void;
-	onEditFields?: () => void;
-	onMerge?: () => void;
-	onStatusChange: (status: string) => void;
-	onWatchOptions?: () => void;
-	pinnedItemsLabel?: string;
-	selectedAgentIds?: readonly string[];
-	skills?: readonly SkillsDirectorySkill[];
-}
-
-export interface JiraKanbanProps {
-	boardColumns: readonly JiraKanbanColumnData[];
-	agents?: readonly JiraKanbanAgentData[];
-	animateCardMoves?: boolean;
-	assignedAgentIdsByColumn?: Readonly<Record<string, readonly string[]>>;
-	ariaLabel?: string;
-	cardMoveAnimation?: JiraKanbanCardMoveAnimation;
-	columnHeaderPaddingBlock?: CSSProperties["paddingBlock"];
-	draggedCardCode?: string | null;
-	activeCardCode?: string;
-	selectedCardCodes?: ReadonlySet<string>;
-	onCardClick?: (title: string, code: string, card: JiraKanbanCardData, columnTitle: string) => void;
-	onCardSelect?: (
-		code: string,
-		columnTitle: string,
-		indexInColumn: number,
-		modifiers: JiraKanbanCardSelectModifiers,
-	) => void;
-	onCardDragStart?: (card: JiraKanbanCardData, sourceColumnTitle: string) => void;
-	onCardDrop?: (targetColumnTitle: string) => void;
-	onCardDragEnd?: () => void;
-	onCardGenerativeActionSubmit?: (
-		request: JiraIssueGenerativeActionRequest,
-		card: JiraKanbanCardData,
-		columnTitle: string,
-	) => void | Promise<void>;
-	onCardAgentActivityOpenChange?: (
-		open: boolean,
-		card: JiraKanbanCardData,
-		columnTitle: string,
-	) => void;
-	onCardAgentActivityViewChat?: (
-		activity: JiraIssueAgentActivity,
-		card: JiraKanbanCardData,
-		columnTitle: string,
-	) => void;
-	onCardAgentActivityQuestionSubmit?: (
-		activity: JiraIssueAgentActivity,
-		answers: QuestionCardAnswers,
-		card: JiraKanbanCardData,
-		columnTitle: string,
-	) => void;
-	onCardAgentDoneRunReview?: (
-		run: JiraIssueCompletedAgentRun,
-		card: JiraKanbanCardData,
-		columnTitle: string,
-	) => void;
-	onCardAgentDoneRunView?: (
-		run: JiraIssueCompletedAgentRun,
-		card: JiraKanbanCardData,
-		columnTitle: string,
-	) => void;
-	onCreateAgent?: (columnTitle: string) => void;
-	onToggleColumnAgent?: (columnTitle: string, agentId: string) => void;
-	paddingBottom?: CSSProperties["paddingBottom"];
-	paddingTop?: CSSProperties["paddingTop"];
-	selectionToolbar?: JiraKanbanSelectionToolbarConfig;
 }
 
 function orderPickerItems<T extends Readonly<{ id: string }>>(
@@ -466,11 +341,11 @@ function getCommonSelectedCardStatus(
 	return foundSelectedCard ? commonStatus : null;
 }
 
-export function JiraKanban({
+export function ExperimentalJiraKanban({
 	activeCardCode,
 	agents,
 	animateCardMoves = false,
-	ariaLabel = "Jira kanban columns. Scroll horizontally to review all statuses.",
+	ariaLabel = "Experimental Jira kanban columns. Scroll horizontally to review all statuses.",
 	assignedAgentIdsByColumn = {},
 	boardColumns,
 	cardMoveAnimation,
@@ -493,7 +368,7 @@ export function JiraKanban({
 	paddingBottom = token("space.150"),
 	paddingTop = token("space.150"),
 	selectionToolbar,
-}: Readonly<JiraKanbanProps>) {
+}: Readonly<ExperimentalJiraKanbanProps>) {
 	const cardLayoutGroupId = useId();
 	const shouldReduceMotion = useReducedMotion();
 	const shouldAnimateCardMoves = animateCardMoves && !shouldReduceMotion;
