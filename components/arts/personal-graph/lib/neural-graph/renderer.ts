@@ -9,7 +9,14 @@ import { getClosestPointOnOrganicRay, getNodeViewportRadius, getOrganicRayCurve,
 import type { NeuralGraphLayout, NeuralLayoutEdge, NeuralLayoutNode, NeuralLayoutTreeBranch } from "./layout";
 import { getPersonalGraphNodeTypeAccentToken } from "./node-type-colors";
 import type { NeuralGraphParams } from "./params";
-import { getAutomationWorkflowNodeType, getRadialLeafNodeIds, shouldLabelWorkflowTreeNode } from "./workflow-label-strategy";
+import {
+	getAutomationWorkflowNodeType,
+	getRadialLabelNodes,
+	getRadialLeafNodeIds,
+	type NeuralGraphLabelStrategy,
+} from "./workflow-label-strategy";
+
+export type { NeuralGraphLabelStrategy } from "./workflow-label-strategy";
 
 const KIND_COLOR_PARAM_KEY: Record<VaultNodeKind, keyof NeuralGraphParams> = {
 	concept: "colorConcept",
@@ -21,7 +28,6 @@ const KIND_COLOR_PARAM_KEY: Record<VaultNodeKind, keyof NeuralGraphParams> = {
 
 export type NeuralGraphThemeMode = "light" | "dark";
 export type NeuralGraphBackgroundMode = "default" | "transparent";
-export type NeuralGraphLabelStrategy = "default" | "workflowTree";
 
 export interface NeuralRayElasticState {
 	distance?: number;
@@ -870,41 +876,6 @@ function drawLabels(
 const RADIAL_LABEL_ALL_NODES_MIN_WIDTH = 700;
 const RADIAL_WORKFLOW_LABEL_ALL_NODES_MIN_WIDTH = 1600;
 const RADIAL_LABEL_OFFSET = 11;
-
-export function getRadialLabelNodes(
-	layout: NeuralGraphLayout,
-	{
-		activeNodeId,
-		labelStrategy = "default",
-		shouldDrawAllLabels,
-	}: {
-		activeNodeId?: string | null;
-		labelStrategy?: NeuralGraphLabelStrategy;
-		shouldDrawAllLabels: boolean;
-	},
-) {
-	const leafNodeIds = getRadialLeafNodeIds(layout);
-	if (labelStrategy !== "workflowTree") {
-		return shouldDrawAllLabels
-			? layout.nodes.filter((node) => leafNodeIds.has(node.id))
-			: activeNodeId
-				? layout.nodes.filter((node) => node.id === activeNodeId)
-				: [];
-	}
-
-	const nodesById = new Map<string, NeuralLayoutNode>();
-	for (const node of layout.nodes) {
-		const nodeType = getAutomationWorkflowNodeType(node);
-		if (
-			shouldLabelWorkflowTreeNode(node) ||
-			(shouldDrawAllLabels && nodeType === "AutomationWorkflowEvidence" && leafNodeIds.has(node.id)) ||
-			node.id === activeNodeId
-		) {
-			nodesById.set(node.id, node);
-		}
-	}
-	return layout.nodes.filter((node) => nodesById.has(node.id));
-}
 
 function drawRadialLabels(
 	ctx: CanvasRenderingContext2D,
