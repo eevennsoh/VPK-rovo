@@ -222,6 +222,31 @@ export function filterExistingTestFiles(filePaths, fileExists = existsSync) {
 	return filePaths.filter((filePath) => fileExists(filePath));
 }
 
+export function assertClassifiedTestFilesExist(
+	classifications = TEST_FILE_CLASSIFICATIONS,
+	fileExists = existsSync,
+) {
+	const missingEntries = Object.entries(classifications)
+		.flatMap(([classification, filePaths]) => filePaths
+			.filter((filePath) => !fileExists(filePath))
+			.map((filePath) => ({ classification, filePath })))
+		.sort((left, right) => {
+			return left.classification.localeCompare(right.classification) ||
+				left.filePath.localeCompare(right.filePath);
+		});
+
+	if (missingEntries.length === 0) {
+		return;
+	}
+
+	throw new Error([
+		"js-unit-tests: classified test paths do not exist:",
+		...missingEntries.map(({ classification, filePath }) => {
+			return `- ${classification}: ${filePath}`;
+		}),
+	].join("\n"));
+}
+
 function listCandidateTestFiles() {
 	const gitResult = spawnSync("git", [
 		"ls-files",
@@ -319,6 +344,7 @@ export function runTestFiles(testFiles, {
 }
 
 function main() {
+	assertClassifiedTestFilesExist();
 	const selection = parseTestSelectionArgs(process.argv.slice(2));
 	const selectionOptions = buildSelectionOptions(selection);
 	const testEntries = readTestEntries(listCandidateTestFiles());

@@ -12,6 +12,7 @@ import { useReducedMotion } from "motion/react";
 import { JiraActivity, JiraActivityViewControl } from "@/components/blocks/jira-activity";
 import type {
 	JiraActivityCommentEntry,
+	JiraActivityEntry,
 	JiraActivityEventEntry,
 	JiraActivityFilter,
 	JiraActivityReaction,
@@ -20,12 +21,19 @@ import type {
 } from "@/components/blocks/jira-activity";
 import { jiraActivitySegmentsToPlainText } from "@/components/blocks/jira-activity/lib/jira-activity-comment-text";
 import { toggleReaction } from "@/components/blocks/jira-activity/lib/jira-activity-reducer";
+import { JiraInsightsCheckpoint } from "@/components/blocks/jira-insights/components/jira-insights-checkpoint";
+import { useJiraInsights } from "@/components/blocks/jira-insights/context-jira-insights";
+import type { JiraInsightSource } from "@/components/blocks/jira-insights/jira-insights-types";
+import { mergeJiraActivityEntriesWithInsights } from "@/components/blocks/jira-insights/lib/jira-insights-activity";
 import { SESSION_EPOCH_MS } from "@/components/blocks/jira-work-item/data/session-fixtures";
 import { useActivityChatComments } from "@/components/blocks/jira-work-item/experimental-v3/context-activity-chat-comments";
 import { useJiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v3/context-jira-work-item";
 import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental-v3/context-metadata-rail";
 import { WorkItemSection } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-section";
-import { usePublishActivityCount } from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
+import {
+	usePublishActivityCount,
+	useSectionNavigation,
+} from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
 import {
 	applyActivitySessionThreadPresentation,
 	collectActivityActors,
@@ -56,13 +64,22 @@ const ACTIVITY_REVEAL_SETTLE_MS = 2_000;
  */
 export function ActivityPanel({
 	activitySessionThread,
+	onInsightSourceSelect,
 	onOpenPullRequest,
 }: Readonly<{
 	activitySessionThread?: ActivitySessionThreadConfig;
+	/** Routes a decision source through the work item's existing in-product owners. */
+	onInsightSourceSelect?: (source: JiraInsightSource) => void;
 	/** Opens the same in-app PR detail as Review pull request / PR resource select. */
 	onOpenPullRequest?: (entry: JiraActivityEventEntry) => void;
 }>) {
 	const { state, meta, actions } = useJiraWorkItem();
+	const {
+		activeCheckpointId,
+		checkpoints,
+		selectCheckpointFromScroll,
+	} = useJiraInsights();
+	const { insightsSelected, selectSection } = useSectionNavigation();
 	const { addComment: addActivityChatComment } = useActivityChatComments();
 	const {
 		activityRevealRequest,
@@ -84,17 +101,30 @@ export function ActivityPanel({
 		[meta.activityEvents],
 	);
 	const derivedEntries = useMemo(
-		() => applyActivitySessionThreadPresentation(
-			mapActivityEventsToJiraEntries(composedActivityEvents, activityReferenceTimeMs, meta.activityEvents),
-			activitySessionThread,
-		),
+		() => {
+			const createdAtByEntryId = new Map(
+				composedActivityEvents.map((event) => [event.id, event.createdAtMs]),
+			);
+			return applyActivitySessionThreadPresentation(
+				mapActivityEventsToJiraEntries(
+					composedActivityEvents,
+					activityReferenceTimeMs,
+					meta.activityEvents,
+				),
+				activitySessionThread,
+			).map((entry) => ({
+				...entry,
+				createdAtMs: createdAtByEntryId.get(entry.id),
+			}));
+		},
 		[activityReferenceTimeMs, activitySessionThread, composedActivityEvents, meta.activityEvents],
 	);
 	const latestActivityEntryId = derivedEntries.at(-1)?.id ?? null;
 	const activityRevealSignature = latestActivityEntryId
 		? `${latestActivityEntryId}:${activitySessionThread?.visibleSessionIds.join(",") ?? "default"}`
 		: null;
-	const autoScrollEnabled = Boolean(activitySessionThread) || Boolean(latestSessionId?.startsWith("session-"));
+	const autoScrollEnabled = !insightsSelected
+		&& (Boolean(activitySessionThread) || Boolean(latestSessionId?.startsWith("session-")));
 	// Reactions and replies to human comments have no home in the work-item
 	// context, so they are held here and overlaid onto the derived timeline.
 	// Keyed by entry id rather than replacing the array, so streaming session
@@ -106,7 +136,7 @@ export function ActivityPanel({
 		Readonly<Record<string, readonly JiraActivityReply[]>>
 	>({});
 
-	const entries = derivedEntries.map((entry) => {
+	const activityEntries = useMemo(() => derivedEntries.map((entry) => {
 		if (entry.kind !== "comment") return entry;
 		const reactions = localReactions[entry.id];
 		const replies = localReplies[entry.id];
@@ -116,9 +146,39 @@ export function ActivityPanel({
 			...(reactions ? { reactions } : {}),
 			...(replies ? { replies: [...(entry.replies ?? []), ...replies] } : {}),
 		};
-	});
+	}), [derivedEntries, localReactions, localReplies]);
+	const entries = useMemo(
+		() => mergeJiraActivityEntriesWithInsights(activityEntries, checkpoints),
+		[activityEntries, checkpoints],
+	);
+	const checkpointById = useMemo(
+		() => new Map(checkpoints.map((checkpoint) => [checkpoint.id, checkpoint])),
+		[checkpoints],
+	);
+	const effectiveFilter = insightsSelected ? "insights-only" : filter;
 
-	usePublishActivityCount(entries.length);
+	usePublishActivityCount(activityEntries.length);
+
+	function handleFilterChange(next: JiraActivityFilter) {
+		if (next === "insights-only") {
+			selectSection("insights");
+			return;
+		}
+		setFilter(next);
+		if (insightsSelected) selectSection("activity");
+	}
+
+	function renderActivityEntry(entry: JiraActivityEntry) {
+		if (entry.category !== "insight") return undefined;
+		const checkpoint = checkpointById.get(entry.id);
+		return checkpoint ? (
+			<JiraInsightsCheckpoint
+				checkpoint={checkpoint}
+				isActive={checkpoint.id === activeCheckpointId}
+				onSourceSelect={onInsightSourceSelect}
+			/>
+		) : undefined;
+	}
 
 	function handleToggleReaction(entry: JiraActivityCommentEntry, emoji: string) {
 		setLocalReactions((previous) => ({
@@ -204,6 +264,28 @@ export function ActivityPanel({
 		}
 		return target;
 	});
+
+	useEffect(() => {
+		const root = activityRootRef.current;
+		if (!root || typeof IntersectionObserver === "undefined") return undefined;
+		const visible = new Map<string, IntersectionObserverEntry>();
+		const observer = new IntersectionObserver((changes) => {
+			for (const change of changes) {
+				const id = (change.target as HTMLElement).dataset.jiraInsightsCheckpointId;
+				if (!id) continue;
+				if (change.isIntersecting) visible.set(id, change);
+				else visible.delete(id);
+			}
+			const closest = [...visible.entries()].sort(([, left], [, right]) => (
+				right.intersectionRatio - left.intersectionRatio
+				|| Math.abs(left.boundingClientRect.top) - Math.abs(right.boundingClientRect.top)
+			))[0];
+			if (closest) selectCheckpointFromScroll(closest[0]);
+		}, { threshold: [0.25, 0.5, 0.75, 1] });
+		const nodes = root.querySelectorAll<HTMLElement>("[data-jira-insights-checkpoint-id]");
+		for (const node of nodes) observer.observe(node);
+		return () => observer.disconnect();
+	}, [checkpoints, effectiveFilter, selectCheckpointFromScroll]);
 
 	useEffect(() => {
 		if (
@@ -310,37 +392,40 @@ export function ActivityPanel({
 
 	return (
 		<WorkItemSection
+			className={insightsSelected ? "group/activity" : undefined}
 			headingAction={(
 				<JiraActivityViewControl
-					filter={filter}
-					filterMode="jira"
+					filter={effectiveFilter}
+					filterMode="jira-insights"
 					menuAlign="end"
-					onFilterChange={setFilter}
+					onFilterChange={handleFilterChange}
 					onSortOrderChange={setSortOrder}
 					sortOrder={sortOrder}
 				/>
 			)}
 			headingVisible
-			id="activity"
-			label="Activity"
+			id={insightsSelected ? "insights" : "activity"}
+			label={insightsSelected ? "Insights" : "Activity"}
 		>
 			<div ref={activityRootRef} className="min-w-0 max-w-full" data-jira-work-item-activity>
 				<JiraActivity
+					activeEntryId={activeCheckpointId ?? undefined}
 					actors={reactionActors}
 					className="min-w-0 gap-2"
 					composer={null}
 					currentUser={JIRA_WORK_ITEM_CURRENT_USER}
 					entries={entries}
-					filter={filter}
+					filter={effectiveFilter}
 					hideHeader
 					onAddCommentToChat={handleAddCommentToChat}
 					onAddReplyToChat={handleAddReplyToChat}
-					onFilterChange={setFilter}
+					onFilterChange={handleFilterChange}
 					onOpenPullRequest={onOpenPullRequest}
 					onSortOrderChange={setSortOrder}
 					onSubmitReply={handleSubmitReply}
 					onToggleReaction={handleToggleReaction}
 					onViewSession={(item) => actions.openSession(item.id)}
+					renderEntry={renderActivityEntry}
 					sortOrder={sortOrder}
 				/>
 			</div>

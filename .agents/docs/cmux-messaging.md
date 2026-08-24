@@ -1,138 +1,113 @@
 # cmux Inter-Agent Messaging
 
-When multiple AI agents run in separate cmux workspaces, use this protocol to coordinate.
+Use this document only for agents that already run in separate cmux workspaces.
+Codex subagents in one task use the product's collaboration tools; Claude agent
+teams use their native team messaging. Do not build a cmux buffer protocol when
+the agents already share an orchestrator.
 
-## Discovery and Spawn
+## Discover the Current Topology
 
-At session start, discover your identity and find peer agents dynamically:
-
-```bash
-# 1. Who am I?
-cmux identify                  # returns your workspace/surface refs
-
-# 2. Who else is running?
-cmux tree                      # full layout — scan workspace names for agent keywords
-```
-
-Scan `cmux tree` output for workspaces named "CODEX", "CLAUDE", "ROVO", or similar. These are all AI agent workspaces — any of them can be a peer for task dispatch and messaging. Extract workspace refs dynamically — never hardcode them.
-
-Known agent types:
-
-| Workspace name | Spawn command |
-| --- | --- |
-| CLAUDE | `vpk-claude-gw` |
-| CODEX | `vpk-codex` |
-| ROVO | `vpk-rovo` |
-
-If a needed peer agent isn't running, spawn it:
+Resolve live handles at the time of use. Never keep a workspace, pane, or
+surface ref in a saved prompt.
 
 ```bash
-cmux new-workspace --name "<AGENT-NAME>" --cwd /Users/esoh/Documents/Labs/VPK-rovo \
-  --command "<spawn-command>"
+cmux identify --json
+cmux list-workspaces
+cmux tree --all
+cmux list-panes
+cmux list-pane-surfaces
 ```
 
-Then re-run `cmux tree` to get the new workspace's ref. See `.rovo/skills/codex/SKILL.md` for Codex-specific flags.
+cmux prints short refs such as `workspace:2` and `surface:5`. UUIDs are also
+accepted when another API already returned one.
 
-To dispatch a task to a running agent workspace, use `cmux send` followed by `send-key Enter` (the send command types text but does not submit it):
+## Start an Agent Workspace
+
+The installed cmux CLI owns the supported Codex and Claude team launchers:
 
 ```bash
-cmux send --workspace <target-ref> "Explore backend/ and broadcast findings via cmux protocol"
-cmux send-key --workspace <target-ref> Enter
+cmux new-workspace \
+  --name "CODEX" \
+  --cwd /Users/esoh/Labs/vpk-rovo \
+  --command "cmux codex-teams"
+
+cmux new-workspace \
+  --name "CLAUDE" \
+  --cwd /Users/esoh/Labs/vpk-rovo \
+  --command "cmux claude-teams"
 ```
 
-## Message Protocol
+Use `cmux codex-teams --help` or `cmux claude-teams --help` before adding model,
+resume, or provider flags. Rovo Serve is a repository service started by
+`pnpm run rovo`; it is not an inter-agent peer or a replacement for either team
+launcher.
 
-All structured messages use XML format in cmux named buffers. Buffer names follow the pattern `agent-msg-{id}` where `{id}` is a monotonic counter or UUID.
+## Dispatch to an Existing Workspace
 
-### Message envelope
-
-```xml
-<cmux-message id="{unique-id}" timestamp="{ISO-8601}">
-  <from workspace="{ws-ref}" surface="{sf-ref}" agent="{agent-name}" />
-  <to workspace="{ws-ref}" />
-  <type>{request|response|broadcast|handoff}</type>
-  <body>{payload}</body>
-</cmux-message>
-```
-
-### Message types
-
-| Type | Purpose | Expected response |
-| --- | --- | --- |
-| `request` | Ask another agent to do something | `response` with same `id` |
-| `response` | Reply to a `request` | None |
-| `broadcast` | Inform all agents (no specific target) | None (optional `response`) |
-| `handoff` | Transfer ownership of a task | `response` acknowledging receipt |
-
-### Sending a message
+Prefer a workspace's focused agent surface. Inspect it before sending so a
+prompt is not typed into a shell, browser, or completed process.
 
 ```bash
-# 1. Discover target workspace ref (never hardcode)
-TARGET_WS=$(cmux tree | grep -i "CODEX" | grep -oE 'workspace:[0-9]+')
-
-# 2. Write message to a named buffer
-cmux set-buffer --name "agent-msg-001" '<cmux-message id="001" timestamp="...">
-  <from workspace="..." surface="..." agent="claude-gw" />
-  <to workspace="'"$TARGET_WS"'" />
-  <type>request</type>
-  <body>Run typecheck and report errors</body>
-</cmux-message>'
-
-# 3. Notify the target agent
-cmux notify --title "agent-msg" --body "agent-msg-001" --workspace "$TARGET_WS"
-
-# 4. Signal readiness (for sync coordination)
-cmux wait-for -S "msg-001-ready"
+cmux read-screen --workspace <workspace-ref> --lines 40
+cmux send --workspace <workspace-ref> "Inspect backend/ and report the owner. Do not edit."
+cmux send-key --workspace <workspace-ref> Enter
 ```
 
-### Receiving a message
+Use `--surface <surface-ref>` when the workspace has multiple surfaces and the
+target must be exact. A successful `send` means text was typed; it does not
+prove that an agent accepted or completed the request.
 
-When you see a notification with title `agent-msg`, the body contains the buffer name:
+## Notify and Synchronize
+
+Use notifications for attention and `wait-for` only when two independent
+workspaces need an explicit shell-level barrier.
 
 ```bash
-# 1. Read the message buffer
-cmux paste-buffer --name "agent-msg-001"
+cmux notify \
+  --title "Agent handoff" \
+  --body "Review request is ready" \
+  --workspace <workspace-ref>
 
-# 2. Parse the XML envelope, execute the request
+# Receiver signals completion.
+cmux wait-for --signal review-ready
 
-# 3. Discover sender's workspace ref from the <from> element
-SENDER_WS="..."  # extracted from the message
-
-# 4. Write response to a new buffer
-cmux set-buffer --name "agent-msg-001-reply" '<cmux-message id="001-reply" timestamp="...">
-  <from workspace="..." surface="..." agent="codex" />
-  <to workspace="'"$SENDER_WS"'" />
-  <type>response</type>
-  <body>Typecheck passed, 0 errors</body>
-</cmux-message>'
-
-# 5. Notify the sender
-cmux notify --title "agent-msg" --body "agent-msg-001-reply" --workspace "$SENDER_WS"
-
-# 6. Signal completion
-cmux wait-for -S "msg-001-done"
+# Sender waits with a bound.
+cmux wait-for review-ready --timeout 120
 ```
 
-## Synchronization
-
-Use `cmux wait-for` for blocking coordination between agents:
+For an attributable payload, put a small envelope in a uniquely named buffer,
+then notify the target with the buffer name:
 
 ```bash
-# Agent A: wait for Agent B to finish setup
-cmux wait-for "setup-complete" --timeout 120
-
-# Agent B: signal when ready
-cmux wait-for -S "setup-complete"
+cmux set-buffer --name "agent-msg-<unique-id>" \
+  '<cmux-message from="workspace:1" to="workspace:2" type="request">Run typecheck and report the result.</cmux-message>'
+cmux notify --title "agent-msg" --body "agent-msg-<unique-id>" --workspace workspace:2
 ```
+
+The receiver reads it with `cmux paste-buffer --name <buffer-name>` and removes
+or overwrites the buffer after processing. Do not place credentials, tokens, or
+private environment values in buffers or notifications.
+
+## Completion Check
+
+Before treating a cross-workspace handoff as complete:
+
+```bash
+cmux read-screen --workspace <workspace-ref> --lines 80
+cmux surface-health --workspace <workspace-ref>
+cmux list-notifications
+```
+
+Verify the reported files, Git state, and tests in the owning repository. A
+notification or terminal message is coordination evidence, not implementation
+proof.
 
 ## Rules
 
-- **No hardcoded refs.** Always discover workspace/surface refs via `cmux tree` at runtime.
-- **Auto-spawn if missing.** If you need a peer agent and none exists, use `cmux new-workspace` to create one. See `.rovo/skills/codex/SKILL.md` for Codex CLI usage.
-- **Use `cmux send`** to type prompts into a peer agent's terminal for task dispatch.
-- Always include `agent` name in the `<from>` element so messages are attributable.
-- Use `cmux notify` as the signaling channel — don't rely on polling `list-buffers`.
-- Buffer names must be unique per session. Use monotonic IDs or include a timestamp.
-- Clean up buffers after processing: the receiver deletes consumed buffers.
-- For fire-and-forget updates (build status, progress), use `broadcast` type.
-- For tasks that require a response, use `request` and wait on the corresponding `wait-for` signal.
+- Discover refs dynamically with `identify`, `list-workspaces`, or `tree`.
+- Use `/Users/esoh/Labs/vpk-rovo`; Documents-era checkout paths are historical.
+- Use only installed launchers shown by `cmux --help`.
+- Inspect the target surface before `send`; use `send-key ... Enter` to submit.
+- Bound `wait-for`; do not block indefinitely.
+- Keep payloads attributable and secret-free.
+- Re-read repository state after any cross-workspace implementation handoff.

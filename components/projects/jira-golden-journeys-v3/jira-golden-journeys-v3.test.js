@@ -21,6 +21,9 @@ test("the work-item stage mounts experimental-v3 inline, not the v2 shell", () =
 	assert.match(pageSource, /<ExperimentalV3JiraWorkItem[\s\S]*presentation="inline"/u);
 	assert.match(pageSource, /workItem=\{controller\.workItem\}/u);
 	assert.match(pageSource, /initialState=\{controller\.initialState\}/u);
+	assert.match(pageSource, /createJiraGoldenJourneysV3InsightsSnapshot/u);
+	assert.match(pageSource, /insightsSnapshot=\{insightsSnapshot\}/u);
+	assert.match(pageSource, /controller\.insightsRevision/u);
 	assert.doesNotMatch(pageSource, /ExperimentalV2JiraWorkItem/u);
 	assert.doesNotMatch(pageSource, /variant="experimental-v2"/u);
 });
@@ -46,6 +49,26 @@ test("the responsive gallery keeps both desktop and compact story controls", () 
 	assert.match(controlsSource, /aria-label="Next chapter"/u);
 });
 
+test("every Jira Golden Journeys header scroller reserves the shared focus-ring gutter", () => {
+	const focusRingSource = readProjectFile("components/ui/focus-ring.ts");
+	assert.match(focusRingSource, /export const FOCUS_RING_CLIP_GUTTER = "-m-1 p-1"/u);
+
+	for (const sourcePath of [
+		"components/projects/jira-golden-journeys-v0/components/gallery-header-controls.tsx",
+		"components/projects/jira-golden-journeys-v1/components/session-stage.tsx",
+		"components/projects/jira-golden-journeys-v2/story-controls.tsx",
+		"components/projects/jira-golden-journeys-v3/story-controls.tsx",
+	]) {
+		const source = readProjectFile(sourcePath);
+		assert.match(source, /import \{ FOCUS_RING_CLIP_GUTTER \} from "@\/components\/ui\/focus-ring"/u);
+		assert.match(
+			source,
+			/"scrollbar-none max-w-\[calc\(100vw-12rem\)\] overflow-x-auto",\s*FOCUS_RING_CLIP_GUTTER/u,
+			sourcePath,
+		);
+	}
+});
+
 test("the controller starts at Terminal with both automation settings disabled", () => {
 	const source = readProjectFile(CONTROLLER_PATH);
 	assert.match(source, /useState<JiraGoldenJourneysV3StoryChapter>\("terminal"\)/u);
@@ -63,6 +86,10 @@ test("Reset owns the full story reset while chapter replay preserves settings", 
 	assert.match(resetStory, /setAutoMergeEnabled\(false\)/u);
 	assert.match(resetStory, /setApprovalStep\(0\)/u);
 	assert.match(resetStory, /setPullRequestMerged\(false\)/u);
+	assert.match(source, /const \[insightsRevision, setInsightsRevision\] = useState\(0\)/u);
+	assert.match(resetStory, /setInsightsRevision\(\(current\) => current \+ 1\)/u);
+	assert.doesNotMatch(restartChapter, /setInsightsRevision/u);
+	assert.match(source, /insightsRevision,/u);
 	assert.doesNotMatch(restartChapter, /setAutoFixEnabled|setAutoMergeEnabled/u);
 	assert.match(source, /const resetCurrentChapter = useCallback\(\(\) => \{\s*restartChapter\(chapter\);/u);
 });

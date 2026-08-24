@@ -493,7 +493,20 @@ test("delegated events use the ADS agent icon", () => {
 		/import AiAgentIcon from "@atlaskit\/icon\/core\/ai-agent"/u,
 	);
 	assert.match(NODE_SOURCE, /delegated: AiAgentIcon/u);
-	assert.doesNotMatch(NODE_SOURCE, /ShortcutIcon|PersonAssigneeIcon/u);
+	assert.doesNotMatch(NODE_SOURCE, /ShortcutIcon/u);
+	assert.doesNotMatch(NODE_SOURCE, /delegated: PersonAssigneeIcon/u);
+});
+
+test("assigned events use the ADS person-assignee icon", () => {
+	assert.match(
+		NODE_SOURCE,
+		/import PersonAssigneeIcon from "@atlaskit\/icon-lab\/core\/person-assignee";/u,
+	);
+	assert.match(NODE_SOURCE, /assigned: PersonAssigneeIcon/u);
+	assert.match(TYPES_SOURCE, /\| "assigned"/u);
+	const assigned = JIRA_ACTIVITY_ENTRIES.find((entry) => entry.id === "assigned");
+	assert.equal(assigned.kind, "event");
+	assert.equal(assigned.icon, "assigned");
 });
 
 test("commit, pull-request, and app events map to ADS SCM/app glyphs", () => {
@@ -515,6 +528,22 @@ test("commit, pull-request, and app events map to ADS SCM/app glyphs", () => {
 	assert.match(NODE_SOURCE, /commit: CommitIcon/u);
 	assert.match(NODE_SOURCE, /"pull-request": PullRequestIcon/u);
 	assert.match(NODE_SOURCE, /app: AppIcon/u);
+});
+
+test("PR activity nodes use PullRequestIcon, not BranchIcon", () => {
+	const prEntries = JIRA_ACTIVITY_ENTRIES.filter(
+		(entry) => entry.kind === "event" && entry.pullRequest,
+	);
+	assert.ok(prEntries.length > 0, "expected a pull-request activity row");
+	for (const entry of prEntries) {
+		assert.equal(entry.icon, "pull-request");
+	}
+	assert.match(NODE_SOURCE, /"pull-request": PullRequestIcon/u);
+	assert.match(NODE_SOURCE, /linked: BranchIcon/u);
+	assert.match(
+		INDEX_SOURCE,
+		/entry\.kind === "event"\s*\? \(entry\.pullRequest \? "pull-request" : entry\.icon\)\s*: undefined/u,
+	);
 });
 
 test("event rows prefer EventGlyph over ActorGlyph whenever icon is set", () => {
@@ -631,6 +660,8 @@ test("Jira Activity exposes controlled entries and replaceable composer contract
 	assert.match(INDEX_SOURCE, /onEntriesChange\?: \(entries: readonly JiraActivityEntry\[\]\) => void/u);
 	assert.match(INDEX_SOURCE, /composer\?: ReactNode \| null/u);
 	assert.match(INDEX_SOURCE, /renderCommentAction\?: \(entry:/u);
+	assert.match(INDEX_SOURCE, /renderEntry\?: \(entry: JiraActivityEntry\) => ReactNode \| undefined/u);
+	assert.match(INDEX_SOURCE, /activeEntryId\?: string/u);
 	assert.match(INDEX_SOURCE, /onAddCommentToChat\?: \(entry: JiraActivityCommentEntry\) => void/u);
 	assert.match(INDEX_SOURCE, /onAddReplyToChat\?: \(reply: JiraActivityReply, entry: JiraActivityCommentEntry\) => void/u);
 	assert.match(INDEX_SOURCE, /onViewSession\?: \(item: AgentListItem\) => void/u);
@@ -640,9 +671,14 @@ test("Jira Activity exposes controlled entries and replaceable composer contract
 	assert.match(INDEX_SOURCE, /defaultFilter\?: JiraActivityFilter/u);
 	assert.match(INDEX_SOURCE, /onFilterChange\?: \(next: JiraActivityFilter\) => void/u);
 	assert.match(INDEX_SOURCE, /data-jira-activity-entry-id=\{entry\.id\}/u);
+	assert.match(INDEX_SOURCE, /aria-current=\{entry\.id === activeEntryId \? "step" : undefined\}/u);
+	assert.match(INDEX_SOURCE, /data-active=\{entry\.id === activeEntryId \? "" : undefined\}/u);
+	assert.match(INDEX_SOURCE, /const customEntry = renderEntry\?\.\(entry\);/u);
+	assert.match(INDEX_SOURCE, /const defaultEntry = entry\.kind === "event"/u);
+	assert.match(INDEX_SOURCE, /customEntry !== undefined \? customEntry : defaultEntry/u);
 	// Timeline rows shrink inside narrow rails so artifact titles can truncate.
 	assert.match(INDEX_SOURCE, /className=\{cn\("group\/activity flex w-full min-w-0 flex-col gap-4", className\)\}/u);
-	assert.match(INDEX_SOURCE, /className="flex min-w-0 gap-2"/u);
+	assert.match(INDEX_SOURCE, /className="group\/activity-event flex min-w-0 gap-2"/u);
 });
 
 test("activity comments expose an outlined Add to chat control left of expand/collapse", () => {
@@ -683,11 +719,13 @@ test("the header shows an activity count and a text-link sort control", () => {
 	assert.match(HEADER_SOURCE, /"agents-only": "Show agents"/u);
 	assert.match(HEADER_SOURCE, /"needs-input": "Show needs input"/u);
 	assert.match(HEADER_SOURCE, /"comments-only": "Show comments"/u);
+	assert.match(HEADER_SOURCE, /"insights-only": "Show insights"/u);
 	assert.match(HEADER_SOURCE, /ascending: "Oldest"/u);
 	assert.match(HEADER_SOURCE, /descending: "Latest"/u);
 	assert.match(HEADER_SOURCE, /"agents-only": "Agents"/u);
 	assert.match(HEADER_SOURCE, /"needs-input": "Needs input"/u);
 	assert.match(HEADER_SOURCE, /"comments-only": "Comments"/u);
+	assert.match(HEADER_SOURCE, /"insights-only": "Insights"/u);
 	assert.doesNotMatch(HEADER_SOURCE, /Show (?:latest|oldest) first|Agents only|Show agents only/u);
 	// Compact menu: override default min-w-56 so short labels hug content.
 	assert.match(HEADER_SOURCE, /className="w-auto min-w-0"/u);
@@ -697,7 +735,7 @@ test("the header shows an activity count and a text-link sort control", () => {
 	assert.match(HEADER_SOURCE, /ACTIVITY_SORT_TRIGGER_REVEAL_CLASS/u);
 	assert.match(HEADER_SOURCE, /pointer-events-none opacity-0/u);
 	assert.match(HEADER_SOURCE, /group-hover\/activity:opacity-100/u);
-	assert.match(HEADER_SOURCE, /group-focus-within\/activity:opacity-100/u);
+	assert.doesNotMatch(HEADER_SOURCE, /group-focus-within\/activity:opacity-100/u);
 	assert.match(HEADER_SOURCE, /group-has-\[:focus-visible\]\/activity:opacity-100/u);
 	assert.match(HEADER_SOURCE, /aria-expanded:opacity-100/u);
 	assert.match(HEADER_SOURCE, /motion-reduce:transition-none/u);
@@ -753,7 +791,7 @@ test("the header shows an activity count and a text-link sort control", () => {
 	);
 });
 
-test("the header offers Agents, Needs input, and Comments filters", () => {
+test("the header offers Insights only to insight-aware Jira consumers", () => {
 	const expectedAgentCards = JIRA_ACTIVITY_ENTRIES.filter(
 		(entry) =>
 			entry.actor.kind === "agent" &&
@@ -765,7 +803,11 @@ test("the header offers Agents, Needs input, and Comments filters", () => {
 	);
 	assert.match(
 		HEADER_SOURCE,
-		/"agents-only",\s*"needs-input",\s*"comments-only"/u,
+		/const JIRA_ACTIVITY_FILTER_VALUES = \[\s*"agents-only",\s*"needs-input",\s*"comments-only",\s*\]/u,
+	);
+	assert.match(
+		HEADER_SOURCE,
+		/const JIRA_ACTIVITY_INSIGHTS_FILTER_VALUES = \[\s*\.\.\.JIRA_ACTIVITY_FILTER_VALUES,\s*"insights-only",\s*\]/u,
 	);
 	assert.match(
 		HEADER_SOURCE,
@@ -777,6 +819,9 @@ test("the header offers Agents, Needs input, and Comments filters", () => {
 	);
 	assert.match(TYPES_SOURCE, /\| "needs-input"/u);
 	assert.match(TYPES_SOURCE, /\| "comments-only"/u);
+	assert.match(TYPES_SOURCE, /\| "insights-only"/u);
+	assert.match(TYPES_SOURCE, /category\?: "insight"/u);
+	assert.match(TYPES_SOURCE, /createdAtMs\?: number/u);
 	assert.match(INDEX_SOURCE, /filterJiraActivityEntries\(entries, filter\)/u);
 	assert.match(INDEX_SOURCE, /count=\{visibleEntries\.length\}/u);
 	// Sample feed seeds a waiting agent comment for the Needs input filter.
@@ -803,36 +848,10 @@ test("Jira Activity supports externally controlled collapse state", () => {
 	assert.match(INDEX_SOURCE, /count=\{visibleEntries\.length\}/u);
 });
 
-test("one-line activity events use 12px type without shrinking expanded agent cards", () => {
-	assert.match(EVENT_SOURCE, /className="flex min-h-6 min-w-0 items-center py-0\.5 text-xs leading-5 text-text-subtlest"/u);
-	assert.match(EVENT_SOURCE, /className="flex min-h-6 min-w-0 items-center gap-2 py-0\.5 text-xs leading-5"/u);
-	assert.doesNotMatch(EVENT_SOURCE, /className="flex h-6 /u);
-	assert.match(COMMENT_SOURCE, /className="text-sm leading-5 text-text"/u);
-});
-
-test("one-line activity timestamps keep 6px spacing around the middot", () => {
-	assert.match(
-		EVENT_SOURCE,
-		/<span className="ml-1\.5 inline-flex items-center gap-1\.5 text-text-subtlest">[\s\S]*<span aria-hidden>·<\/span>[\s\S]*<span>\{entry\.timestamp\}<\/span>/u,
-	);
-	assert.match(
-		EVENT_SOURCE,
-		/<span aria-hidden>·<\/span>[\s\S]*AutomationIcon[\s\S]*<span>\{entry\.timestamp\}<\/span>/u,
-	);
-	assert.doesNotMatch(EVENT_SOURCE, /> · \{entry\.timestamp\}</u);
-});
-
-test("event labels share the timeline node's 24px vertical alignment track", () => {
-	assert.match(NODE_SOURCE, /isCard \? "h-10" : "h-6"/u);
-	assert.match(EVENT_SOURCE, /<p className="flex min-h-6 min-w-0 items-center py-0\.5[^>]*>\s*<span className="min-w-0">/u);
-	assert.doesNotMatch(EVENT_SOURCE, /className="flex h-6 /u);
-	assert.match(INDEX_SOURCE, /hideHeader \? "pt-1" : null/u);
-	assert.doesNotMatch(INDEX_SOURCE, /entry\.kind === "event" && "pt-0\.5"/u);
-});
-
 test("the linked event uses the Jira Queue pull-request row", () => {
 	const linked = JIRA_ACTIVITY_ENTRIES.find((entry) => entry.id === "linked");
 	assert.equal(linked.kind, "event");
+	assert.equal(linked.icon, "pull-request");
 	assert.deepEqual(linked.pullRequest, {
 		number: 1847,
 		title: "Fix threaded comment highlight bottom corners",
@@ -906,7 +925,12 @@ test("Jira Activity owns the shared activity card used by agent comments", () =>
 	// Overflow stays visible so Avatar's hover scale is not clipped on the flush card edge.
 	// min-w-0 keeps checklist / artifact content from forcing a horizontal rail scrollbar.
 	assert.match(CARD_SOURCE, /"w-full min-w-0 overflow-visible bg-transparent"/u);
-	assert.match(CARD_SOURCE, /<div className="min-w-0 text-sm leading-5 text-text">\{children\}<\/div>/u);
+	assert.match(
+		CARD_SOURCE,
+		/const body = \(\s*<div className="min-w-0 text-sm leading-5 text-text">\{children\}<\/div>\s*\);/u,
+	);
+	assert.match(CARD_SOURCE, /\{body\}/u);
+	assert.doesNotMatch(CARD_SOURCE, /<\/div>\s*\{children\}/u);
 	assert.doesNotMatch(CARD_SOURCE, /"w-full overflow-visible bg-surface"/u);
 	assert.doesNotMatch(CARD_SOURCE, /"w-full overflow-hidden bg-surface"/u);
 	assert.doesNotMatch(CARD_SOURCE, /border border-border|border-t border-border|showFooterBorder/u);

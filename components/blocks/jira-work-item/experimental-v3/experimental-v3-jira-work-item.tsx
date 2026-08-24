@@ -1,7 +1,7 @@
 "use client";
 
 import { LayoutGroup } from "motion/react";
-import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from "react";
 
 import { useRovoChat } from "@/app/contexts";
 import type { SkillsDirectorySkill } from "@/app/data/directory";
@@ -9,6 +9,14 @@ import { getAgentsWorkItemForCard } from "@/components/projects/jira/data/rfp-wo
 import { WorkItemModalProvider } from "@/app/contexts/context-work-item-modal";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
+import {
+	JiraInsightsProvider,
+	JiraInsightsScrubber,
+	useJiraInsights,
+	type JiraInsightSource,
+	type JiraInsightsSnapshot,
+} from "@/components/blocks/jira-insights";
+import { EMPTY_JIRA_INSIGHTS_SNAPSHOT } from "@/components/blocks/jira-insights/data";
 import type { InlineReviewComment } from "@/components/blocks/code-review/lib/inline-comments";
 import type {
 	JiraWorkItemComposerDelivery,
@@ -24,6 +32,7 @@ import {
 } from "@/components/blocks/jira-work-item/experimental-v3/context-failing-checks-composer";
 import {
 	JiraWorkItemProvider,
+	useJiraWorkItemActions,
 	useJiraWorkItemMeta,
 	useJiraWorkItemState,
 } from "@/components/blocks/jira-work-item/experimental-v3/context-jira-work-item";
@@ -32,7 +41,10 @@ import {
 	useMetadataRail,
 } from "@/components/blocks/jira-work-item/experimental-v3/context-metadata-rail";
 import { PanelLayoutProvider } from "@/components/blocks/jira-work-item/experimental-v3/context-panel-layout";
-import { SectionNavigationProvider } from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
+import {
+	SectionNavigationProvider,
+	useSectionNavigation,
+} from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
 import { ExperimentalWorkItemDialog } from "@/components/blocks/jira-work-item/experimental-v3/components/experimental-work-item-dialog";
 import { ExperimentalWorkItemLayout } from "@/components/blocks/jira-work-item/experimental-v3/components/experimental-work-item-layout";
 import { ContextPanel } from "@/components/blocks/jira-work-item/experimental-v3/components/context-panel";
@@ -102,6 +114,7 @@ interface ExperimentalV3JiraWorkItemBaseProps {
 	initialPreset: JiraWorkItemPreset;
 	initialState?: JiraWorkItemState;
 	initialStateRevision?: string | number;
+	insightsSnapshot?: JiraInsightsSnapshot;
 	/** Preserve an explicit user dismissal while an authored snapshot updates in place. */
 	preserveActiveSessionOnHydration?: boolean;
 	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
@@ -154,6 +167,8 @@ interface ExperimentalV3JiraWorkItemContentProps {
 	composerAgents?: readonly AgentSelectorAgent[];
 	composerContextBar?: ReactNode;
 	composerToolsAfterAdd?: ReactNode;
+	hasInsights: boolean;
+	insightsSnapshot: JiraInsightsSnapshot;
 	inlineSurface: "card" | "card-fill" | "fill";
 	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
 	onClose: () => void;
@@ -232,6 +247,77 @@ function WorkItemSidePanelResizeHandle({
 	);
 }
 
+function InsightsAwareComposer({
+	hasInsights,
+	...composerProps
+}: Readonly<ComponentProps<typeof ActivityComposer> & { hasInsights: boolean }>) {
+	const { activityEvents } = useJiraWorkItemMeta();
+	const { insightsSelected } = useSectionNavigation();
+	const { selectLatestUnread, unreadCheckpointIds } = useJiraInsights();
+	const activityTimestamps = useMemo(
+		() => activityEvents.flatMap((entry) => (
+			entry.createdAtMs == null ? [] : [entry.createdAtMs]
+		)),
+		[activityEvents],
+	);
+
+	return insightsSelected && hasInsights ? (
+		<JiraInsightsScrubber activityTimestamps={activityTimestamps} />
+	) : (
+		<ActivityComposer
+			{...composerProps}
+			newInsightsCount={hasInsights ? unreadCheckpointIds.length : undefined}
+			onNewInsightsSelect={hasInsights ? selectLatestUnread : undefined}
+		/>
+	);
+}
+
+function InsightsAwareActivityPanel(
+	props: Readonly<ComponentProps<typeof ActivityPanel>>,
+) {
+	const { onSourceSelect } = useJiraInsights();
+
+	return <ActivityPanel {...props} onInsightSourceSelect={onSourceSelect} />;
+}
+
+function WorkItemInsightsProvider({
+	children,
+	onOpenPullRequestIdentity,
+	snapshot,
+}: Readonly<{
+	children: ReactNode;
+	onOpenPullRequestIdentity?: (identity: string) => void;
+	snapshot: JiraInsightsSnapshot;
+}>) {
+	const actions = useJiraWorkItemActions();
+	const { requestRevealLatestActivity } = useMetadataRail();
+	const { selectSection } = useSectionNavigation();
+	const handleInsightSourceSelect = useCallback((source: JiraInsightSource) => {
+		if (source.kind === "work-item-section") {
+			selectSection(source.sectionId);
+			return;
+		}
+		if (source.kind === "activity-entry") {
+			selectSection("activity");
+			requestRevealLatestActivity(source.entryId);
+			return;
+		}
+		if (source.kind === "agent-session") {
+			actions.openSession(source.sessionId);
+			return;
+		}
+		if (source.kind === "pull-request") {
+			onOpenPullRequestIdentity?.(source.identity);
+		}
+	}, [actions, onOpenPullRequestIdentity, requestRevealLatestActivity, selectSection]);
+
+	return (
+		<JiraInsightsProvider onSourceSelect={handleInsightSourceSelect} snapshot={snapshot}>
+			{children}
+		</JiraInsightsProvider>
+	);
+}
+
 function ExperimentalV3JiraWorkItemContent({
 	activitySessionThread,
 	autoOpenPullRequestIdentity = null,
@@ -239,6 +325,8 @@ function ExperimentalV3JiraWorkItemContent({
 	composerAgents,
 	composerContextBar,
 	composerToolsAfterAdd,
+	hasInsights,
+	insightsSnapshot,
 	inlineSurface,
 	onAgentPromptSubmit,
 	onClose,
@@ -386,6 +474,13 @@ function ExperimentalV3JiraWorkItemContent({
 			};
 		});
 	}, [pullRequestApprovalStates]);
+	const handlePullRequestIdentitySelect = useCallback((identity: string) => {
+		const entry = pullRequestEntries.find((candidate) => (
+			candidate.pullRequest
+			&& getPullRequestIdentity(candidate.pullRequest) === identity
+		));
+		if (entry) handlePullRequestSelect(entry);
+	}, [handlePullRequestSelect, pullRequestEntries]);
 	// jira-golden-journeys-v2 Review: open the guided PR once per stage so detail is default.
 	useLayoutEffect(() => {
 		if (!autoOpenPullRequestIdentity) return;
@@ -615,15 +710,20 @@ function ExperimentalV3JiraWorkItemContent({
 	return (
 		<PanelLayoutProvider>
 			<SectionNavigationProvider active={open}>
-			<Toaster id={PULL_REQUEST_REVIEW_TOASTER_ID} position="bottom-left" />
-			<LayoutGroup id={composerLayoutGroupId}>
-				<ExperimentalWorkItemDialog
-						controlRow={(
-							<ContextResources
-								outputs={outputs}
-								primaryCodingAgentId={primaryCodingAgentId}
-							/>
-						)}
+				<WorkItemInsightsProvider
+					onOpenPullRequestIdentity={handlePullRequestIdentitySelect}
+					snapshot={insightsSnapshot}
+				>
+					<Toaster id={PULL_REQUEST_REVIEW_TOASTER_ID} position="bottom-left" />
+					<LayoutGroup id={composerLayoutGroupId}>
+						<ExperimentalWorkItemDialog
+					controlRow={(compact) => (
+						<ContextResources
+							compact={compact}
+							outputs={outputs}
+							primaryCodingAgentId={primaryCodingAgentId}
+						/>
+					)}
 						navigation={(
 							<WorkItemSectionNav
 								endControl={(
@@ -662,11 +762,12 @@ function ExperimentalV3JiraWorkItemContent({
 							context={(scrollContainerRef) => (
 								<ContextPanel
 									activity={(
-										<ActivityPanel
-											activitySessionThread={activitySessionThread}
-											onOpenPullRequest={handlePullRequestSelect}
-										/>
-									)}
+									<InsightsAwareActivityPanel
+										activitySessionThread={activitySessionThread}
+										onOpenPullRequest={handlePullRequestSelect}
+									/>
+								)}
+								hasInsights={hasInsights}
 									onPullRequestChapterReviewedChange={handlePullRequestChapterReviewedChange}
 									onPullRequestInlineCommentsChange={handlePullRequestInlineCommentsChange}
 									pullRequestApprovalState={selectedPullRequestApprovalState}
@@ -679,10 +780,11 @@ function ExperimentalV3JiraWorkItemContent({
 								/>
 							)}
 							composer={(
-								<ActivityComposer
+								<InsightsAwareComposer
 									agents={composerAgents}
 									autoFocus={restoreActivityComposerFocus}
 									composerContextBar={composerContextBar}
+									hasInsights={hasInsights}
 									onAgentPromptSubmit={onAgentPromptSubmit}
 									onOpenAgentChat={onOpenAgentChat}
 									onSectionSelect={selectedPullRequestIdentity ? handlePullRequestClear : undefined}
@@ -718,9 +820,10 @@ function ExperimentalV3JiraWorkItemContent({
 									</div>
 								</div>
 							)}
-						/>
-					</ExperimentalWorkItemDialog>
-				</LayoutGroup>
+							/>
+						</ExperimentalWorkItemDialog>
+					</LayoutGroup>
+				</WorkItemInsightsProvider>
 			</SectionNavigationProvider>
 		</PanelLayoutProvider>
 	);
@@ -768,6 +871,7 @@ export function ExperimentalV3JiraWorkItem(props: Readonly<ExperimentalV3JiraWor
 		[],
 	);
 	const workItem = props.workItem ?? defaultWorkItem;
+	const insightsSnapshot = props.insightsSnapshot ?? EMPTY_JIRA_INSIGHTS_SNAPSHOT;
 
 	return (
 		// Keep the WorkItemModalProvider mounted (isOpen always true) so the reused
@@ -799,6 +903,8 @@ export function ExperimentalV3JiraWorkItem(props: Readonly<ExperimentalV3JiraWor
 								composerAgents={props.composerAgents}
 								composerContextBar={props.composerContextBar}
 								composerToolsAfterAdd={props.composerToolsAfterAdd}
+								hasInsights={props.insightsSnapshot != null}
+								insightsSnapshot={insightsSnapshot}
 								inlineSurface={inlineSurface}
 								onAgentPromptSubmit={props.onAgentPromptSubmit}
 								onClose={onClose}

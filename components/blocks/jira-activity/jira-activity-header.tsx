@@ -27,11 +27,17 @@ const SORT_MENU_LABELS: Record<JiraActivitySortOrder, string> = {
 	descending: "Latest",
 };
 
-/** Full work-item Activity filters (Agents / Needs input / Comments). */
+/** Standard work-item Activity filters. */
 const JIRA_ACTIVITY_FILTER_VALUES = [
 	"agents-only",
 	"needs-input",
 	"comments-only",
+] as const satisfies readonly Exclude<JiraActivityFilter, "all">[];
+
+/** Insight-aware work-item filters used only by consumers that supply insight rows. */
+const JIRA_ACTIVITY_INSIGHTS_FILTER_VALUES = [
+	...JIRA_ACTIVITY_FILTER_VALUES,
+	"insights-only",
 ] as const satisfies readonly Exclude<JiraActivityFilter, "all">[];
 
 /** SCM PR Activity filters — Comments only (All via Latest/Oldest selection). */
@@ -43,15 +49,17 @@ const FILTER_TRIGGER_LABELS: Record<Exclude<JiraActivityFilter, "all">, string> 
 	"agents-only": "Show agents",
 	"needs-input": "Show needs input",
 	"comments-only": "Show comments",
+	"insights-only": "Show insights",
 };
 
 const FILTER_MENU_LABELS: Record<Exclude<JiraActivityFilter, "all">, string> = {
 	"agents-only": "Agents",
 	"needs-input": "Needs input",
 	"comments-only": "Comments",
+	"insights-only": "Insights",
 };
 
-export type JiraActivityViewFilterMode = "jira" | "pull-request" | "sort-only";
+export type JiraActivityViewFilterMode = "jira" | "jira-insights" | "pull-request" | "sort-only";
 
 function filterValuesForMode(
 	mode: JiraActivityViewFilterMode,
@@ -59,6 +67,8 @@ function filterValuesForMode(
 	switch (mode) {
 		case "jira":
 			return JIRA_ACTIVITY_FILTER_VALUES;
+		case "jira-insights":
+			return JIRA_ACTIVITY_INSIGHTS_FILTER_VALUES;
 		case "pull-request":
 			return PULL_REQUEST_ACTIVITY_FILTER_VALUES;
 		case "sort-only":
@@ -78,7 +88,7 @@ function isListedActivityFilter(
 }
 
 const ACTIVITY_SORT_TRIGGER_REVEAL_CLASS =
-	"pointer-events-none opacity-0 transition-opacity duration-normal ease-out group-hover/activity:pointer-events-auto group-hover/activity:opacity-100 group-focus-within/activity:pointer-events-auto group-focus-within/activity:opacity-100 group-has-[:focus-visible]/activity:pointer-events-auto group-has-[:focus-visible]/activity:opacity-100 aria-expanded:pointer-events-auto aria-expanded:opacity-100 motion-reduce:transition-none";
+	"pointer-events-none opacity-0 transition-opacity duration-normal ease-out group-hover/activity:pointer-events-auto group-hover/activity:opacity-100 group-has-[:focus-visible]/activity:pointer-events-auto group-has-[:focus-visible]/activity:opacity-100 aria-expanded:pointer-events-auto aria-expanded:opacity-100 motion-reduce:transition-none";
 
 const TEXT_LINK_TRIGGER_CLASS =
 	`h-auto gap-1 border-0 bg-transparent px-0 text-xs font-normal text-text-subtlest [&_svg]:text-icon-subtlest hover:bg-transparent hover:text-text-subtlest hover:underline focus-visible:ring-0 aria-expanded:bg-transparent aria-expanded:text-text-subtlest aria-expanded:underline ${ACTIVITY_SORT_TRIGGER_REVEAL_CLASS}`;
@@ -105,6 +115,7 @@ function stopTriggerPropagation(event: { stopPropagation(): void }): void {
  *
  * Prefer `filterMode`:
  * - `jira` — Latest / Oldest + Agents / Needs input / Comments
+ * - `jira-insights` — Jira filters + Insights for consumers that supply insight rows
  * - `pull-request` — Latest / Oldest + Comments (SCM Activity)
  * - `sort-only` — Latest / Oldest only
  *

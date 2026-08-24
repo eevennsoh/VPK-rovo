@@ -115,7 +115,7 @@ test("Artifact List Open button reveals on row hover/focus and stays keyboard-re
 	);
 	assert.match(
 		source,
-		/group-focus-within\/artifact-row:ml-3 group-focus-within\/artifact-row:grid-cols-\[1fr\]/u,
+		/group-has-\[:focus-visible\]\/artifact-row:ml-3 group-has-\[:focus-visible\]\/artifact-row:grid-cols-\[1fr\]/u,
 	);
 	assert.match(
 		source,
@@ -123,13 +123,24 @@ test("Artifact List Open button reveals on row hover/focus and stays keyboard-re
 	);
 	assert.match(
 		source,
-		/<Button[\s\S]*pointer-events-none opacity-0[\s\S]*group-hover\/artifact-row:pointer-events-auto group-hover\/artifact-row:opacity-100[\s\S]*group-focus-within\/artifact-row:pointer-events-auto group-focus-within\/artifact-row:opacity-100[\s\S]*focus-visible:pointer-events-auto focus-visible:opacity-100[\s\S]*variant="outline"[\s\S]*size=\{variant === "compact" \? "compact" : "default"\}[\s\S]*type="button"[\s\S]*event\.stopPropagation\(\);[\s\S]*handleOpen\(\);/u,
+		/<Button[\s\S]*pointer-events-none opacity-0[\s\S]*group-hover\/artifact-row:pointer-events-auto group-hover\/artifact-row:opacity-100[\s\S]*group-has-\[:focus-visible\]\/artifact-row:pointer-events-auto group-has-\[:focus-visible\]\/artifact-row:opacity-100[\s\S]*focus-visible:pointer-events-auto focus-visible:opacity-100[\s\S]*variant="outline"[\s\S]*size=\{variant === "compact" \? "compact" : "default"\}[\s\S]*type="button"[\s\S]*event\.stopPropagation\(\);[\s\S]*handleOpen\(\);/u,
 	);
 	assert.match(source, /openOnRowClick \? \([\s\S]*<button[\s\S]*type="button"[\s\S]*onClick=\{handleOpen\}/u);
 	assert.match(source, /openOnRowClick\?: boolean;/u);
 	assert.doesNotMatch(source, /role=\{openOnRowClick \? "button"/u);
 	assert.doesNotMatch(source, /\binert\b/u);
 	assert.doesNotMatch(source, /<HoverRevealActions/u);
+});
+
+test("Artifact List action slots expose their button-owned focus indicators", () => {
+	const source = readProjectFile(
+		"components/ui-custom/artifact-list/components/artifact-list.tsx",
+	);
+
+	assert.match(
+		source,
+		/className="min-w-0 overflow-hidden has-\[:focus-visible\]:overflow-visible"[\s\S]*Code changes:/u,
+	);
 });
 
 test("Artifact List text expands into the action slot at rest", () => {

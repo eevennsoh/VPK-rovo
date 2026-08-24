@@ -189,7 +189,6 @@ export interface JiraKanbanProps {
 	paddingBottom?: CSSProperties["paddingBottom"];
 	paddingTop?: CSSProperties["paddingTop"];
 	selectionToolbar?: JiraKanbanSelectionToolbarConfig;
-	showScrollAffordance?: boolean;
 }
 
 function orderPickerItems<T extends Readonly<{ id: string }>>(
@@ -494,13 +493,10 @@ export function JiraKanban({
 	paddingBottom = token("space.150"),
 	paddingTop = token("space.150"),
 	selectionToolbar,
-	showScrollAffordance = true,
 }: Readonly<JiraKanbanProps>) {
 	const cardLayoutGroupId = useId();
-	const scrollRef = useRef<HTMLDivElement>(null);
 	const shouldReduceMotion = useReducedMotion();
 	const shouldAnimateCardMoves = animateCardMoves && !shouldReduceMotion;
-	const [canScrollRight, setCanScrollRight] = useState(false);
 	const dragImageRef = useRef<HTMLDivElement | null>(null);
 	const selectedCount = selectedCardCodes?.size ?? 0;
 	const selectedStatus = selectedCardCodes
@@ -535,42 +531,7 @@ export function JiraKanban({
 		[selectionToolbar?.defaultPinnedSkillIds, selectionToolbar?.skills],
 	);
 
-	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- scroll affordance depends on measured DOM dimensions.
-	useEffect(() => {
-		const scrollContainer = scrollRef.current;
-
-		if (!scrollContainer) {
-			return;
-		}
-
-		const updateScrollAffordance = () => {
-			const maxScrollLeft = scrollContainer.scrollWidth - scrollContainer.clientWidth;
-			setCanScrollRight(maxScrollLeft > 1 && scrollContainer.scrollLeft < maxScrollLeft - 1);
-		};
-
-		updateScrollAffordance();
-
-		const resizeObserver =
-			typeof ResizeObserver === "undefined"
-				? null
-				: new ResizeObserver(() => {
-					updateScrollAffordance();
-				});
-
-		resizeObserver?.observe(scrollContainer);
-		// Use `scrollend` (Baseline 2025-09-15) so React state only updates once
-		// the user finishes scrolling, rather than re-rendering the affordance
-		// chip on every animation frame during a horizontal scroll.
-		scrollContainer.addEventListener("scrollend", updateScrollAffordance, { passive: true });
-		window.addEventListener("resize", updateScrollAffordance);
-
-		return () => {
-			resizeObserver?.disconnect();
-			scrollContainer.removeEventListener("scrollend", updateScrollAffordance);
-			window.removeEventListener("resize", updateScrollAffordance);
-		};
-	}, [boardColumns]);
-
+	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- the drag preview node is measured/allocated against the live DOM.
 	const handleColumnDragOver = (event: React.DragEvent<HTMLDivElement>) => {
 		event.preventDefault();
 		event.dataTransfer.dropEffect = "move";
@@ -654,17 +615,7 @@ export function JiraKanban({
 
 	return (
 		<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-			{showScrollAffordance && canScrollRight ? (
-				<div
-					aria-hidden="true"
-					className="pointer-events-none absolute top-2 right-4 z-10 rounded-full border border-border bg-surface-raised px-2.5 py-1 text-[11px] font-medium text-text-subtle shadow-sm"
-				>
-					Scroll for more
-				</div>
-			) : null}
-
 			<section
-				ref={scrollRef}
 				tabIndex={0}
 				aria-label={ariaLabel}
 				className="flex min-h-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"

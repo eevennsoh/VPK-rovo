@@ -506,6 +506,36 @@ test("an invoked skill stays private in Activity while remaining steerable", asy
 	assert.ok(state.sessions[0].messages.some((message) => message.content.includes("Focus on unresolved decisions.")));
 });
 
+test("selectActivityEvents forwards a comment progress checklist", async () => {
+	const model = await loadSessionModel();
+	const progressChecklist = [
+		{ id: "story-claude-progress-1", label: "Implement SHOP-4821 in the local terminal", completed: true },
+		{ id: "story-claude-progress-2", label: "Run focused local checks", completed: true },
+	];
+	const outputs = [{
+		id: "story-changed-files",
+		title: "Changed 12 files",
+		source: "Agent output",
+		owner: "feature/shop-4821-guest-checkout",
+		iconName: "ai-chat",
+	}];
+	const state = {
+		...model.hydratePreset("blank", TEST_WORK_ITEM),
+		comments: [{
+			id: "story-channel-claude-pr-handoff",
+			authorName: "Claude Code",
+			authorBrandName: "claude",
+			content: "Focused local checks pass, so the work is ready for a pull request.",
+			createdAtMs: 1_200_000,
+			progressChecklist,
+			outputs,
+		}],
+	};
+	const [event] = model.selectActivityEvents(state).filter((item) => item.kind === "human");
+	assert.deepEqual(event.progressChecklist, progressChecklist);
+	assert.deepEqual(event.outputs, outputs);
+});
+
 test("selectActivityEvents exposes the human prompt author as invokedBy", async () => {
 	const model = await loadSessionModel();
 	const state = {

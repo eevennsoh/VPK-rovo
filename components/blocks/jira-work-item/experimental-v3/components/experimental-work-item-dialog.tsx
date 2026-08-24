@@ -1,16 +1,23 @@
 "use client";
 
-import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Dialog } from "@base-ui/react/dialog";
+import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 
 import { ExperimentalBreadcrumbActions } from "@/components/blocks/jira-work-item/experimental-v3/components/experimental-breadcrumb-actions";
 import {
 	ContextTitleBar,
 	WorkItemKeyCopy,
 } from "@/components/blocks/jira-work-item/experimental-v3/components/context-title-bar";
+import { useWorkItemHeaderVariant } from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
 import { ModalHeader } from "@/components/projects/jira/components/work-item-modal/modal-header";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
+
+const HEADER_LAYOUT_TRANSITION = {
+	duration: 0.2,
+	ease: [0.4, 0, 0, 1],
+} as const; // duration-medium + ease-in-out
 
 interface ExperimentalWorkItemDialogProps {
 	inlineSurface: "card" | "card-fill" | "fill";
@@ -21,7 +28,7 @@ interface ExperimentalWorkItemDialogProps {
 	workItemTitle: string;
 	children: ReactNode;
 	/** Work-item control row, rendered under the title inside the header band. */
-	controlRow?: ReactNode;
+	controlRow?: (compact: boolean) => ReactNode;
 	navigation?: ReactNode;
 	blanketContent?: ReactNode;
 	sidebar: ReactNode;
@@ -51,6 +58,11 @@ export function ExperimentalWorkItemDialog({
 	onBodyWidthChange,
 }: Readonly<ExperimentalWorkItemDialogProps>) {
 	const dialogBodyRef = useRef<HTMLDivElement | null>(null);
+	const headerContentRef = useRef<HTMLDivElement | null>(null);
+	const [headerHeight, setHeaderHeight] = useState<number | null>(null);
+	const shouldReduceMotion = useReducedMotion() ?? false;
+	const headerVariant = useWorkItemHeaderVariant();
+	const headerPositionLayout = shouldReduceMotion ? false : "position";
 	const description = `Details, agent sessions, and activity for work item ${workItemCode}.`;
 	const fillsInlineContainer = presentation === "inline" && inlineSurface !== "card";
 	const isFlushInlineSurface = presentation === "inline" && inlineSurface === "fill";
@@ -74,6 +86,26 @@ export function ExperimentalWorkItemDialog({
 		resizeObserver.observe(dialogBody);
 		return () => resizeObserver.disconnect();
 	}, [onBodyWidthChange]);
+	useLayoutEffect(() => {
+		const headerContent = headerContentRef.current;
+		if (!headerContent) {
+			return;
+		}
+
+		const syncHeaderHeight = () => {
+			const nextHeaderHeight = headerContent.offsetHeight;
+			setHeaderHeight((currentHeaderHeight) =>
+				currentHeaderHeight === nextHeaderHeight ? currentHeaderHeight : nextHeaderHeight,
+			);
+		};
+		syncHeaderHeight();
+		if (typeof ResizeObserver === "undefined") {
+			return;
+		}
+		const resizeObserver = new ResizeObserver(syncHeaderHeight);
+		resizeObserver.observe(headerContent);
+		return () => resizeObserver.disconnect();
+	}, [headerVariant]);
 	const content = (
 		<div
 			ref={dialogBodyRef}
@@ -87,32 +119,51 @@ export function ExperimentalWorkItemDialog({
 			<div
 				className="grid h-full min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)]"
 				data-jira-work-item-main-column
-			>
-				<div
-					className={cn(
-						sidebarResizing
-							? "transition-none"
-							: "transition-[margin-right] duration-medium ease-in-out motion-reduce:transition-none",
-						sidebarOpen
-							? "@[860px]/workitemdialog:mr-[var(--work-item-side-panel-width)]"
-							: null,
-					)}
-					data-jira-work-item-header-column
-					data-jira-work-item-header-band
 				>
-					<ModalHeader
-						actions={<ExperimentalBreadcrumbActions />}
-						actionsClassName="gap-1"
-						breadcrumbLeadingContent={<WorkItemKeyCopy />}
-						breadcrumbRevealOnHover
-						closeButtonDisabled={presentation === "inline"}
-						closeButtonVariant="ghost"
-						paddingBottom={0}
-						paddingTop={token("space.150")}
-					/>
-					<ContextTitleBar controlRow={controlRow} />
-					{navigation}
-				</div>
+				{/* Header height drives the grid; keep the bottom composer out of this layout group. */}
+				<LayoutGroup inherit={false}>
+					<motion.div
+						animate={headerHeight == null ? undefined : { height: headerHeight }}
+						className={cn(
+							sidebarResizing
+								? "transition-none"
+								: "transition-[margin-right] duration-medium ease-in-out motion-reduce:transition-none",
+							sidebarOpen
+								? "@[860px]/workitemdialog:mr-[var(--work-item-side-panel-width)]"
+								: null,
+						)}
+						data-jira-work-item-header-column
+						data-jira-work-item-header-band
+						transition={{ height: shouldReduceMotion ? { duration: 0 } : HEADER_LAYOUT_TRANSITION }}
+					>
+						<div ref={headerContentRef} data-jira-work-item-header-content>
+							<motion.div
+								layout={headerPositionLayout}
+								transition={{ layout: HEADER_LAYOUT_TRANSITION }}
+							>
+								<ModalHeader
+									actions={<ExperimentalBreadcrumbActions />}
+									actionsClassName="gap-1"
+									breadcrumbLeadingContent={<WorkItemKeyCopy />}
+									breadcrumbRevealOnHover
+									closeButtonDisabled={presentation === "inline"}
+									closeButtonVariant="ghost"
+									paddingBottom={0}
+									paddingTop={token("space.150")}
+								/>
+							</motion.div>
+							<ContextTitleBar controlRow={controlRow} />
+							{navigation ? (
+								<motion.div
+									layout={headerPositionLayout}
+									transition={{ layout: HEADER_LAYOUT_TRANSITION }}
+								>
+									{navigation}
+								</motion.div>
+							) : null}
+						</div>
+					</motion.div>
+				</LayoutGroup>
 				<div style={{ minHeight: 0, minWidth: 0, display: "grid", overflow: "hidden" }}>
 					{children}
 				</div>

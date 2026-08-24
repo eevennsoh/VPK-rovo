@@ -24,9 +24,9 @@ export interface ArtifactPaneSectionItem {
 	 */
 	collapsible?: boolean;
 	/**
-	 * Collapsed summary rendered after the title as separate `·` and value siblings
-	 * (parent `gap-1.5` = 6px). Accepts plain numbers, ratios (`"1/3"`), and labeled
-	 * strings (e.g. `"2/3 passed"`, `"3 open"`).
+	 * Collapsed summary rendered after the title (parent `gap-1.5` = 6px).
+	 * Accepts plain numbers, ratios (`"1/3"`), and labeled strings
+	 * (e.g. `"2/3 passed"`, `"3 open"`).
 	 */
 	count?: number | string;
 	defaultOpen?: boolean;
@@ -63,16 +63,11 @@ export interface ArtifactPaneProps extends Omit<ComponentProps<"section">, "chil
 
 const COLLAPSED_COUNT_CLASS_NAME = "shrink-0 text-xs font-normal text-text-subtlest";
 
-/** Separate `·` + value siblings so parent `gap-1.5` owns the 6px title→sep→count gaps. */
-function CollapsedSectionCount({ count }: Readonly<{ count: number | string }>) {
-	return (
-		<>
-			<span aria-hidden className={COLLAPSED_COUNT_CLASS_NAME}>
-				·
-			</span>
-			<span className={COLLAPSED_COUNT_CLASS_NAME}>{count}</span>
-		</>
-	);
+/** Collapsed count value; parent `gap-1.5` owns spacing from the title. */
+function CollapsedSectionCount({
+	count,
+}: Readonly<{ count: number | string }>) {
+	return <span className={COLLAPSED_COUNT_CLASS_NAME}>{count}</span>;
 }
 
 export function ArtifactPanePropertyRow({
@@ -129,7 +124,7 @@ const HEADER_ACTION_OPEN_REVEAL_SLOT_CLASSNAME =
 	"grid shrink-0 transition-[grid-template-columns] duration-normal ease-in-out motion-reduce:transition-none";
 
 /**
- * Collapsed summary (`· 2/3 passed…`) keeps a grid slot so open↔closed doesn't
+ * Collapsed summary (`2/3 passed…`) keeps a grid slot so open↔closed doesn't
  * reflow the title row while content height is animating.
  */
 const COLLAPSED_COUNT_SLOT_CLASSNAME =
@@ -148,7 +143,10 @@ function ArtifactPaneDisclosure({
 	onOpenChange,
 	open,
 	title,
-}: Readonly<Omit<ArtifactPaneSectionItem, "defaultOpen" | "id"> & { onOpenChange: (open: boolean) => void; open: boolean }>) {
+}: Readonly<Omit<ArtifactPaneSectionItem, "defaultOpen" | "id"> & {
+	onOpenChange: (open: boolean) => void;
+	open: boolean;
+}>) {
 	const prefersReducedMotion = useReducedMotion();
 	const headerActionOpenReveal = headerAction?.reveal === "open";
 	// Keep `reveal: "open"` actions mounted (0fr when collapsed) so collapse doesn't
@@ -226,8 +224,8 @@ function ArtifactPaneDisclosure({
 					}
 				>
 					<span
-						className="flex min-w-0 items-center gap-1.5 text-text-subtle group-hover/header:text-text group-has-[:focus-visible]/header:text-text"
-						style={{ font: token("font.heading.xxsmall") }}
+						className="flex min-w-0 items-center gap-1.5 text-xs font-medium leading-4 text-text-subtle group-hover/header:text-text group-has-[:focus-visible]/header:text-text"
+						data-slot="artifact-pane-section-title"
 					>
 						{title}
 						{count !== undefined ? (
@@ -238,7 +236,7 @@ function ArtifactPaneDisclosure({
 									open ? "grid-cols-[0fr] opacity-0" : "grid-cols-[1fr] opacity-100",
 								)}
 							>
-								<span className="flex min-w-0 items-center gap-1.5 overflow-hidden">
+								<span className="flex min-w-0 items-center overflow-hidden">
 									<CollapsedSectionCount count={count} />
 								</span>
 							</span>
@@ -254,13 +252,13 @@ function ArtifactPaneDisclosure({
 									open ? "grid-cols-[1fr]" : "grid-cols-[0fr]",
 								)}
 							>
-								<div className="min-w-0 overflow-hidden">
+								<div className="min-w-0 overflow-hidden has-[:focus-visible]:overflow-visible">
 									{headerActionControl}
 								</div>
 							</div>
 						) : (
 							<div className={HEADER_ACTION_HOVER_SLOT_CLASSNAME}>
-								<div className="min-w-0 overflow-hidden">
+								<div className="min-w-0 overflow-hidden has-[:focus-visible]:overflow-visible">
 									{headerActionControl}
 								</div>
 							</div>

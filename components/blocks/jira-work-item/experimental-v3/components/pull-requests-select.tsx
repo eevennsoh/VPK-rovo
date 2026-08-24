@@ -1,10 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import { toPanelPullRequestProps } from "@/components/blocks/jira-work-item/experimental-v3/components/pull-requests-panel";
-import { NAV_LINK_CLASS } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-section-nav";
 import {
 	getPullRequestIdentity,
 	JIRA_WORK_ITEM_CURRENT_USER,
@@ -22,9 +21,11 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { tabsExperimentalTriggerClass } from "@/components/ui/tabs-experimental";
 import { cn } from "@/lib/utils";
 
 const TRIGGER_LABEL = "Pull requests";
+const HOVER_CLOSE_DELAY_MS = 100;
 
 function findPullRequestEntry(
 	entries: readonly JiraActivityEventEntry[],
@@ -54,6 +55,28 @@ export function PullRequestsSelect({
 		[entries],
 	);
 	const pullRequestCount = orderedEntries.length;
+	const [open, setOpen] = useState(false);
+	const hoverOpenedRef = useRef(false);
+	const retainHoverOpenOnTriggerPressRef = useRef(false);
+	const hoverCloseTimeoutRef = useRef<number | null>(null);
+	const cancelHoverClose = useCallback(() => {
+		if (hoverCloseTimeoutRef.current === null) return;
+
+		window.clearTimeout(hoverCloseTimeoutRef.current);
+		hoverCloseTimeoutRef.current = null;
+	}, []);
+	const scheduleHoverClose = useCallback(() => {
+		if (!hoverOpenedRef.current) return;
+
+		cancelHoverClose();
+		hoverCloseTimeoutRef.current = window.setTimeout(() => {
+			hoverCloseTimeoutRef.current = null;
+			hoverOpenedRef.current = false;
+			setOpen(false);
+		}, HOVER_CLOSE_DELAY_MS);
+	}, [cancelHoverClose]);
+
+	useEffect(() => cancelHoverClose, [cancelHoverClose]);
 
 	if (pullRequestCount === 0) {
 		return null;
@@ -62,6 +85,26 @@ export function PullRequestsSelect({
 	const triggerAriaLabel = selectedIdentity
 		? TRIGGER_LABEL
 		: `${TRIGGER_LABEL}. ${pullRequestCount}`;
+	const handleOpenChange = (nextOpen: boolean) => {
+		if (!nextOpen && retainHoverOpenOnTriggerPressRef.current) {
+			retainHoverOpenOnTriggerPressRef.current = false;
+			hoverOpenedRef.current = false;
+			cancelHoverClose();
+			return;
+		}
+		if (!nextOpen) {
+			hoverOpenedRef.current = false;
+			cancelHoverClose();
+		}
+		setOpen(nextOpen);
+	};
+	const handleTriggerMouseEnter = () => {
+		cancelHoverClose();
+		if (open) return;
+
+		hoverOpenedRef.current = true;
+		setOpen(true);
+	};
 
 	return (
 		<div
@@ -69,6 +112,8 @@ export function PullRequestsSelect({
 			data-jira-work-item-resource-pull-requests-control
 		>
 			<Select
+				onOpenChange={handleOpenChange}
+				open={open}
 				value={selectedIdentity}
 				onValueChange={(nextIdentity) => {
 					if (typeof nextIdentity !== "string" || nextIdentity.length === 0) {
@@ -84,10 +129,15 @@ export function PullRequestsSelect({
 					aria-current={selectedIdentity ? "location" : undefined}
 					aria-label={triggerAriaLabel}
 					className={cn(
-						NAV_LINK_CLASS,
-						"data-placeholder:text-text-subtle [&>:last-child]:hidden",
+						tabsExperimentalTriggerClass,
+						"data-placeholder:text-text-subtle data-placeholder:hover:text-text data-[variant=none]:border-x-[6px]! data-[variant=none]:border-x-transparent! data-popup-open:rounded-md group-data-[header-variant=compact]/work-item-navigation:data-popup-open:rounded-b-none data-popup-open:text-text! [&>:last-child]:hidden",
 					)}
 					data-jira-work-item-resource-pull-requests
+					onMouseEnter={handleTriggerMouseEnter}
+					onMouseLeave={scheduleHoverClose}
+					onPointerDownCapture={() => {
+						retainHoverOpenOnTriggerPressRef.current = hoverOpenedRef.current;
+					}}
 					variant="none"
 				>
 					<SelectValue className="min-w-0">
@@ -96,11 +146,7 @@ export function PullRequestsSelect({
 								<span className="truncate">
 									{TRIGGER_LABEL}
 								</span>
-								<span
-									className={cn(
-										selectedIdentity ? "text-text-selected" : "text-text-subtlest",
-									)}
-								>
+								<span className="shrink-0 text-xs font-normal text-text-subtlest">
 									{pullRequestCount}
 								</span>
 							</>
@@ -114,6 +160,8 @@ export function PullRequestsSelect({
 					className="w-[min(28rem,var(--available-width))] max-w-[var(--available-width)] rounded-xl p-1"
 					data-jira-work-item-resource-pull-requests-menu
 					positionerClassName="z-[502]"
+					onMouseEnter={cancelHoverClose}
+					onMouseLeave={scheduleHoverClose}
 				>
 					<SelectGroup className="flex flex-col gap-0.5">
 						{orderedEntries.map((entry) => {

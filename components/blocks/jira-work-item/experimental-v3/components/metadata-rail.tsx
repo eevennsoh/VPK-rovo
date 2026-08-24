@@ -19,6 +19,7 @@ import {
 } from "@/app/contexts/context-work-item-modal";
 import { ArtifactPane, type ArtifactPaneSectionItem } from "@/components/blocks/artifact-pane";
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
+import { JiraInsightsEditorialPane } from "@/components/blocks/jira-insights/components/jira-insights-editorial-pane";
 import { getAttachmentLabel } from "@/components/blocks/jira-work-item/data/context-fixtures";
 import { METADATA_PEOPLE } from "@/components/blocks/jira-work-item/data/metadata-people";
 import type { ContextLinkedItem } from "@/components/blocks/jira-work-item/data/session-state";
@@ -34,6 +35,7 @@ import {
 	useJiraWorkItemState,
 } from "@/components/blocks/jira-work-item/experimental-v3/context-jira-work-item";
 import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental-v3/context-metadata-rail";
+import { useSectionNavigation } from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
 import { CONNECTED_REPOSITORY_COUNT } from "@/components/blocks/jira-work-item/experimental-v3/lib/development-repositories";
 import { getPullRequestIdentity } from "@/components/blocks/jira-work-item/experimental-v3/lib/jira-activity-adapter";
 import type {
@@ -43,7 +45,9 @@ import type {
 import { SmartLink, type SmartLinkItem } from "@/components/blocks/smart-link";
 import { SMART_LINK_MODAL_ACTIONS } from "@/components/blocks/smart-link/data/smart-link-actions";
 import { ProgressCircle } from "@/components/ui-custom/progress-circle";
+import { FOCUS_RING_TOP_CLIP_GUTTER } from "@/components/ui/focus-ring";
 import { StickyRowScrollFade } from "@/components/visual/scroll-mask";
+import { cn } from "@/lib/utils";
 
 const PullRequestContextRail = dynamic(
 	() => import("@/components/blocks/jira-work-item/experimental-v3/components/pull-request-detail/pull-request-context-rail")
@@ -221,6 +225,7 @@ export function MetadataRail({
 	const { workItem } = useJiraWorkItemMeta();
 	const { contextResources, metadata: draft } = useJiraWorkItemState();
 	const actions = useJiraWorkItemActions();
+	const { insightsSelected } = useSectionNavigation();
 	const {
 		detailsShowMore,
 		openSectionIds,
@@ -315,7 +320,10 @@ export function MetadataRail({
 				ref={metadataBodyScrollRef}
 				// overflow-x-hidden: body owns vertical scroll only; long lines must
 				// wrap/truncate via min-w-0 rather than grow a cross-axis bar.
-				className="relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-none @[860px]/agentlayout:pb-8"
+				className={cn(
+					"relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-none @[860px]/agentlayout:pb-8",
+					FOCUS_RING_TOP_CLIP_GUTTER,
+				)}
 				data-jira-work-item-scroll-region
 				style={metadataBodyScrollMaskStyle}
 			>
@@ -326,8 +334,8 @@ export function MetadataRail({
 				>
 					{/* Kept mounted so collapsible section state survives opening a PR. */}
 					<div
-						hidden={pullRequestSelected}
-						inert={pullRequestSelected ? true : undefined}
+						hidden={pullRequestSelected || insightsSelected}
+						inert={pullRequestSelected || insightsSelected ? true : undefined}
 					>
 						<ArtifactPane
 							aria-label="Work item details"
@@ -373,6 +381,9 @@ export function MetadataRail({
 							]}
 						/>
 					</div>
+					{!pullRequestSelected && insightsSelected ? (
+						<JiraInsightsEditorialPane />
+					) : null}
 					{selectedPullRequestEntry ? (
 						<PullRequestContextRail
 							currentReviewerStatus={currentReviewerStatus}

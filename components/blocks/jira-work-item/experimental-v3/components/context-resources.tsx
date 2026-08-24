@@ -14,6 +14,7 @@ import { AgentFilledSummaryRow } from "@/components/blocks/agent/components/agen
 import { AttachmentsPopover } from "@/components/blocks/jira-work-item/experimental-v3/components/attachments-popover";
 import {
 	ContextTitleActions,
+	ContextTitleActionsSubmenu,
 	type CodingAgentId,
 } from "@/components/blocks/jira-work-item/experimental-v3/components/context-title-actions";
 import { StatusPill } from "@/components/blocks/jira-work-item/experimental-v3/components/detail-field-editors";
@@ -21,6 +22,7 @@ import { LinkedWorkItemsPopover } from "@/components/blocks/jira-work-item/exper
 import { SubtasksPopover } from "@/components/blocks/jira-work-item/experimental-v3/components/subtasks-popover";
 import {
 	useJiraWorkItemActions,
+	useJiraWorkItemMeta,
 	useJiraWorkItemState,
 } from "@/components/blocks/jira-work-item/experimental-v3/context-jira-work-item";
 import { Button } from "@/components/ui/button";
@@ -29,6 +31,7 @@ import {
 	DropdownMenuContent,
 	DropdownMenuGroup,
 	DropdownMenuItem,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
@@ -48,18 +51,24 @@ interface ContextResourceAction {
 }
 
 interface ContextResourcesProps {
+	compact?: boolean;
 	outputs?: readonly string[];
 	primaryCodingAgentId?: CodingAgentId;
 }
 
 export function ContextResources({
+	compact = false,
 	outputs = [],
 	primaryCodingAgentId,
 }: Readonly<ContextResourcesProps>) {
+	const { initialPreset } = useJiraWorkItemMeta();
 	const { metadata, planner } = useJiraWorkItemState();
 	const actions = useJiraWorkItemActions();
 	const hasPlanner = planner.status !== "inactive" && planner.status !== "applied";
 	const [activeResourceAction, setActiveResourceAction] = useState<ContextResourceActionId | null>(null);
+	const [selectedAgentId, setSelectedAgentId] = useState<CodingAgentId | null>(
+		primaryCodingAgentId ?? (initialPreset === "blank" ? null : "claude-code"),
+	);
 	const resources: readonly ContextResourceAction[] = [
 		{
 			id: "attachments",
@@ -89,7 +98,10 @@ export function ContextResources({
 	const closeResourceAction = () => setActiveResourceAction(null);
 
 	return (
-		<div className="mt-3">
+		<div
+			className={cn(compact ? "w-max" : "mt-3")}
+			data-jira-work-item-resource-row-shell
+		>
 			{/*
 			 * Sits in the dialog header band under the title, so it spans the full
 			 * width rather than only the description column. No
@@ -106,22 +118,47 @@ export function ContextResources({
 				data-jira-work-item-resource-row
 			>
 				<div
-					className="@container/resource-row flex flex-wrap items-center gap-2 *:focus-visible:relative *:focus-visible:z-10"
+					className={cn(
+						"@container/resource-row flex items-center gap-2 *:focus-visible:relative *:focus-visible:z-10",
+						compact ? "flex-nowrap" : "flex-wrap",
+					)}
 					data-jira-work-item-resource-row-content
+					style={compact ? { containerType: "normal" } : undefined}
 				>
 					<StatusPill
+						compact={compact}
 						onChange={(next) => actions.updateMetadata({ status: next })}
 						value={metadata.status}
 					/>
-					<ContextTitleActions primaryAgentId={primaryCodingAgentId} />
+					{compact ? null : (
+						<ContextTitleActions
+							onSelectedAgentIdChange={setSelectedAgentId}
+							selectedAgentId={selectedAgentId}
+						/>
+					)}
 					<div className="relative inline-flex">
 						<DropdownMenu>
 							<DropdownMenuTrigger
-								render={<Button aria-label="Add to work item" size="icon" type="button" variant="outline" />}
+								render={(
+									<Button
+										aria-label="Add to work item"
+										size={compact ? "icon-compact" : "icon"}
+										type="button"
+										variant="outline"
+									/>
+								)}
 							>
 								<AddIcon label="" size="small" />
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="start" positionerClassName="z-[502]">
+								{compact ? (
+									<>
+										<ContextTitleActionsSubmenu
+											onSelectedAgentIdChange={setSelectedAgentId}
+										/>
+										<DropdownMenuSeparator />
+									</>
+								) : null}
 								<DropdownMenuGroup>
 									{resources.map((resource) => (
 										<DropdownMenuItem

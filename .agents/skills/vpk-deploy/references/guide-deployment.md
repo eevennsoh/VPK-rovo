@@ -1,535 +1,218 @@
-# Deployment Guide
+# Deployment guide
 
-Complete guide for deploying the VPK prototype to Atlassian Micros platform with seamless local-to-deployment workflow.
+Use this guide for first-time Micros setup or when local deployment
+configuration no longer matches the remote service. For a routine redeploy with
+a valid `.deploy.local`, use `pnpm run deploy:micros`.
 
----
+## Runtime contract
 
-## Architecture & Workflow Overview
+VPK has one source tree and two runtime shapes:
 
-### The Zero-Change Workflow
+| Mode | Frontend | API |
+| --- | --- | --- |
+| Local development | Next.js development server | Next.js route adapters proxy to Express |
+| Micros | Static export served by Express | Express owns `/api/*`, SSE, and WebSockets |
 
-The project uses a **single codebase** that works seamlessly in two modes **without requiring code changes**:
+The production image is `backend/Dockerfile`:
 
-| Mode                  | Frontend      | Backend       | Connection                                       |
-| --------------------- | ------------- | ------------- | ------------------------------------------------ |
-| **Local Development** | Next.js :3000 | Express :8080 | Next.js API routes proxy requests                |
-| **Production**        | Static files  | Express :8080 | Express serves static files + handles API routes |
+- Node 24 installs production dependencies from the root pnpm workspace and
+  `pnpm-lock.yaml`.
+- `corepack pnpm run build:export` creates `out/` before the Docker build.
+- The image copies `out/` to `backend/public`; it does not build Next.js
+  inside Docker.
 
-**Key Insight:** Both environments use `/api/*` relative paths. The difference is:
+Do not remove App Router routes by hand for an export. The checked-in
+`scripts/build-static-export.mjs` wrapper temporarily moves runtime-only
+routes and restores them even when the build fails or is interrupted.
 
-- **Local dev**: Next.js API routes intercept and proxy to backend
-- **Production**: Express backend handles them directly (same domain)
+## Preconditions
 
-### How It Works: Relative Paths
+- Docker Desktop with buildx support.
+- Atlas CLI installed and authenticated.
+- Docker identity token with access to `docker.atl-paas.net`.
+- A lowercase, hyphenated service name no longer than 26 characters.
+- One supported environment:
 
-**Local Development Flow:**
+| Micros environment | AWS region | URL suffix |
+| --- | --- | --- |
+| `pdev-west2` | `us-west-2` | `us-west-2.platdev.atl-paas.net` |
+| `pdev-apse2` | `ap-southeast-2` | `ap-southeast-2.platdev.atl-paas.net` |
 
-```
-Browser
-  ↓ http://localhost:3000
-Next.js Dev Server (:3000)
-  ↓ /api/chat-sdk request
-API Route Proxy (app/api/chat-sdk/route.ts)
-  ↓ forwards to http://localhost:8080/api/chat-sdk
-Express Backend (:8080)
-  ↓ authenticates with ASAP
-AI Gateway
-```
+Micros stashes are environment-specific. Switching environments requires
+restashing every required variable.
 
-**Production Deployment Flow:**
+## Inspect before changing configuration
 
-```
-Browser
-  ↓ https://your-service.platdev.atl-paas.net
-Express Server (:8080)
-  ├─ GET / → Serves static HTML from /app/public
-  ├─ GET /assets/* → Serves static assets
-  └─ POST /api/chat-sdk → API handler in server.js
-       ↓ authenticates with ASAP
-     AI Gateway
-```
-
-**Zero Code Changes:** Both use the same relative paths and ASAP authentication!
-
----
-
-## Prerequisites
-
-1. **Docker Desktop** with buildx support (for multi-platform builds)
-2. **Atlas CLI** installed and authenticated
-3. **Access to docker.atl-paas.net** registry
-4. **ASAP credentials** for AI Gateway (see SETUP_GUIDE.md)
-5. **API Key** from https://packages.atlassian.com/ for Docker registry auth
-6. **Service Name Decision**
-   - Maximum 26 characters
-   - Use lowercase and hyphens only
-   - Examples: `my-prototype`, `chat-demo`, `ai-assistant`
-   - Your service URL will be: `<service-name>.us-west-2.platdev.atl-paas.net`
-
----
-
-## Quick Start Reference
-
-### First-Time Deployment (New Service)
+Read `.deploy.local` when it exists, but confirm its values against Micros:
 
 ```bash
-# 1. Choose service name (≤26 chars)
-SERVICE_NAME="my-awesome-prototype"
-
-# 2. Create service
-atlas micros service create --service=$SERVICE_NAME --no-sd
-
-# 3. Authenticate with Docker
-docker login docker.atl-paas.net  # Use StaffID + API Key
-
-# 4. Build Docker image
-VERSION=1.0.1
-docker buildx build --platform linux/amd64 --no-cache \
-  -t docker.atl-paas.net/$SERVICE_NAME:app-${VERSION} \
-  -f backend/Dockerfile . --load
-
-# 5. Push to registry
-docker push docker.atl-paas.net/$SERVICE_NAME:app-${VERSION}
-
-# 6. Deploy
-export VERSION=1.0.1
-atlas micros service deploy \
-  --service=$SERVICE_NAME \
-  --env=pdev-west2 \
-  --file=service-descriptor.yml
+atlas micros service show -s "$SERVICE_NAME" -e "$ENV"
+atlas micros stash list -s "$SERVICE_NAME" -e "$ENV"
 ```
 
-### Update Existing Deployment
+Use names and counts only when reporting stash state; never print secret
+values. `No such service` or `Unknown service` means the service still needs
+to be created even when local files contain its name.
+
+## Configure a new or recovered service
+
+### 1. Local deployment configuration
+
+Create ignored `.deploy.local` with the service identity and Docker
+credentials:
 
 ```bash
-# Just increment version and redeploy
-VERSION=1.0.2
-docker buildx build --platform linux/amd64 --no-cache \
-  -t docker.atl-paas.net/<your-service-name>:app-${VERSION} \
-  -f backend/Dockerfile . --load
-docker push docker.atl-paas.net/<your-service-name>:app-${VERSION}
-export VERSION=${VERSION}
-atlas micros service deploy \
-  --service=<your-service-name> \
-  --env=pdev-west2 \
-  --file=service-descriptor.yml
+SERVICE_NAME="your-service-name"
+ENV="pdev-west2"
+DOCKER_USERNAME="your-staff-id"
+DOCKER_PASSWORD="your-docker-identity-token"
 ```
 
-### Verify Deployment
+Never commit this file or echo `DOCKER_PASSWORD`.
+
+### 2. Service descriptor
+
+Replace service-name placeholders in `service-descriptor.yml`, including the
+image namespace and SSM paths. A full backend deployment needs these variables
+in the descriptor and in the selected environment's stash:
+
+```text
+AI_GATEWAY_URL
+AI_GATEWAY_USE_CASE_ID
+AI_GATEWAY_CLOUD_ID
+AI_GATEWAY_USER_ID
+ASAP_KID
+ASAP_ISSUER
+ASAP_PRIVATE_KEY
+OPENAI_REALTIME_MODEL
+OPENAI_REALTIME_WS_URL
+OPENAI_REALTIME_VOICE
+VPK_RUNTIME_ADMIN_TOKEN
+```
+
+`VPK_RUNTIME_ADMIN_TOKEN` is mandatory in production. Generate a unique,
+high-entropy value, stash it, and unset the local shell variable after use:
 
 ```bash
-# Get service URL
-atlas micros service show --service=<your-service-name> --env=pdev-west2
-
-# Test health endpoint
-curl https://<your-service-name>.us-west-2.platdev.atl-paas.net/api/health
-
-# Expected response (all values must show "SET")
-{
-  "status": "OK",
-  "message": "Backend server is working!",
-  "envCheck": {
-    "AI_GATEWAY_URL": "SET",
-    "AI_GATEWAY_USE_CASE_ID": "SET",
-    "AI_GATEWAY_CLOUD_ID": "SET",
-    "AI_GATEWAY_USER_ID": "SET",
-    "ASAP_PRIVATE_KEY": "SET"
-  }
-}
+VPK_RUNTIME_ADMIN_TOKEN="$(openssl rand -hex 32)"
+atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" \
+  -k VPK_RUNTIME_ADMIN_TOKEN -v "$VPK_RUNTIME_ADMIN_TOKEN"
+unset VPK_RUNTIME_ADMIN_TOKEN
 ```
 
----
+Realtime model, URL, and voice defaults may exist in local development, but
+stash explicit production values so the deployment is reproducible.
 
-## Path A: First-Time Deployment (New Service)
-
-### Step 1: Choose Service Name
-
-Pick a name ≤26 characters. Your URL will be: `https://<service-name>.us-west-2.platdev.atl-paas.net`
-
-### Step 2: Update service-descriptor.yml
-
-**CRITICAL:** Replace ALL instances of `YOUR-SERVICE-NAME` with your actual service name:
-
-```yaml
-compose:
-  app:
-    image: docker.atl-paas.net/YOUR-SERVICE-NAME # Line 11
-    tag: app-${VERSION}
-    environment:
-      AI_GATEWAY_URL: ((ssm:/YOUR-SERVICE-NAME/AI_GATEWAY_URL)) # Lines 16-22
-      # ... etc
-```
-
-Also update:
-
-- Line 7: `email: your-email@atlassian.com`
-
-### Step 3: Create Service
+### 3. Create the Micros service
 
 ```bash
-atlas micros service create --service=<your-service-name> --no-sd
+atlas micros service create --service="$SERVICE_NAME" --no-sd
 ```
 
-The `--no-sd` flag skips interactive prompts. We'll use our own `service-descriptor.yml`.
+Creating an already-existing service is not a recovery step. Inspect it first.
 
-### Step 4: Authenticate with Docker Registry
+### 4. Stash variables
 
-**First time only:**
+Load credential values from their authoritative local stores, then use
+`atlas micros stash set` without printing them. Use a JSON file for the
+multiline ASAP private key:
 
 ```bash
-# Login to Docker registry
-docker login docker.atl-paas.net
-# Username: Your StaffID (e.g., esoh - NOT your email)
-# Password: API Key from https://packages.atlassian.com/
+(
+  set -e
+  umask 077
+  STASH_FILE="$(mktemp)"
+  trap 'rm -f -- "$STASH_FILE"' EXIT
+  trap 'exit 1' HUP INT TERM
+  jq '{ASAP_PRIVATE_KEY: .privateKey}' .asap-config > "$STASH_FILE"
+  atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" -f "$STASH_FILE"
+)
+```
 
-# Grant push permissions
+Set the remaining variables individually:
+
+```bash
+atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" -k AI_GATEWAY_URL -v "$AI_GATEWAY_URL"
+atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" -k AI_GATEWAY_USE_CASE_ID -v "$AI_GATEWAY_USE_CASE_ID"
+atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" -k AI_GATEWAY_CLOUD_ID -v "$AI_GATEWAY_CLOUD_ID"
+atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" -k AI_GATEWAY_USER_ID -v "$AI_GATEWAY_USER_ID"
+atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" -k ASAP_KID -v "$ASAP_KID"
+atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" -k ASAP_ISSUER -v "$ASAP_ISSUER"
+atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" -k OPENAI_REALTIME_MODEL -v "$OPENAI_REALTIME_MODEL"
+atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" -k OPENAI_REALTIME_WS_URL -v "$OPENAI_REALTIME_WS_URL"
+atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" -k OPENAI_REALTIME_VOICE -v "$OPENAI_REALTIME_VOICE"
+```
+
+Verify names after setting them:
+
+```bash
+atlas micros stash list -s "$SERVICE_NAME" -e "$ENV"
+```
+
+Stop if a required name is absent. Do not assume a stash from the other pdev
+environment is available.
+
+### 5. Authenticate Docker
+
+```bash
 atlas packages permission grant
+atlas packages secrets -t docker -i "$DOCKER_PASSWORD"
 ```
 
-### Step 5: Set Environment Variables
+The permission command updates registry authorization. The secrets command
+updates local Docker credentials; they solve different problems.
 
-**⚠️ CRITICAL - DO NOT SKIP THIS STEP!**
+## Validate and deploy
 
-You MUST set all environment variables BEFORE deploying.
+Run the static contract check when Docker is intentionally unavailable:
 
 ```bash
-ENV=pdev-west2
-SERVICE_NAME=<your-service-name>
-
-atlas micros stash set -s $SERVICE_NAME -e $ENV \
-  -k AI_GATEWAY_URL \
-  -v "https://ai-gateway.us-east-1.staging.atl-paas.net/v1/openai/v1/chat/completions"
-
-atlas micros stash set -s $SERVICE_NAME -e $ENV \
-  -k AI_GATEWAY_USE_CASE_ID \
-  -v "your-use-case-id"
-
-atlas micros stash set -s $SERVICE_NAME -e $ENV \
-  -k AI_GATEWAY_CLOUD_ID \
-  -v "internal-dummy-your-use-case-id"
-
-# REPLACE with YOUR email
-atlas micros stash set -s $SERVICE_NAME -e $ENV \
-  -k AI_GATEWAY_USER_ID \
-  -v "your-email@atlassian.com"
-
-# Set ASAP credentials from your .asap-config
-atlas micros stash set -s $SERVICE_NAME -e $ENV \
-  -k ASAP_KID \
-  -v "your-use-case-id/your-timestamp"
-
-atlas micros stash set -s $SERVICE_NAME -e $ENV \
-  -k ASAP_ISSUER \
-  -v "your-use-case-id"
+bash .agents/skills/vpk-deploy/scripts/deploy-check.sh --check-only
 ```
 
-For ASAP private key (multiline key - requires special handling):
+Before a real deployment, run the full preflight:
 
 ```bash
-# Method 1: From .asap-config file (recommended)
-# jq without -r flag preserves JSON escaping (quotes and \n)
-cat > /tmp/asap_stash.json << EOF
-{
-  "ASAP_PRIVATE_KEY": $(cat .asap-config | jq '.privateKey')
-}
-EOF
-
-atlas micros stash set -s $SERVICE_NAME -e $ENV -f /tmp/asap_stash.json
-rm /tmp/asap_stash.json
+bash .agents/skills/vpk-deploy/scripts/deploy-check.sh
 ```
+
+Then use the canonical script:
 
 ```bash
-# Method 2: From .env.local (if .asap-config not available)
-source .env.local
-ESCAPED_KEY=$(echo "$ASAP_PRIVATE_KEY" | awk '{printf "%s\\n", $0}' | sed 's/\\n$//')
-printf '{"ASAP_PRIVATE_KEY": "%s"}' "$ESCAPED_KEY" > /tmp/asap_stash.json
-
-atlas micros stash set -s $SERVICE_NAME -e $ENV -f /tmp/asap_stash.json
-rm /tmp/asap_stash.json
+.agents/skills/vpk-deploy/scripts/deploy.sh "$SERVICE_NAME" 1.0.1 "$ENV"
 ```
 
-> **Why `jq` works:** Using `jq '.privateKey'` (without `-r` flag) outputs the key with proper JSON escaping - surrounding quotes and `\n` for newlines. The server converts these back at runtime.
+It requires an explicit Docker-tag-safe version, checks that the descriptor
+image and every SSM path match `SERVICE_NAME`, and verifies the service and all
+required stashes before building or pushing. A service that exists but has no
+stack is ready for its initial deployment. The script then runs
+`corepack pnpm run build:export`, requires `out/index.html`, builds a
+`linux/amd64` image, pushes it, and invokes Micros. For the exact underlying
+commands, read
+[`guide-manual-deployment.md`](guide-manual-deployment.md).
 
-**Verification:** Before proceeding, verify all variables are set:
+## Verify
+
+Follow the deployment ID returned by Micros until it reaches a final state:
 
 ```bash
-# Use 'stash list' to view all variables (there is no 'stash get' command)
-atlas micros stash list -s $SERVICE_NAME -e $ENV
+atlas micros events -s "$SERVICE_NAME" -e "$ENV" -d "<deployment-id>"
 ```
 
-### Step 6: Build Docker Image
+Map the environment to its region and verify the deployed runtime:
 
 ```bash
-VERSION=1.0.1
-docker buildx build --platform linux/amd64 --no-cache \
-  -t docker.atl-paas.net/<your-service-name>:app-${VERSION} \
-  -f backend/Dockerfile . --load
+node .agents/skills/vpk-deploy/scripts/verify-runtime.mjs \
+  "https://$SERVICE_NAME.<region>.platdev.atl-paas.net"
 ```
 
-### Step 7: Push Docker Image
-
-```bash
-docker push docker.atl-paas.net/<your-service-name>:app-${VERSION}
-```
-
-### Step 8: Deploy
-
-```bash
-export VERSION=1.0.1
-atlas micros service deploy \
-  --service=<your-service-name> \
-  --env=pdev-west2 \
-  --file=service-descriptor.yml
-```
-
-**First deployment takes 10-15 minutes** (provisioning EC2 instance). Subsequent deployments take ~30 seconds.
-
-### Step 9: Verify
-
-```bash
-# Get your service URL
-atlas micros service show --service=<your-service-name> --env=pdev-west2
-
-# Test health endpoint (replace with your URL)
-curl https://<your-service-name>.us-west-2.platdev.atl-paas.net/api/health
-```
-
----
-
-## Path B: Update Existing Service
-
-### Step 1: Increment Version & Build
-
-```bash
-VERSION=1.0.2  # Increment from previous version
-docker buildx build --platform linux/amd64 --no-cache \
-  -t docker.atl-paas.net/<your-service-name>:app-${VERSION} \
-  -f backend/Dockerfile . --load
-```
-
-### Step 2: Push
-
-```bash
-docker push docker.atl-paas.net/<your-service-name>:app-${VERSION}
-```
-
-### Step 3: Deploy
-
-```bash
-export VERSION=1.0.2
-atlas micros service deploy \
-  --service=<your-service-name> \
-  --env=pdev-west2 \
-  --file=service-descriptor.yml
-```
-
----
-
-## Key Files
-
-| File                        | Purpose                                                                     |
-| --------------------------- | --------------------------------------------------------------------------- |
-| `backend/Dockerfile`        | Multi-stage: builds Next.js (Node 20) → copies to Express container         |
-| `backend/server.js`         | Express server: serves static files + API routes                            |
-| `backend/package-lock.json` | Required for `npm ci` in Docker (generate with `cd backend && npm install`) |
-| `service-descriptor.yml`    | Micros deployment config (EC2, Docker image, env vars)                      |
-| `next.config.ts`            | Next.js config with conditional `output: "export"` for production           |
-| `.env.local`                | Local dev credentials (ASAP keys, AI Gateway config)                        |
-
----
-
-## Troubleshooting
-
-### Build Issues
-
-#### Build fails with TypeScript errors
-
-To verify locally before Docker build:
-
-```bash
-pnpm run build
-```
-
-#### "npm ci" fails in Docker - missing package-lock.json
-
-The backend folder needs a `package-lock.json` file:
-
-```bash
-cd backend && npm install && cd ..
-```
-
-#### "Node.js version >=20.9.0 required"
-
-Update `backend/Dockerfile` to use Node 20:
-
-```dockerfile
-FROM node:20-alpine AS builder
-# ... and also the runtime stage:
-FROM node:20-alpine
-```
-
-#### "scripts/build-export.sh not found"
-
-Use the updated Dockerfile that uses inline build commands instead of external scripts:
-
-```dockerfile
-RUN rm -rf app/api && \
-    NEXT_OUTPUT=export pnpm run build
-```
-
-#### Turbopack still processes moved API routes
-
-Don't use `mv app/api app/api.bak` - Turbopack will still try to process the `.bak` folder.
-Use `rm -rf app/api` to completely remove the folder during build.
-
-#### "Can't resolve @/components/..." - file casing mismatch
-
-macOS is case-insensitive, so `Providers.tsx` and `providers.tsx` appear identical locally.
-Docker runs on Linux (case-sensitive), so mismatches fail.
-
-**Solution:** Check that file names match their imports exactly. If needed, delete and recreate the file with correct casing.
-
-#### "Cannot find module 'express'" - pnpm symlink issue
-
-**Symptom:** Health check fails with 400 error. Splunk logs show:
-
-```
-Error: Cannot find module 'express'
-```
-
-**Root Cause:** The `backend/package-lock.json` was generated by pnpm and contains symlinks instead of resolved packages. When you run `npm install` in a pnpm workspace, npm detects pnpm's structure and creates a lockfile with entries like:
-
-```json
-"node_modules/express": {
-  "resolved": "../node_modules/.pnpm/express@4.22.1/node_modules/express",
-  "link": true
-}
-```
-
-When `npm ci` runs in Docker, these symlinks point to paths that don't exist because pnpm's `node_modules/.pnpm/` directory isn't copied to the container.
-
-**Solution:** Regenerate `package-lock.json` using npm in isolation:
-
-```bash
-cd backend
-rm -rf node_modules package-lock.json
-npm install
-```
-
-This creates a proper npm lockfile with resolved registry URLs:
-
-```json
-"node_modules/express": {
-  "version": "4.21.2",
-  "resolved": "https://registry.npmjs.org/express/-/express-4.21.2.tgz",
-  "integrity": "sha512-..."
-}
-```
-
-**Prevention:**
-
-- Always use `npm install` (not pnpm) when working in the `backend/` directory
-- The backend is a separate npm project that runs independently in Docker
-- If you see `"link": true` entries in `backend/package-lock.json`, regenerate it
-
-### Service name too long error
-
-Maximum 26 characters. Pick a shorter name and start over.
-
-### "Unknown service" when setting environment variables
-
-The service must exist first. Run:
-
-```bash
-atlas micros service create --service=<your-service-name> --no-sd
-```
-
-### Health check shows "MISSING" for environment variables
-
-**This means environment variables weren't set before deployment.**
-
-**Solution:**
-
-1. Set the missing variables (see Step 5)
-2. **Redeploy with a new version** (the running container won't pick up changes automatically)
-
-### Chat returns 401 Unauthorized or "Principal not whitelisted"
-
-ASAP authentication issue. Common fixes:
-
-- **ASAP principal not whitelisted** - Run:
-  ```bash
-  atlas ml aigateway usecase auth add -i YOUR-USE-CASE-ID -e stg-east -p YOUR-USE-CASE-ID -t ASAP_ISSUER
-  ```
-  Then wait 5-10 minutes for changes to propagate
-- **ASAP key not saved to keyserver** - Run:
-  ```bash
-  atlas asap key save --key YOUR-USE-CASE-ID/001 --service YOUR-USE-CASE-ID --env staging --file .asap-config
-  ```
-
-### Push Issues
-
-#### "User is unauthorized to upload"
-
-Docker registry authorization failure. Try these steps in order:
-
-1. **Re-authenticate with Docker:**
-
-   ```bash
-   docker login docker.atl-paas.net
-   # Username: Your StaffID (e.g., esoh - NOT your email)
-   # Password: API Key from https://packages.atlassian.com/
-   ```
-
-2. **Grant permissions (if first time):**
-
-   ```bash
-   atlas packages permission grant
-   ```
-
-3. **Wait and retry:** Permission grants may take 1-2 minutes to propagate.
-
-### Deployment fails: "Exec format error"
-
-Wrong platform architecture. You must build for `linux/amd64`:
-
-```bash
-docker buildx build --platform linux/amd64 --no-cache \
-  -t docker.atl-paas.net/<your-service-name>:app-1.0.7 \
-  -f backend/Dockerfile . --load
-```
-
-### Docker push unauthorized
-
-```bash
-docker login docker.atl-paas.net  # Use StaffID + API Key
-atlas packages permission grant
-```
-
-### Check logs
-
-Splunk URL provided in deployment output, or:
-
-```
-`micros_<service-name>` env=pdev-west2 m.t=application (error OR "AI Gateway")
-```
-
----
-
-## Success Criteria
-
-✅ **Deployment successful when:**
-
-- Health check returns all "SET" values
-- Chat API streams responses in curl test
-- Browser shows images loading
-- No errors in browser console or Splunk logs
-
----
-
-## Additional Resources
-
-- **Micros Documentation**: https://go.atlassian.com/micros
-- **Troubleshooting Guide**: https://go.atlassian.com/mdt
-- **Help Channel**: #help-micros on Slack
-- **AI Gateway**: #help-ai-gateway on Slack
+A backend-backed prototype is complete only when:
+
+- The Micros stack reaches a stable success state.
+- The main route, static assets, fonts, and `/api/health` return successfully.
+- Changed AI, voice, SSE, WebSocket, or API interactions work in the deployed
+  browser.
+- Browser console and server logs show no new errors.
+
+The service URL requires Atlassian VPN. If a command fails, stop and diagnose
+with [`troubleshooting.md`](troubleshooting.md) instead of retrying blindly.

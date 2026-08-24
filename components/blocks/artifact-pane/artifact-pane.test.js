@@ -33,6 +33,7 @@ function readProjectFile(relativePath) {
 test("Artifact Pane owns independently collapsible sections", () => {
 	assert.match(BLOCK_SOURCE, /export function ArtifactPane\(/u);
 	assert.match(BLOCK_SOURCE, /sections: readonly ArtifactPaneSectionItem\[\];/u);
+	assert.doesNotMatch(BLOCK_SOURCE, /showCountSeparators/u);
 	assert.match(BLOCK_SOURCE, /showSeparators\?: boolean;/u);
 	assert.match(BLOCK_SOURCE, /borderless \? "overflow-visible bg-transparent" : "overflow-hidden border border-border"/u);
 	assert.match(
@@ -44,19 +45,24 @@ test("Artifact Pane owns independently collapsible sections", () => {
 		/style=\{\{ backgroundColor: token\("elevation\.surface"\), \.\.\.style \}\}/u,
 	);
 	assert.match(BLOCK_SOURCE, /<Collapsible onOpenChange=\{onOpenChange\} open=\{open\}>/u);
-	assert.match(BLOCK_SOURCE, /function CollapsedSectionCount\(\{ count \}: Readonly<\{ count: number \| string \}>\)/u);
-	// All counts (numbers, ratios, labeled like "2/3 passed") use separate · + value siblings.
+	assert.match(BLOCK_SOURCE, /function CollapsedSectionCount\(\{[\s\S]*count: number \| string/u);
+	// Counts sit beside the title with gap-1.5 — no unicode middle-dot sibling.
 	assert.doesNotMatch(BLOCK_SOURCE, /typeof count === "number" \|\| \/\^\\d\+\(\?:\\\/\\d\+\)\?\$\/u\.test\(count\)/u);
-	assert.match(BLOCK_SOURCE, /<span aria-hidden className=\{COLLAPSED_COUNT_CLASS_NAME\}>[\s\S]*·[\s\S]*<\/span>/u);
+	assert.doesNotMatch(BLOCK_SOURCE, /function CollapsedSectionCount[\s\S]*·/u);
 	assert.match(BLOCK_SOURCE, /<span className=\{COLLAPSED_COUNT_CLASS_NAME\}>\{count\}<\/span>/u);
+	assert.match(BLOCK_SOURCE, /className="flex min-w-0 items-center gap-1\.5 text-xs font-medium leading-4 text-text-subtle/u);
+	assert.match(BLOCK_SOURCE, /data-slot="artifact-pane-section-title"/u);
+	assert.doesNotMatch(BLOCK_SOURCE, /font\.heading\.xxsmall/u);
 	assert.doesNotMatch(BLOCK_SOURCE, /return `· \$\{count\}`/u);
 	assert.doesNotMatch(BLOCK_SOURCE, /labeled counts[\s\S]*stay verbatim|render as provided/u);
 	// Collapsed count stays mounted in a 0fr→1fr slot so open↔closed doesn't reflow the title.
-	assert.match(BLOCK_SOURCE, /count !== undefined \? \([\s\S]*CollapsedSectionCount count=\{count\}/u);
+	assert.match(
+		BLOCK_SOURCE,
+		/count !== undefined \? \([\s\S]*<CollapsedSectionCount count=\{count\} \/>/u,
+	);
 	assert.match(BLOCK_SOURCE, /COLLAPSED_COUNT_SLOT_CLASSNAME =[\s\S]*grid min-w-0 transition-\[grid-template-columns,opacity\]/u);
 	assert.match(BLOCK_SOURCE, /open \? "grid-cols-\[0fr\] opacity-0" : "grid-cols-\[1fr\] opacity-100"/u);
 	assert.doesNotMatch(BLOCK_SOURCE, /!open && count !== undefined \? <CollapsedSectionCount count=\{count\} \/> : null/u);
-	assert.match(BLOCK_SOURCE, /className="flex min-w-0 items-center gap-1\.5 text-text-subtle/u);
 	assert.match(BLOCK_SOURCE, /openSectionIds\?: ReadonlySet<string>/u);
 	assert.match(BLOCK_SOURCE, /onOpenSectionIdsChange\?: \(openSectionIds: ReadonlySet<string>\) => void/u);
 	assert.match(BLOCK_SOURCE, /const isControlled = openSectionIdsProp !== undefined/u);
@@ -69,6 +75,7 @@ test("Artifact Pane owns independently collapsible sections", () => {
 		/const next = apply\(uncontrolledOpenSectionIds\);[\s\S]*setUncontrolledOpenSectionIds\(next\);[\s\S]*onOpenSectionIdsChange\?\.\(next\)/u,
 	);
 	assert.match(BLOCK_SOURCE, /new Set\(sections\.filter\(\(section\) => section\.defaultOpen\)/u);
+	assert.doesNotMatch(BLOCK_SOURCE, /showCountSeparator/u);
 	assert.match(BLOCK_SOURCE, /showSeparators = true/u);
 	// Separators stay mounted and collapse via grid-rows so they don't snap with content height.
 	assert.match(BLOCK_SOURCE, /showSeparators && index > 0 \? \([\s\S]*SECTION_SEPARATOR_SLOT_CLASSNAME[\s\S]*open \|\| previousOpen \? "grid-rows-\[1fr\]" : "grid-rows-\[0fr\]"[\s\S]*className="px-3 py-1\.5"[\s\S]*<Separator \/>/u);
@@ -128,6 +135,51 @@ test("Artifact Pane owns independently collapsible sections", () => {
 	assert.doesNotMatch(BLOCK_SOURCE, /Tabs|TabTrigger|defaultTab/u);
 });
 
+test("Artifact Pane disclosure triggers have no unicode middle-dot in visible or accessible text", () => {
+	const v3RailSource = readProjectFile(
+		"components/blocks/jira-work-item/experimental-v3/components/pull-request-detail/pull-request-details-rail.tsx",
+	);
+	const v3ChecksListSource = readProjectFile(
+		"components/blocks/pull-request/components/pull-request-checks-list.tsx",
+	);
+	const v3MetadataRailSource = readProjectFile(
+		"components/blocks/jira-work-item/experimental-v3/components/metadata-rail.tsx",
+	);
+	const v2RailSource = readProjectFile(
+		"components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-details-rail.tsx",
+	);
+
+	// Collapsed count is the value only; title-row gap-1.5 owns spacing (Subtasks pattern).
+	assert.doesNotMatch(BLOCK_SOURCE, /showCountSeparators/u);
+	assert.doesNotMatch(BLOCK_SOURCE, /function CollapsedSectionCount[\s\S]*·/u);
+	assert.doesNotMatch(BLOCK_SOURCE, /<span aria-hidden[\s\S]{0,80}·/u);
+	assert.match(BLOCK_SOURCE, /<span className=\{COLLAPSED_COUNT_CLASS_NAME\}>\{count\}<\/span>/u);
+	assert.match(
+		BLOCK_SOURCE,
+		/className="flex min-w-0 items-center gap-1\.5 text-xs font-medium leading-4 text-text-subtle/u,
+	);
+	// Count stays in the accessibility tree while collapsed (aria-hidden only when open).
+	assert.match(
+		BLOCK_SOURCE,
+		/aria-hidden=\{open \? true : undefined\}[\s\S]*<CollapsedSectionCount count=\{count\} \/>/u,
+	);
+
+	// CI checks / Commits counts are labeled ratios or numbers — they must not embed `·`.
+	assert.match(v3ChecksListSource, /function ChecksSectionTitle[\s\S]*CI checks[\s\S]*text-text-subtlest[\s\S]*\{passed\}\/\{total\}/u);
+	assert.doesNotMatch(v3RailSource, /checksCollapsedCount/u);
+	assert.match(v3RailSource, /title: "Commits",\s*count: data\.commits\.length,/u);
+	assert.doesNotMatch(v3RailSource, /title: "Commits"[\s\S]{0,120}·/u);
+	assert.doesNotMatch(v2RailSource, /checksCollapsedCount =[\s\S]*·/u);
+	assert.match(v2RailSource, /title: "Commits",\s*count: data\.commits\.length,/u);
+
+	// Work-item Subtasks already used spacing-only counts; keep that and don't reintroduce a local middot.
+	assert.match(
+		v3MetadataRailSource,
+		/count: `\$\{doneSubtasks\}\/\$\{subtasks\.length\}`[\s\S]*title: <SubtasksSectionTitle/u,
+	);
+	assert.doesNotMatch(v3MetadataRailSource, /Subtasks[\s\S]{0,200}·/u);
+});
+
 test("Artifact Pane property rows follow the Jira Session Flyout layout pattern", () => {
 	assert.match(BLOCK_SOURCE, /export function ArtifactPanePropertyRow\(/u);
 	assert.match(BLOCK_SOURCE, /editable = true/u);
@@ -153,6 +205,17 @@ test("Artifact Pane property rows follow the Jira Session Flyout layout pattern"
 	assert.match(BLOCK_SOURCE, /\[&>button\]:min-h-8!/u);
 	assert.match(BLOCK_SOURCE, /\[&>button\]:w-full!/u);
 	assert.match(BLOCK_SOURCE, /\[&>button\]:px-2!/u);
+});
+
+test("Artifact Pane header action slots expose descendant-owned focus indicators", () => {
+	assert.match(
+		BLOCK_SOURCE,
+		/headerActionOpenReveal \? \([\s\S]*className="min-w-0 overflow-hidden has-\[:focus-visible\]:overflow-visible"[\s\S]*\{headerActionControl\}/u,
+	);
+	assert.match(
+		BLOCK_SOURCE,
+		/HEADER_ACTION_HOVER_SLOT_CLASSNAME[\s\S]*className="min-w-0 overflow-hidden has-\[:focus-visible\]:overflow-visible"[\s\S]*\{headerActionControl\}/u,
+	);
 });
 
 test("Artifact Pane remains standalone from the Jira work-item metadata rail", () => {

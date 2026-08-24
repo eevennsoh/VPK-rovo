@@ -60,16 +60,29 @@ test("every Jira chapter continues one stable Claude session", async () => {
 	}
 });
 
-test("non-terminal chapters select Claude for the embedded chat while Terminal stays closed", async () => {
+test("Build and Terminal keep the embedded chat closed while later chapters select Claude", async () => {
 	const story = await loadStoryModule();
+	const build = story.createJiraGoldenJourneysV3StoryState("build");
 	assert.equal(story.createJiraGoldenJourneysV3StoryState("terminal").activeSessionId, null);
-	for (const chapter of ["build", "review", "fix", "approve", "release"]) {
+	assert.equal(build.activeSessionId, null);
+	assert.equal(build.sessions[0].id, "story-session-claude-code");
+	for (const chapter of ["review", "fix", "approve", "release"]) {
 		const state = story.createJiraGoldenJourneysV3StoryState(chapter);
 		assert.equal(state.activeSessionId, state.sessions[0].id);
 	}
 });
 
-test("Build starts with linked PR #1847, running CI, and Claude's handoff", async () => {
+test("Build PR activity uses the pull-request glyph, not BranchIcon", async () => {
+	const story = await loadStoryModule();
+	const build = story.createJiraGoldenJourneysV3StoryState("build");
+	const prEvent = build.staticEvents.find((event) => event.pullRequest);
+	assert.ok(prEvent, "Build should include the Open #1847 snapshot");
+	assert.equal(prEvent.icon, "pull-request");
+	assert.equal(prEvent.pullRequest.status, "Open");
+	assert.equal(prEvent.pullRequest.number, 1847);
+});
+
+test("Build starts with linked PR #1847, running CI, and Claude's work summary", async () => {
 	const story = await loadStoryModule();
 	const build = story.createJiraGoldenJourneysV3StoryState("build", { ciStatus: "running" });
 	const pullRequest = pullRequestFor(build);
@@ -77,7 +90,110 @@ test("Build starts with linked PR #1847, running CI, and Claude's handoff", asyn
 	assert.equal(pullRequest.status, "Open");
 	assert.equal(pullRequest.branch, "feature/shop-4821-guest-checkout");
 	assert.deepEqual(pullRequest.checks.map((check) => check.status), ["running", "queued", "queued"]);
-	assert.match(build.comments[0].content, /PR #1847 is open[\s\S]*CI is running[\s\S]*Priya Narayanan[\s\S]*Jordan Lee/u);
+	assert.match(build.comments[0].content, /Implemented guest checkout[\s\S]*local checks pass[\s\S]*ready for a pull request/u);
+	assert.deepEqual(
+		build.comments[0].progressChecklist.map((item) => [item.label, item.completed]),
+		[
+			["Implement SHOP-4821 in the local terminal", true],
+			["Run focused local checks", true],
+			["Open PR #1847 and request Priya and Jordan", false],
+		],
+	);
+	assert.deepEqual(
+		build.comments[0].progressChecklist.map((item) => item.id),
+		build.sessions[0].progressChecklist.slice(0, 3).map((item) => item.id),
+	);
+	assert.deepEqual(
+		build.comments[0].outputs.map((item) => [item.id, item.title, item.source, item.logoName, item.logoSrc]),
+		[
+			["guest-checkout-pr", "Implement guest checkout without account creation", "Pull request", "github", undefined],
+			[
+				"guest-checkout-final.png",
+				"guest-checkout-final.png",
+				"Image",
+				undefined,
+				"/illustration/jira-golden-journeys-v3/guest-checkout-final.png",
+			],
+		],
+	);
+	assert.deepEqual(build.comments[0].outputs[0].pullRequest, {
+		number: 1847,
+		status: "Open",
+		additions: 86,
+		deletions: 21,
+	});
+});
+
+test("Build preserves the reported-to-pull-request activity lifecycle", async () => {
+	const story = await loadStoryModule();
+	const build = story.createJiraGoldenJourneysV3StoryState("build", { ciStatus: "running" });
+	const lifecycleIds = new Set([
+		"story-reported",
+		"story-assigned",
+		"story-started-with-claude",
+		"story-moved-in-progress",
+		"story-channel-claude-pr-handoff",
+		"story-pr-review",
+	]);
+	const lifecycle = [
+		...build.staticEvents,
+		...build.comments,
+	]
+		.filter((event) => lifecycleIds.has(event.id))
+		.sort((left, right) => left.createdAtMs - right.createdAtMs);
+
+	assert.deepEqual(
+		lifecycle.map((event) => event.id),
+		[
+			"story-reported",
+			"story-assigned",
+			"story-started-with-claude",
+			"story-moved-in-progress",
+			"story-channel-claude-pr-handoff",
+			"story-pr-review",
+		],
+	);
+	assert.equal(lifecycle[0].actor.name, "Maya Chen");
+	assert.equal(lifecycle[1].actor.name, "Priya Narayanan");
+	assert.equal(lifecycle[1].icon, "assigned");
+	assert.deepEqual(lifecycle[1].segments.at(-1), {
+		type: "user-mention",
+		text: "Venn",
+		avatarSrc: "/avatar-user/venn/venn.png",
+	});
+	assert.equal(lifecycle[2].actor.name, "Claude Code");
+	assert.equal(lifecycle[2].showActor, false);
+	assert.equal(lifecycle[2].showTimestamp, undefined);
+	assert.equal(lifecycle[2].createdAtMs, lifecycle[3].createdAtMs - 120_000);
+	assert.deepEqual(lifecycle[2].segments, [
+		{ type: "agent-mention", text: "Claude", brandName: "claude" },
+		{ type: "text", text: " Started working" },
+	]);
+	assert.deepEqual(
+		lifecycle[3].segments.filter((segment) => segment.type === "lozenge").map((segment) => segment.text),
+		["To do", "In progress"],
+	);
+	assert.equal(lifecycle[4].authorBrandName, "claude");
+	assert.match(lifecycle[4].content, /Implemented guest checkout[\s\S]*local checks pass/u);
+	assert.equal(lifecycle[4].progressChecklist.filter((item) => item.completed).length, 2);
+	assert.equal(lifecycle[4].progressChecklist.length, 3);
+	assert.deepEqual(
+		lifecycle[4].outputs.map((item) => item.title),
+		["Implement guest checkout without account creation", "guest-checkout-final.png"],
+	);
+	assert.equal(lifecycle[5].actor.name, "GitHub");
+	assert.equal(lifecycle[5].pullRequest.number, 1847);
+	assert.equal(
+		build.staticEvents.some((event) => event.id === "story-changed-files"),
+		false,
+	);
+	assert.equal(build.sessions[0].activityVisibility, "private");
+	assert.equal(
+		[...build.staticEvents, ...build.comments]
+			.sort((left, right) => left.createdAtMs - right.createdAtMs)
+			.at(-1).id,
+		"story-pr-review",
+	);
 });
 
 test("Claude Code activity actors use the brand mark, not the coding-agent template", async () => {
@@ -257,6 +373,18 @@ test("Release only reveals persisted merge state and never invents a merge", asy
 		pullRequestMerged: true,
 	}).status, "Done");
 	assert.ok(merged.staticEvents.some((event) => event.id === "story-pr-merged"));
-	assert.equal(merged.staticEvents.find((event) => event.id === "story-changed-files").tag.text, "PR #1847 merged");
+	assert.equal(
+		merged.staticEvents.some((event) => event.id === "story-changed-files"),
+		false,
+	);
+	assert.deepEqual(
+		merged.comments[0].outputs.map((item) => item.title),
+		["Implement guest checkout without account creation", "guest-checkout-final.png"],
+	);
 	assert.doesNotMatch(merged.sessions[0].previewText, /deploy|feature flag|telemetry|production/u);
+	assert.equal(merged.sessions[0].progressChecklist.filter((item) => item.completed).length, 6);
+	assert.deepEqual(
+		merged.comments[0].progressChecklist.map((item) => item.completed),
+		[true, true, false],
+	);
 });

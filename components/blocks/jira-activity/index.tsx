@@ -44,6 +44,10 @@ export interface JiraActivityProps {
 	composer?: ReactNode | null;
 	/** Optional trailing action for each comment card. */
 	renderCommentAction?: (entry: JiraActivityCommentEntry) => ReactNode;
+	/** Optional replacement for an entry's built-in body. Return undefined to use the default renderer. */
+	renderEntry?: (entry: JiraActivityEntry) => ReactNode | undefined;
+	/** Marks one timeline row as the current step without changing ordering or filtering. */
+	activeEntryId?: string;
 	/**
 	 * Adds a comment to the sticky work-item activity composer as a pill (Code
 	 * Review `CommentsComposerChip` / multi-comment path). Renders the "Add to
@@ -112,6 +116,8 @@ export function JiraActivity({
 	actors = [],
 	composer,
 	renderCommentAction,
+	renderEntry,
+	activeEntryId,
 	onAddCommentToChat,
 	onAddReplyToChat,
 	onViewSession,
@@ -268,6 +274,7 @@ export function JiraActivity({
 					className={cn("flex flex-col", hideHeader ? "pt-1" : null)}
 				>
 					{orderedEntries.map((entry, index) => {
+						const customEntry = renderEntry?.(entry);
 						const isLast = index === orderedEntries.length - 1;
 						const isCardEntry = entry.kind !== "event";
 						const isNestedComment = entry.kind === "comment" && Boolean(entry.parentId);
@@ -294,10 +301,50 @@ export function JiraActivity({
 								: isCardEntry || isNextEntryCard
 									? "pb-5"
 									: "pb-2";
+						const defaultEntry = entry.kind === "event" ? (
+							<JiraActivityEvent
+								entry={entry}
+								onOpenPullRequest={onOpenPullRequest}
+							/>
+						) : entry.kind === "comment" ? (
+							<JiraActivityComment
+								actorsById={actorsById}
+								commentActions={commentActions}
+								currentUser={currentUser}
+								entry={entry}
+								onAddReplyToChat={
+									onAddReplyToChat
+										? (reply) => onAddReplyToChat(reply, entry)
+										: undefined
+								}
+								onAddToChat={
+									onAddCommentToChat
+										? () => onAddCommentToChat(entry)
+										: undefined
+								}
+								onViewSession={onViewSession}
+								onResolve={
+									entry.allowResolve
+										? () => handleResolveComment(entry)
+										: undefined
+								}
+								onSubmitReply={(body) => handleAddReply(entry, body)}
+								onToggleReaction={(emoji) => handleToggleReaction(entry, emoji)}
+								action={renderCommentAction?.(entry)}
+							/>
+						) : (
+							<JiraActivityChangedFiles
+								entry={entry}
+								hideLeadAvatar
+								onView={onViewSession}
+							/>
+						);
 
 						return (
 							<li
-								className="flex min-w-0 gap-2"
+								aria-current={entry.id === activeEntryId ? "step" : undefined}
+								className="group/activity-event flex min-w-0 gap-2"
+								data-active={entry.id === activeEntryId ? "" : undefined}
 								data-jira-activity-entry-id={entry.id}
 								data-jira-activity-parent-id={
 									entry.kind === "comment" ? entry.parentId : undefined
@@ -320,7 +367,11 @@ export function JiraActivity({
 								) : (
 									<JiraActivityNode
 										actor={entry.actor}
-										icon={entry.kind === "event" ? entry.icon : undefined}
+										icon={
+											entry.kind === "event"
+												? (entry.pullRequest ? "pull-request" : entry.icon)
+												: undefined
+										}
 										isLast={isLast}
 										size={isCardEntry ? "card" : "event"}
 									/>
@@ -332,46 +383,7 @@ export function JiraActivity({
 										isNestedComment ? "pt-3 pl-6" : null,
 									)}
 								>
-									{entry.kind === "event" ? (
-										<JiraActivityEvent
-											entry={entry}
-											onOpenPullRequest={onOpenPullRequest}
-										/>
-									) : null}
-									{entry.kind === "comment" ? (
-										<JiraActivityComment
-											actorsById={actorsById}
-											commentActions={commentActions}
-											currentUser={currentUser}
-											entry={entry}
-											onAddReplyToChat={
-												onAddReplyToChat
-													? (reply) => onAddReplyToChat(reply, entry)
-													: undefined
-											}
-											onAddToChat={
-												onAddCommentToChat
-													? () => onAddCommentToChat(entry)
-													: undefined
-											}
-											onViewSession={onViewSession}
-											onResolve={
-												entry.allowResolve
-													? () => handleResolveComment(entry)
-													: undefined
-											}
-											onSubmitReply={(body) => handleAddReply(entry, body)}
-											onToggleReaction={(emoji) => handleToggleReaction(entry, emoji)}
-											action={renderCommentAction?.(entry)}
-										/>
-									) : null}
-									{entry.kind === "changed-files" ? (
-										<JiraActivityChangedFiles
-											entry={entry}
-											hideLeadAvatar
-											onView={onViewSession}
-										/>
-									) : null}
+									{customEntry !== undefined ? customEntry : defaultEntry}
 								</div>
 							</li>
 						);

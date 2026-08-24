@@ -34,27 +34,24 @@ export const CONTEXT_INLINE_EDIT_BACKDROP_MOTION_PROPS = {
 
 export const CONTEXT_INLINE_EDIT_BACKDROP_CLASS_NAME = "-inset-0.5 bg-bg-neutral-subtle-hovered";
 
-/**
- * ADS heading xxlarge for the editable work-item title.
- *
- * `<input>` UAs force `overflow: clip` (so `overflow-visible` is a no-op) and
- * paint glyphs against a tight content box. The token line-height (2.25rem for
- * a 2rem face) clips descenders; a looser line-box after the `font` shorthand
- * keeps “g”/“y” fully inside the clipped control while preserving the face.
- */
+/** Original expanded work-item title treatment. */
 export const CONTEXT_TITLE_FONT_STYLE = {
 	font: token("font.heading.xxlarge"),
 	lineHeight: "2.75rem",
 } satisfies CSSProperties;
 
+/** Compact title endpoint: ADS 16px scale; weight is owned by the Input utility. */
+export const CONTEXT_TITLE_COMPACT_FONT_STYLE = {
+	font: token("font.heading.small"),
+} satisfies CSSProperties;
+
 /**
  * Always-on title field chrome — typography comes from `CONTEXT_TITLE_FONT_STYLE`.
  * `text-[length:unset] leading-[unset]` clears Input’s default `text-sm` so it
- * cannot fight the heading font shorthand. `py-0` zeroes Input’s default `py-1`
- * (descenders stay unclipped via the looser `lineHeight` on the font style).
+ * cannot fight the heading font shorthand. `py-0` zeroes Input’s default `py-1`.
  */
 export const CONTEXT_TITLE_READ_VIEW_CLASS_NAME =
-	"relative h-auto min-h-[2.75rem] border-0 bg-transparent px-0 py-0 text-[length:unset] leading-[unset] hover:bg-transparent active:bg-transparent focus-visible:border-transparent focus-visible:bg-transparent";
+	"relative h-auto border-0 bg-transparent px-0 py-0 text-[length:unset] leading-[unset] hover:bg-transparent active:bg-transparent focus-visible:border-transparent focus-visible:bg-transparent";
 
 export const CONTEXT_TITLE_INPUT_CLASS_NAME =
 	"h-auto border-2 px-1.5 py-0 focus:border-ring";

@@ -186,6 +186,13 @@ test("in-flow View controls immediately replace lifecycle indicators without col
 	assert.doesNotMatch(CARD_SOURCE, /transition-\[width,margin,opacity\]/u);
 });
 
+test("in-flow activity actions expose their button-owned focus indicators", () => {
+	assert.match(
+		CARD_SOURCE,
+		/className="min-w-0 overflow-hidden has-\[:focus-visible\]:overflow-visible"[\s\S]*<Button onClick=\{\(\) => onView\(item\)\}[\s\S]*View/u,
+	);
+});
+
 test("supports default and compact session rows", () => {
 	assert.match(TYPES_SOURCE, /export type AgentListVariant = "default" \| "compact"/u);
 	assert.match(TYPES_SOURCE, /variant\?: AgentListVariant/u);

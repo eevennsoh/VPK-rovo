@@ -44,6 +44,7 @@ import {
 	type JiraGoldenJourneysV3StoryStateOptions,
 } from "./story-model";
 
+export { resolveJiraGoldenJourneysV3PullRequestChecks } from "./hotfix-story-events";
 export {
 	JIRA_GOLDEN_JOURNEYS_V3_CLAUDE_SCRIPT_ID,
 	JIRA_GOLDEN_JOURNEYS_V3_CLAUDE_SESSION_ID,
@@ -87,6 +88,14 @@ const GUEST_CHECKOUT_PR_ARTIFACT: ArtifactListItem = {
 	},
 };
 
+const GUEST_CHECKOUT_IMAGE_ARTIFACT: ArtifactListItem = {
+	id: "guest-checkout-final.png",
+	title: "guest-checkout-final.png",
+	source: "Image",
+	logoSrc: "/illustration/jira-golden-journeys-v3/guest-checkout-final.png",
+	href: "/illustration/jira-golden-journeys-v3/guest-checkout-final.png",
+};
+
 const CHECKLIST_LABELS = [
 	"Implement SHOP-4821 in the local terminal",
 	"Run focused local checks",
@@ -95,6 +104,22 @@ const CHECKLIST_LABELS = [
 	"Repair the failed path and rerun CI to green",
 	"Satisfy two required approvals and merge automatically",
 ] as const;
+
+/** Implementation is done and local checks pass; the PR is not open yet. */
+const PR_HANDOFF_COMPLETED_COUNT = 2;
+/** Show completed work plus the immediate PR step — not later CI/merge chapters. */
+const PR_HANDOFF_VISIBLE_COUNT = 3;
+
+function createProgressChecklist(
+	completedCount: number,
+	visibleCount: number = CHECKLIST_LABELS.length,
+): NonNullable<AgentSession["progressChecklist"]> {
+	return CHECKLIST_LABELS.slice(0, visibleCount).map((label, index) => ({
+		id: `story-claude-progress-${index + 1}`,
+		label,
+		completed: index < completedCount,
+	}));
+}
 
 function completedChecklistCount(
 	chapter: JiraGoldenJourneysV3StoryChapter,
@@ -191,6 +216,7 @@ function createClaudeSession(
 		agentBrandName: CLAUDE_CODE.brandName,
 		title: CLAUDE_SESSION_TITLE_BY_CHAPTER[chapter],
 		status,
+		activityVisibility: "private",
 		command: "Implement SHOP-4821 locally, run checks, open a pull request, request Priya and Jordan, then monitor CI.",
 		previewText,
 		steps: CHECKLIST_LABELS.map((label, index) => ({
@@ -225,11 +251,7 @@ function createClaudeSession(
 		stepElapsedMs: 0,
 		resumedFromWait: false,
 		order: 1,
-		progressChecklist: CHECKLIST_LABELS.map((label, index) => ({
-			id: `story-claude-progress-${index + 1}`,
-			label,
-			completed: index < completedCount,
-		})),
+		progressChecklist: createProgressChecklist(completedCount),
 		outputs: [{
 			...GUEST_CHECKOUT_PR_ARTIFACT,
 			pullRequest: {
@@ -249,8 +271,10 @@ function createStoryComments(chapter: JiraGoldenJourneysV3StoryChapter): AgentSe
 		id: "story-channel-claude-pr-handoff",
 		authorName: CLAUDE_CODE.name,
 		authorBrandName: CLAUDE_CODE.brandName,
-		content: "PR #1847 is open for SHOP-4821. Local checks pass, CI is running, and Priya Narayanan and Jordan Lee are requested reviewers.",
+		content: "Implemented guest checkout for SHOP-4821 with server-owned pricing, inventory and payment validation, and idempotent order creation. Focused local checks pass, so the work is ready for a pull request.",
 		createdAtMs: STORY_EPOCH_MS - 1_200_000,
+		progressChecklist: createProgressChecklist(PR_HANDOFF_COMPLETED_COUNT, PR_HANDOFF_VISIBLE_COUNT),
+		outputs: [GUEST_CHECKOUT_PR_ARTIFACT, GUEST_CHECKOUT_IMAGE_ARTIFACT],
 	}];
 }
 
@@ -318,7 +342,9 @@ export function createJiraGoldenJourneysV3StoryState(
 		comments: createStoryComments(chapter),
 		sessions,
 		staticEvents: [...storyEventsForChapter(chapter, options)],
-		activeSessionId: sessions[0]?.id ?? null,
+		// Build lands on the work-item and PR handoff. Keep Claude selected from
+		// Review onward so the embedded chat does not cover the item by default.
+		activeSessionId: chapter === "build" ? null : sessions[0]?.id ?? null,
 		composerPrefill: null,
 		elapsedMs: STORY_EPOCH_MS - SESSION_EPOCH_MS,
 		nextOrder: sessions.length,

@@ -16,7 +16,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 - Start every recipe from the home origin unless its preconditions say otherwise.
 - Prefer `#home-category-tab-*`, `href`, and ARIA names listed in the skill. Do not click a tab by the substring `UI`.
 - Treat every command as literal. Keep quoted names and flags unchanged.
-- Restore theme (`localStorage` key `ui-theme`) after a theme recipe.
+- Restore theme through the same user-facing control until its original accessible name returns; never write storage or theme attributes directly.
 - Restore sidebar search (clear the searchbox) after a search recipe.
 - Do not remove proof artifacts during cleanup.
 
@@ -26,6 +26,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 - UI proof includes an ARIA snapshot and a screenshot with VPK identity visible (sidebar `VPK` and the page heading or doc `h1`).
 - Record the feature ID and entry point used with every artifact under `output/agent-browser/vpk-verify/<feature-id>/`.
 - Report an unreachable path with the attempted command and the unmet precondition.
+- Preserve `control-vpk browser`'s failure classification and exact command when handing off to Playwright; never count the failed command as proof.
 - Do not report a skipped entry point as verified through a different path.
 - Studio chat send is not covered here. A loaded composer is not proof that Rovo answered.
 
@@ -47,3 +48,7 @@ Keep implementation details out of the map. Name only user paths, stable handles
 - [Switch theme](./switch-theme.md) covers cycling light, dark, and system from the header.
 - [Search the sidebar](./sidebar-search.md) covers filtering the component browser and clearing the query.
 - [Open Studio](./studio-shell.md) covers loading the Studio shell without sending a chat message.
+- [Jira Golden Journeys v0](./jira-golden-journeys-v0.md) covers the original pattern gallery, keyboard selection, local terminal theme, and narrow layout.
+- [Jira Golden Journeys v1](./jira-golden-journeys-v1.md) covers local/global session walkthroughs, screen navigation, keyboard selection, and narrow layout.
+- [Jira Golden Journeys v2](./jira-golden-journeys-v2.md) covers story chapters, Details/Activity, guided pull-request detail, keyboard focus, and narrow layout.
+- [Jira Golden Journeys v3](./jira-golden-journeys-v3.md) covers section navigation, Activity/Insights, pull-request detail, focus restoration, and narrow layout.

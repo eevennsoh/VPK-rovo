@@ -74,11 +74,15 @@ const WORKING_SESSION_ACTIVITY_SCRIPTS: Readonly<Record<string, readonly string[
 };
 
 interface ActivityComposerContextPillsProps {
+	/** Host-owned left-side context bar; Insights remains independently available on the right. */
+	contextBar?: ReactNode;
 	/**
 	 * Optional override for the far-right "new insights" pill. Omit to derive
 	 * from context (2 on filled / Golden Journeys, 0 on empty). Pass 0 to hide.
 	 */
 	newInsightsCount?: number;
+	/** Marks the current insight notification read before the Insights body mounts. */
+	onNewInsightsSelect?: () => void;
 	onInvokeAgent: (agent: Pick<AgentSelectorAgent, "id" | "name" | "avatarSrc" | "brandName">) => void;
 	onInvokeSkill: (skill: SkillsDirectorySkill) => void;
 	onOpenAgentChat?: (agentId: string, sessionId: string) => void;
@@ -273,9 +277,11 @@ function RevealingPill({ children }: Readonly<{ children: ReactNode }>) {
 
 /** Context shortcuts revealed after the planner review composer becomes sticky. */
 export function ActivityComposerContextPills({
+	contextBar,
 	newInsightsCount,
 	onInvokeAgent,
 	onInvokeSkill,
+	onNewInsightsSelect,
 	onOpenAgentChat,
 	onSectionSelect,
 	workingSessions,
@@ -289,7 +295,7 @@ export function ActivityComposerContextPills({
 	const [newInsightsDismissed, setNewInsightsDismissed] = useState(false);
 	const resolvedNewInsightsCount = resolveNewInsightsCount(contextResources, newInsightsCount);
 	const showNewInsightsPill = resolvedNewInsightsCount > 0
-		&& !newInsightsDismissed
+		&& (!newInsightsDismissed || onNewInsightsSelect != null)
 		&& activeSectionId !== "insights"
 		&& !showWorkingSessions;
 	const needsInputCount = workingSessions.filter((session) => (
@@ -328,36 +334,40 @@ export function ActivityComposerContextPills({
 				/>
 			) : (
 				<>
-					<div className="flex min-w-0 flex-wrap items-center gap-2">
-						{workingSessions.length > 0 && onOpenAgentChat ? (
+					{contextBar !== undefined ? (
+						<div className="min-w-0 flex-1">{contextBar}</div>
+					) : (
+						<div className="flex min-w-0 flex-wrap items-center gap-2">
+							{workingSessions.length > 0 && onOpenAgentChat ? (
+								<RevealingPill>
+									<ContextBarPill
+										aria-label={summaryLabel}
+										className="motion-reduce:transition-none"
+										icon={(
+											<PixelLoader
+												className="size-3 justify-center"
+												pattern={needsInputCount > 0 ? "breathing" : "diagonal-top-left"}
+												shape="dot"
+												size="small"
+											/>
+										)}
+										onClick={() => setShowWorkingSessions(true)}
+										ref={workingTriggerRef}
+									>
+										{needsInputCount > 0 ? (
+											<Shimmer as="span">{summaryLabel}</Shimmer>
+										) : summaryLabel}
+									</ContextBarPill>
+								</RevealingPill>
+							) : null}
 							<RevealingPill>
-								<ContextBarPill
-									aria-label={summaryLabel}
-									className="motion-reduce:transition-none"
-									icon={(
-										<PixelLoader
-											className="size-3 justify-center"
-											pattern={needsInputCount > 0 ? "breathing" : "diagonal-top-left"}
-											shape="dot"
-											size="small"
-										/>
-									)}
-									onClick={() => setShowWorkingSessions(true)}
-									ref={workingTriggerRef}
-								>
-									{needsInputCount > 0 ? (
-										<Shimmer as="span">{summaryLabel}</Shimmer>
-									) : summaryLabel}
-								</ContextBarPill>
+								<ActivityComposerAgentContextPill onInvokeAgent={onInvokeAgent} />
 							</RevealingPill>
-						) : null}
-						<RevealingPill>
-							<ActivityComposerAgentContextPill onInvokeAgent={onInvokeAgent} />
-						</RevealingPill>
-						<RevealingPill>
-							<ActivityComposerSkillContextPill onInvokeSkill={onInvokeSkill} />
-						</RevealingPill>
-					</div>
+							<RevealingPill>
+								<ActivityComposerSkillContextPill onInvokeSkill={onInvokeSkill} />
+							</RevealingPill>
+						</div>
+					)}
 					{showNewInsightsPill ? (
 						<div className="shrink-0">
 							<RevealingPill>
@@ -365,8 +375,9 @@ export function ActivityComposerContextPills({
 									count={resolvedNewInsightsCount}
 									onSelect={() => {
 										onSectionSelect?.();
+										onNewInsightsSelect?.();
 										selectSection("insights");
-										setNewInsightsDismissed(true);
+										if (!onNewInsightsSelect) setNewInsightsDismissed(true);
 									}}
 								/>
 							</RevealingPill>

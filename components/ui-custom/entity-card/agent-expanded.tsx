@@ -307,7 +307,7 @@ export function EntityCardAgentExpanded({
 
 			{showFooter ? (
 				<div className="relative shrink-0 overflow-clip border-t border-border bg-surface">
-					<EntityCardFooter className="justify-between px-4 py-3 transition-opacity duration-fast ease-out group-hover/card:opacity-0 group-focus-within/card:opacity-0">
+					<EntityCardFooter className="justify-between px-4 py-3 transition-opacity duration-fast ease-out group-hover/card:opacity-0 group-has-[:focus-visible]/card:opacity-0">
 						<div className="flex items-center gap-6">
 							{showStats ? (
 								stats.map((stat) => (
@@ -350,7 +350,7 @@ export function EntityCardAgentExpanded({
 							</AvatarGroup>
 						) : null}
 					</EntityCardFooter>
-					<div className="pointer-events-none absolute inset-0 flex items-center px-4 py-2 opacity-0 transition-opacity duration-fast ease-out group-hover/card:pointer-events-auto group-hover/card:opacity-100 group-focus-within/card:pointer-events-auto group-focus-within/card:opacity-100">
+					<div className="pointer-events-none absolute inset-0 flex items-center px-4 py-2 opacity-0 transition-opacity duration-fast ease-out group-hover/card:pointer-events-auto group-hover/card:opacity-100 group-has-[:focus-visible]/card:pointer-events-auto group-has-[:focus-visible]/card:opacity-100">
 						<Button
 							className="w-full"
 							onClick={handleUseTemplateClick}

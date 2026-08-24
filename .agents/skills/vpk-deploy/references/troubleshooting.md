@@ -1,173 +1,176 @@
-# Troubleshooting
+# Deployment troubleshooting
 
-> Common deployment issues and solutions.
+Diagnose the first failing boundary and stop. Do not retry a push or deployment
+until its prerequisite is repaired.
 
-## Quick Reference
+## Quick reference
 
-| Issue                                     | Solution                                                             |
-| ----------------------------------------- | -------------------------------------------------------------------- |
-| **Initial Deploy Issues**                 |                                                                      |
-| Health check shows "MISSING"              | Set missing vars with `stash set`, redeploy with new version         |
-| Health check failed (400 error)           | Environment variables not set on Micros - run `stash set` commands   |
-| Service name too long                     | Max 26 chars - choose shorter name                                   |
-| "Unknown service" when setting vars       | Create service first                                                 |
-| Docker unauthorized                       | `docker login docker.atl-paas.net`                                   |
-| **ASAP_PRIVATE_KEY won't set**            | **Escape newlines first, then use JSON file (see Step 3.6)**         |
-| **Health check fails after setting vars** | **ASAP_PRIVATE_KEY has wrong format - re-escape newlines**           |
-| **Only 5 vars instead of 7**              | **Missing ASAP_KID & ASAP_ISSUER**                                   |
-| **Deployment timeout**                    | **Normal for first deploy! Wait 10-15 min & monitor**                |
-| **pnpm Command Issues**                   |                                                                      |
-| `ERR_PNPM_NOTHING_TO_DEPLOY`              | Use `pnpm run deploy:micros` not `pnpm deploy`                       |
-| **Atlas CLI Issues**                      |                                                                      |
-| `stash get` command not found             | Use `stash list` to view variables (no `get` command)                |
-| **Build Issues**                          |                                                                      |
-| "npm ci" fails in Docker                  | Generate `backend/package-lock.json`: `cd backend && npm install`    |
-| **"Cannot find module 'express'"**        | **package-lock.json has pnpm symlinks - see fix below**              |
-| "Node.js version >=20.9.0 required"       | Update Dockerfile to use `node:20-alpine`                            |
-| "scripts/build-export.sh not found"       | Use updated Dockerfile with inline build commands                    |
-| Turbopack processes api.bak folder        | Use `rm -rf app/api` not `mv app/api app/api.bak`                    |
-| **Push Issues**                           |                                                                      |
-| "User is unauthorized to upload"          | `atlas packages secrets -t docker -i <token>` to refresh keychain creds (see "Docker push 401" below) |
-| Permission grant doesn't work             | Wait 1-2 minutes after `atlas packages permission grant`, then retry |
-| **Region / Subnet Issues**                |                                                                      |
-| ALB CREATE_FAILED "Not enough IP space"   | Check subnet free IPs; switch env to `pdev-apse2` (see "Subnet IP exhaustion" below) |
-| Stale stash after env switch              | Stashes are per-env. Re-stash all 7 vars under the new `-e <env>`    |
-| Status stuck CREATE_IN_PROGRESS           | Micros API lags 1–3 min behind CFN. Check AWS truth: `aws cloudformation describe-stacks --region <r> --query 'Stacks[].StackStatus'` |
-| **Import/Build Issues**                   |                                                                      |
-| "Can't resolve @/components/..."          | Check file casing matches import (macOS is case-insensitive)         |
-| **Redeploy Issues**                       |                                                                      |
-| Build fails with TypeScript errors        | Run `pnpm run build` locally first                                   |
-| Changes not showing                       | Hard refresh (Cmd+Shift+R)                                           |
-| "Exec format error"                       | Missing `--platform linux/amd64`                                     |
-| "Distribution exists"                     | Wait 15-20 min or use different version                              |
+| Symptom | Check |
+| --- | --- |
+| `ERR_PNPM_NOTHING_TO_DEPLOY` | Use `pnpm run deploy:micros`, not `pnpm deploy` |
+| Missing or stale `out/` | Run `corepack pnpm run build:export`; require `out/index.html` |
+| Docker cannot copy `out/` | Confirm the export completed before `docker buildx build` |
+| Package install fails in Docker | Check root `pnpm-lock.yaml`, workspace files, and npm registry credentials |
+| `exec format error` | Build with `--platform linux/amd64` |
+| Docker push returns 401 | Refresh local Docker credentials and registry permissions |
+| Production exits before listening | Verify `VPK_RUNTIME_ADMIN_TOKEN` is in the descriptor and selected environment's stash |
+| AI/voice route returns 401 or 403 | Verify AI Gateway and ASAP variables and authorization |
+| Health or runtime shows missing variables | Restash in the selected environment, then deploy a new version |
+| `stash get` is unavailable | Use `atlas micros stash list`; do not print values |
+| ALB reports insufficient IP space | Measure subnet capacity before considering `pdev-apse2` |
+| Micros remains `CREATE_IN_PROGRESS` | Follow deployment events; allow reconciliation lag |
 
-## Fix: "Cannot find module 'express'" Error
+## Preflight or export failure
 
-**Symptom:** Deployment fails health check. Splunk logs show `Error: Cannot find module 'express'`.
-
-**Root Cause:** The `backend/package-lock.json` was generated by pnpm and contains symlinks (`"link": true`) pointing to `../node_modules/.pnpm/...`. When `npm ci` runs in Docker, these symlinks don't resolve because pnpm's workspace structure doesn't exist inside the container.
-
-**Fix:** Regenerate `package-lock.json` using npm (not pnpm):
+Run the static contract check first:
 
 ```bash
-cd backend
-rm -rf node_modules package-lock.json
-npm install
+bash .agents/skills/vpk-deploy/scripts/deploy-check.sh --check-only
 ```
 
-This creates a proper npm lockfile with resolved registry URLs instead of pnpm symlinks.
+It should confirm the root pnpm workspace, Node 24 Dockerfile, export wrapper,
+and `COPY out ./backend/public` contract. A missing `out/` is informational
+there because both deploy scripts build it before Docker packaging.
 
-**Prevention:** Always use `npm install` (not pnpm) when working in the `backend/` directory. The backend is a separate npm project that runs independently in Docker.
-
-## Fix: Subnet IP exhaustion (`ALB CREATE_FAILED`)
-
-**Symptom:** `atlas micros service deploy` rolls back; CFN events show:
-
-```
-ALB CREATE_FAILED: Not enough IP space available in subnet-xxxxxxxxx.
-ELB requires at least 8 free IP addresses in each subnet.
-```
-
-**Root cause:** ALBs require ≥8 free IPs **per AZ subnet** they're placed in. Public subnets in `pdev-west2` are routinely near full because pdev is a shared sandbox with many short-lived stacks.
-
-**Diagnosis — check actual capacity (don't retry blindly):**
+Build the export separately to expose the real Next.js failure:
 
 ```bash
-# 1. Assume read-only AWS creds (browser SSO, ~1 min)
-atlas micros role assume user -s <your-service> -e pdev-west2 \
-  -o env --disable-export -f /tmp/creds.env
-set -a; source /tmp/creds.env; set +a
-
-# 2. Check the failing subnet + its sister subnets in the same VPC
-VPC=$(aws ec2 describe-subnets --region us-west-2 \
-  --subnet-ids <subnet-from-error> --query 'Subnets[0].VpcId' --output text)
-
-aws ec2 describe-subnets --region us-west-2 \
-  --filters Name=vpc-id,Values=$VPC \
-  --query 'Subnets[].{AZ:AvailabilityZone,Free:AvailableIpAddressCount,CIDR:CidrBlock,Subnet:SubnetId} | sort_by(@, &AZ)' \
-  --output table
+corepack pnpm run build:export
+test -f out/index.html
 ```
 
-If **every public subnet is below 8 free**, retrying west2 is hopeless. If one or two AZs show ≥8, a retry has a chance — but other deploys race for the same pool.
+The wrapper temporarily moves runtime-only routes and restores them in a
+`finally` path. If it reports a pre-existing backup path, stop and inspect the
+named source and backup before changing either one.
 
-**Fix — switch to pdev-apse2 (the only other pdev env):**
+For file-casing errors that only appear in Linux, compare import spelling with
+the tracked filename exactly. Do not add duplicate case variants on macOS.
 
-`pdev-apse2` (Sydney, ap-southeast-2) sits in the **same AWS account** as `pdev-west2`, so the same SSO creds work for cross-region queries. It typically has 50–4000+ free IPs per subnet.
+## Docker dependency or registry failure
+
+`backend/Dockerfile` installs production dependencies from:
+
+- `package.json`
+- `pnpm-lock.yaml`
+- `pnpm-workspace.yaml`
+- `backend/package.json`
+
+Repair those pnpm inputs instead of creating a backend npm lockfile. If private
+registry access fails, confirm `$HOME/.npmrc` contains token-free routing plus
+the required user credential and that the Docker build receives it as the
+`npmrc` secret.
+
+For a push 401, refresh both local credentials and server-side permission:
 
 ```bash
-# 1. Update local config
-sed -i '' 's/^ENV=.*/ENV="pdev-apse2"/' .deploy.local
-
-# 2. Re-stash all 7 env vars in pdev-apse2 (stashes are per-env, NOT auto-copied)
-#    Use a JSON file to handle the multiline ASAP_PRIVATE_KEY cleanly:
-python3 -c "
-import re, json
-keys=['AI_GATEWAY_URL','AI_GATEWAY_USE_CASE_ID','AI_GATEWAY_CLOUD_ID',
-      'AI_GATEWAY_USER_ID','ASAP_KID','ASAP_ISSUER','ASAP_PRIVATE_KEY']
-env={}
-for line in open('.env.local'):
-    m=re.match(r'^([A-Z_][A-Z0-9_]*)=(.*)$', line.rstrip())
-    if m and m.group(1) in keys: env[m.group(1)]=m.group(2)
-print(json.dumps(env))
-" > /tmp/stash.json
-atlas micros stash set -s <your-service> -e pdev-apse2 -f /tmp/stash.json -y
-rm /tmp/stash.json
-atlas micros stash list -s <your-service> -e pdev-apse2  # verify 7 keys
-
-# 3. Bump version + redeploy with explicit env arg
-./scripts/deploy.sh <your-service> 1.0.2 pdev-apse2
-```
-
-**Prevention:** Once your service exists in both envs, you can deploy to either by passing the env as the 3rd arg. Keep `pdev-apse2` "warm" by occasionally redeploying there so the env-vars stash and Micros service record stay current.
-
-## Fix: Docker push 401 ("unauthorized to upload")
-
-**Symptom:** During the `docker push` step, you see:
-
-```
-unauthorized: User is unauthorized to upload to docker-private-local/<svc>/_uploads/...
-```
-
-even though the previous push succeeded with the same token.
-
-**Root cause:** macOS Keychain–stored docker creds become stale or get cleared. `docker login docker.atl-paas.net` may report "Login Succeeded" but write an empty entry — Artifactory then 401s the push.
-
-**Fix — re-issue the docker keychain entry via atlas packages:**
-
-```bash
-# Use the DOCKER_PASSWORD identity token from .deploy.local
 source .deploy.local
 atlas packages secrets -t docker -i "$DOCKER_PASSWORD"
-
-# Verify with a manual push of an already-built tag
-docker push docker.atl-paas.net/<your-service>:app-<version>
+atlas packages permission grant
 ```
 
-`atlas packages secrets` writes to the keychain in the format Artifactory expects, including any required scope tokens. If this still fails, the namespace may be unowned and require a `permission claim` — but that's rare for personal prototypes; check with `atlas packages permission list --namespace=<svc> --artifact-type=docker`.
+`atlas packages secrets` repairs the local keychain entry.
+`atlas packages permission grant` updates registry authorization. A successful
+Docker login alone does not prove push access.
 
-**Note:** `atlas packages permission grant` only refreshes server-side ACLs; it does NOT update your local keychain. The two commands solve different problems.
+## Missing production variables
 
-## Fix: Deploy verification lag
+The full backend runtime needs these descriptor and stash names:
 
-**Symptom:** Deploy script exits "successfully" or with a benign event-stream timeout, but `atlas micros service show` keeps reporting `[CREATE_IN_PROGRESS]` for several minutes. URL stays "not yet set".
+```text
+AI_GATEWAY_URL
+AI_GATEWAY_USE_CASE_ID
+AI_GATEWAY_CLOUD_ID
+AI_GATEWAY_USER_ID
+ASAP_KID
+ASAP_ISSUER
+ASAP_PRIVATE_KEY
+OPENAI_REALTIME_MODEL
+OPENAI_REALTIME_WS_URL
+OPENAI_REALTIME_VOICE
+VPK_RUNTIME_ADMIN_TOKEN
+```
 
-**Root cause:** Micros consumes CloudFormation events via SQS and reconciles the deployment registry asynchronously. Propagation lag is typically 1–3 minutes.
-
-**Fix — get ground truth from AWS directly:**
+Inspect names without exposing values:
 
 ```bash
-atlas micros role assume user -s <svc> -e <env> -o env --disable-export -f /tmp/creds.env
-set -a; source /tmp/creds.env; set +a
-
-# Find your stack (Micros prefixes it with the service name and deployment ID)
-aws cloudformation list-stacks --region <region> \
-  --query 'StackSummaries[?contains(StackName, `<svc>`)][].{Name:StackName,Status:StackStatus}' \
-  --output table
-
-# Then check the parent stack's status
-aws cloudformation describe-stacks --region <region> \
-  --stack-name <parent-stack-name> \
-  --query 'Stacks[].{Status:StackStatus,Updated:LastUpdatedTime}' --output table
+atlas micros stash list -s "$SERVICE_NAME" -e "$ENV"
 ```
 
-If AWS reports `CREATE_COMPLETE`, the deployment is **done** — Micros' UI/CLI will catch up shortly. The ALB DNS name is in the stack's outputs (`URL`, `StackUrl`) and the friendly hostname `<svc>.<region>.platdev.atl-paas.net` will start resolving as soon as Route53 propagates (~30–60s after `ServiceDNS CREATE_COMPLETE`).
+Stashes do not cross environments. After changing a stash, deploy a new image
+version so the running container receives the new configuration.
+
+### ASAP private-key formatting
+
+Preserve the multiline key through JSON rather than shell newline rewriting:
+
+```bash
+(
+  set -e
+  umask 077
+  STASH_FILE="$(mktemp)"
+  trap 'rm -f -- "$STASH_FILE"' EXIT
+  trap 'exit 1' HUP INT TERM
+  jq '{ASAP_PRIVATE_KEY: .privateKey}' .asap-config > "$STASH_FILE"
+  atlas micros stash set -s "$SERVICE_NAME" -e "$ENV" -f "$STASH_FILE"
+)
+```
+
+If AI Gateway still rejects the principal, verify the use-case authorization
+and key registration through the owning platform. Do not rotate or restash
+credentials speculatively.
+
+## Runtime verification failure
+
+`/api/health` proves only that Express responds. Use the runtime verifier and
+exercise every changed backend-backed interaction:
+
+```bash
+node .agents/skills/vpk-deploy/scripts/verify-runtime.mjs \
+  "https://$SERVICE_NAME.$REGION.platdev.atl-paas.net"
+```
+
+If production exits with:
+
+```text
+VPK_RUNTIME_ADMIN_TOKEN is required when runtime admin protection is enabled
+```
+
+ensure the token exists in both the selected environment's stash and
+`service-descriptor.yml`. Never print the token while diagnosing it.
+
+## ALB subnet exhaustion
+
+An ALB needs at least eight free addresses in every selected subnet. When
+`pdev-west2` reports insufficient IP space, measure the subnets before
+retrying:
+
+```bash
+aws ec2 describe-subnets --region us-west-2 \
+  --query 'Subnets[].{AZ:AvailabilityZone,Free:AvailableIpAddressCount,Subnet:SubnetId}' \
+  --output table
+```
+
+If the selected subnets cannot satisfy the requirement, `pdev-apse2` is the
+only other supported pdev environment. Before switching:
+
+1. Set `ENV="pdev-apse2"` in `.deploy.local`.
+2. Restash every required variable into `pdev-apse2`.
+3. Verify the stash names.
+4. Deploy a new version with the explicit environment.
+5. Verify the `ap-southeast-2` URL.
+
+Do not treat an environment switch as a blind retry.
+
+## Micros reconciliation lag
+
+The deploy command can return before Micros finishes reconciling the stack.
+Follow the deployment ID:
+
+```bash
+atlas micros events -s "$SERVICE_NAME" -e "$ENV" -d "<deployment-id>"
+atlas micros service show -s "$SERVICE_NAME" -e "$ENV"
+```
+
+Wait for a final state. If direct AWS inspection is authorized and necessary,
+assume the service role for the same service/environment and inspect the
+matching region; do not infer success from the image push alone.

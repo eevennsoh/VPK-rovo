@@ -6,7 +6,7 @@ Switch theme lets a user cycle the header control through light, dark, and syste
 
 - `theme-read` reports the current header button name and `data-color-mode`.
 - `theme-cycle` moves light → dark → system → light.
-- `theme-restore` writes the previous `localStorage` `ui-theme` value back.
+- `theme-restore` cycles the same user-facing control until its original accessible name returns.
 
 ## How to get to it (user POV)
 
@@ -23,11 +23,11 @@ Preconditions:
 - **Read current.** Note the button name. Run `control-vpk browser snapshot -i --compact --depth 5` and keep the `Light theme` / `Dark theme` / `System theme` name. Run `control-vpk browser eval --stdin` with `document.documentElement.getAttribute("data-color-mode")`. Light theme corresponds to `light`; Dark theme to `dark`; System theme to whichever of `light` or `dark` the OS prefers.
 - **Cycle once.** Choose the theme button. Run `control-vpk browser find role button click --name "Light theme"` (or `Dark theme` / `System theme` as currently shown). The button name becomes the next value in the cycle light → dark → system → light, and `data-color-mode` matches the new actual mode.
 - **Proof.** Capture both modes you actually reached. Run `control-vpk browser screenshot output/agent-browser/vpk-verify/switch-theme/after-click.png` and write `data-color-mode` plus the button name to `output/agent-browser/vpk-verify/switch-theme/mode.txt`. The screenshot shows a visibly different surface (header/sidebar) and the VPK chrome.
-- **Restore.** Put back the stored preference from before the recipe. Run `control-vpk browser eval --stdin` with `localStorage.setItem("ui-theme", "<previous>")` then reload if needed so the header name matches the restored value.
+- **Restore.** Cycle the same theme button at most three times until the accessible name captured by **Read current** returns. Confirm `data-color-mode` again, then clean up. Do not write `localStorage`, theme attributes, classes, `colorScheme`, or ADS variables directly.
 
 ## Gotchas
 
 - Toggling only a `dark` class is not how VPK theming works. Assert `data-color-mode` on `<html>`.
 - `System theme` does not guarantee `data-color-mode=dark`. Compare against `window.matchMedia("(prefers-color-scheme: dark)").matches`.
-- Theme is stored in `localStorage` key `ui-theme` and is shared with any other browser on this origin. Restore it. Do not leave a teammate's session on dark because a verify run clicked once.
+- Theme preference is shared with any other browser on this origin. Restore it through the UI. Do not leave a teammate's session on dark because a verify run clicked once.
 - The button name is the *current* theme, not the theme you will switch to.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { Gallery, type GalleryItem } from "@/components/blocks/gallery";
@@ -9,14 +9,17 @@ import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journ
 import { useTerminalDemo } from "@/components/projects/jira-golden-journeys-v1/hooks/use-terminal-demo";
 
 import { JIRA_GOLDEN_JOURNEYS_V3_GALLERY_ITEMS } from "./data/gallery-items";
+import { createJiraGoldenJourneysV3InsightsSnapshot } from "./data/jira-insights";
 import {
 	JIRA_GOLDEN_JOURNEYS_V3_CLAUDE_SESSION_ID,
 	JIRA_GOLDEN_JOURNEYS_V3_STATUS_PHASES,
 	JIRA_GOLDEN_JOURNEYS_V3_STORY_COMPOSER_AGENTS,
+	resolveJiraGoldenJourneysV3PullRequestChecks,
 } from "./data/hotfix-story";
+import type { JiraGoldenJourneysV3CiStatus } from "./data/story-model";
 import {
 	PullRequestContextBar,
-	type PullRequestContextBarCiCounts,
+	type PullRequestContextBarCiCheck,
 	type PullRequestContextBarCiStatus,
 } from "./pull-request-context-bar";
 import {
@@ -33,53 +36,56 @@ import {
 	type JiraGoldenJourneysV3StoryController,
 } from "./use-hotfix-story";
 
+function summarizeCiChecks(
+	checks: readonly PullRequestContextBarCiCheck[],
+	status: PullRequestContextBarCiStatus,
+	storyCiStatus: JiraGoldenJourneysV3CiStatus,
+): string {
+	const failed = checks.filter((check) => check.status === "failed").length;
+	const passed = checks.filter((check) => check.status === "passed").length;
+	const inProgress = checks.filter((check) => (
+		check.status === "running" || check.status === "queued"
+	)).length;
+	if (failed > 0) {
+		return `${failed} failed, ${passed} passed`;
+	}
+	if (storyCiStatus === "repairing" && inProgress > 0) {
+		return `${passed} passed, ${inProgress} rerunning`;
+	}
+	if (status === "running" && inProgress > 0 && passed > 0) {
+		return `${passed} passed, ${inProgress} in progress`;
+	}
+	if (status === "passed") {
+		return `${passed} checks passed`;
+	}
+	return `${checks.length} CI checks`;
+}
+
 function getCiPresentation(
 	controller: JiraGoldenJourneysV3StoryController,
 ): {
-	counts: PullRequestContextBarCiCounts;
+	checks: readonly PullRequestContextBarCiCheck[];
 	status: PullRequestContextBarCiStatus;
 	summary: string;
 } {
-	if (controller.ciStatus === "failed") {
-		return {
-			counts: { failed: 1, inProgress: 0, passed: 2, skipped: 0 },
-			status: "failed",
-			summary: "1 failed, 2 passed",
-		};
-	}
-	if (controller.ciStatus === "repairing") {
-		return {
-			counts: { failed: 0, inProgress: 1, passed: 2, skipped: 0 },
-			status: "running",
-			summary: "2 passed, 1 rerunning",
-		};
-	}
-	if (controller.ciStatus === "passed") {
-		return {
-			counts: { failed: 0, inProgress: 0, passed: 3, skipped: 0 },
-			status: "passed",
-			summary: "3 checks passed",
-		};
-	}
-
-	if (controller.chapter === "review" && controller.reviewStep === "unit-passed") {
-		return {
-			counts: { failed: 0, inProgress: 2, passed: 1, skipped: 0 },
-			status: "running",
-			summary: "1 passed, 2 in progress",
-		};
-	}
-	if (controller.chapter === "review" && controller.reviewStep === "settling") {
-		return {
-			counts: { failed: 0, inProgress: 1, passed: 2, skipped: 0 },
-			status: "running",
-			summary: "2 passed, 1 in progress",
-		};
-	}
+	const checks = resolveJiraGoldenJourneysV3PullRequestChecks(controller.chapter, {
+		approvalStep: controller.approvalStep,
+		autoFixEnabled: controller.autoFixEnabled,
+		autoMergeEnabled: controller.autoMergeEnabled,
+		ciStatus: controller.ciStatus,
+		fixStep: controller.fixStep,
+		pullRequestMerged: controller.pullRequestMerged,
+		reviewStep: controller.reviewStep,
+	});
+	const status: PullRequestContextBarCiStatus = controller.ciStatus === "failed"
+		? "failed"
+		: controller.ciStatus === "passed"
+			? "passed"
+			: "running";
 	return {
-		counts: { failed: 0, inProgress: 3, passed: 0, skipped: 0 },
-		status: "running",
-		summary: "3 checks in progress",
+		checks,
+		status,
+		summary: summarizeCiChecks(checks, status, controller.ciStatus),
 	};
 }
 
@@ -123,7 +129,7 @@ function JiraGoldenJourneysV3PullRequestBar({
 			autoFixEnabled={controller.autoFixEnabled}
 			autoMergeEnabled={controller.autoMergeEnabled}
 			branch="feature/shop-4821-guest-checkout"
-			ciCounts={ci.counts}
+			ciChecks={ci.checks}
 			ciStatus={ci.status}
 			ciSummary={ci.summary}
 			deletions={21}
@@ -145,6 +151,26 @@ function JiraGoldenJourneysV3WorkItemStage({
 	onDismissPullRequestContext: () => void;
 	showPullRequestContext: boolean;
 }>): React.ReactElement {
+	const insightsSnapshot = useMemo(() => createJiraGoldenJourneysV3InsightsSnapshot(
+		controller.chapter,
+		{
+			approvalStep: controller.approvalStep,
+			ciStatus: controller.ciStatus,
+			fixStep: controller.fixStep,
+			pullRequestMerged: controller.pullRequestMerged,
+			reviewStep: controller.reviewStep,
+		},
+		controller.insightsRevision,
+	), [
+		controller.approvalStep,
+		controller.chapter,
+		controller.ciStatus,
+		controller.fixStep,
+		controller.insightsRevision,
+		controller.pullRequestMerged,
+		controller.reviewStep,
+	]);
+
 	return (
 		<div className="relative left-1/2 flex h-full min-h-0 w-[100cqw] -translate-x-1/2 items-start justify-center overflow-hidden px-8 pt-4 pb-4">
 			<ExperimentalV3JiraWorkItem
@@ -167,6 +193,7 @@ function JiraGoldenJourneysV3WorkItemStage({
 				initialPreset={controller.initialState.preset}
 				initialState={controller.initialState}
 				initialStateRevision={controller.launchId}
+				insightsSnapshot={insightsSnapshot}
 				preserveActiveSessionOnHydration
 				inlineSurface="card-fill"
 				presentation="inline"

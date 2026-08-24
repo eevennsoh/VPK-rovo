@@ -1,5 +1,10 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
+import {
+	probeFocusIndicatorClearance,
+	probeNearestOwnerContainment,
+} from "@/tests/helpers/jira-interaction-contracts";
+
 const JIRA_GOLDEN_JOURNEYS_V3_URL = (
 	process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
 ) + "/jira-golden-journeys-v3";
@@ -15,6 +20,26 @@ function chapterButton(page: Page, name: (typeof CHAPTERS)[number]): Locator {
 
 function contextBar(page: Page): Locator {
 	return page.locator("[data-pr-context-bar][data-pr-number='1847']");
+}
+
+async function expectFocusIndicatorNotClipped(
+	page: Page,
+	indicatorOwner: Locator,
+	focusTargetSelector?: string,
+): Promise<void> {
+	const result = await probeFocusIndicatorClearance(page, indicatorOwner, focusTargetSelector);
+
+	expect(result.focused).toBe(true);
+	expect(result.focusVisible).toBe(true);
+	expect(result.visibleIndicator).toBe(true);
+	expect(result.indicatorPlacement).not.toBe("none");
+	if (result.indicatorPlacement === "outset") {
+		expect(result.outsets.top).toBeGreaterThan(0);
+		expect(result.outsets.right).toBeGreaterThan(0);
+		expect(result.outsets.bottom).toBeGreaterThan(0);
+		expect(result.outsets.left).toBeGreaterThan(0);
+	}
+	expect(result.clips).toEqual([]);
 }
 
 async function openStory(page: Page): Promise<void> {
@@ -58,16 +83,24 @@ async function openBuild(page: Page): Promise<Locator> {
 	return contextBar(page);
 }
 
+async function openMetadataRail(page: Page): Promise<void> {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.setViewportSize({ width: 1920, height: 1080 });
+	await openBuild(page);
+	await expect(page.getByRole("region", { name: "Agent chat" })).toHaveCount(0);
+	await expect(page.getByRole("button", { name: "Change assignee" })).toBeVisible();
+}
+
 async function setAutomation(
 	page: Page,
 	settings: Readonly<{ autoFix: boolean; autoMerge: boolean }>,
 ): Promise<void> {
 	await page.locator("[data-ci-automation-trigger]").click();
-	const autoFix = page.getByRole("menuitemcheckbox", {
-		name: "Auto-fix CI & address comments",
+	const autoFix = page.getByRole("switch", {
+		name: /Auto-fix CI & address comments/u,
 	});
-	const autoMerge = page.getByRole("menuitemcheckbox", {
-		name: "Auto-merge when ready",
+	const autoMerge = page.getByRole("switch", {
+		name: /Auto-merge when ready/u,
 	});
 	if ((await autoFix.getAttribute("aria-checked")) !== String(settings.autoFix)) {
 		await autoFix.click();
@@ -79,6 +112,192 @@ async function setAutomation(
 	await expect(autoMerge).toHaveAttribute("aria-checked", String(settings.autoMerge));
 	await page.keyboard.press("Escape");
 }
+
+test("the desktop chapter control keeps its keyboard focus indicator clear of the gallery scrollport", async ({
+	page,
+}) => {
+	await openStory(page);
+	await expectFocusIndicatorNotClipped(page, chapterButton(page, "Build"));
+});
+
+test("the focus-clearance probe reports a deliberately clipped fixture", async ({ page }) => {
+	await page.setContent(`
+		<style>
+			#clip { width: 48px; height: 32px; overflow: hidden; }
+			#clipped { width: 48px; height: 32px; }
+			#clipped:focus-visible { outline: 4px solid blue; outline-offset: 4px; }
+		</style>
+		<div id="clip"><button id="clipped">Focus</button></div>
+	`);
+
+	const result = await probeFocusIndicatorClearance(page, page.locator("#clipped"));
+	expect(result.indicatorPlacement).toBe("outset");
+	expect(result.visibleIndicator).toBe(true);
+	expect(result.clips).not.toEqual([]);
+	expect(result.clips[0].clippedEdges).toEqual(["top", "right", "bottom", "left"]);
+});
+
+test("the focus-clearance probe does not mistake a resting shadow for a focus indicator", async ({
+	page,
+}) => {
+	await page.setContent(`
+		<style>
+			#resting-shadow {
+				box-shadow: 0 0 0 4px rgb(255 0 0);
+				outline: none;
+			}
+			#resting-shadow:focus-visible { outline: none; }
+		</style>
+		<button id="resting-shadow">Focus</button>
+	`);
+
+	const result = await probeFocusIndicatorClearance(page, page.locator("#resting-shadow"));
+	expect(result.focused).toBe(true);
+	expect(result.focusVisible).toBe(true);
+	expect(result.focusSpecificDelta).toBe(false);
+	expect(result.indicatorPlacement).toBe("none");
+	expect(result.visibleIndicator).toBe(false);
+});
+
+test("the containment probe reports owner and document overflow independently", async ({ page }) => {
+	await page.setContent(`
+		<style>
+			html, body { margin: 0; width: 100%; overflow-x: clip; }
+			#owner { width: 100px; overflow-x: auto; }
+			#subject { width: 200px; height: 20px; }
+		</style>
+		<div id="owner"><div id="subject">Subject</div></div>
+	`);
+
+	const result = await probeNearestOwnerContainment(page.locator("#subject"));
+	expect(result.owner).toBe("#owner");
+	expect(result.containmentKnown).toBe(true);
+	expect(result.ownerHorizontalOverflow).toBe(100);
+	expect(result.documentHorizontalOverflow).toBe(0);
+});
+
+test("the containment probe finds clipping owners before the viewport", async ({ page }) => {
+	await page.setContent(`
+		<style>
+			html, body { margin: 0; width: 100%; }
+			.owner { width: 100px; height: 32px; }
+			#hidden-owner { overflow: hidden; }
+			#clip-owner { overflow: clip; }
+			#paint-owner { contain: paint; }
+			#clip-path-owner { clip-path: inset(0); }
+			.subject { width: 200px; height: 20px; }
+		</style>
+		<div id="hidden-owner" class="owner"><div id="hidden-subject" class="subject"></div></div>
+		<div id="clip-owner" class="owner"><div id="clip-subject" class="subject"></div></div>
+		<div id="paint-owner" class="owner"><div id="paint-subject" class="subject"></div></div>
+		<div id="clip-path-owner" class="owner"><div id="clip-path-subject" class="subject"></div></div>
+	`);
+
+	for (const overflow of ["hidden", "clip", "paint", "clip-path"] as const) {
+		const result = await probeNearestOwnerContainment(
+			page.locator(`#${overflow}-subject`),
+		);
+		expect(result.owner).toBe(`#${overflow}-owner`);
+		expect(result.ownerHorizontalOverflow).toBe(100);
+		expect(result.documentHorizontalOverflow).toBe(0);
+		expect(result.containmentKnown).toBe(overflow !== "clip-path");
+		expect(result.contained).toBe(false);
+	}
+});
+
+test("the containment probe does not claim arbitrary clip-path geometry is contained", async ({
+	page,
+}) => {
+	await page.setContent(`
+		<style>
+			#shape-owner {
+				position: relative;
+				width: 100px;
+				height: 100px;
+				clip-path: circle(1px at 50% 50%);
+			}
+			#shape-subject {
+				position: absolute;
+				top: 40px;
+				left: 40px;
+				width: 20px;
+				height: 20px;
+			}
+		</style>
+		<div id="shape-owner"><div id="shape-subject"></div></div>
+	`);
+
+	const result = await probeNearestOwnerContainment(page.locator("#shape-subject"));
+	expect(result.owner).toBe("#shape-owner");
+	expect(result.containmentKnown).toBe(false);
+	expect(result.contained).toBe(false);
+});
+
+test("the metadata rail keeps field focus indicators clear of its body scrollport", async ({
+	page,
+}) => {
+	await openMetadataRail(page);
+	const assignee = page.getByRole("button", { name: "Change assignee" });
+	await expectFocusIndicatorNotClipped(page, assignee.locator(".."), "button");
+});
+
+test("ArtifactPane header actions keep their keyboard focus indicators clear of reveal slots", async ({
+	page,
+}) => {
+	await openMetadataRail(page);
+	const manageAutomations = page.getByRole("button", { name: "Manage automations" });
+	await expect(manageAutomations).toBeAttached();
+	await expectFocusIndicatorNotClipped(page, manageAutomations);
+});
+
+test("the PR context-bar CI trigger keeps its keyboard focus indicator clear of the content lane", async ({
+	page,
+}) => {
+	await openBuild(page);
+	await expectFocusIndicatorNotClipped(page, page.locator("[data-ci-automation-trigger]"));
+});
+
+test("work-item navigation keeps section and pull-request focus indicators clear", async ({
+	page,
+}) => {
+	await openBuild(page);
+	await expectFocusIndicatorNotClipped(page, page.getByRole("link", { name: "Description" }));
+	await expectFocusIndicatorNotClipped(page, page.getByRole("combobox", { name: "Pull requests. 1" }));
+});
+
+test("activity actions keep session and artifact focus indicators clear of reveal slots", async ({
+	page,
+}) => {
+	await openBuild(page);
+	await expectFocusIndicatorNotClipped(page, page.getByRole("button", { name: "View" }).first());
+	await expectFocusIndicatorNotClipped(
+		page,
+		page.getByRole("button", { name: "Code changes: 86 additions, 21 deletions" }),
+	);
+});
+
+test("activity sort reveal closes after pointer use and remains keyboard discoverable", async ({
+	page,
+}) => {
+	await openBuild(page);
+	const activityHeading = page.getByRole("heading", { name: "Activity", exact: true });
+	const sort = page.getByRole("button", { name: /^Show (?:latest|oldest)$/u });
+
+	await expect(sort).toHaveCSS("opacity", "0");
+	await activityHeading.hover();
+	await expect(sort).toHaveCSS("opacity", "1");
+	await sort.click();
+	await page.getByRole("menuitemradio", { name: "Latest" }).click();
+	await page.mouse.click(1, 1);
+	await page.mouse.move(0, 0);
+	await expect(sort).toHaveAttribute("aria-expanded", "false");
+	await expect(sort).toHaveCSS("opacity", "0");
+
+	await page.keyboard.press("Tab");
+	await sort.focus();
+	await expect(sort).toBeFocused();
+	await expect(sort).toHaveCSS("opacity", "1");
+});
 
 test("Terminal tells the local Claude-to-PR story and waits for the presenter to choose Build", async ({
 	page,
@@ -145,6 +364,8 @@ test("Terminal tells the local Claude-to-PR story and waits for the presenter to
 	await expect(page.getByRole("region", {
 		name: "Add guest checkout to the storefront",
 	})).toBeVisible();
+	await expect(page.getByRole("region", { name: "Agent chat" })).toHaveCount(0);
+	await expect(page.getByRole("button", { name: "Change assignee" })).toBeVisible();
 });
 
 test("rules-gated delivery repairs CI, stages both approvals, and merges before Release", async ({
@@ -168,8 +389,12 @@ test("rules-gated delivery repairs CI, stages both approvals, and merges before 
 	const handoff = page.locator(
 		"[data-jira-activity-entry-id='story-channel-claude-pr-handoff']",
 	);
-	await expect(handoff).toContainText("PR #1847 is open for SHOP-4821");
-	await expect(handoff).toContainText("Priya Narayanan and Jordan Lee");
+	await expect(page.locator("[data-jira-activity-entry-id='story-changed-files']")).toHaveCount(0);
+	await expect(handoff).toContainText("Implemented guest checkout for SHOP-4821");
+	await expect(handoff).toContainText("Implement guest checkout without account creation");
+	await expect(handoff).toContainText("guest-checkout-final.png");
+	await expect(handoff).not.toContainText("Changed 12 files");
+	await expect(handoff).toContainText("Open PR #1847 and request Priya and Jordan");
 	await expect(page.getByRole("link", {
 		name: "#1847: Implement guest checkout without account creation",
 	})).toBeVisible();
@@ -302,29 +527,26 @@ test("the PR bar is keyboard operable and contained at a narrow viewport", async
 	const trigger = page.locator("[data-ci-automation-trigger]");
 	await trigger.focus();
 	await page.keyboard.press("Enter");
-	const autoFix = page.getByRole("menuitemcheckbox", {
-		name: "Auto-fix CI & address comments",
+	const autoFix = page.getByRole("switch", {
+		name: /Auto-fix CI & address comments/u,
 	});
 	await expect(autoFix).toBeVisible();
 	await autoFix.focus();
 	await page.keyboard.press("Space");
 	await expect(autoFix).toHaveAttribute("aria-checked", "true");
 
+	const containment = await probeNearestOwnerContainment(bar);
 	const geometry = await bar.evaluate((element) => {
-		const rect = element.getBoundingClientRect();
 		const branch = element.querySelector<HTMLElement>(
 			"[title='feature/shop-4821-guest-checkout']",
 		);
 		return {
-			left: rect.left,
-			right: rect.right,
 			textOverflow: branch ? getComputedStyle(branch).textOverflow : null,
-			viewportWidth: window.innerWidth,
-			pageScrollWidth: document.documentElement.scrollWidth,
 		};
 	});
-	expect(geometry.left).toBeGreaterThanOrEqual(0);
-	expect(geometry.right).toBeLessThanOrEqual(geometry.viewportWidth);
-	expect(geometry.pageScrollWidth).toBe(geometry.viewportWidth);
+	expect(containment.containmentKnown).toBe(true);
+	expect(containment.contained).toBe(true);
+	expect(containment.ownerHorizontalOverflow).toBe(0);
+	expect(containment.documentHorizontalOverflow).toBe(0);
 	expect(geometry.textOverflow).toBe("ellipsis");
 });

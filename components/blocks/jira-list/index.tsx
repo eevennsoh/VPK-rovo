@@ -293,7 +293,7 @@ export function JiraList({
 								{onCopyLink ? (
 									<span
 										className={cn(
-											"pointer-events-none max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity] duration-normal ease-out-practical motion-reduce:transition-none group-hover/issue-key:pointer-events-auto group-hover/issue-key:max-w-7 group-hover/issue-key:opacity-100 group-focus-within/issue-key:pointer-events-auto group-focus-within/issue-key:max-w-7 group-focus-within/issue-key:opacity-100",
+													"pointer-events-none max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity] duration-normal ease-out-practical motion-reduce:transition-none group-hover/issue-key:pointer-events-auto group-hover/issue-key:max-w-7 group-hover/issue-key:opacity-100 group-has-[:focus-visible]/issue-key:pointer-events-auto group-has-[:focus-visible]/issue-key:max-w-7 group-has-[:focus-visible]/issue-key:opacity-100",
 											isCopiedRow && "pointer-events-auto max-w-7 opacity-100",
 										)}
 										data-testid={`copy-link-reveal-${row.issueKey}`}
@@ -307,7 +307,7 @@ export function JiraList({
 													<Button
 														aria-label={`${isCopiedRow ? "Copied link" : "Copy link"} for ${row.issueKey}`}
 														className={cn(
-															"ms-0.5 size-6 shrink-0 translate-x-1 scale-95 transition-[translate,scale] duration-normal ease-out-practical motion-reduce:transition-none group-hover/issue-key:translate-x-0 group-hover/issue-key:scale-100 group-focus-within/issue-key:translate-x-0 group-focus-within/issue-key:scale-100",
+															"ms-0.5 size-6 shrink-0 translate-x-1 scale-95 transition-[translate,scale] duration-normal ease-out-practical motion-reduce:transition-none group-hover/issue-key:translate-x-0 group-hover/issue-key:scale-100 group-has-[:focus-visible]/issue-key:translate-x-0 group-has-[:focus-visible]/issue-key:scale-100",
 															isCopiedRow && "translate-x-0 scale-100",
 														)}
 														onClick={() => onCopyLink(row)}

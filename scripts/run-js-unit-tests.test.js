@@ -181,6 +181,47 @@ test("test discovery skips files deleted or moved before staging", async () => {
 	);
 });
 
+test("classified test paths fail validation with a deterministic diagnostic", async () => {
+	const { assertClassifiedTestFilesExist } = await import("./run-js-unit-tests.mjs");
+
+	assert.throws(
+		() => assertClassifiedTestFilesExist({
+			stable: ["components/present.test.js", "components/missing.test.js"],
+			"source-contract": ["app/data/moved.test.js"],
+		}, (filePath) => filePath === "components/present.test.js"),
+		new Error([
+			"js-unit-tests: classified test paths do not exist:",
+			"- source-contract: app/data/moved.test.js",
+			"- stable: components/missing.test.js",
+		].join("\n")),
+	);
+});
+
+test("Jira and ASX tests renamed to v0, v1, and v2 remain classified", async () => {
+	const {
+		TEST_FILE_CLASSIFICATIONS,
+	} = await import("./js-unit-test-manifest.mjs");
+	const sourceContractFiles = new Set(TEST_FILE_CLASSIFICATIONS["source-contract"]);
+
+	for (const filePath of [
+		"components/projects/jira-golden-journeys-v0/kanban-stage.test.js",
+		"components/projects/jira-golden-journeys-v0/queue-stage.test.js",
+		"components/projects/jira-golden-journeys-v1/agent-chat-demo.test.js",
+		"components/projects/jira-golden-journeys-v1/kanban-stage.test.js",
+		"components/projects/jira-golden-journeys-v2/jira-golden-journeys-v2.test.js",
+		"app/data/jira-golden-journeys-v1-contract.test.js",
+	]) {
+		assert.equal(sourceContractFiles.has(filePath), true, `${filePath} should remain source-contract`);
+	}
+});
+
+test("every checked-in classified test path exists", async () => {
+	const { TEST_FILE_CLASSIFICATIONS } = await import("./js-unit-test-manifest.mjs");
+	const { assertClassifiedTestFilesExist } = await import("./run-js-unit-tests.mjs");
+
+	assert.doesNotThrow(() => assertClassifiedTestFilesExist(TEST_FILE_CLASSIFICATIONS));
+});
+
 test("test batching groups ordinary node tests by directory and isolates vm-module tests", async () => {
 	const { buildTestFileBatches } = await import("./run-js-unit-tests.mjs");
 	const sourceByFile = new Map([

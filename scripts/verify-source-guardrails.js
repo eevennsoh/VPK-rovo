@@ -5,6 +5,7 @@
 const { spawnSync } = require("node:child_process");
 const { existsSync, readFileSync, writeFileSync } = require("node:fs");
 const path = require("node:path");
+const ts = require("typescript");
 
 const ALLOWLIST_PATH = path.join(__dirname, "source-guardrails-allowlist.json");
 const SOURCE_EXTENSIONS = new Set([
@@ -38,6 +39,10 @@ const BROAD_ANY_PATTERNS = [
 	/\bPromise\s*<\s*any\b/u,
 ];
 const FORBIDDEN_IMPORT_RULES = [
+	{
+		filePathPattern: /^components\/(?:projects\/shared|ui(?:-custom)?)\//u,
+		modulePathPattern: /^@\/components\/.*\/experimental(?:-|\/)/u,
+	},
 	{
 		filePathPattern: /^app\/contexts\/context-rovo-chat\.tsx$/u,
 		modulePath: "@/components/projects/rovo-core/lib/agent-records/agent-versioning",
@@ -101,12 +106,409 @@ function hasLegacyReactContext(line) {
 	return /\b(?:React\.)?useContext\s*\(/u.test(line);
 }
 
+function hasPersistentFocusReveal(line) {
+	if (!/\bopacity-0\b/u.test(line)) return false;
+	const variantScopes = (variant, utility) => new Set(
+		[...line.matchAll(new RegExp(`\\bgroup-${variant}(?:/([^:\\s"']+))?:${utility}\\b`, "gu"))]
+			.map((match) => match[1] ?? "default"),
+	);
+	const hoverScopes = variantScopes("hover", "opacity-100");
+	const focusScopes = variantScopes("focus-within", "opacity-100");
+	const focusPointerScopes = variantScopes("focus-within", "pointer-events-auto");
+	const hasInteractiveCue = /\bpointer-events-none\b|\bcursor-pointer\b|\bfocus-visible:opacity-100\b/u.test(line);
+	if (!hasInteractiveCue) return false;
+	return [...focusScopes].some((scope) => {
+		return hoverScopes.has(scope) && (
+			focusPointerScopes.has(scope) ||
+			/\bcursor-pointer\b|\bfocus-visible:opacity-100\b/u.test(line)
+		);
+	});
+}
+
 function escapeRegExp(value) {
 	return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 }
 
 function getLineNumber(source, index) {
 	return source.slice(0, index).split(/\r?\n/u).length;
+}
+
+
+function getScriptKind(filePath) {
+	switch (path.extname(filePath)) {
+		case ".jsx":
+			return ts.ScriptKind.JSX;
+		case ".tsx":
+			return ts.ScriptKind.TSX;
+		case ".ts":
+			return ts.ScriptKind.TS;
+		default:
+			return ts.ScriptKind.JS;
+	}
+}
+
+function isLexicalScope(node) {
+	return ts.isSourceFile(node) ||
+		ts.isFunctionLike(node) ||
+		ts.isBlock(node) ||
+		ts.isCaseBlock(node) ||
+		ts.isModuleBlock(node) ||
+		ts.isForStatement(node) ||
+		ts.isForInStatement(node) ||
+		ts.isForOfStatement(node);
+}
+
+function getNearestLexicalScope(node) {
+	let current = node;
+	while (current && !isLexicalScope(current)) current = current.parent;
+	return current ?? null;
+}
+
+function getParentLexicalScope(scope) {
+	return scope.parent ? getNearestLexicalScope(scope.parent) : null;
+}
+
+function getNearestFunctionOrSourceScope(node) {
+	let current = node;
+	while (current && !ts.isSourceFile(current) && !ts.isFunctionLike(current)) {
+		current = current.parent;
+	}
+	return current ?? null;
+}
+
+function collectBindingIdentifiers(name, callback) {
+	if (ts.isIdentifier(name)) {
+		callback(name.text);
+		return;
+	}
+	for (const element of name.elements) {
+		if (ts.isOmittedExpression(element)) continue;
+		collectBindingIdentifiers(element.name, callback);
+	}
+}
+
+function collectLexicalBindings(sourceFile) {
+	const bindingsByScope = new Map();
+	const addBinding = (scope, name, binding) => {
+		if (!scope) return;
+		const scopeBindings = bindingsByScope.get(scope) ?? new Map();
+		scopeBindings.set(name, { ...binding, scope });
+		bindingsByScope.set(scope, scopeBindings);
+	};
+	const visit = (node) => {
+		if (ts.isVariableDeclaration(node) && ts.isVariableDeclarationList(node.parent)) {
+			const declarationList = node.parent;
+			const blockScoped = (declarationList.flags & ts.NodeFlags.BlockScoped) !== 0;
+			const scope = blockScoped
+				? getNearestLexicalScope(node)
+				: getNearestFunctionOrSourceScope(node);
+			const expandable = ts.isIdentifier(node.name) &&
+				(declarationList.flags & ts.NodeFlags.Const) !== 0 &&
+				Boolean(node.initializer);
+			collectBindingIdentifiers(node.name, (name) => addBinding(scope, name, {
+				declaration: node,
+				expandable,
+				initializer: expandable ? node.initializer : null,
+			}));
+		} else if (ts.isParameter(node)) {
+			const scope = getNearestLexicalScope(node.parent);
+			collectBindingIdentifiers(node.name, (name) => addBinding(scope, name, {
+				declaration: node,
+				expandable: false,
+				initializer: null,
+			}));
+		} else if (ts.isCatchClause(node) && node.variableDeclaration) {
+			collectBindingIdentifiers(node.variableDeclaration.name, (name) => addBinding(
+				node.block,
+				name,
+				{
+					declaration: node.variableDeclaration,
+					expandable: false,
+					initializer: null,
+				},
+			));
+		} else if (ts.isImportClause(node) && node.name) {
+			addBinding(sourceFile, node.name.text, {
+				declaration: node,
+				expandable: false,
+				initializer: null,
+			});
+		} else if (ts.isImportSpecifier(node) || ts.isNamespaceImport(node)) {
+			addBinding(sourceFile, node.name.text, {
+				declaration: node,
+				expandable: false,
+				initializer: null,
+			});
+		} else if (
+			(ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node) || ts.isEnumDeclaration(node)) &&
+			node.name
+		) {
+			addBinding(getNearestLexicalScope(node.parent), node.name.text, {
+				declaration: node,
+				expandable: false,
+				initializer: null,
+			});
+		}
+		ts.forEachChild(node, visit);
+	};
+	visit(sourceFile);
+	return bindingsByScope;
+}
+
+function resolveLexicalBinding(identifier, scope, bindingsByScope) {
+	let currentScope = scope;
+	while (currentScope) {
+		const binding = bindingsByScope.get(currentScope)?.get(identifier);
+		if (binding) return binding;
+		currentScope = getParentLexicalScope(currentScope);
+	}
+	return null;
+}
+
+function unwrapClassExpression(expression) {
+	let current = expression;
+	while (
+		ts.isParenthesizedExpression(current) ||
+		ts.isAsExpression(current) ||
+		ts.isTypeAssertionExpression(current) ||
+		ts.isSatisfiesExpression(current)
+	) {
+		current = current.expression;
+	}
+	return current;
+}
+
+function isClassBearingConstExpression(expression) {
+	const unwrapped = unwrapClassExpression(expression);
+	return ts.isStringLiteralLike(unwrapped) ||
+		ts.isIdentifier(unwrapped) ||
+		(
+			ts.isCallExpression(unwrapped) &&
+			ts.isIdentifier(unwrapped.expression) &&
+			unwrapped.expression.text === "cn"
+		);
+}
+
+function isReferencedIdentifier(node) {
+	if (ts.isDeclarationName(node)) return false;
+	const parent = node.parent;
+	if (ts.isPropertyAccessExpression(parent) && parent.name === node) return false;
+	if (
+		(
+			ts.isPropertyAssignment(parent) ||
+			ts.isMethodDeclaration(parent) ||
+			ts.isPropertyDeclaration(parent)
+		) &&
+		parent.name === node
+	) {
+		return false;
+	}
+	return true;
+}
+
+function collectReferencedIdentifiers(expression) {
+	const references = [];
+	const visit = (node) => {
+		if (ts.isIdentifier(node) && isReferencedIdentifier(node)) {
+			const scope = getNearestLexicalScope(node);
+			if (scope) references.push({ identifier: node.text, scope });
+		}
+		ts.forEachChild(node, visit);
+	};
+	visit(expression);
+	return references;
+}
+
+function collectReferencedProperties(expression) {
+	const properties = [];
+	const visit = (node) => {
+		if (
+			ts.isPropertyAccessExpression(node) &&
+			ts.isIdentifier(node.expression)
+		) {
+			const scope = getNearestLexicalScope(node);
+			if (scope) {
+				properties.push({
+					identifier: node.expression.text,
+					propertyName: node.name.text,
+					scope,
+				});
+			}
+		} else if (
+			ts.isElementAccessExpression(node) &&
+			ts.isIdentifier(node.expression) &&
+			node.argumentExpression &&
+			ts.isStringLiteralLike(node.argumentExpression)
+		) {
+			const scope = getNearestLexicalScope(node);
+			if (scope) {
+				properties.push({
+					identifier: node.expression.text,
+					propertyName: node.argumentExpression.text,
+					scope,
+				});
+			}
+		}
+		ts.forEachChild(node, visit);
+	};
+	visit(expression);
+	return properties;
+}
+
+function getStaticPropertyName(name) {
+	if (ts.isIdentifier(name) || ts.isStringLiteralLike(name) || ts.isNumericLiteral(name)) {
+		return name.text;
+	}
+	if (
+		ts.isComputedPropertyName(name) &&
+		ts.isStringLiteralLike(name.expression)
+	) {
+		return name.expression.text;
+	}
+	return null;
+}
+
+function getSelectedObjectPropertyInitializer(expression, propertyName) {
+	const objectExpression = unwrapClassExpression(expression);
+	if (!ts.isObjectLiteralExpression(objectExpression)) return null;
+	for (let index = objectExpression.properties.length - 1; index >= 0; index -= 1) {
+		const property = objectExpression.properties[index];
+		if (ts.isSpreadAssignment(property)) return null;
+		if (!property.name || getStaticPropertyName(property.name) !== propertyName) continue;
+		if (ts.isPropertyAssignment(property)) return property.initializer;
+		if (ts.isShorthandPropertyAssignment(property)) return property.name;
+		return null;
+	}
+	return null;
+}
+
+function expandClassNameExpression(record, sourceFile, bindingsByScope) {
+	const parts = [record.text];
+	const pending = [
+		...collectReferencedIdentifiers(record.expression)
+			.map((reference) => ({ ...reference, kind: "identifier" })),
+		...collectReferencedProperties(record.expression)
+			.map((property) => ({ ...property, kind: "property" })),
+	];
+	const visitedDeclarations = new Set();
+	const visitedProperties = new Map();
+	while (pending.length > 0) {
+		const reference = pending.pop();
+		if (!reference) continue;
+		const binding = resolveLexicalBinding(
+			reference.identifier,
+			reference.scope,
+			bindingsByScope,
+		);
+		if (!binding || !binding.expandable) continue;
+		if (reference.kind === "property") {
+			const seenProperties = visitedProperties.get(binding.declaration) ?? new Set();
+			if (seenProperties.has(reference.propertyName)) continue;
+			seenProperties.add(reference.propertyName);
+			visitedProperties.set(binding.declaration, seenProperties);
+			const initializer = unwrapClassExpression(binding.initializer);
+			if (ts.isIdentifier(initializer)) {
+				pending.push({
+					identifier: initializer.text,
+					kind: "property",
+					propertyName: reference.propertyName,
+					scope: binding.scope,
+				});
+				continue;
+			}
+			const selectedInitializer = getSelectedObjectPropertyInitializer(
+				initializer,
+				reference.propertyName,
+			);
+			if (!selectedInitializer) continue;
+			parts.push(selectedInitializer.getText(sourceFile));
+			for (const identifier of collectReferencedIdentifiers(selectedInitializer)) {
+				pending.push({ ...identifier, kind: "identifier" });
+			}
+			for (const property of collectReferencedProperties(selectedInitializer)) {
+				pending.push({ ...property, kind: "property" });
+			}
+			continue;
+		}
+		if (visitedDeclarations.has(binding.declaration)) continue;
+		visitedDeclarations.add(binding.declaration);
+		const initializer = binding.initializer;
+		if (!initializer || !isClassBearingConstExpression(initializer)) continue;
+		parts.push(initializer.getText(sourceFile));
+		for (const identifier of collectReferencedIdentifiers(initializer)) {
+			pending.push({ ...identifier, kind: "identifier" });
+		}
+		for (const property of collectReferencedProperties(initializer)) {
+			pending.push({ ...property, kind: "property" });
+		}
+	}
+	return parts.join(" ");
+}
+
+function assertCandidateSourceParses(sourceFile, filePath) {
+	const diagnostic = sourceFile.parseDiagnostics[0];
+	if (!diagnostic) return;
+	const position = sourceFile.getLineAndCharacterOfPosition(diagnostic.start ?? 0);
+	const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, " ")
+		.replace(/\s+/gu, " ")
+		.trim();
+	throw new Error(
+		`${filePath}:${position.line + 1}: source guardrail could not parse candidate className syntax (TS${diagnostic.code}): ${message}`,
+	);
+}
+
+function collectClassNameExpressionRecords(source, filePath) {
+	if (
+		!source.includes("className") ||
+		!source.includes("group-focus-within") ||
+		!source.includes("opacity-0")
+	) {
+		return [];
+	}
+	const sourceFile = ts.createSourceFile(
+		filePath,
+		source,
+		ts.ScriptTarget.Latest,
+		true,
+		getScriptKind(filePath),
+	);
+	assertCandidateSourceParses(sourceFile, filePath);
+	const bindingsByScope = collectLexicalBindings(sourceFile);
+	const records = [];
+	const visit = (node) => {
+		if (
+			ts.isJsxAttribute(node) &&
+			node.name.text === "className" &&
+			node.initializer
+		) {
+			const expression = ts.isJsxExpression(node.initializer)
+				? node.initializer.expression
+				: node.initializer;
+			const scope = expression ? getNearestLexicalScope(expression) : null;
+			if (expression && scope) {
+				const text = node.getText(sourceFile).replace(/\s+/gu, " ").trim();
+				const record = {
+					expression,
+					line: sourceFile.getLineAndCharacterOfPosition(
+						node.getStart(sourceFile),
+					).line + 1,
+					scope,
+					text,
+				};
+				records.push({
+					...record,
+					expandedText: expandClassNameExpression(
+						record,
+						sourceFile,
+						bindingsByScope,
+					),
+				});
+			}
+		}
+		ts.forEachChild(node, visit);
+	};
+	visit(sourceFile);
+	return records;
 }
 
 function addViolation(violations, occurrenceCounts, violation) {
@@ -137,7 +539,10 @@ function collectForbiddenImportViolationsFromSource(source, filePath) {
 
 	for (const importDeclaration of imports) {
 		for (const rule of rules) {
-			if (importDeclaration.modulePath !== rule.modulePath) {
+			const matchesModule = rule.modulePath
+				? importDeclaration.modulePath === rule.modulePath
+				: rule.modulePathPattern?.test(importDeclaration.modulePath) ?? false;
+			if (!matchesModule) {
 				continue;
 			}
 
@@ -146,7 +551,7 @@ function collectForbiddenImportViolationsFromSource(source, filePath) {
 				addViolation(violations, occurrenceCounts, {
 					filePath,
 					line: importDeclaration.line,
-					text: `forbidden import from ${rule.modulePath}`,
+					text: `forbidden import from ${rule.modulePath ?? importDeclaration.modulePath}`,
 					type: "forbidden-import",
 				});
 				continue;
@@ -215,7 +620,18 @@ function collectSourceGuardrailViolationsFromSource(source, filePath) {
 				type: "legacy-react-context",
 			});
 		}
+
 	});
+
+	for (const expression of collectClassNameExpressionRecords(source, filePath)) {
+		if (!hasPersistentFocusReveal(expression.expandedText)) continue;
+		addViolation(violations, occurrenceCounts, {
+			filePath,
+			line: expression.line,
+			text: expression.text,
+			type: "persistent-focus-reveal",
+		});
+	}
 
 	return [
 		...violations,
@@ -360,6 +776,7 @@ module.exports = {
 	formatFailure,
 	hasBroadAny,
 	hasLegacyReactContext,
+	hasPersistentFocusReveal,
 	isSourceFile,
 	listSourceFiles,
 };

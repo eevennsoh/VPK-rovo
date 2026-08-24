@@ -251,7 +251,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		guideSource,
-		/group-hover\/review-guide:opacity-100[\s\S]*group-focus-within\/review-guide:opacity-100/u,
+		/group-hover\/review-guide:opacity-100[\s\S]*group-has-\[:focus-visible\]\/review-guide:opacity-100/u,
 	);
 	assert.match(guideSource, /review\.summary\.join\(" "\)/u);
 	assert.doesNotMatch(guideSource, /font: token\("font\.heading\.large"\)/u);
@@ -678,7 +678,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		commitsValueSource,
-		/pointer-events-none opacity-0[\s\S]*group-hover:pointer-events-auto group-hover:opacity-100[\s\S]*group-focus-within:pointer-events-auto group-focus-within:opacity-100[\s\S]*focus-visible:pointer-events-auto focus-visible:opacity-100/u,
+		/pointer-events-none opacity-0[\s\S]*group-hover:pointer-events-auto group-hover:opacity-100[\s\S]*focus-visible:pointer-events-auto focus-visible:opacity-100/u,
 	);
 	assert.match(
 		commitsValueSource,
@@ -732,13 +732,16 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 		railSource,
 		/ChecksSectionTitle[\s\S]*inProgress=\{checksInProgress\}[\s\S]*passed=\{passedChecks\}[\s\S]*total=\{data\.checks\.length\}/u,
 	);
-	// Labeled collapsed count; ArtifactPane CollapsedSectionCount owns the · sibling + gap-1.5.
+	// Labeled collapsed count; ArtifactPane spaces it from the title with gap-1.5 (no ·).
 	// Failures are appended when present (e.g. "2/3 passed 1 failed").
+	// Visible/accessible trigger text is "CI checks" + count, never a middle-dot.
 	assert.match(
 		railSource,
 		/const checksCollapsedCount =\s*failedChecks > 0\s*\?\s*`\$\{passedChecks\}\/\$\{data\.checks\.length\} passed \$\{failedChecks\} failed`\s*:\s*`\$\{passedChecks\}\/\$\{data\.checks\.length\} passed`;/u,
 	);
 	assert.match(railSource, /count: checksCollapsedCount,/u);
+	assert.doesNotMatch(railSource, /checksCollapsedCount =[\s\S]*·/u);
+	assert.match(railSource, /title: "Commits",\s*count: data\.commits\.length,/u);
 	assert.match(railSource, /data-jira-work-item-pull-request-checks/u);
 	assert.match(
 		railSource,

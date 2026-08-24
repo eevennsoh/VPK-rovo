@@ -217,6 +217,20 @@ export const CLAUDE_CODE_ACTOR: StaticTimelineEvent["actor"] = {
 	brandName: CLAUDE_CODE.brandName,
 };
 
+export const MAYA_CHEN_ACTOR: StaticTimelineEvent["actor"] = {
+	id: "static-maya-chen",
+	name: "Maya Chen",
+	kind: "person",
+	avatarSrc: "/avatar-user/andrea-wilson/color/asow-service-yellow.png",
+};
+
+export const VENN_ACTOR: StaticTimelineEvent["actor"] = {
+	id: "static-venn",
+	name: "Venn",
+	kind: "person",
+	avatarSrc: "/avatar-user/venn/venn.png",
+};
+
 export const GITHUB_ACTOR: StaticTimelineEvent["actor"] = {
 	id: "static-github",
 	name: "GitHub",

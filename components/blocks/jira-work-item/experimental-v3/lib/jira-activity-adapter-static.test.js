@@ -151,7 +151,7 @@ test("forwards pull-request metadata on a static event so it renders the Jira Ac
 	]);
 
 	assert.equal(entry.kind, "event");
-	assert.equal(entry.icon, "linked");
+	assert.equal(entry.icon, "pull-request");
 	assert.deepEqual(entry.pullRequest, pullRequest);
 });
 

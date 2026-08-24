@@ -53,6 +53,16 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 			description: "Renders an optional trailing action in each comment card header.",
 		},
 		{
+			name: "renderEntry",
+			type: "(entry: JiraActivityEntry) => ReactNode | undefined",
+			description: "Optionally replaces one entry body while retaining Jira Activity ordering, filtering, and timeline structure.",
+		},
+		{
+			name: "activeEntryId",
+			type: "string",
+			description: "Marks one timeline row as the current step with aria-current and a data-active hook.",
+		},
+		{
 			name: "onAddCommentToChat",
 			type: "(entry: JiraActivityCommentEntry) => void",
 			description:
@@ -108,20 +118,20 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 		},
 		{
 			name: "filter",
-			type: '"all" | "agents-only" | "needs-input" | "comments-only"',
+			type: '"all" | "agents-only" | "needs-input" | "comments-only" | "insights-only"',
 			default: "undefined (uncontrolled)",
 			description:
-				"Controlled timeline filter. `agents-only` shows agent cards; `needs-input` shows sessions awaiting the viewer; `comments-only` shows comment entries.",
+				"Controlled timeline filter. `agents-only` shows agent cards; `needs-input` shows sessions awaiting the viewer; `comments-only` shows comment entries; `insights-only` shows captured decisions.",
 		},
 		{
 			name: "defaultFilter",
-			type: '"all" | "agents-only" | "needs-input" | "comments-only"',
+			type: '"all" | "agents-only" | "needs-input" | "comments-only" | "insights-only"',
 			default: '"all"',
 			description: "Initial filter when the header view control is uncontrolled.",
 		},
 		{
 			name: "onFilterChange",
-			type: '(next: "all" | "agents-only" | "needs-input" | "comments-only") => void',
+			type: '(next: "all" | "agents-only" | "needs-input" | "comments-only" | "insights-only") => void',
 			description: "Called when the header view control changes the activity filter.",
 		},
 		{

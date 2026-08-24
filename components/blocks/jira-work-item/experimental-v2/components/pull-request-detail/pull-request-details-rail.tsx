@@ -212,7 +212,7 @@ function CommitsValue({ commits }: Readonly<{ commits: readonly PullRequestCommi
 											"size-3! min-h-0 min-w-0 p-0 text-icon-subtle hover:bg-transparent hover:text-icon",
 											"pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical",
 											"group-hover:pointer-events-auto group-hover:opacity-100",
-											"group-focus-within:pointer-events-auto group-focus-within:opacity-100",
+											"group-has-[:focus-visible]:pointer-events-auto group-has-[:focus-visible]:opacity-100",
 											"focus-visible:pointer-events-auto focus-visible:opacity-100",
 											"motion-reduce:transition-none",
 										)}
@@ -428,7 +428,7 @@ export function PullRequestDetailsRail({
 		pullRequestSectionExpandRequest,
 	} = useMetadataRail();
 	// Review lands on PR Details with CI checks open — the chapter's primary
-	// beat — instead of a collapsed · summary that needs a header click.
+	// beat — instead of a collapsed count summary that needs a header click.
 	const [openSectionIds, setOpenSectionIds] = useState<ReadonlySet<string>>(
 		() => new Set([PULL_REQUEST_CHECKS_SECTION_ID]),
 	);

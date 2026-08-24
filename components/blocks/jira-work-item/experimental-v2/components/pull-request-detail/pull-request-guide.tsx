@@ -211,7 +211,7 @@ export function PullRequestGuide({
 				<ChatTimelineNavigator
 					activeItemId={activeTimelineId}
 					appearance="surface"
-					className="pointer-events-none sticky top-1/2 h-fit -translate-y-1/2 self-start opacity-0 transition-opacity duration-normal ease-out motion-reduce:transition-none group-hover/review-guide:pointer-events-auto group-hover/review-guide:opacity-100 group-focus-within/review-guide:pointer-events-auto group-focus-within/review-guide:opacity-100"
+					className="pointer-events-none sticky top-1/2 h-fit -translate-y-1/2 self-start opacity-0 transition-opacity duration-normal ease-out motion-reduce:transition-none group-hover/review-guide:pointer-events-auto group-hover/review-guide:opacity-100 group-has-[:focus-visible]/review-guide:pointer-events-auto group-has-[:focus-visible]/review-guide:opacity-100"
 					expandedOffsetClassName="pl-4"
 					flyoutSide="right"
 					itemOrder="chronological"

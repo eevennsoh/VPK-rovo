@@ -29,6 +29,7 @@ export interface JiraActivityActor {
  */
 export type JiraActivityEventIcon =
 	| "created"
+	| "assigned"
 	| "label"
 	| "sla"
 	| "status"
@@ -81,6 +82,10 @@ interface JiraActivityEntryBase {
 	actor: JiraActivityActor;
 	/** Human-readable relative time, e.g. "15min ago". */
 	timestamp: string;
+	/** Optional chronological timestamp used when entries from multiple sources are merged. */
+	createdAtMs?: number;
+	/** Cross-cutting feed category. Insights share the Activity spine but can be filtered. */
+	category?: "insight";
 }
 
 /** A compact single-line event on the timeline spine. */
@@ -271,9 +276,11 @@ export type JiraActivitySortOrder = "ascending" | "descending";
  * - `agents-only` — agent-authored comments and generated-output cards
  * - `needs-input` — entries awaiting viewer input (`sessionItem.state === "needs-input"`)
  * - `comments-only` — human and agent comment cards only
+ * - `insights-only` — captured insight/decision rows on the shared Activity timeline
  */
 export type JiraActivityFilter =
 	| "all"
 	| "agents-only"
 	| "needs-input"
-	| "comments-only";
+	| "comments-only"
+	| "insights-only";
