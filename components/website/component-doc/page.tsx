@@ -10,6 +10,7 @@ import { DocInstallation } from "./components/doc-installation";
 import { DocUsage } from "./components/doc-usage";
 import { DocPropsTable } from "./components/doc-props-table";
 import { DocExamples } from "./components/doc-examples";
+import { resolveBleedWrapperDividers, shouldBleedExamples } from "./components/preview-layout";
 
 interface ComponentDocProps {
 	component: {
@@ -36,7 +37,18 @@ export function ComponentDoc({ component }: Readonly<ComponentDocProps>) {
 	const articleStyle = {
 		paddingBottom: token("space.600"),
 	};
-	const detailSections = (
+	// Examples normally sit in the 860px reading container with the rest of the
+	// prose. Opting into "bleed" moves them into the same wide band the preview
+	// uses, so a wide demo renders at an identical width in both sections.
+	const bleedExamples = shouldBleedExamples(detail?.demoLayout);
+	const examplesSection = detail?.examples && detail.examples.length > 0 ? (
+		<DocExamples
+			examples={detail.examples}
+			category={category}
+			demoLayout={detail.demoLayout}
+		/>
+	) : null;
+	const installationAndUsage = (
 		<>
 			{/* 3. Installation — always shown */}
 			<DocInstallation
@@ -46,27 +58,32 @@ export function ComponentDoc({ component }: Readonly<ComponentDocProps>) {
 			/>
 
 			{/* 4. Usage — only if data exists */}
-			{detail?.usage && <DocUsage usage={detail.usage} />}
-
-			{/* 5. Examples — only if data exists */}
-			{detail?.examples && detail.examples.length > 0 && (
-				<DocExamples
-					examples={detail.examples}
-					category={category}
-					demoLayout={detail.demoLayout}
-				/>
-			)}
-
-			{/* 6. API Reference — only if props data exists */}
-			{detail?.props && (
-				<DocPropsTable
-					componentName={name.replace(/\s+/g, "")}
-					props={detail.props}
-					subComponents={detail.subComponents}
-				/>
-			)}
+			{detail?.usage ? <DocUsage usage={detail.usage} /> : null}
 		</>
 	);
+	const propsSection = detail?.props ? (
+		/* 6. API Reference — only if props data exists */
+		<DocPropsTable
+			componentName={name.replace(/\s+/g, "")}
+			props={detail.props}
+			subComponents={detail.subComponents}
+		/>
+	) : null;
+	const detailSections = (
+		<>
+			{installationAndUsage}
+
+			{/* 5. Examples — only if data exists */}
+			{examplesSection}
+
+			{propsSection}
+		</>
+	);
+	// `DocSection` hides its own divider with `last:border-b-0`, which resolves
+	// against its DOM parent. The bleed branch below splits the sections across
+	// three width wrappers, which changes who is `:last-child`, so any wrapper
+	// still followed by a section has to re-assert the divider.
+	const bleedDividers = resolveBleedWrapperDividers(examplesSection !== null, propsSection !== null);
 
 	return (
 		<article style={articleStyle}>
@@ -88,9 +105,26 @@ export function ComponentDoc({ component }: Readonly<ComponentDocProps>) {
 			<DocPreview slug={slug} category={category} demoLayout={detail?.demoLayout} />
 		</div>
 
-			<div style={contentContainerStyle}>
-				{detailSections}
-			</div>
+			{bleedExamples ? (
+				<>
+					<div
+						style={contentContainerStyle}
+						className={bleedDividers.installationAndUsage}
+					>
+						{installationAndUsage}
+					</div>
+					<div style={previewContainerStyle} className={bleedDividers.examples}>
+						{examplesSection}
+					</div>
+					<div style={contentContainerStyle} className={bleedDividers.props}>
+						{propsSection}
+					</div>
+				</>
+			) : (
+				<div style={contentContainerStyle}>
+					{detailSections}
+				</div>
+			)}
 		</article>
 	);
 }
