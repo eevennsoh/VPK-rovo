@@ -181,8 +181,8 @@ export function EntityCardHeader({
 						"relative h-6 shrink-0 overflow-visible transition-[width] duration-fast ease-out motion-reduce:transition-none",
 						hasTrailingStatus
 							? action
-								? added ? "w-16" : "w-6 group-hover/card:w-16 group-focus-within/card:w-16 group-data-[active=true]/card:w-16"
-								: added ? "w-8" : "w-0 group-hover/card:w-8 group-focus-within/card:w-8"
+								? added ? "w-16" : "w-6 group-hover/card:w-16 group-has-[:focus-visible]/card:w-16 group-data-[active=true]/card:w-16"
+								: added ? "w-8" : "w-0 group-hover/card:w-8 group-has-[:focus-visible]/card:w-8"
 							: added ? "w-[52px]" : hoverAdded ? "w-6 group-hover/card:w-[52px] group-data-[active=true]/card:w-[52px]" : "w-6",
 					)}
 				>
@@ -191,7 +191,7 @@ export function EntityCardHeader({
 							className={cn(
 								"absolute top-0 right-0 z-[1] inline-flex transition-transform duration-fast ease-out motion-reduce:transition-none",
 								hasTrailingStatus
-									? added ? "-translate-x-10" : "group-hover/card:-translate-x-10 group-focus-within/card:-translate-x-10 group-data-[active=true]/card:-translate-x-10"
+									? added ? "-translate-x-10" : "group-hover/card:-translate-x-10 group-has-[:focus-visible]/card:-translate-x-10 group-data-[active=true]/card:-translate-x-10"
 									: added ? "-translate-x-7" : hoverAdded ? "group-hover/card:-translate-x-7 group-data-[active=true]/card:-translate-x-7" : "translate-x-0",
 							)}
 						>
@@ -248,7 +248,7 @@ function EntityCardSelectableLeading({
 				aria-hidden
 				className={cn(
 					"absolute inset-0 flex items-center justify-center transition-opacity duration-fast ease-out",
-					selected ? "opacity-0" : "opacity-100 group-hover/card:opacity-0 group-focus-within/card:opacity-0",
+					selected ? "opacity-0" : "opacity-100 group-hover/card:opacity-0 group-has-[:focus-visible]/card:opacity-0",
 				)}
 			>
 				{children}
@@ -260,7 +260,7 @@ function EntityCardSelectableLeading({
 					"opacity-0 transition-opacity duration-fast ease-out after:inset-0 focus-visible:pointer-events-auto focus-visible:opacity-100",
 					selected
 						? "pointer-events-auto opacity-100"
-						: "pointer-events-none group-hover/card:pointer-events-auto group-hover/card:opacity-100 group-focus-within/card:pointer-events-auto group-focus-within/card:opacity-100",
+						: "pointer-events-none group-hover/card:pointer-events-auto group-hover/card:opacity-100 group-has-[:focus-visible]/card:pointer-events-auto group-has-[:focus-visible]/card:opacity-100",
 				)}
 				onCheckedChange={(checked) => onSelectedChange?.(Boolean(checked))}
 				onClick={stopPropagation}
@@ -316,7 +316,7 @@ export function EntityCardAddedSwitch({
 				"transition-opacity duration-fast ease-out motion-reduce:transition-none after:inset-0",
 				added
 					? "pointer-events-auto opacity-100"
-					: "pointer-events-none opacity-0 group-hover/card:pointer-events-auto group-hover/card:opacity-100 group-focus-within/card:pointer-events-auto group-focus-within/card:opacity-100 group-data-[active=true]/card:pointer-events-auto group-data-[active=true]/card:opacity-100",
+					: "pointer-events-none opacity-0 group-hover/card:pointer-events-auto group-hover/card:opacity-100 group-has-[:focus-visible]/card:pointer-events-auto group-has-[:focus-visible]/card:opacity-100 group-data-[active=true]/card:pointer-events-auto group-data-[active=true]/card:opacity-100",
 			)}
 			onCheckedChange={onAddedChange}
 			onClick={stopPropagation}
@@ -366,7 +366,7 @@ export function EntityCardMoreButton({ label, active = false, onClick }: Readonl
 			aria-label={label}
 			aria-pressed={active || undefined}
 			className={cn(
-				"size-6 shrink-0 cursor-pointer opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100",
+				"size-6 shrink-0 cursor-pointer opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-has-[:focus-visible]/card:opacity-100",
 				active && "opacity-100",
 			)}
 			onClick={handleClick}

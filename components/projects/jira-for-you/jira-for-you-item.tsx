@@ -219,7 +219,7 @@ function ItemActions({
 	return (
 		<div
 			className={cn(
-				"pointer-events-none invisible flex w-0 items-center gap-1 overflow-hidden opacity-0 transition-opacity duration-fast ease-out-practical group-hover:pointer-events-auto group-hover:visible group-hover:w-auto group-hover:overflow-visible group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:visible group-focus-within:w-auto group-focus-within:overflow-visible group-focus-within:opacity-100 has-[:focus-visible]:pointer-events-auto has-[:focus-visible]:visible has-[:focus-visible]:w-auto has-[:focus-visible]:overflow-visible has-[:focus-visible]:opacity-100 has-[button[aria-expanded=true]]:pointer-events-auto has-[button[aria-expanded=true]]:visible has-[button[aria-expanded=true]]:w-auto has-[button[aria-expanded=true]]:overflow-visible has-[button[aria-expanded=true]]:opacity-100 motion-reduce:transition-none",
+				"pointer-events-none invisible flex w-0 items-center gap-1 overflow-hidden opacity-0 transition-opacity duration-fast ease-out-practical group-hover:pointer-events-auto group-hover:visible group-hover:w-auto group-hover:overflow-visible group-hover:opacity-100 group-has-[:focus-visible]:pointer-events-auto group-has-[:focus-visible]:visible group-has-[:focus-visible]:w-auto group-has-[:focus-visible]:overflow-visible group-has-[:focus-visible]:opacity-100 has-[:focus-visible]:pointer-events-auto has-[:focus-visible]:visible has-[:focus-visible]:w-auto has-[:focus-visible]:overflow-visible has-[:focus-visible]:opacity-100 has-[button[aria-expanded=true]]:pointer-events-auto has-[button[aria-expanded=true]]:visible has-[button[aria-expanded=true]]:w-auto has-[button[aria-expanded=true]]:overflow-visible has-[button[aria-expanded=true]]:opacity-100 motion-reduce:transition-none",
 				forceVisible && "pointer-events-auto visible w-auto overflow-visible opacity-100",
 			)}
 			data-slot="jira-for-you-actions"
@@ -319,7 +319,7 @@ export function JiraForYouItemRow({
 			</button>
 			<div
 				className={cn(
-					"relative ml-0 flex w-0 shrink-0 items-center group-hover:ml-3 group-hover:w-auto group-focus-within:ml-3 group-focus-within:w-auto has-[button[aria-expanded=true]]:ml-3 has-[button[aria-expanded=true]]:w-auto @[560px]/jira-for-you-items:ml-3 @[560px]/jira-for-you-items:w-auto",
+					"relative ml-0 flex w-0 shrink-0 items-center group-hover:ml-3 group-hover:w-auto group-has-[:focus-visible]:ml-3 group-has-[:focus-visible]:w-auto has-[button[aria-expanded=true]]:ml-3 has-[button[aria-expanded=true]]:w-auto @[560px]/jira-for-you-items:ml-3 @[560px]/jira-for-you-items:w-auto",
 					isViewActionForcedVisible && "ml-3 w-auto",
 				)}
 				data-slot="jira-for-you-trailing"
@@ -332,7 +332,7 @@ export function JiraForYouItemRow({
 				/>
 				<div
 					className={cn(
-						"hidden transition-opacity duration-fast ease-out-practical @[560px]/jira-for-you-items:block group-hover:hidden group-focus-within:hidden group-has-[[data-slot=jira-for-you-actions]_button[aria-expanded=true]]:hidden motion-reduce:transition-none",
+						"hidden transition-opacity duration-fast ease-out-practical @[560px]/jira-for-you-items:block group-hover:hidden group-has-[:focus-visible]:hidden group-has-[[data-slot=jira-for-you-actions]_button[aria-expanded=true]]:hidden motion-reduce:transition-none",
 						isViewActionForcedVisible && "hidden",
 					)}
 				>

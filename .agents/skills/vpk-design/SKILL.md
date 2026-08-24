@@ -170,8 +170,13 @@ Test route: /[route]
 Component root selector or data-testid: [selector]
 
 Capture screenshots in light and dark mode.
-When setting dark mode programmatically, update all 3:
-1) html class, 2) html data-theme, 3) html style.colorScheme.
+Use `vpk-verify` / `control-vpk` and the user-facing theme control from the
+`switch-theme` recipe. Do not mutate html classes, `data-theme`,
+`data-color-mode`, `style.colorScheme`, localStorage, or ADS variables directly.
+For each mode, use an IIFE to find the theme control's nearest
+`[data-color-mode]` owner, then prove the accessible name, local color mode,
+and non-empty computed `--ds-surface` / `--ds-text` values agree. Restore the
+original theme through the same control before scoped cleanup.
 
 Run `ads_analyze_localhost_a11y` scoped to the component root selector
 (not only full-page scans). If it reports material issues, use
@@ -222,15 +227,16 @@ Report both outcomes clearly:
 
 ### Visual Validation
 
-Use `/agent-browser` (`npx agent-browser`) for all browser-driven validation — navigation, snapshots, screenshots, and interaction.
+Use `vpk-verify` (`control-vpk`) for all browser-driven validation — navigation, snapshots, screenshots, interaction, worktree ownership, and cleanup. It delegates to the worktree-installed agent-browser binary with a scoped session.
 
-1. Standard: `/agent-browser` snapshot/screenshot flow plus `ads_analyze_localhost_a11y` scoped to the component root.
-2. If agent-browser launch fails, fallback to:
+1. Standard: `control-vpk doctor` + snapshot/screenshot flow plus `ads_analyze_localhost_a11y` scoped to the component root.
+2. Theme: follow `vpk-verify/features/switch-theme.md`; use the user-facing control and capture the accessible name plus the nearest `[data-color-mode]` owner's local mode and resolved ADS token values.
+3. For a stale non-navigation command, reopen and revalidate the exact feature entrypoint first. If browser-starting `open`/`connect` stays stale after its bounded retry, or agent-browser is otherwise unavailable/blocked, fall back to:
    - server-render sanity checks for expected text/structure at the route
    - component-level a11y analysis (`ads_analyze_a11y`)
    - targeted localhost a11y (`ads_analyze_localhost_a11y`) with component selector
-3. Use `ads_get_a11y_guidelines` and `ads_suggest_a11y_fixes` to separate real issues from noise and turn them into concrete fixes.
-4. Explicitly mark validation as degraded when browser automation is blocked.
+4. Use `ads_get_a11y_guidelines` and `ads_suggest_a11y_fixes` to separate real issues from noise and turn them into concrete fixes.
+5. Explicitly mark validation as degraded when browser automation is blocked.
 
 ### Geometry Parity Checks (Critical)
 
@@ -370,7 +376,7 @@ Before presenting to user:
 - [ ] `ads_i18n_conversion_guide` was used when Figma copy landed in an intl-aware surface
 - [ ] Implementer passed `pnpm run typecheck`
 - [ ] Full lint attempted; scoped lint on changed files reported if baseline lint debt exists
-- [ ] Validator captured light and dark mode screenshots (class + `data-theme` + `colorScheme`)
+- [ ] Validator captured light and dark screenshots through the user-facing theme control and proved `data-color-mode` plus resolved ADS tokens
 - [ ] Validator confirmed geometry parity (sizes, offsets, center invariants, icon button/glyph sizes)
 - [ ] For `SpeechInput` inside `PromptInput`, `allowOverflow` is enabled and listening pulse rings are fully visible (no clipping)
 - [ ] A11y validation scoped to component selector and free of unrelated overlay noise

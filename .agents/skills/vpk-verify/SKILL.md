@@ -48,6 +48,14 @@ Two worktrees can run side by side (deterministic ports, unique Portless origins
 
 Harness: `agent-browser` via `control-vpk browser`, which injects a worktree-scoped session (`agent-browser session id --scope worktree --prefix vpk-verify`). Load `agent-browser skills get core` once per session if you are unsure of flags. After a Next.js code edit, also follow `next-dev-loop` (`/_next/mcp` plus this same browser).
 
+Every browser subprocess is bounded to 35 seconds by default. Set
+`VPK_VERIFY_BROWSER_TIMEOUT_MS` to an integer from 1000 through 300000 only
+when a known command needs a different bound. A timeout closes only this
+worktree's scoped browser session. Only browser-starting `open`/`connect`
+commands close and retry a stale session once. A non-navigation command against
+an inactive session stops immediately; reopen the exact feature entrypoint and
+revalidate its route marker before retrying.
+
 ```bash
 SESSION="$(.agents/skills/vpk-verify/scripts/control-vpk session)"
 export AGENT_BROWSER_SESSION="$SESSION"
@@ -72,6 +80,20 @@ Prefer ARIA roles, accessible names, and `id` / `href` handles from the feature 
 | `role=button` name `Browse all agents` | Studio home |
 
 `pnpm exec playwright test <spec>` is fallback only when `agent-browser` is missing or blocked; it is not this skill's proof path.
+
+### Failure handoff
+
+`control-vpk browser` classifies failures as `timeout`, `stale_session`,
+`missing_binary`, or `assertion_failure`. The diagnostic includes the exact
+forwarded command and says that existing files under
+`output/agent-browser/vpk-verify/` are retained while the failed command is not
+accepted as proof. Do not silently continue with a partial screenshot or curl.
+
+If a browser-starting command cannot recover, or the binary is unavailable,
+load the Playwright skill and run the narrow fallback named in the diagnostic.
+For an inactive non-navigation command, reopen the scoped browser and revalidate
+the feature entrypoint first; stale state alone is not a reason to weaken proof
+to Playwright or curl. Report the classification and evidence boundary.
 
 ## Evidence
 
@@ -105,7 +127,7 @@ Proof standards:
 
 This closes only the `vpk-verify` agent-browser session. It runs `pnpm run dev:tmux:stop` **only** when `launch` started the stack for this run. It never uses `tmux kill-server`, `portless prune`, or `killall node`. It deletes `output/vpk-verify/.run/` scratch state. Proof files under `output/agent-browser/vpk-verify/` stay.
 
-After a failed iteration, run the same cleanup so stranded browsers do not accumulate. Restore theme mutations in the feature recipe (`localStorage` key `ui-theme`) before cleanup if you changed theme.
+After a failed iteration, run the same cleanup so stranded browsers do not accumulate. If a feature recipe changed theme, restore the original accessible theme-control name by cycling that same user-facing control before cleanup. Do not restore theme by mutating storage, attributes, classes, or ADS variables.
 
 ## Helpers
 

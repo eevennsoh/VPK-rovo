@@ -321,10 +321,10 @@ test("code review renders expanded file changes with a collapsible navigation tr
 	assert.match(diffView, /relative inline-flex size-4 items-center justify-center/u);
 	assert.match(
 		diffView,
-		/group-hover\/file-header:opacity-0 group-focus-within\/file-header:opacity-0/u,
+		/group-hover\/file-header:opacity-0 group-has-\[:focus-visible\]\/file-header:opacity-0/u,
 	);
 	assert.match(diffView, /group-hover\/file-header:opacity-100/u);
-	assert.match(diffView, /group-focus-within\/file-header:opacity-100/u);
+	assert.match(diffView, /group-has-\[:focus-visible\]\/file-header:opacity-100/u);
 	assert.match(diffView, /collapsed: showFileHeader && isCollapsed/u);
 	assert.match(diffView, /FileTree2FileIcon/u);
 	assert.match(diffView, /FileTree2IconSprite/u);

@@ -446,7 +446,7 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 					// gradient scrim on top — keeps the effect correct regardless of
 					// the surface color behind the tag.
 					hasOverlayControl &&
-						"group-hover/tag:[mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-focus-within/tag:[mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-hover/tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-focus-within/tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))]",
+						"group-hover/tag:[mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-has-[:focus-visible]/tag:[mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-hover/tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-has-[:focus-visible]/tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))]",
 				)}
 				data-tag-text
 			>
@@ -467,7 +467,7 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 						// the label's trailing-edge mask — so the control stays legible
 						// and clickable instead of sitting on top of the badge.
 						hasOverlayControl &&
-							"transition-opacity duration-fast ease-out group-hover/tag:pointer-events-none group-hover/tag:opacity-0 group-focus-within/tag:pointer-events-none group-focus-within/tag:opacity-0",
+							"transition-opacity duration-fast ease-out group-hover/tag:pointer-events-none group-hover/tag:opacity-0 group-has-[:focus-visible]/tag:pointer-events-none group-has-[:focus-visible]/tag:opacity-0",
 					)}
 					data-slot="tag-after-content"
 				>
@@ -510,7 +510,7 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 							"absolute end-px top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center border-0 bg-transparent text-text opacity-0 transition-[opacity,background-color] duration-fast ease-out focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none disabled:pointer-events-none",
 							isEditor ? "hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed" : "hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed",
 							removeButtonShapeClass,
-							"pointer-events-none group-hover/tag:pointer-events-auto group-hover/tag:opacity-100 group-focus-within/tag:pointer-events-auto group-focus-within/tag:opacity-100",
+							"pointer-events-none group-hover/tag:pointer-events-auto group-hover/tag:opacity-100 group-has-[:focus-visible]/tag:pointer-events-auto group-has-[:focus-visible]/tag:opacity-100",
 						)}
 					>
 						<Icon render={overlayControl.icon} aria-hidden />

@@ -184,7 +184,7 @@ function SmartLinkTrigger({
 					"min-w-0 grow truncate whitespace-nowrap",
 					removable &&
 						!status &&
-						"group-hover/smart-link-remove:[mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-focus-within/smart-link-remove:[mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-hover/smart-link-remove:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-focus-within/smart-link-remove:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))]",
+						"group-hover/smart-link-remove:[mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-has-[:focus-visible]/smart-link-remove:[mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-hover/smart-link-remove:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-has-[:focus-visible]/smart-link-remove:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))]",
 				)}
 				data-smart-link-text
 			>
@@ -196,7 +196,7 @@ function SmartLinkTrigger({
 						"shrink-0",
 						triggerStatusClasses[size],
 						removable &&
-							"group-hover/smart-link-remove:[mask-image:linear-gradient(to_right,#000_calc(100%-1.5rem),transparent_calc(100%-1rem))] group-focus-within/smart-link-remove:[mask-image:linear-gradient(to_right,#000_calc(100%-1.5rem),transparent_calc(100%-1rem))] group-hover/smart-link-remove:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-1.5rem),transparent_calc(100%-1rem))] group-focus-within/smart-link-remove:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-1.5rem),transparent_calc(100%-1rem))]",
+							"group-hover/smart-link-remove:[mask-image:linear-gradient(to_right,#000_calc(100%-1.5rem),transparent_calc(100%-1rem))] group-has-[:focus-visible]/smart-link-remove:[mask-image:linear-gradient(to_right,#000_calc(100%-1.5rem),transparent_calc(100%-1rem))] group-hover/smart-link-remove:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-1.5rem),transparent_calc(100%-1rem))] group-has-[:focus-visible]/smart-link-remove:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-1.5rem),transparent_calc(100%-1rem))]",
 					)}
 					metric={status.metric}
 					variant={status.variant ?? "neutral"}
@@ -895,7 +895,7 @@ export function SmartLink({
 			{hoverCard}
 			<button
 				aria-label={removeButtonLabel ?? `Remove ${item.title}`}
-				className="pointer-events-none absolute end-0.5 top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center rounded-xs border-0 bg-transparent text-text opacity-0 transition-[opacity,background-color] duration-fast ease-out-practical motion-reduce:transition-none hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none group-hover/smart-link-remove:pointer-events-auto group-hover/smart-link-remove:opacity-100 group-focus-within/smart-link-remove:pointer-events-auto group-focus-within/smart-link-remove:opacity-100"
+				className="pointer-events-none absolute end-0.5 top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center rounded-xs border-0 bg-transparent text-text opacity-0 transition-[opacity,background-color] duration-fast ease-out-practical motion-reduce:transition-none hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none group-hover/smart-link-remove:pointer-events-auto group-hover/smart-link-remove:opacity-100 group-has-[:focus-visible]/smart-link-remove:pointer-events-auto group-has-[:focus-visible]/smart-link-remove:opacity-100"
 				data-slot="smart-link-remove-overlay-button"
 				onClick={(event) => {
 					event.stopPropagation();

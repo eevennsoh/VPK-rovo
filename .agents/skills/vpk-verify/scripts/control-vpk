@@ -14,6 +14,41 @@ const RUN_DIR = path.join(REPO_ROOT, "output/vpk-verify/.run");
 const STATE_FILE = path.join(RUN_DIR, "state.json");
 const EVIDENCE_DIR = path.join(REPO_ROOT, "output/agent-browser/vpk-verify");
 const SESSION_PREFIX = "vpk-verify";
+const DEFAULT_BROWSER_TIMEOUT_MS = 35_000;
+const MIN_BROWSER_TIMEOUT_MS = 1_000;
+const MAX_BROWSER_TIMEOUT_MS = 300_000;
+const DEFAULT_LAUNCH_READY_TIMEOUT_MS = 60_000;
+const MIN_LAUNCH_READY_TIMEOUT_MS = 1_000;
+const MAX_LAUNCH_READY_TIMEOUT_MS = 300_000;
+const LAUNCH_READY_POLL_INTERVAL_MS = 500;
+const LOCALHOST_PROXY_BYPASS = ["localhost", "127.0.0.1", ".localhost"];
+
+function applyLocalhostProxyBypass(env = process.env) {
+	for (const key of ["NO_PROXY", "no_proxy"]) {
+		const entries = new Set(
+			String(env[key] ?? "")
+				.split(",")
+				.map((entry) => entry.trim())
+				.filter(Boolean),
+		);
+		for (const entry of LOCALHOST_PROXY_BYPASS) entries.add(entry);
+		env[key] = [...entries].join(",");
+	}
+	return env;
+}
+
+applyLocalhostProxyBypass();
+
+if (require.main === module && process.env.VPK_VERIFY_PROXY_BYPASS_READY !== "1") {
+	const result = spawnSync(process.execPath, [__filename, ...process.argv.slice(2)], {
+		stdio: "inherit",
+		env: {
+			...process.env,
+			VPK_VERIFY_PROXY_BYPASS_READY: "1",
+		},
+	});
+	process.exit(result.status ?? 1);
+}
 
 const { loadPortlessRoutes, findPortlessUrl } = require(
 	path.join(REPO_ROOT, "scripts/lib/portless-routes.js"),
@@ -140,22 +175,217 @@ function resolveAgentBrowserBin(repoRoot = REPO_ROOT) {
 	return binPath;
 }
 
+function parseBrowserTimeoutMs(env = process.env) {
+	const configured = Number.parseInt(env.VPK_VERIFY_BROWSER_TIMEOUT_MS ?? "", 10);
+	if (!Number.isFinite(configured)) return DEFAULT_BROWSER_TIMEOUT_MS;
+	return Math.min(Math.max(configured, MIN_BROWSER_TIMEOUT_MS), MAX_BROWSER_TIMEOUT_MS);
+}
+
+function parseLaunchReadyTimeoutMs(env = process.env) {
+	const configured = Number.parseInt(env.VPK_VERIFY_LAUNCH_TIMEOUT_MS ?? "", 10);
+	if (!Number.isFinite(configured)) return DEFAULT_LAUNCH_READY_TIMEOUT_MS;
+	return Math.min(
+		Math.max(configured, MIN_LAUNCH_READY_TIMEOUT_MS),
+		MAX_LAUNCH_READY_TIMEOUT_MS,
+	);
+}
+
 function runAgentBrowser(args, options = {}) {
-	return spawnSync(resolveAgentBrowserBin(), args, {
+	const {
+		binPath = resolveAgentBrowserBin(),
+		timeoutMs = parseBrowserTimeoutMs(),
+		...spawnOptions
+	} = options;
+	return spawnSync(binPath, args, {
 		cwd: REPO_ROOT,
-		...options,
+		killSignal: "SIGTERM",
+		timeout: timeoutMs,
+		...spawnOptions,
 	});
 }
 
-function browserSessionId() {
+function failureText(failure) {
+	if (failure instanceof Error) return failure.message;
+	return [failure?.stdout, failure?.stderr, failure?.error?.message]
+		.filter(Boolean)
+		.map(String)
+		.join("\n");
+}
+
+function classifyAgentBrowserFailure(failure) {
+	if (!failure) return "assertion_failure";
+	if (["timeout", "stale_session", "missing_binary", "assertion_failure"].includes(failure.classification)) {
+		return failure.classification;
+	}
+	if (failure?.error?.code === "ETIMEDOUT") return "timeout";
+	if (!(failure instanceof Error) && failure.status === 0) return null;
+	const text = failureText(failure);
+	if (/not installed in this worktree|bin is missing|missing a bin\.agent-browser|ENOENT/iu.test(text)) {
+		return "missing_binary";
+	}
+	if (/no browser session|session (?:is )?not found|browser session.*(?:closed|missing)|about:blank/iu.test(text)) {
+		return "stale_session";
+	}
+	return "assertion_failure";
+}
+
+function isBrowserSessionStarter(forwarded) {
+	return forwarded[0] === "open" || forwarded[0] === "connect";
+}
+
+function inspectBrowserSession(runCommand, runOptions, session) {
+	let result;
+	try {
+		result = runCommand(
+			["--session", session, "session", "info", "--json"],
+			runOptions,
+		);
+	} catch (error) {
+		return { classification: classifyAgentBrowserFailure(error), result: error };
+	}
+	const commandClassification = classifyAgentBrowserFailure(result);
+	if (commandClassification !== null) {
+		return { classification: commandClassification, result };
+	}
+
+	let payload;
+	try {
+		payload = JSON.parse(result.stdout);
+	} catch {
+		return {
+			classification: "assertion_failure",
+			result: {
+				...result,
+				stderr: "agent-browser session info did not return valid JSON.",
+			},
+		};
+	}
+	const info = payload?.data;
+	const active = info?.active === true
+		&& info?.runtime?.browserLaunched === true
+		&& Number(info?.runtime?.pageCount) > 0;
+	if (active) return { classification: null, result };
+	return {
+		classification: "stale_session",
+		result: {
+			...result,
+			status: 1,
+			stderr: "The scoped agent-browser session has no active page. Run `control-vpk browser open <url>` before non-navigation commands.",
+		},
+	};
+}
+
+function executeBrowserCommand(forwarded, {
+	runCommand = runAgentBrowser,
+	session,
+	timeoutMs = parseBrowserTimeoutMs(),
+} = {}) {
+	const commandArgs = ["--session", session, ...forwarded];
+	const runOptions = {
+		encoding: "utf8",
+		env: {
+			...process.env,
+			AGENT_BROWSER_SESSION: session,
+			AGENT_BROWSER_RESTORE: session,
+		},
+		stdio: ["inherit", "pipe", "pipe"],
+		timeoutMs,
+	};
+	const invoke = () => {
+		try {
+			return runCommand(commandArgs, runOptions);
+		} catch (error) {
+			return error;
+		}
+	};
+	const closeScopedSession = () => {
+		try {
+			runCommand(["--session", session, "close"], {
+				...runOptions,
+				stdio: "ignore",
+				timeoutMs: Math.min(timeoutMs, 5_000),
+			});
+		} catch {
+			// Best-effort cleanup must never expand beyond this worktree-scoped session.
+		}
+	};
+	const sessionStarter = isBrowserSessionStarter(forwarded);
+	if (!sessionStarter) {
+		const preflight = inspectBrowserSession(runCommand, runOptions, session);
+		if (preflight.classification !== null) {
+			return {
+				classification: preflight.classification,
+				recoveredFromStaleSession: false,
+				result: preflight.result,
+				session,
+				sessionStarter,
+				timeoutMs,
+			};
+		}
+	}
+
+	let result = invoke();
+	let classification = classifyAgentBrowserFailure(result);
+	let recoveredFromStaleSession = false;
+	if (classification === "stale_session" && sessionStarter) {
+		closeScopedSession();
+		result = invoke();
+		classification = classifyAgentBrowserFailure(result);
+		recoveredFromStaleSession = classification === null;
+		if (classification === "stale_session" || classification === "timeout") {
+			closeScopedSession();
+		}
+	} else if (classification === "stale_session" || classification === "timeout") {
+		closeScopedSession();
+	}
+
+	return {
+		classification,
+		recoveredFromStaleSession,
+		result,
+		session,
+		sessionStarter,
+		timeoutMs,
+	};
+}
+
+function quotedCommand(args) {
+	return ["agent-browser", ...args.map((arg) => JSON.stringify(arg))].join(" ");
+}
+
+function formatBrowserFailure(outcome, forwarded) {
+	const classification = outcome.classification ?? "assertion_failure";
+	const detail = failureText(outcome.result).trim() || "agent-browser exited without a diagnostic.";
+	const recovery = classification === "stale_session" && !outcome.sessionStarter
+		? "Recovery: reopen the scoped browser at the feature entrypoint, wait for its route marker, and revalidate before retrying this command."
+		: "Playwright fallback: load the Playwright skill, then run the narrow `corepack pnpm exec playwright test <spec>` proof path and report this agent-browser failure.";
+	return [
+		`control-vpk browser failure [${classification}]`,
+		`failed command: ${quotedCommand(forwarded)}`,
+		`detail: ${detail}`,
+		`Existing evidence retained at ${EVIDENCE_DIR}; this failed command is not accepted as proof.`,
+		recovery,
+	].join("\n");
+}
+
+function writeCapturedOutput(result) {
+	if (!result || result instanceof Error) return;
+	if (result.stdout) process.stdout.write(result.stdout);
+	if (result.stderr) process.stderr.write(result.stderr);
+}
+
+function browserSessionId({ timeoutMs = parseBrowserTimeoutMs() } = {}) {
 	const result = runAgentBrowser(
 		["session", "id", "--scope", "worktree", "--prefix", SESSION_PREFIX],
-		{ encoding: "utf8" },
+		{ encoding: "utf8", timeoutMs },
 	);
 	if (result.status !== 0) {
-		throw new Error(
-			result.stderr?.trim() || "agent-browser session id failed. Run `pnpm install` from the repo root, then retry.",
-		);
+		const classification = classifyAgentBrowserFailure(result);
+		throw Object.assign(new Error(
+			`agent-browser session id failed [${classification}]: ${result.stderr?.trim()
+				|| result.error?.message
+				|| "Run `pnpm install` from the repo root, then retry."}`,
+		), { classification });
 	}
 	return result.stdout.trim();
 }
@@ -218,6 +448,23 @@ async function collectDoctor() {
 	};
 }
 
+async function waitForDoctorReady({
+	collect = collectDoctor,
+	delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+	intervalMs = LAUNCH_READY_POLL_INTERVAL_MS,
+	now = Date.now,
+	timeoutMs = parseLaunchReadyTimeoutMs(),
+} = {}) {
+	const startedAt = now();
+	let report = await collect();
+	while (!report.ok && now() - startedAt < timeoutMs) {
+		const remainingMs = timeoutMs - (now() - startedAt);
+		await delay(Math.min(intervalMs, remainingMs));
+		report = await collect();
+	}
+	return report;
+}
+
 function printDoctor(report) {
 	process.stdout.write(`${JSON.stringify(report, null, "\t")}\n`);
 }
@@ -275,7 +522,7 @@ async function main() {
 		const alreadyListening = before.frontendListening;
 		runPnpm(["run", "dev:tmux:start"]);
 		writeState({ launchedByVerify: !alreadyListening });
-		const after = await collectDoctor();
+		const after = await waitForDoctorReady();
 		printDoctor({
 			...after,
 			reused: alreadyListening,
@@ -304,16 +551,27 @@ async function main() {
 			process.stderr.write("control-vpk browser requires agent-browser arguments.\n");
 			process.exit(1);
 		}
-		const session = browserSessionId();
-		const result = runAgentBrowser(["--session", session, ...forwarded], {
-			stdio: "inherit",
-			env: {
-				...process.env,
-				AGENT_BROWSER_SESSION: session,
-				AGENT_BROWSER_RESTORE: session,
-			},
-		});
-		process.exit(result.status ?? 1);
+		let session;
+		try {
+			session = browserSessionId();
+		} catch (error) {
+			const outcome = {
+				classification: classifyAgentBrowserFailure(error),
+				result: error,
+			};
+			process.stderr.write(`${formatBrowserFailure(outcome, forwarded)}\n`);
+			process.exit(1);
+		}
+		const outcome = executeBrowserCommand(forwarded, { session });
+		writeCapturedOutput(outcome.result);
+		if (outcome.recoveredFromStaleSession) {
+			process.stderr.write(`Recovered stale agent-browser session ${session}; command succeeded on one bounded retry.\n`);
+		}
+		if (outcome.classification !== null) {
+			process.stderr.write(`${formatBrowserFailure(outcome, forwarded)}\n`);
+			process.exit(outcome.result?.status ?? 1);
+		}
+		return;
 	}
 
 	usage(1);
@@ -327,6 +585,14 @@ if (require.main === module) {
 }
 
 module.exports = {
+	applyLocalhostProxyBypass,
+	classifyAgentBrowserFailure,
+	executeBrowserCommand,
+	formatBrowserFailure,
+	isBrowserSessionStarter,
+	parseBrowserTimeoutMs,
+	parseLaunchReadyTimeoutMs,
 	resolveAgentBrowserBin,
 	runAgentBrowser,
+	waitForDoctorReady,
 };

@@ -182,7 +182,7 @@ function ArtifactListRow({
 				// the slot leaves no empty space when width is 0fr.
 				"ml-0 grid shrink-0",
 				"grid-cols-[0fr] group-hover/artifact-row:ml-3 group-hover/artifact-row:grid-cols-[1fr]",
-				"group-focus-within/artifact-row:ml-3 group-focus-within/artifact-row:grid-cols-[1fr]",
+				"group-has-[:focus-visible]/artifact-row:ml-3 group-has-[:focus-visible]/artifact-row:grid-cols-[1fr]",
 				"group-has-[:focus-visible]/artifact-row:ml-3 group-has-[:focus-visible]/artifact-row:grid-cols-[1fr]",
 			)}
 		>
@@ -196,7 +196,7 @@ function ArtifactListRow({
 						// Instant reveal/hide; keep Button chrome transitions but drop opacity.
 						"pointer-events-none opacity-0 transition-[background-color,border-color,box-shadow,color]",
 						"group-hover/artifact-row:pointer-events-auto group-hover/artifact-row:opacity-100",
-						"group-focus-within/artifact-row:pointer-events-auto group-focus-within/artifact-row:opacity-100",
+						"group-has-[:focus-visible]/artifact-row:pointer-events-auto group-has-[:focus-visible]/artifact-row:opacity-100",
 						"focus-visible:pointer-events-auto focus-visible:opacity-100",
 					)}
 					variant="outline"

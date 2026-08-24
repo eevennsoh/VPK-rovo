@@ -94,11 +94,12 @@ test("Personal Graph threads workflowTree label strategy through the graph rende
 	assert.match(NEURAL_CANVAS_SOURCE, /labelStrategy\?: NeuralGraphLabelStrategy;/);
 	assert.match(NEURAL_CANVAS_SOURCE, /labelStrategy = "default"/);
 	assert.match(NEURAL_CANVAS_SOURCE, /labelStrategy,/);
-	assert.match(NEURAL_RENDERER_SOURCE, /export type NeuralGraphLabelStrategy = "default" \| "workflowTree";/);
+	assert.match(NEURAL_RENDERER_SOURCE, /export type \{ NeuralGraphLabelStrategy \} from "\.\/workflow-label-strategy";/);
 	assert.match(NEURAL_RENDERER_SOURCE, /options\.labelStrategy === "workflowTree"/);
-	assert.match(NEURAL_RENDERER_SOURCE, /shouldLabelWorkflowTreeNode/);
+	assert.match(NEURAL_RENDERER_SOURCE, /getRadialLabelNodes/);
 	assert.match(NEURAL_RENDERER_SOURCE, /getRadialLeafNodeIds/);
 	assert.match(NEURAL_WORKFLOW_LABEL_SOURCE, /function shouldLabelWorkflowTreeNode/);
+	assert.match(NEURAL_WORKFLOW_LABEL_SOURCE, /function getRadialLabelNodes/);
 	assert.match(NEURAL_WORKFLOW_LABEL_SOURCE, /AutomationWorkflowCandidate/);
 	assert.match(NEURAL_WORKFLOW_LABEL_SOURCE, /AutomationDraftAction/);
 	assert.match(NEURAL_RENDERER_SOURCE, /AutomationWorkflowEvidence/);

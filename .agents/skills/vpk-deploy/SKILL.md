@@ -1,7 +1,7 @@
 ---
 name: vpk-deploy
 description: Deploy, redeploy, or check status for a VPK prototype on Atlassian Micros.
-validation_command: pnpm run build:export
+validation_command: corepack pnpm run build:export
 ---
 
 # VPK deploy
@@ -82,10 +82,13 @@ the Micros service must be created even when local files contain a name.
 ./.agents/skills/vpk-deploy/scripts/deploy.sh <service-name> <version> [env]
 ```
 
-The script validates configuration, checks the service and stash, builds and
-pushes the `linux/amd64` image, and invokes Micros. Initial deployments commonly
-take 10–15 minutes. When a deployment ID is returned, follow events to a final
-state:
+The script requires an explicit Docker-tag-safe version, validates the
+descriptor image and SSM identity, and checks the service and every required
+stash before any build, push, or deployment. An existing service with no stack
+is a valid initial-deploy state. It then produces and verifies the static export
+through `corepack pnpm run build:export`, builds and pushes the `linux/amd64`
+image, and invokes Micros. Initial deployments commonly take 10–15 minutes.
+When a deployment ID is returned, follow events to a final state:
 
 ```bash
 atlas micros events -s <service-name> -e <env> -d <deployment-id>
@@ -101,6 +104,10 @@ When `.deploy.local` is valid and the existing service is confirmed:
 ```bash
 pnpm run deploy:micros
 ```
+
+The fast path generates a collision-resistant, Docker-tag-safe version when
+one is omitted. It validates descriptor identity, remote service existence, and
+required stashes before registry permission or login.
 
 Do not run `pnpm deploy`; that is pnpm's unrelated workspace deployment command
 and can fail with `ERR_PNPM_NOTHING_TO_DEPLOY`.
