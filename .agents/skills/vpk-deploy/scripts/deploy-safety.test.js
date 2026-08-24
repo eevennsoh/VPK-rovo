@@ -358,6 +358,27 @@ test("fast deploy verifies service existence before registry authentication", ()
 	});
 });
 
+test("canonical deploy verifies remote prerequisites before building or mutating", () => {
+	for (const [fixtureOptions, runOptions, expectedDiagnostic] of [
+		[{}, { serviceExists: false }, /service.*does not exist/iu],
+		[{ stashes: REQUIRED_STASHES.slice(0, -1) }, {}, /VPK_RUNTIME_ADMIN_TOKEN/u],
+	]) {
+		withFixture(fixtureOptions, (fixture) => {
+			const result = runFixture(
+				fixture,
+				".agents/skills/vpk-deploy/scripts/deploy.sh",
+				["vpk-rovo", "1.2.3", "pdev-west2"],
+				{ home: "", ...runOptions },
+			);
+
+			assert.notEqual(result.status, 0);
+			assert.match(`${result.stdout}\n${result.stderr}`, expectedDiagnostic);
+			assert.doesNotMatch(callsFor(fixture), /corepack pnpm run build:export/u);
+			assertNoMutationCalls(callsFor(fixture));
+		});
+	}
+});
+
 test("fast deploy verifies every required stash before registry authentication", () => {
 	withFixture({ stashes: REQUIRED_STASHES.slice(0, -1) }, (fixture) => {
 		const result = runFixture(fixture, "scripts/dev-deploy-fast.sh", ["1.2.3"], {
