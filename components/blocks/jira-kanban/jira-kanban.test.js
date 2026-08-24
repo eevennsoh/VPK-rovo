@@ -9,6 +9,9 @@ const SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 const DATA_SOURCE = readFileSync(join(__dirname, "jira-kanban-data.ts"), "utf8");
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const HEADER_SOURCE = readFileSync(join(__dirname, "board-header.tsx"), "utf8");
+const EXPERIMENTAL_SOURCE = readFileSync(join(__dirname, "experimental", "experimental-jira-kanban.tsx"), "utf8");
+const EXPERIMENTAL_PAGE_SOURCE = readFileSync(join(__dirname, "experimental", "page.tsx"), "utf8");
+const EXPERIMENTAL_HEADER_SOURCE = readFileSync(join(__dirname, "experimental", "experimental-board-header.tsx"), "utf8");
 const JIRA_ISSUE_SOURCE = readFileSync(join(__dirname, "..", "jira-issue", "index.tsx"), "utf8");
 const COLUMN_DRAG_SOURCE = SOURCE.slice(
 	SOURCE.indexOf("const handleColumnDragOver"),
@@ -174,11 +177,13 @@ test("Kanban columns stretch through the available board height", () => {
 	assert.match(SOURCE, /className="group\/board-column"[\s\S]*height: "100%"/u);
 });
 
-test("Kanban scroll affordance can be hidden by an owning surface", () => {
-	assert.match(SOURCE, /showScrollAffordance\?: boolean;/u);
-	assert.match(SOURCE, /showScrollAffordance = true,/u);
-	assert.match(SOURCE, /showScrollAffordance && canScrollRight \? \(/u);
-	assert.match(PAGE_SOURCE, /showScrollAffordance=\{showScrollAffordance\}/u);
+test("Kanban board renders no scroll-for-more affordance or its measurement listeners", () => {
+	for (const source of [SOURCE, PAGE_SOURCE, EXPERIMENTAL_SOURCE, EXPERIMENTAL_PAGE_SOURCE]) {
+		assert.doesNotMatch(source, /Scroll for more/u);
+		assert.doesNotMatch(source, /showScrollAffordance/u);
+		assert.doesNotMatch(source, /canScrollRight/u);
+		assert.doesNotMatch(source, /scrollend/u);
+	}
 });
 
 test("Kanban page keeps plain activation separate from modifier-key bulk selection", () => {
@@ -475,4 +480,29 @@ test("Kanban sparkle agents and skills preserve selection-toolbar ordering", () 
 test("Kanban derives visible column counts from rendered cards", () => {
 	assert.match(SOURCE, /count=\{column\.cards\.length\}/);
 	assert.doesNotMatch(SOURCE, /count=\{column\.count\}/);
+});
+
+test("Experimental kanban variant owns its own tree without touching the default variant", () => {
+	// The fork renders its own board/header so experimental changes cannot leak
+	// into the standard variant.
+	assert.match(EXPERIMENTAL_SOURCE, /export function ExperimentalJiraKanban\(\{/u);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /export function ExperimentalJiraKanbanBoardHeader\(\{/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /export default function ExperimentalJiraKanbanPage\(\{/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /import \{ ExperimentalJiraKanban \} from "\.\/experimental-jira-kanban";/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /import \{ ExperimentalJiraKanbanBoardHeader \} from "\.\/experimental-board-header";/u);
+	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /from "\.\.\/board-header"/u);
+	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /from "\.\.\/page"/u);
+	// Default variant stays free of any experimental import.
+	assert.doesNotMatch(SOURCE, /experimental/iu);
+	assert.doesNotMatch(PAGE_SOURCE, /experimental/iu);
+	assert.doesNotMatch(HEADER_SOURCE, /experimental/iu);
+});
+
+test("Experimental kanban variant reuses the shared board data contracts", () => {
+	// Types and state helpers stay shared so both variants remain swappable
+	// inside an owning surface.
+	assert.match(EXPERIMENTAL_SOURCE, /import type \{[\s\S]*JiraKanbanProps,\n\} from "\.\.\/index";/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /import \{ createJiraKanbanColumns \} from "\.\.\/jira-kanban-data";/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /\} from "\.\.\/state";/u);
+	assert.doesNotMatch(EXPERIMENTAL_SOURCE, /^export interface JiraKanbanProps/mu);
 });
