@@ -735,7 +735,7 @@ test("the header shows an activity count and a text-link sort control", () => {
 	assert.match(HEADER_SOURCE, /ACTIVITY_SORT_TRIGGER_REVEAL_CLASS/u);
 	assert.match(HEADER_SOURCE, /pointer-events-none opacity-0/u);
 	assert.match(HEADER_SOURCE, /group-hover\/activity:opacity-100/u);
-	assert.match(HEADER_SOURCE, /group-focus-within\/activity:opacity-100/u);
+	assert.doesNotMatch(HEADER_SOURCE, /group-focus-within\/activity:opacity-100/u);
 	assert.match(HEADER_SOURCE, /group-has-\[:focus-visible\]\/activity:opacity-100/u);
 	assert.match(HEADER_SOURCE, /aria-expanded:opacity-100/u);
 	assert.match(HEADER_SOURCE, /motion-reduce:transition-none/u);

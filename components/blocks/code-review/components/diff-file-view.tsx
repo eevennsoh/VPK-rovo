@@ -72,7 +72,7 @@ const DIFF_UNSAFE_CSS = `
 `;
 
 const FILE_HEADER_ACTION_CLASS_NAME =
-	"pointer-events-none opacity-0 transition-opacity duration-xxshort ease-out-practical group-hover/file-header:pointer-events-auto group-hover/file-header:opacity-100 group-focus-within/file-header:pointer-events-auto group-focus-within/file-header:opacity-100 focus-visible:opacity-100 motion-reduce:transition-none";
+	"pointer-events-none opacity-0 transition-opacity duration-xxshort ease-out-practical group-hover/file-header:pointer-events-auto group-hover/file-header:opacity-100 group-has-[:focus-visible]/file-header:pointer-events-auto group-has-[:focus-visible]/file-header:opacity-100 focus-visible:opacity-100 motion-reduce:transition-none";
 
 export function DiffFileView({
 	file,
@@ -228,10 +228,10 @@ export function DiffFileView({
 					variant="ghost"
 				>
 					<span className="relative inline-flex size-4 items-center justify-center">
-						<span className="absolute inset-0 inline-flex items-center justify-center group-hover/file-header:opacity-0 group-focus-within/file-header:opacity-0">
+						<span className="absolute inset-0 inline-flex items-center justify-center group-hover/file-header:opacity-0 group-has-[:focus-visible]/file-header:opacity-0">
 							<FileTree2FileIcon path={file.path} />
 						</span>
-						<span className="absolute inset-0 inline-flex items-center justify-center opacity-0 group-hover/file-header:opacity-100 group-focus-within/file-header:opacity-100">
+						<span className="absolute inset-0 inline-flex items-center justify-center opacity-0 group-hover/file-header:opacity-100 group-has-[:focus-visible]/file-header:opacity-100">
 							<Icon
 								aria-hidden
 								render={isCollapsed

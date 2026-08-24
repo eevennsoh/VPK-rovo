@@ -276,7 +276,7 @@ export function AgentFilledSummaryRow({
 										{chip}
 										<Fragment key="row-tail-add">
 											{renderAddButton(
-												"shrink-0 opacity-0 transition-opacity group-hover/agent-row:opacity-100 group-focus-within/agent-row:opacity-100 focus-visible:opacity-100 aria-expanded:opacity-100",
+												"shrink-0 opacity-0 transition-opacity group-hover/agent-row:opacity-100 group-has-[:focus-visible]/agent-row:opacity-100 focus-visible:opacity-100 aria-expanded:opacity-100",
 											)}
 										</Fragment>
 									</div>

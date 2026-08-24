@@ -969,7 +969,7 @@ function SkillMoreMenu({
 						aria-label={`More actions for ${skillName}`}
 						aria-pressed={open || undefined}
 						className={cn(
-							"size-6 shrink-0 cursor-pointer opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100",
+							"size-6 shrink-0 cursor-pointer opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-has-[:focus-visible]/card:opacity-100",
 							open && "opacity-100",
 						)}
 						onClick={stopPropagation}

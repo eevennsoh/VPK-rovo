@@ -175,12 +175,12 @@ test("Skills Directory uses contextual cards, immediate Studio switches, and leg
 	assert.match(partsSource, /onAddedChange\?: \(checked: boolean\) => void/u);
 	assert.match(partsSource, /export function EntityCardAddedSwitch/u);
 	assert.match(partsSource, /"transition-opacity duration-fast ease-out motion-reduce:transition-none after:inset-0"/u);
-	assert.match(partsSource, /action[\s\S]*\? added \? "w-16" : "w-6 group-hover\/card:w-16 group-focus-within\/card:w-16 group-data-\[active=true\]\/card:w-16"[\s\S]*: added \? "w-8" : "w-0 group-hover\/card:w-8 group-focus-within\/card:w-8"/u);
+	assert.match(partsSource, /action[\s\S]*\? added \? "w-16" : "w-6 group-hover\/card:w-16 group-has-\[:focus-visible\]\/card:w-16 group-data-\[active=true\]\/card:w-16"[\s\S]*: added \? "w-8" : "w-0 group-hover\/card:w-8 group-has-\[:focus-visible\]\/card:w-8"/u);
 	assert.match(skillSource, /trailingStatus\?: ReactNode/u);
 	assert.match(skillSource, /onAddedChange\?: \(checked: boolean\) => void/u);
 	assert.doesNotMatch(source, /rounded-xs bg-bg-neutral text-icon-subtle transition-opacity/u);
 	assert.doesNotMatch(source, /absolute top-1\/2 left-1\/2 -translate-x-1\/2 -translate-y-1\/2 opacity-0 transition-opacity/u);
-	assert.match(partsSource, /selected \? "opacity-0" : "opacity-100 group-hover\/card:opacity-0"/u);
+	assert.match(partsSource, /selected \? "opacity-0" : "opacity-100 group-hover\/card:opacity-0 group-has-\[:focus-visible\]\/card:opacity-0"/u);
 	assert.match(partsSource, /focus-visible:pointer-events-auto focus-visible:opacity-100/u);
 	assert.match(partsSource, /pointer-events-none group-hover\/card:pointer-events-auto group-hover\/card:opacity-100/u);
 	assert.match(source, /selected=\{selected\}/u);
@@ -189,10 +189,10 @@ test("Skills Directory uses contextual cards, immediate Studio switches, and leg
 	assert.match(source, /function SkillMoreMenu/u);
 	assert.doesNotMatch(source, /function SkillAddedSwitch/u);
 	assert.doesNotMatch(source, /trailingStatus=\{[\s\S]*<SkillAddedSwitch/u);
-	assert.match(partsSource, /<Switch[\s\S]*aria-label=\{`\$\{added \? "Remove" : "Add"\} \$\{title\}`\}[\s\S]*checked=\{added\}[\s\S]*className=\{cn\([\s\S]*added[\s\S]*\? "pointer-events-auto opacity-100"[\s\S]*: "pointer-events-none opacity-0 group-hover\/card:pointer-events-auto group-hover\/card:opacity-100[\s\S]*group-focus-within\/card:pointer-events-auto group-focus-within\/card:opacity-100[\s\S]*onCheckedChange=\{onAddedChange\}[\s\S]*size="sm"/u);
+	assert.match(partsSource, /<Switch[\s\S]*aria-label=\{`\$\{added \? "Remove" : "Add"\} \$\{title\}`\}[\s\S]*checked=\{added\}[\s\S]*className=\{cn\([\s\S]*added[\s\S]*\? "pointer-events-auto opacity-100"[\s\S]*: "pointer-events-none opacity-0 group-hover\/card:pointer-events-auto group-hover\/card:opacity-100[\s\S]*group-has-\[:focus-visible\]\/card:pointer-events-auto group-has-\[:focus-visible\]\/card:opacity-100[\s\S]*onCheckedChange=\{onAddedChange\}[\s\S]*size="sm"/u);
 	assert.match(source, /added=\{added\}/u);
 	assert.match(source, /const moreActionsDisabled = selected;/u);
-	assert.match(source, /if \(moreActionsDisabled\) \{[\s\S]*setMoreMenuOpen\(false\);/u);
+	assert.match(source, /const nextSelected = checked \?\? !selected;[\s\S]*if \(nextSelected\) \{[\s\S]*setMoreMenuOpen\(false\);/u);
 	assert.match(source, /active=\{!moreActionsDisabled && moreMenuOpen\}/u);
 	assert.match(source, /moreActionsDisabled \? null : \([\s\S]*<SkillMoreMenu/u);
 	assert.match(source, /event\.stopPropagation\(\);\s+onLearnMore\(\);/u);

@@ -139,7 +139,7 @@ function RepositoryRow({
 					"absolute end-2 top-1/2 z-10 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-sm text-icon-subtle",
 					"pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical",
 					"group-hover/repository-row:pointer-events-auto group-hover/repository-row:opacity-100",
-					"group-focus-within/repository-row:pointer-events-auto group-focus-within/repository-row:opacity-100",
+					"group-has-[:focus-visible]/repository-row:pointer-events-auto group-has-[:focus-visible]/repository-row:opacity-100",
 					"focus-visible:pointer-events-auto focus-visible:opacity-100",
 					"hover:text-icon focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none",
 					"motion-reduce:transition-none",

@@ -104,7 +104,7 @@ test("ASX stages fill the Gallery viewport without margin compensation", () => {
 	assert.match(ASX_PAGE_SOURCE, /flex h-full min-h-0 w-\[100cqw\]/u);
 	assert.match(CARD_KANBAN_STAGE_SOURCE, /flex h-full min-h-0 w-\[100cqw\]/u);
 	assert.match(KANBAN_STAGE_SOURCE, /flex h-full min-h-0 w-\[100cqw\]/u);
-	assert.match(QUEUE_STAGE_SOURCE, /h-full min-h-0 w-\[100cqw\]/u);
+	assert.match(QUEUE_STAGE_SOURCE, /relative h-full min-h-0 w-full overflow-hidden isolate/u);
 	assert.doesNotMatch(QUEUE_STAGE_SOURCE, /pb-56/u);
 });
 

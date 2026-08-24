@@ -14,6 +14,10 @@ Quick rules:
 - Move logic into hooks
 - Move static data into `data/` files
 - Use `Readonly<Props>` interfaces
+- Shared `components/ui/**`, `components/ui-custom/**`, and
+  `components/projects/shared/**` owners must not import an experimental
+  variant. Move reusable behavior behind a shared model or require an explicit
+  capability at the feature boundary.
 
 Context pattern (`State/Actions/Meta`) lives in:
 

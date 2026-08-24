@@ -350,7 +350,7 @@ test("experimental v2 Development starts with a searchable provider-branded repo
 	);
 	assert.match(
 		repositoryPickerSource,
-		/pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical[\s\S]*group-hover\/repository-row:pointer-events-auto group-hover\/repository-row:opacity-100[\s\S]*group-focus-within\/repository-row:pointer-events-auto group-focus-within\/repository-row:opacity-100[\s\S]*focus-visible:pointer-events-auto focus-visible:opacity-100/u,
+		/pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical[\s\S]*group-hover\/repository-row:pointer-events-auto group-hover\/repository-row:opacity-100[\s\S]*group-has-\[:focus-visible\]\/repository-row:pointer-events-auto group-has-\[:focus-visible\]\/repository-row:opacity-100[\s\S]*focus-visible:pointer-events-auto focus-visible:opacity-100/u,
 	);
 	assert.match(
 		repositoryPickerSource,

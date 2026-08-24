@@ -281,7 +281,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		guideSource,
-		/group-hover\/review-guide:opacity-100[\s\S]*group-focus-within\/review-guide:opacity-100/u,
+		/group-hover\/review-guide:opacity-100[\s\S]*group-has-\[:focus-visible\]\/review-guide:opacity-100/u,
 	);
 	assert.match(guideSource, /review\.summary\.join\(" "\)/u);
 	assert.doesNotMatch(guideSource, /font: token\("font\.heading\.large"\)/u);
@@ -719,7 +719,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		commitsValueSource,
-		/pointer-events-none opacity-0[\s\S]*group-hover:pointer-events-auto group-hover:opacity-100[\s\S]*group-focus-within:pointer-events-auto group-focus-within:opacity-100[\s\S]*focus-visible:pointer-events-auto focus-visible:opacity-100/u,
+		/pointer-events-none opacity-0[\s\S]*group-hover:pointer-events-auto group-hover:opacity-100[\s\S]*focus-visible:pointer-events-auto focus-visible:opacity-100/u,
 	);
 	assert.match(
 		commitsValueSource,

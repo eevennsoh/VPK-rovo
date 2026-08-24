@@ -21,6 +21,7 @@ const AGENT_BROWSER_SOURCE = readFileSync(
 	join(__dirname, "..", "..", "blocks", "agent-browser", "components", "agent-browser.tsx"),
 	"utf8",
 );
+const AGENT_AVATAR_VISUAL_SOURCE = read(join("..", "agent-avatar-visual.tsx"));
 
 test("shell preserves the bordered surface and hover-elevation classes", () => {
 	assert.match(SHELL_SOURCE, /group\/card/u);
@@ -143,9 +144,9 @@ test("header swaps the leading visual for a default 16x16 checkbox in selectable
 	assert.match(PARTS_SOURCE, /selectable\?: boolean/u);
 	assert.match(PARTS_SOURCE, /onSelectedChange\?: \(checked: boolean\) => void/u);
 	assert.match(PARTS_SOURCE, /<EntityCardSelectableLeading\b/u);
-	// Icon fades out on hover / focus-within / while selected; the checkbox fades in.
-	assert.match(PARTS_SOURCE, /selected \? "opacity-0" : "opacity-100 group-hover\/card:opacity-0 group-focus-within\/card:opacity-0"/u);
-	assert.match(PARTS_SOURCE, /group-hover\/card:pointer-events-auto group-hover\/card:opacity-100 group-focus-within\/card:pointer-events-auto group-focus-within\/card:opacity-100/u);
+	// Icon fades out on hover / keyboard-visible descendant focus / while selected; the checkbox fades in.
+	assert.match(PARTS_SOURCE, /selected \? "opacity-0" : "opacity-100 group-hover\/card:opacity-0 group-has-\[:focus-visible\]\/card:opacity-0"/u);
+	assert.match(PARTS_SOURCE, /group-hover\/card:pointer-events-auto group-hover\/card:opacity-100 group-has-\[:focus-visible\]\/card:pointer-events-auto group-has-\[:focus-visible\]\/card:opacity-100/u);
 	assert.match(PARTS_SOURCE, /onCheckedChange=\{\(checked\) => onSelectedChange\?\.\(Boolean\(checked\)\)\}/u);
 	// Icon + checkbox share a fixed 32px box so the swap never shifts layout; the checkbox
 	// itself keeps its native 16x16 default (its className opens with opacity, not size-*).
@@ -161,8 +162,8 @@ test("header supports a wider trailing status control without using the added ch
 	assert.match(PARTS_SOURCE, /const trailingStatusControl = trailingStatus \?\? defaultTrailingStatus;/u);
 	assert.match(PARTS_SOURCE, /const hasTrailingStatus = Boolean\(trailingStatusControl\);/u);
 	assert.match(PARTS_SOURCE, /action \|\| added \|\| hoverAdded \|\| hasTrailingStatus/u);
-	assert.match(PARTS_SOURCE, /action[\s\S]*\? added \? "w-16" : "w-6 group-hover\/card:w-16 group-focus-within\/card:w-16 group-data-\[active=true\]\/card:w-16"[\s\S]*: added \? "w-8" : "w-0 group-hover\/card:w-8 group-focus-within\/card:w-8"/u);
-	assert.match(PARTS_SOURCE, /hasTrailingStatus[\s\S]*\? added \? "-translate-x-10" : "group-hover\/card:-translate-x-10 group-focus-within\/card:-translate-x-10 group-data-\[active=true\]\/card:-translate-x-10"/u);
+	assert.match(PARTS_SOURCE, /action[\s\S]*\? added \? "w-16" : "w-6 group-hover\/card:w-16 group-has-\[:focus-visible\]\/card:w-16 group-data-\[active=true\]\/card:w-16"[\s\S]*: added \? "w-8" : "w-0 group-hover\/card:w-8 group-has-\[:focus-visible\]\/card:w-8"/u);
+	assert.match(PARTS_SOURCE, /hasTrailingStatus[\s\S]*\? added \? "-translate-x-10" : "group-hover\/card:-translate-x-10 group-has-\[:focus-visible\]\/card:-translate-x-10 group-data-\[active=true\]\/card:-translate-x-10"/u);
 	assert.match(PARTS_SOURCE, /hasTrailingStatus\s*\? "pointer-events-auto absolute top-1\/2 right-0 inline-flex -translate-y-1\/2 items-center"/u);
 	assert.match(PARTS_SOURCE, /\{trailingStatusControl \?\? <EntityCardAddedCheck/u);
 	assert.match(PARTS_SOURCE, /export function EntityCardAddedSwitch/u);
@@ -194,7 +195,8 @@ test("capabilities part renders a borderless icon-tile feature list (no inner sc
 });
 
 test("agent variant renders a hexagon avatar with rating and chat stats", () => {
-	assert.match(AGENT_SOURCE, /shape="hexagon"/u);
+	assert.match(AGENT_SOURCE, /<AgentAvatarVisual/u);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /shape="hexagon"/u);
 	assert.match(AGENT_SOURCE, /StarUnstarredIcon/u);
 	assert.match(AGENT_SOURCE, /AiChatIcon/u);
 	assert.match(AGENT_SOURCE, /<EntityCardByline/u);
@@ -234,6 +236,8 @@ test("expanded agent variant pins the header and footer around a scrollable body
 	// The expanded shell variant resets layout (clip + zero padding/gap).
 	assert.match(VARIANTS_SOURCE, /gap-0 overflow-clip p-0/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /shrink-0 overflow-clip border-t border-border bg-surface/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /group-hover\/card:opacity-0 group-has-\[:focus-visible\]\/card:opacity-0/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /group-hover\/card:pointer-events-auto group-hover\/card:opacity-100 group-has-\[:focus-visible\]\/card:pointer-events-auto group-has-\[:focus-visible\]\/card:opacity-100/u);
 });
 
 test("skill variant uses a 32px icon tile, header byline, and a teammate stat", () => {
@@ -255,16 +259,16 @@ test("skill variant uses a 32px icon tile, header byline, and a teammate stat", 
 	assert.match(PARTS_SOURCE, /: added \? "w-\[52px\]" : hoverAdded \? "w-6 group-hover\/card:w-\[52px\] group-data-\[active=true\]\/card:w-\[52px\]" : "w-6"/u);
 	assert.match(PARTS_SOURCE, /"absolute top-0 right-0 z-\[1\] inline-flex transition-transform duration-fast ease-out motion-reduce:transition-none"/u);
 	assert.match(PARTS_SOURCE, /: added \? "-translate-x-7" : hoverAdded \? "group-hover\/card:-translate-x-7 group-data-\[active=true\]\/card:-translate-x-7" : "translate-x-0"/u);
-	assert.doesNotMatch(PARTS_SOURCE, /group-focus-within\/card:-translate-x-6/u);
-	assert.doesNotMatch(PARTS_SOURCE, /group-hover\/card:pointer-events-none group-hover\/card:opacity-0 group-focus-within\/card:opacity-0/u);
+	assert.doesNotMatch(PARTS_SOURCE, /group-has-\[:focus-visible\]\/card:-translate-x-6/u);
+	assert.doesNotMatch(PARTS_SOURCE, /group-hover\/card:pointer-events-none group-hover\/card:opacity-0 group-has-\[:focus-visible\]\/card:opacity-0/u);
 	assert.match(PARTS_SOURCE, /"pointer-events-none absolute top-0 right-0 inline-flex size-6 origin-center items-center justify-center transition-\[opacity,transform\] duration-fast ease-out motion-reduce:transition-none"/u);
 	assert.match(PARTS_SOURCE, /added\s*\? "scale-100 opacity-100"\s*: hoverAdded\s*\? "scale-75 opacity-0 group-hover\/card:scale-100 group-hover\/card:opacity-100 group-data-\[active=true\]\/card:scale-100 group-data-\[active=true\]\/card:opacity-100"\s*: "scale-75 opacity-0"/u);
 	assert.match(PARTS_SOURCE, /<EntityCardAddedCheck className=\{added \? undefined : "text-icon-disabled"\} label=\{added \? "Added" : ""\} \/>/u);
-	assert.doesNotMatch(PARTS_SOURCE, /group-hover\/card:scale-100 group-hover\/card:opacity-100 group-focus-within\/card/u);
+	assert.doesNotMatch(PARTS_SOURCE, /group-hover\/card:scale-100 group-hover\/card:opacity-100 group-has-\[:focus-visible\]\/card/u);
 	assert.doesNotMatch(PARTS_SOURCE, /absolute left-full inline-flex/u);
 	assert.doesNotMatch(PARTS_SOURCE, /absolute left-full ml-2/u);
 	assert.doesNotMatch(PARTS_SOURCE, /absolute right-full mr-2/u);
-	assert.doesNotMatch(PARTS_SOURCE, /text-icon-disabled[^"]*group-focus-within/u);
+	assert.doesNotMatch(PARTS_SOURCE, /text-icon-disabled[^"]*group-has-\[:focus-visible\]/u);
 });
 
 test("app variant mirrors the tool card layout with tool, knowledge, and teammate counts", () => {
@@ -327,6 +331,7 @@ test("skill tag overlay remove always fades the trailing edge behind the control
 	assert.match(SKILL_TAG_SOURCE, /const shouldShowOverlayScrim = hasOverlayReveal;/u);
 	assert.match(SKILL_TAG_SOURCE, /data-slot="skill-tag-overlay-scrim"/u);
 	assert.match(SKILL_TAG_SOURCE, /shouldShowOverlayScrim && "group-hover\/skill-tag:\[mask-image:linear-gradient/u);
+	assert.match(SKILL_TAG_SOURCE, /group-has-\[:focus-visible\]\/skill-tag:pointer-events-auto group-has-\[:focus-visible\]\/skill-tag:opacity-100/u);
 	assert.doesNotMatch(SKILL_TAG_SOURCE, /labelHasOverflow/u);
 });
 

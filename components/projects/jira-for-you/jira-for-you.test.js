@@ -93,12 +93,12 @@ test("Jira For You rows collapse the resting lozenge slot in constrained contain
 	);
 	assert.match(
 		ITEM_SOURCE,
-		/className=\{cn\(\s*"[^"]*ml-0[^"]*w-0[^"]*group-hover:ml-3[^"]*group-hover:w-auto[^"]*group-focus-within:ml-3[^"]*group-focus-within:w-auto[^"]*@\[560px\]\/jira-for-you-items:ml-3[^"]*@\[560px\]\/jira-for-you-items:w-auto"[\s\S]*data-slot="jira-for-you-trailing"/,
+		/className=\{cn\(\s*"[^"]*ml-0[^"]*w-0[^"]*group-hover:ml-3[^"]*group-hover:w-auto[^"]*group-has-\[:focus-visible\]:ml-3[^"]*group-has-\[:focus-visible\]:w-auto[^"]*@\[560px\]\/jira-for-you-items:ml-3[^"]*@\[560px\]\/jira-for-you-items:w-auto"[\s\S]*data-slot="jira-for-you-trailing"/,
 		"the narrow resting trailing slot should reserve neither lozenge width nor gap",
 	);
 	assert.match(
 		ITEM_SOURCE,
-		/className=\{cn\(\s*"hidden[^"]*@\[560px\]\/jira-for-you-items:block[^"]*group-hover:hidden[^"]*group-focus-within:hidden/,
+		/className=\{cn\(\s*"hidden[^"]*@\[560px\]\/jira-for-you-items:block[^"]*group-hover:hidden[^"]*group-has-\[:focus-visible\]:hidden/,
 		"the resting lozenge should only appear in wide containers and yield to actions",
 	);
 	assert.match(
@@ -141,7 +141,7 @@ test("Jira For You sparkle action opens the shared Jira issue generative menu", 
 	);
 	assert.match(ITEM_SOURCE, /data-slot="jira-for-you-actions"/);
 	assert.match(ITEM_SOURCE, /group-hover:pointer-events-auto[^"]*group-hover:opacity-100/);
-	assert.match(ITEM_SOURCE, /group-focus-within:pointer-events-auto[^"]*group-focus-within:opacity-100/);
+	assert.match(ITEM_SOURCE, /group-has-\[:focus-visible\]:pointer-events-auto[^"]*group-has-\[:focus-visible\]:opacity-100/);
 	assert.match(
 		ITEM_SOURCE,
 		/invisible flex w-0 items-center gap-1 overflow-hidden opacity-0[^"]*group-hover:visible group-hover:w-auto group-hover:overflow-visible group-hover:opacity-100/,
@@ -154,7 +154,7 @@ test("Jira For You sparkle action opens the shared Jira issue generative menu", 
 	);
 	assert.match(
 		ITEM_SOURCE,
-		/group-hover:hidden group-focus-within:hidden/,
+		/group-hover:hidden group-has-\[:focus-visible\]:hidden/,
 		"the resting lozenge should make way for the expanded action cluster",
 	);
 	assert.doesNotMatch(ITEM_SOURCE, /bg-linear-to-l|from-bg-neutral-subtle-hovered|to-transparent/);

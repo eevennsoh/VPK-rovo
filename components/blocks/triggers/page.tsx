@@ -693,7 +693,7 @@ function TriggerRowDeleteButton({ onRemove }: Readonly<{ onRemove: () => void }>
 	return (
 		<Button
 			aria-label="Delete trigger"
-			className="self-start opacity-0 transition-opacity duration-normal group-hover/trigger-row:opacity-100 group-focus-within/trigger-row:opacity-100 focus-visible:opacity-100 hover:bg-bg-danger-hovered hover:text-text-danger active:bg-bg-danger-pressed [&:hover_svg]:text-icon-danger"
+			className="self-start opacity-0 transition-opacity duration-normal group-hover/trigger-row:opacity-100 group-has-[:focus-visible]/trigger-row:opacity-100 focus-visible:opacity-100 hover:bg-bg-danger-hovered hover:text-text-danger active:bg-bg-danger-pressed [&:hover_svg]:text-icon-danger"
 			onClick={onRemove}
 			size="icon-compact"
 			type="button"
