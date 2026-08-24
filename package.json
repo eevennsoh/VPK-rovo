@@ -29,6 +29,7 @@
 		"test:backend": "node scripts/run-js-unit-tests.mjs --prefix backend/",
 		"test:catalog": "node --test scripts/verify-component-catalog.test.js && node scripts/verify-component-catalog.js --strict-warnings && node scripts/run-js-unit-tests.mjs --prefix app/data/",
 		"catalog:add-plan": "node scripts/verify-component-catalog.js --add-plan",
+		"scaffold:jira-variant": "node scripts/scaffold-jira-variant.mjs",
 		"verify:catalog": "node scripts/verify-component-catalog.js --strict-warnings",
 		"verify:api-surfaces": "node scripts/generate-api-surfaces.js --check",
 		"verify:repo-map": "node scripts/generate-repo-map.js --check",
