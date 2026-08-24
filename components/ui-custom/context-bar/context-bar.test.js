@@ -948,7 +948,20 @@ test("ContextBarCreatePullRequest renders branch, diff stats, and a Create PR sp
 	assert.match(markup, /data-selected="true"/u);
 	assert.match(markup, /data-icon="shortcut"/u);
 	assert.match(markup, /aria-label="More pull request actions"/u);
+	assert.equal((markup.match(/disabled=""/gu) ?? []).length, 1);
 	assert.doesNotMatch(markup, /data-pr-number/u);
 	assert.doesNotMatch(markup, /data-ci-status/u);
 	assert.doesNotMatch(markup, /data-slot="lozenge"/u);
+});
+
+test("ContextBarCreatePullRequest disables actions without callbacks", async () => {
+	const harness = await loadContextBarPullRequestHarness();
+	const markup = harness.renderCreatePullRequestBar({
+		onCreate: undefined,
+		onCreateDraft: undefined,
+		onCreateManually: undefined,
+	});
+
+	assert.equal((markup.match(/disabled=""/gu) ?? []).length, 4);
+	assert.match(markup, /Create PR unavailable/u);
 });
