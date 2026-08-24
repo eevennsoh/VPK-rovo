@@ -65,6 +65,16 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	facepile?: ReactNode;
 	/** Mode control, rendered inline with Filter and Group. */
 	modeToggle?: ReactNode;
+	/**
+	 * Turns off the assignee Filter popover.
+	 *
+	 * Pulse sets it: the popover only writes `selectedAssigneeIds`, which feeds
+	 * the board's columns, while Pulse filters on its own member id. Left live it
+	 * lit a filter badge and changed nothing on screen — a control that reports
+	 * success and does nothing is worse than one that is plainly unavailable.
+	 * The facepile beside it is Pulse's real filter.
+	 */
+	disableAssigneeFilter?: boolean;
 	surfaceLabel?: string;
 	viewTabs?: ReactNode;
 }
@@ -100,6 +110,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 	searchPlaceholder = "Search board",
 	selectedAssigneeIds,
 	showBoardControls = true,
+	disableAssigneeFilter = false,
 	facepile,
 	modeToggle,
 	surfaceLabel = "board",
@@ -182,6 +193,17 @@ export function ExperimentalJiraKanbanBoardHeader({
 						</>
 					)}
 
+					{disableAssigneeFilter ? (
+						<Button
+							aria-disabled
+							aria-label={`Filter ${surfaceLabel} is unavailable in this mode — filter by person or agent with the faces to the left`}
+							size={compact ? "icon" : undefined}
+							variant="outline"
+						>
+							<Icon render={<FilterIcon label="" />} />
+							{compact ? null : "Filter"}
+						</Button>
+					) : (
 					<Popover open={filterOpen} onOpenChange={setFilterOpen}>
 						<PopoverTrigger
 							render={
@@ -275,6 +297,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 							</div>
 						</PopoverContent>
 					</Popover>
+					)}
 
 					<Button aria-disabled aria-label={`Group ${surfaceLabel}`} size={compact ? "icon" : undefined} variant="outline">
 						<Icon render={<GroupIcon label="" />} />

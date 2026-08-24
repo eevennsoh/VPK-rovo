@@ -15,6 +15,7 @@ import {
 	scopeByWorkItem,
 } from "@/components/blocks/jira-kanban/experimental/pulse/hooks/use-pulse-timeline";
 import type {
+	PulseAction,
 	PulseMember,
 	PulseSnapshot,
 	PulseTimeline,
@@ -56,7 +57,13 @@ const SNAPSHOT_QUIET = "opacity-80";
 const RUNWAY = "h-[50svh] shrink-0";
 
 /** Everything one insight needs, derived once per snapshot from the timeline. */
-type PulseStreamEntry = Omit<PulseStoryViewProps, "anchorRef" | "onGoToIndex" | "onSelectMember">;
+// The commitments are omitted alongside the callbacks: they are the reader's,
+// owned by the page, and identical for every insight — derivation must not
+// produce a per-snapshot copy of them.
+type PulseStreamEntry = Omit<
+	PulseStoryViewProps,
+	"anchorRef" | "onGoToIndex" | "onRequestAction" | "onSelectMember" | "requestedActionIds"
+>;
 
 /**
  * Why a window came up empty for somebody, in the timeline's own clock. The
@@ -120,6 +127,12 @@ function toStreamEntries(timeline: PulseTimeline, member: PulseMember | null): r
 }
 
 export interface PulseStreamProps {
+	/**
+	 * Commitments the reader has made, owned by the page so they survive both
+	 * scrolling to another insight and toggling Pulse off and back on.
+	 */
+	requestedActionIds: ReadonlySet<string>;
+	onRequestAction: (action: PulseAction) => void;
 	timeline: PulseTimeline;
 	/** Scopes every insight to one member; `null` is the team view. */
 	selectedMemberId: string | null;
@@ -139,6 +152,8 @@ export function PulseStream({
 	activeSnapshotIndex,
 	anchorRef,
 	onGoToSnapshot,
+	onRequestAction,
+	requestedActionIds,
 }: Readonly<PulseStreamProps>) {
 	const member = useMemo(
 		() => timeline.members.find((candidate) => candidate.id === selectedMemberId) ?? null,
@@ -168,6 +183,8 @@ export function PulseStream({
 					<PulseStory
 						{...entry}
 						anchorRef={anchorRef}
+						onRequestAction={onRequestAction}
+						requestedActionIds={requestedActionIds}
 						onGoToIndex={onGoToSnapshot}
 						onSelectMember={onSelectMember}
 					/>

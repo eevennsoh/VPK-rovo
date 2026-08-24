@@ -38,17 +38,20 @@ test("Pulse scrubber draws the outline it is handed and derives no geometry of i
 	assert.match(SOURCES.scrubber, /\{ left: `\$\{entry\.offset \* 100\}%` \}\}/u);
 	assert.match(SOURCES.scrubber, /\{marks\.map\(\(\{ entry, isActive, label, state, tabbable \}, index\) => \(/u);
 	assert.doesNotMatch(SOURCES.scrubber, /new Date\(|getTime\(\)|\.timestamp/u, "the ruler must not read the clock");
+	assert.doesNotMatch(SOURCES.marks, /new Date\(|getTime\(\)/u, "nor may its geometry");
 	assert.doesNotMatch(SOURCES.scrubber, /buildTickModel|toSnapshotOffsets|toNearestSnapshotIndex/u);
 
 	// Both ranks are drawn from one list and both are selectable, so there are no
 	// dead zones on the rail.
 	assert.ok(outline.some((entry) => entry.kind === "insight"));
 	assert.ok(outline.some((entry) => entry.kind === "section"));
-	assert.match(SOURCES.scrubber, /RULE_WEIGHT: Record<PulseOutlineKind, Record<PulseMarkState, PulseRuleWeight>>/u);
+	assert.match(SOURCES.marks, /RULE_WEIGHT: Record<PulseOutlineKind, Record<PulseMarkState, PulseRuleWeight>>/u);
 	// A section may never swell to an insight's length, or the two ranks trade
 	// places under the pointer and the outline stops reading as a hierarchy.
-	const insightPeak = Number.parseInt(SOURCES.scrubber.match(/current: \{ rest: 14, peak: (\d+)/u)[1], 10);
-	const sectionPeak = Number.parseInt(SOURCES.scrubber.match(/current: \{ rest: 8, peak: (\d+)/u)[1], 10);
+	// The weights moved to `lib/pulse-marks.ts` with the rest of the geometry —
+	// a component file that also exports helpers defeats Fast Refresh.
+	const insightPeak = Number.parseInt(SOURCES.marks.match(/current: \{ rest: 14, peak: (\d+)/u)[1], 10);
+	const sectionPeak = Number.parseInt(SOURCES.marks.match(/current: \{ rest: 8, peak: (\d+)/u)[1], 10);
 	assert.ok(sectionPeak < insightPeak, `a section peaks at ${sectionPeak} against an insight's ${insightPeak}`);
 });
 
@@ -212,7 +215,7 @@ test("Pulse scrubber scrubs on pointer move and leaves the reading position stic
 	assert.doesNotMatch(leaveBody, /onSelectEntry/u);
 	assert.match(leaveBody, /animate\(magnify, 0, MAGNIFY_OUT\)/u);
 	// The parked pointer stays finite: -1 rather than Infinity or null.
-	assert.match(SOURCES.scrubber, /const POINTER_AWAY = -1;/u);
+	assert.match(SOURCES.marks, /const POINTER_AWAY = -1;/u);
 	// The swell rides motion values, never React state — 28 rules re-rendering
 	// per mouse pixel would stall the column.
 	assert.match(SOURCES.scrubber, /useTransform\(\[pointerOffset, magnify\]/u);

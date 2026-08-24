@@ -21,6 +21,9 @@ const KANBAN_DIR = join(EXPERIMENTAL_DIR, "..");
 const SOURCES = {
 	data: readFileSync(join(PULSE_DIR, "data", "pulse-timeline.ts"), "utf8"),
 	hook: readFileSync(join(PULSE_DIR, "hooks", "use-pulse-timeline.ts"), "utf8"),
+	// The ruler's pure geometry and weights. Split out of the scrubber so a
+	// component file stops exporting helpers, which defeats Fast Refresh.
+	marks: readFileSync(join(PULSE_DIR, "lib", "pulse-marks.ts"), "utf8"),
 	rail: readFileSync(join(PULSE_DIR, "components", "pulse-rail.tsx"), "utf8"),
 	// The reading position: the only programmatic scroll left in Pulse.
 	reading: readFileSync(join(PULSE_DIR, "hooks", "use-pulse-reading.ts"), "utf8"),
@@ -233,7 +236,7 @@ function loadScrubberHarness() {
 				toMarkState,
 				toNearestEntryIndex,
 				toWeekdayLabel,
-			} from "./components/blocks/jira-kanban/experimental/pulse/components/pulse-scrubber";
+			} from "./components/blocks/jira-kanban/experimental/pulse/lib/pulse-marks";
 		`,
 		sourcefile: "pulse-scrubber-harness.ts",
 	});

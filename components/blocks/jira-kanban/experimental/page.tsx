@@ -84,6 +84,17 @@ export default function ExperimentalJiraKanbanPage({
 	// Owned here, not inside Pulse: the board header's facepile is the primary
 	// way in and out of the filter, and it lives above the mode switch.
 	const [pulseMemberId, setPulseMemberId] = useState<string | null>(null);
+	// Commitments live above the mode switch: Pulse unmounts when it is toggled
+	// off, and a requested action or a captured note is something the reader
+	// decided, not view state that may quietly reset with the subtree.
+	const [requestedActionIds, setRequestedActionIds] = useState<ReadonlySet<string>>(() => new Set<string>());
+	const [capturedLooseWorkIds, setCapturedLooseWorkIds] = useState<ReadonlySet<string>>(() => new Set<string>());
+	const handleRequestAction = useCallback((action: { id: string }) => {
+		setRequestedActionIds((current) => new Set(current).add(action.id));
+	}, []);
+	const handleCaptureLooseWork = useCallback((item: { id: string }) => {
+		setCapturedLooseWorkIds((current) => new Set(current).add(item.id));
+	}, []);
 	const [draggedCard, setDraggedCard] = useState<DraggedCardState | null>(null);
 	const [selection, setSelection] = useState(createJiraKanbanSelectionState);
 	const [assignedAgentIdsByCard, setAssignedAgentIdsByCard] = useState<Record<string, string[]>>({});
@@ -235,6 +246,7 @@ export default function ExperimentalJiraKanbanPage({
 				compact={compactHeader}
 				onSelectedAssigneeIdsChange={handleAssigneeFilterChange}
 				selectedAssigneeIds={selectedAssigneeIds}
+				disableAssigneeFilter={isPulse}
 				facepile={isPulse ? (
 					<PulseRosterFacepile
 						members={PULSE_TIMELINE.members}
@@ -252,7 +264,11 @@ export default function ExperimentalJiraKanbanPage({
 			/>
 			{isPulse ? (
 				<ExperimentalPulse
+					capturedLooseWorkIds={capturedLooseWorkIds}
+					onCaptureLooseWork={handleCaptureLooseWork}
+					onRequestAction={handleRequestAction}
 					onSelectedMemberIdChange={setPulseMemberId}
+					requestedActionIds={requestedActionIds}
 					selectedMemberId={pulseMemberId}
 				/>
 			) : (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ReactNode, type RefCallback } from "react";
+import { useId, type ReactNode, type RefCallback } from "react";
 
 import {
 	PulseAttention,
@@ -94,6 +94,13 @@ export interface PulseStoryViewProps
 	onSelectMember: (memberId: string | null) => void;
 	/** The window's headline numbers, read directly under the title. */
 	stats: readonly PulseStat[];
+	/**
+	 * Requested actions, owned above the article. A request is a commitment the
+	 * reader made; owning it here meant toggling Pulse off and back on recreated
+	 * the set empty and silently un-requested everything.
+	 */
+	requestedActionIds: ReadonlySet<string>;
+	onRequestAction: (action: PulseAction) => void;
 	/** What the window holds before scoping, so an emptied section can say so. */
 	unscopedCounts: {
 		artifacts: number;
@@ -375,23 +382,12 @@ export function PulseStory({
 	contributors,
 	onSelectMember,
 	stats,
+	onRequestAction,
+	requestedActionIds,
 	unscopedCounts,
 	anchorRef,
 }: Readonly<PulseStoryViewProps>) {
 	const headingId = `${useId()}-pulse-story-title`;
-	// Requested actions are committed state, owned here and keyed by action id so
-	// a request survives a filter change re-scoping the list around it.
-	const [requestedActionIds, setRequestedActionIds] = useState<ReadonlySet<string>>(
-		() => new Set<string>(),
-	);
-	const handleRequestAction = (action: PulseAction) => {
-		setRequestedActionIds((previous) => {
-			if (previous.has(action.id)) return previous;
-			const next = new Set(previous);
-			next.add(action.id);
-			return next;
-		});
-	};
 	// The outline decides which parts earn a mark; the article reads the same
 	// helper so the two can never disagree about what exists.
 	const anchoredSections = new Set(toPulseSections(snapshot));
@@ -479,7 +475,7 @@ export function PulseStory({
 					emptyNote={member === null
 						? undefined
 						: toEmptyNote(firstName, unscopedCounts.nextActions, "action", "actions")}
-					onRequestAction={handleRequestAction}
+					onRequestAction={onRequestAction}
 					requestedActionIds={requestedActionIds}
 				/>
 			</PulseStoryAnchor>

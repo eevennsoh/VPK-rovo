@@ -18,7 +18,11 @@ import {
 	usePulseTimeline,
 } from "@/components/blocks/jira-kanban/experimental/pulse/hooks/use-pulse-timeline";
 import { buildPulseOutline } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-outline";
-import type { PulseTimeline } from "@/components/blocks/jira-kanban/experimental/pulse/types";
+import type {
+	PulseAction,
+	PulseLooseWork,
+	PulseTimeline,
+} from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { cn } from "@/lib/utils";
@@ -62,6 +66,15 @@ const PROJECT_LABEL = "min-w-0 truncate text-[10px] font-semibold uppercase trac
 const PULSE_FADE_SIZE = "3rem";
 
 export interface ExperimentalPulseProps {
+	/**
+	 * Commitments the reader has made — actions requested, loose work captured.
+	 * Owned by the page rather than in here, so toggling Pulse off and back on
+	 * cannot silently discard them along with this subtree.
+	 */
+	capturedLooseWorkIds: ReadonlySet<string>;
+	onCaptureLooseWork: (item: PulseLooseWork) => void;
+	requestedActionIds: ReadonlySet<string>;
+	onRequestAction: (action: PulseAction) => void;
 	timeline?: PulseTimeline;
 	/** Controlled member filter, so the board header's facepile can drive it. */
 	selectedMemberId?: string | null;
@@ -69,6 +82,10 @@ export interface ExperimentalPulseProps {
 }
 
 export function ExperimentalPulse({
+	capturedLooseWorkIds,
+	onCaptureLooseWork,
+	onRequestAction,
+	requestedActionIds,
 	timeline = PULSE_TIMELINE,
 	selectedMemberId,
 	onSelectedMemberIdChange,
@@ -183,6 +200,8 @@ export function ExperimentalPulse({
 							activeSnapshotIndex={pulse.activeIndex}
 							anchorRef={reading.registerAnchor}
 							onGoToSnapshot={handleGoToSnapshot}
+						onRequestAction={onRequestAction}
+						requestedActionIds={requestedActionIds}
 							onSelectMember={filter.selectMember}
 							selectedMemberId={filter.selectedMemberId}
 							timeline={timeline}
@@ -196,7 +215,7 @@ export function ExperimentalPulse({
 
 					<div className="lg:w-10 lg:shrink-0" />
 
-					<PulseUncapturedColumn looseWork={pulse.looseWork} members={pulse.members} />
+					<PulseUncapturedColumn capturedIds={capturedLooseWorkIds} onCapture={onCaptureLooseWork} looseWork={pulse.looseWork} members={pulse.members} />
 				</div>
 			</div>
 		</div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import LinkIcon from "@atlaskit/icon/core/link";
 
@@ -45,10 +45,16 @@ function PulseRailEmpty({ children }: Readonly<{ children: ReactNode }>) {
 
 
 function PulseLooseWorkRow({
+	isLinked,
 	item,
 	memberLookup,
-}: Readonly<{ item: PulseLooseWork; memberLookup: ReadonlyMap<string, PulseMember> }>) {
-	const [isLinked, setIsLinked] = useState(false);
+	onCapture,
+}: Readonly<{
+	isLinked: boolean;
+	item: PulseLooseWork;
+	memberLookup: ReadonlyMap<string, PulseMember>;
+	onCapture: (item: PulseLooseWork) => void;
+}>) {
 	const involved = item.memberIds.map((id) => memberLookup.get(id)).filter((member) => member !== undefined);
 
 	return (
@@ -84,7 +90,7 @@ function PulseLooseWorkRow({
 							)}
 							onClick={() => {
 								if (isLinked) return;
-								setIsLinked(true);
+								onCapture(item);
 							}}
 							size="compact"
 							variant="outline"
@@ -172,9 +178,21 @@ export function PulseWorkItemsColumn({
 }
 
 export function PulseUncapturedColumn({
+	capturedIds,
 	looseWork,
 	members,
-}: Readonly<{ looseWork: readonly PulseLooseWork[]; members: readonly PulseMember[] }>) {
+	onCapture,
+}: Readonly<{
+	/**
+	 * Captured rows, owned above this column. A capture is a commitment the
+	 * reader made; keeping it in the row meant scrolling to another insight
+	 * unmounted the keyed row and silently un-captured it on the way back.
+	 */
+	capturedIds: ReadonlySet<string>;
+	looseWork: readonly PulseLooseWork[];
+	members: readonly PulseMember[];
+	onCapture: (item: PulseLooseWork) => void;
+}>) {
 	const memberLookup = useMemo(() => new Map(members.map((member) => [member.id, member])), [members]);
 	return (
 		<PulseWorkColumn label="Uncaptured work" width="lg:w-[300px]">
@@ -186,7 +204,13 @@ export function PulseUncapturedColumn({
 			) : (
 				<ul className="flex flex-col gap-2">
 					{looseWork.map((item) => (
-						<PulseLooseWorkRow item={item} key={item.id} memberLookup={memberLookup} />
+						<PulseLooseWorkRow
+							isLinked={capturedIds.has(item.id)}
+							item={item}
+							key={item.id}
+							memberLookup={memberLookup}
+							onCapture={onCapture}
+						/>
 					))}
 				</ul>
 			)}

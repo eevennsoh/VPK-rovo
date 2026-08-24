@@ -118,12 +118,17 @@ export function usePulseReading({ outline, resetKey = null }: UsePulseReadingOpt
 
 	// A filter rewrites the article, so start it from the top rather than
 	// stranding the reader at an offset that now points at different prose.
+	//
+	// Only the scroll is written here. Setting the active entry as well would be
+	// adjusting state in response to a prop change — the reader would see the
+	// stale mark for a frame, and the value would then be overwritten anyway by
+	// the measure pass the scroll itself triggers. Moving the scrollport is the
+	// cause; the active entry is derived from it.
 	useEffect(() => {
 		if (element === null) {
 			return;
 		}
 		element.scrollTop = 0;
-		setActiveEntryIndex(0);
 	}, [element, resetKey]);
 
 	const scrollToEntry = useCallback((id: string) => {
