@@ -11,7 +11,7 @@ async function loadDemoPreviewShellHarness() {
 				import React from "react";
 				import { token } from "./lib/tokens";
 				import { DemoPreviewShell } from "./components/website/component-doc/components/demo-preview-shell.tsx";
-				import { shouldUseFullPagePreview, resolveExamplesShellLayout, shouldBleedExamples } from "./components/website/component-doc/components/preview-layout.ts";
+				import { shouldUseFullPagePreview, resolveExamplesShellLayout, shouldBleedExamples, resolveBleedWrapperDividers, KEEP_SECTION_DIVIDER } from "./components/website/component-doc/components/preview-layout.ts";
 
 				export function getShellStyles() {
 					const defaultShell = DemoPreviewShell({
@@ -78,6 +78,16 @@ async function loadDemoPreviewShellHarness() {
 						full: shouldBleedExamples({ examplesContentWidth: "full" }),
 						bleed: shouldBleedExamples({ examplesContentWidth: "bleed" }),
 						noLayout: shouldBleedExamples(undefined),
+					};
+				}
+
+				export function getBleedWrapperDividers() {
+					return {
+						keepDivider: KEEP_SECTION_DIVIDER,
+						allSections: resolveBleedWrapperDividers(true, true),
+						withoutProps: resolveBleedWrapperDividers(true, false),
+						withoutExamples: resolveBleedWrapperDividers(false, true),
+						installationAndUsageOnly: resolveBleedWrapperDividers(false, false),
 					};
 				}
 
@@ -221,4 +231,41 @@ test("Only bleed hoists Examples out of the 860px reading container", async () =
 	assert.equal(unset, false);
 	assert.equal(full, false);
 	assert.equal(noLayout, false);
+});
+
+test("Bleed re-asserts the divider on every wrapper that is still followed by a section", async () => {
+	const harness = await loadDemoPreviewShellHarness();
+	const { keepDivider, allSections } = harness.getBleedWrapperDividers();
+
+	// Splitting the sections across width wrappers makes Usage the :last-child
+	// of the first wrapper and Examples the sole child of the second, so
+	// DocSection's `last:border-b-0` would strip both dividers even though
+	// later sections follow. Each non-final wrapper overrides it.
+	assert.equal(allSections.installationAndUsage, keepDivider);
+	assert.equal(allSections.examples, keepDivider);
+	// The genuinely final section keeps the default: no trailing divider.
+	assert.equal(allSections.props, undefined);
+
+	// The override must outrank `last:border-b-0`, which needs the child
+	// combinator — a bare `border-b` would tie on specificity and lose.
+	assert.match(keepDivider, /^\[&>section:last-child\]:border-b$/u);
+});
+
+test("Bleed leaves the divider off once a wrapper really does hold the last section", async () => {
+	const harness = await loadDemoPreviewShellHarness();
+	const { keepDivider, withoutProps, withoutExamples, installationAndUsageOnly } =
+		harness.getBleedWrapperDividers();
+
+	// No API Reference: Examples is last overall, so it must not draw a divider.
+	assert.equal(withoutProps.installationAndUsage, keepDivider);
+	assert.equal(withoutProps.examples, undefined);
+
+	// No Examples: the empty Examples wrapper is skipped, API Reference is last.
+	assert.equal(withoutExamples.installationAndUsage, keepDivider);
+	assert.equal(withoutExamples.examples, undefined);
+
+	// Import + Usage alone: nothing follows, so nothing is overridden.
+	assert.equal(installationAndUsageOnly.installationAndUsage, undefined);
+	assert.equal(installationAndUsageOnly.examples, undefined);
+	assert.equal(installationAndUsageOnly.props, undefined);
 });

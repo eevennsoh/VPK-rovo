@@ -10,7 +10,7 @@ import { DocInstallation } from "./components/doc-installation";
 import { DocUsage } from "./components/doc-usage";
 import { DocPropsTable } from "./components/doc-props-table";
 import { DocExamples } from "./components/doc-examples";
-import { shouldBleedExamples } from "./components/preview-layout";
+import { resolveBleedWrapperDividers, shouldBleedExamples } from "./components/preview-layout";
 
 interface ComponentDocProps {
 	component: {
@@ -79,6 +79,11 @@ export function ComponentDoc({ component }: Readonly<ComponentDocProps>) {
 			{propsSection}
 		</>
 	);
+	// `DocSection` hides its own divider with `last:border-b-0`, which resolves
+	// against its DOM parent. The bleed branch below splits the sections across
+	// three width wrappers, which changes who is `:last-child`, so any wrapper
+	// still followed by a section has to re-assert the divider.
+	const bleedDividers = resolveBleedWrapperDividers(examplesSection !== null, propsSection !== null);
 
 	return (
 		<article style={articleStyle}>
@@ -102,9 +107,18 @@ export function ComponentDoc({ component }: Readonly<ComponentDocProps>) {
 
 			{bleedExamples ? (
 				<>
-					<div style={contentContainerStyle}>{installationAndUsage}</div>
-					<div style={previewContainerStyle}>{examplesSection}</div>
-					<div style={contentContainerStyle}>{propsSection}</div>
+					<div
+						style={contentContainerStyle}
+						className={bleedDividers.installationAndUsage}
+					>
+						{installationAndUsage}
+					</div>
+					<div style={previewContainerStyle} className={bleedDividers.examples}>
+						{examplesSection}
+					</div>
+					<div style={contentContainerStyle} className={bleedDividers.props}>
+						{propsSection}
+					</div>
 				</>
 			) : (
 				<div style={contentContainerStyle}>
