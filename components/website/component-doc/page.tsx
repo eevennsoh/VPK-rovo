@@ -10,6 +10,7 @@ import { DocInstallation } from "./components/doc-installation";
 import { DocUsage } from "./components/doc-usage";
 import { DocPropsTable } from "./components/doc-props-table";
 import { DocExamples } from "./components/doc-examples";
+import { shouldBleedExamples } from "./components/preview-layout";
 
 interface ComponentDocProps {
 	component: {
@@ -36,7 +37,18 @@ export function ComponentDoc({ component }: Readonly<ComponentDocProps>) {
 	const articleStyle = {
 		paddingBottom: token("space.600"),
 	};
-	const detailSections = (
+	// Examples normally sit in the 860px reading container with the rest of the
+	// prose. Opting into "bleed" moves them into the same wide band the preview
+	// uses, so a wide demo renders at an identical width in both sections.
+	const bleedExamples = shouldBleedExamples(detail?.demoLayout);
+	const examplesSection = detail?.examples && detail.examples.length > 0 ? (
+		<DocExamples
+			examples={detail.examples}
+			category={category}
+			demoLayout={detail.demoLayout}
+		/>
+	) : null;
+	const installationAndUsage = (
 		<>
 			{/* 3. Installation — always shown */}
 			<DocInstallation
@@ -46,25 +58,25 @@ export function ComponentDoc({ component }: Readonly<ComponentDocProps>) {
 			/>
 
 			{/* 4. Usage — only if data exists */}
-			{detail?.usage && <DocUsage usage={detail.usage} />}
+			{detail?.usage ? <DocUsage usage={detail.usage} /> : null}
+		</>
+	);
+	const propsSection = detail?.props ? (
+		/* 6. API Reference — only if props data exists */
+		<DocPropsTable
+			componentName={name.replace(/\s+/g, "")}
+			props={detail.props}
+			subComponents={detail.subComponents}
+		/>
+	) : null;
+	const detailSections = (
+		<>
+			{installationAndUsage}
 
 			{/* 5. Examples — only if data exists */}
-			{detail?.examples && detail.examples.length > 0 && (
-				<DocExamples
-					examples={detail.examples}
-					category={category}
-					demoLayout={detail.demoLayout}
-				/>
-			)}
+			{examplesSection}
 
-			{/* 6. API Reference — only if props data exists */}
-			{detail?.props && (
-				<DocPropsTable
-					componentName={name.replace(/\s+/g, "")}
-					props={detail.props}
-					subComponents={detail.subComponents}
-				/>
-			)}
+			{propsSection}
 		</>
 	);
 
@@ -88,9 +100,17 @@ export function ComponentDoc({ component }: Readonly<ComponentDocProps>) {
 			<DocPreview slug={slug} category={category} demoLayout={detail?.demoLayout} />
 		</div>
 
-			<div style={contentContainerStyle}>
-				{detailSections}
-			</div>
+			{bleedExamples ? (
+				<>
+					<div style={contentContainerStyle}>{installationAndUsage}</div>
+					<div style={previewContainerStyle}>{examplesSection}</div>
+					<div style={contentContainerStyle}>{propsSection}</div>
+				</>
+			) : (
+				<div style={contentContainerStyle}>
+					{detailSections}
+				</div>
+			)}
 		</article>
 	);
 }

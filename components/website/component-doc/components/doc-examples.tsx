@@ -10,6 +10,7 @@ import {
 import { Lozenge } from "@/components/ui/lozenge";
 import { AnchorLinkButton, DocSection } from "./doc-section";
 import { DemoPreviewShell } from "./demo-preview-shell";
+import { resolveExamplesShellLayout } from "./preview-layout";
 
 /** Map example badge variant (Badge-style names) to Lozenge variant. */
 const badgeVariantToLozenge: Record<string, "neutral" | "success" | "danger" | "information" | "discovery" | "warning"> = {
@@ -59,11 +60,13 @@ function ExampleSkeleton() {
 }
 
 function ExampleItem({
+	category,
 	example,
 	Demo,
 	demoLayout,
-}: Readonly<{ example: ExampleDefinition; Demo: ComponentType; demoLayout?: DemoLayout }>) {
+}: Readonly<{ category: DemoCategory; example: ExampleDefinition; Demo: ComponentType; demoLayout?: DemoLayout }>) {
 	const id = example.id ?? slugify(example.title);
+	const shell = resolveExamplesShellLayout(category, demoLayout);
 	return (
 		<div
 			id={id}
@@ -109,7 +112,11 @@ function ExampleItem({
 					</p>
 				)}
 			</div>
-			<DemoPreviewShell contentWidth={demoLayout?.examplesContentWidth}>
+			<DemoPreviewShell
+				contentWidth={shell.contentWidth}
+				fullPage={shell.fullPage}
+				fitContent={shell.fitContent}
+			>
 				<Suspense fallback={<ExampleSkeleton />}>
 					{createElement(Demo)}
 				</Suspense>
@@ -154,6 +161,7 @@ function ResolvedDocExamples({
 			>
 				{resolvedExamples.map(({ example, Demo }) => (
 					<ExampleItem
+						category={category}
 						key={example.demoSlug}
 						example={example}
 						Demo={Demo}

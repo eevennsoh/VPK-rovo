@@ -11,7 +11,7 @@ async function loadDemoPreviewShellHarness() {
 				import React from "react";
 				import { token } from "./lib/tokens";
 				import { DemoPreviewShell } from "./components/website/component-doc/components/demo-preview-shell.tsx";
-				import { shouldUseFullPagePreview } from "./components/website/component-doc/components/preview-layout.ts";
+				import { shouldUseFullPagePreview, resolveExamplesShellLayout, shouldBleedExamples } from "./components/website/component-doc/components/preview-layout.ts";
 
 				export function getShellStyles() {
 					const defaultShell = DemoPreviewShell({
@@ -39,6 +39,45 @@ async function loadDemoPreviewShellHarness() {
 						fitFullPageClassName: fitFullPageShell.props.className,
 						fullWidthPadding: fullWidthShell.props.children.props.style.padding,
 						fullWidthInnerStyle: fullWidthShell.props.children.props.children.props.style,
+					};
+				}
+
+				export function getExamplesShellLayouts() {
+					return {
+						unset: resolveExamplesShellLayout("blocks", { previewHeight: "fit" }),
+						full: resolveExamplesShellLayout("blocks", {
+							previewHeight: "fit",
+							examplesContentWidth: "full",
+						}),
+						bleedFit: resolveExamplesShellLayout("blocks", {
+							previewHeight: "fit",
+							examplesContentWidth: "bleed",
+						}),
+						bleedFixed: resolveExamplesShellLayout("blocks", {
+							previewHeight: "fixed",
+							examplesContentWidth: "bleed",
+						}),
+						bleedWithoutHeight: resolveExamplesShellLayout("blocks", {
+							examplesContentWidth: "bleed",
+						}),
+						bleedUnsupportedCategory: resolveExamplesShellLayout("ui-custom", {
+							previewHeight: "fit",
+							examplesContentWidth: "bleed",
+						}),
+						bleedMirrorsPreviewWidth: resolveExamplesShellLayout("blocks", {
+							previewHeight: "fit",
+							previewContentWidth: "full",
+							examplesContentWidth: "bleed",
+						}),
+					};
+				}
+
+				export function getExamplesBleedDecisions() {
+					return {
+						unset: shouldBleedExamples({ previewHeight: "fit" }),
+						full: shouldBleedExamples({ examplesContentWidth: "full" }),
+						bleed: shouldBleedExamples({ examplesContentWidth: "bleed" }),
+						noLayout: shouldBleedExamples(undefined),
 					};
 				}
 
@@ -117,4 +156,69 @@ test("DocPreview requires an explicit height mode before using the full-page she
 	assert.equal(decisions.fixedBlock, true);
 	assert.equal(decisions.fitProject, true);
 	assert.equal(decisions.fixedUi, false);
+});
+
+test("Examples default to the inset shell so the ~400 existing demos are untouched", async () => {
+	const harness = await loadDemoPreviewShellHarness();
+	const { unset, full } = harness.getExamplesShellLayouts();
+
+	// No examplesContentWidth: pass nothing through, exactly as before.
+	assert.equal(unset.contentWidth, undefined);
+	assert.equal(unset.fullPage, false);
+	assert.equal(unset.fitContent, false);
+
+	// "full" keeps the inset shell — it only stretches content inside it. The
+	// padding contract asserted above depends on this staying non-full-page.
+	assert.equal(full.contentWidth, "full");
+	assert.equal(full.fullPage, false);
+	assert.equal(full.fitContent, false);
+});
+
+test("Examples opt into the preview's edge-to-edge frame with examplesContentWidth bleed", async () => {
+	const harness = await loadDemoPreviewShellHarness();
+	const { bleedFit, bleedFixed } = harness.getExamplesShellLayouts();
+
+	// Same shell arguments DocPreview computes, so both sections render at one width.
+	assert.equal(bleedFit.fullPage, true);
+	assert.equal(bleedFit.fitContent, true);
+	// Mirrors previewContentWidth, which is unset here — same as the preview.
+	assert.equal(bleedFit.contentWidth, undefined);
+
+	// "fixed" height previews are full-page but not fit-content.
+	assert.equal(bleedFixed.fullPage, true);
+	assert.equal(bleedFixed.fitContent, false);
+});
+
+test("Bleed never widens an example past its own preview", async () => {
+	const harness = await loadDemoPreviewShellHarness();
+	const { bleedWithoutHeight, bleedUnsupportedCategory } = harness.getExamplesShellLayouts();
+
+	// Both cases are ones where the Preview section itself stays in the inset
+	// shell, so the example must too — degrading to stretch, not edge-to-edge.
+	for (const layout of [bleedWithoutHeight, bleedUnsupportedCategory]) {
+		assert.equal(layout.fullPage, false);
+		assert.equal(layout.fitContent, false);
+	}
+});
+
+test("Bleeding examples inherit the preview's own content width", async () => {
+	const harness = await loadDemoPreviewShellHarness();
+	const { bleedMirrorsPreviewWidth } = harness.getExamplesShellLayouts();
+
+	// The whole contract is "render exactly like the preview", so the example
+	// must not invent a width the preview above it is not using.
+	assert.equal(bleedMirrorsPreviewWidth.contentWidth, "full");
+	assert.equal(bleedMirrorsPreviewWidth.fullPage, true);
+});
+
+test("Only bleed hoists Examples out of the 860px reading container", async () => {
+	const harness = await loadDemoPreviewShellHarness();
+	const { unset, full, bleed, noLayout } = harness.getExamplesBleedDecisions();
+
+	// ComponentDoc renders Examples in the wide preview band only for bleed;
+	// every other component keeps the reading measure it has today.
+	assert.equal(bleed, true);
+	assert.equal(unset, false);
+	assert.equal(full, false);
+	assert.equal(noLayout, false);
 });
