@@ -567,8 +567,10 @@ export function createJiraVariantPlan({
 	}
 	const source = createVersionIdentity(sourceValue, "source");
 	const target = createVersionIdentity(targetValue, "target");
-	if (source.number === target.number) {
-		throw new Error("source and target versions must differ");
+	if (target.number !== source.number + 1) {
+		throw new Error(
+			`target version must be the immediate successor of source version ${source.version}`,
+		);
 	}
 	const values = buildTemplateValues(source, target);
 	const rewriteRules = resolveRewriteRules(manifest, values);

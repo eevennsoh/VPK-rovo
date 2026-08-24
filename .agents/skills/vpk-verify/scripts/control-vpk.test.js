@@ -312,6 +312,14 @@ test("missing binary, stale session, and ordinary assertion failures stay distin
 		"stale_session",
 	);
 	assert.equal(
+		classifyAgentBrowserFailure({
+			status: 0,
+			stderr: "",
+			stdout: "Browser preview empty state: about:blank",
+		}),
+		null,
+	);
+	assert.equal(
 		classifyAgentBrowserFailure({ status: 1, stderr: "Element not found: Build", stdout: "" }),
 		"assertion_failure",
 	);

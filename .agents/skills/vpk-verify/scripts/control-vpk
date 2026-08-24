@@ -218,6 +218,7 @@ function classifyAgentBrowserFailure(failure) {
 		return failure.classification;
 	}
 	if (failure?.error?.code === "ETIMEDOUT") return "timeout";
+	if (!(failure instanceof Error) && failure.status === 0) return null;
 	const text = failureText(failure);
 	if (/not installed in this worktree|bin is missing|missing a bin\.agent-browser|ENOENT/iu.test(text)) {
 		return "missing_binary";
@@ -225,7 +226,6 @@ function classifyAgentBrowserFailure(failure) {
 	if (/no browser session|session (?:is )?not found|browser session.*(?:closed|missing)|about:blank/iu.test(text)) {
 		return "stale_session";
 	}
-	if (!(failure instanceof Error) && failure.status === 0) return null;
 	return "assertion_failure";
 }
 

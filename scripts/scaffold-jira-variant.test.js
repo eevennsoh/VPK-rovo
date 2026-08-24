@@ -361,6 +361,23 @@ test("dry-run planning is deterministic for the v1 to v2 fixture shape", async (
 	}
 });
 
+test("planner rejects targets that are not the immediate successor", async () => {
+	const root = createFixtureWorkspace({ source: "v3" });
+	try {
+		const { createJiraVariantPlan, loadVariantManifest } = await loadGenerator();
+		const manifest = loadVariantManifest(DEFAULT_MANIFEST_PATH);
+
+		for (const target of ["v2", "v3", "v5"]) {
+			assert.throws(
+				() => createJiraVariantPlan({ manifest, root, source: "v3", target }),
+				/target version must be the immediate successor of source version v3/u,
+			);
+		}
+	} finally {
+		rmSync(root, { force: true, recursive: true });
+	}
+});
+
 test("dry-run planning covers v2 to v3 assets, browser tests, and lazy-load wiring", async () => {
 	const root = createFixtureWorkspace({ includeDeferredRules: true, source: "v2" });
 	try {
