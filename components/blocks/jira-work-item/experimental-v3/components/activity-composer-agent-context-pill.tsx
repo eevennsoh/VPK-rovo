@@ -5,11 +5,9 @@ import { useState } from "react";
 
 import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
-import {
-	WORK_ITEM_AGENT_SELECTOR_MENU,
-	WorkItemAgentSelector,
-} from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-agent-selector";
+import { WorkItemAgentSelector } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-agent-selector";
 import { DEFAULT_PINNED_SPACE_AGENT_IDS } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-picker-options";
+import { WORK_ITEM_AGENT_SELECTOR_MENU } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-agent-selector-menu";
 import {
 	DropdownMenu,
 	DropdownMenuContent,

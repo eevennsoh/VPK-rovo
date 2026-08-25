@@ -26,7 +26,7 @@ const spinnerVariants = cva(
 		},
 		defaultVariants: {
 			size: "default",
-			variant: "default",
+			variant: "inherit",
 		},
 	}
 )
@@ -65,7 +65,7 @@ function normalizeSpinnerPhaseOffsetMs(phaseOffsetMs: number): number {
 function Spinner({
 	className,
 	size = "default",
-	variant = "default",
+	variant = "inherit",
 	label = "Loading",
 	phaseOffsetMs = 0,
 	style,

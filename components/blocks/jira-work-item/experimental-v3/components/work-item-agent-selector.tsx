@@ -4,14 +4,6 @@ import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
 import { AgentSelector, type AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { WORK_ITEM_PINNED_ITEMS_LABEL } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-picker-options";
 
-/** Dropdown chrome shared by Assign agents and the Details Agents row. */
-export const WORK_ITEM_AGENT_SELECTOR_MENU = {
-	align: "start",
-	className: "max-h-none w-[360px] overflow-hidden p-0",
-	positionerClassName: "z-[502]",
-	sideOffset: 8,
-} as const;
-
 interface WorkItemAgentSelectorProps {
 	agents?: readonly AgentSelectorAgent[];
 	onAgentToggle: (agentId: string) => void;
@@ -21,6 +13,7 @@ interface WorkItemAgentSelectorProps {
 	onQueryChange: (query: string) => void;
 	pinnedAgentIds: readonly string[];
 	query: string;
+	selectedAgentIds?: readonly string[];
 }
 
 /** Palette AgentSelector used by the Activity composer pill and Details Agents. */
@@ -33,6 +26,7 @@ export function WorkItemAgentSelector({
 	onQueryChange,
 	pinnedAgentIds,
 	query,
+	selectedAgentIds,
 }: Readonly<WorkItemAgentSelectorProps>) {
 	return (
 		<AgentSelector
@@ -47,6 +41,7 @@ export function WorkItemAgentSelector({
 			query={query}
 			searchVariant="palette"
 			selectionMode="single"
+			selectedAgentIds={selectedAgentIds}
 		/>
 	);
 }

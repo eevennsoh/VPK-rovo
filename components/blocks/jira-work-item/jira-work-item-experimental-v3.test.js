@@ -156,15 +156,23 @@ test("the v3 control row is consolidated and Reporter moved back to Details", ()
 	assert.doesNotMatch(detailsEditorsSource, /AvatarGroup/u);
 	assert.doesNotMatch(detailsEditorsSource, /-space-x-/u);
 	assert.doesNotMatch(detailsEditorsSource, /selectionMode="multiple"/u);
-	assert.doesNotMatch(detailsEditorsSource, /selectedAgentIds=\{selectedAgentIds\}/u);
+	assert.match(detailsEditorsSource, /selectedAgentIds=\{selectedAgentIds\}/u);
 	assert.match(
 		detailsEditorsSource,
-		/import \{[\s\S]*WorkItemAgentSelector[\s\S]*\} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/components\/work-item-agent-selector";/u,
+		/if \(selectedAgentIds\.includes\(agentId\)\) \{[\s\S]*onChange\(selectedAgents\.filter\(\(member\) => member\.id !== agentId\)\);[\s\S]*\} else \{[\s\S]*onChange\(\[\.\.\.selectedAgents, toCrewAgent\(agent\)\]\);/u,
 	);
+	assert.match(
+		detailsEditorsSource,
+		/import \{ WorkItemAgentSelector \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/components\/work-item-agent-selector";/u,
+	);
+	assert.match(detailsEditorsSource, /import \{ WORK_ITEM_AGENT_SELECTOR_MENU \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/lib\/work-item-agent-selector-menu";/u);
 	const workItemAgentSelectorSource = readBlockFile("experimental-v3/components/work-item-agent-selector.tsx");
 	assert.match(workItemAgentSelectorSource, /selectionMode="single"/u);
-	assert.doesNotMatch(workItemAgentSelectorSource, /selectedAgentIds/u);
+	assert.match(workItemAgentSelectorSource, /selectedAgentIds\?: readonly string\[\];/u);
+	assert.match(workItemAgentSelectorSource, /selectedAgentIds=\{selectedAgentIds\}/u);
+	assert.doesNotMatch(workItemAgentSelectorSource, /export const WORK_ITEM_AGENT_SELECTOR_MENU/u);
 	const composerAgentPillSource = readBlockFile("experimental-v3/components/activity-composer-agent-context-pill.tsx");
+	assert.match(composerAgentPillSource, /import \{ WORK_ITEM_AGENT_SELECTOR_MENU \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/lib\/work-item-agent-selector-menu";/u);
 	assert.match(
 		composerAgentPillSource,
 		/<DropdownMenuContent \{\.\.\.WORK_ITEM_AGENT_SELECTOR_MENU\}>[\s\S]*<WorkItemAgentSelector/u,

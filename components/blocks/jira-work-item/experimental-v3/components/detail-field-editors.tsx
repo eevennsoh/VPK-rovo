@@ -16,16 +16,14 @@ import type { CrewMember } from "@/components/blocks/jira-work-item/data/metadat
 import type { AgentPlannerAssignee } from "@/components/blocks/jira-work-item/data/planner-state";
 import type { AgentSession, StaticTimelineEvent } from "@/components/blocks/jira-work-item/data/session-state";
 import { DetailValueTrigger } from "@/components/blocks/jira-work-item/experimental-v3/components/detail-field-row";
-import {
-	WORK_ITEM_AGENT_SELECTOR_MENU,
-	WorkItemAgentSelector,
-} from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-agent-selector";
+import { WorkItemAgentSelector } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-agent-selector";
 import {
 	useJiraWorkItemMeta,
 	useJiraWorkItemState,
 } from "@/components/blocks/jira-work-item/experimental-v3/context-jira-work-item";
 import { agentRowStatusTooltip } from "@/components/blocks/jira-work-item/experimental-v3/lib/agent-row-status";
 import { DEFAULT_PINNED_SPACE_AGENT_IDS } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-picker-options";
+import { WORK_ITEM_AGENT_SELECTOR_MENU } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-agent-selector-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -453,7 +451,9 @@ export function AgentsRowField({ value, onChange }: Readonly<{ value: readonly C
 		if (!agent) {
 			return;
 		}
-		if (!selectedAgentIds.includes(agentId)) {
+		if (selectedAgentIds.includes(agentId)) {
+			onChange(selectedAgents.filter((member) => member.id !== agentId));
+		} else {
 			onChange([...selectedAgents, toCrewAgent(agent)]);
 		}
 		handleFooterAction();
@@ -502,6 +502,7 @@ export function AgentsRowField({ value, onChange }: Readonly<{ value: readonly C
 						onQueryChange={setQuery}
 						pinnedAgentIds={pinnedAgentIds}
 						query={query}
+						selectedAgentIds={selectedAgentIds}
 					/>
 				</DropdownMenuContent>
 			</DropdownMenu>

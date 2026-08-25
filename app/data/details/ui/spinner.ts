@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const SPINNER_DETAIL: ComponentDetail = {
     description:
-      "A loading spinner with an icon-subtlest default arc that sweeps around the circle. Supports an `inherit` text-color variant, an `invert` variant for dark surfaces, and a `rainbow` variant that paints the arc with the Rovo brand gradient.",
+      "A loading spinner with an inherited text-color arc that sweeps around the circle. Supports a `default` icon-subtlest variant, an `invert` variant for dark surfaces, and a `rainbow` variant that paints the arc with the Rovo brand gradient.",
     adsUrl: "https://atlassian.design/components/spinner",
     usage: `import { Spinner } from "@/components/ui/spinner";
 
@@ -19,7 +19,7 @@ export const SPINNER_DETAIL: ComponentDetail = {
       {
         name: "variant",
         type: `"default" | "inherit" | "invert" | "rainbow"`,
-        default: `"default"`,
+        default: `"inherit"`,
         description:
           "Stroke color. `default` uses icon subtlest, `inherit` follows currentColor, `invert` paints the background token, and `rainbow` uses the Rovo brand gradient.",
       },

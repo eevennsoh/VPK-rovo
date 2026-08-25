@@ -187,9 +187,6 @@ const JIRA_ISSUE_MOTION_EXIT: Transition = { duration: 0.1, ease: [0.6, 0, 0.8, 
 const JIRA_ISSUE_MOTION_LAYOUT: Transition = { duration: 0.2, ease: [0.4, 0, 0, 1] }; // duration-medium + ease-in-out
 const JIRA_ISSUE_MOTION_REDUCED: Transition = { duration: 0 };
 const JIRA_ISSUE_MOTION_STYLE: CSSProperties = { willChange: "transform, opacity" };
-const DEFAULT_JIRA_ISSUE_GENERATIVE_ACTION: JiraIssueGenerativeActionConfig = {
-	onSubmit: () => undefined,
-};
 
 function getIssueInitial(issueKey: string): string {
 	return issueKey[0]?.toUpperCase() ?? "U";
@@ -563,7 +560,6 @@ function JiraIssueDefault({
 	const [generativeActionRevealSuppressed, setGenerativeActionRevealSuppressed] = useState(false);
 	const [agentActivityHoverOpen, setAgentActivityHoverOpen] = useState(false);
 	const [moreActionMenuOpen, setMoreActionMenuOpen] = useState(false);
-	const resolvedGenerativeAction = generativeAction ?? DEFAULT_JIRA_ISSUE_GENERATIVE_ACTION;
 	const generativeActionRevealActive = !agentActivityHoverOpen
 		&& !moreActionMenuOpen
 		&& !generativeActionRevealSuppressed
@@ -592,7 +588,7 @@ function JiraIssueDefault({
 	const hasIssueRows = hasSubtasks;
 	const hasAgentActivityPresentation = agentActivityMode !== undefined || Boolean(agentActivities?.length) || hasAgentDoneNotification;
 	const usesAgentActivityShell = hasAgentActivityPresentation;
-	const hasInteractiveContent = showMoreAction || hasSubtasks || Boolean(parentEpicControl) || hasAgentActivityPresentation || Boolean(resolvedGenerativeAction);
+	const hasInteractiveContent = showMoreAction || hasSubtasks || Boolean(parentEpicControl) || hasAgentActivityPresentation || Boolean(generativeAction);
 	const shouldRenderIssueClickButton = Boolean(props.onClick && !parentEpicControl);
 	const issueRowsClassName = cn("pt-1", !(hasSubtasks && resolvedSubtasksExpanded) && "pb-1");
 	const layoutTransition = getJiraIssueLayoutTransition(shouldReduceMotion);
@@ -818,9 +814,9 @@ function JiraIssueDefault({
 			</AnimatePresence>
 		</div>
 	);
-	const generativeActionMenu = (
+	const generativeActionMenu = generativeAction ? (
 		<JiraIssueGenerativeActionMenu
-			action={resolvedGenerativeAction}
+			action={generativeAction}
 			anchor={generativeActionAnchor}
 			issue={{ issueKey, summary }}
 			onOpenChange={(nextOpen) => setGenerativeActionRevealSuppressed(!nextOpen)}
@@ -830,7 +826,7 @@ function JiraIssueDefault({
 			onTriggerPointerLeave={() => setGenerativeActionPointerActive(false)}
 			revealActive={generativeActionRevealActive}
 		/>
-	);
+	) : null;
 
 	if (hasInteractiveContent) {
 		if (usesAgentActivityShell) {
