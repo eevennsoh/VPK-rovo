@@ -128,6 +128,10 @@ export const UI_CUSTOM_RUNTIME_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"sources-demo-preview-menu": dynamic(
+		() => import("../../demos/ui-custom/sources-demo-preview-menu"),
+		{ ssr: false },
+	),
 	"speech-input-demo-with-transcript": dynamic(
 		() =>
 			import("../../demos/ui-custom/speech-input-demo").then((mod) => ({

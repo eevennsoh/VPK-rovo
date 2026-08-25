@@ -112,12 +112,19 @@ test("mention suggestions prefer a label match over an earlier description-only 
 test("generic suggestion rows use neutral gray IconTiles", () => {
 	assert.match(
 		SOURCE,
-		/function RichTextSuggestionMenuItemVisual[\s\S]*<IconTile[\s\S]*variant="gray"/u,
+		/function getSuggestionMenuIconTileVariant[\s\S]*return isOverflowFooterLabel\(item\.label\) \? "transparent" : "gray"/u,
+	);
+	assert.match(
+		SOURCE,
+		/function RichTextSuggestionMenuItemVisual[\s\S]*<IconTile[\s\S]*variant=\{tileVariant\}/u,
 	);
 	assert.doesNotMatch(
 		SOURCE,
 		/function RichTextSuggestionMenuItemVisual[\s\S]*<IconTile[\s\S]*variant="blue"/u,
 	);
-	assert.match(SOURCE, /id: getFlatFooterId\(section\.key\)[\s\S]*label: "Browse all"/u);
-	assert.match(SOURCE, /label: expanded \? "View less" : "View more"/u);
+	assert.match(
+		SOURCE,
+		/getSuggestionOverflowFooterItem\(\s*getFlatFooterId\(section\.key\),\s*section\.hasDirectory \? "browse-all" : \(expanded \? "view-less" : "view-more"\)/u,
+	);
+	assert.match(SOURCE, /iconTileVariant: "transparent"/u);
 });

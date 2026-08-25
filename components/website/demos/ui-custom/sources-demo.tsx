@@ -25,13 +25,13 @@ export function SourcesDemoCustomRendering() {
 		<Sources>
 			<SourcesTrigger count={customSources.length}>
 				<p className="font-medium">Using {customSources.length} citations</p>
-				<ChevronDownIcon className="size-4" />
+				<ChevronDownIcon size="small" />
 			</SourcesTrigger>
 			<SourcesContent>
 				{customSources.map((source) => (
 					<Source href={source.href} key={source.href}>
 						{source.title}
-						<ExternalLinkIcon className="size-4" />
+						<ExternalLinkIcon size="small" />
 					</Source>
 				))}
 			</SourcesContent>

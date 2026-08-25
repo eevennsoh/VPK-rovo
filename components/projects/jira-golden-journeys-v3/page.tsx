@@ -315,7 +315,10 @@ export default function JiraGoldenJourneysV3Page(): React.ReactElement {
 					)}
 				/>
 			</div>
-			<JgpRovoOverlay launcher={isWorkItemStage ? "hidden" : "auto"} />
+			<JgpRovoOverlay
+				chat={isWorkItemStage ? "hidden" : "auto"}
+				launcher={isWorkItemStage ? "hidden" : "auto"}
+			/>
 		</RovoChatProvider>
 	);
 }

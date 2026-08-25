@@ -4,10 +4,6 @@
 
 import { useRef, useState, type ReactNode } from "react";
 
-import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
-import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
-import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
-
 import { getSkillConfigLabel } from "@/components/blocks/agent/lib/agent-config-model";
 import { Kbd } from "@/components/ui/kbd";
 import { RovoColorIcon } from "@/components/ui/logo";
@@ -22,6 +18,7 @@ import {
 	getMentionTargetItems,
 	getSlashCommandCategoryItems,
 	getSlashCommandFormatItems,
+	getSuggestionOverflowFooterItem,
 	type RichTextMentionItem,
 	type RichTextMentionMenuCategory,
 	type RichTextMentionSources,
@@ -309,11 +306,10 @@ export function EditorPaletteSearchPicker({
 	);
 	const leadingRows = leadingItems.map(normalizeSearchPickerItem);
 	const items = filterSearchItems(sourceItems, query);
-	const browseAllItem: RichTextSuggestionMenuItem = {
-		id: SEARCH_BROWSE_ALL_ITEM_ID,
-		icon: <ShowMoreHorizontalIcon label="" size="small" />,
-		label: "Browse all",
-	};
+	const browseAllItem = getSuggestionOverflowFooterItem(
+		SEARCH_BROWSE_ALL_ITEM_ID,
+		"browse-all",
+	);
 	const rows = items.length > 0
 		? [...leadingRows, ...items, browseAllItem]
 		: leadingRows;
@@ -517,23 +513,11 @@ function getFlatSectionRows(
 
 	if (overflowing) {
 		rows.push(
-			section.hasDirectory
-				? {
-						id: getSectionFooterId(section.category),
-						label: "Browse all",
-						icon: <ShowMoreHorizontalIcon label="" size="small" />,
-						isSticky: true,
-					}
-				: {
-						id: getSectionFooterId(section.category),
-						label: showAll ? "View less" : "View more",
-						icon: showAll ? (
-							<ChevronUpIcon label="" size="small" />
-						) : (
-							<ChevronDownIcon label="" size="small" />
-						),
-						isSticky: true,
-					},
+			getSuggestionOverflowFooterItem(
+				getSectionFooterId(section.category),
+				section.hasDirectory ? "browse-all" : (showAll ? "view-less" : "view-more"),
+				{ isSticky: true },
+			),
 		);
 	}
 

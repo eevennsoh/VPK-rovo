@@ -342,7 +342,7 @@ test("Jira issue renders a reusable generative action command menu", () => {
 	assert.match(ROVO_SPARKLE_SOURCE, /function filterItems\(items: readonly RovoSparkleItem\[\], query: string\)/);
 	assert.match(ROVO_SPARKLE_SOURCE, /const isFiltering = query\.trim\(\)\.length > 0;/);
 	assert.match(ROVO_SPARKLE_SOURCE, /const SECTION_LIMIT = 3;/);
-	assert.match(ROVO_SPARKLE_SOURCE, /label: "Browse all"/);
+	assert.match(ROVO_SPARKLE_SOURCE, /getSuggestionOverflowFooterItem\(id, "browse-all"\)/);
 	assert.ok(
 		ROVO_SPARKLE_SOURCE.indexOf("id: AGENTS_HEADING_ID")
 			< ROVO_SPARKLE_SOURCE.indexOf("id: SKILLS_HEADING_ID"),

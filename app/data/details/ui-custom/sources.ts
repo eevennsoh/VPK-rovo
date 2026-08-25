@@ -49,5 +49,6 @@ export const SOURCES_DETAIL: ComponentDetail = {
 	],
 	examples: [
 		{ title: "Custom rendering", description: "Sources with custom trigger label, external link icons, and custom source titles.", demoSlug: "sources-demo-custom-rendering" },
+		{ title: "Preview menu", description: "Click Used N sources to open a preview menu of palette-style source rows. Title clicks open the source; extra actions copy the link or open a preview.", demoSlug: "sources-demo-preview-menu" },
 	],
 };
