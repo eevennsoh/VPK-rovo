@@ -375,3 +375,15 @@ test("Pulse scroll alignment keeps ruler and header jumps on their own lines", a
 		"start alignment should still work when the scrollport has no reserved inset",
 	);
 });
+
+test("Pulse only reveals its top fade while the article is moving upward", async () => {
+	const { isPulseScrollTowardTop } = await loadOutlineHarness();
+
+	assert.equal(
+		isPulseScrollTowardTop(0, 9_590),
+		false,
+		"an initial or forward jump should not veil the destination header",
+	);
+	assert.equal(isPulseScrollTowardTop(9_590, 9_430), true);
+	assert.equal(isPulseScrollTowardTop(9_430, 9_430), false);
+});

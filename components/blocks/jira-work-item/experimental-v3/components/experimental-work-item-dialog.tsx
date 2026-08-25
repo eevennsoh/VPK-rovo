@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Dialog } from "@base-ui/react/dialog";
 import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 
@@ -66,6 +66,16 @@ export function ExperimentalWorkItemDialog({
 	const description = `Details, agent sessions, and activity for work item ${workItemCode}.`;
 	const fillsInlineContainer = presentation === "inline" && inlineSurface !== "card";
 	const isFlushInlineSurface = presentation === "inline" && inlineSurface === "fill";
+	useEffect(() => {
+		if (!open) {
+			return;
+		}
+
+		document.documentElement.dataset.jiraWorkItemOpen = "true";
+		return () => {
+			delete document.documentElement.dataset.jiraWorkItemOpen;
+		};
+	}, [open]);
 	// Metadata and embedded chat share this source of truth so resizing either
 	// surface is immediately reflected when switching between them.
 	const sidePanelStyle = {

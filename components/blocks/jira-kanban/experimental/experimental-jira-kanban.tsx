@@ -3,7 +3,7 @@
 // oxlint-disable react-doctor/no-noninteractive-tabindex -- These surfaces intentionally receive keyboard focus for application-style keyboard handling or card-level shortcuts.
 // oxlint-disable react-doctor/prefer-module-scope-pure-function -- These helpers are intentionally local to the component/demo because they depend on the surrounding interaction contract.
 
-import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { LayoutGroup, motion, useReducedMotion, type Transition } from "motion/react";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
@@ -23,7 +23,6 @@ import {
 	AvatarGroup,
 	AvatarImage,
 } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -244,7 +243,6 @@ function BoardColumn({
 	assignedAgentIds,
 	children,
 	count,
-	headerPaddingBlock,
 	onCreateAgent,
 	onToggleAgent,
 	title,
@@ -253,25 +251,24 @@ function BoardColumn({
 	assignedAgentIds: readonly string[];
 	children: ReactNode;
 	count: number;
-	headerPaddingBlock: CSSProperties["paddingBlock"];
 	onCreateAgent?: (columnTitle: string) => void;
 	onToggleAgent?: (agentId: string) => void;
 	title: string;
 }>) {
 	const showAgentAssignment = Boolean(agents?.length && onCreateAgent && onToggleAgent);
-	const { ref: cardListRef, showBottomScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
+	const { ref: cardListRef, showBottomScrollMask, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const cardListScrollMaskStyle = useMemo(
 		() => buildScrollMaskStyle({
 			fadeBottom: showBottomScrollMask,
 			fadeSize: "3rem",
-			fadeTop: false,
+			fadeTop: showTopScrollMask,
 		}),
-		[showBottomScrollMask],
+		[showBottomScrollMask, showTopScrollMask],
 	);
 
 	return (
 		<div
-			className="group/board-column overflow-visible"
+			className="group/board-column min-w-0 overflow-visible"
 			style={{
 				display: "flex",
 				flexDirection: "column",
@@ -280,35 +277,32 @@ function BoardColumn({
 				borderRadius: token("radius.xlarge"),
 			}}
 		>
-			<div style={{ paddingTop: token("space.150"), paddingBottom: headerPaddingBlock }}>
-				<div className={cn("flex min-w-0 items-center gap-2", showAgentAssignment && "justify-between")}>
-					<div className="flex min-w-0 items-center gap-2">
-						<span
-							className="truncate"
-							style={{
-								font: token("font.body.small"),
-								fontWeight: token("font.weight.medium"),
-								color: token("color.text.subtle"),
-							}}
-						>
-							{title.toUpperCase()}
-						</span>
-						<Badge>{count}</Badge>
-					</div>
-					{showAgentAssignment && agents && onCreateAgent && onToggleAgent ? (
-						<ColumnAgentAssignment
-							agents={agents}
-							assignedAgentIds={assignedAgentIds}
-							columnTitle={title}
-							onCreateAgent={onCreateAgent}
-							onToggleAgent={onToggleAgent}
-						/>
-					) : null}
+			<div
+				className={cn("flex min-w-0 items-center gap-2", showAgentAssignment && "justify-between")}
+				style={{ paddingBottom: token("space.100") }}
+			>
+				<div className="flex min-w-0 items-center gap-1.5">
+					<span className="truncate text-xs font-medium leading-4 text-text-subtle">
+						{title}
+					</span>
+					<span className="shrink-0 text-xs font-normal text-text-subtlest">
+						{count}
+					</span>
 				</div>
+				{showAgentAssignment && agents && onCreateAgent && onToggleAgent ? (
+					<ColumnAgentAssignment
+						agents={agents}
+						assignedAgentIds={assignedAgentIds}
+						columnTitle={title}
+						onCreateAgent={onCreateAgent}
+						onToggleAgent={onToggleAgent}
+					/>
+				) : null}
 			</div>
 
 			<div
 				ref={cardListRef}
+				className="min-w-0"
 				style={{
 					flexGrow: 1,
 					overflowY: "auto",
@@ -375,7 +369,6 @@ export function ExperimentalJiraKanban({
 	assignedAgentIdsByColumn = {},
 	boardColumns,
 	cardMoveAnimation,
-	columnHeaderPaddingBlock = token("space.100"),
 	draggedCardCode = null,
 	selectedCardCodes,
 	onCardClick,
@@ -524,29 +517,28 @@ export function ExperimentalJiraKanban({
 					flex: 1,
 					paddingTop,
 					paddingBottom,
-					paddingInline: token("space.200"),
 					overflowX: "auto",
 					overflowY: "hidden",
 					minHeight: 0,
 				}}
 			>
 				<LayoutGroup id={cardLayoutGroupId}>
-					<div className="flex min-h-full items-stretch gap-2" style={{ minWidth: "100%" }}>
+					<div className="flex min-h-full w-max min-w-full items-stretch ps-6">
+						<div className="flex min-h-full items-stretch gap-2">
 						{boardColumns.map((column) => (
 						<div
 							data-jira-kanban-column={column.title}
 							key={column.title}
-							className="overflow-visible border-2 border-transparent transition-colors"
+							className="min-w-0 overflow-visible border-2 border-transparent transition-colors"
 							onDragOver={handleColumnDragOver}
 							onDragLeave={handleColumnDragLeave}
 							onDrop={(event) => handleColumnDrop(event, column.title)}
-							style={{ flex: "1 1 0", minWidth: "280px", borderRadius: token("radius.xlarge") }}
+							style={{ flex: "1 1 0", minWidth: "280px", maxWidth: "280px", borderRadius: token("radius.xlarge") }}
 						>
 							<BoardColumn
 								agents={agents}
 								assignedAgentIds={assignedAgentIdsByColumn[column.title] ?? []}
 								count={column.cards.length}
-								headerPaddingBlock={columnHeaderPaddingBlock}
 								onCreateAgent={onCreateAgent}
 								onToggleAgent={
 									onToggleColumnAgent
@@ -580,7 +572,7 @@ export function ExperimentalJiraKanban({
 									return (
 										<motion.div
 											key={card.code}
-											className="w-full"
+											className="w-full min-w-0"
 											layout={shouldAnimateCardPosition ? "position" : false}
 											layoutId={shouldAnimateCardPosition ? `jira-kanban-card-${card.code}` : undefined}
 											style={shouldAnimateCardPosition ? { willChange: "transform" } : undefined}
@@ -662,6 +654,8 @@ export function ExperimentalJiraKanban({
 							</BoardColumn>
 						</div>
 						))}
+						</div>
+						<div aria-hidden className="w-6 shrink-0" />
 					</div>
 				</LayoutGroup>
 				</section>

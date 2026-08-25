@@ -60,13 +60,11 @@ test("Agent Profile Card forwards submitted composer text to its consumer", () =
 	assert.match(entitySource, /void onInputAction\?\.\(prompt\);/u);
 });
 
-test("Agent Profile Card composer uses the standard prompt backdrop shadow without a border", () => {
+test("Agent Profile Card composer keeps the shared floating prompt border", () => {
 	const entitySource = readProjectFile("components/ui-custom/entity-card/agent-profile.tsx");
 
-	assert.match(
-		entitySource,
-		/className="w-full rounded-xl border-0 bg-bg-input px-3"/u,
-	);
+	assert.match(entitySource, /<FloatingComposer/u);
+	assert.doesNotMatch(entitySource, /\bborder-0\b/u);
 	assert.doesNotMatch(
 		entitySource,
 		/className="[^"]*border border-border[^"]*shadow-md[^"]*"/u,

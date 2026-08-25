@@ -274,8 +274,8 @@ const LOCAL_TEAM_IN_PROGRESS: readonly JiraKanbanCardData[] = [
 			id: "dependency-mapper",
 			name: "Dependency Mapper",
 			avatarSrc: getDirectoryAgentAvatar("work-item-planner"),
-			label: "Waiting for input",
-			labels: ["Mapping permission dependencies", "Checking project boundaries", "Waiting for input"],
+			label: "Needs input",
+			labels: ["Mapping permission dependencies", "Checking project boundaries", "Needs input"],
 			message: "I found two permission boundaries that change the implementation path.",
 			initialElapsedSeconds: 391,
 			question: {

@@ -196,7 +196,7 @@ test("Artifact Pane property rows follow the Jira Session Flyout layout pattern"
 	assert.match(BLOCK_SOURCE, /editable[\s\S]*"-ml-2 rounded-md transition-colors duration-normal ease-out-practical hover:bg-bg-neutral-subtle-hovered motion-reduce:transition-none"/u);
 	assert.match(
 		BLOCK_SOURCE,
-		/has-\[:focus-visible\]:relative has-\[:focus-visible\]:z-10 has-\[:focus-visible\]:bg-bg-input[\s\S]*has-\[\[data-popup-open\]\]:relative has-\[\[data-popup-open\]\]:z-10 has-\[\[data-popup-open\]\]:bg-bg-input/u,
+		/has-\[:focus-visible\]:relative has-\[:focus-visible\]:z-10 has-\[:focus-visible\]:bg-bg-input[\s\S]*has-\[button\[data-popup-open\]\]:relative has-\[button\[data-popup-open\]\]:z-10 has-\[button\[data-popup-open\]\]:bg-bg-input/u,
 	);
 	assert.match(BLOCK_SOURCE, /\[&>button\]:focus-visible:ring-0!/u);
 	assert.doesNotMatch(BLOCK_SOURCE, /editable[\s\S]*"-m[xr]-2 rounded-md/u);
@@ -346,7 +346,7 @@ test("editable property rows draw the shared input focus ring", () => {
 	// with ring + ring-offset (two stacked box-shadows) instead of a border so
 	// these borderless rows keep their geometry on focus.
 	assert.match(focusRingSource, /FOCUS_RING_HAS_VISIBLE[\s\S]*ring-offset-1 has-\[:focus-visible\]:ring-offset-ring/u);
-	assert.match(focusRingSource, /FOCUS_RING_POPUP_OPEN[\s\S]*ring-offset-1 has-\[\[data-popup-open\]\]:ring-offset-ring/u);
+	assert.match(focusRingSource, /FOCUS_RING_POPUP_OPEN[\s\S]*ring-offset-1 has-\[button\[data-popup-open\]\]:ring-offset-ring/u);
 
 	assert.match(BLOCK_SOURCE, /FOCUS_RING_HAS_VISIBLE,\n\s+FOCUS_RING_POPUP_OPEN,/u);
 });

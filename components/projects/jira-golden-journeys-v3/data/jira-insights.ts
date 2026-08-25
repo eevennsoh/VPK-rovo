@@ -144,7 +144,9 @@ export function createJiraGoldenJourneysV3InsightsSnapshot(
 	options: JiraGoldenJourneysV3StoryStateOptions,
 	revision: string | number,
 ): JiraInsightsSnapshot {
-	const checkpoints: JiraInsightCheckpoint[] = chapter === "terminal" ? [] : [...BASE_CHECKPOINTS];
+	const checkpoints: JiraInsightCheckpoint[] = chapter === "terminal" || chapter === "track"
+		? []
+		: [...BASE_CHECKPOINTS];
 	const reviewFailed = chapter === "review" && options.reviewStep === "failed";
 	const reachedFix = chapter === "fix" || chapter === "approve" || chapter === "release";
 	const repairStarted = reachedFix && (chapter !== "fix" || options.fixStep !== "failed");

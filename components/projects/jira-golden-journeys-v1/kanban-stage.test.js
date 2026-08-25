@@ -96,7 +96,7 @@ test("Kanban stage selects ranges against the filtered columns", () => {
 	assert.match(STAGE_SOURCE, /onCardSelect=\{handleFilteredCardSelect\}/u);
 });
 
-test("JGP Kanban reuses the Jira Issue rainbow spinner for working agents", () => {
+test("JGP Kanban reuses the Jira Issue spinner for working agents", () => {
 	assert.match(STAGE_SOURCE, /<JiraKanban/u);
 	assert.match(JIRA_KANBAN_SOURCE, /agentActivities=\{card\.agentActivities\}/u);
 	assert.match(JIRA_KANBAN_SOURCE, /agentActivityMode=\{card\.agentActivityMode\}/u);
@@ -107,8 +107,9 @@ test("JGP Kanban reuses the Jira Issue rainbow spinner for working agents", () =
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<AgentStates/u);
 	assert.match(
 		JIRA_ISSUE_AGENT_ACTIVITY_SOURCE,
-		/<Spinner[\s\S]*label=""[\s\S]*phaseOffsetMs=\{getJiraIssueAgentSpinnerPhaseOffsetMs\(activity\.id, index\)\}[\s\S]*size="sm"[\s\S]*variant="rainbow"/u,
+		/<Spinner[\s\S]*label=""[\s\S]*phaseOffsetMs=\{getJiraIssueAgentSpinnerPhaseOffsetMs\(activity\.id, index\)\}[\s\S]*size="sm"/u,
 	);
+	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /variant="rainbow"/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /const JIRA_ISSUE_AGENT_SPINNER_LOOP_MS = 1200;/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /function getJiraIssueAgentSpinnerPhaseOffsetMs\(activityId: string, index: number\)/u);
 	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<Spinner[^>]*animate-spin/u);

@@ -7,11 +7,12 @@ import { RovoChatProvider, useRovoChat } from "@/app/contexts";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 
-import { AgentList, type AgentListVariant } from "./index";
+import { AgentList, type AgentListFlyout, type AgentListVariant } from "./index";
 
 function AgentListDemo({
+	flyout,
 	variant,
-}: Readonly<{ variant: AgentListVariant }>) {
+}: Readonly<{ flyout: AgentListFlyout; variant: AgentListVariant }>) {
 	const { chatSurface, openChat } = useRovoChat();
 
 	// View drops the user into the Rovo floating chat for that session,
@@ -26,6 +27,7 @@ function AgentListDemo({
 				<AgentList
 					className="w-full"
 					composerChatSurface="floating"
+					flyout={flyout}
 					onView={handleView}
 					variant={variant}
 				/>
@@ -47,11 +49,12 @@ function AgentListDemo({
 }
 
 export default function AgentListPage({
+	flyout = "session",
 	variant = "default",
-}: Readonly<{ variant?: AgentListVariant }>) {
+}: Readonly<{ flyout?: AgentListFlyout; variant?: AgentListVariant }>) {
 	return (
 		<RovoChatProvider>
-			<AgentListDemo variant={variant} />
+			<AgentListDemo flyout={flyout} variant={variant} />
 		</RovoChatProvider>
 	);
 }

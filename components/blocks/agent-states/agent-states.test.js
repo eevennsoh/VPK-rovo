@@ -44,8 +44,10 @@ test("compact agent surfaces use their intended elevation treatment", () => {
 	assert.doesNotMatch(SOURCE, /\bshadow-md\b/u);
 	assert.match(
 		SOURCE,
-		/<RovoComposerActionButton[\s\S]*experimentalDarkCta[\s\S]*liveVoiceEnabled[\s\S]*onStartDictation=\{startPreviewDictation\}/u,
+		/<RovoComposerActionButton[\s\S]*experimentalDarkCta[\s\S]*onStartDictation=\{startPreviewDictation\}[\s\S]*showSubmitWhenEmpty/u,
 	);
+	assert.doesNotMatch(SOURCE, /liveVoiceEnabled/u);
+	assert.doesNotMatch(SOURCE, /onToggleRealtimeVoice/u);
 	assert.match(
 		AGENT_PROFILE_SOURCE,
 		/surface === "overlay" \? "shadow-2xl" : "shadow-sm"/u,

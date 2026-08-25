@@ -29,12 +29,13 @@ function pullRequestFor(state) {
 	return state.staticEvents.find((event) => event.id === "story-pr-review")?.pullRequest;
 }
 
-test("the story exposes the six Terminal-to-Release chapters", async () => {
+test("the story exposes the seven Terminal-to-Release chapters", async () => {
 	const story = await loadStoryModule();
 	assert.deepEqual(
 		story.JIRA_GOLDEN_JOURNEYS_V3_STORY_CHAPTERS.map(({ label, value }) => [label, value]),
 		[
 			["Terminal", "terminal"],
+			["Track", "track"],
 			["Build", "build"],
 			["Review", "review"],
 			["Fix", "fix"],
@@ -64,11 +65,43 @@ test("Build and Terminal keep the embedded chat closed while later chapters sele
 	const story = await loadStoryModule();
 	const build = story.createJiraGoldenJourneysV3StoryState("build");
 	assert.equal(story.createJiraGoldenJourneysV3StoryState("terminal").activeSessionId, null);
+	assert.equal(story.createJiraGoldenJourneysV3StoryState("track").activeSessionId, null);
+	assert.deepEqual(story.createJiraGoldenJourneysV3StoryState("track").sessions, []);
 	assert.equal(build.activeSessionId, null);
 	assert.equal(build.sessions[0].id, "story-session-claude-code");
 	for (const chapter of ["review", "fix", "approve", "release"]) {
 		const state = story.createJiraGoldenJourneysV3StoryState(chapter);
 		assert.equal(state.activeSessionId, state.sessions[0].id);
+	}
+});
+
+test("Track places SHOP-4821 on the In progress board column without a pull request", async () => {
+	const story = await loadStoryModule();
+	const columns = story.createJiraGoldenJourneysV3BoardColumns("track");
+	const inProgress = columns.find((column) => column.title === "In progress");
+	const storyCard = inProgress?.cards.find((card) => card.code === "SHOP-4821");
+	assert.ok(storyCard, "Track should keep SHOP-4821 on In progress");
+	assert.equal(storyCard.pullRequestNumber, undefined);
+});
+
+test("Track board cards keep space labels and omit agent-state summary tags", async () => {
+	const story = await loadStoryModule();
+	const columns = story.createJiraGoldenJourneysV3BoardColumns("track");
+	const cards = columns.flatMap((column) => column.cards);
+	const crm318 = cards.find((card) => card.code === "CRM-318");
+	assert.ok(crm318, "Track should include CRM-318 from the shared Jira Design board");
+	assert.deepEqual(crm318.tags, [{ color: "blue", text: "Revenue platform" }]);
+	assert.ok(crm318.agentActivities?.length > 0, "CRM-318 should still show agent activity rows");
+
+	const agentStateTagPattern = /\b(?:needs input|in progress|awaiting)\b/iu;
+	for (const card of cards) {
+		for (const tag of card.tags ?? []) {
+			assert.doesNotMatch(
+				tag.text,
+				agentStateTagPattern,
+				`${card.code} should not use agent-state copy as a work-item tag`,
+			);
+		}
 	}
 });
 

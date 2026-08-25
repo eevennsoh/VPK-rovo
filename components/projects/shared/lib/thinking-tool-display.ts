@@ -223,7 +223,7 @@ export function getToolActionLabel(toolCall: ThinkingToolCallSummary): string {
 		return getQuestionsAnsweredLabel();
 	}
 	if (toolCall.state === "awaiting-input") {
-		return "Waiting for input";
+		return "Needs input";
 	}
 	if (toolCall.state === "approval-requested") {
 		return "Awaiting approval";

@@ -22,7 +22,7 @@ export function createJiraGoldenJourneysV3StoryContextResources(
 	chapter: JiraGoldenJourneysV3StoryChapter,
 	workItem: WorkItemData,
 ): JiraWorkItemState["contextResources"] {
-	const implementationComplete = chapter !== "terminal";
+	const implementationComplete = chapter !== "terminal" && chapter !== "track";
 	return {
 		title: workItem.title,
 		description: workItem.description ?? "",

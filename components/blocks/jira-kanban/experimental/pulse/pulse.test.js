@@ -671,7 +671,12 @@ test("Pulse keeps focus alive through in-place commits, and pins header jumps to
 	// buttons — the top fade is an overlay now, so that offset is gone.
 	assert.doesNotMatch(SOURCES.shell, /scrollPaddingTop/u);
 	assert.match(SOURCES.shell, /fadeTop: false/u);
-	assert.match(SOURCES.shell, /showTopScrollMask \? \(/u);
+	assert.match(SOURCES.shell, /onScroll=\{handleArticleScroll\}/u);
+	assert.match(SOURCES.shell, /onScrollEnd=\{handleArticleScrollEnd\}/u);
+	assert.match(SOURCES.shell, /showTopScrollMask && isScrollingTowardTop/u);
+	assert.match(SOURCES.shell, /"opacity-0 transition-opacity motion-reduce:transition-none"/u);
+	assert.match(SOURCES.shell, /"visible opacity-100 duration-normal ease-out-practical"/u);
+	assert.match(SOURCES.shell, /"invisible duration-fast ease-in"/u);
 	assert.match(SOURCES.shell, /data-pulse-article-top-fade=""/u);
 	assert.match(SOURCES.shell, /<ScrollMaskEdgeOverlay/u);
 	assert.match(SOURCES.story, /size="icon-compact"/u);
@@ -787,6 +792,7 @@ test("Pulse is a toggle on the board's own control row, not a separate tab", () 
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /export type ExperimentalJiraKanbanMode = "board" \| "pulse";/u);
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /export function PulseModeToggle\(/u);
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /aria-pressed=\{active\}/u);
+	assert.match(PULSE_MODE_CONTROLS_SOURCE, />\s*Insights\s*<\/Button>/u);
 	assert.ok(!existsSync(join(PULSE_DIR, "..", "experimental-view-tabs.tsx")), "the tab component should be retired, not left beside its replacement");
 
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /import \{ ExperimentalPulse \} from "\.\/pulse\/experimental-pulse";/u);
@@ -927,21 +933,22 @@ test("Pulse tiles three columns full-bleed, with the story taking the slack", ()
 	assert.match(SOURCES.shell, /lg:h-full lg:flex-row/u);
 });
 
-test("Pulse allows exactly two all-caps rungs and one item-title rung", () => {
-	// The eyebrow and the section labels used to be byte-identical in spec, and
-	// five uppercase variants lived inside a one-pixel size range. There are now
-	// two tokens, defined once and imported everywhere.
+test("Pulse eyebrow and section labels match the Activity heading rung", () => {
+	// Both tokens share the work-item Activity treatment: 12px semibold,
+	// sentence case, no tracking. They are defined once and imported everywhere.
 	const type = readFileSync(join(PULSE_DIR, "components", "pulse-type.ts"), "utf8");
-	assert.match(type, /PULSE_EYEBROW =\s*\n?\s*"text-\[11px\] font-semibold uppercase leading-4 tracking-\[0\.06em\] text-text-subtle"/u);
-	assert.match(type, /PULSE_SECTION_LABEL =\s*\n?\s*"text-\[10px\] font-semibold uppercase leading-4 tracking-\[0\.12em\] text-text-subtlest"/u);
+	assert.match(type, /PULSE_EYEBROW =\s*\n?\s*"text-xs leading-4 font-semibold text-text-subtlest"/u);
+	assert.match(type, /PULSE_SECTION_LABEL =\s*\n?\s*"text-xs leading-4 font-semibold text-text-subtlest"/u);
 	assert.match(type, /PULSE_ITEM_TITLE = "text-sm font-medium leading-5 tracking-\[-0\.006em\] text-text"/u);
+	assert.doesNotMatch(type, /PULSE_EYEBROW[\s\S]*?uppercase/u);
+	assert.doesNotMatch(type, /PULSE_SECTION_LABEL[\s\S]*?uppercase/u);
 
 	for (const [name, source] of [["rail", SOURCES.rail], ["signals", SOURCES.signals], ["story", SOURCES.story]]) {
 		assert.doesNotMatch(source, /text-\[11px\] font-semibold uppercase[^"]*text-text-subtlest/u, `${name} re-declares a label rung`);
-		assert.doesNotMatch(source, /tracking-\[0\.14em\]|tracking-\[0\.09em\]/u, `${name} keeps a retired label rung`);
+		assert.doesNotMatch(source, /tracking-\[0\.14em\]|tracking-\[0\.12em\]|tracking-\[0\.09em\]|tracking-\[0\.06em\]/u, `${name} keeps a retired label rung`);
+		assert.doesNotMatch(source, /uppercase/u, `${name} does not uppercase labels`);
 	}
-	// The eyebrow is the story's only all-caps line, and it is the one that
-	// names the member while the view is scoped to them.
+	// The eyebrow names the chapter (and the member while the view is scoped).
 	assert.match(SOURCES.story, /className=\{cn\("min-w-0 truncate", PULSE_EYEBROW\)\}/u);
 	assert.match(SOURCES.story, /\$\{member\.name\} · \$\{snapshot\.chapterLabel\} · \$\{snapshot\.rangeLabel\}/u);
 	// Row data is not a label: the quiet marker and the group names are sentence
@@ -960,12 +967,22 @@ test("Pulse allows exactly two all-caps rungs and one item-title rung", () => {
 	assert.match(SOURCES.signals, /<span aria-hidden=\{workItemKey === undefined\} className=\{PULSE_ROW_KEY_TRACK\}>/u);
 	assert.match(SOURCES.signals, /<div className=\{PULSE_ROW_ACTION_TRACK\}>\{trailing\}<\/div>/u);
 	assert.doesNotMatch(SOURCES.signals, /border-l-2/u, "the two signal sections share one list rhythm");
-	// Uppercase headings are exposed to the accessibility tree transformed.
+	// Section labels restate their sentence-case name for the accessibility tree.
 	assert.match(SOURCES.signals, /<h3 aria-label=\{children\}/u);
 	assert.match(SOURCES.rail, /<PulseSectionLabel>\{label\}<\/PulseSectionLabel>/u);
 	// Prose is set to avoid one-word last lines rather than balanced into a
 	// bottom-heavy rag.
 	assert.doesNotMatch(SOURCES.story, /text-balance/u);
 	assert.match(SOURCES.story, /text-base\/6 tracking-\[-0\.011em\] text-pretty text-text/u);
-	assert.match(SOURCES.story, /className=\{cn\("mt-3 text-pretty text-text", MEASURE\)\}/u);
+	assert.match(SOURCES.story, /className=\{cn\("mt-7 text-pretty text-text", MEASURE\)\}/u);
+	// Eyebrow → title → contributors. The old `mt-7` under the eyebrow moves
+	// onto the title; the faces drop to `mt-3` so two large tops do not stack.
+	assert.match(
+		SOURCES.story,
+		/<p className=\{cn\("min-w-0 truncate", PULSE_EYEBROW\)\}>\{eyebrow\}<\/p>[\s\S]*<h2 className=\{cn\("mt-7 text-pretty text-text", MEASURE\)\}[\s\S]*<div className="mt-3 min-w-0">\s*<PulseStoryContributors/u,
+	);
+	assert.doesNotMatch(
+		SOURCES.story,
+		/<PulseStoryContributors[\s\S]*<h2 className=\{cn\("mt-7 text-pretty text-text", MEASURE\)\}/u,
+	);
 });

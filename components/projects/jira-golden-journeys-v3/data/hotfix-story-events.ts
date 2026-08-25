@@ -204,6 +204,7 @@ export function resolveJiraGoldenJourneysV3PullRequestChecks(
 ): StoryPullRequestChecks {
 	switch (chapter) {
 		case "terminal":
+		case "track":
 		case "build":
 			return STARTED_PR_CHECKS;
 		case "review":
@@ -359,6 +360,7 @@ export function storyEventsForChapter(
 ): readonly StaticTimelineEvent[] {
 	switch (chapter) {
 		case "terminal":
+		case "track":
 			return [];
 		case "build":
 			return withWorkItemLifecycle([

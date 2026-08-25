@@ -26,12 +26,15 @@ const CONTEXT_BAR_HEIGHT_CLASS = "min-h-10";
 /**
  * Shared visual recipe for the filled neutral context-bar pill: `ContextBarTrigger`,
  * `ContextBarPill`, and the trailing overflow button all build on this so they stay
- * in sync. `leading-6` matches the text line box to the 24px `h-6` icon span, so
- * pills with and without a leading icon keep an identical 40px height in a row.
+ * in sync. `h-10` + `box-border` locks the 40px height. A reserved
+ * `border-transparent` (overridable to `border-border`) keeps outlined and
+ * `:focus-visible` states from growing by 2px. `py-1.5` + `leading-6` (matching
+ * the 24px `h-6` icon span) plus the 1px border fit inside that 40px box so
+ * pills with and without a visible border stay identical in a row.
  * Layout-only concerns (`mb-3`, `shrink-0`, `disabled:*`) are composed per call site.
  */
 const CONTEXT_BAR_PILL_CLASS = cn(
-	"flex w-fit items-center gap-1.5 rounded-xl bg-bg-neutral px-3 py-2 text-sm font-medium leading-6 text-text-subtle transition-colors duration-normal ease-out hover:bg-bg-neutral-hovered hover:text-text active:bg-bg-neutral-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none",
+	"box-border flex h-10 w-fit items-center gap-1.5 rounded-xl border border-transparent bg-bg-neutral px-3 py-1.5 text-sm font-medium leading-6 text-text-subtle transition-colors duration-normal ease-out hover:bg-bg-neutral-hovered hover:text-text active:bg-bg-neutral-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none",
 	CONTEXT_BAR_HEIGHT_CLASS,
 );
 

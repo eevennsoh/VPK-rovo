@@ -12,7 +12,7 @@ const FILLED = {
 	tldr: ["Shoppers can check out as a guest."],
 };
 
-test("resolveNewInsightsCount hides the pill on empty context and seeds filled demos", async () => {
+test("resolveNewInsightsCount returns 0 on empty context and seeds filled demos", async () => {
 	const { DEFAULT_NEW_INSIGHTS_COUNT, resolveNewInsightsCount } = await loadCount();
 
 	assert.equal(resolveNewInsightsCount(EMPTY), 0);

@@ -13,6 +13,8 @@ import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/
 interface JgpRovoOverlayProps {
 	chatContextBar?: ChatContextBarDescriptor | null;
 	externalThinkingMessageId?: string | null;
+	/** Hide the viewport FAB. Work-item chrome also hides it via `data-jira-work-item-open`. */
+	launcher?: "auto" | "hidden";
 	onInterceptSubmit?: (text: string) => ChatSubmitInterceptOutcome;
 	onLauncherClick?: () => void;
 	onQuestionAnswer?: () => void;
@@ -22,6 +24,7 @@ interface JgpRovoOverlayProps {
 export function JgpRovoOverlay({
 	chatContextBar,
 	externalThinkingMessageId,
+	launcher = "auto",
 	onInterceptSubmit,
 	onLauncherClick,
 	onQuestionAnswer,
@@ -29,18 +32,20 @@ export function JgpRovoOverlay({
 	const { chatSurface } = useRovoChat();
 	const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
 	const [isRovoCanvasOpen, setIsRovoCanvasOpen] = useState(false);
+	const [isWorkItemOpen, setIsWorkItemOpen] = useState(false);
 
 	useEffect(() => {
 		setPortalRoot(document.body);
 
-		const updateRovoCanvasOpen = () => {
+		const updateChromeFlags = () => {
 			setIsRovoCanvasOpen(document.documentElement.dataset.rovoCanvasOpen === "true");
+			setIsWorkItemOpen(document.documentElement.dataset.jiraWorkItemOpen === "true");
 		};
-		updateRovoCanvasOpen();
+		updateChromeFlags();
 
-		const observer = new MutationObserver(updateRovoCanvasOpen);
+		const observer = new MutationObserver(updateChromeFlags);
 		observer.observe(document.documentElement, {
-			attributeFilter: ["data-rovo-canvas-open"],
+			attributeFilter: ["data-jira-work-item-open", "data-rovo-canvas-open"],
 			attributes: true,
 		});
 
@@ -54,11 +59,16 @@ export function JgpRovoOverlay({
 		onApply: onQuestionAnswer,
 	}), [onQuestionAnswer]);
 
+	const showLauncher = launcher === "auto"
+		&& chatSurface === null
+		&& !isRovoCanvasOpen
+		&& !isWorkItemOpen;
+
 	if (!portalRoot) return null;
 
 	return createPortal(
 		<>
-			{chatSurface === null && !isRovoCanvasOpen ? (
+			{showLauncher ? (
 				<FloatingRovoButton
 					ariaLabel="Open Rovo chat"
 					forceVisible

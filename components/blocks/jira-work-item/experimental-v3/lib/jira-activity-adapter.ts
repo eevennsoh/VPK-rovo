@@ -45,6 +45,8 @@ export interface ActivitySessionThreadConfig {
 	parentSessionId: string;
 	childSessionIds: readonly string[];
 	visibleSessionIds: readonly string[];
+	/** Set false to keep the initial scroll position; defaults to following the latest row. */
+	autoScroll?: boolean;
 	/**
 	 * Initial expand state for nested replies on the lead session card.
 	 * Omit to keep the Activity default (expanded). Build collapses the

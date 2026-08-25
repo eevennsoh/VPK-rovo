@@ -129,6 +129,7 @@ function completedChecklistCount(
 	const approvalStep = options.approvalStep ?? 0;
 	switch (chapter) {
 		case "terminal":
+		case "track":
 			return 3;
 		case "build":
 			return 3;
@@ -151,7 +152,7 @@ function claudeStatusForChapter(
 		return "completed";
 	}
 	if (chapter === "fix" && options.fixStep === "repairing") return "running";
-	return chapter === "terminal" ? "completed" : "waiting";
+	return chapter === "terminal" || chapter === "track" ? "completed" : "waiting";
 }
 
 function claudePreviewForChapter(
@@ -161,6 +162,8 @@ function claudePreviewForChapter(
 	switch (chapter) {
 		case "terminal":
 			return "Guest checkout is implemented and local checks pass. I opened PR #1847 and requested reviews from Priya Narayanan and Jordan Lee.";
+		case "track":
+			return "SHOP-4821 is in progress on the board. I’ll keep the work visible while implementation continues.";
 		case "build":
 			return "PR #1847 is linked to SHOP-4821 and CI has started. I’ll monitor the checks and address any actionable failure.";
 		case "review":
@@ -266,7 +269,7 @@ function createClaudeSession(
 }
 
 function createStoryComments(chapter: JiraGoldenJourneysV3StoryChapter): AgentSessionComment[] {
-	if (chapter === "terminal") return [];
+	if (chapter === "terminal" || chapter === "track") return [];
 	return [{
 		id: "story-channel-claude-pr-handoff",
 		authorName: CLAUDE_CODE.name,
@@ -319,7 +322,9 @@ export function createJiraGoldenJourneysV3StoryState(
 	options: JiraGoldenJourneysV3StoryStateOptions = {},
 ): JiraWorkItemState {
 	const workItem = createJiraGoldenJourneysV3StoryWorkItem(chapter, options);
-	const sessions = chapter === "terminal" ? [] : [createClaudeSession(chapter, options)];
+	const sessions = chapter === "terminal" || chapter === "track"
+		? []
+		: [createClaudeSession(chapter, options)];
 	const preset = sessions.length > 0 ? "running" as const : "filled" as const;
 	const base = hydratePreset(preset, workItem);
 	return {
@@ -424,7 +429,7 @@ function createJiraGoldenJourneysV3StoryCard(chapter: JiraGoldenJourneysV3StoryC
 			{ text: "Feature", color: "purple" },
 		],
 		...(activeSessions.length > 0 ? { agentActivities: activeSessions.map(createBoardActivity) } : {}),
-		...(chapter !== "terminal" ? {
+		...(chapter !== "terminal" && chapter !== "track" ? {
 			pullRequestNumber: 1847,
 			pullRequestStatus: chapter === "release" ? "merged" as const : "open" as const,
 		} : {}),

@@ -5,13 +5,14 @@ tools: [
   "Read",
   "Glob",
   "Grep",
+  "Bash",
   "mcp__plugin_figma_figma__get_design_context",
   "mcp__plugin_figma_figma__get_screenshot",
   "mcp__plugin_figma_figma__get_metadata",
   "mcp__plugin_figma_figma__get_variable_defs",
-  "mcp__ads-mcp__ads_plan",
-  "mcp__ads-mcp__ads_get_components",
-  "mcp__ads-mcp__ads_get_a11y_guidelines",
+  "mcp__ads__ads_plan",
+  "mcp__ads__ads_search_components",
+  "mcp__ads__ads_get_a11y_guidelines",
 ]
 skills: ["vpk-design"]
 model: haiku
@@ -70,19 +71,24 @@ Proceed without variable definitions if the call fails, but record the limitatio
 
 #### Step 4: Map to ADS Tokens, Components, and Accessibility Constraints
 
-Use `ads_plan` as the primary ADS lookup. Provide at least two likely search terms for every populated field and set `exactName: true` when the Figma naming makes the target explicit:
+Use the `atlas ads` CLI as the primary ADS lookup (this is the only reason this agent has `Bash`; do not use `Bash` for anything else). Batch the token, icon, and component sweeps into one process, and provide at least two likely search terms for every populated field:
 
-```json
-{
-	"tokens": ["background surface", "text color", "spacing 16"],
-	"icons": ["add", "search"],
-	"components": ["button", "textfield"]
-}
+```bash
+atlas ads batch \
+  --command "search background surface text spacing --type token" \
+  --command "search add search --type icon" \
+  --command "search button textfield --type component"
 ```
 
-If `ads_plan` returns multiple plausible matches, use `ads_get_components` to confirm the package/component name rather than guessing.
+Append `--json` to any command whose output you will parse, and `--limit N` to widen or narrow a search.
 
-Fetch `ads_get_a11y_guidelines` for the most relevant topics (`buttons`, `forms`, `focus`, `keyboard`, or `general`) and include only rules that materially affect the design.
+When the Figma naming makes the target explicit, do an exact lookup instead of a search: `atlas ads component <Name>`, `atlas ads token <name>`, or `atlas ads icon <IconName>`.
+
+If a search returns multiple plausible matches, confirm the package/component name with `atlas ads component <Name>` (or enumerate with `atlas ads component --all`) rather than guessing.
+
+Fetch accessibility guidance with `atlas ads docs a11y <topic>` for the most relevant topics (`buttons`, `forms`, `focus`, `keyboard`, or `general`) and include only rules that materially affect the design.
+
+The CLI ships as an Atlas CLI plugin (`/opt/atlassian/bin/atlas`); on machines without it, use `npx @atlaskit/ads-cli <cmd>`. Only if the CLI is unavailable or erroring, fall back to the equivalent MCP tools — `ads_plan` for the batched sweep, `ads_search_components` for component confirmation, and `ads_get_a11y_guidelines` for the accessibility topics.
 
 #### Step 5: Output Structured Spec
 
@@ -389,5 +395,5 @@ conversation_starters:
 ## Maintenance Notes
 
 - Keep this prompt aligned with `.agents/skills/vpk-design/SKILL.md` Phase 1.
-- MCP tool availability is runtime-dependent; when a Figma or ADS MCP tool is unavailable, report the degraded extraction path rather than guessing.
+- ADS lookups run on the `atlas ads` CLI first and fall back to the ADS MCP tools only when the CLI is unavailable or erroring. MCP tool availability is runtime-dependent; when a Figma or ADS tool is unavailable at every step of that fallback order, report the degraded extraction path rather than guessing.
 - If token mappings change, update this file and the vpk-design skill reference together.

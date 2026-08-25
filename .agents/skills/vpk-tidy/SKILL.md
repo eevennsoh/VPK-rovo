@@ -200,8 +200,14 @@ pnpm exec eslint <changed-file-1> <changed-file-2> ...
 For UI changes:
 
 - Verify affected route(s) in browser snapshots, light and dark when feasible.
-- Run `ads_analyze_a11y` on changed components when available.
-- Run `ads_analyze_localhost_a11y` on affected routes or scoped selectors.
+- Look up ADS accessibility guidance with the CLI first:
+  `atlas ads docs a11y <buttons|forms|images|colors|focus|keyboard|screenReaders|aria|wcag|general>`
+  (portable fallback: `npx @atlaskit/ads-cli docs a11y <topic>`; add `--json` when
+  parsing the output). Fall back to the ADS MCP only if the CLI is unavailable.
+- Run `ads_analyze_a11y` on changed components when available. MCP-only
+  capability — there is no `atlas ads` equivalent, so do not rewrite it as a CLI call.
+- Run `ads_analyze_localhost_a11y` on affected routes or scoped selectors. MCP-only
+  capability, and only exposed when the ADS MCP runs locally; there is no CLI equivalent.
 - Classify findings as introduced regressions vs. unrelated page-shell,
   tooling, or pre-existing issues.
 

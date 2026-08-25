@@ -105,7 +105,7 @@ export function JiraIssueAgentDone({
 	const [openRunId, setOpenRunId] = useState<string | null>(null);
 
 	return (
-		<section aria-label="Agent review" className="flex w-full flex-col overflow-hidden px-1 py-1">
+		<section aria-label="Agent review" className="flex w-full min-w-0 flex-col overflow-hidden px-1 py-1">
 			{runs.map((run, index) => {
 				const state = RUN_STATE_PRESENTATION[run.state];
 				const rowRadiusClassName = runs.length === 1
@@ -133,7 +133,7 @@ export function JiraIssueAgentDone({
 									aria-label={state.label ? `${run.agentName}: ${state.label}` : run.agentName}
 									data-slot="jira-issue-agent-row"
 									className={cn(
-										"flex h-6 w-full items-center justify-between gap-2 px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+										"flex h-6 w-full min-w-0 items-center justify-between gap-2 px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
 										rowRadiusClassName,
 									)}
 									type="button"

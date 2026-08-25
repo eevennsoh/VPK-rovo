@@ -281,6 +281,7 @@ function loadOutlineHarness() {
 		contents: `
 			export {
 				buildPulseOutline,
+				isPulseScrollTowardTop,
 				toActiveInsightEntry,
 				toActiveOutlineIndex,
 				toAdjacentInsightIndex,

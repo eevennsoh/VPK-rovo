@@ -36,9 +36,9 @@ export interface BuildWorkItemSectionTabsInput {
 }
 
 /**
- * The Activity count is not a field here: it is owned by whichever activity
- * panel is mounted and published separately, so the tab list stays a pure
- * function of the mode and does not churn every time a comment lands.
+ * Tab counts (Activity, Insights) are not fields here: they are owned by
+ * whichever panel is mounted and published separately, so the tab list stays a
+ * pure function of the mode and does not churn every time a comment lands.
  */
 export function buildWorkItemSectionTabs({
 	guidedReview,

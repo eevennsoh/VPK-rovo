@@ -28,12 +28,59 @@ test("the work-item stage mounts experimental-v3 inline, not the v2 shell", () =
 	assert.doesNotMatch(pageSource, /variant="experimental-v2"/u);
 });
 
-test("the route resets chat before mounting each story chapter and keeps the floating launcher absent", () => {
+test("Track mounts the experimental Jira kanban board before Build", () => {
 	const pageSource = readProjectFile("components/projects/jira-golden-journeys-v3/page.tsx");
+	const modelSource = readProjectFile(MODEL_PATH);
+	assert.match(
+		pageSource,
+		/import ExperimentalJiraKanbanPage from "@\/components\/blocks\/jira-kanban\/experimental\/page"/u,
+	);
+	assert.match(pageSource, /storyController\.chapter === "track"/u);
+	assert.match(pageSource, /<ExperimentalJiraKanbanPage[\s\S]*boardColumns=\{controller\.boardColumns\}/u);
+	assert.match(pageSource, /onBoardColumnsChange=\{controller\.updateBoardColumns\}/u);
+	assert.match(
+		pageSource,
+		/function JiraGoldenJourneysV3TrackStage\([\s\S]*overflow-hidden pt-4 /u,
+	);
+	assert.doesNotMatch(
+		pageSource.match(/function JiraGoldenJourneysV3TrackStage\([\s\S]*?\n\}/u)?.[0] ?? "",
+		/px-6|px-8|pb-4|padding-inline/u,
+	);
+	assert.doesNotMatch(pageSource, /activeCardCode=/u);
+	assert.match(
+		modelSource,
+		/\{ label: "Terminal", value: "terminal" \},\s*\{ label: "Track", value: "track" \},\s*\{ label: "Build", value: "build" \},/u,
+	);
+});
+
+test("Build keeps the work item at its initial Activity scroll position", () => {
+	const pageSource = readProjectFile("components/projects/jira-golden-journeys-v3/page.tsx");
+	const activityPanelSource = readProjectFile(
+		"components/blocks/jira-work-item/experimental-v3/components/activity-panel.tsx",
+	);
+
+	assert.match(pageSource, /autoScroll: controller\.chapter !== "build"/u);
+	assert.match(
+		activityPanelSource,
+		/const autoScrollEnabled = activitySessionThread\?\.autoScroll !== false\s*&& !insightsSelected/u,
+	);
+});
+
+test("the route resets chat before mounting each story chapter and mounts the floating Rovo launcher", () => {
+	const pageSource = readProjectFile("components/projects/jira-golden-journeys-v3/page.tsx");
+	assert.match(
+		pageSource,
+		/import \{ JgpRovoOverlay \} from "@\/components\/projects\/jira-golden-journeys-v1\/components\/jira-golden-journeys-v1-rovo-overlay"/u,
+	);
 	assert.match(
 		pageSource,
 		/<RovoChatProvider[\s\S]*key=\{`\$\{storyController\.chapter\}:\$\{storyController\.chapterRevision\}`\}/u,
 	);
+	assert.match(
+		pageSource,
+		/const isWorkItemStage = selectedId === "work-item"\s*&& storyController\.chapter !== "terminal"\s*&& storyController\.chapter !== "track";/u,
+	);
+	assert.match(pageSource, /<JgpRovoOverlay launcher=\{isWorkItemStage \? "hidden" : "auto"\} \/>/u);
 	assert.doesNotMatch(pageSource, /const \{ closeChat, resetChat \} = useRovoChat\(\)/u);
 	assert.doesNotMatch(pageSource, /closeChat\(\);[\s\S]*resetChat\(\);/u);
 	assert.match(pageSource, /preserveActiveSessionOnHydration/u);

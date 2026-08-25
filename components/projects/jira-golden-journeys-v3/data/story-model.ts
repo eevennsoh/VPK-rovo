@@ -8,6 +8,7 @@ import { RAW_STORY_DESCRIPTION } from "./story-context";
 
 export type JiraGoldenJourneysV3StoryChapter =
 	| "terminal"
+	| "track"
 	| "build"
 	| "review"
 	| "fix"
@@ -58,6 +59,7 @@ export interface JiraGoldenJourneysV3MergeGate {
 
 export const JIRA_GOLDEN_JOURNEYS_V3_STORY_CHAPTERS = [
 	{ label: "Terminal", value: "terminal" },
+	{ label: "Track", value: "track" },
 	{ label: "Build", value: "build" },
 	{ label: "Review", value: "review" },
 	{ label: "Fix", value: "fix" },
@@ -78,6 +80,7 @@ export const STORY_CREATED_AT_MS = STORY_EPOCH_MS - 3_600_000;
 
 export const STORY_STATUS_BY_CHAPTER = {
 	terminal: "In progress",
+	track: "In progress",
 	build: "In progress",
 	review: "In review",
 	fix: "In progress",
@@ -87,6 +90,7 @@ export const STORY_STATUS_BY_CHAPTER = {
 
 export const WORK_ITEM_STATUS_BY_CHAPTER = {
 	terminal: "In progress",
+	track: "In progress",
 	build: "In progress",
 	review: "In review",
 	fix: "In progress",
@@ -96,6 +100,7 @@ export const WORK_ITEM_STATUS_BY_CHAPTER = {
 
 export const CLAUDE_SESSION_TITLE_BY_CHAPTER = {
 	terminal: "Implement guest checkout from the local terminal",
+	track: "Track guest checkout on the board",
 	build: "Hand off PR #1847 and monitor CI",
 	review: "Monitor the initial CI run",
 	fix: "Auto-fix the failed CI check",

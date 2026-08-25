@@ -28,6 +28,7 @@ import {
 	JiraIssueGenerativeActionMenu,
 	type JiraIssueGenerativeActionConfig,
 } from "@/components/blocks/jira-issue/generative-action-menu";
+import { JiraIssueMoreMenu, type JiraIssueMoreAction } from "@/components/blocks/jira-issue/more-menu";
 import { JiraIssueUncapturedWork } from "@/components/blocks/jira-issue/uncaptured-work";
 import type { SmartLinkItem } from "@/components/blocks/smart-link";
 import { useIsMounted } from "@/components/hooks/use-is-mounted";
@@ -85,6 +86,7 @@ export type {
 	JiraIssueGenerativeActionRequest,
 	JiraIssueGenerativeActionSelectedItem,
 } from "@/components/blocks/jira-issue/generative-action-menu";
+export type { JiraIssueMoreAction } from "@/components/blocks/jira-issue/more-menu";
 
 export interface JiraIssueTag {
 	text: string;
@@ -137,7 +139,7 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	assigneeUnassignedKind?: AvatarUnassignedKind;
 	assigneePulse?: boolean;
 	active?: boolean;
-	/** Raised elevation is the default card chrome. Stroke is a 1px disabled border with no shadow. */
+	/** Raised elevation is the default card chrome. Stroke is a 1px border with no shadow. */
 	chrome?: JiraIssueChrome;
 	selected?: boolean;
 	dragging?: boolean;
@@ -159,6 +161,10 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	onAgentDoneRunSubmit?: (run: JiraIssueCompletedAgentRun, prompt: string) => void;
 	onAgentDoneRunReview?: (run: JiraIssueCompletedAgentRun) => void;
 	onAgentDoneRunView?: (run: JiraIssueCompletedAgentRun) => void;
+	/** Controls the built-in hover-revealed issue actions menu. */
+	showMoreAction?: boolean;
+	/** Called after an item is selected from the issue actions menu. */
+	onMoreActionSelect?: (action: JiraIssueMoreAction) => void;
 	generativeAction?: JiraIssueGenerativeActionConfig;
 }
 
@@ -181,6 +187,9 @@ const JIRA_ISSUE_MOTION_EXIT: Transition = { duration: 0.1, ease: [0.6, 0, 0.8, 
 const JIRA_ISSUE_MOTION_LAYOUT: Transition = { duration: 0.2, ease: [0.4, 0, 0, 1] }; // duration-medium + ease-in-out
 const JIRA_ISSUE_MOTION_REDUCED: Transition = { duration: 0 };
 const JIRA_ISSUE_MOTION_STYLE: CSSProperties = { willChange: "transform, opacity" };
+const DEFAULT_JIRA_ISSUE_GENERATIVE_ACTION: JiraIssueGenerativeActionConfig = {
+	onSubmit: () => undefined,
+};
 
 function getIssueInitial(issueKey: string): string {
 	return issueKey[0]?.toUpperCase() ?? "U";
@@ -293,8 +302,11 @@ function JiraIssueSummary({
 	const priorityColor = PRIORITY_COLORS[priority];
 
 	return (
-		<div className="flex flex-col gap-2">
-			<span className={usesStrokeChrome ? "line-clamp-2 min-h-10 text-sm leading-5" : "text-sm"}>{summary}</span>
+		<div className="flex min-w-0 flex-col gap-2">
+			<div className="flex min-w-0 items-start gap-2">
+				<span className={cn("min-w-0 flex-1", usesStrokeChrome ? "line-clamp-2 min-h-10 text-sm leading-5" : "text-sm")}>{summary}</span>
+				<div className="size-6 shrink-0" data-slot="jira-issue-more-action" />
+			</div>
 
 			{parentEpicControl ? (
 				<div className="flex min-w-0 flex-col items-start gap-1">
@@ -304,7 +316,7 @@ function JiraIssueSummary({
 			) : null}
 
 			{tags && tags.length > 0 ? (
-				<TagGroup className="gap-1">
+				<TagGroup className="min-w-0 gap-1 overflow-hidden">
 					{tags.map((tag, index) => (
 						<Tag key={`${tag.text}-${index}`} color={tag.color}>
 							{tag.text}
@@ -520,12 +532,14 @@ function JiraIssueDefault({
 	onAgentDoneRunSubmit,
 	onAgentDoneRunReview,
 	onAgentDoneRunView,
+	onMoreActionSelect,
 	parentEpicControl,
 	priority = "major",
 	pullRequestNumber,
 	pullRequestStatus,
 	selected = false,
 	showAutomationIndicator = false,
+	showMoreAction = true,
 	showPriorityIndicator = true,
 	style,
 	subtasks,
@@ -548,7 +562,10 @@ function JiraIssueDefault({
 	const [generativeActionFocusActive, setGenerativeActionFocusActive] = useState(false);
 	const [generativeActionRevealSuppressed, setGenerativeActionRevealSuppressed] = useState(false);
 	const [agentActivityHoverOpen, setAgentActivityHoverOpen] = useState(false);
+	const [moreActionMenuOpen, setMoreActionMenuOpen] = useState(false);
+	const resolvedGenerativeAction = generativeAction ?? DEFAULT_JIRA_ISSUE_GENERATIVE_ACTION;
 	const generativeActionRevealActive = !agentActivityHoverOpen
+		&& !moreActionMenuOpen
 		&& !generativeActionRevealSuppressed
 		&& (generativeActionPointerActive || generativeActionFocusActive);
 	const hasSubtasks = Boolean(subtasks?.length);
@@ -575,7 +592,7 @@ function JiraIssueDefault({
 	const hasIssueRows = hasSubtasks;
 	const hasAgentActivityPresentation = agentActivityMode !== undefined || Boolean(agentActivities?.length) || hasAgentDoneNotification;
 	const usesAgentActivityShell = hasAgentActivityPresentation;
-	const hasInteractiveContent = hasSubtasks || Boolean(parentEpicControl) || hasAgentActivityPresentation || Boolean(generativeAction);
+	const hasInteractiveContent = showMoreAction || hasSubtasks || Boolean(parentEpicControl) || hasAgentActivityPresentation || Boolean(resolvedGenerativeAction);
 	const shouldRenderIssueClickButton = Boolean(props.onClick && !parentEpicControl);
 	const issueRowsClassName = cn("pt-1", !(hasSubtasks && resolvedSubtasksExpanded) && "pb-1");
 	const layoutTransition = getJiraIssueLayoutTransition(shouldReduceMotion);
@@ -583,6 +600,9 @@ function JiraIssueDefault({
 	const usesStrokeChrome = chrome === "stroke";
 	const idleBorderClassName = usesStrokeChrome
 		? "border-border-disabled hover:border-border group-hover/jira-issue:border-border"
+		: "border-transparent";
+	const agentActivityIdleBorderClassName = usesStrokeChrome
+		? "border-border-disabled group-hover/jira-issue-card:border-border"
 		: "border-transparent";
 	const rootBaseStyle: CSSProperties = {
 		borderRadius: token("radius.large"),
@@ -598,9 +618,9 @@ function JiraIssueDefault({
 		padding: token("space.150"),
 	};
 	const rootClassName = cn(
-		"group/jira-issue relative w-full border outline-none focus-visible:border-ring",
+		"group/jira-issue relative w-full min-w-0 border outline-none focus-visible:border-ring",
 		usesAgentActivityShell
-			? "border-transparent bg-transparent"
+			? "group/jira-issue-card border-transparent bg-transparent"
 			: selected
 				? "border-border-selected bg-bg-selected"
 				: active
@@ -615,16 +635,16 @@ function JiraIssueDefault({
 		selected
 			? "border-border-selected bg-bg-selected"
 			: active
-				? `${idleBorderClassName} bg-bg-selected`
-				: `${idleBorderClassName} bg-surface`,
+				? `${agentActivityIdleBorderClassName} bg-bg-selected`
+				: `${agentActivityIdleBorderClassName} bg-surface`,
 	);
 	const agentActivityShellClassName = cn(
-		"relative w-full overflow-visible rounded-[10px] outline-none",
+		"relative w-full min-w-0 overflow-visible rounded-[10px] outline-none",
 		"transition-[opacity,background-color,border-color] duration-normal ease-out",
 		"data-starting-style:opacity-0 data-starting-style:-translate-y-1",
 	);
 	const agentActivityArticleClassName = cn(
-		"group/jira-issue relative w-full overflow-visible outline-none",
+		"group/jira-issue relative w-full min-w-0 overflow-visible outline-none",
 		"data-starting-style:opacity-0 data-starting-style:-translate-y-1",
 		className,
 	);
@@ -681,7 +701,7 @@ function JiraIssueDefault({
 			return;
 		}
 
-		if (generativeAction && event.currentTarget.contains(event.target as Node)) {
+		if (event.currentTarget.contains(event.target as Node)) {
 			setGenerativeActionRevealSuppressed(false);
 			setGenerativeActionPointerActive(true);
 		}
@@ -702,8 +722,7 @@ function JiraIssueDefault({
 
 	function handleGenerativeActionFocusCapture(event: FocusEvent<HTMLElement>) {
 		if (
-			generativeAction
-			&& event.target instanceof Element
+			event.target instanceof Element
 			&& event.currentTarget.contains(event.target)
 		) {
 			setGenerativeActionRevealSuppressed(false);
@@ -745,6 +764,15 @@ function JiraIssueDefault({
 			usesStrokeChrome={usesStrokeChrome}
 		/>
 	);
+	const moreActionMenu = showMoreAction ? (
+		<div className="absolute right-3 top-3 z-20 size-6">
+			<JiraIssueMoreMenu
+				issueKey={issueKey}
+				onActionSelect={onMoreActionSelect}
+				onOpenChange={setMoreActionMenuOpen}
+			/>
+		</div>
+	) : null;
 	const richIssueContent = (
 		<div className="relative z-10 flex flex-col">
 			{shouldRenderIssueClickButton ? (
@@ -760,6 +788,7 @@ function JiraIssueDefault({
 			) : (
 				<div className="p-3">{summaryContent}</div>
 			)}
+			{moreActionMenu}
 			<AnimatePresence initial={false} mode="popLayout">
 				{hasIssueRows && subtasks ? (
 					<motion.div
@@ -789,9 +818,9 @@ function JiraIssueDefault({
 			</AnimatePresence>
 		</div>
 	);
-	const generativeActionMenu = generativeAction ? (
+	const generativeActionMenu = (
 		<JiraIssueGenerativeActionMenu
-			action={generativeAction}
+			action={resolvedGenerativeAction}
 			anchor={generativeActionAnchor}
 			issue={{ issueKey, summary }}
 			onOpenChange={(nextOpen) => setGenerativeActionRevealSuppressed(!nextOpen)}
@@ -801,7 +830,7 @@ function JiraIssueDefault({
 			onTriggerPointerLeave={() => setGenerativeActionPointerActive(false)}
 			revealActive={generativeActionRevealActive}
 		/>
-	) : null;
+	);
 
 	if (hasInteractiveContent) {
 		if (usesAgentActivityShell) {

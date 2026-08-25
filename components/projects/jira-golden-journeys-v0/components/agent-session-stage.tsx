@@ -4,20 +4,11 @@ import { useCallback } from "react";
 
 import {
 	AgentList,
+	deriveIssueKeyFromBranch,
 	type AgentListItem,
 } from "@/components/blocks/agent-list";
 import { useAsxAgentChatDemo } from "@/components/projects/jira-golden-journeys-v0/hooks/use-jira-golden-journeys-v0-agent-chat-demo";
 import { AsxRovoOverlay } from "./jira-golden-journeys-v0-rovo-overlay";
-
-/**
- * Derives a Jira-style issue key from an agent-session branch so the chat's
- * work-item context bar reads meaningfully: `rovo/vita-142-vision-deck` →
- * `VITA-142`. Falls back to the raw branch when the pattern does not match.
- */
-function deriveIssueKey(branch: string): string {
-	const match = /^rovo\/([a-z]+)-(\d+)-/.exec(branch);
-	return match ? `${match[1].toUpperCase()}-${match[2]}` : branch;
-}
 
 /** Maps an agent display name to its Rovo profile id (`Progress tracker` → `progress-tracker`). */
 function toAgentId(agentName: string): string {
@@ -46,7 +37,7 @@ export function AgentSessionStage(): React.ReactElement {
 
 	const handleView = useCallback(
 		(item: AgentListItem) => {
-			const issueKey = deriveIssueKey(item.branch);
+			const issueKey = deriveIssueKeyFromBranch(item.branch);
 			openAgentChat({
 				agentId: toAgentId(item.agent.name),
 				agentName: item.agent.name,
@@ -61,7 +52,7 @@ export function AgentSessionStage(): React.ReactElement {
 	return (
 		<div className="relative flex h-full min-h-0 w-full flex-col justify-center px-8 pb-28">
 			<div className="mx-auto w-full max-w-xl">
-				<AgentList className="w-full" composerChatSurface="floating" onView={handleView} />
+				<AgentList className="w-full" onView={handleView} />
 			</div>
 			<AsxRovoOverlay
 				chatContextBar={chatContextBar}

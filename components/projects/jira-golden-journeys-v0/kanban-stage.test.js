@@ -37,15 +37,16 @@ test("Kanban stage selects ranges against the filtered columns", () => {
 	assert.match(STAGE_SOURCE, /onCardSelect=\{handleFilteredCardSelect\}/u);
 });
 
-test("ASX Kanban reuses the Jira Issue rainbow spinner for working agents", () => {
+test("ASX Kanban reuses the Jira Issue spinner for working agents", () => {
 	assert.match(STAGE_SOURCE, /<JiraKanban/u);
 	assert.match(JIRA_KANBAN_SOURCE, /agentActivities=\{card\.agentActivities\}/u);
 	assert.match(JIRA_KANBAN_SOURCE, /agentActivityMode=\{card\.agentActivityMode\}/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
 	assert.match(
 		JIRA_ISSUE_AGENT_ACTIVITY_SOURCE,
-		/<Spinner[\s\S]*label=""[\s\S]*phaseOffsetMs=\{getJiraIssueAgentSpinnerPhaseOffsetMs\(activity\.id, index\)\}[\s\S]*size="sm"[\s\S]*variant="rainbow"[\s\S]*\/>/u,
+		/<Spinner[\s\S]*label=""[\s\S]*phaseOffsetMs=\{getJiraIssueAgentSpinnerPhaseOffsetMs\(activity\.id, index\)\}[\s\S]*size="sm"[\s\S]*\/>/u,
 	);
+	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /variant="rainbow"/u);
 });
 
 test("Kanban lifecycle uses deterministic generation and completion delays", () => {
