@@ -26,6 +26,7 @@ export interface ContextBarCreatePullRequestProps
 	branch: string;
 	additions: number;
 	deletions: number;
+	/** Omit an action callback to render that action disabled. */
 	onCreate?: () => void;
 	onCreateDraft?: () => void;
 	onCreateManually?: () => void;
@@ -46,6 +47,27 @@ function createPullRequestLabel(mode: ContextBarCreatePullRequestMode): string {
 			return "Create draft PR";
 		case "manual":
 			return "Manually create PR";
+		default: {
+			const exhaustive: never = mode;
+			return exhaustive;
+		}
+	}
+}
+
+function createPullRequestAction(
+	mode: ContextBarCreatePullRequestMode,
+	actions: Readonly<Pick<
+		ContextBarCreatePullRequestProps,
+		"onCreate" | "onCreateDraft" | "onCreateManually"
+	>>,
+): (() => void) | undefined {
+	switch (mode) {
+		case "open":
+			return actions.onCreate;
+		case "draft":
+			return actions.onCreateDraft;
+		case "manual":
+			return actions.onCreateManually;
 		default: {
 			const exhaustive: never = mode;
 			return exhaustive;
@@ -81,28 +103,25 @@ function CreatePullRequestSplitButton({
 	onModeChange: (mode: ContextBarCreatePullRequestMode) => void;
 }>) {
 	const primaryLabel = createPullRequestLabel(mode);
+	const primaryAction = createPullRequestAction(mode, {
+		onCreate,
+		onCreateDraft,
+		onCreateManually,
+	});
 
 	function handlePrimaryClick() {
-		switch (mode) {
-			case "open":
-				onCreate?.();
-				return;
-			case "draft":
-				onCreateDraft?.();
-				return;
-			case "manual":
-				onCreateManually?.();
-				return;
-			default: {
-				const exhaustive: never = mode;
-				return exhaustive;
-			}
-		}
+		primaryAction?.();
 	}
 
 	return (
 		<ButtonGroup aria-label="Create pull request" className="shrink-0" variant="split">
-			<Button onClick={handlePrimaryClick} size="compact" type="button" variant="outline">
+			<Button
+				disabled={primaryAction === undefined}
+				onClick={handlePrimaryClick}
+				size="compact"
+				type="button"
+				variant="outline"
+			>
 				{primaryLabel}
 			</Button>
 			<DropdownMenu>
@@ -126,6 +145,7 @@ function CreatePullRequestSplitButton({
 				>
 					<DropdownMenuGroup>
 						<DropdownMenuItem
+							disabled={onCreate === undefined}
 							elemBefore={<PullRequestIcon color="currentColor" label="" size="small" />}
 							onSelect={() => onModeChange("open")}
 							selected={mode === "open"}
@@ -133,6 +153,7 @@ function CreatePullRequestSplitButton({
 							Create PR
 						</DropdownMenuItem>
 						<DropdownMenuItem
+							disabled={onCreateDraft === undefined}
 							elemBefore={<PullRequestIcon color="currentColor" label="" size="small" />}
 							onSelect={() => onModeChange("draft")}
 							selected={mode === "draft"}
@@ -140,6 +161,7 @@ function CreatePullRequestSplitButton({
 							Create draft PR
 						</DropdownMenuItem>
 						<DropdownMenuItem
+							disabled={onCreateManually === undefined}
 							elemBefore={<ShortcutIcon color="currentColor" label="" size="small" />}
 							onSelect={() => onModeChange("manual")}
 							selected={mode === "manual"}
@@ -173,10 +195,15 @@ export function ContextBarCreatePullRequest({
 }: Readonly<ContextBarCreatePullRequestProps>): React.ReactElement {
 	const [mode, setMode] = useState<ContextBarCreatePullRequestMode>("open");
 	const repositoryLabel = shortRepositoryName(repository);
+	const primaryAction = createPullRequestAction(mode, {
+		onCreate,
+		onCreateDraft,
+		onCreateManually,
+	});
 	const regionLabel = [
 		`Unpublished branch ${branch}`,
 		`${additions} additions and ${deletions} deletions`,
-		`${createPullRequestLabel(mode)} ready`,
+		`${createPullRequestLabel(mode)} ${primaryAction === undefined ? "unavailable" : "ready"}`,
 	].join(". ");
 
 	return (

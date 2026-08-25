@@ -149,11 +149,16 @@ test("the v3 control row is consolidated and Reporter moved back to Details", ()
 	assert.doesNotMatch(titleBarSource, /<StatusPill|<ContextTitleMeta|<PersonLabel/u);
 	assert.match(
 		titleBarSource,
-		/"min-w-0 self-stretch px-6"[\s\S]*compact \? "pb-0" : "pb-4"/u,
+		/"min-w-0 self-stretch px-6"[\s\S]*presentedCompact \? "pb-0" : "pb-4"/u,
 	);
 	assert.match(
 		titleBarSource,
-		/<ContextEditableTitle compact=\{compact\} \/>[\s\S]*\{controlRow\(compact\)\}/u,
+		/<ContextEditableTitle compact=\{compact\} \/>[\s\S]*\{controlRow\(presentedCompact\)\}/u,
+	);
+	assert.match(titleBarSource, /const \[presentedCompact, setPresentedCompact\] = useState\(compact\)/u);
+	assert.match(
+		titleBarSource,
+		/<AnimatePresence[\s\S]*mode="wait"[\s\S]*onExitComplete=\{\(\) => setPresentedCompact\(compact\)\}/u,
 	);
 	assert.match(titleBarSource, /useWorkItemHeaderVariant\(\)/u);
 	assert.match(titleBarSource, /data-header-variant=\{variant\}/u);

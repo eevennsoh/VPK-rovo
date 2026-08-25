@@ -19,14 +19,21 @@ export const JIRA_ISSUE_DETAIL: ComponentDetail = {
   assigneeAvatarSrc="/avatar-user/andrea-wilson/color/asow-service-yellow.png"
 />`,
 	examples: [
+		{ title: "Experimental", description: "Issue card with the stroke-only visual treatment used by the experimental Jira Kanban.", demoSlug: "jira-issue-demo-experimental" },
+		{ title: "Uncaptured work", description: "Work discovered outside Jira, with its source context, involved participants, and a controlled Create work item action.", demoSlug: "jira-issue-demo-uncaptured-work" },
 		{ title: "Subtasks collapsed", description: "Issue card with a collapsed nested subtasks row.", demoSlug: "jira-issue-demo-subtasks-collapsed" },
 		{ title: "Subtasks expanded", description: "Expanded subtasks with nested issue cards.", demoSlug: "jira-issue-demo-subtasks-expanded" },
 		{ title: "Parent epic", description: "Issue card with a parent epic selector embedded through the Jira epic block.", demoSlug: "jira-issue-demo-parent-epic" },
 		{ title: "Agent activity states", description: "Interactive issue card states for agents working, awaiting input, and completed work.", demoSlug: "jira-issue-demo-agent-activity-states" },
 	],
 	props: [
+		{ name: "variant", type: '"default" | "uncaptured-work"', default: '"default"', description: "Selects the standard Jira issue card or the uncaptured-work presentation." },
 		{ name: "summary", type: "string", required: true, description: "Issue summary shown as the primary card text." },
-		{ name: "issueKey", type: "string", required: true, description: "Jira issue key shown beside the issue-type icon." },
+		{ name: "issueKey", type: "string", description: "Jira issue key shown beside the issue-type icon. Required for the default variant." },
+		{ name: "sourceLink", type: "SmartLinkItem", description: "Hoverable source reference with provider logo and destination label. Required for the uncaptured-work variant." },
+		{ name: "participants", type: "readonly JiraIssueParticipant[]", description: "People and agents involved in uncaptured work. Required for the uncaptured-work variant." },
+		{ name: "captured", type: "boolean", default: "false", description: "Controlled completion state for the uncaptured-work create action." },
+		{ name: "onCreateWorkItem", type: "() => void", description: "Creates a Jira work item for uncaptured work. When omitted, the action is exposed as unavailable." },
 		{ name: "tags", type: "readonly JiraIssueTag[]", description: "Tags rendered below the summary." },
 		{ name: "parentEpicControl", type: "ReactNode", description: "Optional parent epic selector/control rendered in the issue metadata below the summary." },
 		{ name: "subtasks", type: "readonly JiraIssueSubtask[]", description: "Nested subtasks rendered behind the expandable subtasks row." },

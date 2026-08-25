@@ -4,7 +4,7 @@ import path from "node:path";
 import test from "node:test";
 
 // @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
-import { buildHorizontalScrollMaskStyle, buildScrollMaskBlurLayerStyles, buildScrollMaskStyle, resolveFadeSize } from "./lib.ts";
+import { buildHorizontalScrollMaskStyle, buildScrollMaskBlurLayerStyles, buildScrollMaskOverlayStyle, buildScrollMaskStyle, resolveFadeSize } from "./lib.ts";
 import { createRequire } from "node:module";
 
 const requireRegistrySource = createRequire(import.meta.url);
@@ -167,6 +167,30 @@ test("buildScrollMaskStyle fades only the edges with content scrolled past them"
 	// At rest (nothing scrolled past either edge) the content mask is fully opaque — no fade.
 	const none = buildScrollMaskStyle({ fadeTop: false, fadeBottom: false });
 	assert.equal(none.maskImage, "linear-gradient(to bottom, black 0, black 100%), linear-gradient(black, black)");
+});
+
+test("buildScrollMaskOverlayStyle fades visually without clipping hit-testing", () => {
+	const top = buildScrollMaskOverlayStyle({ edge: "top", fadeSize: "3rem" });
+	assert.equal(top["--scroll-mask-fade-size"], "3rem");
+	assert.equal(top.height, "3rem");
+	assert.equal(top.pointerEvents, "none");
+	assert.equal(
+		top.backgroundImage,
+		"linear-gradient(to bottom, var(--color-surface) 0, transparent 100%)",
+	);
+
+	const bottom = buildScrollMaskOverlayStyle({ edge: "bottom" });
+	assert.equal(bottom.pointerEvents, "none");
+	assert.equal(
+		bottom.backgroundImage,
+		"linear-gradient(to top, var(--color-surface) 0, transparent 100%)",
+	);
+});
+
+test("ScrollMaskEdgeOverlay is a pointer-events-none band gated by the caller", () => {
+	assert.match(SCROLL_MASK_SOURCE, /export function ScrollMaskEdgeOverlay/u);
+	assert.match(SCROLL_MASK_SOURCE, /data-scroll-mask-overlay=\{edge\}/u);
+	assert.match(SCROLL_MASK_SOURCE, /pointer-events-none absolute inset-x-0/u);
 });
 
 test("Scroll Mask is wired into the Visual catalog route and demo registry", () => {

@@ -9,6 +9,10 @@ const SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 const DATA_SOURCE = readFileSync(join(__dirname, "jira-kanban-data.ts"), "utf8");
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const HEADER_SOURCE = readFileSync(join(__dirname, "board-header.tsx"), "utf8");
+const EXPERIMENTAL_SOURCE = readFileSync(join(__dirname, "experimental", "experimental-jira-kanban.tsx"), "utf8");
+const EXPERIMENTAL_PAGE_SOURCE = readFileSync(join(__dirname, "experimental", "page.tsx"), "utf8");
+const EXPERIMENTAL_HEADER_SOURCE = readFileSync(join(__dirname, "experimental", "experimental-board-header.tsx"), "utf8");
+const EXPERIMENTAL_PULSE_RAIL_SOURCE = readFileSync(join(__dirname, "experimental", "pulse", "components", "pulse-rail.tsx"), "utf8");
 const JIRA_ISSUE_SOURCE = readFileSync(join(__dirname, "..", "jira-issue", "index.tsx"), "utf8");
 const COLUMN_DRAG_SOURCE = SOURCE.slice(
 	SOURCE.indexOf("const handleColumnDragOver"),
@@ -32,6 +36,39 @@ async function loadStateHarness() {
 			loader: "ts",
 			resolveDir: process.cwd(),
 			sourcefile: "jira-kanban-state-harness.ts",
+		},
+		bundle: true,
+		format: "cjs",
+		platform: "node",
+		tsconfig: join(process.cwd(), "tsconfig.json"),
+		write: false,
+	});
+
+	return loadCjsModuleFromText(result.outputFiles[0].text);
+}
+
+async function loadDocsLayoutHarness() {
+	const result = await esbuild.build({
+		stdin: {
+			contents: `
+				import { JIRA_KANBAN_DETAIL } from "./app/data/details/blocks/jira-kanban.ts";
+				import { resolveExamplesShellLayout, shouldUseFullPagePreview } from "./components/website/component-doc/components/preview-layout.ts";
+
+				export function getKanbanDocsShells() {
+					const demoLayout = JIRA_KANBAN_DETAIL.demoLayout;
+					const previewFullPage = shouldUseFullPagePreview("blocks", demoLayout);
+					const previewFitContent = demoLayout?.previewHeight === "fit";
+
+					return {
+						previewFullPage,
+						previewFitContent,
+						examples: resolveExamplesShellLayout("blocks", demoLayout),
+					};
+				}
+			`,
+			loader: "tsx",
+			resolveDir: process.cwd(),
+			sourcefile: "jira-kanban-docs-layout-harness.tsx",
 		},
 		bundle: true,
 		format: "cjs",
@@ -76,6 +113,17 @@ test("Kanban demo preserves the rounded docs frame and leaves scrolling to the b
 	assert.doesNotMatch(PAGE_SOURCE, /rounded-lg bg-surface p-4 md:p-5/u);
 	assert.doesNotMatch(PAGE_SOURCE, /overflow-x-auto/u);
 	assert.match(SOURCE, /overflowX: "auto"/u);
+});
+
+test("Kanban docs examples use the same full-page fit shell as Preview", async () => {
+	const harness = await loadDocsLayoutHarness();
+	const { previewFullPage, previewFitContent, examples } = harness.getKanbanDocsShells();
+
+	assert.equal(previewFullPage, true);
+	assert.equal(previewFitContent, true);
+	assert.equal(examples.fullPage, previewFullPage);
+	assert.equal(examples.fitContent, previewFitContent);
+	assert.equal(examples.contentWidth, undefined);
 });
 
 test("Kanban block demo includes the shared Jira header and assignee filter", () => {
@@ -158,6 +206,33 @@ test("Kanban card list gives the first card room for its raised edge", () => {
 	);
 });
 
+test("Experimental kanban card lists drop scroller padding while the default keeps its well", () => {
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/overflowY: "auto",\n\s+display: "flex",\n\s+flexDirection: "column",\n\s+gap: token\("space\.100"\),/,
+	);
+	assert.doesNotMatch(
+		EXPERIMENTAL_SOURCE,
+		/overflowY: "auto",[\s\S]{0,180}padding(?:Top|Bottom|Inline): token\("space\.(?:050|100)"\)/u,
+	);
+	assert.match(
+		SOURCE,
+		/overflowY: "auto",\n\s+paddingTop: token\("space\.050"\),\n\s+paddingBottom: token\("space\.100"\),\n\s+paddingInline: token\("space\.050"\),/,
+	);
+});
+
+test("Experimental kanban card gap matches the column gutter", () => {
+	assert.match(EXPERIMENTAL_SOURCE, /<div className="flex min-h-full items-stretch gap-2" style=\{\{ minWidth: "100%" \}\}>/u);
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/overflowY: "auto",\n\s+display: "flex",\n\s+flexDirection: "column",\n\s+gap: token\("space\.100"\),/,
+	);
+	assert.match(
+		SOURCE,
+		/overflowY: "auto",\n\s+paddingTop: token\("space\.050"\),\n\s+paddingBottom: token\("space\.100"\),\n\s+paddingInline: token\("space\.050"\),\n\s+display: "flex",\n\s+flexDirection: "column",\n\s+gap: token\("space\.050"\),/,
+	);
+});
+
 test("Kanban columns retain a readable minimum width when the board narrows", () => {
 	assert.match(SOURCE, /style=\{\{ flex: "1 1 0", minWidth: "280px", borderRadius: token\("radius\.xlarge"\) \}\}/u);
 });
@@ -174,11 +249,13 @@ test("Kanban columns stretch through the available board height", () => {
 	assert.match(SOURCE, /className="group\/board-column"[\s\S]*height: "100%"/u);
 });
 
-test("Kanban scroll affordance can be hidden by an owning surface", () => {
-	assert.match(SOURCE, /showScrollAffordance\?: boolean;/u);
-	assert.match(SOURCE, /showScrollAffordance = true,/u);
-	assert.match(SOURCE, /showScrollAffordance && canScrollRight \? \(/u);
-	assert.match(PAGE_SOURCE, /showScrollAffordance=\{showScrollAffordance\}/u);
+test("Kanban board renders no scroll-for-more affordance or its measurement listeners", () => {
+	for (const source of [SOURCE, PAGE_SOURCE, EXPERIMENTAL_SOURCE, EXPERIMENTAL_PAGE_SOURCE]) {
+		assert.doesNotMatch(source, /Scroll for more/u);
+		assert.doesNotMatch(source, /showScrollAffordance/u);
+		assert.doesNotMatch(source, /canScrollRight/u);
+		assert.doesNotMatch(source, /scrollend/u);
+	}
 });
 
 test("Kanban page keeps plain activation separate from modifier-key bulk selection", () => {
@@ -475,4 +552,94 @@ test("Kanban sparkle agents and skills preserve selection-toolbar ordering", () 
 test("Kanban derives visible column counts from rendered cards", () => {
 	assert.match(SOURCE, /count=\{column\.cards\.length\}/);
 	assert.doesNotMatch(SOURCE, /count=\{column\.count\}/);
+});
+
+test("Experimental kanban columns sit on the board surface without a sunken fill", () => {
+	assert.doesNotMatch(EXPERIMENTAL_SOURCE, /backgroundColor: token\("elevation.surface.sunken"\)/u);
+	assert.match(SOURCE, /backgroundColor: token\("elevation.surface.sunken"\)/u);
+});
+
+test("Experimental kanban column headers drop inline padding without changing the default board", () => {
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/paddingTop: token\("space\.150"\), paddingBottom: headerPaddingBlock \}\}/u,
+	);
+	assert.doesNotMatch(
+		EXPERIMENTAL_SOURCE,
+		/paddingTop: token\("space\.150"\), paddingBottom: headerPaddingBlock, paddingInline: token\("space\.150"\)/u,
+	);
+	assert.match(
+		SOURCE,
+		/paddingTop: token\("space\.150"\), paddingBottom: headerPaddingBlock, paddingInline: token\("space\.150"\)/u,
+	);
+});
+
+test("Experimental kanban cards use stroke chrome instead of raised elevation", () => {
+	assert.match(EXPERIMENTAL_SOURCE, /<JiraIssue[\s\S]*chrome="stroke"/u);
+	assert.match(EXPERIMENTAL_PULSE_RAIL_SOURCE, /<JiraIssue[\s\S]*chrome="stroke"/u);
+	assert.doesNotMatch(SOURCE, /chrome="stroke"/u);
+});
+
+test("Experimental kanban cards use the hexagon avatar for agent assignees", () => {
+	assert.match(EXPERIMENTAL_SOURCE, /function getCardAssigneeAvatarShape\(card: JiraKanbanCardData\)/);
+	assert.match(EXPERIMENTAL_SOURCE, /card\.avatarSrc\?\.startsWith\("\/avatar-agent\/"\) \? "hexagon" as const : undefined/);
+	assert.match(EXPERIMENTAL_SOURCE, /assigneeAvatarShape=\{getCardAssigneeAvatarShape\(card\)\}/);
+	assert.match(
+		EXPERIMENTAL_PULSE_RAIL_SOURCE,
+		/assigneeAvatarShape=\{assignee\?\.kind === "agent" \? "hexagon" : "circle"\}/,
+	);
+	assert.match(SOURCE, /assigneeAvatarShape=\{card\.avatarShape\}/);
+});
+
+test("Experimental kanban column wrappers stay overflow-visible so card strokes are not clipped", () => {
+	assert.match(EXPERIMENTAL_SOURCE, /className="group\/board-column overflow-visible"/u);
+	assert.match(EXPERIMENTAL_SOURCE, /className="overflow-visible border-2 border-transparent transition-colors"/u);
+	assert.doesNotMatch(SOURCE, /group\/board-column overflow-visible/u);
+});
+
+test("Experimental kanban column card lists reuse the shared bottom scroll-mask", () => {
+	assert.match(EXPERIMENTAL_SOURCE, /import \{ useHasVerticalOverflow \} from "@\/components\/hooks\/use-has-vertical-overflow";/u);
+	assert.match(EXPERIMENTAL_SOURCE, /import \{ buildScrollMaskStyle \} from "@\/components\/visual\/scroll-mask\/lib";/u);
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/const \{ ref: cardListRef, showBottomScrollMask \} = useHasVerticalOverflow<HTMLDivElement>\(\);[\s\S]*buildScrollMaskStyle\(\{\s*fadeBottom: showBottomScrollMask,\s*fadeSize: "3rem",\s*fadeTop: false,\s*\}\)[\s\S]*ref=\{cardListRef\}[\s\S]*overflowY: "auto",[\s\S]*\.\.\.cardListScrollMaskStyle/u,
+	);
+	assert.doesNotMatch(SOURCE, /useHasVerticalOverflow/u);
+	assert.doesNotMatch(SOURCE, /buildScrollMaskStyle/u);
+});
+
+test("Experimental kanban Create is hover-revealed on the column while the default stays visible", () => {
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical[\s\S]*group-hover\/board-column:pointer-events-auto group-hover\/board-column:opacity-100[\s\S]*group-has-\[:focus-visible\]\/board-column:pointer-events-auto group-has-\[:focus-visible\]\/board-column:opacity-100[\s\S]*motion-reduce:transition-none[\s\S]*Create/u,
+	);
+	assert.match(
+		SOURCE,
+		/<Button className="w-full justify-start gap-2 rounded-lg" size="default" variant="ghost">\n\t\t\t\t\t<Icon render=\{<AddIcon label="" size="small" \/>\} \/>\n\t\t\t\t\tCreate/u,
+	);
+});
+
+test("Experimental kanban variant owns its own tree without touching the default variant", () => {
+	// The fork renders its own board/header so experimental changes cannot leak
+	// into the standard variant.
+	assert.match(EXPERIMENTAL_SOURCE, /export function ExperimentalJiraKanban\(\{/u);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /export function ExperimentalJiraKanbanBoardHeader\(\{/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /export default function ExperimentalJiraKanbanPage\(\{/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /import \{ ExperimentalJiraKanban \} from "\.\/experimental-jira-kanban";/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /import \{ ExperimentalJiraKanbanBoardHeader \} from "\.\/experimental-board-header";/u);
+	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /from "\.\.\/board-header"/u);
+	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /from "\.\.\/page"/u);
+	// Default variant stays free of any experimental import.
+	assert.doesNotMatch(SOURCE, /experimental/iu);
+	assert.doesNotMatch(PAGE_SOURCE, /experimental/iu);
+	assert.doesNotMatch(HEADER_SOURCE, /experimental/iu);
+});
+
+test("Experimental kanban variant reuses the shared board data contracts", () => {
+	// Types and state helpers stay shared so both variants remain swappable
+	// inside an owning surface.
+	assert.match(EXPERIMENTAL_SOURCE, /import type \{[\s\S]*JiraKanbanProps,\n\} from "\.\.\/index";/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /import \{ createJiraKanbanColumns \} from "\.\.\/jira-kanban-data";/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /\} from "\.\.\/state";/u);
+	assert.doesNotMatch(EXPERIMENTAL_SOURCE, /^export interface JiraKanbanProps/mu);
 });

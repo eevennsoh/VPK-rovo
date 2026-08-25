@@ -26,12 +26,20 @@ export interface ExternalLinkDefinition {
 }
 
 export type DemoContentWidth = "fit" | "full";
+/**
+ * Examples support one extra mode beyond the shared widths. `"bleed"` renders
+ * an example in the same edge-to-edge frame the Preview section uses, so a wide
+ * demo (a board, a three-column timeline) is exactly as wide in both places.
+ * `"full"` only stretches content inside the standard shell, which keeps that
+ * shell's 24px inset — a deliberate contract other components rely on.
+ */
+export type DemoExamplesContentWidth = DemoContentWidth | "bleed";
 export type DemoPreviewHeight = "fixed" | "fit" | "default";
 
 export interface DemoLayout {
 	previewContentWidth?: DemoContentWidth;
 	previewHeight?: DemoPreviewHeight;
-	examplesContentWidth?: DemoContentWidth;
+	examplesContentWidth?: DemoExamplesContentWidth;
 }
 
 export interface ComponentDetail {
