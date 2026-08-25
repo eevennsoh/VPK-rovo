@@ -154,6 +154,35 @@ async function bundleHarness({ contents, plugins = [], sourcefile }) {
 let timelineHarnessPromise;
 let scrubberHarnessPromise;
 let outlineHarnessPromise;
+let rosterMarkupHarnessPromise;
+
+const rosterMarkupPlugin = {
+	name: "pulse-roster-markup-mocks",
+	setup(build) {
+		build.onResolve({ filter: /^@atlaskit\/icon\/core\/pulse$/ }, () => ({
+			namespace: "pulse-roster-markup-mock",
+			path: "pulse-icon",
+		}));
+		build.onResolve({ filter: /^@\/components\/ui\/(?:button|icon)$/ }, (args) => ({
+			namespace: "pulse-roster-markup-mock",
+			path: args.path,
+		}));
+		build.onLoad({ filter: /.*/, namespace: "pulse-roster-markup-mock" }, (args) => {
+			if (args.path === "pulse-icon") {
+				return {
+					contents: "export default function PulseIcon() { return null; }",
+					loader: "js",
+				};
+			}
+
+			const exportName = args.path.endsWith("/button") ? "Button" : "Icon";
+			return {
+				contents: `export function ${exportName}() { return null; }`,
+				loader: "js",
+			};
+		});
+	},
+};
 
 /**
  * The real hooks plus the fixture, driven by the stub dispatcher above.
@@ -231,7 +260,9 @@ function loadScrubberHarness() {
 	scrubberHarnessPromise ??= bundleHarness({
 		contents: `
 			export {
+				isPulseSectionDimmed,
 				toMagnification,
+				toMarkHint,
 				toMarkLabel,
 				toMarkState,
 				toNearestEntryIndex,
@@ -250,16 +281,44 @@ function loadOutlineHarness() {
 		contents: `
 			export {
 				buildPulseOutline,
+				toActiveInsightEntry,
 				toActiveOutlineIndex,
+				toAdjacentInsightIndex,
 				toPulseAnchorId,
 				toPulseInsightEntries,
+				toPulseScrollOffset,
 				toPulseSections,
+				toRulerHeading,
 			} from "./components/blocks/jira-kanban/experimental/pulse/lib/pulse-outline";
 		`,
 		sourcefile: "pulse-outline-harness.ts",
 	});
 
 	return outlineHarnessPromise;
+}
+
+/** The canonical header roster rendered through React's server renderer. */
+function loadRosterMarkupHarness() {
+	rosterMarkupHarnessPromise ??= bundleHarness({
+		contents: `
+			import React from "react";
+			import { renderToString } from "react-dom/server";
+			import { PulseRosterFacepile } from "./components/blocks/jira-kanban/experimental/pulse/components/pulse-mode-controls";
+			import { PULSE_TIMELINE } from "./components/blocks/jira-kanban/experimental/pulse/data/pulse-timeline";
+
+			export function renderRosterMarkup() {
+				return renderToString(React.createElement(PulseRosterFacepile, {
+					members: PULSE_TIMELINE.members,
+					onSelectedMemberIdChange: () => {},
+					selectedMemberId: null,
+				}));
+			}
+		`,
+		plugins: [rosterMarkupPlugin],
+		sourcefile: "pulse-roster-markup-harness.ts",
+	});
+
+	return rosterMarkupHarnessPromise;
 }
 
 function snapshotAt(timeline, index) {
@@ -287,6 +346,7 @@ module.exports = {
 	join,
 	KANBAN_DIR,
 	loadOutlineHarness,
+	loadRosterMarkupHarness,
 	loadScrubberHarness,
 	loadTimelineHarness,
 	PULSE_DIR,

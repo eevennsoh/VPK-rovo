@@ -15,6 +15,10 @@ import {
 	scopeByWorkItem,
 } from "@/components/blocks/jira-kanban/experimental/pulse/hooks/use-pulse-timeline";
 import type {
+	PulseOutlineEntry,
+	PulseScrollOptions,
+} from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-outline";
+import type {
 	PulseAction,
 	PulseMember,
 	PulseSnapshot,
@@ -62,7 +66,14 @@ const RUNWAY = "h-[50svh] shrink-0";
 // produce a per-snapshot copy of them.
 type PulseStreamEntry = Omit<
 	PulseStoryViewProps,
-	"anchorRef" | "onGoToIndex" | "onRequestAction" | "onSelectMember" | "requestedActionIds"
+	| "anchorRef"
+	| "insightCount"
+	| "insightIndex"
+	| "onGoToIndex"
+	| "onRequestAction"
+	| "onSelectMember"
+	| "previewEntryId"
+	| "requestedActionIds"
 >;
 
 /**
@@ -142,7 +153,9 @@ export interface PulseStreamProps {
 	/** `usePulseReading().registerAnchor`, handed down to every anchored part. */
 	anchorRef: (id: string) => RefCallback<HTMLElement>;
 	/** `usePulseReading().scrollToSnapshot`, for the filtered "way out" jumps. */
-	onGoToSnapshot: (snapshotIndex: number) => void;
+	onGoToSnapshot: (snapshotIndex: number, options?: PulseScrollOptions) => void;
+	/** Ruler entry currently previewed by pointer or keyboard focus. */
+	previewEntry: PulseOutlineEntry | null;
 }
 
 export function PulseStream({
@@ -153,6 +166,7 @@ export function PulseStream({
 	anchorRef,
 	onGoToSnapshot,
 	onRequestAction,
+	previewEntry,
 	requestedActionIds,
 }: Readonly<PulseStreamProps>) {
 	const member = useMemo(
@@ -167,14 +181,16 @@ export function PulseStream({
 	}
 
 	return (
-		<div className="flex min-w-0 flex-col">
+		<div className={cn("mx-auto flex min-w-0 flex-col", MEASURE)}>
 			{entries.map((entry, index) => (
 				<div
 					className={cn(
 						"min-w-0 transition-opacity duration-medium ease-out-practical motion-reduce:transition-none",
 						MEASURE,
 						index === 0 ? null : SNAPSHOT_SEPARATOR,
-						index === activeSnapshotIndex ? SNAPSHOT_READING : SNAPSHOT_QUIET,
+						index === activeSnapshotIndex || index === previewEntry?.snapshotIndex
+							? SNAPSHOT_READING
+							: SNAPSHOT_QUIET,
 					)}
 					data-pulse-insight={index}
 					data-reading={index === activeSnapshotIndex}
@@ -183,7 +199,10 @@ export function PulseStream({
 					<PulseStory
 						{...entry}
 						anchorRef={anchorRef}
+						insightCount={entries.length}
+						insightIndex={index}
 						onRequestAction={onRequestAction}
+						previewEntryId={previewEntry?.id ?? null}
 						requestedActionIds={requestedActionIds}
 						onGoToIndex={onGoToSnapshot}
 						onSelectMember={onSelectMember}

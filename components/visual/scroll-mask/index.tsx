@@ -6,7 +6,13 @@ import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-over
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-import { buildScrollMaskBlurLayerStyles, buildScrollMaskStyle, resolveFadeSize } from "./lib";
+import {
+	buildScrollMaskBlurLayerStyles,
+	buildScrollMaskOverlayStyle,
+	buildScrollMaskStyle,
+	resolveFadeSize,
+	type ScrollMaskOverlayEdge,
+} from "./lib";
 
 // Progressive-blur layer stacks are static per edge, so build them once at module scope and
 // share the style objects across every instance and render (no per-render allocation).
@@ -29,6 +35,37 @@ export interface ScrollMaskProps
 	 * overflow content softly blurs out toward the edges instead of only fading. Off by default.
 	 */
 	edgeBlur?: boolean;
+}
+
+/**
+ * Pointer-events-none edge fade. Pair with `showTopScrollMask` /
+ * `showBottomScrollMask` so the band is visual only and never steals clicks.
+ */
+export function ScrollMaskEdgeOverlay({
+	className,
+	edge,
+	fadeSize,
+	style,
+	...props
+}: Readonly<
+	Omit<ComponentPropsWithoutRef<"div">, "children"> & {
+		edge: ScrollMaskOverlayEdge;
+		fadeSize?: number | string;
+	}
+>) {
+	return (
+		<div
+			{...props}
+			aria-hidden="true"
+			className={cn(
+				"pointer-events-none absolute inset-x-0",
+				edge === "top" ? "top-0" : "bottom-0",
+				className,
+			)}
+			data-scroll-mask-overlay={edge}
+			style={{ ...buildScrollMaskOverlayStyle({ edge, fadeSize }), ...style }}
+		/>
+	);
 }
 
 /** Standard top-edge fade used directly below a sticky row while it is pinned. */

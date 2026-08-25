@@ -1,11 +1,8 @@
 "use client";
 
-import { useCallback, useMemo, useRef, type CSSProperties, type RefCallback } from "react";
+import { useCallback, useMemo, useRef, useState, type CSSProperties, type RefCallback } from "react";
 
-import {
-	PulseUncapturedColumn,
-	PulseWorkItemsColumn,
-} from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-rail";
+import { PulseWorkRail } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-rail";
 import {
 	PulseScrubber,
 	PulseScrubberCompact,
@@ -24,6 +21,7 @@ import type {
 	PulseTimeline,
 } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
+import { ScrollMaskEdgeOverlay } from "@/components/visual/scroll-mask";
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { cn } from "@/lib/utils";
 
@@ -32,8 +30,8 @@ import { cn } from "@/lib/utils";
  *
  * One continuous article. Every insight is on the page, one after another, read
  * by scrolling the way any long piece of writing is read; the ruler on the left
- * is that document's outline and follows the reading position, and the two work
- * columns on the right show what the reader is currently reading about. Nothing
+ * is that document's outline and follows the reading position, and the work
+ * rail on the right shows what the reader is currently reading about. Nothing
  * mounts or unmounts as the position moves, so there is no gesture to intercept
  * — the overscroll state machine that used to fake continuity between separately
  * mounted snapshots is gone, along with its accumulator, dwell gate and momentum
@@ -46,12 +44,13 @@ import { cn } from "@/lib/utils";
  */
 
 /**
- * Pulse runs full-bleed. The insight column takes whatever the four-column row
- * does not: 88px of ruler, then the article, then the two work columns at a fixed
- * 320 and 300 with a 40px gutter between them. Capping the assembly would strand
- * the uncaptured column against the right edge on a wide screen, and the article
- * is the one thing here that earns extra width — its own prose measure is
- * capped separately, inside `PulseStory`.
+ * Pulse runs full-bleed. The insight column takes whatever the three-column row
+ * does not: 144px of ruler (enough for "Next best actions"), then the article,
+ * then one work rail — a two-track grid at a fixed 320 and 300 with a 40px
+ * gutter between the tracks. Capping the assembly would strand the rail against
+ * the right edge on a wide screen, and the article is the one thing here that
+ * earns extra width — its own prose measure is capped separately, inside
+ * `PulseStory`.
  */
 const SHELL_MEASURE = "w-full min-w-0";
 
@@ -94,14 +93,23 @@ export function ExperimentalPulse({
 	// One outline behind both the article and the ruler, so the marks and the
 	// anchors can never disagree: every mark is an element on the page.
 	const outline = useMemo(() => buildPulseOutline(timeline), [timeline]);
+	const [hoveredEntryId, setHoveredEntryId] = useState<string | null>(null);
+	const [focusedEntryId, setFocusedEntryId] = useState<string | null>(null);
+	const previewEntryId = focusedEntryId ?? hoveredEntryId;
+	const previewEntry = useMemo(
+		() => outline.find((entry) => entry.id === previewEntryId) ?? null,
+		[outline, previewEntryId],
+	);
 	const reading = usePulseReading({ outline, resetKey: filter.selectedMemberId });
 	const pulse = usePulseTimeline(timeline, {
 		activeIndex: reading.activeSnapshotIndex,
 		selectedMemberId: filter.selectedMemberId,
 	});
 
-	// The scrollport wears the shared top/bottom fade, so a partly-read insight
-	// dissolves at the edges instead of being sliced off by the fold.
+	// Bottom fade stays a CSS mask. The top fade is a pointer-events-none
+	// overlay gated on `showTopScrollMask` (off at scrollTop 0): mask-image
+	// clips hit-testing, and after a chevron jump the insight header sits at
+	// the true top — under that band — so Next/Prev must stay clickable.
 	const overflow = useHasVerticalOverflow<HTMLDivElement>();
 	const { ref: overflowRef, showBottomScrollMask, showTopScrollMask } = overflow;
 	const { scrollRef, scrollToEntry, scrollToSnapshot } = reading;
@@ -121,14 +129,14 @@ export function ExperimentalPulse({
 		...buildScrollMaskStyle({
 			fadeBottom: showBottomScrollMask,
 			fadeSize: PULSE_FADE_SIZE,
-			fadeTop: showTopScrollMask,
+			fadeTop: false,
 		}),
 		// Jumping from the ruler writes the scroll position directly, and
 		// hover-scrubbing writes it every pointer move; an inherited smooth
 		// behaviour would lag a frame behind the cursor and animate motion under
 		// reduced motion that nobody asked for.
 		scrollBehavior: "auto",
-	}), [showBottomScrollMask, showTopScrollMask]);
+	}), [showBottomScrollMask]);
 
 	if (pulse.activeSnapshot === null) {
 		return (
@@ -158,6 +166,8 @@ export function ExperimentalPulse({
 							filteredMemberName={pulse.selectedMember?.name ?? null}
 							highlightedIndexes={pulse.highlightedIndexes}
 							isFiltered={pulse.isFiltered}
+							onFocusedEntryChange={setFocusedEntryId}
+							onHoveredEntryChange={setHoveredEntryId}
 							onSelectEntry={handleSelectEntry}
 							snapshots={timeline.snapshots}
 						/>
@@ -177,45 +187,58 @@ export function ExperimentalPulse({
 							filteredMemberName={pulse.selectedMember?.name ?? null}
 							highlightedIndexes={pulse.highlightedIndexes}
 							isFiltered={pulse.isFiltered}
+							onFocusedEntryChange={setFocusedEntryId}
+							onHoveredEntryChange={setHoveredEntryId}
 							onSelectEntry={handleSelectEntry}
 							snapshots={timeline.snapshots}
 						/>
 					</div>
 
-					{/* The article, and the one real scrollport in the Pulse fold. It
+					{/* The article, and the reading scrollport in the Pulse fold. It
 					    scrolls at every width — below `lg` inside a bounded reading pane
 					    — because the ruler's marks scroll *this* element, and a ruler
 					    whose marks do nothing is worse than no ruler. `tabIndex` is what
-					    makes it keyboard-scrollable at all in Chrome and Safari. */}
-					<div
-						aria-label={`${timeline.projectLabel} insights`}
-						className="-m-1 max-h-[70svh] min-w-0 flex-1 overflow-y-auto p-1 lg:max-h-none lg:overscroll-y-contain lg:pr-10 lg:pb-12"
-						data-pulse-article=""
-						ref={scrollportRef}
-						role="region"
-						style={scrollportStyle}
-						tabIndex={0}
-					>
-						<PulseStream
-							activeSnapshotIndex={pulse.activeIndex}
-							anchorRef={reading.registerAnchor}
-							onGoToSnapshot={handleGoToSnapshot}
-						onRequestAction={onRequestAction}
-						requestedActionIds={requestedActionIds}
-							onSelectMember={filter.selectMember}
-							selectedMemberId={filter.selectedMemberId}
-							timeline={timeline}
-						/>
+					    makes it keyboard-scrollable at all in Chrome and Safari. The work
+					    rail beside it is its own scroller. */}
+					<div className="relative -m-1 max-h-[70svh] min-h-0 min-w-0 flex-1 lg:mr-10 lg:h-full lg:max-h-none">
+						<div
+							aria-label={`${timeline.projectLabel} insights`}
+							className="h-full overflow-y-auto p-1 lg:overscroll-y-contain lg:pr-10 lg:pb-12"
+							data-pulse-article=""
+							ref={scrollportRef}
+							role="region"
+							style={scrollportStyle}
+							tabIndex={0}
+						>
+							<PulseStream
+								activeSnapshotIndex={pulse.activeIndex}
+								anchorRef={reading.registerAnchor}
+								onGoToSnapshot={handleGoToSnapshot}
+								onRequestAction={onRequestAction}
+								onSelectMember={filter.selectMember}
+								previewEntry={previewEntry}
+								requestedActionIds={requestedActionIds}
+								selectedMemberId={filter.selectedMemberId}
+								timeline={timeline}
+							/>
+						</div>
+						{showTopScrollMask ? (
+							<ScrollMaskEdgeOverlay
+								data-pulse-article-top-fade=""
+								edge="top"
+								fadeSize={PULSE_FADE_SIZE}
+							/>
+						) : null}
 					</div>
 
-					<PulseWorkItemsColumn
+					<PulseWorkRail
+						capturedIds={capturedLooseWorkIds}
+						looseWork={pulse.looseWork}
+						members={pulse.members}
+						onCapture={onCaptureLooseWork}
 						scopedToFirstName={pulse.selectedMember?.name.split(" ")[0] ?? null}
 						workItems={pulse.workItems}
 					/>
-
-					<div className="lg:w-10 lg:shrink-0" />
-
-					<PulseUncapturedColumn capturedIds={capturedLooseWorkIds} onCapture={onCaptureLooseWork} looseWork={pulse.looseWork} members={pulse.members} />
 				</div>
 			</div>
 		</div>

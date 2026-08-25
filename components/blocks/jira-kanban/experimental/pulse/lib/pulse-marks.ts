@@ -1,6 +1,7 @@
-import type {
-	PulseOutlineEntry,
-	PulseOutlineKind,
+import {
+	toRulerHeading,
+	type PulseOutlineEntry,
+	type PulseOutlineKind,
 } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-outline";
 import type { PulseSnapshot } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 
@@ -16,6 +17,44 @@ import type { PulseSnapshot } from "@/components/blocks/jira-kanban/experimental
 
 export function toWeekdayLabel(dateLabel: string): string {
 	return dateLabel.split(" ")[0] ?? dateLabel;
+}
+
+/**
+ * What a mark may write on hover.
+ *
+ * Child ticks stay unlabeled — the sliding pill is the only painted name.
+ * Inactive insight marks may reveal their chapter on hover so the rail still
+ * reads as a TOC. The active mark stays quiet because the pill already says it.
+ */
+export function toMarkHint(
+	entry: PulseOutlineEntry,
+	activeEntryId: string | null,
+): string | null {
+	if (entry.kind === "section") {
+		return null;
+	}
+	if (entry.kind === "insight") {
+		if (entry.id === activeEntryId) {
+			return null;
+		}
+		return toRulerHeading(entry);
+	}
+	const _exhaustive: never = entry.kind;
+	return _exhaustive;
+}
+
+/**
+ * Whether an article block should recede while a ruler mark is previewed.
+ *
+ * The insight intro uses its insight anchor id and each child section uses its
+ * own anchor id, so one equality check covers both ranks. With no preview the
+ * scroll-linked reading treatment remains the only opacity owner.
+ */
+export function isPulseSectionDimmed(
+	previewEntryId: string | null,
+	sectionId: string,
+): boolean {
+	return previewEntryId !== null && previewEntryId !== sectionId;
 }
 
 export type PulseMarkState = "muted" | "current" | "resting";

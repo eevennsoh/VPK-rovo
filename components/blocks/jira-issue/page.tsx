@@ -11,6 +11,7 @@ import {
 	type JiraIssueCompletedAgentRun,
 	type JiraIssueGenerativeActionRequest,
 } from "@/components/blocks/jira-issue";
+import type { SmartLinkItem } from "@/components/blocks/smart-link";
 import { QUESTION_CARD_SINGLE_SELECT_DEMO } from "@/components/blocks/question-card/data/questions";
 import { ASX_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v0/data/agent-chat-data";
 import { AsxRovoOverlay } from "@/components/projects/jira-golden-journeys-v0/components/jira-golden-journeys-v0-rovo-overlay";
@@ -23,6 +24,41 @@ const JIRA_ISSUE_DEMO_TAGS = [
 	{ text: "qualification", color: "blue" },
 	{ text: "enterprise", color: "discovery" },
 ] as const;
+
+const JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS = [
+	{
+		id: "andrea-wilson",
+		name: "Andrea Wilson",
+		avatarSrc: "/avatar-user/andrea-wilson/color/asow-service-yellow.png",
+		avatarShape: "circle",
+	},
+	{
+		id: "andrew-park",
+		name: "Andrew Park",
+		avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+		avatarShape: "circle",
+	},
+	{
+		id: "priya-hansra",
+		name: "Priya Hansra",
+		avatarSrc: "/avatar-user/priya-hansra/color/asow-service-yellow.png",
+		avatarShape: "circle",
+	},
+] as const;
+
+const JIRA_ISSUE_UNCAPTURED_WORK_SOURCE_LINK = {
+	id: "payments-migration-channel",
+	href: "#payments-migration",
+	title: "#payments-migration",
+	variant: "generic",
+	provider: { name: "Slack", logo: { kind: "third-party", name: "slack" } },
+	icon: { kind: "third-party", name: "slack" },
+	description: "The decision itself is not written down.",
+	avatars: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS.map((participant) => ({
+		name: participant.name,
+		src: participant.avatarSrc,
+	})),
+} as const satisfies SmartLinkItem;
 
 const JIRA_ISSUE_DEMO_SUBTASKS = [
 	{
@@ -148,11 +184,14 @@ const JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES = [
 ] as const satisfies readonly { value: JiraIssueAgentActivityDemoState; label: string }[];
 
 interface JiraIssuePageProps {
-	variant?: "default" | "subtasks-collapsed" | "subtasks-expanded" | "parent-epic" | "agent-activity-states";
+	variant?: "default" | "experimental" | "uncaptured-work" | "subtasks-collapsed" | "subtasks-expanded" | "parent-epic" | "agent-activity-states";
 }
 
 export default function JiraIssuePage({ variant = "default" }: Readonly<JiraIssuePageProps> = {}): React.ReactElement {
 	const [selectedEpicId, setSelectedEpicId] = useState("agentic-jira");
+	const [uncapturedWorkCaptured, setUncapturedWorkCaptured] = useState(false);
+	const isExperimentalVariant = variant === "experimental";
+	const isUncapturedWorkVariant = variant === "uncaptured-work";
 	const isSubtasksVariant = variant === "subtasks-collapsed" || variant === "subtasks-expanded";
 	const isParentEpicVariant = variant === "parent-epic";
 	const isAgentActivityVariant = variant === "agent-activity-states";
@@ -172,11 +211,28 @@ export default function JiraIssuePage({ variant = "default" }: Readonly<JiraIssu
 		);
 	}
 
+	if (isUncapturedWorkVariant) {
+		return (
+			<div className="flex h-full min-h-[360px] w-full items-center justify-center bg-surface p-6">
+				<JiraIssue
+					captured={uncapturedWorkCaptured}
+					className="w-[320px]"
+					onCreateWorkItem={() => setUncapturedWorkCaptured(true)}
+					participants={JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS}
+					sourceLink={JIRA_ISSUE_UNCAPTURED_WORK_SOURCE_LINK}
+					summary="The adapter keep-or-delete argument"
+					variant="uncaptured-work"
+				/>
+			</div>
+		);
+	}
+
 	return (
 		<div className="flex h-full min-h-[360px] w-full items-center justify-center bg-surface p-6">
 			<JiraIssue
 				assigneeAvatarSrc="/avatar-user/andrea-wilson/color/asow-service-yellow.png"
 				assigneeUnassignedKind={hasCompactIssueContext ? "person" : undefined}
+				chrome={isExperimentalVariant ? "stroke" : undefined}
 				className="w-[320px]"
 				defaultSubtasksExpanded={variant === "subtasks-expanded"}
 				issueKey={issueKey}
@@ -336,8 +392,11 @@ export type {
 	JiraIssueAgentActivity,
 	JiraIssueAgentActivityMode,
 	JiraIssueAgentActivityState,
+	JiraIssueParticipant,
 	JiraIssuePriority,
 	JiraIssueProps,
 	JiraIssueSubtask,
 	JiraIssueTag,
+	JiraIssueUncapturedWorkProps,
+	JiraIssueVariant,
 } from "@/components/blocks/jira-issue";

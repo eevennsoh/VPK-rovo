@@ -58,8 +58,8 @@ test("Pulse scrubber draws the outline it is handed and derives no geometry of i
 test("Pulse scrubber never lets the current position override a member's absence", async () => {
 	const { toMarkLabel, toMarkState } = await loadScrubberHarness();
 	const snapshot = { chapterLabel: "Night shift", dateLabel: "Wed 19 Aug", timeLabel: "02:30" };
-	const insight = { id: "pulse-s4", kind: "insight", label: "Night shift", offset: 0.5, snapshotIndex: 3 };
-	const section = { id: "pulse-s4-attention", kind: "section", label: "Night shift — Needs attention", offset: 0.58, snapshotIndex: 3 };
+	const insight = { heading: "Night shift", id: "pulse-s4", kind: "insight", label: "Night shift", offset: 0.5, snapshotIndex: 3 };
+	const section = { heading: "Needs attention", id: "pulse-s4-attention", kind: "section", label: "Night shift — Needs attention", offset: 0.58, snapshotIndex: 3 };
 
 	// The bug this guards: reading into a window the filtered member sat out used
 	// to make that absent mark the darkest one on the whole ruler.
@@ -86,18 +86,70 @@ test("Pulse scrubber never lets the current position override a member's absence
 	assert.equal(toMarkLabel(insight, undefined, false, null), "Insight: Night shift");
 });
 
-test("Pulse scrubber pill carries the weekday and the clock inside its 88px column", async () => {
-	const { toWeekdayLabel } = await loadScrubberHarness();
+test("Pulse scrubber slides one pill through insight and section headings", async () => {
+	const { toMarkHint, toWeekdayLabel } = await loadScrubberHarness();
+	const { buildPulseOutline, toRulerHeading } = await loadOutlineHarness();
+	const { PULSE_TIMELINE } = await loadTimelineHarness();
+	const outline = buildPulseOutline(PULSE_TIMELINE);
+	const kickoff = outline.filter((entry) => entry.snapshotIndex === 0);
 
-	// The full date stays in every mark's accessible name; the pill only has room
-	// for the weekday, and it must not truncate mid-word to get it.
+	// The weekday helper remains for accessible names; the pill no longer uses it.
 	assert.equal(toWeekdayLabel("Mon 17 Aug"), "Mon");
-	assert.equal(toWeekdayLabel("Wed 19 Aug"), "Wed");
-	assert.equal(toWeekdayLabel("Mon"), "Mon");
-	assert.equal(toWeekdayLabel(""), "");
-	// The stacked ruler has the width for the whole date, so it does not use it.
-	assert.match(SOURCES.scrubber, /\$\{toWeekdayLabel\(activeSnapshot\.dateLabel\)\} \$\{activeSnapshot\.timeLabel\}/u);
-	assert.match(SOURCES.scrubber, /\$\{activeSnapshot\.dateLabel\} · \$\{activeSnapshot\.timeLabel\}/u);
+	assert.deepEqual(kickoff.map((entry) => toRulerHeading(entry)), [
+		"Kickoff",
+		"Artifacts",
+		"Needs attention",
+		"Next best actions",
+	]);
+	assert.equal(toMarkHint(kickoff[0], kickoff[0].id), null, "the sliding pill already names Kickoff");
+	assert.equal(toMarkHint(kickoff[1], kickoff[0].id), null, "child ticks stay unlabeled");
+	assert.equal(toMarkHint(kickoff[2], kickoff[0].id), null);
+	assert.equal(toMarkHint(kickoff[3], kickoff[0].id), null);
+	assert.equal(toMarkHint(kickoff[1], kickoff[1].id), null, "the active section is the pill, not a tick label");
+	assert.equal(toMarkHint(kickoff[0], kickoff[1].id), "Kickoff", "inactive insights may reveal their name on hover");
+
+	assert.match(SOURCES.scrubber, /toRulerHeading\(activeEntry\)/u);
+	assert.match(SOURCES.scrubber, /toMarkHint\(entry, activeEntry\?\.id \?\? null\)/u);
+	assert.match(SOURCES.scrubber, /top: `\$\{activeEntry\.offset \* 100\}%`/u);
+	assert.match(
+		SOURCES.scrubber,
+		/const PILL = "bg-bg-neutral-bold text-text-inverse inline-flex items-center rounded-full/u,
+	);
+	assert.doesNotMatch(SOURCES.scrubber, /bg-primary|text-primary-foreground/u);
+	assert.doesNotMatch(SOURCES.scrubber, /toWeekdayLabel\(activeSnapshot|activeSnapshot\.timeLabel/u);
+	assert.doesNotMatch(SOURCES.scrubber, /hintAlways/u);
+});
+
+test("Pulse ruler preview dims every article section except its matching anchor", async () => {
+	const { isPulseSectionDimmed } = await loadScrubberHarness();
+	const artifactsId = "pulse-s1-kickoff-artifacts";
+
+	assert.equal(isPulseSectionDimmed(null, artifactsId), false, "idle leaves the reading-position opacity in charge");
+	assert.equal(isPulseSectionDimmed(artifactsId, artifactsId), false, "the matching section stays at full opacity");
+	assert.equal(isPulseSectionDimmed(artifactsId, "pulse-s1-kickoff"), true, "the intro recedes");
+	assert.equal(isPulseSectionDimmed(artifactsId, "pulse-s1-kickoff-attention"), true, "a sibling section recedes");
+	assert.equal(isPulseSectionDimmed(artifactsId, "pulse-s2-first-cut"), true, "sections in other insights recede");
+
+	assert.match(SOURCES.scrubber, /onHoveredEntryChange\(hoveredEntryId\)/u);
+	assert.match(SOURCES.scrubber, /onFocus=\{\(\) => onFocusChange\(entry\.id\)\}/u);
+	assert.match(SOURCES.shell, /const previewEntryId = focusedEntryId \?\? hoveredEntryId;/u);
+	assert.match(SOURCES.stream, /previewEntryId=\{previewEntry\?\.id \?\? null\}/u);
+	assert.match(SOURCES.story, /const SECTION_DIMMED = "opacity-\(--opacity-disabled\)";/u);
+});
+
+test("Pulse vertical scrubber limits pointer capture to a 24px tick strip", () => {
+	const verticalScrubber = SOURCES.scrubber.slice(
+		SOURCES.scrubber.indexOf("export function PulseScrubber("),
+		SOURCES.scrubber.indexOf("export function PulseScrubberCompact("),
+	);
+
+	assert.match(verticalScrubber, /className="pointer-events-none relative h-full min-h-\[24rem\] w-36"/u);
+	assert.match(verticalScrubber, /className="pointer-events-auto relative h-full w-6"/u);
+	assert.doesNotMatch(verticalScrubber, /className="[^"]*pointer-events-auto[^"]*w-36/u);
+	// Rules and labels can paint beyond the 24px button without extending its
+	// hit target into the article.
+	assert.match(SOURCES.scrubber, /className=\{axis === "y" \? "pointer-events-none absolute left-0 h-px bg-text"/u);
+	assert.match(SOURCES.scrubber, /className="pointer-events-none absolute top-1\/2 left-5/u);
 });
 
 test("Pulse keeps its keyboard and screen-reader affordances on the scrubber", () => {
@@ -194,8 +246,8 @@ test("Pulse scrubber resolves the nearest outline entry, majors and minors alike
 test("Pulse scrubber scrubs on pointer move and leaves the reading position sticky", () => {
 	// Hover is the primary gesture; click and the keyboard remain the touch and
 	// assistive paths.
-	assert.match(SOURCES.scrubber, /onPointerMove=\{shouldReduceMotion \? undefined : handlePointerMove\}/u);
-	assert.match(SOURCES.scrubber, /onPointerLeave=\{shouldReduceMotion \? undefined : handlePointerLeave\}/u);
+	assert.match(SOURCES.scrubber, /onPointerMove=\{handlePointerMove\}/u);
+	assert.match(SOURCES.scrubber, /onPointerLeave=\{handlePointerLeave\}/u);
 	assert.match(SOURCES.scrubber, /onSelect=\{\(\) => moveTo\(index\)\}/u);
 	assert.match(SOURCES.scrubber, /onClick=\{onSelect\}/u);
 	// A finger sliding down the rail is a page scroll, not a scrub.
@@ -204,6 +256,9 @@ test("Pulse scrubber scrubs on pointer move and leaves the reading position stic
 	// comparison is against the entry index now, not a snapshot index: a sweep
 	// across one insight's sections has to move the reader.
 	assert.match(SOURCES.scrubber, /if \(nearest !== null && nearest !== activeEntryIndex\) \{/u);
+	// Reduced motion keeps the hover preview but skips ruler swell and
+	// hover-driven scrolling.
+	assert.match(SOURCES.scrubber, /onHoveredEntryChange\(hoveredEntryId\);[\s\S]*if \(shouldReduceMotion\) \{\s*return;/u);
 	// Leaving fades the swell but must not rewind the article. Scope the check to
 	// the function body: `handlePointerLeave` is also named in the hook's return
 	// object, a few characters from unrelated wiring.

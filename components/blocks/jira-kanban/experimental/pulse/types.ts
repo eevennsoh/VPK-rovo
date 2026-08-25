@@ -40,6 +40,8 @@ export interface PulseWorkItem {
 	status: string;
 	/** Everyone — human or agent — who moved this item. */
 	memberIds: readonly string[];
+	/** Roster id of the current assignee — look up `kind` for avatar shape. */
+	assigneeId?: string;
 	assigneeAvatarSrc?: string;
 	assigneeName?: string;
 }
@@ -54,11 +56,11 @@ export interface PulseLooseWork {
 	title: string;
 	/** Where it lives, e.g. "GitHub" / "Slack" / "Loom" / "Confluence". */
 	source: string;
+	/** Compact destination label shown in the hoverable Smart Link trigger. */
+	sourceTitle: string;
 	/** Supporting line, e.g. "PR #1847 · no linked work item". */
 	detail: string;
 	memberIds: readonly string[];
-	/** The one-click remedy, e.g. "Link to PAY-118". */
-	suggestedAction?: string;
 }
 
 export type PulseSignalTone = "attention" | "risk" | "decision" | "shipped";
@@ -115,7 +117,7 @@ export interface PulseSnapshot {
 	rangeLabel: string;
 	/** Display headline. Keep it a sentence a human would actually say. */
 	title: string;
-	/** Narrative body. 2–3 paragraphs, plain prose, no bullet lists. */
+	/** Narrative body. One paragraph, plain prose, no bullet lists. */
 	paragraphs: readonly string[];
 	artifacts: readonly ArtifactListItem[];
 	workItemKeys: readonly string[];
