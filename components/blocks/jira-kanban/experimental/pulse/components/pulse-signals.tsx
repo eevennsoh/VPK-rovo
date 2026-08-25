@@ -3,6 +3,7 @@
 import { useId, useState, type ReactNode } from "react";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 
+import { AgentList } from "@/components/blocks/agent-list";
 import {
 	PULSE_ITEM_BODY,
 	PULSE_ITEM_TITLE,
@@ -11,42 +12,27 @@ import {
 	PULSE_ROW_KEY_TRACK,
 	PULSE_SECTION_LABEL,
 } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-type";
+import { toPulseAttentionItems } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-attention";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
 import { cn } from "@/lib/utils";
 import type {
 	PulseAction,
+	PulseMember,
 	PulseSignal,
-	PulseSignalTone,
 } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 
 /**
  * Pulse signals — the two reading sections that close a snapshot: what needs a
  * human right now, and what that human can do about it without leaving Jira.
  *
- * Both sections use one row shape: a title and its reason on the left, the work
- * item key in a reserved centre track, and the trailing control in a reserved
- * right track. Every row therefore hangs off the same two edges, and the
- * sections read as one list rather than two rhythms. Tone is carried by a
- * single small lozenge in the trailing track, never by a filled alert surface.
+ * They are deliberately not the same list. "Needs attention" is a list of
+ * *people and agents* — an agent that stopped and is waiting, a teammate who
+ * @mentioned you — so it is the shared `agent-list` block, identity first.
+ * "Next best actions" is a list of *things to do*, so it keeps the row shape
+ * this file owns: a title and its rationale on the left, the work item key in a
+ * reserved centre track, and the trailing control in a reserved right track.
  */
-
-type SignalToneVariant = NonNullable<LozengeProps["variant"]>;
-
-const SIGNAL_TONE_LABEL: Record<PulseSignalTone, string> = {
-	attention: "Attention",
-	risk: "Risk",
-	decision: "Decision",
-	shipped: "Shipped",
-};
-
-const SIGNAL_TONE_VARIANT: Record<PulseSignalTone, SignalToneVariant> = {
-	attention: "warning",
-	risk: "danger",
-	decision: "discovery",
-	shipped: "success",
-};
 
 export interface PulseSectionLabelProps {
 	children: string;
@@ -67,7 +53,7 @@ export function PulseSectionLabel({ children, id, className }: Readonly<PulseSec
 	);
 }
 
-/** One row of either section: title + reason, reserved key track, reserved action track. */
+/** One row of the actions section: title + rationale, reserved key track, reserved action track. */
 function PulseSignalRow({
 	detail,
 	title,
@@ -95,38 +81,43 @@ function PulseSectionNote({ children }: Readonly<{ children: ReactNode }>) {
 
 export interface PulseAttentionProps {
 	signals: readonly PulseSignal[];
+	/** The window's roster, used to put a face on every signal. */
+	members: readonly PulseMember[];
+	/** The window's own stamp, e.g. `"Tue 18 Aug 11:05"`. */
+	timeLabel: string;
 	className?: string;
 	/** Rendered in place of the list when scoping has emptied it. */
 	emptyNote?: string;
 }
 
-/** "Needs attention" — the signals a reader must not scroll past. */
-export function PulseAttention({ signals, className, emptyNote }: Readonly<PulseAttentionProps>) {
+/**
+ * "Needs attention" — the agents and people a reader must not scroll past.
+ *
+ * Rendered through the shared agent-list block so an agent waiting on an answer
+ * and a teammate who @mentioned you sit in one list, told apart by their
+ * avatars (hexagon versus circle) rather than by a label. The rows are
+ * flyout-free: half of them are comments, which have no agent session to
+ * preview.
+ */
+export function PulseAttention({
+	signals,
+	members,
+	timeLabel,
+	className,
+	emptyNote,
+}: Readonly<PulseAttentionProps>) {
 	const labelId = `${useId()}-pulse-attention`;
+	const items = toPulseAttentionItems(signals, members, timeLabel);
 
-	if (signals.length === 0 && emptyNote === undefined) return null;
+	if (items.length === 0 && emptyNote === undefined) return null;
 
 	return (
 		<section aria-labelledby={labelId} className={cn("min-w-0", className)}>
 			<PulseSectionLabel id={labelId}>Needs attention</PulseSectionLabel>
-			{signals.length === 0 ? (
+			{items.length === 0 ? (
 				<PulseSectionNote>{emptyNote}</PulseSectionNote>
 			) : (
-				<ul className="mt-3 flex flex-col">
-					{signals.map((signal) => (
-						<PulseSignalRow
-							detail={signal.detail}
-							key={signal.id}
-							title={signal.title}
-							trailing={
-								<Lozenge variant={SIGNAL_TONE_VARIANT[signal.tone]}>
-									{SIGNAL_TONE_LABEL[signal.tone]}
-								</Lozenge>
-							}
-							workItemKey={signal.workItemKey}
-						/>
-					))}
-				</ul>
+				<AgentList className="mt-3" flyout="none" items={items} />
 			)}
 		</section>
 	);

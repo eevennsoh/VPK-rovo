@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 
-import { useRovoChat } from "@/app/contexts";
+import { useOptionalRovoChat } from "@/app/contexts";
 import {
 	JiraSessionFlyoutSurface,
 	createJiraSessionFlyoutHandle,
@@ -26,16 +26,19 @@ export function AgentList({
 	onView,
 	selectedItemId,
 }: Readonly<AgentListProps>) {
-	const { openChat, sendPrompt } = useRovoChat();
+	// Optional: the composer variant is the only branch that sends a prompt, so
+	// a list of comments and @mentions on a route with no chat runtime must
+	// still render rather than throw on a capability it never uses.
+	const chat = useOptionalRovoChat();
 	const handleFlyoutSubmit = useCallback((item: AgentListItem, prompt: string) => {
 		if (onSubmitPrompt) {
 			void onSubmitPrompt(item, prompt);
 			return;
 		}
 
-		openChat(composerChatSurface);
-		void sendPrompt(prompt);
-	}, [composerChatSurface, onSubmitPrompt, openChat, sendPrompt]);
+		chat?.openChat(composerChatSurface);
+		void chat?.sendPrompt(prompt);
+	}, [chat, composerChatSurface, onSubmitPrompt]);
 	// One payload-aware flyout for the whole list: the popup stays mounted and
 	// follows the hovered row, so sliding down the list crossfades instead of
 	// tearing down and remounting a card per row. Unused by the composer variant,
@@ -78,6 +81,7 @@ export {
 	toAgentSessionStatus,
 } from "./agent-list-session";
 export type {
+	AgentListActorKind,
 	AgentListAgent,
 	AgentListFlyout,
 	AgentListInvoker,

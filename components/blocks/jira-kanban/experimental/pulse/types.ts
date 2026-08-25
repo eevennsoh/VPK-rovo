@@ -65,10 +65,20 @@ export interface PulseLooseWork {
 
 export type PulseSignalTone = "attention" | "risk" | "decision" | "shipped";
 
-/** Something the reader must know about right now. */
+/**
+ * Something the reader must know about right now.
+ *
+ * Every signal is attributed: an agent that has stopped and is waiting on a
+ * human, or a teammate who commented or @mentioned the reader. `memberId` is
+ * the roster identity behind the row, and must name a member the snapshot lists
+ * as active — a signal from somebody who was not in the window is not something
+ * the window can show.
+ */
 export interface PulseSignal {
 	id: string;
 	tone: PulseSignalTone;
+	/** Roster member the signal comes from — drives the attention row's identity. */
+	memberId: string;
 	title: string;
 	detail: string;
 	workItemKey?: string;

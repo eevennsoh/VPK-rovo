@@ -5,6 +5,7 @@ import { useState, type ReactNode } from "react";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import StatusInformationIcon from "@atlaskit/icon/core/status-information";
+import StatusWarningIcon from "@atlaskit/icon/core/status-warning";
 
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AnimatedDots } from "@/components/ui-custom/animated-dots";
@@ -18,7 +19,7 @@ import {
 	type JiraSessionFlyoutHandle,
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import { Shimmer } from "@/components/ui-custom/shimmer";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage, type AvatarProps } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ElapsedTime, RelativeTime } from "@/components/ui/elapsed-time";
 import {
@@ -37,6 +38,7 @@ import { cn } from "@/lib/utils";
 
 import { toAgentSessionFlyoutItem } from "./agent-list-session";
 import type {
+	AgentListAgent,
 	AgentListFlyout,
 	AgentListInvoker,
 	AgentListItem,
@@ -49,7 +51,9 @@ import type {
  * State → title-line + lifecycle treatment. `running` shows a solid title with a
  * trailing pixel loader; `needs-input` swaps the title for "Needs input"
  * (see {@link getSessionTitle}), adds animated dots, and shows a trailing info
- * icon; `complete` shows a solid title with no lifecycle indicator.
+ * icon; `attention` keeps the row's own title — it is already the news — and
+ * shows a trailing warning icon; `complete` shows a solid title with no
+ * lifecycle indicator.
  *
  * Activity headers that lead with the agent name move the needs-input treatment
  * onto the metadata status ("Needs input" + shimmer + dots) instead of trailing
@@ -75,6 +79,11 @@ const STATE_META: Record<
 	"needs-input": {
 		shimmerTitle: true,
 		showDots: true,
+		showLifecycle: true,
+	},
+	attention: {
+		shimmerTitle: false,
+		showDots: false,
 		showLifecycle: true,
 	},
 	complete: {
@@ -115,7 +124,7 @@ function MetadataDot() {
 	);
 }
 
-function invokerInitials(name: string): string {
+function actorInitials(name: string): string {
 	return (
 		name
 			.split(" ")
@@ -123,6 +132,48 @@ function invokerInitials(name: string): string {
 			.slice(0, 2)
 			.map((word) => word[0]?.toUpperCase())
 			.join("") || "?"
+	);
+}
+
+/** The two leading-avatar footprints the row uses, as Avatar size tokens. */
+const PX_TO_PERSON_AVATAR_SIZE: Record<number, NonNullable<AvatarProps["size"]>> = {
+	24: "sm",
+	32: "default",
+};
+
+/**
+ * The row's leading identity. Agents keep the shared hexagon agent visual;
+ * people get the circular photo avatar the rest of Jira uses, so a mixed list —
+ * agents waiting on an answer beside teammates who @mentioned you — is
+ * separable at a glance without reading a word.
+ */
+function AgentListIdentity({
+	agent,
+	className,
+	sizePx,
+}: Readonly<{ agent: AgentListAgent; className?: string; sizePx: number }>) {
+	if (agent.kind === "person") {
+		return (
+			<Avatar
+				className={className}
+				label={agent.name}
+				size={PX_TO_PERSON_AVATAR_SIZE[sizePx] ?? "default"}
+			>
+				{agent.avatarSrc ? <AvatarImage alt="" src={agent.avatarSrc} /> : null}
+				<AvatarFallback>{actorInitials(agent.name)}</AvatarFallback>
+			</Avatar>
+		);
+	}
+
+	return (
+		<AgentAvatarVisual
+			avatarClassName={className}
+			avatarSrc={agent.avatarSrc}
+			brandName={agent.brandName}
+			label={agent.name}
+			sizePx={sizePx}
+			vpkLogo={agent.vpkLogo}
+		/>
 	);
 }
 
@@ -138,7 +189,7 @@ function InvokerBy({ invoker }: Readonly<{ invoker: AgentListInvoker }>) {
 							{invoker.avatarSrc ? (
 								<AvatarImage alt="" src={invoker.avatarSrc} />
 							) : null}
-							<AvatarFallback>{invokerInitials(invoker.name)}</AvatarFallback>
+							<AvatarFallback>{actorInitials(invoker.name)}</AvatarFallback>
 						</Avatar>
 					</TooltipTrigger>
 					<TooltipContent>{invoker.name}</TooltipContent>
@@ -166,6 +217,7 @@ function getAgentStatesState(state: AgentListState): AgentStatesState {
 		case "running":
 			return "working";
 		case "needs-input":
+		case "attention":
 			return "awaiting-input";
 		case "complete":
 			return "completed";
@@ -174,8 +226,9 @@ function getAgentStatesState(state: AgentListState): AgentStatesState {
 
 /**
  * Trailing per-state lifecycle indicator: `running` shows the pixel loader,
- * `needs-input` an information icon, `complete` nothing. Each indicator keeps a
- * 24×24 trailing slot with a 12px visual footprint.
+ * `needs-input` an information icon, `attention` a warning icon, `complete`
+ * nothing. Each indicator keeps a 24×24 trailing slot with a 12px visual
+ * footprint.
  */
 function LifecycleIndicator({
 	state,
@@ -211,11 +264,32 @@ function LifecycleIndicator({
 					variant="transparent"
 				/>
 			);
+		case "attention":
+			return (
+				<IconTile
+					icon={
+						<span className="grid place-items-center leading-none text-icon-warning">
+							<StatusWarningIcon color="currentColor" label="" size="small" />
+						</span>
+					}
+					iconSize="small"
+					label="Needs attention"
+					size="small"
+					title="Needs attention"
+					variant="transparent"
+				/>
+			);
 		case "complete":
 			return null;
 	}
 }
 
+/**
+ * The row's time. A pre-formatted `timeLabel` wins outright — a historical row
+ * states when something happened, and aging it once a second would both lie and
+ * cost an interval per row. Otherwise only genuinely live states count up;
+ * everything settled reads as a relative timestamp.
+ */
 function AgentListTime({
 	item,
 	fallback = "Just now",
@@ -227,15 +301,31 @@ function AgentListTime({
 		() => Date.now() - Math.max(0, item.elapsedSeconds ?? 0) * 1000,
 	);
 
-	return item.state === "complete" ? (
+	if (item.timeLabel !== undefined) {
+		return <span>{item.timeLabel}</span>;
+	}
+
+	const isLive = item.state === "running" || item.state === "needs-input";
+
+	return isLive ? (
+		<ElapsedTime startedAtMs={item.startedAtMs ?? seededStartedAtMs} />
+	) : (
 		<RelativeTime
 			fallback={fallback}
 			secondsAgo={item.completedSecondsAgo}
 			timestampMs={item.completedAtMs}
 		/>
-	) : (
-		<ElapsedTime startedAtMs={item.startedAtMs ?? seededStartedAtMs} />
 	);
+}
+
+/**
+ * Tooltip for the row's time slot. Only genuinely live states are counting up;
+ * everything else is stating when the row last changed.
+ */
+function timeSlotTitle(item: AgentListItem): string {
+	return item.state === "running" || item.state === "needs-input"
+		? "Agent runtime"
+		: "Last update";
 }
 
 export function AgentListActivityHeader({
@@ -265,11 +355,11 @@ export function AgentListActivityHeader({
 	const PrIcon = prMeta?.Icon ?? null;
 	const title = leadWithAgentName ? item.agent.name : getSessionTitle(item);
 	const needsInput = item.state === "needs-input";
-	const activityTimeTitle = item.state === "complete"
-		? "Last update"
+	const activityTimeTitle = item.state === "running"
+		? "Agent runtime"
 		: needsInput
 			? NEEDS_INPUT_STATUS_LABEL
-			: "Agent runtime";
+			: "Last update";
 	const hasTrailingActions = Boolean(onView || action);
 	// When the title already leads with the agent name, keep dots off that line —
 	// the needs-input status in metadata owns the Rovo animated-dots indicator.
@@ -295,13 +385,10 @@ export function AgentListActivityHeader({
 			)}
 		>
 			{hideAvatar ? null : (
-				<AgentAvatarVisual
-					avatarClassName="shrink-0"
-					avatarSrc={item.agent.avatarSrc}
-					brandName={item.agent.brandName}
-					label={item.agent.name}
+				<AgentListIdentity
+					agent={item.agent}
+					className="shrink-0"
 					sizePx={32}
-					vpkLogo={item.agent.vpkLogo}
 				/>
 			)}
 			<div className="min-w-0 flex-1 overflow-hidden">
@@ -414,18 +501,55 @@ export function AgentListActivityHeader({
 	);
 }
 
+/**
+ * The row's title/metadata column: a button when the consumer gave it somewhere
+ * to go, a plain box otherwise. Keeping the choice here means the two branches
+ * cannot drift in layout, and a read-only list adds nothing to the tab order.
+ */
+function RowBody({
+	children,
+	className,
+	isSelected,
+	onView,
+}: Readonly<{
+	children: ReactNode;
+	className: string;
+	isSelected: boolean;
+	onView?: () => void;
+}>) {
+	if (onView === undefined) {
+		return <div className={className}>{children}</div>;
+	}
+
+	return (
+		<button
+			aria-pressed={isSelected}
+			className={className}
+			onClick={onView}
+			type="button"
+		>
+			{children}
+		</button>
+	);
+}
+
+/**
+ * The hover/focus-revealed View control. Only rendered when there is somewhere
+ * to go: a row in a list with no `onView` would otherwise reveal a button that
+ * does nothing, which is worse than no button.
+ */
 function CardActions({
 	item,
 	onView,
 }: Readonly<{
 	item: AgentListItem;
-	onView?: (item: AgentListItem) => void;
+	onView: (item: AgentListItem) => void;
 }>) {
 	return (
 		<div
 			className="ml-3 hidden shrink-0 items-center group-hover/agent-row:flex group-has-[:focus-visible]/agent-row:flex"
 		>
-			<Button onClick={() => onView?.(item)} size="compact" variant="outline">
+			<Button onClick={() => onView(item)} size="compact" variant="outline">
 				View
 			</Button>
 		</div>
@@ -460,28 +584,47 @@ function AgentListRow({
 	const stateMeta = STATE_META[item.state];
 	const prMeta = item.prStatus ? PR_STATUS_META[item.prStatus] : null;
 	const PrIcon = prMeta?.Icon ?? null;
+	// A session row is one line tall by contract, so its title truncates. A row
+	// with a reason is already a paragraph — truncating its title there hides the
+	// one line that says what happened.
+	const hasSummary = Boolean(item.summary);
 	const titleClassName = cn(
-		"min-w-0 truncate font-medium",
+		"min-w-0 font-medium",
+		hasSummary ? "text-pretty" : "truncate",
 		isCompact ? "text-xs" : "text-sm",
 	);
 
 	return (
-		<div className="flex min-w-0 items-center gap-0">
-			<AgentAvatarVisual
-				avatarClassName="mr-3 shrink-0"
-				avatarSrc={item.agent.avatarSrc}
-				brandName={item.agent.brandName}
-				label={item.agent.name}
+		<div
+			className={cn(
+				"flex min-w-0 gap-0",
+				// A summary makes the row three lines tall; the identity and the
+				// trailing controls then belong beside the title, not floating in the
+				// middle of a paragraph.
+				hasSummary ? "items-start" : "items-center",
+			)}
+		>
+			<AgentListIdentity
+				agent={item.agent}
+				className={cn("mr-3 shrink-0", hasSummary ? "mt-0.5" : null)}
 				sizePx={isCompact ? 24 : 32}
-				vpkLogo={item.agent.vpkLogo}
 			/>
-			<button
-				aria-pressed={isSelected}
+			{/*
+			 * The body is only a button when there is somewhere to go. A list
+			 * without `onView` — a read-out of comments and @mentions, say — would
+			 * otherwise put one focusable no-op in the tab order per row.
+			 */}
+			<RowBody
 				className="flex min-w-0 flex-1 flex-col items-start justify-center rounded-xs text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-				onClick={() => onView?.(item)}
-				type="button"
+				isSelected={isSelected}
+				onView={onView === undefined ? undefined : () => onView(item)}
 			>
-				<span className="flex w-full min-w-0 items-center gap-0 overflow-hidden">
+				<span
+					className={cn(
+						"flex w-full min-w-0 items-center gap-0",
+						hasSummary ? null : "overflow-hidden",
+					)}
+				>
 					{stateMeta.shimmerTitle ? (
 						<Shimmer
 							as="span"
@@ -498,8 +641,33 @@ function AgentListRow({
 					)}
 					{stateMeta.showDots ? <AnimatedDots /> : null}
 				</span>
-				<span className="flex w-full min-w-0 items-center gap-1 overflow-hidden text-xs text-text-subtlest">
-					<span className="shrink-0" title={item.state === "complete" ? "Last update" : "Agent runtime"}>
+				{/* Wraps rather than truncates: this line carries the reason, and a
+				    reason cut off at one line is not a reason. */}
+				{item.summary ? (
+					<span
+						className={cn(
+							"mt-0.5 w-full min-w-0 text-pretty text-text-subtle",
+							isCompact ? "text-xs leading-4" : "text-sm leading-5",
+						)}
+					>
+						{item.summary}
+					</span>
+				) : null}
+				{/* Same reason the title wraps: a three-line row has no single-line
+				    budget to defend, so the metadata wraps instead of losing its tail. */}
+				<span
+					className={cn(
+						"flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest",
+						hasSummary ? "mt-1 flex-wrap" : "overflow-hidden",
+					)}
+				>
+					{item.metadataPrefix ? (
+						<>
+							<span className="shrink-0">{item.metadataPrefix}</span>
+							<MetadataDot />
+						</>
+					) : null}
+					<span className="shrink-0" title={timeSlotTitle(item)}>
 						<AgentListTime item={item} />
 					</span>
 					<MetadataDot />
@@ -521,7 +689,7 @@ function AgentListRow({
 						</>
 					) : null}
 				</span>
-			</button>
+			</RowBody>
 			{stateMeta.showLifecycle ? (
 				<span
 					className={cn(
@@ -533,7 +701,7 @@ function AgentListRow({
 					<LifecycleIndicator state={item.state} />
 				</span>
 			) : null}
-			{isSelected ? null : (
+			{isSelected || onView === undefined ? null : (
 				<CardActions
 					item={item}
 					onView={onView}
@@ -572,6 +740,20 @@ export function AgentListCard({
 			onView={onView}
 		/>
 	);
+
+	// Rows that are not agent sessions — a teammate's comment, an @mention —
+	// have no session to preview, so they render the row and nothing else.
+	if (flyout === "none") {
+		return (
+			<li
+				aria-current={isSelected ? "true" : undefined}
+				className={rowClassName(isCompact, isSelected)}
+				data-testid={"agent-list-row-" + item.id}
+			>
+				{row}
+			</li>
+		);
+	}
 
 	// The composer variant keeps a per-row Agent States card: it owns local
 	// composer state, so it cannot share a single popup across the list the way

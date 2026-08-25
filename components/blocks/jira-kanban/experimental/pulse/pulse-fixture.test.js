@@ -153,6 +153,63 @@ test("Pulse fixture keeps the story shape the timeline mode depends on", async (
 	});
 });
 
+test("Pulse fixture attributes every attention signal to somebody in the window", async () => {
+	const { PULSE_TIMELINE } = await loadTimelineHarness();
+	const byId = new Map(PULSE_TIMELINE.members.map((member) => [member.id, member]));
+	const kinds = new Set();
+
+	PULSE_TIMELINE.snapshots.forEach((snapshot) => {
+		for (const signal of snapshot.attention) {
+			const where = `${snapshot.id}/${signal.id}`;
+			const member = byId.get(signal.memberId);
+			// "Needs attention" leads with a face, so an unattributed signal — or
+			// one from somebody who was not in the window — has no row to render.
+			assert.ok(member !== undefined, `${where} names an unknown member "${signal.memberId}"`);
+			assert.ok(
+				snapshot.memberIds.includes(signal.memberId),
+				`${where} comes from "${signal.memberId}", who the window does not list as active`,
+			);
+			kinds.add(member.kind);
+		}
+	});
+
+	// The point of the section is that both kinds are waiting on you: agents
+	// that stopped, and teammates who commented or @mentioned you.
+	assert.deepEqual([...kinds].sort(), ["agent", "human"]);
+});
+
+test("Pulse fixture surfaces both agent and human attention across the week", async () => {
+	const { PULSE_TIMELINE } = await loadTimelineHarness();
+	const byId = new Map(PULSE_TIMELINE.members.map((member) => [member.id, member]));
+	const mixed = PULSE_TIMELINE.snapshots.filter((snapshot) => {
+		const kinds = new Set(snapshot.attention.map((signal) => byId.get(signal.memberId)?.kind));
+		return kinds.has("agent") && kinds.has("human");
+	});
+
+	// Not every window can mix — the night shift is deliberately agents only —
+	// but most should, or the mixed list is a claim the fixture never makes.
+	assert.ok(
+		mixed.length >= PULSE_TIMELINE.snapshots.length - 2,
+		`only ${mixed.length} of ${PULSE_TIMELINE.snapshots.length} windows mix agent and human attention`,
+	);
+
+	const nightShift = PULSE_TIMELINE.snapshots.find((snapshot) => snapshot.id === "s4-night-shift");
+	assert.ok(
+		nightShift.attention.every((signal) => byId.get(signal.memberId).kind === "agent"),
+		"the night shift is the agents-only window; a human signal there contradicts the prose",
+	);
+
+	// At least one row must be a teammate @mentioning the reader, which is the
+	// human half of the section in its most literal form.
+	const mentions = PULSE_TIMELINE.snapshots.flatMap((snapshot) =>
+		snapshot.attention.filter((signal) => signal.detail.includes("@you")),
+	);
+	assert.ok(mentions.length >= 3, "the week should contain several unanswered @mentions");
+	for (const mention of mentions) {
+		assert.equal(byId.get(mention.memberId).kind, "human", `${mention.id} @mentions you but is not a person`);
+	}
+});
+
 test("Pulse fixture points every avatar at a file that exists", async () => {
 	const { PULSE_TIMELINE } = await loadTimelineHarness();
 	const publicDir = join(process.cwd(), "public");
