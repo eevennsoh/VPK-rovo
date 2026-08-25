@@ -29,6 +29,7 @@ import type {
 	PulseStoryProps,
 } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { ArtifactList, type ArtifactListItem } from "@/components/ui-custom/artifact-list";
+import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
 import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -68,6 +69,24 @@ export const MEASURE = "max-w-[36rem]";
 const SECTION_FOCUS_TRANSITION = "min-w-0 transition-opacity duration-normal ease-out-practical motion-reduce:transition-none";
 const SECTION_FOCUSED = "opacity-100";
 const SECTION_DIMMED = "opacity-(--opacity-disabled)";
+
+/** The fourteen connected sources the Pulse synthesis reads across. */
+const PULSE_SOURCES = [
+	{ id: "jira", label: "Jira", provider: "jira" },
+	{ id: "confluence", label: "Confluence", provider: "confluence" },
+	{ id: "github", label: "GitHub", provider: "twg", name: "github" },
+	{ id: "slack", label: "Slack", provider: "twg", name: "slack" },
+	{ id: "sentry", label: "Sentry", provider: "twg", name: "sentry" },
+	{ id: "launchdarkly", label: "LaunchDarkly", provider: "twg", name: "launchdarkly" },
+	{ id: "loom", label: "Loom", provider: "loom" },
+	{ id: "figma", label: "Figma", provider: "twg", name: "figma" },
+	{ id: "google-docs", label: "Google Docs", provider: "twg", name: "google-docs" },
+	{ id: "google-drive", label: "Google Drive", provider: "google-drive" },
+	{ id: "bitbucket", label: "Bitbucket", provider: "bitbucket" },
+	{ id: "rovo", label: "Rovo", provider: "rovo" },
+	{ id: "opsgenie", label: "Opsgenie", provider: "opsgenie" },
+	{ id: "statuspage", label: "Statuspage", provider: "statuspage" },
+] as const satisfies readonly TwgToolSource[];
 
 /** 40px → 54px display size, tracked tight the way the reference sets it. */
 const HEADLINE_STYLE = {
@@ -236,6 +255,18 @@ function PulseStoryContributors({
 					);
 				})}
 			</AvatarGroup>
+			<span aria-hidden className={cn("shrink-0", PULSE_ROW_META)}>·</span>
+			<span className={cn("shrink-0", PULSE_ROW_META)}>
+				{PULSE_SOURCES.length}<span className="sr-only"> sources from Jira, Confluence, GitHub, Slack, and 10 more</span>
+			</span>
+			<TWGAppstack
+				animated={false}
+				aria-hidden
+				className="justify-start"
+				iconSize="xxsmall"
+				maxVisible={4}
+				sources={PULSE_SOURCES}
+			/>
 		</div>
 	);
 }
