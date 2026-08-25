@@ -156,6 +156,7 @@ let scrubberHarnessPromise;
 let outlineHarnessPromise;
 let rosterMarkupHarnessPromise;
 let attentionHarnessPromise;
+let scopeHarnessPromise;
 
 /**
  * The pure signal → agent-list-row mapping behind the "Needs attention"
@@ -354,6 +355,62 @@ function findSnapshotIndex(timeline, id) {
 	return index;
 }
 
+/**
+ * Scope — the epic/sprint narrowing, its arithmetic and its figure geometry.
+ *
+ * Leaf imports only. The fixture pulls in nothing but types, and the two libs
+ * are pure functions, so this bundles in milliseconds; reaching for a component
+ * here would drag the whole demo tree and its CSS in behind it.
+ */
+function loadScopeHarness() {
+	scopeHarnessPromise ??= bundleHarness({
+		contents: `
+			export {
+				appendPulseAnswer,
+				findPulseScope,
+				PULSE_EPICS,
+				PULSE_SPRINTS,
+				toPulseAnswer,
+				toPulseScopeKey,
+				toPulseSuggestedQuestions,
+			} from "./components/blocks/jira-kanban/experimental/pulse/data/pulse-scopes";
+			export {
+				toPulseProgressModel,
+				toPulseProgressScale,
+			} from "./components/blocks/jira-kanban/experimental/pulse/lib/pulse-progress";
+			export {
+				buildPulseBurndownGeometry,
+				toPulseBurndownVerdict,
+			} from "./components/blocks/jira-kanban/experimental/pulse/lib/pulse-burndown";
+			export { scopeTimelineToWorkItemKeys } from "./components/blocks/jira-kanban/experimental/pulse/hooks/use-pulse-timeline";
+			export { PULSE_TIMELINE } from "./components/blocks/jira-kanban/experimental/pulse/data/pulse-timeline";
+		`,
+		plugins: [hookRuntimePlugin],
+		sourcefile: "pulse-scope-harness.ts",
+	});
+
+	return scopeHarnessPromise;
+}
+
+/**
+ * Executable text only.
+ *
+ * Several Pulse files name a retired mechanism, or explain why they
+ * deliberately do *not* animate, in a comment. A scan for that mechanism has to
+ * read the code and not the note recording its absence — otherwise a file whose
+ * header says "No motion." fails a motion-guard check for motion it does not
+ * have, and a header explaining which prop was deleted fails a ban on that
+ * prop.
+ *
+ * Line comments are matched only at the start of a line so a `https://` inside
+ * a string literal survives.
+ */
+function withoutComments(source) {
+	return source
+		.replaceAll(/\/\*[\s\S]*?\*\//gu, "")
+		.replaceAll(/^[ \t]*\/\/.*$/gmu, "");
+}
+
 module.exports = {
 	assert,
 	bundleHarness,
@@ -371,6 +428,7 @@ module.exports = {
 	loadAttentionHarness,
 	loadOutlineHarness,
 	loadRosterMarkupHarness,
+	loadScopeHarness,
 	loadScrubberHarness,
 	loadTimelineHarness,
 	PULSE_DIR,
@@ -379,4 +437,5 @@ module.exports = {
 	relative,
 	snapshotAt,
 	SOURCES,
+	withoutComments,
 };

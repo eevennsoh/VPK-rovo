@@ -387,3 +387,61 @@ test("Pulse only reveals its top fade while the article is moving upward", async
 	assert.equal(isPulseScrollTowardTop(9_590, 9_430), true);
 	assert.equal(isPulseScrollTowardTop(9_430, 9_430), false);
 });
+
+/* ------------------------------------------------------------------ */
+/* The lead entry — a scope brief opening the article                   */
+/* ------------------------------------------------------------------ */
+
+test("Pulse leaves the outline untouched when the article has no lead", async () => {
+	const { buildPulseOutline } = await loadOutlineHarness();
+
+	const timeline = timelineOf([snapshot("one"), snapshot("two")]);
+	assert.deepEqual(
+		buildPulseOutline(timeline, null),
+		buildPulseOutline(timeline),
+		"an absent lead must not change a single offset",
+	);
+});
+
+test("Pulse gives a scope brief a whole slice of the rail rather than the first insight's", async () => {
+	const { buildPulseOutline } = await loadOutlineHarness();
+
+	const lead = { id: "pulse-scope", heading: "Sprint 24", label: "Sprint 24 — scope" };
+	const entries = buildPulseOutline(timelineOf([snapshot("one"), snapshot("two")]), lead);
+
+	// Two marks at offset 0 stack on one pixel and only the upper one can be
+	// clicked, so the brief has to shift the insights down a slot rather than
+	// squeeze in above the first one.
+	assert.equal(entries[0].id, "pulse-scope");
+	assert.equal(entries[0].offset, 0);
+	assert.equal(entries[0].kind, "section", "the brief is not a snapshot");
+	assert.equal(entries[0].snapshotIndex, 0, "reading the brief should show the first window's work");
+
+	const insights = entries.filter((entry) => entry.kind === "insight");
+	assert.deepEqual(insights.map((entry) => entry.offset), [1 / 3, 2 / 3]);
+	assert.ok(
+		entries.every((entry) => entry.offset >= 0 && entry.offset < 1),
+		"no mark may be pinned to the very bottom of the rail",
+	);
+});
+
+test("Pulse keeps chevron navigation on insights when a lead is present", async () => {
+	const { buildPulseOutline, toPulseInsightEntries } = await loadOutlineHarness();
+
+	const lead = { id: "pulse-scope", heading: "PAY-90", label: "PAY-90 — scope" };
+	const entries = buildPulseOutline(timelineOf([snapshot("one"), snapshot("two")]), lead);
+
+	// `scrollToSnapshot` resolves `kind === "insight"`. If the brief claimed that
+	// kind, the first chevron press would land on the brief instead of insight 1.
+	assert.deepEqual(
+		toPulseInsightEntries(entries).map((entry) => entry.snapshotIndex),
+		[0, 1],
+	);
+});
+
+test("Pulse still returns an empty outline for an empty timeline, lead or not", async () => {
+	const { buildPulseOutline } = await loadOutlineHarness();
+
+	const lead = { id: "pulse-scope", heading: "Sprint 24", label: "Sprint 24 — scope" };
+	assert.deepEqual(buildPulseOutline(timelineOf([]), lead), []);
+});

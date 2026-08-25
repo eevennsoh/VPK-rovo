@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, type RefCallback } from "react";
+import { useMemo, type ReactNode, type RefCallback } from "react";
 
 import {
 	MEASURE,
@@ -156,6 +156,17 @@ export interface PulseStreamProps {
 	onGoToSnapshot: (snapshotIndex: number, options?: PulseScrollOptions) => void;
 	/** Ruler entry currently previewed by pointer or keyboard focus. */
 	previewEntry: PulseOutlineEntry | null;
+	/**
+	 * The scope brief, when the article is narrowed to an epic or a sprint, and
+	 * the answers section, once the reader has asked something.
+	 *
+	 * Both arrive as nodes rather than as scope and answer data, so the stream
+	 * stays what it is: the thing that lays insights end to end. It has no
+	 * opinion about epics, sprints or questions, and adding a third bracketing
+	 * block will not make it grow a third import.
+	 */
+	scopeBrief?: ReactNode;
+	answers?: ReactNode;
 }
 
 export function PulseStream({
@@ -168,6 +179,8 @@ export function PulseStream({
 	onRequestAction,
 	previewEntry,
 	requestedActionIds,
+	scopeBrief,
+	answers,
 }: Readonly<PulseStreamProps>) {
 	const member = useMemo(
 		() => timeline.members.find((candidate) => candidate.id === selectedMemberId) ?? null,
@@ -182,12 +195,18 @@ export function PulseStream({
 
 	return (
 		<div className={cn("mx-auto flex min-w-0 flex-col", MEASURE)}>
+			{/* The brief is the masthead, so it is exempt from the read/unread
+			    treatment: dimming the page the reader just asked for, because the
+			    reading line has not reached it yet, would be the article arguing
+			    with them. */}
+			{scopeBrief ? <div className={cn("min-w-0", MEASURE)}>{scopeBrief}</div> : null}
+
 			{entries.map((entry, index) => (
 				<div
 					className={cn(
 						"min-w-0 transition-opacity duration-medium ease-out-practical motion-reduce:transition-none",
 						MEASURE,
-						index === 0 ? null : SNAPSHOT_SEPARATOR,
+						index === 0 && scopeBrief === undefined ? null : SNAPSHOT_SEPARATOR,
 						index === activeSnapshotIndex || index === previewEntry?.snapshotIndex
 							? SNAPSHOT_READING
 							: SNAPSHOT_QUIET,
@@ -209,6 +228,8 @@ export function PulseStream({
 					/>
 				</div>
 			))}
+
+			{answers ? <div className={cn("min-w-0", MEASURE, SNAPSHOT_SEPARATOR)}>{answers}</div> : null}
 
 			{/* Scroll position is not a focus change, so the one thing that tells a
 			    screen reader the reading position moved is a single polite status

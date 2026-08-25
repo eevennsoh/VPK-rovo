@@ -148,6 +148,120 @@ export interface PulseSnapshot {
 	contributions: readonly PulseContribution[];
 }
 
+/* ------------------------------------------------------------------ */
+/* Scope — the epic or sprint the reader has narrowed the article to.   */
+/* ------------------------------------------------------------------ */
+
+export type PulseScopeKind = "epic" | "sprint";
+
+/** What the board header's Filter writes. `null` is the whole timeline. */
+export interface PulseScopeSelection {
+	kind: PulseScopeKind;
+	id: string;
+}
+
+/**
+ * The three states any body of work is in. Named by role rather than by board
+ * column so an epic's roll-up and a sprint's commitment read on one scale.
+ */
+export type PulseProgressTone = "done" | "progress" | "todo";
+
+/** One band of a progress bar, authored as a count. Percentages are derived. */
+export interface PulseProgressSegment {
+	tone: PulseProgressTone;
+	/** Reading label, e.g. "Done" / "In progress" / "Not started". */
+	label: string;
+	count: number;
+}
+
+/** A row in the epic's child list — its own name, key and progress bar. */
+export interface PulseEpicChild {
+	id: string;
+	/** Jira key rendered as the row's link text, e.g. "PAY-104". */
+	key: string;
+	name: string;
+	segments: readonly PulseProgressSegment[];
+}
+
+/** One point on the sprint burndown. `remaining: null` is the future. */
+export interface PulseBurndownPoint {
+	/** Axis label; only the first and last are painted. */
+	label: string;
+	/** Points still open at the close of this day, or null once past today. */
+	remaining: number | null;
+}
+
+export type PulseScopeChangeTone = "added" | "removed" | "modified";
+
+/** One column of the sprint's scope-change read-out. */
+export interface PulseScopeChangeEntry {
+	id: string;
+	label: string;
+	/** Signed, so the renderer never re-derives the direction. */
+	points: number;
+	workItems: number;
+	tone: PulseScopeChangeTone;
+}
+
+interface PulseScopeBase {
+	id: string;
+	/** Eyebrow key, e.g. "PAY-90" / "Sprint 24". */
+	key: string;
+	/** Display headline. */
+	name: string;
+	/** One prose line under the headline — the goal, in a human's words. */
+	goal: string;
+	/** Work items this scope owns. Drives the article's own narrowing. */
+	workItemKeys: readonly string[];
+	/** The roll-up bar. */
+	segments: readonly PulseProgressSegment[];
+}
+
+export interface PulseEpicScope extends PulseScopeBase {
+	kind: "epic";
+	/** Pre-formatted, e.g. "12 Sep 2026" — never formatted at render time. */
+	targetDate: string;
+	/** Quiet clause beside the date, e.g. "three weeks out". */
+	targetNote: string;
+	children: readonly PulseEpicChild[];
+}
+
+export interface PulseSprintScope extends PulseScopeBase {
+	kind: "sprint";
+	/** Pre-formatted window, e.g. "18 Aug – 2 Sep". */
+	rangeLabel: string;
+	daysRemaining: number;
+	/**
+	 * Three point totals that are easy to conflate and must not be.
+	 *
+	 * `committedPoints` is what the sprint opened with — it is the guideline's
+	 * origin and nothing else. `scopePoints` is what the sprint holds *now*,
+	 * after everything that came in and went out. `donePoints` is what has
+	 * burned down.
+	 *
+	 * The invariant is `donePoints + last closed remaining === scopePoints`.
+	 * Reading the sentence off `committedPoints` instead is how a brief ends up
+	 * printing "30 of 84 points done, 71 to go" — three true numbers that add
+	 * up to a lie, and the first thing a lead notices.
+	 */
+	committedPoints: number;
+	scopePoints: number;
+	donePoints: number;
+	burndown: readonly PulseBurndownPoint[];
+	/** Net signed points the sprint has gained or shed since it opened. */
+	scopeChangeNetPoints: number;
+	scopeChange: readonly PulseScopeChangeEntry[];
+}
+
+export type PulseScope = PulseEpicScope | PulseSprintScope;
+
+/** A question the reader asked the article, and what it answered. */
+export interface PulseAnswer {
+	id: string;
+	question: string;
+	answer: string;
+}
+
 export interface PulseTimeline {
 	/** Epic line, e.g. "PAY · Payments SDK v2 migration". */
 	projectLabel: string;

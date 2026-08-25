@@ -1,3 +1,4 @@
+import { PULSE_EPICS, PULSE_SPRINTS } from "../pulse/data/pulse-scopes";
 import type { BoardFilterDaysPreset, BoardFilterFieldId } from "../lib/board-filter";
 
 export interface BoardFilterOption {
@@ -13,6 +14,7 @@ export const BOARD_FILTER_FIELD_LABELS: Readonly<Record<BoardFilterFieldId, stri
 	labels: "Labels",
 	parent: "Parent",
 	project: "Atlassian Project",
+	sprint: "Sprint",
 	status: "Status",
 	"work-type": "Work type",
 };
@@ -40,12 +42,20 @@ export const BOARD_FILTER_OPTIONS: Readonly<
 		{ id: "guest-checkout", label: "guest-checkout" },
 		{ id: "ai-native-design-org", label: "ai-native-design-org" },
 	],
-	parent: [
-		{ id: "no-parent", label: "No parent" },
-		{ description: "PAY-101", id: "pay-101", label: "Delete the adapter, not wrap it" },
-		{ description: "SHOP-4821", id: "shop-4821", label: "Guest checkout for SHOP" },
-		{ description: "RAD-739", id: "rad-739", label: "DES L2.KR4: Q1 Deliverable" },
-	],
+	// Parent and Sprint are the two fields Insights actually reads. They are
+	// derived from the Pulse scope fixture rather than hand-listed, so a picker
+	// can never offer a scope the article cannot open — the failure a static
+	// option list makes invisible until someone clicks the row.
+	parent: PULSE_EPICS.map((epic) => ({
+		description: epic.key,
+		id: epic.id,
+		label: epic.name,
+	})),
+	sprint: PULSE_SPRINTS.map((sprint) => ({
+		description: sprint.key,
+		id: sprint.id,
+		label: sprint.name,
+	})),
 	project: [
 		{ id: "no-project", label: "No project" },
 		{ description: "Jira Design", id: "jira-design", label: "Jira Design" },

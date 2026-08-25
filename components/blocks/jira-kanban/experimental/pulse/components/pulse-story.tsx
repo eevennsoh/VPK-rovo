@@ -88,8 +88,14 @@ const PULSE_SOURCES = [
 	{ id: "statuspage", label: "Statuspage", provider: "statuspage" },
 ] as const satisfies readonly TwgToolSource[];
 
-/** 40px → 54px display size, tracked tight the way the reference sets it. */
-const HEADLINE_STYLE = {
+/**
+ * 40px → 54px display size, tracked tight the way the reference sets it.
+ *
+ * Exported because the scope brief opens the same article these stories
+ * continue, and its title has to sit on this exact rung. Two copies of a clamp
+ * drift the moment one of them is tuned.
+ */
+export const HEADLINE_STYLE = {
 	fontSize: "clamp(2.5rem, 0.575rem + 2.8vw, 3.375rem)",
 	fontWeight: 400,
 	letterSpacing: "-0.045em",
