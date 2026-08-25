@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, type ReactNode, type RefCallback } from "react";
+import { type ReactNode, type RefCallback } from "react";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
 
@@ -428,13 +428,11 @@ function PulseStoryArtifacts({
 	artifacts,
 	emptyNote,
 }: Readonly<{ artifacts: readonly ArtifactListItem[]; emptyNote?: string }>) {
-	const labelId = `${useId()}-pulse-artifacts`;
-
 	if (artifacts.length === 0 && emptyNote === undefined) return null;
 
 	return (
-		<section aria-labelledby={labelId} className={cn("mt-8 min-w-0", MEASURE)}>
-			<PulseSectionLabel id={labelId}>Artifacts</PulseSectionLabel>
+		<section className={cn("mt-8 min-w-0", MEASURE)}>
+			<PulseSectionLabel>Artifacts</PulseSectionLabel>
 			{artifacts.length === 0 ? (
 				<p className={cn("mt-3", PULSE_ITEM_BODY)}>{emptyNote}</p>
 			) : (
@@ -466,7 +464,6 @@ export function PulseStory({
 	anchorRef,
 	previewEntryId,
 }: Readonly<PulseStoryViewProps>) {
-	const headingId = `${useId()}-pulse-story-title`;
 	// The outline decides which parts earn a mark; the article reads the same
 	// helper so the two can never disagree about what exists.
 	const anchoredSections = new Set(toPulseSections(snapshot));
@@ -481,7 +478,7 @@ export function PulseStory({
 	const headline = member === null ? snapshot.title : member.name;
 
 	return (
-		<section aria-labelledby={headingId} className="flex min-w-0 flex-col">
+		<section className="flex min-w-0 flex-col">
 			{/* The insight intro — head plus prose — is one ruler block. A jump
 			    lands on its naming line while preview keeps the whole intro together. */}
 			<div
@@ -510,7 +507,7 @@ export function PulseStory({
 					/>
 				</div>
 
-				<h2 className={cn("mt-3 text-pretty text-text", MEASURE)} id={headingId} style={HEADLINE_STYLE}>
+				<h2 className={cn("mt-3 text-pretty text-text", MEASURE)} style={HEADLINE_STYLE}>
 					{headline}
 				</h2>
 

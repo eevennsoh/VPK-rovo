@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 
 import {
@@ -102,13 +102,11 @@ export interface PulseAttentionProps {
 
 /** "Needs attention" — the signals a reader must not scroll past. */
 export function PulseAttention({ signals, className, emptyNote }: Readonly<PulseAttentionProps>) {
-	const labelId = `${useId()}-pulse-attention`;
-
 	if (signals.length === 0 && emptyNote === undefined) return null;
 
 	return (
-		<section aria-labelledby={labelId} className={cn("min-w-0", className)}>
-			<PulseSectionLabel id={labelId}>Needs attention</PulseSectionLabel>
+		<section className={cn("min-w-0", className)}>
+			<PulseSectionLabel>Needs attention</PulseSectionLabel>
 			{signals.length === 0 ? (
 				<PulseSectionNote>{emptyNote}</PulseSectionNote>
 			) : (
@@ -195,7 +193,6 @@ export function PulseNextActions({
 	className,
 	emptyNote,
 }: Readonly<PulseNextActionsProps>) {
-	const labelId = `${useId()}-pulse-next-actions`;
 	const [statusMessage, setStatusMessage] = useState("");
 
 	const handleRequest = (action: PulseAction) => {
@@ -206,8 +203,8 @@ export function PulseNextActions({
 	if (actions.length === 0 && emptyNote === undefined) return null;
 
 	return (
-		<section aria-labelledby={labelId} className={cn("min-w-0", className)}>
-			<PulseSectionLabel id={labelId}>Next best actions</PulseSectionLabel>
+		<section className={cn("min-w-0", className)}>
+			<PulseSectionLabel>Next best actions</PulseSectionLabel>
 			{actions.length === 0 ? (
 				<PulseSectionNote>{emptyNote}</PulseSectionNote>
 			) : (

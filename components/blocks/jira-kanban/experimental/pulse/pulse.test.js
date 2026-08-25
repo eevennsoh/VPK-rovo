@@ -584,6 +584,20 @@ test("Pulse anchors exactly the parts the outline made marks for", () => {
 	assert.match(SOURCES.stream, /anchorRef=\{anchorRef\}/u);
 });
 
+test("Pulse keeps repeated story sections out of landmark navigation", () => {
+	// The whole timeline is already one named region with a ruler for navigation.
+	// Promoting every mounted insight and repeated Artifacts/Needs attention/Next
+	// best actions section into another named landmark gives assistive technology
+	// several indistinguishable regions. Keep the semantic heading structure, but
+	// leave the repeated sections unnamed so they do not become landmarks.
+	assert.doesNotMatch(SOURCES.story, /<section aria-labelledby=/u);
+	assert.doesNotMatch(SOURCES.signals, /<section aria-labelledby=/u);
+	assert.match(SOURCES.story, /<h2 className=\{cn\("mt-3 text-pretty text-text", MEASURE\)\}/u);
+	assert.match(SOURCES.story, /<PulseSectionLabel>Artifacts<\/PulseSectionLabel>/u);
+	assert.match(SOURCES.signals, /<PulseSectionLabel>Needs attention<\/PulseSectionLabel>/u);
+	assert.match(SOURCES.signals, /<PulseSectionLabel>Next best actions<\/PulseSectionLabel>/u);
+});
+
 test("Pulse absorbs sub-pixel jump rounding in the outline, not in the shell", () => {
 	// A jump parks its anchor exactly on the reading line and browser scroll
 	// rounding then leaves it a hundredth of a pixel short — measured at
