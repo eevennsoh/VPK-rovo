@@ -10,6 +10,22 @@ export default function JiraIssueDemo() {
 	);
 }
 
+export function JiraIssueDemoExperimental() {
+	return (
+		<div className="flex w-full justify-center p-6">
+			<JiraIssuePage variant="experimental" />
+		</div>
+	);
+}
+
+export function JiraIssueDemoUncapturedWork() {
+	return (
+		<div className="flex w-full justify-center p-6">
+			<JiraIssuePage variant="uncaptured-work" />
+		</div>
+	);
+}
+
 export function JiraIssueDemoSubtasksCollapsed() {
 	return (
 		<div className="flex w-full justify-center p-6">

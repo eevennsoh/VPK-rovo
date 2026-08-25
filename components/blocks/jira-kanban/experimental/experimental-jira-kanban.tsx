@@ -33,6 +33,8 @@ import {
 import { Icon } from "@/components/ui/icon";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getMentionChildItems } from "@/components/ui-custom/rich-text-editor";
+import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
+import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
@@ -85,6 +87,13 @@ function getAgentInitials(name: string): string {
 		.slice(0, 2)
 		.map((part) => part[0]?.toUpperCase() ?? "")
 		.join("");
+}
+
+function getCardAssigneeAvatarShape(card: JiraKanbanCardData) {
+	if (card.avatarShape) {
+		return card.avatarShape;
+	}
+	return card.avatarSrc?.startsWith("/avatar-agent/") ? "hexagon" as const : undefined;
 }
 
 function AgentAvatar({ agent, className }: Readonly<{ agent: JiraKanbanAgentData; className?: string }>) {
@@ -250,20 +259,28 @@ function BoardColumn({
 	title: string;
 }>) {
 	const showAgentAssignment = Boolean(agents?.length && onCreateAgent && onToggleAgent);
+	const { ref: cardListRef, showBottomScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
+	const cardListScrollMaskStyle = useMemo(
+		() => buildScrollMaskStyle({
+			fadeBottom: showBottomScrollMask,
+			fadeSize: "3rem",
+			fadeTop: false,
+		}),
+		[showBottomScrollMask],
+	);
 
 	return (
 		<div
-			className="group/board-column"
+			className="group/board-column overflow-visible"
 			style={{
 				display: "flex",
 				flexDirection: "column",
 				width: "100%",
 				height: "100%",
-				backgroundColor: token("elevation.surface.sunken"),
 				borderRadius: token("radius.xlarge"),
 			}}
 		>
-			<div style={{ paddingTop: token("space.150"), paddingBottom: headerPaddingBlock, paddingInline: token("space.150") }}>
+			<div style={{ paddingTop: token("space.150"), paddingBottom: headerPaddingBlock }}>
 				<div className={cn("flex min-w-0 items-center gap-2", showAgentAssignment && "justify-between")}>
 					<div className="flex min-w-0 items-center gap-2">
 						<span
@@ -291,22 +308,31 @@ function BoardColumn({
 			</div>
 
 			<div
+				ref={cardListRef}
 				style={{
 					flexGrow: 1,
 					overflowY: "auto",
-					paddingTop: token("space.050"),
-					paddingBottom: token("space.100"),
-					paddingInline: token("space.050"),
 					display: "flex",
 					flexDirection: "column",
-					gap: token("space.050"),
+					gap: token("space.100"),
+					...cardListScrollMaskStyle,
 				}}
 			>
 				{children}
 			</div>
 
 			<div style={{ padding: token("space.050") }}>
-				<Button className="w-full justify-start gap-2 rounded-lg" size="default" variant="ghost">
+				<Button
+					className={cn(
+						"w-full justify-start gap-2 rounded-lg",
+						"pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical",
+						"group-hover/board-column:pointer-events-auto group-hover/board-column:opacity-100",
+						"group-has-[:focus-visible]/board-column:pointer-events-auto group-has-[:focus-visible]/board-column:opacity-100",
+						"motion-reduce:transition-none",
+					)}
+					size="default"
+					variant="ghost"
+				>
 					<Icon render={<AddIcon label="" size="small" />} />
 					Create
 				</Button>
@@ -510,7 +536,7 @@ export function ExperimentalJiraKanban({
 						<div
 							data-jira-kanban-column={column.title}
 							key={column.title}
-							className="border-2 border-transparent transition-colors"
+							className="overflow-visible border-2 border-transparent transition-colors"
 							onDragOver={handleColumnDragOver}
 							onDragLeave={handleColumnDragLeave}
 							onDrop={(event) => handleColumnDrop(event, column.title)}
@@ -572,6 +598,7 @@ export function ExperimentalJiraKanban({
 											>
 											<JiraIssue
 												active={isActive}
+												chrome="stroke"
 												summary={card.title}
 												issueKey={card.code}
 												tags={card.tags}
@@ -580,7 +607,7 @@ export function ExperimentalJiraKanban({
 												pullRequestStatus={card.pullRequestStatus}
 												assigneeAvatarLabel={card.assignee?.name}
 												assigneeAvatarSrc={card.avatarSrc}
-												assigneeAvatarShape={card.avatarShape}
+												assigneeAvatarShape={getCardAssigneeAvatarShape(card)}
 												assigneeUnassignedKind={card.avatarUnassignedKind}
 												assigneePulse={card.avatarPulse}
 												agentActivities={card.agentActivities}

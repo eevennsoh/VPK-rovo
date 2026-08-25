@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import LinkIcon from "@atlaskit/icon/core/link";
 import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
@@ -18,6 +18,16 @@ const HEADER_LAYOUT_TRANSITION = {
 	duration: 0.2,
 	ease: [0.4, 0, 0, 1],
 } as const; // duration-medium + ease-in-out
+const TITLE_ENTER_TRANSITION = {
+	delay: 0.1,
+	duration: 0.1,
+	ease: [0.4, 1, 0.6, 1],
+} as const; // delay-fast + duration-fast + ease-out-practical
+const TITLE_EXIT_TRANSITION = {
+	duration: 0.1,
+	ease: [0.6, 0, 0.8, 0.6],
+} as const; // duration-fast + ease-in
+const INSTANT_TRANSITION = { duration: 0 } as const;
 
 /** Compact breadcrumb control for copying the stable work-item key. */
 export function WorkItemKeyCopy() {
@@ -113,13 +123,20 @@ export function ContextTitleBar({
 	const shouldReduceMotion = useReducedMotion() ?? false;
 	const variant = useWorkItemHeaderVariant();
 	const compact = variant === "compact";
+	const [presentedCompact, setPresentedCompact] = useState(compact);
 	const layout = shouldReduceMotion ? false : "position";
+	const titleEnterTransition = shouldReduceMotion
+		? INSTANT_TRANSITION
+		: TITLE_ENTER_TRANSITION;
+	const titleExitTransition = shouldReduceMotion
+		? INSTANT_TRANSITION
+		: TITLE_EXIT_TRANSITION;
 
 	return (
 		<motion.div
 			className={cn(
 				"min-w-0 self-stretch px-6",
-				compact ? "pb-0" : "pb-4",
+				presentedCompact ? "pb-0" : "pb-4",
 			)}
 			data-header-variant={variant}
 			data-jira-work-item-title-block
@@ -129,26 +146,56 @@ export function ContextTitleBar({
 		>
 			<motion.div
 				className={cn(
-					"flex min-w-0",
-					compact ? "items-center gap-2" : "flex-col",
+					"relative flex min-w-0",
+					presentedCompact ? "items-center gap-2" : "flex-col",
 				)}
 				layout={layout}
 				transition={{ layout: HEADER_LAYOUT_TRANSITION }}
 			>
-				<motion.div
-					className={cn("min-w-0", compact ? "order-2 flex-1" : "order-1")}
-					layout={layout}
-					transition={{ layout: HEADER_LAYOUT_TRANSITION }}
+				<AnimatePresence
+					initial={false}
+					mode="wait"
+					onExitComplete={() => setPresentedCompact(compact)}
 				>
-					<ContextEditableTitle compact={compact} />
-				</motion.div>
+					<motion.div
+						animate={compact ? {
+							opacity: 1,
+						} : {
+							opacity: 1,
+							transform: "scale(1)",
+						}}
+						className={cn("min-w-0", compact ? "order-2 flex-1" : "order-1")}
+						exit={compact ? {
+							opacity: 0,
+							transition: titleExitTransition,
+						} : {
+							opacity: 0,
+							transform: "scale(0.96)",
+							transition: titleExitTransition,
+						}}
+						initial={shouldReduceMotion ? false : compact ? {
+							opacity: 0,
+						} : {
+							opacity: 0,
+							transform: "scale(1)",
+						}}
+						key={variant}
+						style={{
+							transformOrigin: "left center",
+							willChange: compact ? "opacity" : "opacity, transform",
+						}}
+						transition={titleEnterTransition}
+					>
+						<ContextEditableTitle compact={compact} />
+					</motion.div>
+				</AnimatePresence>
 				{controlRow ? (
 					<motion.div
-						className={compact ? "order-1 shrink-0" : "order-2"}
+						className={presentedCompact ? "order-1 shrink-0" : "order-2"}
 						layout={layout}
 						transition={{ layout: HEADER_LAYOUT_TRANSITION }}
 					>
-						{controlRow(compact)}
+						{controlRow(presentedCompact)}
 					</motion.div>
 				) : null}
 			</motion.div>

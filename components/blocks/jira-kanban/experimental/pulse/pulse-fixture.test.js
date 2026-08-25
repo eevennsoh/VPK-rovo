@@ -131,11 +131,9 @@ test("Pulse fixture keeps the story shape the timeline mode depends on", async (
 		for (const field of ["chapterLabel", "dateLabel", "rangeLabel", "timeLabel", "title"]) {
 			assert.ok(snapshot[field].trim().length > 0, `${snapshot.id}.${field} is empty`);
 		}
-		assert.ok(snapshot.paragraphs.length >= 2, `${snapshot.id} needs two to three paragraphs`);
-		assert.ok(snapshot.paragraphs.length <= 3, `${snapshot.id} runs past three paragraphs`);
-		for (const paragraph of snapshot.paragraphs) {
-			assert.doesNotMatch(paragraph, /^\s*[-•*]\s/u, `${snapshot.id} slipped into a bullet list`);
-		}
+		assert.equal(snapshot.paragraphs.length, 1, `${snapshot.id} should be one paragraph, not multiple`);
+		assert.ok(snapshot.paragraphs[0].trim().length > 0, `${snapshot.id} has empty prose`);
+		assert.doesNotMatch(snapshot.paragraphs[0], /^\s*[-•*]\s/u, `${snapshot.id} slipped into a bullet list`);
 		assert.ok(snapshot.artifacts.length > 0, `${snapshot.id} produced no artifacts`);
 		assert.ok(snapshot.workItemKeys.length > 0, `${snapshot.id} moved no work items`);
 		assert.ok(snapshot.looseWorkIds.length > 0, `${snapshot.id} has no uncaptured work, which is the whole point`);
@@ -178,6 +176,40 @@ test("Pulse fixture points every avatar at a file that exists", async () => {
 	for (const source of sources) {
 		assert.ok(source.startsWith("/"), `${source} must be an absolute public path`);
 		assert.ok(existsSync(join(publicDir, source)), `${source} does not exist under public/`);
+	}
+});
+
+test("Pulse work-item assignees resolve to a roster member and keep agent hex art", async () => {
+	const { PULSE_TIMELINE } = await loadTimelineHarness();
+	const membersById = new Map(PULSE_TIMELINE.members.map((member) => [member.id, member]));
+	let agentAssignees = 0;
+
+	for (const workItem of PULSE_TIMELINE.workItems) {
+		assert.ok(workItem.assigneeId, `${workItem.key} has no assigneeId`);
+		const assignee = membersById.get(workItem.assigneeId);
+		assert.ok(assignee, `${workItem.key} assigneeId "${workItem.assigneeId}" is not on the roster`);
+		assert.equal(assignee.name, workItem.assigneeName, `${workItem.key} assignee name does not match the roster`);
+		assert.equal(assignee.avatarSrc, workItem.assigneeAvatarSrc, `${workItem.key} assignee art does not match the roster`);
+		if (assignee.kind === "agent") {
+			agentAssignees += 1;
+			assert.match(assignee.avatarSrc, /^\/avatar-agent\//u, `${workItem.key} agent assignee uses human art`);
+		} else {
+			assert.match(assignee.avatarSrc, /^\/avatar-user\//u, `${workItem.key} human assignee uses agent art`);
+		}
+	}
+
+	assert.ok(agentAssignees > 0, "the fixture has no agent-assigned work items");
+});
+
+test("Pulse work-item summaries are long enough to wrap to two lines at 320px", async () => {
+	const { PULSE_TIMELINE } = await loadTimelineHarness();
+
+	for (const workItem of PULSE_TIMELINE.workItems) {
+		assert.doesNotMatch(workItem.summary, /<br\s*\/?>/u, `${workItem.key} uses a break hack instead of real wrap`);
+		assert.ok(
+			workItem.summary.length >= 54,
+			`${workItem.key} summary is ${workItem.summary.length} chars and will sit on one line at 320px`,
+		);
 	}
 });
 

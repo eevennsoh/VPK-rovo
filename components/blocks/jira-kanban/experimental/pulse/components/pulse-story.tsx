@@ -1,6 +1,8 @@
 "use client";
 
 import { useId, type ReactNode, type RefCallback } from "react";
+import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
 
 import {
 	PulseAttention,
@@ -12,9 +14,12 @@ import {
 	PULSE_ITEM_BODY,
 } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-type";
 import {
+	toAdjacentInsightIndex,
 	toPulseAnchorId,
 	toPulseSections,
+	type PulseScrollOptions,
 } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-outline";
+import { isPulseSectionDimmed } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-marks";
 import type {
 	PulseAction,
 	PulseContribution,
@@ -23,8 +28,9 @@ import type {
 	PulseStoryProps,
 } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { ArtifactList, type ArtifactListItem } from "@/components/ui-custom/artifact-list";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
 /**
@@ -33,9 +39,9 @@ import { cn } from "@/lib/utils";
  * One eyebrow, the faces that produced it, a display headline, the window's
  * numbers, the narrative, the artifacts it produced, then the signals and the
  * actions that follow from it. Nothing here swaps: every insight is mounted at
- * once and the reader scrolls, so the component has no crossfade, no staggered
- * arrival and no prev/next chevrons — navigation is the ruler and the scroll.
- * What it does own is anchors: the insight head and each non-empty section
+ * once and the reader scrolls. The header chevrons jump to the previous or next
+ * insight via the ruler's own scroll — they do not unmount or step a carousel.
+ * What it also owns is anchors: the insight head and each non-empty section
  * carry the id the outline generated for them, so every mark on the ruler is a
  * real place in the document.
  *
@@ -58,6 +64,10 @@ import { cn } from "@/lib/utils";
  */
 export const MEASURE = "max-w-[36rem]";
 
+const SECTION_FOCUS_TRANSITION = "min-w-0 transition-opacity duration-normal ease-out-practical motion-reduce:transition-none";
+const SECTION_FOCUSED = "opacity-100";
+const SECTION_DIMMED = "opacity-(--opacity-disabled)";
+
 /** 40px → 54px display size, tracked tight the way the reference sets it. */
 const HEADLINE_STYLE = {
 	fontSize: "clamp(2.5rem, 0.575rem + 2.8vw, 3.375rem)",
@@ -74,20 +84,24 @@ export interface PulseStoryJump {
 
 /**
  * The frozen `PulseStoryProps` describes the data for one snapshot. The
- * continuous article drops its `index`/`total`/chevron half — there is nothing
- * to step through any more — and needs a little more than the rest: where else
- * the member was active, what the unscoped window holds, and the anchor
- * registrar the ruler scrolls against. That extra is declared here rather than
- * in `types.ts`, which is a read-only contract.
+ * continuous article drops its `onNext`/`onPrevious` stepper half — there is
+ * nothing to unmount any more — and needs a little more than the rest: where
+ * this insight sits in the article, where else the member was active, what
+ * the unscoped window holds, and the anchor registrar the ruler scrolls
+ * against. That extra is declared here rather than in `types.ts`, which is a
+ * read-only contract.
  */
 export interface PulseStoryViewProps
 	extends Omit<PulseStoryProps, "index" | "onNext" | "onPrevious" | "total"> {
+	/** Position in the article, for the header's previous/next jump. */
+	insightIndex: number;
+	insightCount: number;
 	/** Why a window came up empty, e.g. "The window ran … and closed overnight." */
 	quietNote?: string;
 	nextActive?: PulseStoryJump | null;
 	previousActive?: PulseStoryJump | null;
-	/** Jump the article to another insight — the ruler's own scroll, reused. */
-	onGoToIndex: (index: number) => void;
+	/** Jump the article to another insight, optionally at a gesture-specific line. */
+	onGoToIndex: (index: number, options?: PulseScrollOptions) => void;
 	/** Everyone — human and agent — whose work is in this window. */
 	contributors: readonly PulseMember[];
 	/** Clicking a contributor scopes the whole view to them; `null` clears it. */
@@ -113,6 +127,8 @@ export interface PulseStoryViewProps
 	 * are addressing the same elements by construction.
 	 */
 	anchorRef: (id: string) => RefCallback<HTMLElement>;
+	/** Outline entry currently previewed from ruler hover or focus. */
+	previewEntryId: string | null;
 }
 
 /**
@@ -128,17 +144,26 @@ function PulseStoryAnchor({
 	anchored,
 	children,
 	id,
+	isDimmed,
 }: Readonly<{
 	anchorRef: (id: string) => RefCallback<HTMLElement>;
 	anchored: boolean;
 	children: ReactNode;
 	id: string;
+	isDimmed: boolean;
 }>) {
 	if (!anchored) {
 		return children;
 	}
 	return (
-		<div className="min-w-0" id={id} ref={anchorRef(id)}>
+		<div
+			className={cn(
+				SECTION_FOCUS_TRANSITION,
+				isDimmed ? SECTION_DIMMED : SECTION_FOCUSED,
+			)}
+			id={id}
+			ref={anchorRef(id)}
+		>
 			{children}
 		</div>
 	);
@@ -165,45 +190,46 @@ function PulseStoryContributors({
 		return null;
 	}
 	return (
-		<ul
-			aria-label="Contributors in this window"
+		<AvatarGroup
+			label="Contributors in this window"
 			// Leftmost-on-top, matching the board header's facepile: DOM order is
-			// tab order, so the stacking is done with z-index rather than by
-			// reversing the list.
-			className="isolate -mx-0.5 flex min-w-0 items-center -space-x-1.5 px-0.5 [&>*]:relative [&>*:nth-child(1)]:z-[8] [&>*:nth-child(2)]:z-[7] [&>*:nth-child(3)]:z-[6] [&>*:nth-child(4)]:z-[5] [&>*:nth-child(5)]:z-[4] [&>*:nth-child(6)]:z-[3] [&>*:nth-child(7)]:z-[2] [&>*:nth-child(8)]:z-[1]"
+			// tab order, so the stacking is done with z-index. The shared group
+			// also gives hexagon avatars their shape-aware separator.
+			className="isolate -mx-0.5 min-w-0 items-center -space-x-1.5 px-0.5 [&>*]:relative [&>*:nth-child(1)]:z-[8] [&>*:nth-child(2)]:z-[7] [&>*:nth-child(3)]:z-[6] [&>*:nth-child(4)]:z-[5] [&>*:nth-child(5)]:z-[4] [&>*:nth-child(6)]:z-[3] [&>*:nth-child(7)]:z-[2] [&>*:nth-child(8)]:z-[1]"
 		>
 			{contributors.map((member) => {
 				const isSelected = member.id === selectedMemberId;
 				return (
-					<li key={member.id}>
-						<button
-							aria-label={isSelected
-								? `Clear filter: ${member.name}`
-								: `Show only ${member.name}, ${member.role}`}
-							aria-pressed={isSelected}
-							className="focus-visible:ring-ring/50 rounded-full outline-none focus-visible:ring-3"
-							onClick={() => onSelectMember(isSelected ? null : member.id)}
-							title={`${member.name} · ${member.role}`}
-							type="button"
+					<button
+						aria-label={isSelected
+							? `Clear filter: ${member.name}`
+							: `Show only ${member.name}, ${member.role}`}
+						aria-pressed={isSelected}
+						className="focus-visible:ring-ring/50 flex size-6 shrink-0 items-center justify-center rounded-full outline-none focus-visible:ring-3"
+						key={member.id}
+						onClick={() => onSelectMember(isSelected ? null : member.id)}
+						title={`${member.name} · ${member.role}`}
+						type="button"
+					>
+						<Avatar
+							className={cn(
+								"duration-normal ease-out-practical transition-opacity motion-reduce:transition-none",
+								member.kind === "human" ? "ring-2 ring-surface" : null,
+								member.kind === "human" && isSelected ? "ring-border-selected!" : null,
+								member.kind === "agent" && isSelected ? "[&>svg]:text-border-selected!" : null,
+								selectedMemberId !== null && !isSelected ? "opacity-(--opacity-disabled)" : null,
+							)}
+							label={member.name}
+							shape={member.kind === "agent" ? "hexagon" : "circle"}
+							size="sm"
 						>
-							<Avatar
-								className={cn(
-									"duration-normal ease-out-practical ring-2 ring-surface transition-opacity motion-reduce:transition-none",
-									isSelected ? "ring-border-selected!" : null,
-									selectedMemberId !== null && !isSelected ? "opacity-(--opacity-disabled)" : null,
-								)}
-								label={member.name}
-								shape={member.kind === "agent" ? "hexagon" : "circle"}
-								size="sm"
-							>
-								<AvatarImage alt="" src={member.avatarSrc} />
-								<AvatarFallback>{getMemberInitials(member.name)}</AvatarFallback>
-							</Avatar>
-						</button>
-					</li>
+							<AvatarImage alt="" src={member.avatarSrc} />
+							<AvatarFallback>{getMemberInitials(member.name)}</AvatarFallback>
+						</Avatar>
+					</button>
 				);
 			})}
-		</ul>
+		</AvatarGroup>
 	);
 }
 
@@ -286,7 +312,7 @@ function PulseStoryMemberBody({
 	contribution: PulseContribution | null;
 	member: PulseMember;
 	nextActive?: PulseStoryJump | null;
-	onGoToIndex: (index: number) => void;
+	onGoToIndex: (index: number, options?: PulseScrollOptions) => void;
 	onSelectMember: (memberId: string | null) => void;
 	previousActive?: PulseStoryJump | null;
 	quietNote?: string;
@@ -348,6 +374,56 @@ function PulseStoryMemberBody({
 	);
 }
 
+function PulseStoryInsightNav({
+	insightCount,
+	insightIndex,
+	label,
+	onGoToIndex,
+}: Readonly<{
+	insightCount: number;
+	insightIndex: number;
+	label: string;
+	onGoToIndex: (index: number, options?: PulseScrollOptions) => void;
+}>) {
+	const previousIndex = toAdjacentInsightIndex(insightIndex, insightCount, "previous");
+	const nextIndex = toAdjacentInsightIndex(insightIndex, insightCount, "next");
+	const isFirst = previousIndex === null;
+	const isLast = nextIndex === null;
+
+	return (
+		<nav aria-label={`${label} insight navigation`} className="ml-auto flex shrink-0 items-center">
+			<Button
+				aria-disabled={isFirst}
+				aria-label="Previous insight"
+				className={cn(isFirst ? "pointer-events-none opacity-(--opacity-disabled)" : null)}
+				onClick={() => {
+					if (previousIndex === null) return;
+					onGoToIndex(previousIndex, { align: "start" });
+				}}
+				size="icon-compact"
+				type="button"
+				variant="ghost"
+			>
+				<Icon aria-hidden render={<ChevronUpIcon label="" size="small" />} />
+			</Button>
+			<Button
+				aria-disabled={isLast}
+				aria-label="Next insight"
+				className={cn(isLast ? "pointer-events-none opacity-(--opacity-disabled)" : null)}
+				onClick={() => {
+					if (nextIndex === null) return;
+					onGoToIndex(nextIndex, { align: "start" });
+				}}
+				size="icon-compact"
+				type="button"
+				variant="ghost"
+			>
+				<Icon aria-hidden render={<ChevronDownIcon label="" size="small" />} />
+			</Button>
+		</nav>
+	);
+}
+
 function PulseStoryArtifacts({
 	artifacts,
 	emptyNote,
@@ -378,6 +454,8 @@ export function PulseStory({
 	quietNote,
 	nextActive,
 	previousActive,
+	insightCount,
+	insightIndex,
 	onGoToIndex,
 	contributors,
 	onSelectMember,
@@ -386,12 +464,17 @@ export function PulseStory({
 	requestedActionIds,
 	unscopedCounts,
 	anchorRef,
+	previewEntryId,
 }: Readonly<PulseStoryViewProps>) {
 	const headingId = `${useId()}-pulse-story-title`;
 	// The outline decides which parts earn a mark; the article reads the same
 	// helper so the two can never disagree about what exists.
 	const anchoredSections = new Set(toPulseSections(snapshot));
 	const firstName = member === null ? "" : getFirstName(member.name);
+	const insightId = toPulseAnchorId(snapshot.id);
+	const artifactsId = toPulseAnchorId(snapshot.id, "artifacts");
+	const attentionId = toPulseAnchorId(snapshot.id, "attention");
+	const actionsId = toPulseAnchorId(snapshot.id, "actions");
 	const eyebrow = member === null
 		? `${snapshot.chapterLabel} · ${snapshot.rangeLabel}`
 		: `${member.name} · ${snapshot.chapterLabel} · ${snapshot.rangeLabel}`;
@@ -399,12 +482,24 @@ export function PulseStory({
 
 	return (
 		<section aria-labelledby={headingId} className="flex min-w-0 flex-col">
-			{/* The insight head — eyebrow, faces, headline, numbers — is one anchor:
-			    a jump to this insight should land on the line that names it, not
-			    part-way down its prose. */}
-			<div className="min-w-0" id={toPulseAnchorId(snapshot.id)} ref={anchorRef(toPulseAnchorId(snapshot.id))}>
+			{/* The insight intro — head plus prose — is one ruler block. A jump
+			    lands on its naming line while preview keeps the whole intro together. */}
+			<div
+				className={cn(
+					SECTION_FOCUS_TRANSITION,
+					isPulseSectionDimmed(previewEntryId, insightId) ? SECTION_DIMMED : SECTION_FOCUSED,
+				)}
+				id={insightId}
+				ref={anchorRef(insightId)}
+			>
 				<div className={cn("flex min-h-6 min-w-0 items-center", MEASURE)}>
 					<p className={cn("min-w-0 truncate", PULSE_EYEBROW)}>{eyebrow}</p>
+					<PulseStoryInsightNav
+						insightCount={insightCount}
+						insightIndex={insightIndex}
+						label={snapshot.chapterLabel}
+						onGoToIndex={onGoToIndex}
+					/>
 				</div>
 
 				<div className="mt-7 min-w-0">
@@ -420,27 +515,28 @@ export function PulseStory({
 				</h2>
 
 				<PulseStoryStats stats={stats} />
-			</div>
 
-			{member === null ? (
-				<PulseStoryProse paragraphs={snapshot.paragraphs} />
-			) : (
-				<PulseStoryMemberBody
-					contribution={contribution}
-					member={member}
-					nextActive={nextActive}
-					onGoToIndex={onGoToIndex}
-					onSelectMember={onSelectMember}
-					previousActive={previousActive}
-					quietNote={quietNote}
-					teamHeadline={snapshot.title}
-				/>
-			)}
+				{member === null ? (
+					<PulseStoryProse paragraphs={snapshot.paragraphs} />
+				) : (
+					<PulseStoryMemberBody
+						contribution={contribution}
+						member={member}
+						nextActive={nextActive}
+						onGoToIndex={onGoToIndex}
+						onSelectMember={onSelectMember}
+						previousActive={previousActive}
+						quietNote={quietNote}
+						teamHeadline={snapshot.title}
+					/>
+				)}
+			</div>
 
 			<PulseStoryAnchor
 				anchorRef={anchorRef}
 				anchored={anchoredSections.has("artifacts")}
-				id={toPulseAnchorId(snapshot.id, "artifacts")}
+				id={artifactsId}
+				isDimmed={isPulseSectionDimmed(previewEntryId, artifactsId)}
 			>
 				<PulseStoryArtifacts
 					artifacts={artifacts}
@@ -453,7 +549,8 @@ export function PulseStory({
 			<PulseStoryAnchor
 				anchorRef={anchorRef}
 				anchored={anchoredSections.has("attention")}
-				id={toPulseAnchorId(snapshot.id, "attention")}
+				id={attentionId}
+				isDimmed={isPulseSectionDimmed(previewEntryId, attentionId)}
 			>
 				<PulseAttention
 					className={cn("mt-8", MEASURE)}
@@ -467,7 +564,8 @@ export function PulseStory({
 			<PulseStoryAnchor
 				anchorRef={anchorRef}
 				anchored={anchoredSections.has("actions")}
-				id={toPulseAnchorId(snapshot.id, "actions")}
+				id={actionsId}
+				isDimmed={isPulseSectionDimmed(previewEntryId, actionsId)}
 			>
 				<PulseNextActions
 					actions={nextActions}

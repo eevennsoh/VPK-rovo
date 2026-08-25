@@ -28,6 +28,8 @@ import {
 	JiraIssueGenerativeActionMenu,
 	type JiraIssueGenerativeActionConfig,
 } from "@/components/blocks/jira-issue/generative-action-menu";
+import { JiraIssueUncapturedWork } from "@/components/blocks/jira-issue/uncaptured-work";
+import type { SmartLinkItem } from "@/components/blocks/smart-link";
 import { useIsMounted } from "@/components/hooks/use-is-mounted";
 import {
 	Avatar,
@@ -63,8 +65,10 @@ const AGENT_ACTIVITY_SURFACE_STYLE: CSSProperties = {
 	transformOrigin: "top center",
 };
 
+export type JiraIssueChrome = "raised" | "stroke";
 export type JiraIssuePriority = "major" | "medium" | "minor";
 export type JiraIssuePullRequestStatus = "open" | "merged";
+export type JiraIssueVariant = "default" | "uncaptured-work";
 export type {
 	JiraIssueAgentActivity,
 	JiraIssueAgentActivityMode,
@@ -97,7 +101,27 @@ export interface JiraIssueSubtask {
 	assigneeUnassignedKind?: AvatarUnassignedKind;
 }
 
-export interface JiraIssueProps extends Omit<ComponentProps<"button">, "children"> {
+export interface JiraIssueParticipant {
+	id: string;
+	name: string;
+	avatarSrc: string;
+	avatarShape?: NonNullable<AvatarProps["shape"]>;
+}
+
+export interface JiraIssueUncapturedWorkProps extends Omit<ComponentProps<"article">, "children"> {
+	variant: "uncaptured-work";
+	/** Work that has not yet been represented by a Jira issue. */
+	summary: string;
+	/** Hoverable source context, including its provider logo and destination label. */
+	sourceLink: SmartLinkItem;
+	participants: readonly JiraIssueParticipant[];
+	captured?: boolean;
+	/** Creates a Jira work item for this uncaptured work. Omit to expose an unavailable action. */
+	onCreateWorkItem?: () => void;
+}
+
+export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "children"> {
+	variant?: "default";
 	/** Issue summary shown as the primary card text. */
 	summary: string;
 	/** Jira issue key, e.g. RFP-101. */
@@ -113,6 +137,8 @@ export interface JiraIssueProps extends Omit<ComponentProps<"button">, "children
 	assigneeUnassignedKind?: AvatarUnassignedKind;
 	assigneePulse?: boolean;
 	active?: boolean;
+	/** Raised elevation is the default card chrome. Stroke is a 1px disabled border with no shadow. */
+	chrome?: JiraIssueChrome;
 	selected?: boolean;
 	dragging?: boolean;
 	showPriorityIndicator?: boolean;
@@ -135,6 +161,8 @@ export interface JiraIssueProps extends Omit<ComponentProps<"button">, "children
 	onAgentDoneRunView?: (run: JiraIssueCompletedAgentRun) => void;
 	generativeAction?: JiraIssueGenerativeActionConfig;
 }
+
+export type JiraIssueProps = JiraIssueDefaultProps | JiraIssueUncapturedWorkProps;
 
 const PRIORITY_ICONS = {
 	major: PriorityMajorIcon,
@@ -241,6 +269,7 @@ function JiraIssueSummary({
 	showPriorityIndicator,
 	summary,
 	tags,
+	usesStrokeChrome,
 }: Readonly<{
 	assigneeAvatarLabel?: string;
 	assigneeAvatarShape: NonNullable<AvatarProps["shape"]>;
@@ -258,13 +287,14 @@ function JiraIssueSummary({
 	showPriorityIndicator: boolean;
 	summary: string;
 	tags?: readonly JiraIssueTag[];
+	usesStrokeChrome: boolean;
 }>) {
 	const PriorityIcon = PRIORITY_ICONS[priority];
 	const priorityColor = PRIORITY_COLORS[priority];
 
 	return (
 		<div className="flex flex-col gap-2">
-			<span className="text-sm">{summary}</span>
+			<span className={usesStrokeChrome ? "line-clamp-2 min-h-10 text-sm leading-5" : "text-sm"}>{summary}</span>
 
 			{parentEpicControl ? (
 				<div className="flex min-w-0 flex-col items-start gap-1">
@@ -456,7 +486,15 @@ function JiraIssueSubtasks({
 	);
 }
 
-export function JiraIssue({
+export function JiraIssue(props: Readonly<JiraIssueProps>) {
+	if (props.variant === "uncaptured-work") {
+		return <JiraIssueUncapturedWork {...props} />;
+	}
+
+	return <JiraIssueDefault {...props} />;
+}
+
+function JiraIssueDefault({
 	"aria-pressed": ariaPressed,
 	active = false,
 	agentActivities,
@@ -467,6 +505,7 @@ export function JiraIssue({
 	assigneeAvatarSrc,
 	assigneePulse = false,
 	assigneeUnassignedKind,
+	chrome = "raised",
 	className,
 	defaultSubtasksExpanded = false,
 	dragging = false,
@@ -496,8 +535,9 @@ export function JiraIssue({
 	summary,
 	tags,
 	type = "button",
+	variant = "default",
 	...props
-}: Readonly<JiraIssueProps>) {
+}: Readonly<JiraIssueDefaultProps>) {
 	const isMounted = useIsMounted();
 	const shouldReduceMotion = useReducedMotion();
 	const subtasksPanelId = useId();
@@ -540,9 +580,13 @@ export function JiraIssue({
 	const issueRowsClassName = cn("pt-1", !(hasSubtasks && resolvedSubtasksExpanded) && "pb-1");
 	const layoutTransition = getJiraIssueLayoutTransition(shouldReduceMotion);
 	const presenceMotion = getJiraIssuePresenceMotion(shouldReduceMotion);
+	const usesStrokeChrome = chrome === "stroke";
+	const idleBorderClassName = usesStrokeChrome
+		? "border-border-disabled hover:border-border group-hover/jira-issue:border-border"
+		: "border-transparent";
 	const rootBaseStyle: CSSProperties = {
 		borderRadius: token("radius.large"),
-		boxShadow: token("elevation.shadow.raised"),
+		...(usesStrokeChrome ? undefined : { boxShadow: token("elevation.shadow.raised") }),
 		cursor: dragging ? "grabbing" : draggable ? "grab" : "default",
 		opacity: dragging ? 0.5 : 1,
 		textAlign: "left",
@@ -560,8 +604,8 @@ export function JiraIssue({
 			: selected
 				? "border-border-selected bg-bg-selected"
 				: active
-					? "border-transparent bg-bg-selected"
-					: "border-transparent bg-surface",
+					? `${idleBorderClassName} bg-bg-selected`
+					: `${idleBorderClassName} bg-surface`,
 		"transition-[opacity,background-color,border-color] duration-normal ease-out",
 		"data-starting-style:opacity-0 data-starting-style:-translate-y-1",
 		!usesAgentActivityShell && className,
@@ -571,8 +615,8 @@ export function JiraIssue({
 		selected
 			? "border-border-selected bg-bg-selected"
 			: active
-				? "border-transparent bg-bg-selected"
-				: "border-transparent bg-surface",
+				? `${idleBorderClassName} bg-bg-selected`
+				: `${idleBorderClassName} bg-surface`,
 	);
 	const agentActivityShellClassName = cn(
 		"relative w-full overflow-visible rounded-[10px] outline-none",
@@ -608,6 +652,10 @@ export function JiraIssue({
 		left: agentActivitySurfacePosition,
 		right: agentActivitySurfacePosition,
 		top: agentActivitySurfacePosition,
+	};
+	const agentActivitySurfaceStyle: CSSProperties = {
+		...AGENT_ACTIVITY_SURFACE_STYLE,
+		...(usesStrokeChrome ? { boxShadow: "none" } : undefined),
 	};
 
 	function handleSubtasksToggle() {
@@ -694,6 +742,7 @@ export function JiraIssue({
 			showPriorityIndicator={showPriorityIndicator}
 			summary={summary}
 			tags={tags}
+			usesStrokeChrome={usesStrokeChrome}
 		/>
 	);
 	const richIssueContent = (
@@ -764,6 +813,7 @@ export function JiraIssue({
 					data-active={active || undefined}
 					data-dragging={dragging || undefined}
 					data-selected={selected || undefined}
+					data-variant={variant}
 					data-agent-activity-mode={resolvedAgentActivityMode}
 					onBlurCapture={handleGenerativeActionBlurCapture}
 					onDragEnd={props.onDragEnd as ComponentProps<"article">["onDragEnd"]}
@@ -802,7 +852,9 @@ export function JiraIssue({
 									className={agentActivitySurfaceClassName}
 									data-slot="jira-issue-surface"
 									initial={false}
-									style={shouldReduceMotion ? { ...AGENT_ACTIVITY_SURFACE_STYLE, ...agentActivitySurfaceAnimation } : AGENT_ACTIVITY_SURFACE_STYLE}
+									style={shouldReduceMotion
+										? { ...agentActivitySurfaceStyle, ...agentActivitySurfaceAnimation }
+										: agentActivitySurfaceStyle}
 									transition={layoutTransition}
 								/>
 								{richIssueContent}
@@ -850,6 +902,7 @@ export function JiraIssue({
 				data-active={active || undefined}
 				data-dragging={dragging || undefined}
 				data-selected={selected || undefined}
+				data-variant={variant}
 				onBlurCapture={handleGenerativeActionBlurCapture}
 				onDragEnd={props.onDragEnd as ComponentProps<"article">["onDragEnd"]}
 				onDragStart={props.onDragStart as ComponentProps<"article">["onDragStart"]}
@@ -873,6 +926,7 @@ export function JiraIssue({
 			data-active={active || undefined}
 			data-dragging={dragging || undefined}
 			data-selected={selected || undefined}
+			data-variant={variant}
 			style={buttonStyle}
 			{...props}
 		>

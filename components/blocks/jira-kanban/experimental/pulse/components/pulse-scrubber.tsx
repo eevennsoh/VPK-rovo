@@ -3,18 +3,19 @@
 import { useRef, type KeyboardEvent, type PointerEvent, type RefObject } from "react";
 import { animate, motion, useMotionValue, useReducedMotion, useTransform, type MotionValue } from "motion/react";
 
-import type {
-	PulseOutlineEntry,
+import {
+	toRulerHeading,
+	type PulseOutlineEntry,
 } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-outline";
 import type { PulseSnapshot } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import {
 	POINTER_AWAY,
 	RULE_WEIGHT,
 	toMagnification,
+	toMarkHint,
 	toMarkLabel,
 	toMarkState,
 	toNearestEntryIndex,
-	toWeekdayLabel,
 	type PulseMarkState,
 	type PulseRuleWeight,
 } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-marks";
@@ -57,8 +58,8 @@ const KEY_DELTAS: Readonly<Record<string, number | undefined>> = {
  * The frozen `PulseScrubberProps` in `types.ts` still describes the snapshot-at-
  * a-time scrubber this replaced, and that file is a read-only contract. The
  * outline shape is declared here instead: the ruler consumes outline entries and
- * reports the entry the reader asked for, and `snapshots` is carried only so the
- * pill can put a weekday and a clock on the current insight.
+ * reports the entry the reader asked for, and `snapshots` supplies accessible
+ * timestamps on each mark.
  */
 export interface PulseScrubberViewProps {
 	/** The document outline, in reading order. Drawn exactly as given. */
@@ -67,7 +68,11 @@ export interface PulseScrubberViewProps {
 	activeEntryIndex: number;
 	/** Scroll the article to an outline entry. */
 	onSelectEntry: (id: string) => void;
-	/** Indexed by `entry.snapshotIndex` — supplies the pill's date and clock. */
+	/** Preview the nearest entry while the pointer is inside the ruler. */
+	onHoveredEntryChange: (id: string | null) => void;
+	/** Keep the same preview treatment while a mark has keyboard focus. */
+	onFocusedEntryChange: (id: string | null) => void;
+	/** Indexed by `entry.snapshotIndex` — supplies timestamps for spoken names. */
 	snapshots: readonly PulseSnapshot[];
 	/** SNAPSHOT indexes where the filtered member was active; others render muted. */
 	highlightedIndexes: ReadonlySet<number>;
@@ -77,10 +82,6 @@ export interface PulseScrubberViewProps {
 	filteredMemberName?: string | null;
 }
 
-/**
- * "Mon 17 Aug" → "Mon". The pill lives inside an 88px column, so it carries the
- * weekday and the clock; the full date stays in each mark's accessible name.
- */
 const MAGNIFY_IN = { duration: 0.15, ease: [0.4, 1, 0.6, 1] } as const; // duration-normal + ease-out-practical
 const MAGNIFY_OUT = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] } as const; // duration-fast + ease-in
 
@@ -102,9 +103,12 @@ function usePointerScrub(
 	activeEntryIndex: number,
 	onSelectEntry: (id: string) => void,
 	axis: "x" | "y",
+	onHoveredEntryChange: (id: string | null) => void,
+	shouldReduceMotion: boolean,
 ) {
 	const railRef = useRef<HTMLDivElement | null>(null);
 	const railSizeRef = useRef(1);
+	const hoveredEntryIdRef = useRef<string | null>(null);
 	const pointerOffset = useMotionValue(POINTER_AWAY);
 	const magnify = useMotionValue(0);
 
@@ -134,16 +138,32 @@ function usePointerScrub(
 			return;
 		}
 		pointerOffset.set(offset);
+		const nearest = toNearestEntryIndex(entries, offset);
+		const hoveredEntryId = nearest === null ? null : entries[nearest].id;
+		if (hoveredEntryIdRef.current !== hoveredEntryId) {
+			hoveredEntryIdRef.current = hoveredEntryId;
+			onHoveredEntryChange(hoveredEntryId);
+		}
+		if (shouldReduceMotion) {
+			return;
+		}
 		if (magnify.get() !== 1) {
 			animate(magnify, 1, MAGNIFY_IN);
 		}
-		const nearest = toNearestEntryIndex(entries, offset);
 		if (nearest !== null && nearest !== activeEntryIndex) {
 			onSelectEntry(entries[nearest].id);
 		}
 	}
 
 	function handlePointerLeave() {
+		if (hoveredEntryIdRef.current !== null) {
+			hoveredEntryIdRef.current = null;
+			onHoveredEntryChange(null);
+		}
+		if (shouldReduceMotion) {
+			pointerOffset.set(POINTER_AWAY);
+			return;
+		}
 		// The scrubbed position is sticky. Rewinding the article on leave would
 		// snap the reader back every time the pointer crossed into the prose.
 		animate(magnify, 0, MAGNIFY_OUT).then(() => {
@@ -205,10 +225,9 @@ function useOutlineNavigation(
  *
  * `useTransform` keeps this off React's render path: the value lands on the
  * element directly, so the whole ruler responds at frame rate while the
- * component tree stays still. Under reduced motion the pointer handlers are
- * never attached, so `pointerOffset` stays parked and every rule renders — and
- * stays — at exactly its resting weight. One code path, no second geometry to
- * keep in sync.
+ * component tree stays still. Under reduced motion pointer preview still works,
+ * but the scrub hook skips magnification and hover-driven scrolling, so every
+ * rule stays at exactly its resting weight.
  */
 function PulseRule({
 	axis,
@@ -254,6 +273,7 @@ function PulseMark({
 	label,
 	magnify,
 	markRef,
+	onFocusChange,
 	onSelect,
 	pointerOffset,
 	railSizeRef,
@@ -262,12 +282,13 @@ function PulseMark({
 }: Readonly<{
 	axis: "x" | "y";
 	entry: PulseOutlineEntry;
-	/** Shown on hover beside a vertical insight mark; `null` suppresses it. */
+	/** Hover-only name on an inactive insight; `null` leaves the tick unlabeled. */
 	hint: string | null;
 	isActive: boolean;
 	label: string;
 	magnify: MotionValue<number>;
 	markRef: (node: HTMLButtonElement | null) => void;
+	onFocusChange: (id: string | null) => void;
 	onSelect: () => void;
 	pointerOffset: MotionValue<number>;
 	railSizeRef: RefObject<number>;
@@ -282,19 +303,21 @@ function PulseMark({
 			role="option"
 			aria-selected={isActive}
 			tabIndex={tabbable ? 0 : -1}
+			onBlur={() => onFocusChange(null)}
 			onClick={onSelect}
+			onFocus={() => onFocusChange(entry.id)}
 			style={axis === "y" ? { top: `${entry.offset * 100}%` } : { left: `${entry.offset * 100}%` }}
 			// The active pill paints after the marks, so a focused mark has to be
 			// lifted above it or its ring is half-covered.
 			className={cn(
 				"group/mark focus-visible:ring-ring absolute flex rounded-xs outline-none focus-visible:z-10 focus-visible:ring-2",
-				axis === "y" ? "left-0 h-5 w-11 -translate-y-1/2 items-center" : "bottom-0 h-6 w-6 -translate-x-1/2 flex-col justify-end",
+				axis === "y" ? "left-0 h-5 w-full -translate-y-1/2 items-center" : "bottom-0 h-6 w-6 -translate-x-1/2 flex-col justify-end",
 			)}
 		>
 			<span className="sr-only">{label}</span>
 			<PulseRule
 				axis={axis}
-				className={axis === "y" ? "bg-text absolute left-0 h-px" : "bg-text absolute bottom-0 left-1/2 w-px -translate-x-1/2"}
+				className={axis === "y" ? "pointer-events-none absolute left-0 h-px bg-text" : "absolute bottom-0 left-1/2 w-px -translate-x-1/2 bg-text"}
 				magnify={magnify}
 				offset={entry.offset}
 				pointerOffset={pointerOffset}
@@ -304,7 +327,7 @@ function PulseMark({
 			{hint === null ? null : (
 				<span
 					aria-hidden="true"
-					className="text-text-subtlest duration-normal ease-out-practical absolute top-1/2 left-5 -translate-y-1/2 text-[11px] leading-none font-medium whitespace-nowrap opacity-0 transition-opacity group-hover/mark:opacity-100 group-focus-visible/mark:opacity-100 motion-reduce:transition-none"
+					className="pointer-events-none absolute top-1/2 left-5 -translate-y-1/2 text-[11px] leading-none font-medium whitespace-nowrap text-text-subtlest opacity-0 transition-opacity duration-normal ease-out-practical group-hover/mark:opacity-100 group-focus-visible/mark:opacity-100 motion-reduce:transition-none"
 				>
 					{hint}
 				</span>
@@ -313,13 +336,13 @@ function PulseMark({
 	);
 }
 
-const PILL = "bg-primary text-primary-foreground inline-flex items-center rounded-full px-2 py-1.5 text-[11px] leading-none font-medium whitespace-nowrap";
+const PILL = "bg-bg-neutral-bold text-text-inverse inline-flex items-center rounded-full px-2 py-1.5 text-[11px] leading-none font-medium whitespace-nowrap";
 
 /**
  * Everything both orientations derive from the props: the muted set, the mark
- * states, and the insight the pill is speaking for. A section never gets its own
- * pill — it borrows its insight's, parked at the section's own offset, so the
- * pill reads as "you are here, inside this insight".
+ * states, and the outline entry the pill is speaking for. One pill slides to
+ * the active mark — insight or section — and names that heading. Child ticks
+ * stay unlabeled.
  *
  * `tabbable` is clamped rather than tied to `isActive`. Roving tabindex only
  * works if exactly one mark carries `tabIndex={0}`; an active index that fell
@@ -335,24 +358,30 @@ function usePulseOutlineView({
 	snapshots,
 }: Readonly<PulseScrubberViewProps>) {
 	const activeEntry = entries[activeEntryIndex] ?? null;
-	const activeSnapshot = activeEntry === null ? null : (snapshots[activeEntry.snapshotIndex] ?? null);
 	const focusIndex = Math.min(Math.max(activeEntryIndex, 0), entries.length - 1);
 	const marks = entries.map((entry, index) => {
 		const isMuted = isFiltered ? !highlightedIndexes.has(entry.snapshotIndex) : false;
 		return {
 			entry,
+			hint: toMarkHint(entry, activeEntry?.id ?? null),
 			isActive: index === activeEntryIndex,
 			label: toMarkLabel(entry, snapshots[entry.snapshotIndex], isMuted, filteredMemberName),
 			state: toMarkState(isMuted, index === activeEntryIndex),
 			tabbable: index === focusIndex,
 		};
 	});
-	return { activeEntry, activeSnapshot, marks };
+	return { activeEntry, marks };
 }
 
 export function PulseScrubber(props: Readonly<PulseScrubberViewProps>) {
-	const { activeEntryIndex, entries, onSelectEntry, snapshots } = props;
-	const { activeEntry, activeSnapshot, marks } = usePulseOutlineView(props);
+	const {
+		activeEntryIndex,
+		entries,
+		onFocusedEntryChange,
+		onHoveredEntryChange,
+		onSelectEntry,
+	} = props;
+	const { activeEntry, marks } = usePulseOutlineView(props);
 	const { handleKeyDown, markRefs, moveTo } = useOutlineNavigation(entries, activeEntryIndex, onSelectEntry);
 	const shouldReduceMotion = useReducedMotion();
 	const { handlePointerLeave, handlePointerMove, magnify, pointerOffset, railRef, railSizeRef } = usePointerScrub(
@@ -360,49 +389,52 @@ export function PulseScrubber(props: Readonly<PulseScrubberViewProps>) {
 		activeEntryIndex,
 		onSelectEntry,
 		"y",
+		onHoveredEntryChange,
+		shouldReduceMotion === true,
 	);
 
 	return (
-		<div
-			ref={railRef}
-			role="listbox"
-			aria-label="Article outline"
-			aria-orientation="vertical"
-			onKeyDown={handleKeyDown}
-			onPointerMove={shouldReduceMotion ? undefined : handlePointerMove}
-			onPointerLeave={shouldReduceMotion ? undefined : handlePointerLeave}
-			className="relative h-full min-h-[24rem] w-22"
-		>
-			{marks.map(({ entry, isActive, label, state, tabbable }, index) => (
-				<PulseMark
-					key={entry.id}
-					axis="y"
-					entry={entry}
-					// The clock belongs to the insight, and only when the pill is not
-					// already sitting on that mark saying the same thing.
-					hint={entry.kind === "insight" && !isActive ? (snapshots[entry.snapshotIndex]?.timeLabel ?? null) : null}
-					isActive={isActive}
-					label={label}
-					magnify={magnify}
-					markRef={(node) => {
-						markRefs.current[index] = node;
-					}}
-					onSelect={() => moveTo(index)}
-					pointerOffset={pointerOffset}
-					railSizeRef={railSizeRef}
-					state={state}
-					tabbable={tabbable}
-				/>
-			))}
-			{activeEntry === null || activeSnapshot === null ? null : (
+		<div className="pointer-events-none relative h-full min-h-[24rem] w-36">
+			<div
+				ref={railRef}
+				role="listbox"
+				aria-label="Article outline"
+				aria-orientation="vertical"
+				onKeyDown={handleKeyDown}
+				onPointerMove={handlePointerMove}
+				onPointerLeave={handlePointerLeave}
+				className="pointer-events-auto relative h-full w-6"
+			>
+				{marks.map(({ entry, hint, isActive, label, state, tabbable }, index) => (
+					<PulseMark
+						key={entry.id}
+						axis="y"
+						entry={entry}
+						hint={hint}
+						isActive={isActive}
+						label={label}
+						magnify={magnify}
+						markRef={(node) => {
+							markRefs.current[index] = node;
+						}}
+						onFocusChange={onFocusedEntryChange}
+						onSelect={() => moveTo(index)}
+						pointerOffset={pointerOffset}
+						railSizeRef={railSizeRef}
+						state={state}
+						tabbable={tabbable}
+					/>
+				))}
+			</div>
+			{activeEntry === null ? null : (
 				<div
 					aria-hidden="true"
 					style={{ top: `${activeEntry.offset * 100}%` }}
-					// Parked over the tail of the active mark, so the rule reads as a
-					// leader line into the pill and the pill still clears the prose.
+					// Slides to the active mark — insight or section — so the pill is
+					// "you are here" and the other ticks stay unlabeled.
 					className="duration-medium ease-in-out pointer-events-none absolute left-2 -translate-y-1/2 transition-[top] motion-reduce:transition-none"
 				>
-					<span className={PILL}>{`${toWeekdayLabel(activeSnapshot.dateLabel)} ${activeSnapshot.timeLabel}`}</span>
+					<span className={PILL}>{toRulerHeading(activeEntry)}</span>
 				</div>
 			)}
 		</div>
@@ -411,12 +443,18 @@ export function PulseScrubber(props: Readonly<PulseScrubberViewProps>) {
 
 /**
  * The same outline, laid horizontally for the stacked layout below `lg`. Same
- * entries, same single insight pill — the pill slides along the scale and pins
- * itself inside the ends instead of overhanging them.
+ * entries, same single sliding pill — it pins itself inside the ends instead of
+ * overhanging them.
  */
 export function PulseScrubberCompact(props: Readonly<PulseScrubberViewProps>) {
-	const { activeEntryIndex, entries, onSelectEntry } = props;
-	const { activeEntry, activeSnapshot, marks } = usePulseOutlineView(props);
+	const {
+		activeEntryIndex,
+		entries,
+		onFocusedEntryChange,
+		onHoveredEntryChange,
+		onSelectEntry,
+	} = props;
+	const { activeEntry, marks } = usePulseOutlineView(props);
 	const { handleKeyDown, markRefs, moveTo } = useOutlineNavigation(entries, activeEntryIndex, onSelectEntry);
 	const shouldReduceMotion = useReducedMotion();
 	const { handlePointerLeave, handlePointerMove, magnify, pointerOffset, railRef, railSizeRef } = usePointerScrub(
@@ -424,6 +462,8 @@ export function PulseScrubberCompact(props: Readonly<PulseScrubberViewProps>) {
 		activeEntryIndex,
 		onSelectEntry,
 		"x",
+		onHoveredEntryChange,
+		shouldReduceMotion === true,
 	);
 
 	return (
@@ -434,8 +474,8 @@ export function PulseScrubberCompact(props: Readonly<PulseScrubberViewProps>) {
 				aria-label="Article outline"
 				aria-orientation="horizontal"
 				onKeyDown={handleKeyDown}
-				onPointerMove={shouldReduceMotion ? undefined : handlePointerMove}
-				onPointerLeave={shouldReduceMotion ? undefined : handlePointerLeave}
+				onPointerMove={handlePointerMove}
+				onPointerLeave={handlePointerLeave}
 				className="relative h-3.5 min-w-0"
 			>
 				{marks.map(({ entry, isActive, label, state, tabbable }, index) => (
@@ -450,6 +490,7 @@ export function PulseScrubberCompact(props: Readonly<PulseScrubberViewProps>) {
 						markRef={(node) => {
 							markRefs.current[index] = node;
 						}}
+						onFocusChange={onFocusedEntryChange}
 						onSelect={() => moveTo(index)}
 						pointerOffset={pointerOffset}
 						railSizeRef={railSizeRef}
@@ -459,12 +500,12 @@ export function PulseScrubberCompact(props: Readonly<PulseScrubberViewProps>) {
 				))}
 			</div>
 			<div aria-hidden="true" className="relative h-[22px] min-w-0">
-				{activeEntry === null || activeSnapshot === null ? null : (
+				{activeEntry === null ? null : (
 					<div
 						style={{ left: `${activeEntry.offset * 100}%`, transform: `translateX(-${activeEntry.offset * 100}%)` }}
 						className="duration-medium ease-in-out absolute top-0 transition-[left,transform] motion-reduce:transition-none"
 					>
-						<span className={PILL}>{`${activeSnapshot.dateLabel} · ${activeSnapshot.timeLabel}`}</span>
+						<span className={PILL}>{toRulerHeading(activeEntry)}</span>
 					</div>
 				)}
 			</div>

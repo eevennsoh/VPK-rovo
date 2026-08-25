@@ -10,6 +10,7 @@ const COMPLETED_RUNS_SOURCE = readFileSync(join(__dirname, "completed-agent-runs
 const CHANGED_FILES_SOURCE = readFileSync(join(__dirname, "../jira-activity/jira-activity-changed-files.tsx"), "utf8");
 const COUNT_BADGE_SOURCE = readFileSync(join(__dirname, "count-badge.tsx"), "utf8");
 const GENERATIVE_SOURCE = readFileSync(join(__dirname, "generative-action-menu.tsx"), "utf8");
+const UNCAPTURED_WORK_SOURCE = readFileSync(join(__dirname, "uncaptured-work.tsx"), "utf8");
 const ROVO_SPARKLE_SOURCE = readFileSync(join(__dirname, "../../ui-custom/rovo-sparkle/rovo-sparkle.tsx"), "utf8");
 const ROVO_SPARKLE_BUTTON_SOURCE = readFileSync(join(__dirname, "../../ui-custom/rovo-sparkle/button.tsx"), "utf8");
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
@@ -46,9 +47,74 @@ test("Jira issue exposes selected and dragging states on the root button", () =>
 	assert.match(SOURCE, /cursor: dragging \? "grabbing" : draggable \? "grab" : "default"/);
 });
 
+test("Jira issue stroke chrome drops the raised shadow and uses the disabled border token", () => {
+	assert.match(SOURCE, /export type JiraIssueChrome = "raised" \| "stroke";/u);
+	assert.match(SOURCE, /chrome\?: JiraIssueChrome;/u);
+	assert.match(SOURCE, /chrome = "raised",/u);
+	assert.match(SOURCE, /const usesStrokeChrome = chrome === "stroke";/u);
+	assert.match(SOURCE, /const idleBorderClassName = usesStrokeChrome\s*\n\t\t\? "border-border-disabled hover:border-border group-hover\/jira-issue:border-border"\s*\n\t\t: "border-transparent";/u);
+	assert.match(SOURCE, /\.\.\.\(usesStrokeChrome \? undefined : \{ boxShadow: token\("elevation\.shadow\.raised"\) \}\)/u);
+	assert.match(SOURCE, /\.\.\.\(usesStrokeChrome \? \{ boxShadow: "none" \} : undefined\)/u);
+	assert.match(SOURCE, /usesStrokeChrome: boolean;/u);
+	assert.match(SOURCE, /usesStrokeChrome=\{usesStrokeChrome\}/u);
+	assert.match(
+		SOURCE,
+		/className=\{usesStrokeChrome \? "line-clamp-2 min-h-10 text-sm leading-5" : "text-sm"\}/u,
+	);
+});
+
+test("Jira issue exposes the experimental stroke visual as a catalog example", () => {
+	assert.match(PAGE_SOURCE, /variant\?: "default" \| "experimental" \|/u);
+	assert.match(PAGE_SOURCE, /const isExperimentalVariant = variant === "experimental";/u);
+	assert.match(PAGE_SOURCE, /chrome=\{isExperimentalVariant \? "stroke" : undefined\}/u);
+	assert.match(DEMO_SOURCE, /export function JiraIssueDemoExperimental\(\)/u);
+	assert.match(DEMO_SOURCE, /<JiraIssuePage variant="experimental" \/>/u);
+	assert.match(DETAILS_SOURCE, /title: "Experimental"[\s\S]*demoSlug: "jira-issue-demo-experimental"/u);
+	assert.match(VARIANT_REGISTRY_SOURCE, /"jira-issue-demo-experimental": dynamic\(/u);
+	assert.match(VARIANT_REGISTRY_SOURCE, /default: mod\.JiraIssueDemoExperimental/u);
+});
+
+test("Jira issue owns an uncaptured-work variant with a controlled create action", () => {
+	assert.match(SOURCE, /export type JiraIssueVariant = "default" \| "uncaptured-work";/u);
+	assert.match(SOURCE, /export interface JiraIssueUncapturedWorkProps/u);
+	assert.match(SOURCE, /variant: "uncaptured-work";/u);
+	assert.match(SOURCE, /participants: readonly JiraIssueParticipant\[\];/u);
+	assert.match(SOURCE, /sourceLink: SmartLinkItem;/u);
+	assert.match(SOURCE, /onCreateWorkItem\?: \(\) => void;/u);
+	assert.match(SOURCE, /export type JiraIssueProps = JiraIssueDefaultProps \| JiraIssueUncapturedWorkProps;/u);
+	assert.match(SOURCE, /if \(props\.variant === "uncaptured-work"\) \{[\s\S]*<JiraIssueUncapturedWork \{\.\.\.props\} \/>/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /data-variant=\{variant\}/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /flex w-full flex-col gap-2 rounded-lg border border-dashed/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /<p className="line-clamp-2 min-h-10 text-sm leading-5">\{summary\}<\/p>/u);
+	assert.doesNotMatch(UNCAPTURED_WORK_SOURCE, /<p className="truncate[^"]*">\{summary\}<\/p>/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /import \{ SmartLink \} from "@\/components\/blocks\/smart-link";/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /renderVisual\(sourceLink\.provider\.logo, "footer"\)/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /\{sourceLink\.provider\.name\}/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /<span aria-hidden="true">·<\/span>/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /min-h-5 min-w-0 items-center gap-1.5 text-xs leading-4 text-text-subtle/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /<SmartLink[\s\S]*item=\{sourceLink\}/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /\[&>span:first-child\]:hidden/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /text-xs leading-4 text-text-subtle[\s\S]*hover:text-text-subtle hover:underline/u);
+	assert.doesNotMatch(UNCAPTURED_WORK_SOURCE, /hover:text-link/u);
+	assert.doesNotMatch(UNCAPTURED_WORK_SOURCE, /\{source\} · \{detail\}/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /<div className="pt-0.5">/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /className="flex items-center justify-between"/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /size="compact"/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /size="sm"/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /\{captured \? "Captured" : "Create work item"\}/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /aria-disabled=\{captured \|\| actionUnavailable\}/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /aria-live="polite"/u);
+	assert.match(PAGE_SOURCE, /variant\?: "default" \| "experimental" \| "uncaptured-work" \|/u);
+	assert.match(PAGE_SOURCE, /title: "#payments-migration"/u);
+	assert.match(PAGE_SOURCE, /provider: \{ name: "Slack", logo: \{ kind: "third-party", name: "slack" \} \}/u);
+	assert.match(DEMO_SOURCE, /export function JiraIssueDemoUncapturedWork\(\)/u);
+	assert.match(DETAILS_SOURCE, /title: "Uncaptured work"[\s\S]*demoSlug: "jira-issue-demo-uncaptured-work"/u);
+	assert.match(VARIANT_REGISTRY_SOURCE, /default: mod\.JiraIssueDemoUncapturedWork/u);
+});
+
 test("Jira issue distinguishes an active card background from bulk selection", () => {
-	assert.match(ROOT_CLASS_BLOCK, /selected[\s\S]*\? "border-border-selected bg-bg-selected"[\s\S]*: active[\s\S]*\? "border-transparent bg-bg-selected"[\s\S]*: "border-transparent bg-surface"/u);
-	assert.match(ROOT_CLASS_BLOCK, /const agentActivitySurfaceClassName = cn\([\s\S]*selected[\s\S]*\? "border-border-selected bg-bg-selected"[\s\S]*: active[\s\S]*\? "border-transparent bg-bg-selected"/u);
+	assert.match(ROOT_CLASS_BLOCK, /selected[\s\S]*\? "border-border-selected bg-bg-selected"[\s\S]*: active[\s\S]*\? `\$\{idleBorderClassName\} bg-bg-selected`[\s\S]*: `\$\{idleBorderClassName\} bg-surface`/u);
+	assert.match(ROOT_CLASS_BLOCK, /const agentActivitySurfaceClassName = cn\([\s\S]*selected[\s\S]*\? "border-border-selected bg-bg-selected"[\s\S]*: active[\s\S]*\? `\$\{idleBorderClassName\} bg-bg-selected`/u);
 	assert.doesNotMatch(SOURCE, /aria-pressed=\{ariaPressed \?\? active\}/u);
 });
 
@@ -305,7 +371,7 @@ test("Jira issue renders agent activity rows with shimmer and awaiting-input dot
 	assert.match(SOURCE, /const hasAgentDoneNotification = resolvedAgentActivityMode === "completed" && agentDoneRuns\.length > 0;/);
 	assert.match(SOURCE, /const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working"[\s\S]*\|\| resolvedAgentActivityMode === "awaiting-input"[\s\S]*\|\| hasAgentDoneNotification;/);
 	assert.match(SOURCE, /const agentActivitySurfaceInset = hasActiveAgentActivityShell \? 5 : 0;/);
-	assert.match(SOURCE, /const agentActivitySurfaceClassName = cn\([\s\S]*"pointer-events-none absolute border"[\s\S]*"border-transparent bg-surface"/);
+	assert.match(SOURCE, /const agentActivitySurfaceClassName = cn\([\s\S]*"pointer-events-none absolute border"[\s\S]*`\$\{idleBorderClassName\} bg-surface`/);
 	assert.doesNotMatch(SOURCE, /agentActivityShellPadding/);
 	assert.doesNotMatch(SOURCE, /agentActivityBackdropOutset/);
 	assert.match(SOURCE, /data-agent-activity-mode=\{resolvedAgentActivityMode\}/);
@@ -397,7 +463,7 @@ test("Jira issue parent epic demo includes issue context and a collapsed subtask
 });
 
 test("Jira issue agent activity demo is registered in docs and variant registry", () => {
-	assert.match(PAGE_SOURCE, /variant\?: "default" \| "subtasks-collapsed" \| "subtasks-expanded" \| "parent-epic" \| "agent-activity-states";/);
+	assert.match(PAGE_SOURCE, /variant\?: "default" \| "experimental" \| "uncaptured-work" \| "subtasks-collapsed" \| "subtasks-expanded" \| "parent-epic" \| "agent-activity-states";/);
 	assert.match(PAGE_SOURCE, /const JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES = \[/);
 	assert.match(PAGE_SOURCE, /const SERVICE_IMPACT_AGENT_LABELS = \[[\s\S]*"Reading linked design notes"[\s\S]*"Mapping customer-facing impact"/);
 	assert.match(PAGE_SOURCE, /const DEPENDENCY_MAPPER_LABELS = \[[\s\S]*"Following linked work items"[\s\S]*"Finding blocked handoffs"/);
@@ -490,4 +556,10 @@ test("Jira issue renders explicit unassigned avatars with the shared placeholder
 	assert.match(SOURCE, /AvatarUnassigned,/);
 	assert.match(SOURCE, /assigneeUnassignedKind\?: AvatarUnassignedKind;/);
 	assert.match(SOURCE, /function JiraIssueAssignee[\s\S]*if \(assigneeUnassignedKind\) \{[\s\S]*<AvatarUnassigned[\s\S]*kind=\{assigneeUnassignedKind\}[\s\S]*size="sm"/);
+});
+
+test("Jira issue assignee avatars honor the shared hexagon shape for agents", () => {
+	assert.match(SOURCE, /assigneeAvatarShape\?: NonNullable<AvatarProps\["shape"\]>;/);
+	assert.match(SOURCE, /assigneeAvatarShape = "circle"/);
+	assert.match(SOURCE, /function JiraIssueAssignee[\s\S]*shape=\{assigneeAvatarShape\}/);
 });

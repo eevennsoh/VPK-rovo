@@ -461,6 +461,12 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 		{ ssr: false },
 	),
 
+	"jira-issue-demo-experimental": dynamic(() => import("../demos/blocks/jira-issue-demo").then((mod) => ({
+		default: mod.JiraIssueDemoExperimental,
+	})), { ssr: false }),
+	"jira-issue-demo-uncaptured-work": dynamic(() => import("../demos/blocks/jira-issue-demo").then((mod) => ({
+		default: mod.JiraIssueDemoUncapturedWork,
+	})), { ssr: false }),
 	"jira-issue-demo-subtasks-collapsed": dynamic(() => import("../demos/blocks/jira-issue-demo").then((mod) => ({
 		default: mod.JiraIssueDemoSubtasksCollapsed,
 	})), { ssr: false }),
