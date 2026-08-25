@@ -16,3 +16,11 @@ test("Pulse attributes every insight to fourteen sources with a static app stack
 	assert.match(STORY_SOURCE, /\{PULSE_SOURCES\.length\}<span className="sr-only"> sources from Jira, Confluence, GitHub, Slack, and 10 more<\/span>/u);
 	assert.match(STORY_SOURCE, /<TWGAppstack[\s\S]*animated=\{false\}[\s\S]*aria-hidden[\s\S]*iconSize="xxsmall"[\s\S]*sources=\{PULSE_SOURCES\}/u);
 });
+
+test("Pulse keeps source attribution when an insight has no contributors", () => {
+	assert.doesNotMatch(
+		STORY_SOURCE,
+		/if \(contributors\.length === 0\) \{\s*return null;\s*\}/u,
+	);
+	assert.match(STORY_SOURCE, /\{contributors\.length === 0 \? null : \([\s\S]*<AvatarGroup/u);
+});
