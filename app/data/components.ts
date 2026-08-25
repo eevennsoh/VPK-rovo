@@ -426,6 +426,7 @@ export const BLOCK_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	blockComponent("apps-directory", "Apps Directory"),
 	blockComponent("artifact"),
 	blockComponent("artifact-pane", "Artifact Pane"),
+	blockComponent("next-best-action", "Next Best Action"),
 	blockComponent("tools-directory", "Tools Directory"),
 	blockComponent("mermaid-diagram", "Mermaid Diagram"),
 	blockComponent("memory", "Memory"),

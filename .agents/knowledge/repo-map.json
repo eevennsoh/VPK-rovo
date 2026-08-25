@@ -5363,7 +5363,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 423,
+			"manifestEntryCount": 424,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5405,7 +5405,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 103,
+				"entryCount": 104,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5742,6 +5742,12 @@
 						"slug": "mermaid-diagram",
 						"name": "Mermaid Diagram",
 						"importPath": "@/components/blocks/mermaid-diagram"
+					},
+					{
+						"category": "blocks",
+						"slug": "next-best-action",
+						"name": "Next Best Action",
+						"importPath": "@/components/blocks/next-best-action"
 					},
 					{
 						"category": "blocks",
