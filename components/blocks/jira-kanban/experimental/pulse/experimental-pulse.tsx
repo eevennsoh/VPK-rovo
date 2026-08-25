@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, type CSSProperties, type RefCallback, type UIEvent } from "react";
+import { useCallback, useMemo, useRef, useState, type RefCallback, type UIEvent } from "react";
 
 import { PulseWorkRail } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-rail";
 import {
@@ -25,7 +25,6 @@ import type {
 } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { ScrollMaskEdgeOverlay } from "@/components/visual/scroll-mask";
-import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { cn } from "@/lib/utils";
 
 /**
@@ -66,6 +65,15 @@ const PROJECT_LABEL = "min-w-0 truncate text-[10px] font-semibold uppercase trac
 
 /** Matches the reference's ~5% fade band on this column's ~630px viewport. */
 const PULSE_FADE_SIZE = "3rem";
+
+function pulseArticleFadeClassName(visible: boolean) {
+	return cn(
+		"opacity-0 transition-opacity motion-reduce:transition-none",
+		visible
+			? "visible opacity-100 duration-normal ease-out-practical"
+			: "invisible duration-fast ease-in",
+	);
+}
 
 export interface ExperimentalPulseProps {
 	/**
@@ -109,13 +117,17 @@ export function ExperimentalPulse({
 		selectedMemberId: filter.selectedMemberId,
 	});
 
-	// Bottom fade stays a CSS mask. The top fade is a pointer-events-none
-	// overlay that only appears while the reader moves back toward the top:
-	// keeping it mounted at opacity zero lets it transition without veiling a
-	// header after the article is positioned by a chevron or ruler jump.
+	// Both edge fades are pointer-events-none overlays. `mask-image` on a
+	// scrollport fades the document, not the viewport, so a CSS bottom stop
+	// never paints while the reader is mid-article. Overlays stay mounted at
+	// opacity zero so they can transition. The top band only appears while
+	// scrolling toward the top, so a chevron or ruler jump does not veil the
+	// destination header. The bottom band appears while scrolling whenever
+	// there is more content below. Both hide when scrolling stops.
 	const overflow = useHasVerticalOverflow<HTMLDivElement>();
 	const { ref: overflowRef, showBottomScrollMask, showTopScrollMask } = overflow;
 	const { scrollRef, scrollToEntry, scrollToSnapshot } = reading;
+	const [isArticleScrolling, setIsArticleScrolling] = useState(false);
 	const [isScrollingTowardTop, setIsScrollingTowardTop] = useState(false);
 	const previousScrollTopRef = useRef(0);
 	const scrollportRef = useCallback<RefCallback<HTMLDivElement>>((node) => {
@@ -125,12 +137,14 @@ export function ExperimentalPulse({
 	}, [overflowRef, scrollRef]);
 	const handleArticleScroll = useCallback((event: UIEvent<HTMLDivElement>) => {
 		const nextScrollTop = event.currentTarget.scrollTop;
+		setIsArticleScrolling(true);
 		setIsScrollingTowardTop(
 			isPulseScrollTowardTop(previousScrollTopRef.current, nextScrollTop),
 		);
 		previousScrollTopRef.current = nextScrollTop;
 	}, []);
 	const handleArticleScrollEnd = useCallback(() => {
+		setIsArticleScrolling(false);
 		setIsScrollingTowardTop(false);
 	}, []);
 	// No settle nudge here: the rounding that made a jump light the mark above it
@@ -138,19 +152,6 @@ export function ExperimentalPulse({
 	// belongs — the shell should not be correcting the outline's arithmetic.
 	const handleSelectEntry = scrollToEntry;
 	const handleGoToSnapshot = scrollToSnapshot;
-
-	const scrollportStyle = useMemo((): CSSProperties => ({
-		...buildScrollMaskStyle({
-			fadeBottom: showBottomScrollMask,
-			fadeSize: PULSE_FADE_SIZE,
-			fadeTop: false,
-		}),
-		// Jumping from the ruler writes the scroll position directly, and
-		// hover-scrubbing writes it every pointer move; an inherited smooth
-		// behaviour would lag a frame behind the cursor and animate motion under
-		// reduced motion that nobody asked for.
-		scrollBehavior: "auto",
-	}), [showBottomScrollMask]);
 
 	if (pulse.activeSnapshot === null) {
 		return (
@@ -223,7 +224,13 @@ export function ExperimentalPulse({
 							onScrollEnd={handleArticleScrollEnd}
 							ref={scrollportRef}
 							role="region"
-							style={scrollportStyle}
+							style={{
+								// Jumping from the ruler writes the scroll position directly, and
+								// hover-scrubbing writes it every pointer move; an inherited smooth
+								// behaviour would lag a frame behind the cursor and animate motion
+								// under reduced motion that nobody asked for.
+								scrollBehavior: "auto",
+							}}
 							tabIndex={0}
 						>
 							<PulseStream
@@ -239,14 +246,15 @@ export function ExperimentalPulse({
 							/>
 						</div>
 						<ScrollMaskEdgeOverlay
-							className={cn(
-								"opacity-0 transition-opacity motion-reduce:transition-none",
-								showTopScrollMask && isScrollingTowardTop
-									? "visible opacity-100 duration-normal ease-out-practical"
-									: "invisible duration-fast ease-in",
-							)}
+							className={pulseArticleFadeClassName(showTopScrollMask && isScrollingTowardTop)}
 							data-pulse-article-top-fade=""
 							edge="top"
+							fadeSize={PULSE_FADE_SIZE}
+						/>
+						<ScrollMaskEdgeOverlay
+							className={pulseArticleFadeClassName(showBottomScrollMask && isArticleScrolling)}
+							data-pulse-article-bottom-fade=""
+							edge="bottom"
 							fadeSize={PULSE_FADE_SIZE}
 						/>
 					</div>

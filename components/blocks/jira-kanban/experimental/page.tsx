@@ -8,8 +8,20 @@ import type {
 	JiraKanbanColumnData,
 } from "../index";
 import { createJiraKanbanColumns } from "../jira-kanban-data";
+import { BoardFilterPopover } from "./components/board-filter-popover";
+import { TimelineActivityBadge } from "./components/timeline-activity-badge";
 import { ExperimentalJiraKanban } from "./experimental-jira-kanban";
 import { ExperimentalJiraKanbanBoardHeader } from "./experimental-board-header";
+import { useBoardFilter } from "./hooks/use-board-filter";
+import {
+	BOARD_FILTER_DEMO_NOW_ISO,
+	filterPulseTimelineByDays,
+} from "./lib/board-filter";
+import {
+	countUnviewedTimelineSnapshots,
+	EXPERIMENTAL_BOARD_LAST_VIEWED_AT,
+	markTimelineViewed,
+} from "./lib/timeline-activity";
 import { ExperimentalPulse } from "./pulse/experimental-pulse";
 import {
 	PulseModeToggle,
@@ -98,11 +110,27 @@ export default function ExperimentalJiraKanbanPage({
 	const [draggedCard, setDraggedCard] = useState<DraggedCardState | null>(null);
 	const [selection, setSelection] = useState(createJiraKanbanSelectionState);
 	const [assignedAgentIdsByCard, setAssignedAgentIdsByCard] = useState<Record<string, string[]>>({});
-	const [selectedAssigneeIds, setSelectedAssigneeIds] = useState<Set<string>>(() => new Set());
+	const boardFilter = useBoardFilter();
+	const selectedAssigneeIds = boardFilter.selectedAssigneeIds;
+	const [timelineLastViewedAt, setTimelineLastViewedAt] = useState<string | null>(
+		EXPERIMENTAL_BOARD_LAST_VIEWED_AT,
+	);
 	const assignees = useMemo(() => getJiraKanbanAssignees(boardColumns), [boardColumns]);
 	const filteredBoardColumns = useMemo(
 		() => filterJiraKanbanColumnsByAssignee(boardColumns, selectedAssigneeIds),
 		[boardColumns, selectedAssigneeIds],
+	);
+	const pulseTimeline = useMemo(
+		() => filterPulseTimelineByDays(
+			PULSE_TIMELINE,
+			boardFilter.model.days,
+			new Date(BOARD_FILTER_DEMO_NOW_ISO),
+		),
+		[boardFilter.model.days],
+	);
+	const timelineUnreadCount = countUnviewedTimelineSnapshots(
+		PULSE_TIMELINE.snapshots,
+		timelineLastViewedAt,
 	);
 	const selectedAgentIds = useMemo(
 		() => getCommonJiraKanbanAgentIds(assignedAgentIdsByCard, selection.selectedCardCodes),
@@ -187,8 +215,17 @@ export default function ExperimentalJiraKanbanPage({
 	const handleAssigneeFilterChange = (assigneeIds: Set<string>) => {
 		setSelection(createJiraKanbanSelectionState());
 		setDraggedCard(null);
-		setSelectedAssigneeIds(assigneeIds);
+		boardFilter.actions.setAssigneeIds(assigneeIds);
 	};
+
+	const markTimelineAsViewed = useCallback(() => {
+		setTimelineLastViewedAt(markTimelineViewed(PULSE_TIMELINE));
+	}, []);
+
+	const handleOpenTimeline = useCallback(() => {
+		markTimelineAsViewed();
+		setMode("pulse");
+	}, [markTimelineAsViewed]);
 
 	const handleSelectedCardsStatusChange = (targetColumnTitle: string) => {
 		updateBoardColumns((currentColumns) => moveJiraKanbanCardsToColumn(
@@ -246,7 +283,13 @@ export default function ExperimentalJiraKanbanPage({
 				compact={compactHeader}
 				onSelectedAssigneeIdsChange={handleAssigneeFilterChange}
 				selectedAssigneeIds={selectedAssigneeIds}
-				disableAssigneeFilter={isPulse}
+				endSlot={
+					<TimelineActivityBadge
+						compact={compactHeader}
+						onSelect={handleOpenTimeline}
+						unreadCount={isPulse ? 0 : timelineUnreadCount}
+					/>
+				}
 				facepile={isPulse ? (
 					<PulseRosterFacepile
 						members={PULSE_TIMELINE.members}
@@ -254,10 +297,24 @@ export default function ExperimentalJiraKanbanPage({
 						selectedMemberId={pulseMemberId}
 					/>
 				) : undefined}
+				filterControl={
+					<BoardFilterPopover
+						actions={boardFilter.actions}
+						assignees={assignees}
+						compact={compactHeader}
+						model={boardFilter.model}
+					/>
+				}
 				modeToggle={
 					<PulseModeToggle
 						active={isPulse}
-						onToggle={() => setMode(isPulse ? "board" : "pulse")}
+						onToggle={() => {
+							if (isPulse) {
+								setMode("board");
+								return;
+							}
+							handleOpenTimeline();
+						}}
 					/>
 				}
 				viewTabs={viewTabs}
@@ -270,6 +327,7 @@ export default function ExperimentalJiraKanbanPage({
 					onSelectedMemberIdChange={setPulseMemberId}
 					requestedActionIds={requestedActionIds}
 					selectedMemberId={pulseMemberId}
+					timeline={pulseTimeline}
 				/>
 			) : (
 				<div className="flex min-h-0 min-w-0 flex-1">

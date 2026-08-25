@@ -30,6 +30,7 @@ const {
 	DEFAULT_HEADER_SOURCE,
 	DEFAULT_PAGE_SOURCE,
 	existsSync,
+	EXPERIMENTAL_DIR,
 	EXPERIMENTAL_HEADER_SOURCE,
 	EXPERIMENTAL_PAGE_SOURCE,
 	PULSE_MODE_CONTROLS_SOURCE,
@@ -670,14 +671,18 @@ test("Pulse keeps focus alive through in-place commits, and pins header jumps to
 	// used to jump that row 52px down so a CSS top mask would not cover the
 	// buttons — the top fade is an overlay now, so that offset is gone.
 	assert.doesNotMatch(SOURCES.shell, /scrollPaddingTop/u);
-	assert.match(SOURCES.shell, /fadeTop: false/u);
+	assert.doesNotMatch(SOURCES.shell, /buildScrollMaskStyle/u);
+	assert.doesNotMatch(SOURCES.shell, /fadeTop: false/u);
 	assert.match(SOURCES.shell, /onScroll=\{handleArticleScroll\}/u);
 	assert.match(SOURCES.shell, /onScrollEnd=\{handleArticleScrollEnd\}/u);
 	assert.match(SOURCES.shell, /showTopScrollMask && isScrollingTowardTop/u);
+	assert.match(SOURCES.shell, /showBottomScrollMask && isArticleScrolling/u);
 	assert.match(SOURCES.shell, /"opacity-0 transition-opacity motion-reduce:transition-none"/u);
 	assert.match(SOURCES.shell, /"visible opacity-100 duration-normal ease-out-practical"/u);
 	assert.match(SOURCES.shell, /"invisible duration-fast ease-in"/u);
 	assert.match(SOURCES.shell, /data-pulse-article-top-fade=""/u);
+	assert.match(SOURCES.shell, /data-pulse-article-bottom-fade=""/u);
+	assert.match(SOURCES.shell, /edge="bottom"/u);
 	assert.match(SOURCES.shell, /<ScrollMaskEdgeOverlay/u);
 	assert.match(SOURCES.story, /size="icon-compact"/u);
 	// The jump stays on the header row the reader selected, not a one-off in the
@@ -812,6 +817,40 @@ test("Pulse is a toggle on the board's own control row, not a separate tab", () 
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /\{facepile \?\? \(/u);
 });
 
+test("Experimental board header keeps Filter clickable and badges new timeline activity", () => {
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /filterControl: ReactNode;/u);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /endSlot\?: ReactNode;/u);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /\{filterControl\}/u);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /\{endSlot \? endSlot : null\}/u);
+	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /disableAssigneeFilter|aria-disabled[\s\S]*Filter board is unavailable/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<BoardFilterPopover/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<TimelineActivityBadge/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /useBoardFilter\(/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /filterPulseTimelineByDays/u);
+	assert.match(
+		readFileSync(join(EXPERIMENTAL_DIR, "data", "board-filter-options.ts"), "utf8"),
+		/Filter by days/u,
+	);
+	assert.match(
+		readFileSync(join(EXPERIMENTAL_DIR, "components", "board-filter-popover.tsx"), "utf8"),
+		/aria-expanded=\{model\.open\}[\s\S]*aria-label=\{filterLabel\}[\s\S]*aria-pressed=\{hasSelection \|\| model\.open\}/u,
+	);
+	assert.doesNotMatch(
+		readFileSync(join(EXPERIMENTAL_DIR, "components", "board-filter-popover.tsx"), "utf8"),
+		/Filter board is unavailable/u,
+	);
+});
+
+test("Kanban column add-agent controls use the AI agent add icon", () => {
+	assert.match(DEFAULT_BOARD_SOURCE, /import AiAgentAddIcon from "@atlaskit\/icon-lab\/core\/ai-agent-add"/u);
+	assert.match(DEFAULT_BOARD_SOURCE, /render=\{<AiAgentAddIcon label="" \/>\}/u);
+	assert.doesNotMatch(DEFAULT_BOARD_SOURCE, /import AiAgentIcon from "@atlaskit\/icon\/core\/ai-agent"/u);
+	const experimentalBoard = readFileSync(join(EXPERIMENTAL_DIR, "experimental-jira-kanban.tsx"), "utf8");
+	assert.match(experimentalBoard, /import AiAgentAddIcon from "@atlaskit\/icon-lab\/core\/ai-agent-add"/u);
+	assert.match(experimentalBoard, /render=\{<AiAgentAddIcon label="" \/>\}/u);
+	assert.doesNotMatch(experimentalBoard, /import AiAgentIcon from "@atlaskit\/icon\/core\/ai-agent"/u);
+});
+
 test("Pulse keeps one member filter across the header facepile and the story faces", () => {
 	// One selection, three places it can be driven from: the header facepile,
 	// the contributor faces, and the story's own clear control. The filter used
@@ -840,12 +879,14 @@ test("Pulse keeps one member filter across the header facepile and the story fac
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /className="focus-visible:ring-ring\/50 flex size-6 shrink-0 items-center justify-center/u);
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /member\.kind === "human" \? "ring-2 ring-surface" : null/u);
 	assert.doesNotMatch(PULSE_MODE_CONTROLS_SOURCE, /"ring-2 ring-surface transition-opacity/u);
-	// The contributor facepile uses the same primitive and fixed-height wrapper.
-	// Keeping the avatar as a direct child of a 24px flex button removes the
+	// The contributor facepile uses the same primitive and a 16px wrapper.
+	// Keeping the avatar as a direct child of a 16px flex button removes the
 	// inline list/button baseline that made the old row 29px and top-heavy.
 	assert.match(SOURCES.story, /import \{ Avatar, AvatarFallback, AvatarGroup, AvatarImage \} from "@\/components\/ui\/avatar";/u);
-	assert.match(SOURCES.story, /<AvatarGroup[\s\S]*label="Contributors in this window"[\s\S]*items-center -space-x-1\.5/u);
-	assert.match(SOURCES.story, /className="focus-visible:ring-ring\/50 flex size-6 shrink-0 items-center justify-center/u);
+	assert.match(SOURCES.story, /<span aria-hidden className=\{cn\("shrink-0", PULSE_ROW_META\)\}>By<\/span>/u);
+	assert.match(SOURCES.story, /<AvatarGroup[\s\S]*label="By contributors in this window"[\s\S]*size="xs"/u);
+	assert.match(SOURCES.story, /className="focus-visible:ring-ring\/50 flex size-4 shrink-0 items-center justify-center/u);
+	assert.match(SOURCES.story, /size="xs"/u);
 	assert.match(SOURCES.story, /member\.kind === "human" \? "ring-2 ring-surface" : null/u);
 	assert.match(SOURCES.story, /member\.kind === "agent" && isSelected \? "\[&>svg\]:text-border-selected!" : null/u);
 	assert.doesNotMatch(SOURCES.story, /"duration-normal ease-out-practical ring-2 ring-surface transition-opacity/u);

@@ -53,6 +53,46 @@ test("Track mounts the experimental Jira kanban board before Build", () => {
 	);
 });
 
+test("Track keeps the experimental board Filter interactive in Board and Pulse", () => {
+	const pageSource = readProjectFile("components/projects/jira-golden-journeys-v3/page.tsx");
+	const experimentalPageSource = readProjectFile(
+		"components/blocks/jira-kanban/experimental/page.tsx",
+	);
+	const experimentalHeaderSource = readProjectFile(
+		"components/blocks/jira-kanban/experimental/experimental-board-header.tsx",
+	);
+	const filterPopoverSource = readProjectFile(
+		"components/blocks/jira-kanban/experimental/components/board-filter-popover.tsx",
+	);
+	const filterOptionsSource = readProjectFile(
+		"components/blocks/jira-kanban/experimental/data/board-filter-options.ts",
+	);
+	const trackStage = pageSource.match(
+		/function JiraGoldenJourneysV3TrackStage\([\s\S]*?(?=\nfunction JiraGoldenJourneysV3WorkItemStage)/u,
+	)?.[0] ?? "";
+	const filterTrigger = filterPopoverSource.match(
+		/<PopoverTrigger[\s\S]*?<\/PopoverTrigger>/u,
+	)?.[0] ?? "";
+
+	assert.match(trackStage, /<ExperimentalJiraKanbanPage/u);
+	assert.match(
+		experimentalPageSource,
+		/filterControl=\{\s*<BoardFilterPopover[\s\S]*actions=\{boardFilter\.actions\}[\s\S]*model=\{boardFilter\.model\}/u,
+	);
+	assert.match(experimentalHeaderSource, /filterControl: ReactNode;/u);
+	assert.match(experimentalHeaderSource, /\{filterControl\}/u);
+	assert.doesNotMatch(experimentalPageSource, /disableAssigneeFilter/u);
+	assert.doesNotMatch(experimentalHeaderSource, /disableAssigneeFilter/u);
+	assert.doesNotMatch(
+		`${experimentalPageSource}\n${experimentalHeaderSource}\n${filterPopoverSource}`,
+		/Filter board is unavailable|filter by person or agent with the faces to the left/u,
+	);
+	assert.match(filterTrigger, /aria-expanded=\{model\.open\}/u);
+	assert.match(filterTrigger, /aria-label=\{filterLabel\}/u);
+	assert.doesNotMatch(filterTrigger, /aria-disabled/u);
+	assert.match(filterOptionsSource, /Filter by days/u);
+});
+
 test("Build keeps the work item at its initial Activity scroll position", () => {
 	const pageSource = readProjectFile("components/projects/jira-golden-journeys-v3/page.tsx");
 	const activityPanelSource = readProjectFile(
