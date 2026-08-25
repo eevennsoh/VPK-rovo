@@ -43,6 +43,7 @@ import {
 import { PanelLayoutProvider } from "@/components/blocks/jira-work-item/experimental-v3/context-panel-layout";
 import {
 	SectionNavigationProvider,
+	usePublishInsightsCount,
 	useSectionNavigation,
 } from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
 import { ExperimentalWorkItemDialog } from "@/components/blocks/jira-work-item/experimental-v3/components/experimental-work-item-dialog";
@@ -93,6 +94,7 @@ import {
 } from "@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-review-submit";
 import { showPullRequestReviewToast } from "@/components/blocks/jira-work-item/experimental-v3/lib/show-pull-request-review-toast";
 import { resolveInitialReviewedChapterIds } from "@/components/blocks/jira-work-item/experimental-v3/lib/resolve-initial-reviewed-chapter-ids";
+import { resolveNewInsightsCount } from "@/components/blocks/jira-work-item/experimental-v3/lib/new-insights-count";
 import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
 import { SidebarResizeHandle } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
@@ -252,23 +254,26 @@ function InsightsAwareComposer({
 	...composerProps
 }: Readonly<ComponentProps<typeof ActivityComposer> & { hasInsights: boolean }>) {
 	const { activityEvents } = useJiraWorkItemMeta();
+	const { contextResources } = useJiraWorkItemState();
 	const { insightsSelected } = useSectionNavigation();
-	const { selectLatestUnread, unreadCheckpointIds } = useJiraInsights();
+	const { unreadCheckpointIds } = useJiraInsights();
 	const activityTimestamps = useMemo(
 		() => activityEvents.flatMap((entry) => (
 			entry.createdAtMs == null ? [] : [entry.createdAtMs]
 		)),
 		[activityEvents],
 	);
+	usePublishInsightsCount(
+		resolveNewInsightsCount(
+			contextResources,
+			hasInsights ? unreadCheckpointIds.length : undefined,
+		),
+	);
 
 	return insightsSelected && hasInsights ? (
 		<JiraInsightsScrubber activityTimestamps={activityTimestamps} />
 	) : (
-		<ActivityComposer
-			{...composerProps}
-			newInsightsCount={hasInsights ? unreadCheckpointIds.length : undefined}
-			onNewInsightsSelect={hasInsights ? selectLatestUnread : undefined}
-		/>
+		<ActivityComposer {...composerProps} />
 	);
 }
 
@@ -787,7 +792,6 @@ function ExperimentalV3JiraWorkItemContent({
 									hasInsights={hasInsights}
 									onAgentPromptSubmit={onAgentPromptSubmit}
 									onOpenAgentChat={onOpenAgentChat}
-									onSectionSelect={selectedPullRequestIdentity ? handlePullRequestClear : undefined}
 									pullRequestFix={activePullRequestFix}
 									pullRequestReview={activePullRequestReview}
 									onSkillInvoke={onSkillInvoke}

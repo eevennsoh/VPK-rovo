@@ -175,7 +175,8 @@ test("Kanban header compacts its controls while an owning workspace is open", ()
 	assert.match(HEADER_SOURCE, /<FilterIcon label="" \/>/u);
 	assert.match(HEADER_SOURCE, /<GroupIcon label="" \/>/u);
 	assert.doesNotMatch(HEADER_SOURCE, /<(?:FilterIcon|GroupIcon) label="" size="small" \/>/u);
-	assert.match(HEADER_SOURCE, /\{compact \? \([\s\S]*aria-label=\{`More \$\{surfaceLabel\} controls`\}[\s\S]*\) : \([\s\S]*aria-label="View insights"[\s\S]*aria-label=\{`\$\{surfaceTitle\} settings`\}[\s\S]*aria-label="Undo board change"[\s\S]*aria-label="Board announcements"/u);
+	assert.match(HEADER_SOURCE, /\{compact \? \([\s\S]*aria-label=\{`More \$\{surfaceLabel\} controls`\}[\s\S]*\) : \([\s\S]*aria-label="View insights"[\s\S]*aria-label=\{`\$\{surfaceTitle\} settings`\}[\s\S]*aria-label=\{`More \$\{surfaceLabel\} controls`\}/u);
+	assert.doesNotMatch(HEADER_SOURCE, /aria-label="(?:Undo board change|Board announcements)"/u);
 });
 
 test("Kanban header supports owning surfaces with a custom search label", () => {
@@ -195,7 +196,7 @@ test("Kanban assignee list fades into its fixed selection footer", () => {
 });
 
 test("Kanban card focus border stays inside the card and uses the focused border token", () => {
-	assert.match(JIRA_ISSUE_SOURCE, /"group\/jira-issue relative w-full border outline-none focus-visible:border-ring"/);
+	assert.match(JIRA_ISSUE_SOURCE, /"group\/jira-issue relative w-full min-w-0 border outline-none focus-visible:border-ring"/);
 	assert.doesNotMatch(JIRA_ISSUE_SOURCE, /border: "none"/);
 });
 
@@ -222,7 +223,14 @@ test("Experimental kanban card lists drop scroller padding while the default kee
 });
 
 test("Experimental kanban card gap matches the column gutter", () => {
-	assert.match(EXPERIMENTAL_SOURCE, /<div className="flex min-h-full items-stretch gap-2" style=\{\{ minWidth: "100%" \}\}>/u);
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/<div className="flex min-h-full w-max min-w-full items-stretch ps-6">/u,
+	);
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/<div className="flex min-h-full items-stretch gap-2">/u,
+	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
 		/overflowY: "auto",\n\s+display: "flex",\n\s+flexDirection: "column",\n\s+gap: token\("space\.100"\),/,
@@ -235,6 +243,17 @@ test("Experimental kanban card gap matches the column gutter", () => {
 
 test("Kanban columns retain a readable minimum width when the board narrows", () => {
 	assert.match(SOURCE, /style=\{\{ flex: "1 1 0", minWidth: "280px", borderRadius: token\("radius\.xlarge"\) \}\}/u);
+});
+
+test("Experimental kanban columns lock a consistent 280px min and max width", () => {
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/style=\{\{ flex: "1 1 0", minWidth: "280px", maxWidth: "280px", borderRadius: token\("radius\.xlarge"\) \}\}/u,
+	);
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/className="min-w-0 overflow-visible border-2 border-transparent transition-colors"/u,
+	);
 });
 
 test("Kanban column drop targets expose a stable browser selector", () => {
@@ -559,14 +578,14 @@ test("Experimental kanban columns sit on the board surface without a sunken fill
 	assert.match(SOURCE, /backgroundColor: token\("elevation.surface.sunken"\)/u);
 });
 
-test("Experimental kanban column headers drop inline padding without changing the default board", () => {
+test("Experimental kanban column headers keep bottom padding without top padding", () => {
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/paddingTop: token\("space\.150"\), paddingBottom: headerPaddingBlock \}\}/u,
+		/style=\{\{ paddingBottom: token\("space\.100"\) \}\}/u,
 	);
 	assert.doesNotMatch(
 		EXPERIMENTAL_SOURCE,
-		/paddingTop: token\("space\.150"\), paddingBottom: headerPaddingBlock, paddingInline: token\("space\.150"\)/u,
+		/paddingTop: token\("space\.150"\)/u,
 	);
 	assert.match(
 		SOURCE,
@@ -592,17 +611,17 @@ test("Experimental kanban cards use the hexagon avatar for agent assignees", () 
 });
 
 test("Experimental kanban column wrappers stay overflow-visible so card strokes are not clipped", () => {
-	assert.match(EXPERIMENTAL_SOURCE, /className="group\/board-column overflow-visible"/u);
-	assert.match(EXPERIMENTAL_SOURCE, /className="overflow-visible border-2 border-transparent transition-colors"/u);
+	assert.match(EXPERIMENTAL_SOURCE, /className="group\/board-column min-w-0 overflow-visible"/u);
+	assert.match(EXPERIMENTAL_SOURCE, /className="min-w-0 overflow-visible border-2 border-transparent transition-colors"/u);
 	assert.doesNotMatch(SOURCE, /group\/board-column overflow-visible/u);
 });
 
-test("Experimental kanban column card lists reuse the shared bottom scroll-mask", () => {
+test("Experimental kanban column card lists reuse the shared top and bottom scroll-mask", () => {
 	assert.match(EXPERIMENTAL_SOURCE, /import \{ useHasVerticalOverflow \} from "@\/components\/hooks\/use-has-vertical-overflow";/u);
 	assert.match(EXPERIMENTAL_SOURCE, /import \{ buildScrollMaskStyle \} from "@\/components\/visual\/scroll-mask\/lib";/u);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/const \{ ref: cardListRef, showBottomScrollMask \} = useHasVerticalOverflow<HTMLDivElement>\(\);[\s\S]*buildScrollMaskStyle\(\{\s*fadeBottom: showBottomScrollMask,\s*fadeSize: "3rem",\s*fadeTop: false,\s*\}\)[\s\S]*ref=\{cardListRef\}[\s\S]*overflowY: "auto",[\s\S]*\.\.\.cardListScrollMaskStyle/u,
+		/const \{ ref: cardListRef, showBottomScrollMask, showTopScrollMask \} = useHasVerticalOverflow<HTMLDivElement>\(\);[\s\S]*buildScrollMaskStyle\(\{\s*fadeBottom: showBottomScrollMask,\s*fadeSize: "3rem",\s*fadeTop: showTopScrollMask,\s*\}\)[\s\S]*ref=\{cardListRef\}[\s\S]*overflowY: "auto",[\s\S]*\.\.\.cardListScrollMaskStyle/u,
 	);
 	assert.doesNotMatch(SOURCE, /useHasVerticalOverflow/u);
 	assert.doesNotMatch(SOURCE, /buildScrollMaskStyle/u);
@@ -633,6 +652,34 @@ test("Experimental kanban variant owns its own tree without touching the default
 	assert.doesNotMatch(SOURCE, /experimental/iu);
 	assert.doesNotMatch(PAGE_SOURCE, /experimental/iu);
 	assert.doesNotMatch(HEADER_SOURCE, /experimental/iu);
+});
+
+test("Experimental kanban header keeps only configure and more actions", () => {
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /import CustomizeIcon from "@atlaskit\/icon\/core\/customize";/u);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /aria-label=\{`\$\{surfaceTitle\} settings`\}[\s\S]*<CustomizeIcon label="" \/>/u);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /aria-label=\{`More \$\{surfaceLabel\} controls`\}/u);
+	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /aria-label="(?:View insights|Undo board change|Board announcements)"/u);
+});
+
+test("Experimental kanban keeps 24px column gutters on the scrollable row, not the overflow section", () => {
+	assert.doesNotMatch(
+		EXPERIMENTAL_SOURCE.match(/<section[\s\S]*?<\/section>/u)?.[0] ?? "",
+		/paddingInline: token\("space\.200"\)/u,
+	);
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/className="flex min-h-full w-max min-w-full items-stretch ps-6"/u,
+	);
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/className="flex min-h-full items-stretch gap-2"/u,
+	);
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/<div aria-hidden className="w-6 shrink-0" \/>/u,
+	);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /items-center gap-2 px-6/u);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /flex-wrap items-center gap-2 px-6/u);
 });
 
 test("Experimental kanban variant reuses the shared board data contracts", () => {

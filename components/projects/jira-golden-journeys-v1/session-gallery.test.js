@@ -262,6 +262,18 @@ test("Global Jira Design cards keep human assignees while active agents use acti
 	);
 });
 
+test("Jira Design board tags keep space names and omit agent-state summaries", () => {
+	assert.match(
+		JIRA_DESIGN_WORK_ITEMS_SOURCE,
+		/tags: \[\s*\{ color: "blue" as const, text: item\.spaceName \},\s*\],/u,
+	);
+	assert.doesNotMatch(JIRA_DESIGN_WORK_ITEMS_SOURCE, /text: item\.status/u);
+	assert.match(
+		JIRA_DESIGN_WORK_ITEMS_SOURCE,
+		/createJiraDesignListRows[\s\S]*labels: \[\{ color: "blue", text: item\.spaceName \}\]/u,
+	);
+});
+
 test("Global Jira Design screens share functional Board and List line tabs", () => {
 	assert.match(JIRA_DESIGN_VIEW_TABS_SOURCE, /<Tabs[\s\S]*value=\{activeView\}/u);
 	assert.match(JIRA_DESIGN_VIEW_TABS_SOURCE, /<TabsList className="h-9 w-full justify-start px-2" variant="line">/u);

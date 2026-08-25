@@ -254,7 +254,7 @@ export function AvatarDemoGroupWithCount() {
 export function AvatarDemoGroupWithIconCount() {
 	return (
 		<>
-			<AvatarGroup>
+			<AvatarGroup size="sm">
 				<Avatar size="sm">
 					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="Team member" />
 					<AvatarFallback>CN</AvatarFallback>
@@ -277,7 +277,7 @@ export function AvatarDemoGroupWithIconCount() {
 					<PlusIcon />
 				</AvatarGroupCount>
 			</AvatarGroup>
-			<AvatarGroup>
+			<AvatarGroup size="default">
 				<Avatar>
 					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="Team member" />
 					<AvatarFallback>CN</AvatarFallback>
@@ -300,7 +300,7 @@ export function AvatarDemoGroupWithIconCount() {
 					<PlusIcon />
 				</AvatarGroupCount>
 			</AvatarGroup>
-			<AvatarGroup>
+			<AvatarGroup size="lg">
 				<Avatar size="lg">
 					<AvatarImage
 						src={PRIMARY_AVATAR_SRC}

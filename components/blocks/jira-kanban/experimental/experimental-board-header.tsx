@@ -2,14 +2,11 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import AddIcon from "@atlaskit/icon/core/add";
-import ChartTrendIcon from "@atlaskit/icon/core/chart-trend";
+import CustomizeIcon from "@atlaskit/icon/core/customize";
 import FilterIcon from "@atlaskit/icon/core/filter";
-import MegaphoneIcon from "@atlaskit/icon/core/megaphone";
 import PersonAddIcon from "@atlaskit/icon/core/person-add";
 import SearchIcon from "@atlaskit/icon/core/search";
-import SettingsIcon from "@atlaskit/icon/core/settings";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
-import UndoIcon from "@atlaskit/icon/core/undo";
 import GroupIcon from "@atlaskit/icon-lab/core/group";
 
 import {
@@ -139,7 +136,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 
 	return (
 		<header className={cn("shrink-0 pt-3", showBoardControls ? "pb-4" : "pb-0")}>
-			<div className="flex min-w-0 items-center gap-2 px-4">
+			<div className="flex min-w-0 items-center gap-2 px-6">
 				<JiraProjectAvatar label={JIRA_DESIGN_PROJECT.name} src={JIRA_DESIGN_PROJECT.imageSrc} />
 				<Heading as="h1" className="truncate" size="large">Jira Design</Heading>
 				<div className="flex items-center gap-1">
@@ -154,7 +151,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 			{viewTabs ? <div className="mt-2">{viewTabs}</div> : null}
 
 			{showBoardControls ? (
-				<div className="mt-4 flex flex-wrap items-center gap-2 px-4">
+				<div className="mt-4 flex flex-wrap items-center gap-2 px-6">
 					<InputGroup className="w-44">
 						<InputGroupAddon>
 							<Icon render={<SearchIcon label="" size="small" />} />
@@ -313,17 +310,8 @@ export function ExperimentalJiraKanbanBoardHeader({
 							</Button>
 						) : (
 							<>
-								<Button aria-disabled aria-label="View insights" size="icon" variant="outline">
-									<Icon render={<ChartTrendIcon label="" />} />
-								</Button>
 								<Button aria-disabled aria-label={`${surfaceTitle} settings`} size="icon" variant="outline">
-									<Icon render={<SettingsIcon label="" />} />
-								</Button>
-								<Button aria-disabled aria-label="Undo board change" size="icon" variant="outline">
-									<Icon render={<UndoIcon label="" />} />
-								</Button>
-								<Button aria-disabled aria-label="Board announcements" size="icon" variant="outline">
-									<Icon render={<MegaphoneIcon label="" />} />
+									<Icon render={<CustomizeIcon label="" />} />
 								</Button>
 								<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
 									<Icon render={<ShowMoreHorizontalIcon label="" />} />

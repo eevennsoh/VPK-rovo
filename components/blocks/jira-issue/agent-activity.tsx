@@ -43,7 +43,7 @@ const JIRA_ISSUE_MOTION_STYLE: CSSProperties = { willChange: "transform, opacity
 const JIRA_ISSUE_AGENT_LABEL_TRANSITION = { duration: 0.2, ease: "easeOut" } as const;
 const JIRA_ISSUE_AGENT_LABEL_CYCLE_INTERVAL_MS = 5200;
 const JIRA_ISSUE_AGENT_LABEL_CYCLE_JITTER_MS = 1800;
-const JIRA_ISSUE_AGENT_AWAITING_LABEL = "Waiting for input";
+const JIRA_ISSUE_AGENT_AWAITING_LABEL = "Needs input";
 const JIRA_ISSUE_AGENT_SHIMMER_DURATION = 1.4;
 const JIRA_ISSUE_AGENT_SHIMMER_SPREAD = 2;
 const JIRA_ISSUE_AGENT_SPINNER_LOOP_MS = 1200;
@@ -179,12 +179,13 @@ function JiraIssueAgentActivityRow({
 						aria-label={`${activity.name}: ${displayLabel}`}
 						data-slot="jira-issue-agent-row"
 						className={cn(
-							"flex h-6 w-full items-center justify-between gap-2 px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+							"flex h-6 w-full min-w-0 items-center justify-between gap-2 px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
 							rowRadiusClassName,
 						)}
 					>
-						<div className="flex min-w-0 items-center gap-2">
+						<div className="flex min-w-0 flex-1 items-center gap-2">
 							<AgentAvatarVisual
+								avatarClassName="shrink-0"
 								avatarSrc={activity.avatarSrc}
 								brandName={activity.agentBrandName}
 								fallbackText={getAgentInitial(activity.name)}
@@ -192,13 +193,13 @@ function JiraIssueAgentActivityRow({
 								sizePx={16}
 							/>
 							{isAwaitingInput ? (
-								<span className="inline-flex min-w-0 items-baseline text-sm leading-5 text-text-subtlest">
+								<span className="flex min-w-0 flex-1 items-baseline overflow-hidden text-sm leading-5 text-text-subtlest">
 									<Shimmer
 										as="span"
 										duration={JIRA_ISSUE_AGENT_SHIMMER_DURATION}
 										spread={JIRA_ISSUE_AGENT_SHIMMER_SPREAD}
 										wave={false}
-										className="min-w-0 truncate text-sm leading-5"
+										className="block min-w-0 truncate text-sm leading-5"
 									>
 										{displayLabel}
 									</Shimmer>
@@ -217,12 +218,11 @@ function JiraIssueAgentActivityRow({
 								<StatusInformationIcon label="" size="small" color="currentColor" />
 							</span>
 						) : (
-							<span className="-my-1 grid size-6 shrink-0 place-items-center" aria-hidden="true">
+							<span className="-my-1 grid size-6 shrink-0 place-items-center text-icon" aria-hidden="true">
 								<Spinner
 									label=""
 									phaseOffsetMs={getJiraIssueAgentSpinnerPhaseOffsetMs(activity.id, index)}
 									size="sm"
-									variant="rainbow"
 								/>
 							</span>
 						)}
@@ -302,7 +302,7 @@ function JiraIssueCyclingAgentLabelContent({
 
 	return (
 		<span className="block min-w-0 flex-1 overflow-hidden text-sm leading-5 text-text-subtlest">
-			<span className="block min-h-5">
+			<span className="block min-h-5 min-w-0 overflow-hidden">
 				<AnimatePresence mode="wait">
 					<motion.span
 						key={label}
@@ -352,7 +352,7 @@ export function JiraIssueAgentActivityRows({
 
 	return (
 		<motion.div
-			className={cn("flex w-full flex-col overflow-hidden", hasActivities && "px-1 py-1")}
+			className={cn("flex w-full min-w-0 flex-col overflow-hidden", hasActivities && "px-1 py-1")}
 			layout={shouldReduceMotion ? false : "position"}
 			transition={layoutTransition}
 		>
@@ -361,6 +361,7 @@ export function JiraIssueAgentActivityRows({
 					<motion.div
 						key={activity.id}
 						animate={presenceMotion.animate}
+						className="min-w-0"
 						exit={presenceMotion.exit}
 						initial={presenceMotion.initial}
 						layout={shouldReduceMotion ? false : "position"}

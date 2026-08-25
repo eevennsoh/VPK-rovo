@@ -123,7 +123,8 @@ export function ActivityPanel({
 	const activityRevealSignature = latestActivityEntryId
 		? `${latestActivityEntryId}:${activitySessionThread?.visibleSessionIds.join(",") ?? "default"}`
 		: null;
-	const autoScrollEnabled = !insightsSelected
+	const autoScrollEnabled = activitySessionThread?.autoScroll !== false
+		&& !insightsSelected
 		&& (Boolean(activitySessionThread) || Boolean(latestSessionId?.startsWith("session-")));
 	// Reactions and replies to human comments have no home in the work-item
 	// context, so they are held here and overlaid onto the derived timeline.

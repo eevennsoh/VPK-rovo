@@ -13,6 +13,10 @@ import {
 	AgentStates,
 	type AgentStatesState,
 } from "@/components/blocks/agent-states";
+import {
+	JiraSessionFlyoutTrigger,
+	type JiraSessionFlyoutHandle,
+} from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -31,7 +35,9 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
+import { toAgentSessionFlyoutItem } from "./agent-list-session";
 import type {
+	AgentListFlyout,
 	AgentListInvoker,
 	AgentListItem,
 	AgentListPrStatus,
@@ -41,7 +47,7 @@ import type {
 
 /**
  * State → title-line + lifecycle treatment. `running` shows a solid title with a
- * trailing pixel loader; `needs-input` swaps the title for "Waiting for input"
+ * trailing pixel loader; `needs-input` swaps the title for "Needs input"
  * (see {@link getSessionTitle}), adds animated dots, and shows a trailing info
  * icon; `complete` shows a solid title with no lifecycle indicator.
  *
@@ -143,11 +149,11 @@ function InvokerBy({ invoker }: Readonly<{ invoker: AgentListInvoker }>) {
 }
 
 /** Copy shown on the title line while a session is blocked awaiting a reply. */
-const AWAITING_INPUT_TITLE = "Waiting for input";
+const AWAITING_INPUT_TITLE = "Needs input";
 
 /**
  * Title-line text for a session row. `needs-input` swaps the work-item title for
- * "Waiting for input", mirroring the Jira queue card's `JiraSessionLabel`
+ * "Needs input", mirroring the Jira queue card's `JiraSessionLabel`
  * (`components/blocks/product-sidebar/variants/jira.tsx`), so the shimmering line
  * names the state the session is blocked on. Other states show the task title.
  */
@@ -199,9 +205,9 @@ function LifecycleIndicator({
 						</span>
 					}
 					iconSize="small"
-					label="Waiting for input"
+					label="Needs input"
 					size="small"
-					title="Waiting for input"
+					title="Needs input"
 					variant="transparent"
 				/>
 			);
@@ -417,7 +423,7 @@ function CardActions({
 }>) {
 	return (
 		<div
-			className="ml-3 hidden shrink-0 items-center group-hover:flex group-focus-within:flex"
+			className="ml-3 hidden shrink-0 items-center group-hover/agent-row:flex group-has-[:focus-visible]/agent-row:flex"
 		>
 			<Button onClick={() => onView?.(item)} size="compact" variant="outline">
 				View
@@ -426,44 +432,41 @@ function CardActions({
 	);
 }
 
-export function AgentListCard({
-	isSelected = false,
+/** Class list for the `<li>` each flyout variant renders through its trigger. */
+function rowClassName(isCompact: boolean, isSelected: boolean): string {
+	return cn(
+		"group/agent-row relative transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered",
+		isCompact ? "px-3 py-1.5" : "p-3",
+		isSelected && "bg-bg-selected hover:bg-bg-selected-hovered",
+	);
+}
+
+/**
+ * The row body, identical across both flyout variants. It is a single element so
+ * `JiraSessionFlyoutTrigger` can clone its focus-capture handler onto it and open
+ * the session flyout from the keyboard.
+ */
+function AgentListRow({
+	isCompact,
+	isSelected,
 	item,
-	onFlyoutSubmit,
 	onView,
-	variant,
 }: Readonly<{
-	isSelected?: boolean;
+	isCompact: boolean;
+	isSelected: boolean;
 	item: AgentListItem;
-	onFlyoutSubmit?: (prompt: string) => void;
 	onView?: (item: AgentListItem) => void;
-	variant: AgentListVariant;
 }>) {
 	const stateMeta = STATE_META[item.state];
 	const prMeta = item.prStatus ? PR_STATUS_META[item.prStatus] : null;
 	const PrIcon = prMeta?.Icon ?? null;
-	const isCompact = variant === "compact";
 	const titleClassName = cn(
 		"min-w-0 truncate font-medium",
 		isCompact ? "text-xs" : "text-sm",
 	);
 
 	return (
-		<HoverCard closeDelay={80} openDelay={120}>
-			<HoverCardTrigger
-				closeDelay={80}
-				delay={120}
-				render={(
-					<li
-						aria-current={isSelected ? "true" : undefined}
-						className={cn(
-							"group relative flex items-center gap-0 transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered",
-							isCompact ? "px-3 py-1.5" : "p-3",
-							isSelected && "bg-bg-selected hover:bg-bg-selected-hovered",
-						)}
-					/>
-				)}
-			>
+		<div className="flex min-w-0 items-center gap-0">
 			<AgentAvatarVisual
 				avatarClassName="mr-3 shrink-0"
 				avatarSrc={item.agent.avatarSrc}
@@ -524,7 +527,7 @@ export function AgentListCard({
 					className={cn(
 						"ml-3 flex w-6 shrink-0 items-center",
 						!isSelected &&
-							"group-hover:hidden group-focus-within:hidden",
+							"group-hover/agent-row:hidden group-has-[:focus-visible]/agent-row:hidden",
 					)}
 				>
 					<LifecycleIndicator state={item.state} />
@@ -536,30 +539,98 @@ export function AgentListCard({
 					onView={onView}
 				/>
 			)}
-			</HoverCardTrigger>
-			<HoverCardContent
-				align="start"
-				alignOffset={0}
-				className="w-auto max-w-[calc(100vw-32px)] bg-transparent p-0 shadow-none"
-				data-testid={"agent-list-state-" + item.id}
-				positionerClassName="z-[575] after:pointer-events-auto after:absolute after:-inset-2 after:-z-10 after:content-['']"
-				side="left"
-				sideOffset={12}
-			>
-				<AgentStates
-					agent={{
-						avatarSrc: item.agent.avatarSrc,
-						brandName: item.agent.brandName,
-						id: item.agent.id ?? item.id,
-						name: item.agent.name,
-					}}
-					initialElapsedSeconds={item.elapsedSeconds}
-					onSubmit={onFlyoutSubmit}
-					onView={() => onView?.(item)}
-					startedAtMs={item.startedAtMs}
-					state={getAgentStatesState(item.state)}
+		</div>
+	);
+}
+
+export function AgentListCard({
+	flyout,
+	flyoutHandle,
+	isSelected = false,
+	item,
+	onFlyoutSubmit,
+	onView,
+	variant,
+}: Readonly<{
+	/** Which flyout this row opens — see {@link AgentListFlyout}. */
+	flyout: AgentListFlyout;
+	/** Shared payload handle for the list's single Jira session flyout. */
+	flyoutHandle: JiraSessionFlyoutHandle;
+	isSelected?: boolean;
+	item: AgentListItem;
+	/** Composer variant only: called when the Agent States composer submits. */
+	onFlyoutSubmit?: (prompt: string) => void;
+	onView?: (item: AgentListItem) => void;
+	variant: AgentListVariant;
+}>) {
+	const isCompact = variant === "compact";
+	const row = (
+		<AgentListRow
+			isCompact={isCompact}
+			isSelected={isSelected}
+			item={item}
+			onView={onView}
+		/>
+	);
+
+	// The composer variant keeps a per-row Agent States card: it owns local
+	// composer state, so it cannot share a single popup across the list the way
+	// the payload-driven session flyout does.
+	if (flyout === "composer") {
+		return (
+			<HoverCard closeDelay={80} openDelay={120}>
+				<HoverCardTrigger
+					closeDelay={80}
+					delay={120}
+					render={(
+						<li
+							aria-current={isSelected ? "true" : undefined}
+							className={rowClassName(isCompact, isSelected)}
+						/>
+					)}
+				>
+					{row}
+				</HoverCardTrigger>
+				<HoverCardContent
+					align="start"
+					alignOffset={0}
+					className="w-auto max-w-[calc(100vw-32px)] bg-transparent p-0 shadow-none"
+					data-testid={"agent-list-state-" + item.id}
+					positionerClassName="z-[575] after:pointer-events-auto after:absolute after:-inset-2 after:-z-10 after:content-['']"
+					side="left"
+					sideOffset={12}
+				>
+					<AgentStates
+						agent={{
+							avatarSrc: item.agent.avatarSrc,
+							brandName: item.agent.brandName,
+							id: item.agent.id ?? item.id,
+							name: item.agent.name,
+						}}
+						initialElapsedSeconds={item.elapsedSeconds}
+						onSubmit={onFlyoutSubmit}
+						onView={() => onView?.(item)}
+						startedAtMs={item.startedAtMs}
+						state={getAgentStatesState(item.state)}
+					/>
+				</HoverCardContent>
+			</HoverCard>
+		);
+	}
+
+	return (
+		<JiraSessionFlyoutTrigger
+			handle={flyoutHandle}
+			render={(
+				<li
+					aria-current={isSelected ? "true" : undefined}
+					className={rowClassName(isCompact, isSelected)}
+					data-testid={"agent-list-session-" + item.id}
 				/>
-			</HoverCardContent>
-		</HoverCard>
+			)}
+			session={toAgentSessionFlyoutItem(item)}
+		>
+			{row}
+		</JiraSessionFlyoutTrigger>
 	);
 }

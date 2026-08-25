@@ -38,6 +38,13 @@ test("all context-bar surfaces share the 40px minimum-height contract", () => {
 	assert.match(CONTEXT_BAR_SOURCE, /const OVERFLOW_BUTTON_CLASS =\s*"[^"]*size-10/u);
 });
 
+test("ContextBarPill box model stays 40px with a 1px border", () => {
+	assert.match(
+		CONTEXT_BAR_SOURCE,
+		/CONTEXT_BAR_PILL_CLASS = cn\(\s*"box-border flex h-10[\s\S]*border border-transparent[\s\S]*py-1\.5[\s\S]*leading-6/u,
+	);
+});
+
 test("ContextBar exposes descendant focus indicators beyond its truncation lane", () => {
 	assert.match(
 		CONTEXT_BAR_SOURCE,
@@ -761,7 +768,7 @@ async function loadContextBarPullRequestHarness() {
 test("ContextBarPullRequest is a generic PR variation of ContextBar", () => {
 	assert.match(CONTEXT_BAR_PR_SOURCE, /export function ContextBarPullRequest\(/u);
 	assert.match(CONTEXT_BAR_PR_SOURCE, /<ContextBar/u);
-	assert.match(CONTEXT_BAR_PR_SOURCE, /max-w-\[calc\(100vw-7rem\)\][\s\S]*overflow-hidden px-2\.5 py-0 sm:max-w-full/u);
+	assert.match(CONTEXT_BAR_PR_SOURCE, /"mb-2 w-full max-w-\[calc\(100vw-7rem\)\] gap-2 overflow-hidden px-2\.5 py-0 sm:max-w-full"/u);
 	assert.match(CONTEXT_BAR_PR_SOURCE, /className="min-w-0 flex-1 truncate text-sm text-text-subtle" title=\{branch\}/u);
 	assert.match(CONTEXT_BAR_PR_SOURCE, /variant="spacious"/u);
 	assert.match(CONTEXT_BAR_PR_SOURCE, /token\("elevation.shadow.overlay"\)/u);

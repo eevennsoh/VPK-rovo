@@ -54,7 +54,7 @@ const DEFAULT_MESSAGES: Record<AgentStatesState, string> = {
 };
 
 const DEFAULT_INITIAL_ELAPSED_SECONDS = 45;
-// Agent States previews the shared control states without starting a media session.
+// Agent States previews dictation chrome without starting a media session.
 const startPreviewDictation = () => undefined;
 
 function getAgentInitial(name: string): string {
@@ -69,22 +69,8 @@ export function AgentStatesComposer({
 	onSubmit?: (prompt: string) => void;
 }>) {
 	const [reply, setReply] = useState("");
-	const [realtimeVoiceActive, setRealtimeVoiceActive] = useState(false);
-	const [clickyActive, setClickyActive] = useState(false);
 	const canSubmit = Boolean(reply.trim());
 
-	const handleToggleRealtimeVoice = useCallback(() => {
-		setClickyActive(false);
-		setRealtimeVoiceActive((active) => !active);
-	}, []);
-	const handleStop = useCallback(() => {
-		setRealtimeVoiceActive(false);
-		setClickyActive(false);
-	}, []);
-	const handleToggleClicky = useCallback(() => {
-		setRealtimeVoiceActive(true);
-		setClickyActive((active) => !active);
-	}, []);
 	const handleSubmit = useCallback(() => {
 		const prompt = reply.trim();
 		if (!prompt) return;
@@ -97,15 +83,11 @@ export function AgentStatesComposer({
 			actions={
 				<RovoComposerActionButton
 					canSubmit={canSubmit}
-					clickyActive={clickyActive}
 					composerStatus="ready"
 					experimentalDarkCta
-					liveVoiceEnabled
 					onStartDictation={startPreviewDictation}
-					onStop={handleStop}
-					onToggleClicky={handleToggleClicky}
-					onToggleRealtimeVoice={handleToggleRealtimeVoice}
-					realtimeVoiceActive={realtimeVoiceActive}
+					onStop={() => undefined}
+					showSubmitWhenEmpty
 				/>
 			}
 			addButton={

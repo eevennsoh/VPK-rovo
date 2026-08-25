@@ -26,6 +26,17 @@ const TYPES_SOURCE = readFileSync(
 	join(__dirname, "agent-list-types.ts"),
 	"utf8",
 );
+const SESSION_SOURCE = readFileSync(
+	join(__dirname, "agent-list-session.ts"),
+	"utf8",
+);
+const FOR_YOU_PANEL_SOURCE = readFileSync(
+	join(
+		__dirname,
+		"../../projects/jira-for-you/jira-for-you-detail-panel.tsx",
+	),
+	"utf8",
+);
 
 test("awaiting sessions shimmer the title; running and complete are solid", () => {
 	assert.match(CARD_SOURCE, /running:\s*\{[^}]*shimmerTitle:\s*false/);
@@ -34,14 +45,16 @@ test("awaiting sessions shimmer the title; running and complete are solid", () =
 	assert.match(CARD_SOURCE, /stateMeta\.shimmerTitle \?\s*\(\s*<Shimmer/);
 });
 
-test("running drops the redundant label; awaiting swaps the title to the waiting-for-input copy with dots", () => {
+test("running drops the redundant label; awaiting swaps the title to the Needs input copy with dots", () => {
 	// The shimmering title alone communicates a running session.
 	assert.doesNotMatch(CARD_SOURCE, /Working on it/);
 	assert.match(CARD_SOURCE, /"needs-input":\s*\{[^}]*showDots:\s*true/);
 	assert.doesNotMatch(CARD_SOURCE, /titleOverride|const titleText/);
 	// Awaiting sessions name the blocked state instead of the task title, matching
 	// the Jira queue card's JiraSessionLabel.
-	assert.match(CARD_SOURCE, /const AWAITING_INPUT_TITLE = "Waiting for input";/u);
+	assert.match(CARD_SOURCE, /const AWAITING_INPUT_TITLE = "Needs input";/u);
+	assert.match(DETAIL_SOURCE, /an awaiting session replaces the title with "Needs input" plus animated dots/u);
+	assert.doesNotMatch(DETAIL_SOURCE, /Awaiting user response/u);
 	assert.match(
 		CARD_SOURCE,
 		/return item\.state === "needs-input" \? AWAITING_INPUT_TITLE : item\.title;/u,
@@ -133,8 +146,59 @@ test("the list exposes generic selected-item state to its native card", () => {
 	assert.match(CARD_SOURCE, /isSelected && "bg-bg-selected hover:bg-bg-selected-hovered"/u);
 });
 
-test("session rows reuse Agent States flyouts on the left", () => {
+test("session rows default to the shared Jira agent-session flyout", () => {
+	// The default variant reuses the exact flyout the live Jira sidebar renders,
+	// via one payload handle for the whole list rather than a popup per row.
+	assert.match(TYPES_SOURCE, /export type AgentListFlyout = "session" \| "composer";/u);
+	assert.match(INDEX_SOURCE, /flyout = "session"/u);
+	assert.match(
+		INDEX_SOURCE,
+		/const \[flyoutHandle\] = useState\(createJiraSessionFlyoutHandle\);/u,
+	);
+	assert.match(
+		INDEX_SOURCE,
+		/\{flyout === "session" \? \(\s*<JiraSessionFlyoutSurface handle=\{flyoutHandle\} \/>\s*\) : null\}/u,
+	);
+	assert.match(CARD_SOURCE, /<JiraSessionFlyoutTrigger[\s\S]*handle=\{flyoutHandle\}/u);
+	assert.match(CARD_SOURCE, /session=\{toAgentSessionFlyoutItem\(item\)\}/u);
+	// One element child, so JiraSessionFlyoutTrigger's focus-capture clone lands
+	// on the row and keyboard focus can open the flyout.
+	assert.match(CARD_SOURCE, /session=\{toAgentSessionFlyoutItem\(item\)\}\s*>\s*\{row\}\s*<\/JiraSessionFlyoutTrigger>/u);
+});
+
+test("the session adapter derives flyout payloads the row model does not carry", () => {
+	assert.match(
+		SESSION_SOURCE,
+		/export function deriveIssueKeyFromBranch\(branch: string\): string \{[\s\S]*rovo\\\/\(\[a-z\]\+\)-\(\\d\+\)-/u,
+	);
+	// Lifecycle mapping: the row model has no "PR open" state, so a finished
+	// session borrows it from prStatus.
+	assert.match(SESSION_SOURCE, /case "needs-input":\s*return "awaiting-input";/u);
+	assert.match(SESSION_SOURCE, /case "running":\s*return "running";/u);
+	assert.match(
+		SESSION_SOURCE,
+		/case "complete":\s*return item\.prStatus === "created" \? "pr-open" : "merged";/u,
+	);
+	// Explicit sessionDetails win; everything else falls back to the row.
+	assert.match(SESSION_SOURCE, /branch: details\?\.branch \?\? item\.branch,/u);
+	assert.match(SESSION_SOURCE, /host: details\?\.host \?\? "cloud",/u);
+	assert.match(
+		SESSION_SOURCE,
+		/issueKey: details\?\.issueKey \?\? deriveIssueKeyFromBranch\(item\.branch\),/u,
+	);
+	assert.match(SESSION_SOURCE, /issueSummary: details\?\.issueSummary \?\? item\.title,/u);
+	// Identity and lifecycle stay row-owned and are not overridable.
+	assert.match(
+		TYPES_SOURCE,
+		/Omit<\s*JiraSidebarSessionItem,\s*"agentAvatarSrc" \| "agentName" \| "id" \| "status" \| "title"\s*>/u,
+	);
+	assert.match(DATA_SOURCE, /sessionDetails: \{/u);
+	assert.match(DATA_SOURCE, /pullRequestNumber: 284,/u);
+});
+
+test("the composer variant keeps the per-row Agent States flyout on the left", () => {
 	assert.match(TYPES_SOURCE, /id\?: string;[\s\S]*name: string;/u);
+	assert.match(CARD_SOURCE, /if \(flyout === "composer"\) \{/u);
 	assert.match(CARD_SOURCE, /<HoverCard[\s\S]*<HoverCardTrigger/u);
 	assert.match(CARD_SOURCE, /<AgentStates/u);
 	assert.match(CARD_SOURCE, /side="left"/u);
@@ -145,6 +209,12 @@ test("session rows reuse Agent States flyouts on the left", () => {
 	assert.match(CARD_SOURCE, /avatarSrc: item\.agent\.avatarSrc/u);
 	assert.match(CARD_SOURCE, /closeDelay=\{80\}/u);
 	assert.doesNotMatch(CARD_SOURCE, /AgentProfileCard|agentProfile/u);
+	// Both variants wrap the identical row body, so density, states, and hover
+	// actions cannot drift between them.
+	assert.equal((CARD_SOURCE.match(/\{row\}/gu) ?? []).length, 2);
+	assert.match(CARD_SOURCE, /function AgentListRow\(/u);
+	// jira-for-you relies on the composer to reply to an agent inline.
+	assert.match(FOR_YOU_PANEL_SOURCE, /flyout="composer"/u);
 });
 
 test("Agent States composer submissions open the configured chat surface with sidebar fallback", () => {
@@ -176,14 +246,28 @@ test("in-flow View controls immediately replace lifecycle indicators without col
 	);
 	assert.match(CARD_SOURCE, /<span className=\{cn\(titleClassName, "text-text"\)\}>/u);
 	assert.match(CARD_SOURCE, /className="min-w-0 truncate">\{item\.agent\.name\}<\/span>/u);
-	assert.match(CARD_SOURCE, /className="ml-3 hidden shrink-0 items-center group-hover:flex group-focus-within:flex"/u);
+	assert.match(CARD_SOURCE, /className="ml-3 hidden shrink-0 items-center group-hover\/agent-row:flex group-has-\[:focus-visible\]\/agent-row:flex"/u);
 	assert.match(CARD_SOURCE, /\{isSelected \? null : \(\s*<CardActions/u);
 	assert.doesNotMatch(CARD_SOURCE, /isVisible/u);
 	assert.match(
 		CARD_SOURCE,
-		/!isSelected &&\s*"group-hover:hidden group-focus-within:hidden"/u,
+		/!isSelected &&\s*"group-hover\/agent-row:hidden group-has-\[:focus-visible\]\/agent-row:hidden"/u,
 	);
 	assert.doesNotMatch(CARD_SOURCE, /transition-\[width,margin,opacity\]/u);
+});
+
+test("row hover reveal is scoped to a named group so ancestor `group` wrappers cannot trigger it", () => {
+	// Doc example wrappers (`ExampleItem` in
+	// components/website/component-doc/components/doc-examples.tsx) carry a bare
+	// `className="group"`. Tailwind's unnamed `group-hover:` compiles to
+	// `.group:hover &`, which matches ANY ancestor with that class — so hovering
+	// anywhere in the demo shell used to reveal every row's View button at once.
+	assert.doesNotMatch(CARD_SOURCE, /"group relative/u);
+	assert.match(CARD_SOURCE, /"group\/agent-row relative/u);
+	// Named variants read `group-hover/agent-row:`, so a bare `group-hover:`
+	// anywhere in this file is an unscoped leak.
+	assert.doesNotMatch(CARD_SOURCE, /group-hover:/u);
+	assert.doesNotMatch(CARD_SOURCE, /group-focus-within:/u);
 });
 
 test("in-flow activity actions expose their button-owned focus indicators", () => {
@@ -209,7 +293,7 @@ test("supports default and compact session rows", () => {
 
 test("shows the compact variant in the component documentation", () => {
 	assert.match(PAGE_SOURCE, /variant = "default"/u);
-	assert.match(PAGE_SOURCE, /<AgentListDemo variant=\{variant\} \/>/u);
+	assert.match(PAGE_SOURCE, /<AgentListDemo flyout=\{flyout\} variant=\{variant\} \/>/u);
 	assert.match(PAGE_SOURCE, /<AgentList[^>]*variant=\{variant\}/u);
 	assert.match(DEMO_SOURCE, /export function AgentListDemoCompact/u);
 	assert.match(DEMO_SOURCE, /<Page variant="compact" \/>/u);
@@ -217,6 +301,20 @@ test("shows the compact variant in the component documentation", () => {
 	assert.match(DETAIL_SOURCE, /demoSlug: "agent-list-demo-compact"/u);
 	assert.match(VARIANT_REGISTRY_SOURCE, /"agent-list-demo-compact": dynamic/u);
 	assert.match(VARIANT_REGISTRY_SOURCE, /default: mod\.AgentListDemoCompact/u);
+});
+
+test("shows both flyout variants in the component documentation", () => {
+	assert.match(PAGE_SOURCE, /flyout = "session"/u);
+	assert.match(PAGE_SOURCE, /<AgentList[^>]*flyout=\{flyout\}/u);
+	assert.match(DEMO_SOURCE, /export function AgentListDemoComposer/u);
+	assert.match(DEMO_SOURCE, /<Page flyout="composer" \/>/u);
+	assert.match(DETAIL_SOURCE, /title: "Composer flyout"/u);
+	assert.match(DETAIL_SOURCE, /demoSlug: "agent-list-demo-composer"/u);
+	assert.match(DETAIL_SOURCE, /name: "flyout"/u);
+	assert.match(DETAIL_SOURCE, /type: '"session" \| "composer"'/u);
+	assert.match(DETAIL_SOURCE, /default: '"session"'/u);
+	assert.match(VARIANT_REGISTRY_SOURCE, /"agent-list-demo-composer": dynamic/u);
+	assert.match(VARIANT_REGISTRY_SOURCE, /default: mod\.AgentListDemoComposer/u);
 });
 
 test("exports a session activity header whose optional View action requires a handler", () => {

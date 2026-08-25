@@ -8,11 +8,11 @@ tools: [
   "Glob",
   "Grep",
   "Bash",
-  "mcp__ads-mcp__ads_plan",
-  "mcp__ads-mcp__ads_get_components",
-  "mcp__ads-mcp__ads_get_a11y_guidelines",
-  "mcp__ads-mcp__ads_analyze_a11y",
-  "mcp__ads-mcp__ads_suggest_a11y_fixes",
+  "mcp__ads__ads_plan",
+  "mcp__ads__ads_search_components",
+  "mcp__ads__ads_get_a11y_guidelines",
+  "mcp__ads__ads_analyze_a11y",
+  "mcp__ads__ads_suggest_a11y_fixes",
 ]
 skills: ["vpk-design"]
 model: opus
@@ -46,7 +46,7 @@ You receive a structured design spec from the Extractor agent containing:
 - Border and shadow tokens.
 - Component list.
 - Icon list.
-- Accessibility topics and rules from ADS MCP.
+- Accessibility topics and rules from `atlas ads docs a11y`.
 - Target component path or enough route context to identify it.
 
 ### Workflow
@@ -130,16 +130,22 @@ Fix errors in changed files before completing, and explicitly distinguish pre-ex
 
 #### Step 7: Run Accessibility Analysis
 
-Start with the relevant guideline topics from the spec. If the spec is missing them and the surface is interactive, fetch `ads_get_a11y_guidelines` for the closest topics (`buttons`, `forms`, `focus`, `keyboard`, or `general`) before evaluating fixes.
+Start with the relevant guideline topics from the spec. If the spec is missing them and the surface is interactive, fetch the closest topics (`buttons`, `forms`, `focus`, `keyboard`, or `general`) with the `atlas ads` CLI before evaluating fixes:
+
+```bash
+atlas ads docs a11y buttons
+```
+
+The guideline fetch is CLI-first. The analysis and remediation steps below have no CLI equivalent, so they stay on ADS MCP:
 
 ```text
-mcp__ads-mcp__ads_analyze_a11y({
+mcp__ads__ads_analyze_a11y({
   code: [component code],
   componentName: "[ComponentName]"
 })
 ```
 
-If the analysis reports a material issue, do not improvise the repair. Run `ads_suggest_a11y_fixes` with the violation text and the current code, then adapt the suggested remediation to VPK conventions.
+If the analysis reports a material issue, do not improvise the repair. Run `mcp__ads__ads_suggest_a11y_fixes` with the violation text and the current code, then adapt the suggested remediation to VPK conventions.
 
 Fix accessibility issues that are within scope of the component change.
 
@@ -419,5 +425,6 @@ conversation_starters:
 ## Maintenance Notes
 
 - Keep this prompt aligned with `.agents/skills/vpk-design/SKILL.md` Phase 2.
+- Retrieve ADS content with the `atlas ads` CLI first (`atlas ads search <q> --type component|token|icon`, `atlas ads docs <topic>`, `atlas ads docs a11y <topic>`; add `--json` when parsing, `atlas ads batch --command ... --command ...` for several lookups). ADS MCP tools are the fallback when the CLI is unavailable or erroring.
 - MCP tool availability is runtime-dependent; if ADS analysis tools are unavailable, report the limitation and run the strongest local checks available.
 - This agent may edit source during real pipeline runs, but this canonical Markdown definition must stay provider-neutral.

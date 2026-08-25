@@ -20,6 +20,8 @@ const DEMO_INVOKER = {
 	avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
 } as const;
 
+const DEMO_REPOSITORY = "acme-corp/vitafleet-platform";
+
 export const AGENT_LIST_ITEMS: readonly AgentListItem[] = [
 	{
 		id: "performance-benchmarking",
@@ -30,6 +32,20 @@ export const AGENT_LIST_ITEMS: readonly AgentListItem[] = [
 		invokedBy: DEMO_INVOKER,
 		elapsedSeconds: 360,
 		prStatus: "created",
+		sessionDetails: {
+			additions: 412,
+			assignee: {
+				name: "Priya Hansra",
+				src: "/avatar-user/priya-hansra/color/asow-service-yellow.png",
+			},
+			checks: "9 checks passing",
+			deletions: 63,
+			host: "cloud",
+			priority: "high",
+			pullRequestNumber: 284,
+			pullRequestTitle: "PERF-27 Add fleet telemetry benchmark harness",
+			repository: DEMO_REPOSITORY,
+		},
 	},
 	{
 		id: "vitafleet-presentation",
@@ -39,6 +55,16 @@ export const AGENT_LIST_ITEMS: readonly AgentListItem[] = [
 		branch: "rovo/vita-142-vision-deck",
 		invokedBy: DEMO_INVOKER,
 		elapsedSeconds: 482,
+		sessionDetails: {
+			assignee: {
+				name: "Darius Pavri",
+				src: "/avatar-user/darius-pavri/color/asow-strategy-orange.png",
+			},
+			host: "local",
+			priority: "medium",
+			repository: DEMO_REPOSITORY,
+			worktreePath: "~/src/vitafleet-platform/.worktrees/vita-142",
+		},
 	},
 	{
 		id: "refactor-readability",
@@ -50,5 +76,19 @@ export const AGENT_LIST_ITEMS: readonly AgentListItem[] = [
 		elapsedSeconds: 754,
 		completedSecondsAgo: 68 * 60,
 		prStatus: "merged",
+		sessionDetails: {
+			additions: 186,
+			assignee: {
+				name: "Olivia Yang",
+				src: "/avatar-user/olivia-yang/color/asow-service-yellow.png",
+			},
+			checks: "6 checks passing",
+			deletions: 241,
+			host: "cloud",
+			priority: "low",
+			pullRequestNumber: 271,
+			pullRequestTitle: "WEB-461 Extract shared readability helpers",
+			repository: DEMO_REPOSITORY,
+		},
 	},
 ];

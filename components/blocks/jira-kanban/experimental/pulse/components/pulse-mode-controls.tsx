@@ -35,7 +35,7 @@ export function PulseModeToggle({
 				className={cn(active ? "text-icon-selected" : null)}
 				render={<PulseIcon label="" />}
 			/>
-			Pulse
+			Insights
 		</Button>
 	);
 }

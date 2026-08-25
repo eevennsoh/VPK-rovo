@@ -6,6 +6,7 @@ import {
 	useSectionNavigation,
 	useWorkItemHeaderVariant,
 } from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
+import type { WorkItemSectionId } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-section-tabs";
 import { FOCUS_RING_CLIP_GUTTER } from "@/components/ui/focus-ring";
 import {
 	tabsExperimentalListClass,
@@ -19,6 +20,27 @@ const NAV_LIST_CLASS = cn(
 );
 
 const NAV_LINK_CLASS = tabsExperimentalTriggerClass;
+
+function sectionTabCount(
+	sectionId: WorkItemSectionId,
+	activityCount: number | null,
+	insightsCount: number | null,
+): number | null {
+	switch (sectionId) {
+		case "activity":
+			return activityCount;
+		case "insights":
+			return insightsCount;
+		case "description":
+		case "guide":
+		case "files":
+			return null;
+		default: {
+			const exhaustive: never = sectionId;
+			return exhaustive;
+		}
+	}
+}
 
 interface WorkItemSectionNavProps {
 	endControl?: ReactNode;
@@ -38,7 +60,7 @@ export function WorkItemSectionNav({
 	endControl,
 	onSectionSelect,
 }: Readonly<WorkItemSectionNavProps>) {
-	const { activeSectionId, activityCount, sectionElementId, sections, selectSection } = useSectionNavigation();
+	const { activeSectionId, activityCount, insightsCount, sectionElementId, sections, selectSection } = useSectionNavigation();
 	const variant = useWorkItemHeaderVariant();
 	if (sections.length === 0 && endControl == null) return null;
 
@@ -61,38 +83,41 @@ export function WorkItemSectionNav({
 					data-work-item-section-nav
 				>
 					<ul className={NAV_LIST_CLASS}>
-						{sections.map((section) => (
-							<li className="flex" key={section.id}>
-								<a
-									aria-current={section.id === activeSectionId ? "location" : undefined}
-									className={NAV_LINK_CLASS}
-									href={`#${sectionElementId(section.id)}`}
-									onClick={(event) => {
-										event.preventDefault();
-										onSectionSelect?.();
-										selectSection(section.id);
-									}}
-								>
-									<span>{section.label}</span>
-									{section.id === "activity" && activityCount != null ? (
-										<span
-											className={cn(
-												"shrink-0 text-xs font-normal",
-												section.id === activeSectionId ? "text-text" : "text-text-subtlest",
-											)}
-										>
-											{activityCount}
-										</span>
-									) : null}
-									{section.diff ? (
-										<span className="inline-flex items-center gap-1 tabular-nums">
-											<span className="text-text-success">+{section.diff.additions}</span>
-											<span className="text-text-danger">-{section.diff.deletions}</span>
-										</span>
-									) : null}
-								</a>
-							</li>
-						))}
+						{sections.map((section) => {
+							const count = sectionTabCount(section.id, activityCount, insightsCount);
+							return (
+								<li className="flex" key={section.id}>
+									<a
+										aria-current={section.id === activeSectionId ? "location" : undefined}
+										className={NAV_LINK_CLASS}
+										href={`#${sectionElementId(section.id)}`}
+										onClick={(event) => {
+											event.preventDefault();
+											onSectionSelect?.();
+											selectSection(section.id);
+										}}
+									>
+										<span>{section.label}</span>
+										{count != null ? (
+											<span
+												className={cn(
+													"shrink-0 text-xs font-normal",
+													section.id === activeSectionId ? "text-text" : "text-text-subtlest",
+												)}
+											>
+												{count}
+											</span>
+										) : null}
+										{section.diff ? (
+											<span className="inline-flex items-center gap-1 tabular-nums">
+												<span className="text-text-success">+{section.diff.additions}</span>
+												<span className="text-text-danger">-{section.diff.deletions}</span>
+											</span>
+										) : null}
+									</a>
+								</li>
+							);
+						})}
 						{endControl != null ? (
 							<li
 								className="flex h-8 shrink-0"

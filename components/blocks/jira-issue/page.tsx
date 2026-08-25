@@ -8,6 +8,7 @@ import { JIRA_EPIC_DEMO_EPICS } from "@/components/blocks/jira-epic/data/demo-ep
 import {
 	JiraIssue,
 	type JiraIssueAgentActivity,
+	type JiraIssueChrome,
 	type JiraIssueCompletedAgentRun,
 	type JiraIssueGenerativeActionRequest,
 } from "@/components/blocks/jira-issue";
@@ -116,7 +117,7 @@ const JIRA_ISSUE_AWAITING_INPUT_QUESTION = {
 const JIRA_ISSUE_AWAITING_INPUT_ACTIVITIES = [
 	{
 		...JIRA_ISSUE_AGENT_ACTIVITIES[0],
-		label: "Waiting for input",
+		label: "Needs input",
 		question: JIRA_ISSUE_AWAITING_INPUT_QUESTION,
 		state: "awaiting-input",
 	},
@@ -184,7 +185,7 @@ const JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES = [
 ] as const satisfies readonly { value: JiraIssueAgentActivityDemoState; label: string }[];
 
 interface JiraIssuePageProps {
-	variant?: "default" | "experimental" | "uncaptured-work" | "subtasks-collapsed" | "subtasks-expanded" | "parent-epic" | "agent-activity-states";
+	variant?: "default" | "experimental" | "uncaptured-work" | "subtasks-collapsed" | "subtasks-expanded" | "parent-epic" | "agent-activity-states" | "agent-activity-states-experimental";
 }
 
 export default function JiraIssuePage({ variant = "default" }: Readonly<JiraIssuePageProps> = {}): React.ReactElement {
@@ -194,7 +195,7 @@ export default function JiraIssuePage({ variant = "default" }: Readonly<JiraIssu
 	const isUncapturedWorkVariant = variant === "uncaptured-work";
 	const isSubtasksVariant = variant === "subtasks-collapsed" || variant === "subtasks-expanded";
 	const isParentEpicVariant = variant === "parent-epic";
-	const isAgentActivityVariant = variant === "agent-activity-states";
+	const isAgentActivityVariant = variant === "agent-activity-states" || variant === "agent-activity-states-experimental";
 	const hasCompactIssueContext = isSubtasksVariant || isParentEpicVariant;
 	const issueKey = isParentEpicVariant ? "JDSN-157" : isSubtasksVariant ? "JDSN-229" : "RFP-101";
 	const summary = isParentEpicVariant
@@ -206,7 +207,7 @@ export default function JiraIssuePage({ variant = "default" }: Readonly<JiraIssu
 	if (isAgentActivityVariant) {
 		return (
 			<RovoChatProvider agentProfiles={ASX_CHAT_AGENT_PROFILES}>
-				<JiraIssueAgentActivityStatesDemo />
+				<JiraIssueAgentActivityStatesDemo chrome={variant === "agent-activity-states-experimental" ? "stroke" : "raised"} />
 			</RovoChatProvider>
 		);
 	}
@@ -264,7 +265,11 @@ export default function JiraIssuePage({ variant = "default" }: Readonly<JiraIssu
 const JIRA_ISSUE_CHAT_ISSUE_KEY = "PD-40";
 const JIRA_ISSUE_CHAT_ISSUE_SUMMARY = "Implement advanced date-range filter";
 
-function JiraIssueAgentActivityStatesDemo(): React.ReactElement {
+interface JiraIssueAgentActivityStatesDemoProps {
+	chrome?: JiraIssueChrome;
+}
+
+function JiraIssueAgentActivityStatesDemo({ chrome = "raised" }: Readonly<JiraIssueAgentActivityStatesDemoProps> = {}): React.ReactElement {
 	const [agentActivityState, setAgentActivityState] = useState<JiraIssueAgentActivityDemoState>("default");
 	// View chat / question submit / generative actions all drop into the shared
 	// Rovo floating chat with the activity's agent already selected — matching the
@@ -362,6 +367,7 @@ function JiraIssueAgentActivityStatesDemo(): React.ReactElement {
 					}
 					agentDoneRuns={agentActivityState === "agent-completed-work" ? JIRA_ISSUE_COMPLETED_AGENT_RUNS : undefined}
 					assigneeAvatarSrc="/avatar-user/andrea-wilson/color/asow-service-yellow.png"
+					chrome={chrome}
 					className="w-[260px]"
 					generativeAction={{
 						onSubmit: handleGenerativeActionSubmit,

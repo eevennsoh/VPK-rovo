@@ -52,6 +52,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/jira-work-item/experimental-v3/lib/pull-request-review-submit.test.js",
 		"components/blocks/jira-work-item/experimental-v3/lib/pull-request-phases.test.js",
 		"components/blocks/jira-work-item/experimental-v3/lib/new-insights-count.test.js",
+		"components/blocks/jira-work-item/experimental-v3/lib/agent-row-status.test.js",
 		"components/blocks/jira-work-item/experimental-v3/lib/work-item-section-tabs.test.js",
 		"components/projects/jira-golden-journeys-v3/data/jira-insights.test.js",
 		"components/blocks/smart-link/lib/pull-request-smart-link.test.js",

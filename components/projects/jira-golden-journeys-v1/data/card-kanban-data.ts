@@ -83,7 +83,7 @@ export const JGP_CARD_KANBAN_WORKING_ACTIVITIES = [
 export const JGP_CARD_KANBAN_AWAITING_ACTIVITIES = [
 	{
 		...SERVICE_IMPACT_AGENT,
-		label: "Waiting for input",
+		label: "Needs input",
 		question: JGP_CARD_KANBAN_DEPLOYMENT_QUESTION,
 		state: "awaiting-input",
 	},

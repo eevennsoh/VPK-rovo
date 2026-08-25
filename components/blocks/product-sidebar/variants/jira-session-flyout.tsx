@@ -13,13 +13,14 @@ import { preload } from "react-dom";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import BranchIcon from "@atlaskit/icon/core/branch";
 import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
-import CloudArrowUpIcon from "@atlaskit/icon/core/cloud-arrow-up";
+import DevicesIcon from "@atlaskit/icon/core/devices";
 import FolderClosedIcon from "@atlaskit/icon/core/folder-closed";
 import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import StatusInformationIcon from "@atlaskit/icon/core/status-information";
 import TaskIcon from "@atlaskit/icon/core/task";
+import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import IfElseIcon from "@atlaskit/icon-lab/core/if-else";
 
 import { AgentProfileCard } from "@/components/blocks/agent-profile-card";
@@ -41,7 +42,11 @@ import { TileAvatar } from "@/components/ui/tile";
 import { getAgentProfileBannerSrc } from "@/lib/agent-avatars";
 import { MetadataPathLink, MetadataPathValue } from "@/components/ui/metadata-path-link";
 
-import type { JiraSidebarSessionItem, JiraSidebarSessionStatus } from "./jira";
+import type {
+	JiraSidebarSessionHost,
+	JiraSidebarSessionItem,
+	JiraSidebarSessionStatus,
+} from "./jira";
 import { prStateLozenge } from "./jira-session-flyout-data";
 
 export { createJiraSessionFlyoutHandle, prStateLozenge } from "./jira-session-flyout-data";
@@ -154,6 +159,23 @@ function prStateIcon(status: JiraSidebarSessionStatus): ReactNode {
 	if (status === "merged") return <MergeSuccessIcon label="" size="small" />;
 	if (status === "stopped") return <MergeFailureIcon label="" size="small" />;
 	return <PullRequestIcon label="" size="small" />;
+}
+
+/**
+ * Session host glyph: a cloud for a hosted session, devices for one running on
+ * the viewer's own machine. Both read as "where this session runs" — unlike the
+ * previous cloud-arrow-up (an upload action) and folder-closed (a directory),
+ * which named the wrong concept for this row.
+ *
+ * `cloud` comes from icon-lab because `@atlaskit/icon/core` only ships
+ * `cloud-arrow-up`; `devices` is core.
+ */
+function hostIcon(host: JiraSidebarSessionHost): ReactNode {
+	return host === "cloud" ? (
+		<CloudIcon label="" size="small" />
+	) : (
+		<DevicesIcon label="" size="small" />
+	);
 }
 
 /** The Jira status workflow offered by the work-item status dropdown. */
@@ -274,15 +296,12 @@ export function JiraSessionFlyoutBody({
 			{session.status === "awaiting-input" ? (
 				<Alert size="small" variant="info">
 					<Icon render={<StatusInformationIcon label="" />} label="Information" />
-					<AlertTitle>Waiting for input</AlertTitle>
+					<AlertTitle>Needs input</AlertTitle>
 				</Alert>
 			) : null}
 
 			<div className="flex flex-col gap-2">
-				<FlyoutRow
-					icon={session.host === "cloud" ? <CloudArrowUpIcon label="" size="small" /> : <FolderClosedIcon label="" size="small" />}
-					label="Session"
-				>
+				<FlyoutRow icon={hostIcon(session.host)} label="Session">
 					{session.host === "cloud" ? "Cloud" : "Local"}
 				</FlyoutRow>
 				{hideAgentRow ? null : (

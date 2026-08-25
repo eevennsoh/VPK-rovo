@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
-import StatusInformationIcon from "@atlaskit/icon/core/status-information";
 import PersonIcon from "@atlaskit/icon/core/person";
 import PriorityHighIcon from "@atlaskit/icon/core/priority-high";
 import PriorityHighestIcon from "@atlaskit/icon/core/priority-highest";
@@ -12,30 +10,32 @@ import PriorityLowestIcon from "@atlaskit/icon/core/priority-lowest";
 import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
 
 import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
-import { CREW_ROSTER, type CrewMember } from "@/components/blocks/jira-work-item/data/metadata-crew";
-import type { AgentSessionStatus } from "@/components/blocks/jira-work-item/data/session-state";
+import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
+import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
+import type { CrewMember } from "@/components/blocks/jira-work-item/data/metadata-crew";
+import type { AgentPlannerAssignee } from "@/components/blocks/jira-work-item/data/planner-state";
+import type { AgentSession, StaticTimelineEvent } from "@/components/blocks/jira-work-item/data/session-state";
+import { DetailValueTrigger } from "@/components/blocks/jira-work-item/experimental-v3/components/detail-field-row";
+import { WorkItemAgentSelector } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-agent-selector";
 import {
 	useJiraWorkItemMeta,
 	useJiraWorkItemState,
 } from "@/components/blocks/jira-work-item/experimental-v3/context-jira-work-item";
-import { AgentProfileCard } from "@/components/blocks/agent-profile-card/components/agent-profile-card";
-import { BOARD_AGENTS } from "@/components/projects/jira/data/board-agents";
-import type { AgentPlannerAssignee } from "@/components/blocks/jira-work-item/data/planner-state";
-import { DetailValueTrigger } from "@/components/blocks/jira-work-item/experimental-v3/components/detail-field-row";
-import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage } from "@/components/ui/avatar";
-import { FOCUS_RING_VISIBLE } from "@/components/ui/focus-ring";
+import { agentRowStatusTooltip } from "@/components/blocks/jira-work-item/experimental-v3/lib/agent-row-status";
+import { DEFAULT_PINNED_SPACE_AGENT_IDS } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-picker-options";
+import { WORK_ITEM_AGENT_SELECTOR_MENU } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-agent-selector-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Lozenge, LozengeDropdownTrigger } from "@/components/ui/lozenge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Spinner } from "@/components/ui/spinner";
-import { SearchIcon } from "@/components/ui/vpk-icons";
+import { PlusIcon, SearchIcon } from "@/components/ui/vpk-icons";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import {
@@ -362,32 +362,26 @@ export function DateRowField({
 
 const MAX_AGENT_AVATARS = 3;
 
-// Strips the leading role text from a board agent byline so it can seed the
-// profile card's "By {partner}" attribution (e.g. "Rovo agent by Enterprise
-// Solutions" -> "Enterprise Solutions", "by Figma" -> "Figma").
-function partnerNameFromByline(byline: string | undefined): string | undefined {
-	if (!byline) {
-		return undefined;
-	}
-	const match = byline.match(/\bby\s+(.+)$/i);
-	return match ? match[1].trim() : byline;
-}
-
-// Each agent avatar reveals the agent's profile card on hover/focus. The trigger
-// is a plain focusable span (not a button) so it can be nested inside the row's
-// popover-trigger element without producing an invalid button-in-button.
-function AgentAvatar({ member }: Readonly<{ member: CrewMember }>) {
-	const boardAgent = BOARD_AGENTS.find((agent) => agent.id === member.id);
-	const partnerName = partnerNameFromByline(boardAgent?.byline);
-
+function AgentRowStatusAvatar({
+	member,
+	onOpen,
+	sessions,
+	staticEvents,
+}: Readonly<{
+	member: CrewMember;
+	onOpen: () => void;
+	sessions: readonly Pick<AgentSession, "agentId" | "status">[];
+	staticEvents: readonly StaticTimelineEvent[];
+}>) {
+	const statusLabel = agentRowStatusTooltip(sessions, member.id, staticEvents);
 	return (
-		<HoverCard closeDelay={120} openDelay={250}>
-			<HoverCardTrigger
+		<Tooltip>
+			<TooltipTrigger
 				render={
 					<span
-						aria-label={member.name}
-						className="inline-flex rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
-						tabIndex={0}
+						className="relative z-10 inline-flex shrink-0 pointer-events-auto"
+						onClick={onOpen}
+						tabIndex={-1}
 					/>
 				}
 			>
@@ -396,216 +390,122 @@ function AgentAvatar({ member }: Readonly<{ member: CrewMember }>) {
 					avatarSrc={member.avatarUrl}
 					brandName={member.brandName}
 					fallbackText={member.name.slice(0, 2).toUpperCase()}
-					sizePx={20}
+					label={`${member.name}. ${statusLabel}`}
+					sizePx={24}
 				/>
-			</HoverCardTrigger>
-			<HoverCardContent align="start" className="w-auto border-none bg-transparent p-0 shadow-none" side="left">
-				<AgentProfileCard
-					avatarSrc={member.avatarUrl}
-					// The roster carries no per-agent blurb, so surface the byline as the
-					// description rather than the card's built-in placeholder copy, which
-					// would misdescribe every agent. Fall back to an empty string (never
-					// `undefined`) so the placeholder default can't slip back in.
-					description={boardAgent?.byline ?? ""}
-					name={member.name}
-					partnerBrandName={member.brandName}
-					partnerName={partnerName}
-					surface="overlay"
-					variant="preview"
-				/>
-			</HoverCardContent>
-		</HoverCard>
+			</TooltipTrigger>
+			<TooltipContent positionerClassName={METADATA_PICKER_POSITIONER_CLASS}>{statusLabel}</TooltipContent>
+		</Tooltip>
 	);
 }
 
-// Section headings for the agent picker, grouping the currently-added agents by
-// their live session status. Agents with no session (added but not yet run) fall
-// under "Running" as the active-by-default bucket. The unselected roster sits
-// under "Select agent".
-const AGENT_STATUS_SECTIONS: readonly { key: string; label: string; status: AgentSessionStatus }[] = [
-	{ key: "running", label: "Running", status: "running" },
-	{ key: "waiting", label: "Awaiting user response", status: "waiting" },
-	{ key: "completed", label: "Done", status: "completed" },
-];
-
-// Trailing per-row status glyph in the agent picker, mirroring the Jira agent
-// session card: `running` shows the Rovo rainbow spinner, `waiting` an
-// information icon (needs user input), `completed` nothing. Each glyph sits in a
-// 24×24 transparent IconTile so the trailing slot reads at a consistent size.
-function AgentStatusIndicator({ status }: Readonly<{ status: AgentSessionStatus }>) {
-	switch (status) {
-		case "running":
-			return (
-				<IconTile
-					icon={<Spinner label="Running" variant="rainbow" />}
-					iconSize="small"
-					label="Running"
-					size="small"
-					variant="transparent"
-				/>
-			);
-		case "waiting":
-			return (
-				<IconTile
-					icon={
-						<span className="grid place-items-center leading-none text-icon-information">
-							<StatusInformationIcon color="currentColor" label="" size="small" />
-						</span>
-					}
-					iconSize="small"
-					label="Awaiting user response"
-					size="small"
-					title="Awaiting user response"
-					variant="transparent"
-				/>
-			);
-		case "completed":
-			return null;
-	}
-}
-
-function toAgentSuggestionItem(
-	agent: CrewMember,
-	status?: AgentSessionStatus,
-): RichTextSuggestionMenuItem {
+function toCrewAgent(agent: AgentSelectorAgent): CrewMember {
 	return {
-		icon: <AiAgentIcon label="" size="small" />,
 		id: agent.id,
-		label: agent.name,
-		visual: agent.brandName
-			? { kind: "third-party", name: agent.brandName }
-			: agent.avatarUrl
-				? { kind: "avatar", shape: "hexagon", src: agent.avatarUrl }
-				: undefined,
-		...(status && status !== "completed" ? { trailing: <AgentStatusIndicator status={status} /> } : {}),
+		kind: "agent",
+		name: agent.name,
+		...(agent.avatarSrc ? { avatarUrl: agent.avatarSrc } : {}),
+		...(agent.brandName ? { brandName: agent.brandName } : {}),
 	};
 }
 
-function toAgentSuggestionHeading(id: string, label: string): RichTextSuggestionMenuItem {
+function toSelectorAgent(member: CrewMember): AgentSelectorAgent {
 	return {
-		headingLabel: label,
-		icon: null,
-		id,
-		label,
+		id: member.id,
+		name: member.name,
+		byline: "",
+		...(member.avatarUrl ? { avatarSrc: member.avatarUrl } : {}),
+		...(member.brandName ? { brandName: member.brandName } : {}),
 	};
 }
 
 export function AgentsRowField({ value, onChange }: Readonly<{ value: readonly CrewMember[]; onChange: (next: CrewMember[]) => void }>) {
 	const [open, setOpen] = useState(false);
+	const [query, setQuery] = useState("");
+	const [pinnedAgentIds, setPinnedAgentIds] = useState<readonly string[]>(DEFAULT_PINNED_SPACE_AGENT_IDS);
 	const { sessions, staticEvents } = useJiraWorkItemState();
 	const selectedAgents = value.filter((member) => member.kind === "agent");
-	const agents = CREW_ROSTER.filter((member) => member.kind === "agent");
-	const isSelected = (id: string) => selectedAgents.some((item) => item.id === id);
+	const selectedAgentIds = selectedAgents.map((member) => member.id);
+	const extraAgents = selectedAgents
+		.filter((member) => !ROVO_AGENT_SELECTOR_AGENTS.some((agent) => agent.id === member.id))
+		.map(toSelectorAgent);
+	const agents = extraAgents.length > 0
+		? [...extraAgents, ...ROVO_AGENT_SELECTOR_AGENTS]
+		: ROVO_AGENT_SELECTOR_AGENTS;
+	const shown = selectedAgents.slice(0, MAX_AGENT_AVATARS);
 
-	// Live session status per agent id (later sessions win). This is the primary
-	// source of truth for the Running / Awaiting user response / Done sections.
-	const statusByAgentId = new Map<string, AgentSessionStatus>();
-	for (const session of sessions) {
-		statusByAgentId.set(session.agentId, session.status);
-	}
-	// Agents that only appear via a completed changed-files output (e.g. the Done
-	// preset's Readiness Checker) have no live session but represent finished
-	// work, so they resolve to "completed". The output actor id carries a
-	// "static-" prefix that the crew id drops (see withOutputContributors).
-	const completedOutputAgentIds = new Set<string>();
-	for (const event of staticEvents) {
-		if (event.kind === "changed-files" && event.sessionItem?.state === "complete") {
-			completedOutputAgentIds.add(event.actor.id.replace(/^static-/u, ""));
+	const handleOpenChange = (nextOpen: boolean) => {
+		setOpen(nextOpen);
+		if (!nextOpen) {
+			setQuery("");
 		}
-	}
-	// Resolution order: live session status → completed output → "running"
-	// fallback for a manually-added agent that has not started yet.
-	const statusOf = (id: string): AgentSessionStatus =>
-		statusByAgentId.get(id) ?? (completedOutputAgentIds.has(id) ? "completed" : "running");
-
-	// Sections: added agents grouped by session status (Running / Awaiting user
-	// response / Done), then the rest of the roster under "Select agent". Each
-	// section leads with a non-interactive heading; empty sections are omitted.
-	const items: RichTextSuggestionMenuItem[] = [];
-	for (const section of AGENT_STATUS_SECTIONS) {
-		const sectionItems = agents
-			.filter((agent) => isSelected(agent.id) && statusOf(agent.id) === section.status)
-			.map((agent) => toAgentSuggestionItem(agent, section.status));
-		if (sectionItems.length > 0) {
-			items.push(toAgentSuggestionHeading(`__agents-${section.key}-heading`, section.label), ...sectionItems);
-		}
-	}
-	const availableItems = agents
-		.filter((agent) => !isSelected(agent.id))
-		.map((agent) => toAgentSuggestionItem(agent));
-	if (availableItems.length > 0) {
-		items.push(toAgentSuggestionHeading("__agents-select-heading", "Select agent"), ...availableItems);
-	}
-
-	const toggle = (member: CrewMember) => {
-		onChange(
-			isSelected(member.id)
-				? selectedAgents.filter((item) => item.id !== member.id)
-				: [...selectedAgents, member],
-		);
 	};
 
-	const shown = selectedAgents.slice(0, MAX_AGENT_AVATARS);
-	const overflow = selectedAgents.length - shown.length;
-	const editContent = (
-		<PopoverContent
-			align="start"
-			className={METADATA_PICKER_POPOVER_CLASS}
-			positionerClassName={METADATA_PICKER_POSITIONER_CLASS}
-			sideOffset={METADATA_PICKER_SIDE_OFFSET}
-		>
-			<MetadataSearchPicker
-				emptyLabel="No agents found"
-				items={items}
-				onEscape={() => setOpen(false)}
-				onSelect={(item) => {
-					const agent = agents.find((candidate) => candidate.id === item.id);
-					if (agent) {
-						toggle(agent);
-					}
-				}}
-				placeholder="Search agents"
-			/>
-		</PopoverContent>
-	);
+	const handleFooterAction = () => {
+		setOpen(false);
+		setQuery("");
+	};
 
-	// Empty state: the whole row is a single button that opens the agent picker.
-	if (selectedAgents.length === 0) {
-		return (
-			<Popover onOpenChange={setOpen} open={open}>
-				<PopoverTrigger render={<DetailValueTrigger aria-label="Edit agents" />}>
-					<span className="text-sm text-text-subtlest">Add agents</span>
-				</PopoverTrigger>
-				{editContent}
-			</Popover>
-		);
-	}
+	const handleAgentToggle = (agentId: string) => {
+		const agent = agents.find((candidate) => candidate.id === agentId);
+		if (!agent) {
+			return;
+		}
+		if (selectedAgentIds.includes(agentId)) {
+			onChange(selectedAgents.filter((member) => member.id !== agentId));
+		} else {
+			onChange([...selectedAgents, toCrewAgent(agent)]);
+		}
+		handleFooterAction();
+	};
 
-	// Filled state: the whole row opens the picker. A full-row popover trigger
-	// sits behind the avatars as the click surface; the avatars layer on top as
-	// standalone hover triggers (they own profile hover cards, so they can't be
-	// nested inside the trigger <button>). Clicking anywhere on the row that
-	// isn't an avatar opens the picker — no separate edit icon needed.
 	return (
-		<Popover onOpenChange={setOpen} open={open}>
-			<div className="relative flex min-w-0 items-center">
-				<PopoverTrigger
-					render={
-						<button
-							aria-label="Edit agents"
-							className={cn("absolute inset-0 -mx-2 rounded-md px-2", FOCUS_RING_VISIBLE)}
-							type="button"
-						/>
-					}
-				/>
-				<AvatarGroup className="pointer-events-none relative shrink-0 [&_[data-slot=hover-card-trigger]]:pointer-events-auto" label={`${selectedAgents.length} agents`}>
+		<TooltipProvider>
+			<DropdownMenu onOpenChange={handleOpenChange} open={open}>
+				<div className="relative flex min-h-8 w-full min-w-0 items-center gap-0.5 px-2">
+					<DropdownMenuTrigger
+						render={
+							<button
+								aria-label="Edit agents"
+								className="absolute inset-0 z-0 rounded-md outline-none"
+								type="button"
+							/>
+						}
+					/>
 					{shown.map((member) => (
-						<AgentAvatar key={member.id} member={member} />
+						<AgentRowStatusAvatar
+							key={member.id}
+							member={member}
+							onOpen={() => handleOpenChange(true)}
+							sessions={sessions}
+							staticEvents={staticEvents}
+						/>
 					))}
-					{overflow > 0 ? <AvatarGroupCount>+{overflow}</AvatarGroupCount> : null}
-				</AvatarGroup>
-			</div>
-			{editContent}
-		</Popover>
+					<Avatar
+						aria-hidden
+						className="pointer-events-none relative z-10 text-icon-subtle"
+						shape="hexagon"
+						size="sm"
+					>
+						<span className="flex size-full items-center justify-center bg-bg-neutral text-icon-subtle">
+							<PlusIcon size="small" />
+						</span>
+					</Avatar>
+				</div>
+				<DropdownMenuContent {...WORK_ITEM_AGENT_SELECTOR_MENU}>
+					<WorkItemAgentSelector
+						agents={agents}
+						onAgentToggle={handleAgentToggle}
+						onBrowseAgents={handleFooterAction}
+						onCreateAgent={handleFooterAction}
+						onPinnedAgentIdsChange={setPinnedAgentIds}
+						onQueryChange={setQuery}
+						pinnedAgentIds={pinnedAgentIds}
+						query={query}
+						selectedAgentIds={selectedAgentIds}
+					/>
+				</DropdownMenuContent>
+			</DropdownMenu>
+		</TooltipProvider>
 	);
 }

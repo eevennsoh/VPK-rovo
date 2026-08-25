@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, type CSSProperties, type RefCallback } from "react";
+import { useCallback, useMemo, useRef, useState, type CSSProperties, type RefCallback, type UIEvent } from "react";
 
 import { PulseWorkRail } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-rail";
 import {
@@ -14,7 +14,10 @@ import {
 	usePulseMemberFilter,
 	usePulseTimeline,
 } from "@/components/blocks/jira-kanban/experimental/pulse/hooks/use-pulse-timeline";
-import { buildPulseOutline } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-outline";
+import {
+	buildPulseOutline,
+	isPulseScrollTowardTop,
+} from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-outline";
 import type {
 	PulseAction,
 	PulseLooseWork,
@@ -107,18 +110,29 @@ export function ExperimentalPulse({
 	});
 
 	// Bottom fade stays a CSS mask. The top fade is a pointer-events-none
-	// overlay gated on `showTopScrollMask` (off at scrollTop 0): mask-image
-	// clips hit-testing, and after a chevron jump the insight header sits at
-	// the true top — under that band — so Next/Prev must stay clickable.
+	// overlay that only appears while the reader moves back toward the top:
+	// keeping it mounted at opacity zero lets it transition without veiling a
+	// header after the article is positioned by a chevron or ruler jump.
 	const overflow = useHasVerticalOverflow<HTMLDivElement>();
 	const { ref: overflowRef, showBottomScrollMask, showTopScrollMask } = overflow;
 	const { scrollRef, scrollToEntry, scrollToSnapshot } = reading;
-	const portRef = useRef<HTMLDivElement | null>(null);
+	const [isScrollingTowardTop, setIsScrollingTowardTop] = useState(false);
+	const previousScrollTopRef = useRef(0);
 	const scrollportRef = useCallback<RefCallback<HTMLDivElement>>((node) => {
-		portRef.current = node;
+		previousScrollTopRef.current = node?.scrollTop ?? 0;
 		scrollRef(node);
 		overflowRef(node);
 	}, [overflowRef, scrollRef]);
+	const handleArticleScroll = useCallback((event: UIEvent<HTMLDivElement>) => {
+		const nextScrollTop = event.currentTarget.scrollTop;
+		setIsScrollingTowardTop(
+			isPulseScrollTowardTop(previousScrollTopRef.current, nextScrollTop),
+		);
+		previousScrollTopRef.current = nextScrollTop;
+	}, []);
+	const handleArticleScrollEnd = useCallback(() => {
+		setIsScrollingTowardTop(false);
+	}, []);
 	// No settle nudge here: the rounding that made a jump light the mark above it
 	// is absorbed by `toActiveOutlineIndex`'s one-pixel threshold, where it
 	// belongs — the shell should not be correcting the outline's arithmetic.
@@ -205,6 +219,8 @@ export function ExperimentalPulse({
 							aria-label={`${timeline.projectLabel} insights`}
 							className="h-full overflow-y-auto p-1 lg:overscroll-y-contain lg:pr-10 lg:pb-12"
 							data-pulse-article=""
+							onScroll={handleArticleScroll}
+							onScrollEnd={handleArticleScrollEnd}
 							ref={scrollportRef}
 							role="region"
 							style={scrollportStyle}
@@ -222,13 +238,17 @@ export function ExperimentalPulse({
 								timeline={timeline}
 							/>
 						</div>
-						{showTopScrollMask ? (
-							<ScrollMaskEdgeOverlay
-								data-pulse-article-top-fade=""
-								edge="top"
-								fadeSize={PULSE_FADE_SIZE}
-							/>
-						) : null}
+						<ScrollMaskEdgeOverlay
+							className={cn(
+								"opacity-0 transition-opacity motion-reduce:transition-none",
+								showTopScrollMask && isScrollingTowardTop
+									? "visible opacity-100 duration-normal ease-out-practical"
+									: "invisible duration-fast ease-in",
+							)}
+							data-pulse-article-top-fade=""
+							edge="top"
+							fadeSize={PULSE_FADE_SIZE}
+						/>
 					</div>
 
 					<PulseWorkRail

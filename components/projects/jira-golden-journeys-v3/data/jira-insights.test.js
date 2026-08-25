@@ -9,7 +9,7 @@ function checkpointIds(snapshot) {
 	return snapshot.checkpoints.map((checkpoint) => checkpoint.id);
 }
 
-test("Build starts with the two delivery decisions advertised by the notification pill", () => {
+test("Build starts with the two delivery decisions advertised on the Insights tab", () => {
 	const snapshot = createJiraGoldenJourneysV3InsightsSnapshot(
 		"build",
 		{},

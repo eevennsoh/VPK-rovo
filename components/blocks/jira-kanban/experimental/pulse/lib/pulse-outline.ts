@@ -104,6 +104,14 @@ export interface PulseScrollOptions {
 	align?: PulseScrollAlignment;
 }
 
+/** Whether the next article position is moving back toward its top edge. */
+export function isPulseScrollTowardTop(
+	previousScrollTop: number,
+	nextScrollTop: number,
+): boolean {
+	return nextScrollTop < previousScrollTop;
+}
+
 interface PulseScrollOffsetOptions {
 	alignment: PulseScrollAlignment;
 	anchorTop: number;

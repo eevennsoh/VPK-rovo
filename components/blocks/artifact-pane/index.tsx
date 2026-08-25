@@ -91,7 +91,8 @@ export function ArtifactPanePropertyRow({
 								// outward ring isn’t covered by the label/icon grid columns.
 								"-ml-2 rounded-md transition-colors duration-normal ease-out-practical hover:bg-bg-neutral-subtle-hovered motion-reduce:transition-none",
 								"has-[:focus-visible]:relative has-[:focus-visible]:z-10 has-[:focus-visible]:bg-bg-input",
-								"has-[[data-popup-open]]:relative has-[[data-popup-open]]:z-10 has-[[data-popup-open]]:bg-bg-input",
+								// Button triggers only — tooltip `data-popup-open` must not light the row.
+								"has-[button[data-popup-open]]:relative has-[button[data-popup-open]]:z-10 has-[button[data-popup-open]]:bg-bg-input",
 								FOCUS_RING_HAS_VISIBLE,
 								FOCUS_RING_POPUP_OPEN,
 								"[&>button]:m-0! [&>button]:min-h-8! [&>button]:w-full! [&>button]:max-w-none! [&>button]:px-2! [&>button]:py-0! [&>button]:focus-visible:ring-0!",

@@ -36,7 +36,7 @@ import { cn } from "@/lib/utils";
 /**
  * Pulse story — the body of one insight inside the continuous article.
  *
- * One eyebrow, the faces that produced it, a display headline, the window's
+ * One eyebrow, a display headline, the faces that produced it, the window's
  * numbers, the narrative, the artifacts it produced, then the signals and the
  * actions that follow from it. Nothing here swaps: every insight is mounted at
  * once and the reader scrolls. The header chevrons jump to the previous or next
@@ -106,7 +106,7 @@ export interface PulseStoryViewProps
 	contributors: readonly PulseMember[];
 	/** Clicking a contributor scopes the whole view to them; `null` clears it. */
 	onSelectMember: (memberId: string | null) => void;
-	/** The window's headline numbers, read directly under the title. */
+	/** The window's headline numbers, read under the title and faces. */
 	stats: readonly PulseStat[];
 	/**
 	 * Requested actions, owned above the article. A request is a commitment the
@@ -170,7 +170,7 @@ function PulseStoryAnchor({
 }
 
 /**
- * Who produced this window, as faces, directly above the headline.
+ * Who produced this window, as faces, directly under the headline.
  *
  * The roster list used to live in the rail. Attribution belongs next to the
  * claim it supports, so the faces sit on the insight itself — and because each
@@ -234,10 +234,10 @@ function PulseStoryContributors({
 }
 
 /**
- * The window's numbers, as a ruled label/value list under the headline.
+ * The window's numbers, as a ruled label/value list under the faces.
  *
  * These moved out of the rail because they describe the story, not the work
- * queue beside it — read directly under the title they answer "how big was
+ * queue beside it — read after the title and faces they answer "how big was
  * this" before the prose explains what happened.
  */
 function PulseStoryStats({ stats }: Readonly<{ stats: readonly PulseStat[] }>) {
@@ -502,17 +502,17 @@ export function PulseStory({
 					/>
 				</div>
 
-				<div className="mt-7 min-w-0">
+				<h2 className={cn("mt-7 text-pretty text-text", MEASURE)} id={headingId} style={HEADLINE_STYLE}>
+					{headline}
+				</h2>
+
+				<div className="mt-3 min-w-0">
 					<PulseStoryContributors
 						contributors={contributors}
 						onSelectMember={onSelectMember}
 						selectedMemberId={member?.id ?? null}
 					/>
 				</div>
-
-				<h2 className={cn("mt-3 text-pretty text-text", MEASURE)} id={headingId} style={HEADLINE_STYLE}>
-					{headline}
-				</h2>
 
 				<PulseStoryStats stats={stats} />
 

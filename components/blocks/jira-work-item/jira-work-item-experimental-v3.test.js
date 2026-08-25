@@ -138,6 +138,51 @@ test("the v3 control row is consolidated and Reporter moved back to Details", ()
 	);
 	assert.match(
 		detailsTabSource,
+		/label="Reporter">[\s\S]*label="Agents">[\s\S]*<AgentsRowField onChange=\{\(next\) => onChange\(\{ crew: next \}\)\} value=\{draft\.crew\} \/>[\s\S]*label="Priority"/u,
+	);
+	const detailsEditorsSource = readBlockFile("experimental-v3/components/detail-field-editors.tsx");
+	assert.match(
+		detailsEditorsSource,
+		/export function AgentsRowField[\s\S]*gap-0\.5[\s\S]*<DropdownMenuTrigger[\s\S]*aria-label="Edit agents"[\s\S]*absolute inset-0[\s\S]*<AgentRowStatusAvatar[\s\S]*<PlusIcon size="small" \/>[\s\S]*<DropdownMenuContent \{\.\.\.WORK_ITEM_AGENT_SELECTOR_MENU\}>[\s\S]*<WorkItemAgentSelector/u,
+	);
+	assert.match(
+		detailsEditorsSource,
+		/import \{ Tooltip, TooltipContent, TooltipProvider, TooltipTrigger \} from "@\/components\/ui\/tooltip"/u,
+	);
+	assert.match(
+		detailsEditorsSource,
+		/<TooltipTrigger[\s\S]*tabIndex=\{-1\}[\s\S]*<AgentAvatarVisual[\s\S]*sizePx=\{24\}[\s\S]*<TooltipContent[\s\S]*\{statusLabel\}/u,
+	);
+	assert.doesNotMatch(detailsEditorsSource, /AvatarGroup/u);
+	assert.doesNotMatch(detailsEditorsSource, /-space-x-/u);
+	assert.doesNotMatch(detailsEditorsSource, /selectionMode="multiple"/u);
+	assert.match(detailsEditorsSource, /selectedAgentIds=\{selectedAgentIds\}/u);
+	assert.match(
+		detailsEditorsSource,
+		/if \(selectedAgentIds\.includes\(agentId\)\) \{[\s\S]*onChange\(selectedAgents\.filter\(\(member\) => member\.id !== agentId\)\);[\s\S]*\} else \{[\s\S]*onChange\(\[\.\.\.selectedAgents, toCrewAgent\(agent\)\]\);/u,
+	);
+	assert.match(
+		detailsEditorsSource,
+		/import \{ WorkItemAgentSelector \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/components\/work-item-agent-selector";/u,
+	);
+	assert.match(detailsEditorsSource, /import \{ WORK_ITEM_AGENT_SELECTOR_MENU \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/lib\/work-item-agent-selector-menu";/u);
+	const workItemAgentSelectorSource = readBlockFile("experimental-v3/components/work-item-agent-selector.tsx");
+	assert.match(workItemAgentSelectorSource, /selectionMode="single"/u);
+	assert.match(workItemAgentSelectorSource, /selectedAgentIds\?: readonly string\[\];/u);
+	assert.match(workItemAgentSelectorSource, /selectedAgentIds=\{selectedAgentIds\}/u);
+	assert.doesNotMatch(workItemAgentSelectorSource, /export const WORK_ITEM_AGENT_SELECTOR_MENU/u);
+	const composerAgentPillSource = readBlockFile("experimental-v3/components/activity-composer-agent-context-pill.tsx");
+	assert.match(composerAgentPillSource, /import \{ WORK_ITEM_AGENT_SELECTOR_MENU \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/lib\/work-item-agent-selector-menu";/u);
+	assert.match(
+		composerAgentPillSource,
+		/<DropdownMenuContent \{\.\.\.WORK_ITEM_AGENT_SELECTOR_MENU\}>[\s\S]*<WorkItemAgentSelector/u,
+	);
+	assert.match(
+		detailsTabSource,
+		/import \{[\s\S]*AgentsRowField,[\s\S]*\} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/components\/detail-field-editors";/u,
+	);
+	assert.match(
+		detailsTabSource,
 		/import \{ ArtifactProjectField \} from "@\/components\/blocks\/artifact-pane\/artifact-project-field";/u,
 	);
 	assert.match(
@@ -332,6 +377,13 @@ test("v3 header collapse control stays static and does not toggle header mode", 
 	assert.doesNotMatch(navigationSource, /toggleHeaderVariant|headerVariantOverride/u);
 });
 
+test("open work-item chrome publishes a document flag that hides the JGP launcher", () => {
+	const dialogSource = readBlockFile("experimental-v3/components/experimental-work-item-dialog.tsx");
+	assert.match(dialogSource, /document\.documentElement\.dataset\.jiraWorkItemOpen = "true"/u);
+	assert.match(dialogSource, /delete document\.documentElement\.dataset\.jiraWorkItemOpen/u);
+	assert.match(dialogSource, /\}, \[open\]\);/u);
+});
+
 test("compact header motion drives the surrounding grid from measured height", () => {
 	const dialogSource = readBlockFile("experimental-v3/components/experimental-work-item-dialog.tsx");
 
@@ -395,9 +447,12 @@ test("PR select shares the section navigation list without becoming a section", 
 	assert.doesNotMatch(selectSource, /"1 Open"/u);
 	assert.match(
 		navSource,
-		/<span[\s\S]*className=\{cn\([\s\S]*"shrink-0 text-xs font-normal"[\s\S]*section\.id === activeSectionId \? "text-text" : "text-text-subtlest"[\s\S]*\{activityCount\}/u,
+		/<span[\s\S]*className=\{cn\([\s\S]*"shrink-0 text-xs font-normal"[\s\S]*section\.id === activeSectionId \? "text-text" : "text-text-subtlest"[\s\S]*\{count\}/u,
 	);
+	assert.match(navSource, /function sectionTabCount\(/u);
+	assert.match(navSource, /case "insights":\s*return insightsCount/u);
 	assert.doesNotMatch(navSource, /<Badge>\{activityCount\}<\/Badge>/u);
+	assert.doesNotMatch(navSource, /<Badge>\{count\}<\/Badge>/u);
 	assert.doesNotMatch(selectSource, /Review pull request/u);
 	assert.doesNotMatch(selectSource, /PullRequestIcon|@atlaskit\/icon\/core\/pull-request/u);
 	assert.doesNotMatch(selectSource, /@max-\[36rem\]\/resource-row:hidden/u);
@@ -445,19 +500,15 @@ test("PR select shares the section navigation list without becoming a section", 
 		/<InsightsPanel activity=\{activity\} hasInsights=\{hasInsights\} \/>/u,
 	);
 	const contextPillsSource = readBlockFile("experimental-v3/components/activity-composer-context-pills.tsx");
-	assert.match(contextPillsSource, /justify-between/u);
+	assert.doesNotMatch(contextPillsSource, /justify-between/u);
 	assert.match(
 		contextPillsSource,
-		/onSectionSelect\?\.\(\);[\s\S]*onNewInsightsSelect\?\.\(\);[\s\S]*selectSection\("insights"\)/u,
+		/className="flex min-h-10 min-w-0 flex-1 items-center \[&_\[data-context-bar\]\]:mb-0"/u,
 	);
-	assert.match(contextPillsSource, /setNewInsightsDismissed\(true\)/u);
-	assert.match(
-		readBlockFile("experimental-v3/components/activity-composer-new-insights-pill.tsx"),
-		/data-jira-work-item-new-insights-pill/u,
-	);
-	assert.match(
-		readBlockFile("experimental-v3/components/activity-composer-new-insights-pill.tsx"),
-		/@atlaskit\/icon\/core\/lightbulb/u,
+	assert.doesNotMatch(contextPillsSource, /ActivityComposerNewInsightsPill|data-jira-work-item-new-insights-pill|newInsightsCount|onNewInsightsSelect|setNewInsightsDismissed|selectSection\("insights"\)/u);
+	assert.equal(
+		fs.existsSync(path.join(V3_DIR, "components/activity-composer-new-insights-pill.tsx")),
+		false,
 	);
 	assert.doesNotMatch(sectionTabsSource, /pull-request/u);
 
@@ -468,8 +519,9 @@ test("PR select shares the section navigation list without becoming a section", 
 	);
 	assert.match(
 		compositionSource,
-		/<WorkItemSectionNav[\s\S]*onSectionSelect=\{selectedPullRequestIdentity \? handlePullRequestClear : undefined\}[\s\S]*<InsightsAwareComposer[\s\S]*onSectionSelect=\{selectedPullRequestIdentity \? handlePullRequestClear : undefined\}/u,
+		/<WorkItemSectionNav[\s\S]*onSectionSelect=\{selectedPullRequestIdentity \? handlePullRequestClear : undefined\}/u,
 	);
+	assert.doesNotMatch(compositionSource, /<InsightsAwareComposer[\s\S]*onSectionSelect=/u);
 	assert.match(compositionSource, /insightsSnapshot\?: JiraInsightsSnapshot/u);
 	assert.match(compositionSource, /const insightsSnapshot = props\.insightsSnapshot \?\? EMPTY_JIRA_INSIGHTS_SNAPSHOT/u);
 	assert.match(
@@ -481,8 +533,11 @@ test("PR select shares the section navigation list without becoming a section", 
 	assert.match(compositionSource, /insightsSelected && hasInsights/u);
 	assert.match(compositionSource, /activityEvents\.flatMap/u);
 	assert.match(compositionSource, /<JiraInsightsScrubber activityTimestamps=\{activityTimestamps\} \/>/u);
-	assert.match(compositionSource, /newInsightsCount=\{hasInsights \? unreadCheckpointIds\.length : undefined\}/u);
-	assert.match(compositionSource, /onNewInsightsSelect=\{hasInsights \? selectLatestUnread : undefined\}/u);
+	assert.match(
+		compositionSource,
+		/usePublishInsightsCount\(\s*resolveNewInsightsCount\(\s*contextResources,\s*hasInsights \? unreadCheckpointIds\.length : undefined,/u,
+	);
+	assert.doesNotMatch(compositionSource, /newInsightsCount=|onNewInsightsSelect=|selectLatestUnread/u);
 	assert.doesNotMatch(compositionSource, /showDescriptionTools|descriptionViewMode|onDescriptionViewModeChange/u);
 });
 
@@ -504,11 +559,10 @@ test("experimental v3 insight sources reuse work-item, session, activity, and pu
 		readBlockFile("experimental-v3/components/context-panel.tsx"),
 		/JiraInsightSource|handleInsightSourceSelect/u,
 	);
-	assert.match(composerSource, /newInsightsCount\?: number/u);
-	assert.match(composerSource, /onNewInsightsSelect\?: \(\) => void/u);
+	assert.doesNotMatch(composerSource, /newInsightsCount|onNewInsightsSelect|onSectionSelect/u);
 	assert.match(composerSource, /contextBar=\{composerContextBar\}/u);
-	assert.match(pillsSource, /contextBar !== undefined \? \([\s\S]*flex-1">\{contextBar\}/u);
-	assert.match(pillsSource, /onNewInsightsSelect\?\.\(\);[\s\S]*selectSection\("insights"\)/u);
+	assert.match(pillsSource, /contextBar !== undefined \? \([\s\S]*flex-1 items-center \[&_\[data-context-bar\]\]:mb-0">[\s\S]*\{contextBar\}/u);
+	assert.doesNotMatch(pillsSource, /onNewInsightsSelect|selectSection\("insights"\)|data-jira-work-item-new-insights-pill/u);
 });
 
 test("experimental v3 shares one insight selection between the filtered feed and editorial rail", () => {

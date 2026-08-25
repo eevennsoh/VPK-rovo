@@ -1,6 +1,6 @@
 ---
 name: vpk-design
-description: Translate Figma URLs, screenshots, mockups, and pixel-perfect design specs into VPK code. Use ADS MCP only for token/icon/a11y mapping inside Figma tasks. Use vpk-component for ADS or shadcn component harvesting.
+description: Translate Figma URLs, screenshots, mockups, and pixel-perfect design specs into VPK code. Use the atlas ads CLI only for token/icon/a11y mapping inside Figma tasks. Use vpk-component for ADS or shadcn component harvesting.
 ---
 
 # VPK Design
@@ -64,13 +64,14 @@ Not every Figma design requires the full 3-agent pipeline. Choose the approach b
 5. Re-read current component interfaces before implementation (`Props`, callback names, exported APIs). Do not rely on stale assumptions.
 6. Check local workspace state (`git status --short`) and avoid touching unrelated modified files.
 7. Capture the worktree's runtime URL with `pnpm ports` — prefer the Portless `🌐 https://…` URL (falling back to the port files) so the validator hits the correct worktree.
-8. Run an ADS MCP pre-pass for Atlassian-like primitives:
-   - Use `ads_plan` as the primary lookup, with at least 2 likely search terms per populated field (`components`, `icons`, `tokens`)
-   - Set `exactName: true` when the Figma layer name makes the ADS component explicit
-   - Fetch `ads_get_a11y_guidelines` for the closest topic (`buttons`, `forms`, `focus`, `keyboard`, or `general`)
-   - Use `ads_get_all_tokens` / `ads_get_all_icons` only as exhaustive fallback lookups when `ads_plan` still leaves token/icon ambiguity
-   - Treat `ads_get_components` as an exhaustive fallback, not the default search path
-   - If the design reflects legacy Atlaskit spotlight/onboarding patterns, consult `ads_migration_guides` before implementation
+8. Run an ADS lookup pre-pass for Atlassian-like primitives (CLI first; the ADS MCP tools are only a fallback when `atlas ads` is unavailable or erroring):
+   - Use `atlas ads batch --command "search <terms> --type component" --command "search <terms> --type token" --command "search <terms> --type icon"` as the primary lookup, with at least 2 likely search terms per type (one process instead of three)
+   - Use the exact single lookup (`atlas ads component <Name>`, `atlas ads token <name>`, `atlas ads icon <IconName>`) when the Figma layer name makes the ADS component explicit
+   - Fetch `atlas ads docs a11y <topic>` for the closest topic (`buttons`, `forms`, `focus`, `keyboard`, or `general`)
+   - Use `atlas ads token --all` / `atlas ads icon --all` only as exhaustive fallback lookups when the search sweep still leaves token/icon ambiguity
+   - Treat `atlas ads component --all` as an exhaustive fallback, not the default search path
+   - If the design reflects legacy Atlaskit spotlight/onboarding patterns, consult `atlas ads docs migration <avatar-xsmall-to-xxsmall|jira-spotlight|single-step|multi-step|motion>` before implementation
+   - Add `--json` to any command whose output an agent will parse. Portable fallback on machines without the Atlas CLI plugin: `npx @atlaskit/ads-cli <cmd>`
 
 **Scope rules:**
 - When the user provides a Figma URL, the Figma spec is the source of truth for ALL differences — not just the ones the user mentions in their text. User notes are supplementary constraints on top of the full Figma spec. Every difference between the current code and the Figma spec must be implemented.
@@ -99,11 +100,12 @@ CRITICAL — extract ALL of the following:
 - center invariants (what must remain mathematically centered)
 - grouping frames: which elements are grouped in a parent frame and what gap/padding that frame has
 
-ADS MCP rules:
-- Use `ads_plan` as the primary ADS lookup and provide at least 2 likely search terms for every populated field (`components`, `icons`, `tokens`)
-- Set `exactName: true` when a Figma layer name makes the target explicit
-- Use `ads_get_a11y_guidelines` for the most relevant topics and include the applicable rules in the output
-- Use `ads_get_all_tokens` / `ads_get_all_icons` only as exhaustive fallbacks when token/icon matching is still ambiguous
+ADS lookup rules (CLI first; ADS MCP tools only when `atlas ads` is unavailable or erroring):
+- Use `atlas ads batch --command "search <terms> --type component" --command "search <terms> --type token" --command "search <terms> --type icon"` as the primary ADS lookup and provide at least 2 likely search terms per type
+- Use the exact single lookup (`atlas ads component <Name>` / `atlas ads token <name>` / `atlas ads icon <IconName>`) when a Figma layer name makes the target explicit
+- Use `atlas ads docs a11y <topic>` for the most relevant topics and include the applicable rules in the output
+- Use `atlas ads token --all` / `atlas ads icon --all` only as exhaustive fallbacks when token/icon matching is still ambiguous
+- Add `--json` to any command whose output you will parse
 - If ADS mapping remains ambiguous, record the ambiguity instead of guessing
 ```
 
@@ -138,11 +140,13 @@ This includes: text copy, placeholder text, button labels, component types,
 variant/appearance props, spacing/gap structure, and grouping wrappers.
 
 Use ONLY the tokens specified in the spec.
-Use `ads_get_a11y_guidelines` for the relevant control types before finalizing.
-Run `ads_analyze_a11y`, then use `ads_suggest_a11y_fixes` for any material
-violation instead of improvising a remediation.
+Run `atlas ads docs a11y <topic>` for the relevant control types before finalizing.
+Run `ads_analyze_a11y` (MCP — no CLI equivalent), then use `ads_suggest_a11y_fixes`
+(MCP — no CLI equivalent) for any material violation instead of improvising a
+remediation.
 If the target file is intl-aware or lint flags literal JSX strings, use
-`ads_i18n_conversion_guide` before leaving Figma copy hardcoded in code.
+`ads_i18n_conversion_guide` (MCP — no CLI equivalent) before leaving Figma copy
+hardcoded in code.
 Preserve layout invariants from spec. If center content must stay centered,
 implement it so side controls cannot shift it.
 Run lint and typecheck before completing.
@@ -178,9 +182,10 @@ For each mode, use an IIFE to find the theme control's nearest
 and non-empty computed `--ds-surface` / `--ds-text` values agree. Restore the
 original theme through the same control before scoped cleanup.
 
-Run `ads_analyze_localhost_a11y` scoped to the component root selector
-(not only full-page scans). If it reports material issues, use
-`ads_get_a11y_guidelines` and `ads_suggest_a11y_fixes` to turn them into
+Run `ads_analyze_localhost_a11y` (MCP — no CLI equivalent) scoped to the
+component root selector (not only full-page scans). If it reports material
+issues, use `atlas ads docs a11y <topic>` for the guideline and
+`ads_suggest_a11y_fixes` (MCP — no CLI equivalent) to turn them into
 concrete follow-up actions.
 Verify geometry parity (sizes/offsets/centering), not just visual similarity.
 Compare against Figma and report discrepancies.
@@ -233,9 +238,9 @@ Use `vpk-verify` (`control-vpk`) for all browser-driven validation — navigatio
 2. Theme: follow `vpk-verify/features/switch-theme.md`; use the user-facing control and capture the accessible name plus the nearest `[data-color-mode]` owner's local mode and resolved ADS token values.
 3. For a stale non-navigation command, reopen and revalidate the exact feature entrypoint first. If browser-starting `open`/`connect` stays stale after its bounded retry, or agent-browser is otherwise unavailable/blocked, fall back to:
    - server-render sanity checks for expected text/structure at the route
-   - component-level a11y analysis (`ads_analyze_a11y`)
-   - targeted localhost a11y (`ads_analyze_localhost_a11y`) with component selector
-4. Use `ads_get_a11y_guidelines` and `ads_suggest_a11y_fixes` to separate real issues from noise and turn them into concrete fixes.
+   - component-level a11y analysis (`ads_analyze_a11y` — MCP, no CLI equivalent)
+   - targeted localhost a11y (`ads_analyze_localhost_a11y` — MCP, no CLI equivalent) with component selector
+4. Use `atlas ads docs a11y <topic>` for the guideline and `ads_suggest_a11y_fixes` (MCP — no CLI equivalent) to separate real issues from noise and turn them into concrete fixes.
 5. Explicitly mark validation as degraded when browser automation is blocked.
 
 ### Geometry Parity Checks (Critical)
@@ -257,7 +262,7 @@ If geometry checks fail, return `MINOR_FIXES` or `MAJOR_FIXES` even when UI look
 
 - Scope checks to the component selector whenever possible.
 - Full-page a11y scans may include unrelated overlays/toolbars (for example feedback tooling). Treat those as external noise unless the task is explicitly page-wide.
-- When a violation appears material, corroborate it with `ads_get_a11y_guidelines` and convert it into a concrete fix with `ads_suggest_a11y_fixes` instead of leaving a vague note.
+- When a violation appears material, corroborate it with `atlas ads docs a11y <topic>` and convert it into a concrete fix with `ads_suggest_a11y_fixes` (MCP — no CLI equivalent) instead of leaving a vague note.
 
 ### Common Figma-to-Code Pitfalls (Learned)
 
@@ -326,13 +331,16 @@ This codebase uses **Tailwind classes** that map to ADS CSS variables. The expan
 
 ---
 
-## ADS MCP Coverage
+## ADS Coverage
 
-- `ads_plan` is the primary ADS lookup; `ads_get_components` is the package/component fallback inventory.
-- `ads_get_all_tokens` and `ads_get_all_icons` are exhaustive fallbacks only when `ads_plan` still leaves concrete token or icon ambiguity.
-- `ads_get_a11y_guidelines`, `ads_analyze_a11y`, `ads_analyze_localhost_a11y`, and `ads_suggest_a11y_fixes` form the required accessibility loop.
-- `ads_migration_guides` applies when the Figma work reflects legacy spotlight/onboarding patterns.
-- `ads_i18n_conversion_guide` applies when Figma copy lands in intl-aware code or lint flags literal strings.
+Retrieve ADS content with the `atlas ads` CLI first (Atlas CLI plugin at `/opt/atlassian/bin/atlas`; there is no bare `ads` binary). The ADS MCP tools are a fallback for when the CLI is unavailable or erroring, plus the few capabilities that have no CLI equivalent.
+
+- `atlas ads batch --command "search <terms> --type component" --command "search <terms> --type token" --command "search <terms> --type icon"` is the primary ADS lookup (a plain `atlas ads search <terms>` gives a unified sweep); `atlas ads component --all` is the package/component fallback inventory.
+- `atlas ads token --all` and `atlas ads icon --all` are exhaustive fallbacks only when the search sweep still leaves concrete token or icon ambiguity.
+- `atlas ads docs a11y <buttons|forms|images|colors|focus|keyboard|screenReaders|aria|wcag|general>`, plus the MCP-only `ads_analyze_a11y`, `ads_analyze_localhost_a11y`, and `ads_suggest_a11y_fixes`, form the required accessibility loop.
+- `atlas ads docs migration <avatar-xsmall-to-xxsmall|jira-spotlight|single-step|multi-step|motion>` applies when the Figma work reflects legacy spotlight/onboarding patterns.
+- `ads_i18n_conversion_guide` (MCP — no CLI equivalent) applies when Figma copy lands in intl-aware code or lint flags literal strings.
+- Add `--json` to any command whose output an agent will parse. Portable fallback on machines without the Atlas CLI plugin: `npx @atlaskit/ads-cli <cmd>`.
 
 ---
 
@@ -366,14 +374,14 @@ Before presenting to user:
 - [ ] **Preflight: current code was read** and diffed against the Figma screenshot
 - [ ] **Scope verified:** Only implementing what's visible in the Figma node — no extra structural components
 - [ ] **Parent node checked** for full page layout context (no duplicate headers/chrome)
-- [ ] ADS MCP pre-pass covered primary lookup, exhaustive fallbacks, and legacy migration guidance where applicable
+- [ ] `atlas ads` pre-pass covered primary lookup (`atlas ads batch`/`search`), exhaustive fallbacks (`--all`), and `atlas ads docs migration` guidance where applicable
 - [ ] Extractor produced complete spec with all tokens AND Tailwind mappings
 - [ ] Extractor captured **exact text content** (headings, placeholders, button labels) verbatim from Figma
 - [ ] Extractor identified **component types and variant props** (Button vs IconButton, appearance, etc.)
 - [ ] Implementer applied **ALL differences** between current code and Figma spec — not just user-mentioned ones
 - [ ] Implementer used VPK primitives (Button, etc.) with style overrides — not raw HTML elements
 - [ ] Implementer used Tailwind classes (not token()) where possible
-- [ ] `ads_i18n_conversion_guide` was used when Figma copy landed in an intl-aware surface
+- [ ] `ads_i18n_conversion_guide` (MCP — no CLI equivalent) was used when Figma copy landed in an intl-aware surface
 - [ ] Implementer passed `pnpm run typecheck`
 - [ ] Full lint attempted; scoped lint on changed files reported if baseline lint debt exists
 - [ ] Validator captured light and dark screenshots through the user-facing theme control and proved `data-color-mode` plus resolved ADS tokens

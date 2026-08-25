@@ -4,7 +4,10 @@ import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import { useState } from "react";
 
 import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
-import { AgentSelector, type AgentSelectorAgent } from "@/components/blocks/agent-selector";
+import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
+import { WorkItemAgentSelector } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-agent-selector";
+import { DEFAULT_PINNED_SPACE_AGENT_IDS } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-picker-options";
+import { WORK_ITEM_AGENT_SELECTOR_MENU } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-agent-selector-menu";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -12,10 +15,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { ContextBarPill } from "@/components/ui-custom/context-bar";
-import {
-	DEFAULT_PINNED_SPACE_AGENT_IDS,
-	WORK_ITEM_PINNED_ITEMS_LABEL,
-} from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-picker-options";
 
 interface ActivityComposerAgentContextPillProps {
 	onInvokeAgent: (agent: Pick<AgentSelectorAgent, "id" | "name" | "avatarSrc" | "brandName">) => void;
@@ -63,24 +62,15 @@ export function ActivityComposerAgentContextPill({
 			>
 				Assign agents
 			</DropdownMenuTrigger>
-			<DropdownMenuContent
-				align="start"
-				className="max-h-none w-[360px] overflow-hidden p-0"
-				positionerClassName="z-[502]"
-				sideOffset={8}
-			>
-				<AgentSelector
-					agents={ROVO_AGENT_SELECTOR_AGENTS}
+			<DropdownMenuContent {...WORK_ITEM_AGENT_SELECTOR_MENU}>
+				<WorkItemAgentSelector
 					onAgentToggle={handleAgentToggle}
 					onBrowseAgents={handleFooterAction}
 					onCreateAgent={handleFooterAction}
 					onPinnedAgentIdsChange={setPinnedAgentIds}
 					onQueryChange={setQuery}
 					pinnedAgentIds={pinnedAgentIds}
-					pinnedItemsLabel={WORK_ITEM_PINNED_ITEMS_LABEL}
 					query={query}
-					searchVariant="palette"
-					selectionMode="single"
 				/>
 			</DropdownMenuContent>
 		</DropdownMenu>

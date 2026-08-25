@@ -55,9 +55,9 @@ export interface PulseSectionLabelProps {
 }
 
 /**
- * Shared micro-label above every story section. The visible text is uppercased
- * in CSS, which Chrome also exposes to the accessibility tree, so the sentence
- * case name is restated explicitly rather than announced as an initialism.
+ * Shared micro-label above every story section. Visible copy is sentence case
+ * (matching the work-item Activity heading); `aria-label` restates the same
+ * name so the accessibility tree does not depend on CSS text-transform.
  */
 export function PulseSectionLabel({ children, id, className }: Readonly<PulseSectionLabelProps>) {
 	return (

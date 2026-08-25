@@ -50,8 +50,13 @@ failure examples.
 ### 1. Research the source
 
 Classify the source lane and collect primary evidence before editing. For ADS,
-prefer the live examples page, then ADS planning/accessibility tools, then
-published package source inspected in a temporary directory. For shadcn, read
+prefer the live examples page, then the `atlas ads` CLI (`atlas ads search <q>
+--type component`, `atlas ads component <Name>` for the exact entry, `atlas ads
+docs a11y <topic>` for accessibility rules; add `--json` when parsing, and batch
+several lookups with `atlas ads batch --command … --command …`), then published
+package source inspected in a temporary directory. Fall back to the ADS MCP
+(`ads_plan`, `ads_search_components`, `ads_get_a11y_guidelines`) only when the
+CLI is unavailable or erroring. For shadcn, read
 the global shadcn skill, inspect project-aware docs and registry source/examples,
 then render the upstream example when parity matters.
 
@@ -105,9 +110,12 @@ pnpm run typecheck
 
 For UI changes, open the real component route and verify all changed states,
 relevant viewports, keyboard/focus behavior, and accessibility. Use
-`agent-browser` by default and run the appropriate ADS accessibility analysis.
-If new variants were added, search all call sites for exhaustive variant maps
-before handoff.
+`agent-browser` by default. Fetch the applicable rules with `atlas ads docs a11y
+<topic>`, then scan with `ads_analyze_a11y` (component source) or
+`ads_analyze_localhost_a11y` (live route) and turn material violations into
+fixes with `ads_suggest_a11y_fixes` — those three are ADS MCP only and have no
+CLI equivalent. If new variants were added, search all call sites for exhaustive
+variant maps before handoff.
 
 ## Reference index
 

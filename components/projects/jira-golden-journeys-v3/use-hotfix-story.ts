@@ -101,6 +101,7 @@ export function useJiraGoldenJourneysV3Story(active = true): JiraGoldenJourneysV
 	const restartChapter = useCallback((targetChapter: JiraGoldenJourneysV3StoryChapter) => {
 		switch (targetChapter) {
 			case "terminal":
+			case "track":
 				break;
 			case "build":
 				setReviewStep("queued");

@@ -18,6 +18,7 @@ const spinnerVariants = cva(
 				xl: "size-6",
 			},
 			variant: {
+				default: "text-icon-subtlest",
 				inherit: "",
 				invert: "text-background",
 				rainbow: "",

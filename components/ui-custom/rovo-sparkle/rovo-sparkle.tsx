@@ -70,7 +70,12 @@ function getBrowseAllRow(id: string): RovoSparkleItem {
 	return {
 		id,
 		label: "Browse all",
-		icon: <ShowMoreHorizontalIcon color="currentColor" label="" size="small" />,
+		icon: null,
+		leadingVisual: (
+			<span className="grid size-6 place-items-center bg-transparent text-icon-subtle" aria-hidden="true">
+				<ShowMoreHorizontalIcon color="currentColor" label="" size="small" />
+			</span>
+		),
 	};
 }
 
@@ -268,4 +273,3 @@ export function RovoSparkle({
 		</Popover>
 	);
 }
-

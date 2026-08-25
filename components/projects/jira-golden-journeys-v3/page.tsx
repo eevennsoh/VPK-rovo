@@ -4,8 +4,10 @@ import { useCallback, useMemo, useState } from "react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { Gallery, type GalleryItem } from "@/components/blocks/gallery";
+import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
 import { ExperimentalV3JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v3/experimental-v3-jira-work-item";
 import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v1/data/agent-chat-data";
+import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
 import { useTerminalDemo } from "@/components/projects/jira-golden-journeys-v1/hooks/use-terminal-demo";
 
 import { JIRA_GOLDEN_JOURNEYS_V3_GALLERY_ITEMS } from "./data/gallery-items";
@@ -13,6 +15,7 @@ import { createJiraGoldenJourneysV3InsightsSnapshot } from "./data/jira-insights
 import {
 	JIRA_GOLDEN_JOURNEYS_V3_CLAUDE_SESSION_ID,
 	JIRA_GOLDEN_JOURNEYS_V3_STATUS_PHASES,
+	JIRA_GOLDEN_JOURNEYS_V3_STORY_BOARD_AGENTS,
 	JIRA_GOLDEN_JOURNEYS_V3_STORY_COMPOSER_AGENTS,
 	resolveJiraGoldenJourneysV3PullRequestChecks,
 } from "./data/hotfix-story";
@@ -92,6 +95,7 @@ function getCiPresentation(
 function getRevealActivityEntryId(controller: JiraGoldenJourneysV3StoryController): string {
 	switch (controller.chapter) {
 		case "terminal":
+		case "track":
 		case "build":
 			return "story-channel-claude-pr-handoff";
 		case "review":
@@ -142,6 +146,23 @@ function JiraGoldenJourneysV3PullRequestBar({
 	);
 }
 
+function JiraGoldenJourneysV3TrackStage({
+	controller,
+}: Readonly<{
+	controller: JiraGoldenJourneysV3StoryController;
+}>): React.ReactElement {
+	return (
+		<div className="relative left-1/2 flex h-full min-h-0 w-[100cqw] -translate-x-1/2 flex-col overflow-hidden pt-4 [&>div]:h-full [&>div]:min-h-0">
+			<ExperimentalJiraKanbanPage
+				agents={JIRA_GOLDEN_JOURNEYS_V3_STORY_BOARD_AGENTS}
+				ariaLabel="Track SHOP-4821 on the experimental Jira board. Scroll horizontally to review all statuses."
+				boardColumns={controller.boardColumns}
+				onBoardColumnsChange={controller.updateBoardColumns}
+			/>
+		</div>
+	);
+}
+
 function JiraGoldenJourneysV3WorkItemStage({
 	controller,
 	onDismissPullRequestContext,
@@ -178,6 +199,7 @@ function JiraGoldenJourneysV3WorkItemStage({
 					parentSessionId: JIRA_GOLDEN_JOURNEYS_V3_CLAUDE_SESSION_ID,
 					childSessionIds: [],
 					visibleSessionIds: [JIRA_GOLDEN_JOURNEYS_V3_CLAUDE_SESSION_ID],
+					autoScroll: controller.chapter !== "build",
 					defaultRepliesExpanded: false,
 				}}
 				composerAgents={JIRA_GOLDEN_JOURNEYS_V3_STORY_COMPOSER_AGENTS}
@@ -213,6 +235,9 @@ export default function JiraGoldenJourneysV3Page(): React.ReactElement {
 	const [terminalTheme, setTerminalTheme] = useState<"dark" | "light">("dark");
 	const storyController = useJiraGoldenJourneysV3Story(selectedId === "work-item");
 	const isTerminalChapter = storyController.chapter === "terminal";
+	const isWorkItemStage = selectedId === "work-item"
+		&& storyController.chapter !== "terminal"
+		&& storyController.chapter !== "track";
 	const terminalController = useTerminalDemo(
 		selectedId === "work-item" && isTerminalChapter,
 		{ story: JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_STORY },
@@ -235,21 +260,25 @@ export default function JiraGoldenJourneysV3Page(): React.ReactElement {
 	}, []);
 	const renderSelectedItem = useCallback((item: GalleryItem): React.ReactNode => {
 		if (item.id !== "work-item") return null;
-		return storyController.chapter === "terminal"
-			? (
+		if (storyController.chapter === "terminal") {
+			return (
 				<JiraGoldenJourneysV3TerminalStory
 					controller={terminalController}
 					resetKey={storyController.chapterRevision}
 					theme={terminalTheme}
 				/>
-			)
-			: (
-				<JiraGoldenJourneysV3WorkItemStage
-					controller={storyController}
-					onDismissPullRequestContext={() => setShowPullRequestContext(false)}
-					showPullRequestContext={showPullRequestContext}
-				/>
 			);
+		}
+		if (storyController.chapter === "track") {
+			return <JiraGoldenJourneysV3TrackStage controller={storyController} />;
+		}
+		return (
+			<JiraGoldenJourneysV3WorkItemStage
+				controller={storyController}
+				onDismissPullRequestContext={() => setShowPullRequestContext(false)}
+				showPullRequestContext={showPullRequestContext}
+			/>
+		);
 	}, [showPullRequestContext, storyController, terminalController, terminalTheme]);
 	const subtreeThemeProps = isTerminalChapter
 		? {
@@ -286,6 +315,7 @@ export default function JiraGoldenJourneysV3Page(): React.ReactElement {
 					)}
 				/>
 			</div>
+			<JgpRovoOverlay launcher={isWorkItemStage ? "hidden" : "auto"} />
 		</RovoChatProvider>
 	);
 }

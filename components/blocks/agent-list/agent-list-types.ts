@@ -1,4 +1,5 @@
 import type { ChatSurface } from "@/app/contexts/context-rovo-chat";
+import type { JiraSidebarSessionItem } from "@/components/blocks/product-sidebar/variants/jira";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 
 /**
@@ -12,6 +13,17 @@ export type AgentListPrStatus = "created" | "merged";
 
 /** Visual density for Jira agent-session rows. */
 export type AgentListVariant = "default" | "compact";
+
+/**
+ * Which hover/focus flyout a session row opens.
+ *
+ * - `session` (default) — the shared Jira agent-session flyout, the same rich
+ *   work item / agent / development summary the live Jira sidebar renders. Read
+ *   only, and shared across the whole list via one payload handle.
+ * - `composer` — the per-row Agent States card, which adds a prompt composer so
+ *   the viewer can reply to the agent without leaving the list.
+ */
+export type AgentListFlyout = "session" | "composer";
 
 export interface AgentListAgent {
 	/** Canonical directory identity used by agent-state flyouts and all agent surfaces. */
@@ -32,6 +44,19 @@ export interface AgentListInvoker {
 	/** Absolute path to a human face avatar under `public/`. */
 	avatarSrc?: string;
 }
+
+/**
+ * Flyout-only session metadata that a session row cannot derive from itself —
+ * work item, repository, pull request, checks, and worktree details. Identity
+ * (`id`, `title`, agent, lifecycle `status`) is always owned by the row and is
+ * therefore not overridable here; see `toAgentSessionFlyoutItem`.
+ */
+export type AgentListSessionDetails = Partial<
+	Omit<
+		JiraSidebarSessionItem,
+		"agentAvatarSrc" | "agentName" | "id" | "status" | "title"
+	>
+>;
 
 export interface AgentListItem {
 	id: string;
@@ -57,12 +82,19 @@ export interface AgentListItem {
 	 * waiting for input; the metadata row still identifies the agent.
 	 */
 	prStatus?: AgentListPrStatus;
+	/**
+	 * Extra work-item and development metadata surfaced by the hover flyout.
+	 * Anything omitted is derived from the row — see `toAgentSessionFlyoutItem`.
+	 */
+	sessionDetails?: AgentListSessionDetails;
 }
 
 export interface AgentListProps {
 	className?: string;
 	/** Chat surface opened after an Agent States composer submission. */
 	composerChatSurface?: ChatSurface;
+	/** Which flyout a row opens on hover or keyboard focus. Defaults to `session`. */
+	flyout?: AgentListFlyout;
 	/** Session rows to render; defaults to built-in sample data. */
 	items?: readonly AgentListItem[];
 	/** Id of the session currently selected by the consuming surface. */

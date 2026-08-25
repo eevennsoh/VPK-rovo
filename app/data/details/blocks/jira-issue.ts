@@ -25,6 +25,7 @@ export const JIRA_ISSUE_DETAIL: ComponentDetail = {
 		{ title: "Subtasks expanded", description: "Expanded subtasks with nested issue cards.", demoSlug: "jira-issue-demo-subtasks-expanded" },
 		{ title: "Parent epic", description: "Issue card with a parent epic selector embedded through the Jira epic block.", demoSlug: "jira-issue-demo-parent-epic" },
 		{ title: "Agent activity states", description: "Interactive issue card states for agents working, awaiting input, and completed work.", demoSlug: "jira-issue-demo-agent-activity-states" },
+		{ id: "agent-activity-states-experimental", title: "Agent activity states (experimental)", description: "The same agent activity states rendered with the experimental stroke-only card chrome.", demoSlug: "jira-issue-demo-agent-activity-states-experimental" },
 	],
 	props: [
 		{ name: "variant", type: '"default" | "uncaptured-work"', default: '"default"', description: "Selects the standard Jira issue card or the uncaptured-work presentation." },
@@ -34,6 +35,8 @@ export const JIRA_ISSUE_DETAIL: ComponentDetail = {
 		{ name: "participants", type: "readonly JiraIssueParticipant[]", description: "People and agents involved in uncaptured work. Required for the uncaptured-work variant." },
 		{ name: "captured", type: "boolean", default: "false", description: "Controlled completion state for the uncaptured-work create action." },
 		{ name: "onCreateWorkItem", type: "() => void", description: "Creates a Jira work item for uncaptured work. When omitted, the action is exposed as unavailable." },
+		{ name: "showMoreAction", type: "boolean", default: "true", description: "Shows the hover- and focus-revealed issue actions menu while reserving its title-row space." },
+		{ name: "onMoreActionSelect", type: "(action: JiraIssueMoreAction) => void", description: "Called after an item is selected from the built-in issue actions menu." },
 		{ name: "tags", type: "readonly JiraIssueTag[]", description: "Tags rendered below the summary." },
 		{ name: "parentEpicControl", type: "ReactNode", description: "Optional parent epic selector/control rendered in the issue metadata below the summary." },
 		{ name: "subtasks", type: "readonly JiraIssueSubtask[]", description: "Nested subtasks rendered behind the expandable subtasks row." },

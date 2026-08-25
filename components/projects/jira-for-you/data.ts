@@ -46,7 +46,7 @@ export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 				jiraStatus: "Review",
 				tabs: ["assigned", "worked-on"],
 				agents: [READINESS_AGENT],
-				status: "Waiting for input",
+				status: "Needs input",
 			},
 		],
 	},
@@ -64,7 +64,7 @@ export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 				jiraStatus: "In progress",
 				tabs: ["assigned", "worked-on", "viewed"],
 				agents: [READINESS_AGENT, REVIEWER_AGENT, FEEDBACK_AGENT],
-				status: "1 Waiting for input, 2 In progress",
+				status: "1 Needs input, 2 In progress",
 			},
 			{
 				id: "performance-benchmarking",

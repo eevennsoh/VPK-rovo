@@ -97,7 +97,7 @@ function createJiraDesignAgentActivities(
 		return undefined;
 	}
 
-	const hasAwaitingAgent = item.status?.toLocaleLowerCase().includes("waiting for input") ?? false;
+	const hasAwaitingAgent = item.status?.toLocaleLowerCase().includes("needs input") ?? false;
 
 	return item.agents.map((agent, index) => {
 		const labels = JIRA_DESIGN_AGENT_ACTIVITY_LABELS[agent.id ?? ""] ?? [
@@ -111,7 +111,7 @@ function createJiraDesignAgentActivities(
 			avatarSrc: agent.avatarSrc,
 			id: `${item.id}:${agent.id ?? index}`,
 			initialElapsedSeconds: item.elapsedSeconds,
-			label: state === "awaiting-input" ? "Waiting for input" : labels[0],
+			label: state === "awaiting-input" ? "Needs input" : labels[0],
 			labels,
 			message: state === "awaiting-input"
 				? `${agent.name} needs input before continuing work on ${item.issueKey}.`
@@ -145,9 +145,6 @@ export const JIRA_DESIGN_KANBAN_COLUMNS: readonly JiraKanbanColumnData[] =
 					priority: "medium" as const,
 					tags: [
 						{ color: "blue" as const, text: item.spaceName },
-						...(item.status
-							? [{ color: "purple" as const, text: item.status }]
-							: []),
 					],
 					title: item.title,
 				};

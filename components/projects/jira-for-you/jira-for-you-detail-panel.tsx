@@ -161,6 +161,7 @@ function AgentSection({
 			<JiraSessionSectionHeading id="jira-for-you-agents-heading">Agents</JiraSessionSectionHeading>
 			<AgentList
 				className="w-full"
+				flyout="composer"
 				items={sessionItems}
 				onSubmitPrompt={(sessionItem, prompt) => onAgentPrompt(sessionItem.id, prompt)}
 				onView={(sessionItem) => onAgentSelect(sessionItem.id)}

@@ -6,10 +6,10 @@ tools: [
   "Glob",
   "Grep",
   "Bash",
-  "mcp__ads-mcp__ads_analyze_a11y",
-  "mcp__ads-mcp__ads_analyze_localhost_a11y",
-  "mcp__ads-mcp__ads_get_a11y_guidelines",
-  "mcp__ads-mcp__ads_suggest_a11y_fixes",
+  "mcp__ads__ads_analyze_a11y",
+  "mcp__ads__ads_analyze_localhost_a11y",
+  "mcp__ads__ads_get_a11y_guidelines",
+  "mcp__ads__ads_suggest_a11y_fixes",
 ]
 skills: ["vpk-design", "vpk-verify", "agent-browser"]
 model: haiku
@@ -116,9 +116,18 @@ The accessible theme name, nearest-owner `data-color-mode`, and non-empty ADS to
 
 #### Step 3: Run Scoped Accessibility Scan
 
-Run `ads_analyze_localhost_a11y` against the narrowest stable selector available for the implemented component. Prefer the component root selector or `data-testid`; only fall back to a broader container when there is no stable local root.
+Run the MCP tool `ads_analyze_localhost_a11y` against the narrowest stable selector available for the implemented component. Prefer the component root selector or `data-testid`; only fall back to a broader container when there is no stable local root.
 
-If the scan reports a material issue, fetch the relevant topic from `ads_get_a11y_guidelines` and use `ads_suggest_a11y_fixes` to turn the violation into a concrete recommended fix.
+`ads_analyze_localhost_a11y` is MCP-only (no `atlas ads` equivalent) and is exposed only when the ADS MCP server runs locally. If it is absent, mark accessibility evidence as degraded, say so in the report, and fall back to the source scan in Step 4; never drop the scan silently.
+
+If the scan reports a material issue, split the follow-up across the two surfaces:
+
+| Need | Use |
+| --- | --- |
+| Guideline topic for the violation | `atlas ads docs a11y <buttons\|forms\|images\|colors\|focus\|keyboard\|screenReaders\|aria\|wcag\|general>` — CLI first; fall back to MCP `ads_get_a11y_guidelines` only when the CLI is unavailable or erroring |
+| Violation text turned into a concrete fix | MCP `ads_suggest_a11y_fixes` — no CLI equivalent, stays on MCP |
+
+`atlas` is the Atlas CLI (`/opt/atlassian/bin/atlas`) with the ADS plugin; there is no bare `ads` binary. On machines without Atlas, use `npx @atlaskit/ads-cli docs a11y <topic>`. Add `--json` when you will parse the output, and batch several lookups that serve one decision with `atlas ads batch --command "docs a11y focus" --command "docs a11y keyboard"`.
 
 #### Step 4: Fallback If Browser Automation Fails
 
@@ -126,7 +135,7 @@ If a non-navigation command reports a stale session, reopen the exact feature en
 
 1. Mark validation as degraded.
 2. Run server-render sanity checks at the route and confirm expected text or structure is present.
-3. Run `ads_analyze_a11y` on the component source if you can read the relevant file.
+3. Run the MCP tool `ads_analyze_a11y` on the component source if you can read the relevant file; it scans a JSX source string, is MCP-only, and has no `atlas ads` equivalent.
 4. Continue comparison with available evidence and clearly state the limitation.
 5. Do not claim full visual parity when browser evidence is incomplete.
 
@@ -317,4 +326,5 @@ conversation_starters:
 
 - Keep this prompt aligned with `.agents/skills/vpk-design/SKILL.md` Phase 3.
 - `vpk-verify` owns worktree/session selection, timeout recovery, and cleanup; if it hands off to Playwright, use the degraded validation path and make that limitation explicit.
-- MCP accessibility tools are runtime-dependent; unavailable tools should downgrade evidence, not block a useful validation report.
+- Accessibility guideline lookups run on the `atlas ads docs a11y <topic>` CLI first; the ADS MCP `ads_get_a11y_guidelines` tool is only the fallback when the CLI is unavailable or erroring.
+- `ads_analyze_localhost_a11y`, `ads_analyze_a11y`, and `ads_suggest_a11y_fixes` have no CLI equivalent and must stay on MCP. They are runtime-dependent; unavailable tools should downgrade evidence, not block a useful validation report.

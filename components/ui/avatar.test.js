@@ -80,6 +80,36 @@ test("hexagon avatars clip an inner frame so corner overlays render unclipped", 
 	assert.match(AVATAR_SOURCE, /<AvatarHexagonBorder \/>/);
 });
 
+test("AvatarGroupCount maps plus icon size from the group size", () => {
+	assert.match(AVATAR_SOURCE, /function avatarGroupCountIconSize\(size: AvatarSize \| undefined\): "small" \| "medium"/);
+	assert.match(AVATAR_SOURCE, /if \(size === "xs" \|\| size === "sm"\) \{\s*return "small"/);
+	assert.match(AVATAR_SOURCE, /function avatarGroupCountIconSize[\s\S]*return "medium"/);
+	assert.match(AVATAR_SOURCE, /React\.cloneElement\(child, \{ size: iconSize \}/);
+	assert.doesNotMatch(
+		AVATAR_SOURCE,
+		/group-has-data-\[size=lg\]\/avatar-group:\[&_\[data-slot=icon\]\]:size-5/,
+	);
+});
+
+test("group-with-icon-count demo plus size comes from AvatarGroup, not a global small", () => {
+	assert.match(
+		AVATAR_DEMO_SOURCE,
+		/export function AvatarDemoGroupWithIconCount\([\s\S]*<AvatarGroup size="sm">[\s\S]*<AvatarGroupCount>\s*<PlusIcon \/>/,
+	);
+	assert.match(
+		AVATAR_DEMO_SOURCE,
+		/<AvatarGroup size="default">[\s\S]*<AvatarGroupCount>\s*<PlusIcon \/>/,
+	);
+	assert.match(
+		AVATAR_DEMO_SOURCE,
+		/<AvatarGroup size="lg">[\s\S]*<AvatarGroupCount>\s*<PlusIcon \/>[\s\S]*export function AvatarDemoGroup\(/,
+	);
+	assert.doesNotMatch(
+		AVATAR_DEMO_SOURCE,
+		/export function AvatarDemoGroupWithIconCount\([\s\S]*<PlusIcon size="small" \/>[\s\S]*export function AvatarDemoGroup\(/,
+	);
+});
+
 test("avatar status indicator anchors to the top-right corner", () => {
 	assert.match(
 		AVATAR_SOURCE,
