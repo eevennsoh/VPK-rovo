@@ -30,14 +30,7 @@ async function attentionRows(snapshotId) {
 		snapshot.memberIds.includes(member.id),
 	);
 
-	return {
-		items: toPulseAttentionItems(
-			snapshot.attention,
-			contributors,
-			`${snapshot.dateLabel} ${snapshot.timeLabel}`,
-		),
-		snapshot,
-	};
+	return { items: toPulseAttentionItems(snapshot.attention, contributors), snapshot };
 }
 
 test("every signal becomes one row that leads with who it is from", async () => {
@@ -64,10 +57,31 @@ test("every signal becomes one row that leads with who it is from", async () => 
 				member.kind === "agent" ? "agent" : "person",
 				where,
 			);
-			// Historical rows state their window instead of running a clock.
-			assert.equal(item.timeLabel, `${snapshot.dateLabel} ${snapshot.timeLabel}`, where);
 			assert.equal(item.branch, undefined, `${where} is not an agent session`);
 		});
+	}
+});
+
+test("rows carry the signal's own time, not the window's closing boundary", async () => {
+	const { PULSE_TIMELINE } = await loadAttentionHarness();
+
+	for (const snapshot of PULSE_TIMELINE.snapshots) {
+		const { items } = await attentionRows(snapshot.id);
+		const windowClose = `${snapshot.dateLabel} ${snapshot.timeLabel}`;
+
+		items.forEach((item, index) => {
+			const signal = snapshot.attention[index];
+			// A fixed string, so the list states when something happened instead of
+			// running a live clock per row against a week that is already over.
+			assert.equal(item.timeLabel, signal.timeLabel, `${snapshot.id}/${signal.id}`);
+		});
+
+		// Stamping the whole section with the boundary is the bug this replaced: a
+		// comment posted at 08:06 inside a window that closes at 08:12 said 08:12.
+		assert.ok(
+			items.some((item) => item.timeLabel !== windowClose),
+			`${snapshot.id} stamps every row with its own closing time`,
+		);
 	}
 });
 
@@ -114,14 +128,14 @@ test("tone and work item ride the metadata line, not a lozenge the row cannot sh
 test("a signal from somebody outside the window is dropped rather than rendered faceless", async () => {
 	const { PULSE_TIMELINE, toPulseAttentionItems } = await loadAttentionHarness();
 	const [member] = PULSE_TIMELINE.members;
+	const base = { detail: "d", timeLabel: "Mon 17 Aug 08:12", title: "t", tone: "attention" };
 
 	const items = toPulseAttentionItems(
 		[
-			{ id: "known", tone: "attention", memberId: member.id, title: "t", detail: "d" },
-			{ id: "ghost", tone: "attention", memberId: "nobody", title: "t", detail: "d" },
+			{ ...base, id: "known", memberId: member.id },
+			{ ...base, id: "ghost", memberId: "nobody" },
 		],
 		[member],
-		"Mon 17 Aug 08:12",
 	);
 
 	// The row model leads with an identity: a row that cannot name who it is
@@ -134,7 +148,7 @@ test("the section renders the shared agent-list block, flyout-free", () => {
 	assert.match(SOURCES.signals, /<AgentList className="mt-3" flyout="none" items=\{items\} \/>/u);
 	assert.match(
 		SOURCES.signals,
-		/const items = toPulseAttentionItems\(signals, members, timeLabel\);/u,
+		/const items = toPulseAttentionItems\(signals, members\);/u,
 	);
 	// Emptying by scoping is decided on the mapped rows, so a signal the roster
 	// cannot place cannot leave the section claiming to hold something.
@@ -145,10 +159,8 @@ test("the section renders the shared agent-list block, flyout-free", () => {
 	assert.doesNotMatch(SOURCES.signals, /SIGNAL_TONE_VARIANT/u);
 	// The actions section keeps the reserved-track row shape this file owns.
 	assert.match(SOURCES.signals, /<PulseSignalRow[\s\S]*detail=\{action\.rationale\}/u);
-	// The story hands down the window's roster and its own pre-formatted stamp.
+	// The story hands down the window's roster, and nothing else: the time is the
+	// signal's own, so no window boundary can be substituted for an event time.
 	assert.match(SOURCES.story, /members=\{contributors\}/u);
-	assert.match(
-		SOURCES.story,
-		/timeLabel=\{`\$\{snapshot\.dateLabel\} \$\{snapshot\.timeLabel\}`\}/u,
-	);
+	assert.doesNotMatch(SOURCES.story, /timeLabel=/u);
 });

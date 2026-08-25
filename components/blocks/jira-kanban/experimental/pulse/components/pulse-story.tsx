@@ -566,7 +566,6 @@ export function PulseStory({
 						: toEmptyNote(firstName, unscopedCounts.attention, "item needs attention", "items need attention")}
 					members={contributors}
 					signals={attention}
-					timeLabel={`${snapshot.dateLabel} ${snapshot.timeLabel}`}
 				/>
 			</PulseStoryAnchor>
 

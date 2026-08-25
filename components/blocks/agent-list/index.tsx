@@ -26,10 +26,18 @@ export function AgentList({
 	onView,
 	selectedItemId,
 }: Readonly<AgentListProps>) {
-	// Optional: the composer variant is the only branch that sends a prompt, so
-	// a list of comments and @mentions on a route with no chat runtime must
-	// still render rather than throw on a capability it never uses.
+	// Optional read, strict requirement: the composer is the only branch that
+	// sends a prompt, so a read-only list of comments and @mentions renders fine
+	// with no chat runtime. The composer still needs a real destination — its
+	// Agent States card clears the reply as soon as it submits, so a swallowed
+	// prompt would look like a successful send — and fails here, at render, not
+	// after the viewer has typed one.
 	const chat = useOptionalRovoChat();
+	if (flyout === "composer" && onSubmitPrompt === undefined && chat === null) {
+		throw new Error(
+			'AgentList flyout="composer" needs a chat destination: render it inside a RovoChatProvider or pass onSubmitPrompt.',
+		);
+	}
 	const handleFlyoutSubmit = useCallback((item: AgentListItem, prompt: string) => {
 		if (onSubmitPrompt) {
 			void onSubmitPrompt(item, prompt);

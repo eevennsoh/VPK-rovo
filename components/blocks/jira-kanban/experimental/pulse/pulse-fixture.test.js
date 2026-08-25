@@ -153,6 +153,39 @@ test("Pulse fixture keeps the story shape the timeline mode depends on", async (
 	});
 });
 
+test("Pulse fixture gives every attention signal its own honest event time", async () => {
+	const { PULSE_TIMELINE } = await loadTimelineHarness();
+	// "Wed 19 Aug 01:14" — same pre-formatted shape as every other fixture clock,
+	// because formatting at render time drifts between server and client.
+	const stamp = /^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun) \d{2} [A-Z][a-z]{2} \d{2}:\d{2}$/u;
+
+	PULSE_TIMELINE.snapshots.forEach((snapshot) => {
+		const windowClose = `${snapshot.dateLabel} ${snapshot.timeLabel}`;
+
+		for (const signal of snapshot.attention) {
+			const where = `${snapshot.id}/${signal.id}`;
+			assert.match(signal.timeLabel, stamp, `${where} has an unreadable time "${signal.timeLabel}"`);
+
+			// The row labels this field as the last update, so a time quoted in the
+			// copy and the time on the row have to be the same time.
+			const quoted = /\b(?:Posted|since|at) (\d{2}:\d{2})\b/u.exec(signal.detail);
+			if (quoted !== null) {
+				assert.ok(
+					signal.timeLabel.endsWith(quoted[1]),
+					`${where} says "${quoted[1]}" in its detail but is stamped "${signal.timeLabel}"`,
+				);
+			}
+		}
+
+		// Stamping every row with the window's closing boundary is what this
+		// replaced; at least one signal in a window must predate its close.
+		assert.ok(
+			snapshot.attention.some((signal) => signal.timeLabel !== windowClose),
+			`${snapshot.id} dates every signal to the moment the window closed`,
+		);
+	});
+});
+
 test("Pulse fixture attributes every attention signal to somebody in the window", async () => {
 	const { PULSE_TIMELINE } = await loadTimelineHarness();
 	const byId = new Map(PULSE_TIMELINE.members.map((member) => [member.id, member]));

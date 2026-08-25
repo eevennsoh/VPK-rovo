@@ -79,6 +79,14 @@ export interface PulseSignal {
 	tone: PulseSignalTone;
 	/** Roster member the signal comes from — drives the attention row's identity. */
 	memberId: string;
+	/**
+	 * When this actually happened, pre-formatted like every other clock in the
+	 * fixture, e.g. `"Mon 17 Aug 08:06"`. Per signal rather than per window: a
+	 * comment posted at 08:06 must not be stamped with the 08:12 boundary of the
+	 * window that contains it. Must fall inside the snapshot's `rangeLabel`, and
+	 * must agree with any time the `detail` quotes.
+	 */
+	timeLabel: string;
 	title: string;
 	detail: string;
 	workItemKey?: string;

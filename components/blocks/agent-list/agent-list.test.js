@@ -317,6 +317,21 @@ test("Agent States composer submissions open the configured chat surface with si
 	assert.match(DETAIL_SOURCE, /name: "onSubmitPrompt"/u);
 });
 
+test("the composer refuses to render without a chat destination", () => {
+	// The optional read exists for read-only lists, not to make the composer
+	// silently lossy: AgentStatesComposer clears the reply right after calling
+	// back, so a swallowed prompt looks exactly like a successful send. Failing
+	// at render beats failing after the viewer has typed one.
+	assert.match(
+		INDEX_SOURCE,
+		/if \(flyout === "composer" && onSubmitPrompt === undefined && chat === null\) \{\s*throw new Error\(/u,
+	);
+	assert.match(
+		INDEX_SOURCE,
+		/render it inside a RovoChatProvider or pass onSubmitPrompt/u,
+	);
+});
+
 test("in-flow View controls immediately replace lifecycle indicators without collisions", () => {
 	assert.doesNotMatch(CARD_SOURCE, /absolute inset-y-0 right-0/u);
 	assert.match(

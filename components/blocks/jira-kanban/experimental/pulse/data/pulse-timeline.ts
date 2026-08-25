@@ -517,9 +517,9 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 		workItemKeys: ["PAY-101", "PAY-102", "PAY-104", "PAY-121"],
 		looseWorkIds: ["lw-scope-thread"],
 		attention: [
-			{ id: "s1-sig-decision", tone: "decision", memberId: "priya", workItemKey: "PAY-101", title: "Delete the adapter rather than shim it", detail: "Agreed verbally, recorded nowhere durable. The reasoning lives in a chat thread that will scroll out of reach by Wednesday." },
-			{ id: "s1-sig-mention", tone: "attention", memberId: "jordan", workItemKey: "PAY-104", title: "Jordan Okafor mentioned you on PAY-104", detail: "“@you porting createPaymentIntent first only works if the kill switch lands with it — confirm before I start?” Posted 08:06, still unanswered." },
-			{ id: "s1-sig-flag", tone: "attention", memberId: "release-agent", workItemKey: "PAY-121", title: "No kill switch on payments_sdk_v2_rollout", detail: "The flag exists and is off. There is no way to disable it for a single account, which the first port will need." },
+			{ id: "s1-sig-decision", tone: "decision", memberId: "priya", timeLabel: "Mon 17 Aug 07:48", workItemKey: "PAY-101", title: "Delete the adapter rather than shim it", detail: "Agreed verbally, recorded nowhere durable. The reasoning lives in a chat thread that will scroll out of reach by Wednesday." },
+			{ id: "s1-sig-mention", tone: "attention", memberId: "jordan", timeLabel: "Mon 17 Aug 08:06", workItemKey: "PAY-104", title: "Jordan Okafor mentioned you on PAY-104", detail: "“@you porting createPaymentIntent first only works if the kill switch lands with it — confirm before I start?” Posted 08:06, still unanswered." },
+			{ id: "s1-sig-flag", tone: "attention", memberId: "release-agent", timeLabel: "Mon 17 Aug 08:10", workItemKey: "PAY-121", title: "No kill switch on payments_sdk_v2_rollout", detail: "The flag exists and is off. There is no way to disable it for a single account, which the first port will need." },
 		],
 		nextActions: [
 			{ id: "s1-act-decision", label: "Write the adapter decision onto PAY-101", rationale: "The thread has the reasoning and the two objections. Nothing on the board does.", actionLabel: "Capture decision", workItemKey: "PAY-101" },
@@ -555,9 +555,9 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 		workItemKeys: ["PAY-102", "PAY-104", "PAY-105", "PAY-107", "PAY-109", "PAY-126"],
 		looseWorkIds: ["lw-adapter-branch", "lw-loom-spike"],
 		attention: [
-			{ id: "s2-sig-webhook", tone: "risk", memberId: "maya", workItemKey: "PAY-107", title: "Nothing listens for the challenge webhook", detail: "v2 replaced challenge_pending with a webhook. payments-api has no handler, so every 3-D Secure payment stalls the moment the adapter is removed." },
-			{ id: "s2-sig-review", tone: "attention", memberId: "review-agent", workItemKey: "PAY-104", title: "Review Agent is waiting on an answer to its comment on #1851", detail: "One comment, unanswered since 16:20: the retry path on the ported call site still reaches back through the adapter. The agent will not approve until somebody replies." },
-			{ id: "s2-sig-unlinked", tone: "attention", memberId: "maya", workItemKey: "PAY-102", title: "The proof of the whole week is an unlinked branch", detail: "PR #1847 carries the spike result. The work item it proves says only “investigate”." },
+			{ id: "s2-sig-webhook", tone: "risk", memberId: "maya", timeLabel: "Mon 17 Aug 17:31", workItemKey: "PAY-107", title: "Nothing listens for the challenge webhook", detail: "v2 replaced challenge_pending with a webhook. payments-api has no handler, so every 3-D Secure payment stalls the moment the adapter is removed." },
+			{ id: "s2-sig-review", tone: "attention", memberId: "review-agent", timeLabel: "Mon 17 Aug 16:20", workItemKey: "PAY-104", title: "Review Agent is waiting on an answer to its comment on #1851", detail: "One comment, unanswered since 16:20: the retry path on the ported call site still reaches back through the adapter. The agent will not approve until somebody replies." },
+			{ id: "s2-sig-unlinked", tone: "attention", memberId: "maya", timeLabel: "Mon 17 Aug 17:42", workItemKey: "PAY-102", title: "The proof of the whole week is an unlinked branch", detail: "PR #1847 carries the spike result. The work item it proves says only “investigate”." },
 		],
 		nextActions: [
 			{ id: "s2-act-link", label: "Link PR #1847 and the Loom to PAY-102", rationale: "The evidence for the delete decision is currently two links in a DM.", actionLabel: "Link evidence", workItemKey: "PAY-102" },
@@ -592,9 +592,9 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 		workItemKeys: ["PAY-104", "PAY-105", "PAY-107", "PAY-112"],
 		looseWorkIds: ["lw-sandbox-triage", "lw-oncall-note"],
 		attention: [
-			{ id: "s3-sig-replay", tone: "risk", memberId: "jordan", workItemKey: "PAY-112", title: "Truncated keys could be replayed against live accounts", detail: "Two distinct payments can collapse onto the same 64-character key. Nobody yet knows how long the platform retains them, so the blast radius is unknown." },
-			{ id: "s3-sig-mention", tone: "attention", memberId: "priya", workItemKey: "PAY-112", title: "Priya Raman mentioned you on PAY-112", detail: "“@you I need the retention window before I can sign this off — who owns that number?” Posted 11:02, two minutes before the root cause landed, and still unanswered." },
-			{ id: "s3-sig-ignored", tone: "attention", memberId: "review-agent", workItemKey: "PAY-104", title: "An agent review comment was resolved without an answer", detail: "Review Agent named this failure nineteen hours before the sandbox did. Green local tests were treated as the stronger signal." },
+			{ id: "s3-sig-replay", tone: "risk", memberId: "jordan", timeLabel: "Tue 18 Aug 10:58", workItemKey: "PAY-112", title: "Truncated keys could be replayed against live accounts", detail: "Two distinct payments can collapse onto the same 64-character key. Nobody yet knows how long the platform retains them, so the blast radius is unknown." },
+			{ id: "s3-sig-mention", tone: "attention", memberId: "priya", timeLabel: "Tue 18 Aug 11:02", workItemKey: "PAY-112", title: "Priya Raman mentioned you on PAY-112", detail: "“@you I need the retention window before I can sign this off — who owns that number?” Posted 11:02, two minutes before the root cause landed, and still unanswered." },
+			{ id: "s3-sig-ignored", tone: "attention", memberId: "review-agent", timeLabel: "Tue 18 Aug 09:14", workItemKey: "PAY-104", title: "An agent review comment was resolved without an answer", detail: "Review Agent named this failure nineteen hours before the sandbox did. Green local tests were treated as the stronger signal." },
 		],
 		nextActions: [
 			{ id: "s3-act-retention", label: "Chase payments platform on the sandbox key retention window", rationale: "PAY-112 and PAY-105 are both waiting on a single number.", actionLabel: "Escalate", workItemKey: "PAY-112" },
@@ -631,9 +631,9 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 		workItemKeys: ["PAY-105", "PAY-107", "PAY-109", "PAY-113", "PAY-121"],
 		looseWorkIds: ["lw-night-prs", "lw-flag-edits"],
 		attention: [
-			{ id: "s4-sig-unlinked", tone: "attention", memberId: "test-agent", workItemKey: "PAY-113", title: "Six merges, zero linked work items", detail: "The board says nothing moved overnight. Main says the contract suite landed and the kill switch exists." },
-			{ id: "s4-sig-review", tone: "attention", memberId: "review-agent", workItemKey: "PAY-105", title: "Review Agent is holding two pull requests for a human call", detail: "Both were returned with reasons at 01:20 and neither author is awake. The 3-D Secure port cannot land until somebody answers one of them." },
-			{ id: "s4-sig-flag", tone: "risk", memberId: "release-agent", workItemKey: "PAY-121", title: "Flag rules changed with no change record", detail: "Three targeting rules were edited directly in LaunchDarkly at 01:14. The rollout item does not reflect them, so the plan on the page and the plan in production have already diverged." },
+			{ id: "s4-sig-unlinked", tone: "attention", memberId: "test-agent", timeLabel: "Wed 19 Aug 02:12", workItemKey: "PAY-113", title: "Six merges, zero linked work items", detail: "The board says nothing moved overnight. Main says the contract suite landed and the kill switch exists." },
+			{ id: "s4-sig-review", tone: "attention", memberId: "review-agent", timeLabel: "Wed 19 Aug 01:20", workItemKey: "PAY-105", title: "Review Agent is holding two pull requests for a human call", detail: "Both were returned with reasons at 01:20 and neither author is awake. The 3-D Secure port cannot land until somebody answers one of them." },
+			{ id: "s4-sig-flag", tone: "risk", memberId: "release-agent", timeLabel: "Wed 19 Aug 01:14", workItemKey: "PAY-121", title: "Flag rules changed with no change record", detail: "Three targeting rules were edited directly in LaunchDarkly at 01:14. The rollout item does not reflect them, so the plan on the page and the plan in production have already diverged." },
 		],
 		nextActions: [
 			{ id: "s4-act-bulk", label: "Bulk-link #1862 – #1867 to PAY-105 and PAY-113", rationale: "Six merges are invisible on the board. Two work items are wrong as a result.", actionLabel: "Link pull requests" },
@@ -669,10 +669,10 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 		workItemKeys: ["PAY-115", "PAY-118", "PAY-123", "PAY-130"],
 		looseWorkIds: ["lw-figma-parked", "lw-copy-doc"],
 		attention: [
-			{ id: "s5-sig-cut", tone: "decision", memberId: "diego", workItemKey: "PAY-118", title: "Wallet UI cut on a 180–240 ms round-trip cost", detail: "Deferred to the next epic with the card-artwork requirement attached. The reasoning is in a Figma comment thread, not on the item." },
-			{ id: "s5-sig-mention", tone: "attention", memberId: "priya", workItemKey: "PAY-115", title: "Priya Raman mentioned you on PAY-115", detail: "“@you the wallet cut changes the ship note — can you rewrite the customer-facing line before Friday?” Posted 14:58, right after the review ended." },
-			{ id: "s5-sig-fixtures", tone: "attention", memberId: "test-agent", workItemKey: "PAY-123", title: "Test Author Agent stopped: three decline codes have no fixture to record", detail: "expired_card_network, issuer_unavailable and risk_hold were never exercised in v1 either. The agent will not invent responses it has not seen." },
-			{ id: "s5-sig-copy", tone: "attention", memberId: "diego", workItemKey: "PAY-130", title: "Approved copy with no localisation item", detail: "Eleven strings, nine languages, a five-day queue, and it is Wednesday. No work item exists yet." },
+			{ id: "s5-sig-cut", tone: "decision", memberId: "diego", timeLabel: "Wed 19 Aug 14:41", workItemKey: "PAY-118", title: "Wallet UI cut on a 180–240 ms round-trip cost", detail: "Deferred to the next epic with the card-artwork requirement attached. The reasoning is in a Figma comment thread, not on the item." },
+			{ id: "s5-sig-mention", tone: "attention", memberId: "priya", timeLabel: "Wed 19 Aug 14:58", workItemKey: "PAY-115", title: "Priya Raman mentioned you on PAY-115", detail: "“@you the wallet cut changes the ship note — can you rewrite the customer-facing line before Friday?” Posted 14:58, right after the review ended." },
+			{ id: "s5-sig-fixtures", tone: "attention", memberId: "test-agent", timeLabel: "Wed 19 Aug 13:26", workItemKey: "PAY-123", title: "Test Author Agent stopped: three decline codes have no fixture to record", detail: "expired_card_network, issuer_unavailable and risk_hold were never exercised in v1 either. The agent will not invent responses it has not seen." },
+			{ id: "s5-sig-copy", tone: "attention", memberId: "diego", timeLabel: "Wed 19 Aug 15:05", workItemKey: "PAY-130", title: "Approved copy with no localisation item", detail: "Eleven strings, nine languages, a five-day queue, and it is Wednesday. No work item exists yet." },
 		],
 		nextActions: [
 			{ id: "s5-act-record", label: "Record the wallet cut on PAY-118", rationale: "A cut without a written reason gets re-litigated in the next planning session.", actionLabel: "Record decision", workItemKey: "PAY-118" },
@@ -709,10 +709,10 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 		workItemKeys: ["PAY-115", "PAY-119", "PAY-121", "PAY-126", "PAY-128"],
 		looseWorkIds: ["lw-rehearsal-draft", "lw-killswitch-loom"],
 		attention: [
-			{ id: "s6-sig-ledger", tone: "risk", memberId: "release-agent", workItemKey: "PAY-128", title: "Rollback poisons the finance export", detail: "Settlement rows keep a v2 stamp after a rollback. The export groups by that field and would misreport the week without anyone noticing." },
-			{ id: "s6-sig-mention", tone: "attention", memberId: "jordan", workItemKey: "PAY-121", title: "Jordan Okafor mentioned you on PAY-121", detail: "“@you if I am on call Monday I need the kill-switch Loom somewhere I can find at 3am, not in a DM.” Posted 09:41, six minutes after the rehearsal ended." },
-			{ id: "s6-sig-plan", tone: "attention", memberId: "priya", workItemKey: "PAY-119", title: "The rollout plan exists in three unlinked places", detail: "A draft page, a vendor console and a Loom in a DM. None of them is reachable from the epic at three in the morning." },
-			{ id: "s6-sig-rehearsal", tone: "shipped", memberId: "maya", workItemKey: "PAY-119", title: "Rollback verified end to end", detail: "200 synthetic payments, clean ledger in 4m 11s, both in-flight challenges completed on v1." },
+			{ id: "s6-sig-ledger", tone: "risk", memberId: "release-agent", timeLabel: "Thu 20 Aug 09:22", workItemKey: "PAY-128", title: "Rollback poisons the finance export", detail: "Settlement rows keep a v2 stamp after a rollback. The export groups by that field and would misreport the week without anyone noticing." },
+			{ id: "s6-sig-mention", tone: "attention", memberId: "jordan", timeLabel: "Thu 20 Aug 09:41", workItemKey: "PAY-121", title: "Jordan Okafor mentioned you on PAY-121", detail: "“@you if I am on call Monday I need the kill-switch Loom somewhere I can find at 3am, not in a DM.” Posted 09:41, six minutes after the rehearsal ended." },
+			{ id: "s6-sig-plan", tone: "attention", memberId: "priya", timeLabel: "Thu 20 Aug 09:38", workItemKey: "PAY-119", title: "The rollout plan exists in three unlinked places", detail: "A draft page, a vendor console and a Loom in a DM. None of them is reachable from the epic at three in the morning." },
+			{ id: "s6-sig-rehearsal", tone: "shipped", memberId: "maya", timeLabel: "Thu 20 Aug 09:35", workItemKey: "PAY-119", title: "Rollback verified end to end", detail: "200 synthetic payments, clean ledger in 4m 11s, both in-flight challenges completed on v1." },
 		],
 		nextActions: [
 			{ id: "s6-act-publish", label: "Publish the run log and link it to PAY-119", rationale: "It is the only written evidence the rollback works, and it is a draft.", actionLabel: "Publish page", workItemKey: "PAY-119" },
@@ -748,10 +748,10 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 		workItemKeys: ["PAY-105", "PAY-107", "PAY-112", "PAY-121", "PAY-123", "PAY-126", "PAY-128", "PAY-130"],
 		looseWorkIds: ["lw-p95-screenshot", "lw-copy-doc"],
 		attention: [
-			{ id: "s7-sig-keys", tone: "risk", memberId: "jordan", workItemKey: "PAY-112", title: "Still waiting on the sandbox key retention window", detail: "Four days open with payments platform. Without the number, replaying keys against live accounts stays unsigned and the rollout stays at zero." },
-			{ id: "s7-sig-approval", tone: "attention", memberId: "release-agent", workItemKey: "PAY-121", title: "Release Captain Agent is holding the rollout for a human approval", detail: "The one percent, one account, English-only rule is written and staged. The agent deliberately will not arm it — that press belongs to a person." },
-			{ id: "s7-sig-l10n", tone: "attention", memberId: "diego", workItemKey: "PAY-130", title: "Localisation started on a Friday", detail: "Eleven strings, nine languages, five working days. The English-only first slice is the only path that does not wait for them." },
-			{ id: "s7-sig-shipped", tone: "shipped", memberId: "maya", workItemKey: "PAY-126", title: "LegacyGatewayAdapter is gone", detail: "4,180 lines removed, all 61 call sites accounted for, two dead exports flagged for follow-up." },
+			{ id: "s7-sig-keys", tone: "risk", memberId: "jordan", timeLabel: "Fri 21 Aug 16:47", workItemKey: "PAY-112", title: "Still waiting on the sandbox key retention window", detail: "Four days open with payments platform. Without the number, replaying keys against live accounts stays unsigned and the rollout stays at zero." },
+			{ id: "s7-sig-approval", tone: "attention", memberId: "release-agent", timeLabel: "Fri 21 Aug 17:12", workItemKey: "PAY-121", title: "Release Captain Agent is holding the rollout for a human approval", detail: "The one percent, one account, English-only rule is written and staged. The agent deliberately will not arm it — that press belongs to a person." },
+			{ id: "s7-sig-l10n", tone: "attention", memberId: "diego", timeLabel: "Fri 21 Aug 15:04", workItemKey: "PAY-130", title: "Localisation started on a Friday", detail: "Eleven strings, nine languages, five working days. The English-only first slice is the only path that does not wait for them." },
+			{ id: "s7-sig-shipped", tone: "shipped", memberId: "maya", timeLabel: "Fri 21 Aug 11:26", workItemKey: "PAY-126", title: "LegacyGatewayAdapter is gone", detail: "4,180 lines removed, all 61 call sites accounted for, two dead exports flagged for follow-up." },
 		],
 		nextActions: [
 			{ id: "s7-act-approve", label: "Approve the one percent English-only targeting rule", rationale: "It unblocks Monday without waiting on translations, and it is already written and staged.", actionLabel: "Approve rule", workItemKey: "PAY-121" },

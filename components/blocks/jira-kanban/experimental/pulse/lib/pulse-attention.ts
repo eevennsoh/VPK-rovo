@@ -54,14 +54,15 @@ export function toAttentionMetadata(signal: PulseSignal): string | undefined {
  * and a row that cannot name who it is from is worse than no row. The fixture
  * suite asserts that never happens.
  *
- * `timeLabel` is the window's own pre-formatted stamp, handed to every row so
- * the list states when this happened instead of running a live clock per row
- * against a week that is already over.
+ * Each row carries the signal's own pre-formatted stamp, not the window's
+ * closing boundary — a comment posted at 08:06 inside a window that closes at
+ * 08:12 must say 08:06 — and it is a fixed string, so the list states when
+ * something happened instead of running a live clock per row against a week
+ * that is already over.
  */
 export function toPulseAttentionItems(
 	signals: readonly PulseSignal[],
 	members: readonly PulseMember[],
-	timeLabel: string,
 ): readonly AgentListItem[] {
 	const byId = new Map(members.map((member) => [member.id, member]));
 
@@ -82,7 +83,7 @@ export function toPulseAttentionItems(
 			metadataPrefix: toAttentionMetadata(signal),
 			state: toAttentionState(signal.tone),
 			summary: signal.detail,
-			timeLabel,
+			timeLabel: signal.timeLabel,
 			title: signal.title,
 		} satisfies AgentListItem];
 	});

@@ -83,8 +83,6 @@ export interface PulseAttentionProps {
 	signals: readonly PulseSignal[];
 	/** The window's roster, used to put a face on every signal. */
 	members: readonly PulseMember[];
-	/** The window's own stamp, e.g. `"Tue 18 Aug 11:05"`. */
-	timeLabel: string;
 	className?: string;
 	/** Rendered in place of the list when scoping has emptied it. */
 	emptyNote?: string;
@@ -102,12 +100,11 @@ export interface PulseAttentionProps {
 export function PulseAttention({
 	signals,
 	members,
-	timeLabel,
 	className,
 	emptyNote,
 }: Readonly<PulseAttentionProps>) {
 	const labelId = `${useId()}-pulse-attention`;
-	const items = toPulseAttentionItems(signals, members, timeLabel);
+	const items = toPulseAttentionItems(signals, members);
 
 	if (items.length === 0 && emptyNote === undefined) return null;
 
