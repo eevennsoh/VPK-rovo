@@ -29,6 +29,7 @@ import type {
 	PulseStoryProps,
 } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { ArtifactList, type ArtifactListItem } from "@/components/ui-custom/artifact-list";
+import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
 import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -68,6 +69,24 @@ export const MEASURE = "max-w-[36rem]";
 const SECTION_FOCUS_TRANSITION = "min-w-0 transition-opacity duration-normal ease-out-practical motion-reduce:transition-none";
 const SECTION_FOCUSED = "opacity-100";
 const SECTION_DIMMED = "opacity-(--opacity-disabled)";
+
+/** The fourteen connected sources the Pulse synthesis reads across. */
+const PULSE_SOURCES = [
+	{ id: "jira", label: "Jira", provider: "jira" },
+	{ id: "confluence", label: "Confluence", provider: "confluence" },
+	{ id: "github", label: "GitHub", provider: "twg", name: "github" },
+	{ id: "slack", label: "Slack", provider: "twg", name: "slack" },
+	{ id: "sentry", label: "Sentry", provider: "twg", name: "sentry" },
+	{ id: "launchdarkly", label: "LaunchDarkly", provider: "twg", name: "launchdarkly" },
+	{ id: "loom", label: "Loom", provider: "loom" },
+	{ id: "figma", label: "Figma", provider: "twg", name: "figma" },
+	{ id: "google-docs", label: "Google Docs", provider: "twg", name: "google-docs" },
+	{ id: "google-drive", label: "Google Drive", provider: "google-drive" },
+	{ id: "bitbucket", label: "Bitbucket", provider: "bitbucket" },
+	{ id: "rovo", label: "Rovo", provider: "rovo" },
+	{ id: "opsgenie", label: "Opsgenie", provider: "opsgenie" },
+	{ id: "statuspage", label: "Statuspage", provider: "statuspage" },
+] as const satisfies readonly TwgToolSource[];
 
 /** 40px → 54px display size, tracked tight the way the reference sets it. */
 const HEADLINE_STYLE = {
@@ -187,55 +206,68 @@ function PulseStoryContributors({
 	onSelectMember: (memberId: string | null) => void;
 	selectedMemberId: string | null;
 }>) {
-	if (contributors.length === 0) {
-		return null;
-	}
 	return (
 		<div className="flex min-w-0 items-center gap-1">
-			{/* Visible "By" is decorative; the group name already says who these faces are. */}
-			<span aria-hidden className={cn("shrink-0", PULSE_ROW_META)}>By</span>
-			<AvatarGroup
-				label="By contributors in this window"
-				size="xs"
-				// Leftmost-on-top, matching the board header's facepile: DOM order is
-				// tab order, so the stacking is done with z-index. The shared group
-				// also gives hexagon avatars their shape-aware separator. Overlap
-				// comes from AvatarGroup's xs `-space-x-1`.
-				className="isolate -mx-0.5 min-w-0 items-center px-0.5 [&>*]:relative [&>*:nth-child(1)]:z-[8] [&>*:nth-child(2)]:z-[7] [&>*:nth-child(3)]:z-[6] [&>*:nth-child(4)]:z-[5] [&>*:nth-child(5)]:z-[4] [&>*:nth-child(6)]:z-[3] [&>*:nth-child(7)]:z-[2] [&>*:nth-child(8)]:z-[1]"
-			>
-				{contributors.map((member) => {
-					const isSelected = member.id === selectedMemberId;
-					return (
-						<button
-							aria-label={isSelected
-								? `Clear filter: ${member.name}`
-								: `Show only ${member.name}, ${member.role}`}
-							aria-pressed={isSelected}
-							className="focus-visible:ring-ring/50 flex size-4 shrink-0 items-center justify-center rounded-full outline-none focus-visible:ring-3"
-							key={member.id}
-							onClick={() => onSelectMember(isSelected ? null : member.id)}
-							title={`${member.name} · ${member.role}`}
-							type="button"
-						>
-							<Avatar
-								className={cn(
-									"duration-normal ease-out-practical transition-opacity motion-reduce:transition-none",
-									member.kind === "human" ? "ring-2 ring-surface" : null,
-									member.kind === "human" && isSelected ? "ring-border-selected!" : null,
-									member.kind === "agent" && isSelected ? "[&>svg]:text-border-selected!" : null,
-									selectedMemberId !== null && !isSelected ? "opacity-(--opacity-disabled)" : null,
-								)}
-								label={member.name}
-								shape={member.kind === "agent" ? "hexagon" : "circle"}
-								size="xs"
-							>
-								<AvatarImage alt="" src={member.avatarSrc} />
-								<AvatarFallback>{getMemberInitials(member.name)}</AvatarFallback>
-							</Avatar>
-						</button>
-					);
-				})}
-			</AvatarGroup>
+			{contributors.length === 0 ? null : (
+				<>
+					{/* Visible "By" is decorative; the group name already says who these faces are. */}
+					<span aria-hidden className={cn("shrink-0", PULSE_ROW_META)}>By</span>
+					<AvatarGroup
+						label="By contributors in this window"
+						size="xs"
+						// Leftmost-on-top, matching the board header's facepile: DOM order is
+						// tab order, so the stacking is done with z-index. The shared group
+						// also gives hexagon avatars their shape-aware separator. Overlap
+						// comes from AvatarGroup's xs `-space-x-1`.
+						className="isolate -mx-0.5 min-w-0 items-center px-0.5 [&>*]:relative [&>*:nth-child(1)]:z-[8] [&>*:nth-child(2)]:z-[7] [&>*:nth-child(3)]:z-[6] [&>*:nth-child(4)]:z-[5] [&>*:nth-child(5)]:z-[4] [&>*:nth-child(6)]:z-[3] [&>*:nth-child(7)]:z-[2] [&>*:nth-child(8)]:z-[1]"
+					>
+						{contributors.map((member) => {
+							const isSelected = member.id === selectedMemberId;
+							return (
+								<button
+									aria-label={isSelected
+										? `Clear filter: ${member.name}`
+										: `Show only ${member.name}, ${member.role}`}
+									aria-pressed={isSelected}
+									className="focus-visible:ring-ring/50 flex size-4 shrink-0 items-center justify-center rounded-full outline-none focus-visible:ring-3"
+									key={member.id}
+									onClick={() => onSelectMember(isSelected ? null : member.id)}
+									title={`${member.name} · ${member.role}`}
+									type="button"
+								>
+									<Avatar
+										className={cn(
+											"duration-normal ease-out-practical transition-opacity motion-reduce:transition-none",
+											member.kind === "human" ? "ring-2 ring-surface" : null,
+											member.kind === "human" && isSelected ? "ring-border-selected!" : null,
+											member.kind === "agent" && isSelected ? "[&>svg]:text-border-selected!" : null,
+											selectedMemberId !== null && !isSelected ? "opacity-(--opacity-disabled)" : null,
+										)}
+										label={member.name}
+										shape={member.kind === "agent" ? "hexagon" : "circle"}
+										size="xs"
+									>
+										<AvatarImage alt="" src={member.avatarSrc} />
+										<AvatarFallback>{getMemberInitials(member.name)}</AvatarFallback>
+									</Avatar>
+								</button>
+							);
+						})}
+					</AvatarGroup>
+					<span aria-hidden className={cn("shrink-0", PULSE_ROW_META)}>·</span>
+				</>
+			)}
+			<span className={cn("shrink-0", PULSE_ROW_META)}>
+				{PULSE_SOURCES.length}<span className="sr-only"> sources from Jira, Confluence, GitHub, Slack, and 10 more</span>
+			</span>
+			<TWGAppstack
+				animated={false}
+				aria-hidden
+				className="justify-start"
+				iconSize="xxsmall"
+				maxVisible={4}
+				sources={PULSE_SOURCES}
+			/>
 		</div>
 	);
 }
