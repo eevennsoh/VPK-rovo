@@ -238,7 +238,7 @@ export function BoardFilterPopover({
 			</PopoverTrigger>
 			<PopoverContent align="start" className="w-[640px] max-w-[calc(100vw-32px)] gap-0 overflow-hidden p-0">
 				<div className="flex items-center justify-end border-b border-border px-3 py-2">
-					<Button aria-disabled size="compact" variant="ghost">
+					<Button disabled size="compact" variant="ghost">
 						Saved filters
 						<Icon data-icon="inline-end" render={<ChevronDownIcon label="" size="small" />} />
 					</Button>
@@ -260,7 +260,7 @@ export function BoardFilterPopover({
 									</Button>
 								);
 							})}
-							<Button aria-disabled className="mt-1 w-full justify-start" variant="outline">
+							<Button disabled className="mt-1 w-full justify-start" variant="outline">
 								<Icon data-icon="inline-start" render={<AddIcon label="" size="small" />} />
 								Add field
 							</Button>
@@ -358,7 +358,7 @@ export function BoardFilterPopover({
 					</div>
 				</div>
 				<div className="flex items-center justify-between gap-3 border-t border-border px-3 py-2">
-					<Button aria-disabled size="compact" variant="ghost">
+					<Button disabled size="compact" variant="ghost">
 						<Icon data-icon="inline-start" render={<MegaphoneIcon label="" size="small" />} />
 						Give feedback
 					</Button>
