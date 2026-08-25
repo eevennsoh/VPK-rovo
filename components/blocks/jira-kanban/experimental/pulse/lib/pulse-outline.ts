@@ -16,8 +16,8 @@ import type { PulseSnapshot, PulseTimeline } from "@/components/blocks/jira-kanb
  *   close in an afternoon, and an insight is captured whenever there is
  *   something worth saying, so real timestamps cluster four marks into a
  *   morning and leave a weekend of empty rail. Even steps make every insight
- *   the same size target; *when* it happened is carried by the pill and the
- *   mark's label, which is where a date belongs.
+ *   the same size target; *when* it happened stays on the insight eyebrow.
+ *   The pill names whichever outline entry is being read.
  * - **Section** (minor). The parts within an insight that are worth jumping to
  *   — artifacts, what needs attention, the next best actions — spread evenly
  *   through the gap their insight owns. They give the ruler its texture and
@@ -32,8 +32,10 @@ export interface PulseOutlineEntry {
 	kind: PulseOutlineKind;
 	/** Which insight this belongs to; a section carries its parent's index. */
 	snapshotIndex: number;
-	/** Spoken and shown on hover, e.g. "Kickoff — Needs attention". */
+	/** Spoken name, e.g. "Kickoff — Needs attention". */
 	label: string;
+	/** Visible ruler text: the insight name, or the subsection heading. */
+	heading: string;
 	/** Position on the rail, 0 (top) to 1 (bottom). */
 	offset: number;
 }
@@ -47,9 +49,122 @@ const SECTION_ORDER = [
 
 export type PulseSectionKey = (typeof SECTION_ORDER)[number]["key"];
 
+function toSectionHeading(section: PulseSectionKey): string {
+	return SECTION_ORDER.find((entry) => entry.key === section)?.label ?? section;
+}
+
+/**
+ * The short name the ruler paints: "Kickoff" on a parent, "Artifacts" on a child.
+ *
+ * Insight headings are the chapter name. Section headings are the article's
+ * subsection titles — never a clock, and never a name the story does not render.
+ */
+export function toRulerHeading(entry: PulseOutlineEntry): string {
+	if (typeof entry.heading === "string" && entry.heading.trim().length > 0) {
+		return entry.heading;
+	}
+	if (entry.kind === "insight") {
+		return entry.label;
+	}
+	const separator = " — ";
+	const index = entry.label.lastIndexOf(separator);
+	return index === -1 ? entry.label : entry.label.slice(index + separator.length);
+}
+
+/**
+ * The parent insight mark for the entry being read.
+ *
+ * Used when a caller needs the insight that owns a section. Missing parents
+ * (an outline that somehow lost its insight) return null rather than a ghost.
+ */
+export function toActiveInsightEntry(
+	entries: readonly PulseOutlineEntry[],
+	activeEntry: PulseOutlineEntry | null,
+): PulseOutlineEntry | null {
+	if (activeEntry === null) {
+		return null;
+	}
+	if (activeEntry.kind === "insight") {
+		return activeEntry;
+	}
+	return entries.find((entry) => (
+		entry.kind === "insight" && entry.snapshotIndex === activeEntry.snapshotIndex
+	)) ?? null;
+}
+
 /** The anchor id for one section of one insight. Stable across renders. */
 export function toPulseAnchorId(snapshotId: string, section?: PulseSectionKey): string {
 	return section === undefined ? `pulse-${snapshotId}` : `pulse-${snapshotId}-${section}`;
+}
+
+export type PulseInsightNavDirection = "previous" | "next";
+export type PulseScrollAlignment = "reading-line" | "start";
+
+export interface PulseScrollOptions {
+	align?: PulseScrollAlignment;
+}
+
+interface PulseScrollOffsetOptions {
+	alignment: PulseScrollAlignment;
+	anchorTop: number;
+	readingLine: number;
+	scrollportHeight: number;
+	scrollportTop: number;
+	startInset?: number;
+}
+
+/**
+ * The scroll delta that places an anchor at the requested article line.
+ *
+ * Ruler jumps retain the established reading line. Header chevrons use `start`
+ * so each destination nav row lands at the true top of the scroller; the inset
+ * is only the scrollport's content padding, never a reserved fade band.
+ */
+export function toPulseScrollOffset({
+	alignment,
+	anchorTop,
+	readingLine,
+	scrollportHeight,
+	scrollportTop,
+	startInset = 0,
+}: Readonly<PulseScrollOffsetOptions>): number {
+	switch (alignment) {
+		case "reading-line":
+			return anchorTop - scrollportTop - scrollportHeight * readingLine;
+		case "start":
+			return anchorTop - scrollportTop - startInset;
+		default: {
+			const _exhaustive: never = alignment;
+			return _exhaustive;
+		}
+	}
+}
+
+/**
+ * The adjacent insight in the article, or `null` at that end.
+ *
+ * The header chevrons jump by whole insights — not by outline sections, and
+ * not by "was this member active" — so a reader can page the narrative without
+ * scrolling. Ends return `null` so the control can disable rather than wrap.
+ */
+export function toAdjacentInsightIndex(
+	insightIndex: number,
+	insightCount: number,
+	direction: PulseInsightNavDirection,
+): number | null {
+	if (!Number.isFinite(insightIndex) || insightCount <= 0) {
+		return null;
+	}
+	switch (direction) {
+		case "previous":
+			return insightIndex <= 0 ? null : insightIndex - 1;
+		case "next":
+			return insightIndex >= insightCount - 1 ? null : insightIndex + 1;
+		default: {
+			const _exhaustive: never = direction;
+			return _exhaustive;
+		}
+	}
 }
 
 /** Which sections a snapshot actually renders — an empty one earns no mark. */
@@ -93,6 +208,7 @@ export function buildPulseOutline(timeline: PulseTimeline): PulseOutlineEntry[] 
 		entries.push({
 			id: toPulseAnchorId(snapshot.id),
 			kind: "insight",
+			heading: snapshot.chapterLabel,
 			label: snapshot.chapterLabel,
 			offset,
 			snapshotIndex: index,
@@ -100,11 +216,13 @@ export function buildPulseOutline(timeline: PulseTimeline): PulseOutlineEntry[] 
 
 		const sections = toPulseSections(snapshot);
 		sections.forEach((section, sectionIndex) => {
+			const heading = toSectionHeading(section);
 			const share = (sectionIndex + 1) / (sections.length + 1);
 			entries.push({
 				id: toPulseAnchorId(snapshot.id, section),
 				kind: "section",
-				label: `${snapshot.chapterLabel} — ${SECTION_ORDER.find((entry) => entry.key === section)?.label ?? section}`,
+				heading,
+				label: `${snapshot.chapterLabel} — ${heading}`,
 				offset: offset + step * share,
 				snapshotIndex: index,
 			});

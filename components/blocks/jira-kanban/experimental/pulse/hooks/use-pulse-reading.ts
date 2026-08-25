@@ -4,7 +4,9 @@ import { useCallback, useEffect, useRef, useState, type RefCallback } from "reac
 
 import {
 	toActiveOutlineIndex,
+	toPulseScrollOffset,
 	type PulseOutlineEntry,
+	type PulseScrollOptions,
 } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-outline";
 
 /**
@@ -42,9 +44,9 @@ export interface UsePulseReadingResult {
 	/** Attach to each anchored element, keyed by outline id. */
 	registerAnchor: (id: string) => RefCallback<HTMLElement>;
 	/** Jump the article to an outline entry. */
-	scrollToEntry: (id: string) => void;
+	scrollToEntry: (id: string, options?: PulseScrollOptions) => void;
 	/** Move by whole insights — the chevrons and the keyboard. */
-	scrollToSnapshot: (snapshotIndex: number) => void;
+	scrollToSnapshot: (snapshotIndex: number, options?: PulseScrollOptions) => void;
 }
 
 export function usePulseReading({ outline, resetKey = null }: UsePulseReadingOptions): UsePulseReadingResult {
@@ -131,25 +133,37 @@ export function usePulseReading({ outline, resetKey = null }: UsePulseReadingOpt
 		element.scrollTop = 0;
 	}, [element, resetKey]);
 
-	const scrollToEntry = useCallback((id: string) => {
+	const scrollToEntry = useCallback((id: string, { align = "reading-line" }: PulseScrollOptions = {}) => {
 		const node = anchorsRef.current.get(id);
 		if (node === undefined || element === null) {
 			return;
 		}
 		const port = element.getBoundingClientRect();
-		const offset = node.getBoundingClientRect().top - port.top - port.height * READING_LINE;
+		const scrollportStyle = window.getComputedStyle(element);
+		const configuredStartInset = Number.parseFloat(scrollportStyle.scrollPaddingTop);
+		const startInset = configuredStartInset > 0
+			? configuredStartInset
+			: Number.parseFloat(scrollportStyle.paddingTop) || 0;
+		const offset = toPulseScrollOffset({
+			alignment: align,
+			anchorTop: node.getBoundingClientRect().top,
+			readingLine: READING_LINE,
+			scrollportHeight: port.height,
+			scrollportTop: port.top,
+			startInset,
+		});
 		// `scroll-behavior` is set per gesture rather than in CSS: hover-scrubbing
 		// the ruler must be instant to track the pointer, and the browser's own
 		// smooth scrolling would lag a frame behind the cursor.
 		element.scrollBy({ behavior: "auto", top: offset });
 	}, [element]);
 
-	const scrollToSnapshot = useCallback((snapshotIndex: number) => {
+	const scrollToSnapshot = useCallback((snapshotIndex: number, options?: PulseScrollOptions) => {
 		const entry = outlineRef.current.find(
 			(candidate) => candidate.kind === "insight" && candidate.snapshotIndex === snapshotIndex,
 		);
 		if (entry !== undefined) {
-			scrollToEntry(entry.id);
+			scrollToEntry(entry.id, options);
 		}
 	}, [scrollToEntry]);
 

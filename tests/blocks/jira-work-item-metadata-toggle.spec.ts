@@ -232,17 +232,19 @@ test("v3 section navigation links use 12px type", async ({ page }) => {
 		expect(Math.abs(tabBounds[index].left - tabBounds[index - 1].right - 16)).toBeLessThan(1);
 	}
 
-	const navigationBottom = await page.locator("[data-work-item-header-navigation]").evaluate(
-		(element) => element.getBoundingClientRect().bottom,
-	);
-	const descriptionBottom = await descriptionLink.evaluate(
-		(element) => element.getBoundingClientRect().bottom,
-	);
-	const pullRequestsBottom = await pullRequests.evaluate(
-		(element) => element.getBoundingClientRect().bottom,
-	);
-	expect(Math.abs(navigationBottom - descriptionBottom)).toBeLessThan(2);
-	expect(Math.abs(navigationBottom - pullRequestsBottom)).toBeLessThan(2);
+	await expect.poll(async () => {
+		const [navigationBottom, descriptionBottom, pullRequestsBottom] = await Promise.all([
+			page.locator("[data-work-item-header-navigation]").evaluate(
+				(element) => element.getBoundingClientRect().bottom,
+			),
+			descriptionLink.evaluate((element) => element.getBoundingClientRect().bottom),
+			pullRequests.evaluate((element) => element.getBoundingClientRect().bottom),
+		]);
+		return Math.max(
+			Math.abs(navigationBottom - descriptionBottom),
+			Math.abs(navigationBottom - pullRequestsBottom),
+		);
+	}).toBeLessThan(2);
 });
 
 test("v3 metadata disclosure counts omit the unicode separator", async ({ page }) => {
@@ -291,6 +293,77 @@ test("v3 work item header compacts after the body starts scrolling", async ({ pa
 	await sectionScrollport.evaluate((element) => element.scrollTo({ top: 0 }));
 	await expect(titleBlock).toHaveAttribute("data-header-variant", "expanded");
 	await expect(titleBlock).toHaveCSS("padding-bottom", "16px");
+});
+
+test("v3 compact header swaps a scaled fade-out for an opacity-only final title", async ({ page }) => {
+	await page.setViewportSize({ width: 1424, height: 900 });
+	await page.goto(JIRA_WORK_ITEM_V3_URL, { waitUntil: "domcontentloaded" });
+	await page.getByRole("button", { name: "Open work item" }).click();
+
+	const titleBlock = page.locator("[data-jira-work-item-title-block]");
+	const sectionScrollport = page.locator(
+		"[data-jira-work-item-scroll-region]:has([data-work-item-section-id='activity'])",
+	);
+	await expect(titleBlock).toHaveAttribute("data-header-variant", "expanded");
+
+	const transitionSamples = await sectionScrollport.evaluate(async (element) => {
+		const initialTitle = document.querySelector("[data-jira-work-item-title]");
+		if (!(initialTitle instanceof HTMLElement)) {
+			throw new Error("Expected the expanded work-item title.");
+		}
+		const expandedFontSize = Number.parseFloat(getComputedStyle(initialTitle).fontSize);
+
+		element.scrollTo({ top: 48 });
+		const samples = [];
+		for (let frame = 0; frame < 24; frame += 1) {
+			await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+			const title = document.querySelector("[data-jira-work-item-title]");
+			const controls = document.querySelector("[data-jira-work-item-resource-row-content]");
+			if (!(title instanceof HTMLElement) || !(controls instanceof HTMLElement)) {
+				throw new Error("Expected the work-item title and header controls.");
+			}
+
+			const titleTransition = title.parentElement;
+			if (!(titleTransition instanceof HTMLElement)) {
+				throw new Error("Expected the work-item title transition wrapper.");
+			}
+			const titleBounds = title.getBoundingClientRect();
+			const controlBounds = controls.getBoundingClientRect();
+			const overlapWidth = Math.max(
+				0,
+				Math.min(titleBounds.right, controlBounds.right)
+					- Math.max(titleBounds.left, controlBounds.left),
+			);
+			const overlapHeight = Math.max(
+				0,
+				Math.min(titleBounds.bottom, controlBounds.bottom)
+					- Math.max(titleBounds.top, controlBounds.top),
+			);
+			const transform = getComputedStyle(titleTransition).transform;
+			samples.push({
+				fontSize: Number.parseFloat(getComputedStyle(title).fontSize),
+				opacity: Number.parseFloat(getComputedStyle(titleTransition).opacity),
+				overlapArea: overlapWidth * overlapHeight,
+				scaleX: transform === "none" ? 1 : new DOMMatrixReadOnly(transform).a,
+			});
+		}
+		return { expandedFontSize, samples };
+	});
+
+	await expect(titleBlock).toHaveAttribute("data-header-variant", "compact");
+	const compactFontSize = transitionSamples.samples.at(-1)?.fontSize;
+	expect(compactFontSize).toBeDefined();
+	const expandedExitSamples = transitionSamples.samples.filter(
+		(sample) => Math.abs(sample.fontSize - transitionSamples.expandedFontSize) < 0.5,
+	);
+	const compactEnterSamples = transitionSamples.samples.filter(
+		(sample) => Math.abs(sample.fontSize - (compactFontSize ?? 0)) < 0.5,
+	);
+	expect(expandedExitSamples.some((sample) => sample.opacity < 0.99 && sample.scaleX < 0.999)).toBe(true);
+	expect(Math.min(...expandedExitSamples.map((sample) => sample.scaleX))).toBeGreaterThanOrEqual(0.95);
+	expect(compactEnterSamples.some((sample) => sample.opacity < 0.99)).toBe(true);
+	expect(compactEnterSamples.every((sample) => Math.abs(sample.scaleX - 1) < 0.001)).toBe(true);
+	expect(Math.max(...transitionSamples.samples.map((sample) => sample.overlapArea))).toBeLessThan(1);
 });
 
 test("v3 work item title uses medium weight before and after compaction", async ({ page }) => {

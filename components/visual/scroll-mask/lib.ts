@@ -74,6 +74,36 @@ export function buildScrollMaskBlurLayerStyles(edge: ScrollMaskBlurEdge): CSSPro
 	});
 }
 
+export type ScrollMaskOverlayEdge = "top" | "bottom";
+
+export interface ScrollMaskOverlayStyleOptions {
+	edge: ScrollMaskOverlayEdge;
+	fadeSize?: number | string;
+}
+
+/**
+ * Visual-only edge fade. Use this instead of `fadeTop` on `buildScrollMaskStyle`
+ * when controls sit at the start of the scrollport: CSS `mask-image` clips
+ * hit-testing in some browsers, so a top mask would swallow clicks on a header
+ * pinned to `align: "start"`.
+ */
+export function buildScrollMaskOverlayStyle({
+	edge,
+	fadeSize = SCROLL_MASK_DEFAULT_FADE_SIZE,
+}: ScrollMaskOverlayStyleOptions): ScrollMaskCssProperties {
+	const resolvedFadeSize = toCssLength(fadeSize);
+	const backgroundImage = edge === "top"
+		? "linear-gradient(to bottom, var(--color-surface) 0, transparent 100%)"
+		: "linear-gradient(to top, var(--color-surface) 0, transparent 100%)";
+
+	return {
+		"--scroll-mask-fade-size": resolvedFadeSize,
+		backgroundImage,
+		height: resolvedFadeSize,
+		pointerEvents: "none",
+	};
+}
+
 export function buildScrollMaskStyle({
 	fadeSize = SCROLL_MASK_DEFAULT_FADE_SIZE,
 	scrollbarWidth = SCROLL_MASK_DEFAULT_SCROLLBAR_WIDTH,
@@ -84,6 +114,8 @@ export function buildScrollMaskStyle({
 	const resolvedScrollbarWidth = toCssLength(scrollbarWidth);
 	// Only fade an edge that has content scrolled past it, so a menu at rest (or one that
 	// does not overflow) shows no fade. Both default true to preserve the full both-edge mask.
+	// `fadeTop` uses mask-image and can clip hit-testing; prefer
+	// `buildScrollMaskOverlayStyle` when the faded band contains controls.
 	const topStops = fadeTop ? "transparent 0, black var(--scroll-mask-fade-size)" : "black 0";
 	const bottomStops = fadeBottom
 		? "black calc(100% - var(--scroll-mask-fade-size)), transparent 100%"

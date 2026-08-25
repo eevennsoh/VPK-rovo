@@ -3,7 +3,7 @@
 import PulseIcon from "@atlaskit/icon/core/pulse";
 
 import type { PulseMember } from "@/components/blocks/jira-kanban/experimental/pulse/types";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -58,46 +58,47 @@ export function PulseRosterFacepile({
 	selectedMemberId: string | null;
 }>) {
 	return (
-		<ul
-			aria-label="Filter Pulse by person or agent"
+		<AvatarGroup
+			label="Filter by person or agent"
 			// Leftmost-on-top, matching the board's own facepile: DOM order stays
-			// the tab order and the stacking is done with z-index, which needs
-			// `relative` because the list items are otherwise static.
-			className="isolate -mx-0.5 ml-1 flex min-w-0 items-center -space-x-1.5 px-0.5 [&>*]:relative [&>*:nth-child(1)]:z-[8] [&>*:nth-child(2)]:z-[7] [&>*:nth-child(3)]:z-[6] [&>*:nth-child(4)]:z-[5] [&>*:nth-child(5)]:z-[4] [&>*:nth-child(6)]:z-[3] [&>*:nth-child(7)]:z-[2] [&>*:nth-child(8)]:z-[1]"
+			// the tab order and the stacking is done with z-index. The shared
+			// group also gives hexagon avatars their shape-aware separator.
+			className="isolate -mx-0.5 ml-1 min-w-0 items-center -space-x-1.5 px-0.5 [&>*]:relative [&>*:nth-child(1)]:z-[8] [&>*:nth-child(2)]:z-[7] [&>*:nth-child(3)]:z-[6] [&>*:nth-child(4)]:z-[5] [&>*:nth-child(5)]:z-[4] [&>*:nth-child(6)]:z-[3] [&>*:nth-child(7)]:z-[2] [&>*:nth-child(8)]:z-[1]"
 		>
 			{members.map((member) => {
 				const isSelected = member.id === selectedMemberId;
 				return (
-					<li key={member.id}>
-						<button
-							aria-label={isSelected
-								? `Clear filter: ${member.name}`
-								: `Show only ${member.name}, ${member.role}`}
-							aria-pressed={isSelected}
-							className="focus-visible:ring-ring/50 rounded-full outline-none focus-visible:ring-3"
-							onClick={() => onSelectedMemberIdChange(isSelected ? null : member.id)}
-							title={`${member.name} · ${member.role}`}
-							type="button"
+					<button
+						aria-label={isSelected
+							? `Clear filter: ${member.name}`
+							: `Show only ${member.name}, ${member.role}`}
+						aria-pressed={isSelected}
+						className="focus-visible:ring-ring/50 flex size-6 shrink-0 items-center justify-center rounded-full outline-none focus-visible:ring-3"
+						key={member.id}
+						onClick={() => onSelectedMemberIdChange(isSelected ? null : member.id)}
+						title={`${member.name} · ${member.role}`}
+						type="button"
+					>
+						<Avatar
+							className={cn(
+								"duration-normal ease-out-practical transition-opacity motion-reduce:transition-none",
+								member.kind === "human" ? "ring-2 ring-surface" : null,
+								member.kind === "human" && isSelected ? "ring-border-selected!" : null,
+								member.kind === "agent" && isSelected ? "[&>svg]:text-border-selected!" : null,
+								selectedMemberId !== null && !isSelected ? "opacity-(--opacity-disabled)" : null,
+							)}
+							label={member.name}
+							shape={member.kind === "agent" ? "hexagon" : "circle"}
+							size="sm"
 						>
-							<Avatar
-								className={cn(
-									"duration-normal ease-out-practical ring-2 ring-surface transition-opacity motion-reduce:transition-none",
-									isSelected ? "ring-border-selected!" : null,
-									selectedMemberId !== null && !isSelected ? "opacity-(--opacity-disabled)" : null,
-								)}
-								label={member.name}
-								shape={member.kind === "agent" ? "hexagon" : "circle"}
-								size="sm"
-							>
-								<AvatarImage alt="" src={member.avatarSrc} />
-								<AvatarFallback>
-									{member.name.split(" ").map((part) => part.charAt(0)).join("").slice(0, 2).toUpperCase()}
-								</AvatarFallback>
-							</Avatar>
-						</button>
-					</li>
+							<AvatarImage alt="" src={member.avatarSrc} />
+							<AvatarFallback>
+								{member.name.split(" ").map((part) => part.charAt(0)).join("").slice(0, 2).toUpperCase()}
+							</AvatarFallback>
+						</Avatar>
+					</button>
 				);
 			})}
-		</ul>
+		</AvatarGroup>
 	);
 }

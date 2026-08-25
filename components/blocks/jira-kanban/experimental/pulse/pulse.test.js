@@ -35,6 +35,7 @@ const {
 	PULSE_MODE_CONTROLS_SOURCE,
 	findSnapshotIndex,
 	join,
+	loadRosterMarkupHarness,
 	loadTimelineHarness,
 	PULSE_DIR,
 	readdirSync,
@@ -566,11 +567,12 @@ test("Pulse anchors exactly the parts the outline made marks for", () => {
 	// earns a mark. A mark with no anchor scrolls the reader nowhere.
 	assert.match(SOURCES.story, /toPulseAnchorId,\s*toPulseSections,/u);
 	assert.match(SOURCES.story, /const anchoredSections = new Set\(toPulseSections\(snapshot\)\);/u);
-	assert.match(SOURCES.story, /id=\{toPulseAnchorId\(snapshot\.id\)\} ref=\{anchorRef\(toPulseAnchorId\(snapshot\.id\)\)\}/u);
+	assert.match(SOURCES.story, /const insightId = toPulseAnchorId\(snapshot\.id\);/u);
+	assert.match(SOURCES.story, /id=\{insightId\}\s*ref=\{anchorRef\(insightId\)\}/u);
 	for (const section of ["artifacts", "attention", "actions"]) {
 		assert.match(
 			SOURCES.story,
-			new RegExp(`anchored=\\{anchoredSections\\.has\\("${section}"\\)\\}\\s*\\n\\s*id=\\{toPulseAnchorId\\(snapshot\\.id, "${section}"\\)\\}`, "u"),
+			new RegExp(`anchored=\\{anchoredSections\\.has\\("${section}"\\)\\}\\s*\\n\\s*id=\\{${section}Id\\}`, "u"),
 			`the ${section} section is not anchored the way the outline marks it`,
 		);
 	}
@@ -614,7 +616,10 @@ test("Pulse mounts every insight, so nothing crossfades and the position is a tr
 	// not gate content, and a reader must still be able to read ahead.
 	assert.match(SOURCES.stream, /const SNAPSHOT_READING = "opacity-100";/u);
 	assert.match(SOURCES.stream, /const SNAPSHOT_QUIET = "opacity-80";/u);
-	assert.match(SOURCES.stream, /index === activeSnapshotIndex \? SNAPSHOT_READING : SNAPSHOT_QUIET,/u);
+	assert.match(
+		SOURCES.stream,
+		/index === activeSnapshotIndex \|\| index === previewEntry\?\.snapshotIndex[\s\S]*\? SNAPSHOT_READING[\s\S]*: SNAPSHOT_QUIET,/u,
+	);
 	// One property, token timings, and an explicit reduced-motion guard: VPK's
 	// duration tokens resolve to literal ms and play regardless of the setting.
 	assert.match(
@@ -630,28 +635,59 @@ test("Pulse mounts every insight, so nothing crossfades and the position is a tr
 	assert.match(SOURCES.reading, /behavior: "auto", top: offset/u);
 });
 
-test("Pulse keeps focus alive through in-place commits, and no longer steps by chevron", () => {
-	// The prev/next chevrons are gone with the gesture they drove: the article is
-	// scrolled, and the ruler is the navigation. The assertions that used to live
-	// here — `aria-disabled={isFirst}`/`{isLast}` rather than a native `disabled`
-	// that drops the focused control out of the tab order at either end — have no
-	// subject left, so what remains is the rule they enforced, applied to the two
-	// commit affordances that survived.
+test("Pulse keeps focus alive through in-place commits, and pins header jumps to the top", () => {
+	// The snapshot-swap chevrons are gone with the gesture they drove: the
+	// article is scrolled, and the ruler is the primary navigation. The header
+	// pair that replaced them jumps by whole insights through the same scroll
+	// owner but explicitly selects start alignment, and keeps both buttons
+	// mounted at the ends —
+	// `aria-disabled={isFirst}`/`{isLast}` rather than a native `disabled` that
+	// drops the focused control out of the tab order.
 	// The frozen `PulseStoryProps` still describes the stepper; the view type
-	// omits that half rather than accepting props nothing can honour.
+	// omits that half rather than accepting props nothing can honour, and names
+	// the article position separately.
 	assert.match(SOURCES.story, /extends Omit<PulseStoryProps, "index" \| "onNext" \| "onPrevious" \| "total"> \{/u);
-	assert.doesNotMatch(SOURCES.story, /isFirst|isLast|ChevronUp|ChevronDown/u);
+	assert.match(SOURCES.story, /insightIndex: number;/u);
+	assert.match(SOURCES.story, /insightCount: number;/u);
 	assert.doesNotMatch(SOURCES.story, /onNext\(|onPrevious\(|onNext=|onPrevious=/u);
 	assert.doesNotMatch(SOURCES.story, /disabled=\{index/u);
+	assert.match(SOURCES.stream, /insightCount=\{entries\.length\}/u);
+	assert.match(SOURCES.stream, /insightIndex=\{index\}/u);
+	assert.match(SOURCES.story, /aria-label="Previous insight"/u);
+	assert.match(SOURCES.story, /aria-label="Next insight"/u);
+	assert.match(SOURCES.story, /aria-disabled=\{isFirst\}/u);
+	assert.match(SOURCES.story, /aria-disabled=\{isLast\}/u);
+	assert.match(SOURCES.story, /<ChevronUpIcon label="" size="small" \/>/u);
+	assert.match(SOURCES.story, /<ChevronDownIcon label="" size="small" \/>/u);
+	assert.match(SOURCES.story, /toAdjacentInsightIndex\(insightIndex, insightCount, "previous"\)/u);
+	assert.match(SOURCES.story, /toAdjacentInsightIndex\(insightIndex, insightCount, "next"\)/u);
+	assert.match(SOURCES.story, /onGoToIndex\(previousIndex, \{ align: "start" \}\)/u);
+	assert.match(SOURCES.story, /onGoToIndex\(nextIndex, \{ align: "start" \}\)/u);
+	assert.match(SOURCES.reading, /scrollToEntry\(entry\.id, options\)/u);
+	assert.match(SOURCES.reading, /Number\.parseFloat\(scrollportStyle\.paddingTop\) \|\| 0/u);
+	// Chevron `align: "start"` pins the insight header to the scroller top
+	// (plus the 4px focus-ring inset). A reserved fade-band scroll-padding
+	// used to jump that row 52px down so a CSS top mask would not cover the
+	// buttons — the top fade is an overlay now, so that offset is gone.
+	assert.doesNotMatch(SOURCES.shell, /scrollPaddingTop/u);
+	assert.match(SOURCES.shell, /fadeTop: false/u);
+	assert.match(SOURCES.shell, /showTopScrollMask \? \(/u);
+	assert.match(SOURCES.shell, /data-pulse-article-top-fade=""/u);
+	assert.match(SOURCES.shell, /<ScrollMaskEdgeOverlay/u);
+	assert.match(SOURCES.story, /size="icon-compact"/u);
+	// The jump stays on the header row the reader selected, not a one-off in the
+	// shell — the stream only hands the article position down.
+	assert.match(
+		SOURCES.story,
+		/<div className=\{cn\("flex min-h-6 min-w-0 items-center", MEASURE\)\}>[\s\S]*<PulseStoryInsightNav/u,
+	);
+	assert.doesNotMatch(SOURCES.shell, /Previous insight|Next insight|ChevronUp|ChevronDown/u);
 	// Both commit actions keep one element mounted across the state change.
 	assert.match(SOURCES.signals, /aria-disabled=\{isRequested\}/u);
 	assert.match(SOURCES.signals, /if \(isRequested\) return;/u);
-	assert.match(SOURCES.rail, /aria-disabled=\{isLinked\}/u);
-	assert.match(SOURCES.rail, /if \(isLinked\) return;/u);
-	assert.doesNotMatch(SOURCES.rail, /^\s*disabled=\{isLinked\}/mu);
-	// A live region must not contain the control it is announcing.
-	assert.doesNotMatch(SOURCES.rail, /<span aria-live="polite"/u);
-	assert.match(SOURCES.rail, /<p aria-live="polite" className="sr-only" role="status">/u);
+	assert.match(SOURCES.rail, /captured=\{capturedIds\.has\(item\.id\)\}/u);
+	assert.match(SOURCES.rail, /onCreateWorkItem=\{\(\) => onCapture\(item\)\}/u);
+	assert.doesNotMatch(SOURCES.rail, /aria-disabled|aria-live/u, "the shared Jira Issue variant owns the action contract");
 
 	// Scroll position is not a focus change, so the reading position still needs
 	// announcing — but once for the document, not once per insight. Seven live
@@ -692,16 +728,56 @@ test("Pulse keeps a quiet member selectable and lets absence carry the signal", 
 	// The work columns are a read-out: no tab stop, no drag affordance.
 	assert.match(SOURCES.rail, /draggable=\{false\}/u);
 	assert.match(SOURCES.rail, /tabIndex=\{-1\}/u);
+	// Work-item cards share the experimental board's stroke chrome.
+	assert.match(SOURCES.rail, /<JiraIssue[\s\S]*chrome="stroke"/u);
+	assert.match(SOURCES.rail, /<JiraIssue[\s\S]*variant="uncaptured-work"/u);
+	// Agent assignees on work-item cards reuse the roster hexagon, not a circle photo.
+	assert.match(SOURCES.rail, /assigneeAvatarShape=\{assignee\?\.kind === "agent" \? "hexagon" : "circle"\}/u);
+	assert.match(SOURCES.rail, /memberLookup\.get\(workItem\.assigneeId\)/u);
 });
 
 test("Pulse rail hangs everything off one left edge and one right edge", () => {
 	// 776/784/785/789 used to coexist inside a 384px rail. Rows now pad outward
 	// into a bleed gutter, and nothing else carries horizontal padding.
-	assert.match(SOURCES.rail, /className=\{cn\("-mx-3 -my-1 flex w-full shrink-0 flex-col gap-3 px-3 py-1 lg:overflow-y-auto lg:overscroll-y-contain", width\)\}/u);
+	assert.match(SOURCES.rail, /className="flex min-w-0 flex-col gap-3"/u);
+	assert.match(
+		SOURCES.rail,
+		/className="-m-1 grid min-w-0 grid-cols-1 gap-10 p-1 lg:box-content lg:h-full lg:min-h-0 lg:w-\[628px\] lg:shrink-0 lg:grid-cols-\[320px_300px\] lg:gap-2 lg:overflow-y-auto lg:overscroll-y-contain"/u,
+	);
+	assert.equal([...SOURCES.rail.matchAll(/overflow-y-auto/gu)].length, 1, "the rail parent is the only work scroller");
 	// The roster and the window's numbers moved out of the rail entirely; the
 	// two columns left do one job each.
 	assert.doesNotMatch(SOURCES.rail, /Roster/u);
 	assert.doesNotMatch(SOURCES.rail, /PulseRailStats|PulseRosterGroup|PulseRailMemberWeek/u);
+	// Uncaptured cards are the shared Jira Issue variant, not a second inline
+	// implementation inside Pulse.
+	assert.doesNotMatch(SOURCES.rail, /Produced in this window but never landed in a work item/u);
+	assert.doesNotMatch(SOURCES.rail, /Capture it before it disappears/u);
+	assert.match(SOURCES.rail, /<JiraIssue[\s\S]*variant="uncaptured-work"/u);
+	assert.match(SOURCES.rail, /captured=\{capturedIds\.has\(item\.id\)\}/u);
+	assert.match(SOURCES.rail, /onCreateWorkItem=\{\(\) => onCapture\(item\)\}/u);
+	assert.match(SOURCES.rail, /const participants = toUncapturedParticipants\(item, memberLookup\);/u);
+	assert.match(SOURCES.rail, /participants=\{participants\}/u);
+	assert.match(SOURCES.rail, /sourceLink=\{createPulseLooseWorkSmartLink\(item, participants\)\}/u);
+	assert.match(SOURCES.data, /sourceTitle: "#payments-migration"/u);
+	assert.doesNotMatch(SOURCES.rail, /PulseLooseWorkRow|suggestedAction/u);
+	assert.doesNotMatch(SOURCES.rail, /Create work item|AvatarGroup|CheckMarkIcon/u);
+});
+
+test("Pulse header roster locks one SSR and first-render structure", async () => {
+	const { renderRosterMarkup } = await loadRosterMarkupHarness();
+	const serverMarkup = renderRosterMarkup();
+
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/facepile=\{isPulse \? \(\s*<PulseRosterFacepile[\s\S]*members=\{PULSE_TIMELINE\.members\}[\s\S]*\/>\s*\) : undefined\}/u,
+	);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /\{facepile \?\? \(/u);
+	assert.match(serverMarkup, /data-slot="avatar-group" role="group" aria-label="Filter by person or agent"/u);
+	assert.equal([...serverMarkup.matchAll(/<button /gu)].length, 7);
+	assert.equal([...serverMarkup.matchAll(/aria-pressed="false"/gu)].length, 7);
+	assert.match(serverMarkup, /aria-label="Show only Maya Ferreira, Staff engineer"/u);
+	assert.doesNotMatch(serverMarkup, /Board assignees|data-unassigned|aria-label="Unassigned"/u);
 });
 
 test("Pulse is a toggle on the board's own control row, not a separate tab", () => {
@@ -716,10 +792,15 @@ test("Pulse is a toggle on the board's own control row, not a separate tab", () 
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /import \{ ExperimentalPulse \} from "\.\/pulse\/experimental-pulse";/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const \[mode, setMode\] = useState<ExperimentalJiraKanbanMode>\("board"\);/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const isPulse = mode === "pulse";/u);
-	// The control row stays up in Pulse: the facepile in it IS the roster filter.
+	// The control row stays up in Pulse. Board mode keeps the board assignee
+	// facepile; Pulse swaps in its own member roster because the two filters own
+	// different ids and state.
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /showBoardControls=\{!isPulse\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<PulseModeToggle/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /facepile=\{isPulse \? \(/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/facepile=\{isPulse \? \(\s*<PulseRosterFacepile[\s\S]*members=\{PULSE_TIMELINE\.members\}[\s\S]*\/>\s*\) : undefined\}/u,
+	);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /facepile\?: ReactNode;/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /modeToggle\?: ReactNode;/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /\{facepile \?\? \(/u);
@@ -745,9 +826,27 @@ test("Pulse keeps one member filter across the header facepile and the story fac
 	assert.deepEqual([...shellOrder].sort((a, b) => a - b), shellOrder, "the shell composes its hooks out of order");
 	assert.ok(shellOrder.every((index) => index > 0));
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /export function PulseRosterFacepile\(/u);
+	// The shared group supplies the shape-aware separator to nested hexagons,
+	// while fixed-size flex buttons remove inline baseline drift between SVG
+	// agents and photo-backed humans.
+	assert.match(PULSE_MODE_CONTROLS_SOURCE, /import \{ Avatar, AvatarFallback, AvatarGroup, AvatarImage \} from "@\/components\/ui\/avatar";/u);
+	assert.match(PULSE_MODE_CONTROLS_SOURCE, /<AvatarGroup[\s\S]*items-center -space-x-1\.5/u);
+	assert.match(PULSE_MODE_CONTROLS_SOURCE, /className="focus-visible:ring-ring\/50 flex size-6 shrink-0 items-center justify-center/u);
+	assert.match(PULSE_MODE_CONTROLS_SOURCE, /member\.kind === "human" \? "ring-2 ring-surface" : null/u);
+	assert.doesNotMatch(PULSE_MODE_CONTROLS_SOURCE, /"ring-2 ring-surface transition-opacity/u);
+	// The contributor facepile uses the same primitive and fixed-height wrapper.
+	// Keeping the avatar as a direct child of a 24px flex button removes the
+	// inline list/button baseline that made the old row 29px and top-heavy.
+	assert.match(SOURCES.story, /import \{ Avatar, AvatarFallback, AvatarGroup, AvatarImage \} from "@\/components\/ui\/avatar";/u);
+	assert.match(SOURCES.story, /<AvatarGroup[\s\S]*label="Contributors in this window"[\s\S]*items-center -space-x-1\.5/u);
+	assert.match(SOURCES.story, /className="focus-visible:ring-ring\/50 flex size-6 shrink-0 items-center justify-center/u);
+	assert.match(SOURCES.story, /member\.kind === "human" \? "ring-2 ring-surface" : null/u);
+	assert.match(SOURCES.story, /member\.kind === "agent" && isSelected \? "\[&>svg\]:text-border-selected!" : null/u);
+	assert.doesNotMatch(SOURCES.story, /"duration-normal ease-out-practical ring-2 ring-surface transition-opacity/u);
 	// Agents keep the hexagon everywhere the roster is drawn.
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /shape=\{member\.kind === "agent" \? "hexagon" : "circle"\}/u);
 	assert.match(SOURCES.story, /shape=\{member\.kind === "agent" \? "hexagon" : "circle"\}/u);
+	assert.match(SOURCES.rail, /assigneeAvatarShape=\{assignee\?\.kind === "agent" \? "hexagon" : "circle"\}/u);
 });
 
 test("Pulse stays inside the experimental variant", () => {
@@ -776,14 +875,14 @@ test("Pulse stays inside the experimental variant", () => {
 	}
 });
 
-test("Pulse tiles four columns full-bleed, with the story taking the slack", () => {
+test("Pulse tiles three columns full-bleed, with the story taking the slack", () => {
 	const pxValue = (source, pattern) => {
 		const match = source.match(pattern);
 		assert.ok(match, `expected ${pattern} in the source`);
 		return Number.parseInt(match[1], 10);
 	};
 
-	// Full-bleed by design: capping the row would strand the uncaptured column
+	// Full-bleed by design: capping the row would strand the combined work rail
 	// against the right edge on a wide screen. The story is the only flexible
 	// column, and its prose measure is capped separately inside PulseStory.
 	assert.match(SOURCES.shell, /const SHELL_MEASURE = "w-full min-w-0";/u);
@@ -795,20 +894,36 @@ test("Pulse tiles four columns full-bleed, with the story taking the slack", () 
 	// than a nested scroll region.
 	assert.match(
 		SOURCES.shell,
-		/className="-m-1 max-h-\[70svh\] min-w-0 flex-1 overflow-y-auto p-1 lg:max-h-none lg:overscroll-y-contain lg:pr-10 lg:pb-12"/u,
-		"the article column is the flexible one and the only scrollport",
+		/className="relative -m-1 max-h-\[70svh\] min-h-0 min-w-0 flex-1 lg:mr-10 lg:h-full lg:max-h-none"/u,
+		"the article column is the flexible one",
+	);
+	assert.match(
+		SOURCES.shell,
+		/className="h-full overflow-y-auto p-1 lg:overscroll-y-contain lg:pr-10 lg:pb-12"/u,
+		"the nested region is the reading scrollport",
 	);
 	assert.doesNotMatch(SOURCES.shell, /lg:max-w-\[[\d.]+rem\] lg:overflow-y-auto/u, "the story must not re-cap itself in the shell");
 	assert.match(SOURCES.story, /const MEASURE = "max-w-\[36rem\]";/u, "the prose measure still holds at 576px");
+	assert.match(
+		SOURCES.stream,
+		/className=\{cn\("mx-auto flex min-w-0 flex-col", MEASURE\)\}/u,
+		"the article column is centered in the scrollport at the prose measure",
+	);
 
-	const scrubber = pxValue(SOURCES.scrubber, /className="relative h-full min-h-\[24rem\] w-(\d+)"/u) * 4;
-	assert.strictEqual(scrubber, 88);
+	const scrubber = pxValue(SOURCES.scrubber, /className="pointer-events-none relative h-full min-h-\[24rem\] w-(\d+)"/u) * 4;
+	assert.strictEqual(scrubber, 144);
 
-	// The two work columns are fixed; only the story breathes.
-	const columnWidths = [...SOURCES.rail.matchAll(/lg:w-\[(\d+)px\]/gu)].map((match) => Number.parseInt(match[1], 10));
-	assert.deepStrictEqual(columnWidths, [320, 300]);
-	assert.match(SOURCES.shell, /<div className="lg:w-10 lg:shrink-0" \/>/u, "40px gutter between the two work columns");
-	assert.match(SOURCES.shell, /lg:pr-10/u, "the story keeps its own 40px gutter before the work columns");
+	// The work rail is one fixed parent; only the story breathes. The two
+	// tracks keep 320 and 300 with the same 8px gutter as kanban columns.
+	assert.match(SOURCES.rail, /lg:grid-cols-\[320px_300px\]/u);
+	assert.match(SOURCES.rail, /lg:w-\[628px\]/u);
+	assert.match(SOURCES.rail, /lg:box-content/u, "padding sits outside the 320+8+300 measure so overflow-y cannot clip the uncaptured stroke");
+	assert.match(SOURCES.rail, /grid-cols-1 gap-10/u, "40px stacked gutter below lg");
+	assert.match(SOURCES.rail, /lg:gap-2/u, "8px gutter matching experimental kanban columns");
+	assert.doesNotMatch(SOURCES.shell, /lg:w-10 lg:shrink-0/u, "the inter-column spacer left with the two independent rails");
+	assert.match(SOURCES.shell, /<PulseWorkRail/u);
+	assert.match(SOURCES.shell, /lg:mr-10/u, "the article scrollport keeps a 40px gutter before the work rail");
+	assert.match(SOURCES.shell, /lg:pr-10/u, "the story content remains inset from its scrollbar");
 	assert.match(SOURCES.shell, /lg:h-full lg:flex-row/u);
 });
 

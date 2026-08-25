@@ -3,7 +3,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 export const JIRA_KANBAN_DETAIL: ComponentDetail = {
 	description:
 		"Enterprise RFP Jira kanban board with drag-and-drop work-item cards, agent assignment controls, tags, priority signals, avatar ownership, multi-select drag support, and optional Jira Toolbar actions. Ships a standard variant plus an experimental variant that starts identical and diverges independently.",
-	demoLayout: { previewHeight: "fit" },
+	demoLayout: { previewHeight: "fit", examplesContentWidth: "bleed" },
 	importStatement: `import { JiraKanban } from "@/components/blocks/jira-kanban";`,
 	usage: `import JiraKanbanPage from "@/components/blocks/jira-kanban/page";
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";`,

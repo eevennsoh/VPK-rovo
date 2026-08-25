@@ -203,8 +203,31 @@ test("Pulse outline ids are unique and are the anchors the article renders", asy
 
 	for (const entry of outline) {
 		assert.ok(entry.label.trim().length > 0, `${entry.id} has no spoken label`);
+		assert.ok(entry.heading.trim().length > 0, `${entry.id} has no ruler heading`);
 		assert.ok(entry.offset >= 0 && entry.offset <= 1, `${entry.id} is outside the rail`);
 	}
+});
+
+test("Pulse outline headings are the insight name and the article's subsection titles", async () => {
+	const { buildPulseOutline, toActiveInsightEntry, toRulerHeading } = await loadOutlineHarness();
+	const { PULSE_TIMELINE } = await loadTimelineHarness();
+	const outline = buildPulseOutline(PULSE_TIMELINE);
+	const kickoff = outline.filter((entry) => entry.snapshotIndex === 0);
+
+	assert.equal(PULSE_TIMELINE.snapshots[0].chapterLabel, "Kickoff");
+	assert.deepEqual(kickoff.map((entry) => toRulerHeading(entry)), [
+		"Kickoff",
+		"Artifacts",
+		"Needs attention",
+		"Next best actions",
+	]);
+	PULSE_TIMELINE.snapshots.forEach((snapshot, index) => {
+		const insight = outline.find((entry) => entry.kind === "insight" && entry.snapshotIndex === index);
+		assert.equal(toRulerHeading(insight), snapshot.chapterLabel, snapshot.id);
+	});
+	assert.equal(toActiveInsightEntry(outline, kickoff[0])?.id, kickoff[0].id);
+	assert.equal(toActiveInsightEntry(outline, kickoff[2])?.id, kickoff[0].id);
+	assert.equal(toActiveInsightEntry(outline, null), null);
 });
 
 test("Pulse outline steps the fixture evenly while the fixture's clock stays irregular", async () => {
@@ -307,4 +330,48 @@ test("Pulse outline exposes the insight marks on their own for snapshot-to-snaps
 	// by insight can never miss one.
 	assert.deepEqual(insights.map((entry) => entry.snapshotIndex), [0, 1, 2]);
 	assert.deepEqual(toPulseInsightEntries([]), []);
+});
+
+test("Pulse insight nav disables at the ends and targets the adjacent snapshot", async () => {
+	const { toAdjacentInsightIndex } = await loadOutlineHarness();
+	const { PULSE_TIMELINE } = await loadTimelineHarness();
+	const count = PULSE_TIMELINE.snapshots.length;
+	const last = count - 1;
+
+	assert.equal(toAdjacentInsightIndex(0, count, "previous"), null);
+	assert.equal(toAdjacentInsightIndex(0, count, "next"), 1);
+	assert.equal(toAdjacentInsightIndex(1, count, "previous"), 0);
+	assert.equal(toAdjacentInsightIndex(1, count, "next"), 2);
+	assert.equal(toAdjacentInsightIndex(last, count, "previous"), last - 1);
+	assert.equal(toAdjacentInsightIndex(last, count, "next"), null);
+	assert.equal(toAdjacentInsightIndex(0, 1, "previous"), null);
+	assert.equal(toAdjacentInsightIndex(0, 1, "next"), null);
+	assert.equal(toAdjacentInsightIndex(0, 0, "next"), null);
+	assert.equal(toAdjacentInsightIndex(Number.NaN, count, "next"), null);
+});
+
+test("Pulse scroll alignment keeps ruler and header jumps on their own lines", async () => {
+	const { toPulseScrollOffset } = await loadOutlineHarness();
+	const geometry = {
+		anchorTop: 720,
+		readingLine: 0.28,
+		scrollportHeight: 600,
+		scrollportTop: 120,
+	};
+
+	assert.equal(
+		toPulseScrollOffset({ ...geometry, alignment: "reading-line" }),
+		432,
+		"ruler jumps should retain the established 28% reading line",
+	);
+	assert.equal(
+		toPulseScrollOffset({ ...geometry, alignment: "start", startInset: 4 }),
+		596,
+		"chevron jumps should honor the 4px content inset, not a reserved fade band",
+	);
+	assert.equal(
+		toPulseScrollOffset({ ...geometry, alignment: "start" }),
+		600,
+		"start alignment should still work when the scrollport has no reserved inset",
+	);
 });
