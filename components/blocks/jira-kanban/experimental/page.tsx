@@ -247,13 +247,13 @@ export default function ExperimentalJiraKanbanPage({
 				onSelectedAssigneeIdsChange={handleAssigneeFilterChange}
 				selectedAssigneeIds={selectedAssigneeIds}
 				disableAssigneeFilter={isPulse}
-				facepile={
+				facepile={isPulse ? (
 					<PulseRosterFacepile
 						members={PULSE_TIMELINE.members}
 						onSelectedMemberIdChange={setPulseMemberId}
 						selectedMemberId={pulseMemberId}
 					/>
-				}
+				) : undefined}
 				modeToggle={
 					<PulseModeToggle
 						active={isPulse}

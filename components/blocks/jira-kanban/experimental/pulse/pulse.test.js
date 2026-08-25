@@ -770,9 +770,9 @@ test("Pulse header roster locks one SSR and first-render structure", async () =>
 
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/facepile=\{\s*<PulseRosterFacepile[\s\S]*members=\{PULSE_TIMELINE\.members\}[\s\S]*\/>\s*\}/u,
+		/facepile=\{isPulse \? \(\s*<PulseRosterFacepile[\s\S]*members=\{PULSE_TIMELINE\.members\}[\s\S]*\/>\s*\) : undefined\}/u,
 	);
-	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /facepile=\{isPulse \? \(/u);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /\{facepile \?\? \(/u);
 	assert.match(serverMarkup, /data-slot="avatar-group" role="group" aria-label="Filter by person or agent"/u);
 	assert.equal([...serverMarkup.matchAll(/<button /gu)].length, 7);
 	assert.equal([...serverMarkup.matchAll(/aria-pressed="false"/gu)].length, 7);
@@ -792,15 +792,15 @@ test("Pulse is a toggle on the board's own control row, not a separate tab", () 
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /import \{ ExperimentalPulse \} from "\.\/pulse\/experimental-pulse";/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const \[mode, setMode\] = useState<ExperimentalJiraKanbanMode>\("board"\);/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const isPulse = mode === "pulse";/u);
-	// The control row stays up in Pulse, and both modes keep the same canonical
-	// roster so toggling the lens never swaps identities or counts.
+	// The control row stays up in Pulse. Board mode keeps the board assignee
+	// facepile; Pulse swaps in its own member roster because the two filters own
+	// different ids and state.
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /showBoardControls=\{!isPulse\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<PulseModeToggle/u);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/facepile=\{\s*<PulseRosterFacepile[\s\S]*members=\{PULSE_TIMELINE\.members\}[\s\S]*\/>\s*\}/u,
+		/facepile=\{isPulse \? \(\s*<PulseRosterFacepile[\s\S]*members=\{PULSE_TIMELINE\.members\}[\s\S]*\/>\s*\) : undefined\}/u,
 	);
-	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /facepile=\{isPulse \? \(/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /facepile\?: ReactNode;/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /modeToggle\?: ReactNode;/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /\{facepile \?\? \(/u);
