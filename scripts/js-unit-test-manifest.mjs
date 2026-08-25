@@ -125,6 +125,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/jira-insights/components/jira-insights-timeline-rail.test.js",
 		"components/blocks/jira-insights/jira-insights.test.js",
 		"components/blocks/jira-kanban/experimental/pulse/pulse.test.js",
+		"components/blocks/jira-kanban/experimental/pulse/pulse-source-attribution.test.js",
 		"components/blocks/jira-kanban/experimental/pulse/pulse-fixture.test.js",
 		"components/blocks/jira-kanban/experimental/pulse/pulse-outline.test.js",
 		"components/blocks/jira-kanban/experimental/pulse/pulse-scrubber.test.js",

@@ -59,7 +59,7 @@ import {
 	EmptyHeader,
 	EmptyTitle,
 } from "@/components/ui/empty";
-import { IconTile } from "@/components/ui/icon-tile";
+import { IconTile, type IconTileVariant } from "@/components/ui/icon-tile";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { RovoColorIcon } from "@/components/ui/logo";
@@ -111,6 +111,12 @@ export interface RichTextSuggestionMenuItem {
 	inlineMetadata?: ReactNode;
 	shortcut?: string;
 	icon: ReactNode;
+	/**
+	 * IconTile treatment for the fallback (icon-only) leading slot. Overflow
+	 * footers ("Browse all" / "View more" / "View less") use `"transparent"` so
+	 * the glyph sits on the menu surface without a grey rounded-square tile.
+	 */
+	iconTileVariant?: IconTileVariant;
 	/** Optional fully rendered leading visual for domain-specific identity frames. */
 	leadingVisual?: ReactNode;
 	isSticky?: boolean;
@@ -136,6 +142,66 @@ export interface RichTextSuggestionMenuItem {
 	 * yields the slot to the return-key hint only for the active row.
 	 */
 	trailing?: ReactNode;
+}
+
+/** Synthetic overflow rows that cap a flat / search / sparkle section. */
+export type SuggestionOverflowFooterKind = "browse-all" | "view-more" | "view-less";
+
+const OVERFLOW_FOOTER_LABELS = {
+	"browse-all": "Browse all",
+	"view-more": "View more",
+	"view-less": "View less",
+} as const;
+
+function getOverflowFooterIcon(kind: SuggestionOverflowFooterKind): ReactNode {
+	switch (kind) {
+		case "browse-all":
+			return <ShowMoreHorizontalIcon label="" size="small" />;
+		case "view-more":
+			return <ChevronDownIcon label="" size="small" />;
+		case "view-less":
+			return <ChevronUpIcon label="" size="small" />;
+		default: {
+			const _exhaustive: never = kind;
+			return _exhaustive;
+		}
+	}
+}
+
+/**
+ * Shared "Browse all" / "View more" / "View less" row. Always uses the
+ * transparent IconTile so overflow glyphs never pick up the grey fallback tile.
+ */
+export function getSuggestionOverflowFooterItem(
+	id: string,
+	kind: SuggestionOverflowFooterKind,
+	options?: Readonly<{ isSticky?: boolean }>,
+): RichTextSuggestionMenuItem {
+	return {
+		id,
+		label: OVERFLOW_FOOTER_LABELS[kind],
+		icon: getOverflowFooterIcon(kind),
+		iconTileVariant: "transparent",
+		isSticky: options?.isSticky,
+	};
+}
+
+function isOverflowFooterLabel(label: string): boolean {
+	return (
+		label === OVERFLOW_FOOTER_LABELS["browse-all"]
+		|| label === OVERFLOW_FOOTER_LABELS["view-more"]
+		|| label === OVERFLOW_FOOTER_LABELS["view-less"]
+	);
+}
+
+function getSuggestionMenuIconTileVariant(
+	item: RichTextSuggestionMenuItem,
+): IconTileVariant {
+	if (item.iconTileVariant) {
+		return item.iconTileVariant;
+	}
+
+	return isOverflowFooterLabel(item.label) ? "transparent" : "gray";
 }
 
 interface RichTextSuggestionMenuProps {
@@ -978,6 +1044,7 @@ function RichTextSuggestionMenuItemVisual({
 	// 32px mark down to 75%) keeps the glyph on ADS's `small` Tile inset (14px),
 	// matching /components/ui/logo — a scaled 32px tile would freeze the `medium`
 	// inset and shrink the glyph to 12px.
+	const tileVariant = getSuggestionMenuIconTileVariant(item);
 	const visual = item.leadingVisual ? (
 		item.leadingVisual
 	) : item.visual ? (
@@ -989,10 +1056,11 @@ function RichTextSuggestionMenuItemVisual({
 	) : (
 		<IconTile
 			size="small"
+			iconSize={tileVariant === "transparent" ? "small" : undefined}
 			label={item.label}
 			aria-hidden={true}
 			icon={item.icon}
-			variant="gray"
+			variant={tileVariant}
 		/>
 	);
 
@@ -1315,23 +1383,11 @@ function buildFlatSurfaceRows(
 
 		if (overflowing) {
 			rows.push(
-				section.hasDirectory
-					? {
-							id: getFlatFooterId(section.key),
-							label: "Browse all",
-							icon: <ShowMoreHorizontalIcon label="" size="small" />,
-							isSticky: true,
-						}
-					: {
-							id: getFlatFooterId(section.key),
-							label: expanded ? "View less" : "View more",
-							icon: expanded ? (
-								<ChevronUpIcon label="" size="small" />
-							) : (
-								<ChevronDownIcon label="" size="small" />
-							),
-							isSticky: true,
-						},
+				getSuggestionOverflowFooterItem(
+					getFlatFooterId(section.key),
+					section.hasDirectory ? "browse-all" : (expanded ? "view-less" : "view-more"),
+					{ isSticky: true },
+				),
 			);
 		}
 	}

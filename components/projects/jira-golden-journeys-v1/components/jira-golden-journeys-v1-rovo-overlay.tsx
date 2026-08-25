@@ -13,6 +13,11 @@ import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/
 interface JgpRovoOverlayProps {
 	chatContextBar?: ChatContextBarDescriptor | null;
 	externalThinkingMessageId?: string | null;
+	/**
+	 * Hide the viewport floating chat. Work-item surfaces that already embed
+	 * chat also hide it via `data-jira-work-item-open`.
+	 */
+	chat?: "auto" | "hidden";
 	/** Hide the viewport FAB. Work-item chrome also hides it via `data-jira-work-item-open`. */
 	launcher?: "auto" | "hidden";
 	onInterceptSubmit?: (text: string) => ChatSubmitInterceptOutcome;
@@ -24,6 +29,7 @@ interface JgpRovoOverlayProps {
 export function JgpRovoOverlay({
 	chatContextBar,
 	externalThinkingMessageId,
+	chat = "auto",
 	launcher = "auto",
 	onInterceptSubmit,
 	onLauncherClick,
@@ -63,6 +69,9 @@ export function JgpRovoOverlay({
 		&& chatSurface === null
 		&& !isRovoCanvasOpen
 		&& !isWorkItemOpen;
+	const showFloatingChat = chat === "auto"
+		&& chatSurface === "floating"
+		&& !isWorkItemOpen;
 
 	if (!portalRoot) return null;
 
@@ -77,7 +86,7 @@ export function JgpRovoOverlay({
 				/>
 			) : null}
 			<AnimatePresence>
-				{chatSurface === "floating" ? (
+				{showFloatingChat ? (
 					<RovoFloatingChat
 						key="floating-chat"
 						chatContextBar={chatContextBar}

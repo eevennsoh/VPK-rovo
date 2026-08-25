@@ -98,7 +98,8 @@ test("fallback suggestion icons use the 24px neutral IconTile treatment", () => 
 	const visualSource = source.slice(visualStart, source.indexOf("function filterItems", visualStart));
 
 	assert.ok(visualStart > -1, "expected RichTextSuggestionMenuItemVisual source");
-	assert.match(visualSource, /<IconTile[\s\S]*size="small"[\s\S]*variant="gray"/u);
+	assert.match(visualSource, /<IconTile[\s\S]*size="small"[\s\S]*variant=\{tileVariant\}/u);
+	assert.match(source, /function getSuggestionMenuIconTileVariant[\s\S]*return isOverflowFooterLabel\(item\.label\) \? "transparent" : "gray"/u);
 	assert.doesNotMatch(visualSource, /text-icon-subtlest/u);
 });
 

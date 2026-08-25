@@ -106,6 +106,29 @@ test("Build keeps the work item at its initial Activity scroll position", () => 
 	);
 });
 
+test("work-item stages keep the embedded chat and do not mount the floating overlay", () => {
+	const pageSource = readProjectFile("components/projects/jira-golden-journeys-v3/page.tsx");
+	const overlaySource = readProjectFile(
+		"components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay.tsx",
+	);
+	const sessionSurfaceSource = readProjectFile(
+		"components/blocks/jira-work-item/experimental-v3/components/floating-session-surface.tsx",
+	);
+
+	assert.match(pageSource, /<ExperimentalV3JiraWorkItem[\s\S]*presentation="inline"/u);
+	assert.match(sessionSurfaceSource, /<AsxRovoOverlay[\s\S]*placement="embedded"/u);
+	assert.match(
+		pageSource,
+		/const isWorkItemStage = selectedId === "work-item"\s*&& storyController\.chapter !== "terminal"\s*&& storyController\.chapter !== "track";/u,
+	);
+	assert.match(pageSource, /chat=\{isWorkItemStage \? "hidden" : "auto"\}/u);
+	assert.match(
+		overlaySource,
+		/const showFloatingChat = chat === "auto"\s*&& chatSurface === "floating"\s*&& !isWorkItemOpen;/u,
+	);
+	assert.doesNotMatch(pageSource, /chatSurface === "floating" \? \([\s\S]*<RovoFloatingChat/u);
+});
+
 test("the route resets chat before mounting each story chapter and mounts the floating Rovo launcher", () => {
 	const pageSource = readProjectFile("components/projects/jira-golden-journeys-v3/page.tsx");
 	assert.match(
@@ -120,7 +143,10 @@ test("the route resets chat before mounting each story chapter and mounts the fl
 		pageSource,
 		/const isWorkItemStage = selectedId === "work-item"\s*&& storyController\.chapter !== "terminal"\s*&& storyController\.chapter !== "track";/u,
 	);
-	assert.match(pageSource, /<JgpRovoOverlay launcher=\{isWorkItemStage \? "hidden" : "auto"\} \/>/u);
+	assert.match(
+		pageSource,
+		/<JgpRovoOverlay\s+chat=\{isWorkItemStage \? "hidden" : "auto"\}\s+launcher=\{isWorkItemStage \? "hidden" : "auto"\}\s+\/>/u,
+	);
 	assert.doesNotMatch(pageSource, /const \{ closeChat, resetChat \} = useRovoChat\(\)/u);
 	assert.doesNotMatch(pageSource, /closeChat\(\);[\s\S]*resetChat\(\);/u);
 	assert.match(pageSource, /preserveActiveSessionOnHydration/u);
