@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_LIST_DETAIL: ComponentDetail = {
 	description:
-		'A grouped list of single-row agent sessions styled like the Jira "For you" feed. Each row shows the working agent\'s avatar and a title line whose treatment reflects the state: a running session shimmers the work-item title (the shimmer alone signals progress), an awaiting session replaces the title with "Needs input" plus animated dots, and a complete session shows a solid title. A metadata line lists the agent name, branch, and pull-request status (PR created / PR merged; omitted until a PR exists). Hovering or keyboard-focusing a row opens a flyout: by default the shared Jira agent-session summary the live Jira sidebar uses, or the Agent States card with a prompt composer via `flyout="composer"`. Every row offers a View action that opens the Rovo floating chat.',
+		'A grouped list of single-row agent sessions styled like the Jira "For you" feed. Each row shows the working agent\'s avatar and a title line whose treatment reflects the state: a running session shimmers the work-item title (the shimmer alone signals progress), an awaiting session replaces the title with "Needs input" plus animated dots, and a complete session shows a solid title. A metadata line lists the agent name, branch, and pull-request status (PR created / PR merged; omitted until a PR exists). Hovering or keyboard-focusing a row opens the property-free Agent States flyout with a prompt composer and agent at-mentions. Every row offers a View action that opens the Rovo floating chat.',
 	demoLayout: { previewHeight: "fit" },
 	importStatement: `import { AgentList } from "@/components/blocks/agent-list";`,
 	usage: `import { AgentList } from "@/components/blocks/agent-list";
@@ -20,7 +20,7 @@ export const AGENT_LIST_DETAIL: ComponentDetail = {
 		{
 			title: "Composer flyout",
 			description:
-				'The `flyout="composer"` variant swaps the read-only session summary for the per-row Agent States card, which adds a prompt composer so the viewer can reply to the agent without leaving the list.',
+				'The `flyout="composer"` variant keeps a per-row Agent States card instead of the list\'s shared moving flyout, preserving local composer state while the viewer replies to the agent.',
 			demoSlug: "agent-list-demo-composer",
 		},
 	],
@@ -30,14 +30,14 @@ export const AGENT_LIST_DETAIL: ComponentDetail = {
 			type: "readonly AgentListItem[]",
 			default: "built-in sample data",
 			description:
-				"Session cards to render. Each item's `state` (\"running\" | \"complete\" | \"needs-input\") drives the status treatment and row actions. Optional `sessionDetails` supplies the work-item and development metadata shown in the session flyout.",
+				"Session cards to render. Each item's `state` (\"running\" | \"complete\" | \"needs-input\") drives the row treatment and the shared Agent States flyout.",
 		},
 		{
 			name: "flyout",
 			type: '"session" | "composer"',
 			default: '"session"',
 			description:
-				"Which flyout a row opens on hover or keyboard focus. `session` shows the shared Jira agent-session summary (work item, agent, development) that the live Jira sidebar uses; `composer` shows the Agent States card with a prompt composer.",
+				"Which Agent States flyout a row opens on hover or keyboard focus. `session` uses the list's shared moving surface; `composer` keeps a stateful flyout per row.",
 		},
 		{
 			name: "variant",

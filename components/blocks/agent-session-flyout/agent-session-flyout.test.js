@@ -13,8 +13,8 @@ function readRepoFile(relativePath) {
 	return fs.readFileSync(path.join(BLOCK_DIR, "..", "..", "..", relativePath), "utf8");
 }
 
-// The rich flyout body is the canonical "latest" flyout and lives in the Jira
-// sidebar variant so both the live sidebar and this block render it.
+// The Jira sidebar variant owns both the property-free hover surface and the
+// richer detail body used by full detail panels.
 const FLYOUT_BODY_PATH = "components/blocks/product-sidebar/variants/jira-session-flyout.tsx";
 const FLYOUT_HANDLE_PATH = "components/blocks/product-sidebar/variants/jira-session-flyout-data.ts";
 const FLYOUT_DEMO_DATA_PATH = "components/blocks/agent-session-flyout/agent-session-flyout-data.ts";
@@ -23,9 +23,29 @@ const HOVER_CARD_HANDLE_PATH = "components/ui/hover-card-handle.ts";
 const QUEUE_DETAIL_ARTIFACTS_PATH = "components/projects/jira-queue/components/queue-detail-artifacts.tsx";
 const QUEUE_DETAIL_PANEL_PATH = "components/projects/jira-queue/components/queue-detail-panel.tsx";
 
-// The shared body reuses the shared design-system components rather than
-// re-implementing them.
-test("shared flyout body reuses SmartLink, agent Tag, Lozenge, and GitHub logo", () => {
+test("shared hover flyout renders the property-free Agent States card", () => {
+	const source = readRepoFile(FLYOUT_BODY_PATH);
+	assert.match(
+		source,
+		/import\s*\{\s*AgentStates,\s*type AgentStatesState\s*\}\s*from\s*"@\/components\/blocks\/agent-states"/u,
+	);
+	assert.match(source, /function toAgentStatesState\(/u);
+	assert.match(source, /status === "awaiting-input"\) return "awaiting-input"/u);
+	assert.match(source, /status === "running"\) return "working"/u);
+	assert.match(source, /return "completed"/u);
+	assert.match(
+		source,
+		/<AgentStates[\s\S]*agent=\{\{[\s\S]*id: payload\.id,[\s\S]*name: payload\.agentName,[\s\S]*state=\{toAgentStatesState\(payload\.status\)\}/u,
+	);
+	assert.doesNotMatch(
+		source,
+		/<JiraSessionFlyoutBody session=\{payload\} \/>/u,
+	);
+});
+
+// Detail panels still reuse the shared design-system property components rather
+// than re-implementing them inside each panel.
+test("shared detail body reuses SmartLink, agent Tag, Lozenge, and GitHub logo", () => {
 	const source = readRepoFile(FLYOUT_BODY_PATH);
 	assert.match(source, /export function JiraSessionFlyoutBody\b/u);
 	assert.match(source, /import\s*\{[^}]*SmartLink[^}]*\}\s*from\s*"@\/components\/blocks\/smart-link"/u);
@@ -53,9 +73,9 @@ test("nested Jira previews open right by default while Queue Details overrides t
 	assert.match(artifactsSource, /<SmartLink align="center" alignOffset=\{0\}[\s\S]*side="left"/u);
 });
 
-// The block delegates to the shared body and reuses the /jira-golden-journeys-v0 seeds rather than
-// re-declaring its own flyout body or placeholder lifecycle copy.
-test("block delegates to the shared flyout body and reuses /jira-golden-journeys-v0 data", () => {
+// The block delegates to the shared surface and reuses the /jira-golden-journeys-v0 seeds rather than
+// re-declaring its own flyout card or placeholder lifecycle copy.
+test("block delegates to the shared flyout surface and reuses /jira-golden-journeys-v0 data", () => {
 	const source = readBlockFile("components/agent-session-flyout.tsx");
 	const dataSource = readRepoFile(FLYOUT_DEMO_DATA_PATH);
 	assert.match(
@@ -105,10 +125,9 @@ test("demo sessions share one moving shell with a fade-only content viewport", (
 	assert.match(hoverCardSource, /positionerClassName\?: string/u);
 });
 
-// SCM fields live in their own separated "Development" block using the normal
-// 12px body font (not mono), and the block preserves every field the legacy
-// compact flyout carried.
-test("development fields are separated, complete, and use the normal body font", () => {
+// SCM fields remain available to full detail panels without leaking back into
+// the compact hover flyout.
+test("detail-panel development fields remain complete and use the normal body font", () => {
 	const source = readRepoFile(FLYOUT_BODY_PATH);
 	assert.match(source, />Development</u);
 	assert.doesNotMatch(source, /font-mono/u);
@@ -117,9 +136,8 @@ test("development fields are separated, complete, and use the normal body font",
 	}
 });
 
-// The live Jira sidebar row renders the same shared flyout body, and the old
-// compact hover body is fully removed (never coexisting).
-test("the live sidebar row renders the shared flyout body", () => {
+// The live Jira sidebar row renders the same property-free shared flyout.
+test("the live sidebar row renders the shared flyout surface", () => {
 	const jiraSource = readRepoFile("components/blocks/product-sidebar/variants/jira.tsx");
 	assert.match(jiraSource, /JiraSessionFlyoutSurface,[\s\S]*JiraSessionFlyoutTrigger,[\s\S]*createJiraSessionFlyoutHandle/u);
 	assert.match(jiraSource, /<JiraSessionFlyoutTrigger[\s\S]*?session=\{session\}/u);

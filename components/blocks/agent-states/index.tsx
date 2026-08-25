@@ -103,7 +103,7 @@ export function AgentStatesComposer({
 			<PromptInputTextarea
 				aria-label="Reply to agent"
 				className={cn(floatingComposerTextareaClassName, "text-sm leading-5")}
-				enableDirectoryAutocomplete={false}
+				enableDirectoryAutocomplete
 				onChange={(event) => setReply(event.currentTarget.value)}
 				placeholder="Ask, @mention, or / for actions"
 				rows={1}

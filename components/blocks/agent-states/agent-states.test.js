@@ -29,6 +29,14 @@ test("Agent States owns the shared Jira agent flyout surface", () => {
 	assert.match(SOURCE, /state === "awaiting-input" && question/u);
 });
 
+test("Agent States composer keeps the agent mention directory enabled", () => {
+	assert.match(
+		SOURCE,
+		/<PromptInputTextarea[\s\S]*?enableDirectoryAutocomplete\s*[\r\n]+\s*onChange=/u,
+	);
+	assert.doesNotMatch(SOURCE, /enableDirectoryAutocomplete=\{false\}/u);
+});
+
 test("Agent States demo exposes distinct content for each state", () => {
 	assert.match(
 		PAGE_SOURCE,
