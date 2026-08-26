@@ -25,10 +25,10 @@ test("Track and Learn share one controlled board and Insights surface", () => {
 	assert.match(PAGE_SOURCE, /function JiraGoldenJourneysV3TrackLearnStage/u);
 	assert.match(PAGE_SOURCE, /mode=\{chapter === "learn" \? "pulse" : "board"\}/u);
 	assert.match(PAGE_SOURCE, /insightsDefaultAssigneeIds=\{EMPTY_INSIGHTS_ASSIGNEE_IDS\}/u);
-	assert.match(
-		PAGE_SOURCE,
-		/onModeChange=\{\(mode\) => onChapterChange\(mode === "pulse" \? "learn" : "track"\)\}/u,
-	);
+	assert.match(PAGE_SOURCE, /const handleBoardModeChange = useCallback/u);
+	assert.match(PAGE_SOURCE, /onModeChange=\{handleBoardModeChange\}/u);
+	assert.match(PAGE_SOURCE, /key=\{`track-learn:\$\{stageRevision\}`\}/u);
+	assert.match(PAGE_SOURCE, /nextChapter === "learn" && chapter !== "learn"/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onModeChange/u);
 	assert.match(PAGE_SOURCE, /activeCardCode=\{PAY_101_ISSUE_KEY\}/u);
 	assert.match(PAGE_SOURCE, /Track the Payments SDK v2 migration/u);

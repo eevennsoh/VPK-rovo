@@ -92,6 +92,20 @@ test("the actual Insights control advances Track to Learn and PAY-101 opens Buil
 	await expect(page.getByText("8c2f4e1 map 61 v1 call sites and owners", { exact: true }).first()).toBeVisible();
 });
 
+test("direct Learn entry clears Track filters and Reset clears child-owned state", async ({ page }) => {
+	await openStory(page);
+	const diegoFilter = page.getByRole("button", { name: "Filter board by Diego Santos" });
+	await diegoFilter.click();
+	await expect(diegoFilter).toHaveAttribute("aria-pressed", "true");
+
+	await selectChapter(page, "Learn");
+	await expect(page.locator("[data-work-item-key='PAY-101']").getByRole("button")).toBeVisible();
+
+	await page.getByRole("button", { exact: true, name: "Reset" }).click();
+	await expect(chapterButton(page, "Track")).toHaveAttribute("aria-pressed", "true");
+	await expect(page.getByRole("button", { name: "Filter board by Diego Santos" })).toHaveAttribute("aria-pressed", "false");
+});
+
 test("Resume is hover and keyboard discoverable, copies a prompt, and Terminal restores the local session", async ({
 	page,
 }) => {

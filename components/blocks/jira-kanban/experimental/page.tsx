@@ -158,9 +158,11 @@ export default function ExperimentalJiraKanbanPage({
 	const [assignedAgentIdsByCard, setAssignedAgentIdsByCard] = useState<Record<string, string[]>>({});
 	const boardFilter = useBoardFilter();
 	const selectedAssigneeIds = boardFilter.selectedAssigneeIds;
-	const [timelineLastViewedAt, setTimelineLastViewedAt] = useState<string | null>(
-		EXPERIMENTAL_BOARD_LAST_VIEWED_AT,
-	);
+	const [timelineLastViewedAt, setTimelineLastViewedAt] = useState<string | null>(() => (
+		controlledMode === "pulse"
+			? markTimelineViewed(PULSE_TIMELINE)
+			: EXPERIMENTAL_BOARD_LAST_VIEWED_AT
+	));
 	const markTimelineAsViewed = useCallback(() => {
 		setTimelineLastViewedAt(markTimelineViewed(PULSE_TIMELINE));
 	}, []);

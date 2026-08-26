@@ -46,12 +46,14 @@ function JiraGoldenJourneysV3TrackLearnStage({
 	chapter,
 	onBoardColumnsChange,
 	onChapterChange,
+	onModeChange,
 	onResumeLooseWork,
 }: Readonly<{
 	boardColumns: readonly JiraKanbanColumnData[];
 	chapter: "learn" | "track";
 	onBoardColumnsChange: (columns: readonly JiraKanbanColumnData[]) => void;
 	onChapterChange: (chapter: JiraGoldenJourneysV3PresentationChapter) => void;
+	onModeChange: (mode: "board" | "pulse") => void;
 	onResumeLooseWork: (item: PulseLooseWork) => void;
 }>): React.ReactElement {
 	const openBuild = useCallback((workItem: PulseWorkItem | JiraKanbanCardData) => {
@@ -74,7 +76,7 @@ function JiraGoldenJourneysV3TrackLearnStage({
 				onBoardColumnsChange={onBoardColumnsChange}
 				onCardClick={openBuild}
 				onInsightsWorkItemClick={openBuild}
-				onModeChange={(mode) => onChapterChange(mode === "pulse" ? "learn" : "track")}
+				onModeChange={onModeChange}
 				onResumeLooseWork={onResumeLooseWork}
 			/>
 		</div>
@@ -131,11 +133,14 @@ export default function JiraGoldenJourneysV3Page(): React.ReactElement {
 		JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_STEP_COUNT,
 	);
 	const handleChapterChange = useCallback((nextChapter: JiraGoldenJourneysV3PresentationChapter) => {
-		if (chapter === nextChapter) {
+		if (chapter === nextChapter || (nextChapter === "learn" && chapter !== "learn")) {
 			setStageRevision((current) => current + 1);
 		}
 		setChapter(nextChapter);
 	}, [chapter]);
+	const handleBoardModeChange = useCallback((mode: "board" | "pulse") => {
+		setChapter(mode === "pulse" ? "learn" : "track");
+	}, []);
 	const resetStory = useCallback(() => {
 		setChapter("track");
 		setStageRevision((current) => current + 1);
@@ -183,14 +188,17 @@ export default function JiraGoldenJourneysV3Page(): React.ReactElement {
 			<JiraGoldenJourneysV3TrackLearnStage
 				boardColumns={boardColumns}
 				chapter={chapter}
+				key={`track-learn:${stageRevision}`}
 				onBoardColumnsChange={(columns) => setBoardColumns([...columns])}
 				onChapterChange={handleChapterChange}
+				onModeChange={handleBoardModeChange}
 				onResumeLooseWork={(looseWork) => void handleResumeLooseWork(looseWork)}
 			/>
 		);
 	}, [
 		boardColumns,
 		chapter,
+		handleBoardModeChange,
 		handleChapterChange,
 		handleResumeLooseWork,
 		resumePromptCopied,

@@ -528,6 +528,7 @@ test("Pulse keeps one member filter across the header facepile and the story fac
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /toInsightsAssigneeIds\(selectedAssigneeIds, PULSE_MEMBER_IDS\)/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /insightsDefaultAssigneeIds\?: readonly string\[\];/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /: new Set\(insightsDefaultAssigneeIds\);/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /controlledMode === "pulse"[\s\S]*markTimelineViewed\(PULSE_TIMELINE\)/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /handlePulseMemberChange/u);
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /const \[pulseMemberId, setPulseMemberId\] = useState<string \| null>\(null\);/u);
 	assert.match(SOURCES.shell, /usePulseMemberFilter\(\{ onSelectedMemberIdChange, selectedMemberId \}\)/u);
