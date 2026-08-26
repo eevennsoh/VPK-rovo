@@ -411,7 +411,6 @@ const SCOPE_SOURCES = {
 	brief: readSource(joinPath(DIR, "components", "pulse-scope-brief.tsx"), "utf8"),
 	composer: readSource(joinPath(DIR, "components", "pulse-insights-composer.tsx"), "utf8"),
 	epic: readSource(joinPath(DIR, "components", "pulse-scope-brief-epic.tsx"), "utf8"),
-	chip: readSource(joinPath(DIR, "components", "pulse-scope-chip.tsx"), "utf8"),
 	header: readSource(joinPath(EXP, "experimental-board-header.tsx"), "utf8"),
 	options: readSource(joinPath(EXP, "data", "board-filter-options.ts"), "utf8"),
 	shell: readSource(joinPath(DIR, "experimental-pulse.tsx"), "utf8"),
@@ -453,8 +452,8 @@ test("Parent and Sprint offer exactly the scopes the article can open", () => {
 
 test("choosing a scope opens the surface the brief lives on", () => {
 	// The brief only exists in Insights. Without this, picking an epic from the
-	// board filter recomputes the scope, lights the chip, and leaves the reader
-	// on the board looking at columns — the feature silently doing nothing.
+	// board filter recomputes the scope and leaves the reader on the board
+	// looking at columns — the feature silently doing nothing.
 	//
 	// It hangs off the filter action rather than an effect on `scope`, so the
 	// mode change is caused by the click and does not also fire when a scope is
@@ -468,10 +467,9 @@ test("choosing a scope opens the surface the brief lives on", () => {
 		/useEffect\([\s\S]*?setMode\("pulse"\)/u,
 		"the mode change is an event, not a reaction to derived state",
 	);
-	// Both surfaces must go through the wrapped actions or one of them silently
-	// keeps the un-wrapped behaviour.
+	// The popover must go through the wrapped actions or it silently keeps the
+	// un-wrapped behaviour.
 	assert.match(SCOPE_SOURCES.page, /actions=\{filterActions\}/u);
-	assert.match(SCOPE_SOURCES.page, /filterActions\.clearField\("parent"\)/u);
 });
 
 test("an unsent draft does not survive a change of scope", () => {
@@ -487,15 +485,14 @@ test("an unsent draft does not survive a change of scope", () => {
 	);
 });
 
-test("the scope chip keeps its way out in the tab order and owns no state", () => {
-	// A standing statement about what the page is showing must not hide its own
-	// dismissal behind a pointer (gotchas-ui.md), and it must not hold a second
-	// copy of the selection — the popover and the chip could then disagree.
-	assert.match(SCOPE_SOURCES.chip, /removeButtonLabel=\{`Clear \$\{scope\.kind\} scope: \$\{scope\.key\}`\}/u);
-	assert.doesNotMatch(SCOPE_SOURCES.chip, /group-hover:opacity|opacity-0 group-hover/u);
-	assert.doesNotMatch(SCOPE_SOURCES.chip, /useState/u, "the chip reflects a selection it does not own");
-	assert.match(SCOPE_SOURCES.page, /filterActions\.clearField\("parent"\)/u);
-	assert.match(SCOPE_SOURCES.page, /filterActions\.clearField\("sprint"\)/u);
+test("Filter is the only standing statement of scope in the toolbar", () => {
+	// The Filter badge already shows that the page is narrowed. A second chip
+	// beside it restated the same selection and is not coming back.
+	assert.doesNotMatch(withoutComments(SCOPE_SOURCES.page), /PulseScopeChip/u);
+	assert.ok(
+		!existsSource(joinPath(DIR, "components", "pulse-scope-chip.tsx")),
+		"the scope chip file must stay deleted",
+	);
 });
 
 test("both briefs sit on the article's own rungs rather than inventing a second set", () => {
