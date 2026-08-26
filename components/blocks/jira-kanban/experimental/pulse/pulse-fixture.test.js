@@ -123,14 +123,17 @@ test("Pulse fixture keeps the story shape the timeline mode depends on", async (
 
 	let previousTime = Number.NEGATIVE_INFINITY;
 	PULSE_TIMELINE.snapshots.forEach((snapshot) => {
-		const time = new Date(snapshot.timestamp).getTime();
-		assert.ok(Number.isFinite(time), `${snapshot.id} has an unparseable timestamp`);
-		assert.ok(time > previousTime, `${snapshot.id} is not in chronological order`);
-		previousTime = time;
+		const generated = new Date(snapshot.timestamp).getTime();
+		assert.ok(Number.isFinite(generated), `${snapshot.id} has an unparseable timestamp`);
+		assert.ok(generated > previousTime, `${snapshot.id} is not in chronological order`);
+		previousTime = generated;
 
-		for (const field of ["chapterLabel", "dateLabel", "rangeLabel", "timeLabel", "title"]) {
+		for (const field of ["chapterLabel", "dateLabel", "rangeLabel", "timeLabel", "title", "updatedDateLabel", "updatedTimeLabel"]) {
 			assert.ok(snapshot[field].trim().length > 0, `${snapshot.id}.${field} is empty`);
 		}
+		const updated = new Date(snapshot.updatedAt).getTime();
+		assert.ok(Number.isFinite(updated), `${snapshot.id} has an unparseable updatedAt`);
+		assert.ok(updated >= generated, `${snapshot.id} was last updated before it was generated`);
 		assert.equal(snapshot.paragraphs.length, 1, `${snapshot.id} should be one paragraph, not multiple`);
 		assert.ok(snapshot.paragraphs[0].trim().length > 0, `${snapshot.id} has empty prose`);
 		assert.doesNotMatch(snapshot.paragraphs[0], /^\s*[-•*]\s/u, `${snapshot.id} slipped into a bullet list`);
@@ -151,6 +154,15 @@ test("Pulse fixture keeps the story shape the timeline mode depends on", async (
 			);
 		}
 	});
+
+	assert.ok(
+		PULSE_TIMELINE.snapshots.some((snapshot) => snapshot.updatedAt !== snapshot.timestamp),
+		"the fixture must show that an insight can be revised after it is generated",
+	);
+	assert.ok(
+		PULSE_TIMELINE.snapshots.some((snapshot) => snapshot.updatedAt === snapshot.timestamp),
+		"the fixture must also keep an insight that has not been revised",
+	);
 });
 
 test("Pulse fixture gives every attention signal its own honest event time", async () => {

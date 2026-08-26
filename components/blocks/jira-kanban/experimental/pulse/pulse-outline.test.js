@@ -376,16 +376,19 @@ test("Pulse scroll alignment keeps ruler and header jumps on their own lines", a
 	);
 });
 
-test("Pulse only reveals its top fade while the article is moving upward", async () => {
-	const { isPulseScrollTowardTop } = await loadOutlineHarness();
+test("Pulse top fade paints while the article is clipped, except after a chevron jump", async () => {
+	const { isPulseChevronHeaderJump, toPulseArticleTopFadeVisible } = await loadOutlineHarness();
 
+	assert.equal(toPulseArticleTopFadeVisible(true, false), true, "a rest-state clip should fade");
+	assert.equal(toPulseArticleTopFadeVisible(false, false), false, "the top of the article has nothing to fade");
 	assert.equal(
-		isPulseScrollTowardTop(0, 9_590),
+		toPulseArticleTopFadeVisible(true, true),
 		false,
-		"an initial or forward jump should not veil the destination header",
+		"a chevron jump pins the insight nav into the fade band",
 	);
-	assert.equal(isPulseScrollTowardTop(9_590, 9_430), true);
-	assert.equal(isPulseScrollTowardTop(9_430, 9_430), false);
+	assert.equal(isPulseChevronHeaderJump({ align: "start" }), true);
+	assert.equal(isPulseChevronHeaderJump({ align: "reading-line" }), false);
+	assert.equal(isPulseChevronHeaderJump(undefined), false);
 });
 
 /* ------------------------------------------------------------------ */
