@@ -26,6 +26,7 @@ import { AGENT_INSIGHTS_DETAIL } from "./blocks/agent-insights";
 import { AGENT_TEST_DETAIL } from "./blocks/agent-test";
 import { AGENT_SURFACES_DETAIL } from "./blocks/agent-surfaces";
 import { MERMAID_DIAGRAM_DETAIL } from "./blocks/mermaid-diagram";
+import { VIDEO_DETAIL } from "./blocks/video";
 import { CURSOR_DETAIL } from "./blocks/cursor";
 import { AGENT_PROGRESS_DETAIL } from "./blocks/agent-progress";
 import { AGENT_SELECTOR_DETAIL } from "./blocks/agent-selector";
@@ -132,6 +133,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"agent-test": AGENT_TEST_DETAIL,
 	"agent-surfaces": AGENT_SURFACES_DETAIL,
 	"mermaid-diagram": MERMAID_DIAGRAM_DETAIL,
+	video: VIDEO_DETAIL,
 	cursor: CURSOR_DETAIL,
 	"agent-progress": AGENT_PROGRESS_DETAIL,
 	"agent-selector": AGENT_SELECTOR_DETAIL,

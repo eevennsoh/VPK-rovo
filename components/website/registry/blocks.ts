@@ -210,6 +210,9 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	"mermaid-diagram": dynamic(() => import("../demos/blocks/mermaid-diagram-demo"), {
 		ssr: false,
 	}),
+	video: dynamic(() => import("../demos/blocks/video-demo"), {
+		ssr: false,
+	}),
 	"next-best-action": dynamic(() => import("../demos/blocks/next-best-action-demo"), {
 		ssr: false,
 	}),

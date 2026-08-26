@@ -429,6 +429,7 @@ export const BLOCK_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	blockComponent("next-best-action", "Next Best Action"),
 	blockComponent("tools-directory", "Tools Directory"),
 	blockComponent("mermaid-diagram", "Mermaid Diagram"),
+	blockComponent("video", "Video"),
 	blockComponent("memory", "Memory"),
 	{ name: "Login 01", slug: "login-01", importPath: "@/components/blocks/login/login-01", category: "blocks", detail: BLOCK_DETAILS["login-01"] },
 	{ name: "Login 02", slug: "login-02", importPath: "@/components/blocks/login/login-02", category: "blocks", detail: BLOCK_DETAILS["login-02"] },

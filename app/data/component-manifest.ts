@@ -421,6 +421,7 @@ export const BLOCK_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	blockComponent("next-best-action", "Next Best Action"),
 	blockComponent("tools-directory", "Tools Directory"),
 	blockComponent("mermaid-diagram", "Mermaid Diagram"),
+	blockComponent("video", "Video"),
 	blockComponent("memory", "Memory"),
 	{
 		name: "Login 01",
