@@ -5421,6 +5421,12 @@
 					},
 					{
 						"category": "blocks",
+						"slug": "agent-assignment",
+						"name": "Agent Assignment",
+						"importPath": "@/components/blocks/agent-assignment"
+					},
+					{
+						"category": "blocks",
 						"slug": "agent-bento",
 						"name": "Agent Bento",
 						"importPath": "@/components/blocks/agent-bento"
