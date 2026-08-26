@@ -82,6 +82,7 @@ import {
 	getSuggestionMatchRank,
 	rankSuggestionsByMatch,
 } from "./suggestion-ranking";
+import "./suggestion-menu-actions.css";
 import type {
 	RichTextCommandCategory,
 	RichTextMentionCategory,

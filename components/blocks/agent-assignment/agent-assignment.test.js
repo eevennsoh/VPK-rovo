@@ -31,7 +31,7 @@ test("Agent Assignment preserves the work-item trigger and two-stage menu behavi
 	const source = readProjectFile("components/blocks/agent-assignment/components/agent-assignment.tsx");
 	const menu = readProjectFile("components/blocks/agent-assignment/components/assigned-agents-menu.tsx");
 	const suggestionMenu = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
-	const suggestionMenuCss = readProjectFile("components/ui-custom/rich-text-editor/rich-text-editor.css");
+	const suggestionMenuCss = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu-actions.css");
 
 	assert.match(source, /aria-label=\{triggerLabel\}/u);
 	assert.match(source, /import \{ token \} from "@\/lib\/tokens";/u);
@@ -50,6 +50,7 @@ test("Agent Assignment preserves the work-item trigger and two-stage menu behavi
 	assert.match(menu, /inlineMetadata: row\.status,/u);
 	assert.match(menu, /hoverActions: \{[\s\S]*primaryLabel: "View"[\s\S]*secondaryLabel: "Archive"/u);
 	assert.match(suggestionMenu, /hoverActions\?: RichTextSuggestionMenuHoverActions;/u);
+	assert.match(suggestionMenu, /import "\.\/suggestion-menu-actions\.css";/u);
 	assert.match(suggestionMenu, /data-suggestion-action-buttons=""/u);
 	assert.match(suggestionMenu, /className="pointer-events-none flex w-0 items-center gap-1 overflow-hidden opacity-0"/u);
 	assert.doesNotMatch(suggestionMenu, /className="hidden items-center gap-1/u);
