@@ -315,7 +315,7 @@ function BoardColumn({
 				{children}
 			</div>
 
-			<div style={{ padding: token("space.050") }}>
+			<div className="w-full" style={{ paddingBlock: token("space.050") }}>
 				<Button
 					className={cn(
 						"w-full justify-start gap-2 rounded-lg",

@@ -22,10 +22,10 @@ test("TWG Appstack exposes the shared 16/20/24/32 tile size scale", () => {
 		SOURCE,
 		/export type TwgToolSourceIconSize = "xxsmall" \| "xsmall" \| "small" \| "medium";/u,
 	);
-	assert.match(SOURCE, /xxsmall: \{ box: "size-4", imagePx: 16, overlap: "-ml-0\.5", countText: "text-\[10px\]" \}/u);
-	assert.match(SOURCE, /xsmall: \{ box: "size-5", imagePx: 20, overlap: "-ml-1", countText: "text-\[10px\]" \}/u);
-	assert.match(SOURCE, /small: \{ box: "size-6", imagePx: 24, overlap: "-ml-1", countText: "text-xs" \}/u);
-	assert.match(SOURCE, /medium: \{ box: "size-8", imagePx: 32, overlap: "-ml-1\.5", countText: "text-xs" \}/u);
+	assert.match(SOURCE, /xxsmall: \{\s*box: "size-4",\s*overflowBox: "h-4 max-h-4 min-h-0 min-w-4 w-auto",\s*overflowRadius: "rounded-sm!",\s*imagePx: 16,\s*overlap: "-ml-0\.5",\s*countText: "text-\[10px\]",\s*countPad: "px-0\.5",\s*\}/u);
+	assert.match(SOURCE, /xsmall: \{\s*box: "size-5",\s*overflowBox: "h-5 max-h-5 min-h-0 min-w-5 w-auto",\s*overflowRadius: "rounded-sm!",\s*imagePx: 20,\s*overlap: "-ml-1",\s*countText: "text-\[10px\]",\s*countPad: "px-0\.5",\s*\}/u);
+	assert.match(SOURCE, /small: \{\s*box: "size-6",\s*overflowBox: "h-6 max-h-6 min-h-0 min-w-6 w-auto",\s*overflowRadius: "rounded-md!",\s*imagePx: 24,\s*overlap: "-ml-1",\s*countText: "text-xs",\s*countPad: "px-1",\s*\}/u);
+	assert.match(SOURCE, /medium: \{\s*box: "size-8",\s*overflowBox: "h-8 max-h-8 min-h-0 min-w-8 w-auto",\s*overflowRadius: "rounded-lg!",\s*imagePx: 32,\s*overlap: "-ml-1\.5",\s*countText: "text-xs",\s*countPad: "px-1",\s*\}/u);
 	assert.match(SOURCE, /as const satisfies Record<TwgToolSourceIconSize, \{/u);
 	assert.match(SOURCE, /"relative flex shrink-0 items-center justify-center"/u);
 });
@@ -34,7 +34,8 @@ test("TWG Appstack defaults to 24px and passes the size straight to the tile sca
 	assert.match(SOURCE, /size = "small",/u);
 	assert.match(SOURCE, /iconSize = "small",/u);
 	assert.match(SOURCE, /const sizing = APPSTACK_SIZES\[iconSize\];/u);
-	assert.match(SOURCE, /sizing\.box,\s*index > 0 && sizing\.overlap/u);
+	assert.match(SOURCE, /boxClassName = sizing\.box/u);
+	assert.match(SOURCE, /boxClassName,\s*index > 0 && sizing\.overlap/u);
 	// The four names are shared with `components/ui/tile`, so no translation
 	// table sits between the prop and the Tile / logo primitives.
 	assert.doesNotMatch(SOURCE, /getSourceTileSize|getAppstackItemClassName|getSourceImageSize/u);
@@ -52,10 +53,10 @@ test("TWG Appstack rejects caller children that its source render path discards"
 test("TWG Appstack uses a solid fill on stacked tiles", () => {
 	assert.match(SOURCE, /const APPSTACK_TILE_FILL_CLASS = "bg-surface"/u);
 	assert.match(SOURCE, /cn\("shrink-0", APPSTACK_TILE_FILL_CLASS, className\)/u);
-	assert.match(SOURCE, /className="shrink-0 bg-surface text-text-subtlest"/u);
+	assert.match(SOURCE, /"box-border w-auto shrink-0 overflow-hidden bg-surface py-0 leading-none text-text-subtlest \[&_span\]:h-full \[&_span\]:w-auto"/u);
 	assert.match(
 		SOURCE,
-		/<span className=\{cn\("font-medium leading-none", sizing\.countText\)\}>\+\{hiddenCount\}<\/span>/u,
+		/<span className=\{cn\("whitespace-nowrap font-medium leading-none tabular-nums", sizing\.countText\)\}>/u,
 	);
 });
 
@@ -144,6 +145,38 @@ test("all TWG Tool demos use a centered frame", () => {
 	assert.equal((TWG_TOOL_DEMO_SOURCE.match(/<TwgToolDemoFrame>/gu) ?? []).length, 4);
 });
 
+test("TWG Appstack overflow count uses tile min-width and grows for longer counts", () => {
+	assert.match(SOURCE, /overflowBox: "h-4 max-h-4 min-h-0 min-w-4 w-auto"/u);
+	assert.match(SOURCE, /overflowBox: "h-6 max-h-6 min-h-0 min-w-6 w-auto"/u);
+	assert.match(SOURCE, /overflowBox: "h-8 max-h-8 min-h-0 min-w-8 w-auto"/u);
+	assert.match(SOURCE, /overflowRadius: "rounded-sm!"/u);
+	assert.match(SOURCE, /overflowRadius: "rounded-md!"/u);
+	assert.match(SOURCE, /overflowRadius: "rounded-lg!"/u);
+	assert.match(SOURCE, /sizing\.overflowBox/u);
+	assert.match(SOURCE, /sizing\.overflowRadius/u);
+	assert.match(SOURCE, /sizing\.countPad/u);
+	assert.match(SOURCE, /countPad: "px-0\.5"/u);
+	assert.match(SOURCE, /countPad: "px-1"/u);
+	assert.doesNotMatch(SOURCE, /countPad: "p-/u);
+	assert.doesNotMatch(SOURCE, /countPad: "py-/u);
+	assert.match(SOURCE, /Never use `rounded-tile` here/u);
+	assert.match(SOURCE, /data-appstack-overflow=\{hiddenCount\}/u);
+	assert.match(SOURCE, /whitespace-nowrap/u);
+	assert.match(SOURCE, /box-border w-auto shrink-0 overflow-hidden bg-surface py-0 leading-none/u);
+	assert.match(SOURCE, /\[&_span\]:h-full \[&_span\]:w-auto/u);
+	assert.doesNotMatch(SOURCE, /\[&_span\]:size-auto/u);
+	assert.doesNotMatch(
+		SOURCE,
+		/hiddenCount > 0 \? \([\s\S]*renderItem\([\s\S]*sizing\.box/u,
+	);
+	assert.match(DEMO_SOURCE, /createOverflowSources\(10\)/u);
+	assert.match(DEMO_SOURCE, /createOverflowSources\(48\)/u);
+	assert.match(DEMO_SOURCE, /\+10 — square min-width/u);
+	assert.match(DEMO_SOURCE, /\+48 — grows past the tile square/u);
+	assert.match(DETAILS_SOURCE, /demoSlug: "twg-appstack-demo-overflow-grow"/u);
+	assert.match(REGISTRY_SOURCE, /"twg-appstack-demo-overflow-grow": dynamic\(/u);
+});
+
 test("TWG Appstack is wired into the ui-custom catalog", () => {
 	assert.match(COMPONENTS_SOURCE, /customComponent\("twg-appstack", "TWG Appstack"\)/u);
 	assert.match(MANIFEST_SOURCE, /customComponent\("twg-appstack", "TWG Appstack"\)/u);
@@ -152,6 +185,7 @@ test("TWG Appstack is wired into the ui-custom catalog", () => {
 	assert.match(REGISTRY_SOURCE, /"twg-appstack-demo-sizes": dynamic\(/u);
 	assert.match(DETAILS_SOURCE, /demoSlug: "twg-appstack-demo-sizes"/u);
 	assert.match(DEMO_SOURCE, /export function TWGAppstackDemoSizes\(\)/u);
+	assert.match(DEMO_SOURCE, /export function TWGAppstackDemoOverflowGrow\(\)/u);
 	assert.match(DEMO_SOURCE, /export default function TWGAppstackDemo/u);
 	assert.match(DEMO_SOURCE, /aria-label="Replay TWG app stack animation"/u);
 	assert.match(DEMO_SOURCE, /setReplayKey\(\(currentKey\) => currentKey \+ 1\)/u);

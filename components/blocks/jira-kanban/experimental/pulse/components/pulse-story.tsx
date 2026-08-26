@@ -4,6 +4,9 @@ import { useId, type ReactNode, type RefCallback } from "react";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
 
+import { PulseProseText } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-prose-text";
+import { PulseSourcesAppstack } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-sources-appstack";
+import { PULSE_SOURCES } from "@/components/blocks/jira-kanban/experimental/pulse/data/pulse-sources-preview";
 import {
 	PulseAttention,
 	PulseNextActions,
@@ -30,7 +33,6 @@ import type {
 	PulseStoryProps,
 } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { ArtifactList, type ArtifactListItem } from "@/components/ui-custom/artifact-list";
-import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
 import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -70,24 +72,6 @@ export const MEASURE = "max-w-[36rem]";
 const SECTION_FOCUS_TRANSITION = "min-w-0 transition-opacity duration-normal ease-out-practical motion-reduce:transition-none";
 const SECTION_FOCUSED = "opacity-100";
 const SECTION_DIMMED = "opacity-(--opacity-disabled)";
-
-/** The fourteen connected sources the Pulse synthesis reads across. */
-const PULSE_SOURCES = [
-	{ id: "jira", label: "Jira", provider: "jira" },
-	{ id: "confluence", label: "Confluence", provider: "confluence" },
-	{ id: "github", label: "GitHub", provider: "twg", name: "github" },
-	{ id: "slack", label: "Slack", provider: "twg", name: "slack" },
-	{ id: "sentry", label: "Sentry", provider: "twg", name: "sentry" },
-	{ id: "launchdarkly", label: "LaunchDarkly", provider: "twg", name: "launchdarkly" },
-	{ id: "loom", label: "Loom", provider: "loom" },
-	{ id: "figma", label: "Figma", provider: "twg", name: "figma" },
-	{ id: "google-docs", label: "Google Docs", provider: "twg", name: "google-docs" },
-	{ id: "google-drive", label: "Google Drive", provider: "google-drive" },
-	{ id: "bitbucket", label: "Bitbucket", provider: "bitbucket" },
-	{ id: "rovo", label: "Rovo", provider: "rovo" },
-	{ id: "opsgenie", label: "Opsgenie", provider: "opsgenie" },
-	{ id: "statuspage", label: "Statuspage", provider: "statuspage" },
-] as const satisfies readonly TwgToolSource[];
 
 /** One window the filtered member was active in, offered as a way out. */
 export interface PulseStoryJump {
@@ -251,16 +235,10 @@ function PulseStoryContributors({
 				</>
 			)}
 			<span className={cn("shrink-0", PULSE_ROW_META)}>
-				{PULSE_SOURCES.length}<span className="sr-only"> sources from Jira, Confluence, GitHub, Slack, and 10 more</span>
+				{`${PULSE_SOURCES.length} ${PULSE_SOURCES.length === 1 ? "Source" : "Sources"}`}
+				<span className="sr-only"> from Jira, Confluence, GitHub, Slack, and 10 more</span>
 			</span>
-			<TWGAppstack
-				animated={false}
-				aria-hidden
-				className="justify-start"
-				iconSize="xxsmall"
-				maxVisible={4}
-				sources={PULSE_SOURCES}
-			/>
+			<PulseSourcesAppstack />
 		</div>
 	);
 }
@@ -323,7 +301,7 @@ function PulseStoryProse({ paragraphs }: Readonly<{ paragraphs: readonly string[
 		<div className={cn("mt-7 flex flex-col gap-6", MEASURE)}>
 			{paragraphs.map((paragraph) => (
 				<p className="text-base/6 tracking-[-0.011em] text-pretty text-text" key={paragraph}>
-					{paragraph}
+					<PulseProseText text={paragraph} />
 				</p>
 			))}
 		</div>
@@ -395,7 +373,9 @@ function PulseStoryMemberBody({
 					</Button>
 				</div>
 			) : (
-				<p className="mt-6 text-base/6 tracking-[-0.011em] text-pretty text-text">{contribution.summary}</p>
+				<p className="mt-6 text-base/6 tracking-[-0.011em] text-pretty text-text">
+					<PulseProseText text={contribution.summary} />
+				</p>
 			)}
 
 			<p className={cn("mt-7 border-t border-border pt-4", PULSE_ITEM_BODY)}>
@@ -534,11 +514,11 @@ export function PulseStory({
 					/>
 				</div>
 
-				<h2 className={cn("mt-7 text-pretty text-text", MEASURE)} id={headingId} style={HEADLINE_STYLE}>
+				<h2 className={cn("mt-6 text-pretty text-text", MEASURE)} id={headingId} style={HEADLINE_STYLE}>
 					{headline}
 				</h2>
 
-				<div className="mt-3 min-w-0">
+				<div className="mt-4 min-w-0">
 					<PulseStoryContributors
 						contributors={contributors}
 						onSelectMember={onSelectMember}

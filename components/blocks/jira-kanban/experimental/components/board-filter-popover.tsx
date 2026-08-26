@@ -260,7 +260,7 @@ export function BoardFilterPopover({
 									</Button>
 								);
 							})}
-							<Button aria-disabled className="mt-1 w-full justify-start" variant="outline">
+							<Button aria-disabled className="mt-1 w-full justify-start" variant="ghost">
 								<Icon data-icon="inline-start" render={<AddIcon label="" size="small" />} />
 								Add field
 							</Button>

@@ -7,6 +7,9 @@ export interface SourcesPreviewPage {
 	snippet: string;
 }
 
+/** Long enough that "Owned by …" ellipsizes in the 26rem preview popover. */
+export const SOURCES_PREVIEW_LONG_OWNER = "Mike Cannon-Brookes";
+
 export const SOURCES_PREVIEW_PAGES: readonly SourcesPreviewPage[] = [
 	{
 		id: "about-ust",
@@ -22,7 +25,7 @@ export const SOURCES_PREVIEW_PAGES: readonly SourcesPreviewPage[] = [
 		title: "Unified String Theory (UST)",
 		href: "https://hello.atlassian.net/wiki/spaces/UST/pages/5483563869",
 		updatedAt: new Date(2025, 9, 31),
-		owner: "Mike Cannon-Brookes",
+		owner: SOURCES_PREVIEW_LONG_OWNER,
 		snippet:
 			"“We will open the book. Its pages are blank. We are going to put words on them ourselves. The book is called Opportunity and its…",
 	},
@@ -54,18 +57,50 @@ export function formatSourcesPreviewDate(date: Date): string {
 	return SOURCE_DATE_FORMAT.format(date);
 }
 
-export function isConfluenceWikiHref(href: string): boolean {
+export type SourcesPreviewProduct = "jira" | "confluence" | "github" | "slack" | "other";
+
+function parseHref(href: string): URL | null {
 	try {
-		const url = new URL(href);
-		return url.hostname.endsWith("atlassian.net") && url.pathname.includes("/wiki");
+		return new URL(href);
 	} catch {
-		return href.includes("/wiki/");
+		return null;
 	}
+}
+
+export function isConfluenceWikiHref(href: string): boolean {
+	const url = parseHref(href);
+	if (url) {
+		return url.hostname.endsWith("atlassian.net") && url.pathname.includes("/wiki");
+	}
+	return href.includes("/wiki/");
+}
+
+export function getSourcesPreviewProduct(href: string): SourcesPreviewProduct {
+	const url = parseHref(href);
+	const hostname = url?.hostname ?? "";
+	const pathname = url?.pathname ?? href;
+
+	if (hostname === "github.com" || hostname.endsWith(".github.com")) {
+		return "github";
+	}
+	if (hostname === "slack.com" || hostname.endsWith(".slack.com")) {
+		return "slack";
+	}
+	if (hostname.endsWith("atlassian.net") && pathname.includes("/wiki")) {
+		return "confluence";
+	}
+	if (hostname.endsWith("atlassian.net") || pathname.includes("/browse/")) {
+		return "jira";
+	}
+	if (href.includes("/wiki/")) {
+		return "confluence";
+	}
+	return "other";
 }
 
 /** Matches Smart Link Confluence pages: IconTile `blue` (information tone). */
 export function getSourcesPreviewIconTileVariant(
 	href: string,
 ): "blue" | "gray" {
-	return isConfluenceWikiHref(href) ? "blue" : "gray";
+	return getSourcesPreviewProduct(href) === "confluence" ? "blue" : "gray";
 }

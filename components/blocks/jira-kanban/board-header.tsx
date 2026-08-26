@@ -173,7 +173,7 @@ export function JiraKanbanBoardHeader({
 					<PopoverContent align="start" className="w-[560px] max-w-[calc(100vw-32px)] gap-0 overflow-hidden p-0">
 						<div className="grid h-[360px] grid-cols-[200px_minmax(0,1fr)]">
 							<div className="border-r border-border p-3">
-								<Button aria-disabled variant="outline">
+								<Button aria-disabled variant="ghost">
 									<Icon data-icon="inline-start" render={<AddIcon label="" size="small" />} />
 									Add field
 								</Button>
