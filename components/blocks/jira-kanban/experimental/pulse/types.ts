@@ -65,10 +65,28 @@ export interface PulseLooseWork {
 
 export type PulseSignalTone = "attention" | "risk" | "decision" | "shipped";
 
-/** Something the reader must know about right now. */
+/**
+ * Something the reader must know about right now.
+ *
+ * Every signal is attributed: an agent that has stopped and is waiting on a
+ * human, or a teammate who commented or @mentioned the reader. `memberId` is
+ * the roster identity behind the row, and must name a member the snapshot lists
+ * as active — a signal from somebody who was not in the window is not something
+ * the window can show.
+ */
 export interface PulseSignal {
 	id: string;
 	tone: PulseSignalTone;
+	/** Roster member the signal comes from — drives the attention row's identity. */
+	memberId: string;
+	/**
+	 * When this actually happened, pre-formatted like every other clock in the
+	 * fixture, e.g. `"Mon 17 Aug 08:06"`. Per signal rather than per window: a
+	 * comment posted at 08:06 must not be stamped with the 08:12 boundary of the
+	 * window that contains it. Must fall inside the snapshot's `rangeLabel`, and
+	 * must agree with any time the `detail` quotes.
+	 */
+	timeLabel: string;
 	title: string;
 	detail: string;
 	workItemKey?: string;

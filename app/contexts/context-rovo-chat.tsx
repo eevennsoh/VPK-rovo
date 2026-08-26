@@ -2370,6 +2370,16 @@ export function useRovoChat() {
 	return context;
 }
 
+/**
+ * The chat context when there is one, `null` otherwise. For shared components
+ * that only reach for chat on one branch of their API — a list whose composer
+ * variant sends a prompt — and are otherwise renderable on a route that never
+ * mounts a provider. Anything that genuinely needs chat uses {@link useRovoChat}.
+ */
+export function useOptionalRovoChat() {
+	return use(RovoChatContext) ?? null;
+}
+
 export function useRovoSelectedAgent() {
 	const {
 		selectedAgentId,

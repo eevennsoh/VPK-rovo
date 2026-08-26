@@ -20,9 +20,14 @@ import type { AgentListItem } from "./agent-list-types";
 /**
  * Derives a Jira-style issue key from an agent-session branch:
  * `rovo/vita-142-vision-deck` → `VITA-142`. Falls back to the raw branch when
- * the pattern does not match, so the flyout still names something real.
+ * the pattern does not match, so the flyout still names something real, and to
+ * an empty string for rows that carry no branch — those are not agent sessions
+ * and never open the session flyout.
  */
-export function deriveIssueKeyFromBranch(branch: string): string {
+export function deriveIssueKeyFromBranch(branch: string | undefined): string {
+	if (branch === undefined) {
+		return "";
+	}
 	const match = /^rovo\/([a-z]+)-(\d+)-/.exec(branch);
 	return match ? `${match[1].toUpperCase()}-${match[2]}` : branch;
 }
@@ -31,11 +36,13 @@ export function deriveIssueKeyFromBranch(branch: string): string {
  * Row lifecycle → flyout lifecycle. The row model has no dedicated "PR open"
  * state, so a finished session borrows it from `prStatus`; a finished session
  * that never opened a PR reads as `merged` (work item Done) because that is the
- * only terminal-success status the flyout models.
+ * only terminal-success status the flyout models. `attention` is a
+ * notification, not a session, but it still reads as blocked on the viewer.
  */
 export function toAgentSessionStatus(item: AgentListItem): JiraSidebarSessionStatus {
 	switch (item.state) {
 		case "needs-input":
+		case "attention":
 			return "awaiting-input";
 		case "running":
 			return "running";

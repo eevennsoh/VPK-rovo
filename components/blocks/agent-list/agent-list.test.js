@@ -88,11 +88,11 @@ test("session rows expose View without advertising a Stop action", () => {
 	assert.doesNotMatch(CARD_SOURCE, /Stop agent|VideoStopOverlayIcon|onStop|showStop/u);
 	assert.doesNotMatch(INDEX_SOURCE, /onStop/u);
 	assert.doesNotMatch(TYPES_SOURCE, /onStop\?:/u);
-	assert.match(CARD_SOURCE, /<Button onClick=\{\(\) => onView\?\.\(item\)\} size="compact" variant="outline">[\s\S]*View/u);
+	assert.match(CARD_SOURCE, /<Button onClick=\{\(\) => onView\(item\)\} size="compact" variant="outline">[\s\S]*View/u);
 });
 
 test("View opens the Rovo floating chat in the demo", () => {
-	assert.match(CARD_SOURCE, /<Button onClick=\{\(\) => onView\?\.\(item\)\} size="compact" variant="outline">\s*View/u);
+	assert.match(CARD_SOURCE, /<Button onClick=\{\(\) => onView\(item\)\} size="compact" variant="outline">\s*View/u);
 	assert.match(PAGE_SOURCE, /const handleView = useCallback\(\(\) => \{\s*openChat\("floating"\);/);
 	assert.match(PAGE_SOURCE, /composerChatSurface="floating"/);
 	assert.match(PAGE_SOURCE, /onView=\{handleView\}/);
@@ -102,13 +102,81 @@ test("View opens the Rovo floating chat in the demo", () => {
 test("the leading tile renders the agent or VPK identity at the selected density", () => {
 	assert.match(
 		CARD_SOURCE,
-		/<AgentAvatarVisual[\s\S]*avatarSrc=\{item\.agent\.avatarSrc\}[\s\S]*sizePx=\{isCompact \? 24 : 32\}/,
+		/<AgentAvatarVisual[\s\S]*avatarSrc=\{agent\.avatarSrc\}[\s\S]*sizePx=\{sizePx\}/,
 	);
-	assert.match(CARD_SOURCE, /vpkLogo=\{item\.agent\.vpkLogo\}/u);
+	assert.match(CARD_SOURCE, /vpkLogo=\{agent\.vpkLogo\}/u);
+	assert.match(CARD_SOURCE, /<AgentListIdentity[\s\S]*sizePx=\{isCompact \? 24 : 32\}/u);
+});
+
+test("people render a circular photo beside the hexagon agents in the same list", () => {
+	assert.match(TYPES_SOURCE, /export type AgentListActorKind = "agent" \| "person";/u);
+	assert.match(TYPES_SOURCE, /kind\?: AgentListActorKind;/u);
+	// The person branch is the one that must not reach for hexagon agent art.
+	assert.match(
+		CARD_SOURCE,
+		/if \(agent\.kind === "person"\) \{[\s\S]*<Avatar[\s\S]*label=\{agent\.name\}[\s\S]*<AvatarImage alt="" src=\{agent\.avatarSrc\} \/>[\s\S]*<AvatarFallback>\{actorInitials\(agent\.name\)\}<\/AvatarFallback>/u,
+	);
+	// One identity component, so the list row and the activity header cannot
+	// disagree about what an agent or a person looks like.
+	assert.equal((CARD_SOURCE.match(/<AgentListIdentity\b/gu) ?? []).length, 2);
+	assert.match(CARD_SOURCE, /PX_TO_PERSON_AVATAR_SIZE: Record<number, NonNullable<AvatarProps\["size"\]>> = \{\s*24: "sm",\s*32: "default",/u);
+});
+
+test("the attention state keeps the row's own title and warns instead of shimmering", () => {
+	// `needs-input` swaps a task title for the blocked state; an attention row's
+	// title already is the news, so swapping it would erase the row's content.
+	assert.match(TYPES_SOURCE, /export type AgentListState = "running" \| "complete" \| "needs-input" \| "attention";/u);
+	assert.match(CARD_SOURCE, /attention:\s*\{\s*shimmerTitle: false,\s*showDots: false,\s*showLifecycle: true,/u);
+	assert.match(
+		CARD_SOURCE,
+		/return item\.state === "needs-input" \? AWAITING_INPUT_TITLE : item\.title;/u,
+	);
+	assert.match(
+		CARD_SOURCE,
+		/case "attention":[\s\S]*text-icon-warning[\s\S]*<StatusWarningIcon color="currentColor" label="" size="small" \/>[\s\S]*label="Needs attention"/u,
+	);
+	assert.match(CARD_SOURCE, /case "needs-input":\s*case "attention":\s*return "awaiting-input";/u);
+	assert.match(SESSION_SOURCE, /case "needs-input":\s*case "attention":\s*return "awaiting-input";/u);
+});
+
+test("rows carry an optional reason line, leading metadata, and a static time", () => {
+	assert.match(TYPES_SOURCE, /summary\?: string;/u);
+	assert.match(TYPES_SOURCE, /metadataPrefix\?: string;/u);
+	assert.match(TYPES_SOURCE, /timeLabel\?: string;/u);
+	// The reason wraps; a session row's single-line title keeps truncating.
+	assert.match(CARD_SOURCE, /const hasSummary = Boolean\(item\.summary\);/u);
+	assert.match(CARD_SOURCE, /hasSummary \? "text-pretty" : "truncate"/u);
+	assert.match(
+		CARD_SOURCE,
+		/\{item\.summary \? \(\s*<span\s*className=\{cn\(\s*"mt-0\.5 w-full min-w-0 text-pretty text-text-subtle",/u,
+	);
+	assert.doesNotMatch(
+		CARD_SOURCE,
+		/"mt-0\.5 w-full min-w-0 text-pretty text-text-subtle truncate"/u,
+	);
+	// A three-line row hangs its identity off the title and lets metadata wrap
+	// instead of clipping its tail.
+	assert.match(CARD_SOURCE, /hasSummary \? "items-start" : "items-center"/u);
+	assert.match(CARD_SOURCE, /hasSummary \? "mt-1 flex-wrap" : "overflow-hidden"/u);
+	assert.match(
+		CARD_SOURCE,
+		/\{item\.metadataPrefix \? \(\s*<>\s*<span className="shrink-0">\{item\.metadataPrefix\}<\/span>\s*<MetadataDot \/>/u,
+	);
+	// A pre-formatted stamp wins outright, so a historical list runs no per-row
+	// one-second interval to age a fact that cannot change.
+	assert.match(
+		CARD_SOURCE,
+		/if \(item\.timeLabel !== undefined\) \{\s*return <span>\{item\.timeLabel\}<\/span>;/u,
+	);
 });
 
 test("the metadata line uses elapsed runtime, agent name, and asx PR-status colors", () => {
-	assert.match(CARD_SOURCE, /function AgentListTime[\s\S]*item\.state === "complete" \? \([\s\S]*<RelativeTime[\s\S]*\) : \([\s\S]*<ElapsedTime startedAtMs=\{item\.startedAtMs \?\? seededStartedAtMs\}/u);
+	// Only genuinely live states count up; settled and attention rows read as a
+	// relative timestamp rather than a ticking runtime.
+	assert.match(
+		CARD_SOURCE,
+		/const isLive = item\.state === "running" \|\| item\.state === "needs-input";\s*\n\s*return isLive \? \(\s*<ElapsedTime startedAtMs=\{item\.startedAtMs \?\? seededStartedAtMs\}[\s\S]*\) : \(\s*<RelativeTime/u,
+	);
 	assert.equal((CARD_SOURCE.match(/<AgentListTime\b/gu) ?? []).length, 2);
 	assert.match(CARD_SOURCE, /<span className="min-w-0 truncate">\{item\.agent\.name\}<\/span>/u);
 	assert.doesNotMatch(CARD_SOURCE, /<span className="truncate">\{item\.agent\.name\}<\/span>/u);
@@ -149,7 +217,7 @@ test("the list exposes generic selected-item state to its native card", () => {
 test("session rows default to the shared Jira agent-session flyout", () => {
 	// The default variant reuses the exact flyout the live Jira sidebar renders,
 	// via one payload handle for the whole list rather than a popup per row.
-	assert.match(TYPES_SOURCE, /export type AgentListFlyout = "session" \| "composer";/u);
+	assert.match(TYPES_SOURCE, /export type AgentListFlyout = "session" \| "composer" \| "none";/u);
 	assert.match(INDEX_SOURCE, /flyout = "session"/u);
 	assert.match(
 		INDEX_SOURCE,
@@ -169,11 +237,14 @@ test("session rows default to the shared Jira agent-session flyout", () => {
 test("the session adapter derives flyout payloads the row model does not carry", () => {
 	assert.match(
 		SESSION_SOURCE,
-		/export function deriveIssueKeyFromBranch\(branch: string\): string \{[\s\S]*rovo\\\/\(\[a-z\]\+\)-\(\\d\+\)-/u,
+		/export function deriveIssueKeyFromBranch\(branch: string \| undefined\): string \{[\s\S]*rovo\\\/\(\[a-z\]\+\)-\(\\d\+\)-/u,
 	);
+	// Rows that are not agent sessions carry no branch, and never open the flyout.
+	assert.match(SESSION_SOURCE, /if \(branch === undefined\) \{\s*return "";/u);
+	assert.match(TYPES_SOURCE, /branch\?: string;/u);
 	// Lifecycle mapping: the row model has no "PR open" state, so a finished
 	// session borrows it from prStatus.
-	assert.match(SESSION_SOURCE, /case "needs-input":\s*return "awaiting-input";/u);
+	assert.match(SESSION_SOURCE, /case "needs-input":\s*case "attention":\s*return "awaiting-input";/u);
 	assert.match(SESSION_SOURCE, /case "running":\s*return "running";/u);
 	assert.match(
 		SESSION_SOURCE,
@@ -209,12 +280,24 @@ test("the composer variant keeps the per-row Agent States flyout on the left", (
 	assert.match(CARD_SOURCE, /avatarSrc: item\.agent\.avatarSrc/u);
 	assert.match(CARD_SOURCE, /closeDelay=\{80\}/u);
 	assert.doesNotMatch(CARD_SOURCE, /AgentProfileCard|agentProfile/u);
-	// Both variants wrap the identical row body, so density, states, and hover
-	// actions cannot drift between them.
-	assert.equal((CARD_SOURCE.match(/\{row\}/gu) ?? []).length, 2);
+	// All three flyout variants wrap the identical row body, so density, states,
+	// and hover actions cannot drift between them.
+	assert.equal((CARD_SOURCE.match(/\{row\}/gu) ?? []).length, 3);
 	assert.match(CARD_SOURCE, /function AgentListRow\(/u);
 	// jira-for-you relies on the composer to reply to an agent inline.
 	assert.match(FOR_YOU_PANEL_SOURCE, /flyout="composer"/u);
+});
+
+test("flyout=\"none\" renders the row alone for entries that are not agent sessions", () => {
+	assert.match(
+		CARD_SOURCE,
+		/if \(flyout === "none"\) \{[\s\S]*<li\s*aria-current=\{isSelected \? "true" : undefined\}\s*className=\{rowClassName\(isCompact, isSelected\)\}\s*data-testid=\{"agent-list-row-" \+ item\.id\}\s*>\s*\{row\}\s*<\/li>/u,
+	);
+	// The shared session flyout surface only mounts for the variant that uses it.
+	assert.match(
+		INDEX_SOURCE,
+		/\{flyout === "session" \? \(\s*<JiraSessionFlyoutSurface handle=\{flyoutHandle\} \/>\s*\) : null\}/u,
+	);
 });
 
 test("Agent States composer submissions open the configured chat surface with sidebar fallback", () => {
@@ -222,12 +305,31 @@ test("Agent States composer submissions open the configured chat surface with si
 	assert.match(TYPES_SOURCE, /onSubmitPrompt\?: \(item: AgentListItem, prompt: string\) => Promise<void> \| void;/u);
 	assert.match(INDEX_SOURCE, /composerChatSurface = "sidebar"/u);
 	assert.match(INDEX_SOURCE, /if \(onSubmitPrompt\) \{[\s\S]*void onSubmitPrompt\(item, prompt\);[\s\S]*return;/u);
-	assert.match(INDEX_SOURCE, /openChat\(composerChatSurface\);/u);
-	assert.match(INDEX_SOURCE, /void sendPrompt\(prompt\);/u);
+	// The chat runtime is optional: the composer is the only branch that needs
+	// it, so a comment/@mention list on a route with no RovoChatProvider renders
+	// instead of throwing on a capability it never uses.
+	assert.match(INDEX_SOURCE, /const chat = useOptionalRovoChat\(\);/u);
+	assert.match(INDEX_SOURCE, /chat\?\.openChat\(composerChatSurface\);/u);
+	assert.match(INDEX_SOURCE, /void chat\?\.sendPrompt\(prompt\);/u);
 	assert.match(INDEX_SOURCE, /onFlyoutSubmit=\{\(prompt\) => handleFlyoutSubmit\(item, prompt\)\}/u);
 	assert.match(DETAIL_SOURCE, /name: "composerChatSurface"/u);
 	assert.match(DETAIL_SOURCE, /default: '"sidebar"'/u);
 	assert.match(DETAIL_SOURCE, /name: "onSubmitPrompt"/u);
+});
+
+test("the composer refuses to render without a chat destination", () => {
+	// The optional read exists for read-only lists, not to make the composer
+	// silently lossy: AgentStatesComposer clears the reply right after calling
+	// back, so a swallowed prompt looks exactly like a successful send. Failing
+	// at render beats failing after the viewer has typed one.
+	assert.match(
+		INDEX_SOURCE,
+		/if \(flyout === "composer" && onSubmitPrompt === undefined && chat === null\) \{\s*throw new Error\(/u,
+	);
+	assert.match(
+		INDEX_SOURCE,
+		/render it inside a RovoChatProvider or pass onSubmitPrompt/u,
+	);
 });
 
 test("in-flow View controls immediately replace lifecycle indicators without collisions", () => {
@@ -236,18 +338,25 @@ test("in-flow View controls immediately replace lifecycle indicators without col
 		CARD_SOURCE,
 		/className="flex min-w-0 flex-1 flex-col items-start justify-center/u,
 	);
+	// The body is a button only when the consumer gave it somewhere to go; a
+	// read-only list must not add one focusable no-op to the tab order per row.
 	assert.match(
 		CARD_SOURCE,
-		/className="flex w-full min-w-0 items-center gap-0 overflow-hidden"/u,
+		/if \(onView === undefined\) \{\s*return <div className=\{className\}>\{children\}<\/div>;/u,
+	);
+	assert.match(CARD_SOURCE, /onView=\{onView === undefined \? undefined : \(\) => onView\(item\)\}/u);
+	assert.match(CARD_SOURCE, /\{isSelected \|\| onView === undefined \? null : \(\s*<CardActions/u);
+	assert.match(
+		CARD_SOURCE,
+		/"flex w-full min-w-0 items-center gap-0",\s*hasSummary \? null : "overflow-hidden",/u,
 	);
 	assert.match(
 		CARD_SOURCE,
-		/className="flex w-full min-w-0 items-center gap-1 overflow-hidden text-xs/u,
+		/"flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest",/u,
 	);
 	assert.match(CARD_SOURCE, /<span className=\{cn\(titleClassName, "text-text"\)\}>/u);
 	assert.match(CARD_SOURCE, /className="min-w-0 truncate">\{item\.agent\.name\}<\/span>/u);
 	assert.match(CARD_SOURCE, /className="ml-3 hidden shrink-0 items-center group-hover\/agent-row:flex group-has-\[:focus-visible\]\/agent-row:flex"/u);
-	assert.match(CARD_SOURCE, /\{isSelected \? null : \(\s*<CardActions/u);
 	assert.doesNotMatch(CARD_SOURCE, /isVisible/u);
 	assert.match(
 		CARD_SOURCE,
@@ -311,7 +420,7 @@ test("shows both flyout variants in the component documentation", () => {
 	assert.match(DETAIL_SOURCE, /title: "Composer flyout"/u);
 	assert.match(DETAIL_SOURCE, /demoSlug: "agent-list-demo-composer"/u);
 	assert.match(DETAIL_SOURCE, /name: "flyout"/u);
-	assert.match(DETAIL_SOURCE, /type: '"session" \| "composer"'/u);
+	assert.match(DETAIL_SOURCE, /type: '"session" \| "composer" \| "none"'/u);
 	assert.match(DETAIL_SOURCE, /default: '"session"'/u);
 	assert.match(VARIANT_REGISTRY_SOURCE, /"agent-list-demo-composer": dynamic/u);
 	assert.match(VARIANT_REGISTRY_SOURCE, /default: mod\.AgentListDemoComposer/u);
@@ -322,7 +431,11 @@ test("exports a session activity header whose optional View action requires a ha
 		INDEX_SOURCE,
 		/export \{ AgentListActivityHeader \} from "\.\/agent-list-card"/u,
 	);
-	assert.match(CARD_SOURCE, /title=\{item\.state === "complete" \? "Last update" : "Agent runtime"\}/u);
+	assert.match(CARD_SOURCE, /title=\{timeSlotTitle\(item\)\}/u);
+	assert.match(
+		CARD_SOURCE,
+		/function timeSlotTitle\(item: AgentListItem\): string \{\s*return item\.state === "running" \|\| item\.state === "needs-input"\s*\? "Agent runtime"\s*: "Last update";/u,
+	);
 	assert.match(
 		CARD_SOURCE,
 		/"pointer-events-none flex shrink-0 items-center gap-1 pl-2 opacity-0[\s\S]*actionVisibilityClass[\s\S]*\{onView \? \(\s*<Button onClick=\{\(\) => onView\(item\)\}[\s\S]*View[\s\S]*<\/Button>/u,

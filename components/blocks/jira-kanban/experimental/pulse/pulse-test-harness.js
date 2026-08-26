@@ -155,6 +155,28 @@ let timelineHarnessPromise;
 let scrubberHarnessPromise;
 let outlineHarnessPromise;
 let rosterMarkupHarnessPromise;
+let attentionHarnessPromise;
+
+/**
+ * The pure signal → agent-list-row mapping behind the "Needs attention"
+ * section. It imports nothing but types from the shared block, so it bundles as
+ * a leaf and can be executed rather than grepped.
+ */
+function loadAttentionHarness() {
+	attentionHarnessPromise ??= bundleHarness({
+		contents: `
+			export {
+				toAttentionMetadata,
+				toAttentionState,
+				toPulseAttentionItems,
+			} from "./components/blocks/jira-kanban/experimental/pulse/lib/pulse-attention";
+			export { PULSE_TIMELINE } from "./components/blocks/jira-kanban/experimental/pulse/data/pulse-timeline";
+		`,
+		sourcefile: "pulse-attention-harness.ts",
+	});
+
+	return attentionHarnessPromise;
+}
 
 const rosterMarkupPlugin = {
 	name: "pulse-roster-markup-mocks",
@@ -346,6 +368,7 @@ module.exports = {
 	findSnapshotIndex,
 	join,
 	KANBAN_DIR,
+	loadAttentionHarness,
 	loadOutlineHarness,
 	loadRosterMarkupHarness,
 	loadScrubberHarness,

@@ -3,10 +3,24 @@ import type { JiraSidebarSessionItem } from "@/components/blocks/product-sidebar
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 
 /**
- * Lifecycle of an agent working a Jira work item. Drives the title/status
- * treatment (shimmer, animated dots, or none) and which row actions appear.
+ * Lifecycle of a row. Drives the title/status treatment (shimmer, animated
+ * dots, or none) and which trailing indicator appears.
+ *
+ * The first three describe an agent working a Jira work item. `attention` is
+ * the notification shape: something already happened and is waiting on the
+ * viewer — an agent blocked on an answer, or a teammate who @mentioned them.
+ * It keeps the row's own `title` (unlike `needs-input`, whose title is a task
+ * name and is therefore swapped for the blocked state) because on those rows
+ * the title already is the news.
  */
-export type AgentListState = "running" | "complete" | "needs-input";
+export type AgentListState = "running" | "complete" | "needs-input" | "attention";
+
+/**
+ * Whether the leading identity is an agent or a person. `agent` (the default)
+ * renders the shared hexagon agent visual; `person` renders the circular photo
+ * avatar the rest of Jira uses, so a human comment reads as human at a glance.
+ */
+export type AgentListActorKind = "agent" | "person";
 
 /** Pull-request status shown in the metadata row, when a PR exists. */
 export type AgentListPrStatus = "created" | "merged";
@@ -22,14 +36,18 @@ export type AgentListVariant = "default" | "compact";
  *   only, and shared across the whole list via one payload handle.
  * - `composer` — the per-row Agent States card, which adds a prompt composer so
  *   the viewer can reply to the agent without leaving the list.
+ * - `none` — no flyout. For rows that are not agent sessions (a teammate's
+ *   comment, an @mention) and therefore have no session summary to preview.
  */
-export type AgentListFlyout = "session" | "composer";
+export type AgentListFlyout = "session" | "composer" | "none";
 
 export interface AgentListAgent {
 	/** Canonical directory identity used by agent-state flyouts and all agent surfaces. */
 	id?: string;
 	/** Display name, shown as the avatar label and the metadata-row label. */
 	name: string;
+	/** Identity shape — see {@link AgentListActorKind}. Defaults to `agent`. */
+	kind?: AgentListActorKind;
 	/** Absolute path to the agent avatar SVG under `public/`. */
 	avatarSrc?: string;
 	/** Canonical VPK product mark used for platform-owned runners such as Rovo. */
@@ -61,12 +79,34 @@ export type AgentListSessionDetails = Partial<
 export interface AgentListItem {
 	id: string;
 	title: string;
-	/** Agent session state — see {@link AgentListState}. */
+	/** Row state — see {@link AgentListState}. */
 	state: AgentListState;
-	/** The agent working the session; rendered in the leading avatar. */
+	/** The agent or person the row is about; rendered in the leading avatar. */
 	agent: AgentListAgent;
-	/** Feature branch the agent is working on. */
-	branch: string;
+	/**
+	 * Feature branch the agent is working on. Omitted by rows that are not agent
+	 * sessions, which have no branch and open no session flyout.
+	 */
+	branch?: string;
+	/**
+	 * Wrapping secondary line between the title and the metadata row, for rows
+	 * whose title needs a sentence of context (an attention signal's reason, a
+	 * comment's excerpt). Rendered by the list row only, not by
+	 * `AgentListActivityHeader`, whose two-line geometry is fixed.
+	 */
+	summary?: string;
+	/**
+	 * Leading metadata chunk, shown before the timestamp on the metadata line
+	 * (e.g. `"Risk · PAY-112"`). Consumer-formatted, so a list can carry its own
+	 * classification without the row learning that vocabulary.
+	 */
+	metadataPrefix?: string;
+	/**
+	 * Pre-formatted time shown verbatim in place of the live runtime or relative
+	 * clock (e.g. `"Tue 18 Aug 11:05"`). Historical rows use it so the list does
+	 * not run a per-row one-second interval to age a fact that cannot change.
+	 */
+	timeLabel?: string;
 	/** Human (or upstream actor) who invoked the session via the opening prompt. */
 	invokedBy?: AgentListInvoker;
 	/** Initial runtime shown by expanded activity cards, which tick while active. */

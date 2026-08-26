@@ -7,6 +7,7 @@
 // Chat contexts
 export {
 	RovoChatProvider,
+	useOptionalRovoChat,
 	useRovoChat,
 	useRovoSelectedAgent,
 } from "./context-rovo-chat";
