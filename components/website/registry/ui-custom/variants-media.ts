@@ -343,6 +343,13 @@ export const UI_CUSTOM_MEDIA_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"context-bar-demo-prompt-flyout": dynamic(
+		() =>
+			import("../../demos/ui-custom/context-bar-demo").then((mod) => ({
+				default: mod.ContextBarDemoPromptFlyout,
+			})),
+		{ ssr: false },
+	),
 	"environment-variables-demo-with-copy": dynamic(
 		() =>
 			import("../../demos/ui-custom/environment-variables-demo").then((mod) => ({

@@ -2,11 +2,12 @@
 
 import { useCallback, useMemo, useRef, useState, type RefCallback } from "react";
 
-import { PulseWorkRail } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-rail";
 import {
 	PulseAnswers,
 	PulseInsightsComposer,
 } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-insights-composer";
+import { PulseEmbeddedChat } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-embedded-chat";
+import { PulseWorkRail } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-rail";
 import { PulseScopeBrief } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-scope-brief";
 import {
 	PulseScrubber,
@@ -18,6 +19,7 @@ import {
 	toPulseScopeKey,
 	toPulseSuggestedQuestions,
 } from "@/components/blocks/jira-kanban/experimental/pulse/data/pulse-scopes";
+import { usePulseInsightsChat } from "@/components/blocks/jira-kanban/experimental/pulse/hooks/use-pulse-insights-chat";
 import { usePulseReading } from "@/components/blocks/jira-kanban/experimental/pulse/hooks/use-pulse-reading";
 import {
 	scopeTimelineToWorkItemKeys,
@@ -38,6 +40,7 @@ import type {
 	PulseLooseWork,
 	PulseScope,
 	PulseTimeline,
+	PulseWorkItem,
 } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { ScrollMaskEdgeOverlay } from "@/components/visual/scroll-mask";
@@ -64,11 +67,11 @@ import { cn } from "@/lib/utils";
 /**
  * Pulse runs full-bleed. The insight column takes whatever the three-column row
  * does not: 144px of ruler (enough for "Next best actions"), then the article,
- * then one work rail — a two-track grid at a fixed 320 and 300 with a 40px
- * gutter between the tracks. Capping the assembly would strand the rail against
- * the right edge on a wide screen, and the article is the one thing here that
- * earns extra width — its own prose measure is capped separately, inside
- * `PulseStory`.
+ * then one work rail — a two-track grid that defaults to 320 and 300, with a
+ * 40px gutter before it that holds the insights/work-items resize handle.
+ * Capping the assembly would strand the rail against the right edge on a wide
+ * screen, and the article is the one thing here that earns extra width — its
+ * own prose measure is capped separately, inside `PulseStory`.
  */
 const SHELL_MEASURE = "w-full min-w-0";
 
@@ -101,7 +104,11 @@ export interface ExperimentalPulseProps {
 	 * cannot silently discard them along with this subtree.
 	 */
 	capturedLooseWorkIds: ReadonlySet<string>;
+	isLooseWorkResumable?: (item: PulseLooseWork) => boolean;
+	isWorkItemInteractive?: (workItem: PulseWorkItem) => boolean;
 	onCaptureLooseWork: (item: PulseLooseWork) => void;
+	onResumeLooseWork?: (item: PulseLooseWork) => void;
+	onWorkItemClick?: (workItem: PulseWorkItem) => void;
 	requestedActionIds: ReadonlySet<string>;
 	onRequestAction: (action: PulseAction) => void;
 	timeline?: PulseTimeline;
@@ -126,7 +133,11 @@ export interface ExperimentalPulseProps {
 
 export function ExperimentalPulse({
 	capturedLooseWorkIds,
+	isLooseWorkResumable,
+	isWorkItemInteractive,
 	onCaptureLooseWork,
+	onResumeLooseWork,
+	onWorkItemClick,
 	onRequestAction,
 	requestedActionIds,
 	timeline: sourceTimeline = PULSE_TIMELINE,
@@ -177,6 +188,16 @@ export function ExperimentalPulse({
 		selectedMemberId: filter.selectedMemberId,
 	});
 	const suggestions = useMemo(() => toPulseSuggestedQuestions(scope), [scope]);
+	const {
+		ask: askInsightsChat,
+		chatContextBar,
+		chatOpen: insightsChatOpen,
+		enabled: insightsChatEnabled,
+	} = usePulseInsightsChat(scope, timeline.projectLabel);
+	const handleAsk = useCallback((question: string) => {
+		askInsightsChat(question);
+		onAsk?.(question);
+	}, [askInsightsChat, onAsk]);
 
 	// Both edge fades are pointer-events-none overlays. `mask-image` on a
 	// scrollport fades the document, not the viewport, so a CSS bottom stop
@@ -336,7 +357,7 @@ export function ExperimentalPulse({
 							<PulseStream
 								activeSnapshotIndex={pulse.activeIndex}
 								anchorRef={reading.registerAnchor}
-								answers={(
+								answers={insightsChatEnabled ? undefined : (
 									<PulseAnswers
 										anchorId={PULSE_ANSWERS_ANCHOR_ID}
 										anchorRef={reading.registerAnchor(PULSE_ANSWERS_ANCHOR_ID)}
@@ -388,7 +409,7 @@ export function ExperimentalPulse({
 									// at the boundary instead of submitting it against another
 									// scope's answers.
 									key={scopeKey}
-									onAsk={onAsk}
+									onAsk={handleAsk}
 									scope={scope}
 									suggestions={suggestions}
 								/>
@@ -398,9 +419,16 @@ export function ExperimentalPulse({
 
 					<PulseWorkRail
 						capturedIds={capturedLooseWorkIds}
+						chat={insightsChatOpen ? (
+							<PulseEmbeddedChat chatContextBar={chatContextBar} />
+						) : undefined}
+						isLooseWorkResumable={isLooseWorkResumable}
+						isWorkItemInteractive={isWorkItemInteractive}
 						looseWork={pulse.looseWork}
 						members={pulse.members}
 						onCapture={onCaptureLooseWork}
+						onResumeLooseWork={onResumeLooseWork}
+						onWorkItemClick={onWorkItemClick}
 						scopedToFirstName={pulse.selectedMember?.name.split(" ")[0] ?? null}
 						workItems={pulse.workItems}
 					/>

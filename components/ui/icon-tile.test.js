@@ -46,6 +46,11 @@ test("IconTile exposes a transparent, backgroundless tile variant", () => {
 	assert.match(ICON_TILE_SOURCE, /square: "rounded-tile"/u);
 });
 
+test("IconTile gives labelled div and span roots valid image semantics", () => {
+	assert.match(ICON_TILE_SOURCE, /"aria-label": isDecorative \? undefined : label/u);
+	assert.match(ICON_TILE_SOURCE, /role: isDecorative \? props\.role : props\.role \?\? "img"/u);
+});
+
 test("IconTile transparent variant supports 24px and 32px tiles with 12px or 16px icons", () => {
 	assert.match(ICON_TILE_SOURCE, /small: "size-6/u);
 	assert.match(ICON_TILE_SOURCE, /medium: "size-8/u);
@@ -64,14 +69,9 @@ test("IconTile demos reserve the 16px size for transparent tiles only", () => {
 	assert.match(sizesDemoMatch[0], /variant="blue" size="xsmall"/u);
 	assert.match(sizesDemoMatch[0], /variant="blue" size="xlarge"/u);
 
-	assert.match(transparentDemoMatch[0], /variant="transparent" size="xxsmall"/u);
-	assert.match(transparentDemoMatch[0], /iconSize="small"[\s\S]*variant="transparent" size="small"/u);
-	assert.match(transparentDemoMatch[0], /iconSize="medium"[\s\S]*variant="transparent" size="small"/u);
-	assert.match(transparentDemoMatch[0], /iconSize="small"[\s\S]*variant="transparent" size="medium"/u);
-	assert.match(transparentDemoMatch[0], /iconSize="medium"[\s\S]*variant="transparent" size="medium"/u);
-	assert.match(transparentDemoMatch[0], /variant="transparent" size="small"/u);
-	assert.match(transparentDemoMatch[0], /variant="transparent" size="medium"/u);
-	assert.doesNotMatch(transparentDemoMatch[0], /variant="transparent" size="xsmall"/u);
-	assert.doesNotMatch(transparentDemoMatch[0], /variant="transparent" size="large"/u);
-	assert.doesNotMatch(transparentDemoMatch[0], /variant="transparent" size="xlarge"/u);
+	assert.match(ICON_TILE_DEMO_SOURCE, /\{ label: "16", size: "xxsmall", logoSize: "xxsmall" \}/u);
+	assert.match(ICON_TILE_DEMO_SOURCE, /\{ label: "24", size: "small", logoSize: "small" \}/u);
+	assert.match(ICON_TILE_DEMO_SOURCE, /\{ label: "32", size: "medium", logoSize: "small" \}/u);
+	assert.match(transparentDemoMatch[0], /variant="transparent" size=\{size\}/u);
+	assert.doesNotMatch(ICON_TILE_DEMO_SOURCE, /label: "(?:20|40|48)"/u);
 });

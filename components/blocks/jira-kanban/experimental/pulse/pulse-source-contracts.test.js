@@ -329,7 +329,7 @@ test("Pulse keeps a quiet member selectable and lets absence carry the signal", 
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /aria-label=\{isSelected\s*\?\s*`Clear filter: \$\{member\.name\}`/u);
 	// The work columns are a read-out: no tab stop, no drag affordance.
 	assert.match(SOURCES.rail, /draggable=\{false\}/u);
-	assert.match(SOURCES.rail, /tabIndex=\{-1\}/u);
+	assert.match(SOURCES.rail, /tabIndex=\{isInteractive \? undefined : -1\}/u);
 	// Work-item cards share the experimental board's stroke chrome.
 	assert.match(SOURCES.rail, /<JiraIssue[\s\S]*chrome="stroke"/u);
 	assert.match(SOURCES.rail, /<JiraIssue[\s\S]*variant="uncaptured-work"/u);
@@ -344,7 +344,7 @@ test("Pulse rail hangs everything off one left edge and one right edge", () => {
 	assert.match(SOURCES.rail, /className="flex min-w-0 flex-col gap-3"/u);
 	assert.match(
 		SOURCES.rail,
-		/className="-m-1 grid min-w-0 grid-cols-1 gap-10 p-1 lg:box-content lg:h-full lg:min-h-0 lg:w-\[628px\] lg:shrink-0 lg:grid-cols-\[320px_300px\] lg:gap-2 lg:overflow-y-auto lg:overscroll-y-contain"/u,
+		/className="-m-1 grid min-w-0 grid-cols-1 gap-10 p-1 lg:box-content lg:h-full lg:min-h-0 lg:grid-cols-\[minmax\(0,1fr\)_minmax\(0,1fr\)\] lg:gap-2 lg:overflow-y-auto lg:overscroll-y-contain"/u,
 	);
 	assert.equal([...SOURCES.rail.matchAll(/overflow-y-auto/gu)].length, 1, "the rail parent is the only work scroller");
 	// The roster and the window's numbers moved out of the rail entirely; the
@@ -387,6 +387,7 @@ test("Pulse header roster locks one SSR and first-render structure", async () =>
 	assert.match(serverMarkup, /data-slot="avatar-group" role="group" aria-label="Filter by person or agent"/u);
 	assert.equal([...serverMarkup.matchAll(/<button /gu)].length, 7);
 	assert.equal([...serverMarkup.matchAll(/aria-pressed="false"/gu)].length, 7);
+	assert.match(serverMarkup, /aria-label="Show only Venn, Software engineer"/u);
 	assert.match(serverMarkup, /aria-label="Show only Maya Ferreira, Staff engineer"/u);
 	assert.doesNotMatch(serverMarkup, /Board assignees|data-unassigned|aria-label="Unassigned"/u);
 });
@@ -405,11 +406,11 @@ test("Pulse is a toggle on the board's own control row, not a separate tab", () 
 	assert.ok(!existsSync(join(PULSE_DIR, "..", "experimental-view-tabs.tsx")), "the tab component should be retired, not left beside its replacement");
 
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /import \{ ExperimentalPulse \} from "\.\/pulse\/experimental-pulse";/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const \[mode, setMode\] = useState<ExperimentalJiraKanbanMode>\("board"\);/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const mode = controlledMode \?\? localMode;/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const isPulse = mode === "pulse";/u);
 	// The control row stays up in Pulse. Board mode keeps the board assignee
-	// facepile; Pulse swaps in its own member roster because the two filters own
-	// different ids and state.
+	// facepile, with Venn promoted so the presentation persona is visible;
+	// Pulse swaps in its roster. Both faces write the same Filter assignee field.
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /showBoardControls=\{!isPulse\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<PulseModeToggle/u);
 	assert.match(
@@ -419,6 +420,39 @@ test("Pulse is a toggle on the board's own control row, not a separate tab", () 
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /facepile\?: ReactNode;/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /modeToggle\?: ReactNode;/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /\{facepile \?\? \(/u);
+});
+
+test("the pressed Insights label uses a blue token that passes on its selected surface", () => {
+	assert.match(PULSE_MODE_CONTROLS_SOURCE, /border-border-selected text-text-accent-blue-bolder!/u);
+	assert.doesNotMatch(PULSE_MODE_CONTROLS_SOURCE, /text-text-selected/u);
+});
+
+test("Experimental board mode supports controlled and uncontrolled composition", () => {
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /mode\?: ExperimentalJiraKanbanMode;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onModeChange\?: \(mode: ExperimentalJiraKanbanMode\) => void;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /mode: controlledMode,/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const \[localMode, setLocalMode\] = useState<ExperimentalJiraKanbanMode>\("board"\);/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const mode = controlledMode \?\? localMode;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /if \(controlledMode === undefined\) \{\s*setLocalMode\(nextMode\);\s*\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onModeChange\?\.\(nextMode\);/u);
+});
+
+test("Insights routes only opted-in work items and local sessions", () => {
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onInsightsWorkItemClick\?: \(workItem: PulseWorkItem\) => void;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /isInsightsWorkItemInteractive\?: \(workItem: PulseWorkItem\) => boolean;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onResumeLooseWork\?: \(item: PulseLooseWork\) => void;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /isLooseWorkResumable\?: \(item: PulseLooseWork\) => boolean;/u);
+	assert.match(SOURCES.rail, /data-work-item-key=\{workItem\.key\}/u);
+	assert.match(SOURCES.rail, /const isInteractive = onWorkItemClick !== undefined/u);
+	assert.match(SOURCES.rail, /isWorkItemInteractive\?\.\(workItem\) \?\? true/u);
+	assert.match(SOURCES.rail, /onClick=\{isInteractive \? \(\) => onWorkItemClick\(workItem\) : undefined\}/u);
+	assert.match(SOURCES.rail, /disabled=\{!isInteractive\}/u);
+	assert.match(SOURCES.rail, /showMoreAction=\{false\}/u);
+	assert.match(SOURCES.rail, /tabIndex=\{isInteractive \? undefined : -1\}/u);
+	assert.match(SOURCES.rail, /data-loose-work-id=\{item\.id\}/u);
+	assert.match(SOURCES.rail, /item\.kind === "agent-session"/u);
+	assert.match(SOURCES.rail, /isLooseWorkResumable\?\.\(item\) \?\? true/u);
+	assert.match(SOURCES.rail, /onResumeAgentSession=\{\(\) => onResumeLooseWork\(item\)\}/u);
 });
 
 test("Insights owns the unread activity pill instead of a separate Timeline button", async () => {
@@ -490,7 +524,13 @@ test("Pulse keeps one member filter across the header facepile and the story fac
 	assert.match(SOURCES.hook, /const isControlled = selectedMemberId !== undefined;/u);
 	assert.match(SOURCES.hook, /onSelectedMemberIdChange\?\.\(memberId\);/u);
 	assert.match(SOURCES.hook, /export interface PulseTimelineOptions/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const \[pulseMemberId, setPulseMemberId\] = useState<string \| null>\(null\);/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /toPulseMemberId\(selectedAssigneeIds, PULSE_MEMBER_IDS\)/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /toInsightsAssigneeIds\(selectedAssigneeIds, PULSE_MEMBER_IDS\)/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /insightsDefaultAssigneeIds\?: readonly string\[\];/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /: new Set\(insightsDefaultAssigneeIds\);/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /controlledMode === "pulse"[\s\S]*markTimelineViewed\(PULSE_TIMELINE\)/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /handlePulseMemberChange/u);
+	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /const \[pulseMemberId, setPulseMemberId\] = useState<string \| null>\(null\);/u);
 	assert.match(SOURCES.shell, /usePulseMemberFilter\(\{ onSelectedMemberIdChange, selectedMemberId \}\)/u);
 	// Composition order is the contract: filter, then reading position, then pure
 	// derivation on top of both. Reversing any two of them puts the old circular
@@ -620,18 +660,73 @@ test("Pulse tiles three columns full-bleed, with the story taking the slack", ()
 	const scrubber = pxValue(SOURCES.scrubber, /className="pointer-events-none relative h-full min-h-\[24rem\] w-(\d+)"/u) * 4;
 	assert.strictEqual(scrubber, 144);
 
-	// The work rail is one fixed parent; only the story breathes. The two
-	// tracks keep 320 and 300 with the same 8px gutter as kanban columns.
-	assert.match(SOURCES.rail, /lg:grid-cols-\[320px_300px\]/u);
-	assert.match(SOURCES.rail, /lg:w-\[628px\]/u);
-	assert.match(SOURCES.rail, /lg:box-content/u, "padding sits outside the 320+8+300 measure so overflow-y cannot clip the uncaptured stroke");
+	// The work rail defaults to 320 / 8 / 300 and is resizable from `lg`. The
+	// story remains the flexible column; one handle lives in the 40px article
+	// gutter, as a sibling of the overflow grid.
+	assert.match(SOURCES.rail, /lg:grid-cols-\[minmax\(0,1fr\)_minmax\(0,1fr\)\]/u);
+	assert.match(SOURCES.rail, /lg:w-\[var\(--pulse-work-rail-width\)\]/u);
+	assert.match(SOURCES.rail, /lg:box-content/u, "padding sits outside the track measure so overflow-y cannot clip the uncaptured stroke");
 	assert.match(SOURCES.rail, /grid-cols-1 gap-10/u, "40px stacked gutter below lg");
 	assert.match(SOURCES.rail, /lg:gap-2/u, "8px gutter matching experimental kanban columns");
+	assert.match(SOURCES.rail, /testId="jira-pulse-insights-resize-handle"/u);
+	assert.doesNotMatch(SOURCES.rail, /testId="jira-pulse-work-items-resize-handle"/u);
+	assert.match(SOURCES.rail, /ariaLabel="Resize insights and work items"/u);
+	assert.doesNotMatch(SOURCES.rail, /ariaLabel="Resize work items and uncaptured work"/u);
+	assert.equal(
+		[...SOURCES.rail.matchAll(/<PulseResizeHandle/gu)].length,
+		1,
+		"only the insights/work-items gutter carries a resize handle",
+	);
+	assert.match(SOURCES.rail, /after:w-10/u, "the insights handle's hit area covers the 40px article gutter");
+	assert.match(SOURCES.rail, /left-\[-1\.25rem\]!/u, "the insights handle sits in the centre of the article gutter");
+	assert.match(SOURCES.rail, /group-hover\/pulse-work-rail:\[&>div\]:opacity-100/u, "the pill reveals while the work rail is hovered");
+	assert.match(
+		SOURCES.resizeHandle,
+		/bg-transparent! hover:bg-transparent! data-\[active\]:bg-transparent!/u,
+		"the 1px track never paints a full-height separator",
+	);
+	assert.match(
+		SOURCES.resizeHandle,
+		/\[&>div\]:origin-center \[&>div\]:bg-neutral-100/u,
+		"the pill is a grey bar when revealed",
+	);
+	assert.match(
+		SOURCES.resizeHandle,
+		/focus-visible:\[&>div\]:opacity-100/u,
+		"keyboard focus still reveals the pill without pointer hover",
+	);
+	assert.match(
+		SOURCES.resizeHandle,
+		/hover:\[&>div\]:scale-105 hover:\[&>div\]:bg-bg-selected-bold/u,
+		"the pill turns blue and scales on hover",
+	);
 	assert.doesNotMatch(SOURCES.shell, /lg:w-10 lg:shrink-0/u, "the inter-column spacer left with the two independent rails");
 	assert.match(SOURCES.shell, /<PulseWorkRail/u);
+	assert.match(SOURCES.rail, /chat === undefined \?/u, "the work rail swaps cards for embedded chat");
+	assert.match(SOURCES.rail, /data-pulse-embedded-chat=""/u);
+	assert.match(SOURCES.shell, /<PulseEmbeddedChat/u);
 	assert.match(SOURCES.shell, /lg:mr-10/u, "the article scrollport keeps a 40px gutter before the work rail");
 	assert.match(SOURCES.shell, /lg:pr-10/u, "the story content remains inset from its scrollbar");
 	assert.match(SOURCES.shell, /lg:h-full lg:min-h-0 lg:flex-row/u);
+});
+
+test("Pulse Insights hides the viewport Rovo launcher and embeds chat in the work rail", () => {
+	assert.match(SOURCES.chatContext, /PULSE_OPEN_DATASET_KEY = "jiraPulseOpen"/u);
+	assert.match(
+		SOURCES.insightsChat,
+		/document\.documentElement\.dataset\[PULSE_OPEN_DATASET_KEY\] = "true"/u,
+	);
+	assert.match(SOURCES.insightsChat, /openChat\("floating"\)/u);
+	assert.match(SOURCES.insightsChat, /sendPrompt\(question\)/u);
+	assert.match(SOURCES.embeddedChat, /placement="embedded"/u);
+	assert.match(SOURCES.embeddedChat, /showAgentBackButton=\{false\}/u);
+	assert.match(SOURCES.embeddedChat, /headerClassName=\{PULSE_EMBEDDED_CHAT_HEADER_CLASS\}/u);
+	assert.match(SOURCES.embeddedChat, /compactHeader/u);
+	assert.match(SOURCES.embeddedChat, /overflow-visible/u);
+	assert.match(SOURCES.layout, /PULSE_EMBEDDED_CHAT_HEADER_CLASS = "h-6 px-1 py-0"/u);
+	assert.doesNotMatch(SOURCES.embeddedChat, /FloatingRovoButton/u);
+	assert.doesNotMatch(SOURCES.shell, /FloatingRovoButton/u);
+	assert.match(SOURCES.shell, /insightsChatEnabled \? undefined : \(/u, "article answers stay the no-chat fallback");
 });
 
 test("Pulse scroll surface keeps a 24px content-side inset at the bottom", () => {

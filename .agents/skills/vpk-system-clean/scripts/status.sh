@@ -13,7 +13,11 @@ NEXT_DIRS=(
 	"$HOME/Labs/vpk-rovo/.next"
 	"$HOME"/.codex/worktrees/*/vpk-rovo/.next
 	"$HOME"/Labs/vpk-rovo/.claude/worktrees/*/.next
+	"$HOME"/.cursor/worktrees/vpk-rovo/*/.next
+	"$HOME"/.superset/worktrees/*/*/.next
 )
+MAIN_WORKTREE="$HOME/Labs/vpk-rovo"
+IDLE_STACK_MIN_AGE_SECS=1800
 
 print -- "── dev servers (next-server) ──"
 np=( ${(f)"$(pgrep -f 'next-server' 2>/dev/null)"} )
@@ -67,23 +71,41 @@ fi
 
 print -- "\n── tmux dev sessions (vpk-dev-*) ──"
 if command -v tmux >/dev/null 2>&1; then
-	rows=( ${(f)"$(tmux list-sessions -F '#{session_name}|#{session_path}|#{session_attached}' 2>/dev/null | grep '^vpk-dev-')"} )
-	if (( ${#rows} )); then
+	any=0
+	now_epoch=$(date +%s)
+	for socket in default vpk-dev; do
+		if [[ "$socket" == "default" ]]; then
+			rows=( ${(f)"$(tmux list-sessions -F '#{session_name}|#{session_path}|#{session_attached}|#{session_created}' 2>/dev/null)"} )
+		else
+			rows=( ${(f)"$(tmux -L "$socket" list-sessions -F '#{session_name}|#{session_path}|#{session_attached}|#{session_created}' 2>/dev/null)"} )
+		fi
 		for row in $rows; do
 			sname="${row%%|*}"; rest="${row#*|}"
-			spath="${rest%%|*}"; sattached="${rest##*|}"
+			spath="${rest%%|*}"; rest="${rest#*|}"
+			sattached="${rest%%|*}"; screated="${rest##*|}"
+			[[ "$sname" == vpk-dev-* ]] || continue
+			any=1
 			att=""; [[ "$sattached" == 1 ]] && att=" (attached)"
-			if [[ -n "$spath" && -d "$spath" ]]; then
-				print -- "${sname}${att}  $spath"
-			else
+			age=""
+			if [[ -n "$screated" && "$screated" != "0" ]]; then
+				age="  age $(( (now_epoch - screated) / 60 ))m"
+			fi
+			if [[ -z "$spath" || ! -d "$spath" ]]; then
 				flag="  ⚠ orphaned — worktree gone; sweep will kill it"
 				[[ "$sattached" == 1 ]] && flag="  ⚠ orphaned but attached — sweep keeps it"
-				print -- "${sname}${att}  ${spath:-?}$flag"
+				print -- "${sname}${att}${age}  ${spath:-?}  [$socket]$flag"
+				continue
 			fi
+			flag=""
+			if [[ "$sattached" == 1 || "$sname" == "vpk-dev-main" || "$spath" == "$MAIN_WORKTREE" ]]; then
+				flag=""
+			elif [[ -n "$screated" && "$screated" != "0" ]] && (( now_epoch - screated >= IDLE_STACK_MIN_AGE_SECS )); then
+				flag="  ⚠ idle candidate — sweep stops if no tool process has cwd here"
+			fi
+			print -- "${sname}${att}${age}  $spath  [$socket]$flag"
 		done
-	else
-		print -- "(none running)"
-	fi
+	done
+	(( any == 0 )) && print -- "(none running)"
 else
 	print -- "(tmux not installed)"
 fi

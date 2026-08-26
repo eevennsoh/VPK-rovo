@@ -9,6 +9,11 @@ export {
 	ContextBarTrigger,
 } from "./context-bar";
 export {
+	ContextBarPromptFlyout,
+	type ContextBarPromptFlyoutItem,
+	type ContextBarPromptFlyoutProps,
+} from "./context-bar-prompt-flyout";
+export {
 	ContextBarCreatePullRequest,
 	type ContextBarCreatePullRequestMode,
 	type ContextBarCreatePullRequestProps,

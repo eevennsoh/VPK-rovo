@@ -13,7 +13,7 @@ const WORK_ITEM_SECTION_TABS = buildWorkItemSectionTabs({ guidedReview: null });
 
 /**
  * Work-item body as one continuous scroll: description then activity.
- * Insights is a body swap in `ContextPanel`, not a stacked section here.
+ * Insights sits beside this body in `ContextPanel`, not as a stacked section.
  *
  * The activity slot arrives pre-wrapped in its own `WorkItemSection` because
  * the panel owns the filter/sort state that its heading row renders.

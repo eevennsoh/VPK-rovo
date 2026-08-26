@@ -48,6 +48,10 @@ const TERMINAL_JIRA_PANE_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/jira-golden-journeys-v1/components/terminal-stage-jira-pane.tsx"),
 	"utf8",
 );
+const TERMINAL_CLAUDE_PANE_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/jira-golden-journeys-v1/components/terminal-stage-claude-pane.tsx"),
+	"utf8",
+);
 const TERMINAL_STAGE_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/jira-golden-journeys-v1/components/terminal-stage.tsx"),
 	"utf8",
@@ -119,6 +123,28 @@ test("applyBoardEvent no-ops on an unknown key", async () => {
 	const next = harness.applyBoardEvent(items, { key: "WEB-404", to: "done", type: "move-item" });
 
 	assert.deepEqual(next, items);
+});
+
+test("paste writes the full prompt draft without changing type semantics", async () => {
+	const harness = await loadTerminalStateHarness();
+	const initial = harness.createInitialTerminalDemoState();
+	const pasted = harness.applyStep(initial, {
+		kind: "paste",
+		pane: "right",
+		text: "claude --resume PAY-101",
+	});
+	const typed = harness.applyStep(initial, {
+		kind: "type",
+		pane: "right",
+		text: "claude --resume PAY-101",
+	});
+
+	assert.equal(pasted.right.promptDraft, "claude --resume PAY-101");
+	assert.equal(typed.right.promptDraft, "claude --resume PAY-101");
+	assert.deepEqual(pasted.right.transcript, []);
+	assert.deepEqual(typed.right.transcript, []);
+	assert.match(TERMINAL_HOOK_SOURCE, /step\.kind === "paste"[\s\S]*PASTE_PREVIEW_MS/u);
+	assert.match(TERMINAL_CLAUDE_PANE_SOURCE, /activeStep\?\.kind === "paste"/u);
 });
 
 test("stepping through the whole script equals folding to the final beat", async () => {

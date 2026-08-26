@@ -84,7 +84,11 @@ function FilterOptionLeadingVisual({
 		}
 
 		return (
-			<Avatar label="" size={compact ? "xs" : "sm"}>
+			<Avatar
+				label=""
+				shape={option.avatarSrc.startsWith("/avatar-agent/") ? "hexagon" : "circle"}
+				size={compact ? "xs" : "sm"}
+			>
 				<AvatarImage alt="" src={option.avatarSrc} />
 				<AvatarFallback>{option.label.slice(0, 1)}</AvatarFallback>
 			</Avatar>

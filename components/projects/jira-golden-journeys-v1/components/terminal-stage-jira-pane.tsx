@@ -90,7 +90,12 @@ function JiraShellView({
 	story: TerminalStoryDefinition;
 }>): React.ReactElement {
 	const isTyping = activeStep?.kind === "type" && activeStep.pane === "left";
-	const displayedDraft = isTyping ? activeStep.text.slice(0, revealCount) : pane.promptDraft;
+	const isPasting = activeStep?.kind === "paste" && activeStep.pane === "left";
+	const displayedDraft = isTyping
+		? activeStep.text.slice(0, revealCount)
+		: isPasting
+			? activeStep.text
+			: pane.promptDraft;
 	const inFlightLines = getVisibleOutputLines(activeStep, "left", revealCount);
 
 	return (

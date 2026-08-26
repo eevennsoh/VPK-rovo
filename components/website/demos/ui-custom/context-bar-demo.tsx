@@ -2,6 +2,7 @@
 
 import BranchIcon from "@atlaskit/icon/core/branch";
 import EditIcon from "@atlaskit/icon/core/edit";
+import LightbulbIcon from "@atlaskit/icon/core/lightbulb";
 import LocationIcon from "@atlaskit/icon/core/location";
 import PageIcon from "@atlaskit/icon/core/page";
 import PersonIcon from "@atlaskit/icon/core/person";
@@ -15,6 +16,7 @@ import {
 	ContextBarCreatePullRequest,
 	ContextBarLead,
 	ContextBarPill,
+	ContextBarPromptFlyout,
 	ContextBarPullRequest,
 	ContextBarTag,
 	ContextBarTagGroup,
@@ -269,3 +271,38 @@ export function ContextBarDemoPullRequest() {
 		</div>
 	);
 }
+
+/**
+ * One context-bar pill in the dock; hover or click stacks the remaining prompts
+ * straight up as the same pills. The extras sit above the trigger, so the
+ * demo is padded from the top rather than wrapping a full composer.
+ */
+export function ContextBarDemoPromptFlyout() {
+	const prompts = [
+		"Is this epic going to hit its target date?",
+		"Which stream is furthest behind?",
+		"What is left before the adapter can be deleted?",
+	];
+	const [selected, setSelected] = useState<string | null>(null);
+
+	return (
+		<div className="flex min-h-[28rem] w-full max-w-md items-end p-8">
+			<div className="w-full">
+				<ContextBarPromptFlyout
+					icon={
+						<LightbulbIcon color={token("color.icon.subtle")} label="" size="small" />
+					}
+					items={prompts.map((prompt, index) => ({
+						id: `prompt-${index}`,
+						label: prompt,
+						onSelect: () => setSelected(prompt),
+					}))}
+				/>
+				{selected ? (
+					<p className="mt-3 text-sm text-text-subtle">Asked: {selected}</p>
+				) : null}
+			</div>
+		</div>
+	);
+}
+
