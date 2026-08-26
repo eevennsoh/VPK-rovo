@@ -655,6 +655,29 @@ test("Experimental kanban Create is hover-revealed on the column while the defau
 	);
 });
 
+test("Experimental kanban column agent assignment uses the compact trigger and work-item selector", () => {
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/import \{ WorkItemAgentSelector \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/components\/work-item-agent-selector";/u,
+	);
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/const \[pinnedAgentIds, setPinnedAgentIds\] = useState<readonly string\[\]>\(DEFAULT_PINNED_SPACE_AGENT_IDS\);/u,
+	);
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/hasAssignedAgents \? "default" : "icon-compact"/u,
+	);
+	assert.doesNotMatch(
+		EXPERIMENTAL_SOURCE,
+		/hasAssignedAgents \? "h-8 min-w-0 gap-1 px-1\.5" : "size-8"/u,
+	);
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/<WorkItemAgentSelector[\s\S]*agents=\{agents\}[\s\S]*onPinnedAgentIdsChange=\{setPinnedAgentIds\}[\s\S]*pinnedAgentIds=\{pinnedAgentIds\}[\s\S]*selectedAgentIds=\{assignedAgentIds\}/u,
+	);
+});
+
 test("Experimental kanban variant owns its own tree without touching the default variant", () => {
 	// The fork renders its own board/header so experimental changes cannot leak
 	// into the standard variant.
