@@ -189,6 +189,7 @@ test("RFP-101 resolves needs-input and completion states before moving to Review
 		issueKey: "RFP-101",
 		issueSummary: "Acmecorp: Prepare for bid recommendation for ESM RFP",
 		relativeTime: "Just now",
+		state: "done",
 	});
 	assert.equal(column(state, "Drafting").cards.length, 0);
 });

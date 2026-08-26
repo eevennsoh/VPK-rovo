@@ -5,7 +5,12 @@ import { AnimatePresence, motion, useReducedMotion, type Transition } from "moti
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import StatusInformationIcon from "@atlaskit/icon/core/status-information";
 
-import { AgentList, type AgentListItem } from "@/components/blocks/agent-list";
+import {
+	AgentList,
+	type AgentListCustomFlyoutActions,
+	type AgentListItem,
+} from "@/components/blocks/agent-list";
+import { AgentStates } from "@/components/blocks/agent-states";
 import { summarizeJiraIssueAgentActivities } from "@/components/blocks/jira-issue/agent-activity-model";
 import type { QuestionCardAnswers, QuestionCardQuestion } from "@/components/blocks/question-card/types";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
@@ -112,10 +117,12 @@ function toAgentListItem(activity: JiraIssueAgentActivity): AgentListItem {
 function JiraIssueAgentActivityRow({
 	activities,
 	onOpenChange,
+	onQuestionSubmit,
 	onViewChat,
 }: Readonly<{
 	activities: readonly JiraIssueAgentActivity[];
 	onOpenChange?: (open: boolean) => void;
+	onQuestionSubmit?: (activity: JiraIssueAgentActivity, answers: QuestionCardAnswers) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
 }>) {
 	const [flyoutOpen, setFlyoutOpen] = useState(false);
@@ -143,21 +150,67 @@ function JiraIssueAgentActivityRow({
 		onViewChat?.(activity);
 	}
 
+	function renderAgentFlyout(
+		item: AgentListItem,
+		{ close }: AgentListCustomFlyoutActions,
+	) {
+		const activity = activities.find((candidate) => candidate.id === item.id);
+		if (!activity) {
+			return null;
+		}
+
+		return (
+			<AgentStates
+				agent={{
+					avatarSrc: activity.avatarSrc,
+					brandName: activity.agentBrandName,
+					id: activity.id,
+					name: activity.name,
+				}}
+				initialElapsedSeconds={activity.initialElapsedSeconds}
+				message={activity.message}
+				onQuestionSubmit={onQuestionSubmit
+					? (answers) => {
+						close();
+						handleOpenChange(false);
+						onQuestionSubmit(activity, answers);
+					}
+					: undefined}
+				onView={onViewChat
+					? () => {
+						close();
+						handleAgentListView(item);
+					}
+					: undefined}
+				question={activity.question}
+				startedAtMs={activity.startedAtMs}
+				state={activity.state}
+			/>
+		);
+	}
+
 	const trigger = (
 		<button
 			type="button"
 			aria-expanded={isSingleAgent ? undefined : flyoutOpen}
 			aria-label={
 				isSingleAgent
-					? `Open ${activities[0]?.name ?? "agent"} in Rovo chat: ${summary.label}`
+					? onViewChat
+						? `Open ${activities[0]?.name ?? "agent"} in Rovo chat: ${summary.label}`
+						: `Show ${activities[0]?.name ?? "agent"}: ${summary.label}`
 					: `Show ${summary.activityCount} agents: ${summary.label}`
 			}
 			data-slot="jira-issue-agent-row"
-			disabled={isSingleAgent && onViewChat === undefined}
 			onClick={isSingleAgent
-				? () => onViewChat?.(activities[0])
+				? () => {
+					if (onViewChat) {
+						onViewChat(activities[0]);
+						return;
+					}
+					handleOpenChange(true);
+				}
 				: () => handleOpenChange(true)}
-			className="flex h-6 w-full min-w-0 items-center justify-between gap-2 rounded-b-[6px] rounded-t-sm px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-disabled"
+			className="flex h-6 w-full min-w-0 items-center justify-between gap-2 rounded-b-[6px] rounded-t-sm px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
 		>
 			<div className="flex min-w-0 flex-1 items-center gap-2">
 				{featuredActivity ? (
@@ -211,8 +264,22 @@ function JiraIssueAgentActivityRow({
 		</button>
 	);
 
-	if (isSingleAgent) {
-		return trigger;
+	if (isSingleAgent && featuredActivity) {
+		return (
+			<HoverCard open={flyoutOpen} onOpenChange={handleOpenChange}>
+				<HoverCardTrigger closeDelay={80} delay={120} render={trigger} />
+				<HoverCardContent
+					align="start"
+					alignOffset={0}
+					className="w-auto max-w-[calc(100vw-48px)] bg-transparent p-0 shadow-none data-ending-style:transition-none"
+					positionerClassName="z-[575] after:pointer-events-auto after:absolute after:-inset-2 after:-z-10 after:content-['']"
+					side="right"
+					sideOffset={8}
+				>
+					{renderAgentFlyout(agentListItems[0], { close: () => handleOpenChange(false) })}
+				</HoverCardContent>
+			</HoverCard>
+		);
 	}
 
 	return (
@@ -231,6 +298,7 @@ function JiraIssueAgentActivityRow({
 					flyout="none"
 					items={agentListItems}
 					onView={handleAgentListView}
+					renderFlyout={renderAgentFlyout}
 					variant="compact"
 				/>
 			</HoverCardContent>
@@ -309,6 +377,7 @@ function JiraIssueCyclingAgentLabel(props: Readonly<{
 export function JiraIssueAgentActivityRows({
 	activities,
 	onOpenChange,
+	onQuestionSubmit,
 	onViewChat,
 	shouldReduceMotion,
 }: Readonly<{
@@ -344,6 +413,7 @@ export function JiraIssueAgentActivityRows({
 						<JiraIssueAgentActivityRow
 							activities={activities}
 							onOpenChange={onOpenChange}
+							onQuestionSubmit={onQuestionSubmit}
 							onViewChat={onViewChat}
 						/>
 					</motion.div>

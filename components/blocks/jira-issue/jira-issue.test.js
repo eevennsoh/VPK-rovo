@@ -194,14 +194,15 @@ test("Jira issue exposes agent activity state props", () => {
 });
 
 test("Jira issue aggregates active agents into one priority row and an Agent List flyout", () => {
-	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ AgentList, type AgentListItem \} from "@\/components\/blocks\/agent-list";/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /import \{[\s\S]*AgentList,[\s\S]*type AgentListCustomFlyoutActions,[\s\S]*type AgentListItem,[\s\S]*\} from "@\/components\/blocks\/agent-list";/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ AgentStates \} from "@\/components\/blocks\/agent-states";/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /import AiAgentIcon from "@atlaskit\/icon\/core\/ai-agent";/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /summarizeJiraIssueAgentActivities\(activities\)/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<span className="ml-px grid size-4 shrink-0 place-items-center text-text-subtlest" aria-hidden="true">\s*<AiAgentIcon label="" \/>/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AvatarFallback[\s\S]*\{summary\.activityCount\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /className="flex h-6 w-full[^"]*rounded-b-\[6px\] rounded-t-sm[^"]*"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const isSingleAgent = summary\.activityCount === 1;/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /onClick=\{isSingleAgent[\s\S]*\? \(\) => onViewChat\?\.\(activities\[0\]\)[\s\S]*: \(\) => handleOpenChange\(true\)\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /onClick=\{isSingleAgent[\s\S]*if \(onViewChat\) \{[\s\S]*onViewChat\(activities\[0\]\);[\s\S]*return;[\s\S]*\}[\s\S]*handleOpenChange\(true\);[\s\S]*: \(\) => handleOpenChange\(true\)\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<AgentList[\s\S]*flyout="none"[\s\S]*items=\{agentListItems\}[\s\S]*onView=\{handleAgentListView\}[\s\S]*variant="compact"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /className="w-full border-0 bg-surface-overlay shadow-2xl"/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /className="w-full shadow-overlay"/u);
@@ -377,7 +378,8 @@ test("Jira issue uses the VPK Badge primitive for row counts", () => {
 });
 
 test("Jira issue renders one aggregate agent row with prioritized status and a list flyout", () => {
-	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ AgentList, type AgentListItem \} from "@\/components\/blocks\/agent-list";/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /import \{[\s\S]*AgentList,[\s\S]*type AgentListCustomFlyoutActions,[\s\S]*type AgentListItem,[\s\S]*\} from "@\/components\/blocks\/agent-list";/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ AgentStates \} from "@\/components\/blocks\/agent-states";/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual";/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /import \{ Avatar, AvatarFallback \} from "@\/components\/ui\/avatar";/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const summary = summarizeJiraIssueAgentActivities\(activities\);/u);
@@ -390,9 +392,10 @@ test("Jira issue renders one aggregate agent row with prioritized status and a l
 	assert.match(AGENT_ACTIVITY_SOURCE, /duration=\{JIRA_ISSUE_AGENT_SHIMMER_DURATION\}[\s\S]*spread=\{JIRA_ISSUE_AGENT_SHIMMER_SPREAD\}[\s\S]*\{summary\.label\}[\s\S]*<AnimatedDots \/>/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<Spinner label="" size="sm" \/>/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<HoverCard open=\{flyoutOpen\} onOpenChange=\{handleOpenChange\}>[\s\S]*<HoverCardTrigger closeDelay=\{80\} delay=\{120\}/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<AgentList[\s\S]*flyout="none"[\s\S]*items=\{agentListItems\}[\s\S]*onView=\{handleAgentListView\}[\s\S]*variant="compact"/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<AgentList[\s\S]*flyout="none"[\s\S]*items=\{agentListItems\}[\s\S]*onView=\{handleAgentListView\}[\s\S]*renderFlyout=\{renderAgentFlyout\}[\s\S]*variant="compact"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /handleOpenChange\(false\);[\s\S]*onViewChat\?\.\(activity\);/u);
-	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AgentStates/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<AgentStates[\s\S]*onQuestionSubmit=\{onQuestionSubmit[\s\S]*onQuestionSubmit\(activity, answers\);[\s\S]*question=\{activity\.question\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<JiraIssueAgentActivityRow[\s\S]*onQuestionSubmit=\{onQuestionSubmit\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /className=\{cn\("flex w-full min-w-0 flex-col overflow-hidden", hasActivities && "px-1 py-1"\)\}/u);
 	assert.match(SOURCE, /"relative w-full min-w-0 overflow-visible rounded-\[10px\] outline-none"/);
 	assert.match(SOURCE, /"group\/jira-issue relative w-full min-w-0 overflow-visible outline-none"/);
