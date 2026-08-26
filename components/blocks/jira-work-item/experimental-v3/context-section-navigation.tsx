@@ -28,7 +28,7 @@ interface SectionNavigationValue {
 	activeSectionId: WorkItemSectionId | null;
 	/** Count on the Insights tab. Null until a panel publishes a positive one. */
 	insightsCount: number | null;
-	/** True while Insights has replaced the Description/Activity body. */
+	/** True while Insights is shown beside the Description/Activity body. */
 	insightsSelected: boolean;
 	clearInsights: () => void;
 	registerSection: (sectionId: WorkItemSectionId, node: HTMLElement | null) => void;
@@ -220,8 +220,8 @@ export function usePublishSections(next: readonly WorkItemSectionTab[]): void {
 
 /**
  * Publishes the Activity tab's count from whichever activity panel is mounted.
- * Keep the last value on unmount so a body swap (Insights) does not blank the
- * tab number while Description/Activity are off-screen.
+ * Keep the last value on unmount so leaving Insights does not blank the
+ * tab number while Description/Activity remount.
  */
 export function usePublishActivityCount(count: number): void {
 	const { setActivityCount } = useSectionNavigation();
@@ -233,7 +233,7 @@ export function usePublishActivityCount(count: number): void {
 /**
  * Publishes the Insights tab's count from the same source the composer
  * "new insights" pill used. Zero hides the number; keep a positive value
- * on unmount so a body swap does not blank the tab.
+ * on unmount so leaving Insights does not blank the tab.
  */
 export function usePublishInsightsCount(count: number): void {
 	const { setInsightsCount } = useSectionNavigation();

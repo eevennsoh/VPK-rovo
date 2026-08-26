@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { RovoColorIcon } from "@/components/ui/logo";
+import { cn } from "@/lib/utils";
 import {
 	isRovoAgentProfile,
 } from "@/app/data/directory/agents";
@@ -75,10 +76,12 @@ const ROVO_APP_BRAND_REDUCED_ITEM_VARIANTS = {
 } as const;
 
 export interface RovoAppBrandProps {
+	className?: string;
 	enableAgentSelector?: boolean;
 }
 
 export function RovoAppBrand({
+	className,
 	enableAgentSelector = true,
 }: Readonly<RovoAppBrandProps>) {
 	const [open, setOpen] = useState(false);
@@ -170,7 +173,7 @@ export function RovoAppBrand({
 
 	if (!enableAgentSelector) {
 		return (
-			<div className="flex h-8 min-w-0 shrink-0 items-center px-2 text-sm font-medium text-text">
+			<div className={cn("flex h-8 min-w-0 shrink-0 items-center px-2 text-sm font-medium text-text", className)}>
 				{identity}
 			</div>
 		);
@@ -182,7 +185,7 @@ export function RovoAppBrand({
 				render={
 					<Button
 						aria-label={isCustomAgentSelected ? `Select ${selectedAgent.name}` : "Select Rovo agent"}
-						className="h-8 min-w-0 shrink gap-1.5 px-2 text-sm font-medium text-text"
+						className={cn("h-8 min-w-0 shrink gap-1.5 px-2 text-sm font-medium text-text", className)}
 						type="button"
 						variant="ghost"
 					/>

@@ -344,7 +344,7 @@ test("Pulse rail hangs everything off one left edge and one right edge", () => {
 	assert.match(SOURCES.rail, /className="flex min-w-0 flex-col gap-3"/u);
 	assert.match(
 		SOURCES.rail,
-		/className="-m-1 grid min-w-0 grid-cols-1 gap-10 p-1 lg:box-content lg:h-full lg:min-h-0 lg:w-\[628px\] lg:shrink-0 lg:grid-cols-\[320px_300px\] lg:gap-2 lg:overflow-y-auto lg:overscroll-y-contain"/u,
+		/className="-m-1 grid min-w-0 grid-cols-1 gap-10 p-1 lg:box-content lg:h-full lg:min-h-0 lg:grid-cols-\[minmax\(0,1fr\)_minmax\(0,1fr\)\] lg:gap-2 lg:overflow-y-auto lg:overscroll-y-contain"/u,
 	);
 	assert.equal([...SOURCES.rail.matchAll(/overflow-y-auto/gu)].length, 1, "the rail parent is the only work scroller");
 	// The roster and the window's numbers moved out of the rail entirely; the
@@ -624,18 +624,73 @@ test("Pulse tiles three columns full-bleed, with the story taking the slack", ()
 	const scrubber = pxValue(SOURCES.scrubber, /className="pointer-events-none relative h-full min-h-\[24rem\] w-(\d+)"/u) * 4;
 	assert.strictEqual(scrubber, 144);
 
-	// The work rail is one fixed parent; only the story breathes. The two
-	// tracks keep 320 and 300 with the same 8px gutter as kanban columns.
-	assert.match(SOURCES.rail, /lg:grid-cols-\[320px_300px\]/u);
-	assert.match(SOURCES.rail, /lg:w-\[628px\]/u);
-	assert.match(SOURCES.rail, /lg:box-content/u, "padding sits outside the 320+8+300 measure so overflow-y cannot clip the uncaptured stroke");
+	// The work rail defaults to 320 / 8 / 300 and is resizable from `lg`. The
+	// story remains the flexible column; one handle lives in the 40px article
+	// gutter, as a sibling of the overflow grid.
+	assert.match(SOURCES.rail, /lg:grid-cols-\[minmax\(0,1fr\)_minmax\(0,1fr\)\]/u);
+	assert.match(SOURCES.rail, /lg:w-\[var\(--pulse-work-rail-width\)\]/u);
+	assert.match(SOURCES.rail, /lg:box-content/u, "padding sits outside the track measure so overflow-y cannot clip the uncaptured stroke");
 	assert.match(SOURCES.rail, /grid-cols-1 gap-10/u, "40px stacked gutter below lg");
 	assert.match(SOURCES.rail, /lg:gap-2/u, "8px gutter matching experimental kanban columns");
+	assert.match(SOURCES.rail, /testId="jira-pulse-insights-resize-handle"/u);
+	assert.doesNotMatch(SOURCES.rail, /testId="jira-pulse-work-items-resize-handle"/u);
+	assert.match(SOURCES.rail, /ariaLabel="Resize insights and work items"/u);
+	assert.doesNotMatch(SOURCES.rail, /ariaLabel="Resize work items and uncaptured work"/u);
+	assert.equal(
+		[...SOURCES.rail.matchAll(/<PulseResizeHandle/gu)].length,
+		1,
+		"only the insights/work-items gutter carries a resize handle",
+	);
+	assert.match(SOURCES.rail, /after:w-10/u, "the insights handle's hit area covers the 40px article gutter");
+	assert.match(SOURCES.rail, /left-\[-1\.25rem\]!/u, "the insights handle sits in the centre of the article gutter");
+	assert.match(SOURCES.rail, /group-hover\/pulse-work-rail:\[&>div\]:opacity-100/u, "the pill reveals while the work rail is hovered");
+	assert.match(
+		SOURCES.resizeHandle,
+		/bg-transparent! hover:bg-transparent! data-\[active\]:bg-transparent!/u,
+		"the 1px track never paints a full-height separator",
+	);
+	assert.match(
+		SOURCES.resizeHandle,
+		/\[&>div\]:origin-center \[&>div\]:bg-neutral-100/u,
+		"the pill is a grey bar when revealed",
+	);
+	assert.match(
+		SOURCES.resizeHandle,
+		/focus-visible:\[&>div\]:opacity-100/u,
+		"keyboard focus still reveals the pill without pointer hover",
+	);
+	assert.match(
+		SOURCES.resizeHandle,
+		/hover:\[&>div\]:scale-105 hover:\[&>div\]:bg-bg-selected-bold/u,
+		"the pill turns blue and scales on hover",
+	);
 	assert.doesNotMatch(SOURCES.shell, /lg:w-10 lg:shrink-0/u, "the inter-column spacer left with the two independent rails");
 	assert.match(SOURCES.shell, /<PulseWorkRail/u);
+	assert.match(SOURCES.rail, /chat === undefined \?/u, "the work rail swaps cards for embedded chat");
+	assert.match(SOURCES.rail, /data-pulse-embedded-chat=""/u);
+	assert.match(SOURCES.shell, /<PulseEmbeddedChat/u);
 	assert.match(SOURCES.shell, /lg:mr-10/u, "the article scrollport keeps a 40px gutter before the work rail");
 	assert.match(SOURCES.shell, /lg:pr-10/u, "the story content remains inset from its scrollbar");
 	assert.match(SOURCES.shell, /lg:h-full lg:min-h-0 lg:flex-row/u);
+});
+
+test("Pulse Insights hides the viewport Rovo launcher and embeds chat in the work rail", () => {
+	assert.match(SOURCES.chatContext, /PULSE_OPEN_DATASET_KEY = "jiraPulseOpen"/u);
+	assert.match(
+		SOURCES.insightsChat,
+		/document\.documentElement\.dataset\[PULSE_OPEN_DATASET_KEY\] = "true"/u,
+	);
+	assert.match(SOURCES.insightsChat, /openChat\("floating"\)/u);
+	assert.match(SOURCES.insightsChat, /sendPrompt\(question\)/u);
+	assert.match(SOURCES.embeddedChat, /placement="embedded"/u);
+	assert.match(SOURCES.embeddedChat, /showAgentBackButton=\{false\}/u);
+	assert.match(SOURCES.embeddedChat, /headerClassName=\{PULSE_EMBEDDED_CHAT_HEADER_CLASS\}/u);
+	assert.match(SOURCES.embeddedChat, /compactHeader/u);
+	assert.match(SOURCES.embeddedChat, /overflow-visible/u);
+	assert.match(SOURCES.layout, /PULSE_EMBEDDED_CHAT_HEADER_CLASS = "h-6 px-1 py-0"/u);
+	assert.doesNotMatch(SOURCES.embeddedChat, /FloatingRovoButton/u);
+	assert.doesNotMatch(SOURCES.shell, /FloatingRovoButton/u);
+	assert.match(SOURCES.shell, /insightsChatEnabled \? undefined : \(/u, "article answers stay the no-chat fallback");
 });
 
 test("Pulse scroll surface keeps a 24px content-side inset at the bottom", () => {
