@@ -31,9 +31,8 @@ export type AgentListVariant = "default" | "compact";
 /**
  * Which hover/focus flyout a session row opens.
  *
- * - `session` (default) — the shared Jira agent-session flyout, the same rich
- *   work item / agent / development summary the live Jira sidebar renders. Read
- *   only, and shared across the whole list via one payload handle.
+ * - `session` (default) — the shared, property-free Agent States flyout. It is
+ *   shared across the whole list via one payload handle.
  * - `composer` — the per-row Agent States card, which adds a prompt composer so
  *   the viewer can reply to the agent without leaving the list.
  * - `none` — no flyout. For rows that are not agent sessions (a teammate's
@@ -64,15 +63,22 @@ export interface AgentListInvoker {
 }
 
 /**
- * Flyout-only session metadata that a session row cannot derive from itself —
- * work item, repository, pull request, checks, and worktree details. Identity
- * (`id`, `title`, agent, lifecycle `status`) is always owned by the row and is
- * therefore not overridable here; see `toAgentSessionFlyoutItem`.
+ * Session metadata that a row cannot derive from itself. Identity, lifecycle,
+ * and timing are always owned by the row and are therefore not overridable
+ * here; see `toAgentSessionFlyoutItem`.
  */
 export type AgentListSessionDetails = Partial<
 	Omit<
 		JiraSidebarSessionItem,
-		"agentAvatarSrc" | "agentName" | "id" | "status" | "title"
+		| "agentAvatarSrc"
+		| "agentName"
+		| "completedAtMs"
+		| "completedSecondsAgo"
+		| "id"
+		| "initialElapsedSeconds"
+		| "startedAtMs"
+		| "status"
+		| "title"
 	>
 >;
 
@@ -123,8 +129,8 @@ export interface AgentListItem {
 	 */
 	prStatus?: AgentListPrStatus;
 	/**
-	 * Extra work-item and development metadata surfaced by the hover flyout.
-	 * Anything omitted is derived from the row — see `toAgentSessionFlyoutItem`.
+	 * Extra session metadata carried through the shared payload. Anything omitted
+	 * is derived from the row — see `toAgentSessionFlyoutItem`.
 	 */
 	sessionDetails?: AgentListSessionDetails;
 }

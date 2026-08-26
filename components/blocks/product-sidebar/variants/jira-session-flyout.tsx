@@ -23,6 +23,7 @@ import TaskIcon from "@atlaskit/icon/core/task";
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import IfElseIcon from "@atlaskit/icon-lab/core/if-else";
 
+import { AgentStates, type AgentStatesState } from "@/components/blocks/agent-states";
 import { AgentProfileCard } from "@/components/blocks/agent-profile-card";
 import { SmartLink, SMART_LINK_MODAL_ACTIONS, type SmartLinkItem } from "@/components/blocks/smart-link";
 import { Alert, AlertTitle } from "@/components/ui/alert";
@@ -63,6 +64,7 @@ export type JiraSessionFlyoutTriggerProps = Omit<
 
 export interface JiraSessionFlyoutSurfaceProps {
 	handle: JiraSessionFlyoutHandle;
+	onSubmitPrompt?: (session: JiraSidebarSessionItem, prompt: string) => void;
 }
 
 interface FocusCaptureChildProps {
@@ -114,10 +116,10 @@ export function JiraSessionFlyoutTrigger({
 }
 
 /**
- * The rich Jira agent-session flyout body — the canonical "latest" flyout for a
- * queue session. It is rendered both by the live product sidebar
- * (`JiraSessionRow` in `./jira`) and by the `agent-session-flyout` block
- * showcase, so it lives here as a shared owner rather than inside the block.
+ * The rich Jira agent-session detail body used by the queue and For You detail
+ * panels. Hover flyouts use the property-free Agent States card below; this
+ * body remains the owner for surfaces that intentionally expose work-item and
+ * development properties.
  *
  * The body reuses the shared design-system components: the work item is a
  * SmartLink, the agent is an agent-type Tag pill, PR state is a Lozenge, and the
@@ -136,6 +138,19 @@ const STATUS_UPDATED_LABEL: Record<JiraSidebarSessionStatus, string> = {
 	merged: "5h ago",
 	stopped: "1d ago",
 };
+
+/** Queue lifecycle mapped onto the compact, property-free agent card states. */
+function toAgentStatesState(status: JiraSidebarSessionStatus): AgentStatesState {
+	if (status === "awaiting-input") return "awaiting-input";
+	if (status === "running") return "working";
+	return "completed";
+}
+
+/** Copy for terminal states that cannot use the successful completion default. */
+function toAgentStatesMessage(status: JiraSidebarSessionStatus): string | undefined {
+	if (status !== "stopped") return undefined;
+	return "This session was stopped before the requested work was completed.";
+}
 
 /** Work-item status lozenge derived from the session lifecycle. */
 const STATUS_WORK_ITEM: Record<
@@ -414,13 +429,15 @@ export function JiraSessionFlyoutBody({
 }
 
 /**
- * One payload-aware flyout shared by every session row in a list. Base UI's
- * viewport keeps the popup mounted while the anchor changes. The shell follows
- * the new row, immediately adopts its measured size, and crossfades the old and
- * new content without letting rapid hovers restart a stale size transition.
+ * One payload-aware, property-free Agent States flyout shared by every session
+ * row in a list. Base UI's viewport keeps the popup mounted while the anchor
+ * changes. The shell follows the new row, immediately adopts its measured size,
+ * and crossfades the old and new content without letting rapid hovers restart a
+ * stale size transition.
  */
 export function JiraSessionFlyoutSurface({
 	handle,
+	onSubmitPrompt,
 }: Readonly<JiraSessionFlyoutSurfaceProps>) {
 	return (
 		<HoverCard<JiraSidebarSessionItem> handle={handle}>
@@ -435,9 +452,21 @@ export function JiraSessionFlyoutSurface({
 				>
 					<HoverCardViewport className="relative size-full overflow-clip rounded-[inherit] [&_[data-current]]:w-(--popup-width) [&_[data-current]]:opacity-100 [&_[data-current]]:transition-opacity [&_[data-current]]:duration-medium [&_[data-current]]:ease-in-out [&_[data-current]]:[will-change:opacity] [&_[data-current][data-starting-style]]:opacity-0 [&_[data-previous]]:w-(--popup-width) [&_[data-previous]]:opacity-100 [&_[data-previous]]:transition-opacity [&_[data-previous]]:duration-medium [&_[data-previous]]:ease-in-out [&_[data-previous]]:[will-change:opacity] [&_[data-previous][data-ending-style]]:opacity-0 motion-reduce:[&_[data-current]]:transition-none motion-reduce:[&_[data-current]]:[will-change:auto] motion-reduce:[&_[data-previous]]:transition-none motion-reduce:[&_[data-previous]]:[will-change:auto] data-instant:[&_[data-current]]:transition-none data-instant:[&_[data-previous]]:transition-none">
 						{payload ? (
-							<div className="w-[400px] bg-surface-overlay p-4 text-text">
-								<JiraSessionFlyoutBody session={payload} />
-							</div>
+							<AgentStates
+								agent={{
+									avatarSrc: payload.agentAvatarSrc,
+									id: payload.id,
+									name: payload.agentName,
+								}}
+								className="w-[400px] max-w-[calc(100vw-48px)] rounded-none shadow-none"
+								completedAtMs={payload.completedAtMs}
+								completedSecondsAgo={payload.completedSecondsAgo}
+								initialElapsedSeconds={payload.initialElapsedSeconds}
+								message={toAgentStatesMessage(payload.status)}
+								onSubmit={onSubmitPrompt ? (prompt) => onSubmitPrompt(payload, prompt) : undefined}
+								startedAtMs={payload.startedAtMs}
+								state={toAgentStatesState(payload.status)}
+							/>
 						) : null}
 					</HoverCardViewport>
 				</HoverCardContent>

@@ -29,6 +29,28 @@ test("Agent States owns the shared Jira agent flyout surface", () => {
 	assert.match(SOURCE, /state === "awaiting-input" && question/u);
 });
 
+test("Agent States composer keeps the agent mention directory enabled", () => {
+	assert.match(
+		SOURCE,
+		/<PromptInputTextarea[\s\S]*?enableDirectoryAutocomplete\s*[\r\n]+\s*onChange=/u,
+	);
+	assert.doesNotMatch(SOURCE, /enableDirectoryAutocomplete=\{false\}/u);
+});
+
+test("Agent States composer cannot silently clear a prompt without a destination", () => {
+	assert.match(SOURCE, /const canSubmit = Boolean\(onSubmit && reply\.trim\(\)\);/u);
+	assert.match(SOURCE, /if \(!prompt \|\| !onSubmit\) return;\s*onSubmit\(prompt\);\s*setReply\(""\);/u);
+	assert.match(SOURCE, /submitDisabled=\{onSubmit === undefined\}/u);
+});
+
+test("completed Agent States cards show a fixed update time instead of a live runtime", () => {
+	assert.match(SOURCE, /import \{ ElapsedTime, RelativeTime \} from "@\/components\/ui\/elapsed-time";/u);
+	assert.match(
+		SOURCE,
+		/state === "completed" \? \([\s\S]*<RelativeTime[\s\S]*secondsAgo=\{completedSecondsAgo\}[\s\S]*timestampMs=\{completedAtMs\}[\s\S]*\) : \([\s\S]*<ElapsedTime/u,
+	);
+});
+
 test("Agent States demo exposes distinct content for each state", () => {
 	assert.match(
 		PAGE_SOURCE,
