@@ -14,7 +14,7 @@ import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import ReturnIcon from "@atlaskit/icon-lab/core/return";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { shouldShowQuestionCardFooter, shouldShowQuestionCardSkipAction } from "@/components/blocks/question-card/lib/footer-actions";
+import { shouldShowQuestionCardFooter } from "@/components/blocks/question-card/lib/footer-actions";
 import { getVisibleOptionCount } from "@/components/blocks/question-card/lib/option-slots";
 import { getSelectedValues } from "@/components/blocks/question-card/lib/question-helpers";
 import { getQuestionSignature, useQuestionCard } from "@/components/blocks/question-card/hooks/use-question-card";
@@ -257,7 +257,6 @@ function QuestionCardContent({
 		primaryAction,
 		goToNextQuestion,
 		goToPreviousQuestion,
-		handleSkip,
 		handleNext,
 		handleAnswerChange,
 		handleCustomInputFocus,
@@ -279,12 +278,8 @@ function QuestionCardContent({
 	const variants = shouldReduceMotion ? noMotionVariants : slideVariants;
 	const footerActionLabel = primaryAction === "submit"
 		? (isSubmitting ? "Submitting..." : "Submit")
-		: primaryAction === "next"
-			? "Next"
-			: "Skip";
-	const hasDismissControl = Boolean(onDismiss);
-	const showFooter = shouldShowQuestionCardFooter(showCustomInput, primaryAction, hasDismissControl);
-	const showFooterSkip = shouldShowQuestionCardSkipAction(showCustomInput, primaryAction, hasDismissControl);
+		: "Next";
+	const showFooter = shouldShowQuestionCardFooter(showCustomInput, primaryAction);
 	let footerActionButton: React.ReactNode = null;
 	switch (primaryAction) {
 		case "submit":
@@ -302,11 +297,7 @@ function QuestionCardContent({
 			);
 			break;
 		case "skip":
-			footerActionButton = showFooterSkip ? (
-				<Button ref={footerButtonRef} variant="ghost" disabled={isSubmitting} onClick={handleSkip} tabIndex={-1} className="shrink-0">
-					{footerActionLabel}
-				</Button>
-			) : null;
+			footerActionButton = null;
 			break;
 		default: {
 			const _exhaustive: never = primaryAction;

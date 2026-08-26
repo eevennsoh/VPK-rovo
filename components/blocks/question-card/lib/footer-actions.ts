@@ -4,7 +4,7 @@ export type QuestionCardPrimaryAction = "skip" | "next" | "submit";
  * Determine the footer primary CTA:
  * - "submit" when every question has an answer, or the current (answered) question is the last one
  * - "next" when the current question has an answer (an option selection or custom input text) and a later question remains
- * - "skip" otherwise
+ * - "skip" otherwise (header dismiss owns cancel; the footer never renders a Skip button)
  */
 export function getQuestionCardPrimaryAction(
 	allQuestionsAnswered: boolean,
@@ -16,33 +16,23 @@ export function getQuestionCardPrimaryAction(
 	return "skip";
 }
 
-/** Skip is redundant with the header dismiss control when the custom input row is hidden. */
-export function shouldShowQuestionCardSkipAction(
-	showCustomInput: boolean,
-	primaryAction: QuestionCardPrimaryAction,
-	hasDismissControl: boolean,
-): boolean {
-	if (primaryAction !== "skip") {
-		return false;
-	}
-
-	return showCustomInput || !hasDismissControl;
-}
-
-export function shouldShowQuestionCardFooter(
-	showCustomInput: boolean,
-	primaryAction: QuestionCardPrimaryAction,
-	hasDismissControl: boolean,
-): boolean {
+export function shouldShowQuestionCardFooterButton(primaryAction: QuestionCardPrimaryAction): boolean {
 	switch (primaryAction) {
 		case "submit":
 		case "next":
 			return true;
 		case "skip":
-			return shouldShowQuestionCardSkipAction(showCustomInput, primaryAction, hasDismissControl);
+			return false;
 		default: {
 			const _exhaustive: never = primaryAction;
 			return _exhaustive;
 		}
 	}
+}
+
+export function shouldShowQuestionCardFooter(
+	showCustomInput: boolean,
+	primaryAction: QuestionCardPrimaryAction,
+): boolean {
+	return showCustomInput || shouldShowQuestionCardFooterButton(primaryAction);
 }

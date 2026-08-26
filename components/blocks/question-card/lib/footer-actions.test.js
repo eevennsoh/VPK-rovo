@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 
 const {
 	getQuestionCardPrimaryAction,
-	shouldShowQuestionCardSkipAction,
+	shouldShowQuestionCardFooterButton,
 	shouldShowQuestionCardFooter,
 } = require("./footer-actions.ts");
 
@@ -28,22 +28,15 @@ test("switches footer action to Submit once every question is answered", () => {
 	assert.equal(getQuestionCardPrimaryAction(true, true, true), "submit");
 });
 
-test("hides Skip when custom input is off and header dismiss already cancels", () => {
-	assert.equal(shouldShowQuestionCardSkipAction(false, "skip", true), false);
-	assert.equal(shouldShowQuestionCardFooter(false, "skip", true), false);
-});
-
-test("keeps Skip when custom input is off but no dismiss control exists", () => {
-	assert.equal(shouldShowQuestionCardSkipAction(false, "skip", false), true);
-	assert.equal(shouldShowQuestionCardFooter(false, "skip", false), true);
-});
-
-test("keeps Skip in the footer when the custom input row is visible", () => {
-	assert.equal(shouldShowQuestionCardSkipAction(true, "skip", true), true);
-	assert.equal(shouldShowQuestionCardFooter(true, "skip", true), true);
+test("never renders a Skip footer button because header dismiss owns cancel", () => {
+	assert.equal(shouldShowQuestionCardFooterButton("skip"), false);
+	assert.equal(shouldShowQuestionCardFooter(false, "skip"), false);
+	assert.equal(shouldShowQuestionCardFooter(true, "skip"), true);
 });
 
 test("keeps Next and Submit in the footer even without a custom input row", () => {
-	assert.equal(shouldShowQuestionCardFooter(false, "next", true), true);
-	assert.equal(shouldShowQuestionCardFooter(false, "submit", true), true);
+	assert.equal(shouldShowQuestionCardFooterButton("next"), true);
+	assert.equal(shouldShowQuestionCardFooterButton("submit"), true);
+	assert.equal(shouldShowQuestionCardFooter(false, "next"), true);
+	assert.equal(shouldShowQuestionCardFooter(false, "submit"), true);
 });

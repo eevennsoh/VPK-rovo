@@ -5,7 +5,7 @@ import {
 	getVisibleOptionCount,
 } from "../lib/option-slots";
 import { shouldAutoFocusCustomInputForQuestion } from "../lib/focus-policy";
-import { getQuestionCardPrimaryAction, shouldShowQuestionCardFooter } from "../lib/footer-actions";
+import { getQuestionCardPrimaryAction, shouldShowQuestionCardFooterButton } from "../lib/footer-actions";
 import {
 	getCustomInputValue,
 	getSelectedValues,
@@ -143,7 +143,7 @@ export function useQuestionCard({
 
 	const allQuestionsAnswered = questions.every((question) => isQuestionAnswered(question, answers));
 	const primaryAction = getQuestionCardPrimaryAction(allQuestionsAnswered, currentQuestionAnswered, canGoToNextQuestion);
-	const hasFooterButton = shouldShowQuestionCardFooter(showCustomInput, primaryAction, Boolean(onDismiss));
+	const hasFooterButton = shouldShowQuestionCardFooterButton(primaryAction);
 
 	useEffect(() => {
 		// preventScroll: focusing the card for keyboard handling must not scroll the
@@ -398,7 +398,12 @@ export function useQuestionCard({
 						} else {
 							if (isCustomInputFocused) {
 								event.preventDefault();
-								footerButtonRef.current?.focus();
+								if (hasFooterButton) {
+									footerButtonRef.current?.focus();
+								} else {
+									cardRef.current?.focus();
+									setFocusedIndex(0);
+								}
 							} else if (isFooterButtonFocused) {
 								event.preventDefault();
 								cardRef.current?.focus();

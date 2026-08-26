@@ -106,15 +106,15 @@ test("QuestionCard footer sits on the option-list rhythm without a top border", 
 	assert.doesNotMatch(body, /\bpb-4\b/u, "Body bottom padding must not add extra space above the footer");
 });
 
-test("QuestionCard hides Skip when custom input is off and drops header bottom padding when there are no options", () => {
+test("QuestionCard never renders a Skip footer button and drops header bottom padding when there are no options", () => {
 	const header = extractSlice(
 		"<header data-slot=\"question-card-header\"",
 		"</header>",
 	);
 
-	assert.match(QUESTION_CARD_SOURCE, /shouldShowQuestionCardSkipAction\(showCustomInput, primaryAction, hasDismissControl\)/u);
-	assert.match(QUESTION_CARD_SOURCE, /shouldShowQuestionCardFooter\(showCustomInput, primaryAction, hasDismissControl\)/u);
-	assert.match(QUESTION_CARD_SOURCE, /showFooterSkip \?/u);
+	assert.match(QUESTION_CARD_SOURCE, /shouldShowQuestionCardFooter\(showCustomInput, primaryAction\)/u);
+	assert.match(QUESTION_CARD_SOURCE, /case "skip":/u);
+	assert.doesNotMatch(QUESTION_CARD_SOURCE, />Skip</u);
 	assert.match(header, /visibleOptionCount > 0 \? "pb-4" : "pb-0"/u);
 });
 
