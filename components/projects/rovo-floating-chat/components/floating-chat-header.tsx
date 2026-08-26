@@ -18,8 +18,12 @@ import {
 import { RovoAppBrand } from "@/components/projects/rovo-core/components/rovo-app-brand";
 import { RovoAgentBackButton } from "@/components/projects/rovo-core/components/rovo-agent-back-button";
 import { ChatHistoryButton } from "@/components/projects/sidebar-chat/components/chat-history-button";
+import { cn } from "@/lib/utils";
 
 interface FloatingChatHeaderProps {
+	className?: string;
+	/** 24px row — matches Pulse's insight eyebrow (`min-h-6`) and icon-compact chevrons. */
+	compact?: boolean;
 	onClose: () => void;
 	onNewChat?: () => void;
 	onSurfaceSwitch?: ChatSurfaceSwitchHandler;
@@ -35,6 +39,8 @@ interface FloatingChatHeaderProps {
 const noop = () => {};
 
 export default function FloatingChatHeader({
+	className,
+	compact = false,
 	onClose,
 	onNewChat,
 	onSurfaceSwitch,
@@ -47,19 +53,23 @@ export default function FloatingChatHeader({
 	showNewChatButton = true,
 }: Readonly<FloatingChatHeaderProps>) {
 	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+	const iconSize = compact ? "icon-compact" : "icon";
 
 	return (
-		<div className="relative z-10 flex shrink-0 items-center justify-between px-3 py-3">
+		<div className={cn("relative z-10 flex shrink-0 items-center justify-between px-3 py-3", className)}>
 			<div className="flex items-center gap-1">
 				{showAgentBackButton ? <RovoAgentBackButton /> : null}
 				{showChatHistory ? (
 					<ChatHistoryButton isHistoryOpen={isHistoryOpen} onToggle={onHistoryToggle} />
 				) : null}
-				<RovoAppBrand enableAgentSelector={showAgentSelector} />
+				<RovoAppBrand
+					className={compact ? "h-6 px-1" : undefined}
+					enableAgentSelector={showAgentSelector}
+				/>
 			</div>
 			<div className="flex items-center gap-1">
 				{showNewChatButton ? (
-					<Button aria-label="New chat" size="icon" variant="ghost" onClick={onNewChat ?? noop}>
+					<Button aria-label="New chat" size={iconSize} variant="ghost" onClick={onNewChat ?? noop}>
 						<EditIcon label="" />
 					</Button>
 				) : null}
@@ -69,7 +79,7 @@ export default function FloatingChatHeader({
 							render={
 								<Button
 									aria-label="More"
-									size="icon"
+									size={iconSize}
 									variant={isMoreMenuOpen ? "secondary" : "ghost"}
 								/>
 							}
@@ -81,7 +91,7 @@ export default function FloatingChatHeader({
 						</DropdownMenuContent>
 					</DropdownMenu>
 				) : null}
-				<Button aria-label="Close" size="icon" variant="ghost" onClick={onClose}>
+				<Button aria-label="Close" size={iconSize} variant="ghost" onClick={onClose}>
 					<CrossIcon label="" />
 				</Button>
 			</div>

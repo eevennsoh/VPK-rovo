@@ -132,7 +132,7 @@ test("work-item stages keep the embedded chat and do not mount the floating over
 	assert.match(pageSource, /chat=\{isWorkItemStage \? "hidden" : "auto"\}/u);
 	assert.match(
 		overlaySource,
-		/const showFloatingChat = chat === "auto"\s*&& chatSurface === "floating"\s*&& !isWorkItemOpen;/u,
+		/const showFloatingChat = chat === "auto"\s*&& chatSurface === "floating"\s*&& !isEmbeddedHostOpen;/u,
 	);
 	assert.doesNotMatch(pageSource, /chatSurface === "floating" \? \([\s\S]*<RovoFloatingChat/u);
 });

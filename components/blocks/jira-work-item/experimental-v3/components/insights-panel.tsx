@@ -7,7 +7,7 @@ import { buildWorkItemSectionTabs } from "@/components/blocks/jira-work-item/exp
 
 const WORK_ITEM_SECTION_TABS = buildWorkItemSectionTabs({ guidedReview: null });
 
-/** Insights body swap: a sourced briefing when the host supplies insight data. */
+/** Insights column: a sourced briefing when the host supplies insight data. */
 export function InsightsPanel({
 	activity,
 	hasInsights,

@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useMemo, useState, type ReactNode } from "react";
+
+import { useOptionalRovoChat } from "@/app/contexts";
 import type {
 	JiraKanbanAgentData,
 	JiraKanbanCardData,
@@ -104,6 +106,7 @@ export default function ExperimentalJiraKanbanPage({
 	}, [boardColumns, controlledBoardColumns, onBoardColumnsChange]);
 	const [columnAgentAssignments, setColumnAgentAssignments] = useState<Record<string, string[]>>({});
 	const [mode, setMode] = useState<ExperimentalJiraKanbanMode>("board");
+	const rovoChat = useOptionalRovoChat();
 	// Owned here, not inside Pulse: the board header's facepile is the primary
 	// way in and out of the filter, and it lives above the mode switch.
 	const [pulseMemberId, setPulseMemberId] = useState<string | null>(null);
@@ -365,6 +368,7 @@ export default function ExperimentalJiraKanbanPage({
 						active={isPulse}
 						onToggle={() => {
 							if (isPulse) {
+								rovoChat?.closeChat();
 								setMode("board");
 								return;
 							}

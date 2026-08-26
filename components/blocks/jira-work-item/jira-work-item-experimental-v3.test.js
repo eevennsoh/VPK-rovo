@@ -298,7 +298,7 @@ test("the v3 dialog owns one fixed chrome row", () => {
 	assert.match(layoutSource, /data-jira-work-item-column-chrome/u);
 	assert.match(
 		layoutSource,
-		/data-jira-work-item-column-chrome[\s\S]*@\[860px\]\/agentlayout:overflow-y-auto @\[860px\]\/agentlayout:overscroll-y-none @\[860px\]\/agentlayout:px-6 @\[860px\]\/agentlayout:pt-6 @\[860px\]\/agentlayout:pb-6"[\s\S]*data-jira-work-item-scroll-region/u,
+		/data-jira-work-item-column-chrome[\s\S]*@\[860px\]\/agentlayout:overflow-y-auto @\[860px\]\/agentlayout:overscroll-y-none @\[860px\]\/agentlayout:px-6 @\[860px\]\/agentlayout:pt-6 @\[860px\]\/agentlayout:pb-6[\s\S]*data-jira-work-item-scroll-region/u,
 	);
 	assert.match(layoutSource, /setWideScrollContainer\(element\)/u);
 	assert.match(layoutSource, /setNarrowScrollContainer\(element\)/u);
@@ -473,7 +473,7 @@ test("PR select shares the section navigation list without becoming a section", 
 	);
 	assert.match(
 		readBlockFile("experimental-v3/components/context-panel.tsx"),
-		/selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView[\s\S]*insightsSelected \? \([\s\S]*<InsightsPanel[\s\S]*<WorkItemBody/u,
+		/selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView[\s\S]*insightsSelected && hasInsights \? \([\s\S]*<InsightsWorkItemSplit[\s\S]*workItem=\{workItem\}/u,
 	);
 	const sectionNavigationSource = readBlockFile("experimental-v3/context-section-navigation.tsx");
 	assert.match(
@@ -497,7 +497,7 @@ test("PR select shares the section navigation list without becoming a section", 
 	);
 	assert.match(
 		readBlockFile("experimental-v3/components/context-panel.tsx"),
-		/<InsightsPanel activity=\{activity\} hasInsights=\{hasInsights\} \/>/u,
+		/<InsightsPanel activity=\{insightsFeed\} hasInsights=\{hasInsights\} \/>/u,
 	);
 	const contextPillsSource = readBlockFile("experimental-v3/components/activity-composer-context-pills.tsx");
 	assert.doesNotMatch(contextPillsSource, /justify-between/u);
@@ -554,7 +554,7 @@ test("experimental v3 insight sources reuse work-item, session, activity, and pu
 	assert.match(compositionSource, /source\.kind === "pull-request"/u);
 	assert.match(compositionSource, /onOpenPullRequestIdentity\?\.\(source\.identity\)/u);
 	assert.match(compositionSource, /const \{ onSourceSelect \} = useJiraInsights\(\)/u);
-	assert.match(compositionSource, /<ActivityPanel \{\.\.\.props\} onInsightSourceSelect=\{onSourceSelect\} \/>/u);
+	assert.match(compositionSource, /<ActivityPanel[\s\S]*\{\.\.\.props\}[\s\S]*onInsightSourceSelect=\{onSourceSelect\}[\s\S]*surface=\{surface\}/u);
 	assert.doesNotMatch(
 		readBlockFile("experimental-v3/components/context-panel.tsx"),
 		/JiraInsightSource|handleInsightSourceSelect/u,
@@ -583,7 +583,19 @@ test("experimental v3 shares one insight selection between the filtered feed and
 	assert.doesNotMatch(metadataSource, /useState/u);
 	assert.match(
 		contextSource,
-		/selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView[\s\S]*insightsSelected \? \([\s\S]*<InsightsPanel activity=\{activity\}/u,
+		/selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView[\s\S]*insightsSelected && hasInsights \? \([\s\S]*<InsightsWorkItemSplit[\s\S]*insights=\{\s*<InsightsPanel activity=\{insightsFeed\}/u,
+	);
+	assert.match(
+		readBlockFile("experimental-v3/components/insights-work-item-split.tsx"),
+		/ariaLabel="Resize insights and work item"/u,
+	);
+	assert.match(
+		readBlockFile("experimental-v3/components/insights-work-item-split.tsx"),
+		/testId="jira-work-item-insights-resize-handle"/u,
+	);
+	assert.match(
+		readBlockFile("experimental-v3/components/work-item-side-panel-resize-handle.tsx"),
+		/SidebarResizeHandle/u,
 	);
 });
 
@@ -637,12 +649,12 @@ test("experimental v3 uses one chronological Activity feed for activity and insi
 	assert.match(activityPanelSource, /useJiraInsights\(\)/u);
 	assert.match(activityPanelSource, /mergeJiraActivityEntriesWithInsights/u);
 	assert.match(activityPanelSource, /createdAtMs: createdAtByEntryId\.get\(entry\.id\)/u);
-	assert.match(activityPanelSource, /const effectiveFilter = insightsSelected \? "insights-only" : filter/u);
+	assert.match(activityPanelSource, /const effectiveFilter = surface === "insights" \? "insights-only" : filter/u);
 	assert.match(activityPanelSource, /filterMode="jira-insights"/u);
 	assert.match(activityPanelSource, /activeEntryId=\{activeCheckpointId \?\? undefined\}/u);
 	assert.match(activityPanelSource, /renderEntry=\{renderActivityEntry\}/u);
 	assert.match(activityPanelSource, /<JiraInsightsCheckpoint/u);
-	assert.match(activityPanelSource, /id=\{insightsSelected \? "insights" : "activity"\}/u);
+	assert.match(activityPanelSource, /id=\{surface === "insights" \? "insights" : "activity"\}/u);
 });
 
 test("experimental v3 header Actions menu copies the work item as markdown", () => {

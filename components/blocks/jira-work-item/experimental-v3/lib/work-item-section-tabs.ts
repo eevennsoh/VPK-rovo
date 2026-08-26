@@ -3,13 +3,13 @@
  *
  * One tab bar serves both modes. Description, Activity, and Insights are
  * always present. Description and Activity are scroll-anchored in the work-item
- * body; Insights is a body swap, not another stacked section. Guide and Files
+ * body; Insights is a sibling column, not another stacked section. Guide and Files
  * are extras that only a guided review can supply.
  */
 
 export type WorkItemSectionId = "description" | "activity" | "insights" | "guide" | "files";
 
-/** Insights replaces the body; it is not a scroll-spy target. */
+/** Insights is a sibling column; it is not a scroll-spy target. */
 export function isScrollAnchoredSectionId(sectionId: WorkItemSectionId): boolean {
 	return sectionId !== "insights";
 }

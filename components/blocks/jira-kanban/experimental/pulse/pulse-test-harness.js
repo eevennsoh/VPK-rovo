@@ -25,6 +25,12 @@ const SOURCES = {
 	// component file stops exporting helpers, which defeats Fast Refresh.
 	marks: readFileSync(join(PULSE_DIR, "lib", "pulse-marks.ts"), "utf8"),
 	rail: readFileSync(join(PULSE_DIR, "components", "pulse-rail.tsx"), "utf8"),
+	embeddedChat: readFileSync(join(PULSE_DIR, "components", "pulse-embedded-chat.tsx"), "utf8"),
+	insightsChat: readFileSync(join(PULSE_DIR, "hooks", "use-pulse-insights-chat.ts"), "utf8"),
+	chatContext: readFileSync(join(PULSE_DIR, "lib", "pulse-chat-context.ts"), "utf8"),
+	layout: readFileSync(join(PULSE_DIR, "lib", "pulse-layout.ts"), "utf8"),
+	resizeHandle: readFileSync(join(PULSE_DIR, "components", "pulse-resize-handle.tsx"), "utf8"),
+	railResize: readFileSync(join(PULSE_DIR, "hooks", "use-pulse-work-rail-resize.ts"), "utf8"),
 	// The reading position: the only programmatic scroll left in Pulse.
 	reading: readFileSync(join(PULSE_DIR, "hooks", "use-pulse-reading.ts"), "utf8"),
 	scrubber: readFileSync(join(PULSE_DIR, "components", "pulse-scrubber.tsx"), "utf8"),
