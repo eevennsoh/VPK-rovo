@@ -15,9 +15,11 @@ import { summarizeJiraIssueAgentActivities } from "@/components/blocks/jira-issu
 import type { QuestionCardAnswers, QuestionCardQuestion } from "@/components/blocks/question-card/types";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AnimatedDots } from "@/components/ui-custom/animated-dots";
+import { PixelLoader } from "@/components/ui-custom/pixel-loader";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { IconTile } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
@@ -119,11 +121,13 @@ function JiraIssueAgentActivityRow({
 	onOpenChange,
 	onQuestionSubmit,
 	onViewChat,
+	usesStrokeChrome,
 }: Readonly<{
 	activities: readonly JiraIssueAgentActivity[];
 	onOpenChange?: (open: boolean) => void;
 	onQuestionSubmit?: (activity: JiraIssueAgentActivity, answers: QuestionCardAnswers) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
+	usesStrokeChrome: boolean;
 }>) {
 	const [flyoutOpen, setFlyoutOpen] = useState(false);
 	const summary = summarizeJiraIssueAgentActivities(activities);
@@ -212,7 +216,7 @@ function JiraIssueAgentActivityRow({
 				: () => handleOpenChange(true)}
 			className="flex h-6 w-full min-w-0 items-center justify-between gap-2 rounded-md px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
 		>
-			<div className="flex min-w-0 flex-1 items-center gap-2">
+			<div className={cn("flex min-w-0 flex-1 items-center", usesStrokeChrome ? "gap-1.5" : "gap-2")}>
 				{featuredActivity ? (
 					<AgentAvatarVisual
 						avatarClassName="shrink-0"
@@ -222,43 +226,87 @@ function JiraIssueAgentActivityRow({
 						label={featuredActivity.name}
 						sizePx={16}
 					/>
+				) : usesStrokeChrome ? (
+					<IconTile
+						aria-hidden
+						as="span"
+						className="text-icon-subtle"
+						icon={<AiAgentIcon label="" size="small" />}
+						iconSize="small"
+						label=""
+						size="xxsmall"
+						variant="transparent"
+					/>
 				) : (
-					<span className="ml-px grid size-4 shrink-0 place-items-center text-icon-subtle" aria-hidden="true">
+					<span
+						className="ml-px grid size-4 shrink-0 place-items-center text-icon-subtle"
+						aria-hidden="true"
+					>
 						<AiAgentIcon label="" />
 					</span>
 				)}
 				{isAwaitingInput ? (
-					<span className="flex min-w-0 flex-1 items-baseline overflow-hidden text-sm leading-5 text-text-subtlest">
+					<span
+						className={cn(
+							"flex min-w-0 flex-1 items-baseline overflow-hidden text-text-subtlest",
+							usesStrokeChrome ? "text-xs leading-4" : "text-sm leading-5",
+						)}
+					>
 						<Shimmer
 							as="span"
-							className="block min-w-0 truncate text-sm leading-5"
+							className={cn(
+								"block min-w-0 truncate",
+								usesStrokeChrome ? "text-xs leading-4" : "text-sm leading-5",
+							)}
 							duration={JIRA_ISSUE_AGENT_SHIMMER_DURATION}
 							spread={JIRA_ISSUE_AGENT_SHIMMER_SPREAD}
 							wave={false}
 						>
 							{summary.label}
 						</Shimmer>
-						<AnimatedDots />
+						<AnimatedDots className={usesStrokeChrome ? "[&>span]:text-xs" : undefined} />
 					</span>
 				) : shouldCycleSingleAgentLabel ? (
 					<JiraIssueCyclingAgentLabel
 						cycleIntervalJitterMs={activities[0]?.cycleIntervalJitterMs ?? JIRA_ISSUE_AGENT_LABEL_CYCLE_JITTER_MS}
 						cycleIntervalMs={activities[0]?.cycleIntervalMs ?? JIRA_ISSUE_AGENT_LABEL_CYCLE_INTERVAL_MS}
 						labels={getJiraIssueAgentWorkingLabels(activities[0])}
+						usesStrokeChrome={usesStrokeChrome}
 					/>
 				) : (
-					<span className="block min-w-0 flex-1 truncate text-sm leading-5 text-text-subtlest">
+					<span
+						className={cn(
+							"block min-w-0 flex-1 truncate text-text-subtlest",
+							usesStrokeChrome ? "text-xs leading-4" : "text-sm leading-5",
+						)}
+					>
 						{summary.label}
 					</span>
 				)}
 			</div>
 			{isAwaitingInput ? (
-				<span className="-my-1 grid size-6 shrink-0 place-items-center text-icon-information" aria-hidden="true">
+				<span
+					className={cn(
+						"grid shrink-0 place-items-center text-icon-information",
+						usesStrokeChrome ? "size-4" : "-my-1 size-6",
+					)}
+					aria-hidden="true"
+				>
 					<StatusInformationIcon label="" size="small" color="currentColor" />
 				</span>
 			) : (
-				<span className="-my-1 grid size-6 shrink-0 place-items-center text-icon" aria-hidden="true">
-					<Spinner label="" size="sm" />
+				<span
+					className={cn(
+						"grid shrink-0 place-items-center text-icon",
+						usesStrokeChrome ? "size-4" : "-my-1 size-6",
+					)}
+					aria-hidden="true"
+				>
+					{usesStrokeChrome ? (
+						<PixelLoader className="justify-center" pattern="diagonal-top-left" shape="dot" size="small" />
+					) : (
+						<Spinner label="" size="sm" />
+					)}
 				</span>
 			)}
 		</button>
@@ -310,10 +358,12 @@ function JiraIssueCyclingAgentLabelContent({
 	cycleIntervalJitterMs,
 	cycleIntervalMs,
 	labels,
+	usesStrokeChrome,
 }: Readonly<{
 	cycleIntervalJitterMs: number;
 	cycleIntervalMs: number;
 	labels: readonly string[];
+	usesStrokeChrome: boolean;
 }>) {
 	const shouldReduceMotion = useReducedMotion();
 	const [labelIndex, setLabelIndex] = useState(0);
@@ -342,13 +392,18 @@ function JiraIssueCyclingAgentLabelContent({
 	}, [cycleIntervalJitterMs, cycleIntervalMs, labels.length, shouldReduceMotion]);
 
 	return (
-		<span className="block min-w-0 flex-1 overflow-hidden text-sm leading-5 text-text-subtlest">
-			<span className="block min-h-5 min-w-0 overflow-hidden">
+		<span
+			className={cn(
+				"block min-w-0 flex-1 overflow-hidden text-text-subtlest",
+				usesStrokeChrome ? "text-xs leading-4" : "text-sm leading-5",
+			)}
+		>
+			<span className={cn("block min-w-0 overflow-hidden", usesStrokeChrome ? "min-h-4" : "min-h-5")}>
 				<AnimatePresence mode="wait">
 					<motion.span
 						key={label}
 						animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
-						className="block min-w-0 truncate text-sm leading-5"
+						className={cn("block min-w-0 truncate", usesStrokeChrome ? "text-xs leading-4" : "text-sm leading-5")}
 						exit={shouldReduceMotion ? undefined : { opacity: 0, y: 4 }}
 						initial={shouldReduceMotion ? false : { opacity: 0, y: -4 }}
 						transition={JIRA_ISSUE_AGENT_LABEL_TRANSITION}
@@ -365,6 +420,7 @@ function JiraIssueCyclingAgentLabel(props: Readonly<{
 	cycleIntervalJitterMs: number;
 	cycleIntervalMs: number;
 	labels: readonly string[];
+	usesStrokeChrome: boolean;
 }>) {
 	return (
 		<JiraIssueCyclingAgentLabelContent
@@ -380,12 +436,14 @@ export function JiraIssueAgentActivityRows({
 	onQuestionSubmit,
 	onViewChat,
 	shouldReduceMotion,
+	usesStrokeChrome,
 }: Readonly<{
 	activities: readonly JiraIssueAgentActivity[];
 	onOpenChange?: (open: boolean) => void;
 	onQuestionSubmit?: (activity: JiraIssueAgentActivity, answers: QuestionCardAnswers) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
 	shouldReduceMotion: boolean | null;
+	usesStrokeChrome: boolean;
 }>) {
 	const layoutTransition = getJiraIssueLayoutTransition(shouldReduceMotion);
 	const presenceMotion = getJiraIssuePresenceMotion(shouldReduceMotion);
@@ -415,6 +473,7 @@ export function JiraIssueAgentActivityRows({
 							onOpenChange={onOpenChange}
 							onQuestionSubmit={onQuestionSubmit}
 							onViewChat={onViewChat}
+							usesStrokeChrome={usesStrokeChrome}
 						/>
 					</motion.div>
 				) : null}

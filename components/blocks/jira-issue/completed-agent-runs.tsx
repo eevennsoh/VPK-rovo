@@ -16,6 +16,8 @@ import { AgentStatesComposer } from "@/components/blocks/agent-states";
 import type { ArtifactListItem } from "@/components/ui-custom/artifact-list";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { IconTile } from "@/components/ui/icon-tile";
+import { cn } from "@/lib/utils";
 
 export type JiraIssueCompletedAgentRunState = "done" | "failed" | "review";
 
@@ -95,12 +97,14 @@ export function JiraIssueAgentDone({
 	onSubmit,
 	onView,
 	runs,
+	usesStrokeChrome,
 }: Readonly<{
 	onOpenChange?: (open: boolean) => void;
 	onReview?: (run: JiraIssueCompletedAgentRun) => void;
 	onSubmit?: (run: JiraIssueCompletedAgentRun, prompt: string) => void;
 	onView?: (run: JiraIssueCompletedAgentRun) => void;
 	runs: readonly JiraIssueCompletedAgentRun[];
+	usesStrokeChrome: boolean;
 }>) {
 	const [aggregateOpen, setAggregateOpen] = useState(false);
 	const finishedLabel = `${runs.length} Finished`;
@@ -178,14 +182,40 @@ export function JiraIssueAgentDone({
 							data-slot="jira-issue-agent-row"
 							type="button"
 						>
-							<span className="flex min-w-0 flex-1 items-center gap-2">
-								<span className="ml-px grid size-4 shrink-0 place-items-center text-text-subtlest" aria-hidden="true">
-									<AiAgentIcon label="" />
+							<span className={cn("flex min-w-0 flex-1 items-center", usesStrokeChrome ? "gap-1.5" : "gap-2")}>
+								{usesStrokeChrome ? (
+									<IconTile
+										aria-hidden
+										as="span"
+										className="text-icon-subtle"
+										icon={<AiAgentIcon label="" size="small" />}
+										iconSize="small"
+										label=""
+										size="xxsmall"
+										variant="transparent"
+									/>
+								) : (
+									<span className="ml-px grid size-4 shrink-0 place-items-center text-text-subtlest" aria-hidden="true">
+										<AiAgentIcon label="" />
+									</span>
+								)}
+								<span
+									className={cn(
+										"truncate text-text-subtlest",
+										usesStrokeChrome ? "text-xs leading-4" : "text-sm leading-5",
+									)}
+								>
+									{finishedLabel}
 								</span>
-								<span className="truncate text-sm leading-5 text-text-subtlest">{finishedLabel}</span>
 							</span>
 							{hasFailedRun ? (
-								<span className="-my-1 grid size-6 shrink-0 place-items-center text-icon-danger" aria-hidden="true">
+								<span
+									className={cn(
+										"grid shrink-0 place-items-center text-icon-danger",
+										usesStrokeChrome ? "size-4" : "-my-1 size-6",
+									)}
+									aria-hidden="true"
+								>
 									<StatusErrorIcon color="currentColor" label="" size="small" />
 								</span>
 							) : null}
