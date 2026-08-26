@@ -14,6 +14,7 @@ import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import ReturnIcon from "@atlaskit/icon-lab/core/return";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { shouldShowQuestionCardFooter, shouldShowQuestionCardSkipAction } from "@/components/blocks/question-card/lib/footer-actions";
 import { getVisibleOptionCount } from "@/components/blocks/question-card/lib/option-slots";
 import { getSelectedValues } from "@/components/blocks/question-card/lib/question-helpers";
 import { getQuestionSignature, useQuestionCard } from "@/components/blocks/question-card/hooks/use-question-card";
@@ -281,6 +282,36 @@ function QuestionCardContent({
 		: primaryAction === "next"
 			? "Next"
 			: "Skip";
+	const showFooter = shouldShowQuestionCardFooter(showCustomInput, primaryAction);
+	const showFooterSkip = shouldShowQuestionCardSkipAction(showCustomInput, primaryAction);
+	let footerActionButton: React.ReactNode = null;
+	switch (primaryAction) {
+		case "submit":
+			footerActionButton = (
+				<Button ref={footerButtonRef} disabled={isSubmitting} onClick={handleSubmit} tabIndex={-1} className="shrink-0">
+					{footerActionLabel}
+				</Button>
+			);
+			break;
+		case "next":
+			footerActionButton = (
+				<Button ref={footerButtonRef} variant="outline" disabled={isSubmitting} onClick={handleNext} tabIndex={-1} className="shrink-0">
+					{footerActionLabel}
+				</Button>
+			);
+			break;
+		case "skip":
+			footerActionButton = showFooterSkip ? (
+				<Button ref={footerButtonRef} variant="ghost" disabled={isSubmitting} onClick={handleSkip} tabIndex={-1} className="shrink-0">
+					{footerActionLabel}
+				</Button>
+			) : null;
+			break;
+		default: {
+			const _exhaustive: never = primaryAction;
+			footerActionButton = _exhaustive;
+		}
+	}
 
 	return (
 		<div
@@ -295,7 +326,7 @@ function QuestionCardContent({
 			className={cn("mx-auto flex max-h-[min(70vh,32rem)] w-full flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-[0_-2px_50px_8px_rgba(30,31,33,0.08)] outline-none", className)}
 			{...props}
 		>
-			<header data-slot="question-card-header" className="px-4 py-4">
+			<header data-slot="question-card-header" className={cn("px-4 pt-4", visibleOptionCount > 0 ? "pb-4" : "pb-0")}>
 				{hasMultipleQuestions ? (
 					<>
 						<div className="mb-3 flex h-8 items-center justify-between gap-2">
@@ -360,7 +391,8 @@ function QuestionCardContent({
 					data-slot="question-card-body"
 					className={cn(
 						"min-h-0 flex-1 overflow-y-auto overscroll-contain",
-						visibleOptionCount > 0 ? "px-3 pb-4" : undefined,
+						visibleOptionCount > 0 ? "px-3" : undefined,
+						visibleOptionCount > 0 && !showFooter ? "pb-3" : undefined,
 					)}
 				>
 					<QuestionInput
@@ -375,38 +407,31 @@ function QuestionCardContent({
 				</motion.div>
 			</AnimatePresence>
 
-			<footer data-slot="question-card-footer" className="flex items-center gap-2 border-t border-border px-3 py-3">
-				{showCustomInput ? (
-					<div className="flex min-w-0 flex-1 items-center gap-4 pl-2">
-						<span className="inline-flex size-5 shrink-0 items-center justify-center rounded-[4px] border border-border bg-surface text-sm leading-5 font-medium text-text">{customOptionIndex + 1}</span>
-						<Input
-							ref={customInputRef}
-							variant="none"
-							data-slot="question-card-custom-input"
-							aria-label={`${currentQuestion.label} custom answer`}
-							value={customInputValue ?? ""}
-							onChange={(event) => handleAnswerChange((event.target as HTMLInputElement).value)}
-							onFocus={handleCustomInputFocus}
-							disabled={isSubmitting}
-							placeholder={currentQuestion.placeholder ?? customInputPlaceholder}
-							className="h-8 min-w-0 flex-1 px-0 text-sm leading-5 focus-visible:ring-0 focus-visible:border-transparent"
-						/>
-					</div>
-				) : null}
-				{primaryAction === "submit" ? (
-					<Button ref={footerButtonRef} disabled={isSubmitting} onClick={handleSubmit} tabIndex={-1} className="shrink-0">
-						{footerActionLabel}
-					</Button>
-				) : primaryAction === "next" ? (
-					<Button ref={footerButtonRef} variant="outline" disabled={isSubmitting} onClick={handleNext} tabIndex={-1} className="shrink-0">
-						{footerActionLabel}
-					</Button>
-				) : (
-					<Button ref={footerButtonRef} variant="ghost" disabled={isSubmitting} onClick={handleSkip} tabIndex={-1} className="shrink-0">
-						{footerActionLabel}
-					</Button>
-				)}
-			</footer>
+			{showFooter ? (
+				<footer
+					data-slot="question-card-footer"
+					className="flex items-center gap-2 px-3 py-3"
+				>
+					{showCustomInput ? (
+						<div className="flex min-w-0 flex-1 items-center gap-4 pl-2">
+							<span className="inline-flex size-5 shrink-0 items-center justify-center rounded-[4px] border border-border bg-surface text-sm leading-5 font-medium text-text">{customOptionIndex + 1}</span>
+							<Input
+								ref={customInputRef}
+								variant="none"
+								data-slot="question-card-custom-input"
+								aria-label={`${currentQuestion.label} custom answer`}
+								value={customInputValue ?? ""}
+								onChange={(event) => handleAnswerChange((event.target as HTMLInputElement).value)}
+								onFocus={handleCustomInputFocus}
+								disabled={isSubmitting}
+								placeholder={currentQuestion.placeholder ?? customInputPlaceholder}
+								className="h-8 min-w-0 flex-1 px-0 text-sm leading-5 focus-visible:ring-0 focus-visible:border-transparent"
+							/>
+						</div>
+					) : null}
+					{footerActionButton}
+				</footer>
+			) : null}
 		</div>
 	);
 }

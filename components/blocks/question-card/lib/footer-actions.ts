@@ -15,3 +15,18 @@ export function getQuestionCardPrimaryAction(
 	if (currentQuestionAnswered) return canGoToNextQuestion ? "next" : "submit";
 	return "skip";
 }
+
+/** Skip is redundant with the header dismiss control when the custom input row is hidden. */
+export function shouldShowQuestionCardSkipAction(
+	showCustomInput: boolean,
+	primaryAction: QuestionCardPrimaryAction,
+): boolean {
+	return showCustomInput && primaryAction === "skip";
+}
+
+export function shouldShowQuestionCardFooter(
+	showCustomInput: boolean,
+	primaryAction: QuestionCardPrimaryAction,
+): boolean {
+	return showCustomInput || primaryAction === "submit" || primaryAction === "next";
+}
