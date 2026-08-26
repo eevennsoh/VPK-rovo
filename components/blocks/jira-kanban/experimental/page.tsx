@@ -46,7 +46,7 @@ import {
 	toPulseSuggestedQuestions,
 } from "./pulse/data/pulse-scopes";
 import { scopeTimelineToWorkItemKeys } from "./pulse/hooks/use-pulse-timeline";
-import type { PulseAnswer } from "./pulse/types";
+import type { PulseAnswer, PulseLooseWork, PulseWorkItem } from "./pulse/types";
 import {
 	createJiraKanbanSelectionState,
 	filterJiraKanbanColumnsByAssignee,
@@ -78,8 +78,14 @@ export interface ExperimentalJiraKanbanPageProps {
 	ariaLabel?: string;
 	boardColumns?: readonly JiraKanbanColumnData[];
 	compactHeader?: boolean;
+	isInsightsWorkItemInteractive?: (workItem: PulseWorkItem) => boolean;
+	isLooseWorkResumable?: (item: PulseLooseWork) => boolean;
+	mode?: ExperimentalJiraKanbanMode;
 	onBoardColumnsChange?: (columns: readonly JiraKanbanColumnData[]) => void;
 	onCardClick?: (card: JiraKanbanCardData, columnTitle: string) => void;
+	onInsightsWorkItemClick?: (workItem: PulseWorkItem) => void;
+	onModeChange?: (mode: ExperimentalJiraKanbanMode) => void;
+	onResumeLooseWork?: (item: PulseLooseWork) => void;
 	viewTabs?: ReactNode;
 }
 
@@ -94,8 +100,14 @@ export default function ExperimentalJiraKanbanPage({
 	ariaLabel = "Experimental RFP board columns. Scroll horizontally to review all statuses.",
 	boardColumns: controlledBoardColumns,
 	compactHeader = false,
+	isInsightsWorkItemInteractive,
+	isLooseWorkResumable,
+	mode: controlledMode,
 	onBoardColumnsChange,
 	onCardClick,
+	onInsightsWorkItemClick,
+	onModeChange,
+	onResumeLooseWork,
 	viewTabs,
 }: Readonly<ExperimentalJiraKanbanPageProps>) {
 	const [localBoardColumns, setLocalBoardColumns] = useState<JiraKanbanColumnData[]>(
@@ -114,7 +126,14 @@ export default function ExperimentalJiraKanbanPage({
 		setLocalBoardColumns([...nextColumns]);
 	}, [boardColumns, controlledBoardColumns, onBoardColumnsChange]);
 	const [columnAgentAssignments, setColumnAgentAssignments] = useState<Record<string, string[]>>({});
-	const [mode, setMode] = useState<ExperimentalJiraKanbanMode>("board");
+	const [localMode, setLocalMode] = useState<ExperimentalJiraKanbanMode>("board");
+	const mode = controlledMode ?? localMode;
+	const updateMode = useCallback((nextMode: ExperimentalJiraKanbanMode) => {
+		if (controlledMode === undefined) {
+			setLocalMode(nextMode);
+		}
+		onModeChange?.(nextMode);
+	}, [controlledMode, onModeChange]);
 	const rovoChat = useOptionalRovoChat();
 	// Commitments live above the mode switch: Pulse unmounts when it is toggled
 	// off, and a requested action or a captured note is something the reader
@@ -149,8 +168,8 @@ export default function ExperimentalJiraKanbanPage({
 		setSelection(createJiraKanbanSelectionState());
 		setDraggedCard(null);
 		boardFilter.actions.setAssigneeIds(nextAssigneeIds);
-		setMode("pulse");
-	}, [boardFilter.actions, markTimelineAsViewed, selectedAssigneeIds]);
+		updateMode("pulse");
+	}, [boardFilter.actions, markTimelineAsViewed, selectedAssigneeIds, updateMode]);
 	// Choosing an epic or a sprint is a request to read the brief, and the brief
 	// only exists in Insights. Without this, picking one from the board filter
 	// recomputes the scope and leaves the reader on the board looking at
@@ -396,7 +415,7 @@ export default function ExperimentalJiraKanbanPage({
 						onToggle={() => {
 							if (isPulse) {
 								rovoChat?.closeChat();
-								setMode("board");
+								updateMode("board");
 								return;
 							}
 							handleOpenTimeline();
@@ -410,10 +429,14 @@ export default function ExperimentalJiraKanbanPage({
 				<ExperimentalPulse
 					answers={answers}
 					capturedLooseWorkIds={capturedLooseWorkIds}
+					isLooseWorkResumable={isLooseWorkResumable}
+					isWorkItemInteractive={isInsightsWorkItemInteractive}
 					onAsk={handleAsk}
 					onCaptureLooseWork={handleCaptureLooseWork}
 					onRequestAction={handleRequestAction}
+					onResumeLooseWork={onResumeLooseWork}
 					onSelectedMemberIdChange={handlePulseMemberChange}
+					onWorkItemClick={onInsightsWorkItemClick}
 					requestedActionIds={requestedActionIds}
 					scope={scope}
 					selectedMemberId={pulseMemberId}

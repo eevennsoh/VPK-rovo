@@ -329,7 +329,7 @@ test("Pulse keeps a quiet member selectable and lets absence carry the signal", 
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /aria-label=\{isSelected\s*\?\s*`Clear filter: \$\{member\.name\}`/u);
 	// The work columns are a read-out: no tab stop, no drag affordance.
 	assert.match(SOURCES.rail, /draggable=\{false\}/u);
-	assert.match(SOURCES.rail, /tabIndex=\{-1\}/u);
+	assert.match(SOURCES.rail, /tabIndex=\{isInteractive \? undefined : -1\}/u);
 	// Work-item cards share the experimental board's stroke chrome.
 	assert.match(SOURCES.rail, /<JiraIssue[\s\S]*chrome="stroke"/u);
 	assert.match(SOURCES.rail, /<JiraIssue[\s\S]*variant="uncaptured-work"/u);
@@ -406,7 +406,7 @@ test("Pulse is a toggle on the board's own control row, not a separate tab", () 
 	assert.ok(!existsSync(join(PULSE_DIR, "..", "experimental-view-tabs.tsx")), "the tab component should be retired, not left beside its replacement");
 
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /import \{ ExperimentalPulse \} from "\.\/pulse\/experimental-pulse";/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const \[mode, setMode\] = useState<ExperimentalJiraKanbanMode>\("board"\);/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const mode = controlledMode \?\? localMode;/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const isPulse = mode === "pulse";/u);
 	// The control row stays up in Pulse. Board mode keeps the board assignee
 	// facepile, with Venn promoted so the presentation persona is visible;
@@ -420,6 +420,39 @@ test("Pulse is a toggle on the board's own control row, not a separate tab", () 
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /facepile\?: ReactNode;/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /modeToggle\?: ReactNode;/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /\{facepile \?\? \(/u);
+});
+
+test("the pressed Insights label uses a blue token that passes on its selected surface", () => {
+	assert.match(PULSE_MODE_CONTROLS_SOURCE, /border-border-selected text-text-accent-blue-bolder!/u);
+	assert.doesNotMatch(PULSE_MODE_CONTROLS_SOURCE, /text-text-selected/u);
+});
+
+test("Experimental board mode supports controlled and uncontrolled composition", () => {
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /mode\?: ExperimentalJiraKanbanMode;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onModeChange\?: \(mode: ExperimentalJiraKanbanMode\) => void;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /mode: controlledMode,/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const \[localMode, setLocalMode\] = useState<ExperimentalJiraKanbanMode>\("board"\);/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const mode = controlledMode \?\? localMode;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /if \(controlledMode === undefined\) \{\s*setLocalMode\(nextMode\);\s*\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onModeChange\?\.\(nextMode\);/u);
+});
+
+test("Insights routes only opted-in work items and local sessions", () => {
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onInsightsWorkItemClick\?: \(workItem: PulseWorkItem\) => void;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /isInsightsWorkItemInteractive\?: \(workItem: PulseWorkItem\) => boolean;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onResumeLooseWork\?: \(item: PulseLooseWork\) => void;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /isLooseWorkResumable\?: \(item: PulseLooseWork\) => boolean;/u);
+	assert.match(SOURCES.rail, /data-work-item-key=\{workItem\.key\}/u);
+	assert.match(SOURCES.rail, /const isInteractive = onWorkItemClick !== undefined/u);
+	assert.match(SOURCES.rail, /isWorkItemInteractive\?\.\(workItem\) \?\? true/u);
+	assert.match(SOURCES.rail, /onClick=\{isInteractive \? \(\) => onWorkItemClick\(workItem\) : undefined\}/u);
+	assert.match(SOURCES.rail, /disabled=\{!isInteractive\}/u);
+	assert.match(SOURCES.rail, /showMoreAction=\{false\}/u);
+	assert.match(SOURCES.rail, /tabIndex=\{isInteractive \? undefined : -1\}/u);
+	assert.match(SOURCES.rail, /data-loose-work-id=\{item\.id\}/u);
+	assert.match(SOURCES.rail, /item\.kind === "agent-session"/u);
+	assert.match(SOURCES.rail, /isLooseWorkResumable\?\.\(item\) \?\? true/u);
+	assert.match(SOURCES.rail, /onResumeAgentSession=\{\(\) => onResumeLooseWork\(item\)\}/u);
 });
 
 test("Insights owns the unread activity pill instead of a separate Timeline button", async () => {

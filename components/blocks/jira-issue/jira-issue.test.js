@@ -132,6 +132,18 @@ test("Jira issue owns an uncaptured-work variant with a controlled create action
 	assert.match(UNCAPTURED_WORK_SOURCE, /<DropdownMenuItem[\s\S]*>[\s\S]*Link work item[\s\S]*<\/DropdownMenuItem>/u);
 	assert.match(UNCAPTURED_WORK_SOURCE, /aria-disabled=\{createUnavailable\}/u);
 	assert.match(UNCAPTURED_WORK_SOURCE, /disabled=\{linkUnavailable\}/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /aria-label=\{`Resume agent session for \$\{summary\}`\}/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, />\s*Resume\s*<\/Button>/u);
+	assert.match(
+		UNCAPTURED_WORK_SOURCE,
+		/pointer-events-none opacity-0[^"]*group-hover\/uncaptured-work:pointer-events-auto group-hover\/uncaptured-work:opacity-100[^"]*group-focus-within\/uncaptured-work:pointer-events-auto group-focus-within\/uncaptured-work:opacity-100/u,
+	);
+	assert.match(UNCAPTURED_WORK_SOURCE, /focus-visible:ring-3/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /motion-reduce:transition-none/u);
+	assert.match(
+		UNCAPTURED_WORK_SOURCE,
+		/onResumeAgentSession === undefined \? \([\s\S]*Create work item[\s\S]*Link work item[\s\S]*\) : \([\s\S]*Resume/u,
+	);
 	assert.match(UNCAPTURED_WORK_SOURCE, /Captured/u);
 	assert.match(UNCAPTURED_WORK_SOURCE, /aria-live="polite"/u);
 	assert.match(PAGE_SOURCE, /variant\?: "default" \| "experimental" \| "uncaptured-work" \|/u);

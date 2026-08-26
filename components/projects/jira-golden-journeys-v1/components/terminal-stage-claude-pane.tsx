@@ -76,7 +76,12 @@ export function TerminalStageClaudePane({
 }: Readonly<TerminalStageClaudePaneProps>): React.ReactElement {
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const isTyping = activeStep?.kind === "type" && activeStep.pane === "right";
-	const displayedDraft = isTyping ? activeStep.text.slice(0, revealCount) : pane.promptDraft;
+	const isPasting = activeStep?.kind === "paste" && activeStep.pane === "right";
+	const displayedDraft = isTyping
+		? activeStep.text.slice(0, revealCount)
+		: isPasting
+			? activeStep.text
+			: pane.promptDraft;
 	const inFlightLines = getVisibleOutputLines(activeStep, "right", revealCount);
 	const currentLine = inFlightLines.at(-1) ?? pane.transcript.at(-1);
 	const activeLine = pane.working ? currentLine : undefined;
