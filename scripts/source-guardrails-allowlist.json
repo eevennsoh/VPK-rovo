@@ -107,20 +107,6 @@
 			"type": "eslint-disable"
 		},
 		{
-			"filePath": "components/blocks/next-best-action/components/next-best-action.tsx",
-			"occurrence": 1,
-			"reason": "mirrors the artifact-list leading tile: Tile child-sizing CSS targets [&_img], so agent avatars must render as a plain inset img",
-			"text": "// eslint-disable-next-line @next/next/no-img-element -- Tile child-sizing CSS targets [&_img]; agent avatars render 20px inset on the neutral tile, not as a standalone hexagon Avatar.",
-			"type": "eslint-disable"
-		},
-		{
-			"filePath": "components/blocks/next-best-action/components/next-best-action.tsx",
-			"occurrence": 1,
-			"reason": "mirrors the artifact-list leading tile: Tile child-sizing CSS targets [&_img], so 2P logos must render as a plain inset img",
-			"text": "// eslint-disable-next-line @next/next/no-img-element -- Tile child-sizing CSS targets [&_img]; mirrors logo-mark.tsx",
-			"type": "eslint-disable"
-		},
-		{
 			"filePath": "components/blocks/product-sidebar/data/confluence-navigation.ts",
 			"occurrence": 1,
 			"reason": "existing baseline",

@@ -1,313 +1,53 @@
 "use client";
 
-import { type ReactNode } from "react";
+import { ArtifactList, type ArtifactListItem } from "@/components/ui-custom/artifact-list";
 
-import AiChatIcon from "@atlaskit/icon/core/ai-chat";
-import AutomationIcon from "@atlaskit/icon/core/automation";
-import GlobeIcon from "@atlaskit/icon/core/globe";
-import MagicWandIcon from "@atlaskit/icon/core/magic-wand";
-import PageIcon from "@atlaskit/icon/core/page";
-import VideoIcon from "@atlaskit/icon/core/video";
+/**
+ * A suggestion row. Structurally identical to an Artifact List row — this block
+ * intentionally reuses that implementation rather than restating it — so the
+ * only difference is what the fields mean:
+ *
+ * - `title` is the suggested action ("Create a Sprint triage agent")
+ * - `source` is the suggestion kind ("Suggested agent")
+ * - `owner` is the rationale ("Would cover 23 untriaged bugs")
+ * - `rowActionLabel` is the verb for that row ("Create", "Enable", "Connect")
+ */
+export type NextBestActionItem = ArtifactListItem;
 
-import { Button } from "@/components/ui/button";
-import { LogoThirdParty } from "@/components/ui/logo-third-party";
-import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
-import { Lozenge } from "@/components/ui/lozenge";
-import { Tile } from "@/components/ui/tile";
-import { token } from "@/lib/tokens";
-import { cn } from "@/lib/utils";
-
-export interface NextBestActionItem {
-	/** Stable identity for the row (used as the React key and `onAct` payload). */
-	id: string;
-	/** Primary line, e.g. "Create a Release notes drafter skill". */
-	title: string;
-	/** Metadata kind label, e.g. "Suggested skill". */
-	source: string;
-	/** Metadata rationale label, e.g. "Based on 14 similar prompts". */
-	owner?: string;
-	/** Optional destination for consumers that route `onAct` via URL. */
-	href?: string;
-	/** Per-row action label, e.g. "Create". Falls back to the list-level `actionLabel`. */
-	rowActionLabel?: string;
-	/** Pull-request metadata rendered inline in compact rows, matching the agent session flyout. */
-	pullRequest?: {
-		number: number;
-		status: "Open" | "Merged";
-		additions: number;
-		deletions: number;
-	};
-	/** Serializable built-in icon for data-only consumers. `icon` takes precedence. */
-	iconName?: "ai-chat" | "automation" | "globe" | "magic-wand" | "page" | "video";
-	/** ADS icon for the leading tile (e.g. `<AutomationIcon label="" />`). */
-	icon?: ReactNode;
-	/**
-	 * Tile color appearance for the `icon` variant — any `Tile` variant, e.g.
-	 * `"blueSubtle"`. Defaults to `"neutral"`. Ignored for `logoSrc`/`avatarSrc`
-	 * rows, which always use the neutral tile.
-	 */
-	tileVariant?: React.ComponentProps<typeof Tile>["variant"];
-	/**
-	 * Third-party brand id — renders the upstream package mark (its own tile).
-	 * Takes precedence over `logoSrc`/`icon`.
-	 */
-	logoName?: ThirdPartyLogoName;
-	/**
-	 * 2P logo path (e.g. `/2p/appfire.png`) rendered 24px inset on the
-	 * neutral tile. Takes precedence over `icon`.
-	 */
-	logoSrc?: string;
-	/**
-	 * Agent avatar image path (e.g. `/avatar-agent/teamwork-agents/teamwork-coach.svg`)
-	 * rendered 20px inset on the neutral tile. Takes precedence over `logoSrc`/`icon`.
-	 */
-	avatarSrc?: string;
-}
-
-export interface NextBestActionProps extends React.ComponentProps<"div"> {
-	items: readonly NextBestActionItem[];
+export interface NextBestActionProps
+	extends Omit<
+		React.ComponentProps<typeof ArtifactList>,
+		"onOpen" | "openLabel" | "openOnRowClick"
+	> {
 	/** Fired when a row's hover/focus-revealed action button is activated. */
 	onAct?: (item: NextBestActionItem) => void;
-	/** Default action-button label. Defaults to "Create". Overridden per row by `rowActionLabel`. */
+	/** Default action-button label. Defaults to "Create". Rows override it with `rowActionLabel`. */
 	actionLabel?: string;
 	/** Also fire `onAct` when the row body is clicked. */
 	actOnRowClick?: boolean;
-	/** Row density and surface treatment. Defaults to `"default"`. */
-	variant?: "default" | "compact";
 }
 
-function NextBestActionTileContent({ item }: Readonly<{ item: NextBestActionItem }>) {
-	if (item.avatarSrc) {
-		// eslint-disable-next-line @next/next/no-img-element -- Tile child-sizing CSS targets [&_img]; agent avatars render 20px inset on the neutral tile, not as a standalone hexagon Avatar.
-		return <img alt="" aria-hidden className="object-contain" height={20} src={item.avatarSrc} width={20} />;
-	}
-	if (item.logoSrc) {
-		// eslint-disable-next-line @next/next/no-img-element -- Tile child-sizing CSS targets [&_img]; mirrors logo-mark.tsx
-		return <img alt="" aria-hidden className="object-contain" height={24} src={item.logoSrc} width={24} />;
-	}
-	if (item.icon) return item.icon;
-	if (item.iconName === "page") return <PageIcon label="" size="small" />;
-	if (item.iconName === "video") return <VideoIcon label="" size="small" />;
-	if (item.iconName === "globe") return <GlobeIcon label="" size="small" />;
-	if (item.iconName === "ai-chat") return <AiChatIcon label="" size="small" />;
-	if (item.iconName === "automation") return <AutomationIcon label="" size="small" />;
-	if (item.iconName === "magic-wand") return <MagicWandIcon label="" size="small" />;
-	return null;
-}
-
-function NextBestActionLeadingTile({
-	item,
-	variant,
-}: Readonly<{ item: NextBestActionItem; variant: "default" | "compact" }>) {
-	// 3P brand logos render as the self-framing package mark (its own tile).
-	if (item.logoName) {
-		const logo = (
-			<LogoThirdParty
-				label=""
-				name={item.logoName}
-				size={variant === "compact" ? "small" : "medium"}
-			/>
-		);
-		return logo;
-	}
-
-	// Logo + agent-avatar rows stay neutral; logos render 24px inset and agent
-	// avatars 20px, while plain icon rows can opt into a color appearance and keep
-	// the tile's default 16px inset.
-	const usesInsetImage = Boolean(item.avatarSrc || item.logoSrc);
-	const tile = (
-		<Tile
-			aria-hidden
-			label={item.source}
-			variant={usesInsetImage ? "neutral" : item.tileVariant ?? "neutral"}
-			size={variant === "compact" ? "small" : "medium"}
-			className={cn(
-				"rounded-tile",
-				item.logoSrc && "[&_img]:size-6!",
-				item.avatarSrc && "[&_img]:size-5!",
-			)}
-		>
-			<NextBestActionTileContent item={item} />
-		</Tile>
-	);
-
-	return tile;
-}
-
-function NextBestActionRow({
-	item,
-	isLast,
-	actionLabel,
-	actOnRowClick,
-	onAct,
-	variant,
-}: Readonly<{
-	item: NextBestActionItem;
-	isLast: boolean;
-	actionLabel: string;
-	actOnRowClick?: boolean;
-	onAct?: (item: NextBestActionItem) => void;
-	variant: "default" | "compact";
-}>) {
-	const handleAct = () => onAct?.(item);
-	const rowActionLabel = item.rowActionLabel ?? actionLabel;
-	const compactMetadata = (
-		<span className="block w-full truncate text-xs leading-4 text-text-subtle">
-			{item.source}
-			{item.owner ? (
-				<>
-					<span aria-hidden="true" className="text-text-subtlest"> · </span>
-					{item.owner}
-				</>
-			) : null}
-		</span>
-	);
-	const compactPullRequestByline = item.pullRequest ? (
-		<span className="mt-0.5 flex w-full min-w-0 items-center gap-1 text-xs leading-4">
-			<span className="shrink-0">
-				<Lozenge variant={item.pullRequest.status === "Merged" ? "discovery" : "success"}>
-					{item.pullRequest.status}
-				</Lozenge>
-			</span>
-			{item.href ? (
-				<a
-					className="min-w-0 flex-1 truncate rounded-[3px] text-text no-underline decoration-current outline-none hover:underline focus-visible:underline"
-					href={item.href}
-					title={`#${item.pullRequest.number}: ${item.title}`}
-				>
-					#{item.pullRequest.number}: {item.title}
-				</a>
-			) : (
-				// No destination: render plain text rather than a focusable link that cannot navigate.
-				<span
-					className="min-w-0 flex-1 truncate text-text"
-					title={`#${item.pullRequest.number}: ${item.title}`}
-				>
-					#{item.pullRequest.number}: {item.title}
-				</span>
-			)}
-		</span>
-	) : null;
-
-	const actAction = (
-		<div
-			className={cn(
-				// Collapse at rest so titles use the full row; expand on hover/focus
-				// without jumping the action control into an absolute overlay (which
-				// the raised card's overflow would clip). Margin (not flex gap) so
-				// the slot leaves no empty space when width is 0fr.
-				"ml-0 grid shrink-0",
-				"grid-cols-[0fr] group-hover/next-best-action-row:ml-3 group-hover/next-best-action-row:grid-cols-[1fr]",
-				"group-has-[:focus-visible]/next-best-action-row:ml-3 group-has-[:focus-visible]/next-best-action-row:grid-cols-[1fr]",
-			)}
-		>
-			<div className="min-w-0 overflow-hidden has-[:focus-visible]:overflow-visible">
-				<Button
-					aria-label={item.pullRequest
-						? `Code changes: ${item.pullRequest.additions} additions, ${item.pullRequest.deletions} deletions`
-						: undefined}
-					className={cn(
-						"shrink-0 whitespace-nowrap",
-						// Instant reveal/hide; keep Button chrome transitions but drop opacity.
-						"pointer-events-none opacity-0 transition-[background-color,border-color,box-shadow,color] motion-reduce:transition-none",
-						"group-hover/next-best-action-row:pointer-events-auto group-hover/next-best-action-row:opacity-100",
-						"group-has-[:focus-visible]/next-best-action-row:pointer-events-auto group-has-[:focus-visible]/next-best-action-row:opacity-100",
-						"focus-visible:pointer-events-auto focus-visible:opacity-100",
-					)}
-					variant="outline"
-					size={variant === "compact" ? "compact" : "default"}
-					type="button"
-					onClick={(event) => {
-						event.stopPropagation();
-						handleAct();
-					}}
-				>
-					{item.pullRequest ? (
-						<span className="flex items-center gap-1">
-							<span className="text-text-success">+{item.pullRequest.additions}</span>
-							<span className="text-text-danger">-{item.pullRequest.deletions}</span>
-						</span>
-					) : rowActionLabel}
-				</Button>
-			</div>
-		</div>
-	);
-
-	return (
-		<div
-			className={cn(
-				"group/next-best-action-row min-w-0 w-full",
-				variant === "compact"
-					? "flex min-h-12 items-center px-3 py-2 transition-colors motion-reduce:transition-none hover:bg-surface-hovered"
-					: "flex min-h-16 items-center px-3 py-2 transition-colors motion-reduce:transition-none hover:bg-surface-hovered",
-				!isLast && "border-b border-border",
-			)}
-		>
-			<div className="relative flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
-				{actOnRowClick ? (
-						<button
-							aria-label={`${rowActionLabel} ${item.title}`}
-							// Inset ring: the row content wrapper is `overflow-hidden`, which would
-							// clip an outward `ring-offset` indicator on every edge.
-							className="absolute inset-0 z-10 cursor-pointer appearance-none rounded-sm border-0 bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-							type="button"
-							onClick={handleAct}
-						/>
-				) : null}
-				<span className="shrink-0">
-					<NextBestActionLeadingTile item={item} variant={variant} />
-				</span>
-				{variant === "compact" ? (
-					<div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-						<p className="w-full truncate text-xs font-medium leading-4 text-text">{item.title}</p>
-						{compactPullRequestByline ?? compactMetadata}
-					</div>
-				) : (
-					<div className="min-w-0 flex-1 overflow-hidden">
-						<p className="truncate text-sm font-medium leading-5 text-text">{item.title}</p>
-						<p className="flex min-w-0 items-center gap-1 text-xs leading-4">
-							<span className="shrink-0 text-text-subtle">{item.source}</span>
-							{item.owner ? (
-								<>
-									<span aria-hidden="true" className="shrink-0 text-text-subtlest">·</span>
-									<span className="min-w-0 truncate text-text-subtle">{item.owner}</span>
-								</>
-							) : null}
-						</p>
-					</div>
-				)}
-			</div>
-			{actAction}
-		</div>
-	);
-}
-
+/**
+ * Next Best Action — proactive suggestions (skills and agents worth creating,
+ * automations worth enabling, integrations worth connecting, in-context work
+ * nudges) rendered with the Artifact List row anatomy.
+ *
+ * This is a naming/semantics adapter, not a second row implementation. Layout,
+ * tiles, metadata, PR bylines, hover/focus reveal, and accessibility all live in
+ * `components/ui-custom/artifact-list` so fixes land once.
+ */
 export function NextBestAction({
-	items,
 	onAct,
 	actionLabel = "Create",
 	actOnRowClick = false,
-	variant = "default",
-	className,
 	...props
 }: Readonly<NextBestActionProps>) {
 	return (
-		<div
-			className={cn("min-w-0 max-w-full overflow-hidden rounded-lg bg-surface-raised", className)}
-			style={{ boxShadow: token("elevation.shadow.raised") }}
+		<ArtifactList
+			onOpen={onAct}
+			openLabel={actionLabel}
+			openOnRowClick={actOnRowClick}
 			{...props}
-		>
-			{items.map((item, index) => (
-				<NextBestActionRow
-					key={item.id}
-					item={item}
-					isLast={index === items.length - 1}
-					actionLabel={actionLabel}
-					actOnRowClick={actOnRowClick}
-					onAct={onAct}
-					variant={variant}
-				/>
-			))}
-		</div>
+		/>
 	);
 }

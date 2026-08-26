@@ -1,7 +1,7 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const NEXT_BEST_ACTION_DETAIL: ComponentDetail = {
-	description: "A proactive suggestion card that reuses the Artifact List row anatomy — raised surface, leading tile, title with \"kind · rationale\" metadata, and a hover/focus-revealed action. Content is next best actions rather than artifacts: skills and agents worth creating, automations worth enabling, integrations worth connecting, and in-context work nudges. The default variant uses 64px rows; the compact variant uses 48px rows and swaps the action for inline PR diff stats when a row carries pull-request metadata.",
+	description: "A proactive suggestion card: skills and agents worth creating, automations worth enabling, integrations worth connecting, and in-context work nudges. It is a naming adapter over Artifact List, not a second row implementation — layout, tiles, metadata, PR bylines, hover/focus reveal, and accessibility all live in `components/ui-custom/artifact-list`, so fixes land once. Rows read as \"kind · rationale\" and each carries its own action verb via `rowActionLabel`.",
 	importStatement: `import { NextBestAction } from "@/components/blocks/next-best-action";`,
 	usage: `import { NextBestAction } from "@/components/blocks/next-best-action";
 import type { NextBestActionItem } from "@/components/blocks/next-best-action";
@@ -36,7 +36,7 @@ const items: NextBestActionItem[] = [
 			name: "items",
 			type: "readonly NextBestActionItem[]",
 			required: true,
-			description: "Suggestions to render. Each item provides a title, kind/rationale metadata, an optional per-row action label, and either an ADS icon, a 3P logo, or an agent avatar.",
+			description: "Suggestions to render. `NextBestActionItem` is `ArtifactListItem`: `title` is the suggested action, `source` the suggestion kind, `owner` the rationale, plus an ADS icon, 3P logo, or agent avatar. Set `rowActionLabel` for that row's verb and `href` to make a pull-request byline a real link.",
 		},
 		{
 			name: "onAct",
