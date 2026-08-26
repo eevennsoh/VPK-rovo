@@ -396,7 +396,7 @@ export function AgentsRowField({ value, onChange }: Readonly<{ value: readonly C
 		status: row.session !== undefined && row.session.status !== "completed"
 			? <WorkingSessionActivityByline session={row.session} sessionIndex={rowIndex} />
 			: <WorkingSessionActivityByline fallbackLabel={row.statusLabel} />,
-		statusLabel: row.session ? row.statusLabel : "Running",
+		statusLabel: row.statusLabel,
 	}));
 	const extraAgents = selectedAgents
 		.filter((member) => !ROVO_AGENT_SELECTOR_AGENTS.some((agent) => agent.id === member.id))
@@ -419,9 +419,10 @@ export function AgentsRowField({ value, onChange }: Readonly<{ value: readonly C
 	};
 
 	const handleAssignedAgentIdsChange = (agentIds: readonly string[]) => {
+		const nonAgentCrew = value.filter((member) => member.kind !== "agent");
 		const selectedById = new Map(selectedAgents.map((member) => [member.id, member]));
 		const availableById = new Map(agents.map((agent) => [agent.id, agent]));
-		const next = agentIds.flatMap((agentId) => {
+		const nextAgents = agentIds.flatMap((agentId) => {
 			const selected = selectedById.get(agentId);
 			if (selected) {
 				return [selected];
@@ -429,7 +430,7 @@ export function AgentsRowField({ value, onChange }: Readonly<{ value: readonly C
 			const agent = availableById.get(agentId);
 			return agent ? [toCrewAgent(agent)] : [];
 		});
-		onChange(next);
+		onChange([...nonAgentCrew, ...nextAgents]);
 	};
 
 	return (

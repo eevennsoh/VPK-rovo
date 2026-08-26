@@ -151,8 +151,8 @@ export function AgentAssignment({
 						<AgentSelector
 							agents={agents}
 							onAgentToggle={handleAgentToggle}
-							onBrowseAgents={() => handleFooterAction(onBrowseAgents)}
-							onCreateAgent={() => handleFooterAction(onCreateAgent)}
+							onBrowseAgents={onBrowseAgents ? () => handleFooterAction(onBrowseAgents) : undefined}
+							onCreateAgent={onCreateAgent ? () => handleFooterAction(onCreateAgent) : undefined}
 							onPinnedAgentIdsChange={setPinnedAgentIds}
 							onQueryChange={setQuery}
 							pinnedAgentIds={pinnedAgentIds}

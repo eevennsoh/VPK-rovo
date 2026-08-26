@@ -40,6 +40,8 @@ test("Agent Assignment preserves the work-item trigger and two-stage menu behavi
 	assert.match(source, /const effectiveView = assignedAgents\.length === 0 \? "selector" : view;/u);
 	assert.match(source, /<AssignedAgentsMenu[\s\S]*onAddAgent=\{\(\) => setView\("selector"\)\}/u);
 	assert.match(source, /<AgentSelector[\s\S]*searchVariant="palette"[\s\S]*selectionMode="single"/u);
+	assert.match(source, /onBrowseAgents=\{onBrowseAgents \? \(\) => handleFooterAction\(onBrowseAgents\) : undefined\}/u);
+	assert.match(source, /onCreateAgent=\{onCreateAgent \? \(\) => handleFooterAction\(onCreateAgent\) : undefined\}/u);
 	assert.match(source, /onAssignedAgentIdsChange\(nextAssignedAgentIds\);/u);
 	assert.match(source, /if \(!assignedAgentIds\.includes\(agentId\)\) \{\s*onAgentAssign\?\.\(agent\);\s*\}/u);
 
@@ -49,11 +51,12 @@ test("Agent Assignment preserves the work-item trigger and two-stage menu behavi
 	assert.match(menu, /hoverActions: \{[\s\S]*primaryLabel: "View"[\s\S]*secondaryLabel: "Archive"/u);
 	assert.match(suggestionMenu, /hoverActions\?: RichTextSuggestionMenuHoverActions;/u);
 	assert.match(suggestionMenu, /data-suggestion-action-buttons=""/u);
-	assert.doesNotMatch(suggestionMenu, /group-hover\/suggestion-option:flex|group-has-\[:focus-visible\]\/suggestion-option:flex/u);
-	assert.match(suggestionMenuCss, /\.rich-text-command-menu:not\(:has\(\[data-suggestion-actions\]:hover\)\)[\s\S]*\[data-suggestion-actions\]:focus-within/u);
+	assert.match(suggestionMenu, /className="pointer-events-none flex w-0 items-center gap-1 overflow-hidden opacity-0"/u);
+	assert.doesNotMatch(suggestionMenu, /className="hidden items-center gap-1/u);
+	assert.match(suggestionMenuCss, /\.rich-text-command-menu:not\(:has\(\[data-suggestion-actions\] :focus-visible\)\)[\s\S]*\[data-suggestion-actions\]:hover/u);
+	assert.match(suggestionMenuCss, /\[data-suggestion-actions\]:has\(:focus-visible\) > \[data-suggestion-action-buttons\]/u);
 	assert.match(suggestionMenu, /className="group\/suggestion-option grid grid-cols-\[minmax\(0,1fr\)_auto\] items-center rounded-lg"/u);
 	assert.doesNotMatch(suggestionMenu, /absolute inset-y-0 right-2/u);
-	assert.match(suggestionMenuCss, /\[data-suggestion-actions\]:hover,[\s\S]*\[data-suggestion-actions\]:focus-within[\s\S]*background-color:/u);
 	assert.doesNotMatch(suggestionMenuCss, /padding-right: 104px/u);
 	assert.match(menu, /className="rich-text-command-menu-embedded w-full!"/u);
 	assert.match(

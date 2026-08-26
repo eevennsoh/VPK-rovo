@@ -685,14 +685,18 @@
 /* Action rows become a two-column grid only while actions are revealed. The
    option column is minmax(0,1fr), so its existing ellipsis treatment shrinks
    before the in-flow buttons instead of painting underneath them. */
-[data-suggestion-actions]:hover,
-.rich-text-command-menu:not(:has([data-suggestion-actions]:hover)) [data-suggestion-actions]:focus-within {
+[data-suggestion-actions]:has(:focus-visible),
+.rich-text-command-menu:not(:has([data-suggestion-actions] :focus-visible)) [data-suggestion-actions]:hover {
 	background-color: var(--ds-background-neutral-subtle-hovered, #f1f2f4);
 }
 
-[data-suggestion-actions]:hover > [data-suggestion-action-buttons],
-.rich-text-command-menu:not(:has([data-suggestion-actions]:hover)) [data-suggestion-actions]:focus-within > [data-suggestion-action-buttons] {
-	display: flex;
+[data-suggestion-actions]:has(:focus-visible) > [data-suggestion-action-buttons],
+.rich-text-command-menu:not(:has([data-suggestion-actions] :focus-visible)) [data-suggestion-actions]:hover > [data-suggestion-action-buttons] {
+	width: auto;
+	overflow: visible;
+	padding-right: var(--ds-space-100, 8px);
+	opacity: 1;
+	pointer-events: auto;
 }
 
 [data-suggestion-actions] .rich-text-command-menu-item[data-has-actions="true"],

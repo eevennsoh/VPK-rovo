@@ -1070,7 +1070,7 @@ function RichTextSuggestionMenuOption({
 		>
 			{option}
 			<div
-				className="hidden items-center gap-1 pr-2"
+				className="pointer-events-none flex w-0 items-center gap-1 overflow-hidden opacity-0"
 				data-suggestion-action-buttons=""
 			>
 				<Button

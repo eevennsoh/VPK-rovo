@@ -150,7 +150,7 @@ test("the v3 control row is consolidated and Reporter moved back to Details", ()
 	assert.doesNotMatch(detailsEditorsSource, /selectionMode="multiple"/u);
 	assert.match(
 		detailsEditorsSource,
-		/const handleAssignedAgentIdsChange = \(agentIds: readonly string\[\]\) =>[\s\S]*onChange\(next\);/u,
+		/const handleAssignedAgentIdsChange = \(agentIds: readonly string\[\]\) =>[\s\S]*const nonAgentCrew = value\.filter\(\(member\) => member\.kind !== "agent"\);[\s\S]*onChange\(\[\.\.\.nonAgentCrew, \.\.\.nextAgents\]\);/u,
 	);
 	assert.match(
 		detailsEditorsSource,
@@ -690,7 +690,7 @@ test("the v3 Agents details row opens the assigned menu first and swaps to the p
 	);
 	assert.match(
 		detailsEditorsSource,
-		/const assignedAgents = assignedRows\.map\(\(row, rowIndex\): AgentAssignmentAgent =>[\s\S]*status: row\.session !== undefined && row\.session\.status !== "completed"[\s\S]*<WorkingSessionActivityByline session=\{row\.session\} sessionIndex=\{rowIndex\} \/>[\s\S]*<WorkingSessionActivityByline fallbackLabel=\{row\.statusLabel\} \/>[\s\S]*statusLabel: row\.session \? row\.statusLabel : "Running",/u,
+		/const assignedAgents = assignedRows\.map\(\(row, rowIndex\): AgentAssignmentAgent =>[\s\S]*status: row\.session !== undefined && row\.session\.status !== "completed"[\s\S]*<WorkingSessionActivityByline session=\{row\.session\} sessionIndex=\{rowIndex\} \/>[\s\S]*<WorkingSessionActivityByline fallbackLabel=\{row\.statusLabel\} \/>[\s\S]*statusLabel: row\.statusLabel,/u,
 	);
 	assert.match(
 		detailsEditorsSource,
@@ -698,7 +698,7 @@ test("the v3 Agents details row opens the assigned menu first and swaps to the p
 	);
 	assert.match(
 		detailsEditorsSource,
-		/const handleAssignedAgentIdsChange = \(agentIds: readonly string\[\]\) =>[\s\S]*const next = agentIds\.flatMap[\s\S]*onChange\(next\);/u,
+		/const handleAssignedAgentIdsChange = \(agentIds: readonly string\[\]\) =>[\s\S]*const nonAgentCrew = value\.filter\(\(member\) => member\.kind !== "agent"\);[\s\S]*const nextAgents = agentIds\.flatMap[\s\S]*onChange\(\[\.\.\.nonAgentCrew, \.\.\.nextAgents\]\);/u,
 	);
 	assert.match(
 		detailsEditorsSource,
