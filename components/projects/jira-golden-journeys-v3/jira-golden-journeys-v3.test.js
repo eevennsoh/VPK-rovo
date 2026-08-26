@@ -76,11 +76,17 @@ test("Track keeps the experimental board Filter interactive in Board and Pulse",
 
 	assert.match(trackStage, /<ExperimentalJiraKanbanPage/u);
 	// The slot may hold more than the popover — Insights hangs its scope chip
-	// beside the control it reflects — so this pins the popover and its wiring
-	// rather than the slot being nothing but the popover.
+	// beside the control it reflects — and the actions may be the filter's own
+	// or a wrapper over them, because choosing a scope also opens Insights. This
+	// pins the popover and its wiring rather than one exact spelling of either.
 	assert.match(
 		experimentalPageSource,
-		/filterControl=\{[\s\S]*?<BoardFilterPopover[\s\S]*actions=\{boardFilter\.actions\}[\s\S]*model=\{boardFilter\.model\}/u,
+		/filterControl=\{[\s\S]*?<BoardFilterPopover[\s\S]*actions=\{(?:boardFilter\.actions|filterActions)\}[\s\S]*model=\{boardFilter\.model\}/u,
+	);
+	assert.match(
+		experimentalPageSource,
+		/const filterActions = useMemo\((?:.|\n)*?\.\.\.boardFilter\.actions/u,
+		"a wrapper must still delegate to the filter's own actions",
 	);
 	assert.match(experimentalHeaderSource, /filterControl: ReactNode;/u);
 	assert.match(experimentalHeaderSource, /\{filterControl\}/u);

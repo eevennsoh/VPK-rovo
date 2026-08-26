@@ -414,6 +414,7 @@ const SCOPE_SOURCES = {
 	chip: readSource(joinPath(DIR, "components", "pulse-scope-chip.tsx"), "utf8"),
 	header: readSource(joinPath(EXP, "experimental-board-header.tsx"), "utf8"),
 	options: readSource(joinPath(EXP, "data", "board-filter-options.ts"), "utf8"),
+	shell: readSource(joinPath(DIR, "experimental-pulse.tsx"), "utf8"),
 	popover: readSource(joinPath(EXP, "components", "board-filter-popover.tsx"), "utf8"),
 	page: readSource(joinPath(EXP, "page.tsx"), "utf8"),
 	progress: readSource(joinPath(DIR, "components", "pulse-progress-bar.tsx"), "utf8"),
@@ -450,6 +451,42 @@ test("Parent and Sprint offer exactly the scopes the article can open", () => {
 	assert.match(SCOPE_SOURCES.options, /sprint: "Sprint",/u, "the field needs a label or the rail renders blank");
 });
 
+test("choosing a scope opens the surface the brief lives on", () => {
+	// The brief only exists in Insights. Without this, picking an epic from the
+	// board filter recomputes the scope, lights the chip, and leaves the reader
+	// on the board looking at columns — the feature silently doing nothing.
+	//
+	// It hangs off the filter action rather than an effect on `scope`, so the
+	// mode change is caused by the click and does not also fire when a scope is
+	// restored on mount.
+	assert.match(
+		SCOPE_SOURCES.page,
+		/toggleValue: \(fieldId, valueId\) => \{[\s\S]*?setMode\("pulse"\)/u,
+	);
+	assert.doesNotMatch(
+		SCOPE_SOURCES.page,
+		/useEffect\([\s\S]*?setMode\("pulse"\)/u,
+		"the mode change is an event, not a reaction to derived state",
+	);
+	// Both surfaces must go through the wrapped actions or one of them silently
+	// keeps the un-wrapped behaviour.
+	assert.match(SCOPE_SOURCES.page, /actions=\{filterActions\}/u);
+	assert.match(SCOPE_SOURCES.page, /filterActions\.clearField\("parent"\)/u);
+});
+
+test("an unsent draft does not survive a change of scope", () => {
+	// A question typed under Sprint 24 is entity-local state. Carrying it into
+	// PAY-90 would submit it against the new scope's answers, which is the
+	// accepted-input-silently-discarded failure in gotchas-ui.md — except worse,
+	// because the input is not discarded, it is misfiled.
+	assert.match(SCOPE_SOURCES.shell, /<PulseInsightsComposer[\s\S]*?key=\{scopeKey\}/u);
+	assert.doesNotMatch(
+		SCOPE_SOURCES.composer,
+		/useEffect/u,
+		"re-keying is the reset; an effect would run after the render that already showed the stale draft",
+	);
+});
+
 test("the scope chip keeps its way out in the tab order and owns no state", () => {
 	// A standing statement about what the page is showing must not hide its own
 	// dismissal behind a pointer (gotchas-ui.md), and it must not hold a second
@@ -457,13 +494,16 @@ test("the scope chip keeps its way out in the tab order and owns no state", () =
 	assert.match(SCOPE_SOURCES.chip, /removeButtonLabel=\{`Clear \$\{scope\.kind\} scope: \$\{scope\.key\}`\}/u);
 	assert.doesNotMatch(SCOPE_SOURCES.chip, /group-hover:opacity|opacity-0 group-hover/u);
 	assert.doesNotMatch(SCOPE_SOURCES.chip, /useState/u, "the chip reflects a selection it does not own");
-	assert.match(SCOPE_SOURCES.page, /boardFilter\.actions\.clearField\("parent"\)/u);
-	assert.match(SCOPE_SOURCES.page, /boardFilter\.actions\.clearField\("sprint"\)/u);
+	assert.match(SCOPE_SOURCES.page, /filterActions\.clearField\("parent"\)/u);
+	assert.match(SCOPE_SOURCES.page, /filterActions\.clearField\("sprint"\)/u);
 });
 
 test("both briefs sit on the article's own rungs rather than inventing a second set", () => {
 	for (const [name, source] of [["sprint", SCOPE_SOURCES.sprint], ["epic", SCOPE_SOURCES.epic]]) {
-		assert.match(source, /HEADLINE_STYLE, MEASURE \} from ".*pulse-story"/u, `${name} must borrow the display rung`);
+		// The display rung lives on the type scale, not on a component file: two
+		// files need it, and a component that also exports constants stops being
+		// Fast-Refresh-safe.
+		assert.match(source, /\bHEADLINE_STYLE,\n/u, `${name} must borrow the display rung`);
 		assert.doesNotMatch(source, /const HEADLINE_STYLE/u, `${name} must not keep a second copy of the clamp`);
 		assert.match(source, /PULSE_EYEBROW/u, `${name} must use the shared eyebrow`);
 		assert.match(source, /PulseSectionLabel/u, `${name} must use the shared section label`);
@@ -513,6 +553,11 @@ test("answers enter with their own exit timing and a reduced-motion guard", () =
 	assert.match(SCOPE_SOURCES.composer, /exit=\{\{ opacity: 0, transition: exit, y: offset \}\}/u);
 	assert.match(SCOPE_SOURCES.composer, /useReducedMotion\(\)/u);
 	assert.doesNotMatch(SCOPE_SOURCES.composer, /duration-\d|duration-\[|ease-\[/u);
+	// The suggestions row frees real space when it retires, but `height` cannot
+	// be the thing animated — it re-runs layout every frame. Motion's `layout`
+	// prop FLIPs the same change with a transform.
+	assert.doesNotMatch(SCOPE_SOURCES.composer, /height: "auto"|height: 0/u);
+	assert.match(SCOPE_SOURCES.composer, /layout=\{shouldReduceMotion \? false : "position"\}/u);
 });
 
 test("scope and questions are owned above the surface that renders them", () => {

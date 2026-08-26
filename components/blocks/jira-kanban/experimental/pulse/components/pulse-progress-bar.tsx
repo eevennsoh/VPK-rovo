@@ -154,5 +154,3 @@ export function PulseProgressLegend({
 		</dl>
 	);
 }
-
-export { toPulseProgressModel };

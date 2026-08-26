@@ -12,7 +12,7 @@ import { BoardFilterPopover } from "./components/board-filter-popover";
 import { TimelineActivityBadge } from "./components/timeline-activity-badge";
 import { ExperimentalJiraKanban } from "./experimental-jira-kanban";
 import { ExperimentalJiraKanbanBoardHeader } from "./experimental-board-header";
-import { useBoardFilter } from "./hooks/use-board-filter";
+import { useBoardFilter, type BoardFilterActions } from "./hooks/use-board-filter";
 import {
 	BOARD_FILTER_DEMO_NOW_ISO,
 	filterPulseTimelineByDays,
@@ -130,6 +130,23 @@ export default function ExperimentalJiraKanbanPage({
 	const [assignedAgentIdsByCard, setAssignedAgentIdsByCard] = useState<Record<string, string[]>>({});
 	const boardFilter = useBoardFilter();
 	const selectedAssigneeIds = boardFilter.selectedAssigneeIds;
+	// Choosing an epic or a sprint is a request to read the brief, and the brief
+	// only exists in Insights. Without this, picking one from the board filter
+	// recomputes the scope, lights the chip, and leaves the reader on the board
+	// looking at columns — the feature silently doing nothing.
+	//
+	// It hangs off the filter's own actions rather than an effect on `scope`:
+	// the mode change is caused by the reader's click, and deriving it from
+	// state afterwards would also fire when a scope is restored on mount.
+	const filterActions = useMemo((): BoardFilterActions => ({
+		...boardFilter.actions,
+		toggleValue: (fieldId, valueId) => {
+			boardFilter.actions.toggleValue(fieldId, valueId);
+			if (fieldId === "parent" || fieldId === "sprint") {
+				setMode("pulse");
+			}
+		},
+	}), [boardFilter.actions]);
 	// Insights reads Parent and Sprint off the same filter the board reads its
 	// own fields off. One control, one selection model — the scope is derived
 	// here rather than owned separately, so the popover and the article cannot
@@ -347,7 +364,7 @@ export default function ExperimentalJiraKanbanPage({
 				filterControl={
 					<>
 						<BoardFilterPopover
-							actions={boardFilter.actions}
+							actions={filterActions}
 							assignees={assignees}
 							compact={compactHeader}
 							model={boardFilter.model}
@@ -358,8 +375,8 @@ export default function ExperimentalJiraKanbanPage({
 						    action the popover uses. */}
 						<PulseScopeChip
 							onClear={() => {
-								boardFilter.actions.clearField("parent");
-								boardFilter.actions.clearField("sprint");
+								filterActions.clearField("parent");
+								filterActions.clearField("sprint");
 							}}
 							scope={scope}
 						/>

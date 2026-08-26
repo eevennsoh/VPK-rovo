@@ -9,7 +9,25 @@
  * - `PULSE_SECTION_LABEL` — every section heading (`PulseSectionLabel`).
  * - `PULSE_ITEM_TITLE` / `PULSE_ITEM_BODY` — the row rung shared by signals,
  *   actions and uncaptured work, so 14px means exactly one thing.
+ * - `HEADLINE_STYLE` — the one display rung, shared by an insight headline and
+ *   the scope brief that opens the article.
  */
+
+/**
+ * 40px → 54px display size, tracked tight the way the reference sets it.
+ *
+ * A composite `font`-shorthand rung has no Tailwind utility, so it is an
+ * inline style object rather than a class. It lives here rather than on
+ * `pulse-story.tsx` because two files need it and a component file that also
+ * exports constants stops being Fast-Refresh-safe — the same reason the
+ * ruler's geometry was split out of the scrubber.
+ */
+export const HEADLINE_STYLE = {
+	fontSize: "clamp(2.5rem, 0.575rem + 2.8vw, 3.375rem)",
+	fontWeight: 400,
+	letterSpacing: "-0.045em",
+	lineHeight: 1.03,
+} as const;
 
 export const PULSE_EYEBROW =
 	"text-xs leading-4 font-semibold text-text-subtlest";

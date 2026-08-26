@@ -4,8 +4,9 @@ import { useId, type RefCallback } from "react";
 
 import { PulseProgressBar, PulseProgressLegend } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-progress-bar";
 import { PulseSectionLabel } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-signals";
-import { HEADLINE_STYLE, MEASURE } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-story";
+import { MEASURE } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-story";
 import {
+	HEADLINE_STYLE,
 	PULSE_EYEBROW,
 	PULSE_ITEM_BODY,
 	PULSE_ITEM_TITLE,

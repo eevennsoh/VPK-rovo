@@ -354,6 +354,11 @@ export function ExperimentalPulse({
 							<div className="min-w-0 shrink-0 px-1 lg:pr-10">
 								<PulseInsightsComposer
 									hasAsked={answers.length > 0}
+									// Scope identity keys the composer: an unsent draft belongs
+									// to the scope it was typed under, and re-keying discards it
+									// at the boundary instead of submitting it against another
+									// scope's answers.
+									key={scopeKey}
 									onAsk={onAsk}
 									scope={scope}
 									suggestions={suggestions}

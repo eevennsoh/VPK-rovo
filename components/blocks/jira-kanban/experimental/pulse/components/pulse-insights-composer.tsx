@@ -33,9 +33,17 @@ import { cn } from "@/lib/utils";
  * put a second seam on top of that one.
  *
  * The suggestions above it are scaffolding for the first question only. Once
- * the reader has asked anything they know the box works, so the row leaves —
- * by unmounting through a height collapse, not by being hidden, because a row
- * that vanishes instantly drops the composer 40px mid-reach.
+ * the reader has asked anything they know the box works, so the row leaves. It
+ * unmounts rather than hiding — a row that stays but goes blank leaves a 40px
+ * hole — and the dock carries Motion's `layout` prop so the space it frees is
+ * FLIPped with a transform instead of animating `height`, which would re-run
+ * layout on every frame.
+ *
+ * The draft is entity-local state and is not carried across scopes: a question
+ * typed under Sprint 24 would otherwise be submitted against PAY-90's answers
+ * after a filter change. The shell keys this component by scope identity, so
+ * the draft is discarded at the boundary rather than after the reader has
+ * pressed send (.agents/rules/gotchas-ui.md).
  *
  * Answers are not a chat log. They are the last section of the article, in the
  * article's ruled rhythm and the article's voice: no bubbles, no avatars, no
@@ -102,21 +110,30 @@ export function PulseInsightsComposer({
 	}
 
 	return (
-		<div className="shrink-0 pt-4">
+		// `layout` is what keeps the collapse off the layout thread. The
+		// suggestions row has to free the space it occupies when it retires —
+		// fading in place would leave a 40px hole above the composer — but
+		// animating `height` re-runs layout every frame. Motion measures the
+		// before and after and FLIPs the difference with a transform instead,
+		// which is the escape hatch `no-layout-property-animation` names.
+		<motion.div
+			className="shrink-0 pt-4"
+			layout={shouldReduceMotion ? false : "position"}
+			transition={shouldReduceMotion ? PULSE_ASK_STILL : PULSE_ASK_ENTER}
+		>
 			<div className={cn("mx-auto min-w-0", MEASURE)}>
 				<AnimatePresence initial={false}>
 					{hasAsked || suggestions.length === 0 ? null : (
 						<motion.div
-							animate={{ height: "auto", opacity: 1 }}
-							// Clipped while it collapses, opened again the moment a chip
-							// takes keyboard focus so its ring is not sliced by the seam.
+							animate={{ opacity: 1 }}
+							// Opened again the moment a chip takes keyboard focus, so its
+							// ring is not sliced by the seam while the row is clipped.
 							className="overflow-hidden has-[:focus-visible]:overflow-visible"
 							exit={{
-								height: 0,
 								opacity: 0,
 								transition: shouldReduceMotion ? PULSE_ASK_STILL : PULSE_ASK_EXIT,
 							}}
-							initial={{ height: 0, opacity: 0 }}
+							initial={{ opacity: 0 }}
 							key="pulse-insights-suggestions"
 							style={{ willChange: "opacity" }}
 							transition={shouldReduceMotion ? PULSE_ASK_STILL : PULSE_ASK_ENTER}
@@ -153,7 +170,7 @@ export function PulseInsightsComposer({
 					variant="comment"
 				/>
 			</div>
-		</div>
+		</motion.div>
 	);
 }
 
