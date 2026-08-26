@@ -566,7 +566,12 @@ function JiraIssueSubtasks({
 
 	return (
 		<section aria-label={label}>
-			<div className="flex h-8 w-full items-center justify-between px-3 py-2">
+			<div
+				className={cn(
+					"flex h-8 w-full items-center justify-between px-3 py-2",
+					usesStrokeChrome && "-mx-px w-[calc(100%+2px)]",
+				)}
+			>
 				<div
 					className={
 						usesStrokeChrome
