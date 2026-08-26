@@ -78,15 +78,15 @@ export function ContextPanel({
 					submittedReviewActivity={submittedReviewActivity}
 					submitReviewAction={submitReviewAction}
 				/>
-			) : insightsSelected && hasInsights ? (
-				<InsightsWorkItemSplit
-					insights={<InsightsPanel activity={insightsFeed} hasInsights={hasInsights} />}
-					workItem={workItem}
-				/>
-			) : insightsSelected ? (
+			) : insightsSelected && !hasInsights ? (
 				<InsightsPanel activity={insightsFeed} hasInsights={hasInsights} />
 			) : (
-				workItem
+				<InsightsWorkItemSplit
+					insights={insightsSelected && hasInsights
+						? <InsightsPanel activity={insightsFeed} hasInsights={hasInsights} />
+						: undefined}
+					workItem={workItem}
+				/>
 			)}
 		</section>
 	);

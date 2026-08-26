@@ -110,7 +110,7 @@ test("Build keeps the work item at its initial Activity scroll position", () => 
 	assert.match(pageSource, /autoScroll: controller\.chapter !== "build"/u);
 	assert.match(
 		activityPanelSource,
-		/const autoScrollEnabled = activitySessionThread\?\.autoScroll !== false\s*&& !insightsSelected/u,
+		/const autoScrollEnabled = activitySessionThread\?\.autoScroll !== false\s*&& surface === "activity"\s*&& !insightsSelected/u,
 	);
 });
 

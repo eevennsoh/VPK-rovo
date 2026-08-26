@@ -473,7 +473,7 @@ test("PR select shares the section navigation list without becoming a section", 
 	);
 	assert.match(
 		readBlockFile("experimental-v3/components/context-panel.tsx"),
-		/selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView[\s\S]*insightsSelected && hasInsights \? \([\s\S]*<InsightsWorkItemSplit[\s\S]*workItem=\{workItem\}/u,
+		/selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView[\s\S]*insightsSelected && !hasInsights \? \([\s\S]*<InsightsPanel[\s\S]*<InsightsWorkItemSplit[\s\S]*workItem=\{workItem\}/u,
 	);
 	const sectionNavigationSource = readBlockFile("experimental-v3/context-section-navigation.tsx");
 	assert.match(
@@ -583,7 +583,7 @@ test("experimental v3 shares one insight selection between the filtered feed and
 	assert.doesNotMatch(metadataSource, /useState/u);
 	assert.match(
 		contextSource,
-		/selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView[\s\S]*insightsSelected && hasInsights \? \([\s\S]*<InsightsWorkItemSplit[\s\S]*insights=\{\s*<InsightsPanel activity=\{insightsFeed\}/u,
+		/selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView[\s\S]*insightsSelected && !hasInsights \? \([\s\S]*<InsightsPanel[\s\S]*<InsightsWorkItemSplit[\s\S]*insights=\{insightsSelected && hasInsights/u,
 	);
 	assert.match(
 		readBlockFile("experimental-v3/components/insights-work-item-split.tsx"),
