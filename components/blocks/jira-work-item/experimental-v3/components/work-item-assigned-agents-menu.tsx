@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent } from "react";
 
 import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 
@@ -76,12 +76,34 @@ export function WorkItemAssignedAgentsMenu({
 	];
 	const selectableIndexes = items.flatMap((item, index) => (item.disabled ? [] : [index]));
 
+	/**
+	 * DOM focus is the single source of truth for selection. Every row renders as
+	 * a real `role="option"` button, so focusing one announces its name and state
+	 * to assistive tech and keeps Tab and Arrow on the same row — a roving
+	 * `selectedIndex` alone would leave a screen reader parked on the container.
+	 * Disabled rows are never focused because they are excluded from
+	 * `selectableIndexes`, and a disabled button cannot take focus anyway.
+	 */
+	const focusOptionAt = (index: number) => {
+		containerRef.current
+			?.querySelectorAll<HTMLButtonElement>('[role="option"]')
+			.item(index)
+			?.focus();
+	};
+
 	useEffect(() => {
 		// Base UI parks focus on the menu popup after it mounts. Claim it back on
 		// the next frame so Arrow/Enter reach this list instead of an empty menu
-		// composite that owns no items.
+		// composite that owns no items. Reading the first enabled row from the DOM
+		// keeps this a true mount-only effect with no row-set dependency.
 		const frameId = window.requestAnimationFrame(() => {
-			containerRef.current?.focus();
+			const container = containerRef.current;
+			const firstEnabled = container?.querySelector<HTMLButtonElement>('[role="option"]:not([disabled])');
+			if (firstEnabled) {
+				firstEnabled.focus();
+				return;
+			}
+			container?.focus();
 		});
 		return () => window.cancelAnimationFrame(frameId);
 	}, []);
@@ -106,28 +128,42 @@ export function WorkItemAssignedAgentsMenu({
 		const nextCursor = cursor === -1
 			? (step > 0 ? 0 : selectableIndexes.length - 1)
 			: (cursor + step + selectableIndexes.length) % selectableIndexes.length;
-		setSelectedIndex(selectableIndexes[nextCursor]);
+		// `onFocus` mirrors the landed row back into `selectedIndex`, so moving
+		// focus is the only state change needed here.
+		focusOptionAt(selectableIndexes[nextCursor]);
 	};
 
+	/** Keeps the highlight on whichever row actually holds focus, including Tab. */
+	const handleFocus = (event: FocusEvent<HTMLDivElement>) => {
+		const options = containerRef.current?.querySelectorAll<HTMLButtonElement>('[role="option"]');
+		if (!options) {
+			return;
+		}
+		// React types a delegated `target` as the container, so widen before
+		// narrowing to the row button that actually received focus.
+		const focused: EventTarget = event.target;
+		if (!(focused instanceof HTMLButtonElement)) {
+			return;
+		}
+		const index = [...options].indexOf(focused);
+		if (index !== -1) {
+			setSelectedIndex(index);
+		}
+	};
+
+	// Enter and Space are left to the focused option's own button activation, so
+	// a row can never fire twice from one keypress.
 	const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
 		if (event.key === "ArrowDown" || event.key === "ArrowUp") {
 			event.preventDefault();
 			moveSelection(event.key === "ArrowDown" ? 1 : -1);
-			return;
-		}
-		if (event.key === "Enter") {
-			const item = items[selectedIndex];
-			if (!item || item.disabled) {
-				return;
-			}
-			event.preventDefault();
-			handleSelect(item);
 		}
 	};
 
 	return (
 		<div
 			className="w-full outline-none"
+			onFocus={handleFocus}
 			onKeyDown={handleKeyDown}
 			ref={containerRef}
 			tabIndex={-1}

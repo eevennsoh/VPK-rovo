@@ -798,11 +798,24 @@ test("the v3 assigned-agents menu lists live agent state and ends in an Add agen
 	assert.match(menuSource, /const \[selectedIndex, setSelectedIndex\] = useState\(-1\);/u);
 	assert.match(menuSource, /event\.key === "ArrowDown" \|\| event\.key === "ArrowUp"/u);
 
+	// DOM focus is the single source of truth: Arrow moves focus onto the row
+	// button and `onFocus` mirrors it back into `selectedIndex`, so assistive
+	// tech announces the landed row and Tab can never desync from the highlight.
+	assert.match(menuSource, /focusOptionAt\(selectableIndexes\[nextCursor\]\);/u);
+	assert.match(menuSource, /onFocus=\{handleFocus\}/u);
+	assert.match(
+		menuSource,
+		/const handleFocus = \(event: FocusEvent<HTMLDivElement>\) =>[\s\S]*indexOf\(focused\)[\s\S]*setSelectedIndex\(index\)/u,
+	);
+	// Enter/Space stay with the focused option's own button activation so a row
+	// can never fire twice from a single keypress.
+	assert.doesNotMatch(menuSource, /event\.key === "Enter"/u);
+
 	// Base UI parks focus on the popup after mount, so the list has to reclaim
 	// it a frame later or Arrow/Enter never reach this handler.
 	assert.match(
 		menuSource,
-		/window\.requestAnimationFrame\(\(\) => \{\s*containerRef\.current\?\.focus\(\);\s*\}\);/u,
+		/window\.requestAnimationFrame\(\(\) => \{[\s\S]*'\[role="option"\]:not\(\[disabled\]\)'[\s\S]*firstEnabled\.focus\(\);[\s\S]*container\?\.focus\(\);/u,
 	);
 	assert.match(menuSource, /return \(\) => window\.cancelAnimationFrame\(frameId\);/u);
 
