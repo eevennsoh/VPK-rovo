@@ -71,7 +71,11 @@ function FilterOptionRow({
 		<label className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 hover:bg-bg-neutral-subtle-hovered">
 			<Checkbox checked={checked} onCheckedChange={onToggle} />
 			{option.avatarSrc ? (
-				<Avatar label="" size="sm">
+				<Avatar
+					label=""
+					shape={option.avatarSrc.startsWith("/avatar-agent/") ? "hexagon" : "circle"}
+					size="sm"
+				>
 					<AvatarImage alt="" src={option.avatarSrc} />
 					<AvatarFallback>{option.label.slice(0, 1)}</AvatarFallback>
 				</Avatar>

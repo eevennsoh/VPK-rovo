@@ -23,6 +23,7 @@ import type {
 /* ------------------------------------------------------------------ */
 
 const AVATAR = {
+	venn: "/avatar-user/venn/venn.png",
 	maya: "/avatar-user/chloe-lee/color/asow-dev-lime.png",
 	jordan: "/avatar-user/issac-varghese/color/asow-dev-lime.png",
 	priya: "/avatar-user/ting-chen/color/asow-teamwork-blue.png",
@@ -33,17 +34,20 @@ const AVATAR = {
 } as const;
 
 /* ------------------------------------------------------------------ */
-/* Members — four humans across four time zones, three agents.          */
+/* Members — Venn is the presentation persona (leftmost in the header
+ * facepile). Four other humans across four time zones, three agents. Diego
+ * stays on the roster and in the story; the header shows seven faces. */
 /* ------------------------------------------------------------------ */
 
 const MEMBERS: readonly PulseMember[] = [
+	{ id: "venn", name: "Venn", role: "Software engineer", kind: "human", avatarSrc: AVATAR.venn, timezone: "Singapore" },
 	{ id: "maya", name: "Maya Ferreira", role: "Staff engineer", kind: "human", avatarSrc: AVATAR.maya, timezone: "Sydney" },
 	{ id: "jordan", name: "Jordan Okafor", role: "Senior engineer", kind: "human", avatarSrc: AVATAR.jordan, timezone: "Austin" },
 	{ id: "priya", name: "Priya Raman", role: "Engineering manager", kind: "human", avatarSrc: AVATAR.priya, timezone: "London" },
-	{ id: "diego", name: "Diego Santos", role: "Product designer", kind: "human", avatarSrc: AVATAR.diego, timezone: "Lisbon" },
 	{ id: "review-agent", name: "Review Agent", role: "Reviews every pull request", kind: "agent", avatarSrc: AVATAR.reviewAgent },
 	{ id: "test-agent", name: "Test Author Agent", role: "Writes and repairs tests", kind: "agent", avatarSrc: AVATAR.testAgent },
 	{ id: "release-agent", name: "Release Captain Agent", role: "Owns the flag and the rollout", kind: "agent", avatarSrc: AVATAR.releaseAgent },
+	{ id: "diego", name: "Diego Santos", role: "Product designer", kind: "human", avatarSrc: AVATAR.diego, timezone: "Lisbon" },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -59,7 +63,7 @@ const WORK_ITEMS: readonly PulseWorkItem[] = [
 		tags: [{ text: "discovery", color: "purple" }],
 		priority: "medium",
 		status: "Done",
-		memberIds: ["maya", "jordan", "priya"],
+		memberIds: ["maya", "jordan", "priya", "venn"],
 		assigneeId: "jordan",
 		assigneeAvatarSrc: AVATAR.jordan,
 		assigneeName: "Jordan Okafor",
@@ -81,7 +85,7 @@ const WORK_ITEMS: readonly PulseWorkItem[] = [
 		tags: [{ text: "checkout-web", color: "blue" }],
 		priority: "major",
 		status: "Done",
-		memberIds: ["jordan", "review-agent"],
+		memberIds: ["jordan", "review-agent", "venn"],
 		assigneeId: "jordan",
 		assigneeAvatarSrc: AVATAR.jordan,
 		assigneeName: "Jordan Okafor",
@@ -125,7 +129,7 @@ const WORK_ITEMS: readonly PulseWorkItem[] = [
 		tags: [{ text: "regression", color: "red" }, { text: "3ds", color: "orange" }],
 		priority: "major",
 		status: "Blocked",
-		memberIds: ["jordan", "priya", "review-agent"],
+		memberIds: ["jordan", "priya", "review-agent", "venn"],
 		assigneeId: "jordan",
 		assigneeAvatarSrc: AVATAR.jordan,
 		assigneeName: "Jordan Okafor",
@@ -147,7 +151,7 @@ const WORK_ITEMS: readonly PulseWorkItem[] = [
 		tags: [{ text: "ledger-sync", color: "magenta" }],
 		priority: "medium",
 		status: "In progress",
-		memberIds: ["maya", "release-agent"],
+		memberIds: ["maya", "release-agent", "venn"],
 		assigneeId: "maya",
 		assigneeAvatarSrc: AVATAR.maya,
 		assigneeName: "Maya Ferreira",
@@ -169,7 +173,7 @@ const WORK_ITEMS: readonly PulseWorkItem[] = [
 		tags: [{ text: "release", color: "yellow" }],
 		priority: "major",
 		status: "Done",
-		memberIds: ["priya", "release-agent", "maya"],
+		memberIds: ["priya", "release-agent", "maya", "venn"],
 		assigneeId: "release-agent",
 		assigneeAvatarSrc: AVATAR.releaseAgent,
 		assigneeName: "Release Captain Agent",
@@ -180,7 +184,7 @@ const WORK_ITEMS: readonly PulseWorkItem[] = [
 		tags: [{ text: "release", color: "yellow" }, { text: "flag", color: "teal" }],
 		priority: "major",
 		status: "In review",
-		memberIds: ["release-agent", "priya"],
+		memberIds: ["release-agent", "priya", "venn"],
 		assigneeId: "release-agent",
 		assigneeAvatarSrc: AVATAR.releaseAgent,
 		assigneeName: "Release Captain Agent",
@@ -224,7 +228,7 @@ const WORK_ITEMS: readonly PulseWorkItem[] = [
 		tags: [{ text: "content", color: "purple" }, { text: "blocker", color: "red" }],
 		priority: "major",
 		status: "To do",
-		memberIds: ["diego", "priya"],
+		memberIds: ["diego", "priya", "venn"],
 		assigneeId: "diego",
 		assigneeAvatarSrc: AVATAR.diego,
 		assigneeName: "Diego Santos",
@@ -253,7 +257,7 @@ const LOOSE_WORK: readonly PulseLooseWork[] = [
 		kind: "agent-session",
 		sourceTitle: "Local · PAY-101",
 		detail: "host local · worktree .worktrees/pay-101-adapter · the decision itself is not written down",
-		memberIds: ["priya", "maya", "jordan"],
+		memberIds: ["priya", "maya", "jordan", "venn"],
 		host: "local",
 	},
 	{
@@ -286,7 +290,7 @@ const LOOSE_WORK: readonly PulseLooseWork[] = [
 		kind: "agent-session",
 		sourceTitle: "Local · PAY-112",
 		detail: "host local · worktree .worktrees/pay-112-sandbox-401 · PAY-112 still reads “investigating”",
-		memberIds: ["jordan", "review-agent"],
+		memberIds: ["jordan", "review-agent", "venn"],
 		host: "local",
 	},
 	{
@@ -336,7 +340,7 @@ const LOOSE_WORK: readonly PulseLooseWork[] = [
 		kind: "commit",
 		sourceTitle: "c91e4b7",
 		detail: `${PULSE_SPACE_REPOSITORY} · c91e4b7 · approved copy with no work item and no localisation ticket`,
-		memberIds: ["diego", "priya"],
+		memberIds: ["diego", "priya", "venn"],
 	},
 	{
 		id: "lw-rehearsal-draft",
@@ -344,7 +348,7 @@ const LOOSE_WORK: readonly PulseLooseWork[] = [
 		kind: "agent-session",
 		sourceTitle: "Local · PAY-119",
 		detail: "host local · worktree .worktrees/pay-119-rollback-rehearsal · 4m 11s recorded · not linked to the epic",
-		memberIds: ["priya", "release-agent"],
+		memberIds: ["priya", "release-agent", "venn"],
 		host: "local",
 	},
 	{
@@ -398,6 +402,10 @@ const S1_CONTRIBUTIONS: readonly PulseContribution[] = [
 		memberId: "release-agent", workItemKeys: ["PAY-121"], artifactIds: ["a1-lanes"], looseWorkIds: [],
 		summary: "Created payments_sdk_v2_rollout in an off state with no targeting rules, and flagged that the kill switch does not exist yet and will be needed before the first port lands.",
 	},
+	{
+		memberId: "venn", workItemKeys: ["PAY-104", "PAY-121"], artifactIds: ["a1-lanes"], looseWorkIds: ["lw-scope-thread"],
+		summary: "Jordan asked whether the kill switch lands with the first port. Confirmed it has to, and took PAY-121 as a prerequisite rather than a rollout leftover.",
+	},
 ];
 
 const S2_CONTRIBUTIONS: readonly PulseContribution[] = [
@@ -417,6 +425,10 @@ const S2_CONTRIBUTIONS: readonly PulseContribution[] = [
 		memberId: "test-agent", workItemKeys: ["PAY-109", "PAY-113"], artifactIds: ["a2-findings"], looseWorkIds: [],
 		summary: "Regenerated the webhook payload types from the v2 OpenAPI spec and found four fields that changed nullability without a version bump. Filed them as review notes rather than guessing at intent.",
 	},
+	{
+		memberId: "venn", workItemKeys: ["PAY-104", "PAY-105"], artifactIds: ["a2-callsites"], looseWorkIds: [],
+		summary: "Replied to Review Agent on #1851: the retry path has to leave the adapter on this port, not the next one. Jordan kept going from there.",
+	},
 ];
 
 const S3_CONTRIBUTIONS: readonly PulseContribution[] = [
@@ -435,6 +447,10 @@ const S3_CONTRIBUTIONS: readonly PulseContribution[] = [
 	{
 		memberId: "review-agent", workItemKeys: ["PAY-112", "PAY-104"], artifactIds: ["a3-review", "a3-sentry"], looseWorkIds: ["lw-sandbox-triage"],
 		summary: "Had already flagged this. The comment on #1851 reading “length not bounded, upstream limit unknown” predates the sandbox failure by nineteen hours and was waved through on green local tests.",
+	},
+	{
+		memberId: "venn", workItemKeys: ["PAY-112", "PAY-105"], artifactIds: ["a3-triage"], looseWorkIds: ["lw-sandbox-triage"],
+		summary: "Priya asked who owns the sandbox key retention window. Chased payments platform and parked the number on PAY-112 so the item is blocked on an answer, not a guess.",
 	},
 ];
 
@@ -470,6 +486,10 @@ const S5_CONTRIBUTIONS: readonly PulseContribution[] = [
 		memberId: "test-agent", workItemKeys: ["PAY-123", "PAY-113"], artifactIds: ["a5-copy"], looseWorkIds: [],
 		summary: "Generated assertion coverage for all eleven decline codes against the v2 error taxonomy and reported three that no fixture currently exercises: expired_card_network, issuer_unavailable and risk_hold.",
 	},
+	{
+		memberId: "venn", workItemKeys: ["PAY-115", "PAY-130"], artifactIds: ["a5-review-notes"], looseWorkIds: ["lw-copy-doc"],
+		summary: "Rewrote the customer-facing ship line after the wallet cut, in the thread Priya pinged and then on PAY-130 so the copy is not only in chat.",
+	},
 ];
 
 const S6_CONTRIBUTIONS: readonly PulseContribution[] = [
@@ -488,6 +508,10 @@ const S6_CONTRIBUTIONS: readonly PulseContribution[] = [
 	{
 		memberId: "jordan", workItemKeys: ["PAY-105", "PAY-112"], artifactIds: ["a6-rehearsal"], looseWorkIds: [],
 		summary: "Watched the two in-flight challenge payments complete on v1 after the flag went off, which was the case he was most worried about. PAY-112 is still blocked on the platform team.",
+	},
+	{
+		memberId: "venn", workItemKeys: ["PAY-119", "PAY-121"], artifactIds: ["a6-plan"], looseWorkIds: ["lw-rehearsal-draft"],
+		summary: "Sat the rehearsal as the human on the pager. The run log is still a draft; linked it from PAY-119 so the next person is not hunting Confluence at 3am.",
 	},
 ];
 
@@ -519,6 +543,10 @@ const S7_CONTRIBUTIONS: readonly PulseContribution[] = [
 	{
 		memberId: "release-agent", workItemKeys: ["PAY-121", "PAY-128"], artifactIds: ["a7-targeting"], looseWorkIds: [],
 		summary: "Staged the first rollout rule: one percent of traffic, one account, English-only locale, kill switch armed. The rule is written and unapproved, and will not fire until a human presses it.",
+	},
+	{
+		memberId: "venn", workItemKeys: ["PAY-121", "PAY-128"], artifactIds: ["a7-readiness", "a7-targeting"], looseWorkIds: [],
+		summary: "Signed the one-percent targeting rule and the kill switch. Monday is possible if Priya approves the English-only constraint; Wednesday if she does not.",
 	},
 ];
 
@@ -557,7 +585,7 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 			{ id: "s1-stat-lanes", label: "Lanes assigned", value: "5" },
 			{ id: "s1-stat-uncaptured", label: "Uncaptured", value: "1" },
 		],
-		memberIds: ["maya", "jordan", "priya", "diego", "review-agent", "test-agent", "release-agent"],
+		memberIds: ["maya", "jordan", "priya", "diego", "review-agent", "test-agent", "release-agent", "venn"],
 		contributions: S1_CONTRIBUTIONS,
 	},
 	{
@@ -595,7 +623,7 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 			{ id: "s2-stat-review", label: "Median review turnaround", value: "4 min" },
 			{ id: "s2-stat-uncaptured", label: "Uncaptured", value: "2" },
 		],
-		memberIds: ["maya", "jordan", "review-agent", "test-agent"],
+		memberIds: ["maya", "jordan", "review-agent", "test-agent", "venn"],
 		contributions: S2_CONTRIBUTIONS,
 	},
 	{
@@ -633,7 +661,7 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 			{ id: "s3-stat-ttd", label: "Time to root cause", value: "32 min" },
 			{ id: "s3-stat-uncaptured", label: "Uncaptured", value: "2" },
 		],
-		memberIds: ["jordan", "priya", "maya", "review-agent"],
+		memberIds: ["jordan", "priya", "maya", "review-agent", "venn"],
 		contributions: S3_CONTRIBUTIONS,
 	},
 	{
@@ -711,7 +739,7 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 			{ id: "s5-stat-strings", label: "Decline strings approved", value: "11" },
 			{ id: "s5-stat-uncaptured", label: "Uncaptured", value: "2" },
 		],
-		memberIds: ["diego", "priya", "maya", "test-agent"],
+		memberIds: ["diego", "priya", "maya", "test-agent", "venn"],
 		contributions: S5_CONTRIBUTIONS,
 	},
 	{
@@ -750,7 +778,7 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 			{ id: "s6-stat-inflight", label: "In-flight challenges recovered", value: "2 / 2" },
 			{ id: "s6-stat-uncaptured", label: "Uncaptured", value: "2" },
 		],
-		memberIds: ["priya", "maya", "release-agent", "jordan"],
+		memberIds: ["priya", "maya", "release-agent", "jordan", "venn"],
 		contributions: S6_CONTRIBUTIONS,
 	},
 	{
@@ -790,7 +818,7 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 			{ id: "s7-stat-blockers", label: "Blockers left", value: "2" },
 			{ id: "s7-stat-p95", label: "p95 vs v1", value: "−42 ms" },
 		],
-		memberIds: ["maya", "jordan", "priya", "diego", "review-agent", "test-agent", "release-agent"],
+		memberIds: ["maya", "jordan", "priya", "diego", "review-agent", "test-agent", "release-agent", "venn"],
 		contributions: S7_CONTRIBUTIONS,
 	},
 ];

@@ -383,6 +383,7 @@ test("Pulse header roster locks one SSR and first-render structure", async () =>
 	assert.match(serverMarkup, /data-slot="avatar-group" role="group" aria-label="Filter by person or agent"/u);
 	assert.equal([...serverMarkup.matchAll(/<button /gu)].length, 7);
 	assert.equal([...serverMarkup.matchAll(/aria-pressed="false"/gu)].length, 7);
+	assert.match(serverMarkup, /aria-label="Show only Venn, Software engineer"/u);
 	assert.match(serverMarkup, /aria-label="Show only Maya Ferreira, Staff engineer"/u);
 	assert.doesNotMatch(serverMarkup, /Board assignees|data-unassigned|aria-label="Unassigned"/u);
 });
@@ -404,8 +405,8 @@ test("Pulse is a toggle on the board's own control row, not a separate tab", () 
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const \[mode, setMode\] = useState<ExperimentalJiraKanbanMode>\("board"\);/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const isPulse = mode === "pulse";/u);
 	// The control row stays up in Pulse. Board mode keeps the board assignee
-	// facepile; Pulse swaps in its own member roster because the two filters own
-	// different ids and state.
+	// facepile, with Venn promoted so the presentation persona is visible;
+	// Pulse swaps in its roster. Both faces write the same Filter assignee field.
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /showBoardControls=\{!isPulse\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<PulseModeToggle/u);
 	assert.match(
@@ -486,7 +487,10 @@ test("Pulse keeps one member filter across the header facepile and the story fac
 	assert.match(SOURCES.hook, /const isControlled = selectedMemberId !== undefined;/u);
 	assert.match(SOURCES.hook, /onSelectedMemberIdChange\?\.\(memberId\);/u);
 	assert.match(SOURCES.hook, /export interface PulseTimelineOptions/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const \[pulseMemberId, setPulseMemberId\] = useState<string \| null>\(null\);/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /toPulseMemberId\(selectedAssigneeIds, PULSE_MEMBER_IDS\)/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /toInsightsAssigneeIds\(selectedAssigneeIds, PULSE_MEMBER_IDS\)/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /handlePulseMemberChange/u);
+	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /const \[pulseMemberId, setPulseMemberId\] = useState<string \| null>\(null\);/u);
 	assert.match(SOURCES.shell, /usePulseMemberFilter\(\{ onSelectedMemberIdChange, selectedMemberId \}\)/u);
 	// Composition order is the contract: filter, then reading position, then pure
 	// derivation on top of both. Reversing any two of them puts the old circular

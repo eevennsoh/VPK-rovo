@@ -102,6 +102,36 @@ test("Track keeps the experimental board Filter interactive in Board and Pulse",
 	assert.match(filterOptionsSource, /Filter by days/u);
 });
 
+test("Insights defaults the person filter to Venn and shares it with Filter", () => {
+	const experimentalPageSource = readProjectFile(
+		"components/blocks/jira-kanban/experimental/page.tsx",
+	);
+	const rosterFilterSource = readProjectFile(
+		"components/blocks/jira-kanban/experimental/lib/pulse-roster-filter.ts",
+	);
+	const pulseTimelineSource = readProjectFile(
+		"components/blocks/jira-kanban/experimental/pulse/data/pulse-timeline.ts",
+	);
+
+	assert.match(rosterFilterSource, /export const PULSE_PRESENTATION_MEMBER_ID = "venn"/u);
+	assert.match(experimentalPageSource, /toInsightsAssigneeIds\(selectedAssigneeIds, PULSE_MEMBER_IDS\)/u);
+	assert.match(experimentalPageSource, /toPulseMemberId\(selectedAssigneeIds, PULSE_MEMBER_IDS\)/u);
+	assert.match(experimentalPageSource, /handlePulseMemberChange/u);
+	assert.match(experimentalPageSource, /assignees=\{filterAssignees\}/u);
+	assert.match(
+		experimentalPageSource,
+		/promoteAssignee\(getJiraKanbanAssignees\(boardColumns\), PULSE_PRESENTATION_MEMBER_ID\)/u,
+	);
+	assert.doesNotMatch(
+		experimentalPageSource,
+		/const \[pulseMemberId, setPulseMemberId\] = useState<string \| null>\(null\);/u,
+	);
+	assert.match(
+		pulseTimelineSource,
+		/id: "venn", name: "Venn", role: "Software engineer", kind: "human", avatarSrc: AVATAR\.venn/u,
+	);
+});
+
 test("Build keeps the work item at its initial Activity scroll position", () => {
 	const pageSource = readProjectFile("components/projects/jira-golden-journeys-v3/page.tsx");
 	const activityPanelSource = readProjectFile(
