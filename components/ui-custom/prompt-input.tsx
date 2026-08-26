@@ -543,7 +543,7 @@ const promptInputVariants = cva("w-full", {
     variant: {
       default: "",
       floating:
-        "rounded-xl border border-border bg-bg-input p-4 shadow-[0px_-2px_50px_8px_rgba(30,31,33,0.08)]",
+        "rounded-xl border border-border bg-bg-input p-2 shadow-[0px_-2px_50px_8px_rgba(30,31,33,0.08)]",
     },
   },
   defaultVariants: {
