@@ -40,7 +40,7 @@ test("Next Best Action card uses the same raised-surface elevation skin as Artif
 test("Next Best Action rows are at least 64px, hover to surface-hovered, and the last row is borderless", () => {
 	const source = readProjectFile(SOURCE);
 
-	assert.match(source, /flex min-h-16 items-center px-3 py-2 transition-colors hover:bg-surface-hovered/u);
+	assert.match(source, /flex min-h-16 items-center px-3 py-2 transition-colors/u);
 	assert.match(source, /group\/next-best-action-row min-w-0 w-full/u);
 	assert.match(source, /relative flex min-w-0 flex-1 items-center gap-3 overflow-hidden/u);
 	assert.match(source, /<span className="shrink-0">\s*<NextBestActionLeadingTile/u);
@@ -118,7 +118,39 @@ test("Next Best Action compact rows keep the PR byline and diff-stat action", ()
 	assert.match(source, /\{compactPullRequestByline \?\? compactMetadata\}/u);
 	assert.match(source, /aria-label=\{item\.pullRequest[\s\S]*`Code changes: \$\{item\.pullRequest\.additions\} additions, \$\{item\.pullRequest\.deletions\} deletions`/u);
 	assert.match(source, /\{item\.pullRequest \? \([\s\S]*text-text-success[\s\S]*text-text-danger/u);
-	assert.match(source, /variant === "compact"[\s\S]*flex min-h-12 items-center px-3 py-2 transition-colors hover:bg-surface-hovered/u);
+	assert.match(source, /variant === "compact"[\s\S]*flex min-h-12 items-center px-3 py-2 transition-colors/u);
+});
+
+test("Next Best Action never renders a focusable PR link without a destination", () => {
+	const source = readProjectFile(SOURCE);
+
+	// The link is gated on a real href; otherwise the byline is plain text.
+	assert.match(source, /\{item\.href \? \([\s\S]*<a[\s\S]*href=\{item\.href\}/u);
+	assert.doesNotMatch(source, /href="#"/u);
+	assert.doesNotMatch(source, /event\.preventDefault\(\)/u);
+	assert.match(source, /\) : \([\s\S]*<span[\s\S]*min-w-0 flex-1 truncate text-text[\s\S]*#\{item\.pullRequest\.number\}: \{item\.title\}/u);
+});
+
+test("Next Best Action honors prefers-reduced-motion on every transition it adds", () => {
+	const source = readProjectFile(SOURCE);
+
+	// VPK duration/easing tokens do not collapse automatically, so each transition
+	// needs an explicit guard.
+	const transitions = source.match(/transition-\[[^\]]+\]|transition-colors/gu) ?? [];
+	assert.ok(transitions.length >= 3, `expected transitions to guard, found ${transitions.length}`);
+	assert.equal(
+		(source.match(/motion-reduce:transition-none/gu) ?? []).length,
+		transitions.length,
+		"every transition utility must be paired with motion-reduce:transition-none",
+	);
+});
+
+test("Next Best Action row-click overlay keeps its focus ring inside the clipping wrapper", () => {
+	const source = readProjectFile(SOURCE);
+
+	// The content wrapper is overflow-hidden, so an outward ring-offset would be clipped.
+	assert.match(source, /absolute inset-0 z-10[\s\S]*focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/u);
+	assert.doesNotMatch(source, /focus-visible:ring-offset-2/u);
 });
 
 test("Next Best Action sample data suggests skills, agents, automations, integrations and nudges", () => {

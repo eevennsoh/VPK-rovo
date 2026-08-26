@@ -63,6 +63,7 @@ export const COMPACT_SAMPLE_NEXT_BEST_ACTIONS: readonly NextBestActionItem[] = [
 		id: "review-pull-request",
 		title: "VertexRail Assets positioning",
 		source: "Review pull request",
+		href: "https://github.com/vertexrail/teams-in-space-frontend/pull/1847",
 		logoName: "github",
 		pullRequest: {
 			number: 1847,
