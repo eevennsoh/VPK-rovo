@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, type RefCallback, type UIEvent } from "react";
+import { useCallback, useMemo, useRef, useState, type RefCallback } from "react";
 
 import { PulseWorkRail } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-rail";
 import {
@@ -26,9 +26,11 @@ import {
 } from "@/components/blocks/jira-kanban/experimental/pulse/hooks/use-pulse-timeline";
 import {
 	buildPulseOutline,
-	isPulseScrollTowardTop,
+	isPulseChevronHeaderJump,
 	PULSE_ANSWERS_ANCHOR_ID,
 	PULSE_SCOPE_ANCHOR_ID,
+	toPulseArticleTopFadeVisible,
+	type PulseScrollOptions,
 } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-outline";
 import type {
 	PulseAction,
@@ -179,34 +181,59 @@ export function ExperimentalPulse({
 	// Both edge fades are pointer-events-none overlays. `mask-image` on a
 	// scrollport fades the document, not the viewport, so a CSS bottom stop
 	// never paints while the reader is mid-article. The top overlay stays
-	// mounted at opacity zero so it can transition, and only appears while
-	// scrolling toward the top, so a chevron or ruler jump does not veil the
-	// destination header. The bottom band stays on: the article sits flush on
-	// the composer, and a rest-state cutoff reads as a clip.
+	// mounted at opacity zero so it can transition. It paints whenever the
+	// article is clipped at the top — a rest-state headline should not cut off
+	// flush — and hides after a header chevron jump, which pins the up/down
+	// nav into that same band. The bottom band stays on: the article sits flush
+	// on the composer, and a rest-state cutoff reads as a clip.
 	const { ref: overflowRef, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const { scrollRef, scrollToEntry, scrollToSnapshot } = reading;
-	const [isScrollingTowardTop, setIsScrollingTowardTop] = useState(false);
-	const previousScrollTopRef = useRef(0);
+	const [suppressTopFade, setSuppressTopFade] = useState(false);
+	const suppressTopFadeRef = useRef(false);
+	const skipProgrammaticScrollRef = useRef(false);
 	const scrollportRef = useCallback<RefCallback<HTMLDivElement>>((node) => {
-		previousScrollTopRef.current = node?.scrollTop ?? 0;
 		scrollRef(node);
 		overflowRef(node);
 	}, [overflowRef, scrollRef]);
-	const handleArticleScroll = useCallback((event: UIEvent<HTMLDivElement>) => {
-		const nextScrollTop = event.currentTarget.scrollTop;
-		setIsScrollingTowardTop(
-			isPulseScrollTowardTop(previousScrollTopRef.current, nextScrollTop),
-		);
-		previousScrollTopRef.current = nextScrollTop;
+	const handleArticleScroll = useCallback(() => {
+		if (skipProgrammaticScrollRef.current) {
+			return;
+		}
+		if (!suppressTopFadeRef.current) {
+			return;
+		}
+		suppressTopFadeRef.current = false;
+		setSuppressTopFade(false);
 	}, []);
-	const handleArticleScrollEnd = useCallback(() => {
-		setIsScrollingTowardTop(false);
-	}, []);
+	const handleSelectEntry = useCallback((id: string) => {
+		if (suppressTopFadeRef.current) {
+			suppressTopFadeRef.current = false;
+			setSuppressTopFade(false);
+		}
+		scrollToEntry(id);
+	}, [scrollToEntry]);
+	const handleGoToSnapshot = useCallback((snapshotIndex: number, options?: PulseScrollOptions) => {
+		if (isPulseChevronHeaderJump(options)) {
+			suppressTopFadeRef.current = true;
+			skipProgrammaticScrollRef.current = true;
+			setSuppressTopFade(true);
+			scrollToSnapshot(snapshotIndex, options);
+			requestAnimationFrame(() => {
+				requestAnimationFrame(() => {
+					skipProgrammaticScrollRef.current = false;
+				});
+			});
+			return;
+		}
+		if (suppressTopFadeRef.current) {
+			suppressTopFadeRef.current = false;
+			setSuppressTopFade(false);
+		}
+		scrollToSnapshot(snapshotIndex, options);
+	}, [scrollToSnapshot]);
 	// No settle nudge here: the rounding that made a jump light the mark above it
 	// is absorbed by `toActiveOutlineIndex`'s one-pixel threshold, where it
 	// belongs — the shell should not be correcting the outline's arithmetic.
-	const handleSelectEntry = scrollToEntry;
-	const handleGoToSnapshot = scrollToSnapshot;
 
 	if (pulse.activeSnapshot === null) {
 		return (
@@ -295,7 +322,6 @@ export function ExperimentalPulse({
 							className="min-h-0 flex-1 overflow-y-auto p-1 lg:overscroll-y-contain lg:pr-10 lg:pb-6"
 							data-pulse-article=""
 							onScroll={handleArticleScroll}
-							onScrollEnd={handleArticleScrollEnd}
 							ref={scrollportRef}
 							role="region"
 							style={{
@@ -334,7 +360,9 @@ export function ExperimentalPulse({
 							/>
 						</div>
 						<ScrollMaskEdgeOverlay
-							className={pulseArticleFadeClassName(showTopScrollMask && isScrollingTowardTop)}
+							className={pulseArticleFadeClassName(
+								toPulseArticleTopFadeVisible(showTopScrollMask, suppressTopFade),
+							)}
 							data-pulse-article-top-fade=""
 							edge="top"
 							fadeSize={PULSE_FADE_SIZE}
