@@ -19,7 +19,6 @@ const DEMO_SOURCE = readFileSync(join(__dirname, "../../website/demos/blocks/jir
 const DETAILS_SOURCE = readFileSync(join(__dirname, "../../../app/data/details/blocks/jira-issue.ts"), "utf8");
 const VARIANT_REGISTRY_SOURCE = readFileSync(join(__dirname, "../../website/registry/blocks-variants.ts"), "utf8");
 const RICH_TEXT_EDITOR_CSS_SOURCE = readFileSync(join(__dirname, "../../ui-custom/rich-text-editor/rich-text-editor.css"), "utf8");
-const SHIMMER_SOURCE = readFileSync(join(__dirname, "../../ui-custom/shimmer.tsx"), "utf8");
 const ROOT_CLASS_BLOCK = SOURCE.slice(
 	SOURCE.indexOf("const rootClassName = cn("),
 	SOURCE.indexOf("function handleSubtasksToggle"),
@@ -183,7 +182,6 @@ test("Jira issue exposes agent activity state props", () => {
 	assert.match(AGENT_ACTIVITY_SOURCE, /export type JiraIssueAgentActivityMode = "none" \| "working" \| "awaiting-input" \| "completed";/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /export type JiraIssueAgentActivityState = "working" \| "awaiting-input" \| "completed";/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /export interface JiraIssueAgentActivity \{[\s\S]*id: string;[\s\S]*name: string;[\s\S]*avatarSrc\?: string;[\s\S]*label: string;[\s\S]*labels\?: readonly string\[\];[\s\S]*message\?: string;[\s\S]*cycleIntervalJitterMs\?: number;[\s\S]*cycleIntervalMs\?: number;[\s\S]*question\?: QuestionCardQuestion;[\s\S]*state: JiraIssueAgentActivityState;/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /if \(activity\.message\) \{[\s\S]*return activity\.message;/u);
 	assert.match(SOURCE, /export type \{[\s\S]*JiraIssueAgentActivity,[\s\S]*JiraIssueAgentActivityMode,[\s\S]*JiraIssueAgentActivityState,[\s\S]*\} from "@\/components\/blocks\/jira-issue\/agent-activity";/);
 	assert.match(SOURCE, /agentActivities\?: readonly JiraIssueAgentActivity\[\];/);
 	assert.match(SOURCE, /agentDoneRuns\?: readonly JiraIssueCompletedAgentRun\[\];/);
@@ -193,6 +191,22 @@ test("Jira issue exposes agent activity state props", () => {
 	assert.match(SOURCE, /onAgentActivityViewChat\?: \(activity: JiraIssueAgentActivity\) => void;/);
 	assert.match(SOURCE, /generativeAction\?: JiraIssueGenerativeActionConfig;/);
 	assert.match(SOURCE, /export type \{[\s\S]*JiraIssueGenerativeActionConfig,[\s\S]*JiraIssueGenerativeActionRequest,[\s\S]*\} from "@\/components\/blocks\/jira-issue\/generative-action-menu";/);
+});
+
+test("Jira issue aggregates active agents into one priority row and an Agent List flyout", () => {
+	assert.match(AGENT_ACTIVITY_SOURCE, /import \{[\s\S]*AgentList,[\s\S]*type AgentListCustomFlyoutActions,[\s\S]*type AgentListItem,[\s\S]*\} from "@\/components\/blocks\/agent-list";/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ AgentStates \} from "@\/components\/blocks\/agent-states";/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /import AiAgentIcon from "@atlaskit\/icon\/core\/ai-agent";/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /summarizeJiraIssueAgentActivities\(activities\)/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<span className="ml-px grid size-4 shrink-0 place-items-center text-text-subtlest" aria-hidden="true">\s*<AiAgentIcon label="" \/>/u);
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AvatarFallback[\s\S]*\{summary\.activityCount\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /className="flex h-6 w-full[^"]*rounded-b-\[6px\] rounded-t-sm[^"]*"/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /const isSingleAgent = summary\.activityCount === 1;/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /onClick=\{isSingleAgent[\s\S]*if \(onViewChat\) \{[\s\S]*onViewChat\(activities\[0\]\);[\s\S]*return;[\s\S]*\}[\s\S]*handleOpenChange\(true\);[\s\S]*: \(\) => handleOpenChange\(true\)\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<AgentList[\s\S]*flyout="none"[\s\S]*items=\{agentListItems\}[\s\S]*onView=\{handleAgentListView\}[\s\S]*variant="compact"/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /className="w-full border-0 bg-surface-overlay shadow-2xl"/u);
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /className="w-full shadow-overlay"/u);
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /activities\.map\(\(activity, index\)/u);
 });
 
 test("Jira issue shows PR metadata with the specified summary-row spacing", () => {
@@ -363,75 +377,26 @@ test("Jira issue uses the VPK Badge primitive for row counts", () => {
 	assert.doesNotMatch(COUNT_BADGE_SOURCE, /rounded-sm bg-bg-neutral px-1\.5 py-0\.5 text-xs font-semibold leading-4 text-text-subtle/);
 });
 
-test("Jira issue renders agent activity rows with shimmer and awaiting-input dots", () => {
-	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ Shimmer \} from "@\/components\/ui-custom\/shimmer";/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ AnimatedDots \} from "@\/components\/ui-custom\/animated-dots";/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ HoverCard, HoverCardContent, HoverCardTrigger \} from "@\/components\/ui\/hover-card";/);
-	assert.match(
-		AGENT_ACTIVITY_SOURCE,
-		/<HoverCardContent[\s\S]*positionerClassName="z-\[575\] after:pointer-events-auto after:absolute after:-inset-2 after:-z-10 after:content-\[''\]"/u,
-		"active agent flyouts should stay above card-level sparkle triggers and retain hover through their visible shadow edge",
-	);
-	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ AgentStates \} from "@\/components\/blocks\/agent-states";/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /import type \{ QuestionCardAnswers, QuestionCardQuestion \} from "@\/components\/blocks\/question-card\/types";/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /function JiraIssueAgentActivityRow\(\{\n\tactivity,\n\tindex,\n\tonOpenChange,\n\tonQuestionSubmit,\n\tonViewChat,\n\trowCount,/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /const rowRadiusClassName = rowCount === 1[\s\S]*\? "rounded-sm"[\s\S]*index === 0[\s\S]*\? "rounded-tl-\[6px\] rounded-tr-\[6px\] rounded-bl-\[2px\] rounded-br-\[2px\]"[\s\S]*index === rowCount - 1[\s\S]*\? "rounded-tl-\[2px\] rounded-tr-\[2px\] rounded-bl-\[6px\] rounded-br-\[6px\]"[\s\S]*: "rounded-\[2px\]";/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /"flex h-6 w-full min-w-0 items-center justify-between gap-2 px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered/);
-	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /hover:bg-bg-neutral-hovered/);
-	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /gap-2 rounded-sm px-3 py-1/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /const \[startedAtMs\] = useState\(\(\) => \{[\s\S]*activity\.startedAtMs[\s\S]*activity\.initialElapsedSeconds[\s\S]*getJiraIssueAgentInitialElapsedSeconds\(\)[\s\S]*Date\.now\(\) - initialElapsedSeconds \* 1000;/u);
-	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, />Just now<\/p>/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /className=\{cn\("flex w-full min-w-0 flex-col overflow-hidden", hasActivities && "px-1 py-1"\)\}/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /activities\.map\(\(activity, index\) =>/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<JiraIssueAgentActivityRow[\s\S]*activity=\{activity\}[\s\S]*index=\{index\}[\s\S]*onQuestionSubmit=\{onQuestionSubmit\}[\s\S]*onViewChat=\{onViewChat\}[\s\S]*rowCount=\{activities\.length\}/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /const isAwaitingInput = activity\.state === "awaiting-input";/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /const JIRA_ISSUE_AGENT_AWAITING_LABEL = "Needs input";/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /const displayLabel = isAwaitingInput \? JIRA_ISSUE_AGENT_AWAITING_LABEL : activity\.label;/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /const JIRA_ISSUE_AGENT_WORKING_LABELS = \[[\s\S]*"Figuring out which services are affected"[\s\S]*"Checking dependent components"[\s\S]*"Reviewing linked work items"/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /function getJiraIssueAgentWorkingLabels\(activity: JiraIssueAgentActivity\): readonly string\[\]/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /const workingLabels = activity\.labels \?\? JIRA_ISSUE_AGENT_WORKING_LABELS;/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /function getJiraIssueAgentCycleDelay\(intervalMs: number, jitterMs: number\): number \{[\s\S]*Math\.random\(\) \* Math\.max\(0, jitterMs\)/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /function JiraIssueCyclingAgentLabel\(props: Readonly<\{[\s\S]*cycleIntervalJitterMs: number;[\s\S]*cycleIntervalMs: number;[\s\S]*labels: readonly string\[\];/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /const JIRA_ISSUE_AGENT_LABEL_TRANSITION = \{ duration: 0\.2, ease: "easeOut" \} as const;/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /const JIRA_ISSUE_AGENT_LABEL_CYCLE_INTERVAL_MS = 5200;/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /const JIRA_ISSUE_AGENT_LABEL_CYCLE_JITTER_MS = 1800;/);
-	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /const JIRA_ISSUE_AGENT_LABEL_CYCLE_MS = 550;/);
-	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /window\.setInterval/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /window\.setTimeout\(\(\) => \{[\s\S]*getJiraIssueAgentCycleDelay\(cycleIntervalMs, cycleIntervalJitterMs\)/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<AnimatePresence mode="wait">[\s\S]*key=\{label\}[\s\S]*initial=\{shouldReduceMotion \? false : \{ opacity: 0, y: -4 \}\}[\s\S]*exit=\{shouldReduceMotion \? undefined : \{ opacity: 0, y: 4 \}\}/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /duration=\{JIRA_ISSUE_AGENT_SHIMMER_DURATION\}[\s\S]*spread=\{JIRA_ISSUE_AGENT_SHIMMER_SPREAD\}[\s\S]*wave=\{false\}/);
-	// Use the shared 100% origin so the sweep enters from the first word. The enabled
-	// initial Motion sequence makes that sweep run on the first label as well as later labels.
-	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /initialBackgroundPosition=/);
-	assert.match(SHIMMER_SOURCE, /initialBackgroundPosition\?: string;/);
-	assert.match(SHIMMER_SOURCE, /const resolvedInitialBackgroundPosition = initialBackgroundPosition \?\? "100% center";/);
-	assert.match(SHIMMER_SOURCE, /"shimmer-sweep-motion relative inline-block/);
-	assert.match(SHIMMER_SOURCE, /"--text-shimmer-duration": `\$\{resolvedDuration\}s`/);
-	assert.match(SHIMMER_SOURCE, /"--text-shimmer-start-position": resolvedInitialBackgroundPosition/);
-	assert.doesNotMatch(SHIMMER_SOURCE, /animate=\{\{ backgroundPosition:/);
-	assert.doesNotMatch(SHIMMER_SOURCE, /initial=\{false\}/);
-	assert.doesNotMatch(SHIMMER_SOURCE, /text-gradient-shimmer/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /const JIRA_ISSUE_AGENT_SHIMMER_DURATION = 1\.4;/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /const JIRA_ISSUE_AGENT_SHIMMER_SPREAD = 2;/);
-	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /JIRA_ISSUE_AGENT_SHIMMER_TRANSITION/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /cycleIntervalJitterMs=\{activity\.cycleIntervalJitterMs \?\? JIRA_ISSUE_AGENT_LABEL_CYCLE_JITTER_MS\}/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /cycleIntervalMs=\{activity\.cycleIntervalMs \?\? JIRA_ISSUE_AGENT_LABEL_CYCLE_INTERVAL_MS\}/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /labels=\{workingLabels\}/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<span className="flex min-w-0 flex-1 items-baseline overflow-hidden text-sm leading-5 text-text-subtlest">[\s\S]*<AnimatedDots \/>/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /className="block min-w-0 truncate text-sm leading-5"/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<span className="block min-h-5 min-w-0 overflow-hidden">/);
-	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AnimatedDots className="-ml-0\.5 \[&>span\]:text-sm" \/>/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<span className="-my-1 grid size-6 shrink-0 place-items-center text-icon-information" aria-hidden="true">\s*<StatusInformationIcon label="" size="small" color="currentColor" \/>/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<span className="-my-1 grid size-6 shrink-0 place-items-center text-icon" aria-hidden="true">\s*<Spinner[\s\S]*label=""[\s\S]*size="sm"/);
-	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /variant="rainbow"/);
-	// Instant reveal + instant dismiss: delay lives on the Trigger (Base UI), while
-	// Agent States owns the 400px overlay surface and interaction content.
-	assert.match(AGENT_ACTIVITY_SOURCE, /<HoverCard onOpenChange=\{onOpenChange\}>[\s\S]*<HoverCardTrigger[\s\S]*closeDelay=\{0\}[\s\S]*delay=\{0\}[\s\S]*aria-label=\{`\$\{activity\.name\}: \$\{displayLabel\}`\}[\s\S]*<HoverCardContent[\s\S]*className="w-auto max-w-\[calc\(100vw-48px\)\] bg-transparent p-0 shadow-none data-ending-style:transition-none"[\s\S]*<AgentStates[\s\S]*message=\{getJiraIssueAgentPanelMessage\(activity\)\}[\s\S]*question=\{activity\.question\}[\s\S]*startedAtMs=\{startedAtMs\}[\s\S]*state=\{activity\.state\}/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /data-slot="jira-issue-agent-row"/u);
-	assert.match(AGENT_STATES_SOURCE, /<AgentCardHeader[\s\S]*<ElapsedTime[\s\S]*title=\{agent\.name\}/u);
-	assert.match(AGENT_STATES_SOURCE, /state === "awaiting-input" && question[\s\S]*<QuestionCard[\s\S]*<AgentStatesComposer/u);
-	assert.match(AGENT_STATES_SOURCE, /placeholder="Ask, @mention, or \/ for actions"/u);
-	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /EmojiAddIcon|ShowMoreHorizontalIcon|PromptInputSubmit/);
+test("Jira issue renders one aggregate agent row with prioritized status and a list flyout", () => {
+	assert.match(AGENT_ACTIVITY_SOURCE, /import \{[\s\S]*AgentList,[\s\S]*type AgentListCustomFlyoutActions,[\s\S]*type AgentListItem,[\s\S]*\} from "@\/components\/blocks\/agent-list";/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ AgentStates \} from "@\/components\/blocks\/agent-states";/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual";/u);
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /import \{ Avatar, AvatarFallback \} from "@\/components\/ui\/avatar";/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /const summary = summarizeJiraIssueAgentActivities\(activities\);/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /const isSingleAgent = summary\.activityCount === 1;/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /const featuredActivity = summary\.featuredActivityIndex !== null[\s\S]*\? activities\[summary\.featuredActivityIndex\][\s\S]*: undefined;/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /featuredActivity \? \([\s\S]*<AgentAvatarVisual[\s\S]*avatarSrc=\{featuredActivity\.avatarSrc\}[\s\S]*label=\{featuredActivity\.name\}[\s\S]*: \([\s\S]*<AiAgentIcon label="" \/>/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /const isAwaitingInput = summary\.priorityState === "awaiting-input";/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /const shouldCycleSingleAgentLabel = isSingleAgent && !isAwaitingInput;/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /shouldCycleSingleAgentLabel \? \([\s\S]*<JiraIssueCyclingAgentLabel[\s\S]*labels=\{getJiraIssueAgentWorkingLabels\(activities\[0\]\)\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /duration=\{JIRA_ISSUE_AGENT_SHIMMER_DURATION\}[\s\S]*spread=\{JIRA_ISSUE_AGENT_SHIMMER_SPREAD\}[\s\S]*\{summary\.label\}[\s\S]*<AnimatedDots \/>/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<Spinner label="" size="sm" \/>/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<HoverCard open=\{flyoutOpen\} onOpenChange=\{handleOpenChange\}>[\s\S]*<HoverCardTrigger closeDelay=\{80\} delay=\{120\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<AgentList[\s\S]*flyout="none"[\s\S]*items=\{agentListItems\}[\s\S]*onView=\{handleAgentListView\}[\s\S]*renderFlyout=\{renderAgentFlyout\}[\s\S]*variant="compact"/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /handleOpenChange\(false\);[\s\S]*onViewChat\?\.\(activity\);/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<AgentStates[\s\S]*onQuestionSubmit=\{onQuestionSubmit[\s\S]*onQuestionSubmit\(activity, answers\);[\s\S]*question=\{activity\.question\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<JiraIssueAgentActivityRow[\s\S]*onQuestionSubmit=\{onQuestionSubmit\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /className=\{cn\("flex w-full min-w-0 flex-col overflow-hidden", hasActivities && "px-1 py-1"\)\}/u);
 	assert.match(SOURCE, /"relative w-full min-w-0 overflow-visible rounded-\[10px\] outline-none"/);
 	assert.match(SOURCE, /"group\/jira-issue relative w-full min-w-0 overflow-visible outline-none"/);
 	assert.match(SOURCE, /const hasAgentDoneNotification = resolvedAgentActivityMode === "completed" && agentDoneRuns\.length > 0;/);
@@ -450,24 +415,26 @@ test("Jira issue completed agent flyouts retain hover through their visible shad
 	);
 });
 
-test("Jira issue renders completed agents as individual inset hover rows", () => {
+test("Jira issue aggregates completed agents into a Finished row with failure priority", () => {
 	assert.match(COMPLETED_RUNS_SOURCE, /export interface JiraIssueCompletedAgentRun \{[\s\S]*summary: string;[\s\S]*agentName: string;[\s\S]*agentAvatarSrc\?: string;[\s\S]*agentBrandName\?: ThirdPartyLogoName;[\s\S]*issueKey: string;[\s\S]*issueSummary: string;[\s\S]*relativeTime\?: string;[\s\S]*completedAtMs\?: number;[\s\S]*completedSecondsAgo\?: number;[\s\S]*state: JiraIssueCompletedAgentRunState;/);
 	assert.match(COMPLETED_RUNS_SOURCE, /completedAtMs: run\.completedAtMs,[\s\S]*completedSecondsAgo: run\.completedSecondsAgo,/u);
-	assert.equal((COMPLETED_RUNS_SOURCE.match(/brandName: run\.agentBrandName,/gu) ?? []).length, 2);
+	assert.equal((COMPLETED_RUNS_SOURCE.match(/brandName: run\.agentBrandName,/gu) ?? []).length, 3);
+	assert.match(COMPLETED_RUNS_SOURCE, /import \{[\s\S]*AgentList,[\s\S]*type AgentListItem,[\s\S]*\} from "@\/components\/blocks\/agent-list";/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /import AiAgentIcon from "@atlaskit\/icon\/core\/ai-agent";/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /function toCompletedAgentListItem\(run: JiraIssueCompletedAgentRun\): AgentListItem \{[\s\S]*state: "complete",[\s\S]*title: run\.summary,/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /const finishedLabel = `\$\{runs\.length\} Finished`;/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /const hasFailedRun = runs\.some\(\(run\) => run\.state === "failed"\);/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /<section aria-label="Agent review" className="flex w-full min-w-0 flex-col overflow-hidden px-1 py-1">/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /runs\.map\(\(run, index\) => \{[\s\S]*<HoverCard[\s\S]*key=\{run\.id\}[\s\S]*onOpenChange=\{\(open\) => \{[\s\S]*onOpenChange\?\.\(open\);[\s\S]*open=\{openRunId === run\.id\}[\s\S]*<HoverCardTrigger[\s\S]*closeDelay=\{0\}[\s\S]*delay=\{0\}/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /data-slot="jira-issue-agent-row"/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /<AgentAvatarVisual[\s\S]*brandName=\{run\.agentBrandName\}[\s\S]*label=\{run\.agentName\}[\s\S]*sizePx=\{16\}[\s\S]*\{run\.summary\}[\s\S]*\{run\.showStateIcon !== false && state\.icon \? \(/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /done: \{[\s\S]*label: null,[\s\S]*icon: null,[\s\S]*failed: \{[\s\S]*label: "Alert"[\s\S]*StatusErrorIcon[\s\S]*review: \{[\s\S]*label: "Ready for review"[\s\S]*text-icon-success[\s\S]*PullRequestIcon/u);
-	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /StatusSuccessIcon/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /<HoverCard open=\{aggregateOpen\} onOpenChange=\{handleAggregateOpenChange\}>[\s\S]*aria-label=\{hasFailedRun \? `\$\{finishedLabel\}, includes errors` : finishedLabel\}[\s\S]*data-slot="jira-issue-agent-row"[\s\S]*<span className="ml-px grid size-4 shrink-0 place-items-center text-text-subtlest" aria-hidden="true">\s*<AiAgentIcon label="" \/>[\s\S]*\{finishedLabel\}[\s\S]*hasFailedRun \? \([\s\S]*<StatusErrorIcon/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /className="flex h-6 w-full[^"]*rounded-b-\[6px\] rounded-t-sm[^"]*"/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /<AgentList[\s\S]*className="w-full border-0 bg-surface-overlay shadow-2xl"[\s\S]*flyout="none"[\s\S]*items=\{completedItems\}[\s\S]*renderFlyout=\{renderCompletedRunFlyout\}[\s\S]*variant="compact"/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /import \{ JiraActivityChangedFiles \}/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /<HoverCardContent[\s\S]*w-\[440px\][\s\S]*side="right"/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /<JiraActivityChangedFiles[\s\S]*entry=\{getCompletedRunEntry\(run\)\}[\s\S]*status=\{run\.state\}/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /function renderCompletedRunFlyout\([\s\S]*item: AgentListItem,[\s\S]*\{ close \}: AgentListCustomFlyoutActions,[\s\S]*\)[\s\S]*<JiraActivityChangedFiles[\s\S]*entry=\{getCompletedRunEntry\(run\)\}[\s\S]*status=\{run\.state\}/u);
 	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /pullRequestNumber=\{run\.pullRequestNumber\}/u);
 	assert.match(CHANGED_FILES_SOURCE, /<ArtifactList[\s\S]*onOpen=\{onOutputOpen\}/u);
 	assert.match(
 		COMPLETED_RUNS_SOURCE,
-		/onOutputOpen=\{\(item\) => \{[\s\S]*if \(item\.pullRequest\) \{[\s\S]*setOpenRunId\(null\);[\s\S]*onOpenChange\?\.\(false\);[\s\S]*onReview\?\.\(run\);/u,
+		/onOutputOpen=\{\(output\) => \{[\s\S]*if \(output\.pullRequest\) \{[\s\S]*close\(\);[\s\S]*handleAggregateOpenChange\(false\);[\s\S]*onReview\?\.\(run\);/u,
 		"opening a pull-request review should dismiss its agent flyout first",
 	);
 	assert.match(SOURCE, /onAgentDoneRunReview\?: \(run: JiraIssueCompletedAgentRun\) => void;/u);
@@ -489,7 +456,7 @@ test("Jira issue animates agent state transitions with Motion", () => {
 	assert.match(SOURCE, /const JIRA_ISSUE_MOTION_REDUCED: Transition = \{ duration: 0 \};/);
 	assert.match(SOURCE, /const shouldReduceMotion = useReducedMotion\(\);/);
 	assert.match(SOURCE, /function getJiraIssuePresenceMotion\(shouldReduceMotion: boolean \| null\)[\s\S]*initial: false/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*activities\.map\(\(activity, index\) => \([\s\S]*<motion\.div[\s\S]*exit=\{presenceMotion\.exit\}[\s\S]*initial=\{presenceMotion\.initial\}/);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*\{summary \? \([\s\S]*<motion\.div[\s\S]*key=\{`\$\{summary\.priorityState\}-\$\{summary\.activityCount\}`\}[\s\S]*exit=\{presenceMotion\.exit\}[\s\S]*initial=\{presenceMotion\.initial\}/u);
 	assert.match(SOURCE, /const hasIssueRows = hasSubtasks;/);
 	assert.match(SOURCE, /const issueRowsClassName = cn\("pt-1", !\(hasSubtasks && resolvedSubtasksExpanded\) && "pb-1"\);/);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*key="agent-review"[\s\S]*<JiraIssueAgentDone[\s\S]*runs=\{agentDoneRuns\}/u);

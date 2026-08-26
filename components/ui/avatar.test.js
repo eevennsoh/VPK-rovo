@@ -106,7 +106,15 @@ test("group-with-icon-count demo plus size comes from AvatarGroup, not a global 
 	);
 	assert.doesNotMatch(
 		AVATAR_DEMO_SOURCE,
-		/export function AvatarDemoGroupWithIconCount\([\s\S]*<PlusIcon size="small" \/>[\s\S]*export function AvatarDemoGroup\(/,
+		/<AvatarGroupCount>\s*<PlusIcon size="small" \/>\s*<\/AvatarGroupCount>/u,
+	);
+	assert.match(
+		AVATAR_DEMO_SOURCE,
+		/export function AvatarDemoGroupWithIconCount\([\s\S]*<AvatarGroup label="24px agent avatar group with icon count" size="sm">[\s\S]*AGENT_GROUP_AVATARS\.map[\s\S]*<AgentAvatarVisual[\s\S]*sizePx=\{24\}[\s\S]*<Avatar[\s\S]*shape="hexagon"[\s\S]*size="sm"[\s\S]*bg-bg-neutral text-icon-subtle[\s\S]*<PlusIcon size="small" \/>/u,
+	);
+	assert.match(
+		AVATAR_DETAILS_SOURCE,
+		/description: "Human and agent avatar groups with icon-based count indicators\."/u,
 	);
 });
 

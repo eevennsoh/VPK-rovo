@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import type { ChatSurface } from "@/app/contexts/context-rovo-chat";
 import type { JiraSidebarSessionItem } from "@/components/blocks/product-sidebar/variants/jira";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
@@ -135,6 +137,10 @@ export interface AgentListItem {
 	sessionDetails?: AgentListSessionDetails;
 }
 
+export interface AgentListCustomFlyoutActions {
+	close: () => void;
+}
+
 export interface AgentListProps {
 	className?: string;
 	/** Chat surface opened after an Agent States composer submission. */
@@ -145,6 +151,8 @@ export interface AgentListProps {
 	items?: readonly AgentListItem[];
 	/** Id of the session currently selected by the consuming surface. */
 	selectedItemId?: string;
+	/** Optional consumer-owned detail surface that keeps the shared Agent List row presentation. */
+	renderFlyout?: (item: AgentListItem, actions: AgentListCustomFlyoutActions) => ReactNode;
 	/** Row density; compact uses a 24px avatar and 12px title. */
 	variant?: AgentListVariant;
 	/** Called when a row body or its View action is activated. */

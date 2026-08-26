@@ -293,9 +293,9 @@ test("the composer variant keeps the per-row Agent States flyout on the left", (
 	assert.match(CARD_SOURCE, /avatarSrc: item\.agent\.avatarSrc/u);
 	assert.match(CARD_SOURCE, /closeDelay=\{80\}/u);
 	assert.doesNotMatch(CARD_SOURCE, /AgentProfileCard|agentProfile/u);
-	// All three flyout variants wrap the identical row body, so density, states,
+	// All four flyout variants wrap the identical row body, so density, states,
 	// and hover actions cannot drift between them.
-	assert.equal((CARD_SOURCE.match(/\{row\}/gu) ?? []).length, 3);
+	assert.equal((CARD_SOURCE.match(/\{row\}/gu) ?? []).length, 4);
 	assert.match(CARD_SOURCE, /function AgentListRow\(/u);
 	// jira-for-you relies on the composer to reply to an agent inline.
 	assert.match(FOR_YOU_PANEL_SOURCE, /flyout="composer"/u);
@@ -590,4 +590,12 @@ test("the session activity header can preserve a consumer-provided completed tim
 	assert.match(CARD_SOURCE, /fallback = "Just now"/u);
 	assert.match(CARD_SOURCE, /timeFallback\?: string;/u);
 	assert.match(CARD_SOURCE, /<AgentListTime fallback=\{timeFallback\} item=\{item\} \/>/u);
+});
+
+test("AgentList supports consumer-owned detail flyouts without changing row presentation", () => {
+	assert.match(TYPES_SOURCE, /export interface AgentListCustomFlyoutActions \{[\s\S]*close: \(\) => void;[\s\S]*\}/u);
+	assert.match(TYPES_SOURCE, /renderFlyout\?: \(item: AgentListItem, actions: AgentListCustomFlyoutActions\) => ReactNode;/u);
+	assert.match(INDEX_SOURCE, /renderFlyout,[\s\S]*<AgentListCard[\s\S]*renderFlyout=\{renderFlyout\}/u);
+	assert.match(CARD_SOURCE, /const \[customFlyoutHandle\] = useState\(createHoverCardHandle\);/u);
+	assert.match(CARD_SOURCE, /if \(renderFlyout\) \{[\s\S]*<HoverCard handle=\{customFlyoutHandle\}>[\s\S]*<HoverCardTrigger[\s\S]*\{row\}[\s\S]*renderFlyout\(item, \{ close: \(\) => customFlyoutHandle\.close\(\) \}\)/u);
 });
