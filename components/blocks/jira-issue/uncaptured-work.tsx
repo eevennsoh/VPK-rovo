@@ -18,6 +18,11 @@ import {
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
+interface JiraIssueUncapturedWorkResumeProps extends JiraIssueUncapturedWorkProps {
+	/** Resumes a local agent session represented by this uncaptured work. */
+	onResumeAgentSession?: () => void;
+}
+
 function getInitials(name: string): string {
 	return name
 		.split(" ")
@@ -32,13 +37,14 @@ export function JiraIssueUncapturedWork({
 	className,
 	onCreateWorkItem,
 	onLinkWorkItem,
+	onResumeAgentSession,
 	participants,
 	sourceLink,
 	style,
 	summary,
 	variant,
 	...props
-}: Readonly<JiraIssueUncapturedWorkProps>) {
+}: Readonly<JiraIssueUncapturedWorkResumeProps>) {
 	const createUnavailable = onCreateWorkItem === undefined;
 	const linkUnavailable = onLinkWorkItem === undefined;
 	const createLabel = captured
@@ -51,7 +57,7 @@ export function JiraIssueUncapturedWork({
 		<article
 			{...props}
 			className={cn(
-				"flex w-full flex-col gap-2 rounded-lg border border-dashed border-border-disabled bg-surface p-3 text-left",
+				"group/uncaptured-work flex w-full flex-col gap-2 rounded-lg border border-dashed border-border-disabled bg-surface p-3 text-left",
 				className,
 			)}
 			data-captured={captured || undefined}
@@ -71,56 +77,68 @@ export function JiraIssueUncapturedWork({
 				/>
 			</div>
 			<div className="flex items-center justify-between">
-				{captured ? (
-					<Button
-						aria-disabled
-						aria-label={createLabel}
-						className="justify-start border-transparent bg-transparent text-text-success [&_svg]:text-icon-success hover:bg-transparent active:bg-transparent"
-						size="compact"
-						variant="outline"
-					>
-						<Icon aria-hidden render={<CheckMarkIcon label="" />} />
-						Captured
-					</Button>
-				) : (
-					<ButtonGroup aria-label={`Work item actions for ${summary}`} variant="split">
+				{onResumeAgentSession === undefined ? (
+					captured ? (
 						<Button
-							aria-disabled={createUnavailable}
+							aria-disabled
 							aria-label={createLabel}
-							className={cn("justify-start", createUnavailable ? "cursor-not-allowed opacity-(--opacity-disabled)" : null)}
-							onClick={() => {
-								onCreateWorkItem?.();
-							}}
+							className="justify-start border-transparent bg-transparent text-text-success [&_svg]:text-icon-success hover:bg-transparent active:bg-transparent"
 							size="compact"
 							variant="outline"
 						>
-							Create work item
+							<Icon aria-hidden render={<CheckMarkIcon label="" />} />
+							Captured
 						</Button>
-						<DropdownMenu>
-							<DropdownMenuTrigger
-								render={
-									<Button
-										aria-label={`More work item actions for ${summary}`}
-										size="icon-compact"
-										type="button"
-										variant="outline"
-									/>
-								}
+					) : (
+						<ButtonGroup aria-label={`Work item actions for ${summary}`} variant="split">
+							<Button
+								aria-disabled={createUnavailable}
+								aria-label={createLabel}
+								className={cn("justify-start", createUnavailable ? "cursor-not-allowed opacity-(--opacity-disabled)" : null)}
+								onClick={() => {
+									onCreateWorkItem?.();
+								}}
+								size="compact"
+								variant="outline"
 							>
-								<Icon aria-hidden render={<ChevronDownIcon label="" size="small" />} />
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="start" side="bottom">
-								<DropdownMenuItem
-									disabled={linkUnavailable}
-									onSelect={() => {
-										onLinkWorkItem?.();
-									}}
+								Create work item
+							</Button>
+							<DropdownMenu>
+								<DropdownMenuTrigger
+									render={
+										<Button
+											aria-label={`More work item actions for ${summary}`}
+											size="icon-compact"
+											type="button"
+											variant="outline"
+										/>
+									}
 								>
-									Link work item
-								</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
-					</ButtonGroup>
+									<Icon aria-hidden render={<ChevronDownIcon label="" size="small" />} />
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="start" side="bottom">
+									<DropdownMenuItem
+										disabled={linkUnavailable}
+										onSelect={() => {
+											onLinkWorkItem?.();
+										}}
+									>
+										Link work item
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+						</ButtonGroup>
+					)
+				) : (
+					<Button
+						aria-label={`Resume agent session for ${summary}`}
+						className="pointer-events-none opacity-0 transition-opacity duration-xxshort ease-out-practical motion-reduce:transition-none group-hover/uncaptured-work:pointer-events-auto group-hover/uncaptured-work:opacity-100 group-focus-within/uncaptured-work:pointer-events-auto group-focus-within/uncaptured-work:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 focus-visible:ring-3"
+						onClick={onResumeAgentSession}
+						size="compact"
+						variant="outline"
+					>
+						Resume
+					</Button>
 				)}
 				<AvatarGroup className="ml-auto" label={`Involved: ${participants.map((participant) => participant.name).join(", ")}`}>
 					{participants.map((participant) => (

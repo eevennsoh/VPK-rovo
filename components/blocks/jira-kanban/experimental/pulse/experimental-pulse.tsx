@@ -40,6 +40,7 @@ import type {
 	PulseLooseWork,
 	PulseScope,
 	PulseTimeline,
+	PulseWorkItem,
 } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { ScrollMaskEdgeOverlay } from "@/components/visual/scroll-mask";
@@ -103,7 +104,11 @@ export interface ExperimentalPulseProps {
 	 * cannot silently discard them along with this subtree.
 	 */
 	capturedLooseWorkIds: ReadonlySet<string>;
+	isLooseWorkResumable?: (item: PulseLooseWork) => boolean;
+	isWorkItemInteractive?: (workItem: PulseWorkItem) => boolean;
 	onCaptureLooseWork: (item: PulseLooseWork) => void;
+	onResumeLooseWork?: (item: PulseLooseWork) => void;
+	onWorkItemClick?: (workItem: PulseWorkItem) => void;
 	requestedActionIds: ReadonlySet<string>;
 	onRequestAction: (action: PulseAction) => void;
 	timeline?: PulseTimeline;
@@ -128,7 +133,11 @@ export interface ExperimentalPulseProps {
 
 export function ExperimentalPulse({
 	capturedLooseWorkIds,
+	isLooseWorkResumable,
+	isWorkItemInteractive,
 	onCaptureLooseWork,
+	onResumeLooseWork,
+	onWorkItemClick,
 	onRequestAction,
 	requestedActionIds,
 	timeline: sourceTimeline = PULSE_TIMELINE,
@@ -413,9 +422,13 @@ export function ExperimentalPulse({
 						chat={insightsChatOpen ? (
 							<PulseEmbeddedChat chatContextBar={chatContextBar} />
 						) : undefined}
+						isLooseWorkResumable={isLooseWorkResumable}
+						isWorkItemInteractive={isWorkItemInteractive}
 						looseWork={pulse.looseWork}
 						members={pulse.members}
 						onCapture={onCaptureLooseWork}
+						onResumeLooseWork={onResumeLooseWork}
+						onWorkItemClick={onWorkItemClick}
 						scopedToFirstName={pulse.selectedMember?.name.split(" ")[0] ?? null}
 						workItems={pulse.workItems}
 					/>
