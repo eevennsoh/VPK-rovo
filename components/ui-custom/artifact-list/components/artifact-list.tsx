@@ -26,6 +26,12 @@ export interface ArtifactListItem {
 	owner?: string;
 	/** Optional open destination for consumers that route `onOpen` via URL. */
 	href?: string;
+	/**
+	 * Per-row action label, e.g. "Enable". Falls back to the list-level
+	 * `openLabel`. Lets one list mix verbs (Create / Connect / Review) without a
+	 * second row implementation.
+	 */
+	rowActionLabel?: string;
 	/** Pull-request metadata rendered inline in compact rows, matching the agent session flyout. */
 	pullRequest?: {
 		number: number;
@@ -144,6 +150,7 @@ function ArtifactListRow({
 	variant: "default" | "compact";
 }>) {
 	const handleOpen = () => onOpen?.(item);
+	const rowOpenLabel = item.rowActionLabel ?? openLabel;
 	const compactMetadata = (
 		<span className="block w-full truncate text-xs leading-4 text-text-subtle">
 			{item.source}
@@ -162,14 +169,23 @@ function ArtifactListRow({
 					{item.pullRequest.status}
 				</Lozenge>
 			</span>
-			<a
-				className="min-w-0 flex-1 truncate rounded-[3px] text-text no-underline decoration-current outline-none hover:underline focus-visible:underline"
-				href="#"
-				onClick={(event) => event.preventDefault()}
-				title={`#${item.pullRequest.number}: ${item.title}`}
-			>
-				#{item.pullRequest.number}: {item.title}
-			</a>
+			{item.href ? (
+				<a
+					className="min-w-0 flex-1 truncate rounded-[3px] text-text no-underline decoration-current outline-none hover:underline focus-visible:underline"
+					href={item.href}
+					title={`#${item.pullRequest.number}: ${item.title}`}
+				>
+					#{item.pullRequest.number}: {item.title}
+				</a>
+			) : (
+				// No destination: plain text rather than a focusable link that cannot navigate.
+				<span
+					className="min-w-0 flex-1 truncate text-text"
+					title={`#${item.pullRequest.number}: ${item.title}`}
+				>
+					#{item.pullRequest.number}: {item.title}
+				</span>
+			)}
 		</span>
 	) : null;
 
@@ -194,7 +210,7 @@ function ArtifactListRow({
 					className={cn(
 						"shrink-0 whitespace-nowrap",
 						// Instant reveal/hide; keep Button chrome transitions but drop opacity.
-						"pointer-events-none opacity-0 transition-[background-color,border-color,box-shadow,color]",
+						"pointer-events-none opacity-0 transition-[background-color,border-color,box-shadow,color] motion-reduce:transition-none",
 						"group-hover/artifact-row:pointer-events-auto group-hover/artifact-row:opacity-100",
 						"group-has-[:focus-visible]/artifact-row:pointer-events-auto group-has-[:focus-visible]/artifact-row:opacity-100",
 						"focus-visible:pointer-events-auto focus-visible:opacity-100",
@@ -212,7 +228,7 @@ function ArtifactListRow({
 							<span className="text-text-success">+{item.pullRequest.additions}</span>
 							<span className="text-text-danger">-{item.pullRequest.deletions}</span>
 						</span>
-					) : openLabel}
+					) : rowOpenLabel}
 				</Button>
 			</div>
 		</div>
@@ -223,16 +239,18 @@ function ArtifactListRow({
 			className={cn(
 				"group/artifact-row min-w-0 w-full",
 				variant === "compact"
-					? "flex min-h-12 items-center px-3 py-2 transition-colors hover:bg-surface-hovered"
-					: "flex min-h-16 items-center px-3 py-2 transition-colors hover:bg-surface-hovered",
+					? "flex min-h-12 items-center px-3 py-2 transition-colors motion-reduce:transition-none hover:bg-surface-hovered"
+					: "flex min-h-16 items-center px-3 py-2 transition-colors motion-reduce:transition-none hover:bg-surface-hovered",
 				!isLast && "border-b border-border",
 			)}
 		>
 			<div className="relative flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
 				{openOnRowClick ? (
 						<button
-							aria-label={`${openLabel} ${item.title}`}
-							className="absolute inset-0 z-10 cursor-pointer appearance-none rounded-sm border-0 bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+							aria-label={`${rowOpenLabel} ${item.title}`}
+							// Inset ring: the row content wrapper is `overflow-hidden`, which would
+							// clip an outward `ring-offset` indicator on every edge.
+							className="absolute inset-0 z-10 cursor-pointer appearance-none rounded-sm border-0 bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
 							type="button"
 							onClick={handleOpen}
 						/>

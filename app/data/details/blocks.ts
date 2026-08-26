@@ -89,6 +89,7 @@ import { SIGNUP_05_DETAIL } from "./blocks/signup-05";
 import { VISUAL_WAVEFORM_DETAIL } from "./blocks/visual-waveform";
 import { QUESTION_CARD_DETAIL } from "./blocks/question-card";
 import { APPROVAL_CARD_DETAIL } from "./blocks/approval-card";
+import { NEXT_BEST_ACTION_DETAIL } from "./blocks/next-best-action";
 import { TOOL_APPROVAL_DETAIL } from "./blocks/tool-approval";
 import { CHATBOT_DETAIL } from "./blocks/chatbot";
 import { JIRA_EPIC_DETAIL } from "./blocks/jira-epic";
@@ -194,6 +195,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"visual-waveform": VISUAL_WAVEFORM_DETAIL,
 	"question-card": QUESTION_CARD_DETAIL,
 	"approval-card": APPROVAL_CARD_DETAIL,
+	"next-best-action": NEXT_BEST_ACTION_DETAIL,
 	"tool-approval": TOOL_APPROVAL_DETAIL,
 	chatbot: CHATBOT_DETAIL,
 	"jira-epic": JIRA_EPIC_DETAIL,
