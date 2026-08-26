@@ -24,6 +24,7 @@ const {
 	EXPERIMENTAL_PAGE_SOURCE,
 	PULSE_MODE_CONTROLS_SOURCE,
 	join,
+	loadInsightsToggleMarkupHarness,
 	loadRosterMarkupHarness,
 	PULSE_DIR,
 	readdirSync,
@@ -359,7 +360,10 @@ test("Pulse is a toggle on the board's own control row, not a separate tab", () 
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /export type ExperimentalJiraKanbanMode = "board" \| "pulse";/u);
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /export function PulseModeToggle\(/u);
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /aria-pressed=\{active\}/u);
-	assert.match(PULSE_MODE_CONTROLS_SOURCE, />\s*Insights\s*<\/Button>/u);
+	assert.match(
+		PULSE_MODE_CONTROLS_SOURCE,
+		/>\s*Insights\s*\{unreadCount > 0 \? <Badge variant="information">\{unreadCount\}<\/Badge> : null\}/u,
+	);
 	assert.ok(!existsSync(join(PULSE_DIR, "..", "experimental-view-tabs.tsx")), "the tab component should be retired, not left beside its replacement");
 
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /import \{ ExperimentalPulse \} from "\.\/pulse\/experimental-pulse";/u);
@@ -379,6 +383,26 @@ test("Pulse is a toggle on the board's own control row, not a separate tab", () 
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /\{facepile \?\? \(/u);
 });
 
+test("Insights owns the unread activity pill instead of a separate Timeline button", async () => {
+	const { renderInsightsToggleMarkup } = await loadInsightsToggleMarkupHarness();
+	const unread = renderInsightsToggleMarkup({ unreadCount: 3 });
+	const idle = renderInsightsToggleMarkup({ unreadCount: 0 });
+	const pressed = renderInsightsToggleMarkup({ active: true, unreadCount: 0 });
+
+	assert.match(unread, /aria-label="Insights, 3 new updates since you last viewed"/u);
+	assert.match(unread, /aria-pressed="false"/u);
+	assert.match(unread, />Insights</u);
+	assert.match(unread, /data-slot="badge">3</u);
+	assert.doesNotMatch(unread, /Timeline/u);
+
+	assert.doesNotMatch(idle, /aria-label=/u);
+	assert.doesNotMatch(idle, /data-slot="badge"/u);
+	assert.match(idle, />Insights</u);
+
+	assert.match(pressed, /aria-pressed="true"/u);
+	assert.doesNotMatch(pressed, /data-slot="badge"/u);
+});
+
 test("Experimental board header keeps Filter clickable and badges new timeline activity", () => {
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /filterControl: ReactNode;/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /endSlot\?: ReactNode;/u);
@@ -386,7 +410,12 @@ test("Experimental board header keeps Filter clickable and badges new timeline a
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /\{endSlot \? endSlot : null\}/u);
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /disableAssigneeFilter|aria-disabled[\s\S]*Filter board is unavailable/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<BoardFilterPopover/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<TimelineActivityBadge/u);
+	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /TimelineActivityBadge|timeline-activity-badge/u);
+	assert.ok(
+		!existsSync(join(EXPERIMENTAL_DIR, "components", "timeline-activity-badge.tsx")),
+		"the standalone Timeline button should be deleted, not parked",
+	);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /unreadCount=\{isPulse \? 0 : timelineUnreadCount\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /useBoardFilter\(/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /filterPulseTimelineByDays/u);
 	assert.match(
@@ -437,7 +466,7 @@ test("Pulse keeps one member filter across the header facepile and the story fac
 	// while fixed-size flex buttons remove inline baseline drift between SVG
 	// agents and photo-backed humans.
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /import \{ Avatar, AvatarFallback, AvatarGroup, AvatarImage \} from "@\/components\/ui\/avatar";/u);
-	assert.match(PULSE_MODE_CONTROLS_SOURCE, /<AvatarGroup[\s\S]*items-center -space-x-1\.5/u);
+	assert.match(PULSE_MODE_CONTROLS_SOURCE, /<AvatarGroup[\s\S]*className=\{JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME\}/u);
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /className="focus-visible:ring-ring\/50 flex size-6 shrink-0 items-center justify-center/u);
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /member\.kind === "human" \? "ring-2 ring-surface" : null/u);
 	assert.doesNotMatch(PULSE_MODE_CONTROLS_SOURCE, /"ring-2 ring-surface transition-opacity/u);
@@ -564,7 +593,26 @@ test("Pulse tiles three columns full-bleed, with the story taking the slack", ()
 	assert.match(SOURCES.shell, /<PulseWorkRail/u);
 	assert.match(SOURCES.shell, /lg:mr-10/u, "the article scrollport keeps a 40px gutter before the work rail");
 	assert.match(SOURCES.shell, /lg:pr-10/u, "the story content remains inset from its scrollbar");
-	assert.match(SOURCES.shell, /lg:h-full lg:flex-row/u);
+	assert.match(SOURCES.shell, /lg:h-full lg:min-h-0 lg:flex-row/u);
+});
+
+test("Pulse scroll surface keeps a 24px content-side inset at the bottom", () => {
+	// Artifacts / last work-item cards used to sit flush with the fold because
+	// `lg:overflow-hidden` clipped the padded row. The inset is `pb-6`
+	// (space.300) on the scroll content, not a collapsing spacer, and the
+	// surface keeps `overflow-y-auto` so that gap stays visible at max scroll.
+	assert.match(
+		SOURCES.shell,
+		/className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-6 pt-10 lg:pt-12"/u,
+		"the fold surface stays the scroll owner at every width",
+	);
+	assert.doesNotMatch(SOURCES.shell, /lg:overflow-hidden/u, "hidden overflow must not clip the 24px inset");
+	assert.match(
+		SOURCES.shell,
+		/flex flex-col gap-10 pb-6 lg:h-full lg:min-h-0 lg:flex-row lg:gap-0/u,
+		"the row carries pb-6 (24px) on the scroll content and stays fold-height at lg",
+	);
+	assert.doesNotMatch(SOURCES.shell, /px-6 py-10 lg:overflow-hidden lg:py-12/u);
 });
 
 test("Pulse eyebrow and section labels match the Activity heading rung", () => {
@@ -608,15 +656,15 @@ test("Pulse eyebrow and section labels match the Activity heading rung", () => {
 	// bottom-heavy rag.
 	assert.doesNotMatch(SOURCES.story, /text-balance/u);
 	assert.match(SOURCES.story, /text-base\/6 tracking-\[-0\.011em\] text-pretty text-text/u);
-	assert.match(SOURCES.story, /className=\{cn\("mt-7 text-pretty text-text", MEASURE\)\}/u);
-	// Eyebrow → title → contributors. The old `mt-7` under the eyebrow moves
-	// onto the title; the faces drop to `mt-3` so two large tops do not stack.
+	assert.match(SOURCES.story, /className=\{cn\("mt-6 text-pretty text-text", MEASURE\)\}/u);
+	// Eyebrow → title → contributors. Kickoff line to title is `mt-6` (24px);
+	// title to the By row is `mt-4` (16px).
 	assert.match(
 		SOURCES.story,
-		/<p className=\{cn\("min-w-0 truncate", PULSE_EYEBROW\)\}>\{eyebrow\}<\/p>[\s\S]*<h2 className=\{cn\("mt-7 text-pretty text-text", MEASURE\)\}[\s\S]*<div className="mt-3 min-w-0">\s*<PulseStoryContributors/u,
+		/<p className=\{cn\("min-w-0 truncate", PULSE_EYEBROW\)\}>\{eyebrow\}<\/p>[\s\S]*<h2 className=\{cn\("mt-6 text-pretty text-text", MEASURE\)\}[\s\S]*<div className="mt-4 min-w-0">\s*<PulseStoryContributors/u,
 	);
 	assert.doesNotMatch(
 		SOURCES.story,
-		/<PulseStoryContributors[\s\S]*<h2 className=\{cn\("mt-7 text-pretty text-text", MEASURE\)\}/u,
+		/<PulseStoryContributors[\s\S]*<h2 className=\{cn\("mt-6 text-pretty text-text", MEASURE\)\}/u,
 	);
 });

@@ -22,6 +22,10 @@ import { JiraProjectAvatar } from "@/components/blocks/product-sidebar/variants/
 import { JIRA_DESIGN_PROJECT } from "@/components/blocks/product-sidebar/data/jira-navigation";
 import { cn } from "@/lib/utils";
 import type { JiraKanbanAssigneeData } from "../index";
+import {
+	JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME,
+	JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS,
+} from "./header-facepile";
 
 /**
  * Experimental fork of `components/blocks/jira-kanban/board-header.tsx`.
@@ -50,8 +54,7 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	/** Mode control, rendered inline with Filter and Group. */
 	modeToggle?: ReactNode;
 	/**
-	 * Trailing cluster end slot — after the more/ellipsis control. Pulse puts
-	 * the Timeline activity badge here so it does not invent a second overflow.
+	 * Trailing cluster end slot — after the more/ellipsis control.
 	 */
 	endSlot?: ReactNode;
 	surfaceLabel?: string;
@@ -141,11 +144,11 @@ export function ExperimentalJiraKanbanBoardHeader({
 					    contains these low z-indexes; `[&>*]:relative` is required because the
 					    face <button> wrappers are position:static, where z-index is inert. */}
 					<AvatarGroup
-						className="ml-1 -space-x-1.5 isolate [&>*]:relative [&>*:nth-child(1)]:z-[7] [&>*:nth-child(2)]:z-[6] [&>*:nth-child(3)]:z-[5] [&>*:nth-child(4)]:z-[4] [&>*:nth-child(5)]:z-[3] [&>*:nth-child(6)]:z-[2] [&>*:nth-child(7)]:z-[1]"
+						className={JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME}
 						label={`${surfaceTitle} assignees`}
 					>
 						<AvatarUnassigned kind="person" label="Unassigned" size="sm" />
-						{assignees.slice(0, 6).map((assignee) => (
+						{assignees.slice(0, JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS - 1).map((assignee) => (
 							<button
 								aria-label={`Filter ${surfaceLabel} by ${assignee.name}`}
 								aria-pressed={selectedAssigneeIds.has(assignee.id)}

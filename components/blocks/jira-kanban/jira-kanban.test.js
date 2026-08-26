@@ -12,7 +12,9 @@ const HEADER_SOURCE = readFileSync(join(__dirname, "board-header.tsx"), "utf8");
 const EXPERIMENTAL_SOURCE = readFileSync(join(__dirname, "experimental", "experimental-jira-kanban.tsx"), "utf8");
 const EXPERIMENTAL_PAGE_SOURCE = readFileSync(join(__dirname, "experimental", "page.tsx"), "utf8");
 const EXPERIMENTAL_HEADER_SOURCE = readFileSync(join(__dirname, "experimental", "experimental-board-header.tsx"), "utf8");
+const EXPERIMENTAL_HEADER_FACEPILE_SOURCE = readFileSync(join(__dirname, "experimental", "header-facepile.ts"), "utf8");
 const EXPERIMENTAL_PULSE_RAIL_SOURCE = readFileSync(join(__dirname, "experimental", "pulse", "components", "pulse-rail.tsx"), "utf8");
+const EXPERIMENTAL_PULSE_MODE_CONTROLS_SOURCE = readFileSync(join(__dirname, "experimental", "pulse", "components", "pulse-mode-controls.tsx"), "utf8");
 const JIRA_ISSUE_SOURCE = readFileSync(join(__dirname, "..", "jira-issue", "index.tsx"), "utf8");
 const COLUMN_DRAG_SOURCE = SOURCE.slice(
 	SOURCE.indexOf("const handleColumnDragOver"),
@@ -143,13 +145,13 @@ test("Kanban header matches the production board alignment and action groups", (
 	assert.doesNotMatch(HEADER_SOURCE, />Filter by</u);
 	assert.match(
 		HEADER_SOURCE,
-		/<div className="border-r border-border p-3">[\s\S]*<Button aria-disabled variant="outline">[\s\S]*<Icon data-icon="inline-start" render=\{<AddIcon label="" size="small" \/>\} \/>[\s\S]*Add field[\s\S]*\{FILTER_FIELDS\.map/u,
+		/<div className="border-r border-border p-3">[\s\S]*<Button aria-disabled variant="ghost">[\s\S]*<Icon data-icon="inline-start" render=\{<AddIcon label="" size="small" \/>\} \/>[\s\S]*Add field[\s\S]*\{FILTER_FIELDS\.map/u,
 	);
 	assert.match(HEADER_SOURCE, /<AvatarUnassigned kind="person" label="Unassigned" size="sm" \/>/u);
 	assert.match(HEADER_SOURCE, /aria-label=\{`Filter \$\{surfaceLabel\} by \$\{assignee\.name\}`\}/u);
 	assert.match(HEADER_SOURCE, /aria-pressed=\{selectedAssigneeIds\.has\(assignee\.id\)\}/u);
 	assert.match(HEADER_SOURCE, /onClick=\{\(\) => toggleAssignee\(assignee\.id\)\}/u);
-	assert.match(HEADER_SOURCE, /<Button aria-disabled variant="outline">[\s\S]*Group/u);
+	assert.match(HEADER_SOURCE, /<Button aria-disabled aria-label=\{`Group \$\{surfaceLabel\}`\} size=\{compact \? "icon" : undefined\} variant="outline">[\s\S]*Group/u);
 	assert.match(HEADER_SOURCE, /className=\{cn\("flex items-center gap-1", compact \? undefined : "ml-auto"\)\}/u);
 	assert.match(HEADER_SOURCE, /aria-label="View insights"/u);
 	assert.match(HEADER_SOURCE, /aria-label=\{`More \$\{surfaceLabel\} controls`\}/u);
@@ -627,6 +629,21 @@ test("Experimental kanban column card lists reuse the shared top and bottom scro
 	assert.doesNotMatch(SOURCE, /buildScrollMaskStyle/u);
 });
 
+test("Kanban Create footers stretch to the same width as column cards", () => {
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/<div className="w-full" style=\{\{ paddingBlock: token\("space\.050"\) \}\}>[\s\S]*<Button[\s\S]*"w-full justify-start gap-2 rounded-lg"/u,
+	);
+	assert.doesNotMatch(
+		EXPERIMENTAL_SOURCE,
+		/<div(?: className="w-full")? style=\{\{ padding(?!Block): token\("space\.050"\) \}\}>[\s\S]*Create/u,
+	);
+	assert.match(
+		SOURCE,
+		/paddingInline: token\("space\.050"\)[\s\S]*<div className="w-full" style=\{\{ paddingBlock: token\("space\.050"\), paddingInline: token\("space\.050"\) \}\}>[\s\S]*<Button className="w-full justify-start gap-2 rounded-lg"/u,
+	);
+});
+
 test("Experimental kanban Create is hover-revealed on the column while the default stays visible", () => {
 	assert.match(
 		EXPERIMENTAL_SOURCE,
@@ -659,6 +676,27 @@ test("Experimental kanban header keeps only configure and more actions", () => {
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /aria-label=\{`\$\{surfaceTitle\} settings`\}[\s\S]*<CustomizeIcon label="" \/>/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /aria-label=\{`More \$\{surfaceLabel\} controls`\}/u);
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /aria-label="(?:View insights|Undo board change|Board announcements)"/u);
+});
+
+test("Insights keeps the seven-item header facepile at one reserved width", () => {
+	assert.match(EXPERIMENTAL_HEADER_FACEPILE_SOURCE, /JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS = 7/u);
+	assert.match(
+		EXPERIMENTAL_HEADER_FACEPILE_SOURCE,
+		/JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME =\s*\n?\s*"ml-1 w-33 shrink-0 isolate items-center -space-x-1\.5/u,
+	);
+	assert.match(
+		EXPERIMENTAL_HEADER_SOURCE,
+		/<AvatarGroup\s+className=\{JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME\}[\s\S]*<AvatarUnassigned[\s\S]*assignees\.slice\(0, JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS - 1\)/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PULSE_MODE_CONTROLS_SOURCE,
+		/<AvatarGroup[\s\S]*className=\{JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME\}[\s\S]*members\.slice\(0, JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS\)\.map/u,
+	);
+	assert.doesNotMatch(EXPERIMENTAL_PULSE_MODE_CONTROLS_SOURCE, /-mx-0\.5|px-0\.5/u);
+	assert.match(
+		EXPERIMENTAL_PULSE_MODE_CONTROLS_SOURCE,
+		/<Button[\s\S]*className=\{cn\(active \? "border-border-selected text-text-selected" : null\)\}[\s\S]*size="default"[\s\S]*variant="outline"/u,
+	);
 });
 
 test("Experimental kanban keeps 24px column gutters on the scrollable row, not the overflow section", () => {

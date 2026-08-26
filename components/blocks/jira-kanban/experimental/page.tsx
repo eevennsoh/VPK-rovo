@@ -9,7 +9,6 @@ import type {
 } from "../index";
 import { createJiraKanbanColumns } from "../jira-kanban-data";
 import { BoardFilterPopover } from "./components/board-filter-popover";
-import { TimelineActivityBadge } from "./components/timeline-activity-badge";
 import { ExperimentalJiraKanban } from "./experimental-jira-kanban";
 import { ExperimentalJiraKanbanBoardHeader } from "./experimental-board-header";
 import { useBoardFilter, type BoardFilterActions } from "./hooks/use-board-filter";
@@ -347,13 +346,6 @@ export default function ExperimentalJiraKanbanPage({
 				compact={compactHeader}
 				onSelectedAssigneeIdsChange={handleAssigneeFilterChange}
 				selectedAssigneeIds={selectedAssigneeIds}
-				endSlot={
-					<TimelineActivityBadge
-						compact={compactHeader}
-						onSelect={handleOpenTimeline}
-						unreadCount={isPulse ? 0 : timelineUnreadCount}
-					/>
-				}
 				facepile={isPulse ? (
 					<PulseRosterFacepile
 						members={PULSE_TIMELINE.members}
@@ -392,6 +384,7 @@ export default function ExperimentalJiraKanbanPage({
 							}
 							handleOpenTimeline();
 						}}
+						unreadCount={isPulse ? 0 : timelineUnreadCount}
 					/>
 				}
 				viewTabs={viewTabs}

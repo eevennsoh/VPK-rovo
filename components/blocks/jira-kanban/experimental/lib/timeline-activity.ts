@@ -3,7 +3,7 @@ import type { PulseSnapshot, PulseTimeline } from "@/components/blocks/jira-kanb
 /**
  * Timeline activity since the reader last opened Pulse.
  *
- * The badge in the board header end slot is a count of snapshots newer than
+ * The unread pill on Insights is a count of snapshots newer than
  * `lastViewedAt`. The seed is the demo "previous visit": after the night-shift
  * snapshot and before the rest of the week, so the board opens with unread
  * activity instead of an always-on stub.
