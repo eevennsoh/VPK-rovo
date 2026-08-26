@@ -29,7 +29,6 @@
 		"components/arts/personal-graph/personal-graph-neural-canvas.tsx": 1231,
 		"components/arts/personal-graph/personal-graph-surface.tsx": 1219,
 		"components/blocks/agent-browser/components/agent-browser.tsx": 1908,
-		"components/blocks/jira-kanban/experimental/pulse/pulse.test.js": 1029,
 		"components/blocks/jira-work-item/jira-work-item.test.js": 1198,
 		"components/blocks/jira-work-item/data/session-state.ts": 1154,
 		"components/blocks/apps-directory/components/apps-directory.tsx": 1799,
