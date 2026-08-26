@@ -96,7 +96,7 @@ test("Kanban stage selects ranges against the filtered columns", () => {
 	assert.match(STAGE_SOURCE, /onCardSelect=\{handleFilteredCardSelect\}/u);
 });
 
-test("JGP Kanban reuses the Jira Issue spinner for working agents", () => {
+test("JGP Kanban reuses the Jira Issue aggregate row for working agents", () => {
 	assert.match(STAGE_SOURCE, /<JiraKanban/u);
 	assert.match(JIRA_KANBAN_SOURCE, /agentActivities=\{card\.agentActivities\}/u);
 	assert.match(JIRA_KANBAN_SOURCE, /agentActivityMode=\{card\.agentActivityMode\}/u);
@@ -104,20 +104,19 @@ test("JGP Kanban reuses the Jira Issue spinner for working agents", () => {
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual";/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /agentBrandName\?: ThirdPartyLogoName;/u);
 	assert.equal(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE.match(/<AgentAvatarVisual/g)?.length, 1);
-	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<AgentStates/u);
-	assert.match(
-		JIRA_ISSUE_AGENT_ACTIVITY_SOURCE,
-		/<Spinner[\s\S]*label=""[\s\S]*phaseOffsetMs=\{getJiraIssueAgentSpinnerPhaseOffsetMs\(activity\.id, index\)\}[\s\S]*size="sm"/u,
-	);
+	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<AiAgentIcon label="" \/>/u);
+	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<Spinner label="" size="sm" \/>/u);
+	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /Show \$\{summary\.activityCount\} agents: \$\{summary\.label\}/u);
 	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /variant="rainbow"/u);
-	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /const JIRA_ISSUE_AGENT_SPINNER_LOOP_MS = 1200;/u);
-	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /function getJiraIssueAgentSpinnerPhaseOffsetMs\(activityId: string, index: number\)/u);
+	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /phaseOffsetMs=/u);
 	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<Spinner[^>]*animate-spin/u);
 });
 
-test("completed Jira agent rows can suppress repeated state icons without hiding hover artifacts", () => {
-	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /showStateIcon\?: boolean;/u);
-	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /run\.showStateIcon !== false && state\.icon/u);
+test("completed Jira agent rows aggregate finished and failed states without hiding hover artifacts", () => {
+	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /const finishedLabel = `\$\{runs\.length\} Finished`;/u);
+	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /const hasFailedRun = runs\.some\(\(run\) => run\.state === "failed"\);/u);
+	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /<StatusErrorIcon color="currentColor" label="" size="small" \/>/u);
+	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /renderFlyout=\{renderCompletedRunFlyout\}/u);
 	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /outputs: run\.outputs \?\? \[\]/u);
 });
 

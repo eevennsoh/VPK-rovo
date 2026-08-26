@@ -14,7 +14,8 @@ import {
 	mapAgentToMentionItem,
 	mapSkillToMentionItem,
 } from "@/components/blocks/editor-palette/data/mention-sources";
-import { AgentSelector } from "@/components/blocks/agent-selector";
+import { WorkItemAgentSelector } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-agent-selector";
+import { DEFAULT_PINNED_SPACE_AGENT_IDS } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-picker-options";
 import { JiraToolbar } from "@/components/blocks/jira-toolbar";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import {
@@ -150,6 +151,7 @@ function ColumnAgentAssignment({
 	onToggleAgent: (agentId: string) => void;
 }>) {
 	const [open, setOpen] = useState(false);
+	const [pinnedAgentIds, setPinnedAgentIds] = useState<readonly string[]>(DEFAULT_PINNED_SPACE_AGENT_IDS);
 	const [query, setQuery] = useState("");
 	const assignedAgents = useMemo(
 		() => assignedAgentIds.map((id) => agents.find((agent) => agent.id === id)).filter((agent): agent is JiraKanbanAgentData => Boolean(agent)),
@@ -190,12 +192,12 @@ function ColumnAgentAssignment({
 										aria-label={triggerLabel}
 										className={cn(
 											"opacity-0 transition-opacity group-hover/board-column:opacity-100 group-focus-within/board-column:opacity-100",
-											hasAssignedAgents ? "h-8 min-w-0 gap-1 px-1.5" : "size-8",
+											hasAssignedAgents && "h-8 min-w-0 gap-1 px-1.5",
 											(hasAssignedAgents || open) && "opacity-100",
 										)}
 										data-assigned={hasAssignedAgents || undefined}
 										data-open={open || undefined}
-										size={hasAssignedAgents ? "default" : "icon"}
+										size={hasAssignedAgents ? "default" : "icon-compact"}
 										variant="ghost"
 									/>
 								}
@@ -223,14 +225,16 @@ function ColumnAgentAssignment({
 					positionerClassName="z-[502]"
 					sideOffset={8}
 				>
-					<AgentSelector
+					<WorkItemAgentSelector
 						agents={agents}
-						selectedAgentIds={assignedAgentIds}
+						onAgentToggle={onToggleAgent}
 						onBrowseAgents={handleBrowseAgents}
 						onCreateAgent={handleCreateAgent}
+						onPinnedAgentIdsChange={setPinnedAgentIds}
 						onQueryChange={setQuery}
-						onAgentToggle={onToggleAgent}
+						pinnedAgentIds={pinnedAgentIds}
 						query={query}
+						selectedAgentIds={assignedAgentIds}
 					/>
 				</DropdownMenuContent>
 			</DropdownMenu>

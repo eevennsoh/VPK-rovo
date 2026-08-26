@@ -277,6 +277,26 @@ export function AvatarDemoGroupWithIconCount() {
 					<PlusIcon />
 				</AvatarGroupCount>
 			</AvatarGroup>
+			<AvatarGroup label="24px agent avatar group with icon count" size="sm">
+				{AGENT_GROUP_AVATARS.map((agent) => (
+					<AgentAvatarVisual
+						avatarSrc={agent.src}
+						key={agent.label}
+						label={agent.label}
+						sizePx={24}
+					/>
+				))}
+				<Avatar
+					aria-hidden
+					className="pointer-events-none relative z-10 text-icon-subtle"
+					shape="hexagon"
+					size="sm"
+				>
+					<span className="flex size-full items-center justify-center bg-bg-neutral text-icon-subtle">
+						<PlusIcon size="small" />
+					</span>
+				</Avatar>
+			</AvatarGroup>
 			<AvatarGroup size="default">
 				<Avatar>
 					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="Team member" />

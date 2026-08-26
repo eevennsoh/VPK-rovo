@@ -2,17 +2,20 @@
 
 import { useState } from "react";
 
-import PullRequestIcon from "@atlaskit/icon/core/pull-request";
+import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import StatusErrorIcon from "@atlaskit/icon/core/status-error";
 
+import {
+	AgentList,
+	type AgentListCustomFlyoutActions,
+	type AgentListItem,
+} from "@/components/blocks/agent-list";
 import { JiraActivityChangedFiles } from "@/components/blocks/jira-activity/jira-activity-changed-files";
 import type { JiraActivityChangedFilesEntry } from "@/components/blocks/jira-activity/jira-activity-types";
 import { AgentStatesComposer } from "@/components/blocks/agent-states";
-import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import type { ArtifactListItem } from "@/components/ui-custom/artifact-list";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { cn } from "@/lib/utils";
 
 export type JiraIssueCompletedAgentRunState = "done" | "failed" | "review";
 
@@ -34,28 +37,8 @@ export interface JiraIssueCompletedAgentRun {
 	pullRequestNumber?: number;
 	outputs?: readonly ArtifactListItem[];
 	actionLabel?: "Open" | "View";
-	/** Allows dense consumers to keep review state without repeating a trailing PR glyph on the row. */
-	showStateIcon?: boolean;
 	state: JiraIssueCompletedAgentRunState;
 }
-
-const RUN_STATE_PRESENTATION = {
-	done: {
-		label: null,
-		iconClassName: null,
-		icon: null,
-	},
-	failed: {
-		label: "Alert",
-		iconClassName: "text-icon-danger",
-		icon: <StatusErrorIcon color="currentColor" label="" size="small" />,
-	},
-	review: {
-		label: "Ready for review",
-		iconClassName: "text-icon-success",
-		icon: <PullRequestIcon color="currentColor" label="" size="small" />,
-	},
-} as const;
 
 function getCompletedRunEntry(run: JiraIssueCompletedAgentRun): JiraActivityChangedFilesEntry {
 	return {
@@ -89,6 +72,23 @@ function getCompletedRunEntry(run: JiraIssueCompletedAgentRun): JiraActivityChan
 	};
 }
 
+function toCompletedAgentListItem(run: JiraIssueCompletedAgentRun): AgentListItem {
+	return {
+		agent: {
+			avatarSrc: run.agentAvatarSrc,
+			brandName: run.agentBrandName,
+			id: run.id,
+			name: run.agentName,
+		},
+		completedAtMs: run.completedAtMs,
+		completedSecondsAgo: run.completedSecondsAgo,
+		elapsedSeconds: run.elapsedSeconds,
+		id: run.id,
+		state: "complete",
+		title: run.summary,
+	};
+}
+
 export function JiraIssueAgentDone({
 	onOpenChange,
 	onReview,
@@ -102,97 +102,114 @@ export function JiraIssueAgentDone({
 	onView?: (run: JiraIssueCompletedAgentRun) => void;
 	runs: readonly JiraIssueCompletedAgentRun[];
 }>) {
-	const [openRunId, setOpenRunId] = useState<string | null>(null);
+	const [aggregateOpen, setAggregateOpen] = useState(false);
+	const finishedLabel = `${runs.length} Finished`;
+	const hasFailedRun = runs.some((run) => run.state === "failed");
+	const completedItems = runs.map(toCompletedAgentListItem);
+
+	function handleAggregateOpenChange(open: boolean) {
+		setAggregateOpen(open);
+		onOpenChange?.(open);
+	}
+
+	function findRun(item: AgentListItem): JiraIssueCompletedAgentRun | undefined {
+		return runs.find((run) => run.id === item.id);
+	}
+
+	function handleCompletedRunView(item: AgentListItem) {
+		const run = findRun(item);
+		if (!run) {
+			return;
+		}
+		handleAggregateOpenChange(false);
+		onView?.(run);
+	}
+
+	function renderCompletedRunFlyout(
+		item: AgentListItem,
+		{ close }: AgentListCustomFlyoutActions,
+	) {
+		const run = findRun(item);
+		if (!run) {
+			return null;
+		}
+
+		return (
+			<div className="w-[440px] max-w-[calc(100vw-48px)] overflow-hidden rounded-xl bg-surface-overlay text-text shadow-overlay">
+				<JiraActivityChangedFiles
+					entry={getCompletedRunEntry(run)}
+					footer={
+						<AgentStatesComposer
+							className="w-full"
+							onSubmit={(prompt) => onSubmit?.(run, prompt)}
+						/>
+					}
+					onOutputOpen={(output) => {
+						if (output.pullRequest) {
+							close();
+							handleAggregateOpenChange(false);
+							onReview?.(run);
+						}
+					}}
+					onView={() => {
+						close();
+						handleAggregateOpenChange(false);
+						onView?.(run);
+					}}
+					status={run.state}
+					variant="jira-issue"
+					viewActionLabel={run.actionLabel}
+				/>
+			</div>
+		);
+	}
 
 	return (
 		<section aria-label="Agent review" className="flex w-full min-w-0 flex-col overflow-hidden px-1 py-1">
-			{runs.map((run, index) => {
-				const state = RUN_STATE_PRESENTATION[run.state];
-				const rowRadiusClassName = runs.length === 1
-					? "rounded-sm"
-					: index === 0
-						? "rounded-tl-[6px] rounded-tr-[6px] rounded-bl-[2px] rounded-br-[2px]"
-						: index === runs.length - 1
-							? "rounded-tl-[2px] rounded-tr-[2px] rounded-bl-[6px] rounded-br-[6px]"
-							: "rounded-[2px]";
-
-				return (
-					<HoverCard
-						key={run.id}
-						onOpenChange={(open) => {
-							setOpenRunId(open ? run.id : null);
-							onOpenChange?.(open);
-						}}
-						open={openRunId === run.id}
-					>
-						<HoverCardTrigger
-							closeDelay={0}
-							delay={0}
-							render={(
-								<button
-									aria-label={state.label ? `${run.agentName}: ${state.label}` : run.agentName}
-									data-slot="jira-issue-agent-row"
-									className={cn(
-										"flex h-6 w-full min-w-0 items-center justify-between gap-2 px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-										rowRadiusClassName,
-									)}
-									type="button"
-								>
-									<span className="flex min-w-0 items-center gap-2">
-										<AgentAvatarVisual
-											avatarClassName="shrink-0"
-											avatarSrc={run.agentAvatarSrc}
-											brandName={run.agentBrandName}
-											fallbackText={run.agentName}
-											label={run.agentName}
-											sizePx={16}
-										/>
-										<span className="truncate text-sm leading-5 text-text-subtlest">{run.summary}</span>
-									</span>
-									{run.showStateIcon !== false && state.icon ? (
-										<span className={cn("-my-1 grid size-6 shrink-0 place-items-center", state.iconClassName)} aria-hidden="true">
-											{state.icon}
-										</span>
-									) : null}
-								</button>
-							)}
-						/>
-						<HoverCardContent
-							align="start"
-							alignOffset={0}
-							className="w-[440px] max-w-[calc(100vw-48px)] overflow-hidden rounded-xl bg-surface-overlay p-0 text-text shadow-overlay data-ending-style:transition-none"
-							positionerClassName="z-[575] after:pointer-events-auto after:absolute after:-inset-2 after:-z-10 after:content-['']"
-							side="right"
-							sideOffset={8}
+			<HoverCard open={aggregateOpen} onOpenChange={handleAggregateOpenChange}>
+				<HoverCardTrigger
+					closeDelay={80}
+					delay={120}
+					render={(
+						<button
+							aria-expanded={aggregateOpen}
+							aria-label={hasFailedRun ? `${finishedLabel}, includes errors` : finishedLabel}
+							className="flex h-6 w-full min-w-0 items-center justify-between gap-2 rounded-b-[6px] rounded-t-sm px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+							data-slot="jira-issue-agent-row"
+							type="button"
 						>
-							<JiraActivityChangedFiles
-								entry={getCompletedRunEntry(run)}
-								footer={
-									<AgentStatesComposer
-										className="w-full"
-										onSubmit={(prompt) => onSubmit?.(run, prompt)}
-									/>
-								}
-								onOutputOpen={(item) => {
-									if (item.pullRequest) {
-										setOpenRunId(null);
-										onOpenChange?.(false);
-										onReview?.(run);
-									}
-								}}
-								onView={() => {
-									setOpenRunId(null);
-									onOpenChange?.(false);
-									onView?.(run);
-								}}
-								status={run.state}
-								variant="jira-issue"
-								viewActionLabel={run.actionLabel}
-							/>
-						</HoverCardContent>
-					</HoverCard>
-				);
-			})}
+							<span className="flex min-w-0 flex-1 items-center gap-2">
+								<span className="ml-px grid size-4 shrink-0 place-items-center text-text-subtlest" aria-hidden="true">
+									<AiAgentIcon label="" />
+								</span>
+								<span className="truncate text-sm leading-5 text-text-subtlest">{finishedLabel}</span>
+							</span>
+							{hasFailedRun ? (
+								<span className="-my-1 grid size-6 shrink-0 place-items-center text-icon-danger" aria-hidden="true">
+									<StatusErrorIcon color="currentColor" label="" size="small" />
+								</span>
+							) : null}
+						</button>
+					)}
+				/>
+				<HoverCardContent
+					align="start"
+					alignOffset={0}
+					className="w-[320px] max-w-[calc(100vw-48px)] bg-transparent p-0 shadow-none data-ending-style:transition-none"
+					positionerClassName="z-[575] after:pointer-events-auto after:absolute after:-inset-2 after:-z-10 after:content-['']"
+					side="right"
+					sideOffset={8}
+				>
+					<AgentList
+						className="w-full border-0 bg-surface-overlay shadow-2xl"
+						flyout="none"
+						items={completedItems}
+						onView={handleCompletedRunView}
+						renderFlyout={renderCompletedRunFlyout}
+						variant="compact"
+					/>
+				</HoverCardContent>
+			</HoverCard>
 		</section>
 	);
 }

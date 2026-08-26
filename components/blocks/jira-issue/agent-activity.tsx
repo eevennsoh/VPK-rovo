@@ -2,13 +2,20 @@
 
 import { useEffect, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion, useReducedMotion, type Transition } from "motion/react";
+import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import StatusInformationIcon from "@atlaskit/icon/core/status-information";
 
+import {
+	AgentList,
+	type AgentListCustomFlyoutActions,
+	type AgentListItem,
+} from "@/components/blocks/agent-list";
 import { AgentStates } from "@/components/blocks/agent-states";
+import { summarizeJiraIssueAgentActivities } from "@/components/blocks/jira-issue/agent-activity-model";
 import type { QuestionCardAnswers, QuestionCardQuestion } from "@/components/blocks/question-card/types";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AnimatedDots } from "@/components/ui-custom/animated-dots";
 import { Shimmer } from "@/components/ui-custom/shimmer";
-import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Spinner } from "@/components/ui/spinner";
@@ -43,29 +50,8 @@ const JIRA_ISSUE_MOTION_STYLE: CSSProperties = { willChange: "transform, opacity
 const JIRA_ISSUE_AGENT_LABEL_TRANSITION = { duration: 0.2, ease: "easeOut" } as const;
 const JIRA_ISSUE_AGENT_LABEL_CYCLE_INTERVAL_MS = 5200;
 const JIRA_ISSUE_AGENT_LABEL_CYCLE_JITTER_MS = 1800;
-const JIRA_ISSUE_AGENT_AWAITING_LABEL = "Needs input";
 const JIRA_ISSUE_AGENT_SHIMMER_DURATION = 1.4;
 const JIRA_ISSUE_AGENT_SHIMMER_SPREAD = 2;
-const JIRA_ISSUE_AGENT_SPINNER_LOOP_MS = 1200;
-const JIRA_ISSUE_AGENT_INITIAL_ELAPSED_MIN_SECONDS = 45;
-const JIRA_ISSUE_AGENT_INITIAL_ELAPSED_MAX_SECONDS = 7 * 60;
-const JIRA_ISSUE_AGENT_WORKING_LABELS = [
-	"Figuring out which services are affected",
-	"Checking dependent components",
-	"Reviewing linked work items",
-	"Mapping owners and handoffs",
-	"Preparing the next update",
-] as const;
-const JIRA_ISSUE_AGENT_PANEL_MESSAGES = {
-	"dependency-mapper": "On it. I am checking the linked component dependencies and will write the handoff notes back into this work item.",
-	"service-impact-agent": "On it. I am digging into the affected services and will add a clear service impact summary inside this work item.",
-} as const;
-const JIRA_ISSUE_AGENT_PANEL_FALLBACK_MESSAGE =
-	"On it. I am reviewing the connected work and will add the next update inside this work item.";
-
-function getAgentInitial(name: string): string {
-	return name.trim()[0]?.toUpperCase() ?? "A";
-}
 
 function getJiraIssueLayoutTransition(shouldReduceMotion: boolean | null): Transition {
 	return shouldReduceMotion ? JIRA_ISSUE_MOTION_REDUCED : JIRA_ISSUE_MOTION_LAYOUT;
@@ -87,24 +73,23 @@ function getJiraIssuePresenceMotion(shouldReduceMotion: boolean | null) {
 	} as const;
 }
 
+function getAgentInitial(name: string): string {
+	return name.trim()[0]?.toUpperCase() ?? "A";
+}
+
 function getJiraIssueAgentCycleDelay(intervalMs: number, jitterMs: number): number {
 	return Math.max(1000, intervalMs) + Math.round(Math.random() * Math.max(0, jitterMs));
 }
 
-function getJiraIssueAgentSpinnerPhaseOffsetMs(activityId: string, index: number): number {
-	let hash = (index + 1) * 317;
-	for (let characterIndex = 0; characterIndex < activityId.length; characterIndex += 1) {
-		hash = (hash * 31 + activityId.charCodeAt(characterIndex)) % JIRA_ISSUE_AGENT_SPINNER_LOOP_MS;
+function getJiraIssueAgentWorkingLabels(activity: JiraIssueAgentActivity | undefined): readonly string[] {
+	if (!activity) {
+		return [];
 	}
-	return hash;
-}
 
-function getJiraIssueAgentWorkingLabels(activity: JiraIssueAgentActivity): readonly string[] {
 	const trimmedLabel = activity.label.trim();
 	const labels = trimmedLabel ? [trimmedLabel] : [];
-	const workingLabels = activity.labels ?? JIRA_ISSUE_AGENT_WORKING_LABELS;
 
-	for (const workingLabel of workingLabels) {
+	for (const workingLabel of activity.labels ?? []) {
 		if (workingLabel !== trimmedLabel) {
 			labels.push(workingLabel);
 		}
@@ -113,152 +98,208 @@ function getJiraIssueAgentWorkingLabels(activity: JiraIssueAgentActivity): reado
 	return labels;
 }
 
-function getJiraIssueAgentPanelMessage(activity: JiraIssueAgentActivity): string {
-	if (activity.message) {
-		return activity.message;
-	}
-
-	if (activity.state === "awaiting-input") {
-		return "I found a decision point that needs your input before I can continue with the implementation notes.";
-	}
-
-	return JIRA_ISSUE_AGENT_PANEL_MESSAGES[activity.id as keyof typeof JIRA_ISSUE_AGENT_PANEL_MESSAGES]
-		?? JIRA_ISSUE_AGENT_PANEL_FALLBACK_MESSAGE;
-}
-
-function getJiraIssueAgentInitialElapsedSeconds(): number {
-	const range = JIRA_ISSUE_AGENT_INITIAL_ELAPSED_MAX_SECONDS
-		- JIRA_ISSUE_AGENT_INITIAL_ELAPSED_MIN_SECONDS;
-	return JIRA_ISSUE_AGENT_INITIAL_ELAPSED_MIN_SECONDS + Math.floor(Math.random() * range);
+function toAgentListItem(activity: JiraIssueAgentActivity): AgentListItem {
+	return {
+		agent: {
+			avatarSrc: activity.avatarSrc,
+			brandName: activity.agentBrandName,
+			id: activity.id,
+			name: activity.name,
+		},
+		elapsedSeconds: activity.initialElapsedSeconds,
+		id: activity.id,
+		startedAtMs: activity.startedAtMs,
+		state: activity.state === "awaiting-input" ? "needs-input" : "running",
+		title: activity.label,
+	};
 }
 
 function JiraIssueAgentActivityRow({
-	activity,
-	index,
+	activities,
 	onOpenChange,
 	onQuestionSubmit,
 	onViewChat,
-	rowCount,
 }: Readonly<{
-	activity: JiraIssueAgentActivity;
-	index: number;
+	activities: readonly JiraIssueAgentActivity[];
 	onOpenChange?: (open: boolean) => void;
 	onQuestionSubmit?: (activity: JiraIssueAgentActivity, answers: QuestionCardAnswers) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
-	rowCount: number;
 }>) {
-	const isAwaitingInput = activity.state === "awaiting-input";
-	const displayLabel = isAwaitingInput ? JIRA_ISSUE_AGENT_AWAITING_LABEL : activity.label;
-	const [startedAtMs] = useState(() => {
-		if (typeof activity.startedAtMs === "number" && Number.isFinite(activity.startedAtMs)) {
-			return activity.startedAtMs;
+	const [flyoutOpen, setFlyoutOpen] = useState(false);
+	const summary = summarizeJiraIssueAgentActivities(activities);
+	const isSingleAgent = summary.activityCount === 1;
+	const agentListItems = activities.map(toAgentListItem);
+	const isAwaitingInput = summary.priorityState === "awaiting-input";
+	const featuredActivity = summary.featuredActivityIndex !== null
+		? activities[summary.featuredActivityIndex]
+		: undefined;
+	const shouldCycleSingleAgentLabel = isSingleAgent && !isAwaitingInput;
+
+	function handleOpenChange(open: boolean) {
+		setFlyoutOpen(open);
+		onOpenChange?.(open);
+	}
+
+	function handleAgentListView(item: AgentListItem) {
+		const activity = activities.find((candidate) => candidate.id === item.id);
+		if (!activity) {
+			return;
 		}
-		const initialElapsedSeconds = activity.initialElapsedSeconds
-			?? getJiraIssueAgentInitialElapsedSeconds();
-		return Date.now() - initialElapsedSeconds * 1000;
-	});
-	const workingLabels = getJiraIssueAgentWorkingLabels(activity);
-	const rowRadiusClassName = rowCount === 1
-		? "rounded-sm"
-		: index === 0
-			? "rounded-tl-[6px] rounded-tr-[6px] rounded-bl-[2px] rounded-br-[2px]"
-			: index === rowCount - 1
-				? "rounded-tl-[2px] rounded-tr-[2px] rounded-bl-[6px] rounded-br-[6px]"
-				: "rounded-[2px]";
+
+		handleOpenChange(false);
+		onViewChat?.(activity);
+	}
+
+	function renderAgentFlyout(
+		item: AgentListItem,
+		{ close }: AgentListCustomFlyoutActions,
+	) {
+		const activity = activities.find((candidate) => candidate.id === item.id);
+		if (!activity) {
+			return null;
+		}
+
+		return (
+			<AgentStates
+				agent={{
+					avatarSrc: activity.avatarSrc,
+					brandName: activity.agentBrandName,
+					id: activity.id,
+					name: activity.name,
+				}}
+				initialElapsedSeconds={activity.initialElapsedSeconds}
+				message={activity.message}
+				onQuestionSubmit={onQuestionSubmit
+					? (answers) => {
+						close();
+						handleOpenChange(false);
+						onQuestionSubmit(activity, answers);
+					}
+					: undefined}
+				onView={onViewChat
+					? () => {
+						close();
+						handleAgentListView(item);
+					}
+					: undefined}
+				question={activity.question}
+				startedAtMs={activity.startedAtMs}
+				state={activity.state}
+			/>
+		);
+	}
+
+	const trigger = (
+		<button
+			type="button"
+			aria-expanded={isSingleAgent ? undefined : flyoutOpen}
+			aria-label={
+				isSingleAgent
+					? onViewChat
+						? `Open ${activities[0]?.name ?? "agent"} in Rovo chat: ${summary.label}`
+						: `Show ${activities[0]?.name ?? "agent"}: ${summary.label}`
+					: `Show ${summary.activityCount} agents: ${summary.label}`
+			}
+			data-slot="jira-issue-agent-row"
+			onClick={isSingleAgent
+				? () => {
+					if (onViewChat) {
+						onViewChat(activities[0]);
+						return;
+					}
+					handleOpenChange(true);
+				}
+				: () => handleOpenChange(true)}
+			className="flex h-6 w-full min-w-0 items-center justify-between gap-2 rounded-b-[6px] rounded-t-sm px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+		>
+			<div className="flex min-w-0 flex-1 items-center gap-2">
+				{featuredActivity ? (
+					<AgentAvatarVisual
+						avatarClassName="shrink-0"
+						avatarSrc={featuredActivity.avatarSrc}
+						brandName={featuredActivity.agentBrandName}
+						fallbackText={getAgentInitial(featuredActivity.name)}
+						label={featuredActivity.name}
+						sizePx={16}
+					/>
+				) : (
+					<span className="ml-px grid size-4 shrink-0 place-items-center text-text-subtlest" aria-hidden="true">
+						<AiAgentIcon label="" />
+					</span>
+				)}
+				{isAwaitingInput ? (
+					<span className="flex min-w-0 flex-1 items-baseline overflow-hidden text-sm leading-5 text-text-subtlest">
+						<Shimmer
+							as="span"
+							className="block min-w-0 truncate text-sm leading-5"
+							duration={JIRA_ISSUE_AGENT_SHIMMER_DURATION}
+							spread={JIRA_ISSUE_AGENT_SHIMMER_SPREAD}
+							wave={false}
+						>
+							{summary.label}
+						</Shimmer>
+						<AnimatedDots />
+					</span>
+				) : shouldCycleSingleAgentLabel ? (
+					<JiraIssueCyclingAgentLabel
+						cycleIntervalJitterMs={activities[0]?.cycleIntervalJitterMs ?? JIRA_ISSUE_AGENT_LABEL_CYCLE_JITTER_MS}
+						cycleIntervalMs={activities[0]?.cycleIntervalMs ?? JIRA_ISSUE_AGENT_LABEL_CYCLE_INTERVAL_MS}
+						labels={getJiraIssueAgentWorkingLabels(activities[0])}
+					/>
+				) : (
+					<span className="block min-w-0 flex-1 truncate text-sm leading-5 text-text-subtlest">
+						{summary.label}
+					</span>
+				)}
+			</div>
+			{isAwaitingInput ? (
+				<span className="-my-1 grid size-6 shrink-0 place-items-center text-icon-information" aria-hidden="true">
+					<StatusInformationIcon label="" size="small" color="currentColor" />
+				</span>
+			) : (
+				<span className="-my-1 grid size-6 shrink-0 place-items-center text-icon" aria-hidden="true">
+					<Spinner label="" size="sm" />
+				</span>
+			)}
+		</button>
+	);
+
+	if (isSingleAgent && featuredActivity) {
+		return (
+			<HoverCard open={flyoutOpen} onOpenChange={handleOpenChange}>
+				<HoverCardTrigger closeDelay={80} delay={120} render={trigger} />
+				<HoverCardContent
+					align="start"
+					alignOffset={0}
+					className="w-auto max-w-[calc(100vw-48px)] bg-transparent p-0 shadow-none data-ending-style:transition-none"
+					positionerClassName="z-[575] after:pointer-events-auto after:absolute after:-inset-2 after:-z-10 after:content-['']"
+					side="right"
+					sideOffset={8}
+				>
+					{renderAgentFlyout(agentListItems[0], { close: () => handleOpenChange(false) })}
+				</HoverCardContent>
+			</HoverCard>
+		);
+	}
 
 	return (
-		<HoverCard onOpenChange={onOpenChange}>
-			{/* Base UI reads open/close delay on the Trigger, not the Root; 0/0 makes the reveal
-			    and dismissal instant so switching between rows doesn't overlap two flyouts. */}
-			<HoverCardTrigger
-				closeDelay={0}
-				delay={0}
-				render={(
-					<button
-						type="button"
-						aria-label={`${activity.name}: ${displayLabel}`}
-						data-slot="jira-issue-agent-row"
-						className={cn(
-							"flex h-6 w-full min-w-0 items-center justify-between gap-2 px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-							rowRadiusClassName,
-						)}
-					>
-						<div className="flex min-w-0 flex-1 items-center gap-2">
-							<AgentAvatarVisual
-								avatarClassName="shrink-0"
-								avatarSrc={activity.avatarSrc}
-								brandName={activity.agentBrandName}
-								fallbackText={getAgentInitial(activity.name)}
-								label={activity.name}
-								sizePx={16}
-							/>
-							{isAwaitingInput ? (
-								<span className="flex min-w-0 flex-1 items-baseline overflow-hidden text-sm leading-5 text-text-subtlest">
-									<Shimmer
-										as="span"
-										duration={JIRA_ISSUE_AGENT_SHIMMER_DURATION}
-										spread={JIRA_ISSUE_AGENT_SHIMMER_SPREAD}
-										wave={false}
-										className="block min-w-0 truncate text-sm leading-5"
-									>
-										{displayLabel}
-									</Shimmer>
-									<AnimatedDots />
-								</span>
-							) : (
-								<JiraIssueCyclingAgentLabel
-									cycleIntervalJitterMs={activity.cycleIntervalJitterMs ?? JIRA_ISSUE_AGENT_LABEL_CYCLE_JITTER_MS}
-									cycleIntervalMs={activity.cycleIntervalMs ?? JIRA_ISSUE_AGENT_LABEL_CYCLE_INTERVAL_MS}
-									labels={workingLabels}
-								/>
-							)}
-						</div>
-						{isAwaitingInput ? (
-							<span className="-my-1 grid size-6 shrink-0 place-items-center text-icon-information" aria-hidden="true">
-								<StatusInformationIcon label="" size="small" color="currentColor" />
-							</span>
-						) : (
-							<span className="-my-1 grid size-6 shrink-0 place-items-center text-icon" aria-hidden="true">
-								<Spinner
-									label=""
-									phaseOffsetMs={getJiraIssueAgentSpinnerPhaseOffsetMs(activity.id, index)}
-									size="sm"
-								/>
-							</span>
-						)}
-					</button>
-				)}
-			/>
+		<HoverCard open={flyoutOpen} onOpenChange={handleOpenChange}>
+			<HoverCardTrigger closeDelay={80} delay={120} render={trigger} />
 			<HoverCardContent
 				align="start"
 				alignOffset={0}
-				className="w-auto max-w-[calc(100vw-48px)] bg-transparent p-0 shadow-none data-ending-style:transition-none"
+				className="w-[320px] max-w-[calc(100vw-48px)] bg-transparent p-0 shadow-none data-ending-style:transition-none"
 				positionerClassName="z-[575] after:pointer-events-auto after:absolute after:-inset-2 after:-z-10 after:content-['']"
 				side="right"
 				sideOffset={8}
 			>
-				<AgentStates
-					agent={{
-						avatarSrc: activity.avatarSrc,
-						brandName: activity.agentBrandName,
-						id: activity.id,
-						name: activity.name,
-					}}
-					initialElapsedSeconds={activity.initialElapsedSeconds}
-					message={getJiraIssueAgentPanelMessage(activity)}
-					onQuestionSubmit={
-						onQuestionSubmit
-							? (answers) => onQuestionSubmit(activity, answers)
-							: undefined
-					}
-					onView={
-						onViewChat
-							? () => onViewChat(activity)
-							: undefined
-					}
-					question={activity.question}
-					startedAtMs={startedAtMs}
-					state={activity.state}
+				<AgentList
+					className="w-full border-0 bg-surface-overlay shadow-2xl"
+					flyout="none"
+					items={agentListItems}
+					onView={handleAgentListView}
+					renderFlyout={renderAgentFlyout}
+					variant="compact"
 				/>
 			</HoverCardContent>
 		</HoverCard>
@@ -306,10 +347,10 @@ function JiraIssueCyclingAgentLabelContent({
 				<AnimatePresence mode="wait">
 					<motion.span
 						key={label}
-						className="block min-w-0 truncate text-sm leading-5"
-						initial={shouldReduceMotion ? false : { opacity: 0, y: -4 }}
 						animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+						className="block min-w-0 truncate text-sm leading-5"
 						exit={shouldReduceMotion ? undefined : { opacity: 0, y: 4 }}
+						initial={shouldReduceMotion ? false : { opacity: 0, y: -4 }}
 						transition={JIRA_ISSUE_AGENT_LABEL_TRANSITION}
 					>
 						{label}
@@ -349,6 +390,7 @@ export function JiraIssueAgentActivityRows({
 	const layoutTransition = getJiraIssueLayoutTransition(shouldReduceMotion);
 	const presenceMotion = getJiraIssuePresenceMotion(shouldReduceMotion);
 	const hasActivities = activities.length > 0;
+	const summary = hasActivities ? summarizeJiraIssueAgentActivities(activities) : null;
 
 	return (
 		<motion.div
@@ -357,9 +399,9 @@ export function JiraIssueAgentActivityRows({
 			transition={layoutTransition}
 		>
 			<AnimatePresence initial={false} mode="popLayout">
-				{activities.map((activity, index) => (
+				{summary ? (
 					<motion.div
-						key={activity.id}
+						key={`${summary.priorityState}-${summary.activityCount}`}
 						animate={presenceMotion.animate}
 						className="min-w-0"
 						exit={presenceMotion.exit}
@@ -369,15 +411,13 @@ export function JiraIssueAgentActivityRows({
 						transition={layoutTransition}
 					>
 						<JiraIssueAgentActivityRow
-							activity={activity}
-							index={index}
+							activities={activities}
 							onOpenChange={onOpenChange}
 							onQuestionSubmit={onQuestionSubmit}
 							onViewChat={onViewChat}
-							rowCount={activities.length}
 						/>
 					</motion.div>
-				))}
+				) : null}
 			</AnimatePresence>
 		</motion.div>
 	);
