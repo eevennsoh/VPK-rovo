@@ -11,6 +11,7 @@ import {
 	type JiraIssueChrome,
 	type JiraIssueCompletedAgentRun,
 	type JiraIssueGenerativeActionRequest,
+	type JiraIssuePullRequestStatus,
 } from "@/components/blocks/jira-issue";
 import type { SmartLinkItem } from "@/components/blocks/smart-link";
 import { QUESTION_CARD_SINGLE_SELECT_DEMO } from "@/components/blocks/question-card/data/questions";
@@ -184,6 +185,32 @@ const JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES = [
 	{ value: "agent-dismissed-work", label: "Done" },
 ] as const satisfies readonly { value: JiraIssueAgentActivityDemoState; label: string }[];
 
+function getExperimentalDemoPullRequest(
+	chrome: JiraIssueChrome,
+	agentActivityState: JiraIssueAgentActivityDemoState,
+): { pullRequestNumber?: number; pullRequestStatus?: JiraIssuePullRequestStatus } {
+	if (chrome !== "stroke") {
+		return {};
+	}
+
+	switch (agentActivityState) {
+		case "awaiting-user-input":
+			return { pullRequestNumber: 812, pullRequestStatus: "open" };
+		case "agent-completed-work":
+			return { pullRequestNumber: 812, pullRequestStatus: "failed" };
+		case "agent-dismissed-work":
+			return { pullRequestNumber: 812, pullRequestStatus: "merged" };
+		case "default":
+		case "single-agent-working":
+		case "multiple-agents-working":
+			return {};
+		default: {
+			const exhaustive: never = agentActivityState;
+			throw new Error(`Unhandled agent activity demo state: ${String(exhaustive)}`);
+		}
+	}
+}
+
 interface JiraIssuePageProps {
 	variant?: "default" | "experimental" | "uncaptured-work" | "subtasks-collapsed" | "subtasks-expanded" | "parent-epic" | "agent-activity-states" | "agent-activity-states-experimental";
 }
@@ -277,6 +304,7 @@ function JiraIssueAgentActivityStatesDemo({ chrome = "raised" }: Readonly<JiraIs
 	// ASX Kanban "View chat" behavior instead of a blank vanilla Rovo chat.
 	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useAsxAgentChatDemo();
 	const [pendingChatQuestion, setPendingChatQuestion] = useState<Readonly<{ submit: () => void }> | null>(null);
+	const experimentalPullRequest = getExperimentalDemoPullRequest(chrome, agentActivityState);
 	const agentActivities = agentActivityState === "single-agent-working"
 		? JIRA_ISSUE_AGENT_ACTIVITIES.slice(0, 1)
 		: agentActivityState === "multiple-agents-working"
@@ -379,6 +407,8 @@ function JiraIssueAgentActivityStatesDemo({ chrome = "raised" }: Readonly<JiraIs
 					onAgentDoneRunSubmit={handleAgentDoneRunSubmit}
 					onAgentDoneRunView={handleAgentDoneRunView}
 					priority="major"
+					pullRequestNumber={experimentalPullRequest.pullRequestNumber}
+					pullRequestStatus={experimentalPullRequest.pullRequestStatus}
 					subtasks={JIRA_ISSUE_DEMO_SUBTASKS}
 					subtasksCompleted={0}
 					summary="Implement advanced date-range filter"

@@ -609,16 +609,13 @@ export function ExperimentalJiraKanban({
 												agentActivities={card.agentActivities}
 												agentActivityMode={card.agentActivityMode}
 												agentDoneRuns={card.agentDoneRuns}
-												generativeAction={
-													onCardGenerativeActionSubmit
-														? {
-															agents: generativeActionAgents,
-															onSubmit: (request) =>
-																onCardGenerativeActionSubmit(request, card, column.title),
-															skills: generativeActionSkills,
-														}
-														: undefined
-												}
+												generativeAction={{
+													agents: generativeActionAgents,
+													onSubmit: (request) => {
+														void onCardGenerativeActionSubmit?.(request, card, column.title);
+													},
+													skills: generativeActionSkills,
+												}}
 												onAgentActivityOpenChange={
 													onCardAgentActivityOpenChange
 														? (open) => onCardAgentActivityOpenChange(open, card, column.title)
