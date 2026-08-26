@@ -202,6 +202,25 @@ test("scopes resolve by kind and id, and an unknown id resolves to nothing", asy
 	);
 });
 
+test("a brief opens for exactly one selection and for nothing else", async () => {
+	const { PULSE_EPICS, PULSE_SPRINTS, resolvePulseScopeFromSelections } = await loadScopeHarness();
+	const epic = PULSE_EPICS[0].id;
+	const sprint = PULSE_SPRINTS[0].id;
+
+	assert.equal(resolvePulseScopeFromSelections({ parent: [], sprint: [] }), null);
+	assert.equal(resolvePulseScopeFromSelections({ parent: [epic], sprint: [] }).id, epic);
+	assert.equal(resolvePulseScopeFromSelections({ parent: [], sprint: [sprint] }).id, sprint);
+
+	// The board filter is multi-select per field, which is right for a board.
+	// A brief is one document about one body of work, and there is no honest
+	// page about two sprints — so two selections close it rather than silently
+	// showing the first one's numbers under a filter that says something else.
+	assert.equal(resolvePulseScopeFromSelections({ parent: [epic, PULSE_EPICS[1].id], sprint: [] }), null);
+	assert.equal(resolvePulseScopeFromSelections({ parent: [epic], sprint: [sprint] }), null);
+	// An id the fixture does not know resolves to nothing rather than a ghost.
+	assert.equal(resolvePulseScopeFromSelections({ parent: ["nope"], sprint: [] }), null);
+});
+
 test("every scope points at work items the timeline actually holds", async () => {
 	const { PULSE_EPICS, PULSE_SPRINTS, PULSE_TIMELINE } = await loadScopeHarness();
 
@@ -386,49 +405,60 @@ test("appending an answer never mutates the list it was given", async () => {
 /* Source contracts — what Node cannot execute                          */
 /* ------------------------------------------------------------------ */
 
-const { readFileSync: readSource, join: joinPath, PULSE_DIR: DIR, EXPERIMENTAL_DIR: EXP } = require("./pulse-test-harness");
+const { existsSync: existsSource, readFileSync: readSource, join: joinPath, PULSE_DIR: DIR, EXPERIMENTAL_DIR: EXP } = require("./pulse-test-harness");
 
 const SCOPE_SOURCES = {
 	brief: readSource(joinPath(DIR, "components", "pulse-scope-brief.tsx"), "utf8"),
 	composer: readSource(joinPath(DIR, "components", "pulse-insights-composer.tsx"), "utf8"),
 	epic: readSource(joinPath(DIR, "components", "pulse-scope-brief-epic.tsx"), "utf8"),
-	filter: readSource(joinPath(EXP, "experimental-board-filter.tsx"), "utf8"),
+	chip: readSource(joinPath(DIR, "components", "pulse-scope-chip.tsx"), "utf8"),
 	header: readSource(joinPath(EXP, "experimental-board-header.tsx"), "utf8"),
+	options: readSource(joinPath(EXP, "data", "board-filter-options.ts"), "utf8"),
+	popover: readSource(joinPath(EXP, "components", "board-filter-popover.tsx"), "utf8"),
 	page: readSource(joinPath(EXP, "page.tsx"), "utf8"),
 	progress: readSource(joinPath(DIR, "components", "pulse-progress-bar.tsx"), "utf8"),
 	sprint: readSource(joinPath(DIR, "components", "pulse-scope-brief-sprint.tsx"), "utf8"),
 };
 
-test("Filter is a declared capability now, never a greyed-out dead end", () => {
-	// The old header greyed Filter out in Insights because the popover only wrote
-	// `selectedAssigneeIds`, which Insights never reads. Naming what a surface
-	// *can* filter by means no field is ever offered that writes into a void —
-	// the deficiency cannot come back as a disabled button.
-	//
-	// The header's own doc comment still names the boolean it replaced, and
-	// should: that is the record of why the prop shape is what it is. Only the
-	// code has to be free of it.
+test("Insights reads the board's own Filter rather than a second one", () => {
+	// The header used to grey Filter out in Insights because the popover only
+	// wrote `selectedAssigneeIds`, which Insights never reads. The board filter
+	// that landed alongside this work replaced the header's own popover with a
+	// `filterControl` slot, so the fix is no longer a capability prop — it is
+	// that Insights derives its scope from the same selection model the board
+	// uses. There must be exactly one filter in this directory.
 	assert.doesNotMatch(withoutComments(SCOPE_SOURCES.header), /disableAssigneeFilter/u, "the boolean must not return");
 	assert.doesNotMatch(withoutComments(SCOPE_SOURCES.page), /disableAssigneeFilter/u);
-	assert.match(SCOPE_SOURCES.header, /filterFields\?: readonly ExperimentalBoardFilterField\[\]/u);
-	assert.match(SCOPE_SOURCES.filter, /export type ExperimentalBoardFilterField = "assignee" \| "parent" \| "sprint";/u);
-	assert.match(SCOPE_SOURCES.page, /const PULSE_FILTER_FIELDS = \["parent", "sprint"\] as const;/u);
+	assert.match(SCOPE_SOURCES.header, /filterControl: ReactNode;/u);
+	assert.doesNotMatch(
+		SCOPE_SOURCES.header,
+		/filterFields|ExperimentalBoardFilterField/u,
+		"the parallel filter implementation must not come back",
+	);
+	assert.ok(
+		!existsSource(joinPath(EXP, "experimental-board-filter.tsx")),
+		"a second board filter must not coexist with components/board-filter-popover.tsx",
+	);
+	assert.match(SCOPE_SOURCES.page, /resolvePulseScopeFromSelections\(boardFilter\.model\.selectedValueIdsByField\)/u);
 });
 
-test("scope selection is single-select with real radio semantics", () => {
-	// A scope is one epic or one sprint, so it is a radio group — not a row of
-	// `aria-pressed` buttons that a screen reader reads as seven toggles with no
-	// relationship to each other.
-	assert.match(SCOPE_SOURCES.filter, /<RadioGroup\b/u);
-	assert.match(SCOPE_SOURCES.filter, /<RadioGroupItem\b/u);
-	assert.doesNotMatch(SCOPE_SOURCES.filter, /aria-pressed=\{[^}]*scope/u);
+test("Parent and Sprint offer exactly the scopes the article can open", () => {
+	// Derived from the fixture, not hand-listed. A static option list makes the
+	// failure invisible until someone clicks a row and the brief comes up empty.
+	assert.match(SCOPE_SOURCES.options, /parent: PULSE_EPICS\.map/u);
+	assert.match(SCOPE_SOURCES.options, /sprint: PULSE_SPRINTS\.map/u);
+	assert.match(SCOPE_SOURCES.options, /sprint: "Sprint",/u, "the field needs a label or the rail renders blank");
 });
 
-test("the scope chip keeps its way out in the tab order", () => {
+test("the scope chip keeps its way out in the tab order and owns no state", () => {
 	// A standing statement about what the page is showing must not hide its own
-	// dismissal behind a pointer (gotchas-ui.md).
-	assert.match(SCOPE_SOURCES.filter, /removeButtonLabel=\{`Clear \$\{scope\.kind\} scope: \$\{scope\.key\}`\}/u);
-	assert.doesNotMatch(SCOPE_SOURCES.filter, /group-hover:opacity|opacity-0 group-hover/u);
+	// dismissal behind a pointer (gotchas-ui.md), and it must not hold a second
+	// copy of the selection — the popover and the chip could then disagree.
+	assert.match(SCOPE_SOURCES.chip, /removeButtonLabel=\{`Clear \$\{scope\.kind\} scope: \$\{scope\.key\}`\}/u);
+	assert.doesNotMatch(SCOPE_SOURCES.chip, /group-hover:opacity|opacity-0 group-hover/u);
+	assert.doesNotMatch(SCOPE_SOURCES.chip, /useState/u, "the chip reflects a selection it does not own");
+	assert.match(SCOPE_SOURCES.page, /boardFilter\.actions\.clearField\("parent"\)/u);
+	assert.match(SCOPE_SOURCES.page, /boardFilter\.actions\.clearField\("sprint"\)/u);
 });
 
 test("both briefs sit on the article's own rungs rather than inventing a second set", () => {
@@ -488,8 +518,11 @@ test("answers enter with their own exit timing and a reduced-motion guard", () =
 test("scope and questions are owned above the surface that renders them", () => {
 	// Insights unmounts when the mode is toggled. Neither "I narrowed this to
 	// Sprint 24" nor "I asked why the burndown went up" is view state.
-	assert.match(SCOPE_SOURCES.page, /const \[scopeSelection, setScopeSelection\] = useState<PulseScopeSelection \| null>\(null\);/u);
-	assert.match(SCOPE_SOURCES.page, /const \[answers, setAnswers\] = useState<readonly PulseAnswer\[\]>\(\[\]\);/u);
-	// Changing scope rewrites the article, so answers about the old one go with it.
-	assert.match(SCOPE_SOURCES.page, /setScopeSelection\(selection\);\s*\n\s*setAnswers\(\[\]\);/u);
+	// Answers are keyed by scope rather than cleared on change: an answer about
+	// Sprint 24 shown as a reply to a question asked of PAY-90 would be a lie
+	// the page told by omission, and a key avoids an effect that resets state
+	// behind the reader.
+	assert.match(SCOPE_SOURCES.page, /const \[answersByScope, setAnswersByScope\] = useState</u);
+	assert.match(SCOPE_SOURCES.page, /answersByScope\[scopeKey\] \?\? EMPTY_ANSWERS/u);
+	assert.doesNotMatch(SCOPE_SOURCES.page, /setAnswers\(\[\]\)/u, "no effect may clear answers behind the reader");
 });

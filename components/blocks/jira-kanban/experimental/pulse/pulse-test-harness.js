@@ -368,6 +368,7 @@ function loadScopeHarness() {
 			export {
 				appendPulseAnswer,
 				findPulseScope,
+				resolvePulseScopeFromSelections,
 				PULSE_EPICS,
 				PULSE_SPRINTS,
 				toPulseAnswer,

@@ -75,9 +75,12 @@ test("Track keeps the experimental board Filter interactive in Board and Pulse",
 	)?.[0] ?? "";
 
 	assert.match(trackStage, /<ExperimentalJiraKanbanPage/u);
+	// The slot may hold more than the popover — Insights hangs its scope chip
+	// beside the control it reflects — so this pins the popover and its wiring
+	// rather than the slot being nothing but the popover.
 	assert.match(
 		experimentalPageSource,
-		/filterControl=\{\s*<BoardFilterPopover[\s\S]*actions=\{boardFilter\.actions\}[\s\S]*model=\{boardFilter\.model\}/u,
+		/filterControl=\{[\s\S]*?<BoardFilterPopover[\s\S]*actions=\{boardFilter\.actions\}[\s\S]*model=\{boardFilter\.model\}/u,
 	);
 	assert.match(experimentalHeaderSource, /filterControl: ReactNode;/u);
 	assert.match(experimentalHeaderSource, /\{filterControl\}/u);
