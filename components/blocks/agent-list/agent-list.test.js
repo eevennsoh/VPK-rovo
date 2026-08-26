@@ -150,25 +150,33 @@ test("the attention state keeps the row's own title and warns instead of shimmer
 	assert.match(SESSION_SOURCE, /case "needs-input":\s*case "attention":\s*return "awaiting-input";/u);
 });
 
-test("rows carry an optional reason line, leading metadata, and a static time", () => {
+test("rows carry an optional summary below metadata, leading metadata, and a static time", () => {
 	assert.match(TYPES_SOURCE, /summary\?: string;/u);
 	assert.match(TYPES_SOURCE, /metadataPrefix\?: string;/u);
 	assert.match(TYPES_SOURCE, /timeLabel\?: string;/u);
-	// The reason wraps; a session row's single-line title keeps truncating.
+	// The summary wraps below the metadata row; a session row's single-line
+	// title keeps truncating unless that body copy is present.
 	assert.match(CARD_SOURCE, /const hasSummary = Boolean\(item\.summary\);/u);
 	assert.match(CARD_SOURCE, /hasSummary \? "text-pretty" : "truncate"/u);
 	assert.match(
 		CARD_SOURCE,
-		/\{item\.summary \? \(\s*<span\s*className=\{cn\(\s*"mt-0\.5 w-full min-w-0 text-pretty text-text-subtle",/u,
+		/<AgentListMetadataIdentity item=\{item\} \/>[\s\S]*\{item\.summary \? \(\s*<span\s*className=\{cn\(\s*"mt-2 w-full min-w-0 text-pretty text-text",/u,
 	);
 	assert.doesNotMatch(
 		CARD_SOURCE,
-		/"mt-0\.5 w-full min-w-0 text-pretty text-text-subtle truncate"/u,
+		/"mt-2 w-full min-w-0 text-pretty text-text truncate"/u,
 	);
-	// A three-line row hangs its identity off the title and lets metadata wrap
-	// instead of clipping its tail.
+	assert.doesNotMatch(
+		CARD_SOURCE,
+		/"mt-0\.5 w-full min-w-0 text-pretty text-text-subtle"/u,
+	);
+	// A taller row hangs its identity off the title; metadata stays one line
+	// so the wrapping summary owns the extra height.
 	assert.match(CARD_SOURCE, /hasSummary \? "items-start" : "items-center"/u);
-	assert.match(CARD_SOURCE, /hasSummary \? "mt-1 flex-wrap" : "overflow-hidden"/u);
+	assert.match(
+		CARD_SOURCE,
+		/"flex w-full min-w-0 items-center gap-1 overflow-hidden text-xs text-text-subtlest"/u,
+	);
 	assert.match(
 		CARD_SOURCE,
 		/\{item\.metadataPrefix \? \(\s*<>\s*<span className="shrink-0">\{item\.metadataPrefix\}<\/span>\s*<MetadataDot \/>/u,
@@ -179,6 +187,9 @@ test("rows carry an optional reason line, leading metadata, and a static time", 
 		CARD_SOURCE,
 		/if \(item\.timeLabel !== undefined\) \{\s*return <span>\{item\.timeLabel\}<\/span>;/u,
 	);
+	assert.match(DATA_SOURCE, /summary:\s*"Extracted shared helpers from the checkout path/u);
+	assert.match(DETAIL_SOURCE, /Optional `summary` copy wraps below that metadata/u);
+	assert.match(DETAIL_SOURCE, /Optional `summary` adds wrapping body copy below the metadata row/u);
 });
 
 test("the metadata line uses elapsed runtime, agent name, and asx PR-status colors", () => {
@@ -389,7 +400,7 @@ test("in-flow View controls immediately replace lifecycle indicators without col
 	);
 	assert.match(
 		CARD_SOURCE,
-		/"flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest",/u,
+		/"flex w-full min-w-0 items-center gap-1 overflow-hidden text-xs text-text-subtlest"/u,
 	);
 	assert.match(CARD_SOURCE, /<span className=\{cn\(titleClassName, "text-text"\)\}>/u);
 	assert.match(CARD_SOURCE, /className="min-w-0 truncate">\{item\.agent\.name\}<\/span>/u);
