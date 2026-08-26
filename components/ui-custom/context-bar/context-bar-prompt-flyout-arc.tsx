@@ -9,13 +9,12 @@ import { motion, type Transition } from "motion/react";
  */
 
 /** duration-normal + ease-out-practical — popup-family entrance. */
-export const ITEM_ENTER: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] };
+const ITEM_ENTER: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] };
 /** duration-fast + ease-in — faster than enter so exit does not pile onto the trigger. */
-export const ITEM_EXIT: Transition = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] };
-export const STAGGER_INTERVAL = 0.05;
-export const EXTRA_SLIDE_Y = 8;
-/** duration-normal — crossing a gap is shorter than this; resting outside is not. */
-export const HOVER_LEAVE_MS = 150;
+const ITEM_EXIT: Transition = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] };
+const REDUCED_MOTION: Transition = { duration: 0, delay: 0 };
+const STAGGER_INTERVAL = 0.05;
+const EXTRA_SLIDE_Y = 8;
 
 interface ContextBarPromptFlyoutStackItemProps {
 	children: ReactNode;
@@ -30,20 +29,24 @@ export function ContextBarPromptFlyoutStackItem({
 }: Readonly<ContextBarPromptFlyoutStackItemProps>) {
 	const enterDelay = index * STAGGER_INTERVAL;
 	const slideY = reduceMotion ? 0 : EXTRA_SLIDE_Y;
+	const enterTransition = reduceMotion
+		? REDUCED_MOTION
+		: { ...ITEM_ENTER, delay: enterDelay };
+	const exitTransition = reduceMotion ? REDUCED_MOTION : ITEM_EXIT;
 
 	return (
 		<motion.div
 			animate={{
 				opacity: 1,
 				y: 0,
-				transition: { ...ITEM_ENTER, delay: enterDelay },
+				transition: enterTransition,
 			}}
 			className="pointer-events-auto relative z-20 rounded-xl bg-surface"
 			data-context-bar-prompt-flyout-item=""
 			exit={{
 				opacity: 0,
 				y: slideY,
-				transition: ITEM_EXIT,
+				transition: exitTransition,
 			}}
 			initial={{ opacity: 0, y: slideY }}
 			style={{ willChange: reduceMotion ? "opacity" : "opacity, transform" }}

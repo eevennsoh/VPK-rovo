@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type PointerEvent, type ReactNode } from "react";
 import { AnimatePresence, useReducedMotion } from "motion/react";
 
 import { cn } from "@/lib/utils";
@@ -9,8 +9,12 @@ import { ContextBarPill } from "./context-bar";
 import {
 	ContextBarPromptFlyoutHoverPad,
 	ContextBarPromptFlyoutStackItem,
-	HOVER_LEAVE_MS,
 } from "./context-bar-prompt-flyout-arc";
+import {
+	HOVER_LEAVE_MS,
+	sortFlyoutItemsByLabelLength,
+	type ContextBarPromptFlyoutItem,
+} from "./context-bar-prompt-flyout-model";
 
 /**
  * Suggested-prompt flyout for a composer: one context-bar pill in the dock, with
@@ -21,12 +25,7 @@ import {
  * Escape, blur, a press outside, and a delayed pointer leave close it.
  */
 
-export interface ContextBarPromptFlyoutItem {
-	id: string;
-	label: string;
-	icon?: ReactNode;
-	onSelect: () => void;
-}
+export type { ContextBarPromptFlyoutItem };
 
 export interface ContextBarPromptFlyoutProps {
 	items: ReadonlyArray<ContextBarPromptFlyoutItem>;
@@ -35,19 +34,6 @@ export interface ContextBarPromptFlyoutProps {
 	ariaLabel?: string;
 	/** Start expanded. Remount with a `key` to reset. */
 	defaultOpen?: boolean;
-}
-
-/** Longest label docks at the bottom; shortest stacks to the top. Ties keep source order. */
-export function sortFlyoutItemsByLabelLength(
-	items: ReadonlyArray<ContextBarPromptFlyoutItem>,
-): ReadonlyArray<ContextBarPromptFlyoutItem> {
-	return items
-		.map((item, index) => ({ item, index }))
-		.sort((left, right) => {
-			const byLength = right.item.label.length - left.item.label.length;
-			return byLength !== 0 ? byLength : left.index - right.index;
-		})
-		.map((entry) => entry.item);
 }
 
 export function ContextBarPromptFlyout({
@@ -91,11 +77,16 @@ export function ContextBarPromptFlyout({
 		}, HOVER_LEAVE_MS);
 	}, [cancelScheduledClose]);
 
+	const handlePointerEnter = useCallback((event: PointerEvent<HTMLElement>) => {
+		if (event.pointerType === "touch") return;
+		openFlyout();
+	}, [openFlyout]);
+
 	useEffect(() => () => cancelScheduledClose(), [cancelScheduledClose]);
 
 	useEffect(() => {
 		if (!isOpen) return;
-		function onPointerDown(event: PointerEvent) {
+		function onPointerDown(event: globalThis.PointerEvent) {
 			if (!rootRef.current?.contains(event.target as Node)) {
 				closeFlyout();
 			}
@@ -140,8 +131,7 @@ export function ContextBarPromptFlyout({
 					closeFlyout();
 				}
 			}}
-			onMouseEnter={openFlyout}
-			onPointerEnter={openFlyout}
+			onPointerEnter={handlePointerEnter}
 			onMouseLeave={scheduleClose}
 			ref={rootRef}
 			role="group"
@@ -149,9 +139,9 @@ export function ContextBarPromptFlyout({
 			<ContextBarPill
 				aria-expanded={canExpand ? isOpen : undefined}
 				className="relative z-50 max-w-full min-w-0"
-				icon={icon ?? primary.icon}
+				icon={primary.icon ?? icon}
 				onClick={handlePrimaryClick}
-				onPointerEnter={openFlyout}
+				onPointerEnter={handlePointerEnter}
 				ref={triggerRef}
 				title={primary.label}
 			>
@@ -165,7 +155,7 @@ export function ContextBarPromptFlyout({
 						isOpen ? "pointer-events-auto" : "pointer-events-none [&_*]:pointer-events-none",
 					)}
 					inert={!isOpen}
-					onPointerEnter={openFlyout}
+					onPointerEnter={handlePointerEnter}
 				>
 					{isOpen ? <ContextBarPromptFlyoutHoverPad /> : null}
 					<AnimatePresence>

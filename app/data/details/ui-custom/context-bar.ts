@@ -161,10 +161,10 @@ export const CONTEXT_BAR_DETAIL: ComponentDetail = {
 			description: "ContextBarTagGroup only. Pills to lay out; overflowing items collapse behind the trailing \u2026 button.",
 		},
 		{
-			name: "prompts",
+			name: "items (ContextBarPromptFlyout)",
 			type: "Array<{ id: string; label: string; onSelect: () => void }>",
 			required: true,
-			description: "ContextBarPromptFlyout `items`. Prompts to offer. The longest label docks as the trigger; the rest stack straight up, left-aligned.",
+			description: "ContextBarPromptFlyout `items` prop, distinct from ContextBarTagGroup `items`. Prompts to offer. The longest label docks as the trigger; the rest stack straight up, left-aligned.",
 		},
 		{
 			name: "icon",

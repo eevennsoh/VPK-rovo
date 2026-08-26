@@ -13,6 +13,10 @@ const ARC_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/ui-custom/context-bar/context-bar-prompt-flyout-arc.tsx"),
 	"utf8",
 );
+const MODEL_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/ui-custom/context-bar/context-bar-prompt-flyout-model.ts"),
+	"utf8",
+);
 const INDEX_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/ui-custom/context-bar/index.ts"),
 	"utf8",
@@ -41,6 +45,9 @@ test("ContextBarPromptFlyout is exported and catalogued", () => {
 	assert.match(REGISTRY_SOURCE, /"context-bar-demo-prompt-flyout"/u);
 	assert.match(DETAILS_SOURCE, /ContextBarPromptFlyout/u);
 	assert.match(DETAILS_SOURCE, /same context-bar pills/u);
+	assert.match(DETAILS_SOURCE, /items \(ContextBarPromptFlyout\)/u);
+	assert.match(DETAILS_SOURCE, /distinct from ContextBarTagGroup `items`/u);
+	assert.doesNotMatch(DETAILS_SOURCE, /name: "prompts"/u);
 	assert.doesNotMatch(DETAILS_SOURCE, /fanned circular controls/u);
 });
 
@@ -53,11 +60,14 @@ test("ContextBarPromptFlyout stacks extras straight up, left-aligned, with reduc
 	assert.match(ARC_SOURCE, /const slideY = reduceMotion \? 0 : EXTRA_SLIDE_Y/u);
 	assert.match(ARC_SOURCE, /duration: 0\.15, ease: \[0\.4, 1, 0\.6, 1\]/u);
 	assert.match(ARC_SOURCE, /duration: 0\.1, ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
+	assert.match(ARC_SOURCE, /REDUCED_MOTION: Transition = \{ duration: 0, delay: 0 \}/u);
+	assert.match(ARC_SOURCE, /const enterTransition = reduceMotion\n\t\t\? REDUCED_MOTION\n\t\t: \{ \.\.\.ITEM_ENTER, delay: enterDelay \}/u);
+	assert.match(ARC_SOURCE, /const exitTransition = reduceMotion \? REDUCED_MOTION : ITEM_EXIT/u);
 	assert.match(ARC_SOURCE, /initial=\{\{ opacity: 0, y: slideY \}\}/u);
 	assert.match(ARC_SOURCE, /y: 0/u);
-	assert.match(ARC_SOURCE, /transition: ITEM_EXIT/u);
 	assert.match(ARC_SOURCE, /willChange: reduceMotion \? "opacity" : "opacity, transform"/u);
 	assert.match(ARC_SOURCE, /rounded-xl bg-surface/u);
+	assert.match(FLYOUT_SOURCE, /icon=\{primary\.icon \?\? icon\}/u);
 	assert.match(FLYOUT_SOURCE, /inert=\{!isOpen\}/u);
 	assert.match(FLYOUT_SOURCE, /aria-hidden=\{!isOpen\}/u);
 	assert.match(FLYOUT_SOURCE, /aria-expanded=\{canExpand \? isOpen : undefined\}/u);
@@ -88,17 +98,17 @@ test("ContextBarPromptFlyout stacks extras straight up, left-aligned, with reduc
 
 test("ContextBarPromptFlyout docks the longest label, not caller array order", () => {
 	assert.match(FLYOUT_SOURCE, /sortFlyoutItemsByLabelLength\(items\)/u);
-	assert.match(FLYOUT_SOURCE, /right\.item\.label\.length - left\.item\.label\.length/u);
-	assert.match(FLYOUT_SOURCE, /left\.index - right\.index/u);
+	assert.match(MODEL_SOURCE, /right\.item\.label\.length - left\.item\.label\.length/u);
+	assert.match(MODEL_SOURCE, /left\.index - right\.index/u);
 	assert.doesNotMatch(FLYOUT_SOURCE, /const \[primary, \.\.\.rest\] = items;/u);
 });
 
 test("ContextBarPromptFlyout keeps hover alive across gaps in the stack", () => {
 	assert.match(ARC_SOURCE, /data-context-bar-prompt-flyout-hover-pad/u);
-	assert.match(FLYOUT_SOURCE, /onMouseEnter=\{openFlyout\}/u);
-	assert.match(FLYOUT_SOURCE, /onPointerEnter=\{openFlyout\}/u);
+	assert.match(FLYOUT_SOURCE, /onPointerEnter=\{handlePointerEnter\}/u);
+	assert.match(FLYOUT_SOURCE, /event\.pointerType === "touch"/u);
 	assert.match(FLYOUT_SOURCE, /onMouseLeave=\{scheduleClose\}/u);
-	assert.match(ARC_SOURCE, /HOVER_LEAVE_MS = 150/u);
+	assert.match(MODEL_SOURCE, /HOVER_LEAVE_MS = 150/u);
 	assert.match(FLYOUT_SOURCE, /ContextBarPromptFlyoutHoverPad/u);
 	assert.match(FLYOUT_SOURCE, /\{isOpen \? <ContextBarPromptFlyoutHoverPad \/> : null\}/u);
 	assert.match(FLYOUT_SOURCE, /cancelScheduledClose\(\);\n\t\tif \(canExpand\) setOpen\(true\)/u);
@@ -227,10 +237,8 @@ async function loadFlyoutHarness() {
 			contents: `
 				import React from "react";
 				import { renderToStaticMarkup } from "react-dom/server";
-				import {
-					ContextBarPromptFlyout,
-					sortFlyoutItemsByLabelLength,
-				} from "./components/ui-custom/context-bar/context-bar-prompt-flyout.tsx";
+				import { ContextBarPromptFlyout } from "./components/ui-custom/context-bar/context-bar-prompt-flyout.tsx";
+				import { sortFlyoutItemsByLabelLength } from "./components/ui-custom/context-bar/context-bar-prompt-flyout-model.ts";
 
 				const ITEMS = [
 					{ id: "date", label: "Is this epic going to hit its target date?", onSelect: () => {} },
