@@ -199,7 +199,7 @@ function ArtifactListRow({
 				"ml-0 grid shrink-0",
 				"grid-cols-[0fr] group-hover/artifact-row:ml-3 group-hover/artifact-row:grid-cols-[1fr]",
 				"group-has-[:focus-visible]/artifact-row:ml-3 group-has-[:focus-visible]/artifact-row:grid-cols-[1fr]",
-				"group-has-[:focus-visible]/artifact-row:ml-3 group-has-[:focus-visible]/artifact-row:grid-cols-[1fr]",
+				"[@media(hover:none)]:ml-3 [@media(hover:none)]:grid-cols-[1fr]",
 			)}
 		>
 			<div className="min-w-0 overflow-hidden has-[:focus-visible]:overflow-visible">
@@ -213,6 +213,7 @@ function ArtifactListRow({
 						"pointer-events-none opacity-0 transition-[background-color,border-color,box-shadow,color] motion-reduce:transition-none",
 						"group-hover/artifact-row:pointer-events-auto group-hover/artifact-row:opacity-100",
 						"group-has-[:focus-visible]/artifact-row:pointer-events-auto group-has-[:focus-visible]/artifact-row:opacity-100",
+						"[@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100",
 						"focus-visible:pointer-events-auto focus-visible:opacity-100",
 					)}
 					variant="outline"
