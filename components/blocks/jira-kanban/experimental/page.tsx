@@ -12,7 +12,7 @@ import { BoardFilterPopover } from "./components/board-filter-popover";
 import { TimelineActivityBadge } from "./components/timeline-activity-badge";
 import { ExperimentalJiraKanban } from "./experimental-jira-kanban";
 import { ExperimentalJiraKanbanBoardHeader } from "./experimental-board-header";
-import { useBoardFilter } from "./hooks/use-board-filter";
+import { useBoardFilter, type BoardFilterActions } from "./hooks/use-board-filter";
 import {
 	BOARD_FILTER_DEMO_NOW_ISO,
 	filterPulseTimelineByDays,
@@ -30,6 +30,16 @@ import {
 } from "./pulse/components/pulse-mode-controls";
 import { PULSE_TIMELINE } from "./pulse/data/pulse-timeline";
 import {
+	appendPulseAnswer,
+	resolvePulseScopeFromSelections,
+	toPulseAnswer,
+	toPulseScopeKey,
+	toPulseSuggestedQuestions,
+} from "./pulse/data/pulse-scopes";
+import { scopeTimelineToWorkItemKeys } from "./pulse/hooks/use-pulse-timeline";
+import type { PulseAnswer } from "./pulse/types";
+import { PulseScopeChip } from "./pulse/components/pulse-scope-chip";
+import {
 	createJiraKanbanSelectionState,
 	filterJiraKanbanColumnsByAssignee,
 	getCommonJiraKanbanAgentIds,
@@ -42,6 +52,9 @@ import { BOARD_AGENTS } from "@/components/projects/jira/data/board-agents";
 import { BOARD_COLUMNS } from "@/components/projects/jira/data/board-data";
 
 const DEFAULT_CREATED_COLUMN_AGENT_ID = "readiness-checker";
+
+/** Stable identity, so an unscoped article does not re-render on every tick. */
+const EMPTY_ANSWERS: readonly PulseAnswer[] = [];
 
 /**
  * Experimental Jira Kanban page.
@@ -107,11 +120,56 @@ export default function ExperimentalJiraKanbanPage({
 	const handleCaptureLooseWork = useCallback((item: { id: string }) => {
 		setCapturedLooseWorkIds((current) => new Set(current).add(item.id));
 	}, []);
+	// Questions are stored per scope rather than cleared when the scope changes.
+	// An answer about Sprint 24 read as a reply to a question asked of PAY-90
+	// would be a lie the page told by omission, and keying the record is how
+	// that is prevented without an effect that resets state behind the reader.
+	const [answersByScope, setAnswersByScope] = useState<Readonly<Record<string, readonly PulseAnswer[]>>>({});
 	const [draggedCard, setDraggedCard] = useState<DraggedCardState | null>(null);
 	const [selection, setSelection] = useState(createJiraKanbanSelectionState);
 	const [assignedAgentIdsByCard, setAssignedAgentIdsByCard] = useState<Record<string, string[]>>({});
 	const boardFilter = useBoardFilter();
 	const selectedAssigneeIds = boardFilter.selectedAssigneeIds;
+	// Choosing an epic or a sprint is a request to read the brief, and the brief
+	// only exists in Insights. Without this, picking one from the board filter
+	// recomputes the scope, lights the chip, and leaves the reader on the board
+	// looking at columns — the feature silently doing nothing.
+	//
+	// It hangs off the filter's own actions rather than an effect on `scope`:
+	// the mode change is caused by the reader's click, and deriving it from
+	// state afterwards would also fire when a scope is restored on mount.
+	const filterActions = useMemo((): BoardFilterActions => ({
+		...boardFilter.actions,
+		toggleValue: (fieldId, valueId) => {
+			boardFilter.actions.toggleValue(fieldId, valueId);
+			if (fieldId === "parent" || fieldId === "sprint") {
+				setMode("pulse");
+			}
+		},
+	}), [boardFilter.actions]);
+	// Insights reads Parent and Sprint off the same filter the board reads its
+	// own fields off. One control, one selection model — the scope is derived
+	// here rather than owned separately, so the popover and the article cannot
+	// disagree about what the page is showing.
+	const scope = useMemo(
+		() => resolvePulseScopeFromSelections(boardFilter.model.selectedValueIdsByField),
+		[boardFilter.model.selectedValueIdsByField],
+	);
+	const scopeKey = toPulseScopeKey(scope);
+	const answers = answersByScope[scopeKey] ?? EMPTY_ANSWERS;
+	const handleAsk = useCallback((question: string) => {
+		setAnswersByScope((current) => {
+			const resolved = resolvePulseScopeFromSelections(boardFilter.model.selectedValueIdsByField);
+			const key = toPulseScopeKey(resolved);
+			return {
+				...current,
+				[key]: appendPulseAnswer(
+					current[key] ?? EMPTY_ANSWERS,
+					toPulseAnswer(question, resolved, toPulseSuggestedQuestions(resolved)),
+				),
+			};
+		});
+	}, [boardFilter.model.selectedValueIdsByField]);
 	const [timelineLastViewedAt, setTimelineLastViewedAt] = useState<string | null>(
 		EXPERIMENTAL_BOARD_LAST_VIEWED_AT,
 	);
@@ -120,13 +178,19 @@ export default function ExperimentalJiraKanbanPage({
 		() => filterJiraKanbanColumnsByAssignee(boardColumns, selectedAssigneeIds),
 		[boardColumns, selectedAssigneeIds],
 	);
+	// Days first, then scope. Both narrow the same timeline and both come from
+	// the same control, so they compose rather than competing: a sprint scope
+	// inside a "last 3 days" window is a legitimate thing to ask for.
 	const pulseTimeline = useMemo(
-		() => filterPulseTimelineByDays(
-			PULSE_TIMELINE,
-			boardFilter.model.days,
-			new Date(BOARD_FILTER_DEMO_NOW_ISO),
+		() => scopeTimelineToWorkItemKeys(
+			filterPulseTimelineByDays(
+				PULSE_TIMELINE,
+				boardFilter.model.days,
+				new Date(BOARD_FILTER_DEMO_NOW_ISO),
+			),
+			scope === null ? null : new Set(scope.workItemKeys),
 		),
-		[boardFilter.model.days],
+		[boardFilter.model.days, scope],
 	);
 	const timelineUnreadCount = countUnviewedTimelineSnapshots(
 		PULSE_TIMELINE.snapshots,
@@ -298,12 +362,25 @@ export default function ExperimentalJiraKanbanPage({
 					/>
 				) : undefined}
 				filterControl={
-					<BoardFilterPopover
-						actions={boardFilter.actions}
-						assignees={assignees}
-						compact={compactHeader}
-						model={boardFilter.model}
-					/>
+					<>
+						<BoardFilterPopover
+							actions={filterActions}
+							assignees={assignees}
+							compact={compactHeader}
+							model={boardFilter.model}
+						/>
+						{/* The chip is the only always-visible proof the article is
+						    narrowed. It rides in the filter slot so it sits beside the
+						    control it reflects, and it clears through the same filter
+						    action the popover uses. */}
+						<PulseScopeChip
+							onClear={() => {
+								filterActions.clearField("parent");
+								filterActions.clearField("sprint");
+							}}
+							scope={scope}
+						/>
+					</>
 				}
 				modeToggle={
 					<PulseModeToggle
@@ -321,11 +398,14 @@ export default function ExperimentalJiraKanbanPage({
 			/>
 			{isPulse ? (
 				<ExperimentalPulse
+					answers={answers}
 					capturedLooseWorkIds={capturedLooseWorkIds}
+					onAsk={handleAsk}
 					onCaptureLooseWork={handleCaptureLooseWork}
 					onRequestAction={handleRequestAction}
 					onSelectedMemberIdChange={setPulseMemberId}
 					requestedActionIds={requestedActionIds}
+					scope={scope}
 					selectedMemberId={pulseMemberId}
 					timeline={pulseTimeline}
 				/>

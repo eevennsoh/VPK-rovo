@@ -10,6 +10,7 @@ import {
 	PulseSectionLabel,
 } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-signals";
 import {
+	HEADLINE_STYLE,
 	PULSE_EYEBROW,
 	PULSE_ITEM_BODY,
 	PULSE_ROW_META,
@@ -87,14 +88,6 @@ const PULSE_SOURCES = [
 	{ id: "opsgenie", label: "Opsgenie", provider: "opsgenie" },
 	{ id: "statuspage", label: "Statuspage", provider: "statuspage" },
 ] as const satisfies readonly TwgToolSource[];
-
-/** 40px → 54px display size, tracked tight the way the reference sets it. */
-const HEADLINE_STYLE = {
-	fontSize: "clamp(2.5rem, 0.575rem + 2.8vw, 3.375rem)",
-	fontWeight: 400,
-	letterSpacing: "-0.045em",
-	lineHeight: 1.03,
-} as const;
 
 /** One window the filtered member was active in, offered as a way out. */
 export interface PulseStoryJump {

@@ -70,7 +70,10 @@ test("Pulse animation carries explicit reduced-motion handling in every animatin
 	assert.ok(files.length >= 7, "expected the whole Pulse tree to be scanned");
 	const animatingFiles = [];
 	for (const file of files) {
-		const source = readFileSync(file, "utf8");
+		// Prose is not code. A file whose header explains *why it deliberately does
+		// not animate* contains the sentence "No motion." — which matches ` motion.`
+		// and then fails the file for lacking a guard on motion it does not have.
+		const source = withoutComments(readFileSync(file, "utf8"));
 		if (!animating.test(source)) {
 			continue;
 		}
@@ -498,15 +501,46 @@ test("Pulse tiles three columns full-bleed, with the story taking the slack", ()
 	// layout the compact ruler would neither follow nor jump. It is a bounded
 	// reading pane below `lg` instead — a ruler whose marks do nothing is worse
 	// than a nested scroll region.
+	//
+	// The column is a flex column holding two children now: the bounded
+	// scrollport and the ask dock beneath it. The dock is a static sibling
+	// rather than a sticky overlay, so the article's own bottom fade stays the
+	// only seam between them.
 	assert.match(
 		SOURCES.shell,
-		/className="relative -m-1 max-h-\[70svh\] min-h-0 min-w-0 flex-1 lg:mr-10 lg:h-full lg:max-h-none"/u,
+		/className="flex min-h-0 min-w-0 flex-1 flex-col lg:mr-10 lg:h-full"/u,
 		"the article column is the flexible one",
+	);
+	// `flex-1 min-h-0` and not `h-full`. A percentage height needs a containing
+	// block with a *specified* height; this wrapper's comes from `max-height`
+	// clamping a flex-grown box, which is definite enough for flexbox and not
+	// for percentage resolution. Under `lg` the scrollport fell back to `auto`,
+	// grew to the article's full ~12,700px, and painted out of its
+	// `overflow: visible` parent straight over the ask dock beneath it.
+	assert.match(
+		SOURCES.shell,
+		/className="relative -m-1 flex max-h-\[70svh\] min-h-0 min-w-0 flex-1 flex-col lg:max-h-none"/u,
+		"the scrollport stays a bounded reading pane below lg",
 	);
 	assert.match(
 		SOURCES.shell,
-		/className="h-full overflow-y-auto p-1 lg:overscroll-y-contain lg:pr-10 lg:pb-12"/u,
-		"the nested region is the reading scrollport",
+		/className="min-h-0 flex-1 overflow-y-auto p-1 lg:overscroll-y-contain lg:pr-10 lg:pb-6"/u,
+		"the nested region is the reading scrollport, bounded by flex and not by a percentage",
+	);
+	assert.doesNotMatch(
+		SOURCES.shell,
+		/className="h-full overflow-y-auto/u,
+		"a percentage height cannot bound the reading pane under lg",
+	);
+	assert.match(
+		SOURCES.shell,
+		/className="min-w-0 shrink-0 px-1 lg:pr-10"/u,
+		"the ask dock is a static sibling on the article's own horizontal rails",
+	);
+	assert.doesNotMatch(
+		SOURCES.shell,
+		/className="[^"]*\b(?:sticky|fixed)\b/u,
+		"the dock must not overlay the article — the bottom fade is the seam",
 	);
 	assert.doesNotMatch(SOURCES.shell, /lg:max-w-\[[\d.]+rem\] lg:overflow-y-auto/u, "the story must not re-cap itself in the shell");
 	assert.match(SOURCES.story, /const MEASURE = "max-w-\[36rem\]";/u, "the prose measure still holds at 576px");

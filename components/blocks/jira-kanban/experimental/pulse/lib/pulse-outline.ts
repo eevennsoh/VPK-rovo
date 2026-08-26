@@ -97,6 +97,17 @@ export function toPulseAnchorId(snapshotId: string, section?: PulseSectionKey): 
 	return section === undefined ? `pulse-${snapshotId}` : `pulse-${snapshotId}-${section}`;
 }
 
+/**
+ * Anchors for the two blocks that bracket the insights.
+ *
+ * They live here rather than on the components that render them so the shell
+ * can build the outline without importing a component — a component file that
+ * exports constants stops being Fast-Refresh-safe, which is why the ruler's
+ * geometry was split out of the scrubber in the first place.
+ */
+export const PULSE_SCOPE_ANCHOR_ID = "pulse-scope-brief";
+export const PULSE_ANSWERS_ANCHOR_ID = "pulse-answers";
+
 export type PulseInsightNavDirection = "previous" | "next";
 export type PulseScrollAlignment = "reading-line" | "start";
 
@@ -191,6 +202,26 @@ export function toPulseSections(snapshot: PulseSnapshot): readonly PulseSectionK
 }
 
 /**
+ * The lead section the article opens with, when it has one.
+ *
+ * A scope brief is a real place in the document, so it needs a real mark: a
+ * ruler whose first mark is the second thing on the page is a ruler that lies
+ * about where the top is. It takes a whole slice of the rail rather than
+ * squeezing in above the first insight at the same offset, because two marks
+ * at `offset: 0` stack on one pixel and only the upper one can be clicked.
+ *
+ * It is a `section` mark, not an `insight` one: the brief is not a snapshot,
+ * the chevrons page between snapshots, and the work rail keys off
+ * `snapshotIndex` — which is 0 here, so reading the brief shows the first
+ * window's work rather than an empty rail.
+ */
+export interface PulseOutlineLead {
+	id: string;
+	heading: string;
+	label: string;
+}
+
+/**
  * The whole outline, in reading order.
  *
  * Every insight owns an equal slice of the rail, including the last one — the
@@ -203,16 +234,31 @@ export function toPulseSections(snapshot: PulseSnapshot): readonly PulseSectionK
  * Sections spread through their insight's slice and never land on the next
  * mark: two sections sit at a third and two thirds of the way across it.
  */
-export function buildPulseOutline(timeline: PulseTimeline): PulseOutlineEntry[] {
+export function buildPulseOutline(
+	timeline: PulseTimeline,
+	lead: PulseOutlineLead | null = null,
+): PulseOutlineEntry[] {
 	const { snapshots } = timeline;
 	if (snapshots.length === 0) {
 		return [];
 	}
-	const step = 1 / snapshots.length;
+	const leadSlots = lead === null ? 0 : 1;
+	const step = 1 / (snapshots.length + leadSlots);
 	const entries: PulseOutlineEntry[] = [];
 
+	if (lead !== null) {
+		entries.push({
+			id: lead.id,
+			kind: "section",
+			heading: lead.heading,
+			label: lead.label,
+			offset: 0,
+			snapshotIndex: 0,
+		});
+	}
+
 	snapshots.forEach((snapshot, index) => {
-		const offset = index * step;
+		const offset = (index + leadSlots) * step;
 		entries.push({
 			id: toPulseAnchorId(snapshot.id),
 			kind: "insight",

@@ -345,7 +345,12 @@ test("Pulse member selection survives reading on and clears on demand", async ()
 	// document from the top instead of stranding the reader at an offset that now
 	// points at different prose. That reset is `usePulseReading`'s, and the shell
 	// is what wires the two together.
-	assert.match(SOURCES.shell, /usePulseReading\(\{ outline, resetKey: filter\.selectedMemberId \}\)/u);
+	//
+	// The key is composite because scope rewrites the article for exactly the
+	// same reason a member filter does. Both halves have to be in it: keying on
+	// the member alone would leave a reader who switched from an epic to a
+	// sprint parked halfway down prose that is no longer there.
+	assert.match(SOURCES.shell, /resetKey: `\$\{scopeKey\}\|\$\{filter\.selectedMemberId \?\? ""\}`/u);
 });
 
 test("Pulse answers what a member did across the whole week, not just this window", async () => {

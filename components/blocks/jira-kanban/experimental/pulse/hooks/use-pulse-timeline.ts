@@ -99,6 +99,42 @@ export function scopeByWorkItem<T extends { readonly workItemKey?: string }>(
 	return entries.filter((entry) => entry.workItemKey !== undefined && scope.has(entry.workItemKey));
 }
 
+/**
+ * Narrow a whole timeline to one epic's or one sprint's work items.
+ *
+ * Scope composes *underneath* the member filter rather than beside it: this
+ * returns a timeline, so every derivation downstream — the member filter, the
+ * outline, the rail — keeps working on the narrowed one without knowing scope
+ * exists. Reusing `scopeByWorkItem` here is deliberate; "scoped" must mean the
+ * same thing for a sprint as it does for a person.
+ *
+ * Snapshots are never dropped, only narrowed. An insight whose work all sits
+ * outside the scope still happened, and removing it would renumber the ruler
+ * under a reader mid-article — a scope filter is not an edit to the week.
+ */
+export function scopeTimelineToWorkItemKeys(
+	timeline: PulseTimeline,
+	keys: ReadonlySet<string> | null,
+): PulseTimeline {
+	if (keys === null) {
+		return timeline;
+	}
+	return {
+		...timeline,
+		workItems: timeline.workItems.filter((workItem) => keys.has(workItem.key)),
+		snapshots: timeline.snapshots.map((snapshot) => ({
+			...snapshot,
+			workItemKeys: snapshot.workItemKeys.filter((key) => keys.has(key)),
+			attention: scopeByWorkItem(snapshot.attention, keys),
+			nextActions: scopeByWorkItem(snapshot.nextActions, keys),
+			contributions: snapshot.contributions.map((contribution) => ({
+				...contribution,
+				workItemKeys: contribution.workItemKeys.filter((key) => keys.has(key)),
+			})),
+		})),
+	};
+}
+
 /** Snapshot indexes where the member was active. Unfiltered means every index. */
 export function computeHighlightedIndexes(
 	snapshots: readonly PulseSnapshot[],
