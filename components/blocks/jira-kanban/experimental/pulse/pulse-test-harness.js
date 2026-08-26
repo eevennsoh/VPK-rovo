@@ -295,12 +295,16 @@ function loadScrubberHarness() {
 	scrubberHarnessPromise ??= bundleHarness({
 		contents: `
 			export {
+				isInsightRevised,
 				isPulseSectionDimmed,
+				toInsightGeneratedLabel,
+				toInsightUpdatedLabel,
 				toMagnification,
 				toMarkHint,
 				toMarkLabel,
 				toMarkState,
 				toNearestEntryIndex,
+				toPulseInsightEyebrow,
 				toWeekdayLabel,
 			} from "./components/blocks/jira-kanban/experimental/pulse/lib/pulse-marks";
 		`,
@@ -316,11 +320,12 @@ function loadOutlineHarness() {
 		contents: `
 			export {
 				buildPulseOutline,
-				isPulseScrollTowardTop,
+				isPulseChevronHeaderJump,
 				toActiveInsightEntry,
 				toActiveOutlineIndex,
 				toAdjacentInsightIndex,
 				toPulseAnchorId,
+				toPulseArticleTopFadeVisible,
 				toPulseInsightEntries,
 				toPulseScrollOffset,
 				toPulseSections,

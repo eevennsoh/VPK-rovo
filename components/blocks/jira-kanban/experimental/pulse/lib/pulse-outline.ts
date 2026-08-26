@@ -16,7 +16,8 @@ import type { PulseSnapshot, PulseTimeline } from "@/components/blocks/jira-kanb
  *   close in an afternoon, and an insight is captured whenever there is
  *   something worth saying, so real timestamps cluster four marks into a
  *   morning and leave a weekend of empty rail. Even steps make every insight
- *   the same size target; *when* it happened stays on the insight eyebrow.
+ *   the same size target; *when* it was last updated stays on the insight
+ *   eyebrow.
  *   The pill names whichever outline entry is being read.
  * - **Section** (minor). The parts within an insight that are worth jumping to
  *   — artifacts, what needs attention, the next best actions — spread evenly
@@ -115,12 +116,22 @@ export interface PulseScrollOptions {
 	align?: PulseScrollAlignment;
 }
 
-/** Whether the next article position is moving back toward its top edge. */
-export function isPulseScrollTowardTop(
-	previousScrollTop: number,
-	nextScrollTop: number,
+/** Whether the next article position is a header chevron jump. */
+export function isPulseChevronHeaderJump(options?: PulseScrollOptions): boolean {
+	return options?.align === "start";
+}
+
+/**
+ * The article's top fade is an overlay, not a CSS mask, so it cannot swallow
+ * clicks. It still veils whatever sits in the top band — including the insight
+ * nav when a chevron pins that row to `align: "start"`. Show the fade whenever
+ * the article is clipped at the top, and suppress it only for that jump.
+ */
+export function toPulseArticleTopFadeVisible(
+	showTopScrollMask: boolean,
+	suppressForChevronJump: boolean,
 ): boolean {
-	return nextScrollTop < previousScrollTop;
+	return showTopScrollMask && !suppressForChevronJump;
 }
 
 interface PulseScrollOffsetOptions {

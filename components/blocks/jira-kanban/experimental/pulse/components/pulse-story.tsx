@@ -19,12 +19,15 @@ import {
 	PULSE_ROW_META,
 } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-type";
 import {
+	isPulseSectionDimmed,
+	toPulseInsightEyebrow,
+} from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-marks";
+import {
 	toAdjacentInsightIndex,
 	toPulseAnchorId,
 	toPulseSections,
 	type PulseScrollOptions,
 } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-outline";
-import { isPulseSectionDimmed } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-marks";
 import type {
 	PulseAction,
 	PulseContribution,
@@ -41,9 +44,10 @@ import { cn } from "@/lib/utils";
 /**
  * Pulse story — the body of one insight inside the continuous article.
  *
- * One eyebrow, a display headline, the faces that produced it, the window's
- * numbers, the narrative, the artifacts it produced, then the signals and the
- * actions that follow from it. Nothing here swaps: every insight is mounted at
+ * One eyebrow names the outcome and when it was last updated, then
+ * a display headline, the faces that produced it, the window's numbers, the
+ * narrative, the artifacts it produced, then the signals and the actions that
+ * follow from it. Nothing here swaps: every insight is mounted at
  * once and the reader scrolls. The header chevrons jump to the previous or next
  * insight via the ruler's own scroll — they do not unmount or step a carousel.
  * What it also owns is anchors: the insight head and each non-empty section
@@ -487,9 +491,7 @@ export function PulseStory({
 	const artifactsId = toPulseAnchorId(snapshot.id, "artifacts");
 	const attentionId = toPulseAnchorId(snapshot.id, "attention");
 	const actionsId = toPulseAnchorId(snapshot.id, "actions");
-	const eyebrow = member === null
-		? `${snapshot.chapterLabel} · ${snapshot.rangeLabel}`
-		: `${member.name} · ${snapshot.chapterLabel} · ${snapshot.rangeLabel}`;
+	const eyebrow = toPulseInsightEyebrow(snapshot, member?.name ?? null);
 	const headline = member === null ? snapshot.title : member.name;
 
 	return (
