@@ -30,6 +30,10 @@ const SOURCES = {
 	scrubber: readFileSync(join(PULSE_DIR, "components", "pulse-scrubber.tsx"), "utf8"),
 	shell: readFileSync(join(PULSE_DIR, "experimental-pulse.tsx"), "utf8"),
 	signals: readFileSync(join(PULSE_DIR, "components", "pulse-signals.tsx"), "utf8"),
+	sourcesAppstack: readFileSync(join(PULSE_DIR, "components", "pulse-sources-appstack.tsx"), "utf8"),
+	sourcesPreview: readFileSync(join(PULSE_DIR, "data", "pulse-sources-preview.ts"), "utf8"),
+	prose: readFileSync(join(PULSE_DIR, "lib", "pulse-prose.ts"), "utf8"),
+	proseText: readFileSync(join(PULSE_DIR, "components", "pulse-prose-text.tsx"), "utf8"),
 	story: readFileSync(join(PULSE_DIR, "components", "pulse-story.tsx"), "utf8"),
 	// The continuous article. It did not exist under the snapshot-at-a-time
 	// model, and it is now where several contracts that used to sit in the shell
@@ -157,6 +161,7 @@ let outlineHarnessPromise;
 let rosterMarkupHarnessPromise;
 let attentionHarnessPromise;
 let scopeHarnessPromise;
+let proseHarnessPromise;
 
 /**
  * The pure signal → agent-list-row mapping behind the "Needs attention"
@@ -186,7 +191,7 @@ const rosterMarkupPlugin = {
 			namespace: "pulse-roster-markup-mock",
 			path: "pulse-icon",
 		}));
-		build.onResolve({ filter: /^@\/components\/ui\/(?:button|icon)$/ }, (args) => ({
+		build.onResolve({ filter: /^@\/components\/ui\/(?:badge|button|icon)$/ }, (args) => ({
 			namespace: "pulse-roster-markup-mock",
 			path: args.path,
 		}));
@@ -198,7 +203,11 @@ const rosterMarkupPlugin = {
 				};
 			}
 
-			const exportName = args.path.endsWith("/button") ? "Button" : "Icon";
+			const exportName = args.path.endsWith("/button")
+				? "Button"
+				: args.path.endsWith("/badge")
+					? "Badge"
+					: "Icon";
 			return {
 				contents: `export function ${exportName}() { return null; }`,
 				loader: "js",
@@ -321,6 +330,45 @@ function loadOutlineHarness() {
 	return outlineHarnessPromise;
 }
 
+/** Outcome highlighter — tokenizer plus the real React render path. */
+function loadProseHarness() {
+	proseHarnessPromise ??= bundleHarness({
+		contents: `
+			import React from "react";
+			import { renderToString } from "react-dom/server";
+			import { PulseProseText } from "./components/blocks/jira-kanban/experimental/pulse/components/pulse-prose-text";
+			import { PULSE_TIMELINE } from "./components/blocks/jira-kanban/experimental/pulse/data/pulse-timeline";
+			import { tokenizePulseProse } from "./components/blocks/jira-kanban/experimental/pulse/lib/pulse-prose";
+
+			export { PULSE_TIMELINE, tokenizePulseProse };
+
+			export function renderPulseProse(text) {
+				return renderToString(React.createElement(PulseProseText, { text }));
+			}
+
+			export function snapshotParagraph(id) {
+				const snapshot = PULSE_TIMELINE.snapshots.find((entry) => entry.id === id);
+				if (snapshot === undefined) {
+					throw new Error(\`fixture is missing the snapshot "\${id}"\`);
+				}
+				return snapshot.paragraphs[0];
+			}
+
+			export function contributionSummary(snapshotId, memberId) {
+				const snapshot = PULSE_TIMELINE.snapshots.find((entry) => entry.id === snapshotId);
+				const contribution = snapshot?.contributions.find((entry) => entry.memberId === memberId);
+				if (contribution === undefined) {
+					throw new Error(\`fixture is missing \${snapshotId}/\${memberId}\`);
+				}
+				return contribution.summary;
+			}
+		`,
+		sourcefile: "pulse-prose-harness.ts",
+	});
+
+	return proseHarnessPromise;
+}
+
 /** The canonical header roster rendered through React's server renderer. */
 function loadRosterMarkupHarness() {
 	rosterMarkupHarnessPromise ??= bundleHarness({
@@ -343,6 +391,89 @@ function loadRosterMarkupHarness() {
 	});
 
 	return rosterMarkupHarnessPromise;
+}
+
+const insightsToggleMarkupPlugin = {
+	name: "pulse-insights-toggle-markup-mocks",
+	setup(build) {
+		build.onResolve({ filter: /^@atlaskit\/icon\/core\/pulse$/ }, () => ({
+			namespace: "pulse-insights-toggle-mock",
+			path: "pulse-icon",
+		}));
+		build.onResolve({ filter: /^@\/components\/ui\/(?:badge|button|icon)$/ }, (args) => ({
+			namespace: "pulse-insights-toggle-mock",
+			path: args.path,
+		}));
+		build.onLoad({ filter: /.*/, namespace: "pulse-insights-toggle-mock" }, (args) => {
+			if (args.path === "pulse-icon") {
+				return {
+					contents: "export default function PulseIcon() { return null; }",
+					loader: "js",
+					resolveDir: process.cwd(),
+				};
+			}
+
+			if (args.path.endsWith("/badge")) {
+				return {
+					contents: `
+						import React from "react";
+						export function Badge({ children }) {
+							return React.createElement("span", { "data-slot": "badge" }, children);
+						}
+					`,
+					loader: "js",
+					resolveDir: process.cwd(),
+				};
+			}
+
+			if (args.path.endsWith("/icon")) {
+				return {
+					contents: "export function Icon() { return null; }",
+					loader: "js",
+					resolveDir: process.cwd(),
+				};
+			}
+
+			return {
+				contents: `
+					import React from "react";
+					export function Button({ children, ...props }) {
+						return React.createElement("button", { type: "button", ...props }, children);
+					}
+				`,
+				loader: "js",
+				resolveDir: process.cwd(),
+			};
+		});
+	},
+};
+
+let insightsToggleMarkupHarnessPromise;
+
+/** Insights toggle markup, including the unread activity pill. */
+function loadInsightsToggleMarkupHarness() {
+	insightsToggleMarkupHarnessPromise ??= bundleHarness({
+		contents: `
+			import React from "react";
+			import { renderToString } from "react-dom/server";
+			import { PulseModeToggle } from "./components/blocks/jira-kanban/experimental/pulse/components/pulse-mode-controls";
+
+			export function renderInsightsToggleMarkup({
+				active = false,
+				unreadCount = 0,
+			} = {}) {
+				return renderToString(React.createElement(PulseModeToggle, {
+					active,
+					onToggle: () => {},
+					unreadCount,
+				}));
+			}
+		`,
+		plugins: [insightsToggleMarkupPlugin],
+		sourcefile: "pulse-insights-toggle-markup-harness.ts",
+	});
+
+	return insightsToggleMarkupHarnessPromise;
 }
 
 function snapshotAt(timeline, index) {
@@ -427,7 +558,9 @@ module.exports = {
 	join,
 	KANBAN_DIR,
 	loadAttentionHarness,
+	loadInsightsToggleMarkupHarness,
 	loadOutlineHarness,
+	loadProseHarness,
 	loadRosterMarkupHarness,
 	loadScopeHarness,
 	loadScrubberHarness,

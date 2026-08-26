@@ -4,6 +4,7 @@ import { useId, useState, type ReactNode } from "react";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 
 import { AgentList } from "@/components/blocks/agent-list";
+import { PulseProseText } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-prose-text";
 import {
 	PULSE_ITEM_BODY,
 	PULSE_ITEM_TITLE,
@@ -63,8 +64,12 @@ function PulseSignalRow({
 	return (
 		<li className={PULSE_ROW}>
 			<div className="min-w-0 flex-1">
-				<p className={PULSE_ITEM_TITLE}>{title}</p>
-				<p className={cn("mt-1", PULSE_ITEM_BODY)}>{detail}</p>
+				<p className={PULSE_ITEM_TITLE}>
+					<PulseProseText text={title} />
+				</p>
+				<p className={cn("mt-1", PULSE_ITEM_BODY)}>
+					<PulseProseText text={detail} />
+				</p>
 			</div>
 			<span aria-hidden={workItemKey === undefined} className={PULSE_ROW_KEY_TRACK}>
 				{workItemKey === undefined ? "" : workItemKey}

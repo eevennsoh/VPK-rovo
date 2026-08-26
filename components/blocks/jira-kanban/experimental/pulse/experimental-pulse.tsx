@@ -221,7 +221,7 @@ export function ExperimentalPulse({
 	}
 
 	return (
-		// The fold contract is what makes `lg:h-full` and `overflow-y-auto` below
+		// The fold contract is what makes `lg:flex-1` and `overflow-y-auto` below
 		// mean anything: without it the whole page scrolls and the ruler — the
 		// primary navigation — scrolls away with it.
 		//
@@ -249,8 +249,14 @@ export function ExperimentalPulse({
 				</div>
 			</div>
 
-			<div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-6 py-10 lg:overflow-hidden lg:py-12">
-				<div className={cn(SHELL_MEASURE, "flex flex-col gap-10 lg:h-full lg:flex-row lg:gap-0")}>
+			{/* `pb-6` (space.300 / 24px) is content-side so the last cards sit
+			    above the scrollport's inner edge at max scroll. The surface stays
+			    `overflow-y-auto` at every width — `overflow-hidden` would clip that
+			    inset, and `overflow: clip` would steal the mobile scroll owner.
+			    `lg:h-full` keeps the row on the fold; `lg:flex-1` without a
+			    percentage height lets the article grow the page instead. */}
+			<div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-6 pt-10 lg:pt-12">
+				<div className={cn(SHELL_MEASURE, "flex flex-col gap-10 pb-6 lg:h-full lg:min-h-0 lg:flex-row lg:gap-0")}>
 					{/* 12px of lead-in drops the first mark onto the optical centre of
 					    the 24px eyebrow row, so the ruler starts on the article's first
 					    line rather than below it, and the rail runs to the fold. */}

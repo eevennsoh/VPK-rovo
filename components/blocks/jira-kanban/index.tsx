@@ -430,7 +430,7 @@ function BoardColumn({
 				{children}
 			</div>
 
-			<div style={{ padding: token("space.050") }}>
+			<div className="w-full" style={{ paddingBlock: token("space.050"), paddingInline: token("space.050") }}>
 				<Button className="w-full justify-start gap-2 rounded-lg" size="default" variant="ghost">
 					<Icon render={<AddIcon label="" size="small" />} />
 					Create
