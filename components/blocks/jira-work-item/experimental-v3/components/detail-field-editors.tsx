@@ -17,11 +17,17 @@ import type { AgentPlannerAssignee } from "@/components/blocks/jira-work-item/da
 import type { AgentSession, StaticTimelineEvent } from "@/components/blocks/jira-work-item/data/session-state";
 import { DetailValueTrigger } from "@/components/blocks/jira-work-item/experimental-v3/components/detail-field-row";
 import { WorkItemAgentSelector } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-agent-selector";
+import { WorkItemAssignedAgentsMenu } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-assigned-agents-menu";
 import {
+	useJiraWorkItemActions,
 	useJiraWorkItemMeta,
 	useJiraWorkItemState,
 } from "@/components/blocks/jira-work-item/experimental-v3/context-jira-work-item";
 import { agentRowStatusTooltip } from "@/components/blocks/jira-work-item/experimental-v3/lib/agent-row-status";
+import {
+	resolveAssignedAgentRows,
+	type AssignedAgentRow,
+} from "@/components/blocks/jira-work-item/experimental-v3/lib/assigned-agent-rows";
 import { DEFAULT_PINNED_SPACE_AGENT_IDS } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-picker-options";
 import { WORK_ITEM_AGENT_SELECTOR_MENU } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-agent-selector-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -422,10 +428,17 @@ function toSelectorAgent(member: CrewMember): AgentSelectorAgent {
 export function AgentsRowField({ value, onChange }: Readonly<{ value: readonly CrewMember[]; onChange: (next: CrewMember[]) => void }>) {
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
+	// Which surface the shared dropdown shows. Assigning an agent always closes
+	// the menu, so resolving the effective view per render can never yank the
+	// palette out from under the pointer.
+	const [view, setView] = useState<"assigned" | "selector">("assigned");
 	const [pinnedAgentIds, setPinnedAgentIds] = useState<readonly string[]>(DEFAULT_PINNED_SPACE_AGENT_IDS);
+	const actions = useJiraWorkItemActions();
 	const { sessions, staticEvents } = useJiraWorkItemState();
 	const selectedAgents = value.filter((member) => member.kind === "agent");
 	const selectedAgentIds = selectedAgents.map((member) => member.id);
+	const assignedRows = resolveAssignedAgentRows(value, sessions, staticEvents);
+	const effectiveView = assignedRows.length === 0 ? "selector" : view;
 	const extraAgents = selectedAgents
 		.filter((member) => !ROVO_AGENT_SELECTOR_AGENTS.some((agent) => agent.id === member.id))
 		.map(toSelectorAgent);
@@ -438,12 +451,25 @@ export function AgentsRowField({ value, onChange }: Readonly<{ value: readonly C
 		setOpen(nextOpen);
 		if (!nextOpen) {
 			setQuery("");
+			setView("assigned");
 		}
 	};
 
 	const handleFooterAction = () => {
 		setOpen(false);
 		setQuery("");
+		setView("assigned");
+	};
+
+	// Mirrors `handleOpenWorkingSession` in activity-composer.tsx: the embedded
+	// surface is driven purely by `openSession`. Rows without a session are
+	// non-interactive, so nothing is ever launched from here.
+	const handleOpenAgentSession = (row: AssignedAgentRow) => {
+		if (!row.session) {
+			return;
+		}
+		handleOpenChange(false);
+		actions.openSession(row.session.id);
 	};
 
 	const handleAgentToggle = (agentId: string) => {
@@ -493,17 +519,25 @@ export function AgentsRowField({ value, onChange }: Readonly<{ value: readonly C
 					</Avatar>
 				</div>
 				<DropdownMenuContent {...WORK_ITEM_AGENT_SELECTOR_MENU}>
-					<WorkItemAgentSelector
-						agents={agents}
-						onAgentToggle={handleAgentToggle}
-						onBrowseAgents={handleFooterAction}
-						onCreateAgent={handleFooterAction}
-						onPinnedAgentIdsChange={setPinnedAgentIds}
-						onQueryChange={setQuery}
-						pinnedAgentIds={pinnedAgentIds}
-						query={query}
-						selectedAgentIds={selectedAgentIds}
-					/>
+					{effectiveView === "assigned" ? (
+						<WorkItemAssignedAgentsMenu
+							onAddAgent={() => setView("selector")}
+							onOpenAgentSession={handleOpenAgentSession}
+							rows={assignedRows}
+						/>
+					) : (
+						<WorkItemAgentSelector
+							agents={agents}
+							onAgentToggle={handleAgentToggle}
+							onBrowseAgents={handleFooterAction}
+							onCreateAgent={handleFooterAction}
+							onPinnedAgentIdsChange={setPinnedAgentIds}
+							onQueryChange={setQuery}
+							pinnedAgentIds={pinnedAgentIds}
+							query={query}
+							selectedAgentIds={selectedAgentIds}
+						/>
+					)}
 				</DropdownMenuContent>
 			</DropdownMenu>
 		</TooltipProvider>

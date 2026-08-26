@@ -680,6 +680,199 @@ test("experimental v3 header Actions menu copies the work item as markdown", () 
 	assert.doesNotMatch(descriptionSource, /onViewModeChange/u);
 });
 
+test("the v3 Agents details row opens the assigned menu first and swaps to the palette in place", () => {
+	const detailsEditorsSource = readBlockFile("experimental-v3/components/detail-field-editors.tsx");
+
+	// One trigger, two surfaces. The row model comes from the shared pure
+	// resolver so the menu, the trigger avatars, and the status tooltip can
+	// never disagree about which agents are assigned or what they are doing.
+	assert.match(
+		detailsEditorsSource,
+		/import \{\s*resolveAssignedAgentRows,\s*type AssignedAgentRow,\s*\} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/lib\/assigned-agent-rows";/u,
+	);
+	assert.match(
+		detailsEditorsSource,
+		/import \{ WorkItemAssignedAgentsMenu \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/components\/work-item-assigned-agents-menu";/u,
+	);
+	assert.match(detailsEditorsSource, /const \[view, setView\] = useState<"assigned" \| "selector">\("assigned"\);/u);
+	assert.match(
+		detailsEditorsSource,
+		/const assignedRows = resolveAssignedAgentRows\(value, sessions, staticEvents\);/u,
+	);
+
+	// Zero assigned agents must still land on the palette exactly as before —
+	// an empty "assigned" menu would be a dead end.
+	assert.match(
+		detailsEditorsSource,
+		/const effectiveView = assignedRows\.length === 0 \? "selector" : view;/u,
+	);
+
+	// Every close path resets the view, so reopening never resumes mid-swap.
+	assert.match(
+		detailsEditorsSource,
+		/const handleOpenChange = \(nextOpen: boolean\) => \{[\s\S]*if \(!nextOpen\) \{\s*setQuery\(""\);\s*setView\("assigned"\);/u,
+	);
+	assert.match(
+		detailsEditorsSource,
+		/const handleFooterAction = \(\) => \{\s*setOpen\(false\);\s*setQuery\(""\);\s*setView\("assigned"\);/u,
+	);
+	// Toggling an agent routes through handleFooterAction, so the surface is
+	// always closed when the assigned count crosses 0 -> 1 and the derived
+	// `effectiveView` can never yank the palette out from under the pointer.
+	assert.match(
+		detailsEditorsSource,
+		/const handleAgentToggle = \(agentId: string\) => \{[\s\S]*handleFooterAction\(\);\s*\};/u,
+	);
+
+	// Both surfaces share one DropdownMenuContent — "Add agent" swaps in place
+	// rather than opening a second popup.
+	assert.match(
+		detailsEditorsSource,
+		/<DropdownMenuContent \{\.\.\.WORK_ITEM_AGENT_SELECTOR_MENU\}>\s*\{effectiveView === "assigned" \? \(\s*<WorkItemAssignedAgentsMenu\s*onAddAgent=\{\(\) => setView\("selector"\)\}\s*onOpenAgentSession=\{handleOpenAgentSession\}\s*rows=\{assignedRows\}\s*\/>\s*\) : \(\s*<WorkItemAgentSelector/u,
+	);
+
+	// Row activation is the shared openSession action and nothing else: no
+	// launchSession / invokeAgent (which create a brand-new scripted session
+	// and never set activeSessionId), and no focus restore — the metadata rail
+	// goes inert the moment the floating session surface opens.
+	assert.match(
+		detailsEditorsSource,
+		/const handleOpenAgentSession = \(row: AssignedAgentRow\) => \{\s*if \(!row\.session\) \{\s*return;\s*\}\s*handleOpenChange\(false\);\s*actions\.openSession\(row\.session\.id\);/u,
+	);
+	assert.match(detailsEditorsSource, /const actions = useJiraWorkItemActions\(\);/u);
+	assert.doesNotMatch(detailsEditorsSource, /launchSession|invokeAgent|onOpenAgentChat/u);
+});
+
+test("the v3 assigned-agents menu lists live agent state and ends in an Add agent row", () => {
+	const menuSource = readBlockFile("experimental-v3/components/work-item-assigned-agents-menu.tsx");
+
+	assert.match(menuSource, /^"use client";/u);
+	assert.match(menuSource, /import AiAgentAddIcon from "@atlaskit\/icon-lab\/core\/ai-agent-add";/u);
+
+	// Rows reuse the shared suggestion-menu primitive, so `inlineMetadata`
+	// renders the `name · state` split (middot and truncation included) instead
+	// of a hand-rolled row.
+	assert.match(
+		menuSource,
+		/<RichTextSuggestionMenu\s*className="rich-text-command-menu-borderless w-full!"[\s\S]*title="Assigned agents"/u,
+	);
+	assert.match(menuSource, /label: row\.name,/u);
+	assert.match(menuSource, /leadingVisual: \([\s\S]*<AgentAvatarVisual[\s\S]*avatarSrc=\{row\.avatarSrc\}[\s\S]*brandName=\{row\.brandName\}[\s\S]*sizePx=\{24\}/u);
+
+	// Live narration only while a session is actually running or waiting; a
+	// finished or never-run agent falls back to the resolved status label so a
+	// row can never claim "Working" for an agent that is not.
+	assert.match(
+		menuSource,
+		/inlineMetadata: row\.session !== undefined && row\.session\.status !== "completed"\s*\? <WorkingSessionActivityByline session=\{row\.session\} sessionIndex=\{rowIndex\} \/>\s*: <WorkingSessionActivityByline fallbackLabel=\{row\.statusLabel\} \/>,/u,
+	);
+	assert.match(
+		menuSource,
+		/import \{ WorkingSessionActivityByline \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/components\/agent-session-activity-byline";/u,
+	);
+
+	// Rows with no session open nothing, so they stay informational rather than
+	// offering a click that would silently no-op.
+	assert.match(menuSource, /disabled: row\.session === undefined,/u);
+	assert.match(
+		menuSource,
+		/const row = rows\.find\(\(candidate\) => candidate\.agentId === item\.id\);\s*if \(!row\?\.session\) \{\s*return;\s*\}\s*onOpenAgentSession\(row\);/u,
+	);
+
+	// The footer row is last, separated by the primitive's decorative rule, and
+	// swaps the surface rather than dismissing the dropdown.
+	assert.match(
+		menuSource,
+		/const items: readonly RichTextSuggestionMenuItem\[\] = \[\s*\.\.\.rows\.map\(toAgentItem\),\s*\{\s*icon: <AiAgentAddIcon label="" \/>,\s*iconTileVariant: "transparent",\s*id: ADD_AGENT_ITEM_ID,\s*label: "Add agent",\s*separatorBefore: true,\s*\},\s*\];/u,
+	);
+	assert.match(
+		menuSource,
+		/if \(item\.id === ADD_AGENT_ITEM_ID\) \{\s*onAddAgent\(\);\s*return;\s*\}/u,
+	);
+
+	// Roving selection skips the disabled rows instead of parking on them.
+	assert.match(
+		menuSource,
+		/const selectableIndexes = items\.flatMap\(\(item, index\) => \(item\.disabled \? \[\] : \[index\]\)\);/u,
+	);
+	assert.match(menuSource, /const \[selectedIndex, setSelectedIndex\] = useState\(-1\);/u);
+	assert.match(menuSource, /event\.key === "ArrowDown" \|\| event\.key === "ArrowUp"/u);
+
+	// Base UI parks focus on the popup after mount, so the list has to reclaim
+	// it a frame later or Arrow/Enter never reach this handler.
+	assert.match(
+		menuSource,
+		/window\.requestAnimationFrame\(\(\) => \{\s*containerRef\.current\?\.focus\(\);\s*\}\);/u,
+	);
+	assert.match(menuSource, /return \(\) => window\.cancelAnimationFrame\(frameId\);/u);
+
+	// Dismissal belongs to the host DropdownMenuContent; duplicating the
+	// composer menu's window-level listeners here would fight Base UI.
+	assert.doesNotMatch(menuSource, /window\.addEventListener|keepMounted|AnimatePresence/u);
+});
+
+test("the v3 working-session byline is one shared module, not a per-surface copy", () => {
+	const bylineSource = readBlockFile("experimental-v3/components/agent-session-activity-byline.tsx");
+	const contextPillsSource = readBlockFile("experimental-v3/components/activity-composer-context-pills.tsx");
+
+	// The narration cadence, scripts, and shimmer treatment now live in one
+	// place that both the composer's working-agents menu and the Details rail's
+	// assigned-agents menu import.
+	assert.match(bylineSource, /^"use client";/u);
+	assert.match(bylineSource, /export const NEEDS_INPUT_STATUS_LABEL = "Needs input";/u);
+	assert.match(bylineSource, /export function WorkingSessionActivityByline\(/u);
+	assert.match(bylineSource, /"code-planner": \[[\s\S]*"Plan the guest checkout architecture"/u);
+	assert.match(bylineSource, /"claude-code": \[[\s\S]*"Implement and verify guest checkout"/u);
+	assert.match(bylineSource, /session\.scriptId === "shop-4821-ci-fix"[\s\S]*CI_REPAIR_ACTIVITY_SCRIPT/u);
+	assert.match(bylineSource, /`Waiting for \$\{session\.waitingOn\.agentName\}`/u);
+	assert.match(bylineSource, /WORKING_SESSION_ACTIVITY_STAGGER_MS \* \(sessionIndex \+ 1\)/u);
+	assert.match(bylineSource, /window\.setTimeout\([\s\S]*window\.setInterval\([\s\S]*setActivityCycleIndex\(\(index\) => index \+ 1\)/u);
+	assert.match(bylineSource, /window\.clearTimeout\(timeoutId\);[\s\S]*window\.clearInterval\(intervalId\);/u);
+	assert.doesNotMatch(bylineSource, /Math\.random/u);
+
+	// Reduced motion, the skip-while-waiting rule, and the `active` pause all
+	// short-circuit the same effect, so no surface can leave a timer running.
+	assert.match(bylineSource, /const shouldReduceMotion = Boolean\(useReducedMotion\(\)\);/u);
+	assert.match(
+		bylineSource,
+		/if \(!active \|\| shouldReduceMotion \|\| sessionStatus === undefined \|\| sessionStatus === "waiting"\) \{\s*return;\s*\}/u,
+	);
+	assert.match(bylineSource, /\}, \[active, cycleDelayMs, sessionStatus, shouldReduceMotion\]\);/u);
+
+	// Both modes share one component and one typography wrapper: a live session
+	// cycles, a `fallbackLabel` renders statically with no timer and no shimmer.
+	assert.match(bylineSource, /session\?: AgentSession;/u);
+	assert.match(bylineSource, /fallbackLabel\?: string;/u);
+	assert.match(bylineSource, /const activity: string \| null = session\s*\? getWorkingSessionActivity\(session, activityCycleIndex\)\s*: fallbackLabel \?\? null;/u);
+	assert.match(bylineSource, /<CyclingByline className="menu-row-title text-text-subtlest">/u);
+	assert.match(
+		bylineSource,
+		/needsUserInput && activity !== null \? \(\s*<span className="inline-flex min-w-0 items-baseline">\s*<Shimmer as="span">\{activity\}<\/Shimmer>\s*<AnimatedDots \/>\s*<\/span>\s*\) : activity/u,
+	);
+
+	// The composer imports the byline rather than redefining it, and the
+	// now-unused byline-only imports are gone (Shimmer stays: the summary pill
+	// still uses it).
+	assert.match(
+		contextPillsSource,
+		/import \{ NEEDS_INPUT_STATUS_LABEL, WorkingSessionActivityByline \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/components\/agent-session-activity-byline";/u,
+	);
+	assert.doesNotMatch(contextPillsSource, /function WorkingSessionActivityByline|function getWorkingSessionActivity/u);
+	assert.doesNotMatch(contextPillsSource, /WORKING_SESSION_ACTIVITY_SCRIPTS|CI_REPAIR_ACTIVITY_SCRIPT|NEEDS_INPUT_STATUS_LABEL = /u);
+	assert.doesNotMatch(contextPillsSource, /import \{ AnimatedDots \}|import \{ CyclingByline \}/u);
+	assert.match(contextPillsSource, /import \{ Shimmer \} from "@\/components\/ui-custom\/shimmer";/u);
+
+	// The composer menu still drives the byline the same way it always did.
+	assert.match(
+		contextPillsSource,
+		/inlineMetadata: \([\s\S]*<WorkingSessionActivityByline[\s\S]*sessionIndex=\{sessionIndex\}/u,
+	);
+	assert.match(
+		contextPillsSource,
+		/trailing: session\.status === "waiting"[\s\S]*\{session\.waitingOn\?\.kind === "user" \? NEEDS_INPUT_STATUS_LABEL : "Waiting"\}[\s\S]*: null/u,
+	);
+});
+
 test("the v3 lib test suite is registered so it actually runs in CI", () => {
 	// Tests under `components/**` are inert unless they are explicitly listed in
 	// the unit-test manifest, so a forked test file is worthless until it is
@@ -702,4 +895,16 @@ test("the v3 lib test suite is registered so it actually runs in CI", () => {
 			`${testFile} is registered for v3 but the file does not exist`,
 		);
 	}
+
+	// `assigned-agent-rows` is v3-only (it has no v2 twin to inherit
+	// registration from), so the loop above cannot reach it. It is the row
+	// model behind the Details rail's assigned-agents menu, so it has to run.
+	assert.ok(
+		fs.existsSync(path.join(V3_DIR, "lib", "assigned-agent-rows.test.js")),
+		"expected the assigned-agent-rows row-model test to exist",
+	);
+	assert.match(
+		manifestSource,
+		/"components\/blocks\/jira-work-item\/experimental-v3\/lib\/assigned-agent-rows\.test\.js"/u,
+	);
 });
