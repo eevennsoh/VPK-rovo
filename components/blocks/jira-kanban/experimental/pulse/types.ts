@@ -160,18 +160,31 @@ export interface PulseContribution {
 	looseWorkIds: readonly string[];
 }
 
-/** One decision point on the timeline. */
+/** One captured outcome on the article — an insight, not a time-window. */
 export interface PulseSnapshot {
 	id: string;
-	/** ISO timestamp — drives proportional tick placement on the scrubber. */
+	/**
+	 * ISO time this outcome was first generated. Orders the article. The ruler
+	 * ignores it and steps insights evenly: spacing counts outcomes, not elapsed
+	 * time.
+	 */
 	timestamp: string;
-	/** Scrubber pill label, e.g. "Wed 13 Aug". */
+	/** Generated date, e.g. "Wed 13 Aug". */
 	dateLabel: string;
-	/** Clock label, e.g. "02:30". */
+	/** Generated clock, e.g. "02:30". */
 	timeLabel: string;
-	/** Eyebrow left half, e.g. "Night shift". */
+	/** ISO time this insight was last revised. May equal `timestamp`. */
+	updatedAt: string;
+	/** Last-updated date, same shape as `dateLabel`. */
+	updatedDateLabel: string;
+	/** Last-updated clock, same shape as `timeLabel`. */
+	updatedTimeLabel: string;
+	/** Outcome name, e.g. "Night shift". */
 	chapterLabel: string;
-	/** Eyebrow right half, e.g. "Tue 18:00 – Wed 06:00". */
+	/**
+	 * Window a quiet-member note still names, e.g. "Tue 18:00 – Wed 06:00".
+	 * Not painted on the eyebrow: the header clock is last updated.
+	 */
 	rangeLabel: string;
 	/** Display headline. Keep it a sentence a human would actually say. */
 	title: string;

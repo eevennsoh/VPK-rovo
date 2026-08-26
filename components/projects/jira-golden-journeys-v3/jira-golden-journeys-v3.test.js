@@ -75,10 +75,9 @@ test("Track keeps the experimental board Filter interactive in Board and Pulse",
 	)?.[0] ?? "";
 
 	assert.match(trackStage, /<ExperimentalJiraKanbanPage/u);
-	// The slot may hold more than the popover — Insights hangs its scope chip
-	// beside the control it reflects — and the actions may be the filter's own
-	// or a wrapper over them, because choosing a scope also opens Insights. This
-	// pins the popover and its wiring rather than one exact spelling of either.
+	// The actions may be the filter's own or a wrapper over them, because
+	// choosing a scope also opens Insights. This pins the popover and its
+	// wiring rather than one exact spelling of either.
 	assert.match(
 		experimentalPageSource,
 		/filterControl=\{[\s\S]*?<BoardFilterPopover[\s\S]*actions=\{(?:boardFilter\.actions|filterActions)\}[\s\S]*model=\{boardFilter\.model\}/u,
@@ -118,6 +117,14 @@ test("Insights defaults the person filter to Venn and shares it with Filter", ()
 	assert.match(experimentalPageSource, /toPulseMemberId\(selectedAssigneeIds, PULSE_MEMBER_IDS\)/u);
 	assert.match(experimentalPageSource, /handlePulseMemberChange/u);
 	assert.match(experimentalPageSource, /assignees=\{filterAssignees\}/u);
+	assert.match(
+		experimentalPageSource,
+		/mode === "pulse"\s*\? mergeBoardFilterAssignees\(assignees, PULSE_TIMELINE\.members\)/u,
+	);
+	assert.match(
+		experimentalPageSource,
+		/if \(fieldId === "parent" \|\| fieldId === "sprint"\) \{\s*handleOpenTimeline\(\);/u,
+	);
 	assert.match(
 		experimentalPageSource,
 		/promoteAssignee\(getJiraKanbanAssignees\(boardColumns\), PULSE_PRESENTATION_MEMBER_ID\)/u,

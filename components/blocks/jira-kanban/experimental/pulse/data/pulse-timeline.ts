@@ -11,8 +11,10 @@ import type {
  * Pulse fixture — one sprint week of the `PAY` Payments SDK v2 migration.
  *
  * Monday 17 August through Friday 21 August 2026. Seven snapshots, each a real
- * decision point rather than a status update. Timestamps are deliberately
- * uneven so the scrubber's proportional tick spacing reads as elapsed time.
+ * decision point rather than a status update. Each insight records when it was
+ * generated and when it was last updated — an outcome can be revised after it
+ * first appears. Those clocks are deliberately uneven; the ruler ignores them
+ * and steps insights evenly, because spacing counts outcomes, not elapsed time.
  *
  * All date and time strings are pre-formatted here on purpose: formatting at
  * render time drifts between server and client.
@@ -556,6 +558,9 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 		timestamp: "2026-08-17T08:12:00Z",
 		dateLabel: "Mon 17 Aug",
 		timeLabel: "08:12",
+		updatedAt: "2026-08-17T09:26:00Z",
+		updatedDateLabel: "Mon 17 Aug",
+		updatedTimeLabel: "09:26",
 		chapterLabel: "Kickoff",
 		rangeLabel: "Fri 17:00 – Mon 08:12",
 		title: "We agreed to delete the adapter, not wrap it",
@@ -593,6 +598,9 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 		timestamp: "2026-08-17T17:55:00Z",
 		dateLabel: "Mon 17 Aug",
 		timeLabel: "17:55",
+		updatedAt: "2026-08-18T09:14:00Z",
+		updatedDateLabel: "Tue 18 Aug",
+		updatedTimeLabel: "09:14",
 		chapterLabel: "The spike",
 		rangeLabel: "Mon 08:12 – Mon 17:55",
 		title: "The adapter can go, with one asterisk",
@@ -631,6 +639,9 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 		timestamp: "2026-08-18T11:05:00Z",
 		dateLabel: "Tue 18 Aug",
 		timeLabel: "11:05",
+		updatedAt: "2026-08-18T11:05:00Z",
+		updatedDateLabel: "Tue 18 Aug",
+		updatedTimeLabel: "11:05",
 		chapterLabel: "Regression",
 		rangeLabel: "Mon 17:55 – Tue 11:05",
 		title: "Idempotency keys are bouncing in sandbox-eu",
@@ -669,6 +680,9 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 		timestamp: "2026-08-19T02:30:00Z",
 		dateLabel: "Wed 19 Aug",
 		timeLabel: "02:30",
+		updatedAt: "2026-08-19T08:15:00Z",
+		updatedDateLabel: "Wed 19 Aug",
+		updatedTimeLabel: "08:15",
 		chapterLabel: "Night shift",
 		rangeLabel: "Tue 11:05 – Wed 02:30",
 		title: "Six pull requests while everyone slept",
@@ -708,6 +722,9 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 		timestamp: "2026-08-19T15:20:00Z",
 		dateLabel: "Wed 19 Aug",
 		timeLabel: "15:20",
+		updatedAt: "2026-08-19T16:48:00Z",
+		updatedDateLabel: "Wed 19 Aug",
+		updatedTimeLabel: "16:48",
 		chapterLabel: "Design review",
 		rangeLabel: "Wed 02:30 – Wed 15:20",
 		title: "We cut the wallet UI",
@@ -747,6 +764,9 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 		timestamp: "2026-08-20T09:45:00Z",
 		dateLabel: "Thu 20 Aug",
 		timeLabel: "09:45",
+		updatedAt: "2026-08-20T09:45:00Z",
+		updatedDateLabel: "Thu 20 Aug",
+		updatedTimeLabel: "09:45",
 		chapterLabel: "Rehearsal",
 		rangeLabel: "Wed 15:20 – Thu 09:45",
 		title: "The rollback took four minutes",
@@ -786,6 +806,9 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 		timestamp: "2026-08-21T17:30:00Z",
 		dateLabel: "Fri 21 Aug",
 		timeLabel: "17:30",
+		updatedAt: "2026-08-21T18:05:00Z",
+		updatedDateLabel: "Fri 21 Aug",
+		updatedTimeLabel: "18:05",
 		chapterLabel: "Ship readiness",
 		rangeLabel: "Thu 09:45 – Fri 17:30",
 		title: "Two blockers between here and Monday",

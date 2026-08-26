@@ -156,11 +156,12 @@ test("Pulse absorbs sub-pixel jump rounding in the outline, not in the shell", (
 	// `toActiveOutlineIndex` counted an anchor as read only at `<= 0`.
 	//
 	// That threshold now defaults to a pixel, so the correction lives with the
-	// arithmetic that needs it and the shell simply passes the handlers through.
+	// arithmetic that needs it. The shell wraps the handlers to suppress the
+	// top fade on a chevron jump; it still must not nudge the scrollport.
 	assert.doesNotMatch(SOURCES.shell, /JUMP_SETTLE_PX/u);
 	assert.doesNotMatch(SOURCES.shell, /scrollBy\(/u, "the shell no longer corrects the outline's rounding");
-	assert.match(SOURCES.shell, /const handleSelectEntry = scrollToEntry;/u);
-	assert.match(SOURCES.shell, /const handleGoToSnapshot = scrollToSnapshot;/u);
+	assert.match(SOURCES.shell, /scrollToEntry\(id\)/u);
+	assert.match(SOURCES.shell, /scrollToSnapshot\(snapshotIndex, options\)/u);
 });
 
 test("Pulse mounts every insight, so nothing crossfades and the position is a treatment", () => {
@@ -232,13 +233,16 @@ test("Pulse keeps focus alive through in-place commits, and pins header jumps to
 	// Chevron `align: "start"` pins the insight header to the scroller top
 	// (plus the 4px focus-ring inset). A reserved fade-band scroll-padding
 	// used to jump that row 52px down so a CSS top mask would not cover the
-	// buttons — the top fade is an overlay now, so that offset is gone.
+	// buttons — the top fade is an overlay now, so that offset is gone. The
+	// overlay still veils the nav if it paints, so the shell suppresses it
+	// for the chevron jump and shows it for every other clipped rest state.
 	assert.doesNotMatch(SOURCES.shell, /scrollPaddingTop/u);
 	assert.doesNotMatch(SOURCES.shell, /buildScrollMaskStyle/u);
 	assert.doesNotMatch(SOURCES.shell, /fadeTop: false/u);
 	assert.match(SOURCES.shell, /onScroll=\{handleArticleScroll\}/u);
-	assert.match(SOURCES.shell, /onScrollEnd=\{handleArticleScrollEnd\}/u);
-	assert.match(SOURCES.shell, /showTopScrollMask && isScrollingTowardTop/u);
+	assert.doesNotMatch(SOURCES.shell, /onScrollEnd=/u);
+	assert.match(SOURCES.shell, /toPulseArticleTopFadeVisible\(showTopScrollMask, suppressTopFade\)/u);
+	assert.match(SOURCES.shell, /isPulseChevronHeaderJump\(options\)/u);
 	assert.match(SOURCES.shell, /"opacity-0 transition-opacity motion-reduce:transition-none"/u);
 	assert.match(SOURCES.shell, /"visible opacity-100 duration-normal ease-out-practical"/u);
 	assert.match(SOURCES.shell, /"invisible duration-fast ease-in"/u);
@@ -292,7 +296,7 @@ test("Pulse Insights always paints a bottom scroll mask above the composer", () 
 	);
 	assert.match(
 		SOURCES.shell,
-		/pulseArticleFadeClassName\(showTopScrollMask && isScrollingTowardTop\)/u,
+		/pulseArticleFadeClassName\(\s*toPulseArticleTopFadeVisible\(showTopScrollMask, suppressTopFade\),\s*\)/u,
 	);
 });
 
@@ -668,9 +672,10 @@ test("Pulse eyebrow and section labels match the Activity heading rung", () => {
 		assert.doesNotMatch(source, /tracking-\[0\.14em\]|tracking-\[0\.12em\]|tracking-\[0\.09em\]|tracking-\[0\.06em\]/u, `${name} keeps a retired label rung`);
 		assert.doesNotMatch(source, /uppercase/u, `${name} does not uppercase labels`);
 	}
-	// The eyebrow names the chapter (and the member while the view is scoped).
+	// The eyebrow names the chapter and when this outcome was last updated.
 	assert.match(SOURCES.story, /className=\{cn\("min-w-0 truncate", PULSE_EYEBROW\)\}/u);
-	assert.match(SOURCES.story, /\$\{member\.name\} · \$\{snapshot\.chapterLabel\} · \$\{snapshot\.rangeLabel\}/u);
+	assert.match(SOURCES.story, /toPulseInsightEyebrow\(snapshot, member\?\.name \?\? null\)/u);
+	assert.doesNotMatch(SOURCES.story, /snapshot\.rangeLabel/u);
 	// Row data is not a label: the quiet marker and the group names are sentence
 	// case. The roster's own group labels left with it, and so did the "3 of 7"
 	// counter that sat beside the retired chevrons — the reading position is

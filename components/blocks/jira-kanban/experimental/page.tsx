@@ -45,7 +45,6 @@ import {
 } from "./pulse/data/pulse-scopes";
 import { scopeTimelineToWorkItemKeys } from "./pulse/hooks/use-pulse-timeline";
 import type { PulseAnswer } from "./pulse/types";
-import { PulseScopeChip } from "./pulse/components/pulse-scope-chip";
 import {
 	createJiraKanbanSelectionState,
 	filterJiraKanbanColumnsByAssignee,
@@ -135,23 +134,39 @@ export default function ExperimentalJiraKanbanPage({
 	const [assignedAgentIdsByCard, setAssignedAgentIdsByCard] = useState<Record<string, string[]>>({});
 	const boardFilter = useBoardFilter();
 	const selectedAssigneeIds = boardFilter.selectedAssigneeIds;
+	const [timelineLastViewedAt, setTimelineLastViewedAt] = useState<string | null>(
+		EXPERIMENTAL_BOARD_LAST_VIEWED_AT,
+	);
+	const markTimelineAsViewed = useCallback(() => {
+		setTimelineLastViewedAt(markTimelineViewed(PULSE_TIMELINE));
+	}, []);
+	const handleOpenTimeline = useCallback(() => {
+		markTimelineAsViewed();
+		const nextAssigneeIds = toInsightsAssigneeIds(selectedAssigneeIds, PULSE_MEMBER_IDS);
+		setSelection(createJiraKanbanSelectionState());
+		setDraggedCard(null);
+		boardFilter.actions.setAssigneeIds(nextAssigneeIds);
+		setMode("pulse");
+	}, [boardFilter.actions, markTimelineAsViewed, selectedAssigneeIds]);
 	// Choosing an epic or a sprint is a request to read the brief, and the brief
 	// only exists in Insights. Without this, picking one from the board filter
-	// recomputes the scope, lights the chip, and leaves the reader on the board
-	// looking at columns — the feature silently doing nothing.
+	// recomputes the scope and leaves the reader on the board looking at
+	// columns — the feature silently doing nothing.
 	//
 	// It hangs off the filter's own actions rather than an effect on `scope`:
 	// the mode change is caused by the reader's click, and deriving it from
 	// state afterwards would also fire when a scope is restored on mount.
+	// Parent and Sprint go through handleOpenTimeline so scoped entry gets the
+	// same Venn default as the Insights toggle.
 	const filterActions = useMemo((): BoardFilterActions => ({
 		...boardFilter.actions,
 		toggleValue: (fieldId, valueId) => {
 			boardFilter.actions.toggleValue(fieldId, valueId);
 			if (fieldId === "parent" || fieldId === "sprint") {
-				setMode("pulse");
+				handleOpenTimeline();
 			}
 		},
-	}), [boardFilter.actions]);
+	}), [boardFilter.actions, handleOpenTimeline]);
 	// Insights reads Parent and Sprint off the same filter the board reads its
 	// own fields off. One control, one selection model — the scope is derived
 	// here rather than owned separately, so the popover and the article cannot
@@ -175,16 +190,15 @@ export default function ExperimentalJiraKanbanPage({
 			};
 		});
 	}, [boardFilter.model.selectedValueIdsByField]);
-	const [timelineLastViewedAt, setTimelineLastViewedAt] = useState<string | null>(
-		EXPERIMENTAL_BOARD_LAST_VIEWED_AT,
-	);
 	const assignees = useMemo(
 		() => promoteAssignee(getJiraKanbanAssignees(boardColumns), PULSE_PRESENTATION_MEMBER_ID),
 		[boardColumns],
 	);
 	const filterAssignees = useMemo(
-		() => mergeBoardFilterAssignees(assignees, PULSE_TIMELINE.members),
-		[assignees],
+		() => mode === "pulse"
+			? mergeBoardFilterAssignees(assignees, PULSE_TIMELINE.members)
+			: assignees,
+		[assignees, mode],
 	);
 	// Pulse faces are a shorthand for Filter → assignee. The roster reads the
 	// same field the popover writes, so the Filter button is pressed whenever
@@ -302,19 +316,6 @@ export default function ExperimentalJiraKanbanPage({
 		handleAssigneeFilterChange(toPulseMemberAssigneeIds(memberId));
 	};
 
-	const markTimelineAsViewed = useCallback(() => {
-		setTimelineLastViewedAt(markTimelineViewed(PULSE_TIMELINE));
-	}, []);
-
-	const handleOpenTimeline = useCallback(() => {
-		markTimelineAsViewed();
-		const nextAssigneeIds = toInsightsAssigneeIds(selectedAssigneeIds, PULSE_MEMBER_IDS);
-		setSelection(createJiraKanbanSelectionState());
-		setDraggedCard(null);
-		boardFilter.actions.setAssigneeIds(nextAssigneeIds);
-		setMode("pulse");
-	}, [boardFilter.actions, markTimelineAsViewed, selectedAssigneeIds]);
-
 	const handleSelectedCardsStatusChange = (targetColumnTitle: string) => {
 		updateBoardColumns((currentColumns) => moveJiraKanbanCardsToColumn(
 			currentColumns,
@@ -379,25 +380,12 @@ export default function ExperimentalJiraKanbanPage({
 					/>
 				) : undefined}
 				filterControl={
-					<>
-						<BoardFilterPopover
-							actions={filterActions}
-							assignees={filterAssignees}
-							compact={compactHeader}
-							model={boardFilter.model}
-						/>
-						{/* The chip is the only always-visible proof the article is
-						    narrowed. It rides in the filter slot so it sits beside the
-						    control it reflects, and it clears through the same filter
-						    action the popover uses. */}
-						<PulseScopeChip
-							onClear={() => {
-								filterActions.clearField("parent");
-								filterActions.clearField("sprint");
-							}}
-							scope={scope}
-						/>
-					</>
+					<BoardFilterPopover
+						actions={filterActions}
+						assignees={filterAssignees}
+						compact={compactHeader}
+						model={boardFilter.model}
+					/>
 				}
 				modeToggle={
 					<PulseModeToggle
