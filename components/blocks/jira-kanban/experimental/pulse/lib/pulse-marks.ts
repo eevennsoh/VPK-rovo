@@ -21,6 +21,9 @@ export function toWeekdayLabel(dateLabel: string): string {
 
 type PulseInsightClock = Pick<PulseSnapshot, "dateLabel" | "timeLabel">;
 type PulseInsightUpdateClock = Pick<PulseSnapshot, "updatedDateLabel" | "updatedTimeLabel">;
+type PulseInsightRevisionClock = PulseInsightClock & Partial<
+	Pick<PulseSnapshot, "timestamp" | "updatedAt" | "updatedDateLabel" | "updatedTimeLabel">
+>;
 type PulseInsightEyebrow = Pick<PulseSnapshot, "chapterLabel"> & PulseInsightUpdateClock;
 
 /** Pre-formatted generated stamp, e.g. "Wed 19 Aug 02:30". */
@@ -36,9 +39,14 @@ export function toInsightUpdatedLabel(snapshot: PulseInsightUpdateClock): string
 /**
  * Whether this insight was revised after it was first generated.
  *
- * Partial test snapshots may omit the updated clock; those read as unrevised.
+ * Prefer the canonical ISO clocks: a revision inside the same displayed minute
+ * still has distinct `timestamp` / `updatedAt` values, but identical labels.
+ * Partial test snapshots may omit both clocks; those read as unrevised.
  */
-export function isInsightRevised(snapshot: Partial<PulseInsightUpdateClock> & PulseInsightClock): boolean {
+export function isInsightRevised(snapshot: PulseInsightRevisionClock): boolean {
+	if (typeof snapshot.timestamp === "string" && typeof snapshot.updatedAt === "string") {
+		return snapshot.updatedAt !== snapshot.timestamp;
+	}
 	if (snapshot.updatedDateLabel === undefined || snapshot.updatedTimeLabel === undefined) {
 		return false;
 	}

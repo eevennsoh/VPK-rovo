@@ -89,6 +89,29 @@ test("Pulse scrubber never lets the current position override a member's absence
 	assert.equal(isInsightRevised(snapshot), false);
 	assert.equal(isInsightRevised(revised), true);
 	assert.equal(
+		isInsightRevised({
+			dateLabel: "Wed 19 Aug",
+			timeLabel: "02:30",
+			timestamp: "2026-08-19T02:30:00Z",
+			updatedAt: "2026-08-19T02:30:41Z",
+			updatedDateLabel: "Wed 19 Aug",
+			updatedTimeLabel: "02:30",
+		}),
+		true,
+		"a revision inside the same displayed minute is still a revision",
+	);
+	assert.equal(
+		isInsightRevised({
+			dateLabel: "Wed 19 Aug",
+			timeLabel: "02:30",
+			timestamp: "2026-08-19T02:30:00Z",
+			updatedAt: "2026-08-19T02:30:00Z",
+			updatedDateLabel: "Wed 19 Aug",
+			updatedTimeLabel: "02:30",
+		}),
+		false,
+	);
+	assert.equal(
 		toPulseInsightEyebrow(revised, null),
 		"Night shift · Last updated Wed 19 Aug 08:15",
 	);
