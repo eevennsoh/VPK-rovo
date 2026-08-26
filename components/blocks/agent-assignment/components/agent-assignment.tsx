@@ -81,10 +81,11 @@ export function AgentAssignment({
 		if (!agent) {
 			return;
 		}
-		if (!assignedAgentIds.includes(agentId)) {
+		const isAssigned = assignedAgentIds.includes(agentId);
+		if (!isAssigned) {
 			onAgentAssign?.(agent);
 		}
-		const nextAssignedAgentIds = assignedAgentIds.includes(agentId)
+		const nextAssignedAgentIds = isAssigned
 			? assignedAgentIds.filter((id) => id !== agentId)
 			: [...assignedAgentIds, agentId];
 		onAssignedAgentIdsChange(nextAssignedAgentIds);
