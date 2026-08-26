@@ -357,7 +357,7 @@ const UNSCOPED_QUESTIONS: readonly PulseSuggestedQuestion[] = [
 	{
 		id: "q-unscoped-uncaptured",
 		question: "What happened outside Jira?",
-		answer: "Twelve pieces. The largest is a scope thread in Slack that changed the release boundary without a work item, and a Loom walkthrough of the spike that is the only record of why the adapter can be deleted outright.",
+		answer: "Twelve pieces. The largest is a local Claude session on PAY-101 that changed the release boundary without a work item, and a spike branch that is the only record of why the adapter can be deleted outright.",
 	},
 ];
 

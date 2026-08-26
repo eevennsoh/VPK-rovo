@@ -178,15 +178,13 @@ export function ExperimentalPulse({
 
 	// Both edge fades are pointer-events-none overlays. `mask-image` on a
 	// scrollport fades the document, not the viewport, so a CSS bottom stop
-	// never paints while the reader is mid-article. Overlays stay mounted at
-	// opacity zero so they can transition. The top band only appears while
+	// never paints while the reader is mid-article. The top overlay stays
+	// mounted at opacity zero so it can transition, and only appears while
 	// scrolling toward the top, so a chevron or ruler jump does not veil the
-	// destination header. The bottom band appears while scrolling whenever
-	// there is more content below. Both hide when scrolling stops.
-	const overflow = useHasVerticalOverflow<HTMLDivElement>();
-	const { ref: overflowRef, showBottomScrollMask, showTopScrollMask } = overflow;
+	// destination header. The bottom band stays on: the article sits flush on
+	// the composer, and a rest-state cutoff reads as a clip.
+	const { ref: overflowRef, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const { scrollRef, scrollToEntry, scrollToSnapshot } = reading;
-	const [isArticleScrolling, setIsArticleScrolling] = useState(false);
 	const [isScrollingTowardTop, setIsScrollingTowardTop] = useState(false);
 	const previousScrollTopRef = useRef(0);
 	const scrollportRef = useCallback<RefCallback<HTMLDivElement>>((node) => {
@@ -196,14 +194,12 @@ export function ExperimentalPulse({
 	}, [overflowRef, scrollRef]);
 	const handleArticleScroll = useCallback((event: UIEvent<HTMLDivElement>) => {
 		const nextScrollTop = event.currentTarget.scrollTop;
-		setIsArticleScrolling(true);
 		setIsScrollingTowardTop(
 			isPulseScrollTowardTop(previousScrollTopRef.current, nextScrollTop),
 		);
 		previousScrollTopRef.current = nextScrollTop;
 	}, []);
 	const handleArticleScrollEnd = useCallback(() => {
-		setIsArticleScrolling(false);
 		setIsScrollingTowardTop(false);
 	}, []);
 	// No settle nudge here: the rounding that made a jump light the mark above it
@@ -344,7 +340,6 @@ export function ExperimentalPulse({
 							fadeSize={PULSE_FADE_SIZE}
 						/>
 						<ScrollMaskEdgeOverlay
-							className={pulseArticleFadeClassName(showBottomScrollMask && isArticleScrolling)}
 							data-pulse-article-bottom-fade=""
 							edge="bottom"
 							fadeSize={PULSE_FADE_SIZE}

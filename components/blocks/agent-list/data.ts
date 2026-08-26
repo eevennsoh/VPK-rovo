@@ -53,6 +53,9 @@ export const AGENT_LIST_ITEMS: readonly AgentListItem[] = [
 		state: "needs-input",
 		agent: createSessionAgent("readiness-checker"),
 		branch: "rovo/vita-142-vision-deck",
+		host: "local",
+		machineName: "Geoff’s MacBook",
+		timeLabel: "3 mins ago",
 		invokedBy: DEMO_INVOKER,
 		elapsedSeconds: 482,
 		sessionDetails: {

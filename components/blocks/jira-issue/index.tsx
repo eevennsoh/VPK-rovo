@@ -120,6 +120,8 @@ export interface JiraIssueUncapturedWorkProps extends Omit<ComponentProps<"artic
 	captured?: boolean;
 	/** Creates a Jira work item for this uncaptured work. Omit to expose an unavailable action. */
 	onCreateWorkItem?: () => void;
+	/** Links this uncaptured work to an existing Jira work item. Omit to expose an unavailable split-menu action. */
+	onLinkWorkItem?: () => void;
 }
 
 export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "children"> {
@@ -301,7 +303,7 @@ function JiraIssueSummary({
 	return (
 		<div className="flex min-w-0 flex-col gap-2">
 			<div className="flex min-w-0 items-start gap-2">
-				<span className={cn("min-w-0 flex-1", usesStrokeChrome ? "line-clamp-2 min-h-10 text-sm leading-5" : "text-sm")}>{summary}</span>
+				<span className={cn("min-w-0 flex-1", usesStrokeChrome ? "line-clamp-2 text-sm leading-5" : "text-sm")}>{summary}</span>
 				<div className="size-6 shrink-0" data-slot="jira-issue-more-action" />
 			</div>
 
@@ -325,9 +327,23 @@ function JiraIssueSummary({
 			<div className="pt-0.5">
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-2">
-						<div className="flex items-center gap-1">
+						<div
+							className={
+								usesStrokeChrome
+									? "flex items-center gap-2"
+									: "flex items-center gap-1"
+							}
+						>
 							<TaskIcon label={issueTypeLabel} color={token("color.icon.brand")} />
-							<span className="text-xs font-semibold text-text-subtlest">{issueKey}</span>
+							<span
+								className={
+									usesStrokeChrome
+										? "text-xs font-medium leading-4 text-text-subtle"
+										: "text-xs font-semibold text-text-subtlest"
+								}
+							>
+								{issueKey}
+							</span>
 						</div>
 						{pullRequestNumber ? (
 							<div className="flex items-center gap-1">
@@ -425,6 +441,7 @@ function JiraIssueSubtasks({
 	onToggle,
 	shouldReduceMotion,
 	subtasks,
+	usesStrokeChrome,
 }: Readonly<{
 	completedCount: number;
 	controlId: string;
@@ -434,6 +451,7 @@ function JiraIssueSubtasks({
 	onToggle: () => void;
 	shouldReduceMotion: boolean | null;
 	subtasks: readonly JiraIssueSubtask[];
+	usesStrokeChrome: boolean;
 }>) {
 	const totalCount = subtasks.length;
 	const subtasksToggleLabel = `${expanded ? "Hide" : "Show"} ${label.toLowerCase()}`;
@@ -443,12 +461,18 @@ function JiraIssueSubtasks({
 	return (
 		<section aria-label={label}>
 			<div className="flex h-8 w-full items-center justify-between px-3 py-2">
-				<div className="flex items-center gap-2 text-sm font-medium leading-5 text-text-subtle">
+				<div
+					className={
+						usesStrokeChrome
+							? "flex items-center gap-2 text-xs font-medium leading-4 text-text-subtle"
+							: "flex items-center gap-2 text-sm font-medium leading-5 text-text-subtle"
+					}
+				>
 					<span className="grid size-4 shrink-0 place-items-center text-icon-subtle" aria-hidden="true">
 						<SubtasksIcon label="" size="medium" spacing="none" color="currentColor" />
 					</span>
 					<span>{label}</span>
-					<JiraIssueCountBadge>{completedCount}/{totalCount}</JiraIssueCountBadge>
+					<JiraIssueCountBadge compact={usesStrokeChrome}>{completedCount}/{totalCount}</JiraIssueCountBadge>
 				</div>
 				<Tooltip>
 					<TooltipTrigger
@@ -807,6 +831,7 @@ function JiraIssueDefault({
 								onToggle={handleSubtasksToggle}
 								shouldReduceMotion={shouldReduceMotion}
 								subtasks={subtasks}
+								usesStrokeChrome={usesStrokeChrome}
 							/>
 						</div>
 					</motion.div>

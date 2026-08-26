@@ -16,6 +16,13 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"agent-session-flyout-demo-composer": dynamic(
+		() =>
+			import("../demos/blocks/agent-session-flyout-demo").then((mod) => ({
+				default: mod.AgentSessionFlyoutDemoComposer,
+			})),
+		{ ssr: false },
+	),
 	"jira-kanban-demo-standard": dynamic(
 		() =>
 			import("../demos/blocks/jira-kanban-demo").then((mod) => ({

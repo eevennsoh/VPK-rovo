@@ -239,7 +239,6 @@ test("Pulse keeps focus alive through in-place commits, and pins header jumps to
 	assert.match(SOURCES.shell, /onScroll=\{handleArticleScroll\}/u);
 	assert.match(SOURCES.shell, /onScrollEnd=\{handleArticleScrollEnd\}/u);
 	assert.match(SOURCES.shell, /showTopScrollMask && isScrollingTowardTop/u);
-	assert.match(SOURCES.shell, /showBottomScrollMask && isArticleScrolling/u);
 	assert.match(SOURCES.shell, /"opacity-0 transition-opacity motion-reduce:transition-none"/u);
 	assert.match(SOURCES.shell, /"visible opacity-100 duration-normal ease-out-practical"/u);
 	assert.match(SOURCES.shell, /"invisible duration-fast ease-in"/u);
@@ -260,6 +259,7 @@ test("Pulse keeps focus alive through in-place commits, and pins header jumps to
 	assert.match(SOURCES.signals, /if \(isRequested\) return;/u);
 	assert.match(SOURCES.rail, /captured=\{capturedIds\.has\(item\.id\)\}/u);
 	assert.match(SOURCES.rail, /onCreateWorkItem=\{\(\) => onCapture\(item\)\}/u);
+	assert.match(SOURCES.rail, /onLinkWorkItem=\{\(\) => onCapture\(item\)\}/u);
 	assert.doesNotMatch(SOURCES.rail, /aria-disabled|aria-live/u, "the shared Jira Issue variant owns the action contract");
 
 	// Scroll position is not a focus change, so the reading position still needs
@@ -269,6 +269,31 @@ test("Pulse keeps focus alive through in-place commits, and pins header jumps to
 	assert.match(SOURCES.stream, /<p aria-live="polite" className="sr-only" role="status">/u);
 	assert.match(SOURCES.stream, /Insight \$\{activeSnapshotIndex \+ 1\} of \$\{entries\.length\}/u);
 	assert.equal(SOURCES.stream.match(/aria-live/gu).length, 1, "one status for the whole article");
+});
+
+test("Pulse Insights always paints a bottom scroll mask above the composer", () => {
+	// The ask dock is a static sibling under the article. Overflow-gated fades
+	// only paint while scrolling, so a rest-state article would cut off flush
+	// against the composer. The bottom overlay is the seam and stays on
+	// whether or not the column is overflowing or currently scrolling.
+	assert.doesNotMatch(SOURCES.shell, /isArticleScrolling/u);
+	assert.doesNotMatch(SOURCES.shell, /showBottomScrollMask/u);
+	assert.doesNotMatch(
+		SOURCES.shell,
+		/pulseArticleFadeClassName\([^)]*showBottomScrollMask/u,
+	);
+	assert.match(
+		SOURCES.shell,
+		/<ScrollMaskEdgeOverlay\s+data-pulse-article-bottom-fade=""\s+edge="bottom"\s+fadeSize=\{PULSE_FADE_SIZE\}\s*\/>/u,
+	);
+	assert.match(
+		SOURCES.shell,
+		/data-pulse-article-bottom-fade=""[\s\S]*<PulseInsightsComposer/u,
+	);
+	assert.match(
+		SOURCES.shell,
+		/pulseArticleFadeClassName\(showTopScrollMask && isScrollingTowardTop\)/u,
+	);
 });
 
 test("Pulse styles stay on semantic tokens and never render with a logical AND", () => {
@@ -329,10 +354,19 @@ test("Pulse rail hangs everything off one left edge and one right edge", () => {
 	assert.match(SOURCES.rail, /<JiraIssue[\s\S]*variant="uncaptured-work"/u);
 	assert.match(SOURCES.rail, /captured=\{capturedIds\.has\(item\.id\)\}/u);
 	assert.match(SOURCES.rail, /onCreateWorkItem=\{\(\) => onCapture\(item\)\}/u);
+	assert.match(SOURCES.rail, /onLinkWorkItem=\{\(\) => onCapture\(item\)\}/u);
 	assert.match(SOURCES.rail, /const participants = toUncapturedParticipants\(item, memberLookup\);/u);
 	assert.match(SOURCES.rail, /participants=\{participants\}/u);
 	assert.match(SOURCES.rail, /sourceLink=\{createPulseLooseWorkSmartLink\(item, participants\)\}/u);
-	assert.match(SOURCES.data, /sourceTitle: "#payments-migration"/u);
+	assert.match(SOURCES.rail, /toPullRequestSmartLink/u);
+	assert.match(SOURCES.rail, /GitHub: \{ kind: "third-party", name: "github" \}/u);
+	assert.match(SOURCES.rail, /Claude: \{ kind: "third-party", name: "claude" \}/u);
+	assert.doesNotMatch(SOURCES.rail, /Slack: \{ kind: "third-party", name: "slack" \}/u);
+	assert.doesNotMatch(SOURCES.rail, /Loom: \{ kind: "atlassian", name: "loom" \}/u);
+	assert.match(SOURCES.data, /export const PULSE_SPACE_REPOSITORY = "eevensoh\/vpk-rovo"/u);
+	assert.match(SOURCES.data, /kind: "pull-request"/u);
+	assert.match(SOURCES.data, /kind: "agent-session"/u);
+	assert.match(SOURCES.data, /host: "local"/u);
 	assert.doesNotMatch(SOURCES.rail, /PulseLooseWorkRow|suggestedAction/u);
 	assert.doesNotMatch(SOURCES.rail, /Create work item|AvatarGroup|CheckMarkIcon/u);
 });

@@ -88,7 +88,7 @@ function Button({
 			)}
 			{...props}
 		>
-			{isLoading && <Spinner />}
+			{isLoading && <Spinner variant="inherit" />}
 			{children}
 		</ButtonPrimitive>
 	)

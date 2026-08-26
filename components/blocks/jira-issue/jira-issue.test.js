@@ -67,7 +67,7 @@ test("Jira issue stroke chrome drops the raised shadow and uses the disabled bor
 	assert.match(SOURCE, /usesStrokeChrome=\{usesStrokeChrome\}/u);
 	assert.match(
 		SOURCE,
-		/className=\{cn\("min-w-0 flex-1", usesStrokeChrome \? "line-clamp-2 min-h-10 text-sm leading-5" : "text-sm"\)\}/u,
+		/className=\{cn\("min-w-0 flex-1", usesStrokeChrome \? "line-clamp-2 text-sm leading-5" : "text-sm"\)\}/u,
 	);
 	assert.match(SOURCE, /<div className="flex min-w-0 flex-col gap-2">/u);
 	assert.match(SOURCE, /<TagGroup className="min-w-0 gap-1 overflow-hidden">/u);
@@ -105,11 +105,13 @@ test("Jira issue owns an uncaptured-work variant with a controlled create action
 	assert.match(SOURCE, /participants: readonly JiraIssueParticipant\[\];/u);
 	assert.match(SOURCE, /sourceLink: SmartLinkItem;/u);
 	assert.match(SOURCE, /onCreateWorkItem\?: \(\) => void;/u);
+	assert.match(SOURCE, /onLinkWorkItem\?: \(\) => void;/u);
 	assert.match(SOURCE, /export type JiraIssueProps = JiraIssueDefaultProps \| JiraIssueUncapturedWorkProps;/u);
 	assert.match(SOURCE, /if \(props\.variant === "uncaptured-work"\) \{[\s\S]*<JiraIssueUncapturedWork \{\.\.\.props\} \/>/u);
 	assert.match(UNCAPTURED_WORK_SOURCE, /data-variant=\{variant\}/u);
 	assert.match(UNCAPTURED_WORK_SOURCE, /flex w-full flex-col gap-2 rounded-lg border border-dashed/u);
-	assert.match(UNCAPTURED_WORK_SOURCE, /<p className="line-clamp-2 min-h-10 text-sm leading-5">\{summary\}<\/p>/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /<p className="line-clamp-2 text-sm leading-5">\{summary\}<\/p>/u);
+	assert.doesNotMatch(UNCAPTURED_WORK_SOURCE, /line-clamp-2 min-h-10/u);
 	assert.doesNotMatch(UNCAPTURED_WORK_SOURCE, /<p className="truncate[^"]*">\{summary\}<\/p>/u);
 	assert.match(UNCAPTURED_WORK_SOURCE, /import \{ SmartLink \} from "@\/components\/blocks\/smart-link";/u);
 	assert.match(UNCAPTURED_WORK_SOURCE, /renderVisual\(sourceLink\.provider\.logo, "footer"\)/u);
@@ -121,18 +123,25 @@ test("Jira issue owns an uncaptured-work variant with a controlled create action
 	assert.match(UNCAPTURED_WORK_SOURCE, /text-xs leading-4 text-text-subtle[\s\S]*hover:text-text-subtle hover:underline/u);
 	assert.doesNotMatch(UNCAPTURED_WORK_SOURCE, /hover:text-link/u);
 	assert.doesNotMatch(UNCAPTURED_WORK_SOURCE, /\{source\} · \{detail\}/u);
-	assert.match(UNCAPTURED_WORK_SOURCE, /<div className="pt-0.5">/u);
+	assert.doesNotMatch(UNCAPTURED_WORK_SOURCE, /pt-0\.5/u);
 	assert.match(UNCAPTURED_WORK_SOURCE, /className="flex items-center justify-between"/u);
 	assert.match(UNCAPTURED_WORK_SOURCE, /size="compact"/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /size="icon-compact"/u);
 	assert.match(UNCAPTURED_WORK_SOURCE, /size="sm"/u);
-	assert.match(UNCAPTURED_WORK_SOURCE, /\{captured \? "Captured" : "Create work item"\}/u);
-	assert.match(UNCAPTURED_WORK_SOURCE, /aria-disabled=\{captured \|\| actionUnavailable\}/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /<ButtonGroup aria-label=\{`Work item actions for \$\{summary\}`\} variant="split">/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /Create work item/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /<DropdownMenuItem[\s\S]*>[\s\S]*Link work item[\s\S]*<\/DropdownMenuItem>/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /aria-disabled=\{createUnavailable\}/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /disabled=\{linkUnavailable\}/u);
+	assert.match(UNCAPTURED_WORK_SOURCE, /Captured/u);
 	assert.match(UNCAPTURED_WORK_SOURCE, /aria-live="polite"/u);
 	assert.match(PAGE_SOURCE, /variant\?: "default" \| "experimental" \| "uncaptured-work" \|/u);
-	assert.match(PAGE_SOURCE, /title: "#payments-migration"/u);
-	assert.match(PAGE_SOURCE, /provider: \{ name: "Slack", logo: \{ kind: "third-party", name: "slack" \} \}/u);
+	assert.match(PAGE_SOURCE, /title: "Local · PAY-101"/u);
+	assert.match(PAGE_SOURCE, /provider: \{ name: "Claude", logo: \{ kind: "third-party", name: "claude" \} \}/u);
 	assert.match(DEMO_SOURCE, /export function JiraIssueDemoUncapturedWork\(\)/u);
 	assert.match(DETAILS_SOURCE, /title: "Uncaptured work"[\s\S]*demoSlug: "jira-issue-demo-uncaptured-work"/u);
+	assert.match(DETAILS_SOURCE, /name: "onLinkWorkItem"/u);
+	assert.match(PAGE_SOURCE, /onLinkWorkItem=\{\(\) => setUncapturedWorkCaptured\(true\)\}/u);
 	assert.match(VARIANT_REGISTRY_SOURCE, /default: mod\.JiraIssueDemoUncapturedWork/u);
 });
 
@@ -198,9 +207,10 @@ test("Jira issue aggregates active agents into one priority row and an Agent Lis
 	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ AgentStates \} from "@\/components\/blocks\/agent-states";/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /import AiAgentIcon from "@atlaskit\/icon\/core\/ai-agent";/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /summarizeJiraIssueAgentActivities\(activities\)/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<span className="ml-px grid size-4 shrink-0 place-items-center text-text-subtlest" aria-hidden="true">\s*<AiAgentIcon label="" \/>/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<span className="ml-px grid size-4 shrink-0 place-items-center text-icon-subtle" aria-hidden="true">\s*<AiAgentIcon label="" \/>/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AvatarFallback[\s\S]*\{summary\.activityCount\}/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /className="flex h-6 w-full[^"]*rounded-b-\[6px\] rounded-t-sm[^"]*"/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /className="flex h-6 w-full[^"]*rounded-md[^"]*"/u);
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /className="flex h-6 w-full[^"]*rounded-b-\[6px\] rounded-t-sm[^"]*"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const isSingleAgent = summary\.activityCount === 1;/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /onClick=\{isSingleAgent[\s\S]*if \(onViewChat\) \{[\s\S]*onViewChat\(activities\[0\]\);[\s\S]*return;[\s\S]*\}[\s\S]*handleOpenChange\(true\);[\s\S]*: \(\) => handleOpenChange\(true\)\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<AgentList[\s\S]*flyout="none"[\s\S]*items=\{agentListItems\}[\s\S]*onView=\{handleAgentListView\}[\s\S]*variant="compact"/u);
@@ -213,9 +223,15 @@ test("Jira issue shows PR metadata with the specified summary-row spacing", () =
 	assert.match(SOURCE, /pullRequestNumber\?: number;[\s\S]*pullRequestStatus\?: JiraIssuePullRequestStatus;/u);
 	assert.match(SOURCE, /const inferredPullRequestNumber = agentDoneRuns\.find\(\(run\) => run\.pullRequestNumber\)\?\.pullRequestNumber;/u);
 	assert.match(SOURCE, /const resolvedPullRequestNumber = pullRequestNumber \?\? inferredPullRequestNumber;/u);
-	assert.match(SOURCE, /<div className="flex items-center gap-2">[\s\S]*<div className="flex items-center gap-1">[\s\S]*<TaskIcon[\s\S]*\{issueKey\}[\s\S]*\{pullRequestNumber \? \([\s\S]*<div className="flex items-center gap-1">[\s\S]*pullRequestStatus === "merged"[\s\S]*text-icon-accent-purple[\s\S]*<MergeSuccessIcon label="Pull request merged" color="currentColor" \/>[\s\S]*text-icon-accent-lime[\s\S]*<PullRequestIcon label="Pull request" color="currentColor" \/>[\s\S]*#\{pullRequestNumber\}/u);
+	assert.match(SUMMARY_BLOCK, /<TaskIcon[\s\S]*\{issueKey\}[\s\S]*\{pullRequestNumber \? \([\s\S]*<div className="flex items-center gap-1">[\s\S]*pullRequestStatus === "merged"[\s\S]*text-icon-accent-purple[\s\S]*<MergeSuccessIcon label="Pull request merged" color="currentColor" \/>[\s\S]*text-icon-accent-lime[\s\S]*<PullRequestIcon label="Pull request" color="currentColor" \/>[\s\S]*#\{pullRequestNumber\}/u);
 	assert.match(SOURCE, /pullRequestNumber=\{resolvedPullRequestNumber\}/u);
 	assert.match(SOURCE, /pullRequestStatus=\{pullRequestStatus\}/u);
+});
+
+test("Jira issue stroke chrome matches subtasks type on the issue-key cluster", () => {
+	assert.match(SUMMARY_BLOCK, /usesStrokeChrome\s*\n\s*\? "flex items-center gap-2"\s*\n\s*: "flex items-center gap-1"/);
+	assert.match(SUMMARY_BLOCK, /usesStrokeChrome\s*\n\s*\? "text-xs font-medium leading-4 text-text-subtle"\s*\n\s*: "text-xs font-semibold text-text-subtlest"/);
+	assert.match(SUMMARY_BLOCK, /<TaskIcon label=\{issueTypeLabel\} color=\{token\("color\.icon\.brand"\)\} \/>/);
 });
 
 test("Jira issue uses the 8px large radius token", () => {
@@ -371,10 +387,19 @@ test("Jira issue renders a reusable generative action command menu", () => {
 
 test("Jira issue uses the VPK Badge primitive for row counts", () => {
 	assert.match(COUNT_BADGE_SOURCE, /import \{ Badge \} from "@\/components\/ui\/badge";/);
-	assert.match(COUNT_BADGE_SOURCE, /function JiraIssueCountBadge\(\{ children \}: Readonly<\{ children: ReactNode \}>\) \{\n\treturn \(\n\t\t<Badge className="h-5 min-w-0 rounded-sm px-1\.5 font-semibold text-text-subtle" max=\{false\} variant="neutral">/);
-	assert.match(SOURCE, /<JiraIssueCountBadge>\{completedCount\}\/\{totalCount\}<\/JiraIssueCountBadge>/);
+	assert.match(COUNT_BADGE_SOURCE, /<Badge className="h-5 min-w-0 rounded-sm px-1\.5 font-semibold text-text-subtle" max=\{false\} variant="neutral">/);
+	assert.match(SOURCE, /<JiraIssueCountBadge compact=\{usesStrokeChrome\}>\{completedCount\}\/\{totalCount\}<\/JiraIssueCountBadge>/);
 	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /JiraIssueCountBadge|Agent done/u);
 	assert.doesNotMatch(COUNT_BADGE_SOURCE, /rounded-sm bg-bg-neutral px-1\.5 py-0\.5 text-xs font-semibold leading-4 text-text-subtle/);
+});
+
+test("Jira issue stroke chrome uses compact inline subtask counts", () => {
+	assert.match(COUNT_BADGE_SOURCE, /compact = false/);
+	assert.match(COUNT_BADGE_SOURCE, /return compact \? \(/);
+	assert.match(COUNT_BADGE_SOURCE, /<span className="shrink-0 text-xs font-normal leading-4 text-text-subtlest">/);
+	assert.match(SUBTASKS_BLOCK, /usesStrokeChrome: boolean;/);
+	assert.match(SUBTASKS_BLOCK, /usesStrokeChrome\s*\n\s*\? "flex items-center gap-2 text-xs font-medium leading-4 text-text-subtle"\s*\n\s*: "flex items-center gap-2 text-sm font-medium leading-5 text-text-subtle"/);
+	assert.match(SOURCE, /<JiraIssueSubtasks[\s\S]*usesStrokeChrome=\{usesStrokeChrome\}/);
 });
 
 test("Jira issue renders one aggregate agent row with prioritized status and a list flyout", () => {
@@ -584,7 +609,7 @@ test("Jira issue renders expandable subtasks with nested subtask cards", () => {
 	assert.doesNotMatch(SUBTASKS_BLOCK, /<JiraIssueSeparator \/>/);
 	assert.match(SOURCE, /<JiraIssueSeparator inset=\{usesAgentActivityShell \? agentActivitySurfaceInset : 0\} \/>[\s\S]*<div className=\{issueRowsClassName\}>/);
 	assert.match(SUBTASKS_BLOCK, /className="flex h-8 w-full items-center justify-between px-3 py-2"/);
-	assert.match(SUBTASKS_BLOCK, /className="flex items-center gap-2 text-sm font-medium leading-5 text-text-subtle"/);
+	assert.match(SUBTASKS_BLOCK, /"flex items-center gap-2 text-sm font-medium leading-5 text-text-subtle"/);
 	assert.match(SUBTASKS_BLOCK, /<span className="grid size-4 shrink-0 place-items-center text-icon-subtle" aria-hidden="true">\s*<SubtasksIcon label="" size="medium" spacing="none" color="currentColor" \/>/);
 	assert.match(SUBTASKS_BLOCK, /className="inline-flex size-6 items-center justify-center rounded-sm/);
 	assert.doesNotMatch(SUBTASKS_BLOCK, /className="flex h-12 w-full items-center justify-between px-4"/);

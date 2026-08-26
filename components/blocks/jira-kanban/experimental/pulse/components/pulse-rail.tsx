@@ -4,18 +4,24 @@ import { useMemo, type ReactNode } from "react";
 
 import { JiraIssue, type JiraIssueParticipant } from "@/components/blocks/jira-issue";
 import { PulseSectionLabel } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-signals";
-import type { SmartLinkItem, SmartLinkVisual } from "@/components/blocks/smart-link";
+import {
+	toPullRequestSmartLink,
+	type SmartLinkItem,
+	type SmartLinkVisual,
+} from "@/components/blocks/smart-link";
 
-import type { PulseLooseWork, PulseMember, PulseWorkItem } from "../types";
+import { PULSE_SPACE_REPOSITORY } from "../data/pulse-timeline";
+import {
+	pulseLooseWorkSource,
+	type PulseLooseWork,
+	type PulseLooseWorkSource,
+	type PulseMember,
+	type PulseWorkItem,
+} from "../types";
 
-const PULSE_LOOSE_WORK_SOURCE_VISUALS: Readonly<Record<string, SmartLinkVisual>> = {
-	Confluence: { kind: "atlassian", name: "confluence" },
-	Figma: { kind: "third-party", name: "figma" },
+const PULSE_LOOSE_WORK_SOURCE_VISUALS: Readonly<Record<PulseLooseWorkSource, SmartLinkVisual>> = {
 	GitHub: { kind: "third-party", name: "github" },
-	"Google Docs": { kind: "third-party", name: "google-docs" },
-	LaunchDarkly: { kind: "third-party", name: "launchdarkly" },
-	Loom: { kind: "atlassian", name: "loom" },
-	Slack: { kind: "third-party", name: "slack" },
+	Claude: { kind: "third-party", name: "claude" },
 };
 
 /**
@@ -52,22 +58,72 @@ function createPulseLooseWorkSmartLink(
 	item: PulseLooseWork,
 	participants: readonly JiraIssueParticipant[],
 ): SmartLinkItem {
-	const visual = PULSE_LOOSE_WORK_SOURCE_VISUALS[item.source] ?? {
-		kind: "text",
-		label: item.source.charAt(0).toUpperCase(),
-	};
-	const variant = item.source === "Confluence" ? "confluence" : item.source === "Loom" ? "loom" : "generic";
+	const source = pulseLooseWorkSource(item.kind);
+	const visual = PULSE_LOOSE_WORK_SOURCE_VISUALS[source];
+	const avatars = participants.map((participant) => ({
+		name: participant.name,
+		src: participant.avatarSrc,
+	}));
 
-	return {
-		id: `pulse-source-${item.id}`,
-		href: `#${item.id}`,
-		title: item.sourceTitle,
-		variant,
-		provider: { name: item.source, logo: visual },
-		icon: visual,
-		description: item.detail,
-		avatars: participants.map((participant) => ({ name: participant.name, src: participant.avatarSrc })),
-	};
+	switch (item.kind) {
+		case "pull-request": {
+			const { pullRequest } = item;
+			return {
+				...toPullRequestSmartLink({
+					id: `pulse-source-${item.id}`,
+					number: pullRequest.number,
+					title: item.title,
+					status: pullRequest.status,
+					files: pullRequest.files,
+					additions: pullRequest.additions,
+					deletions: pullRequest.deletions,
+					repository: PULSE_SPACE_REPOSITORY,
+					branch: pullRequest.branch,
+					targetBranch: "main",
+					description: item.detail,
+				}),
+				title: item.sourceTitle,
+				avatars,
+			};
+		}
+		case "branch":
+			return {
+				id: `pulse-source-${item.id}`,
+				href: `https://github.com/${PULSE_SPACE_REPOSITORY}/tree/${item.sourceTitle}`,
+				title: item.sourceTitle,
+				variant: "generic",
+				provider: { name: source, logo: visual },
+				icon: visual,
+				description: item.detail,
+				avatars,
+			};
+		case "commit":
+			return {
+				id: `pulse-source-${item.id}`,
+				href: `https://github.com/${PULSE_SPACE_REPOSITORY}/commit/${item.sourceTitle}`,
+				title: item.sourceTitle,
+				variant: "generic",
+				provider: { name: source, logo: visual },
+				icon: visual,
+				description: item.detail,
+				avatars,
+			};
+		case "agent-session":
+			return {
+				id: `pulse-source-${item.id}`,
+				href: `#${item.id}`,
+				title: item.sourceTitle,
+				variant: "generic",
+				provider: { name: source, logo: visual },
+				icon: visual,
+				description: item.detail,
+				avatars,
+			};
+		default: {
+			const _exhaustive: never = item;
+			return _exhaustive;
+		}
+	}
 }
 
 function PulseWorkItemList({
@@ -181,6 +237,7 @@ function PulseUncapturedColumn({
 								<JiraIssue
 									captured={capturedIds.has(item.id)}
 									onCreateWorkItem={() => onCapture(item)}
+									onLinkWorkItem={() => onCapture(item)}
 									participants={participants}
 									sourceLink={createPulseLooseWorkSmartLink(item, participants)}
 									summary={item.title}

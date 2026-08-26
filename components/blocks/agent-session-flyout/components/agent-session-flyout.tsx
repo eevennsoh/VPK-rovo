@@ -11,19 +11,26 @@ import {
 	JiraSessionFlyoutSurface,
 	JiraSessionFlyoutTrigger,
 	createJiraSessionFlyoutHandle,
+	type JiraSessionFlyoutContent,
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import { AGENT_SESSION_FLYOUT_SESSIONS } from "@/components/blocks/agent-session-flyout/agent-session-flyout-data";
 import { cn } from "@/lib/utils";
 
 /**
  * The `/jira-golden-journeys-v0` queue session flyout showcase. The compact session list feeds the
- * shared `JiraSessionFlyoutSurface` — the exact rich, direction-aware flyout
- * used by the live Jira product sidebar.
+ * shared `JiraSessionFlyoutSurface` — the exact direction-aware flyout used by
+ * the live Jira product sidebar. It defaults to session details and can opt
+ * into the Agent States composer.
  */
 
 export interface AgentSessionFlyoutProps {
 	/** Sessions to render in the compact list. Defaults to the `/jira-golden-journeys-v0` queue seeds. */
 	sessions?: readonly JiraSidebarSessionItem[];
+	/**
+	 * Hover flyout body. Defaults to session details; pass `"composer"` for the
+	 * Agent States card with a prompt composer.
+	 */
+	content?: JiraSessionFlyoutContent;
 	/** Additional classes applied to the outer session list. */
 	className?: string;
 }
@@ -69,8 +76,9 @@ function AgentSessionFlyoutTrigger({
  * move directly up or down the list to exercise the directional transition.
  */
 export function AgentSessionFlyout({
-	sessions = AGENT_SESSION_FLYOUT_SESSIONS,
 	className,
+	content = "details",
+	sessions = AGENT_SESSION_FLYOUT_SESSIONS,
 }: Readonly<AgentSessionFlyoutProps>) {
 	const [flyoutHandle] = useState(createJiraSessionFlyoutHandle);
 
@@ -87,7 +95,7 @@ export function AgentSessionFlyout({
 					<AgentSessionFlyoutTrigger session={session} />
 				</JiraSessionFlyoutTrigger>
 			))}
-			<JiraSessionFlyoutSurface handle={flyoutHandle} />
+			<JiraSessionFlyoutSurface content={content} handle={flyoutHandle} />
 		</div>
 	);
 }

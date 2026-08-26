@@ -27,9 +27,9 @@ test("ProgressTracker supports optional bylines and warning steps without replac
 
 test("Spinner preserves the CodePen chasing-tail motion without competing rotation drivers", () => {
 	assert.match(SPINNER_SOURCE, /default: "text-icon-subtlest"/u);
-	assert.match(SPINNER_SOURCE, /defaultVariants: \{[\s\S]*variant: "inherit"/u);
-	assert.match(SPINNER_SOURCE, /variant = "inherit"/u);
-	assert.match(SPINNER_DETAIL_SOURCE, /name: "size",[\s\S]*default: `"default"`,[\s\S]*name: "variant",[\s\S]*default: `"inherit"`,/u);
+	assert.match(SPINNER_SOURCE, /defaultVariants: \{[\s\S]*variant: "default"/u);
+	assert.match(SPINNER_SOURCE, /variant = "default"/u);
+	assert.match(SPINNER_DETAIL_SOURCE, /name: "size",[\s\S]*default: `"default"`,[\s\S]*name: "variant",[\s\S]*default: `"default"`,/u);
 	assert.match(SPINNER_SOURCE, /import \{ useReducedMotion \} from "motion\/react"/u);
 	assert.match(SPINNER_SOURCE, /<svg/u);
 	assert.match(SPINNER_SOURCE, /<circle/u);

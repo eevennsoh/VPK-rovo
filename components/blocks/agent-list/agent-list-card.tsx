@@ -2,6 +2,8 @@
 
 import { useState, type ReactNode } from "react";
 
+import ArchiveBoxIcon from "@atlaskit/icon/core/archive-box";
+import DevicesIcon from "@atlaskit/icon/core/devices";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import StatusInformationIcon from "@atlaskit/icon/core/status-information";
@@ -37,7 +39,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-import { toAgentSessionFlyoutItem } from "./agent-list-session";
+import { isLocalAgentListItem, toAgentSessionFlyoutItem } from "./agent-list-session";
 import type {
 	AgentListAgent,
 	AgentListCustomFlyoutActions,
@@ -289,7 +291,8 @@ function LifecycleIndicator({
 /**
  * The row's time. A pre-formatted `timeLabel` wins outright — a historical row
  * states when something happened, and aging it once a second would both lie and
- * cost an interval per row. Otherwise only genuinely live states count up;
+ * cost an interval per row. Local sessions are also static: they name a machine,
+ * not a ticking runtime. Otherwise only genuinely live cloud states count up;
  * everything settled reads as a relative timestamp.
  */
 function AgentListTime({
@@ -307,7 +310,8 @@ function AgentListTime({
 		return <span>{item.timeLabel}</span>;
 	}
 
-	const isLive = item.state === "running" || item.state === "needs-input";
+	const isLive = !isLocalAgentListItem(item)
+		&& (item.state === "running" || item.state === "needs-input");
 
 	return isLive ? (
 		<ElapsedTime startedAtMs={item.startedAtMs ?? seededStartedAtMs} />
@@ -325,9 +329,40 @@ function AgentListTime({
  * everything else is stating when the row last changed.
  */
 function timeSlotTitle(item: AgentListItem): string {
+	if (isLocalAgentListItem(item)) {
+		return "Last update";
+	}
+
 	return item.state === "running" || item.state === "needs-input"
 		? "Agent runtime"
 		: "Last update";
+}
+
+/** Local sessions resume from the viewer's machine; cloud sessions are inspected. */
+function rowPrimaryActionLabel(item: AgentListItem): string {
+	return isLocalAgentListItem(item) ? "Resume" : "View";
+}
+
+/**
+ * Identity on the metadata line. Cloud rows name the agent; local rows name the
+ * machine beside the devices glyph, matching the Jira session flyout host chip.
+ */
+function AgentListMetadataIdentity({ item }: Readonly<{ item: AgentListItem }>) {
+	if (isLocalAgentListItem(item) && item.machineName) {
+		return (
+			<span className="flex min-w-0 items-center gap-1">
+				<span
+					aria-hidden="true"
+					className="grid size-4 shrink-0 place-items-center"
+				>
+					<DevicesIcon color="currentColor" label="" size="small" />
+				</span>
+				<span className="min-w-0 truncate">{item.machineName}</span>
+			</span>
+		);
+	}
+
+	return <span className="min-w-0 truncate">{item.agent.name}</span>;
 }
 
 export function AgentListActivityHeader({
@@ -536,24 +571,46 @@ function RowBody({
 }
 
 /**
- * The hover/focus-revealed View control. Only rendered when there is somewhere
- * to go: a row in a list with no `onView` would otherwise reveal a button that
- * does nothing, which is worse than no button.
+ * The hover/focus-revealed primary action plus Archive. Only rendered when there
+ * is somewhere to go: a row in a list with no `onView` would otherwise reveal a
+ * button that does nothing, which is worse than no button.
  */
 function CardActions({
 	item,
+	onArchive,
 	onView,
 }: Readonly<{
 	item: AgentListItem;
+	onArchive?: (item: AgentListItem) => void;
 	onView: (item: AgentListItem) => void;
 }>) {
 	return (
 		<div
-			className="ml-3 hidden shrink-0 items-center group-hover/agent-row:flex group-has-[:focus-visible]/agent-row:flex"
+			className="ml-3 hidden shrink-0 items-center gap-1 group-hover/agent-row:flex group-has-[:focus-visible]/agent-row:flex"
 		>
-			<Button onClick={() => onView(item)} size="compact" variant="outline">
-				View
+			<Button onClick={() => onView(item)} size="compact" type="button" variant="outline">
+				{rowPrimaryActionLabel(item)}
 			</Button>
+			{onArchive ? (
+				<TooltipProvider>
+					<Tooltip>
+						<TooltipTrigger
+							render={
+								<Button
+									aria-label="Archive"
+									onClick={() => onArchive(item)}
+									size="icon-compact"
+									type="button"
+									variant="outline"
+								/>
+							}
+						>
+							<ArchiveBoxIcon label="" size="small" />
+						</TooltipTrigger>
+						<TooltipContent>Archive</TooltipContent>
+					</Tooltip>
+				</TooltipProvider>
+			) : null}
 		</div>
 	);
 }
@@ -576,11 +633,13 @@ function AgentListRow({
 	isCompact,
 	isSelected,
 	item,
+	onArchive,
 	onView,
 }: Readonly<{
 	isCompact: boolean;
 	isSelected: boolean;
 	item: AgentListItem;
+	onArchive?: (item: AgentListItem) => void;
 	onView?: (item: AgentListItem) => void;
 }>) {
 	const stateMeta = STATE_META[item.state];
@@ -673,7 +732,7 @@ function AgentListRow({
 						<AgentListTime item={item} />
 					</span>
 					<MetadataDot />
-					<span className="min-w-0 truncate">{item.agent.name}</span>
+					<AgentListMetadataIdentity item={item} />
 					{prMeta && PrIcon ? (
 						<>
 							<MetadataDot />
@@ -706,6 +765,7 @@ function AgentListRow({
 			{isSelected || onView === undefined ? null : (
 				<CardActions
 					item={item}
+					onArchive={onArchive}
 					onView={onView}
 				/>
 			)}
@@ -718,6 +778,7 @@ export function AgentListCard({
 	flyoutHandle,
 	isSelected = false,
 	item,
+	onArchive,
 	onFlyoutSubmit,
 	onView,
 	renderFlyout,
@@ -729,6 +790,7 @@ export function AgentListCard({
 	flyoutHandle: JiraSessionFlyoutHandle;
 	isSelected?: boolean;
 	item: AgentListItem;
+	onArchive?: (item: AgentListItem) => void;
 	/** Composer variant only: called when the Agent States composer submits. */
 	onFlyoutSubmit?: (prompt: string) => void;
 	onView?: (item: AgentListItem) => void;
@@ -742,6 +804,7 @@ export function AgentListCard({
 			isCompact={isCompact}
 			isSelected={isSelected}
 			item={item}
+			onArchive={onArchive}
 			onView={onView}
 		/>
 	);

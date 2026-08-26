@@ -22,22 +22,22 @@ export function AgentList({
 	flyout = "session",
 	items = AGENT_LIST_ITEMS,
 	variant = "default",
+	onArchive,
 	onSubmitPrompt,
 	onView,
 	renderFlyout,
 	selectedItemId,
 }: Readonly<AgentListProps>) {
-	// Optional read, strict requirement: both Agent States flyout variants send
+	// Optional read, strict requirement: only the composer flyout sends
 	// prompts, so a read-only list of comments and @mentions renders fine with no
-	// chat runtime only when it opts out of flyouts. A composer needs a real
-	// destination — its
-	// Agent States card clears the reply as soon as it submits, so a swallowed
-	// prompt would look like a successful send — and fails here, at render, not
-	// after the viewer has typed one.
+	// chat runtime. The default session-details flyout has nothing to submit. A
+	// composer needs a real destination — its Agent States card clears the reply
+	// as soon as it submits, so a swallowed prompt would look like a successful
+	// send — and fails here, at render, not after the viewer has typed one.
 	const chat = useOptionalRovoChat();
-	if (flyout !== "none" && onSubmitPrompt === undefined && chat === null) {
+	if (flyout === "composer" && onSubmitPrompt === undefined && chat === null) {
 		throw new Error(
-			'AgentList flyout="session" or "composer" needs a chat destination: render it inside a RovoChatProvider or pass onSubmitPrompt.',
+			'AgentList flyout="composer" needs a chat destination: render it inside a RovoChatProvider or pass onSubmitPrompt.',
 		);
 	}
 	const handleFlyoutSubmit = useCallback((item: AgentListItem, prompt: string) => {
@@ -70,6 +70,7 @@ export function AgentList({
 						isSelected={item.id === selectedItemId}
 						item={item}
 						key={item.id}
+						onArchive={onArchive}
 						onView={onView}
 						onFlyoutSubmit={(prompt) => handleFlyoutSubmit(item, prompt)}
 						renderFlyout={renderFlyout}
@@ -78,13 +79,7 @@ export function AgentList({
 				))}
 			</ul>
 			{flyout === "session" ? (
-				<JiraSessionFlyoutSurface
-					handle={flyoutHandle}
-					onSubmitPrompt={(session, prompt) => {
-						const item = items.find((candidate) => candidate.id === session.id);
-						if (item) handleFlyoutSubmit(item, prompt);
-					}}
-				/>
+				<JiraSessionFlyoutSurface handle={flyoutHandle} />
 			) : null}
 		</>
 	);
@@ -94,6 +89,8 @@ export { AGENT_LIST_ITEMS } from "./data";
 export { AgentListActivityHeader } from "./agent-list-card";
 export {
 	deriveIssueKeyFromBranch,
+	getAgentListHost,
+	isLocalAgentListItem,
 	toAgentSessionFlyoutItem,
 	toAgentSessionStatus,
 } from "./agent-list-session";
@@ -102,6 +99,7 @@ export type {
 	AgentListAgent,
 	AgentListCustomFlyoutActions,
 	AgentListFlyout,
+	AgentListHost,
 	AgentListInvoker,
 	AgentListItem,
 	AgentListPrStatus,

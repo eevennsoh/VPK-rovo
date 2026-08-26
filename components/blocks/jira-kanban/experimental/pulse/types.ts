@@ -47,20 +47,60 @@ export interface PulseWorkItem {
 }
 
 /**
- * Work the team produced that never landed in a work item: an unlinked PR, a
- * decision made in chat, a Loom nobody filed. Surfacing these is the whole
- * point of Pulse — they are the part a stand-up usually misses.
+ * Uncaptured work in this space is only GitHub (PRs, branches, commits on the
+ * configured repo) or Claude (local terminal sessions that refer to this space).
  */
-export interface PulseLooseWork {
+export type PulseLooseWorkKind = "pull-request" | "branch" | "commit" | "agent-session";
+
+export type PulseLooseWorkSource = "GitHub" | "Claude";
+
+/** Flyout fields for a `pull-request` card — feeds `toPullRequestSmartLink`. */
+export interface PulseLooseWorkPullRequest {
+	number: number;
+	status: "Open" | "Merged";
+	files: number;
+	additions: number;
+	deletions: number;
+	branch?: string;
+}
+
+interface PulseLooseWorkBase {
 	id: string;
 	title: string;
-	/** Where it lives, e.g. "GitHub" / "Slack" / "Loom" / "Confluence". */
-	source: string;
 	/** Compact destination label shown in the hoverable Smart Link trigger. */
 	sourceTitle: string;
 	/** Supporting line, e.g. "PR #1847 · no linked work item". */
 	detail: string;
 	memberIds: readonly string[];
+}
+
+/**
+ * Work the team produced that never landed in a work item: an unlinked PR,
+ * branch, or commit, or a local Claude session. Surfacing these is the whole
+ * point of Pulse — they are the part a stand-up usually misses.
+ */
+export type PulseLooseWork =
+	| (PulseLooseWorkBase & {
+			kind: "pull-request";
+			pullRequest: PulseLooseWorkPullRequest;
+	  })
+	| (PulseLooseWorkBase & { kind: "branch" | "commit" })
+	| (PulseLooseWorkBase & { kind: "agent-session"; host: "local" });
+
+/** Card footer brand: `GitHub · PR #1847` or `Claude · Local · PAY-112`. */
+export function pulseLooseWorkSource(kind: PulseLooseWorkKind): PulseLooseWorkSource {
+	switch (kind) {
+		case "pull-request":
+		case "branch":
+		case "commit":
+			return "GitHub";
+		case "agent-session":
+			return "Claude";
+		default: {
+			const _exhaustive: never = kind;
+			return _exhaustive;
+		}
+	}
 }
 
 export type PulseSignalTone = "attention" | "risk" | "decision" | "shipped";

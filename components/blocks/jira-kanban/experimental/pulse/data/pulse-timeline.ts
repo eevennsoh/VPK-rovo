@@ -232,8 +232,14 @@ const WORK_ITEMS: readonly PulseWorkItem[] = [
 ];
 
 /* ------------------------------------------------------------------ */
-/* Uncaptured work — real output that never became a work item.         */
+/* Uncaptured work — coding artifacts that never became a work item.    */
 /* ------------------------------------------------------------------ */
+
+/**
+ * The PAY space's configured GitHub repo. Every uncaptured PR, branch, and
+ * commit lives here — the same repo Pulse already names on PR #1847.
+ */
+export const PULSE_SPACE_REPOSITORY = "eevensoh/vpk-rovo";
 
 /**
  * Titles must wrap to two visible lines at the 300px uncaptured card
@@ -243,98 +249,118 @@ const WORK_ITEMS: readonly PulseWorkItem[] = [
 const LOOSE_WORK: readonly PulseLooseWork[] = [
 	{
 		id: "lw-scope-thread",
-		title: "The adapter keep-or-delete argument still lives in Slack",
-		source: "Slack",
-		sourceTitle: "#payments-migration",
-		detail: "The decision itself is not written down",
+		title: "The adapter keep-or-delete argument still lives in a local Claude session",
+		kind: "agent-session",
+		sourceTitle: "Local · PAY-101",
+		detail: "host local · worktree .worktrees/pay-101-adapter · the decision itself is not written down",
 		memberIds: ["priya", "maya", "jordan"],
+		host: "local",
 	},
 	{
 		id: "lw-adapter-branch",
 		title: "Proof branch deleting the whole adapter, still unlinked",
-		source: "GitHub",
+		kind: "pull-request",
 		sourceTitle: "PR #1847",
-		detail: "PR #1847 · 41 files, 4,180 deletions · no linked work item",
+		detail: `${PULSE_SPACE_REPOSITORY} · PR #1847 · 41 files, 4,180 deletions · no linked work item`,
 		memberIds: ["maya"],
+		pullRequest: {
+			number: 1847,
+			status: "Open",
+			files: 41,
+			additions: 0,
+			deletions: 4180,
+			branch: "proof/delete-legacy-gateway-adapter",
+		},
 	},
 	{
 		id: "lw-loom-spike",
-		title: "Walkthrough of what the spike actually found, shared in a DM",
-		source: "Loom",
-		sourceTitle: "Spike walkthrough",
-		detail: "9 min · shared in a DM, never attached to the epic",
+		title: "Spike branch that proves the adapter can go, still unlinked",
+		kind: "branch",
+		sourceTitle: "spike/delete-legacy-adapter",
+		detail: `${PULSE_SPACE_REPOSITORY} · unlinked spike branch · never attached to PAY-102`,
 		memberIds: ["maya"],
 	},
 	{
 		id: "lw-sandbox-triage",
-		title: "Root cause of the sandbox 401s still sits in the thread",
-		source: "Slack",
-		sourceTitle: "Sandbox 401 thread",
-		detail: "Found in thread at 10:52 · PAY-112 still reads “investigating”",
+		title: "Root cause of the sandbox 401s still sits in a local Claude session",
+		kind: "agent-session",
+		sourceTitle: "Local · PAY-112",
+		detail: "host local · worktree .worktrees/pay-112-sandbox-401 · PAY-112 still reads “investigating”",
 		memberIds: ["jordan", "review-agent"],
+		host: "local",
 	},
 	{
 		id: "lw-oncall-note",
-		title: "On-call handover note on key truncation, in a personal space",
-		source: "Confluence",
-		sourceTitle: "On-call handover note",
-		detail: "Written at 03:10 Tuesday · sits in a personal space",
+		title: "On-call handover note on key truncation, still an unlinked commit",
+		kind: "commit",
+		sourceTitle: "a3f81c2",
+		detail: `${PULSE_SPACE_REPOSITORY} · a3f81c2 · written at 03:10 Tuesday · no linked work item`,
 		memberIds: ["jordan"],
 	},
 	{
 		id: "lw-night-prs",
 		title: "Six agent pull requests merged overnight, none of them linked",
-		source: "GitHub",
+		kind: "pull-request",
 		sourceTitle: "PRs #1862–#1867",
-		detail: "#1862–#1867 · all green, none linked to a work item",
+		detail: `${PULSE_SPACE_REPOSITORY} · #1862–#1867 · all green, none linked to a work item`,
 		memberIds: ["review-agent", "test-agent", "release-agent"],
+		pullRequest: {
+			number: 1862,
+			status: "Merged",
+			files: 18,
+			additions: 1240,
+			deletions: 86,
+			branch: "agent/night-shift-contract-suite",
+		},
 	},
 	{
 		id: "lw-flag-edits",
-		title: "Kill switch built straight in LaunchDarkly, with no Jira record",
-		source: "LaunchDarkly",
-		sourceTitle: "Kill switch targeting rules",
-		detail: "3 targeting rules changed at 01:14 · no change record in Jira",
+		title: "Kill switch targeting rules live on a branch, with no Jira record",
+		kind: "branch",
+		sourceTitle: "flag/payments-sdk-v2-kill-switch",
+		detail: `${PULSE_SPACE_REPOSITORY} · 3 targeting rules changed at 01:14 · no change record in Jira`,
 		memberIds: ["release-agent"],
 	},
 	{
 		id: "lw-figma-parked",
-		title: "Wallet frames marked “parked, needs card artwork” in a comment",
-		source: "Figma",
-		sourceTitle: "Wallet frames comment",
-		detail: "The reason we cut it lives in a comment thread",
+		title: "Wallet cut and card-artwork reason still live in a local Claude session",
+		kind: "agent-session",
+		sourceTitle: "Local · PAY-118",
+		detail: "host local · worktree .worktrees/pay-118-wallet-cut · the reason we cut it is not on the item",
 		memberIds: ["diego"],
+		host: "local",
 	},
 	{
 		id: "lw-copy-doc",
-		title: "Eleven decline strings, already read by legal, still unattached",
-		source: "Google Docs",
-		sourceTitle: "Decline strings document",
-		detail: "Approved copy with no work item and no localisation ticket",
+		title: "Eleven decline strings, already read by legal, still an unlinked commit",
+		kind: "commit",
+		sourceTitle: "c91e4b7",
+		detail: `${PULSE_SPACE_REPOSITORY} · c91e4b7 · approved copy with no work item and no localisation ticket`,
 		memberIds: ["diego", "priya"],
 	},
 	{
 		id: "lw-rehearsal-draft",
-		title: "Rollback rehearsal run log, still a draft on Confluence",
-		source: "Confluence",
-		sourceTitle: "Rollback rehearsal log",
-		detail: "Draft page, four minutes eleven seconds recorded · not linked to the epic",
+		title: "Rollback rehearsal run log, still a local Claude session on PAY-119",
+		kind: "agent-session",
+		sourceTitle: "Local · PAY-119",
+		detail: "host local · worktree .worktrees/pay-119-rollback-rehearsal · 4m 11s recorded · not linked to the epic",
 		memberIds: ["priya", "release-agent"],
+		host: "local",
 	},
 	{
 		id: "lw-killswitch-loom",
-		title: "How to flip the kill switch at 3am, recorded for the pager",
-		source: "Loom",
-		sourceTitle: "Kill switch walkthrough",
-		detail: "6 min recorded at 22:00 Sydney · only the two reviewers have the link",
+		title: "How to flip the kill switch at 3am, sitting on an unlinked branch",
+		kind: "branch",
+		sourceTitle: "docs/kill-switch-3am-runbook",
+		detail: `${PULSE_SPACE_REPOSITORY} · runbook branch · recorded at 22:00 Sydney · never linked to PAY-121`,
 		memberIds: ["maya"],
 	},
 	{
 		id: "lw-p95-screenshot",
-		title: "v2 is 42 ms faster at p95, and the graph lives only in Slack",
-		source: "Slack",
-		sourceTitle: "#payments-migration",
-		detail: "A screenshot in #payments-migration · changes the rollout argument, lives nowhere",
+		title: "v2 is 42 ms faster at p95, and the graph lives only in an unlinked commit",
+		kind: "commit",
+		sourceTitle: "e7b02d4",
+		detail: `${PULSE_SPACE_REPOSITORY} · e7b02d4 · changes the rollout argument, lives nowhere on the board`,
 		memberIds: ["maya"],
 	},
 ];
@@ -468,7 +494,7 @@ const S6_CONTRIBUTIONS: readonly PulseContribution[] = [
 const S7_CONTRIBUTIONS: readonly PulseContribution[] = [
 	{
 		memberId: "maya", workItemKeys: ["PAY-126", "PAY-107", "PAY-115"], artifactIds: ["a7-adapter", "a7-p95"], looseWorkIds: ["lw-p95-screenshot"],
-		summary: "Merged the deletion. LegacyGatewayAdapter is gone and retry now lives in payments-api where it can be reasoned about. Also posted the p95 comparison to chat on Wednesday and never mentioned it again.",
+		summary: "Merged the deletion. LegacyGatewayAdapter is gone and retry now lives in payments-api where it can be reasoned about. Also left the p95 comparison as an unlinked commit on Wednesday and never mentioned it again.",
 	},
 	{
 		memberId: "jordan", workItemKeys: ["PAY-105", "PAY-112", "PAY-123"], artifactIds: ["a7-readiness"], looseWorkIds: [],
@@ -506,7 +532,7 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 		rangeLabel: "Fri 17:00 – Mon 08:12",
 		title: "We agreed to delete the adapter, not wrap it",
 		paragraphs: [
-			"Keeping LegacyGatewayAdapter as a compatibility shim would have been cheaper for two weeks and more expensive forever: the v1 adapter still owns retry semantics for 3-D Secure, so every v2 call would have to route back through it. Removal won, conditional on PAY-102 proving it is possible before anyone ports a call site. That sets the shape of the week — fourteen items, one epic, and 61 call sites to port rather than the 47 everyone had been quoting since June. The reasoning exists only in a 38-message chat thread, so nothing on the board says why the adapter is going.",
+			"Keeping LegacyGatewayAdapter as a compatibility shim would have been cheaper for two weeks and more expensive forever: the v1 adapter still owns retry semantics for 3-D Secure, so every v2 call would have to route back through it. Removal won, conditional on PAY-102 proving it is possible before anyone ports a call site. That sets the shape of the week — fourteen items, one epic, and 61 call sites to port rather than the 47 everyone had been quoting since June. The reasoning exists only in a local Claude session on PAY-101, so nothing on the board says why the adapter is going.",
 		],
 		artifacts: [
 			{ id: "a1-scope", title: "Payments SDK v2 — migration scope", source: "Confluence page", owner: "Priya Raman", iconName: "page", tileVariant: "blueSubtle" },
@@ -517,12 +543,12 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 		workItemKeys: ["PAY-101", "PAY-102", "PAY-104", "PAY-121"],
 		looseWorkIds: ["lw-scope-thread"],
 		attention: [
-			{ id: "s1-sig-decision", tone: "decision", memberId: "priya", timeLabel: "Mon 17 Aug 07:48", workItemKey: "PAY-101", title: "Delete the adapter rather than shim it", detail: "Agreed verbally, recorded nowhere durable. The reasoning lives in a chat thread that will scroll out of reach by Wednesday." },
+			{ id: "s1-sig-decision", tone: "decision", memberId: "priya", timeLabel: "Mon 17 Aug 07:48", workItemKey: "PAY-101", title: "Delete the adapter rather than shim it", detail: "Agreed verbally, recorded nowhere durable. The reasoning lives in a local Claude session that will be gone when the worktree is deleted." },
 			{ id: "s1-sig-mention", tone: "attention", memberId: "jordan", timeLabel: "Mon 17 Aug 08:06", workItemKey: "PAY-104", title: "Jordan Okafor mentioned you on PAY-104", detail: "“@you porting createPaymentIntent first only works if the kill switch lands with it — confirm before I start?” Posted 08:06, still unanswered." },
 			{ id: "s1-sig-flag", tone: "attention", memberId: "release-agent", timeLabel: "Mon 17 Aug 08:10", workItemKey: "PAY-121", title: "No kill switch on payments_sdk_v2_rollout", detail: "The flag exists and is off. There is no way to disable it for a single account, which the first port will need." },
 		],
 		nextActions: [
-			{ id: "s1-act-decision", label: "Write the adapter decision onto PAY-101", rationale: "The thread has the reasoning and the two objections. Nothing on the board does.", actionLabel: "Capture decision", workItemKey: "PAY-101" },
+			{ id: "s1-act-decision", label: "Write the adapter decision onto PAY-101", rationale: "The local Claude session has the reasoning and the two objections. Nothing on the board does.", actionLabel: "Capture decision", workItemKey: "PAY-101" },
 			{ id: "s1-act-killswitch", label: "Ask Release Captain Agent to build the kill switch first", rationale: "It is a prerequisite for the first merged port, not a rollout-week task.", actionLabel: "Assign agent", workItemKey: "PAY-121" },
 		],
 		stats: [
@@ -560,7 +586,7 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 			{ id: "s2-sig-unlinked", tone: "attention", memberId: "maya", timeLabel: "Mon 17 Aug 17:42", workItemKey: "PAY-102", title: "The proof of the whole week is an unlinked branch", detail: "PR #1847 carries the spike result. The work item it proves says only “investigate”." },
 		],
 		nextActions: [
-			{ id: "s2-act-link", label: "Link PR #1847 and the Loom to PAY-102", rationale: "The evidence for the delete decision is currently two links in a DM.", actionLabel: "Link evidence", workItemKey: "PAY-102" },
+			{ id: "s2-act-link", label: "Link PR #1847 and the spike branch to PAY-102", rationale: "The evidence for the delete decision is currently an unlinked PR and an unlinked branch.", actionLabel: "Link evidence", workItemKey: "PAY-102" },
 			{ id: "s2-act-handler", label: "Promote the challenge webhook handler to a blocker on PAY-107", rationale: "It gates every remaining 3-D Secure call site, not just the stub.", actionLabel: "Set blocker", workItemKey: "PAY-107" },
 		],
 		stats: [
@@ -598,7 +624,7 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 		],
 		nextActions: [
 			{ id: "s3-act-retention", label: "Chase payments platform on the sandbox key retention window", rationale: "PAY-112 and PAY-105 are both waiting on a single number.", actionLabel: "Escalate", workItemKey: "PAY-112" },
-			{ id: "s3-act-sync", label: "Sync the triage thread onto PAY-112", rationale: "The root cause has been known since 10:52. The work item still reads “investigating”.", actionLabel: "Sync summary", workItemKey: "PAY-112" },
+			{ id: "s3-act-sync", label: "Sync the local Claude session onto PAY-112", rationale: "The root cause has been known since 10:52. The work item still reads “investigating”.", actionLabel: "Sync summary", workItemKey: "PAY-112" },
 			{ id: "s3-act-tests", label: "Have Test Author Agent add a key-length boundary case", rationale: "The suite passes at 73 characters today, which is the whole problem.", actionLabel: "Assign agent", workItemKey: "PAY-113" },
 		],
 		stats: [
@@ -669,7 +695,7 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 		workItemKeys: ["PAY-115", "PAY-118", "PAY-123", "PAY-130"],
 		looseWorkIds: ["lw-figma-parked", "lw-copy-doc"],
 		attention: [
-			{ id: "s5-sig-cut", tone: "decision", memberId: "diego", timeLabel: "Wed 19 Aug 14:41", workItemKey: "PAY-118", title: "Wallet UI cut on a 180–240 ms round-trip cost", detail: "Deferred to the next epic with the card-artwork requirement attached. The reasoning is in a Figma comment thread, not on the item." },
+			{ id: "s5-sig-cut", tone: "decision", memberId: "diego", timeLabel: "Wed 19 Aug 14:41", workItemKey: "PAY-118", title: "Wallet UI cut on a 180–240 ms round-trip cost", detail: "Deferred to the next epic with the card-artwork requirement attached. The reasoning is in a local Claude session, not on the item." },
 			{ id: "s5-sig-mention", tone: "attention", memberId: "priya", timeLabel: "Wed 19 Aug 14:58", workItemKey: "PAY-115", title: "Priya Raman mentioned you on PAY-115", detail: "“@you the wallet cut changes the ship note — can you rewrite the customer-facing line before Friday?” Posted 14:58, right after the review ended." },
 			{ id: "s5-sig-fixtures", tone: "attention", memberId: "test-agent", timeLabel: "Wed 19 Aug 13:26", workItemKey: "PAY-123", title: "Test Author Agent stopped: three decline codes have no fixture to record", detail: "expired_card_network, issuer_unavailable and risk_hold were never exercised in v1 either. The agent will not invent responses it has not seen." },
 			{ id: "s5-sig-copy", tone: "attention", memberId: "diego", timeLabel: "Wed 19 Aug 15:05", workItemKey: "PAY-130", title: "Approved copy with no localisation item", detail: "Eleven strings, nine languages, a five-day queue, and it is Wednesday. No work item exists yet." },
@@ -697,7 +723,7 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 		rangeLabel: "Wed 15:20 – Thu 09:45",
 		title: "The rollback took four minutes",
 		paragraphs: [
-			"Rollback is proven rather than assumed: 200 synthetic payments through the v2 path, the flag pulled mid-flight, a clean ledger in four minutes eleven seconds, and both in-flight 3-D Secure challenges completing on v1. The rehearsal also surfaced the one failure paper would have missed — ledger-sync stamps the SDK version at intent time, so a rollback leaves rows marked v2 against payments that settled on v1, which is harmless for reconciliation and poisonous for a finance export that groups by that field. Writing the version at settlement time instead is an 88-line fix, now PAY-128. The procedure you would actually need at three in the morning is spread across a draft run log, a vendor console and a Loom in a DM.",
+			"Rollback is proven rather than assumed: 200 synthetic payments through the v2 path, the flag pulled mid-flight, a clean ledger in four minutes eleven seconds, and both in-flight 3-D Secure challenges completing on v1. The rehearsal also surfaced the one failure paper would have missed — ledger-sync stamps the SDK version at intent time, so a rollback leaves rows marked v2 against payments that settled on v1, which is harmless for reconciliation and poisonous for a finance export that groups by that field. Writing the version at settlement time instead is an 88-line fix, now PAY-128. The procedure you would actually need at three in the morning is spread across a draft run log, a vendor console and a branch nobody linked.",
 		],
 		artifacts: [
 			{ id: "a6-rehearsal", title: "Rollback rehearsal — run log", source: "Confluence page · draft", owner: "Priya Raman", iconName: "page", tileVariant: "blueSubtle" },
@@ -710,8 +736,8 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 		looseWorkIds: ["lw-rehearsal-draft", "lw-killswitch-loom"],
 		attention: [
 			{ id: "s6-sig-ledger", tone: "risk", memberId: "release-agent", timeLabel: "Thu 20 Aug 09:22", workItemKey: "PAY-128", title: "Rollback poisons the finance export", detail: "Settlement rows keep a v2 stamp after a rollback. The export groups by that field and would misreport the week without anyone noticing." },
-			{ id: "s6-sig-mention", tone: "attention", memberId: "jordan", timeLabel: "Thu 20 Aug 09:41", workItemKey: "PAY-121", title: "Jordan Okafor mentioned you on PAY-121", detail: "“@you if I am on call Monday I need the kill-switch Loom somewhere I can find at 3am, not in a DM.” Posted 09:41, six minutes after the rehearsal ended." },
-			{ id: "s6-sig-plan", tone: "attention", memberId: "priya", timeLabel: "Thu 20 Aug 09:38", workItemKey: "PAY-119", title: "The rollout plan exists in three unlinked places", detail: "A draft page, a vendor console and a Loom in a DM. None of them is reachable from the epic at three in the morning." },
+			{ id: "s6-sig-mention", tone: "attention", memberId: "jordan", timeLabel: "Thu 20 Aug 09:41", workItemKey: "PAY-121", title: "Jordan Okafor mentioned you on PAY-121", detail: "“@you if I am on call Monday I need the kill-switch runbook branch somewhere I can find at 3am, not in a worktree.” Posted 09:41, six minutes after the rehearsal ended." },
+			{ id: "s6-sig-plan", tone: "attention", memberId: "priya", timeLabel: "Thu 20 Aug 09:38", workItemKey: "PAY-119", title: "The rollout plan exists in three unlinked places", detail: "A draft page, a vendor console and a runbook branch. None of them is reachable from the epic at three in the morning." },
 			{ id: "s6-sig-rehearsal", tone: "shipped", memberId: "maya", timeLabel: "Thu 20 Aug 09:35", workItemKey: "PAY-119", title: "Rollback verified end to end", detail: "200 synthetic payments, clean ledger in 4m 11s, both in-flight challenges completed on v1." },
 		],
 		nextActions: [
@@ -736,7 +762,7 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 		rangeLabel: "Thu 09:45 – Fri 17:30",
 		title: "Two blockers between here and Monday",
 		paragraphs: [
-			"The migration itself is done: all 61 call sites ported, LegacyGatewayAdapter deleted, 4,180 lines gone, retry living in payments-api where it can be reasoned about, and a flag with per-account targeting and an armed kill switch. Two things stand between here and Monday — PAY-112 waits on the sandbox key retention window before anyone signs off on replaying keys against live accounts, and PAY-130's eleven decline strings entered a five working day localisation queue on a Friday afternoon. Neither blocks the first slice, which is one percent of traffic on a single English-only account, so Monday is possible and Wednesday is likely; the targeting rule is written and deliberately unapproved. The strongest argument for moving faster, v2 running 42 ms quicker at p95, exists only as a screenshot in a chat thread.",
+			"The migration itself is done: all 61 call sites ported, LegacyGatewayAdapter deleted, 4,180 lines gone, retry living in payments-api where it can be reasoned about, and a flag with per-account targeting and an armed kill switch. Two things stand between here and Monday — PAY-112 waits on the sandbox key retention window before anyone signs off on replaying keys against live accounts, and PAY-130's eleven decline strings entered a five working day localisation queue on a Friday afternoon. Neither blocks the first slice, which is one percent of traffic on a single English-only account, so Monday is possible and Wednesday is likely; the targeting rule is written and deliberately unapproved. The strongest argument for moving faster, v2 running 42 ms quicker at p95, exists only as an unlinked commit.",
 		],
 		artifacts: [
 			{ id: "a7-adapter", title: "Delete LegacyGatewayAdapter", source: "GitHub · #1847 merged", owner: "Maya Ferreira · −4,180 lines", logoName: "github" },
@@ -756,7 +782,7 @@ const SNAPSHOTS: readonly PulseSnapshot[] = [
 		nextActions: [
 			{ id: "s7-act-approve", label: "Approve the one percent English-only targeting rule", rationale: "It unblocks Monday without waiting on translations, and it is already written and staged.", actionLabel: "Approve rule", workItemKey: "PAY-121" },
 			{ id: "s7-act-escalate", label: "Escalate PAY-112 to the payments platform on-call", rationale: "Four days on a single number. The polite channel has not worked.", actionLabel: "Page on-call", workItemKey: "PAY-112" },
-			{ id: "s7-act-p95", label: "File the p95 comparison against PAY-126", rationale: "A 42 ms improvement is the strongest argument for moving faster and it is invisible to everyone outside one chat thread.", actionLabel: "Attach result", workItemKey: "PAY-126" },
+			{ id: "s7-act-p95", label: "File the p95 comparison against PAY-126", rationale: "A 42 ms improvement is the strongest argument for moving faster and it is invisible to everyone outside an unlinked commit.", actionLabel: "Attach result", workItemKey: "PAY-126" },
 		],
 		stats: [
 			{ id: "s7-stat-ported", label: "Call sites ported", value: "61 / 61" },
