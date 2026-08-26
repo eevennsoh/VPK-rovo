@@ -38,6 +38,7 @@ import {
 import { JiraGoldenJourneysV3TerminalStory } from "./terminal-story";
 
 const PAY_101_ISSUE_KEY = "PAY-101";
+const EMPTY_INSIGHTS_ASSIGNEE_IDS: readonly string[] = [];
 const PAY_STATUS_PHASES = ["Review", "In progress", "In review", "To do", "Done"] as const;
 
 function JiraGoldenJourneysV3TrackLearnStage({
@@ -66,6 +67,7 @@ function JiraGoldenJourneysV3TrackLearnStage({
 				agents={JIRA_GOLDEN_JOURNEYS_V3_PAY_BOARD_AGENTS}
 				ariaLabel="Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses."
 				boardColumns={boardColumns}
+				insightsDefaultAssigneeIds={EMPTY_INSIGHTS_ASSIGNEE_IDS}
 				isInsightsWorkItemInteractive={(workItem) => workItem.key === PAY_101_ISSUE_KEY}
 				isLooseWorkResumable={(item) => item.id === JIRA_GOLDEN_JOURNEYS_V3_PAY_101_UNCAPTURED_SESSION_ID}
 				mode={chapter === "learn" ? "pulse" : "board"}

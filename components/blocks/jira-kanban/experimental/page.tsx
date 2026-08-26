@@ -78,6 +78,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	ariaLabel?: string;
 	boardColumns?: readonly JiraKanbanColumnData[];
 	compactHeader?: boolean;
+	insightsDefaultAssigneeIds?: readonly string[];
 	isInsightsWorkItemInteractive?: (workItem: PulseWorkItem) => boolean;
 	isLooseWorkResumable?: (item: PulseLooseWork) => boolean;
 	mode?: ExperimentalJiraKanbanMode;
@@ -100,6 +101,7 @@ export default function ExperimentalJiraKanbanPage({
 	ariaLabel = "Experimental RFP board columns. Scroll horizontally to review all statuses.",
 	boardColumns: controlledBoardColumns,
 	compactHeader = false,
+	insightsDefaultAssigneeIds,
 	isInsightsWorkItemInteractive,
 	isLooseWorkResumable,
 	mode: controlledMode,
@@ -164,12 +166,14 @@ export default function ExperimentalJiraKanbanPage({
 	}, []);
 	const handleOpenTimeline = useCallback(() => {
 		markTimelineAsViewed();
-		const nextAssigneeIds = toInsightsAssigneeIds(selectedAssigneeIds, PULSE_MEMBER_IDS);
+		const nextAssigneeIds = insightsDefaultAssigneeIds === undefined
+			? toInsightsAssigneeIds(selectedAssigneeIds, PULSE_MEMBER_IDS)
+			: new Set(insightsDefaultAssigneeIds);
 		setSelection(createJiraKanbanSelectionState());
 		setDraggedCard(null);
 		boardFilter.actions.setAssigneeIds(nextAssigneeIds);
 		updateMode("pulse");
-	}, [boardFilter.actions, markTimelineAsViewed, selectedAssigneeIds, updateMode]);
+	}, [boardFilter.actions, insightsDefaultAssigneeIds, markTimelineAsViewed, selectedAssigneeIds, updateMode]);
 	// Choosing an epic or a sprint is a request to read the brief, and the brief
 	// only exists in Insights. Without this, picking one from the board filter
 	// recomputes the scope and leaves the reader on the board looking at

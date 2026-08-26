@@ -24,6 +24,7 @@ test("the route starts and resets at Track in the four-chapter presentation", ()
 test("Track and Learn share one controlled board and Insights surface", () => {
 	assert.match(PAGE_SOURCE, /function JiraGoldenJourneysV3TrackLearnStage/u);
 	assert.match(PAGE_SOURCE, /mode=\{chapter === "learn" \? "pulse" : "board"\}/u);
+	assert.match(PAGE_SOURCE, /insightsDefaultAssigneeIds=\{EMPTY_INSIGHTS_ASSIGNEE_IDS\}/u);
 	assert.match(
 		PAGE_SOURCE,
 		/onModeChange=\{\(mode\) => onChapterChange\(mode === "pulse" \? "learn" : "track"\)\}/u,
