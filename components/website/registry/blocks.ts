@@ -137,6 +137,10 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 		() => import("../demos/blocks/agent-states-demo"),
 		{ ssr: false },
 	),
+	"agent-assignment": dynamic(
+		() => import("../demos/blocks/agent-assignment-demo"),
+		{ ssr: false },
+	),
 	"agent-selector": dynamic(
 		() => import("../demos/blocks/agent-selector-demo"),
 		{ ssr: false },
