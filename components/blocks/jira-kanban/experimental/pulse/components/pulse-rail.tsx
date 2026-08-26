@@ -3,6 +3,7 @@
 import { useMemo, type ReactNode } from "react";
 
 import { JiraIssue, type JiraIssueParticipant } from "@/components/blocks/jira-issue";
+import { JiraIssueUncapturedWork } from "@/components/blocks/jira-issue/uncaptured-work";
 import { PulseResizeHandle } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-resize-handle";
 import { PulseSectionLabel } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-signals";
 import { usePulseWorkRailResize } from "@/components/blocks/jira-kanban/experimental/pulse/hooks/use-pulse-work-rail-resize";
@@ -129,10 +130,14 @@ function createPulseLooseWorkSmartLink(
 }
 
 function PulseWorkItemList({
+	isWorkItemInteractive,
 	members,
+	onWorkItemClick,
 	workItems,
 }: Readonly<{
+	isWorkItemInteractive?: (workItem: PulseWorkItem) => boolean;
 	members: readonly PulseMember[];
+	onWorkItemClick?: (workItem: PulseWorkItem) => void;
 	workItems: readonly PulseWorkItem[];
 }>) {
 	const memberLookup = useMemo(() => new Map(members.map((member) => [member.id, member])), [members]);
@@ -144,18 +149,23 @@ function PulseWorkItemList({
 		<ul className="flex flex-col gap-2">
 			{workItems.map((workItem) => {
 				const assignee = workItem.assigneeId === undefined ? undefined : memberLookup.get(workItem.assigneeId);
+				const isInteractive = onWorkItemClick !== undefined
+					&& (isWorkItemInteractive?.(workItem) ?? true);
 				return (
-					<li key={workItem.key}>
+					<li data-work-item-key={workItem.key} key={workItem.key}>
 						<JiraIssue
 							assigneeAvatarLabel={assignee?.name ?? workItem.assigneeName}
 							assigneeAvatarShape={assignee?.kind === "agent" ? "hexagon" : "circle"}
 							assigneeAvatarSrc={assignee?.avatarSrc ?? workItem.assigneeAvatarSrc}
 							chrome="stroke"
+							disabled={!isInteractive}
 							draggable={false}
 							issueKey={workItem.key}
+							onClick={isInteractive ? () => onWorkItemClick(workItem) : undefined}
 							priority={workItem.priority}
+							showMoreAction={false}
 							summary={workItem.summary}
-							tabIndex={-1}
+							tabIndex={isInteractive ? undefined : -1}
 							tags={workItem.tags}
 						/>
 					</li>
@@ -189,11 +199,15 @@ function PulseWorkColumn({
 }
 
 function PulseWorkItemsColumn({
+	isWorkItemInteractive,
 	members,
+	onWorkItemClick,
 	scopedToFirstName,
 	workItems,
 }: Readonly<{
+	isWorkItemInteractive?: (workItem: PulseWorkItem) => boolean;
 	members: readonly PulseMember[];
+	onWorkItemClick?: (workItem: PulseWorkItem) => void;
 	scopedToFirstName: string | null;
 	workItems: readonly PulseWorkItem[];
 }>) {
@@ -204,16 +218,23 @@ function PulseWorkItemsColumn({
 					{`Items ${scopedToFirstName} touched in this window — not only items they own.`}
 				</p>
 			)}
-			<PulseWorkItemList members={members} workItems={workItems} />
+			<PulseWorkItemList
+				isWorkItemInteractive={isWorkItemInteractive}
+				members={members}
+				onWorkItemClick={onWorkItemClick}
+				workItems={workItems}
+			/>
 		</PulseWorkColumn>
 	);
 }
 
 function PulseUncapturedColumn({
 	capturedIds,
+	isLooseWorkResumable,
 	looseWork,
 	members,
 	onCapture,
+	onResumeLooseWork,
 }: Readonly<{
 	/**
 	 * Captured rows, owned above this column. A capture is a commitment the
@@ -221,9 +242,11 @@ function PulseUncapturedColumn({
 	 * unmounted the keyed row and silently un-captured it on the way back.
 	 */
 	capturedIds: ReadonlySet<string>;
+	isLooseWorkResumable?: (item: PulseLooseWork) => boolean;
 	looseWork: readonly PulseLooseWork[];
 	members: readonly PulseMember[];
 	onCapture: (item: PulseLooseWork) => void;
+	onResumeLooseWork?: (item: PulseLooseWork) => void;
 }>) {
 	const memberLookup = useMemo(() => new Map(members.map((member) => [member.id, member])), [members]);
 	return (
@@ -234,17 +257,35 @@ function PulseUncapturedColumn({
 				<ul className="flex flex-col gap-2">
 					{looseWork.map((item) => {
 						const participants = toUncapturedParticipants(item, memberLookup);
+						const canResume = onResumeLooseWork !== undefined
+							&& item.kind === "agent-session"
+							&& (isLooseWorkResumable?.(item) ?? true);
 						return (
 							<li key={item.id}>
-								<JiraIssue
-									captured={capturedIds.has(item.id)}
-									onCreateWorkItem={() => onCapture(item)}
-									onLinkWorkItem={() => onCapture(item)}
-									participants={participants}
-									sourceLink={createPulseLooseWorkSmartLink(item, participants)}
-									summary={item.title}
-									variant="uncaptured-work"
-								/>
+								{canResume ? (
+									<JiraIssueUncapturedWork
+										captured={capturedIds.has(item.id)}
+										data-loose-work-id={item.id}
+										onCreateWorkItem={() => onCapture(item)}
+										onLinkWorkItem={() => onCapture(item)}
+										onResumeAgentSession={() => onResumeLooseWork(item)}
+										participants={participants}
+										sourceLink={createPulseLooseWorkSmartLink(item, participants)}
+										summary={item.title}
+										variant="uncaptured-work"
+									/>
+								) : (
+									<JiraIssue
+										captured={capturedIds.has(item.id)}
+										data-loose-work-id={item.id}
+										onCreateWorkItem={() => onCapture(item)}
+										onLinkWorkItem={() => onCapture(item)}
+										participants={participants}
+										sourceLink={createPulseLooseWorkSmartLink(item, participants)}
+										summary={item.title}
+										variant="uncaptured-work"
+									/>
+								)}
 							</li>
 						);
 					})}
@@ -269,18 +310,26 @@ function PulseUncapturedColumn({
 export function PulseWorkRail({
 	capturedIds,
 	chat,
+	isLooseWorkResumable,
+	isWorkItemInteractive,
 	looseWork,
 	members,
 	onCapture,
+	onResumeLooseWork,
+	onWorkItemClick,
 	scopedToFirstName,
 	workItems,
 }: Readonly<{
 	capturedIds: ReadonlySet<string>;
 	/** When set, replaces both card tracks — same swap as the work-item side panel. */
 	chat?: ReactNode;
+	isLooseWorkResumable?: (item: PulseLooseWork) => boolean;
+	isWorkItemInteractive?: (workItem: PulseWorkItem) => boolean;
 	looseWork: readonly PulseLooseWork[];
 	members: readonly PulseMember[];
 	onCapture: (item: PulseLooseWork) => void;
+	onResumeLooseWork?: (item: PulseLooseWork) => void;
+	onWorkItemClick?: (workItem: PulseWorkItem) => void;
 	scopedToFirstName: string | null;
 	workItems: readonly PulseWorkItem[];
 }>) {
@@ -305,15 +354,19 @@ export function PulseWorkRail({
 			{chat === undefined ? (
 				<div className="-m-1 grid min-w-0 grid-cols-1 gap-10 p-1 lg:box-content lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-2 lg:overflow-y-auto lg:overscroll-y-contain">
 					<PulseWorkItemsColumn
+						isWorkItemInteractive={isWorkItemInteractive}
 						members={members}
+						onWorkItemClick={onWorkItemClick}
 						scopedToFirstName={scopedToFirstName}
 						workItems={workItems}
 					/>
 					<PulseUncapturedColumn
 						capturedIds={capturedIds}
+						isLooseWorkResumable={isLooseWorkResumable}
 						looseWork={looseWork}
 						members={members}
 						onCapture={onCapture}
+						onResumeLooseWork={onResumeLooseWork}
 					/>
 				</div>
 			) : (

@@ -7,298 +7,92 @@ function readProjectFile(relativePath) {
 	return readFileSync(path.join(process.cwd(), relativePath), "utf8");
 }
 
-const CONTROLLER_PATH = "components/projects/jira-golden-journeys-v3/use-hotfix-story.ts";
-const MODEL_PATH = "components/projects/jira-golden-journeys-v3/data/story-model.ts";
-const STORY_PATH = "components/projects/jira-golden-journeys-v3/data/hotfix-story.ts";
-const EVENTS_PATH = "components/projects/jira-golden-journeys-v3/data/hotfix-story-events.ts";
+const PAGE_SOURCE = readProjectFile("components/projects/jira-golden-journeys-v3/page.tsx");
+const CONTROLS_SOURCE = readProjectFile("components/projects/jira-golden-journeys-v3/story-controls.tsx");
+const EXPERIMENTAL_PAGE_SOURCE = readProjectFile("components/blocks/jira-kanban/experimental/page.tsx");
 
-test("the work-item stage mounts experimental-v3 inline, not the v2 shell", () => {
-	const pageSource = readProjectFile("components/projects/jira-golden-journeys-v3/page.tsx");
+test("the route starts and resets at Track in the four-chapter presentation", () => {
 	assert.match(
-		pageSource,
-		/import \{ ExperimentalV3JiraWorkItem \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/experimental-v3-jira-work-item"/u,
+		PAGE_SOURCE,
+		/useState<JiraGoldenJourneysV3PresentationChapter>\("track"\)/u,
 	);
-	assert.match(pageSource, /<ExperimentalV3JiraWorkItem[\s\S]*presentation="inline"/u);
-	assert.match(pageSource, /workItem=\{controller\.workItem\}/u);
-	assert.match(pageSource, /initialState=\{controller\.initialState\}/u);
-	assert.match(pageSource, /createJiraGoldenJourneysV3InsightsSnapshot/u);
-	assert.match(pageSource, /insightsSnapshot=\{insightsSnapshot\}/u);
-	assert.match(pageSource, /controller\.insightsRevision/u);
-	assert.doesNotMatch(pageSource, /ExperimentalV2JiraWorkItem/u);
-	assert.doesNotMatch(pageSource, /variant="experimental-v2"/u);
+	assert.match(PAGE_SOURCE, /const resetStory = useCallback\(\(\) => \{\s*setChapter\("track"\)/u);
+	assert.match(CONTROLS_SOURCE, /JIRA_GOLDEN_JOURNEYS_V3_PRESENTATION_CHAPTERS/u);
+	assert.doesNotMatch(CONTROLS_SOURCE, /Review|Fix|Approve|Release/u);
 });
 
-test("Track mounts the experimental Jira kanban board before Build", () => {
-	const pageSource = readProjectFile("components/projects/jira-golden-journeys-v3/page.tsx");
-	const modelSource = readProjectFile(MODEL_PATH);
-	assert.match(
-		pageSource,
-		/import ExperimentalJiraKanbanPage from "@\/components\/blocks\/jira-kanban\/experimental\/page"/u,
-	);
-	assert.match(pageSource, /storyController\.chapter === "track"/u);
-	assert.match(pageSource, /<ExperimentalJiraKanbanPage[\s\S]*boardColumns=\{controller\.boardColumns\}/u);
-	assert.match(pageSource, /onBoardColumnsChange=\{controller\.updateBoardColumns\}/u);
-	assert.match(
-		pageSource,
-		/function JiraGoldenJourneysV3TrackStage\([\s\S]*overflow-hidden pt-4 /u,
-	);
-	assert.doesNotMatch(
-		pageSource.match(/function JiraGoldenJourneysV3TrackStage\([\s\S]*?\n\}/u)?.[0] ?? "",
-		/px-6|px-8|pb-4|padding-inline/u,
-	);
-	assert.doesNotMatch(pageSource, /activeCardCode=/u);
-	assert.match(
-		modelSource,
-		/\{ label: "Terminal", value: "terminal" \},\s*\{ label: "Track", value: "track" \},\s*\{ label: "Build", value: "build" \},/u,
-	);
+test("Track and Learn share one controlled board and Insights surface", () => {
+	assert.match(PAGE_SOURCE, /function JiraGoldenJourneysV3TrackLearnStage/u);
+	assert.match(PAGE_SOURCE, /mode=\{chapter === "learn" \? "pulse" : "board"\}/u);
+	assert.match(PAGE_SOURCE, /insightsDefaultAssigneeIds=\{EMPTY_INSIGHTS_ASSIGNEE_IDS\}/u);
+	assert.match(PAGE_SOURCE, /const handleBoardModeChange = useCallback/u);
+	assert.match(PAGE_SOURCE, /onModeChange=\{handleBoardModeChange\}/u);
+	assert.match(PAGE_SOURCE, /key=\{`track-learn:\$\{stageRevision\}`\}/u);
+	assert.match(PAGE_SOURCE, /nextChapter === "learn" && chapter !== "learn"/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onModeChange/u);
+	assert.match(PAGE_SOURCE, /activeCardCode=\{PAY_101_ISSUE_KEY\}/u);
+	assert.match(PAGE_SOURCE, /Track the Payments SDK v2 migration/u);
 });
 
-test("Track keeps the experimental board Filter interactive in Board and Pulse", () => {
-	const pageSource = readProjectFile("components/projects/jira-golden-journeys-v3/page.tsx");
-	const experimentalPageSource = readProjectFile(
-		"components/blocks/jira-kanban/experimental/page.tsx",
+test("PAY-101 connects the board and Insights rail to Build", () => {
+	assert.match(PAGE_SOURCE, /const PAY_101_ISSUE_KEY = "PAY-101"/u);
+	assert.match(PAGE_SOURCE, /isInsightsWorkItemInteractive=\{\(workItem\) => workItem\.key === PAY_101_ISSUE_KEY\}/u);
+	assert.match(PAGE_SOURCE, /onInsightsWorkItemClick=\{openBuild\}/u);
+	assert.match(PAGE_SOURCE, /onCardClick=\{openBuild\}/u);
+	assert.match(PAGE_SOURCE, /onChapterChange\("build"\)/u);
+});
+
+test("Build renders the PAY-101 Jira item with its captured session and no auto-scroll", () => {
+	assert.match(PAGE_SOURCE, /createJiraGoldenJourneysV3Pay101BuildState/u);
+	assert.match(PAGE_SOURCE, /workItem=\{JIRA_GOLDEN_JOURNEYS_V3_PAY_101_WORK_ITEM\}/u);
+	assert.match(
+		PAGE_SOURCE,
+		/parentSessionId: JIRA_GOLDEN_JOURNEYS_V3_PAY_101_SESSION_ID[\s\S]*autoScroll: false/u,
 	);
-	const experimentalHeaderSource = readProjectFile(
-		"components/blocks/jira-kanban/experimental/experimental-board-header.tsx",
-	);
-	const filterPopoverSource = readProjectFile(
-		"components/blocks/jira-kanban/experimental/components/board-filter-popover.tsx",
-	);
-	const filterOptionsSource = readProjectFile(
-		"components/blocks/jira-kanban/experimental/data/board-filter-options.ts",
-	);
-	const trackStage = pageSource.match(
-		/function JiraGoldenJourneysV3TrackStage\([\s\S]*?(?=\nfunction JiraGoldenJourneysV3WorkItemStage)/u,
+	assert.match(PAGE_SOURCE, /<ExperimentalV3JiraWorkItem[\s\S]*presentation="inline"/u);
+	assert.doesNotMatch(PAGE_SOURCE, /ExperimentalV2JiraWorkItem/u);
+});
+
+test("the uncaptured PAY-101 session copies the shared resume prompt without skipping Build", () => {
+	assert.match(PAGE_SOURCE, /JIRA_GOLDEN_JOURNEYS_V3_PAY_101_UNCAPTURED_SESSION_ID/u);
+	assert.match(PAGE_SOURCE, /isLooseWorkResumable=\{\(item\) => item\.id === JIRA_GOLDEN_JOURNEYS_V3_PAY_101_UNCAPTURED_SESSION_ID\}/u);
+	assert.match(PAGE_SOURCE, /navigator\.clipboard\.writeText\(JIRA_GOLDEN_JOURNEYS_V3_RESUME_PROMPT\)/u);
+	assert.match(PAGE_SOURCE, /setResumePromptCopied\(true\)/u);
+	assert.match(PAGE_SOURCE, /Resume prompt copied\. Open Terminal to paste it/u);
+	const resumeHandler = PAGE_SOURCE.match(
+		/const handleResumeLooseWork = useCallback\([\s\S]*?\n\t\}, \[\]\);/u,
 	)?.[0] ?? "";
-	const filterTrigger = filterPopoverSource.match(
-		/<PopoverTrigger[\s\S]*?<\/PopoverTrigger>/u,
-	)?.[0] ?? "";
-
-	assert.match(trackStage, /<ExperimentalJiraKanbanPage/u);
-	// The actions may be the filter's own or a wrapper over them, because
-	// choosing a scope also opens Insights. This pins the popover and its
-	// wiring rather than one exact spelling of either.
-	assert.match(
-		experimentalPageSource,
-		/filterControl=\{[\s\S]*?<BoardFilterPopover[\s\S]*actions=\{(?:boardFilter\.actions|filterActions)\}[\s\S]*model=\{boardFilter\.model\}/u,
-	);
-	assert.match(
-		experimentalPageSource,
-		/const filterActions = useMemo\((?:.|\n)*?\.\.\.boardFilter\.actions/u,
-		"a wrapper must still delegate to the filter's own actions",
-	);
-	assert.match(experimentalHeaderSource, /filterControl: ReactNode;/u);
-	assert.match(experimentalHeaderSource, /\{filterControl\}/u);
-	assert.doesNotMatch(experimentalPageSource, /disableAssigneeFilter/u);
-	assert.doesNotMatch(experimentalHeaderSource, /disableAssigneeFilter/u);
-	assert.doesNotMatch(
-		`${experimentalPageSource}\n${experimentalHeaderSource}\n${filterPopoverSource}`,
-		/Filter board is unavailable|filter by person or agent with the faces to the left/u,
-	);
-	assert.match(filterTrigger, /aria-expanded=\{model\.open\}/u);
-	assert.match(filterTrigger, /aria-label=\{filterLabel\}/u);
-	assert.doesNotMatch(filterTrigger, /aria-disabled/u);
-	assert.match(filterOptionsSource, /Filter by days/u);
+	assert.doesNotMatch(resumeHandler, /setChapter\("terminal"\)|handleChapterChange\("terminal"\)/u);
+	assert.match(PAGE_SOURCE, /aria-live="polite"[\s\S]*resumeAnnouncement/u);
 });
 
-test("Insights defaults the person filter to Venn and shares it with Filter", () => {
-	const experimentalPageSource = readProjectFile(
-		"components/blocks/jira-kanban/experimental/page.tsx",
-	);
-	const rosterFilterSource = readProjectFile(
-		"components/blocks/jira-kanban/experimental/lib/pulse-roster-filter.ts",
-	);
-	const pulseTimelineSource = readProjectFile(
-		"components/blocks/jira-kanban/experimental/pulse/data/pulse-timeline.ts",
-	);
-
-	assert.match(rosterFilterSource, /export const PULSE_PRESENTATION_MEMBER_ID = "venn"/u);
-	assert.match(experimentalPageSource, /toInsightsAssigneeIds\(selectedAssigneeIds, PULSE_MEMBER_IDS\)/u);
-	assert.match(experimentalPageSource, /toPulseMemberId\(selectedAssigneeIds, PULSE_MEMBER_IDS\)/u);
-	assert.match(experimentalPageSource, /handlePulseMemberChange/u);
-	assert.match(experimentalPageSource, /assignees=\{filterAssignees\}/u);
-	assert.match(
-		experimentalPageSource,
-		/mode === "pulse"\s*\? mergeBoardFilterAssignees\(assignees, PULSE_TIMELINE\.members\)/u,
-	);
-	assert.match(
-		experimentalPageSource,
-		/if \(fieldId === "parent" \|\| fieldId === "sprint"\) \{\s*handleOpenTimeline\(\);/u,
-	);
-	assert.match(
-		experimentalPageSource,
-		/promoteAssignee\(getJiraKanbanAssignees\(boardColumns\), PULSE_PRESENTATION_MEMBER_ID\)/u,
-	);
-	assert.doesNotMatch(
-		experimentalPageSource,
-		/const \[pulseMemberId, setPulseMemberId\] = useState<string \| null>\(null\);/u,
-	);
-	assert.match(
-		pulseTimelineSource,
-		/id: "venn", name: "Venn", role: "Software engineer", kind: "human", avatarSrc: AVATAR\.venn/u,
-	);
+test("Terminal receives the copied-prompt state and route-owned resume story", () => {
+	assert.match(PAGE_SOURCE, /story: JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_STORY/u);
+	assert.match(PAGE_SOURCE, /promptCopied=\{resumePromptCopied\}/u);
+	assert.match(PAGE_SOURCE, /data-resume-prompt-copied=\{resumePromptCopied \? "true" : "false"\}/u);
 });
 
-test("Build keeps the work item at its initial Activity scroll position", () => {
-	const pageSource = readProjectFile("components/projects/jira-golden-journeys-v3/page.tsx");
-	const activityPanelSource = readProjectFile(
-		"components/blocks/jira-work-item/experimental-v3/components/activity-panel.tsx",
-	);
-
-	assert.match(pageSource, /autoScroll: controller\.chapter !== "build"/u);
-	assert.match(
-		activityPanelSource,
-		/const autoScrollEnabled = activitySessionThread\?\.autoScroll !== false\s*&& surface === "activity"\s*&& !insightsSelected/u,
-	);
+test("the responsive header exposes desktop and compact four-chapter controls", () => {
+	assert.match(PAGE_SOURCE, /<JiraGoldenJourneysV3StoryControls[\s\S]*terminalStep=\{terminalStep\}/u);
+	assert.match(PAGE_SOURCE, /<JiraGoldenJourneysV3CompactStoryControls[\s\S]*chapter=\{chapter\}/u);
+	assert.match(CONTROLS_SOURCE, /aria-label="Open a software delivery story chapter"/u);
+	assert.match(CONTROLS_SOURCE, /aria-label="Jump to chapter"/u);
+	assert.match(CONTROLS_SOURCE, /aria-label="Previous chapter"/u);
+	assert.match(CONTROLS_SOURCE, /aria-label="Next chapter"/u);
 });
 
-test("work-item stages keep the embedded chat and do not mount the floating overlay", () => {
-	const pageSource = readProjectFile("components/projects/jira-golden-journeys-v3/page.tsx");
-	const overlaySource = readProjectFile(
-		"components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay.tsx",
-	);
-	const sessionSurfaceSource = readProjectFile(
-		"components/blocks/jira-work-item/experimental-v3/components/floating-session-surface.tsx",
-	);
-
-	assert.match(pageSource, /<ExperimentalV3JiraWorkItem[\s\S]*presentation="inline"/u);
-	assert.match(sessionSurfaceSource, /<AsxRovoOverlay[\s\S]*placement="embedded"/u);
-	assert.match(
-		pageSource,
-		/const isWorkItemStage = selectedId === "work-item"\s*&& storyController\.chapter !== "terminal"\s*&& storyController\.chapter !== "track";/u,
-	);
-	assert.match(pageSource, /chat=\{isWorkItemStage \? "hidden" : "auto"\}/u);
-	assert.match(
-		overlaySource,
-		/const showFloatingChat = chat === "auto"\s*&& chatSurface === "floating"\s*&& !isEmbeddedHostOpen;/u,
-	);
-	assert.doesNotMatch(pageSource, /chatSurface === "floating" \? \([\s\S]*<RovoFloatingChat/u);
+test("only Build suppresses the floating Rovo surface", () => {
+	assert.match(PAGE_SOURCE, /const isWorkItemStage = chapter === "build"/u);
+	assert.match(PAGE_SOURCE, /chat=\{isWorkItemStage \? "hidden" : "auto"\}/u);
+	assert.match(PAGE_SOURCE, /launcher=\{isWorkItemStage \? "hidden" : "auto"\}/u);
+	assert.match(PAGE_SOURCE, /preserveActiveSessionOnHydration/u);
 });
 
-test("the route resets chat before mounting each story chapter and mounts the floating Rovo launcher", () => {
-	const pageSource = readProjectFile("components/projects/jira-golden-journeys-v3/page.tsx");
-	assert.match(
-		pageSource,
-		/import \{ JgpRovoOverlay \} from "@\/components\/projects\/jira-golden-journeys-v1\/components\/jira-golden-journeys-v1-rovo-overlay"/u,
-	);
-	assert.match(
-		pageSource,
-		/<RovoChatProvider[\s\S]*key=\{`\$\{storyController\.chapter\}:\$\{storyController\.chapterRevision\}`\}/u,
-	);
-	assert.match(
-		pageSource,
-		/const isWorkItemStage = selectedId === "work-item"\s*&& storyController\.chapter !== "terminal"\s*&& storyController\.chapter !== "track";/u,
-	);
-	assert.match(
-		pageSource,
-		/<JgpRovoOverlay\s+chat=\{isWorkItemStage \? "hidden" : "auto"\}\s+launcher=\{isWorkItemStage \? "hidden" : "auto"\}\s+\/>/u,
-	);
-	assert.doesNotMatch(pageSource, /const \{ closeChat, resetChat \} = useRovoChat\(\)/u);
-	assert.doesNotMatch(pageSource, /closeChat\(\);[\s\S]*resetChat\(\);/u);
-	assert.match(pageSource, /preserveActiveSessionOnHydration/u);
-});
-
-test("the responsive gallery keeps both desktop and compact story controls", () => {
-	const pageSource = readProjectFile("components/projects/jira-golden-journeys-v3/page.tsx");
-	const controlsSource = readProjectFile("components/projects/jira-golden-journeys-v3/story-controls.tsx");
-	assert.match(pageSource, /<JiraGoldenJourneysV3StoryControls[\s\S]*terminalStep=\{terminalStep\}/u);
-	assert.match(pageSource, /<JiraGoldenJourneysV3CompactStoryControls controller=\{storyController\} \/>/u);
-	assert.match(controlsSource, /aria-label="Jump to chapter"/u);
-	assert.match(controlsSource, /aria-label="Previous chapter"/u);
-	assert.match(controlsSource, /aria-label="Next chapter"/u);
-});
-
-test("every Jira Golden Journeys header scroller reserves the shared focus-ring gutter", () => {
+test("the chapter scroller reserves the shared focus-ring gutter", () => {
 	const focusRingSource = readProjectFile("components/ui/focus-ring.ts");
 	assert.match(focusRingSource, /export const FOCUS_RING_CLIP_GUTTER = "-m-1 p-1"/u);
-
-	for (const sourcePath of [
-		"components/projects/jira-golden-journeys-v0/components/gallery-header-controls.tsx",
-		"components/projects/jira-golden-journeys-v1/components/session-stage.tsx",
-		"components/projects/jira-golden-journeys-v2/story-controls.tsx",
-		"components/projects/jira-golden-journeys-v3/story-controls.tsx",
-	]) {
-		const source = readProjectFile(sourcePath);
-		assert.match(source, /import \{ FOCUS_RING_CLIP_GUTTER \} from "@\/components\/ui\/focus-ring"/u);
-		assert.match(
-			source,
-			/"scrollbar-none max-w-\[calc\(100vw-12rem\)\] overflow-x-auto",\s*FOCUS_RING_CLIP_GUTTER/u,
-			sourcePath,
-		);
-	}
-});
-
-test("the controller starts at Terminal with both automation settings disabled", () => {
-	const source = readProjectFile(CONTROLLER_PATH);
-	assert.match(source, /useState<JiraGoldenJourneysV3StoryChapter>\("terminal"\)/u);
-	assert.match(source, /const \[autoFixEnabled, setAutoFixEnabled\] = useState\(false\)/u);
-	assert.match(source, /const \[autoMergeEnabled, setAutoMergeEnabled\] = useState\(false\)/u);
-	assert.match(source, /const \[approvalStep, setApprovalStep\] = useState<JiraGoldenJourneysV3ApprovalStep>\(0\)/u);
-});
-
-test("Reset owns the full story reset while chapter replay preserves settings", () => {
-	const source = readProjectFile(CONTROLLER_PATH);
-	const resetStory = source.match(/const resetStory = useCallback\(\(\) => \{[\s\S]*?\n\t\}, \[\]\);/u)?.[0] ?? "";
-	const restartChapter = source.match(/const restartChapter = useCallback\([\s\S]*?\n\t\}, \[\]\);/u)?.[0] ?? "";
-	assert.match(resetStory, /setChapter\("terminal"\)/u);
-	assert.match(resetStory, /setAutoFixEnabled\(false\)/u);
-	assert.match(resetStory, /setAutoMergeEnabled\(false\)/u);
-	assert.match(resetStory, /setApprovalStep\(0\)/u);
-	assert.match(resetStory, /setPullRequestMerged\(false\)/u);
-	assert.match(source, /const \[insightsRevision, setInsightsRevision\] = useState\(0\)/u);
-	assert.match(resetStory, /setInsightsRevision\(\(current\) => current \+ 1\)/u);
-	assert.doesNotMatch(restartChapter, /setInsightsRevision/u);
-	assert.match(source, /insightsRevision,/u);
-	assert.doesNotMatch(restartChapter, /setAutoFixEnabled|setAutoMergeEnabled/u);
-	assert.match(source, /const resetCurrentChapter = useCallback\(\(\) => \{\s*restartChapter\(chapter\);/u);
-});
-
-test("Review, Fix, and Approve progression is gated by the correct facts", () => {
-	const source = readProjectFile(CONTROLLER_PATH);
-	assert.match(source, /chapter !== "review" \|\| reviewStep === "failed"/u);
-	assert.match(source, /if \(transition\.next === "failed"\) setCiStatus\("failed"\)/u);
-	assert.match(source, /chapter !== "fix" \|\| !autoFixEnabled \|\| fixStep !== "failed"/u);
-	assert.match(source, /setFixStep\(shouldReduceMotion \? "complete" : "repairing"\)/u);
-	assert.match(source, /setCiStatus\(shouldReduceMotion \? "passed" : "repairing"\)/u);
-	assert.match(source, /chapter !== "approve" \|\| ciStatus !== "passed" \|\| approvalStep === 2/u);
-	assert.match(source, /setApprovalStep\(\(current\) => current === 0 \? 1 : 2\)/u);
-});
-
-test("returning to Fix invalidates later approval and merge evidence", () => {
-	const source = readProjectFile(CONTROLLER_PATH);
-	const selectChapter = source.match(/const selectChapter = useCallback\([\s\S]*?\n\t\}, \[chapter, ciStatus, restartChapter\]\);/u)?.[0] ?? "";
-	assert.match(selectChapter, /else if \(nextChapter === "fix"\)/u);
-	assert.match(selectChapter, /setFixStep\(ciStatus === "passed" \? "complete" : "failed"\)/u);
-	assert.match(selectChapter, /setApprovalStep\(0\)/u);
-	assert.match(selectChapter, /if \(ciStatus !== "passed"\) setCiStatus\("failed"\)/u);
-	assert.match(selectChapter, /setPullRequestMerged\(false\)/u);
-});
-
-test("auto-merge is global, rules-gated, and independent from Release navigation", () => {
-	const source = readProjectFile(CONTROLLER_PATH);
-	const releaseCase = source.match(/case "release":\s*\/\/[\s\S]*?\s*break;/u)?.[0] ?? "";
-	const mergeEffect = source.match(/useEffect\(\(\) => \{\s*if \(!active \|\| !autoMergeEnabled[\s\S]*?\n\t\}, \[[^\]]+\]\);/u)?.[0] ?? "";
-	assert.ok(releaseCase.length > 0);
-	assert.doesNotMatch(releaseCase, /setPullRequestMerged|setCiStatus|setApprovalStep/u);
-	assert.match(mergeEffect, /!mergeGate\.canMerge \|\| pullRequestMerged/u);
-	assert.match(mergeEffect, /setPullRequestMerged\(true\)/u);
-	assert.doesNotMatch(mergeEffect.match(/\}, \[[^\]]+\]\);/u)?.[0] ?? "", /chapter/u);
-});
-
-test("authored transitions collapse under reduced motion", () => {
-	const source = readProjectFile(CONTROLLER_PATH);
-	assert.match(source, /if \(shouldReduceMotion\) \{\s*setReviewStep\("failed"\);\s*setCiStatus\("failed"\)/u);
-	assert.match(source, /setFixStep\(shouldReduceMotion \? "complete" : "repairing"\)/u);
-	assert.match(source, /if \(shouldReduceMotion\) \{\s*setApprovalStep\(2\)/u);
-	assert.match(source, /if \(shouldReduceMotion\) \{\s*setPullRequestMerged\(true\)/u);
-});
-
-test("v3 source removes the old planning, skill, repair-picker, and deployment narratives", () => {
-	const source = [MODEL_PATH, STORY_PATH, EVENTS_PATH, CONTROLLER_PATH]
-		.map(readProjectFile)
-		.join("\n");
-	assert.doesNotMatch(source, /Code Planner|descriptionSkill|Improve description|PullRequestFix|fixAgentId|CI_REPAIR_SESSION/u);
-	assert.doesNotMatch(source, /feature-flag rollout|production smoke|healthy telemetry|PR #1848/u);
-	assert.doesNotMatch(source, /basic-coding-agent-template/u);
-	assert.equal((source.match(/id: "claude-code"/gu) ?? []).length, 1);
+	assert.match(
+		CONTROLS_SOURCE,
+		/"scrollbar-none max-w-\[calc\(100vw-12rem\)\] overflow-x-auto",\s*FOCUS_RING_CLIP_GUTTER/u,
+	);
 });

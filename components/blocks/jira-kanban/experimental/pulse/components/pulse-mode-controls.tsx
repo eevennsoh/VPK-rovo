@@ -43,7 +43,7 @@ export function PulseModeToggle({
 		<Button
 			aria-label={label}
 			aria-pressed={active}
-			className={cn(active ? "border-border-selected text-text-selected" : null)}
+			className={cn(active ? "border-border-selected text-text-accent-blue-bolder!" : null)}
 			onClick={onToggle}
 			size="default"
 			variant="outline"
