@@ -112,8 +112,8 @@ test("QuestionCard hides Skip when custom input is off and drops header bottom p
 		"</header>",
 	);
 
-	assert.match(QUESTION_CARD_SOURCE, /shouldShowQuestionCardSkipAction\(showCustomInput, primaryAction\)/u);
-	assert.match(QUESTION_CARD_SOURCE, /shouldShowQuestionCardFooter\(showCustomInput, primaryAction\)/u);
+	assert.match(QUESTION_CARD_SOURCE, /shouldShowQuestionCardSkipAction\(showCustomInput, primaryAction, hasDismissControl\)/u);
+	assert.match(QUESTION_CARD_SOURCE, /shouldShowQuestionCardFooter\(showCustomInput, primaryAction, hasDismissControl\)/u);
 	assert.match(QUESTION_CARD_SOURCE, /showFooterSkip \?/u);
 	assert.match(header, /visibleOptionCount > 0 \? "pb-4" : "pb-0"/u);
 });

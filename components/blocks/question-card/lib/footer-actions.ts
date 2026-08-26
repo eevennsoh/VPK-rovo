@@ -20,13 +20,29 @@ export function getQuestionCardPrimaryAction(
 export function shouldShowQuestionCardSkipAction(
 	showCustomInput: boolean,
 	primaryAction: QuestionCardPrimaryAction,
+	hasDismissControl: boolean,
 ): boolean {
-	return showCustomInput && primaryAction === "skip";
+	if (primaryAction !== "skip") {
+		return false;
+	}
+
+	return showCustomInput || !hasDismissControl;
 }
 
 export function shouldShowQuestionCardFooter(
 	showCustomInput: boolean,
 	primaryAction: QuestionCardPrimaryAction,
+	hasDismissControl: boolean,
 ): boolean {
-	return showCustomInput || primaryAction === "submit" || primaryAction === "next";
+	switch (primaryAction) {
+		case "submit":
+		case "next":
+			return true;
+		case "skip":
+			return shouldShowQuestionCardSkipAction(showCustomInput, primaryAction, hasDismissControl);
+		default: {
+			const _exhaustive: never = primaryAction;
+			return _exhaustive;
+		}
+	}
 }

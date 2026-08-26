@@ -143,7 +143,7 @@ export function useQuestionCard({
 
 	const allQuestionsAnswered = questions.every((question) => isQuestionAnswered(question, answers));
 	const primaryAction = getQuestionCardPrimaryAction(allQuestionsAnswered, currentQuestionAnswered, canGoToNextQuestion);
-	const hasFooterButton = shouldShowQuestionCardFooter(showCustomInput, primaryAction);
+	const hasFooterButton = shouldShowQuestionCardFooter(showCustomInput, primaryAction, Boolean(onDismiss));
 
 	useEffect(() => {
 		// preventScroll: focusing the card for keyboard handling must not scroll the

@@ -282,8 +282,9 @@ function QuestionCardContent({
 		: primaryAction === "next"
 			? "Next"
 			: "Skip";
-	const showFooter = shouldShowQuestionCardFooter(showCustomInput, primaryAction);
-	const showFooterSkip = shouldShowQuestionCardSkipAction(showCustomInput, primaryAction);
+	const hasDismissControl = Boolean(onDismiss);
+	const showFooter = shouldShowQuestionCardFooter(showCustomInput, primaryAction, hasDismissControl);
+	const showFooterSkip = shouldShowQuestionCardSkipAction(showCustomInput, primaryAction, hasDismissControl);
 	let footerActionButton: React.ReactNode = null;
 	switch (primaryAction) {
 		case "submit":
