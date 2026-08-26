@@ -116,15 +116,19 @@ test("JGP Rovo surfaces render at viewport level above the Gallery dock", () => 
 	assert.match(ROVO_OVERLAY_SOURCE, /launcher = "auto"/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /document\.documentElement\.dataset\.rovoCanvasOpen === "true"/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /document\.documentElement\.dataset\.jiraWorkItemOpen === "true"/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /document\.documentElement\.dataset\.jiraPulseOpen === "true"/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /new MutationObserver\(updateChromeFlags\)/u);
-	assert.match(ROVO_OVERLAY_SOURCE, /attributeFilter: \["data-jira-work-item-open", "data-rovo-canvas-open"\]/u);
 	assert.match(
 		ROVO_OVERLAY_SOURCE,
-		/const showLauncher = launcher === "auto"\s*&& chatSurface === null\s*&& !isRovoCanvasOpen\s*&& !isWorkItemOpen;/u,
+		/attributeFilter: \["data-jira-work-item-open", "data-jira-pulse-open", "data-rovo-canvas-open"\]/u,
 	);
 	assert.match(
 		ROVO_OVERLAY_SOURCE,
-		/const showFloatingChat = chat === "auto"\s*&& chatSurface === "floating"\s*&& !isWorkItemOpen;/u,
+		/const showLauncher = launcher === "auto"\s*&& chatSurface === null\s*&& !isRovoCanvasOpen\s*&& !isEmbeddedHostOpen;/u,
+	);
+	assert.match(
+		ROVO_OVERLAY_SOURCE,
+		/const showFloatingChat = chat === "auto"\s*&& chatSurface === "floating"\s*&& !isEmbeddedHostOpen;/u,
 	);
 	assert.match(ROVO_OVERLAY_SOURCE, /\{showFloatingChat \? \(\s*<RovoFloatingChat/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /chatContextBar=\{chatContextBar\}/u);

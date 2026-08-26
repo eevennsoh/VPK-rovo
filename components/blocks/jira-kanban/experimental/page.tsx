@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useMemo, useState, type ReactNode } from "react";
+
+import { useOptionalRovoChat } from "@/app/contexts";
 import type {
 	JiraKanbanAgentData,
 	JiraKanbanCardData,
@@ -113,6 +115,7 @@ export default function ExperimentalJiraKanbanPage({
 	}, [boardColumns, controlledBoardColumns, onBoardColumnsChange]);
 	const [columnAgentAssignments, setColumnAgentAssignments] = useState<Record<string, string[]>>({});
 	const [mode, setMode] = useState<ExperimentalJiraKanbanMode>("board");
+	const rovoChat = useOptionalRovoChat();
 	// Commitments live above the mode switch: Pulse unmounts when it is toggled
 	// off, and a requested action or a captured note is something the reader
 	// decided, not view state that may quietly reset with the subtree.
@@ -392,6 +395,7 @@ export default function ExperimentalJiraKanbanPage({
 						active={isPulse}
 						onToggle={() => {
 							if (isPulse) {
+								rovoChat?.closeChat();
 								setMode("board");
 								return;
 							}
