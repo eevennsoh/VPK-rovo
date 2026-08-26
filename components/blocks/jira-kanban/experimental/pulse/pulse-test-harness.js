@@ -231,7 +231,8 @@ function loadTimelineHarness() {
 	timelineHarnessPromise ??= bundleHarness({
 		contents: `
 			import { __mount, __render } from "react";
-			import { PULSE_TIMELINE } from "./components/blocks/jira-kanban/experimental/pulse/data/pulse-timeline";
+			import { PULSE_SPACE_REPOSITORY, PULSE_TIMELINE } from "./components/blocks/jira-kanban/experimental/pulse/data/pulse-timeline";
+			import { pulseLooseWorkSource } from "./components/blocks/jira-kanban/experimental/pulse/types";
 			import {
 				clampSnapshotIndex,
 				computeHighlightedIndexes,
@@ -252,7 +253,9 @@ function loadTimelineHarness() {
 				computeMemberWeek,
 				findAdjacentActiveIndexes,
 				findContribution,
+				PULSE_SPACE_REPOSITORY,
 				PULSE_TIMELINE,
+				pulseLooseWorkSource,
 				resolveLooseWork,
 				resolveWorkItems,
 				scopeArtifacts,

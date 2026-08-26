@@ -35,6 +35,7 @@ export const JIRA_ISSUE_DETAIL: ComponentDetail = {
 		{ name: "participants", type: "readonly JiraIssueParticipant[]", description: "People and agents involved in uncaptured work. Required for the uncaptured-work variant." },
 		{ name: "captured", type: "boolean", default: "false", description: "Controlled completion state for the uncaptured-work create action." },
 		{ name: "onCreateWorkItem", type: "() => void", description: "Creates a Jira work item for uncaptured work. When omitted, the action is exposed as unavailable." },
+		{ name: "onLinkWorkItem", type: "() => void", description: "Links uncaptured work to an existing Jira work item from the split-button menu. When omitted, the menu action is exposed as unavailable." },
 		{ name: "showMoreAction", type: "boolean", default: "true", description: "Shows the hover- and focus-revealed issue actions menu while reserving its title-row space." },
 		{ name: "onMoreActionSelect", type: "(action: JiraIssueMoreAction) => void", description: "Called after an item is selected from the built-in issue actions menu." },
 		{ name: "tags", type: "readonly JiraIssueTag[]", description: "Tags rendered below the summary." },

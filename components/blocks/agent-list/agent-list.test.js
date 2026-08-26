@@ -84,18 +84,29 @@ test("running sessions use the spinner-sized diagonal dot pixel loader", () => {
 	assert.doesNotMatch(CARD_SOURCE, /<Spinner/u);
 });
 
-test("session rows expose View without advertising a Stop action", () => {
+test("session rows expose View or Resume without advertising a Stop action", () => {
 	assert.doesNotMatch(CARD_SOURCE, /Stop agent|VideoStopOverlayIcon|onStop|showStop/u);
 	assert.doesNotMatch(INDEX_SOURCE, /onStop/u);
 	assert.doesNotMatch(TYPES_SOURCE, /onStop\?:/u);
-	assert.match(CARD_SOURCE, /<Button onClick=\{\(\) => onView\(item\)\} size="compact" variant="outline">[\s\S]*View/u);
+	assert.match(
+		CARD_SOURCE,
+		/<Button onClick=\{\(\) => onView\(item\)\} size="compact" type="button" variant="outline">\s*\{rowPrimaryActionLabel\(item\)\}/u,
+	);
+	assert.match(
+		CARD_SOURCE,
+		/function rowPrimaryActionLabel\(item: AgentListItem\): string \{\s*return isLocalAgentListItem\(item\) \? "Resume" : "View";/u,
+	);
 });
 
-test("View opens the Rovo floating chat in the demo", () => {
-	assert.match(CARD_SOURCE, /<Button onClick=\{\(\) => onView\(item\)\} size="compact" variant="outline">\s*View/u);
+test("View and Resume open the Rovo floating chat in the demo", () => {
+	assert.match(
+		CARD_SOURCE,
+		/<Button onClick=\{\(\) => onView\(item\)\} size="compact" type="button" variant="outline">\s*\{rowPrimaryActionLabel\(item\)\}/u,
+	);
 	assert.match(PAGE_SOURCE, /const handleView = useCallback\(\(\) => \{\s*openChat\("floating"\);/);
 	assert.match(PAGE_SOURCE, /composerChatSurface="floating"/);
 	assert.match(PAGE_SOURCE, /onView=\{handleView\}/);
+	assert.match(PAGE_SOURCE, /onArchive=\{handleArchive\}/);
 	assert.match(PAGE_SOURCE, /chatSurface === "floating" \? <RovoFloatingChat/);
 });
 
@@ -171,13 +182,18 @@ test("rows carry an optional reason line, leading metadata, and a static time", 
 });
 
 test("the metadata line uses elapsed runtime, agent name, and asx PR-status colors", () => {
-	// Only genuinely live states count up; settled and attention rows read as a
-	// relative timestamp rather than a ticking runtime.
+	// Only genuinely live cloud states count up; local, settled, and attention
+	// rows read as a relative timestamp rather than a ticking runtime.
 	assert.match(
 		CARD_SOURCE,
-		/const isLive = item\.state === "running" \|\| item\.state === "needs-input";\s*\n\s*return isLive \? \(\s*<ElapsedTime startedAtMs=\{item\.startedAtMs \?\? seededStartedAtMs\}[\s\S]*\) : \(\s*<RelativeTime/u,
+		/const isLive = !isLocalAgentListItem\(item\)\s*&& \(item\.state === "running" \|\| item\.state === "needs-input"\);/u,
+	);
+	assert.match(
+		CARD_SOURCE,
+		/return isLive \? \(\s*<ElapsedTime startedAtMs=\{item\.startedAtMs \?\? seededStartedAtMs\}[\s\S]*\) : \(\s*<RelativeTime/u,
 	);
 	assert.equal((CARD_SOURCE.match(/<AgentListTime\b/gu) ?? []).length, 2);
+	assert.match(CARD_SOURCE, /<AgentListMetadataIdentity item=\{item\} \/>/u);
 	assert.match(CARD_SOURCE, /<span className="min-w-0 truncate">\{item\.agent\.name\}<\/span>/u);
 	assert.doesNotMatch(CARD_SOURCE, /<span className="truncate">\{item\.agent\.name\}<\/span>/u);
 	assert.doesNotMatch(CARD_SOURCE, /<span className="truncate">\{item\.branch\}<\/span>/u);
@@ -225,7 +241,11 @@ test("session rows default to the shared Jira agent-session flyout", () => {
 	);
 	assert.match(
 		INDEX_SOURCE,
-		/\{flyout === "session" \? \(\s*<JiraSessionFlyoutSurface[\s\S]*handle=\{flyoutHandle\}[\s\S]*onSubmitPrompt=\{\(session, prompt\) => \{/u,
+		/\{flyout === "session" \? \(\s*<JiraSessionFlyoutSurface handle=\{flyoutHandle\} \/>/u,
+	);
+	assert.doesNotMatch(
+		INDEX_SOURCE,
+		/<JiraSessionFlyoutSurface[\s\S]*onSubmitPrompt=/u,
 	);
 	assert.match(CARD_SOURCE, /<JiraSessionFlyoutTrigger[\s\S]*handle=\{flyoutHandle\}/u);
 	assert.match(CARD_SOURCE, /session=\{toAgentSessionFlyoutItem\(item\)\}/u);
@@ -250,9 +270,13 @@ test("the session adapter derives flyout payloads the row model does not carry",
 		SESSION_SOURCE,
 		/case "complete":\s*return item\.prStatus === "created" \? "pr-open" : "merged";/u,
 	);
-	// Explicit sessionDetails win; everything else falls back to the row.
+	// Explicit sessionDetails win for flyout-only fields; host prefers the row.
 	assert.match(SESSION_SOURCE, /branch: details\?\.branch \?\? item\.branch,/u);
-	assert.match(SESSION_SOURCE, /host: details\?\.host \?\? "cloud",/u);
+	assert.match(SESSION_SOURCE, /host: getAgentListHost\(item\),/u);
+	assert.match(
+		SESSION_SOURCE,
+		/export function getAgentListHost\(item: AgentListItem\): AgentListHost \{\s*return item\.host \?\? item\.sessionDetails\?\.host \?\? "cloud";/u,
+	);
 	assert.match(
 		SESSION_SOURCE,
 		/issueKey: details\?\.issueKey \?\? deriveIssueKeyFromBranch\(item\.branch\),/u,
@@ -309,7 +333,7 @@ test("flyout=\"none\" renders the row alone for entries that are not agent sessi
 	// The shared session flyout surface only mounts for the variant that uses it.
 	assert.match(
 		INDEX_SOURCE,
-		/\{flyout === "session" \? \(\s*<JiraSessionFlyoutSurface[\s\S]*handle=\{flyoutHandle\}[\s\S]*onSubmitPrompt=/u,
+		/\{flyout === "session" \? \(\s*<JiraSessionFlyoutSurface handle=\{flyoutHandle\} \/>/u,
 	);
 });
 
@@ -337,11 +361,11 @@ test("the composer refuses to render without a chat destination", () => {
 	// at render beats failing after the viewer has typed one.
 	assert.match(
 		INDEX_SOURCE,
-		/if \(flyout !== "none" && onSubmitPrompt === undefined && chat === null\) \{\s*throw new Error\(/u,
+		/if \(flyout === "composer" && onSubmitPrompt === undefined && chat === null\) \{\s*throw new Error\(/u,
 	);
 	assert.match(
 		INDEX_SOURCE,
-		/render it inside a RovoChatProvider or pass onSubmitPrompt/u,
+		/'AgentList flyout="composer" needs a chat destination: render it inside a RovoChatProvider or pass onSubmitPrompt.'/u,
 	);
 });
 
@@ -369,7 +393,7 @@ test("in-flow View controls immediately replace lifecycle indicators without col
 	);
 	assert.match(CARD_SOURCE, /<span className=\{cn\(titleClassName, "text-text"\)\}>/u);
 	assert.match(CARD_SOURCE, /className="min-w-0 truncate">\{item\.agent\.name\}<\/span>/u);
-	assert.match(CARD_SOURCE, /className="ml-3 hidden shrink-0 items-center group-hover\/agent-row:flex group-has-\[:focus-visible\]\/agent-row:flex"/u);
+	assert.match(CARD_SOURCE, /className="ml-3 hidden shrink-0 items-center gap-1 group-hover\/agent-row:flex group-has-\[:focus-visible\]\/agent-row:flex"/u);
 	assert.doesNotMatch(CARD_SOURCE, /isVisible/u);
 	assert.match(
 		CARD_SOURCE,
@@ -447,7 +471,7 @@ test("exports a session activity header whose optional View action requires a ha
 	assert.match(CARD_SOURCE, /title=\{timeSlotTitle\(item\)\}/u);
 	assert.match(
 		CARD_SOURCE,
-		/function timeSlotTitle\(item: AgentListItem\): string \{\s*return item\.state === "running" \|\| item\.state === "needs-input"\s*\? "Agent runtime"\s*: "Last update";/u,
+		/function timeSlotTitle\(item: AgentListItem\): string \{\s*if \(isLocalAgentListItem\(item\)\) \{\s*return "Last update";\s*\}\s*return item\.state === "running" \|\| item\.state === "needs-input"\s*\? "Agent runtime"\s*: "Last update";/u,
 	);
 	assert.match(
 		CARD_SOURCE,
@@ -590,6 +614,40 @@ test("the session activity header can preserve a consumer-provided completed tim
 	assert.match(CARD_SOURCE, /fallback = "Just now"/u);
 	assert.match(CARD_SOURCE, /timeFallback\?: string;/u);
 	assert.match(CARD_SOURCE, /<AgentListTime fallback=\{timeFallback\} item=\{item\} \/>/u);
+});
+
+test("local sessions show a static timestamp, devices glyph, and machine name", () => {
+	assert.match(TYPES_SOURCE, /export type AgentListHost = "cloud" \| "local";/u);
+	assert.match(TYPES_SOURCE, /host\?: AgentListHost;/u);
+	assert.match(TYPES_SOURCE, /machineName\?: string;/u);
+	assert.match(
+		SESSION_SOURCE,
+		/export function isLocalAgentListItem\(item: AgentListItem\): boolean \{\s*return getAgentListHost\(item\) === "local";/u,
+	);
+	assert.match(INDEX_SOURCE, /isLocalAgentListItem,/u);
+	assert.match(CARD_SOURCE, /import DevicesIcon from "@atlaskit\/icon\/core\/devices";/u);
+	assert.match(
+		CARD_SOURCE,
+		/if \(isLocalAgentListItem\(item\) && item\.machineName\) \{[\s\S]*<DevicesIcon color="currentColor" label="" size="small" \/>[\s\S]*\{item\.machineName\}/u,
+	);
+	assert.match(DATA_SOURCE, /host: "local"/u);
+	assert.match(DATA_SOURCE, /machineName: "Geoff’s MacBook"/u);
+	assert.match(DATA_SOURCE, /timeLabel: "3 mins ago"/u);
+	assert.match(DETAIL_SOURCE, /Local sessions swap the live runtime and agent name/u);
+});
+
+test("hover actions add an Archive icon beside View or Resume", () => {
+	assert.match(TYPES_SOURCE, /onArchive\?: \(item: AgentListItem\) => void;/u);
+	assert.match(INDEX_SOURCE, /onArchive=\{onArchive\}/u);
+	assert.match(CARD_SOURCE, /import ArchiveBoxIcon from "@atlaskit\/icon\/core\/archive-box";/u);
+	assert.match(
+		CARD_SOURCE,
+		/<Button[\s\S]*aria-label="Archive"[\s\S]*size="icon-compact"[\s\S]*<ArchiveBoxIcon label="" size="small" \/>/u,
+	);
+	assert.match(CARD_SOURCE, /<TooltipContent>Archive<\/TooltipContent>/u);
+	assert.match(PAGE_SOURCE, /onArchive=\{handleArchive\}/u);
+	assert.match(DETAIL_SOURCE, /name: "onArchive"/u);
+	assert.match(DETAIL_SOURCE, /Resume on local sessions/u);
 });
 
 test("AgentList supports consumer-owned detail flyouts without changing row presentation", () => {

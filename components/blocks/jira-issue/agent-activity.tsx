@@ -210,7 +210,7 @@ function JiraIssueAgentActivityRow({
 					handleOpenChange(true);
 				}
 				: () => handleOpenChange(true)}
-			className="flex h-6 w-full min-w-0 items-center justify-between gap-2 rounded-b-[6px] rounded-t-sm px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+			className="flex h-6 w-full min-w-0 items-center justify-between gap-2 rounded-md px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
 		>
 			<div className="flex min-w-0 flex-1 items-center gap-2">
 				{featuredActivity ? (
@@ -223,7 +223,7 @@ function JiraIssueAgentActivityRow({
 						sizePx={16}
 					/>
 				) : (
-					<span className="ml-px grid size-4 shrink-0 place-items-center text-text-subtlest" aria-hidden="true">
+					<span className="ml-px grid size-4 shrink-0 place-items-center text-icon-subtle" aria-hidden="true">
 						<AiAgentIcon label="" />
 					</span>
 				)}

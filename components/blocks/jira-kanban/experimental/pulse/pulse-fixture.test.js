@@ -291,6 +291,57 @@ test("Pulse work-item assignees resolve to a roster member and keep agent hex ar
 	assert.ok(agentAssignees > 0, "the fixture has no agent-assigned work items");
 });
 
+test("Pulse uncaptured work is only GitHub PRs, branches, commits, or local Claude sessions", async () => {
+	const { PULSE_TIMELINE, PULSE_SPACE_REPOSITORY, pulseLooseWorkSource } = await loadTimelineHarness();
+	const kinds = new Set(["pull-request", "branch", "commit", "agent-session"]);
+
+	assert.equal(PULSE_SPACE_REPOSITORY, "eevensoh/vpk-rovo");
+	assert.equal(PULSE_TIMELINE.looseWork.length, 12);
+
+	for (const item of PULSE_TIMELINE.looseWork) {
+		assert.ok(kinds.has(item.kind), `${item.id} has unknown kind "${item.kind}"`);
+		assert.doesNotMatch(item.title, /<br\s*\/?>/u, `${item.id} uses a break hack instead of real wrap`);
+		assert.ok(
+			item.title.length >= 54,
+			`${item.id} title is ${item.title.length} chars and will sit on one line at 300px`,
+		);
+
+		const source = pulseLooseWorkSource(item.kind);
+		if (item.kind === "agent-session") {
+			assert.equal(source, "Claude", `${item.id} should brand as Claude`);
+			assert.equal(item.host, "local", `${item.id} is not a local session`);
+			assert.match(item.sourceTitle, /^Local · /u, `${item.id} sourceTitle should read Local · PAY-…`);
+			assert.match(item.detail, /host local/u, `${item.id} detail should name the local host`);
+			assert.doesNotMatch(item.sourceTitle, /Slack|Loom|Figma|Confluence/u);
+			continue;
+		}
+
+		assert.equal(source, "GitHub", `${item.id} should brand as GitHub`);
+		assert.match(item.detail, /eevensoh\/vpk-rovo/u, `${item.id} is not on the space repo`);
+		if (item.kind === "pull-request") {
+			assert.ok(item.pullRequest, `${item.id} is a PR without pullRequest fields`);
+			assert.match(item.sourceTitle, /^PRs? #/u, `${item.id} sourceTitle should be PR #N`);
+		}
+	}
+
+	assert.equal(
+		PULSE_TIMELINE.looseWork.filter((item) => item.kind === "pull-request").map((item) => item.id).join(","),
+		"lw-adapter-branch,lw-night-prs",
+	);
+	assert.equal(
+		PULSE_TIMELINE.looseWork.filter((item) => item.kind === "branch").map((item) => item.id).join(","),
+		"lw-loom-spike,lw-flag-edits,lw-killswitch-loom",
+	);
+	assert.equal(
+		PULSE_TIMELINE.looseWork.filter((item) => item.kind === "commit").map((item) => item.id).join(","),
+		"lw-oncall-note,lw-copy-doc,lw-p95-screenshot",
+	);
+	assert.equal(
+		PULSE_TIMELINE.looseWork.filter((item) => item.kind === "agent-session").map((item) => item.id).join(","),
+		"lw-scope-thread,lw-sandbox-triage,lw-figma-parked,lw-rehearsal-draft",
+	);
+});
+
 test("Pulse work-item summaries are long enough to wrap to two lines at 320px", async () => {
 	const { PULSE_TIMELINE } = await loadTimelineHarness();
 

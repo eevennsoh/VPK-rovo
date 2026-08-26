@@ -1,11 +1,11 @@
 "use client";
 
-import { AgentSessionFlyout } from "@/components/blocks/agent-session-flyout";
+import Page from "@/components/blocks/agent-session-flyout/page";
 
 export default function AgentSessionFlyoutDemo() {
-	return (
-		<div className="flex h-full w-full items-center justify-center p-6">
-			<AgentSessionFlyout />
-		</div>
-	);
+	return <Page />;
+}
+
+export function AgentSessionFlyoutDemoComposer() {
+	return <Page content="composer" />;
 }

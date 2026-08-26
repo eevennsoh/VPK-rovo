@@ -3,7 +3,21 @@ import type {
 	JiraSidebarSessionStatus,
 } from "@/components/blocks/product-sidebar/variants/jira";
 
-import type { AgentListItem } from "./agent-list-types";
+import type { AgentListHost, AgentListItem } from "./agent-list-types";
+
+/**
+ * Where a row's session runs. The row field wins; `sessionDetails.host` is the
+ * flyout-era fallback so older payloads still resolve without duplicating host
+ * onto every consumer.
+ */
+export function getAgentListHost(item: AgentListItem): AgentListHost {
+	return item.host ?? item.sessionDetails?.host ?? "cloud";
+}
+
+/** Local sessions surface a device chip instead of a live runtime and agent name. */
+export function isLocalAgentListItem(item: AgentListItem): boolean {
+	return getAgentListHost(item) === "local";
+}
 
 /**
  * Boundary between the agent-session row model (`AgentListItem`) and the
@@ -62,7 +76,7 @@ export function toAgentSessionFlyoutItem(item: AgentListItem): JiraSidebarSessio
 		branch: details?.branch ?? item.branch,
 		completedAtMs: item.completedAtMs,
 		completedSecondsAgo: item.completedSecondsAgo,
-		host: details?.host ?? "cloud",
+		host: getAgentListHost(item),
 		id: item.id,
 		initialElapsedSeconds: item.elapsedSeconds,
 		issueKey: details?.issueKey ?? deriveIssueKeyFromBranch(item.branch),

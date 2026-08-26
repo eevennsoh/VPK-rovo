@@ -30,10 +30,13 @@ export type AgentListPrStatus = "created" | "merged";
 /** Visual density for Jira agent-session rows. */
 export type AgentListVariant = "default" | "compact";
 
+/** Where the session is running. Local rows replace the agent name with a device chip. */
+export type AgentListHost = "cloud" | "local";
+
 /**
  * Which hover/focus flyout a session row opens.
  *
- * - `session` (default) — the shared, property-free Agent States flyout. It is
+ * - `session` (default) — the shared session-details flyout. It is
  *   shared across the whole list via one payload handle.
  * - `composer` — the per-row Agent States card, which adds a prompt composer so
  *   the viewer can reply to the agent without leaving the list.
@@ -113,8 +116,20 @@ export interface AgentListItem {
 	 * Pre-formatted time shown verbatim in place of the live runtime or relative
 	 * clock (e.g. `"Tue 18 Aug 11:05"`). Historical rows use it so the list does
 	 * not run a per-row one-second interval to age a fact that cannot change.
+	 * Local sessions always read as a static stamp, even without this field.
 	 */
 	timeLabel?: string;
+	/**
+	 * Where the session runs. Defaults to `"cloud"`. Local rows render a static
+	 * timestamp, the devices glyph, and {@link AgentListItem.machineName} instead
+	 * of a live runtime and the agent name.
+	 */
+	host?: AgentListHost;
+	/**
+	 * Viewer machine shown beside the devices glyph on local rows
+	 * (e.g. `"Geoff’s MacBook"`). Ignored unless `host` is `"local"`.
+	 */
+	machineName?: string;
 	/** Human (or upstream actor) who invoked the session via the opening prompt. */
 	invokedBy?: AgentListInvoker;
 	/** Initial runtime shown by expanded activity cards, which tick while active. */
@@ -155,8 +170,10 @@ export interface AgentListProps {
 	renderFlyout?: (item: AgentListItem, actions: AgentListCustomFlyoutActions) => ReactNode;
 	/** Row density; compact uses a 24px avatar and 12px title. */
 	variant?: AgentListVariant;
-	/** Called when a row body or its View action is activated. */
+	/** Called when a row body or its View/Resume action is activated. */
 	onView?: (item: AgentListItem) => void;
+	/** Called when the hover Archive icon is activated. */
+	onArchive?: (item: AgentListItem) => void;
 	/** Overrides the default chat destination for Agent States composer submissions. */
 	onSubmitPrompt?: (item: AgentListItem, prompt: string) => Promise<void> | void;
 }

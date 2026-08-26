@@ -48,13 +48,13 @@ const JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS = [
 ] as const;
 
 const JIRA_ISSUE_UNCAPTURED_WORK_SOURCE_LINK = {
-	id: "payments-migration-channel",
-	href: "#payments-migration",
-	title: "#payments-migration",
+	id: "pay-101-adapter-session",
+	href: "#lw-scope-thread",
+	title: "Local · PAY-101",
 	variant: "generic",
-	provider: { name: "Slack", logo: { kind: "third-party", name: "slack" } },
-	icon: { kind: "third-party", name: "slack" },
-	description: "The decision itself is not written down.",
+	provider: { name: "Claude", logo: { kind: "third-party", name: "claude" } },
+	icon: { kind: "third-party", name: "claude" },
+	description: "host local · worktree .worktrees/pay-101-adapter · the decision itself is not written down",
 	avatars: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS.map((participant) => ({
 		name: participant.name,
 		src: participant.avatarSrc,
@@ -219,9 +219,10 @@ export default function JiraIssuePage({ variant = "default" }: Readonly<JiraIssu
 					captured={uncapturedWorkCaptured}
 					className="w-[320px]"
 					onCreateWorkItem={() => setUncapturedWorkCaptured(true)}
+					onLinkWorkItem={() => setUncapturedWorkCaptured(true)}
 					participants={JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS}
 					sourceLink={JIRA_ISSUE_UNCAPTURED_WORK_SOURCE_LINK}
-					summary="The adapter keep-or-delete argument"
+					summary="The adapter keep-or-delete argument still lives in a local Claude session"
 					variant="uncaptured-work"
 				/>
 			</div>
