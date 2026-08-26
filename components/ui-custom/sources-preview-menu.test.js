@@ -63,6 +63,10 @@ test("preview-menu leading tiles follow the href product, not a single Confluenc
 	assert.match(MENU_SOURCE, /provider: "jira"/u);
 	assert.match(MENU_SOURCE, /name: "github"/u);
 	assert.match(MENU_SOURCE, /name: "slack"/u);
+	assert.match(
+		MENU_SOURCE,
+		/case "github":[\s\S]*<TwgToolSourceIcon[\s\S]*aria-hidden[\s\S]*name: "github"[\s\S]*case "slack":[\s\S]*<TwgToolSourceIcon[\s\S]*aria-hidden[\s\S]*name: "slack"/u,
+	);
 	assert.match(MENU_SOURCE, /variant="blue"/u);
 });
 

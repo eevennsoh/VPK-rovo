@@ -180,8 +180,10 @@ export function TwgToolSourceIcon({
 
 	if (source.name) {
 		// 3P brand → upstream package mark (its own white tile replaces the appstack
-		// tile at the same size). No `public/3p` asset path.
-		return (
+		// tile at the same size). No `public/3p` asset path. `LogoThirdParty` does
+		// not take leftover Tile props, so `aria-hidden` has to wrap the labeled
+		// `role="img"` rather than being spread onto it.
+		const logo = (
 			<LogoThirdParty
 				className={cn("shrink-0", className)}
 				label={source.label}
@@ -189,6 +191,7 @@ export function TwgToolSourceIcon({
 				size={size}
 			/>
 		);
+		return props["aria-hidden"] ? <span aria-hidden>{logo}</span> : logo;
 	}
 
 	if (source.iconSrc) {
@@ -238,7 +241,7 @@ export function TwgToolSourceIcon({
 
 	if (isThirdPartyProvider(source.provider)) {
 		// Provider is itself a 3P brand id (`google-drive` / `salesforce`).
-		return (
+		const logo = (
 			<LogoThirdParty
 				className={cn("shrink-0", className)}
 				label={source.label}
@@ -246,6 +249,7 @@ export function TwgToolSourceIcon({
 				size={size}
 			/>
 		);
+		return props["aria-hidden"] ? <span aria-hidden>{logo}</span> : logo;
 	}
 
 	return (

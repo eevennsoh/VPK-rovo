@@ -83,6 +83,17 @@ test("TWG Appstack only staggers its first reveal and layout-animates later sour
 	assert.match(SOURCE, /layout: \{ duration: 0\.25, ease: \[0\.4, 0, 0, 1\] \}/u);
 });
 
+test("TWG source icons hide labeled third-party logos when aria-hidden is set", () => {
+	assert.match(
+		SOURCE,
+		/if \(source\.name\) \{[\s\S]*return props\["aria-hidden"\] \? <span aria-hidden>\{logo\}<\/span> : logo;/u,
+	);
+	assert.match(
+		SOURCE,
+		/if \(isThirdPartyProvider\(source\.provider\)\) \{[\s\S]*return props\["aria-hidden"\] \? <span aria-hidden>\{logo\}<\/span> : logo;/u,
+	);
+});
+
 test("TWG Appstack keeps the legacy TwgToolSourceStack adapter", () => {
 	assert.match(SOURCE, /export function TwgToolSourceStack\(props: TWGAppstackProps\)/u);
 	assert.match(SOURCE, /return <TWGAppstack \{\.\.\.props\} \/>/u);
