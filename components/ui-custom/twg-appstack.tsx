@@ -306,7 +306,7 @@ export function TWGAppstack({
 		index: number,
 		children: ReactNode,
 		rotation = getAppstackRotation(index),
-		boxClassName = sizing.box,
+		boxClassName: string = sizing.box,
 	) => {
 		const itemClassName = cn(
 			"relative flex shrink-0 items-center justify-center",

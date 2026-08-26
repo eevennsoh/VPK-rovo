@@ -34,7 +34,7 @@ test("TWG Appstack defaults to 24px and passes the size straight to the tile sca
 	assert.match(SOURCE, /size = "small",/u);
 	assert.match(SOURCE, /iconSize = "small",/u);
 	assert.match(SOURCE, /const sizing = APPSTACK_SIZES\[iconSize\];/u);
-	assert.match(SOURCE, /boxClassName = sizing\.box/u);
+	assert.match(SOURCE, /boxClassName: string = sizing\.box/u);
 	assert.match(SOURCE, /boxClassName,\s*index > 0 && sizing\.overlap/u);
 	// The four names are shared with `components/ui/tile`, so no translation
 	// table sits between the prop and the Tile / logo primitives.
