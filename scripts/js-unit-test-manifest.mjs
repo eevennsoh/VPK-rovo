@@ -191,6 +191,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/trigger-config/trigger-config.test.js",
 		"components/blocks/gallery/gallery.test.js",
 		"components/blocks/html-selector/html-selector.test.js",
+		"components/blocks/video/video.test.js",
 		"components/projects/rovo/components/rovo-app-messages-empty-state.test.js",
 		"components/projects/studio/components/rovo-app-automation-discovery-widget.test.js",
 		"components/projects/studio/hooks/use-rovo-app.test.js",

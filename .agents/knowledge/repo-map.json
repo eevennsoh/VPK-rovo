@@ -5363,7 +5363,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 424,
+			"manifestEntryCount": 425,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5405,7 +5405,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 104,
+				"entryCount": 105,
 				"entries": [
 					{
 						"category": "blocks",
@@ -6018,6 +6018,12 @@
 						"slug": "twg-agent-card",
 						"name": "TWG Agent Card",
 						"importPath": "@/components/blocks/twg-agent-card"
+					},
+					{
+						"category": "blocks",
+						"slug": "video",
+						"name": "Video",
+						"importPath": "@/components/blocks/video"
 					},
 					{
 						"category": "blocks",
