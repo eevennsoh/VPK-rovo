@@ -41,7 +41,10 @@ test("Pulse Kickoff and The spike both render inline code and an issue-key lozen
 	const spikeTokens = tokenizePulseProse(spike);
 
 	assert.deepEqual(tokensOfType(kickoffTokens, "code"), ["LegacyGatewayAdapter"]);
-	assert.deepEqual(tokensOfType(kickoffTokens, "issue-key"), ["PAY-102"]);
+	// The kickoff paragraph cites PAY-102 for the proof-of-possibility and then
+	// PAY-101 as the work item the reasoning is stranded on, so both render as
+	// lozenges in document order.
+	assert.deepEqual(tokensOfType(kickoffTokens, "issue-key"), ["PAY-102", "PAY-101"]);
 	assert.ok(tokensOfType(spikeTokens, "code").includes("LegacyGatewayAdapter"));
 	assert.ok(tokensOfType(spikeTokens, "issue-key").includes("PAY-102"));
 	assert.ok(tokensOfType(spikeTokens, "issue-key").includes("PAY-107"));

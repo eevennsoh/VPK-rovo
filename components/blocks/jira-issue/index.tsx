@@ -1,16 +1,14 @@
 "use client";
 
 import { useId, useState, type ComponentProps, type CSSProperties, type FocusEvent, type PointerEvent, type ReactNode } from "react";
-import { AnimatePresence, LayoutGroup, motion, useReducedMotion, type Transition } from "motion/react";
+import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
 import AutomationIcon from "@atlaskit/icon/core/automation";
-import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
-import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
+import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PriorityMajorIcon from "@atlaskit/icon/core/priority-major";
 import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
 import PriorityMinorIcon from "@atlaskit/icon/core/priority-minor";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
-import SubtasksIcon from "@atlaskit/icon/core/subtasks";
 import TaskIcon from "@atlaskit/icon/core/task";
 
 import {
@@ -23,7 +21,14 @@ import {
 	type JiraIssueCompletedAgentRun,
 } from "@/components/blocks/jira-issue/completed-agent-runs";
 import type { QuestionCardAnswers } from "@/components/blocks/question-card/types";
-import { JiraIssueCountBadge } from "@/components/blocks/jira-issue/count-badge";
+import {
+	getCompletedCount,
+	getIssueInitial,
+	getJiraIssueLayoutTransition,
+	getJiraIssuePresenceMotion,
+	JIRA_ISSUE_MOTION_STYLE,
+} from "@/components/blocks/jira-issue/lib";
+import { JiraIssueSeparator, JiraIssueSubtasks } from "@/components/blocks/jira-issue/subtasks";
 import {
 	JiraIssueGenerativeActionMenu,
 	type JiraIssueGenerativeActionConfig,
@@ -40,10 +45,8 @@ import {
 	type AvatarProps,
 	type AvatarUnassignedKind,
 } from "@/components/ui/avatar";
-import { Lozenge } from "@/components/ui/lozenge";
-import { Separator } from "@/components/ui/separator";
+import { IconTile } from "@/components/ui/icon-tile";
 import { Tag, TagGroup, type TagColor } from "@/components/ui/tag";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
@@ -68,7 +71,7 @@ const AGENT_ACTIVITY_SURFACE_STYLE: CSSProperties = {
 
 export type JiraIssueChrome = "raised" | "stroke";
 export type JiraIssuePriority = "major" | "medium" | "minor";
-export type JiraIssuePullRequestStatus = "open" | "merged";
+export type JiraIssuePullRequestStatus = "open" | "failed" | "merged";
 export type JiraIssueVariant = "default" | "uncaptured-work";
 export type {
 	JiraIssueAgentActivity,
@@ -184,40 +187,6 @@ const PRIORITY_COLORS = {
 	minor: token("color.icon.success"),
 } as const;
 
-const JIRA_ISSUE_MOTION_ENTER: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] }; // duration-normal + ease-out-practical
-const JIRA_ISSUE_MOTION_EXIT: Transition = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] }; // duration-fast + ease-in
-const JIRA_ISSUE_MOTION_LAYOUT: Transition = { duration: 0.2, ease: [0.4, 0, 0, 1] }; // duration-medium + ease-in-out
-const JIRA_ISSUE_MOTION_REDUCED: Transition = { duration: 0 };
-const JIRA_ISSUE_MOTION_STYLE: CSSProperties = { willChange: "transform, opacity" };
-
-function getIssueInitial(issueKey: string): string {
-	return issueKey[0]?.toUpperCase() ?? "U";
-}
-
-function getCompletedCount(completedCount: number | undefined, totalCount: number): number {
-	return Math.min(Math.max(completedCount ?? 0, 0), totalCount);
-}
-
-function getJiraIssueLayoutTransition(shouldReduceMotion: boolean | null): Transition {
-	return shouldReduceMotion ? JIRA_ISSUE_MOTION_REDUCED : JIRA_ISSUE_MOTION_LAYOUT;
-}
-
-function getJiraIssuePresenceMotion(shouldReduceMotion: boolean | null) {
-	if (shouldReduceMotion) {
-		return {
-			animate: undefined,
-			exit: undefined,
-			initial: false,
-		} as const;
-	}
-
-	return {
-		animate: { opacity: 1, y: 0, transition: JIRA_ISSUE_MOTION_ENTER },
-		exit: { opacity: 0, y: -4, transition: JIRA_ISSUE_MOTION_EXIT },
-		initial: { opacity: 0, y: -4 },
-	} as const;
-}
-
 function JiraIssueAssignee({
 	assigneeAvatarLabel,
 	assigneeAvatarShape,
@@ -225,6 +194,7 @@ function JiraIssueAssignee({
 	assigneePulse,
 	assigneeUnassignedKind,
 	issueKey,
+	size = "sm",
 }: Readonly<{
 	assigneeAvatarLabel?: string;
 	assigneeAvatarShape: NonNullable<AvatarProps["shape"]>;
@@ -232,6 +202,7 @@ function JiraIssueAssignee({
 	assigneePulse: boolean;
 	assigneeUnassignedKind?: AvatarUnassignedKind;
 	issueKey: string;
+	size?: NonNullable<AvatarProps["size"]>;
 }>) {
 	if (assigneeUnassignedKind) {
 		return (
@@ -240,7 +211,7 @@ function JiraIssueAssignee({
 					assigneePulse && "motion-safe:animate-pulse ring-2 ring-border-focused ring-offset-2 ring-offset-surface",
 				)}
 				kind={assigneeUnassignedKind}
-				size="sm"
+				size={size}
 			/>
 		);
 	}
@@ -252,11 +223,91 @@ function JiraIssueAssignee({
 			)}
 			label={assigneeAvatarLabel ?? issueKey}
 			shape={assigneeAvatarShape}
-			size="sm"
+			size={size}
 		>
 			{assigneeAvatarSrc ? <AvatarImage src={assigneeAvatarSrc} alt="" /> : null}
 			<AvatarFallback>{getIssueInitial(issueKey)}</AvatarFallback>
 		</Avatar>
+	);
+}
+
+function getJiraIssuePullRequestPresentation(status: JiraIssuePullRequestStatus | undefined): {
+	Icon: typeof PullRequestIcon;
+	colorClass: string;
+	label: string;
+} {
+	switch (status) {
+		case "failed":
+			return {
+				Icon: MergeFailureIcon,
+				colorClass: "text-icon-danger",
+				label: "Pull request failed",
+			};
+		case "merged":
+			return {
+				Icon: MergeSuccessIcon,
+				colorClass: "text-icon-accent-purple",
+				label: "Pull request merged",
+			};
+		case "open":
+		case undefined:
+			return {
+				Icon: PullRequestIcon,
+				colorClass: "text-icon-accent-lime",
+				label: "Pull request",
+			};
+		default: {
+			const exhaustive: never = status;
+			throw new Error(`Unhandled pull request status: ${String(exhaustive)}`);
+		}
+	}
+}
+
+function JiraIssuePullRequestCluster({
+	pullRequestNumber,
+	pullRequestStatus,
+	usesStrokeChrome,
+}: Readonly<{
+	pullRequestNumber: number;
+	pullRequestStatus?: JiraIssuePullRequestStatus;
+	usesStrokeChrome: boolean;
+}>) {
+	const { Icon, colorClass, label } = getJiraIssuePullRequestPresentation(pullRequestStatus);
+	const icon = (
+		<Icon
+			label={usesStrokeChrome ? "" : label}
+			color="currentColor"
+			size={usesStrokeChrome ? "small" : undefined}
+		/>
+	);
+
+	return (
+		<div className={cn("flex items-center", usesStrokeChrome ? "gap-1.5" : "gap-1")}>
+			{usesStrokeChrome ? (
+				<IconTile
+					as="span"
+					className={colorClass}
+					icon={icon}
+					iconSize="small"
+					label={label}
+					size="xxsmall"
+					variant="transparent"
+				/>
+			) : (
+				<span className={colorClass}>
+					{icon}
+				</span>
+			)}
+			<span
+				className={
+					usesStrokeChrome
+						? "font-mono text-xs font-normal leading-4 text-text-subtlest"
+						: "text-xs font-semibold text-text-subtlest"
+				}
+			>
+				#{pullRequestNumber}
+			</span>
+		</div>
 	);
 }
 
@@ -326,19 +377,33 @@ function JiraIssueSummary({
 
 			<div className="pt-0.5">
 				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-2">
+					<div className={usesStrokeChrome ? "flex items-center gap-3" : "flex items-center gap-2"}>
 						<div
 							className={
 								usesStrokeChrome
-									? "flex items-center gap-2"
+									? "flex items-center gap-1.5"
 									: "flex items-center gap-1"
 							}
 						>
-							<TaskIcon label={issueTypeLabel} color={token("color.icon.brand")} />
+							{usesStrokeChrome ? (
+								<IconTile
+									as="span"
+									icon={<TaskIcon label="" color={token("color.icon.brand")} size="small" />}
+									iconSize="small"
+									label={issueTypeLabel}
+									size="xxsmall"
+									variant="transparent"
+								/>
+							) : (
+								<TaskIcon
+									label={issueTypeLabel}
+									color={token("color.icon.brand")}
+								/>
+							)}
 							<span
 								className={
 									usesStrokeChrome
-										? "text-xs font-medium leading-4 text-text-subtle"
+										? "font-mono text-xs font-normal leading-4 text-text-subtlest"
 										: "text-xs font-semibold text-text-subtlest"
 								}
 							>
@@ -346,18 +411,11 @@ function JiraIssueSummary({
 							</span>
 						</div>
 						{pullRequestNumber ? (
-							<div className="flex items-center gap-1">
-								{pullRequestStatus === "merged" ? (
-									<span className="text-icon-accent-purple">
-										<MergeSuccessIcon label="Pull request merged" color="currentColor" />
-									</span>
-								) : (
-									<span className="text-icon-accent-lime">
-										<PullRequestIcon label="Pull request" color="currentColor" />
-									</span>
-								)}
-								<span className="text-xs font-semibold text-text-subtlest">#{pullRequestNumber}</span>
-							</div>
+							<JiraIssuePullRequestCluster
+								pullRequestNumber={pullRequestNumber}
+								pullRequestStatus={pullRequestStatus}
+								usesStrokeChrome={usesStrokeChrome}
+							/>
 						) : null}
 					</div>
 
@@ -367,7 +425,13 @@ function JiraIssueSummary({
 						</span>
 					) : (
 						<div className="flex items-center gap-1.5">
-							{showPriorityIndicator ? <PriorityIcon label={`${priority} priority`} color={priorityColor} /> : null}
+							{showPriorityIndicator ? (
+								<PriorityIcon
+									label={`${priority} priority`}
+									color={priorityColor}
+									size={usesStrokeChrome ? "small" : undefined}
+								/>
+							) : null}
 							{isMounted ? (
 								<JiraIssueAssignee
 									assigneeAvatarLabel={assigneeAvatarLabel}
@@ -376,6 +440,7 @@ function JiraIssueSummary({
 									assigneePulse={assigneePulse}
 									assigneeUnassignedKind={assigneeUnassignedKind}
 									issueKey={issueKey}
+									size={usesStrokeChrome ? "xs" : "sm"}
 								/>
 							) : null}
 						</div>
@@ -383,139 +448,6 @@ function JiraIssueSummary({
 				</div>
 			</div>
 		</div>
-	);
-}
-
-function JiraIssueSubtaskCard({ subtask }: Readonly<{ subtask: JiraIssueSubtask }>) {
-	return (
-		<div
-			className="border border-transparent bg-surface p-3"
-			style={{
-				borderRadius: token("radius.large"),
-				boxShadow: token("elevation.shadow.raised"),
-			}}
-		>
-			<div className="flex flex-col gap-4">
-				<p className="text-sm leading-5 text-text">{subtask.summary}</p>
-				<div className="flex items-center justify-between gap-3">
-					<div className="flex min-w-0 items-center gap-2">
-						<TaskIcon label={subtask.issueTypeLabel ?? "Sub-task"} color={token("color.icon.information")} />
-						<span className="truncate text-xs font-semibold text-text-subtlest">{subtask.issueKey}</span>
-					</div>
-					<div className="flex shrink-0 items-center gap-2">
-						<Lozenge>{subtask.status ?? "To Do"}</Lozenge>
-						{subtask.assigneeUnassignedKind ? (
-							<AvatarUnassigned kind={subtask.assigneeUnassignedKind} size="sm" />
-						) : (
-							<Avatar label={subtask.assigneeAvatarLabel ?? subtask.issueKey} size="sm">
-								{subtask.assigneeAvatarSrc ? <AvatarImage alt="" src={subtask.assigneeAvatarSrc} /> : null}
-								<AvatarFallback>{getIssueInitial(subtask.issueKey)}</AvatarFallback>
-							</Avatar>
-						)}
-					</div>
-				</div>
-			</div>
-		</div>
-	);
-}
-
-function JiraIssueSeparator({ inset = 0 }: Readonly<{ inset?: number }>) {
-	return (
-		<Separator
-			className="h-px transition-[margin,width] duration-medium ease-in-out motion-reduce:transition-none"
-			style={{
-				marginLeft: `${inset - 1}px`,
-				marginRight: `${inset - 1}px`,
-				width: `calc(100% + ${2 - inset * 2}px)`,
-			}}
-		/>
-	);
-}
-
-function JiraIssueSubtasks({
-	completedCount,
-	controlId,
-	expanded,
-	hasInsetSurface,
-	label,
-	onToggle,
-	shouldReduceMotion,
-	subtasks,
-	usesStrokeChrome,
-}: Readonly<{
-	completedCount: number;
-	controlId: string;
-	expanded: boolean;
-	hasInsetSurface: boolean;
-	label: string;
-	onToggle: () => void;
-	shouldReduceMotion: boolean | null;
-	subtasks: readonly JiraIssueSubtask[];
-	usesStrokeChrome: boolean;
-}>) {
-	const totalCount = subtasks.length;
-	const subtasksToggleLabel = `${expanded ? "Hide" : "Show"} ${label.toLowerCase()}`;
-	const layoutTransition = getJiraIssueLayoutTransition(shouldReduceMotion);
-	const presenceMotion = getJiraIssuePresenceMotion(shouldReduceMotion);
-
-	return (
-		<section aria-label={label}>
-			<div className="flex h-8 w-full items-center justify-between px-3 py-2">
-				<div
-					className={
-						usesStrokeChrome
-							? "flex items-center gap-2 text-xs font-medium leading-4 text-text-subtle"
-							: "flex items-center gap-2 text-sm font-medium leading-5 text-text-subtle"
-					}
-				>
-					<span className="grid size-4 shrink-0 place-items-center text-icon-subtle" aria-hidden="true">
-						<SubtasksIcon label="" size="medium" spacing="none" color="currentColor" />
-					</span>
-					<span>{label}</span>
-					<JiraIssueCountBadge compact={usesStrokeChrome}>{completedCount}/{totalCount}</JiraIssueCountBadge>
-				</div>
-				<Tooltip>
-					<TooltipTrigger
-						render={
-							<button
-								type="button"
-								aria-controls={controlId}
-								aria-expanded={expanded}
-								aria-label={subtasksToggleLabel}
-								className="inline-flex size-6 items-center justify-center rounded-sm text-icon-subtle outline-none transition-colors duration-normal ease-out hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-								onClick={onToggle}
-							>
-								{expanded ? (
-									<ChevronDownIcon label="" size="small" color="currentColor" />
-								) : (
-									<ChevronRightIcon label="" size="small" color="currentColor" />
-								)}
-							</button>
-						}
-					/>
-					<TooltipContent>{subtasksToggleLabel}</TooltipContent>
-				</Tooltip>
-			</div>
-			<AnimatePresence initial={false} mode="popLayout">
-				{expanded ? (
-					<motion.div
-						id={controlId}
-						key="subtasks-panel"
-						animate={presenceMotion.animate}
-						className={cn("flex flex-col gap-2 px-3 pt-1", hasInsetSurface ? "pb-2" : "pb-3")}
-						exit={presenceMotion.exit}
-						initial={presenceMotion.initial}
-						layout={shouldReduceMotion ? false : "position"}
-						style={shouldReduceMotion ? undefined : JIRA_ISSUE_MOTION_STYLE}
-						transition={layoutTransition}
-					>
-						{subtasks.map((subtask) => (
-							<JiraIssueSubtaskCard key={subtask.issueKey} subtask={subtask} />
-						))}
-					</motion.div>
-				) : null}
-			</AnimatePresence>
-		</section>
 	);
 }
 
@@ -820,7 +752,10 @@ function JiraIssueDefault({
 						style={shouldReduceMotion ? undefined : JIRA_ISSUE_MOTION_STYLE}
 						transition={layoutTransition}
 					>
-						<JiraIssueSeparator inset={usesAgentActivityShell ? agentActivitySurfaceInset : 0} />
+						<JiraIssueSeparator
+							inset={usesAgentActivityShell ? agentActivitySurfaceInset : 0}
+							usesStrokeChrome={usesStrokeChrome}
+						/>
 						<div className={issueRowsClassName}>
 							<JiraIssueSubtasks
 								completedCount={completedSubtaskCount}
@@ -915,6 +850,7 @@ function JiraIssueDefault({
 								onQuestionSubmit={onAgentActivityQuestionSubmit}
 								onViewChat={onAgentActivityViewChat}
 								shouldReduceMotion={shouldReduceMotion}
+								usesStrokeChrome={usesStrokeChrome}
 							/>
 							<AnimatePresence initial={false} mode="popLayout">
 								{hasAgentDoneNotification ? (
@@ -933,6 +869,7 @@ function JiraIssueDefault({
 											onSubmit={onAgentDoneRunSubmit}
 											onView={onAgentDoneRunView}
 											runs={agentDoneRuns}
+											usesStrokeChrome={usesStrokeChrome}
 										/>
 									</motion.div>
 								) : null}

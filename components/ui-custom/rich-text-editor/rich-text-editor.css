@@ -761,6 +761,18 @@
 	cursor: not-allowed;
 }
 
+/* The row's copy sets its own color (`.menu-row-title`, `.menu-row-byline`, and
+   utility classes such as `text-text-subtlest`), so the button's disabled color
+   never reaches the text a reader actually sees — an inert row would render at
+   full contrast and look identical to an actionable one. Re-assert the disabled
+   color on the copy itself. This sheet is unlayered, so it also wins over the
+   layered Tailwind color utilities a caller may put on the byline. */
+.rich-text-command-menu-item:disabled .rich-text-command-menu-copy,
+.rich-text-command-menu-item:disabled .menu-row-title,
+.rich-text-command-menu-item:disabled .menu-row-byline {
+	color: var(--ds-text-disabled, #091e424f);
+}
+
 .rich-text-command-menu[data-has-header="true"] .rich-text-command-menu-list {
 	padding-top: 4px;
 }
@@ -948,6 +960,15 @@
 	padding: 14px 10px;
 	color: var(--ds-text-subtle, #44546f);
 	font-size: 13px;
+}
+
+/* Full-bleed rule above a footer row (`separatorBefore`), matching the popup
+   footer treatment. The negative inline margin cancels the list's 4px padding
+   so it spans the menu edge to edge instead of insetting like a menu item. */
+.rich-text-command-menu-divider {
+	height: 1px;
+	margin: 4px -4px;
+	background-color: var(--ds-border, #dfe1e6);
 }
 
 /* Section heading for merged "/" lists (flat editor palette). Mirrors the
