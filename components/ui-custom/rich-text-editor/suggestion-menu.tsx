@@ -5,6 +5,7 @@
 // oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
 
 import {
+	Fragment,
 	useEffect,
 	useLayoutEffect,
 	useRef,
@@ -142,6 +143,13 @@ export interface RichTextSuggestionMenuItem {
 	 * yields the slot to the return-key hint only for the active row.
 	 */
 	trailing?: ReactNode;
+	/**
+	 * When true, a full-bleed rule is drawn immediately above this row — the
+	 * popup footer treatment used to split a trailing action (e.g. "Add agent")
+	 * from the rows above it. The rule is decorative (`aria-hidden`, no `role`)
+	 * so it stays out of the listbox, and it never consumes a selectable index.
+	 */
+	separatorBefore?: boolean;
 }
 
 /** Synthetic overflow rows that cap a flat / search / sparkle section. */
@@ -732,24 +740,27 @@ export function RichTextSuggestionMenu({
 				{items.length > 0 ? (
 					items.map((item, index) => {
 						return (
-							item.headingLabel !== undefined ? (
-								<div
-									key={item.id}
-									className="rich-text-command-menu-heading"
-									role="presentation"
-								>
-									{item.headingLabel}
-								</div>
-							) : (
-								<RichTextSuggestionMenuOption
-									key={item.id}
-									isChosen={selectedItemIds?.has(item.id)}
-									isSelected={index === selectedIndex}
-									item={item}
-									onHover={onHover ? () => onHover(index) : undefined}
-									onSelect={onSelect}
-								/>
-							)
+							<Fragment key={item.id}>
+								{item.separatorBefore ? (
+									<div aria-hidden="true" className="rich-text-command-menu-divider" />
+								) : null}
+								{item.headingLabel !== undefined ? (
+									<div
+										className="rich-text-command-menu-heading"
+										role="presentation"
+									>
+										{item.headingLabel}
+									</div>
+								) : (
+									<RichTextSuggestionMenuOption
+										isChosen={selectedItemIds?.has(item.id)}
+										isSelected={index === selectedIndex}
+										item={item}
+										onHover={onHover ? () => onHover(index) : undefined}
+										onSelect={onSelect}
+									/>
+								)}
+							</Fragment>
 						);
 					})
 				) : (

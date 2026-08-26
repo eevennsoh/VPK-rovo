@@ -9,6 +9,8 @@ const AGENT_STATES_SOURCE = readFileSync(join(__dirname, "../agent-states/index.
 const COMPLETED_RUNS_SOURCE = readFileSync(join(__dirname, "completed-agent-runs.tsx"), "utf8");
 const CHANGED_FILES_SOURCE = readFileSync(join(__dirname, "../jira-activity/jira-activity-changed-files.tsx"), "utf8");
 const COUNT_BADGE_SOURCE = readFileSync(join(__dirname, "count-badge.tsx"), "utf8");
+const LIB_SOURCE = readFileSync(join(__dirname, "lib.ts"), "utf8");
+const SUBTASKS_SOURCE = readFileSync(join(__dirname, "subtasks.tsx"), "utf8");
 const GENERATIVE_SOURCE = readFileSync(join(__dirname, "generative-action-menu.tsx"), "utf8");
 const MORE_MENU_SOURCE = readFileSync(join(__dirname, "more-menu.tsx"), "utf8");
 const UNCAPTURED_WORK_SOURCE = readFileSync(join(__dirname, "uncaptured-work.tsx"), "utf8");
@@ -23,13 +25,10 @@ const ROOT_CLASS_BLOCK = SOURCE.slice(
 	SOURCE.indexOf("const rootClassName = cn("),
 	SOURCE.indexOf("function handleSubtasksToggle"),
 );
-const SUBTASKS_BLOCK = SOURCE.slice(
-	SOURCE.indexOf("function JiraIssueSubtasks"),
-	SOURCE.indexOf("export function JiraIssue"),
-);
+const SUBTASKS_BLOCK = SUBTASKS_SOURCE.slice(SUBTASKS_SOURCE.indexOf("export function JiraIssueSubtasks"));
 const SUMMARY_BLOCK = SOURCE.slice(
 	SOURCE.indexOf("function JiraIssueSummary"),
-	SOURCE.indexOf("function JiraIssueSubtaskCard"),
+	SOURCE.indexOf("export function JiraIssue(props"),
 );
 const RICH_ISSUE_CONTENT_BLOCK = SOURCE.slice(
 	SOURCE.indexOf("const richIssueContent ="),
@@ -266,8 +265,8 @@ test("Jira issue switches rich variants to an article with internal controls", (
 	assert.match(SOURCE, /\{showPriorityIndicator \? \([\s\S]*<PriorityIcon[\s\S]*label=\{`\$\{priority\} priority`\}[\s\S]*color=\{priorityColor\}[\s\S]*size=\{usesStrokeChrome \? "small" : undefined\}/);
 	assert.match(SOURCE, /className="w-full p-3 text-left outline-none/);
 	assert.match(SOURCE, /<div className="p-3">\{summaryContent\}<\/div>/);
-	assert.match(SOURCE, /import \{ JiraIssueCountBadge \} from "@\/components\/blocks\/jira-issue\/count-badge";/);
-	assert.match(SOURCE, /import \{ Separator \} from "@\/components\/ui\/separator";/);
+	assert.match(SUBTASKS_SOURCE, /import \{ JiraIssueCountBadge \} from "@\/components\/blocks\/jira-issue\/count-badge";/);
+	assert.match(SUBTASKS_SOURCE, /import \{ Separator \} from "@\/components\/ui\/separator";/);
 	assert.doesNotMatch(SOURCE, /parentEpicControl \? <JiraIssueSeparator \/> : null/);
 	assert.doesNotMatch(SOURCE, /overflow: "hidden"/);
 	assert.doesNotMatch(ROOT_CLASS_BLOCK, /hover:bg-bg-neutral-subtle-hovered/);
@@ -401,7 +400,7 @@ test("Jira issue renders a reusable generative action command menu", () => {
 test("Jira issue uses the VPK Badge primitive for row counts", () => {
 	assert.match(COUNT_BADGE_SOURCE, /import \{ Badge \} from "@\/components\/ui\/badge";/);
 	assert.match(COUNT_BADGE_SOURCE, /<Badge className="h-5 min-w-0 rounded-sm px-1\.5 font-semibold text-text-subtle" max=\{false\} variant="neutral">/);
-	assert.match(SOURCE, /<JiraIssueCountBadge compact=\{usesStrokeChrome\}>\{completedCount\}\/\{totalCount\}<\/JiraIssueCountBadge>/);
+	assert.match(SUBTASKS_SOURCE, /<JiraIssueCountBadge compact=\{usesStrokeChrome\}>\{completedCount\}\/\{totalCount\}<\/JiraIssueCountBadge>/);
 	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /JiraIssueCountBadge|Agent done/u);
 	assert.doesNotMatch(COUNT_BADGE_SOURCE, /rounded-sm bg-bg-neutral px-1\.5 py-0\.5 text-xs font-semibold leading-4 text-text-subtle/);
 });
@@ -495,14 +494,15 @@ test("Jira issue aggregates completed agents into a Finished row with failure pr
 });
 
 test("Jira issue animates agent state transitions with Motion", () => {
-	assert.match(SOURCE, /import \{ AnimatePresence, LayoutGroup, motion, useReducedMotion, type Transition \} from "motion\/react";/);
+	assert.match(SOURCE, /import \{ AnimatePresence, LayoutGroup, motion, useReducedMotion \} from "motion\/react";/);
+	assert.match(LIB_SOURCE, /import type \{ Transition \} from "motion\/react";/);
 	assert.doesNotMatch(SOURCE, /framer-motion/);
-	assert.match(SOURCE, /const JIRA_ISSUE_MOTION_ENTER: Transition = \{ duration: 0\.15, ease: \[0\.4, 1, 0\.6, 1\] \}; \/\/ duration-normal \+ ease-out-practical/);
-	assert.match(SOURCE, /const JIRA_ISSUE_MOTION_EXIT: Transition = \{ duration: 0\.1, ease: \[0\.6, 0, 0\.8, 0\.6\] \}; \/\/ duration-fast \+ ease-in/);
-	assert.match(SOURCE, /const JIRA_ISSUE_MOTION_LAYOUT: Transition = \{ duration: 0\.2, ease: \[0\.4, 0, 0, 1\] \}; \/\/ duration-medium \+ ease-in-out/);
-	assert.match(SOURCE, /const JIRA_ISSUE_MOTION_REDUCED: Transition = \{ duration: 0 \};/);
+	assert.match(LIB_SOURCE, /export const JIRA_ISSUE_MOTION_ENTER: Transition = \{ duration: 0\.15, ease: \[0\.4, 1, 0\.6, 1\] \}; \/\/ duration-normal \+ ease-out-practical/);
+	assert.match(LIB_SOURCE, /export const JIRA_ISSUE_MOTION_EXIT: Transition = \{ duration: 0\.1, ease: \[0\.6, 0, 0\.8, 0\.6\] \}; \/\/ duration-fast \+ ease-in/);
+	assert.match(LIB_SOURCE, /export const JIRA_ISSUE_MOTION_LAYOUT: Transition = \{ duration: 0\.2, ease: \[0\.4, 0, 0, 1\] \}; \/\/ duration-medium \+ ease-in-out/);
+	assert.match(LIB_SOURCE, /export const JIRA_ISSUE_MOTION_REDUCED: Transition = \{ duration: 0 \};/);
 	assert.match(SOURCE, /const shouldReduceMotion = useReducedMotion\(\);/);
-	assert.match(SOURCE, /function getJiraIssuePresenceMotion\(shouldReduceMotion: boolean \| null\)[\s\S]*initial: false/);
+	assert.match(LIB_SOURCE, /export function getJiraIssuePresenceMotion\(shouldReduceMotion: boolean \| null\)[\s\S]*initial: false/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*\{summary \? \([\s\S]*<motion\.div[\s\S]*key=\{`\$\{summary\.priorityState\}-\$\{summary\.activityCount\}`\}[\s\S]*exit=\{presenceMotion\.exit\}[\s\S]*initial=\{presenceMotion\.initial\}/u);
 	assert.match(SOURCE, /const hasIssueRows = hasSubtasks;/);
 	assert.match(SOURCE, /const issueRowsClassName = cn\("pt-1", !\(hasSubtasks && resolvedSubtasksExpanded\) && "pb-1"\);/);
@@ -522,12 +522,12 @@ test("Jira issue animates agent state transitions with Motion", () => {
 	assert.match(SOURCE, /const AGENT_ACTIVITY_INNER_STYLE: CSSProperties = \{[\s\S]*transformOrigin: "top center"/);
 	assert.doesNotMatch(SOURCE, /layout=\{!shouldReduceMotion\}/);
 	assert.match(SOURCE, /layout=\{shouldReduceMotion \? false : "position"\}/);
-	assert.match(SOURCE, /style=\{shouldReduceMotion \? undefined : JIRA_ISSUE_MOTION_STYLE\}/);
+	assert.match(SUBTASKS_SOURCE, /style=\{shouldReduceMotion \? undefined : JIRA_ISSUE_MOTION_STYLE\}/);
 });
 
 test("Jira issue compensates expanded subtask spacing for the active surface inset", () => {
-	assert.match(SOURCE, /hasInsetSurface: boolean;/);
-	assert.match(SOURCE, /className=\{cn\("flex flex-col gap-2 px-3 pt-1", hasInsetSurface \? "pb-2" : "pb-3"\)\}/);
+	assert.match(SUBTASKS_SOURCE, /hasInsetSurface: boolean;/);
+	assert.match(SUBTASKS_SOURCE, /className=\{cn\("flex flex-col gap-2 px-3 pt-1", hasInsetSurface \? "pb-2" : "pb-3"\)\}/);
 	assert.match(SOURCE, /<JiraIssueSubtasks[\s\S]*hasInsetSurface=\{hasActiveAgentActivityShell\}/);
 });
 
@@ -627,14 +627,14 @@ test("Jira issue agent activity demo has an experimental stroke-chrome duplicate
 
 test("Jira issue renders expandable subtasks with nested subtask cards", () => {
 	assert.match(SOURCE, /subtasks\?: readonly JiraIssueSubtask\[\];/);
-	assert.match(SOURCE, /aria-expanded=\{expanded\}/);
-	assert.match(SOURCE, /const subtasksToggleLabel = `\$\{expanded \? "Hide" : "Show"\} \$\{label\.toLowerCase\(\)\}`;/);
+	assert.match(SUBTASKS_SOURCE, /aria-expanded=\{expanded\}/);
+	assert.match(SUBTASKS_SOURCE, /const subtasksToggleLabel = `\$\{expanded \? "Hide" : "Show"\} \$\{label\.toLowerCase\(\)\}`;/);
 	assert.match(SUBTASKS_BLOCK, /<Tooltip>/);
 	assert.match(SUBTASKS_BLOCK, /aria-label=\{subtasksToggleLabel\}/);
 	assert.match(SUBTASKS_BLOCK, /<TooltipContent>\{subtasksToggleLabel\}<\/TooltipContent>/);
-	assert.match(SOURCE, /function JiraIssueSeparator\(\{[\s\S]*inset = 0,[\s\S]*usesStrokeChrome,[\s\S]*\}: Readonly<\{ inset\?: number; usesStrokeChrome: boolean \}>\) \{[\s\S]*marginLeft: `\$\{inset - 1\}px`,[\s\S]*marginRight: `\$\{inset - 1\}px`,[\s\S]*width: `calc\(100% \+ \$\{2 - inset \* 2\}px\)`,/);
+	assert.match(SUBTASKS_SOURCE, /export function JiraIssueSeparator\(\{[\s\S]*inset = 0,[\s\S]*usesStrokeChrome,[\s\S]*\}: Readonly<\{ inset\?: number; usesStrokeChrome: boolean \}>\) \{[\s\S]*marginLeft: `\$\{inset - 1\}px`,[\s\S]*marginRight: `\$\{inset - 1\}px`,[\s\S]*width: `calc\(100% \+ \$\{2 - inset \* 2\}px\)`,/);
 	assert.match(
-		SOURCE,
+		SUBTASKS_SOURCE,
 		/usesStrokeChrome\s*\n\s*\? "bg-border-disabled transition-\[margin,width,background-color\] duration-normal ease-out group-hover\/jira-issue:bg-border group-hover\/jira-issue-card:bg-border"\s*\n\s*: "transition-\[margin,width\] duration-medium ease-in-out"/,
 	);
 	assert.doesNotMatch(SUBTASKS_BLOCK, /<JiraIssueSeparator \/>/);
@@ -651,11 +651,11 @@ test("Jira issue renders expandable subtasks with nested subtask cards", () => {
 	assert.doesNotMatch(SUBTASKS_BLOCK, /hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring[\s\S]*onClick=\{onToggle\}/);
 	assert.doesNotMatch(SOURCE, /role="progressbar"/);
 	assert.doesNotMatch(SOURCE, /progressPercent/);
-	assert.match(SOURCE, /<JiraIssueSubtaskCard key=\{subtask\.issueKey\} subtask=\{subtask\} \/>/);
-	assert.match(SOURCE, /className="border border-transparent bg-surface p-3"/);
+	assert.match(SUBTASKS_SOURCE, /<JiraIssueSubtaskCard key=\{subtask\.issueKey\} subtask=\{subtask\} \/>/);
+	assert.match(SUBTASKS_SOURCE, /className="border border-transparent bg-surface p-3"/);
 	assert.match(SOURCE, /boxShadow: token\("elevation\.shadow\.raised"\)/);
-	assert.doesNotMatch(SOURCE, /className="border border-transparent bg-surface px-4 py-3"/);
-	assert.doesNotMatch(SOURCE, /rounded-lg border border-border bg-surface px-3 py-3 shadow-sm/);
+	assert.doesNotMatch(SUBTASKS_SOURCE, /className="border border-transparent bg-surface px-4 py-3"/);
+	assert.doesNotMatch(SUBTASKS_SOURCE, /rounded-lg border border-border bg-surface px-3 py-3 shadow-sm/);
 });
 
 test("Jira issue renders explicit unassigned avatars with the shared placeholder", () => {

@@ -37,7 +37,6 @@ import {
 } from "./pulse/data/pulse-scopes";
 import { scopeTimelineToWorkItemKeys } from "./pulse/hooks/use-pulse-timeline";
 import type { PulseAnswer } from "./pulse/types";
-import { PulseScopeChip } from "./pulse/components/pulse-scope-chip";
 import {
 	createJiraKanbanSelectionState,
 	filterJiraKanbanColumnsByAssignee,
@@ -131,8 +130,8 @@ export default function ExperimentalJiraKanbanPage({
 	const selectedAssigneeIds = boardFilter.selectedAssigneeIds;
 	// Choosing an epic or a sprint is a request to read the brief, and the brief
 	// only exists in Insights. Without this, picking one from the board filter
-	// recomputes the scope, lights the chip, and leaves the reader on the board
-	// looking at columns — the feature silently doing nothing.
+	// recomputes the scope and leaves the reader on the board looking at
+	// columns — the feature silently doing nothing.
 	//
 	// It hangs off the filter's own actions rather than an effect on `scope`:
 	// the mode change is caused by the reader's click, and deriving it from
@@ -354,25 +353,12 @@ export default function ExperimentalJiraKanbanPage({
 					/>
 				) : undefined}
 				filterControl={
-					<>
-						<BoardFilterPopover
-							actions={filterActions}
-							assignees={assignees}
-							compact={compactHeader}
-							model={boardFilter.model}
-						/>
-						{/* The chip is the only always-visible proof the article is
-						    narrowed. It rides in the filter slot so it sits beside the
-						    control it reflects, and it clears through the same filter
-						    action the popover uses. */}
-						<PulseScopeChip
-							onClear={() => {
-								filterActions.clearField("parent");
-								filterActions.clearField("sprint");
-							}}
-							scope={scope}
-						/>
-					</>
+					<BoardFilterPopover
+						actions={filterActions}
+						assignees={assignees}
+						compact={compactHeader}
+						model={boardFilter.model}
+					/>
 				}
 				modeToggle={
 					<PulseModeToggle
