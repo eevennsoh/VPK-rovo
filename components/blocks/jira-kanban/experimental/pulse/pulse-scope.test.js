@@ -477,7 +477,7 @@ test("choosing a scope opens the surface the brief lives on", () => {
 	// restored on mount.
 	assert.match(
 		SCOPE_SOURCES.page,
-		/toggleValue: \(fieldId, valueId\) => \{[\s\S]*?setMode\("pulse"\)/u,
+		/toggleValue: \(fieldId, valueId\) => \{[\s\S]*?handleOpenTimeline\(\)/u,
 	);
 	assert.doesNotMatch(
 		SCOPE_SOURCES.page,
