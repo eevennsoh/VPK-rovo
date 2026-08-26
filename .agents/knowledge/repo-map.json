@@ -8123,7 +8123,7 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-symphony"
 			},
 			{
-				"description": "Diagnose and remediate VPK local-dev CPU, memory, and disk pressure, or manage its scheduled maintenance. Use when the user says \\\"vpk-system-clean\\\", \\\"next-server eating CPU / at 400%\\\", \\\"Mac is slow or loud\\\", \\\"fseventsd\\\", or \\\"clean .next caches / free space\\\".",
+				"description": "Diagnose and remediate VPK local-dev CPU, memory, disk, and leftover worktree-port pressure, or manage its scheduled maintenance. Use when the user says \\\"vpk-system-clean\\\", \\\"next-server eating CPU / at 400%\\\", \\\"Mac is slow or loud\\\", \\\"fseventsd\\\", \\\"clean .next caches / free space\\\", \\\"kill unused ports\\\", or \\\"idle worktree stacks\\\".",
 				"name": "vpk-system-clean",
 				"path": ".agents/skills/vpk-system-clean/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-system-clean"
