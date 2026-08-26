@@ -24,6 +24,7 @@ export function AgentList({
 	variant = "default",
 	onSubmitPrompt,
 	onView,
+	renderFlyout,
 	selectedItemId,
 }: Readonly<AgentListProps>) {
 	// Optional read, strict requirement: both Agent States flyout variants send
@@ -71,6 +72,7 @@ export function AgentList({
 						key={item.id}
 						onView={onView}
 						onFlyoutSubmit={(prompt) => handleFlyoutSubmit(item, prompt)}
+						renderFlyout={renderFlyout}
 						variant={variant}
 					/>
 				))}
@@ -98,6 +100,7 @@ export {
 export type {
 	AgentListActorKind,
 	AgentListAgent,
+	AgentListCustomFlyoutActions,
 	AgentListFlyout,
 	AgentListInvoker,
 	AgentListItem,

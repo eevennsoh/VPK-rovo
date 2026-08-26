@@ -82,12 +82,13 @@ test("compact agent surfaces use their intended elevation treatment", () => {
 	}
 });
 
-test("Jira Issue and Agent List consume Agent States instead of local flyout cards", () => {
+test("Jira Issue routes multi-agent flyouts through Agent List while Agent List owns Agent States", () => {
 	assert.match(
 		JIRA_ISSUE_SOURCE,
-		/import \{ AgentStates \} from "@\/components\/blocks\/agent-states";/u,
+		/import \{ AgentList, type AgentListItem \} from "@\/components\/blocks\/agent-list";/u,
 	);
-	assert.match(JIRA_ISSUE_SOURCE, /<AgentStates/u);
+	assert.match(JIRA_ISSUE_SOURCE, /<AgentList/u);
+	assert.doesNotMatch(JIRA_ISSUE_SOURCE, /<AgentStates/u);
 	assert.match(
 		AGENT_LIST_SOURCE,
 		/import \{[\s\S]*AgentStates,[\s\S]*\} from "@\/components\/blocks\/agent-states";/u,

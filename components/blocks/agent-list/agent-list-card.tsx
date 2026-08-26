@@ -26,6 +26,7 @@ import {
 	HoverCard,
 	HoverCardContent,
 	HoverCardTrigger,
+	createHoverCardHandle,
 } from "@/components/ui/hover-card";
 import { IconTile } from "@/components/ui/icon-tile";
 import {
@@ -39,6 +40,7 @@ import { cn } from "@/lib/utils";
 import { toAgentSessionFlyoutItem } from "./agent-list-session";
 import type {
 	AgentListAgent,
+	AgentListCustomFlyoutActions,
 	AgentListFlyout,
 	AgentListInvoker,
 	AgentListItem,
@@ -718,6 +720,7 @@ export function AgentListCard({
 	item,
 	onFlyoutSubmit,
 	onView,
+	renderFlyout,
 	variant,
 }: Readonly<{
 	/** Which flyout this row opens — see {@link AgentListFlyout}. */
@@ -729,8 +732,10 @@ export function AgentListCard({
 	/** Composer variant only: called when the Agent States composer submits. */
 	onFlyoutSubmit?: (prompt: string) => void;
 	onView?: (item: AgentListItem) => void;
+	renderFlyout?: (item: AgentListItem, actions: AgentListCustomFlyoutActions) => ReactNode;
 	variant: AgentListVariant;
 }>) {
+	const [customFlyoutHandle] = useState(createHoverCardHandle);
 	const isCompact = variant === "compact";
 	const row = (
 		<AgentListRow
@@ -740,6 +745,35 @@ export function AgentListCard({
 			onView={onView}
 		/>
 	);
+	if (renderFlyout) {
+		return (
+			<HoverCard handle={customFlyoutHandle}>
+				<HoverCardTrigger
+					closeDelay={80}
+					delay={120}
+					render={(
+						<li
+							aria-current={isSelected ? "true" : undefined}
+							className={rowClassName(isCompact, isSelected)}
+							data-testid={"agent-list-custom-" + item.id}
+						/>
+					)}
+				>
+					{row}
+				</HoverCardTrigger>
+				<HoverCardContent
+					align="start"
+					alignOffset={0}
+					className="w-auto max-w-[calc(100vw-48px)] bg-transparent p-0 shadow-none data-ending-style:transition-none"
+					positionerClassName="z-[575] after:pointer-events-auto after:absolute after:-inset-2 after:-z-10 after:content-['']"
+					side="right"
+					sideOffset={8}
+				>
+					{renderFlyout(item, { close: () => customFlyoutHandle.close() })}
+				</HoverCardContent>
+			</HoverCard>
+		);
+	}
 
 	// Rows that are not agent sessions — a teammate's comment, an @mention —
 	// have no session to preview, so they render the row and nothing else.
