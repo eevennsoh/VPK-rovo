@@ -646,7 +646,7 @@ function AgentListRow({
 	const prMeta = item.prStatus ? PR_STATUS_META[item.prStatus] : null;
 	const PrIcon = prMeta?.Icon ?? null;
 	// A session row is one line tall by contract, so its title truncates. A row
-	// with a reason is already a paragraph — truncating its title there hides the
+	// with body copy is already a paragraph — truncating its title there hides the
 	// one line that says what happened.
 	const hasSummary = Boolean(item.summary);
 	const titleClassName = cn(
@@ -659,7 +659,7 @@ function AgentListRow({
 		<div
 			className={cn(
 				"flex min-w-0 gap-0",
-				// A summary makes the row three lines tall; the identity and the
+				// A summary makes the row taller than one line; the identity and the
 				// trailing controls then belong beside the title, not floating in the
 				// middle of a paragraph.
 				hasSummary ? "items-start" : "items-center",
@@ -702,26 +702,7 @@ function AgentListRow({
 					)}
 					{stateMeta.showDots ? <AnimatedDots /> : null}
 				</span>
-				{/* Wraps rather than truncates: this line carries the reason, and a
-				    reason cut off at one line is not a reason. */}
-				{item.summary ? (
-					<span
-						className={cn(
-							"mt-0.5 w-full min-w-0 text-pretty text-text-subtle",
-							isCompact ? "text-xs leading-4" : "text-sm leading-5",
-						)}
-					>
-						{item.summary}
-					</span>
-				) : null}
-				{/* Same reason the title wraps: a three-line row has no single-line
-				    budget to defend, so the metadata wraps instead of losing its tail. */}
-				<span
-					className={cn(
-						"flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest",
-						hasSummary ? "mt-1 flex-wrap" : "overflow-hidden",
-					)}
-				>
+				<span className="flex w-full min-w-0 items-center gap-1 overflow-hidden text-xs text-text-subtlest">
 					{item.metadataPrefix ? (
 						<>
 							<span className="shrink-0">{item.metadataPrefix}</span>
@@ -750,6 +731,18 @@ function AgentListRow({
 						</>
 					) : null}
 				</span>
+				{/* Wraps rather than truncates: this line carries the session
+				    summary, and a summary cut off at one line is not a summary. */}
+				{item.summary ? (
+					<span
+						className={cn(
+							"mt-2 w-full min-w-0 text-pretty text-text",
+							isCompact ? "text-xs leading-4" : "text-sm leading-5",
+						)}
+					>
+						{item.summary}
+					</span>
+				) : null}
 			</RowBody>
 			{stateMeta.showLifecycle ? (
 				<span

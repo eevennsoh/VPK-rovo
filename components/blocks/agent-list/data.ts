@@ -75,6 +75,8 @@ export const AGENT_LIST_ITEMS: readonly AgentListItem[] = [
 		state: "complete",
 		agent: createSessionAgent("code-planner"),
 		branch: "rovo/web-461-readability",
+		summary:
+			"Extracted shared helpers from the checkout path, renamed locals to match the steps they describe, and removed nested conditionals that made the happy path hard to scan.",
 		invokedBy: DEMO_INVOKER,
 		elapsedSeconds: 754,
 		completedSecondsAgo: 68 * 60,

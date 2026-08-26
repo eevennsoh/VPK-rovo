@@ -100,9 +100,8 @@ export interface AgentListItem {
 	 */
 	branch?: string;
 	/**
-	 * Wrapping secondary line between the title and the metadata row, for rows
-	 * whose title needs a sentence of context (an attention signal's reason, a
-	 * comment's excerpt). Rendered by the list row only, not by
+	 * Wrapping body copy below the metadata row. Optional — omit it to keep a
+	 * compact title-and-metadata row. Rendered by the list row only, not by
 	 * `AgentListActivityHeader`, whose two-line geometry is fixed.
 	 */
 	summary?: string;
