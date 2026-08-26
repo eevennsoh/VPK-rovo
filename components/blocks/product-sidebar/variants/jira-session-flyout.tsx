@@ -64,6 +64,7 @@ export type JiraSessionFlyoutTriggerProps = Omit<
 
 export interface JiraSessionFlyoutSurfaceProps {
 	handle: JiraSessionFlyoutHandle;
+	onSubmitPrompt?: (session: JiraSidebarSessionItem, prompt: string) => void;
 }
 
 interface FocusCaptureChildProps {
@@ -143,6 +144,12 @@ function toAgentStatesState(status: JiraSidebarSessionStatus): AgentStatesState 
 	if (status === "awaiting-input") return "awaiting-input";
 	if (status === "running") return "working";
 	return "completed";
+}
+
+/** Copy for terminal states that cannot use the successful completion default. */
+function toAgentStatesMessage(status: JiraSidebarSessionStatus): string | undefined {
+	if (status !== "stopped") return undefined;
+	return "This session was stopped before the requested work was completed.";
 }
 
 /** Work-item status lozenge derived from the session lifecycle. */
@@ -430,6 +437,7 @@ export function JiraSessionFlyoutBody({
  */
 export function JiraSessionFlyoutSurface({
 	handle,
+	onSubmitPrompt,
 }: Readonly<JiraSessionFlyoutSurfaceProps>) {
 	return (
 		<HoverCard<JiraSidebarSessionItem> handle={handle}>
@@ -451,6 +459,12 @@ export function JiraSessionFlyoutSurface({
 									name: payload.agentName,
 								}}
 								className="w-[400px] max-w-[calc(100vw-48px)] rounded-none shadow-none"
+								completedAtMs={payload.completedAtMs}
+								completedSecondsAgo={payload.completedSecondsAgo}
+								initialElapsedSeconds={payload.initialElapsedSeconds}
+								message={toAgentStatesMessage(payload.status)}
+								onSubmit={onSubmitPrompt ? (prompt) => onSubmitPrompt(payload, prompt) : undefined}
+								startedAtMs={payload.startedAtMs}
 								state={toAgentStatesState(payload.status)}
 							/>
 						) : null}

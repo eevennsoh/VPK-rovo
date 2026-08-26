@@ -43,6 +43,28 @@ test("shared hover flyout renders the property-free Agent States card", () => {
 	);
 });
 
+test("shared Agent States flyout forwards submission, timing, and stopped lifecycle data", () => {
+	const source = readRepoFile(FLYOUT_BODY_PATH);
+	const jiraSource = readRepoFile("components/blocks/product-sidebar/variants/jira.tsx");
+	const queueSource = readRepoFile("components/projects/jira-queue/data/queue-sessions.ts");
+
+	assert.match(source, /onSubmitPrompt\?: \(session: JiraSidebarSessionItem, prompt: string\) => void;/u);
+	assert.match(
+		source,
+		/onSubmit=\{onSubmitPrompt \? \(prompt\) => onSubmitPrompt\(payload, prompt\) : undefined\}/u,
+	);
+	for (const prop of ["completedAtMs", "completedSecondsAgo", "initialElapsedSeconds", "startedAtMs"]) {
+		assert.match(source, new RegExp(`${prop}=\\{payload\\.${prop}\\}`, "u"));
+		assert.match(jiraSource, new RegExp(`${prop}\\?: number;`, "u"));
+	}
+	assert.match(source, /function toAgentStatesMessage\(/u);
+	assert.match(source, /status !== "stopped"\) return undefined;/u);
+	assert.match(source, /This session was stopped before the requested work was completed\./u);
+	assert.match(source, /message=\{toAgentStatesMessage\(payload\.status\)\}/u);
+	assert.match(queueSource, /const QUEUE_SESSION_TIMING:/u);
+	assert.match(queueSource, /stopped: \{ completedSecondsAgo:/u);
+});
+
 // Detail panels still reuse the shared design-system property components rather
 // than re-implementing them inside each panel.
 test("shared detail body reuses SmartLink, agent Tag, Lozenge, and GitHub logo", () => {

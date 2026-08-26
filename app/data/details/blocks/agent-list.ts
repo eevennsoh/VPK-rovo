@@ -57,7 +57,7 @@ export const AGENT_LIST_DETAIL: ComponentDetail = {
 			type: '"floating" | "sidebar"',
 			default: '"sidebar"',
 			description:
-				'Composer variant only. Chat surface opened after sending from an Agent States flyout. Consumers with a floating Rovo launcher opt into floating; other surfaces fall back to sidebar chat.',
+				"Chat surface opened after sending from either Agent States flyout. Consumers with a floating Rovo launcher opt into floating; other surfaces fall back to sidebar chat.",
 		},
 		{
 			name: "onView",
@@ -69,7 +69,7 @@ export const AGENT_LIST_DETAIL: ComponentDetail = {
 			name: "onSubmitPrompt",
 			type: "(item: AgentListItem, prompt: string) => void | Promise<void>",
 			description:
-				"Composer variant only. Overrides the default chat destination for Agent States composer submissions.",
+				"Overrides the default chat destination for submissions from either Agent States flyout.",
 		},
 		{
 			name: "className",

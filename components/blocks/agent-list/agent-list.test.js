@@ -225,7 +225,7 @@ test("session rows default to the shared Jira agent-session flyout", () => {
 	);
 	assert.match(
 		INDEX_SOURCE,
-		/\{flyout === "session" \? \(\s*<JiraSessionFlyoutSurface handle=\{flyoutHandle\} \/>\s*\) : null\}/u,
+		/\{flyout === "session" \? \(\s*<JiraSessionFlyoutSurface[\s\S]*handle=\{flyoutHandle\}[\s\S]*onSubmitPrompt=\{\(session, prompt\) => \{/u,
 	);
 	assert.match(CARD_SOURCE, /<JiraSessionFlyoutTrigger[\s\S]*handle=\{flyoutHandle\}/u);
 	assert.match(CARD_SOURCE, /session=\{toAgentSessionFlyoutItem\(item\)\}/u);
@@ -258,11 +258,24 @@ test("the session adapter derives flyout payloads the row model does not carry",
 		/issueKey: details\?\.issueKey \?\? deriveIssueKeyFromBranch\(item\.branch\),/u,
 	);
 	assert.match(SESSION_SOURCE, /issueSummary: details\?\.issueSummary \?\? item\.title,/u);
+	assert.match(SESSION_SOURCE, /completedAtMs: item\.completedAtMs,/u);
+	assert.match(SESSION_SOURCE, /completedSecondsAgo: item\.completedSecondsAgo,/u);
+	assert.match(SESSION_SOURCE, /initialElapsedSeconds: item\.elapsedSeconds,/u);
+	assert.match(SESSION_SOURCE, /startedAtMs: item\.startedAtMs,/u);
 	// Identity and lifecycle stay row-owned and are not overridable.
-	assert.match(
-		TYPES_SOURCE,
-		/Omit<\s*JiraSidebarSessionItem,\s*"agentAvatarSrc" \| "agentName" \| "id" \| "status" \| "title"\s*>/u,
-	);
+	for (const rowOwnedField of [
+		"agentAvatarSrc",
+		"agentName",
+		"completedAtMs",
+		"completedSecondsAgo",
+		"id",
+		"initialElapsedSeconds",
+		"startedAtMs",
+		"status",
+		"title",
+	]) {
+		assert.match(TYPES_SOURCE, new RegExp(`\\| "${rowOwnedField}"`, "u"));
+	}
 	assert.match(DATA_SOURCE, /sessionDetails: \{/u);
 	assert.match(DATA_SOURCE, /pullRequestNumber: 284,/u);
 });
@@ -296,7 +309,7 @@ test("flyout=\"none\" renders the row alone for entries that are not agent sessi
 	// The shared session flyout surface only mounts for the variant that uses it.
 	assert.match(
 		INDEX_SOURCE,
-		/\{flyout === "session" \? \(\s*<JiraSessionFlyoutSurface handle=\{flyoutHandle\} \/>\s*\) : null\}/u,
+		/\{flyout === "session" \? \(\s*<JiraSessionFlyoutSurface[\s\S]*handle=\{flyoutHandle\}[\s\S]*onSubmitPrompt=/u,
 	);
 });
 
@@ -324,7 +337,7 @@ test("the composer refuses to render without a chat destination", () => {
 	// at render beats failing after the viewer has typed one.
 	assert.match(
 		INDEX_SOURCE,
-		/if \(flyout === "composer" && onSubmitPrompt === undefined && chat === null\) \{\s*throw new Error\(/u,
+		/if \(flyout !== "none" && onSubmitPrompt === undefined && chat === null\) \{\s*throw new Error\(/u,
 	);
 	assert.match(
 		INDEX_SOURCE,

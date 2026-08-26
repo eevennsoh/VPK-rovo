@@ -26,16 +26,17 @@ export function AgentList({
 	onView,
 	selectedItemId,
 }: Readonly<AgentListProps>) {
-	// Optional read, strict requirement: the composer is the only branch that
-	// sends a prompt, so a read-only list of comments and @mentions renders fine
-	// with no chat runtime. The composer still needs a real destination — its
+	// Optional read, strict requirement: both Agent States flyout variants send
+	// prompts, so a read-only list of comments and @mentions renders fine with no
+	// chat runtime only when it opts out of flyouts. A composer needs a real
+	// destination — its
 	// Agent States card clears the reply as soon as it submits, so a swallowed
 	// prompt would look like a successful send — and fails here, at render, not
 	// after the viewer has typed one.
 	const chat = useOptionalRovoChat();
-	if (flyout === "composer" && onSubmitPrompt === undefined && chat === null) {
+	if (flyout !== "none" && onSubmitPrompt === undefined && chat === null) {
 		throw new Error(
-			'AgentList flyout="composer" needs a chat destination: render it inside a RovoChatProvider or pass onSubmitPrompt.',
+			'AgentList flyout="session" or "composer" needs a chat destination: render it inside a RovoChatProvider or pass onSubmitPrompt.',
 		);
 	}
 	const handleFlyoutSubmit = useCallback((item: AgentListItem, prompt: string) => {
@@ -75,7 +76,13 @@ export function AgentList({
 				))}
 			</ul>
 			{flyout === "session" ? (
-				<JiraSessionFlyoutSurface handle={flyoutHandle} />
+				<JiraSessionFlyoutSurface
+					handle={flyoutHandle}
+					onSubmitPrompt={(session, prompt) => {
+						const item = items.find((candidate) => candidate.id === session.id);
+						if (item) handleFlyoutSubmit(item, prompt);
+					}}
+				/>
 			) : null}
 		</>
 	);
