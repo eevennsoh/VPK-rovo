@@ -729,8 +729,8 @@
 	background-color: transparent;
 }
 
-.rich-text-command-menu:focus-within .rich-text-command-menu-item:hover .rich-text-command-menu-copy,
-.rich-text-command-menu:focus-within .rich-text-command-menu-item-selected .rich-text-command-menu-copy {
+.rich-text-command-menu:focus-within .rich-text-command-menu-item:not([data-has-actions="true"]):hover .rich-text-command-menu-copy,
+.rich-text-command-menu:focus-within .rich-text-command-menu-item-selected:not([data-has-actions="true"]) .rich-text-command-menu-copy {
 	padding-right: 0;
 }
 

@@ -29,6 +29,7 @@ import { MERMAID_DIAGRAM_DETAIL } from "./blocks/mermaid-diagram";
 import { VIDEO_DETAIL } from "./blocks/video";
 import { CURSOR_DETAIL } from "./blocks/cursor";
 import { AGENT_PROGRESS_DETAIL } from "./blocks/agent-progress";
+import { AGENT_ASSIGNMENT_DETAIL } from "./blocks/agent-assignment";
 import { AGENT_SELECTOR_DETAIL } from "./blocks/agent-selector";
 import { SKILL_SELECTOR_DETAIL } from "./blocks/skill-selector";
 import { JIRA_WORK_ITEM_DETAIL } from "./blocks/jira-work-item";
@@ -136,6 +137,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	video: VIDEO_DETAIL,
 	cursor: CURSOR_DETAIL,
 	"agent-progress": AGENT_PROGRESS_DETAIL,
+	"agent-assignment": AGENT_ASSIGNMENT_DETAIL,
 	"agent-selector": AGENT_SELECTOR_DETAIL,
 	"skill-selector": SKILL_SELECTOR_DETAIL,
 	"jira-work-item": JIRA_WORK_ITEM_DETAIL,

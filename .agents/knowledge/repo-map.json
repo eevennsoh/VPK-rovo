@@ -5363,7 +5363,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 425,
+			"manifestEntryCount": 426,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5405,7 +5405,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 105,
+				"entryCount": 106,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5418,6 +5418,12 @@
 						"slug": "agent-access",
 						"name": "Agent Access",
 						"importPath": "@/components/blocks/agent-access"
+					},
+					{
+						"category": "blocks",
+						"slug": "agent-assignment",
+						"name": "Agent Assignment",
+						"importPath": "@/components/blocks/agent-assignment"
 					},
 					{
 						"category": "blocks",

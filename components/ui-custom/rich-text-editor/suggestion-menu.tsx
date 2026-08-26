@@ -82,6 +82,7 @@ import {
 	getSuggestionMatchRank,
 	rankSuggestionsByMatch,
 } from "./suggestion-ranking";
+import "./suggestion-menu-actions.css";
 import type {
 	RichTextCommandCategory,
 	RichTextMentionCategory,
@@ -101,6 +102,14 @@ export interface RichTextCommandItem {
 	run: (editor: Editor) => void;
 }
 
+export interface RichTextSuggestionMenuHoverActions {
+	onPrimary: () => void;
+	onSecondary: () => void;
+	primaryLabel: string;
+	secondaryIcon: ReactNode;
+	secondaryLabel: string;
+}
+
 export interface RichTextSuggestionMenuItem {
 	id: string;
 	label: string;
@@ -110,6 +119,8 @@ export interface RichTextSuggestionMenuItem {
 	 * compact, dynamic metadata such as a running tool-call narration.
 	 */
 	inlineMetadata?: ReactNode;
+	/** Hover/focus-revealed sibling buttons; keeps the option button unnested. */
+	hoverActions?: RichTextSuggestionMenuHoverActions;
 	shortcut?: string;
 	icon: ReactNode;
 	/**
@@ -686,6 +697,7 @@ export function RichTextSuggestionMenu({
 	} = useCommandMenuScrollMask();
 	const listRef = listProps.ref;
 	const isNested = Boolean(onBack);
+	const hasHoverActions = items.some((item) => item.hoverActions !== undefined);
 
 	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- nested menu changes reset and remeasure the scroll container.
 	useEffect(() => {
@@ -699,14 +711,18 @@ export function RichTextSuggestionMenu({
 
 	useLayoutEffect(() => {
 		const listElement = listRef.current;
-		const selectedElement = listElement?.querySelector<HTMLElement>("[role='option'][aria-selected='true']");
+		const selectedElement = listElement?.querySelector<HTMLElement>(
+			hasHoverActions
+				? "[data-suggestion-option][data-selected='true']"
+				: "[role='option'][aria-selected='true']",
+		);
 		if (!listElement || !selectedElement) {
 			return;
 		}
 
 		selectedElement.scrollIntoView({ block: "nearest" });
 		updateListScrollState();
-	}, [items, listRef, selectedIndex, title, updateListScrollState]);
+	}, [hasHoverActions, items, listRef, selectedIndex, title, updateListScrollState]);
 
 	return (
 		<div
@@ -732,7 +748,7 @@ export function RichTextSuggestionMenu({
 			{header}
 			<div
 				className="rich-text-command-menu-list"
-				role="listbox"
+				role={hasHoverActions ? "list" : "listbox"}
 				aria-label={title}
 				aria-multiselectable={selectedItemIds ? true : undefined}
 				{...listProps}
@@ -756,6 +772,7 @@ export function RichTextSuggestionMenu({
 										isChosen={selectedItemIds?.has(item.id)}
 										isSelected={index === selectedIndex}
 										item={item}
+										listMode={hasHoverActions}
 										onHover={onHover ? () => onHover(index) : undefined}
 										onSelect={onSelect}
 									/>
@@ -898,6 +915,7 @@ interface RichTextSuggestionMenuOptionProps {
 	isChosen?: boolean;
 	isSelected: boolean;
 	item: RichTextSuggestionMenuItem;
+	listMode?: boolean;
 	onHover?: () => void;
 	onSelect: (item: RichTextSuggestionMenuItem) => void;
 }
@@ -906,6 +924,7 @@ function RichTextSuggestionMenuOption({
 	isChosen,
 	isSelected,
 	item,
+	listMode = false,
 	onHover,
 	onSelect,
 }: Readonly<RichTextSuggestionMenuOptionProps>) {
@@ -918,7 +937,7 @@ function RichTextSuggestionMenuOption({
 	const hasDescription = Boolean(item.description);
 	const showsPersistentDescription = hasDescription && Boolean(item.persistentDescription);
 	const canRevealMetadata = hasDescription && !item.persistentDescription;
-	const shouldShowReturnShortcut = !item.disabled && (isSelected || isInteractionActive);
+	const shouldShowReturnShortcut = !item.disabled && item.hoverActions === undefined && (isSelected || isInteractionActive);
 	// A persistent trailing indicator (e.g. a status glyph) shows at rest, so the
 	// copy must reserve room for it always — not only on hover/selection like the
 	// return hint — so the label truncates before it instead of sliding under it.
@@ -992,14 +1011,16 @@ function RichTextSuggestionMenuOption({
 		</>
 	);
 
-	if (canRevealMetadata) {
-		return (
+	const option = canRevealMetadata ? (
 			<motion.button
 				type="button"
-				role="option"
-				aria-selected={isChosen ?? isSelected}
+				role={listMode ? undefined : "option"}
+				aria-selected={listMode ? undefined : isChosen ?? isSelected}
 				animate={isSelected ? "active" : "idle"}
 				className={className}
+				data-has-actions={item.hoverActions ? "true" : undefined}
+				data-selected={isChosen ?? isSelected ? "true" : undefined}
+				data-suggestion-option=""
 				data-has-trailing={hasPersistentTrailing ? "true" : undefined}
 				disabled={item.disabled}
 				initial={false}
@@ -1014,15 +1035,15 @@ function RichTextSuggestionMenuOption({
 			>
 				{children}
 			</motion.button>
-		);
-	}
-
-	return (
+	) : (
 		<button
 			type="button"
-			role="option"
-			aria-selected={isChosen ?? isSelected}
+			role={listMode ? undefined : "option"}
+			aria-selected={listMode ? undefined : isChosen ?? isSelected}
 			className={className}
+			data-has-actions={item.hoverActions ? "true" : undefined}
+			data-selected={isChosen ?? isSelected ? "true" : undefined}
+			data-suggestion-option=""
 			data-has-trailing={hasPersistentTrailing ? "true" : undefined}
 			disabled={item.disabled}
 			onMouseDown={(event) => event.preventDefault()}
@@ -1034,6 +1055,50 @@ function RichTextSuggestionMenuOption({
 		>
 			{children}
 		</button>
+	);
+
+	if (!item.hoverActions) {
+		return option;
+	}
+
+	return (
+		<div
+			className="group/suggestion-option grid grid-cols-[minmax(0,1fr)_auto] items-center rounded-lg"
+			data-suggestion-actions=""
+			onMouseEnter={handleMouseEnter}
+			onMouseLeave={() => setIsInteractionActive(false)}
+			role="listitem"
+		>
+			{option}
+			<div
+				className="pointer-events-none flex w-0 items-center gap-1 overflow-hidden opacity-0"
+				data-suggestion-action-buttons=""
+			>
+				<Button
+					onClick={(event) => {
+						event.stopPropagation();
+						item.hoverActions?.onPrimary();
+					}}
+					size="compact"
+					type="button"
+					variant="outline"
+				>
+					{item.hoverActions.primaryLabel}
+				</Button>
+				<Button
+					aria-label={item.hoverActions.secondaryLabel}
+					onClick={(event) => {
+						event.stopPropagation();
+						item.hoverActions?.onSecondary();
+					}}
+					size="icon-compact"
+					type="button"
+					variant="outline"
+				>
+					{item.hoverActions.secondaryIcon}
+				</Button>
+			</div>
+		</div>
 	);
 }
 

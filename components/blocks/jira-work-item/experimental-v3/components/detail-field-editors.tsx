@@ -11,27 +11,23 @@ import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
 
 import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
+import { AgentAssignment, type AgentAssignmentAgent } from "@/components/blocks/agent-assignment";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { CrewMember } from "@/components/blocks/jira-work-item/data/metadata-crew";
 import type { AgentPlannerAssignee } from "@/components/blocks/jira-work-item/data/planner-state";
-import type { AgentSession, StaticTimelineEvent } from "@/components/blocks/jira-work-item/data/session-state";
+import { WorkingSessionActivityByline } from "@/components/blocks/jira-work-item/experimental-v3/components/agent-session-activity-byline";
 import { DetailValueTrigger } from "@/components/blocks/jira-work-item/experimental-v3/components/detail-field-row";
-import { WorkItemAgentSelector } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-agent-selector";
-import { WorkItemAssignedAgentsMenu } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-assigned-agents-menu";
 import {
 	useJiraWorkItemActions,
 	useJiraWorkItemMeta,
 	useJiraWorkItemState,
 } from "@/components/blocks/jira-work-item/experimental-v3/context-jira-work-item";
-import { agentRowStatusTooltip } from "@/components/blocks/jira-work-item/experimental-v3/lib/agent-row-status";
+import { resolveAssignedAgentRows } from "@/components/blocks/jira-work-item/experimental-v3/lib/assigned-agent-rows";
 import {
-	resolveAssignedAgentRows,
-	type AssignedAgentRow,
-} from "@/components/blocks/jira-work-item/experimental-v3/lib/assigned-agent-rows";
-import { DEFAULT_PINNED_SPACE_AGENT_IDS } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-picker-options";
-import { WORK_ITEM_AGENT_SELECTOR_MENU } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-agent-selector-menu";
+	DEFAULT_PINNED_SPACE_AGENT_IDS,
+	WORK_ITEM_PINNED_ITEMS_LABEL,
+} from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-picker-options";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -41,7 +37,7 @@ import {
 import { IconTile } from "@/components/ui/icon-tile";
 import { Lozenge, LozengeDropdownTrigger } from "@/components/ui/lozenge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { PlusIcon, SearchIcon } from "@/components/ui/vpk-icons";
+import { SearchIcon } from "@/components/ui/vpk-icons";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import {
@@ -366,45 +362,6 @@ export function DateRowField({
 	);
 }
 
-const MAX_AGENT_AVATARS = 3;
-
-function AgentRowStatusAvatar({
-	member,
-	onOpen,
-	sessions,
-	staticEvents,
-}: Readonly<{
-	member: CrewMember;
-	onOpen: () => void;
-	sessions: readonly Pick<AgentSession, "agentId" | "status">[];
-	staticEvents: readonly StaticTimelineEvent[];
-}>) {
-	const statusLabel = agentRowStatusTooltip(sessions, member.id, staticEvents);
-	return (
-		<Tooltip>
-			<TooltipTrigger
-				render={
-					<span
-						className="relative z-10 inline-flex shrink-0 pointer-events-auto"
-						onClick={onOpen}
-						tabIndex={-1}
-					/>
-				}
-			>
-				<AgentAvatarVisual
-					avatarClassName="shrink-0"
-					avatarSrc={member.avatarUrl}
-					brandName={member.brandName}
-					fallbackText={member.name.slice(0, 2).toUpperCase()}
-					label={`${member.name}. ${statusLabel}`}
-					sizePx={24}
-				/>
-			</TooltipTrigger>
-			<TooltipContent positionerClassName={METADATA_PICKER_POSITIONER_CLASS}>{statusLabel}</TooltipContent>
-		</Tooltip>
-	);
-}
-
 function toCrewAgent(agent: AgentSelectorAgent): CrewMember {
 	return {
 		id: agent.id,
@@ -426,120 +383,67 @@ function toSelectorAgent(member: CrewMember): AgentSelectorAgent {
 }
 
 export function AgentsRowField({ value, onChange }: Readonly<{ value: readonly CrewMember[]; onChange: (next: CrewMember[]) => void }>) {
-	const [open, setOpen] = useState(false);
-	const [query, setQuery] = useState("");
-	// Which surface the shared dropdown shows. Assigning an agent always closes
-	// the menu, so resolving the effective view per render can never yank the
-	// palette out from under the pointer.
-	const [view, setView] = useState<"assigned" | "selector">("assigned");
-	const [pinnedAgentIds, setPinnedAgentIds] = useState<readonly string[]>(DEFAULT_PINNED_SPACE_AGENT_IDS);
 	const actions = useJiraWorkItemActions();
 	const { sessions, staticEvents } = useJiraWorkItemState();
 	const selectedAgents = value.filter((member) => member.kind === "agent");
-	const selectedAgentIds = selectedAgents.map((member) => member.id);
 	const assignedRows = resolveAssignedAgentRows(value, sessions, staticEvents);
-	const effectiveView = assignedRows.length === 0 ? "selector" : view;
+	const assignedAgents = assignedRows.map((row, rowIndex): AgentAssignmentAgent => ({
+		id: row.agentId,
+		name: row.name,
+		byline: "",
+		...(row.avatarSrc ? { avatarSrc: row.avatarSrc } : {}),
+		...(row.brandName ? { brandName: row.brandName } : {}),
+		status: row.session !== undefined && row.session.status !== "completed"
+			? <WorkingSessionActivityByline session={row.session} sessionIndex={rowIndex} />
+			: <WorkingSessionActivityByline fallbackLabel={row.statusLabel} />,
+		statusLabel: row.statusLabel,
+	}));
 	const extraAgents = selectedAgents
 		.filter((member) => !ROVO_AGENT_SELECTOR_AGENTS.some((agent) => agent.id === member.id))
 		.map(toSelectorAgent);
 	const agents = extraAgents.length > 0
 		? [...extraAgents, ...ROVO_AGENT_SELECTOR_AGENTS]
 		: ROVO_AGENT_SELECTOR_AGENTS;
-	const shown = selectedAgents.slice(0, MAX_AGENT_AVATARS);
 
-	const handleOpenChange = (nextOpen: boolean) => {
-		setOpen(nextOpen);
-		if (!nextOpen) {
-			setQuery("");
-			setView("assigned");
-		}
-	};
-
-	const handleFooterAction = () => {
-		setOpen(false);
-		setQuery("");
-		setView("assigned");
-	};
-
-	// Mirrors `handleOpenWorkingSession` in activity-composer.tsx: the embedded
-	// surface is driven purely by `openSession`. Rows without a session are
-	// non-interactive, so nothing is ever launched from here.
-	const handleOpenAgentSession = (row: AssignedAgentRow) => {
-		if (!row.session) {
+	const handleOpenAgentSession = (agent: AgentAssignmentAgent) => {
+		const row = assignedRows.find((candidate) => candidate.agentId === agent.id);
+		if (!row?.session) {
+			actions.invokeAgent(agent, "context-pill", `@${agent.name}`);
 			return;
 		}
-		handleOpenChange(false);
 		actions.openSession(row.session.id);
 	};
 
-	const handleAgentToggle = (agentId: string) => {
-		const agent = agents.find((candidate) => candidate.id === agentId);
-		if (!agent) {
-			return;
-		}
-		if (selectedAgentIds.includes(agentId)) {
-			onChange(selectedAgents.filter((member) => member.id !== agentId));
-		} else {
-			onChange([...selectedAgents, toCrewAgent(agent)]);
-		}
-		handleFooterAction();
+	const handleAgentAssign = (agent: AgentSelectorAgent) => {
+		actions.invokeAgent(agent, "context-pill", `@${agent.name}`);
+	};
+
+	const handleAssignedAgentIdsChange = (agentIds: readonly string[]) => {
+		const nonAgentCrew = value.filter((member) => member.kind !== "agent");
+		const selectedById = new Map(selectedAgents.map((member) => [member.id, member]));
+		const availableById = new Map(agents.map((agent) => [agent.id, agent]));
+		const nextAgents = agentIds.flatMap((agentId) => {
+			const selected = selectedById.get(agentId);
+			if (selected) {
+				return [selected];
+			}
+			const agent = availableById.get(agentId);
+			return agent ? [toCrewAgent(agent)] : [];
+		});
+		onChange([...nonAgentCrew, ...nextAgents]);
 	};
 
 	return (
-		<TooltipProvider>
-			<DropdownMenu onOpenChange={handleOpenChange} open={open}>
-				<div className="relative flex min-h-8 w-full min-w-0 items-center gap-0.5 px-2">
-					<DropdownMenuTrigger
-						render={
-							<button
-								aria-label="Edit agents"
-								className="absolute inset-0 z-0 rounded-md outline-none"
-								type="button"
-							/>
-						}
-					/>
-					{shown.map((member) => (
-						<AgentRowStatusAvatar
-							key={member.id}
-							member={member}
-							onOpen={() => handleOpenChange(true)}
-							sessions={sessions}
-							staticEvents={staticEvents}
-						/>
-					))}
-					<Avatar
-						aria-hidden
-						className="pointer-events-none relative z-10 text-icon-subtle"
-						shape="hexagon"
-						size="sm"
-					>
-						<span className="flex size-full items-center justify-center bg-bg-neutral text-icon-subtle">
-							<PlusIcon size="small" />
-						</span>
-					</Avatar>
-				</div>
-				<DropdownMenuContent {...WORK_ITEM_AGENT_SELECTOR_MENU}>
-					{effectiveView === "assigned" ? (
-						<WorkItemAssignedAgentsMenu
-							onAddAgent={() => setView("selector")}
-							onOpenAgentSession={handleOpenAgentSession}
-							rows={assignedRows}
-						/>
-					) : (
-						<WorkItemAgentSelector
-							agents={agents}
-							onAgentToggle={handleAgentToggle}
-							onBrowseAgents={handleFooterAction}
-							onCreateAgent={handleFooterAction}
-							onPinnedAgentIdsChange={setPinnedAgentIds}
-							onQueryChange={setQuery}
-							pinnedAgentIds={pinnedAgentIds}
-							query={query}
-							selectedAgentIds={selectedAgentIds}
-						/>
-					)}
-				</DropdownMenuContent>
-			</DropdownMenu>
-		</TooltipProvider>
+		<AgentAssignment
+			agents={agents}
+			assignedAgents={assignedAgents}
+			defaultPinnedAgentIds={DEFAULT_PINNED_SPACE_AGENT_IDS}
+			maxVisibleAgents={3}
+			onAgentAssign={handleAgentAssign}
+			onAssignedAgentIdsChange={handleAssignedAgentIdsChange}
+			onAssignedAgentSelect={handleOpenAgentSession}
+			pinnedItemsLabel={WORK_ITEM_PINNED_ITEMS_LABEL}
+			positionerClassName="z-[502]"
+		/>
 	);
 }
