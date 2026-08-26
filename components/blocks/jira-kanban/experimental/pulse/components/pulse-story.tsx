@@ -596,6 +596,7 @@ export function PulseStory({
 					emptyNote={member === null
 						? undefined
 						: toEmptyNote(firstName, unscopedCounts.attention, "item needs attention", "items need attention")}
+					members={contributors}
 					signals={attention}
 				/>
 			</PulseStoryAnchor>
