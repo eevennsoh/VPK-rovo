@@ -1,12 +1,12 @@
 "use client";
 
-import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import { useMemo, useState, type KeyboardEvent, type ReactElement } from "react";
 import { createPortal } from "react-dom";
 
 import {
 	RichTextCommandMenuSearchField,
 	RichTextSuggestionMenu,
+	getSuggestionOverflowFooterItem,
 	type RichTextSuggestionMenuItem,
 } from "@/components/ui-custom/rich-text-editor";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
@@ -67,11 +67,7 @@ function getSelectedItemMetadata(item: RovoSparkleItem): RovoSparkleSelectedItem
 }
 
 function getBrowseAllRow(id: string): RovoSparkleItem {
-	return {
-		id,
-		label: "Browse all",
-		icon: <ShowMoreHorizontalIcon color="currentColor" label="" size="small" />,
-	};
+	return getSuggestionOverflowFooterItem(id, "browse-all");
 }
 
 function filterItems(items: readonly RovoSparkleItem[], query: string): readonly RovoSparkleItem[] {
@@ -268,4 +264,3 @@ export function RovoSparkle({
 		</Popover>
 	);
 }
-

@@ -164,12 +164,9 @@ export function ActivityComposer({
 	agents,
 	autoFocus = false,
 	composerContextBar,
-	newInsightsCount,
 	onAgentPromptSubmit,
 	onFailingChecksSubmit,
-	onNewInsightsSelect,
 	onOpenAgentChat,
-	onSectionSelect,
 	pullRequestFix,
 	pullRequestReview,
 	onSkillInvoke,
@@ -177,13 +174,10 @@ export function ActivityComposer({
 	agents?: readonly AgentSelectorAgent[];
 	autoFocus?: boolean;
 	composerContextBar?: ReactNode;
-	newInsightsCount?: number;
 	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
 	/** Advances Fix-chapter storytelling when a failing-checks chip is submitted. */
 	onFailingChecksSubmit?: () => void;
-	onNewInsightsSelect?: () => void;
 	onOpenAgentChat?: (agentId: string) => void;
-	onSectionSelect?: () => void;
 	/** Expanded PullRequestFix card (Fix / Fix all); replaces the activity prompt. */
 	pullRequestFix?: ActivityComposerPullRequestFix;
 	pullRequestReview?: ActivityComposerPullRequestReview;
@@ -469,12 +463,9 @@ export function ActivityComposer({
 			{hasExpandedPullRequestComposer ? null : (
 				<ActivityComposerContextPills
 					contextBar={composerContextBar}
-					newInsightsCount={newInsightsCount}
 					onInvokeAgent={handleInvokeAgent}
 					onInvokeSkill={handleInvokeSkill}
-					onNewInsightsSelect={onNewInsightsSelect}
 					onOpenAgentChat={onOpenAgentChat ? handleOpenWorkingSession : undefined}
-					onSectionSelect={onSectionSelect}
 					workingSessions={workingSessions}
 				/>
 			)}

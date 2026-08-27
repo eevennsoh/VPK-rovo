@@ -89,9 +89,12 @@ export interface JiraSidebarSessionItem {
 	branch?: string;
 	checks?: string;
 	commit?: string;
+	completedAtMs?: number;
+	completedSecondsAgo?: number;
 	deletions?: number;
 	host: JiraSidebarSessionHost;
 	id: string;
+	initialElapsedSeconds?: number;
 	issueKey: string;
 	issueSummary: string;
 	priority?: JiraSidebarWorkItemPriority;
@@ -99,6 +102,7 @@ export interface JiraSidebarSessionItem {
 	pullRequestTitle?: string;
 	repository?: string;
 	status: JiraSidebarSessionStatus;
+	startedAtMs?: number;
 	title: string;
 	worktreePath?: string;
 }
@@ -157,7 +161,7 @@ export function JiraSessionLabel({ session }: Readonly<{ session: JiraSidebarSes
 	return session.status === "awaiting-input" ? (
 		<span className="flex min-w-0 items-baseline">
 			<Shimmer as="span" className="min-w-0 truncate" duration={1.4} spread={2}>
-				Waiting for input
+				Needs input
 			</Shimmer>
 			<AnimatedDots />
 		</span>
@@ -168,8 +172,8 @@ export function JiraSessionLifecycle({ status }: Readonly<{ status: JiraSidebarS
 	switch (status) {
 		case "awaiting-input":
 			return (
-				<span className="grid size-4 shrink-0 place-items-center text-icon-information" title="Waiting for input">
-					<StatusInformationIcon label="Waiting for input" size="small" color="currentColor" />
+				<span className="grid size-4 shrink-0 place-items-center text-icon-information" title="Needs input">
+					<StatusInformationIcon label="Needs input" size="small" color="currentColor" />
 				</span>
 			);
 		case "running":

@@ -101,11 +101,11 @@ function MetadataDot() {
 /**
  * Visual rule (shared with jira-issue agent activity): text shimmer is reserved
  * for "needs input" states; in-progress work uses the rainbow spinner instead.
- * A status can combine both (e.g. "1 Waiting for input, 2 In progress"),
+ * A status can combine both (e.g. "1 Needs input, 2 In progress"),
  * so each comma-separated segment is classified and rendered independently.
  */
 function isAwaitingInputStatus(status: string): boolean {
-	return /awaiting user|waiting for input/i.test(status);
+	return /awaiting user|needs input/i.test(status);
 }
 
 function JiraForYouStatusSegment({
@@ -113,7 +113,7 @@ function JiraForYouStatusSegment({
 	trailingComma = false,
 }: Readonly<{ segment: string; trailingComma?: boolean }>) {
 	// The comma is punctuation, not status text, so it stays outside the shimmer
-	// while still hugging the segment (no leading space): "Waiting for input, …".
+	// while still hugging the segment (no leading space): "Needs input, …".
 	const comma = trailingComma ? <span aria-hidden="true">,</span> : null;
 
 	if (isAwaitingInputStatus(segment)) {

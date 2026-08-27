@@ -4,12 +4,10 @@ import { useMemo, useState, type ReactNode } from "react";
 import AddIcon from "@atlaskit/icon/core/add";
 import ChartTrendIcon from "@atlaskit/icon/core/chart-trend";
 import FilterIcon from "@atlaskit/icon/core/filter";
-import MegaphoneIcon from "@atlaskit/icon/core/megaphone";
 import PersonAddIcon from "@atlaskit/icon/core/person-add";
 import SearchIcon from "@atlaskit/icon/core/search";
 import SettingsIcon from "@atlaskit/icon/core/settings";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
-import UndoIcon from "@atlaskit/icon/core/undo";
 import GroupIcon from "@atlaskit/icon-lab/core/group";
 
 import {
@@ -175,7 +173,7 @@ export function JiraKanbanBoardHeader({
 					<PopoverContent align="start" className="w-[560px] max-w-[calc(100vw-32px)] gap-0 overflow-hidden p-0">
 						<div className="grid h-[360px] grid-cols-[200px_minmax(0,1fr)]">
 							<div className="border-r border-border p-3">
-								<Button aria-disabled variant="outline">
+								<Button aria-disabled variant="ghost">
 									<Icon data-icon="inline-start" render={<AddIcon label="" size="small" />} />
 									Add field
 								</Button>
@@ -267,12 +265,6 @@ export function JiraKanbanBoardHeader({
 							</Button>
 							<Button aria-disabled aria-label={`${surfaceTitle} settings`} size="icon" variant="outline">
 								<Icon render={<SettingsIcon label="" />} />
-							</Button>
-							<Button aria-disabled aria-label="Undo board change" size="icon" variant="outline">
-								<Icon render={<UndoIcon label="" />} />
-							</Button>
-							<Button aria-disabled aria-label="Board announcements" size="icon" variant="outline">
-								<Icon render={<MegaphoneIcon label="" />} />
 							</Button>
 							<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
 								<Icon render={<ShowMoreHorizontalIcon label="" />} />

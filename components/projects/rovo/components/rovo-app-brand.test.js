@@ -54,7 +54,7 @@ test("RovoAppBrand uses selected-agent actions while a custom agent is active", 
 test("RovoAppBrand can render a fixed identity without an agent selector", () => {
 	assert.match(SOURCE, /enableAgentSelector\?: boolean;/u);
 	assert.match(SOURCE, /if \(!enableAgentSelector\) \{/u);
-	assert.match(SOURCE, /<div className="flex h-8 min-w-0 shrink-0 items-center px-2 text-sm font-medium text-text">[\s\S]*\{identity\}/u);
+	assert.match(SOURCE, /<div className=\{cn\("flex h-8 min-w-0 shrink-0 items-center px-2 text-sm font-medium text-text", className\)\}>[\s\S]*\{identity\}/u);
 });
 
 test("RovoAppBrand renders selected third-party identities as labeled extra-small hexagons", () => {

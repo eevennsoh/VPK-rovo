@@ -4,9 +4,14 @@ import PulseIcon from "@atlaskit/icon/core/pulse";
 
 import type { PulseMember } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
+import {
+	JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME,
+	JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS,
+} from "../../header-facepile";
 
 /**
  * The two Pulse controls that live in the board header.
@@ -22,11 +27,23 @@ export type ExperimentalJiraKanbanMode = "board" | "pulse";
 export function PulseModeToggle({
 	active,
 	onToggle,
-}: Readonly<{ active: boolean; onToggle: () => void }>) {
+	unreadCount = 0,
+}: Readonly<{
+	active: boolean;
+	onToggle: () => void;
+	unreadCount?: number;
+}>) {
+	const label = unreadCount <= 0
+		? undefined
+		: unreadCount === 1
+			? "Insights, 1 new update since you last viewed"
+			: `Insights, ${unreadCount} new updates since you last viewed`;
+
 	return (
 		<Button
+			aria-label={label}
 			aria-pressed={active}
-			className={cn(active ? "border-border-selected text-text-selected" : null)}
+			className={cn(active ? "border-border-selected text-text-selected! [&_svg]:text-icon-selected!" : null)}
 			onClick={onToggle}
 			size="default"
 			variant="outline"
@@ -35,7 +52,8 @@ export function PulseModeToggle({
 				className={cn(active ? "text-icon-selected" : null)}
 				render={<PulseIcon label="" />}
 			/>
-			Pulse
+			Insights
+			{unreadCount > 0 ? <Badge variant="information">{unreadCount}</Badge> : null}
 		</Button>
 	);
 }
@@ -63,9 +81,9 @@ export function PulseRosterFacepile({
 			// Leftmost-on-top, matching the board's own facepile: DOM order stays
 			// the tab order and the stacking is done with z-index. The shared
 			// group also gives hexagon avatars their shape-aware separator.
-			className="isolate -mx-0.5 ml-1 min-w-0 items-center -space-x-1.5 px-0.5 [&>*]:relative [&>*:nth-child(1)]:z-[8] [&>*:nth-child(2)]:z-[7] [&>*:nth-child(3)]:z-[6] [&>*:nth-child(4)]:z-[5] [&>*:nth-child(5)]:z-[4] [&>*:nth-child(6)]:z-[3] [&>*:nth-child(7)]:z-[2] [&>*:nth-child(8)]:z-[1]"
+			className={JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME}
 		>
-			{members.map((member) => {
+			{members.slice(0, JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS).map((member) => {
 				const isSelected = member.id === selectedMemberId;
 				return (
 					<button

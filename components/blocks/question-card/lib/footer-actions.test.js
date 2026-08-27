@@ -1,7 +1,11 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const { getQuestionCardPrimaryAction } = require("./footer-actions.ts");
+const {
+	getQuestionCardPrimaryAction,
+	shouldShowQuestionCardFooterButton,
+	shouldShowQuestionCardFooter,
+} = require("./footer-actions.ts");
 
 test("keeps Skip as the footer action when the current question is unanswered", () => {
 	// Unanswered current question, more questions remain.
@@ -22,4 +26,17 @@ test("switches footer action to Submit when the answered current question is the
 test("switches footer action to Submit once every question is answered", () => {
 	assert.equal(getQuestionCardPrimaryAction(true, true, false), "submit");
 	assert.equal(getQuestionCardPrimaryAction(true, true, true), "submit");
+});
+
+test("never renders a Skip footer button because header dismiss owns cancel", () => {
+	assert.equal(shouldShowQuestionCardFooterButton("skip"), false);
+	assert.equal(shouldShowQuestionCardFooter(false, "skip"), false);
+	assert.equal(shouldShowQuestionCardFooter(true, "skip"), true);
+});
+
+test("keeps Next and Submit in the footer even without a custom input row", () => {
+	assert.equal(shouldShowQuestionCardFooterButton("next"), true);
+	assert.equal(shouldShowQuestionCardFooterButton("submit"), true);
+	assert.equal(shouldShowQuestionCardFooter(false, "next"), true);
+	assert.equal(shouldShowQuestionCardFooter(false, "submit"), true);
 });

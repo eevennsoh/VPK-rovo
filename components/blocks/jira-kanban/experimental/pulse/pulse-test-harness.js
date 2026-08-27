@@ -20,16 +20,27 @@ const KANBAN_DIR = join(EXPERIMENTAL_DIR, "..");
 
 const SOURCES = {
 	data: readFileSync(join(PULSE_DIR, "data", "pulse-timeline.ts"), "utf8"),
+	looseWork: readFileSync(join(PULSE_DIR, "data", "pulse-loose-work.ts"), "utf8"),
 	hook: readFileSync(join(PULSE_DIR, "hooks", "use-pulse-timeline.ts"), "utf8"),
 	// The ruler's pure geometry and weights. Split out of the scrubber so a
 	// component file stops exporting helpers, which defeats Fast Refresh.
 	marks: readFileSync(join(PULSE_DIR, "lib", "pulse-marks.ts"), "utf8"),
 	rail: readFileSync(join(PULSE_DIR, "components", "pulse-rail.tsx"), "utf8"),
+	embeddedChat: readFileSync(join(PULSE_DIR, "components", "pulse-embedded-chat.tsx"), "utf8"),
+	insightsChat: readFileSync(join(PULSE_DIR, "hooks", "use-pulse-insights-chat.ts"), "utf8"),
+	chatContext: readFileSync(join(PULSE_DIR, "lib", "pulse-chat-context.ts"), "utf8"),
+	layout: readFileSync(join(PULSE_DIR, "lib", "pulse-layout.ts"), "utf8"),
+	resizeHandle: readFileSync(join(PULSE_DIR, "components", "pulse-resize-handle.tsx"), "utf8"),
+	railResize: readFileSync(join(PULSE_DIR, "hooks", "use-pulse-work-rail-resize.ts"), "utf8"),
 	// The reading position: the only programmatic scroll left in Pulse.
 	reading: readFileSync(join(PULSE_DIR, "hooks", "use-pulse-reading.ts"), "utf8"),
 	scrubber: readFileSync(join(PULSE_DIR, "components", "pulse-scrubber.tsx"), "utf8"),
 	shell: readFileSync(join(PULSE_DIR, "experimental-pulse.tsx"), "utf8"),
 	signals: readFileSync(join(PULSE_DIR, "components", "pulse-signals.tsx"), "utf8"),
+	sourcesAppstack: readFileSync(join(PULSE_DIR, "components", "pulse-sources-appstack.tsx"), "utf8"),
+	sourcesPreview: readFileSync(join(PULSE_DIR, "data", "pulse-sources-preview.ts"), "utf8"),
+	prose: readFileSync(join(PULSE_DIR, "lib", "pulse-prose.ts"), "utf8"),
+	proseText: readFileSync(join(PULSE_DIR, "components", "pulse-prose-text.tsx"), "utf8"),
 	story: readFileSync(join(PULSE_DIR, "components", "pulse-story.tsx"), "utf8"),
 	// The continuous article. It did not exist under the snapshot-at-a-time
 	// model, and it is now where several contracts that used to sit in the shell
@@ -155,6 +166,75 @@ let timelineHarnessPromise;
 let scrubberHarnessPromise;
 let outlineHarnessPromise;
 let rosterMarkupHarnessPromise;
+let attentionHarnessPromise;
+let sessionsHarnessPromise;
+let nextActionsHarnessPromise;
+let scopeHarnessPromise;
+let proseHarnessPromise;
+
+/**
+ * The pure signal → agent-list-row mapping behind the "Needs input"
+ * section. It imports nothing but types from the shared block, so it bundles as
+ * a leaf and can be executed rather than grepped.
+ */
+function loadAttentionHarness() {
+	attentionHarnessPromise ??= bundleHarness({
+		contents: `
+			export {
+				resolveAttentionWorkItem,
+				toAttentionActionLabel,
+				toAttentionMetadata,
+				toAttentionState,
+				toPulseAttentionItems,
+			} from "./components/blocks/jira-kanban/experimental/pulse/lib/pulse-attention";
+			export { PULSE_TIMELINE } from "./components/blocks/jira-kanban/experimental/pulse/data/pulse-timeline";
+		`,
+		sourcefile: "pulse-attention-harness.ts",
+	});
+
+	return attentionHarnessPromise;
+}
+
+/**
+ * The pure session → agent-list-row mapping behind Uncaptured work's coding
+ * sessions. It imports nothing but types from the shared block, so it bundles
+ * as a leaf and can be executed rather than grepped.
+ */
+function loadSessionsHarness() {
+	sessionsHarnessPromise ??= bundleHarness({
+		contents: `
+			export {
+				toPulseSessionItems,
+				toPulseSessionWorktree,
+			} from "./components/blocks/jira-kanban/experimental/pulse/lib/pulse-sessions";
+			export { PULSE_TIMELINE } from "./components/blocks/jira-kanban/experimental/pulse/data/pulse-timeline";
+		`,
+		sourcefile: "pulse-sessions-harness.ts",
+	});
+
+	return sessionsHarnessPromise;
+}
+
+/**
+ * The pure action → next-best-action-row mapping behind the "Next best
+ * actions" section. It imports nothing but types from the shared block, so it
+ * bundles as a leaf and can be executed rather than grepped.
+ */
+function loadNextActionsHarness() {
+	nextActionsHarnessPromise ??= bundleHarness({
+		contents: `
+			export {
+				toPulseNextActionItems,
+				toPulseNextActionRowLabel,
+				toPulseNextActionSource,
+			} from "./components/blocks/jira-kanban/experimental/pulse/lib/pulse-next-actions";
+			export { PULSE_TIMELINE } from "./components/blocks/jira-kanban/experimental/pulse/data/pulse-timeline";
+		`,
+		sourcefile: "pulse-next-actions-harness.ts",
+	});
+
+	return nextActionsHarnessPromise;
+}
 
 const rosterMarkupPlugin = {
 	name: "pulse-roster-markup-mocks",
@@ -163,7 +243,7 @@ const rosterMarkupPlugin = {
 			namespace: "pulse-roster-markup-mock",
 			path: "pulse-icon",
 		}));
-		build.onResolve({ filter: /^@\/components\/ui\/(?:button|icon)$/ }, (args) => ({
+		build.onResolve({ filter: /^@\/components\/ui\/(?:badge|button|icon)$/ }, (args) => ({
 			namespace: "pulse-roster-markup-mock",
 			path: args.path,
 		}));
@@ -175,7 +255,11 @@ const rosterMarkupPlugin = {
 				};
 			}
 
-			const exportName = args.path.endsWith("/button") ? "Button" : "Icon";
+			const exportName = args.path.endsWith("/button")
+				? "Button"
+				: args.path.endsWith("/badge")
+					? "Badge"
+					: "Icon";
 			return {
 				contents: `export function ${exportName}() { return null; }`,
 				loader: "js",
@@ -199,7 +283,8 @@ function loadTimelineHarness() {
 	timelineHarnessPromise ??= bundleHarness({
 		contents: `
 			import { __mount, __render } from "react";
-			import { PULSE_TIMELINE } from "./components/blocks/jira-kanban/experimental/pulse/data/pulse-timeline";
+			import { PULSE_SPACE_REPOSITORY, PULSE_TIMELINE } from "./components/blocks/jira-kanban/experimental/pulse/data/pulse-timeline";
+			import { pulseLooseWorkCanCreateWorkItem, pulseLooseWorkHostLabel, pulseLooseWorkSource } from "./components/blocks/jira-kanban/experimental/pulse/types";
 			import {
 				clampSnapshotIndex,
 				computeHighlightedIndexes,
@@ -220,7 +305,11 @@ function loadTimelineHarness() {
 				computeMemberWeek,
 				findAdjacentActiveIndexes,
 				findContribution,
+				PULSE_SPACE_REPOSITORY,
 				PULSE_TIMELINE,
+				pulseLooseWorkCanCreateWorkItem,
+				pulseLooseWorkHostLabel,
+				pulseLooseWorkSource,
 				resolveLooseWork,
 				resolveWorkItems,
 				scopeArtifacts,
@@ -260,12 +349,17 @@ function loadScrubberHarness() {
 	scrubberHarnessPromise ??= bundleHarness({
 		contents: `
 			export {
+				isInsightRevised,
 				isPulseSectionDimmed,
+				toInsightGeneratedLabel,
+				toInsightUpdatedLabel,
 				toMagnification,
 				toMarkHint,
 				toMarkLabel,
 				toMarkState,
 				toNearestEntryIndex,
+				toPulseInsightEyebrow,
+				toPulseInsightHeadline,
 				toWeekdayLabel,
 			} from "./components/blocks/jira-kanban/experimental/pulse/lib/pulse-marks";
 		`,
@@ -281,20 +375,64 @@ function loadOutlineHarness() {
 		contents: `
 			export {
 				buildPulseOutline,
+				isPulseChevronHeaderJump,
 				toActiveInsightEntry,
 				toActiveOutlineIndex,
 				toAdjacentInsightIndex,
 				toPulseAnchorId,
+				toPulseArticleTopFadeVisible,
 				toPulseInsightEntries,
+				toPulseMeasureLineY,
 				toPulseScrollOffset,
+				toPulseSectionStats,
 				toPulseSections,
 				toRulerHeading,
+				toSectionHeading,
 			} from "./components/blocks/jira-kanban/experimental/pulse/lib/pulse-outline";
 		`,
 		sourcefile: "pulse-outline-harness.ts",
 	});
 
 	return outlineHarnessPromise;
+}
+
+/** Outcome highlighter — tokenizer plus the real React render path. */
+function loadProseHarness() {
+	proseHarnessPromise ??= bundleHarness({
+		contents: `
+			import React from "react";
+			import { renderToString } from "react-dom/server";
+			import { PulseProseText } from "./components/blocks/jira-kanban/experimental/pulse/components/pulse-prose-text";
+			import { PULSE_TIMELINE } from "./components/blocks/jira-kanban/experimental/pulse/data/pulse-timeline";
+			import { tokenizePulseProse } from "./components/blocks/jira-kanban/experimental/pulse/lib/pulse-prose";
+
+			export { PULSE_TIMELINE, tokenizePulseProse };
+
+			export function renderPulseProse(text) {
+				return renderToString(React.createElement(PulseProseText, { text }));
+			}
+
+			export function snapshotParagraph(id) {
+				const snapshot = PULSE_TIMELINE.snapshots.find((entry) => entry.id === id);
+				if (snapshot === undefined) {
+					throw new Error(\`fixture is missing the snapshot "\${id}"\`);
+				}
+				return snapshot.paragraphs[0];
+			}
+
+			export function contributionSummary(snapshotId, memberId) {
+				const snapshot = PULSE_TIMELINE.snapshots.find((entry) => entry.id === snapshotId);
+				const contribution = snapshot?.contributions.find((entry) => entry.memberId === memberId);
+				if (contribution === undefined) {
+					throw new Error(\`fixture is missing \${snapshotId}/\${memberId}\`);
+				}
+				return contribution.summary;
+			}
+		`,
+		sourcefile: "pulse-prose-harness.ts",
+	});
+
+	return proseHarnessPromise;
 }
 
 /** The canonical header roster rendered through React's server renderer. */
@@ -321,6 +459,89 @@ function loadRosterMarkupHarness() {
 	return rosterMarkupHarnessPromise;
 }
 
+const insightsToggleMarkupPlugin = {
+	name: "pulse-insights-toggle-markup-mocks",
+	setup(build) {
+		build.onResolve({ filter: /^@atlaskit\/icon\/core\/pulse$/ }, () => ({
+			namespace: "pulse-insights-toggle-mock",
+			path: "pulse-icon",
+		}));
+		build.onResolve({ filter: /^@\/components\/ui\/(?:badge|button|icon)$/ }, (args) => ({
+			namespace: "pulse-insights-toggle-mock",
+			path: args.path,
+		}));
+		build.onLoad({ filter: /.*/, namespace: "pulse-insights-toggle-mock" }, (args) => {
+			if (args.path === "pulse-icon") {
+				return {
+					contents: "export default function PulseIcon() { return null; }",
+					loader: "js",
+					resolveDir: process.cwd(),
+				};
+			}
+
+			if (args.path.endsWith("/badge")) {
+				return {
+					contents: `
+						import React from "react";
+						export function Badge({ children }) {
+							return React.createElement("span", { "data-slot": "badge" }, children);
+						}
+					`,
+					loader: "js",
+					resolveDir: process.cwd(),
+				};
+			}
+
+			if (args.path.endsWith("/icon")) {
+				return {
+					contents: "export function Icon() { return null; }",
+					loader: "js",
+					resolveDir: process.cwd(),
+				};
+			}
+
+			return {
+				contents: `
+					import React from "react";
+					export function Button({ children, ...props }) {
+						return React.createElement("button", { type: "button", ...props }, children);
+					}
+				`,
+				loader: "js",
+				resolveDir: process.cwd(),
+			};
+		});
+	},
+};
+
+let insightsToggleMarkupHarnessPromise;
+
+/** Insights toggle markup, including the unread activity pill. */
+function loadInsightsToggleMarkupHarness() {
+	insightsToggleMarkupHarnessPromise ??= bundleHarness({
+		contents: `
+			import React from "react";
+			import { renderToString } from "react-dom/server";
+			import { PulseModeToggle } from "./components/blocks/jira-kanban/experimental/pulse/components/pulse-mode-controls";
+
+			export function renderInsightsToggleMarkup({
+				active = false,
+				unreadCount = 0,
+			} = {}) {
+				return renderToString(React.createElement(PulseModeToggle, {
+					active,
+					onToggle: () => {},
+					unreadCount,
+				}));
+			}
+		`,
+		plugins: [insightsToggleMarkupPlugin],
+		sourcefile: "pulse-insights-toggle-markup-harness.ts",
+	});
+
+	return insightsToggleMarkupHarnessPromise;
+}
+
 function snapshotAt(timeline, index) {
 	return timeline.snapshots[index];
 }
@@ -329,6 +550,63 @@ function findSnapshotIndex(timeline, id) {
 	const index = timeline.snapshots.findIndex((snapshot) => snapshot.id === id);
 	assert.notEqual(index, -1, `fixture is missing the snapshot "${id}"`);
 	return index;
+}
+
+/**
+ * Scope — the epic/sprint narrowing, its arithmetic and its figure geometry.
+ *
+ * Leaf imports only. The fixture pulls in nothing but types, and the two libs
+ * are pure functions, so this bundles in milliseconds; reaching for a component
+ * here would drag the whole demo tree and its CSS in behind it.
+ */
+function loadScopeHarness() {
+	scopeHarnessPromise ??= bundleHarness({
+		contents: `
+			export {
+				appendPulseAnswer,
+				findPulseScope,
+				resolvePulseScopeFromSelections,
+				PULSE_EPICS,
+				PULSE_SPRINTS,
+				toPulseAnswer,
+				toPulseScopeKey,
+				toPulseSuggestedQuestions,
+			} from "./components/blocks/jira-kanban/experimental/pulse/data/pulse-scopes";
+			export {
+				toPulseProgressModel,
+				toPulseProgressScale,
+			} from "./components/blocks/jira-kanban/experimental/pulse/lib/pulse-progress";
+			export {
+				buildPulseBurndownGeometry,
+				toPulseBurndownVerdict,
+			} from "./components/blocks/jira-kanban/experimental/pulse/lib/pulse-burndown";
+			export { scopeTimelineToWorkItemKeys } from "./components/blocks/jira-kanban/experimental/pulse/hooks/use-pulse-timeline";
+			export { PULSE_TIMELINE } from "./components/blocks/jira-kanban/experimental/pulse/data/pulse-timeline";
+		`,
+		plugins: [hookRuntimePlugin],
+		sourcefile: "pulse-scope-harness.ts",
+	});
+
+	return scopeHarnessPromise;
+}
+
+/**
+ * Executable text only.
+ *
+ * Several Pulse files name a retired mechanism, or explain why they
+ * deliberately do *not* animate, in a comment. A scan for that mechanism has to
+ * read the code and not the note recording its absence — otherwise a file whose
+ * header says "No motion." fails a motion-guard check for motion it does not
+ * have, and a header explaining which prop was deleted fails a ban on that
+ * prop.
+ *
+ * Line comments are matched only at the start of a line so a `https://` inside
+ * a string literal survives.
+ */
+function withoutComments(source) {
+	return source
+		.replaceAll(/\/\*[\s\S]*?\*\//gu, "")
+		.replaceAll(/^[ \t]*\/\/.*$/gmu, "");
 }
 
 module.exports = {
@@ -345,8 +623,14 @@ module.exports = {
 	findSnapshotIndex,
 	join,
 	KANBAN_DIR,
+	loadAttentionHarness,
+	loadSessionsHarness,
+	loadNextActionsHarness,
+	loadInsightsToggleMarkupHarness,
 	loadOutlineHarness,
+	loadProseHarness,
 	loadRosterMarkupHarness,
+	loadScopeHarness,
 	loadScrubberHarness,
 	loadTimelineHarness,
 	PULSE_DIR,
@@ -355,4 +639,5 @@ module.exports = {
 	relative,
 	snapshotAt,
 	SOURCES,
+	withoutComments,
 };

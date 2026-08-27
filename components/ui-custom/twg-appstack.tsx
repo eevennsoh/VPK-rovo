@@ -93,22 +93,62 @@ function getAppstackTransition(delay: number): Transition {
 }
 
 /**
- * Per-size geometry. `box` matches the `Tile` size class so the animated
- * wrapper and the tile it holds stay the same square; `imagePx` sizes the
- * `next/image` fallback to that same box; `overlap` scales the negative inline
- * margin with the tile so the stack keeps its density at every size; `countText`
- * keeps the `+N` overflow label legible inside a smaller square.
+ * Per-size geometry. `box` matches the `Tile` size class so source icons stay
+ * square. `overflowBox` locks that same height (`h-* max-h-* min-h-0`) so the
+ * count cannot grow taller than the icons, then uses min-width + `w-auto` so
+ * short counts stay square-ish and `+48` / `+100` grow sideways. `overflowRadius`
+ * is the fixed ADS radius of a *square* tile at this size (25% of height as
+ * `rounded-sm` / `rounded-md` / `rounded-lg`). Never use `rounded-tile` here —
+ * that token is 25% per axis and stretches into ellipses when width grows.
+ * The `!` beats Tile's `rounded-tile`. `imagePx` sizes the `next/image`
+ * fallback; `overlap` scales the negative inline margin; `countText` keeps
+ * the `+N` label legible; `countPad` is horizontal token spacing only.
  */
 const APPSTACK_SIZES = {
-	xxsmall: { box: "size-4", imagePx: 16, overlap: "-ml-0.5", countText: "text-[10px]" },
-	xsmall: { box: "size-5", imagePx: 20, overlap: "-ml-1", countText: "text-[10px]" },
-	small: { box: "size-6", imagePx: 24, overlap: "-ml-1", countText: "text-xs" },
-	medium: { box: "size-8", imagePx: 32, overlap: "-ml-1.5", countText: "text-xs" },
+	xxsmall: {
+		box: "size-4",
+		overflowBox: "h-4 max-h-4 min-h-0 min-w-4 w-auto",
+		overflowRadius: "rounded-sm!",
+		imagePx: 16,
+		overlap: "-ml-0.5",
+		countText: "text-[10px]",
+		countPad: "px-0.5",
+	},
+	xsmall: {
+		box: "size-5",
+		overflowBox: "h-5 max-h-5 min-h-0 min-w-5 w-auto",
+		overflowRadius: "rounded-sm!",
+		imagePx: 20,
+		overlap: "-ml-1",
+		countText: "text-[10px]",
+		countPad: "px-0.5",
+	},
+	small: {
+		box: "size-6",
+		overflowBox: "h-6 max-h-6 min-h-0 min-w-6 w-auto",
+		overflowRadius: "rounded-md!",
+		imagePx: 24,
+		overlap: "-ml-1",
+		countText: "text-xs",
+		countPad: "px-1",
+	},
+	medium: {
+		box: "size-8",
+		overflowBox: "h-8 max-h-8 min-h-0 min-w-8 w-auto",
+		overflowRadius: "rounded-lg!",
+		imagePx: 32,
+		overlap: "-ml-1.5",
+		countText: "text-xs",
+		countPad: "px-1",
+	},
 } as const satisfies Record<TwgToolSourceIconSize, {
 	box: string;
+	overflowBox: string;
+	overflowRadius: string;
 	imagePx: number;
 	overlap: string;
 	countText: string;
+	countPad: string;
 }>;
 
 function isThirdPartyProvider(
@@ -140,8 +180,10 @@ export function TwgToolSourceIcon({
 
 	if (source.name) {
 		// 3P brand → upstream package mark (its own white tile replaces the appstack
-		// tile at the same size). No `public/3p` asset path.
-		return (
+		// tile at the same size). No `public/3p` asset path. `LogoThirdParty` does
+		// not take leftover Tile props, so `aria-hidden` has to wrap the labeled
+		// `role="img"` rather than being spread onto it.
+		const logo = (
 			<LogoThirdParty
 				className={cn("shrink-0", className)}
 				label={source.label}
@@ -149,6 +191,7 @@ export function TwgToolSourceIcon({
 				size={size}
 			/>
 		);
+		return props["aria-hidden"] ? <span aria-hidden>{logo}</span> : logo;
 	}
 
 	if (source.iconSrc) {
@@ -198,7 +241,7 @@ export function TwgToolSourceIcon({
 
 	if (isThirdPartyProvider(source.provider)) {
 		// Provider is itself a 3P brand id (`google-drive` / `salesforce`).
-		return (
+		const logo = (
 			<LogoThirdParty
 				className={cn("shrink-0", className)}
 				label={source.label}
@@ -206,6 +249,7 @@ export function TwgToolSourceIcon({
 				size={size}
 			/>
 		);
+		return props["aria-hidden"] ? <span aria-hidden>{logo}</span> : logo;
 	}
 
 	return (
@@ -257,10 +301,16 @@ export function TWGAppstack({
 	const hiddenCount = Math.max(0, sources.length - visibleSources.length);
 	const itemCount = visibleSources.length + (hiddenCount > 0 ? 1 : 0);
 
-	const renderItem = (key: string, index: number, children: ReactNode, rotation = getAppstackRotation(index)) => {
+	const renderItem = (
+		key: string,
+		index: number,
+		children: ReactNode,
+		rotation = getAppstackRotation(index),
+		boxClassName: string = sizing.box,
+	) => {
 		const itemClassName = cn(
 			"relative flex shrink-0 items-center justify-center",
-			sizing.box,
+			boxClassName,
 			index > 0 && sizing.overlap
 		);
 
@@ -315,16 +365,25 @@ export function TWGAppstack({
 					"hidden-source-count",
 					visibleSources.length,
 					<Tile
-						className="shrink-0 bg-surface text-text-subtlest"
+						className={cn(
+							"box-border w-auto shrink-0 overflow-hidden bg-surface py-0 leading-none text-text-subtlest [&_span]:h-full [&_span]:w-auto",
+							sizing.overflowBox,
+							sizing.overflowRadius,
+							sizing.countPad,
+						)}
+						data-appstack-overflow={hiddenCount}
 						hasBorder
 						isInset={false}
 						label={`${hiddenCount} more sources`}
 						size={iconSize}
 						variant="transparent"
 					>
-						<span className={cn("font-medium leading-none", sizing.countText)}>+{hiddenCount}</span>
+						<span className={cn("whitespace-nowrap font-medium leading-none tabular-nums", sizing.countText)}>
+							+{hiddenCount}
+						</span>
 					</Tile>,
-					0
+					0,
+					sizing.overflowBox,
 				)
 			) : null}
 		</div>

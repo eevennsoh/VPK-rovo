@@ -58,6 +58,29 @@ type AvatarUnassignedKind = "person" | "agent"
 type AvatarSize = NonNullable<VariantProps<typeof avatarVariants>["size"]>
 
 const AvatarGroupContext = React.createContext(false)
+const AvatarGroupSizeContext = React.createContext<AvatarSize | undefined>(undefined)
+
+/** xs/sm (16/24) use the 12px small plus; 32px+ groups keep the default 16×16 medium plus. */
+function avatarGroupCountIconSize(size: AvatarSize | undefined): "small" | "medium" {
+	if (size === "xs" || size === "sm") {
+		return "small"
+	}
+	return "medium"
+}
+
+function firstAvatarSize(children: React.ReactNode): AvatarSize | undefined {
+	let resolved: AvatarSize | undefined
+	React.Children.forEach(children, (child) => {
+		if (resolved !== undefined || !React.isValidElement(child)) {
+			return
+		}
+		if (child.type !== Avatar) {
+			return
+		}
+		resolved = (child.props as AvatarProps).size ?? "default"
+	})
+	return resolved
+}
 
 interface AvatarProps
 	extends AvatarPrimitive.Root.Props,
@@ -549,23 +572,27 @@ function AvatarStatusIndicator({
 
 interface AvatarGroupProps extends React.ComponentProps<"div"> {
 	label?: string
+	size?: AvatarSize
 }
 
-function AvatarGroup({ children, className, label, ...props }: Readonly<AvatarGroupProps>) {
+function AvatarGroup({ children, className, label, size, ...props }: Readonly<AvatarGroupProps>) {
+	const resolvedSize = size ?? firstAvatarSize(children)
 	return (
 		<AvatarGroupContext value>
-			<div
-				data-slot="avatar-group"
-				role="group"
-				aria-label={label}
-				className={cn(
-					"*:data-[slot=avatar]:ring-background group/avatar-group flex -space-x-2 has-data-[size=xs]:-space-x-1 *:data-[slot=avatar]:ring-2 [&>[data-slot=avatar][data-shape=hexagon]]:ring-0",
-					className
-				)}
-				{...props}
-			>
-				{children}
-			</div>
+			<AvatarGroupSizeContext value={resolvedSize}>
+				<div
+					data-slot="avatar-group"
+					role="group"
+					aria-label={label}
+					className={cn(
+						"*:data-[slot=avatar]:ring-background group/avatar-group flex -space-x-2 has-data-[size=xs]:-space-x-1 *:data-[slot=avatar]:ring-2 [&>[data-slot=avatar][data-shape=hexagon]]:ring-0",
+						className
+					)}
+					{...props}
+				>
+					{children}
+				</div>
+			</AvatarGroupSizeContext>
 		</AvatarGroupContext>
 	)
 }
@@ -573,15 +600,27 @@ function AvatarGroup({ children, className, label, ...props }: Readonly<AvatarGr
 type AvatarGroupCountProps = React.ComponentProps<"div">
 
 function AvatarGroupCount({
+	children,
 	className,
 	...props
 }: Readonly<AvatarGroupCountProps>) {
+	const groupSize = React.use(AvatarGroupSizeContext)
+	const iconSize = avatarGroupCountIconSize(groupSize)
+	const content = React.Children.map(children, (child) => {
+		if (!React.isValidElement(child) || typeof child.type === "string") {
+			return child
+		}
+		return React.cloneElement(child, { size: iconSize } as never)
+	})
+
 	return (
 		<div
 			data-slot="avatar-group-count"
-			className={cn("bg-muted text-muted-foreground size-8 rounded-full text-xs group-has-data-[size=lg]/avatar-group:size-10 group-has-data-[size=lg]/avatar-group:text-sm group-has-data-[size=sm]/avatar-group:size-6 group-has-data-[size=xs]/avatar-group:size-4 group-has-data-[size=xs]/avatar-group:text-[8px] [&_[data-slot=icon]]:size-4 [&_svg]:size-4 group-has-data-[size=lg]/avatar-group:[&_[data-slot=icon]]:size-5 group-has-data-[size=lg]/avatar-group:[&_svg]:size-5 group-has-data-[size=sm]/avatar-group:[&_[data-slot=icon]]:size-3 group-has-data-[size=sm]/avatar-group:[&_svg]:size-3 group-has-data-[size=xs]/avatar-group:[&_[data-slot=icon]]:size-2 group-has-data-[size=xs]/avatar-group:[&_svg]:size-2 ring-background relative flex shrink-0 items-center justify-center ring-2", className)}
+			className={cn("bg-muted text-muted-foreground size-8 rounded-full text-xs group-has-data-[size=lg]/avatar-group:size-10 group-has-data-[size=lg]/avatar-group:text-sm group-has-data-[size=sm]/avatar-group:size-6 group-has-data-[size=xs]/avatar-group:size-4 group-has-data-[size=xs]/avatar-group:text-[8px] [&_[data-slot=icon]]:size-4 [&_svg]:size-4 group-has-data-[size=sm]/avatar-group:[&_[data-slot=icon]]:size-3 group-has-data-[size=sm]/avatar-group:[&_svg]:size-3 group-has-data-[size=xs]/avatar-group:[&_[data-slot=icon]]:size-2 group-has-data-[size=xs]/avatar-group:[&_svg]:size-2 ring-background relative flex shrink-0 items-center justify-center ring-2", className)}
 			{...props}
-		/>
+		>
+			{content}
+		</div>
 	)
 }
 

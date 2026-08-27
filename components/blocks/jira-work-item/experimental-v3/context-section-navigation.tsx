@@ -26,7 +26,9 @@ interface SectionNavigationValue {
 	/** Count pill on the Activity tab. Null until a panel publishes one. */
 	activityCount: number | null;
 	activeSectionId: WorkItemSectionId | null;
-	/** True while Insights has replaced the Description/Activity body. */
+	/** Count on the Insights tab. Null until a panel publishes a positive one. */
+	insightsCount: number | null;
+	/** True while Insights is shown beside the Description/Activity body. */
 	insightsSelected: boolean;
 	clearInsights: () => void;
 	registerSection: (sectionId: WorkItemSectionId, node: HTMLElement | null) => void;
@@ -42,6 +44,7 @@ interface SectionNavigationValue {
 	sections: readonly WorkItemSectionTab[];
 	selectSection: (sectionId: WorkItemSectionId) => void;
 	setActivityCount: (count: number | null) => void;
+	setInsightsCount: (count: number | null) => void;
 	setNarrowScrollContainer: (element: HTMLElement | null) => void;
 	/** Safe to call every render — identical tab lists are ignored. */
 	setSections: (next: readonly WorkItemSectionTab[]) => void;
@@ -76,6 +79,7 @@ export function SectionNavigationProvider({
 	const [insightsSelected, setInsightsSelected] = useState(false);
 	const [pendingSectionId, setPendingSectionId] = useState<WorkItemSectionId | null>(null);
 	const [activityCount, setActivityCount] = useState<number | null>(null);
+	const [insightsCount, setInsightsCount] = useState<number | null>(null);
 	const [wideScrollContainer, setWideScrollContainer] = useState<HTMLElement | null>(null);
 	const [narrowScrollContainer, setNarrowScrollContainer] = useState<HTMLElement | null>(null);
 	const [wideScrollerActive, setWideScrollerActive] = useState(false);
@@ -153,6 +157,7 @@ export function SectionNavigationProvider({
 		activityCount,
 		activeSectionId: insightsSelected ? "insights" : activeId as WorkItemSectionId | null,
 		clearInsights,
+		insightsCount,
 		insightsSelected,
 		registerSection,
 		scrollContainer,
@@ -161,10 +166,11 @@ export function SectionNavigationProvider({
 		sections,
 		selectSection: selectSectionWithSurface,
 		setActivityCount,
+		setInsightsCount,
 		setNarrowScrollContainer,
 		setSections,
 		setWideScrollContainer,
-	}), [activeId, activityCount, clearInsights, insightsSelected, registerSection, scrollContainer, sectionElementId, sectionHeadingId, sections, selectSectionWithSurface, setSections]);
+	}), [activeId, activityCount, clearInsights, insightsCount, insightsSelected, registerSection, scrollContainer, sectionElementId, sectionHeadingId, sections, selectSectionWithSurface, setSections]);
 
 	return <SectionNavigationContext value={value}>{children}</SectionNavigationContext>;
 }
@@ -214,12 +220,24 @@ export function usePublishSections(next: readonly WorkItemSectionTab[]): void {
 
 /**
  * Publishes the Activity tab's count from whichever activity panel is mounted.
- * Keep the last value on unmount so a body swap (Insights) does not blank the
- * tab number while Description/Activity are off-screen.
+ * Keep the last value on unmount so leaving Insights does not blank the
+ * tab number while Description/Activity remount.
  */
 export function usePublishActivityCount(count: number): void {
 	const { setActivityCount } = useSectionNavigation();
 	useEffect(() => {
 		setActivityCount(count);
 	}, [count, setActivityCount]);
+}
+
+/**
+ * Publishes the Insights tab's count from the same source the composer
+ * "new insights" pill used. Zero hides the number; keep a positive value
+ * on unmount so leaving Insights does not blank the tab.
+ */
+export function usePublishInsightsCount(count: number): void {
+	const { setInsightsCount } = useSectionNavigation();
+	useEffect(() => {
+		setInsightsCount(count > 0 ? count : null);
+	}, [count, setInsightsCount]);
 }

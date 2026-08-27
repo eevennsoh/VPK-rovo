@@ -123,7 +123,6 @@ function createCompletedRun(params: Readonly<{
 	issueSummary: string;
 	outputs?: JiraIssueCompletedAgentRun["outputs"];
 	pullRequestNumber?: number;
-	showStateIcon?: boolean;
 	state: JiraIssueCompletedAgentRun["state"];
 	summary: string;
 }>): JiraIssueCompletedAgentRun {
@@ -140,7 +139,6 @@ function createCompletedRun(params: Readonly<{
 		outputs: params.outputs,
 		pullRequestNumber: params.pullRequestNumber,
 		relativeTime: params.state === "done" ? "This week" : "Today",
-		showStateIcon: params.showStateIcon ?? false,
 		state: params.state,
 		summary: params.summary,
 	};
@@ -274,8 +272,8 @@ const LOCAL_TEAM_IN_PROGRESS: readonly JiraKanbanCardData[] = [
 			id: "dependency-mapper",
 			name: "Dependency Mapper",
 			avatarSrc: getDirectoryAgentAvatar("work-item-planner"),
-			label: "Waiting for input",
-			labels: ["Mapping permission dependencies", "Checking project boundaries", "Waiting for input"],
+			label: "Needs input",
+			labels: ["Mapping permission dependencies", "Checking project boundaries", "Needs input"],
 			message: "I found two permission boundaries that change the implementation path.",
 			initialElapsedSeconds: 391,
 			question: {
@@ -326,7 +324,6 @@ const LOCAL_TEAM_REVIEW: readonly JiraKanbanCardData[] = [
 					title: "Fix assignee facepile overflow",
 				}],
 				pullRequestNumber: 812,
-				showStateIcon: true,
 				state: "review",
 				summary: "Fixed the facepile overflow",
 			}),
@@ -404,7 +401,6 @@ const LOCAL_TEAM_REVIEW: readonly JiraKanbanCardData[] = [
 				title: "Preserve keyboard focus after filtering",
 			}],
 			pullRequestNumber: 819,
-			showStateIcon: true,
 			state: "review",
 			summary: "Preserved keyboard focus across filters",
 		})],

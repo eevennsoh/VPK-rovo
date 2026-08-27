@@ -13,6 +13,14 @@ import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/
 interface JgpRovoOverlayProps {
 	chatContextBar?: ChatContextBarDescriptor | null;
 	externalThinkingMessageId?: string | null;
+	/**
+	 * Hide the viewport floating chat. Work-item and Pulse Insights surfaces
+	 * that already embed chat also hide it via `data-jira-work-item-open` /
+	 * `data-jira-pulse-open`.
+	 */
+	chat?: "auto" | "hidden";
+	/** Hide the viewport FAB. Embedded chrome also hides it via the same flags. */
+	launcher?: "auto" | "hidden";
 	onInterceptSubmit?: (text: string) => ChatSubmitInterceptOutcome;
 	onLauncherClick?: () => void;
 	onQuestionAnswer?: () => void;
@@ -22,6 +30,8 @@ interface JgpRovoOverlayProps {
 export function JgpRovoOverlay({
 	chatContextBar,
 	externalThinkingMessageId,
+	chat = "auto",
+	launcher = "auto",
 	onInterceptSubmit,
 	onLauncherClick,
 	onQuestionAnswer,
@@ -29,18 +39,23 @@ export function JgpRovoOverlay({
 	const { chatSurface } = useRovoChat();
 	const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
 	const [isRovoCanvasOpen, setIsRovoCanvasOpen] = useState(false);
+	const [isEmbeddedHostOpen, setIsEmbeddedHostOpen] = useState(false);
 
 	useEffect(() => {
 		setPortalRoot(document.body);
 
-		const updateRovoCanvasOpen = () => {
+		const updateChromeFlags = () => {
 			setIsRovoCanvasOpen(document.documentElement.dataset.rovoCanvasOpen === "true");
+			setIsEmbeddedHostOpen(
+				document.documentElement.dataset.jiraWorkItemOpen === "true"
+				|| document.documentElement.dataset.jiraPulseOpen === "true",
+			);
 		};
-		updateRovoCanvasOpen();
+		updateChromeFlags();
 
-		const observer = new MutationObserver(updateRovoCanvasOpen);
+		const observer = new MutationObserver(updateChromeFlags);
 		observer.observe(document.documentElement, {
-			attributeFilter: ["data-rovo-canvas-open"],
+			attributeFilter: ["data-jira-work-item-open", "data-jira-pulse-open", "data-rovo-canvas-open"],
 			attributes: true,
 		});
 
@@ -54,11 +69,19 @@ export function JgpRovoOverlay({
 		onApply: onQuestionAnswer,
 	}), [onQuestionAnswer]);
 
+	const showLauncher = launcher === "auto"
+		&& chatSurface === null
+		&& !isRovoCanvasOpen
+		&& !isEmbeddedHostOpen;
+	const showFloatingChat = chat === "auto"
+		&& chatSurface === "floating"
+		&& !isEmbeddedHostOpen;
+
 	if (!portalRoot) return null;
 
 	return createPortal(
 		<>
-			{chatSurface === null && !isRovoCanvasOpen ? (
+			{showLauncher ? (
 				<FloatingRovoButton
 					ariaLabel="Open Rovo chat"
 					forceVisible
@@ -67,7 +90,7 @@ export function JgpRovoOverlay({
 				/>
 			) : null}
 			<AnimatePresence>
-				{chatSurface === "floating" ? (
+				{showFloatingChat ? (
 					<RovoFloatingChat
 						key="floating-chat"
 						chatContextBar={chatContextBar}

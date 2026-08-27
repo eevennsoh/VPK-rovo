@@ -513,6 +513,26 @@ test("v3 compact header removes layout motion when reduced motion is requested",
 	await expect(titleBlock).toHaveCSS("transform", "none");
 });
 
+test("golden journeys v3 Insights keeps the work item visible and resizes beside it", async ({ page }) => {
+	await page.setViewportSize({ width: 1424, height: 900 });
+	await page.goto(JIRA_GOLDEN_JOURNEYS_V3_URL, { waitUntil: "domcontentloaded" });
+
+	const sectionNav = page.getByRole("navigation", { name: "Work item sections" });
+	await sectionNav.getByRole("link", { name: /^Insights/u }).click();
+
+	const resizeHandle = page.getByRole("separator", { name: "Resize insights and work item" });
+	await expect(resizeHandle).toBeVisible();
+	await expect(page.locator("[data-insights-work-item-split-insights]")).toBeVisible();
+	await expect(page.locator("[data-work-item-section-id='description']")).toBeVisible();
+	await expect(page.locator("[data-work-item-section-id='activity']")).toBeVisible();
+
+	const startWidth = Number(await resizeHandle.getAttribute("aria-valuenow"));
+	await resizeHandle.focus();
+	await page.keyboard.press("ArrowRight");
+	await expect.poll(async () => Number(await resizeHandle.getAttribute("aria-valuenow")))
+		.toBeGreaterThan(startWidth);
+});
+
 test("v3 section links keep working in the narrow reduced-motion layout", async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.emulateMedia({ reducedMotion: "reduce" });

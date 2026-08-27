@@ -365,6 +365,7 @@ export const BLOCK_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	blockComponent("agent-states", "Agent States"),
 	blockComponent("agent-directory", "Agent Directory"),
 	blockComponent("agent-progress", "Agent Progress"),
+	blockComponent("agent-assignment", "Agent Assignment"),
 	blockComponent("agent-selector", "Agent Selector"),
 	blockComponent("skill-selector", "Skill Selector"),
 	blockComponent("jira-work-item", "Jira Work Item"),
@@ -418,8 +419,10 @@ export const BLOCK_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	blockComponent("apps-directory", "Apps Directory"),
 	blockComponent("artifact"),
 	blockComponent("artifact-pane", "Artifact Pane"),
+	blockComponent("next-best-action", "Next Best Action"),
 	blockComponent("tools-directory", "Tools Directory"),
 	blockComponent("mermaid-diagram", "Mermaid Diagram"),
+	blockComponent("video", "Video"),
 	blockComponent("memory", "Memory"),
 	{
 		name: "Login 01",

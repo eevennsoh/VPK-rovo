@@ -25,8 +25,32 @@ test("Agent States owns the shared Jira agent flyout surface", () => {
 	assert.match(SOURCE, /w-\[400px\][\s\S]*bg-surface-overlay[\s\S]*shadow-2xl/u);
 	assert.match(SOURCE, /<AgentCardHeader/u);
 	assert.match(SOURCE, /<ElapsedTime/u);
+	assert.match(SOURCE, /composer\?: "visible" \| "hidden";/u);
 	assert.match(SOURCE, /<AgentStatesComposer onSubmit=\{onSubmit\} \/>/u);
 	assert.match(SOURCE, /state === "awaiting-input" && question/u);
+	assert.doesNotMatch(JIRA_ISSUE_SOURCE, /<AgentStates/u);
+});
+
+test("Agent States composer keeps the agent mention directory enabled", () => {
+	assert.match(
+		SOURCE,
+		/<PromptInputTextarea[\s\S]*?enableDirectoryAutocomplete\s*[\r\n]+\s*onChange=/u,
+	);
+	assert.doesNotMatch(SOURCE, /enableDirectoryAutocomplete=\{false\}/u);
+});
+
+test("Agent States composer cannot silently clear a prompt without a destination", () => {
+	assert.match(SOURCE, /const canSubmit = Boolean\(onSubmit && reply\.trim\(\)\);/u);
+	assert.match(SOURCE, /if \(!prompt \|\| !onSubmit\) return;\s*onSubmit\(prompt\);\s*setReply\(""\);/u);
+	assert.match(SOURCE, /submitDisabled=\{onSubmit === undefined\}/u);
+});
+
+test("completed Agent States cards show a fixed update time instead of a live runtime", () => {
+	assert.match(SOURCE, /import \{ ElapsedTime, RelativeTime \} from "@\/components\/ui\/elapsed-time";/u);
+	assert.match(
+		SOURCE,
+		/state === "completed" \? \([\s\S]*<RelativeTime[\s\S]*secondsAgo=\{completedSecondsAgo\}[\s\S]*timestampMs=\{completedAtMs\}[\s\S]*\) : \([\s\S]*<ElapsedTime/u,
+	);
 });
 
 test("Agent States demo exposes distinct content for each state", () => {
@@ -44,8 +68,10 @@ test("compact agent surfaces use their intended elevation treatment", () => {
 	assert.doesNotMatch(SOURCE, /\bshadow-md\b/u);
 	assert.match(
 		SOURCE,
-		/<RovoComposerActionButton[\s\S]*experimentalDarkCta[\s\S]*liveVoiceEnabled[\s\S]*onStartDictation=\{startPreviewDictation\}/u,
+		/<RovoComposerActionButton[\s\S]*experimentalDarkCta[\s\S]*onStartDictation=\{startPreviewDictation\}[\s\S]*showSubmitWhenEmpty/u,
 	);
+	assert.doesNotMatch(SOURCE, /liveVoiceEnabled/u);
+	assert.doesNotMatch(SOURCE, /onToggleRealtimeVoice/u);
 	assert.match(
 		AGENT_PROFILE_SOURCE,
 		/surface === "overlay" \? "shadow-2xl" : "shadow-sm"/u,
@@ -58,12 +84,11 @@ test("compact agent surfaces use their intended elevation treatment", () => {
 	}
 });
 
-test("Jira Issue and Agent List consume Agent States instead of local flyout cards", () => {
-	assert.match(
-		JIRA_ISSUE_SOURCE,
-		/import \{ AgentStates \} from "@\/components\/blocks\/agent-states";/u,
-	);
-	assert.match(JIRA_ISSUE_SOURCE, /<AgentStates/u);
+test("Jira Issue agent rows do not open Agent States; Agent List still owns that flyout", () => {
+	assert.doesNotMatch(JIRA_ISSUE_SOURCE, /from "@\/components\/blocks\/agent-list"/u);
+	assert.doesNotMatch(JIRA_ISSUE_SOURCE, /<AgentList/u);
+	assert.doesNotMatch(JIRA_ISSUE_SOURCE, /<AgentStates/u);
+	assert.doesNotMatch(JIRA_ISSUE_SOURCE, /<HoverCard/u);
 	assert.match(
 		AGENT_LIST_SOURCE,
 		/import \{[\s\S]*AgentStates,[\s\S]*\} from "@\/components\/blocks\/agent-states";/u,

@@ -110,10 +110,27 @@ test("JGP Rovo surfaces render at viewport level above the Gallery dock", () => 
 	assert.match(ROVO_OVERLAY_SOURCE, /createPortal/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /document\.body/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /<FloatingRovoButton/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /chat\?: "auto" \| "hidden"/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /launcher\?: "auto" \| "hidden"/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /chat = "auto"/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /launcher = "auto"/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /document\.documentElement\.dataset\.rovoCanvasOpen === "true"/u);
-	assert.match(ROVO_OVERLAY_SOURCE, /new MutationObserver\(updateRovoCanvasOpen\)/u);
-	assert.match(ROVO_OVERLAY_SOURCE, /chatSurface === null && !isRovoCanvasOpen/u);
-	assert.match(ROVO_OVERLAY_SOURCE, /<RovoFloatingChat/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /document\.documentElement\.dataset\.jiraWorkItemOpen === "true"/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /document\.documentElement\.dataset\.jiraPulseOpen === "true"/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /new MutationObserver\(updateChromeFlags\)/u);
+	assert.match(
+		ROVO_OVERLAY_SOURCE,
+		/attributeFilter: \["data-jira-work-item-open", "data-jira-pulse-open", "data-rovo-canvas-open"\]/u,
+	);
+	assert.match(
+		ROVO_OVERLAY_SOURCE,
+		/const showLauncher = launcher === "auto"\s*&& chatSurface === null\s*&& !isRovoCanvasOpen\s*&& !isEmbeddedHostOpen;/u,
+	);
+	assert.match(
+		ROVO_OVERLAY_SOURCE,
+		/const showFloatingChat = chat === "auto"\s*&& chatSurface === "floating"\s*&& !isEmbeddedHostOpen;/u,
+	);
+	assert.match(ROVO_OVERLAY_SOURCE, /\{showFloatingChat \? \(\s*<RovoFloatingChat/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /chatContextBar=\{chatContextBar\}/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /hideComposerSourceAndModelControls/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /showAgentBackButton=\{false\}/u);
@@ -145,7 +162,7 @@ test("JGP Rovo history reuses Queue session behavior with route-owned global-sto
 	assert.match(ROVO_STAGE_SOURCE, /description: <JiraSessionDescription session=\{session\} \/>/u);
 	assert.match(ROVO_STAGE_SOURCE, /meta: <JiraSessionLifecycle status=\{session\.status\} \/>/u);
 	assert.match(ROVO_STAGE_SOURCE, /session\.status === "awaiting-input"/u);
-	assert.match(ROVO_STAGE_SOURCE, /Waiting for input/u);
+	assert.match(ROVO_STAGE_SOURCE, /Needs input/u);
 	assert.match(ROVO_STAGE_SOURCE, /<AnimatedDots \/>/u);
 	assert.match(ROVO_STAGE_SOURCE, /: <JiraSessionLabel session=\{session\} \/>/u);
 	assert.match(ROVO_STAGE_SOURCE, /getThreadPresentation,/u);

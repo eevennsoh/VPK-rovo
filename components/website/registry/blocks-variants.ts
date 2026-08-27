@@ -9,6 +9,27 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"agent-list-demo-composer": dynamic(
+		() =>
+			import("../demos/blocks/agent-list-demo").then((mod) => ({
+				default: mod.AgentListDemoComposer,
+			})),
+		{ ssr: false },
+	),
+	"agent-list-demo-uncaptured": dynamic(
+		() =>
+			import("../demos/blocks/agent-list-demo").then((mod) => ({
+				default: mod.AgentListDemoUncaptured,
+			})),
+		{ ssr: false },
+	),
+	"agent-session-flyout-demo-composer": dynamic(
+		() =>
+			import("../demos/blocks/agent-session-flyout-demo").then((mod) => ({
+				default: mod.AgentSessionFlyoutDemoComposer,
+			})),
+		{ ssr: false },
+	),
 	"jira-kanban-demo-standard": dynamic(
 		() =>
 			import("../demos/blocks/jira-kanban-demo").then((mod) => ({
@@ -478,6 +499,9 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 	})), { ssr: false }),
 	"jira-issue-demo-agent-activity-states": dynamic(() => import("../demos/blocks/jira-issue-demo").then((mod) => ({
 		default: mod.JiraIssueDemoAgentActivityStates,
+	})), { ssr: false }),
+	"jira-issue-demo-agent-activity-states-experimental": dynamic(() => import("../demos/blocks/jira-issue-demo").then((mod) => ({
+		default: mod.JiraIssueDemoAgentActivityStatesExperimental,
 	})), { ssr: false }),
 	"jira-activity-demo-activity-card": dynamic(
 		() =>

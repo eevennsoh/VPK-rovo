@@ -12,11 +12,11 @@ const TYPES_SOURCE = readFileSync(join(__dirname, "jira-for-you-types.ts"), "utf
 test("CRM analytics activity summarizes each agent status", () => {
 	assert.match(
 		DATA_SOURCE,
-		/id: "crm-analytics-dashboard"[\s\S]*agents: \[READINESS_AGENT, REVIEWER_AGENT, FEEDBACK_AGENT\][\s\S]*status: "1 Waiting for input, 2 In progress"/,
+		/id: "crm-analytics-dashboard"[\s\S]*agents: \[READINESS_AGENT, REVIEWER_AGENT, FEEDBACK_AGENT\][\s\S]*status: "1 Needs input, 2 In progress"/,
 	);
 	assert.match(
 		ITEM_SOURCE,
-		/return \/awaiting user\|waiting for input\/i\.test\(status\);/,
+		/return \/awaiting user\|needs input\/i\.test\(status\);/,
 	);
 });
 

@@ -26,7 +26,8 @@ test("Kanban stage wires the shared issue lifecycle callbacks", () => {
 	assert.match(STAGE_SOURCE, /boardColumns=\{filteredBoardColumns\}/u);
 	assert.match(STAGE_SOURCE, /handleClearSelection\(\);[\s\S]*handleCardDragEnd\(\);/u);
 	assert.match(STAGE_SOURCE, /onCardGenerativeActionSubmit=\{handleGenerativeActionSubmit\}/u);
-	assert.match(STAGE_SOURCE, /onCardAgentActivityQuestionSubmit=\{handleQuestionSubmit\}/u);
+	assert.doesNotMatch(STAGE_SOURCE, /onCardAgentActivityQuestionSubmit/u);
+	assert.match(STAGE_SOURCE, /submit: \(\) => handleQuestionSubmit\(/u);
 	assert.match(STAGE_SOURCE, /onCardAgentActivityViewChat=\{handleViewChat\}/u);
 	assert.match(STAGE_SOURCE, /selectedCardCodes=\{selectedCardCodes\}/u);
 });
@@ -37,15 +38,16 @@ test("Kanban stage selects ranges against the filtered columns", () => {
 	assert.match(STAGE_SOURCE, /onCardSelect=\{handleFilteredCardSelect\}/u);
 });
 
-test("ASX Kanban reuses the Jira Issue rainbow spinner for working agents", () => {
+test("ASX Kanban reuses the Jira Issue aggregate row for working agents", () => {
 	assert.match(STAGE_SOURCE, /<JiraKanban/u);
 	assert.match(JIRA_KANBAN_SOURCE, /agentActivities=\{card\.agentActivities\}/u);
 	assert.match(JIRA_KANBAN_SOURCE, /agentActivityMode=\{card\.agentActivityMode\}/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
-	assert.match(
-		JIRA_ISSUE_AGENT_ACTIVITY_SOURCE,
-		/<Spinner[\s\S]*label=""[\s\S]*phaseOffsetMs=\{getJiraIssueAgentSpinnerPhaseOffsetMs\(activity\.id, index\)\}[\s\S]*size="sm"[\s\S]*variant="rainbow"[\s\S]*\/>/u,
-	);
+	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<AiAgentIcon label="" \/>/u);
+	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<Spinner label="" size="sm" \/>/u);
+	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /\$\{summary\.activityCount\} agents: \$\{summary\.label\}/u);
+	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /phaseOffsetMs=/u);
+	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /variant="rainbow"/u);
 });
 
 test("Kanban lifecycle uses deterministic generation and completion delays", () => {

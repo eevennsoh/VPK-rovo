@@ -1,52 +1,33 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 
+import { AgentList, type AgentListItem } from "@/components/blocks/agent-list";
+import { NextBestAction, type NextBestActionItem } from "@/components/blocks/next-best-action";
 import {
 	PULSE_ITEM_BODY,
-	PULSE_ITEM_TITLE,
-	PULSE_ROW,
-	PULSE_ROW_ACTION_TRACK,
-	PULSE_ROW_KEY_TRACK,
 	PULSE_SECTION_LABEL,
 } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-type";
-import { Button } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
-import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
+import { toPulseAttentionItems } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-attention";
+import { toPulseNextActionItems } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-next-actions";
+import { toSectionHeading } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-outline";
 import { cn } from "@/lib/utils";
 import type {
 	PulseAction,
+	PulseMember,
 	PulseSignal,
-	PulseSignalTone,
 } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 
 /**
  * Pulse signals — the two reading sections that close a snapshot: what needs a
  * human right now, and what that human can do about it without leaving Jira.
  *
- * Both sections use one row shape: a title and its reason on the left, the work
- * item key in a reserved centre track, and the trailing control in a reserved
- * right track. Every row therefore hangs off the same two edges, and the
- * sections read as one list rather than two rhythms. Tone is carried by a
- * single small lozenge in the trailing track, never by a filled alert surface.
+ * They are deliberately not the same list. "Needs input" is a list of
+ * *people and agents* — an agent that stopped and is waiting, a teammate who
+ * @mentioned you — so it is the shared `agent-list` block, identity first.
+ * "Next best actions" is a list of *things to do*, so it is the shared
+ * `next-best-action` block: title, rationale, and a per-row verb.
  */
-
-type SignalToneVariant = NonNullable<LozengeProps["variant"]>;
-
-const SIGNAL_TONE_LABEL: Record<PulseSignalTone, string> = {
-	attention: "Attention",
-	risk: "Risk",
-	decision: "Decision",
-	shipped: "Shipped",
-};
-
-const SIGNAL_TONE_VARIANT: Record<PulseSignalTone, SignalToneVariant> = {
-	attention: "warning",
-	risk: "danger",
-	decision: "discovery",
-	shipped: "success",
-};
 
 export interface PulseSectionLabelProps {
 	children: string;
@@ -55,36 +36,15 @@ export interface PulseSectionLabelProps {
 }
 
 /**
- * Shared micro-label above every story section. The visible text is uppercased
- * in CSS, which Chrome also exposes to the accessibility tree, so the sentence
- * case name is restated explicitly rather than announced as an initialism.
+ * Shared micro-label above every story section. Visible copy is sentence case
+ * (matching the work-item Activity heading); `aria-label` restates the same
+ * name so the accessibility tree does not depend on CSS text-transform.
  */
 export function PulseSectionLabel({ children, id, className }: Readonly<PulseSectionLabelProps>) {
 	return (
 		<h3 aria-label={children} className={cn(PULSE_SECTION_LABEL, className)} id={id}>
 			{children}
 		</h3>
-	);
-}
-
-/** One row of either section: title + reason, reserved key track, reserved action track. */
-function PulseSignalRow({
-	detail,
-	title,
-	trailing,
-	workItemKey,
-}: Readonly<{ detail: string; title: string; trailing: ReactNode; workItemKey?: string }>) {
-	return (
-		<li className={PULSE_ROW}>
-			<div className="min-w-0 flex-1">
-				<p className={PULSE_ITEM_TITLE}>{title}</p>
-				<p className={cn("mt-1", PULSE_ITEM_BODY)}>{detail}</p>
-			</div>
-			<span aria-hidden={workItemKey === undefined} className={PULSE_ROW_KEY_TRACK}>
-				{workItemKey === undefined ? "" : workItemKey}
-			</span>
-			<div className={PULSE_ROW_ACTION_TRACK}>{trailing}</div>
-		</li>
 	);
 }
 
@@ -95,80 +55,45 @@ function PulseSectionNote({ children }: Readonly<{ children: ReactNode }>) {
 
 export interface PulseAttentionProps {
 	signals: readonly PulseSignal[];
+	/** The window's roster, used to put a face on every signal. */
+	members: readonly PulseMember[];
 	className?: string;
 	/** Rendered in place of the list when scoping has emptied it. */
 	emptyNote?: string;
+	/** Opens the work item a Needs input row is waiting on. */
+	onView: (item: AgentListItem) => void;
 }
 
-/** "Needs attention" — the signals a reader must not scroll past. */
-export function PulseAttention({ signals, className, emptyNote }: Readonly<PulseAttentionProps>) {
-	if (signals.length === 0 && emptyNote === undefined) return null;
+/**
+ * "Needs input" — the agents and people a reader must not scroll past.
+ *
+ * Rendered through the shared agent-list block so an agent waiting on an answer
+ * and a teammate who @mentioned you sit in one list, told apart by their
+ * avatars (hexagon versus circle) rather than by a label. The rows are
+ * flyout-free: half of them are comments, which have no agent session to
+ * preview. The primary action still shows — Reply on a person, Give input on
+ * an agent — because waiting without a way to answer is just a list.
+ */
+export function PulseAttention({
+	signals,
+	members,
+	className,
+	emptyNote,
+	onView,
+}: Readonly<PulseAttentionProps>) {
+	const items = toPulseAttentionItems(signals, members);
+
+	if (items.length === 0 && emptyNote === undefined) return null;
 
 	return (
 		<section className={cn("min-w-0", className)}>
-			<PulseSectionLabel>Needs attention</PulseSectionLabel>
-			{signals.length === 0 ? (
+			<PulseSectionLabel>{toSectionHeading("attention")}</PulseSectionLabel>
+			{items.length === 0 ? (
 				<PulseSectionNote>{emptyNote}</PulseSectionNote>
 			) : (
-				<ul className="mt-3 flex flex-col">
-					{signals.map((signal) => (
-						<PulseSignalRow
-							detail={signal.detail}
-							key={signal.id}
-							title={signal.title}
-							trailing={
-								<Lozenge variant={SIGNAL_TONE_VARIANT[signal.tone]}>
-									{SIGNAL_TONE_LABEL[signal.tone]}
-								</Lozenge>
-							}
-							workItemKey={signal.workItemKey}
-						/>
-					))}
-				</ul>
+				<AgentList chrome="raised" className="mt-3" flyout="none" items={items} onView={onView} />
 			)}
 		</section>
-	);
-}
-
-function PulseNextActionRow({
-	action,
-	isRequested,
-	onRequest,
-}: Readonly<{
-	action: PulseAction;
-	isRequested: boolean;
-	onRequest: (action: PulseAction) => void;
-}>) {
-	return (
-		<PulseSignalRow
-			detail={action.rationale}
-			title={action.label}
-			trailing={
-				// One element across both states: swapping the Button for a static
-				// span on activation would throw focus to the document body on the
-				// one interaction this whole mode is built around.
-				<Button
-					aria-disabled={isRequested}
-					className={cn(
-						"shrink-0",
-						isRequested
-							? "border-transparent bg-transparent text-text-success [&_svg]:text-icon-success hover:bg-transparent active:bg-transparent"
-							: null,
-					)}
-					onClick={() => {
-						if (isRequested) return;
-						onRequest(action);
-					}}
-					size="compact"
-					type="button"
-					variant="outline"
-				>
-					{isRequested ? <Icon aria-hidden render={<CheckMarkIcon label="" />} /> : null}
-					{isRequested ? "Requested" : action.actionLabel}
-				</Button>
-			}
-			workItemKey={action.workItemKey}
-		/>
 	);
 }
 
@@ -194,30 +119,25 @@ export function PulseNextActions({
 	emptyNote,
 }: Readonly<PulseNextActionsProps>) {
 	const [statusMessage, setStatusMessage] = useState("");
+	const items = toPulseNextActionItems(actions, requestedActionIds);
 
-	const handleRequest = (action: PulseAction) => {
+	const handleAct = (item: NextBestActionItem) => {
+		if (requestedActionIds.has(item.id)) return;
+		const action = actions.find((entry) => entry.id === item.id);
+		if (action === undefined) return;
 		setStatusMessage(`${action.actionLabel} requested for ${action.label}.`);
 		onRequestAction(action);
 	};
 
-	if (actions.length === 0 && emptyNote === undefined) return null;
+	if (items.length === 0 && emptyNote === undefined) return null;
 
 	return (
 		<section className={cn("min-w-0", className)}>
-			<PulseSectionLabel>Next best actions</PulseSectionLabel>
-			{actions.length === 0 ? (
+			<PulseSectionLabel>{toSectionHeading("actions")}</PulseSectionLabel>
+			{items.length === 0 ? (
 				<PulseSectionNote>{emptyNote}</PulseSectionNote>
 			) : (
-				<ul className="mt-3 flex flex-col">
-					{actions.map((action) => (
-						<PulseNextActionRow
-							action={action}
-							isRequested={requestedActionIds.has(action.id)}
-							key={action.id}
-							onRequest={handleRequest}
-						/>
-					))}
-				</ul>
+				<NextBestAction className="mt-3" items={items} onAct={handleAct} />
 			)}
 			<p aria-live="polite" className="sr-only" role="status">
 				{statusMessage}

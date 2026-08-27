@@ -1,5 +1,6 @@
 "use client";
 
+import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import CalendarIcon from "@atlaskit/icon/core/calendar";
 import EpicIcon from "@atlaskit/icon/core/epic";
 import PersonIcon from "@atlaskit/icon/core/person";
@@ -14,6 +15,7 @@ import { ArtifactParentField } from "@/components/blocks/artifact-pane/artifact-
 import { ArtifactProjectField } from "@/components/blocks/artifact-pane/artifact-project-field";
 import type { AgentPlannerMetadata } from "@/components/blocks/jira-work-item/data/planner-state";
 import {
+	AgentsRowField,
 	DateRowField,
 	PersonRowField,
 	PriorityRowField,
@@ -58,6 +60,9 @@ export function DetailsTab({
 					placeholder="Unassigned"
 					value={draft.reporter}
 				/>
+			</ArtifactPanePropertyRow>
+			<ArtifactPanePropertyRow icon={<AiAgentIcon label="" size="small" />} label="Agents">
+				<AgentsRowField onChange={(next) => onChange({ crew: next })} value={draft.crew} />
 			</ArtifactPanePropertyRow>
 			<ArtifactPanePropertyRow icon={<PriorityMediumIcon label="" size="small" />} label="Priority">
 				<PriorityRowField onChange={(next) => onChange({ priority: next })} value={draft.priority} />

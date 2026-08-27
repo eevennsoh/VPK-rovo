@@ -6,6 +6,10 @@ export {
 	SMART_LINK_PANEL_ACTIONS,
 } from "@/components/blocks/smart-link/data/smart-link-actions";
 export {
+	GITHUB_BRANCH_SMART_LINK_ICON,
+	GITHUB_COMMIT_SMART_LINK_ICON,
+} from "@/components/blocks/smart-link/lib/github-artifact-icons";
+export {
 	toPullRequestSmartLink,
 	type PullRequestSmartLinkInput,
 	type PullRequestSmartLinkStatus,

@@ -13,15 +13,17 @@ import { preload } from "react-dom";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import BranchIcon from "@atlaskit/icon/core/branch";
 import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
-import CloudArrowUpIcon from "@atlaskit/icon/core/cloud-arrow-up";
+import DevicesIcon from "@atlaskit/icon/core/devices";
 import FolderClosedIcon from "@atlaskit/icon/core/folder-closed";
 import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import StatusInformationIcon from "@atlaskit/icon/core/status-information";
 import TaskIcon from "@atlaskit/icon/core/task";
+import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import IfElseIcon from "@atlaskit/icon-lab/core/if-else";
 
+import { AgentStates, type AgentStatesState } from "@/components/blocks/agent-states";
 import { AgentProfileCard } from "@/components/blocks/agent-profile-card";
 import { SmartLink, SMART_LINK_MODAL_ACTIONS, type SmartLinkItem } from "@/components/blocks/smart-link";
 import { Alert, AlertTitle } from "@/components/ui/alert";
@@ -36,12 +38,16 @@ import {
 import { Icon } from "@/components/ui/icon";
 import { GithubLogo } from "@/components/ui/logo-third-party";
 import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
-import { Tag } from "@/components/ui/tag";
-import { TileAvatar } from "@/components/ui/tile";
-import { getAgentProfileBannerSrc } from "@/lib/agent-avatars";
 import { MetadataPathLink, MetadataPathValue } from "@/components/ui/metadata-path-link";
+import { Tag } from "@/components/ui/tag";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { getAgentProfileBannerSrc } from "@/lib/agent-avatars";
 
-import type { JiraSidebarSessionItem, JiraSidebarSessionStatus } from "./jira";
+import type {
+	JiraSidebarSessionHost,
+	JiraSidebarSessionItem,
+	JiraSidebarSessionStatus,
+} from "./jira";
 import { prStateLozenge } from "./jira-session-flyout-data";
 
 export { createJiraSessionFlyoutHandle, prStateLozenge } from "./jira-session-flyout-data";
@@ -56,8 +62,16 @@ export type JiraSessionFlyoutTriggerProps = Omit<
 	session: JiraSidebarSessionItem;
 };
 
+export type JiraSessionFlyoutContent = "details" | "composer";
+
 export interface JiraSessionFlyoutSurfaceProps {
 	handle: JiraSessionFlyoutHandle;
+	/**
+	 * Flyout body. `details` (default) is the session property card; `composer`
+	 * is the Agent States card with a prompt composer.
+	 */
+	content?: JiraSessionFlyoutContent;
+	onSubmitPrompt?: (session: JiraSidebarSessionItem, prompt: string) => void;
 }
 
 interface FocusCaptureChildProps {
@@ -109,10 +123,9 @@ export function JiraSessionFlyoutTrigger({
 }
 
 /**
- * The rich Jira agent-session flyout body — the canonical "latest" flyout for a
- * queue session. It is rendered both by the live product sidebar
- * (`JiraSessionRow` in `./jira`) and by the `agent-session-flyout` block
- * showcase, so it lives here as a shared owner rather than inside the block.
+ * The rich Jira agent-session detail body used by hover flyouts (the default
+ * session-details surface) plus the queue and For You detail panels. The
+ * composer Agent States card is an opt-in on the shared hover surface.
  *
  * The body reuses the shared design-system components: the work item is a
  * SmartLink, the agent is an agent-type Tag pill, PR state is a Lozenge, and the
@@ -131,6 +144,19 @@ const STATUS_UPDATED_LABEL: Record<JiraSidebarSessionStatus, string> = {
 	merged: "5h ago",
 	stopped: "1d ago",
 };
+
+/** Queue lifecycle mapped onto the compact, property-free agent card states. */
+function toAgentStatesState(status: JiraSidebarSessionStatus): AgentStatesState {
+	if (status === "awaiting-input") return "awaiting-input";
+	if (status === "running") return "working";
+	return "completed";
+}
+
+/** Copy for terminal states that cannot use the successful completion default. */
+function toAgentStatesMessage(status: JiraSidebarSessionStatus): string | undefined {
+	if (status !== "stopped") return undefined;
+	return "This session was stopped before the requested work was completed.";
+}
 
 /** Work-item status lozenge derived from the session lifecycle. */
 const STATUS_WORK_ITEM: Record<
@@ -154,6 +180,23 @@ function prStateIcon(status: JiraSidebarSessionStatus): ReactNode {
 	if (status === "merged") return <MergeSuccessIcon label="" size="small" />;
 	if (status === "stopped") return <MergeFailureIcon label="" size="small" />;
 	return <PullRequestIcon label="" size="small" />;
+}
+
+/**
+ * Session host glyph: a cloud for a hosted session, devices for one running on
+ * the viewer's own machine. Both read as "where this session runs" — unlike the
+ * previous cloud-arrow-up (an upload action) and folder-closed (a directory),
+ * which named the wrong concept for this row.
+ *
+ * `cloud` comes from icon-lab because `@atlaskit/icon/core` only ships
+ * `cloud-arrow-up`; `devices` is core.
+ */
+function hostIcon(host: JiraSidebarSessionHost): ReactNode {
+	return host === "cloud" ? (
+		<CloudIcon label="" size="small" />
+	) : (
+		<DevicesIcon label="" size="small" />
+	);
 }
 
 /** The Jira status workflow offered by the work-item status dropdown. */
@@ -188,18 +231,20 @@ function toWorkItem(session: JiraSidebarSessionItem): SmartLinkItem {
 	};
 }
 
-/** A labeled row inside the flyout: fixed label column + value column. */
+/** A metadata row: icon + value. The property name is screen-reader only so
+ * the visible flyout stays property-free — that label column has been dropped
+ * more than once and must not come back. */
 export function FlyoutRow({
 	icon,
 	label,
 	children,
 }: Readonly<{ icon: ReactNode; label: string; children: ReactNode }>) {
 	return (
-		<div className="grid min-w-0 grid-cols-[16px_84px_minmax(0,1fr)] items-center gap-2 text-xs leading-5">
-			<span className="grid size-4 place-items-center text-icon-subtle" aria-hidden="true">
+		<div className="flex min-w-0 items-center gap-2 text-xs leading-5">
+			<span className="grid size-4 shrink-0 place-items-center text-icon-subtle" aria-hidden="true">
 				{icon}
 			</span>
-			<span className="text-text-subtlest">{label}</span>
+			<span className="sr-only">{label}</span>
 			<span className="flex min-w-0 items-center text-text">{children}</span>
 		</div>
 	);
@@ -274,15 +319,12 @@ export function JiraSessionFlyoutBody({
 			{session.status === "awaiting-input" ? (
 				<Alert size="small" variant="info">
 					<Icon render={<StatusInformationIcon label="" />} label="Information" />
-					<AlertTitle>Waiting for input</AlertTitle>
+					<AlertTitle>Needs input</AlertTitle>
 				</Alert>
 			) : null}
 
 			<div className="flex flex-col gap-2">
-				<FlyoutRow
-					icon={session.host === "cloud" ? <CloudArrowUpIcon label="" size="small" /> : <FolderClosedIcon label="" size="small" />}
-					label="Session"
-				>
+				<FlyoutRow icon={hostIcon(session.host)} label="Session">
 					{session.host === "cloud" ? "Cloud" : "Local"}
 				</FlyoutRow>
 				{hideAgentRow ? null : (
@@ -297,10 +339,20 @@ export function JiraSessionFlyoutBody({
 							delay={0}
 							render={
 								<Tag
-									elemBefore={session.agentAvatarSrc ? (
-										<TileAvatar alt="" aria-hidden shape="hexagon" src={session.agentAvatarSrc} />
-									) : undefined}
+									color="gray"
+									elemBefore={
+										<span aria-hidden>
+											<AgentAvatarVisual
+												avatarClassName="after:border-0"
+												avatarSrc={session.agentAvatarSrc}
+												fallbackText={session.agentName}
+												label={session.agentName}
+												sizePx={16}
+											/>
+										</span>
+									}
 									type="agent"
+									variant="editor"
 								>
 									{session.agentName}
 								</Tag>
@@ -394,14 +446,59 @@ export function JiraSessionFlyoutBody({
 	);
 }
 
+function JiraSessionFlyoutPayload({
+	content,
+	onSubmitPrompt,
+	session,
+}: Readonly<{
+	content: JiraSessionFlyoutContent;
+	onSubmitPrompt?: (session: JiraSidebarSessionItem, prompt: string) => void;
+	session: JiraSidebarSessionItem;
+}>) {
+	switch (content) {
+		case "composer":
+			return (
+				<AgentStates
+					agent={{
+						avatarSrc: session.agentAvatarSrc,
+						id: session.id,
+						name: session.agentName,
+					}}
+					className="w-[400px] max-w-[calc(100vw-48px)] rounded-none shadow-none"
+					completedAtMs={session.completedAtMs}
+					completedSecondsAgo={session.completedSecondsAgo}
+					initialElapsedSeconds={session.initialElapsedSeconds}
+					message={toAgentStatesMessage(session.status)}
+					onSubmit={onSubmitPrompt ? (prompt) => onSubmitPrompt(session, prompt) : undefined}
+					startedAtMs={session.startedAtMs}
+					state={toAgentStatesState(session.status)}
+				/>
+			);
+		case "details":
+			return (
+				<div className="w-[400px] bg-surface-overlay p-4 text-text">
+					<JiraSessionFlyoutBody session={session} />
+				</div>
+			);
+		default: {
+			const _exhaustive: never = content;
+			return _exhaustive;
+		}
+	}
+}
+
 /**
- * One payload-aware flyout shared by every session row in a list. Base UI's
- * viewport keeps the popup mounted while the anchor changes. The shell follows
- * the new row, immediately adopts its measured size, and crossfades the old and
- * new content without letting rapid hovers restart a stale size transition.
+ * One payload-aware flyout shared by every session row in a list. Defaults to
+ * the session-details card; pass `content="composer"` for the Agent States
+ * prompt composer. Base UI's viewport keeps the popup mounted while the anchor
+ * changes. The shell follows the new row, immediately adopts its measured size,
+ * and crossfades the old and new content without letting rapid hovers restart a
+ * stale size transition.
  */
 export function JiraSessionFlyoutSurface({
+	content = "details",
 	handle,
+	onSubmitPrompt,
 }: Readonly<JiraSessionFlyoutSurfaceProps>) {
 	return (
 		<HoverCard<JiraSidebarSessionItem> handle={handle}>
@@ -416,9 +513,11 @@ export function JiraSessionFlyoutSurface({
 				>
 					<HoverCardViewport className="relative size-full overflow-clip rounded-[inherit] [&_[data-current]]:w-(--popup-width) [&_[data-current]]:opacity-100 [&_[data-current]]:transition-opacity [&_[data-current]]:duration-medium [&_[data-current]]:ease-in-out [&_[data-current]]:[will-change:opacity] [&_[data-current][data-starting-style]]:opacity-0 [&_[data-previous]]:w-(--popup-width) [&_[data-previous]]:opacity-100 [&_[data-previous]]:transition-opacity [&_[data-previous]]:duration-medium [&_[data-previous]]:ease-in-out [&_[data-previous]]:[will-change:opacity] [&_[data-previous][data-ending-style]]:opacity-0 motion-reduce:[&_[data-current]]:transition-none motion-reduce:[&_[data-current]]:[will-change:auto] motion-reduce:[&_[data-previous]]:transition-none motion-reduce:[&_[data-previous]]:[will-change:auto] data-instant:[&_[data-current]]:transition-none data-instant:[&_[data-previous]]:transition-none">
 						{payload ? (
-							<div className="w-[400px] bg-surface-overlay p-4 text-text">
-								<JiraSessionFlyoutBody session={payload} />
-							</div>
+							<JiraSessionFlyoutPayload
+								content={content}
+								onSubmitPrompt={onSubmitPrompt}
+								session={payload}
+							/>
 						) : null}
 					</HoverCardViewport>
 				</HoverCardContent>

@@ -256,7 +256,7 @@ export function RovoStage(): React.ReactElement {
 			title: session.status === "awaiting-input" ? (
 				<span className="flex min-w-0 items-baseline">
 					<Shimmer as="span" className="min-w-0 truncate" duration={1.4} spread={2}>
-						Waiting for input
+						Needs input
 					</Shimmer>
 					<AnimatedDots />
 				</span>
@@ -332,7 +332,7 @@ export function RovoStage(): React.ReactElement {
 				onArchive={() => handleArchiveThread(thread.id)}
 				onTogglePin={() => handleTogglePinThread(thread.id)}
 				status={session.status}
-				title={session.status === "awaiting-input" ? "Waiting for input" : session.title}
+				title={session.status === "awaiting-input" ? "Needs input" : session.title}
 			/>
 		);
 	}, [

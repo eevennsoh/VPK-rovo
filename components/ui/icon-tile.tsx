@@ -109,13 +109,14 @@ function IconTile({
 		"data-transparent-icon-size":
 			variant === "transparent" ? transparentIconSize : undefined,
 		"data-variant": variant,
-		"aria-label": isDecorative ? undefined : label,
 		className: cn(
 			iconTileVariants({ size, shape }),
 			ICON_TILE_VARIANTS[variant],
 			className
 		),
 		...props,
+		"aria-label": isDecorative ? undefined : label,
+		role: isDecorative ? props.role : props.role ?? "img",
 	}
 
 	return as === "span" ? (

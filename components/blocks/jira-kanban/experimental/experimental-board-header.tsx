@@ -1,17 +1,10 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
-import AddIcon from "@atlaskit/icon/core/add";
-import ChartTrendIcon from "@atlaskit/icon/core/chart-trend";
-import FilterIcon from "@atlaskit/icon/core/filter";
-import MegaphoneIcon from "@atlaskit/icon/core/megaphone";
+import type { ReactNode } from "react";
+import CustomizeIcon from "@atlaskit/icon/core/customize";
 import PersonAddIcon from "@atlaskit/icon/core/person-add";
 import SearchIcon from "@atlaskit/icon/core/search";
-import SettingsIcon from "@atlaskit/icon/core/settings";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
-import UndoIcon from "@atlaskit/icon/core/undo";
-import GroupIcon from "@atlaskit/icon-lab/core/group";
-
 import {
 	Avatar,
 	AvatarFallback,
@@ -19,27 +12,19 @@ import {
 	AvatarImage,
 	AvatarUnassigned,
 } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Heading } from "@/components/ui/heading";
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollMask } from "@/components/visual/scroll-mask";
 import { JiraProjectAvatar } from "@/components/blocks/product-sidebar/variants/jira";
 import { JIRA_DESIGN_PROJECT } from "@/components/blocks/product-sidebar/data/jira-navigation";
 import { cn } from "@/lib/utils";
 import type { JiraKanbanAssigneeData } from "../index";
-
-const FILTER_FIELDS = [
-	"Project",
-	"Parent",
-	"Assignee",
-	"Status",
-	"Work type",
-	"Labels",
-] as const;
+import { BoardGroupMenu } from "./components/board-group-menu";
+import {
+	JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME,
+	JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS,
+} from "./header-facepile";
 
 /**
  * Experimental fork of `components/blocks/jira-kanban/board-header.tsx`.
@@ -63,18 +48,14 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	 * agents — so one facepile drives whichever surface is showing.
 	 */
 	facepile?: ReactNode;
+	/** Clickable Filter control, including the two-pane popover. */
+	filterControl: ReactNode;
 	/** Mode control, rendered inline with Filter and Group. */
 	modeToggle?: ReactNode;
 	/**
-	 * Turns off the assignee Filter popover.
-	 *
-	 * Pulse sets it: the popover only writes `selectedAssigneeIds`, which feeds
-	 * the board's columns, while Pulse filters on its own member id. Left live it
-	 * lit a filter badge and changed nothing on screen — a control that reports
-	 * success and does nothing is worse than one that is plainly unavailable.
-	 * The facepile beside it is Pulse's real filter.
+	 * Trailing cluster end slot — after the more/ellipsis control.
 	 */
-	disableAssigneeFilter?: boolean;
+	endSlot?: ReactNode;
 	surfaceLabel?: string;
 	viewTabs?: ReactNode;
 }
@@ -88,13 +69,16 @@ function AssigneeAvatar({
 	muted?: boolean;
 	selected?: boolean;
 }>) {
+	const isAgent = assignee.avatarSrc.startsWith("/avatar-agent/");
+
 	return (
 		<Avatar
 			className={cn(
-				selected && "ring-2! ring-border-selected!",
+				selected && !isAgent && "ring-2! ring-border-selected!",
 				muted && "opacity-(--opacity-disabled)",
 			)}
 			label={assignee.name}
+			shape={isAgent ? "hexagon" : "circle"}
 			size="sm"
 		>
 			<AvatarImage alt="" src={assignee.avatarSrc} />
@@ -110,20 +94,13 @@ export function ExperimentalJiraKanbanBoardHeader({
 	searchPlaceholder = "Search board",
 	selectedAssigneeIds,
 	showBoardControls = true,
-	disableAssigneeFilter = false,
 	facepile,
+	filterControl,
 	modeToggle,
+	endSlot,
 	surfaceLabel = "board",
 	viewTabs,
 }: Readonly<ExperimentalJiraKanbanBoardHeaderProps>) {
-	const [filterOpen, setFilterOpen] = useState(false);
-	const [query, setQuery] = useState("");
-	const filteredAssignees = useMemo(() => {
-		const normalizedQuery = query.trim().toLocaleLowerCase();
-		return normalizedQuery
-			? assignees.filter((assignee) => assignee.name.toLocaleLowerCase().includes(normalizedQuery))
-			: assignees;
-	}, [assignees, query]);
 	const hasSelection = selectedAssigneeIds.size > 0;
 	const surfaceTitle = `${surfaceLabel.slice(0, 1).toLocaleUpperCase()}${surfaceLabel.slice(1)}`;
 
@@ -139,7 +116,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 
 	return (
 		<header className={cn("shrink-0 pt-3", showBoardControls ? "pb-4" : "pb-0")}>
-			<div className="flex min-w-0 items-center gap-2 px-4">
+			<div className="flex min-w-0 items-center gap-2 px-6">
 				<JiraProjectAvatar label={JIRA_DESIGN_PROJECT.name} src={JIRA_DESIGN_PROJECT.imageSrc} />
 				<Heading as="h1" className="truncate" size="large">Jira Design</Heading>
 				<div className="flex items-center gap-1">
@@ -154,7 +131,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 			{viewTabs ? <div className="mt-2">{viewTabs}</div> : null}
 
 			{showBoardControls ? (
-				<div className="mt-4 flex flex-wrap items-center gap-2 px-4">
+				<div className="mt-4 flex flex-wrap items-center gap-2 px-6">
 					<InputGroup className="w-44">
 						<InputGroupAddon>
 							<Icon render={<SearchIcon label="" size="small" />} />
@@ -169,11 +146,11 @@ export function ExperimentalJiraKanbanBoardHeader({
 					    contains these low z-indexes; `[&>*]:relative` is required because the
 					    face <button> wrappers are position:static, where z-index is inert. */}
 					<AvatarGroup
-						className="ml-1 -space-x-1.5 isolate [&>*]:relative [&>*:nth-child(1)]:z-[7] [&>*:nth-child(2)]:z-[6] [&>*:nth-child(3)]:z-[5] [&>*:nth-child(4)]:z-[4] [&>*:nth-child(5)]:z-[3] [&>*:nth-child(6)]:z-[2] [&>*:nth-child(7)]:z-[1]"
+						className={JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME}
 						label={`${surfaceTitle} assignees`}
 					>
 						<AvatarUnassigned kind="person" label="Unassigned" size="sm" />
-						{assignees.slice(0, 6).map((assignee) => (
+						{assignees.slice(0, JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS - 1).map((assignee) => (
 							<button
 								aria-label={`Filter ${surfaceLabel} by ${assignee.name}`}
 								aria-pressed={selectedAssigneeIds.has(assignee.id)}
@@ -193,116 +170,9 @@ export function ExperimentalJiraKanbanBoardHeader({
 						</>
 					)}
 
-					{disableAssigneeFilter ? (
-						<Button
-							aria-disabled
-							aria-label={`Filter ${surfaceLabel} is unavailable in this mode — filter by person or agent with the faces to the left`}
-							size={compact ? "icon" : undefined}
-							variant="outline"
-						>
-							<Icon render={<FilterIcon label="" />} />
-							{compact ? null : "Filter"}
-						</Button>
-					) : (
-					<Popover open={filterOpen} onOpenChange={setFilterOpen}>
-						<PopoverTrigger
-							render={
-								<Button
-									aria-expanded={filterOpen}
-									aria-label={hasSelection ? `Filter ${surfaceLabel}, ${selectedAssigneeIds.size} selected` : `Filter ${surfaceLabel}`}
-									aria-pressed={hasSelection}
-									size={compact ? "icon" : undefined}
-									variant="outline"
-								/>
-							}
-						>
-							<Icon render={<FilterIcon label="" />} />
-							{compact ? null : "Filter"}
-							{hasSelection && !compact ? <Badge variant="information">{selectedAssigneeIds.size}</Badge> : null}
-						</PopoverTrigger>
-						<PopoverContent align="start" className="w-[560px] max-w-[calc(100vw-32px)] gap-0 overflow-hidden p-0">
-							<div className="grid h-[360px] grid-cols-[200px_minmax(0,1fr)]">
-								<div className="border-r border-border p-3">
-									<Button aria-disabled variant="outline">
-										<Icon data-icon="inline-start" render={<AddIcon label="" size="small" />} />
-										Add field
-									</Button>
-									<div className="mt-2">
-										{FILTER_FIELDS.map((field) => {
-											const enabled = field === "Assignee";
-											return (
-												<Button
-													aria-current={enabled ? "page" : undefined}
-													className="w-full justify-start"
-													disabled={!enabled}
-													key={field}
-													variant={enabled ? "secondary" : "ghost"}
-												>
-													{field}
-												</Button>
-											);
-										})}
-									</div>
-								</div>
+					{filterControl}
 
-								<div className="flex min-h-0 min-w-0 flex-col p-3">
-									<InputGroup>
-										<InputGroupAddon>
-											<Icon render={<SearchIcon label="" size="small" />} />
-										</InputGroupAddon>
-										<InputGroupInput
-											aria-label="Search assignee"
-											onChange={(event) => setQuery(event.target.value)}
-											placeholder="Search assignee"
-											value={query}
-										/>
-									</InputGroup>
-
-									<ScrollMask
-										className="mt-2 min-h-0 flex-1 rounded-none border-0 bg-transparent"
-										footer={
-											<div className="flex items-center justify-between gap-3">
-												<p className="text-xs text-text-subtle">{selectedAssigneeIds.size} selected</p>
-												<Button
-													disabled={!hasSelection}
-													onClick={() => onSelectedAssigneeIdsChange(new Set())}
-													size="compact"
-													variant="ghost"
-												>
-													Clear all
-												</Button>
-											</div>
-										}
-										footerClassName="bg-popover px-0 pb-0 pt-3"
-										viewportClassName="[scrollbar-gutter:auto]"
-									>
-										{filteredAssignees.map((assignee) => (
-											<label
-												className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 hover:bg-bg-neutral-subtle-hovered"
-												key={assignee.id}
-											>
-												<Checkbox
-													checked={selectedAssigneeIds.has(assignee.id)}
-													onCheckedChange={() => toggleAssignee(assignee.id)}
-												/>
-												<AssigneeAvatar assignee={assignee} />
-												<span className="min-w-0 truncate text-sm">{assignee.name}</span>
-											</label>
-										))}
-										{filteredAssignees.length === 0 ? (
-											<p className="px-2 py-6 text-center text-sm text-text-subtle">No assignees found</p>
-										) : null}
-									</ScrollMask>
-								</div>
-							</div>
-						</PopoverContent>
-					</Popover>
-					)}
-
-					<Button aria-disabled aria-label={`Group ${surfaceLabel}`} size={compact ? "icon" : undefined} variant="outline">
-						<Icon render={<GroupIcon label="" />} />
-						{compact ? null : "Group"}
-					</Button>
+					<BoardGroupMenu compact={compact} surfaceLabel={surfaceLabel} />
 
 					{modeToggle}
 
@@ -313,23 +183,15 @@ export function ExperimentalJiraKanbanBoardHeader({
 							</Button>
 						) : (
 							<>
-								<Button aria-disabled aria-label="View insights" size="icon" variant="outline">
-									<Icon render={<ChartTrendIcon label="" />} />
-								</Button>
 								<Button aria-disabled aria-label={`${surfaceTitle} settings`} size="icon" variant="outline">
-									<Icon render={<SettingsIcon label="" />} />
-								</Button>
-								<Button aria-disabled aria-label="Undo board change" size="icon" variant="outline">
-									<Icon render={<UndoIcon label="" />} />
-								</Button>
-								<Button aria-disabled aria-label="Board announcements" size="icon" variant="outline">
-									<Icon render={<MegaphoneIcon label="" />} />
+									<Icon render={<CustomizeIcon label="" />} />
 								</Button>
 								<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
 									<Icon render={<ShowMoreHorizontalIcon label="" />} />
 								</Button>
 							</>
 						)}
+						{endSlot ? endSlot : null}
 					</div>
 				</div>
 			) : null}

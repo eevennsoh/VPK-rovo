@@ -119,6 +119,11 @@ test("Local session drives the TwG setup live and resumes review beats after Kan
 		/<StateGlyph status="working" className="shrink-0 text-\[#D97757\]" \/>/u,
 	);
 	assert.match(TERMINAL_CLAUDE_PANE_SOURCE, /<span>Working…<\/span>/u);
+	assert.match(TERMINAL_CLAUDE_PANE_SOURCE, /const visibleLines = \[\.\.\.pane\.transcript, \.\.\.inFlightLines\]/u);
+	assert.doesNotMatch(TERMINAL_CLAUDE_PANE_SOURCE, /key=\{`in-flight-\$\{index\}`\}/u);
+	assert.match(TERMINAL_CLAUDE_PANE_SOURCE, /<AnimatePresence initial=\{false\}>/u);
+	assert.match(TERMINAL_CLAUDE_PANE_SOURCE, /layout=\{shouldReduceMotion \? false : "position"\}/u);
+	assert.match(TERMINAL_CLAUDE_PANE_SOURCE, /key="working"/u);
 });
 
 test("Post-review terminal screens share the line-by-line output reveal timing", () => {
@@ -259,6 +264,18 @@ test("Global Jira Design cards keep human assignees while active agents use acti
 	assert.match(
 		JIRA_DESIGN_WORK_ITEMS_SOURCE,
 		/function createJiraDesignAgentActivities[\s\S]*if \(!item\.agents\?\.length\)[\s\S]*return undefined;[\s\S]*state = hasAwaitingAgent && index === 0 \? "awaiting-input" as const : "working" as const/u,
+	);
+});
+
+test("Jira Design board tags keep space names and omit agent-state summaries", () => {
+	assert.match(
+		JIRA_DESIGN_WORK_ITEMS_SOURCE,
+		/tags: \[\s*\{ color: "blue" as const, text: item\.spaceName \},\s*\],/u,
+	);
+	assert.doesNotMatch(JIRA_DESIGN_WORK_ITEMS_SOURCE, /text: item\.status/u);
+	assert.match(
+		JIRA_DESIGN_WORK_ITEMS_SOURCE,
+		/createJiraDesignListRows[\s\S]*labels: \[\{ color: "blue", text: item\.spaceName \}\]/u,
 	);
 });
 

@@ -88,6 +88,44 @@ test("toPullRequestSmartLink prefers an explicit href and maps Merged status", a
 	assert.equal(item.status.variant, "discovery");
 	assert.equal(item.status.placement, undefined);
 	assert.equal(item.status.icon, undefined);
+	assert.equal(item.icon.kind, "icon");
+});
+
+test("toPullRequestSmartLink maps Failed status to the merge-failure glyph", async () => {
+	const { toPullRequestSmartLink } = await loadHelper();
+	const open = toPullRequestSmartLink({
+		id: "pr-open",
+		number: 1,
+		title: "Open",
+		status: "Open",
+		additions: 1,
+		deletions: 0,
+	});
+	const merged = toPullRequestSmartLink({
+		id: "pr-merged",
+		number: 2,
+		title: "Merged",
+		status: "Merged",
+		additions: 1,
+		deletions: 0,
+	});
+	const failed = toPullRequestSmartLink({
+		id: "pr-failed",
+		number: 3,
+		title: "Failed",
+		status: "Failed",
+		additions: 1,
+		deletions: 0,
+	});
+
+	assert.equal(failed.status.label, "Failed");
+	assert.equal(failed.status.variant, "danger");
+	assert.equal(open.icon.kind, "icon");
+	assert.equal(merged.icon.kind, "icon");
+	assert.equal(failed.icon.kind, "icon");
+	assert.notEqual(open.icon.icon.type, merged.icon.icon.type);
+	assert.notEqual(open.icon.icon.type, failed.icon.icon.type);
+	assert.notEqual(merged.icon.icon.type, failed.icon.icon.type);
 });
 
 test("toPullRequestSmartLink falls back to a hash href without repository", async () => {

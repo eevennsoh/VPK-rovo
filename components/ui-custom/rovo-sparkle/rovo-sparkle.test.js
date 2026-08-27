@@ -83,7 +83,7 @@ test("Rovo Sparkle preserves the shared selector interaction contract", () => {
 	assert.match(SPARKLE_SOURCE, /const SECTION_LIMIT = 3;/);
 	assert.match(SPARKLE_SOURCE, /headingLabel: "Agents"/);
 	assert.match(SPARKLE_SOURCE, /headingLabel: "Skills"/);
-	assert.match(SPARKLE_SOURCE, /label: "Browse all"/);
+	assert.match(SPARKLE_SOURCE, /getSuggestionOverflowFooterItem\(id, "browse-all"\)/);
 	assert.match(SPARKLE_SOURCE, /function filterItems[\s\S]*toLowerCase\(\)[\s\S]*includes\(normalizedQuery\)/);
 	assert.match(SPARKLE_SOURCE, /event\.key === "ArrowDown" \|\| event\.key === "ArrowUp"/);
 	assert.match(SPARKLE_SOURCE, /event\.key === "Enter" && isSelectableRow\(rows\[selectedIndex\]\)/);

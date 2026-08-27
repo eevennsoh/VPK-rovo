@@ -62,16 +62,21 @@ const ACTIVITY_REVEAL_SETTLE_MS = 2_000;
  * Owns its own section heading so the filter/sort control sits beside the
  * "Activity" title, and publishes its entry count for the nav's count pill.
  */
+export type ActivityPanelSurface = "activity" | "insights";
+
 export function ActivityPanel({
 	activitySessionThread,
 	onInsightSourceSelect,
 	onOpenPullRequest,
+	surface = "activity",
 }: Readonly<{
 	activitySessionThread?: ActivitySessionThreadConfig;
 	/** Routes a decision source through the work item's existing in-product owners. */
 	onInsightSourceSelect?: (source: JiraInsightSource) => void;
 	/** Opens the same in-app PR detail as Review pull request / PR resource select. */
 	onOpenPullRequest?: (entry: JiraActivityEventEntry) => void;
+	/** Insights column vs the work-item Activity section. */
+	surface?: ActivityPanelSurface;
 }>) {
 	const { state, meta, actions } = useJiraWorkItem();
 	const {
@@ -123,7 +128,9 @@ export function ActivityPanel({
 	const activityRevealSignature = latestActivityEntryId
 		? `${latestActivityEntryId}:${activitySessionThread?.visibleSessionIds.join(",") ?? "default"}`
 		: null;
-	const autoScrollEnabled = !insightsSelected
+	const autoScrollEnabled = activitySessionThread?.autoScroll !== false
+		&& surface === "activity"
+		&& !insightsSelected
 		&& (Boolean(activitySessionThread) || Boolean(latestSessionId?.startsWith("session-")));
 	// Reactions and replies to human comments have no home in the work-item
 	// context, so they are held here and overlaid onto the derived timeline.
@@ -155,7 +162,7 @@ export function ActivityPanel({
 		() => new Map(checkpoints.map((checkpoint) => [checkpoint.id, checkpoint])),
 		[checkpoints],
 	);
-	const effectiveFilter = insightsSelected ? "insights-only" : filter;
+	const effectiveFilter = surface === "insights" ? "insights-only" : filter;
 
 	usePublishActivityCount(activityEntries.length);
 
@@ -392,7 +399,7 @@ export function ActivityPanel({
 
 	return (
 		<WorkItemSection
-			className={insightsSelected ? "group/activity" : undefined}
+			className={surface === "insights" ? "group/activity" : undefined}
 			headingAction={(
 				<JiraActivityViewControl
 					filter={effectiveFilter}
@@ -404,8 +411,8 @@ export function ActivityPanel({
 				/>
 			)}
 			headingVisible
-			id={insightsSelected ? "insights" : "activity"}
-			label={insightsSelected ? "Insights" : "Activity"}
+			id={surface === "insights" ? "insights" : "activity"}
+			label={surface === "insights" ? "Insights" : "Activity"}
 		>
 			<div ref={activityRootRef} className="min-w-0 max-w-full" data-jira-work-item-activity>
 				<JiraActivity

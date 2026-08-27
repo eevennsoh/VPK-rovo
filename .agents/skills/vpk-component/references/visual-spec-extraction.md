@@ -1,6 +1,6 @@
 # Visual Spec Extraction
 
-ADS MCP tools return API-level information (props, variants, usage) but **not** precise CSS values. For pixel-accurate enrichment (padding, border-radius, height, font-size, etc.), use the following methods in priority order.
+The `atlas ads` CLI returns API-level information (props, variants, usage) but **not** precise CSS values. For pixel-accurate enrichment (padding, border-radius, height, font-size, etc.), use the following methods in priority order.
 
 > **Critical rule — never guess CSS values from token names:** Token names like `radius.small`, `radius.medium`, etc. do not reliably map to the actual computed pixel values used by ADS components. For example, ADS Button uses `border-radius: 6px` (`rounded-md`), not `rounded-sm` (4px) or `rounded-lg` (8px). The only reliable source is `getComputedStyle()` on the live `atlassian.design` examples page. **Always extract before coding — never assume.**
 
@@ -151,9 +151,11 @@ Reusable extraction snippet:
 > })()
 > ```
 
-## Method 2 (API/Props only): ADS MCP tools
+## Method 2 (API/Props only): `atlas ads` CLI
 
-`ads_plan` and `ads_get_components` return prop names, variant values, package names, and usage guidance. They do **not** return CSS values — those are embedded in compiled CSS-in-JS at runtime.
+Run `atlas ads search <terms> --type component` (add `--type token` / `--type icon`, or batch them with `atlas ads batch --command "search <terms> --type component" --command "search <terms> --type token"`), then `atlas ads component <Name>` for an exact lookup or `atlas ads component --all` for the full catalog. Add `--json` when parsing the output. These return prop names, variant values, package names, and usage guidance. They do **not** return CSS values — those are embedded in compiled CSS-in-JS at runtime.
+
+Fall back to the ADS MCP tools (`ads_plan`, `ads_search_components`, `ads_get_all_components`) only when the CLI is unavailable or erroring.
 
 ## Method 3 (Last resort): Atlaskit source code
 

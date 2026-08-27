@@ -27,19 +27,19 @@ export function SpinnerDemoInBadges() {
 	return (
 		<div className="flex flex-wrap items-center justify-center gap-4">
 			<Badge>
-				<Spinner data-icon="inline-start" />
+				<Spinner data-icon="inline-start" variant="inherit" />
 				Badge
 			</Badge>
 			<Badge variant="neutral">
-				<Spinner data-icon="inline-start" />
+				<Spinner data-icon="inline-start" variant="inherit" />
 				Badge
 			</Badge>
 			<Badge variant="danger">
-				<Spinner data-icon="inline-start" />
+				<Spinner data-icon="inline-start" variant="inherit" />
 				Badge
 			</Badge>
 			<Badge variant="neutral">
-				<Spinner data-icon="inline-start" />
+				<Spinner data-icon="inline-start" variant="inherit" />
 				Badge
 			</Badge>
 		</div>
@@ -50,16 +50,16 @@ export function SpinnerDemoInButtons() {
 	return (
 		<div className="flex flex-wrap items-center gap-4">
 			<Button>
-				<Spinner data-icon="inline-start" /> Submit
+				<Spinner data-icon="inline-start" variant="inherit" /> Submit
 			</Button>
 			<Button disabled>
-				<Spinner data-icon="inline-start" /> Disabled
+				<Spinner data-icon="inline-start" variant="inherit" /> Disabled
 			</Button>
 			<Button variant="outline" disabled>
-				<Spinner data-icon="inline-start" /> Outline
+				<Spinner data-icon="inline-start" variant="inherit" /> Outline
 			</Button>
 			<Button variant="outline" size="icon" disabled>
-				<Spinner data-icon="inline-start" />
+				<Spinner data-icon="inline-start" variant="inherit" />
 				<span className="sr-only">Loading...</span>
 			</Button>
 		</div>

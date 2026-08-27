@@ -3,9 +3,9 @@
 // oxlint-disable react-doctor/no-noninteractive-tabindex -- These surfaces intentionally receive keyboard focus for application-style keyboard handling or card-level shortcuts.
 // oxlint-disable react-doctor/prefer-module-scope-pure-function -- These helpers are intentionally local to the component/demo because they depend on the surrounding interaction contract.
 
-import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { LayoutGroup, motion, useReducedMotion, type Transition } from "motion/react";
-import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
+import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import AddIcon from "@atlaskit/icon/core/add";
 
@@ -14,7 +14,8 @@ import {
 	mapAgentToMentionItem,
 	mapSkillToMentionItem,
 } from "@/components/blocks/editor-palette/data/mention-sources";
-import { AgentSelector } from "@/components/blocks/agent-selector";
+import { WorkItemAgentSelector } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-agent-selector";
+import { DEFAULT_PINNED_SPACE_AGENT_IDS } from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-picker-options";
 import { JiraToolbar } from "@/components/blocks/jira-toolbar";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import {
@@ -23,7 +24,6 @@ import {
 	AvatarGroup,
 	AvatarImage,
 } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -151,6 +151,7 @@ function ColumnAgentAssignment({
 	onToggleAgent: (agentId: string) => void;
 }>) {
 	const [open, setOpen] = useState(false);
+	const [pinnedAgentIds, setPinnedAgentIds] = useState<readonly string[]>(DEFAULT_PINNED_SPACE_AGENT_IDS);
 	const [query, setQuery] = useState("");
 	const assignedAgents = useMemo(
 		() => assignedAgentIds.map((id) => agents.find((agent) => agent.id === id)).filter((agent): agent is JiraKanbanAgentData => Boolean(agent)),
@@ -191,12 +192,12 @@ function ColumnAgentAssignment({
 										aria-label={triggerLabel}
 										className={cn(
 											"opacity-0 transition-opacity group-hover/board-column:opacity-100 group-focus-within/board-column:opacity-100",
-											hasAssignedAgents ? "h-8 min-w-0 gap-1 px-1.5" : "size-8",
+											hasAssignedAgents && "h-8 min-w-0 gap-1 px-1.5",
 											(hasAssignedAgents || open) && "opacity-100",
 										)}
 										data-assigned={hasAssignedAgents || undefined}
 										data-open={open || undefined}
-										size={hasAssignedAgents ? "default" : "icon"}
+										size={hasAssignedAgents ? "default" : "icon-compact"}
 										variant="ghost"
 									/>
 								}
@@ -209,8 +210,8 @@ function ColumnAgentAssignment({
 								) : (
 									<Icon
 										className="text-icon-subtle group-aria-expanded/button:text-icon-selected"
-										label="Agent"
-										render={<AiAgentIcon label="" />}
+										label="Add agent"
+										render={<AiAgentAddIcon label="" />}
 									/>
 								)}
 							</DropdownMenuTrigger>
@@ -224,14 +225,16 @@ function ColumnAgentAssignment({
 					positionerClassName="z-[502]"
 					sideOffset={8}
 				>
-					<AgentSelector
+					<WorkItemAgentSelector
 						agents={agents}
-						selectedAgentIds={assignedAgentIds}
+						onAgentToggle={onToggleAgent}
 						onBrowseAgents={handleBrowseAgents}
 						onCreateAgent={handleCreateAgent}
+						onPinnedAgentIdsChange={setPinnedAgentIds}
 						onQueryChange={setQuery}
-						onAgentToggle={onToggleAgent}
+						pinnedAgentIds={pinnedAgentIds}
 						query={query}
+						selectedAgentIds={assignedAgentIds}
 					/>
 				</DropdownMenuContent>
 			</DropdownMenu>
@@ -244,7 +247,6 @@ function BoardColumn({
 	assignedAgentIds,
 	children,
 	count,
-	headerPaddingBlock,
 	onCreateAgent,
 	onToggleAgent,
 	title,
@@ -253,25 +255,24 @@ function BoardColumn({
 	assignedAgentIds: readonly string[];
 	children: ReactNode;
 	count: number;
-	headerPaddingBlock: CSSProperties["paddingBlock"];
 	onCreateAgent?: (columnTitle: string) => void;
 	onToggleAgent?: (agentId: string) => void;
 	title: string;
 }>) {
 	const showAgentAssignment = Boolean(agents?.length && onCreateAgent && onToggleAgent);
-	const { ref: cardListRef, showBottomScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
+	const { ref: cardListRef, showBottomScrollMask, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const cardListScrollMaskStyle = useMemo(
 		() => buildScrollMaskStyle({
 			fadeBottom: showBottomScrollMask,
 			fadeSize: "3rem",
-			fadeTop: false,
+			fadeTop: showTopScrollMask,
 		}),
-		[showBottomScrollMask],
+		[showBottomScrollMask, showTopScrollMask],
 	);
 
 	return (
 		<div
-			className="group/board-column overflow-visible"
+			className="group/board-column min-w-0 overflow-visible"
 			style={{
 				display: "flex",
 				flexDirection: "column",
@@ -280,35 +281,32 @@ function BoardColumn({
 				borderRadius: token("radius.xlarge"),
 			}}
 		>
-			<div style={{ paddingTop: token("space.150"), paddingBottom: headerPaddingBlock }}>
-				<div className={cn("flex min-w-0 items-center gap-2", showAgentAssignment && "justify-between")}>
-					<div className="flex min-w-0 items-center gap-2">
-						<span
-							className="truncate"
-							style={{
-								font: token("font.body.small"),
-								fontWeight: token("font.weight.medium"),
-								color: token("color.text.subtle"),
-							}}
-						>
-							{title.toUpperCase()}
-						</span>
-						<Badge>{count}</Badge>
-					</div>
-					{showAgentAssignment && agents && onCreateAgent && onToggleAgent ? (
-						<ColumnAgentAssignment
-							agents={agents}
-							assignedAgentIds={assignedAgentIds}
-							columnTitle={title}
-							onCreateAgent={onCreateAgent}
-							onToggleAgent={onToggleAgent}
-						/>
-					) : null}
+			<div
+				className={cn("flex min-w-0 items-center gap-2", showAgentAssignment && "justify-between")}
+				style={{ paddingBottom: token("space.100") }}
+			>
+				<div className="flex min-w-0 items-center gap-1.5">
+					<span className="truncate text-xs font-medium leading-4 text-text-subtle">
+						{title}
+					</span>
+					<span className="shrink-0 text-xs font-normal text-text-subtlest">
+						{count}
+					</span>
 				</div>
+				{showAgentAssignment && agents && onCreateAgent && onToggleAgent ? (
+					<ColumnAgentAssignment
+						agents={agents}
+						assignedAgentIds={assignedAgentIds}
+						columnTitle={title}
+						onCreateAgent={onCreateAgent}
+						onToggleAgent={onToggleAgent}
+					/>
+				) : null}
 			</div>
 
 			<div
 				ref={cardListRef}
+				className="min-w-0"
 				style={{
 					flexGrow: 1,
 					overflowY: "auto",
@@ -321,7 +319,7 @@ function BoardColumn({
 				{children}
 			</div>
 
-			<div style={{ padding: token("space.050") }}>
+			<div className="w-full" style={{ paddingBlock: token("space.050") }}>
 				<Button
 					className={cn(
 						"w-full justify-start gap-2 rounded-lg",
@@ -337,6 +335,39 @@ function BoardColumn({
 					Create
 				</Button>
 			</div>
+		</div>
+	);
+}
+
+function BoardAddColumnButton() {
+	return (
+		<div className="flex shrink-0 flex-col self-start overflow-visible border-2 border-transparent">
+			<div
+				aria-hidden
+				className="flex items-center"
+				style={{ paddingBottom: token("space.100") }}
+			>
+				<span className="size-6" />
+			</div>
+			<TooltipProvider>
+				<Tooltip>
+					<TooltipTrigger
+						render={
+							<Button
+								aria-label="Create column"
+								className="shrink-0"
+								data-jira-kanban-add-column=""
+								size="icon"
+								type="button"
+								variant="outline"
+							/>
+						}
+					>
+						<Icon render={<AddIcon label="" />} />
+					</TooltipTrigger>
+					<TooltipContent>Create column</TooltipContent>
+				</Tooltip>
+			</TooltipProvider>
 		</div>
 	);
 }
@@ -375,7 +406,6 @@ export function ExperimentalJiraKanban({
 	assignedAgentIdsByColumn = {},
 	boardColumns,
 	cardMoveAnimation,
-	columnHeaderPaddingBlock = token("space.100"),
 	draggedCardCode = null,
 	selectedCardCodes,
 	onCardClick,
@@ -385,7 +415,6 @@ export function ExperimentalJiraKanban({
 	onCardDrop,
 	onCardGenerativeActionSubmit,
 	onCardAgentActivityOpenChange,
-	onCardAgentActivityQuestionSubmit,
 	onCardAgentActivityViewChat,
 	onCardAgentDoneRunReview,
 	onCardAgentDoneRunView,
@@ -524,29 +553,28 @@ export function ExperimentalJiraKanban({
 					flex: 1,
 					paddingTop,
 					paddingBottom,
-					paddingInline: token("space.200"),
 					overflowX: "auto",
 					overflowY: "hidden",
 					minHeight: 0,
 				}}
 			>
 				<LayoutGroup id={cardLayoutGroupId}>
-					<div className="flex min-h-full items-stretch gap-2" style={{ minWidth: "100%" }}>
+					<div className="flex min-h-full w-max min-w-full items-stretch ps-6">
+						<div className="flex min-h-full flex-1 items-stretch gap-2">
 						{boardColumns.map((column) => (
 						<div
 							data-jira-kanban-column={column.title}
 							key={column.title}
-							className="overflow-visible border-2 border-transparent transition-colors"
+							className="min-w-0 overflow-visible border-2 border-transparent transition-colors"
 							onDragOver={handleColumnDragOver}
 							onDragLeave={handleColumnDragLeave}
 							onDrop={(event) => handleColumnDrop(event, column.title)}
-							style={{ flex: "1 1 0", minWidth: "280px", borderRadius: token("radius.xlarge") }}
+							style={{ flex: "1 1 0", minWidth: "280px", maxWidth: "280px", borderRadius: token("radius.xlarge") }}
 						>
 							<BoardColumn
 								agents={agents}
 								assignedAgentIds={assignedAgentIdsByColumn[column.title] ?? []}
 								count={column.cards.length}
-								headerPaddingBlock={columnHeaderPaddingBlock}
 								onCreateAgent={onCreateAgent}
 								onToggleAgent={
 									onToggleColumnAgent
@@ -580,7 +608,7 @@ export function ExperimentalJiraKanban({
 									return (
 										<motion.div
 											key={card.code}
-											className="w-full"
+											className="w-full min-w-0 max-w-[280px]"
 											layout={shouldAnimateCardPosition ? "position" : false}
 											layoutId={shouldAnimateCardPosition ? `jira-kanban-card-${card.code}` : undefined}
 											style={shouldAnimateCardPosition ? { willChange: "transform" } : undefined}
@@ -592,6 +620,7 @@ export function ExperimentalJiraKanban({
 														? { scale: getJiraKanbanCardScale(cardMovePhase) }
 														: undefined
 												}
+												className="w-full min-w-0 max-w-[280px]"
 												initial={false}
 												style={cardMovePhase ? { willChange: "transform" } : undefined}
 												transition={cardMovePhase === "departing" ? JIRA_KANBAN_CARD_DEPART : JIRA_KANBAN_CARD_MOVE}
@@ -613,16 +642,13 @@ export function ExperimentalJiraKanban({
 												agentActivities={card.agentActivities}
 												agentActivityMode={card.agentActivityMode}
 												agentDoneRuns={card.agentDoneRuns}
-												generativeAction={
-													onCardGenerativeActionSubmit
-														? {
-															agents: generativeActionAgents,
-															onSubmit: (request) =>
-																onCardGenerativeActionSubmit(request, card, column.title),
-															skills: generativeActionSkills,
-														}
-														: undefined
-												}
+												generativeAction={{
+													agents: generativeActionAgents,
+													onSubmit: (request) => {
+														void onCardGenerativeActionSubmit?.(request, card, column.title);
+													},
+													skills: generativeActionSkills,
+												}}
 												onAgentActivityOpenChange={
 													onCardAgentActivityOpenChange
 														? (open) => onCardAgentActivityOpenChange(open, card, column.title)
@@ -631,12 +657,6 @@ export function ExperimentalJiraKanban({
 												onAgentActivityViewChat={
 													onCardAgentActivityViewChat
 														? (activity) => onCardAgentActivityViewChat(activity, card, column.title)
-														: undefined
-												}
-												onAgentActivityQuestionSubmit={
-													onCardAgentActivityQuestionSubmit
-														? (activity, answers) =>
-															onCardAgentActivityQuestionSubmit(activity, answers, card, column.title)
 														: undefined
 												}
 												onAgentDoneRunReview={
@@ -662,6 +682,9 @@ export function ExperimentalJiraKanban({
 							</BoardColumn>
 						</div>
 						))}
+						<BoardAddColumnButton />
+						</div>
+						<div aria-hidden className="w-6 shrink-0" />
 					</div>
 				</LayoutGroup>
 				</section>

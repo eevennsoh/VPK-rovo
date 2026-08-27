@@ -53,11 +53,11 @@ Next.js 16 (React 19, Tailwind CSS v4) + Express backend with AI SDK (Vercel), A
 
 **External Documentation** — fetch via tools when needed:
 
-| When you need...        | URL                                                       |
-| ----------------------- | --------------------------------------------------------- |
-| Atlassian Design System | `https://atlassian.design` (also via `ads_plan` MCP tool) |
-| shadcn/ui components    | `https://ui.shadcn.com/docs`                              |
-| Tailwind CSS            | `https://tailwindcss.com/docs`                            |
+| When you need...        | URL                                                                      |
+| ----------------------- | ------------------------------------------------------------------------ |
+| Atlassian Design System | `atlas ads` CLI first (see **ADS Lookups**), then `https://atlassian.design` |
+| shadcn/ui components    | `https://ui.shadcn.com/docs`                                             |
+| Tailwind CSS            | `https://tailwindcss.com/docs`                                           |
 
 ## Core Rules (Highest Priority)
 
@@ -77,6 +77,7 @@ If instructions overlap, use this precedence:
 - React 19: `use(Context)`, `<Context value={}>`, and `ref` as a regular prop; not `useContext()`, `<Context.Provider>`, or `forwardRef`.
 - Conditional rendering: use ternary (`cond ? <X /> : null`), not `&&` patterns that can render `0`.
 - Prefer semantic token classes; do not introduce `bg-[var(--ds-...)]` / `text-[var(--ds-...)]` in VPK components.
+- ADS content (components, tokens, icons, docs): query the `atlas ads` CLI first; ADS MCP tools are fallback only. See **ADS Lookups**.
 - Custom CSS classes: prefer `@utility name { … }` (Tailwind v4 idiom) over `@layer components`. Full rules in `.agents/rules/token-priority.md`.
 
 ## Engineering Standards
@@ -117,6 +118,23 @@ Selection priority: semantic shadcn/ADS utilities, accent Tailwind classes from 
 - Use `~/.agents/skills/animation-vocabulary/SKILL.md` when a user describes a motion effect vaguely or asks what an effect is called. Name or disambiguate the effect first; the skill is glossary help, not implementation guidance.
 - For implementation, reuse existing patterns, then follow `.agents/rules/motion-decisions.md`, `.agents/rules/token-priority.md`, the global `motion` skill for Motion for React, and `.agents/rules/motion-base-ui.md` for Base UI.
 - Use VPK duration/easing tokens, avoid layout-thrashing motion, and add explicit reduced-motion handling for any motion you introduce or modify.
+
+### ADS Lookups
+
+Retrieve ADS content with the `atlas ads` CLI first — same structured content as the ADS MCP, but faster and cheaper, and the MCP server has hung here for minutes on a single call. It ships as an Atlas CLI plugin (`/opt/atlassian/bin/atlas`), so the command is `atlas ads <cmd>`; there is no bare `ads` binary. Portable fallback on other machines: `npx @atlaskit/ads-cli <cmd>`. Add `--json` when you will parse the output, and use `atlas ads batch --command … --command …` when several lookups serve one decision.
+
+| When you need...                        | Run                                                                                                                                                                                   |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Plan a UI (components + tokens + icons) | `atlas ads batch --command "search <terms> --type component" --command "search <terms> --type token" --command "search <terms> --type icon"`, or `atlas ads search <terms>` for one unified sweep |
+| Search one kind                         | `atlas ads search <q> --type component` / `--type token` / `--type icon` (`[--limit N]`)                                                                                              |
+| Exact single lookup                     | `atlas ads component <Name>` / `atlas ads token <name>` / `atlas ads icon <IconName>`                                                                                                 |
+| Whole catalog                           | `atlas ads component --all` / `atlas ads token --all` / `atlas ads icon --all`                                                                                                        |
+| Foundations guidelines                  | `atlas ads docs <topic...>` (e.g. `atlas ads docs spacing`)                                                                                                                           |
+| Accessibility guidelines                | `atlas ads docs a11y <buttons\|forms\|images\|colors\|focus\|keyboard\|screenReaders\|aria\|wcag\|general>`                                                                            |
+| ESLint rule docs                        | `atlas ads lint-rules [term...] [--limit N]`                                                                                                                                          |
+| Migration guides                        | `atlas ads docs migration <avatar-xsmall-to-xxsmall\|jira-spotlight\|single-step\|multi-step\|motion>`                                                                                 |
+
+Reach for the ADS MCP only when the CLI is unavailable or erroring, or for capabilities with no CLI equivalent: `ads_analyze_a11y`, `ads_analyze_localhost_a11y`, `ads_suggest_a11y_fixes`, `ads_i18n_conversion_guide`, and the broader non-ADS `atlaskit_search_components` / `atlaskit_get_components` catalog.
 
 ### Browser Support
 
@@ -163,7 +181,7 @@ treat them as progressive enhancement — degrade silently, no polyfill.
   `.agents/rules/agent-operations.md`.
   <!-- validation-freshness:end -->
 - Bundle work: use `pnpm run perf:budget:warn`, strict `pnpm run perf:budget` before shipping, and `pnpm run perf:baseline:timing -- --base-url <URL>` for route timing. Do not commit `output/perf-baseline.json`.
-- UI work also needs browser evidence and accessibility checks via `ads_analyze_a11y` / `ads_analyze_localhost_a11y`; see the extended workflow checklist.
+- UI work also needs browser evidence and accessibility checks: fetch the rules with `atlas ads docs a11y <topic>`, then scan the code with the MCP-only `ads_analyze_a11y` / `ads_analyze_localhost_a11y` (and `ads_suggest_a11y_fixes` for remediation — these have no CLI equivalent); see the extended workflow checklist.
 
 ### Debugging
 
@@ -239,9 +257,11 @@ Rules live in `.agents/rules/` (canonical; provider dirs `.cursor/`, `.claude/`,
 | `browser-screenshots.mdc` | `*` (always) |
 
 <!-- BEGIN:nextjs-agent-rules -->
+
 # This is NOT the Next.js you know
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 
-**Keep this block, including in commits.** It is part of the project's agent setup, maintained by `next dev` for every agent that works here. If it appears as an uncommitted change, that is intentional — commit it as-is. Do not remove it to clean up a diff; it will be regenerated.
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
 <!-- END:nextjs-agent-rules -->

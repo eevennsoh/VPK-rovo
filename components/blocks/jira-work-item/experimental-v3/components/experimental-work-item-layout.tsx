@@ -2,6 +2,7 @@
 
 import {
 	useCallback,
+	useLayoutEffect,
 	useMemo,
 	useRef,
 	type CSSProperties,
@@ -106,12 +107,12 @@ function DescriptionColumnShell({
 			</div>
 			<div
 				ref={scrollRef}
-				className="order-2 contents has-[[data-jira-work-item-pull-request-detail-header]]:[overflow-anchor:none] @[860px]/agentlayout:relative @[860px]/agentlayout:block @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:overscroll-y-none @[860px]/agentlayout:px-6 @[860px]/agentlayout:pt-6 @[860px]/agentlayout:pb-6"
+				className="order-2 contents has-[[data-jira-work-item-pull-request-detail-header]]:[overflow-anchor:none] @[860px]/agentlayout:relative @[860px]/agentlayout:block @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:overscroll-y-none @[860px]/agentlayout:px-6 @[860px]/agentlayout:pt-6 @[860px]/agentlayout:pb-6 @[860px]/agentlayout:has-[[data-insights-work-item-split]]:flex @[860px]/agentlayout:has-[[data-insights-work-item-split]]:flex-col @[860px]/agentlayout:has-[[data-insights-work-item-split]]:overflow-hidden"
 				data-jira-work-item-scroll-region
 				style={style}
 			>
 				<div
-					className="order-2 relative z-0 min-w-0 @[860px]/agentlayout:mx-auto @[860px]/agentlayout:flex @[860px]/agentlayout:w-full @[860px]/agentlayout:flex-col @[860px]/agentlayout:gap-y-6"
+					className="order-2 relative z-0 min-w-0 @[860px]/agentlayout:mx-auto @[860px]/agentlayout:flex @[860px]/agentlayout:w-full @[860px]/agentlayout:flex-col @[860px]/agentlayout:gap-y-6 @[860px]/agentlayout:has-[[data-insights-work-item-split]]:min-h-0 @[860px]/agentlayout:has-[[data-insights-work-item-split]]:flex-1"
 					data-jira-work-item-column-body
 					style={bodyStyle}
 				>
@@ -132,7 +133,7 @@ export function ExperimentalWorkItemLayout({
 }: Readonly<ExperimentalWorkItemLayoutProps>) {
 	const { planner } = useJiraWorkItemState();
 	const { metadataCollapsed } = usePanelLayout();
-	const { setNarrowScrollContainer, setWideScrollContainer } = useSectionNavigation();
+	const { insightsSelected, setNarrowScrollContainer, setWideScrollContainer } = useSectionNavigation();
 	const shouldReduceMotion = useReducedMotion() ?? false;
 	const showStickyComposer = planner.status === "inactive" || planner.status === "applied";
 	const {
@@ -152,6 +153,12 @@ export function ExperimentalWorkItemLayout({
 		// does not scroll, so the section spy falls back to the narrow one.
 		setWideScrollContainer(element);
 	}, [leftScrollMaskRef, setWideScrollContainer]);
+	useLayoutEffect(() => {
+		if (insightsSelected) return;
+		if (leftScrollContainerRef.current) {
+			setWideScrollContainer(leftScrollContainerRef.current);
+		}
+	}, [insightsSelected, setWideScrollContainer]);
 	const setNarrowScrollRef = useCallback((element: HTMLDivElement | null) => {
 		narrowOverflowRef(element);
 		setNarrowScrollContainer(element);

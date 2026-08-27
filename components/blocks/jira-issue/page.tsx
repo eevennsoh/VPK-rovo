@@ -8,10 +8,17 @@ import { JIRA_EPIC_DEMO_EPICS } from "@/components/blocks/jira-epic/data/demo-ep
 import {
 	JiraIssue,
 	type JiraIssueAgentActivity,
+	type JiraIssueChrome,
 	type JiraIssueCompletedAgentRun,
 	type JiraIssueGenerativeActionRequest,
+	type JiraIssuePullRequestStatus,
 } from "@/components/blocks/jira-issue";
-import type { SmartLinkItem } from "@/components/blocks/smart-link";
+import {
+	GITHUB_BRANCH_SMART_LINK_ICON,
+	GITHUB_COMMIT_SMART_LINK_ICON,
+	toPullRequestSmartLink,
+	type SmartLinkItem,
+} from "@/components/blocks/smart-link";
 import { QUESTION_CARD_SINGLE_SELECT_DEMO } from "@/components/blocks/question-card/data/questions";
 import { ASX_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v0/data/agent-chat-data";
 import { AsxRovoOverlay } from "@/components/projects/jira-golden-journeys-v0/components/jira-golden-journeys-v0-rovo-overlay";
@@ -46,19 +53,110 @@ const JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS = [
 	},
 ] as const;
 
-const JIRA_ISSUE_UNCAPTURED_WORK_SOURCE_LINK = {
-	id: "payments-migration-channel",
-	href: "#payments-migration",
-	title: "#payments-migration",
-	variant: "generic",
-	provider: { name: "Slack", logo: { kind: "third-party", name: "slack" } },
-	icon: { kind: "third-party", name: "slack" },
-	description: "The decision itself is not written down.",
-	avatars: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS.map((participant) => ({
-		name: participant.name,
-		src: participant.avatarSrc,
-	})),
-} as const satisfies SmartLinkItem;
+const JIRA_ISSUE_UNCAPTURED_GITHUB_VISUAL = { kind: "third-party", name: "github" } as const;
+const JIRA_ISSUE_UNCAPTURED_GITHUB_AVATARS = JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS.map((participant) => ({
+	name: participant.name,
+	src: participant.avatarSrc,
+}));
+
+const JIRA_ISSUE_UNCAPTURED_WORK_EXAMPLES = [
+	{
+		id: "uncaptured-pr-1840",
+		suggestedWorkItemKey: "PAY-101",
+		summary: "Fourteen extra call sites, inventoried in an unlinked pull request",
+		sourceLink: {
+			...toPullRequestSmartLink({
+				id: "uncaptured-pr-1840",
+				number: 1840,
+				title: "Fourteen extra call sites, inventoried in an unlinked pull request",
+				status: "Open",
+				files: 14,
+				additions: 312,
+				deletions: 0,
+				repository: "eevensoh/vpk-rovo",
+				branch: "inventory/forgotten-harnesses",
+				targetBranch: "main",
+				description: "eevensoh/vpk-rovo · PR #1840 · 14 files · no linked work item",
+			}),
+			title: "PR #1840",
+			avatars: JIRA_ISSUE_UNCAPTURED_GITHUB_AVATARS,
+		},
+	},
+	{
+		id: "uncaptured-pr-1862",
+		suggestedWorkItemKey: "PAY-113",
+		summary: "Overnight contract suite merged without a work item to land on",
+		sourceLink: {
+			...toPullRequestSmartLink({
+				id: "uncaptured-pr-1862",
+				number: 1862,
+				title: "Overnight contract suite merged without a work item to land on",
+				status: "Merged",
+				files: 18,
+				additions: 1240,
+				deletions: 86,
+				repository: "eevensoh/vpk-rovo",
+				branch: "agent/night-shift-contract-suite",
+				targetBranch: "main",
+				description: "eevensoh/vpk-rovo · PR #1862 · merged · no linked work item",
+			}),
+			title: "PR #1862",
+			avatars: JIRA_ISSUE_UNCAPTURED_GITHUB_AVATARS,
+		},
+	},
+	{
+		id: "uncaptured-pr-1890",
+		suggestedWorkItemKey: "PAY-102",
+		summary: "Checks failed on the adapter-delete proof, still unlinked",
+		sourceLink: {
+			...toPullRequestSmartLink({
+				id: "uncaptured-pr-1890",
+				number: 1890,
+				title: "Checks failed on the adapter-delete proof, still unlinked",
+				status: "Failed",
+				files: 41,
+				additions: 0,
+				deletions: 4180,
+				repository: "eevensoh/vpk-rovo",
+				branch: "proof/delete-legacy-gateway-adapter",
+				targetBranch: "main",
+				description: "eevensoh/vpk-rovo · PR #1890 · checks failed · no linked work item",
+			}),
+			title: "PR #1890",
+			avatars: JIRA_ISSUE_UNCAPTURED_GITHUB_AVATARS,
+		},
+	},
+	{
+		id: "uncaptured-branch-spike",
+		suggestedWorkItemKey: "PAY-102",
+		summary: "Spike branch that proves the adapter can go, still unlinked",
+		sourceLink: {
+			id: "uncaptured-branch-spike",
+			href: "https://github.com/eevensoh/vpk-rovo/tree/spike/delete-legacy-adapter",
+			title: "spike/delete-legacy-adapter",
+			variant: "generic",
+			provider: { name: "GitHub", logo: JIRA_ISSUE_UNCAPTURED_GITHUB_VISUAL },
+			icon: GITHUB_BRANCH_SMART_LINK_ICON,
+			description: "eevensoh/vpk-rovo · unlinked spike branch",
+			avatars: JIRA_ISSUE_UNCAPTURED_GITHUB_AVATARS,
+		},
+	},
+	{
+		id: "uncaptured-commit-b4c19e8",
+		suggestedWorkItemKey: "PAY-101",
+		summary: "The adapter-delete vote is recorded only as an unlinked commit",
+		sourceLink: {
+			id: "uncaptured-commit-b4c19e8",
+			href: "https://github.com/eevensoh/vpk-rovo/commit/b4c19e8",
+			title: "b4c19e8",
+			variant: "generic",
+			provider: { name: "GitHub", logo: JIRA_ISSUE_UNCAPTURED_GITHUB_VISUAL },
+			icon: GITHUB_COMMIT_SMART_LINK_ICON,
+			description: "eevensoh/vpk-rovo · b4c19e8 · never attached to a work item",
+			avatars: JIRA_ISSUE_UNCAPTURED_GITHUB_AVATARS,
+		},
+	},
+] as const satisfies readonly { id: string; suggestedWorkItemKey: string; summary: string; sourceLink: SmartLinkItem }[];
 
 const JIRA_ISSUE_DEMO_SUBTASKS = [
 	{
@@ -116,7 +214,7 @@ const JIRA_ISSUE_AWAITING_INPUT_QUESTION = {
 const JIRA_ISSUE_AWAITING_INPUT_ACTIVITIES = [
 	{
 		...JIRA_ISSUE_AGENT_ACTIVITIES[0],
-		label: "Waiting for input",
+		label: "Needs input",
 		question: JIRA_ISSUE_AWAITING_INPUT_QUESTION,
 		state: "awaiting-input",
 	},
@@ -183,18 +281,77 @@ const JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES = [
 	{ value: "agent-dismissed-work", label: "Done" },
 ] as const satisfies readonly { value: JiraIssueAgentActivityDemoState; label: string }[];
 
+function getExperimentalDemoPullRequest(
+	chrome: JiraIssueChrome,
+	agentActivityState: JiraIssueAgentActivityDemoState,
+): { pullRequestNumber?: number; pullRequestStatus?: JiraIssuePullRequestStatus } {
+	if (chrome !== "stroke") {
+		return {};
+	}
+
+	switch (agentActivityState) {
+		case "awaiting-user-input":
+			return { pullRequestNumber: 812, pullRequestStatus: "open" };
+		case "agent-completed-work":
+			return { pullRequestNumber: 812, pullRequestStatus: "failed" };
+		case "agent-dismissed-work":
+			return { pullRequestNumber: 812, pullRequestStatus: "merged" };
+		case "default":
+		case "single-agent-working":
+		case "multiple-agents-working":
+			return {};
+		default: {
+			const exhaustive: never = agentActivityState;
+			throw new Error(`Unhandled agent activity demo state: ${String(exhaustive)}`);
+		}
+	}
+}
+
 interface JiraIssuePageProps {
-	variant?: "default" | "experimental" | "uncaptured-work" | "subtasks-collapsed" | "subtasks-expanded" | "parent-epic" | "agent-activity-states";
+	variant?: "default" | "experimental" | "uncaptured-work" | "subtasks-collapsed" | "subtasks-expanded" | "parent-epic" | "agent-activity-states" | "agent-activity-states-experimental";
+}
+
+function JiraIssueUncapturedWorkDemo() {
+	const [capturedIds, setCapturedIds] = useState<ReadonlySet<string>>(() => new Set());
+	const [dismissedIds, setDismissedIds] = useState<ReadonlySet<string>>(() => new Set());
+
+	return (
+		<div
+			className="flex h-full min-h-[360px] w-full flex-col items-center justify-center gap-2 bg-surface p-6"
+			id="uncaptured-work"
+		>
+			{JIRA_ISSUE_UNCAPTURED_WORK_EXAMPLES.filter((example) => !dismissedIds.has(example.id)).map((example) => (
+				<JiraIssue
+					captured={capturedIds.has(example.id)}
+					className="w-[320px]"
+					key={example.id}
+					onCreateWorkItem={() => {
+						setCapturedIds((current) => new Set(current).add(example.id));
+					}}
+					onDismiss={() => {
+						setDismissedIds((current) => new Set(current).add(example.id));
+					}}
+					onLinkWorkItem={() => {
+						setCapturedIds((current) => new Set(current).add(example.id));
+					}}
+					participants={JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS}
+					sourceLink={example.sourceLink}
+					suggestedWorkItemKey={example.suggestedWorkItemKey}
+					summary={example.summary}
+					variant="uncaptured-work"
+				/>
+			))}
+		</div>
+	);
 }
 
 export default function JiraIssuePage({ variant = "default" }: Readonly<JiraIssuePageProps> = {}): React.ReactElement {
 	const [selectedEpicId, setSelectedEpicId] = useState("agentic-jira");
-	const [uncapturedWorkCaptured, setUncapturedWorkCaptured] = useState(false);
 	const isExperimentalVariant = variant === "experimental";
 	const isUncapturedWorkVariant = variant === "uncaptured-work";
 	const isSubtasksVariant = variant === "subtasks-collapsed" || variant === "subtasks-expanded";
 	const isParentEpicVariant = variant === "parent-epic";
-	const isAgentActivityVariant = variant === "agent-activity-states";
+	const isAgentActivityVariant = variant === "agent-activity-states" || variant === "agent-activity-states-experimental";
 	const hasCompactIssueContext = isSubtasksVariant || isParentEpicVariant;
 	const issueKey = isParentEpicVariant ? "JDSN-157" : isSubtasksVariant ? "JDSN-229" : "RFP-101";
 	const summary = isParentEpicVariant
@@ -206,25 +363,13 @@ export default function JiraIssuePage({ variant = "default" }: Readonly<JiraIssu
 	if (isAgentActivityVariant) {
 		return (
 			<RovoChatProvider agentProfiles={ASX_CHAT_AGENT_PROFILES}>
-				<JiraIssueAgentActivityStatesDemo />
+				<JiraIssueAgentActivityStatesDemo chrome={variant === "agent-activity-states-experimental" ? "stroke" : "raised"} />
 			</RovoChatProvider>
 		);
 	}
 
 	if (isUncapturedWorkVariant) {
-		return (
-			<div className="flex h-full min-h-[360px] w-full items-center justify-center bg-surface p-6">
-				<JiraIssue
-					captured={uncapturedWorkCaptured}
-					className="w-[320px]"
-					onCreateWorkItem={() => setUncapturedWorkCaptured(true)}
-					participants={JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS}
-					sourceLink={JIRA_ISSUE_UNCAPTURED_WORK_SOURCE_LINK}
-					summary="The adapter keep-or-delete argument"
-					variant="uncaptured-work"
-				/>
-			</div>
-		);
+		return <JiraIssueUncapturedWorkDemo />;
 	}
 
 	return (
@@ -264,13 +409,18 @@ export default function JiraIssuePage({ variant = "default" }: Readonly<JiraIssu
 const JIRA_ISSUE_CHAT_ISSUE_KEY = "PD-40";
 const JIRA_ISSUE_CHAT_ISSUE_SUMMARY = "Implement advanced date-range filter";
 
-function JiraIssueAgentActivityStatesDemo(): React.ReactElement {
+interface JiraIssueAgentActivityStatesDemoProps {
+	chrome?: JiraIssueChrome;
+}
+
+function JiraIssueAgentActivityStatesDemo({ chrome = "raised" }: Readonly<JiraIssueAgentActivityStatesDemoProps> = {}): React.ReactElement {
 	const [agentActivityState, setAgentActivityState] = useState<JiraIssueAgentActivityDemoState>("default");
 	// View chat / question submit / generative actions all drop into the shared
 	// Rovo floating chat with the activity's agent already selected — matching the
 	// ASX Kanban "View chat" behavior instead of a blank vanilla Rovo chat.
 	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useAsxAgentChatDemo();
 	const [pendingChatQuestion, setPendingChatQuestion] = useState<Readonly<{ submit: () => void }> | null>(null);
+	const experimentalPullRequest = getExperimentalDemoPullRequest(chrome, agentActivityState);
 	const agentActivities = agentActivityState === "single-agent-working"
 		? JIRA_ISSUE_AGENT_ACTIVITIES.slice(0, 1)
 		: agentActivityState === "multiple-agents-working"
@@ -294,7 +444,6 @@ function JiraIssueAgentActivityStatesDemo(): React.ReactElement {
 		});
 	}, [openAgentChat]);
 	const handleAgentActivityViewChat = openActivityChat;
-	const handleAgentActivityQuestionSubmit = openActivityChat;
 	const handleAgentDoneRunView = useCallback((run: JiraIssueCompletedAgentRun) => {
 		setPendingChatQuestion(null);
 		const agentId = run.id.includes(":") ? run.id.slice(run.id.indexOf(":") + 1) : run.id;
@@ -362,16 +511,18 @@ function JiraIssueAgentActivityStatesDemo(): React.ReactElement {
 					}
 					agentDoneRuns={agentActivityState === "agent-completed-work" ? JIRA_ISSUE_COMPLETED_AGENT_RUNS : undefined}
 					assigneeAvatarSrc="/avatar-user/andrea-wilson/color/asow-service-yellow.png"
+					chrome={chrome}
 					className="w-[260px]"
 					generativeAction={{
 						onSubmit: handleGenerativeActionSubmit,
 					}}
 					issueKey="PD-40"
-					onAgentActivityQuestionSubmit={handleAgentActivityQuestionSubmit}
 					onAgentActivityViewChat={handleAgentActivityViewChat}
 					onAgentDoneRunSubmit={handleAgentDoneRunSubmit}
 					onAgentDoneRunView={handleAgentDoneRunView}
 					priority="major"
+					pullRequestNumber={experimentalPullRequest.pullRequestNumber}
+					pullRequestStatus={experimentalPullRequest.pullRequestStatus}
 					subtasks={JIRA_ISSUE_DEMO_SUBTASKS}
 					subtasksCompleted={0}
 					summary="Implement advanced date-range filter"

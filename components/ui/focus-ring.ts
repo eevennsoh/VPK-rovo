@@ -28,9 +28,9 @@ export const FOCUS_RING_VISIBLE =
 export const FOCUS_RING_HAS_VISIBLE =
 	"has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50 has-[:focus-visible]:ring-offset-1 has-[:focus-visible]:ring-offset-ring";
 
-/** Held open while a descendant trigger's popover is showing. */
+/** Held open while a descendant button trigger's popover/menu is showing. */
 export const FOCUS_RING_POPUP_OPEN =
-	"has-[[data-popup-open]]:ring-3 has-[[data-popup-open]]:ring-ring/50 has-[[data-popup-open]]:ring-offset-1 has-[[data-popup-open]]:ring-offset-ring";
+	"has-[button[data-popup-open]]:ring-3 has-[button[data-popup-open]]:ring-ring/50 has-[button[data-popup-open]]:ring-offset-1 has-[button[data-popup-open]]:ring-offset-ring";
 
 /**
  * Four pixels of compensated clearance for an outward focus indicator inside

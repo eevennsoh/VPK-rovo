@@ -43,6 +43,7 @@ import {
 import { PanelLayoutProvider } from "@/components/blocks/jira-work-item/experimental-v3/context-panel-layout";
 import {
 	SectionNavigationProvider,
+	usePublishInsightsCount,
 	useSectionNavigation,
 } from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
 import { ExperimentalWorkItemDialog } from "@/components/blocks/jira-work-item/experimental-v3/components/experimental-work-item-dialog";
@@ -51,6 +52,7 @@ import { ContextPanel } from "@/components/blocks/jira-work-item/experimental-v3
 import { ContextResources } from "@/components/blocks/jira-work-item/experimental-v3/components/context-resources";
 import { PullRequestsSelect } from "@/components/blocks/jira-work-item/experimental-v3/components/pull-requests-select";
 import { WorkItemSectionNav } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-section-nav";
+import { WorkItemSidePanelResizeHandle } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-side-panel-resize-handle";
 import { ActivityPanel } from "@/components/blocks/jira-work-item/experimental-v3/components/activity-panel";
 import {
 	ActivityComposer,
@@ -93,10 +95,9 @@ import {
 } from "@/components/blocks/jira-work-item/experimental-v3/lib/pull-request-review-submit";
 import { showPullRequestReviewToast } from "@/components/blocks/jira-work-item/experimental-v3/lib/show-pull-request-review-toast";
 import { resolveInitialReviewedChapterIds } from "@/components/blocks/jira-work-item/experimental-v3/lib/resolve-initial-reviewed-chapter-ids";
+import { resolveNewInsightsCount } from "@/components/blocks/jira-work-item/experimental-v3/lib/new-insights-count";
 import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
-import { SidebarResizeHandle } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
-import { cn } from "@/lib/utils";
 
 interface ExperimentalV3JiraWorkItemBaseProps {
 	activitySessionThread?: ActivitySessionThreadConfig;
@@ -209,75 +210,47 @@ function resolvePullRequestFixCheckName(checks: readonly PullRequestCheck[]): st
 	return `${checks.length} failing checks`;
 }
 
-interface WorkItemSidePanelResizeHandleProps {
-	ariaLabel: string;
-	className?: string;
-	resize: ReturnType<typeof useSidebarResize>;
-	testId: string;
-}
-
-function WorkItemSidePanelResizeHandle({
-	ariaLabel,
-	className,
-	resize,
-	testId,
-}: Readonly<WorkItemSidePanelResizeHandleProps>) {
-	return (
-		<SidebarResizeHandle
-			aria-label={ariaLabel}
-			aria-orientation="vertical"
-			aria-valuemax={resize.maxWidth}
-			aria-valuemin={resize.minWidth}
-			aria-valuenow={resize.sidebarWidth}
-			className={cn(
-				"bottom-6! bg-transparent duration-normal ease-out-practical focus-visible:bg-bg-selected-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&>div]:h-16 [&>div]:origin-center [&>div]:transition-[opacity,background-color,scale] hover:[&>div]:scale-105 data-[active]:[&>div]:scale-105 focus-visible:[&>div]:scale-105 focus-visible:[&>div]:bg-bg-selected-bold focus-visible:[&>div]:opacity-100 [&>div]:duration-medium [&>div]:ease-out-practical motion-reduce:transition-none motion-reduce:[&>div]:scale-100 motion-reduce:[&>div]:transition-none",
-				className,
-			)}
-			data-active={resize.isResizing ? "" : undefined}
-			data-testid={testId}
-			onDoubleClick={resize.onResizeHandleDoubleClick}
-			onKeyDown={resize.onResizeHandleKeyDown}
-			onPointerDown={resize.onResizeHandlePointerDown}
-			onPointerEnter={resize.onResizeHandlePointerEnter}
-			onPointerLeave={resize.onResizeHandlePointerLeave}
-			role="separator"
-			side="left"
-			tabIndex={0}
-		/>
-	);
-}
-
 function InsightsAwareComposer({
 	hasInsights,
 	...composerProps
 }: Readonly<ComponentProps<typeof ActivityComposer> & { hasInsights: boolean }>) {
 	const { activityEvents } = useJiraWorkItemMeta();
+	const { contextResources } = useJiraWorkItemState();
 	const { insightsSelected } = useSectionNavigation();
-	const { selectLatestUnread, unreadCheckpointIds } = useJiraInsights();
+	const { unreadCheckpointIds } = useJiraInsights();
 	const activityTimestamps = useMemo(
 		() => activityEvents.flatMap((entry) => (
 			entry.createdAtMs == null ? [] : [entry.createdAtMs]
 		)),
 		[activityEvents],
 	);
+	usePublishInsightsCount(
+		resolveNewInsightsCount(
+			contextResources,
+			hasInsights ? unreadCheckpointIds.length : undefined,
+		),
+	);
 
 	return insightsSelected && hasInsights ? (
 		<JiraInsightsScrubber activityTimestamps={activityTimestamps} />
 	) : (
-		<ActivityComposer
-			{...composerProps}
-			newInsightsCount={hasInsights ? unreadCheckpointIds.length : undefined}
-			onNewInsightsSelect={hasInsights ? selectLatestUnread : undefined}
-		/>
+		<ActivityComposer {...composerProps} />
 	);
 }
 
-function InsightsAwareActivityPanel(
-	props: Readonly<ComponentProps<typeof ActivityPanel>>,
-) {
+function InsightsAwareActivityPanel({
+	surface = "activity",
+	...props
+}: Readonly<ComponentProps<typeof ActivityPanel>>) {
 	const { onSourceSelect } = useJiraInsights();
 
-	return <ActivityPanel {...props} onInsightSourceSelect={onSourceSelect} />;
+	return (
+		<ActivityPanel
+			{...props}
+			onInsightSourceSelect={onSourceSelect}
+			surface={surface}
+		/>
+	);
 }
 
 function WorkItemInsightsProvider({
@@ -768,6 +741,13 @@ function ExperimentalV3JiraWorkItemContent({
 									/>
 								)}
 								hasInsights={hasInsights}
+									insightsFeed={(
+										<InsightsAwareActivityPanel
+											activitySessionThread={activitySessionThread}
+											onOpenPullRequest={handlePullRequestSelect}
+											surface="insights"
+										/>
+									)}
 									onPullRequestChapterReviewedChange={handlePullRequestChapterReviewedChange}
 									onPullRequestInlineCommentsChange={handlePullRequestInlineCommentsChange}
 									pullRequestApprovalState={selectedPullRequestApprovalState}
@@ -787,7 +767,6 @@ function ExperimentalV3JiraWorkItemContent({
 									hasInsights={hasInsights}
 									onAgentPromptSubmit={onAgentPromptSubmit}
 									onOpenAgentChat={onOpenAgentChat}
-									onSectionSelect={selectedPullRequestIdentity ? handlePullRequestClear : undefined}
 									pullRequestFix={activePullRequestFix}
 									pullRequestReview={activePullRequestReview}
 									onSkillInvoke={onSkillInvoke}
