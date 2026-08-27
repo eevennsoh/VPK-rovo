@@ -19,7 +19,8 @@ import { cn } from "@/lib/utils";
 
 import {
 	GooeyMorphAvatarExample,
-	GooeyMorphCardsExample,
+	GooeyBendCardExample,
+	GooeyMeltCardsExample,
 	GooeyMorphEmailExample,
 	GooeyMorphMenuExample,
 	GooeyMoveSliderExample,
@@ -28,7 +29,7 @@ import {
 import { GOOEY_SOURCE_SHADOW, useGooeyDemoDrag } from "./gooey-demo-utils";
 
 type NumberKey =
-	| "blur" | "contrast" | "filterPadding"
+	| "blur" | "contrast" | "filterPadding" | "waviness" | "wavinessFreq"
 	| "x" | "y" | "scale" | "delay"
 	| "radius" | "radiusTL" | "radiusTR" | "radiusBR" | "radiusBL"
 	| "transitionStiffness" | "transitionDamping" | "transitionMass" | "transitionDuration"
@@ -38,6 +39,7 @@ type NumberKey =
 	| "cornerDuration" | "cornerDelay" | "anticipation" | "travel"
 	| "moveSpringiness" | "moveWobble" | "moveStretch" | "moveTrail"
 	| "moveStiffness" | "moveDamping" | "rawMoveStretch" | "moveTail"
+	| "bendVertical" | "bendHorizontal"
 	| "dissolveBlur" | "dissolveWarp" | "dissolvePull" | "dissolveRange"
 	| "dissolveZone" | "dissolveMix" | "dissolveGravity" | "dissolveTaper"
 	| "dissolveWarpFreq" | "dissolveFlowSpeed" | "dissolveDetail"
@@ -82,6 +84,8 @@ const DEFAULT_CONFIG: PlaygroundConfig = {
 	fill: "var(--color-surface)",
 	shadow: GOOEY_SOURCE_SHADOW,
 	filterPadding: GOOEY_DEFAULTS.filterPadding,
+	waviness: GOOEY_DEFAULTS.waviness,
+	wavinessFreq: GOOEY_DEFAULTS.wavinessFreq,
 	effect: "morph",
 	x: 36,
 	y: 0,
@@ -130,6 +134,8 @@ const DEFAULT_CONFIG: PlaygroundConfig = {
 	moveDamping: MOVE_DEFAULTS.damping,
 	rawMoveStretch: MOVE_DEFAULTS.stretch,
 	moveTail: MOVE_DEFAULTS.tail,
+	bendVertical: 0.6,
+	bendHorizontal: 0.35,
 	dissolveEnabled: false,
 	dissolveBlur: DISSOLVE_DEFAULTS.blur,
 	dissolveWarp: DISSOLVE_DEFAULTS.warp,
@@ -261,7 +267,7 @@ export default function GooeyDemo() {
 	const radius: number | CornerRadii = config.radiusMode === "corners"
 		? [config.radiusTL, config.radiusTR, config.radiusBR, config.radiusBL]
 		: config.radius;
-	const observed = config.observe || config.effect === "move" || config.morphShape || config.dissolveEnabled;
+	const observed = config.observe || config.effect === "move" || config.effect === "bend" || config.morphShape || config.dissolveEnabled;
 	const itemStyle = parseStyle(config.itemStyle);
 	const dissolve = config.dissolveEnabled ? {
 		blur: config.dissolveBlur, warp: config.dissolveWarp, pull: config.dissolvePull,
@@ -291,7 +297,8 @@ export default function GooeyDemo() {
 		stretch: config.moveStretch, trail: config.moveTrail,
 		advanced: { stiffness: config.moveStiffness, damping: config.moveDamping, stretch: config.rawMoveStretch, tail: config.moveTail },
 	};
-	const copiedValues = { root: { blur: config.blur, contrast: config.contrast, fill: config.fill, shadow: config.shadow, filterPadding: config.filterPadding }, item: { effect: config.effect, morph, move, dissolve, x: config.x, y: config.y, scale: config.scale, transition, delay: config.delay, observe: config.observe, radius, className: config.itemClassName, style: itemStyle, children: config.childrenText } };
+	const bend = { vertical: config.bendVertical, horizontal: config.bendHorizontal };
+	const copiedValues = { root: { blur: config.blur, contrast: config.contrast, fill: config.fill, shadow: config.shadow, filterPadding: config.filterPadding, waviness: config.waviness, wavinessFreq: config.wavinessFreq }, item: { effect: config.effect, morph, move, bend, dissolve, x: config.x, y: config.y, scale: config.scale, transition, delay: config.delay, observe: config.observe, radius, className: config.itemClassName, style: itemStyle, children: config.childrenText } };
 	const activeTransition: Transition = heroDrag.dragging ? { duration: 0, ease: "linear" } : transition;
 
 	function renderNumberControls(definitions: readonly NumberControlDefinition[]) {
@@ -309,6 +316,8 @@ export default function GooeyDemo() {
 					fill={config.fill}
 					shadow={config.shadow}
 					filterPadding={config.filterPadding}
+					waviness={config.waviness}
+					wavinessFreq={config.wavinessFreq}
 					className="min-h-[360px] w-full overflow-visible rounded-xl bg-bg-neutral-subtle"
 				>
 						<Gooey.Item observe radius={radius}>
@@ -323,9 +332,10 @@ export default function GooeyDemo() {
 							</button>
 						</Gooey.Item>
 						<Gooey.Item
-							effect={config.effect as "morph" | "move"}
+							effect={config.effect as "morph" | "move" | "bend"}
 							morph={morph}
 							move={move}
+							bend={bend}
 							dissolve={dissolve}
 							x={config.x}
 							y={config.y}
@@ -363,9 +373,11 @@ export default function GooeyDemo() {
 						<GUI.ColorInput id="gooey-fill" label="Fill" value={config.fill} defaultValue={DEFAULT_CONFIG.fill} format="css" onChange={setString("fill")} />
 						<GUI.TextInput id="gooey-shadow" label="Shadow" value={config.shadow} onChange={setString("shadow")} />
 						<GUI.Control id="gooey-filter-padding" label="Filter padding" value={config.filterPadding} defaultValue={DEFAULT_CONFIG.filterPadding} min={0} max={160} step={1} unit="px" onChange={setNumber("filterPadding")} />
+						<GUI.Control id="gooey-waviness" label="Waviness" value={config.waviness} defaultValue={DEFAULT_CONFIG.waviness} min={0} max={24} step={0.5} unit="px" onChange={setNumber("waviness")} />
+						<GUI.Control id="gooey-waviness-frequency" label="Wave frequency" value={config.wavinessFreq} defaultValue={DEFAULT_CONFIG.wavinessFreq} min={0.002} max={0.08} step={0.001} onChange={setNumber("wavinessFreq")} />
 					</GUI.Section>
 					<GUI.Section title="Item">
-						<GUI.Select id="gooey-effect" label="Effect" value={config.effect} defaultValue="morph" options={[{ label: "Morph", value: "morph" }, { label: "Move", value: "move" }]} onChange={setString("effect")} />
+						<GUI.Select id="gooey-effect" label="Effect" value={config.effect} defaultValue="morph" options={[{ label: "Morph", value: "morph" }, { label: "Move", value: "move" }, { label: "Bend", value: "bend" }]} onChange={setString("effect")} />
 						{renderNumberControls([{ key: "x", label: "X", min: heroBounds.minX, max: heroBounds.maxX, step: 1, unit: "px" }, { key: "y", label: "Y", min: heroBounds.minY, max: heroBounds.maxY, step: 1, unit: "px" }, { key: "scale", label: "Scale", min: 0.1, max: 2, step: 0.01 }, { key: "delay", label: "Delay", min: 0, max: 2000, step: 10, unit: "ms" }])}
 						<GUI.Toggle id="gooey-observe" label="Observe" checked={config.observe} onChange={setBoolean("observe")} />
 						<GUI.Select id="gooey-radius-mode" label="Radius mode" value={config.radiusMode} defaultValue="uniform" options={[{ label: "Uniform", value: "uniform" }, { label: "Corners", value: "corners" }]} onChange={setString("radiusMode")} />
@@ -388,6 +400,7 @@ export default function GooeyDemo() {
 						<GUI.TextInput id="gooey-corner-ease" label="Corner ease" value={config.cornerEase} onChange={setString("cornerEase")} />
 					</GUI.Section>
 					<GUI.Section title="Move" defaultOpen={false}>{renderNumberControls(MOVE_CONTROLS)}</GUI.Section>
+					<GUI.Section title="Bend" defaultOpen={false}>{renderNumberControls([{ key: "bendVertical", label: "Vertical bow", min: 0, max: 1, step: 0.01 }, { key: "bendHorizontal", label: "Horizontal caps", min: 0, max: 1, step: 0.01 }])}</GUI.Section>
 					<GUI.Section title="Dissolve" defaultOpen={false}>
 						<GUI.Toggle id="gooey-dissolve-enabled" label="Dissolve" checked={config.dissolveEnabled} onChange={setBoolean("dissolveEnabled")} />
 						<GUI.Toggle id="gooey-dissolve-active" label="Active" checked={config.dissolveActive} onChange={setBoolean("dissolveActive")} />
@@ -404,7 +417,8 @@ export {
 	GooeyMorphMenuExample,
 	GooeyMorphEmailExample,
 	GooeyMorphAvatarExample,
-	GooeyMorphCardsExample,
+	GooeyMeltCardsExample,
+	GooeyBendCardExample,
 	GooeyMoveTabsExample,
 	GooeyMoveSliderExample,
 };

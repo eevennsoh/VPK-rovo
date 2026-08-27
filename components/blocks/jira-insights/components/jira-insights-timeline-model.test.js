@@ -3,6 +3,7 @@ const test = require("node:test");
 
 const {
 	buildJiraInsightsTimelineTicks,
+	findNearestVisibleTimelineButtonIndex,
 	findNearestTimelineCheckpointIndex,
 	getTimelineKeyTargetIndex,
 	getTimelineTickHeight,
@@ -46,6 +47,24 @@ test("track positions resolve to the nearest checkpoint", () => {
 	assert.equal(findNearestTimelineCheckpointIndex(151, 300, 3), 1);
 	assert.equal(findNearestTimelineCheckpointIndex(400, 300, 3), 2);
 	assert.equal(findNearestTimelineCheckpointIndex(0, 0, 0), null);
+});
+
+test("visible checkpoint selection reads invariant viewport geometry once", () => {
+	let viewportRectReads = 0;
+	const viewport = {
+		clientWidth: 200,
+		scrollLeft: 100,
+		getBoundingClientRect() {
+			viewportRectReads += 1;
+			return { left: 40 };
+		},
+	};
+	const buttons = [60, 150, 260].map((left) => ({
+		getBoundingClientRect: () => ({ left, width: 20 }),
+	}));
+
+	assert.equal(findNearestVisibleTimelineButtonIndex(viewport, buttons), 1);
+	assert.equal(viewportRectReads, 1);
 });
 
 test("timeline ticks interleave ordinary activity with insight landmarks without duplicate dates", () => {
