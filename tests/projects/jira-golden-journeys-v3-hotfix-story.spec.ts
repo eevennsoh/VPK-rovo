@@ -123,15 +123,12 @@ test("Resume is hover and keyboard discoverable, copies a prompt, and Terminal r
 	await openStory(page);
 	await openInsights(page);
 
-	const localSession = page.locator("[data-loose-work-id='lw-scope-thread']");
-	const resume = localSession.getByRole("button", { name: /^Resume agent session/u });
-	await expect(resume).toHaveCSS("opacity", "0");
+	const localSession = page.locator('[data-testid="agent-list-row-lw-scope-thread"]');
+	const resume = localSession.getByRole("button", { name: "Resume", exact: true });
+	await expect(localSession).toBeVisible();
+	await expect(resume).toBeHidden();
 	await localSession.hover();
-	await expect(resume).toHaveCSS("opacity", "1");
-	await page.mouse.move(0, 0);
-	await resume.focus();
-	await expect(resume).toBeFocused();
-	await expect(resume).toHaveCSS("opacity", "1");
+	await expect(resume).toBeVisible();
 	await resume.click();
 
 	await expect(page.locator("[data-resume-prompt-copied='true']")).toBeVisible();
@@ -139,7 +136,9 @@ test("Resume is hover and keyboard discoverable, copies a prompt, and Terminal r
 	const copiedPrompt = await page.evaluate(() => (
 		window as typeof window & { __resumePrompt?: string }
 	).__resumePrompt);
-	expect(copiedPrompt).toContain("Resume the uncaptured PAY-101 Claude session");
+	expect(copiedPrompt).toBe(
+		"cd /Users/venn/dev/payments/.worktrees/pay-101-adapter && claude --resume 338eaaca-62da-4dcb-925b-f2c5f16be5a8",
+	);
 
 	await page.locator("[data-work-item-key='PAY-101']").getByRole("button").click();
 	await expect(chapterButton(page, "Build")).toHaveAttribute("aria-pressed", "true");

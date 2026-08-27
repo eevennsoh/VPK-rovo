@@ -129,7 +129,9 @@ test("Pulse anchors exactly the parts the outline made marks for", () => {
 	// call `toPulseAnchorId`, and the article decides what is anchored with
 	// `toPulseSections` — the same helper `buildPulseOutline` uses to decide what
 	// earns a mark. A mark with no anchor scrolls the reader nowhere.
-	assert.match(SOURCES.story, /toPulseAnchorId,\s*toPulseSections,/u);
+	assert.match(SOURCES.story, /toPulseAnchorId,/u);
+	assert.match(SOURCES.story, /toPulseSections,/u);
+	assert.match(SOURCES.story, /toPulseSectionStats,/u);
 	assert.match(SOURCES.story, /const anchoredSections = new Set\(toPulseSections\(snapshot\)\);/u);
 	assert.match(SOURCES.story, /const insightId = toPulseAnchorId\(snapshot\.id\);/u);
 	assert.match(SOURCES.story, /id=\{insightId\}\s*ref=\{anchorRef\(insightId\)\}/u);
@@ -148,6 +150,34 @@ test("Pulse anchors exactly the parts the outline made marks for", () => {
 	assert.match(SOURCES.stream, /anchorRef=\{anchorRef\}/u);
 });
 
+test("Pulse story stats jump to the same section anchors the outline marked", () => {
+	// The ruled list under the faces is a TOC, not a second set of numbers: each
+	// row is an in-page link to a section the outline already made a mark for,
+	// using the same id helper, and the down arrow is the affordance rather than
+	// a second control. Native hash scrolling would miss the article's scrollport,
+	// so the click is intercepted and handed to the one jump the ruler uses.
+	assert.match(SOURCES.story, /toPulseSectionStats\(snapshot, \{/u);
+	assert.match(SOURCES.story, /href=\{`#\$\{link\.id\}`\}/u);
+	assert.match(SOURCES.story, /event\.preventDefault\(\);\s*onGoToEntry\(link\.id\);/u);
+	assert.match(
+		SOURCES.story,
+		/min-w-0 truncate transition-colors duration-xxshort ease-out-practical group-hover\/stat-link:text-text group-focus-visible\/stat-link:text-text motion-reduce:transition-none/u,
+	);
+	assert.match(
+		SOURCES.story,
+		/opacity-0 transition-opacity duration-xxshort ease-out-practical group-hover\/stat-link:opacity-100 group-focus-visible\/stat-link:opacity-100 motion-reduce:transition-none/u,
+	);
+	assert.match(SOURCES.story, /render=\{<ArrowDownIcon label="" size="small" \/>\}/u);
+	assert.doesNotMatch(
+		SOURCES.story.replaceAll("aria-hidden", ""),
+		/hidden[\s\S]{0,80}ArrowDownIcon|ArrowDownIcon[\s\S]{0,80}hidden/u,
+	);
+	assert.match(SOURCES.stream, /onGoToEntry=\{onGoToEntry\}/u);
+	assert.match(SOURCES.shell, /onGoToEntry=\{handleSelectEntry\}/u);
+	assert.doesNotMatch(SOURCES.stream, /stats: snapshot\.stats/u);
+	assert.doesNotMatch(SOURCES.story, /PulseStat/u);
+});
+
 test("Pulse absorbs sub-pixel jump rounding in the outline, not in the shell", () => {
 	// A jump parks its anchor exactly on the reading line and browser scroll
 	// rounding then leaves it a hundredth of a pixel short — measured at
@@ -157,10 +187,10 @@ test("Pulse absorbs sub-pixel jump rounding in the outline, not in the shell", (
 	//
 	// That threshold now defaults to a pixel, so the correction lives with the
 	// arithmetic that needs it. The shell wraps the handlers to suppress the
-	// top fade on a chevron jump; it still must not nudge the scrollport.
+	// top fade on a start-aligned jump; it still must not nudge the scrollport.
 	assert.doesNotMatch(SOURCES.shell, /JUMP_SETTLE_PX/u);
 	assert.doesNotMatch(SOURCES.shell, /scrollBy\(/u, "the shell no longer corrects the outline's rounding");
-	assert.match(SOURCES.shell, /scrollToEntry\(id\)/u);
+	assert.match(SOURCES.shell, /scrollToEntry\(id, \{ align: "start" \}\)/u);
 	assert.match(SOURCES.shell, /scrollToSnapshot\(snapshotIndex, options\)/u);
 });
 
@@ -230,12 +260,25 @@ test("Pulse keeps focus alive through in-place commits, and pins header jumps to
 	assert.match(SOURCES.story, /onGoToIndex\(nextIndex, \{ align: "start" \}\)/u);
 	assert.match(SOURCES.reading, /scrollToEntry\(entry\.id, options\)/u);
 	assert.match(SOURCES.reading, /Number\.parseFloat\(scrollportStyle\.paddingTop\) \|\| 0/u);
-	// Chevron `align: "start"` pins the insight header to the scroller top
-	// (plus the 4px focus-ring inset). A reserved fade-band scroll-padding
-	// used to jump that row 52px down so a CSS top mask would not cover the
-	// buttons — the top fade is an overlay now, so that offset is gone. The
-	// overlay still veils the nav if it paints, so the shell suppresses it
-	// for the chevron jump and shows it for every other clipped rest state.
+	assert.match(SOURCES.reading, /measureAlignmentRef\.current = align/u);
+	assert.match(SOURCES.reading, /toPulseMeasureLineY\(/u);
+	assert.match(SOURCES.reading, /addEventListener\("scroll", handleUserScroll/u);
+	assert.match(SOURCES.reading, /new ResizeObserver\(schedule\)/u);
+	assert.match(SOURCES.shell, /scrollToEntry\(id, \{ align: "start" \}\)/u);
+	assert.match(SOURCES.shell, /runStartAlignedJump\(\(\) => \{\s*scrollToEntry\(id, \{ align: "start" \}\);/u);
+	assert.match(SOURCES.shell, /runStartAlignedJump\(\(\) => \{\s*scrollToSnapshot\(snapshotIndex, options\);/u);
+	// The story column owns the gap between insight and section blocks, so a
+	// subsection jump parks the heading rather than the 32px spacer that used
+	// to live inside the scroll target.
+	assert.match(SOURCES.story, /className="flex min-w-0 flex-col gap-8"/u);
+	assert.doesNotMatch(SOURCES.story, /className=\{cn\("mt-8/u);
+	// Start alignment pins the destination section to the scroller top (plus
+	// the 4px focus-ring inset). Header chevrons and ruler scrubs share that
+	// pin. A reserved fade-band scroll-padding used to jump the row 52px down
+	// so a CSS top mask would not cover the buttons — the top fade is an
+	// overlay now, so that offset is gone. The overlay still veils the
+	// destination if it paints, so the shell suppresses it for the start-
+	// aligned jump and shows it for every other clipped rest state.
 	assert.doesNotMatch(SOURCES.shell, /scrollPaddingTop/u);
 	assert.doesNotMatch(SOURCES.shell, /buildScrollMaskStyle/u);
 	assert.doesNotMatch(SOURCES.shell, /fadeTop: false/u);
@@ -258,12 +301,15 @@ test("Pulse keeps focus alive through in-place commits, and pins header jumps to
 		/<div className=\{cn\("flex min-h-6 min-w-0 items-center", MEASURE\)\}>[\s\S]*<PulseStoryInsightNav/u,
 	);
 	assert.doesNotMatch(SOURCES.shell, /Previous insight|Next insight|ChevronUp|ChevronDown/u);
-	// Both commit actions keep one element mounted across the state change.
-	assert.match(SOURCES.signals, /aria-disabled=\{isRequested\}/u);
-	assert.match(SOURCES.signals, /if \(isRequested\) return;/u);
+	// Requested actions stay on the same NextBestAction row; a second
+	// activation is a no-op so focus cannot jump to the document body.
+	assert.match(SOURCES.signals, /if \(requestedActionIds\.has\(item\.id\)\) return;/u);
+	assert.match(SOURCES.signals, /<NextBestAction className="mt-3" items=\{items\} onAct=\{handleAct\} \/>/u);
 	assert.match(SOURCES.rail, /captured=\{capturedIds\.has\(item\.id\)\}/u);
 	assert.match(SOURCES.rail, /onCreateWorkItem=\{\(\) => onCapture\(item\)\}/u);
+	assert.match(SOURCES.rail, /onDismiss=\{\(\) => onDismiss\(item\)\}/u);
 	assert.match(SOURCES.rail, /onLinkWorkItem=\{\(\) => onCapture\(item\)\}/u);
+	assert.match(SOURCES.rail, /suggestedWorkItemKey=\{suggestPulseLooseWorkItemKey\(item, workItems\)\}/u);
 	assert.doesNotMatch(SOURCES.rail, /aria-disabled|aria-live/u, "the shared Jira Issue variant owns the action contract");
 
 	// Scroll position is not a focus change, so the reading position still needs
@@ -300,6 +346,18 @@ test("Pulse Insights always paints a bottom scroll mask above the composer", () 
 	);
 });
 
+test("Pulse keeps repeated story sections out of landmark navigation", () => {
+	// The whole timeline is already one named region with a ruler for navigation.
+	// Repeating a named region for every insight and subsection creates several
+	// indistinguishable landmarks, so the semantic headings stay unlabelled.
+	assert.doesNotMatch(SOURCES.story, /<section aria-labelledby=/u);
+	assert.doesNotMatch(SOURCES.signals, /<section aria-labelledby=/u);
+	assert.match(SOURCES.story, /<h2 className=\{cn\("mt-6 text-pretty text-text", MEASURE\)\} style=\{HEADLINE_STYLE\}>/u);
+	assert.match(SOURCES.story, /<PulseSectionLabel>\{toSectionHeading\("artifacts"\)\}<\/PulseSectionLabel>/u);
+	assert.match(SOURCES.signals, /<PulseSectionLabel>\{toSectionHeading\("attention"\)\}<\/PulseSectionLabel>/u);
+	assert.match(SOURCES.signals, /<PulseSectionLabel>\{toSectionHeading\("actions"\)\}<\/PulseSectionLabel>/u);
+});
+
 test("Pulse styles stay on semantic tokens and never render with a logical AND", () => {
 	for (const [name, source] of Object.entries(SOURCES)) {
 		assert.doesNotMatch(source, /(?:bg|text|border)-\[var\(--ds-/u, `${name} bypasses the semantic token classes`);
@@ -323,9 +381,9 @@ test("Pulse keeps a quiet member selectable and lets absence carry the signal", 
 	// on exactly the snapshot that needs explaining most.
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /aria-pressed=\{isSelected\}/u);
 	assert.doesNotMatch(PULSE_MODE_CONTROLS_SOURCE, /disabled=|cursor-not-allowed/u);
-	// Clicking the pressed face is the way out of the filter, from either row.
+	// Clicking the pressed header face is the way out of the filter.
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /onSelectedMemberIdChange\(isSelected \? null : member\.id\)/u);
-	assert.match(SOURCES.story, /onSelectMember\(isSelected \? null : member\.id\)/u);
+	assert.doesNotMatch(SOURCES.story, /onSelectMember\(isSelected \? null : member\.id\)/u);
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /aria-label=\{isSelected\s*\?\s*`Clear filter: \$\{member\.name\}`/u);
 	// The work columns are a read-out: no tab stop, no drag affordance.
 	assert.match(SOURCES.rail, /draggable=\{false\}/u);
@@ -334,8 +392,9 @@ test("Pulse keeps a quiet member selectable and lets absence carry the signal", 
 	assert.match(SOURCES.rail, /<JiraIssue[\s\S]*chrome="stroke"/u);
 	assert.match(SOURCES.rail, /<JiraIssue[\s\S]*variant="uncaptured-work"/u);
 	// Agent assignees on work-item cards reuse the roster hexagon, not a circle photo.
-	assert.match(SOURCES.rail, /assigneeAvatarShape=\{assignee\?\.kind === "agent" \? "hexagon" : "circle"\}/u);
-	assert.match(SOURCES.rail, /memberLookup\.get\(workItem\.assigneeId\)/u);
+	assert.match(SOURCES.rail, /assigneeAvatarShape=\{face\.kind === "agent" \? "hexagon" : "circle"\}/u);
+	assert.match(SOURCES.rail, /resolvePulseWorkItemFace\(workItem, memberLookup, selectedMember\)/u);
+	assert.match(SOURCES.shell, /selectedMember=\{pulse\.selectedMember\}/u);
 });
 
 test("Pulse rail hangs everything off one left edge and one right edge", () => {
@@ -355,22 +414,43 @@ test("Pulse rail hangs everything off one left edge and one right edge", () => {
 	// implementation inside Pulse.
 	assert.doesNotMatch(SOURCES.rail, /Produced in this window but never landed in a work item/u);
 	assert.doesNotMatch(SOURCES.rail, /Capture it before it disappears/u);
+	assert.doesNotMatch(SOURCES.rail, /touched in this window/u);
+	assert.doesNotMatch(SOURCES.rail, /scopedToFirstName/u);
+	assert.doesNotMatch(SOURCES.shell, /scopedToFirstName/u);
 	assert.match(SOURCES.rail, /<JiraIssue[\s\S]*variant="uncaptured-work"/u);
 	assert.match(SOURCES.rail, /captured=\{capturedIds\.has\(item\.id\)\}/u);
 	assert.match(SOURCES.rail, /onCreateWorkItem=\{\(\) => onCapture\(item\)\}/u);
+	assert.match(SOURCES.rail, /onDismiss=\{\(\) => onDismiss\(item\)\}/u);
 	assert.match(SOURCES.rail, /onLinkWorkItem=\{\(\) => onCapture\(item\)\}/u);
+	assert.match(SOURCES.rail, /suggestedWorkItemKey=\{suggestPulseLooseWorkItemKey\(item, workItems\)\}/u);
+	assert.match(SOURCES.rail, /githubWork = looseWork\.filter\(isPulseGithubLooseWork\)\.filter\(\(item\) => !dismissedIds\.has\(item\.id\)\)/u);
+	assert.match(
+		SOURCES.rail,
+		/const sessionItems = toPulseSessionItems\(\s*looseWork.filter\(\(item\) => !dismissedIds.has\(item\.id\)\),\s*members,\s*\);/u,
+	);
+	assert.match(
+		SOURCES.rail,
+		/<JiraIssue[\s\S]*variant="uncaptured-work"[\s\S]*<AgentList[\s\S]*flyout="none"[\s\S]*items=\{sessionItems\}[\s\S]*variant="uncaptured"/u,
+	);
+	assert.match(SOURCES.rail, /capturedItemIds=\{capturedIds\}/u);
+	assert.match(SOURCES.rail, /onCopyResume=\{\(item\) => \{/u);
+	assert.doesNotMatch(SOURCES.rail, /variant="compact"/u);
 	assert.match(SOURCES.rail, /const participants = toUncapturedParticipants\(item, memberLookup\);/u);
 	assert.match(SOURCES.rail, /participants=\{participants\}/u);
 	assert.match(SOURCES.rail, /sourceLink=\{createPulseLooseWorkSmartLink\(item, participants\)\}/u);
 	assert.match(SOURCES.rail, /toPullRequestSmartLink/u);
-	assert.match(SOURCES.rail, /GitHub: \{ kind: "third-party", name: "github" \}/u);
-	assert.match(SOURCES.rail, /Claude: \{ kind: "third-party", name: "claude" \}/u);
+	assert.match(SOURCES.rail, /GITHUB_BRANCH_SMART_LINK_ICON/u);
+	assert.match(SOURCES.rail, /GITHUB_COMMIT_SMART_LINK_ICON/u);
+	assert.match(SOURCES.rail, /PULSE_GITHUB_SOURCE_VISUAL: SmartLinkVisual = \{ kind: "third-party", name: "github" \}/u);
+	assert.doesNotMatch(SOURCES.rail, /name: "claude"/u);
 	assert.doesNotMatch(SOURCES.rail, /Slack: \{ kind: "third-party", name: "slack" \}/u);
 	assert.doesNotMatch(SOURCES.rail, /Loom: \{ kind: "atlassian", name: "loom" \}/u);
-	assert.match(SOURCES.data, /export const PULSE_SPACE_REPOSITORY = "eevensoh\/vpk-rovo"/u);
-	assert.match(SOURCES.data, /kind: "pull-request"/u);
-	assert.match(SOURCES.data, /kind: "agent-session"/u);
-	assert.match(SOURCES.data, /host: "local"/u);
+	assert.match(SOURCES.data, /export \{ PULSE_SPACE_REPOSITORY \} from "\.\/pulse-loose-work"/u);
+	assert.match(SOURCES.looseWork, /export const PULSE_SPACE_REPOSITORY = "eevensoh\/vpk-rovo"/u);
+	assert.match(SOURCES.looseWork, /kind: "pull-request"/u);
+	assert.match(SOURCES.looseWork, /kind: "agent-session"/u);
+	assert.match(SOURCES.looseWork, /kind: "commit"/u);
+	assert.match(SOURCES.looseWork, /host: "local"/u);
 	assert.doesNotMatch(SOURCES.rail, /PulseLooseWorkRow|suggestedAction/u);
 	assert.doesNotMatch(SOURCES.rail, /Create work item|AvatarGroup|CheckMarkIcon/u);
 });
@@ -406,6 +486,13 @@ test("Pulse is a toggle on the board's own control row, not a separate tab", () 
 	assert.ok(!existsSync(join(PULSE_DIR, "..", "experimental-view-tabs.tsx")), "the tab component should be retired, not left beside its replacement");
 
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /import \{ ExperimentalPulse \} from "\.\/pulse\/experimental-pulse";/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /dismissedLooseWorkIds=\{dismissedLooseWorkIds\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onDismissLooseWork=\{handleDismissLooseWork\}/u);
+	assert.match(SOURCES.shell, /dismissedIds=\{dismissedLooseWorkIds\}/u);
+	// The mode may be driven from outside — the route mounts a floating insights
+	// nudge that opens Insights — so the local state is the fallback half of a
+	// controlled pair rather than the only owner.
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const \[localMode, setLocalMode\] = useState<ExperimentalJiraKanbanMode>\("board"\);/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const mode = controlledMode \?\? localMode;/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const isPulse = mode === "pulse";/u);
 	// The control row stays up in Pulse. Board mode keeps the board assignee
@@ -422,9 +509,12 @@ test("Pulse is a toggle on the board's own control row, not a separate tab", () 
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /\{facepile \?\? \(/u);
 });
 
-test("the pressed Insights label uses a blue token that passes on its selected surface", () => {
-	assert.match(PULSE_MODE_CONTROLS_SOURCE, /border-border-selected text-text-accent-blue-bolder!/u);
-	assert.doesNotMatch(PULSE_MODE_CONTROLS_SOURCE, /text-text-selected/u);
+test("the pressed Insights label uses selected blue text on its selected surface", () => {
+	assert.match(
+		PULSE_MODE_CONTROLS_SOURCE,
+		/border-border-selected text-text-selected! \[&_svg\]:text-icon-selected!/u,
+	);
+	assert.doesNotMatch(PULSE_MODE_CONTROLS_SOURCE, /text-text-accent-blue-bolder/u);
 });
 
 test("Experimental board mode supports controlled and uncontrolled composition", () => {
@@ -451,8 +541,12 @@ test("Insights routes only opted-in work items and local sessions", () => {
 	assert.match(SOURCES.rail, /tabIndex=\{isInteractive \? undefined : -1\}/u);
 	assert.match(SOURCES.rail, /data-loose-work-id=\{item\.id\}/u);
 	assert.match(SOURCES.rail, /item\.kind === "agent-session"/u);
-	assert.match(SOURCES.rail, /isLooseWorkResumable\?\.\(item\) \?\? true/u);
-	assert.match(SOURCES.rail, /onResumeAgentSession=\{\(\) => onResumeLooseWork\(item\)\}/u);
+	assert.match(SOURCES.rail, /isLooseWorkResumable\?\.\(session\) \?\? true/u);
+	assert.match(SOURCES.rail, /onView=\{/u);
+	assert.doesNotMatch(SOURCES.rail, /canViewItem=/u);
+	assert.match(SOURCES.stream, /onWorkItemClick\?: \(workItem: PulseWorkItem\) => void;/u);
+	assert.match(SOURCES.stream, /onViewAttention=\{handleViewAttention\}/u);
+	assert.match(SOURCES.shell, /<PulseStream[\s\S]*onWorkItemClick=\{onWorkItemClick\}/u);
 });
 
 test("Insights owns the unread activity pill instead of a separate Timeline button", async () => {
@@ -504,6 +598,24 @@ test("Experimental board header keeps Filter clickable and badges new timeline a
 	);
 });
 
+test("Experimental board header opens the production Group picker without regrouping", () => {
+	const groupMenu = readFileSync(join(EXPERIMENTAL_DIR, "components", "board-group-menu.tsx"), "utf8");
+	const groupOptions = readFileSync(join(EXPERIMENTAL_DIR, "data", "board-group-options.ts"), "utf8");
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /<BoardGroupMenu compact=\{compact\} surfaceLabel=\{surfaceLabel\} \/>/u);
+	assert.doesNotMatch(
+		EXPERIMENTAL_HEADER_SOURCE,
+		/aria-disabled[\s\S]*Group \$\{surfaceLabel\}/u,
+	);
+	assert.match(groupMenu, /aria-label=\{`Group \$\{surfaceLabel\}`\}/u);
+	assert.doesNotMatch(groupMenu, /aria-disabled/u);
+	assert.match(
+		groupOptions,
+		/"Agent"[\s\S]*"Assignee"[\s\S]*"Atlassian Project"[\s\S]*"Epic"[\s\S]*"Labels"[\s\S]*"Priority"[\s\S]*"Subtask"/u,
+	);
+	assert.match(groupMenu, /onSelect=\{\(\) => undefined\}/u);
+	assert.doesNotMatch(withoutComments(groupMenu), /setSelected|selectedId/u);
+});
+
 test("Kanban column add-agent controls use the AI agent add icon", () => {
 	assert.match(DEFAULT_BOARD_SOURCE, /import AiAgentAddIcon from "@atlaskit\/icon-lab\/core\/ai-agent-add"/u);
 	assert.match(DEFAULT_BOARD_SOURCE, /render=\{<AiAgentAddIcon label="" \/>\}/u);
@@ -514,12 +626,13 @@ test("Kanban column add-agent controls use the AI agent add icon", () => {
 	assert.doesNotMatch(experimentalBoard, /import AiAgentIcon from "@atlaskit\/icon\/core\/ai-agent"/u);
 });
 
-test("Pulse keeps one member filter across the header facepile and the story faces", () => {
-	// One selection, three places it can be driven from: the header facepile,
-	// the contributor faces, and the story's own clear control. The filter used
-	// to be one more thing `usePulseTimeline` owned; it is its own hook now, so
-	// exactly one hook owns each piece of state and the shell can resolve the
-	// filter first — the reading position re-keys on it.
+test("Pulse keeps one member filter on the header facepile, not the story attribution faces", () => {
+	// One selection, two places it can be driven from: the header facepile and
+	// the story's own clear control. Attribution faces under the headline name
+	// who worked in the window; they are not a second roster.
+	// The filter used to be one more thing `usePulseTimeline` owned; it is its
+	// own hook now, so exactly one hook owns each piece of state and the shell
+	// can resolve the filter first — the reading position re-keys on it.
 	assert.match(SOURCES.hook, /export function usePulseMemberFilter\(/u);
 	assert.match(SOURCES.hook, /const isControlled = selectedMemberId !== undefined;/u);
 	assert.match(SOURCES.hook, /onSelectedMemberIdChange\?\.\(memberId\);/u);
@@ -549,20 +662,21 @@ test("Pulse keeps one member filter across the header facepile and the story fac
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /member\.kind === "human" \? "ring-2 ring-surface" : null/u);
 	assert.doesNotMatch(PULSE_MODE_CONTROLS_SOURCE, /"ring-2 ring-surface transition-opacity/u);
 	// The contributor facepile uses the same primitive and a 16px wrapper.
-	// Keeping the avatar as a direct child of a 16px flex button removes the
-	// inline list/button baseline that made the old row 29px and top-heavy.
+	// Keeping the avatar as a direct child of a 16px flex span removes the
+	// inline list baseline that made the old row 29px and top-heavy.
 	assert.match(SOURCES.story, /import \{ Avatar, AvatarFallback, AvatarGroup, AvatarImage \} from "@\/components\/ui\/avatar";/u);
 	assert.match(SOURCES.story, /<span aria-hidden className=\{cn\("shrink-0", PULSE_ROW_META\)\}>By<\/span>/u);
 	assert.match(SOURCES.story, /<AvatarGroup[\s\S]*label="By contributors in this window"[\s\S]*size="xs"/u);
-	assert.match(SOURCES.story, /className="focus-visible:ring-ring\/50 flex size-4 shrink-0 items-center justify-center/u);
+	assert.match(SOURCES.story, /className="flex size-4 shrink-0 items-center justify-center"/u);
 	assert.match(SOURCES.story, /size="xs"/u);
-	assert.match(SOURCES.story, /member\.kind === "human" \? "ring-2 ring-surface" : null/u);
-	assert.match(SOURCES.story, /member\.kind === "agent" && isSelected \? "\[&>svg\]:text-border-selected!" : null/u);
+	assert.match(SOURCES.story, /member\.kind === "human" \? "ring-2 ring-surface" : undefined/u);
+	assert.doesNotMatch(SOURCES.story, /ring-border-selected!/u);
+	assert.doesNotMatch(SOURCES.story, /Clear filter:/u);
 	assert.doesNotMatch(SOURCES.story, /"duration-normal ease-out-practical ring-2 ring-surface transition-opacity/u);
 	// Agents keep the hexagon everywhere the roster is drawn.
 	assert.match(PULSE_MODE_CONTROLS_SOURCE, /shape=\{member\.kind === "agent" \? "hexagon" : "circle"\}/u);
 	assert.match(SOURCES.story, /shape=\{member\.kind === "agent" \? "hexagon" : "circle"\}/u);
-	assert.match(SOURCES.rail, /assigneeAvatarShape=\{assignee\?\.kind === "agent" \? "hexagon" : "circle"\}/u);
+	assert.match(SOURCES.rail, /assigneeAvatarShape=\{face\.kind === "agent" \? "hexagon" : "circle"\}/u);
 });
 
 test("Pulse stays inside the experimental variant", () => {
@@ -764,8 +878,15 @@ test("Pulse eyebrow and section labels match the Activity heading rung", () => {
 		assert.doesNotMatch(source, /uppercase/u, `${name} does not uppercase labels`);
 	}
 	// The eyebrow names the chapter and when this outcome was last updated.
+	// A roster filter must not prefix the selected member — that name lives
+	// on the facepile, not in this label.
 	assert.match(SOURCES.story, /className=\{cn\("min-w-0 truncate", PULSE_EYEBROW\)\}/u);
-	assert.match(SOURCES.story, /toPulseInsightEyebrow\(snapshot, member\?\.name \?\? null\)/u);
+	assert.match(SOURCES.story, /toPulseInsightEyebrow\(snapshot\)/u);
+	assert.doesNotMatch(SOURCES.story, /toPulseInsightEyebrow\(snapshot, member/u);
+	assert.match(SOURCES.marks, /export function toPulseInsightEyebrow\(snapshot: PulseInsightEyebrow\): string/u);
+	assert.doesNotMatch(SOURCES.marks, /memberName \? `\$\{memberName\} · \$\{base\}`/u);
+	assert.match(SOURCES.story, /toPulseInsightHeadline\(snapshot, contribution\)/u);
+	assert.doesNotMatch(SOURCES.story, /headline = member === null \? snapshot\.title : member\.name/u);
 	assert.doesNotMatch(SOURCES.story, /snapshot\.rangeLabel/u);
 	// Row data is not a label: the quiet marker and the group names are sentence
 	// case. The roster's own group labels left with it, and so did the "3 of 7"
@@ -776,12 +897,12 @@ test("Pulse eyebrow and section labels match the Activity heading rung", () => {
 	assert.doesNotMatch(PULSE_MODE_CONTROLS_SOURCE, /uppercase/u);
 	assert.doesNotMatch(SOURCES.story, /tabular-nums text-text-subtlest"/u, "the snapshot counter left with the chevrons");
 	assert.doesNotMatch(SOURCES.stream, /uppercase/u, "the article's separators are rules, not labels");
-	// Both signal sections share one row shape, so every row hangs off the same
-	// two edges regardless of how wide its own button happens to be.
+	// The epic brief still hangs keys off a reserved track. Actions left that
+	// row shape for the shared next-best-action block.
 	assert.match(type, /PULSE_ROW_KEY_TRACK =\s*\n?\s*"mt-0\.5 w-16 shrink-0/u);
-	assert.match(type, /PULSE_ROW_ACTION_TRACK = "flex w-36 shrink-0 justify-end"/u);
-	assert.match(SOURCES.signals, /<span aria-hidden=\{workItemKey === undefined\} className=\{PULSE_ROW_KEY_TRACK\}>/u);
-	assert.match(SOURCES.signals, /<div className=\{PULSE_ROW_ACTION_TRACK\}>\{trailing\}<\/div>/u);
+	assert.doesNotMatch(type, /PULSE_ROW_ACTION_TRACK/u);
+	assert.doesNotMatch(SOURCES.signals, /PULSE_ROW_KEY_TRACK/u);
+	assert.doesNotMatch(SOURCES.signals, /PULSE_ROW_ACTION_TRACK/u);
 	assert.doesNotMatch(SOURCES.signals, /border-l-2/u, "the two signal sections share one list rhythm");
 	// Section labels restate their sentence-case name for the accessibility tree.
 	assert.match(SOURCES.signals, /<h3 aria-label=\{children\}/u);

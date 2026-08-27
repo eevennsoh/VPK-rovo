@@ -7,8 +7,8 @@ import { Lozenge } from "@/components/ui/lozenge";
 /**
  * Renders one Pulse outcome string with issue-key lozenges and type-name code.
  *
- * Shared by the story paragraphs, member-scoped summaries, and the signal /
- * action rows so every insight uses the same highlighter.
+ * Shared by the story paragraphs and member-scoped summaries so every insight
+ * uses the same highlighter.
  */
 export function PulseProseText({ text }: Readonly<{ text: string }>) {
 	return tokenizePulseProse(text).map((token, index) => {

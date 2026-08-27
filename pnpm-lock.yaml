@@ -420,6 +420,9 @@ importers:
       linkedom:
         specifier: ^0.18.13
         version: 0.18.13
+      liquid-gooey:
+        specifier: 0.2.1
+        version: 0.2.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       media-chrome:
         specifier: ^4.19.2
         version: 4.19.2(react@19.2.8)
@@ -6388,6 +6391,12 @@ packages:
 
   linkifyjs@4.3.3:
     resolution: {integrity: sha512-P8aEP5U/D1/IlTY2OeYsErdwh9bGuLE30NcXtKEjgdHcahveQoQwM2yZNsioQHsWFz0P7KKudisbrzCgR0sDHg==}
+
+  liquid-gooey@0.2.1:
+    resolution: {integrity: sha512-BRb0Rscie4JCHFmk4bkWxM+p03c34sidLgNE8XFJGRGEyWM/Wf0FYztJH3CfMWwOVajd4dVurAFe+BTSj8Eeeg==}
+    peerDependencies:
+      react: '>=18'
+      react-dom: '>=18'
 
   livekit-client@2.16.1:
     resolution: {integrity: sha512-PmOHiGdkzw2P/t0vLbJRwHU59+T+JcFlGTYDV7PObWmzvypIij1Vlj0WhZKDZ/Ac7CvwWinbiGCVw/Pb/OiYYw==}
@@ -15165,6 +15174,11 @@ snapshots:
       uc.micro: 1.0.6
 
   linkifyjs@4.3.3: {}
+
+  liquid-gooey@0.2.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
+    dependencies:
+      react: 19.2.8
+      react-dom: 19.2.8(react@19.2.8)
 
   livekit-client@2.16.1(@types/dom-mediacapture-record@1.0.22):
     dependencies:

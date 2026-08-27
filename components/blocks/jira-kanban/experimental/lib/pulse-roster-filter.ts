@@ -65,6 +65,36 @@ export function promoteAssignee(
 }
 
 /**
+ * Board facepile extras (Venn, agents) sit ahead of card assignees so the
+ * reserved seven-face width fills with the presentation roster instead of
+ * leaving empty slots. Venn stays leftmost so the Insights swap cannot hide
+ * them.
+ */
+export function fillBoardFacepileAssignees(
+	boardAssignees: readonly JiraKanbanAssigneeData[],
+	extras: readonly JiraKanbanAssigneeData[] = [],
+): JiraKanbanAssigneeData[] {
+	const seen = new Set<string>();
+	const merged: JiraKanbanAssigneeData[] = [];
+
+	function push(assignee: JiraKanbanAssigneeData) {
+		if (seen.has(assignee.id)) {
+			return;
+		}
+		seen.add(assignee.id);
+		merged.push(assignee);
+	}
+
+	for (const assignee of extras) {
+		push(assignee);
+	}
+	for (const assignee of boardAssignees) {
+		push(assignee);
+	}
+	return promoteAssignee(merged, PULSE_PRESENTATION_MEMBER_ID);
+}
+
+/**
  * Filter's assignee list is the union of board people and the Pulse roster, so
  * choosing a face and choosing the same row in Filter cannot disagree.
  */

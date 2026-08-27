@@ -2,7 +2,7 @@
  * Pulse outcome highlighting — issue keys become lozenges, type names become
  * inline code, and every story uses the same walk.
  *
- * Executed against the fixture rather than grepped: Kickoff and The spike both
+ * Executed against the fixture rather than grepped: the first two insights both
  * have to render a `<code>` node and a lozenge, and a member-scoped summary
  * has to pick up the same treatment so filtering a face does not drop it.
  */
@@ -32,7 +32,7 @@ test("Pulse tokenizes issue keys and type names without lighting up ordinary wor
 	assert.match(tokens.map((token) => token.value).join(""), /v1, v2/);
 });
 
-test("Pulse Kickoff and The spike both render inline code and an issue-key lozenge", async () => {
+test("Pulse first two insights both render inline code and an issue-key lozenge", async () => {
 	const { renderPulseProse, snapshotParagraph, tokenizePulseProse } = await loadProseHarness();
 
 	const kickoff = snapshotParagraph("s1-kickoff");
@@ -67,25 +67,24 @@ test("Pulse member summaries and later insights reuse the same highlighter", asy
 		await loadProseHarness();
 
 	const ship = snapshotParagraph("s7-ship-readiness");
-	const mayaKickoff = contributionSummary("s1-kickoff", "maya");
+	const vennKickoff = contributionSummary("s1-kickoff", "venn");
 
 	assert.ok(tokensOfType(tokenizePulseProse(ship), "code").includes("LegacyGatewayAdapter"));
 	assert.ok(tokensOfType(tokenizePulseProse(ship), "issue-key").includes("PAY-112"));
-	assert.ok(tokensOfType(tokenizePulseProse(mayaKickoff), "issue-key").includes("PAY-102"));
+	assert.ok(tokensOfType(tokenizePulseProse(vennKickoff), "issue-key").includes("PAY-121"));
 
 	const shipMarkup = renderPulseProse(ship);
-	const summaryMarkup = renderPulseProse(mayaKickoff);
+	const summaryMarkup = renderPulseProse(vennKickoff);
 
 	assert.match(shipMarkup, /data-pulse-prose="code"[^>]*>LegacyGatewayAdapter<\/code>/u);
 	assert.match(shipMarkup, /data-pulse-prose="issue-key"[\s\S]*PAY-112/u);
-	assert.match(summaryMarkup, /data-pulse-prose="issue-key"[\s\S]*PAY-102/u);
+	assert.match(summaryMarkup, /data-pulse-prose="issue-key"[\s\S]*PAY-121/u);
 });
 
-test("Pulse story and signal rows both render through PulseProseText", () => {
+test("Pulse story renders through PulseProseText", () => {
 	assert.match(SOURCES.story, /<PulseProseText text=\{paragraph\} \/>/u);
 	assert.match(SOURCES.story, /<PulseProseText text=\{contribution\.summary\} \/>/u);
-	assert.match(SOURCES.signals, /<PulseProseText text=\{title\} \/>/u);
-	assert.match(SOURCES.signals, /<PulseProseText text=\{detail\} \/>/u);
+	assert.doesNotMatch(SOURCES.signals, /PulseProseText/u);
 	assert.match(SOURCES.proseText, /data-pulse-prose="code"/u);
 	assert.match(SOURCES.proseText, /data-pulse-prose="issue-key"/u);
 	assert.match(SOURCES.proseText, /<Lozenge[\s\S]*elemBefore=\{<TaskIcon color="var\(--ds-icon-brand\)" label="Task" \/>\}[\s\S]*variant="neutral"/u);

@@ -3,7 +3,10 @@ import {
 	type PulseOutlineEntry,
 	type PulseOutlineKind,
 } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-outline";
-import type { PulseSnapshot } from "@/components/blocks/jira-kanban/experimental/pulse/types";
+import type {
+	PulseContribution,
+	PulseSnapshot,
+} from "@/components/blocks/jira-kanban/experimental/pulse/types";
 
 /**
  * The ruler's pure geometry, weights and labelling.
@@ -37,6 +40,18 @@ export function toInsightUpdatedLabel(snapshot: PulseInsightUpdateClock): string
 }
 
 /**
+ * The story eyebrow: outcome name, then when this insight was last updated.
+ *
+ * Generated time still lives on the snapshot and on spoken ruler names. The
+ * painted line only has room for one clock, and last updated is the one that
+ * moves when an insight is revised. A member filter does not belong here —
+ * the roster already names who is selected, and the headline stays an insight.
+ */
+export function toPulseInsightEyebrow(snapshot: PulseInsightEyebrow): string {
+	return `${snapshot.chapterLabel} · Last updated ${toInsightUpdatedLabel(snapshot)}`;
+}
+
+/**
  * Whether this insight was revised after it was first generated.
  *
  * Prefer the canonical ISO clocks: a revision inside the same displayed minute
@@ -54,15 +69,18 @@ export function isInsightRevised(snapshot: PulseInsightRevisionClock): boolean {
 }
 
 /**
- * The story eyebrow: outcome name, then when this insight was last updated.
+ * The story display headline stays an insight, even when a member filter is on.
  *
- * Generated time still lives on the snapshot and on spoken ruler names. The
- * painted line only has room for one clock, and last updated is the one that
- * moves when an insight is revised.
+ * A filtered contribution may author its own takeaway. Quiet windows and
+ * members without a title fall back to the team's sentence. The member's name
+ * never occupies this slot — that is what the roster is for.
  */
-export function toPulseInsightEyebrow(snapshot: PulseInsightEyebrow, memberName?: string | null): string {
-	const base = `${snapshot.chapterLabel} · Last updated ${toInsightUpdatedLabel(snapshot)}`;
-	return memberName ? `${memberName} · ${base}` : base;
+export function toPulseInsightHeadline(
+	snapshot: Pick<PulseSnapshot, "title">,
+	contribution: Pick<PulseContribution, "title"> | null | undefined,
+): string {
+	const authored = contribution?.title?.trim();
+	return authored === undefined || authored.length === 0 ? snapshot.title : authored;
 }
 
 /**

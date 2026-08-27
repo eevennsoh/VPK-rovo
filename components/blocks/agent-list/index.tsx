@@ -7,10 +7,16 @@ import {
 	JiraSessionFlyoutSurface,
 	createJiraSessionFlyoutHandle,
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
+import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 import { AGENT_LIST_ITEMS } from "./data";
 import { AgentListCard } from "./agent-list-card";
+import { isCodingAgentListItem } from "./agent-list-session";
+import {
+	AgentListUncapturedCard,
+	suggestedUncapturedWorkItemKey,
+} from "./agent-list-uncaptured";
 import type {
 	AgentListItem,
 	AgentListProps,
@@ -18,11 +24,21 @@ import type {
 
 export function AgentList({
 	className,
+	chrome = "stroke",
 	composerChatSurface = "sidebar",
 	flyout = "session",
 	items = AGENT_LIST_ITEMS,
 	variant = "default",
+	canViewItem,
+	capturedItemIds,
+	getResumeCommand,
+	getSuggestedWorkItemKey,
+	isResumable,
 	onArchive,
+	onCopyResume,
+	onCreateWorkItem,
+	onDismiss,
+	onLinkWorkItem,
 	onSubmitPrompt,
 	onView,
 	renderFlyout,
@@ -49,19 +65,56 @@ export function AgentList({
 		chat?.openChat(composerChatSurface);
 		void chat?.sendPrompt(prompt);
 	}, [chat, composerChatSurface, onSubmitPrompt]);
+	const handleCodingView = useCallback((item: AgentListItem) => {
+		onView?.(item);
+	}, [onView]);
 	// One payload-aware flyout for the whole list: the popup stays mounted and
 	// follows the hovered row, so sliding down the list crossfades instead of
 	// tearing down and remounting a card per row. Unused by the composer variant,
 	// whose Agent States card owns local state and must stay per-row.
 	const [flyoutHandle] = useState(createJiraSessionFlyoutHandle);
 
+	if (variant === "uncaptured") {
+		return (
+			<ul className={cn("flex flex-col gap-2", className)}>
+				{items.map((item: AgentListItem) => (
+					<AgentListUncapturedCard
+						captured={capturedItemIds?.has(item.id) ?? false}
+						getResumeCommand={getResumeCommand}
+						isResumable={isResumable}
+						item={item}
+						key={item.id}
+						onCopyResume={onCopyResume}
+						onCreateWorkItem={onCreateWorkItem === undefined ? undefined : () => onCreateWorkItem(item)}
+						onDismiss={onDismiss === undefined ? undefined : () => onDismiss(item)}
+						onLinkWorkItem={onLinkWorkItem === undefined ? undefined : () => onLinkWorkItem(item)}
+						onView={
+							isCodingAgentListItem(item)
+								? handleCodingView
+								: onView === undefined || (canViewItem !== undefined && !canViewItem(item))
+									? undefined
+									: onView
+						}
+						suggestedWorkItemKey={getSuggestedWorkItemKey?.(item) ?? suggestedUncapturedWorkItemKey(item)}
+					/>
+				))}
+			</ul>
+		);
+	}
+
 	return (
 		<>
 			<ul
 				className={cn(
-					"divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface",
+					"divide-y divide-border overflow-hidden rounded-lg",
+					chrome === "raised"
+						? "bg-surface-raised"
+						: "border border-border bg-surface",
 					className,
 				)}
+				style={chrome === "raised"
+					? { boxShadow: token("elevation.shadow.raised") }
+					: undefined}
 			>
 				{items.map((item: AgentListItem) => (
 					<AgentListCard
@@ -71,7 +124,13 @@ export function AgentList({
 						item={item}
 						key={item.id}
 						onArchive={onArchive}
-						onView={onView}
+						onView={
+							isCodingAgentListItem(item)
+								? handleCodingView
+								: onView === undefined || (canViewItem !== undefined && !canViewItem(item))
+									? undefined
+									: onView
+						}
 						onFlyoutSubmit={(prompt) => handleFlyoutSubmit(item, prompt)}
 						renderFlyout={renderFlyout}
 						variant={variant}
@@ -85,18 +144,22 @@ export function AgentList({
 	);
 }
 
-export { AGENT_LIST_ITEMS } from "./data";
+export { AGENT_LIST_ITEMS, AGENT_LIST_UNCAPTURED_ITEMS } from "./data";
 export { AgentListActivityHeader } from "./agent-list-card";
+export { AgentListUncapturedCard, suggestedUncapturedWorkItemKey } from "./agent-list-uncaptured";
 export {
 	deriveIssueKeyFromBranch,
 	getAgentListHost,
+	isCodingAgentListItem,
 	isLocalAgentListItem,
+	toAgentListResumeCommand,
 	toAgentSessionFlyoutItem,
 	toAgentSessionStatus,
 } from "./agent-list-session";
 export type {
 	AgentListActorKind,
 	AgentListAgent,
+	AgentListChrome,
 	AgentListCustomFlyoutActions,
 	AgentListFlyout,
 	AgentListHost,

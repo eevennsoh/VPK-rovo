@@ -1,11 +1,20 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { Gallery, type GalleryItem } from "@/components/blocks/gallery";
+import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
-import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
+import { PULSE_PRESENTATION_MEMBER_ID } from "@/components/blocks/jira-kanban/experimental/lib/pulse-roster-filter";
+import {
+	EXPERIMENTAL_BOARD_LAST_VIEWED_AT,
+	markTimelineViewed,
+} from "@/components/blocks/jira-kanban/experimental/lib/timeline-activity";
+import ExperimentalJiraKanbanPage, {
+	type ExperimentalJiraKanbanPageHandle,
+} from "@/components/blocks/jira-kanban/experimental/page";
+import { PULSE_TIMELINE } from "@/components/blocks/jira-kanban/experimental/pulse/data/pulse-timeline";
 import type {
 	PulseLooseWork,
 	PulseWorkItem,
@@ -13,8 +22,10 @@ import type {
 import { ExperimentalV3JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v3/experimental-v3-jira-work-item";
 import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v1/data/agent-chat-data";
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
+import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journeys-v1/hooks/use-jira-golden-journeys-v1-agent-chat-demo";
 import { useTerminalDemo } from "@/components/projects/jira-golden-journeys-v1/hooks/use-terminal-demo";
 
+import { toBoardInsightsNudgeConfig } from "./board-insights-nudge-config";
 import { JIRA_GOLDEN_JOURNEYS_V3_GALLERY_ITEMS } from "./data/gallery-items";
 import {
 	createJiraGoldenJourneysV3Pay101BuildState,
@@ -24,6 +35,8 @@ import {
 	JIRA_GOLDEN_JOURNEYS_V3_PAY_101_WORK_ITEM,
 	JIRA_GOLDEN_JOURNEYS_V3_PAY_BOARD_AGENTS,
 	JIRA_GOLDEN_JOURNEYS_V3_PAY_COMPOSER_AGENTS,
+	JIRA_GOLDEN_JOURNEYS_V3_PAY_HEADER_ASSIGNEES,
+	JIRA_GOLDEN_JOURNEYS_V3_PAY_STATUS_PHASES,
 	type JiraGoldenJourneysV3PresentationChapter,
 } from "./data/presentation-story";
 import {
@@ -38,23 +51,34 @@ import {
 import { JiraGoldenJourneysV3TerminalStory } from "./terminal-story";
 
 const PAY_101_ISSUE_KEY = "PAY-101";
-const EMPTY_INSIGHTS_ASSIGNEE_IDS: readonly string[] = [];
-const PAY_STATUS_PHASES = ["Review", "In progress", "In review", "To do", "Done"] as const;
+/** Opening Insights selects Venn, the same face the header treats as selected. */
+const INSIGHTS_DEFAULT_ASSIGNEE_IDS: readonly string[] = [PULSE_PRESENTATION_MEMBER_ID];
 
 function JiraGoldenJourneysV3TrackLearnStage({
 	boardColumns,
+	boardRef,
 	chapter,
 	onBoardColumnsChange,
+	onCardAgentActivityViewChat,
 	onChapterChange,
 	onModeChange,
 	onResumeLooseWork,
+	onTimelineLastViewedAtChange,
+	timelineLastViewedAt,
 }: Readonly<{
 	boardColumns: readonly JiraKanbanColumnData[];
+	boardRef: React.Ref<ExperimentalJiraKanbanPageHandle>;
 	chapter: "learn" | "track";
 	onBoardColumnsChange: (columns: readonly JiraKanbanColumnData[]) => void;
+	onCardAgentActivityViewChat: (
+		activity: JiraIssueAgentActivity,
+		card: JiraKanbanCardData,
+	) => void;
 	onChapterChange: (chapter: JiraGoldenJourneysV3PresentationChapter) => void;
 	onModeChange: (mode: "board" | "pulse") => void;
 	onResumeLooseWork: (item: PulseLooseWork) => void;
+	onTimelineLastViewedAtChange: (lastViewedAt: string) => void;
+	timelineLastViewedAt: string | null;
 }>): React.ReactElement {
 	const openBuild = useCallback((workItem: PulseWorkItem | JiraKanbanCardData) => {
 		if (("key" in workItem ? workItem.key : workItem.code) === PAY_101_ISSUE_KEY) {
@@ -65,19 +89,23 @@ function JiraGoldenJourneysV3TrackLearnStage({
 	return (
 		<div className="relative left-1/2 flex h-full min-h-0 w-[100cqw] -translate-x-1/2 flex-col overflow-hidden pt-4 [&>div]:h-full [&>div]:min-h-0">
 			<ExperimentalJiraKanbanPage
-				activeCardCode={PAY_101_ISSUE_KEY}
 				agents={JIRA_GOLDEN_JOURNEYS_V3_PAY_BOARD_AGENTS}
 				ariaLabel="Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses."
 				boardColumns={boardColumns}
-				insightsDefaultAssigneeIds={EMPTY_INSIGHTS_ASSIGNEE_IDS}
+				headerAssignees={JIRA_GOLDEN_JOURNEYS_V3_PAY_HEADER_ASSIGNEES}
+				insightsDefaultAssigneeIds={INSIGHTS_DEFAULT_ASSIGNEE_IDS}
 				isInsightsWorkItemInteractive={(workItem) => workItem.key === PAY_101_ISSUE_KEY}
 				isLooseWorkResumable={(item) => item.id === JIRA_GOLDEN_JOURNEYS_V3_PAY_101_UNCAPTURED_SESSION_ID}
 				mode={chapter === "learn" ? "pulse" : "board"}
 				onBoardColumnsChange={onBoardColumnsChange}
+				onCardAgentActivityViewChat={onCardAgentActivityViewChat}
 				onCardClick={openBuild}
 				onInsightsWorkItemClick={openBuild}
 				onModeChange={onModeChange}
 				onResumeLooseWork={onResumeLooseWork}
+				onTimelineLastViewedAtChange={onTimelineLastViewedAtChange}
+				ref={boardRef}
+				timelineLastViewedAt={timelineLastViewedAt}
 			/>
 		</div>
 	);
@@ -107,7 +135,7 @@ function JiraGoldenJourneysV3BuildStage({
 				inlineSurface="card-fill"
 				presentation="inline"
 				stageKey={`build:${revision}`}
-				statusPhases={PAY_STATUS_PHASES}
+				statusPhases={JIRA_GOLDEN_JOURNEYS_V3_PAY_STATUS_PHASES}
 				workItem={JIRA_GOLDEN_JOURNEYS_V3_PAY_101_WORK_ITEM}
 			/>
 		</div>
@@ -115,6 +143,15 @@ function JiraGoldenJourneysV3BuildStage({
 }
 
 export default function JiraGoldenJourneysV3Page(): React.ReactElement {
+	return (
+		<RovoChatProvider agentProfiles={JGP_CHAT_AGENT_PROFILES}>
+			<JiraGoldenJourneysV3App />
+		</RovoChatProvider>
+	);
+}
+
+function JiraGoldenJourneysV3App(): React.ReactElement {
+	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useJgpAgentChatDemo();
 	const [selectedId, setSelectedId] = useState(JIRA_GOLDEN_JOURNEYS_V3_GALLERY_ITEMS[0]?.id ?? "");
 	const [chapter, setChapter] = useState<JiraGoldenJourneysV3PresentationChapter>("track");
 	const [stageRevision, setStageRevision] = useState(0);
@@ -122,6 +159,15 @@ export default function JiraGoldenJourneysV3Page(): React.ReactElement {
 	const [boardColumns, setBoardColumns] = useState(createJiraGoldenJourneysV3PayBoardColumns);
 	const [resumePromptCopied, setResumePromptCopied] = useState(false);
 	const [resumeAnnouncement, setResumeAnnouncement] = useState("");
+	// Board Insights state lives up here rather than in the Track/Learn stage:
+	// the nudge that opens it rides on the floating Rovo button, which is
+	// portalled to `document.body` from this level, and the stage remounts on
+	// every `stageRevision` bump.
+	const boardRef = useRef<ExperimentalJiraKanbanPageHandle | null>(null);
+	const [timelineLastViewedAt, setTimelineLastViewedAt] = useState<string | null>(
+		EXPERIMENTAL_BOARD_LAST_VIEWED_AT,
+	);
+	const [insightsDismissed, setInsightsDismissed] = useState(false);
 	const isTerminalChapter = chapter === "terminal";
 	const isWorkItemStage = chapter === "build";
 	const terminalController = useTerminalDemo(
@@ -136,17 +182,64 @@ export default function JiraGoldenJourneysV3Page(): React.ReactElement {
 		if (chapter === nextChapter || (nextChapter === "learn" && chapter !== "learn")) {
 			setStageRevision((current) => current + 1);
 		}
+		// Jumping straight to Learn from the chapter scroller is still a read of
+		// the article, so it advances the watermark the same way the board's own
+		// toggle does. The board cannot do it for us here: it owns neither half
+		// of the pair once the watermark is controlled from this level.
+		if (nextChapter === "learn") {
+			setTimelineLastViewedAt(markTimelineViewed(PULSE_TIMELINE));
+		}
 		setChapter(nextChapter);
 	}, [chapter]);
 	const handleBoardModeChange = useCallback((mode: "board" | "pulse") => {
 		setChapter(mode === "pulse" ? "learn" : "track");
 	}, []);
+	// Not `setChapter("learn")`: opening also advances the unread watermark and
+	// applies the roster default, and the board owns those steps. Going through
+	// the handle means the toolbar badge cannot stay at 3 over an article being
+	// read.
+	const handleOpenInsights = useCallback((snapshotId: string | null) => {
+		boardRef.current?.openTimeline(snapshotId);
+	}, []);
+	const handleDismissInsights = useCallback(() => {
+		setInsightsDismissed(true);
+	}, []);
+	// The nudge only makes sense over the board it describes, and its actions run
+	// through the mounted board's own open handler, so it is offered on the Track
+	// chapter alone.
+	//
+	// Do not widen this to "wherever the launcher is visible". The launcher also
+	// shows on the Terminal chapter, where the board is unmounted and `boardRef`
+	// is therefore null — a card offered there would render, promise three
+	// insights, and do nothing when clicked. Learn is excluded for the opposite
+	// reason: the article is already open.
+	const insights = useMemo(() => {
+		if (selectedId !== "work-item" || chapter !== "track" || insightsDismissed) {
+			return null;
+		}
+		// `spaceName` is left to the builder's default — the board's own name.
+		// Naming a scope here instead ("PAY · Payments SDK v2 migration") puts a
+		// place the reader was never in on the card, and ellipsises.
+		return toBoardInsightsNudgeConfig(PULSE_TIMELINE.snapshots, timelineLastViewedAt, {
+			onDismiss: handleDismissInsights,
+			onOpenSnapshot: handleOpenInsights,
+		});
+	}, [
+		chapter,
+		handleDismissInsights,
+		handleOpenInsights,
+		insightsDismissed,
+		selectedId,
+		timelineLastViewedAt,
+	]);
 	const resetStory = useCallback(() => {
 		setChapter("track");
 		setStageRevision((current) => current + 1);
 		setBoardColumns(createJiraGoldenJourneysV3PayBoardColumns());
 		setResumePromptCopied(false);
 		setResumeAnnouncement("");
+		setTimelineLastViewedAt(EXPERIMENTAL_BOARD_LAST_VIEWED_AT);
+		setInsightsDismissed(false);
 	}, []);
 	const handleSelectedChange = useCallback((nextSelectedId: string) => {
 		resetStory();
@@ -169,6 +262,16 @@ export default function JiraGoldenJourneysV3Page(): React.ReactElement {
 			setResumeAnnouncement("The resume prompt could not be copied. Check clipboard permissions and try again.");
 		}
 	}, []);
+	const handleViewChat = useCallback((activity: JiraIssueAgentActivity, card: JiraKanbanCardData) => {
+		openAgentChat({
+			agentId: activity.id,
+			agentName: activity.name,
+			issueKey: card.code,
+			issueSummary: card.title,
+			intro: activity.message,
+			question: activity.question,
+		});
+	}, [openAgentChat]);
 	const renderSelectedItem = useCallback((item: GalleryItem): React.ReactNode => {
 		if (item.id !== "work-item") return null;
 		if (chapter === "terminal") {
@@ -187,12 +290,16 @@ export default function JiraGoldenJourneysV3Page(): React.ReactElement {
 		return (
 			<JiraGoldenJourneysV3TrackLearnStage
 				boardColumns={boardColumns}
+				boardRef={boardRef}
 				chapter={chapter}
 				key={`track-learn:${stageRevision}`}
 				onBoardColumnsChange={(columns) => setBoardColumns([...columns])}
+				onCardAgentActivityViewChat={handleViewChat}
 				onChapterChange={handleChapterChange}
 				onModeChange={handleBoardModeChange}
 				onResumeLooseWork={(looseWork) => void handleResumeLooseWork(looseWork)}
+				onTimelineLastViewedAtChange={setTimelineLastViewedAt}
+				timelineLastViewedAt={timelineLastViewedAt}
 			/>
 		);
 	}, [
@@ -201,10 +308,12 @@ export default function JiraGoldenJourneysV3Page(): React.ReactElement {
 		handleBoardModeChange,
 		handleChapterChange,
 		handleResumeLooseWork,
+		handleViewChat,
 		resumePromptCopied,
 		stageRevision,
 		terminalController,
 		terminalTheme,
+		timelineLastViewedAt,
 	]);
 	const subtreeThemeProps = isTerminalChapter
 		? {
@@ -215,7 +324,7 @@ export default function JiraGoldenJourneysV3Page(): React.ReactElement {
 		: {};
 
 	return (
-		<RovoChatProvider agentProfiles={JGP_CHAT_AGENT_PROFILES}>
+		<>
 			<div
 				className="relative h-dvh w-full overflow-hidden bg-surface"
 				data-flow-chapter={chapter}
@@ -250,8 +359,11 @@ export default function JiraGoldenJourneysV3Page(): React.ReactElement {
 			</div>
 			<JgpRovoOverlay
 				chat={isWorkItemStage ? "hidden" : "auto"}
+				chatContextBar={chatContextBar}
+				externalThinkingMessageId={externalThinkingMessageId}
+				insights={insights}
 				launcher={isWorkItemStage ? "hidden" : "auto"}
 			/>
-		</RovoChatProvider>
+		</>
 	);
 }

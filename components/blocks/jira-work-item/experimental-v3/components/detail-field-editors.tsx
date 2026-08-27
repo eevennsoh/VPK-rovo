@@ -22,7 +22,11 @@ import {
 	useJiraWorkItemMeta,
 	useJiraWorkItemState,
 } from "@/components/blocks/jira-work-item/experimental-v3/context-jira-work-item";
-import { resolveAssignedAgentRows } from "@/components/blocks/jira-work-item/experimental-v3/lib/assigned-agent-rows";
+import {
+	resolveAssignedAgentRows,
+	resolveLatestAgentSession,
+	resolveUsedAgentIds,
+} from "@/components/blocks/jira-work-item/experimental-v3/lib/assigned-agent-rows";
 import {
 	DEFAULT_PINNED_SPACE_AGENT_IDS,
 	WORK_ITEM_PINNED_ITEMS_LABEL,
@@ -414,6 +418,15 @@ export function AgentsRowField({ value, onChange }: Readonly<{ value: readonly C
 		actions.openSession(row.session.id);
 	};
 
+	const handleContinueExistingSession = (agent: AgentSelectorAgent) => {
+		const session = resolveLatestAgentSession(sessions, agent.id);
+		if (!session) {
+			actions.invokeAgent(agent, "context-pill", `@${agent.name}`);
+			return;
+		}
+		actions.openSession(session.id);
+	};
+
 	const handleAgentAssign = (agent: AgentSelectorAgent) => {
 		actions.invokeAgent(agent, "context-pill", `@${agent.name}`);
 	};
@@ -442,7 +455,10 @@ export function AgentsRowField({ value, onChange }: Readonly<{ value: readonly C
 			onAgentAssign={handleAgentAssign}
 			onAssignedAgentIdsChange={handleAssignedAgentIdsChange}
 			onAssignedAgentSelect={handleOpenAgentSession}
+			onContinueExistingSession={handleContinueExistingSession}
+			onStartNewSession={handleAgentAssign}
 			pinnedItemsLabel={WORK_ITEM_PINNED_ITEMS_LABEL}
+			usedAgentIds={resolveUsedAgentIds(sessions)}
 			positionerClassName="z-[502]"
 		/>
 	);

@@ -73,9 +73,12 @@ test("v3 terminal resumes the uncaptured PAY-101 Claude session in order", async
 	assert.equal(resumeBeat.steps[0].kind, "paste");
 	assert.equal(resumeBeat.steps[0].text, harness.JIRA_GOLDEN_JOURNEYS_V3_RESUME_PROMPT);
 	assert.equal(resumeBeat.steps[1].kind, "submit");
-	assert.match(harness.JIRA_GOLDEN_JOURNEYS_V3_RESUME_PROMPT, /PAY-101/u);
-	assert.match(harness.JIRA_GOLDEN_JOURNEYS_V3_RESUME_PROMPT, /\.worktrees\/pay-101-adapter/u);
+	assert.match(
+		harness.JIRA_GOLDEN_JOURNEYS_V3_RESUME_PROMPT,
+		/^cd \/Users\/venn\/dev\/payments\/\.worktrees\/pay-101-adapter && claude --resume [0-9a-f-]{36}$/u,
+	);
 	assert.match(allText, /restored local Claude session/u);
+	assert.match(allText, /38 messages · Ee Venn Soh · last active Mon 17 Aug 07:48/u);
 	assert.match(allText, /We agreed to delete the adapter, not wrap it/u);
 	assert.match(allText, /Call-site inventory across four services/u);
 	assert.match(allText, /#1839/u);

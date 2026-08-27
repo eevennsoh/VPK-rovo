@@ -34,7 +34,8 @@ test("Kanban stage wires the shared issue lifecycle callbacks", () => {
 	assert.match(STAGE_SOURCE, /boardColumns=\{filteredBoardColumns\}/u);
 	assert.match(STAGE_SOURCE, /handleClearSelection\(\);[\s\S]*handleCardDragEnd\(\);/u);
 	assert.match(STAGE_SOURCE, /onCardGenerativeActionSubmit=\{handleGenerativeActionSubmit\}/u);
-	assert.match(STAGE_SOURCE, /onCardAgentActivityQuestionSubmit=\{handleQuestionSubmit\}/u);
+	assert.doesNotMatch(STAGE_SOURCE, /onCardAgentActivityQuestionSubmit/u);
+	assert.match(STAGE_SOURCE, /submit: \(\) => handleQuestionSubmit\(/u);
 	assert.match(STAGE_SOURCE, /onCardAgentActivityViewChat=\{handleViewChat\}/u);
 	assert.match(STAGE_SOURCE, /onCardAgentDoneRunView=\{handleCompletedAgentView\}/u);
 	assert.match(STAGE_SOURCE, /onCardAgentDoneRunReview=\{\(_run, card\) =>/u);
@@ -106,7 +107,7 @@ test("JGP Kanban reuses the Jira Issue aggregate row for working agents", () => 
 	assert.equal(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE.match(/<AgentAvatarVisual/g)?.length, 1);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<AiAgentIcon label="" \/>/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<Spinner label="" size="sm" \/>/u);
-	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /Show \$\{summary\.activityCount\} agents: \$\{summary\.label\}/u);
+	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /\$\{summary\.activityCount\} agents: \$\{summary\.label\}/u);
 	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /variant="rainbow"/u);
 	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /phaseOffsetMs=/u);
 	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<Spinner[^>]*animate-spin/u);

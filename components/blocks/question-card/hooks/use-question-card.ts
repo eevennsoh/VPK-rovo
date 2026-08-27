@@ -8,6 +8,7 @@ import { shouldAutoFocusCustomInputForQuestion } from "../lib/focus-policy";
 import { getQuestionCardPrimaryAction, shouldShowQuestionCardFooterButton } from "../lib/footer-actions";
 import {
 	getCustomInputValue,
+	getQuestionSignature,
 	getSelectedValues,
 	isQuestionAnswered,
 } from "../lib/question-helpers";
@@ -40,9 +41,7 @@ function getQuestionCardStorageKey(toolCallId: string | undefined): string | nul
 	return `${QUESTION_CARD_STORAGE_PREFIX}${toolCallId}`;
 }
 
-export function getQuestionSignature(questions: ReadonlyArray<QuestionCardQuestion>): string {
-	return questions.map((question) => question.id).join("|");
-}
+export { getQuestionSignature } from "../lib/question-helpers";
 
 function readPersistedQuestionCardState(
 	storageKey: string | null,

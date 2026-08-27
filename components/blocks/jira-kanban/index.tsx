@@ -26,7 +26,6 @@ import {
 import { AgentSelector } from "@/components/blocks/agent-selector";
 import { JiraToolbar } from "@/components/blocks/jira-toolbar";
 import type { SkillsDirectorySkill } from "@/app/data/directory";
-import type { QuestionCardAnswers } from "@/components/blocks/question-card/types";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import {
@@ -165,12 +164,6 @@ export interface JiraKanbanProps {
 	) => void;
 	onCardAgentActivityViewChat?: (
 		activity: JiraIssueAgentActivity,
-		card: JiraKanbanCardData,
-		columnTitle: string,
-	) => void;
-	onCardAgentActivityQuestionSubmit?: (
-		activity: JiraIssueAgentActivity,
-		answers: QuestionCardAnswers,
 		card: JiraKanbanCardData,
 		columnTitle: string,
 	) => void;
@@ -484,7 +477,6 @@ export function JiraKanban({
 	onCardDrop,
 	onCardGenerativeActionSubmit,
 	onCardAgentActivityOpenChange,
-	onCardAgentActivityQuestionSubmit,
 	onCardAgentActivityViewChat,
 	onCardAgentDoneRunReview,
 	onCardAgentDoneRunView,
@@ -729,12 +721,6 @@ export function JiraKanban({
 												onAgentActivityViewChat={
 													onCardAgentActivityViewChat
 														? (activity) => onCardAgentActivityViewChat(activity, card, column.title)
-														: undefined
-												}
-												onAgentActivityQuestionSubmit={
-													onCardAgentActivityQuestionSubmit
-														? (activity, answers) =>
-															onCardAgentActivityQuestionSubmit(activity, answers, card, column.title)
 														: undefined
 												}
 												onAgentDoneRunReview={

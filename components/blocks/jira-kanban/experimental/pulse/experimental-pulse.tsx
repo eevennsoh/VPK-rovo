@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, type RefCallback } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefCallback } from "react";
 
 import {
 	PulseAnswers,
@@ -32,6 +32,7 @@ import {
 	PULSE_ANSWERS_ANCHOR_ID,
 	PULSE_SCOPE_ANCHOR_ID,
 	toPulseArticleTopFadeVisible,
+	toPulseAnchorId,
 	type PulseScrollOptions,
 } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-outline";
 import type {
@@ -99,14 +100,16 @@ function pulseArticleFadeClassName(visible: boolean) {
 
 export interface ExperimentalPulseProps {
 	/**
-	 * Commitments the reader has made — actions requested, loose work captured.
-	 * Owned by the page rather than in here, so toggling Pulse off and back on
-	 * cannot silently discard them along with this subtree.
+	 * Commitments the reader has made — actions requested, loose work captured
+	 * or dismissed. Owned by the page rather than in here, so toggling Pulse
+	 * off and back on cannot silently discard them along with this subtree.
 	 */
 	capturedLooseWorkIds: ReadonlySet<string>;
+	dismissedLooseWorkIds: ReadonlySet<string>;
 	isLooseWorkResumable?: (item: PulseLooseWork) => boolean;
 	isWorkItemInteractive?: (workItem: PulseWorkItem) => boolean;
 	onCaptureLooseWork: (item: PulseLooseWork) => void;
+	onDismissLooseWork: (item: PulseLooseWork) => void;
 	onResumeLooseWork?: (item: PulseLooseWork) => void;
 	onWorkItemClick?: (workItem: PulseWorkItem) => void;
 	requestedActionIds: ReadonlySet<string>;
@@ -129,13 +132,26 @@ export interface ExperimentalPulseProps {
 	 */
 	answers?: readonly PulseAnswer[];
 	onAsk?: (question: string) => void;
+	/**
+	 * Land the article on this snapshot instead of at the top.
+	 *
+	 * The board's daily-insights nudge promises "3 new insights"; opening at the
+	 * top drops the reader on snapshot 1 of 7, which they have already read. The
+	 * id names a `PulseSnapshot`, not an anchor — the anchor is derived here so
+	 * callers never have to know how the article spells its ids. A snapshot the
+	 * current scope or day range has filtered out simply has no anchor, and the
+	 * article opens at the top rather than jumping somewhere arbitrary.
+	 */
+	initialSnapshotId?: string | null;
 }
 
 export function ExperimentalPulse({
 	capturedLooseWorkIds,
+	dismissedLooseWorkIds,
 	isLooseWorkResumable,
 	isWorkItemInteractive,
 	onCaptureLooseWork,
+	onDismissLooseWork,
 	onResumeLooseWork,
 	onWorkItemClick,
 	onRequestAction,
@@ -146,6 +162,7 @@ export function ExperimentalPulse({
 	scope = null,
 	answers = EMPTY_ANSWERS,
 	onAsk,
+	initialSnapshotId = null,
 }: Readonly<ExperimentalPulseProps>) {
 	const filter = usePulseMemberFilter({ onSelectedMemberIdChange, selectedMemberId });
 	// Scope narrows the whole timeline before anything else reads it, so the
@@ -204,14 +221,16 @@ export function ExperimentalPulse({
 	// never paints while the reader is mid-article. The top overlay stays
 	// mounted at opacity zero so it can transition. It paints whenever the
 	// article is clipped at the top — a rest-state headline should not cut off
-	// flush — and hides after a header chevron jump, which pins the up/down
-	// nav into that same band. The bottom band stays on: the article sits flush
-	// on the composer, and a rest-state cutoff reads as a clip.
+	// flush — and hides after a start-aligned jump, which pins the destination
+	// section (and the insight nav, on a chevron) into that same band. The
+	// bottom band stays on: the article sits flush on the composer, and a
+	// rest-state cutoff reads as a clip.
 	const { ref: overflowRef, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const { scrollRef, scrollToEntry, scrollToSnapshot } = reading;
 	const [suppressTopFade, setSuppressTopFade] = useState(false);
 	const suppressTopFadeRef = useRef(false);
 	const skipProgrammaticScrollRef = useRef(false);
+	const startJumpGenerationRef = useRef(0);
 	const scrollportRef = useCallback<RefCallback<HTMLDivElement>>((node) => {
 		scrollRef(node);
 		overflowRef(node);
@@ -226,23 +245,30 @@ export function ExperimentalPulse({
 		suppressTopFadeRef.current = false;
 		setSuppressTopFade(false);
 	}, []);
+	const runStartAlignedJump = useCallback((run: () => void) => {
+		const generation = startJumpGenerationRef.current + 1;
+		startJumpGenerationRef.current = generation;
+		suppressTopFadeRef.current = true;
+		skipProgrammaticScrollRef.current = true;
+		setSuppressTopFade(true);
+		run();
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => {
+				if (startJumpGenerationRef.current === generation) {
+					skipProgrammaticScrollRef.current = false;
+				}
+			});
+		});
+	}, []);
 	const handleSelectEntry = useCallback((id: string) => {
-		if (suppressTopFadeRef.current) {
-			suppressTopFadeRef.current = false;
-			setSuppressTopFade(false);
-		}
-		scrollToEntry(id);
-	}, [scrollToEntry]);
+		runStartAlignedJump(() => {
+			scrollToEntry(id, { align: "start" });
+		});
+	}, [runStartAlignedJump, scrollToEntry]);
 	const handleGoToSnapshot = useCallback((snapshotIndex: number, options?: PulseScrollOptions) => {
 		if (isPulseChevronHeaderJump(options)) {
-			suppressTopFadeRef.current = true;
-			skipProgrammaticScrollRef.current = true;
-			setSuppressTopFade(true);
-			scrollToSnapshot(snapshotIndex, options);
-			requestAnimationFrame(() => {
-				requestAnimationFrame(() => {
-					skipProgrammaticScrollRef.current = false;
-				});
+			runStartAlignedJump(() => {
+				scrollToSnapshot(snapshotIndex, options);
 			});
 			return;
 		}
@@ -251,10 +277,27 @@ export function ExperimentalPulse({
 			setSuppressTopFade(false);
 		}
 		scrollToSnapshot(snapshotIndex, options);
-	}, [scrollToSnapshot]);
+	}, [runStartAlignedJump, scrollToSnapshot]);
 	// No settle nudge here: the rounding that made a jump light the mark above it
 	// is absorbed by `toActiveOutlineIndex`'s one-pixel threshold, where it
 	// belongs — the shell should not be correcting the outline's arithmetic.
+
+	// The deep link. It is an effect rather than part of the caller's click
+	// because the anchor it needs does not exist yet at that moment: the
+	// scrollport ref resolves on the commit that mounts this subtree, and
+	// `usePulseReading` writes `scrollTop = 0` on the same commit. Hook effects
+	// run before the component's own, so this lands after that reset rather than
+	// being undone by it. It goes through `handleSelectEntry` — the same
+	// start-aligned jump a chevron or ruler mark takes — so the destination
+	// header is not veiled by the top fade on arrival. `handleSelectEntry` is in
+	// the deps because its identity changes exactly once, when the scrollport
+	// element resolves, which is the earliest frame the jump can succeed.
+	useEffect(() => {
+		if (initialSnapshotId === null) {
+			return;
+		}
+		handleSelectEntry(toPulseAnchorId(initialSnapshotId));
+	}, [handleSelectEntry, initialSnapshotId]);
 
 	if (pulse.activeSnapshot === null) {
 		return (
@@ -371,9 +414,11 @@ export function ExperimentalPulse({
 										scope={scope}
 									/>
 								)}
+								onGoToEntry={handleSelectEntry}
 								onGoToSnapshot={handleGoToSnapshot}
 								onRequestAction={onRequestAction}
 								onSelectMember={filter.selectMember}
+								onWorkItemClick={onWorkItemClick}
 								previewEntry={previewEntry}
 								requestedActionIds={requestedActionIds}
 								selectedMemberId={filter.selectedMemberId}
@@ -422,14 +467,16 @@ export function ExperimentalPulse({
 						chat={insightsChatOpen ? (
 							<PulseEmbeddedChat chatContextBar={chatContextBar} />
 						) : undefined}
+						dismissedIds={dismissedLooseWorkIds}
 						isLooseWorkResumable={isLooseWorkResumable}
 						isWorkItemInteractive={isWorkItemInteractive}
 						looseWork={pulse.looseWork}
 						members={pulse.members}
 						onCapture={onCaptureLooseWork}
+						onDismiss={onDismissLooseWork}
 						onResumeLooseWork={onResumeLooseWork}
 						onWorkItemClick={onWorkItemClick}
-						scopedToFirstName={pulse.selectedMember?.name.split(" ")[0] ?? null}
+						selectedMember={pulse.selectedMember}
 						workItems={pulse.workItems}
 					/>
 				</div>
