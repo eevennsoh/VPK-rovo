@@ -28,6 +28,7 @@ import type { TerminalStoryDefinition } from "../lib/terminal-story-definition";
 // ---------------------------------------------------------------------------
 
 const TYPE_MS_PER_CHAR = 28;
+const PASTE_PREVIEW_MS = 650;
 const OUTPUT_MS_PER_LINE = 250; // duration-slow
 const OUTPUT_LEAD_IN_MS = 300;
 const BOARD_MS_PER_EVENT = 350;
@@ -187,6 +188,10 @@ export function useTerminalDemo(
 			} else {
 				startReveal(step.text.length, TYPE_MS_PER_CHAR);
 			}
+		} else if (step.kind === "paste") {
+			// A paste appears atomically, then stays visible long enough for the
+			// presenter to connect the copied Insights action to the terminal.
+			scheduleTimer(() => dispatch({ type: "commit-step" }), PASTE_PREVIEW_MS);
 		} else if (step.kind === "output") {
 			const leadIn = step.pane === "right" ? OUTPUT_LEAD_IN_MS : 0;
 			if (step.lines.length === 0) {

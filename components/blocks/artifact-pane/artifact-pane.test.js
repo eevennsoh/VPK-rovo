@@ -253,7 +253,8 @@ test("Artifact Pane demo provides editable, avatar-rich metadata fields", () => 
 	assert.doesNotMatch(AGENTS_FIELD_SOURCE, /\? \{ kind: "third-party", name: agent\.brandName \}/u);
 	assert.match(SUGGESTION_MENU_SOURCE, /leadingVisual\?: ReactNode;/u);
 	assert.match(SUGGESTION_MENU_SOURCE, /aria-multiselectable=\{selectedItemIds \? true : undefined\}/u);
-	assert.match(SUGGESTION_MENU_SOURCE, /aria-selected=\{isChosen \?\? isSelected\}/u);
+	assert.match(SUGGESTION_MENU_SOURCE, /aria-selected=\{listMode \? undefined : isChosen \?\? isSelected\}/u);
+	assert.match(SUGGESTION_MENU_SOURCE, /role=\{listMode \? undefined : "option"\}/u);
 	assert.match(SUGGESTION_MENU_SOURCE, /const visual = item\.leadingVisual \? \([\s\S]*item\.leadingVisual/u);
 	assert.doesNotMatch(AGENTS_FIELD_SOURCE, /avatarClassName="[^"]*ring-/u);
 	assert.doesNotMatch(AGENTS_FIELD_SOURCE, /label=\{agent\.name\}/u);

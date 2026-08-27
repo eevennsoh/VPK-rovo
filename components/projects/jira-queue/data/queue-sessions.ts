@@ -482,11 +482,26 @@ export function createAsxQueueHistoryThreads(
 	});
 }
 
+/** Demo timing that preserves the flyout's previous relative-time labels. */
+const QUEUE_SESSION_TIMING: Readonly<
+	Record<
+		AsxQueueSessionStatus,
+		Pick<JiraSidebarSessionItem, "completedSecondsAgo" | "initialElapsedSeconds">
+	>
+> = {
+	"awaiting-input": { completedSecondsAgo: undefined, initialElapsedSeconds: 2 * 24 * 60 * 60 },
+	running: { completedSecondsAgo: undefined, initialElapsedSeconds: 3 * 60 },
+	"pr-open": { completedSecondsAgo: 60 * 60, initialElapsedSeconds: undefined },
+	merged: { completedSecondsAgo: 5 * 60 * 60, initialElapsedSeconds: undefined },
+	stopped: { completedSecondsAgo: 24 * 60 * 60, initialElapsedSeconds: undefined },
+};
+
 export function createAsxQueueSidebarSessionItem(
 	session: AsxQueueSession,
 ): JiraSidebarSessionItem {
 	const agent = getAsxQueueAgent(session.agentId);
 	return {
+		...QUEUE_SESSION_TIMING[session.status],
 		additions: session.fileChanges?.additions,
 		agentAvatarSrc: agent.avatarSrc,
 		agentName: agent.name,

@@ -3,7 +3,10 @@ import {
 	type PulseOutlineEntry,
 	type PulseOutlineKind,
 } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-outline";
-import type { PulseSnapshot } from "@/components/blocks/jira-kanban/experimental/pulse/types";
+import type {
+	PulseContribution,
+	PulseSnapshot,
+} from "@/components/blocks/jira-kanban/experimental/pulse/types";
 
 /**
  * The ruler's pure geometry, weights and labelling.
@@ -17,6 +20,67 @@ import type { PulseSnapshot } from "@/components/blocks/jira-kanban/experimental
 
 export function toWeekdayLabel(dateLabel: string): string {
 	return dateLabel.split(" ")[0] ?? dateLabel;
+}
+
+type PulseInsightClock = Pick<PulseSnapshot, "dateLabel" | "timeLabel">;
+type PulseInsightUpdateClock = Pick<PulseSnapshot, "updatedDateLabel" | "updatedTimeLabel">;
+type PulseInsightRevisionClock = PulseInsightClock & Partial<
+	Pick<PulseSnapshot, "timestamp" | "updatedAt" | "updatedDateLabel" | "updatedTimeLabel">
+>;
+type PulseInsightEyebrow = Pick<PulseSnapshot, "chapterLabel"> & PulseInsightUpdateClock;
+
+/** Pre-formatted generated stamp, e.g. "Wed 19 Aug 02:30". */
+export function toInsightGeneratedLabel(snapshot: PulseInsightClock): string {
+	return `${snapshot.dateLabel} ${snapshot.timeLabel}`;
+}
+
+/** Pre-formatted last-updated stamp, e.g. "Wed 19 Aug 08:15". */
+export function toInsightUpdatedLabel(snapshot: PulseInsightUpdateClock): string {
+	return `${snapshot.updatedDateLabel} ${snapshot.updatedTimeLabel}`;
+}
+
+/**
+ * The story eyebrow: outcome name, then when this insight was last updated.
+ *
+ * Generated time still lives on the snapshot and on spoken ruler names. The
+ * painted line only has room for one clock, and last updated is the one that
+ * moves when an insight is revised. A member filter does not belong here —
+ * the roster already names who is selected, and the headline stays an insight.
+ */
+export function toPulseInsightEyebrow(snapshot: PulseInsightEyebrow): string {
+	return `${snapshot.chapterLabel} · Last updated ${toInsightUpdatedLabel(snapshot)}`;
+}
+
+/**
+ * Whether this insight was revised after it was first generated.
+ *
+ * Prefer the canonical ISO clocks: a revision inside the same displayed minute
+ * still has distinct `timestamp` / `updatedAt` values, but identical labels.
+ * Partial test snapshots may omit both clocks; those read as unrevised.
+ */
+export function isInsightRevised(snapshot: PulseInsightRevisionClock): boolean {
+	if (typeof snapshot.timestamp === "string" && typeof snapshot.updatedAt === "string") {
+		return snapshot.updatedAt !== snapshot.timestamp;
+	}
+	if (snapshot.updatedDateLabel === undefined || snapshot.updatedTimeLabel === undefined) {
+		return false;
+	}
+	return snapshot.updatedDateLabel !== snapshot.dateLabel || snapshot.updatedTimeLabel !== snapshot.timeLabel;
+}
+
+/**
+ * The story display headline stays an insight, even when a member filter is on.
+ *
+ * A filtered contribution may author its own takeaway. Quiet windows and
+ * members without a title fall back to the team's sentence. The member's name
+ * never occupies this slot — that is what the roster is for.
+ */
+export function toPulseInsightHeadline(
+	snapshot: Pick<PulseSnapshot, "title">,
+	contribution: Pick<PulseContribution, "title"> | null | undefined,
+): string {
+	const authored = contribution?.title?.trim();
+	return authored === undefined || authored.length === 0 ? snapshot.title : authored;
 }
 
 /**
@@ -79,18 +143,30 @@ export function toMarkState(isMuted: boolean, isActive: boolean): PulseMarkState
  * A mark's accessible name.
  *
  * The rank is spoken, because the two ranks mean different things and the
- * difference is otherwise carried by rule length alone. An insight also gets its
- * timestamp; a section's label already names its parent insight, so it does not
- * repeat one. A muted mark means the filtered member was absent from that
- * window, which is the whole point of the muting and is otherwise visual-only.
+ * difference is otherwise carried by rule length alone. An insight also gets
+ * when it was generated, and last updated when those differ; a section's label
+ * already names its parent insight, so it does not repeat a clock. A muted mark
+ * means the filtered member was absent from that window, which is the whole
+ * point of the muting and is otherwise visual-only.
  */
+function toMarkStamp(snapshot: PulseSnapshot | undefined): string {
+	if (snapshot === undefined) {
+		return "";
+	}
+	const generated = `${snapshot.dateLabel}, ${snapshot.timeLabel}`;
+	if (!isInsightRevised(snapshot)) {
+		return ` — generated ${generated}`;
+	}
+	return ` — generated ${generated}, last updated ${snapshot.updatedDateLabel}, ${snapshot.updatedTimeLabel}`;
+}
+
 export function toMarkLabel(
 	entry: PulseOutlineEntry,
 	snapshot: PulseSnapshot | undefined,
 	isMuted: boolean,
 	memberName?: string | null,
 ): string {
-	const stamp = snapshot === undefined ? "" : ` — ${snapshot.dateLabel}, ${snapshot.timeLabel}`;
+	const stamp = toMarkStamp(snapshot);
 	const base = entry.kind === "insight" ? `Insight: ${entry.label}${stamp}` : `Section: ${entry.label}`;
 	if (!isMuted) {
 		return base;

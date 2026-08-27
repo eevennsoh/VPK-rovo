@@ -1,30 +1,43 @@
 "use client";
 
-import { useId, type ReactNode, type RefCallback } from "react";
+import { type ReactNode, type RefCallback } from "react";
+import ArrowDownIcon from "@atlaskit/icon/core/arrow-down";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
 
+import type { AgentListItem } from "@/components/blocks/agent-list";
+import { PulseProseText } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-prose-text";
+import { PulseSourcesAppstack } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-sources-appstack";
+import { PULSE_SOURCES } from "@/components/blocks/jira-kanban/experimental/pulse/data/pulse-sources-preview";
 import {
 	PulseAttention,
 	PulseNextActions,
 	PulseSectionLabel,
 } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-signals";
 import {
+	HEADLINE_STYLE,
 	PULSE_EYEBROW,
 	PULSE_ITEM_BODY,
+	PULSE_ROW_META,
 } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-type";
+import {
+	isPulseSectionDimmed,
+	toPulseInsightEyebrow,
+	toPulseInsightHeadline,
+} from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-marks";
 import {
 	toAdjacentInsightIndex,
 	toPulseAnchorId,
 	toPulseSections,
+	toPulseSectionStats,
+	toSectionHeading,
 	type PulseScrollOptions,
+	type PulseSectionStat,
 } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-outline";
-import { isPulseSectionDimmed } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-marks";
 import type {
 	PulseAction,
 	PulseContribution,
 	PulseMember,
-	PulseStat,
 	PulseStoryProps,
 } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { ArtifactList, type ArtifactListItem } from "@/components/ui-custom/artifact-list";
@@ -36,20 +49,22 @@ import { cn } from "@/lib/utils";
 /**
  * Pulse story — the body of one insight inside the continuous article.
  *
- * One eyebrow, a display headline, the faces that produced it, the window's
- * numbers, the narrative, the artifacts it produced, then the signals and the
- * actions that follow from it. Nothing here swaps: every insight is mounted at
- * once and the reader scrolls. The header chevrons jump to the previous or next
+ * One eyebrow names the outcome and when it was last updated, then a display
+ * headline, the faces that produced it, a jump list of the subsections below,
+ * the narrative, the artifacts it produced, then the signals and the actions
+ * that follow from it. Nothing here swaps: every insight is mounted at once
+ * and the reader scrolls. The header chevrons jump to the previous or next
  * insight via the ruler's own scroll — they do not unmount or step a carousel.
  * What it also owns is anchors: the insight head and each non-empty section
  * carry the id the outline generated for them, so every mark on the ruler is a
  * real place in the document.
  *
- * While a member filter is on the column visibly becomes that member's: the
- * eyebrow carries their name, the display slot carries them rather than the
- * team, and the team's headline drops to a subdued line underneath. A member
- * who was quiet still gets a page — what the window was, and two ways out —
- * instead of one grey sentence and eight hundred pixels of white.
+ * While a member filter is on, the display headline stays an insight — the
+ * filtered member's authored title, or the team's if they have none. The
+ * team's headline drops to a subdued line underneath. The eyebrow stays the
+ * chapter and last-updated stamp; the roster already names who is selected. A
+ * member who was quiet still gets a page — what the window was, and two ways
+ * out — instead of one grey sentence and eight hundred pixels of white.
  */
 
 /**
@@ -67,14 +82,6 @@ export const MEASURE = "max-w-[36rem]";
 const SECTION_FOCUS_TRANSITION = "min-w-0 transition-opacity duration-normal ease-out-practical motion-reduce:transition-none";
 const SECTION_FOCUSED = "opacity-100";
 const SECTION_DIMMED = "opacity-(--opacity-disabled)";
-
-/** 40px → 54px display size, tracked tight the way the reference sets it. */
-const HEADLINE_STYLE = {
-	fontSize: "clamp(2.5rem, 0.575rem + 2.8vw, 3.375rem)",
-	fontWeight: 400,
-	letterSpacing: "-0.045em",
-	lineHeight: 1.03,
-} as const;
 
 /** One window the filtered member was active in, offered as a way out. */
 export interface PulseStoryJump {
@@ -104,10 +111,10 @@ export interface PulseStoryViewProps
 	onGoToIndex: (index: number, options?: PulseScrollOptions) => void;
 	/** Everyone — human and agent — whose work is in this window. */
 	contributors: readonly PulseMember[];
-	/** Clicking a contributor scopes the whole view to them; `null` clears it. */
+	/** Clears the header roster filter. Attribution faces do not drive this. */
 	onSelectMember: (memberId: string | null) => void;
-	/** The window's headline numbers, read under the title and faces. */
-	stats: readonly PulseStat[];
+	/** Jump the article to a section the outline already marked. */
+	onGoToEntry: (id: string) => void;
 	/**
 	 * Requested actions, owned above the article. A request is a commitment the
 	 * reader made; owning it here meant toggling Pulse off and back on recreated
@@ -115,6 +122,8 @@ export interface PulseStoryViewProps
 	 */
 	requestedActionIds: ReadonlySet<string>;
 	onRequestAction: (action: PulseAction) => void;
+	/** Opens the work item a Needs input row is waiting on. */
+	onViewAttention: (item: AgentListItem) => void;
 	/** What the window holds before scoping, so an emptied section can say so. */
 	unscopedCounts: {
 		artifacts: number;
@@ -138,6 +147,11 @@ export interface PulseStoryViewProps
  * the outline made marks for — an unanchored part renders identically, it just
  * has no mark pointing at it, so the ruler can never offer a jump that lands
  * nowhere.
+ *
+ * The story column owns the gap between blocks (`gap-8`), so this wrapper
+ * starts on the section heading. A start-aligned scrub then parks that heading
+ * on the scroller top — the same line a chevron uses for the insight eyebrow.
+ * A top margin inside the wrapper would park the spacer instead.
  */
 function PulseStoryAnchor({
 	anchorRef,
@@ -172,92 +186,115 @@ function PulseStoryAnchor({
 /**
  * Who produced this window, as faces, directly under the headline.
  *
- * The roster list used to live in the rail. Attribution belongs next to the
- * claim it supports, so the faces sit on the insight itself — and because each
- * face is the filter control, "who said this" and "show me only them" are the
- * same gesture.
+ * Attribution, not a filter. The header facepile is the roster control;
+ * these faces name who worked in the window.
  */
 function PulseStoryContributors({
 	contributors,
-	onSelectMember,
-	selectedMemberId,
 }: Readonly<{
 	contributors: readonly PulseMember[];
-	onSelectMember: (memberId: string | null) => void;
-	selectedMemberId: string | null;
 }>) {
-	if (contributors.length === 0) {
-		return null;
-	}
 	return (
-		<AvatarGroup
-			label="Contributors in this window"
-			// Leftmost-on-top, matching the board header's facepile: DOM order is
-			// tab order, so the stacking is done with z-index. The shared group
-			// also gives hexagon avatars their shape-aware separator.
-			className="isolate -mx-0.5 min-w-0 items-center -space-x-1.5 px-0.5 [&>*]:relative [&>*:nth-child(1)]:z-[8] [&>*:nth-child(2)]:z-[7] [&>*:nth-child(3)]:z-[6] [&>*:nth-child(4)]:z-[5] [&>*:nth-child(5)]:z-[4] [&>*:nth-child(6)]:z-[3] [&>*:nth-child(7)]:z-[2] [&>*:nth-child(8)]:z-[1]"
-		>
-			{contributors.map((member) => {
-				const isSelected = member.id === selectedMemberId;
-				return (
-					<button
-						aria-label={isSelected
-							? `Clear filter: ${member.name}`
-							: `Show only ${member.name}, ${member.role}`}
-						aria-pressed={isSelected}
-						className="focus-visible:ring-ring/50 flex size-6 shrink-0 items-center justify-center rounded-full outline-none focus-visible:ring-3"
-						key={member.id}
-						onClick={() => onSelectMember(isSelected ? null : member.id)}
-						title={`${member.name} · ${member.role}`}
-						type="button"
+		<div className="flex min-w-0 items-center gap-1">
+			{contributors.length === 0 ? null : (
+				<>
+					{/* Visible "By" is decorative; the group name already says who these faces are. */}
+					<span aria-hidden className={cn("shrink-0", PULSE_ROW_META)}>By</span>
+					<AvatarGroup
+						label="By contributors in this window"
+						size="xs"
+						// Leftmost-on-top, matching the board header's facepile: DOM order is
+						// tab order, so the stacking is done with z-index. The shared group
+						// also gives hexagon avatars their shape-aware separator. Overlap
+						// comes from AvatarGroup's xs `-space-x-1`.
+						className="isolate -mx-0.5 min-w-0 items-center px-0.5 [&>*]:relative [&>*:nth-child(1)]:z-[8] [&>*:nth-child(2)]:z-[7] [&>*:nth-child(3)]:z-[6] [&>*:nth-child(4)]:z-[5] [&>*:nth-child(5)]:z-[4] [&>*:nth-child(6)]:z-[3] [&>*:nth-child(7)]:z-[2] [&>*:nth-child(8)]:z-[1]"
 					>
-						<Avatar
-							className={cn(
-								"duration-normal ease-out-practical transition-opacity motion-reduce:transition-none",
-								member.kind === "human" ? "ring-2 ring-surface" : null,
-								member.kind === "human" && isSelected ? "ring-border-selected!" : null,
-								member.kind === "agent" && isSelected ? "[&>svg]:text-border-selected!" : null,
-								selectedMemberId !== null && !isSelected ? "opacity-(--opacity-disabled)" : null,
-							)}
-							label={member.name}
-							shape={member.kind === "agent" ? "hexagon" : "circle"}
-							size="sm"
-						>
-							<AvatarImage alt="" src={member.avatarSrc} />
-							<AvatarFallback>{getMemberInitials(member.name)}</AvatarFallback>
-						</Avatar>
-					</button>
-				);
-			})}
-		</AvatarGroup>
+						{contributors.map((member) => (
+							<span
+								className="flex size-4 shrink-0 items-center justify-center"
+								key={member.id}
+							>
+								<Avatar
+									className={member.kind === "human" ? "ring-2 ring-surface" : undefined}
+									label={member.name}
+									shape={member.kind === "agent" ? "hexagon" : "circle"}
+									size="xs"
+								>
+									<AvatarImage alt="" src={member.avatarSrc} />
+									<AvatarFallback>{getMemberInitials(member.name)}</AvatarFallback>
+								</Avatar>
+							</span>
+						))}
+					</AvatarGroup>
+					<span aria-hidden className={cn("shrink-0", PULSE_ROW_META)}>·</span>
+				</>
+			)}
+			<span className={cn("shrink-0", PULSE_ROW_META)}>
+				{`${PULSE_SOURCES.length} ${PULSE_SOURCES.length === 1 ? "Source" : "Sources"}`}
+				<span className="sr-only"> from Jira, Confluence, GitHub, Slack, and 10 more</span>
+			</span>
+			<PulseSourcesAppstack />
+		</div>
 	);
 }
 
 /**
- * The window's numbers, as a ruled label/value list under the faces.
+ * The window's subsection TOC, as a ruled label/value list under the faces.
  *
- * These moved out of the rail because they describe the story, not the work
- * queue beside it — read after the title and faces they answer "how big was
- * this" before the prose explains what happened.
+ * Each row is the same heading the article paints further down, counted from
+ * what this page actually holds, and jumps to that section's outline anchor.
+ * The down arrow is the affordance, not a second control: it stays in layout
+ * and fades in on hover or keyboard focus so Tab can reach the jump without a
+ * pointer. The label also lifts to default text on that same hover or focus.
  */
-function PulseStoryStats({ stats }: Readonly<{ stats: readonly PulseStat[] }>) {
-	if (stats.length === 0) {
+function PulseStoryStats({
+	label,
+	links,
+	onGoToEntry,
+}: Readonly<{
+	label: string;
+	links: readonly PulseSectionStat[];
+	onGoToEntry: (id: string) => void;
+}>) {
+	if (links.length === 0) {
 		return null;
 	}
 	return (
-		<dl className={cn("mt-6 min-w-0", MEASURE)}>
-			{stats.map((stat) => (
-				<div
-					className="flex min-w-0 items-baseline justify-between gap-6 border-b border-border py-2.5 last:border-b-0"
-					key={stat.id}
-				>
-					<dt className={cn("min-w-0 truncate", PULSE_ITEM_BODY)}>{stat.label}</dt>
-					<dd className="shrink-0 text-[18px] leading-6 font-medium tracking-[-0.01em] text-text tabular-nums">
-						{stat.value}
-					</dd>
-				</div>
-			))}
-		</dl>
+		<nav aria-label={`${label} sections`} className={cn("mt-6 min-w-0", MEASURE)}>
+			<ul>
+				{links.map((link) => (
+					<li className="border-b border-border last:border-b-0" key={link.id}>
+						<a
+							className="group/stat-link flex min-w-0 items-baseline justify-between gap-6 rounded-xs py-2.5 text-text-subtle no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring"
+							href={`#${link.id}`}
+							onClick={(event) => {
+								event.preventDefault();
+								onGoToEntry(link.id);
+							}}
+						>
+							<span className="flex min-w-0 items-center gap-1">
+								<span
+									className={cn(
+										"min-w-0 truncate transition-colors duration-xxshort ease-out-practical group-hover/stat-link:text-text group-focus-visible/stat-link:text-text motion-reduce:transition-none",
+										PULSE_ITEM_BODY,
+									)}
+								>
+									{link.label}
+								</span>
+								<Icon
+									aria-hidden
+									className="shrink-0 text-icon-subtle opacity-0 transition-opacity duration-xxshort ease-out-practical group-hover/stat-link:opacity-100 group-focus-visible/stat-link:opacity-100 motion-reduce:transition-none"
+									render={<ArrowDownIcon label="" size="small" />}
+								/>
+							</span>
+							<span className="shrink-0 text-[18px] leading-6 font-medium tracking-[-0.01em] text-text tabular-nums">
+								{link.value}
+							</span>
+						</a>
+					</li>
+				))}
+			</ul>
+		</nav>
 	);
 }
 
@@ -291,14 +328,14 @@ function PulseStoryProse({ paragraphs }: Readonly<{ paragraphs: readonly string[
 		<div className={cn("mt-7 flex flex-col gap-6", MEASURE)}>
 			{paragraphs.map((paragraph) => (
 				<p className="text-base/6 tracking-[-0.011em] text-pretty text-text" key={paragraph}>
-					{paragraph}
+					<PulseProseText text={paragraph} />
 				</p>
 			))}
 		</div>
 	);
 }
 
-/** The scoped body: who this is, what they did, and the way back to the team. */
+/** The scoped body: what they did, and the way back to the team. */
 function PulseStoryMemberBody({
 	contribution,
 	member,
@@ -321,25 +358,9 @@ function PulseStoryMemberBody({
 	const firstName = getFirstName(member.name);
 
 	return (
-		<div className={cn("mt-5", MEASURE)}>
-			<div className="flex min-w-0 items-center gap-2.5">
-				<Avatar shape={member.kind === "agent" ? "hexagon" : "circle"} size="sm">
-					<AvatarImage alt="" src={member.avatarSrc} />
-					<AvatarFallback>{getMemberInitials(member.name)}</AvatarFallback>
-				</Avatar>
-				<p className="min-w-0 truncate text-sm leading-5 text-text-subtle">
-					{member.role}
-					{member.timezone === undefined ? null : (
-						<>
-							<span aria-hidden className="text-text-subtlest"> · </span>
-							{member.timezone}
-						</>
-					)}
-				</p>
-			</div>
-
+		<div className={cn("mt-7", MEASURE)}>
 			{contribution === null ? (
-				<div className="mt-6">
+				<div>
 					<p className="text-base/6 tracking-[-0.011em] text-pretty text-text">
 						{`No activity from ${firstName} in this window.`}
 					</p>
@@ -363,7 +384,9 @@ function PulseStoryMemberBody({
 					</Button>
 				</div>
 			) : (
-				<p className="mt-6 text-base/6 tracking-[-0.011em] text-pretty text-text">{contribution.summary}</p>
+				<p className="text-base/6 tracking-[-0.011em] text-pretty text-text">
+					<PulseProseText text={contribution.summary} />
+				</p>
 			)}
 
 			<p className={cn("mt-7 border-t border-border pt-4", PULSE_ITEM_BODY)}>
@@ -428,13 +451,11 @@ function PulseStoryArtifacts({
 	artifacts,
 	emptyNote,
 }: Readonly<{ artifacts: readonly ArtifactListItem[]; emptyNote?: string }>) {
-	const labelId = `${useId()}-pulse-artifacts`;
-
 	if (artifacts.length === 0 && emptyNote === undefined) return null;
 
 	return (
-		<section aria-labelledby={labelId} className={cn("mt-8 min-w-0", MEASURE)}>
-			<PulseSectionLabel id={labelId}>Artifacts</PulseSectionLabel>
+		<section className={cn("min-w-0", MEASURE)}>
+			<PulseSectionLabel>{toSectionHeading("artifacts")}</PulseSectionLabel>
 			{artifacts.length === 0 ? (
 				<p className={cn("mt-3", PULSE_ITEM_BODY)}>{emptyNote}</p>
 			) : (
@@ -457,16 +478,16 @@ export function PulseStory({
 	insightCount,
 	insightIndex,
 	onGoToIndex,
+	onGoToEntry,
 	contributors,
 	onSelectMember,
-	stats,
 	onRequestAction,
+	onViewAttention,
 	requestedActionIds,
 	unscopedCounts,
 	anchorRef,
 	previewEntryId,
 }: Readonly<PulseStoryViewProps>) {
-	const headingId = `${useId()}-pulse-story-title`;
 	// The outline decides which parts earn a mark; the article reads the same
 	// helper so the two can never disagree about what exists.
 	const anchoredSections = new Set(toPulseSections(snapshot));
@@ -475,13 +496,16 @@ export function PulseStory({
 	const artifactsId = toPulseAnchorId(snapshot.id, "artifacts");
 	const attentionId = toPulseAnchorId(snapshot.id, "attention");
 	const actionsId = toPulseAnchorId(snapshot.id, "actions");
-	const eyebrow = member === null
-		? `${snapshot.chapterLabel} · ${snapshot.rangeLabel}`
-		: `${member.name} · ${snapshot.chapterLabel} · ${snapshot.rangeLabel}`;
-	const headline = member === null ? snapshot.title : member.name;
+	const sectionStats = toPulseSectionStats(snapshot, {
+		artifacts: artifacts.length,
+		attention: attention.length,
+		nextActions: nextActions.length,
+	});
+	const eyebrow = toPulseInsightEyebrow(snapshot);
+	const headline = toPulseInsightHeadline(snapshot, contribution);
 
 	return (
-		<section aria-labelledby={headingId} className="flex min-w-0 flex-col">
+		<section className="flex min-w-0 flex-col gap-8">
 			{/* The insight intro — head plus prose — is one ruler block. A jump
 			    lands on its naming line while preview keeps the whole intro together. */}
 			<div
@@ -502,19 +526,21 @@ export function PulseStory({
 					/>
 				</div>
 
-				<h2 className={cn("mt-7 text-pretty text-text", MEASURE)} id={headingId} style={HEADLINE_STYLE}>
+				<h2 className={cn("mt-6 text-pretty text-text", MEASURE)} style={HEADLINE_STYLE}>
 					{headline}
 				</h2>
 
-				<div className="mt-3 min-w-0">
+				<div className="mt-4 min-w-0">
 					<PulseStoryContributors
 						contributors={contributors}
-						onSelectMember={onSelectMember}
-						selectedMemberId={member?.id ?? null}
 					/>
 				</div>
 
-				<PulseStoryStats stats={stats} />
+				<PulseStoryStats
+					label={snapshot.chapterLabel}
+					links={sectionStats}
+					onGoToEntry={onGoToEntry}
+				/>
 
 				{member === null ? (
 					<PulseStoryProse paragraphs={snapshot.paragraphs} />
@@ -553,10 +579,12 @@ export function PulseStory({
 				isDimmed={isPulseSectionDimmed(previewEntryId, attentionId)}
 			>
 				<PulseAttention
-					className={cn("mt-8", MEASURE)}
+					className={MEASURE}
 					emptyNote={member === null
 						? undefined
-						: toEmptyNote(firstName, unscopedCounts.attention, "item needs attention", "items need attention")}
+						: toEmptyNote(firstName, unscopedCounts.attention, "item needs input", "items need input")}
+					members={contributors}
+					onView={onViewAttention}
 					signals={attention}
 				/>
 			</PulseStoryAnchor>
@@ -569,7 +597,7 @@ export function PulseStory({
 			>
 				<PulseNextActions
 					actions={nextActions}
-					className={cn("mt-8", MEASURE)}
+					className={MEASURE}
 					emptyNote={member === null
 						? undefined
 						: toEmptyNote(firstName, unscopedCounts.nextActions, "action", "actions")}

@@ -1,0 +1,21 @@
+/* Hover-action rows stay mounted and tabbable. Keyboard focus takes precedence
+   over pointer hover so only one row presents its action state at a time. */
+[data-suggestion-actions]:has(:focus-visible),
+.rich-text-command-menu:not(:has([data-suggestion-actions] :focus-visible)) [data-suggestion-actions]:hover {
+	background-color: var(--ds-background-neutral-subtle-hovered, #f1f2f4);
+}
+
+[data-suggestion-actions]:has(:focus-visible) > [data-suggestion-action-buttons],
+.rich-text-command-menu:not(:has([data-suggestion-actions] :focus-visible)) [data-suggestion-actions]:hover > [data-suggestion-action-buttons] {
+	width: auto;
+	overflow: visible;
+	padding-right: var(--ds-space-100, 8px);
+	opacity: 1;
+	pointer-events: auto;
+}
+
+[data-suggestion-actions] .rich-text-command-menu-item[data-has-actions="true"],
+.rich-text-command-menu:focus-within [data-suggestion-actions] .rich-text-command-menu-item[data-has-actions="true"] {
+	min-width: 0;
+	background-color: transparent;
+}

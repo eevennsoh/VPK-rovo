@@ -12,6 +12,7 @@ async function loadTerminalStoryHarness() {
 				export { foldBeats } from "./components/projects/jira-golden-journeys-v1/lib/terminal-demo-state";
 					export {
 					getJiraGoldenJourneysV3IssueUrl,
+					JIRA_GOLDEN_JOURNEYS_V3_RESUME_PROMPT,
 					JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_BEATS,
 					JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_STEP_COUNT,
 					JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_STORY,
@@ -40,14 +41,14 @@ const PAGE_COMPONENT_SOURCE = fs.readFileSync(
 	"utf8",
 );
 
-test("v3 terminal tells the local Claude-to-PR story in order", async () => {
+test("v3 terminal resumes the uncaptured PAY-101 Claude session in order", async () => {
 	const harness = await loadTerminalStoryHarness();
 	assert.deepEqual(
 		harness.JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_BEATS.map((beat) => beat.id),
-		["implement", "local-checks", "create-pull-request", "ci-started"],
+		["paste-resume-prompt", "restore-session", "show-generated-artifacts"],
 	);
 	assert.equal(harness.JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_BEATS[0].trigger, "click");
-	assert.equal(harness.JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_STEP_COUNT, 5);
+	assert.equal(harness.JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_STEP_COUNT, 4);
 	assert.ok(
 		harness.JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_BEATS
 			.flatMap((beat) => beat.steps)
@@ -62,21 +63,32 @@ test("v3 terminal tells the local Claude-to-PR story in order", async () => {
 	const allText = harness.JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_BEATS
 		.flatMap((beat) => beat.steps)
 		.flatMap((step) => {
-			if (step.kind === "type") return [step.text];
+			if (step.kind === "type" || step.kind === "paste") return [step.text];
 			if (step.kind === "output") return step.lines.flatMap((line) => line.map((span) => span.text));
 			return [];
 		})
 		.join("\n");
 
-	assert.match(allText, /Implement SHOP-4821 guest checkout/u);
-	assert.match(allText, /feature\/shop-4821-guest-checkout/u);
-	assert.match(allText, /opened PR #1847/u);
-	assert.match(allText, /Priya Narayanan and Jordan Lee requested/u);
-	assert.match(allText, /CI started for PR #1847/u);
-	assert.doesNotMatch(allText, /Code Planner|auto-merge|merged into main/u);
+	const resumeBeat = harness.JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_BEATS[0];
+	assert.equal(resumeBeat.steps[0].kind, "paste");
+	assert.equal(resumeBeat.steps[0].text, harness.JIRA_GOLDEN_JOURNEYS_V3_RESUME_PROMPT);
+	assert.equal(resumeBeat.steps[1].kind, "submit");
+	assert.match(
+		harness.JIRA_GOLDEN_JOURNEYS_V3_RESUME_PROMPT,
+		/^cd \/Users\/venn\/dev\/payments\/\.worktrees\/pay-101-adapter && claude --resume [0-9a-f-]{36}$/u,
+	);
+	assert.match(allText, /restored local Claude session/u);
+	assert.match(allText, /38 messages · Ee Venn Soh · last active Mon 17 Aug 07:48/u);
+	assert.match(allText, /We agreed to delete the adapter, not wrap it/u);
+	assert.match(allText, /Call-site inventory across four services/u);
+	assert.match(allText, /#1839/u);
+	assert.match(allText, /8c2f4e1/u);
+	assert.match(allText, /Payments SDK v2 — migration scope/u);
+	assert.match(allText, /Lane assignments, humans and agents/u);
+	assert.doesNotMatch(allText, /Implement |pnpm|CI started|auto-merge|merged into main/u);
 });
 
-test("v3 terminal finishes with an open PR handoff and directs the presenter to Build", async () => {
+test("v3 terminal finishes with restored artifacts and no implementation workflow", async () => {
 	const harness = await loadTerminalStoryHarness();
 	const { JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_BEATS: beats } = harness;
 	const final = harness.foldBeats(beats, beats.length - 1);
@@ -88,21 +100,25 @@ test("v3 terminal finishes with an open PR handoff and directs the presenter to 
 	assert.equal(harness.JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_STORY.layout, "claude-only");
 	assert.match(
 		final.right.transcript.flatMap((line) => line.map((span) => span.text)).join("\n"),
-		/CI started for PR #1847/u,
+		/Call-site inventory across four services/u,
 	);
-	assert.equal(harness.JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_STORY.finishedHint, "PR #1847 created · select Build above");
+	assert.equal(harness.JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_STORY.finishedHint, "PAY-101 context restored · session ready");
 	assert.equal(
-		harness.getJiraGoldenJourneysV3IssueUrl("SHOP-4821"),
-		"https://jira-golden-journeys-v3.atlassian.net/browse/SHOP-4821",
+		harness.getJiraGoldenJourneysV3IssueUrl("PAY-101"),
+		"https://jira-golden-journeys-v3.atlassian.net/browse/PAY-101",
 	);
 });
 
 test("v3 terminal exposes controlled reset, completion, and accessible handoff contracts", () => {
 	assert.match(TERMINAL_COMPONENT_SOURCE, /controller: TerminalDemoController/u);
 	assert.match(TERMINAL_COMPONENT_SOURCE, /resetKey\?: number \| string/u);
+	assert.match(TERMINAL_COMPONENT_SOURCE, /promptCopied\?: boolean/u);
 	assert.doesNotMatch(TERMINAL_COMPONENT_SOURCE, /onStepChange|onComplete/u);
 	assert.match(TERMINAL_COMPONENT_SOURCE, /data-story-complete=\{controller\.state\.finished \? "true" : "false"\}/u);
-	assert.match(TERMINAL_COMPONENT_SOURCE, /PR #1847 created\. Priya Narayanan and Jordan Lee requested as reviewers\./u);
+	assert.match(TERMINAL_COMPONENT_SOURCE, /PAY-101 session restored\./u);
+	assert.match(TERMINAL_COMPONENT_SOURCE, /data-restored-session="PAY-101"/u);
+	assert.match(TERMINAL_COMPONENT_SOURCE, /data-restored-artifacts=/u);
+	assert.match(TERMINAL_COMPONENT_SOURCE, /data-prompt-copied=/u);
 	assert.match(TERMINAL_COMPONENT_SOURCE, /theme\?: "dark" \| "light"/u);
 	assert.match(TERMINAL_COMPONENT_SOURCE, /data-color-mode=\{theme\}/u);
 	assert.match(

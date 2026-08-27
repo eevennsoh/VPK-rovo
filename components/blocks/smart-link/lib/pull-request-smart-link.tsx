@@ -1,3 +1,6 @@
+import type { ReactElement } from "react";
+import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
+import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 
 import type {
@@ -6,8 +9,8 @@ import type {
 } from "@/components/blocks/smart-link/components/smart-link";
 import { SMART_LINK_MODAL_ACTIONS } from "@/components/blocks/smart-link/data/smart-link-actions";
 
-/** Status values shared with Jira activity pull-request rows. */
-export type PullRequestSmartLinkStatus = "Open" | "Merged";
+/** Status values shared with Jira issue pull-request chrome. */
+export type PullRequestSmartLinkStatus = "Open" | "Merged" | "Failed";
 
 export interface PullRequestSmartLinkInput {
 	id: string;
@@ -30,14 +33,28 @@ export interface PullRequestSmartLinkInput {
 	description?: string;
 }
 
-function pullRequestStatusPresentation(
+function pullRequestFrontSlot(
 	status: PullRequestSmartLinkStatus,
-): NonNullable<SmartLinkItem["status"]> {
+): {
+	icon: ReactElement;
+	status: NonNullable<SmartLinkItem["status"]>;
+} {
 	switch (status) {
 		case "Open":
-			return { label: "Open", variant: "success" };
+			return {
+				icon: <PullRequestIcon label="" />,
+				status: { label: "Open", variant: "success" },
+			};
 		case "Merged":
-			return { label: "Merged", variant: "discovery" };
+			return {
+				icon: <MergeSuccessIcon label="" />,
+				status: { label: "Merged", variant: "discovery" },
+			};
+		case "Failed":
+			return {
+				icon: <MergeFailureIcon label="" />,
+				status: { label: "Failed", variant: "danger" },
+			};
 		default: {
 			const _exhaustive: never = status;
 			return _exhaustive;
@@ -60,6 +77,8 @@ function resolvePullRequestHref(input: Readonly<PullRequestSmartLinkInput>): str
 export function toPullRequestSmartLink(
 	input: Readonly<PullRequestSmartLinkInput>,
 ): SmartLinkItem {
+	const frontSlot = pullRequestFrontSlot(input.status);
+
 	return {
 		id: input.id,
 		href: resolvePullRequestHref(input),
@@ -68,11 +87,10 @@ export function toPullRequestSmartLink(
 		title: `#${input.number}: ${input.title}`,
 		variant: "pull-request",
 		provider: { name: "GitHub", logo: { kind: "third-party", name: "github" } },
-		// The front slot is a transparent icon tile holding the pull-request glyph,
-		// tinted to the status tone (green Open, purple Merged). The GitHub logo
-		// still identifies the provider in the footer and the repo tag.
-		icon: { kind: "icon", icon: <PullRequestIcon label="" /> },
-		status: pullRequestStatusPresentation(input.status),
+		// The front slot encodes Open / Merged / Failed with the same glyphs Jira
+		// issue chrome uses. The GitHub logo still identifies the provider.
+		icon: { kind: "icon", icon: frontSlot.icon },
+		status: frontSlot.status,
 		author: input.author,
 		codeStats: {
 			files: input.files,

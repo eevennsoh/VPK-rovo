@@ -57,6 +57,11 @@ const sources: TwgToolSource[] = [
 	examples: [
 		{ title: "Static", description: "Non-animated stack for cards and templates.", demoSlug: "twg-appstack-demo-static" },
 		{ title: "Overflow", description: "Stack with hidden source count.", demoSlug: "twg-appstack-demo-overflow" },
+		{
+			title: "Overflow grow",
+			description: "Overflow tile keeps the icon-square min-width for +10 and grows for +48 and +100.",
+			demoSlug: "twg-appstack-demo-overflow-grow",
+		},
 		{ title: "Sizes", description: "xxsmall 16px, xsmall 20px, small 24px, and medium 32px stacks.", demoSlug: "twg-appstack-demo-sizes" },
 	],
 };

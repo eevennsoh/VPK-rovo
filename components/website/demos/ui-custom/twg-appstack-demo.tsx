@@ -74,6 +74,10 @@ export default function TWGAppstackDemo() {
 					<span className="text-xs font-semibold leading-4 text-text-subtle">Sizes</span>
 					<TWGAppstackDemoSizes />
 				</div>
+				<div className="flex flex-col gap-2">
+					<span className="text-xs font-semibold leading-4 text-text-subtle">Overflow grow</span>
+					<TWGAppstackDemoOverflowGrow />
+				</div>
 			</div>
 		</div>
 	);
@@ -85,6 +89,52 @@ export function TWGAppstackDemoStatic() {
 
 export function TWGAppstackDemoOverflow() {
 	return <TWGAppstack animated={false} className="justify-start" sources={SOURCES} maxVisible={3} />;
+}
+
+function createOverflowSources(hiddenCount: number, visibleCount = 3): TwgToolSource[] {
+	const total = visibleCount + hiddenCount;
+	return Array.from({ length: total }, (_, index) => {
+		const source = SOURCES[index % SOURCES.length];
+		return {
+			id: `${source.id}-${hiddenCount}-${index}`,
+			label: source.label,
+			provider: source.provider,
+		};
+	});
+}
+
+export function TWGAppstackDemoOverflowGrow() {
+	return (
+		<div className="flex flex-col gap-4">
+			<div className="flex flex-col gap-1.5">
+				<span className="text-xs leading-4 text-text-subtlest">+10 — square min-width</span>
+				<TWGAppstack
+					animated={false}
+					className="justify-start"
+					maxVisible={3}
+					sources={createOverflowSources(10)}
+				/>
+			</div>
+			<div className="flex flex-col gap-1.5">
+				<span className="text-xs leading-4 text-text-subtlest">+48 — grows past the tile square</span>
+				<TWGAppstack
+					animated={false}
+					className="justify-start"
+					maxVisible={3}
+					sources={createOverflowSources(48)}
+				/>
+			</div>
+			<div className="flex flex-col gap-1.5">
+				<span className="text-xs leading-4 text-text-subtlest">+100 — three-digit overflow</span>
+				<TWGAppstack
+					animated={false}
+					className="justify-start"
+					maxVisible={3}
+					sources={createOverflowSources(100)}
+				/>
+			</div>
+		</div>
+	);
 }
 
 export function TWGAppstackDemoSizes() {

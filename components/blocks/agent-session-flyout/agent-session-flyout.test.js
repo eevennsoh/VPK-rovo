@@ -13,8 +13,9 @@ function readRepoFile(relativePath) {
 	return fs.readFileSync(path.join(BLOCK_DIR, "..", "..", "..", relativePath), "utf8");
 }
 
-// The rich flyout body is the canonical "latest" flyout and lives in the Jira
-// sidebar variant so both the live sidebar and this block render it.
+// The Jira sidebar variant owns both the property-free hover surface and the
+// richer detail body used by full detail panels. Property names stay on the
+// row as accessible labels only — never as a visible label column.
 const FLYOUT_BODY_PATH = "components/blocks/product-sidebar/variants/jira-session-flyout.tsx";
 const FLYOUT_HANDLE_PATH = "components/blocks/product-sidebar/variants/jira-session-flyout-data.ts";
 const FLYOUT_DEMO_DATA_PATH = "components/blocks/agent-session-flyout/agent-session-flyout-data.ts";
@@ -23,9 +24,45 @@ const HOVER_CARD_HANDLE_PATH = "components/ui/hover-card-handle.ts";
 const QUEUE_DETAIL_ARTIFACTS_PATH = "components/projects/jira-queue/components/queue-detail-artifacts.tsx";
 const QUEUE_DETAIL_PANEL_PATH = "components/projects/jira-queue/components/queue-detail-panel.tsx";
 
-// The shared body reuses the shared design-system components rather than
-// re-implementing them.
-test("shared flyout body reuses SmartLink, agent Tag, Lozenge, and GitHub logo", () => {
+test("shared hover flyout defaults to session details and can opt into the composer card", () => {
+	const source = readRepoFile(FLYOUT_BODY_PATH);
+	assert.match(source, /export type JiraSessionFlyoutContent = "details" \| "composer";/u);
+	assert.match(source, /content = "details"/u);
+	assert.match(source, /case "details":/u);
+	assert.match(source, /<JiraSessionFlyoutBody session=\{session\} \/>/u);
+	assert.match(source, /case "composer":/u);
+	assert.match(
+		source,
+		/<AgentStates[\s\S]*agent=\{\{[\s\S]*id: session\.id,[\s\S]*name: session\.agentName,[\s\S]*state=\{toAgentStatesState\(session\.status\)\}/u,
+	);
+	assert.match(source, /function toAgentStatesState\(/u);
+	assert.match(source, /status === "awaiting-input"\) return "awaiting-input"/u);
+	assert.match(source, /status === "running"\) return "working"/u);
+	assert.match(source, /return "completed"/u);
+});
+
+test("shared Agent States flyout forwards submission, timing, and stopped lifecycle data", () => {
+	const source = readRepoFile(FLYOUT_BODY_PATH);
+	const jiraSource = readRepoFile("components/blocks/product-sidebar/variants/jira.tsx");
+	const queueSource = readRepoFile("components/projects/jira-queue/data/queue-sessions.ts");
+
+	assert.match(source, /onSubmitPrompt\?: \(session: JiraSidebarSessionItem, prompt: string\) => void;/u);
+	assert.match(source, /onSubmit=\{onSubmitPrompt \? \(prompt\) => onSubmitPrompt\(session, prompt\) : undefined\}/u);
+	for (const prop of ["completedAtMs", "completedSecondsAgo", "initialElapsedSeconds", "startedAtMs"]) {
+		assert.match(source, new RegExp(`${prop}=\\{session\\.${prop}\\}`, "u"));
+		assert.match(jiraSource, new RegExp(`${prop}\\?: number;`, "u"));
+	}
+	assert.match(source, /function toAgentStatesMessage\(/u);
+	assert.match(source, /status !== "stopped"\) return undefined;/u);
+	assert.match(source, /This session was stopped before the requested work was completed\./u);
+	assert.match(source, /message=\{toAgentStatesMessage\(session\.status\)\}/u);
+	assert.match(queueSource, /const QUEUE_SESSION_TIMING:/u);
+	assert.match(queueSource, /stopped: \{ completedSecondsAgo:/u);
+});
+
+// Detail panels still reuse the shared design-system property components rather
+// than re-implementing them inside each panel.
+test("shared detail body reuses SmartLink, agent Tag, Lozenge, and GitHub logo", () => {
 	const source = readRepoFile(FLYOUT_BODY_PATH);
 	assert.match(source, /export function JiraSessionFlyoutBody\b/u);
 	assert.match(source, /import\s*\{[^}]*SmartLink[^}]*\}\s*from\s*"@\/components\/blocks\/smart-link"/u);
@@ -33,8 +70,16 @@ test("shared flyout body reuses SmartLink, agent Tag, Lozenge, and GitHub logo",
 	assert.match(source, /import\s*\{[^}]*Lozenge[^}]*\}\s*from\s*"@\/components\/ui\/lozenge"/u);
 	assert.match(source, /import\s*\{[^}]*Tag[^}]*\}\s*from\s*"@\/components\/ui\/tag"/u);
 	assert.match(source, /<SmartLink[\s\S]*item=\{toWorkItem\(session\)\}/u);
-	// Agent renders as an agent-type Tag pill; PR state renders as a Lozenge.
-	assert.match(source, /<Tag[\s\S]*?type="agent"/u);
+	// Agent renders as the canonical at-mention Tag; PR state renders as a Lozenge.
+	assert.match(
+		source,
+		/<Tag[\s\S]*color="gray"[\s\S]*type="agent"[\s\S]*variant="editor"/u,
+	);
+	assert.match(
+		source,
+		/<AgentAvatarVisual[\s\S]*sizePx=\{16\}/u,
+	);
+	assert.doesNotMatch(source, /TileAvatar/u);
 	assert.match(source, /<Lozenge variant=\{prState\.variant\}>/u);
 });
 
@@ -53,16 +98,16 @@ test("nested Jira previews open right by default while Queue Details overrides t
 	assert.match(artifactsSource, /<SmartLink align="center" alignOffset=\{0\}[\s\S]*side="left"/u);
 });
 
-// The block delegates to the shared body and reuses the /jira-golden-journeys-v0 seeds rather than
-// re-declaring its own flyout body or placeholder lifecycle copy.
-test("block delegates to the shared flyout body and reuses /jira-golden-journeys-v0 data", () => {
+// The block delegates to the shared surface and reuses the /jira-golden-journeys-v0 seeds rather than
+// re-declaring its own flyout card or placeholder lifecycle copy.
+test("block delegates to the shared flyout surface and reuses /jira-golden-journeys-v0 data", () => {
 	const source = readBlockFile("components/agent-session-flyout.tsx");
 	const dataSource = readRepoFile(FLYOUT_DEMO_DATA_PATH);
 	assert.match(
 		source,
 		/import\s*\{[^}]*JiraSessionFlyoutSurface[^}]*JiraSessionFlyoutTrigger[^}]*\}\s*from\s*"@\/components\/blocks\/product-sidebar\/variants\/jira-session-flyout"/u,
 	);
-	assert.match(source, /<JiraSessionFlyoutSurface handle=\{flyoutHandle\} \/>/u);
+	assert.match(source, /<JiraSessionFlyoutSurface content=\{content\} handle=\{flyoutHandle\} \/>/u);
 	assert.match(source, /<JiraSessionFlyoutTrigger[\s\S]*?session=\{session\}/u);
 	assert.match(source, /AGENT_SESSION_FLYOUT_SESSIONS/u);
 	assert.match(dataSource, /ASX_QUEUE_SESSION_SEEDS\.map\(createAsxQueueSidebarSessionItem\)/u);
@@ -105,21 +150,23 @@ test("demo sessions share one moving shell with a fade-only content viewport", (
 	assert.match(hoverCardSource, /positionerClassName\?: string/u);
 });
 
-// SCM fields live in their own separated "Development" block using the normal
-// 12px body font (not mono), and the block preserves every field the legacy
-// compact flyout carried.
-test("development fields are separated, complete, and use the normal body font", () => {
+// SCM fields remain available to full detail panels. Visible rows are icon +
+// value only; the property name is screen-reader-only so a label column cannot
+// regress back into the flyout.
+test("session flyout metadata is property-free: no visible label column", () => {
 	const source = readRepoFile(FLYOUT_BODY_PATH);
-	assert.match(source, />Development</u);
+	assert.doesNotMatch(source, /grid-cols-\[16px_84px_minmax\(0,1fr\)\]/u);
+	assert.match(source, /<span className="sr-only">\{label\}<\/span>/u);
+	assert.doesNotMatch(source, /<span className="text-text-subtlest">\{label\}<\/span>/u);
 	assert.doesNotMatch(source, /font-mono/u);
-	for (const label of ["Pull request", "Checks", "Repository", "Branch", "Worktree"]) {
-		assert.match(source, new RegExp(`label="${label}"`, "u"), `missing Development field "${label}"`);
+	assert.match(source, />Development</u);
+	for (const label of ["Session", "Agent", "Work item", "Pull request", "Checks", "Repository", "Branch", "Worktree"]) {
+		assert.match(source, new RegExp(`label="${label}"`, "u"), `missing accessible property name "${label}"`);
 	}
 });
 
-// The live Jira sidebar row renders the same shared flyout body, and the old
-// compact hover body is fully removed (never coexisting).
-test("the live sidebar row renders the shared flyout body", () => {
+// The live Jira sidebar row renders the same property-free shared flyout.
+test("the live sidebar row renders the shared flyout surface", () => {
 	const jiraSource = readRepoFile("components/blocks/product-sidebar/variants/jira.tsx");
 	assert.match(jiraSource, /JiraSessionFlyoutSurface,[\s\S]*JiraSessionFlyoutTrigger,[\s\S]*createJiraSessionFlyoutHandle/u);
 	assert.match(jiraSource, /<JiraSessionFlyoutTrigger[\s\S]*?session=\{session\}/u);
@@ -154,4 +201,28 @@ test("block is registered across catalog, manifest, details, and demo registry",
 	assert.match(readRepoFile("app/data/details/blocks.ts"), /"agent-session-flyout":\s*AGENT_SESSION_FLYOUT_DETAIL/u);
 	assert.match(readRepoFile("app/data/component-manifest.ts"), /blockComponent\("agent-session-flyout", "Agent Session Flyout"\)/u);
 	assert.match(readRepoFile("app/data/components.ts"), /blockComponent\("agent-session-flyout", "Agent Session Flyout"\)/u);
+});
+
+test("catalog defaults to session details and exposes a composer option", () => {
+	const source = readBlockFile("components/agent-session-flyout.tsx");
+	const pageSource = readBlockFile("page.tsx");
+	const demoSource = readRepoFile("components/website/demos/blocks/agent-session-flyout-demo.tsx");
+	const detailSource = readRepoFile("app/data/details/blocks/agent-session-flyout.ts");
+	const variantRegistry = readRepoFile("components/website/registry/blocks-variants.ts");
+
+	assert.match(source, /content = "details"/u);
+	assert.match(source, /content\?: JiraSessionFlyoutContent/u);
+	assert.match(pageSource, /content = "details"/u);
+	assert.match(pageSource, /\{ label: "Details", value: "details" \}/u);
+	assert.match(pageSource, /\{ label: "Composer", value: "composer" \}/u);
+	assert.match(pageSource, /<AgentSessionFlyout content=\{flyoutContent\} \/>/u);
+	assert.match(demoSource, /export function AgentSessionFlyoutDemoComposer/u);
+	assert.match(demoSource, /<Page content="composer" \/>/u);
+	assert.match(detailSource, /name: "content"/u);
+	assert.match(detailSource, /type: '"details" \| "composer"'/u);
+	assert.match(detailSource, /default: '"details"'/u);
+	assert.match(detailSource, /title: "Composer flyout"/u);
+	assert.match(detailSource, /demoSlug: "agent-session-flyout-demo-composer"/u);
+	assert.match(variantRegistry, /"agent-session-flyout-demo-composer": dynamic/u);
+	assert.match(variantRegistry, /default: mod\.AgentSessionFlyoutDemoComposer/u);
 });

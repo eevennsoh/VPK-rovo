@@ -3,7 +3,61 @@ import type {
 	JiraSidebarSessionStatus,
 } from "@/components/blocks/product-sidebar/variants/jira";
 
-import type { AgentListItem } from "./agent-list-types";
+import type { AgentListHost, AgentListItem } from "./agent-list-types";
+
+/**
+ * Where a row's session runs. The row field wins; `sessionDetails.host` is the
+ * flyout-era fallback so older payloads still resolve without duplicating host
+ * onto every consumer.
+ */
+export function getAgentListHost(item: AgentListItem): AgentListHost {
+	return item.host ?? item.sessionDetails?.host ?? "cloud";
+}
+
+/** Local sessions surface a device chip instead of a live runtime and agent name. */
+export function isLocalAgentListItem(item: AgentListItem): boolean {
+	return getAgentListHost(item) === "local";
+}
+
+/**
+ * POSIX-safe shell argument. Values that are already made only of characters no
+ * shell treats specially are left bare so the copied command stays readable;
+ * anything else (spaces in a checkout path, `$`, quotes, …) is single-quoted,
+ * with embedded single quotes closed and re-opened as `'\''`.
+ */
+const SHELL_SAFE_PATTERN = /^[A-Za-z0-9_@%+=:,./-]+$/u;
+
+export function quoteShellArgument(value: string): string {
+	if (SHELL_SAFE_PATTERN.test(value)) {
+		return value;
+	}
+	return `'${value.replaceAll("'", String.raw`'\''`)}'`;
+}
+
+/**
+ * Shell command that restores a local coding session in the viewer's terminal.
+ * Prefers an explicit resume id when the fixture named one; otherwise the row
+ * id. A worktree path, when present, is prefixed as `cd … &&`. Both values are
+ * shell-quoted so a path such as `/Users/me/My Project` pastes correctly.
+ */
+export function toAgentListResumeCommand(item: AgentListItem): string {
+	const resumeId = quoteShellArgument(item.sessionDetails?.resumeSessionId ?? item.id);
+	const worktree = item.sessionDetails?.worktreePath?.trim();
+	if (worktree === undefined || worktree.length === 0) {
+		return `claude --resume ${resumeId}`;
+	}
+
+	return `cd ${quoteShellArgument(worktree)} && claude --resume ${resumeId}`;
+}
+
+/**
+ * Agent coding sessions, as opposed to person rows (comments, @mentions).
+ * Coding rows always keep the hover View / Resume actions; `canViewItem` may
+ * still hide Reply on a person row.
+ */
+export function isCodingAgentListItem(item: AgentListItem): boolean {
+	return (item.agent.kind ?? "agent") !== "person";
+}
 
 /**
  * Boundary between the agent-session row model (`AgentListItem`) and the
@@ -20,9 +74,14 @@ import type { AgentListItem } from "./agent-list-types";
 /**
  * Derives a Jira-style issue key from an agent-session branch:
  * `rovo/vita-142-vision-deck` → `VITA-142`. Falls back to the raw branch when
- * the pattern does not match, so the flyout still names something real.
+ * the pattern does not match, so the flyout still names something real, and to
+ * an empty string for rows that carry no branch — those are not agent sessions
+ * and never open the session flyout.
  */
-export function deriveIssueKeyFromBranch(branch: string): string {
+export function deriveIssueKeyFromBranch(branch: string | undefined): string {
+	if (branch === undefined) {
+		return "";
+	}
 	const match = /^rovo\/([a-z]+)-(\d+)-/.exec(branch);
 	return match ? `${match[1].toUpperCase()}-${match[2]}` : branch;
 }
@@ -31,11 +90,13 @@ export function deriveIssueKeyFromBranch(branch: string): string {
  * Row lifecycle → flyout lifecycle. The row model has no dedicated "PR open"
  * state, so a finished session borrows it from `prStatus`; a finished session
  * that never opened a PR reads as `merged` (work item Done) because that is the
- * only terminal-success status the flyout models.
+ * only terminal-success status the flyout models. `attention` is a
+ * notification, not a session, but it still reads as blocked on the viewer.
  */
 export function toAgentSessionStatus(item: AgentListItem): JiraSidebarSessionStatus {
 	switch (item.state) {
 		case "needs-input":
+		case "attention":
 			return "awaiting-input";
 		case "running":
 			return "running";
@@ -53,10 +114,14 @@ export function toAgentSessionFlyoutItem(item: AgentListItem): JiraSidebarSessio
 		agentAvatarSrc: item.agent.avatarSrc,
 		agentName: item.agent.name,
 		branch: details?.branch ?? item.branch,
-		host: details?.host ?? "cloud",
+		completedAtMs: item.completedAtMs,
+		completedSecondsAgo: item.completedSecondsAgo,
+		host: getAgentListHost(item),
 		id: item.id,
+		initialElapsedSeconds: item.elapsedSeconds,
 		issueKey: details?.issueKey ?? deriveIssueKeyFromBranch(item.branch),
 		issueSummary: details?.issueSummary ?? item.title,
+		startedAtMs: item.startedAtMs,
 		status: toAgentSessionStatus(item),
 		title: item.title,
 	};

@@ -1,31 +1,49 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, type CSSProperties, type RefCallback, type UIEvent } from "react";
+import { useCallback, useMemo, useRef, useState, type RefCallback } from "react";
 
+import {
+	PulseAnswers,
+	PulseInsightsComposer,
+} from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-insights-composer";
+import { PulseEmbeddedChat } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-embedded-chat";
 import { PulseWorkRail } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-rail";
+import { PulseScopeBrief } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-scope-brief";
 import {
 	PulseScrubber,
 	PulseScrubberCompact,
 } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-scrubber";
 import { PulseStream } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-stream";
 import { PULSE_TIMELINE } from "@/components/blocks/jira-kanban/experimental/pulse/data/pulse-timeline";
+import {
+	toPulseScopeKey,
+	toPulseSuggestedQuestions,
+} from "@/components/blocks/jira-kanban/experimental/pulse/data/pulse-scopes";
+import { usePulseInsightsChat } from "@/components/blocks/jira-kanban/experimental/pulse/hooks/use-pulse-insights-chat";
 import { usePulseReading } from "@/components/blocks/jira-kanban/experimental/pulse/hooks/use-pulse-reading";
 import {
+	scopeTimelineToWorkItemKeys,
 	usePulseMemberFilter,
 	usePulseTimeline,
 } from "@/components/blocks/jira-kanban/experimental/pulse/hooks/use-pulse-timeline";
 import {
 	buildPulseOutline,
-	isPulseScrollTowardTop,
+	isPulseChevronHeaderJump,
+	PULSE_ANSWERS_ANCHOR_ID,
+	PULSE_SCOPE_ANCHOR_ID,
+	toPulseArticleTopFadeVisible,
+	type PulseScrollOptions,
 } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-outline";
 import type {
 	PulseAction,
+	PulseAnswer,
 	PulseLooseWork,
+	PulseScope,
 	PulseTimeline,
+	PulseWorkItem,
 } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { ScrollMaskEdgeOverlay } from "@/components/visual/scroll-mask";
-import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { cn } from "@/lib/utils";
 
 /**
@@ -49,11 +67,11 @@ import { cn } from "@/lib/utils";
 /**
  * Pulse runs full-bleed. The insight column takes whatever the three-column row
  * does not: 144px of ruler (enough for "Next best actions"), then the article,
- * then one work rail — a two-track grid at a fixed 320 and 300 with a 40px
- * gutter between the tracks. Capping the assembly would strand the rail against
- * the right edge on a wide screen, and the article is the one thing here that
- * earns extra width — its own prose measure is capped separately, inside
- * `PulseStory`.
+ * then one work rail — a two-track grid that defaults to 320 and 300, with a
+ * 40px gutter before it that holds the insights/work-items resize handle.
+ * Capping the assembly would strand the rail against the right edge on a wide
+ * screen, and the article is the one thing here that earns extra width — its
+ * own prose measure is capped separately, inside `PulseStory`.
  */
 const SHELL_MEASURE = "w-full min-w-0";
 
@@ -67,35 +85,95 @@ const PROJECT_LABEL = "min-w-0 truncate text-[10px] font-semibold uppercase trac
 /** Matches the reference's ~5% fade band on this column's ~630px viewport. */
 const PULSE_FADE_SIZE = "3rem";
 
+/** Stable identity, so an unanswered article does not re-render on every tick. */
+const EMPTY_ANSWERS: readonly PulseAnswer[] = [];
+
+function pulseArticleFadeClassName(visible: boolean) {
+	return cn(
+		"opacity-0 transition-opacity motion-reduce:transition-none",
+		visible
+			? "visible opacity-100 duration-normal ease-out-practical"
+			: "invisible duration-fast ease-in",
+	);
+}
+
 export interface ExperimentalPulseProps {
 	/**
-	 * Commitments the reader has made — actions requested, loose work captured.
-	 * Owned by the page rather than in here, so toggling Pulse off and back on
-	 * cannot silently discard them along with this subtree.
+	 * Commitments the reader has made — actions requested, loose work captured
+	 * or dismissed. Owned by the page rather than in here, so toggling Pulse
+	 * off and back on cannot silently discard them along with this subtree.
 	 */
 	capturedLooseWorkIds: ReadonlySet<string>;
+	dismissedLooseWorkIds: ReadonlySet<string>;
+	isLooseWorkResumable?: (item: PulseLooseWork) => boolean;
+	isWorkItemInteractive?: (workItem: PulseWorkItem) => boolean;
 	onCaptureLooseWork: (item: PulseLooseWork) => void;
+	onDismissLooseWork: (item: PulseLooseWork) => void;
+	onResumeLooseWork?: (item: PulseLooseWork) => void;
+	onWorkItemClick?: (workItem: PulseWorkItem) => void;
 	requestedActionIds: ReadonlySet<string>;
 	onRequestAction: (action: PulseAction) => void;
 	timeline?: PulseTimeline;
 	/** Controlled member filter, so the board header's facepile can drive it. */
 	selectedMemberId?: string | null;
 	onSelectedMemberIdChange?: (memberId: string | null) => void;
+	/**
+	 * The epic or sprint the article is narrowed to, already resolved by the
+	 * page from the board filter's selection. Resolving it up there keeps one
+	 * owner: the same object drives the header's chip and this brief, so the
+	 * chip can never name a scope the article is not actually showing.
+	 */
+	scope?: PulseScope | null;
+	/**
+	 * Questions the reader has asked, and the answers. Owned by the page for the
+	 * same reason the commitments are: Insights unmounts when it is toggled off,
+	 * and a question somebody asked is not view state.
+	 */
+	answers?: readonly PulseAnswer[];
+	onAsk?: (question: string) => void;
 }
 
 export function ExperimentalPulse({
 	capturedLooseWorkIds,
+	dismissedLooseWorkIds,
+	isLooseWorkResumable,
+	isWorkItemInteractive,
 	onCaptureLooseWork,
+	onDismissLooseWork,
+	onResumeLooseWork,
+	onWorkItemClick,
 	onRequestAction,
 	requestedActionIds,
-	timeline = PULSE_TIMELINE,
+	timeline: sourceTimeline = PULSE_TIMELINE,
 	selectedMemberId,
 	onSelectedMemberIdChange,
+	scope = null,
+	answers = EMPTY_ANSWERS,
+	onAsk,
 }: Readonly<ExperimentalPulseProps>) {
 	const filter = usePulseMemberFilter({ onSelectedMemberIdChange, selectedMemberId });
+	// Scope narrows the whole timeline before anything else reads it, so the
+	// member filter, the outline and the rail all derive from the narrowed one
+	// and none of them has to learn what an epic is. It composes underneath the
+	// board filter's day range, which the page has already applied.
+	const timeline = useMemo(
+		() => scopeTimelineToWorkItemKeys(
+			sourceTimeline,
+			scope === null ? null : new Set(scope.workItemKeys),
+		),
+		[scope, sourceTimeline],
+	);
+	const scopeKey = toPulseScopeKey(scope);
 	// One outline behind both the article and the ruler, so the marks and the
 	// anchors can never disagree: every mark is an element on the page.
-	const outline = useMemo(() => buildPulseOutline(timeline), [timeline]);
+	const outline = useMemo(
+		() => buildPulseOutline(timeline, scope === null ? null : {
+			id: PULSE_SCOPE_ANCHOR_ID,
+			heading: scope.key,
+			label: `${scope.key} — ${scope.name}`,
+		}),
+		[scope, timeline],
+	);
 	const [hoveredEntryId, setHoveredEntryId] = useState<string | null>(null);
 	const [focusedEntryId, setFocusedEntryId] = useState<string | null>(null);
 	const previewEntryId = focusedEntryId ?? hoveredEntryId;
@@ -103,54 +181,93 @@ export function ExperimentalPulse({
 		() => outline.find((entry) => entry.id === previewEntryId) ?? null,
 		[outline, previewEntryId],
 	);
-	const reading = usePulseReading({ outline, resetKey: filter.selectedMemberId });
+	// Changing the scope rewrites the article for exactly the reason changing
+	// the member filter does, so it re-keys the reading position the same way.
+	const reading = usePulseReading({
+		outline,
+		resetKey: `${scopeKey}|${filter.selectedMemberId ?? ""}`,
+	});
 	const pulse = usePulseTimeline(timeline, {
 		activeIndex: reading.activeSnapshotIndex,
 		selectedMemberId: filter.selectedMemberId,
 	});
+	const suggestions = useMemo(() => toPulseSuggestedQuestions(scope), [scope]);
+	const {
+		ask: askInsightsChat,
+		chatContextBar,
+		chatOpen: insightsChatOpen,
+		enabled: insightsChatEnabled,
+	} = usePulseInsightsChat(scope, timeline.projectLabel);
+	const handleAsk = useCallback((question: string) => {
+		askInsightsChat(question);
+		onAsk?.(question);
+	}, [askInsightsChat, onAsk]);
 
-	// Bottom fade stays a CSS mask. The top fade is a pointer-events-none
-	// overlay that only appears while the reader moves back toward the top:
-	// keeping it mounted at opacity zero lets it transition without veiling a
-	// header after the article is positioned by a chevron or ruler jump.
-	const overflow = useHasVerticalOverflow<HTMLDivElement>();
-	const { ref: overflowRef, showBottomScrollMask, showTopScrollMask } = overflow;
+	// Both edge fades are pointer-events-none overlays. `mask-image` on a
+	// scrollport fades the document, not the viewport, so a CSS bottom stop
+	// never paints while the reader is mid-article. The top overlay stays
+	// mounted at opacity zero so it can transition. It paints whenever the
+	// article is clipped at the top — a rest-state headline should not cut off
+	// flush — and hides after a start-aligned jump, which pins the destination
+	// section (and the insight nav, on a chevron) into that same band. The
+	// bottom band stays on: the article sits flush on the composer, and a
+	// rest-state cutoff reads as a clip.
+	const { ref: overflowRef, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const { scrollRef, scrollToEntry, scrollToSnapshot } = reading;
-	const [isScrollingTowardTop, setIsScrollingTowardTop] = useState(false);
-	const previousScrollTopRef = useRef(0);
+	const [suppressTopFade, setSuppressTopFade] = useState(false);
+	const suppressTopFadeRef = useRef(false);
+	const skipProgrammaticScrollRef = useRef(false);
+	const startJumpGenerationRef = useRef(0);
 	const scrollportRef = useCallback<RefCallback<HTMLDivElement>>((node) => {
-		previousScrollTopRef.current = node?.scrollTop ?? 0;
 		scrollRef(node);
 		overflowRef(node);
 	}, [overflowRef, scrollRef]);
-	const handleArticleScroll = useCallback((event: UIEvent<HTMLDivElement>) => {
-		const nextScrollTop = event.currentTarget.scrollTop;
-		setIsScrollingTowardTop(
-			isPulseScrollTowardTop(previousScrollTopRef.current, nextScrollTop),
-		);
-		previousScrollTopRef.current = nextScrollTop;
+	const handleArticleScroll = useCallback(() => {
+		if (skipProgrammaticScrollRef.current) {
+			return;
+		}
+		if (!suppressTopFadeRef.current) {
+			return;
+		}
+		suppressTopFadeRef.current = false;
+		setSuppressTopFade(false);
 	}, []);
-	const handleArticleScrollEnd = useCallback(() => {
-		setIsScrollingTowardTop(false);
+	const runStartAlignedJump = useCallback((run: () => void) => {
+		const generation = startJumpGenerationRef.current + 1;
+		startJumpGenerationRef.current = generation;
+		suppressTopFadeRef.current = true;
+		skipProgrammaticScrollRef.current = true;
+		setSuppressTopFade(true);
+		run();
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => {
+				if (startJumpGenerationRef.current === generation) {
+					skipProgrammaticScrollRef.current = false;
+				}
+			});
+		});
 	}, []);
+	const handleSelectEntry = useCallback((id: string) => {
+		runStartAlignedJump(() => {
+			scrollToEntry(id, { align: "start" });
+		});
+	}, [runStartAlignedJump, scrollToEntry]);
+	const handleGoToSnapshot = useCallback((snapshotIndex: number, options?: PulseScrollOptions) => {
+		if (isPulseChevronHeaderJump(options)) {
+			runStartAlignedJump(() => {
+				scrollToSnapshot(snapshotIndex, options);
+			});
+			return;
+		}
+		if (suppressTopFadeRef.current) {
+			suppressTopFadeRef.current = false;
+			setSuppressTopFade(false);
+		}
+		scrollToSnapshot(snapshotIndex, options);
+	}, [runStartAlignedJump, scrollToSnapshot]);
 	// No settle nudge here: the rounding that made a jump light the mark above it
 	// is absorbed by `toActiveOutlineIndex`'s one-pixel threshold, where it
 	// belongs — the shell should not be correcting the outline's arithmetic.
-	const handleSelectEntry = scrollToEntry;
-	const handleGoToSnapshot = scrollToSnapshot;
-
-	const scrollportStyle = useMemo((): CSSProperties => ({
-		...buildScrollMaskStyle({
-			fadeBottom: showBottomScrollMask,
-			fadeSize: PULSE_FADE_SIZE,
-			fadeTop: false,
-		}),
-		// Jumping from the ruler writes the scroll position directly, and
-		// hover-scrubbing writes it every pointer move; an inherited smooth
-		// behaviour would lag a frame behind the cursor and animate motion under
-		// reduced motion that nobody asked for.
-		scrollBehavior: "auto",
-	}), [showBottomScrollMask]);
 
 	if (pulse.activeSnapshot === null) {
 		return (
@@ -161,7 +278,7 @@ export function ExperimentalPulse({
 	}
 
 	return (
-		// The fold contract is what makes `lg:h-full` and `overflow-y-auto` below
+		// The fold contract is what makes `lg:flex-1` and `overflow-y-auto` below
 		// mean anything: without it the whole page scrolls and the ruler — the
 		// primary navigation — scrolls away with it.
 		//
@@ -189,8 +306,14 @@ export function ExperimentalPulse({
 				</div>
 			</div>
 
-			<div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-6 py-10 lg:overflow-hidden lg:py-12">
-				<div className={cn(SHELL_MEASURE, "flex flex-col gap-10 lg:h-full lg:flex-row lg:gap-0")}>
+			{/* `pb-6` (space.300 / 24px) is content-side so the last cards sit
+			    above the scrollport's inner edge at max scroll. The surface stays
+			    `overflow-y-auto` at every width — `overflow-hidden` would clip that
+			    inset, and `overflow: clip` would steal the mobile scroll owner.
+			    `lg:h-full` keeps the row on the fold; `lg:flex-1` without a
+			    percentage height lets the article grow the page instead. */}
+			<div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-6 pt-10 lg:pt-12">
+				<div className={cn(SHELL_MEASURE, "flex flex-col gap-10 pb-6 lg:h-full lg:min-h-0 lg:flex-row lg:gap-0")}>
 					{/* 12px of lead-in drops the first mark onto the optical centre of
 					    the 24px eyebrow row, so the ruler starts on the article's first
 					    line rather than below it, and the rail runs to the fold. */}
@@ -214,24 +337,58 @@ export function ExperimentalPulse({
 					    whose marks do nothing is worse than no ruler. `tabIndex` is what
 					    makes it keyboard-scrollable at all in Chrome and Safari. The work
 					    rail beside it is its own scroller. */}
-					<div className="relative -m-1 max-h-[70svh] min-h-0 min-w-0 flex-1 lg:mr-10 lg:h-full lg:max-h-none">
+					<div className="flex min-h-0 min-w-0 flex-1 flex-col lg:mr-10 lg:h-full">
+						{/* `flex flex-col` here, and `flex-1 min-h-0` rather than `h-full`
+						    on the scrollport below, is what actually bounds the reading
+						    pane under `lg`.
+
+						    `height: 100%` needs a containing block with a *specified*
+						    height, and this wrapper's height comes from `max-height`
+						    clamping a flex-grown box — definite enough for flexbox, not
+						    for percentage resolution. The scrollport fell back to `auto`,
+						    grew to its full ~12,700px of article, and spilled out of an
+						    `overflow: visible` parent. Nothing looked wrong while the page
+						    below it was empty; the ask dock is the first thing that ever
+						    sat under it, and the overflow painted straight over it. */}
+						<div className="relative -m-1 flex max-h-[70svh] min-h-0 min-w-0 flex-1 flex-col lg:max-h-none">
 						<div
 							aria-label={`${timeline.projectLabel} insights`}
-							className="h-full overflow-y-auto p-1 lg:overscroll-y-contain lg:pr-10 lg:pb-12"
+							className="min-h-0 flex-1 overflow-y-auto p-1 lg:overscroll-y-contain lg:pr-10 lg:pb-6"
 							data-pulse-article=""
 							onScroll={handleArticleScroll}
-							onScrollEnd={handleArticleScrollEnd}
 							ref={scrollportRef}
 							role="region"
-							style={scrollportStyle}
+							style={{
+								// Jumping from the ruler writes the scroll position directly, and
+								// hover-scrubbing writes it every pointer move; an inherited smooth
+								// behaviour would lag a frame behind the cursor and animate motion
+								// under reduced motion that nobody asked for.
+								scrollBehavior: "auto",
+							}}
 							tabIndex={0}
 						>
 							<PulseStream
 								activeSnapshotIndex={pulse.activeIndex}
 								anchorRef={reading.registerAnchor}
+								answers={insightsChatEnabled ? undefined : (
+									<PulseAnswers
+										anchorId={PULSE_ANSWERS_ANCHOR_ID}
+										anchorRef={reading.registerAnchor(PULSE_ANSWERS_ANCHOR_ID)}
+										answers={answers}
+									/>
+								)}
+								scopeBrief={scope === null ? undefined : (
+									<PulseScopeBrief
+										anchorId={PULSE_SCOPE_ANCHOR_ID}
+										anchorRef={reading.registerAnchor(PULSE_SCOPE_ANCHOR_ID)}
+										scope={scope}
+									/>
+								)}
+								onGoToEntry={handleSelectEntry}
 								onGoToSnapshot={handleGoToSnapshot}
 								onRequestAction={onRequestAction}
 								onSelectMember={filter.selectMember}
+								onWorkItemClick={onWorkItemClick}
 								previewEntry={previewEntry}
 								requestedActionIds={requestedActionIds}
 								selectedMemberId={filter.selectedMemberId}
@@ -239,24 +396,57 @@ export function ExperimentalPulse({
 							/>
 						</div>
 						<ScrollMaskEdgeOverlay
-							className={cn(
-								"opacity-0 transition-opacity motion-reduce:transition-none",
-								showTopScrollMask && isScrollingTowardTop
-									? "visible opacity-100 duration-normal ease-out-practical"
-									: "invisible duration-fast ease-in",
+							className={pulseArticleFadeClassName(
+								toPulseArticleTopFadeVisible(showTopScrollMask, suppressTopFade),
 							)}
 							data-pulse-article-top-fade=""
 							edge="top"
 							fadeSize={PULSE_FADE_SIZE}
 						/>
+						<ScrollMaskEdgeOverlay
+							data-pulse-article-bottom-fade=""
+							edge="bottom"
+							fadeSize={PULSE_FADE_SIZE}
+						/>
+						</div>
+
+						{/* The ask dock: a static sibling under the bounded scrollport, not
+						    a sticky overlay. The scrollport is bounded at both widths, so a
+						    sibling is permanently visible without putting a second seam on
+						    top of the article's own bottom fade. Same horizontal padding as
+						    the scrollport, so it lines up with the prose measure above it. */}
+						{onAsk === undefined ? null : (
+							<div className="min-w-0 shrink-0 px-1 lg:pr-10">
+								<PulseInsightsComposer
+									hasAsked={answers.length > 0}
+									// Scope identity keys the composer: an unsent draft belongs
+									// to the scope it was typed under, and re-keying discards it
+									// at the boundary instead of submitting it against another
+									// scope's answers.
+									key={scopeKey}
+									onAsk={handleAsk}
+									scope={scope}
+									suggestions={suggestions}
+								/>
+							</div>
+						)}
 					</div>
 
 					<PulseWorkRail
 						capturedIds={capturedLooseWorkIds}
+						chat={insightsChatOpen ? (
+							<PulseEmbeddedChat chatContextBar={chatContextBar} />
+						) : undefined}
+						dismissedIds={dismissedLooseWorkIds}
+						isLooseWorkResumable={isLooseWorkResumable}
+						isWorkItemInteractive={isWorkItemInteractive}
 						looseWork={pulse.looseWork}
 						members={pulse.members}
 						onCapture={onCaptureLooseWork}
-						scopedToFirstName={pulse.selectedMember?.name.split(" ")[0] ?? null}
+						onDismiss={onDismissLooseWork}
+						onResumeLooseWork={onResumeLooseWork}
+						onWorkItemClick={onWorkItemClick}
+						selectedMember={pulse.selectedMember}
 						workItems={pulse.workItems}
 					/>
 				</div>

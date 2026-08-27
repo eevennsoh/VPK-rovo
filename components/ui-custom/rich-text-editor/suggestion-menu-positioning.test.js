@@ -98,7 +98,8 @@ test("fallback suggestion icons use the 24px neutral IconTile treatment", () => 
 	const visualSource = source.slice(visualStart, source.indexOf("function filterItems", visualStart));
 
 	assert.ok(visualStart > -1, "expected RichTextSuggestionMenuItemVisual source");
-	assert.match(visualSource, /<IconTile[\s\S]*size="small"[\s\S]*variant="gray"/u);
+	assert.match(visualSource, /<IconTile[\s\S]*size="small"[\s\S]*variant=\{tileVariant\}/u);
+	assert.match(source, /function getSuggestionMenuIconTileVariant[\s\S]*return isOverflowFooterLabel\(item\.label\) \? "transparent" : "gray"/u);
 	assert.doesNotMatch(visualSource, /text-icon-subtlest/u);
 });
 
@@ -118,5 +119,37 @@ test("document autocomplete only renders ghost text at the end of a text block",
 	assert.match(
 		editorSource,
 		/const \{ \$from \} = selection;[\s\S]*!\$from\.parent\.isTextblock[\s\S]*\$from\.parentOffset !== \$from\.parent\.content\.size[\s\S]*setDirectoryAutocompleteState\(null\);/u,
+	);
+});
+
+test("separatorBefore draws a decorative full-bleed rule that never joins the listbox", () => {
+	const source = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
+	const css = readProjectFile("components/ui-custom/rich-text-editor/rich-text-editor.css");
+
+	// The rule is an opt-in field on the item, so a row can split a trailing
+	// action (e.g. an "Add agent" footer) off the rows above it.
+	assert.match(source, /separatorBefore\?: boolean;/u);
+	assert.match(source, /import \{\s*Fragment,/u);
+
+	// Decorative only: `aria-hidden`, no `role="separator"`, no `<hr>`. It is
+	// emitted before EITHER branch, so a heading row can carry one too, and it
+	// consumes no index — `selectedIndex` still maps straight into `items`.
+	assert.match(
+		source,
+		/<Fragment key=\{item\.id\}>\s*\{item\.separatorBefore \? \(\s*<div aria-hidden="true" className="rich-text-command-menu-divider" \/>\s*\) : null\}\s*\{item\.headingLabel !== undefined \? \(/u,
+	);
+	assert.doesNotMatch(source, /rich-text-command-menu-divider[\s\S]{0,80}role=/u);
+	assert.doesNotMatch(source, /<hr/u);
+
+	// `key` moved onto the Fragment, so neither branch may still carry one.
+	assert.doesNotMatch(source, /<RichTextSuggestionMenuOption\s+key=/u);
+	assert.match(source, /<div\s+className="rich-text-command-menu-heading"\s+role="presentation"\s*>/u);
+
+	// Full-bleed: the negative inline margin has to cancel the list's padding
+	// exactly, or the rule insets like a menu item instead of spanning the menu.
+	assert.match(css, /\.rich-text-command-menu-list \{[\s\S]*?padding: 4px;/u);
+	assert.match(
+		css,
+		/\.rich-text-command-menu-divider \{\s*height: 1px;\s*margin: 4px -4px;\s*background-color: var\(--ds-border, #dfe1e6\);\s*\}/u,
 	);
 });

@@ -143,34 +143,19 @@ test("the v3 control row is consolidated and Reporter moved back to Details", ()
 	const detailsEditorsSource = readBlockFile("experimental-v3/components/detail-field-editors.tsx");
 	assert.match(
 		detailsEditorsSource,
-		/export function AgentsRowField[\s\S]*gap-0\.5[\s\S]*<DropdownMenuTrigger[\s\S]*aria-label="Edit agents"[\s\S]*absolute inset-0[\s\S]*<AgentRowStatusAvatar[\s\S]*<PlusIcon size="small" \/>[\s\S]*<DropdownMenuContent \{\.\.\.WORK_ITEM_AGENT_SELECTOR_MENU\}>[\s\S]*<WorkItemAgentSelector/u,
-	);
-	assert.match(
-		detailsEditorsSource,
-		/import \{ Tooltip, TooltipContent, TooltipProvider, TooltipTrigger \} from "@\/components\/ui\/tooltip"/u,
-	);
-	assert.match(
-		detailsEditorsSource,
-		/<TooltipTrigger[\s\S]*tabIndex=\{-1\}[\s\S]*<AgentAvatarVisual[\s\S]*sizePx=\{24\}[\s\S]*<TooltipContent[\s\S]*\{statusLabel\}/u,
+		/export function AgentsRowField[\s\S]*<AgentAssignment[\s\S]*assignedAgents=\{assignedAgents\}[\s\S]*maxVisibleAgents=\{3\}[\s\S]*onAssignedAgentIdsChange=\{handleAssignedAgentIdsChange\}/u,
 	);
 	assert.doesNotMatch(detailsEditorsSource, /AvatarGroup/u);
 	assert.doesNotMatch(detailsEditorsSource, /-space-x-/u);
 	assert.doesNotMatch(detailsEditorsSource, /selectionMode="multiple"/u);
-	assert.match(detailsEditorsSource, /selectedAgentIds=\{selectedAgentIds\}/u);
 	assert.match(
 		detailsEditorsSource,
-		/if \(selectedAgentIds\.includes\(agentId\)\) \{[\s\S]*onChange\(selectedAgents\.filter\(\(member\) => member\.id !== agentId\)\);[\s\S]*\} else \{[\s\S]*onChange\(\[\.\.\.selectedAgents, toCrewAgent\(agent\)\]\);/u,
+		/const handleAssignedAgentIdsChange = \(agentIds: readonly string\[\]\) =>[\s\S]*const nonAgentCrew = value\.filter\(\(member\) => member\.kind !== "agent"\);[\s\S]*onChange\(\[\.\.\.nonAgentCrew, \.\.\.nextAgents\]\);/u,
 	);
 	assert.match(
 		detailsEditorsSource,
-		/import \{ WorkItemAgentSelector \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/components\/work-item-agent-selector";/u,
+		/import \{ AgentAssignment, type AgentAssignmentAgent \} from "@\/components\/blocks\/agent-assignment";/u,
 	);
-	assert.match(detailsEditorsSource, /import \{ WORK_ITEM_AGENT_SELECTOR_MENU \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/lib\/work-item-agent-selector-menu";/u);
-	const workItemAgentSelectorSource = readBlockFile("experimental-v3/components/work-item-agent-selector.tsx");
-	assert.match(workItemAgentSelectorSource, /selectionMode="single"/u);
-	assert.match(workItemAgentSelectorSource, /selectedAgentIds\?: readonly string\[\];/u);
-	assert.match(workItemAgentSelectorSource, /selectedAgentIds=\{selectedAgentIds\}/u);
-	assert.doesNotMatch(workItemAgentSelectorSource, /export const WORK_ITEM_AGENT_SELECTOR_MENU/u);
 	const composerAgentPillSource = readBlockFile("experimental-v3/components/activity-composer-agent-context-pill.tsx");
 	assert.match(composerAgentPillSource, /import \{ WORK_ITEM_AGENT_SELECTOR_MENU \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/lib\/work-item-agent-selector-menu";/u);
 	assert.match(
@@ -298,7 +283,7 @@ test("the v3 dialog owns one fixed chrome row", () => {
 	assert.match(layoutSource, /data-jira-work-item-column-chrome/u);
 	assert.match(
 		layoutSource,
-		/data-jira-work-item-column-chrome[\s\S]*@\[860px\]\/agentlayout:overflow-y-auto @\[860px\]\/agentlayout:overscroll-y-none @\[860px\]\/agentlayout:px-6 @\[860px\]\/agentlayout:pt-6 @\[860px\]\/agentlayout:pb-6"[\s\S]*data-jira-work-item-scroll-region/u,
+		/data-jira-work-item-column-chrome[\s\S]*@\[860px\]\/agentlayout:overflow-y-auto @\[860px\]\/agentlayout:overscroll-y-none @\[860px\]\/agentlayout:px-6 @\[860px\]\/agentlayout:pt-6 @\[860px\]\/agentlayout:pb-6[\s\S]*data-jira-work-item-scroll-region/u,
 	);
 	assert.match(layoutSource, /setWideScrollContainer\(element\)/u);
 	assert.match(layoutSource, /setNarrowScrollContainer\(element\)/u);
@@ -473,7 +458,7 @@ test("PR select shares the section navigation list without becoming a section", 
 	);
 	assert.match(
 		readBlockFile("experimental-v3/components/context-panel.tsx"),
-		/selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView[\s\S]*insightsSelected \? \([\s\S]*<InsightsPanel[\s\S]*<WorkItemBody/u,
+		/selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView[\s\S]*insightsSelected && !hasInsights \? \([\s\S]*<InsightsPanel[\s\S]*<InsightsWorkItemSplit[\s\S]*workItem=\{workItem\}/u,
 	);
 	const sectionNavigationSource = readBlockFile("experimental-v3/context-section-navigation.tsx");
 	assert.match(
@@ -497,7 +482,7 @@ test("PR select shares the section navigation list without becoming a section", 
 	);
 	assert.match(
 		readBlockFile("experimental-v3/components/context-panel.tsx"),
-		/<InsightsPanel activity=\{activity\} hasInsights=\{hasInsights\} \/>/u,
+		/<InsightsPanel activity=\{insightsFeed\} hasInsights=\{hasInsights\} \/>/u,
 	);
 	const contextPillsSource = readBlockFile("experimental-v3/components/activity-composer-context-pills.tsx");
 	assert.doesNotMatch(contextPillsSource, /justify-between/u);
@@ -554,7 +539,7 @@ test("experimental v3 insight sources reuse work-item, session, activity, and pu
 	assert.match(compositionSource, /source\.kind === "pull-request"/u);
 	assert.match(compositionSource, /onOpenPullRequestIdentity\?\.\(source\.identity\)/u);
 	assert.match(compositionSource, /const \{ onSourceSelect \} = useJiraInsights\(\)/u);
-	assert.match(compositionSource, /<ActivityPanel \{\.\.\.props\} onInsightSourceSelect=\{onSourceSelect\} \/>/u);
+	assert.match(compositionSource, /<ActivityPanel[\s\S]*\{\.\.\.props\}[\s\S]*onInsightSourceSelect=\{onSourceSelect\}[\s\S]*surface=\{surface\}/u);
 	assert.doesNotMatch(
 		readBlockFile("experimental-v3/components/context-panel.tsx"),
 		/JiraInsightSource|handleInsightSourceSelect/u,
@@ -583,7 +568,19 @@ test("experimental v3 shares one insight selection between the filtered feed and
 	assert.doesNotMatch(metadataSource, /useState/u);
 	assert.match(
 		contextSource,
-		/selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView[\s\S]*insightsSelected \? \([\s\S]*<InsightsPanel activity=\{activity\}/u,
+		/selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView[\s\S]*insightsSelected && !hasInsights \? \([\s\S]*<InsightsPanel[\s\S]*<InsightsWorkItemSplit[\s\S]*insights=\{insightsSelected && hasInsights/u,
+	);
+	assert.match(
+		readBlockFile("experimental-v3/components/insights-work-item-split.tsx"),
+		/ariaLabel="Resize insights and work item"/u,
+	);
+	assert.match(
+		readBlockFile("experimental-v3/components/insights-work-item-split.tsx"),
+		/testId="jira-work-item-insights-resize-handle"/u,
+	);
+	assert.match(
+		readBlockFile("experimental-v3/components/work-item-side-panel-resize-handle.tsx"),
+		/SidebarResizeHandle/u,
 	);
 });
 
@@ -637,12 +634,12 @@ test("experimental v3 uses one chronological Activity feed for activity and insi
 	assert.match(activityPanelSource, /useJiraInsights\(\)/u);
 	assert.match(activityPanelSource, /mergeJiraActivityEntriesWithInsights/u);
 	assert.match(activityPanelSource, /createdAtMs: createdAtByEntryId\.get\(entry\.id\)/u);
-	assert.match(activityPanelSource, /const effectiveFilter = insightsSelected \? "insights-only" : filter/u);
+	assert.match(activityPanelSource, /const effectiveFilter = surface === "insights" \? "insights-only" : filter/u);
 	assert.match(activityPanelSource, /filterMode="jira-insights"/u);
 	assert.match(activityPanelSource, /activeEntryId=\{activeCheckpointId \?\? undefined\}/u);
 	assert.match(activityPanelSource, /renderEntry=\{renderActivityEntry\}/u);
 	assert.match(activityPanelSource, /<JiraInsightsCheckpoint/u);
-	assert.match(activityPanelSource, /id=\{insightsSelected \? "insights" : "activity"\}/u);
+	assert.match(activityPanelSource, /id=\{surface === "insights" \? "insights" : "activity"\}/u);
 });
 
 test("experimental v3 header Actions menu copies the work item as markdown", () => {
@@ -680,6 +677,133 @@ test("experimental v3 header Actions menu copies the work item as markdown", () 
 	assert.doesNotMatch(descriptionSource, /onViewModeChange/u);
 });
 
+test("the v3 Agents details row opens the assigned menu first and swaps to the palette in place", () => {
+	const detailsEditorsSource = readBlockFile("experimental-v3/components/detail-field-editors.tsx");
+
+	assert.match(
+		detailsEditorsSource,
+		/import \{ AgentAssignment, type AgentAssignmentAgent \} from "@\/components\/blocks\/agent-assignment";/u,
+	);
+	assert.match(
+		detailsEditorsSource,
+		/const assignedRows = resolveAssignedAgentRows\(value, sessions, staticEvents\);/u,
+	);
+	assert.match(
+		detailsEditorsSource,
+		/const assignedAgents = assignedRows\.map\(\(row, rowIndex\): AgentAssignmentAgent =>[\s\S]*status: row\.session !== undefined && row\.session\.status !== "completed"[\s\S]*<WorkingSessionActivityByline session=\{row\.session\} sessionIndex=\{rowIndex\} \/>[\s\S]*<WorkingSessionActivityByline fallbackLabel=\{row\.statusLabel\} \/>[\s\S]*statusLabel: row\.statusLabel,/u,
+	);
+	assert.match(
+		detailsEditorsSource,
+		/<AgentAssignment[\s\S]*agents=\{agents\}[\s\S]*assignedAgents=\{assignedAgents\}[\s\S]*defaultPinnedAgentIds=\{DEFAULT_PINNED_SPACE_AGENT_IDS\}[\s\S]*onAssignedAgentIdsChange=\{handleAssignedAgentIdsChange\}[\s\S]*onAssignedAgentSelect=\{handleOpenAgentSession\}[\s\S]*onContinueExistingSession=\{handleContinueExistingSession\}[\s\S]*onStartNewSession=\{handleAgentAssign\}[\s\S]*usedAgentIds=\{resolveUsedAgentIds\(sessions\)\}/u,
+	);
+	assert.match(
+		detailsEditorsSource,
+		/const handleAssignedAgentIdsChange = \(agentIds: readonly string\[\]\) =>[\s\S]*const nonAgentCrew = value\.filter\(\(member\) => member\.kind !== "agent"\);[\s\S]*const nextAgents = agentIds\.flatMap[\s\S]*onChange\(\[\.\.\.nonAgentCrew, \.\.\.nextAgents\]\);/u,
+	);
+	assert.match(
+		detailsEditorsSource,
+		/const handleAgentAssign = \(agent: AgentSelectorAgent\) => \{\s*actions\.invokeAgent\(agent, "context-pill", `@\$\{agent\.name\}`\);\s*\};/u,
+	);
+	assert.match(
+		detailsEditorsSource,
+		/const handleOpenAgentSession = \(agent: AgentAssignmentAgent\) => \{\s*const row = assignedRows\.find\(\(candidate\) => candidate\.agentId === agent\.id\);\s*if \(!row\?\.session\) \{\s*actions\.invokeAgent\(agent, "context-pill", `@\$\{agent\.name\}`\);\s*return;\s*\}\s*actions\.openSession\(row\.session\.id\);/u,
+	);
+	assert.match(
+		detailsEditorsSource,
+		/const handleContinueExistingSession = \(agent: AgentSelectorAgent\) => \{\s*const session = resolveLatestAgentSession\(sessions, agent\.id\);\s*if \(!session\) \{\s*actions\.invokeAgent\(agent, "context-pill", `@\$\{agent\.name\}`\);\s*return;\s*\}\s*actions\.openSession\(session\.id\);/u,
+	);
+	assert.match(detailsEditorsSource, /const actions = useJiraWorkItemActions\(\);/u);
+	assert.doesNotMatch(detailsEditorsSource, /launchSession|onOpenAgentChat/u);
+});
+
+test("the v3 assigned-agents menu lists live agent state and ends in an Assign agent row", () => {
+	const detailsEditorsSource = readBlockFile("experimental-v3/components/detail-field-editors.tsx");
+	const menuSource = fs.readFileSync(
+		path.join(process.cwd(), "components/blocks/agent-assignment/components/assigned-agents-menu.tsx"),
+		"utf8",
+	);
+
+	assert.match(
+		menuSource,
+		/<RichTextSuggestionMenu[\s\S]*title="Assigned agents"/u,
+	);
+	assert.match(
+		menuSource,
+		/inlineMetadata: toAssignedAgentStatus\(row\.status\),[\s\S]*hoverActions: \{[\s\S]*primaryLabel: "View"[\s\S]*secondaryLabel: "Archive"/u,
+	);
+	assert.match(
+		detailsEditorsSource,
+		/import \{ WorkingSessionActivityByline \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/components\/agent-session-activity-byline";/u,
+	);
+	assert.match(
+		menuSource,
+		/<Button[\s\S]*onClick=\{onAddAgent\}[\s\S]*<AiAgentAddIcon label="" \/>[\s\S]*Assign agent/u,
+	);
+	assert.doesNotMatch(menuSource, /window\.addEventListener|keepMounted|AnimatePresence/u);
+});
+
+test("the v3 working-session byline is one shared module, not a per-surface copy", () => {
+	const bylineSource = readBlockFile("experimental-v3/components/agent-session-activity-byline.tsx");
+	const contextPillsSource = readBlockFile("experimental-v3/components/activity-composer-context-pills.tsx");
+
+	// The narration cadence, scripts, and shimmer treatment now live in one
+	// place that both the composer's working-agents menu and the Details rail's
+	// assigned-agents menu import.
+	assert.match(bylineSource, /^"use client";/u);
+	assert.match(bylineSource, /export const NEEDS_INPUT_STATUS_LABEL = "Needs input";/u);
+	assert.match(bylineSource, /export function WorkingSessionActivityByline\(/u);
+	assert.match(bylineSource, /"code-planner": \[[\s\S]*"Plan the guest checkout architecture"/u);
+	assert.match(bylineSource, /"claude-code": \[[\s\S]*"Implement and verify guest checkout"/u);
+	assert.match(bylineSource, /session\.scriptId === "shop-4821-ci-fix"[\s\S]*CI_REPAIR_ACTIVITY_SCRIPT/u);
+	assert.match(bylineSource, /`Waiting for \$\{session\.waitingOn\.agentName\}`/u);
+	assert.match(bylineSource, /WORKING_SESSION_ACTIVITY_STAGGER_MS \* \(sessionIndex \+ 1\)/u);
+	assert.match(bylineSource, /window\.setTimeout\([\s\S]*window\.setInterval\([\s\S]*setActivityCycleIndex\(\(index\) => index \+ 1\)/u);
+	assert.match(bylineSource, /window\.clearTimeout\(timeoutId\);[\s\S]*window\.clearInterval\(intervalId\);/u);
+	assert.doesNotMatch(bylineSource, /Math\.random/u);
+
+	// Reduced motion, the skip-while-waiting rule, and the `active` pause all
+	// short-circuit the same effect, so no surface can leave a timer running.
+	assert.match(bylineSource, /const shouldReduceMotion = Boolean\(useReducedMotion\(\)\);/u);
+	assert.match(
+		bylineSource,
+		/if \(!active \|\| shouldReduceMotion \|\| sessionStatus === undefined \|\| sessionStatus === "waiting"\) \{\s*return;\s*\}/u,
+	);
+	assert.match(bylineSource, /\}, \[active, cycleDelayMs, sessionStatus, shouldReduceMotion\]\);/u);
+
+	// Both modes share one component and one typography wrapper: a live session
+	// cycles, a `fallbackLabel` renders statically with no timer and no shimmer.
+	assert.match(bylineSource, /session\?: AgentSession;/u);
+	assert.match(bylineSource, /fallbackLabel\?: string;/u);
+	assert.match(bylineSource, /const activity: string \| null = session\s*\? getWorkingSessionActivity\(session, activityCycleIndex\)\s*: fallbackLabel \?\? null;/u);
+	assert.match(bylineSource, /<CyclingByline className="menu-row-title text-text-subtlest">/u);
+	assert.match(
+		bylineSource,
+		/needsUserInput && activity !== null \? \(\s*<span className="inline-flex min-w-0 items-baseline">\s*<Shimmer as="span">\{activity\}<\/Shimmer>\s*<AnimatedDots \/>\s*<\/span>\s*\) : activity/u,
+	);
+
+	// The composer imports the byline rather than redefining it, and the
+	// now-unused byline-only imports are gone (Shimmer stays: the summary pill
+	// still uses it).
+	assert.match(
+		contextPillsSource,
+		/import \{ NEEDS_INPUT_STATUS_LABEL, WorkingSessionActivityByline \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/components\/agent-session-activity-byline";/u,
+	);
+	assert.doesNotMatch(contextPillsSource, /function WorkingSessionActivityByline|function getWorkingSessionActivity/u);
+	assert.doesNotMatch(contextPillsSource, /WORKING_SESSION_ACTIVITY_SCRIPTS|CI_REPAIR_ACTIVITY_SCRIPT|NEEDS_INPUT_STATUS_LABEL = /u);
+	assert.doesNotMatch(contextPillsSource, /import \{ AnimatedDots \}|import \{ CyclingByline \}/u);
+	assert.match(contextPillsSource, /import \{ Shimmer \} from "@\/components\/ui-custom\/shimmer";/u);
+
+	// The composer menu still drives the byline the same way it always did.
+	assert.match(
+		contextPillsSource,
+		/inlineMetadata: \([\s\S]*<WorkingSessionActivityByline[\s\S]*sessionIndex=\{sessionIndex\}/u,
+	);
+	assert.match(
+		contextPillsSource,
+		/trailing: session\.status === "waiting"[\s\S]*\{session\.waitingOn\?\.kind === "user" \? NEEDS_INPUT_STATUS_LABEL : "Waiting"\}[\s\S]*: null/u,
+	);
+});
+
 test("the v3 lib test suite is registered so it actually runs in CI", () => {
 	// Tests under `components/**` are inert unless they are explicitly listed in
 	// the unit-test manifest, so a forked test file is worthless until it is
@@ -702,4 +826,16 @@ test("the v3 lib test suite is registered so it actually runs in CI", () => {
 			`${testFile} is registered for v3 but the file does not exist`,
 		);
 	}
+
+	// `assigned-agent-rows` is v3-only (it has no v2 twin to inherit
+	// registration from), so the loop above cannot reach it. It is the row
+	// model behind the Details rail's assigned-agents menu, so it has to run.
+	assert.ok(
+		fs.existsSync(path.join(V3_DIR, "lib", "assigned-agent-rows.test.js")),
+		"expected the assigned-agent-rows row-model test to exist",
+	);
+	assert.match(
+		manifestSource,
+		/"components\/blocks\/jira-work-item\/experimental-v3\/lib\/assigned-agent-rows\.test\.js"/u,
+	);
 });

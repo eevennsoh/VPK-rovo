@@ -1,6 +1,6 @@
 ---
 name: vpk-system-clean
-description: "Diagnose and remediate VPK local-dev CPU, memory, and disk pressure, or manage its scheduled maintenance. Use when the user says \"vpk-system-clean\", \"next-server eating CPU / at 400%\", \"Mac is slow or loud\", \"fseventsd\", or \"clean .next caches / free space\"."
+description: "Diagnose and remediate VPK local-dev CPU, memory, disk, and leftover worktree-port pressure, or manage its scheduled maintenance. Use when the user says \"vpk-system-clean\", \"next-server eating CPU / at 400%\", \"Mac is slow or loud\", \"fseventsd\", \"clean .next caches / free space\", \"kill unused ports\", or \"idle worktree stacks\"."
 validation_command: zsh scripts/status.sh
 ---
 
@@ -8,8 +8,9 @@ validation_command: zsh scripts/status.sh
 
 Use this skill to diagnose and safely remediate recurring VPK development-Mac
 pressure: sustained-hot or memory-bloated `next-server`/Turbopack processes,
-oversized idle `.next` caches, orphaned worktree tmux sessions, sustained-hot
-exact-path Atlassian `almd`, and ballooned `fseventsd`.
+oversized idle `.next` caches, leftover unattached worktree port stacks,
+orphaned worktree tmux sessions, sustained-hot exact-path Atlassian `almd`, and
+ballooned `fseventsd`.
 
 ## When to use
 
@@ -26,10 +27,12 @@ for arbitrary process killing, repository cleanup, or generated-artifact removal
   only repository data eligible for scheduled deletion is a qualifying `.next`
   cache chosen by the canonical script while no dev server uses it.
 - Target only exact guarded processes: the selected `next-server` and parent,
-  exact `/usr/local/bin/almd`, orphaned `vpk-dev-*` sessions, and `fseventsd`
-  when its sudoers guard exists. Do not broaden names or paths.
+  exact `/usr/local/bin/almd`, `vpk-dev-*` sessions, and `fseventsd` when its
+  sudoers guard exists. Do not broaden names or paths.
 - Do not run global `portless prune`; it may kill another worktree after port
-  reuse. The cleanup never touches the long-lived Portless `:443` proxy.
+  reuse. The cleanup never touches the long-lived Portless `:443` proxy. Idle
+  stacks are stopped through that worktree's own `dev-tmux-plain.sh stop` so
+  Portless drops only this route.
 - The skill does not run `sudo`. Missing sudoers support is reported for the
   user to repair deliberately.
 
@@ -73,10 +76,11 @@ zsh ~/.local/bin/vpk-system-clean.sh
 ```
 
 The sweep samples sustained-hot `next-server`, rechecks memory-bloated but idle
-servers, deletes only oversized inactive `.next` caches, stops unattached tmux
-sessions whose worktree path is gone, samples old exact-path `almd` before TERM
-and guarded KILL, and restarts oversized `fseventsd` only when the least-privilege
-sudoers rule exists.
+servers, stops leftover unattached `vpk-dev-*` stacks (then deletes only
+oversized inactive `.next` caches), stops unattached tmux sessions whose
+worktree path is gone, samples old exact-path `almd` before TERM and guarded
+KILL, and restarts oversized `fseventsd` only when the least-privilege sudoers
+rule exists.
 
 Silent exit zero is a valid successful run. Do not improvise extra remediation
 after it. For a script-only handoff, report status, the log path
@@ -94,6 +98,11 @@ cleanup.
   similarly named shell or Atlassian service remains untouched.
 - Orphaned tmux sessions are killed through the same socket that listed them and
   only when their worktree path is gone and the session is unattached.
+- Idle leftover stacks (path still exists, ports still bound) are stopped only
+  when unattached, older than the grace window, not the primary checkout, and
+  with no process named exactly `claude`, `caffeinate`, `lazygit`,
+  `cursor-agent`, or `codex` whose cwd is that worktree. Worktree names are
+  not part of this check.
 - If sandbox permissions block a cache or log path, report the exact failure;
   do not attempt alternate deletion, permission repair, or schedule changes.
 
@@ -105,7 +114,8 @@ zsh scripts/records.sh
 ```
 
 Use status for launchd/sudoers state, `fseventsd`, live Next servers, tmux
-sessions, and cache sizes. Use records or the log for runs, servers restarted,
-caches removed, space reclaimed, session/almd/fseventsd resets, and warnings.
+sessions, idle-stack candidates, and cache sizes. Use records or the log for
+runs, servers restarted, caches removed, space reclaimed, idle stack/session/
+almd/fseventsd resets, and warnings.
 Report only the operation requested and its evidence; do not widen a script-only
 run into configuration changes.

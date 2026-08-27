@@ -729,8 +729,8 @@
 	background-color: transparent;
 }
 
-.rich-text-command-menu:focus-within .rich-text-command-menu-item:hover .rich-text-command-menu-copy,
-.rich-text-command-menu:focus-within .rich-text-command-menu-item-selected .rich-text-command-menu-copy {
+.rich-text-command-menu:focus-within .rich-text-command-menu-item:not([data-has-actions="true"]):hover .rich-text-command-menu-copy,
+.rich-text-command-menu:focus-within .rich-text-command-menu-item-selected:not([data-has-actions="true"]) .rich-text-command-menu-copy {
 	padding-right: 0;
 }
 
@@ -759,6 +759,18 @@
 .rich-text-command-menu-item:disabled {
 	color: var(--ds-text-disabled, #091e424f);
 	cursor: not-allowed;
+}
+
+/* The row's copy sets its own color (`.menu-row-title`, `.menu-row-byline`, and
+   utility classes such as `text-text-subtlest`), so the button's disabled color
+   never reaches the text a reader actually sees — an inert row would render at
+   full contrast and look identical to an actionable one. Re-assert the disabled
+   color on the copy itself. This sheet is unlayered, so it also wins over the
+   layered Tailwind color utilities a caller may put on the byline. */
+.rich-text-command-menu-item:disabled .rich-text-command-menu-copy,
+.rich-text-command-menu-item:disabled .menu-row-title,
+.rich-text-command-menu-item:disabled .menu-row-byline {
+	color: var(--ds-text-disabled, #091e424f);
 }
 
 .rich-text-command-menu[data-has-header="true"] .rich-text-command-menu-list {
@@ -891,10 +903,12 @@
 	overflow: hidden;
 }
 
-/* Compact status rows keep identity and live metadata on one line. */
+/* Compact status rows keep identity and live metadata on one line. The name
+   stays content-sized; the metadata track owns shrinking and ellipsis. */
 .rich-text-command-menu-copy-inline {
 	flex-direction: row;
 	align-items: center;
+	flex-wrap: nowrap;
 	/* Matches the one normal text-space on each side of the inline `·`. */
 	column-gap: 4px;
 }
@@ -948,6 +962,15 @@
 	padding: 14px 10px;
 	color: var(--ds-text-subtle, #44546f);
 	font-size: 13px;
+}
+
+/* Full-bleed rule above a footer row (`separatorBefore`), matching the popup
+   footer treatment. The negative inline margin cancels the list's 4px padding
+   so it spans the menu edge to edge instead of insetting like a menu item. */
+.rich-text-command-menu-divider {
+	height: 1px;
+	margin: 4px -4px;
+	background-color: var(--ds-border, #dfe1e6);
 }
 
 /* Section heading for merged "/" lists (flat editor palette). Mirrors the

@@ -6,6 +6,7 @@ import { useLayoutEffect, type ReactNode, type RefObject } from "react";
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import type { InlineReviewComment } from "@/components/blocks/code-review/lib/inline-comments";
 import { InsightsPanel } from "@/components/blocks/jira-work-item/experimental-v3/components/insights-panel";
+import { InsightsWorkItemSplit } from "@/components/blocks/jira-work-item/experimental-v3/components/insights-work-item-split";
 import { WorkItemBody } from "@/components/blocks/jira-work-item/experimental-v3/components/work-item-body";
 import { useSectionNavigation } from "@/components/blocks/jira-work-item/experimental-v3/context-section-navigation";
 import { getPullRequestIdentity } from "@/components/blocks/jira-work-item/experimental-v3/lib/jira-activity-adapter";
@@ -20,6 +21,7 @@ const PullRequestDetailView = dynamic(
 export function ContextPanel({
 	activity,
 	hasInsights,
+	insightsFeed,
 	onPullRequestChapterReviewedChange,
 	onPullRequestInlineCommentsChange,
 	pullRequestApprovalState,
@@ -33,6 +35,8 @@ export function ContextPanel({
 	/** Pre-wrapped in its own `WorkItemSection` by the activity panel. */
 	activity: ReactNode;
 	hasInsights: boolean;
+	/** Insights-only feed; mounted beside the work item while Insights is selected. */
+	insightsFeed: ReactNode;
 	onPullRequestChapterReviewedChange?: (identity: string, chapterId: string, reviewed: boolean) => void;
 	onPullRequestInlineCommentsChange?: (
 		identity: string,
@@ -51,6 +55,7 @@ export function ContextPanel({
 	const selectedPullRequestKey = selectedPullRequestEntry?.pullRequest
 		? getPullRequestIdentity(selectedPullRequestEntry.pullRequest)
 		: selectedPullRequestEntry?.id;
+	const workItem = <WorkItemBody activity={activity} />;
 
 	useLayoutEffect(() => {
 		if (selectedPullRequestEntry) {
@@ -59,7 +64,7 @@ export function ContextPanel({
 	}, [clearInsights, selectedPullRequestEntry]);
 
 	return (
-		<section aria-label="Work item context" className="flex flex-col">
+		<section aria-label="Work item context" className="flex min-h-0 min-w-0 flex-1 flex-col">
 			{selectedPullRequestEntry ? (
 				<PullRequestDetailView
 					approvalState={pullRequestApprovalState}
@@ -73,10 +78,15 @@ export function ContextPanel({
 					submittedReviewActivity={submittedReviewActivity}
 					submitReviewAction={submitReviewAction}
 				/>
-			) : insightsSelected ? (
-				<InsightsPanel activity={activity} hasInsights={hasInsights} />
+			) : insightsSelected && !hasInsights ? (
+				<InsightsPanel activity={insightsFeed} hasInsights={hasInsights} />
 			) : (
-				<WorkItemBody activity={activity} />
+				<InsightsWorkItemSplit
+					insights={insightsSelected && hasInsights
+						? <InsightsPanel activity={insightsFeed} hasInsights={hasInsights} />
+						: undefined}
+					workItem={workItem}
+				/>
 			)}
 		</section>
 	);

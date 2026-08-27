@@ -19,7 +19,7 @@ import {
 } from "@/components/ui-custom/prompt-input";
 import { Button } from "@/components/ui/button";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
-import { ElapsedTime } from "@/components/ui/elapsed-time";
+import { ElapsedTime, RelativeTime } from "@/components/ui/elapsed-time";
 import { cn } from "@/lib/utils";
 
 export type AgentStatesState = "working" | "awaiting-input" | "completed";
@@ -34,6 +34,9 @@ export interface AgentStatesAgent {
 export interface AgentStatesProps {
 	agent: AgentStatesAgent;
 	className?: string;
+	completedAtMs?: number;
+	completedSecondsAgo?: number;
+	composer?: "visible" | "hidden";
 	initialElapsedSeconds?: number;
 	message?: string;
 	onQuestionSubmit?: (answers: QuestionCardAnswers) => void;
@@ -69,12 +72,12 @@ export function AgentStatesComposer({
 	onSubmit?: (prompt: string) => void;
 }>) {
 	const [reply, setReply] = useState("");
-	const canSubmit = Boolean(reply.trim());
+	const canSubmit = Boolean(onSubmit && reply.trim());
 
 	const handleSubmit = useCallback(() => {
 		const prompt = reply.trim();
-		if (!prompt) return;
-		onSubmit?.(prompt);
+		if (!prompt || !onSubmit) return;
+		onSubmit(prompt);
 		setReply("");
 	}, [onSubmit, reply]);
 
@@ -88,6 +91,7 @@ export function AgentStatesComposer({
 					onStartDictation={startPreviewDictation}
 					onStop={() => undefined}
 					showSubmitWhenEmpty
+					submitDisabled={onSubmit === undefined}
 				/>
 			}
 			addButton={
@@ -103,7 +107,7 @@ export function AgentStatesComposer({
 			<PromptInputTextarea
 				aria-label="Reply to agent"
 				className={cn(floatingComposerTextareaClassName, "text-sm leading-5")}
-				enableDirectoryAutocomplete={false}
+				enableDirectoryAutocomplete
 				onChange={(event) => setReply(event.currentTarget.value)}
 				placeholder="Ask, @mention, or / for actions"
 				rows={1}
@@ -113,9 +117,47 @@ export function AgentStatesComposer({
 	);
 }
 
+function renderAgentStatesFooter({
+	composer,
+	onQuestionSubmit,
+	onSubmit,
+	question,
+	state,
+}: Readonly<{
+	composer: "visible" | "hidden";
+	onQuestionSubmit?: (answers: QuestionCardAnswers) => void;
+	onSubmit?: (prompt: string) => void;
+	question?: QuestionCardQuestion;
+	state: AgentStatesState;
+}>) {
+	if (state === "awaiting-input" && question) {
+		return (
+			<QuestionCard
+				className="shadow-none"
+				onSubmit={(answers) => onQuestionSubmit?.(answers)}
+				questions={[question]}
+			/>
+		);
+	}
+
+	switch (composer) {
+		case "hidden":
+			return null;
+		case "visible":
+			return <AgentStatesComposer onSubmit={onSubmit} />;
+		default: {
+			const _exhaustive: never = composer;
+			return _exhaustive;
+		}
+	}
+}
+
 export function AgentStates({
 	agent,
 	className,
+	completedAtMs,
+	completedSecondsAgo,
+	composer = "visible",
 	initialElapsedSeconds = DEFAULT_INITIAL_ELAPSED_SECONDS,
 	message,
 	onQuestionSubmit,
@@ -148,10 +190,19 @@ export function AgentStates({
 					) : null
 				}
 				byline={
-					<ElapsedTime
-						className="text-xs leading-4 text-text-subtle"
-						startedAtMs={resolvedStartedAtMs}
-					/>
+					state === "completed" ? (
+						<RelativeTime
+							className="text-xs leading-4 text-text-subtle"
+							fallback="Just now"
+							secondsAgo={completedSecondsAgo}
+							timestampMs={completedAtMs}
+						/>
+					) : (
+						<ElapsedTime
+							className="text-xs leading-4 text-text-subtle"
+							startedAtMs={resolvedStartedAtMs}
+						/>
+					)
 				}
 				leading={
 					<AgentAvatarVisual
@@ -168,15 +219,13 @@ export function AgentStates({
 			<p className="text-sm leading-5 text-text">
 				{message ?? DEFAULT_MESSAGES[state]}
 			</p>
-			{state === "awaiting-input" && question ? (
-				<QuestionCard
-					className="shadow-none"
-					onSubmit={(answers) => onQuestionSubmit?.(answers)}
-					questions={[question]}
-				/>
-			) : (
-				<AgentStatesComposer onSubmit={onSubmit} />
-			)}
+			{renderAgentStatesFooter({
+				composer,
+				onQuestionSubmit,
+				onSubmit,
+				question,
+				state,
+			})}
 		</div>
 	);
 }

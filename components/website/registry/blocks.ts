@@ -137,6 +137,10 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 		() => import("../demos/blocks/agent-states-demo"),
 		{ ssr: false },
 	),
+	"agent-assignment": dynamic(
+		() => import("../demos/blocks/agent-assignment-demo"),
+		{ ssr: false },
+	),
 	"agent-selector": dynamic(
 		() => import("../demos/blocks/agent-selector-demo"),
 		{ ssr: false },
@@ -208,6 +212,12 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 		ssr: false,
 	}),
 	"mermaid-diagram": dynamic(() => import("../demos/blocks/mermaid-diagram-demo"), {
+		ssr: false,
+	}),
+	video: dynamic(() => import("../demos/blocks/video-demo"), {
+		ssr: false,
+	}),
+	"next-best-action": dynamic(() => import("../demos/blocks/next-best-action-demo"), {
 		ssr: false,
 	}),
 	dashboard: dynamic(() => import("../demos/blocks/dashboard-demo"), {

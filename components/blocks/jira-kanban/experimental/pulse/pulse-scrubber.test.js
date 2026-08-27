@@ -56,10 +56,15 @@ test("Pulse scrubber draws the outline it is handed and derives no geometry of i
 });
 
 test("Pulse scrubber never lets the current position override a member's absence", async () => {
-	const { toMarkLabel, toMarkState } = await loadScrubberHarness();
+	const { isInsightRevised, toMarkLabel, toMarkState, toPulseInsightEyebrow, toPulseInsightHeadline } = await loadScrubberHarness();
 	const snapshot = { chapterLabel: "Night shift", dateLabel: "Wed 19 Aug", timeLabel: "02:30" };
+	const revised = {
+		...snapshot,
+		updatedDateLabel: "Wed 19 Aug",
+		updatedTimeLabel: "08:15",
+	};
 	const insight = { heading: "Night shift", id: "pulse-s4", kind: "insight", label: "Night shift", offset: 0.5, snapshotIndex: 3 };
-	const section = { heading: "Needs attention", id: "pulse-s4-attention", kind: "section", label: "Night shift — Needs attention", offset: 0.58, snapshotIndex: 3 };
+	const section = { heading: "Needs input", id: "pulse-s4-attention", kind: "section", label: "Night shift — Needs input", offset: 0.58, snapshotIndex: 3 };
 
 	// The bug this guards: reading into a window the filtered member sat out used
 	// to make that absent mark the darkest one on the whole ruler.
@@ -69,18 +74,77 @@ test("Pulse scrubber never lets the current position override a member's absence
 	assert.equal(toMarkState(false, false), "resting");
 
 	// Muting is visual; the accessible name has to carry the same fact. The rank
-	// is spoken too — it is otherwise carried by rule length alone.
-	assert.equal(toMarkLabel(insight, snapshot, false, "Maya Ferreira"), "Insight: Night shift — Wed 19 Aug, 02:30");
+	// is spoken too — it is otherwise carried by rule length alone. The stamp is
+	// when the outcome was generated, not a time-window, because the ruler no
+	// longer is a clock.
+	assert.equal(toMarkLabel(insight, snapshot, false, "Maya Ferreira"), "Insight: Night shift — generated Wed 19 Aug, 02:30");
 	assert.equal(
 		toMarkLabel(insight, snapshot, true, "Maya Ferreira"),
-		"Insight: Night shift — Wed 19 Aug, 02:30 — no activity from Maya Ferreira",
+		"Insight: Night shift — generated Wed 19 Aug, 02:30 — no activity from Maya Ferreira",
+	);
+	assert.equal(
+		toMarkLabel(insight, revised, false, null),
+		"Insight: Night shift — generated Wed 19 Aug, 02:30, last updated Wed 19 Aug, 08:15",
+	);
+	assert.equal(isInsightRevised(snapshot), false);
+	assert.equal(isInsightRevised(revised), true);
+	assert.equal(
+		isInsightRevised({
+			dateLabel: "Wed 19 Aug",
+			timeLabel: "02:30",
+			timestamp: "2026-08-19T02:30:00Z",
+			updatedAt: "2026-08-19T02:30:41Z",
+			updatedDateLabel: "Wed 19 Aug",
+			updatedTimeLabel: "02:30",
+		}),
+		true,
+		"a revision inside the same displayed minute is still a revision",
+	);
+	assert.equal(
+		isInsightRevised({
+			dateLabel: "Wed 19 Aug",
+			timeLabel: "02:30",
+			timestamp: "2026-08-19T02:30:00Z",
+			updatedAt: "2026-08-19T02:30:00Z",
+			updatedDateLabel: "Wed 19 Aug",
+			updatedTimeLabel: "02:30",
+		}),
+		false,
+	);
+	assert.equal(
+		toPulseInsightEyebrow(revised),
+		"Night shift · Last updated Wed 19 Aug 08:15",
+	);
+	assert.equal(
+		toPulseInsightEyebrow({ ...snapshot, updatedDateLabel: "Wed 19 Aug", updatedTimeLabel: "02:30" }),
+		"Night shift · Last updated Wed 19 Aug 02:30",
+	);
+	const { PULSE_TIMELINE } = await loadTimelineHarness();
+	assert.equal(
+		toPulseInsightEyebrow(PULSE_TIMELINE.snapshots[0]),
+		"Adapter deleted · Last updated Mon 17 Aug 09:26",
+	);
+	assert.equal(
+		toPulseInsightHeadline({ title: "We agreed to delete the adapter, not wrap it" }, null),
+		"We agreed to delete the adapter, not wrap it",
+	);
+	assert.equal(
+		toPulseInsightHeadline(
+			{ title: "We agreed to delete the adapter, not wrap it" },
+			{ title: "The first port does not ship without a kill switch" },
+		),
+		"The first port does not ship without a kill switch",
+	);
+	assert.equal(
+		toPulseInsightHeadline({ title: "We agreed to delete the adapter, not wrap it" }, { title: "  " }),
+		"We agreed to delete the adapter, not wrap it",
 	);
 	// A section's label already names its parent insight, so it does not repeat
 	// the timestamp.
-	assert.equal(toMarkLabel(section, snapshot, false, null), "Section: Night shift — Needs attention");
+	assert.equal(toMarkLabel(section, snapshot, false, null), "Section: Night shift — Needs input");
 	assert.equal(
 		toMarkLabel(section, snapshot, true, null),
-		"Section: Night shift — Needs attention — no activity from the selected member",
+		"Section: Night shift — Needs input — no activity from the selected member",
 	);
 	// A mark with no snapshot behind it still speaks rather than saying "undefined".
 	assert.equal(toMarkLabel(insight, undefined, false, null), "Insight: Night shift");
@@ -96,24 +160,24 @@ test("Pulse scrubber slides one pill through insight and section headings", asyn
 	// The weekday helper remains for accessible names; the pill no longer uses it.
 	assert.equal(toWeekdayLabel("Mon 17 Aug"), "Mon");
 	assert.deepEqual(kickoff.map((entry) => toRulerHeading(entry)), [
-		"Kickoff",
+		"Adapter deleted",
 		"Artifacts",
-		"Needs attention",
+		"Needs input",
 		"Next best actions",
 	]);
-	assert.equal(toMarkHint(kickoff[0], kickoff[0].id), null, "the sliding pill already names Kickoff");
+	assert.equal(toMarkHint(kickoff[0], kickoff[0].id), null, "the sliding pill already names Adapter deleted");
 	assert.equal(toMarkHint(kickoff[1], kickoff[0].id), null, "child ticks stay unlabeled");
 	assert.equal(toMarkHint(kickoff[2], kickoff[0].id), null);
 	assert.equal(toMarkHint(kickoff[3], kickoff[0].id), null);
 	assert.equal(toMarkHint(kickoff[1], kickoff[1].id), null, "the active section is the pill, not a tick label");
-	assert.equal(toMarkHint(kickoff[0], kickoff[1].id), "Kickoff", "inactive insights may reveal their name on hover");
+	assert.equal(toMarkHint(kickoff[0], kickoff[1].id), "Adapter deleted", "inactive insights may reveal their name on hover");
 
 	assert.match(SOURCES.scrubber, /toRulerHeading\(activeEntry\)/u);
 	assert.match(SOURCES.scrubber, /toMarkHint\(entry, activeEntry\?\.id \?\? null\)/u);
 	assert.match(SOURCES.scrubber, /top: `\$\{activeEntry\.offset \* 100\}%`/u);
 	assert.match(
 		SOURCES.scrubber,
-		/const PILL = "bg-bg-neutral-bold text-text-inverse inline-flex items-center rounded-full/u,
+		/const PILL = "bg-bg-neutral-bold text-text-inverse inline-flex items-center rounded-md/u,
 	);
 	assert.doesNotMatch(SOURCES.scrubber, /bg-primary|text-primary-foreground/u);
 	assert.doesNotMatch(SOURCES.scrubber, /toWeekdayLabel\(activeSnapshot|activeSnapshot\.timeLabel/u);

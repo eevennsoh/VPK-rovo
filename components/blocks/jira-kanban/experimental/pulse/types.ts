@@ -47,28 +47,132 @@ export interface PulseWorkItem {
 }
 
 /**
- * Work the team produced that never landed in a work item: an unlinked PR, a
- * decision made in chat, a Loom nobody filed. Surfacing these is the whole
- * point of Pulse — they are the part a stand-up usually misses.
+ * Uncaptured work in this space is only GitHub (PRs, branches, commits on the
+ * configured repo) or Claude (local terminal sessions that refer to this space).
  */
-export interface PulseLooseWork {
+export type PulseLooseWorkKind = "pull-request" | "branch" | "commit" | "agent-session";
+
+export type PulseLooseWorkSource = "GitHub" | "Claude";
+
+/** Flyout fields for a `pull-request` card — feeds `toPullRequestSmartLink`. */
+export interface PulseLooseWorkPullRequest {
+	number: number;
+	status: "Open" | "Merged";
+	files: number;
+	additions: number;
+	deletions: number;
+	branch?: string;
+}
+
+interface PulseLooseWorkBase {
 	id: string;
 	title: string;
-	/** Where it lives, e.g. "GitHub" / "Slack" / "Loom" / "Confluence". */
-	source: string;
-	/** Compact destination label shown in the hoverable Smart Link trigger. */
+	/**
+	 * Compact destination label shown in the hoverable Smart Link trigger.
+	 * Sessions use the issue key (`PAY-121`); GitHub uses `PR #1847`, a SHA, or a branch name.
+	 */
 	sourceTitle: string;
 	/** Supporting line, e.g. "PR #1847 · no linked work item". */
 	detail: string;
 	memberIds: readonly string[];
 }
 
+/**
+ * Work the team produced that never landed in a work item: an unlinked PR,
+ * branch, or commit, or a local Claude session. GitHub artifacts render as
+ * uncaptured-work cards; sessions render through the shared agent list's
+ * uncaptured variant.
+ */
+export type PulseLooseWork =
+	| (PulseLooseWorkBase & {
+			kind: "pull-request";
+			pullRequest: PulseLooseWorkPullRequest;
+	  })
+	| (PulseLooseWorkBase & { kind: "branch" | "commit" })
+	| (PulseLooseWorkBase & { kind: "agent-session"; host: "local" });
+
+export type PulseGithubLooseWork = Exclude<PulseLooseWork, { kind: "agent-session" }>;
+
+export function isPulseGithubLooseWork(item: PulseLooseWork): item is PulseGithubLooseWork {
+	return item.kind !== "agent-session";
+}
+
+export function isPulseAgentSession(
+	item: PulseLooseWork,
+): item is Extract<PulseLooseWork, { kind: "agent-session" }> {
+	return item.kind === "agent-session";
+}
+
+/**
+ * Card source brand. GitHub stays an inline `GitHub · PR #1847` row.
+ * Coding sessions brand as Claude and render in the agent-list uncaptured card.
+ */
+export function pulseLooseWorkSource(kind: PulseLooseWorkKind): PulseLooseWorkSource {
+	switch (kind) {
+		case "pull-request":
+		case "branch":
+		case "commit":
+			return "GitHub";
+		case "agent-session":
+			return "Claude";
+		default: {
+			const _exhaustive: never = kind;
+			return _exhaustive;
+		}
+	}
+}
+
+/** Only GitHub artifacts can become a Jira work item from this card. */
+export function pulseLooseWorkCanCreateWorkItem(kind: PulseLooseWorkKind): boolean {
+	switch (kind) {
+		case "pull-request":
+		case "branch":
+		case "commit":
+			return true;
+		case "agent-session":
+			return false;
+		default: {
+			const _exhaustive: never = kind;
+			return _exhaustive;
+		}
+	}
+}
+
+export function pulseLooseWorkHostLabel(host: "local"): string {
+	switch (host) {
+		case "local":
+			return "Local";
+		default: {
+			const _exhaustive: never = host;
+			return _exhaustive;
+		}
+	}
+}
+
 export type PulseSignalTone = "attention" | "risk" | "decision" | "shipped";
 
-/** Something the reader must know about right now. */
+/**
+ * Something the reader must know about right now.
+ *
+ * Every signal is attributed: an agent that has stopped and is waiting on a
+ * human, or a teammate who commented or @mentioned the reader. `memberId` is
+ * the roster identity behind the row, and must name a member the snapshot lists
+ * as active — a signal from somebody who was not in the window is not something
+ * the window can show.
+ */
 export interface PulseSignal {
 	id: string;
 	tone: PulseSignalTone;
+	/** Roster member the signal comes from — drives the attention row's identity. */
+	memberId: string;
+	/**
+	 * When this actually happened, pre-formatted like every other clock in the
+	 * fixture, e.g. `"Mon 17 Aug 08:06"`. Per signal rather than per window: a
+	 * comment posted at 08:06 must not be stamped with the 08:12 boundary of the
+	 * window that contains it. Must fall inside the snapshot's `rangeLabel`, and
+	 * must agree with any time the `detail` quotes.
+	 */
+	timeLabel: string;
 	title: string;
 	detail: string;
 	workItemKey?: string;
@@ -95,6 +199,12 @@ export interface PulseStat {
 /** Per-member scoping: what this one person or agent did in this snapshot. */
 export interface PulseContribution {
 	memberId: string;
+	/**
+	 * Display headline when this member is the filter. Keep it a sentence a
+	 * human would actually say — never the member's name. Omit it to reuse the
+	 * team's insight title.
+	 */
+	title?: string;
 	/** One or two sentences, written in the same voice as the snapshot prose. */
 	summary: string;
 	workItemKeys: readonly string[];
@@ -102,18 +212,31 @@ export interface PulseContribution {
 	looseWorkIds: readonly string[];
 }
 
-/** One decision point on the timeline. */
+/** One captured outcome on the article — an insight, not a time-window. */
 export interface PulseSnapshot {
 	id: string;
-	/** ISO timestamp — drives proportional tick placement on the scrubber. */
+	/**
+	 * ISO time this outcome was first generated. Orders the article. The ruler
+	 * ignores it and steps insights evenly: spacing counts outcomes, not elapsed
+	 * time.
+	 */
 	timestamp: string;
-	/** Scrubber pill label, e.g. "Wed 13 Aug". */
+	/** Generated date, e.g. "Wed 13 Aug". */
 	dateLabel: string;
-	/** Clock label, e.g. "02:30". */
+	/** Generated clock, e.g. "02:30". */
 	timeLabel: string;
-	/** Eyebrow left half, e.g. "Night shift". */
+	/** ISO time this insight was last revised. May equal `timestamp`. */
+	updatedAt: string;
+	/** Last-updated date, same shape as `dateLabel`. */
+	updatedDateLabel: string;
+	/** Last-updated clock, same shape as `timeLabel`. */
+	updatedTimeLabel: string;
+	/** Terse outcome name for the story microheader and ruler, e.g. "Wallet cut". */
 	chapterLabel: string;
-	/** Eyebrow right half, e.g. "Tue 18:00 – Wed 06:00". */
+	/**
+	 * Window a quiet-member note still names, e.g. "Tue 18:00 – Wed 06:00".
+	 * Not painted on the eyebrow: the header clock is last updated.
+	 */
 	rangeLabel: string;
 	/** Display headline. Keep it a sentence a human would actually say. */
 	title: string;
@@ -128,6 +251,120 @@ export interface PulseSnapshot {
 	/** Members active in this window — drives roster availability. */
 	memberIds: readonly string[];
 	contributions: readonly PulseContribution[];
+}
+
+/* ------------------------------------------------------------------ */
+/* Scope — the epic or sprint the reader has narrowed the article to.   */
+/* ------------------------------------------------------------------ */
+
+export type PulseScopeKind = "epic" | "sprint";
+
+/** What the board header's Filter writes. `null` is the whole timeline. */
+export interface PulseScopeSelection {
+	kind: PulseScopeKind;
+	id: string;
+}
+
+/**
+ * The three states any body of work is in. Named by role rather than by board
+ * column so an epic's roll-up and a sprint's commitment read on one scale.
+ */
+export type PulseProgressTone = "done" | "progress" | "todo";
+
+/** One band of a progress bar, authored as a count. Percentages are derived. */
+export interface PulseProgressSegment {
+	tone: PulseProgressTone;
+	/** Reading label, e.g. "Done" / "In progress" / "Not started". */
+	label: string;
+	count: number;
+}
+
+/** A row in the epic's child list — its own name, key and progress bar. */
+export interface PulseEpicChild {
+	id: string;
+	/** Jira key rendered as the row's link text, e.g. "PAY-104". */
+	key: string;
+	name: string;
+	segments: readonly PulseProgressSegment[];
+}
+
+/** One point on the sprint burndown. `remaining: null` is the future. */
+export interface PulseBurndownPoint {
+	/** Axis label; only the first and last are painted. */
+	label: string;
+	/** Points still open at the close of this day, or null once past today. */
+	remaining: number | null;
+}
+
+export type PulseScopeChangeTone = "added" | "removed" | "modified";
+
+/** One column of the sprint's scope-change read-out. */
+export interface PulseScopeChangeEntry {
+	id: string;
+	label: string;
+	/** Signed, so the renderer never re-derives the direction. */
+	points: number;
+	workItems: number;
+	tone: PulseScopeChangeTone;
+}
+
+interface PulseScopeBase {
+	id: string;
+	/** Eyebrow key, e.g. "PAY-90" / "Sprint 24". */
+	key: string;
+	/** Display headline. */
+	name: string;
+	/** One prose line under the headline — the goal, in a human's words. */
+	goal: string;
+	/** Work items this scope owns. Drives the article's own narrowing. */
+	workItemKeys: readonly string[];
+	/** The roll-up bar. */
+	segments: readonly PulseProgressSegment[];
+}
+
+export interface PulseEpicScope extends PulseScopeBase {
+	kind: "epic";
+	/** Pre-formatted, e.g. "12 Sep 2026" — never formatted at render time. */
+	targetDate: string;
+	/** Quiet clause beside the date, e.g. "three weeks out". */
+	targetNote: string;
+	children: readonly PulseEpicChild[];
+}
+
+export interface PulseSprintScope extends PulseScopeBase {
+	kind: "sprint";
+	/** Pre-formatted window, e.g. "18 Aug – 2 Sep". */
+	rangeLabel: string;
+	daysRemaining: number;
+	/**
+	 * Three point totals that are easy to conflate and must not be.
+	 *
+	 * `committedPoints` is what the sprint opened with — it is the guideline's
+	 * origin and nothing else. `scopePoints` is what the sprint holds *now*,
+	 * after everything that came in and went out. `donePoints` is what has
+	 * burned down.
+	 *
+	 * The invariant is `donePoints + last closed remaining === scopePoints`.
+	 * Reading the sentence off `committedPoints` instead is how a brief ends up
+	 * printing "30 of 84 points done, 71 to go" — three true numbers that add
+	 * up to a lie, and the first thing a lead notices.
+	 */
+	committedPoints: number;
+	scopePoints: number;
+	donePoints: number;
+	burndown: readonly PulseBurndownPoint[];
+	/** Net signed points the sprint has gained or shed since it opened. */
+	scopeChangeNetPoints: number;
+	scopeChange: readonly PulseScopeChangeEntry[];
+}
+
+export type PulseScope = PulseEpicScope | PulseSprintScope;
+
+/** A question the reader asked the article, and what it answered. */
+export interface PulseAnswer {
+	id: string;
+	question: string;
+	answer: string;
 }
 
 export interface PulseTimeline {

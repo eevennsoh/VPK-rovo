@@ -35,13 +35,12 @@ import { useJiraActivityComposerDictation } from "./use-jira-activity-composer-d
  *   floating chrome (rounded border, input fill) with controls tightened to
  *   24px, but `shadow-none` so the soft backdrop never clips in the activity rail.
  *
- * Both surfaces keep FloatingComposer's floating border/fill and only override
- * padding to `p-2` (FloatingComposer defaults to `p-3`).
+ * Both surfaces keep FloatingComposer's floating border/fill and the shared
+ * compact `p-2` (space.100) inset. Flush also drops the backdrop shadow.
  */
 const COMPOSER_SURFACES = {
 	comment: {
-		// Override FloatingComposer's default `p-3` (12px) to `p-2` (8px) for this
-		// work-item activity comment surface only; other FloatingComposer callers keep `p-3`.
+		// Same compact inset as FloatingComposer (`p-2` / space.100).
 		chrome: "p-2",
 		// 32px controls at the shared `Button` default, with the default ADS glyph.
 		controlClassName: "",

@@ -161,7 +161,7 @@ export const AVATAR_DETAIL: ComponentDetail = {
       },
       {
         title: "Group with icon count",
-        description: "Avatar group with icon-based count.",
+        description: "Human and agent avatar groups with icon-based count indicators.",
         demoSlug: "avatar-demo-group-with-icon-count",
       },
       {
