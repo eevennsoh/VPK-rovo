@@ -7,6 +7,7 @@ const QUESTION_CARD_FILE = path.join(__dirname, "question-card.tsx");
 const QUESTION_CARD_SOURCE = fs.readFileSync(QUESTION_CARD_FILE, "utf8");
 const QUESTION_CARD_HOOK_FILE = path.join(__dirname, "..", "hooks", "use-question-card.ts");
 const QUESTION_CARD_HOOK_SOURCE = fs.readFileSync(QUESTION_CARD_HOOK_FILE, "utf8");
+const { getQuestionSignature } = require("../lib/question-helpers.ts");
 
 function extractSlice(startMarker, endMarker) {
 	const startIndex = QUESTION_CARD_SOURCE.indexOf(startMarker);
@@ -27,6 +28,13 @@ function extractHookSlice(startMarker, endMarker) {
 
 	return QUESTION_CARD_HOOK_SOURCE.slice(startIndex, endIndex);
 }
+
+test("QuestionCard persistence distinguishes question IDs containing delimiters", () => {
+	const embeddedDelimiterSignature = getQuestionSignature([{ id: "question|detail" }]);
+	const multipleQuestionSignature = getQuestionSignature([{ id: "question" }, { id: "detail" }]);
+
+	assert.notEqual(embeddedDelimiterSignature, multipleQuestionSignature);
+});
 
 test("QuestionCard renders navigation controls above the question heading", () => {
 	const header = extractSlice(
