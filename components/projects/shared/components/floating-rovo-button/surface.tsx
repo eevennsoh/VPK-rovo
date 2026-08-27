@@ -41,6 +41,7 @@ import {
 	getFloatingRovoButtonDragConstraints,
 	getFloatingRovoButtonLocalMeasurement,
 	getNearestFloatingRovoButtonSnapTarget,
+	resolveFloatingRovoButtonPersistentBarSide,
 	resolveFloatingRovoButtonPlacement,
 	FLOATING_ROVO_BUTTON_DRAG_CLICK_THRESHOLD,
 	type FloatingRovoButtonDragConstraints,
@@ -54,10 +55,7 @@ import {
 import { restoreFloatingRovoButtonFocus } from "./focus-restore";
 import { FLOATING_ROVO_BUTTON_MORPH_SPRING } from "./motion";
 import { FloatingRovoButtonOnboardingPanelInner } from "./onboarding-panel";
-import {
-	FloatingRovoButtonPersistentBarRail,
-	resolveFloatingRovoButtonPersistentBarSide,
-} from "./persistent-bar";
+import { FloatingRovoButtonPersistentBarRail } from "./persistent-bar";
 import type {
 	FloatingRovoButtonInsightsConfig,
 	FloatingRovoButtonInsightsStage,

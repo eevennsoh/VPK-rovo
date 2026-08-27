@@ -1,4 +1,8 @@
-import type { FloatingRovoButtonPlacement, FloatingRovoButtonPositioning } from "./types";
+import type {
+	FloatingRovoButtonPersistentBarSide,
+	FloatingRovoButtonPlacement,
+	FloatingRovoButtonPositioning,
+} from "./types";
 
 const DEFAULT_BUTTON_RIGHT = "24px";
 const DEFAULT_BUTTON_BOTTOM = "24px";
@@ -181,4 +185,27 @@ export function getClampedFloatingRovoButtonTarget(
 	const clampedTop = clampFloatingRovoButtonValue(rect.top, minTop, maxTop);
 
 	return { left: clampedLeft, top: clampedTop };
+}
+
+/**
+ * Which edge of the button the persistent bar attaches to.
+ *
+ * Lives here rather than beside the rail it serves: a component module that
+ * also exports a plain function costs Fast Refresh the ability to preserve
+ * component state (`react-doctor/only-export-components`), and this is pure
+ * geometry like everything else in this file.
+ */
+export function resolveFloatingRovoButtonPersistentBarSide(
+	configuredSide: FloatingRovoButtonPersistentBarSide,
+	targetTop: number,
+	rectHeight: number,
+	spaceHeight: number,
+): "top" | "bottom" {
+	if (configuredSide !== "auto") {
+		return configuredSide;
+	}
+
+	// Button in the lower half of its space → open the bar upward, and vice versa.
+	const center = targetTop + rectHeight / 2;
+	return center >= spaceHeight / 2 ? "top" : "bottom";
 }

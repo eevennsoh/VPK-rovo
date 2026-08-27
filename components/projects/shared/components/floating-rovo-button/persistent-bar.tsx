@@ -4,22 +4,7 @@ import { motion } from "motion/react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
-import type { FloatingRovoButtonPersistentBar, FloatingRovoButtonPersistentBarSide } from "./types";
-
-export function resolveFloatingRovoButtonPersistentBarSide(
-	configuredSide: FloatingRovoButtonPersistentBarSide,
-	targetTop: number,
-	rectHeight: number,
-	spaceHeight: number,
-): "top" | "bottom" {
-	if (configuredSide !== "auto") {
-		return configuredSide;
-	}
-
-	// Button in the lower half of its space → open the bar upward, and vice versa.
-	const center = targetTop + rectHeight / 2;
-	return center >= spaceHeight / 2 ? "top" : "bottom";
-}
+import type { FloatingRovoButtonPersistentBar } from "./types";
 
 export function FloatingRovoButtonPersistentBarRail({
 	bar,
