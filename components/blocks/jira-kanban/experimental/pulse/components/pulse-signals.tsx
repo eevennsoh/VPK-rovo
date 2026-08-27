@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { AgentList, type AgentListItem } from "@/components/blocks/agent-list";
 import { NextBestAction, type NextBestActionItem } from "@/components/blocks/next-best-action";
@@ -81,14 +81,13 @@ export function PulseAttention({
 	emptyNote,
 	onView,
 }: Readonly<PulseAttentionProps>) {
-	const labelId = `${useId()}-pulse-attention`;
 	const items = toPulseAttentionItems(signals, members);
 
 	if (items.length === 0 && emptyNote === undefined) return null;
 
 	return (
-		<section aria-labelledby={labelId} className={cn("min-w-0", className)}>
-			<PulseSectionLabel id={labelId}>{toSectionHeading("attention")}</PulseSectionLabel>
+		<section className={cn("min-w-0", className)}>
+			<PulseSectionLabel>{toSectionHeading("attention")}</PulseSectionLabel>
 			{items.length === 0 ? (
 				<PulseSectionNote>{emptyNote}</PulseSectionNote>
 			) : (
@@ -119,7 +118,6 @@ export function PulseNextActions({
 	className,
 	emptyNote,
 }: Readonly<PulseNextActionsProps>) {
-	const labelId = `${useId()}-pulse-next-actions`;
 	const [statusMessage, setStatusMessage] = useState("");
 	const items = toPulseNextActionItems(actions, requestedActionIds);
 
@@ -134,8 +132,8 @@ export function PulseNextActions({
 	if (items.length === 0 && emptyNote === undefined) return null;
 
 	return (
-		<section aria-labelledby={labelId} className={cn("min-w-0", className)}>
-			<PulseSectionLabel id={labelId}>{toSectionHeading("actions")}</PulseSectionLabel>
+		<section className={cn("min-w-0", className)}>
+			<PulseSectionLabel>{toSectionHeading("actions")}</PulseSectionLabel>
 			{items.length === 0 ? (
 				<PulseSectionNote>{emptyNote}</PulseSectionNote>
 			) : (
