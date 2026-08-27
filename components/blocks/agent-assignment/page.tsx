@@ -1,50 +1,60 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useReducedMotion } from "motion/react";
+import { useState } from "react";
 
 import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
 import {
 	AgentAssignment,
 	type AgentAssignmentAgent,
 } from "@/components/blocks/agent-assignment";
-import { CyclingByline } from "@/components/ui-custom/chain-of-thought";
 
 const INITIAL_ASSIGNED_AGENT_IDS = ROVO_AGENT_SELECTOR_AGENTS.slice(0, 2).map((agent) => agent.id);
 
-function DemoAgentActivity({ agentName }: Readonly<{ agentName: string }>) {
-	const shouldReduceMotion = Boolean(useReducedMotion());
-	const [index, setIndex] = useState(0);
-	const activities = [
-		`Reviewing context with ${agentName}`,
-		`Planning the next steps with ${agentName}`,
-		`Working through the request with ${agentName}`,
-	];
+const DEMO_AGENT_STATUSES: Readonly<Record<string, {
+	intervalMs: number;
+	jitterMs: number;
+	labels: readonly string[];
+}>> = {
+	"github-copilot": {
+		intervalMs: 1700,
+		jitterMs: 1900,
+		labels: ["Inspecting changed files", "Tracing affected call sites", "Checking the proposed patch"],
+	},
+	"release-notes-drafter": {
+		intervalMs: 2300,
+		jitterMs: 1700,
+		labels: ["Reading merged work items", "Grouping customer-facing changes", "Drafting the release summary"],
+	},
+};
 
-	useEffect(() => {
-		if (shouldReduceMotion) {
-			return;
-		}
-		const intervalId = window.setInterval(() => setIndex((value) => value + 1), 2_200);
-		return () => window.clearInterval(intervalId);
-	}, [shouldReduceMotion]);
-
-	return (
-		<CyclingByline className="menu-row-title text-text-subtlest">
-			{activities[index % activities.length]}
-		</CyclingByline>
-	);
+function getDemoAgentStatus(agent: Pick<AgentAssignmentAgent, "id" | "name">) {
+	return DEMO_AGENT_STATUSES[agent.id] ?? {
+		intervalMs: 2000,
+		jitterMs: 1800,
+		labels: [
+			`Reading context assigned to ${agent.name}`,
+			`Running ${agent.name}'s connected tools`,
+			`Preparing ${agent.name}'s next update`,
+		],
+	};
 }
 
 export default function AgentAssignmentPage() {
 	const [assignedAgentIds, setAssignedAgentIds] = useState<readonly string[]>(INITIAL_ASSIGNED_AGENT_IDS);
 	const assignedAgents = assignedAgentIds.flatMap((agentId): AgentAssignmentAgent[] => {
 		const agent = ROVO_AGENT_SELECTOR_AGENTS.find((candidate) => candidate.id === agentId);
-		return agent ? [{
+		if (!agent) {
+			return [];
+		}
+		const demoStatus = getDemoAgentStatus(agent);
+		return [{
 			...agent,
-			status: <DemoAgentActivity agentName={agent.name} />,
+			status: demoStatus.labels[0],
+			statusSequence: demoStatus.labels,
+			statusCycleIntervalMs: demoStatus.intervalMs,
+			statusCycleJitterMs: demoStatus.jitterMs,
 			statusLabel: "Running",
-		}] : [];
+		}];
 	});
 
 	return (

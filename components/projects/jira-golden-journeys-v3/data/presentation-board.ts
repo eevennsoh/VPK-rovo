@@ -171,15 +171,21 @@ function createActivity({
 	agentBrandName,
 	agentName,
 	avatarSrc,
+	cycleIntervalJitterMs,
+	cycleIntervalMs,
 	id,
 	label,
+	labels,
 	state,
 }: Readonly<{
 	agentBrandName?: JiraIssueAgentActivity["agentBrandName"];
 	agentName: string;
 	avatarSrc?: string;
+	cycleIntervalJitterMs?: number;
+	cycleIntervalMs?: number;
 	id: string;
 	label: string;
+	labels?: readonly string[];
 	state: "working" | "awaiting-input";
 }>): JiraIssueAgentActivity {
 	return {
@@ -187,9 +193,11 @@ function createActivity({
 		name: agentName,
 		avatarSrc,
 		agentBrandName,
+		cycleIntervalJitterMs,
+		cycleIntervalMs,
 		label,
 		labels: state === "working"
-			? [label, "Checking connected code and work-item context", "Preparing the next update"]
+			? labels ?? [label]
 			: [label],
 		message: state === "working"
 			? `${agentName} is working and will post the next result to the Jira work item.`
@@ -296,7 +304,10 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 					id: "PAY-105:test-agent",
 					agentName: "Test Author Agent",
 					avatarSrc: PAY_AVATARS.testAgent,
+					cycleIntervalJitterMs: 1800,
+					cycleIntervalMs: 2600,
 					label: "Replaying 3-D Secure fixtures",
+					labels: ["Replaying 3-D Secure fixtures", "Comparing challenge payloads", "Running checkout recovery cases"],
 					state: "working",
 				})],
 			}),
@@ -312,7 +323,10 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 					id: "PAY-107:claude-code",
 					agentName: "Claude Code",
 					agentBrandName: "claude",
+					cycleIntervalJitterMs: 2200,
+					cycleIntervalMs: 3100,
 					label: "Implementing webhook retry semantics",
+					labels: ["Implementing webhook retry semantics", "Moving backoff into the v2 client", "Running payments API retry tests"],
 					state: "working",
 				})],
 			}),
@@ -327,14 +341,20 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 						id: "PAY-123:test-agent",
 						agentName: "Test Author Agent",
 						avatarSrc: PAY_AVATARS.testAgent,
+						cycleIntervalJitterMs: 1700,
+						cycleIntervalMs: 1900,
 						label: "Recording decline-code fixtures",
+						labels: ["Recording decline-code fixtures", "Comparing missing decline cases", "Running fixture coverage"],
 						state: "working",
 					}),
 					createActivity({
 						id: "PAY-123:claude-code",
 						agentName: "Claude Code",
 						agentBrandName: "claude",
+						cycleIntervalJitterMs: 2100,
+						cycleIntervalMs: 2400,
 						label: "Wiring recorded fixtures into the v2 client",
+						labels: ["Wiring recorded fixtures into the v2 client", "Adapting client assertions", "Running v2 client tests"],
 						state: "working",
 					}),
 				],
@@ -418,7 +438,10 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 					id: "PAY-121:release-agent",
 					agentName: "Release Captain Agent",
 					avatarSrc: PAY_AVATARS.releaseAgent,
+					cycleIntervalJitterMs: 2400,
+					cycleIntervalMs: 3600,
 					label: "Validating one-percent targeting",
+					labels: ["Validating one-percent targeting", "Checking account kill-switch rules", "Reviewing release telemetry gates"],
 					state: "working",
 				})],
 			}),

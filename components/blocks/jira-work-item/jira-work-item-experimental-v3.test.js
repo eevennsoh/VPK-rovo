@@ -729,7 +729,7 @@ test("the v3 assigned-agents menu lists live agent state and ends in an Assign a
 	);
 	assert.match(
 		menuSource,
-		/inlineMetadata: toAssignedAgentStatus\(row\.status\),[\s\S]*hoverActions: \{[\s\S]*primaryLabel: "View"[\s\S]*secondaryLabel: "Archive"/u,
+		/inlineMetadata: <AssignedAgentStatus agent=\{row\} rowIndex=\{rowIndex\} \/>,[\s\S]*hoverActions: \{[\s\S]*primaryLabel: "View"[\s\S]*secondaryLabel: "Archive"/u,
 	);
 	assert.match(
 		detailsEditorsSource,

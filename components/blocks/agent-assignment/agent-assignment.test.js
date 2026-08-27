@@ -14,6 +14,9 @@ test("Agent Assignment exposes a reusable controlled block contract", () => {
 
 	assert.match(source, /export interface AgentAssignmentAgent extends AgentSelectorAgent/u);
 	assert.match(source, /status\?: ReactNode;/u);
+	assert.match(source, /statusSequence\?: readonly string\[\];/u);
+	assert.match(source, /statusCycleIntervalMs\?: number;/u);
+	assert.match(source, /statusCycleJitterMs\?: number;/u);
 	assert.match(source, /export interface AgentAssignmentProps/u);
 	assert.match(source, /agents: readonly AgentSelectorAgent\[\];/u);
 	assert.match(source, /assignedAgents: readonly AgentAssignmentAgent\[\];/u);
@@ -25,9 +28,10 @@ test("Agent Assignment exposes a reusable controlled block contract", () => {
 	assert.match(source, /usedAgentIds\?: readonly string\[\];/u);
 	assert.match(index, /export \{ AgentAssignment \}/u);
 	assert.match(index, /AgentAssignmentAgent, AgentAssignmentProps/u);
-	assert.match(page, /import \{ CyclingByline \} from "@\/components\/ui-custom\/chain-of-thought";/u);
-	assert.match(page, /<CyclingByline className="menu-row-title text-text-subtlest">[\s\S]*\{activities\[index % activities\.length\]\}[\s\S]*<\/CyclingByline>/u);
-	assert.doesNotMatch(page, /return <span className="menu-row-title text-text-subtlest">/u);
+	assert.match(page, /"github-copilot": \{[\s\S]*labels: \["Inspecting changed files", "Tracing affected call sites", "Checking the proposed patch"\]/u);
+	assert.match(page, /"release-notes-drafter": \{[\s\S]*labels: \["Reading merged work items", "Grouping customer-facing changes", "Drafting the release summary"\]/u);
+	assert.match(page, /statusSequence: demoStatus\.labels,[\s\S]*statusCycleIntervalMs: demoStatus\.intervalMs,[\s\S]*statusCycleJitterMs: demoStatus\.jitterMs,/u);
+	assert.doesNotMatch(page, /DemoAgentActivity|setInterval|useReducedMotion/u);
 });
 
 test("Agent Assignment preserves the work-item trigger and two-stage menu behavior", () => {
@@ -64,11 +68,14 @@ test("Agent Assignment preserves the work-item trigger and two-stage menu behavi
 
 	assert.doesNotMatch(menu, /AgentList/u);
 	assert.match(menu, /<RichTextSuggestionMenu[\s\S]*title="Assigned agents"/u);
-	assert.match(menu, /inlineMetadata: toAssignedAgentStatus\(row\.status\),/u);
-	assert.match(
-		menu,
-		/function toAssignedAgentStatus\([\s\S]*typeof status === "string"[\s\S]*<CyclingByline className="menu-row-title text-text-subtlest">[\s\S]*\{status\}[\s\S]*<\/CyclingByline>/u,
-	);
+	assert.match(menu, /const ASSIGNED_AGENT_STATUS_CYCLE_INTERVAL_MS = 1800;/u);
+	assert.match(menu, /const ASSIGNED_AGENT_STATUS_CYCLE_JITTER_MS = 1600;/u);
+	assert.match(menu, /const ASSIGNED_AGENT_STATUS_INITIAL_STAGGER_MS = 320;/u);
+	assert.match(menu, /function getAssignedAgentStatusLabels\([\s\S]*agent\.statusSequence/u);
+	assert.match(menu, /function getAssignedAgentStatusCycleDelay\([\s\S]*Math\.random\(\)/u);
+	assert.match(menu, /function AssignedAgentStatus\([\s\S]*useReducedMotion\(\)[\s\S]*window\.setTimeout[\s\S]*window\.clearTimeout/u);
+	assert.match(menu, /inlineMetadata: <AssignedAgentStatus agent=\{row\} rowIndex=\{rowIndex\} \/>,/u);
+	assert.doesNotMatch(menu, /setInterval/u);
 	assert.match(menu, /hoverActions: \{[\s\S]*primaryLabel: "View"[\s\S]*secondaryLabel: "Archive"/u);
 	assert.match(suggestionMenu, /hoverActions\?: RichTextSuggestionMenuHoverActions;/u);
 	assert.match(suggestionMenu, /import "\.\/suggestion-menu-actions\.css";/u);

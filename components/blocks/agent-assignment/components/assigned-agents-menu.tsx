@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent } from "react";
+import { useReducedMotion } from "motion/react";
 
 import ArchiveBoxIcon from "@atlaskit/icon/core/archive-box";
 import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
@@ -21,26 +22,87 @@ interface AssignedAgentsMenuProps {
 	rows: readonly AgentAssignmentAgent[];
 }
 
-function toAssignedAgentStatus(status: AgentAssignmentAgent["status"]) {
-	if (typeof status === "string") {
-		return (
-			<CyclingByline className="menu-row-title text-text-subtlest">
-				{status}
-			</CyclingByline>
-		);
+const ASSIGNED_AGENT_STATUS_CYCLE_INTERVAL_MS = 1800;
+const ASSIGNED_AGENT_STATUS_CYCLE_JITTER_MS = 1600;
+const ASSIGNED_AGENT_STATUS_INITIAL_STAGGER_MS = 320;
+
+function getAssignedAgentStatusLabels(agent: AgentAssignmentAgent): readonly string[] {
+	const sequence = agent.statusSequence
+		?.map((label) => label.trim())
+		.filter((label, index, labels) => label.length > 0 && labels.indexOf(label) === index);
+	if (sequence?.length) {
+		return sequence;
 	}
-	return status;
+
+	return typeof agent.status === "string" && agent.status.trim()
+		? [agent.status.trim()]
+		: [];
+}
+
+function getAssignedAgentStatusCycleDelay(intervalMs: number, jitterMs: number): number {
+	return Math.max(1000, intervalMs) + Math.round(Math.random() * Math.max(0, jitterMs));
+}
+
+function AssignedAgentStatus({
+	agent,
+	rowIndex,
+}: Readonly<{
+	agent: AgentAssignmentAgent;
+	rowIndex: number;
+}>) {
+	const shouldReduceMotion = useReducedMotion();
+	const [statusIndex, setStatusIndex] = useState(0);
+	const labels = getAssignedAgentStatusLabels(agent);
+	const label = labels[statusIndex % labels.length];
+	const intervalMs = agent.statusCycleIntervalMs ?? ASSIGNED_AGENT_STATUS_CYCLE_INTERVAL_MS;
+	const jitterMs = agent.statusCycleJitterMs ?? ASSIGNED_AGENT_STATUS_CYCLE_JITTER_MS;
+	const statusKey = labels.join("\n");
+
+	useEffect(() => {
+		if (shouldReduceMotion || labels.length <= 1) {
+			return undefined;
+		}
+
+		let timeoutId: number | undefined;
+		const queueNextStatus = (delayMs: number) => {
+			timeoutId = window.setTimeout(() => {
+				setStatusIndex((index) => (index + 1) % labels.length);
+				queueNextStatus(getAssignedAgentStatusCycleDelay(intervalMs, jitterMs));
+			}, delayMs);
+		};
+		queueNextStatus(
+			getAssignedAgentStatusCycleDelay(intervalMs, jitterMs)
+				+ rowIndex * ASSIGNED_AGENT_STATUS_INITIAL_STAGGER_MS,
+		);
+
+		return () => {
+			if (timeoutId !== undefined) {
+				window.clearTimeout(timeoutId);
+			}
+		};
+	}, [intervalMs, jitterMs, labels.length, rowIndex, shouldReduceMotion, statusKey]);
+
+	if (label === undefined) {
+		return agent.status;
+	}
+
+	return (
+		<CyclingByline className="menu-row-title text-text-subtlest">
+			{label}
+		</CyclingByline>
+	);
 }
 
 function toAgentItem(
 	row: AgentAssignmentAgent,
+	rowIndex: number,
 	onArchiveAgent: (agent: AgentAssignmentAgent) => void,
 	onSelectAgent: (agent: AgentAssignmentAgent) => void,
 ): RichTextSuggestionMenuItem {
 	return {
 		icon: null,
 		id: row.id,
-		inlineMetadata: toAssignedAgentStatus(row.status),
+		inlineMetadata: <AssignedAgentStatus agent={row} rowIndex={rowIndex} />,
 		hoverActions: {
 			onPrimary: () => onSelectAgent(row),
 			onSecondary: () => onArchiveAgent(row),
@@ -70,8 +132,8 @@ export function AssignedAgentsMenu({
 }: Readonly<AssignedAgentsMenuProps>) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const [selectedIndex, setSelectedIndex] = useState(-1);
-	const items: readonly RichTextSuggestionMenuItem[] = rows.map((row) =>
-		toAgentItem(row, onArchiveAgent, onSelectAgent)
+	const items: readonly RichTextSuggestionMenuItem[] = rows.map((row, rowIndex) =>
+		toAgentItem(row, rowIndex, onArchiveAgent, onSelectAgent)
 	);
 
 	const focusOptionAt = (index: number) => {
