@@ -8,6 +8,7 @@ import { useRovoChat } from "@/app/contexts";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
 import type { ChatSubmitInterceptOutcome } from "@/components/projects/sidebar-chat/page";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
+import type { FloatingRovoButtonInsightsConfig } from "@/components/projects/shared/components/floating-rovo-button";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 
 interface JgpRovoOverlayProps {
@@ -19,6 +20,11 @@ interface JgpRovoOverlayProps {
 	 * `data-jira-pulse-open`.
 	 */
 	chat?: "auto" | "hidden";
+	/**
+	 * The "N new insights since your last visit" affordance the launcher grows
+	 * into. `null` leaves it a plain chat launcher.
+	 */
+	insights?: FloatingRovoButtonInsightsConfig | null;
 	/** Hide the viewport FAB. Embedded chrome also hides it via the same flags. */
 	launcher?: "auto" | "hidden";
 	onInterceptSubmit?: (text: string) => ChatSubmitInterceptOutcome;
@@ -31,6 +37,7 @@ export function JgpRovoOverlay({
 	chatContextBar,
 	externalThinkingMessageId,
 	chat = "auto",
+	insights = null,
 	launcher = "auto",
 	onInterceptSubmit,
 	onLauncherClick,
@@ -85,6 +92,7 @@ export function JgpRovoOverlay({
 				<FloatingRovoButton
 					ariaLabel="Open Rovo chat"
 					forceVisible
+					insights={insights}
 					onButtonClick={onLauncherClick}
 					product="home"
 				/>

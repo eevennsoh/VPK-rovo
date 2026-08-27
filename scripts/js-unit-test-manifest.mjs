@@ -22,6 +22,8 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/projects/studio/lib/studio-screen-assistant-patch.test.js",
 		"components/projects/sidebar-chat/lib/agent-activity-timeline.test.js",
 		"components/projects/skills/lib/skill-intercept.test.js",
+		"components/projects/shared/components/floating-rovo-button/daily-insights-row-classes.test.js",
+		"components/projects/shared/components/floating-rovo-button/focus-restore.test.js",
 		"components/screen-assistant/screen-assistant-geometry.test.js",
 		"components/hooks/use-has-vertical-overflow.test.js",
 		"components/arts/personal-graph/lib/neural-graph/neural-graph.test.js",

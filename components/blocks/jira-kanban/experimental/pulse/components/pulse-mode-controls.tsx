@@ -2,6 +2,7 @@
 
 import PulseIcon from "@atlaskit/icon/core/pulse";
 
+import { formatInsightsToggleAriaLabel } from "@/components/blocks/jira-kanban/experimental/lib/board-insights-nudge";
 import type { PulseMember } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -33,11 +34,9 @@ export function PulseModeToggle({
 	onToggle: () => void;
 	unreadCount?: number;
 }>) {
-	const label = unreadCount <= 0
-		? undefined
-		: unreadCount === 1
-			? "Insights, 1 new update since you last viewed"
-			: `Insights, ${unreadCount} new updates since you last viewed`;
+	// The pill's number and this label are the same fact said twice, so both
+	// strings live in one helper — see `board-insights-nudge`.
+	const label = formatInsightsToggleAriaLabel(unreadCount);
 
 	return (
 		<Button
