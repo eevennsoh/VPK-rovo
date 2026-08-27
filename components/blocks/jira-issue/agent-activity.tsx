@@ -107,6 +107,9 @@ function toAgentAssignmentAgent(activity: JiraIssueAgentActivity): AgentAssignme
 		...(activity.avatarSrc ? { avatarSrc: activity.avatarSrc } : {}),
 		...(activity.agentBrandName ? { brandName: activity.agentBrandName } : {}),
 		status: activity.label,
+		statusSequence: activity.state === "working" ? getJiraIssueAgentWorkingLabels(activity) : undefined,
+		...(activity.cycleIntervalMs !== undefined ? { statusCycleIntervalMs: activity.cycleIntervalMs } : {}),
+		...(activity.cycleIntervalJitterMs !== undefined ? { statusCycleJitterMs: activity.cycleIntervalJitterMs } : {}),
 		statusLabel: activity.label,
 	};
 }

@@ -30,7 +30,13 @@ import { cn } from "@/lib/utils";
 
 export interface AgentAssignmentAgent extends AgentSelectorAgent {
 	status?: ReactNode;
+	/** Minimum time a status remains visible before advancing. */
+	statusCycleIntervalMs?: number;
+	/** Random time added independently to every status step. */
+	statusCycleJitterMs?: number;
 	statusLabel: string;
+	/** Agent-specific tool-call narration. Avoid sharing one sequence across agents. */
+	statusSequence?: readonly string[];
 }
 
 export interface AgentAssignmentProps {

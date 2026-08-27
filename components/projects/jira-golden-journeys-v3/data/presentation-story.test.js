@@ -88,6 +88,22 @@ test("the PAY board fills every existing status with coding work and the full st
 		)),
 		"one card should show two agents working together",
 	);
+	const multiAgentCard = cards.find((card) => (
+		(card.agentActivities?.filter((activity) => activity.state === "working").length ?? 0) >= 2
+	));
+	const workingActivities = multiAgentCard?.agentActivities?.filter((activity) => activity.state === "working") ?? [];
+	assert.ok(workingActivities.every((activity) => (activity.labels?.length ?? 0) >= 3));
+	assert.equal(
+		new Set(workingActivities.flatMap((activity) => activity.labels ?? [])).size,
+		workingActivities.reduce((count, activity) => count + (activity.labels?.length ?? 0), 0),
+		"agents working together should not narrate the same tool-call labels",
+	);
+	assert.equal(
+		new Set(workingActivities.map((activity) => activity.cycleIntervalMs)).size,
+		workingActivities.length,
+		"agents working together should have distinct base dwell times",
+	);
+	assert.ok(workingActivities.every((activity) => (activity.cycleIntervalJitterMs ?? 0) > 0));
 
 	assert.deepEqual(
 		story.JIRA_GOLDEN_JOURNEYS_V3_PAY_HEADER_ASSIGNEES.map((assignee) => assignee.id),
