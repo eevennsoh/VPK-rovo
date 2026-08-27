@@ -69,9 +69,9 @@ export function UncapturedWorkChin({
 		>
 			{captured ? (
 				<Button
-					aria-disabled
+					disabled
 					aria-label={createLabel}
-					className="justify-start border-transparent bg-transparent text-text-success [&_svg]:text-icon-success hover:bg-transparent active:bg-transparent"
+					className="justify-start border-transparent bg-transparent text-text-success disabled:opacity-100 [&_svg]:text-icon-success hover:bg-transparent active:bg-transparent"
 					size="compact"
 					variant="outline"
 				>
