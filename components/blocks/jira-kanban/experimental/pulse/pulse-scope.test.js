@@ -474,14 +474,15 @@ test("choosing a scope opens the surface the brief lives on", () => {
 	//
 	// It hangs off the filter action rather than an effect on `scope`, so the
 	// mode change is caused by the click and does not also fire when a scope is
-	// restored on mount.
+	// restored on mount. `updateMode` rather than a raw setter: the mode may be
+	// controlled from outside, and a scope pick has to reach that owner too.
 	assert.match(
 		SCOPE_SOURCES.page,
 		/toggleValue: \(fieldId, valueId\) => \{[\s\S]*?handleOpenTimeline\(\)/u,
 	);
 	assert.doesNotMatch(
 		SCOPE_SOURCES.page,
-		/useEffect\([\s\S]*?setMode\("pulse"\)/u,
+		/useEffect\([\s\S]*?updateMode\("pulse"\)/u,
 		"the mode change is an event, not a reaction to derived state",
 	);
 	// The popover must go through the wrapped actions or it silently keeps the

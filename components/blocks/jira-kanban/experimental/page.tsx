@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import {
+	useCallback,
+	useImperativeHandle,
+	useMemo,
+	useState,
+	type ReactNode,
+	type Ref,
+} from "react";
 
 import { useOptionalRovoChat } from "@/app/contexts";
 import type {
@@ -73,6 +80,25 @@ const EMPTY_ANSWERS: readonly PulseAnswer[] = [];
  * board and header components so the experimental variant can diverge without
  * touching the default variant, while reusing the shared board state helpers.
  */
+/**
+ * Imperative entry into Insights, for an owner that renders its own affordance.
+ *
+ * The board's daily-insights nudge lives on the floating Rovo button, which is
+ * portalled to `document.body` and therefore mounted by the route rather than
+ * by this page. It still has to open Insights *the board's way*: opening also
+ * advances the unread watermark and applies the roster default, and a caller
+ * that merely set `mode="pulse"` would leave a stale badge over an article the
+ * reader is looking at. Handing out `handleOpenTimeline` itself keeps that rule
+ * in one place instead of copying its steps into every owner.
+ */
+export interface ExperimentalJiraKanbanPageHandle {
+	/**
+	 * Open Insights, mark the timeline viewed, and land on `snapshotId`.
+	 * Omit the id to open at the top of the article, as the toggle does.
+	 */
+	openTimeline: (snapshotId?: string | null) => void;
+}
+
 export interface ExperimentalJiraKanbanPageProps {
 	activeCardCode?: string;
 	agents?: readonly JiraKanbanAgentData[];
@@ -90,6 +116,15 @@ export interface ExperimentalJiraKanbanPageProps {
 	onInsightsWorkItemClick?: (workItem: PulseWorkItem) => void;
 	onModeChange?: (mode: ExperimentalJiraKanbanMode) => void;
 	onResumeLooseWork?: (item: PulseLooseWork) => void;
+	/**
+	 * Controlled unread watermark, so an owner rendering its own insights
+	 * affordance counts the same unread snapshots the toggle's badge does.
+	 * Omit to let this page own it; `null` is a real value meaning "nothing
+	 * viewed yet", so it cannot be spelled the same way as "uncontrolled".
+	 */
+	onTimelineLastViewedAtChange?: (lastViewedAt: string) => void;
+	ref?: Ref<ExperimentalJiraKanbanPageHandle>;
+	timelineLastViewedAt?: string | null;
 	viewTabs?: ReactNode;
 }
 
@@ -115,6 +150,9 @@ export default function ExperimentalJiraKanbanPage({
 	onInsightsWorkItemClick,
 	onModeChange,
 	onResumeLooseWork,
+	onTimelineLastViewedAtChange,
+	ref,
+	timelineLastViewedAt: controlledTimelineLastViewedAt,
 	viewTabs,
 }: Readonly<ExperimentalJiraKanbanPageProps>) {
 	const [localBoardColumns, setLocalBoardColumns] = useState<JiraKanbanColumnData[]>(
@@ -141,6 +179,10 @@ export default function ExperimentalJiraKanbanPage({
 		}
 		onModeChange?.(nextMode);
 	}, [controlledMode, onModeChange]);
+	// Which insight the article should open on. Written only by
+	// `handleOpenTimeline`, so the toggle's plain open clears it back to the top
+	// and a deep link cannot survive into the next visit.
+	const [pulseFocusSnapshotId, setPulseFocusSnapshotId] = useState<string | null>(null);
 	const rovoChat = useOptionalRovoChat();
 	// Commitments live above the mode switch: Pulse unmounts when it is toggled
 	// off, and a requested action or a captured note is something the reader
@@ -167,15 +209,33 @@ export default function ExperimentalJiraKanbanPage({
 	const [assignedAgentIdsByCard, setAssignedAgentIdsByCard] = useState<Record<string, string[]>>({});
 	const boardFilter = useBoardFilter();
 	const selectedAssigneeIds = boardFilter.selectedAssigneeIds;
-	const [timelineLastViewedAt, setTimelineLastViewedAt] = useState<string | null>(() => (
+	const [localTimelineLastViewedAt, setLocalTimelineLastViewedAt] = useState<string | null>(() => (
 		controlledMode === "pulse"
 			? markTimelineViewed(PULSE_TIMELINE)
 			: EXPERIMENTAL_BOARD_LAST_VIEWED_AT
 	));
+	// `??` would swallow a controlled `null`, which means "nothing viewed yet"
+	// and makes every snapshot unread — a real value here, unlike `boardColumns`,
+	// where only `undefined` is ever passed.
+	const timelineLastViewedAt = controlledTimelineLastViewedAt !== undefined
+		? controlledTimelineLastViewedAt
+		: localTimelineLastViewedAt;
 	const markTimelineAsViewed = useCallback(() => {
-		setTimelineLastViewedAt(markTimelineViewed(PULSE_TIMELINE));
-	}, []);
-	const handleOpenTimeline = useCallback(() => {
+		const nextViewedAt = markTimelineViewed(PULSE_TIMELINE);
+		if (controlledTimelineLastViewedAt !== undefined) {
+			onTimelineLastViewedAtChange?.(nextViewedAt);
+			return;
+		}
+
+		setLocalTimelineLastViewedAt(nextViewedAt);
+	}, [controlledTimelineLastViewedAt, onTimelineLastViewedAtChange]);
+	// The one way into Insights. Every step belongs together: opening the
+	// article is what "reading" means here, so the badge must clear in the same
+	// gesture, and every caller — the toggle, the board filter's scope pick, and
+	// the route's floating nudge through the ref handle below — goes through
+	// here.
+	const handleOpenTimeline = useCallback((snapshotId: string | null = null) => {
+		setPulseFocusSnapshotId(snapshotId);
 		markTimelineAsViewed();
 		const nextAssigneeIds = insightsDefaultAssigneeIds === undefined
 			? toInsightsAssigneeIds(selectedAssigneeIds, PULSE_MEMBER_IDS)
@@ -185,6 +245,9 @@ export default function ExperimentalJiraKanbanPage({
 		boardFilter.actions.setAssigneeIds(nextAssigneeIds);
 		updateMode("pulse");
 	}, [boardFilter.actions, insightsDefaultAssigneeIds, markTimelineAsViewed, selectedAssigneeIds, updateMode]);
+	useImperativeHandle(ref, () => ({
+		openTimeline: (snapshotId: string | null = null) => handleOpenTimeline(snapshotId),
+	}), [handleOpenTimeline]);
 	// Choosing an epic or a sprint is a request to read the brief, and the brief
 	// only exists in Insights. Without this, picking one from the board filter
 	// recomputes the scope and leaves the reader on the board looking at
@@ -448,6 +511,7 @@ export default function ExperimentalJiraKanbanPage({
 					answers={answers}
 					capturedLooseWorkIds={capturedLooseWorkIds}
 					dismissedLooseWorkIds={dismissedLooseWorkIds}
+					initialSnapshotId={pulseFocusSnapshotId}
 					isLooseWorkResumable={isLooseWorkResumable}
 					isWorkItemInteractive={isInsightsWorkItemInteractive}
 					onAsk={handleAsk}

@@ -180,6 +180,7 @@
 		"katex": "^0.18.4",
 		"leaflet": "^1.9.4",
 		"linkedom": "^0.18.13",
+		"liquid-gooey": "0.2.1",
 		"media-chrome": "^4.19.2",
 		"motion": "^13.1.0",
 		"motion-plus": "https://api.motion.dev/registry?package=motion-plus&version=2.11.2&token=fc0a8c2295343956b76bd070a01a9863c7a11d012c3983c9a7bf9720642e239f",
