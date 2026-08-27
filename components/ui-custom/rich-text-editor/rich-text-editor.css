@@ -903,10 +903,12 @@
 	overflow: hidden;
 }
 
-/* Compact status rows keep identity and live metadata on one line. */
+/* Compact status rows keep identity and live metadata on one line. The name
+   stays content-sized; the metadata track owns shrinking and ellipsis. */
 .rich-text-command-menu-copy-inline {
 	flex-direction: row;
 	align-items: center;
+	flex-wrap: nowrap;
 	/* Matches the one normal text-space on each side of the inline `·`. */
 	column-gap: 4px;
 }

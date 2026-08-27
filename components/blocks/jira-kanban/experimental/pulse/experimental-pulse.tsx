@@ -99,14 +99,16 @@ function pulseArticleFadeClassName(visible: boolean) {
 
 export interface ExperimentalPulseProps {
 	/**
-	 * Commitments the reader has made — actions requested, loose work captured.
-	 * Owned by the page rather than in here, so toggling Pulse off and back on
-	 * cannot silently discard them along with this subtree.
+	 * Commitments the reader has made — actions requested, loose work captured
+	 * or dismissed. Owned by the page rather than in here, so toggling Pulse
+	 * off and back on cannot silently discard them along with this subtree.
 	 */
 	capturedLooseWorkIds: ReadonlySet<string>;
+	dismissedLooseWorkIds: ReadonlySet<string>;
 	isLooseWorkResumable?: (item: PulseLooseWork) => boolean;
 	isWorkItemInteractive?: (workItem: PulseWorkItem) => boolean;
 	onCaptureLooseWork: (item: PulseLooseWork) => void;
+	onDismissLooseWork: (item: PulseLooseWork) => void;
 	onResumeLooseWork?: (item: PulseLooseWork) => void;
 	onWorkItemClick?: (workItem: PulseWorkItem) => void;
 	requestedActionIds: ReadonlySet<string>;
@@ -133,9 +135,11 @@ export interface ExperimentalPulseProps {
 
 export function ExperimentalPulse({
 	capturedLooseWorkIds,
+	dismissedLooseWorkIds,
 	isLooseWorkResumable,
 	isWorkItemInteractive,
 	onCaptureLooseWork,
+	onDismissLooseWork,
 	onResumeLooseWork,
 	onWorkItemClick,
 	onRequestAction,
@@ -204,14 +208,16 @@ export function ExperimentalPulse({
 	// never paints while the reader is mid-article. The top overlay stays
 	// mounted at opacity zero so it can transition. It paints whenever the
 	// article is clipped at the top — a rest-state headline should not cut off
-	// flush — and hides after a header chevron jump, which pins the up/down
-	// nav into that same band. The bottom band stays on: the article sits flush
-	// on the composer, and a rest-state cutoff reads as a clip.
+	// flush — and hides after a start-aligned jump, which pins the destination
+	// section (and the insight nav, on a chevron) into that same band. The
+	// bottom band stays on: the article sits flush on the composer, and a
+	// rest-state cutoff reads as a clip.
 	const { ref: overflowRef, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const { scrollRef, scrollToEntry, scrollToSnapshot } = reading;
 	const [suppressTopFade, setSuppressTopFade] = useState(false);
 	const suppressTopFadeRef = useRef(false);
 	const skipProgrammaticScrollRef = useRef(false);
+	const startJumpGenerationRef = useRef(0);
 	const scrollportRef = useCallback<RefCallback<HTMLDivElement>>((node) => {
 		scrollRef(node);
 		overflowRef(node);
@@ -226,23 +232,30 @@ export function ExperimentalPulse({
 		suppressTopFadeRef.current = false;
 		setSuppressTopFade(false);
 	}, []);
+	const runStartAlignedJump = useCallback((run: () => void) => {
+		const generation = startJumpGenerationRef.current + 1;
+		startJumpGenerationRef.current = generation;
+		suppressTopFadeRef.current = true;
+		skipProgrammaticScrollRef.current = true;
+		setSuppressTopFade(true);
+		run();
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => {
+				if (startJumpGenerationRef.current === generation) {
+					skipProgrammaticScrollRef.current = false;
+				}
+			});
+		});
+	}, []);
 	const handleSelectEntry = useCallback((id: string) => {
-		if (suppressTopFadeRef.current) {
-			suppressTopFadeRef.current = false;
-			setSuppressTopFade(false);
-		}
-		scrollToEntry(id);
-	}, [scrollToEntry]);
+		runStartAlignedJump(() => {
+			scrollToEntry(id, { align: "start" });
+		});
+	}, [runStartAlignedJump, scrollToEntry]);
 	const handleGoToSnapshot = useCallback((snapshotIndex: number, options?: PulseScrollOptions) => {
 		if (isPulseChevronHeaderJump(options)) {
-			suppressTopFadeRef.current = true;
-			skipProgrammaticScrollRef.current = true;
-			setSuppressTopFade(true);
-			scrollToSnapshot(snapshotIndex, options);
-			requestAnimationFrame(() => {
-				requestAnimationFrame(() => {
-					skipProgrammaticScrollRef.current = false;
-				});
+			runStartAlignedJump(() => {
+				scrollToSnapshot(snapshotIndex, options);
 			});
 			return;
 		}
@@ -251,7 +264,7 @@ export function ExperimentalPulse({
 			setSuppressTopFade(false);
 		}
 		scrollToSnapshot(snapshotIndex, options);
-	}, [scrollToSnapshot]);
+	}, [runStartAlignedJump, scrollToSnapshot]);
 	// No settle nudge here: the rounding that made a jump light the mark above it
 	// is absorbed by `toActiveOutlineIndex`'s one-pixel threshold, where it
 	// belongs — the shell should not be correcting the outline's arithmetic.
@@ -371,9 +384,11 @@ export function ExperimentalPulse({
 										scope={scope}
 									/>
 								)}
+								onGoToEntry={handleSelectEntry}
 								onGoToSnapshot={handleGoToSnapshot}
 								onRequestAction={onRequestAction}
 								onSelectMember={filter.selectMember}
+								onWorkItemClick={onWorkItemClick}
 								previewEntry={previewEntry}
 								requestedActionIds={requestedActionIds}
 								selectedMemberId={filter.selectedMemberId}
@@ -422,14 +437,16 @@ export function ExperimentalPulse({
 						chat={insightsChatOpen ? (
 							<PulseEmbeddedChat chatContextBar={chatContextBar} />
 						) : undefined}
+						dismissedIds={dismissedLooseWorkIds}
 						isLooseWorkResumable={isLooseWorkResumable}
 						isWorkItemInteractive={isWorkItemInteractive}
 						looseWork={pulse.looseWork}
 						members={pulse.members}
 						onCapture={onCaptureLooseWork}
+						onDismiss={onDismissLooseWork}
 						onResumeLooseWork={onResumeLooseWork}
 						onWorkItemClick={onWorkItemClick}
-						scopedToFirstName={pulse.selectedMember?.name.split(" ")[0] ?? null}
+						selectedMember={pulse.selectedMember}
 						workItems={pulse.workItems}
 					/>
 				</div>

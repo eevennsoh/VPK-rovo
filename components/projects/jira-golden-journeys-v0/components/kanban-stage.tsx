@@ -127,7 +127,6 @@ export function KanbanStage(): React.ReactElement {
 				ariaLabel="RFP board columns. Assign agents or drag Intake cards into Drafting to start work."
 				boardColumns={filteredBoardColumns}
 				draggedCardCode={draggedCardCode}
-				onCardAgentActivityQuestionSubmit={handleQuestionSubmit}
 				onCardAgentActivityViewChat={handleViewChat}
 				onCardDragEnd={handleCardDragEnd}
 				onCardDragStart={handleCardDragStart}

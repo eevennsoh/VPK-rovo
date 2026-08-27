@@ -8,6 +8,7 @@ import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 import type { AgentAssignmentAgent } from "@/components/blocks/agent-assignment/components/agent-assignment";
 import { Button } from "@/components/ui/button";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { CyclingByline } from "@/components/ui-custom/chain-of-thought";
 import {
 	RichTextSuggestionMenu,
 	type RichTextSuggestionMenuItem,
@@ -20,6 +21,17 @@ interface AssignedAgentsMenuProps {
 	rows: readonly AgentAssignmentAgent[];
 }
 
+function toAssignedAgentStatus(status: AgentAssignmentAgent["status"]) {
+	if (typeof status === "string") {
+		return (
+			<CyclingByline className="menu-row-title text-text-subtlest">
+				{status}
+			</CyclingByline>
+		);
+	}
+	return status;
+}
+
 function toAgentItem(
 	row: AgentAssignmentAgent,
 	onArchiveAgent: (agent: AgentAssignmentAgent) => void,
@@ -28,7 +40,7 @@ function toAgentItem(
 	return {
 		icon: null,
 		id: row.id,
-		inlineMetadata: row.status,
+		inlineMetadata: toAssignedAgentStatus(row.status),
 		hoverActions: {
 			onPrimary: () => onSelectAgent(row),
 			onSecondary: () => onArchiveAgent(row),
@@ -136,7 +148,7 @@ export function AssignedAgentsMenu({
 						<span className="grid size-6 shrink-0 place-items-center text-icon-subtle">
 							<AiAgentAddIcon label="" />
 						</span>
-						<span className="text-text-subtle">Add agent</span>
+						<span className="text-text-subtle">Assign agent</span>
 					</Button>
 				</div>
 			</>

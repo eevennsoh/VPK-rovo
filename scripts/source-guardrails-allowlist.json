@@ -107,13 +107,6 @@
 			"type": "eslint-disable"
 		},
 		{
-			"filePath": "components/blocks/jira-issue/uncaptured-work.tsx",
-			"occurrence": 1,
-			"reason": "Resume is intentionally hover-revealed while remaining keyboard-focusable and visible on focus",
-			"text": "className=\"pointer-events-none opacity-0 transition-opacity duration-xxshort ease-out-practical motion-reduce:transition-none group-hover/uncaptured-work:pointer-events-auto group-hover/uncaptured-work:opacity-100 group-focus-within/uncaptured-work:pointer-events-auto group-focus-within/uncaptured-work:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 focus-visible:ring-3\"",
-			"type": "persistent-focus-reveal"
-		},
-		{
 			"filePath": "components/blocks/product-sidebar/data/confluence-navigation.ts",
 			"occurrence": 1,
 			"reason": "existing baseline",

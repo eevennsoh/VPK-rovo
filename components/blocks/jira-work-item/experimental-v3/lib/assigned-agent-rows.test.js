@@ -109,6 +109,31 @@ test("resolveAssignedAgentRows still labels agents that have no session", async 
 	assert.equal(unstarted.statusLabel, "Working");
 });
 
+test("resolveUsedAgentIds lists distinct directory agents and skips skills", async () => {
+	const { resolveLatestAgentSession, resolveUsedAgentIds } = await loadRows();
+
+	assert.deepEqual(
+		resolveUsedAgentIds([
+			session({ agentId: "claude-code" }),
+			session({ id: "session-skill", agentId: "skill:plan", agentName: "Rovo" }),
+			session({ id: "session-2", agentId: "code-planner" }),
+			session({ id: "session-3", agentId: "claude-code", status: "completed" }),
+		]),
+		["claude-code", "code-planner"],
+	);
+	assert.equal(
+		resolveLatestAgentSession(
+			[
+				session({ id: "session-early" }),
+				session({ id: "session-late", status: "waiting" }),
+			],
+			"claude-code",
+		)?.id,
+		"session-late",
+	);
+	assert.equal(resolveLatestAgentSession([session()], "missing"), undefined);
+});
+
 test("resolveAssignedAgentRows returns an empty list for empty or person-only input", async () => {
 	const { resolveAssignedAgentRows } = await loadRows();
 

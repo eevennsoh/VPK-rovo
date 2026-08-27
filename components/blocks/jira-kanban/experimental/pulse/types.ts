@@ -67,7 +67,10 @@ export interface PulseLooseWorkPullRequest {
 interface PulseLooseWorkBase {
 	id: string;
 	title: string;
-	/** Compact destination label shown in the hoverable Smart Link trigger. */
+	/**
+	 * Compact destination label shown in the hoverable Smart Link trigger.
+	 * Sessions use the issue key (`PAY-121`); GitHub uses `PR #1847`, a SHA, or a branch name.
+	 */
 	sourceTitle: string;
 	/** Supporting line, e.g. "PR #1847 · no linked work item". */
 	detail: string;
@@ -76,8 +79,9 @@ interface PulseLooseWorkBase {
 
 /**
  * Work the team produced that never landed in a work item: an unlinked PR,
- * branch, or commit, or a local Claude session. Surfacing these is the whole
- * point of Pulse — they are the part a stand-up usually misses.
+ * branch, or commit, or a local Claude session. GitHub artifacts render as
+ * uncaptured-work cards; sessions render through the shared agent list's
+ * uncaptured variant.
  */
 export type PulseLooseWork =
 	| (PulseLooseWorkBase & {
@@ -87,7 +91,22 @@ export type PulseLooseWork =
 	| (PulseLooseWorkBase & { kind: "branch" | "commit" })
 	| (PulseLooseWorkBase & { kind: "agent-session"; host: "local" });
 
-/** Card footer brand: `GitHub · PR #1847` or `Claude · Local · PAY-112`. */
+export type PulseGithubLooseWork = Exclude<PulseLooseWork, { kind: "agent-session" }>;
+
+export function isPulseGithubLooseWork(item: PulseLooseWork): item is PulseGithubLooseWork {
+	return item.kind !== "agent-session";
+}
+
+export function isPulseAgentSession(
+	item: PulseLooseWork,
+): item is Extract<PulseLooseWork, { kind: "agent-session" }> {
+	return item.kind === "agent-session";
+}
+
+/**
+ * Card source brand. GitHub stays an inline `GitHub · PR #1847` row.
+ * Coding sessions brand as Claude and render in the agent-list uncaptured card.
+ */
 export function pulseLooseWorkSource(kind: PulseLooseWorkKind): PulseLooseWorkSource {
 	switch (kind) {
 		case "pull-request":
@@ -98,6 +117,33 @@ export function pulseLooseWorkSource(kind: PulseLooseWorkKind): PulseLooseWorkSo
 			return "Claude";
 		default: {
 			const _exhaustive: never = kind;
+			return _exhaustive;
+		}
+	}
+}
+
+/** Only GitHub artifacts can become a Jira work item from this card. */
+export function pulseLooseWorkCanCreateWorkItem(kind: PulseLooseWorkKind): boolean {
+	switch (kind) {
+		case "pull-request":
+		case "branch":
+		case "commit":
+			return true;
+		case "agent-session":
+			return false;
+		default: {
+			const _exhaustive: never = kind;
+			return _exhaustive;
+		}
+	}
+}
+
+export function pulseLooseWorkHostLabel(host: "local"): string {
+	switch (host) {
+		case "local":
+			return "Local";
+		default: {
+			const _exhaustive: never = host;
 			return _exhaustive;
 		}
 	}
@@ -153,6 +199,12 @@ export interface PulseStat {
 /** Per-member scoping: what this one person or agent did in this snapshot. */
 export interface PulseContribution {
 	memberId: string;
+	/**
+	 * Display headline when this member is the filter. Keep it a sentence a
+	 * human would actually say — never the member's name. Omit it to reuse the
+	 * team's insight title.
+	 */
+	title?: string;
 	/** One or two sentences, written in the same voice as the snapshot prose. */
 	summary: string;
 	workItemKeys: readonly string[];
@@ -179,7 +231,7 @@ export interface PulseSnapshot {
 	updatedDateLabel: string;
 	/** Last-updated clock, same shape as `timeLabel`. */
 	updatedTimeLabel: string;
-	/** Outcome name, e.g. "Night shift". */
+	/** Terse outcome name for the story microheader and ruler, e.g. "Wallet cut". */
 	chapterLabel: string;
 	/**
 	 * Window a quiet-member note still names, e.g. "Tue 18:00 – Wed 06:00".

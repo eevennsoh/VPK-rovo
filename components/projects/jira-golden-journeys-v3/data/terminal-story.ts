@@ -4,7 +4,7 @@ import type { TerminalStoryDefinition } from "@/components/projects/jira-golden-
 const JIRA_GOLDEN_JOURNEYS_V3_BASE_URL = "https://jira-golden-journeys-v3.atlassian.net";
 
 export const JIRA_GOLDEN_JOURNEYS_V3_RESUME_PROMPT =
-	"Resume the uncaptured PAY-101 Claude session from .worktrees/pay-101-adapter. Restore the prior conversation, Jira context, Git history, and generated artifacts so I can continue from where Maya stopped.";
+	"cd /Users/venn/dev/payments/.worktrees/pay-101-adapter && claude --resume 338eaaca-62da-4dcb-925b-f2c5f16be5a8";
 
 export function getJiraGoldenJourneysV3IssueUrl(issueKey: string): string {
 	return `${JIRA_GOLDEN_JOURNEYS_V3_BASE_URL}/browse/${encodeURIComponent(issueKey)}`;
@@ -29,7 +29,7 @@ export const JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_BEATS: readonly TerminalBeat[] = [
 				lines: [
 					[{ text: "⏺ Session · ", tone: "brand" }, { text: "restored local Claude session for PAY-101" }],
 					[{ text: "  ⎿ Worktree · ", tone: "dim" }, { text: ".worktrees/pay-101-adapter" }],
-					[{ text: "  ⎿ Conversation · ", tone: "dim" }, { text: "38 messages · Maya Ferreira · last active Mon 17 Aug 07:48" }],
+					[{ text: "  ⎿ Conversation · ", tone: "dim" }, { text: "38 messages · Ee Venn Soh · last active Mon 17 Aug 07:48" }],
 				],
 			},
 		],

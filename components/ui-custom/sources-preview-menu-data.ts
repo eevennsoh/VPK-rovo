@@ -1,3 +1,5 @@
+import type { TwgToolSource } from "@/components/ui-custom/twg-appstack";
+
 export interface SourcesPreviewPage {
 	id: string;
 	title: string;
@@ -5,6 +7,8 @@ export interface SourcesPreviewPage {
 	updatedAt: Date;
 	owner: string;
 	snippet: string;
+	/** When set, the row uses this stack icon instead of guessing from the href. */
+	source?: TwgToolSource;
 }
 
 /** Long enough that "Owned by …" ellipsizes in the 26rem preview popover. */

@@ -11,6 +11,7 @@ const TYPES_SOURCE = fs.readFileSync(path.join(DIR, "components", "smart-link-ty
 const VISUALS_SOURCE = fs.readFileSync(path.join(DIR, "components", "smart-link-visuals.tsx"), "utf8");
 const DATA_SOURCE = fs.readFileSync(path.join(DIR, "data", "demo-smart-links.tsx"), "utf8");
 const PULL_REQUEST_HELPER_SOURCE = fs.readFileSync(path.join(DIR, "lib", "pull-request-smart-link.tsx"), "utf8");
+const GITHUB_ARTIFACT_ICONS_SOURCE = fs.readFileSync(path.join(DIR, "lib", "github-artifact-icons.tsx"), "utf8");
 const DEMO_SOURCE = fs.readFileSync(path.join(process.cwd(), "components", "website", "demos", "blocks", "smart-link-demo.tsx"), "utf8");
 const PAGE_SOURCE = fs.readFileSync(path.join(DIR, "page.tsx"), "utf8");
 const INDEX_SOURCE = fs.readFileSync(path.join(DIR, "index.ts"), "utf8");
@@ -235,11 +236,18 @@ test("the pull-request status lozenge trails the title like every other card", (
 });
 
 test("the pull-request front slot is a status-tinted pull-request glyph", () => {
-	// A transparent icon tile holding the PR glyph replaces the GitHub logo; the
-	// tint follows the status tone so it matches the lozenge (green Open).
+	// A transparent icon tile holding the status glyph replaces the GitHub logo;
+	// Open, Merged, and Failed each get their Jira-issue chrome glyph.
 	assert.match(PULL_REQUEST_HELPER_SOURCE, /import PullRequestIcon from "@atlaskit\/icon\/core\/pull-request";/u);
-	assert.match(PULL_REQUEST_HELPER_SOURCE, /icon: \{ kind: "icon", icon: <PullRequestIcon label="" \/> \}/u);
+	assert.match(PULL_REQUEST_HELPER_SOURCE, /import MergeSuccessIcon from "@atlaskit\/icon\/core\/merge-success";/u);
+	assert.match(PULL_REQUEST_HELPER_SOURCE, /import MergeFailureIcon from "@atlaskit\/icon\/core\/merge-failure";/u);
+	assert.match(PULL_REQUEST_HELPER_SOURCE, /icon: \{ kind: "icon", icon: frontSlot\.icon \}/u);
 	assert.match(PULL_REQUEST_HELPER_SOURCE, /label: "Open", variant: "success"/u);
+	assert.match(PULL_REQUEST_HELPER_SOURCE, /label: "Merged", variant: "discovery"/u);
+	assert.match(PULL_REQUEST_HELPER_SOURCE, /label: "Failed", variant: "danger"/u);
+	assert.match(PULL_REQUEST_HELPER_SOURCE, /<PullRequestIcon label="" \/>/u);
+	assert.match(PULL_REQUEST_HELPER_SOURCE, /<MergeSuccessIcon label="" \/>/u);
+	assert.match(PULL_REQUEST_HELPER_SOURCE, /<MergeFailureIcon label="" \/>/u);
 	// GitHub still identifies the provider for the footer and the repo tag.
 	assert.match(PULL_REQUEST_HELPER_SOURCE, /provider: \{ name: "GitHub", logo: \{ kind: "third-party", name: "github" \} \}/u);
 	// `kind: "icon"` routes through the transparent IconTile branch.
@@ -255,6 +263,10 @@ test("the pull-request front slot is a status-tinted pull-request glyph", () => 
 		COMPONENT_SOURCE,
 		/statusIconTone\(item\.variant, item\.variant === "goal" \? status : item\.status\)/u,
 	);
+	assert.match(GITHUB_ARTIFACT_ICONS_SOURCE, /import BranchIcon from "@atlaskit\/icon\/core\/branch"/u);
+	assert.match(GITHUB_ARTIFACT_ICONS_SOURCE, /import CommitIcon from "@atlaskit\/icon\/core\/commit"/u);
+	assert.match(INDEX_SOURCE, /GITHUB_BRANCH_SMART_LINK_ICON/u);
+	assert.match(INDEX_SOURCE, /GITHUB_COMMIT_SMART_LINK_ICON/u);
 });
 
 test("the pull-request number prefixes the title", () => {

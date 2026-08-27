@@ -23,9 +23,10 @@ const PAY_AVATARS = {
 	jordan: "/avatar-user/issac-varghese/color/asow-dev-lime.png",
 	maya: "/avatar-user/chloe-lee/color/asow-dev-lime.png",
 	priya: "/avatar-user/ting-chen/color/asow-teamwork-blue.png",
-	releaseAgent: "/avatar-agent/dev-agents/deployment-summarizer.svg",
-	reviewAgent: "/avatar-agent/dev-agents/code-reviewer.svg",
-	testAgent: "/avatar-agent/dev-agents/unit-test-creator.svg",
+	releaseAgent: "/avatar-agent/strategy-agents/strategic-insight.svg",
+	reviewAgent: "/avatar-agent/teamwork-agents/decision-director.svg",
+	testAgent: "/avatar-agent/service-agents/rca-agent.svg",
+	venn: "/avatar-user/venn/venn.png",
 } as const;
 
 const PAY_ASSIGNEES = {
@@ -104,6 +105,29 @@ export const JIRA_GOLDEN_JOURNEYS_V3_PAY_COMPOSER_AGENTS = [
 		avatarSrc: PAY_AVATARS.releaseAgent,
 	},
 ] as const satisfies readonly AgentSelectorAgent[];
+
+export const JIRA_GOLDEN_JOURNEYS_V3_PAY_HEADER_ASSIGNEES = [
+	{
+		id: "venn",
+		name: "Venn",
+		avatarSrc: PAY_AVATARS.venn,
+	},
+	{
+		id: "review-agent",
+		name: "Review Agent",
+		avatarSrc: PAY_AVATARS.reviewAgent,
+	},
+	{
+		id: "test-agent",
+		name: "Test Author Agent",
+		avatarSrc: PAY_AVATARS.testAgent,
+	},
+	{
+		id: "release-agent",
+		name: "Release Captain Agent",
+		avatarSrc: PAY_AVATARS.releaseAgent,
+	},
+] as const satisfies readonly JiraKanbanAssigneeData[];
 
 function createCard({
 	agentActivities,
@@ -216,59 +240,43 @@ function createCompletedRun({
 	};
 }
 
+export const JIRA_GOLDEN_JOURNEYS_V3_PAY_STATUS_PHASES = [
+	"To do",
+	"In progress",
+	"In review",
+	"Done",
+] as const satisfies readonly string[];
+
 const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 	{
-		title: "Review",
+		title: "To do",
 		count: 4,
 		cards: [
 			createCard({
-				assignee: PAY_ASSIGNEES.jordan,
-				code: "PAY-112",
-				priority: "major",
-				pullRequestNumber: 1858,
-				pullRequestStatus: "failed",
-				tags: [{ text: "idempotency", color: "red" }],
-				title: "Confirm the sandbox key retention window before replay",
-				agentActivities: [createActivity({
-					id: "PAY-112:review-agent",
-					agentName: "Review Agent",
-					avatarSrc: PAY_AVATARS.reviewAgent,
-					label: "Needs the retention window",
-					state: "awaiting-input",
-				})],
+				assignee: PAY_ASSIGNEES.diego,
+				code: "PAY-118",
+				tags: [{ text: "wallet", color: "purple" }],
+				title: "Carry card-artwork metadata into the next wallet epic",
 			}),
 			createCard({
 				assignee: PAY_ASSIGNEES.priya,
-				code: "PAY-115",
-				tags: [{ text: "release note", color: "blue" }],
-				title: "Rewrite the customer ship note after the wallet cut",
+				code: "PAY-124",
+				priority: "major",
+				tags: [{ text: "rollout", color: "blue" }],
+				title: "Confirm the English-only account allow-list",
 			}),
 			createCard({
 				assignee: PAY_ASSIGNEES.maya,
-				code: "PAY-119",
-				pullRequestNumber: 1880,
-				pullRequestStatus: "open",
-				tags: [{ text: "runbook", color: "teal" }],
-				title: "Publish and link the rollback rehearsal runbook",
-				agentActivityMode: "completed",
-				agentDoneRuns: [createCompletedRun({
-					id: "PAY-119:release-agent",
-					agentName: "Release Captain Agent",
-					avatarSrc: PAY_AVATARS.releaseAgent,
-					issueKey: "PAY-119",
-					issueSummary: "Publish and link the rollback rehearsal runbook",
-					description: "Compiled the rehearsal evidence into a review-ready runbook update.",
-					pullRequestNumber: 1880,
-					state: "review",
-					summary: "Prepared rollback runbook update",
-				})],
+				code: "PAY-125",
+				tags: [{ text: "observability", color: "green" }],
+				title: "Add production dashboards for the one-percent slice",
 			}),
 			createCard({
-				assignee: PAY_ASSIGNEES.diego,
-				code: "PAY-132",
+				assignee: PAY_ASSIGNEES.jordan,
+				code: "PAY-127",
 				priority: "minor",
-				tags: [{ text: "copy", color: "purple" }],
-				title: "Approve the final issuer-unavailable recovery message",
+				tags: [{ text: "cleanup", color: "gray" }],
+				title: "Remove the two dead v1 exports after rollout",
 			}),
 		],
 	},
@@ -314,13 +322,22 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				priority: "major",
 				tags: [{ text: "fixtures", color: "purple" }],
 				title: "Record the three missing decline-code fixtures",
-				agentActivities: [createActivity({
-					id: "PAY-123:test-agent",
-					agentName: "Test Author Agent",
-					avatarSrc: PAY_AVATARS.testAgent,
-					label: "Needs observed provider responses",
-					state: "awaiting-input",
-				})],
+				agentActivities: [
+					createActivity({
+						id: "PAY-123:test-agent",
+						agentName: "Test Author Agent",
+						avatarSrc: PAY_AVATARS.testAgent,
+						label: "Recording decline-code fixtures",
+						state: "working",
+					}),
+					createActivity({
+						id: "PAY-123:claude-code",
+						agentName: "Claude Code",
+						agentBrandName: "claude",
+						label: "Wiring recorded fixtures into the v2 client",
+						state: "working",
+					}),
+				],
 			}),
 			createCard({
 				assignee: PAY_ASSIGNEES.diego,
@@ -333,8 +350,45 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 	},
 	{
 		title: "In review",
-		count: 4,
+		count: 8,
 		cards: [
+			createCard({
+				assignee: PAY_ASSIGNEES.jordan,
+				code: "PAY-112",
+				priority: "major",
+				pullRequestNumber: 1858,
+				pullRequestStatus: "failed",
+				tags: [{ text: "idempotency", color: "red" }],
+				title: "Confirm the sandbox key retention window before replay",
+				agentActivities: [createActivity({
+					id: "PAY-112:review-agent",
+					agentName: "Review Agent",
+					avatarSrc: PAY_AVATARS.reviewAgent,
+					label: "Needs the retention window",
+					state: "awaiting-input",
+				})],
+			}),
+			createCard({
+				assignee: PAY_ASSIGNEES.priya,
+				code: "PAY-115",
+				tags: [{ text: "release note", color: "blue" }],
+				title: "Rewrite the customer ship note after the wallet cut",
+			}),
+			createCard({
+				assignee: PAY_ASSIGNEES.maya,
+				code: "PAY-119",
+				pullRequestNumber: 1880,
+				pullRequestStatus: "open",
+				tags: [{ text: "runbook", color: "teal" }],
+				title: "Publish and link the rollback rehearsal runbook",
+			}),
+			createCard({
+				assignee: PAY_ASSIGNEES.diego,
+				code: "PAY-132",
+				priority: "minor",
+				tags: [{ text: "copy", color: "purple" }],
+				title: "Approve the final issuer-unavailable recovery message",
+			}),
 			createCard({
 				assignee: PAY_ASSIGNEES.jordan,
 				code: "PAY-104",
@@ -343,13 +397,6 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				pullRequestStatus: "open",
 				tags: [{ text: "checkout-web", color: "blue" }],
 				title: "Port createPaymentIntent onto the v2 client",
-				agentActivities: [createActivity({
-					id: "PAY-104:review-agent",
-					agentName: "Review Agent",
-					avatarSrc: PAY_AVATARS.reviewAgent,
-					label: "Needs a retry-path answer",
-					state: "awaiting-input",
-				})],
 			}),
 			createCard({
 				assignee: PAY_ASSIGNEES.maya,
@@ -358,18 +405,6 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				pullRequestStatus: "open",
 				tags: [{ text: "codegen", color: "gray" }],
 				title: "Regenerate webhook payloads from the v2 OpenAPI spec",
-				agentActivityMode: "completed",
-				agentDoneRuns: [createCompletedRun({
-					id: "PAY-109:test-agent",
-					agentName: "Test Author Agent",
-					avatarSrc: PAY_AVATARS.testAgent,
-					issueKey: "PAY-109",
-					issueSummary: "Regenerate webhook payloads from the v2 OpenAPI spec",
-					description: "Generated the typed payloads and added contract fixtures.",
-					pullRequestNumber: 1863,
-					state: "review",
-					summary: "Opened generated webhook types PR",
-				})],
 			}),
 			createCard({
 				assignee: PAY_ASSIGNEES.priya,
@@ -395,57 +430,6 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				pullRequestStatus: "open",
 				tags: [{ text: "ledger-sync", color: "teal" }],
 				title: "Stamp SDK version at settlement for finance exports",
-				agentActivityMode: "completed",
-				agentDoneRuns: [createCompletedRun({
-					id: "PAY-128:review-agent",
-					agentName: "Review Agent",
-					avatarSrc: PAY_AVATARS.reviewAgent,
-					issueKey: "PAY-128",
-					issueSummary: "Stamp SDK version at settlement for finance exports",
-					description: "Reviewed the settlement-time stamp and found no remaining blockers.",
-					pullRequestNumber: 1881,
-					state: "review",
-					summary: "Completed finance-export review",
-				})],
-			}),
-		],
-	},
-	{
-		title: "To do",
-		count: 4,
-		cards: [
-			createCard({
-				assignee: PAY_ASSIGNEES.diego,
-				code: "PAY-118",
-				tags: [{ text: "wallet", color: "purple" }],
-				title: "Carry card-artwork metadata into the next wallet epic",
-			}),
-			createCard({
-				assignee: PAY_ASSIGNEES.priya,
-				code: "PAY-124",
-				priority: "major",
-				tags: [{ text: "rollout", color: "blue" }],
-				title: "Confirm the English-only account allow-list",
-			}),
-			createCard({
-				assignee: PAY_ASSIGNEES.maya,
-				code: "PAY-125",
-				tags: [{ text: "observability", color: "green" }],
-				title: "Add production dashboards for the one-percent slice",
-				agentActivities: [createActivity({
-					id: "PAY-125:release-agent",
-					agentName: "Release Captain Agent",
-					avatarSrc: PAY_AVATARS.releaseAgent,
-					label: "Drafting rollout monitors",
-					state: "working",
-				})],
-			}),
-			createCard({
-				assignee: PAY_ASSIGNEES.jordan,
-				code: "PAY-127",
-				priority: "minor",
-				tags: [{ text: "cleanup", color: "gray" }],
-				title: "Remove the two dead v1 exports after rollout",
 			}),
 		],
 	},
@@ -482,17 +466,6 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				pullRequestStatus: "merged",
 				tags: [{ text: "spike", color: "teal" }, { text: "sdk", color: "blue" }],
 				title: "Prove LegacyGatewayAdapter can be deleted outright",
-				agentActivityMode: "completed",
-				agentDoneRuns: [createCompletedRun({
-					id: "PAY-102:claude-code",
-					agentName: "Claude Code",
-					agentBrandName: "claude",
-					issueKey: "PAY-102",
-					issueSummary: "Prove LegacyGatewayAdapter can be deleted outright",
-					description: "Deleted the adapter on a proof branch and verified the v2 idempotency contract.",
-					pullRequestNumber: 1847,
-					summary: "Proved the adapter can be deleted",
-				})],
 			}),
 			createCard({
 				assignee: PAY_ASSIGNEES.jordan,
@@ -501,17 +474,6 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				pullRequestStatus: "merged",
 				tags: [{ text: "contract tests", color: "green" }],
 				title: "Land the 3-D Secure contract suite with 214 assertions",
-				agentActivityMode: "completed",
-				agentDoneRuns: [createCompletedRun({
-					id: "PAY-113:test-agent",
-					agentName: "Test Author Agent",
-					avatarSrc: PAY_AVATARS.testAgent,
-					issueKey: "PAY-113",
-					issueSummary: "Land the 3-D Secure contract suite with 214 assertions",
-					description: "Added and merged the recorded-fixture contract suite.",
-					pullRequestNumber: 1863,
-					summary: "Merged 214 contract assertions",
-				})],
 			}),
 			createCard({
 				assignee: PAY_ASSIGNEES.maya,
@@ -520,17 +482,6 @@ const PAY_BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				pullRequestStatus: "merged",
 				tags: [{ text: "migration", color: "blue" }],
 				title: "Delete LegacyGatewayAdapter after all 61 ports land",
-				agentActivityMode: "completed",
-				agentDoneRuns: [createCompletedRun({
-					id: "PAY-126:review-agent",
-					agentName: "Review Agent",
-					avatarSrc: PAY_AVATARS.reviewAgent,
-					issueKey: "PAY-126",
-					issueSummary: "Delete LegacyGatewayAdapter after all 61 ports land",
-					description: "Verified the adapter deletion, 61 migrated call sites, and two follow-up exports.",
-					pullRequestNumber: 1874,
-					summary: "Approved the final adapter deletion",
-				})],
 			}),
 		],
 	},

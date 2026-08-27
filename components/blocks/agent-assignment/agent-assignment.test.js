@@ -20,6 +20,9 @@ test("Agent Assignment exposes a reusable controlled block contract", () => {
 	assert.match(source, /onAssignedAgentIdsChange: \(agentIds: readonly string\[\]\) => void;/u);
 	assert.match(source, /onAgentAssign\?: \(agent: AgentSelectorAgent\) => void;/u);
 	assert.match(source, /onAssignedAgentSelect: \(agent: AgentAssignmentAgent\) => void;/u);
+	assert.match(source, /onContinueExistingSession\?: \(agent: AgentSelectorAgent\) => void;/u);
+	assert.match(source, /onStartNewSession\?: \(agent: AgentSelectorAgent\) => void;/u);
+	assert.match(source, /usedAgentIds\?: readonly string\[\];/u);
 	assert.match(index, /export \{ AgentAssignment \}/u);
 	assert.match(index, /AgentAssignmentAgent, AgentAssignmentProps/u);
 	assert.match(page, /import \{ CyclingByline \} from "@\/components\/ui-custom\/chain-of-thought";/u);
@@ -33,12 +36,24 @@ test("Agent Assignment preserves the work-item trigger and two-stage menu behavi
 	const suggestionMenu = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
 	const suggestionMenuCss = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu-actions.css");
 
-	assert.match(source, /aria-label=\{triggerLabel\}/u);
+	assert.match(source, /openMode\?: "click" \| "hover";/u);
+	assert.match(source, /trigger\?: ReactElement<\{ "aria-expanded"\?: boolean \}>;/u);
+	assert.match(source, /onOpenChange\?: \(open: boolean\) => void;/u);
+	assert.match(source, /openMode === "hover"/u);
+	assert.match(source, /<HoverCard onOpenChange=\{handleOpenChange\} open=\{open\}>/u);
+	assert.match(source, /delay=\{120\}/u);
+	assert.match(source, /closeDelay=\{80\}/u);
+	assert.match(source, /cloneElement\(trigger, \{ "aria-expanded": open \}\)/u);
 	assert.match(source, /import \{ token \} from "@\/lib\/tokens";/u);
 	assert.match(source, /<PopoverContent[\s\S]*style=\{\{ boxShadow: token\("elevation\.shadow\.overlay"\) \}\}/u);
 	assert.match(source, /className="absolute inset-0 z-0 rounded-md outline-none"/u);
-	assert.match(source, /const effectiveView = assignedAgents\.length === 0 \? "selector" : view;/u);
+	assert.match(
+		source,
+		/const showSessionView = view === "session" && pendingSessionAgent !== null;[\s\S]*const effectiveView = showSessionView[\s\S]*assignedAgents\.length === 0 \|\| view === "session"[\s\S]*"selector"/u,
+	);
 	assert.match(source, /<AssignedAgentsMenu[\s\S]*onAddAgent=\{\(\) => setView\("selector"\)\}/u);
+	assert.match(source, /if \(usedAgentIds\.includes\(agentId\)\) \{\s*setPendingSessionAgent\(agent\);\s*setView\("session"\);/u);
+	assert.match(source, /<AgentSessionTargetMenu[\s\S]*onChoose=\{\(choice\) => handleSessionChoice\(pendingSessionAgent, choice\)\}/u);
 	assert.match(source, /<AgentSelector[\s\S]*searchVariant="palette"[\s\S]*selectionMode="single"/u);
 	assert.match(source, /onBrowseAgents=\{onBrowseAgents \? \(\) => handleFooterAction\(onBrowseAgents\) : undefined\}/u);
 	assert.match(source, /onCreateAgent=\{onCreateAgent \? \(\) => handleFooterAction\(onCreateAgent\) : undefined\}/u);
@@ -47,7 +62,11 @@ test("Agent Assignment preserves the work-item trigger and two-stage menu behavi
 
 	assert.doesNotMatch(menu, /AgentList/u);
 	assert.match(menu, /<RichTextSuggestionMenu[\s\S]*title="Assigned agents"/u);
-	assert.match(menu, /inlineMetadata: row\.status,/u);
+	assert.match(menu, /inlineMetadata: toAssignedAgentStatus\(row\.status\),/u);
+	assert.match(
+		menu,
+		/function toAssignedAgentStatus\([\s\S]*typeof status === "string"[\s\S]*<CyclingByline className="menu-row-title text-text-subtlest">[\s\S]*\{status\}[\s\S]*<\/CyclingByline>/u,
+	);
 	assert.match(menu, /hoverActions: \{[\s\S]*primaryLabel: "View"[\s\S]*secondaryLabel: "Archive"/u);
 	assert.match(suggestionMenu, /hoverActions\?: RichTextSuggestionMenuHoverActions;/u);
 	assert.match(suggestionMenu, /import "\.\/suggestion-menu-actions\.css";/u);
@@ -57,6 +76,14 @@ test("Agent Assignment preserves the work-item trigger and two-stage menu behavi
 	assert.match(suggestionMenuCss, /\.rich-text-command-menu:not\(:has\(\[data-suggestion-actions\] :focus-visible\)\)[\s\S]*\[data-suggestion-actions\]:hover/u);
 	assert.match(suggestionMenuCss, /\[data-suggestion-actions\]:has\(:focus-visible\) > \[data-suggestion-action-buttons\]/u);
 	assert.match(suggestionMenu, /className="group\/suggestion-option grid grid-cols-\[minmax\(0,1fr\)_auto\] items-center rounded-lg"/u);
+	assert.match(
+		suggestionMenu,
+		/item\.inlineMetadata \? \([\s\S]*className="menu-row-title shrink-0"[\s\S]*className="menu-row-title min-w-0 flex-1 text-text-subtlest"/u,
+	);
+	assert.doesNotMatch(
+		suggestionMenu,
+		/<span className="min-w-0 flex-1">\s*\{item\.inlineMetadata\}/u,
+	);
 	assert.doesNotMatch(suggestionMenu, /absolute inset-y-0 right-2/u);
 	assert.doesNotMatch(suggestionMenuCss, /padding-right: 104px/u);
 	assert.match(menu, /className="rich-text-command-menu-embedded w-full!"/u);
@@ -70,9 +97,15 @@ test("Agent Assignment preserves the work-item trigger and two-stage menu behavi
 	assert.match(menu, /selectedIndex === -1\s*\? \(step > 0 \? 0 : items\.length - 1\)/u);
 	assert.match(
 		menu,
-		/<Button[\s\S]*className="h-8 min-h-8 w-full justify-start gap-3 pl-2 pr-3 py-0 text-left text-sm font-normal"[\s\S]*onClick=\{onAddAgent\}[\s\S]*variant="ghost"[\s\S]*<span className="grid size-6 shrink-0 place-items-center text-icon-subtle">[\s\S]*<AiAgentAddIcon label="" \/>[\s\S]*<span className="text-text-subtle">Add agent<\/span>/u,
+		/<Button[\s\S]*className="h-8 min-h-8 w-full justify-start gap-3 pl-2 pr-3 py-0 text-left text-sm font-normal"[\s\S]*onClick=\{onAddAgent\}[\s\S]*variant="ghost"[\s\S]*<span className="grid size-6 shrink-0 place-items-center text-icon-subtle">[\s\S]*<AiAgentAddIcon label="" \/>[\s\S]*<span className="text-text-subtle">Assign agent<\/span>/u,
 	);
 	assert.doesNotMatch(menu, /disabled:/u);
+
+	const sessionMenu = readProjectFile("components/blocks/agent-assignment/components/agent-session-target-menu.tsx");
+	assert.match(sessionMenu, /title="Choose agent session"/u);
+	assert.match(sessionMenu, /label: "Continue in existing session"/u);
+	assert.match(sessionMenu, /label: "Start a new session"/u);
+	assert.match(sessionMenu, /onBack=\{onBack\}/u);
 });
 
 test("the Jira work-item Agents field adapts its session model to Agent Assignment", () => {
@@ -83,6 +116,9 @@ test("the Jira work-item Agents field adapts its session model to Agent Assignme
 	assert.match(source, /<AgentAssignment[\s\S]*assignedAgents=\{assignedAgents\}[\s\S]*onAssignedAgentIdsChange=\{handleAssignedAgentIdsChange\}/u);
 	assert.match(source, /onAgentAssign=\{handleAgentAssign\}/u);
 	assert.match(source, /onAssignedAgentSelect=\{handleOpenAgentSession\}/u);
+	assert.match(source, /onContinueExistingSession=\{handleContinueExistingSession\}/u);
+	assert.match(source, /onStartNewSession=\{handleAgentAssign\}/u);
+	assert.match(source, /usedAgentIds=\{resolveUsedAgentIds\(sessions\)\}/u);
 	assert.match(source, /actions\.invokeAgent\(agent, "context-pill", `@\$\{agent\.name\}`\);/u);
 	assert.doesNotMatch(source, /WorkItemAssignedAgentsMenu/u);
 });

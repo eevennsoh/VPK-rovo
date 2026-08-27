@@ -18,7 +18,8 @@
  * The outline that both the ruler and the article are built from lives in
  * `pulse-outline.test.js`; the ruler's own drawing and pointer gesture live in
  * `pulse-scrubber.test.js`; the fixture is walked in `pulse-fixture.test.js`;
- * the "Needs attention" agent list is in `pulse-attention.test.js`.
+ * the "Needs input" agent list is in `pulse-attention.test.js`; the
+ * "Next best actions" mapping is in `pulse-next-actions.test.js`.
  */
 
 const { test } = require("node:test");
@@ -94,6 +95,10 @@ test("Pulse highlights exactly the snapshots a member was active in", async () =
 			.filter((index) => index !== null);
 		assert.deepEqual([...computeHighlightedIndexes(snapshots, member.id)], expected, member.id);
 		assert.ok(expected.length > 0, `${member.id} is never active, so the roster row is dead weight`);
+		if (member.id === "venn") {
+			assert.equal(expected.length, snapshots.length, "Venn authors every window");
+			continue;
+		}
 		assert.ok(
 			expected.length < snapshots.length,
 			`${member.id} is active in every snapshot, which makes the muted-tick affordance invisible`,
@@ -204,7 +209,7 @@ test("Pulse member filter narrows work items, artifacts, loose work and signals"
 	const harness = await loadTimelineHarness();
 	const { mountPulse, PULSE_TIMELINE } = harness;
 	const host = mountPulse();
-	const index = findSnapshotIndex(PULSE_TIMELINE, "s1-kickoff");
+	const index = findSnapshotIndex(PULSE_TIMELINE, "s2-spike");
 	host.read(index);
 	const snapshot = snapshotAt(PULSE_TIMELINE, index);
 	const unscopedWorkItems = host.current.workItems.length;
@@ -229,7 +234,7 @@ test("Pulse member filter narrows work items, artifacts, loose work and signals"
 		scoped.artifacts.map((item) => item.id),
 		snapshot.artifacts.map((item) => item.id).filter((id) => contribution.artifactIds.includes(id)),
 	);
-	assert.ok(host.current.workItems.length > 0, "Maya moved work in the kickoff window");
+	assert.ok(host.current.workItems.length > 0, "Maya moved work in the spike window");
 	assert.ok(host.current.workItems.length < unscopedWorkItems, "scoping must remove something");
 	assert.ok(scoped.artifacts.length < snapshot.artifacts.length, "scoping must remove something");
 	scoped.attention.forEach((signal) => {
@@ -390,6 +395,10 @@ test("Pulse answers what a member did across the whole week, not just this windo
 		assert.equal(week.looseWork, expectedLoose.size, member.id);
 		// The aggregate has to be a week, not a restatement of one window.
 		assert.ok(week.windowsActive > 1, `${member.id} cannot demonstrate a week`);
+		if (member.id === "venn") {
+			assert.equal(week.windowsActive, week.totalWindows, "Venn authors every window");
+			continue;
+		}
 		assert.ok(week.windowsActive < week.totalWindows, `${member.id} is never quiet`);
 	}
 });
@@ -418,6 +427,7 @@ test("Pulse offers a quiet member the nearest windows they were active in", asyn
 	assert.match(SOURCES.stream, /nextActive: toJump\(timeline\.snapshots, adjacent\.next\),/u);
 	assert.match(SOURCES.stream, /previousActive: toJump\(timeline\.snapshots, adjacent\.previous\),/u);
 	assert.match(SOURCES.stream, /onGoToIndex=\{onGoToSnapshot\}/u);
+	assert.match(SOURCES.stream, /onGoToEntry=\{onGoToEntry\}/u);
 	assert.match(SOURCES.story, /onClick=\{\(\) => onGoToIndex\(previousActive\.index\)\}/u);
 	assert.match(SOURCES.story, /onClick=\{\(\) => onGoToIndex\(nextActive\.index\)\}/u);
 });
@@ -429,7 +439,7 @@ test("Pulse keeps the unscoped window counts so an emptied section can say what 
 	const snapshot = snapshotAt(PULSE_TIMELINE, index);
 	const scoped = scopeInsight(harness, PULSE_TIMELINE, snapshot, "maya");
 
-	// "Nothing for Maya here — 3 items need attention across the team" only works
+	// "Nothing for Maya here — 3 items need input across the team" only works
 	// if the unscoped size survives the scoping. The counts moved from the model
 	// to the stream with the sections they describe, and narrowed to the three
 	// the story can empty: the work columns beside the article are not part of a
@@ -438,7 +448,7 @@ test("Pulse keeps the unscoped window counts so an emptied section can say what 
 	assert.ok(snapshot.attention.length > 0, "the window itself is not empty");
 	assert.match(SOURCES.stream, /unscopedCounts: \{\s*artifacts: snapshot\.artifacts\.length,\s*attention: snapshot\.attention\.length,\s*nextActions: snapshot\.nextActions\.length,\s*\},/u);
 	assert.match(SOURCES.story, /toEmptyNote\(firstName, unscopedCounts\.artifacts, "artifact", "artifacts"\)/u);
-	assert.match(SOURCES.story, /toEmptyNote\(firstName, unscopedCounts\.attention, "item needs attention", "items need attention"\)/u);
+	assert.match(SOURCES.story, /toEmptyNote\(firstName, unscopedCounts\.attention, "item needs input", "items need input"\)/u);
 	assert.match(SOURCES.story, /toEmptyNote\(firstName, unscopedCounts\.nextActions, "action", "actions"\)/u);
 	assert.match(SOURCES.story, /Nothing here for \$\{firstName\}, and nothing for the team either\./u);
 });

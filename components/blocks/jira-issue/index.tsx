@@ -20,7 +20,6 @@ import {
 	JiraIssueAgentDone,
 	type JiraIssueCompletedAgentRun,
 } from "@/components/blocks/jira-issue/completed-agent-runs";
-import type { QuestionCardAnswers } from "@/components/blocks/question-card/types";
 import {
 	getCompletedCount,
 	getIssueInitial,
@@ -117,14 +116,18 @@ export interface JiraIssueUncapturedWorkProps extends Omit<ComponentProps<"artic
 	variant: "uncaptured-work";
 	/** Work that has not yet been represented by a Jira issue. */
 	summary: string;
-	/** Hoverable source context, including its provider logo and destination label. */
+	/** Hoverable source context: type icon, provider name, and destination label. */
 	sourceLink: SmartLinkItem;
 	participants: readonly JiraIssueParticipant[];
 	captured?: boolean;
-	/** Creates a Jira work item for this uncaptured work. Omit to expose an unavailable action. */
+	/** Suggested Jira key the chin split-button should link to, e.g. PAY-121. */
+	suggestedWorkItemKey?: string;
+	/** Creates a Jira work item from the chin split-button menu. Omit to expose an unavailable action. */
 	onCreateWorkItem?: () => void;
-	/** Links this uncaptured work to an existing Jira work item. Omit to expose an unavailable split-menu action. */
+	/** Links this uncaptured work to the suggested Jira work item. Omit to expose an unavailable primary action. */
 	onLinkWorkItem?: () => void;
+	/** Dismisses this uncaptured work from the chin. Omit to hide the dismiss control. */
+	onDismiss?: () => void;
 }
 
 export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "children"> {
@@ -161,7 +164,6 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	agentDoneRuns?: readonly JiraIssueCompletedAgentRun[];
 	agentActivityMode?: JiraIssueAgentActivityMode;
 	onAgentActivityOpenChange?: (open: boolean) => void;
-	onAgentActivityQuestionSubmit?: (activity: JiraIssueAgentActivity, answers: QuestionCardAnswers) => void;
 	onAgentActivityViewChat?: (activity: JiraIssueAgentActivity) => void;
 	onAgentDoneRunSubmit?: (run: JiraIssueCompletedAgentRun, prompt: string) => void;
 	onAgentDoneRunReview?: (run: JiraIssueCompletedAgentRun) => void;
@@ -480,7 +482,6 @@ function JiraIssueDefault({
 	issueTypeLabel = "Task",
 	onSubtasksExpandedChange,
 	onAgentActivityOpenChange,
-	onAgentActivityQuestionSubmit,
 	onAgentActivityViewChat,
 	onAgentDoneRunSubmit,
 	onAgentDoneRunReview,
@@ -847,7 +848,6 @@ function JiraIssueDefault({
 							<JiraIssueAgentActivityRows
 								activities={activeAgentActivities}
 								onOpenChange={handleAgentActivityOpenChange}
-								onQuestionSubmit={onAgentActivityQuestionSubmit}
 								onViewChat={onAgentActivityViewChat}
 								shouldReduceMotion={shouldReduceMotion}
 								usesStrokeChrome={usesStrokeChrome}

@@ -97,6 +97,7 @@ export function CardKanbanStage({ controller }: Readonly<CardKanbanStageProps>):
 	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useJgpAgentChatDemo();
 	const completionTimeoutRef = useRef<number | null>(null);
 	const [addedAgentActivities, setAddedAgentActivities] = useState<readonly JiraIssueAgentActivity[]>([]);
+	const [pendingChatQuestion, setPendingChatQuestion] = useState<{ submit: () => void } | null>(null);
 	const {
 		activeIndex,
 		pauseHandlers,
@@ -135,7 +136,36 @@ export function CardKanbanStage({ controller }: Readonly<CardKanbanStageProps>):
 					? "completed"
 					: "none";
 
+	const handleQuestionSubmit = useCallback(() => {
+		if (completionTimeoutRef.current !== null) {
+			window.clearTimeout(completionTimeoutRef.current);
+		}
+		setExternalInteractionActive(false);
+		setActiveIndex(1);
+		completionTimeoutRef.current = window.setTimeout(() => {
+			setActiveIndex(4);
+			completionTimeoutRef.current = null;
+		}, 2_500);
+	}, [setActiveIndex, setExternalInteractionActive]);
+
+	/**
+	 * The agent row no longer answers clarifications inline, so an awaiting-input
+	 * activity hands its question to floating chat and advances the story only
+	 * once the viewer answers there.
+	 */
 	const handleViewChat = useCallback((activity: JiraIssueAgentActivity) => {
+		setPendingChatQuestion(activity.question ? { submit: handleQuestionSubmit } : null);
+		if (activity.question) {
+			openAgentChat({
+				agentId: activity.id,
+				agentName: activity.name,
+				issueKey: JGP_CARD_KANBAN_CARD.issueKey,
+				issueSummary: JGP_CARD_KANBAN_CARD.summary,
+				intro: activity.message,
+				question: activity.question,
+			});
+			return;
+		}
 		openAgentChat({
 			agentId: activity.id,
 			agentName: activity.name,
@@ -143,7 +173,12 @@ export function CardKanbanStage({ controller }: Readonly<CardKanbanStageProps>):
 			issueSummary: JGP_CARD_KANBAN_CARD.summary,
 			request: `Show me your progress on ${JGP_CARD_KANBAN_CARD.issueKey}.`,
 		});
-	}, [openAgentChat]);
+	}, [handleQuestionSubmit, openAgentChat]);
+
+	const handleChatQuestionAnswer = useCallback(() => {
+		pendingChatQuestion?.submit();
+		setPendingChatQuestion(null);
+	}, [pendingChatQuestion]);
 
 	const handleGenerativeActionSubmit = useCallback(
 		(request: JiraIssueGenerativeActionRequest) => {
@@ -167,18 +202,6 @@ export function CardKanbanStage({ controller }: Readonly<CardKanbanStageProps>):
 		[openAgentChat],
 	);
 
-	const handleQuestionSubmit = useCallback(() => {
-		if (completionTimeoutRef.current !== null) {
-			window.clearTimeout(completionTimeoutRef.current);
-		}
-		setExternalInteractionActive(false);
-		setActiveIndex(1);
-		completionTimeoutRef.current = window.setTimeout(() => {
-			setActiveIndex(4);
-			completionTimeoutRef.current = null;
-		}, 2_500);
-	}, [setActiveIndex, setExternalInteractionActive]);
-
 	return (
 		<div className="relative left-1/2 flex h-full min-h-0 w-[100cqw] -translate-x-1/2 flex-col px-8">
 			<div className="flex flex-1 flex-col items-center justify-center pb-28">
@@ -200,7 +223,6 @@ export function CardKanbanStage({ controller }: Readonly<CardKanbanStageProps>):
 							generativeAction={{ onSubmit: handleGenerativeActionSubmit }}
 							issueKey={JGP_CARD_KANBAN_CARD.issueKey}
 							onAgentActivityOpenChange={setExternalInteractionActive}
-							onAgentActivityQuestionSubmit={handleQuestionSubmit}
 							onAgentActivityViewChat={handleViewChat}
 							priority={JGP_CARD_KANBAN_CARD.priority}
 							subtasks={JGP_CARD_KANBAN_SUBTASKS}
@@ -214,6 +236,7 @@ export function CardKanbanStage({ controller }: Readonly<CardKanbanStageProps>):
 			<JgpRovoOverlay
 				chatContextBar={chatContextBar}
 				externalThinkingMessageId={externalThinkingMessageId}
+				onQuestionAnswer={pendingChatQuestion ? handleChatQuestionAnswer : undefined}
 			/>
 		</div>
 	);
