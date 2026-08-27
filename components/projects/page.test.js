@@ -4,10 +4,40 @@ const path = require("node:path");
 const test = require("node:test");
 
 const PROJECT_LAYOUT_SOURCE = fs.readFileSync(path.join(__dirname, "page.tsx"), "utf8");
-const FLOATING_ROVO_BUTTON_SOURCE = fs.readFileSync(
-	path.join(__dirname, "shared/components/floating-rovo-button.tsx"),
-	"utf8",
-);
+// The floating Rovo button is a directory of collaborating modules, not one
+// file. These greps assert "this code exists somewhere in the component", so we
+// concatenate every source file in that directory. The order below mirrors the
+// component's composition (types → geometry → leaves → surface → entry) so
+// assertions that span sections keep reading top-to-bottom; any file not listed
+// is appended alphabetically so a new module can never be silently skipped.
+const FLOATING_ROVO_BUTTON_DIR = path.join(__dirname, "shared/components/floating-rovo-button");
+const FLOATING_ROVO_BUTTON_FILE_ORDER = [
+	"types.ts",
+	"geometry.ts",
+	"motion.ts",
+	"floating-rovo-button-click-suppression.ts",
+	"persistent-bar.tsx",
+	"nudge.tsx",
+	"onboarding-panel.tsx",
+	"surface.tsx",
+	"index.tsx",
+];
+const FLOATING_ROVO_BUTTON_SOURCE = fs
+	.readdirSync(FLOATING_ROVO_BUTTON_DIR)
+	.filter((name) => /\.tsx?$/u.test(name) && !/\.test\.tsx?$/u.test(name))
+	.sort((first, second) => {
+		const firstRank = FLOATING_ROVO_BUTTON_FILE_ORDER.indexOf(first);
+		const secondRank = FLOATING_ROVO_BUTTON_FILE_ORDER.indexOf(second);
+
+		if (firstRank !== secondRank) {
+			return (firstRank === -1 ? Number.MAX_SAFE_INTEGER : firstRank)
+				- (secondRank === -1 ? Number.MAX_SAFE_INTEGER : secondRank);
+		}
+
+		return first.localeCompare(second);
+	})
+	.map((name) => fs.readFileSync(path.join(FLOATING_ROVO_BUTTON_DIR, name), "utf8"))
+	.join("\n");
 const ROVO_CANVAS_SOURCE = fs.readFileSync(
 	path.join(__dirname, "../blocks/rovo-canvas/components/rovo-canvas.tsx"),
 	"utf8",
@@ -172,9 +202,15 @@ test("Rovo Canvas main artefact frame uses a border without elevation", () => {
 });
 
 test("floating Rovo button has an exit transition for canvas handoff", () => {
+	// Split across two imports since the split: the surface owns the drag/morph
+	// motion APIs, the entry component owns the presence + reduced-motion ones.
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/import \{[\s\S]*AnimatePresence,[\s\S]*animate,[\s\S]*motion,[\s\S]*useMotionValue,[\s\S]*useReducedMotion,[\s\S]*type MotionStyle,[\s\S]*\} from "motion\/react";/u,
+		/import \{[\s\S]*AnimatePresence,[\s\S]*animate,[\s\S]*motion,[\s\S]*useMotionValue,[\s\S]*type MotionStyle,[\s\S]*\} from "motion\/react";/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/import \{ AnimatePresence, useReducedMotion \} from "motion\/react";/u,
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
@@ -225,7 +261,7 @@ test("floating Rovo button can be dragged and snapped to a 4x4 viewport grid", (
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/const surfaceRef = useRef<HTMLDivElement \| null>\(null\);[\s\S]*const buttonX = useMotionValue\(0\);[\s\S]*const buttonY = useMotionValue\(0\);[\s\S]*const \[dragOrigin, setDragOrigin\] = useState<FloatingRovoButtonSnapTarget \| null>\(null\);[\s\S]*const \[dragConstraints, setDragConstraints\] = useState<FloatingRovoButtonDragConstraints>\(\{[\s\S]*bottom: 0,[\s\S]*left: 0,[\s\S]*right: 0,[\s\S]*top: 0,[\s\S]*\}\);[\s\S]*const dragPointerStartRef = useRef<FloatingRovoButtonDragStart \| null>\(null\);[\s\S]*const suppressDragClickStateRef = useRef<FloatingRovoButtonClickSuppressionState>\([\s\S]*createInitialClickSuppressionState\(\),[\s\S]*\);[\s\S]*const suppressDragClickTimeoutRef = useRef<number \| null>\(null\);/u,
+		/const surfaceRef = useRef<HTMLDivElement \| null>\(null\);[\s\S]*const buttonX = useMotionValue\(0\);[\s\S]*const buttonY = useMotionValue\(0\);[\s\S]*const \[dragOrigin, setDragOrigin\] = useState<FloatingRovoButtonSnapTarget \| null>\(null\);[\s\S]*const \[dragConstraints, setDragConstraints\] = useState<FloatingRovoButtonDragConstraints>\(\{[\s\S]*bottom: 0,[\s\S]*left: 0,[\s\S]*right: 0,[\s\S]*top: 0,[\s\S]*\}\);[\s\S]*const dragPointerStartRef = useRef<FloatingRovoButtonDragStart \| null>\(null\);[\s\S]*const suppressDragClickStateRef = useLazyRef<FloatingRovoButtonClickSuppressionState>\(\(\) =>[\s\S]*createInitialClickSuppressionState\(\),[\s\S]*\);[\s\S]*const suppressDragClickTimeoutRef = useRef<number \| null>\(null\);/u,
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
@@ -297,11 +333,19 @@ test("floating Rovo button applies collapsed elevation to the button surface", (
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/boxShadow: onboardingOpen \? token\("elevation\.shadow\.overlay"\) : undefined/u,
+		/const surfaceOwnsElevation = cardOpen \|\| insightsStage === "pill";/u,
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/onboardingOpen\s*\?\s*"w-\[295px\] max-w-\[calc\(100vw-32px\)\] overflow-hidden"\s*:\s*"size-12"/u,
+		/boxShadow: surfaceOwnsElevation \? token\("elevation\.shadow\.overlay"\) : undefined/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/const cardOpen = onboardingOpen \|\| insightsStage === "card";/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/cardOpen\s*\?\s*"w-\[295px\] max-w-\[calc\(100vw-32px\)\] overflow-hidden"\s*:\s*insightsStage === "pill"\s*\?\s*"h-12 w-fit max-w-\[calc\(100vw-32px\)\] overflow-hidden"\s*:\s*"size-12"/u,
 	);
 });
 
@@ -359,7 +403,7 @@ test("floating Rovo button can render a collapsed proactive suggestion nudge", (
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/\{suggestion && shouldShowButton && !onboardingOpen \? \([\s\S]*<FloatingRovoButtonNudge[\s\S]*key=\{suggestion\.id\}[\s\S]*placement=\{placement\}[\s\S]*positioning=\{positioning\}[\s\S]*suggestion=\{suggestion\}[\s\S]*\/>[\s\S]*\) : null\}/u,
+		/\{suggestion && shouldShowButton && !onboardingOpen && insightsStage === "hidden" \? \([\s\S]*<FloatingRovoButtonNudge[\s\S]*key=\{suggestion\.id\}[\s\S]*placement=\{placement\}[\s\S]*positioning=\{positioning\}[\s\S]*suggestion=\{suggestion\}[\s\S]*\/>[\s\S]*\) : null\}/u,
 	);
 });
 
@@ -386,7 +430,7 @@ test("floating Rovo button persistent bar can show item tooltips", () => {
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/<TooltipProvider delay=\{0\}>[\s\S]*<TooltipTrigger render=\{actionButton\} \/>[\s\S]*<TooltipContent side="left">\{item\.tooltipLabel\}<\/TooltipContent>/u,
+		/<TooltipProvider delay=\{0\}>[\s\S]*<TooltipTrigger render=\{actionButton\} \/>[\s\S]*<TooltipContent side=\{side\}>\{item\.tooltipLabel\}<\/TooltipContent>/u,
 	);
 });
 
@@ -409,7 +453,7 @@ test("floating Rovo button supports demo initial placement while preserving defa
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/const shouldSuppressSurface = embedded \|\| product === "rovo" \|\| product === "studio";[\s\S]*const shouldRenderSurface = \(shouldShowButton \|\| onboardingOpen\) && \(forceVisible \|\| !shouldSuppressSurface\);/u,
+		/const shouldSuppressSurface = embedded \|\| product === "rovo" \|\| product === "studio";[\s\S]*const insightsCardOpen = insightsStage === "card";[\s\S]*const shouldRenderSurface = \(shouldShowButton \|\| onboardingOpen \|\| insightsCardOpen\) && \(forceVisible \|\| !shouldSuppressSurface\);/u,
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
@@ -418,6 +462,48 @@ test("floating Rovo button supports demo initial placement while preserving defa
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
 		/ariaLabel=\{resolvedAriaLabel\}/u,
+	);
+});
+
+test("floating Rovo button daily insights", () => {
+	// Stage machine: the pill advances to the card, and dismissing collapses the
+	// affordance without touching the primary action — dismissed is not read.
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/if \(insightsStage === "pill"\) \{[\s\S]*setInsightsStage\("card"\);[\s\S]*return;[\s\S]*\}[\s\S]*openChat\("floating"\);/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/const handleInsightsDismiss = useCallback\(\(\) => \{[\s\S]*setInsightsStage\("hidden"\);[\s\S]*activeInsights\?\.onDismiss\?\.\(\);[\s\S]*\}, \[activeInsights, setInsightsStage\]\);/u,
+	);
+	// The primary label carries the overflow count, so there is no separate
+	// "+N more" control. These three facts are the whole contract: an explicit
+	// label wins, overflow names the total, and no overflow falls back.
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/const primaryActionLabel = insights\.primaryActionLabel\s*\?\?\s*formatFloatingRovoButtonInsightPrimaryAction\(insights\.count, overflowCount\);/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/function formatFloatingRovoButtonInsightPrimaryAction\(count: number, overflowCount: number\): string \{[\s\S]*if \(overflowCount <= 0\) \{[\s\S]*return "Open insights";[\s\S]*\}[\s\S]*return count === 1 \? "Open insight" : `Open all \$\{count\} insights`;/u,
+	);
+	assert.doesNotMatch(FLOATING_ROVO_BUTTON_SOURCE, /formatFloatingRovoButtonInsightOverflow|\+\$\{overflowCount\} more/u);
+	// Focus restore is *proved* by focus-restore.test.js, which exercises the
+	// real function. These assertions only prove it is wired in: that the effect
+	// runs off the committed `cardOpen` transition (not the close handler, and
+	// not the insights stage alone — the onboarding panel shares this path), and
+	// that both replacement controls actually carry the refs it reads.
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/const previousCardOpen = previousCardOpenRef\.current;[\s\S]*previousCardOpenRef\.current = cardOpen;[\s\S]*restoreFloatingRovoButtonFocus\([\s\S]*previousCardOpen,[\s\S]*cardOpen,[\s\S]*insightsStage === "pill" \? insightsPillRef\.current : collapsedButtonRef\.current,[\s\S]*\}, \[cardOpen, insightsStage\]\);/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/<FloatingRovoButtonDailyInsightsPill[\s\S]*ref=\{insightsPillRef\}/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/<FloatingRovoButtonInner[\s\S]*ref=\{collapsedButtonRef\}/u,
 	);
 });
 
