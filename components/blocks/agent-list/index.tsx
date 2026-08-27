@@ -33,6 +33,7 @@ export function AgentList({
 	capturedItemIds,
 	getResumeCommand,
 	getSuggestedWorkItemKey,
+	isResumable,
 	onArchive,
 	onCopyResume,
 	onCreateWorkItem,
@@ -80,6 +81,7 @@ export function AgentList({
 					<AgentListUncapturedCard
 						captured={capturedItemIds?.has(item.id) ?? false}
 						getResumeCommand={getResumeCommand}
+						isResumable={isResumable}
 						item={item}
 						key={item.id}
 						onCopyResume={onCopyResume}

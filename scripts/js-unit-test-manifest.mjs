@@ -28,6 +28,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/arts/rovo-p5/lib/point-cloud-sampling.test.ts",
 		"components/arts/rovo-p5/lib/teamwork-graph.test.ts",
 		"components/arts/rovo-p5/lib/rovo-p5-timeline.test.ts",
+		"components/blocks/agent-list/agent-list-session.test.js",
 		"components/blocks/triggers/data/trigger-inference.test.js",
 		"components/blocks/jira-activity/lib/jira-activity-reducer.test.js",
 		"components/blocks/jira-activity/lib/jira-activity-filter.test.js",

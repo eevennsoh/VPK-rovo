@@ -242,7 +242,8 @@ test("Jira issue exposes agent activity state props", () => {
 	assert.match(SOURCE, /agentDoneRuns\?: readonly JiraIssueCompletedAgentRun\[\];/);
 	assert.match(SOURCE, /export type \{[\s\S]*JiraIssueCompletedAgentRun,[\s\S]*JiraIssueCompletedAgentRunState,[\s\S]*\} from "@\/components\/blocks\/jira-issue\/completed-agent-runs";/);
 	assert.match(SOURCE, /agentActivityMode\?: JiraIssueAgentActivityMode;/);
-	assert.match(SOURCE, /onAgentActivityQuestionSubmit\?: \(activity: JiraIssueAgentActivity, answers: QuestionCardAnswers\) => void;/);
+	assert.doesNotMatch(SOURCE, /onAgentActivityQuestionSubmit/);
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /onQuestionSubmit/);
 	assert.match(SOURCE, /onAgentActivityViewChat\?: \(activity: JiraIssueAgentActivity\) => void;/);
 	assert.match(SOURCE, /generativeAction\?: JiraIssueGenerativeActionConfig;/);
 	assert.match(SOURCE, /export type \{[\s\S]*JiraIssueGenerativeActionConfig,[\s\S]*JiraIssueGenerativeActionRequest,[\s\S]*\} from "@\/components\/blocks\/jira-issue\/generative-action-menu";/);

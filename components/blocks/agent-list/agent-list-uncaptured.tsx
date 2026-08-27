@@ -24,6 +24,7 @@ async function copyResumeCommand(command: string): Promise<void> {
 export function AgentListUncapturedCard({
 	captured = false,
 	getResumeCommand,
+	isResumable,
 	item,
 	onCopyResume,
 	onCreateWorkItem,
@@ -34,6 +35,7 @@ export function AgentListUncapturedCard({
 }: Readonly<{
 	captured?: boolean;
 	getResumeCommand?: (item: AgentListItem) => string | undefined;
+	isResumable?: (item: AgentListItem) => boolean;
 	item: AgentListItem;
 	onCopyResume?: (item: AgentListItem) => void;
 	onCreateWorkItem?: () => void;
@@ -44,7 +46,11 @@ export function AgentListUncapturedCard({
 }>) {
 	const hasWorkItemActions = onCreateWorkItem !== undefined || onLinkWorkItem !== undefined;
 	const resumeCommand = getResumeCommand?.(item) ?? toAgentListResumeCommand(item);
-	const showChin = captured || hasWorkItemActions || onDismiss !== undefined || resumeCommand.length > 0;
+	// Resume is an affordance, not just a callback: a row the host cannot resume
+	// must not render an enabled control, because the chin copies the command to
+	// the clipboard before `onCopyResume` ever runs.
+	const canResume = (isResumable?.(item) ?? true) && resumeCommand.length > 0;
+	const showChin = captured || hasWorkItemActions || onDismiss !== undefined || canResume;
 
 	return (
 		<li data-testid={"agent-list-row-" + item.id}>
@@ -67,11 +73,13 @@ export function AgentListUncapturedCard({
 						captured={captured}
 						createUnavailable={onCreateWorkItem === undefined}
 						linkUnavailable={onLinkWorkItem === undefined}
-						onCopyResume={() => {
-							void copyResumeCommand(resumeCommand).then(() => {
-								onCopyResume?.(item);
-							});
-						}}
+						onCopyResume={canResume
+							? () => {
+								void copyResumeCommand(resumeCommand).then(() => {
+									onCopyResume?.(item);
+								});
+							}
+							: undefined}
 						onCreateWorkItem={onCreateWorkItem}
 						onDismiss={onDismiss}
 						onLinkWorkItem={onLinkWorkItem}

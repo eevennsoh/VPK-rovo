@@ -292,6 +292,11 @@ function PulseUncapturedColumn({
 					capturedItemIds={capturedIds}
 					className="w-full min-w-0"
 					flyout="none"
+					isResumable={(item) => {
+						const session = sessionById.get(item.id);
+						if (session === undefined) return false;
+						return isLooseWorkResumable?.(session) ?? true;
+					}}
 					items={sessionItems}
 					onCopyResume={(item) => {
 						const session = sessionById.get(item.id);

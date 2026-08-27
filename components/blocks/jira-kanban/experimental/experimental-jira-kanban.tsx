@@ -415,7 +415,6 @@ export function ExperimentalJiraKanban({
 	onCardDrop,
 	onCardGenerativeActionSubmit,
 	onCardAgentActivityOpenChange,
-	onCardAgentActivityQuestionSubmit,
 	onCardAgentActivityViewChat,
 	onCardAgentDoneRunReview,
 	onCardAgentDoneRunView,
@@ -658,12 +657,6 @@ export function ExperimentalJiraKanban({
 												onAgentActivityViewChat={
 													onCardAgentActivityViewChat
 														? (activity) => onCardAgentActivityViewChat(activity, card, column.title)
-														: undefined
-												}
-												onAgentActivityQuestionSubmit={
-													onCardAgentActivityQuestionSubmit
-														? (activity, answers) =>
-															onCardAgentActivityQuestionSubmit(activity, answers, card, column.title)
 														: undefined
 												}
 												onAgentDoneRunReview={

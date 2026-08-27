@@ -199,6 +199,12 @@ export interface AgentListProps {
 	onDismiss?: (item: AgentListItem) => void;
 	/** Overrides the shell command copied from an uncaptured session chin. */
 	getResumeCommand?: (item: AgentListItem) => string | undefined;
+	/**
+	 * Whether an uncaptured session can be resumed. Rows that answer `false` hide
+	 * the Resume control entirely instead of copying a command the host cannot
+	 * honour. Defaults to resumable.
+	 */
+	isResumable?: (item: AgentListItem) => boolean;
 	/** Called after an uncaptured session resume command is copied. */
 	onCopyResume?: (item: AgentListItem) => void;
 	/** Called when a row body or its primary action is activated. */

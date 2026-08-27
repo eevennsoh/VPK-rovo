@@ -12,7 +12,7 @@ import {
 } from "@/components/blocks/agent-assignment";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { summarizeJiraIssueAgentActivities } from "@/components/blocks/jira-issue/agent-activity-model";
-import type { QuestionCardAnswers, QuestionCardQuestion } from "@/components/blocks/question-card/types";
+import type { QuestionCardQuestion } from "@/components/blocks/question-card/types";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AnimatedDots } from "@/components/ui-custom/animated-dots";
 import { PixelLoader } from "@/components/ui-custom/pixel-loader";
@@ -396,7 +396,6 @@ export function JiraIssueAgentActivityRows({
 }: Readonly<{
 	activities: readonly JiraIssueAgentActivity[];
 	onOpenChange?: (open: boolean) => void;
-	onQuestionSubmit?: (activity: JiraIssueAgentActivity, answers: QuestionCardAnswers) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
 	shouldReduceMotion: boolean | null;
 	usesStrokeChrome: boolean;

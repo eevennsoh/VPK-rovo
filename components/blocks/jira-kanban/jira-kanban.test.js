@@ -557,14 +557,10 @@ test("Kanban card interactions preserve card and column context", () => {
 		SOURCE,
 		/\? \(open\) => onCardAgentActivityOpenChange\(open, card, column\.title\)/,
 	);
-	assert.match(
-		SOURCE,
-		/onCardAgentActivityQuestionSubmit\?: \([\s\S]*activity: JiraIssueAgentActivity,[\s\S]*answers: QuestionCardAnswers,[\s\S]*card: JiraKanbanCardData,[\s\S]*columnTitle: string,[\s\S]*\) => void;/,
-	);
-	assert.match(
-		SOURCE,
-		/onAgentActivityQuestionSubmit=\{[\s\S]*\? \(activity, answers\) =>[\s\S]*onCardAgentActivityQuestionSubmit\(activity, answers, card, column\.title\)/,
-	);
+	// The agent row answers clarifications in chat now, so no question-submit
+	// callback is threaded from the board down into JiraIssue.
+	assert.doesNotMatch(SOURCE, /onCardAgentActivityQuestionSubmit/);
+	assert.doesNotMatch(SOURCE, /onAgentActivityQuestionSubmit/);
 	assert.match(
 		SOURCE,
 		/onCardAgentDoneRunReview\?: \([\s\S]*run: JiraIssueCompletedAgentRun,[\s\S]*card: JiraKanbanCardData,[\s\S]*columnTitle: string,[\s\S]*\) => void;/,

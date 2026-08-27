@@ -20,7 +20,6 @@ import {
 	JiraIssueAgentDone,
 	type JiraIssueCompletedAgentRun,
 } from "@/components/blocks/jira-issue/completed-agent-runs";
-import type { QuestionCardAnswers } from "@/components/blocks/question-card/types";
 import {
 	getCompletedCount,
 	getIssueInitial,
@@ -165,7 +164,6 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	agentDoneRuns?: readonly JiraIssueCompletedAgentRun[];
 	agentActivityMode?: JiraIssueAgentActivityMode;
 	onAgentActivityOpenChange?: (open: boolean) => void;
-	onAgentActivityQuestionSubmit?: (activity: JiraIssueAgentActivity, answers: QuestionCardAnswers) => void;
 	onAgentActivityViewChat?: (activity: JiraIssueAgentActivity) => void;
 	onAgentDoneRunSubmit?: (run: JiraIssueCompletedAgentRun, prompt: string) => void;
 	onAgentDoneRunReview?: (run: JiraIssueCompletedAgentRun) => void;
@@ -484,7 +482,6 @@ function JiraIssueDefault({
 	issueTypeLabel = "Task",
 	onSubtasksExpandedChange,
 	onAgentActivityOpenChange,
-	onAgentActivityQuestionSubmit,
 	onAgentActivityViewChat,
 	onAgentDoneRunSubmit,
 	onAgentDoneRunReview,
@@ -851,7 +848,6 @@ function JiraIssueDefault({
 							<JiraIssueAgentActivityRows
 								activities={activeAgentActivities}
 								onOpenChange={handleAgentActivityOpenChange}
-								onQuestionSubmit={onAgentActivityQuestionSubmit}
 								onViewChat={onAgentActivityViewChat}
 								shouldReduceMotion={shouldReduceMotion}
 								usesStrokeChrome={usesStrokeChrome}

@@ -444,7 +444,6 @@ function JiraIssueAgentActivityStatesDemo({ chrome = "raised" }: Readonly<JiraIs
 		});
 	}, [openAgentChat]);
 	const handleAgentActivityViewChat = openActivityChat;
-	const handleAgentActivityQuestionSubmit = openActivityChat;
 	const handleAgentDoneRunView = useCallback((run: JiraIssueCompletedAgentRun) => {
 		setPendingChatQuestion(null);
 		const agentId = run.id.includes(":") ? run.id.slice(run.id.indexOf(":") + 1) : run.id;
@@ -518,7 +517,6 @@ function JiraIssueAgentActivityStatesDemo({ chrome = "raised" }: Readonly<JiraIs
 						onSubmit: handleGenerativeActionSubmit,
 					}}
 					issueKey="PD-40"
-					onAgentActivityQuestionSubmit={handleAgentActivityQuestionSubmit}
 					onAgentActivityViewChat={handleAgentActivityViewChat}
 					onAgentDoneRunSubmit={handleAgentDoneRunSubmit}
 					onAgentDoneRunView={handleAgentDoneRunView}

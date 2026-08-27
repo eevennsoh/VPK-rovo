@@ -296,7 +296,7 @@ test("the session adapter derives flyout payloads the row model does not carry",
 	);
 	assert.match(
 		SESSION_SOURCE,
-		/export function toAgentListResumeCommand\(item: AgentListItem\): string \{[\s\S]*item\.sessionDetails\?\.resumeSessionId \?\? item\.id;[\s\S]*cd \$\{worktree\} && claude --resume \$\{resumeId\}/u,
+		/export function toAgentListResumeCommand\(item: AgentListItem\): string \{[\s\S]*item\.sessionDetails\?\.resumeSessionId \?\? item\.id\);[\s\S]*cd \$\{quoteShellArgument\(worktree\)\} && claude --resume \$\{resumeId\}/u,
 	);
 	assert.match(INDEX_SOURCE, /toAgentListResumeCommand,/u);
 	// Rows that are not agent sessions carry no branch, and never open the flyout.
@@ -503,7 +503,11 @@ test("supports an uncaptured coding-session card that reuses the shared row", ()
 	assert.match(UNCAPTURED_SOURCE, /bg-surface-sunken/u);
 	assert.match(UNCAPTURED_SOURCE, /border-dashed border-border-disabled/u);
 	assert.match(UNCAPTURED_SOURCE, /<UncapturedWorkChin/u);
-	assert.match(UNCAPTURED_SOURCE, /onCopyResume=\{\(\) => \{/u);
+	// Resume is gated on the host's capability, so a non-resumable row renders no
+	// control rather than copying a command the host cannot honour.
+	assert.match(UNCAPTURED_SOURCE, /const canResume = \(isResumable\?\.\(item\) \?\? true\) && resumeCommand\.length > 0;/u);
+	assert.match(UNCAPTURED_SOURCE, /onCopyResume=\{canResume\s*\?\s*\(\) => \{/u);
+	assert.match(UNCAPTURED_SOURCE, /onDismiss !== undefined \|\| canResume;/u);
 	assert.match(UNCAPTURED_SOURCE, /toAgentListResumeCommand\(item\)/u);
 	assert.match(UNCAPTURED_SOURCE, /<AgentListRow[\s\S]*hideHoverActions/u);
 	assert.match(UNCAPTURED_SOURCE, /item.sessionDetails\?\.issueKey/u);

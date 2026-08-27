@@ -109,6 +109,9 @@ test("the uncaptured column renders sessions through the shared agent-list block
 	assert.doesNotMatch(SOURCES.rail, /canViewItem=/u);
 	assert.match(SOURCES.rail, /onView=\{\(item\) => \{/u);
 	assert.match(SOURCES.rail, /isLooseWorkResumable\?\.\(session\) \?\? true/u);
+	// The rail declares resumability up front so non-resumable rows never render
+	// an enabled Resume control; the callback guard alone runs after the copy.
+	assert.match(SOURCES.rail, /isResumable=\{\(item\) => \{/u);
 	assert.doesNotMatch(SOURCES.rail, /onResumeAgentSession/u);
 	assert.doesNotMatch(SOURCES.rail, /sourceFacts/u);
 	assert.doesNotMatch(SOURCES.rail, /JiraIssueUncapturedWork/u);
