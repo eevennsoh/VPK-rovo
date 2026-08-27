@@ -46,24 +46,56 @@ test("the PAY board fills every existing status with coding work and the full st
 	const columns = story.createJiraGoldenJourneysV3PayBoardColumns();
 	const cards = columns.flatMap((column) => column.cards);
 
-	assert.deepEqual(columns.map((column) => column.title), [
-		"Review",
-		"In progress",
-		"In review",
-		"To do",
-		"Done",
-	]);
+	assert.deepEqual(
+		[...story.JIRA_GOLDEN_JOURNEYS_V3_PAY_STATUS_PHASES],
+		["To do", "In progress", "In review", "Done"],
+	);
+	assert.deepEqual(
+		columns.map((column) => column.title),
+		[...story.JIRA_GOLDEN_JOURNEYS_V3_PAY_STATUS_PHASES],
+	);
 	assert.ok(columns.every((column) => column.cards.length >= 3));
 	assert.ok(columns.every((column) => column.count === column.cards.length));
 	assert.ok(cards.every((card) => card.code.startsWith("PAY-")));
+	assert.ok(!columns.some((column) => column.title === "Review"));
+
+	const inReviewCodes = new Set(
+		columns.find((column) => column.title === "In review")?.cards.map((card) => card.code) ?? [],
+	);
+	assert.ok(["PAY-112", "PAY-115", "PAY-119", "PAY-132"].every((code) => inReviewCodes.has(code)));
 
 	const agentStates = new Set(
 		cards.flatMap((card) => card.agentActivities?.map((activity) => activity.state) ?? []),
+	);
+	const agentCards = cards.filter((card) => (
+		Boolean(card.agentActivities?.length) || Boolean(card.agentDoneRuns?.length)
+	));
+	const agentAvatarFamilies = new Set(
+		agentCards.flatMap((card) => [
+			...(card.agentActivities?.map((activity) => activity.avatarSrc) ?? []),
+			...(card.agentDoneRuns?.map((run) => run.agentAvatarSrc) ?? []),
+		]).filter(Boolean).map((src) => src.match(/\/avatar-agent\/([^/]+)\//u)?.[1]),
 	);
 	assert.ok(cards.some((card) => !card.agentActivities?.length && !card.agentDoneRuns?.length));
 	assert.ok(agentStates.has("working"));
 	assert.ok(agentStates.has("awaiting-input"));
 	assert.ok(cards.some((card) => card.agentActivityMode === "completed" && card.agentDoneRuns?.length));
+	assert.ok(agentCards.length <= 6, `expected a handful of agent cards, got ${agentCards.length}`);
+	assert.ok(agentAvatarFamilies.size >= 3, "running agents should not share one avatar family");
+	assert.ok(
+		cards.some((card) => (
+			(card.agentActivities?.filter((activity) => activity.state === "working").length ?? 0) >= 2
+		)),
+		"one card should show two agents working together",
+	);
+
+	assert.deepEqual(
+		story.JIRA_GOLDEN_JOURNEYS_V3_PAY_HEADER_ASSIGNEES.map((assignee) => assignee.id),
+		["venn", "review-agent", "test-agent", "release-agent"],
+	);
+	assert.ok(story.JIRA_GOLDEN_JOURNEYS_V3_PAY_HEADER_ASSIGNEES.every((assignee) => (
+		assignee.id === "venn" || assignee.avatarSrc.startsWith("/avatar-agent/")
+	)));
 
 	assert.deepEqual(
 		new Set(cards.map((card) => card.pullRequestStatus).filter(Boolean)),
@@ -83,7 +115,15 @@ test("the board factory returns isolated cards and nested agent state", async ()
 	assert.notEqual(first, second);
 	assert.notEqual(first[0].cards, second[0].cards);
 	assert.notEqual(first[0].cards[0], second[0].cards[0]);
-	assert.notEqual(first[0].cards[0].agentActivities, second[0].cards[0].agentActivities);
+
+	const firstActivityCard = first
+		.flatMap((column) => column.cards)
+		.find((card) => card.agentActivities?.length);
+	const secondActivityCard = second
+		.flatMap((column) => column.cards)
+		.find((card) => card.code === firstActivityCard.code);
+	assert.ok(firstActivityCard);
+	assert.notEqual(firstActivityCard.agentActivities, secondActivityCard.agentActivities);
 });
 
 test("PAY-101 Build captures the inventory agent run and the first Insight's merged evidence", async () => {

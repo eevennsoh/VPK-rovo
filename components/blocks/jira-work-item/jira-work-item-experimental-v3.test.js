@@ -694,7 +694,7 @@ test("the v3 Agents details row opens the assigned menu first and swaps to the p
 	);
 	assert.match(
 		detailsEditorsSource,
-		/<AgentAssignment[\s\S]*agents=\{agents\}[\s\S]*assignedAgents=\{assignedAgents\}[\s\S]*defaultPinnedAgentIds=\{DEFAULT_PINNED_SPACE_AGENT_IDS\}[\s\S]*onAssignedAgentIdsChange=\{handleAssignedAgentIdsChange\}[\s\S]*onAssignedAgentSelect=\{handleOpenAgentSession\}/u,
+		/<AgentAssignment[\s\S]*agents=\{agents\}[\s\S]*assignedAgents=\{assignedAgents\}[\s\S]*defaultPinnedAgentIds=\{DEFAULT_PINNED_SPACE_AGENT_IDS\}[\s\S]*onAssignedAgentIdsChange=\{handleAssignedAgentIdsChange\}[\s\S]*onAssignedAgentSelect=\{handleOpenAgentSession\}[\s\S]*onContinueExistingSession=\{handleContinueExistingSession\}[\s\S]*onStartNewSession=\{handleAgentAssign\}[\s\S]*usedAgentIds=\{resolveUsedAgentIds\(sessions\)\}/u,
 	);
 	assert.match(
 		detailsEditorsSource,
@@ -708,11 +708,15 @@ test("the v3 Agents details row opens the assigned menu first and swaps to the p
 		detailsEditorsSource,
 		/const handleOpenAgentSession = \(agent: AgentAssignmentAgent\) => \{\s*const row = assignedRows\.find\(\(candidate\) => candidate\.agentId === agent\.id\);\s*if \(!row\?\.session\) \{\s*actions\.invokeAgent\(agent, "context-pill", `@\$\{agent\.name\}`\);\s*return;\s*\}\s*actions\.openSession\(row\.session\.id\);/u,
 	);
+	assert.match(
+		detailsEditorsSource,
+		/const handleContinueExistingSession = \(agent: AgentSelectorAgent\) => \{\s*const session = resolveLatestAgentSession\(sessions, agent\.id\);\s*if \(!session\) \{\s*actions\.invokeAgent\(agent, "context-pill", `@\$\{agent\.name\}`\);\s*return;\s*\}\s*actions\.openSession\(session\.id\);/u,
+	);
 	assert.match(detailsEditorsSource, /const actions = useJiraWorkItemActions\(\);/u);
 	assert.doesNotMatch(detailsEditorsSource, /launchSession|onOpenAgentChat/u);
 });
 
-test("the v3 assigned-agents menu lists live agent state and ends in an Add agent row", () => {
+test("the v3 assigned-agents menu lists live agent state and ends in an Assign agent row", () => {
 	const detailsEditorsSource = readBlockFile("experimental-v3/components/detail-field-editors.tsx");
 	const menuSource = fs.readFileSync(
 		path.join(process.cwd(), "components/blocks/agent-assignment/components/assigned-agents-menu.tsx"),
@@ -725,7 +729,7 @@ test("the v3 assigned-agents menu lists live agent state and ends in an Add agen
 	);
 	assert.match(
 		menuSource,
-		/inlineMetadata: row\.status,[\s\S]*hoverActions: \{[\s\S]*primaryLabel: "View"[\s\S]*secondaryLabel: "Archive"/u,
+		/inlineMetadata: toAssignedAgentStatus\(row\.status\),[\s\S]*hoverActions: \{[\s\S]*primaryLabel: "View"[\s\S]*secondaryLabel: "Archive"/u,
 	);
 	assert.match(
 		detailsEditorsSource,
@@ -733,7 +737,7 @@ test("the v3 assigned-agents menu lists live agent state and ends in an Add agen
 	);
 	assert.match(
 		menuSource,
-		/<Button[\s\S]*onClick=\{onAddAgent\}[\s\S]*<AiAgentAddIcon label="" \/>[\s\S]*Add agent/u,
+		/<Button[\s\S]*onClick=\{onAddAgent\}[\s\S]*<AiAgentAddIcon label="" \/>[\s\S]*Assign agent/u,
 	);
 	assert.doesNotMatch(menuSource, /window\.addEventListener|keepMounted|AnimatePresence/u);
 });

@@ -20,6 +20,30 @@ export function isLocalAgentListItem(item: AgentListItem): boolean {
 }
 
 /**
+ * Shell command that restores a local coding session in the viewer's terminal.
+ * Prefers an explicit resume id when the fixture named one; otherwise the row
+ * id. A worktree path, when present, is prefixed as `cd … &&`.
+ */
+export function toAgentListResumeCommand(item: AgentListItem): string {
+	const resumeId = item.sessionDetails?.resumeSessionId ?? item.id;
+	const worktree = item.sessionDetails?.worktreePath?.trim();
+	if (worktree === undefined || worktree.length === 0) {
+		return `claude --resume ${resumeId}`;
+	}
+
+	return `cd ${worktree} && claude --resume ${resumeId}`;
+}
+
+/**
+ * Agent coding sessions, as opposed to person rows (comments, @mentions).
+ * Coding rows always keep the hover View / Resume actions; `canViewItem` may
+ * still hide Reply on a person row.
+ */
+export function isCodingAgentListItem(item: AgentListItem): boolean {
+	return (item.agent.kind ?? "agent") !== "person";
+}
+
+/**
  * Boundary between the agent-session row model (`AgentListItem`) and the
  * canonical Jira session flyout model (`JiraSidebarSessionItem`).
  *

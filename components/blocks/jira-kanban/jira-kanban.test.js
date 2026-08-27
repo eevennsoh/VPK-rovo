@@ -231,7 +231,7 @@ test("Experimental kanban card gap matches the column gutter", () => {
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/<div className="flex min-h-full items-stretch gap-2">/u,
+		/<div className="flex min-h-full flex-1 items-stretch gap-2">/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
@@ -247,7 +247,7 @@ test("Kanban columns retain a readable minimum width when the board narrows", ()
 	assert.match(SOURCE, /style=\{\{ flex: "1 1 0", minWidth: "280px", borderRadius: token\("radius\.xlarge"\) \}\}/u);
 });
 
-test("Experimental kanban columns lock a consistent 280px min and max width", () => {
+test("Experimental kanban columns lock a 280px min and max width", () => {
 	assert.match(
 		EXPERIMENTAL_SOURCE,
 		/style=\{\{ flex: "1 1 0", minWidth: "280px", maxWidth: "280px", borderRadius: token\("radius\.xlarge"\) \}\}/u,
@@ -256,6 +256,31 @@ test("Experimental kanban columns lock a consistent 280px min and max width", ()
 		EXPERIMENTAL_SOURCE,
 		/className="min-w-0 overflow-visible border-2 border-transparent transition-colors"/u,
 	);
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/<div className="flex min-h-full flex-1 items-stretch gap-2">/u,
+	);
+});
+
+test("Experimental kanban cards cap at 280px so generative agent chrome cannot stretch them", () => {
+	assert.match(EXPERIMENTAL_SOURCE, /className="w-full min-w-0 max-w-\[280px\]"/u);
+});
+
+test("Experimental kanban shows a create-column control after the last column", () => {
+	assert.match(EXPERIMENTAL_SOURCE, /<BoardAddColumnButton \/>/u);
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/aria-label="Create column"[\s\S]*data-jira-kanban-add-column=""[\s\S]*size="icon"[\s\S]*variant="outline"/u,
+	);
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/className="flex shrink-0 flex-col self-start overflow-visible border-2 border-transparent"/u,
+	);
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/className="flex items-center"\n\s+style=\{\{ paddingBottom: token\("space\.100"\) \}\}/u,
+	);
+	assert.match(EXPERIMENTAL_SOURCE, /className="size-6"/u);
 });
 
 test("Kanban column drop targets expose a stable browser selector", () => {
@@ -607,7 +632,7 @@ test("Experimental kanban cards use the hexagon avatar for agent assignees", () 
 	assert.match(EXPERIMENTAL_SOURCE, /assigneeAvatarShape=\{getCardAssigneeAvatarShape\(card\)\}/);
 	assert.match(
 		EXPERIMENTAL_PULSE_RAIL_SOURCE,
-		/assigneeAvatarShape=\{assignee\?\.kind === "agent" \? "hexagon" : "circle"\}/,
+		/assigneeAvatarShape=\{face\.kind === "agent" \? "hexagon" : "circle"\}/,
 	);
 	assert.match(SOURCE, /assigneeAvatarShape=\{card\.avatarShape\}/);
 });
@@ -711,6 +736,9 @@ test("Insights keeps the seven-item header facepile at one reserved width", () =
 		EXPERIMENTAL_HEADER_SOURCE,
 		/<AvatarGroup\s+className=\{JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME\}[\s\S]*<AvatarUnassigned[\s\S]*assignees\.slice\(0, JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS - 1\)/u,
 	);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /shape=\{isAgent \? "hexagon" : "circle"\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /headerAssignees\?: readonly JiraKanbanAssigneeData\[\];/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /fillBoardFacepileAssignees\(/u);
 	assert.match(
 		EXPERIMENTAL_PULSE_MODE_CONTROLS_SOURCE,
 		/<AvatarGroup[\s\S]*className=\{JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME\}[\s\S]*members\.slice\(0, JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS\)\.map/u,
@@ -718,7 +746,7 @@ test("Insights keeps the seven-item header facepile at one reserved width", () =
 	assert.doesNotMatch(EXPERIMENTAL_PULSE_MODE_CONTROLS_SOURCE, /-mx-0\.5|px-0\.5/u);
 	assert.match(
 		EXPERIMENTAL_PULSE_MODE_CONTROLS_SOURCE,
-		/<Button[\s\S]*className=\{cn\(active \? "border-border-selected text-text-selected" : null\)\}[\s\S]*size="default"[\s\S]*variant="outline"/u,
+		/<Button[\s\S]*className=\{cn\(active \? "border-border-selected text-text-selected! \[&_svg\]:text-icon-selected!" : null\)\}[\s\S]*size="default"[\s\S]*variant="outline"/u,
 	);
 });
 
@@ -733,7 +761,7 @@ test("Experimental kanban keeps 24px column gutters on the scrollable row, not t
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/className="flex min-h-full items-stretch gap-2"/u,
+		/className="flex min-h-full flex-1 items-stretch gap-2"/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,

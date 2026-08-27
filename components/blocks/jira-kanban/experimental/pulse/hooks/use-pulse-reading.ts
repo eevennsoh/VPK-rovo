@@ -4,8 +4,10 @@ import { useCallback, useEffect, useRef, useState, type RefCallback } from "reac
 
 import {
 	toActiveOutlineIndex,
+	toPulseMeasureLineY,
 	toPulseScrollOffset,
 	type PulseOutlineEntry,
+	type PulseScrollAlignment,
 	type PulseScrollOptions,
 } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-outline";
 
@@ -27,6 +29,14 @@ import {
 
 /** Where the reading line sits, as a fraction down the scrollport. */
 const READING_LINE = 0.28;
+
+function readStartInset(element: HTMLElement): number {
+	const scrollportStyle = window.getComputedStyle(element);
+	const configuredStartInset = Number.parseFloat(scrollportStyle.scrollPaddingTop);
+	return configuredStartInset > 0
+		? configuredStartInset
+		: Number.parseFloat(scrollportStyle.paddingTop) || 0;
+}
 
 export interface UsePulseReadingOptions {
 	outline: readonly PulseOutlineEntry[];
@@ -53,6 +63,12 @@ export function usePulseReading({ outline, resetKey = null }: UsePulseReadingOpt
 	const [element, setElement] = useState<HTMLDivElement | null>(null);
 	const [activeEntryIndex, setActiveEntryIndex] = useState(0);
 	const anchorsRef = useRef(new Map<string, HTMLElement>());
+	// Start-aligned jumps park on the scroller top. Measure against that same
+	// line until the reader scrolls themselves, or a short section sitting
+	// above the 28% reading line would immediately light the next mark.
+	const measureAlignmentRef = useRef<PulseScrollAlignment>("reading-line");
+	const programmaticScrollRef = useRef(false);
+	const jumpGenerationRef = useRef(0);
 	// Read inside the scroll handler so the listener never re-subscribes as the
 	// outline changes under a filter.
 	const outlineRef = useRef(outline);
@@ -84,7 +100,13 @@ export function usePulseReading({ outline, resetKey = null }: UsePulseReadingOpt
 		const measure = () => {
 			frame = 0;
 			const port = element.getBoundingClientRect();
-			const line = port.top + port.height * READING_LINE;
+			const line = toPulseMeasureLineY({
+				alignment: measureAlignmentRef.current,
+				readingLine: READING_LINE,
+				scrollportHeight: port.height,
+				scrollportTop: port.top,
+				startInset: readStartInset(element),
+			});
 			const entries = outlineRef.current;
 			const positions = entries.map((entry) => {
 				const node = anchorsRef.current.get(entry.id);
@@ -101,9 +123,15 @@ export function usePulseReading({ outline, resetKey = null }: UsePulseReadingOpt
 			}
 			frame = requestAnimationFrame(measure);
 		};
+		const handleUserScroll = () => {
+			if (!programmaticScrollRef.current) {
+				measureAlignmentRef.current = "reading-line";
+			}
+			schedule();
+		};
 
 		measure();
-		element.addEventListener("scroll", schedule, { passive: true });
+		element.addEventListener("scroll", handleUserScroll, { passive: true });
 		const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(schedule);
 		observer?.observe(element);
 		window.addEventListener("resize", schedule);
@@ -112,7 +140,7 @@ export function usePulseReading({ outline, resetKey = null }: UsePulseReadingOpt
 			if (frame !== 0) {
 				cancelAnimationFrame(frame);
 			}
-			element.removeEventListener("scroll", schedule);
+			element.removeEventListener("scroll", handleUserScroll);
 			observer?.disconnect();
 			window.removeEventListener("resize", schedule);
 		};
@@ -139,23 +167,35 @@ export function usePulseReading({ outline, resetKey = null }: UsePulseReadingOpt
 			return;
 		}
 		const port = element.getBoundingClientRect();
-		const scrollportStyle = window.getComputedStyle(element);
-		const configuredStartInset = Number.parseFloat(scrollportStyle.scrollPaddingTop);
-		const startInset = configuredStartInset > 0
-			? configuredStartInset
-			: Number.parseFloat(scrollportStyle.paddingTop) || 0;
 		const offset = toPulseScrollOffset({
 			alignment: align,
 			anchorTop: node.getBoundingClientRect().top,
 			readingLine: READING_LINE,
 			scrollportHeight: port.height,
 			scrollportTop: port.top,
-			startInset,
+			startInset: readStartInset(element),
 		});
+		const generation = jumpGenerationRef.current + 1;
+		jumpGenerationRef.current = generation;
+		measureAlignmentRef.current = align;
+		programmaticScrollRef.current = true;
+		if (align === "start") {
+			const index = outlineRef.current.findIndex((entry) => entry.id === id);
+			if (index !== -1) {
+				setActiveEntryIndex(index);
+			}
+		}
 		// `scroll-behavior` is set per gesture rather than in CSS: hover-scrubbing
 		// the ruler must be instant to track the pointer, and the browser's own
 		// smooth scrolling would lag a frame behind the cursor.
 		element.scrollBy({ behavior: "auto", top: offset });
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => {
+				if (jumpGenerationRef.current === generation) {
+					programmaticScrollRef.current = false;
+				}
+			});
+		});
 	}, [element]);
 
 	const scrollToSnapshot = useCallback((snapshotIndex: number, options?: PulseScrollOptions) => {

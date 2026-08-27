@@ -13,3 +13,7 @@ export function AgentListDemoCompact() {
 export function AgentListDemoComposer() {
 	return <Page flyout="composer" />;
 }
+
+export function AgentListDemoUncaptured() {
+	return <Page variant="uncaptured" />;
+}

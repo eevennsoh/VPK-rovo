@@ -28,8 +28,8 @@ test("Card Kanban keeps auto-cycling paused while a portalled agent flyout is op
 	assert.match(AUTO_CYCLE_SOURCE, /wrapperInteractingRef\.current \|\| externalInteractingRef\.current/u);
 	assert.match(JIRA_ISSUE_SOURCE, /onAgentActivityOpenChange\?: \(open: boolean\) => void;/u);
 	assert.match(JIRA_ISSUE_SOURCE, /onOpenChange=\{handleAgentActivityOpenChange\}/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<HoverCard onOpenChange=\{onOpenChange\}>/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /<HoverCard[\s\S]*onOpenChange\?\.\(open\)/u);
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<HoverCard/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /<HoverCard open=\{aggregateOpen\} onOpenChange=\{handleAggregateOpenChange\}>/u);
 });
 
 test("Card Kanban restarts its progression when the gallery re-enters it", () => {

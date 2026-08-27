@@ -130,7 +130,7 @@ function SourcePreviewActions({
 						</Button>
 					}
 				/>
-				<DropdownMenuContent align="end" portalled={false} sideOffset={6}>
+				<DropdownMenuContent align="end" sideOffset={6}>
 					<DropdownMenuGroup>
 						<DropdownMenuItem
 							elemBefore={<Icon render={<LinkIcon label="" size="small" />} />}
@@ -156,6 +156,16 @@ function SourcePreviewActions({
 function SourcePreviewLeadingTile({
 	source,
 }: Readonly<{ source: SourcesPreviewPage }>) {
+	if (source.source) {
+		return (
+			<TwgToolSourceIcon
+				aria-hidden
+				size="small"
+				source={source.source}
+			/>
+		);
+	}
+
 	const product = getSourcesPreviewProduct(source.href);
 
 	switch (product) {
@@ -331,7 +341,7 @@ export function SourcesPreviewMenu({
 				</PopoverTrigger>
 				<PopoverContent
 					align={align}
-					className="w-[min(26rem,var(--available-width,26rem))] gap-0 overflow-visible border-0 p-1 shadow-2xl"
+					className="w-[min(26rem,var(--available-width,26rem))] max-h-[min(22rem,var(--available-height,22rem))] gap-0 overflow-x-hidden overflow-y-auto border-0 p-1 shadow-2xl"
 					initialFocus={(openType) => openType === "keyboard"}
 				>
 					<PopoverTitle className="sr-only">Source previews</PopoverTitle>

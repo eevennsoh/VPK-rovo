@@ -44,7 +44,7 @@ test("ASX Kanban reuses the Jira Issue aggregate row for working agents", () => 
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<AiAgentIcon label="" \/>/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<Spinner label="" size="sm" \/>/u);
-	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /Show \$\{summary\.activityCount\} agents: \$\{summary\.label\}/u);
+	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /\$\{summary\.activityCount\} agents: \$\{summary\.label\}/u);
 	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /phaseOffsetMs=/u);
 	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /variant="rainbow"/u);
 });

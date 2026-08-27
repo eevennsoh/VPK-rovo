@@ -5,9 +5,11 @@ import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useOptionalRovoChat } from "@/app/contexts";
 import type {
 	JiraKanbanAgentData,
+	JiraKanbanAssigneeData,
 	JiraKanbanCardData,
 	JiraKanbanCardSelectModifiers,
 	JiraKanbanColumnData,
+	JiraKanbanProps,
 } from "../index";
 import { createJiraKanbanColumns } from "../jira-kanban-data";
 import { BoardFilterPopover } from "./components/board-filter-popover";
@@ -19,9 +21,8 @@ import {
 	filterPulseTimelineByDays,
 } from "./lib/board-filter";
 import {
-	PULSE_PRESENTATION_MEMBER_ID,
+	fillBoardFacepileAssignees,
 	mergeBoardFilterAssignees,
-	promoteAssignee,
 	toInsightsAssigneeIds,
 	toPulseMemberAssigneeIds,
 	toPulseMemberId,
@@ -78,12 +79,14 @@ export interface ExperimentalJiraKanbanPageProps {
 	ariaLabel?: string;
 	boardColumns?: readonly JiraKanbanColumnData[];
 	compactHeader?: boolean;
+	headerAssignees?: readonly JiraKanbanAssigneeData[];
 	insightsDefaultAssigneeIds?: readonly string[];
 	isInsightsWorkItemInteractive?: (workItem: PulseWorkItem) => boolean;
 	isLooseWorkResumable?: (item: PulseLooseWork) => boolean;
 	mode?: ExperimentalJiraKanbanMode;
 	onBoardColumnsChange?: (columns: readonly JiraKanbanColumnData[]) => void;
 	onCardClick?: (card: JiraKanbanCardData, columnTitle: string) => void;
+	onCardAgentActivityViewChat?: JiraKanbanProps["onCardAgentActivityViewChat"];
 	onInsightsWorkItemClick?: (workItem: PulseWorkItem) => void;
 	onModeChange?: (mode: ExperimentalJiraKanbanMode) => void;
 	onResumeLooseWork?: (item: PulseLooseWork) => void;
@@ -101,12 +104,14 @@ export default function ExperimentalJiraKanbanPage({
 	ariaLabel = "Experimental RFP board columns. Scroll horizontally to review all statuses.",
 	boardColumns: controlledBoardColumns,
 	compactHeader = false,
+	headerAssignees,
 	insightsDefaultAssigneeIds,
 	isInsightsWorkItemInteractive,
 	isLooseWorkResumable,
 	mode: controlledMode,
 	onBoardColumnsChange,
 	onCardClick,
+	onCardAgentActivityViewChat,
 	onInsightsWorkItemClick,
 	onModeChange,
 	onResumeLooseWork,
@@ -142,11 +147,15 @@ export default function ExperimentalJiraKanbanPage({
 	// decided, not view state that may quietly reset with the subtree.
 	const [requestedActionIds, setRequestedActionIds] = useState<ReadonlySet<string>>(() => new Set<string>());
 	const [capturedLooseWorkIds, setCapturedLooseWorkIds] = useState<ReadonlySet<string>>(() => new Set<string>());
+	const [dismissedLooseWorkIds, setDismissedLooseWorkIds] = useState<ReadonlySet<string>>(() => new Set<string>());
 	const handleRequestAction = useCallback((action: { id: string }) => {
 		setRequestedActionIds((current) => new Set(current).add(action.id));
 	}, []);
 	const handleCaptureLooseWork = useCallback((item: { id: string }) => {
 		setCapturedLooseWorkIds((current) => new Set(current).add(item.id));
+	}, []);
+	const handleDismissLooseWork = useCallback((item: { id: string }) => {
+		setDismissedLooseWorkIds((current) => new Set(current).add(item.id));
 	}, []);
 	// Questions are stored per scope rather than cleared when the scope changes.
 	// An answer about Sprint 24 read as a reply to a question asked of PAY-90
@@ -219,8 +228,11 @@ export default function ExperimentalJiraKanbanPage({
 		});
 	}, [boardFilter.model.selectedValueIdsByField]);
 	const assignees = useMemo(
-		() => promoteAssignee(getJiraKanbanAssignees(boardColumns), PULSE_PRESENTATION_MEMBER_ID),
-		[boardColumns],
+		() => fillBoardFacepileAssignees(
+			getJiraKanbanAssignees(boardColumns),
+			headerAssignees ?? [],
+		),
+		[boardColumns, headerAssignees],
 	);
 	const filterAssignees = useMemo(
 		() => mode === "pulse"
@@ -435,10 +447,12 @@ export default function ExperimentalJiraKanbanPage({
 				<ExperimentalPulse
 					answers={answers}
 					capturedLooseWorkIds={capturedLooseWorkIds}
+					dismissedLooseWorkIds={dismissedLooseWorkIds}
 					isLooseWorkResumable={isLooseWorkResumable}
 					isWorkItemInteractive={isInsightsWorkItemInteractive}
 					onAsk={handleAsk}
 					onCaptureLooseWork={handleCaptureLooseWork}
+					onDismissLooseWork={handleDismissLooseWork}
 					onRequestAction={handleRequestAction}
 					onResumeLooseWork={onResumeLooseWork}
 					onSelectedMemberIdChange={handlePulseMemberChange}
@@ -459,6 +473,7 @@ export default function ExperimentalJiraKanbanPage({
 						draggedCardCode={draggedCard?.card.code ?? null}
 						selectedCardCodes={selection.selectedCardCodes}
 						onCardClick={handleCardClick}
+						onCardAgentActivityViewChat={onCardAgentActivityViewChat}
 						onCardSelect={handleCardSelect}
 						onCardDragStart={handleCardDragStart}
 						onCardDrop={handleCardDrop}

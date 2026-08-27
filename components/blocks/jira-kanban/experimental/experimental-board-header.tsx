@@ -5,8 +5,6 @@ import CustomizeIcon from "@atlaskit/icon/core/customize";
 import PersonAddIcon from "@atlaskit/icon/core/person-add";
 import SearchIcon from "@atlaskit/icon/core/search";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
-import GroupIcon from "@atlaskit/icon-lab/core/group";
-
 import {
 	Avatar,
 	AvatarFallback,
@@ -22,6 +20,7 @@ import { JiraProjectAvatar } from "@/components/blocks/product-sidebar/variants/
 import { JIRA_DESIGN_PROJECT } from "@/components/blocks/product-sidebar/data/jira-navigation";
 import { cn } from "@/lib/utils";
 import type { JiraKanbanAssigneeData } from "../index";
+import { BoardGroupMenu } from "./components/board-group-menu";
 import {
 	JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME,
 	JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS,
@@ -70,13 +69,16 @@ function AssigneeAvatar({
 	muted?: boolean;
 	selected?: boolean;
 }>) {
+	const isAgent = assignee.avatarSrc.startsWith("/avatar-agent/");
+
 	return (
 		<Avatar
 			className={cn(
-				selected && "ring-2! ring-border-selected!",
+				selected && !isAgent && "ring-2! ring-border-selected!",
 				muted && "opacity-(--opacity-disabled)",
 			)}
 			label={assignee.name}
+			shape={isAgent ? "hexagon" : "circle"}
 			size="sm"
 		>
 			<AvatarImage alt="" src={assignee.avatarSrc} />
@@ -170,10 +172,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 
 					{filterControl}
 
-					<Button aria-disabled aria-label={`Group ${surfaceLabel}`} size={compact ? "icon" : undefined} variant="outline">
-						<Icon render={<GroupIcon label="" />} />
-						{compact ? null : "Group"}
-					</Button>
+					<BoardGroupMenu compact={compact} surfaceLabel={surfaceLabel} />
 
 					{modeToggle}
 

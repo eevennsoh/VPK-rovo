@@ -960,9 +960,9 @@ function RichTextSuggestionMenuOption({
 			<RichTextSuggestionMenuItemVisual item={item} />
 			{item.inlineMetadata ? (
 				<span className="rich-text-command-menu-copy rich-text-command-menu-copy-inline">
-					<span className="menu-row-title">{item.label}</span>
+					<span className="menu-row-title shrink-0">{item.label}</span>
 					<span aria-hidden="true" className="shrink-0 text-text-subtlest">·</span>
-					<span className="min-w-0 flex-1">
+					<span className="menu-row-title min-w-0 flex-1 text-text-subtlest">
 						{item.inlineMetadata}
 					</span>
 				</span>

@@ -16,11 +16,11 @@ import type { PulseSnapshot, PulseTimeline } from "@/components/blocks/jira-kanb
  *   close in an afternoon, and an insight is captured whenever there is
  *   something worth saying, so real timestamps cluster four marks into a
  *   morning and leave a weekend of empty rail. Even steps make every insight
- *   the same size target; *when* it was last updated stays on the insight
- *   eyebrow.
+ *   the same size target; the outcome name on the insight eyebrow is the
+ *   painted label, not a clock.
  *   The pill names whichever outline entry is being read.
  * - **Section** (minor). The parts within an insight that are worth jumping to
- *   — artifacts, what needs attention, the next best actions — spread evenly
+ *   — artifacts, what needs input, the next best actions — spread evenly
  *   through the gap their insight owns. They give the ruler its texture and
  *   make it a table of contents rather than decoration.
  */
@@ -33,7 +33,7 @@ export interface PulseOutlineEntry {
 	kind: PulseOutlineKind;
 	/** Which insight this belongs to; a section carries its parent's index. */
 	snapshotIndex: number;
-	/** Spoken name, e.g. "Kickoff — Needs attention". */
+	/** Spoken name, e.g. "Adapter deleted — Needs input". */
 	label: string;
 	/** Visible ruler text: the insight name, or the subsection heading. */
 	heading: string;
@@ -44,18 +44,19 @@ export interface PulseOutlineEntry {
 /** Sections in the order the article lays them out. */
 const SECTION_ORDER = [
 	{ key: "artifacts", label: "Artifacts" },
-	{ key: "attention", label: "Needs attention" },
+	{ key: "attention", label: "Needs input" },
 	{ key: "actions", label: "Next best actions" },
 ] as const;
 
 export type PulseSectionKey = (typeof SECTION_ORDER)[number]["key"];
 
-function toSectionHeading(section: PulseSectionKey): string {
+/** Visible subsection title, shared by the article, the ruler, and the story TOC. */
+export function toSectionHeading(section: PulseSectionKey): string {
 	return SECTION_ORDER.find((entry) => entry.key === section)?.label ?? section;
 }
 
 /**
- * The short name the ruler paints: "Kickoff" on a parent, "Artifacts" on a child.
+ * The short name the ruler paints: "Adapter deleted" on a parent, "Artifacts" on a child.
  *
  * Insight headings are the chapter name. Section headings are the article's
  * subsection titles — never a clock, and never a name the story does not render.
@@ -116,7 +117,7 @@ export interface PulseScrollOptions {
 	align?: PulseScrollAlignment;
 }
 
-/** Whether the next article position is a header chevron jump. */
+/** Whether the next article position pins its destination to the scroller top. */
 export function isPulseChevronHeaderJump(options?: PulseScrollOptions): boolean {
 	return options?.align === "start";
 }
@@ -124,50 +125,67 @@ export function isPulseChevronHeaderJump(options?: PulseScrollOptions): boolean 
 /**
  * The article's top fade is an overlay, not a CSS mask, so it cannot swallow
  * clicks. It still veils whatever sits in the top band — including the insight
- * nav when a chevron pins that row to `align: "start"`. Show the fade whenever
- * the article is clipped at the top, and suppress it only for that jump.
+ * nav when a start-aligned jump pins that row to `align: "start"`. Show the
+ * fade whenever the article is clipped at the top, and suppress it for those
+ * jumps: header chevrons and ruler scrubs share the same pin.
  */
 export function toPulseArticleTopFadeVisible(
 	showTopScrollMask: boolean,
-	suppressForChevronJump: boolean,
+	suppressForStartAlignedJump: boolean,
 ): boolean {
-	return showTopScrollMask && !suppressForChevronJump;
+	return showTopScrollMask && !suppressForStartAlignedJump;
 }
 
-interface PulseScrollOffsetOptions {
+interface PulseMeasureLineOptions {
 	alignment: PulseScrollAlignment;
-	anchorTop: number;
 	readingLine: number;
 	scrollportHeight: number;
 	scrollportTop: number;
 	startInset?: number;
 }
 
+interface PulseScrollOffsetOptions extends PulseMeasureLineOptions {
+	anchorTop: number;
+}
+
 /**
- * The scroll delta that places an anchor at the requested article line.
+ * The article line a jump is aiming at, in viewport coordinates.
  *
- * Ruler jumps retain the established reading line. Header chevrons use `start`
- * so each destination nav row lands at the true top of the scroller; the inset
- * is only the scrollport's content padding, never a reserved fade band.
+ * Free scrolling still reads at the established 28% line. Start-aligned jumps
+ * — header chevrons and the ruler — aim at the scroller top plus its content
+ * inset, never a reserved fade band.
  */
-export function toPulseScrollOffset({
+export function toPulseMeasureLineY({
 	alignment,
-	anchorTop,
 	readingLine,
 	scrollportHeight,
 	scrollportTop,
 	startInset = 0,
-}: Readonly<PulseScrollOffsetOptions>): number {
+}: Readonly<PulseMeasureLineOptions>): number {
 	switch (alignment) {
 		case "reading-line":
-			return anchorTop - scrollportTop - scrollportHeight * readingLine;
+			return scrollportTop + scrollportHeight * readingLine;
 		case "start":
-			return anchorTop - scrollportTop - startInset;
+			return scrollportTop + startInset;
 		default: {
 			const _exhaustive: never = alignment;
 			return _exhaustive;
 		}
 	}
+}
+
+/**
+ * The scroll delta that places an anchor at the requested article line.
+ *
+ * Ruler scrubs and header chevrons use `start` so the destination section
+ * lands at the true top of the scroller. The inset is only the scrollport's
+ * content padding, never a reserved fade band.
+ */
+export function toPulseScrollOffset({
+	anchorTop,
+	...measure
+}: Readonly<PulseScrollOffsetOptions>): number {
+	return anchorTop - toPulseMeasureLineY(measure);
 }
 
 /**
@@ -210,6 +228,54 @@ export function toPulseSections(snapshot: PulseSnapshot): readonly PulseSectionK
 		present.push("actions");
 	}
 	return present;
+}
+
+/** Counts the story TOC paints, keyed the way the article's sections are named. */
+export interface PulseSectionCountMap {
+	artifacts: number;
+	attention: number;
+	nextActions: number;
+}
+
+/** One jump in the story TOC — label, count, and the outline anchor it scrolls to. */
+export interface PulseSectionStat {
+	id: string;
+	key: PulseSectionKey;
+	label: string;
+	value: string;
+}
+
+function toSectionCount(section: PulseSectionKey, counts: PulseSectionCountMap): number {
+	switch (section) {
+		case "artifacts":
+			return counts.artifacts;
+		case "attention":
+			return counts.attention;
+		case "actions":
+			return counts.nextActions;
+		default: {
+			const _exhaustive: never = section;
+			return _exhaustive;
+		}
+	}
+}
+
+/**
+ * The story's subsection TOC: the same sections the outline marked, labelled
+ * the way the article heads them, counted from what the reader can actually
+ * see. Presence still comes from the unscoped snapshot so a filtered-empty
+ * section keeps its jump; the number is the scoped length.
+ */
+export function toPulseSectionStats(
+	snapshot: PulseSnapshot,
+	counts: PulseSectionCountMap,
+): readonly PulseSectionStat[] {
+	return toPulseSections(snapshot).map((section) => ({
+		id: toPulseAnchorId(snapshot.id, section),
+		key: section,
+		label: toSectionHeading(section),
+		value: String(toSectionCount(section, counts)),
+	}));
 }
 
 /**

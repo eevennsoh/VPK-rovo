@@ -1,11 +1,17 @@
 import type { AgentListItem } from "@/components/blocks/agent-list";
 
-import type { PulseMember, PulseSignal, PulseSignalTone } from "../types";
+import type {
+	PulseMember,
+	PulseMemberKind,
+	PulseSignal,
+	PulseSignalTone,
+	PulseWorkItem,
+} from "../types";
 
 /**
  * Boundary between a Pulse attention signal and the shared agent-list row.
  *
- * "Needs attention" is a list of people and agents, not a list of statements:
+ * "Needs input" is a list of people and agents, not a list of statements:
  * an agent that stopped and is waiting on a human, a teammate who commented or
  * @mentioned the reader. That is exactly what `components/blocks/agent-list`
  * renders, so the section shows the identity first and the signal becomes the
@@ -16,7 +22,7 @@ import type { PulseMember, PulseSignal, PulseSignalTone } from "../types";
 /**
  * Tone → the word that leads the metadata line, before the work item key.
  *
- * `attention` has no word: the section is headed "Needs attention" and the row
+ * `attention` has no word: the section is headed "Needs input" and the row
  * already carries the warning glyph, so naming it a third time spends a line of
  * metadata saying nothing. The other three are classifications the row cannot
  * otherwise show.
@@ -36,6 +42,38 @@ const TONE_LABEL: Record<PulseSignalTone, string | null> = {
  */
 export function toAttentionState(tone: PulseSignalTone): AgentListItem["state"] {
 	return tone === "shipped" ? "complete" : "attention";
+}
+
+/**
+ * Human comments ask for a reply; agents that stopped ask for input. The verbs
+ * are different on purpose so a mixed Needs input list does not pretend those
+ * are the same kind of wait.
+ */
+export function toAttentionActionLabel(kind: PulseMemberKind): string {
+	switch (kind) {
+		case "human":
+			return "Reply";
+		case "agent":
+			return "Give input";
+		default: {
+			const _exhaustive: never = kind;
+			return _exhaustive;
+		}
+	}
+}
+
+/** The work item a Needs input row opens, when the signal named one. */
+export function resolveAttentionWorkItem(
+	itemId: string,
+	signals: readonly PulseSignal[],
+	workItems: readonly PulseWorkItem[],
+): PulseWorkItem | undefined {
+	const signal = signals.find((entry) => entry.id === itemId);
+	if (signal?.workItemKey === undefined) {
+		return undefined;
+	}
+
+	return workItems.find((workItem) => workItem.key === signal.workItemKey);
 }
 
 /** `"Risk · PAY-112"`, or whichever half of that the signal actually has. */
@@ -73,6 +111,7 @@ export function toPulseAttentionItems(
 		}
 
 		return [{
+			actionLabel: toAttentionActionLabel(member.kind),
 			agent: {
 				avatarSrc: member.avatarSrc,
 				id: member.id,

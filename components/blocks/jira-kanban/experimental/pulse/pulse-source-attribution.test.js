@@ -61,11 +61,19 @@ test("Pulse opens the shared sources preview menu from the app stack button", ()
 	assert.doesNotMatch(STORY_SOURCE, /function SourcePreviewCard/u);
 });
 
-test("Pulse preview pages match the visible stack logos", () => {
+test("Pulse preview pages match the connected sources one-for-one", () => {
+	const copyBlock = PREVIEW_SOURCE.match(
+		/const PULSE_SOURCE_PREVIEW_COPY = \{([\s\S]*?)\} satisfies Record<PulseSourceId, PulseSourcePreviewCopy>;/u,
+	)?.[1] ?? "";
+
+	assert.equal([...copyBlock.matchAll(/title:/gu)].length, 14);
+	assert.match(PREVIEW_SOURCE, /PULSE_SOURCES\.map\(\(source\) =>/u);
 	assert.match(PREVIEW_SOURCE, /hello\.atlassian\.net\/browse\/PAY-102/u);
 	assert.match(PREVIEW_SOURCE, /hello\.atlassian\.net\/wiki\/spaces\/PAY/u);
 	assert.match(PREVIEW_SOURCE, /github\.com\/eevensoh\/vpk-rovo\/pull\/1847/u);
 	assert.match(PREVIEW_SOURCE, /atlassian\.slack\.com\/archives\/C0PAYMENTS/u);
+	assert.match(PREVIEW_SOURCE, /atlassian\.sentry\.io/u);
+	assert.match(PREVIEW_SOURCE, /app\.launchdarkly\.com/u);
 	assert.doesNotMatch(PREVIEW_SOURCE, /About UST/u);
 	assert.doesNotMatch(PREVIEW_SOURCE, /Unified String Theory/u);
 });

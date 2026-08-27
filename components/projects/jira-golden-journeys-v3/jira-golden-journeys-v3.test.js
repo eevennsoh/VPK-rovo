@@ -24,13 +24,15 @@ test("the route starts and resets at Track in the four-chapter presentation", ()
 test("Track and Learn share one controlled board and Insights surface", () => {
 	assert.match(PAGE_SOURCE, /function JiraGoldenJourneysV3TrackLearnStage/u);
 	assert.match(PAGE_SOURCE, /mode=\{chapter === "learn" \? "pulse" : "board"\}/u);
-	assert.match(PAGE_SOURCE, /insightsDefaultAssigneeIds=\{EMPTY_INSIGHTS_ASSIGNEE_IDS\}/u);
+	assert.match(PAGE_SOURCE, /insightsDefaultAssigneeIds=\{INSIGHTS_DEFAULT_ASSIGNEE_IDS\}/u);
+	assert.match(PAGE_SOURCE, /const INSIGHTS_DEFAULT_ASSIGNEE_IDS: readonly string\[\] = \[PULSE_PRESENTATION_MEMBER_ID\]/u);
 	assert.match(PAGE_SOURCE, /const handleBoardModeChange = useCallback/u);
 	assert.match(PAGE_SOURCE, /onModeChange=\{handleBoardModeChange\}/u);
 	assert.match(PAGE_SOURCE, /key=\{`track-learn:\$\{stageRevision\}`\}/u);
 	assert.match(PAGE_SOURCE, /nextChapter === "learn" && chapter !== "learn"/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onModeChange/u);
-	assert.match(PAGE_SOURCE, /activeCardCode=\{PAY_101_ISSUE_KEY\}/u);
+	assert.doesNotMatch(PAGE_SOURCE, /activeCardCode=\{PAY_101_ISSUE_KEY\}/u);
+	assert.match(PAGE_SOURCE, /headerAssignees=\{JIRA_GOLDEN_JOURNEYS_V3_PAY_HEADER_ASSIGNEES\}/u);
 	assert.match(PAGE_SOURCE, /Track the Payments SDK v2 migration/u);
 });
 
@@ -50,6 +52,8 @@ test("Build renders the PAY-101 Jira item with its captured session and no auto-
 		/parentSessionId: JIRA_GOLDEN_JOURNEYS_V3_PAY_101_SESSION_ID[\s\S]*autoScroll: false/u,
 	);
 	assert.match(PAGE_SOURCE, /<ExperimentalV3JiraWorkItem[\s\S]*presentation="inline"/u);
+	assert.match(PAGE_SOURCE, /statusPhases=\{JIRA_GOLDEN_JOURNEYS_V3_PAY_STATUS_PHASES\}/u);
+	assert.doesNotMatch(PAGE_SOURCE, /\["Review", "In progress", "In review", "To do", "Done"\]/u);
 	assert.doesNotMatch(PAGE_SOURCE, /ExperimentalV2JiraWorkItem/u);
 });
 
@@ -85,7 +89,12 @@ test("only Build suppresses the floating Rovo surface", () => {
 	assert.match(PAGE_SOURCE, /const isWorkItemStage = chapter === "build"/u);
 	assert.match(PAGE_SOURCE, /chat=\{isWorkItemStage \? "hidden" : "auto"\}/u);
 	assert.match(PAGE_SOURCE, /launcher=\{isWorkItemStage \? "hidden" : "auto"\}/u);
-	assert.match(PAGE_SOURCE, /preserveActiveSessionOnHydration/u);
+	assert.match(PAGE_SOURCE, /useJgpAgentChatDemo\(\)/u);
+	assert.match(PAGE_SOURCE, /onCardAgentActivityViewChat=\{handleViewChat\}/u);
+	assert.match(PAGE_SOURCE, /openAgentChat\(\{[\s\S]*agentId: activity\.id,[\s\S]*issueKey: card\.code/u);
+	assert.match(PAGE_SOURCE, /chatContextBar=\{chatContextBar\}/u);
+	assert.match(PAGE_SOURCE, /externalThinkingMessageId=\{externalThinkingMessageId\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCardAgentActivityViewChat=\{onCardAgentActivityViewChat\}/u);
 });
 
 test("the chapter scroller reserves the shared focus-ring gutter", () => {
