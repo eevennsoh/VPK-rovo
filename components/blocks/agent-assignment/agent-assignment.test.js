@@ -62,7 +62,9 @@ test("Agent Assignment preserves the work-item trigger and two-stage menu behavi
 	assert.match(source, /onBrowseAgents=\{onBrowseAgents \? \(\) => handleFooterAction\(onBrowseAgents\) : undefined\}/u);
 	assert.match(source, /onCreateAgent=\{onCreateAgent \? \(\) => handleFooterAction\(onCreateAgent\) : undefined\}/u);
 	assert.match(source, /onAssignedAgentIdsChange\(nextAssignedAgentIds\);/u);
-	assert.match(source, /if \(!assignedAgentIds\.includes\(agentId\)\) \{\s*onAgentAssign\?\.\(agent\);\s*\}/u);
+	assert.match(source, /const isAssigned = assignedAgentIds\.includes\(agentId\);/u);
+	assert.match(source, /if \(!isAssigned\) \{\s*onAgentAssign\?\.\(agent\);\s*\}/u);
+	assert.match(source, /const nextAssignedAgentIds = isAssigned\s*\? assignedAgentIds\.filter\(\(id\) => id !== agentId\)\s*:\s*\[\.\.\.assignedAgentIds, agentId\];/u);
 
 	assert.doesNotMatch(menu, /AgentList/u);
 	assert.match(menu, /<RichTextSuggestionMenu[\s\S]*title="Assigned agents"/u);
