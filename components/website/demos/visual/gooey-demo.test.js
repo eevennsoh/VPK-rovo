@@ -20,7 +20,6 @@ const DEMO = fs.readFileSync(path.join(__dirname, "gooey-demo.tsx"), "utf8");
 const EXAMPLES = fs.readFileSync(path.join(__dirname, "gooey-examples.tsx"), "utf8");
 const UTILS = fs.readFileSync(path.join(__dirname, "gooey-demo-utils.ts"), "utf8");
 const INDEX = fs.readFileSync(path.join(ROOT, "components/visual/gooey/index.ts"), "utf8");
-const ROOT_SOURCE = fs.readFileSync(path.join(ROOT, "components/visual/gooey/gooey-root.tsx"), "utf8");
 const VARIANT_REGISTRY = REGISTRY.slice(REGISTRY.indexOf("export const VISUAL_VARIANT_DEMOS"));
 
 function loadUseGooeyDemoDrag() {
@@ -48,18 +47,19 @@ test("Gooey is a top-level Visual component with local source attribution", () =
 	assert.match(DETAILS_INDEX, /gooey: GOOEY_DETAIL/u);
 	assert.match(REGISTRY, /VISUAL_DEMOS[\s\S]*gooey: dynamic\(\(\) => import\("\.\.\/demos\/visual\/gooey-demo"\)/u);
 	assert.match(REGISTRY, /VISUAL_VARIANT_DEMOS[\s\S]*"gooey-morph-menu"/u);
-	assert.match(INDEX, /export const Gooey = Object\.assign\(GooeyRoot, \{ Item: GooeyItem \}\)/u);
+	assert.match(INDEX, /export const Gooey = Liquid/u);
 	assert.ok(DETAIL.includes("https://gooey.jakubantalik.com/"));
-	assert.ok(DETAIL.includes("cfa51e10f4bc581445248b75c3e9e81c9afac0ef"));
+	assert.ok(DETAIL.includes("37835a94a54de606ebe6e3a5a1f8d30ddf4303b0"));
 	assert.ok(fs.existsSync(path.join(ROOT, "components/visual/gooey/LICENSE")));
 });
 
-test("all six upstream compositions are registered and documented", () => {
+test("all current upstream effects are registered and documented", () => {
 	for (const [slug, exportName, title] of [
 		["gooey-morph-menu", "GooeyMorphMenuExample", "Morph plus menu"],
 		["gooey-morph-email", "GooeyMorphEmailExample", "Morph email input"],
 		["gooey-morph-avatars", "GooeyMorphAvatarExample", "Morph avatar group with dissolve"],
-		["gooey-morph-cards", "GooeyMorphCardsExample", "Morph melting cards"],
+		["gooey-melt-cards", "GooeyMeltCardsExample", "Melt image cards"],
+		["gooey-bend-card", "GooeyBendCardExample", "Bend draggable card"],
 		["gooey-move-tabs", "GooeyMoveTabsExample", "Move gooey tabs"],
 		["gooey-move-slider", "GooeyMoveSliderExample", "Move liquid-rubber slider"],
 	]) {
@@ -246,16 +246,17 @@ test("pointer dragging bypasses transition inertia while preserving configured t
 	assert.doesNotMatch(DEMO, /transition: "transform var\(--duration-slower\)/u);
 });
 
-test("playground exposes the complete root, item, transition, morph, evolve, move, and dissolve surface", () => {
-	for (const section of ["Root", "Item", "Transition", "Morph", "Evolve", "Move", "Dissolve"]) {
+test("playground exposes the complete root, item, transition, morph, evolve, move, bend, and dissolve surface", () => {
+	for (const section of ["Root", "Item", "Transition", "Morph", "Evolve", "Move", "Bend", "Dissolve"]) {
 		assert.ok(DEMO.includes(`title="${section}"`), section);
 	}
 	for (const control of [
-		"Blur", "Contrast", "Fill", "Shadow", "Filter padding", "Effect", "X", "Y", "Scale", "Delay", "Observe",
+		"Blur", "Contrast", "Fill", "Shadow", "Filter padding", "Waviness", "Wave frequency", "Effect", "X", "Y", "Scale", "Delay", "Observe",
 		"Radius", "Item className", "Item style JSON", "Children text", "Transition", "Spring stiffness", "Spring damping", "Spring mass", "Duration", "Easing",
 		"Shape", "Speed", "Bounce", "Content blur", "Blob inset", "Bridge grow",
 		"Mass stiffness", "Mass damping", "Size stiffness", "Size damping", "Radius stiffness", "Radius damping", "Evolve content blur", "Roundness", "Corner duration", "Corner delay", "Corner ease", "Anticipation", "Travel",
 		"Springiness", "Wobble", "Stretch", "Trail", "Raw stiffness", "Raw damping", "Raw stretch", "Raw tail",
+		"Vertical bow", "Horizontal caps",
 		"Dissolve", "Dissolve blur", "Warp", "Pull", "Range", "Zone", "Mix", "Gravity", "Taper", "Warp frequency", "Flow speed", "Warp style", "Detail", "Active", "Release", "Fade", "Strength", "Sink",
 	]) {
 		assert.ok(DEMO.includes(`label: "${control}"`) || DEMO.includes(`label="${control}"`), control);
@@ -263,17 +264,17 @@ test("playground exposes the complete root, item, transition, morph, evolve, mov
 	assert.match(DEMO, /<GUI\.Panel title="Gooey controls" values=\{copiedValues\}>/u);
 });
 
-test("silhouette and dissolve overlays are hidden, inert SVG while content stays DOM", () => {
-	assert.equal((ROOT_SOURCE.match(/aria-hidden="true"/gu) || []).length, 2);
-	assert.equal((ROOT_SOURCE.match(/focusable="false"/gu) || []).length, 2);
-	assert.equal((ROOT_SOURCE.match(/pointerEvents: 'none'/gu) || []).length, 2);
+test("interactive example content remains real DOM above the liquid layers", () => {
+	assert.match(INDEX, /import \{ Liquid \} from "liquid-gooey"/u);
 	assert.match(EXAMPLES, /<button/u);
 	assert.match(EXAMPLES, /<input/u);
 });
 
-test("observed items retain a concrete wrapper for className and style positioning", () => {
-	const itemSource = fs.readFileSync(path.join(ROOT, "components/visual/gooey/item-core.tsx"), "utf8");
-	assert.match(itemSource, /style=\{\{ display: 'inline-block', \.\.\.style \}\}/u);
+test("melt and bend examples exercise the new 0.2.1 effects", () => {
+	assert.match(EXAMPLES, /effect="melt"/u);
+	assert.match(EXAMPLES, /effect="bend"/u);
+	assert.match(EXAMPLES, /--lg-bend-y/u);
+	assert.match(EXAMPLES, /peer-focus-visible:opacity-100/u);
 });
 
 test("GUI slider labels reach Base UI thumb inputs", () => {

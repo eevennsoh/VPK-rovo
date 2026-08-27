@@ -27,8 +27,16 @@ export type AgentListActorKind = "agent" | "person";
 /** Pull-request status shown in the metadata row, when a PR exists. */
 export type AgentListPrStatus = "created" | "merged";
 
-/** Visual density for Jira agent-session rows. */
-export type AgentListVariant = "default" | "compact";
+/** Visual density and chrome for Jira agent-session rows. */
+export type AgentListVariant = "default" | "compact" | "uncaptured";
+
+/**
+ * List surface treatment. `stroke` (the default) is a bordered card. `raised`
+ * drops the outer border and uses elevation.shadow.raised, matching Artifact
+ * List / Next best action so a Needs input section can sit beside it without
+ * a double outline.
+ */
+export type AgentListChrome = "stroke" | "raised";
 
 /** Where the session is running. Local rows replace the agent name with a device chip. */
 export type AgentListHost = "cloud" | "local";
@@ -85,7 +93,10 @@ export type AgentListSessionDetails = Partial<
 		| "status"
 		| "title"
 	>
->;
+> & {
+	/** Claude session id used by `claude --resume`. Defaults to the row id. */
+	resumeSessionId?: string;
+};
 
 export interface AgentListItem {
 	id: string;
@@ -100,9 +111,8 @@ export interface AgentListItem {
 	 */
 	branch?: string;
 	/**
-	 * Wrapping secondary line between the title and the metadata row, for rows
-	 * whose title needs a sentence of context (an attention signal's reason, a
-	 * comment's excerpt). Rendered by the list row only, not by
+	 * Wrapping body copy below the metadata row. Optional — omit it to keep a
+	 * compact title-and-metadata row. Rendered by the list row only, not by
 	 * `AgentListActivityHeader`, whose two-line geometry is fixed.
 	 */
 	summary?: string;
@@ -150,6 +160,11 @@ export interface AgentListItem {
 	 * is derived from the row — see `toAgentSessionFlyoutItem`.
 	 */
 	sessionDetails?: AgentListSessionDetails;
+	/**
+	 * Hover/focus primary action copy. Omit to use the row default: Reply on
+	 * person rows, Resume on local sessions, View on cloud agent sessions.
+	 */
+	actionLabel?: string;
 }
 
 export interface AgentListCustomFlyoutActions {
@@ -168,10 +183,38 @@ export interface AgentListProps {
 	selectedItemId?: string;
 	/** Optional consumer-owned detail surface that keeps the shared Agent List row presentation. */
 	renderFlyout?: (item: AgentListItem, actions: AgentListCustomFlyoutActions) => ReactNode;
-	/** Row density; compact uses a 24px avatar and 12px title. */
+	/** Row density and chrome. Compact uses a 24px avatar and 12px title. Uncaptured wraps each session in the dashed uncaptured-work card. */
 	variant?: AgentListVariant;
-	/** Called when a row body or its View/Resume action is activated. */
+	/** Outer list surface. Defaults to a bordered stroke; `raised` uses elevation and no border. */
+	chrome?: AgentListChrome;
+	/** Captured session ids for the uncaptured chin. Ignored unless `variant` is `"uncaptured"`. */
+	capturedItemIds?: ReadonlySet<string>;
+	/** Suggested Jira key for the uncaptured chin. Defaults to `sessionDetails.issueKey`. */
+	getSuggestedWorkItemKey?: (item: AgentListItem) => string | undefined;
+	/** Links an uncaptured session to the suggested work item. */
+	onLinkWorkItem?: (item: AgentListItem) => void;
+	/** Creates a work item from an uncaptured session. Omit to expose an unavailable Create action. */
+	onCreateWorkItem?: (item: AgentListItem) => void;
+	/** Dismisses an uncaptured session. Omit to hide the dismiss control. */
+	onDismiss?: (item: AgentListItem) => void;
+	/** Overrides the shell command copied from an uncaptured session chin. */
+	getResumeCommand?: (item: AgentListItem) => string | undefined;
+	/**
+	 * Whether an uncaptured session can be resumed. Rows that answer `false` hide
+	 * the Resume control entirely instead of copying a command the host cannot
+	 * honour. Defaults to resumable.
+	 */
+	isResumable?: (item: AgentListItem) => boolean;
+	/** Called after an uncaptured session resume command is copied. */
+	onCopyResume?: (item: AgentListItem) => void;
+	/** Called when a row body or its primary action is activated. */
 	onView?: (item: AgentListItem) => void;
+	/**
+	 * When `onView` is set, person rows for which this returns false omit the
+	 * primary action. Coding agent rows always keep View / Resume. Defaults to
+	 * every row.
+	 */
+	canViewItem?: (item: AgentListItem) => boolean;
 	/** Called when the hover Archive icon is activated. */
 	onArchive?: (item: AgentListItem) => void;
 	/** Overrides the default chat destination for Agent States composer submissions. */

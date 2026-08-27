@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { AnimatePresence, motion, useReducedMotion, type Transition } from "motion/react";
 
 import {
 	getVisibleOutputLines,
@@ -9,6 +10,10 @@ import {
 } from "../lib/terminal-demo-state";
 import type { TerminalStoryDefinition } from "../lib/terminal-story-definition";
 import { BlinkCursor, StateGlyph, TerminalLineView } from "./terminal-stage-chrome";
+
+const LINE_TRANSITION: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] }; // duration-normal + ease-out-practical
+const LINE_EXIT_TRANSITION: Transition = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] }; // duration-fast + ease-in
+const LINE_MOTION_STYLE = { willChange: "transform, opacity" } as const;
 
 // ---------------------------------------------------------------------------
 // Right pane — the Claude Code session. Renders the welcome box, committed
@@ -74,10 +79,19 @@ export function TerminalStageClaudePane({
 	revealCount,
 	story,
 }: Readonly<TerminalStageClaudePaneProps>): React.ReactElement {
+	const shouldReduceMotion = useReducedMotion();
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const isTyping = activeStep?.kind === "type" && activeStep.pane === "right";
-	const displayedDraft = isTyping ? activeStep.text.slice(0, revealCount) : pane.promptDraft;
+	const isPasting = activeStep?.kind === "paste" && activeStep.pane === "right";
+	const displayedDraft = isTyping
+		? activeStep.text.slice(0, revealCount)
+		: isPasting
+			? activeStep.text
+			: pane.promptDraft;
 	const inFlightLines = getVisibleOutputLines(activeStep, "right", revealCount);
+	// One list so committing an output step does not remount the same lines under
+	// new keys (that flash is what made Working… jump between beats).
+	const visibleLines = [...pane.transcript, ...inFlightLines];
 	const currentLine = inFlightLines.at(-1) ?? pane.transcript.at(-1);
 	const activeLine = pane.working ? currentLine : undefined;
 	const hasInlineWorkingMarker = activeLine?.[0]?.text === "⏺ ";
@@ -100,26 +114,38 @@ export function TerminalStageClaudePane({
 					</div>
 				</div>
 				<div className="flex flex-col gap-1">
-					{pane.transcript.map((line, index) => (
-						<TerminalLineView
-							key={index}
-							line={line}
-							active={line === activeLine}
-						/>
+					{visibleLines.map((line, index) => (
+						<motion.div
+							key={`line-${index}`}
+							layout={shouldReduceMotion ? false : "position"}
+							initial={shouldReduceMotion ? false : { opacity: 0 }}
+							animate={{ opacity: 1 }}
+							transition={shouldReduceMotion ? { duration: 0 } : LINE_TRANSITION}
+							style={shouldReduceMotion ? undefined : LINE_MOTION_STYLE}
+						>
+							<TerminalLineView
+								line={line}
+								active={line === activeLine}
+							/>
+						</motion.div>
 					))}
-					{inFlightLines.map((line, index) => (
-						<TerminalLineView
-							key={`in-flight-${index}`}
-							line={line}
-							active={line === activeLine}
-						/>
-					))}
-					{pane.working && !hasInlineWorkingMarker ? (
-						<div className="mt-1 flex items-center gap-2 text-text-subtlest">
-							<StateGlyph status="working" className="shrink-0 text-[#D97757]" />
-							<span>Working…</span>
-						</div>
-					) : null}
+					<AnimatePresence initial={false}>
+						{pane.working && !hasInlineWorkingMarker ? (
+							<motion.div
+								key="working"
+								layout={shouldReduceMotion ? false : "position"}
+								initial={shouldReduceMotion ? false : { opacity: 0 }}
+								animate={{ opacity: 1 }}
+								exit={shouldReduceMotion ? undefined : { opacity: 0, transition: LINE_EXIT_TRANSITION }}
+								transition={shouldReduceMotion ? { duration: 0 } : LINE_TRANSITION}
+								style={shouldReduceMotion ? undefined : LINE_MOTION_STYLE}
+								className="mt-1 flex items-center gap-2 text-text-subtlest"
+							>
+								<StateGlyph status="working" className="shrink-0 text-[#D97757]" />
+								<span>Working…</span>
+							</motion.div>
+						) : null}
+					</AnimatePresence>
 				</div>
 			</div>
 			<div className="shrink-0 border-t border-border px-4 py-3">

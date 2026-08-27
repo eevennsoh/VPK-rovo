@@ -189,30 +189,58 @@ export function GooeyMorphAvatarExample() {
 	);
 }
 
-export function GooeyMorphCardsExample() {
+export function GooeyMeltCardsExample() {
 	const [position, setPosition] = useState<GooeyDemoDragPosition>({ x: 0, y: 0 });
 	const drag = useGooeyDemoDrag(position, setPosition, { minX: -24, maxX: 112, minY: -16, maxY: 72 });
 
 	return (
-		<ExampleStage label="Morph melting cards">
-			<Gooey fill={SURFACE_FILL} blur={8} shadow={GOOEY_SOURCE_SHADOW} className="relative h-48 w-full max-w-64">
-				<Gooey.Item observe dissolve={{ active: drag.dragging, strength: 0.9, gravity: 72, fadeMs: 280 }} morph={{ advanced: { blobInset: 2, bridgeGrow: 8 } }}>
+		<ExampleStage label="Melt image cards">
+			<Gooey className="relative h-48 w-full max-w-64">
+				<Gooey.Item effect="melt" melt={{ warp: 8, mix: 1, gravity: 1.9 }}>
 					<button
 						type="button"
 						aria-label="Drag first card; arrow keys also move it"
 						{...drag.bind}
 						style={{ transform: `translate(${drag.position.x}px, ${drag.position.y}px)` }}
-						className="absolute left-4 top-4 z-10 w-32 touch-none overflow-hidden rounded-xl p-2 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+						className="peer absolute left-4 top-4 z-10 h-24 w-32 touch-none overflow-hidden rounded-xl outline-none"
 					>
-						<Image src="/avatar-human/bradley-phillips.png" alt="Bradley Phillips" width={112} height={70} draggable={false} className="pointer-events-none h-[70px] w-28 select-none rounded-lg object-cover" />
-						<span className="mt-2 block text-xs font-medium text-text">Design review</span>
+						<Image src="/avatar-human/bradley-phillips.png" alt="Bradley Phillips" width={128} height={96} draggable={false} className="pointer-events-none size-full select-none object-cover" />
 					</button>
+					<span
+						aria-hidden="true"
+						style={{ transform: `translate(${drag.position.x}px, ${drag.position.y}px)` }}
+						className="pointer-events-none absolute left-4 top-4 z-20 h-24 w-32 rounded-xl opacity-0 ring-3 ring-ring/50 peer-focus-visible:opacity-100"
+					/>
 				</Gooey.Item>
-				<Gooey.Item observe>
-					<article className="absolute bottom-4 right-3 w-32 overflow-hidden rounded-xl p-2">
-						<Image src="/avatar-human/florence-applebee.png" alt="Florence Applebee" width={112} height={70} draggable={false} className="pointer-events-none h-[70px] w-28 select-none rounded-lg object-cover" />
-						<span className="mt-2 block text-xs font-medium text-text">Ready to merge</span>
+				<Gooey.Item effect="melt" melt={{ warp: 8, mix: 1, gravity: 1.9 }}>
+					<article className="absolute bottom-4 right-3 h-24 w-32 overflow-hidden rounded-xl">
+						<Image src="/avatar-human/florence-applebee.png" alt="Florence Applebee" width={128} height={96} draggable={false} className="pointer-events-none size-full select-none object-cover" />
 					</article>
+				</Gooey.Item>
+			</Gooey>
+		</ExampleStage>
+	);
+}
+
+export function GooeyBendCardExample() {
+	const [position, setPosition] = useState<GooeyDemoDragPosition>({ x: 0, y: 0 });
+	const drag = useGooeyDemoDrag(position, setPosition, { minX: -52, maxX: 52, minY: -72, maxY: 72 });
+
+	return (
+		<ExampleStage label="Bend draggable card">
+			<Gooey fill={SURFACE_FILL} shadow={GOOEY_SOURCE_SHADOW} className="relative h-56 w-full max-w-64">
+				<Gooey.Item effect="bend" bend={{ vertical: 0.6, horizontal: 0.35 }}>
+					<button
+						type="button"
+						aria-label="Drag bending card; arrow keys also move it"
+						{...drag.bind}
+						style={{ transform: `translate(${drag.position.x}px, ${drag.position.y}px)` }}
+						className="absolute left-12 top-20 flex h-14 w-40 touch-none items-center justify-center rounded-full text-sm font-medium text-text outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+					>
+						<span style={{ transform: "translateY(calc(var(--lg-bend-y, 0px) * 2)) rotate(calc(var(--lg-bend-yn, 0) * 1deg))" }}>
+							Drag to bend
+						</span>
+					</button>
 				</Gooey.Item>
 			</Gooey>
 		</ExampleStage>

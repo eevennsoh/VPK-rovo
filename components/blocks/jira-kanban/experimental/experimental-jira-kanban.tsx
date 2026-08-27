@@ -339,6 +339,39 @@ function BoardColumn({
 	);
 }
 
+function BoardAddColumnButton() {
+	return (
+		<div className="flex shrink-0 flex-col self-start overflow-visible border-2 border-transparent">
+			<div
+				aria-hidden
+				className="flex items-center"
+				style={{ paddingBottom: token("space.100") }}
+			>
+				<span className="size-6" />
+			</div>
+			<TooltipProvider>
+				<Tooltip>
+					<TooltipTrigger
+						render={
+							<Button
+								aria-label="Create column"
+								className="shrink-0"
+								data-jira-kanban-add-column=""
+								size="icon"
+								type="button"
+								variant="outline"
+							/>
+						}
+					>
+						<Icon render={<AddIcon label="" />} />
+					</TooltipTrigger>
+					<TooltipContent>Create column</TooltipContent>
+				</Tooltip>
+			</TooltipProvider>
+		</div>
+	);
+}
+
 function getCommonSelectedCardStatus(
 	columns: readonly JiraKanbanColumnData[],
 	selectedCardCodes: ReadonlySet<string>,
@@ -382,7 +415,6 @@ export function ExperimentalJiraKanban({
 	onCardDrop,
 	onCardGenerativeActionSubmit,
 	onCardAgentActivityOpenChange,
-	onCardAgentActivityQuestionSubmit,
 	onCardAgentActivityViewChat,
 	onCardAgentDoneRunReview,
 	onCardAgentDoneRunView,
@@ -528,7 +560,7 @@ export function ExperimentalJiraKanban({
 			>
 				<LayoutGroup id={cardLayoutGroupId}>
 					<div className="flex min-h-full w-max min-w-full items-stretch ps-6">
-						<div className="flex min-h-full items-stretch gap-2">
+						<div className="flex min-h-full flex-1 items-stretch gap-2">
 						{boardColumns.map((column) => (
 						<div
 							data-jira-kanban-column={column.title}
@@ -576,7 +608,7 @@ export function ExperimentalJiraKanban({
 									return (
 										<motion.div
 											key={card.code}
-											className="w-full min-w-0"
+											className="w-full min-w-0 max-w-[280px]"
 											layout={shouldAnimateCardPosition ? "position" : false}
 											layoutId={shouldAnimateCardPosition ? `jira-kanban-card-${card.code}` : undefined}
 											style={shouldAnimateCardPosition ? { willChange: "transform" } : undefined}
@@ -588,6 +620,7 @@ export function ExperimentalJiraKanban({
 														? { scale: getJiraKanbanCardScale(cardMovePhase) }
 														: undefined
 												}
+												className="w-full min-w-0 max-w-[280px]"
 												initial={false}
 												style={cardMovePhase ? { willChange: "transform" } : undefined}
 												transition={cardMovePhase === "departing" ? JIRA_KANBAN_CARD_DEPART : JIRA_KANBAN_CARD_MOVE}
@@ -626,12 +659,6 @@ export function ExperimentalJiraKanban({
 														? (activity) => onCardAgentActivityViewChat(activity, card, column.title)
 														: undefined
 												}
-												onAgentActivityQuestionSubmit={
-													onCardAgentActivityQuestionSubmit
-														? (activity, answers) =>
-															onCardAgentActivityQuestionSubmit(activity, answers, card, column.title)
-														: undefined
-												}
 												onAgentDoneRunReview={
 													onCardAgentDoneRunReview
 														? (run) => onCardAgentDoneRunReview(run, card, column.title)
@@ -655,6 +682,7 @@ export function ExperimentalJiraKanban({
 							</BoardColumn>
 						</div>
 						))}
+						<BoardAddColumnButton />
 						</div>
 						<div aria-hidden className="w-6 shrink-0" />
 					</div>

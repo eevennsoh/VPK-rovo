@@ -336,7 +336,7 @@ function PulseMark({
 	);
 }
 
-const PILL = "bg-bg-neutral-bold text-text-inverse inline-flex items-center rounded-full px-2 py-1.5 text-[11px] leading-none font-medium whitespace-nowrap";
+const PILL = "bg-bg-neutral-bold text-text-inverse inline-flex items-center rounded-md px-2 py-1.5 text-[11px] leading-none font-medium whitespace-nowrap";
 
 /**
  * Everything both orientations derive from the props: the muted set, the mark

@@ -123,11 +123,11 @@ test("Artifact List Open button reveals on row hover/focus and stays keyboard-re
 	);
 	assert.match(
 		source,
-		/group-has-\[:focus-visible\]\/artifact-row:ml-3 group-has-\[:focus-visible\]\/artifact-row:grid-cols-\[1fr\]/u,
+		/\[@media\(hover:none\)\]:ml-3 \[@media\(hover:none\)\]:grid-cols-\[1fr\]/u,
 	);
 	assert.match(
 		source,
-		/<Button[\s\S]*pointer-events-none opacity-0[\s\S]*group-hover\/artifact-row:pointer-events-auto group-hover\/artifact-row:opacity-100[\s\S]*group-has-\[:focus-visible\]\/artifact-row:pointer-events-auto group-has-\[:focus-visible\]\/artifact-row:opacity-100[\s\S]*focus-visible:pointer-events-auto focus-visible:opacity-100[\s\S]*variant="outline"[\s\S]*size=\{variant === "compact" \? "compact" : "default"\}[\s\S]*type="button"[\s\S]*event\.stopPropagation\(\);[\s\S]*handleOpen\(\);/u,
+		/<Button[\s\S]*pointer-events-none opacity-0[\s\S]*group-hover\/artifact-row:pointer-events-auto group-hover\/artifact-row:opacity-100[\s\S]*group-has-\[:focus-visible\]\/artifact-row:pointer-events-auto group-has-\[:focus-visible\]\/artifact-row:opacity-100[\s\S]*\[@media\(hover:none\)\]:pointer-events-auto \[@media\(hover:none\)\]:opacity-100[\s\S]*focus-visible:pointer-events-auto focus-visible:opacity-100[\s\S]*variant="outline"[\s\S]*size=\{variant === "compact" \? "compact" : "default"\}[\s\S]*type="button"[\s\S]*event\.stopPropagation\(\);[\s\S]*handleOpen\(\);/u,
 	);
 	assert.match(source, /openOnRowClick \? \([\s\S]*<button[\s\S]*type="button"[\s\S]*onClick=\{handleOpen\}/u);
 	assert.match(source, /openOnRowClick\?: boolean;/u);

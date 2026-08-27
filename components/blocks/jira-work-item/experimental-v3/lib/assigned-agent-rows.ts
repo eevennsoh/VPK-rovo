@@ -22,7 +22,7 @@ export interface AssignedAgentRow {
 }
 
 /** Later sessions win, matching `resolveAgentRowSessionStatus`. */
-function resolveLatestSession(
+export function resolveLatestAgentSession(
 	sessions: readonly AgentSession[],
 	agentId: string,
 ): AgentSession | undefined {
@@ -35,6 +35,20 @@ function resolveLatestSession(
 	return latest;
 }
 
+/** Distinct directory agents that already have a session on this work item. */
+export function resolveUsedAgentIds(sessions: readonly AgentSession[]): readonly string[] {
+	const usedAgentIds: string[] = [];
+	const seen = new Set<string>();
+	for (const session of sessions) {
+		if (session.agentId.startsWith("skill:") || seen.has(session.agentId)) {
+			continue;
+		}
+		seen.add(session.agentId);
+		usedAgentIds.push(session.agentId);
+	}
+	return usedAgentIds;
+}
+
 export function resolveAssignedAgentRows(
 	members: readonly CrewMember[],
 	sessions: readonly AgentSession[],
@@ -45,7 +59,7 @@ export function resolveAssignedAgentRows(
 		if (member.kind !== "agent") {
 			continue;
 		}
-		const session = resolveLatestSession(sessions, member.id);
+		const session = resolveLatestAgentSession(sessions, member.id);
 		rows.push({
 			agentId: member.id,
 			name: member.name,

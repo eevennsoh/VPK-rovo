@@ -15,6 +15,7 @@ import { useReducedMotion } from "motion/react";
 import type { JiraInsightCheckpoint } from "@/components/blocks/jira-insights/jira-insights-types";
 import {
 	buildJiraInsightsTimelineTicks,
+	findNearestVisibleTimelineButtonIndex,
 	getTimelineKeyTargetIndex,
 	getTimelineTickHeight,
 	getTimelineWheelDelta,
@@ -54,10 +55,13 @@ function formatTimelineDate(capturedAtMs: number): string {
 	return TIMELINE_DATE_FORMATTER.format(new Date(capturedAtMs));
 }
 
-function getButtonCenter(viewport: HTMLDivElement, button: HTMLButtonElement): number {
-	const viewportRect = viewport.getBoundingClientRect();
+function getButtonCenter(
+	viewport: HTMLDivElement,
+	viewportLeft: number,
+	button: HTMLButtonElement,
+): number {
 	const buttonRect = button.getBoundingClientRect();
-	return viewport.scrollLeft + buttonRect.left - viewportRect.left + buttonRect.width / 2;
+	return viewport.scrollLeft + buttonRect.left - viewportLeft + buttonRect.width / 2;
 }
 
 export function JiraInsightsTimelineRail({
@@ -111,20 +115,7 @@ export function JiraInsightsTimelineRail({
 	const findNearestVisibleIndex = useCallback(() => {
 		const viewport = viewportRef.current;
 		if (!viewport) return null;
-		const viewportCenter = viewport.scrollLeft + viewport.clientWidth / 2;
-		let closestIndex: number | null = null;
-		let closestDistance = Number.POSITIVE_INFINITY;
-		for (let index = 0; index < buttonRefs.current.length; index += 1) {
-			const button = buttonRefs.current[index];
-			if (!button) continue;
-			const buttonCenter = getButtonCenter(viewport, button);
-			const distance = Math.abs(buttonCenter - viewportCenter);
-			if (distance < closestDistance) {
-				closestDistance = distance;
-				closestIndex = index;
-			}
-		}
-		return closestIndex;
+		return findNearestVisibleTimelineButtonIndex(viewport, buttonRefs.current);
 	}, []);
 
 	const selectNearestVisibleCheckpoint = useCallback(() => {
@@ -142,7 +133,8 @@ export function JiraInsightsTimelineRail({
 		const viewport = viewportRef.current;
 		const button = buttonRefs.current[index];
 		if (!viewport || !button) return;
-		const targetLeft = getButtonCenter(viewport, button) - viewport.clientWidth / 2;
+		const viewportLeft = viewport.getBoundingClientRect().left;
+		const targetLeft = getButtonCenter(viewport, viewportLeft, button) - viewport.clientWidth / 2;
 		const maxScrollLeft = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
 		const nextScrollLeft = Math.min(maxScrollLeft, Math.max(0, targetLeft));
 		programmaticScrollTargetRef.current = Math.abs(viewport.scrollLeft - nextScrollLeft) <= 1
@@ -231,7 +223,7 @@ export function JiraInsightsTimelineRail({
 		for (let index = 0; index < buttonRefs.current.length; index += 1) {
 			const button = buttonRefs.current[index];
 			if (!button) continue;
-			const distance = Math.abs(getButtonCenter(viewport, button) - position);
+			const distance = Math.abs(getButtonCenter(viewport, viewportRect.left, button) - position);
 			if (distance < nearestDistance) {
 				nearestDistance = distance;
 				nearestIndex = index;

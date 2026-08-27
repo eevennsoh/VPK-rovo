@@ -50,10 +50,16 @@ test("preview-menu is a shared popover owner, not a docs-only demo", () => {
 	assert.match(MENU_SOURCE, /<PopoverTitle className="sr-only">Source previews<\/PopoverTitle>/u);
 	assert.match(MENU_SOURCE, /Open preview modal/u);
 	assert.match(MENU_SOURCE, /Copy link/u);
+	assert.match(
+		MENU_SOURCE,
+		/max-h-\[min\(22rem,var\(--available-height,22rem\)\)\][\s\S]*overflow-y-auto/u,
+	);
+	assert.doesNotMatch(MENU_SOURCE, /gap-0 overflow-visible border-0 p-1 shadow-2xl/u);
 });
 
-test("preview-menu leading tiles follow the href product, not a single Confluence page icon", () => {
+test("preview-menu leading tiles follow an explicit source, then the href product", () => {
 	assert.match(MENU_SOURCE, /function SourcePreviewLeadingTile/u);
+	assert.match(MENU_SOURCE, /if \(source\.source\) \{/u);
 	assert.match(MENU_SOURCE, /const product = getSourcesPreviewProduct\(source\.href\)/u);
 	assert.match(MENU_SOURCE, /case "jira":/u);
 	assert.match(MENU_SOURCE, /case "confluence":/u);

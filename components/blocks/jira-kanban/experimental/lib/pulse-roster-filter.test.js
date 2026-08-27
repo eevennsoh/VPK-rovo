@@ -3,6 +3,7 @@ const test = require("node:test");
 
 const {
 	PULSE_PRESENTATION_MEMBER_ID,
+	fillBoardFacepileAssignees,
 	mergeBoardFilterAssignees,
 	promoteAssignee,
 	toInsightsAssigneeIds,
@@ -97,4 +98,28 @@ test("Filter assignee options union the Pulse roster with board people", () => {
 		["venn", "review-agent", "elena"],
 	);
 	assert.equal(merged[0].avatarSrc, "/pulse-venn.png", "Pulse identity wins on a shared id");
+});
+
+test("board facepile extras fill remaining slots after Venn", () => {
+	const filled = fillBoardFacepileAssignees(
+		[
+			{ id: "maya", name: "Maya Ferreira", avatarSrc: "/maya.png" },
+			{ id: "jordan", name: "Jordan Okafor", avatarSrc: "/jordan.png" },
+		],
+		[
+			{ id: "venn", name: "Venn", avatarSrc: "/venn.png" },
+			{ id: "review-agent", name: "Review Agent", avatarSrc: "/review.svg" },
+			{ id: "test-agent", name: "Test Author Agent", avatarSrc: "/test.svg" },
+		],
+	);
+	assert.deepEqual(
+		filled.map((assignee) => assignee.id),
+		["venn", "review-agent", "test-agent", "maya", "jordan"],
+	);
+	assert.deepEqual(
+		fillBoardFacepileAssignees([
+			{ id: "maya", name: "Maya Ferreira", avatarSrc: "/maya.png" },
+		]).map((assignee) => assignee.id),
+		["maya"],
+	);
 });

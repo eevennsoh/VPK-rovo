@@ -99,14 +99,16 @@ export const MOVE_TUNING_DEFAULTS = {
 } as const satisfies Readonly<MoveTuning>;
 
 /**
- * `<Gooey>` root filter defaults. Lives here rather than in `gooey-root.tsx` so
- * that module exports only its component and Fast Refresh can preserve state.
+ * `<Gooey>` root filter defaults retained for the VPK playground and callers
+ * that seed controls from the component's public defaults.
  */
 export const GOOEY_DEFAULTS = {
 	blur: 6,
 	contrast: 18,
 	fill: "#fff",
 	filterPadding: 24,
+	waviness: 0,
+	wavinessFreq: 0.018,
 } as const;
 
 export const DISSOLVE_DEFAULTS = {
@@ -126,7 +128,7 @@ export const DISSOLVE_DEFAULTS = {
 	releaseMs: 110,
 	fadeMs: 110,
 	strength: 1,
-	sink: 0.45,
+	sink: 0.8,
 } as const satisfies Required<DissolveOptions>;
 
 export function resolveDissolveTimings(

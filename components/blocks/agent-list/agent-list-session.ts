@@ -20,6 +20,46 @@ export function isLocalAgentListItem(item: AgentListItem): boolean {
 }
 
 /**
+ * POSIX-safe shell argument. Values that are already made only of characters no
+ * shell treats specially are left bare so the copied command stays readable;
+ * anything else (spaces in a checkout path, `$`, quotes, …) is single-quoted,
+ * with embedded single quotes closed and re-opened as `'\''`.
+ */
+const SHELL_SAFE_PATTERN = /^[A-Za-z0-9_@%+=:,./-]+$/u;
+
+export function quoteShellArgument(value: string): string {
+	if (SHELL_SAFE_PATTERN.test(value)) {
+		return value;
+	}
+	return `'${value.replaceAll("'", String.raw`'\''`)}'`;
+}
+
+/**
+ * Shell command that restores a local coding session in the viewer's terminal.
+ * Prefers an explicit resume id when the fixture named one; otherwise the row
+ * id. A worktree path, when present, is prefixed as `cd … &&`. Both values are
+ * shell-quoted so a path such as `/Users/me/My Project` pastes correctly.
+ */
+export function toAgentListResumeCommand(item: AgentListItem): string {
+	const resumeId = quoteShellArgument(item.sessionDetails?.resumeSessionId ?? item.id);
+	const worktree = item.sessionDetails?.worktreePath?.trim();
+	if (worktree === undefined || worktree.length === 0) {
+		return `claude --resume ${resumeId}`;
+	}
+
+	return `cd ${quoteShellArgument(worktree)} && claude --resume ${resumeId}`;
+}
+
+/**
+ * Agent coding sessions, as opposed to person rows (comments, @mentions).
+ * Coding rows always keep the hover View / Resume actions; `canViewItem` may
+ * still hide Reply on a person row.
+ */
+export function isCodingAgentListItem(item: AgentListItem): boolean {
+	return (item.agent.kind ?? "agent") !== "person";
+}
+
+/**
  * Boundary between the agent-session row model (`AgentListItem`) and the
  * canonical Jira session flyout model (`JiraSidebarSessionItem`).
  *

@@ -729,8 +729,8 @@
 	background-color: transparent;
 }
 
-.rich-text-command-menu:focus-within .rich-text-command-menu-item:hover .rich-text-command-menu-copy,
-.rich-text-command-menu:focus-within .rich-text-command-menu-item-selected .rich-text-command-menu-copy {
+.rich-text-command-menu:focus-within .rich-text-command-menu-item:not([data-has-actions="true"]):hover .rich-text-command-menu-copy,
+.rich-text-command-menu:focus-within .rich-text-command-menu-item-selected:not([data-has-actions="true"]) .rich-text-command-menu-copy {
 	padding-right: 0;
 }
 
@@ -903,10 +903,12 @@
 	overflow: hidden;
 }
 
-/* Compact status rows keep identity and live metadata on one line. */
+/* Compact status rows keep identity and live metadata on one line. The name
+   stays content-sized; the metadata track owns shrinking and ellipsis. */
 .rich-text-command-menu-copy-inline {
 	flex-direction: row;
 	align-items: center;
+	flex-wrap: nowrap;
 	/* Matches the one normal text-space on each side of the inline `·`. */
 	column-gap: 4px;
 }

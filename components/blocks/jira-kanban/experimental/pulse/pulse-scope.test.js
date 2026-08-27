@@ -474,14 +474,15 @@ test("choosing a scope opens the surface the brief lives on", () => {
 	//
 	// It hangs off the filter action rather than an effect on `scope`, so the
 	// mode change is caused by the click and does not also fire when a scope is
-	// restored on mount.
+	// restored on mount. `updateMode` rather than a raw setter: the mode may be
+	// controlled from outside, and a scope pick has to reach that owner too.
 	assert.match(
 		SCOPE_SOURCES.page,
 		/toggleValue: \(fieldId, valueId\) => \{[\s\S]*?handleOpenTimeline\(\)/u,
 	);
 	assert.doesNotMatch(
 		SCOPE_SOURCES.page,
-		/useEffect\([\s\S]*?setMode\("pulse"\)/u,
+		/useEffect\([\s\S]*?updateMode\("pulse"\)/u,
 		"the mode change is an event, not a reaction to derived state",
 	);
 	// The popover must go through the wrapped actions or it silently keeps the
@@ -553,12 +554,15 @@ test("the ask dock reuses the work item's composer instead of growing a third on
 	assert.doesNotMatch(SCOPE_SOURCES.composer, /experimental-v3\/components\/activity-composer/u);
 });
 
-test("the suggestion row wraps rather than clipping at the reading measure", () => {
-	// `Suggestions` is a horizontal ScrollArea built for a full-width chat pane.
-	// Inside a 36rem column the third chip is sliced off at the edge with no
-	// fade, which reads as a clipping bug rather than an invitation to scroll.
-	assert.match(SCOPE_SOURCES.composer, /flex min-w-0 flex-wrap gap-2/u);
+test("the suggestion row uses the context-bar prompt flyout", () => {
+	// One docked pill, with the rest stacked straight up on hover or click.
+	// `Suggestions` is a horizontal ScrollArea built for a full-width chat pane
+	// and would clip the third chip at this 36rem measure.
+	assert.match(SCOPE_SOURCES.composer, /ContextBarPromptFlyout/u);
+	assert.match(SCOPE_SOURCES.composer, /ariaLabel="Suggested questions"/u);
 	assert.doesNotMatch(SCOPE_SOURCES.composer, /<Suggestions\b/u);
+	assert.doesNotMatch(SCOPE_SOURCES.composer, /<Suggestion\b/u);
+	assert.doesNotMatch(SCOPE_SOURCES.composer, /flex min-w-0 flex-wrap gap-2/u);
 });
 
 test("answers enter with their own exit timing and a reduced-motion guard", () => {

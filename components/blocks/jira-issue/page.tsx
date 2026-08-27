@@ -13,7 +13,12 @@ import {
 	type JiraIssueGenerativeActionRequest,
 	type JiraIssuePullRequestStatus,
 } from "@/components/blocks/jira-issue";
-import type { SmartLinkItem } from "@/components/blocks/smart-link";
+import {
+	GITHUB_BRANCH_SMART_LINK_ICON,
+	GITHUB_COMMIT_SMART_LINK_ICON,
+	toPullRequestSmartLink,
+	type SmartLinkItem,
+} from "@/components/blocks/smart-link";
 import { QUESTION_CARD_SINGLE_SELECT_DEMO } from "@/components/blocks/question-card/data/questions";
 import { ASX_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v0/data/agent-chat-data";
 import { AsxRovoOverlay } from "@/components/projects/jira-golden-journeys-v0/components/jira-golden-journeys-v0-rovo-overlay";
@@ -48,19 +53,110 @@ const JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS = [
 	},
 ] as const;
 
-const JIRA_ISSUE_UNCAPTURED_WORK_SOURCE_LINK = {
-	id: "pay-101-adapter-session",
-	href: "#lw-scope-thread",
-	title: "Local · PAY-101",
-	variant: "generic",
-	provider: { name: "Claude", logo: { kind: "third-party", name: "claude" } },
-	icon: { kind: "third-party", name: "claude" },
-	description: "host local · worktree .worktrees/pay-101-adapter · the decision itself is not written down",
-	avatars: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS.map((participant) => ({
-		name: participant.name,
-		src: participant.avatarSrc,
-	})),
-} as const satisfies SmartLinkItem;
+const JIRA_ISSUE_UNCAPTURED_GITHUB_VISUAL = { kind: "third-party", name: "github" } as const;
+const JIRA_ISSUE_UNCAPTURED_GITHUB_AVATARS = JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS.map((participant) => ({
+	name: participant.name,
+	src: participant.avatarSrc,
+}));
+
+const JIRA_ISSUE_UNCAPTURED_WORK_EXAMPLES = [
+	{
+		id: "uncaptured-pr-1840",
+		suggestedWorkItemKey: "PAY-101",
+		summary: "Fourteen extra call sites, inventoried in an unlinked pull request",
+		sourceLink: {
+			...toPullRequestSmartLink({
+				id: "uncaptured-pr-1840",
+				number: 1840,
+				title: "Fourteen extra call sites, inventoried in an unlinked pull request",
+				status: "Open",
+				files: 14,
+				additions: 312,
+				deletions: 0,
+				repository: "eevensoh/vpk-rovo",
+				branch: "inventory/forgotten-harnesses",
+				targetBranch: "main",
+				description: "eevensoh/vpk-rovo · PR #1840 · 14 files · no linked work item",
+			}),
+			title: "PR #1840",
+			avatars: JIRA_ISSUE_UNCAPTURED_GITHUB_AVATARS,
+		},
+	},
+	{
+		id: "uncaptured-pr-1862",
+		suggestedWorkItemKey: "PAY-113",
+		summary: "Overnight contract suite merged without a work item to land on",
+		sourceLink: {
+			...toPullRequestSmartLink({
+				id: "uncaptured-pr-1862",
+				number: 1862,
+				title: "Overnight contract suite merged without a work item to land on",
+				status: "Merged",
+				files: 18,
+				additions: 1240,
+				deletions: 86,
+				repository: "eevensoh/vpk-rovo",
+				branch: "agent/night-shift-contract-suite",
+				targetBranch: "main",
+				description: "eevensoh/vpk-rovo · PR #1862 · merged · no linked work item",
+			}),
+			title: "PR #1862",
+			avatars: JIRA_ISSUE_UNCAPTURED_GITHUB_AVATARS,
+		},
+	},
+	{
+		id: "uncaptured-pr-1890",
+		suggestedWorkItemKey: "PAY-102",
+		summary: "Checks failed on the adapter-delete proof, still unlinked",
+		sourceLink: {
+			...toPullRequestSmartLink({
+				id: "uncaptured-pr-1890",
+				number: 1890,
+				title: "Checks failed on the adapter-delete proof, still unlinked",
+				status: "Failed",
+				files: 41,
+				additions: 0,
+				deletions: 4180,
+				repository: "eevensoh/vpk-rovo",
+				branch: "proof/delete-legacy-gateway-adapter",
+				targetBranch: "main",
+				description: "eevensoh/vpk-rovo · PR #1890 · checks failed · no linked work item",
+			}),
+			title: "PR #1890",
+			avatars: JIRA_ISSUE_UNCAPTURED_GITHUB_AVATARS,
+		},
+	},
+	{
+		id: "uncaptured-branch-spike",
+		suggestedWorkItemKey: "PAY-102",
+		summary: "Spike branch that proves the adapter can go, still unlinked",
+		sourceLink: {
+			id: "uncaptured-branch-spike",
+			href: "https://github.com/eevensoh/vpk-rovo/tree/spike/delete-legacy-adapter",
+			title: "spike/delete-legacy-adapter",
+			variant: "generic",
+			provider: { name: "GitHub", logo: JIRA_ISSUE_UNCAPTURED_GITHUB_VISUAL },
+			icon: GITHUB_BRANCH_SMART_LINK_ICON,
+			description: "eevensoh/vpk-rovo · unlinked spike branch",
+			avatars: JIRA_ISSUE_UNCAPTURED_GITHUB_AVATARS,
+		},
+	},
+	{
+		id: "uncaptured-commit-b4c19e8",
+		suggestedWorkItemKey: "PAY-101",
+		summary: "The adapter-delete vote is recorded only as an unlinked commit",
+		sourceLink: {
+			id: "uncaptured-commit-b4c19e8",
+			href: "https://github.com/eevensoh/vpk-rovo/commit/b4c19e8",
+			title: "b4c19e8",
+			variant: "generic",
+			provider: { name: "GitHub", logo: JIRA_ISSUE_UNCAPTURED_GITHUB_VISUAL },
+			icon: GITHUB_COMMIT_SMART_LINK_ICON,
+			description: "eevensoh/vpk-rovo · b4c19e8 · never attached to a work item",
+			avatars: JIRA_ISSUE_UNCAPTURED_GITHUB_AVATARS,
+		},
+	},
+] as const satisfies readonly { id: string; suggestedWorkItemKey: string; summary: string; sourceLink: SmartLinkItem }[];
 
 const JIRA_ISSUE_DEMO_SUBTASKS = [
 	{
@@ -215,9 +311,42 @@ interface JiraIssuePageProps {
 	variant?: "default" | "experimental" | "uncaptured-work" | "subtasks-collapsed" | "subtasks-expanded" | "parent-epic" | "agent-activity-states" | "agent-activity-states-experimental";
 }
 
+function JiraIssueUncapturedWorkDemo() {
+	const [capturedIds, setCapturedIds] = useState<ReadonlySet<string>>(() => new Set());
+	const [dismissedIds, setDismissedIds] = useState<ReadonlySet<string>>(() => new Set());
+
+	return (
+		<div
+			className="flex h-full min-h-[360px] w-full flex-col items-center justify-center gap-2 bg-surface p-6"
+			id="uncaptured-work"
+		>
+			{JIRA_ISSUE_UNCAPTURED_WORK_EXAMPLES.filter((example) => !dismissedIds.has(example.id)).map((example) => (
+				<JiraIssue
+					captured={capturedIds.has(example.id)}
+					className="w-[320px]"
+					key={example.id}
+					onCreateWorkItem={() => {
+						setCapturedIds((current) => new Set(current).add(example.id));
+					}}
+					onDismiss={() => {
+						setDismissedIds((current) => new Set(current).add(example.id));
+					}}
+					onLinkWorkItem={() => {
+						setCapturedIds((current) => new Set(current).add(example.id));
+					}}
+					participants={JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS}
+					sourceLink={example.sourceLink}
+					suggestedWorkItemKey={example.suggestedWorkItemKey}
+					summary={example.summary}
+					variant="uncaptured-work"
+				/>
+			))}
+		</div>
+	);
+}
+
 export default function JiraIssuePage({ variant = "default" }: Readonly<JiraIssuePageProps> = {}): React.ReactElement {
 	const [selectedEpicId, setSelectedEpicId] = useState("agentic-jira");
-	const [uncapturedWorkCaptured, setUncapturedWorkCaptured] = useState(false);
 	const isExperimentalVariant = variant === "experimental";
 	const isUncapturedWorkVariant = variant === "uncaptured-work";
 	const isSubtasksVariant = variant === "subtasks-collapsed" || variant === "subtasks-expanded";
@@ -240,20 +369,7 @@ export default function JiraIssuePage({ variant = "default" }: Readonly<JiraIssu
 	}
 
 	if (isUncapturedWorkVariant) {
-		return (
-			<div className="flex h-full min-h-[360px] w-full items-center justify-center bg-surface p-6">
-				<JiraIssue
-					captured={uncapturedWorkCaptured}
-					className="w-[320px]"
-					onCreateWorkItem={() => setUncapturedWorkCaptured(true)}
-					onLinkWorkItem={() => setUncapturedWorkCaptured(true)}
-					participants={JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS}
-					sourceLink={JIRA_ISSUE_UNCAPTURED_WORK_SOURCE_LINK}
-					summary="The adapter keep-or-delete argument still lives in a local Claude session"
-					variant="uncaptured-work"
-				/>
-			</div>
-		);
+		return <JiraIssueUncapturedWorkDemo />;
 	}
 
 	return (
@@ -328,7 +444,6 @@ function JiraIssueAgentActivityStatesDemo({ chrome = "raised" }: Readonly<JiraIs
 		});
 	}, [openAgentChat]);
 	const handleAgentActivityViewChat = openActivityChat;
-	const handleAgentActivityQuestionSubmit = openActivityChat;
 	const handleAgentDoneRunView = useCallback((run: JiraIssueCompletedAgentRun) => {
 		setPendingChatQuestion(null);
 		const agentId = run.id.includes(":") ? run.id.slice(run.id.indexOf(":") + 1) : run.id;
@@ -402,7 +517,6 @@ function JiraIssueAgentActivityStatesDemo({ chrome = "raised" }: Readonly<JiraIs
 						onSubmit: handleGenerativeActionSubmit,
 					}}
 					issueKey="PD-40"
-					onAgentActivityQuestionSubmit={handleAgentActivityQuestionSubmit}
 					onAgentActivityViewChat={handleAgentActivityViewChat}
 					onAgentDoneRunSubmit={handleAgentDoneRunSubmit}
 					onAgentDoneRunView={handleAgentDoneRunView}

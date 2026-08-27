@@ -14,15 +14,19 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { JIRA_GOLDEN_JOURNEYS_V3_STORY_CHAPTERS } from "./data/hotfix-story";
+import {
+	JIRA_GOLDEN_JOURNEYS_V3_PRESENTATION_CHAPTERS,
+	type JiraGoldenJourneysV3PresentationChapter,
+} from "./data/presentation-story";
 import { JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_STEP_COUNT } from "./data/terminal-story";
-import type { JiraGoldenJourneysV3StoryController } from "./use-hotfix-story";
 
 export function JiraGoldenJourneysV3StoryControls({
-	controller,
+	chapter,
+	onChapterChange,
 	terminalStep,
 }: Readonly<{
-	controller: JiraGoldenJourneysV3StoryController;
+	chapter: JiraGoldenJourneysV3PresentationChapter;
+	onChapterChange: (chapter: JiraGoldenJourneysV3PresentationChapter) => void;
 	terminalStep: number;
 }>): React.ReactElement {
 	return (
@@ -37,12 +41,12 @@ export function JiraGoldenJourneysV3StoryControls({
 				className="w-max [&>[data-slot]~[data-slot]]:-ml-px [&>[data-slot]~[data-slot]]:border-l!"
 				variant="connected"
 			>
-				{JIRA_GOLDEN_JOURNEYS_V3_STORY_CHAPTERS.map((option) => (
+				{JIRA_GOLDEN_JOURNEYS_V3_PRESENTATION_CHAPTERS.map((option) => (
 					<Button
-						aria-pressed={controller.chapter === option.value}
+						aria-pressed={chapter === option.value}
 						className="aria-pressed:z-10"
 						key={option.value}
-						onClick={() => controller.selectChapter(option.value)}
+						onClick={() => onChapterChange(option.value)}
 						size="compact"
 						type="button"
 						variant="outline"
@@ -58,14 +62,18 @@ export function JiraGoldenJourneysV3StoryControls({
 }
 
 export function JiraGoldenJourneysV3CompactStoryControls({
-	controller,
-}: Readonly<{ controller: JiraGoldenJourneysV3StoryController }>): React.ReactElement {
-	const activeIndex = JIRA_GOLDEN_JOURNEYS_V3_STORY_CHAPTERS.findIndex(
-		(option) => option.value === controller.chapter,
+	chapter,
+	onChapterChange,
+}: Readonly<{
+	chapter: JiraGoldenJourneysV3PresentationChapter;
+	onChapterChange: (chapter: JiraGoldenJourneysV3PresentationChapter) => void;
+}>): React.ReactElement {
+	const activeIndex = JIRA_GOLDEN_JOURNEYS_V3_PRESENTATION_CHAPTERS.findIndex(
+		(option) => option.value === chapter,
 	);
-	const activeChapter = JIRA_GOLDEN_JOURNEYS_V3_STORY_CHAPTERS[activeIndex];
-	const previousChapter = JIRA_GOLDEN_JOURNEYS_V3_STORY_CHAPTERS[activeIndex - 1];
-	const nextChapter = JIRA_GOLDEN_JOURNEYS_V3_STORY_CHAPTERS[activeIndex + 1];
+	const activeChapter = JIRA_GOLDEN_JOURNEYS_V3_PRESENTATION_CHAPTERS[activeIndex];
+	const previousChapter = JIRA_GOLDEN_JOURNEYS_V3_PRESENTATION_CHAPTERS[activeIndex - 1];
+	const nextChapter = JIRA_GOLDEN_JOURNEYS_V3_PRESENTATION_CHAPTERS[activeIndex + 1];
 
 	return (
 		<div className="flex items-center text-sm text-text">
@@ -75,7 +83,7 @@ export function JiraGoldenJourneysV3CompactStoryControls({
 				size="icon-compact"
 				className="mr-2"
 				aria-label="Previous chapter"
-				onClick={() => previousChapter ? controller.selectChapter(previousChapter.value) : undefined}
+				onClick={() => previousChapter ? onChapterChange(previousChapter.value) : undefined}
 				disabled={!previousChapter}
 			>
 				<ChevronLeftIcon label="" size="small" />
@@ -94,11 +102,11 @@ export function JiraGoldenJourneysV3CompactStoryControls({
 					<ChevronDownIcon label="" size="small" />
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="center" portalled={false}>
-					{JIRA_GOLDEN_JOURNEYS_V3_STORY_CHAPTERS.map((option) => (
+					{JIRA_GOLDEN_JOURNEYS_V3_PRESENTATION_CHAPTERS.map((option) => (
 						<DropdownMenuItem
 							key={option.value}
-							selected={option.value === controller.chapter}
-							onSelect={() => controller.selectChapter(option.value)}
+							selected={option.value === chapter}
+							onSelect={() => onChapterChange(option.value)}
 						>
 							{option.label}
 						</DropdownMenuItem>
@@ -110,7 +118,7 @@ export function JiraGoldenJourneysV3CompactStoryControls({
 				variant="outline"
 				size="icon-compact"
 				aria-label="Next chapter"
-				onClick={() => nextChapter ? controller.selectChapter(nextChapter.value) : undefined}
+				onClick={() => nextChapter ? onChapterChange(nextChapter.value) : undefined}
 				disabled={!nextChapter}
 			>
 				<ChevronRightIcon label="" size="small" />

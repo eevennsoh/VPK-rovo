@@ -36,6 +36,7 @@ export interface AgentStatesProps {
 	className?: string;
 	completedAtMs?: number;
 	completedSecondsAgo?: number;
+	composer?: "visible" | "hidden";
 	initialElapsedSeconds?: number;
 	message?: string;
 	onQuestionSubmit?: (answers: QuestionCardAnswers) => void;
@@ -116,11 +117,47 @@ export function AgentStatesComposer({
 	);
 }
 
+function renderAgentStatesFooter({
+	composer,
+	onQuestionSubmit,
+	onSubmit,
+	question,
+	state,
+}: Readonly<{
+	composer: "visible" | "hidden";
+	onQuestionSubmit?: (answers: QuestionCardAnswers) => void;
+	onSubmit?: (prompt: string) => void;
+	question?: QuestionCardQuestion;
+	state: AgentStatesState;
+}>) {
+	if (state === "awaiting-input" && question) {
+		return (
+			<QuestionCard
+				className="shadow-none"
+				onSubmit={(answers) => onQuestionSubmit?.(answers)}
+				questions={[question]}
+			/>
+		);
+	}
+
+	switch (composer) {
+		case "hidden":
+			return null;
+		case "visible":
+			return <AgentStatesComposer onSubmit={onSubmit} />;
+		default: {
+			const _exhaustive: never = composer;
+			return _exhaustive;
+		}
+	}
+}
+
 export function AgentStates({
 	agent,
 	className,
 	completedAtMs,
 	completedSecondsAgo,
+	composer = "visible",
 	initialElapsedSeconds = DEFAULT_INITIAL_ELAPSED_SECONDS,
 	message,
 	onQuestionSubmit,
@@ -182,15 +219,13 @@ export function AgentStates({
 			<p className="text-sm leading-5 text-text">
 				{message ?? DEFAULT_MESSAGES[state]}
 			</p>
-			{state === "awaiting-input" && question ? (
-				<QuestionCard
-					className="shadow-none"
-					onSubmit={(answers) => onQuestionSubmit?.(answers)}
-					questions={[question]}
-				/>
-			) : (
-				<AgentStatesComposer onSubmit={onSubmit} />
-			)}
+			{renderAgentStatesFooter({
+				composer,
+				onQuestionSubmit,
+				onSubmit,
+				question,
+				state,
+			})}
 		</div>
 	);
 }

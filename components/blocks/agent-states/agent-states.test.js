@@ -25,8 +25,10 @@ test("Agent States owns the shared Jira agent flyout surface", () => {
 	assert.match(SOURCE, /w-\[400px\][\s\S]*bg-surface-overlay[\s\S]*shadow-2xl/u);
 	assert.match(SOURCE, /<AgentCardHeader/u);
 	assert.match(SOURCE, /<ElapsedTime/u);
+	assert.match(SOURCE, /composer\?: "visible" \| "hidden";/u);
 	assert.match(SOURCE, /<AgentStatesComposer onSubmit=\{onSubmit\} \/>/u);
 	assert.match(SOURCE, /state === "awaiting-input" && question/u);
+	assert.doesNotMatch(JIRA_ISSUE_SOURCE, /<AgentStates/u);
 });
 
 test("Agent States composer keeps the agent mention directory enabled", () => {
@@ -82,14 +84,11 @@ test("compact agent surfaces use their intended elevation treatment", () => {
 	}
 });
 
-test("Jira Issue routes multi-agent flyouts through Agent List and preserves Agent States questions", () => {
-	assert.match(
-		JIRA_ISSUE_SOURCE,
-		/import \{[\s\S]*AgentList,[\s\S]*type AgentListCustomFlyoutActions,[\s\S]*type AgentListItem,[\s\S]*\} from "@\/components\/blocks\/agent-list";/u,
-	);
-	assert.match(JIRA_ISSUE_SOURCE, /<AgentList/u);
-	assert.match(JIRA_ISSUE_SOURCE, /<AgentStates[\s\S]*onQuestionSubmit=\{onQuestionSubmit/u);
-	assert.match(JIRA_ISSUE_SOURCE, /renderFlyout=\{renderAgentFlyout\}/u);
+test("Jira Issue agent rows do not open Agent States; Agent List still owns that flyout", () => {
+	assert.doesNotMatch(JIRA_ISSUE_SOURCE, /from "@\/components\/blocks\/agent-list"/u);
+	assert.doesNotMatch(JIRA_ISSUE_SOURCE, /<AgentList/u);
+	assert.doesNotMatch(JIRA_ISSUE_SOURCE, /<AgentStates/u);
+	assert.doesNotMatch(JIRA_ISSUE_SOURCE, /<HoverCard/u);
 	assert.match(
 		AGENT_LIST_SOURCE,
 		/import \{[\s\S]*AgentStates,[\s\S]*\} from "@\/components\/blocks\/agent-states";/u,
