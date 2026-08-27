@@ -46,17 +46,10 @@ test("viewport-aware edge padding lets both timeline endpoints reach the scrubbe
 	assert.match(source, /timelineEdgePadding \* 2/u);
 });
 
-test("scroll-frame selection snapshots invariant viewport geometry once", () => {
+test("scroll-frame selection delegates invariant geometry reads to the tested model", () => {
 	const source = fs.readFileSync(RAIL_PATH, "utf8");
 
-	assert.match(
-		source,
-		/findNearestVisibleIndex[\s\S]*const viewportLeft = viewport\.getBoundingClientRect\(\)\.left;[\s\S]*for \(let index = 0;[\s\S]*getButtonCenter\(viewport, viewportLeft, button\)/u,
-	);
-	assert.match(
-		source,
-		/function getButtonCenter\([\s\S]*viewportLeft: number,[\s\S]*button\.getBoundingClientRect\(\)[\s\S]*buttonRect\.left - viewportLeft/u,
-	);
+	assert.match(source, /findNearestVisibleTimelineButtonIndex\(viewport, buttonRefs\.current\)/u);
 });
 
 test("ordinary activity supplies minor ticks while the active decision keeps a constant landmark", () => {

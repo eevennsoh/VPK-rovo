@@ -15,6 +15,7 @@ import { useReducedMotion } from "motion/react";
 import type { JiraInsightCheckpoint } from "@/components/blocks/jira-insights/jira-insights-types";
 import {
 	buildJiraInsightsTimelineTicks,
+	findNearestVisibleTimelineButtonIndex,
 	getTimelineKeyTargetIndex,
 	getTimelineTickHeight,
 	getTimelineWheelDelta,
@@ -114,21 +115,7 @@ export function JiraInsightsTimelineRail({
 	const findNearestVisibleIndex = useCallback(() => {
 		const viewport = viewportRef.current;
 		if (!viewport) return null;
-		const viewportCenter = viewport.scrollLeft + viewport.clientWidth / 2;
-		const viewportLeft = viewport.getBoundingClientRect().left;
-		let closestIndex: number | null = null;
-		let closestDistance = Number.POSITIVE_INFINITY;
-		for (let index = 0; index < buttonRefs.current.length; index += 1) {
-			const button = buttonRefs.current[index];
-			if (!button) continue;
-			const buttonCenter = getButtonCenter(viewport, viewportLeft, button);
-			const distance = Math.abs(buttonCenter - viewportCenter);
-			if (distance < closestDistance) {
-				closestDistance = distance;
-				closestIndex = index;
-			}
-		}
-		return closestIndex;
+		return findNearestVisibleTimelineButtonIndex(viewport, buttonRefs.current);
 	}, []);
 
 	const selectNearestVisibleCheckpoint = useCallback(() => {
