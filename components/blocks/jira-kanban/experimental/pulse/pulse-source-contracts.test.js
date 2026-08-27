@@ -346,6 +346,18 @@ test("Pulse Insights always paints a bottom scroll mask above the composer", () 
 	);
 });
 
+test("Pulse keeps repeated story sections out of landmark navigation", () => {
+	// The whole timeline is already one named region with a ruler for navigation.
+	// Repeating a named region for every insight and subsection creates several
+	// indistinguishable landmarks, so the semantic headings stay unlabelled.
+	assert.doesNotMatch(SOURCES.story, /<section aria-labelledby=/u);
+	assert.doesNotMatch(SOURCES.signals, /<section aria-labelledby=/u);
+	assert.match(SOURCES.story, /<h2 className=\{cn\("mt-6 text-pretty text-text", MEASURE\)\} style=\{HEADLINE_STYLE\}>/u);
+	assert.match(SOURCES.story, /<PulseSectionLabel>\{toSectionHeading\("artifacts"\)\}<\/PulseSectionLabel>/u);
+	assert.match(SOURCES.signals, /<PulseSectionLabel>\{toSectionHeading\("attention"\)\}<\/PulseSectionLabel>/u);
+	assert.match(SOURCES.signals, /<PulseSectionLabel>\{toSectionHeading\("actions"\)\}<\/PulseSectionLabel>/u);
+});
+
 test("Pulse styles stay on semantic tokens and never render with a logical AND", () => {
 	for (const [name, source] of Object.entries(SOURCES)) {
 		assert.doesNotMatch(source, /(?:bg|text|border)-\[var\(--ds-/u, `${name} bypasses the semantic token classes`);
