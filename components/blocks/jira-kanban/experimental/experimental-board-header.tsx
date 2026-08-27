@@ -5,8 +5,6 @@ import CustomizeIcon from "@atlaskit/icon/core/customize";
 import PersonAddIcon from "@atlaskit/icon/core/person-add";
 import SearchIcon from "@atlaskit/icon/core/search";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
-import GroupIcon from "@atlaskit/icon-lab/core/group";
-
 import {
 	Avatar,
 	AvatarFallback,
@@ -22,6 +20,11 @@ import { JiraProjectAvatar } from "@/components/blocks/product-sidebar/variants/
 import { JIRA_DESIGN_PROJECT } from "@/components/blocks/product-sidebar/data/jira-navigation";
 import { cn } from "@/lib/utils";
 import type { JiraKanbanAssigneeData } from "../index";
+import { BoardGroupMenu } from "./components/board-group-menu";
+import {
+	JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME,
+	JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS,
+} from "./header-facepile";
 
 /**
  * Experimental fork of `components/blocks/jira-kanban/board-header.tsx`.
@@ -50,8 +53,7 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	/** Mode control, rendered inline with Filter and Group. */
 	modeToggle?: ReactNode;
 	/**
-	 * Trailing cluster end slot — after the more/ellipsis control. Pulse puts
-	 * the Timeline activity badge here so it does not invent a second overflow.
+	 * Trailing cluster end slot — after the more/ellipsis control.
 	 */
 	endSlot?: ReactNode;
 	surfaceLabel?: string;
@@ -67,13 +69,16 @@ function AssigneeAvatar({
 	muted?: boolean;
 	selected?: boolean;
 }>) {
+	const isAgent = assignee.avatarSrc.startsWith("/avatar-agent/");
+
 	return (
 		<Avatar
 			className={cn(
-				selected && "ring-2! ring-border-selected!",
+				selected && !isAgent && "ring-2! ring-border-selected!",
 				muted && "opacity-(--opacity-disabled)",
 			)}
 			label={assignee.name}
+			shape={isAgent ? "hexagon" : "circle"}
 			size="sm"
 		>
 			<AvatarImage alt="" src={assignee.avatarSrc} />
@@ -141,11 +146,11 @@ export function ExperimentalJiraKanbanBoardHeader({
 					    contains these low z-indexes; `[&>*]:relative` is required because the
 					    face <button> wrappers are position:static, where z-index is inert. */}
 					<AvatarGroup
-						className="ml-1 -space-x-1.5 isolate [&>*]:relative [&>*:nth-child(1)]:z-[7] [&>*:nth-child(2)]:z-[6] [&>*:nth-child(3)]:z-[5] [&>*:nth-child(4)]:z-[4] [&>*:nth-child(5)]:z-[3] [&>*:nth-child(6)]:z-[2] [&>*:nth-child(7)]:z-[1]"
+						className={JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME}
 						label={`${surfaceTitle} assignees`}
 					>
 						<AvatarUnassigned kind="person" label="Unassigned" size="sm" />
-						{assignees.slice(0, 6).map((assignee) => (
+						{assignees.slice(0, JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS - 1).map((assignee) => (
 							<button
 								aria-label={`Filter ${surfaceLabel} by ${assignee.name}`}
 								aria-pressed={selectedAssigneeIds.has(assignee.id)}
@@ -167,10 +172,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 
 					{filterControl}
 
-					<Button aria-disabled aria-label={`Group ${surfaceLabel}`} size={compact ? "icon" : undefined} variant="outline">
-						<Icon render={<GroupIcon label="" />} />
-						{compact ? null : "Group"}
-					</Button>
+					<BoardGroupMenu compact={compact} surfaceLabel={surfaceLabel} />
 
 					{modeToggle}
 

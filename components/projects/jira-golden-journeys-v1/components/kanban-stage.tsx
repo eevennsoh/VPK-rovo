@@ -227,7 +227,6 @@ export function KanbanStage({ scenario = "local-review" }: Readonly<KanbanStageP
 				boardColumns={filteredBoardColumns}
 				cardMoveAnimation={completionCardMoveAnimation}
 				draggedCardCode={draggedCardCode}
-				onCardAgentActivityQuestionSubmit={handleQuestionSubmit}
 				onCardAgentActivityViewChat={handleViewChat}
 				onCardAgentDoneRunReview={(_run, card) => {
 					if (card.code === "JGP-247") setCodeReviewOpen(true);

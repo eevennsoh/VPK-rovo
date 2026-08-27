@@ -322,7 +322,10 @@ test("RovoFloatingChat can render a fixed single-thread agent header", async () 
 	assert.match(ROVO_FLOATING_CHAT_SOURCE, /showAgentSelector\?: boolean;/u);
 	assert.match(ROVO_FLOATING_CHAT_SOURCE, /showChatHistory\?: boolean;/u);
 	assert.match(ROVO_FLOATING_CHAT_SOURCE, /showNewChatButton\?: boolean;/u);
-	assert.match(FLOATING_CHAT_HEADER_SOURCE, /<RovoAppBrand enableAgentSelector=\{showAgentSelector\} \/>/u);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /compactHeader\?: boolean;/u);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /compact=\{compactHeader\}/u);
+	assert.match(FLOATING_CHAT_HEADER_SOURCE, /<RovoAppBrand[\s\S]*enableAgentSelector=\{showAgentSelector\}/u);
+	assert.match(FLOATING_CHAT_HEADER_SOURCE, /const iconSize = compact \? "icon-compact" : "icon"/u);
 	assert.match(FLOATING_CHAT_HEADER_SOURCE, /showChatHistory \? \([\s\S]*<ChatHistoryButton/u);
 	assert.match(FLOATING_CHAT_HEADER_SOURCE, /showNewChatButton \? \(/u);
 });
@@ -331,13 +334,13 @@ test("RovoFloatingChat can fill an embedded owner instead of using viewport posi
 	const harness = await loadRovoFloatingChatHarness();
 	const markup = harness.renderEmbeddedChat();
 
-	assert.match(markup, /class="absolute inset-0 z-10 flex min-h-0 w-full flex-col overflow-hidden border-l border-border/);
+	assert.match(markup, /class="absolute inset-0 z-10 flex min-h-0 w-full flex-col overflow-visible border-l border-border/);
 	assert.match(markup, /aria-label="Agent chat"/);
 	assert.match(markup, /data-rovo-chat-placement="embedded"/);
 	assert.match(markup, /data-show-more-button="false"/);
 	assert.match(markup, /role="region"/);
 	assert.doesNotMatch(markup, /fixed right-6 bottom-6/);
-	assert.match(markup, /class="h-full min-h-0 min-w-0"/);
+	assert.match(markup, /class="h-full min-h-0 min-w-0 overflow-visible"/);
 	assert.match(ROVO_FLOATING_CHAT_SOURCE, /height: embedded \? "100%" : "auto"/u);
 	assert.match(ROVO_FLOATING_CHAT_SOURCE, /maxHeight: embedded \? "none"/u);
 	assert.match(ROVO_FLOATING_CHAT_SOURCE, /initial=\{embedded \|\| shouldReduceMotion \? false/u);
@@ -480,10 +483,30 @@ test("Floating chat panel receives a bounded max-height without forcing empty-st
 });
 
 test("Floating chat keeps chrome and composer outside the scrollable message viewport", () => {
-	assert.match(FLOATING_CHAT_HEADER_SOURCE, /className="relative z-10 flex shrink-0 items-center justify-between px-3 py-3"/);
+	assert.match(
+		FLOATING_CHAT_HEADER_SOURCE,
+		/className=\{cn\("relative z-10 flex shrink-0 items-center justify-between px-3 py-3", className\)\}/,
+	);
 	assert.match(CHAT_PANEL_SOURCE, /<Conversation\s+className="min-h-0 min-w-0 flex-1"/);
 	assert.match(CHAT_PANEL_SOURCE, /<div className="min-w-0 shrink-0">[\s\S]*<ChatComposer/);
 	assert.match(CHAT_PANEL_SOURCE, /<div className="shrink-0">[\s\S]*<ChatHeader/);
+});
+
+test("Embedded chat lets the composer glow paint past the shell", () => {
+	assert.match(
+		ROVO_FLOATING_CHAT_SOURCE,
+		/\? "absolute inset-0 z-10 flex min-h-0 w-full flex-col overflow-visible/,
+	);
+	assert.match(
+		ROVO_FLOATING_CHAT_SOURCE,
+		/embedded \? "min-h-0 min-w-0 flex-1 overflow-visible"/,
+	);
+	assert.match(
+		ROVO_FLOATING_CHAT_SOURCE,
+		/embedded \? "h-full min-h-0 min-w-0 overflow-visible"/,
+	);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /\.\.\.\(embedded \? \{ overflow: "visible" as const \} : \{\}\)/);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /: "min-h-0 min-w-0 overflow-hidden"}/);
 });
 
 test("Floating chat header does not force an always-on scroll fade", () => {

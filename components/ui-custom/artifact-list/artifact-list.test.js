@@ -42,7 +42,7 @@ test("Artifact List rows are at least 64px, hover to surface-hovered, and the la
 		"components/ui-custom/artifact-list/components/artifact-list.tsx",
 	);
 
-	assert.match(source, /flex min-h-16 items-center px-3 py-2 transition-colors hover:bg-surface-hovered/u);
+	assert.match(source, /flex min-h-16 items-center px-3 py-2 transition-colors motion-reduce:transition-none hover:bg-surface-hovered/u);
 	// Icon/text gap lives on the content cluster; the Open slot uses margin on reveal.
 	assert.match(source, /group\/artifact-row min-w-0 w-full/u);
 	assert.match(source, /relative flex min-w-0 flex-1 items-center gap-3 overflow-hidden/u);
@@ -95,10 +95,14 @@ test("Artifact List keeps the compact row structure and uses flyout metadata for
 		source,
 		/<span className="shrink-0">\s*<Lozenge variant=\{item\.pullRequest\.status === "Merged" \? "discovery" : "success"\}>[\s\S]*\{item\.pullRequest\.status\}/u,
 	);
-	assert.match(source, /<a[\s\S]*no-underline decoration-current outline-none hover:underline focus-visible:underline[\s\S]*href="#[\s\S]*event\.preventDefault\(\)[\s\S]*#\{item\.pullRequest\.number\}: \{item\.title\}[\s\S]*<\/a>/u);
+	// The PR byline links only when the item supplies a destination; without one it
+	// renders plain text rather than a focusable anchor that cannot navigate.
+	assert.match(source, /\{item\.href \? \([\s\S]*<a[\s\S]*no-underline decoration-current outline-none hover:underline focus-visible:underline[\s\S]*href=\{item\.href\}[\s\S]*#\{item\.pullRequest\.number\}: \{item\.title\}[\s\S]*<\/a>/u);
+	assert.doesNotMatch(source, /href="#"/u);
+	assert.doesNotMatch(source, /event\.preventDefault\(\)/u);
 	assert.match(source, /<p className="w-full truncate text-xs font-medium leading-4 text-text">\{item\.title\}<\/p>[\s\S]*\{compactPullRequestByline \?\? compactMetadata\}/u);
 	assert.match(source, /aria-label=\{item\.pullRequest[\s\S]*`Code changes: \$\{item\.pullRequest\.additions\} additions, \$\{item\.pullRequest\.deletions\} deletions`/u);
-	assert.match(source, /\{item\.pullRequest \? \([\s\S]*text-text-success[\s\S]*text-text-danger[\s\S]*\) : openLabel\}/u);
+	assert.match(source, /\{item\.pullRequest \? \([\s\S]*text-text-success[\s\S]*text-text-danger[\s\S]*\) : rowOpenLabel\}/u);
 });
 
 test("Artifact List Open button reveals on row hover/focus and stays keyboard-reachable", () => {
@@ -177,8 +181,8 @@ test("Artifact List compact variant shares default shell chrome, keeps denser ro
 	// Shared raised shell; compact keeps denser min-h-12 rows (not default min-h-16).
 	assert.match(source, /min-w-0 max-w-full overflow-hidden rounded-lg bg-surface-raised/u);
 	assert.doesNotMatch(source, /border border-border bg-surface/u);
-	assert.match(source, /variant === "compact"[\s\S]*flex min-h-12 items-center px-3 py-2 transition-colors hover:bg-surface-hovered/u);
-	assert.match(source, /flex min-h-16 items-center px-3 py-2 transition-colors hover:bg-surface-hovered/u);
+	assert.match(source, /variant === "compact"[\s\S]*flex min-h-12 items-center px-3 py-2 transition-colors motion-reduce:transition-none hover:bg-surface-hovered/u);
+	assert.match(source, /flex min-h-16 items-center px-3 py-2 transition-colors motion-reduce:transition-none hover:bg-surface-hovered/u);
 	assert.match(source, /relative flex min-w-0 flex-1 items-center gap-3 overflow-hidden/u);
 	assert.doesNotMatch(source, /grid size-8 shrink-0 place-items-center/u);
 	assert.match(source, /size=\{variant === "compact" \? "small" : "medium"\}/u);

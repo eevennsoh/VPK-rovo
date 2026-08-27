@@ -123,7 +123,6 @@ function createCompletedRun(params: Readonly<{
 	issueSummary: string;
 	outputs?: JiraIssueCompletedAgentRun["outputs"];
 	pullRequestNumber?: number;
-	showStateIcon?: boolean;
 	state: JiraIssueCompletedAgentRun["state"];
 	summary: string;
 }>): JiraIssueCompletedAgentRun {
@@ -140,7 +139,6 @@ function createCompletedRun(params: Readonly<{
 		outputs: params.outputs,
 		pullRequestNumber: params.pullRequestNumber,
 		relativeTime: params.state === "done" ? "This week" : "Today",
-		showStateIcon: params.showStateIcon ?? false,
 		state: params.state,
 		summary: params.summary,
 	};
@@ -326,7 +324,6 @@ const LOCAL_TEAM_REVIEW: readonly JiraKanbanCardData[] = [
 					title: "Fix assignee facepile overflow",
 				}],
 				pullRequestNumber: 812,
-				showStateIcon: true,
 				state: "review",
 				summary: "Fixed the facepile overflow",
 			}),
@@ -404,7 +401,6 @@ const LOCAL_TEAM_REVIEW: readonly JiraKanbanCardData[] = [
 				title: "Preserve keyboard focus after filtering",
 			}],
 			pullRequestNumber: 819,
-			showStateIcon: true,
 			state: "review",
 			summary: "Preserved keyboard focus across filters",
 		})],

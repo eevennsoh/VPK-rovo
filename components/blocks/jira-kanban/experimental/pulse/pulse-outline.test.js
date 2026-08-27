@@ -214,11 +214,11 @@ test("Pulse outline headings are the insight name and the article's subsection t
 	const outline = buildPulseOutline(PULSE_TIMELINE);
 	const kickoff = outline.filter((entry) => entry.snapshotIndex === 0);
 
-	assert.equal(PULSE_TIMELINE.snapshots[0].chapterLabel, "Kickoff");
+	assert.equal(PULSE_TIMELINE.snapshots[0].chapterLabel, "Adapter deleted");
 	assert.deepEqual(kickoff.map((entry) => toRulerHeading(entry)), [
-		"Kickoff",
+		"Adapter deleted",
 		"Artifacts",
-		"Needs attention",
+		"Needs input",
 		"Next best actions",
 	]);
 	PULSE_TIMELINE.snapshots.forEach((snapshot, index) => {
@@ -315,6 +315,46 @@ test("Pulse outline lists only the sections an insight actually renders, in arti
 	}
 });
 
+test("Pulse section stats are the subsection TOC, labelled and counted from the article", async () => {
+	const { toPulseAnchorId, toPulseSectionStats, toSectionHeading } = await loadOutlineHarness();
+	const { PULSE_TIMELINE } = await loadTimelineHarness();
+	const kickoff = PULSE_TIMELINE.snapshots[0];
+	const stats = toPulseSectionStats(kickoff, {
+		artifacts: kickoff.artifacts.length,
+		attention: kickoff.attention.length,
+		nextActions: kickoff.nextActions.length,
+	});
+
+	assert.equal(toSectionHeading("attention"), "Needs input");
+	assert.deepEqual(stats.map((row) => row.label), [
+		"Artifacts",
+		"Needs input",
+		"Next best actions",
+	]);
+	assert.deepEqual(stats.map((row) => row.id), [
+		toPulseAnchorId(kickoff.id, "artifacts"),
+		toPulseAnchorId(kickoff.id, "attention"),
+		toPulseAnchorId(kickoff.id, "actions"),
+	]);
+	assert.deepEqual(stats.map((row) => row.value), [
+		String(kickoff.artifacts.length),
+		String(kickoff.attention.length),
+		String(kickoff.nextActions.length),
+	]);
+
+	// Presence follows the unscoped snapshot; the number is whatever this page
+	// actually holds, so a filtered-empty section still has somewhere to jump.
+	const zeroed = toPulseSectionStats(kickoff, { artifacts: 0, attention: 0, nextActions: 0 });
+	assert.equal(zeroed.length, 3);
+	assert.deepEqual(zeroed.map((row) => row.value), ["0", "0", "0"]);
+	assert.deepEqual(
+		toPulseSectionStats({ ...kickoff, attention: [] }, { artifacts: 4, attention: 0, nextActions: 2 }).map(
+			(row) => row.key,
+		),
+		["artifacts", "actions"],
+	);
+});
+
 test("Pulse outline exposes the insight marks on their own for snapshot-to-snapshot moves", async () => {
 	const { buildPulseOutline, toPulseInsightEntries } = await loadOutlineHarness();
 	const outline = buildPulseOutline(timelineOf([
@@ -351,7 +391,7 @@ test("Pulse insight nav disables at the ends and targets the adjacent snapshot",
 });
 
 test("Pulse scroll alignment keeps ruler and header jumps on their own lines", async () => {
-	const { toPulseScrollOffset } = await loadOutlineHarness();
+	const { toPulseMeasureLineY, toPulseScrollOffset } = await loadOutlineHarness();
 	const geometry = {
 		anchorTop: 720,
 		readingLine: 0.28,
@@ -360,14 +400,24 @@ test("Pulse scroll alignment keeps ruler and header jumps on their own lines", a
 	};
 
 	assert.equal(
+		toPulseMeasureLineY({ ...geometry, alignment: "reading-line" }),
+		288,
+		"free scrolling still reads at the established 28% line",
+	);
+	assert.equal(
+		toPulseMeasureLineY({ ...geometry, alignment: "start", startInset: 4 }),
+		124,
+		"start-aligned jumps measure from the scroller top plus the content inset",
+	);
+	assert.equal(
 		toPulseScrollOffset({ ...geometry, alignment: "reading-line" }),
 		432,
-		"ruler jumps should retain the established 28% reading line",
+		"reading-line jumps retain the established 28% reading line",
 	);
 	assert.equal(
 		toPulseScrollOffset({ ...geometry, alignment: "start", startInset: 4 }),
 		596,
-		"chevron jumps should honor the 4px content inset, not a reserved fade band",
+		"start-aligned jumps honor the 4px content inset, not a reserved fade band",
 	);
 	assert.equal(
 		toPulseScrollOffset({ ...geometry, alignment: "start" }),
@@ -376,14 +426,75 @@ test("Pulse scroll alignment keeps ruler and header jumps on their own lines", a
 	);
 });
 
-test("Pulse only reveals its top fade while the article is moving upward", async () => {
-	const { isPulseScrollTowardTop } = await loadOutlineHarness();
+test("Pulse top fade paints while the article is clipped, except after a start-aligned jump", async () => {
+	const { isPulseChevronHeaderJump, toPulseArticleTopFadeVisible } = await loadOutlineHarness();
 
+	assert.equal(toPulseArticleTopFadeVisible(true, false), true, "a rest-state clip should fade");
+	assert.equal(toPulseArticleTopFadeVisible(false, false), false, "the top of the article has nothing to fade");
 	assert.equal(
-		isPulseScrollTowardTop(0, 9_590),
+		toPulseArticleTopFadeVisible(true, true),
 		false,
-		"an initial or forward jump should not veil the destination header",
+		"a start-aligned jump pins the destination section into the fade band",
 	);
-	assert.equal(isPulseScrollTowardTop(9_590, 9_430), true);
-	assert.equal(isPulseScrollTowardTop(9_430, 9_430), false);
+	assert.equal(isPulseChevronHeaderJump({ align: "start" }), true);
+	assert.equal(isPulseChevronHeaderJump({ align: "reading-line" }), false);
+	assert.equal(isPulseChevronHeaderJump(undefined), false);
+});
+
+/* ------------------------------------------------------------------ */
+/* The lead entry — a scope brief opening the article                   */
+/* ------------------------------------------------------------------ */
+
+test("Pulse leaves the outline untouched when the article has no lead", async () => {
+	const { buildPulseOutline } = await loadOutlineHarness();
+
+	const timeline = timelineOf([snapshot("one"), snapshot("two")]);
+	assert.deepEqual(
+		buildPulseOutline(timeline, null),
+		buildPulseOutline(timeline),
+		"an absent lead must not change a single offset",
+	);
+});
+
+test("Pulse gives a scope brief a whole slice of the rail rather than the first insight's", async () => {
+	const { buildPulseOutline } = await loadOutlineHarness();
+
+	const lead = { id: "pulse-scope", heading: "Sprint 24", label: "Sprint 24 — scope" };
+	const entries = buildPulseOutline(timelineOf([snapshot("one"), snapshot("two")]), lead);
+
+	// Two marks at offset 0 stack on one pixel and only the upper one can be
+	// clicked, so the brief has to shift the insights down a slot rather than
+	// squeeze in above the first one.
+	assert.equal(entries[0].id, "pulse-scope");
+	assert.equal(entries[0].offset, 0);
+	assert.equal(entries[0].kind, "section", "the brief is not a snapshot");
+	assert.equal(entries[0].snapshotIndex, 0, "reading the brief should show the first window's work");
+
+	const insights = entries.filter((entry) => entry.kind === "insight");
+	assert.deepEqual(insights.map((entry) => entry.offset), [1 / 3, 2 / 3]);
+	assert.ok(
+		entries.every((entry) => entry.offset >= 0 && entry.offset < 1),
+		"no mark may be pinned to the very bottom of the rail",
+	);
+});
+
+test("Pulse keeps chevron navigation on insights when a lead is present", async () => {
+	const { buildPulseOutline, toPulseInsightEntries } = await loadOutlineHarness();
+
+	const lead = { id: "pulse-scope", heading: "PAY-90", label: "PAY-90 — scope" };
+	const entries = buildPulseOutline(timelineOf([snapshot("one"), snapshot("two")]), lead);
+
+	// `scrollToSnapshot` resolves `kind === "insight"`. If the brief claimed that
+	// kind, the first chevron press would land on the brief instead of insight 1.
+	assert.deepEqual(
+		toPulseInsightEntries(entries).map((entry) => entry.snapshotIndex),
+		[0, 1],
+	);
+});
+
+test("Pulse still returns an empty outline for an empty timeline, lead or not", async () => {
+	const { buildPulseOutline } = await loadOutlineHarness();
+
+	const lead = { id: "pulse-scope", heading: "Sprint 24", label: "Sprint 24 — scope" };
+	assert.deepEqual(buildPulseOutline(timelineOf([]), lead), []);
 });

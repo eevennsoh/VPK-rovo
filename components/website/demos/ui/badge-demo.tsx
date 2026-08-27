@@ -186,15 +186,15 @@ export function BadgeDemoWithSpinner() {
 	return (
 		<div className="flex items-center gap-4">
 			<Badge>
-				<Spinner data-icon="inline-start" />
+				<Spinner data-icon="inline-start" variant="inherit" />
 				8
 			</Badge>
 			<Badge variant="information">
-				<Spinner data-icon="inline-start" />
+				<Spinner data-icon="inline-start" variant="inherit" />
 				12
 			</Badge>
 			<Badge variant="success">
-				<Spinner data-icon="inline-start" />
+				<Spinner data-icon="inline-start" variant="inherit" />
 				+100
 			</Badge>
 		</div>

@@ -5,6 +5,7 @@
 // oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
 
 import {
+	Fragment,
 	useEffect,
 	useLayoutEffect,
 	useRef,
@@ -59,7 +60,7 @@ import {
 	EmptyHeader,
 	EmptyTitle,
 } from "@/components/ui/empty";
-import { IconTile } from "@/components/ui/icon-tile";
+import { IconTile, type IconTileVariant } from "@/components/ui/icon-tile";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { RovoColorIcon } from "@/components/ui/logo";
@@ -81,6 +82,7 @@ import {
 	getSuggestionMatchRank,
 	rankSuggestionsByMatch,
 } from "./suggestion-ranking";
+import "./suggestion-menu-actions.css";
 import type {
 	RichTextCommandCategory,
 	RichTextMentionCategory,
@@ -100,6 +102,14 @@ export interface RichTextCommandItem {
 	run: (editor: Editor) => void;
 }
 
+export interface RichTextSuggestionMenuHoverActions {
+	onPrimary: () => void;
+	onSecondary: () => void;
+	primaryLabel: string;
+	secondaryIcon: ReactNode;
+	secondaryLabel: string;
+}
+
 export interface RichTextSuggestionMenuItem {
 	id: string;
 	label: string;
@@ -109,8 +119,16 @@ export interface RichTextSuggestionMenuItem {
 	 * compact, dynamic metadata such as a running tool-call narration.
 	 */
 	inlineMetadata?: ReactNode;
+	/** Hover/focus-revealed sibling buttons; keeps the option button unnested. */
+	hoverActions?: RichTextSuggestionMenuHoverActions;
 	shortcut?: string;
 	icon: ReactNode;
+	/**
+	 * IconTile treatment for the fallback (icon-only) leading slot. Overflow
+	 * footers ("Browse all" / "View more" / "View less") use `"transparent"` so
+	 * the glyph sits on the menu surface without a grey rounded-square tile.
+	 */
+	iconTileVariant?: IconTileVariant;
 	/** Optional fully rendered leading visual for domain-specific identity frames. */
 	leadingVisual?: ReactNode;
 	isSticky?: boolean;
@@ -136,6 +154,73 @@ export interface RichTextSuggestionMenuItem {
 	 * yields the slot to the return-key hint only for the active row.
 	 */
 	trailing?: ReactNode;
+	/**
+	 * When true, a full-bleed rule is drawn immediately above this row — the
+	 * popup footer treatment used to split a trailing action (e.g. "Add agent")
+	 * from the rows above it. The rule is decorative (`aria-hidden`, no `role`)
+	 * so it stays out of the listbox, and it never consumes a selectable index.
+	 */
+	separatorBefore?: boolean;
+}
+
+/** Synthetic overflow rows that cap a flat / search / sparkle section. */
+export type SuggestionOverflowFooterKind = "browse-all" | "view-more" | "view-less";
+
+const OVERFLOW_FOOTER_LABELS = {
+	"browse-all": "Browse all",
+	"view-more": "View more",
+	"view-less": "View less",
+} as const;
+
+function getOverflowFooterIcon(kind: SuggestionOverflowFooterKind): ReactNode {
+	switch (kind) {
+		case "browse-all":
+			return <ShowMoreHorizontalIcon label="" size="small" />;
+		case "view-more":
+			return <ChevronDownIcon label="" size="small" />;
+		case "view-less":
+			return <ChevronUpIcon label="" size="small" />;
+		default: {
+			const _exhaustive: never = kind;
+			return _exhaustive;
+		}
+	}
+}
+
+/**
+ * Shared "Browse all" / "View more" / "View less" row. Always uses the
+ * transparent IconTile so overflow glyphs never pick up the grey fallback tile.
+ */
+export function getSuggestionOverflowFooterItem(
+	id: string,
+	kind: SuggestionOverflowFooterKind,
+	options?: Readonly<{ isSticky?: boolean }>,
+): RichTextSuggestionMenuItem {
+	return {
+		id,
+		label: OVERFLOW_FOOTER_LABELS[kind],
+		icon: getOverflowFooterIcon(kind),
+		iconTileVariant: "transparent",
+		isSticky: options?.isSticky,
+	};
+}
+
+function isOverflowFooterLabel(label: string): boolean {
+	return (
+		label === OVERFLOW_FOOTER_LABELS["browse-all"]
+		|| label === OVERFLOW_FOOTER_LABELS["view-more"]
+		|| label === OVERFLOW_FOOTER_LABELS["view-less"]
+	);
+}
+
+function getSuggestionMenuIconTileVariant(
+	item: RichTextSuggestionMenuItem,
+): IconTileVariant {
+	if (item.iconTileVariant) {
+		return item.iconTileVariant;
+	}
+
+	return isOverflowFooterLabel(item.label) ? "transparent" : "gray";
 }
 
 interface RichTextSuggestionMenuProps {
@@ -612,6 +697,7 @@ export function RichTextSuggestionMenu({
 	} = useCommandMenuScrollMask();
 	const listRef = listProps.ref;
 	const isNested = Boolean(onBack);
+	const hasHoverActions = items.some((item) => item.hoverActions !== undefined);
 
 	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- nested menu changes reset and remeasure the scroll container.
 	useEffect(() => {
@@ -625,14 +711,18 @@ export function RichTextSuggestionMenu({
 
 	useLayoutEffect(() => {
 		const listElement = listRef.current;
-		const selectedElement = listElement?.querySelector<HTMLElement>("[role='option'][aria-selected='true']");
+		const selectedElement = listElement?.querySelector<HTMLElement>(
+			hasHoverActions
+				? "[data-suggestion-option][data-selected='true']"
+				: "[role='option'][aria-selected='true']",
+		);
 		if (!listElement || !selectedElement) {
 			return;
 		}
 
 		selectedElement.scrollIntoView({ block: "nearest" });
 		updateListScrollState();
-	}, [items, listRef, selectedIndex, title, updateListScrollState]);
+	}, [hasHoverActions, items, listRef, selectedIndex, title, updateListScrollState]);
 
 	return (
 		<div
@@ -658,7 +748,7 @@ export function RichTextSuggestionMenu({
 			{header}
 			<div
 				className="rich-text-command-menu-list"
-				role="listbox"
+				role={hasHoverActions ? "list" : "listbox"}
 				aria-label={title}
 				aria-multiselectable={selectedItemIds ? true : undefined}
 				{...listProps}
@@ -666,24 +756,28 @@ export function RichTextSuggestionMenu({
 				{items.length > 0 ? (
 					items.map((item, index) => {
 						return (
-							item.headingLabel !== undefined ? (
-								<div
-									key={item.id}
-									className="rich-text-command-menu-heading"
-									role="presentation"
-								>
-									{item.headingLabel}
-								</div>
-							) : (
-								<RichTextSuggestionMenuOption
-									key={item.id}
-									isChosen={selectedItemIds?.has(item.id)}
-									isSelected={index === selectedIndex}
-									item={item}
-									onHover={onHover ? () => onHover(index) : undefined}
-									onSelect={onSelect}
-								/>
-							)
+							<Fragment key={item.id}>
+								{item.separatorBefore ? (
+									<div aria-hidden="true" className="rich-text-command-menu-divider" />
+								) : null}
+								{item.headingLabel !== undefined ? (
+									<div
+										className="rich-text-command-menu-heading"
+										role="presentation"
+									>
+										{item.headingLabel}
+									</div>
+								) : (
+									<RichTextSuggestionMenuOption
+										isChosen={selectedItemIds?.has(item.id)}
+										isSelected={index === selectedIndex}
+										item={item}
+										listMode={hasHoverActions}
+										onHover={onHover ? () => onHover(index) : undefined}
+										onSelect={onSelect}
+									/>
+								)}
+							</Fragment>
 						);
 					})
 				) : (
@@ -821,6 +915,7 @@ interface RichTextSuggestionMenuOptionProps {
 	isChosen?: boolean;
 	isSelected: boolean;
 	item: RichTextSuggestionMenuItem;
+	listMode?: boolean;
 	onHover?: () => void;
 	onSelect: (item: RichTextSuggestionMenuItem) => void;
 }
@@ -829,6 +924,7 @@ function RichTextSuggestionMenuOption({
 	isChosen,
 	isSelected,
 	item,
+	listMode = false,
 	onHover,
 	onSelect,
 }: Readonly<RichTextSuggestionMenuOptionProps>) {
@@ -841,7 +937,7 @@ function RichTextSuggestionMenuOption({
 	const hasDescription = Boolean(item.description);
 	const showsPersistentDescription = hasDescription && Boolean(item.persistentDescription);
 	const canRevealMetadata = hasDescription && !item.persistentDescription;
-	const shouldShowReturnShortcut = !item.disabled && (isSelected || isInteractionActive);
+	const shouldShowReturnShortcut = !item.disabled && item.hoverActions === undefined && (isSelected || isInteractionActive);
 	// A persistent trailing indicator (e.g. a status glyph) shows at rest, so the
 	// copy must reserve room for it always — not only on hover/selection like the
 	// return hint — so the label truncates before it instead of sliding under it.
@@ -864,9 +960,9 @@ function RichTextSuggestionMenuOption({
 			<RichTextSuggestionMenuItemVisual item={item} />
 			{item.inlineMetadata ? (
 				<span className="rich-text-command-menu-copy rich-text-command-menu-copy-inline">
-					<span className="menu-row-title">{item.label}</span>
+					<span className="menu-row-title shrink-0">{item.label}</span>
 					<span aria-hidden="true" className="shrink-0 text-text-subtlest">·</span>
-					<span className="min-w-0 flex-1">
+					<span className="menu-row-title min-w-0 flex-1 text-text-subtlest">
 						{item.inlineMetadata}
 					</span>
 				</span>
@@ -915,14 +1011,16 @@ function RichTextSuggestionMenuOption({
 		</>
 	);
 
-	if (canRevealMetadata) {
-		return (
+	const option = canRevealMetadata ? (
 			<motion.button
 				type="button"
-				role="option"
-				aria-selected={isChosen ?? isSelected}
+				role={listMode ? undefined : "option"}
+				aria-selected={listMode ? undefined : isChosen ?? isSelected}
 				animate={isSelected ? "active" : "idle"}
 				className={className}
+				data-has-actions={item.hoverActions ? "true" : undefined}
+				data-selected={isChosen ?? isSelected ? "true" : undefined}
+				data-suggestion-option=""
 				data-has-trailing={hasPersistentTrailing ? "true" : undefined}
 				disabled={item.disabled}
 				initial={false}
@@ -937,15 +1035,15 @@ function RichTextSuggestionMenuOption({
 			>
 				{children}
 			</motion.button>
-		);
-	}
-
-	return (
+	) : (
 		<button
 			type="button"
-			role="option"
-			aria-selected={isChosen ?? isSelected}
+			role={listMode ? undefined : "option"}
+			aria-selected={listMode ? undefined : isChosen ?? isSelected}
 			className={className}
+			data-has-actions={item.hoverActions ? "true" : undefined}
+			data-selected={isChosen ?? isSelected ? "true" : undefined}
+			data-suggestion-option=""
 			data-has-trailing={hasPersistentTrailing ? "true" : undefined}
 			disabled={item.disabled}
 			onMouseDown={(event) => event.preventDefault()}
@@ -957,6 +1055,50 @@ function RichTextSuggestionMenuOption({
 		>
 			{children}
 		</button>
+	);
+
+	if (!item.hoverActions) {
+		return option;
+	}
+
+	return (
+		<div
+			className="group/suggestion-option grid grid-cols-[minmax(0,1fr)_auto] items-center rounded-lg"
+			data-suggestion-actions=""
+			onMouseEnter={handleMouseEnter}
+			onMouseLeave={() => setIsInteractionActive(false)}
+			role="listitem"
+		>
+			{option}
+			<div
+				className="pointer-events-none flex w-0 items-center gap-1 overflow-hidden opacity-0"
+				data-suggestion-action-buttons=""
+			>
+				<Button
+					onClick={(event) => {
+						event.stopPropagation();
+						item.hoverActions?.onPrimary();
+					}}
+					size="compact"
+					type="button"
+					variant="outline"
+				>
+					{item.hoverActions.primaryLabel}
+				</Button>
+				<Button
+					aria-label={item.hoverActions.secondaryLabel}
+					onClick={(event) => {
+						event.stopPropagation();
+						item.hoverActions?.onSecondary();
+					}}
+					size="icon-compact"
+					type="button"
+					variant="outline"
+				>
+					{item.hoverActions.secondaryIcon}
+				</Button>
+			</div>
+		</div>
 	);
 }
 
@@ -978,6 +1120,7 @@ function RichTextSuggestionMenuItemVisual({
 	// 32px mark down to 75%) keeps the glyph on ADS's `small` Tile inset (14px),
 	// matching /components/ui/logo — a scaled 32px tile would freeze the `medium`
 	// inset and shrink the glyph to 12px.
+	const tileVariant = getSuggestionMenuIconTileVariant(item);
 	const visual = item.leadingVisual ? (
 		item.leadingVisual
 	) : item.visual ? (
@@ -989,10 +1132,11 @@ function RichTextSuggestionMenuItemVisual({
 	) : (
 		<IconTile
 			size="small"
+			iconSize={tileVariant === "transparent" ? "small" : undefined}
 			label={item.label}
 			aria-hidden={true}
 			icon={item.icon}
-			variant="gray"
+			variant={tileVariant}
 		/>
 	);
 
@@ -1315,23 +1459,11 @@ function buildFlatSurfaceRows(
 
 		if (overflowing) {
 			rows.push(
-				section.hasDirectory
-					? {
-							id: getFlatFooterId(section.key),
-							label: "Browse all",
-							icon: <ShowMoreHorizontalIcon label="" size="small" />,
-							isSticky: true,
-						}
-					: {
-							id: getFlatFooterId(section.key),
-							label: expanded ? "View less" : "View more",
-							icon: expanded ? (
-								<ChevronUpIcon label="" size="small" />
-							) : (
-								<ChevronDownIcon label="" size="small" />
-							),
-							isSticky: true,
-						},
+				getSuggestionOverflowFooterItem(
+					getFlatFooterId(section.key),
+					section.hasDirectory ? "browse-all" : (expanded ? "view-less" : "view-more"),
+					{ isSticky: true },
+				),
 			);
 		}
 	}

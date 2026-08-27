@@ -261,7 +261,9 @@ export function FloatingComposer({
 			variant="floating"
 			className={cn(
 				composerPromptInputClassName,
-				"p-3",
+				"p-2",
+				// Compact floating chrome uses space.100 (8px) so demo, Studio, and
+				// work-item composers share the same inset as the activity comment bar.
 				// The shell already owns the horizontal gutter, so drop the editor's
 				// own `px-2.5` from both the control container and the placeholder
 				// overlay. Without this the text sits ~10px inboard of the leading

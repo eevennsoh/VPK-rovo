@@ -15,7 +15,7 @@ test("Board Filter uses native disabled controls for unavailable actions", () =>
 	);
 	assert.match(
 		BOARD_FILTER_POPOVER_SOURCE,
-		/<Button disabled className="mt-1 w-full justify-start" variant="outline">[\s\S]*Add field/u,
+		/<Button disabled className="mt-1 w-full justify-start" variant="ghost">[\s\S]*Add field/u,
 	);
 	assert.match(
 		BOARD_FILTER_POPOVER_SOURCE,

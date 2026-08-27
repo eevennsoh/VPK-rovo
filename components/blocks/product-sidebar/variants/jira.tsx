@@ -89,9 +89,12 @@ export interface JiraSidebarSessionItem {
 	branch?: string;
 	checks?: string;
 	commit?: string;
+	completedAtMs?: number;
+	completedSecondsAgo?: number;
 	deletions?: number;
 	host: JiraSidebarSessionHost;
 	id: string;
+	initialElapsedSeconds?: number;
 	issueKey: string;
 	issueSummary: string;
 	priority?: JiraSidebarWorkItemPriority;
@@ -99,6 +102,7 @@ export interface JiraSidebarSessionItem {
 	pullRequestTitle?: string;
 	repository?: string;
 	status: JiraSidebarSessionStatus;
+	startedAtMs?: number;
 	title: string;
 	worktreePath?: string;
 }

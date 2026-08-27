@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { DateRange } from "react-day-picker";
+import Image from "next/image";
 import AddIcon from "@atlaskit/icon/core/add";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import EpicIcon from "@atlaskit/icon/core/epic";
 import FilterIcon from "@atlaskit/icon/core/filter";
 import MegaphoneIcon from "@atlaskit/icon/core/megaphone";
 import SearchIcon from "@atlaskit/icon/core/search";
+import SprintIcon from "@atlaskit/icon/core/sprint";
 import SubtasksIcon from "@atlaskit/icon/core/subtasks";
 import TaskIcon from "@atlaskit/icon/core/task";
 
@@ -17,6 +19,7 @@ import {
 	BOARD_FILTER_FIELD_LABELS,
 	BOARD_FILTER_OPTIONS,
 	type BoardFilterOption,
+	type BoardFilterOptionIcon,
 } from "../data/board-filter-options";
 import type { BoardFilterActions, BoardFilterModel } from "../hooks/use-board-filter";
 import {
@@ -38,20 +41,67 @@ import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Lozenge } from "@/components/ui/lozenge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tile } from "@/components/ui/tile";
 import { ScrollMask } from "@/components/visual/scroll-mask";
 import { cn } from "@/lib/utils";
 
-const WORK_TYPE_ICONS = {
+const FILTER_OPTION_ICONS: Readonly<Record<BoardFilterOptionIcon, typeof EpicIcon>> = {
 	epic: EpicIcon,
+	sprint: SprintIcon,
 	"sub-task": SubtasksIcon,
 	task: TaskIcon,
-} as const;
+};
 
 function isTextEntryTarget(target: EventTarget | null): boolean {
 	if (!(target instanceof HTMLElement)) {
 		return false;
 	}
 	return Boolean(target.closest("input, textarea, select, [contenteditable='true']"));
+}
+
+function FilterOptionLeadingVisual({
+	compact,
+	option,
+}: Readonly<{
+	compact?: boolean;
+	option: BoardFilterOption;
+}>) {
+	const OptionIcon = option.icon ? FILTER_OPTION_ICONS[option.icon] : null;
+
+	if (option.avatarSrc) {
+		if (option.avatarShape === "square") {
+			return (
+				<Tile
+					aria-hidden
+					isInset={false}
+					label=""
+					size="xxsmall"
+					variant="transparent"
+				>
+					<Image alt="" height={16} src={option.avatarSrc} width={16} />
+				</Tile>
+			);
+		}
+
+		return (
+			<Avatar
+				label=""
+				shape={option.avatarSrc.startsWith("/avatar-agent/") ? "hexagon" : "circle"}
+				size={compact ? "xs" : "sm"}
+			>
+				<AvatarImage alt="" src={option.avatarSrc} />
+				<AvatarFallback>{option.label.slice(0, 1)}</AvatarFallback>
+			</Avatar>
+		);
+	}
+
+	return OptionIcon ? (
+		<Icon
+			aria-hidden
+			className={cn("shrink-0", option.iconClassName)}
+			render={<OptionIcon color="currentColor" label="" size={compact ? "small" : "medium"} />}
+		/>
+	) : null;
 }
 
 function FilterOptionRow({
@@ -61,31 +111,38 @@ function FilterOptionRow({
 }: Readonly<{
 	checked: boolean;
 	onToggle: () => void;
-	option: BoardFilterOption & { avatarSrc?: string };
+	option: BoardFilterOption;
 }>) {
-	const WorkTypeIcon = option.id in WORK_TYPE_ICONS
-		? WORK_TYPE_ICONS[option.id as keyof typeof WORK_TYPE_ICONS]
-		: null;
+	const hasDescription = Boolean(option.description);
+	const leadingVisual = <FilterOptionLeadingVisual compact={hasDescription} option={option} />;
+	const tightLeading = !hasDescription && (option.avatarShape === "square" || Boolean(option.icon));
+	const labelBlock = option.lozenge ? (
+		<Lozenge variant={option.lozenge}>{option.label}</Lozenge>
+	) : (
+		<span className="min-w-0 flex-1">
+			<span className="block truncate text-sm">{option.label}</span>
+			{option.description ? (
+				<span className="flex min-w-0 items-center gap-1">
+					{leadingVisual}
+					<span className="min-w-0 truncate text-xs text-text-subtle">{option.description}</span>
+				</span>
+			) : null}
+		</span>
+	);
 
 	return (
 		<label className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 hover:bg-bg-neutral-subtle-hovered">
 			<Checkbox checked={checked} onCheckedChange={onToggle} />
-			{option.avatarSrc ? (
-				<Avatar label="" size="sm">
-					<AvatarImage alt="" src={option.avatarSrc} />
-					<AvatarFallback>{option.label.slice(0, 1)}</AvatarFallback>
-				</Avatar>
-			) : null}
-			{WorkTypeIcon ? <Icon render={<WorkTypeIcon label="" />} /> : null}
-			{option.lozenge ? (
-				<Lozenge variant={option.lozenge}>{option.label}</Lozenge>
-			) : (
-				<span className="min-w-0 flex-1">
-					<span className="block truncate text-sm">{option.label}</span>
-					{option.description ? (
-						<span className="block truncate text-xs text-text-subtle">{option.description}</span>
-					) : null}
+			{tightLeading ? (
+				<span className="flex min-w-0 flex-1 items-center gap-1.5">
+					{leadingVisual}
+					{labelBlock}
 				</span>
+			) : (
+				<>
+					{hasDescription ? null : leadingVisual}
+					{labelBlock}
+				</>
 			)}
 		</label>
 	);
@@ -132,7 +189,7 @@ export function BoardFilterPopover({
 		setQuery("");
 	}, [selectedField]);
 
-	const valueOptions = useMemo((): readonly (BoardFilterOption & { avatarSrc?: string })[] => {
+	const valueOptions = useMemo((): readonly BoardFilterOption[] => {
 		if (selectedField === "days" || selectedField === "assignee") {
 			return [];
 		}
@@ -140,7 +197,7 @@ export function BoardFilterPopover({
 	}, [selectedField]);
 
 	const assigneeOptions = useMemo(
-		(): readonly (BoardFilterOption & { avatarSrc?: string })[] => assignees.map((assignee) => ({
+		(): readonly BoardFilterOption[] => assignees.map((assignee) => ({
 			avatarSrc: assignee.avatarSrc,
 			id: assignee.id,
 			label: assignee.name,
@@ -260,7 +317,7 @@ export function BoardFilterPopover({
 									</Button>
 								);
 							})}
-							<Button disabled className="mt-1 w-full justify-start" variant="outline">
+							<Button disabled className="mt-1 w-full justify-start" variant="ghost">
 								<Icon data-icon="inline-start" render={<AddIcon label="" size="small" />} />
 								Add field
 							</Button>

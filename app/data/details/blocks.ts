@@ -26,8 +26,10 @@ import { AGENT_INSIGHTS_DETAIL } from "./blocks/agent-insights";
 import { AGENT_TEST_DETAIL } from "./blocks/agent-test";
 import { AGENT_SURFACES_DETAIL } from "./blocks/agent-surfaces";
 import { MERMAID_DIAGRAM_DETAIL } from "./blocks/mermaid-diagram";
+import { VIDEO_DETAIL } from "./blocks/video";
 import { CURSOR_DETAIL } from "./blocks/cursor";
 import { AGENT_PROGRESS_DETAIL } from "./blocks/agent-progress";
+import { AGENT_ASSIGNMENT_DETAIL } from "./blocks/agent-assignment";
 import { AGENT_SELECTOR_DETAIL } from "./blocks/agent-selector";
 import { SKILL_SELECTOR_DETAIL } from "./blocks/skill-selector";
 import { JIRA_WORK_ITEM_DETAIL } from "./blocks/jira-work-item";
@@ -89,6 +91,7 @@ import { SIGNUP_05_DETAIL } from "./blocks/signup-05";
 import { VISUAL_WAVEFORM_DETAIL } from "./blocks/visual-waveform";
 import { QUESTION_CARD_DETAIL } from "./blocks/question-card";
 import { APPROVAL_CARD_DETAIL } from "./blocks/approval-card";
+import { NEXT_BEST_ACTION_DETAIL } from "./blocks/next-best-action";
 import { TOOL_APPROVAL_DETAIL } from "./blocks/tool-approval";
 import { CHATBOT_DETAIL } from "./blocks/chatbot";
 import { JIRA_EPIC_DETAIL } from "./blocks/jira-epic";
@@ -131,8 +134,10 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"agent-test": AGENT_TEST_DETAIL,
 	"agent-surfaces": AGENT_SURFACES_DETAIL,
 	"mermaid-diagram": MERMAID_DIAGRAM_DETAIL,
+	video: VIDEO_DETAIL,
 	cursor: CURSOR_DETAIL,
 	"agent-progress": AGENT_PROGRESS_DETAIL,
+	"agent-assignment": AGENT_ASSIGNMENT_DETAIL,
 	"agent-selector": AGENT_SELECTOR_DETAIL,
 	"skill-selector": SKILL_SELECTOR_DETAIL,
 	"jira-work-item": JIRA_WORK_ITEM_DETAIL,
@@ -194,6 +199,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"visual-waveform": VISUAL_WAVEFORM_DETAIL,
 	"question-card": QUESTION_CARD_DETAIL,
 	"approval-card": APPROVAL_CARD_DETAIL,
+	"next-best-action": NEXT_BEST_ACTION_DETAIL,
 	"tool-approval": TOOL_APPROVAL_DETAIL,
 	chatbot: CHATBOT_DETAIL,
 	"jira-epic": JIRA_EPIC_DETAIL,

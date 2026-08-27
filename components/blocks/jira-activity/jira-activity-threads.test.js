@@ -442,9 +442,9 @@ test("the floating activity composer reuses shared dictation via browser transcr
 test("the two floating surfaces are separated by variant, not by callsite classNames", () => {
 	assert.match(COMPOSER_SOURCE, /variant\?: "reply" \| "comment" \| "flush"/u);
 	assert.match(COMPOSER_SOURCE, /const surface = COMPOSER_SURFACES\[variant\];/u);
-	// Both floating surfaces keep PromptInput's bordered chrome and only override
-	// FloatingComposer's default `p-3` (12px) to `p-2` (8px). Flush drops the
-	// floating backdrop shadow; comment keeps it. Control size also separates them.
+	// Both floating surfaces keep PromptInput's bordered chrome and the shared
+	// compact `p-2` (space.100) inset. Flush drops the floating backdrop shadow;
+	// comment keeps it. Control size also separates them.
 	assert.match(
 		COMPOSER_SOURCE,
 		/comment: \{[\s\S]*?chrome: "p-2",[\s\S]*?controlClassName: "",/u,

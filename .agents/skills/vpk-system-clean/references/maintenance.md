@@ -22,6 +22,13 @@ The top of `scripts/vpk-system-clean.sh` defines:
 - `ALMD_MIN_AGE_SECS` (900): protects the first 15 minutes after `almd` starts.
 - `KILL_RUNAWAY_ALMD` (1): set to 0 for report-only behavior.
 - `FSEVENTS_MAX_MB` (2048): RSS threshold for restarting `fseventsd`.
+- `IDLE_STACK_MIN_AGE_SECS` (1800): leftover `vpk-dev-*` stacks younger than
+  30 minutes are treated as still warming and are not stopped.
+- `KILL_IDLE_STACKS` (1): set to 0 to report idle leftover stacks without
+  stopping them. The primary checkout (`vpk-dev-main` / `~/Labs/vpk-rovo`),
+  attached sessions, and worktrees that still have a process named exactly
+  `claude`, `caffeinate`, `lazygit`, `cursor-agent`, or `codex` whose cwd is
+  that directory are always kept. Worktree folder names are ignored.
 
 Do not replace the Next memory measure with `ps` RSS. The observed arm64
 `MAP_JIT` leak lives in JIT/native mappings: an 11.1 GB physical-footprint
@@ -36,8 +43,10 @@ zsh scripts/status.sh
 ```
 
 If a legitimate compile is repeatedly restarted, raise `NEXT_CPU_HOT` or set
-`KILL_RUNAWAY_NEXT=0` and rely on doctor-driven remediation. Do not weaken the
-resampling, idle-state, executable-path, cache-liveness, or artifact guards.
+`KILL_RUNAWAY_NEXT=0` and rely on doctor-driven remediation. If an agent
+worktree is stopped while still warming up, raise `IDLE_STACK_MIN_AGE_SECS`
+or set `KILL_IDLE_STACKS=0`. Do not weaken the resampling, idle-state,
+executable-path, cache-liveness, tool-process-cwd, or artifact guards.
 
 ## Schedule
 
@@ -84,8 +93,8 @@ and sudoers result through `scripts/status.sh`.
 ## Records and log inspection
 
 `scripts/records.sh` aggregates total runs, servers restarted, caches removed,
-approximate GB reclaimed, orphaned tmux sessions stopped, `almd` resets,
-`fseventsd` resets, and the last eight runs.
+approximate GB reclaimed, orphaned tmux sessions stopped, idle leftover stacks
+stopped, `almd` resets, `fseventsd` resets, and the last eight runs.
 
 ```bash
 zsh scripts/records.sh
@@ -101,15 +110,19 @@ user asks for deeper proof.
 ## What the sweep is allowed to affect
 
 The sweep may act on sustained-hot or settled-bloated `next-server`, its
-`next dev` parent, qualifying inactive `.next` caches, orphaned unattached
-`vpk-dev-*` tmux sessions on their discovered socket, old sustained-hot exact
-`/usr/local/bin/almd`, and over-threshold `fseventsd` with the sudoers guard.
+`next dev` parent, leftover unattached `vpk-dev-*` stacks (via that worktree's
+`dev-tmux-plain.sh stop`), qualifying inactive `.next` caches, orphaned
+unattached `vpk-dev-*` tmux sessions on their discovered socket, old
+sustained-hot exact `/usr/local/bin/almd`, and over-threshold `fseventsd` with
+the sudoers guard.
 
 It never targets `artifacts/**`, active build caches, attached tmux sessions,
-the Portless proxy, other worktrees' routes, `atlassian-otel-collector`, Jamf,
+the primary checkout, worktrees with a matching tool-process cwd, the
+Portless proxy, other worktrees' routes, `atlassian-otel-collector`, Jamf,
 osquery, Apple `ecosystem*` services, or merely similar process names. Paths
-assume `~/Labs/vpk-rovo`, `~/.codex/worktrees/*`, and
-`.claude/worktrees/*`; adjust `NEXT_DIRS` deliberately if the layout changes.
+assume `~/Labs/vpk-rovo`, `~/.codex/worktrees/*`, `~/.cursor/worktrees/vpk-rovo/*`,
+`~/.superset/worktrees/*/*`, and `.claude/worktrees/*`; adjust `NEXT_DIRS`
+deliberately if the layout changes.
 
 ## Uninstall
 

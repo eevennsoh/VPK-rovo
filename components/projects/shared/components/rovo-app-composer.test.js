@@ -224,7 +224,7 @@ test("Rovo Cursor is gated behind active live voice in shared composer chrome", 
 	assert.match(CARD_BODY_SOURCE, /rounded-xl border border-border bg-surface p-3/u);
 	assert.match(CARD_BODY_SOURCE, /compact \? "pb-2 pt-3" : "pt-4"/u);
 	// The shell owns the horizontal gutter — see the dedicated test below.
-	assert.match(FLOATING_COMPOSER_SOURCE, /composerPromptInputClassName,\s*"p-3",/u);
+	assert.match(FLOATING_COMPOSER_SOURCE, /composerPromptInputClassName,\s*"p-2",/u);
 	assert.equal((SEND_CONTROLS_SOURCE.match(/^\s*<ComposerVoiceWaveform\b/gmu) ?? []).length, 2);
 	assert.match(SEND_CONTROLS_SOURCE, /function ComposerVoiceWaveform/u);
 	assert.match(SEND_CONTROLS_SOURCE, /barCount\?: 4 \| 8;/u);
@@ -570,7 +570,7 @@ test("RovoAppComposer threads dictation controls and text snapshots through both
 test("the floating shell owns the horizontal gutter so text aligns with the leading control", () => {
 	// `PromptInputTextarea` pads its control container and placeholder overlay
 	// with `px-2.5`. Inside a floating composer that stacks on the shell's own
-	// `p-3`, pushing text ~10px inboard of the "+" button. The shell zeroes both
+	// `p-2`, pushing text ~10px inboard of the "+" button. The shell zeroes both
 	// so empty and typed states start at the same offset as the controls.
 	assert.match(
 		PROMPT_INPUT_SOURCE,
@@ -582,6 +582,6 @@ test("the floating shell owns the horizontal gutter so text aligns with the lead
 	);
 	assert.match(
 		FLOATING_COMPOSER_SOURCE,
-		/composerPromptInputClassName,\s*"p-3",[\s\S]*?"\[&_\[data-slot=input-group-control-container\]\]:px-0 \[&_\[data-slot=prompt-input-placeholder\]\]:px-0",\s*className,/u,
+		/composerPromptInputClassName,\s*"p-2",[\s\S]*?"\[&_\[data-slot=input-group-control-container\]\]:px-0 \[&_\[data-slot=prompt-input-placeholder\]\]:px-0",\s*className,/u,
 	);
 });

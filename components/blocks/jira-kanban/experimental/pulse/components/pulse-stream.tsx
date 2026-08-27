@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, type RefCallback } from "react";
+import { useCallback, useMemo, type ReactNode, type RefCallback } from "react";
 
+import type { AgentListItem } from "@/components/blocks/agent-list";
 import {
 	MEASURE,
 	PulseStory,
@@ -14,6 +15,7 @@ import {
 	scopeArtifacts,
 	scopeByWorkItem,
 } from "@/components/blocks/jira-kanban/experimental/pulse/hooks/use-pulse-timeline";
+import { resolveAttentionWorkItem } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-attention";
 import type {
 	PulseOutlineEntry,
 	PulseScrollOptions,
@@ -23,6 +25,7 @@ import type {
 	PulseMember,
 	PulseSnapshot,
 	PulseTimeline,
+	PulseWorkItem,
 } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { cn } from "@/lib/utils";
 
@@ -69,9 +72,11 @@ type PulseStreamEntry = Omit<
 	| "anchorRef"
 	| "insightCount"
 	| "insightIndex"
+	| "onGoToEntry"
 	| "onGoToIndex"
 	| "onRequestAction"
 	| "onSelectMember"
+	| "onViewAttention"
 	| "previewEntryId"
 	| "requestedActionIds"
 >;
@@ -127,7 +132,6 @@ function toStreamEntries(timeline: PulseTimeline, member: PulseMember | null): r
 			previousActive: toJump(timeline.snapshots, adjacent.previous),
 			quietNote: toQuietNote(snapshot),
 			snapshot,
-			stats: snapshot.stats,
 			unscopedCounts: {
 				artifacts: snapshot.artifacts.length,
 				attention: snapshot.attention.length,
@@ -144,6 +148,11 @@ export interface PulseStreamProps {
 	 */
 	requestedActionIds: ReadonlySet<string>;
 	onRequestAction: (action: PulseAction) => void;
+	/**
+	 * Opens the work item a Needs input row is waiting on. Optional so a
+	 * catalog surface can still show Reply / Give input without a destination.
+	 */
+	onWorkItemClick?: (workItem: PulseWorkItem) => void;
 	timeline: PulseTimeline;
 	/** Scopes every insight to one member; `null` is the team view. */
 	selectedMemberId: string | null;
@@ -154,8 +163,21 @@ export interface PulseStreamProps {
 	anchorRef: (id: string) => RefCallback<HTMLElement>;
 	/** `usePulseReading().scrollToSnapshot`, for the filtered "way out" jumps. */
 	onGoToSnapshot: (snapshotIndex: number, options?: PulseScrollOptions) => void;
+	/** `usePulseReading().scrollToEntry`, for the story's subsection TOC. */
+	onGoToEntry: (id: string) => void;
 	/** Ruler entry currently previewed by pointer or keyboard focus. */
 	previewEntry: PulseOutlineEntry | null;
+	/**
+	 * The scope brief, when the article is narrowed to an epic or a sprint, and
+	 * the answers section, once the reader has asked something.
+	 *
+	 * Both arrive as nodes rather than as scope and answer data, so the stream
+	 * stays what it is: the thing that lays insights end to end. It has no
+	 * opinion about epics, sprints or questions, and adding a third bracketing
+	 * block will not make it grow a third import.
+	 */
+	scopeBrief?: ReactNode;
+	answers?: ReactNode;
 }
 
 export function PulseStream({
@@ -165,9 +187,13 @@ export function PulseStream({
 	activeSnapshotIndex,
 	anchorRef,
 	onGoToSnapshot,
+	onGoToEntry,
 	onRequestAction,
+	onWorkItemClick,
 	previewEntry,
 	requestedActionIds,
+	scopeBrief,
+	answers,
 }: Readonly<PulseStreamProps>) {
 	const member = useMemo(
 		() => timeline.members.find((candidate) => candidate.id === selectedMemberId) ?? null,
@@ -175,6 +201,20 @@ export function PulseStream({
 	);
 	const entries = useMemo(() => toStreamEntries(timeline, member), [member, timeline]);
 	const reading = timeline.snapshots[activeSnapshotIndex] ?? null;
+	const handleViewAttention = useCallback((item: AgentListItem) => {
+		for (const snapshot of timeline.snapshots) {
+			const workItem = resolveAttentionWorkItem(
+				item.id,
+				snapshot.attention,
+				timeline.workItems,
+			);
+			if (workItem === undefined) {
+				continue;
+			}
+			onWorkItemClick?.(workItem);
+			return;
+		}
+	}, [onWorkItemClick, timeline]);
 
 	if (entries.length === 0) {
 		return null;
@@ -182,12 +222,18 @@ export function PulseStream({
 
 	return (
 		<div className={cn("mx-auto flex min-w-0 flex-col", MEASURE)}>
+			{/* The brief is the masthead, so it is exempt from the read/unread
+			    treatment: dimming the page the reader just asked for, because the
+			    reading line has not reached it yet, would be the article arguing
+			    with them. */}
+			{scopeBrief ? <div className={cn("min-w-0", MEASURE)}>{scopeBrief}</div> : null}
+
 			{entries.map((entry, index) => (
 				<div
 					className={cn(
 						"min-w-0 transition-opacity duration-medium ease-out-practical motion-reduce:transition-none",
 						MEASURE,
-						index === 0 ? null : SNAPSHOT_SEPARATOR,
+						index === 0 && scopeBrief === undefined ? null : SNAPSHOT_SEPARATOR,
 						index === activeSnapshotIndex || index === previewEntry?.snapshotIndex
 							? SNAPSHOT_READING
 							: SNAPSHOT_QUIET,
@@ -202,13 +248,17 @@ export function PulseStream({
 						insightCount={entries.length}
 						insightIndex={index}
 						onRequestAction={onRequestAction}
+						onViewAttention={handleViewAttention}
 						previewEntryId={previewEntry?.id ?? null}
 						requestedActionIds={requestedActionIds}
+						onGoToEntry={onGoToEntry}
 						onGoToIndex={onGoToSnapshot}
 						onSelectMember={onSelectMember}
 					/>
 				</div>
 			))}
+
+			{answers ? <div className={cn("min-w-0", MEASURE, SNAPSHOT_SEPARATOR)}>{answers}</div> : null}
 
 			{/* Scroll position is not a focus change, so the one thing that tells a
 			    screen reader the reading position moved is a single polite status

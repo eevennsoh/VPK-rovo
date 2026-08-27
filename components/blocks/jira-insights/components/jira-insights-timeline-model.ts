@@ -110,3 +110,37 @@ export function findNearestTimelineCheckpointIndex(
 	const normalizedPosition = clamp(position / trackWidth, 0, 1 - Number.EPSILON);
 	return Math.min(checkpointCount - 1, Math.floor(normalizedPosition * checkpointCount));
 }
+
+interface TimelineViewportGeometry {
+	clientWidth: number;
+	scrollLeft: number;
+	getBoundingClientRect: () => Pick<DOMRect, "left">;
+}
+
+interface TimelineButtonGeometry {
+	getBoundingClientRect: () => Pick<DOMRect, "left" | "width">;
+}
+
+export function findNearestVisibleTimelineButtonIndex(
+	viewport: TimelineViewportGeometry,
+	buttons: readonly (TimelineButtonGeometry | null)[],
+): number | null {
+	const viewportCenter = viewport.scrollLeft + viewport.clientWidth / 2;
+	const viewportLeft = viewport.getBoundingClientRect().left;
+	let closestIndex: number | null = null;
+	let closestDistance = Number.POSITIVE_INFINITY;
+
+	for (let index = 0; index < buttons.length; index += 1) {
+		const button = buttons[index];
+		if (button === null) continue;
+		const buttonRect = button.getBoundingClientRect();
+		const buttonCenter = viewport.scrollLeft + buttonRect.left - viewportLeft + buttonRect.width / 2;
+		const distance = Math.abs(buttonCenter - viewportCenter);
+		if (distance < closestDistance) {
+			closestDistance = distance;
+			closestIndex = index;
+		}
+	}
+
+	return closestIndex;
+}

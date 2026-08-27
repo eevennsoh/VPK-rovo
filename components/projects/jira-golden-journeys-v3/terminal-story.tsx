@@ -7,12 +7,14 @@ import type { TerminalDemoController } from "@/components/projects/jira-golden-j
 
 export interface JiraGoldenJourneysV3TerminalStoryProps {
 	controller: TerminalDemoController;
+	promptCopied?: boolean;
 	resetKey?: number | string;
 	theme?: "dark" | "light";
 }
 
 export function JiraGoldenJourneysV3TerminalStory({
 	controller,
+	promptCopied = false,
 	resetKey,
 	theme = "dark",
 }: Readonly<JiraGoldenJourneysV3TerminalStoryProps>): React.ReactElement {
@@ -25,7 +27,10 @@ export function JiraGoldenJourneysV3TerminalStory({
 	return (
 		<div
 			className="relative left-1/2 h-full min-h-0 w-[100cqw] -translate-x-1/2 bg-surface"
-			data-pr-number="1847"
+			data-pr-number="1839"
+			data-prompt-copied={promptCopied ? "true" : "false"}
+			data-restored-session="PAY-101"
+			data-restored-artifacts={controller.state.finished ? "available" : "pending"}
 			data-story-complete={controller.state.finished ? "true" : "false"}
 			data-color-mode={theme}
 			data-subtree-theme=""
@@ -33,8 +38,10 @@ export function JiraGoldenJourneysV3TerminalStory({
 		>
 			<p className="sr-only" aria-live="polite">
 				{controller.state.finished
-					? "PR #1847 created. Priya Narayanan and Jordan Lee requested as reviewers. CI is running. Select Build to continue."
-					: "Local Claude session for SHOP-4821."}
+					? "PAY-101 session restored. The prior conversation, worktree, commit, PR #1839, and generated artifacts are available."
+					: promptCopied
+						? "Copied resume prompt ready for the uncaptured PAY-101 Claude session."
+						: "Resume prompt not copied yet. Return to Learn and choose Resume on the PAY-101 Claude session."}
 			</p>
 			<TerminalStage controller={controller} />
 		</div>

@@ -28,43 +28,140 @@ function runSweep({
 	cpu = "75.0",
 	elapsed = "01:00:00",
 	executable = "/usr/local/bin/almd",
+	almd = true,
+	sessions = null,
+	operators = [],
 } = {}) {
 	const root = mkdtempSync(join(tmpdir(), "vpk-system-clean-test-"));
 	const home = join(root, "home");
 	const fakeBin = join(root, "bin");
 	const zDotDir = join(root, "zdot");
 	const killLog = join(root, "kill.log");
+	const stopLog = join(root, "stop.log");
+	const tmuxLog = join(root, "tmux.log");
+	const sessionsFile = join(root, "tmux-sessions");
 	const cleanupLog = join(home, "Library/Logs/vpk-system-clean.log");
 	mkdirSync(join(home, "Library/Logs"), { recursive: true });
+	mkdirSync(join(home, "Labs/vpk-rovo"), { recursive: true });
 	mkdirSync(fakeBin, { recursive: true });
 	mkdirSync(zDotDir, { recursive: true });
 	writeFileSync(join(zDotDir, ".zshenv"), "disable kill\n");
 
-	writeExecutable(join(fakeBin, "pgrep"), `#!/bin/sh
-if [ "$*" = "-x almd" ]; then
-	echo 4242
-	exit 0
-fi
-exit 1
-`);
-	writeExecutable(join(fakeBin, "ps"), `#!/bin/sh
+	const resolvedSessions = typeof sessions === "function" ? sessions(home) : sessions;
+	const resolvedOperators = typeof operators === "function" ? operators(home) : operators;
+	const now = Math.floor(Date.now() / 1000);
+	const sessionLines = (resolvedSessions ?? []).map((session) => {
+		const worktreePath = session.path;
+		if (!session.missingPath) {
+			mkdirSync(join(worktreePath, "scripts"), { recursive: true });
+			writeExecutable(
+				join(worktreePath, "scripts", "dev-tmux-plain.sh"),
+				`#!/bin/bash
+printf 'stop session=%s cwd=%s args=%s\\n' "\${VPK_DEV_TMUX_SESSION}" "$(pwd)" "$*" >> "${stopLog}"
+`,
+			);
+		}
+		const created = now - (session.createdAgoSecs ?? 3600);
+		return [session.socket ?? "vpk-dev", session.name, worktreePath, session.attached ?? "0", String(created)].join(
+			"|",
+		);
+	});
+	writeFileSync(sessionsFile, `${sessionLines.join("\n")}${sessionLines.length ? "\n" : ""}`);
+
+	const operatorPids = resolvedOperators
+		.map((operator) => `	"-x ${operator.name}") echo ${operator.pid} ;;`)
+		.join("\n");
+	writeExecutable(
+		join(fakeBin, "pgrep"),
+		`#!/bin/sh
+case "$*" in
+	"-x almd") ${almd ? "echo 4242" : "exit 1"} ;;
+${operatorPids}
+	*) exit 1 ;;
+esac
+`,
+	);
+	writeExecutable(
+		join(fakeBin, "ps"),
+		`#!/bin/sh
 case "$*" in
 	*%cpu=*) echo "${cpu}" ;;
 	*etime=*) echo "${elapsed}" ;;
 	*) exit 1 ;;
 esac
-`);
-	writeExecutable(join(fakeBin, "lsof"), `#!/bin/sh
-printf 'p4242\\nftxt\\nn${executable}\\n'
-`);
+`,
+	);
+
+	const operatorCwdCases = resolvedOperators
+		.map(
+			(operator) => `	*"-p ${operator.pid}"*|*"-p${operator.pid}"*)
+		printf 'p${operator.pid}\\nfcwd\\nn${operator.cwd}\\n'
+		exit 0
+		;;`,
+		)
+		.join("\n");
+	writeExecutable(
+		join(fakeBin, "lsof"),
+		`#!/bin/sh
+case " $* " in
+	*" -d txt "*|*" -d txt")
+		printf 'p4242\\nftxt\\nn${executable}\\n'
+		exit 0
+		;;
+esac
+case "$*" in
+${operatorCwdCases}
+esac
+exit 0
+`,
+	);
 	writeExecutable(join(fakeBin, "sleep"), "#!/bin/sh\nexit 0\n");
-	writeExecutable(join(fakeBin, "tmux"), "#!/bin/sh\nexit 1\n");
-	writeExecutable(join(fakeBin, "kill"), `#!/bin/sh
+	if (resolvedSessions === null) {
+		writeExecutable(join(fakeBin, "tmux"), "#!/bin/sh\nexit 1\n");
+	} else {
+		writeExecutable(
+			join(fakeBin, "tmux"),
+			`#!/bin/sh
+socket="default"
+while [ "$#" -gt 0 ]; do
+	case "$1" in
+		-L)
+			socket="$2"
+			shift 2
+			;;
+		-F|-t|-p)
+			shift 2
+			;;
+		list-sessions)
+			awk -F'|' -v s="$socket" '$1==s { print $2"|"$3"|"$4"|"$5 }' "${sessionsFile}"
+			exit 0
+			;;
+		kill-session)
+			printf 'kill-session %s %s\\n' "$socket" "$*" >> "${tmuxLog}"
+			exit 0
+			;;
+		send-keys)
+			printf 'send-keys %s %s\\n' "$socket" "$*" >> "${tmuxLog}"
+			exit 0
+			;;
+		*)
+			shift
+			;;
+	esac
+done
+exit 1
+`,
+		);
+	}
+	writeExecutable(
+		join(fakeBin, "kill"),
+		`#!/bin/sh
 if [ "\${1:-}" = "-0" ]; then
 	exit 1
 fi
 printf '%s\\n' "$*" >> "$FAKE_KILL_LOG"
-`);
+`,
+	);
 
 	const result = spawnSync(ZSH_PATH, [SCRIPT_PATH], {
 		encoding: "utf8",
@@ -77,8 +174,10 @@ printf '%s\\n' "$*" >> "$FAKE_KILL_LOG"
 		},
 	});
 	const output = {
-		cleanupLog: readFileSync(cleanupLog, "utf8"),
+		cleanupLog: existsSync(cleanupLog) ? readFileSync(cleanupLog, "utf8") : "",
 		killLog: existsSync(killLog) ? readFileSync(killLog, "utf8") : "",
+		stopLog: existsSync(stopLog) ? readFileSync(stopLog, "utf8") : "",
+		tmuxLog: existsSync(tmuxLog) ? readFileSync(tmuxLog, "utf8") : "",
 		result,
 	};
 	rmSync(root, { recursive: true, force: true });
@@ -108,4 +207,125 @@ test("keeps a same-named process from an unexpected executable path", ZSH_TEST_O
 	assert.equal(result.status, 0, result.stderr);
 	assert.equal(killLog, "");
 	assert.match(cleanupLog, /unexpected executable '\/tmp\/almd', expected \/usr\/local\/bin\/almd/);
+});
+
+test("stops an old unattached leftover stack through the worktree stop script", ZSH_TEST_OPTIONS, () => {
+	const { cleanupLog, stopLog, tmuxLog, result } = runSweep({
+		almd: false,
+		sessions: (home) => [
+			{
+				socket: "vpk-dev",
+				name: "vpk-dev-leftover",
+				path: join(home, "wt-leftover"),
+				attached: "0",
+				createdAgoSecs: 3600,
+			},
+		],
+	});
+
+	assert.equal(result.status, 0, result.stderr);
+	assert.match(stopLog, /stop session=vpk-dev-leftover/);
+	assert.match(stopLog, /args=stop/);
+	assert.equal(tmuxLog, "");
+	assert.match(cleanupLog, /stopped idle tmux session vpk-dev-leftover on vpk-dev socket/);
+	assert.match(cleanupLog, /1 idle stack\(s\) stopped/);
+});
+
+test("keeps the primary checkout even when old and unattached", ZSH_TEST_OPTIONS, () => {
+	const { cleanupLog, stopLog, result } = runSweep({
+		almd: false,
+		sessions: (home) => [
+			{
+				socket: "vpk-dev",
+				name: "vpk-dev-main",
+				path: join(home, "Labs/vpk-rovo"),
+				attached: "0",
+				createdAgoSecs: 7200,
+			},
+		],
+	});
+
+	assert.equal(result.status, 0, result.stderr);
+	assert.equal(stopLog, "");
+	assert.match(cleanupLog, /kept tmux session vpk-dev-main on vpk-dev socket \(primary checkout\)/);
+});
+
+test("keeps a leftover stack still inside the grace window", ZSH_TEST_OPTIONS, () => {
+	const { cleanupLog, stopLog, result } = runSweep({
+		almd: false,
+		sessions: (home) => [
+			{
+				socket: "vpk-dev",
+				name: "vpk-dev-warming",
+				path: join(home, "wt-warming"),
+				attached: "0",
+				createdAgoSecs: 60,
+			},
+		],
+	});
+
+	assert.equal(result.status, 0, result.stderr);
+	assert.equal(stopLog, "");
+	assert.match(cleanupLog, /kept tmux session vpk-dev-warming on vpk-dev socket \(\d+s old < 1800s minimum\)/);
+});
+
+test("keeps an old leftover stack that still has a claude operator", ZSH_TEST_OPTIONS, () => {
+	const { cleanupLog, stopLog, result } = runSweep({
+		almd: false,
+		sessions: (home) => [
+			{
+				socket: "vpk-dev",
+				name: "vpk-dev-operator",
+				path: join(home, "wt-operator"),
+				attached: "0",
+				createdAgoSecs: 7200,
+			},
+		],
+		operators: (home) => [{ name: "claude", pid: "99", cwd: join(home, "wt-operator") }],
+	});
+
+	assert.equal(result.status, 0, result.stderr);
+	assert.equal(stopLog, "");
+	assert.match(cleanupLog, /kept tmux session vpk-dev-operator on vpk-dev socket \(tool process cwd is /);
+});
+
+test("keeps an attached leftover stack", ZSH_TEST_OPTIONS, () => {
+	const { cleanupLog, stopLog, result } = runSweep({
+		almd: false,
+		sessions: (home) => [
+			{
+				socket: "vpk-dev",
+				name: "vpk-dev-attached",
+				path: join(home, "wt-attached"),
+				attached: "1",
+				createdAgoSecs: 7200,
+			},
+		],
+	});
+
+	assert.equal(result.status, 0, result.stderr);
+	assert.equal(stopLog, "");
+	assert.match(cleanupLog, /kept tmux session vpk-dev-attached on vpk-dev socket \(attached\)/);
+});
+
+test("kills an unattached orphan whose worktree path is gone", ZSH_TEST_OPTIONS, () => {
+	const { cleanupLog, tmuxLog, stopLog, result } = runSweep({
+		almd: false,
+		sessions: (home) => [
+			{
+				socket: "vpk-dev",
+				name: "vpk-dev-orphan",
+				path: join(home, "gone-worktree"),
+				attached: "0",
+				createdAgoSecs: 7200,
+				missingPath: true,
+			},
+		],
+	});
+
+	assert.equal(result.status, 0, result.stderr);
+	assert.equal(stopLog, "");
+	assert.match(tmuxLog, /send-keys/);
+	assert.match(tmuxLog, /kill-session/);
+	assert.match(cleanupLog, /killed stale tmux session vpk-dev-orphan on vpk-dev socket/);
 });

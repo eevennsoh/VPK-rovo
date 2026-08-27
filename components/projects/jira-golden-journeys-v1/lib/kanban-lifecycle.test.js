@@ -149,8 +149,6 @@ test("JGP scenarios use the focus-work lifecycle and deterministic snapshots", a
 			["Loom", "Video", "video", undefined, undefined],
 		],
 	);
-	assert.ok(wiredRuns.every((run) => run.showStateIcon !== false));
-	assert.ok(customRuns.every((run) => run.showStateIcon === false));
 	const agentCards = review.columns
 		.flatMap((item) => item.cards)
 		.filter((card) => card.agentActivityMode);

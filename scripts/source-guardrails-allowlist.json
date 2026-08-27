@@ -144,7 +144,7 @@
 		{
 			"filePath": "components/blocks/visual-waveform/page.tsx",
 			"occurrence": 1,
-			"reason": "existing baseline",
+			"reason": "preserves existing plan-retry monitor dependency contract while moving it out of use-rovo-app-core",
 			"text": "// eslint-disable-next-line react-hooks/exhaustive-deps",
 			"type": "eslint-disable"
 		},
@@ -214,7 +214,7 @@
 		{
 			"filePath": "components/projects/rovo-core/hooks/use-rovo-app-plan-retry.ts",
 			"occurrence": 1,
-			"reason": "preserves existing plan-retry monitor dependency contract while moving it out of use-rovo-app-core",
+			"reason": "existing baseline",
 			"text": "// eslint-disable-next-line react-hooks/exhaustive-deps",
 			"type": "eslint-disable"
 		},

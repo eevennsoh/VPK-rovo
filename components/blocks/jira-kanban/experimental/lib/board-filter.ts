@@ -13,6 +13,7 @@ export const BOARD_FILTER_DEMO_NOW_ISO = "2026-08-21T18:00:00.000Z";
 export const BOARD_FILTER_VALUE_FIELD_IDS = [
 	"project",
 	"parent",
+	"sprint",
 	"assignee",
 	"status",
 	"work-type",
@@ -58,6 +59,7 @@ export const EMPTY_BOARD_FILTER_VALUE_SELECTIONS: BoardFilterValueSelections = {
 	labels: [],
 	parent: [],
 	project: [],
+	sprint: [],
 	status: [],
 	"work-type": [],
 };
