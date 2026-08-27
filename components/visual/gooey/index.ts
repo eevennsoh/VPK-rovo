@@ -1,16 +1,21 @@
-import { GooeyRoot } from "./gooey-root";
-import { GooeyItem } from "./gooey-item";
+import { Liquid } from "liquid-gooey";
 
 /**
- * VPK-owned adaptation of liquid-gooey 0.1.0 at commit cfa51e1.
+ * VPK-facing alias for liquid-gooey 0.2.1 at commit 37835a9.
  * Original: https://gooey.jakubantalik.com/
- * Source: https://github.com/Jakubantalik/Libraries/tree/cfa51e10f4bc581445248b75c3e9e81c9afac0ef/packages/liquid-gooey
+ * Source: https://github.com/Jakubantalik/Libraries/tree/37835a94a54de606ebe6e3a5a1f8d30ddf4303b0/packages/liquid-gooey
  */
-export const Gooey = Object.assign(GooeyRoot, { Item: GooeyItem });
+export const Gooey = Liquid;
 
 export { GOOEY_DEFAULTS } from "./tuning-model";
-export type { GooeyProps } from "./gooey-root";
-export type { GooeyEffect, GooeyItemProps } from "./gooey-item";
+export type {
+	BendTuning,
+	LiquidEffect as GooeyEffect,
+	LiquidItemProps as GooeyItemProps,
+	LiquidProps as GooeyProps,
+	ImageMeltOptions,
+} from "liquid-gooey";
+export { IMAGE_MELT_DEFAULTS } from "liquid-gooey";
 export {
 	DISSOLVE_DEFAULTS,
 	MORPH_DEFAULTS,
@@ -20,13 +25,11 @@ export {
 	resolveMoveTuning,
 } from "./tuning";
 export type { MorphTuning, MoveTuning } from "./tuning";
-export type { DissolveOptions } from "./item-core";
-export { EVOLVE_DEFAULTS, MOVE_DEFAULTS } from "./observer";
-export type { EvolveOptions, MoveOptions } from "./observer";
-export { easingFunction, presets } from "./spring";
+export type { DissolveOptions, EvolveOptions, MoveOptions } from "liquid-gooey";
+export { EVOLVE_DEFAULTS, MOVE_DEFAULTS, easingFunction, presets } from "liquid-gooey";
 export type {
 	SpringConfig,
 	Transition,
 	TransitionPreset,
-} from "./spring";
-export type { CornerRadii } from "./geometry";
+} from "liquid-gooey";
+export type { CornerRadii } from "liquid-gooey";
