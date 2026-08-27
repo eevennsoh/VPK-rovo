@@ -489,6 +489,10 @@ test("Pulse is a toggle on the board's own control row, not a separate tab", () 
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /dismissedLooseWorkIds=\{dismissedLooseWorkIds\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onDismissLooseWork=\{handleDismissLooseWork\}/u);
 	assert.match(SOURCES.shell, /dismissedIds=\{dismissedLooseWorkIds\}/u);
+	// The mode may be driven from outside — the route mounts a floating insights
+	// nudge that opens Insights — so the local state is the fallback half of a
+	// controlled pair rather than the only owner.
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const \[localMode, setLocalMode\] = useState<ExperimentalJiraKanbanMode>\("board"\);/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const mode = controlledMode \?\? localMode;/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const isPulse = mode === "pulse";/u);
 	// The control row stays up in Pulse. Board mode keeps the board assignee

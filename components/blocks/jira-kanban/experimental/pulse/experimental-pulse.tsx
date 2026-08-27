@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, type RefCallback } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefCallback } from "react";
 
 import {
 	PulseAnswers,
@@ -32,6 +32,7 @@ import {
 	PULSE_ANSWERS_ANCHOR_ID,
 	PULSE_SCOPE_ANCHOR_ID,
 	toPulseArticleTopFadeVisible,
+	toPulseAnchorId,
 	type PulseScrollOptions,
 } from "@/components/blocks/jira-kanban/experimental/pulse/lib/pulse-outline";
 import type {
@@ -131,6 +132,17 @@ export interface ExperimentalPulseProps {
 	 */
 	answers?: readonly PulseAnswer[];
 	onAsk?: (question: string) => void;
+	/**
+	 * Land the article on this snapshot instead of at the top.
+	 *
+	 * The board's daily-insights nudge promises "3 new insights"; opening at the
+	 * top drops the reader on snapshot 1 of 7, which they have already read. The
+	 * id names a `PulseSnapshot`, not an anchor — the anchor is derived here so
+	 * callers never have to know how the article spells its ids. A snapshot the
+	 * current scope or day range has filtered out simply has no anchor, and the
+	 * article opens at the top rather than jumping somewhere arbitrary.
+	 */
+	initialSnapshotId?: string | null;
 }
 
 export function ExperimentalPulse({
@@ -150,6 +162,7 @@ export function ExperimentalPulse({
 	scope = null,
 	answers = EMPTY_ANSWERS,
 	onAsk,
+	initialSnapshotId = null,
 }: Readonly<ExperimentalPulseProps>) {
 	const filter = usePulseMemberFilter({ onSelectedMemberIdChange, selectedMemberId });
 	// Scope narrows the whole timeline before anything else reads it, so the
@@ -268,6 +281,23 @@ export function ExperimentalPulse({
 	// No settle nudge here: the rounding that made a jump light the mark above it
 	// is absorbed by `toActiveOutlineIndex`'s one-pixel threshold, where it
 	// belongs — the shell should not be correcting the outline's arithmetic.
+
+	// The deep link. It is an effect rather than part of the caller's click
+	// because the anchor it needs does not exist yet at that moment: the
+	// scrollport ref resolves on the commit that mounts this subtree, and
+	// `usePulseReading` writes `scrollTop = 0` on the same commit. Hook effects
+	// run before the component's own, so this lands after that reset rather than
+	// being undone by it. It goes through `handleSelectEntry` — the same
+	// start-aligned jump a chevron or ruler mark takes — so the destination
+	// header is not veiled by the top fade on arrival. `handleSelectEntry` is in
+	// the deps because its identity changes exactly once, when the scrollport
+	// element resolves, which is the earliest frame the jump can succeed.
+	useEffect(() => {
+		if (initialSnapshotId === null) {
+			return;
+		}
+		handleSelectEntry(toPulseAnchorId(initialSnapshotId));
+	}, [handleSelectEntry, initialSnapshotId]);
 
 	if (pulse.activeSnapshot === null) {
 		return (
