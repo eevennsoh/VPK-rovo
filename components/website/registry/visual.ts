@@ -312,8 +312,12 @@ export const VISUAL_VARIANT_DEMOS: Record<string, ComponentType> = {
 		() => import("../demos/visual/gooey-demo").then((mod) => ({ default: mod.GooeyMorphAvatarExample })),
 		{ ssr: false },
 	),
-	"gooey-morph-cards": dynamic(
-		() => import("../demos/visual/gooey-demo").then((mod) => ({ default: mod.GooeyMorphCardsExample })),
+	"gooey-melt-cards": dynamic(
+		() => import("../demos/visual/gooey-demo").then((mod) => ({ default: mod.GooeyMeltCardsExample })),
+		{ ssr: false },
+	),
+	"gooey-bend-card": dynamic(
+		() => import("../demos/visual/gooey-demo").then((mod) => ({ default: mod.GooeyBendCardExample })),
 		{ ssr: false },
 	),
 	"gooey-move-tabs": dynamic(
