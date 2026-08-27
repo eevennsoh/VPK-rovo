@@ -104,6 +104,12 @@ test("session flyout derives lifecycle, issue, and host fallbacks from a row", a
 	assert.equal(deriveIssueKeyFromBranch("rovo/vita-142-vision-deck"), "VITA-142");
 	assert.equal(deriveIssueKeyFromBranch("feature/vision-deck"), "feature/vision-deck");
 	assert.equal(deriveIssueKeyFromBranch(undefined), "");
+	assert.equal(
+		toAgentSessionFlyoutItem(sessionItem(undefined, {
+			branch: "rovo/vita-142-vision-deck",
+		})).issueKey,
+		"VITA-142",
+	);
 
 	assert.equal(toAgentSessionFlyoutItem(sessionItem(undefined)).host, "cloud");
 	assert.equal(
