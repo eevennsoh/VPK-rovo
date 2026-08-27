@@ -1,24 +1,23 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion, useReducedMotion, type Transition } from "motion/react";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import StatusInformationIcon from "@atlaskit/icon/core/status-information";
 
+import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
 import {
-	AgentList,
-	type AgentListCustomFlyoutActions,
-	type AgentListItem,
-} from "@/components/blocks/agent-list";
-import { AgentStates } from "@/components/blocks/agent-states";
+	AgentAssignment,
+	type AgentAssignmentAgent,
+} from "@/components/blocks/agent-assignment";
+import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { summarizeJiraIssueAgentActivities } from "@/components/blocks/jira-issue/agent-activity-model";
-import type { QuestionCardAnswers, QuestionCardQuestion } from "@/components/blocks/question-card/types";
+import type { QuestionCardQuestion } from "@/components/blocks/question-card/types";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AnimatedDots } from "@/components/ui-custom/animated-dots";
 import { PixelLoader } from "@/components/ui-custom/pixel-loader";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
@@ -100,120 +99,97 @@ function getJiraIssueAgentWorkingLabels(activity: JiraIssueAgentActivity | undef
 	return labels;
 }
 
-function toAgentListItem(activity: JiraIssueAgentActivity): AgentListItem {
+function toAgentAssignmentAgent(activity: JiraIssueAgentActivity): AgentAssignmentAgent {
 	return {
-		agent: {
-			avatarSrc: activity.avatarSrc,
-			brandName: activity.agentBrandName,
-			id: activity.id,
-			name: activity.name,
-		},
-		elapsedSeconds: activity.initialElapsedSeconds,
 		id: activity.id,
-		startedAtMs: activity.startedAtMs,
-		state: activity.state === "awaiting-input" ? "needs-input" : "running",
-		title: activity.label,
+		name: activity.name,
+		byline: "",
+		...(activity.avatarSrc ? { avatarSrc: activity.avatarSrc } : {}),
+		...(activity.agentBrandName ? { brandName: activity.agentBrandName } : {}),
+		status: activity.label,
+		statusLabel: activity.label,
+	};
+}
+
+function toSelectorAgent(activity: JiraIssueAgentActivity): AgentSelectorAgent {
+	return {
+		id: activity.id,
+		name: activity.name,
+		byline: "",
+		...(activity.avatarSrc ? { avatarSrc: activity.avatarSrc } : {}),
+		...(activity.agentBrandName ? { brandName: activity.agentBrandName } : {}),
+	};
+}
+
+function toActivityFromAssignedAgent(agent: AgentAssignmentAgent): JiraIssueAgentActivity {
+	return {
+		id: agent.id,
+		name: agent.name,
+		...(agent.avatarSrc ? { avatarSrc: agent.avatarSrc } : {}),
+		...(agent.brandName ? { agentBrandName: agent.brandName } : {}),
+		label: agent.statusLabel,
+		state: "working",
 	};
 }
 
 function JiraIssueAgentActivityRow({
 	activities,
 	onOpenChange,
-	onQuestionSubmit,
 	onViewChat,
 	usesStrokeChrome,
 }: Readonly<{
 	activities: readonly JiraIssueAgentActivity[];
 	onOpenChange?: (open: boolean) => void;
-	onQuestionSubmit?: (activity: JiraIssueAgentActivity, answers: QuestionCardAnswers) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
 	usesStrokeChrome: boolean;
 }>) {
-	const [flyoutOpen, setFlyoutOpen] = useState(false);
 	const summary = summarizeJiraIssueAgentActivities(activities);
 	const isSingleAgent = summary.activityCount === 1;
-	const agentListItems = activities.map(toAgentListItem);
 	const isAwaitingInput = summary.priorityState === "awaiting-input";
 	const featuredActivity = summary.featuredActivityIndex !== null
 		? activities[summary.featuredActivityIndex]
 		: undefined;
 	const shouldCycleSingleAgentLabel = isSingleAgent && !isAwaitingInput;
-
-	function handleOpenChange(open: boolean) {
-		setFlyoutOpen(open);
-		onOpenChange?.(open);
-	}
-
-	function handleAgentListView(item: AgentListItem) {
-		const activity = activities.find((candidate) => candidate.id === item.id);
-		if (!activity) {
-			return;
+	const canOpenChat = isSingleAgent && Boolean(onViewChat);
+	const activityKey = activities.map((activity) => activity.id).join("\n");
+	const [assignedIdDraft, setAssignedIdDraft] = useState<{
+		key: string;
+		ids: readonly string[];
+	} | null>(null);
+	const assignedIds = assignedIdDraft?.key === activityKey
+		? assignedIdDraft.ids
+		: activities.map((activity) => activity.id);
+	const catalogAgents = useMemo(() => {
+		const extras = activities
+			.filter((activity) => !ROVO_AGENT_SELECTOR_AGENTS.some((agent) => agent.id === activity.id))
+			.map(toSelectorAgent);
+		return extras.length > 0
+			? [...extras, ...ROVO_AGENT_SELECTOR_AGENTS]
+			: ROVO_AGENT_SELECTOR_AGENTS;
+	}, [activities]);
+	const assignedAgents = assignedIds.flatMap((agentId): AgentAssignmentAgent[] => {
+		const activity = activities.find((candidate) => candidate.id === agentId);
+		if (activity) {
+			return [toAgentAssignmentAgent(activity)];
 		}
+		const catalogAgent = catalogAgents.find((candidate) => candidate.id === agentId);
+		return catalogAgent
+			? [{ ...catalogAgent, statusLabel: "Assigned" }]
+			: [];
+	});
 
-		handleOpenChange(false);
-		onViewChat?.(activity);
-	}
-
-	function renderAgentFlyout(
-		item: AgentListItem,
-		{ close }: AgentListCustomFlyoutActions,
-	) {
-		const activity = activities.find((candidate) => candidate.id === item.id);
-		if (!activity) {
-			return null;
-		}
-
-		return (
-			<AgentStates
-				agent={{
-					avatarSrc: activity.avatarSrc,
-					brandName: activity.agentBrandName,
-					id: activity.id,
-					name: activity.name,
-				}}
-				initialElapsedSeconds={activity.initialElapsedSeconds}
-				message={activity.message}
-				onQuestionSubmit={onQuestionSubmit
-					? (answers) => {
-						close();
-						handleOpenChange(false);
-						onQuestionSubmit(activity, answers);
-					}
-					: undefined}
-				onView={onViewChat
-					? () => {
-						close();
-						handleAgentListView(item);
-					}
-					: undefined}
-				question={activity.question}
-				startedAtMs={activity.startedAtMs}
-				state={activity.state}
-			/>
-		);
-	}
-
-	const trigger = (
+	const rowButton = (
 		<button
 			type="button"
-			aria-expanded={isSingleAgent ? undefined : flyoutOpen}
 			aria-label={
-				isSingleAgent
-					? onViewChat
-						? `Open ${activities[0]?.name ?? "agent"} in Rovo chat: ${summary.label}`
-						: `Show ${activities[0]?.name ?? "agent"}: ${summary.label}`
-					: `Show ${summary.activityCount} agents: ${summary.label}`
+				canOpenChat
+					? `Open ${activities[0]?.name ?? "agent"} in Rovo chat: ${summary.label}`
+					: isSingleAgent
+						? `${activities[0]?.name ?? "Agent"}: ${summary.label}`
+						: `${summary.activityCount} agents: ${summary.label}`
 			}
 			data-slot="jira-issue-agent-row"
-			onClick={isSingleAgent
-				? () => {
-					if (onViewChat) {
-						onViewChat(activities[0]);
-						return;
-					}
-					handleOpenChange(true);
-				}
-				: () => handleOpenChange(true)}
+			onClick={canOpenChat ? () => onViewChat?.(activities[0]) : undefined}
 			className="flex h-6 w-full min-w-0 items-center justify-between gap-2 rounded-md px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
 		>
 			<div className={cn("flex min-w-0 flex-1 items-center", usesStrokeChrome ? "gap-1.5" : "gap-2")}>
@@ -312,45 +288,26 @@ function JiraIssueAgentActivityRow({
 		</button>
 	);
 
-	if (isSingleAgent && featuredActivity) {
-		return (
-			<HoverCard open={flyoutOpen} onOpenChange={handleOpenChange}>
-				<HoverCardTrigger closeDelay={80} delay={120} render={trigger} />
-				<HoverCardContent
-					align="start"
-					alignOffset={0}
-					className="w-auto max-w-[calc(100vw-48px)] bg-transparent p-0 shadow-none data-ending-style:transition-none"
-					positionerClassName="z-[575] after:pointer-events-auto after:absolute after:-inset-2 after:-z-10 after:content-['']"
-					side="right"
-					sideOffset={8}
-				>
-					{renderAgentFlyout(agentListItems[0], { close: () => handleOpenChange(false) })}
-				</HoverCardContent>
-			</HoverCard>
-		);
+	if (isSingleAgent) {
+		return rowButton;
 	}
 
 	return (
-		<HoverCard open={flyoutOpen} onOpenChange={handleOpenChange}>
-			<HoverCardTrigger closeDelay={80} delay={120} render={trigger} />
-			<HoverCardContent
-				align="start"
-				alignOffset={0}
-				className="w-[320px] max-w-[calc(100vw-48px)] bg-transparent p-0 shadow-none data-ending-style:transition-none"
-				positionerClassName="z-[575] after:pointer-events-auto after:absolute after:-inset-2 after:-z-10 after:content-['']"
-				side="right"
-				sideOffset={8}
-			>
-				<AgentList
-					className="w-full border-0 bg-surface-overlay shadow-2xl"
-					flyout="none"
-					items={agentListItems}
-					onView={handleAgentListView}
-					renderFlyout={renderAgentFlyout}
-					variant="compact"
-				/>
-			</HoverCardContent>
-		</HoverCard>
+		<AgentAssignment
+			agents={catalogAgents}
+			assignedAgents={assignedAgents}
+			onAssignedAgentIdsChange={(agentIds) => {
+				setAssignedIdDraft({ ids: agentIds, key: activityKey });
+			}}
+			onAssignedAgentSelect={(agent) => {
+				const activity = activities.find((candidate) => candidate.id === agent.id);
+				onViewChat?.(activity ?? toActivityFromAssignedAgent(agent));
+			}}
+			onOpenChange={onOpenChange}
+			openMode="hover"
+			positionerClassName="z-[575]"
+			trigger={rowButton}
+		/>
 	);
 }
 
@@ -433,14 +390,12 @@ function JiraIssueCyclingAgentLabel(props: Readonly<{
 export function JiraIssueAgentActivityRows({
 	activities,
 	onOpenChange,
-	onQuestionSubmit,
 	onViewChat,
 	shouldReduceMotion,
 	usesStrokeChrome,
 }: Readonly<{
 	activities: readonly JiraIssueAgentActivity[];
 	onOpenChange?: (open: boolean) => void;
-	onQuestionSubmit?: (activity: JiraIssueAgentActivity, answers: QuestionCardAnswers) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
 	shouldReduceMotion: boolean | null;
 	usesStrokeChrome: boolean;
@@ -471,7 +426,6 @@ export function JiraIssueAgentActivityRows({
 						<JiraIssueAgentActivityRow
 							activities={activities}
 							onOpenChange={onOpenChange}
-							onQuestionSubmit={onQuestionSubmit}
 							onViewChat={onViewChat}
 							usesStrokeChrome={usesStrokeChrome}
 						/>

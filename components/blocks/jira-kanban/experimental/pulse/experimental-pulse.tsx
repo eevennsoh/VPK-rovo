@@ -2,11 +2,12 @@
 
 import { useCallback, useMemo, useRef, useState, type RefCallback } from "react";
 
-import { PulseWorkRail } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-rail";
 import {
 	PulseAnswers,
 	PulseInsightsComposer,
 } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-insights-composer";
+import { PulseEmbeddedChat } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-embedded-chat";
+import { PulseWorkRail } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-rail";
 import { PulseScopeBrief } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-scope-brief";
 import {
 	PulseScrubber,
@@ -18,6 +19,7 @@ import {
 	toPulseScopeKey,
 	toPulseSuggestedQuestions,
 } from "@/components/blocks/jira-kanban/experimental/pulse/data/pulse-scopes";
+import { usePulseInsightsChat } from "@/components/blocks/jira-kanban/experimental/pulse/hooks/use-pulse-insights-chat";
 import { usePulseReading } from "@/components/blocks/jira-kanban/experimental/pulse/hooks/use-pulse-reading";
 import {
 	scopeTimelineToWorkItemKeys,
@@ -38,6 +40,7 @@ import type {
 	PulseLooseWork,
 	PulseScope,
 	PulseTimeline,
+	PulseWorkItem,
 } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { ScrollMaskEdgeOverlay } from "@/components/visual/scroll-mask";
@@ -64,11 +67,11 @@ import { cn } from "@/lib/utils";
 /**
  * Pulse runs full-bleed. The insight column takes whatever the three-column row
  * does not: 144px of ruler (enough for "Next best actions"), then the article,
- * then one work rail — a two-track grid at a fixed 320 and 300 with a 40px
- * gutter between the tracks. Capping the assembly would strand the rail against
- * the right edge on a wide screen, and the article is the one thing here that
- * earns extra width — its own prose measure is capped separately, inside
- * `PulseStory`.
+ * then one work rail — a two-track grid that defaults to 320 and 300, with a
+ * 40px gutter before it that holds the insights/work-items resize handle.
+ * Capping the assembly would strand the rail against the right edge on a wide
+ * screen, and the article is the one thing here that earns extra width — its
+ * own prose measure is capped separately, inside `PulseStory`.
  */
 const SHELL_MEASURE = "w-full min-w-0";
 
@@ -96,12 +99,18 @@ function pulseArticleFadeClassName(visible: boolean) {
 
 export interface ExperimentalPulseProps {
 	/**
-	 * Commitments the reader has made — actions requested, loose work captured.
-	 * Owned by the page rather than in here, so toggling Pulse off and back on
-	 * cannot silently discard them along with this subtree.
+	 * Commitments the reader has made — actions requested, loose work captured
+	 * or dismissed. Owned by the page rather than in here, so toggling Pulse
+	 * off and back on cannot silently discard them along with this subtree.
 	 */
 	capturedLooseWorkIds: ReadonlySet<string>;
+	dismissedLooseWorkIds: ReadonlySet<string>;
+	isLooseWorkResumable?: (item: PulseLooseWork) => boolean;
+	isWorkItemInteractive?: (workItem: PulseWorkItem) => boolean;
 	onCaptureLooseWork: (item: PulseLooseWork) => void;
+	onDismissLooseWork: (item: PulseLooseWork) => void;
+	onResumeLooseWork?: (item: PulseLooseWork) => void;
+	onWorkItemClick?: (workItem: PulseWorkItem) => void;
 	requestedActionIds: ReadonlySet<string>;
 	onRequestAction: (action: PulseAction) => void;
 	timeline?: PulseTimeline;
@@ -126,7 +135,13 @@ export interface ExperimentalPulseProps {
 
 export function ExperimentalPulse({
 	capturedLooseWorkIds,
+	dismissedLooseWorkIds,
+	isLooseWorkResumable,
+	isWorkItemInteractive,
 	onCaptureLooseWork,
+	onDismissLooseWork,
+	onResumeLooseWork,
+	onWorkItemClick,
 	onRequestAction,
 	requestedActionIds,
 	timeline: sourceTimeline = PULSE_TIMELINE,
@@ -177,20 +192,32 @@ export function ExperimentalPulse({
 		selectedMemberId: filter.selectedMemberId,
 	});
 	const suggestions = useMemo(() => toPulseSuggestedQuestions(scope), [scope]);
+	const {
+		ask: askInsightsChat,
+		chatContextBar,
+		chatOpen: insightsChatOpen,
+		enabled: insightsChatEnabled,
+	} = usePulseInsightsChat(scope, timeline.projectLabel);
+	const handleAsk = useCallback((question: string) => {
+		askInsightsChat(question);
+		onAsk?.(question);
+	}, [askInsightsChat, onAsk]);
 
 	// Both edge fades are pointer-events-none overlays. `mask-image` on a
 	// scrollport fades the document, not the viewport, so a CSS bottom stop
 	// never paints while the reader is mid-article. The top overlay stays
 	// mounted at opacity zero so it can transition. It paints whenever the
 	// article is clipped at the top — a rest-state headline should not cut off
-	// flush — and hides after a header chevron jump, which pins the up/down
-	// nav into that same band. The bottom band stays on: the article sits flush
-	// on the composer, and a rest-state cutoff reads as a clip.
+	// flush — and hides after a start-aligned jump, which pins the destination
+	// section (and the insight nav, on a chevron) into that same band. The
+	// bottom band stays on: the article sits flush on the composer, and a
+	// rest-state cutoff reads as a clip.
 	const { ref: overflowRef, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const { scrollRef, scrollToEntry, scrollToSnapshot } = reading;
 	const [suppressTopFade, setSuppressTopFade] = useState(false);
 	const suppressTopFadeRef = useRef(false);
 	const skipProgrammaticScrollRef = useRef(false);
+	const startJumpGenerationRef = useRef(0);
 	const scrollportRef = useCallback<RefCallback<HTMLDivElement>>((node) => {
 		scrollRef(node);
 		overflowRef(node);
@@ -205,23 +232,30 @@ export function ExperimentalPulse({
 		suppressTopFadeRef.current = false;
 		setSuppressTopFade(false);
 	}, []);
+	const runStartAlignedJump = useCallback((run: () => void) => {
+		const generation = startJumpGenerationRef.current + 1;
+		startJumpGenerationRef.current = generation;
+		suppressTopFadeRef.current = true;
+		skipProgrammaticScrollRef.current = true;
+		setSuppressTopFade(true);
+		run();
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => {
+				if (startJumpGenerationRef.current === generation) {
+					skipProgrammaticScrollRef.current = false;
+				}
+			});
+		});
+	}, []);
 	const handleSelectEntry = useCallback((id: string) => {
-		if (suppressTopFadeRef.current) {
-			suppressTopFadeRef.current = false;
-			setSuppressTopFade(false);
-		}
-		scrollToEntry(id);
-	}, [scrollToEntry]);
+		runStartAlignedJump(() => {
+			scrollToEntry(id, { align: "start" });
+		});
+	}, [runStartAlignedJump, scrollToEntry]);
 	const handleGoToSnapshot = useCallback((snapshotIndex: number, options?: PulseScrollOptions) => {
 		if (isPulseChevronHeaderJump(options)) {
-			suppressTopFadeRef.current = true;
-			skipProgrammaticScrollRef.current = true;
-			setSuppressTopFade(true);
-			scrollToSnapshot(snapshotIndex, options);
-			requestAnimationFrame(() => {
-				requestAnimationFrame(() => {
-					skipProgrammaticScrollRef.current = false;
-				});
+			runStartAlignedJump(() => {
+				scrollToSnapshot(snapshotIndex, options);
 			});
 			return;
 		}
@@ -230,7 +264,7 @@ export function ExperimentalPulse({
 			setSuppressTopFade(false);
 		}
 		scrollToSnapshot(snapshotIndex, options);
-	}, [scrollToSnapshot]);
+	}, [runStartAlignedJump, scrollToSnapshot]);
 	// No settle nudge here: the rounding that made a jump light the mark above it
 	// is absorbed by `toActiveOutlineIndex`'s one-pixel threshold, where it
 	// belongs — the shell should not be correcting the outline's arithmetic.
@@ -336,7 +370,7 @@ export function ExperimentalPulse({
 							<PulseStream
 								activeSnapshotIndex={pulse.activeIndex}
 								anchorRef={reading.registerAnchor}
-								answers={(
+								answers={insightsChatEnabled ? undefined : (
 									<PulseAnswers
 										anchorId={PULSE_ANSWERS_ANCHOR_ID}
 										anchorRef={reading.registerAnchor(PULSE_ANSWERS_ANCHOR_ID)}
@@ -350,9 +384,11 @@ export function ExperimentalPulse({
 										scope={scope}
 									/>
 								)}
+								onGoToEntry={handleSelectEntry}
 								onGoToSnapshot={handleGoToSnapshot}
 								onRequestAction={onRequestAction}
 								onSelectMember={filter.selectMember}
+								onWorkItemClick={onWorkItemClick}
 								previewEntry={previewEntry}
 								requestedActionIds={requestedActionIds}
 								selectedMemberId={filter.selectedMemberId}
@@ -388,7 +424,7 @@ export function ExperimentalPulse({
 									// at the boundary instead of submitting it against another
 									// scope's answers.
 									key={scopeKey}
-									onAsk={onAsk}
+									onAsk={handleAsk}
 									scope={scope}
 									suggestions={suggestions}
 								/>
@@ -398,10 +434,19 @@ export function ExperimentalPulse({
 
 					<PulseWorkRail
 						capturedIds={capturedLooseWorkIds}
+						chat={insightsChatOpen ? (
+							<PulseEmbeddedChat chatContextBar={chatContextBar} />
+						) : undefined}
+						dismissedIds={dismissedLooseWorkIds}
+						isLooseWorkResumable={isLooseWorkResumable}
+						isWorkItemInteractive={isWorkItemInteractive}
 						looseWork={pulse.looseWork}
 						members={pulse.members}
 						onCapture={onCaptureLooseWork}
-						scopedToFirstName={pulse.selectedMember?.name.split(" ")[0] ?? null}
+						onDismiss={onDismissLooseWork}
+						onResumeLooseWork={onResumeLooseWork}
+						onWorkItemClick={onWorkItemClick}
+						selectedMember={pulse.selectedMember}
 						workItems={pulse.workItems}
 					/>
 				</div>

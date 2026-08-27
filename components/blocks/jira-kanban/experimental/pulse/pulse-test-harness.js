@@ -20,11 +20,18 @@ const KANBAN_DIR = join(EXPERIMENTAL_DIR, "..");
 
 const SOURCES = {
 	data: readFileSync(join(PULSE_DIR, "data", "pulse-timeline.ts"), "utf8"),
+	looseWork: readFileSync(join(PULSE_DIR, "data", "pulse-loose-work.ts"), "utf8"),
 	hook: readFileSync(join(PULSE_DIR, "hooks", "use-pulse-timeline.ts"), "utf8"),
 	// The ruler's pure geometry and weights. Split out of the scrubber so a
 	// component file stops exporting helpers, which defeats Fast Refresh.
 	marks: readFileSync(join(PULSE_DIR, "lib", "pulse-marks.ts"), "utf8"),
 	rail: readFileSync(join(PULSE_DIR, "components", "pulse-rail.tsx"), "utf8"),
+	embeddedChat: readFileSync(join(PULSE_DIR, "components", "pulse-embedded-chat.tsx"), "utf8"),
+	insightsChat: readFileSync(join(PULSE_DIR, "hooks", "use-pulse-insights-chat.ts"), "utf8"),
+	chatContext: readFileSync(join(PULSE_DIR, "lib", "pulse-chat-context.ts"), "utf8"),
+	layout: readFileSync(join(PULSE_DIR, "lib", "pulse-layout.ts"), "utf8"),
+	resizeHandle: readFileSync(join(PULSE_DIR, "components", "pulse-resize-handle.tsx"), "utf8"),
+	railResize: readFileSync(join(PULSE_DIR, "hooks", "use-pulse-work-rail-resize.ts"), "utf8"),
 	// The reading position: the only programmatic scroll left in Pulse.
 	reading: readFileSync(join(PULSE_DIR, "hooks", "use-pulse-reading.ts"), "utf8"),
 	scrubber: readFileSync(join(PULSE_DIR, "components", "pulse-scrubber.tsx"), "utf8"),
@@ -160,11 +167,13 @@ let scrubberHarnessPromise;
 let outlineHarnessPromise;
 let rosterMarkupHarnessPromise;
 let attentionHarnessPromise;
+let sessionsHarnessPromise;
+let nextActionsHarnessPromise;
 let scopeHarnessPromise;
 let proseHarnessPromise;
 
 /**
- * The pure signal → agent-list-row mapping behind the "Needs attention"
+ * The pure signal → agent-list-row mapping behind the "Needs input"
  * section. It imports nothing but types from the shared block, so it bundles as
  * a leaf and can be executed rather than grepped.
  */
@@ -172,6 +181,8 @@ function loadAttentionHarness() {
 	attentionHarnessPromise ??= bundleHarness({
 		contents: `
 			export {
+				resolveAttentionWorkItem,
+				toAttentionActionLabel,
 				toAttentionMetadata,
 				toAttentionState,
 				toPulseAttentionItems,
@@ -182,6 +193,47 @@ function loadAttentionHarness() {
 	});
 
 	return attentionHarnessPromise;
+}
+
+/**
+ * The pure session → agent-list-row mapping behind Uncaptured work's coding
+ * sessions. It imports nothing but types from the shared block, so it bundles
+ * as a leaf and can be executed rather than grepped.
+ */
+function loadSessionsHarness() {
+	sessionsHarnessPromise ??= bundleHarness({
+		contents: `
+			export {
+				toPulseSessionItems,
+				toPulseSessionWorktree,
+			} from "./components/blocks/jira-kanban/experimental/pulse/lib/pulse-sessions";
+			export { PULSE_TIMELINE } from "./components/blocks/jira-kanban/experimental/pulse/data/pulse-timeline";
+		`,
+		sourcefile: "pulse-sessions-harness.ts",
+	});
+
+	return sessionsHarnessPromise;
+}
+
+/**
+ * The pure action → next-best-action-row mapping behind the "Next best
+ * actions" section. It imports nothing but types from the shared block, so it
+ * bundles as a leaf and can be executed rather than grepped.
+ */
+function loadNextActionsHarness() {
+	nextActionsHarnessPromise ??= bundleHarness({
+		contents: `
+			export {
+				toPulseNextActionItems,
+				toPulseNextActionRowLabel,
+				toPulseNextActionSource,
+			} from "./components/blocks/jira-kanban/experimental/pulse/lib/pulse-next-actions";
+			export { PULSE_TIMELINE } from "./components/blocks/jira-kanban/experimental/pulse/data/pulse-timeline";
+		`,
+		sourcefile: "pulse-next-actions-harness.ts",
+	});
+
+	return nextActionsHarnessPromise;
 }
 
 const rosterMarkupPlugin = {
@@ -232,7 +284,7 @@ function loadTimelineHarness() {
 		contents: `
 			import { __mount, __render } from "react";
 			import { PULSE_SPACE_REPOSITORY, PULSE_TIMELINE } from "./components/blocks/jira-kanban/experimental/pulse/data/pulse-timeline";
-			import { pulseLooseWorkSource } from "./components/blocks/jira-kanban/experimental/pulse/types";
+			import { pulseLooseWorkCanCreateWorkItem, pulseLooseWorkHostLabel, pulseLooseWorkSource } from "./components/blocks/jira-kanban/experimental/pulse/types";
 			import {
 				clampSnapshotIndex,
 				computeHighlightedIndexes,
@@ -255,6 +307,8 @@ function loadTimelineHarness() {
 				findContribution,
 				PULSE_SPACE_REPOSITORY,
 				PULSE_TIMELINE,
+				pulseLooseWorkCanCreateWorkItem,
+				pulseLooseWorkHostLabel,
 				pulseLooseWorkSource,
 				resolveLooseWork,
 				resolveWorkItems,
@@ -305,6 +359,7 @@ function loadScrubberHarness() {
 				toMarkState,
 				toNearestEntryIndex,
 				toPulseInsightEyebrow,
+				toPulseInsightHeadline,
 				toWeekdayLabel,
 			} from "./components/blocks/jira-kanban/experimental/pulse/lib/pulse-marks";
 		`,
@@ -327,9 +382,12 @@ function loadOutlineHarness() {
 				toPulseAnchorId,
 				toPulseArticleTopFadeVisible,
 				toPulseInsightEntries,
+				toPulseMeasureLineY,
 				toPulseScrollOffset,
+				toPulseSectionStats,
 				toPulseSections,
 				toRulerHeading,
+				toSectionHeading,
 			} from "./components/blocks/jira-kanban/experimental/pulse/lib/pulse-outline";
 		`,
 		sourcefile: "pulse-outline-harness.ts",
@@ -566,6 +624,8 @@ module.exports = {
 	join,
 	KANBAN_DIR,
 	loadAttentionHarness,
+	loadSessionsHarness,
+	loadNextActionsHarness,
 	loadInsightsToggleMarkupHarness,
 	loadOutlineHarness,
 	loadProseHarness,

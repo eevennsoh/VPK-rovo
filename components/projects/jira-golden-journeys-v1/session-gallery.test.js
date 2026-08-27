@@ -119,6 +119,11 @@ test("Local session drives the TwG setup live and resumes review beats after Kan
 		/<StateGlyph status="working" className="shrink-0 text-\[#D97757\]" \/>/u,
 	);
 	assert.match(TERMINAL_CLAUDE_PANE_SOURCE, /<span>Working…<\/span>/u);
+	assert.match(TERMINAL_CLAUDE_PANE_SOURCE, /const visibleLines = \[\.\.\.pane\.transcript, \.\.\.inFlightLines\]/u);
+	assert.doesNotMatch(TERMINAL_CLAUDE_PANE_SOURCE, /key=\{`in-flight-\$\{index\}`\}/u);
+	assert.match(TERMINAL_CLAUDE_PANE_SOURCE, /<AnimatePresence initial=\{false\}>/u);
+	assert.match(TERMINAL_CLAUDE_PANE_SOURCE, /layout=\{shouldReduceMotion \? false : "position"\}/u);
+	assert.match(TERMINAL_CLAUDE_PANE_SOURCE, /key="working"/u);
 });
 
 test("Post-review terminal screens share the line-by-line output reveal timing", () => {

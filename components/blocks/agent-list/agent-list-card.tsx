@@ -338,8 +338,20 @@ function timeSlotTitle(item: AgentListItem): string {
 		: "Last update";
 }
 
-/** Local sessions resume from the viewer's machine; cloud sessions are inspected. */
+/**
+ * Primary action copy. Person rows are comments and @mentions, so they Reply;
+ * local sessions Resume on the viewer's machine; cloud agent sessions are
+ * inspected with View. A row can override any of those with `actionLabel`.
+ */
 function rowPrimaryActionLabel(item: AgentListItem): string {
+	if (item.actionLabel !== undefined) {
+		return item.actionLabel;
+	}
+
+	if (item.agent.kind === "person") {
+		return "Reply";
+	}
+
 	return isLocalAgentListItem(item) ? "Resume" : "View";
 }
 
@@ -571,9 +583,9 @@ function RowBody({
 }
 
 /**
- * The hover/focus-revealed primary action plus Archive. Only rendered when there
- * is somewhere to go: a row in a list with no `onView` would otherwise reveal a
- * button that does nothing, which is worse than no button.
+ * The hover/focus-revealed primary action plus Archive. Coding agent rows always
+ * mount this so View / Resume stays reachable; a list with no `onView` still
+ * reveals the control rather than looking like a read-only transcript.
  */
 function CardActions({
 	item,
@@ -586,31 +598,37 @@ function CardActions({
 }>) {
 	return (
 		<div
-			className="ml-3 hidden shrink-0 items-center gap-1 group-hover/agent-row:flex group-has-[:focus-visible]/agent-row:flex"
+			className="grid shrink-0 grid-cols-[0fr] transition-[grid-template-columns] duration-normal ease-out-practical group-hover/agent-row:grid-cols-[1fr] group-has-[:focus-visible]/agent-row:grid-cols-[1fr] motion-reduce:transition-none"
 		>
-			<Button onClick={() => onView(item)} size="compact" type="button" variant="outline">
-				{rowPrimaryActionLabel(item)}
-			</Button>
-			{onArchive ? (
-				<TooltipProvider>
-					<Tooltip>
-						<TooltipTrigger
-							render={
-								<Button
-									aria-label="Archive"
-									onClick={() => onArchive(item)}
-									size="icon-compact"
-									type="button"
-									variant="outline"
-								/>
-							}
-						>
-							<ArchiveBoxIcon label="" size="small" />
-						</TooltipTrigger>
-						<TooltipContent>Archive</TooltipContent>
-					</Tooltip>
-				</TooltipProvider>
-			) : null}
+			<div className="min-w-0 overflow-hidden has-[:focus-visible]:overflow-visible">
+				<div
+					className="pointer-events-none flex shrink-0 items-center gap-1 pl-3 opacity-0 transition-opacity duration-normal ease-out-practical group-hover/agent-row:pointer-events-auto group-hover/agent-row:opacity-100 group-has-[:focus-visible]/agent-row:pointer-events-auto group-has-[:focus-visible]/agent-row:opacity-100 motion-reduce:transition-none"
+				>
+					<Button onClick={() => onView(item)} size="compact" type="button" variant="outline">
+						{rowPrimaryActionLabel(item)}
+					</Button>
+					{onArchive ? (
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger
+									render={
+										<Button
+											aria-label="Archive"
+											onClick={() => onArchive(item)}
+											size="icon-compact"
+											type="button"
+											variant="outline"
+										/>
+									}
+								>
+									<ArchiveBoxIcon label="" size="small" />
+								</TooltipTrigger>
+								<TooltipContent>Archive</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+					) : null}
+				</div>
+			</div>
 		</div>
 	);
 }
@@ -629,13 +647,16 @@ function rowClassName(isCompact: boolean, isSelected: boolean): string {
  * `JiraSessionFlyoutTrigger` can clone its focus-capture handler onto it and open
  * the session flyout from the keyboard.
  */
-function AgentListRow({
+export function AgentListRow({
+	hideHoverActions = false,
 	isCompact,
 	isSelected,
 	item,
 	onArchive,
 	onView,
 }: Readonly<{
+	/** Hide Resume / View / Archive; the uncaptured chin owns those actions. */
+	hideHoverActions?: boolean;
 	isCompact: boolean;
 	isSelected: boolean;
 	item: AgentListItem;
@@ -646,7 +667,7 @@ function AgentListRow({
 	const prMeta = item.prStatus ? PR_STATUS_META[item.prStatus] : null;
 	const PrIcon = prMeta?.Icon ?? null;
 	// A session row is one line tall by contract, so its title truncates. A row
-	// with a reason is already a paragraph — truncating its title there hides the
+	// with body copy is already a paragraph — truncating its title there hides the
 	// one line that says what happened.
 	const hasSummary = Boolean(item.summary);
 	const titleClassName = cn(
@@ -655,11 +676,13 @@ function AgentListRow({
 		isCompact ? "text-xs" : "text-sm",
 	);
 
+	const viewItem = onView === undefined ? undefined : () => onView(item);
+
 	return (
 		<div
 			className={cn(
 				"flex min-w-0 gap-0",
-				// A summary makes the row three lines tall; the identity and the
+				// A summary makes the row taller than one line; the identity and the
 				// trailing controls then belong beside the title, not floating in the
 				// middle of a paragraph.
 				hasSummary ? "items-start" : "items-center",
@@ -670,105 +693,108 @@ function AgentListRow({
 				className={cn("mr-3 shrink-0", hasSummary ? "mt-0.5" : null)}
 				sizePx={isCompact ? 24 : 32}
 			/>
-			{/*
-			 * The body is only a button when there is somewhere to go. A list
-			 * without `onView` — a read-out of comments and @mentions, say — would
-			 * otherwise put one focusable no-op in the tab order per row.
-			 */}
-			<RowBody
-				className="flex min-w-0 flex-1 flex-col items-start justify-center rounded-xs text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-				isSelected={isSelected}
-				onView={onView === undefined ? undefined : () => onView(item)}
-			>
-				<span
+			<div className="flex min-w-0 flex-1 flex-col">
+				<div
 					className={cn(
-						"flex w-full min-w-0 items-center gap-0",
-						hasSummary ? null : "overflow-hidden",
+						"flex min-w-0",
+						hasSummary ? "items-start" : "items-center",
 					)}
 				>
-					{stateMeta.shimmerTitle ? (
-						<Shimmer
-							as="span"
-							className={titleClassName}
-							duration={1.4}
-							spread={2}
+					{/*
+					 * The body is only a button when there is somewhere to go. A list
+					 * without `onView` — a read-out of comments and @mentions, say —
+					 * would otherwise put one focusable no-op in the tab order per row.
+					 */}
+					<RowBody
+						className="flex min-w-0 flex-1 flex-col items-start justify-center rounded-xs text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+						isSelected={isSelected}
+						onView={viewItem}
+					>
+						<span
+							className={cn(
+								"flex w-full min-w-0 items-center gap-0",
+								hasSummary ? null : "overflow-hidden",
+							)}
 						>
-							{getSessionTitle(item)}
-						</Shimmer>
-					) : (
-						<span className={cn(titleClassName, "text-text")}>
-							{getSessionTitle(item)}
+							{stateMeta.shimmerTitle ? (
+								<Shimmer
+									as="span"
+									className={titleClassName}
+									duration={1.4}
+									spread={2}
+								>
+									{getSessionTitle(item)}
+								</Shimmer>
+							) : (
+								<span className={cn(titleClassName, "text-text")}>
+									{getSessionTitle(item)}
+								</span>
+							)}
+							{stateMeta.showDots ? <AnimatedDots /> : null}
 						</span>
+						<span className="flex w-full min-w-0 items-center gap-1 overflow-hidden text-xs text-text-subtlest">
+							{item.metadataPrefix ? (
+								<>
+									<span className="shrink-0">{item.metadataPrefix}</span>
+									<MetadataDot />
+								</>
+							) : null}
+							<span className="shrink-0" title={timeSlotTitle(item)}>
+								<AgentListTime item={item} />
+							</span>
+							<MetadataDot />
+							<AgentListMetadataIdentity item={item} />
+							{prMeta && PrIcon ? (
+								<>
+									<MetadataDot />
+									<span className="flex min-w-0 shrink items-center gap-1">
+										<span
+											className={cn(
+												"grid size-4 shrink-0 place-items-center",
+												prMeta.colorClass,
+											)}
+										>
+											<PrIcon color="currentColor" label="" size="small" />
+										</span>
+										<span className="truncate text-text-subtle">{prMeta.label}</span>
+									</span>
+								</>
+							) : null}
+						</span>
+					</RowBody>
+					{stateMeta.showLifecycle ? (
+						<span
+							className={cn(
+								"ml-3 flex w-6 shrink-0 items-center",
+								!isSelected &&
+									"group-hover/agent-row:hidden group-has-[:focus-visible]/agent-row:hidden",
+							)}
+						>
+							<LifecycleIndicator state={item.state} />
+						</span>
+					) : null}
+					{isSelected || hideHoverActions || onView === undefined ? null : (
+						<CardActions
+							item={item}
+							onArchive={onArchive}
+							onView={onView}
+						/>
 					)}
-					{stateMeta.showDots ? <AnimatedDots /> : null}
-				</span>
-				{/* Wraps rather than truncates: this line carries the reason, and a
-				    reason cut off at one line is not a reason. */}
+				</div>
+				{/* Own column under the title row: hover actions steal width from
+				    title/metadata only. A summary cut off at one line is not a
+				    summary, so this wraps rather than truncates. */}
 				{item.summary ? (
 					<span
 						className={cn(
-							"mt-0.5 w-full min-w-0 text-pretty text-text-subtle",
+							"mt-2 w-full min-w-0 text-pretty text-text",
 							isCompact ? "text-xs leading-4" : "text-sm leading-5",
 						)}
 					>
 						{item.summary}
 					</span>
 				) : null}
-				{/* Same reason the title wraps: a three-line row has no single-line
-				    budget to defend, so the metadata wraps instead of losing its tail. */}
-				<span
-					className={cn(
-						"flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest",
-						hasSummary ? "mt-1 flex-wrap" : "overflow-hidden",
-					)}
-				>
-					{item.metadataPrefix ? (
-						<>
-							<span className="shrink-0">{item.metadataPrefix}</span>
-							<MetadataDot />
-						</>
-					) : null}
-					<span className="shrink-0" title={timeSlotTitle(item)}>
-						<AgentListTime item={item} />
-					</span>
-					<MetadataDot />
-					<AgentListMetadataIdentity item={item} />
-					{prMeta && PrIcon ? (
-						<>
-							<MetadataDot />
-							<span className="flex min-w-0 shrink items-center gap-1">
-								<span
-									className={cn(
-										"grid size-4 shrink-0 place-items-center",
-										prMeta.colorClass,
-									)}
-								>
-									<PrIcon color="currentColor" label="" size="small" />
-								</span>
-								<span className="truncate text-text-subtle">{prMeta.label}</span>
-							</span>
-						</>
-					) : null}
-				</span>
-			</RowBody>
-			{stateMeta.showLifecycle ? (
-				<span
-					className={cn(
-						"ml-3 flex w-6 shrink-0 items-center",
-						!isSelected &&
-							"group-hover/agent-row:hidden group-has-[:focus-visible]/agent-row:hidden",
-					)}
-				>
-					<LifecycleIndicator state={item.state} />
-				</span>
-			) : null}
-			{isSelected || onView === undefined ? null : (
-				<CardActions
-					item={item}
-					onArchive={onArchive}
-					onView={onView}
-				/>
-			)}
+			</div>
 		</div>
 	);
 }

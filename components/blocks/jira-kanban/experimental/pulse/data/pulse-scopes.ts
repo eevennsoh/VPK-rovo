@@ -357,7 +357,7 @@ const UNSCOPED_QUESTIONS: readonly PulseSuggestedQuestion[] = [
 	{
 		id: "q-unscoped-uncaptured",
 		question: "What happened outside Jira?",
-		answer: "Twelve pieces. The largest is a local Claude session on PAY-101 that changed the release boundary without a work item, and a spike branch that is the only record of why the adapter can be deleted outright.",
+		answer: "Forty pieces. The largest is a local Claude session on PAY-101 that changed the release boundary without a work item, and a spike branch that is the only record of why the adapter can be deleted outright.",
 	},
 ];
 
@@ -430,7 +430,7 @@ export function toPulseAnswer(
 		id: `answer-${matched?.id ?? question.trim().toLocaleLowerCase().replaceAll(/[^a-z0-9]+/g, "-")}`,
 		question: question.trim(),
 		answer: matched?.answer
-			?? `Reading ${scopeLabel} — seven insights, ${scope?.workItemKeys.length ?? 16} work items and twelve pieces of uncaptured work. There is no answer written for that question in this prototype.`,
+			?? `Reading ${scopeLabel} — seven insights, ${scope?.workItemKeys.length ?? 16} work items and forty pieces of uncaptured work. There is no answer written for that question in this prototype.`,
 	};
 }
 

@@ -450,6 +450,23 @@ test("Parent and Sprint offer exactly the scopes the article can open", () => {
 	assert.match(SCOPE_SOURCES.options, /sprint: "Sprint",/u, "the field needs a label or the rail renders blank");
 });
 
+test("described Parent and Sprint rows still render name and key", () => {
+	// Parent/Sprint are two-line (label + key). Clustering the mark next to
+	// the label for Work type/Project used a `hasDescription ? null` branch
+	// that also swallowed the label block, leaving empty checkboxes.
+	assert.match(SCOPE_SOURCES.options, /description: epic\.key/u);
+	assert.match(SCOPE_SOURCES.options, /description: sprint\.key/u);
+	assert.doesNotMatch(
+		SCOPE_SOURCES.popover,
+		/hasDescription \? null : tightLeading/u,
+		"described rows must still render their label block",
+	);
+	assert.match(
+		SCOPE_SOURCES.popover,
+		/hasDescription \? null : leadingVisual[\s\S]*\{labelBlock\}/u,
+	);
+});
+
 test("choosing a scope opens the surface the brief lives on", () => {
 	// The brief only exists in Insights. Without this, picking an epic from the
 	// board filter recomputes the scope and leaves the reader on the board
@@ -460,7 +477,7 @@ test("choosing a scope opens the surface the brief lives on", () => {
 	// restored on mount.
 	assert.match(
 		SCOPE_SOURCES.page,
-		/toggleValue: \(fieldId, valueId\) => \{[\s\S]*?setMode\("pulse"\)/u,
+		/toggleValue: \(fieldId, valueId\) => \{[\s\S]*?handleOpenTimeline\(\)/u,
 	);
 	assert.doesNotMatch(
 		SCOPE_SOURCES.page,
@@ -536,12 +553,15 @@ test("the ask dock reuses the work item's composer instead of growing a third on
 	assert.doesNotMatch(SCOPE_SOURCES.composer, /experimental-v3\/components\/activity-composer/u);
 });
 
-test("the suggestion row wraps rather than clipping at the reading measure", () => {
-	// `Suggestions` is a horizontal ScrollArea built for a full-width chat pane.
-	// Inside a 36rem column the third chip is sliced off at the edge with no
-	// fade, which reads as a clipping bug rather than an invitation to scroll.
-	assert.match(SCOPE_SOURCES.composer, /flex min-w-0 flex-wrap gap-2/u);
+test("the suggestion row uses the context-bar prompt flyout", () => {
+	// One docked pill, with the rest stacked straight up on hover or click.
+	// `Suggestions` is a horizontal ScrollArea built for a full-width chat pane
+	// and would clip the third chip at this 36rem measure.
+	assert.match(SCOPE_SOURCES.composer, /ContextBarPromptFlyout/u);
+	assert.match(SCOPE_SOURCES.composer, /ariaLabel="Suggested questions"/u);
 	assert.doesNotMatch(SCOPE_SOURCES.composer, /<Suggestions\b/u);
+	assert.doesNotMatch(SCOPE_SOURCES.composer, /<Suggestion\b/u);
+	assert.doesNotMatch(SCOPE_SOURCES.composer, /flex min-w-0 flex-wrap gap-2/u);
 });
 
 test("answers enter with their own exit timing and a reduced-motion guard", () => {

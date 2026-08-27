@@ -3,20 +3,23 @@ import type { TerminalStoryDefinition } from "@/components/projects/jira-golden-
 
 const JIRA_GOLDEN_JOURNEYS_V3_BASE_URL = "https://jira-golden-journeys-v3.atlassian.net";
 
+export const JIRA_GOLDEN_JOURNEYS_V3_RESUME_PROMPT =
+	"cd /Users/venn/dev/payments/.worktrees/pay-101-adapter && claude --resume 338eaaca-62da-4dcb-925b-f2c5f16be5a8";
+
 export function getJiraGoldenJourneysV3IssueUrl(issueKey: string): string {
 	return `${JIRA_GOLDEN_JOURNEYS_V3_BASE_URL}/browse/${encodeURIComponent(issueKey)}`;
 }
 
 export const JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_BEATS: readonly TerminalBeat[] = [
 	{
-		id: "implement",
+		id: "paste-resume-prompt",
 		trigger: "click",
-		hint: "→ next: run the local checks",
+		hint: "→ next: restore the prior conversation",
 		steps: [
 			{
-				kind: "type",
+				kind: "paste",
 				pane: "right",
-				text: "Implement SHOP-4821 guest checkout. Preserve the existing checkout safeguards and add focused regression coverage.",
+				text: JIRA_GOLDEN_JOURNEYS_V3_RESUME_PROMPT,
 			},
 			{ kind: "submit", pane: "right" },
 			{ kind: "set-working", pane: "right", working: true },
@@ -24,71 +27,46 @@ export const JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_BEATS: readonly TerminalBeat[] = [
 				kind: "output",
 				pane: "right",
 				lines: [
-					[{ text: "⏺ Atlassian · ", tone: "brand" }, { text: "read SHOP-4821 acceptance criteria" }],
-					[{ text: "⏺ Read · ", tone: "brand" }, { text: "checkout session, address, payment, and order submission owners" }],
-					[{ text: "⏺ Search · ", tone: "brand" }, { text: "guest eligibility and duplicate-order safeguards" }],
-					[{ text: "⏺ Git · ", tone: "brand" }, { text: "created feature/shop-4821-guest-checkout" }],
-					[{ text: "⏺ Edit · ", tone: "brand" }, { text: "added the guest checkout path without changing signed-in checkout" }],
-					[{ text: "⏺ Edit · ", tone: "brand" }, { text: "kept delivery and payment details after recoverable errors" }],
-					[{ text: "⏺ Test · ", tone: "brand" }, { text: "covered desktop, mobile, retry, and duplicate-order behavior" }],
+					[{ text: "⏺ Session · ", tone: "brand" }, { text: "restored local Claude session for PAY-101" }],
+					[{ text: "  ⎿ Worktree · ", tone: "dim" }, { text: ".worktrees/pay-101-adapter" }],
+					[{ text: "  ⎿ Conversation · ", tone: "dim" }, { text: "38 messages · Ee Venn Soh · last active Mon 17 Aug 07:48" }],
 				],
 			},
 		],
 	},
 	{
-		id: "local-checks",
+		id: "restore-session",
 		trigger: "key",
-		hint: "→ next: create PR #1847 from this session",
+		hint: "→ next: reveal the work produced outside Jira",
 		steps: [
-			{ kind: "type", pane: "right", text: "Run the focused tests, lint, and typecheck." },
-			{ kind: "submit", pane: "right" },
 			{
 				kind: "output",
 				pane: "right",
 				lines: [
-					[{ text: "⏺ Bash · ", tone: "brand" }, { text: "pnpm test checkout · 48 passed" }],
-					[{ text: "⏺ Bash · ", tone: "brand" }, { text: "pnpm run lint · passed" }],
-					[{ text: "⏺ Bash · ", tone: "brand" }, { text: "pnpm run typecheck · passed" }],
-					[{ text: "✓ ", tone: "success" }, { text: "Local checks are green · ready for a pull request" }],
+					[{ text: "⏺ Context · ", tone: "brand" }, { text: "PAY-101 · Inventory every v1 call site and name an owner" }],
+					[{ text: "  Maya · ", tone: "dim" }, { text: "Should we keep LegacyGatewayAdapter as a compatibility shim?" }],
+					[{ text: "  Claude · ", tone: "dim" }, { text: "We agreed to delete the adapter, not wrap it." }],
+					[{ text: "  ⎿ Decision · ", tone: "dim" }, { text: "61 call sites across four services; PAY-102 must prove deletion before ports begin" }],
+					[{ text: "  ⎿ Risk · ", tone: "dim" }, { text: "v1 still owns retry semantics for 3-D Secure" }],
 				],
 			},
 		],
 	},
 	{
-		id: "create-pull-request",
+		id: "show-generated-artifacts",
 		trigger: "key",
-		hint: "→ next: confirm CI has started",
-		steps: [
-			{
-				kind: "type",
-				pane: "right",
-				text: "Create the pull request, request Priya Narayanan and Jordan Lee, then monitor CI.",
-			},
-			{ kind: "submit", pane: "right" },
-			{
-				kind: "output",
-				pane: "right",
-				lines: [
-					[{ text: "⏺ Git · ", tone: "brand" }, { text: "committed feat(checkout): add guest checkout" }],
-					[{ text: "⏺ Git · ", tone: "brand" }, { text: "pushed feature/shop-4821-guest-checkout" }],
-					[{ text: "⏺ GitHub · ", tone: "brand" }, { text: "opened PR #1847 · Add guest checkout to the storefront" }],
-					[{ text: "  ⎿ Reviewers · ", tone: "dim" }, { text: "Priya Narayanan and Jordan Lee requested" }],
-				],
-			},
-		],
-	},
-	{
-		id: "ci-started",
-		trigger: "key",
-		hint: "PR #1847 created · select Build above",
+		hint: "PAY-101 context restored · session ready",
 		steps: [
 			{
 				kind: "output",
 				pane: "right",
 				lines: [
-					[{ text: "⏺ GitHub · ", tone: "brand" }, { text: "CI started for PR #1847" }],
-					[{ text: "  ⎿ ", tone: "dim" }, { text: "Unit tests, browser tests, lint, and typecheck are running" }],
-					[{ text: "✓ ", tone: "success" }, { text: "PR linked to SHOP-4821 in Jira" }],
+					[{ text: "⏺ Git · ", tone: "brand" }, { text: "commit 8c2f4e1 · map 61 v1 call sites and owners" }],
+					[{ text: "⏺ GitHub · ", tone: "brand" }, { text: "PR #1839 merged · Call-site inventory across four services · +312 lines" }],
+					[{ text: "⏺ Artifact · ", tone: "brand" }, { text: "Payments SDK v2 — migration scope" }],
+					[{ text: "⏺ Artifact · ", tone: "brand" }, { text: "#payments-migration — keep or delete the adapter" }],
+					[{ text: "⏺ Artifact · ", tone: "brand" }, { text: "Lane assignments, humans and agents" }],
+					[{ text: "✓ ", tone: "success" }, { text: "Local work is visible again and ready to continue" }],
 				],
 			},
 			{ kind: "set-working", pane: "right", working: false },
@@ -102,23 +80,23 @@ export const JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_STEP_COUNT =
 export const JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_STORY = {
 	beats: JIRA_GOLDEN_JOURNEYS_V3_TERMINAL_BEATS,
 	layout: "claude-only",
-	initialHint: "click the terminal to start Claude on SHOP-4821",
-	finishedHint: "PR #1847 created · select Build above",
+	initialHint: "click the terminal to paste the copied PAY-101 resume prompt",
+	finishedHint: "PAY-101 context restored · session ready",
 	getIssueUrl: getJiraGoldenJourneysV3IssueUrl,
-	frameAriaLabel: "Start Claude working on SHOP-4821",
+	frameAriaLabel: "Paste the copied resume prompt for PAY-101",
 	dashboard: {
 		title: "Jira work item",
-		workspace: "Jira Golden Journeys v3 · SHOP-4821",
+		workspace: "Jira Golden Journeys v3 · PAY-101",
 		footerHints: "↑↓ to browse · enter to inspect in Jira",
-		shellPrompt: "~/dev/storefront $",
+		shellPrompt: "~/dev/payments $",
 	},
 	claude: {
-		cwd: "~/dev/storefront",
+		cwd: "~/dev/payments/.worktrees/pay-101-adapter",
 	},
 	statusBar: {
-		sessionName: "jira-golden-journeys-v3",
+		sessionName: "pay-101-adapter",
 		singleWindowLabel: "0:claude*",
 		splitWindowLabel: "0:jira 1:claude*",
-		clock: "10:48",
+		clock: "08:12",
 	},
 } as const satisfies TerminalStoryDefinition;

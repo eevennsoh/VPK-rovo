@@ -43,7 +43,7 @@ export function PulseModeToggle({
 		<Button
 			aria-label={label}
 			aria-pressed={active}
-			className={cn(active ? "border-border-selected text-text-selected" : null)}
+			className={cn(active ? "border-border-selected text-text-selected! [&_svg]:text-icon-selected!" : null)}
 			onClick={onToggle}
 			size="default"
 			variant="outline"

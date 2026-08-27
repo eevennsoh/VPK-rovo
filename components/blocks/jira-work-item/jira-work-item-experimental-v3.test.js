@@ -143,34 +143,19 @@ test("the v3 control row is consolidated and Reporter moved back to Details", ()
 	const detailsEditorsSource = readBlockFile("experimental-v3/components/detail-field-editors.tsx");
 	assert.match(
 		detailsEditorsSource,
-		/export function AgentsRowField[\s\S]*gap-0\.5[\s\S]*<DropdownMenuTrigger[\s\S]*aria-label="Edit agents"[\s\S]*absolute inset-0[\s\S]*<AgentRowStatusAvatar[\s\S]*<PlusIcon size="small" \/>[\s\S]*<DropdownMenuContent \{\.\.\.WORK_ITEM_AGENT_SELECTOR_MENU\}>[\s\S]*<WorkItemAgentSelector/u,
-	);
-	assert.match(
-		detailsEditorsSource,
-		/import \{ Tooltip, TooltipContent, TooltipProvider, TooltipTrigger \} from "@\/components\/ui\/tooltip"/u,
-	);
-	assert.match(
-		detailsEditorsSource,
-		/<TooltipTrigger[\s\S]*tabIndex=\{-1\}[\s\S]*<AgentAvatarVisual[\s\S]*sizePx=\{24\}[\s\S]*<TooltipContent[\s\S]*\{statusLabel\}/u,
+		/export function AgentsRowField[\s\S]*<AgentAssignment[\s\S]*assignedAgents=\{assignedAgents\}[\s\S]*maxVisibleAgents=\{3\}[\s\S]*onAssignedAgentIdsChange=\{handleAssignedAgentIdsChange\}/u,
 	);
 	assert.doesNotMatch(detailsEditorsSource, /AvatarGroup/u);
 	assert.doesNotMatch(detailsEditorsSource, /-space-x-/u);
 	assert.doesNotMatch(detailsEditorsSource, /selectionMode="multiple"/u);
-	assert.match(detailsEditorsSource, /selectedAgentIds=\{selectedAgentIds\}/u);
 	assert.match(
 		detailsEditorsSource,
-		/if \(selectedAgentIds\.includes\(agentId\)\) \{[\s\S]*onChange\(selectedAgents\.filter\(\(member\) => member\.id !== agentId\)\);[\s\S]*\} else \{[\s\S]*onChange\(\[\.\.\.selectedAgents, toCrewAgent\(agent\)\]\);/u,
+		/const handleAssignedAgentIdsChange = \(agentIds: readonly string\[\]\) =>[\s\S]*const nonAgentCrew = value\.filter\(\(member\) => member\.kind !== "agent"\);[\s\S]*onChange\(\[\.\.\.nonAgentCrew, \.\.\.nextAgents\]\);/u,
 	);
 	assert.match(
 		detailsEditorsSource,
-		/import \{ WorkItemAgentSelector \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/components\/work-item-agent-selector";/u,
+		/import \{ AgentAssignment, type AgentAssignmentAgent \} from "@\/components\/blocks\/agent-assignment";/u,
 	);
-	assert.match(detailsEditorsSource, /import \{ WORK_ITEM_AGENT_SELECTOR_MENU \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/lib\/work-item-agent-selector-menu";/u);
-	const workItemAgentSelectorSource = readBlockFile("experimental-v3/components/work-item-agent-selector.tsx");
-	assert.match(workItemAgentSelectorSource, /selectionMode="single"/u);
-	assert.match(workItemAgentSelectorSource, /selectedAgentIds\?: readonly string\[\];/u);
-	assert.match(workItemAgentSelectorSource, /selectedAgentIds=\{selectedAgentIds\}/u);
-	assert.doesNotMatch(workItemAgentSelectorSource, /export const WORK_ITEM_AGENT_SELECTOR_MENU/u);
 	const composerAgentPillSource = readBlockFile("experimental-v3/components/activity-composer-agent-context-pill.tsx");
 	assert.match(composerAgentPillSource, /import \{ WORK_ITEM_AGENT_SELECTOR_MENU \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/lib\/work-item-agent-selector-menu";/u);
 	assert.match(
@@ -298,7 +283,7 @@ test("the v3 dialog owns one fixed chrome row", () => {
 	assert.match(layoutSource, /data-jira-work-item-column-chrome/u);
 	assert.match(
 		layoutSource,
-		/data-jira-work-item-column-chrome[\s\S]*@\[860px\]\/agentlayout:overflow-y-auto @\[860px\]\/agentlayout:overscroll-y-none @\[860px\]\/agentlayout:px-6 @\[860px\]\/agentlayout:pt-6 @\[860px\]\/agentlayout:pb-6"[\s\S]*data-jira-work-item-scroll-region/u,
+		/data-jira-work-item-column-chrome[\s\S]*@\[860px\]\/agentlayout:overflow-y-auto @\[860px\]\/agentlayout:overscroll-y-none @\[860px\]\/agentlayout:px-6 @\[860px\]\/agentlayout:pt-6 @\[860px\]\/agentlayout:pb-6[\s\S]*data-jira-work-item-scroll-region/u,
 	);
 	assert.match(layoutSource, /setWideScrollContainer\(element\)/u);
 	assert.match(layoutSource, /setNarrowScrollContainer\(element\)/u);
@@ -473,7 +458,7 @@ test("PR select shares the section navigation list without becoming a section", 
 	);
 	assert.match(
 		readBlockFile("experimental-v3/components/context-panel.tsx"),
-		/selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView[\s\S]*insightsSelected \? \([\s\S]*<InsightsPanel[\s\S]*<WorkItemBody/u,
+		/selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView[\s\S]*insightsSelected && !hasInsights \? \([\s\S]*<InsightsPanel[\s\S]*<InsightsWorkItemSplit[\s\S]*workItem=\{workItem\}/u,
 	);
 	const sectionNavigationSource = readBlockFile("experimental-v3/context-section-navigation.tsx");
 	assert.match(
@@ -497,7 +482,7 @@ test("PR select shares the section navigation list without becoming a section", 
 	);
 	assert.match(
 		readBlockFile("experimental-v3/components/context-panel.tsx"),
-		/<InsightsPanel activity=\{activity\} hasInsights=\{hasInsights\} \/>/u,
+		/<InsightsPanel activity=\{insightsFeed\} hasInsights=\{hasInsights\} \/>/u,
 	);
 	const contextPillsSource = readBlockFile("experimental-v3/components/activity-composer-context-pills.tsx");
 	assert.doesNotMatch(contextPillsSource, /justify-between/u);
@@ -554,7 +539,7 @@ test("experimental v3 insight sources reuse work-item, session, activity, and pu
 	assert.match(compositionSource, /source\.kind === "pull-request"/u);
 	assert.match(compositionSource, /onOpenPullRequestIdentity\?\.\(source\.identity\)/u);
 	assert.match(compositionSource, /const \{ onSourceSelect \} = useJiraInsights\(\)/u);
-	assert.match(compositionSource, /<ActivityPanel \{\.\.\.props\} onInsightSourceSelect=\{onSourceSelect\} \/>/u);
+	assert.match(compositionSource, /<ActivityPanel[\s\S]*\{\.\.\.props\}[\s\S]*onInsightSourceSelect=\{onSourceSelect\}[\s\S]*surface=\{surface\}/u);
 	assert.doesNotMatch(
 		readBlockFile("experimental-v3/components/context-panel.tsx"),
 		/JiraInsightSource|handleInsightSourceSelect/u,
@@ -583,7 +568,19 @@ test("experimental v3 shares one insight selection between the filtered feed and
 	assert.doesNotMatch(metadataSource, /useState/u);
 	assert.match(
 		contextSource,
-		/selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView[\s\S]*insightsSelected \? \([\s\S]*<InsightsPanel activity=\{activity\}/u,
+		/selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView[\s\S]*insightsSelected && !hasInsights \? \([\s\S]*<InsightsPanel[\s\S]*<InsightsWorkItemSplit[\s\S]*insights=\{insightsSelected && hasInsights/u,
+	);
+	assert.match(
+		readBlockFile("experimental-v3/components/insights-work-item-split.tsx"),
+		/ariaLabel="Resize insights and work item"/u,
+	);
+	assert.match(
+		readBlockFile("experimental-v3/components/insights-work-item-split.tsx"),
+		/testId="jira-work-item-insights-resize-handle"/u,
+	);
+	assert.match(
+		readBlockFile("experimental-v3/components/work-item-side-panel-resize-handle.tsx"),
+		/SidebarResizeHandle/u,
 	);
 });
 
@@ -637,12 +634,12 @@ test("experimental v3 uses one chronological Activity feed for activity and insi
 	assert.match(activityPanelSource, /useJiraInsights\(\)/u);
 	assert.match(activityPanelSource, /mergeJiraActivityEntriesWithInsights/u);
 	assert.match(activityPanelSource, /createdAtMs: createdAtByEntryId\.get\(entry\.id\)/u);
-	assert.match(activityPanelSource, /const effectiveFilter = insightsSelected \? "insights-only" : filter/u);
+	assert.match(activityPanelSource, /const effectiveFilter = surface === "insights" \? "insights-only" : filter/u);
 	assert.match(activityPanelSource, /filterMode="jira-insights"/u);
 	assert.match(activityPanelSource, /activeEntryId=\{activeCheckpointId \?\? undefined\}/u);
 	assert.match(activityPanelSource, /renderEntry=\{renderActivityEntry\}/u);
 	assert.match(activityPanelSource, /<JiraInsightsCheckpoint/u);
-	assert.match(activityPanelSource, /id=\{insightsSelected \? "insights" : "activity"\}/u);
+	assert.match(activityPanelSource, /id=\{surface === "insights" \? "insights" : "activity"\}/u);
 });
 
 test("experimental v3 header Actions menu copies the work item as markdown", () => {
@@ -683,144 +680,65 @@ test("experimental v3 header Actions menu copies the work item as markdown", () 
 test("the v3 Agents details row opens the assigned menu first and swaps to the palette in place", () => {
 	const detailsEditorsSource = readBlockFile("experimental-v3/components/detail-field-editors.tsx");
 
-	// One trigger, two surfaces. The row model comes from the shared pure
-	// resolver so the menu, the trigger avatars, and the status tooltip can
-	// never disagree about which agents are assigned or what they are doing.
 	assert.match(
 		detailsEditorsSource,
-		/import \{\s*resolveAssignedAgentRows,\s*type AssignedAgentRow,\s*\} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/lib\/assigned-agent-rows";/u,
+		/import \{ AgentAssignment, type AgentAssignmentAgent \} from "@\/components\/blocks\/agent-assignment";/u,
 	);
-	assert.match(
-		detailsEditorsSource,
-		/import \{ WorkItemAssignedAgentsMenu \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/components\/work-item-assigned-agents-menu";/u,
-	);
-	assert.match(detailsEditorsSource, /const \[view, setView\] = useState<"assigned" \| "selector">\("assigned"\);/u);
 	assert.match(
 		detailsEditorsSource,
 		/const assignedRows = resolveAssignedAgentRows\(value, sessions, staticEvents\);/u,
 	);
-
-	// Zero assigned agents must still land on the palette exactly as before —
-	// an empty "assigned" menu would be a dead end.
 	assert.match(
 		detailsEditorsSource,
-		/const effectiveView = assignedRows\.length === 0 \? "selector" : view;/u,
-	);
-
-	// Every close path resets the view, so reopening never resumes mid-swap.
-	assert.match(
-		detailsEditorsSource,
-		/const handleOpenChange = \(nextOpen: boolean\) => \{[\s\S]*if \(!nextOpen\) \{\s*setQuery\(""\);\s*setView\("assigned"\);/u,
+		/const assignedAgents = assignedRows\.map\(\(row, rowIndex\): AgentAssignmentAgent =>[\s\S]*status: row\.session !== undefined && row\.session\.status !== "completed"[\s\S]*<WorkingSessionActivityByline session=\{row\.session\} sessionIndex=\{rowIndex\} \/>[\s\S]*<WorkingSessionActivityByline fallbackLabel=\{row\.statusLabel\} \/>[\s\S]*statusLabel: row\.statusLabel,/u,
 	);
 	assert.match(
 		detailsEditorsSource,
-		/const handleFooterAction = \(\) => \{\s*setOpen\(false\);\s*setQuery\(""\);\s*setView\("assigned"\);/u,
+		/<AgentAssignment[\s\S]*agents=\{agents\}[\s\S]*assignedAgents=\{assignedAgents\}[\s\S]*defaultPinnedAgentIds=\{DEFAULT_PINNED_SPACE_AGENT_IDS\}[\s\S]*onAssignedAgentIdsChange=\{handleAssignedAgentIdsChange\}[\s\S]*onAssignedAgentSelect=\{handleOpenAgentSession\}[\s\S]*onContinueExistingSession=\{handleContinueExistingSession\}[\s\S]*onStartNewSession=\{handleAgentAssign\}[\s\S]*usedAgentIds=\{resolveUsedAgentIds\(sessions\)\}/u,
 	);
-	// Toggling an agent routes through handleFooterAction, so the surface is
-	// always closed when the assigned count crosses 0 -> 1 and the derived
-	// `effectiveView` can never yank the palette out from under the pointer.
 	assert.match(
 		detailsEditorsSource,
-		/const handleAgentToggle = \(agentId: string\) => \{[\s\S]*handleFooterAction\(\);\s*\};/u,
+		/const handleAssignedAgentIdsChange = \(agentIds: readonly string\[\]\) =>[\s\S]*const nonAgentCrew = value\.filter\(\(member\) => member\.kind !== "agent"\);[\s\S]*const nextAgents = agentIds\.flatMap[\s\S]*onChange\(\[\.\.\.nonAgentCrew, \.\.\.nextAgents\]\);/u,
 	);
-
-	// Both surfaces share one DropdownMenuContent — "Add agent" swaps in place
-	// rather than opening a second popup.
 	assert.match(
 		detailsEditorsSource,
-		/<DropdownMenuContent \{\.\.\.WORK_ITEM_AGENT_SELECTOR_MENU\}>\s*\{effectiveView === "assigned" \? \(\s*<WorkItemAssignedAgentsMenu\s*onAddAgent=\{\(\) => setView\("selector"\)\}\s*onOpenAgentSession=\{handleOpenAgentSession\}\s*rows=\{assignedRows\}\s*\/>\s*\) : \(\s*<WorkItemAgentSelector/u,
+		/const handleAgentAssign = \(agent: AgentSelectorAgent\) => \{\s*actions\.invokeAgent\(agent, "context-pill", `@\$\{agent\.name\}`\);\s*\};/u,
 	);
-
-	// Row activation is the shared openSession action and nothing else: no
-	// launchSession / invokeAgent (which create a brand-new scripted session
-	// and never set activeSessionId), and no focus restore — the metadata rail
-	// goes inert the moment the floating session surface opens.
 	assert.match(
 		detailsEditorsSource,
-		/const handleOpenAgentSession = \(row: AssignedAgentRow\) => \{\s*if \(!row\.session\) \{\s*return;\s*\}\s*handleOpenChange\(false\);\s*actions\.openSession\(row\.session\.id\);/u,
+		/const handleOpenAgentSession = \(agent: AgentAssignmentAgent\) => \{\s*const row = assignedRows\.find\(\(candidate\) => candidate\.agentId === agent\.id\);\s*if \(!row\?\.session\) \{\s*actions\.invokeAgent\(agent, "context-pill", `@\$\{agent\.name\}`\);\s*return;\s*\}\s*actions\.openSession\(row\.session\.id\);/u,
+	);
+	assert.match(
+		detailsEditorsSource,
+		/const handleContinueExistingSession = \(agent: AgentSelectorAgent\) => \{\s*const session = resolveLatestAgentSession\(sessions, agent\.id\);\s*if \(!session\) \{\s*actions\.invokeAgent\(agent, "context-pill", `@\$\{agent\.name\}`\);\s*return;\s*\}\s*actions\.openSession\(session\.id\);/u,
 	);
 	assert.match(detailsEditorsSource, /const actions = useJiraWorkItemActions\(\);/u);
-	assert.doesNotMatch(detailsEditorsSource, /launchSession|invokeAgent|onOpenAgentChat/u);
+	assert.doesNotMatch(detailsEditorsSource, /launchSession|onOpenAgentChat/u);
 });
 
-test("the v3 assigned-agents menu lists live agent state and ends in an Add agent row", () => {
-	const menuSource = readBlockFile("experimental-v3/components/work-item-assigned-agents-menu.tsx");
-
-	assert.match(menuSource, /^"use client";/u);
-	assert.match(menuSource, /import AiAgentAddIcon from "@atlaskit\/icon-lab\/core\/ai-agent-add";/u);
-
-	// Rows reuse the shared suggestion-menu primitive, so `inlineMetadata`
-	// renders the `name · state` split (middot and truncation included) instead
-	// of a hand-rolled row.
-	assert.match(
-		menuSource,
-		/<RichTextSuggestionMenu\s*className="rich-text-command-menu-borderless w-full!"[\s\S]*title="Assigned agents"/u,
+test("the v3 assigned-agents menu lists live agent state and ends in an Assign agent row", () => {
+	const detailsEditorsSource = readBlockFile("experimental-v3/components/detail-field-editors.tsx");
+	const menuSource = fs.readFileSync(
+		path.join(process.cwd(), "components/blocks/agent-assignment/components/assigned-agents-menu.tsx"),
+		"utf8",
 	);
-	assert.match(menuSource, /label: row\.name,/u);
-	assert.match(menuSource, /leadingVisual: \([\s\S]*<AgentAvatarVisual[\s\S]*avatarSrc=\{row\.avatarSrc\}[\s\S]*brandName=\{row\.brandName\}[\s\S]*sizePx=\{24\}/u);
 
-	// Live narration only while a session is actually running or waiting; a
-	// finished or never-run agent falls back to the resolved status label so a
-	// row can never claim "Working" for an agent that is not.
 	assert.match(
 		menuSource,
-		/inlineMetadata: row\.session !== undefined && row\.session\.status !== "completed"\s*\? <WorkingSessionActivityByline session=\{row\.session\} sessionIndex=\{rowIndex\} \/>\s*: <WorkingSessionActivityByline fallbackLabel=\{row\.statusLabel\} \/>,/u,
+		/<RichTextSuggestionMenu[\s\S]*title="Assigned agents"/u,
 	);
 	assert.match(
 		menuSource,
+		/inlineMetadata: toAssignedAgentStatus\(row\.status\),[\s\S]*hoverActions: \{[\s\S]*primaryLabel: "View"[\s\S]*secondaryLabel: "Archive"/u,
+	);
+	assert.match(
+		detailsEditorsSource,
 		/import \{ WorkingSessionActivityByline \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/components\/agent-session-activity-byline";/u,
 	);
-
-	// Rows with no session open nothing, so they stay informational rather than
-	// offering a click that would silently no-op.
-	assert.match(menuSource, /disabled: row\.session === undefined,/u);
 	assert.match(
 		menuSource,
-		/const row = rows\.find\(\(candidate\) => candidate\.agentId === item\.id\);\s*if \(!row\?\.session\) \{\s*return;\s*\}\s*onOpenAgentSession\(row\);/u,
+		/<Button[\s\S]*onClick=\{onAddAgent\}[\s\S]*<AiAgentAddIcon label="" \/>[\s\S]*Assign agent/u,
 	);
-
-	// The footer row is last, separated by the primitive's decorative rule, and
-	// swaps the surface rather than dismissing the dropdown.
-	assert.match(
-		menuSource,
-		/const items: readonly RichTextSuggestionMenuItem\[\] = \[\s*\.\.\.rows\.map\(toAgentItem\),\s*\{\s*icon: <AiAgentAddIcon label="" \/>,\s*iconTileVariant: "transparent",\s*id: ADD_AGENT_ITEM_ID,\s*label: "Add agent",\s*separatorBefore: true,\s*\},\s*\];/u,
-	);
-	assert.match(
-		menuSource,
-		/if \(item\.id === ADD_AGENT_ITEM_ID\) \{\s*onAddAgent\(\);\s*return;\s*\}/u,
-	);
-
-	// Roving selection skips the disabled rows instead of parking on them.
-	assert.match(
-		menuSource,
-		/const selectableIndexes = items\.flatMap\(\(item, index\) => \(item\.disabled \? \[\] : \[index\]\)\);/u,
-	);
-	assert.match(menuSource, /const \[selectedIndex, setSelectedIndex\] = useState\(-1\);/u);
-	assert.match(menuSource, /event\.key === "ArrowDown" \|\| event\.key === "ArrowUp"/u);
-
-	// DOM focus is the single source of truth: Arrow moves focus onto the row
-	// button and `onFocus` mirrors it back into `selectedIndex`, so assistive
-	// tech announces the landed row and Tab can never desync from the highlight.
-	assert.match(menuSource, /focusOptionAt\(selectableIndexes\[nextCursor\]\);/u);
-	assert.match(menuSource, /onFocus=\{handleFocus\}/u);
-	assert.match(
-		menuSource,
-		/const handleFocus = \(event: FocusEvent<HTMLDivElement>\) =>[\s\S]*indexOf\(focused\)[\s\S]*setSelectedIndex\(index\)/u,
-	);
-	// Enter/Space stay with the focused option's own button activation so a row
-	// can never fire twice from a single keypress.
-	assert.doesNotMatch(menuSource, /event\.key === "Enter"/u);
-
-	// Base UI parks focus on the popup after mount, so the list has to reclaim
-	// it a frame later or Arrow/Enter never reach this handler.
-	assert.match(
-		menuSource,
-		/window\.requestAnimationFrame\(\(\) => \{[\s\S]*'\[role="option"\]:not\(\[disabled\]\)'[\s\S]*firstEnabled\.focus\(\);[\s\S]*container\?\.focus\(\);/u,
-	);
-	assert.match(menuSource, /return \(\) => window\.cancelAnimationFrame\(frameId\);/u);
-
-	// Dismissal belongs to the host DropdownMenuContent; duplicating the
-	// composer menu's window-level listeners here would fight Base UI.
 	assert.doesNotMatch(menuSource, /window\.addEventListener|keepMounted|AnimatePresence/u);
 });
 

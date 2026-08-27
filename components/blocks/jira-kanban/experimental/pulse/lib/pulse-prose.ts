@@ -2,8 +2,8 @@
  * Deterministic highlighter for Pulse outcome copy.
  *
  * Fixture paragraphs stay plain strings. This walk is the only place that
- * decides what is an issue key versus a type name, so every story — Kickoff
- * through Ship readiness, plus member-scoped summaries — renders the same way.
+ * decides what is an issue key versus a type name, so every story — Adapter
+ * deleted through Two blockers, plus member-scoped summaries — renders the same way.
  *
  * - Issue keys (`PAY-102`) become lozenges.
  * - Explicit backtick spans become inline code.

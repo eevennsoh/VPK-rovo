@@ -90,6 +90,34 @@ test("QuestionCard caps card height and scrolls overflowing question content int
 	assert.match(body, /\boverscroll-contain\b/u);
 });
 
+test("QuestionCard footer sits on the option-list rhythm without a top border", () => {
+	const footer = extractSlice(
+		"data-slot=\"question-card-footer\"",
+		"</footer>",
+	);
+	const body = extractSlice(
+		"data-slot=\"question-card-body\"",
+		"<QuestionInput",
+	);
+
+	assert.match(footer, /\bpy-3\b/u, "Custom input footers use the extra vertical padding from the Submit row");
+	assert.doesNotMatch(footer, /\bpt-1\b/u);
+	assert.doesNotMatch(footer, /\bborder-t\b/u);
+	assert.doesNotMatch(body, /\bpb-4\b/u, "Body bottom padding must not add extra space above the footer");
+});
+
+test("QuestionCard never renders a Skip footer button and drops header bottom padding when there are no options", () => {
+	const header = extractSlice(
+		"<header data-slot=\"question-card-header\"",
+		"</header>",
+	);
+
+	assert.match(QUESTION_CARD_SOURCE, /shouldShowQuestionCardFooter\(showCustomInput, primaryAction\)/u);
+	assert.match(QUESTION_CARD_SOURCE, /case "skip":/u);
+	assert.doesNotMatch(QUESTION_CARD_SOURCE, />Skip</u);
+	assert.match(header, /visibleOptionCount > 0 \? "pb-4" : "pb-0"/u);
+});
+
 test("QuestionCard keyboard shortcuts toggle multi-select options without submitting", () => {
 	const keyboardSelect = extractHookSlice(
 		"const handleKeyboardOptionSelect = useCallback(",
@@ -111,6 +139,7 @@ test("QuestionCard keyboard shortcuts toggle multi-select options without submit
 
 	assert.match(enterKeyHandler, /handleKeyboardOptionSelect\(option\.id\)/u);
 	assert.match(enterKeyHandler, /isOptionButtonFocused \|\| document\.activeElement === footerButtonRef\.current/u);
+	assert.match(QUESTION_CARD_HOOK_SOURCE, /hasFooterButton/u);
 	assert.match(
 		QUESTION_CARD_HOOK_SOURCE,
 		/default: \{[\s\S]*const digit = Number\(event\.key\)[\s\S]*handleKeyboardOptionSelect\(option\.id\)/u,

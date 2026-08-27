@@ -1,6 +1,6 @@
 #!/bin/zsh
 # vpk-system-clean.sh
-# Keeps a 24/7 Mac from drowning in local-development churn. Six guards:
+# Keeps a 24/7 Mac from drowning in local-development churn. Seven guards:
 #  1. RUNAWAY DEV SERVER (CPU): a `next-server` stuck at high CPU is a
 #     Turbopack watch/recompile thrash loop. Detected by sampling CPU twice so a
 #     normal bursty compile is NOT mistaken for a runaway. Killed (with its
@@ -15,22 +15,28 @@
 #     second sample — an idle server holding this much memory is the leak; a
 #     busy one is a normal burst. Killed (with its `next dev` parent) to
 #     restart clean.
-#  3. RUNAWAY .next CACHES: Turbopack's .next/dev grows unbounded (15GB seen);
+#  3. IDLE DEV STACKS (PORTS): leftover `vpk-dev-*` tmux sessions whose
+#     worktree still exists keep next-server, Express, and Portless routes
+#     bound. Stopped only when unattached, older than a grace window, and not
+#     the primary checkout. Occupancy is a running executable named exactly
+#     `claude`, `caffeinate`, `lazygit`, `cursor-agent`, or `codex` whose cwd
+#     is that worktree — worktree directory names are ignored. Uses the
+#     worktree's own `dev-tmux-plain.sh stop` (SIGINT so Portless drops THIS
+#     route). Never `portless prune`.
+#  4. RUNAWAY .next CACHES: Turbopack's .next/dev grows unbounded (15GB seen);
 #     every file feeds macOS FSEvents and amplifies the thrash. Deleted PER
 #     WORKTREE when over threshold AND that worktree has no live dev server (each
 #     running server's cwd is matched to the cache's worktree root) — so idle
-#     caches are reclaimed even while OTHER worktrees keep a live build. This is
-#     the "prevention". The old all-or-nothing skip reclaimed nothing in
-#     practice, because a 24/7 box always has at least one server up somewhere.
-#  4. STALE TMUX SESSIONS: dev-tmux.sh and dev-tmux-plain.sh leave a
-#     vpk-dev-<worktree> session alive per worktree. When a worktree is deleted
-#     the session is orphaned and keeps burning resources. Killed when its
-#     worktree path is gone AND no client is attached.
-#  5. RUNAWAY ALMD: Atlassian's /usr/local/bin/almd can get stuck consuming a
+#     caches are reclaimed even while OTHER worktrees keep a live build. Idle
+#     stacks are stopped first so their caches can be reclaimed in the same run.
+#  5. STALE TMUX SESSIONS: when a worktree directory is deleted, the
+#     `vpk-dev-<worktree>` session is orphaned. Killed when its path is gone
+#     AND no client is attached (SIGINT then kill-session; no Portless prune).
+#  6. RUNAWAY ALMD: Atlassian's /usr/local/bin/almd can get stuck consuming a
 #     CPU core for hours. Restarted only after exact-path verification, a
 #     minimum process age, and three sustained-hot samples. Its user LaunchAgent
 #     retries it automatically.
-#  6. fseventsd LEAK: the FS-events daemon leaks CPU/RAM over long uptimes
+#  7. fseventsd LEAK: the FS-events daemon leaks CPU/RAM over long uptimes
 #     (22GB seen). Restarted if ballooned (needs the sudoers rule from install).
 #
 # Safe unattended: never deletes a live build's cache, and only kills a process
@@ -38,6 +44,10 @@
 # "summary:" line.
 set -u
 setopt NULL_GLOB
+
+# launchd gives a bare PATH. Append common bins so `node` is found without
+# shadowing a caller-provided PATH (tests put fakes first).
+export PATH="${PATH:-/usr/bin:/bin:/usr/sbin:/sbin}:/opt/homebrew/bin:/usr/local/bin"
 
 LOG="$HOME/Library/Logs/vpk-system-clean.log"
 NEXT_MAX_GB=3            # delete .next only once it grows past this
@@ -55,11 +65,16 @@ ALMD_SAMPLE_COUNT=3      # three observations avoid treating a brief burst as ru
 ALMD_SAMPLE_SECS=10      # 20-second confirmation window after the first sample
 ALMD_TERM_GRACE_SECS=5   # allow graceful exit before a guarded SIGKILL fallback
 KILL_RUNAWAY_ALMD=1      # 1 = reset sustained-hot almd; 0 = report only
+IDLE_STACK_MIN_AGE_SECS=1800  # leftover stacks younger than 30m are still warming
+KILL_IDLE_STACKS=1       # 1 = stop idle unattached leftover stacks; 0 = report only
+MAIN_WORKTREE="$HOME/Labs/vpk-rovo"
 
 NEXT_DIRS=(
 	"$HOME/Labs/vpk-rovo/.next"
 	"$HOME"/.codex/worktrees/*/vpk-rovo/.next
 	"$HOME"/Labs/vpk-rovo/.claude/worktrees/*/.next
+	"$HOME"/.cursor/worktrees/vpk-rovo/*/.next
+	"$HOME"/.superset/worktrees/*/*/.next
 )
 
 ts() { date "+%Y-%m-%d %H:%M:%S"; }
@@ -95,6 +110,53 @@ mem_gb_of() {
 		ps -o rss= -p "$1" 2>/dev/null | awk '{print int($1/1024/1024)}'
 	fi
 }
+cwd_of() { lsof -a -d cwd -p "$1" -Fn 2>/dev/null | sed -n 's/^n//p' | head -1; }
+
+tmux_cmd() {
+	local socket="$1"
+	shift
+	if [[ "$socket" == "default" ]]; then
+		tmux "$@"
+	else
+		tmux -L "$socket" "$@"
+	fi
+}
+
+# Occupancy: a process whose *executable name* is one of these, and whose cwd
+# is this worktree. Worktree folder/session names are not consulted.
+# Do not broaden to agent-browser leftovers or ChatGPT.app Codex helpers.
+worktree_has_operator() {
+	local root="$1" p c
+	local -a pids
+	pids=(
+		${(f)"$(pgrep -x claude 2>/dev/null)"}
+		${(f)"$(pgrep -x caffeinate 2>/dev/null)"}
+		${(f)"$(pgrep -x lazygit 2>/dev/null)"}
+		${(f)"$(pgrep -x cursor-agent 2>/dev/null)"}
+		${(f)"$(pgrep -x codex 2>/dev/null)"}
+	)
+	for p in $pids; do
+		[[ -n "$p" ]] || continue
+		c=$(cwd_of "$p")
+		[[ -n "$c" ]] || continue
+		[[ "$c" == "$root" || "$c" == "$root/"* ]] && return 0
+	done
+	return 1
+}
+
+stop_idle_stack() {
+	local socket="$1" sname="$2" spath="$3"
+	local stop_script="$spath/scripts/dev-tmux-plain.sh"
+	if [[ -f "$stop_script" ]]; then
+		if (cd "$spath" && VPK_DEV_TMUX_SESSION="$sname" /bin/bash "$stop_script" stop) >/dev/null 2>&1; then
+			return 0
+		fi
+		return 1
+	fi
+	tmux_cmd "$socket" send-keys -t "$sname" C-c 2>/dev/null || true
+	sleep 1
+	tmux_cmd "$socket" kill-session -t "$sname" 2>/dev/null
+}
 
 # Keep the log bounded on a 24/7 box (cap ~500 lines).
 if [[ -f "$LOG" ]] && (( $(wc -l < "$LOG") > 500 )); then
@@ -102,7 +164,7 @@ if [[ -f "$LOG" ]] && (( $(wc -l < "$LOG") > 500 )); then
 fi
 
 log "run start"
-freed=0; count=0; killed=0; bloated=0; almd_resets=0
+freed=0; count=0; killed=0; bloated=0; almd_resets=0; idle_stopped=0; stale_killed=0
 
 # --- 1. runaway dev server -----------------------------------------------------
 # First pass: which next-server pids are hot right now?
@@ -161,12 +223,89 @@ if (( ${#bloat1} )); then
 	done
 fi
 
-# --- 3. .next cleanup (per-worktree) ------------------------------------------
+# --- 3. idle leftover stacks + 5. orphaned tmux sessions ----------------------
+# Walk vpk-dev-* sessions on both sockets. Orphans (worktree path gone) are
+# SIGINT + kill-session. Leftover stacks whose path still exists are stopped
+# through that worktree's own stop script so Portless drops this route only.
+# Keep attached sessions, the primary checkout, stacks still in their grace
+# window, and worktrees with a matching tool process cwd.
+tmux_action="not-checked"
+if command -v tmux >/dev/null 2>&1; then
+	now_epoch=$(date +%s)
+	for socket in default vpk-dev; do
+		socket_stale=0
+		socket_idle=0
+		rows=( ${(f)"$(tmux_cmd "$socket" list-sessions -F '#{session_name}|#{session_path}|#{session_attached}|#{session_created}' 2>/dev/null)"} )
+		for row in $rows; do
+			sname="${row%%|*}"; rest="${row#*|}"
+			spath="${rest%%|*}"; rest="${rest#*|}"
+			sattached="${rest%%|*}"; screated="${rest##*|}"
+			[[ -n "$sname" ]] || continue
+			[[ "$sname" == vpk-dev-* ]] || continue
+			if [[ -z "$spath" ]]; then
+				spath=$(tmux_cmd "$socket" display-message -t "$sname" -p '#{pane_current_path}' 2>/dev/null)
+			fi
+
+			if [[ -z "$spath" || ! -d "$spath" ]]; then
+				if [[ "$sattached" == 1 ]]; then
+					log "kept tmux session $sname on $socket socket (orphaned path '${spath:-}' but attached)"
+					continue
+				fi
+				tmux_cmd "$socket" send-keys -t "$sname" C-c 2>/dev/null || true
+				sleep 1
+				if tmux_cmd "$socket" kill-session -t "$sname" 2>/dev/null; then
+					stale_killed=$(( stale_killed + 1 ))
+					socket_stale=$(( socket_stale + 1 ))
+					log "killed stale tmux session $sname on $socket socket (worktree path '${spath:-}' gone)"
+				else
+					log "FAILED to kill tmux session $sname on $socket socket"
+				fi
+				continue
+			fi
+
+			if [[ "$sattached" == 1 ]]; then
+				log "kept tmux session $sname on $socket socket (attached)"
+				continue
+			fi
+			if [[ "$sname" == "vpk-dev-main" || "$spath" == "$MAIN_WORKTREE" ]]; then
+				log "kept tmux session $sname on $socket socket (primary checkout)"
+				continue
+			fi
+			if [[ -z "$screated" || "$screated" == "0" ]]; then
+				log "kept tmux session $sname on $socket socket (unknown age)"
+				continue
+			fi
+			sage=$(( now_epoch - screated ))
+			if (( sage < IDLE_STACK_MIN_AGE_SECS )); then
+				log "kept tmux session $sname on $socket socket (${sage}s old < ${IDLE_STACK_MIN_AGE_SECS}s minimum)"
+				continue
+			fi
+			if worktree_has_operator "$spath"; then
+				log "kept tmux session $sname on $socket socket (tool process cwd is '$spath')"
+				continue
+			fi
+			if (( ! KILL_IDLE_STACKS )); then
+				log "idle tmux session $sname on $socket socket ('$spath', ${sage}s old) — KILL_IDLE_STACKS=0, left running"
+				continue
+			fi
+			if stop_idle_stack "$socket" "$sname" "$spath"; then
+				idle_stopped=$(( idle_stopped + 1 ))
+				socket_idle=$(( socket_idle + 1 ))
+				log "stopped idle tmux session $sname on $socket socket (worktree '$spath', ${sage}s old)"
+			else
+				log "FAILED to stop idle tmux session $sname on $socket socket (worktree '$spath')"
+			fi
+		done
+		log "checked tmux socket $socket (${socket_stale} stale session(s) killed, ${socket_idle} idle stack(s) stopped)"
+	done
+	tmux_action="checked default+vpk-dev sockets; ${stale_killed} stale session(s) killed; ${idle_stopped} idle stack(s) stopped"
+fi
+
+# --- 4. .next cleanup (per-worktree) ------------------------------------------
 # Map each running dev server to the worktree it serves (by its cwd), then
 # delete only the .next caches whose OWN worktree has no live server. This keeps
 # the "never touch a live build" guarantee while still reclaiming idle caches —
 # the previous all-or-nothing skip freed nothing whenever any server was up.
-cwd_of() { lsof -a -d cwd -p "$1" -Fn 2>/dev/null | sed -n 's/^n//p' | head -1; }
 busy_roots=()
 for p in ${(f)"$(pgrep -f 'next dev|next-server' 2>/dev/null)"}; do
 	c=$(cwd_of "$p"); [[ -n "$c" ]] && busy_roots+="$c"
@@ -196,53 +335,7 @@ for nx in ${(u)NEXT_DIRS}; do
 	fi
 done
 
-# --- 4. stale tmux sessions ----------------------------------------------------
-# dev-tmux.sh and dev-tmux-plain.sh name each session vpk-dev-<worktree> and
-# point session_path at the worktree root. Check both the default tmux socket and
-# the private vpk-dev socket used by the plain stack. When a worktree is deleted
-# its session is orphaned: it keeps a frontend/backend and sometimes a Rovo port
-# pool alive against a path that no longer exists. Kill those (skipping any
-# session you're attached to — never tear down a session in active use).
-# Self-correcting: a live worktree's path still exists, so it is never touched.
-tmux_action="not-checked"
-if command -v tmux >/dev/null 2>&1; then
-	stale_killed=0
-	for socket in default vpk-dev; do
-		socket_killed=0
-		if [[ "$socket" == "default" ]]; then
-			rows=( ${(f)"$(tmux list-sessions -F '#{session_name}|#{session_path}|#{session_attached}' 2>/dev/null)"} )
-		else
-			rows=( ${(f)"$(tmux -L "$socket" list-sessions -F '#{session_name}|#{session_path}|#{session_attached}' 2>/dev/null)"} )
-		fi
-		for row in $rows; do
-			sname="${row%%|*}"; rest="${row#*|}"
-			spath="${rest%%|*}"; sattached="${rest##*|}"
-			[[ -n "$sname" ]] || continue
-			[[ "$sname" == vpk-dev-* ]] || continue
-			[[ -n "$spath" && -d "$spath" ]] && continue   # worktree still exists
-			if [[ "$sattached" == 1 ]]; then
-				log "kept tmux session $sname on $socket socket (orphaned path '$spath' but attached)"
-				continue
-			fi
-			if [[ "$socket" == "default" ]]; then
-				tmux kill-session -t "$sname" 2>/dev/null
-			else
-				tmux -L "$socket" kill-session -t "$sname" 2>/dev/null
-			fi
-			if (( $? == 0 )); then
-				stale_killed=$(( stale_killed + 1 ))
-				socket_killed=$(( socket_killed + 1 ))
-				log "killed stale tmux session $sname on $socket socket (worktree path '$spath' gone)"
-			else
-				log "FAILED to kill tmux session $sname on $socket socket"
-			fi
-		done
-		log "checked tmux socket $socket (${socket_killed} stale session(s) killed)"
-	done
-	tmux_action="checked default+vpk-dev sockets; ${stale_killed} stale session(s) killed"
-fi
-
-# --- 5. runaway almd ----------------------------------------------------------
+# --- 6. runaway almd ----------------------------------------------------------
 # almd is a user LaunchAgent that retries every five minutes. Reset only the
 # exact deployed binary, only after it is old enough to be past startup work,
 # and only when every sample in a 20-second window remains hot.
@@ -316,7 +409,7 @@ if (( ${#almd_pids} )); then
 	(( almd_resets > 0 )) && almd_action="reset ${almd_resets}"
 fi
 
-# --- 6. fseventsd reset --------------------------------------------------------
+# --- 7. fseventsd reset --------------------------------------------------------
 fse_action="not-checked"
 fp=$(pgrep -x fseventsd | head -1)
 if [[ -n "$fp" ]]; then

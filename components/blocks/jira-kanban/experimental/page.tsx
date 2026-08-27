@@ -1,11 +1,15 @@
 "use client";
 
 import { useCallback, useMemo, useState, type ReactNode } from "react";
+
+import { useOptionalRovoChat } from "@/app/contexts";
 import type {
 	JiraKanbanAgentData,
+	JiraKanbanAssigneeData,
 	JiraKanbanCardData,
 	JiraKanbanCardSelectModifiers,
 	JiraKanbanColumnData,
+	JiraKanbanProps,
 } from "../index";
 import { createJiraKanbanColumns } from "../jira-kanban-data";
 import { BoardFilterPopover } from "./components/board-filter-popover";
@@ -16,6 +20,13 @@ import {
 	BOARD_FILTER_DEMO_NOW_ISO,
 	filterPulseTimelineByDays,
 } from "./lib/board-filter";
+import {
+	fillBoardFacepileAssignees,
+	mergeBoardFilterAssignees,
+	toInsightsAssigneeIds,
+	toPulseMemberAssigneeIds,
+	toPulseMemberId,
+} from "./lib/pulse-roster-filter";
 import {
 	countUnviewedTimelineSnapshots,
 	EXPERIMENTAL_BOARD_LAST_VIEWED_AT,
@@ -36,7 +47,7 @@ import {
 	toPulseSuggestedQuestions,
 } from "./pulse/data/pulse-scopes";
 import { scopeTimelineToWorkItemKeys } from "./pulse/hooks/use-pulse-timeline";
-import type { PulseAnswer } from "./pulse/types";
+import type { PulseAnswer, PulseLooseWork, PulseWorkItem } from "./pulse/types";
 import {
 	createJiraKanbanSelectionState,
 	filterJiraKanbanColumnsByAssignee,
@@ -50,6 +61,7 @@ import { BOARD_AGENTS } from "@/components/projects/jira/data/board-agents";
 import { BOARD_COLUMNS } from "@/components/projects/jira/data/board-data";
 
 const DEFAULT_CREATED_COLUMN_AGENT_ID = "readiness-checker";
+const PULSE_MEMBER_IDS = new Set(PULSE_TIMELINE.members.map((member) => member.id));
 
 /** Stable identity, so an unscoped article does not re-render on every tick. */
 const EMPTY_ANSWERS: readonly PulseAnswer[] = [];
@@ -67,8 +79,17 @@ export interface ExperimentalJiraKanbanPageProps {
 	ariaLabel?: string;
 	boardColumns?: readonly JiraKanbanColumnData[];
 	compactHeader?: boolean;
+	headerAssignees?: readonly JiraKanbanAssigneeData[];
+	insightsDefaultAssigneeIds?: readonly string[];
+	isInsightsWorkItemInteractive?: (workItem: PulseWorkItem) => boolean;
+	isLooseWorkResumable?: (item: PulseLooseWork) => boolean;
+	mode?: ExperimentalJiraKanbanMode;
 	onBoardColumnsChange?: (columns: readonly JiraKanbanColumnData[]) => void;
 	onCardClick?: (card: JiraKanbanCardData, columnTitle: string) => void;
+	onCardAgentActivityViewChat?: JiraKanbanProps["onCardAgentActivityViewChat"];
+	onInsightsWorkItemClick?: (workItem: PulseWorkItem) => void;
+	onModeChange?: (mode: ExperimentalJiraKanbanMode) => void;
+	onResumeLooseWork?: (item: PulseLooseWork) => void;
 	viewTabs?: ReactNode;
 }
 
@@ -83,8 +104,17 @@ export default function ExperimentalJiraKanbanPage({
 	ariaLabel = "Experimental RFP board columns. Scroll horizontally to review all statuses.",
 	boardColumns: controlledBoardColumns,
 	compactHeader = false,
+	headerAssignees,
+	insightsDefaultAssigneeIds,
+	isInsightsWorkItemInteractive,
+	isLooseWorkResumable,
+	mode: controlledMode,
 	onBoardColumnsChange,
 	onCardClick,
+	onCardAgentActivityViewChat,
+	onInsightsWorkItemClick,
+	onModeChange,
+	onResumeLooseWork,
 	viewTabs,
 }: Readonly<ExperimentalJiraKanbanPageProps>) {
 	const [localBoardColumns, setLocalBoardColumns] = useState<JiraKanbanColumnData[]>(
@@ -103,20 +133,29 @@ export default function ExperimentalJiraKanbanPage({
 		setLocalBoardColumns([...nextColumns]);
 	}, [boardColumns, controlledBoardColumns, onBoardColumnsChange]);
 	const [columnAgentAssignments, setColumnAgentAssignments] = useState<Record<string, string[]>>({});
-	const [mode, setMode] = useState<ExperimentalJiraKanbanMode>("board");
-	// Owned here, not inside Pulse: the board header's facepile is the primary
-	// way in and out of the filter, and it lives above the mode switch.
-	const [pulseMemberId, setPulseMemberId] = useState<string | null>(null);
+	const [localMode, setLocalMode] = useState<ExperimentalJiraKanbanMode>("board");
+	const mode = controlledMode ?? localMode;
+	const updateMode = useCallback((nextMode: ExperimentalJiraKanbanMode) => {
+		if (controlledMode === undefined) {
+			setLocalMode(nextMode);
+		}
+		onModeChange?.(nextMode);
+	}, [controlledMode, onModeChange]);
+	const rovoChat = useOptionalRovoChat();
 	// Commitments live above the mode switch: Pulse unmounts when it is toggled
 	// off, and a requested action or a captured note is something the reader
 	// decided, not view state that may quietly reset with the subtree.
 	const [requestedActionIds, setRequestedActionIds] = useState<ReadonlySet<string>>(() => new Set<string>());
 	const [capturedLooseWorkIds, setCapturedLooseWorkIds] = useState<ReadonlySet<string>>(() => new Set<string>());
+	const [dismissedLooseWorkIds, setDismissedLooseWorkIds] = useState<ReadonlySet<string>>(() => new Set<string>());
 	const handleRequestAction = useCallback((action: { id: string }) => {
 		setRequestedActionIds((current) => new Set(current).add(action.id));
 	}, []);
 	const handleCaptureLooseWork = useCallback((item: { id: string }) => {
 		setCapturedLooseWorkIds((current) => new Set(current).add(item.id));
+	}, []);
+	const handleDismissLooseWork = useCallback((item: { id: string }) => {
+		setDismissedLooseWorkIds((current) => new Set(current).add(item.id));
 	}, []);
 	// Questions are stored per scope rather than cleared when the scope changes.
 	// An answer about Sprint 24 read as a reply to a question asked of PAY-90
@@ -128,6 +167,24 @@ export default function ExperimentalJiraKanbanPage({
 	const [assignedAgentIdsByCard, setAssignedAgentIdsByCard] = useState<Record<string, string[]>>({});
 	const boardFilter = useBoardFilter();
 	const selectedAssigneeIds = boardFilter.selectedAssigneeIds;
+	const [timelineLastViewedAt, setTimelineLastViewedAt] = useState<string | null>(() => (
+		controlledMode === "pulse"
+			? markTimelineViewed(PULSE_TIMELINE)
+			: EXPERIMENTAL_BOARD_LAST_VIEWED_AT
+	));
+	const markTimelineAsViewed = useCallback(() => {
+		setTimelineLastViewedAt(markTimelineViewed(PULSE_TIMELINE));
+	}, []);
+	const handleOpenTimeline = useCallback(() => {
+		markTimelineAsViewed();
+		const nextAssigneeIds = insightsDefaultAssigneeIds === undefined
+			? toInsightsAssigneeIds(selectedAssigneeIds, PULSE_MEMBER_IDS)
+			: new Set(insightsDefaultAssigneeIds);
+		setSelection(createJiraKanbanSelectionState());
+		setDraggedCard(null);
+		boardFilter.actions.setAssigneeIds(nextAssigneeIds);
+		updateMode("pulse");
+	}, [boardFilter.actions, insightsDefaultAssigneeIds, markTimelineAsViewed, selectedAssigneeIds, updateMode]);
 	// Choosing an epic or a sprint is a request to read the brief, and the brief
 	// only exists in Insights. Without this, picking one from the board filter
 	// recomputes the scope and leaves the reader on the board looking at
@@ -136,15 +193,17 @@ export default function ExperimentalJiraKanbanPage({
 	// It hangs off the filter's own actions rather than an effect on `scope`:
 	// the mode change is caused by the reader's click, and deriving it from
 	// state afterwards would also fire when a scope is restored on mount.
+	// Parent and Sprint go through handleOpenTimeline so scoped entry gets the
+	// same Venn default as the Insights toggle.
 	const filterActions = useMemo((): BoardFilterActions => ({
 		...boardFilter.actions,
 		toggleValue: (fieldId, valueId) => {
 			boardFilter.actions.toggleValue(fieldId, valueId);
 			if (fieldId === "parent" || fieldId === "sprint") {
-				setMode("pulse");
+				handleOpenTimeline();
 			}
 		},
-	}), [boardFilter.actions]);
+	}), [boardFilter.actions, handleOpenTimeline]);
 	// Insights reads Parent and Sprint off the same filter the board reads its
 	// own fields off. One control, one selection model — the scope is derived
 	// here rather than owned separately, so the popover and the article cannot
@@ -168,10 +227,23 @@ export default function ExperimentalJiraKanbanPage({
 			};
 		});
 	}, [boardFilter.model.selectedValueIdsByField]);
-	const [timelineLastViewedAt, setTimelineLastViewedAt] = useState<string | null>(
-		EXPERIMENTAL_BOARD_LAST_VIEWED_AT,
+	const assignees = useMemo(
+		() => fillBoardFacepileAssignees(
+			getJiraKanbanAssignees(boardColumns),
+			headerAssignees ?? [],
+		),
+		[boardColumns, headerAssignees],
 	);
-	const assignees = useMemo(() => getJiraKanbanAssignees(boardColumns), [boardColumns]);
+	const filterAssignees = useMemo(
+		() => mode === "pulse"
+			? mergeBoardFilterAssignees(assignees, PULSE_TIMELINE.members)
+			: assignees,
+		[assignees, mode],
+	);
+	// Pulse faces are a shorthand for Filter → assignee. The roster reads the
+	// same field the popover writes, so the Filter button is pressed whenever
+	// a human or agent face is selected.
+	const pulseMemberId = toPulseMemberId(selectedAssigneeIds, PULSE_MEMBER_IDS);
 	const filteredBoardColumns = useMemo(
 		() => filterJiraKanbanColumnsByAssignee(boardColumns, selectedAssigneeIds),
 		[boardColumns, selectedAssigneeIds],
@@ -280,14 +352,9 @@ export default function ExperimentalJiraKanbanPage({
 		boardFilter.actions.setAssigneeIds(assigneeIds);
 	};
 
-	const markTimelineAsViewed = useCallback(() => {
-		setTimelineLastViewedAt(markTimelineViewed(PULSE_TIMELINE));
-	}, []);
-
-	const handleOpenTimeline = useCallback(() => {
-		markTimelineAsViewed();
-		setMode("pulse");
-	}, [markTimelineAsViewed]);
+	const handlePulseMemberChange = (memberId: string | null) => {
+		handleAssigneeFilterChange(toPulseMemberAssigneeIds(memberId));
+	};
 
 	const handleSelectedCardsStatusChange = (targetColumnTitle: string) => {
 		updateBoardColumns((currentColumns) => moveJiraKanbanCardsToColumn(
@@ -348,14 +415,14 @@ export default function ExperimentalJiraKanbanPage({
 				facepile={isPulse ? (
 					<PulseRosterFacepile
 						members={PULSE_TIMELINE.members}
-						onSelectedMemberIdChange={setPulseMemberId}
+						onSelectedMemberIdChange={handlePulseMemberChange}
 						selectedMemberId={pulseMemberId}
 					/>
 				) : undefined}
 				filterControl={
 					<BoardFilterPopover
 						actions={filterActions}
-						assignees={assignees}
+						assignees={filterAssignees}
 						compact={compactHeader}
 						model={boardFilter.model}
 					/>
@@ -365,7 +432,8 @@ export default function ExperimentalJiraKanbanPage({
 						active={isPulse}
 						onToggle={() => {
 							if (isPulse) {
-								setMode("board");
+								rovoChat?.closeChat();
+								updateMode("board");
 								return;
 							}
 							handleOpenTimeline();
@@ -379,10 +447,16 @@ export default function ExperimentalJiraKanbanPage({
 				<ExperimentalPulse
 					answers={answers}
 					capturedLooseWorkIds={capturedLooseWorkIds}
+					dismissedLooseWorkIds={dismissedLooseWorkIds}
+					isLooseWorkResumable={isLooseWorkResumable}
+					isWorkItemInteractive={isInsightsWorkItemInteractive}
 					onAsk={handleAsk}
 					onCaptureLooseWork={handleCaptureLooseWork}
+					onDismissLooseWork={handleDismissLooseWork}
 					onRequestAction={handleRequestAction}
-					onSelectedMemberIdChange={setPulseMemberId}
+					onResumeLooseWork={onResumeLooseWork}
+					onSelectedMemberIdChange={handlePulseMemberChange}
+					onWorkItemClick={onInsightsWorkItemClick}
 					requestedActionIds={requestedActionIds}
 					scope={scope}
 					selectedMemberId={pulseMemberId}
@@ -399,6 +473,7 @@ export default function ExperimentalJiraKanbanPage({
 						draggedCardCode={draggedCard?.card.code ?? null}
 						selectedCardCodes={selection.selectedCardCodes}
 						onCardClick={handleCardClick}
+						onCardAgentActivityViewChat={onCardAgentActivityViewChat}
 						onCardSelect={handleCardSelect}
 						onCardDragStart={handleCardDragStart}
 						onCardDrop={handleCardDrop}

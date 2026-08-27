@@ -30,6 +30,10 @@ const SESSION_SOURCE = readFileSync(
 	join(__dirname, "agent-list-session.ts"),
 	"utf8",
 );
+const UNCAPTURED_SOURCE = readFileSync(
+	join(__dirname, "agent-list-uncaptured.tsx"),
+	"utf8",
+);
 const FOR_YOU_PANEL_SOURCE = readFileSync(
 	join(
 		__dirname,
@@ -84,7 +88,7 @@ test("running sessions use the spinner-sized diagonal dot pixel loader", () => {
 	assert.doesNotMatch(CARD_SOURCE, /<Spinner/u);
 });
 
-test("session rows expose View or Resume without advertising a Stop action", () => {
+test("session rows expose View, Resume, or Reply without advertising a Stop action", () => {
 	assert.doesNotMatch(CARD_SOURCE, /Stop agent|VideoStopOverlayIcon|onStop|showStop/u);
 	assert.doesNotMatch(INDEX_SOURCE, /onStop/u);
 	assert.doesNotMatch(TYPES_SOURCE, /onStop\?:/u);
@@ -92,10 +96,24 @@ test("session rows expose View or Resume without advertising a Stop action", () 
 		CARD_SOURCE,
 		/<Button onClick=\{\(\) => onView\(item\)\} size="compact" type="button" variant="outline">\s*\{rowPrimaryActionLabel\(item\)\}/u,
 	);
+	assert.match(TYPES_SOURCE, /actionLabel\?: string;/u);
 	assert.match(
 		CARD_SOURCE,
-		/function rowPrimaryActionLabel\(item: AgentListItem\): string \{\s*return isLocalAgentListItem\(item\) \? "Resume" : "View";/u,
+		/if \(item\.actionLabel !== undefined\) \{\s*return item\.actionLabel;\s*\}\s*if \(item\.agent\.kind === "person"\) \{\s*return "Reply";\s*\}\s*return isLocalAgentListItem\(item\) \? "Resume" : "View";/u,
 	);
+});
+
+test("coding agent rows keep hover Resume even when canViewItem would hide them", () => {
+	assert.match(
+		SESSION_SOURCE,
+		/export function isCodingAgentListItem\(item: AgentListItem\): boolean \{\s*return \(item\.agent\.kind \?\? "agent"\) !== "person";/u,
+	);
+	assert.match(INDEX_SOURCE, /isCodingAgentListItem,/u);
+	assert.match(
+		INDEX_SOURCE,
+		/isCodingAgentListItem\(item\)\s*\?\s*handleCodingView/u,
+	);
+	assert.match(TYPES_SOURCE, /Coding agent rows always keep View \/ Resume/u);
 });
 
 test("View and Resume open the Rovo floating chat in the demo", () => {
@@ -150,25 +168,39 @@ test("the attention state keeps the row's own title and warns instead of shimmer
 	assert.match(SESSION_SOURCE, /case "needs-input":\s*case "attention":\s*return "awaiting-input";/u);
 });
 
-test("rows carry an optional reason line, leading metadata, and a static time", () => {
+test("rows carry an optional summary below metadata, leading metadata, and a static time", () => {
 	assert.match(TYPES_SOURCE, /summary\?: string;/u);
 	assert.match(TYPES_SOURCE, /metadataPrefix\?: string;/u);
 	assert.match(TYPES_SOURCE, /timeLabel\?: string;/u);
-	// The reason wraps; a session row's single-line title keeps truncating.
+	// The summary wraps below the metadata row; a session row's single-line
+	// title keeps truncating unless that body copy is present.
 	assert.match(CARD_SOURCE, /const hasSummary = Boolean\(item\.summary\);/u);
 	assert.match(CARD_SOURCE, /hasSummary \? "text-pretty" : "truncate"/u);
 	assert.match(
 		CARD_SOURCE,
-		/\{item\.summary \? \(\s*<span\s*className=\{cn\(\s*"mt-0\.5 w-full min-w-0 text-pretty text-text-subtle",/u,
+		/<AgentListMetadataIdentity item=\{item\} \/>[\s\S]*\{item\.summary \? \(\s*<span\s*className=\{cn\(\s*"mt-2 w-full min-w-0 text-pretty text-text",/u,
 	);
 	assert.doesNotMatch(
 		CARD_SOURCE,
-		/"mt-0\.5 w-full min-w-0 text-pretty text-text-subtle truncate"/u,
+		/"mt-2 w-full min-w-0 text-pretty text-text truncate"/u,
 	);
-	// A three-line row hangs its identity off the title and lets metadata wrap
-	// instead of clipping its tail.
+	assert.doesNotMatch(
+		CARD_SOURCE,
+		/"mt-0\.5 w-full min-w-0 text-pretty text-text-subtle"/u,
+	);
+	// A taller row hangs its identity off the title; metadata stays one line
+	// so the wrapping summary owns the extra height. Hover actions share a
+	// row with title/metadata only, so expanding View/Archive cannot reflow
+	// the summary sitting in its own column underneath.
 	assert.match(CARD_SOURCE, /hasSummary \? "items-start" : "items-center"/u);
-	assert.match(CARD_SOURCE, /hasSummary \? "mt-1 flex-wrap" : "overflow-hidden"/u);
+	assert.match(
+		CARD_SOURCE,
+		/<div className="flex min-w-0 flex-1 flex-col">[\s\S]*<CardActions[\s\S]*?<\/div>[\s\S]*?\{item\.summary \?/u,
+	);
+	assert.match(
+		CARD_SOURCE,
+		/"flex w-full min-w-0 items-center gap-1 overflow-hidden text-xs text-text-subtlest"/u,
+	);
 	assert.match(
 		CARD_SOURCE,
 		/\{item\.metadataPrefix \? \(\s*<>\s*<span className="shrink-0">\{item\.metadataPrefix\}<\/span>\s*<MetadataDot \/>/u,
@@ -179,6 +211,9 @@ test("rows carry an optional reason line, leading metadata, and a static time", 
 		CARD_SOURCE,
 		/if \(item\.timeLabel !== undefined\) \{\s*return <span>\{item\.timeLabel\}<\/span>;/u,
 	);
+	assert.match(DATA_SOURCE, /summary:\s*"Extracted shared helpers from the checkout path/u);
+	assert.match(DETAIL_SOURCE, /Optional `summary` copy wraps below that metadata/u);
+	assert.match(DETAIL_SOURCE, /Optional `summary` adds wrapping body copy below the metadata row/u);
 });
 
 test("the metadata line uses elapsed runtime, agent name, and asx PR-status colors", () => {
@@ -259,6 +294,11 @@ test("the session adapter derives flyout payloads the row model does not carry",
 		SESSION_SOURCE,
 		/export function deriveIssueKeyFromBranch\(branch: string \| undefined\): string \{[\s\S]*rovo\\\/\(\[a-z\]\+\)-\(\\d\+\)-/u,
 	);
+	assert.match(
+		SESSION_SOURCE,
+		/export function toAgentListResumeCommand\(item: AgentListItem\): string \{[\s\S]*item\.sessionDetails\?\.resumeSessionId \?\? item\.id\);[\s\S]*cd \$\{quoteShellArgument\(worktree\)\} && claude --resume \$\{resumeId\}/u,
+	);
+	assert.match(INDEX_SOURCE, /toAgentListResumeCommand,/u);
 	// Rows that are not agent sessions carry no branch, and never open the flyout.
 	assert.match(SESSION_SOURCE, /if \(branch === undefined\) \{\s*return "";/u);
 	assert.match(TYPES_SOURCE, /branch\?: string;/u);
@@ -381,19 +421,31 @@ test("in-flow View controls immediately replace lifecycle indicators without col
 		CARD_SOURCE,
 		/if \(onView === undefined\) \{\s*return <div className=\{className\}>\{children\}<\/div>;/u,
 	);
-	assert.match(CARD_SOURCE, /onView=\{onView === undefined \? undefined : \(\) => onView\(item\)\}/u);
-	assert.match(CARD_SOURCE, /\{isSelected \|\| onView === undefined \? null : \(\s*<CardActions/u);
+	assert.match(
+		CARD_SOURCE,
+		/const viewItem = onView === undefined \? undefined : \(\) => onView\(item\);/u,
+	);
+	assert.match(CARD_SOURCE, /onView=\{viewItem\}/u);
+	assert.match(CARD_SOURCE, /\{isSelected \|\| hideHoverActions \|\| onView === undefined \? null : \(\s*<CardActions/u);
 	assert.match(
 		CARD_SOURCE,
 		/"flex w-full min-w-0 items-center gap-0",\s*hasSummary \? null : "overflow-hidden",/u,
 	);
 	assert.match(
 		CARD_SOURCE,
-		/"flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest",/u,
+		/"flex w-full min-w-0 items-center gap-1 overflow-hidden text-xs text-text-subtlest"/u,
 	);
 	assert.match(CARD_SOURCE, /<span className=\{cn\(titleClassName, "text-text"\)\}>/u);
 	assert.match(CARD_SOURCE, /className="min-w-0 truncate">\{item\.agent\.name\}<\/span>/u);
-	assert.match(CARD_SOURCE, /className="ml-3 hidden shrink-0 items-center gap-1 group-hover\/agent-row:flex group-has-\[:focus-visible\]\/agent-row:flex"/u);
+	assert.match(
+		CARD_SOURCE,
+		/grid-cols-\[0fr\][\s\S]*group-hover\/agent-row:grid-cols-\[1fr\][\s\S]*group-has-\[:focus-visible\]\/agent-row:grid-cols-\[1fr\]/u,
+	);
+	assert.match(
+		CARD_SOURCE,
+		/"pointer-events-none flex shrink-0 items-center gap-1 pl-3 opacity-0/u,
+	);
+	assert.doesNotMatch(CARD_SOURCE, /className="ml-3 hidden shrink-0 items-center gap-1/u);
 	assert.doesNotMatch(CARD_SOURCE, /isVisible/u);
 	assert.match(
 		CARD_SOURCE,
@@ -424,17 +476,69 @@ test("in-flow activity actions expose their button-owned focus indicators", () =
 });
 
 test("supports default and compact session rows", () => {
-	assert.match(TYPES_SOURCE, /export type AgentListVariant = "default" \| "compact"/u);
+	assert.match(TYPES_SOURCE, /export type AgentListVariant = "default" \| "compact" \| "uncaptured"/u);
 	assert.match(TYPES_SOURCE, /variant\?: AgentListVariant/u);
 	assert.match(INDEX_SOURCE, /variant = "default"/u);
+	assert.match(TYPES_SOURCE, /canViewItem\?: \(item: AgentListItem\) => boolean;/u);
+	assert.match(INDEX_SOURCE, /canViewItem !== undefined && !canViewItem\(item\)/u);
 	assert.match(INDEX_SOURCE, /<AgentListCard[\s\S]*variant=\{variant\}/u);
 	assert.match(CARD_SOURCE, /variant === "compact"/u);
 	assert.match(CARD_SOURCE, /sizePx=\{isCompact \? 24 : 32\}/u);
 	assert.match(CARD_SOURCE, /isCompact \? "text-xs" : "text-sm"/u);
 	assert.match(CARD_SOURCE, /isCompact \? "px-3 py-1\.5" : "p-3"/u);
 	assert.match(DETAIL_SOURCE, /name: "variant"/u);
-	assert.match(DETAIL_SOURCE, /type: '"default" \| "compact"'/u);
+	assert.match(DETAIL_SOURCE, /type: '"default" \| "compact" \| "uncaptured"'/u);
 	assert.match(DETAIL_SOURCE, /default: '"default"'/u);
+});
+
+test("supports an uncaptured coding-session card that reuses the shared row", () => {
+	assert.match(INDEX_SOURCE, /if \(variant === "uncaptured"\) \{/u);
+	assert.match(INDEX_SOURCE, /<AgentListUncapturedCard/u);
+	assert.match(INDEX_SOURCE, /capturedItemIds\?\.has\(item\.id\)/u);
+	assert.match(
+		INDEX_SOURCE,
+		/suggestedWorkItemKey=\{getSuggestedWorkItemKey\?\.\(item\) \?\? suggestedUncapturedWorkItemKey\(item\)\}/u,
+	);
+	assert.match(UNCAPTURED_SOURCE, /data-testid=\{"agent-list-row-" \+ item.id\}/u);
+	assert.match(UNCAPTURED_SOURCE, /bg-surface-sunken/u);
+	assert.match(UNCAPTURED_SOURCE, /border-dashed border-border-disabled/u);
+	assert.match(UNCAPTURED_SOURCE, /<UncapturedWorkChin/u);
+	// Resume is gated on the host's capability, so a non-resumable row renders no
+	// control rather than copying a command the host cannot honour.
+	assert.match(UNCAPTURED_SOURCE, /const canResume = \(isResumable\?\.\(item\) \?\? true\) && resumeCommand\.length > 0;/u);
+	assert.match(UNCAPTURED_SOURCE, /onCopyResume=\{canResume\s*\?\s*\(\) => \{/u);
+	assert.match(UNCAPTURED_SOURCE, /onDismiss !== undefined \|\| canResume;/u);
+	assert.match(UNCAPTURED_SOURCE, /toAgentListResumeCommand\(item\)/u);
+	assert.match(UNCAPTURED_SOURCE, /<AgentListRow[\s\S]*hideHoverActions/u);
+	assert.match(UNCAPTURED_SOURCE, /item.sessionDetails\?\.issueKey/u);
+	assert.match(DATA_SOURCE, /export const AGENT_LIST_UNCAPTURED_ITEMS/u);
+	assert.match(DATA_SOURCE, /id: "lw-scope-thread"/u);
+	assert.match(DATA_SOURCE, /brandName: "claude"/u);
+	assert.match(DATA_SOURCE, /issueKey: "PAY-101"/u);
+	assert.match(PAGE_SOURCE, /variant === "uncaptured"/u);
+	assert.match(PAGE_SOURCE, /id="uncaptured"/u);
+	assert.match(DEMO_SOURCE, /export function AgentListDemoUncaptured/u);
+	assert.match(DEMO_SOURCE, /<Page variant="uncaptured" \/>/u);
+	assert.match(DETAIL_SOURCE, /title: "Uncaptured"/u);
+	assert.match(DETAIL_SOURCE, /demoSlug: "agent-list-demo-uncaptured"/u);
+	assert.match(VARIANT_REGISTRY_SOURCE, /"agent-list-demo-uncaptured": dynamic/u);
+	assert.match(CARD_SOURCE, /hideHoverActions/u);
+});
+
+test("raised chrome uses elevation and drops the outer border", () => {
+	assert.match(TYPES_SOURCE, /export type AgentListChrome = "stroke" \| "raised";/u);
+	assert.match(TYPES_SOURCE, /chrome\?: AgentListChrome;/u);
+	assert.match(INDEX_SOURCE, /chrome = "stroke"/u);
+	assert.match(
+		INDEX_SOURCE,
+		/chrome === "raised"\s*\? "bg-surface-raised"\s*: "border border-border bg-surface"/u,
+	);
+	assert.match(
+		INDEX_SOURCE,
+		/chrome === "raised"\s*\? \{ boxShadow: token\("elevation\.shadow\.raised"\) \}\s*: undefined/u,
+	);
+	assert.match(DETAIL_SOURCE, /name: "chrome"/u);
+	assert.match(DETAIL_SOURCE, /type: '"stroke" \| "raised"'/u);
 });
 
 test("shows the compact variant in the component documentation", () => {

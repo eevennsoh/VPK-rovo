@@ -37,6 +37,7 @@ export type TerminalBoardEvent =
 export type TerminalBeatStep =
 	| { kind: "split" }
 	| { kind: "type"; pane: "left" | "right"; text: string }
+	| { kind: "paste"; pane: "left" | "right"; text: string }
 	| { kind: "submit"; pane: "left" | "right" }
 	| { kind: "output"; pane: "left" | "right"; lines: readonly TerminalLine[] }
 	| { kind: "set-working"; pane: "left" | "right"; working: boolean }
@@ -150,6 +151,7 @@ export function applyStep(state: TerminalDemoState, step: TerminalBeatStep): Ter
 		case "show-dashboard":
 			return { ...state, dashboardVisible: true };
 		case "type":
+		case "paste":
 			return updatePane(state, step.pane, (pane) => ({ ...pane, promptDraft: step.text }));
 		case "submit":
 			return updatePane(state, step.pane, (pane) => ({

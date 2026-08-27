@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState, type RefCallback } from "react";
+import LightbulbIcon from "@atlaskit/icon/core/lightbulb";
 import { AnimatePresence, motion, useReducedMotion, type Transition } from "motion/react";
 
 import { MEASURE } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-story";
@@ -16,7 +17,8 @@ import type {
 	PulseScope,
 } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { JiraActivityComposer, type JiraActivityActor } from "@/components/blocks/jira-activity";
-import { Suggestion } from "@/components/ui-custom/suggestion";
+import { ContextBarPromptFlyout } from "@/components/ui-custom/context-bar";
+import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 /**
@@ -32,12 +34,13 @@ import { cn } from "@/lib/utils";
  * already fades its own bottom edge, and a `sticky` box with a z-index would
  * put a second seam on top of that one.
  *
- * The suggestions above it are scaffolding for the first question only. Once
- * the reader has asked anything they know the box works, so the row leaves. It
- * unmounts rather than hiding — a row that stays but goes blank leaves a 40px
- * hole — and the dock carries Motion's `layout` prop so the space it frees is
- * FLIPped with a transform instead of animating `height`, which would re-run
- * layout on every frame.
+ * The suggestion above it is scaffolding for the first question only: one
+ * context-bar pill in the dock, with the rest stacked straight up on hover or click.
+ * Once the reader has asked anything they know the box works, so the pill
+ * leaves. It unmounts rather than hiding — a row that stays but goes blank
+ * leaves a 40px hole — and the dock carries Motion's `layout` prop so the
+ * space it frees is FLIPped with a transform instead of animating `height`,
+ * which would re-run layout on every frame.
  *
  * The draft is entity-local state and is not carried across scopes: a question
  * typed under Sprint 24 would otherwise be submitted against PAY-90's answers
@@ -126,9 +129,10 @@ export function PulseInsightsComposer({
 					{hasAsked || suggestions.length === 0 ? null : (
 						<motion.div
 							animate={{ opacity: 1 }}
-							// Opened again the moment a chip takes keyboard focus, so its
-							// ring is not sliced by the seam while the row is clipped.
-							className="overflow-hidden has-[:focus-visible]:overflow-visible"
+							// The prompt flyout stacks extra questions up over the article, so
+							// this wrapper must not clip. Focus rings still clear the dock
+							// because the flyout itself is overflow-visible.
+							className="overflow-visible"
 							exit={{
 								opacity: 0,
 								transition: shouldReduceMotion ? PULSE_ASK_STILL : PULSE_ASK_EXIT,
@@ -139,23 +143,25 @@ export function PulseInsightsComposer({
 							transition={shouldReduceMotion ? PULSE_ASK_STILL : PULSE_ASK_ENTER}
 						>
 							<div className="pb-3">
-								{/* Wrapped, not scrolled. `Suggestions` is a horizontal
-								    ScrollArea built for a full-width chat pane; inside a 36rem
-								    reading measure the third chip is sliced clean off at the
-								    column edge with no fade, which reads as a clipping bug
-								    rather than as an invitation to scroll. Three short
-								    questions wrap to two lines and stay entirely legible. */}
-								<div aria-label="Suggested questions" className="flex min-w-0 flex-wrap gap-2" role="group">
-									{suggestions.map((suggestion) => (
-										<Suggestion
-											className="max-w-full"
-											key={suggestion.id}
-											onClick={handleAsk}
-											size="compact"
-											suggestion={suggestion.question}
+								{/* One context-bar pill in the dock; hover or click stacks the
+								    rest straight up. `Suggestions` is a horizontal ScrollArea
+								    built for a full-width chat pane and would clip the third
+								    chip at this 36rem measure. */}
+								<ContextBarPromptFlyout
+									ariaLabel="Suggested questions"
+									icon={
+										<LightbulbIcon
+											color={token("color.icon.subtle")}
+											label=""
+											size="small"
 										/>
-									))}
-								</div>
+									}
+									items={suggestions.map((suggestion) => ({
+										id: suggestion.id,
+										label: suggestion.question,
+										onSelect: () => handleAsk(suggestion.question),
+									}))}
+								/>
 							</div>
 						</motion.div>
 					)}
