@@ -796,7 +796,9 @@ test("ContextBarPullRequest is a generic PR variation of ContextBar", () => {
 	assert.match(CONTEXT_BAR_DEMO_SOURCE, /\{ id: "open-failed", ciStatus: "failed", checks: FAILED_CI_CHECKS, status: "Open"/u);
 	assert.match(CONTEXT_BAR_DEMO_SOURCE, /\{ id: "open-passed", ciStatus: "passed", checks: PASSED_CI_CHECKS, status: "Open"/u);
 	assert.match(CONTEXT_BAR_DEMO_SOURCE, /\{ id: "merged-passed", ciStatus: "passed", checks: PASSED_CI_CHECKS, status: "Merged"/u);
-	assert.match(CONTEXT_BAR_DEMO_SOURCE, /data-pr-permutations[\s\S]*showRepository=\{false\}[\s\S]*showStatusLozenge/u);
+	assert.match(CONTEXT_BAR_DEMO_SOURCE, /function ContextBarDemoPullRequestPermutation[\s\S]*useState\(false\)[\s\S]*useState\(true\)/u);
+	assert.match(CONTEXT_BAR_DEMO_SOURCE, /showRepository=\{false\}[\s\S]*showStatusLozenge/u);
+	assert.match(CONTEXT_BAR_DEMO_SOURCE, /data-pr-permutations/u);
 	assert.doesNotMatch(CONTEXT_BAR_DEMO_SOURCE, /SHOP-4821|#1847/u);
 
 	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /data-ci-automation-trigger/u);
@@ -915,8 +917,6 @@ test("ContextBarPullRequest owns the CI checks menu", async () => {
 				{ id: "lint-types", name: "Lint and typecheck", status: "failed", details: "Failed after 42s · deliveryAddress may be null" },
 				{ id: "unit-tests", name: "Unit tests", status: "passed", details: "418 tests in 2m 46s" },
 			],
-			onAutoFixChange: () => {},
-			onAutoMergeChange: () => {},
 			status: "failed",
 			summary: "1 failed, 1 passed",
 		},
@@ -927,6 +927,8 @@ test("ContextBarPullRequest owns the CI checks menu", async () => {
 	assert.match(reviewMarkup, />1\/2 approved</u);
 	assert.match(reviewMarkup, />Auto-merge blocked</u);
 	assert.match(reviewMarkup, /text-text-success/u);
+	assert.match(reviewMarkup, /aria-label="CI failed\. 1 failed, 1 passed\. View CI checks"/u);
+	assert.doesNotMatch(reviewMarkup, /Auto-fix CI|Auto-merge when ready/u);
 });
 
 test("ContextBarCreatePullRequest is the pre-PR variation of ContextBar", () => {

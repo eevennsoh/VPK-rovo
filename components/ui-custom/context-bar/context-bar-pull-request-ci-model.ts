@@ -10,8 +10,8 @@ export interface ContextBarPullRequestCi {
 	summary: string;
 	autoFixEnabled: boolean;
 	autoMergeEnabled: boolean;
-	onAutoFixChange: (enabled: boolean) => void;
-	onAutoMergeChange: (enabled: boolean) => void;
+	onAutoFixChange?: (enabled: boolean) => void;
+	onAutoMergeChange?: (enabled: boolean) => void;
 	onFixCheck?: (checks: readonly ContextBarPullRequestCiCheck[]) => void;
 }
 

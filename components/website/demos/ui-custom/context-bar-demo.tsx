@@ -246,10 +246,48 @@ const PULL_REQUEST_STATE_PERMUTATIONS = [
 	{ id: "merged-passed", ciStatus: "passed", checks: PASSED_CI_CHECKS, status: "Merged", summary: "3 CI checks passed" },
 ] as const;
 
-export function ContextBarDemoPullRequest() {
-	const item = DEMO_PULL_REQUESTS[0];
+function ContextBarDemoPullRequestPermutation({
+	item,
+	permutation,
+}: Readonly<{
+	item: (typeof DEMO_PULL_REQUESTS)[number];
+	permutation: (typeof PULL_REQUEST_STATE_PERMUTATIONS)[number];
+}>) {
 	const [autoFixEnabled, setAutoFixEnabled] = useState(false);
 	const [autoMergeEnabled, setAutoMergeEnabled] = useState(true);
+	const canMutatePullRequest = permutation.status === "Open";
+
+	return (
+		<ContextBarPullRequest
+			additions={item.additions}
+			author={item.author}
+			branch={item.branch ?? "main"}
+			ci={{
+				autoFixEnabled,
+				autoMergeEnabled,
+				checks: permutation.checks,
+				onAutoFixChange: canMutatePullRequest ? setAutoFixEnabled : undefined,
+				onAutoMergeChange: canMutatePullRequest ? setAutoMergeEnabled : undefined,
+				status: permutation.ciStatus,
+				summary: permutation.summary,
+			}}
+			deletions={item.deletions}
+			filesChanged={item.filesChanged}
+			href={`https://github.com/${item.repository}/pull/${item.number}`}
+			number={item.number}
+			onDismiss={() => undefined}
+			repository={item.repository}
+			showRepository={false}
+			showStatusLozenge
+			status={permutation.status}
+			targetBranch={item.targetBranch}
+			title={item.title}
+		/>
+	);
+}
+
+export function ContextBarDemoPullRequest() {
+	const item = DEMO_PULL_REQUESTS[0];
 	if (!item) {
 		return null;
 	}
@@ -257,31 +295,10 @@ export function ContextBarDemoPullRequest() {
 	return (
 		<div className="flex w-full max-w-xl flex-col gap-5 p-8" data-pr-permutations>
 			{PULL_REQUEST_STATE_PERMUTATIONS.map((permutation) => (
-				<ContextBarPullRequest
-					additions={item.additions}
-					author={item.author}
-					branch={item.branch ?? "main"}
-					ci={{
-						autoFixEnabled,
-						autoMergeEnabled,
-						checks: permutation.checks,
-						onAutoFixChange: setAutoFixEnabled,
-						onAutoMergeChange: setAutoMergeEnabled,
-						status: permutation.ciStatus,
-						summary: permutation.summary,
-					}}
-					deletions={item.deletions}
-					filesChanged={item.filesChanged}
-					href={`https://github.com/${item.repository}/pull/${item.number}`}
+				<ContextBarDemoPullRequestPermutation
+					item={item}
 					key={permutation.id}
-					number={item.number}
-					onDismiss={() => undefined}
-					repository={item.repository}
-					showRepository={false}
-					showStatusLozenge
-					status={permutation.status}
-					targetBranch={item.targetBranch}
-					title={item.title}
+					permutation={permutation}
 				/>
 			))}
 		</div>

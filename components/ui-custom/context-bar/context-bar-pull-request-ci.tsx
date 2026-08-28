@@ -103,11 +103,13 @@ export function ContextBarPullRequestCiMenu({
 	const presentation = contextBarPullRequestCiPresentation(ci.status);
 	const isRunning = ci.status === "running";
 	const checksTitle = pullRequestChecksTitleState(ci.checks);
+	const hasAutomationControls = ci.onAutoFixChange !== undefined || ci.onAutoMergeChange !== undefined;
+	const menuActionLabel = hasAutomationControls ? "Configure CI automation" : "View CI checks";
 
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger
-				aria-label={`${presentation.label}. ${ci.summary}. Configure CI automation`}
+				aria-label={`${presentation.label}. ${ci.summary}. ${menuActionLabel}`}
 				className={cn(
 					"flex shrink-0 items-center gap-1 rounded-lg px-2 text-sm text-text-subtle outline-none transition-colors duration-normal ease-out-practical hover:bg-bg-neutral-hovered hover:text-text active:bg-bg-neutral-pressed focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none",
 					isRunning ? "h-6" : "h-8",
@@ -135,21 +137,29 @@ export function ContextBarPullRequestCiMenu({
 						/>
 					</div>
 				</DropdownMenuGroup>
-				<DropdownMenuSeparator />
-				<DropdownMenuGroup>
-					<CiAutomationToggleRow
-						checked={ci.autoFixEnabled}
-						label="Auto-fix CI & address comments"
-						onCheckedChange={ci.onAutoFixChange}
-						setting="auto-fix"
-					/>
-					<CiAutomationToggleRow
-						checked={ci.autoMergeEnabled}
-						label="Auto-merge when ready"
-						onCheckedChange={ci.onAutoMergeChange}
-						setting="auto-merge"
-					/>
-				</DropdownMenuGroup>
+				{hasAutomationControls ? (
+					<>
+						<DropdownMenuSeparator />
+						<DropdownMenuGroup>
+							{ci.onAutoFixChange ? (
+								<CiAutomationToggleRow
+									checked={ci.autoFixEnabled}
+									label="Auto-fix CI & address comments"
+									onCheckedChange={ci.onAutoFixChange}
+									setting="auto-fix"
+								/>
+							) : null}
+							{ci.onAutoMergeChange ? (
+								<CiAutomationToggleRow
+									checked={ci.autoMergeEnabled}
+									label="Auto-merge when ready"
+									onCheckedChange={ci.onAutoMergeChange}
+									setting="auto-merge"
+								/>
+							) : null}
+						</DropdownMenuGroup>
+					</>
+				) : null}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);
