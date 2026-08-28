@@ -164,7 +164,7 @@ treat them as progressive enhancement — degrade silently, no polyfill.
 
 - There is no single `pnpm test` script in `package.json`.
 - Repo tests span `backend/`, `lib/`, `scripts/`, `app/`, `components/`, and `rovo/`; run targeted `node --test` commands against relevant `.test.js` or `.test.ts` files.
-- Classify every new or renamed `components/**` `node:test` suite in `scripts/js-unit-test-manifest.mjs` as `stable` or `source-contract`, then verify it through `node scripts/run-js-unit-tests.mjs --file <path>`. Unclassified component suites default to `legacy-drift` and are skipped by the CI unit gate.
+- Classify every new or renamed `components/**` `node:test` suite in `scripts/js-unit-test-manifest.mjs` as `stable` or `source-contract`, then verify CI discovery through unfiltered `node scripts/run-js-unit-tests.mjs`. The `--file` option force-runs a named path and does not prove manifest inclusion; unclassified component suites default to `legacy-drift` and are skipped by the CI unit gate.
 - Browser coverage is under `tests/**/*.spec.ts`; run targeted specs with `pnpm exec playwright test <spec>` after `pnpm install`.
 - GitHub Actions verifies lockfile registry URLs, runs `pnpm install --frozen-lockfile`, then `pnpm run ci:pr` for repository guards, lint, typecheck, and tests. It is required by branch protection on `main` — `/vpk-git-ship` auto-merge waits for it.
 - Validation freshness:
