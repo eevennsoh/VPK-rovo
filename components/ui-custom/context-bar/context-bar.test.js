@@ -673,6 +673,13 @@ async function loadContextBarPullRequestHarness() {
 			`,
 		],
 	]);
+	for (const [modulePath, iconName] of [
+		["@atlaskit/icon/core/check-circle", "check-circle"],
+		["@atlaskit/icon/core/status-error", "status-error"],
+		["@atlaskit/icon/core/task-to-do", "task-to-do"],
+	]) {
+		mockModules.set(modulePath, `import React from "react"; export default function Icon() { return React.createElement("svg", { "data-icon": "${iconName}" }); }`);
+	}
 
 	const result = await esbuild.build({
 		stdin: {
@@ -786,6 +793,12 @@ test("ContextBarPullRequest is a generic PR variation of ContextBar", () => {
 	assert.match(CONTEXT_BAR_DEMO_SOURCE, /export function ContextBarDemoPullRequest/u);
 	assert.match(CONTEXT_BAR_DEMO_SOURCE, /DEMO_PULL_REQUESTS\[0\]/u);
 	assert.match(CONTEXT_BAR_DEMO_SOURCE, /ci=\{\{/u);
+	assert.match(CONTEXT_BAR_DEMO_SOURCE, /\{ id: "open-failed", ciStatus: "failed", checks: FAILED_CI_CHECKS, status: "Open"/u);
+	assert.match(CONTEXT_BAR_DEMO_SOURCE, /\{ id: "open-passed", ciStatus: "passed", checks: PASSED_CI_CHECKS, status: "Open"/u);
+	assert.match(CONTEXT_BAR_DEMO_SOURCE, /\{ id: "merged-passed", ciStatus: "passed", checks: PASSED_CI_CHECKS, status: "Merged"/u);
+	assert.match(CONTEXT_BAR_DEMO_SOURCE, /function ContextBarDemoPullRequestPermutation[\s\S]*useState\(false\)[\s\S]*useState\(true\)/u);
+	assert.match(CONTEXT_BAR_DEMO_SOURCE, /showRepository=\{false\}[\s\S]*showStatusLozenge/u);
+	assert.match(CONTEXT_BAR_DEMO_SOURCE, /data-pr-permutations/u);
 	assert.doesNotMatch(CONTEXT_BAR_DEMO_SOURCE, /SHOP-4821|#1847/u);
 
 	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /data-ci-automation-trigger/u);
@@ -826,6 +839,7 @@ test("ContextBarPullRequest renders a hoverable PR number and spacious overlay c
 
 	assert.match(markup, /data-pr-context-bar/u);
 	assert.match(markup, /data-pr-number="42"/u);
+	assert.match(markup, /aria-label="Pull request #42\. Open\. CI running\. 1 of 2 approvals\. Auto-merge queued"/u);
 	assert.match(markup, /rounded-xl/u);
 	assert.match(markup, /bg-bg-neutral/u);
 	assert.match(
@@ -865,7 +879,7 @@ test("ContextBarPullRequest can hide the status lozenge and show the repository"
 	assert.match(markup, /data-icon="pull-request"/u);
 	assert.match(markup, /acme\/app/u);
 	assert.match(markup, /hotfix\/tax/u);
-	assert.match(markup, /font-medium text-text-selected/u);
+	assert.match(markup, /font-medium text-text-discovery/u);
 	assert.match(markup, /data-pull-request="9" data-status="Merged" data-variant="spacious"/u);
 });
 
@@ -890,6 +904,8 @@ test("ContextBarPullRequest owns the CI checks menu", async () => {
 	assert.match(markup, /role="switch"[^>]*aria-label="Enable Auto-fix CI &amp; address comments"[^>]*aria-checked="false"|aria-label="Enable Auto-fix CI &amp; address comments"[^>]*role="switch"[^>]*aria-checked="false"/u);
 	assert.match(markup, /Auto-fix CI &amp; address comments/u);
 	assert.match(markup, /Auto-merge when ready/u);
+	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /StatusErrorIcon/u);
+	assert.match(CONTEXT_BAR_PR_CI_SOURCE, /CheckCircleIcon/u);
 	assert.doesNotMatch(markup, /data-approvals-summary/u);
 	assert.doesNotMatch(markup, /data-merge-state-label/u);
 
@@ -901,8 +917,6 @@ test("ContextBarPullRequest owns the CI checks menu", async () => {
 				{ id: "lint-types", name: "Lint and typecheck", status: "failed", details: "Failed after 42s · deliveryAddress may be null" },
 				{ id: "unit-tests", name: "Unit tests", status: "passed", details: "418 tests in 2m 46s" },
 			],
-			onAutoFixChange: () => {},
-			onAutoMergeChange: () => {},
 			status: "failed",
 			summary: "1 failed, 1 passed",
 		},
@@ -912,7 +926,9 @@ test("ContextBarPullRequest owns the CI checks menu", async () => {
 	assert.match(reviewMarkup, /data-approvals-summary/u);
 	assert.match(reviewMarkup, />1\/2 approved</u);
 	assert.match(reviewMarkup, />Auto-merge blocked</u);
-	assert.match(reviewMarkup, /font-medium text-text-selected/u);
+	assert.match(reviewMarkup, /text-text-success/u);
+	assert.match(reviewMarkup, /aria-label="CI failed\. 1 failed, 1 passed\. View CI checks"/u);
+	assert.doesNotMatch(reviewMarkup, /Auto-fix CI|Auto-merge when ready/u);
 });
 
 test("ContextBarCreatePullRequest is the pre-PR variation of ContextBar", () => {

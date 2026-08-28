@@ -87,9 +87,9 @@ export const CONTEXT_BAR_DETAIL: ComponentDetail = {
   repository="eevensoh/vpk-rovo"
   targetBranch="main"
   ci={{
-    status: "running",
+    status: "passed",
     checks: [
-      { id: "lint-types", name: "Lint and typecheck", status: "running", details: "Running for 1m 42s" },
+      { id: "lint-types", name: "Lint and typecheck", status: "passed", details: "Passed in 1m 18s" },
       { id: "unit-tests", name: "Unit tests", status: "passed", details: "418 tests in 2m 46s" },
     ],
     summary: "2 CI checks",
@@ -249,7 +249,7 @@ export const CONTEXT_BAR_DETAIL: ComponentDetail = {
 	],
 	examples: [
 		{ title: "Create pull request", description: "Composer bar for a branch that does not have a pull request yet. The split button creates a ready PR, a draft, or creates one manually.", demoSlug: "context-bar-demo-create-pull-request" },
-		{ title: "Pull request", description: "Composer bar for an open pull request. Hover the number to preview the spacious PR card.", demoSlug: "context-bar-demo-pull-request" },
+		{ title: "Pull request", description: "Three compact permutations: open with failed CI, open with passed CI, and merged with passed CI. Hover a number to preview the spacious PR card.", demoSlug: "context-bar-demo-pull-request" },
 		{ title: "Collapsible", description: "Self-contained bar that collapses to a pill on dismiss and re-expands when pressed.", demoSlug: "context-bar-demo-collapsible" },
 		{ title: "Animated expand", description: "The collapsed pill morphs into the full bar with a Motion layout spring, and collapses back on dismiss.", demoSlug: "context-bar-demo-animated" },
 		{ title: "Multiple pills with overflow", description: "A row of action pills that collapses overflowing items into a trailing \u2026 button revealing them in a popover.", demoSlug: "context-bar-demo-multi-pill" },

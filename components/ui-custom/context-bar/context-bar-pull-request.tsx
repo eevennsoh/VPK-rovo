@@ -47,7 +47,7 @@ export interface ContextBarPullRequestProps extends Omit<ComponentProps<"div">, 
 	showStatusLozenge?: boolean;
 	/** Optional repo label between the number and the branch. */
 	showRepository?: boolean;
-	/** Override the status-derived number color (Open = success, Merged = selected). */
+	/** Override the status-derived number color (Open = success, Merged = discovery). */
 	numberClassName?: string;
 	/** CI checks menu: status, check rows, auto-fix / auto-merge. */
 	ci?: ContextBarPullRequestCi;
@@ -78,7 +78,7 @@ function defaultNumberClassName(status: PullRequestStatus): string {
 		case "Open":
 			return "text-text-success";
 		case "Merged":
-			return "font-medium text-text-selected";
+			return "font-medium text-text-discovery";
 		default: {
 			const _exhaustive: never = status;
 			return _exhaustive;
@@ -203,8 +203,7 @@ export function ContextBarPullRequest({
 	const compact = ci?.status === "running";
 	const resolvedShowStatusLozenge = showStatusLozenge ?? (ci === undefined ? true : compact);
 	const resolvedShowRepository = showRepository ?? (ci !== undefined && !compact);
-	const resolvedNumberClassName = numberClassName
-		?? (ci !== undefined && !compact ? "font-medium text-text-selected" : defaultNumberClassName(status));
+	const resolvedNumberClassName = numberClassName ?? defaultNumberClassName(status);
 	const ciPresentation = ci === undefined ? null : contextBarPullRequestCiPresentation(ci.status);
 	const mergePresentation = mergeState === undefined
 		? null
@@ -214,6 +213,7 @@ export function ContextBarPullRequest({
 		: `${approvalsCurrent} of ${approvalsRequired} approvals`;
 	const regionLabel = [
 		`Pull request #${number}`,
+		status,
 		ciPresentation?.label,
 		approvalLabel,
 		mergePresentation?.label,
