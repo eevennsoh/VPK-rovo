@@ -1,6 +1,9 @@
 "use client";
 
+import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import StatusErrorIcon from "@atlaskit/icon/core/status-error";
+import TaskToDoIcon from "@atlaskit/icon/core/task-to-do";
 
 import {
 	ChecksSectionTitle,
@@ -18,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
+import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
 import {
@@ -33,6 +37,22 @@ export type {
 	ContextBarPullRequestCiStatus,
 	ContextBarPullRequestMergeState,
 } from "./context-bar-pull-request-ci-model";
+
+function CiStatusIcon({
+	className,
+	status,
+}: Readonly<{
+	className: string;
+	status: Exclude<ContextBarPullRequestCi["status"], "running">;
+}>) {
+	const icon = status === "failed"
+		? <StatusErrorIcon color="currentColor" label="" size="small" />
+		: status === "passed"
+			? <CheckCircleIcon color="currentColor" label="" size="small" />
+			: <TaskToDoIcon color="currentColor" label="" size="small" />;
+
+	return <Icon aria-hidden className={className} render={icon} />;
+}
 
 function suppressMenuDismissal(event: { preventDefault: () => void }) {
 	event.preventDefault();
@@ -94,10 +114,10 @@ export function ContextBarPullRequestCiMenu({
 				)}
 				data-ci-automation-trigger
 			>
-				{isRunning ? (
+				{ci.status === "running" ? (
 					<Spinner className="text-icon-subtle" label="CI running" size="xs" />
 				) : (
-					<span aria-hidden className={cn("size-2 shrink-0 rounded-full", presentation.dotClassName)} />
+					<CiStatusIcon className={presentation.iconClassName} status={ci.status} />
 				)}
 				<span>CI</span>
 				<ChevronDownIcon color="currentColor" label="" size="small" />
