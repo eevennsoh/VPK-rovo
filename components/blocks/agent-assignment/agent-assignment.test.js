@@ -58,7 +58,7 @@ test("Agent Assignment preserves the work-item trigger and two-stage menu behavi
 	assert.match(source, /<AssignedAgentsMenu[\s\S]*onAddAgent=\{\(\) => setView\("selector"\)\}/u);
 	assert.match(source, /if \(usedAgentIds\.includes\(agentId\)\) \{\s*setPendingSessionAgent\(agent\);\s*setView\("session"\);/u);
 	assert.match(source, /<AgentSessionTargetMenu[\s\S]*onChoose=\{\(choice\) => handleSessionChoice\(pendingSessionAgent, choice\)\}/u);
-	assert.match(source, /<AgentSelector[\s\S]*searchVariant="palette"[\s\S]*selectionMode="single"/u);
+	assert.match(source, /<AgentSelector[\s\S]*searchVariant="palette"[\s\S]*selectionMode="multiple"/u);
 	assert.match(source, /onBrowseAgents=\{onBrowseAgents \? \(\) => handleFooterAction\(onBrowseAgents\) : undefined\}/u);
 	assert.match(source, /onCreateAgent=\{onCreateAgent \? \(\) => handleFooterAction\(onCreateAgent\) : undefined\}/u);
 	assert.match(source, /onAssignedAgentIdsChange\(nextAssignedAgentIds\);/u);
