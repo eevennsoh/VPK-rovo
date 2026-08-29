@@ -97,17 +97,16 @@ function getCardAssigneeAvatarShape(card: JiraKanbanCardData) {
 }
 
 function AgentAvatar({ agent, className }: Readonly<{ agent: JiraKanbanAgentData; className?: string }>) {
-	if (agent.brandName) {
-		return (
-			<Avatar className={className} label={agent.name} shape="hexagon" size="sm">
-				<LogoThirdParty borderless label="" name={agent.brandName} size="xxsmall" />
-			</Avatar>
-		);
-	}
 	return (
 		<Avatar className={className} label={agent.name} shape="hexagon" size="sm">
-			<AvatarImage alt="" src={agent.avatarSrc} />
-			<AvatarFallback>{getAgentInitials(agent.name)}</AvatarFallback>
+			{agent.brandName ? (
+				<LogoThirdParty borderless label="" name={agent.brandName} size="xxsmall" />
+			) : (
+				<>
+					<AvatarImage alt="" src={agent.avatarSrc} />
+					<AvatarFallback>{getAgentInitials(agent.name)}</AvatarFallback>
+				</>
+			)}
 		</Avatar>
 	);
 }
