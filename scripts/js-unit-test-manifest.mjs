@@ -159,6 +159,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/agent-evaluation/agent-evaluation.test.js",
 		"components/blocks/agent-assignment/agent-assignment.test.js",
 		"components/blocks/agent-list/agent-list.test.js",
+		"components/blocks/agent-selector/agent-selector.test.js",
 		"components/blocks/agent-session/agent-session.test.js",
 		"components/blocks/artifact-pane/artifact-pane.test.js",
 		"components/blocks/jira-issue/uncaptured-work-chin.test.js",
