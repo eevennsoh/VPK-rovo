@@ -4,10 +4,17 @@ import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent } from
 import { useReducedMotion } from "motion/react";
 
 import ArchiveBoxIcon from "@atlaskit/icon/core/archive-box";
+import StatusInformationIcon from "@atlaskit/icon/core/status-information";
+import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 
-import type { AgentAssignmentAgent } from "@/components/blocks/agent-assignment/components/agent-assignment";
+import {
+	resolveAssignedAgentStatusKind,
+	type AgentAssignmentAgent,
+	type AgentAssignmentStatusKind,
+} from "@/components/blocks/agent-assignment/components/agent-assignment";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { CyclingByline } from "@/components/ui-custom/chain-of-thought";
 import {
@@ -41,6 +48,73 @@ function getAssignedAgentStatusLabels(agent: AgentAssignmentAgent): readonly str
 
 function getAssignedAgentStatusCycleDelay(intervalMs: number, jitterMs: number): number {
 	return Math.max(1000, intervalMs) + Math.round(Math.random() * Math.max(0, jitterMs));
+}
+
+function getAssignedAgentStaticByline(
+	agent: AgentAssignmentAgent,
+	fallback: string,
+): string {
+	if (typeof agent.status === "string" && agent.status.trim()) {
+		return agent.status.trim();
+	}
+
+	return agent.statusLabel.trim() || fallback;
+}
+
+function getAssignedAgentHoverByline(
+	agent: AgentAssignmentAgent,
+	kind: AgentAssignmentStatusKind,
+	rowIndex: number,
+) {
+	switch (kind) {
+		case "working":
+			return <AssignedAgentStatus agent={agent} rowIndex={rowIndex} />;
+		case "needs-input":
+			return getAssignedAgentStaticByline(agent, "Needs input");
+		case "finished":
+			return getAssignedAgentStaticByline(agent, "Finished");
+		case "idle":
+			return agent.status ?? undefined;
+		default: {
+			const exhaustiveKind: never = kind;
+			return exhaustiveKind;
+		}
+	}
+}
+
+function AssignedAgentTrailingStatus({
+	agent,
+	kind,
+}: Readonly<{
+	agent: AgentAssignmentAgent;
+	kind: AgentAssignmentStatusKind;
+}>) {
+	switch (kind) {
+		case "working":
+			return (
+				<span className="grid size-6 shrink-0 place-items-center">
+					<Spinner label={`${agent.name} running`} size="sm" variant="rainbow" />
+				</span>
+			);
+		case "needs-input":
+			return (
+				<span className="grid size-6 shrink-0 place-items-center text-icon-information">
+					<StatusInformationIcon label={`${agent.name} needs input`} size="small" />
+				</span>
+			);
+		case "finished":
+			return (
+				<span className="grid size-6 shrink-0 place-items-center text-icon-success">
+					<StatusSuccessIcon label={`${agent.name} finished`} size="small" />
+				</span>
+			);
+		case "idle":
+			return null;
+		default: {
+			const exhaustiveKind: never = kind;
+			return exhaustiveKind;
+		}
+	}
 }
 
 function AssignedAgentStatus({
@@ -87,7 +161,7 @@ function AssignedAgentStatus({
 	}
 
 	return (
-		<CyclingByline className="menu-row-title text-text-subtlest">
+		<CyclingByline className="menu-row-byline">
 			{label}
 		</CyclingByline>
 	);
@@ -99,10 +173,15 @@ function toAgentItem(
 	onArchiveAgent: (agent: AgentAssignmentAgent) => void,
 	onSelectAgent: (agent: AgentAssignmentAgent) => void,
 ): RichTextSuggestionMenuItem {
+	const statusKind = resolveAssignedAgentStatusKind(row);
+	const trailing = statusKind === "idle"
+		? undefined
+		: <AssignedAgentTrailingStatus agent={row} kind={statusKind} />;
+
 	return {
 		icon: null,
 		id: row.id,
-		inlineMetadata: <AssignedAgentStatus agent={row} rowIndex={rowIndex} />,
+		inlineMetadata: getAssignedAgentHoverByline(row, statusKind, rowIndex),
 		hoverActions: {
 			onPrimary: () => onSelectAgent(row),
 			onSecondary: () => onArchiveAgent(row),
@@ -111,6 +190,7 @@ function toAgentItem(
 			secondaryLabel: "Archive",
 		},
 		label: row.name,
+		trailing,
 		leadingVisual: (
 			<AgentAvatarVisual
 				avatarClassName="shrink-0"
@@ -166,13 +246,25 @@ export function AssignedAgentsMenu({
 
 	const handleFocus = (event: FocusEvent<HTMLDivElement>) => {
 		const options = containerRef.current?.querySelectorAll<HTMLButtonElement>("[data-suggestion-option]");
-		if (!options || !(event.target instanceof HTMLButtonElement)) {
-			return;
+		if (options && event.target instanceof HTMLButtonElement) {
+			const index = [...options].indexOf(event.target);
+			if (index !== -1) {
+				setSelectedIndex(index);
+				return;
+			}
 		}
-		const index = [...options].indexOf(event.target);
-		if (index !== -1) {
-			setSelectedIndex(index);
+		const actionsRow = event.target instanceof Element
+			? event.target.closest("[data-suggestion-actions]")
+			: null;
+		if (actionsRow && containerRef.current?.contains(actionsRow) && options) {
+			const option = actionsRow.querySelector<HTMLButtonElement>("[data-suggestion-option]");
+			const index = option ? [...options].indexOf(option) : -1;
+			if (index !== -1) {
+				setSelectedIndex(index);
+				return;
+			}
 		}
+		setSelectedIndex(-1);
 	};
 
 	const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -196,6 +288,7 @@ export function AssignedAgentsMenu({
 					emptyLabel="No agents assigned"
 					items={items}
 					onHover={setSelectedIndex}
+					onHoverEnd={() => setSelectedIndex(-1)}
 					onSelect={handleSelect}
 					selectedIndex={selectedIndex}
 					title="Assigned agents"

@@ -673,38 +673,60 @@ export function AvatarDemoPresence() {
 
 export function AvatarDemoStatus() {
 	return (
-		<div className="flex flex-wrap items-center gap-4">
-			<div className="flex flex-col items-center gap-1">
-				<Avatar>
-					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="Approved" />
-					<AvatarFallback>CN</AvatarFallback>
-					<AvatarStatusIndicator status="approved" />
-				</Avatar>
-				<span className="text-xs text-text-subtle">Approved</span>
+		<div className="flex flex-col gap-4">
+			<div className="flex flex-wrap items-center gap-4">
+				<div className="flex flex-col items-center gap-1">
+					<Avatar>
+						<AvatarImage src={PRIMARY_AVATAR_SRC} alt="Approved" />
+						<AvatarFallback>CN</AvatarFallback>
+						<AvatarStatusIndicator status="approved" />
+					</Avatar>
+					<span className="text-xs text-text-subtle">Approved</span>
+				</div>
+				<div className="flex flex-col items-center gap-1">
+					<Avatar>
+						<AvatarImage src={PRIMARY_AVATAR_SRC} alt="Declined" />
+						<AvatarFallback>CN</AvatarFallback>
+						<AvatarStatusIndicator status="declined" />
+					</Avatar>
+					<span className="text-xs text-text-subtle">Declined</span>
+				</div>
+				<div className="flex flex-col items-center gap-1">
+					<Avatar>
+						<AvatarImage src={PRIMARY_AVATAR_SRC} alt="Locked" />
+						<AvatarFallback>CN</AvatarFallback>
+						<AvatarStatusIndicator status="locked" />
+					</Avatar>
+					<span className="text-xs text-text-subtle">Locked</span>
+				</div>
+				<div className="flex flex-col items-center gap-1">
+					<Avatar>
+						<AvatarImage src={PRIMARY_AVATAR_SRC} alt="Warning" />
+						<AvatarFallback>CN</AvatarFallback>
+						<AvatarStatusIndicator status="warning" />
+					</Avatar>
+					<span className="text-xs text-text-subtle">Warning</span>
+				</div>
 			</div>
-			<div className="flex flex-col items-center gap-1">
-				<Avatar>
-					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="Declined" />
-					<AvatarFallback>CN</AvatarFallback>
-					<AvatarStatusIndicator status="declined" />
-				</Avatar>
-				<span className="text-xs text-text-subtle">Declined</span>
-			</div>
-			<div className="flex flex-col items-center gap-1">
-				<Avatar>
-					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="Locked" />
-					<AvatarFallback>CN</AvatarFallback>
-					<AvatarStatusIndicator status="locked" />
-				</Avatar>
-				<span className="text-xs text-text-subtle">Locked</span>
-			</div>
-			<div className="flex flex-col items-center gap-1">
-				<Avatar>
-					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="Warning" />
-					<AvatarFallback>CN</AvatarFallback>
-					<AvatarStatusIndicator status="warning" />
-				</Avatar>
-				<span className="text-xs text-text-subtle">Warning</span>
+			<div className="flex flex-wrap items-center gap-4 overflow-visible">
+				<div className="flex flex-col items-center gap-1 overflow-visible">
+					<AgentAvatarVisual
+						avatarSrc={AGENT_AVATAR_SRC}
+						label="Code planner, Needs input"
+						sizePx={32}
+						status="needs-input"
+					/>
+					<span className="text-xs text-text-subtle">Needs input</span>
+				</div>
+				<div className="flex flex-col items-center gap-1 overflow-visible">
+					<AgentAvatarVisual
+						avatarSrc={AGENT_AVATAR_SRC}
+						label="Code planner, Finished"
+						sizePx={32}
+						status="finished"
+					/>
+					<span className="text-xs text-text-subtle">Finished</span>
+				</div>
 			</div>
 		</div>
 	);

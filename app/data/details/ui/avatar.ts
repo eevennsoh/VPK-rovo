@@ -70,7 +70,7 @@ export const AVATAR_DETAIL: ComponentDetail = {
       },
       {
         name: "AvatarStatusIndicator",
-        description: "Status indicator (approved, declined, locked, warning).",
+        description: "Status indicator (approved, declined, locked, warning, needs-input, finished).",
       },
       { name: "AvatarGroup", description: "Overlapping group of avatars." },
       {
@@ -121,7 +121,7 @@ export const AVATAR_DETAIL: ComponentDetail = {
       },
       {
         title: "Status",
-        description: "Approved, declined, locked, and warning status indicators.",
+        description: "Circle statuses plus agent-shaped avatars with Needs input and Finished overlays.",
         demoSlug: "avatar-demo-status",
       },
       {

@@ -5,6 +5,12 @@ import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip"
 
 import { cn } from "@/lib/utils"
 
+const TooltipConfiguredContext = React.createContext(false)
+const TooltipAnimateContext = React.createContext(true)
+
+const TOOLTIP_POPUP_ANIMATION_CLASSES =
+	"transition-[opacity,translate] duration-normal ease-out-practical motion-reduce:transition-none data-ending-style:duration-fast data-ending-style:ease-in data-starting-style:opacity-0 data-ending-style:opacity-0 data-[side=bottom]:data-starting-style:-translate-y-2 data-[side=top]:data-starting-style:translate-y-2 data-[side=left]:data-starting-style:translate-x-2 data-[side=right]:data-starting-style:-translate-x-2 data-[side=inline-start]:data-starting-style:translate-x-2 data-[side=inline-end]:data-starting-style:-translate-x-2 data-[side=bottom]:data-ending-style:-translate-y-2 data-[side=top]:data-ending-style:translate-y-2 data-[side=left]:data-ending-style:translate-x-2 data-[side=right]:data-ending-style:-translate-x-2 data-[side=inline-start]:data-ending-style:translate-x-2 data-[side=inline-end]:data-ending-style:-translate-x-2"
+
 type TooltipProviderProps = TooltipPrimitive.Provider.Props & {
 	delay?: number
 }
@@ -14,23 +20,29 @@ function TooltipProvider({
 	...props
 }: Readonly<TooltipProviderProps>) {
 	return (
-		<TooltipPrimitive.Provider
-			data-slot="tooltip-provider"
-			delay={delay}
-			{...props}
-		/>
+		<TooltipConfiguredContext value={true}>
+			<TooltipPrimitive.Provider
+				data-slot="tooltip-provider"
+				delay={delay}
+				{...props}
+			/>
+		</TooltipConfiguredContext>
 	)
 }
 
-type TooltipProps = TooltipPrimitive.Root.Props
+type TooltipProps = TooltipPrimitive.Root.Props & {
+	animate?: boolean
+}
 
 function Tooltip({
 	actionsRef,
+	animate = true,
 	defaultOpen = false,
 	onOpenChange,
 	open,
 	...props
 }: Readonly<TooltipProps>) {
+	const hasProvider = React.use(TooltipConfiguredContext)
 	const internalActionsRef = React.useRef<TooltipPrimitive.Root.Actions | null>(null)
 	const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen)
 	const isOpen = open ?? uncontrolledOpen
@@ -63,16 +75,20 @@ function Tooltip({
 		return () => window.removeEventListener("scroll", handleScroll, true)
 	}, [isOpen])
 
-	return (
-		<TooltipPrimitive.Root
-			actionsRef={internalActionsRef}
-			data-slot="tooltip"
-			defaultOpen={defaultOpen}
-			onOpenChange={handleOpenChange}
-			open={open}
-			{...props}
-		/>
+	const root = (
+		<TooltipAnimateContext value={animate}>
+			<TooltipPrimitive.Root
+				actionsRef={internalActionsRef}
+				data-slot="tooltip"
+				defaultOpen={defaultOpen}
+				onOpenChange={handleOpenChange}
+				open={open}
+				{...props}
+			/>
+		</TooltipAnimateContext>
 	)
+
+	return hasProvider ? root : <TooltipProvider>{root}</TooltipProvider>
 }
 
 type TooltipTriggerProps = TooltipPrimitive.Trigger.Props
@@ -87,28 +103,35 @@ interface TooltipContentProps
 	extends TooltipPrimitive.Popup.Props,
 		Pick<
 			TooltipPrimitive.Positioner.Props,
-			"align" | "alignOffset" | "anchor" | "side" | "sideOffset"
+			"align" | "alignOffset" | "anchor" | "collisionAvoidance" | "side" | "sideOffset"
 		> {
+	animate?: boolean
 	positionerClassName?: string
 }
 
 function TooltipContent({
+	animate,
 	className,
 	side = "top",
 	sideOffset = 4,
 	align = "center",
 	alignOffset = 0,
 	anchor,
+	collisionAvoidance,
 	positionerClassName,
 	children,
 	...props
 }: Readonly<TooltipContentProps>) {
+	const animateFromRoot = React.use(TooltipAnimateContext)
+	const shouldAnimate = animate ?? animateFromRoot
+
 	return (
 		<TooltipPrimitive.Portal>
 			<TooltipPrimitive.Positioner
 				align={align}
 				alignOffset={alignOffset}
 				anchor={anchor}
+				collisionAvoidance={collisionAvoidance}
 				side={side}
 				sideOffset={sideOffset}
 				className={cn("isolate z-[200]", positionerClassName)}
@@ -116,10 +139,10 @@ function TooltipContent({
 				<TooltipPrimitive.Popup
 					data-slot="tooltip-content"
 					className={cn(
-						// Opacity-only enter/exit. Side-axis translate compounds with Floating UI
-						// Positioner updates (and resizing triggers like WorkItemKeyCopy) into
-						// diagonal motion; scale from --transform-origin did the same.
-						"w-fit max-w-xs rounded-md bg-bg-neutral-bold px-3 py-1.5 text-xs text-text-inverse outline-hidden transition-opacity duration-fast ease-out motion-reduce:transition-none data-starting-style:opacity-0 data-ending-style:opacity-0",
+						"w-fit max-w-xs rounded-md bg-bg-neutral-bold px-3 py-1.5 text-xs text-text-inverse outline-hidden",
+						shouldAnimate
+							? TOOLTIP_POPUP_ANIMATION_CLASSES
+							: "transition-none motion-reduce:transition-none",
 						className
 					)}
 					{...props}

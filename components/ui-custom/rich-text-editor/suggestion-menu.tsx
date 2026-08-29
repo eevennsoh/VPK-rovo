@@ -10,6 +10,7 @@ import {
 	useLayoutEffect,
 	useRef,
 	useState,
+	type FocusEvent,
 	type KeyboardEvent,
 	type ReactNode,
 } from "react";
@@ -19,7 +20,7 @@ import type {
 	SuggestionKeyDownProps,
 	SuggestionProps,
 } from "@tiptap/suggestion";
-import { motion, type Variants } from "motion/react";
+import { motion, useReducedMotion, type Variants } from "motion/react";
 
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
@@ -115,8 +116,9 @@ export interface RichTextSuggestionMenuItem {
 	label: string;
 	description?: string;
 	/**
-	 * Optional supplementary content that stays on the title line. This is for
-	 * compact, dynamic metadata such as a running tool-call narration.
+	 * Optional supplementary content revealed as a second-line byline on
+	 * hover/selection. Use this for compact, dynamic metadata such as a running
+	 * tool-call narration — the row stays a single identity line at rest.
 	 */
 	inlineMetadata?: ReactNode;
 	/** Hover/focus-revealed sibling buttons; keeps the option button unnested. */
@@ -150,8 +152,9 @@ export interface RichTextSuggestionMenuItem {
 	persistentDescription?: boolean;
 	/**
 	 * Optional trailing indicator rendered on the far right of the row (e.g. a
-	 * status spinner or info glyph). Shown at rest and while hovered/selected; it
-	 * yields the slot to the return-key hint only for the active row.
+	 * status spinner or info glyph). Shown at rest; it yields the slot to the
+	 * return-key hint on the active row, and to `hoverActions` when that row is
+	 * hovered or keyboard-focused.
 	 */
 	trailing?: ReactNode;
 	/**
@@ -237,9 +240,17 @@ interface RichTextSuggestionMenuProps {
 	 * row under the pointer).
 	 */
 	onHover?: (index: number) => void;
+	/** Pointer left a hover-tracked row. Used to idle selection after hover-out. */
+	onHoverEnd?: () => void;
 	onSelect: (item: RichTextSuggestionMenuItem) => void;
 	selectedIndex: number;
 	selectedItemIds?: ReadonlySet<string>;
+	/**
+	 * When false, hide the Return (↵) shortcut glyph and its reserved gutter.
+	 * Used by the agents-field session submenu, which is mouse-first.
+	 * Defaults to true so editor palettes keep the keyboard hint.
+	 */
+	showReturnShortcut?: boolean;
 	title: string;
 }
 
@@ -257,27 +268,27 @@ type RichTextMentionParentCategory = "people-team" | "subagent";
 const SUGGESTION_PAGE_KEY_STEP = 5;
 
 const nestedCommandLabelVariants: Variants = {
-	idle: {
+	idle: (instant: boolean) => ({
 		transform: "translateY(8px)",
-		transition: { type: "spring", bounce: 0, visualDuration: 0.18 },
-	},
-	active: {
+		transition: instant ? { duration: 0 } : { type: "spring", bounce: 0, visualDuration: 0.18 },
+	}),
+	active: (instant: boolean) => ({
 		transform: "translateY(0px)",
-		transition: { type: "spring", bounce: 0.12, visualDuration: 0.24 },
-	},
+		transition: instant ? { duration: 0 } : { type: "spring", bounce: 0.12, visualDuration: 0.24 },
+	}),
 };
 
 const nestedCommandDescriptionVariants: Variants = {
-	idle: {
+	idle: (instant: boolean) => ({
 		opacity: 0,
 		transform: "translateY(4px)",
-		transition: { duration: 0.1, ease: [0.4, 0, 1, 1] },
-	},
-	active: {
+		transition: instant ? { duration: 0 } : { duration: 0.1, ease: [0.4, 0, 1, 1] },
+	}),
+	active: (instant: boolean) => ({
 		opacity: 1,
 		transform: "translateY(0px)",
-		transition: { delay: 0.02, duration: 0.16, ease: [0, 0.4, 0, 1] },
-	},
+		transition: instant ? { duration: 0 } : { delay: 0.02, duration: 0.16, ease: [0, 0.4, 0, 1] },
+	}),
 };
 
 const PEOPLE_AVATAR_SRCS = [
@@ -685,9 +696,11 @@ export function RichTextSuggestionMenu({
 	items,
 	onBack,
 	onHover,
+	onHoverEnd,
 	onSelect,
 	selectedIndex,
 	selectedItemIds,
+	showReturnShortcut = true,
 	title,
 }: Readonly<RichTextSuggestionMenuProps>) {
 	const {
@@ -729,6 +742,7 @@ export function RichTextSuggestionMenu({
 			className={cn("rich-text-command-menu", className)}
 			data-nested={isNested ? "true" : undefined}
 			data-has-header={header ? "true" : undefined}
+			data-hide-return-shortcut={showReturnShortcut ? undefined : "true"}
 			data-pointer-selects={onHover ? "true" : undefined}
 			{...menuProps}
 		>
@@ -774,7 +788,9 @@ export function RichTextSuggestionMenu({
 										item={item}
 										listMode={hasHoverActions}
 										onHover={onHover ? () => onHover(index) : undefined}
+										onHoverEnd={onHoverEnd}
 										onSelect={onSelect}
+										showReturnShortcut={showReturnShortcut}
 									/>
 								)}
 							</Fragment>
@@ -917,7 +933,16 @@ interface RichTextSuggestionMenuOptionProps {
 	item: RichTextSuggestionMenuItem;
 	listMode?: boolean;
 	onHover?: () => void;
+	onHoverEnd?: () => void;
 	onSelect: (item: RichTextSuggestionMenuItem) => void;
+	showReturnShortcut?: boolean;
+}
+
+function isFocusLeavingElement(
+	event: FocusEvent<HTMLElement>,
+): boolean {
+	const next = event.relatedTarget;
+	return !(next instanceof Node && event.currentTarget.contains(next));
 }
 
 function RichTextSuggestionMenuOption({
@@ -926,30 +951,61 @@ function RichTextSuggestionMenuOption({
 	item,
 	listMode = false,
 	onHover,
+	onHoverEnd,
 	onSelect,
+	showReturnShortcut = true,
 }: Readonly<RichTextSuggestionMenuOptionProps>) {
-	const [isInteractionActive, setIsInteractionActive] = useState(false);
-	// Descriptions reveal on hover/selection wherever an item has one, in both
-	// the nested drill-in lists and the merged flat lists, so the collapsed row
-	// stays compact (label only) until the user lands on it. Rows that opt into
-	// `persistentDescription` (nested parent rows with a count byline) instead
-	// keep their description visible at all times.
+	const [isRowPointerActive, setIsRowPointerActive] = useState(false);
+	const [isRowFocusWithin, setIsRowFocusWithin] = useState(false);
+	const prefersReducedMotion = useReducedMotion();
+	// Descriptions and live `inlineMetadata` (tool-call narration) reveal on
+	// hover/selection so the collapsed row stays compact (label only) until the
+	// user lands on it. Rows that opt into `persistentDescription` (nested parent
+	// rows with a count byline) instead keep their description visible at all
+	// times.
 	const hasDescription = Boolean(item.description);
 	const showsPersistentDescription = hasDescription && Boolean(item.persistentDescription);
-	const canRevealMetadata = hasDescription && !item.persistentDescription;
-	const shouldShowReturnShortcut = !item.disabled && item.hoverActions === undefined && (isSelected || isInteractionActive);
+	const revealedMetadata = item.inlineMetadata ?? (showsPersistentDescription ? undefined : item.description);
+	const canRevealMetadata = revealedMetadata !== undefined && revealedMetadata !== "";
+	const hasHoverActions = item.hoverActions !== undefined;
+	const hasTrailing = item.trailing != null;
+	// Hover-action rows reveal from the row wrapper (pointer on the row or
+	// keyboard focus on the option/CTAs). A stale `isSelected` from the last
+	// hover must not keep the byline or hide the rest-state spinner.
+	const isHoverActionsRevealed = hasHoverActions && (isRowPointerActive || isRowFocusWithin);
+	const isBylineRevealed = hasHoverActions ? isHoverActionsRevealed : isSelected;
+	const shouldShowReturnShortcut = showReturnShortcut && !item.disabled && !hasHoverActions && (isSelected || isRowPointerActive || isRowFocusWithin);
+	const shouldYieldTrailingToHoverActions = isHoverActionsRevealed;
 	// A persistent trailing indicator (e.g. a status glyph) shows at rest, so the
 	// copy must reserve room for it always — not only on hover/selection like the
 	// return hint — so the label truncates before it instead of sliding under it.
-	const hasPersistentTrailing = item.trailing !== undefined && !shouldShowReturnShortcut;
-	// Hovering a row moves the real keyboard selection onto it (via `onHover`),
-	// so mouse and keyboard never disagree and Enter commits the hovered row.
-	const handleMouseEnter = () => {
-		setIsInteractionActive(true);
+	const hasPersistentTrailing = hasTrailing && !shouldShowReturnShortcut && !shouldYieldTrailingToHoverActions;
+	const handlePointerEnter = () => {
+		setIsRowPointerActive(true);
 		if (!item.disabled) {
 			onHover?.();
 		}
 	};
+	const handlePointerLeave = () => {
+		setIsRowPointerActive(false);
+		onHoverEnd?.();
+	};
+	const handleFocusWithin = () => {
+		setIsRowFocusWithin(true);
+	};
+	const handleBlurWithin = (event: FocusEvent<HTMLElement>) => {
+		if (isFocusLeavingElement(event)) {
+			setIsRowFocusWithin(false);
+		}
+	};
+	const optionInteractionProps = hasHoverActions
+		? {}
+		: {
+			onBlur: handleBlurWithin,
+			onFocus: handleFocusWithin,
+			onMouseEnter: handlePointerEnter,
+			onMouseLeave: handlePointerLeave,
+		};
 	const className = cn(
 		"rich-text-command-menu-item",
 		isSelected && "rich-text-command-menu-item-selected",
@@ -958,33 +1014,27 @@ function RichTextSuggestionMenuOption({
 	const children = (
 		<>
 			<RichTextSuggestionMenuItemVisual item={item} />
-			{item.inlineMetadata ? (
-				<span className="rich-text-command-menu-copy rich-text-command-menu-copy-inline">
-					<span className="menu-row-title shrink-0">{item.label}</span>
-					<span aria-hidden="true" className="shrink-0 text-text-subtlest">·</span>
-					<span className="menu-row-title min-w-0 flex-1 text-text-subtlest">
-						{item.inlineMetadata}
-					</span>
-				</span>
-			) : canRevealMetadata ? (
-				<span className="rich-text-command-menu-copy rich-text-command-menu-nested-copy rich-text-command-menu-nested-copy-revealable">
+			{canRevealMetadata ? (
+				<span className="rich-text-command-menu-copy rich-text-command-menu-nested-copy rich-text-command-menu-nested-copy-revealable min-w-0">
 					<motion.span
-						className="menu-row-title"
+						className="menu-row-title min-w-0"
+						custom={Boolean(prefersReducedMotion)}
 						style={{ willChange: "transform" }}
 						variants={nestedCommandLabelVariants}
 					>
 						{item.label}
 					</motion.span>
 					<motion.span
-						className="menu-row-byline"
+						className="menu-row-byline min-w-0"
+						custom={Boolean(prefersReducedMotion)}
 						style={{ willChange: "transform, opacity" }}
 						variants={nestedCommandDescriptionVariants}
 					>
-						{item.description}
+						{revealedMetadata}
 					</motion.span>
 				</span>
 			) : (
-				<span className="rich-text-command-menu-copy">
+				<span className="rich-text-command-menu-copy min-w-0">
 					<span className="menu-row-title">{item.label}</span>
 					{showsPersistentDescription ? (
 						<span className="menu-row-byline">
@@ -999,8 +1049,14 @@ function RichTextSuggestionMenuOption({
 						<ReturnIcon className="size-3.5 text-icon-subtlest" />
 					</span>
 				</span>
-			) : item.trailing !== undefined ? (
-				<span className="rich-text-command-menu-shortcut">
+			) : hasTrailing ? (
+				<span
+					aria-hidden={shouldYieldTrailingToHoverActions ? true : undefined}
+					className={cn(
+						"rich-text-command-menu-shortcut",
+						shouldYieldTrailingToHoverActions ? "pointer-events-none opacity-0" : undefined,
+					)}
+				>
 					{item.trailing}
 				</span>
 			) : item.shortcut ? (
@@ -1016,9 +1072,10 @@ function RichTextSuggestionMenuOption({
 				type="button"
 				role={listMode ? undefined : "option"}
 				aria-selected={listMode ? undefined : isChosen ?? isSelected}
-				animate={isSelected ? "active" : "idle"}
+				animate={isBylineRevealed ? "active" : "idle"}
+				custom={Boolean(prefersReducedMotion)}
 				className={className}
-				data-has-actions={item.hoverActions ? "true" : undefined}
+				data-has-actions={hasHoverActions ? "true" : undefined}
 				data-selected={isChosen ?? isSelected ? "true" : undefined}
 				data-suggestion-option=""
 				data-has-trailing={hasPersistentTrailing ? "true" : undefined}
@@ -1026,12 +1083,9 @@ function RichTextSuggestionMenuOption({
 				initial={false}
 				onMouseDown={(event) => event.preventDefault()}
 				onClick={() => onSelect(item)}
-				onBlur={() => setIsInteractionActive(false)}
-				onFocus={() => setIsInteractionActive(true)}
-				onMouseEnter={handleMouseEnter}
-				onMouseLeave={() => setIsInteractionActive(false)}
-				whileFocus="active"
-				whileHover="active"
+				whileFocus={hasHoverActions ? undefined : "active"}
+				whileHover={hasHoverActions ? undefined : "active"}
+				{...optionInteractionProps}
 			>
 				{children}
 			</motion.button>
@@ -1041,17 +1095,14 @@ function RichTextSuggestionMenuOption({
 			role={listMode ? undefined : "option"}
 			aria-selected={listMode ? undefined : isChosen ?? isSelected}
 			className={className}
-			data-has-actions={item.hoverActions ? "true" : undefined}
+			data-has-actions={hasHoverActions ? "true" : undefined}
 			data-selected={isChosen ?? isSelected ? "true" : undefined}
 			data-suggestion-option=""
 			data-has-trailing={hasPersistentTrailing ? "true" : undefined}
 			disabled={item.disabled}
 			onMouseDown={(event) => event.preventDefault()}
 			onClick={() => onSelect(item)}
-			onBlur={() => setIsInteractionActive(false)}
-			onFocus={() => setIsInteractionActive(true)}
-			onMouseEnter={handleMouseEnter}
-			onMouseLeave={() => setIsInteractionActive(false)}
+			{...optionInteractionProps}
 		>
 			{children}
 		</button>
@@ -1063,10 +1114,12 @@ function RichTextSuggestionMenuOption({
 
 	return (
 		<div
-			className="group/suggestion-option grid grid-cols-[minmax(0,1fr)_auto] items-center rounded-lg"
+			className="group/suggestion-option grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center rounded-lg"
 			data-suggestion-actions=""
-			onMouseEnter={handleMouseEnter}
-			onMouseLeave={() => setIsInteractionActive(false)}
+			onBlur={handleBlurWithin}
+			onFocus={handleFocusWithin}
+			onMouseEnter={handlePointerEnter}
+			onMouseLeave={handlePointerLeave}
 			role="listitem"
 		>
 			{option}

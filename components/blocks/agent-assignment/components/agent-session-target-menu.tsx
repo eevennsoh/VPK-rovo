@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent } from "react";
+import { useLayoutEffect, useRef, useState, type FocusEvent, type KeyboardEvent } from "react";
 
 import AddIcon from "@atlaskit/icon/core/add";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
@@ -44,11 +44,8 @@ export function AgentSessionTargetMenu({
 			?.focus();
 	};
 
-	useEffect(() => {
-		const frameId = window.requestAnimationFrame(() => {
-			containerRef.current?.focus();
-		});
-		return () => window.cancelAnimationFrame(frameId);
+	useLayoutEffect(() => {
+		containerRef.current?.focus();
 	}, []);
 
 	const moveSelection = (step: number) => {
@@ -105,6 +102,7 @@ export function AgentSessionTargetMenu({
 				onHover={setSelectedIndex}
 				onSelect={(item) => onChoose(item.id === "new" ? "new" : "continue")}
 				selectedIndex={selectedIndex}
+				showReturnShortcut={false}
 				title="Choose agent session"
 			/>
 		</div>
