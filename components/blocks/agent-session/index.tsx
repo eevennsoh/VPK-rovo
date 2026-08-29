@@ -6,10 +6,8 @@ import { isCodingAgentListItem } from "@/components/blocks/agent-list";
 import { cn } from "@/lib/utils";
 
 import { AGENT_SESSION_ITEMS } from "./data";
-import {
-	AgentSessionCard,
-	suggestedAgentSessionWorkItemKey,
-} from "./agent-session-card";
+import { AgentSessionCard } from "./agent-session-card";
+import { suggestedAgentSessionWorkItemKey } from "./agent-session-work-item";
 import type {
 	AgentSessionItem,
 	AgentSessionProps,
@@ -73,5 +71,6 @@ export function AgentSession({
 }
 
 export { AGENT_SESSION_ITEMS } from "./data";
-export { AgentSessionCard, suggestedAgentSessionWorkItemKey } from "./agent-session-card";
+export { AgentSessionCard } from "./agent-session-card";
+export { suggestedAgentSessionWorkItemKey } from "./agent-session-work-item";
 export type { AgentSessionItem, AgentSessionProps } from "./agent-session-types";

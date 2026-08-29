@@ -6,11 +6,6 @@ import { UncapturedWorkChin } from "@/components/blocks/jira-issue/uncaptured-wo
 
 import type { AgentSessionItem } from "./agent-session-types";
 
-/** Default chin suggestion: the key the session already names in its details. */
-export function suggestedAgentSessionWorkItemKey(item: AgentSessionItem): string | undefined {
-	return item.sessionDetails?.issueKey;
-}
-
 async function copyResumeCommand(command: string): Promise<void> {
 	if (typeof navigator === "undefined" || navigator.clipboard?.writeText === undefined) {
 		return;

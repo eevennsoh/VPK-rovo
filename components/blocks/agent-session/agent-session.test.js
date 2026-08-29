@@ -8,6 +8,7 @@ const DATA_SOURCE = readFileSync(join(__dirname, "data.ts"), "utf8");
 const INDEX_SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const TYPES_SOURCE = readFileSync(join(__dirname, "agent-session-types.ts"), "utf8");
+const WORK_ITEM_SOURCE = readFileSync(join(__dirname, "agent-session-work-item.ts"), "utf8");
 const DEMO_SOURCE = readFileSync(
 	join(__dirname, "../../website/demos/blocks/agent-session-demo.tsx"),
 	"utf8",
@@ -54,7 +55,19 @@ test("the chin owns every action, so no row renders a competing flyout", () => {
 		INDEX_SOURCE,
 		/suggestedWorkItemKey=\{getSuggestedWorkItemKey\?\.\(item\) \?\? suggestedAgentSessionWorkItemKey\(item\)\}/u,
 	);
-	assert.match(CARD_SOURCE, /item.sessionDetails\?\.issueKey/u);
+	assert.match(WORK_ITEM_SOURCE, /item.sessionDetails\?\.issueKey/u);
+});
+
+// Fast Refresh can only preserve a component's state when its file exports
+// nothing but components, so the chin's suggestion helper lives on its own.
+test("the card file exports only a component", () => {
+	assert.doesNotMatch(CARD_SOURCE, /suggestedAgentSessionWorkItemKey/u);
+	assert.match(WORK_ITEM_SOURCE, /export function suggestedAgentSessionWorkItemKey/u);
+	assert.match(WORK_ITEM_SOURCE, /item.sessionDetails\?\.issueKey/u);
+	assert.match(
+		INDEX_SOURCE,
+		/import \{ suggestedAgentSessionWorkItemKey \} from "\.\/agent-session-work-item";/u,
+	);
 });
 
 test("Resume is gated on host capability before the clipboard write", () => {
