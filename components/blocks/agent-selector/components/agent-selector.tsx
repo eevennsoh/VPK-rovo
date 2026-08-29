@@ -716,7 +716,7 @@ export function AgentSelector({
 				/>
 			</CommandList>
 			{hasFooterActions ? (
-				<div className="sticky bottom-0 z-10 flex shrink-0 flex-col border-t border-border bg-popover p-0 pt-2">
+				<div className="sticky bottom-0 z-10 flex shrink-0 flex-col border-t border-border bg-popover p-0 pt-1">
 					{onBrowseAgents ? (
 						<Button
 							className={ACTION_BUTTON_CLASS}
