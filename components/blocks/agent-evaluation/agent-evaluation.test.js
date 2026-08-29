@@ -1,5 +1,5 @@
 const assert = require("node:assert/strict");
-const { readFileSync } = require("node:fs");
+const { existsSync, readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const { test } = require("node:test");
 const { readDetailCategorySource } = require(process.cwd() + "/app/data/details/test-source.cjs");
@@ -21,6 +21,7 @@ const MANIFEST_SOURCE = readFileSync(
 	join(__dirname, "..", "..", "..", "app", "data", "component-manifest.ts"),
 	"utf8",
 );
+const LEGACY_COMPATIBILITY_MODULE = join(__dirname, "..", "..", "ui-custom", "agent-evaluation.tsx");
 
 test("AgentEvaluation screen exposes Datasets and Evaluations tabs", () => {
 	assert.match(SOURCE, /export function AgentEvaluation\(/u);
@@ -101,4 +102,8 @@ test("AgentEvaluation index re-exports the public API", () => {
 	assert.match(INDEX_SOURCE, /AgentEvaluationDatasetOption/u);
 	assert.match(INDEX_SOURCE, /AgentEvaluationTypeOption/u);
 	assert.match(INDEX_SOURCE, /AgentEvaluationCompletedRow/u);
+});
+
+test("AgentEvaluation has no retired ui-custom compatibility entry point", () => {
+	assert.equal(existsSync(LEGACY_COMPATIBILITY_MODULE), false);
 });
