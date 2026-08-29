@@ -41,8 +41,11 @@ export default function JiraWorkItemPage() {
 			<Button type="button" variant="outline" onClick={() => setActiveVariant("experimental-v3")}>
 				Open experimental v3 session
 			</Button>
-			<Button type="button" onClick={() => setActiveVariant("experimental-v4")}>
+			<Button type="button" variant="outline" onClick={() => setActiveVariant("experimental-v4")}>
 				Open experimental v4 session
+			</Button>
+			<Button type="button" onClick={() => setActiveVariant("experimental-v5")}>
+				Open experimental v5 session
 			</Button>
 		</div>
 	);
@@ -61,4 +64,8 @@ export function JiraWorkItemExperimentalV3Page() {
 }
 export function JiraWorkItemExperimentalV4Page() {
 	return <JiraWorkItem variant="experimental-v4" initialExperimentalPreset="filled" />;
+}
+
+export function JiraWorkItemExperimentalV5Page() {
+	return <JiraWorkItem variant="experimental-v5" initialExperimentalPreset="filled" />;
 }

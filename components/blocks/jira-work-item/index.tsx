@@ -12,20 +12,22 @@ import { ExperimentalJiraWorkItem } from "@/components/blocks/jira-work-item/exp
 import { ExperimentalV2JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v2/experimental-v2-jira-work-item";
 import { ExperimentalV3JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v3/experimental-v3-jira-work-item";
 import { ExperimentalV4JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v4/experimental-v4-jira-work-item";
+import { ExperimentalV5JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v5/experimental-v5-jira-work-item";
 
-export type JiraWorkItemVariant = "default" | "experimental" | "experimental-v2" | "experimental-v3" | "experimental-v4";
+export type JiraWorkItemVariant = "default" | "experimental" | "experimental-v2" | "experimental-v3" | "experimental-v4" | "experimental-v5";
 export type JiraWorkItemExperimentalPreset = JiraWorkItemPreset;
 
 /**
  * Experimental surfaces keyed by variant. `experimental-v2` is a full fork of
- * the v1 tree and `experimental-v3` is a full fork of v2, so each can diverge
- * independently; all three share the session/planner model under `data/`.
+ * the v1 tree, with each later version continuing as a full fork so the
+ * variants can diverge independently while sharing the model under `data/`.
  */
 const EXPERIMENTAL_SURFACES = {
 	experimental: ExperimentalJiraWorkItem,
 	"experimental-v2": ExperimentalV2JiraWorkItem,
 	"experimental-v3": ExperimentalV3JiraWorkItem,
 	"experimental-v4": ExperimentalV4JiraWorkItem,
+	"experimental-v5": ExperimentalV5JiraWorkItem,
 } as const;
 
 type ExperimentalVariant = keyof typeof EXPERIMENTAL_SURFACES;

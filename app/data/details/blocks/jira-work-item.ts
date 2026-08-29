@@ -72,6 +72,21 @@ export const JIRA_WORK_ITEM_DETAIL: ComponentDetail = {
 			description: "Experimental v4 seeded with the running preset: several work-item-scoped agents progressing concurrently on a deterministic metronome, with live status pills and progress.",
 			demoSlug: "jira-work-item-demo-experimental-v4-running",
 		},
+		{
+			title: "Experimental v5 · Filled context",
+			description: "Experimental v5 session: a standalone fork of the experimental v4 surface that starts identical to v4 and can diverge independently. Shares the session/planner model and owns its own component tree.",
+			demoSlug: "jira-work-item-demo-experimental-v5",
+		},
+		{
+			title: "Experimental v5 · Empty context",
+			description: "Experimental v5 empty-context preset with the same automatic deterministic AI Planner pass, natural-language refinement, and single explicit confirmation action as v4.",
+			demoSlug: "jira-work-item-demo-experimental-v5-empty",
+		},
+		{
+			title: "Experimental v5 · Multiple agents running",
+			description: "Experimental v5 seeded with the running preset: several work-item-scoped agents progressing concurrently on a deterministic metronome, with live status pills and progress.",
+			demoSlug: "jira-work-item-demo-experimental-v5-running",
+		},
 	],
 	props: [
 		{
@@ -87,7 +102,7 @@ export const JIRA_WORK_ITEM_DETAIL: ComponentDetail = {
 		},
 		{
 			name: "variant",
-			type: "\"default\" | \"experimental\" | \"experimental-v2\" | \"experimental-v3\" | \"experimental-v4\"",
+			type: "\"default\" | \"experimental\" | \"experimental-v2\" | \"experimental-v3\" | \"experimental-v4\" | \"experimental-v5\"",
 			default: "\"default\"",
 			description: "Opt-in layout variation with independently versioned experimental component trees.",
 		},
