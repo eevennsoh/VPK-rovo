@@ -1,7 +1,5 @@
-export {
-	AgentAssignment,
-	resolveAssignedAgentStatusKind,
-} from "./components/agent-assignment";
+export { AgentAssignment } from "./components/agent-assignment";
+export { resolveAssignedAgentStatusKind } from "./components/assigned-agent-status";
 export type {
 	AgentAssignmentAgent,
 	AgentAssignmentProps,

@@ -13,6 +13,10 @@ import {
 import { AssignedAgentsMenu } from "@/components/blocks/agent-assignment/components/assigned-agents-menu";
 import { AssignmentAvatar } from "@/components/blocks/agent-assignment/components/assignment-avatar";
 import {
+	resolveAssignedAgentStatusKind,
+	type AgentAssignmentStatusKind,
+} from "@/components/blocks/agent-assignment/components/assigned-agent-status";
+import {
 	isAssignedAgentAttentionKind,
 	useAssignedAgentAttention,
 } from "@/components/blocks/agent-assignment/components/use-assigned-agent-attention";
@@ -32,7 +36,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-export type AgentAssignmentStatusKind = "working" | "needs-input" | "finished" | "idle";
+export type { AgentAssignmentStatusKind } from "@/components/blocks/agent-assignment/components/assigned-agent-status";
 
 export interface AgentAssignmentAgent extends AgentSelectorAgent {
 	status?: ReactNode;
@@ -48,17 +52,6 @@ export interface AgentAssignmentAgent extends AgentSelectorAgent {
 	statusLabel: string;
 	/** Agent-specific tool-call narration. Avoid sharing one sequence across agents. */
 	statusSequence?: readonly string[];
-}
-
-export function resolveAssignedAgentStatusKind(
-	agent: Pick<AgentAssignmentAgent, "statusKind" | "statusSequence">,
-): AgentAssignmentStatusKind {
-	if (agent.statusKind !== undefined) {
-		return agent.statusKind;
-	}
-
-	const hasWorkingSequence = agent.statusSequence?.some((label) => label.trim().length > 0) ?? false;
-	return hasWorkingSequence ? "working" : "idle";
 }
 
 export interface AgentAssignmentProps {

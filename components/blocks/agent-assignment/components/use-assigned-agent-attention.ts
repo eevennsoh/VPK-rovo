@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
-import type { AgentAssignmentStatusKind } from "@/components/blocks/agent-assignment/components/agent-assignment";
+import type { AgentAssignmentStatusKind } from "@/components/blocks/agent-assignment/components/assigned-agent-status";
 import { SONNER_TOAST_AUTO_DISMISS_MS } from "@/components/ui/sonner";
 
 export const ASSIGNED_AGENT_ATTENTION_TOOLTIP_MS = SONNER_TOAST_AUTO_DISMISS_MS;
@@ -88,57 +88,57 @@ export function useAssignedAgentAttention(
 	isAttentionAcknowledged: (agentId: string) => boolean;
 } {
 	const [activeId, setActiveId] = useState<string | null>(null);
+	const [attentionEpoch, setAttentionEpoch] = useState(0);
 	const [acknowledgedIds, setAcknowledgedIds] = useState<ReadonlySet<string>>(() => new Set());
-	const previousKindsRef = useRef<Map<string, AgentAssignmentStatusKind>>(new Map());
-	const attentionGenerationRef = useRef(0);
+	const [previousKinds, setPreviousKinds] = useState<ReadonlyMap<string, AgentAssignmentStatusKind>>(
+		() => new Map(),
+	);
+	const attentionSignature = `${menuOpen ? "open" : "closed"}|${agents
+		.map((agent) => `${agent.id}:${agent.statusKind}`)
+		.join(",")}`;
+	const [seenSignature, setSeenSignature] = useState<string | null>(null);
 
-	useEffect(() => {
+	if (attentionSignature !== seenSignature) {
+		setSeenSignature(attentionSignature);
+
 		const { changedIds, enterId, nextKinds } = resolveAssignedAgentAttentionEnterId(
 			agents,
-			previousKindsRef.current,
+			previousKinds,
 		);
-		previousKindsRef.current = nextKinds;
+		setPreviousKinds(nextKinds);
 		setAcknowledgedIds((current) => clearAcknowledgedAssignedAgentIds(current, changedIds));
 
 		if (menuOpen) {
-			attentionGenerationRef.current += 1;
 			setActiveId(null);
-			return;
-		}
-
-		if (enterId) {
-			attentionGenerationRef.current += 1;
+		} else if (enterId) {
 			setActiveId(enterId);
-			return;
+			setAttentionEpoch((epoch) => epoch + 1);
+		} else {
+			setActiveId((current) => {
+				if (!current) {
+					return null;
+				}
+				const stillAttention = agents.some((agent) => (
+					agent.id === current && isAssignedAgentAttentionKind(agent.statusKind)
+				));
+				return stillAttention ? current : null;
+			});
 		}
-
-		setActiveId((current) => {
-			if (!current) {
-				return null;
-			}
-			const stillAttention = agents.some((agent) => (
-				agent.id === current && isAssignedAgentAttentionKind(agent.statusKind)
-			));
-			return stillAttention ? current : null;
-		});
-	}, [agents, menuOpen]);
+	}
 
 	useEffect(() => {
 		if (!activeId || menuOpen) {
 			return undefined;
 		}
 
-		const generation = attentionGenerationRef.current;
 		const timeoutId = window.setTimeout(() => {
-			if (attentionGenerationRef.current === generation) {
-				setActiveId(null);
-			}
+			setActiveId(null);
 		}, ASSIGNED_AGENT_ATTENTION_TOOLTIP_MS);
 
 		return () => {
 			window.clearTimeout(timeoutId);
 		};
-	}, [activeId, menuOpen]);
+	}, [activeId, attentionEpoch, menuOpen]);
 
 	const acknowledgeAttention = (agentId: string) => {
 		const agent = agents.find((candidate) => candidate.id === agentId);

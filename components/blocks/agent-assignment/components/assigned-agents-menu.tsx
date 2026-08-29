@@ -9,10 +9,10 @@ import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 
 import {
-	resolveAssignedAgentStatusKind,
 	type AgentAssignmentAgent,
 	type AgentAssignmentStatusKind,
 } from "@/components/blocks/agent-assignment/components/agent-assignment";
+import { resolveAssignedAgentStatusKind } from "@/components/blocks/agent-assignment/components/assigned-agent-status";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import type {
 	AgentAssignmentAgent,
@@ -74,23 +74,14 @@ export function AssignmentAvatar({
 }>) {
 	const avatarStatus = attentionAcknowledged ? undefined : getAssignmentAvatarStatus(statusKind);
 	const tooltipLabel = getAssignmentAvatarTooltipLabel(statusKind, agent.statusLabel);
-	const [tooltipOpen, setTooltipOpen] = useState(autoRevealAttention);
-
-	useEffect(() => {
-		setTooltipOpen(autoRevealAttention);
-	}, [autoRevealAttention]);
-
-	useEffect(() => {
-		if (menuOpen) {
-			setTooltipOpen(false);
-		}
-	}, [menuOpen]);
+	const [hoverOpen, setHoverOpen] = useState(false);
+	const tooltipOpen = !menuOpen && (hoverOpen || autoRevealAttention);
 
 	const handleTooltipOpenChange = (nextOpen: boolean) => {
 		if (menuOpen && nextOpen) {
 			return;
 		}
-		setTooltipOpen(nextOpen);
+		setHoverOpen(nextOpen);
 	};
 
 	return (

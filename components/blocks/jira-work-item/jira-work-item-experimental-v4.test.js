@@ -690,7 +690,7 @@ test("the v4 Agents details row opens the assigned menu first and swaps to the p
 	);
 	assert.match(
 		detailsEditorsSource,
-		/const assignedAgents = assignedRows\.map\(\(row, rowIndex\): AgentAssignmentAgent =>[\s\S]*status: row\.session !== undefined && row\.session\.status !== "completed"[\s\S]*<WorkingSessionActivityByline session=\{row\.session\} sessionIndex=\{rowIndex\} \/>[\s\S]*<WorkingSessionActivityByline fallbackLabel=\{row\.statusLabel\} \/>[\s\S]*statusLabel: row\.statusLabel,/u,
+		/const assignedAgents = assignedRows\.map\(\(row, rowIndex\): AgentAssignmentAgent =>[\s\S]*status: row\.session !== undefined && row\.session\.status !== "completed"[\s\S]*<WorkingSessionActivityByline session=\{row\.session\} sessionIndex=\{rowIndex\} \/>[\s\S]*<WorkingSessionActivityByline fallbackLabel=\{row\.statusLabel\} \/>[\s\S]*statusKind: row\.statusKind,[\s\S]*statusLabel: row\.statusLabel,/u,
 	);
 	assert.match(
 		detailsEditorsSource,

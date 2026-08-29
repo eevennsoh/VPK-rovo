@@ -21,8 +21,11 @@ test("Agent Assignment exposes a reusable controlled block contract", () => {
 	assert.match(source, /status\?: ReactNode;/u);
 	assert.match(source, /statusSequence\?: readonly string\[\];/u);
 	assert.match(source, /statusKind\?: AgentAssignmentStatusKind;/u);
-	assert.match(source, /export type AgentAssignmentStatusKind = "working" \| "needs-input" \| "finished" \| "idle";/u);
-	assert.match(source, /export function resolveAssignedAgentStatusKind\(/u);
+	assert.match(source, /export type \{ AgentAssignmentStatusKind \} from "@\/components\/blocks\/agent-assignment\/components\/assigned-agent-status";/u);
+	const statusHelper = readProjectFile("components/blocks/agent-assignment/components/assigned-agent-status.ts");
+	assert.match(statusHelper, /export type AgentAssignmentStatusKind = "working" \| "needs-input" \| "finished" \| "idle";/u);
+	assert.match(statusHelper, /export function resolveAssignedAgentStatusKind\(/u);
+	assert.doesNotMatch(source, /export function resolveAssignedAgentStatusKind\(/u);
 	assert.match(source, /statusCycleIntervalMs\?: number;/u);
 	assert.match(source, /statusCycleJitterMs\?: number;/u);
 	assert.match(source, /export interface AgentAssignmentProps/u);
@@ -34,7 +37,8 @@ test("Agent Assignment exposes a reusable controlled block contract", () => {
 	assert.match(source, /onContinueExistingSession\?: \(agent: AgentSelectorAgent\) => void;/u);
 	assert.match(source, /onStartNewSession\?: \(agent: AgentSelectorAgent\) => void;/u);
 	assert.match(source, /usedAgentIds\?: readonly string\[\];/u);
-	assert.match(index, /export \{\s*AgentAssignment,\s*resolveAssignedAgentStatusKind,\s*\} from "\.\/components\/agent-assignment";/u);
+	assert.match(index, /export \{ AgentAssignment \} from "\.\/components\/agent-assignment";/u);
+	assert.match(index, /export \{ resolveAssignedAgentStatusKind \} from "\.\/components\/assigned-agent-status";/u);
 	assert.match(index, /AgentAssignmentAgent,[\s\S]*AgentAssignmentProps,[\s\S]*AgentAssignmentStatusKind/u);
 	assert.match(page, /"github-copilot": \{[\s\S]*statusKind: "working"[\s\S]*"Checking the proposed patch across every changed file in this review"/u);
 	assert.match(page, /"release-notes-drafter": \{[\s\S]*statusKind: "needs-input"/u);
@@ -55,8 +59,10 @@ test("Agent Assignment exposes a reusable controlled block contract", () => {
 	assert.match(avatar, /onOpenChange=\{handleTooltipOpenChange\}/u);
 	assert.match(avatar, /open=\{tooltipOpen\}/u);
 	assert.doesNotMatch(avatar, /animate=\{false\}/u);
-	assert.match(avatar, /useState\(autoRevealAttention\)/u);
-	assert.match(avatar, /if \(menuOpen\) \{\s*setTooltipOpen\(false\);/u);
+	assert.match(avatar, /const \[hoverOpen, setHoverOpen\] = useState\(false\);/u);
+	assert.match(avatar, /const tooltipOpen = !menuOpen && \(hoverOpen \|\| autoRevealAttention\);/u);
+	assert.doesNotMatch(avatar, /useState\(autoRevealAttention\)/u);
+	assert.doesNotMatch(avatar, /setTooltipOpen\(autoRevealAttention\)/u);
 	assert.match(source, /statusKind=\{statusKind\}/u);
 	assert.match(source, /menuOpen=\{open\}/u);
 	assert.match(source, /overflow-visible px-2/u);
@@ -84,14 +90,16 @@ test("Agent Assignment exposes a reusable controlled block contract", () => {
 	assert.match(sonner, /const SONNER_TOAST_AUTO_DISMISS_MS = 8_000;/u);
 	assert.match(attention, /export const ASSIGNED_AGENT_ATTENTION_TOOLTIP_MS = SONNER_TOAST_AUTO_DISMISS_MS;/u);
 	assert.match(attention, /import \{ SONNER_TOAST_AUTO_DISMISS_MS \} from "@\/components\/ui\/sonner"/u);
-	assert.match(attention, /if \(attentionGenerationRef\.current === generation\) \{\s*setActiveId\(null\);/u);
-	assert.match(attention, /window\.setTimeout\(\(\) => \{\s*if \(attentionGenerationRef\.current === generation\) \{\s*setActiveId\(null\);/u);
+	assert.match(attention, /const \[attentionEpoch, setAttentionEpoch\] = useState\(0\);/u);
+	assert.match(attention, /window\.setTimeout\(\(\) => \{\s*setActiveId\(null\);\s*\}, ASSIGNED_AGENT_ATTENTION_TOOLTIP_MS\)/u);
+	assert.match(attention, /\}, \[activeId, attentionEpoch, menuOpen\]\);/u);
 	assert.match(attention, /if \(isAssignedAgentAttentionKind\(agent\.statusKind\) && previousKind !== agent\.statusKind\) \{\s*enterId = agent\.id;/u);
 	assert.match(attention, /if \(previousKind !== undefined && previousKind !== agent\.statusKind\) \{\s*changedIds\.push\(agent\.id\);/u);
 	assert.match(attention, /export function acknowledgeAssignedAgentAttention\(/u);
 	assert.match(attention, /export function clearAcknowledgedAssignedAgentIds\(/u);
 	assert.match(attention, /setAcknowledgedIds\(\(current\) => clearAcknowledgedAssignedAgentIds\(current, changedIds\)\);/u);
-	assert.match(attention, /if \(enterId\) \{\s*attentionGenerationRef\.current \+= 1;\s*setActiveId\(enterId\);/u);
+	assert.match(attention, /else if \(enterId\) \{\s*setActiveId\(enterId\);\s*setAttentionEpoch\(\(epoch\) => epoch \+ 1\);/u);
+	assert.doesNotMatch(attention, /attentionGenerationRef|previousKindsRef/u);
 });
 
 test("Agent Assignment preserves the work-item trigger and two-stage menu behavior", () => {
