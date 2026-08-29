@@ -6,6 +6,11 @@ import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import SubtasksIcon from "@atlaskit/icon/core/subtasks";
 import WorkItemAddIcon from "@atlaskit/icon-lab/core/work-item-add";
 
+import {
+	uncapturedWorkLinkActionLabel,
+	uncapturedWorkLinkLabel,
+	uncapturedWorkSuggestionKeys,
+} from "@/components/blocks/jira-issue/lib";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import {
@@ -15,27 +20,6 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-
-export function uncapturedWorkLinkLabel(suggestedWorkItemKey?: string): string {
-	return suggestedWorkItemKey === undefined ? "Link work item" : `Link to ${suggestedWorkItemKey}`;
-}
-
-/**
- * The keys this chin offers to link against, normalized to one list so the
- * no-suggestion, one-suggestion, and many-suggestion chins are the same shape.
- *
- * An empty list still yields one row — the generic "Link work item" control —
- * so the caller never has to special-case "no suggestion" downstream.
- */
-export function uncapturedWorkSuggestionKeys(
-	suggestedWorkItemKey?: string,
-	suggestedWorkItemKeys?: readonly string[],
-): readonly (string | undefined)[] {
-	const keys = suggestedWorkItemKeys
-		?? (suggestedWorkItemKey === undefined ? [] : [suggestedWorkItemKey]);
-
-	return keys.length === 0 ? [undefined] : keys;
-}
 
 /**
  * A trailing icon-only chin control. Unavailable actions stay focusable via
@@ -173,8 +157,8 @@ export function UncapturedWorkChin({
 						<Button
 							aria-disabled={linkUnavailable}
 							aria-label={linkUnavailable
-								? `${linkActionLabel(summary, key)} unavailable`
-								: linkActionLabel(summary, key)}
+								? `${uncapturedWorkLinkActionLabel(summary, key)} unavailable`
+								: uncapturedWorkLinkActionLabel(summary, key)}
 							className={cn("justify-start", linkUnavailable ? "cursor-not-allowed opacity-(--opacity-disabled)" : null)}
 							onClick={() => {
 								onLinkWorkItem?.(key);
@@ -190,10 +174,4 @@ export function UncapturedWorkChin({
 			)}
 		</footer>
 	);
-}
-
-function linkActionLabel(summary: string, suggestedWorkItemKey?: string): string {
-	return suggestedWorkItemKey === undefined
-		? `Link ${summary} to a work item`
-		: `Link ${summary} to ${suggestedWorkItemKey}`;
 }

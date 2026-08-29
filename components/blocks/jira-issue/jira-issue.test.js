@@ -148,7 +148,7 @@ test("Jira issue owns an uncaptured-work variant with a suggested-link chin", ()
 	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /size="compact"/u);
 	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /size="icon-compact"/u);
 	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /uncapturedWorkLinkLabel/u);
-	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /Link to \$\{suggestedWorkItemKey\}/u);
+	assert.match(LIB_SOURCE, /Link to \$\{suggestedWorkItemKey\}/u);
 	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /aria-disabled=\{linkUnavailable\}/u);
 	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /disabled=\{createUnavailable\}/u);
 	// The Link split button collapsed to a plain button when Create work item
@@ -168,7 +168,10 @@ test("Jira issue owns an uncaptured-work variant with a suggested-link chin", ()
 	assert.doesNotMatch(UNCAPTURED_WORK_CHIN_SOURCE, /group-hover\/uncaptured-chin/u);
 	// Several candidate keys render one linkable row each, and every row carries
 	// its own Create work item + Subtasks pair.
-	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /export function uncapturedWorkSuggestionKeys\(/u);
+	assert.match(LIB_SOURCE, /export function uncapturedWorkSuggestionKeys\(/u);
+	// Fast Refresh only preserves state when a component file exports nothing
+	// but components, so the chin's pure helpers live in lib.ts.
+	assert.doesNotMatch(UNCAPTURED_WORK_CHIN_SOURCE, /export (?!function UncapturedWorkChin)/u);
 	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /suggestionKeys\.map\(\(key\) => \(/u);
 	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /<ChinRow actions=\{trailingActions\} key=/u);
 	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /onLinkWorkItem\?\.\(key\)/u);
