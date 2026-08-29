@@ -13,10 +13,6 @@ import { cn } from "@/lib/utils";
 import { AGENT_LIST_ITEMS } from "./data";
 import { AgentListCard } from "./agent-list-card";
 import { isCodingAgentListItem } from "./agent-list-session";
-import {
-	AgentListUncapturedCard,
-	suggestedUncapturedWorkItemKey,
-} from "./agent-list-uncaptured";
 import type {
 	AgentListItem,
 	AgentListProps,
@@ -30,15 +26,7 @@ export function AgentList({
 	items = AGENT_LIST_ITEMS,
 	variant = "default",
 	canViewItem,
-	capturedItemIds,
-	getResumeCommand,
-	getSuggestedWorkItemKey,
-	isResumable,
 	onArchive,
-	onCopyResume,
-	onCreateWorkItem,
-	onDismiss,
-	onLinkWorkItem,
 	onSubmitPrompt,
 	onView,
 	renderFlyout,
@@ -73,34 +61,6 @@ export function AgentList({
 	// tearing down and remounting a card per row. Unused by the composer variant,
 	// whose Agent States card owns local state and must stay per-row.
 	const [flyoutHandle] = useState(createJiraSessionFlyoutHandle);
-
-	if (variant === "uncaptured") {
-		return (
-			<ul className={cn("flex flex-col gap-2", className)}>
-				{items.map((item: AgentListItem) => (
-					<AgentListUncapturedCard
-						captured={capturedItemIds?.has(item.id) ?? false}
-						getResumeCommand={getResumeCommand}
-						isResumable={isResumable}
-						item={item}
-						key={item.id}
-						onCopyResume={onCopyResume}
-						onCreateWorkItem={onCreateWorkItem === undefined ? undefined : () => onCreateWorkItem(item)}
-						onDismiss={onDismiss === undefined ? undefined : () => onDismiss(item)}
-						onLinkWorkItem={onLinkWorkItem === undefined ? undefined : () => onLinkWorkItem(item)}
-						onView={
-							isCodingAgentListItem(item)
-								? handleCodingView
-								: onView === undefined || (canViewItem !== undefined && !canViewItem(item))
-									? undefined
-									: onView
-						}
-						suggestedWorkItemKey={getSuggestedWorkItemKey?.(item) ?? suggestedUncapturedWorkItemKey(item)}
-					/>
-				))}
-			</ul>
-		);
-	}
 
 	return (
 		<>
@@ -144,9 +104,8 @@ export function AgentList({
 	);
 }
 
-export { AGENT_LIST_ITEMS, AGENT_LIST_UNCAPTURED_ITEMS } from "./data";
+export { AGENT_LIST_ITEMS } from "./data";
 export { AgentListActivityHeader } from "./agent-list-card";
-export { AgentListUncapturedCard, suggestedUncapturedWorkItemKey } from "./agent-list-uncaptured";
 export {
 	deriveIssueKeyFromBranch,
 	getAgentListHost,

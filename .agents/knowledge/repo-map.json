@@ -3644,8 +3644,8 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 90,
-			"pageCount": 66
+			"ownerImportCount": 92,
+			"pageCount": 68
 		},
 		"pages": [
 			{
@@ -4070,6 +4070,22 @@
 						]
 					}
 				],
+				"routePath": "/jira-golden-journeys-v4",
+				"shellOwnerCount": 0,
+				"shellOwners": [],
+				"source": "app/jira-golden-journeys-v4/page.tsx"
+			},
+			{
+				"ownerCount": 1,
+				"owners": [
+					{
+						"importPath": "@/components/website/demo-registry-loader",
+						"source": "components/website/demo-registry-loader",
+						"symbols": [
+							"loadDemoComponent"
+						]
+					}
+				],
 				"routePath": "/jira-queue",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
@@ -4352,6 +4368,30 @@
 					}
 				],
 				"source": "app/preview/blocks/jira-kanban-experimental/page.tsx"
+			},
+			{
+				"ownerCount": 1,
+				"owners": [
+					{
+						"importPath": "@/components/blocks/jira-kanban/experimental-v2/page",
+						"source": "components/blocks/jira-kanban/experimental-v2/page",
+						"symbols": [
+							"ExperimentalV2JiraKanbanPage"
+						]
+					}
+				],
+				"routePath": "/preview/blocks/jira-kanban-experimental-v2",
+				"shellOwnerCount": 1,
+				"shellOwners": [
+					{
+						"importPath": "@/components/blocks/jira-kanban/experimental-v2/page",
+						"source": "components/blocks/jira-kanban/experimental-v2/page",
+						"symbols": [
+							"ExperimentalV2JiraKanbanPage"
+						]
+					}
+				],
+				"source": "app/preview/blocks/jira-kanban-experimental-v2/page.tsx"
 			},
 			{
 				"ownerCount": 1,
@@ -5363,7 +5403,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 426,
+			"manifestEntryCount": 428,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5405,7 +5445,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 106,
+				"entryCount": 107,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5478,6 +5518,12 @@
 						"slug": "agent-selector",
 						"name": "Agent Selector",
 						"importPath": "@/components/blocks/agent-selector"
+					},
+					{
+						"category": "blocks",
+						"slug": "agent-session",
+						"name": "Agent Session",
+						"importPath": "@/components/blocks/agent-session"
 					},
 					{
 						"category": "blocks",
@@ -6047,7 +6093,7 @@
 			},
 			{
 				"category": "projects",
-				"entryCount": 16,
+				"entryCount": 17,
 				"entries": [
 					{
 						"category": "projects",
@@ -6102,6 +6148,12 @@
 						"slug": "jira-golden-journeys-v3",
 						"name": "Jira Golden Journeys v3",
 						"importPath": "@/components/projects/jira-golden-journeys-v3"
+					},
+					{
+						"category": "projects",
+						"slug": "jira-golden-journeys-v4",
+						"name": "Jira Golden Journeys v4",
+						"importPath": "@/components/projects/jira-golden-journeys-v4"
 					},
 					{
 						"category": "projects",

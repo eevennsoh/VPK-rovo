@@ -2,12 +2,9 @@
 
 import { AgentListRow } from "@/components/blocks/agent-list/agent-list-card";
 import { toAgentListResumeCommand } from "@/components/blocks/agent-list/agent-list-session";
-import type { AgentListItem } from "@/components/blocks/agent-list/agent-list-types";
 import { UncapturedWorkChin } from "@/components/blocks/jira-issue/uncaptured-work-chin";
 
-export function suggestedUncapturedWorkItemKey(item: AgentListItem): string | undefined {
-	return item.sessionDetails?.issueKey;
-}
+import type { AgentSessionItem } from "./agent-session-types";
 
 async function copyResumeCommand(command: string): Promise<void> {
 	if (typeof navigator === "undefined" || navigator.clipboard?.writeText === undefined) {
@@ -21,7 +18,7 @@ async function copyResumeCommand(command: string): Promise<void> {
 	}
 }
 
-export function AgentListUncapturedCard({
+export function AgentSessionCard({
 	captured = false,
 	getResumeCommand,
 	isResumable,
@@ -34,14 +31,14 @@ export function AgentListUncapturedCard({
 	suggestedWorkItemKey,
 }: Readonly<{
 	captured?: boolean;
-	getResumeCommand?: (item: AgentListItem) => string | undefined;
-	isResumable?: (item: AgentListItem) => boolean;
-	item: AgentListItem;
-	onCopyResume?: (item: AgentListItem) => void;
+	getResumeCommand?: (item: AgentSessionItem) => string | undefined;
+	isResumable?: (item: AgentSessionItem) => boolean;
+	item: AgentSessionItem;
+	onCopyResume?: (item: AgentSessionItem) => void;
 	onCreateWorkItem?: () => void;
 	onDismiss?: () => void;
 	onLinkWorkItem?: () => void;
-	onView?: (item: AgentListItem) => void;
+	onView?: (item: AgentSessionItem) => void;
 	suggestedWorkItemKey?: string;
 }>) {
 	const hasWorkItemActions = onCreateWorkItem !== undefined || onLinkWorkItem !== undefined;
@@ -53,7 +50,7 @@ export function AgentListUncapturedCard({
 	const showChin = captured || hasWorkItemActions || onDismiss !== undefined || canResume;
 
 	return (
-		<li data-testid={"agent-list-row-" + item.id}>
+		<li data-testid={"agent-session-row-" + item.id}>
 			<article
 				className="group/uncaptured-work flex w-full flex-col overflow-hidden rounded-lg border border-dashed border-border-disabled bg-surface text-left"
 				data-captured={captured || undefined}

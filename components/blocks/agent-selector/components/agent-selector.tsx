@@ -82,6 +82,11 @@ export interface AgentSelectorProps {
 	selectedActionsLabel?: string;
 	selectedAgentIds?: readonly string[];
 	/**
+	 * Agents whose row opens a follow-up menu instead of changing selection.
+	 * Submenu rows use action semantics and never expose a checkbox state.
+	 */
+	submenuAgentIds?: readonly string[];
+	/**
 	 * Agents that are already committed elsewhere and must not be re-selected.
 	 * Disabled rows get `aria-disabled`, a subtle trailing marker, and their
 	 * toggle is a no-op. Generic + domain-neutral; absent = no disabled rows.
@@ -145,6 +150,7 @@ const EMPTY_SELECTED_AGENT_IDS: readonly string[] = [];
 const EMPTY_PINNED_AGENT_IDS: readonly string[] = [];
 const EMPTY_IN_PROGRESS_AGENT_IDS: readonly string[] = [];
 const EMPTY_DISABLED_AGENT_IDS: readonly string[] = [];
+const EMPTY_SUBMENU_AGENT_IDS: readonly string[] = [];
 const EMPTY_SELECTED_AGENT_ACTIONS: readonly AgentSelectorAction[] = [];
 const ACTION_BUTTON_CLASS = "h-8 min-h-8 w-full justify-start gap-3 pl-2 pr-3 py-0 text-left text-sm font-normal";
 const ACTION_ICON_CLASS = "grid size-6 shrink-0 place-items-center text-icon-subtle";
@@ -208,6 +214,7 @@ function AgentSelectorItem({
 	isDisabled,
 	isInProgress,
 	isPinned,
+	isSubmenuTrigger,
 	onStop,
 	onTogglePinned,
 	onToggle,
@@ -221,6 +228,8 @@ function AgentSelectorItem({
 	/** In-progress rows swap the pin/check affordance for a stop-on-hover control. */
 	isInProgress: boolean;
 	isPinned: boolean;
+	/** Opens a follow-up menu instead of toggling selection. */
+	isSubmenuTrigger: boolean;
 	onStop?: (agentId: string) => void;
 	onTogglePinned: (agentId: string) => void;
 	onToggle?: (agentId: string) => void;
@@ -250,9 +259,13 @@ function AgentSelectorItem({
 	// Multiple-select rows use CommandItem's built-in check lane. Single-select
 	// opt-in uses a custom blue check tile instead (rendered in the trailing
 	// region below). In-progress rows never show any tick.
-	const showCheckIcon = supportsMultipleSelection && !isInProgress;
+	const showCheckIcon = supportsMultipleSelection && !isInProgress && !isSubmenuTrigger;
 	const showSingleSelectTick =
-		!isInProgress && !supportsMultipleSelection && showSelectedTickInSingleSelect && isChecked;
+		!isInProgress
+		&& !isSubmenuTrigger
+		&& !supportsMultipleSelection
+		&& showSelectedTickInSingleSelect
+		&& isChecked;
 	// The selected row floats to the top of the list on selection. If it were
 	// hovered when clicked, its "active" (byline-visible) copy state would ride
 	// the reorder up to the top and only then animate back to idle — a visible
@@ -265,8 +278,9 @@ function AgentSelectorItem({
 	const copyInstant = isChecked || prefersReducedMotion;
 	return (
 		<CommandItem
-			aria-checked={supportsMultipleSelection && !isInProgress ? isChecked : undefined}
+			aria-checked={showCheckIcon ? isChecked : undefined}
 			aria-disabled={isDisabled || undefined}
+			aria-haspopup={isSubmenuTrigger ? "menu" : undefined}
 			className={cn(
 				AGENT_ROW_BASE_CLASS,
 				showCheckIcon ? AGENT_ROW_CHECK_COLS : AGENT_ROW_PLAIN_COLS,
@@ -288,7 +302,6 @@ function AgentSelectorItem({
 				}
 				onToggle?.(agent.id);
 			}}
-			role={supportsMultipleSelection && !isInProgress ? "menuitemcheckbox" : undefined}
 			showCheckIcon={showCheckIcon}
 			value={agent.id}
 		>
@@ -428,6 +441,7 @@ interface AgentSelectorGroupProps {
 	pinningEnabled: boolean;
 	selectedAgentIdSet: ReadonlySet<string>;
 	showSelectedTickInSingleSelect: boolean;
+	submenuAgentIdSet: ReadonlySet<string>;
 	supportsMultipleSelection: boolean;
 }
 
@@ -443,6 +457,7 @@ function AgentSelectorGroup({
 	pinningEnabled,
 	selectedAgentIdSet,
 	showSelectedTickInSingleSelect,
+	submenuAgentIdSet,
 	supportsMultipleSelection,
 }: Readonly<AgentSelectorGroupProps>): ReactElement | null {
 	return agents.length > 0 ? (
@@ -457,6 +472,7 @@ function AgentSelectorGroup({
 					isDisabled={disabledAgentIdSet.has(agent.id)}
 					isInProgress={isInProgressGroup}
 					isPinned={pinnedAgentIdSet.has(agent.id)}
+					isSubmenuTrigger={submenuAgentIdSet.has(agent.id)}
 					key={agent.id}
 					onStop={onStopAgent}
 					onToggle={onAgentToggle}
@@ -498,6 +514,7 @@ export function AgentSelector({
 	selectedAgentActions,
 	selectedActionsLabel = "Selected agent actions",
 	selectedAgentIds,
+	submenuAgentIds,
 	disabledAgentIds,
 	inProgressAgentIds,
 	inProgressLabel = "In progress",
@@ -508,6 +525,7 @@ export function AgentSelector({
 	const [internalPinnedAgentIds, setInternalPinnedAgentIds] = useState<readonly string[]>(defaultPinnedAgentIds);
 	const selectedIds = selectedAgentIds ?? EMPTY_SELECTED_AGENT_IDS;
 	const disabledIds = disabledAgentIds ?? EMPTY_DISABLED_AGENT_IDS;
+	const submenuIds = submenuAgentIds ?? EMPTY_SUBMENU_AGENT_IDS;
 	const selectedActions = selectedAgentActions ?? EMPTY_SELECTED_AGENT_ACTIONS;
 	const resolvedQuery = query ?? internalQuery;
 	const normalizedQuery = resolvedQuery.trim().toLowerCase();
@@ -515,6 +533,7 @@ export function AgentSelector({
 	const inProgressIds = inProgressAgentIds ?? EMPTY_IN_PROGRESS_AGENT_IDS;
 	const selectedAgentIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
 	const disabledAgentIdSet = useMemo(() => new Set(disabledIds), [disabledIds]);
+	const submenuAgentIdSet = useMemo(() => new Set(submenuIds), [submenuIds]);
 	const pinnedAgentIdSet = useMemo(() => new Set(resolvedPinnedAgentIds), [resolvedPinnedAgentIds]);
 	const inProgressAgentIdSet = useMemo(() => new Set(inProgressIds), [inProgressIds]);
 	const listOverflow = useHasVerticalOverflow<HTMLDivElement>();
@@ -666,6 +685,7 @@ export function AgentSelector({
 					pinningEnabled={pinningEnabled}
 					selectedAgentIdSet={selectedAgentIdSet}
 					showSelectedTickInSingleSelect={false}
+					submenuAgentIdSet={submenuAgentIdSet}
 					supportsMultipleSelection={supportsMultipleSelection}
 				/>
 				<AgentSelectorGroup
@@ -678,6 +698,7 @@ export function AgentSelector({
 					pinningEnabled={pinningEnabled}
 					selectedAgentIdSet={selectedAgentIdSet}
 					showSelectedTickInSingleSelect={showSelectedTickInSingleSelect}
+					submenuAgentIdSet={submenuAgentIdSet}
 					supportsMultipleSelection={supportsMultipleSelection}
 				/>
 				<AgentSelectorGroup
@@ -690,6 +711,7 @@ export function AgentSelector({
 					pinningEnabled={pinningEnabled}
 					selectedAgentIdSet={selectedAgentIdSet}
 					showSelectedTickInSingleSelect={showSelectedTickInSingleSelect}
+					submenuAgentIdSet={submenuAgentIdSet}
 					supportsMultipleSelection={supportsMultipleSelection}
 				/>
 			</CommandList>
