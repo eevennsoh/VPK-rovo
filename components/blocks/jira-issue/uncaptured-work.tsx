@@ -61,18 +61,19 @@ export function JiraIssueUncapturedWork({
 	captured = false,
 	className,
 	onCreateWorkItem,
-	onDismiss,
 	onLinkWorkItem,
+	onSubtasks,
 	participants,
 	sourceLink,
 	style,
 	suggestedWorkItemKey,
+	suggestedWorkItemKeys,
 	summary,
 	variant,
 	...props
 }: Readonly<JiraIssueUncapturedWorkProps>) {
 	const hasWorkItemActions = onCreateWorkItem !== undefined || onLinkWorkItem !== undefined;
-	const showChin = captured || hasWorkItemActions || onDismiss !== undefined;
+	const showChin = captured || hasWorkItemActions;
 
 	return (
 		<article
@@ -110,9 +111,10 @@ export function JiraIssueUncapturedWork({
 					createUnavailable={onCreateWorkItem === undefined}
 					linkUnavailable={onLinkWorkItem === undefined}
 					onCreateWorkItem={onCreateWorkItem}
-					onDismiss={onDismiss}
 					onLinkWorkItem={onLinkWorkItem}
+					onSubtasks={onSubtasks}
 					suggestedWorkItemKey={suggestedWorkItemKey}
+					suggestedWorkItemKeys={suggestedWorkItemKeys}
 					summary={summary}
 				/>
 			) : null}

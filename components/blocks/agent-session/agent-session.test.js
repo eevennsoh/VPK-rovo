@@ -32,6 +32,10 @@ const RAIL_SOURCE = readFileSync(
 	),
 	"utf8",
 );
+const VARIANT_REGISTRY_SOURCE = readFileSync(
+	join(__dirname, "../../website/registry/blocks-variants.ts"),
+	"utf8",
+);
 
 test("renders each session as a dashed uncaptured-work card around the shared row", () => {
 	assert.match(CARD_SOURCE, /data-testid=\{"agent-session-row-" \+ item.id\}/u);
@@ -40,10 +44,31 @@ test("renders each session as a dashed uncaptured-work card around the shared ro
 	// The row presenter stays owned by Agent List; this block only frames it.
 	assert.match(
 		CARD_SOURCE,
-		/import \{ AgentListRow \} from "@\/components\/blocks\/agent-list\/agent-list-card";/u,
+		/import \{\s*AgentListRow,\s*type AgentListRowHoverActions,\s*\} from "@\/components\/blocks\/agent-list\/agent-list-card";/u,
 	);
-	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*hideHoverActions/u);
+	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*hoverActions=\{hoverActions\}/u);
 	assert.match(CARD_SOURCE, /<UncapturedWorkChin/u);
+});
+
+test("the row reveals Resume plus a show/hide eye where Agent List puts Archive", () => {
+	// The hover pair is the Agent List row's own generic slot, not a fork of its
+	// markup — the card only supplies the two action descriptors.
+	assert.match(
+		CARD_SOURCE,
+		/import \{\s*AgentListRow,\s*type AgentListRowHoverActions,\s*\} from "@\/components\/blocks\/agent-list\/agent-list-card";/u,
+	);
+	assert.match(CARD_SOURCE, /const hoverActions: AgentListRowHoverActions = \{/u);
+	assert.match(CARD_SOURCE, /label: copiedResume \? "Copied" : "Resume",/u);
+	assert.match(CARD_SOURCE, /icon: <EyeOpenIcon label="" size="small" \/>,\s*label: "Show\/hide",/u);
+	assert.match(CARD_SOURCE, /import EyeOpenIcon from "@atlaskit\/icon\/core\/eye-open";/u);
+	// The card is two hit areas: `group/agent-row` scopes the reveal to the sunken
+	// top region so hovering the chin below cannot pop Resume open above it.
+	assert.match(CARD_SOURCE, /className="group\/agent-row bg-surface-sunken p-3"/u);
+	assert.doesNotMatch(CARD_SOURCE, /group\/agent-row group\/uncaptured-work/u);
+	// Placeholder today: the eye always renders and calls the optional handler.
+	assert.match(CARD_SOURCE, /onToggleVisibility\?\.\(item\)/u);
+	assert.match(INDEX_SOURCE, /onToggleVisibility=\{onToggleVisibility\}/u);
+	assert.match(TYPES_SOURCE, /onToggleVisibility\?: \(item: AgentSessionItem\) => void;/u);
 });
 
 test("the chin owns every action, so no row renders a competing flyout", () => {
@@ -71,14 +96,16 @@ test("the card file exports only a component", () => {
 });
 
 test("Resume is gated on host capability before the clipboard write", () => {
-	// The chin copies the command before `onCopyResume` ever runs, so a row the
-	// host cannot resume must render no control rather than a failing one.
+	// The hover Resume button copies the command before `onCopyResume` ever runs,
+	// so a row the host cannot resume must render no control rather than a
+	// failing one. The eye stays regardless — it is not a resume affordance.
 	assert.match(
 		CARD_SOURCE,
 		/const canResume = \(isResumable\?\.\(item\) \?\? true\) && resumeCommand\.length > 0;/u,
 	);
-	assert.match(CARD_SOURCE, /onCopyResume=\{canResume\s*\?\s*\(\) => \{/u);
-	assert.match(CARD_SOURCE, /onDismiss !== undefined \|\| canResume;/u);
+	assert.match(CARD_SOURCE, /primary: canResume\s*\?\s*\{/u);
+	assert.match(CARD_SOURCE, /: undefined,\s*secondary: \{/u);
+	assert.match(CARD_SOURCE, /const showChin = captured \|\| hasWorkItemActions;/u);
 	assert.match(CARD_SOURCE, /toAgentListResumeCommand\(item\)/u);
 });
 
@@ -105,6 +132,28 @@ test("ships demo data and a catalog entry", () => {
 		DETAIL_SOURCE,
 		/import \{ AgentSession \} from "@\/components\/blocks\/agent-session";/u,
 	);
+});
+
+// A session usually touches more than the ticket it started from, so the chin
+// can offer several candidates — one linkable row each.
+test("the multi-link variant renders one chin row per candidate work item", () => {
+	assert.match(DATA_SOURCE, /export const AGENT_SESSION_MULTI_LINK_KEYS/u);
+	assert.match(DATA_SOURCE, /"lw-scope-thread": \["PAY-101", "PAY-121", "PAY-104"\]/u);
+	assert.match(TYPES_SOURCE, /getSuggestedWorkItemKeys\?: \(item: AgentSessionItem\) => readonly string\[\] \| undefined;/u);
+	assert.match(TYPES_SOURCE, /onLinkWorkItem\?: \(item: AgentSessionItem, workItemKey\?: string\) => void;/u);
+	assert.match(INDEX_SOURCE, /suggestedWorkItemKeys=\{getSuggestedWorkItemKeys\?\.\(item\)\}/u);
+	// The picked row's key must reach the host, not just the fact that a link ran.
+	assert.match(
+		INDEX_SOURCE,
+		/onLinkWorkItem=\{onLinkWorkItem === undefined \? undefined : \(workItemKey\) => onLinkWorkItem\(item, workItemKey\)\}/u,
+	);
+	assert.match(CARD_SOURCE, /suggestedWorkItemKeys=\{suggestedWorkItemKeys\}/u);
+	assert.match(PAGE_SOURCE, /variant\?: "default" \| "multi-link"/u);
+	assert.match(PAGE_SOURCE, /AGENT_SESSION_MULTI_LINK_KEYS\[item\.id\]/u);
+	assert.match(DEMO_SOURCE, /export function AgentSessionDemoMultiLink\(\)/u);
+	assert.match(VARIANT_REGISTRY_SOURCE, /"agent-session-demo-multi-link": dynamic\(/u);
+	assert.match(VARIANT_REGISTRY_SOURCE, /default: mod\.AgentSessionDemoMultiLink/u);
+	assert.match(DETAIL_SOURCE, /demoSlug: "agent-session-demo-multi-link"/u);
 });
 
 test("Pulse's uncaptured column renders sessions through this block", () => {
