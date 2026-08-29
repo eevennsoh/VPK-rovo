@@ -89,7 +89,9 @@ test("Rovo Dev stays available as the fallback profile but is not a selector exa
 
 	assert.doesNotMatch(DEMO_AGENTS_SOURCE, /ROVO_AGENT_ID/u);
 	assert.doesNotMatch(DEMO_AGENTS_SOURCE, /rovo-dev/u);
-	assert.match(AGENT_SELECTOR_PAGE_SOURCE, /variant === "selected-agent-actions" \? \["ai-insights-agent"\] : \["github-copilot"\]/u);
+	assert.match(AGENT_SELECTOR_PAGE_SOURCE, /variant === "selected-agent-actions"\s*\?\s*\["ai-insights-agent"\]/u);
+	assert.match(AGENT_SELECTOR_PAGE_SOURCE, /variant === "jira"\s*\?\s*\[[\s\S]*"github-copilot"[\s\S]*"readiness-checker"[\s\S]*\]\s*:\s*\["github-copilot"\]/u);
+	assert.doesNotMatch(AGENT_SELECTOR_PAGE_SOURCE, /rovo-dev/u);
 });
 
 test("the subagent reference catalog resolves curated ids against the unified catalog", () => {
