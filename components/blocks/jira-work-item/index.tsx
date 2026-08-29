@@ -11,8 +11,9 @@ import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data
 import { ExperimentalJiraWorkItem } from "@/components/blocks/jira-work-item/experimental/experimental-jira-work-item";
 import { ExperimentalV2JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v2/experimental-v2-jira-work-item";
 import { ExperimentalV3JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v3/experimental-v3-jira-work-item";
+import { ExperimentalV4JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v4/experimental-v4-jira-work-item";
 
-export type JiraWorkItemVariant = "default" | "experimental" | "experimental-v2" | "experimental-v3";
+export type JiraWorkItemVariant = "default" | "experimental" | "experimental-v2" | "experimental-v3" | "experimental-v4";
 export type JiraWorkItemExperimentalPreset = JiraWorkItemPreset;
 
 /**
@@ -24,6 +25,7 @@ const EXPERIMENTAL_SURFACES = {
 	experimental: ExperimentalJiraWorkItem,
 	"experimental-v2": ExperimentalV2JiraWorkItem,
 	"experimental-v3": ExperimentalV3JiraWorkItem,
+	"experimental-v4": ExperimentalV4JiraWorkItem,
 } as const;
 
 type ExperimentalVariant = keyof typeof EXPERIMENTAL_SURFACES;
