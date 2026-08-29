@@ -2,6 +2,8 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const esbuild = require("esbuild");
+const { loadCjsModuleFromText } = require(path.join(process.cwd(), "scripts/lib/esbuild-cjs-loader.js"));
 
 const COMPONENT_SOURCE = fs.readFileSync(path.join(__dirname, "components/agent-selector.tsx"), "utf8");
 const DATA_SOURCE = fs.readFileSync(path.join(__dirname, "data/demo-agents.ts"), "utf8");
@@ -20,6 +22,113 @@ const AGENT_SELECTOR_DROPDOWN_CALLSITE_SOURCES = [
 	source: fs.readFileSync(path.join(process.cwd(), sourcePath), "utf8"),
 	sourcePath,
 }));
+
+async function loadAgentSelectorHarness() {
+	const mockModules = new Map([
+		["@atlaskit/icon/core/add", "export default function Icon() { return null; }"],
+		["@atlaskit/icon/core/ai-agent", "export default function Icon() { return null; }"],
+		["@atlaskit/icon/core/pin-filled", "export default function Icon() { return null; }"],
+		["@atlaskit/icon/core/pin", "export default function Icon() { return null; }"],
+		["@atlaskit/icon/core/video-stop-overlay", "export default function Icon() { return null; }"],
+		[
+			"motion/react",
+			`
+				import React from "react";
+				export const motion = {
+					span(props) {
+						const { animate, custom, initial, variants, ...rest } = props;
+						return React.createElement("span", rest, props.children);
+					},
+				};
+				export function useReducedMotion() { return false; }
+			`,
+		],
+		["@/app/data/directory/agents", "export const ROVO_AGENT_SELECTOR_AGENTS = [];"],
+		[
+			"@/components/ui/command",
+			`
+				import React from "react";
+				export function Command(props) { return React.createElement("div", null, props.children); }
+				export function CommandEmpty(props) { return React.createElement("div", null, props.children); }
+				export function CommandGroup(props) { return React.createElement("div", null, props.children); }
+				export function CommandInput() { return null; }
+				export function CommandItem(props) {
+					return React.createElement(
+						"div",
+						{
+							"aria-checked": props["aria-checked"],
+							"aria-haspopup": props["aria-haspopup"],
+							"data-agent-id": props.value,
+							role: "option",
+						},
+						props.children,
+					);
+				}
+				export function CommandList(props) { return React.createElement("div", null, props.children); }
+			`,
+		],
+		["@/components/ui/button", "export function Button() { return null; }"],
+		["@/components/ui/icon", "export function Icon() { return null; }"],
+		["@/components/ui/icon-tile", "export function IconTile() { return null; }"],
+		["@/components/ui/spinner", "export function Spinner() { return null; }"],
+		["@/components/ui/vpk-icons", "export function CheckIcon() { return null; } export function SearchIcon() { return null; }"],
+		["@/components/ui-custom/agent-avatar-visual", "export function AgentAvatarVisual() { return null; }"],
+		["@/components/ui-custom/rich-text-editor", "export function RichTextCommandMenuSearchField() { return null; }"],
+		["@/components/hooks/use-has-vertical-overflow", "export function useHasVerticalOverflow() { return { ref() {}, showTopScrollMask: false }; }"],
+		["@/lib/utils", "export function cn(...values) { return values.filter(Boolean).join(' '); }"],
+	]);
+	const result = await esbuild.build({
+		stdin: {
+			contents: `
+				import React from "react";
+				import { renderToStaticMarkup } from "react-dom/server";
+				import { AgentSelector } from "./components/blocks/agent-selector/components/agent-selector.tsx";
+
+				export function renderMixedAgentRows() {
+					return renderToStaticMarkup(React.createElement(AgentSelector, {
+						agents: [
+							{ id: "session-agent", name: "Session agent", byline: "Has a session" },
+							{ id: "toggle-agent", name: "Toggle agent", byline: "Can be assigned" },
+						],
+						onAgentToggle() {},
+						pinningEnabled: false,
+						selectionMode: "multiple",
+						selectedAgentIds: ["session-agent"],
+						submenuAgentIds: ["session-agent"],
+					}));
+				}
+			`,
+			loader: "tsx",
+			resolveDir: process.cwd(),
+			sourcefile: "agent-selector-harness.tsx",
+		},
+		bundle: true,
+		format: "cjs",
+		platform: "node",
+		tsconfig: path.join(process.cwd(), "tsconfig.json"),
+		write: false,
+		plugins: [
+			{
+				name: "agent-selector-test-mocks",
+				setup(build) {
+					build.onResolve({ filter: /.*/ }, (args) => {
+						if (!mockModules.has(args.path)) {
+							return undefined;
+						}
+						return { path: args.path, namespace: "agent-selector-test-mock" };
+					});
+					build.onLoad({ filter: /.*/, namespace: "agent-selector-test-mock" }, (args) => ({
+						contents: mockModules.get(args.path),
+						loader: "tsx",
+						resolveDir: process.cwd(),
+					}));
+				},
+			},
+		],
+	});
+
+	return loadCjsModuleFromText(result.outputFiles[0].text);
+}
 
 test("agent rows use 8px left padding while preserving the compact trailing inset", () => {
 	assert.match(
@@ -61,13 +170,24 @@ test("AgentSelector hides command checkmarks for single-select usage by default"
 	assert.match(COMPONENT_SOURCE, /const supportsMultipleSelection = selectionMode === "multiple";/u);
 	// CommandItem's built-in check lane is multiple-select only. Single-select uses
 	// a separate custom blue tile (below); in-progress rows never show a tick.
-	assert.match(COMPONENT_SOURCE, /const showCheckIcon = supportsMultipleSelection && !isInProgress;/u);
+	assert.match(COMPONENT_SOURCE, /const showCheckIcon = supportsMultipleSelection && !isInProgress && !isSubmenuTrigger;/u);
 	assert.match(COMPONENT_SOURCE, /showCheckIcon=\{showCheckIcon\}/u);
 	assert.match(COMPONENT_SOURCE, /data-checked=\{showCheckIcon && isChecked \? true : undefined\}/u);
 	// Checkbox semantics (role + aria-checked) stay tied to multiple-select only;
 	// a single-select tick is a visual affordance, not a checkbox.
-	assert.match(COMPONENT_SOURCE, /aria-checked=\{supportsMultipleSelection && !isInProgress \? isChecked : undefined\}/u);
-	assert.match(COMPONENT_SOURCE, /role=\{supportsMultipleSelection && !isInProgress \? "menuitemcheckbox" : undefined\}/u);
+	assert.match(COMPONENT_SOURCE, /aria-checked=\{showCheckIcon \? isChecked : undefined\}/u);
+	assert.match(COMPONENT_SOURCE, /aria-haspopup=\{isSubmenuTrigger \? "menu" : undefined\}/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /role=\{(?:rowRole|supportsMultipleSelection)/u);
+});
+
+test("AgentSelector exposes submenu rows as actions while retaining checkbox semantics for toggles", async () => {
+	const harness = await loadAgentSelectorHarness();
+	const markup = harness.renderMixedAgentRows();
+
+	assert.match(markup, /<div(?=[^>]*data-agent-id="session-agent")(?=[^>]*role="option")(?=[^>]*aria-haspopup="menu")[^>]*>/u);
+	assert.doesNotMatch(markup, /<div(?=[^>]*data-agent-id="session-agent")(?=[^>]*aria-checked)[^>]*>/u);
+	assert.match(markup, /<div(?=[^>]*data-agent-id="toggle-agent")(?=[^>]*role="option")(?=[^>]*aria-checked="false")[^>]*>/u);
+	assert.doesNotMatch(markup, /<div(?=[^>]*data-agent-id="toggle-agent")(?=[^>]*aria-haspopup)[^>]*>/u);
 });
 
 test("AgentSelector single-select tick uses the VPK check in a transparent icon tile", () => {
@@ -77,7 +197,7 @@ test("AgentSelector single-select tick uses the VPK check in a transparent icon 
 	// Single-select tick derives independently of the multi-select check lane.
 	assert.match(
 		COMPONENT_SOURCE,
-		/const showSingleSelectTick =\s*!isInProgress && !supportsMultipleSelection && showSelectedTickInSingleSelect && isChecked;/u,
+		/const showSingleSelectTick =\s*!isInProgress\s*&& !isSubmenuTrigger\s*&& !supportsMultipleSelection\s*&& showSelectedTickInSingleSelect\s*&& isChecked;/u,
 	);
 	// Rendered as the VPK CheckIcon in selected color, inside a 24px transparent
 	// IconTile (small = size-6). `iconSize="small"` is required: transparent tiles
@@ -214,8 +334,8 @@ test("AgentSelector renders in-progress agents in a top section with stop-on-hov
 	assert.doesNotMatch(COMPONENT_SOURCE, /tabIndex=\{showStopButton/u);
 	// In-progress rows never show a tick: the multi-select check lane excludes them
 	// and the single-select tile requires !isInProgress.
-	assert.match(COMPONENT_SOURCE, /const showCheckIcon = supportsMultipleSelection && !isInProgress;/u);
-	assert.match(COMPONENT_SOURCE, /const showSingleSelectTick =\s*!isInProgress &&/u);
+	assert.match(COMPONENT_SOURCE, /const showCheckIcon = supportsMultipleSelection && !isInProgress && !isSubmenuTrigger;/u);
+	assert.match(COMPONENT_SOURCE, /const showSingleSelectTick =\s*!isInProgress\s*&&/u);
 	assert.match(COMPONENT_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
 	assert.match(COMPONENT_SOURCE, /<Spinner label=\{`\$\{agent\.name\} running`\} size="sm" variant="rainbow" \/>/u);
 	// Spinner fades out while the stop button + its pointer-events fade in, all

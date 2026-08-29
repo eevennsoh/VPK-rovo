@@ -1,5 +1,5 @@
 const assert = require("node:assert/strict");
-const { readFileSync } = require("node:fs");
+const { existsSync, readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const { test } = require("node:test");
 
@@ -28,10 +28,6 @@ const TYPES_SOURCE = readFileSync(
 );
 const SESSION_SOURCE = readFileSync(
 	join(__dirname, "agent-list-session.ts"),
-	"utf8",
-);
-const UNCAPTURED_SOURCE = readFileSync(
-	join(__dirname, "agent-list-uncaptured.tsx"),
 	"utf8",
 );
 const FOR_YOU_PANEL_SOURCE = readFileSync(
@@ -476,7 +472,7 @@ test("in-flow activity actions expose their button-owned focus indicators", () =
 });
 
 test("supports default and compact session rows", () => {
-	assert.match(TYPES_SOURCE, /export type AgentListVariant = "default" \| "compact" \| "uncaptured"/u);
+	assert.match(TYPES_SOURCE, /export type AgentListVariant = "default" \| "compact";/u);
 	assert.match(TYPES_SOURCE, /variant\?: AgentListVariant/u);
 	assert.match(INDEX_SOURCE, /variant = "default"/u);
 	assert.match(TYPES_SOURCE, /canViewItem\?: \(item: AgentListItem\) => boolean;/u);
@@ -487,42 +483,27 @@ test("supports default and compact session rows", () => {
 	assert.match(CARD_SOURCE, /isCompact \? "text-xs" : "text-sm"/u);
 	assert.match(CARD_SOURCE, /isCompact \? "px-3 py-1\.5" : "p-3"/u);
 	assert.match(DETAIL_SOURCE, /name: "variant"/u);
-	assert.match(DETAIL_SOURCE, /type: '"default" \| "compact" \| "uncaptured"'/u);
+	assert.match(DETAIL_SOURCE, /type: '"default" \| "compact"'/u);
 	assert.match(DETAIL_SOURCE, /default: '"default"'/u);
 });
 
-test("supports an uncaptured coding-session card that reuses the shared row", () => {
-	assert.match(INDEX_SOURCE, /if \(variant === "uncaptured"\) \{/u);
-	assert.match(INDEX_SOURCE, /<AgentListUncapturedCard/u);
-	assert.match(INDEX_SOURCE, /capturedItemIds\?\.has\(item\.id\)/u);
-	assert.match(
-		INDEX_SOURCE,
-		/suggestedWorkItemKey=\{getSuggestedWorkItemKey\?\.\(item\) \?\? suggestedUncapturedWorkItemKey\(item\)\}/u,
-	);
-	assert.match(UNCAPTURED_SOURCE, /data-testid=\{"agent-list-row-" \+ item.id\}/u);
-	assert.match(UNCAPTURED_SOURCE, /bg-surface-sunken/u);
-	assert.match(UNCAPTURED_SOURCE, /border-dashed border-border-disabled/u);
-	assert.match(UNCAPTURED_SOURCE, /<UncapturedWorkChin/u);
-	// Resume is gated on the host's capability, so a non-resumable row renders no
-	// control rather than copying a command the host cannot honour.
-	assert.match(UNCAPTURED_SOURCE, /const canResume = \(isResumable\?\.\(item\) \?\? true\) && resumeCommand\.length > 0;/u);
-	assert.match(UNCAPTURED_SOURCE, /onCopyResume=\{canResume\s*\?\s*\(\) => \{/u);
-	assert.match(UNCAPTURED_SOURCE, /onDismiss !== undefined \|\| canResume;/u);
-	assert.match(UNCAPTURED_SOURCE, /toAgentListResumeCommand\(item\)/u);
-	assert.match(UNCAPTURED_SOURCE, /<AgentListRow[\s\S]*hideHoverActions/u);
-	assert.match(UNCAPTURED_SOURCE, /item.sessionDetails\?\.issueKey/u);
-	assert.match(DATA_SOURCE, /export const AGENT_LIST_UNCAPTURED_ITEMS/u);
-	assert.match(DATA_SOURCE, /id: "lw-scope-thread"/u);
-	assert.match(DATA_SOURCE, /brandName: "claude"/u);
-	assert.match(DATA_SOURCE, /issueKey: "PAY-101"/u);
-	assert.match(PAGE_SOURCE, /variant === "uncaptured"/u);
-	assert.match(PAGE_SOURCE, /id="uncaptured"/u);
-	assert.match(DEMO_SOURCE, /export function AgentListDemoUncaptured/u);
-	assert.match(DEMO_SOURCE, /<Page variant="uncaptured" \/>/u);
-	assert.match(DETAIL_SOURCE, /title: "Uncaptured"/u);
-	assert.match(DETAIL_SOURCE, /demoSlug: "agent-list-demo-uncaptured"/u);
-	assert.match(VARIANT_REGISTRY_SOURCE, /"agent-list-demo-uncaptured": dynamic/u);
+// The uncaptured coding-session card moved to the Agent Session block. Agent
+// List keeps only the list surface, so nothing here may reintroduce the chin,
+// its callbacks, or the dashed card chrome.
+test("no longer owns the uncaptured coding-session card", () => {
+	assert.doesNotMatch(TYPES_SOURCE, /uncaptured/iu);
+	assert.doesNotMatch(TYPES_SOURCE, /capturedItemIds|onCreateWorkItem|onLinkWorkItem|onCopyResume|isResumable|getResumeCommand|getSuggestedWorkItemKey|onDismiss/u);
+	assert.doesNotMatch(INDEX_SOURCE, /uncaptured/iu);
+	assert.doesNotMatch(INDEX_SOURCE, /UncapturedWorkChin|capturedItemIds/u);
+	assert.doesNotMatch(PAGE_SOURCE, /uncaptured/iu);
+	assert.doesNotMatch(DATA_SOURCE, /AGENT_LIST_UNCAPTURED_ITEMS/u);
+	assert.doesNotMatch(DEMO_SOURCE, /Uncaptured/u);
+	assert.doesNotMatch(DETAIL_SOURCE, /uncaptured/iu);
+	assert.doesNotMatch(VARIANT_REGISTRY_SOURCE, /agent-list-demo-uncaptured/u);
+	assert.equal(existsSync(join(__dirname, "agent-list-uncaptured.tsx")), false);
+	// AgentListRow stays shared: the Agent Session card renders it in its sunken body.
 	assert.match(CARD_SOURCE, /hideHoverActions/u);
+	assert.match(CARD_SOURCE, /export function AgentListRow/u);
 });
 
 test("raised chrome uses elevation and drops the outer border", () => {

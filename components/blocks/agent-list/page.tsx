@@ -9,7 +9,6 @@ import FloatingRovoButton from "@/components/projects/shared/components/floating
 
 import {
 	AGENT_LIST_ITEMS,
-	AGENT_LIST_UNCAPTURED_ITEMS,
 	AgentList,
 	type AgentListFlyout,
 	type AgentListItem,
@@ -61,44 +60,10 @@ function AgentListDemo({
 	);
 }
 
-function AgentListUncapturedDemo() {
-	const [items, setItems] = useState<readonly AgentListItem[]>(AGENT_LIST_UNCAPTURED_ITEMS);
-	const [capturedIds, setCapturedIds] = useState<ReadonlySet<string>>(() => new Set());
-
-	const handleCapture = useCallback((item: AgentListItem) => {
-		setCapturedIds((current) => new Set(current).add(item.id));
-	}, []);
-	const handleDismiss = useCallback((item: AgentListItem) => {
-		setItems((current) => current.filter((candidate) => candidate.id !== item.id));
-	}, []);
-
-	return (
-		<div
-			className="flex h-full min-h-[360px] w-full flex-col items-center justify-center gap-2 bg-surface p-6"
-			id="uncaptured"
-		>
-			<AgentList
-				capturedItemIds={capturedIds}
-				className="w-[320px]"
-				flyout="none"
-				items={items}
-				onCreateWorkItem={handleCapture}
-				onDismiss={handleDismiss}
-				onLinkWorkItem={handleCapture}
-				variant="uncaptured"
-			/>
-		</div>
-	);
-}
-
 export default function AgentListPage({
 	flyout = "session",
 	variant = "default",
 }: Readonly<{ flyout?: AgentListFlyout; variant?: AgentListVariant }>) {
-	if (variant === "uncaptured") {
-		return <AgentListUncapturedDemo />;
-	}
-
 	return (
 		<RovoChatProvider>
 			<AgentListDemo flyout={flyout} variant={variant} />
