@@ -249,13 +249,6 @@ function AgentSelectorItem({
 	// reveal (React-state width/opacity), the stop reveal is driven purely by CSS
 	// group-hover/focus-visible so the control's hit area appears in the same frame
 	// the pointer reaches the row — see the in-progress block below.
-	// A pinned agent always shows its (filled) pin. Otherwise the pin reveals on
-	// hover/focus — but never via hover on the checked row: on selection the
-	// checked row floats to the top of the list carrying its still-active
-	// interaction state, which would flash the pin for a frame at the new
-	// position before `onMouseLeave` fires. Mirrors the `revealByline` guard.
-	const showPinButton =
-		!isInProgress && pinningEnabled && (isPinned || (isInteractionActive && !isChecked));
 	// Multiple-select rows use CommandItem's built-in check lane. Single-select
 	// opt-in uses a custom blue check tile instead (rendered in the trailing
 	// region below). In-progress rows never show any tick.
@@ -266,6 +259,13 @@ function AgentSelectorItem({
 		&& !supportsMultipleSelection
 		&& showSelectedTickInSingleSelect
 		&& isChecked;
+	// Pinned is only the space/user pin set. Assignment, selection, and used
+	// sessions must never fill the pin. Unpinned rows reveal an outline pin on
+	// hover/focus as the pin-this-agent affordance. Tick-mode selected rows still
+	// suppress that hover pin so promotion cannot flash one.
+	const showPinButton =
+		!isInProgress && pinningEnabled && (isPinned || (isInteractionActive && !showSingleSelectTick));
+	const pinFilled = isPinned;
 	// The selected row floats to the top of the list on selection. If it were
 	// hovered when clicked, its "active" (byline-visible) copy state would ride
 	// the reorder up to the top and only then animate back to idle — a visible
@@ -296,6 +296,18 @@ function AgentSelectorItem({
 			onFocus={() => setIsInteractionActive(true)}
 			onMouseEnter={() => setIsInteractionActive(true)}
 			onMouseLeave={() => setIsInteractionActive(false)}
+			onPointerDown={(event) => {
+				// Submenu rows activate on pointer down so preventDefault keeps
+				// focus in the host popover while the selector unmounts.
+				if (isDisabled || !isSubmenuTrigger) {
+					return;
+				}
+				if (event.target instanceof Element && event.target.closest("[data-slot=button]")) {
+					return;
+				}
+				event.preventDefault();
+				onToggle?.(agent.id);
+			}}
 			onSelect={() => {
 				if (isDisabled) {
 					return;
@@ -400,7 +412,7 @@ function AgentSelectorItem({
 						>
 							<Icon
 								aria-hidden
-								render={isPinned ? <PinFilledIcon label="" size="small" /> : <PinIcon label="" size="small" />}
+								render={pinFilled ? <PinFilledIcon label="" size="small" /> : <PinIcon label="" size="small" />}
 							/>
 						</Button>
 					</span>
@@ -716,7 +728,7 @@ export function AgentSelector({
 				/>
 			</CommandList>
 			{hasFooterActions ? (
-				<div className="sticky bottom-0 z-10 flex shrink-0 flex-col border-t border-border bg-popover p-0 pt-2">
+				<div className="sticky bottom-0 z-10 flex shrink-0 flex-col border-t border-border bg-popover p-0 pt-1">
 					{onBrowseAgents ? (
 						<Button
 							className={ACTION_BUTTON_CLASS}

@@ -83,6 +83,7 @@ test("resolveAssignedAgentRows takes the last matching session and its status", 
 
 	assert.equal(row.session.id, "session-late");
 	assert.equal(row.statusLabel, "Needs input");
+	assert.equal(row.statusKind, "needs-input");
 });
 
 test("resolveAssignedAgentRows still labels agents that have no session", async () => {
@@ -104,9 +105,11 @@ test("resolveAssignedAgentRows still labels agents that have no session", async 
 	assert.equal(finished.session, undefined);
 	assert.equal(Object.hasOwn(finished, "session"), false);
 	assert.equal(finished.statusLabel, "Finished");
+	assert.equal(finished.statusKind, "finished");
 	// Documented weak default: an assigned agent with no history reads as Working.
 	assert.equal(unstarted.session, undefined);
 	assert.equal(unstarted.statusLabel, "Working");
+	assert.equal(unstarted.statusKind, "working");
 });
 
 test("resolveUsedAgentIds lists distinct directory agents and skips skills", async () => {

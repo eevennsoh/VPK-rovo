@@ -53,7 +53,10 @@ import {
 	FloatingRovoButtonDailyInsightsPill,
 } from "./daily-insights-panel";
 import { restoreFloatingRovoButtonFocus } from "./focus-restore";
-import { FLOATING_ROVO_BUTTON_MORPH_SPRING } from "./motion";
+import {
+	FLOATING_ROVO_BUTTON_CONTENT_EXIT,
+	FLOATING_ROVO_BUTTON_MORPH_SPRING,
+} from "./motion";
 import { FloatingRovoButtonOnboardingPanelInner } from "./onboarding-panel";
 import { FloatingRovoButtonPersistentBarRail } from "./persistent-bar";
 import type {
@@ -105,7 +108,7 @@ function FloatingRovoButtonInner({
 			animate={shouldReduceMotion
 				? { opacity: 1 }
 				: { opacity: 1, filter: "blur(0px)" }}
-			exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, transition: { duration: 0.08 } }}
+			exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, transition: FLOATING_ROVO_BUTTON_CONTENT_EXIT }}
 			transition={shouldReduceMotion
 				? { duration: 0 }
 				: { duration: 0.2, delay: 0.24, ease: [0, 0.4, 0, 1] as const }}

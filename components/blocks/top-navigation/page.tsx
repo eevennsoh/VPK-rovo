@@ -158,17 +158,18 @@ export default function TopNavigation({
 	const [sidebarOpen, setSidebarOpen] = useState(defaultSidebarOpen);
 	const didAutoReleaseShellSidebarRef = useRef(false);
 	useEffect(() => {
-		if (responsiveWidth === 0) return;
+		const shellWidth = nav.windowWidth || responsiveWidth;
+		if (shellWidth === 0) return;
 
-		const isSmallContainer = responsiveWidth < TOP_NAV_SIDEBAR_PIN_RELEASE_BREAKPOINT_PX;
+		const isSmallContainer = shellWidth < TOP_NAV_SIDEBAR_PIN_RELEASE_BREAKPOINT_PX;
 		if (isSmallContainer && sidebarOpen) {
 			didAutoReleaseShellSidebarRef.current = true;
 			setSidebarOpen(false);
-		} else if (didAutoReleaseShellSidebarRef.current) {
+		} else if (!isSmallContainer && didAutoReleaseShellSidebarRef.current) {
 			didAutoReleaseShellSidebarRef.current = false;
 			setSidebarOpen(true);
 		}
-	}, [responsiveWidth, sidebarOpen]);
+	}, [nav.windowWidth, responsiveWidth, sidebarOpen]);
 
 	const sidebarResize = useSidebarResize({
 		defaultWidth: ROVO_APP_SEPARATOR_LINE_OFFSET_PX,

@@ -68,9 +68,13 @@ test("AvatarUnassigned exposes grey person and agent avatar states", () => {
 
 test("hexagon avatars clip an inner frame so corner overlays render unclipped", () => {
 	assert.match(AVATAR_SOURCE, /const HEXAGON_POINTS =/);
-	assert.match(AVATAR_SOURCE, /hexagon: "isolate after:border-0"/);
+	assert.match(AVATAR_SOURCE, /hexagon: "isolate overflow-visible after:border-0"/);
 	assert.doesNotMatch(AVATAR_SOURCE, /hexagon: `\$\{HEXAGON_CLIP\} after:border-0`/);
-	assert.match(AVATAR_SOURCE, /<span className=\{cn\("relative flex size-full items-center justify-center", HEXAGON_CLIP\)\}>/);
+	assert.match(
+		AVATAR_SOURCE,
+		/<span\s+className=\{cn\("relative flex size-full items-center justify-center overflow-hidden", HEXAGON_CLIP\)\}\s+data-slot="avatar-hexagon-artwork"/,
+	);
+	assert.match(AVATAR_SOURCE, /\{status \? <AvatarStatusIndicator status=\{status\} \/> : null\}/);
 	assert.doesNotMatch(AVATAR_SOURCE, /isAgent && HEXAGON_CLIP/);
 	assert.match(AVATAR_SOURCE, /isAgent && "size-full bg-muted"/);
 	assert.match(AVATAR_SOURCE, /const AVATAR_OVERLAY_TYPES: ReadonlySet<unknown> = new Set\(\[/);
@@ -123,6 +127,11 @@ test("avatar status indicator anchors to the top-right corner", () => {
 		AVATAR_SOURCE,
 		/data-slot="avatar-status"[\s\S]*"ring-background absolute top-0 right-0 z-10 overflow-hidden rounded-full ring-2"/,
 	);
+	assert.match(
+		AVATAR_SOURCE,
+		/const HEXAGON_STATUS_POSITION_CLASS_NAME =\n\t"group-data-\[shape=hexagon\]\/avatar:top-\[21\.34%\] group-data-\[shape=hexagon\]\/avatar:right-auto group-data-\[shape=hexagon\]\/avatar:left-\[89\.64%\] group-data-\[shape=hexagon\]\/avatar:-translate-x-1\/2 group-data-\[shape=hexagon\]\/avatar:-translate-y-1\/2"/,
+	);
+	assert.match(AVATAR_SOURCE, /HEXAGON_STATUS_POSITION_CLASS_NAME,/);
 	assert.doesNotMatch(
 		AVATAR_SOURCE,
 		/data-slot="avatar-status"[\s\S]*absolute right-0 bottom-0/,
@@ -137,10 +146,15 @@ test("avatar status indicators use simple glyphs on presence-style circular fill
 	assert.doesNotMatch(AVATAR_SOURCE, /import WarningIcon from "@atlaskit\/icon\/core\/warning"/);
 	assert.match(AVATAR_SOURCE, /function AvatarWarningBangIcon\(/);
 	assert.match(AVATAR_SOURCE, /function AvatarLockedIcon\(/);
+	assert.match(AVATAR_SOURCE, /function AvatarInformationMarkIcon\(/);
 	assert.doesNotMatch(AVATAR_SOURCE, /StatusVerifiedIcon|status-verified/);
 	assert.doesNotMatch(AVATAR_SOURCE, /StatusWarningIcon|status-warning/);
+	assert.doesNotMatch(AVATAR_SOURCE, /StatusInformationIcon|status-information/);
 	assert.doesNotMatch(AVATAR_SOURCE, /CrossCircleIcon|cross-circle/);
-	assert.match(AVATAR_SOURCE, /type AvatarStatus = "approved" \| "declined" \| "locked" \| "warning"/);
+	assert.match(
+		AVATAR_SOURCE,
+		/type AvatarStatus = "approved" \| "declined" \| "locked" \| "warning" \| "needs-input" \| "finished"/,
+	);
 	assert.match(
 		AVATAR_SOURCE,
 		/approved: \{ icon: CheckMarkIcon, className: "bg-success text-success-foreground"/,
@@ -160,6 +174,21 @@ test("avatar status indicators use simple glyphs on presence-style circular fill
 		/warning: \{\s*icon: AvatarWarningBangIcon,\s*className: "bg-warning text-icon"/,
 	);
 	assert.match(AVATAR_SOURCE, /iconClassName: STATUS_ICON_CLASS_NAME,\s*label: "Warning"/);
+	assert.match(
+		AVATAR_SOURCE,
+		/"needs-input": \{\s*icon: AvatarInformationMarkIcon,\s*className: "bg-info text-info-foreground"/,
+	);
+	assert.match(AVATAR_SOURCE, /label: "Needs input"/);
+	assert.match(
+		AVATAR_SOURCE,
+		/finished: \{ icon: CheckMarkIcon, className: "bg-success text-success-foreground", iconClassName: STATUS_ICON_CLASS_NAME, label: "Finished" \}/,
+	);
+	assert.match(AVATAR_SOURCE, /label: "Finished"/);
+	assert.match(
+		AVATAR_SOURCE,
+		/approved: \{ icon: CheckMarkIcon, className: "bg-success text-success-foreground"[\s\S]*finished: \{ icon: CheckMarkIcon, className: "bg-success text-success-foreground"/,
+	);
+	assert.doesNotMatch(AVATAR_SOURCE, /finished: \{[\s\S]*bg-surface|ring-border-success/);
 	assert.doesNotMatch(AVATAR_SOURCE, /locked: \{[^\n]*bg-background/);
 	assert.doesNotMatch(AVATAR_SOURCE, /locked: \{[^\n]*bg-warning/);
 	assert.match(
@@ -218,7 +247,24 @@ test("avatar presence indicators use ADS glyph treatments per variant", () => {
 	assert.match(AVATAR_DEMO_SOURCE, /<AvatarPresenceIndicator presence="focus"/);
 	assert.match(AVATAR_DEMO_SOURCE, /<AvatarPresenceIndicator presence="offline"/);
 	assert.match(AVATAR_DEMO_SOURCE, /<AvatarStatusIndicator status="warning"/);
-	assert.match(AVATAR_DETAILS_SOURCE, /approved, declined, locked, warning/);
+	assert.match(AVATAR_DEMO_SOURCE, /status="needs-input"/);
+	assert.match(AVATAR_DEMO_SOURCE, /status="finished"/);
+	assert.match(AVATAR_DEMO_SOURCE, /<span className="text-xs text-text-subtle">Needs input<\/span>/);
+	assert.match(AVATAR_DEMO_SOURCE, /<span className="text-xs text-text-subtle">Finished<\/span>/);
+	assert.match(
+		AVATAR_DEMO_SOURCE,
+		/export function AvatarDemoStatus\([\s\S]*<AgentAvatarVisual[\s\S]*status="needs-input"[\s\S]*status="finished"[\s\S]*export function AvatarDemoDisabled/,
+	);
+	assert.equal(
+		[...AVATAR_DEMO_SOURCE.match(/export function AvatarDemoStatus\([\s\S]*?^export function /m)[0].matchAll(/<AgentAvatarVisual/g)].length,
+		2,
+	);
+	assert.doesNotMatch(
+		AVATAR_DEMO_SOURCE.match(/export function AvatarDemoStatus\([\s\S]*?^export function /m)[0],
+		/<AgentAvatarVisual[\s\S]*status="(?:approved|warning|declined|locked)"/,
+	);
+	assert.match(AVATAR_DETAILS_SOURCE, /approved, declined, locked, warning, needs-input, finished/);
+	assert.match(AVATAR_DETAILS_SOURCE, /Needs input and Finished/);
 });
 
 test("avatar badges optically scale wrapped Atlaskit icons", () => {
@@ -251,7 +297,10 @@ test("avatar badges optically scale wrapped Atlaskit icons", () => {
 });
 
 test("agent avatars share one hexagon contract across 1P, 2P, and 3P visuals", () => {
-	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /<Avatar className=\{avatarClassName\} label=\{label\} shape="hexagon"/);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /shape="hexagon"/);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /status=\{status\}/);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /status\?: AvatarStatus/);
+	assert.doesNotMatch(AGENT_AVATAR_VISUAL_SOURCE, /AvatarStatusIndicator/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /avatarSrc\?\.startsWith\("\/2p\/"\)/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /<LogoThirdParty borderless label="" name=\{brandName\}/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /32: "xsmall"/);

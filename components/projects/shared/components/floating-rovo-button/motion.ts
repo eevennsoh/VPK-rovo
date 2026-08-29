@@ -11,3 +11,10 @@ export const FLOATING_ROVO_BUTTON_MORPH_SPRING = {
 	bounce: 0,
 	visualDuration: 0.28,
 } as const;
+
+// `duration-fast` + `ease-in`: the button and its insights pill leave the
+// shared morphing surface with the same practical exit signature.
+export const FLOATING_ROVO_BUTTON_CONTENT_EXIT = {
+	duration: 0.1,
+	ease: [0.6, 0, 0.8, 0.6],
+} as const;

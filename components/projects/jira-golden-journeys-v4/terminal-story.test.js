@@ -109,7 +109,7 @@ test("v4 terminal finishes with restored artifacts and no implementation workflo
 	);
 });
 
-test("v4 terminal exposes controlled reset, completion, and accessible handoff contracts", () => {
+test("the retired v4 terminal fixture is no longer mounted by the board-only route", () => {
 	assert.match(TERMINAL_COMPONENT_SOURCE, /controller: TerminalDemoController/u);
 	assert.match(TERMINAL_COMPONENT_SOURCE, /resetKey\?: number \| string/u);
 	assert.match(TERMINAL_COMPONENT_SOURCE, /promptCopied\?: boolean/u);
@@ -125,9 +125,6 @@ test("v4 terminal exposes controlled reset, completion, and accessible handoff c
 		TERMINAL_COMPONENT_SOURCE,
 		/left-1\/2 h-full min-h-0 w-\[100cqw\] -translate-x-1\/2 bg-surface/u,
 	);
-	assert.match(PAGE_COMPONENT_SOURCE, /useState<"dark" \| "light">\("dark"\)/u);
-	assert.match(PAGE_COMPONENT_SOURCE, /useTerminalDemo\([\s\S]*JIRA_GOLDEN_JOURNEYS_V4_TERMINAL_STORY/u);
-	assert.match(PAGE_COMPONENT_SOURCE, /terminalController\.state\.beatIndex \+ 2/u);
-	assert.match(PAGE_COMPONENT_SOURCE, /theme=\{isTerminalChapter \? terminalTheme : undefined\}/u);
-	assert.match(PAGE_COMPONENT_SOURCE, /data-color-mode": terminalTheme/u);
+	assert.doesNotMatch(PAGE_COMPONENT_SOURCE, /useTerminalDemo|JiraGoldenJourneysV4TerminalStory/u);
+	assert.doesNotMatch(PAGE_COMPONENT_SOURCE, /terminalTheme|data-resume-prompt-copied/u);
 });
