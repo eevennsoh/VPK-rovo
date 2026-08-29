@@ -10,17 +10,17 @@ export interface ContextBarPullRequestCi {
 	summary: string;
 	autoFixEnabled: boolean;
 	autoMergeEnabled: boolean;
-	onAutoFixChange: (enabled: boolean) => void;
-	onAutoMergeChange: (enabled: boolean) => void;
+	onAutoFixChange?: (enabled: boolean) => void;
+	onAutoMergeChange?: (enabled: boolean) => void;
 	onFixCheck?: (checks: readonly ContextBarPullRequestCiCheck[]) => void;
 }
 
 const CI_STATUS_PRESENTATION = {
-	pending: { dotClassName: "bg-border-bold", label: "CI pending" },
-	running: { dotClassName: "bg-bg-warning", label: "CI running" },
-	failed: { dotClassName: "bg-bg-danger", label: "CI failed" },
-	passed: { dotClassName: "bg-bg-success", label: "CI passed" },
-} satisfies Record<ContextBarPullRequestCiStatus, { dotClassName: string; label: string }>;
+	pending: { iconClassName: "text-icon-subtle", label: "CI pending" },
+	running: { iconClassName: "text-icon-warning", label: "CI running" },
+	failed: { iconClassName: "text-icon-danger", label: "CI failed" },
+	passed: { iconClassName: "text-icon-success", label: "CI passed" },
+} satisfies Record<ContextBarPullRequestCiStatus, { iconClassName: string; label: string }>;
 
 const MERGE_STATE_PRESENTATION = {
 	disabled: {
