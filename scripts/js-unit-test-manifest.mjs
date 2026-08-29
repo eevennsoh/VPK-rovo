@@ -156,6 +156,8 @@ export const TEST_FILE_CLASSIFICATIONS = {
 	"source-contract": [
 		"components/arts/rovo-p5/index.test.js",
 		"components/blocks/agent-assignment/agent-assignment.test.js",
+		"components/blocks/agent-list/agent-list.test.js",
+		"components/blocks/agent-session/agent-session.test.js",
 		"components/blocks/artifact-pane/artifact-pane.test.js",
 		"components/blocks/jira-issue/uncaptured-work-chin.test.js",
 		"components/blocks/next-best-action/next-best-action.test.js",

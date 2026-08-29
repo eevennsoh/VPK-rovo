@@ -2,7 +2,7 @@
 
 import { useMemo, type ReactNode } from "react";
 
-import { AgentList } from "@/components/blocks/agent-list";
+import { AgentSession } from "@/components/blocks/agent-session";
 import { JiraIssue, type JiraIssueParticipant } from "@/components/blocks/jira-issue";
 import { PulseResizeHandle } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-resize-handle";
 import { PulseSectionLabel } from "@/components/blocks/jira-kanban/experimental/pulse/components/pulse-signals";
@@ -288,10 +288,9 @@ function PulseUncapturedColumn({
 				</ul>
 			) : null}
 			{sessionItems.length > 0 ? (
-				<AgentList
+				<AgentSession
 					capturedItemIds={capturedIds}
 					className="w-full min-w-0"
-					flyout="none"
 					isResumable={(item) => {
 						const session = sessionById.get(item.id);
 						if (session === undefined) return false;
@@ -320,7 +319,6 @@ function PulseUncapturedColumn({
 						if (!(isLooseWorkResumable?.(session) ?? true)) return;
 						onResumeLooseWork?.(session);
 					}}
-					variant="uncaptured"
 				/>
 			) : null}
 		</PulseWorkColumn>

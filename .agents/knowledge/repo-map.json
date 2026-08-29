@@ -5403,7 +5403,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 427,
+			"manifestEntryCount": 428,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5445,7 +5445,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 106,
+				"entryCount": 107,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5518,6 +5518,12 @@
 						"slug": "agent-selector",
 						"name": "Agent Selector",
 						"importPath": "@/components/blocks/agent-selector"
+					},
+					{
+						"category": "blocks",
+						"slug": "agent-session",
+						"name": "Agent Session",
+						"importPath": "@/components/blocks/agent-session"
 					},
 					{
 						"category": "blocks",
