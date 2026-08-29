@@ -137,6 +137,13 @@ test("agent rows use 8px left padding while preserving the compact trailing inse
 	);
 });
 
+test("AgentSelector footer uses 4px top padding", () => {
+	assert.match(
+		COMPONENT_SOURCE,
+		/<div className="sticky bottom-0 z-10 flex shrink-0 flex-col border-t border-border bg-popover p-0 pt-1">/u,
+	);
+});
+
 test("AgentSelector demo list omits Rovo Dev", () => {
 	assert.doesNotMatch(DATA_SOURCE, /name:\s*"Rovo Dev"/u);
 	assert.doesNotMatch(DATA_SOURCE, /id:\s*"rovo-dev"/u);
