@@ -8,6 +8,7 @@ import { RovoColorIcon } from "@/components/ui/logo";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import { DAILY_INSIGHTS_ROW_CLASSES } from "./daily-insights-row-classes";
+import { FLOATING_ROVO_BUTTON_CONTENT_EXIT } from "./motion";
 import type { FloatingRovoButtonInsightRow, FloatingRovoButtonInsightsConfig } from "./types";
 
 /**
@@ -329,7 +330,7 @@ export function FloatingRovoButtonDailyInsightsPill({
 			animate={shouldReduceMotion
 				? { opacity: 1 }
 				: { opacity: 1, filter: "blur(0px)" }}
-			exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, transition: { duration: 0.08 } }}
+			exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, transition: FLOATING_ROVO_BUTTON_CONTENT_EXIT }}
 			transition={shouldReduceMotion
 				? { duration: 0 }
 				: { duration: 0.2, delay: 0.24, ease: [0, 0.4, 0, 1] as const }}

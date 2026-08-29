@@ -24,6 +24,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/projects/skills/lib/skill-intercept.test.js",
 		"components/projects/shared/components/floating-rovo-button/daily-insights-row-classes.test.js",
 		"components/projects/shared/components/floating-rovo-button/focus-restore.test.js",
+		"components/projects/shared/components/floating-rovo-button/motion.test.js",
 		"components/blocks/jira-kanban/experimental/lib/board-insights-nudge.test.js",
 		"components/projects/jira-golden-journeys-v3/board-insights-nudge-config.test.js",
 		"components/screen-assistant/screen-assistant-geometry.test.js",
