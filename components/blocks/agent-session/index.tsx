@@ -17,10 +17,12 @@ import type {
  * Local coding sessions that never became work items.
  *
  * Each session is a dashed uncaptured-work card: the shared Agent List row
- * (identity, static stamp, viewer machine) sits in a sunken body, and the chin
- * below it offers Link to work item, Create work item, Copy resume command, and
- * dismiss. There is no hover flyout — the chin owns every action, so the row
- * renders with `hideHoverActions` and the card never needs a popup surface.
+ * (identity, static stamp, viewer machine) sits in a sunken body and reveals
+ * the same hover/focus action pair Agent List rows use — Resume, plus a
+ * show/hide eye where Agent List puts Archive. The chin below owns the work
+ * item actions: one Link to work item row per candidate key, each with its own
+ * trailing Create work item and Subtasks icons. There is no hover flyout, so the
+ * card never needs a popup surface.
  */
 export function AgentSession({
 	className,
@@ -29,11 +31,13 @@ export function AgentSession({
 	capturedItemIds,
 	getResumeCommand,
 	getSuggestedWorkItemKey,
+	getSuggestedWorkItemKeys,
 	isResumable,
 	onCopyResume,
 	onCreateWorkItem,
-	onDismiss,
 	onLinkWorkItem,
+	onSubtasks,
+	onToggleVisibility,
 	onView,
 }: Readonly<AgentSessionProps>) {
 	// Coding rows stay activatable regardless of `canViewItem`: resuming a
@@ -54,8 +58,9 @@ export function AgentSession({
 					key={item.id}
 					onCopyResume={onCopyResume}
 					onCreateWorkItem={onCreateWorkItem === undefined ? undefined : () => onCreateWorkItem(item)}
-					onDismiss={onDismiss === undefined ? undefined : () => onDismiss(item)}
-					onLinkWorkItem={onLinkWorkItem === undefined ? undefined : () => onLinkWorkItem(item)}
+					onLinkWorkItem={onLinkWorkItem === undefined ? undefined : (workItemKey) => onLinkWorkItem(item, workItemKey)}
+					onSubtasks={onSubtasks === undefined ? undefined : () => onSubtasks(item)}
+					onToggleVisibility={onToggleVisibility}
 					onView={
 						isCodingAgentListItem(item)
 							? handleCodingView
@@ -64,13 +69,14 @@ export function AgentSession({
 								: onView
 					}
 					suggestedWorkItemKey={getSuggestedWorkItemKey?.(item) ?? suggestedAgentSessionWorkItemKey(item)}
+					suggestedWorkItemKeys={getSuggestedWorkItemKeys?.(item)}
 				/>
 			))}
 		</ul>
 	);
 }
 
-export { AGENT_SESSION_ITEMS } from "./data";
+export { AGENT_SESSION_ITEMS, AGENT_SESSION_MULTI_LINK_KEYS } from "./data";
 export { AgentSessionCard } from "./agent-session-card";
 export { suggestedAgentSessionWorkItemKey } from "./agent-session-work-item";
 export type { AgentSessionItem, AgentSessionProps } from "./agent-session-types";

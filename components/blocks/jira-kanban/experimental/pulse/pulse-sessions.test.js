@@ -95,7 +95,7 @@ test("the uncaptured column renders sessions through the Agent Session block", (
 	assert.match(SOURCES.rail, /import \{ AgentSession \} from "@\/components\/blocks\/agent-session";/u);
 	assert.match(
 		SOURCES.rail,
-		/const sessionItems = toPulseSessionItems\(\s*looseWork.filter\(\(item\) => !dismissedIds.has\(item\.id\)\),\s*members,\s*\);/u,
+		/const sessionItems = toPulseSessionItems\(\s*looseWork,\s*members,\s*\);/u,
 	);
 	assert.match(SOURCES.rail, /githubWork = looseWork\.filter\(isPulseGithubLooseWork\)/u);
 	assert.match(

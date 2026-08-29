@@ -313,23 +313,19 @@ interface JiraIssuePageProps {
 
 function JiraIssueUncapturedWorkDemo() {
 	const [capturedIds, setCapturedIds] = useState<ReadonlySet<string>>(() => new Set());
-	const [dismissedIds, setDismissedIds] = useState<ReadonlySet<string>>(() => new Set());
 
 	return (
 		<div
 			className="flex h-full min-h-[360px] w-full flex-col items-center justify-center gap-2 bg-surface p-6"
 			id="uncaptured-work"
 		>
-			{JIRA_ISSUE_UNCAPTURED_WORK_EXAMPLES.filter((example) => !dismissedIds.has(example.id)).map((example) => (
+			{JIRA_ISSUE_UNCAPTURED_WORK_EXAMPLES.map((example) => (
 				<JiraIssue
 					captured={capturedIds.has(example.id)}
 					className="w-[320px]"
 					key={example.id}
 					onCreateWorkItem={() => {
 						setCapturedIds((current) => new Set(current).add(example.id));
-					}}
-					onDismiss={() => {
-						setDismissedIds((current) => new Set(current).add(example.id));
 					}}
 					onLinkWorkItem={() => {
 						setCapturedIds((current) => new Set(current).add(example.id));

@@ -105,11 +105,9 @@ export interface ExperimentalPulseProps {
 	 * off and back on cannot silently discard them along with this subtree.
 	 */
 	capturedLooseWorkIds: ReadonlySet<string>;
-	dismissedLooseWorkIds: ReadonlySet<string>;
 	isLooseWorkResumable?: (item: PulseLooseWork) => boolean;
 	isWorkItemInteractive?: (workItem: PulseWorkItem) => boolean;
 	onCaptureLooseWork: (item: PulseLooseWork) => void;
-	onDismissLooseWork: (item: PulseLooseWork) => void;
 	onResumeLooseWork?: (item: PulseLooseWork) => void;
 	onWorkItemClick?: (workItem: PulseWorkItem) => void;
 	requestedActionIds: ReadonlySet<string>;
@@ -147,11 +145,9 @@ export interface ExperimentalPulseProps {
 
 export function ExperimentalPulse({
 	capturedLooseWorkIds,
-	dismissedLooseWorkIds,
 	isLooseWorkResumable,
 	isWorkItemInteractive,
 	onCaptureLooseWork,
-	onDismissLooseWork,
 	onResumeLooseWork,
 	onWorkItemClick,
 	onRequestAction,
@@ -467,13 +463,11 @@ export function ExperimentalPulse({
 						chat={insightsChatOpen ? (
 							<PulseEmbeddedChat chatContextBar={chatContextBar} />
 						) : undefined}
-						dismissedIds={dismissedLooseWorkIds}
 						isLooseWorkResumable={isLooseWorkResumable}
 						isWorkItemInteractive={isWorkItemInteractive}
 						looseWork={pulse.looseWork}
 						members={pulse.members}
 						onCapture={onCaptureLooseWork}
-						onDismiss={onDismissLooseWork}
 						onResumeLooseWork={onResumeLooseWork}
 						onWorkItemClick={onWorkItemClick}
 						selectedMember={pulse.selectedMember}

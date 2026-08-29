@@ -120,14 +120,20 @@ export interface JiraIssueUncapturedWorkProps extends Omit<ComponentProps<"artic
 	sourceLink: SmartLinkItem;
 	participants: readonly JiraIssueParticipant[];
 	captured?: boolean;
-	/** Suggested Jira key the chin split-button should link to, e.g. PAY-121. */
+	/** Suggested Jira key the chin's Link button should point at, e.g. PAY-121. */
 	suggestedWorkItemKey?: string;
-	/** Creates a Jira work item from the chin split-button menu. Omit to expose an unavailable action. */
+	/** Several candidate Jira keys, rendered one linkable chin row each. Takes precedence over `suggestedWorkItemKey`. */
+	suggestedWorkItemKeys?: readonly string[];
+	/** Creates a Jira work item from the chin's trailing add control. Omit to expose an unavailable action. */
 	onCreateWorkItem?: () => void;
-	/** Links this uncaptured work to the suggested Jira work item. Omit to expose an unavailable primary action. */
-	onLinkWorkItem?: () => void;
-	/** Dismisses this uncaptured work from the chin. Omit to hide the dismiss control. */
-	onDismiss?: () => void;
+	/** Links this uncaptured work to a suggested Jira work item. Receives the row's key when several are offered. Omit to expose an unavailable primary action. */
+	onLinkWorkItem?: (workItemKey?: string) => void;
+	/**
+	 * Subtasks action behind the chin's trailing subtasks control. The button
+	 * always renders; omit this to leave it a placeholder until the behaviour
+	 * lands.
+	 */
+	onSubtasks?: () => void;
 }
 
 export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "children"> {
