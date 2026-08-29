@@ -66,6 +66,14 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 			previewContentWidth: "full",
 		},
 	},
+	"jira-golden-journeys-v4": {
+		description: "A Jira Golden Journeys v4 gallery with a Work Item stage for the software delivery story.",
+		importStatement: `import JiraGoldenJourneysV4Page from "@/components/projects/jira-golden-journeys-v4";`,
+		demoLayout: {
+			previewHeight: "fixed",
+			previewContentWidth: "full",
+		},
+	},
 	"jira-queue": {
 		description: "A Jira agent-session queue — a project sidebar of running, awaiting, and completed agent sessions beside a conversation workspace with a detail panel of sources and outputs.",
 		importStatement: `import JiraQueuePage from "@/components/projects/jira-queue";`,
