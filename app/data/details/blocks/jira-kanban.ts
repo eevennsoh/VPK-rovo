@@ -2,11 +2,12 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const JIRA_KANBAN_DETAIL: ComponentDetail = {
 	description:
-		"Enterprise RFP Jira kanban board with drag-and-drop work-item cards, agent assignment controls, tags, priority signals, avatar ownership, multi-select drag support, and optional Jira Toolbar actions. Ships a standard variant plus an experimental variant that starts identical and diverges independently.",
+		"Enterprise RFP Jira kanban board with drag-and-drop work-item cards, agent assignment controls, tags, priority signals, avatar ownership, multi-select drag support, and optional Jira Toolbar actions. Ships a standard variant plus independently owned experimental variants.",
 	demoLayout: { previewHeight: "fit", examplesContentWidth: "bleed" },
 	importStatement: `import { JiraKanban } from "@/components/blocks/jira-kanban";`,
 	usage: `import JiraKanbanPage from "@/components/blocks/jira-kanban/page";
-import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";`,
+import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
+import ExperimentalV2JiraKanbanPage from "@/components/blocks/jira-kanban/experimental-v2/page";`,
 	examples: [
 		{
 			title: "Standard",
@@ -17,6 +18,11 @@ import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experime
 			title: "Experimental",
 			description: "Standalone fork of the standard board that starts identical to it. Owns its own board, header, and page tree so experimental changes never touch the default variant; shares the board state helpers and data contracts.",
 			demoSlug: "jira-kanban-demo-experimental",
+		},
+		{
+			title: "Experimental v2",
+			description: "Standalone fork of Experimental that starts identical to it. Owns its own board, header, and page tree so v2 can diverge independently; shares the established experimental support contracts.",
+			demoSlug: "jira-kanban-demo-experimental-v2",
 		},
 	],
 	props: [

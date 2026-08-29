@@ -44,6 +44,13 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"jira-kanban-demo-experimental-v2": dynamic(
+		() =>
+			import("../demos/blocks/jira-kanban-demo").then((mod) => ({
+				default: mod.JiraKanbanDemoExperimentalV2,
+			})),
+		{ ssr: false },
+	),
 	"jira-work-item-demo-standard": dynamic(
 		() =>
 			import("../demos/blocks/jira-work-item-demo").then((mod) => ({
@@ -100,6 +107,20 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"jira-work-item-demo-experimental-v4": dynamic(
+		() =>
+			import("../demos/blocks/jira-work-item-demo").then((mod) => ({
+				default: mod.JiraWorkItemDemoExperimentalV4,
+			})),
+		{ ssr: false },
+	),
+	"jira-work-item-demo-experimental-v5": dynamic(
+		() =>
+			import("../demos/blocks/jira-work-item-demo").then((mod) => ({
+				default: mod.JiraWorkItemDemoExperimentalV5,
+			})),
+		{ ssr: false },
+	),
 	"jira-work-item-demo-experimental-v3-empty": dynamic(
 		() =>
 			import("../demos/blocks/jira-work-item-demo").then((mod) => ({
@@ -107,10 +128,38 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"jira-work-item-demo-experimental-v4-empty": dynamic(
+		() =>
+			import("../demos/blocks/jira-work-item-demo").then((mod) => ({
+				default: mod.JiraWorkItemDemoExperimentalV4Empty,
+			})),
+		{ ssr: false },
+	),
+	"jira-work-item-demo-experimental-v5-empty": dynamic(
+		() =>
+			import("../demos/blocks/jira-work-item-demo").then((mod) => ({
+				default: mod.JiraWorkItemDemoExperimentalV5Empty,
+			})),
+		{ ssr: false },
+	),
 	"jira-work-item-demo-experimental-v3-running": dynamic(
 		() =>
 			import("../demos/blocks/jira-work-item-demo").then((mod) => ({
 				default: mod.JiraWorkItemDemoExperimentalV3Running,
+			})),
+		{ ssr: false },
+	),
+	"jira-work-item-demo-experimental-v4-running": dynamic(
+		() =>
+			import("../demos/blocks/jira-work-item-demo").then((mod) => ({
+				default: mod.JiraWorkItemDemoExperimentalV4Running,
+			})),
+		{ ssr: false },
+	),
+	"jira-work-item-demo-experimental-v5-running": dynamic(
+		() =>
+			import("../demos/blocks/jira-work-item-demo").then((mod) => ({
+				default: mod.JiraWorkItemDemoExperimentalV5Running,
 			})),
 		{ ssr: false },
 	),

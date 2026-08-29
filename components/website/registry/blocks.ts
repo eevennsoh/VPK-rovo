@@ -185,6 +185,20 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"jira-work-item-demo-experimental-v4": dynamic(
+		() =>
+			import("../demos/blocks/jira-work-item-demo").then((mod) => ({
+				default: mod.JiraWorkItemDemoExperimentalV4,
+			})),
+		{ ssr: false },
+	),
+	"jira-work-item-demo-experimental-v5": dynamic(
+		() =>
+			import("../demos/blocks/jira-work-item-demo").then((mod) => ({
+				default: mod.JiraWorkItemDemoExperimentalV5,
+			})),
+		{ ssr: false },
+	),
 	"task-progress": dynamic(
 		() => import("../demos/blocks/task-progress-demo"),
 		{ ssr: false },

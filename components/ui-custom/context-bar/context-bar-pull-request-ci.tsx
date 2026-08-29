@@ -1,6 +1,9 @@
 "use client";
 
+import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import StatusErrorIcon from "@atlaskit/icon/core/status-error";
+import TaskToDoIcon from "@atlaskit/icon/core/task-to-do";
 
 import {
 	ChecksSectionTitle,
@@ -18,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
+import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
 import {
@@ -33,6 +37,22 @@ export type {
 	ContextBarPullRequestCiStatus,
 	ContextBarPullRequestMergeState,
 } from "./context-bar-pull-request-ci-model";
+
+function CiStatusIcon({
+	className,
+	status,
+}: Readonly<{
+	className: string;
+	status: Exclude<ContextBarPullRequestCi["status"], "running">;
+}>) {
+	const icon = status === "failed"
+		? <StatusErrorIcon color="currentColor" label="" size="small" />
+		: status === "passed"
+			? <CheckCircleIcon color="currentColor" label="" size="small" />
+			: <TaskToDoIcon color="currentColor" label="" size="small" />;
+
+	return <Icon aria-hidden className={className} render={icon} />;
+}
 
 function suppressMenuDismissal(event: { preventDefault: () => void }) {
 	event.preventDefault();
@@ -83,21 +103,23 @@ export function ContextBarPullRequestCiMenu({
 	const presentation = contextBarPullRequestCiPresentation(ci.status);
 	const isRunning = ci.status === "running";
 	const checksTitle = pullRequestChecksTitleState(ci.checks);
+	const hasAutomationControls = ci.onAutoFixChange !== undefined || ci.onAutoMergeChange !== undefined;
+	const menuActionLabel = hasAutomationControls ? "Configure CI automation" : "View CI checks";
 
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger
-				aria-label={`${presentation.label}. ${ci.summary}. Configure CI automation`}
+				aria-label={`${presentation.label}. ${ci.summary}. ${menuActionLabel}`}
 				className={cn(
 					"flex shrink-0 items-center gap-1 rounded-lg px-2 text-sm text-text-subtle outline-none transition-colors duration-normal ease-out-practical hover:bg-bg-neutral-hovered hover:text-text active:bg-bg-neutral-pressed focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none",
 					isRunning ? "h-6" : "h-8",
 				)}
 				data-ci-automation-trigger
 			>
-				{isRunning ? (
+				{ci.status === "running" ? (
 					<Spinner className="text-icon-subtle" label="CI running" size="xs" />
 				) : (
-					<span aria-hidden className={cn("size-2 shrink-0 rounded-full", presentation.dotClassName)} />
+					<CiStatusIcon className={presentation.iconClassName} status={ci.status} />
 				)}
 				<span>CI</span>
 				<ChevronDownIcon color="currentColor" label="" size="small" />
@@ -115,21 +137,29 @@ export function ContextBarPullRequestCiMenu({
 						/>
 					</div>
 				</DropdownMenuGroup>
-				<DropdownMenuSeparator />
-				<DropdownMenuGroup>
-					<CiAutomationToggleRow
-						checked={ci.autoFixEnabled}
-						label="Auto-fix CI & address comments"
-						onCheckedChange={ci.onAutoFixChange}
-						setting="auto-fix"
-					/>
-					<CiAutomationToggleRow
-						checked={ci.autoMergeEnabled}
-						label="Auto-merge when ready"
-						onCheckedChange={ci.onAutoMergeChange}
-						setting="auto-merge"
-					/>
-				</DropdownMenuGroup>
+				{hasAutomationControls ? (
+					<>
+						<DropdownMenuSeparator />
+						<DropdownMenuGroup>
+							{ci.onAutoFixChange ? (
+								<CiAutomationToggleRow
+									checked={ci.autoFixEnabled}
+									label="Auto-fix CI & address comments"
+									onCheckedChange={ci.onAutoFixChange}
+									setting="auto-fix"
+								/>
+							) : null}
+							{ci.onAutoMergeChange ? (
+								<CiAutomationToggleRow
+									checked={ci.autoMergeEnabled}
+									label="Auto-merge when ready"
+									onCheckedChange={ci.onAutoMergeChange}
+									setting="auto-merge"
+								/>
+							) : null}
+						</DropdownMenuGroup>
+					</>
+				) : null}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

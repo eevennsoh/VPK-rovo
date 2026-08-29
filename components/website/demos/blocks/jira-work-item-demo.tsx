@@ -38,11 +38,29 @@ export function JiraWorkItemDemoExperimentalV2Running() {
 export function JiraWorkItemDemoExperimentalV3() {
 	return <JiraWorkItem variant="experimental-v3" initialExperimentalPreset="filled" />;
 }
+export function JiraWorkItemDemoExperimentalV4() {
+	return <JiraWorkItem variant="experimental-v4" initialExperimentalPreset="filled" />;
+}
+export function JiraWorkItemDemoExperimentalV5() {
+	return <JiraWorkItem variant="experimental-v5" initialExperimentalPreset="filled" />;
+}
 
 export function JiraWorkItemDemoExperimentalV3Empty() {
 	return <JiraWorkItem variant="experimental-v3" initialExperimentalPreset="empty" />;
 }
+export function JiraWorkItemDemoExperimentalV4Empty() {
+	return <JiraWorkItem variant="experimental-v4" initialExperimentalPreset="empty" />;
+}
+export function JiraWorkItemDemoExperimentalV5Empty() {
+	return <JiraWorkItem variant="experimental-v5" initialExperimentalPreset="empty" />;
+}
 
 export function JiraWorkItemDemoExperimentalV3Running() {
 	return <JiraWorkItem variant="experimental-v3" initialExperimentalPreset="running" />;
+}
+export function JiraWorkItemDemoExperimentalV4Running() {
+	return <JiraWorkItem variant="experimental-v4" initialExperimentalPreset="running" />;
+}
+export function JiraWorkItemDemoExperimentalV5Running() {
+	return <JiraWorkItem variant="experimental-v5" initialExperimentalPreset="running" />;
 }

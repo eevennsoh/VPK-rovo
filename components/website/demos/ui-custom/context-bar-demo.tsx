@@ -228,46 +228,79 @@ export function ContextBarDemoCreatePullRequest() {
 	);
 }
 
-export function ContextBarDemoPullRequest() {
-	const item = DEMO_PULL_REQUESTS[0];
+const FAILED_CI_CHECKS = [
+	{ id: "lint-types", name: "Lint and typecheck", status: "failed", details: "Failed after 42s · deliveryAddress may be null" },
+	{ id: "unit-tests", name: "Unit tests", status: "passed", details: "418 tests in 2m 46s" },
+	{ id: "browser-tests", name: "Guest checkout browser tests", status: "queued", details: "Waiting for CI" },
+] as const;
+
+const PASSED_CI_CHECKS = [
+	{ id: "lint-types", name: "Lint and typecheck", status: "passed", details: "Passed in 1m 18s" },
+	{ id: "unit-tests", name: "Unit tests", status: "passed", details: "418 tests in 2m 46s" },
+	{ id: "browser-tests", name: "Guest checkout browser tests", status: "passed", details: "Passed in 3m 12s" },
+] as const;
+
+const PULL_REQUEST_STATE_PERMUTATIONS = [
+	{ id: "open-failed", ciStatus: "failed", checks: FAILED_CI_CHECKS, status: "Open", summary: "1 failed, 1 passed, 1 queued" },
+	{ id: "open-passed", ciStatus: "passed", checks: PASSED_CI_CHECKS, status: "Open", summary: "3 CI checks passed" },
+	{ id: "merged-passed", ciStatus: "passed", checks: PASSED_CI_CHECKS, status: "Merged", summary: "3 CI checks passed" },
+] as const;
+
+function ContextBarDemoPullRequestPermutation({
+	item,
+	permutation,
+}: Readonly<{
+	item: (typeof DEMO_PULL_REQUESTS)[number];
+	permutation: (typeof PULL_REQUEST_STATE_PERMUTATIONS)[number];
+}>) {
 	const [autoFixEnabled, setAutoFixEnabled] = useState(false);
 	const [autoMergeEnabled, setAutoMergeEnabled] = useState(true);
+	const canMutatePullRequest = permutation.status === "Open";
+
+	return (
+		<ContextBarPullRequest
+			additions={item.additions}
+			author={item.author}
+			branch={item.branch ?? "main"}
+			ci={{
+				autoFixEnabled,
+				autoMergeEnabled,
+				checks: permutation.checks,
+				onAutoFixChange: canMutatePullRequest ? setAutoFixEnabled : undefined,
+				onAutoMergeChange: canMutatePullRequest ? setAutoMergeEnabled : undefined,
+				status: permutation.ciStatus,
+				summary: permutation.summary,
+			}}
+			deletions={item.deletions}
+			filesChanged={item.filesChanged}
+			href={`https://github.com/${item.repository}/pull/${item.number}`}
+			number={item.number}
+			onDismiss={() => undefined}
+			repository={item.repository}
+			showRepository={false}
+			showStatusLozenge
+			status={permutation.status}
+			targetBranch={item.targetBranch}
+			title={item.title}
+		/>
+	);
+}
+
+export function ContextBarDemoPullRequest() {
+	const item = DEMO_PULL_REQUESTS[0];
 	if (!item) {
 		return null;
 	}
 
 	return (
-		<div className="w-full max-w-xl p-8">
-			<ContextBarPullRequest
-				additions={item.additions}
-				approvalsCurrent={1}
-				approvalsRequired={2}
-				author={item.author}
-				branch={item.branch ?? "main"}
-				ci={{
-					autoFixEnabled,
-					autoMergeEnabled,
-					checks: [
-						{ id: "lint-types", name: "Lint and typecheck", status: "running", details: "Running for 1m 42s" },
-						{ id: "unit-tests", name: "Unit tests", status: "passed", details: "418 tests in 2m 46s" },
-						{ id: "browser-tests", name: "Guest checkout browser tests", status: "queued", details: "Waiting for CI" },
-					],
-					onAutoFixChange: setAutoFixEnabled,
-					onAutoMergeChange: setAutoMergeEnabled,
-					status: "running",
-					summary: "3 CI checks",
-				}}
-				deletions={item.deletions}
-				filesChanged={item.filesChanged}
-				href={`https://github.com/${item.repository}/pull/${item.number}`}
-				mergeState="queued"
-				number={item.number}
-				onDismiss={() => undefined}
-				repository={item.repository}
-				status={item.status}
-				targetBranch={item.targetBranch}
-				title={item.title}
-			/>
+		<div className="flex w-full max-w-xl flex-col gap-5 p-8" data-pr-permutations>
+			{PULL_REQUEST_STATE_PERMUTATIONS.map((permutation) => (
+				<ContextBarDemoPullRequestPermutation
+					item={item}
+					key={permutation.id}
+					permutation={permutation}
+				/>
+			))}
 		</div>
 	);
 }
@@ -305,4 +338,3 @@ export function ContextBarDemoPromptFlyout() {
 		</div>
 	);
 }
-

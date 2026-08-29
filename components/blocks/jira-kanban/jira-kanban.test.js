@@ -1,5 +1,5 @@
 const assert = require("node:assert/strict");
-const { readFileSync } = require("node:fs");
+const { existsSync, readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const { test } = require("node:test");
 const esbuild = require("esbuild");
@@ -12,9 +12,16 @@ const HEADER_SOURCE = readFileSync(join(__dirname, "board-header.tsx"), "utf8");
 const EXPERIMENTAL_SOURCE = readFileSync(join(__dirname, "experimental", "experimental-jira-kanban.tsx"), "utf8");
 const EXPERIMENTAL_PAGE_SOURCE = readFileSync(join(__dirname, "experimental", "page.tsx"), "utf8");
 const EXPERIMENTAL_HEADER_SOURCE = readFileSync(join(__dirname, "experimental", "experimental-board-header.tsx"), "utf8");
+const EXPERIMENTAL_V2_SOURCE = readFileSync(join(__dirname, "experimental-v2", "experimental-v2-jira-kanban.tsx"), "utf8");
+const EXPERIMENTAL_V2_PAGE_SOURCE = readFileSync(join(__dirname, "experimental-v2", "page.tsx"), "utf8");
+const EXPERIMENTAL_V2_HEADER_SOURCE = readFileSync(join(__dirname, "experimental-v2", "experimental-v2-board-header.tsx"), "utf8");
+const EXPERIMENTAL_V2_PREVIEW_SOURCE = readFileSync(join(__dirname, "..", "..", "..", "app", "preview", "blocks", "jira-kanban-experimental-v2", "page.tsx"), "utf8");
 const EXPERIMENTAL_HEADER_FACEPILE_SOURCE = readFileSync(join(__dirname, "experimental", "header-facepile.ts"), "utf8");
 const EXPERIMENTAL_PULSE_RAIL_SOURCE = readFileSync(join(__dirname, "experimental", "pulse", "components", "pulse-rail.tsx"), "utf8");
 const EXPERIMENTAL_PULSE_MODE_CONTROLS_SOURCE = readFileSync(join(__dirname, "experimental", "pulse", "components", "pulse-mode-controls.tsx"), "utf8");
+const DETAIL_SOURCE = readFileSync(join(__dirname, "..", "..", "..", "app", "data", "details", "blocks", "jira-kanban.ts"), "utf8");
+const DEMO_SOURCE = readFileSync(join(__dirname, "..", "..", "website", "demos", "blocks", "jira-kanban-demo.tsx"), "utf8");
+const VARIANT_REGISTRY_SOURCE = readFileSync(join(__dirname, "..", "..", "website", "registry", "blocks-variants.ts"), "utf8");
 const JIRA_ISSUE_SOURCE = readFileSync(join(__dirname, "..", "jira-issue", "index.tsx"), "utf8");
 const COLUMN_DRAG_SOURCE = SOURCE.slice(
 	SOURCE.indexOf("const handleColumnDragOver"),
@@ -713,6 +720,26 @@ test("Experimental kanban variant owns its own tree without touching the default
 	assert.doesNotMatch(SOURCE, /experimental/iu);
 	assert.doesNotMatch(PAGE_SOURCE, /experimental/iu);
 	assert.doesNotMatch(HEADER_SOURCE, /experimental/iu);
+});
+
+test("Experimental v2 is exposed as an independently owned copy of Experimental", () => {
+	assert.match(DETAIL_SOURCE, /title: "Experimental v2"/u);
+	assert.match(DETAIL_SOURCE, /demoSlug: "jira-kanban-demo-experimental-v2"/u);
+	assert.match(DEMO_SOURCE, /import ExperimentalV2Page from "@\/components\/blocks\/jira-kanban\/experimental-v2\/page";/u);
+	assert.match(DEMO_SOURCE, /export function JiraKanbanDemoExperimentalV2\(\)/u);
+	assert.match(VARIANT_REGISTRY_SOURCE, /"jira-kanban-demo-experimental-v2"/u);
+	assert.equal(
+		existsSync(join(__dirname, "..", "..", "..", "app", "preview", "blocks", "jira-kanban-experimental-v2", "page.tsx")),
+		true,
+	);
+	assert.match(EXPERIMENTAL_V2_SOURCE, /export function ExperimentalV2JiraKanban\(\{/u);
+	assert.match(EXPERIMENTAL_V2_HEADER_SOURCE, /export function ExperimentalV2JiraKanbanBoardHeader\(\{/u);
+	assert.match(EXPERIMENTAL_V2_PAGE_SOURCE, /export default function ExperimentalV2JiraKanbanPage\(\{/u);
+	assert.match(EXPERIMENTAL_V2_PAGE_SOURCE, /import \{ ExperimentalV2JiraKanban \} from "\.\/experimental-v2-jira-kanban";/u);
+	assert.match(EXPERIMENTAL_V2_PAGE_SOURCE, /import \{ ExperimentalV2JiraKanbanBoardHeader \} from "\.\/experimental-v2-board-header";/u);
+	assert.doesNotMatch(EXPERIMENTAL_V2_PAGE_SOURCE, /from "\.\.\/experimental\/page"/u);
+	assert.match(EXPERIMENTAL_V2_PREVIEW_SOURCE, /<div className="h-dvh">/u);
+	assert.doesNotMatch(EXPERIMENTAL_V2_PREVIEW_SOURCE, /<main/u);
 });
 
 test("Experimental kanban header keeps only configure and more actions", () => {
