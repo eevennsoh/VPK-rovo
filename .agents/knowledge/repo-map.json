@@ -3644,8 +3644,8 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 91,
-			"pageCount": 67
+			"ownerImportCount": 92,
+			"pageCount": 68
 		},
 		"pages": [
 			{
@@ -4368,6 +4368,30 @@
 					}
 				],
 				"source": "app/preview/blocks/jira-kanban-experimental/page.tsx"
+			},
+			{
+				"ownerCount": 1,
+				"owners": [
+					{
+						"importPath": "@/components/blocks/jira-kanban/experimental-v2/page",
+						"source": "components/blocks/jira-kanban/experimental-v2/page",
+						"symbols": [
+							"ExperimentalV2JiraKanbanPage"
+						]
+					}
+				],
+				"routePath": "/preview/blocks/jira-kanban-experimental-v2",
+				"shellOwnerCount": 1,
+				"shellOwners": [
+					{
+						"importPath": "@/components/blocks/jira-kanban/experimental-v2/page",
+						"source": "components/blocks/jira-kanban/experimental-v2/page",
+						"symbols": [
+							"ExperimentalV2JiraKanbanPage"
+						]
+					}
+				],
+				"source": "app/preview/blocks/jira-kanban-experimental-v2/page.tsx"
 			},
 			{
 				"ownerCount": 1,
