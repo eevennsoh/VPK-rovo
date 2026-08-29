@@ -90,3 +90,14 @@ test("responsive Jira chrome releases and restores the sidebar without an update
 
 	expect(consoleErrors.filter((message) => message.includes("Maximum update depth exceeded"))).toEqual([]);
 });
+
+test("the board stays inside the Jira shell at short viewport heights", async ({ page }) => {
+	await page.setViewportSize({ width: 1200, height: 640 });
+	await openBoard(page);
+	const board = page.getByRole("region", {
+		name: "Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses.",
+	});
+	const boardBox = await board.boundingBox();
+	expect(boardBox).not.toBeNull();
+	expect((boardBox?.y ?? 0) + (boardBox?.height ?? 0)).toBeLessThanOrEqual(640);
+});

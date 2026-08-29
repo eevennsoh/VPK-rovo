@@ -21,6 +21,7 @@ test("the route renders the Payments board directly inside Jira app chrome", () 
 	assert.match(PAGE_SOURCE, /createJiraGoldenJourneysV4PayBoardColumns/u);
 	assert.match(PAGE_SOURCE, /JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS/u);
 	assert.match(PAGE_SOURCE, /JIRA_GOLDEN_JOURNEYS_V4_PAY_HEADER_ASSIGNEES/u);
+	assert.match(PAGE_SOURCE, /overflow-hidden bg-surface \[&>div\]:min-h-0/u);
 });
 
 test("the route no longer renders gallery or presentation phases", () => {
