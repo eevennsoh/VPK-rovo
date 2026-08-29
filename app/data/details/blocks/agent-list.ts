@@ -23,12 +23,6 @@ export const AGENT_LIST_DETAIL: ComponentDetail = {
 				'The `flyout="composer"` variant keeps a per-row Agent States card instead of the list\'s shared moving flyout, preserving local composer state while the viewer replies to the agent.',
 			demoSlug: "agent-list-demo-composer",
 		},
-		{
-			title: "Uncaptured",
-			description:
-				"Local coding sessions as dashed uncaptured-work cards: the shared agent-list row (Claude, time, machine) sits in a sunken body, with a Link to work item chin, Create work item in the split menu, and dismiss.",
-			demoSlug: "agent-list-demo-uncaptured",
-		},
 	],
 	props: [
 		{
@@ -47,10 +41,10 @@ export const AGENT_LIST_DETAIL: ComponentDetail = {
 		},
 		{
 			name: "variant",
-			type: '"default" | "compact" | "uncaptured"',
+			type: '"default" | "compact"',
 			default: '"default"',
 			description:
-				"Controls row density and chrome. Compact rows use a 24px agent avatar and 12px title. Uncaptured wraps each session in the dashed uncaptured-work card with a sunken body and Link / Create / Dismiss chin.",
+				"Controls row density. Compact rows use a 24px agent avatar and 12px title.",
 		},
 		{
 			name: "chrome",
@@ -58,48 +52,6 @@ export const AGENT_LIST_DETAIL: ComponentDetail = {
 			default: '"stroke"',
 			description:
 				"Outer list surface. `stroke` keeps the default bordered card. `raised` drops the outer border and applies elevation.shadow.raised so Needs input can sit beside Next best action without a double outline.",
-		},
-		{
-			name: "capturedItemIds",
-			type: "ReadonlySet<string>",
-			description:
-				"Ids of uncaptured sessions whose chin should read Captured. Ignored unless `variant` is `\"uncaptured\"`.",
-		},
-		{
-			name: "getSuggestedWorkItemKey",
-			type: "(item: AgentListItem) => string | undefined",
-			description:
-				"Suggested Jira key for the uncaptured chin primary action. Defaults to `sessionDetails.issueKey`.",
-		},
-		{
-			name: "onLinkWorkItem",
-			type: "(item: AgentListItem) => void",
-			description:
-				"Links an uncaptured session to the suggested work item from the chin primary action.",
-		},
-		{
-			name: "onCreateWorkItem",
-			type: "(item: AgentListItem) => void",
-			description:
-				"Creates a work item from an uncaptured session via the chin split-button menu. When omitted, the menu action is exposed as unavailable.",
-		},
-		{
-			name: "onDismiss",
-			type: "(item: AgentListItem) => void",
-			description:
-				"Dismisses an uncaptured session from the chin. When omitted, the dismiss control is hidden.",
-		},
-		{
-			name: "getResumeCommand",
-			type: "(item: AgentListItem) => string | undefined",
-			description:
-				"Overrides the shell command copied from an uncaptured session chin. Defaults to `cd <worktree> && claude --resume <id>`.",
-		},
-		{
-			name: "onCopyResume",
-			type: "(item: AgentListItem) => void",
-			description:
-				"Called after the uncaptured chin copies the resume command, so a host can announce or restore a terminal session.",
 		},
 		{
 			name: "selectedItemId",

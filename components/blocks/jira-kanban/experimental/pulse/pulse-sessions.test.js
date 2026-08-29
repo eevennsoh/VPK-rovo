@@ -91,8 +91,8 @@ test("session rows name a human invoker when the roster can place one", async ()
 	});
 });
 
-test("the uncaptured column renders sessions through the shared agent-list block", () => {
-	assert.match(SOURCES.rail, /import \{ AgentList \} from "@\/components\/blocks\/agent-list";/u);
+test("the uncaptured column renders sessions through the Agent Session block", () => {
+	assert.match(SOURCES.rail, /import \{ AgentSession \} from "@\/components\/blocks\/agent-session";/u);
 	assert.match(
 		SOURCES.rail,
 		/const sessionItems = toPulseSessionItems\(\s*looseWork.filter\(\(item\) => !dismissedIds.has\(item\.id\)\),\s*members,\s*\);/u,
@@ -100,7 +100,7 @@ test("the uncaptured column renders sessions through the shared agent-list block
 	assert.match(SOURCES.rail, /githubWork = looseWork\.filter\(isPulseGithubLooseWork\)/u);
 	assert.match(
 		SOURCES.rail,
-		/<JiraIssue[\s\S]*variant="uncaptured-work"[\s\S]*<AgentList[\s\S]*flyout="none"[\s\S]*items=\{sessionItems\}[\s\S]*variant="uncaptured"/u,
+		/<JiraIssue[\s\S]*variant="uncaptured-work"[\s\S]*<AgentSession[\s\S]*items=\{sessionItems\}/u,
 	);
 	assert.match(SOURCES.rail, /capturedItemIds=\{capturedIds\}/u);
 	assert.match(SOURCES.rail, /onCopyResume=\{\(item\) => \{/u);

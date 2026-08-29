@@ -33,6 +33,7 @@ import { AGENT_ASSIGNMENT_DETAIL } from "./blocks/agent-assignment";
 import { AGENT_SELECTOR_DETAIL } from "./blocks/agent-selector";
 import { SKILL_SELECTOR_DETAIL } from "./blocks/skill-selector";
 import { JIRA_WORK_ITEM_DETAIL } from "./blocks/jira-work-item";
+import { AGENT_SESSION_DETAIL } from "./blocks/agent-session";
 import { AGENT_SESSION_FLYOUT_DETAIL } from "./blocks/agent-session-flyout";
 import { TASK_PROGRESS_DETAIL } from "./blocks/task-progress";
 import { TRIGGERS_DETAIL } from "./blocks/triggers";
@@ -141,6 +142,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"agent-selector": AGENT_SELECTOR_DETAIL,
 	"skill-selector": SKILL_SELECTOR_DETAIL,
 	"jira-work-item": JIRA_WORK_ITEM_DETAIL,
+	"agent-session": AGENT_SESSION_DETAIL,
 	"agent-session-flyout": AGENT_SESSION_FLYOUT_DETAIL,
 	"task-progress": TASK_PROGRESS_DETAIL,
 	triggers: TRIGGERS_DETAIL,

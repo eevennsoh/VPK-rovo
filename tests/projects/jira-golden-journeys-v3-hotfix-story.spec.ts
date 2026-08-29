@@ -123,7 +123,7 @@ test("Resume is hover and keyboard discoverable, copies a prompt, and Terminal r
 	await openStory(page);
 	await openInsights(page);
 
-	const localSession = page.locator('[data-testid="agent-list-row-lw-scope-thread"]');
+	const localSession = page.locator('[data-testid="agent-session-row-lw-scope-thread"]');
 	const resume = localSession.getByRole("button", { name: "Resume", exact: true });
 	await expect(localSession).toBeVisible();
 	await expect(resume).toBeHidden();

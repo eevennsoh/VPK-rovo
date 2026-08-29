@@ -1,12 +1,12 @@
-import type { AgentListItem } from "@/components/blocks/agent-list";
+import type { AgentSessionItem } from "@/components/blocks/agent-session";
 
 import { isPulseAgentSession, type PulseLooseWork, type PulseMember } from "../types";
 
 /**
- * Boundary between a Pulse local coding session and the shared agent-list row.
+ * Boundary between a Pulse local coding session and the shared Agent Session card.
  *
  * Uncaptured GitHub work stays a dashed card with a Link to work item chin. A
- * Claude session uses the same card chrome through AgentList `variant="uncaptured"`:
+ * Claude session uses the same card chrome through the Agent Session block:
  * the shared row (identity, static stamp, viewer machine) sits in the sunken
  * body, and the issue key becomes the chin's Link to work item suggestion. The
  * worktree stays on the flyout payload. Keeping the mapping pure and here means
@@ -39,7 +39,7 @@ export function toPulseSessionWorktree(detail: string): string | undefined {
 export function toPulseSessionItems(
 	looseWork: readonly PulseLooseWork[],
 	members: readonly PulseMember[],
-): readonly AgentListItem[] {
+): readonly AgentSessionItem[] {
 	const byId = new Map(members.map((member) => [member.id, member]));
 
 	return looseWork.flatMap((item) => {
@@ -77,6 +77,6 @@ export function toPulseSessionItems(
 			state: "complete",
 			timeLabel: PULSE_LOCAL_TIME_LABEL,
 			title: item.title,
-		} satisfies AgentListItem];
+		} satisfies AgentSessionItem];
 	});
 }
