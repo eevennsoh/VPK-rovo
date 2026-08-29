@@ -400,6 +400,7 @@ export function AgentsRowField({ value, onChange }: Readonly<{ value: readonly C
 		status: row.session !== undefined && row.session.status !== "completed"
 			? <WorkingSessionActivityByline session={row.session} sessionIndex={rowIndex} />
 			: <WorkingSessionActivityByline fallbackLabel={row.statusLabel} />,
+		statusKind: row.statusKind,
 		statusLabel: row.statusLabel,
 	}));
 	const extraAgents = selectedAgents
