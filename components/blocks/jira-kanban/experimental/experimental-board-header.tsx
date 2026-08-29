@@ -131,7 +131,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 			{viewTabs ? <div className="mt-2">{viewTabs}</div> : null}
 
 			{showBoardControls ? (
-				<div className="mt-4 flex flex-wrap items-center gap-2 px-6">
+				<div className="mt-6 flex flex-wrap items-center gap-2 px-6">
 					<InputGroup className="w-44">
 						<InputGroupAddon>
 							<Icon render={<SearchIcon label="" size="small" />} />

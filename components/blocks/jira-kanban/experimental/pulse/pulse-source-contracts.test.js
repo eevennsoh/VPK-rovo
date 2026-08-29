@@ -494,7 +494,7 @@ test("Pulse is a toggle on the board's own control row, not a separate tab", () 
 	// controlled pair rather than the only owner.
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const \[localMode, setLocalMode\] = useState<ExperimentalJiraKanbanMode>\("board"\);/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const mode = controlledMode \?\? localMode;/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const isPulse = mode === "pulse";/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const isPulse = insightsEnabled && mode === "pulse";/u);
 	// The control row stays up in Pulse. Board mode keeps the board assignee
 	// facepile, with Venn promoted so the presentation persona is visible;
 	// Pulse swaps in its roster. Both faces write the same Filter assignee field.
@@ -507,6 +507,17 @@ test("Pulse is a toggle on the board's own control row, not a separate tab", () 
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /facepile\?: ReactNode;/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /modeToggle\?: ReactNode;/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /\{facepile \?\? \(/u);
+});
+
+test("Experimental board consumers can disable the complete Insights surface", () => {
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /insightsEnabled\?: boolean;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /insightsEnabled = true/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const isPulse = insightsEnabled && mode === "pulse";/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /modeToggle=\{insightsEnabled \? \(/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/if \(insightsEnabled && \(fieldId === "parent" \|\| fieldId === "sprint"\)\)/u,
+	);
 });
 
 test("the pressed Insights label uses selected blue text on its selected surface", () => {
