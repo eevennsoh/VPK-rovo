@@ -222,6 +222,7 @@ export function AgentAssignment({
 			searchVariant="palette"
 			selectionMode="multiple"
 			selectedAgentIds={assignedAgentIds}
+			submenuAgentIds={usedAgentIds}
 		/>
 	);
 
