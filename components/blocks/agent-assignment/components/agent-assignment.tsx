@@ -220,8 +220,9 @@ export function AgentAssignment({
 			pinnedItemsLabel={pinnedItemsLabel}
 			query={query}
 			searchVariant="palette"
-			selectionMode="single"
+			selectionMode="multiple"
 			selectedAgentIds={assignedAgentIds}
+			submenuAgentIds={usedAgentIds}
 		/>
 	);
 
