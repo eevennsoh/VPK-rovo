@@ -16,13 +16,6 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"agent-list-demo-uncaptured": dynamic(
-		() =>
-			import("../demos/blocks/agent-list-demo").then((mod) => ({
-				default: mod.AgentListDemoUncaptured,
-			})),
-		{ ssr: false },
-	),
 	"agent-session-flyout-demo-composer": dynamic(
 		() =>
 			import("../demos/blocks/agent-session-flyout-demo").then((mod) => ({

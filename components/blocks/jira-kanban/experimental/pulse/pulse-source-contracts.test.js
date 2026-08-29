@@ -430,7 +430,7 @@ test("Pulse rail hangs everything off one left edge and one right edge", () => {
 	);
 	assert.match(
 		SOURCES.rail,
-		/<JiraIssue[\s\S]*variant="uncaptured-work"[\s\S]*<AgentList[\s\S]*flyout="none"[\s\S]*items=\{sessionItems\}[\s\S]*variant="uncaptured"/u,
+		/<JiraIssue[\s\S]*variant="uncaptured-work"[\s\S]*<AgentSession[\s\S]*items=\{sessionItems\}/u,
 	);
 	assert.match(SOURCES.rail, /capturedItemIds=\{capturedIds\}/u);
 	assert.match(SOURCES.rail, /onCopyResume=\{\(item\) => \{/u);
