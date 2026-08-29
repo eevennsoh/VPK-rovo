@@ -105,7 +105,9 @@ test("Resume is gated on host capability before the clipboard write", () => {
 	);
 	assert.match(CARD_SOURCE, /primary: canResume\s*\?\s*\{/u);
 	assert.match(CARD_SOURCE, /: undefined,\s*secondary: \{/u);
-	assert.match(CARD_SOURCE, /const showChin = captured \|\| hasWorkItemActions;/u);
+	// A consumer wiring only onSubtasks still needs the chin, or that control
+	// would be unreachable.
+	assert.match(CARD_SOURCE, /const showChin = captured \|\| hasWorkItemActions \|\| onSubtasks !== undefined;/u);
 	assert.match(CARD_SOURCE, /toAgentListResumeCommand\(item\)/u);
 });
 

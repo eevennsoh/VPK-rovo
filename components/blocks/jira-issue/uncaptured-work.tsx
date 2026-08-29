@@ -73,7 +73,9 @@ export function JiraIssueUncapturedWork({
 	...props
 }: Readonly<JiraIssueUncapturedWorkProps>) {
 	const hasWorkItemActions = onCreateWorkItem !== undefined || onLinkWorkItem !== undefined;
-	const showChin = captured || hasWorkItemActions;
+	// Subtasks counts too: a consumer that wires only that handler still needs
+	// the chin, or its control would be unreachable.
+	const showChin = captured || hasWorkItemActions || onSubtasks !== undefined;
 
 	return (
 		<article

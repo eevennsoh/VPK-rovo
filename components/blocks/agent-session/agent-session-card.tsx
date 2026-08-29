@@ -68,7 +68,9 @@ export function AgentSessionCard({
 	// must not render an enabled control, because the button copies the command to
 	// the clipboard before `onCopyResume` ever runs.
 	const canResume = (isResumable?.(item) ?? true) && resumeCommand.length > 0;
-	const showChin = captured || hasWorkItemActions;
+	// Subtasks counts too: a consumer that wires only that handler still needs
+	// the chin, or its control would be unreachable.
+	const showChin = captured || hasWorkItemActions || onSubtasks !== undefined;
 
 	// The same hover/focus-revealed pair Agent List rows use, with show/hide in
 	// the slot Agent List gives to Archive. The eye is a placeholder today: the
