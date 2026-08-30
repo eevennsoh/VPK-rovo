@@ -123,7 +123,7 @@ test("Agent Assignment preserves the work-item trigger and two-stage menu behavi
 		source,
 		/const showSessionView = view === "session" && pendingSessionAgent !== null;[\s\S]*const effectiveView = showSessionView[\s\S]*assignedAgents\.length === 0 \|\| view === "session"[\s\S]*"selector"/u,
 	);
-	assert.match(source, /<AssignedAgentsMenu[\s\S]*onAddAgent=\{\(\) => setView\("selector"\)\}/u);
+	assert.match(source, /<AssignedAgentsMenu[\s\S]*onAddAgent=\{handleShowSelector\}/u);
 	assert.match(source, /if \(usedAgentIds\.includes\(agentId\)\) \{\s*retainPopoverOpenRef\.current = true;\s*menuRootRef\.current\?\.focus\(\);\s*setPendingSessionAgent\(agent\);\s*setView\("session"\);/u);
 	assert.match(source, /<AgentSessionTargetMenu[\s\S]*onChoose=\{\(choice\) => handleSessionChoice\(pendingSessionAgent, choice\)\}/u);
 	assert.match(source, /<AgentSelector[\s\S]*searchVariant="palette"[\s\S]*selectionMode="single"/u);
@@ -377,9 +377,39 @@ async function loadAgentAssignmentClickHarness() {
 			"@/components/ui/hover-card",
 			`
 				import React from "react";
-				export function HoverCard(props) { return React.createElement("div", null, props.children); }
+				export function HoverCard(props) {
+					const [hoverCloseCanceled, setHoverCloseCanceled] = React.useState(false);
+					return React.createElement(
+						"div",
+						{
+							"data-hover-close-canceled": hoverCloseCanceled,
+							"data-open": props.open,
+						},
+						React.createElement("button", {
+							"data-hover-open": "",
+							onClick() {
+								props.onOpenChange?.(true, {
+									cancel() {},
+									reason: "trigger-hover",
+								});
+							},
+							type: "button",
+						}),
+						React.createElement("button", {
+							"data-hover-close": "",
+							onClick() {
+								props.onOpenChange?.(false, {
+									cancel() { setHoverCloseCanceled(true); },
+									reason: "trigger-hover",
+								});
+							},
+							type: "button",
+						}),
+						props.children,
+					);
+				}
 				export function HoverCardTrigger() { return null; }
-				export function HoverCardContent(props) { return React.createElement("div", null, props.children); }
+				export function HoverCardContent(props) { return React.createElement("div", { "data-assignment-menu": "" }, props.children); }
 			`,
 		],
 		["@/components/ui/tooltip", "export function TooltipProvider(props) { return props.children; }"],
@@ -459,6 +489,7 @@ async function loadAgentAssignmentClickHarness() {
 						onAssignedAgentSelect() {},
 						onContinueExistingSession() {},
 						onStartNewSession() {},
+						openMode: "hover",
 						usedAgentIds: ["github-copilot"],
 					});
 				}
@@ -546,7 +577,7 @@ async function loadAgentAssignmentClickHarness() {
 	return loadCjsModuleFromText(result.outputFiles[0].text, "agent-assignment-click-harness.cjs");
 }
 
-test("clicking a used agent opens the session menu with Back, Continue, and Start a new session", async () => {
+test("hover-open Agent Assignment keeps focus inside while opening the selector and used-agent session menu", async () => {
 	const { window } = parseHTML("<!doctype html><html><body><div id='app'></div></body></html>");
 	const originalGlobals = {
 		document: globalThis.document,
@@ -564,6 +595,12 @@ test("clicking a used agent opens the session menu with Back, Continue, and Star
 		window,
 		IS_REACT_ACT_ENVIRONMENT: true,
 	});
+	const originalFocus = window.HTMLElement.prototype.focus;
+	const focusedElements = [];
+	window.HTMLElement.prototype.focus = function focus() {
+		focusedElements.push(this);
+		return originalFocus.call(this);
+	};
 
 	const harness = await loadAgentAssignmentClickHarness();
 	const root = createRoot(window.document.getElementById("app"));
@@ -571,15 +608,33 @@ test("clicking a used agent opens the session menu with Back, Continue, and Star
 		await React.act(async () => {
 			root.render(React.createElement(harness.UsedAgentAssignmentProbe));
 		});
+		await React.act(async () => {
+			window.document.querySelector("[data-hover-open]").click();
+		});
+		assert.equal(window.document.querySelector("[data-open]").getAttribute("data-open"), "true");
 		assert.match(window.document.body.textContent, /Assign agent/u);
 		assert.doesNotMatch(window.document.body.textContent, /Continue in existing session/u);
 
 		await React.act(async () => {
 			const assignButton = [...window.document.querySelectorAll("button")]
 				.find((button) => button.textContent === "Assign agent");
+			assignButton.focus();
 			assignButton.click();
 		});
 		assert.match(window.document.body.textContent, /GitHub Copilot/u);
+		const lastFocusedElement = focusedElements.at(-1);
+		assert.equal(lastFocusedElement?.isConnected, true);
+		assert.ok(lastFocusedElement?.querySelector("[data-agent-selector]"));
+
+		await React.act(async () => {
+			window.document.querySelector("[data-hover-close]").click();
+		});
+		assert.equal(window.document.querySelector("[data-open]").getAttribute("data-open"), "true");
+		assert.equal(
+			window.document.querySelector("[data-hover-close-canceled]").getAttribute("data-hover-close-canceled"),
+			"true",
+		);
+		assert.ok(window.document.querySelector("[data-agent-selector]"));
 
 		await React.act(async () => {
 			window.document.querySelector("[data-agent-id='github-copilot']").click();
@@ -592,6 +647,7 @@ test("clicking a used agent opens the session menu with Back, Continue, and Star
 		await React.act(async () => {
 			root.unmount();
 		});
+		window.HTMLElement.prototype.focus = originalFocus;
 		Object.assign(globalThis, originalGlobals);
 	}
 });
