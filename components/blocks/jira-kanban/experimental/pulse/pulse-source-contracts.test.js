@@ -431,7 +431,7 @@ test("Pulse rail hangs everything off one left edge and one right edge", () => {
 		/<JiraIssue[\s\S]*variant="uncaptured-work"[\s\S]*<AgentSession[\s\S]*items=\{sessionItems\}/u,
 	);
 	assert.match(SOURCES.rail, /capturedItemIds=\{capturedIds\}/u);
-	assert.match(SOURCES.sessions, /onCopyResume: \(item: AgentSessionItem\) => \{/u);
+	assert.match(SOURCES.sessions, /onCopyResume: onResume === undefined \? undefined : \(item: AgentSessionItem\) => \{/u);
 	assert.doesNotMatch(SOURCES.rail, /variant="compact"/u);
 	assert.match(SOURCES.rail, /const participants = toUncapturedParticipants\(item, memberLookup\);/u);
 	assert.match(SOURCES.rail, /participants=\{participants\}/u);
@@ -552,7 +552,7 @@ test("Insights routes only opted-in work items and local sessions", () => {
 	assert.match(SOURCES.sessions, /looseWork\.filter\(isPulseAgentSession\)/u);
 	assert.match(SOURCES.sessions, /isLooseWorkResumable\?\.\(session\) \?\? true/u);
 	assert.match(SOURCES.rail, /toPulseSessionHandlers/u);
-	assert.match(SOURCES.sessions, /onView: \(item: AgentSessionItem\)/u);
+	assert.match(SOURCES.sessions, /onView: onResume === undefined \? undefined : \(item: AgentSessionItem\)/u);
 	assert.doesNotMatch(SOURCES.rail, /canViewItem=/u);
 	assert.match(SOURCES.stream, /onWorkItemClick\?: \(workItem: PulseWorkItem\) => void;/u);
 	assert.match(SOURCES.stream, /onViewAttention=\{handleViewAttention\}/u);
