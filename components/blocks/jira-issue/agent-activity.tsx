@@ -69,6 +69,13 @@ export interface JiraIssueAgentActivity {
  */
 export interface JiraIssueAgentSessionDragState {
 	activities: readonly JiraIssueAgentActivity[];
+	/**
+	 * The gesture was aborted (`pointercancel`) rather than released. Consumers
+	 * must clear any armed drop target WITHOUT committing it: an interrupted
+	 * pointer is not a drop, and treating it as one silently unlinks or moves a
+	 * session the user never dropped.
+	 */
+	cancelled: boolean;
 	dragging: boolean;
 	pointer: PointerDragPosition | null;
 }
@@ -86,6 +93,7 @@ export interface JiraIssueAgentSessionDragBinding {
 
 export const JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE: JiraIssueAgentSessionDragState = {
 	activities: [],
+	cancelled: false,
 	dragging: false,
 	pointer: null,
 };
@@ -206,7 +214,11 @@ function JiraIssueAgentActivityRow({
 }: Readonly<{
 	activities: readonly JiraIssueAgentActivity[];
 	onOpenChange?: (open: boolean) => void;
-	onSessionDragChange?: (dragging: boolean, pointer: PointerDragPosition | null) => void;
+	onSessionDragChange?: (
+		dragging: boolean,
+		pointer: PointerDragPosition | null,
+		cancelled: boolean,
+	) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
 	shouldReduceMotion: boolean | null;
@@ -278,8 +290,12 @@ function JiraIssueAgentActivityRow({
 		dragOffsetY.set(drag.position.y);
 	}, [dragOffsetX, dragOffsetY, drag.position.x, drag.position.y]);
 
-	function publishSessionDrag(dragging: boolean, event?: ReactPointerEvent<HTMLElement>) {
-		onSessionDragChange?.(dragging, event ? { x: event.clientX, y: event.clientY } : null);
+	function publishSessionDrag(
+		dragging: boolean,
+		event?: ReactPointerEvent<HTMLElement>,
+		cancelled = false,
+	) {
+		onSessionDragChange?.(dragging, event ? { x: event.clientX, y: event.clientY } : null, cancelled);
 	}
 
 	function endSessionDrag(event: ReactPointerEvent<HTMLElement>) {
@@ -288,9 +304,23 @@ function JiraIssueAgentActivityRow({
 		publishSessionDrag(false);
 	}
 
+	// `pointercancel` is an interruption, not a release: end the gesture but flag
+	// it so the transfer region drops its armed target instead of committing it.
+	function cancelSessionDrag(event: ReactPointerEvent<HTMLElement>) {
+		drag.bind.onPointerCancel(event);
+		setDragOffset(JIRA_ISSUE_SESSION_DRAG_ORIGIN);
+		publishSessionDrag(false, undefined, true);
+	}
+
+	// `onKeyDown` is deliberately dropped from the spread: the shared pointer-drag
+	// hook nudges position with arrow keys, but only the pointer handlers publish
+	// transfer state, so keyboard movement would displace a focused row with no
+	// way to arm, drop, or reset it. Keyboard users get the drop zones directly —
+	// they are tabbable buttons that fire the same callbacks as a drop.
+	const { onKeyDown: _ignoredPointerDragKeyDown, ...dragBindWithoutKeyboard } = drag.bind;
 	const sessionDragBind = sessionDrag
 		? {
-			...drag.bind,
+			...dragBindWithoutKeyboard,
 			// The card `<article>` is `draggable`, so a plain pointerdown would hand
 			// the gesture to native HTML5 drag. Cancelling the compatibility
 			// mousedown suppresses `dragstart`; focus has to be restored by hand.
@@ -298,7 +328,7 @@ function JiraIssueAgentActivityRow({
 				event.preventDefault();
 				event.currentTarget.focus();
 			},
-			onPointerCancel: endSessionDrag,
+			onPointerCancel: cancelSessionDrag,
 			onPointerDown: (event: ReactPointerEvent<HTMLElement>) => {
 				drag.bind.onPointerDown(event);
 				publishSessionDrag(true, event);
@@ -655,9 +685,14 @@ export function JiraIssueAgentActivityRows({
 						<JiraIssueAgentActivityRow
 							activities={rowGroup.activities}
 							onOpenChange={onOpenChange}
-							onSessionDragChange={(dragging, pointer) => {
+							onSessionDragChange={(dragging, pointer, cancelled) => {
 								setSessionDragging(dragging);
-								sessionDrag?.onDragStateChange({ activities: rowGroup.activities, dragging, pointer });
+								sessionDrag?.onDragStateChange({
+									activities: rowGroup.activities,
+									cancelled,
+									dragging,
+									pointer,
+								});
 							}}
 							onViewChat={onViewChat}
 							sessionDrag={sessionDrag}

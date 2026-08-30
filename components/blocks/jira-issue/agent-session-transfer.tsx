@@ -86,26 +86,41 @@ function MoveWorkItemTypeIcon({ type }: Readonly<{ type?: string }>) {
 	);
 }
 
+/** Identity of the session a transfer acted on. Split layout renders one row per
+ *  agent against a single config, so the callbacks have to say which one. */
+export interface JiraIssueAgentSessionRef {
+	id: string;
+	name: string;
+}
+
 /** Demo-owned copy and commit handlers. Every label has a neutral default. */
 export interface JiraIssueAgentSessionTransferConfig {
 	emptyLabel?: string;
 	headingLabel?: string;
 	moveLabel?: string;
 	moveWorkItems: readonly JiraIssueMoveWorkItem[];
-	onMove?: (workItemKey: string) => void;
-	onUnlink?: () => void;
+	/** Receives the destination key plus the session that was dragged, so a host
+	 *  rendering split rows can tell which of several sessions to re-home. */
+	onMove?: (workItemKey: string, session?: JiraIssueAgentSessionRef) => void;
+	/** Receives the session that was dragged out; see `onMove`. */
+	onUnlink?: (session?: JiraIssueAgentSessionRef) => void;
 	prompt?: string;
 	searchPlaceholder?: string;
 	unlinkLabel?: string;
 }
 
 export interface JiraIssueAgentSessionTransferProps {
+	/** The drag was interrupted rather than released: clear the armed zone
+	 *  without committing it. */
+	cancelled?: boolean;
 	config: Readonly<JiraIssueAgentSessionTransferConfig>;
 	/** True while a session row is dragged; keeps the region revealed. */
 	dragging?: boolean;
 	onMenuOpenChange?: (open: boolean) => void;
 	/** Viewport-space pointer while dragging; drives the drop-zone hit test. */
 	pointer?: JiraIssueSessionPointer | null;
+	/** Which session the gesture is carrying, forwarded to the commit callbacks. */
+	session?: JiraIssueAgentSessionRef;
 	sessionLabel?: string;
 }
 
@@ -228,9 +243,11 @@ function MoveMenu({
 
 export function JiraIssueAgentSessionTransfer({
 	config,
+	cancelled = false,
 	dragging = false,
 	onMenuOpenChange,
 	pointer,
+	session,
 	sessionLabel = "agent session",
 }: Readonly<JiraIssueAgentSessionTransferProps>) {
 	const unlinkRef = useRef<HTMLButtonElement | null>(null);
@@ -247,9 +264,13 @@ export function JiraIssueAgentSessionTransfer({
 	// The two commit handlers change identity on every render, so the drop
 	// effect reads them from a committed ref rather than resubscribing (and
 	// re-running its arm/commit pass) each time the parent re-renders.
-	const commitRef = useRef<{ onUnlink?: () => void; setMenu: (open: boolean) => void } | null>(null);
+	const commitRef = useRef<{
+		onUnlink?: (session?: JiraIssueAgentSessionRef) => void;
+		session?: JiraIssueAgentSessionRef;
+		setMenu: (open: boolean) => void;
+	} | null>(null);
 	useEffect(() => {
-		commitRef.current = { onUnlink: config.onUnlink, setMenu };
+		commitRef.current = { onUnlink: config.onUnlink, session, setMenu };
 	});
 
 	// Arms the nearest zone as the pointer moves, then commits on release — a
@@ -257,12 +278,15 @@ export function JiraIssueAgentSessionTransfer({
 	useEffect(() => {
 		const zones = readDropZones(["unlink", unlinkRef], ["move", moveRef]);
 		const next = dragging && pointer ? resolveNearestDropZone(pointer, zones, TRANSFER_DROP_HALO_PX) : null;
-		const dropped = dragging ? null : armedRef.current;
+		// A cancelled gesture ends the drag without being a drop: clear the armed
+		// target rather than committing it, or an interrupted pointer would
+		// silently unlink or move a session the user never released.
+		const dropped = dragging || cancelled ? null : armedRef.current;
 		armedRef.current = next;
 		setArmed(next);
-		if (dropped === "unlink") commitRef.current?.onUnlink?.();
+		if (dropped === "unlink") commitRef.current?.onUnlink?.(commitRef.current?.session);
 		if (dropped === "move") commitRef.current?.setMenu(true);
-	}, [dragging, pointer]);
+	}, [cancelled, dragging, pointer]);
 
 	const revealed = dragging || menuOpen;
 
@@ -299,7 +323,7 @@ export function JiraIssueAgentSessionTransfer({
 					dragging={dragging}
 					label={config.unlinkLabel ?? "Unlink"}
 					measureRef={unlinkRef}
-					onClick={() => config.onUnlink?.()}
+					onClick={() => config.onUnlink?.(session)}
 				/>
 				<Popover onOpenChange={setMenu} open={menuOpen}>
 					<PopoverTrigger
@@ -324,7 +348,7 @@ export function JiraIssueAgentSessionTransfer({
 							onEscape={() => setMenu(false)}
 							onSelectKey={(key) => {
 								setMenu(false);
-								config.onMove?.(key);
+								config.onMove?.(key, session);
 							}}
 						/>
 					</PopoverContent>

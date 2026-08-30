@@ -131,7 +131,9 @@ test("Jira issue session transfer drop zones are labelled buttons reachable by k
 	assert.match(TRANSFER_REGION_BLOCK, /description=\{`Move \$\{sessionLabel\} to another work item`\}/u);
 	assert.match(TRANSFER_SOURCE, /sessionLabel = "agent session",/u);
 	// Keyboard activation runs the same callbacks as a drop.
-	assert.match(TRANSFER_REGION_BLOCK, /onClick=\{\(\) => config\.onUnlink\?\.\(\)\}/u);
+	// A click and a drop must run the same commit, and both must say WHICH session
+	// they acted on — split layout renders one row per agent against one config.
+	assert.match(TRANSFER_REGION_BLOCK, /onClick=\{\(\) => config\.onUnlink\?\.\(session\)\}/u);
 	assert.match(TRANSFER_REGION_BLOCK, /<PopoverTrigger\s*\n\s*render=\{\s*\n\s*<TransferDropZone/u);
 	assert.match(TRANSFER_SOURCE, /const TRANSFER_ZONE_BASE_CLASS =\s*\n\s*"[^"]*outline-none[^"]*focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring\/50[^"]*"/u);
 	// A drop commits exactly what the zone's own click handler commits. The
@@ -139,11 +141,11 @@ test("Jira issue session transfer drop zones are labelled buttons reachable by k
 	// resubscribe on every parent render, so assert the ref stays in sync too.
 	assert.match(
 		TRANSFER_SOURCE,
-		/commitRef\.current = \{ onUnlink: config\.onUnlink, setMenu \};/u,
+		/commitRef\.current = \{ onUnlink: config\.onUnlink, session, setMenu \};/u,
 	);
 	assert.match(
 		TRANSFER_SOURCE,
-		/if \(dropped === "unlink"\) commitRef\.current\?\.onUnlink\?\.\(\);\s*\n\s*if \(dropped === "move"\) commitRef\.current\?\.setMenu\(true\);/u,
+		/if \(dropped === "unlink"\) commitRef\.current\?\.onUnlink\?\.\(commitRef\.current\?\.session\);\s*\n\s*if \(dropped === "move"\) commitRef\.current\?\.setMenu\(true\);/u,
 	);
 });
 
@@ -313,4 +315,44 @@ test("Jira issue dragged session reads as the at-mention chip it becomes", () =>
 	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ Tag \} from "@\/components\/ui\/tag";/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /isDraggedOut \? \(\s*\n[\s\S]*<Tag\s*\n\s*color="gray"[\s\S]*variant="editor"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /isDraggedOut\s*\n\s*\? "w-fit max-w-full justify-start rounded-full bg-surface-raised px-1 shadow-overlay"/u);
+});
+
+// --- Review findings on PR #1445 -------------------------------------------
+
+test("Jira issue pointer cancellation aborts the drag instead of committing the armed zone", () => {
+	// `pointercancel` used to call the same handler as `pointerup`, so an
+	// interrupted pointer published `dragging: false` and the transfer effect
+	// read that as a drop — silently unlinking or moving a session the user
+	// never released onto a zone.
+	assert.match(AGENT_ACTIVITY_SOURCE, /cancelled: boolean;/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /function cancelSessionDrag\([\s\S]*drag\.bind\.onPointerCancel\(event\);[\s\S]*publishSessionDrag\(false, undefined, true\);/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /onPointerCancel: cancelSessionDrag,/u);
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /onPointerCancel: endSessionDrag,/u);
+	// The commit gate itself must exclude a cancelled gesture.
+	assert.match(TRANSFER_SOURCE, /const dropped = dragging \|\| cancelled \? null : armedRef\.current;/u);
+	assert.match(TRANSFER_SOURCE, /\}, \[cancelled, dragging, pointer\]\);/u);
+});
+
+test("Jira issue session rows do not install the shared hook's incomplete keyboard drag", () => {
+	// The pointer-drag hook nudges position with arrow keys, but only the pointer
+	// handlers publish transfer state, so keyboard movement would displace a
+	// focused row with no way to arm, drop, or reset it. Keyboard users reach the
+	// drop zones directly — they are tabbable buttons running the same callbacks.
+	assert.match(AGENT_ACTIVITY_SOURCE, /const \{ onKeyDown: _ignoredPointerDragKeyDown, \.\.\.dragBindWithoutKeyboard \} = drag\.bind;/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /\.\.\.dragBindWithoutKeyboard,/u);
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /\n\t\t\t\.\.\.drag\.bind,/u);
+});
+
+test("Jira issue transfer callbacks identify which session was dragged", () => {
+	// Split layout renders one row per agent against a single shared config, so a
+	// bare `onUnlink()` / `onMove(key)` left the host unable to tell which session
+	// to act on — and free to update the wrong one.
+	assert.match(TRANSFER_SOURCE, /export interface JiraIssueAgentSessionRef \{[\s\S]*id: string;[\s\S]*name: string;/u);
+	assert.match(TRANSFER_SOURCE, /onMove\?: \(workItemKey: string, session\?: JiraIssueAgentSessionRef\) => void;/u);
+	assert.match(TRANSFER_SOURCE, /onUnlink\?: \(session\?: JiraIssueAgentSessionRef\) => void;/u);
+	assert.match(TRANSFER_SOURCE, /session\?: JiraIssueAgentSessionRef;/u);
+	assert.match(TRANSFER_SOURCE, /config\.onMove\?\.\(key, session\);/u);
+	// The card feeds the dragged row's own activity through as that identity.
+	assert.match(SOURCE, /session=\{agentSessionDragState\.activities\[0\]\}/u);
+	assert.match(SOURCE, /cancelled=\{agentSessionDragState\.cancelled\}/u);
 });

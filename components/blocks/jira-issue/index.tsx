@@ -643,10 +643,12 @@ function JiraIssueDefault({
 		<Gooey {...AGENT_SESSION_TRANSFER_GOO} className="relative w-full min-w-0 overflow-visible">
 			{agentActivityShell}
 			<JiraIssueAgentSessionTransfer
+				cancelled={agentSessionDragState.cancelled}
 				config={agentSessionTransfer}
 				dragging={agentSessionDragState.dragging}
 				onMenuOpenChange={setAgentSessionTransferMenuOpen}
 				pointer={agentSessionDragState.pointer}
+				session={agentSessionDragState.activities[0]}
 				sessionLabel={agentSessionDragState.activities[0]?.name}
 			/>
 		</Gooey>
