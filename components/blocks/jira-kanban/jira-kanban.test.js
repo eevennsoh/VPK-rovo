@@ -629,6 +629,11 @@ test("Experimental kanban cards use stroke chrome instead of raised elevation", 
 	assert.doesNotMatch(SOURCE, /chrome="stroke"/u);
 });
 
+test("Experimental kanban cards forward their configured agent activity layout", () => {
+	assert.match(EXPERIMENTAL_SOURCE, /agentActivityLayout\?: JiraIssueAgentActivityLayout;/u);
+	assert.match(EXPERIMENTAL_SOURCE, /<JiraIssue[\s\S]*agentActivityLayout=\{agentActivityLayout\}/u);
+});
+
 test("Experimental kanban cards use the hexagon avatar for agent assignees", () => {
 	assert.match(EXPERIMENTAL_SOURCE, /function getCardAssigneeAvatarShape\(card: JiraKanbanCardData\)/);
 	assert.match(EXPERIMENTAL_SOURCE, /card\.avatarSrc\?\.startsWith\("\/avatar-agent\/"\) \? "hexagon" as const : undefined/);
