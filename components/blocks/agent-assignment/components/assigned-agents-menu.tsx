@@ -93,7 +93,7 @@ function AssignedAgentTrailingStatus({
 		case "working":
 			return (
 				<span className="grid size-6 shrink-0 place-items-center">
-					<Spinner label={`${agent.name} running`} size="sm" variant="rainbow" />
+					<Spinner label={`${agent.name} running`} size="sm" />
 				</span>
 			);
 		case "needs-input":
