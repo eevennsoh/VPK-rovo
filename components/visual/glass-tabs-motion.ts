@@ -4,7 +4,6 @@ import {
 	animate,
 	useMotionValue,
 	useReducedMotion,
-	useSpring,
 	useTransform,
 } from "motion/react";
 import {
@@ -22,6 +21,7 @@ import type {
 } from "react";
 import { useLatestRef } from "@/lib/use-latest-ref";
 
+import { useMagneticProximity } from "@/components/ui-custom/hooks/use-magnetic-proximity";
 import type { LiquidGlassProps } from "@/components/website/demos/visual/shaders/liquid-glass";
 import {
 	formatCornerShapeSuperellipse,
@@ -160,19 +160,6 @@ function observeGlassTabsLayout(
 	return () => resizeObserver.disconnect();
 }
 
-// Reverse-engineered from the "Magnetic Hover" component shipped on
-// magnet.learnframer.site (chunk-ND35KM2X.mjs).
-const MAGNET_PARENT_DISTANCE = 10;
-const MAGNET_LABEL_DISTANCE = 6;
-const MAGNET_HOVER_AREA = 24;
-const MAGNET_LABEL_RATIO = MAGNET_LABEL_DISTANCE / MAGNET_PARENT_DISTANCE;
-const MAGNET_SPRING = {
-	damping: 50,
-	stiffness: 900,
-	mass: 0.5,
-	restDelta: 0.001,
-} as const;
-
 export function getGlassTabsKeyboardIndex(
 	key: string,
 	index: number,
@@ -284,18 +271,10 @@ export function useGlassTabsMotion<TValue extends string>({
 		);
 	});
 
-	const parentMagnetX = useMotionValue(0);
-	const parentMagnetY = useMotionValue(0);
-	const parentSpringX = useSpring(parentMagnetX, MAGNET_SPRING);
-	const parentSpringY = useSpring(parentMagnetY, MAGNET_SPRING);
-	const labelMagnetX = useTransform(
-		parentSpringX,
-		(nextValue) => nextValue * MAGNET_LABEL_RATIO,
-	);
-	const labelMagnetY = useTransform(
-		parentSpringY,
-		(nextValue) => nextValue * MAGNET_LABEL_RATIO,
-	);
+	// Magnetic lean of the whole shell toward the pointer. `containerRef` sits
+	// inside the element the caller transforms with `parentSpringX/Y`, so the
+	// measured rect follows the lean and the offset self-damps.
+	const magnet = useMagneticProximity(containerRef);
 
 	const leftAnimRef = useRef<ReturnType<typeof animate> | null>(null);
 	const widthAnimRef = useRef<ReturnType<typeof animate> | null>(null);
@@ -578,50 +557,6 @@ export function useGlassTabsMotion<TValue extends string>({
 		stopHoverAnims,
 	]);
 
-	useEffect(() => {
-		if (shouldReduceMotion) {
-			parentMagnetX.set(0);
-			parentMagnetY.set(0);
-			return;
-		}
-		if (typeof document === "undefined") return;
-
-		const handleMove = (event: MouseEvent) => {
-			const element = containerRef.current;
-			if (!element) return;
-			const rect = element.getBoundingClientRect();
-			if (rect.width <= 0 || rect.height <= 0) return;
-
-			const inActivation =
-				event.clientX >= rect.left - MAGNET_HOVER_AREA &&
-				event.clientX <= rect.right + MAGNET_HOVER_AREA &&
-				event.clientY >= rect.top - MAGNET_HOVER_AREA &&
-				event.clientY <= rect.bottom + MAGNET_HOVER_AREA;
-
-			if (inActivation) {
-				const dx = event.clientX - (rect.left + rect.width / 2);
-				const dy = event.clientY - (rect.top + rect.height / 2);
-				parentMagnetX.set(
-					(dx / (rect.width / 2)) * MAGNET_PARENT_DISTANCE,
-				);
-				parentMagnetY.set(
-					(dy / (rect.height / 2)) * MAGNET_PARENT_DISTANCE,
-				);
-				return;
-			}
-
-			parentMagnetX.set(0);
-			parentMagnetY.set(0);
-		};
-
-		document.addEventListener("mousemove", handleMove, { passive: true });
-		return () => {
-			document.removeEventListener("mousemove", handleMove);
-			parentMagnetX.set(0);
-			parentMagnetY.set(0);
-		};
-	}, [shouldReduceMotion, parentMagnetX, parentMagnetY]);
-
 	useEffect(
 		() => () => {
 			stopAnims();
@@ -716,10 +651,10 @@ export function useGlassTabsMotion<TValue extends string>({
 		hoverPillOpacity,
 		hoverPillWidth: hoverPillDisplayWidth,
 		hoveredIndex,
-		labelMagnetX,
-		labelMagnetY,
-		parentSpringX,
-		parentSpringY,
+		labelMagnetX: magnet.labelX,
+		labelMagnetY: magnet.labelY,
+		parentSpringX: magnet.x,
+		parentSpringY: magnet.y,
 		pillLeft: pillDisplayLeft,
 		pillWidth: pillDisplayWidth,
 		selectedIndex,

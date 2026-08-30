@@ -5,6 +5,11 @@ const { test } = require("node:test");
 
 const SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 const AGENT_ACTIVITY_SOURCE = readFileSync(join(__dirname, "agent-activity.tsx"), "utf8");
+// The summary cluster and the standalone card types were split out of index.tsx
+// to keep it under the 1000-line budget; these assertions follow them.
+const SUMMARY_SOURCE = readFileSync(join(__dirname, "summary.tsx"), "utf8");
+const TYPES_SOURCE = readFileSync(join(__dirname, "types.ts"), "utf8");
+const MODEL_SOURCE = readFileSync(join(__dirname, "agent-activity-model.ts"), "utf8");
 const AGENT_STATES_SOURCE = readFileSync(join(__dirname, "../agent-states/index.tsx"), "utf8");
 const COMPLETED_RUNS_SOURCE = readFileSync(join(__dirname, "completed-agent-runs.tsx"), "utf8");
 const CHANGED_FILES_SOURCE = readFileSync(join(__dirname, "../jira-activity/jira-activity-changed-files.tsx"), "utf8");
@@ -27,10 +32,7 @@ const ROOT_CLASS_BLOCK = SOURCE.slice(
 	SOURCE.indexOf("function handleSubtasksToggle"),
 );
 const SUBTASKS_BLOCK = SUBTASKS_SOURCE.slice(SUBTASKS_SOURCE.indexOf("export function JiraIssueSubtasks"));
-const SUMMARY_BLOCK = SOURCE.slice(
-	SOURCE.indexOf("function JiraIssueSummary"),
-	SOURCE.indexOf("export function JiraIssue(props"),
-);
+const SUMMARY_BLOCK = SUMMARY_SOURCE.slice(SUMMARY_SOURCE.indexOf("export function JiraIssueSummary"));
 const RICH_ISSUE_CONTENT_BLOCK = SOURCE.slice(
 	SOURCE.indexOf("const richIssueContent ="),
 	SOURCE.indexOf("const generativeActionMenu ="),
@@ -56,24 +58,24 @@ test("Jira issue exposes selected and dragging states on the root button", () =>
 });
 
 test("Jira issue stroke chrome drops the raised shadow and uses the disabled border token", () => {
-	assert.match(SOURCE, /export type JiraIssueChrome = "raised" \| "stroke";/u);
+	assert.match(TYPES_SOURCE, /export type JiraIssueChrome = "raised" \| "stroke";/u);
 	assert.match(SOURCE, /chrome\?: JiraIssueChrome;/u);
 	assert.match(SOURCE, /chrome = "raised",/u);
 	assert.match(SOURCE, /const usesStrokeChrome = chrome === "stroke";/u);
 	assert.match(SOURCE, /const idleBorderClassName = usesStrokeChrome\s*\n\t\t\? "border-border-disabled hover:border-border group-hover\/jira-issue:border-border"\s*\n\t\t: "border-transparent";/u);
 	assert.match(SOURCE, /\.\.\.\(usesStrokeChrome \? undefined : \{ boxShadow: token\("elevation\.shadow\.raised"\) \}\)/u);
 	assert.match(SOURCE, /\.\.\.\(usesStrokeChrome \? \{ boxShadow: "none" \} : undefined\)/u);
-	assert.match(SOURCE, /usesStrokeChrome: boolean;/u);
+	assert.match(SUMMARY_SOURCE, /usesStrokeChrome: boolean;/u);
 	assert.match(SOURCE, /usesStrokeChrome=\{usesStrokeChrome\}/u);
 	assert.match(
-		SOURCE,
+		SUMMARY_SOURCE,
 		/className=\{cn\("min-w-0 flex-1", usesStrokeChrome \? "line-clamp-2 text-sm leading-5" : "text-sm"\)\}/u,
 	);
-	assert.match(SOURCE, /<div className="flex min-w-0 flex-col gap-2">/u);
-	assert.match(SOURCE, /<TagGroup className="min-w-0 gap-1 overflow-hidden">/u);
+	assert.match(SUMMARY_SOURCE, /<div className="flex min-w-0 flex-col gap-2">/u);
+	assert.match(SUMMARY_SOURCE, /<TagGroup className="min-w-0 gap-1 overflow-hidden">/u);
 });
 
-test("Jira issue stroke chrome uses the same disabled rest border with or without agents", () => {
+test("Jira issue stroke chrome keeps its rest border everywhere except the agent shell's white surface", () => {
 	assert.match(SOURCE, /const idleBorderClassName = usesStrokeChrome\s*\n\t\t\? "border-border-disabled hover:border-border group-hover\/jira-issue:border-border"\s*\n\t\t: "border-transparent";/u);
 	assert.match(SOURCE, /const agentActivityIdleBorderClassName = usesStrokeChrome\s*\n\t\t\? "border-border-disabled group-hover\/jira-issue-card:border-border"\s*\n\t\t: "border-transparent";/u);
 	assert.match(SOURCE, /usesAgentActivityShell\s*\n\t\t\t\? "group\/jira-issue-card border-transparent bg-transparent"/u);
@@ -83,8 +85,14 @@ test("Jira issue stroke chrome uses the same disabled rest border with or withou
 	);
 	assert.match(
 		ROOT_CLASS_BLOCK,
-		/const agentActivitySurfaceClassName = cn\([\s\S]*selected[\s\S]*\? "border-border-selected bg-bg-selected"[\s\S]*: active[\s\S]*\? `\$\{agentActivityIdleBorderClassName\} bg-bg-selected`[\s\S]*: `\$\{agentActivityIdleBorderClassName\} bg-surface`/u,
+		/const agentActivitySurfaceClassName = cn\([\s\S]*selected[\s\S]*\? "border-border-selected bg-bg-selected"[\s\S]*: active[\s\S]*\? `\$\{agentActivityIdleBorderClassName\} bg-bg-selected`[\s\S]*: `\$\{agentActivityRestBorderClassName\} bg-surface`/u,
 	);
+	// Only the resting white surface ON THE GREY AGENT BACKDROP swaps to a
+	// surface-coloured hairline: a disabled-grey border over white composites to
+	// the gutter colour, which read as the card being 1px narrower than the chin
+	// rows. With no active shell the card is on the page background and keeps its
+	// stroke outline. Hover still darkens; selected/active are not on white.
+	assert.match(SOURCE, /const agentActivityRestBorderClassName = !hasActiveAgentActivityShell\s*\n\t\t\? agentActivityIdleBorderClassName\s*\n\t\t: usesStrokeChrome\s*\n\t\t\t\? "border-surface group-hover\/jira-issue-card:border-border"\s*\n\t\t\t: "border-transparent";/u);
 });
 
 test("Jira issue exposes the experimental stroke visual as a catalog example", () => {
@@ -99,7 +107,7 @@ test("Jira issue exposes the experimental stroke visual as a catalog example", (
 });
 
 test("Jira issue owns an uncaptured-work variant with a suggested-link chin", () => {
-	assert.match(SOURCE, /export type JiraIssueVariant = "default" \| "uncaptured-work";/u);
+	assert.match(TYPES_SOURCE, /export type JiraIssueVariant = "default" \| "uncaptured-work";/u);
 	assert.match(SOURCE, /export interface JiraIssueUncapturedWorkProps/u);
 	assert.match(SOURCE, /variant: "uncaptured-work";/u);
 	assert.match(SOURCE, /participants: readonly JiraIssueParticipant\[\];/u);
@@ -221,7 +229,7 @@ test("Jira issue reserves a stable title action slot and opens the built-in acti
 	assert.match(SOURCE, /import \{ JiraIssueMoreMenu, type JiraIssueMoreAction \} from "@\/components\/blocks\/jira-issue\/more-menu";/u);
 	assert.match(SOURCE, /showMoreAction\?: boolean;/u);
 	assert.match(SOURCE, /onMoreActionSelect\?: \(action: JiraIssueMoreAction\) => void;/u);
-	assert.match(SOURCE, /<div className="size-6 shrink-0" data-slot="jira-issue-more-action" \/>/u);
+	assert.match(SUMMARY_SOURCE, /<div className="size-6 shrink-0" data-slot="jira-issue-more-action" \/>/u);
 	assert.match(SOURCE, /<JiraIssueMoreMenu[\s\S]*issueKey=\{issueKey\}[\s\S]*onActionSelect=\{onMoreActionSelect\}[\s\S]*onOpenChange=\{setMoreActionMenuOpen\}/u);
 	assert.match(MORE_MENU_SOURCE, /import ShowMoreHorizontalIcon from "@atlaskit\/icon\/core\/show-more-horizontal";/u);
 	assert.match(MORE_MENU_SOURCE, /<DropdownMenu onOpenChange=\{onOpenChange\}>/u);
@@ -277,13 +285,23 @@ test("Jira issue aggregates active agents into one priority row without a hover 
 	assert.match(AGENT_ACTIVITY_SOURCE, /className="ml-px grid size-4 shrink-0 place-items-center text-icon-subtle"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<AiAgentIcon label="" \/>/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AvatarFallback[\s\S]*\{summary\.activityCount\}/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /className="flex h-6 w-full[^"]*rounded-md[^"]*"/u);
+	// At rest the row is the full-width chin row; dragged out it collapses to the
+	// at-mention chip, so the width/shape classes live on the two branches.
+	assert.match(AGENT_ACTIVITY_SOURCE, /className=\{cn\(\s*"flex h-6 items-center[^"]*",\s*\n\s*isDraggedOut/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /: "w-full min-w-0 justify-between rounded-md px-2 py-1 hover:bg-bg-neutral-subtle-hovered"/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /className="flex h-6 w-full[^"]*rounded-b-\[6px\] rounded-t-sm[^"]*"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const isSingleAgent = summary\.activityCount === 1;/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /onClick=\{canOpenChat \? \(\) => onViewChat\?\.\(activities\[0\]\) : undefined\}/u);
+	// The open-chat handler is hoisted so the drag hook can own `bind.onClick`
+	// and swallow the click that ends a transfer gesture; without a session-drag
+	// binding the row falls back to a plain `onClick`.
+	assert.match(AGENT_ACTIVITY_SOURCE, /const handleOpenChat = canOpenChat \? \(\) => onViewChat\?\.\(activities\[0\]\) : undefined;/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /\{\.\.\.\(sessionDragBind \?\? \{ onClick: handleOpenChat \}\)\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /from "@\/components\/blocks\/agent-assignment"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /openMode="hover"/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /if \(isSingleAgent\) \{[\s\S]*return rowButton;[\s\S]*<AgentAssignment/u);
+	// The gooey wrapper is applied around the whole `AgentAssignment` on the
+	// multi-agent path, never around `rowButton`, so the hover card keeps the
+	// cloned `aria-expanded` and its merged trigger ref.
+	assert.match(AGENT_ACTIVITY_SOURCE, /if \(isSingleAgent\) \{[\s\S]*return withSessionDragGoo\(rowButton\);[\s\S]*withSessionDragGoo\(\s*<AgentAssignment/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /from "@\/components\/blocks\/agent-list"/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /from "@\/components\/blocks\/agent-states"/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /from "@\/components\/ui\/hover-card"/u);
@@ -298,20 +316,20 @@ test("Jira issue shows PR metadata with the specified summary-row spacing", () =
 	assert.match(SOURCE, /pullRequestNumber\?: number;[\s\S]*pullRequestStatus\?: JiraIssuePullRequestStatus;/u);
 	assert.match(SOURCE, /const inferredPullRequestNumber = agentDoneRuns\.find\(\(run\) => run\.pullRequestNumber\)\?\.pullRequestNumber;/u);
 	assert.match(SOURCE, /const resolvedPullRequestNumber = pullRequestNumber \?\? inferredPullRequestNumber;/u);
-	assert.match(SOURCE, /function JiraIssuePullRequestCluster\(/u);
+	assert.match(SUMMARY_SOURCE, /function JiraIssuePullRequestCluster\(/u);
 	assert.match(SUMMARY_BLOCK, /\{issueKey\}[\s\S]*\{pullRequestNumber \? \([\s\S]*<JiraIssuePullRequestCluster[\s\S]*usesStrokeChrome=\{usesStrokeChrome\}/u);
 	assert.doesNotMatch(SUMMARY_BLOCK, /usesStrokeChrome && pullRequestNumber \? \(/u);
-	assert.match(SOURCE, /export type JiraIssuePullRequestStatus = "open" \| "failed" \| "merged";/u);
-	assert.match(SOURCE, /function getJiraIssuePullRequestPresentation\(/u);
-	assert.match(SOURCE, /case "failed":[\s\S]*MergeFailureIcon[\s\S]*text-icon-danger[\s\S]*case "merged":[\s\S]*MergeSuccessIcon[\s\S]*text-icon-accent-purple[\s\S]*case "open":[\s\S]*PullRequestIcon[\s\S]*text-icon-accent-lime/u);
+	assert.match(TYPES_SOURCE, /export type JiraIssuePullRequestStatus = "open" \| "failed" \| "merged";/u);
+	assert.match(SUMMARY_SOURCE, /function getJiraIssuePullRequestPresentation\(/u);
+	assert.match(SUMMARY_SOURCE, /case "failed":[\s\S]*MergeFailureIcon[\s\S]*text-icon-danger[\s\S]*case "merged":[\s\S]*MergeSuccessIcon[\s\S]*text-icon-accent-purple[\s\S]*case "open":[\s\S]*PullRequestIcon[\s\S]*text-icon-accent-lime/u);
 	assert.match(SOURCE, /pullRequestNumber=\{resolvedPullRequestNumber\}/u);
 	assert.match(SOURCE, /pullRequestStatus=\{pullRequestStatus\}/u);
-	assert.match(SOURCE, /function JiraIssuePullRequestCluster\([\s\S]*usesStrokeChrome[\s\S]*\? "font-mono text-xs font-normal leading-4 text-text-subtlest"[\s\S]*: "text-xs font-semibold text-text-subtlest"/u);
+	assert.match(SUMMARY_SOURCE, /function JiraIssuePullRequestCluster\([\s\S]*usesStrokeChrome[\s\S]*\? "font-mono text-xs font-normal leading-4 text-text-subtlest"[\s\S]*: "text-xs font-semibold text-text-subtlest"/u);
 	assert.match(SUMMARY_BLOCK, /usesStrokeChrome \? "flex items-center gap-3" : "flex items-center gap-2"/u);
 });
 
 test("Jira issue stroke chrome matches the work-item key type on the issue-key cluster", () => {
-	assert.match(SOURCE, /import \{ IconTile \} from "@\/components\/ui\/icon-tile";/);
+	assert.match(SUMMARY_SOURCE, /import \{ IconTile \} from "@\/components\/ui\/icon-tile";/);
 	assert.match(SUMMARY_BLOCK, /usesStrokeChrome\s*\n\s*\? "flex items-center gap-1\.5"\s*\n\s*: "flex items-center gap-1"/);
 	assert.match(SUMMARY_BLOCK, /usesStrokeChrome\s*\n\s*\? "font-mono text-xs font-normal leading-4 text-text-subtlest"\s*\n\s*: "text-xs font-semibold text-text-subtlest"/);
 	assert.match(SUMMARY_BLOCK, /usesStrokeChrome \? \(\s*<IconTile[\s\S]*icon=\{<TaskIcon label="" color=\{token\("color\.icon\.brand"\)\} size="small" \/>\}[\s\S]*iconSize="small"[\s\S]*label=\{issueTypeLabel\}[\s\S]*size="xxsmall"[\s\S]*variant="transparent"/);
@@ -326,16 +344,16 @@ test("Jira issue uses the 8px large radius token", () => {
 
 test("Jira issue switches rich variants to an article with internal controls", () => {
 	assert.match(SOURCE, /const hasAgentActivityPresentation = agentActivityMode !== undefined \|\| Boolean\(agentActivities\?\.length\) \|\| hasAgentDoneNotification;/);
-	assert.match(SOURCE, /const hasInteractiveContent = showMoreAction \|\| hasSubtasks \|\| Boolean\(parentEpicControl\) \|\| hasAgentActivityPresentation \|\| Boolean\(generativeAction\);/);
+	assert.match(SOURCE, /const hasInteractiveContent = showMoreAction \|\| hasSubtasks \|\| Boolean\(parentEpicControl\) \|\| hasAgentActivityPresentation \|\| Boolean\(generativeAction\) \|\| Boolean\(agentSessionTransfer\);/);
 	assert.match(SOURCE, /const shouldRenderIssueClickButton = Boolean\(props\.onClick && !parentEpicControl\);/);
 	assert.match(SOURCE, /<article[\s\S]*data-selected=\{selected \|\| undefined\}/);
 	assert.match(SOURCE, /draggable=\{draggable\}/);
 	assert.match(SOURCE, /shouldRenderIssueClickButton \? \([\s\S]*aria-pressed=\{ariaPressed \?\? selected\}/);
 	assert.match(SOURCE, /parentEpicControl\?: ReactNode;/);
 	assert.match(SOURCE, /parentEpicControl=\{parentEpicControl\}/);
-	assert.match(SOURCE, /<p className="text-sm font-semibold leading-5 text-text-subtle">Parent<\/p>/);
+	assert.match(SUMMARY_SOURCE, /<p className="text-sm font-semibold leading-5 text-text-subtle">Parent<\/p>/);
 	assert.match(SOURCE, /showPriorityIndicator\?: boolean;/);
-	assert.match(SOURCE, /\{showPriorityIndicator \? \([\s\S]*<PriorityIcon[\s\S]*label=\{`\$\{priority\} priority`\}[\s\S]*color=\{priorityColor\}[\s\S]*size=\{usesStrokeChrome \? "small" : undefined\}/);
+	assert.match(SUMMARY_SOURCE, /\{showPriorityIndicator \? \([\s\S]*<PriorityIcon[\s\S]*label=\{`\$\{priority\} priority`\}[\s\S]*color=\{priorityColor\}[\s\S]*size=\{usesStrokeChrome \? "small" : undefined\}/);
 	assert.match(SOURCE, /className="w-full p-3 text-left outline-none/);
 	assert.match(SOURCE, /<div className="p-3">\{summaryContent\}<\/div>/);
 	assert.match(SUBTASKS_SOURCE, /import \{ JiraIssueCountBadge \} from "@\/components\/blocks\/jira-issue\/count-badge";/);
@@ -354,7 +372,7 @@ test("Jira issue renders a reusable generative action command menu", () => {
 	assert.match(SOURCE, /generativeAction,/);
 	assert.doesNotMatch(SOURCE, /DEFAULT_JIRA_ISSUE_GENERATIVE_ACTION|onSubmit: \(\) => undefined/u);
 	assert.match(SOURCE, /const generativeActionMenu = generativeAction \? \([\s\S]*<JiraIssueGenerativeActionMenu[\s\S]*action=\{generativeAction\}[\s\S]*issue=\{\{ issueKey, summary \}\}[\s\S]*revealActive=\{generativeActionRevealActive\}[\s\S]*\/>[\s\S]*\) : null;/);
-	assert.match(SOURCE, /const hasInteractiveContent = showMoreAction \|\| hasSubtasks \|\| Boolean\(parentEpicControl\) \|\| hasAgentActivityPresentation \|\| Boolean\(generativeAction\);/);
+	assert.match(SOURCE, /const hasInteractiveContent = showMoreAction \|\| hasSubtasks \|\| Boolean\(parentEpicControl\) \|\| hasAgentActivityPresentation \|\| Boolean\(generativeAction\) \|\| Boolean\(agentSessionTransfer\);/);
 	assert.match(SOURCE, /\{generativeActionMenu\}/);
 	assert.match(SOURCE, /"group\/jira-issue relative w-full min-w-0 overflow-visible outline-none"/);
 
@@ -379,8 +397,8 @@ test("Jira issue renders a reusable generative action command menu", () => {
 	assert.match(SOURCE, /onPointerOut=\{handleGenerativeActionPointerOut\}/);
 	assert.match(
 		SOURCE,
-		/function handleGenerativeActionPointerOver\(event: PointerEvent<HTMLElement>\) \{[\s\S]*event\.target instanceof Element[\s\S]*event\.target\.closest\("\[data-slot='jira-issue-agent-row'\]"\)[\s\S]*setGenerativeActionRevealSuppressed\(true\);[\s\S]*setGenerativeActionPointerActive\(false\);[\s\S]*return;/,
-		"agent rows should suppress the portaled sparkle before their hover cards open",
+		/function handleGenerativeActionPointerOver\(event: PointerEvent<HTMLElement>\) \{[\s\S]*event\.target instanceof Element[\s\S]*event\.target\.closest\("\[data-slot='jira-issue-agent-row'\], \[data-slot='jira-issue-session-transfer'\]"\)[\s\S]*setGenerativeActionRevealSuppressed\(true\);[\s\S]*setGenerativeActionPointerActive\(false\);[\s\S]*return;/,
+		"agent rows and the transfer region should suppress the portaled sparkle before their own surfaces open",
 	);
 	assert.match(SOURCE, /onFocusCapture=\{handleGenerativeActionFocusCapture\}/);
 	assert.match(SOURCE, /onBlurCapture=\{handleGenerativeActionBlurCapture\}/);
@@ -502,10 +520,12 @@ test("Jira issue renders one aggregate agent row with prioritized status and no 
 	assert.match(AGENT_ACTIVITY_SOURCE, /status: activity\.label,[\s\S]*statusSequence: activity\.state === "working" \? getJiraIssueAgentWorkingLabels\(activity\) : undefined,[\s\S]*statusCycleIntervalMs: activity\.cycleIntervalMs[\s\S]*statusCycleJitterMs: activity\.cycleIntervalJitterMs/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /duration=\{JIRA_ISSUE_AGENT_SHIMMER_DURATION\}[\s\S]*spread=\{JIRA_ISSUE_AGENT_SHIMMER_SPREAD\}[\s\S]*\{summary\.label\}[\s\S]*<AnimatedDots/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /usesStrokeChrome \? "text-xs leading-4" : "text-sm leading-5"/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ PixelLoader \} from "@\/components\/ui-custom\/pixel-loader";/u);
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /PixelLoader/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /usesStrokeChrome \? "gap-1\.5" : "gap-2"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /usesStrokeChrome \? "size-4" : "-my-1 size-6"/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /usesStrokeChrome \? \([\s\S]*<PixelLoader className="justify-center" pattern="diagonal-top-left" shape="dot" size="small" \/>[\s\S]*: \([\s\S]*<Spinner label="" size="sm" \/>/u);
+	// Both chromes use the standard (non-rainbow) Spinner for the working indicator;
+	// the stroke chrome no longer swaps in a PixelLoader.
+	assert.match(AGENT_ACTIVITY_SOURCE, /aria-hidden="true"\s*\n\s*>\s*\n\s*<Spinner label="" size="sm" \/>/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<HoverCard/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AgentList/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AgentStates/u);
@@ -515,13 +535,16 @@ test("Jira issue renders one aggregate agent row with prioritized status and no 
 		AGENT_ACTIVITY_SOURCE,
 		/"block min-w-0 flex-1 truncate text-text-subtlest",[\s\S]*usesStrokeChrome \? "text-xs leading-4" : "text-sm leading-5"/u,
 	);
-	assert.match(AGENT_ACTIVITY_SOURCE, /className=\{cn\("flex w-full min-w-0 flex-col overflow-hidden", hasActivities && "px-1 py-1"\)\}/u);
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/className=\{cn\(\s*"flex w-full min-w-0 flex-col",[\s\S]*sessionDragging \? "overflow-visible" : "overflow-hidden",\s*hasActivities && "px-1 py-1",\s*\)\}/u,
+	);
 	assert.match(SOURCE, /"relative w-full min-w-0 overflow-visible rounded-\[10px\] outline-none"/);
 	assert.match(SOURCE, /"group\/jira-issue relative w-full min-w-0 overflow-visible outline-none"/);
 	assert.match(SOURCE, /const hasAgentDoneNotification = resolvedAgentActivityMode === "completed" && agentDoneRuns\.length > 0;/);
 	assert.match(SOURCE, /const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working"[\s\S]*\|\| resolvedAgentActivityMode === "awaiting-input"[\s\S]*\|\| hasAgentDoneNotification;/);
-	assert.match(SOURCE, /const agentActivitySurfaceInset = hasActiveAgentActivityShell \? 5 : 0;/);
-	assert.match(SOURCE, /const agentActivitySurfaceClassName = cn\([\s\S]*"pointer-events-none absolute border"[\s\S]*`\$\{agentActivityIdleBorderClassName\} bg-surface`/);
+	assert.match(SOURCE, /const agentActivitySurfaceInset = hasActiveAgentActivityShell \? 4 : 0;/);
+	assert.match(SOURCE, /const agentActivitySurfaceClassName = cn\([\s\S]*"pointer-events-none absolute border"[\s\S]*`\$\{agentActivityRestBorderClassName\} bg-surface`/);
 	assert.doesNotMatch(SOURCE, /agentActivityShellPadding/);
 	assert.doesNotMatch(SOURCE, /agentActivityBackdropOutset/);
 	assert.match(SOURCE, /data-agent-activity-mode=\{resolvedAgentActivityMode\}/);
@@ -548,13 +571,21 @@ test("Jira issue aggregates completed agents into a Finished row with failure pr
 	assert.match(COMPLETED_RUNS_SOURCE, /className="flex h-6 w-full[^"]*rounded-b-\[6px\] rounded-t-sm[^"]*"/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /<AgentList[\s\S]*className="w-full border-0 bg-surface-overlay shadow-2xl"[\s\S]*flyout="none"[\s\S]*items=\{completedItems\}[\s\S]*renderFlyout=\{renderCompletedRunFlyout\}[\s\S]*variant="compact"/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /import \{ JiraActivityChangedFiles \}/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /function renderCompletedRunFlyout\([\s\S]*item: AgentListItem,[\s\S]*\{ close \}: AgentListCustomFlyoutActions,[\s\S]*\)[\s\S]*<JiraActivityChangedFiles[\s\S]*entry=\{getCompletedRunEntry\(run\)\}[\s\S]*status=\{run\.state\}/u);
+	// The changed-files detail card is shared: the merged aggregate flyout and each
+	// split row both render CompletedRunFlyoutCard, so the two layouts cannot drift.
+	assert.match(COMPLETED_RUNS_SOURCE, /function renderCompletedRunFlyout\([\s\S]*item: AgentListItem,[\s\S]*\{ close \}: AgentListCustomFlyoutActions,[\s\S]*\)[\s\S]*<CompletedRunFlyoutCard[\s\S]*run=\{run\}/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /function CompletedRunFlyoutCard\([\s\S]*<JiraActivityChangedFiles[\s\S]*entry=\{getCompletedRunEntry\(run\)\}[\s\S]*status=\{run\.state\}/u);
 	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /pullRequestNumber=\{run\.pullRequestNumber\}/u);
 	assert.match(CHANGED_FILES_SOURCE, /<ArtifactList[\s\S]*onOpen=\{onOutputOpen\}/u);
 	assert.match(
 		COMPLETED_RUNS_SOURCE,
-		/onOutputOpen=\{\(output\) => \{[\s\S]*if \(output\.pullRequest\) \{[\s\S]*close\(\);[\s\S]*handleAggregateOpenChange\(false\);[\s\S]*onReview\?\.\(run\);/u,
+		/onOutputOpen=\{\(output\) => \{[\s\S]*if \(output\.pullRequest\) \{[\s\S]*onClose\(\);[\s\S]*onReview\?\.\(run\);/u,
 		"opening a pull-request review should dismiss its agent flyout first",
+	);
+	assert.match(
+		COMPLETED_RUNS_SOURCE,
+		/onClose=\{\(\) => \{[\s\S]*close\(\);[\s\S]*handleAggregateOpenChange\(false\);/u,
+		"the merged aggregate must close both the per-run flyout and the aggregate hover card",
 	);
 	assert.match(SOURCE, /onAgentDoneRunReview\?: \(run: JiraIssueCompletedAgentRun\) => void;/u);
 	assert.match(SOURCE, /<JiraIssueAgentDone[\s\S]*onReview=\{onAgentDoneRunReview\}[\s\S]*usesStrokeChrome=\{usesStrokeChrome\}/u);
@@ -576,13 +607,13 @@ test("Jira issue animates agent state transitions with Motion", () => {
 	assert.match(LIB_SOURCE, /export const JIRA_ISSUE_MOTION_REDUCED: Transition = \{ duration: 0 \};/);
 	assert.match(SOURCE, /const shouldReduceMotion = useReducedMotion\(\);/);
 	assert.match(LIB_SOURCE, /export function getJiraIssuePresenceMotion\(shouldReduceMotion: boolean \| null\)[\s\S]*initial: false/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*\{summary \? \([\s\S]*<motion\.div[\s\S]*key=\{`\$\{summary\.priorityState\}-\$\{summary\.activityCount\}`\}[\s\S]*exit=\{presenceMotion\.exit\}[\s\S]*initial=\{presenceMotion\.initial\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*\{rowGroups\.map\(\(rowGroup\) => \([\s\S]*<motion\.div[\s\S]*key=\{rowGroup\.key\}[\s\S]*exit=\{presenceMotion\.exit\}[\s\S]*initial=\{presenceMotion\.initial\}/u);
 	assert.match(SOURCE, /const hasIssueRows = hasSubtasks;/);
 	assert.match(SOURCE, /const issueRowsClassName = cn\("pt-1", !\(hasSubtasks && resolvedSubtasksExpanded\) && "pb-1"\);/);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*key="agent-review"[\s\S]*<JiraIssueAgentDone[\s\S]*runs=\{agentDoneRuns\}/u);
 	assert.match(SOURCE, /const usesAgentActivityShell = hasAgentActivityPresentation;/);
 	assert.match(SOURCE, /const agentActivityBackdropAnimation = \{[\s\S]*left: 0,[\s\S]*opacity: hasActiveAgentActivityShell \? 1 : 0,[\s\S]*right: 0,[\s\S]*top: 0/);
-	assert.match(SOURCE, /an inset of 5 gives the active agent shell a visible 4px reveal/);
+	assert.match(SOURCE, /an inset of 4\s*\n\t\/\/ puts them 4px from the article edge, flush with the `px-1` gutter the chin/);
 	assert.match(SOURCE, /const agentActivitySurfacePosition = agentActivitySurfaceInset - 1;/);
 	assert.match(SOURCE, /const agentActivitySurfaceAnimation = \{[\s\S]*bottom: -1,[\s\S]*left: agentActivitySurfacePosition,[\s\S]*right: agentActivitySurfacePosition,[\s\S]*top: agentActivitySurfacePosition/);
 	assert.match(SOURCE, /<article[\s\S]*className=\{agentActivityArticleClassName\}[\s\S]*data-agent-activity-mode=\{resolvedAgentActivityMode\}/);
@@ -634,9 +665,8 @@ test("Jira issue agent activity demo is registered in docs and variant registry"
 	assert.match(PAGE_SOURCE, /const \{ chatContextBar, externalThinkingMessageId, openAgentChat \} = useAsxAgentChatDemo\(\);/);
 	assert.match(PAGE_SOURCE, /const openActivityChat = useCallback\(\(activity: JiraIssueAgentActivity\) => \{[\s\S]*openAgentChat\(\{[\s\S]*agentId: activity\.id,[\s\S]*agentName: activity\.name,[\s\S]*question: activity\.question,[\s\S]*\}\);[\s\S]*\}, \[openAgentChat\]\);/);
 	assert.match(PAGE_SOURCE, /const handleAgentActivityViewChat = openActivityChat;/);
-	assert.match(PAGE_SOURCE, /const handleAgentActivityQuestionSubmit = openActivityChat;/);
 	assert.match(PAGE_SOURCE, /const handleGenerativeActionSubmit = useCallback\(\(request: JiraIssueGenerativeActionRequest\) => \{[\s\S]*openAgentChat\(\{[\s\S]*request: request\.prompt,[\s\S]*\}\);[\s\S]*\}, \[openAgentChat\]\);/);
-	assert.match(PAGE_SOURCE, /<RovoChatProvider agentProfiles=\{ASX_CHAT_AGENT_PROFILES\}>[\s\S]*<JiraIssueAgentActivityStatesDemo chrome=\{variant === "agent-activity-states-experimental" \? "stroke" : "raised"\} \/>[\s\S]*<\/RovoChatProvider>/);
+	assert.match(PAGE_SOURCE, /<RovoChatProvider agentProfiles=\{ASX_CHAT_AGENT_PROFILES\}>[\s\S]*<JiraIssueAgentActivityStatesDemo[\s\S]*agentActivityLayout=\{isExperimentalAgentActivityVariant \? "split" : "merged"\}[\s\S]*chrome=\{isExperimentalAgentActivityVariant \? "stroke" : "raised"\}[\s\S]*\/>[\s\S]*<\/RovoChatProvider>/);
 	assert.doesNotMatch(PAGE_SOURCE, /request-review-agent/);
 	assert.match(PAGE_SOURCE, /\{ value: "default", label: "Default" \}/);
 	assert.match(PAGE_SOURCE, /\{ value: "single-agent-working", label: "1 agent" \}/);
@@ -657,10 +687,15 @@ test("Jira issue agent activity demo is registered in docs and variant registry"
 	assert.doesNotMatch(PAGE_SOURCE, /\{ value: "awaiting-user-input", label: "Awaiting user input" \}/);
 	assert.doesNotMatch(PAGE_SOURCE, /\{ value: "agent-completed-work", label: "Agent completed work" \}/);
 	assert.doesNotMatch(PAGE_SOURCE, /flex flex-wrap items-center justify-center gap-2/);
-	assert.match(PAGE_SOURCE, /agentActivityState === "awaiting-user-input"[\s\S]*\? JIRA_ISSUE_AWAITING_INPUT_ACTIVITIES/);
+	// Activity selection moved out of the JSX into a switch so the transfer
+	// phases can drop the row once a session has been moved away.
+	assert.match(PAGE_SOURCE, /function getDemoAgentActivities\(\s*state: JiraIssueAgentActivityDemoState,\s*sessionMoved: boolean,\s*\): readonly JiraIssueAgentActivity\[\] \| undefined \{/u);
+	assert.match(PAGE_SOURCE, /case "awaiting-user-input":\s*\n\s*return JIRA_ISSUE_AWAITING_INPUT_ACTIVITIES;/u);
 	assert.match(PAGE_SOURCE, /subtasks=\{JIRA_ISSUE_DEMO_SUBTASKS\}/);
 	assert.doesNotMatch(PAGE_SOURCE, /subtasks=\{agentActivityState === "agent-completed-work" \? JIRA_ISSUE_DEMO_SUBTASKS : undefined\}/);
-	assert.match(PAGE_SOURCE, /setAgentActivityState\(state\.value\)/);
+	// Tab clicks route through `selectDemoState`, which also drops the pending
+	// notice timer and any moved-session state before switching phase.
+	assert.match(PAGE_SOURCE, /onClick=\{\(\) => selectDemoState\(state\.value\)\}/u);
 	assert.match(PAGE_SOURCE, /function getExperimentalDemoPullRequest\(/);
 	assert.match(PAGE_SOURCE, /case "awaiting-user-input":[\s\S]*pullRequestNumber: 812[\s\S]*pullRequestStatus: "open"/);
 	assert.match(PAGE_SOURCE, /case "agent-completed-work":[\s\S]*pullRequestStatus: "failed"/);
@@ -686,16 +721,33 @@ test("Jira issue agent activity demo is registered in docs and variant registry"
 
 test("Jira issue agent activity demo has an experimental stroke-chrome duplicate", () => {
 	// The experimental duplicate reuses the same demo component and only swaps
-	// the card chrome, so the two sections cannot drift apart.
+	// the card chrome plus the split agent-activity chin layout, so the two
+	// sections cannot drift apart.
 	assert.match(PAGE_SOURCE, /const isAgentActivityVariant = variant === "agent-activity-states" \|\| variant === "agent-activity-states-experimental";/);
-	assert.match(PAGE_SOURCE, /interface JiraIssueAgentActivityStatesDemoProps \{[\s\S]*chrome\?: JiraIssueChrome;[\s\S]*\}/);
-	assert.match(PAGE_SOURCE, /function JiraIssueAgentActivityStatesDemo\(\{ chrome = "raised" \}: Readonly<JiraIssueAgentActivityStatesDemoProps> = \{\}\): React\.ReactElement \{/);
-	assert.match(PAGE_SOURCE, /<JiraIssue[\s\S]*chrome=\{chrome\}/);
+	assert.match(PAGE_SOURCE, /const isExperimentalAgentActivityVariant = variant === "agent-activity-states-experimental";/);
+	assert.match(PAGE_SOURCE, /interface JiraIssueAgentActivityStatesDemoProps \{[\s\S]*agentActivityLayout\?: JiraIssueAgentActivityLayout;[\s\S]*chrome\?: JiraIssueChrome;[\s\S]*\}/);
+	assert.match(PAGE_SOURCE, /function JiraIssueAgentActivityStatesDemo\(\{[\s\S]*agentActivityLayout = "merged",[\s\S]*chrome = "raised",[\s\S]*\}: Readonly<JiraIssueAgentActivityStatesDemoProps> = \{\}\): React\.ReactElement \{/);
+	assert.match(PAGE_SOURCE, /<JiraIssue[\s\S]*agentActivityLayout=\{agentActivityLayout\}[\s\S]*chrome=\{chrome\}/);
 	assert.match(DEMO_SOURCE, /export function JiraIssueDemoAgentActivityStatesExperimental\(\)/);
 	assert.match(DEMO_SOURCE, /<JiraIssuePage variant="agent-activity-states-experimental" \/>/);
 	assert.match(DETAILS_SOURCE, /id: "agent-activity-states-experimental"[\s\S]*demoSlug: "jira-issue-demo-agent-activity-states-experimental"/);
 	assert.match(VARIANT_REGISTRY_SOURCE, /"jira-issue-demo-agent-activity-states-experimental": dynamic\(/);
 	assert.match(VARIANT_REGISTRY_SOURCE, /default: mod\.JiraIssueDemoAgentActivityStatesExperimental/);
+});
+
+test("Jira issue agent activity chin splits into one row per agent only when asked", () => {
+	// Merged stays the default so every existing consumer keeps the aggregated
+	// "2 Working" row; only an explicit split opt-in fans the agents out.
+	assert.match(SOURCE, /agentActivityLayout\?: JiraIssueAgentActivityLayout;/);
+	assert.match(SOURCE, /agentActivityLayout = "merged",/);
+	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*layout=\{agentActivityLayout\}/);
+	assert.match(AGENT_ACTIVITY_SOURCE, /layout\?: JiraIssueAgentActivityLayout;/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /const rowGroups = groupJiraIssueAgentActivityRows\(activities, layout\);/u);
+	// Split rows reuse the single-agent row verbatim, which is what makes each
+	// row show its own avatar, cycling status, and click-through to Rovo chat.
+	assert.match(AGENT_ACTIVITY_SOURCE, /<JiraIssueAgentActivityRow\s*\n\s*activities=\{rowGroup\.activities\}/u);
+	assert.match(MODEL_SOURCE, /export type JiraIssueAgentActivityLayout = "merged" \| "split";/u);
+	assert.match(MODEL_SOURCE, /if \(layout === "split"\) \{[\s\S]*activeActivities\.map\(\(activity\) => \(\{ activities: \[activity\], key: activity\.id \}\)\)/u);
 });
 
 test("Jira issue renders expandable subtasks with nested subtask cards", () => {
@@ -732,14 +784,14 @@ test("Jira issue renders expandable subtasks with nested subtask cards", () => {
 });
 
 test("Jira issue renders explicit unassigned avatars with the shared placeholder", () => {
-	assert.match(SOURCE, /AvatarUnassigned,/);
+	assert.match(SUMMARY_SOURCE, /AvatarUnassigned,/);
 	assert.match(SOURCE, /assigneeUnassignedKind\?: AvatarUnassignedKind;/);
-	assert.match(SOURCE, /function JiraIssueAssignee[\s\S]*size = "sm"[\s\S]*if \(assigneeUnassignedKind\) \{[\s\S]*<AvatarUnassigned[\s\S]*kind=\{assigneeUnassignedKind\}[\s\S]*size=\{size\}/);
-	assert.match(SOURCE, /size=\{usesStrokeChrome \? "xs" : "sm"\}/);
+	assert.match(SUMMARY_SOURCE, /function JiraIssueAssignee[\s\S]*size = "sm"[\s\S]*if \(assigneeUnassignedKind\) \{[\s\S]*<AvatarUnassigned[\s\S]*kind=\{assigneeUnassignedKind\}[\s\S]*size=\{size\}/);
+	assert.match(SUMMARY_SOURCE, /size=\{usesStrokeChrome \? "xs" : "sm"\}/);
 });
 
 test("Jira issue assignee avatars honor the shared hexagon shape for agents", () => {
 	assert.match(SOURCE, /assigneeAvatarShape\?: NonNullable<AvatarProps\["shape"\]>;/);
 	assert.match(SOURCE, /assigneeAvatarShape = "circle"/);
-	assert.match(SOURCE, /function JiraIssueAssignee[\s\S]*shape=\{assigneeAvatarShape\}/);
+	assert.match(SUMMARY_SOURCE, /function JiraIssueAssignee[\s\S]*shape=\{assigneeAvatarShape\}/);
 });

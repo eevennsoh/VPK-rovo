@@ -19,11 +19,12 @@ const REGISTRY = fs.readFileSync(path.join(ROOT, "components/website/registry/vi
 const DEMO = fs.readFileSync(path.join(__dirname, "gooey-demo.tsx"), "utf8");
 const EXAMPLES = fs.readFileSync(path.join(__dirname, "gooey-examples.tsx"), "utf8");
 const UTILS = fs.readFileSync(path.join(__dirname, "gooey-demo-utils.ts"), "utf8");
+const DRAG = fs.readFileSync(path.join(ROOT, "components/ui-custom/hooks/use-pointer-drag.ts"), "utf8");
 const INDEX = fs.readFileSync(path.join(ROOT, "components/visual/gooey/index.ts"), "utf8");
 const VARIANT_REGISTRY = REGISTRY.slice(REGISTRY.indexOf("export const VISUAL_VARIANT_DEMOS"));
 
-function loadUseGooeyDemoDrag() {
-	const entryPoint = path.join(__dirname, "gooey-demo-utils.ts");
+function loadUsePointerDrag() {
+	const entryPoint = path.join(ROOT, "components/ui-custom/hooks/use-pointer-drag.ts");
 	const result = esbuild.buildSync({
 		entryPoints: [entryPoint],
 		bundle: true,
@@ -35,8 +36,8 @@ function loadUseGooeyDemoDrag() {
 		write: false,
 	});
 
-	return loadCjsModuleFromText(result.outputFiles[0].text, "gooey-demo-drag-harness.cjs")
-		.useGooeyDemoDrag;
+	return loadCjsModuleFromText(result.outputFiles[0].text, "pointer-drag-harness.cjs")
+		.usePointerDrag;
 }
 
 test("Gooey is a top-level Visual component with local source attribution", () => {
@@ -104,7 +105,7 @@ test("move slider has one liquid-owned thumb surface", () => {
 });
 
 test("hero and draggable examples expose pointer, reset, and keyboard interaction", () => {
-	assert.match(DEMO, /useGooeyDemoDrag\(/u);
+	assert.match(DEMO, /usePointerDrag\(/u);
 	assert.match(DEMO, /aria-label="Reset Gooey item position"/u);
 	assert.match(DEMO, /aria-label="Drag or activate Gooey item; arrow keys also move it"/u);
 	assert.match(DEMO, /\{\.\.\.heroDrag\.bind\}/u);
@@ -116,9 +117,9 @@ test("hero and draggable examples expose pointer, reset, and keyboard interactio
 	assert.doesNotMatch(DEMO, /current\.x >= 0 \? -72 : 36/u);
 	assert.equal((DEMO.match(/top: "calc\(50% - 40px\)"/gu) || []).length, 2);
 	assert.doesNotMatch(DEMO, /h-44 w-full max-w-80/u);
-	assert.match(UTILS, /setPointerCapture\(event\.pointerId\)/u);
-	assert.match(UTILS, /onKeyDown/u);
-	assert.match(UTILS, /clampPosition/u);
+	assert.match(DRAG, /setPointerCapture\(event\.pointerId\)/u);
+	assert.match(DRAG, /onKeyDown/u);
+	assert.match(DRAG, /clampPosition/u);
 });
 
 test("Gooey drag clamps movement and does not activate after a cancelled pointer drag", async () => {
@@ -140,7 +141,7 @@ test("Gooey drag clamps movement and does not activate after a cancelled pointer
 		IS_REACT_ACT_ENVIRONMENT: true,
 	});
 
-	const useGooeyDemoDrag = loadUseGooeyDemoDrag();
+	const usePointerDrag = loadUsePointerDrag();
 	let drag = null;
 	let activationCount = 0;
 	const capturedPointers = [];
@@ -153,7 +154,7 @@ test("Gooey drag clamps movement and does not activate after a cancelled pointer
 
 	function Probe() {
 		const [position, setPosition] = React.useState({ x: 10, y: 10 });
-		drag = useGooeyDemoDrag(
+		drag = usePointerDrag(
 			position,
 			setPosition,
 			{ minX: 0, maxX: 20, minY: 0, maxY: 20 },
@@ -201,9 +202,9 @@ test("Gooey drag clamps movement and does not activate after a cancelled pointer
 });
 
 test("Gooey component modules keep Fast Refresh exports component-only", () => {
-	assert.doesNotMatch(EXAMPLES, /export const GOOEY_SOURCE_SHADOW|export function useGooeyDemoDrag/u);
+	assert.doesNotMatch(EXAMPLES, /export const GOOEY_SOURCE_SHADOW|export function usePointerDrag/u);
 	assert.match(UTILS, /export const GOOEY_SOURCE_SHADOW = \[/u);
-	assert.match(UTILS, /export function useGooeyDemoDrag/u);
+	assert.match(DRAG, /export function usePointerDrag/u);
 });
 
 test("images never intercept native dragging from Gooey drag targets", () => {
