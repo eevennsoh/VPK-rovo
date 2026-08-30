@@ -55,6 +55,7 @@ import {
 } from "../experimental/pulse/data/pulse-scopes";
 import { scopeTimelineToWorkItemKeys } from "../experimental/pulse/hooks/use-pulse-timeline";
 import {
+	filterPulseLooseWorkByMember,
 	toPulseSessionHandlers,
 	toPulseSessionItems,
 } from "../experimental/pulse/lib/pulse-sessions";
@@ -330,13 +331,17 @@ export default function ExperimentalV2JiraKanbanPage({
 		timelineLastViewedAt,
 	);
 	// The board's untracked-work column and the Insights rail show the same
-	// sessions from the same fixtures, filtered by the same control, and commit
-	// through the same captured set. Capturing a session on the board is
-	// therefore the same event as capturing it in Insights — there is no second
-	// copy of this list that could disagree.
+	// sessions from the same fixtures and commit through the same captured set,
+	// so capturing on the board is the same event as capturing in Insights.
+	// The column also honours the header's assignee filter: it narrows the
+	// status columns, and a filter that skipped this one would stop describing
+	// the whole board.
 	const agentSessionItems = useMemo(
-		() => toPulseSessionItems(pulseTimeline.looseWork, PULSE_TIMELINE.members),
-		[pulseTimeline.looseWork],
+		() => toPulseSessionItems(
+			filterPulseLooseWorkByMember(pulseTimeline.looseWork, pulseMemberId),
+			PULSE_TIMELINE.members,
+		),
+		[pulseMemberId, pulseTimeline.looseWork],
 	);
 	const agentSessionHandlers = useMemo(
 		() => toPulseSessionHandlers({

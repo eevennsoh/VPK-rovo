@@ -208,6 +208,7 @@ function loadSessionsHarness() {
 	sessionsHarnessPromise ??= bundleHarness({
 		contents: `
 			export {
+				filterPulseLooseWorkByMember,
 				toPulseSessionItems,
 				toPulseSessionWorktree,
 			} from "./components/blocks/jira-kanban/experimental/pulse/lib/pulse-sessions";

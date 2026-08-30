@@ -82,6 +82,34 @@ export function toPulseSessionItems(
 }
 
 /**
+ * Loose work attributable to the selected roster member.
+ *
+ * The board header's assignee filter narrows the status columns, so it has to
+ * narrow the untracked-work column too — otherwise picking one person hides
+ * their teammates' cards while leaving every teammate's session on screen, and
+ * the filter stops describing the whole board.
+ *
+ * It takes the *roster-resolved* member id rather than the raw assignee set on
+ * purpose. The assignee field carries ids from whichever facepile wrote it, and
+ * only some of those name a Pulse member — that is what `toPulseMemberId` is
+ * for. Matching the raw ids instead would empty the column for every selection
+ * made in the other id space, asserting "nobody has untracked sessions" when
+ * the truth is that the selection cannot be expressed in this roster at all.
+ * `null` means no roster member is selected, which is not the same as "nobody
+ * matched".
+ */
+export function filterPulseLooseWorkByMember(
+	looseWork: readonly PulseLooseWork[],
+	memberId: string | null,
+): readonly PulseLooseWork[] {
+	if (memberId === null) {
+		return looseWork;
+	}
+
+	return looseWork.filter((item) => item.memberIds.includes(memberId));
+}
+
+/**
  * The Agent Session callbacks for a set of Pulse loose work.
  *
  * The card speaks `AgentSessionItem`; every Pulse action speaks

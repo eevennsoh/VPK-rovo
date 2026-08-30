@@ -97,8 +97,14 @@ test("the board column commits through the same captured set as Insights", () =>
 	assert.match(BOARD_PAGE_SOURCE, /capturedItemIds: capturedLooseWorkIds,/u);
 	assert.match(BOARD_PAGE_SOURCE, /onCapture: handleCaptureLooseWork,/u);
 	// One fixture list, read through the same day/scope filter the rail reads.
-	assert.match(BOARD_PAGE_SOURCE, /toPulseSessionItems\(pulseTimeline\.looseWork, PULSE_TIMELINE\.members\)/u);
 	assert.match(BOARD_PAGE_SOURCE, /looseWork: pulseTimeline\.looseWork,/u);
+	// The header's assignee filter narrows the status columns, so it narrows
+	// this column too — routed through the roster boundary, because only some
+	// assignee ids name a session member. Behaviour lives in pulse-sessions.test.js.
+	assert.match(
+		BOARD_PAGE_SOURCE,
+		/filterPulseLooseWorkByMember\(pulseTimeline\.looseWork, pulseMemberId\)/u,
+	);
 });
 
 test("the block is registered in the catalog", () => {

@@ -119,3 +119,33 @@ test("the uncaptured column renders sessions through the Agent Session block", (
 	assert.doesNotMatch(SOURCES.rail, /sourceFacts/u);
 	assert.doesNotMatch(SOURCES.rail, /JiraIssueUncapturedWork/u);
 });
+
+test("the roster filter narrows sessions the way the header narrows board cards", async () => {
+	const { filterPulseLooseWorkByMember, PULSE_TIMELINE } = await loadSessionsHarness();
+	const all = PULSE_TIMELINE.looseWork;
+
+	// No roster member selected means no filter.
+	assert.equal(filterPulseLooseWorkByMember(all, null).length, all.length);
+
+	// Regression: the board's untracked-work column used to map every session
+	// regardless of the header selection, so picking one person hid their
+	// teammates' cards while leaving every teammate's session on screen.
+	const memberId = all.find((item) => item.memberIds.length > 0)?.memberIds[0];
+	assert.ok(memberId !== undefined, "fixture should attribute loose work to a member");
+
+	const filtered = filterPulseLooseWorkByMember(all, memberId);
+	assert.ok(filtered.length > 0, "the selected member should keep their own loose work");
+	assert.ok(filtered.length < all.length, "other members' loose work should drop out");
+	for (const item of filtered) {
+		assert.ok(item.memberIds.includes(memberId), `${item.id} is not attributable to the selection`);
+	}
+
+	// Only a roster-resolved id ever reaches this helper. `toPulseMemberId`
+	// answers null for a selection made in the board's own assignee id space,
+	// so the column is never emptied by a selection it cannot express.
+	const boardOnlyIds = new Set(["maya-chen", "jordan-lee"]);
+	const pulseMemberIds = new Set(PULSE_TIMELINE.members.map((member) => member.id));
+	for (const id of boardOnlyIds) {
+		assert.ok(!pulseMemberIds.has(id), `${id} should not name a roster member`);
+	}
+});
