@@ -5,13 +5,13 @@ import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/r
 
 import {
 	JiraIssueAgentActivityRows,
-	JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE,
 	type JiraIssueAgentActivity,
 	type JiraIssueAgentActivityLayout,
 	type JiraIssueAgentActivityMode,
 	type JiraIssueAgentSessionDragBinding,
 	type JiraIssueAgentSessionDragState,
 } from "@/components/blocks/jira-issue/agent-activity";
+import { JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE } from "@/components/blocks/jira-issue/agent-session-drag";
 import {
 	JiraIssueAgentSessionTransfer,
 	type JiraIssueAgentSessionTransferConfig,

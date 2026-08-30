@@ -10,6 +10,9 @@ const SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 const AGENT_ACTIVITY_SOURCE = readFileSync(join(__dirname, "agent-activity.tsx"), "utf8");
 const COMPLETED_RUNS_SOURCE = readFileSync(join(__dirname, "completed-agent-runs.tsx"), "utf8");
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
+// The drag state/binding types and the idle constant live outside the component
+// file so a value export cannot defeat Fast Refresh (only-export-components).
+const DRAG_SOURCE = readFileSync(join(__dirname, "agent-session-drag.ts"), "utf8");
 const TRANSFER_SOURCE = readFileSync(join(__dirname, "agent-session-transfer.tsx"), "utf8");
 const MAGNETIC_PROXIMITY_SOURCE = readFileSync(
 	join(__dirname, "../../ui-custom/hooks/use-magnetic-proximity.ts"),
@@ -324,7 +327,9 @@ test("Jira issue pointer cancellation aborts the drag instead of committing the 
 	// interrupted pointer published `dragging: false` and the transfer effect
 	// read that as a drop — silently unlinking or moving a session the user
 	// never released onto a zone.
-	assert.match(AGENT_ACTIVITY_SOURCE, /cancelled: boolean;/u);
+	assert.match(DRAG_SOURCE, /cancelled: boolean;/u);
+	assert.match(DRAG_SOURCE, /export const JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE/u);
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /^export const /mu);
 	assert.match(AGENT_ACTIVITY_SOURCE, /function cancelSessionDrag\([\s\S]*drag\.bind\.onPointerCancel\(event\);[\s\S]*publishSessionDrag\(false, undefined, true\);/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /onPointerCancel: cancelSessionDrag,/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /onPointerCancel: endSessionDrag,/u);
