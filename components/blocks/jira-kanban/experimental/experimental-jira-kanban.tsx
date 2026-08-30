@@ -332,18 +332,18 @@ function BoardColumn({
 
 			<div className="w-full" style={{ paddingBlock: token("space.050") }}>
 				<Button
+					aria-label={`Create in ${title}`}
 					className={cn(
-						"w-full justify-start gap-2 rounded-lg",
+						"w-full",
 						"pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical",
 						"group-hover/board-column:pointer-events-auto group-hover/board-column:opacity-100",
 						"group-has-[:focus-visible]/board-column:pointer-events-auto group-has-[:focus-visible]/board-column:opacity-100",
 						"motion-reduce:transition-none",
 					)}
-					size="default"
-					variant="ghost"
+					size="compact"
+					variant="outline"
 				>
 					<Icon render={<AddIcon label="" size="small" />} />
-					Create
 				</Button>
 			</div>
 		</div>
