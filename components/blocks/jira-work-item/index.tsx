@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { AnimatePresence } from "motion/react";
+import dynamic from "next/dynamic";
 import { useRovoChat } from "@/app/contexts";
 import { Button } from "@/components/ui/button";
 import JiraWorkItemModal from "@/components/projects/jira/components/jira-work-item-modal";
@@ -12,7 +13,11 @@ import { ExperimentalJiraWorkItem } from "@/components/blocks/jira-work-item/exp
 import { ExperimentalV2JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v2/experimental-v2-jira-work-item";
 import { ExperimentalV3JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v3/experimental-v3-jira-work-item";
 import { ExperimentalV4JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v4/experimental-v4-jira-work-item";
-import { ExperimentalV5JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v5/experimental-v5-jira-work-item";
+
+const ExperimentalV5JiraWorkItem = dynamic(
+	() => import("@/components/blocks/jira-work-item/experimental-v5/experimental-v5-jira-work-item")
+		.then((module) => module.ExperimentalV5JiraWorkItem),
+);
 
 export type JiraWorkItemVariant = "default" | "experimental" | "experimental-v2" | "experimental-v3" | "experimental-v4" | "experimental-v5";
 export type JiraWorkItemExperimentalPreset = JiraWorkItemPreset;

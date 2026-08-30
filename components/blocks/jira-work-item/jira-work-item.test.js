@@ -83,7 +83,15 @@ test("JiraWorkItem experimental view delegates chat ownership to its composition
 	assert.match(JIRA_WORK_ITEM_SOURCE, /import \{ ExperimentalV2JiraWorkItem \} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/experimental-v2-jira-work-item";/u);
 	assert.match(JIRA_WORK_ITEM_SOURCE, /import \{ ExperimentalV3JiraWorkItem \} from "@\/components\/blocks\/jira-work-item\/experimental-v3\/experimental-v3-jira-work-item";/u);
 	assert.match(JIRA_WORK_ITEM_SOURCE, /import \{ ExperimentalV4JiraWorkItem \} from "@\/components\/blocks\/jira-work-item\/experimental-v4\/experimental-v4-jira-work-item";/u);
-	assert.match(JIRA_WORK_ITEM_SOURCE, /import \{ ExperimentalV5JiraWorkItem \} from "@\/components\/blocks\/jira-work-item\/experimental-v5\/experimental-v5-jira-work-item";/u);
+	// The newest full fork is isolated from every earlier/default variant while
+	// retaining Next's default SSR behavior and the shared surface contract.
+	assert.match(JIRA_WORK_ITEM_SOURCE, /import dynamic from "next\/dynamic";/u);
+	assert.doesNotMatch(JIRA_WORK_ITEM_SOURCE, /import \{ ExperimentalV5JiraWorkItem \} from/u);
+	assert.match(
+		JIRA_WORK_ITEM_SOURCE,
+		/const ExperimentalV5JiraWorkItem = dynamic\(\s*\(\) => import\("@\/components\/blocks\/jira-work-item\/experimental-v5\/experimental-v5-jira-work-item"\)\s*\.then\(\(module\) => module\.ExperimentalV5JiraWorkItem\),\s*\);/u,
+	);
+	assert.doesNotMatch(JIRA_WORK_ITEM_SOURCE, /ExperimentalV5JiraWorkItem = dynamic\([\s\S]*ssr:\s*false/u);
 	// Shared open/close shell is extracted and used by both views.
 	assert.match(JIRA_WORK_ITEM_SOURCE, /function JiraWorkItemShell\(/u);
 	assert.equal((JIRA_WORK_ITEM_SOURCE.match(/<JiraWorkItemShell onOpen=/gu) ?? []).length, 2);
