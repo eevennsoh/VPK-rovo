@@ -42,7 +42,7 @@ export function JiraViewTabs({ selectedTab, onTabChange }: Readonly<JiraHeaderPr
 						>
 							<div className="flex items-center gap-1.5">
 								<IconComponent
-									label={tab.label}
+									label=""
 									color={isSelected ? token("color.icon.selected") : "currentColor"}
 								/>
 								<span className={`text-sm font-medium${isSelected ? " text-text-selected" : ""}`}>

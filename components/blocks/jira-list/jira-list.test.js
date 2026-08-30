@@ -313,12 +313,21 @@ test("JiraList places an accessible open action last in each Work cell action gr
 	assert.ok(workCellSource.lastIndexOf("Open work item") > workCellSource.lastIndexOf("Create"));
 });
 
+test("JiraList renders summaries as plain text when no issue action is available", () => {
+	const workCellSource = SOURCE.match(
+		/id: "work",([\s\S]*?)\n\t\t\{\n\t\t\tid: "status"/u,
+	)?.[1] ?? "";
+
+	assert.match(workCellSource, /\{onIssueClick \? \([\s\S]*?<button[\s\S]*?onClick=\{\(\) => onIssueClick\(row\)\}/u);
+	assert.match(workCellSource, /\) : \([\s\S]*?<span className="min-w-0 flex-1 truncate text-\[13px\] font-medium text-text">/u);
+});
+
 test("JiraList reveals copy link only beside the focused or hovered issue key", () => {
 	const workCellSource = SOURCE.match(
 		/id: "work",([\s\S]*?)\n\t\t\{\n\t\t\tid: "status"/u,
 	)?.[1] ?? "";
 	const issueKeyGroupSource = workCellSource.match(
-		/<div className="group\/issue-key[\s\S]*?\n\t\t\t\t\t\t\t<button\n\t\t\t\t\t\t\t\tclassName="min-w-0 flex-1 truncate/u,
+		/<div className="group\/issue-key[\s\S]*?\n\t\t\t\t\t\t\t\{onIssueClick \? \(/u,
 	)?.[0] ?? "";
 	const rowActionGroupSource = workCellSource.match(
 		/<div className="flex shrink-0 items-center gap-1 opacity-0[\s\S]*?<\/div>\s*\) : null\}/u,

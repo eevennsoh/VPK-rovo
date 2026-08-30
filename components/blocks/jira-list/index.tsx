@@ -332,13 +332,19 @@ export function JiraList({
 									</span>
 								) : null}
 							</div>
-							<button
-								className="min-w-0 flex-1 truncate rounded-sm text-left text-[13px] font-medium text-text hover:text-link focus-visible:text-link focus-visible:outline-none"
-								onClick={() => onIssueClick?.(row)}
-								type="button"
-							>
-								{row.summary}
-							</button>
+							{onIssueClick ? (
+								<button
+									className="min-w-0 flex-1 truncate rounded-sm text-left text-[13px] font-medium text-text hover:text-link focus-visible:text-link focus-visible:outline-none"
+									onClick={() => onIssueClick(row)}
+									type="button"
+								>
+									{row.summary}
+								</button>
+							) : (
+								<span className="min-w-0 flex-1 truncate text-[13px] font-medium text-text">
+									{row.summary}
+								</span>
+							)}
 						</div>
 						{hasHoverRowActions ? (
 							<div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover/row:opacity-100 group-focus-within/row:opacity-100">

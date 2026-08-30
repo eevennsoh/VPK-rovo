@@ -22,7 +22,10 @@ import type {
 import { createJiraKanbanColumns } from "../jira-kanban-data";
 import { BoardFilterPopover } from "./components/board-filter-popover";
 import { ExperimentalJiraKanban } from "./experimental-jira-kanban";
-import { ExperimentalJiraKanbanBoardHeader } from "./experimental-board-header";
+import {
+	ExperimentalJiraKanbanBoardHeader,
+	type ExperimentalJiraKanbanView,
+} from "./experimental-board-header";
 import { useBoardFilter, type BoardFilterActions } from "./hooks/use-board-filter";
 import {
 	BOARD_FILTER_DEMO_NOW_ISO,
@@ -106,6 +109,7 @@ export interface ExperimentalJiraKanbanPageHandle {
 }
 
 export interface ExperimentalJiraKanbanPageProps {
+	activeView?: ExperimentalJiraKanbanView;
 	activeCardCode?: string;
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	agentSessionAssigneeIdAliases?: Readonly<Record<string, string>>;
@@ -125,6 +129,8 @@ export interface ExperimentalJiraKanbanPageProps {
 	onInsightsWorkItemClick?: (workItem: PulseWorkItem) => void;
 	onModeChange?: (mode: ExperimentalJiraKanbanMode) => void;
 	onResumeLooseWork?: (item: PulseLooseWork) => void;
+	onViewChange?: (view: ExperimentalJiraKanbanView) => void;
+	renderListContent?: (columns: readonly JiraKanbanColumnData[]) => ReactNode;
 	showBoardContent?: boolean;
 	showAgentSessionColumn?: boolean;
 	/**
@@ -145,6 +151,7 @@ interface DraggedCardState {
 }
 
 export default function ExperimentalJiraKanbanPage({
+	activeView = "board",
 	activeCardCode,
 	agentActivityLayout,
 	agentSessionAssigneeIdAliases,
@@ -164,6 +171,8 @@ export default function ExperimentalJiraKanbanPage({
 	onInsightsWorkItemClick,
 	onModeChange,
 	onResumeLooseWork,
+	onViewChange,
+	renderListContent,
 	onTimelineLastViewedAtChange,
 	ref,
 	showAgentSessionColumn = false,
@@ -510,9 +519,12 @@ export default function ExperimentalJiraKanbanPage({
 	return (
 		<div className="flex h-full min-h-[640px] flex-col rounded-lg bg-surface">
 			<ExperimentalJiraKanbanBoardHeader
+				activeView={activeView}
 				assignees={assignees}
 				compact={compactHeader}
 				onSelectedAssigneeIdsChange={handleAssigneeFilterChange}
+				onViewChange={renderListContent ? onViewChange : undefined}
+				searchPlaceholder={`Search ${activeView}`}
 				selectedAssigneeIds={selectedAssigneeIds}
 				showBoardControls={showBoardContent}
 				facepile={isPulse ? (
@@ -528,6 +540,7 @@ export default function ExperimentalJiraKanbanPage({
 						assignees={filterAssignees}
 						compact={compactHeader}
 						model={boardFilter.model}
+						surfaceLabel={activeView}
 					/>
 				}
 				modeToggle={insightsEnabled ? (
@@ -544,9 +557,12 @@ export default function ExperimentalJiraKanbanPage({
 						unreadCount={isPulse ? 0 : timelineUnreadCount}
 					/>
 				) : undefined}
+				surfaceLabel={activeView}
 				viewTabs={viewTabs}
 			/>
-			{showBoardContent ? (isPulse ? (
+			{showBoardContent ? (activeView === "list" && renderListContent ? (
+				renderListContent(filteredBoardColumns)
+			) : isPulse ? (
 				<ExperimentalPulse
 					answers={answers}
 					capturedLooseWorkIds={capturedLooseWorkIds}

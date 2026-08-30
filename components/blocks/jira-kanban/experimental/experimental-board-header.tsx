@@ -1,10 +1,12 @@
 "use client";
 
 import type { ReactNode } from "react";
+import BoardIcon from "@atlaskit/icon/core/board";
 import CustomizeIcon from "@atlaskit/icon/core/customize";
 import PersonAddIcon from "@atlaskit/icon/core/person-add";
 import SearchIcon from "@atlaskit/icon/core/search";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
+import TableIcon from "@atlaskit/icon/core/table";
 import {
 	Avatar,
 	AvatarFallback,
@@ -16,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { JiraProjectAvatar } from "@/components/blocks/product-sidebar/variants/jira";
 import { JIRA_DESIGN_PROJECT } from "@/components/blocks/product-sidebar/data/jira-navigation";
 import { cn } from "@/lib/utils";
@@ -31,9 +34,11 @@ import {
  * Starts identical to the default board header and diverges independently.
  */
 interface ExperimentalJiraKanbanBoardHeaderProps {
+	activeView?: ExperimentalJiraKanbanView;
 	assignees: readonly JiraKanbanAssigneeData[];
 	compact?: boolean;
 	onSelectedAssigneeIdsChange: (assigneeIds: Set<string>) => void;
+	onViewChange?: (view: ExperimentalJiraKanbanView) => void;
 	searchPlaceholder?: string;
 	selectedAssigneeIds: ReadonlySet<string>;
 	/**
@@ -59,6 +64,8 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	surfaceLabel?: string;
 	viewTabs?: ReactNode;
 }
+
+export type ExperimentalJiraKanbanView = "board" | "list";
 
 function AssigneeAvatar({
 	assignee,
@@ -88,9 +95,11 @@ function AssigneeAvatar({
 }
 
 export function ExperimentalJiraKanbanBoardHeader({
+	activeView = "board",
 	assignees,
 	compact = false,
 	onSelectedAssigneeIdsChange,
+	onViewChange,
 	searchPlaceholder = "Search board",
 	selectedAssigneeIds,
 	showBoardControls = true,
@@ -177,6 +186,27 @@ export function ExperimentalJiraKanbanBoardHeader({
 					{modeToggle}
 
 					<div className={cn("flex items-center gap-1", compact ? undefined : "ml-auto")}>
+						{onViewChange ? (
+							<Tabs
+								onValueChange={(value) => {
+									if (value === "board" || value === "list") {
+										onViewChange(value);
+									}
+								}}
+								value={activeView}
+							>
+								<TabsList aria-label="Work items view">
+									<TabsTrigger value="board">
+										<Icon aria-hidden render={<BoardIcon label="" />} />
+										Board
+									</TabsTrigger>
+									<TabsTrigger value="list">
+										<Icon aria-hidden render={<TableIcon label="" />} />
+										List
+									</TabsTrigger>
+								</TabsList>
+							</Tabs>
+						) : null}
 						{compact ? (
 							<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
 								<Icon render={<ShowMoreHorizontalIcon label="" />} />
