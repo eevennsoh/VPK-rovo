@@ -103,15 +103,18 @@ test("the uncaptured column renders sessions through the Agent Session block", (
 		/<JiraIssue[\s\S]*variant="uncaptured-work"[\s\S]*<AgentSession[\s\S]*items=\{sessionItems\}/u,
 	);
 	assert.match(SOURCES.rail, /capturedItemIds=\{capturedIds\}/u);
-	assert.match(SOURCES.rail, /onCopyResume=\{\(item\) => \{/u);
-	assert.match(SOURCES.rail, /onLinkWorkItem=\{\(item\) => \{/u);
+	// The row -> loose work callbacks live in the shared adapter, so the rail and
+	// the v2 board's untracked-work column apply one set of rules.
+	assert.match(SOURCES.rail, /\{\.\.\.sessionHandlers\}/u);
+	assert.match(SOURCES.sessions, /onCopyResume: \(item: AgentSessionItem\) => \{/u);
+	assert.match(SOURCES.sessions, /onLinkWorkItem: \(item: AgentSessionItem\) => \{/u);
 	assert.doesNotMatch(SOURCES.rail, /variant="compact"/u);
 	assert.doesNotMatch(SOURCES.rail, /canViewItem=/u);
-	assert.match(SOURCES.rail, /onView=\{\(item\) => \{/u);
-	assert.match(SOURCES.rail, /isLooseWorkResumable\?\.\(session\) \?\? true/u);
-	// The rail declares resumability up front so non-resumable rows never render
-	// an enabled Resume control; the callback guard alone runs after the copy.
-	assert.match(SOURCES.rail, /isResumable=\{\(item\) => \{/u);
+	assert.match(SOURCES.sessions, /onView: \(item: AgentSessionItem\) => \{/u);
+	assert.match(SOURCES.sessions, /isLooseWorkResumable\?\.\(session\) \?\? true/u);
+	// Resumability is declared up front so non-resumable rows never render an
+	// enabled Resume control; the callback guard alone runs after the copy.
+	assert.match(SOURCES.sessions, /isResumable: \(item: AgentSessionItem\) => resolveResumable\(item\) !== undefined/u);
 	assert.doesNotMatch(SOURCES.rail, /onResumeAgentSession/u);
 	assert.doesNotMatch(SOURCES.rail, /sourceFacts/u);
 	assert.doesNotMatch(SOURCES.rail, /JiraIssueUncapturedWork/u);

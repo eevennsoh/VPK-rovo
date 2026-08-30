@@ -80,3 +80,53 @@ export function toPulseSessionItems(
 		} satisfies AgentSessionItem];
 	});
 }
+
+/**
+ * The Agent Session callbacks for a set of Pulse loose work.
+ *
+ * The card speaks `AgentSessionItem`; every Pulse action speaks
+ * `PulseLooseWork`. Translating between them is a rule, not a rendering
+ * detail — resume is gated on host capability *and* on the row still resolving
+ * to a known session — so it lives here once and is shared by every surface
+ * that shows these sessions (the Insights rail and the board's untracked-work
+ * column). A second hand-rolled copy is how the two would drift.
+ */
+export function toPulseSessionHandlers({
+	isLooseWorkResumable,
+	looseWork,
+	onCapture,
+	onResume,
+}: Readonly<{
+	isLooseWorkResumable?: (item: PulseLooseWork) => boolean;
+	looseWork: readonly PulseLooseWork[];
+	onCapture: (item: PulseLooseWork) => void;
+	onResume?: (item: PulseLooseWork) => void;
+}>) {
+	const sessionById = new Map(
+		looseWork.filter(isPulseAgentSession).map((item) => [item.id, item] as const),
+	);
+	const resolveResumable = (item: AgentSessionItem): PulseLooseWork | undefined => {
+		const session = sessionById.get(item.id);
+		if (session === undefined) return undefined;
+		return (isLooseWorkResumable?.(session) ?? true) ? session : undefined;
+	};
+
+	return {
+		isResumable: (item: AgentSessionItem) => resolveResumable(item) !== undefined,
+		onCopyResume: (item: AgentSessionItem) => {
+			const session = resolveResumable(item);
+			if (session === undefined) return;
+			onResume?.(session);
+		},
+		onLinkWorkItem: (item: AgentSessionItem) => {
+			const session = sessionById.get(item.id);
+			if (session === undefined) return;
+			onCapture(session);
+		},
+		onView: (item: AgentSessionItem) => {
+			const session = resolveResumable(item);
+			if (session === undefined) return;
+			onResume?.(session);
+		},
+	};
+}

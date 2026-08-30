@@ -54,6 +54,10 @@ import {
 	toPulseSuggestedQuestions,
 } from "../experimental/pulse/data/pulse-scopes";
 import { scopeTimelineToWorkItemKeys } from "../experimental/pulse/hooks/use-pulse-timeline";
+import {
+	toPulseSessionHandlers,
+	toPulseSessionItems,
+} from "../experimental/pulse/lib/pulse-sessions";
 import type { PulseAnswer, PulseLooseWork, PulseWorkItem } from "../experimental/pulse/types";
 import {
 	createJiraKanbanSelectionState,
@@ -325,6 +329,29 @@ export default function ExperimentalV2JiraKanbanPage({
 		PULSE_TIMELINE.snapshots,
 		timelineLastViewedAt,
 	);
+	// The board's untracked-work column and the Insights rail show the same
+	// sessions from the same fixtures, filtered by the same control, and commit
+	// through the same captured set. Capturing a session on the board is
+	// therefore the same event as capturing it in Insights — there is no second
+	// copy of this list that could disagree.
+	const agentSessionItems = useMemo(
+		() => toPulseSessionItems(pulseTimeline.looseWork, PULSE_TIMELINE.members),
+		[pulseTimeline.looseWork],
+	);
+	const agentSessionHandlers = useMemo(
+		() => toPulseSessionHandlers({
+			isLooseWorkResumable,
+			looseWork: pulseTimeline.looseWork,
+			onCapture: handleCaptureLooseWork,
+			onResume: onResumeLooseWork,
+		}),
+		[
+			handleCaptureLooseWork,
+			isLooseWorkResumable,
+			onResumeLooseWork,
+			pulseTimeline.looseWork,
+		],
+	);
 	const selectedAgentIds = useMemo(
 		() => getCommonJiraKanbanAgentIds(assignedAgentIdsByCard, selection.selectedCardCodes),
 		[assignedAgentIdsByCard, selection.selectedCardCodes],
@@ -524,6 +551,11 @@ export default function ExperimentalV2JiraKanbanPage({
 				<div className="flex min-h-0 min-w-0 flex-1">
 					<ExperimentalV2JiraKanban
 						activeCardCode={activeCardCode}
+						agentSessionColumn={{
+							capturedItemIds: capturedLooseWorkIds,
+							items: agentSessionItems,
+							...agentSessionHandlers,
+						}}
 						agents={agents}
 						ariaLabel={ariaLabel}
 						assignedAgentIdsByColumn={columnAgentAssignments}

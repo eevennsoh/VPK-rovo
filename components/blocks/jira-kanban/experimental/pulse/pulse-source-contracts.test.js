@@ -431,7 +431,7 @@ test("Pulse rail hangs everything off one left edge and one right edge", () => {
 		/<JiraIssue[\s\S]*variant="uncaptured-work"[\s\S]*<AgentSession[\s\S]*items=\{sessionItems\}/u,
 	);
 	assert.match(SOURCES.rail, /capturedItemIds=\{capturedIds\}/u);
-	assert.match(SOURCES.rail, /onCopyResume=\{\(item\) => \{/u);
+	assert.match(SOURCES.sessions, /onCopyResume: \(item: AgentSessionItem\) => \{/u);
 	assert.doesNotMatch(SOURCES.rail, /variant="compact"/u);
 	assert.match(SOURCES.rail, /const participants = toUncapturedParticipants\(item, memberLookup\);/u);
 	assert.match(SOURCES.rail, /participants=\{participants\}/u);
@@ -546,9 +546,13 @@ test("Insights routes only opted-in work items and local sessions", () => {
 	assert.match(SOURCES.rail, /showMoreAction=\{false\}/u);
 	assert.match(SOURCES.rail, /tabIndex=\{isInteractive \? undefined : -1\}/u);
 	assert.match(SOURCES.rail, /data-loose-work-id=\{item\.id\}/u);
-	assert.match(SOURCES.rail, /item\.kind === "agent-session"/u);
-	assert.match(SOURCES.rail, /isLooseWorkResumable\?\.\(session\) \?\? true/u);
-	assert.match(SOURCES.rail, /onView=\{/u);
+	// Session row -> loose work resolution and the resume gate moved into the
+	// shared adapter, so the rail and the v2 board's untracked-work column
+	// cannot drift apart on either rule.
+	assert.match(SOURCES.sessions, /looseWork\.filter\(isPulseAgentSession\)/u);
+	assert.match(SOURCES.sessions, /isLooseWorkResumable\?\.\(session\) \?\? true/u);
+	assert.match(SOURCES.rail, /toPulseSessionHandlers/u);
+	assert.match(SOURCES.sessions, /onView: \(item: AgentSessionItem\)/u);
 	assert.doesNotMatch(SOURCES.rail, /canViewItem=/u);
 	assert.match(SOURCES.stream, /onWorkItemClick\?: \(workItem: PulseWorkItem\) => void;/u);
 	assert.match(SOURCES.stream, /onViewAttention=\{handleViewAttention\}/u);

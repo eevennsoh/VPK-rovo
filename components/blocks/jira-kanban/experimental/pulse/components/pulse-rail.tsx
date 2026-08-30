@@ -17,7 +17,7 @@ import {
 
 import { PULSE_SPACE_REPOSITORY } from "../data/pulse-timeline";
 import { suggestPulseLooseWorkItemKey } from "../lib/pulse-loose-work-suggestion";
-import { toPulseSessionItems } from "../lib/pulse-sessions";
+import { toPulseSessionHandlers, toPulseSessionItems } from "../lib/pulse-sessions";
 import { resolvePulseWorkItemFace } from "../lib/pulse-work-item-face";
 import {
 	isPulseGithubLooseWork,
@@ -245,9 +245,14 @@ function PulseUncapturedColumn({
 		looseWork,
 		members,
 	);
-	const sessionById = useMemo(
-		() => new Map(looseWork.filter((item) => item.kind === "agent-session").map((item) => [item.id, item])),
-		[looseWork],
+	const sessionHandlers = useMemo(
+		() => toPulseSessionHandlers({
+			isLooseWorkResumable,
+			looseWork,
+			onCapture,
+			onResume: onResumeLooseWork,
+		}),
+		[isLooseWorkResumable, looseWork, onCapture, onResumeLooseWork],
 	);
 
 	if (githubWork.length === 0 && sessionItems.length === 0) {
@@ -286,29 +291,8 @@ function PulseUncapturedColumn({
 				<AgentSession
 					capturedItemIds={capturedIds}
 					className="w-full min-w-0"
-					isResumable={(item) => {
-						const session = sessionById.get(item.id);
-						if (session === undefined) return false;
-						return isLooseWorkResumable?.(session) ?? true;
-					}}
 					items={sessionItems}
-					onCopyResume={(item) => {
-						const session = sessionById.get(item.id);
-						if (session === undefined) return;
-						if (!(isLooseWorkResumable?.(session) ?? true)) return;
-						onResumeLooseWork?.(session);
-					}}
-					onLinkWorkItem={(item) => {
-						const session = sessionById.get(item.id);
-						if (session === undefined) return;
-						onCapture(session);
-					}}
-					onView={(item) => {
-						const session = sessionById.get(item.id);
-						if (session === undefined) return;
-						if (!(isLooseWorkResumable?.(session) ?? true)) return;
-						onResumeLooseWork?.(session);
-					}}
+					{...sessionHandlers}
 				/>
 			) : null}
 		</PulseWorkColumn>

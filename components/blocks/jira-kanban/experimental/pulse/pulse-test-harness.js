@@ -35,6 +35,10 @@ const SOURCES = {
 	// The reading position: the only programmatic scroll left in Pulse.
 	reading: readFileSync(join(PULSE_DIR, "hooks", "use-pulse-reading.ts"), "utf8"),
 	scrubber: readFileSync(join(PULSE_DIR, "components", "pulse-scrubber.tsx"), "utf8"),
+	// Loose work <-> Agent Session card boundary. Shared by the rail and the v2
+	// board's untracked-work column, so its rules live here rather than in
+	// either renderer.
+	sessions: readFileSync(join(PULSE_DIR, "lib", "pulse-sessions.ts"), "utf8"),
 	shell: readFileSync(join(PULSE_DIR, "experimental-pulse.tsx"), "utf8"),
 	signals: readFileSync(join(PULSE_DIR, "components", "pulse-signals.tsx"), "utf8"),
 	sourcesAppstack: readFileSync(join(PULSE_DIR, "components", "pulse-sources-appstack.tsx"), "utf8"),
