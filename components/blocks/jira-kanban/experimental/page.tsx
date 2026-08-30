@@ -194,15 +194,11 @@ export default function ExperimentalJiraKanbanPage({
 	// decided, not view state that may quietly reset with the subtree.
 	const [requestedActionIds, setRequestedActionIds] = useState<ReadonlySet<string>>(() => new Set<string>());
 	const [capturedLooseWorkIds, setCapturedLooseWorkIds] = useState<ReadonlySet<string>>(() => new Set<string>());
-	const [dismissedLooseWorkIds, setDismissedLooseWorkIds] = useState<ReadonlySet<string>>(() => new Set<string>());
 	const handleRequestAction = useCallback((action: { id: string }) => {
 		setRequestedActionIds((current) => new Set(current).add(action.id));
 	}, []);
 	const handleCaptureLooseWork = useCallback((item: { id: string }) => {
 		setCapturedLooseWorkIds((current) => new Set(current).add(item.id));
-	}, []);
-	const handleDismissLooseWork = useCallback((item: { id: string }) => {
-		setDismissedLooseWorkIds((current) => new Set(current).add(item.id));
 	}, []);
 	// Questions are stored per scope rather than cleared when the scope changes.
 	// An answer about Sprint 24 read as a reply to a question asked of PAY-90
@@ -516,13 +512,11 @@ export default function ExperimentalJiraKanbanPage({
 				<ExperimentalPulse
 					answers={answers}
 					capturedLooseWorkIds={capturedLooseWorkIds}
-					dismissedLooseWorkIds={dismissedLooseWorkIds}
 					initialSnapshotId={pulseFocusSnapshotId}
 					isLooseWorkResumable={isLooseWorkResumable}
 					isWorkItemInteractive={isInsightsWorkItemInteractive}
 					onAsk={handleAsk}
 					onCaptureLooseWork={handleCaptureLooseWork}
-					onDismissLooseWork={handleDismissLooseWork}
 					onRequestAction={handleRequestAction}
 					onResumeLooseWork={onResumeLooseWork}
 					onSelectedMemberIdChange={handlePulseMemberChange}

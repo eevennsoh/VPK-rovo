@@ -307,7 +307,6 @@ test("Pulse keeps focus alive through in-place commits, and pins header jumps to
 	assert.match(SOURCES.signals, /<NextBestAction className="mt-3" items=\{items\} onAct=\{handleAct\} \/>/u);
 	assert.match(SOURCES.rail, /captured=\{capturedIds\.has\(item\.id\)\}/u);
 	assert.match(SOURCES.rail, /onCreateWorkItem=\{\(\) => onCapture\(item\)\}/u);
-	assert.match(SOURCES.rail, /onDismiss=\{\(\) => onDismiss\(item\)\}/u);
 	assert.match(SOURCES.rail, /onLinkWorkItem=\{\(\) => onCapture\(item\)\}/u);
 	assert.match(SOURCES.rail, /suggestedWorkItemKey=\{suggestPulseLooseWorkItemKey\(item, workItems\)\}/u);
 	assert.doesNotMatch(SOURCES.rail, /aria-disabled|aria-live/u, "the shared Jira Issue variant owns the action contract");
@@ -420,13 +419,12 @@ test("Pulse rail hangs everything off one left edge and one right edge", () => {
 	assert.match(SOURCES.rail, /<JiraIssue[\s\S]*variant="uncaptured-work"/u);
 	assert.match(SOURCES.rail, /captured=\{capturedIds\.has\(item\.id\)\}/u);
 	assert.match(SOURCES.rail, /onCreateWorkItem=\{\(\) => onCapture\(item\)\}/u);
-	assert.match(SOURCES.rail, /onDismiss=\{\(\) => onDismiss\(item\)\}/u);
 	assert.match(SOURCES.rail, /onLinkWorkItem=\{\(\) => onCapture\(item\)\}/u);
 	assert.match(SOURCES.rail, /suggestedWorkItemKey=\{suggestPulseLooseWorkItemKey\(item, workItems\)\}/u);
-	assert.match(SOURCES.rail, /githubWork = looseWork\.filter\(isPulseGithubLooseWork\)\.filter\(\(item\) => !dismissedIds\.has\(item\.id\)\)/u);
+	assert.match(SOURCES.rail, /githubWork = looseWork\.filter\(isPulseGithubLooseWork\);/u);
 	assert.match(
 		SOURCES.rail,
-		/const sessionItems = toPulseSessionItems\(\s*looseWork.filter\(\(item\) => !dismissedIds.has\(item\.id\)\),\s*members,\s*\);/u,
+		/const sessionItems = toPulseSessionItems\(\s*looseWork,\s*members,\s*\);/u,
 	);
 	assert.match(
 		SOURCES.rail,
@@ -486,9 +484,6 @@ test("Pulse is a toggle on the board's own control row, not a separate tab", () 
 	assert.ok(!existsSync(join(PULSE_DIR, "..", "experimental-view-tabs.tsx")), "the tab component should be retired, not left beside its replacement");
 
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /import \{ ExperimentalPulse \} from "\.\/pulse\/experimental-pulse";/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /dismissedLooseWorkIds=\{dismissedLooseWorkIds\}/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onDismissLooseWork=\{handleDismissLooseWork\}/u);
-	assert.match(SOURCES.shell, /dismissedIds=\{dismissedLooseWorkIds\}/u);
 	// The mode may be driven from outside — the route mounts a floating insights
 	// nudge that opens Insights — so the local state is the fallback half of a
 	// controlled pair rather than the only owner.
