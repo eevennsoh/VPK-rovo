@@ -80,3 +80,81 @@ export function toPulseSessionItems(
 		} satisfies AgentSessionItem];
 	});
 }
+
+/**
+ * Loose work attributable to the selected roster member.
+ *
+ * The board header's assignee filter narrows the status columns, so it has to
+ * narrow the untracked-work column too — otherwise picking one person hides
+ * their teammates' cards while leaving every teammate's session on screen, and
+ * the filter stops describing the whole board.
+ *
+ * It takes the *roster-resolved* member id rather than the raw assignee set on
+ * purpose. The assignee field carries ids from whichever facepile wrote it, and
+ * only some of those name a Pulse member — that is what `toPulseMemberId` is
+ * for. Matching the raw ids instead would empty the column for every selection
+ * made in the other id space, asserting "nobody has untracked sessions" when
+ * the truth is that the selection cannot be expressed in this roster at all.
+ * `null` means no roster member is selected, which is not the same as "nobody
+ * matched".
+ */
+export function filterPulseLooseWorkByMember(
+	looseWork: readonly PulseLooseWork[],
+	memberId: string | null,
+): readonly PulseLooseWork[] {
+	if (memberId === null) {
+		return looseWork;
+	}
+
+	return looseWork.filter((item) => item.memberIds.includes(memberId));
+}
+
+/**
+ * The Agent Session callbacks for a set of Pulse loose work.
+ *
+ * The card speaks `AgentSessionItem`; every Pulse action speaks
+ * `PulseLooseWork`. Translating between them is a rule, not a rendering
+ * detail — resume is gated on host capability *and* on the row still resolving
+ * to a known session — so it lives here once and is shared by every surface
+ * that shows these sessions (the Insights rail and the board's untracked-work
+ * column). A second hand-rolled copy is how the two would drift.
+ */
+export function toPulseSessionHandlers({
+	isLooseWorkResumable,
+	looseWork,
+	onCapture,
+	onResume,
+}: Readonly<{
+	isLooseWorkResumable?: (item: PulseLooseWork) => boolean;
+	looseWork: readonly PulseLooseWork[];
+	onCapture: (item: PulseLooseWork) => void;
+	onResume?: (item: PulseLooseWork) => void;
+}>) {
+	const sessionById = new Map(
+		looseWork.filter(isPulseAgentSession).map((item) => [item.id, item] as const),
+	);
+	const resolveResumable = (item: AgentSessionItem): PulseLooseWork | undefined => {
+		const session = sessionById.get(item.id);
+		if (session === undefined) return undefined;
+		return (isLooseWorkResumable?.(session) ?? true) ? session : undefined;
+	};
+
+	return {
+		isResumable: (item: AgentSessionItem) => resolveResumable(item) !== undefined,
+		onCopyResume: (item: AgentSessionItem) => {
+			const session = resolveResumable(item);
+			if (session === undefined) return;
+			onResume?.(session);
+		},
+		onLinkWorkItem: (item: AgentSessionItem) => {
+			const session = sessionById.get(item.id);
+			if (session === undefined) return;
+			onCapture(session);
+		},
+		onView: (item: AgentSessionItem) => {
+			const session = resolveResumable(item);
+			if (session === undefined) return;
+			onResume?.(session);
+		},
+	};
+}

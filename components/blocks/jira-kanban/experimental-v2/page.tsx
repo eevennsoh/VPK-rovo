@@ -54,6 +54,11 @@ import {
 	toPulseSuggestedQuestions,
 } from "../experimental/pulse/data/pulse-scopes";
 import { scopeTimelineToWorkItemKeys } from "../experimental/pulse/hooks/use-pulse-timeline";
+import {
+	filterPulseLooseWorkByMember,
+	toPulseSessionHandlers,
+	toPulseSessionItems,
+} from "../experimental/pulse/lib/pulse-sessions";
 import type { PulseAnswer, PulseLooseWork, PulseWorkItem } from "../experimental/pulse/types";
 import {
 	createJiraKanbanSelectionState,
@@ -325,6 +330,33 @@ export default function ExperimentalV2JiraKanbanPage({
 		PULSE_TIMELINE.snapshots,
 		timelineLastViewedAt,
 	);
+	// The board's untracked-work column and the Insights rail show the same
+	// sessions from the same fixtures and commit through the same captured set,
+	// so capturing on the board is the same event as capturing in Insights.
+	// The column also honours the header's assignee filter: it narrows the
+	// status columns, and a filter that skipped this one would stop describing
+	// the whole board.
+	const agentSessionItems = useMemo(
+		() => toPulseSessionItems(
+			filterPulseLooseWorkByMember(pulseTimeline.looseWork, pulseMemberId),
+			PULSE_TIMELINE.members,
+		),
+		[pulseMemberId, pulseTimeline.looseWork],
+	);
+	const agentSessionHandlers = useMemo(
+		() => toPulseSessionHandlers({
+			isLooseWorkResumable,
+			looseWork: pulseTimeline.looseWork,
+			onCapture: handleCaptureLooseWork,
+			onResume: onResumeLooseWork,
+		}),
+		[
+			handleCaptureLooseWork,
+			isLooseWorkResumable,
+			onResumeLooseWork,
+			pulseTimeline.looseWork,
+		],
+	);
 	const selectedAgentIds = useMemo(
 		() => getCommonJiraKanbanAgentIds(assignedAgentIdsByCard, selection.selectedCardCodes),
 		[assignedAgentIdsByCard, selection.selectedCardCodes],
@@ -524,6 +556,11 @@ export default function ExperimentalV2JiraKanbanPage({
 				<div className="flex min-h-0 min-w-0 flex-1">
 					<ExperimentalV2JiraKanban
 						activeCardCode={activeCardCode}
+						agentSessionColumn={{
+							capturedItemIds: capturedLooseWorkIds,
+							items: agentSessionItems,
+							...agentSessionHandlers,
+						}}
 						agents={agents}
 						ariaLabel={ariaLabel}
 						assignedAgentIdsByColumn={columnAgentAssignments}

@@ -9,6 +9,7 @@ import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import AddIcon from "@atlaskit/icon/core/add";
 
+import { AgentSessionColumn, type AgentSessionColumnProps } from "@/components/blocks/agent-session-column";
 import { JiraIssue } from "@/components/blocks/jira-issue";
 import {
 	mapAgentToMentionItem,
@@ -55,7 +56,19 @@ import type {
  * contracts (`JiraKanban*` types, `state.ts`, `jira-kanban-data.ts`) stay
  * shared so both variants remain interchangeable inside an owning surface.
  */
-export type ExperimentalV2JiraKanbanProps = JiraKanbanProps;
+export type ExperimentalV2JiraKanbanProps = JiraKanbanProps & {
+	/**
+	 * Sessions that never became work items, pinned as a sunken column to the
+	 * left of the board.
+	 *
+	 * It sits outside the horizontal scrollport rather than inside
+	 * `boardColumns`, because untracked work is not a status: it has no place in
+	 * the left-to-right progression the board's columns describe, and it must
+	 * stay reachable while the reader scrolls to Submitted. Omit to render the
+	 * board without it.
+	 */
+	agentSessionColumn?: AgentSessionColumnProps;
+};
 
 const JIRA_KANBAN_CARD_MOVE: Transition = { duration: 0.6, ease: [0.4, 0, 0, 1] }; // duration-slowest + ease-in-out
 const JIRA_KANBAN_CARD_DEPART: Transition = { duration: 0.4, ease: [0.6, 0, 0.8, 0.6] }; // duration-slower + ease-in
@@ -399,6 +412,7 @@ function getCommonSelectedCardStatus(
 
 export function ExperimentalV2JiraKanban({
 	activeCardCode,
+	agentSessionColumn,
 	agents,
 	animateCardMoves = false,
 	ariaLabel = "Experimental v2 Jira kanban columns. Scroll horizontally to review all statuses.",
@@ -544,21 +558,40 @@ export function ExperimentalV2JiraKanban({
 
 	return (
 		<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-			<section
-				tabIndex={0}
-				aria-label={ariaLabel}
-				className="flex min-h-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-				style={{
-					flex: 1,
-					paddingTop,
-					paddingBottom,
-					overflowX: "auto",
-					overflowY: "hidden",
-					minHeight: 0,
-				}}
-			>
+			<div className="flex min-h-0 min-w-0 flex-1 items-stretch">
+				{agentSessionColumn ? (
+					// Same vertical padding as the scrollport beside it, so the two
+					// column headers sit on one baseline even though only one scrolls.
+					<div
+						className="flex min-h-0 shrink-0 ps-6"
+						style={{ paddingTop, paddingBottom }}
+					>
+						<AgentSessionColumn {...agentSessionColumn} />
+					</div>
+				) : null}
+				<section
+					tabIndex={0}
+					aria-label={ariaLabel}
+					className="flex min-h-0 min-w-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+					style={{
+						flex: 1,
+						paddingTop,
+						paddingBottom,
+						overflowX: "auto",
+						overflowY: "hidden",
+						minHeight: 0,
+					}}
+				>
 				<LayoutGroup id={cardLayoutGroupId}>
-					<div className="flex min-h-full w-max min-w-full items-stretch ps-6">
+					<div
+						className={cn(
+							"flex min-h-full w-max min-w-full items-stretch",
+							// The pinned column already supplies the board's left inset, so
+							// drop to the inter-column gap and keep one rhythm across all
+							// columns instead of a 24px seam after the sunken one.
+							agentSessionColumn ? "ps-2" : "ps-6",
+						)}
+					>
 						<div className="flex min-h-full flex-1 items-stretch gap-2">
 						{boardColumns.map((column) => (
 						<div
@@ -687,6 +720,7 @@ export function ExperimentalV2JiraKanban({
 					</div>
 				</LayoutGroup>
 				</section>
+			</div>
 				{selectionToolbar ? (
 					<JiraToolbar
 						agents={selectionToolbar.agents ?? agents ?? []}
