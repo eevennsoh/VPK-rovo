@@ -322,7 +322,8 @@ test("Queue detail panel reuses session details and adds sources and output", ()
 	assert.match(JIRA_SESSION_FLYOUT_SOURCE, /label="Session"/u);
 	assert.match(JIRA_SESSION_FLYOUT_SOURCE, /label="Agent"/u);
 	assert.match(JIRA_SESSION_FLYOUT_SOURCE, /<Tag[\s\S]*type="agent"/u);
-	assert.match(JIRA_SESSION_FLYOUT_SOURCE, />Development</u);
+	assert.doesNotMatch(JIRA_SESSION_FLYOUT_SOURCE, />Development</u);
+	assert.match(JIRA_SESSION_FLYOUT_SOURCE, /return \(\s*<div className="flex flex-col gap-2">/u);
 
 	assert.match(QUEUE_DETAIL_ARTIFACTS_SOURCE, /title="Sources"/u);
 	assert.match(QUEUE_DETAIL_ARTIFACTS_SOURCE, /title="Output"/u);

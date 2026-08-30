@@ -178,7 +178,7 @@ test("submitted Rovo answer makes the completed changes ready for review", async
 		repository: "atlassian/jira-cloud",
 		branch: "cursor/jgp-252-clear-focus-action",
 		commit: "6f4c2ab",
-		checks: "5 checks passing",
+		checks: { passed: 5, failed: 0 },
 		fileChanges: {
 			additions: 42,
 			deletions: 8,

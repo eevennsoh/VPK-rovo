@@ -15,6 +15,7 @@ export { AGENT_SESSION_FLYOUT_SESSIONS } from "@/components/blocks/agent-session
 const FLYOUT_CONTENT: readonly { label: string; value: JiraSessionFlyoutContent }[] = [
 	{ label: "Details", value: "details" },
 	{ label: "Composer", value: "composer" },
+	{ label: "Untracked work", value: "untracked-work" },
 ];
 
 export default function AgentSessionFlyoutPage({
