@@ -45,3 +45,15 @@ export const AGENT_SESSION_ITEMS: readonly AgentSessionItem[] = [
 		},
 	},
 ];
+
+/**
+ * Candidate work items per session for the multi-link chin, keyed by session id.
+ *
+ * A session rarely maps to exactly one work item — the same local thread often
+ * touches the ticket it started from plus the neighbours it turned out to
+ * affect. Each key becomes its own linkable chin row.
+ */
+export const AGENT_SESSION_MULTI_LINK_KEYS: Readonly<Record<string, readonly string[]>> = {
+	"lw-scope-thread": ["PAY-101", "PAY-121", "PAY-104"],
+	"lw-kickoff-killswitch-session": ["PAY-121", "PAY-101"],
+};

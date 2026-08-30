@@ -389,6 +389,10 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 		() => import("../demos/blocks/agent-session-demo"),
 		{ ssr: false },
 	),
+	"agent-session-column": dynamic(
+		() => import("../demos/blocks/agent-session-column-demo"),
+		{ ssr: false },
+	),
 	"jira-activity": dynamic(() => import("../demos/blocks/jira-activity-demo"), {
 		ssr: false,
 	}),

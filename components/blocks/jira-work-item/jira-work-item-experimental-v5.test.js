@@ -690,7 +690,7 @@ test("the v5 Agents details row opens the assigned menu first and swaps to the p
 	);
 	assert.match(
 		detailsEditorsSource,
-		/const assignedAgents = assignedRows\.map\(\(row, rowIndex\): AgentAssignmentAgent =>[\s\S]*status: row\.session !== undefined && row\.session\.status !== "completed"[\s\S]*<WorkingSessionActivityByline session=\{row\.session\} sessionIndex=\{rowIndex\} \/>[\s\S]*<WorkingSessionActivityByline fallbackLabel=\{row\.statusLabel\} \/>[\s\S]*statusLabel: row\.statusLabel,/u,
+		/const assignedAgents = assignedRows\.map\(\(row, rowIndex\): AgentAssignmentAgent =>[\s\S]*status: row\.session !== undefined && row\.session\.status !== "completed"[\s\S]*<WorkingSessionActivityByline session=\{row\.session\} sessionIndex=\{rowIndex\} \/>[\s\S]*<WorkingSessionActivityByline fallbackLabel=\{row\.statusLabel\} \/>[\s\S]*statusKind: row\.statusKind,[\s\S]*statusLabel: row\.statusLabel,/u,
 	);
 	assert.match(
 		detailsEditorsSource,
@@ -729,7 +729,7 @@ test("the v5 assigned-agents menu lists live agent state and ends in an Assign a
 	);
 	assert.match(
 		menuSource,
-		/inlineMetadata: <AssignedAgentStatus agent=\{row\} rowIndex=\{rowIndex\} \/>,[\s\S]*hoverActions: \{[\s\S]*primaryLabel: "View"[\s\S]*secondaryLabel: "Archive"/u,
+		/inlineMetadata: getAssignedAgentHoverByline\(row, statusKind, rowIndex\),[\s\S]*hoverActions: \{[\s\S]*primaryLabel: "View"[\s\S]*secondaryLabel: "Archive"/u,
 	);
 	assert.match(
 		detailsEditorsSource,
@@ -775,7 +775,7 @@ test("the v5 working-session byline is one shared module, not a per-surface copy
 	assert.match(bylineSource, /session\?: AgentSession;/u);
 	assert.match(bylineSource, /fallbackLabel\?: string;/u);
 	assert.match(bylineSource, /const activity: string \| null = session\s*\? getWorkingSessionActivity\(session, activityCycleIndex\)\s*: fallbackLabel \?\? null;/u);
-	assert.match(bylineSource, /<CyclingByline className="menu-row-title text-text-subtlest">/u);
+	assert.match(bylineSource, /<CyclingByline className="menu-row-byline">/u);
 	assert.match(
 		bylineSource,
 		/needsUserInput && activity !== null \? \(\s*<span className="inline-flex min-w-0 items-baseline">\s*<Shimmer as="span">\{activity\}<\/Shimmer>\s*<AnimatedDots \/>\s*<\/span>\s*\) : activity/u,

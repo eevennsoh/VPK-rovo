@@ -90,7 +90,7 @@ test("session rows expose View, Resume, or Reply without advertising a Stop acti
 	assert.doesNotMatch(TYPES_SOURCE, /onStop\?:/u);
 	assert.match(
 		CARD_SOURCE,
-		/<Button onClick=\{\(\) => onView\(item\)\} size="compact" type="button" variant="outline">\s*\{rowPrimaryActionLabel\(item\)\}/u,
+		/primary: \{\s*label: rowPrimaryActionLabel\(item\),\s*onClick: \(\) => onView\(item\),\s*\},/u,
 	);
 	assert.match(TYPES_SOURCE, /actionLabel\?: string;/u);
 	assert.match(
@@ -115,7 +115,7 @@ test("coding agent rows keep hover Resume even when canViewItem would hide them"
 test("View and Resume open the Rovo floating chat in the demo", () => {
 	assert.match(
 		CARD_SOURCE,
-		/<Button onClick=\{\(\) => onView\(item\)\} size="compact" type="button" variant="outline">\s*\{rowPrimaryActionLabel\(item\)\}/u,
+		/primary: \{\s*label: rowPrimaryActionLabel\(item\),\s*onClick: \(\) => onView\(item\),\s*\},/u,
 	);
 	assert.match(PAGE_SOURCE, /const handleView = useCallback\(\(\) => \{\s*openChat\("floating"\);/);
 	assert.match(PAGE_SOURCE, /composerChatSurface="floating"/);
@@ -422,7 +422,11 @@ test("in-flow View controls immediately replace lifecycle indicators without col
 		/const viewItem = onView === undefined \? undefined : \(\) => onView\(item\);/u,
 	);
 	assert.match(CARD_SOURCE, /onView=\{viewItem\}/u);
-	assert.match(CARD_SOURCE, /\{isSelected \|\| hideHoverActions \|\| onView === undefined \? null : \(\s*<CardActions/u);
+	assert.match(
+		CARD_SOURCE,
+		/const showHoverActions = !isSelected &&\s*\(hoverActions\?\.primary !== undefined \|\| hoverActions\?\.secondary !== undefined\);/u,
+	);
+	assert.match(CARD_SOURCE, /\{showHoverActions \? \(\s*<CardActions/u);
 	assert.match(
 		CARD_SOURCE,
 		/"flex w-full min-w-0 items-center gap-0",\s*hasSummary \? null : "overflow-hidden",/u,
@@ -445,7 +449,7 @@ test("in-flow View controls immediately replace lifecycle indicators without col
 	assert.doesNotMatch(CARD_SOURCE, /isVisible/u);
 	assert.match(
 		CARD_SOURCE,
-		/!isSelected &&\s*"group-hover\/agent-row:hidden group-has-\[:focus-visible\]\/agent-row:hidden"/u,
+		/showHoverActions &&\s*"group-hover\/agent-row:hidden group-has-\[:focus-visible\]\/agent-row:hidden"/u,
 	);
 	assert.doesNotMatch(CARD_SOURCE, /transition-\[width,margin,opacity\]/u);
 });
@@ -501,8 +505,11 @@ test("no longer owns the uncaptured coding-session card", () => {
 	assert.doesNotMatch(DETAIL_SOURCE, /uncaptured/iu);
 	assert.doesNotMatch(VARIANT_REGISTRY_SOURCE, /agent-list-demo-uncaptured/u);
 	assert.equal(existsSync(join(__dirname, "agent-list-uncaptured.tsx")), false);
-	// AgentListRow stays shared: the Agent Session card renders it in its sunken body.
-	assert.match(CARD_SOURCE, /hideHoverActions/u);
+	// AgentListRow stays shared: the Agent Session card renders it in its sunken
+	// body. Its hover slot is generic, so each owner supplies its own pair rather
+	// than the row hardcoding a second block's actions.
+	assert.match(CARD_SOURCE, /hoverActions\?: AgentListRowHoverActions;/u);
+	assert.match(CARD_SOURCE, /export type AgentListRowHoverActions = Readonly<\{/u);
 	assert.match(CARD_SOURCE, /export function AgentListRow/u);
 });
 
@@ -727,9 +734,15 @@ test("hover actions add an Archive icon beside View or Resume", () => {
 	assert.match(CARD_SOURCE, /import ArchiveBoxIcon from "@atlaskit\/icon\/core\/archive-box";/u);
 	assert.match(
 		CARD_SOURCE,
-		/<Button[\s\S]*aria-label="Archive"[\s\S]*size="icon-compact"[\s\S]*<ArchiveBoxIcon label="" size="small" \/>/u,
+		/secondary: onArchive === undefined\s*\?\s*undefined\s*:\s*\{\s*icon: <ArchiveBoxIcon label="" size="small" \/>,\s*label: "Archive",\s*onClick: \(\) => onArchive\(item\),\s*\},/u,
 	);
-	assert.match(CARD_SOURCE, /<TooltipContent>Archive<\/TooltipContent>/u);
+	// An action with an icon renders icon-only, with its label as both the
+	// tooltip and the accessible name.
+	assert.match(
+		CARD_SOURCE,
+		/<Button\s*aria-label=\{action\.label\}[\s\S]*size="icon-compact"[\s\S]*\{action\.icon\}/u,
+	);
+	assert.match(CARD_SOURCE, /<TooltipContent>\{action\.label\}<\/TooltipContent>/u);
 	assert.match(PAGE_SOURCE, /onArchive=\{handleArchive\}/u);
 	assert.match(DETAIL_SOURCE, /name: "onArchive"/u);
 	assert.match(DETAIL_SOURCE, /Resume on local sessions/u);

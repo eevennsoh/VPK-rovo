@@ -1,6 +1,6 @@
 "use client";
 
-import { cloneElement, useState, type ReactElement, type ReactNode } from "react";
+import { cloneElement, useRef, useState, type ReactElement, type ReactNode } from "react";
 
 import {
 	AgentSelector,
@@ -12,6 +12,14 @@ import {
 } from "@/components/blocks/agent-assignment/components/agent-session-target-menu";
 import { AssignedAgentsMenu } from "@/components/blocks/agent-assignment/components/assigned-agents-menu";
 import { AssignmentAvatar } from "@/components/blocks/agent-assignment/components/assignment-avatar";
+import {
+	resolveAssignedAgentStatusKind,
+	type AgentAssignmentStatusKind,
+} from "@/components/blocks/agent-assignment/components/assigned-agent-status";
+import {
+	isAssignedAgentAttentionKind,
+	useAssignedAgentAttention,
+} from "@/components/blocks/agent-assignment/components/use-assigned-agent-attention";
 import { Avatar } from "@/components/ui/avatar";
 import {
 	HoverCard,
@@ -28,12 +36,19 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
+export type { AgentAssignmentStatusKind } from "@/components/blocks/agent-assignment/components/assigned-agent-status";
+
 export interface AgentAssignmentAgent extends AgentSelectorAgent {
 	status?: ReactNode;
 	/** Minimum time a status remains visible before advancing. */
 	statusCycleIntervalMs?: number;
 	/** Random time added independently to every status step. */
 	statusCycleJitterMs?: number;
+	/**
+	 * Rest-state trailing treatment. When omitted, a cycling `statusSequence`
+	 * defaults to working so existing adapters keep a spinner; otherwise idle.
+	 */
+	statusKind?: AgentAssignmentStatusKind;
 	statusLabel: string;
 	/** Agent-specific tool-call narration. Avoid sharing one sequence across agents. */
 	statusSequence?: readonly string[];
@@ -54,6 +69,7 @@ export interface AgentAssignmentProps {
 	onOpenChange?: (open: boolean) => void;
 	onStartNewSession?: (agent: AgentSelectorAgent) => void;
 	openMode?: "click" | "hover";
+	moreItemsLabel?: string;
 	pinnedItemsLabel?: string;
 	positionerClassName?: string;
 	side?: "top" | "right" | "bottom" | "left";
@@ -81,7 +97,8 @@ export function AgentAssignment({
 	onOpenChange,
 	onStartNewSession,
 	openMode = "click",
-	pinnedItemsLabel,
+	moreItemsLabel = "More agents",
+	pinnedItemsLabel = "Pinned by space",
 	positionerClassName = "z-[502]",
 	side,
 	trigger,
@@ -93,6 +110,8 @@ export function AgentAssignment({
 	const [view, setView] = useState<"assigned" | "selector" | "session">("assigned");
 	const [pendingSessionAgent, setPendingSessionAgent] = useState<AgentSelectorAgent | null>(null);
 	const [pinnedAgentIds, setPinnedAgentIds] = useState<readonly string[]>(defaultPinnedAgentIds);
+	const menuRootRef = useRef<HTMLDivElement>(null);
+	const retainPopoverOpenRef = useRef(false);
 	const assignedAgentIds = assignedAgents.map((agent) => agent.id);
 	const showSessionView = view === "session" && pendingSessionAgent !== null;
 	const effectiveView = showSessionView
@@ -101,6 +120,15 @@ export function AgentAssignment({
 			? "selector"
 			: view;
 	const shown = assignedAgents.slice(0, maxVisibleAgents);
+	const attentionAgents = assignedAgents.map((agent) => ({
+		id: agent.id,
+		statusKind: resolveAssignedAgentStatusKind(agent),
+	}));
+	const {
+		acknowledgeAttention,
+		attentionAgentId,
+		isAttentionAcknowledged,
+	} = useAssignedAgentAttention(attentionAgents, open);
 	const overlayPositionerClassName = openMode === "hover"
 		? cn(
 			positionerClassName,
@@ -111,7 +139,23 @@ export function AgentAssignment({
 		? cloneElement(trigger, { "aria-expanded": open })
 		: undefined;
 
-	const handleOpenChange = (nextOpen: boolean) => {
+	const handleOpenChange = (
+		nextOpen: boolean,
+		eventDetails?: { preventUnmountOnClose?: () => void; reason?: string },
+	) => {
+		// Replacing the selector with the session menu unmounts the focused search
+		// field. Base UI treats that blur as focus-out and would close the popover
+		// before the session options can paint.
+		if (
+			!nextOpen
+			&& retainPopoverOpenRef.current
+			&& eventDetails?.reason === "focus-out"
+		) {
+			retainPopoverOpenRef.current = false;
+			eventDetails.preventUnmountOnClose?.();
+			return;
+		}
+		retainPopoverOpenRef.current = false;
 		setOpen(nextOpen);
 		onOpenChange?.(nextOpen);
 		if (!nextOpen) {
@@ -169,8 +213,13 @@ export function AgentAssignment({
 			return;
 		}
 		if (usedAgentIds.includes(agentId)) {
+			retainPopoverOpenRef.current = true;
+			menuRootRef.current?.focus();
 			setPendingSessionAgent(agent);
 			setView("session");
+			queueMicrotask(() => {
+				retainPopoverOpenRef.current = false;
+			});
 			return;
 		}
 		const isAssigned = assignedAgentIds.includes(agentId);
@@ -189,6 +238,7 @@ export function AgentAssignment({
 	};
 
 	const handleAssignedAgentSelect = (agent: AgentAssignmentAgent) => {
+		acknowledgeAttention(agent.id);
 		handleOpenChange(false);
 		onAssignedAgentSelect?.(agent);
 	};
@@ -214,16 +264,24 @@ export function AgentAssignment({
 			onAgentToggle={handleAgentToggle}
 			onBrowseAgents={onBrowseAgents ? () => handleFooterAction(onBrowseAgents) : undefined}
 			onCreateAgent={onCreateAgent ? () => handleFooterAction(onCreateAgent) : undefined}
+			moreItemsLabel={moreItemsLabel}
 			onPinnedAgentIdsChange={setPinnedAgentIds}
 			onQueryChange={setQuery}
 			pinnedAgentIds={pinnedAgentIds}
 			pinnedItemsLabel={pinnedItemsLabel}
+			pinningEnabled
 			query={query}
 			searchVariant="palette"
-			selectionMode="multiple"
+			selectionMode="single"
 			selectedAgentIds={assignedAgentIds}
+			showSelectedTickInSingleSelect={false}
 			submenuAgentIds={usedAgentIds}
 		/>
+	);
+	const menuSurface = (
+		<div className="w-full outline-none" ref={menuRootRef} tabIndex={-1}>
+			{menu}
+		</div>
 	);
 
 	if (openMode === "hover") {
@@ -251,7 +309,7 @@ export function AgentAssignment({
 						sideOffset={8}
 						style={{ boxShadow: token("elevation.shadow.overlay") }}
 					>
-						{menu}
+						{menuSurface}
 					</HoverCardContent>
 				</HoverCard>
 			</TooltipProvider>
@@ -264,7 +322,7 @@ export function AgentAssignment({
 				{resolvedTrigger ? (
 					<PopoverTrigger render={resolvedTrigger} />
 				) : (
-					<div className={cn("relative flex min-h-8 w-full min-w-0 items-center gap-0.5 px-2", className)}>
+					<div className={cn("relative flex min-h-8 w-full min-w-0 items-center gap-0.5 overflow-visible px-2", className)}>
 						<PopoverTrigger
 							render={
 								<button
@@ -274,14 +332,25 @@ export function AgentAssignment({
 								/>
 							}
 						/>
-						{shown.map((agent) => (
-							<AssignmentAvatar
-								agent={agent}
-								key={agent.id}
-								onOpen={() => handleOpenChange(true)}
-								positionerClassName={positionerClassName}
-							/>
-						))}
+						{shown.map((agent, index) => {
+							const statusKind = resolveAssignedAgentStatusKind(agent);
+							const attentionAcknowledged = isAttentionAcknowledged(agent.id);
+							const seeksAttention = isAssignedAgentAttentionKind(statusKind)
+								&& !attentionAcknowledged;
+							return (
+								<AssignmentAvatar
+									agent={agent}
+									attentionAcknowledged={attentionAcknowledged}
+									autoRevealAttention={agent.id === attentionAgentId}
+									key={agent.id}
+									menuOpen={open}
+									onOpen={() => handleOpenChange(true)}
+									positionerClassName={positionerClassName}
+									stackZIndex={seeksAttention ? 30 - index : 10}
+									statusKind={statusKind}
+								/>
+							);
+						})}
 						<Avatar
 							aria-hidden
 							className="pointer-events-none relative z-10 text-icon-subtle"
@@ -303,7 +372,7 @@ export function AgentAssignment({
 					sideOffset={8}
 					style={{ boxShadow: token("elevation.shadow.overlay") }}
 				>
-					{menu}
+					{menuSurface}
 				</PopoverContent>
 			</Popover>
 		</TooltipProvider>

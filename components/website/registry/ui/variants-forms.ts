@@ -407,6 +407,13 @@ export const UI_FORM_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"tooltip-demo-without-animation": dynamic(
+		() =>
+			import("../../demos/ui/tooltip-demo").then((mod) => ({
+				default: mod.TooltipDemoWithoutAnimation,
+			})),
+		{ ssr: false },
+	),
 	"tooltip-demo-side": dynamic(
 		() =>
 			import("../../demos/ui/tooltip-demo").then((mod) => ({

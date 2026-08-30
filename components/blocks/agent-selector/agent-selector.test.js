@@ -27,8 +27,8 @@ async function loadAgentSelectorHarness() {
 	const mockModules = new Map([
 		["@atlaskit/icon/core/add", "export default function Icon() { return null; }"],
 		["@atlaskit/icon/core/ai-agent", "export default function Icon() { return null; }"],
-		["@atlaskit/icon/core/pin-filled", "export default function Icon() { return null; }"],
-		["@atlaskit/icon/core/pin", "export default function Icon() { return null; }"],
+		["@atlaskit/icon/core/pin-filled", "export default function Icon() { return 'PIN_FILLED'; }"],
+		["@atlaskit/icon/core/pin", "export default function Icon() { return 'PIN_OUTLINE'; }"],
 		["@atlaskit/icon/core/video-stop-overlay", "export default function Icon() { return null; }"],
 		[
 			"motion/react",
@@ -67,8 +67,33 @@ async function loadAgentSelectorHarness() {
 				export function CommandList(props) { return React.createElement("div", null, props.children); }
 			`,
 		],
-		["@/components/ui/button", "export function Button() { return null; }"],
-		["@/components/ui/icon", "export function Icon() { return null; }"],
+		[
+			"@/components/ui/button",
+			`
+				import React from "react";
+				export function Button(props) {
+					return React.createElement(
+						"button",
+						{
+							"aria-hidden": props["aria-hidden"],
+							"aria-label": props["aria-label"],
+							"aria-pressed": props["aria-pressed"],
+							type: props.type,
+						},
+						props.children,
+					);
+				}
+			`,
+		],
+		[
+			"@/components/ui/icon",
+			`
+				import React from "react";
+				export function Icon(props) {
+					return React.createElement("span", { "data-icon": true }, props.render);
+				}
+			`,
+		],
 		["@/components/ui/icon-tile", "export function IconTile() { return null; }"],
 		["@/components/ui/spinner", "export function Spinner() { return null; }"],
 		["@/components/ui/vpk-icons", "export function CheckIcon() { return null; } export function SearchIcon() { return null; }"],
@@ -95,6 +120,25 @@ async function loadAgentSelectorHarness() {
 						selectionMode: "multiple",
 						selectedAgentIds: ["session-agent"],
 						submenuAgentIds: ["session-agent"],
+					}));
+				}
+
+				export function renderAssignmentCatalogPins() {
+					return renderToStaticMarkup(React.createElement(AgentSelector, {
+						agents: [
+							{ id: "github-copilot", name: "GitHub Copilot", byline: "Agent by GitHub" },
+							{ id: "release-notes-drafter", name: "Release Notes Drafter", byline: "Drafts notes" },
+							{ id: "code-reviewer", name: "Code Reviewer", byline: "Reviews code" },
+							{ id: "readiness-checker", name: "Readiness Checker", byline: "Checks readiness" },
+							{ id: "rfp-drafting-agent", name: "RFP Drafter", byline: "Drafts RFPs" },
+						],
+						onAgentToggle() {},
+						pinnedAgentIds: ["rfp-drafting-agent", "readiness-checker"],
+						pinningEnabled: true,
+						selectionMode: "single",
+						selectedAgentIds: ["github-copilot", "release-notes-drafter", "code-reviewer", "readiness-checker"],
+						showSelectedTickInSingleSelect: false,
+						submenuAgentIds: ["github-copilot", "release-notes-drafter"],
 					}));
 				}
 			`,
@@ -137,13 +181,20 @@ test("agent rows use 8px left padding while preserving the compact trailing inse
 	);
 });
 
+test("AgentSelector footer uses 4px top padding", () => {
+	assert.match(
+		COMPONENT_SOURCE,
+		/<div className="sticky bottom-0 z-10 flex shrink-0 flex-col border-t border-border bg-popover p-0 pt-1">/u,
+	);
+});
+
 test("AgentSelector demo list omits Rovo Dev", () => {
 	assert.doesNotMatch(DATA_SOURCE, /name:\s*"Rovo Dev"/u);
 	assert.doesNotMatch(DATA_SOURCE, /id:\s*"rovo-dev"/u);
 });
 
 test("AgentSelector demo uses single selection without multi-select toggling", () => {
-	assert.match(PAGE_SOURCE, /variant === "selected-agent-actions" \? \["ai-insights-agent"\] : \["github-copilot"\]/u);
+	assert.match(PAGE_SOURCE, /variant === "selected-agent-actions"[\s\S]*\["ai-insights-agent"\][\s\S]*variant === "jira"[\s\S]*"github-copilot"[\s\S]*"release-notes-drafter"[\s\S]*"code-reviewer"[\s\S]*"readiness-checker"[\s\S]*\["github-copilot"\]/u);
 	assert.match(PAGE_SOURCE, /function selectAgent\(agentId: string\) \{[\s\S]*setSelectedAgentIds\(\[agentId\]\);[\s\S]*\}/u);
 	assert.match(PAGE_SOURCE, /selectionMode="single"/u);
 	assert.doesNotMatch(PAGE_SOURCE, /currentIds\.includes\(agentId\)[\s\S]*currentIds\.filter/u);
@@ -180,6 +231,24 @@ test("AgentSelector hides command checkmarks for single-select usage by default"
 	assert.doesNotMatch(COMPONENT_SOURCE, /role=\{(?:rowRole|supportsMultipleSelection)/u);
 });
 
+test("AgentSelector filled pins stay on the pinned set when assigned agents sit in More agents", async () => {
+	const harness = await loadAgentSelectorHarness();
+	const markup = harness.renderAssignmentCatalogPins();
+
+	assert.match(markup, /Unpin Readiness Checker/u);
+	assert.match(markup, /Unpin RFP Drafter/u);
+	assert.match(markup, /<button(?=[^>]*aria-label="Unpin Readiness Checker")(?=[^>]*aria-pressed="true")[^>]*>[\s\S]*PIN_FILLED[\s\S]*?<\/button>/u);
+	assert.match(markup, /<button(?=[^>]*aria-label="Unpin RFP Drafter")(?=[^>]*aria-pressed="true")[^>]*>[\s\S]*PIN_FILLED[\s\S]*?<\/button>/u);
+	assert.doesNotMatch(markup, /Unpin GitHub Copilot|Unpin Release Notes Drafter|Unpin Code Reviewer/u);
+	assert.doesNotMatch(
+		markup,
+		/<button(?=[^>]*aria-label="Pin (?:GitHub Copilot|Release Notes Drafter|Code Reviewer)")(?=[^>]*aria-pressed="true")/u,
+	);
+	assert.match(markup, /<button(?=[^>]*aria-label="Pin GitHub Copilot")(?=[^>]*aria-pressed="false")[^>]*>[\s\S]*PIN_OUTLINE[\s\S]*?<\/button>/u);
+	assert.match(markup, /<button(?=[^>]*aria-label="Pin Release Notes Drafter")(?=[^>]*aria-pressed="false")[^>]*>[\s\S]*PIN_OUTLINE[\s\S]*?<\/button>/u);
+	assert.match(markup, /<button(?=[^>]*aria-label="Pin Code Reviewer")(?=[^>]*aria-pressed="false")[^>]*>[\s\S]*PIN_OUTLINE[\s\S]*?<\/button>/u);
+});
+
 test("AgentSelector exposes submenu rows as actions while retaining checkbox semantics for toggles", async () => {
 	const harness = await loadAgentSelectorHarness();
 	const markup = harness.renderMixedAgentRows();
@@ -188,6 +257,7 @@ test("AgentSelector exposes submenu rows as actions while retaining checkbox sem
 	assert.doesNotMatch(markup, /<div(?=[^>]*data-agent-id="session-agent")(?=[^>]*aria-checked)[^>]*>/u);
 	assert.match(markup, /<div(?=[^>]*data-agent-id="toggle-agent")(?=[^>]*role="option")(?=[^>]*aria-checked="false")[^>]*>/u);
 	assert.doesNotMatch(markup, /<div(?=[^>]*data-agent-id="toggle-agent")(?=[^>]*aria-haspopup)[^>]*>/u);
+	assert.match(COMPONENT_SOURCE, /onPointerDown=\{\(event\) => \{[\s\S]*isSubmenuTrigger[\s\S]*event\.preventDefault\(\);\s*onToggle\?\.\(agent\.id\);/u);
 });
 
 test("AgentSelector single-select tick uses the VPK check in a transparent icon tile", () => {
@@ -209,11 +279,14 @@ test("AgentSelector single-select tick uses the VPK check in a transparent icon 
 		COMPONENT_SOURCE,
 		/<IconTile[\s\S]*className="ml-1 mr-1 text-icon-selected"[\s\S]*icon=\{<CheckIcon size="small" \/>\}[\s\S]*iconSize="small"[\s\S]*size="small"[\s\S]*variant="transparent"[\s\S]*\/>/u,
 	);
-	// The default and selected-agent-actions demo variants turn it on; jira does not.
+	// The default and selected-agent-actions demo variants turn it on; jira does
+	// not. Jira / Assign agent never treat selection as a filled pin.
 	assert.match(
 		PAGE_SOURCE,
 		/showSelectedTickInSingleSelect=\{variant === "default" \|\| variant === "selected-agent-actions"\}/u,
 	);
+	assert.match(PAGE_SOURCE, /pinningEnabled/u);
+	assert.match(PAGE_SOURCE, /variant === "jira"[\s\S]*"github-copilot"[\s\S]*"release-notes-drafter"[\s\S]*"code-reviewer"[\s\S]*"readiness-checker"/u);
 });
 
 test("AgentSelector uses stable command values for duplicate agent names", () => {
@@ -288,13 +361,16 @@ test("AgentSelector rows use greeting prompt text rhythm and shared agent avatar
 test("AgentSelector pin actions reveal without permanently reserving label space and split pinned rows", () => {
 	assert.match(COMPONENT_SOURCE, /import PinFilledIcon from "@atlaskit\/icon\/core\/pin-filled";/u);
 	assert.match(COMPONENT_SOURCE, /import PinIcon from "@atlaskit\/icon\/core\/pin";/u);
-	// The hover reveal is suppressed on the checked row so the pin never flashes
-	// for a frame as the selected row floats to the top carrying stale hover
-	// state. Mirrors the `revealByline = isInteractionActive && !isChecked` guard.
+	// Filled pins follow the pinned set only. Selected / assigned / used rows
+	// never get a persistent filled pin. Hover reveals an outline pin on unpinned
+	// rows; tick-mode selected rows still suppress that hover pin.
+	assert.doesNotMatch(COMPONENT_SOURCE, /showSelectionPin/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/const showPinButton =\s*!isInProgress && pinningEnabled && \(isPinned \|\| \(isInteractionActive && !isChecked\)\);/u,
+		/const showPinButton =\s*!isInProgress && pinningEnabled && \(isPinned \|\| \(isInteractionActive && !showSingleSelectTick\)\);/u,
 	);
+	assert.match(COMPONENT_SOURCE, /const pinFilled = isPinned;/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /pinFilled = isPinned \|\|/u);
 	assert.match(COMPONENT_SOURCE, /marginLeft: showPinButton \? 8 : 0,[\s\S]*opacity: showPinButton \? 1 : 0,[\s\S]*width: showPinButton \? 24 : 0/u);
 	assert.match(COMPONENT_SOURCE, /aria-label=\{`\$\{isPinned \? "Unpin" : "Pin"\} \$\{agent\.name\}`\}/u);
 	assert.match(COMPONENT_SOURCE, /aria-hidden=\{!showPinButton\}/u);
@@ -363,11 +439,23 @@ test("AgentSelector renders in-progress agents in a top section with stop-on-hov
 	assert.match(COMPONENT_SOURCE, /!pinnedAgentIdSet\.has\(agent\.id\) && !inProgressAgentIdSet\.has\(agent\.id\)/u);
 });
 
-test("AgentSelector demo exposes a Jira variant with in-progress stop-on-hover", () => {
+test("AgentSelector jira-kanban catalog demo matches the Assign agent palette", () => {
 	assert.match(PAGE_SOURCE, /variant\?: "default" \| "selected-agent-actions" \| "jira";/u);
-	assert.match(PAGE_SOURCE, /variant === "jira" \? \["github-copilot", "readiness-checker"\] : \[\]/u);
-	assert.match(PAGE_SOURCE, /inProgressAgentIds=\{inProgressAgentIds\}/u);
-	assert.match(PAGE_SOURCE, /onStopAgent=\{\(agentId\) =>\s*setInProgressAgentIds\(\(ids\) => ids\.filter\(\(id\) => id !== agentId\)\)/u);
+	assert.doesNotMatch(PAGE_SOURCE, /inProgressAgentIds/u);
+	assert.doesNotMatch(PAGE_SOURCE, /onStopAgent/u);
+	assert.doesNotMatch(PAGE_SOURCE, /setInProgressAgentIds/u);
+	assert.match(DETAILS_SOURCE, /title: "Jira kanban", description: "Same palette as Assign agent/u);
+	assert.doesNotMatch(DETAILS_SOURCE, /title: "Jira kanban"[\s\S]{0,240}In progress/u);
+	assert.match(PAGE_SOURCE, /searchVariant="palette"/u);
+	assert.match(PAGE_SOURCE, /selectionMode="single"/u);
+	assert.match(PAGE_SOURCE, /pinningEnabled/u);
+	assert.match(PAGE_SOURCE, /showSelectedTickInSingleSelect=\{variant === "default" \|\| variant === "selected-agent-actions"\}/u);
+	assert.match(PAGE_SOURCE, /onBrowseAgents=\{\(\) => undefined\}/u);
+	assert.match(PAGE_SOURCE, /onCreateAgent=\{\(\) => undefined\}/u);
+	assert.match(PAGE_SOURCE, /variant === "jira" \? DEFAULT_PINNED_SPACE_AGENT_IDS : \[\]/u);
+	assert.match(PAGE_SOURCE, /pinnedItemsLabel=\{variant === "jira" \? WORK_ITEM_PINNED_ITEMS_LABEL : undefined\}/u);
+	assert.match(PAGE_SOURCE, /moreItemsLabel=\{variant === "jira" \? "More agents" : undefined\}/u);
+	assert.match(DETAILS_SOURCE, /Pinned by space \/ More agents grouping/u);
 
 	// Wired end-to-end: demo wrapper -> variant registry -> details example.
 	assert.match(DEMO_SOURCE, /export function AgentSelectorDemoJira/u);

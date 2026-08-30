@@ -669,10 +669,18 @@
 /* When the return icon is revealed (hover / selection), reserve room for it on
    the copy's right edge so the text truncates BEFORE the icon — the 16px icon
    plus a 12px gap — instead of sliding underneath the absolutely-positioned
-   shortcut. */
-.rich-text-command-menu-item:hover .rich-text-command-menu-copy,
-.rich-text-command-menu-item-selected .rich-text-command-menu-copy {
+   shortcut. Rows with hover-action CTAs never show that shortcut; the sibling
+   CTA column already owns the trailing space, so they must not get this gutter. */
+.rich-text-command-menu-item:not([data-has-actions="true"]):hover .rich-text-command-menu-copy,
+.rich-text-command-menu-item-selected:not([data-has-actions="true"]) .rich-text-command-menu-copy {
 	padding-right: 28px;
+}
+
+/* Agents-field session submenu: Continue / Start new are mouse-led, so they
+   omit the Return (↵) hint and must not reserve its 28px gutter. */
+.rich-text-command-menu[data-hide-return-shortcut] .rich-text-command-menu-item:not([data-has-actions="true"]):hover .rich-text-command-menu-copy,
+.rich-text-command-menu[data-hide-return-shortcut] .rich-text-command-menu-item-selected:not([data-has-actions="true"]) .rich-text-command-menu-copy {
+	padding-right: 0;
 }
 
 /* Rows with a persistent trailing indicator (e.g. an agent status glyph) show it
@@ -747,8 +755,8 @@
 	background-color: var(--ds-background-neutral-subtle-hovered, #f1f2f4);
 }
 
-.rich-text-command-menu-search-selects:focus-within .rich-text-command-menu-item-selected .rich-text-command-menu-copy,
-.rich-text-command-menu-search-selects:focus-within .rich-text-command-menu-item-selected:hover .rich-text-command-menu-copy {
+.rich-text-command-menu-search-selects:focus-within .rich-text-command-menu-item-selected:not([data-has-actions="true"]) .rich-text-command-menu-copy,
+.rich-text-command-menu-search-selects:focus-within .rich-text-command-menu-item-selected:not([data-has-actions="true"]):hover .rich-text-command-menu-copy {
 	padding-right: 28px;
 }
 
@@ -901,16 +909,6 @@
 	flex-direction: column;
 	justify-content: center;
 	overflow: hidden;
-}
-
-/* Compact status rows keep identity and live metadata on one line. The name
-   stays content-sized; the metadata track owns shrinking and ellipsis. */
-.rich-text-command-menu-copy-inline {
-	flex-direction: row;
-	align-items: center;
-	flex-wrap: nowrap;
-	/* Matches the one normal text-space on each side of the inline `·`. */
-	column-gap: 4px;
 }
 
 /* Reveal-able / persistent copy: holds the label plus a description line stacked

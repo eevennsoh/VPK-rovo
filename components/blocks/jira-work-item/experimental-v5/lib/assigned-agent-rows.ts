@@ -6,10 +6,19 @@
  * the trigger avatar tooltip, and the byline can never disagree.
  */
 
+import type { AgentAssignmentStatusKind } from "@/components/blocks/agent-assignment/components/assigned-agent-status";
 import type { CrewMember } from "@/components/blocks/jira-work-item/data/metadata-crew";
-import type { AgentSession, StaticTimelineEvent } from "@/components/blocks/jira-work-item/data/session-state";
+import type {
+	AgentSession,
+	AgentSessionStatus,
+	StaticTimelineEvent,
+} from "@/components/blocks/jira-work-item/data/session-state";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
-import { agentRowStatusTooltip, type AgentRowStatusTooltip } from "./agent-row-status";
+import {
+	agentRowStatusTooltip,
+	resolveAgentRowSessionStatus,
+	type AgentRowStatusTooltip,
+} from "./agent-row-status";
 
 export interface AssignedAgentRow {
 	agentId: string;
@@ -18,7 +27,23 @@ export interface AssignedAgentRow {
 	brandName?: ThirdPartyLogoName;
 	/** Last session in `sessions` matching the agent; absent when the agent never ran. */
 	session?: AgentSession;
+	statusKind: AgentAssignmentStatusKind;
 	statusLabel: AgentRowStatusTooltip;
+}
+
+function toAssignmentStatusKind(status: AgentSessionStatus): AgentAssignmentStatusKind {
+	switch (status) {
+		case "running":
+			return "working";
+		case "waiting":
+			return "needs-input";
+		case "completed":
+			return "finished";
+		default: {
+			const _exhaustive: never = status;
+			return _exhaustive;
+		}
+	}
 }
 
 /** Later sessions win, matching `resolveAgentRowSessionStatus`. */
@@ -60,12 +85,14 @@ export function resolveAssignedAgentRows(
 			continue;
 		}
 		const session = resolveLatestAgentSession(sessions, member.id);
+		const sessionStatus = resolveAgentRowSessionStatus(sessions, member.id, staticEvents);
 		rows.push({
 			agentId: member.id,
 			name: member.name,
 			...(member.avatarUrl ? { avatarSrc: member.avatarUrl } : {}),
 			...(member.brandName ? { brandName: member.brandName } : {}),
 			...(session ? { session } : {}),
+			statusKind: toAssignmentStatusKind(sessionStatus),
 			statusLabel: agentRowStatusTooltip(sessions, member.id, staticEvents),
 		});
 	}

@@ -114,8 +114,9 @@ test("Jira issue owns an uncaptured-work variant with a suggested-link chin", ()
 	assert.match(SOURCE, /sourceLink: SmartLinkItem;/u);
 	assert.match(SOURCE, /suggestedWorkItemKey\?: string;/u);
 	assert.match(SOURCE, /onCreateWorkItem\?: \(\) => void;/u);
-	assert.match(SOURCE, /onLinkWorkItem\?: \(\) => void;/u);
-	assert.match(SOURCE, /onDismiss\?: \(\) => void;/u);
+	assert.match(SOURCE, /onLinkWorkItem\?: \(workItemKey\?: string\) => void;/u);
+	assert.match(SOURCE, /suggestedWorkItemKeys\?: readonly string\[\];/u);
+	assert.match(SOURCE, /onSubtasks\?: \(\) => void;/u);
 	assert.match(SOURCE, /export type JiraIssueProps = JiraIssueDefaultProps \| JiraIssueUncapturedWorkProps;/u);
 	assert.match(SOURCE, /if \(props\.variant === "uncaptured-work"\) \{[\s\S]*<JiraIssueUncapturedWork \{\.\.\.props\} \/>/u);
 	assert.match(UNCAPTURED_WORK_SOURCE, /data-variant=\{variant\}/u);
@@ -151,22 +152,42 @@ test("Jira issue owns an uncaptured-work variant with a suggested-link chin", ()
 	assert.match(UNCAPTURED_WORK_SOURCE, /size="xs"/u);
 	assert.match(UNCAPTURED_WORK_SOURCE, /<UncapturedWorkChin/u);
 	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /data-slot="uncaptured-work-chin"/u);
-	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /border-t border-dashed border-border-disabled bg-surface px-3 py-2/u);
+	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /border-t border-dashed border-border-disabled bg-surface p-2"/u);
 	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /size="compact"/u);
 	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /size="icon-compact"/u);
-	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /<ButtonGroup aria-label=\{`Work item actions for \$\{summary\}`\} variant="split">/u);
 	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /uncapturedWorkLinkLabel/u);
-	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /Link to \$\{suggestedWorkItemKey\}/u);
-	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /<DropdownMenuItem[\s\S]*>[\s\S]*Create work item[\s\S]*<\/DropdownMenuItem>/u);
+	assert.match(LIB_SOURCE, /Link to \$\{suggestedWorkItemKey\}/u);
 	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /aria-disabled=\{linkUnavailable\}/u);
 	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /disabled=\{createUnavailable\}/u);
-	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /Dismiss \$\{summary\}/u);
-	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /<DeleteIcon label="" \/>/u);
-	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /onCopyResume\?: \(\) => void;/u);
-	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /<TooltipProvider delay=\{0\}>/u);
-	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /<TooltipContent>Resume session<\/TooltipContent>/u);
-	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /<CopyIcon label="" \/>/u);
-	assert.doesNotMatch(UNCAPTURED_WORK_SOURCE, /onCopyResume/u);
+	// The Link split button collapsed to a plain button when Create work item
+	// left the dropdown for a trailing icon, so no menu surface remains.
+	assert.doesNotMatch(UNCAPTURED_WORK_CHIN_SOURCE, /ButtonGroup|DropdownMenu/u);
+	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /import WorkItemAddIcon from "@atlaskit\/icon-lab\/core\/work-item-add";/u);
+	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /import SubtasksIcon from "@atlaskit\/icon\/core\/subtasks";/u);
+	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /label="Create work item"/u);
+	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /label="Subtasks"/u);
+	// A chin row's controls are one group sharing one hover surface. The hover
+	// lives on the row, not the footer, so a multi-suggestion chin lights only
+	// the row under the pointer.
+	assert.match(
+		UNCAPTURED_WORK_CHIN_SOURCE,
+		/hover:bg-bg-neutral-subtle-hovered has-\[:focus-visible\]:bg-bg-neutral-subtle-hovered motion-reduce:transition-none/u,
+	);
+	assert.doesNotMatch(UNCAPTURED_WORK_CHIN_SOURCE, /group-hover\/uncaptured-chin/u);
+	// Several candidate keys render one linkable row each, and every row carries
+	// its own Create work item + Subtasks pair.
+	assert.match(LIB_SOURCE, /export function uncapturedWorkSuggestionKeys\(/u);
+	// Fast Refresh only preserves state when a component file exports nothing
+	// but components, so the chin's pure helpers live in lib.ts.
+	assert.doesNotMatch(UNCAPTURED_WORK_CHIN_SOURCE, /export (?!function UncapturedWorkChin)/u);
+	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /suggestionKeys\.map\(\(key\) => \(/u);
+	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /<ChinRow actions=\{trailingActions\} key=/u);
+	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /onLinkWorkItem\?\.\(key\)/u);
+	// Resume moved onto the Agent List row's hover/focus action pair, and Dismiss
+	// was retired with the trash icon, so the chin owns work item capture only.
+	assert.doesNotMatch(UNCAPTURED_WORK_CHIN_SOURCE, /onCopyResume|onDismiss/u);
+	assert.doesNotMatch(UNCAPTURED_WORK_CHIN_SOURCE, /CopyIcon|DeleteIcon|Resume|Dismiss/u);
+	assert.doesNotMatch(UNCAPTURED_WORK_SOURCE, /onCopyResume|onDismiss/u);
 	assert.doesNotMatch(UNCAPTURED_WORK_SOURCE, /aria-label=\{`Resume agent session for \$\{summary\}`\}/u);
 	assert.doesNotMatch(UNCAPTURED_WORK_SOURCE, />\s*Resume\s*<\/Button>/u);
 	assert.match(UNCAPTURED_WORK_CHIN_SOURCE, /Captured/u);
@@ -186,7 +207,6 @@ test("Jira issue owns an uncaptured-work variant with a suggested-link chin", ()
 	assert.match(PAGE_SOURCE, /icon: GITHUB_COMMIT_SMART_LINK_ICON/u);
 	assert.match(PAGE_SOURCE, /toPullRequestSmartLink/u);
 	assert.match(PAGE_SOURCE, /onCreateWorkItem=\{\(\) => \{/u);
-	assert.match(PAGE_SOURCE, /onDismiss=\{\(\) => \{/u);
 	assert.match(PAGE_SOURCE, /suggestedWorkItemKey=\{example\.suggestedWorkItemKey\}/u);
 	assert.match(PAGE_SOURCE, /suggestedWorkItemKey: "PAY-101"/u);
 	assert.doesNotMatch(PAGE_SOURCE, /sourceFacts/u);
@@ -195,7 +215,7 @@ test("Jira issue owns an uncaptured-work variant with a suggested-link chin", ()
 	assert.match(DETAILS_SOURCE, /title: "Uncaptured work"[\s\S]*demoSlug: "jira-issue-demo-uncaptured-work"/u);
 	assert.match(DETAILS_SOURCE, /name: "onLinkWorkItem"/u);
 	assert.match(DETAILS_SOURCE, /name: "suggestedWorkItemKey"/u);
-	assert.match(DETAILS_SOURCE, /name: "onDismiss"/u);
+	assert.match(DETAILS_SOURCE, /name: "onSubtasks"/u);
 	assert.match(VARIANT_REGISTRY_SOURCE, /default: mod\.JiraIssueDemoUncapturedWork/u);
 });
 

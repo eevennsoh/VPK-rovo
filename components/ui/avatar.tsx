@@ -23,6 +23,11 @@ const HEXAGON_CLIP =
 const HEXAGON_POINTS =
 	"45,1.34 46.58,0.6 48.26,0.15 50,0 51.74,0.15 53.42,0.6 55,1.34 89.64,21.34 91.07,22.34 92.3,23.57 93.3,25 94.04,26.58 94.49,28.26 94.64,30 94.64,70 94.49,71.74 94.04,73.42 93.3,75 92.3,76.43 91.07,77.66 89.64,78.66 55,98.66 53.42,99.4 51.74,99.85 50,100 48.26,99.85 46.58,99.4 45,98.66 10.36,78.66 8.93,77.66 7.7,76.43 6.7,75 5.96,73.42 5.51,71.74 5.36,70 5.36,30 5.51,28.26 5.96,26.58 6.7,25 7.7,23.57 8.93,22.34 10.36,21.34"
 
+// Top-right hex vertex (89.64%, 21.34%). Circle/square status stays at the box corner;
+// hexagon status centers on this vertex so the badge sits on the tile, not in empty space.
+const HEXAGON_STATUS_POSITION_CLASS_NAME =
+	"group-data-[shape=hexagon]/avatar:top-[21.34%] group-data-[shape=hexagon]/avatar:right-auto group-data-[shape=hexagon]/avatar:left-[89.64%] group-data-[shape=hexagon]/avatar:-translate-x-1/2 group-data-[shape=hexagon]/avatar:-translate-y-1/2"
+
 // motion.avatar.* recipe expressed in vpk tokens (Motion for React can't read var(), so use the resolved values — see motion-decisions.md).
 const AVATAR_ENTER_TRANSITION: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] } // duration-normal + ease-out-practical
 const AVATAR_EXIT_TRANSITION: Transition = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] } // duration-fast + ease-in
@@ -43,7 +48,7 @@ const avatarVariants = cva(
 			shape: {
 				circle: "rounded-full after:rounded-full",
 				square: "rounded-[6px] after:rounded-[6px]",
-				hexagon: "isolate after:border-0",
+				hexagon: "isolate overflow-visible after:border-0",
 			},
 		},
 		defaultVariants: {
@@ -87,6 +92,8 @@ interface AvatarProps
 		VariantProps<typeof avatarVariants> {
 	disabled?: boolean
 	label?: string
+	/** Rendered as an unclipped sibling of hex artwork so the badge can hang past the tile. */
+	status?: AvatarStatus
 }
 
 function AvatarHexagonBorder() {
@@ -115,6 +122,7 @@ function Avatar({
 	shape = "circle",
 	disabled = false,
 	label,
+	status,
 	...props
 }: Readonly<AvatarProps>) {
 	const isInAvatarGroup = React.use(AvatarGroupContext)
@@ -169,10 +177,14 @@ function Avatar({
 						data-slot="avatar-hexagon-group-border"
 					/>
 				) : null}
-				<span className={cn("relative flex size-full items-center justify-center", HEXAGON_CLIP)}>
+				<span
+					className={cn("relative flex size-full items-center justify-center overflow-hidden", HEXAGON_CLIP)}
+					data-slot="avatar-hexagon-artwork"
+				>
 					{childArray.filter((child) => !isOverlay(child))}
 				</span>
 				<AvatarHexagonBorder />
+				{status ? <AvatarStatusIndicator status={status} /> : null}
 				{childArray.filter(isOverlay)}
 			</AvatarPrimitive.Root>
 		)
@@ -191,6 +203,7 @@ function Avatar({
 			{...props}
 		>
 			{children}
+			{status ? <AvatarStatusIndicator status={status} /> : null}
 		</AvatarPrimitive.Root>
 	)
 }
@@ -443,7 +456,7 @@ function AvatarProjectBadge({
 	)
 }
 
-type AvatarStatus = "approved" | "declined" | "locked" | "warning"
+type AvatarStatus = "approved" | "declined" | "locked" | "warning" | "needs-input" | "finished"
 
 // Bang-only glyph for warning status — Atlaskit WarningIcon includes a triangle; Figma wants "!" alone.
 // Paths match the stem + dot from @atlaskit/icon/core/warning (16×16 viewBox), without the triangle.
@@ -499,6 +512,31 @@ function AvatarLockedIcon({
 	)
 }
 
+// "i" mark for needs-input — filled information-disk icons read as nested seals
+// at status-dot size. Paths match the stem + dot from the information glyph.
+function AvatarInformationMarkIcon({
+	label = "",
+	size = "small",
+	color = "currentColor",
+	...props
+}: Readonly<NewCoreIconProps>) {
+	const px = size === "small" ? 16 : 24
+	return (
+		<svg
+			width={px}
+			height={px}
+			viewBox="0 0 16 16"
+			fill="none"
+			aria-hidden={label ? undefined : true}
+			aria-label={label || undefined}
+			{...props}
+		>
+			<path fill={color} d="M9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0" />
+			<path fill={color} d="M7.25 6.25v5h1.5v-5z" />
+		</svg>
+	)
+}
+
 // Optical fit via CSS transform on the Icon wrapper — slightly under AvatarBadge's
 // 0.75/1/1.25 so glyphs leave a thin fill inset without looking wispy at 0.5.
 const STATUS_ICON_CLASS_NAME =
@@ -526,6 +564,14 @@ const statusConfig: Record<
 		iconClassName: STATUS_ICON_CLASS_NAME,
 		label: "Warning",
 	},
+	"needs-input": {
+		icon: AvatarInformationMarkIcon,
+		className: "bg-info text-info-foreground",
+		iconClassName: STATUS_ICON_CLASS_NAME,
+		label: "Needs input",
+	},
+	// Agent alias of approved — same green fill, white check, and ring-background cutout.
+	finished: { icon: CheckMarkIcon, className: "bg-success text-success-foreground", iconClassName: STATUS_ICON_CLASS_NAME, label: "Finished" },
 }
 
 interface AvatarStatusIndicatorProps extends React.ComponentProps<"span"> {
@@ -550,6 +596,7 @@ function AvatarStatusIndicator({
 				// from painting over ring-2 (which made status borders look thinner).
 				"ring-background absolute top-0 right-0 z-10 overflow-hidden rounded-full ring-2",
 				"inline-flex items-center justify-center",
+				HEXAGON_STATUS_POSITION_CLASS_NAME,
 				config.className,
 				"group-data-[size=xs]/avatar:size-1.5",
 				"group-data-[size=sm]/avatar:size-2",

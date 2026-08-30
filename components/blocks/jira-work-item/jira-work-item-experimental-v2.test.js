@@ -460,7 +460,7 @@ test("experimental v2 working-agents menu includes waiting sessions without chan
 	assert.match(contextPillsSource, /<AgentAvatarVisual[\s\S]*sizePx=\{24\}/u);
 	assert.match(contextPillsSource, /brandName=\{session\.agentBrandName\}/u);
 	assert.match(contextPillsSource, /vpkLogo=\{session\.agentName === "Rovo" \? "rovo" : undefined\}/u);
-	assert.match(contextPillsSource, /<CyclingByline className="menu-row-title text-text-subtlest">/u);
+	assert.match(contextPillsSource, /<CyclingByline className="menu-row-byline">/u);
 	assert.match(contextPillsSource, /import \{ AnimatedDots \} from "@\/components\/ui-custom\/animated-dots";/u);
 	assert.match(contextPillsSource, /const NEEDS_INPUT_STATUS_LABEL = "Needs input";/u);
 	assert.match(

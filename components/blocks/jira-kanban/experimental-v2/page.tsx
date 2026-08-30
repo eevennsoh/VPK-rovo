@@ -54,6 +54,11 @@ import {
 	toPulseSuggestedQuestions,
 } from "../experimental/pulse/data/pulse-scopes";
 import { scopeTimelineToWorkItemKeys } from "../experimental/pulse/hooks/use-pulse-timeline";
+import {
+	filterPulseLooseWorkByMember,
+	toPulseSessionHandlers,
+	toPulseSessionItems,
+} from "../experimental/pulse/lib/pulse-sessions";
 import type { PulseAnswer, PulseLooseWork, PulseWorkItem } from "../experimental/pulse/types";
 import {
 	createJiraKanbanSelectionState,
@@ -189,15 +194,11 @@ export default function ExperimentalV2JiraKanbanPage({
 	// decided, not view state that may quietly reset with the subtree.
 	const [requestedActionIds, setRequestedActionIds] = useState<ReadonlySet<string>>(() => new Set<string>());
 	const [capturedLooseWorkIds, setCapturedLooseWorkIds] = useState<ReadonlySet<string>>(() => new Set<string>());
-	const [dismissedLooseWorkIds, setDismissedLooseWorkIds] = useState<ReadonlySet<string>>(() => new Set<string>());
 	const handleRequestAction = useCallback((action: { id: string }) => {
 		setRequestedActionIds((current) => new Set(current).add(action.id));
 	}, []);
 	const handleCaptureLooseWork = useCallback((item: { id: string }) => {
 		setCapturedLooseWorkIds((current) => new Set(current).add(item.id));
-	}, []);
-	const handleDismissLooseWork = useCallback((item: { id: string }) => {
-		setDismissedLooseWorkIds((current) => new Set(current).add(item.id));
 	}, []);
 	// Questions are stored per scope rather than cleared when the scope changes.
 	// An answer about Sprint 24 read as a reply to a question asked of PAY-90
@@ -328,6 +329,33 @@ export default function ExperimentalV2JiraKanbanPage({
 	const timelineUnreadCount = countUnviewedTimelineSnapshots(
 		PULSE_TIMELINE.snapshots,
 		timelineLastViewedAt,
+	);
+	// The board's untracked-work column and the Insights rail show the same
+	// sessions from the same fixtures and commit through the same captured set,
+	// so capturing on the board is the same event as capturing in Insights.
+	// The column also honours the header's assignee filter: it narrows the
+	// status columns, and a filter that skipped this one would stop describing
+	// the whole board.
+	const agentSessionItems = useMemo(
+		() => toPulseSessionItems(
+			filterPulseLooseWorkByMember(pulseTimeline.looseWork, pulseMemberId),
+			PULSE_TIMELINE.members,
+		),
+		[pulseMemberId, pulseTimeline.looseWork],
+	);
+	const agentSessionHandlers = useMemo(
+		() => toPulseSessionHandlers({
+			isLooseWorkResumable,
+			looseWork: pulseTimeline.looseWork,
+			onCapture: handleCaptureLooseWork,
+			onResume: onResumeLooseWork,
+		}),
+		[
+			handleCaptureLooseWork,
+			isLooseWorkResumable,
+			onResumeLooseWork,
+			pulseTimeline.looseWork,
+		],
 	);
 	const selectedAgentIds = useMemo(
 		() => getCommonJiraKanbanAgentIds(assignedAgentIdsByCard, selection.selectedCardCodes),
@@ -510,13 +538,11 @@ export default function ExperimentalV2JiraKanbanPage({
 				<ExperimentalPulse
 					answers={answers}
 					capturedLooseWorkIds={capturedLooseWorkIds}
-					dismissedLooseWorkIds={dismissedLooseWorkIds}
 					initialSnapshotId={pulseFocusSnapshotId}
 					isLooseWorkResumable={isLooseWorkResumable}
 					isWorkItemInteractive={isInsightsWorkItemInteractive}
 					onAsk={handleAsk}
 					onCaptureLooseWork={handleCaptureLooseWork}
-					onDismissLooseWork={handleDismissLooseWork}
 					onRequestAction={handleRequestAction}
 					onResumeLooseWork={onResumeLooseWork}
 					onSelectedMemberIdChange={handlePulseMemberChange}
@@ -530,6 +556,11 @@ export default function ExperimentalV2JiraKanbanPage({
 				<div className="flex min-h-0 min-w-0 flex-1">
 					<ExperimentalV2JiraKanban
 						activeCardCode={activeCardCode}
+						agentSessionColumn={{
+							capturedItemIds: capturedLooseWorkIds,
+							items: agentSessionItems,
+							...agentSessionHandlers,
+						}}
 						agents={agents}
 						ariaLabel={ariaLabel}
 						assignedAgentIdsByColumn={columnAgentAssignments}

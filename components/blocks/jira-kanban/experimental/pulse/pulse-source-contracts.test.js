@@ -307,7 +307,6 @@ test("Pulse keeps focus alive through in-place commits, and pins header jumps to
 	assert.match(SOURCES.signals, /<NextBestAction className="mt-3" items=\{items\} onAct=\{handleAct\} \/>/u);
 	assert.match(SOURCES.rail, /captured=\{capturedIds\.has\(item\.id\)\}/u);
 	assert.match(SOURCES.rail, /onCreateWorkItem=\{\(\) => onCapture\(item\)\}/u);
-	assert.match(SOURCES.rail, /onDismiss=\{\(\) => onDismiss\(item\)\}/u);
 	assert.match(SOURCES.rail, /onLinkWorkItem=\{\(\) => onCapture\(item\)\}/u);
 	assert.match(SOURCES.rail, /suggestedWorkItemKey=\{suggestPulseLooseWorkItemKey\(item, workItems\)\}/u);
 	assert.doesNotMatch(SOURCES.rail, /aria-disabled|aria-live/u, "the shared Jira Issue variant owns the action contract");
@@ -420,20 +419,19 @@ test("Pulse rail hangs everything off one left edge and one right edge", () => {
 	assert.match(SOURCES.rail, /<JiraIssue[\s\S]*variant="uncaptured-work"/u);
 	assert.match(SOURCES.rail, /captured=\{capturedIds\.has\(item\.id\)\}/u);
 	assert.match(SOURCES.rail, /onCreateWorkItem=\{\(\) => onCapture\(item\)\}/u);
-	assert.match(SOURCES.rail, /onDismiss=\{\(\) => onDismiss\(item\)\}/u);
 	assert.match(SOURCES.rail, /onLinkWorkItem=\{\(\) => onCapture\(item\)\}/u);
 	assert.match(SOURCES.rail, /suggestedWorkItemKey=\{suggestPulseLooseWorkItemKey\(item, workItems\)\}/u);
-	assert.match(SOURCES.rail, /githubWork = looseWork\.filter\(isPulseGithubLooseWork\)\.filter\(\(item\) => !dismissedIds\.has\(item\.id\)\)/u);
+	assert.match(SOURCES.rail, /githubWork = looseWork\.filter\(isPulseGithubLooseWork\);/u);
 	assert.match(
 		SOURCES.rail,
-		/const sessionItems = toPulseSessionItems\(\s*looseWork.filter\(\(item\) => !dismissedIds.has\(item\.id\)\),\s*members,\s*\);/u,
+		/const sessionItems = toPulseSessionItems\(\s*looseWork,\s*members,\s*\);/u,
 	);
 	assert.match(
 		SOURCES.rail,
 		/<JiraIssue[\s\S]*variant="uncaptured-work"[\s\S]*<AgentSession[\s\S]*items=\{sessionItems\}/u,
 	);
 	assert.match(SOURCES.rail, /capturedItemIds=\{capturedIds\}/u);
-	assert.match(SOURCES.rail, /onCopyResume=\{\(item\) => \{/u);
+	assert.match(SOURCES.sessions, /onCopyResume: \(item: AgentSessionItem\) => \{/u);
 	assert.doesNotMatch(SOURCES.rail, /variant="compact"/u);
 	assert.match(SOURCES.rail, /const participants = toUncapturedParticipants\(item, memberLookup\);/u);
 	assert.match(SOURCES.rail, /participants=\{participants\}/u);
@@ -486,15 +484,12 @@ test("Pulse is a toggle on the board's own control row, not a separate tab", () 
 	assert.ok(!existsSync(join(PULSE_DIR, "..", "experimental-view-tabs.tsx")), "the tab component should be retired, not left beside its replacement");
 
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /import \{ ExperimentalPulse \} from "\.\/pulse\/experimental-pulse";/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /dismissedLooseWorkIds=\{dismissedLooseWorkIds\}/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onDismissLooseWork=\{handleDismissLooseWork\}/u);
-	assert.match(SOURCES.shell, /dismissedIds=\{dismissedLooseWorkIds\}/u);
 	// The mode may be driven from outside — the route mounts a floating insights
 	// nudge that opens Insights — so the local state is the fallback half of a
 	// controlled pair rather than the only owner.
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const \[localMode, setLocalMode\] = useState<ExperimentalJiraKanbanMode>\("board"\);/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const mode = controlledMode \?\? localMode;/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const isPulse = mode === "pulse";/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const isPulse = insightsEnabled && mode === "pulse";/u);
 	// The control row stays up in Pulse. Board mode keeps the board assignee
 	// facepile, with Venn promoted so the presentation persona is visible;
 	// Pulse swaps in its roster. Both faces write the same Filter assignee field.
@@ -507,6 +502,17 @@ test("Pulse is a toggle on the board's own control row, not a separate tab", () 
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /facepile\?: ReactNode;/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /modeToggle\?: ReactNode;/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /\{facepile \?\? \(/u);
+});
+
+test("Experimental board consumers can disable the complete Insights surface", () => {
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /insightsEnabled\?: boolean;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /insightsEnabled = true/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const isPulse = insightsEnabled && mode === "pulse";/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /modeToggle=\{insightsEnabled \? \(/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/if \(insightsEnabled && \(fieldId === "parent" \|\| fieldId === "sprint"\)\)/u,
+	);
 });
 
 test("the pressed Insights label uses selected blue text on its selected surface", () => {
@@ -540,9 +546,13 @@ test("Insights routes only opted-in work items and local sessions", () => {
 	assert.match(SOURCES.rail, /showMoreAction=\{false\}/u);
 	assert.match(SOURCES.rail, /tabIndex=\{isInteractive \? undefined : -1\}/u);
 	assert.match(SOURCES.rail, /data-loose-work-id=\{item\.id\}/u);
-	assert.match(SOURCES.rail, /item\.kind === "agent-session"/u);
-	assert.match(SOURCES.rail, /isLooseWorkResumable\?\.\(session\) \?\? true/u);
-	assert.match(SOURCES.rail, /onView=\{/u);
+	// Session row -> loose work resolution and the resume gate moved into the
+	// shared adapter, so the rail and the v2 board's untracked-work column
+	// cannot drift apart on either rule.
+	assert.match(SOURCES.sessions, /looseWork\.filter\(isPulseAgentSession\)/u);
+	assert.match(SOURCES.sessions, /isLooseWorkResumable\?\.\(session\) \?\? true/u);
+	assert.match(SOURCES.rail, /toPulseSessionHandlers/u);
+	assert.match(SOURCES.sessions, /onView: \(item: AgentSessionItem\)/u);
 	assert.doesNotMatch(SOURCES.rail, /canViewItem=/u);
 	assert.match(SOURCES.stream, /onWorkItemClick\?: \(workItem: PulseWorkItem\) => void;/u);
 	assert.match(SOURCES.stream, /onViewAttention=\{handleViewAttention\}/u);

@@ -17,7 +17,7 @@ import {
 
 import { PULSE_SPACE_REPOSITORY } from "../data/pulse-timeline";
 import { suggestPulseLooseWorkItemKey } from "../lib/pulse-loose-work-suggestion";
-import { toPulseSessionItems } from "../lib/pulse-sessions";
+import { toPulseSessionHandlers, toPulseSessionItems } from "../lib/pulse-sessions";
 import { resolvePulseWorkItemFace } from "../lib/pulse-work-item-face";
 import {
 	isPulseGithubLooseWork,
@@ -219,12 +219,10 @@ function PulseWorkItemsColumn({
 
 function PulseUncapturedColumn({
 	capturedIds,
-	dismissedIds,
 	isLooseWorkResumable,
 	looseWork,
 	members,
 	onCapture,
-	onDismiss,
 	onResumeLooseWork,
 	workItems,
 }: Readonly<{
@@ -234,24 +232,27 @@ function PulseUncapturedColumn({
 	 * unmounted the keyed row and silently un-captured it on the way back.
 	 */
 	capturedIds: ReadonlySet<string>;
-	dismissedIds: ReadonlySet<string>;
 	isLooseWorkResumable?: (item: PulseLooseWork) => boolean;
 	looseWork: readonly PulseLooseWork[];
 	members: readonly PulseMember[];
 	onCapture: (item: PulseLooseWork) => void;
-	onDismiss: (item: PulseLooseWork) => void;
 	onResumeLooseWork?: (item: PulseLooseWork) => void;
 	workItems: readonly PulseWorkItem[];
 }>) {
 	const memberLookup = useMemo(() => new Map(members.map((member) => [member.id, member])), [members]);
-	const githubWork = looseWork.filter(isPulseGithubLooseWork).filter((item) => !dismissedIds.has(item.id));
+	const githubWork = looseWork.filter(isPulseGithubLooseWork);
 	const sessionItems = toPulseSessionItems(
-		looseWork.filter((item) => !dismissedIds.has(item.id)),
+		looseWork,
 		members,
 	);
-	const sessionById = useMemo(
-		() => new Map(looseWork.filter((item) => item.kind === "agent-session").map((item) => [item.id, item])),
-		[looseWork],
+	const sessionHandlers = useMemo(
+		() => toPulseSessionHandlers({
+			isLooseWorkResumable,
+			looseWork,
+			onCapture,
+			onResume: onResumeLooseWork,
+		}),
+		[isLooseWorkResumable, looseWork, onCapture, onResumeLooseWork],
 	);
 
 	if (githubWork.length === 0 && sessionItems.length === 0) {
@@ -274,7 +275,6 @@ function PulseUncapturedColumn({
 									captured={capturedIds.has(item.id)}
 									data-loose-work-id={item.id}
 									onCreateWorkItem={() => onCapture(item)}
-									onDismiss={() => onDismiss(item)}
 									onLinkWorkItem={() => onCapture(item)}
 									participants={participants}
 									sourceLink={createPulseLooseWorkSmartLink(item, participants)}
@@ -291,34 +291,8 @@ function PulseUncapturedColumn({
 				<AgentSession
 					capturedItemIds={capturedIds}
 					className="w-full min-w-0"
-					isResumable={(item) => {
-						const session = sessionById.get(item.id);
-						if (session === undefined) return false;
-						return isLooseWorkResumable?.(session) ?? true;
-					}}
 					items={sessionItems}
-					onCopyResume={(item) => {
-						const session = sessionById.get(item.id);
-						if (session === undefined) return;
-						if (!(isLooseWorkResumable?.(session) ?? true)) return;
-						onResumeLooseWork?.(session);
-					}}
-					onDismiss={(item) => {
-						const session = sessionById.get(item.id);
-						if (session === undefined) return;
-						onDismiss(session);
-					}}
-					onLinkWorkItem={(item) => {
-						const session = sessionById.get(item.id);
-						if (session === undefined) return;
-						onCapture(session);
-					}}
-					onView={(item) => {
-						const session = sessionById.get(item.id);
-						if (session === undefined) return;
-						if (!(isLooseWorkResumable?.(session) ?? true)) return;
-						onResumeLooseWork?.(session);
-					}}
+					{...sessionHandlers}
 				/>
 			) : null}
 		</PulseWorkColumn>
@@ -340,13 +314,11 @@ function PulseUncapturedColumn({
 export function PulseWorkRail({
 	capturedIds,
 	chat,
-	dismissedIds,
 	isLooseWorkResumable,
 	isWorkItemInteractive,
 	looseWork,
 	members,
 	onCapture,
-	onDismiss,
 	onResumeLooseWork,
 	onWorkItemClick,
 	selectedMember = null,
@@ -355,13 +327,11 @@ export function PulseWorkRail({
 	capturedIds: ReadonlySet<string>;
 	/** When set, replaces both card tracks — same swap as the work-item side panel. */
 	chat?: ReactNode;
-	dismissedIds: ReadonlySet<string>;
 	isLooseWorkResumable?: (item: PulseLooseWork) => boolean;
 	isWorkItemInteractive?: (workItem: PulseWorkItem) => boolean;
 	looseWork: readonly PulseLooseWork[];
 	members: readonly PulseMember[];
 	onCapture: (item: PulseLooseWork) => void;
-	onDismiss: (item: PulseLooseWork) => void;
 	onResumeLooseWork?: (item: PulseLooseWork) => void;
 	onWorkItemClick?: (workItem: PulseWorkItem) => void;
 	/** Filtered Insights persona — cards wear this face instead of the Jira assignee. */
@@ -397,12 +367,10 @@ export function PulseWorkRail({
 					/>
 					<PulseUncapturedColumn
 						capturedIds={capturedIds}
-						dismissedIds={dismissedIds}
 						isLooseWorkResumable={isLooseWorkResumable}
 						looseWork={looseWork}
 						members={members}
 						onCapture={onCapture}
-						onDismiss={onDismiss}
 						onResumeLooseWork={onResumeLooseWork}
 						workItems={workItems}
 					/>

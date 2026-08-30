@@ -6,6 +6,10 @@ import { useState, type ReactElement } from "react";
 
 import { AgentSelector, type AgentSelectorAction } from "@/components/blocks/agent-selector";
 import { AGENT_SELECTOR_CUSTOM_AGENT_DEMO_AGENTS, AGENT_SELECTOR_DEMO_AGENTS } from "@/components/blocks/agent-selector/data/demo-agents";
+import {
+	DEFAULT_PINNED_SPACE_AGENT_IDS,
+	WORK_ITEM_PINNED_ITEMS_LABEL,
+} from "@/components/blocks/jira-work-item/experimental-v3/lib/work-item-picker-options";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -29,14 +33,19 @@ export default function AgentSelectorPage({
 }: Readonly<AgentSelectorPageProps> = {}): ReactElement {
 	const [open, setOpen] = useState(true);
 	const [selectedAgentIds, setSelectedAgentIds] = useState<readonly string[]>(
-		variant === "selected-agent-actions" ? ["ai-insights-agent"] : ["github-copilot"]
+		variant === "selected-agent-actions"
+			? ["ai-insights-agent"]
+			: variant === "jira"
+				? [
+					"github-copilot",
+					"release-notes-drafter",
+					"code-reviewer",
+					"readiness-checker",
+				]
+				: ["github-copilot"]
 	);
-	const [pinnedAgentIds, setPinnedAgentIds] = useState<readonly string[]>([]);
-	// Jira kanban use case: agents actively running on the work item render in a
-	// top "In progress" section with a stop-on-hover control (instead of a tick);
-	// stopping removes the agent from the section.
-	const [inProgressAgentIds, setInProgressAgentIds] = useState<readonly string[]>(
-		variant === "jira" ? ["github-copilot", "readiness-checker"] : []
+	const [pinnedAgentIds, setPinnedAgentIds] = useState<readonly string[]>(
+		variant === "jira" ? DEFAULT_PINNED_SPACE_AGENT_IDS : []
 	);
 	const agents = variant === "selected-agent-actions" ? AGENT_SELECTOR_CUSTOM_AGENT_DEMO_AGENTS : AGENT_SELECTOR_DEMO_AGENTS;
 	const selectedAgentActions: readonly AgentSelectorAction[] = variant === "selected-agent-actions"
@@ -69,13 +78,12 @@ export default function AgentSelectorPage({
 			onCreateAgent={() => undefined}
 			selectionMode="single"
 			searchVariant="palette"
+			moreItemsLabel={variant === "jira" ? "More agents" : undefined}
 			onPinnedAgentIdsChange={setPinnedAgentIds}
 			pinnedAgentIds={pinnedAgentIds}
+			pinnedItemsLabel={variant === "jira" ? WORK_ITEM_PINNED_ITEMS_LABEL : undefined}
+			pinningEnabled
 			showSelectedTickInSingleSelect={variant === "default" || variant === "selected-agent-actions"}
-			inProgressAgentIds={inProgressAgentIds}
-			onStopAgent={(agentId) =>
-				setInProgressAgentIds((ids) => ids.filter((id) => id !== agentId))
-			}
 			selectedAgentActions={selectedAgentActions}
 			selectedAgentIds={selectedAgentIds}
 		/>
