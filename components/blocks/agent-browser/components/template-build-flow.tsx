@@ -316,7 +316,7 @@ export function TemplateBuildFlow({
 											aria-hidden="true"
 											className={cn(
 												"opacity-0 transition-opacity duration-fast",
-												isSelected ? "text-icon-selected" : "text-icon-subtle",
+												"text-icon-subtle [&_svg]:text-icon-subtle!",
 												"group-hover/template-app-row:opacity-100 group-focus-visible/template-app-row:opacity-100",
 												isSelected && "opacity-100",
 											)}

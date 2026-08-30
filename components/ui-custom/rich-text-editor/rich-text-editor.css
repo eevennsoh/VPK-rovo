@@ -666,6 +666,20 @@
 	background-color: var(--ds-background-neutral-subtle-hovered, #f1f2f4);
 }
 
+/* Persisted multi-select choices use the selected surface while their label
+   and trailing check retain their own default/subtle foreground tokens. */
+.rich-text-command-menu-item[data-chosen="true"] {
+	background-color: var(--ds-background-selected, #e9f2fe);
+}
+
+.rich-text-command-menu-item[data-chosen="true"]:hover {
+	background-color: var(--ds-background-selected-hovered, #cce0ff);
+}
+
+.rich-text-command-menu-item[data-chosen="true"]:active {
+	background-color: var(--ds-background-selected-pressed, #85b8ff);
+}
+
 /* When the return icon is revealed (hover / selection), reserve room for it on
    the copy's right edge so the text truncates BEFORE the icon — the 16px icon
    plus a 12px gap — instead of sliding underneath the absolutely-positioned

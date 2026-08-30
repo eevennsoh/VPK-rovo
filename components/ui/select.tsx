@@ -212,7 +212,7 @@ function SelectItem({
 				dropdownStyles.selectableItem,
 				"pl-2",
 				showIndicator ? "pr-8" : null,
-				"data-selected:bg-bg-selected data-selected:data-highlighted:bg-bg-selected-hovered data-selected:active:bg-bg-selected-pressed",
+				"data-selected:bg-bg-selected data-selected:text-text data-selected:data-highlighted:bg-bg-selected-hovered data-selected:data-highlighted:text-text data-selected:active:bg-bg-selected-pressed",
 				className
 			)}
 			{...props}
@@ -220,13 +220,13 @@ function SelectItem({
 			{showIndicator ? (
 				<span
 					data-slot="select-item-indicator"
-					className="pointer-events-none absolute right-2 inline-flex size-6 items-center justify-center text-icon-selected [&_[data-slot=icon]]:text-icon-selected [&_svg]:text-icon-selected"
+					className="pointer-events-none absolute right-2 inline-flex size-6 items-center justify-center text-icon-subtle [&_[data-slot=icon]]:text-icon-subtle [&_svg]:text-icon-subtle!"
 				>
 					<SelectPrimitive.ItemIndicator>
 						<Icon
 							render={<CheckMarkIcon label="" size="small" />}
 							label="Selected"
-							className="text-text-selected"
+							className="text-icon-subtle"
 						/>
 					</SelectPrimitive.ItemIndicator>
 				</span>

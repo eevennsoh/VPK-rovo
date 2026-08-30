@@ -17,6 +17,10 @@ const SUGGESTION_MENU_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "..", "ui-custom", "rich-text-editor", "suggestion-menu.tsx"),
 	"utf8",
 );
+const SUGGESTION_MENU_CSS_SOURCE = fs.readFileSync(
+	path.join(__dirname, "..", "..", "ui-custom", "rich-text-editor", "rich-text-editor.css"),
+	"utf8",
+);
 const METADATA_RAIL_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "jira-work-item", "experimental", "components", "metadata-rail.tsx"),
 	"utf8",
@@ -245,8 +249,10 @@ test("Artifact Pane demo provides editable, avatar-rich metadata fields", () => 
 	assert.match(DEMO_SOURCE, /import \{ ArtifactPaneAgentsField \} from "@\/components\/blocks\/artifact-pane\/artifact-agents-field"/u);
 	assert.match(DEMO_SOURCE, /<ArtifactPaneAgentsField/u);
 	assert.match(AGENTS_FIELD_SOURCE, /export function ArtifactPaneAgentsField/u);
-	assert.match(AGENTS_FIELD_SOURCE, /trailing: value\.includes\(agent\.id\) \? <CheckIcon[^>]*\/> : undefined/u);
+	assert.match(AGENTS_FIELD_SOURCE, /trailing: value\.includes\(agent\.id\) \? <CheckIcon className="size-4 text-icon-subtle" \/> : undefined/u);
 	assert.match(AGENTS_FIELD_SOURCE, /selectedItemIds=\{new Set\(value\)\}/u);
+	assert.equal(SUGGESTION_MENU_SOURCE.match(/data-chosen=\{isChosen \? "true" : undefined\}/gu)?.length, 2);
+	assert.match(SUGGESTION_MENU_CSS_SOURCE, /\.rich-text-command-menu-item\[data-chosen="true"\] \{\s*background-color: var\(--ds-background-selected, #e9f2fe\);/u);
 	assert.match(AGENTS_FIELD_SOURCE, /<AvatarGroup[\s\S]*<AgentAvatarVisual[\s\S]*sizePx=\{24\}/u);
 	assert.doesNotMatch(AGENTS_FIELD_SOURCE, /sizePx=\{16\}/u);
 	assert.match(AGENTS_FIELD_SOURCE, /leadingVisual: \([\s\S]*<AgentAvatarVisual[\s\S]*brandName=\{agent\.brandName\}[\s\S]*sizePx=\{24\}/u);

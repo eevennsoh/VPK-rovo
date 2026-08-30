@@ -1075,6 +1075,7 @@ function RichTextSuggestionMenuOption({
 				animate={isBylineRevealed ? "active" : "idle"}
 				custom={Boolean(prefersReducedMotion)}
 				className={className}
+				data-chosen={isChosen ? "true" : undefined}
 				data-has-actions={hasHoverActions ? "true" : undefined}
 				data-selected={isChosen ?? isSelected ? "true" : undefined}
 				data-suggestion-option=""
@@ -1095,6 +1096,7 @@ function RichTextSuggestionMenuOption({
 			role={listMode ? undefined : "option"}
 			aria-selected={listMode ? undefined : isChosen ?? isSelected}
 			className={className}
+			data-chosen={isChosen ? "true" : undefined}
 			data-has-actions={hasHoverActions ? "true" : undefined}
 			data-selected={isChosen ?? isSelected ? "true" : undefined}
 			data-suggestion-option=""
