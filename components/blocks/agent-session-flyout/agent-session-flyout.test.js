@@ -32,7 +32,7 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.match(source, /<JiraSessionFlyoutBody session=\{session\} \/>/u);
 	assert.match(source, /case "composer":/u);
 	assert.match(source, /case "untracked-work":/u);
-	assert.match(source, /<JiraSessionFlyoutBody session=\{session\} variant="untracked-work" \/>/u);
+	assert.match(source, /<JiraSessionFlyoutBody[\s\S]*session=\{session\}[\s\S]*variant="untracked-work"/u);
 	assert.match(source, /showSeparator/u);
 	assert.match(source, /Link to \{session\.issueKey\}/u);
 	assert.match(source, /<JiraSessionSectionHeading meta="High confidence" showSeparator>/u);
@@ -43,9 +43,16 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.match(source, /This session appears related to \{session\.issueKey\}/u);
 	assert.match(source, /<ButtonGroup aria-label=\{`Link \$\{issueKey\}`\} variant="split">/u);
 	assert.match(source, /Link to \{issueKey\}/u);
+	assert.match(source, /aria-disabled=\{linkUnavailable\}/u);
+	assert.match(source, /onClick=\{\(\) => onLinkWorkItem\?\.\(issueKey\)\}/u);
 	assert.match(source, /aria-label=\{`More link options for \$\{issueKey\}`\}/u);
-	assert.match(source, /<DropdownMenuItem>Add as a subtask<\/DropdownMenuItem>/u);
-	assert.match(source, /<Button type="button" variant="outline">\s*Create new/u);
+	assert.match(source, /<DropdownMenuItem[\s\S]*disabled=\{addAsSubtaskUnavailable\}[\s\S]*onSelect=\{\(\) => onAddAsSubtask\?\.\(issueKey\)\}[\s\S]*>\s*Add as a subtask/u);
+	assert.match(source, /Create new/u);
+	assert.match(source, /aria-disabled=\{createUnavailable\}/u);
+	assert.match(source, /onClick=\{onCreateWorkItem\}/u);
+	assert.match(source, /onLinkWorkItem\?: \(session: JiraSidebarSessionItem, workItemKey: string\) => void;/u);
+	assert.match(source, /onCreateWorkItem\?: \(session: JiraSidebarSessionItem\) => void;/u);
+	assert.match(source, /onAddAsSubtask\?: \(session: JiraSidebarSessionItem, workItemKey: string\) => void;/u);
 	assert.match(
 		source,
 		/<AgentStates[\s\S]*agent=\{\{[\s\S]*id: session\.id,[\s\S]*name: session\.agentName,[\s\S]*state=\{toAgentStatesState\(session\.status\)\}/u,
@@ -137,7 +144,7 @@ test("block delegates to the shared flyout surface and reuses /jira-golden-journ
 		source,
 		/import\s*\{[^}]*JiraSessionFlyoutSurface[^}]*JiraSessionFlyoutTrigger[^}]*\}\s*from\s*"@\/components\/blocks\/product-sidebar\/variants\/jira-session-flyout"/u,
 	);
-	assert.match(source, /<JiraSessionFlyoutSurface content=\{content\} handle=\{flyoutHandle\} \/>/u);
+	assert.match(source, /<JiraSessionFlyoutSurface[\s\S]*content=\{content\}[\s\S]*handle=\{flyoutHandle\}[\s\S]*onLinkWorkItem=\{onLinkWorkItem\}/u);
 	assert.match(source, /<JiraSessionFlyoutTrigger[\s\S]*?session=\{session\}/u);
 	assert.match(source, /AGENT_SESSION_FLYOUT_SESSIONS/u);
 	assert.match(dataSource, /ASX_QUEUE_SESSION_SEEDS\.map\(createAsxQueueSidebarSessionItem\)/u);
@@ -247,7 +254,11 @@ test("catalog defaults to session details and exposes composer and untracked-wor
 	assert.match(pageSource, /\{ label: "Details", value: "details" \}/u);
 	assert.match(pageSource, /\{ label: "Composer", value: "composer" \}/u);
 	assert.match(pageSource, /\{ label: "Untracked work", value: "untracked-work" \}/u);
-	assert.match(pageSource, /<AgentSessionFlyout content=\{flyoutContent\} \/>/u);
+	assert.match(pageSource, /<AgentSessionFlyout[\s\S]*content=\{flyoutContent\}/u);
+	assert.match(pageSource, /onLinkWorkItem=\{/u);
+	assert.match(pageSource, /onCreateWorkItem=\{/u);
+	assert.match(pageSource, /onAddAsSubtask=\{/u);
+	assert.match(pageSource, /aria-live="polite"/u);
 	assert.match(demoSource, /export function AgentSessionFlyoutDemoComposer/u);
 	assert.match(demoSource, /<Page content="composer" \/>/u);
 	assert.match(demoSource, /export function AgentSessionFlyoutDemoUntrackedWork/u);

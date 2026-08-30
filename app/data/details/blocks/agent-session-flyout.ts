@@ -42,5 +42,20 @@ export const AGENT_SESSION_FLYOUT_DETAIL: ComponentDetail = {
 			type: "string",
 			description: "Additional classes applied to the compact session-list container.",
 		},
+		{
+			name: "onLinkWorkItem",
+			type: "(session: JiraSidebarSessionItem, workItemKey: string) => void",
+			description: "Links the session to the suggested work item. When omitted, the action is exposed as unavailable.",
+		},
+		{
+			name: "onCreateWorkItem",
+			type: "(session: JiraSidebarSessionItem) => void",
+			description: "Creates a work item from the session. When omitted, the action is exposed as unavailable.",
+		},
+		{
+			name: "onAddAsSubtask",
+			type: "(session: JiraSidebarSessionItem, workItemKey: string) => void",
+			description: "Adds the session below the suggested work item. When omitted, the menu option is exposed as unavailable.",
+		},
 	],
 };

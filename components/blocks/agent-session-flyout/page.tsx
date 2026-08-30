@@ -22,6 +22,7 @@ export default function AgentSessionFlyoutPage({
 	content = "details",
 }: Readonly<{ content?: JiraSessionFlyoutContent }>): React.ReactElement {
 	const [flyoutContent, setFlyoutContent] = useState(content);
+	const [actionStatus, setActionStatus] = useState("No untracked work action taken.");
 
 	return (
 		<div className="flex h-full w-full flex-col items-center justify-center gap-6 p-6">
@@ -39,7 +40,19 @@ export default function AgentSessionFlyoutPage({
 					</Button>
 				))}
 			</div>
-			<AgentSessionFlyout content={flyoutContent} />
+			<AgentSessionFlyout
+				content={flyoutContent}
+				onAddAsSubtask={(session, workItemKey) => {
+					setActionStatus(`Added ${session.title} as a subtask of ${workItemKey}.`);
+				}}
+				onCreateWorkItem={(session) => {
+					setActionStatus(`Started a new work item from ${session.title}.`);
+				}}
+				onLinkWorkItem={(session, workItemKey) => {
+					setActionStatus(`Linked ${session.title} to ${workItemKey}.`);
+				}}
+			/>
+			<p aria-live="polite" className="sr-only">{actionStatus}</p>
 		</div>
 	);
 }
