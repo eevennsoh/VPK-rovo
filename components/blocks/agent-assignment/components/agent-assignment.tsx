@@ -154,7 +154,7 @@ export function AgentAssignment({
 		if (
 			!nextOpen
 			&& openMode === "hover"
-			&& effectiveView !== "assigned"
+			&& view !== "assigned"
 			&& eventDetails?.reason === "trigger-hover"
 		) {
 			eventDetails.cancel?.();

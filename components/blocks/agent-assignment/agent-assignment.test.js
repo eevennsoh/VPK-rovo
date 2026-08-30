@@ -493,6 +493,16 @@ async function loadAgentAssignmentClickHarness() {
 						usedAgentIds: ["github-copilot"],
 					});
 				}
+
+				export function EmptyHoverAssignmentProbe() {
+					return React.createElement(AgentAssignment, {
+						agents: AGENTS,
+						assignedAgents: [],
+						onAssignedAgentIdsChange() {},
+						onAssignedAgentSelect() {},
+						openMode: "hover",
+					});
+				}
 			`,
 			loader: "tsx",
 			resolveDir: process.cwd(),
@@ -577,7 +587,7 @@ async function loadAgentAssignmentClickHarness() {
 	return loadCjsModuleFromText(result.outputFiles[0].text, "agent-assignment-click-harness.cjs");
 }
 
-test("hover-open Agent Assignment keeps focus inside while opening the selector and used-agent session menu", async () => {
+test("hover-open Agent Assignment only retains explicitly transitioned interactive views", async () => {
 	const { window } = parseHTML("<!doctype html><html><body><div id='app'></div></body></html>");
 	const originalGlobals = {
 		document: globalThis.document,
@@ -643,6 +653,21 @@ test("hover-open Agent Assignment keeps focus inside while opening the selector 
 		assert.match(window.document.body.textContent, /Continue in existing session/u);
 		assert.match(window.document.body.textContent, /Start a new session/u);
 		assert.doesNotMatch(window.document.body.textContent, /GitHub Copilot/u);
+
+		await React.act(async () => {
+			root.render(React.createElement(harness.EmptyHoverAssignmentProbe));
+		});
+		await React.act(async () => {
+			window.document.querySelector("[data-hover-open]").click();
+		});
+		await React.act(async () => {
+			window.document.querySelector("[data-hover-close]").click();
+		});
+		assert.equal(window.document.querySelector("[data-open]").getAttribute("data-open"), "false");
+		assert.equal(
+			window.document.querySelector("[data-hover-close-canceled]").getAttribute("data-hover-close-canceled"),
+			"false",
+		);
 	} finally {
 		await React.act(async () => {
 			root.unmount();
