@@ -107,7 +107,7 @@ export function WorkingSessionActivityByline({
 	}, [active, cycleDelayMs, sessionStatus, shouldReduceMotion]);
 
 	return (
-		<CyclingByline className="menu-row-title text-text-subtlest">
+		<CyclingByline className="menu-row-byline">
 			{needsUserInput && activity !== null ? (
 				<span className="inline-flex min-w-0 items-baseline">
 					<Shimmer as="span">{activity}</Shimmer>

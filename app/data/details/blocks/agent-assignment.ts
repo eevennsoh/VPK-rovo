@@ -1,7 +1,7 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_ASSIGNMENT_DETAIL: ComponentDetail = {
-	description: "Reusable assigned-agent field with avatar status summaries, independently timed agent-specific activity sequences, View and Archive hover actions, and an in-place searchable agent selector.",
+	description: "Reusable assigned-agent field with Working, Needs input, Finished, and Idle trailing status, View and Archive hover actions, and an in-place searchable agent selector.",
 	importStatement: `import { AgentAssignment } from "@/components/blocks/agent-assignment";`,
 	usage: `import { AgentAssignment } from "@/components/blocks/agent-assignment";
 
@@ -9,7 +9,8 @@ export const AGENT_ASSIGNMENT_DETAIL: ComponentDetail = {
   agents={availableAgents}
   assignedAgents={assignedAgents.map((agent) => ({
     ...agent,
-    statusSequence: agent.toolCallLabels,
+    statusKind: agent.statusKind,
+    statusSequence: agent.statusKind === "working" ? agent.toolCallLabels : undefined,
     statusCycleIntervalMs: 1800,
     statusCycleJitterMs: 1600,
   }))}
@@ -27,7 +28,7 @@ export const AGENT_ASSIGNMENT_DETAIL: ComponentDetail = {
 			name: "assignedAgents",
 			type: "readonly AgentAssignmentAgent[]",
 			required: true,
-			description: "Controlled assigned agents. Give each agent its own statusSequence; the shared menu varies every dwell with statusCycleIntervalMs plus statusCycleJitterMs and staggers rows so agents do not advance in lockstep.",
+			description: "Controlled assigned agents. Set statusKind to working, needs-input, finished, or idle. Working rows can supply a statusSequence that cycles on hover; other kinds use a static byline and a rest-state trailing icon.",
 		},
 		{
 			name: "onAgentAssign",

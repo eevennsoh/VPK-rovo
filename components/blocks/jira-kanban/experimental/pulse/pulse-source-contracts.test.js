@@ -307,7 +307,6 @@ test("Pulse keeps focus alive through in-place commits, and pins header jumps to
 	assert.match(SOURCES.signals, /<NextBestAction className="mt-3" items=\{items\} onAct=\{handleAct\} \/>/u);
 	assert.match(SOURCES.rail, /captured=\{capturedIds\.has\(item\.id\)\}/u);
 	assert.match(SOURCES.rail, /onCreateWorkItem=\{\(\) => onCapture\(item\)\}/u);
-	assert.match(SOURCES.rail, /onDismiss=\{\(\) => onDismiss\(item\)\}/u);
 	assert.match(SOURCES.rail, /onLinkWorkItem=\{\(\) => onCapture\(item\)\}/u);
 	assert.match(SOURCES.rail, /suggestedWorkItemKey=\{suggestPulseLooseWorkItemKey\(item, workItems\)\}/u);
 	assert.doesNotMatch(SOURCES.rail, /aria-disabled|aria-live/u, "the shared Jira Issue variant owns the action contract");
@@ -420,13 +419,12 @@ test("Pulse rail hangs everything off one left edge and one right edge", () => {
 	assert.match(SOURCES.rail, /<JiraIssue[\s\S]*variant="uncaptured-work"/u);
 	assert.match(SOURCES.rail, /captured=\{capturedIds\.has\(item\.id\)\}/u);
 	assert.match(SOURCES.rail, /onCreateWorkItem=\{\(\) => onCapture\(item\)\}/u);
-	assert.match(SOURCES.rail, /onDismiss=\{\(\) => onDismiss\(item\)\}/u);
 	assert.match(SOURCES.rail, /onLinkWorkItem=\{\(\) => onCapture\(item\)\}/u);
 	assert.match(SOURCES.rail, /suggestedWorkItemKey=\{suggestPulseLooseWorkItemKey\(item, workItems\)\}/u);
-	assert.match(SOURCES.rail, /githubWork = looseWork\.filter\(isPulseGithubLooseWork\)\.filter\(\(item\) => !dismissedIds\.has\(item\.id\)\)/u);
+	assert.match(SOURCES.rail, /githubWork = looseWork\.filter\(isPulseGithubLooseWork\);/u);
 	assert.match(
 		SOURCES.rail,
-		/const sessionItems = toPulseSessionItems\(\s*looseWork.filter\(\(item\) => !dismissedIds.has\(item\.id\)\),\s*members,\s*\);/u,
+		/const sessionItems = toPulseSessionItems\(\s*looseWork,\s*members,\s*\);/u,
 	);
 	assert.match(
 		SOURCES.rail,
@@ -486,15 +484,12 @@ test("Pulse is a toggle on the board's own control row, not a separate tab", () 
 	assert.ok(!existsSync(join(PULSE_DIR, "..", "experimental-view-tabs.tsx")), "the tab component should be retired, not left beside its replacement");
 
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /import \{ ExperimentalPulse \} from "\.\/pulse\/experimental-pulse";/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /dismissedLooseWorkIds=\{dismissedLooseWorkIds\}/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onDismissLooseWork=\{handleDismissLooseWork\}/u);
-	assert.match(SOURCES.shell, /dismissedIds=\{dismissedLooseWorkIds\}/u);
 	// The mode may be driven from outside — the route mounts a floating insights
 	// nudge that opens Insights — so the local state is the fallback half of a
 	// controlled pair rather than the only owner.
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const \[localMode, setLocalMode\] = useState<ExperimentalJiraKanbanMode>\("board"\);/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const mode = controlledMode \?\? localMode;/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const isPulse = mode === "pulse";/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const isPulse = insightsEnabled && mode === "pulse";/u);
 	// The control row stays up in Pulse. Board mode keeps the board assignee
 	// facepile, with Venn promoted so the presentation persona is visible;
 	// Pulse swaps in its roster. Both faces write the same Filter assignee field.
@@ -507,6 +502,17 @@ test("Pulse is a toggle on the board's own control row, not a separate tab", () 
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /facepile\?: ReactNode;/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /modeToggle\?: ReactNode;/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /\{facepile \?\? \(/u);
+});
+
+test("Experimental board consumers can disable the complete Insights surface", () => {
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /insightsEnabled\?: boolean;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /insightsEnabled = true/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const isPulse = insightsEnabled && mode === "pulse";/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /modeToggle=\{insightsEnabled \? \(/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/if \(insightsEnabled && \(fieldId === "parent" \|\| fieldId === "sprint"\)\)/u,
+	);
 });
 
 test("the pressed Insights label uses selected blue text on its selected surface", () => {

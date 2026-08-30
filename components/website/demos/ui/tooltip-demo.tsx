@@ -8,7 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 export default function TooltipDemo() {
 	return (
-		<TooltipProvider>
+		<TooltipProvider delay={0}>
 			<Tooltip>
 				<TooltipTrigger render={<Button variant="outline" size="default" />}>
 					Hover me
@@ -34,11 +34,24 @@ export function TooltipDemoBasic() {
 
 export function TooltipDemoDefault() {
 	return (
-		<TooltipProvider>
+		<TooltipProvider delay={0}>
 			<Tooltip>
 				<TooltipTrigger render={<Button variant="outline">Hover me</Button>} />
 				<TooltipContent>
 					<p>This is a tooltip</p>
+				</TooltipContent>
+			</Tooltip>
+		</TooltipProvider>
+	);
+}
+
+export function TooltipDemoWithoutAnimation() {
+	return (
+		<TooltipProvider delay={0}>
+			<Tooltip animate={false}>
+				<TooltipTrigger render={<Button variant="outline">Hover me</Button>} />
+				<TooltipContent>
+					<p>This tooltip appears without motion</p>
 				</TooltipContent>
 			</Tooltip>
 		</TooltipProvider>
@@ -78,7 +91,7 @@ export function TooltipDemoFormattedContent() {
 
 export function TooltipDemoIconButton() {
 	return (
-		<TooltipProvider>
+		<TooltipProvider delay={0}>
 			<Tooltip>
 				<TooltipTrigger
 					render={
@@ -133,7 +146,7 @@ export function TooltipDemoOnLink() {
 
 export function TooltipDemoSide() {
 	return (
-		<TooltipProvider>
+		<TooltipProvider delay={0}>
 			<Tooltip>
 				<TooltipTrigger render={<Button variant="outline">Hover me</Button>} />
 				<TooltipContent side="right">
@@ -146,29 +159,31 @@ export function TooltipDemoSide() {
 
 export function TooltipDemoSides() {
 	return (
-		<div className="flex flex-wrap gap-2">
-			{(
-				[
-					"inline-start",
-					"left",
-					"top",
-					"bottom",
-					"right",
-					"inline-end",
-				] as const
-			).map((side) => (
-				<Tooltip key={side}>
-					<TooltipTrigger
-						render={<Button variant="outline" className="w-fit capitalize" />}
-					>
-						{side.replace("-", " ")}
-					</TooltipTrigger>
-					<TooltipContent side={side}>
-						<p>Add to library</p>
-					</TooltipContent>
-				</Tooltip>
-			))}
-		</div>
+		<TooltipProvider delay={0}>
+			<div className="flex flex-wrap gap-2">
+				{(
+					[
+						"inline-start",
+						"left",
+						"top",
+						"bottom",
+						"right",
+						"inline-end",
+					] as const
+				).map((side) => (
+					<Tooltip key={side}>
+						<TooltipTrigger
+							render={<Button variant="outline" className="w-fit capitalize" />}
+						>
+							{side.replace("-", " ")}
+						</TooltipTrigger>
+						<TooltipContent side={side}>
+							<p>Add to library</p>
+						</TooltipContent>
+					</Tooltip>
+				))}
+			</div>
+		</TooltipProvider>
 	);
 }
 

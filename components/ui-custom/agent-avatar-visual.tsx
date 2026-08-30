@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 
-import { Avatar, AvatarFallback, AvatarImage, type AvatarProps } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage, type AvatarProps, type AvatarStatus } from "@/components/ui/avatar";
 import { AtlassianLogo, RovoColorIcon, type AtlassianLogoName, type LogoProps } from "@/components/ui/logo";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
@@ -74,6 +74,8 @@ export interface AgentAvatarVisualProps {
 	inset?: boolean;
 	/** Initials shown when no visual source is available. */
 	fallbackText?: string;
+	/** Agent status overlay. Use `needs-input` or `finished`. */
+	status?: AvatarStatus;
 	/** Avatar overlays such as company or project badges. */
 	children?: ReactNode;
 	avatarClassName?: string;
@@ -95,6 +97,7 @@ export function AgentAvatarVisual({
 	sizePx,
 	inset = false,
 	fallbackText,
+	status,
 	children,
 	avatarClassName,
 	className,
@@ -131,7 +134,13 @@ export function AgentAvatarVisual({
 	);
 
 	return (
-		<Avatar className={avatarClassName} label={label} shape="hexagon" size={avatarSizeFromPx(sizePx)}>
+		<Avatar
+			className={avatarClassName}
+			label={label}
+			shape="hexagon"
+			size={avatarSizeFromPx(sizePx)}
+			status={status}
+		>
 			{hasWhiteBackdrop ? (
 				<span className="flex size-full items-center justify-center bg-[#fff]">{visual}</span>
 			) : (

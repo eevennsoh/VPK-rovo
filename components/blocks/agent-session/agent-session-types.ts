@@ -18,13 +18,22 @@ export interface AgentSessionProps {
 	capturedItemIds?: ReadonlySet<string>;
 	/** Suggested Jira key for the chin primary action. Defaults to `sessionDetails.issueKey`. */
 	getSuggestedWorkItemKey?: (item: AgentSessionItem) => string | undefined;
-	/** Links a session to the suggested work item from the chin primary action. */
-	onLinkWorkItem?: (item: AgentSessionItem) => void;
+	/**
+	 * Several candidate keys for a session, rendered one linkable chin row each.
+	 * Takes precedence over `getSuggestedWorkItemKey` for the rows it returns.
+	 */
+	getSuggestedWorkItemKeys?: (item: AgentSessionItem) => readonly string[] | undefined;
+	/** Links a session to a suggested work item. Receives the row's key when several are offered. */
+	onLinkWorkItem?: (item: AgentSessionItem, workItemKey?: string) => void;
 	/** Creates a work item from a session. Omit to expose an unavailable Create action. */
 	onCreateWorkItem?: (item: AgentSessionItem) => void;
-	/** Dismisses a session. Omit to hide the dismiss control. */
-	onDismiss?: (item: AgentSessionItem) => void;
-	/** Overrides the shell command copied from the chin. */
+	/**
+	 * Subtasks action behind the chin's trailing subtasks control. The button
+	 * always renders; omit this to leave it a placeholder until the behaviour
+	 * lands.
+	 */
+	onSubtasks?: (item: AgentSessionItem) => void;
+	/** Overrides the shell command the hover Resume control copies. */
 	getResumeCommand?: (item: AgentSessionItem) => string | undefined;
 	/**
 	 * Whether a session can be resumed. Rows that answer `false` hide the Resume
@@ -32,8 +41,13 @@ export interface AgentSessionProps {
 	 * Defaults to resumable.
 	 */
 	isResumable?: (item: AgentSessionItem) => boolean;
-	/** Called after the chin copies the resume command. */
+	/** Called after the hover Resume control copies the resume command. */
 	onCopyResume?: (item: AgentSessionItem) => void;
+	/**
+	 * Show/hide-later toggle behind the hover eye control. The button always
+	 * renders; omit this to leave it a placeholder until the behaviour lands.
+	 */
+	onToggleVisibility?: (item: AgentSessionItem) => void;
 	/** Called when a card body is activated. */
 	onView?: (item: AgentSessionItem) => void;
 	/**

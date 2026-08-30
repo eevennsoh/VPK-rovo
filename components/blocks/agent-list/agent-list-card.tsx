@@ -583,18 +583,69 @@ function RowBody({
 }
 
 /**
- * The hover/focus-revealed primary action plus Archive. Coding agent rows always
- * mount this so View / Resume stays reachable; a list with no `onView` still
- * reveals the control rather than looking like a read-only transcript.
+ * One hover-revealed row control. With an `icon` it renders as an icon-only
+ * button whose tooltip and accessible name are both `label`; without one the
+ * label is the button text.
+ */
+export type AgentListRowAction = Readonly<{
+	icon?: ReactNode;
+	label: string;
+	onClick: () => void;
+}>;
+
+/**
+ * The pair of controls a row owner reveals on hover/focus. The row stays
+ * generic about what they do: Agent List builds View / Resume + Archive, Agent
+ * Session builds Resume + show/hide. Omit both to reveal nothing.
+ */
+export type AgentListRowHoverActions = Readonly<{
+	primary?: AgentListRowAction;
+	secondary?: AgentListRowAction;
+}>;
+
+function RowAction({ action }: Readonly<{ action: AgentListRowAction }>) {
+	if (action.icon === undefined) {
+		return (
+			<Button onClick={action.onClick} size="compact" type="button" variant="outline">
+				{action.label}
+			</Button>
+		);
+	}
+
+	return (
+		<TooltipProvider>
+			<Tooltip>
+				<TooltipTrigger
+					render={
+						<Button
+							aria-label={action.label}
+							onClick={action.onClick}
+							size="icon-compact"
+							type="button"
+							variant="outline"
+						/>
+					}
+				>
+					{action.icon}
+				</TooltipTrigger>
+				<TooltipContent>{action.label}</TooltipContent>
+			</Tooltip>
+		</TooltipProvider>
+	);
+}
+
+/**
+ * The hover/focus-revealed action pair. Kept in the tab order rather than
+ * `display: none`-hidden, because a hidden wrapper could never satisfy its own
+ * `:focus-visible` reveal condition. Width collapses via `0fr`/`1fr` so the
+ * lifecycle indicator sits flush right at rest.
  */
 function CardActions({
-	item,
-	onArchive,
-	onView,
+	primary,
+	secondary,
 }: Readonly<{
-	item: AgentListItem;
-	onArchive?: (item: AgentListItem) => void;
-	onView: (item: AgentListItem) => void;
+	primary?: AgentListRowAction;
+	secondary?: AgentListRowAction;
 }>) {
 	return (
 		<div
@@ -604,29 +655,8 @@ function CardActions({
 				<div
 					className="pointer-events-none flex shrink-0 items-center gap-1 pl-3 opacity-0 transition-opacity duration-normal ease-out-practical group-hover/agent-row:pointer-events-auto group-hover/agent-row:opacity-100 group-has-[:focus-visible]/agent-row:pointer-events-auto group-has-[:focus-visible]/agent-row:opacity-100 motion-reduce:transition-none"
 				>
-					<Button onClick={() => onView(item)} size="compact" type="button" variant="outline">
-						{rowPrimaryActionLabel(item)}
-					</Button>
-					{onArchive ? (
-						<TooltipProvider>
-							<Tooltip>
-								<TooltipTrigger
-									render={
-										<Button
-											aria-label="Archive"
-											onClick={() => onArchive(item)}
-											size="icon-compact"
-											type="button"
-											variant="outline"
-										/>
-									}
-								>
-									<ArchiveBoxIcon label="" size="small" />
-								</TooltipTrigger>
-								<TooltipContent>Archive</TooltipContent>
-							</Tooltip>
-						</TooltipProvider>
-					) : null}
+					{primary ? <RowAction action={primary} /> : null}
+					{secondary ? <RowAction action={secondary} /> : null}
 				</div>
 			</div>
 		</div>
@@ -648,19 +678,17 @@ function rowClassName(isCompact: boolean, isSelected: boolean): string {
  * the session flyout from the keyboard.
  */
 export function AgentListRow({
-	hideHoverActions = false,
+	hoverActions,
 	isCompact,
 	isSelected,
 	item,
-	onArchive,
 	onView,
 }: Readonly<{
-	/** Hide Resume / View / Archive; the uncaptured chin owns those actions. */
-	hideHoverActions?: boolean;
+	/** Controls revealed on hover/focus. Omit to render a row with no actions. */
+	hoverActions?: AgentListRowHoverActions;
 	isCompact: boolean;
 	isSelected: boolean;
 	item: AgentListItem;
-	onArchive?: (item: AgentListItem) => void;
 	onView?: (item: AgentListItem) => void;
 }>) {
 	const stateMeta = STATE_META[item.state];
@@ -677,6 +705,10 @@ export function AgentListRow({
 	);
 
 	const viewItem = onView === undefined ? undefined : () => onView(item);
+	// A selected row is already the destination, so it keeps its lifecycle
+	// indicator instead of swapping in controls that would navigate nowhere.
+	const showHoverActions = !isSelected &&
+		(hoverActions?.primary !== undefined || hoverActions?.secondary !== undefined);
 
 	return (
 		<div
@@ -766,20 +798,19 @@ export function AgentListRow({
 						<span
 							className={cn(
 								"ml-3 flex w-6 shrink-0 items-center",
-								!isSelected &&
+								showHoverActions &&
 									"group-hover/agent-row:hidden group-has-[:focus-visible]/agent-row:hidden",
 							)}
 						>
 							<LifecycleIndicator state={item.state} />
 						</span>
 					) : null}
-					{isSelected || hideHoverActions || onView === undefined ? null : (
+					{showHoverActions ? (
 						<CardActions
-							item={item}
-							onArchive={onArchive}
-							onView={onView}
+							primary={hoverActions?.primary}
+							secondary={hoverActions?.secondary}
 						/>
-					)}
+					) : null}
 				</div>
 				{/* Own column under the title row: hover actions steal width from
 				    title/metadata only. A summary cut off at one line is not a
@@ -825,12 +856,30 @@ export function AgentListCard({
 }>) {
 	const [customFlyoutHandle] = useState(createHoverCardHandle);
 	const isCompact = variant === "compact";
+	// Agent List's own adapter onto the row's generic action slot. A list without
+	// `onView` has nowhere to go, so it reveals nothing rather than putting a
+	// no-op control in the tab order once per row.
+	const hoverActions: AgentListRowHoverActions | undefined = onView === undefined
+		? undefined
+		: {
+			primary: {
+				label: rowPrimaryActionLabel(item),
+				onClick: () => onView(item),
+			},
+			secondary: onArchive === undefined
+				? undefined
+				: {
+					icon: <ArchiveBoxIcon label="" size="small" />,
+					label: "Archive",
+					onClick: () => onArchive(item),
+				},
+		};
 	const row = (
 		<AgentListRow
+			hoverActions={hoverActions}
 			isCompact={isCompact}
 			isSelected={isSelected}
 			item={item}
-			onArchive={onArchive}
 			onView={onView}
 		/>
 	);

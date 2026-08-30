@@ -14,6 +14,24 @@
 	pointer-events: auto;
 }
 
+/* Trailing status must vanish in the same frame as CTAs appear — no opacity
+   crossfade over the name. Instant both ways so hover-out does not stack the
+   glyph on fading View/Archive. */
+[data-suggestion-actions]:has(:focus-visible) .rich-text-command-menu-item[data-has-actions="true"] .rich-text-command-menu-shortcut,
+.rich-text-command-menu:not(:has([data-suggestion-actions] :focus-visible)) [data-suggestion-actions]:hover .rich-text-command-menu-item[data-has-actions="true"] .rich-text-command-menu-shortcut {
+	opacity: 0;
+	pointer-events: none;
+	transition: none;
+}
+
+/* Hover-action rows: the CTA column owns trailing space. Drop any leftover
+   trailing-spinner gutter so the byline ellipsis sits 8px from View (the
+   option's own 8px padding). */
+[data-suggestion-actions]:has(:focus-visible) .rich-text-command-menu-item[data-has-actions="true"] .rich-text-command-menu-copy,
+.rich-text-command-menu:not(:has([data-suggestion-actions] :focus-visible)) [data-suggestion-actions]:hover .rich-text-command-menu-item[data-has-actions="true"] .rich-text-command-menu-copy {
+	padding-right: 0;
+}
+
 [data-suggestion-actions] .rich-text-command-menu-item[data-has-actions="true"],
 .rich-text-command-menu:focus-within [data-suggestion-actions] .rich-text-command-menu-item[data-has-actions="true"] {
 	min-width: 0;

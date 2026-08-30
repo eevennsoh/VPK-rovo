@@ -19,6 +19,34 @@ export function getIssueInitial(issueKey: string): string {
 	return issueKey[0]?.toUpperCase() ?? "U";
 }
 
+export function uncapturedWorkLinkLabel(suggestedWorkItemKey?: string): string {
+	return suggestedWorkItemKey === undefined ? "Link work item" : `Link to ${suggestedWorkItemKey}`;
+}
+
+export function uncapturedWorkLinkActionLabel(summary: string, suggestedWorkItemKey?: string): string {
+	return suggestedWorkItemKey === undefined
+		? `Link ${summary} to a work item`
+		: `Link ${summary} to ${suggestedWorkItemKey}`;
+}
+
+/**
+ * The keys an uncaptured-work chin offers to link against, normalized to one
+ * list so the no-suggestion, one-suggestion, and many-suggestion chins are the
+ * same shape.
+ *
+ * An empty list still yields one row — the generic "Link work item" control —
+ * so the caller never has to special-case "no suggestion" downstream.
+ */
+export function uncapturedWorkSuggestionKeys(
+	suggestedWorkItemKey?: string,
+	suggestedWorkItemKeys?: readonly string[],
+): readonly (string | undefined)[] {
+	const keys = suggestedWorkItemKeys
+		?? (suggestedWorkItemKey === undefined ? [] : [suggestedWorkItemKey]);
+
+	return keys.length === 0 ? [undefined] : keys;
+}
+
 export function getCompletedCount(completedCount: number | undefined, totalCount: number): number {
 	return Math.min(Math.max(completedCount ?? 0, 0), totalCount);
 }
