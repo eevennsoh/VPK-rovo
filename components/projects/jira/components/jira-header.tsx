@@ -38,7 +38,7 @@ export function JiraViewTabs({ selectedTab, onTabChange }: Readonly<JiraHeaderPr
 						<TabsTrigger
 							key={tab.label}
 							value={tab.label}
-							className={isFirst ? "ml-3 flex-none" : "flex-none"}
+							className={isFirst ? "ml-4 flex-none" : "flex-none"}
 						>
 							<div className="flex items-center gap-1.5">
 								<IconComponent
