@@ -1,10 +1,9 @@
 import AttachmentIcon from "@atlaskit/icon/core/attachment";
-import BoardIcon from "@atlaskit/icon/core/board";
 import CalendarIcon from "@atlaskit/icon/core/calendar";
 import FormIcon from "@atlaskit/icon/core/form";
 import GlobeIcon from "@atlaskit/icon/core/globe";
 import PageIcon from "@atlaskit/icon/core/page";
-import TableIcon from "@atlaskit/icon/core/table";
+import WorkItemIcon from "@atlaskit/icon/core/work-item";
 
 export interface TabDefinition {
 	label: string;
@@ -14,8 +13,7 @@ export interface TabDefinition {
 
 export const JIRA_TABS: readonly TabDefinition[] = [
 	{ label: "Summary", icon: GlobeIcon, hasContent: false },
-	{ label: "Board", icon: BoardIcon, hasContent: true },
-	{ label: "List", icon: TableIcon, hasContent: false },
+	{ label: "Work items", icon: WorkItemIcon, hasContent: true },
 	{ label: "Forms", icon: FormIcon, hasContent: false },
 	{ label: "Pages", icon: PageIcon, hasContent: false },
 	{ label: "Attachments", icon: AttachmentIcon, hasContent: false },

@@ -9,6 +9,7 @@ function readProjectFile(relativePath) {
 
 const PAGE_SOURCE = readProjectFile("components/projects/jira-golden-journeys-v4/page.tsx");
 const JIRA_HEADER_SOURCE = readProjectFile("components/projects/jira/components/jira-header.tsx");
+const JIRA_TABS_SOURCE = readProjectFile("components/projects/jira/data/tabs.ts");
 const EXPERIMENTAL_HEADER_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/experimental-board-header.tsx",
 );
@@ -52,12 +53,15 @@ test("the board opts into the experimental Jira issue split agent rows", () => {
 	);
 });
 
-test("the board reuses Jira's tab bar and only shows board content on the Board tab", () => {
+test("the Jira tab bar groups Board and List under one Work items destination", () => {
 	assert.match(JIRA_HEADER_SOURCE, /export function JiraViewTabs/u);
 	assert.match(JIRA_HEADER_SOURCE, /className=\{isFirst \? "ml-4 flex-none" : "flex-none"\}/u);
+	assert.match(JIRA_HEADER_SOURCE, /<IconComponent[\s\S]*label=""/u);
 	assert.match(JIRA_HEADER_SOURCE, /<JiraViewTabs selectedTab=\{selectedTab\} onTabChange=\{onTabChange\} \/>/u);
+	assert.match(JIRA_TABS_SOURCE, /import WorkItemIcon from "@atlaskit\/icon\/core\/work-item"/u);
+	assert.match(JIRA_TABS_SOURCE, /\{ label: "Work items", icon: WorkItemIcon, hasContent: true \}/u);
+	assert.doesNotMatch(JIRA_TABS_SOURCE, /label: "(?:Board|List)"/u);
 	assert.match(PAGE_SOURCE, /import \{ JiraViewTabs \} from "@\/components\/projects\/jira\/components\/jira-header"/u);
-	assert.match(PAGE_SOURCE, /const \[selectedTab, setSelectedTab\] = useState\(1\)/u);
 	assert.match(
 		PAGE_SOURCE,
 		/viewTabs=\{<JiraViewTabs selectedTab=\{selectedTab\} onTabChange=\{setSelectedTab\} \/>\}/u,
@@ -65,6 +69,28 @@ test("the board reuses Jira's tab bar and only shows board content on the Board 
 	assert.match(PAGE_SOURCE, /showBoardContent=\{selectedTab === 1\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showBoardContent\?: boolean;/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showBoardControls=\{showBoardContent\}/u);
+});
+
+test("the Work items header switches between Board and List views with their icons", () => {
+	assert.match(PAGE_SOURCE, /const \[activeView, setActiveView\] = useState<"board" \| "list">\("board"\)/u);
+	assert.match(PAGE_SOURCE, /activeView=\{activeView\}/u);
+	assert.match(PAGE_SOURCE, /onViewChange=\{setActiveView\}/u);
+	assert.match(PAGE_SOURCE, /renderListContent=\{\(columns\) =>/u);
+	assert.match(PAGE_SOURCE, /<JiraList[\s\S]*rows=\{listRows\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /activeView\?: ExperimentalJiraKanbanView;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /renderListContent\?: \(columns: readonly JiraKanbanColumnData\[\]\) => ReactNode;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /activeView === "list" && renderListContent/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<BoardFilterPopover[\s\S]*surfaceLabel=\{activeView\}/u);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs"/u);
+	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /ToggleGroup/u);
+	assert.match(
+		EXPERIMENTAL_HEADER_SOURCE,
+		/<TabsList aria-label="Work items view">[\s\S]*<TabsTrigger value="board">[\s\S]*<BoardIcon[\s\S]*Board[\s\S]*<TabsTrigger value="list">[\s\S]*<TableIcon[\s\S]*List/u,
+	);
+	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /<TabsList[^>]*className=|<TabsTrigger[^>]*className=/u);
+	const viewSwitcherIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf('aria-label="Work items view"');
+	const settingsIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf('aria-label={`${surfaceTitle} settings`}');
+	assert.ok(viewSwitcherIndex > 0 && viewSwitcherIndex < settingsIndex);
 });
 
 test("the board keeps 24px between the Jira tabs and filter controls", () => {
