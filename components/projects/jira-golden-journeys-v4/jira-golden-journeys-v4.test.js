@@ -43,6 +43,15 @@ test("the board disables Insights while keeping card agent chat in the Jira shel
 	assert.doesNotMatch(PAGE_SOURCE, /<JgpRovoOverlay[\s\S]*insights=/u);
 });
 
+test("the board opts into the experimental Jira issue split agent rows", () => {
+	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage[\s\S]*agentActivityLayout="split"/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /agentActivityLayout\?: JiraIssueAgentActivityLayout;/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/<ExperimentalJiraKanban[\s\S]*agentActivityLayout=\{agentActivityLayout\}/u,
+	);
+});
+
 test("the board reuses Jira's tab bar and only shows board content on the Board tab", () => {
 	assert.match(JIRA_HEADER_SOURCE, /export function JiraViewTabs/u);
 	assert.match(JIRA_HEADER_SOURCE, /className=\{isFirst \? "ml-3 flex-none" : "flex-none"\}/u);

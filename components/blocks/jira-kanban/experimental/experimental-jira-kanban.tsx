@@ -10,7 +10,10 @@ import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import AddIcon from "@atlaskit/icon/core/add";
 
 import { AgentSessionColumn, type AgentSessionColumnProps } from "@/components/blocks/agent-session-column";
-import { JiraIssue } from "@/components/blocks/jira-issue";
+import {
+	JiraIssue,
+	type JiraIssueAgentActivityLayout,
+} from "@/components/blocks/jira-issue";
 import {
 	mapAgentToMentionItem,
 	mapSkillToMentionItem,
@@ -56,13 +59,14 @@ import type {
  * contracts (`JiraKanban*` types, `state.ts`, `jira-kanban-data.ts`) stay
  * shared so both variants remain interchangeable inside an owning surface.
  */
-export type ExperimentalJiraKanbanProps = JiraKanbanProps & {
+export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
+	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	/**
 	 * Sessions that never became work items, pinned as a sunken column to the
 	 * left of the board. Omit to render only Jira status columns.
 	 */
 	agentSessionColumn?: AgentSessionColumnProps;
-};
+}
 
 const JIRA_KANBAN_CARD_MOVE: Transition = { duration: 0.6, ease: [0.4, 0, 0, 1] }; // duration-slowest + ease-in-out
 const JIRA_KANBAN_CARD_DEPART: Transition = { duration: 0.4, ease: [0.6, 0, 0.8, 0.6] }; // duration-slower + ease-in
@@ -407,6 +411,7 @@ function getCommonSelectedCardStatus(
 
 export function ExperimentalJiraKanban({
 	activeCardCode,
+	agentActivityLayout = "merged",
 	agentSessionColumn,
 	agents,
 	animateCardMoves = false,
@@ -662,6 +667,7 @@ export function ExperimentalJiraKanban({
 												assigneeUnassignedKind={card.avatarUnassignedKind}
 												assigneePulse={card.avatarPulse}
 												agentActivities={card.agentActivities}
+												agentActivityLayout={agentActivityLayout}
 												agentActivityMode={card.agentActivityMode}
 												agentDoneRuns={card.agentDoneRuns}
 												generativeAction={{
