@@ -9,3 +9,7 @@ export default function AgentSessionFlyoutDemo() {
 export function AgentSessionFlyoutDemoComposer() {
 	return <Page content="composer" />;
 }
+
+export function AgentSessionFlyoutDemoUntrackedWork() {
+	return <Page content="untracked-work" />;
+}

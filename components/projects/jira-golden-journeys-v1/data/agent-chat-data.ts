@@ -148,7 +148,7 @@ export const JGP_ROVO_COMPLETED_SESSION_PATCH: Readonly<Partial<AsxQueueSession>
 	repository: "atlassian/jira-cloud",
 	branch: "cursor/jgp-252-clear-focus-action",
 	commit: "6f4c2ab",
-	checks: "5 checks passing",
+	checks: { passed: 5, failed: 0 },
 	fileChanges: {
 		additions: 42,
 		deletions: 8,

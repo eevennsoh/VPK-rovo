@@ -4,7 +4,10 @@ import {
 } from "@/app/data/directory/agents";
 import type { SmartLinkItem } from "@/components/blocks/smart-link/components/smart-link";
 import { SMART_LINK_MODAL_ACTIONS } from "@/components/blocks/smart-link/data/smart-link-actions";
-import type { JiraSidebarSessionStatus } from "@/components/blocks/product-sidebar/variants/jira";
+import type {
+	JiraSidebarSessionChecks,
+	JiraSidebarSessionStatus,
+} from "@/components/blocks/product-sidebar/variants/jira";
 import type { QuestionCardQuestion } from "@/components/blocks/question-card/types";
 import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
 
@@ -58,7 +61,7 @@ interface WorkspaceAgentSeed {
 interface WorkspaceItemSeed {
 	agentSessions?: Readonly<Record<string, WorkspaceAgentSeed>>;
 	branch?: string;
-	checks?: string;
+	checks?: JiraSidebarSessionChecks;
 	host?: "cloud" | "local";
 	outputs?: readonly string[];
 	pullRequestNumber?: number;
@@ -182,7 +185,7 @@ const WORKSPACE_ITEM_SEEDS: Readonly<Record<string, WorkspaceItemSeed>> = {
 	},
 	"crm-analytics-dashboard": {
 		branch: "rovo/crm-318-dashboard-review",
-		checks: "5 checks passing",
+		checks: { passed: 5, failed: 0 },
 		host: "local",
 		outputs: ["crm-318-review-notes.docx", "dashboard-regression-checklist.xlsx"],
 		pullRequestNumber: 3184,

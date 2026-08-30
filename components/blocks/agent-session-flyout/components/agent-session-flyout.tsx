@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
  * The `/jira-golden-journeys-v0` queue session flyout showcase. The compact session list feeds the
  * shared `JiraSessionFlyoutSurface` — the exact direction-aware flyout used by
  * the live Jira product sidebar. It defaults to session details and can opt
- * into the Agent States composer.
+ * into the Agent States composer or an untracked-work suggestion.
  */
 
 export interface AgentSessionFlyoutProps {
@@ -28,7 +28,7 @@ export interface AgentSessionFlyoutProps {
 	sessions?: readonly JiraSidebarSessionItem[];
 	/**
 	 * Hover flyout body. Defaults to session details; pass `"composer"` for the
-	 * Agent States card with a prompt composer.
+	 * Agent States card or `"untracked-work"` for a suggested Jira relationship.
 	 */
 	content?: JiraSessionFlyoutContent;
 	/** Additional classes applied to the outer session list. */

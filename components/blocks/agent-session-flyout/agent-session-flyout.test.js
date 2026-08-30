@@ -24,13 +24,23 @@ const HOVER_CARD_HANDLE_PATH = "components/ui/hover-card-handle.ts";
 const QUEUE_DETAIL_ARTIFACTS_PATH = "components/projects/jira-queue/components/queue-detail-artifacts.tsx";
 const QUEUE_DETAIL_PANEL_PATH = "components/projects/jira-queue/components/queue-detail-panel.tsx";
 
-test("shared hover flyout defaults to session details and can opt into the composer card", () => {
+test("shared hover flyout defaults to session details and exposes composer and untracked-work variants", () => {
 	const source = readRepoFile(FLYOUT_BODY_PATH);
-	assert.match(source, /export type JiraSessionFlyoutContent = "details" \| "composer";/u);
+	assert.match(source, /export type JiraSessionFlyoutContent = "details" \| "composer" \| "untracked-work";/u);
 	assert.match(source, /content = "details"/u);
 	assert.match(source, /case "details":/u);
 	assert.match(source, /<JiraSessionFlyoutBody session=\{session\} \/>/u);
 	assert.match(source, /case "composer":/u);
+	assert.match(source, /case "untracked-work":/u);
+	assert.match(source, /<JiraSessionFlyoutBody session=\{session\} variant="untracked-work" \/>/u);
+	assert.match(source, /showSeparator/u);
+	assert.match(source, /Link to \{session\.issueKey\}/u);
+	assert.match(source, /<JiraSessionSectionHeading meta="High confidence" showSeparator>/u);
+	assert.match(source, /flex min-w-0 shrink-0 items-center gap-1\.5 text-xs font-medium leading-4 text-text-subtle/u);
+	assert.match(source, /className="shrink-0 text-xs font-normal text-text-subtlest"/u);
+	assert.doesNotMatch(source, /<span aria-hidden="true"> · <\/span>/u);
+	assert.match(source, /aria-label=\{`Link to \$\{session\.issueKey\}, High confidence`\}/u);
+	assert.match(source, /This session appears related to \{session\.issueKey\}/u);
 	assert.match(
 		source,
 		/<AgentStates[\s\S]*agent=\{\{[\s\S]*id: session\.id,[\s\S]*name: session\.agentName,[\s\S]*state=\{toAgentStatesState\(session\.status\)\}/u,
@@ -62,13 +72,16 @@ test("shared Agent States flyout forwards submission, timing, and stopped lifecy
 
 // Detail panels still reuse the shared design-system property components rather
 // than re-implementing them inside each panel.
-test("shared detail body reuses SmartLink, agent Tag, Lozenge, and GitHub logo", () => {
+test("shared detail body reuses SmartLink, agent Tag, Lozenge, GitHub logo, and CI progress circle", () => {
 	const source = readRepoFile(FLYOUT_BODY_PATH);
+	const jiraSource = readRepoFile("components/blocks/product-sidebar/variants/jira.tsx");
 	assert.match(source, /export function JiraSessionFlyoutBody\b/u);
 	assert.match(source, /import\s*\{[^}]*SmartLink[^}]*\}\s*from\s*"@\/components\/blocks\/smart-link"/u);
 	assert.match(source, /import\s*\{[^}]*GithubLogo[^}]*\}\s*from\s*"@\/components\/ui\/logo-third-party"/u);
 	assert.match(source, /import\s*\{[^}]*Lozenge[^}]*\}\s*from\s*"@\/components\/ui\/lozenge"/u);
 	assert.match(source, /import\s*\{[^}]*Tag[^}]*\}\s*from\s*"@\/components\/ui\/tag"/u);
+	assert.match(source, /import\s*\{[^}]*ProgressCircle[^}]*\}\s*from\s*"@\/components\/ui-custom\/progress-circle"/u);
+	assert.match(jiraSource, /export interface JiraSidebarSessionChecks \{\s*failed: number;\s*passed: number;\s*\}/u);
 	assert.match(source, /<SmartLink[\s\S]*item=\{toWorkItem\(session\)\}/u);
 	// Agent renders as the canonical at-mention Tag; PR state renders as a Lozenge.
 	assert.match(
@@ -81,6 +94,14 @@ test("shared detail body reuses SmartLink, agent Tag, Lozenge, and GitHub logo",
 	);
 	assert.doesNotMatch(source, /TileAvatar/u);
 	assert.match(source, /<Lozenge variant=\{prState\.variant\}>/u);
+	assert.match(
+		source,
+		/<ProgressCircle[\s\S]*aria-hidden[\s\S]*animated=\{false\}[\s\S]*size="xs"[\s\S]*value=\{checksTotal > 0 \? Math\.round\(\(session\.checks\.passed \/ checksTotal\) \* 100\) : 0\}[\s\S]*variant="outline"/u,
+	);
+	assert.match(source, /`\$\{checks\.passed\}\/\$\{total\} passed \$\{checks\.failed\} failed`/u);
+	assert.match(source, /`\$\{checks\.passed\}\/\$\{total\} passed`/u);
+	assert.match(source, /className="shrink-0 text-xs font-normal text-text"/u);
+	assert.doesNotMatch(source, /CheckCircleIcon/u);
 });
 
 test("nested Jira previews open right by default while Queue Details overrides them left", () => {
@@ -153,13 +174,14 @@ test("demo sessions share one moving shell with a fade-only content viewport", (
 // SCM fields remain available to full detail panels. Visible rows are icon +
 // value only; the property name is screen-reader-only so a label column cannot
 // regress back into the flyout.
-test("session flyout metadata is property-free: no visible label column", () => {
+test("session flyout metadata is compact and property-free", () => {
 	const source = readRepoFile(FLYOUT_BODY_PATH);
 	assert.doesNotMatch(source, /grid-cols-\[16px_84px_minmax\(0,1fr\)\]/u);
 	assert.match(source, /<span className="sr-only">\{label\}<\/span>/u);
 	assert.doesNotMatch(source, /<span className="text-text-subtlest">\{label\}<\/span>/u);
 	assert.doesNotMatch(source, /font-mono/u);
-	assert.match(source, />Development</u);
+	assert.match(source, /return \(\s*<div className="flex flex-col gap-2">/u);
+	assert.doesNotMatch(source, /<Alert\b|<AlertTitle\b|>Development</u);
 	for (const label of ["Session", "Agent", "Work item", "Pull request", "Checks", "Repository", "Branch", "Worktree"]) {
 		assert.match(source, new RegExp(`label="${label}"`, "u"), `missing accessible property name "${label}"`);
 	}
@@ -192,8 +214,8 @@ test("/jira-golden-journeys-v0 seeds provide the four expected states with PR fi
 	// PR-bearing sessions carry a pull-request number + checks.
 	assert.match(seeds, /pullRequestNumber:\s*1847/u);
 	assert.match(seeds, /pullRequestNumber:\s*1842/u);
-	assert.match(seeds, /checks:\s*"4 checks passing"/u);
-	assert.match(seeds, /checks:\s*"6 checks passing"/u);
+	assert.match(seeds, /checks:\s*\{ passed: 2, failed: 1 \}/u);
+	assert.match(seeds, /checks:\s*\{ passed: 6, failed: 0 \}/u);
 });
 
 test("block is registered across catalog, manifest, details, and demo registry", () => {
@@ -203,7 +225,7 @@ test("block is registered across catalog, manifest, details, and demo registry",
 	assert.match(readRepoFile("app/data/components.ts"), /blockComponent\("agent-session-flyout", "Agent Session Flyout"\)/u);
 });
 
-test("catalog defaults to session details and exposes a composer option", () => {
+test("catalog defaults to session details and exposes composer and untracked-work options", () => {
 	const source = readBlockFile("components/agent-session-flyout.tsx");
 	const pageSource = readBlockFile("page.tsx");
 	const demoSource = readRepoFile("components/website/demos/blocks/agent-session-flyout-demo.tsx");
@@ -215,14 +237,21 @@ test("catalog defaults to session details and exposes a composer option", () => 
 	assert.match(pageSource, /content = "details"/u);
 	assert.match(pageSource, /\{ label: "Details", value: "details" \}/u);
 	assert.match(pageSource, /\{ label: "Composer", value: "composer" \}/u);
+	assert.match(pageSource, /\{ label: "Untracked work", value: "untracked-work" \}/u);
 	assert.match(pageSource, /<AgentSessionFlyout content=\{flyoutContent\} \/>/u);
 	assert.match(demoSource, /export function AgentSessionFlyoutDemoComposer/u);
 	assert.match(demoSource, /<Page content="composer" \/>/u);
+	assert.match(demoSource, /export function AgentSessionFlyoutDemoUntrackedWork/u);
+	assert.match(demoSource, /<Page content="untracked-work" \/>/u);
 	assert.match(detailSource, /name: "content"/u);
-	assert.match(detailSource, /type: '"details" \| "composer"'/u);
+	assert.match(detailSource, /type: '"details" \| "composer" \| "untracked-work"'/u);
 	assert.match(detailSource, /default: '"details"'/u);
 	assert.match(detailSource, /title: "Composer flyout"/u);
 	assert.match(detailSource, /demoSlug: "agent-session-flyout-demo-composer"/u);
+	assert.match(detailSource, /title: "Untracked work"/u);
+	assert.match(detailSource, /demoSlug: "agent-session-flyout-demo-untracked-work"/u);
 	assert.match(variantRegistry, /"agent-session-flyout-demo-composer": dynamic/u);
 	assert.match(variantRegistry, /default: mod\.AgentSessionFlyoutDemoComposer/u);
+	assert.match(variantRegistry, /"agent-session-flyout-demo-untracked-work": dynamic/u);
+	assert.match(variantRegistry, /default: mod\.AgentSessionFlyoutDemoUntrackedWork/u);
 });

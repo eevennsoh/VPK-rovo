@@ -81,13 +81,18 @@ export interface JiraSidebarAssignee {
 	src?: string;
 }
 
+export interface JiraSidebarSessionChecks {
+	failed: number;
+	passed: number;
+}
+
 export interface JiraSidebarSessionItem {
 	additions?: number;
 	agentAvatarSrc?: string;
 	agentName: string;
 	assignee?: JiraSidebarAssignee;
 	branch?: string;
-	checks?: string;
+	checks?: JiraSidebarSessionChecks;
 	commit?: string;
 	completedAtMs?: number;
 	completedSecondsAgo?: number;
@@ -177,7 +182,7 @@ export function JiraSessionLifecycle({ status }: Readonly<{ status: JiraSidebarS
 				</span>
 			);
 		case "running":
-			return <Spinner label="Running" size="xs" variant="rainbow" />;
+			return <Spinner label="Running" size="xs" />;
 		case "pr-open":
 			return (
 				<span className="grid size-4 shrink-0 place-items-center text-icon-success" title="Pull request open">

@@ -23,6 +23,13 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"agent-session-flyout-demo-untracked-work": dynamic(
+		() =>
+			import("../demos/blocks/agent-session-flyout-demo").then((mod) => ({
+				default: mod.AgentSessionFlyoutDemoUntrackedWork,
+			})),
+		{ ssr: false },
+	),
 	"agent-session-demo-multi-link": dynamic(
 		() =>
 			import("../demos/blocks/agent-session-demo").then((mod) => ({
