@@ -21,7 +21,19 @@ test("dropdown menu front slot icons use a 24px subtle icon container", () => {
 });
 
 test("dropdown menu selected indicator uses a 24px container aligned with item icons", () => {
-	assert.match(source, /indicator:\s*"pointer-events-none absolute left-2 inline-flex size-6 items-center justify-center text-icon-selected/u);
+	assert.match(source, /indicator:\s*"pointer-events-none absolute left-2 inline-flex size-6 items-center justify-center text-icon-subtle/u);
+	assert.doesNotMatch(source, /indicator:\s*"[^"]*text-icon-selected/u);
+});
+
+test("dropdown menu default selected check stays subtle", () => {
+	assert.match(source, /const usesDefaultSelectedCheck = elemAfter === undefined && selected;/u);
+	assert.match(source, /usesDefaultSelectedCheck[\s\S]*?text-icon-subtle \[&_svg\]:text-icon-subtle!/u);
+});
+
+test("dropdown menu selected rows keep the selected surface and default label color", () => {
+	assert.match(source, /checkedState:\s*"data-checked:bg-bg-selected data-checked:text-text/u);
+	assert.match(source, /"data-selected:bg-bg-selected data-selected:text-text/u);
+	assert.doesNotMatch(source, /data-(?:checked|selected):text-text-selected/u);
 });
 
 test("dropdown menu rows use an 8px item radius", () => {

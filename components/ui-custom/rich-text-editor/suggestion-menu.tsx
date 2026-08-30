@@ -1009,6 +1009,7 @@ function RichTextSuggestionMenuOption({
 	const className = cn(
 		"rich-text-command-menu-item",
 		isSelected && "rich-text-command-menu-item-selected",
+		isChosen && "bg-bg-selected! hover:bg-bg-selected-hovered! active:bg-bg-selected-pressed!",
 		getSuggestionMenuItemStickyClassName(item),
 	);
 	const children = (

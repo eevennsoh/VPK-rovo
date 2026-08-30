@@ -16,8 +16,11 @@ test("SelectItem renders the selected check mark as a trailing affordance", () =
 	);
 	assert.match(
 		SELECT_SOURCE,
-		/data-slot="select-item-indicator"\n\t\t\t\t\tclassName="pointer-events-none absolute right-2 inline-flex size-6 items-center justify-center text-icon-selected/,
+		/data-slot="select-item-indicator"\n\t\t\t\t\tclassName="pointer-events-none absolute right-2 inline-flex size-6 items-center justify-center text-icon-subtle/,
 	);
+	assert.match(SELECT_SOURCE, /className="text-icon-subtle"/);
+	assert.match(SELECT_SOURCE, /data-selected:bg-bg-selected data-selected:text-text/u);
+	assert.doesNotMatch(SELECT_SOURCE, /data-selected:text-text-selected/u);
 	assert.doesNotMatch(
 		SELECT_SOURCE,
 		/<span className=\{dropdownStyles\.indicator\}>[\s\S]*?<SelectPrimitive\.ItemIndicator>/,

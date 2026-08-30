@@ -250,7 +250,7 @@ function AgentSelectorItem({
 	// group-hover/focus-visible so the control's hit area appears in the same frame
 	// the pointer reaches the row — see the in-progress block below.
 	// Multiple-select rows use CommandItem's built-in check lane. Single-select
-	// opt-in uses a custom blue check tile instead (rendered in the trailing
+	// opt-in uses a custom subtle check tile instead (rendered in the trailing
 	// region below). In-progress rows never show any tick.
 	const showCheckIcon = supportsMultipleSelection && !isInProgress && !isSubmenuTrigger;
 	const showSingleSelectTick =
@@ -285,10 +285,10 @@ function AgentSelectorItem({
 				AGENT_ROW_BASE_CLASS,
 				showCheckIcon ? AGENT_ROW_CHECK_COLS : AGENT_ROW_PLAIN_COLS,
 				// The single-select selected row carries a persistent subtlest-blue
-				// background so the choice reads as "selected" at rest. CommandItem's
-				// `data-selected:bg-muted` (hover/keyboard active) still layers on top
-				// via the cascade so hovering the selected row is unaffected.
-				showSingleSelectTick && "bg-bg-selected",
+				// background so the choice reads as "selected" at rest and while it is
+				// the command menu's active option. Its label keeps the row's default
+				// `menu-row-title` color; only the surface communicates selection.
+				showSingleSelectTick && "bg-bg-selected data-selected:bg-bg-selected",
 			)}
 			data-checked={showCheckIcon && isChecked ? true : undefined}
 			keywords={[agent.name, agent.byline]}
@@ -418,8 +418,8 @@ function AgentSelectorItem({
 					</span>
 				) : null}
 				{showSingleSelectTick ? (
-					// Single-select selected marker: the VPK check glyph in the selected
-					// (blue) icon color, in a 24px transparent icon tile so it aligns with
+					// Single-select selected marker: the VPK check glyph in the subtle icon
+					// color, in a 24px transparent icon tile so it aligns with
 					// the pin/stop slot. `mr-1` mirrors the in-progress spinner's trailing
 					// margin so the 24px chip sits 10px from the row's right edge (6px row
 					// padding + 4px), matching its 10px top/bottom inset. `ml-1` keeps the
@@ -427,7 +427,7 @@ function AgentSelectorItem({
 					// this tick follows).
 					<IconTile
 						aria-hidden
-						className="ml-1 mr-1 text-icon-selected"
+						className="ml-1 mr-1 text-icon-subtle"
 						icon={<CheckIcon size="small" />}
 						iconSize="small"
 						label=""

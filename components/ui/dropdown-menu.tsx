@@ -28,11 +28,11 @@ export const dropdownStyles = {
   selectableItem:
     "data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex min-h-8 w-full cursor-pointer items-center rounded-lg py-1.5 pr-2 pl-8 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   checkedState:
-    "data-checked:bg-bg-selected data-checked:text-text-selected data-checked:data-[highlighted]:bg-bg-selected-hovered data-checked:data-[highlighted]:text-text-selected data-checked:active:bg-bg-selected-pressed",
+    "data-checked:bg-bg-selected data-checked:text-text data-checked:data-[highlighted]:bg-bg-selected-hovered data-checked:data-[highlighted]:text-text data-checked:active:bg-bg-selected-pressed",
   label: "text-text-subtlest px-2 pt-3 pb-1 text-xs leading-4 font-semibold",
   separator: "bg-border mx-1 my-1 h-px",
   indicator:
-    "pointer-events-none absolute left-2 inline-flex size-6 items-center justify-center text-icon-selected [&_[data-slot=icon]]:text-icon-selected [&_svg]:text-icon-selected",
+    "pointer-events-none absolute left-2 inline-flex size-6 items-center justify-center text-icon-subtle [&_[data-slot=icon]]:text-icon-subtle [&_svg]:text-icon-subtle!",
 } as const;
 
 const dropdownMenuOverlayShadow = "shadow-2xl";
@@ -201,7 +201,7 @@ interface DropdownMenuItemProps extends Omit<MenuPrimitive.Item.Props, "onSelect
   /**
    * Marks the item as the active choice in a single-select menu. Applies the
    * selected background (with hover/pressed states), recolors the leading icon
-   * to the selected icon token, and shows a trailing check mark unless the
+   * to the selected icon token, and shows a subtle trailing check mark unless the
    * caller supplies their own `elemAfter`.
    */
   selected?: boolean;
@@ -243,6 +243,7 @@ function DropdownMenuItem({
   // gets a consistent selected affordance without repeating it.
   const resolvedElemAfter =
     elemAfter ?? (selected ? <CheckMarkIcon label="" size="small" /> : undefined);
+  const usesDefaultSelectedCheck = elemAfter === undefined && selected;
   const isSelected = selected && variant === "default";
   const shouldWrapText = allowTextWrap || Boolean(description);
 
@@ -257,8 +258,8 @@ function DropdownMenuItem({
         // (an explicit `allowTextWrap` or a `description`), matching Menubar.
         "group/dropdown-menu-item data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex w-full cursor-pointer items-center gap-3 rounded-lg px-2 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_svg]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-icon-subtle data-[variant=destructive]:[&_svg]:text-icon-danger",
         shouldWrapText ? dropdownMenuWrappingRowClassName : dropdownMenuRowHeightClassName,
-        // Selected state: selected surface + selected hover/pressed + selected icon/text tokens.
-        "data-selected:bg-bg-selected data-selected:text-text-selected data-selected:data-[highlighted]:bg-bg-selected-hovered data-selected:data-[highlighted]:text-text-selected data-selected:active:bg-bg-selected-pressed data-selected:[&_svg]:text-icon-selected",
+        // Selected state: selected surface + selected hover/pressed, with default label color.
+        "data-selected:bg-bg-selected data-selected:text-text data-selected:data-[highlighted]:bg-bg-selected-hovered data-selected:data-[highlighted]:text-text data-selected:active:bg-bg-selected-pressed data-selected:[&_svg]:text-icon-selected",
         className,
       )}
       onClick={handleClick}
@@ -283,7 +284,16 @@ function DropdownMenuItem({
         ) : null}
       </span>
       {resolvedElemAfter ? (
-        <span className={cn("ml-auto inline-flex h-5 shrink-0 items-center justify-center [&_svg]:size-3", variant === "destructive" ? "text-icon-danger" : isSelected ? "text-icon-selected" : "text-icon-subtle")}>
+        <span className={cn(
+          "ml-auto inline-flex h-5 shrink-0 items-center justify-center [&_svg]:size-3",
+          variant === "destructive"
+            ? "text-icon-danger"
+            : usesDefaultSelectedCheck
+              ? "text-icon-subtle [&_svg]:text-icon-subtle!"
+              : isSelected
+                ? "text-icon-selected"
+                : "text-icon-subtle",
+        )}>
           {resolvedElemAfter}
         </span>
       ) : null}
@@ -387,7 +397,7 @@ function DropdownMenuCheckboxItem({
           <Icon
             render={<CheckMarkIcon label="" size="small" />}
             label="Selected"
-            className="text-text-selected"
+            className="text-icon-subtle"
           />
         </MenuPrimitive.CheckboxItemIndicator>
       </span>
@@ -437,7 +447,7 @@ function DropdownMenuRadioItem({
           <Icon
             render={<CheckMarkIcon label="" size="small" />}
             label="Selected"
-            className="text-text-selected"
+            className="text-icon-subtle"
           />
         </MenuPrimitive.RadioItemIndicator>
       </span>

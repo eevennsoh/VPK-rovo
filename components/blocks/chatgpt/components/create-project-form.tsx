@@ -84,8 +84,9 @@ export function CreateProjectForm() {
 							</InputGroup>
 							<FieldDescription className="flex flex-wrap gap-2">
 								{CATEGORIES.map((category) => (
-									<Badge
-										key={category.id}
+								<Badge
+									className={selectedCategory === category.id ? "bg-bg-selected text-text hover:bg-bg-selected-hovered active:bg-bg-selected-pressed" : undefined}
+									key={category.id}
 										variant={
 											selectedCategory === category.id ? "information" : "neutral"
 										}
@@ -104,7 +105,7 @@ export function CreateProjectForm() {
 											/>
 										}
 									>
-										<CircleCheckIcon data-icon="inline-start" className="hidden group-data-[checked=true]/badge:inline" />
+										<CircleCheckIcon data-icon="inline-start" className="hidden text-icon-subtle! group-data-[checked=true]/badge:inline" />
 										{category.label}
 									</Badge>
 								))}

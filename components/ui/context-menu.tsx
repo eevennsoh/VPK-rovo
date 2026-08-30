@@ -172,13 +172,13 @@ function ContextMenuCheckboxItem({
       data-slot="context-menu-checkbox-item"
       data-inset={inset}
       className={cn(
-        "focus:bg-accent focus:text-accent-foreground gap-1.5 rounded-md py-1 pr-8 pl-1.5 text-sm data-inset:pl-7 [&_svg:not([class*='size-'])]:size-4 relative flex cursor-pointer items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "focus:bg-accent focus:text-accent-foreground data-checked:bg-bg-selected data-checked:text-text data-checked:focus:bg-bg-selected-hovered data-checked:focus:text-text data-checked:active:bg-bg-selected-pressed gap-1.5 rounded-md py-1 pr-8 pl-1.5 text-sm data-inset:pl-7 [&_svg:not([class*='size-'])]:size-4 relative flex cursor-pointer items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       checked={checked}
       {...props}
     >
-      <span className="absolute right-2 pointer-events-none">
+      <span className="absolute right-2 pointer-events-none text-icon-subtle [&_svg]:text-icon-subtle!">
         <ContextMenuPrimitive.CheckboxItemIndicator>
           <CheckMarkIcon label="" spacing="none" />
         </ContextMenuPrimitive.CheckboxItemIndicator>
@@ -210,12 +210,12 @@ function ContextMenuRadioItem({
       data-slot="context-menu-radio-item"
       data-inset={inset}
       className={cn(
-        "focus:bg-accent focus:text-accent-foreground gap-1.5 rounded-md py-1 pr-8 pl-1.5 text-sm data-inset:pl-7 [&_svg:not([class*='size-'])]:size-4 relative flex cursor-pointer items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "focus:bg-accent focus:text-accent-foreground data-checked:bg-bg-selected data-checked:text-text data-checked:focus:bg-bg-selected-hovered data-checked:focus:text-text data-checked:active:bg-bg-selected-pressed gap-1.5 rounded-md py-1 pr-8 pl-1.5 text-sm data-inset:pl-7 [&_svg:not([class*='size-'])]:size-4 relative flex cursor-pointer items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       {...props}
     >
-      <span className="absolute right-2 pointer-events-none">
+      <span className="absolute right-2 pointer-events-none text-icon-subtle [&_svg]:text-icon-subtle!">
         <ContextMenuPrimitive.RadioItemIndicator>
           <CheckMarkIcon label="" spacing="none" />
         </ContextMenuPrimitive.RadioItemIndicator>

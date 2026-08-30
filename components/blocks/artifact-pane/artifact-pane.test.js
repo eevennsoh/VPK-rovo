@@ -245,8 +245,9 @@ test("Artifact Pane demo provides editable, avatar-rich metadata fields", () => 
 	assert.match(DEMO_SOURCE, /import \{ ArtifactPaneAgentsField \} from "@\/components\/blocks\/artifact-pane\/artifact-agents-field"/u);
 	assert.match(DEMO_SOURCE, /<ArtifactPaneAgentsField/u);
 	assert.match(AGENTS_FIELD_SOURCE, /export function ArtifactPaneAgentsField/u);
-	assert.match(AGENTS_FIELD_SOURCE, /trailing: value\.includes\(agent\.id\) \? <CheckIcon[^>]*\/> : undefined/u);
+	assert.match(AGENTS_FIELD_SOURCE, /trailing: value\.includes\(agent\.id\) \? <CheckIcon className="size-4 text-icon-subtle" \/> : undefined/u);
 	assert.match(AGENTS_FIELD_SOURCE, /selectedItemIds=\{new Set\(value\)\}/u);
+	assert.match(SUGGESTION_MENU_SOURCE, /isChosen && "bg-bg-selected! hover:bg-bg-selected-hovered! active:bg-bg-selected-pressed!"/u);
 	assert.match(AGENTS_FIELD_SOURCE, /<AvatarGroup[\s\S]*<AgentAvatarVisual[\s\S]*sizePx=\{24\}/u);
 	assert.doesNotMatch(AGENTS_FIELD_SOURCE, /sizePx=\{16\}/u);
 	assert.match(AGENTS_FIELD_SOURCE, /leadingVisual: \([\s\S]*<AgentAvatarVisual[\s\S]*brandName=\{agent\.brandName\}[\s\S]*sizePx=\{24\}/u);

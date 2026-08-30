@@ -68,4 +68,8 @@ export const SOURCE_TOGGLES: SourceToggle[] = [
 
 export const FILTER_BY_APPS_ICON = <AppsIcon label="Filter by apps" />;
 export const SETTINGS_ICON = <SettingsIcon label="Settings" />;
-export const SELECTED_CHECK_ICON = <CheckMarkIcon label="Selected" />;
+export const SELECTED_CHECK_ICON = (
+	<span className="text-icon-subtle">
+		<CheckMarkIcon label="Selected" />
+	</span>
+);

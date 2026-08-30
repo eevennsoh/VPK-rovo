@@ -83,7 +83,7 @@ export function ArtifactPaneAgentsField({
 				sizePx={24}
 			/>
 		),
-		trailing: value.includes(agent.id) ? <CheckIcon className="size-4 text-icon-success" /> : undefined,
+		trailing: value.includes(agent.id) ? <CheckIcon className="size-4 text-icon-subtle" /> : undefined,
 	}));
 	const selectedAgents = value
 		.map((id) => ARTIFACT_PANE_AGENTS.find((agent) => agent.id === id))
