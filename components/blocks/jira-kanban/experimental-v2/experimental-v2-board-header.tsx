@@ -20,7 +20,7 @@ import { JiraProjectAvatar } from "@/components/blocks/product-sidebar/variants/
 import { JIRA_DESIGN_PROJECT } from "@/components/blocks/product-sidebar/data/jira-navigation";
 import { cn } from "@/lib/utils";
 import type { JiraKanbanAssigneeData } from "../index";
-import { BoardGroupMenu } from "../experimental/components/board-group-menu";
+import { BoardViewMenu } from "../experimental/components/board-view-menu";
 import {
 	JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME,
 	JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS,
@@ -172,7 +172,7 @@ export function ExperimentalV2JiraKanbanBoardHeader({
 
 					{filterControl}
 
-					<BoardGroupMenu compact={compact} surfaceLabel={surfaceLabel} />
+					<BoardViewMenu compact={compact} surfaceLabel={surfaceLabel} />
 
 					{modeToggle}
 
