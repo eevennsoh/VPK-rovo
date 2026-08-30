@@ -155,7 +155,7 @@ export const ModelSelectorItem = ({
 	return (
 		<CommandItem
 			className={cn(
-				"h-8 pr-3 data-selected:bg-bg-neutral-subtle-hovered! data-selected:text-text! data-selected:active:bg-bg-neutral-subtle-pressed! data-[checked=true]:bg-bg-selected data-[checked=true]:text-text data-[checked=true]:*:[svg]:text-text-selected data-[checked=true]:[&_[data-slot=icon]]:text-text-selected data-[checked=true]:active:bg-bg-selected-pressed",
+				"h-8 pr-3 data-selected:bg-bg-neutral-subtle-hovered! data-selected:text-text! data-selected:active:bg-bg-neutral-subtle-pressed! data-[checked=true]:text-text data-[checked=true]:*:[svg]:text-text-selected data-[checked=true]:[&_[data-slot=icon]]:text-text-selected",
 				className
 			)}
 			showCheckIcon={showCheckIcon}

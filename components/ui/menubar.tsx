@@ -195,7 +195,7 @@ function MenubarCheckboxItem({
       className={cn(
         menubarRowBaseClassName,
         allowTextWrap ? menubarWrappingRowClassName : menubarRowHeightClassName,
-        "pr-2 pl-10 data-checked:bg-bg-selected data-checked:text-text data-checked:data-[highlighted]:bg-bg-selected-hovered data-checked:data-[highlighted]:text-text data-checked:active:bg-bg-selected-pressed data-inset:pl-10 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
+        "pr-2 pl-10 data-checked:text-text data-checked:data-[highlighted]:text-text data-inset:pl-10 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
         className,
       )}
       checked={checked}
@@ -243,7 +243,7 @@ function MenubarRadioItem({
       className={cn(
         menubarRowBaseClassName,
         allowTextWrap ? menubarWrappingRowClassName : menubarRowHeightClassName,
-        "pr-2 pl-10 data-checked:bg-bg-selected data-checked:text-text data-checked:data-[highlighted]:bg-bg-selected-hovered data-checked:data-[highlighted]:text-text data-checked:active:bg-bg-selected-pressed data-inset:pl-10 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
+        "pr-2 pl-10 data-checked:text-text data-checked:data-[highlighted]:text-text data-inset:pl-10 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
         className,
       )}
       {...props}

@@ -279,7 +279,7 @@ test("AgentSelector single-select tick uses the VPK check in a transparent icon 
 		COMPONENT_SOURCE,
 		/<IconTile[\s\S]*className="ml-1 mr-1 text-icon-subtle"[\s\S]*icon=\{<CheckIcon size="small" \/>\}[\s\S]*iconSize="small"[\s\S]*size="small"[\s\S]*variant="transparent"[\s\S]*\/>/u,
 	);
-	assert.match(COMPONENT_SOURCE, /showSingleSelectTick && "bg-bg-selected data-selected:bg-bg-selected"/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /showSingleSelectTick && "[^"]*bg-bg-selected/u);
 	assert.match(COMPONENT_SOURCE, /const AGENT_LABEL_CLASS = "menu-row-title text-left";/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /showSingleSelectTick && "[^"]*text-text-selected/u);
 	// The default and selected-agent-actions demo variants turn it on; jira does

@@ -28,7 +28,7 @@ export const dropdownStyles = {
   selectableItem:
     "data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex min-h-8 w-full cursor-pointer items-center rounded-lg py-1.5 pr-2 pl-8 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   checkedState:
-    "data-checked:bg-bg-selected data-checked:text-text data-checked:data-[highlighted]:bg-bg-selected-hovered data-checked:data-[highlighted]:text-text data-checked:active:bg-bg-selected-pressed",
+    "data-checked:text-text data-checked:data-[highlighted]:text-text",
   label: "text-text-subtlest px-2 pt-3 pb-1 text-xs leading-4 font-semibold",
   separator: "bg-border mx-1 my-1 h-px",
   indicator:
@@ -258,8 +258,9 @@ function DropdownMenuItem({
         // (an explicit `allowTextWrap` or a `description`), matching Menubar.
         "group/dropdown-menu-item data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex w-full cursor-pointer items-center gap-3 rounded-lg px-2 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_svg]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-icon-subtle data-[variant=destructive]:[&_svg]:text-icon-danger",
         shouldWrapText ? dropdownMenuWrappingRowClassName : dropdownMenuRowHeightClassName,
-        // Selected state: selected surface + selected hover/pressed, with default label color.
-        "data-selected:bg-bg-selected data-selected:text-text data-selected:data-[highlighted]:bg-bg-selected-hovered data-selected:data-[highlighted]:text-text data-selected:active:bg-bg-selected-pressed data-selected:[&_svg]:text-icon-selected",
+        // A selected item keeps the default label and neutral interaction surface;
+        // its trailing subtle check is the persistent selection indicator.
+        "data-selected:text-text data-selected:data-[highlighted]:text-text data-selected:[&_svg]:text-icon-selected",
         className,
       )}
       onClick={handleClick}

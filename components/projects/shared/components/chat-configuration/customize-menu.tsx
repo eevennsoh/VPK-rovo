@@ -74,7 +74,6 @@ function ReasoningSection({ selectedReasoning, onReasoningChange, onClose }: Rea
 			>
 				{REASONING_OPTIONS.map((option) => (
 					<MenuItemButton
-						className={selectedReasoning === option.id ? "bg-bg-selected text-text hover:bg-bg-selected-hovered focus-visible:bg-bg-selected-hovered active:bg-bg-selected-pressed" : undefined}
 						key={option.id}
 						elemBefore={<CircleIcon>{option.icon}</CircleIcon>}
 						elemAfter={selectedReasoning === option.id ? SELECTED_CHECK_ICON : null}

@@ -284,11 +284,6 @@ function AgentSelectorItem({
 			className={cn(
 				AGENT_ROW_BASE_CLASS,
 				showCheckIcon ? AGENT_ROW_CHECK_COLS : AGENT_ROW_PLAIN_COLS,
-				// The single-select selected row carries a persistent subtlest-blue
-				// background so the choice reads as "selected" at rest and while it is
-				// the command menu's active option. Its label keeps the row's default
-				// `menu-row-title` color; only the surface communicates selection.
-				showSingleSelectTick && "bg-bg-selected data-selected:bg-bg-selected",
 			)}
 			data-checked={showCheckIcon && isChecked ? true : undefined}
 			keywords={[agent.name, agent.byline]}

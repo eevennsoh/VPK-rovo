@@ -212,7 +212,7 @@ function SelectItem({
 				dropdownStyles.selectableItem,
 				"pl-2",
 				showIndicator ? "pr-8" : null,
-				"data-selected:bg-bg-selected data-selected:text-text data-selected:data-highlighted:bg-bg-selected-hovered data-selected:data-highlighted:text-text data-selected:active:bg-bg-selected-pressed",
+				"data-selected:text-text data-selected:data-highlighted:text-text",
 				className
 			)}
 			{...props}
