@@ -141,8 +141,25 @@ export function AgentAssignment({
 
 	const handleOpenChange = (
 		nextOpen: boolean,
-		eventDetails?: { preventUnmountOnClose?: () => void; reason?: string },
+		eventDetails?: {
+			cancel?: () => void;
+			preventUnmountOnClose?: () => void;
+			reason?: string;
+		},
 	) => {
+		// Once a hover preview becomes an interactive selector or session menu, a
+		// popup resize can leave the pointer outside its new bounds. Keep that view
+		// open for keyboard/pointer interaction; Escape and outside presses still
+		// flow through the ordinary close path.
+		if (
+			!nextOpen
+			&& openMode === "hover"
+			&& view !== "assigned"
+			&& eventDetails?.reason === "trigger-hover"
+		) {
+			eventDetails.cancel?.();
+			return;
+		}
 		// Replacing the selector with the session menu unmounts the focused search
 		// field. Base UI treats that blur as focus-out and would close the popover
 		// before the session options can paint.
@@ -168,6 +185,18 @@ export function AgentAssignment({
 	const handleFooterAction = (action?: () => void) => {
 		handleOpenChange(false);
 		action?.();
+	};
+
+	const handleShowSelector = () => {
+		// The assigned list owns focus until its button is activated. Move focus to
+		// the stable menu root before replacing that list so hover-open previews do
+		// not interpret the unmounted button as leaving the popup.
+		retainPopoverOpenRef.current = true;
+		menuRootRef.current?.focus();
+		setView("selector");
+		queueMicrotask(() => {
+			retainPopoverOpenRef.current = false;
+		});
 	};
 
 	const ensureAssigned = (agent: AgentSelectorAgent) => {
@@ -245,7 +274,7 @@ export function AgentAssignment({
 
 	const menu = effectiveView === "assigned" ? (
 		<AssignedAgentsMenu
-			onAddAgent={() => setView("selector")}
+			onAddAgent={handleShowSelector}
 			onArchiveAgent={handleArchiveAgent}
 			onSelectAgent={handleAssignedAgentSelect}
 			rows={assignedAgents}
