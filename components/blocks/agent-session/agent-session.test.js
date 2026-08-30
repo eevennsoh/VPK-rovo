@@ -120,6 +120,13 @@ test("reuses the Agent List row model instead of forking a parallel one", () => 
 	assert.match(INDEX_SOURCE, /isCodingAgentListItem\(item\)/u);
 });
 
+test("a coding session body is read-only when the host omits onView", () => {
+	assert.match(
+		INDEX_SOURCE,
+		/isCodingAgentListItem\(item\)\s*\? onView === undefined\s*\? undefined\s*: handleCodingView/u,
+	);
+});
+
 test("ships demo data and a catalog entry", () => {
 	assert.match(DATA_SOURCE, /export const AGENT_SESSION_ITEMS/u);
 	assert.match(DATA_SOURCE, /id: "lw-scope-thread"/u);

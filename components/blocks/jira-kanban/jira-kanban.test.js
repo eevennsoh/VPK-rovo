@@ -23,6 +23,7 @@ const DETAIL_SOURCE = readFileSync(join(__dirname, "..", "..", "..", "app", "dat
 const DEMO_SOURCE = readFileSync(join(__dirname, "..", "..", "website", "demos", "blocks", "jira-kanban-demo.tsx"), "utf8");
 const VARIANT_REGISTRY_SOURCE = readFileSync(join(__dirname, "..", "..", "website", "registry", "blocks-variants.ts"), "utf8");
 const JIRA_ISSUE_SOURCE = readFileSync(join(__dirname, "..", "jira-issue", "index.tsx"), "utf8");
+const JIRA_ISSUE_SUMMARY_SOURCE = readFileSync(join(__dirname, "..", "jira-issue", "summary.tsx"), "utf8");
 const COLUMN_DRAG_SOURCE = SOURCE.slice(
 	SOURCE.indexOf("const handleColumnDragOver"),
 	SOURCE.indexOf("<BoardColumn", SOURCE.indexOf("const handleColumnDragOver")),
@@ -234,7 +235,7 @@ test("Experimental kanban card lists drop scroller padding while the default kee
 test("Experimental kanban card gap matches the column gutter", () => {
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/<div className="flex min-h-full w-max min-w-full items-stretch ps-6">/u,
+		/"flex min-h-full w-max min-w-full items-stretch",\s*agentSessionColumn \? "ps-2" : "ps-6"/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
@@ -353,13 +354,13 @@ test("Kanban agent assignment icons use selected icon color while the trigger is
 });
 
 test("Kanban card renders explicit unassigned avatars with the shared placeholder", () => {
-	assert.match(JIRA_ISSUE_SOURCE, /AvatarUnassigned,/);
+	assert.match(JIRA_ISSUE_SUMMARY_SOURCE, /AvatarUnassigned,/);
 	assert.match(JIRA_ISSUE_SOURCE, /assigneeUnassignedKind\?: AvatarUnassignedKind;/);
 	assert.match(SOURCE, /assigneeUnassignedKind=\{card\.avatarUnassignedKind\}/);
 	assert.match(SOURCE, /assigneeAvatarLabel=\{card\.assignee\?\.name\}/);
 	assert.match(
-		JIRA_ISSUE_SOURCE,
-		/function JiraIssueAssignee[\s\S]*if \(assigneeUnassignedKind\) \{[\s\S]*<AvatarUnassigned[\s\S]*kind=\{assigneeUnassignedKind\}[\s\S]*size="sm"/,
+		JIRA_ISSUE_SUMMARY_SOURCE,
+		/function JiraIssueAssignee[\s\S]*size = "sm"[\s\S]*if \(assigneeUnassignedKind\) \{[\s\S]*<AvatarUnassigned[\s\S]*kind=\{assigneeUnassignedKind\}[\s\S]*size=\{size\}/,
 	);
 });
 
@@ -785,7 +786,7 @@ test("Experimental kanban keeps 24px column gutters on the scrollable row, not t
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/className="flex min-h-full w-max min-w-full items-stretch ps-6"/u,
+		/"flex min-h-full w-max min-w-full items-stretch",\s*agentSessionColumn \? "ps-2" : "ps-6"/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,

@@ -9,6 +9,7 @@ import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import AddIcon from "@atlaskit/icon/core/add";
 
+import { AgentSessionColumn, type AgentSessionColumnProps } from "@/components/blocks/agent-session-column";
 import {
 	JiraIssue,
 	type JiraIssueAgentActivityLayout,
@@ -60,6 +61,11 @@ import type {
  */
 export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
+	/**
+	 * Sessions that never became work items, pinned as a sunken column to the
+	 * left of the board. Omit to render only Jira status columns.
+	 */
+	agentSessionColumn?: AgentSessionColumnProps;
 }
 
 const JIRA_KANBAN_CARD_MOVE: Transition = { duration: 0.6, ease: [0.4, 0, 0, 1] }; // duration-slowest + ease-in-out
@@ -406,6 +412,7 @@ function getCommonSelectedCardStatus(
 export function ExperimentalJiraKanban({
 	activeCardCode,
 	agentActivityLayout = "merged",
+	agentSessionColumn,
 	agents,
 	animateCardMoves = false,
 	ariaLabel = "Experimental Jira kanban columns. Scroll horizontally to review all statuses.",
@@ -551,21 +558,35 @@ export function ExperimentalJiraKanban({
 
 	return (
 		<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-			<section
-				tabIndex={0}
-				aria-label={ariaLabel}
-				className="flex min-h-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-				style={{
-					flex: 1,
-					paddingTop,
-					paddingBottom,
-					overflowX: "auto",
-					overflowY: "hidden",
-					minHeight: 0,
-				}}
-			>
+			<div className="flex min-h-0 min-w-0 flex-1 items-stretch">
+				{agentSessionColumn ? (
+					<div
+						className="flex min-h-0 shrink-0 ps-6"
+						style={{ paddingTop, paddingBottom }}
+					>
+						<AgentSessionColumn {...agentSessionColumn} />
+					</div>
+				) : null}
+				<section
+					tabIndex={0}
+					aria-label={ariaLabel}
+					className="flex min-h-0 min-w-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+					style={{
+						flex: 1,
+						paddingTop,
+						paddingBottom,
+						overflowX: "auto",
+						overflowY: "hidden",
+						minHeight: 0,
+					}}
+				>
 				<LayoutGroup id={cardLayoutGroupId}>
-					<div className="flex min-h-full w-max min-w-full items-stretch ps-6">
+					<div
+						className={cn(
+							"flex min-h-full w-max min-w-full items-stretch",
+							agentSessionColumn ? "ps-2" : "ps-6",
+						)}
+					>
 						<div className="flex min-h-full flex-1 items-stretch gap-2">
 						{boardColumns.map((column) => (
 						<div
@@ -695,6 +716,7 @@ export function ExperimentalJiraKanban({
 					</div>
 				</LayoutGroup>
 				</section>
+			</div>
 				{selectionToolbar ? (
 					<JiraToolbar
 						agents={selectionToolbar.agents ?? agents ?? []}

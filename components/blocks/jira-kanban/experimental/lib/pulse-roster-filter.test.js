@@ -28,6 +28,23 @@ test("Pulse member id is the first selected assignee that is on the roster", () 
 	);
 });
 
+test("Pulse member id resolves route-specific assignee aliases", () => {
+	const aliases = {
+		"jordan-okafor": "jordan",
+		"maya-ferreira": "maya",
+	};
+
+	assert.equal(
+		toPulseMemberId(new Set(["maya-ferreira"]), PULSE_MEMBER_IDS, aliases),
+		"maya",
+	);
+	assert.equal(
+		toPulseMemberId(new Set(["jordan-okafor"]), PULSE_MEMBER_IDS, aliases),
+		null,
+		"an alias must still resolve to a member on the active roster",
+	);
+});
+
 test("Clicking a Pulse face writes a singleton assignee filter", () => {
 	assert.deepEqual([...toPulseMemberAssigneeIds(null)], []);
 	assert.deepEqual([...toPulseMemberAssigneeIds("venn")], ["venn"]);

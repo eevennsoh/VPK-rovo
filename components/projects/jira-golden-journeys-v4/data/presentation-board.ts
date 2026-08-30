@@ -52,6 +52,13 @@ const PAY_ASSIGNEES = {
 	},
 } as const satisfies Record<string, JiraKanbanAssigneeData>;
 
+export const JIRA_GOLDEN_JOURNEYS_V4_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID = {
+	"diego-santos": "diego",
+	"jordan-okafor": "jordan",
+	"maya-ferreira": "maya",
+	"priya-raman": "priya",
+} as const satisfies Readonly<Record<string, string>>;
+
 export const JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS = [
 	{
 		id: "claude-code",

@@ -40,9 +40,9 @@ export function AgentSession({
 	onToggleVisibility,
 	onView,
 }: Readonly<AgentSessionProps>) {
-	// Coding rows stay activatable regardless of `canViewItem`: resuming a
-	// session the viewer owns is never a permission question, and the host still
-	// decides what activation does by supplying (or omitting) `onView`.
+	// Coding rows ignore `canViewItem`: resuming a session the viewer owns is not
+	// a permission question. They still require `onView`, because a read-only
+	// host must not receive a focusable no-op body.
 	const handleCodingView = useCallback((item: AgentSessionItem) => {
 		onView?.(item);
 	}, [onView]);
@@ -63,7 +63,9 @@ export function AgentSession({
 					onToggleVisibility={onToggleVisibility}
 					onView={
 						isCodingAgentListItem(item)
-							? handleCodingView
+							? onView === undefined
+								? undefined
+								: handleCodingView
 							: onView === undefined || (canViewItem !== undefined && !canViewItem(item))
 								? undefined
 								: onView

@@ -55,6 +55,11 @@ import {
 	toPulseSuggestedQuestions,
 } from "./pulse/data/pulse-scopes";
 import { scopeTimelineToWorkItemKeys } from "./pulse/hooks/use-pulse-timeline";
+import {
+	filterPulseLooseWorkByMember,
+	toPulseSessionHandlers,
+	toPulseSessionItems,
+} from "./pulse/lib/pulse-sessions";
 import type { PulseAnswer, PulseLooseWork, PulseWorkItem } from "./pulse/types";
 import {
 	createJiraKanbanSelectionState,
@@ -103,6 +108,7 @@ export interface ExperimentalJiraKanbanPageHandle {
 export interface ExperimentalJiraKanbanPageProps {
 	activeCardCode?: string;
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
+	agentSessionAssigneeIdAliases?: Readonly<Record<string, string>>;
 	agents?: readonly JiraKanbanAgentData[];
 	ariaLabel?: string;
 	boardColumns?: readonly JiraKanbanColumnData[];
@@ -120,6 +126,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	onModeChange?: (mode: ExperimentalJiraKanbanMode) => void;
 	onResumeLooseWork?: (item: PulseLooseWork) => void;
 	showBoardContent?: boolean;
+	showAgentSessionColumn?: boolean;
 	/**
 	 * Controlled unread watermark, so an owner rendering its own insights
 	 * affordance counts the same unread snapshots the toggle's badge does.
@@ -140,6 +147,7 @@ interface DraggedCardState {
 export default function ExperimentalJiraKanbanPage({
 	activeCardCode,
 	agentActivityLayout,
+	agentSessionAssigneeIdAliases,
 	agents = BOARD_AGENTS,
 	ariaLabel = "Experimental RFP board columns. Scroll horizontally to review all statuses.",
 	boardColumns: controlledBoardColumns,
@@ -158,6 +166,7 @@ export default function ExperimentalJiraKanbanPage({
 	onResumeLooseWork,
 	onTimelineLastViewedAtChange,
 	ref,
+	showAgentSessionColumn = false,
 	showBoardContent = true,
 	timelineLastViewedAt: controlledTimelineLastViewedAt,
 	viewTabs,
@@ -313,6 +322,11 @@ export default function ExperimentalJiraKanbanPage({
 	// same field the popover writes, so the Filter button is pressed whenever
 	// a human or agent face is selected.
 	const pulseMemberId = toPulseMemberId(selectedAssigneeIds, PULSE_MEMBER_IDS);
+	const agentSessionMemberId = toPulseMemberId(
+		selectedAssigneeIds,
+		PULSE_MEMBER_IDS,
+		agentSessionAssigneeIdAliases,
+	);
 	const filteredBoardColumns = useMemo(
 		() => filterJiraKanbanColumnsByAssignee(boardColumns, selectedAssigneeIds),
 		[boardColumns, selectedAssigneeIds],
@@ -334,6 +348,27 @@ export default function ExperimentalJiraKanbanPage({
 	const timelineUnreadCount = countUnviewedTimelineSnapshots(
 		PULSE_TIMELINE.snapshots,
 		timelineLastViewedAt,
+	);
+	const agentSessionItems = useMemo(
+		() => toPulseSessionItems(
+			filterPulseLooseWorkByMember(pulseTimeline.looseWork, agentSessionMemberId),
+			PULSE_TIMELINE.members,
+		),
+		[agentSessionMemberId, pulseTimeline.looseWork],
+	);
+	const agentSessionHandlers = useMemo(
+		() => toPulseSessionHandlers({
+			isLooseWorkResumable,
+			looseWork: pulseTimeline.looseWork,
+			onCapture: handleCaptureLooseWork,
+			onResume: onResumeLooseWork,
+		}),
+		[
+			handleCaptureLooseWork,
+			isLooseWorkResumable,
+			onResumeLooseWork,
+			pulseTimeline.looseWork,
+		],
 	);
 	const selectedAgentIds = useMemo(
 		() => getCommonJiraKanbanAgentIds(assignedAgentIdsByCard, selection.selectedCardCodes),
@@ -534,6 +569,11 @@ export default function ExperimentalJiraKanbanPage({
 					<ExperimentalJiraKanban
 						activeCardCode={activeCardCode}
 						agentActivityLayout={agentActivityLayout}
+						agentSessionColumn={showAgentSessionColumn ? {
+							capturedItemIds: capturedLooseWorkIds,
+							items: agentSessionItems,
+							...agentSessionHandlers,
+						} : undefined}
 						agents={agents}
 						ariaLabel={ariaLabel}
 						assignedAgentIdsByColumn={columnAgentAssignments}
