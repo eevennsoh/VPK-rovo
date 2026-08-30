@@ -52,7 +52,8 @@ export interface AgentSessionProps {
 	onView?: (item: AgentSessionItem) => void;
 	/**
 	 * When `onView` is set, non-coding rows for which this returns false omit the
-	 * body action. Coding agent rows always stay activatable. Defaults to every row.
+	 * body action. Coding agent rows ignore this permission check but still require
+	 * `onView` before their body becomes interactive. Defaults to every row.
 	 */
 	canViewItem?: (item: AgentSessionItem) => boolean;
 }

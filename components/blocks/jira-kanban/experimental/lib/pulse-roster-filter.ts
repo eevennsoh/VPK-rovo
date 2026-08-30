@@ -15,10 +15,15 @@ export const PULSE_PRESENTATION_MEMBER_ID = "venn";
 export function toPulseMemberId(
 	selectedAssigneeIds: ReadonlySet<string>,
 	pulseMemberIds: ReadonlySet<string>,
+	assigneeIdAliases: Readonly<Record<string, string>> = {},
 ): string | null {
 	for (const id of selectedAssigneeIds) {
 		if (pulseMemberIds.has(id)) {
 			return id;
+		}
+		const memberId = assigneeIdAliases[id];
+		if (memberId !== undefined && pulseMemberIds.has(memberId)) {
+			return memberId;
 		}
 	}
 	return null;

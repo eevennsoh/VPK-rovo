@@ -134,6 +134,7 @@ export function toPulseSessionHandlers({
 		looseWork.filter(isPulseAgentSession).map((item) => [item.id, item] as const),
 	);
 	const resolveResumable = (item: AgentSessionItem): PulseLooseWork | undefined => {
+		if (onResume === undefined) return undefined;
 		const session = sessionById.get(item.id);
 		if (session === undefined) return undefined;
 		return (isLooseWorkResumable?.(session) ?? true) ? session : undefined;
@@ -141,20 +142,20 @@ export function toPulseSessionHandlers({
 
 	return {
 		isResumable: (item: AgentSessionItem) => resolveResumable(item) !== undefined,
-		onCopyResume: (item: AgentSessionItem) => {
+		onCopyResume: onResume === undefined ? undefined : (item: AgentSessionItem) => {
 			const session = resolveResumable(item);
 			if (session === undefined) return;
-			onResume?.(session);
+			onResume(session);
 		},
 		onLinkWorkItem: (item: AgentSessionItem) => {
 			const session = sessionById.get(item.id);
 			if (session === undefined) return;
 			onCapture(session);
 		},
-		onView: (item: AgentSessionItem) => {
+		onView: onResume === undefined ? undefined : (item: AgentSessionItem) => {
 			const session = resolveResumable(item);
 			if (session === undefined) return;
-			onResume?.(session);
+			onResume(session);
 		},
 	};
 }

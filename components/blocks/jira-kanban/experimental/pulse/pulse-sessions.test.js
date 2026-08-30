@@ -91,6 +91,21 @@ test("session rows name a human invoker when the roster can place one", async ()
 	});
 });
 
+test("session activation is omitted when the host cannot resume it", async () => {
+	const { PULSE_TIMELINE, toPulseSessionHandlers, toPulseSessionItems } = await loadSessionsHarness();
+	const session = PULSE_TIMELINE.looseWork.find((item) => item.kind === "agent-session");
+	assert.ok(session !== undefined, "fixture should include a local agent session");
+	const item = toPulseSessionItems([session], PULSE_TIMELINE.members)[0];
+	const handlers = toPulseSessionHandlers({
+		looseWork: [session],
+		onCapture() {},
+	});
+
+	assert.equal(handlers.onView, undefined);
+	assert.equal(handlers.onCopyResume, undefined);
+	assert.equal(handlers.isResumable(item), false);
+});
+
 test("the uncaptured column renders sessions through the Agent Session block", () => {
 	assert.match(SOURCES.rail, /import \{ AgentSession \} from "@\/components\/blocks\/agent-session";/u);
 	assert.match(
@@ -106,11 +121,11 @@ test("the uncaptured column renders sessions through the Agent Session block", (
 	// The row -> loose work callbacks live in the shared adapter, so the rail and
 	// the v2 board's untracked-work column apply one set of rules.
 	assert.match(SOURCES.rail, /\{\.\.\.sessionHandlers\}/u);
-	assert.match(SOURCES.sessions, /onCopyResume: \(item: AgentSessionItem\) => \{/u);
+	assert.match(SOURCES.sessions, /onCopyResume: onResume === undefined \? undefined : \(item: AgentSessionItem\) => \{/u);
 	assert.match(SOURCES.sessions, /onLinkWorkItem: \(item: AgentSessionItem\) => \{/u);
 	assert.doesNotMatch(SOURCES.rail, /variant="compact"/u);
 	assert.doesNotMatch(SOURCES.rail, /canViewItem=/u);
-	assert.match(SOURCES.sessions, /onView: \(item: AgentSessionItem\) => \{/u);
+	assert.match(SOURCES.sessions, /onView: onResume === undefined \? undefined : \(item: AgentSessionItem\) => \{/u);
 	assert.match(SOURCES.sessions, /isLooseWorkResumable\?\.\(session\) \?\? true/u);
 	// Resumability is declared up front so non-resumable rows never render an
 	// enabled Resume control; the callback guard alone runs after the copy.

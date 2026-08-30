@@ -106,6 +106,7 @@ export interface ExperimentalJiraKanbanPageHandle {
 
 export interface ExperimentalJiraKanbanPageProps {
 	activeCardCode?: string;
+	agentSessionAssigneeIdAliases?: Readonly<Record<string, string>>;
 	agents?: readonly JiraKanbanAgentData[];
 	ariaLabel?: string;
 	boardColumns?: readonly JiraKanbanColumnData[];
@@ -143,6 +144,7 @@ interface DraggedCardState {
 
 export default function ExperimentalJiraKanbanPage({
 	activeCardCode,
+	agentSessionAssigneeIdAliases,
 	agents = BOARD_AGENTS,
 	ariaLabel = "Experimental RFP board columns. Scroll horizontally to review all statuses.",
 	boardColumns: controlledBoardColumns,
@@ -317,6 +319,11 @@ export default function ExperimentalJiraKanbanPage({
 	// same field the popover writes, so the Filter button is pressed whenever
 	// a human or agent face is selected.
 	const pulseMemberId = toPulseMemberId(selectedAssigneeIds, PULSE_MEMBER_IDS);
+	const agentSessionMemberId = toPulseMemberId(
+		selectedAssigneeIds,
+		PULSE_MEMBER_IDS,
+		agentSessionAssigneeIdAliases,
+	);
 	const filteredBoardColumns = useMemo(
 		() => filterJiraKanbanColumnsByAssignee(boardColumns, selectedAssigneeIds),
 		[boardColumns, selectedAssigneeIds],
@@ -341,10 +348,10 @@ export default function ExperimentalJiraKanbanPage({
 	);
 	const agentSessionItems = useMemo(
 		() => toPulseSessionItems(
-			filterPulseLooseWorkByMember(pulseTimeline.looseWork, pulseMemberId),
+			filterPulseLooseWorkByMember(pulseTimeline.looseWork, agentSessionMemberId),
 			PULSE_TIMELINE.members,
 		),
-		[pulseMemberId, pulseTimeline.looseWork],
+		[agentSessionMemberId, pulseTimeline.looseWork],
 	);
 	const agentSessionHandlers = useMemo(
 		() => toPulseSessionHandlers({
