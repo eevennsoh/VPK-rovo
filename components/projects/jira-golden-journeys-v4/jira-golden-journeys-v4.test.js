@@ -54,7 +54,7 @@ test("the board opts into the experimental Jira issue split agent rows", () => {
 
 test("the board reuses Jira's tab bar and only shows board content on the Board tab", () => {
 	assert.match(JIRA_HEADER_SOURCE, /export function JiraViewTabs/u);
-	assert.match(JIRA_HEADER_SOURCE, /className=\{isFirst \? "ml-3 flex-none" : "flex-none"\}/u);
+	assert.match(JIRA_HEADER_SOURCE, /className=\{isFirst \? "ml-4 flex-none" : "flex-none"\}/u);
 	assert.match(JIRA_HEADER_SOURCE, /<JiraViewTabs selectedTab=\{selectedTab\} onTabChange=\{onTabChange\} \/>/u);
 	assert.match(PAGE_SOURCE, /import \{ JiraViewTabs \} from "@\/components\/projects\/jira\/components\/jira-header"/u);
 	assert.match(PAGE_SOURCE, /const \[selectedTab, setSelectedTab\] = useState\(1\)/u);
