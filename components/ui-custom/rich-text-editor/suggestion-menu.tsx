@@ -1009,6 +1009,7 @@ function RichTextSuggestionMenuOption({
 	const className = cn(
 		"rich-text-command-menu-item",
 		isSelected && "rich-text-command-menu-item-selected",
+		isChosen && "bg-bg-selected! hover:bg-bg-selected-hovered! active:bg-bg-selected-pressed!",
 		getSuggestionMenuItemStickyClassName(item),
 	);
 	const children = (
@@ -1075,7 +1076,6 @@ function RichTextSuggestionMenuOption({
 				animate={isBylineRevealed ? "active" : "idle"}
 				custom={Boolean(prefersReducedMotion)}
 				className={className}
-				data-chosen={isChosen ? "true" : undefined}
 				data-has-actions={hasHoverActions ? "true" : undefined}
 				data-selected={isChosen ?? isSelected ? "true" : undefined}
 				data-suggestion-option=""
@@ -1096,7 +1096,6 @@ function RichTextSuggestionMenuOption({
 			role={listMode ? undefined : "option"}
 			aria-selected={listMode ? undefined : isChosen ?? isSelected}
 			className={className}
-			data-chosen={isChosen ? "true" : undefined}
 			data-has-actions={hasHoverActions ? "true" : undefined}
 			data-selected={isChosen ?? isSelected ? "true" : undefined}
 			data-suggestion-option=""
