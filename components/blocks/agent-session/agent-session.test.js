@@ -39,7 +39,10 @@ const VARIANT_REGISTRY_SOURCE = readFileSync(
 
 test("renders each session as a dashed uncaptured-work card around the shared row", () => {
 	assert.match(CARD_SOURCE, /data-testid=\{"agent-session-row-" \+ item.id\}/u);
-	assert.match(CARD_SOURCE, /border-dashed border-border-disabled/u);
+	// Dashed always — it means "uncaptured". The colour is conditional, because a
+	// newly synced card recolours the same dash rather than replacing it.
+	assert.match(CARD_SOURCE, /border border-dashed/u);
+	assert.match(CARD_SOURCE, /isNew \? "border-border-discovery" : "border-border-disabled"/u);
 	assert.match(CARD_SOURCE, /bg-surface-sunken/u);
 	// The row presenter stays owned by Agent List; this block only frames it.
 	assert.match(

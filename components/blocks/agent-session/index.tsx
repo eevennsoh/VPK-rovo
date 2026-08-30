@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 import { isCodingAgentListItem } from "@/components/blocks/agent-list";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,39 @@ import type {
 	AgentSessionItem,
 	AgentSessionProps,
 } from "./agent-session-types";
+
+/**
+ * Past this many arrivals the group lands together instead of stepping in.
+ * Eight staggered cards is half a second of competing focal points, which is
+ * the opposite of the one-focal-point rule the beat exists to serve.
+ */
+const ARRIVAL_STAGGER_LIMIT = 4;
+
+/** Seconds between staggered arrivals. */
+const ARRIVAL_STAGGER_SECONDS = 0.06;
+
+/**
+ * Arrival order for the ids in `newItemIds`, as a delay in seconds.
+ *
+ * Keyed by id rather than list index so the delay follows the card if the host
+ * re-sorts, and so a card that is not new never carries one at all.
+ */
+function buildArrivalDelays(
+	items: readonly AgentSessionItem[],
+	newItemIds: ReadonlySet<string> | undefined,
+): ReadonlyMap<string, number> {
+	if (newItemIds === undefined || newItemIds.size === 0) {
+		return new Map<string, number>();
+	}
+
+	const arrivals = items.filter((item: AgentSessionItem) => newItemIds.has(item.id));
+	const shouldStagger = arrivals.length <= ARRIVAL_STAGGER_LIMIT;
+
+	return new Map(arrivals.map((item: AgentSessionItem, index: number) => [
+		item.id,
+		shouldStagger ? index * ARRIVAL_STAGGER_SECONDS : 0,
+	]));
+}
 
 /**
  * Local coding sessions that never became work items.
@@ -33,6 +66,7 @@ export function AgentSession({
 	getSuggestedWorkItemKey,
 	getSuggestedWorkItemKeys,
 	isResumable,
+	newItemIds,
 	onCopyResume,
 	onCreateWorkItem,
 	onLinkWorkItem,
@@ -46,13 +80,19 @@ export function AgentSession({
 	const handleCodingView = useCallback((item: AgentSessionItem) => {
 		onView?.(item);
 	}, [onView]);
+	const arrivalDelays = useMemo(
+		() => buildArrivalDelays(items, newItemIds),
+		[items, newItemIds],
+	);
 
 	return (
 		<ul className={cn("flex flex-col gap-2", className)}>
 			{items.map((item: AgentSessionItem) => (
 				<AgentSessionCard
+					arrivalDelaySeconds={arrivalDelays.get(item.id)}
 					captured={capturedItemIds?.has(item.id) ?? false}
 					getResumeCommand={getResumeCommand}
+					isNew={newItemIds?.has(item.id) ?? false}
 					isResumable={isResumable}
 					item={item}
 					key={item.id}

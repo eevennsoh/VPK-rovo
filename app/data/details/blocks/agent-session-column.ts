@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_SESSION_COLUMN_DETAIL: ComponentDetail = {
 	description:
-		'A kanban column of agent sessions that never became work items. The board\'s status columns are unfilled — they read as regions of the board surface — so this one is filled with `surface-sunken`: the sunken plane is what says "outside the workflow" without a label having to explain it. Below a header of title plus count, the column renders the Agent Session block verbatim, so each card keeps its dashed uncaptured-work chrome, its Link to <key> chin with Create work item behind it, its hover Resume and visibility controls, its Captured state, and its resume gating. The list is a scrollport with top and bottom fade masks and a reserved 4px focus-ring gutter, so a focused card\'s ring is never clipped. In the experimental v2 Jira Kanban board it is pinned to the left of the horizontal scrollport rather than added to `boardColumns`, because untracked work is not a status: it has no place in the left-to-right progression the status columns describe, and it stays visible while the reader scrolls to the last column.',
+		'A kanban column of agent sessions that never became work items. The board\'s status columns are unfilled — they read as regions of the board surface — so this one is filled with `surface-sunken`: the sunken plane is what says "outside the workflow" without a label having to explain it. The fill starts below the header rather than behind it, so the title and count share an inset and a baseline with the status column titles beside them and the five headers read as one row. Inside the plane the column renders the Agent Session block verbatim, so each card keeps its dashed uncaptured-work chrome, its Link to <key> chin with Create work item behind it, its hover Resume and visibility controls, its Captured state, and its resume gating. The list is a scrollport with top and bottom fade masks and a reserved 4px focus-ring gutter, so a focused card\'s ring is never clipped. In the experimental v2 Jira Kanban board it is pinned to the left of the horizontal scrollport rather than added to `boardColumns`, because untracked work is not a status: it has no place in the left-to-right progression the status columns describe, and it stays visible while the reader scrolls to the last column. A hover-revealed control collapses it, but not into the rotated label a status column becomes: a status is only a name, while these are live sessions, so the collapsed column is a full-height 32px rail of mini notches — one per session, resting quiet in `icon-subtlest` and lighting up to `icon` with a slight scale under the pointer or keyboard focus — and hovering or focusing a notch opens the same payload-driven session flyout an Agent List row opens. Collapsed, the column loses the cards and keeps every session one hover away.',
 	demoLayout: { previewHeight: "fit" },
 	importStatement: `import { AgentSessionColumn } from "@/components/blocks/agent-session-column";`,
 	usage: `import { AgentSessionColumn } from "@/components/blocks/agent-session-column";
@@ -41,10 +41,28 @@ export const AGENT_SESSION_COLUMN_DETAIL: ComponentDetail = {
 			description: "Copy shown in place of the list when there are no sessions.",
 		},
 		{
+			name: "defaultCollapsed",
+			type: "boolean",
+			default: "false",
+			description:
+				"Whether the column starts collapsed into its notch rail. The column owns the state from there — the hover-revealed shrink/grow control toggles it.",
+		},
+		{
+			name: "onCollapsedChange",
+			type: "(collapsed: boolean) => void",
+			description: "Called after the viewer collapses or expands the column.",
+		},
+		{
 			name: "capturedItemIds",
 			type: "ReadonlySet<string>",
 			description:
 				"Ids of sessions whose chin should read Captured instead of offering Link and Create.",
+		},
+		{
+			name: "newItemIds",
+			type: "ReadonlySet<string>",
+			description:
+				"Ids that arrived in the last sync and have not been reviewed. Each one plays a one-shot arrival beat and carries a persistent unreviewed mark: expanded, the card steps in from above and its dashed border recolours to discovery with a dot in the corner; collapsed, the notch grows from its centre to full size while the notches below slide down to make room, then simply stays lit — `icon` and slightly scaled, exactly the state a reviewed notch reaches on hover — while the rail's head counts the unread as +N. New is the rail holding the hover gesture open for you rather than a separate mark to learn; the dash is already spent on uncaptured, so the card recolours it rather than replacing it. The mark is the load-bearing half — it survives a backgrounded tab, a collapsed column, and prefers-reduced-motion, where the beat does not.",
 		},
 		{
 			name: "onLinkWorkItem",
@@ -78,7 +96,7 @@ export const AGENT_SESSION_COLUMN_DETAIL: ComponentDetail = {
 		{
 			name: "className",
 			type: "string",
-			description: "Additional classes applied to the sunken column surface.",
+			description: "Additional classes applied to the column region that wraps the header and the sunken plane.",
 		},
 		{
 			name: "listClassName",
