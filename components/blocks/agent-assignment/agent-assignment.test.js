@@ -156,7 +156,8 @@ test("Agent Assignment preserves the work-item trigger and two-stage menu behavi
 	assert.match(menu, /hoverActions: \{[\s\S]*primaryLabel: "View"[\s\S]*secondaryLabel: "Archive"/u);
 	assert.match(menu, /function AssignedAgentTrailingStatus\(/u);
 	assert.match(menu, /const statusKind = resolveAssignedAgentStatusKind\(row\);/u);
-	assert.match(menu, /<Spinner[\s\S]*size="sm"[\s\S]*variant="rainbow"/u);
+	assert.match(menu, /<Spinner label=\{`\$\{agent\.name\} running`\} size="sm" \/>/u);
+	assert.doesNotMatch(menu, /<Spinner[^>]*variant="rainbow"/u);
 	assert.match(menu, /<StatusInformationIcon[\s\S]*size="small"/u);
 	assert.match(menu, /<StatusSuccessIcon[\s\S]*size="small"/u);
 	assert.match(menu, /text-icon-information/u);
@@ -310,7 +311,8 @@ test("assigned-agent action rows truncate 8px from CTAs and idle the byline on h
 
 	// Working assigned agents show a rest-state spinner that yields (opacity) to
 	// View/Archive — never unmounted with display:none / hidden.
-	assert.match(menu, /<Spinner[\s\S]*size="sm"[\s\S]*variant="rainbow"/u);
+	assert.match(menu, /<Spinner label=\{`\$\{agent\.name\} running`\} size="sm" \/>/u);
+	assert.doesNotMatch(menu, /<Spinner[^>]*variant="rainbow"/u);
 	assert.match(suggestionMenu, /shouldYieldTrailingToHoverActions \? "pointer-events-none opacity-0"/u);
 	assert.doesNotMatch(suggestionMenu, /className="hidden items-center gap-1/u);
 
@@ -795,4 +797,3 @@ test("clicking an assigned-agents row dismisses that agent's needs-input field p
 		Object.assign(globalThis, originalGlobals);
 	}
 });
-
