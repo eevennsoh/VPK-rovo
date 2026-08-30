@@ -12,13 +12,11 @@ import { preload } from "react-dom";
 
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import BranchIcon from "@atlaskit/icon/core/branch";
-import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
 import DevicesIcon from "@atlaskit/icon/core/devices";
 import FolderClosedIcon from "@atlaskit/icon/core/folder-closed";
 import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
-import StatusInformationIcon from "@atlaskit/icon/core/status-information";
 import TaskIcon from "@atlaskit/icon/core/task";
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import IfElseIcon from "@atlaskit/icon-lab/core/if-else";
@@ -26,7 +24,6 @@ import IfElseIcon from "@atlaskit/icon-lab/core/if-else";
 import { AgentStates, type AgentStatesState } from "@/components/blocks/agent-states";
 import { AgentProfileCard } from "@/components/blocks/agent-profile-card";
 import { SmartLink, SMART_LINK_MODAL_ACTIONS, type SmartLinkItem } from "@/components/blocks/smart-link";
-import { Alert, AlertTitle } from "@/components/ui/alert";
 import {
 	HoverCard,
 	HoverCardContent,
@@ -35,16 +32,17 @@ import {
 	type HoverCardHandle,
 	type HoverCardTriggerProps,
 } from "@/components/ui/hover-card";
-import { Icon } from "@/components/ui/icon";
 import { GithubLogo } from "@/components/ui/logo-third-party";
 import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
 import { MetadataPathLink, MetadataPathValue } from "@/components/ui/metadata-path-link";
 import { Tag } from "@/components/ui/tag";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { ProgressCircle } from "@/components/ui-custom/progress-circle";
 import { getAgentProfileBannerSrc } from "@/lib/agent-avatars";
 
 import type {
 	JiraSidebarSessionHost,
+	JiraSidebarSessionChecks,
 	JiraSidebarSessionItem,
 	JiraSidebarSessionStatus,
 } from "./jira";
@@ -62,13 +60,13 @@ export type JiraSessionFlyoutTriggerProps = Omit<
 	session: JiraSidebarSessionItem;
 };
 
-export type JiraSessionFlyoutContent = "details" | "composer";
+export type JiraSessionFlyoutContent = "details" | "composer" | "untracked-work";
 
 export interface JiraSessionFlyoutSurfaceProps {
 	handle: JiraSessionFlyoutHandle;
 	/**
-	 * Flyout body. `details` (default) is the session property card; `composer`
-	 * is the Agent States card with a prompt composer.
+	 * Flyout body. `details` (default) is the session property card, `composer`
+	 * is the Agent States card, and `untracked-work` suggests a related Jira item.
 	 */
 	content?: JiraSessionFlyoutContent;
 	onSubmitPrompt?: (session: JiraSidebarSessionItem, prompt: string) => void;
@@ -129,7 +127,7 @@ export function JiraSessionFlyoutTrigger({
  *
  * The body reuses the shared design-system components: the work item is a
  * SmartLink, the agent is an agent-type Tag pill, PR state is a Lozenge, and the
- * SCM ("Development") fields sit in their own separated block behind the
+ * SCM fields sit in their own block behind the
  * third-party GitHub logo, rendered in the normal 12px body font.
  *
  * It depends on `./jira` for TYPES ONLY (erased at build time) so that `./jira`
@@ -156,6 +154,13 @@ function toAgentStatesState(status: JiraSidebarSessionStatus): AgentStatesState 
 function toAgentStatesMessage(status: JiraSidebarSessionStatus): string | undefined {
 	if (status !== "stopped") return undefined;
 	return "This session was stopped before the requested work was completed.";
+}
+
+function formatSessionChecks(checks: JiraSidebarSessionChecks): string {
+	const total = checks.passed + checks.failed;
+	return checks.failed > 0
+		? `${checks.passed}/${total} passed ${checks.failed} failed`
+		: `${checks.passed}/${total} passed`;
 }
 
 /** Work-item status lozenge derived from the session lifecycle. */
@@ -209,7 +214,10 @@ const WORK_ITEM_STATUS_OPTIONS: ReadonlyArray<{ label: string; variant: LozengeP
 
 /** Builds the SmartLink work-item link (issue key + summary + assignee, priority,
  * and an interactive status dropdown). */
-function toWorkItem(session: JiraSidebarSessionItem): SmartLinkItem {
+function toWorkItem(
+	session: JiraSidebarSessionItem,
+	relationship: "primary" | "suggested",
+): SmartLinkItem {
 	const workItemStatus = STATUS_WORK_ITEM[session.status];
 
 	return {
@@ -219,15 +227,19 @@ function toWorkItem(session: JiraSidebarSessionItem): SmartLinkItem {
 		variant: "jira",
 		provider: { name: "Jira", logo: { kind: "atlassian", name: "jira" } },
 		icon: { kind: "atlassian", name: "jira" },
-		description: `Primary work item for ${session.title}.`,
+		description: `${relationship === "suggested" ? "Suggested" : "Primary"} work item for ${session.title}.`,
 		assignee: session.assignee,
 		priority: session.priority,
-		status: {
-			label: workItemStatus.label,
-			variant: workItemStatus.variant,
-			options: WORK_ITEM_STATUS_OPTIONS,
-		},
-		actions: SMART_LINK_MODAL_ACTIONS,
+		...(relationship === "primary"
+			? {
+					actions: SMART_LINK_MODAL_ACTIONS,
+					status: {
+						label: workItemStatus.label,
+						variant: workItemStatus.variant,
+						options: WORK_ITEM_STATUS_OPTIONS,
+					},
+				}
+			: {}),
 	};
 }
 
@@ -241,7 +253,7 @@ export function FlyoutRow({
 }: Readonly<{ icon: ReactNode; label: string; children: ReactNode }>) {
 	return (
 		<div className="flex min-w-0 items-center gap-2 text-xs leading-5">
-			<span className="grid size-4 shrink-0 place-items-center text-icon-subtle" aria-hidden="true">
+			<span className="grid size-4 shrink-0 place-items-center text-icon-subtlest" aria-hidden="true">
 				{icon}
 			</span>
 			<span className="sr-only">{label}</span>
@@ -250,17 +262,23 @@ export function FlyoutRow({
 	);
 }
 
-/** A section divider heading ("Label ────") used inside the flyout body. It is
- * exported so the detail panel's Sources/Output sections reuse the exact same
- * heading composition, keeping every section header identical across surfaces. */
+/** A section heading shared by detail panels and the untracked-work suggestion. */
 export function JiraSessionSectionHeading({
 	id,
 	children,
-}: Readonly<{ id?: string; children: ReactNode }>) {
+	meta,
+	showSeparator = false,
+}: Readonly<{ id?: string; children: ReactNode; meta?: ReactNode; showSeparator?: boolean }>) {
 	return (
 		<div className="mb-1 flex items-center gap-3">
-			<span className="shrink-0 text-xs font-semibold text-text-subtlest" id={id}>{children}</span>
-			<span className="h-px flex-1 bg-border" aria-hidden="true" />
+			<span
+				className="flex min-w-0 shrink-0 items-center gap-1.5 text-xs font-medium leading-4 text-text-subtle"
+				id={id}
+			>
+				{children}
+				{meta ? <span className="shrink-0 text-xs font-normal text-text-subtlest">{meta}</span> : null}
+			</span>
+			{showSeparator ? <span className="h-px flex-1 bg-border" aria-hidden="true" /> : null}
 		</div>
 	);
 }
@@ -276,6 +294,7 @@ export function JiraSessionFlyoutBody({
 	hideAgentRow = false,
 	hideHeader = false,
 	previewPosition,
+	variant = "details",
 }: Readonly<{
 	session: JiraSidebarSessionItem;
 	/** Hide the Agent metadata row when the surrounding surface owns agent selection. */
@@ -289,6 +308,8 @@ export function JiraSessionFlyoutBody({
 	hideHeader?: boolean;
 	/** Override nested Agent and Work item preview placement for constrained surfaces. */
 	previewPosition?: JiraSessionPreviewPosition;
+	/** Replace development metadata with a suggested Jira link rationale. */
+	variant?: "details" | "untracked-work";
 }>) {
 	const agentBannerSrc = getAgentProfileBannerSrc(session.agentAvatarSrc);
 	preload(agentBannerSrc, { as: "image" });
@@ -302,9 +323,11 @@ export function JiraSessionFlyoutBody({
 	);
 	const prState = prStateLozenge(session.status);
 	const hasCodeChanges = session.additions !== undefined && session.deletions !== undefined;
+	const checksTotal = session.checks ? session.checks.passed + session.checks.failed : 0;
+	const workItemRelationship = variant === "untracked-work" ? "suggested" : "primary";
 
 	return (
-		<div className="flex flex-col gap-4">
+		<div className="flex flex-col gap-2">
 			{hideHeader ? null : (
 				<div className="flex items-center justify-between gap-3">
 					<p className="min-w-0 truncate text-sm font-semibold leading-5 text-text" title={session.title}>
@@ -315,13 +338,6 @@ export function JiraSessionFlyoutBody({
 					</span>
 				</div>
 			)}
-
-			{session.status === "awaiting-input" ? (
-				<Alert size="small" variant="info">
-					<Icon render={<StatusInformationIcon label="" />} label="Information" />
-					<AlertTitle>Needs input</AlertTitle>
-				</Alert>
-			) : null}
 
 			<div className="flex flex-col gap-2">
 				<FlyoutRow icon={hostIcon(session.host)} label="Session">
@@ -378,16 +394,27 @@ export function JiraSessionFlyoutBody({
 					<SmartLink
 						align={previewPosition?.align ?? "center"}
 						alignOffset={previewPosition?.alignOffset ?? 0}
-						item={toWorkItem(session)}
-						showStatus
+						item={toWorkItem(session, workItemRelationship)}
+						showStatus={workItemRelationship === "primary"}
 						side={previewPosition?.side ?? "right"}
 					/>
 				</FlyoutRow>
 			</div>
 
-			{hasDevelopment ? (
+			{variant === "untracked-work" ? (
+				<section
+					aria-label={`Link to ${session.issueKey}, High confidence`}
+					className="flex flex-col gap-2 pt-2"
+				>
+					<JiraSessionSectionHeading meta="High confidence" showSeparator>
+						Link to {session.issueKey}
+					</JiraSessionSectionHeading>
+					<p className="text-sm leading-5 text-text">
+						This session appears related to {session.issueKey} because the work item matches its activity and context.
+					</p>
+				</section>
+			) : hasDevelopment ? (
 				<div className="flex flex-col gap-2">
-					<JiraSessionSectionHeading>Development</JiraSessionSectionHeading>
 					{session.pullRequestNumber ? (
 						<FlyoutRow icon={prStateIcon(session.status)} label="Pull request">
 							<span className="flex min-w-0 flex-1 items-center gap-1">
@@ -414,8 +441,21 @@ export function JiraSessionFlyoutBody({
 						</FlyoutRow>
 					) : null}
 					{session.checks ? (
-						<FlyoutRow icon={<CheckCircleIcon label="" size="small" />} label="Checks">
-							<span className="min-w-0 truncate text-text" title={session.checks}>{session.checks}</span>
+						<FlyoutRow
+							icon={(
+								<ProgressCircle
+									aria-hidden
+									animated={false}
+									size="xs"
+									value={checksTotal > 0 ? Math.round((session.checks.passed / checksTotal) * 100) : 0}
+									variant="outline"
+								/>
+							)}
+							label="Checks"
+						>
+							<span className="shrink-0 text-xs font-normal text-text">
+								{formatSessionChecks(session.checks)}
+							</span>
 						</FlyoutRow>
 					) : null}
 					{session.repository ? (
@@ -474,6 +514,12 @@ function JiraSessionFlyoutPayload({
 					state={toAgentStatesState(session.status)}
 				/>
 			);
+		case "untracked-work":
+			return (
+				<div className="w-[400px] bg-surface-overlay p-4 text-text">
+					<JiraSessionFlyoutBody session={session} variant="untracked-work" />
+				</div>
+			);
 		case "details":
 			return (
 				<div className="w-[400px] bg-surface-overlay p-4 text-text">
@@ -490,7 +536,8 @@ function JiraSessionFlyoutPayload({
 /**
  * One payload-aware flyout shared by every session row in a list. Defaults to
  * the session-details card; pass `content="composer"` for the Agent States
- * prompt composer. Base UI's viewport keeps the popup mounted while the anchor
+ * prompt composer or `content="untracked-work"` for a Jira-link suggestion.
+ * Base UI's viewport keeps the popup mounted while the anchor
  * changes. The shell follows the new row, immediately adopts its measured size,
  * and crossfades the old and new content without letting rapid hovers restart a
  * stale size transition.

@@ -1,6 +1,9 @@
 import { getRovoAgentProfile, type RovoAgentProfile } from "@/app/data/directory/agents";
 import { STARRED_PROJECTS } from "@/components/blocks/product-sidebar/data/jira-navigation";
-import type { JiraSidebarSessionItem } from "@/components/blocks/product-sidebar/variants/jira";
+import type {
+	JiraSidebarSessionChecks,
+	JiraSidebarSessionItem,
+} from "@/components/blocks/product-sidebar/variants/jira";
 import type { QuestionCardQuestion } from "@/components/blocks/question-card/types";
 import type { RovoAppThread } from "@/lib/rovo-app-types";
 import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
@@ -44,7 +47,7 @@ export interface AsxQueueSession {
 	/** Human accountable for the Jira work item (shown in the work-item smart link). */
 	assignee?: AsxQueueAssignee;
 	branch?: string;
-	checks?: string;
+	checks?: JiraSidebarSessionChecks;
 	commit?: string;
 	fileChanges?: AsxQueueFileChanges;
 	host: AsxQueueSessionHost;
@@ -267,7 +270,7 @@ export const ASX_QUEUE_SESSION_SEEDS: readonly AsxQueueSession[] = [
 		pullRequestNumber: 1847,
 		pullRequestTitle: "RFP-102 Automate Northstar security evidence",
 		commit: "7d3a91c",
-		checks: "4 checks passing",
+		checks: { passed: 2, failed: 1 },
 		fileChanges: {
 			additions: 148,
 			deletions: 37,
@@ -301,7 +304,7 @@ export const ASX_QUEUE_SESSION_SEEDS: readonly AsxQueueSession[] = [
 					"**Validation**",
 					"- Regression coverage includes duplicate control IDs, missing owners, expired links, manual overrides, and dry-run output.",
 					"- Lint, unit tests, and typecheck pass locally.",
-					"- All four pull-request checks are green.",
+					"- Two of three pull-request checks pass; one failing check remains.",
 					"",
 					"**Delivery status**",
 					"PR #1847 contains four changed files with **148 additions** and **37 deletions**. It is ready for review; the Jira transition is set to **Done** by default and can be changed from the context bar below.",
@@ -331,7 +334,7 @@ export const ASX_QUEUE_SESSION_SEEDS: readonly AsxQueueSession[] = [
 		pullRequestNumber: 1842,
 		pullRequestTitle: "RFP-103 Validate security response evidence",
 		commit: "2f6bc84",
-		checks: "6 checks passing",
+		checks: { passed: 6, failed: 0 },
 		fileChanges: {
 			additions: 92,
 			deletions: 18,

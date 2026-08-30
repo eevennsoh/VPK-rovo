@@ -101,7 +101,7 @@ test("Jira session lifecycle metadata reuses the established Rovo visuals", () =
 		/<span className="shrink-0" aria-hidden="true">·<\/span>\s*<JiraSessionLifecycle/u,
 	);
 	assert.match(JIRA_SIDEBAR_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
-	assert.match(JIRA_SIDEBAR_SOURCE, /return <Spinner label="Running" size="xs" variant="rainbow" \/>/u);
+	assert.match(JIRA_SIDEBAR_SOURCE, /return <Spinner label="Running" size="xs" \/>/u);
 	assert.match(JIRA_SIDEBAR_SOURCE, /text-icon-success[\s\S]*<PullRequestIcon label="Pull request open"/u);
 	assert.match(JIRA_SIDEBAR_SOURCE, /text-icon-accent-purple[\s\S]*<MergeSuccessIcon label="Pull request merged"/u);
 	assert.match(JIRA_SIDEBAR_SOURCE, /<VideoStopIcon label="Stopped"/u);
