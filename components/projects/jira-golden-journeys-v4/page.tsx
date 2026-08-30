@@ -52,6 +52,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 			>
 				<div className="h-full min-h-0 min-w-0 overflow-hidden bg-surface [&>div]:min-h-0">
 					<ExperimentalJiraKanbanPage
+						agentActivityLayout="split"
 						agents={JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS}
 						ariaLabel="Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses."
 						boardColumns={boardColumns}
