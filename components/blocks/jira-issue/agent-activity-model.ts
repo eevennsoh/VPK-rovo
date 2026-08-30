@@ -1,7 +1,22 @@
 export type JiraIssueActiveAgentState = "working" | "awaiting-input";
 
+/**
+ * `merged` collapses every active agent into one prioritized chin row
+ * (`2 Working`). `split` gives each active agent its own row.
+ */
+export type JiraIssueAgentActivityLayout = "merged" | "split";
+
 interface JiraIssueAgentActivitySummaryInput {
 	state: JiraIssueActiveAgentState | "completed";
+}
+
+interface JiraIssueAgentActivityRowInput extends JiraIssueAgentActivitySummaryInput {
+	id: string;
+}
+
+export interface JiraIssueAgentActivityRowGroup<TActivity> {
+	activities: readonly TActivity[];
+	key: string;
 }
 
 export interface JiraIssueAgentActivitySummary {
@@ -38,4 +53,27 @@ export function summarizeJiraIssueAgentActivities(
 		priorityCount,
 		priorityState,
 	};
+}
+
+/**
+ * Resolves the chin rows to render. Completed activities never take a row, so
+ * both layouts operate on the active set only.
+ */
+export function groupJiraIssueAgentActivityRows<TActivity extends JiraIssueAgentActivityRowInput>(
+	activities: readonly TActivity[],
+	layout: JiraIssueAgentActivityLayout,
+): readonly JiraIssueAgentActivityRowGroup<TActivity>[] {
+	const activeActivities = activities.filter((activity) => activity.state !== "completed");
+
+	if (activeActivities.length === 0) {
+		return [];
+	}
+
+	if (layout === "split") {
+		return activeActivities.map((activity) => ({ activities: [activity], key: activity.id }));
+	}
+
+	const summary = summarizeJiraIssueAgentActivities(activeActivities);
+
+	return [{ activities: activeActivities, key: `${summary.priorityState}-${summary.activityCount}` }];
 }

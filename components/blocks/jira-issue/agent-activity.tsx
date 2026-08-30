@@ -1,7 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import { AnimatePresence, motion, useReducedMotion, type Transition } from "motion/react";
+import {
+	useEffect,
+	useMemo,
+	useState,
+	type CSSProperties,
+	type MouseEvent as ReactMouseEvent,
+	type PointerEvent as ReactPointerEvent,
+	type ReactElement,
+} from "react";
+import { AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring, type Transition } from "motion/react";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import StatusInformationIcon from "@atlaskit/icon/core/status-information";
 
@@ -11,19 +19,30 @@ import {
 	type AgentAssignmentAgent,
 } from "@/components/blocks/agent-assignment";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
-import { summarizeJiraIssueAgentActivities } from "@/components/blocks/jira-issue/agent-activity-model";
+import {
+	groupJiraIssueAgentActivityRows,
+	summarizeJiraIssueAgentActivities,
+	type JiraIssueAgentActivityLayout,
+} from "@/components/blocks/jira-issue/agent-activity-model";
 import type { QuestionCardQuestion } from "@/components/blocks/question-card/types";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AnimatedDots } from "@/components/ui-custom/animated-dots";
-import { PixelLoader } from "@/components/ui-custom/pixel-loader";
+import {
+	usePointerDrag,
+	type PointerDragBounds,
+	type PointerDragPosition,
+} from "@/components/ui-custom/hooks/use-pointer-drag";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
+import { Tag } from "@/components/ui/tag";
+import { Gooey } from "@/components/visual/gooey";
 import { cn } from "@/lib/utils";
 
 export type JiraIssueAgentActivityMode = "none" | "working" | "awaiting-input" | "completed";
 export type JiraIssueAgentActivityState = "working" | "awaiting-input" | "completed";
+export type { JiraIssueAgentActivityLayout } from "@/components/blocks/jira-issue/agent-activity-model";
 
 export interface JiraIssueAgentActivity {
 	id: string;
@@ -42,6 +61,47 @@ export interface JiraIssueAgentActivity {
 	question?: QuestionCardQuestion;
 	state: JiraIssueAgentActivityState;
 }
+
+/**
+ * Live state of an in-progress chin-row session drag. Published to the
+ * transfer region so it can reveal drop zones and hit-test the pointer.
+ * `pointer` is in client coordinates and is `null` once the drag ends.
+ */
+export interface JiraIssueAgentSessionDragState {
+	activities: readonly JiraIssueAgentActivity[];
+	dragging: boolean;
+	pointer: PointerDragPosition | null;
+}
+
+/**
+ * Opt-in binding that turns each chin row into a draggable session handle.
+ * Supplying it is what mounts the gooey wrapper and the pointer-drag bind;
+ * without it the rows render exactly as before.
+ */
+export interface JiraIssueAgentSessionDragBinding {
+	/** Clamp for the row translate, in px relative to its resting position. */
+	bounds?: PointerDragBounds;
+	onDragStateChange: (state: JiraIssueAgentSessionDragState) => void;
+}
+
+export const JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE: JiraIssueAgentSessionDragState = {
+	activities: [],
+	dragging: false,
+	pointer: null,
+};
+
+const JIRA_ISSUE_SESSION_DRAG_ORIGIN: PointerDragPosition = { x: 0, y: 0 };
+const JIRA_ISSUE_SESSION_DRAG_DISSOLVE_FADE_MS = 240;
+const JIRA_ISSUE_SESSION_DRAG_DISSOLVE_SINK = 0.8;
+const JIRA_ISSUE_SESSION_DRAG_MORPH = { advanced: { blobInset: 3, bridgeGrow: 7 } } as const;
+/** Travel before the grey goo phase hands over to the opaque at-mention chip. */
+const JIRA_ISSUE_SESSION_DRAG_CHIP_DISTANCE_PX = 28;
+/**
+ * Light friction on the dragged tag. Underdamped on purpose: the chip trails a
+ * few frames behind the pointer, and that lag is what the gooey filter renders
+ * as a sticky tail stretching back toward the chin before it snaps free.
+ */
+const JIRA_ISSUE_SESSION_DRAG_SPRING = { damping: 26, mass: 0.6, stiffness: 420, restDelta: 0.01 } as const;
 
 const JIRA_ISSUE_MOTION_ENTER: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] }; // duration-normal + ease-out-practical
 const JIRA_ISSUE_MOTION_EXIT: Transition = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] }; // duration-fast + ease-in
@@ -138,12 +198,18 @@ function toActivityFromAssignedAgent(agent: AgentAssignmentAgent): JiraIssueAgen
 function JiraIssueAgentActivityRow({
 	activities,
 	onOpenChange,
+	onSessionDragChange,
 	onViewChat,
+	sessionDrag,
+	shouldReduceMotion,
 	usesStrokeChrome,
 }: Readonly<{
 	activities: readonly JiraIssueAgentActivity[];
 	onOpenChange?: (open: boolean) => void;
+	onSessionDragChange?: (dragging: boolean, pointer: PointerDragPosition | null) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
+	sessionDrag?: JiraIssueAgentSessionDragBinding;
+	shouldReduceMotion: boolean | null;
 	usesStrokeChrome: boolean;
 }>) {
 	const summary = summarizeJiraIssueAgentActivities(activities);
@@ -181,6 +247,114 @@ function JiraIssueAgentActivityRow({
 			: [];
 	});
 
+	const handleOpenChat = canOpenChat ? () => onViewChat?.(activities[0]) : undefined;
+	const [dragOffset, setDragOffset] = useState<PointerDragPosition>(JIRA_ISSUE_SESSION_DRAG_ORIGIN);
+	// `onActivate` (not a sibling `onClick`) is how the row keeps its open-chat
+	// behaviour: the hook owns `bind.onClick` and swallows exactly one click
+	// after a >2px drag, so a transfer gesture never opens the chat.
+	const drag = usePointerDrag(dragOffset, setDragOffset, sessionDrag?.bounds, handleOpenChat);
+	// The pointer offset feeds motion values, and the springs are what the tag
+	// actually renders — so it trails the cursor instead of pinning to it.
+	// Reduced motion reads the raw values, giving an exact 1:1 follow.
+	const dragOffsetX = useMotionValue(0);
+	const dragOffsetY = useMotionValue(0);
+	const springX = useSpring(dragOffsetX, JIRA_ISSUE_SESSION_DRAG_SPRING);
+	const springY = useSpring(dragOffsetY, JIRA_ISSUE_SESSION_DRAG_SPRING);
+	const dragX = shouldReduceMotion ? dragOffsetX : springX;
+	const dragY = shouldReduceMotion ? dragOffsetY : springY;
+	/**
+	 * Session is clear of the chin: show it as the chip it is about to become.
+	 * Held back until the row has actually travelled, because the chip's opaque
+	 * `bg-surface-raised` pill covers the goo silhouette painted behind it —
+	 * swapping on the first pointermove is what made the pull-out snap straight
+	 * to a hard-edged tag with no visible stretch.
+	 */
+	const isDragging = Boolean(sessionDrag) && drag.dragging;
+	const isDraggedOut = isDragging
+		&& Math.hypot(drag.position.x, drag.position.y) >= JIRA_ISSUE_SESSION_DRAG_CHIP_DISTANCE_PX;
+
+	useEffect(() => {
+		dragOffsetX.set(drag.position.x);
+		dragOffsetY.set(drag.position.y);
+	}, [dragOffsetX, dragOffsetY, drag.position.x, drag.position.y]);
+
+	function publishSessionDrag(dragging: boolean, event?: ReactPointerEvent<HTMLElement>) {
+		onSessionDragChange?.(dragging, event ? { x: event.clientX, y: event.clientY } : null);
+	}
+
+	function endSessionDrag(event: ReactPointerEvent<HTMLElement>) {
+		drag.bind.onPointerUp(event);
+		setDragOffset(JIRA_ISSUE_SESSION_DRAG_ORIGIN);
+		publishSessionDrag(false);
+	}
+
+	const sessionDragBind = sessionDrag
+		? {
+			...drag.bind,
+			// The card `<article>` is `draggable`, so a plain pointerdown would hand
+			// the gesture to native HTML5 drag. Cancelling the compatibility
+			// mousedown suppresses `dragstart`; focus has to be restored by hand.
+			onMouseDown: (event: ReactMouseEvent<HTMLElement>) => {
+				event.preventDefault();
+				event.currentTarget.focus();
+			},
+			onPointerCancel: endSessionDrag,
+			onPointerDown: (event: ReactPointerEvent<HTMLElement>) => {
+				drag.bind.onPointerDown(event);
+				publishSessionDrag(true, event);
+			},
+			onPointerMove: (event: ReactPointerEvent<HTMLElement>) => {
+				drag.bind.onPointerMove(event);
+				if (drag.dragging) {
+					publishSessionDrag(true, event);
+				}
+			},
+			onPointerUp: endSessionDrag,
+		}
+		: undefined;
+
+	function withSessionDragGoo(node: ReactElement) {
+		if (!sessionDrag) {
+			return node;
+		}
+
+		return (
+			<div className={cn("min-w-0", isDragging && "relative h-6 w-full")}>
+				{isDragging ? (
+					// The goo bridges BODIES, and a lone item has nothing to stick to —
+					// this is why the drag showed no stretch at all. This blob holds the
+					// row's vacated slot so the merged silhouette keeps one end anchored
+					// in the chin while the other travels, drawing the neck between them.
+					// It paints nothing itself; the `<Gooey>` root fills the silhouette.
+					<Gooey.Item observe>
+						<div aria-hidden className="pointer-events-none h-6 w-full rounded-md" />
+					</Gooey.Item>
+				) : null}
+				<Gooey.Item
+					observe
+					dissolve={{
+						active: !shouldReduceMotion && drag.dragging,
+						fadeMs: JIRA_ISSUE_SESSION_DRAG_DISSOLVE_FADE_MS,
+						sink: JIRA_ISSUE_SESSION_DRAG_DISSOLVE_SINK,
+					}}
+					morph={JIRA_ISSUE_SESSION_DRAG_MORPH}
+				>
+					{/* The spring lives on the wrapper, not the row: `AgentAssignment`
+					    clones the trigger and `Gooey.Item` forwards no ref, so neither
+					    can carry motion values of its own. While dragging it also has to
+					    outrank the drop wells, which are later siblings and would
+					    otherwise paint over the travelling chip. */}
+					<motion.div
+						className={cn("min-w-0", isDragging && "absolute inset-x-0 top-0 z-20")}
+						style={{ x: dragX, y: dragY }}
+					>
+						{node}
+					</motion.div>
+				</Gooey.Item>
+			</div>
+		);
+	}
+
 	const rowButton = (
 		<button
 			type="button"
@@ -192,9 +366,43 @@ function JiraIssueAgentActivityRow({
 						: `${summary.activityCount} agents: ${summary.label}`
 			}
 			data-slot="jira-issue-agent-row"
-			onClick={canOpenChat ? () => onViewChat?.(activities[0]) : undefined}
-			className="flex h-6 w-full min-w-0 items-center justify-between gap-2 rounded-md px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+			{...(sessionDragBind ?? { onClick: handleOpenChat })}
+			{...(sessionDragBind
+				? {
+					"aria-roledescription": "Draggable agent session",
+					"data-session-dragging": drag.dragging || undefined,
+					draggable: false,
+				}
+				: {})}
+			className={cn(
+				"flex h-6 items-center gap-2 text-left outline-none transition-[background-color,box-shadow] duration-fast ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none",
+				isDraggedOut
+					? "w-fit max-w-full justify-start rounded-full bg-surface-raised px-1 shadow-overlay"
+					: "w-full min-w-0 justify-between rounded-md px-2 py-1 hover:bg-bg-neutral-subtle-hovered",
+				sessionDragBind && "touch-none select-none",
+			)}
 		>
+			{isDraggedOut ? (
+				// Out of the chin the session reads as the at-mention chip it will
+				// become once dropped, so the gesture previews its own result.
+				<Tag
+					color="gray"
+					elemBefore={
+						<AgentAvatarVisual
+							avatarClassName="shrink-0"
+							avatarSrc={featuredActivity?.avatarSrc}
+							brandName={featuredActivity?.agentBrandName}
+							fallbackText={getAgentInitial(featuredActivity?.name ?? "Agent")}
+							label={featuredActivity?.name ?? "Agent"}
+							sizePx={16}
+						/>
+					}
+					variant="editor"
+				>
+					{featuredActivity?.name ?? "Agent"}
+				</Tag>
+			) : (
+				<>
 			<div className={cn("flex min-w-0 flex-1 items-center", usesStrokeChrome ? "gap-1.5" : "gap-2")}>
 				{featuredActivity ? (
 					<AgentAvatarVisual
@@ -281,21 +489,22 @@ function JiraIssueAgentActivityRow({
 					)}
 					aria-hidden="true"
 				>
-					{usesStrokeChrome ? (
-						<PixelLoader className="justify-center" pattern="diagonal-top-left" shape="dot" size="small" />
-					) : (
-						<Spinner label="" size="sm" />
-					)}
+					<Spinner label="" size="sm" />
 				</span>
+			)}
+				</>
 			)}
 		</button>
 	);
 
 	if (isSingleAgent) {
-		return rowButton;
+		return withSessionDragGoo(rowButton);
 	}
 
-	return (
+	// The gooey wrapper goes around `AgentAssignment`, never around `rowButton`
+	// itself: the hover card clones the trigger to inject `aria-expanded` and
+	// merges its own ref, and `Gooey.Item` forwards neither.
+	return withSessionDragGoo(
 		<AgentAssignment
 			agents={catalogAgents}
 			assignedAgents={assignedAgents}
@@ -310,7 +519,7 @@ function JiraIssueAgentActivityRow({
 			openMode="hover"
 			positionerClassName="z-[575]"
 			trigger={rowButton}
-		/>
+		/>,
 	);
 }
 
@@ -392,48 +601,71 @@ function JiraIssueCyclingAgentLabel(props: Readonly<{
 
 export function JiraIssueAgentActivityRows({
 	activities,
+	layout = "merged",
 	onOpenChange,
 	onViewChat,
+	sessionDrag,
 	shouldReduceMotion,
 	usesStrokeChrome,
 }: Readonly<{
 	activities: readonly JiraIssueAgentActivity[];
+	/** `split` gives every active agent its own chin row instead of one merged row. */
+	layout?: JiraIssueAgentActivityLayout;
 	onOpenChange?: (open: boolean) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
+	/** Opt-in: makes every chin row a draggable session handle. Requires a `<Gooey>` ancestor. */
+	sessionDrag?: JiraIssueAgentSessionDragBinding;
 	shouldReduceMotion: boolean | null;
 	usesStrokeChrome: boolean;
 }>) {
+	const [sessionDragging, setSessionDragging] = useState(false);
 	const layoutTransition = getJiraIssueLayoutTransition(shouldReduceMotion);
 	const presenceMotion = getJiraIssuePresenceMotion(shouldReduceMotion);
 	const hasActivities = activities.length > 0;
-	const summary = hasActivities ? summarizeJiraIssueAgentActivities(activities) : null;
+	const rowGroups = groupJiraIssueAgentActivityRows(activities, layout);
+	// A pointer drag re-renders the row on every move. Freezing `layout` for the
+	// duration keeps Motion from re-measuring the whole LayoutGroup projection
+	// tree each frame, and stops popLayout from animating the dragged row.
+	const rowLayout = shouldReduceMotion || sessionDragging ? false : "position";
 
 	return (
 		<motion.div
-			className={cn("flex w-full min-w-0 flex-col overflow-hidden", hasActivities && "px-1 py-1")}
-			layout={shouldReduceMotion ? false : "position"}
+			className={cn(
+				"flex w-full min-w-0 flex-col",
+				// The goo silhouette paints outside the row box, so the clip has to
+				// lift for the duration of a transfer drag.
+				sessionDragging ? "overflow-visible" : "overflow-hidden",
+				hasActivities && "px-1 py-1",
+			)}
+			layout={rowLayout}
 			transition={layoutTransition}
 		>
 			<AnimatePresence initial={false} mode="popLayout">
-				{summary ? (
+				{rowGroups.map((rowGroup) => (
 					<motion.div
-						key={`${summary.priorityState}-${summary.activityCount}`}
+						key={rowGroup.key}
 						animate={presenceMotion.animate}
 						className="min-w-0"
 						exit={presenceMotion.exit}
 						initial={presenceMotion.initial}
-						layout={shouldReduceMotion ? false : "position"}
+						layout={rowLayout}
 						style={shouldReduceMotion ? undefined : JIRA_ISSUE_MOTION_STYLE}
 						transition={layoutTransition}
 					>
 						<JiraIssueAgentActivityRow
-							activities={activities}
+							activities={rowGroup.activities}
 							onOpenChange={onOpenChange}
+							onSessionDragChange={(dragging, pointer) => {
+								setSessionDragging(dragging);
+								sessionDrag?.onDragStateChange({ activities: rowGroup.activities, dragging, pointer });
+							}}
 							onViewChat={onViewChat}
+							sessionDrag={sessionDrag}
+							shouldReduceMotion={shouldReduceMotion}
 							usesStrokeChrome={usesStrokeChrome}
 						/>
 					</motion.div>
-				) : null}
+				))}
 			</AnimatePresence>
 		</motion.div>
 	);

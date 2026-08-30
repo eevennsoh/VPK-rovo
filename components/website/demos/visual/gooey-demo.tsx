@@ -26,7 +26,9 @@ import {
 	GooeyMoveSliderExample,
 	GooeyMoveTabsExample,
 } from "./gooey-examples";
-import { GOOEY_SOURCE_SHADOW, useGooeyDemoDrag } from "./gooey-demo-utils";
+import { usePointerDrag } from "@/components/ui-custom/hooks/use-pointer-drag";
+
+import { GOOEY_SOURCE_SHADOW } from "./gooey-demo-utils";
 
 type NumberKey =
 	| "blur" | "contrast" | "filterPadding" | "waviness" | "wavinessFreq"
@@ -218,7 +220,7 @@ export default function GooeyDemo() {
 	const setNumber = (key: NumberKey) => (value: number) => setConfig((current) => ({ ...current, [key]: value }));
 	const setBoolean = (key: BooleanKey) => (value: boolean) => setConfig((current) => ({ ...current, [key]: value }));
 	const setString = (key: StringKey) => (value: string) => setConfig((current) => ({ ...current, [key]: value }));
-	const heroDrag = useGooeyDemoDrag(
+	const heroDrag = usePointerDrag(
 		{ x: config.x, y: config.y },
 		(position) => setConfig((current) => ({ ...current, x: position.x, y: position.y })),
 		heroBounds,

@@ -5,11 +5,12 @@ import { useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { usePointerDrag, type PointerDragPosition } from "@/components/ui-custom/hooks/use-pointer-drag";
 import { CheckIcon, EmailIcon, FileIcon, FolderIcon, ImageIcon, PlusIcon } from "@/components/ui/vpk-icons";
 import { Gooey } from "@/components/visual/gooey";
 import { cn } from "@/lib/utils";
 
-import { GOOEY_SOURCE_SHADOW, useGooeyDemoDrag, type GooeyDemoDragPosition } from "./gooey-demo-utils";
+import { GOOEY_SOURCE_SHADOW } from "./gooey-demo-utils";
 
 const PRIMARY_FILL = "var(--color-primary)";
 const SURFACE_FILL = "var(--color-surface)";
@@ -156,8 +157,8 @@ const AVATARS = [
 ];
 
 export function GooeyMorphAvatarExample() {
-	const [position, setPosition] = useState<GooeyDemoDragPosition>({ x: 0, y: 0 });
-	const drag = useGooeyDemoDrag(position, setPosition, { minX: -24, maxX: 144, minY: -48, maxY: 48 });
+	const [position, setPosition] = useState<PointerDragPosition>({ x: 0, y: 0 });
+	const drag = usePointerDrag(position, setPosition, { minX: -24, maxX: 144, minY: -48, maxY: 48 });
 
 	return (
 		<ExampleStage label="Morph avatar group with dissolve">
@@ -190,8 +191,8 @@ export function GooeyMorphAvatarExample() {
 }
 
 export function GooeyMeltCardsExample() {
-	const [position, setPosition] = useState<GooeyDemoDragPosition>({ x: 0, y: 0 });
-	const drag = useGooeyDemoDrag(position, setPosition, { minX: -24, maxX: 112, minY: -16, maxY: 72 });
+	const [position, setPosition] = useState<PointerDragPosition>({ x: 0, y: 0 });
+	const drag = usePointerDrag(position, setPosition, { minX: -24, maxX: 112, minY: -16, maxY: 72 });
 
 	return (
 		<ExampleStage label="Melt image cards">
@@ -223,8 +224,8 @@ export function GooeyMeltCardsExample() {
 }
 
 export function GooeyBendCardExample() {
-	const [position, setPosition] = useState<GooeyDemoDragPosition>({ x: 0, y: 0 });
-	const drag = useGooeyDemoDrag(position, setPosition, { minX: -52, maxX: 52, minY: -72, maxY: 72 });
+	const [position, setPosition] = useState<PointerDragPosition>({ x: 0, y: 0 });
+	const drag = usePointerDrag(position, setPosition, { minX: -52, maxX: 52, minY: -72, maxY: 72 });
 
 	return (
 		<ExampleStage label="Bend draggable card">
