@@ -82,7 +82,11 @@ test("shared detail body reuses SmartLink, agent Tag, Lozenge, GitHub logo, and 
 	assert.match(source, /import\s*\{[^}]*Tag[^}]*\}\s*from\s*"@\/components\/ui\/tag"/u);
 	assert.match(source, /import\s*\{[^}]*ProgressCircle[^}]*\}\s*from\s*"@\/components\/ui-custom\/progress-circle"/u);
 	assert.match(jiraSource, /export interface JiraSidebarSessionChecks \{\s*failed: number;\s*passed: number;\s*\}/u);
-	assert.match(source, /<SmartLink[\s\S]*item=\{toWorkItem\(session\)\}/u);
+	assert.match(source, /const workItemRelationship = variant === "untracked-work" \? "suggested" : "primary";/u);
+	assert.match(source, /<SmartLink[\s\S]*item=\{toWorkItem\(session, workItemRelationship\)\}/u);
+	assert.match(source, /showStatus=\{workItemRelationship === "primary"\}/u);
+	assert.match(source, /relationship === "suggested" \? "Suggested" : "Primary"/u);
+	assert.match(source, /\.\.\.\(relationship === "primary"[\s\S]*actions: SMART_LINK_MODAL_ACTIONS/u);
 	// Agent renders as the canonical at-mention Tag; PR state renders as a Lozenge.
 	assert.match(
 		source,

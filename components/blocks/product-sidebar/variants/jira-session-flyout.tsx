@@ -214,7 +214,10 @@ const WORK_ITEM_STATUS_OPTIONS: ReadonlyArray<{ label: string; variant: LozengeP
 
 /** Builds the SmartLink work-item link (issue key + summary + assignee, priority,
  * and an interactive status dropdown). */
-function toWorkItem(session: JiraSidebarSessionItem): SmartLinkItem {
+function toWorkItem(
+	session: JiraSidebarSessionItem,
+	relationship: "primary" | "suggested",
+): SmartLinkItem {
 	const workItemStatus = STATUS_WORK_ITEM[session.status];
 
 	return {
@@ -224,15 +227,19 @@ function toWorkItem(session: JiraSidebarSessionItem): SmartLinkItem {
 		variant: "jira",
 		provider: { name: "Jira", logo: { kind: "atlassian", name: "jira" } },
 		icon: { kind: "atlassian", name: "jira" },
-		description: `Primary work item for ${session.title}.`,
+		description: `${relationship === "suggested" ? "Suggested" : "Primary"} work item for ${session.title}.`,
 		assignee: session.assignee,
 		priority: session.priority,
-		status: {
-			label: workItemStatus.label,
-			variant: workItemStatus.variant,
-			options: WORK_ITEM_STATUS_OPTIONS,
-		},
-		actions: SMART_LINK_MODAL_ACTIONS,
+		...(relationship === "primary"
+			? {
+					actions: SMART_LINK_MODAL_ACTIONS,
+					status: {
+						label: workItemStatus.label,
+						variant: workItemStatus.variant,
+						options: WORK_ITEM_STATUS_OPTIONS,
+					},
+				}
+			: {}),
 	};
 }
 
@@ -317,6 +324,7 @@ export function JiraSessionFlyoutBody({
 	const prState = prStateLozenge(session.status);
 	const hasCodeChanges = session.additions !== undefined && session.deletions !== undefined;
 	const checksTotal = session.checks ? session.checks.passed + session.checks.failed : 0;
+	const workItemRelationship = variant === "untracked-work" ? "suggested" : "primary";
 
 	return (
 		<div className="flex flex-col gap-2">
@@ -386,8 +394,8 @@ export function JiraSessionFlyoutBody({
 					<SmartLink
 						align={previewPosition?.align ?? "center"}
 						alignOffset={previewPosition?.alignOffset ?? 0}
-						item={toWorkItem(session)}
-						showStatus
+						item={toWorkItem(session, workItemRelationship)}
+						showStatus={workItemRelationship === "primary"}
 						side={previewPosition?.side ?? "right"}
 					/>
 				</FlyoutRow>
