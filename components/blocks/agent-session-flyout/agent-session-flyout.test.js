@@ -41,6 +41,11 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.doesNotMatch(source, /<span aria-hidden="true"> · <\/span>/u);
 	assert.match(source, /aria-label=\{`Link to \$\{session\.issueKey\}, High confidence`\}/u);
 	assert.match(source, /This session appears related to \{session\.issueKey\}/u);
+	assert.match(source, /<ButtonGroup aria-label=\{`Link \$\{issueKey\}`\} variant="split">/u);
+	assert.match(source, /Link to \{issueKey\}/u);
+	assert.match(source, /aria-label=\{`More link options for \$\{issueKey\}`\}/u);
+	assert.match(source, /<DropdownMenuItem>Add as a subtask<\/DropdownMenuItem>/u);
+	assert.match(source, /<Button type="button" variant="outline">\s*Create new/u);
 	assert.match(
 		source,
 		/<AgentStates[\s\S]*agent=\{\{[\s\S]*id: session\.id,[\s\S]*name: session\.agentName,[\s\S]*state=\{toAgentStatesState\(session\.status\)\}/u,

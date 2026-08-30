@@ -12,6 +12,7 @@ import { preload } from "react-dom";
 
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import BranchIcon from "@atlaskit/icon/core/branch";
+import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import DevicesIcon from "@atlaskit/icon/core/devices";
 import FolderClosedIcon from "@atlaskit/icon/core/folder-closed";
 import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
@@ -24,6 +25,15 @@ import IfElseIcon from "@atlaskit/icon-lab/core/if-else";
 import { AgentStates, type AgentStatesState } from "@/components/blocks/agent-states";
 import { AgentProfileCard } from "@/components/blocks/agent-profile-card";
 import { SmartLink, SMART_LINK_MODAL_ACTIONS, type SmartLinkItem } from "@/components/blocks/smart-link";
+import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
 	HoverCard,
 	HoverCardContent,
@@ -283,6 +293,42 @@ export function JiraSessionSectionHeading({
 	);
 }
 
+function JiraSessionUntrackedWorkActions({
+	issueKey,
+}: Readonly<{ issueKey: string }>) {
+	return (
+		<div className="flex items-start gap-2 pt-2">
+			<ButtonGroup aria-label={`Link ${issueKey}`} variant="split">
+				<Button type="button" variant="outline">
+					Link to {issueKey}
+				</Button>
+				<DropdownMenu>
+					<DropdownMenuTrigger
+						render={(
+							<Button
+								aria-label={`More link options for ${issueKey}`}
+								size="icon"
+								type="button"
+								variant="outline"
+							>
+								<ChevronDownIcon label="" size="small" />
+							</Button>
+						)}
+					/>
+					<DropdownMenuContent align="end">
+						<DropdownMenuGroup>
+							<DropdownMenuItem>Add as a subtask</DropdownMenuItem>
+						</DropdownMenuGroup>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			</ButtonGroup>
+			<Button type="button" variant="outline">
+				Create new
+			</Button>
+		</div>
+	);
+}
+
 type JiraSessionPreviewPosition = Pick<
 	ComponentProps<typeof HoverCardContent>,
 	"align" | "alignOffset" | "side"
@@ -412,6 +458,7 @@ export function JiraSessionFlyoutBody({
 					<p className="text-sm leading-5 text-text">
 						This session appears related to {session.issueKey} because the work item matches its activity and context.
 					</p>
+					<JiraSessionUntrackedWorkActions issueKey={session.issueKey} />
 				</section>
 			) : hasDevelopment ? (
 				<div className="flex flex-col gap-2">
