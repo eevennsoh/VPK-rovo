@@ -13,6 +13,9 @@ const EXPERIMENTAL_HEADER_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/experimental-board-header.tsx",
 );
 const EXPERIMENTAL_PAGE_SOURCE = readProjectFile("components/blocks/jira-kanban/experimental/page.tsx");
+const EXPERIMENTAL_BOARD_SOURCE = readProjectFile(
+	"components/blocks/jira-kanban/experimental/experimental-jira-kanban.tsx",
+);
 
 test("the route renders the Payments board directly inside Jira app chrome", () => {
 	assert.match(PAGE_SOURCE, /import AppLayout from "@\/components\/projects\/page"/u);
@@ -60,4 +63,17 @@ test("the board keeps 24px between the Jira tabs and filter controls", () => {
 		EXPERIMENTAL_HEADER_SOURCE,
 		/\{viewTabs \? <div className="mt-2">\{viewTabs\}<\/div> : null\}[\s\S]*<div className="mt-6 flex flex-wrap items-center gap-2 px-6">/u,
 	);
+});
+
+test("the route pins the shared Agent Session column beside Jira statuses", () => {
+	assert.match(PAGE_SOURCE, /showAgentSessionColumn/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showAgentSessionColumn\?: boolean;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /capturedItemIds: capturedLooseWorkIds,/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /toPulseSessionHandlers/u);
+
+	const columnIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<AgentSessionColumn {...agentSessionColumn} />");
+	const scrollportIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<section");
+	assert.ok(columnIndex > 0, "expected the board to render the Agent Session column");
+	assert.ok(columnIndex < scrollportIndex, "expected untracked work to stay pinned before the status scrollport");
+	assert.match(EXPERIMENTAL_BOARD_SOURCE, /agentSessionColumn \? "ps-2" : "ps-6"/u);
 });

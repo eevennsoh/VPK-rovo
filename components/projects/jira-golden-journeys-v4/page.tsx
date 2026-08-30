@@ -61,6 +61,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 							setBoardColumns([...columns]);
 						}}
 						onCardAgentActivityViewChat={handleViewChat}
+						showAgentSessionColumn
 						showBoardContent={selectedTab === 1}
 						viewTabs={<JiraViewTabs selectedTab={selectedTab} onTabChange={setSelectedTab} />}
 					/>

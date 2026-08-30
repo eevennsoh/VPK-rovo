@@ -54,6 +54,11 @@ import {
 	toPulseSuggestedQuestions,
 } from "./pulse/data/pulse-scopes";
 import { scopeTimelineToWorkItemKeys } from "./pulse/hooks/use-pulse-timeline";
+import {
+	filterPulseLooseWorkByMember,
+	toPulseSessionHandlers,
+	toPulseSessionItems,
+} from "./pulse/lib/pulse-sessions";
 import type { PulseAnswer, PulseLooseWork, PulseWorkItem } from "./pulse/types";
 import {
 	createJiraKanbanSelectionState,
@@ -118,6 +123,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	onModeChange?: (mode: ExperimentalJiraKanbanMode) => void;
 	onResumeLooseWork?: (item: PulseLooseWork) => void;
 	showBoardContent?: boolean;
+	showAgentSessionColumn?: boolean;
 	/**
 	 * Controlled unread watermark, so an owner rendering its own insights
 	 * affordance counts the same unread snapshots the toggle's badge does.
@@ -155,6 +161,7 @@ export default function ExperimentalJiraKanbanPage({
 	onResumeLooseWork,
 	onTimelineLastViewedAtChange,
 	ref,
+	showAgentSessionColumn = false,
 	showBoardContent = true,
 	timelineLastViewedAt: controlledTimelineLastViewedAt,
 	viewTabs,
@@ -331,6 +338,27 @@ export default function ExperimentalJiraKanbanPage({
 	const timelineUnreadCount = countUnviewedTimelineSnapshots(
 		PULSE_TIMELINE.snapshots,
 		timelineLastViewedAt,
+	);
+	const agentSessionItems = useMemo(
+		() => toPulseSessionItems(
+			filterPulseLooseWorkByMember(pulseTimeline.looseWork, pulseMemberId),
+			PULSE_TIMELINE.members,
+		),
+		[pulseMemberId, pulseTimeline.looseWork],
+	);
+	const agentSessionHandlers = useMemo(
+		() => toPulseSessionHandlers({
+			isLooseWorkResumable,
+			looseWork: pulseTimeline.looseWork,
+			onCapture: handleCaptureLooseWork,
+			onResume: onResumeLooseWork,
+		}),
+		[
+			handleCaptureLooseWork,
+			isLooseWorkResumable,
+			onResumeLooseWork,
+			pulseTimeline.looseWork,
+		],
 	);
 	const selectedAgentIds = useMemo(
 		() => getCommonJiraKanbanAgentIds(assignedAgentIdsByCard, selection.selectedCardCodes),
@@ -530,6 +558,11 @@ export default function ExperimentalJiraKanbanPage({
 				<div className="flex min-h-0 min-w-0 flex-1">
 					<ExperimentalJiraKanban
 						activeCardCode={activeCardCode}
+						agentSessionColumn={showAgentSessionColumn ? {
+							capturedItemIds: capturedLooseWorkIds,
+							items: agentSessionItems,
+							...agentSessionHandlers,
+						} : undefined}
 						agents={agents}
 						ariaLabel={ariaLabel}
 						assignedAgentIdsByColumn={columnAgentAssignments}
