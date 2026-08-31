@@ -16,6 +16,14 @@ const MEDIUM_CARD_SOURCE = readFileSync(
 	join(__dirname, "agent-session-medium-card.tsx"),
 	"utf8",
 );
+const MEDIUM_DRAG_SOURCE = readFileSync(
+	join(__dirname, "agent-session-medium-drag.tsx"),
+	"utf8",
+);
+const MORE_MENU_SOURCE = readFileSync(
+	join(__dirname, "agent-session-medium-more-menu.tsx"),
+	"utf8",
+);
 const NOTCH_SOURCE = readFileSync(join(__dirname, "agent-session-notch.tsx"), "utf8");
 const ARRIVAL_MOTION_SOURCE = readFileSync(
 	join(__dirname, "agent-session-arrival-motion.ts"),
@@ -113,10 +121,22 @@ test("medium matches the 276 by 33 Figma row and reuses shared identity primitiv
 	assert.match(MEDIUM_CARD_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual";/u);
 	assert.match(MEDIUM_CARD_SOURCE, /import \{ Avatar, AvatarFallback, AvatarImage \} from "@\/components\/ui\/avatar";/u);
 	assert.match(MEDIUM_CARD_SOURCE, /h-\[33px\] w-\[276px\]/u);
-	assert.match(MEDIUM_CARD_SOURCE, /rounded-\[10px\] bg-bg-accent-gray-subtlest px-3/u);
+	assert.match(MEDIUM_CARD_SOURCE, /items-center gap-2 rounded-\[10px\] border border-transparent bg-bg-accent-gray-subtlest px-3/u);
 	assert.match(MEDIUM_CARD_SOURCE, /sizePx=\{16\}/u);
-	assert.match(MEDIUM_CARD_SOURCE, /w-\[160px\] truncate text-left text-xs font-normal leading-4/u);
+	assert.match(MEDIUM_CARD_SOURCE, /min-w-0 flex-1 truncate text-left text-xs font-normal leading-4/u);
 	assert.match(MEDIUM_CARD_SOURCE, /<AddIcon label="" size="small" \/>/u);
+	assert.match(MEDIUM_CARD_SOURCE, /size="icon-compact"/u);
+	assert.match(MEDIUM_CARD_SOURCE, /flex shrink-0 items-center gap-0/u);
+	assert.match(
+		MEDIUM_CARD_SOURCE,
+		/className="flex size-6 shrink-0 items-center justify-center -mr-1"/u,
+	);
+	assert.doesNotMatch(MEDIUM_CARD_SOURCE, /-mx-0\.5/u);
+	assert.match(MEDIUM_CARD_SOURCE, /Attach \$\{label\} to work item/u);
+	assert.match(MEDIUM_CARD_SOURCE, /onAttach\?\.\(item\)/u);
+	assert.match(MEDIUM_CARD_SOURCE, /<AgentSessionMediumMoreMenu/u);
+	assert.match(MEDIUM_CARD_SOURCE, /group\/session-card/u);
+	assert.doesNotMatch(MEDIUM_CARD_SOURCE, /className="[^"]*\bhidden\b/u);
 	assert.match(MEDIUM_CARD_SOURCE, /<Avatar.*size="xs"/su);
 	assert.doesNotMatch(MEDIUM_CARD_SOURCE, /\?\? \{ name: "person A" \}/u);
 	assert.match(
@@ -126,15 +146,54 @@ test("medium matches the 276 by 33 Figma row and reuses shared identity primitiv
 	assert.match(MEDIUM_CARD_SOURCE, /invoker === undefined \? null : \(/u);
 });
 
+test("medium drag chip is the shared agent mention tag with overlay elevation", () => {
+	assert.match(
+		MEDIUM_DRAG_SOURCE,
+		/import \{ AgentSessionMentionChip \} from "@\/components\/blocks\/jira-issue\/agent-session-mention-chip";/u,
+	);
+	assert.match(MEDIUM_DRAG_SOURCE, /<AgentSessionMentionChip[\s\S]*elevated[\s\S]*name=\{item\.agent\.name\}/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /\{isDragging \? chip : children\(undefined\)\}/u);
+	assert.match(
+		MEDIUM_DRAG_SOURCE,
+		/className="pointer-events-none flex w-fit max-w-full items-center justify-start"/u,
+	);
+	assert.doesNotMatch(MEDIUM_DRAG_SOURCE, /bg-surface-raised/u);
+	assert.doesNotMatch(MEDIUM_DRAG_SOURCE, /h-\[33px\] w-fit/u);
+});
+
+test("medium drag keeps pointer capture on the motion host instead of swapping a chip button", () => {
+	// Replacing `children(sessionDragBind)` with a new chip button on drag-start
+	// unmounted the node that called setPointerCapture. pointerup never fired,
+	// so the card stuck on an empty grey attach chin.
+	assert.doesNotMatch(MEDIUM_DRAG_SOURCE, /isDragging \? chip : children\(sessionDragBind\)/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /<motion\.div\s*\n\s*ref=\{hostRef\}/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /\{\.\.\.sessionDragBind\}/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /window\.addEventListener\("pointerup", onPointerUp\)/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /window\.addEventListener\("pointercancel", onPointerCancel\)/u);
+});
+
+test("medium more menu collapses until hover so the label can use the slot", () => {
+	assert.match(MORE_MENU_SOURCE, /flex h-6 w-0 shrink-0 overflow-hidden/u);
+	assert.match(MORE_MENU_SOURCE, /group-hover\/session-card:w-6/u);
+	assert.match(MORE_MENU_SOURCE, /group-has-\[:focus-visible\]\/session-card:w-6/u);
+	assert.doesNotMatch(MORE_MENU_SOURCE, /className=\{?["'`][^"'`]*\bhidden\b/u);
+	assert.match(MORE_MENU_SOURCE, /<DropdownMenuContent align="end" className="min-w-0 w-max">/u);
+	assert.match(MORE_MENU_SOURCE, /<DropdownMenuItem onSelect=\{\(\) => onSubtasks\?\.\(\)\}>\s*\n\s*Add as a subtask/u);
+	assert.match(MORE_MENU_SOURCE, /<DropdownMenuItem onSelect=\{\(\) => onCreateWorkItem\?\.\(\)\}>\s*\n\s*Create new/u);
+	assert.match(INDEX_SOURCE, /onCreateWorkItem=\{onCreateWorkItem\}/u);
+	assert.match(INDEX_SOURCE, /onSubtasks=\{onSubtasks\}/u);
+});
+
 test("medium attached reuses the Jira issue agent activity row", () => {
 	assert.match(
 		COMPACT_CARD_SOURCE,
-		/import \{ JiraIssueAgentActivityRows, type JiraIssueAgentActivity \} from "@\/components\/blocks\/jira-issue\/agent-activity";/u,
+		/import \{ JiraIssueAgentActivityRows \} from "@\/components\/blocks\/jira-issue\/agent-activity";/u,
 	);
 	assert.match(COMPACT_CARD_SOURCE, /variant === "medium-attached"/u);
 	assert.match(COMPACT_CARD_SOURCE, /<JiraIssueAgentActivityRows/u);
 	assert.match(COMPACT_CARD_SOURCE, /usesStrokeChrome/u);
-	assert.match(COMPACT_CARD_SOURCE, /item\.state === "needs-input" \|\| item\.state === "attention"/u);
+	assert.match(WORK_ITEM_SOURCE, /item\.state === "needs-input" \|\| item\.state === "attention"/u);
+	assert.match(COMPACT_CARD_SOURCE, /toJiraIssueAgentActivityFromSession\(item\)/u);
 	assert.match(COMPACT_CARD_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
 	assert.match(COMPACT_CARD_SOURCE, /data-new=\{isNew \|\| undefined\}/u);
 	assert.match(COMPACT_CARD_SOURCE, /isNew \? "ring-1 ring-border-discovery" : null/u);
@@ -253,13 +312,16 @@ test("sessions share one moving untracked-work flyout instead of a popup per row
 });
 
 test("every size variant opens the shared agent-session flyout", () => {
-	// Large connects inside AgentSessionCard; compact variants connect at the
-	// list-item boundary so Medium and Small keep their exact visual geometry.
+	// Large connects inside AgentSessionCard; attached compact variants connect
+	// at the list-item boundary so Medium attached and Small keep their geometry.
+	// Medium detached uses a click more menu instead of the hover flyout.
 	assert.match(CARD_SOURCE, /<JiraSessionFlyoutTrigger/u);
 	assert.match(
 		INDEX_SOURCE,
 		/<JiraSessionFlyoutTrigger[\s\S]*render=\{<li data-testid=\{"agent-session-row-" \+ item\.id\} \/>\}[\s\S]*session=\{flyoutSession\}/u,
 	);
+	assert.match(INDEX_SOURCE, /variant === "medium-detached" \? sessionDrag : undefined/u);
+	assert.doesNotMatch(INDEX_SOURCE, /renderMore=/u);
 	assert.match(COMPACT_CARD_SOURCE, /onView === undefined && !flyout/u);
 	assert.match(MEDIUM_CARD_SOURCE, /onView === undefined && !flyout/u);
 	assert.match(
@@ -279,6 +341,7 @@ test("the card file exports only a component", () => {
 		INDEX_SOURCE,
 		/import \{\s*bindAgentSessionFlyoutActions,\s*resolveAgentSessionWorkItemKey,\s*toAgentSessionUntrackedWorkFlyoutItem,\s*\} from "\.\/agent-session-work-item";/u,
 	);
+	assert.match(INDEX_SOURCE, /toJiraIssueAgentActivityFromSession,/u);
 });
 
 test("Resume is gated on host capability before the clipboard write", () => {

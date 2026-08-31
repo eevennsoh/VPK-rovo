@@ -69,7 +69,8 @@ function buildArrivalDelays(
  * shared untracked-work session flyout, the same surface
  * `components/blocks/agent-session-flyout` uses, so hovering a card offers
  * Link / Create / Add as a subtask without a footer chin. Medium detached keeps
- * that uncaptured relationship in the Jira Agents compact row. Medium attached
+ * that uncaptured relationship in the Jira Agents compact row and opens Create /
+ * Add as a subtask from a click more menu. Medium attached
  * reuses the Jira Issue activity row and opens session details because its work
  * relationship already exists. Small is the collapsed-column identity notch.
  */
@@ -90,6 +91,7 @@ export function AgentSession({
 	onSubtasks,
 	onToggleVisibility,
 	onView,
+	sessionDrag,
 	variant = "large",
 	visibilityLabel,
 }: Readonly<AgentSessionProps>) {
@@ -153,23 +155,55 @@ export function AgentSession({
 							),
 						);
 
-					return variant === "large" ? (
-						<AgentSessionCard
-							arrivalDelaySeconds={arrivalDelays.get(item.id)}
-							captured={capturedItemIds?.has(item.id) ?? false}
-							flyoutHandle={flyoutHandle}
-							flyoutSession={flyoutSession}
-							getResumeCommand={getResumeCommand}
+					if (variant === "large") {
+						return (
+							<AgentSessionCard
+								arrivalDelaySeconds={arrivalDelays.get(item.id)}
+								captured={capturedItemIds?.has(item.id) ?? false}
+								flyoutHandle={flyoutHandle}
+								flyoutSession={flyoutSession}
+								getResumeCommand={getResumeCommand}
+								isArriving={beatItemIds?.has(item.id) ?? false}
+								isNew={newItemIds?.has(item.id) ?? false}
+								isResumable={isResumable}
+								item={item}
+								key={item.id}
+								onCopyResume={onCopyResume}
+								onToggleVisibility={onToggleVisibility}
+								onView={itemOnView}
+								visibilityLabel={visibilityLabel}
+							/>
+						);
+					}
+
+					const compactCard = (
+						<AgentSessionCompactCard
+							flyout
 							isArriving={beatItemIds?.has(item.id) ?? false}
 							isNew={newItemIds?.has(item.id) ?? false}
-							isResumable={isResumable}
 							item={item}
-							key={item.id}
-							onCopyResume={onCopyResume}
-							onToggleVisibility={onToggleVisibility}
+							onAttach={onLinkWorkItem
+								? () => onLinkWorkItem(
+									item,
+									resolveAgentSessionWorkItemKey(
+										item,
+										getSuggestedWorkItemKey,
+										getSuggestedWorkItemKeys,
+									),
+								)
+								: undefined}
+							onCreateWorkItem={onCreateWorkItem}
+							onSubtasks={onSubtasks}
 							onView={itemOnView}
-							visibilityLabel={visibilityLabel}
+							sessionDrag={variant === "medium-detached" ? sessionDrag : undefined}
+							variant={variant}
 						/>
+					);
+
+					return variant === "medium-detached" ? (
+						<li data-testid={"agent-session-row-" + item.id} key={item.id}>
+							{compactCard}
+						</li>
 					) : (
 						<JiraSessionFlyoutTrigger
 							closeDelay={160}
@@ -178,14 +212,7 @@ export function AgentSession({
 							render={<li data-testid={"agent-session-row-" + item.id} />}
 							session={flyoutSession}
 						>
-							<AgentSessionCompactCard
-								flyout
-								isArriving={beatItemIds?.has(item.id) ?? false}
-								isNew={newItemIds?.has(item.id) ?? false}
-								item={item}
-								onView={itemOnView}
-								variant={variant}
-							/>
+							{compactCard}
 						</JiraSessionFlyoutTrigger>
 					);
 				})}
@@ -209,5 +236,6 @@ export {
 	resolveAgentSessionWorkItemKey,
 	suggestedAgentSessionWorkItemKey,
 	toAgentSessionUntrackedWorkFlyoutItem,
+	toJiraIssueAgentActivityFromSession,
 } from "./agent-session-work-item";
 export type { AgentSessionItem, AgentSessionProps, AgentSessionVariant } from "./agent-session-types";

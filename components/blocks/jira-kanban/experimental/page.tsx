@@ -132,6 +132,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	onBoardColumnsChange?: (columns: readonly JiraKanbanColumnData[]) => void;
 	onCardClick?: (card: JiraKanbanCardData, columnTitle: string) => void;
 	onCardAgentActivityViewChat?: JiraKanbanProps["onCardAgentActivityViewChat"];
+	onCardAgentSessionLink?: ExperimentalJiraKanbanProps["onCardAgentSessionLink"];
 	onCardAgentSessionUnlink?: ExperimentalJiraKanbanProps["onCardAgentSessionUnlink"];
 	onInsightsWorkItemClick?: (workItem: PulseWorkItem) => void;
 	onModeChange?: (mode: ExperimentalJiraKanbanMode) => void;
@@ -177,6 +178,7 @@ export default function ExperimentalJiraKanbanPage({
 	onBoardColumnsChange,
 	onCardClick,
 	onCardAgentActivityViewChat,
+	onCardAgentSessionLink,
 	onCardAgentSessionUnlink,
 	onInsightsWorkItemClick,
 	onModeChange,
@@ -617,6 +619,7 @@ export default function ExperimentalJiraKanbanPage({
 						selectedCardCodes={selection.selectedCardCodes}
 						onCardClick={handleCardClick}
 						onCardAgentActivityViewChat={onCardAgentActivityViewChat}
+						onCardAgentSessionLink={onCardAgentSessionLink}
 						onCardAgentSessionUnlink={onCardAgentSessionUnlink}
 						onCardSelect={handleCardSelect}
 						onCardDragStart={handleCardDragStart}

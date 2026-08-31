@@ -36,3 +36,31 @@ export function isWithinJiraIssueDropZoneHalo(
 		&& pointer.y <= rect.bottom + haloPx
 	);
 }
+
+/**
+ * The host resets to idle in the same commit as pointer-up. A drop is that
+ * idle transition while a zone was armed — not a later hover, and never a
+ * cancelled gesture.
+ */
+export function shouldCommitJiraIssueSessionTransferDrop({
+	armed,
+	cancelled,
+	dragging,
+}: {
+	armed: boolean;
+	cancelled: boolean;
+	dragging: boolean;
+}): boolean {
+	return !dragging && !cancelled && armed;
+}
+
+/**
+ * The attach chin/backdrop is a live-gesture preview only. A leftover
+ * `source: "detached"` after release must not keep an empty grey slab open.
+ */
+export function isJiraIssueSessionAttachPreview(
+	dragging: boolean,
+	source: "chin" | "detached",
+): boolean {
+	return dragging && source === "detached";
+}

@@ -100,9 +100,9 @@ test("Jira issue raised agent activity demo still exposes exactly the original s
 });
 
 test("Jira issue session transfer drop zone stays mounted and reveals with opacity, not display", () => {
-	// Always rendered: the region has no early return and no conditional around
-	// the zone, so it stays in the DOM and in the tab order.
-	assert.doesNotMatch(TRANSFER_REGION_BLOCK, /return null/u);
+	// Unlink stays mounted when offered. Attach has no well, so that path
+	// returns null instead of painting a dashed attach zone.
+	assert.match(TRANSFER_REGION_BLOCK, /if \(!showUnlinkWell\) \{\s*\n\s*return null;/u);
 	assert.doesNotMatch(TRANSFER_REGION_BLOCK, /\{dragging \? </u);
 	assert.equal(
 		(TRANSFER_REGION_BLOCK.match(/<TransferDropZone/gu) ?? []).length,
@@ -164,21 +164,21 @@ test("Jira issue session transfer drop zone is a labelled button reachable by ke
 		/<button\s*\n\s*aria-label=\{description\}[\s\S]*type="button"/u,
 	);
 	assert.match(TRANSFER_SOURCE, /description: string;/u);
-	// The zone carries an action-describing accessible name, and its visible
-	// label states the gesture now that there is no separator prompt above it.
+	// The unlink well is the only dashed zone. Attach uses the card chin.
 	assert.match(TRANSFER_REGION_BLOCK, /description=\{`Unlink \$\{sessionLabel\} from this work item`\}/u);
-	assert.match(TRANSFER_REGION_BLOCK, /label=\{config\.unlinkLabel \?\? "Drag here to unlink"\}/u);
+	assert.match(TRANSFER_REGION_BLOCK, /config\.unlinkLabel \?\? "Drag here to unlink"/u);
+	assert.doesNotMatch(TRANSFER_SOURCE, /Drag here to attach/u);
 	assert.match(TRANSFER_SOURCE, /sessionLabel = "agent session",/u);
 	// Keyboard activation runs the same callback as a drop, and both must say
 	// WHICH session they acted on — split layout renders one row per agent
 	// against one config.
-	assert.match(TRANSFER_REGION_BLOCK, /onClick=\{\(\) => config\.onUnlink\?\.\(session\)\}/u);
+	assert.match(TRANSFER_REGION_BLOCK, /config\.onUnlink\?\.\(session\);/u);
 	assert.match(TRANSFER_SOURCE, /const TRANSFER_ZONE_BASE_CLASS =\s*\n\s*"[^"]*outline-none[^"]*focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring\/50[^"]*"/u);
 	// A drop commits exactly what the zone's own click handler commits. The
 	// handler is read through a committed ref so the arming effect does not
 	// resubscribe on every parent render, so assert the ref stays in sync too.
-	assert.match(TRANSFER_SOURCE, /commitRef\.current = \{ onUnlink: config\.onUnlink, session \};/u);
-	assert.match(TRANSFER_SOURCE, /if \(dropped\) commitRef\.current\?\.onUnlink\?\.\(commitRef\.current\?\.session\);/u);
+	assert.match(TRANSFER_SOURCE, /if \(!dragging\) \{\s*\n\s*return;\s*\n\s*\}\s*\n\s*commitRef\.current = \{\s*\n\s*onLink: config\.onLink,\s*\n\s*onUnlink: config\.onUnlink,\s*\n\s*session,\s*\n\s*source,\s*\n\s*\};/u);
+	assert.match(TRANSFER_SOURCE, /if \(!commit\) \{\s*\n\s*return;\s*\n\s*\}\s*\n\s*if \(commit\.source === "detached"\) \{\s*\n\s*commit\.onLink\?\.\(commit\.session\);\s*\n\s*\} else \{\s*\n\s*commit\.onUnlink\?\.\(commit\.session\);\s*\n\s*\}/u);
 });
 
 test("Jira issue keyboard unlink preserves the focused split-row session", () => {
@@ -234,7 +234,7 @@ test("Jira issue agentSessionTransfer is opt-in so existing consumers are unaffe
 	// No config -> no drag binding handed to the chin rows.
 	assert.match(
 		SOURCE,
-		/const agentSessionDragBinding: JiraIssueAgentSessionDragBinding \| undefined = agentSessionTransfer[\s\S]*onDragStateChange: setAgentSessionDragState,[\s\S]*onFocusedActivitiesChange:[\s\S]*: undefined;/u,
+		/const agentSessionDragBinding: JiraIssueAgentSessionDragBinding \| undefined = agentSessionTransfer[\s\S]*onDragStateChange: \(state\) => \{[\s\S]*setAgentSessionDragState\([\s\S]*JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE[\s\S]*onFocusedActivitiesChange:[\s\S]*: undefined;/u,
 	);
 	// No config -> no `<Gooey>` root and no transfer region in the tree.
 	assert.match(
@@ -361,26 +361,24 @@ test("Jira issue dragged session paints its goo in the chin's grey", () => {
 	assert.doesNotMatch(SOURCE, /AGENT_SESSION_TRANSFER_GOO[\s\S]{0,200}fill: "var\(--color-surface\)"/u);
 	// Out of the chin the row renders the shared at-mention chip, not a bespoke pill.
 	assert.match(AGENT_ACTIVITY_SOURCE, /const isDragging = Boolean\(sessionDrag\) && drag\.dragging;/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ Tag \} from "@\/components\/ui\/tag";/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /isDraggedOut \? \(\s*\n[\s\S]*<Tag\s*\n\s*color="gray"[\s\S]*variant="editor"/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /isDraggedOut\s*\n\s*\? "w-fit max-w-full justify-start rounded-full bg-surface-raised px-1"/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<AgentSessionMentionChip[\s\S]*elevated[\s\S]*name=\{featuredActivity\?\.name \?\? "Agent"\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /isDraggedOut\s*\n\s*\? "h-auto w-fit max-w-full justify-start bg-transparent p-0"/u);
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /bg-surface-raised/u);
 });
 
 test("Jira issue at-mention chip floats on overlay elevation, not a dead utility", () => {
 	// `shadow-overlay` is not a utility in this theme — `--ds-shadow-overlay` is
 	// only mapped onto `--shadow-2xl` — so the class silently rendered no shadow
-	// and the chip read as flat against the card. (The source still names it in a
-	// comment, so match a class position, not the bare word.)
+	// and the chip read as flat against the card. Elevation belongs on the Tag.
+	const mentionChipSource = readFileSync(join(__dirname, "agent-session-mention-chip.tsx"), "utf8");
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /[\s"']shadow-overlay[\s"']/u);
 	assert.match(
-		AGENT_ACTIVITY_SOURCE,
-		/const JIRA_ISSUE_SESSION_DRAG_CHIP_STYLE: CSSProperties = \{\s*\n\s*boxShadow: token\("elevation\.shadow\.overlay"\),\s*\n\};/u,
+		mentionChipSource,
+		/boxShadow: token\("elevation\.shadow\.overlay"\),/u,
 	);
-	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ token \} from "@\/lib\/tokens";/u);
-	assert.match(
-		AGENT_ACTIVITY_SOURCE,
-		/style=\{isDraggedOut \? JIRA_ISSUE_SESSION_DRAG_CHIP_STYLE : undefined\}/u,
-	);
+	assert.match(mentionChipSource, /type="agent"/u);
+	assert.match(mentionChipSource, /variant="editor"/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /elevated/u);
 });
 
 test("Jira issue card hugs its content the moment the chip leaves the chin", () => {
@@ -409,7 +407,7 @@ test("Jira issue chip handover collapses in one commit, so the hit test measures
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /useEffect\([\s\S]{0,120}isDraggedOut/u);
 	// The hit test still keys only off the gesture, which is only sound because
 	// the target no longer moves in a commit the gesture does not drive.
-	assert.match(TRANSFER_SOURCE, /\}, \[cancelled, dragging, pointer\]\);/u);
+	assert.match(TRANSFER_SOURCE, /\}, \[cancelled, cardMeasureRef, dragging, isLinking, pointer\]\);/u);
 });
 
 // --- Review findings on PR #1445 -------------------------------------------
@@ -420,14 +418,16 @@ test("Jira issue pointer cancellation aborts the drag instead of committing the 
 	// read that as a drop — silently unlinking or moving a session the user
 	// never released onto a zone.
 	assert.match(DRAG_SOURCE, /cancelled: boolean;/u);
+	assert.match(DRAG_SOURCE, /source: JiraIssueAgentSessionDragSource;/u);
+	assert.match(DRAG_SOURCE, /source: "chin",/u);
 	assert.match(DRAG_SOURCE, /export const JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /^export const /mu);
 	assert.match(AGENT_ACTIVITY_SOURCE, /function cancelSessionDrag\([\s\S]*drag\.bind\.onPointerCancel\(event\);[\s\S]*publishSessionDrag\(false, undefined, true\);/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /onPointerCancel: cancelSessionDrag,/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /onPointerCancel: endSessionDrag,/u);
 	// The commit gate itself must exclude a cancelled gesture.
-	assert.match(TRANSFER_SOURCE, /const dropped = dragging \|\| cancelled \? false : armedRef\.current;/u);
-	assert.match(TRANSFER_SOURCE, /\}, \[cancelled, dragging, pointer\]\);/u);
+	assert.match(TRANSFER_SOURCE, /shouldCommitJiraIssueSessionTransferDrop\(\{\s*\n\s*armed: armedRef\.current,\s*\n\s*cancelled,\s*\n\s*dragging,\s*\n\s*\}\)/u);
+	assert.match(TRANSFER_SOURCE, /\}, \[cancelled, cardMeasureRef, dragging, isLinking, pointer\]\);/u);
 });
 
 test("Jira issue session rows do not install the shared hook's incomplete keyboard drag", () => {
@@ -450,4 +450,31 @@ test("Jira issue transfer callback identifies which session was dragged", () => 
 	// The card feeds the dragged row's own activity through as that identity.
 	assert.match(SOURCE, /session=\{agentSessionDragState\.activities\[0\]\}/u);
 	assert.match(SOURCE, /cancelled=\{agentSessionDragState\.cancelled\}/u);
+	assert.match(SOURCE, /source=\{agentSessionDragState\.source\}/u);
+	assert.match(SOURCE, /sessionTransferAfter\?:/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /source: "chin",/u);
+});
+
+test("Jira issue attach has no dashed well and grows the backdrop chin instead", () => {
+	assert.match(TRANSFER_SOURCE, /const showUnlinkWell = !isLinking && Boolean\(config\.onUnlink\);/u);
+	assert.match(TRANSFER_SOURCE, /if \(!showUnlinkWell\) \{\s*\n\s*return null;/u);
+	assert.doesNotMatch(TRANSFER_SOURCE, /Drag here to attach/u);
+	assert.match(
+		TRANSFER_SOURCE,
+		/!isLinking\s*\n\s*&& dragging\s*\n\s*&& pointer\s*\n\s*&& wellRect/u,
+	);
+	assert.match(SOURCE, /const isAttachingSession = isJiraIssueSessionAttachPreview\(\s*\n\s*agentSessionDragState\.dragging,\s*\n\s*agentSessionDragState\.source,\s*\n\s*\);/u);
+	assert.match(SOURCE, /\|\| isAttachingSession;/u);
+	assert.match(SOURCE, /data-slot="jira-issue-attach-chin"/u);
+	assert.match(SOURCE, /data-slot="jira-issue-agent-shell"/u);
+	assert.match(SOURCE, /data-session-dragging=\{agentSessionDragState\.dragging \|\| undefined\}/u);
+	// Attach hit-tests the shell, not the article that also wraps detached pills.
+	assert.match(
+		SOURCE,
+		/ref=\{\(node\) => \{\s*\n\s*cardMeasureRef\.current = node;\s*\n\s*\}\}/u,
+	);
+	assert.doesNotMatch(
+		SOURCE,
+		/ref=\{\(node\) => \{\s*\n\s*setGenerativeActionAnchor\(node\);\s*\n\s*cardMeasureRef\.current = node;/u,
+	);
 });

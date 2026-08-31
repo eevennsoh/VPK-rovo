@@ -167,6 +167,35 @@ export function unlinkJiraKanbanAgentSession(
 	return changed ? nextColumns : [...columns];
 }
 
+export function linkJiraKanbanAgentSession(
+	columns: readonly JiraKanbanColumnData[],
+	cardCode: string,
+	activity: NonNullable<JiraKanbanCardData["agentActivities"]>[number],
+): JiraKanbanColumnData[] {
+	let changed = false;
+	const nextColumns = columns.map((column) => {
+		const cards = column.cards.map((card) => {
+			if (card.code !== cardCode || card.agentActivities?.some((candidate) => candidate.id === activity.id)) {
+				return card;
+			}
+
+			changed = true;
+			const agentActivities = [...(card.agentActivities ?? []), activity];
+			return {
+				...card,
+				agentActivities,
+				agentActivityMode: getAgentActivityModeAfterUnlink(card, agentActivities),
+			};
+		});
+
+		return cards.some((card, index) => card !== column.cards[index])
+			? { ...column, cards }
+			: column;
+	});
+
+	return changed ? nextColumns : [...columns];
+}
+
 export function getCommonJiraKanbanAgentIds(
 	assignedAgentIdsByCard: Readonly<Record<string, readonly string[]>>,
 	selectedCardCodes: ReadonlySet<string>,

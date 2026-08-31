@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, type ComponentProps } from "react";
+import { useEffect, useRef, useState, type ComponentProps, type RefObject } from "react";
 
+import type { JiraIssueAgentSessionDragSource } from "@/components/blocks/jira-issue/agent-session-drag";
 import {
 	isWithinJiraIssueDropZoneHalo,
+	shouldCommitJiraIssueSessionTransferDrop,
 	type JiraIssueSessionPointer,
 } from "@/components/blocks/jira-issue/agent-session-transfer-model";
 import { cn } from "@/lib/utils";
@@ -57,6 +59,8 @@ export interface JiraIssueAgentSessionTransferConfig {
 	/** Receives the session that was dragged out, so a host rendering split rows
 	 *  can tell which of several sessions to detach. */
 	onUnlink?: (session?: JiraIssueAgentSessionRef) => void;
+	/** Receives the detached session that was dropped back onto this work item. */
+	onLink?: (session?: JiraIssueAgentSessionRef) => void;
 	unlinkLabel?: string;
 }
 
@@ -72,6 +76,10 @@ export interface JiraIssueAgentSessionTransferProps {
 	/** Which session the gesture is carrying, forwarded to the commit callback. */
 	session?: JiraIssueAgentSessionRef;
 	sessionLabel?: string;
+	/** `detached` attaches via the card chin, not this unlink well. */
+	source?: JiraIssueAgentSessionDragSource;
+	/** Work-item card rect, so a detached session can drop onto the card itself. */
+	cardMeasureRef?: RefObject<HTMLElement | null>;
 }
 
 type TransferDropZoneProps = Readonly<
@@ -109,41 +117,90 @@ function TransferDropZone({ armed, description, dragging, label, measureRef, ...
 export function JiraIssueAgentSessionTransfer({
 	config,
 	cancelled = false,
+	cardMeasureRef,
 	dragging = false,
 	pointer,
 	session,
 	sessionLabel = "agent session",
+	source = "chin",
 }: Readonly<JiraIssueAgentSessionTransferProps>) {
 	const unlinkRef = useRef<HTMLButtonElement | null>(null);
 	const [armed, setArmed] = useState(false);
 	const armedRef = useRef(false);
+	const isLinking = source === "detached";
+	// Attach has no dashed well: the card backdrop/chin is the drop target.
+	const showUnlinkWell = !isLinking && Boolean(config.onUnlink);
 
 	// The commit handler changes identity on every render, so the drop effect
 	// reads it from a committed ref rather than resubscribing (and re-running its
 	// arm/commit pass) each time the parent re-renders.
 	const commitRef = useRef<{
+		onLink?: (session?: JiraIssueAgentSessionRef) => void;
 		onUnlink?: (session?: JiraIssueAgentSessionRef) => void;
 		session?: JiraIssueAgentSessionRef;
+		source: JiraIssueAgentSessionDragSource;
 	} | null>(null);
 	useEffect(() => {
-		commitRef.current = { onUnlink: config.onUnlink, session };
+		// Snapshot only while the gesture is live. The host resets to idle on
+		// release in the same commit that this effect would otherwise overwrite
+		// with `source: "chin"`, and that would make a detached drop unlink.
+		if (!dragging) {
+			return;
+		}
+		commitRef.current = {
+			onLink: config.onLink,
+			onUnlink: config.onUnlink,
+			session,
+			source,
+		};
 	});
 
 	// Arms the zone as the pointer moves, then commits on release — a drop runs
 	// exactly the callback the zone's click handler runs.
 	useEffect(() => {
-		const rect = unlinkRef.current?.getBoundingClientRect();
-		const next = Boolean(
-			dragging && pointer && rect && isWithinJiraIssueDropZoneHalo(pointer, rect, TRANSFER_DROP_HALO_PX),
+		const wellRect = unlinkRef.current?.getBoundingClientRect();
+		const cardRect = cardMeasureRef?.current?.getBoundingClientRect();
+		const overWell = Boolean(
+			!isLinking
+			&& dragging
+			&& pointer
+			&& wellRect
+			&& isWithinJiraIssueDropZoneHalo(pointer, wellRect, TRANSFER_DROP_HALO_PX),
 		);
+		const overCard = Boolean(
+			isLinking
+			&& dragging
+			&& pointer
+			&& cardRect
+			&& isWithinJiraIssueDropZoneHalo(pointer, cardRect, TRANSFER_DROP_HALO_PX),
+		);
+		const next = overWell || overCard;
 		// A cancelled gesture ends the drag without being a drop: clear the armed
 		// target rather than committing it, or an interrupted pointer would
 		// silently unlink a session the user never released.
-		const dropped = dragging || cancelled ? false : armedRef.current;
+		const dropped = shouldCommitJiraIssueSessionTransferDrop({
+			armed: armedRef.current,
+			cancelled,
+			dragging,
+		});
 		armedRef.current = next;
 		setArmed(next);
-		if (dropped) commitRef.current?.onUnlink?.(commitRef.current?.session);
-	}, [cancelled, dragging, pointer]);
+		if (dropped) {
+			const commit = commitRef.current;
+			if (!commit) {
+				return;
+			}
+			if (commit.source === "detached") {
+				commit.onLink?.(commit.session);
+			} else {
+				commit.onUnlink?.(commit.session);
+			}
+		}
+	}, [cancelled, cardMeasureRef, dragging, isLinking, pointer]);
+
+	if (!showUnlinkWell) {
+		return null;
+	}
 
 	return (
 		<div
@@ -161,7 +218,9 @@ export function JiraIssueAgentSessionTransfer({
 				dragging={dragging}
 				label={config.unlinkLabel ?? "Drag here to unlink"}
 				measureRef={unlinkRef}
-				onClick={() => config.onUnlink?.(session)}
+				onClick={() => {
+					config.onUnlink?.(session);
+				}}
 			/>
 		</div>
 	);

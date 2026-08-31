@@ -2,7 +2,8 @@
 
 import { motion, useReducedMotion } from "motion/react";
 
-import { JiraIssueAgentActivityRows, type JiraIssueAgentActivity } from "@/components/blocks/jira-issue/agent-activity";
+import { JiraIssueAgentActivityRows } from "@/components/blocks/jira-issue/agent-activity";
+import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -13,21 +14,7 @@ import {
 import { AgentSessionMediumCard } from "./agent-session-medium-card";
 import { AgentSessionNotchMark } from "./agent-session-notch";
 import type { AgentSessionItem, AgentSessionVariant } from "./agent-session-types";
-
-function toAttachedActivity(item: AgentSessionItem): JiraIssueAgentActivity {
-	return {
-		agentBrandName: item.agent.brandName,
-		avatarSrc: item.agent.avatarSrc,
-		id: item.id,
-		label: item.title,
-		name: item.agent.name,
-		state: item.state === "needs-input" || item.state === "attention"
-			? "awaiting-input"
-			: item.state === "complete"
-				? "completed"
-				: "working",
-	};
-}
+import { toJiraIssueAgentActivityFromSession } from "./agent-session-work-item";
 
 function AttachedAgentSession({
 	isArriving,
@@ -62,7 +49,7 @@ function AttachedAgentSession({
 				</>
 			) : null}
 			<JiraIssueAgentActivityRows
-				activities={[toAttachedActivity(item)]}
+				activities={[toJiraIssueAgentActivityFromSession(item)]}
 				onViewChat={onView === undefined ? undefined : () => onView(item)}
 				shouldReduceMotion={shouldReduceMotion}
 				usesStrokeChrome
@@ -114,14 +101,22 @@ export function AgentSessionCompactCard({
 	isArriving = false,
 	isNew = false,
 	item,
+	onAttach,
+	onCreateWorkItem,
+	onSubtasks,
 	onView,
+	sessionDrag,
 	variant,
 }: Readonly<{
 	isArriving?: boolean;
 	isNew?: boolean;
 	item: AgentSessionItem;
 	flyout?: boolean;
+	onAttach?: (item: AgentSessionItem) => void;
+	onCreateWorkItem?: (item: AgentSessionItem) => void;
+	onSubtasks?: (item: AgentSessionItem) => void;
 	onView?: (item: AgentSessionItem) => void;
+	sessionDrag?: JiraIssueAgentSessionDragBinding;
 	variant: Exclude<AgentSessionVariant, "large">;
 }>) {
 	return variant === "small" ? (
@@ -145,7 +140,11 @@ export function AgentSessionCompactCard({
 			isArriving={isArriving}
 			isNew={isNew}
 			item={item}
+			onAttach={onAttach}
+			onCreateWorkItem={onCreateWorkItem}
+			onSubtasks={onSubtasks}
 			onView={onView}
+			sessionDrag={sessionDrag}
 		/>
 	);
 }

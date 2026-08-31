@@ -57,11 +57,14 @@ test("the board opts into the experimental Jira issue split agent rows", () => {
 });
 
 test("the board enables the experimental Jira issue drag-to-unlink session transfer", () => {
-	assert.match(PAGE_SOURCE, /import \{ unlinkJiraKanbanAgentSession \} from "@\/components\/blocks\/jira-kanban\/state"/u);
+	assert.match(PAGE_SOURCE, /import \{ linkJiraKanbanAgentSession, unlinkJiraKanbanAgentSession \} from "@\/components\/blocks\/jira-kanban\/state"/u);
 	assert.match(PAGE_SOURCE, /setBoardColumns\(\(columns\) => unlinkJiraKanbanAgentSession\(columns, card\.code, session\.id\)\)/u);
+	assert.match(PAGE_SOURCE, /setBoardColumns\(\(columns\) => linkJiraKanbanAgentSession\(columns, card\.code, activity\)\)/u);
+	assert.match(PAGE_SOURCE, /onCardAgentSessionLink=\{handleAgentSessionLink\}/u);
 	assert.match(PAGE_SOURCE, /onCardAgentSessionUnlink=\{handleAgentSessionUnlink\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCardAgentSessionUnlink\?: ExperimentalJiraKanbanProps\["onCardAgentSessionUnlink"\];/u);
-	assert.match(EXPERIMENTAL_CARD_SOURCE, /agentSessionTransfer=\{canUnlinkAgentSession \? \{/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /const canTransferAgentSession = canUnlinkAgentSession \|\| canLinkAgentSession;/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /sessionTransferAfter=\{canLinkAgentSession/u);
 });
 
 test("unlinked agent sessions remain detached beneath their source Jira card", () => {
