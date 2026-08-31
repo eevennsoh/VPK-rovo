@@ -79,7 +79,15 @@ export type ScrollMaskOverlayEdge = "top" | "bottom";
 export interface ScrollMaskOverlayStyleOptions {
 	edge: ScrollMaskOverlayEdge;
 	fadeSize?: number | string;
+	/**
+	 * Fade color. Defaults to the page surface so overlays match a `bg-surface`
+	 * parent. Pass the parent backdrop token when the scrollport sits on a
+	 * different fill (for example `var(--color-bg-accent-gray-subtlest)`).
+	 */
+	color?: string;
 }
+
+const SCROLL_MASK_OVERLAY_DEFAULT_COLOR = "var(--color-surface)";
 
 /**
  * Visual-only edge fade. Use this instead of `fadeTop` on `buildScrollMaskStyle`
@@ -90,11 +98,12 @@ export interface ScrollMaskOverlayStyleOptions {
 export function buildScrollMaskOverlayStyle({
 	edge,
 	fadeSize = SCROLL_MASK_DEFAULT_FADE_SIZE,
+	color = SCROLL_MASK_OVERLAY_DEFAULT_COLOR,
 }: ScrollMaskOverlayStyleOptions): ScrollMaskCssProperties {
 	const resolvedFadeSize = toCssLength(fadeSize);
 	const backgroundImage = edge === "top"
-		? "linear-gradient(to bottom, var(--color-surface) 0, transparent 100%)"
-		: "linear-gradient(to top, var(--color-surface) 0, transparent 100%)";
+		? `linear-gradient(to bottom, ${color} 0, transparent 100%)`
+		: `linear-gradient(to top, ${color} 0, transparent 100%)`;
 
 	return {
 		"--scroll-mask-fade-size": resolvedFadeSize,

@@ -43,12 +43,14 @@ export interface ScrollMaskProps
  */
 export function ScrollMaskEdgeOverlay({
 	className,
+	color,
 	edge,
 	fadeSize,
 	style,
 	...props
 }: Readonly<
 	Omit<ComponentPropsWithoutRef<"div">, "children"> & {
+		color?: string;
 		edge: ScrollMaskOverlayEdge;
 		fadeSize?: number | string;
 	}
@@ -63,7 +65,7 @@ export function ScrollMaskEdgeOverlay({
 				className,
 			)}
 			data-scroll-mask-overlay={edge}
-			style={{ ...buildScrollMaskOverlayStyle({ edge, fadeSize }), ...style }}
+			style={{ ...buildScrollMaskOverlayStyle({ color, edge, fadeSize }), ...style }}
 		/>
 	);
 }

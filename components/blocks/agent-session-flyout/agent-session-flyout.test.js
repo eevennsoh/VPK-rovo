@@ -34,18 +34,31 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.match(source, /case "untracked-work":/u);
 	assert.match(source, /<JiraSessionFlyoutBody[\s\S]*session=\{session\}[\s\S]*variant="untracked-work"/u);
 	assert.match(source, /showSeparator/u);
-	assert.match(source, /Link to \{session\.issueKey\}/u);
 	assert.match(source, /<JiraSessionSectionHeading meta="High confidence" showSeparator>/u);
 	assert.match(source, /flex min-w-0 shrink-0 items-center gap-1\.5 text-xs font-medium leading-4 text-text-subtle/u);
 	assert.match(source, /className="shrink-0 text-xs font-normal text-text-subtlest"/u);
 	assert.doesNotMatch(source, /<span aria-hidden="true"> · <\/span>/u);
-	assert.match(source, /aria-label=\{`Link to \$\{session\.issueKey\}, High confidence`\}/u);
-	assert.match(source, /This session appears related to \{session\.issueKey\}/u);
-	assert.match(source, /<ButtonGroup aria-label=\{`Link \$\{issueKey\}`\} variant="split">/u);
-	assert.match(source, /Link to \{issueKey\}/u);
+	assert.match(
+		source,
+		/session\.issueKey\.length > 0\s*\? `Link to \$\{session\.issueKey\}, High confidence`\s*: "Link work item, High confidence"/u,
+	);
+	assert.match(
+		source,
+		/session\.issueKey\.length > 0 \? `Link to \$\{session\.issueKey\}` : "Link work item"/u,
+	);
+	assert.match(source, /This session appears related to \$\{session\.issueKey\}/u);
+	assert.match(source, /capturedSessionIds\?: ReadonlySet<string>;/u);
+	assert.match(source, /const linkLabel = hasIssueKey \? `Link to \$\{issueKey\}` : "Link work item";/u);
+	assert.match(
+		source,
+		/<ButtonGroup aria-label=\{hasIssueKey \? `Link \$\{issueKey\}` : "Link work item"\} variant="split">/u,
+	);
 	assert.match(source, /aria-disabled=\{linkUnavailable\}/u);
 	assert.match(source, /onClick=\{\(\) => onLinkWorkItem\?\.\(issueKey\)\}/u);
-	assert.match(source, /aria-label=\{`More link options for \$\{issueKey\}`\}/u);
+	assert.match(
+		source,
+		/aria-label=\{hasIssueKey \? `More link options for \$\{issueKey\}` : "More link options"\}/u,
+	);
 	assert.match(source, /<DropdownMenuItem[\s\S]*disabled=\{addAsSubtaskUnavailable\}[\s\S]*onSelect=\{\(\) => onAddAsSubtask\?\.\(issueKey\)\}[\s\S]*>\s*Add as a subtask/u);
 	assert.match(source, /Create new/u);
 	assert.match(source, /aria-disabled=\{createUnavailable\}/u);
@@ -84,10 +97,19 @@ test("shared Agent States flyout forwards submission, timing, and stopped lifecy
 
 // Detail panels still reuse the shared design-system property components rather
 // than re-implementing them inside each panel.
-test("shared detail body reuses SmartLink, agent Tag, Lozenge, GitHub logo, and CI progress circle", () => {
+test("shared detail body hides the human assignee avatar while awaiting input", () => {
 	const source = readRepoFile(FLYOUT_BODY_PATH);
 	const jiraSource = readRepoFile("components/blocks/product-sidebar/variants/jira.tsx");
 	assert.match(source, /export function JiraSessionFlyoutBody\b/u);
+	assert.match(source, /import\s*\{[^}]*Avatar[^}]*AvatarFallback[^}]*AvatarImage[^}]*\}\s*from\s*"@\/components\/ui\/avatar"/u);
+	assert.match(
+		source,
+		/session\.assignee && session\.status !== "awaiting-input" \? \(\s*<Avatar[\s\S]*label=\{session\.assignee\.name\}[\s\S]*size="xs"[\s\S]*<AvatarImage alt="" src=\{session\.assignee\.src\} \/>[\s\S]*<AvatarFallback>\{actorInitials\(session\.assignee\.name\)\}<\/AvatarFallback>/u,
+	);
+	assert.match(
+		source,
+		/session\.status === "awaiting-input" \? \(\s*<Lozenge variant="information">Needs input<\/Lozenge>\s*\) : \(\s*<span className="text-\[12px\] leading-4 text-text-subtlest">\s*\{STATUS_UPDATED_LABEL\[session\.status\]\}\s*<\/span>/u,
+	);
 	assert.match(source, /import\s*\{[^}]*SmartLink[^}]*\}\s*from\s*"@\/components\/blocks\/smart-link"/u);
 	assert.match(source, /import\s*\{[^}]*GithubLogo[^}]*\}\s*from\s*"@\/components\/ui\/logo-third-party"/u);
 	assert.match(source, /import\s*\{[^}]*Lozenge[^}]*\}\s*from\s*"@\/components\/ui\/lozenge"/u);

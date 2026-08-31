@@ -55,26 +55,33 @@ export const BOARD_COLUMN_OPTIONS: readonly BoardVisibilityOption[] = [
  * Which pull-request states surface on a card's development row. Ordered by
  * where a PR sits in its lifecycle rather than alphabetically, so the list
  * reads as a progression.
+ *
+ * `as const satisfies` rather than a plain annotation: the shape is still
+ * checked, but the literal ids survive so `BoardPrStateId` can key the menu's
+ * icon map and make a missing glyph a type error rather than a blank row.
  */
-export const BOARD_PR_STATE_OPTIONS: readonly BoardVisibilityOption[] = [
+export const BOARD_PR_STATE_OPTIONS = [
 	{ id: "open", label: "Open", shown: true },
 	{ id: "draft", label: "Draft", shown: true },
 	{ id: "queued", label: "Queued", shown: true },
 	{ id: "merged", label: "Merged", shown: true },
 	{ id: "closed", label: "Closed", shown: true },
-];
+] as const satisfies readonly BoardVisibilityOption[];
+
+export type BoardPrStateId = (typeof BOARD_PR_STATE_OPTIONS)[number]["id"];
 
 /**
- * Which agent-session states surface on a card's activity row. Ordered by
- * escalation — running work first, then the two states that want a human, then
- * failure — so the rows that need attention are not buried alphabetically.
+ * Which agent-session states surface on a card's activity row. Ordered by the
+ * shape of a session rather than alphabetically: the state an agent holds on
+ * its own, then the one that wants a human, then the terminal one.
+ *
+ * Label-only in the menu — unlike PR state these rows carry no leading glyph,
+ * so the list needs no literal-id union to key an icon map.
  */
 export const BOARD_AGENT_STATE_OPTIONS: readonly BoardVisibilityOption[] = [
-	{ id: "idle", label: "Idle", shown: true },
 	{ id: "working", label: "Working", shown: true },
-	{ id: "needs-permission", label: "Needs permission", shown: true },
-	{ id: "ready-for-review", label: "Ready for review", shown: true },
-	{ id: "failed", label: "Failed", shown: true },
+	{ id: "needs-input", label: "Needs input", shown: true },
+	{ id: "finished", label: "Finished", shown: true },
 ];
 
 interface BoardFieldOption extends BoardVisibilityOption {

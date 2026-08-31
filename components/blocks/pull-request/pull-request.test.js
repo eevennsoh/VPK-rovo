@@ -117,6 +117,15 @@ test("PullRequest spacious variant rearranges the same data into three rows", ()
 	// Spacious leads with a glyph-bearing lozenge and closes with an author footer.
 	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/pull-request"/u);
 	assert.match(COMPONENT_SOURCE, /<PullRequestStatusLozenge status=\{status\} withIcon \/>/u);
+	// Title + #N share ADS body 14px / 20px (`text-sm leading-5`) on both densities.
+	assert.match(
+		COMPONENT_SOURCE,
+		/function PullRequestCompactBody[\s\S]*text-sm font-medium leading-5[\s\S]*function PullRequestSpaciousBody/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/function PullRequestSpaciousBody[\s\S]*text-sm font-medium leading-5/u,
+	);
 	assert.match(COMPONENT_SOURCE, /PullRequestAuthorAvatar author=\{author\} size="xs"/u);
 	assert.match(COMPONENT_SOURCE, /Created by \{author\.name\}/u);
 	assert.match(

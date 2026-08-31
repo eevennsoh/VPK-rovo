@@ -37,6 +37,7 @@ import { JiraIssueSummary } from "@/components/blocks/jira-issue/summary";
 import type {
 	JiraIssueChrome,
 	JiraIssuePriority,
+	JiraIssuePullRequestPreview,
 	JiraIssuePullRequestStatus,
 	JiraIssueTag,
 } from "@/components/blocks/jira-issue/types";
@@ -80,6 +81,7 @@ const AGENT_SESSION_TRANSFER_GOO = {
 export type {
 	JiraIssueChrome,
 	JiraIssuePriority,
+	JiraIssuePullRequestPreview,
 	JiraIssuePullRequestStatus,
 	JiraIssueTag,
 	JiraIssueVariant,
@@ -154,7 +156,9 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	/** Jira issue key, e.g. RFP-101. */
 	issueKey: string;
 	pullRequestNumber?: number;
+	pullRequestPreview?: JiraIssuePullRequestPreview;
 	pullRequestStatus?: JiraIssuePullRequestStatus;
+	pullRequestTitle?: string;
 	tags?: readonly JiraIssueTag[];
 	priority?: JiraIssuePriority;
 	issueTypeLabel?: string;
@@ -237,7 +241,9 @@ function JiraIssueDefault({
 	parentEpicControl,
 	priority = "major",
 	pullRequestNumber,
+	pullRequestPreview,
 	pullRequestStatus,
+	pullRequestTitle,
 	selected = false,
 	showAutomationIndicator = false,
 	showMoreAction = true,
@@ -302,12 +308,12 @@ function JiraIssueDefault({
 	const hasIssueRows = hasSubtasks;
 	const hasAgentActivityPresentation = agentActivityMode !== undefined || Boolean(agentActivities?.length) || hasAgentDoneNotification;
 	const usesAgentActivityShell = hasAgentActivityPresentation;
-	const hasInteractiveContent = showMoreAction || hasSubtasks || Boolean(parentEpicControl) || hasAgentActivityPresentation || Boolean(generativeAction) || Boolean(agentSessionTransfer);
+	const usesStrokeChrome = chrome === "stroke";
+	const hasInteractiveContent = showMoreAction || hasSubtasks || Boolean(parentEpicControl) || hasAgentActivityPresentation || Boolean(generativeAction) || Boolean(agentSessionTransfer) || usesStrokeChrome;
 	const shouldRenderIssueClickButton = Boolean(props.onClick && !parentEpicControl);
 	const issueRowsClassName = cn("pt-1", !(hasSubtasks && resolvedSubtasksExpanded) && "pb-1");
 	const layoutTransition = getJiraIssueLayoutTransition(shouldReduceMotion);
 	const presenceMotion = getJiraIssuePresenceMotion(shouldReduceMotion);
-	const usesStrokeChrome = chrome === "stroke";
 	const idleBorderClassName = usesStrokeChrome
 		? "border-border-disabled hover:border-border group-hover/jira-issue:border-border"
 		: "border-transparent";
@@ -484,7 +490,9 @@ function JiraIssueDefault({
 			parentEpicControl={parentEpicControl}
 			priority={priority}
 			pullRequestNumber={resolvedPullRequestNumber}
+			pullRequestPreview={pullRequestPreview}
 			pullRequestStatus={pullRequestStatus}
+			pullRequestTitle={pullRequestTitle}
 			showAutomationIndicator={showAutomationIndicator}
 			showPriorityIndicator={showPriorityIndicator}
 			summary={summary}
@@ -504,17 +512,36 @@ function JiraIssueDefault({
 	const richIssueContent = (
 		<div className="relative z-10 flex flex-col">
 			{shouldRenderIssueClickButton ? (
-				<button
-					type={type}
-					aria-pressed={ariaPressed ?? selected}
-					className="w-full p-3 text-left outline-none transition-colors duration-normal ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-					disabled={props.disabled}
-					onClick={props.onClick}
-				>
-					{summaryContent}
-				</button>
+				usesStrokeChrome ? (
+					<div className="relative w-full px-3 pt-3 pb-2 text-left outline-none transition-colors duration-normal ease-out has-[:focus-visible]:border-ring has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50">
+						<button
+							aria-pressed={ariaPressed ?? selected}
+							className="sr-only"
+							disabled={props.disabled}
+							onClick={props.onClick}
+							type={type}
+						>
+							{issueKey}: {summary}
+						</button>
+						<div
+							onClick={props.disabled ? undefined : props.onClick as ComponentProps<"div">["onClick"]}
+						>
+							{summaryContent}
+						</div>
+					</div>
+				) : (
+					<button
+						type={type}
+						aria-pressed={ariaPressed ?? selected}
+						className="w-full p-3 text-left outline-none transition-colors duration-normal ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+						disabled={props.disabled}
+						onClick={props.onClick}
+					>
+						{summaryContent}
+					</button>
+				)
 			) : (
-				<div className="p-3">{summaryContent}</div>
+				<div className={usesStrokeChrome ? "px-3 pt-3 pb-2" : "p-3"}>{summaryContent}</div>
 			)}
 			{moreActionMenu}
 			<AnimatePresence initial={false} mode="popLayout">

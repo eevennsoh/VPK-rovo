@@ -907,6 +907,7 @@ export function ExperimentalJiraKanban({
 												tags={card.tags}
 												priority={card.priority}
 												pullRequestNumber={card.pullRequestNumber}
+												pullRequestPreview={card.pullRequestPreview}
 												pullRequestStatus={card.pullRequestStatus}
 												assigneeAvatarLabel={card.assignee?.name}
 												assigneeAvatarSrc={card.avatarSrc}

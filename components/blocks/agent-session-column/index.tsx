@@ -12,7 +12,7 @@ import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-over
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
+import { ScrollMaskEdgeOverlay } from "@/components/visual/scroll-mask";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
@@ -37,27 +37,37 @@ const AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX = 32;
 const AGENT_SESSION_COLUMN_TRANSITION = "width var(--duration-medium) var(--ease-in-out)";
 
 /**
- * The sunken plane that holds the sessions.
+ * The filled plane that holds the sessions.
  *
  * It wraps only the list, never the header: the header has to sit on the board
  * surface at the same inset and baseline as `To do` and `In progress`, so the
  * five column titles read as one row. Filling behind the header instead would
  * push this title 8px in and 8px down from its neighbours and make the column
  * look like a panel docked beside the board rather than a column of it.
+ *
+ * `relative overflow-hidden` keeps the edge fades positioned to this plane and
+ * clipped to its radius, so they span the full backdrop rather than the inset
+ * scrollport.
  */
-const AGENT_SESSION_PLANE = "flex min-h-0 min-w-0 flex-1 flex-col bg-surface-sunken";
+const AGENT_SESSION_PLANE =
+	"relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-bg-accent-gray-subtlest";
+
+/** Matches `bg-bg-accent-gray-subtlest` so edge fades dissolve into the plane. */
+const AGENT_SESSION_PLANE_FADE_COLOR = "var(--color-bg-accent-gray-subtlest)";
+
+const AGENT_SESSION_PLANE_FADE_SIZE = "3rem";
 
 /**
  * A kanban column of agent sessions that never became work items.
  *
  * The board's status columns are unfilled — they read as regions of the board
- * surface. This one fills the area *below its header* with `surface-sunken`,
- * because its contents are not on the board yet: the sunken plane is what says
- * "outside the workflow" without needing a label to explain it. The header stays
- * outside that fill so it shares an inset and a baseline with the status column
- * titles. Everything below the header is the Agent Session block verbatim, so a
- * card's chin, captured state, and resume gating behave identically here and in
- * the standalone block.
+ * surface. This one fills the area *below its header* with
+ * `bg-bg-accent-gray-subtlest`, because its contents are not on the board yet:
+ * the filled plane is what says "outside the workflow" without needing a label
+ * to explain it. The header stays outside that fill so it shares an inset and a
+ * baseline with the status column titles. Everything below the header is the
+ * Agent Session block verbatim, so a card's untracked-work flyout, captured
+ * state, and resume gating behave identically here and in the standalone block.
  *
  * The column is a scrollport, so it reserves the 4px focus-ring gutter VPK's
  * widest ring needs (`-m-1 p-1`) rather than clipping a focused card's ring.
@@ -90,14 +100,6 @@ export function AgentSessionColumn({
 		showBottomScrollMask,
 		showTopScrollMask,
 	} = useHasVerticalOverflow<HTMLDivElement>();
-	const listStyle = useMemo(
-		() => buildScrollMaskStyle({
-			fadeBottom: showBottomScrollMask,
-			fadeSize: "3rem",
-			fadeTop: showTopScrollMask,
-		}),
-		[showBottomScrollMask, showTopScrollMask],
-	);
 	const sessionCount = count ?? items.length;
 	// Collapsing swaps the cards for the rail and back, which remounts them — and
 	// a mount is exactly what re-arms an `initial` animation. The beat is meant to
@@ -247,7 +249,6 @@ export function AgentSessionColumn({
 						<div
 							ref={listRef}
 							className="-m-1 min-h-0 min-w-0 flex-1 overflow-y-auto p-1"
-							style={listStyle}
 						>
 							{items.length === 0 ? (
 								<p className="text-xs text-text-subtlest">{emptyLabel}</p>
@@ -261,6 +262,20 @@ export function AgentSessionColumn({
 								/>
 							)}
 						</div>
+						{showTopScrollMask ? (
+							<ScrollMaskEdgeOverlay
+								color={AGENT_SESSION_PLANE_FADE_COLOR}
+								edge="top"
+								fadeSize={AGENT_SESSION_PLANE_FADE_SIZE}
+							/>
+						) : null}
+						{showBottomScrollMask ? (
+							<ScrollMaskEdgeOverlay
+								color={AGENT_SESSION_PLANE_FADE_COLOR}
+								edge="bottom"
+								fadeSize={AGENT_SESSION_PLANE_FADE_SIZE}
+							/>
+						) : null}
 					</div>
 				</>
 			)}
