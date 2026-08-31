@@ -10,11 +10,12 @@ import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import AddIcon from "@atlaskit/icon/core/add";
 
 import { AgentSessionColumn, type AgentSessionColumnProps } from "@/components/blocks/agent-session-column";
+import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import {
-	JiraIssue,
 	type JiraIssueAgentActivityLayout,
 	type JiraIssueGenerativeActionPresentation,
 } from "@/components/blocks/jira-issue";
+import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
 import {
 	mapAgentToMentionItem,
 	mapSkillToMentionItem,
@@ -56,6 +57,7 @@ import {
 	BOARD_COLUMN_WIDTH_PX,
 	type CollapsedBoardColumns,
 } from "./lib/board-column-collapse";
+import { ExperimentalJiraKanbanCard } from "./experimental-jira-kanban-card";
 
 import type {
 	JiraKanbanAgentData,
@@ -76,6 +78,13 @@ import type {
  */
 export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
+	/** Detached sessions keyed by the Jira card they should remain beneath. */
+	detachedAgentSessionsByCard?: Readonly<Record<string, readonly AgentSessionItem[]>>;
+	onCardAgentSessionUnlink?: (
+		session: JiraIssueAgentSessionRef,
+		card: JiraKanbanCardData,
+		columnTitle: string,
+	) => void;
 	/** Chooses where card agent and skill actions are presented. */
 	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;
 	/**
@@ -138,13 +147,6 @@ function getAgentInitials(name: string): string {
 		.slice(0, 2)
 		.map((part) => part[0]?.toUpperCase() ?? "")
 		.join("");
-}
-
-function getCardAssigneeAvatarShape(card: JiraKanbanCardData) {
-	if (card.avatarShape) {
-		return card.avatarShape;
-	}
-	return card.avatarSrc?.startsWith("/avatar-agent/") ? "hexagon" as const : undefined;
 }
 
 function AgentAvatar({ agent, className }: Readonly<{ agent: JiraKanbanAgentData; className?: string }>) {
@@ -547,6 +549,7 @@ export function ExperimentalJiraKanban({
 	cardGenerativeActionPresentation = "sparkle",
 	cardMoveAnimation,
 	collapsedColumns: controlledCollapsedColumns,
+	detachedAgentSessionsByCard,
 	draggedCardCode = null,
 	selectedCardCodes,
 	onCardClick,
@@ -557,6 +560,7 @@ export function ExperimentalJiraKanban({
 	onCardGenerativeActionSubmit,
 	onCardAgentActivityOpenChange,
 	onCardAgentActivityViewChat,
+	onCardAgentSessionUnlink,
 	onCardAgentDoneRunReview,
 	onCardAgentDoneRunView,
 	onCreateAgent,
@@ -770,6 +774,7 @@ export function ExperimentalJiraKanban({
 										? cardMoveAnimation.phase
 										: undefined;
 									const shouldAnimateCardPosition = shouldAnimateCardMoves && cardMovePhase === undefined;
+									const detachedAgentSessions = detachedAgentSessionsByCard?.[card.code] ?? [];
 									const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
 										const modifiers: JiraKanbanCardSelectModifiers = {
 											shiftKey: event.shiftKey,
@@ -797,63 +802,31 @@ export function ExperimentalJiraKanban({
 														? { scale: getJiraKanbanCardScale(cardMovePhase) }
 														: undefined
 												}
-												className="w-full min-w-0 max-w-[280px]"
+												className="flex w-full min-w-0 max-w-[280px] flex-col gap-2"
 												initial={false}
 												style={cardMovePhase ? { willChange: "transform" } : undefined}
 												transition={cardMovePhase === "departing" ? JIRA_KANBAN_CARD_DEPART : JIRA_KANBAN_CARD_MOVE}
 											>
-											<JiraIssue
+											<ExperimentalJiraKanbanCard
 												active={isActive}
-												chrome="stroke"
-												summary={card.title}
-												issueKey={card.code}
-												tags={card.tags}
-												priority={card.priority}
-												pullRequestNumber={card.pullRequestNumber}
-												pullRequestPreview={card.pullRequestPreview}
-												pullRequestStatus={card.pullRequestStatus}
-												assigneeAvatarLabel={card.assignee?.name}
-												assigneeAvatarSrc={card.avatarSrc}
-												assigneeAvatarShape={getCardAssigneeAvatarShape(card)}
-												assigneeUnassignedKind={card.avatarUnassignedKind}
-												assigneePulse={card.avatarPulse}
-												agentActivities={card.agentActivities}
 												agentActivityLayout={agentActivityLayout}
-												agentActivityMode={card.agentActivityMode}
-												agentDoneRuns={card.agentDoneRuns}
-												generativeAction={{
-													agents: generativeActionAgents,
-													onSubmit: (request) => {
-														void onCardGenerativeActionSubmit?.(request, card, column.title);
-													},
-													skills: generativeActionSkills,
-												}}
-												generativeActionPresentation={cardGenerativeActionPresentation}
-												onAgentActivityOpenChange={
-													onCardAgentActivityOpenChange
-														? (open) => onCardAgentActivityOpenChange(open, card, column.title)
-														: undefined
-												}
-												onAgentActivityViewChat={
-													onCardAgentActivityViewChat
-														? (activity) => onCardAgentActivityViewChat(activity, card, column.title)
-														: undefined
-												}
-												onAgentDoneRunReview={
-													onCardAgentDoneRunReview
-														? (run) => onCardAgentDoneRunReview(run, card, column.title)
-														: undefined
-												}
-												onAgentDoneRunView={
-													onCardAgentDoneRunView
-														? (run) => onCardAgentDoneRunView(run, card, column.title)
-														: undefined
-												}
+												card={card}
+												columnTitle={column.title}
+												detachedAgentSessions={detachedAgentSessions}
 												dragging={isCardBeingDragged || isSelectedCardBeingDragged}
-												selected={isSelected}
+												generativeActionAgents={generativeActionAgents}
+												generativeActionPresentation={cardGenerativeActionPresentation}
+												generativeActionSkills={generativeActionSkills}
+												onAgentActivityOpenChange={onCardAgentActivityOpenChange}
+												onAgentActivityViewChat={onCardAgentActivityViewChat}
+												onAgentDoneRunReview={onCardAgentDoneRunReview}
+												onAgentDoneRunView={onCardAgentDoneRunView}
 												onClick={handleClick}
-												onDragStart={(event) => handleCardDragStartInternal(card, column.title, event)}
 												onDragEnd={handleCardDragEndInternal}
+												onDragStart={(event) => handleCardDragStartInternal(card, column.title, event)}
+												onGenerativeActionSubmit={onCardGenerativeActionSubmit}
+												onSessionUnlink={onCardAgentSessionUnlink}
+												selected={isSelected}
 											/>
 											</motion.div>
 										</motion.div>

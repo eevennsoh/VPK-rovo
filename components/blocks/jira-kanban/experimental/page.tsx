@@ -21,7 +21,10 @@ import type {
 } from "../index";
 import { createJiraKanbanColumns } from "../jira-kanban-data";
 import { BoardFilterPopover } from "./components/board-filter-popover";
-import { ExperimentalJiraKanban } from "./experimental-jira-kanban";
+import {
+	ExperimentalJiraKanban,
+	type ExperimentalJiraKanbanProps,
+} from "./experimental-jira-kanban";
 import { EMPTY_COLLAPSED_BOARD_COLUMNS } from "./lib/board-column-collapse";
 import {
 	ExperimentalJiraKanbanBoardHeader,
@@ -114,6 +117,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	activeCardCode?: string;
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;
+	detachedAgentSessionsByCard?: ExperimentalJiraKanbanProps["detachedAgentSessionsByCard"];
 	agentSessionAssigneeIdAliases?: Readonly<Record<string, string>>;
 	agents?: readonly JiraKanbanAgentData[];
 	ariaLabel?: string;
@@ -128,6 +132,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	onBoardColumnsChange?: (columns: readonly JiraKanbanColumnData[]) => void;
 	onCardClick?: (card: JiraKanbanCardData, columnTitle: string) => void;
 	onCardAgentActivityViewChat?: JiraKanbanProps["onCardAgentActivityViewChat"];
+	onCardAgentSessionUnlink?: ExperimentalJiraKanbanProps["onCardAgentSessionUnlink"];
 	onInsightsWorkItemClick?: (workItem: PulseWorkItem) => void;
 	onModeChange?: (mode: ExperimentalJiraKanbanMode) => void;
 	onResumeLooseWork?: (item: PulseLooseWork) => void;
@@ -157,6 +162,7 @@ export default function ExperimentalJiraKanbanPage({
 	activeCardCode,
 	agentActivityLayout,
 	cardGenerativeActionPresentation,
+	detachedAgentSessionsByCard,
 	agentSessionAssigneeIdAliases,
 	agents = BOARD_AGENTS,
 	ariaLabel = "Experimental RFP board columns. Scroll horizontally to review all statuses.",
@@ -171,6 +177,7 @@ export default function ExperimentalJiraKanbanPage({
 	onBoardColumnsChange,
 	onCardClick,
 	onCardAgentActivityViewChat,
+	onCardAgentSessionUnlink,
 	onInsightsWorkItemClick,
 	onModeChange,
 	onResumeLooseWork,
@@ -604,11 +611,13 @@ export default function ExperimentalJiraKanbanPage({
 						boardColumns={filteredBoardColumns}
 						cardGenerativeActionPresentation={cardGenerativeActionPresentation}
 						collapsedColumns={collapsedColumns}
+						detachedAgentSessionsByCard={detachedAgentSessionsByCard}
 						onCollapsedColumnsChange={setCollapsedColumns}
 						draggedCardCode={draggedCard?.card.code ?? null}
 						selectedCardCodes={selection.selectedCardCodes}
 						onCardClick={handleCardClick}
 						onCardAgentActivityViewChat={onCardAgentActivityViewChat}
+						onCardAgentSessionUnlink={onCardAgentSessionUnlink}
 						onCardSelect={handleCardSelect}
 						onCardDragStart={handleCardDragStart}
 						onCardDrop={handleCardDrop}

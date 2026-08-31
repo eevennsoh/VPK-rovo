@@ -17,6 +17,9 @@ const EXPERIMENTAL_PAGE_SOURCE = readProjectFile("components/blocks/jira-kanban/
 const EXPERIMENTAL_BOARD_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/experimental-jira-kanban.tsx",
 );
+const EXPERIMENTAL_CARD_SOURCE = readProjectFile(
+	"components/blocks/jira-kanban/experimental/experimental-jira-kanban-card.tsx",
+);
 
 test("the route renders the Payments board directly inside Jira app chrome", () => {
 	assert.match(PAGE_SOURCE, /import AppLayout from "@\/components\/projects\/page"/u);
@@ -53,12 +56,28 @@ test("the board opts into the experimental Jira issue split agent rows", () => {
 	);
 });
 
+test("the board enables the experimental Jira issue drag-to-unlink session transfer", () => {
+	assert.match(PAGE_SOURCE, /import \{ unlinkJiraKanbanAgentSession \} from "@\/components\/blocks\/jira-kanban\/state"/u);
+	assert.match(PAGE_SOURCE, /setBoardColumns\(\(columns\) => unlinkJiraKanbanAgentSession\(columns, card\.code, session\.id\)\)/u);
+	assert.match(PAGE_SOURCE, /onCardAgentSessionUnlink=\{handleAgentSessionUnlink\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCardAgentSessionUnlink\?: ExperimentalJiraKanbanProps\["onCardAgentSessionUnlink"\];/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /agentSessionTransfer=\{canUnlinkAgentSession \? \{/u);
+});
+
+test("unlinked agent sessions remain detached beneath their source Jira card", () => {
+	assert.match(PAGE_SOURCE, /const \[detachedAgentSessionsByCard, setDetachedAgentSessionsByCard\] = useState/u);
+	assert.match(PAGE_SOURCE, /toJiraGoldenJourneysV4DetachedAgentSession\(activity, card\)/u);
+	assert.match(PAGE_SOURCE, /setDetachedAgentSessionsByCard\(\(current\) =>/u);
+	assert.match(PAGE_SOURCE, /detachedAgentSessionsByCard=\{detachedAgentSessionsByCard\}/u);
+});
+
 test("the board puts agent and skill assignment in each card's More actions menu", () => {
 	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage[\s\S]*cardGenerativeActionPresentation="more-actions"/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /cardGenerativeActionPresentation\?: JiraIssueGenerativeActionPresentation;/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<ExperimentalJiraKanban[\s\S]*cardGenerativeActionPresentation=\{cardGenerativeActionPresentation\}/u);
 	assert.match(EXPERIMENTAL_BOARD_SOURCE, /cardGenerativeActionPresentation = "sparkle",/u);
-	assert.match(EXPERIMENTAL_BOARD_SOURCE, /<JiraIssue[\s\S]*generativeActionPresentation=\{cardGenerativeActionPresentation\}/u);
+	assert.match(EXPERIMENTAL_BOARD_SOURCE, /<ExperimentalJiraKanbanCard[\s\S]*generativeActionPresentation=\{cardGenerativeActionPresentation\}/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*generativeActionPresentation=\{generativeActionPresentation\}/u);
 });
 
 test("the Jira tab bar groups Board and List under one Work items destination", () => {
