@@ -1,39 +1,65 @@
 "use client";
 
+import ChevronLeftIcon from "@atlaskit/icon/core/chevron-left";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 
-import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
+
+export type AgentSessionColumnWellFooterMode = "hidden" | "back";
 
 /**
- * Sticky-by-flex sibling under the session list: Work hidden N, with a trailing
- * chevron that opens the hidden-work view. Lives outside the scrollport so it
- * cannot be clipped by overflow.
+ * Last cell of the session well. Two modes share the same chrome — a full-width
+ * row under the scrollport, square corners, hover fill, 12px chevron — so the
+ * well can own the outer stroke and bottom radius.
+ *
+ * `hidden` is Work hidden N and opens the hidden-work list. `back` is Back to
+ * untracked work N (the active/untracked count) and returns to that list.
  */
 export function AgentSessionColumnHiddenFooter({
-	hiddenCount,
-	onOpen,
+	count,
+	mode,
+	onClick,
+	title = "Untracked work",
 }: Readonly<{
-	hiddenCount: number;
-	onOpen: () => void;
+	count: number;
+	mode: AgentSessionColumnWellFooterMode;
+	onClick: () => void;
+	title?: string;
 }>) {
-	const sessionWord = hiddenCount === 1 ? "session" : "sessions";
+	const isBack = mode === "back";
+	const sessionWord = count === 1 ? "session" : "sessions";
 
 	return (
-		<Button
-			aria-label={`Show ${hiddenCount} hidden ${sessionWord}`}
-			className="w-full shrink-0 justify-between text-xs font-medium"
-			onClick={onOpen}
-			size="compact"
+		<button
+			aria-label={isBack ? `Back to ${title}` : `Show ${count} hidden ${sessionWord}`}
+			className={cn(
+				"flex w-full shrink-0 cursor-pointer items-center justify-between",
+				"rounded-none rounded-b-none border-0 border-t border-solid border-border-disabled bg-transparent p-3 text-left",
+				"hover:bg-surface-hovered",
+				"transition-[border-color,background-color] duration-xxshort ease-out-practical",
+				"motion-reduce:transition-none",
+			)}
+			onClick={onClick}
 			type="button"
-			variant="ghost"
 		>
-			Work hidden {hiddenCount}
+			<span className="flex min-w-0 items-center gap-1.5">
+				<span className="truncate text-xs font-medium leading-4 text-text-subtle">
+					{isBack ? "Back to untracked work" : "Work hidden"}
+				</span>
+				<span className="shrink-0 text-xs font-normal text-text-subtlest">
+					{count}
+				</span>
+			</span>
 			<Icon
 				className="text-icon-subtle"
 				data-icon="inline-end"
-				render={<ChevronRightIcon label="" />}
+				render={isBack ? (
+					<ChevronLeftIcon label="" size="small" />
+				) : (
+					<ChevronRightIcon label="" size="small" />
+				)}
 			/>
-		</Button>
+		</button>
 	);
 }

@@ -4,6 +4,10 @@ const { join } = require("node:path");
 const { test } = require("node:test");
 
 const CARD_SOURCE = readFileSync(join(__dirname, "agent-session-card.tsx"), "utf8");
+const LIST_CARD_SOURCE = readFileSync(
+	join(__dirname, "../agent-list/agent-list-card.tsx"),
+	"utf8",
+);
 const COMPACT_CARD_SOURCE = readFileSync(
 	join(__dirname, "agent-session-compact-card.tsx"),
 	"utf8",
@@ -54,16 +58,15 @@ const VARIANT_REGISTRY_SOURCE = readFileSync(
 	"utf8",
 );
 
-test("renders each session as a dashed uncaptured-work card around the shared row", () => {
+test("renders each session as a solid uncaptured-work card around the shared row", () => {
 	assert.match(CARD_SOURCE, /data-testid=\{"agent-session-row-" \+ item.id\}/u);
-	// Dashed means "uncaptured". The colour is conditional, because a newly
-	// synced card recolours the same dash rather than replacing it. Captured
-	// sessions drop the dash for a solid frame.
-	assert.match(CARD_SOURCE, /dash-4-2 \[--dash-color:var\(--color-border-discovery\)\]/u);
-	assert.match(CARD_SOURCE, /dash-4-2 \[--dash-color:var\(--color-border-disabled\)\]/u);
-	assert.match(CARD_SOURCE, /border border-solid border-border/u);
+	// Solid disabled frame. A newly synced card recolours the same border to
+	// discovery rather than replacing it. Resting untracked chrome stays disabled.
+	assert.match(CARD_SOURCE, /!captured && isNew \? "border-border-discovery" : "border-border-disabled"/u);
+	assert.match(CARD_SOURCE, /border border-solid/u);
+	assert.doesNotMatch(CARD_SOURCE, /dash-4-2/u);
 	assert.doesNotMatch(CARD_SOURCE, /bg-surface-sunken/u);
-	assert.doesNotMatch(CARD_SOURCE, /bg-surface(?!-sunken)/u);
+	assert.doesNotMatch(CARD_SOURCE, /(?<!hover:)bg-surface(?!-sunken|-hovered)/u);
 	assert.doesNotMatch(CARD_SOURCE, /bg-bg-accent-gray-subtlest/u);
 	assert.doesNotMatch(CARD_SOURCE, /UncapturedWorkChin/u);
 	// The row presenter stays owned by Agent List; this block only frames it.
@@ -167,6 +170,11 @@ test("small is the collapsed-column notch and stays keyboard operable when view 
 	assert.match(NOTCH_SOURCE, /w-3 transition-\[background-color,scale\]/u);
 	assert.doesNotMatch(COMPACT_CARD_SOURCE, /proximity/u);
 	assert.match(NOTCH_SOURCE, /isNew \? NOTCH_EMPHASIS : NOTCH_AT_REST/u);
+	assert.match(NOTCH_SOURCE, /const NOTCH_EMPHASIS = "scale-x-\[1\.6\] bg-icon";/u);
+	assert.match(NOTCH_SOURCE, /"bg-icon-subtlest",/u);
+	assert.match(NOTCH_SOURCE, /group-hover\/notch:bg-icon/u);
+	assert.match(NOTCH_SOURCE, /toAgentSessionNotchTone\(/u);
+	assert.doesNotMatch(NOTCH_SOURCE, /toAgentSessionNotchOpacity|transition-opacity/u);
 	assert.match(ARRIVAL_MOTION_SOURCE, /duration: 0\.25,\s*ease: \[0, 0\.4, 0, 1\]/u);
 });
 
@@ -179,14 +187,19 @@ test("the row reveals Resume plus a Hide / Show eye where Agent List puts Archiv
 	);
 	assert.match(CARD_SOURCE, /const hoverActions: AgentListRowHoverActions = \{/u);
 	assert.match(CARD_SOURCE, /label: copiedResume \? "Copied" : "Resume",/u);
-	assert.match(CARD_SOURCE, /icon: <EyeOpenIcon label="" size="small" \/>,\s*label: visibilityLabel,/u);
+	assert.match(CARD_SOURCE, /visibilityLabel === "Show"/u);
+	assert.match(CARD_SOURCE, /<EyeOpenIcon label="" size="small" \/>/u);
+	assert.match(CARD_SOURCE, /<EyeOpenStrikethroughIcon label="" size="small" \/>/u);
+	assert.match(CARD_SOURCE, /label: visibilityLabel,/u);
 	assert.match(CARD_SOURCE, /visibilityLabel = "Hide"/u);
 	assert.match(CARD_SOURCE, /import EyeOpenIcon from "@atlaskit\/icon\/core\/eye-open";/u);
+	assert.match(CARD_SOURCE, /import EyeOpenStrikethroughIcon from "@atlaskit\/icon\/core\/eye-open-strikethrough";/u);
 	assert.match(CARD_SOURCE, /group\/agent-row relative flex w-full cursor-pointer rounded-none bg-transparent p-3 text-left text-text/u);
-	assert.match(CARD_SOURCE, /hover:border-border/u);
-	assert.match(CARD_SOURCE, /focus-within:border-border/u);
-	assert.match(CARD_SOURCE, /transition-\[border-color\] duration-xxshort ease-out-practical/u);
-	assert.doesNotMatch(CARD_SOURCE, /hover:bg-/u);
+	assert.doesNotMatch(CARD_SOURCE, /hover:border-border(?!-disabled)/u);
+	assert.doesNotMatch(CARD_SOURCE, /focus-within:border-border(?!-disabled)/u);
+	assert.match(CARD_SOURCE, /hover:bg-surface-hovered/u);
+	assert.match(CARD_SOURCE, /transition-\[border-color,background-color\] duration-xxshort ease-out-practical/u);
+	assert.doesNotMatch(CARD_SOURCE, /hover:bg-white/u);
 	assert.doesNotMatch(CARD_SOURCE, /focus-within:bg-/u);
 	assert.doesNotMatch(CARD_SOURCE, /active:bg-/u);
 	assert.doesNotMatch(CARD_SOURCE, /hover:shadow-md/u);
@@ -198,6 +211,9 @@ test("the row reveals Resume plus a Hide / Show eye where Agent List puts Archiv
 	assert.match(INDEX_SOURCE, /visibilityLabel=\{visibilityLabel\}/u);
 	assert.match(TYPES_SOURCE, /onToggleVisibility\?: \(item: AgentSessionItem\) => void;/u);
 	assert.match(TYPES_SOURCE, /visibilityLabel\?: string;/u);
+	// The shared row fades actions in; uncaptured-work snaps them on.
+	assert.match(LIST_CARD_SOURCE, /group-data-\[variant=uncaptured-work\]\/agent-row:transition-none/u);
+	assert.match(CARD_SOURCE, /data-variant="uncaptured-work"/u);
 });
 
 test("the untracked-work flyout owns capture, so the card has no footer chin", () => {
@@ -328,25 +344,20 @@ test("ships demo data and catalog entries for every attachment and size variant"
 	assert.doesNotMatch(DETAIL_SOURCE, /agent-session-demo-multi-link/u);
 });
 
-test("large uncaptured-work cards stack as one dashed well", () => {
-	// Figma 3039:2911: no gap, first card rounded on top, last on the bottom,
-	// shared edges collapsed, 4px dash / 2px gap. A single card is both first
-	// and last, so it keeps a full rounded frame.
+test("large uncaptured-work cards stack as one solid well", () => {
+	// No gap, first card rounded on top, last on the bottom, shared edges
+	// collapsed to a single stroke. A single card is both first and last, so
+	// it keeps a full rounded frame.
 	assert.match(INDEX_SOURCE, /variant === "large" \? "gap-0" : "gap-2"/u);
 	assert.match(INDEX_SOURCE, /data-stack=\{variant === "large" \? "well" : undefined\}/u);
 	assert.match(CARD_SOURCE, /\[li:first-child_&\]:rounded-t-lg/u);
 	assert.match(CARD_SOURCE, /\[li:last-child_&\]:rounded-b-lg/u);
-	assert.match(CARD_SOURCE, /\[li:not\(:last-child\)_&\]:\[--dash-bottom-size:0px\]/u);
 	assert.match(CARD_SOURCE, /\[li:not\(:last-child\)_&\]:border-b-0/u);
-	assert.match(CARD_SOURCE, /dash-4-2/u);
+	assert.match(CARD_SOURCE, /border border-solid/u);
+	assert.doesNotMatch(CARD_SOURCE, /dash-4-2/u);
 	assert.doesNotMatch(CARD_SOURCE, /rounded-none border bg-transparent/u);
 	assert.doesNotMatch(CARD_SOURCE, /rounded-lg border p-3/u);
 	assert.doesNotMatch(INDEX_SOURCE, /flex flex-col gap-2/u);
-	const themeSource = readFileSync(join(__dirname, "../../../app/dash-4-2.css"), "utf8");
-	assert.match(themeSource, /@utility dash-4-2/u);
-	assert.match(themeSource, /--border-dash-length: 4px/u);
-	assert.match(themeSource, /--border-dash-gap: 2px/u);
-	assert.match(themeSource, /repeating-linear-gradient/u);
 });
 
 test("the untracked-work flyout offers the first candidate key", () => {

@@ -62,7 +62,7 @@ function buildArrivalDelays(
 /**
  * Local coding sessions that never became work items.
  *
- * Large sessions are dashed uncaptured-work cards: the shared Agent List row
+ * Large sessions are solid uncaptured-work cards: the shared Agent List row
  * (identity, static stamp, viewer machine) sits on a single surface and reveals
  * the same hover/focus action pair Agent List rows use — Resume, plus a
  * Hide / Show eye where Agent List puts Archive. Work-item capture lives on the
