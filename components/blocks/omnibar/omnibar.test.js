@@ -200,6 +200,50 @@ test("Omnibar hoists the Timeline chip off the composer layout surface", () => {
 	assert.doesNotMatch(source, /key="omnibar-hover"\n\s+layout/u);
 });
 
+test("Omnibar gates the timeline behind entries rather than always rendering it", () => {
+	const source = readFileSync(new URL("./components/omnibar.tsx", import.meta.url), "utf8");
+	const bar = readFileSync(new URL("./components/omnibar-bar.tsx", import.meta.url), "utf8");
+
+	// No entries means no toggle, so every existing consumer keeps today's bar.
+	assert.match(source, /const timeline = timelineEntries\s*\?/u);
+	assert.match(bar, /\{timeline && !hideContextPill \? \(/u);
+	assert.match(bar, /<OmnibarTimelinePill/u);
+	assert.match(bar, /<ContextBarPill/u);
+	assert.doesNotMatch(bar, /Customize|CustomizeIcon/u);
+	// Only the horizontal axis takes the editor cell; `y` docks a sibling rail.
+	assert.match(bar, /timeline\?\.isTimeline === true && timeline\.axis === "x"/u);
+	assert.match(source, /timelineAxis === "y"/u);
+});
+
+test("Omnibar compact tone leaves the existing FloatingComposer chrome in place", () => {
+	const source = readFileSync(new URL("./components/omnibar.tsx", import.meta.url), "utf8");
+	const bar = readFileSync(new URL("./components/omnibar-bar.tsx", import.meta.url), "utf8");
+	const hook = readFileSync(new URL("./hooks/use-omnibar-state.ts", import.meta.url), "utf8");
+
+	assert.match(source, /tone = "inverse"/u);
+	assert.match(bar, /const isInverse = tone === "inverse"/u);
+	assert.match(bar, /isInverse \? OMNIBAR_BAR_SKIN : null/u);
+	assert.match(hook, /if \(onOpenPanelRef\.current\) \{/u);
+	assert.match(hook, /dispatch\(\{ type: "collapse" \}\)/u);
+});
+
+test("Omnibar send control stays disabled when the host wires no onSubmit", () => {
+	// `RovoComposerActionButton` resolves `disabled` as `submitDisabled || !canSubmit`.
+	// Without forwarding `submitDisabled`, the button enables on the first keystroke
+	// and then does nothing — `handleSubmit` returns early with no consumer.
+	const source = readFileSync(new URL("./components/omnibar.tsx", import.meta.url), "utf8");
+	const bar = readFileSync(new URL("./components/omnibar-bar.tsx", import.meta.url), "utf8");
+
+	assert.match(source, /<OmnibarBar[\s\S]*submitDisabled=\{onSubmit === undefined\}/u);
+	assert.match(
+		bar,
+		/<RovoComposerActionButton[\s\S]*submitDisabled=\{submitDisabled\}/u,
+		"the bar must forward submitDisabled, not just accept it",
+	);
+	// The runtime guard stays too: Enter reaches requestSubmit() without touching the button.
+	assert.match(source, /if \(!prompt \|\| onSubmit === undefined\) \{/u);
+});
+
 test("Omnibar morphs width and height instead of layout-scaling prompt text", () => {
 	// Motion `layout` projects size with transform:scale, which enlarges
 	// placeholder and button labels while the 96px pill becomes the 720px bar.

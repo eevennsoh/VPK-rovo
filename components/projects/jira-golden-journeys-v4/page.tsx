@@ -2,15 +2,13 @@
 
 import { useCallback, useState } from "react";
 
-import { RovoChatProvider, useRovoChat } from "@/app/contexts/context-rovo-chat";
+import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
 import { unlinkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
 import { JiraList, type JiraListRowData } from "@/components/blocks/jira-list";
-import { Omnibar } from "@/components/blocks/omnibar";
-import { SCRUBBER_DEMO_ENTRIES } from "@/components/blocks/scrubber";
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
 import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v1/data/agent-chat-data";
 import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journeys-v1/hooks/use-jira-golden-journeys-v1-agent-chat-demo";
@@ -60,8 +58,6 @@ export default function JiraGoldenJourneysV4Page(): React.ReactElement {
 
 function JiraGoldenJourneysV4App(): React.ReactElement {
 	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useJgpAgentChatDemo();
-	const { chatSurface, openChat, sendPrompt } = useRovoChat();
-	const isSidebarChatOpen = chatSurface === "sidebar";
 	const [boardColumns, setBoardColumns] = useState(createJiraGoldenJourneysV4PayBoardColumns);
 	const [detachedAgentSessionsByCard, setDetachedAgentSessionsByCard] = useState<
 		Readonly<Record<string, readonly AgentSessionItem[]>>
@@ -78,13 +74,6 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 			question: activity.question,
 		});
 	}, [openAgentChat]);
-	const handleOmnibarOpenPanel = useCallback(() => {
-		openChat("sidebar");
-	}, [openChat]);
-	const handleOmnibarSubmit = useCallback((prompt: string) => {
-		openChat("sidebar");
-		void sendPrompt(prompt);
-	}, [openChat, sendPrompt]);
 	const handleAgentSessionUnlink = useCallback((session: { id: string }, card: JiraKanbanCardData) => {
 		const activity = card.agentActivities?.find((candidate) => candidate.id === session.id);
 		if (!activity) return;
@@ -145,35 +134,9 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 					/>
 				</div>
 			</AppLayout>
-			{/*
-			 * The Omnibar is this board's single AI entry point, so the launcher is hidden —
-			 * two bottom-anchored Rovo affordances would compete for the same job. The
-			 * floating chat stays reachable: card "View chat" actions still open it.
-			 *
-			 * `tone="default"` keeps the existing compact prompt instead of the inverse black
-			 * bar. The side-panel control opens the same AppLayout sidebar Ask Rovo uses —
-			 * not a second docked ChatPanel. While that sidebar is open the bar unmounts so
-			 * the page never shows two composers at once.
-			 *
-			 * `positioning="viewport"` because the board fills the window and the bar has to
-			 * clear the horizontally scrolling columns rather than ride inside them. The
-			 * timeline is the same PAY sprint week the board narrates, so scrubbing it reads
-			 * as moving through this project's history.
-			 */}
-			{isSidebarChatOpen ? null : (
-				<Omnibar
-					onOpenPanel={handleOmnibarOpenPanel}
-					onSubmit={handleOmnibarSubmit}
-					positioning="viewport"
-					timelineAxis="x"
-					timelineEntries={SCRUBBER_DEMO_ENTRIES}
-					tone="default"
-				/>
-			)}
 			<JgpRovoOverlay
 				chatContextBar={chatContextBar}
 				externalThinkingMessageId={externalThinkingMessageId}
-				launcher="hidden"
 			/>
 		</>
 	);
