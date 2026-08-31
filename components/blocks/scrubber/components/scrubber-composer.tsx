@@ -132,11 +132,15 @@ export function ScrubberComposer({
 
 	const handleSubmit = useCallback(() => {
 		const prompt = draft.trim();
-		// The rail owns the row while scrubbing; there is no draft to send.
-		if (isTimeline || prompt.length === 0) {
+		// The rail owns the row while scrubbing; there is no draft to send. And without a
+		// consumer there is nowhere for the draft to go, so clearing it would destroy the
+		// only copy — the submit button is disabled in that case, but Enter still reaches
+		// the form's `requestSubmit()`, so the guard has to live here rather than only on
+		// the control.
+		if (isTimeline || prompt.length === 0 || onSubmit === undefined) {
 			return;
 		}
-		onSubmit?.(prompt);
+		onSubmit(prompt);
 		setDraft("");
 	}, [draft, isTimeline, onSubmit, setDraft]);
 

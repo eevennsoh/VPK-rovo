@@ -96,3 +96,18 @@ export function buildScrubberEntries(groups: readonly ScrubberGroup[]): Scrubber
 
 	return entries;
 }
+
+/**
+ * A mark's spoken name.
+ *
+ * Rank has to be said out loud: the two ranks differ only by rule length, which
+ * is invisible to a screen reader. Muting is visual-only for the same reason.
+ *
+ * It lives here rather than beside the mark that renders it because a component
+ * file that also exports helpers defeats Fast Refresh — React can no longer
+ * preserve component state across an edit.
+ */
+export function toScrubberMarkLabel(entry: ScrubberEntry): string {
+	const rank = entry.kind === "major" ? "major mark" : "minor mark";
+	return entry.muted === true ? `${entry.label}, ${rank}, filtered out` : `${entry.label}, ${rank}`;
+}

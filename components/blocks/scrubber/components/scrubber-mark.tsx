@@ -4,20 +4,12 @@ import type { RefObject } from "react";
 import type { MotionValue } from "motion/react";
 
 import { ScrubberRule } from "@/components/blocks/scrubber/components/scrubber-rule";
-import type { ScrubberEntry } from "@/components/blocks/scrubber/lib/scrubber-entries";
+import {
+	toScrubberMarkLabel,
+	type ScrubberEntry,
+} from "@/components/blocks/scrubber/lib/scrubber-entries";
 import { RULE_WEIGHT, type ScrubberMarkState } from "@/components/blocks/scrubber/lib/scrubber-geometry";
 import { cn } from "@/lib/utils";
-
-/**
- * The spoken name.
- *
- * Rank has to be said out loud: the two ranks differ only by rule length, which
- * is invisible to a screen reader. Muting is visual-only for the same reason.
- */
-export function toScrubberMarkLabel(entry: ScrubberEntry): string {
-	const rank = entry.kind === "major" ? "major mark" : "minor mark";
-	return entry.muted === true ? `${entry.label}, ${rank}, filtered out` : `${entry.label}, ${rank}`;
-}
 
 export interface ScrubberMarkProps {
 	axis: "x" | "y";

@@ -55,7 +55,14 @@ export function useOmnibarState({
 	});
 	const surfaceRef = useRef<HTMLDivElement | null>(null);
 	const collapseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const lastReportedStateRef = useRef<OmnibarState>(defaultState);
+	// Mirrors `machine` so `dispatch` can compute the next state without an updater.
+	const machineRef = useRef<OmnibarMachineState>({ state: defaultState, pinned: false });
+	// Kept current in an effect rather than during render, which must stay pure.
+	const onStateChangeRef = useRef(onStateChange);
+
+	useEffect(() => {
+		onStateChangeRef.current = onStateChange;
+	}, [onStateChange]);
 
 	const clearCollapseTimer = useCallback(() => {
 		if (collapseTimerRef.current !== null) {
@@ -65,17 +72,22 @@ export function useOmnibarState({
 	}, []);
 
 	const dispatch = useCallback((event: OmnibarEvent) => {
-		setMachine((current) => omnibarReducer(current, event));
-	}, []);
-
-	// Reporting lives in an effect rather than the updater so the updater stays pure.
-	useEffect(() => {
-		if (lastReportedStateRef.current === machine.state) {
+		// The next state is computed here, in the handler, rather than inside the
+		// updater: `onStateChange` has to fire somewhere, and notifying a parent from
+		// an effect costs every consumer an extra render. Reading and writing
+		// `machineRef` is safe because this only ever runs from an event handler or a
+		// timer — never during render, and never inside the updater itself.
+		const next = omnibarReducer(machineRef.current, event);
+		if (next === machineRef.current) {
 			return;
 		}
-		lastReportedStateRef.current = machine.state;
-		onStateChange?.(machine.state);
-	}, [machine.state, onStateChange]);
+		const previousState = machineRef.current.state;
+		machineRef.current = next;
+		setMachine(next);
+		if (next.state !== previousState) {
+			onStateChangeRef.current?.(next.state);
+		}
+	}, []);
 
 	useEffect(() => clearCollapseTimer, [clearCollapseTimer]);
 

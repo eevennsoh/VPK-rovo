@@ -10,7 +10,7 @@ import {
 	toNearestEntryIndex,
 	toResolvedIndex,
 } from "./lib/scrubber-geometry.ts";
-import { buildScrubberEntries } from "./lib/scrubber-entries.ts";
+import { buildScrubberEntries, toScrubberMarkLabel } from "./lib/scrubber-entries.ts";
 import {
 	SCRUBBER_MAGNIFY_IN,
 	SCRUBBER_MAGNIFY_OUT,
@@ -400,4 +400,28 @@ test("Scrubber zeroes every transition under reduced motion", () => {
 
 test("Scrubber reduced-motion transition actually removes the duration", () => {
 	assert.equal(SCRUBBER_REDUCED.duration, 0);
+});
+
+test("Scrubber mark labels speak the rank, because rule length alone is invisible", () => {
+	assert.equal(
+		toScrubberMarkLabel({ id: "a", kind: "major", offset: 0, label: "Wallet cut", heading: "Wallet cut" }),
+		"Wallet cut, major mark",
+	);
+	assert.equal(
+		toScrubberMarkLabel({ id: "b", kind: "minor", offset: 0.1, label: "Artifacts", heading: "Artifacts" }),
+		"Artifacts, minor mark",
+	);
+});
+
+test("Scrubber mark labels say when a mark is filtered out", () => {
+	// Muting is visual-only otherwise, so a screen reader would never learn the mark
+	// had been filtered.
+	assert.equal(
+		toScrubberMarkLabel({ id: "c", kind: "major", offset: 0, label: "Wallet cut", heading: "Wallet cut", muted: true }),
+		"Wallet cut, major mark, filtered out",
+	);
+	assert.equal(
+		toScrubberMarkLabel({ id: "d", kind: "major", offset: 0, label: "Wallet cut", heading: "Wallet cut", muted: false }),
+		"Wallet cut, major mark",
+	);
 });

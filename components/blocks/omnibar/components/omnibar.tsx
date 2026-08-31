@@ -38,8 +38,11 @@ export interface OmnibarProps {
 	 * Body of the docked state. Defaults to the self-contained `ChatPanel` block. Pass a real
 	 * surface (for example the Rovo sidebar chat) to swap it without this block taking on that
 	 * surface's providers.
+	 *
+	 * Supply a function to receive `onClose`: a plain node has no way to send the Omnibar back
+	 * to `collapsed`, so a custom panel would otherwise be a one-way door.
 	 */
-	sidePanel?: ReactNode;
+	sidePanel?: ReactNode | ((controls: Readonly<{ onClose: () => void }>) => ReactNode);
 }
 
 /**
@@ -74,10 +77,13 @@ export function Omnibar({
 
 	const handleSubmit = useCallback(() => {
 		const prompt = value.trim();
-		if (!prompt) {
+		// Without a consumer there is nowhere for the draft to go, so clearing it would
+		// destroy the only copy. The submit control is disabled in that case, but Enter
+		// still reaches `requestSubmit()`, so the guard has to live here too.
+		if (!prompt || onSubmit === undefined) {
 			return;
 		}
-		onSubmit?.(prompt);
+		onSubmit(prompt);
 		setValue("");
 	}, [onSubmit, value]);
 
@@ -94,7 +100,7 @@ export function Omnibar({
 			positioning={positioning}
 			shouldReduceMotion={shouldReduceMotion}
 		>
-			{sidePanel}
+			{typeof sidePanel === "function" ? sidePanel({ onClose: closePanel }) : sidePanel}
 		</OmnibarPanel>
 	);
 
@@ -119,13 +125,20 @@ export function Omnibar({
 							animate={{ opacity: 1, borderRadius: isExpanded ? BAR_RADIUS : PILL_RADIUS }}
 							className={cn(
 								"pointer-events-auto overflow-hidden bg-bg-neutral-bold shadow-overlay",
-								isExpanded ? "w-[min(720px,calc(100vw-32px))]" : "h-7 w-24",
+								// Measured against the rail, not the viewport: under
+								// `positioning="container"` the rail is the positioned ancestor, and a
+								// `100vw` cap would overflow any container narrower than the window —
+								// then get clipped by a host frame like the demo page's.
+								isExpanded ? "w-[min(720px,calc(100%-32px))]" : "h-7 w-24",
 							)}
 							exit={{ opacity: 0, transition: morphTransition }}
 							initial={{ opacity: 0, borderRadius: PILL_RADIUS }}
 							key="omnibar-surface"
 							layout
-							onFocusCapture={handlePin}
+							// Only pins once the bar is already open. Firing while collapsed would
+							// expand on Tab, unmounting the pill the focus is on and dropping focus
+							// to the document — the keyboard user could not get in at all.
+							onFocusCapture={isExpanded ? handlePin : undefined}
 							onPointerDown={handlePin}
 							onPointerEnter={handlePointerEnter}
 							onPointerLeave={handlePointerLeave}
