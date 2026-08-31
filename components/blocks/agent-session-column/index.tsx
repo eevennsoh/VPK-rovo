@@ -216,7 +216,6 @@ export function AgentSessionColumn({
 								<TooltipTrigger
 									render={
 										<Button
-											aria-expanded
 											aria-label={`Collapse ${title} column`}
 											className={cn(
 												"ms-auto shrink-0 opacity-0 transition-opacity duration-normal ease-out-practical",
@@ -233,7 +232,7 @@ export function AgentSessionColumn({
 								>
 									<Icon className="text-icon-subtle" render={<ShrinkHorizontalIcon label="" />} />
 								</TooltipTrigger>
-								<TooltipContent>Collapse column</TooltipContent>
+								<TooltipContent>Collapse</TooltipContent>
 							</Tooltip>
 						</TooltipProvider>
 					</div>

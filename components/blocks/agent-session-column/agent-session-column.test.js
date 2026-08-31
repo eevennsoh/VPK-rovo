@@ -167,6 +167,19 @@ test("collapsing swaps the cards for the notch rail, not for a rotated label", (
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /jira-kanban\/experimental/u);
 });
 
+test("column resize buttons swap icons without using selected button state", () => {
+	assert.match(INDEX_SOURCE, /aria-label=\{`Collapse \$\{title\} column`\}/u);
+	assert.match(INDEX_SOURCE, /<ShrinkHorizontalIcon/u);
+	assert.match(INDEX_SOURCE, /<TooltipContent>Collapse<\/TooltipContent>/u);
+	assert.match(RAIL_COLUMN_SOURCE, /aria-label=\{`Expand \$\{title\} column`\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /<GrowHorizontalIcon/u);
+	assert.match(RAIL_COLUMN_SOURCE, /<TooltipContent>Expand<\/TooltipContent>/u);
+	assert.doesNotMatch(INDEX_SOURCE, /<TooltipContent>Collapse column<\/TooltipContent>/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /<TooltipContent>Expand column<\/TooltipContent>/u);
+	assert.doesNotMatch(INDEX_SOURCE, /\baria-(?:expanded|pressed)(?:\s|=)/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /\baria-(?:expanded|pressed)(?:\s|=)/u);
+});
+
 test("each notch opens the shared session flyout rather than a forked preview", () => {
 	assert.match(
 		RAIL_COLUMN_SOURCE,

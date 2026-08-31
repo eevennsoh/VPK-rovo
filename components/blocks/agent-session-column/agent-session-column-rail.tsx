@@ -223,7 +223,6 @@ export function AgentSessionColumnRail({
 							<TooltipTrigger
 								render={
 									<Button
-										aria-expanded={false}
 										aria-label={`Expand ${title} column`}
 										className={cn("absolute shrink-0", HEAD_ON_REVEAL)}
 										onClick={onExpand}
@@ -235,7 +234,7 @@ export function AgentSessionColumnRail({
 							>
 								<Icon className="text-icon-subtle" render={<GrowHorizontalIcon label="" />} />
 							</TooltipTrigger>
-							<TooltipContent>Expand column</TooltipContent>
+							<TooltipContent>Expand</TooltipContent>
 						</Tooltip>
 					</TooltipProvider>
 				</div>
