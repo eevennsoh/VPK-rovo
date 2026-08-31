@@ -187,10 +187,25 @@ test("buildScrollMaskOverlayStyle fades visually without clipping hit-testing", 
 	);
 });
 
+test("buildScrollMaskOverlayStyle can fade into a parent backdrop other than surface", () => {
+	const color = "var(--color-bg-accent-gray-subtlest)";
+	const top = buildScrollMaskOverlayStyle({ color, edge: "top", fadeSize: "3rem" });
+	assert.equal(
+		top.backgroundImage,
+		"linear-gradient(to bottom, var(--color-bg-accent-gray-subtlest) 0, transparent 100%)",
+	);
+	const bottom = buildScrollMaskOverlayStyle({ color, edge: "bottom" });
+	assert.equal(
+		bottom.backgroundImage,
+		"linear-gradient(to top, var(--color-bg-accent-gray-subtlest) 0, transparent 100%)",
+	);
+});
+
 test("ScrollMaskEdgeOverlay is a pointer-events-none band gated by the caller", () => {
 	assert.match(SCROLL_MASK_SOURCE, /export function ScrollMaskEdgeOverlay/u);
 	assert.match(SCROLL_MASK_SOURCE, /data-scroll-mask-overlay=\{edge\}/u);
 	assert.match(SCROLL_MASK_SOURCE, /pointer-events-none absolute inset-x-0/u);
+	assert.match(SCROLL_MASK_SOURCE, /buildScrollMaskOverlayStyle\(\{ color, edge, fadeSize \}\)/u);
 });
 
 test("Scroll Mask is wired into the Visual catalog route and demo registry", () => {
