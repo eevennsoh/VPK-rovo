@@ -81,9 +81,11 @@ test("Experimental board header opens the production View picker without changin
 	assert.match(viewMenu, /<DropdownMenuLabel>Order<\/DropdownMenuLabel>[\s\S]*BOARD_SORT_ORDER_OPTIONS\.map/u);
 	// PR state and Agent sit in their own section between grouping/sorting and
 	// column/card chrome, so they scan as a pair instead of trailing Columns.
+	// Anchor after the Sort submenu closes so the first separator cannot match
+	// the nested Sort/Order divider inside that submenu.
 	assert.match(
 		viewMenu,
-		/<DropdownMenuSubTrigger>Sort by<\/DropdownMenuSubTrigger>[\s\S]*<DropdownMenuSeparator \/>[\s\S]*label="PR state"[\s\S]*label="Agent"[\s\S]*<DropdownMenuSeparator \/>[\s\S]*Column size[\s\S]*Hide done work items[\s\S]*label="Columns"[\s\S]*label="Show fields"/u,
+		/<DropdownMenuSubTrigger>Sort by<\/DropdownMenuSubTrigger>[\s\S]*<\/DropdownMenuSubContent>\s*<\/DropdownMenuSub>\s*<DropdownMenuSeparator \/>\s*<VisibilityToggleSubmenu[\s\S]*label="PR state"[\s\S]*label="Agent"[\s\S]*<DropdownMenuSeparator \/>[\s\S]*Column size[\s\S]*Hide done work items[\s\S]*label="Columns"[\s\S]*label="Show fields"/u,
 	);
 	assert.match(
 		groupOptions,
