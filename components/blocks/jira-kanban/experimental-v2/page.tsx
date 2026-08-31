@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import { useOptionalRovoChat } from "@/app/contexts";
+import type { JiraIssueAgentActivityLayout } from "@/components/blocks/jira-issue";
 import type {
 	JiraKanbanAgentData,
 	JiraKanbanAssigneeData,
@@ -21,7 +22,11 @@ import type {
 import { createJiraKanbanColumns } from "../jira-kanban-data";
 import { BoardFilterPopover } from "../experimental/components/board-filter-popover";
 import { ExperimentalV2JiraKanban } from "./experimental-v2-jira-kanban";
-import { ExperimentalV2JiraKanbanBoardHeader } from "./experimental-v2-board-header";
+import { EMPTY_COLLAPSED_BOARD_COLUMNS } from "../experimental/lib/board-column-collapse";
+import {
+	ExperimentalV2JiraKanbanBoardHeader,
+	type ExperimentalV2JiraKanbanView,
+} from "./experimental-v2-board-header";
 import { useBoardFilter, type BoardFilterActions } from "../experimental/hooks/use-board-filter";
 import {
 	BOARD_FILTER_DEMO_NOW_ISO,
@@ -105,12 +110,16 @@ export interface ExperimentalV2JiraKanbanPageHandle {
 }
 
 export interface ExperimentalV2JiraKanbanPageProps {
+	activeView?: ExperimentalV2JiraKanbanView;
 	activeCardCode?: string;
+	agentActivityLayout?: JiraIssueAgentActivityLayout;
+	agentSessionAssigneeIdAliases?: Readonly<Record<string, string>>;
 	agents?: readonly JiraKanbanAgentData[];
 	ariaLabel?: string;
 	boardColumns?: readonly JiraKanbanColumnData[];
 	compactHeader?: boolean;
 	headerAssignees?: readonly JiraKanbanAssigneeData[];
+	insightsEnabled?: boolean;
 	insightsDefaultAssigneeIds?: readonly string[];
 	isInsightsWorkItemInteractive?: (workItem: PulseWorkItem) => boolean;
 	isLooseWorkResumable?: (item: PulseLooseWork) => boolean;
@@ -121,6 +130,10 @@ export interface ExperimentalV2JiraKanbanPageProps {
 	onInsightsWorkItemClick?: (workItem: PulseWorkItem) => void;
 	onModeChange?: (mode: ExperimentalV2JiraKanbanMode) => void;
 	onResumeLooseWork?: (item: PulseLooseWork) => void;
+	onViewChange?: (view: ExperimentalV2JiraKanbanView) => void;
+	renderListContent?: (columns: readonly JiraKanbanColumnData[]) => ReactNode;
+	showBoardContent?: boolean;
+	showAgentSessionColumn?: boolean;
 	/**
 	 * Controlled unread watermark, so an owner rendering its own insights
 	 * affordance counts the same unread snapshots the toggle's badge does.
@@ -139,12 +152,16 @@ interface DraggedCardState {
 }
 
 export default function ExperimentalV2JiraKanbanPage({
+	activeView = "board",
 	activeCardCode,
+	agentActivityLayout,
+	agentSessionAssigneeIdAliases,
 	agents = BOARD_AGENTS,
 	ariaLabel = "Experimental v2 RFP board columns. Scroll horizontally to review all statuses.",
 	boardColumns: controlledBoardColumns,
 	compactHeader = false,
 	headerAssignees,
+	insightsEnabled = true,
 	insightsDefaultAssigneeIds,
 	isInsightsWorkItemInteractive,
 	isLooseWorkResumable,
@@ -155,8 +172,12 @@ export default function ExperimentalV2JiraKanbanPage({
 	onInsightsWorkItemClick,
 	onModeChange,
 	onResumeLooseWork,
+	onViewChange,
+	renderListContent,
 	onTimelineLastViewedAtChange,
 	ref,
+	showAgentSessionColumn = false,
+	showBoardContent = true,
 	timelineLastViewedAt: controlledTimelineLastViewedAt,
 	viewTabs,
 }: Readonly<ExperimentalV2JiraKanbanPageProps>) {
@@ -178,6 +199,7 @@ export default function ExperimentalV2JiraKanbanPage({
 	const [columnAgentAssignments, setColumnAgentAssignments] = useState<Record<string, string[]>>({});
 	const [localMode, setLocalMode] = useState<ExperimentalV2JiraKanbanMode>("board");
 	const mode = controlledMode ?? localMode;
+	const isPulse = insightsEnabled && mode === "pulse";
 	const updateMode = useCallback((nextMode: ExperimentalV2JiraKanbanMode) => {
 		if (controlledMode === undefined) {
 			setLocalMode(nextMode);
@@ -194,6 +216,10 @@ export default function ExperimentalV2JiraKanbanPage({
 	// decided, not view state that may quietly reset with the subtree.
 	const [requestedActionIds, setRequestedActionIds] = useState<ReadonlySet<string>>(() => new Set<string>());
 	const [capturedLooseWorkIds, setCapturedLooseWorkIds] = useState<ReadonlySet<string>>(() => new Set<string>());
+	// Owned here rather than inside the board: switching to the list or Pulse
+	// view unmounts `ExperimentalV2JiraKanban`, and a viewer's collapse choices are
+	// a deliberate setting that must outlive a temporary view switch.
+	const [collapsedColumns, setCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
 	const handleRequestAction = useCallback((action: { id: string }) => {
 		setRequestedActionIds((current) => new Set(current).add(action.id));
 	}, []);
@@ -211,7 +237,7 @@ export default function ExperimentalV2JiraKanbanPage({
 	const boardFilter = useBoardFilter();
 	const selectedAssigneeIds = boardFilter.selectedAssigneeIds;
 	const [localTimelineLastViewedAt, setLocalTimelineLastViewedAt] = useState<string | null>(() => (
-		controlledMode === "pulse"
+		insightsEnabled && controlledMode === "pulse"
 			? markTimelineViewed(PULSE_TIMELINE)
 			: EXPERIMENTAL_BOARD_LAST_VIEWED_AT
 	));
@@ -236,6 +262,8 @@ export default function ExperimentalV2JiraKanbanPage({
 	// the route's floating nudge through the ref handle below — goes through
 	// here.
 	const handleOpenTimeline = useCallback((snapshotId: string | null = null) => {
+		if (!insightsEnabled) return;
+
 		setPulseFocusSnapshotId(snapshotId);
 		markTimelineAsViewed();
 		const nextAssigneeIds = insightsDefaultAssigneeIds === undefined
@@ -245,7 +273,7 @@ export default function ExperimentalV2JiraKanbanPage({
 		setDraggedCard(null);
 		boardFilter.actions.setAssigneeIds(nextAssigneeIds);
 		updateMode("pulse");
-	}, [boardFilter.actions, insightsDefaultAssigneeIds, markTimelineAsViewed, selectedAssigneeIds, updateMode]);
+	}, [boardFilter.actions, insightsDefaultAssigneeIds, insightsEnabled, markTimelineAsViewed, selectedAssigneeIds, updateMode]);
 	useImperativeHandle(ref, () => ({
 		openTimeline: (snapshotId: string | null = null) => handleOpenTimeline(snapshotId),
 	}), [handleOpenTimeline]);
@@ -263,11 +291,11 @@ export default function ExperimentalV2JiraKanbanPage({
 		...boardFilter.actions,
 		toggleValue: (fieldId, valueId) => {
 			boardFilter.actions.toggleValue(fieldId, valueId);
-			if (fieldId === "parent" || fieldId === "sprint") {
+			if (insightsEnabled && (fieldId === "parent" || fieldId === "sprint")) {
 				handleOpenTimeline();
 			}
 		},
-	}), [boardFilter.actions, handleOpenTimeline]);
+	}), [boardFilter.actions, handleOpenTimeline, insightsEnabled]);
 	// Insights reads Parent and Sprint off the same filter the board reads its
 	// own fields off. One control, one selection model — the scope is derived
 	// here rather than owned separately, so the popover and the article cannot
@@ -299,15 +327,20 @@ export default function ExperimentalV2JiraKanbanPage({
 		[boardColumns, headerAssignees],
 	);
 	const filterAssignees = useMemo(
-		() => mode === "pulse"
+		() => isPulse
 			? mergeBoardFilterAssignees(assignees, PULSE_TIMELINE.members)
 			: assignees,
-		[assignees, mode],
+		[assignees, isPulse],
 	);
 	// Pulse faces are a shorthand for Filter → assignee. The roster reads the
 	// same field the popover writes, so the Filter button is pressed whenever
 	// a human or agent face is selected.
 	const pulseMemberId = toPulseMemberId(selectedAssigneeIds, PULSE_MEMBER_IDS);
+	const agentSessionMemberId = toPulseMemberId(
+		selectedAssigneeIds,
+		PULSE_MEMBER_IDS,
+		agentSessionAssigneeIdAliases,
+	);
 	const filteredBoardColumns = useMemo(
 		() => filterJiraKanbanColumnsByAssignee(boardColumns, selectedAssigneeIds),
 		[boardColumns, selectedAssigneeIds],
@@ -330,18 +363,12 @@ export default function ExperimentalV2JiraKanbanPage({
 		PULSE_TIMELINE.snapshots,
 		timelineLastViewedAt,
 	);
-	// The board's untracked-work column and the Insights rail show the same
-	// sessions from the same fixtures and commit through the same captured set,
-	// so capturing on the board is the same event as capturing in Insights.
-	// The column also honours the header's assignee filter: it narrows the
-	// status columns, and a filter that skipped this one would stop describing
-	// the whole board.
 	const agentSessionItems = useMemo(
 		() => toPulseSessionItems(
-			filterPulseLooseWorkByMember(pulseTimeline.looseWork, pulseMemberId),
+			filterPulseLooseWorkByMember(pulseTimeline.looseWork, agentSessionMemberId),
 			PULSE_TIMELINE.members,
 		),
-		[pulseMemberId, pulseTimeline.looseWork],
+		[agentSessionMemberId, pulseTimeline.looseWork],
 	);
 	const agentSessionHandlers = useMemo(
 		() => toPulseSessionHandlers({
@@ -494,15 +521,17 @@ export default function ExperimentalV2JiraKanbanPage({
 		});
 	};
 
-	const isPulse = mode === "pulse";
-
 	return (
 		<div className="flex h-full min-h-[640px] flex-col rounded-lg bg-surface">
 			<ExperimentalV2JiraKanbanBoardHeader
+				activeView={activeView}
 				assignees={assignees}
 				compact={compactHeader}
 				onSelectedAssigneeIdsChange={handleAssigneeFilterChange}
+				onViewChange={renderListContent ? onViewChange : undefined}
+				searchPlaceholder={`Search ${activeView}`}
 				selectedAssigneeIds={selectedAssigneeIds}
+				showBoardControls={showBoardContent}
 				facepile={isPulse ? (
 					<PulseRosterFacepile
 						members={PULSE_TIMELINE.members}
@@ -516,9 +545,10 @@ export default function ExperimentalV2JiraKanbanPage({
 						assignees={filterAssignees}
 						compact={compactHeader}
 						model={boardFilter.model}
+						surfaceLabel={activeView}
 					/>
 				}
-				modeToggle={
+				modeToggle={insightsEnabled ? (
 					<PulseModeToggle
 						active={isPulse}
 						onToggle={() => {
@@ -531,10 +561,13 @@ export default function ExperimentalV2JiraKanbanPage({
 						}}
 						unreadCount={isPulse ? 0 : timelineUnreadCount}
 					/>
-				}
+				) : undefined}
+				surfaceLabel={activeView}
 				viewTabs={viewTabs}
 			/>
-			{isPulse ? (
+			{showBoardContent ? (activeView === "list" && renderListContent ? (
+				renderListContent(filteredBoardColumns)
+			) : isPulse ? (
 				<ExperimentalPulse
 					answers={answers}
 					capturedLooseWorkIds={capturedLooseWorkIds}
@@ -556,15 +589,18 @@ export default function ExperimentalV2JiraKanbanPage({
 				<div className="flex min-h-0 min-w-0 flex-1">
 					<ExperimentalV2JiraKanban
 						activeCardCode={activeCardCode}
-						agentSessionColumn={{
+						agentActivityLayout={agentActivityLayout}
+						agentSessionColumn={showAgentSessionColumn ? {
 							capturedItemIds: capturedLooseWorkIds,
 							items: agentSessionItems,
 							...agentSessionHandlers,
-						}}
+						} : undefined}
 						agents={agents}
 						ariaLabel={ariaLabel}
 						assignedAgentIdsByColumn={columnAgentAssignments}
 						boardColumns={filteredBoardColumns}
+						collapsedColumns={collapsedColumns}
+						onCollapsedColumnsChange={setCollapsedColumns}
 						draggedCardCode={draggedCard?.card.code ?? null}
 						selectedCardCodes={selection.selectedCardCodes}
 						onCardClick={handleCardClick}
@@ -584,7 +620,7 @@ export default function ExperimentalV2JiraKanbanPage({
 						}}
 					/>
 				</div>
-			)}
+			)) : null}
 		</div>
 	);
 }

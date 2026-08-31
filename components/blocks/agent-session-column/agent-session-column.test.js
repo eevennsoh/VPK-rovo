@@ -60,9 +60,9 @@ const MANIFEST_SOURCE = readFileSync(
 	"utf8",
 );
 
-test("the column is a sunken surface, unlike the board's unfilled status columns", () => {
-	assert.match(INDEX_SOURCE, /bg-surface-sunken/u);
-	// Sunken is the whole point of the column, so it must not be reachable only
+test("the column is a filled accent-gray plane, unlike the board's unfilled status columns", () => {
+	assert.match(INDEX_SOURCE, /bg-bg-accent-gray-subtlest/u);
+	// The fill is the whole point of the column, so it must not be reachable only
 	// through a caller-supplied class.
 	assert.doesNotMatch(INDEX_SOURCE, /className=\{cn\(\s*className/u);
 	assert.match(INDEX_SOURCE, /borderRadius: token\("radius\.xlarge"\)/u);
@@ -72,10 +72,11 @@ test("the fill starts below the header, so the title shares the status columns' 
 	// The header has to sit on the board surface at the same inset and baseline
 	// as `To do`. Filling the <section> itself would put the title inside the
 	// grey and push it 8px in and 8px down from every other column title.
-	assert.doesNotMatch(INDEX_SOURCE, /<section[\s\S]*?className=\{cn\(\s*"[^"]*bg-surface-sunken/u);
-	assert.doesNotMatch(INDEX_SOURCE, /"group\/session-column[^"]*bg-surface-sunken/u);
+	assert.doesNotMatch(INDEX_SOURCE, /<section[\s\S]*?className=\{cn\(\s*"[^"]*bg-bg-accent-gray-subtlest/u);
+	assert.doesNotMatch(INDEX_SOURCE, /"group\/session-column[^"]*bg-bg-accent-gray-subtlest/u);
 	// The fill is a plane the header is a sibling of, not an ancestor of.
-	assert.match(INDEX_SOURCE, /const AGENT_SESSION_PLANE = "[^"]*bg-surface-sunken[^"]*";/u);
+	assert.match(INDEX_SOURCE, /bg-bg-accent-gray-subtlest/u);
+	assert.match(INDEX_SOURCE, /const AGENT_SESSION_PLANE =/u);
 	// The section carries no padding of its own either — that would inset the
 	// header just as surely as the fill would.
 	assert.doesNotMatch(INDEX_SOURCE, /padding: collapsed \?/u);
@@ -95,8 +96,19 @@ test("the header count defaults to the rendered sessions and can be overridden",
 
 test("the scrollport reserves the focus-ring gutter instead of clipping a focused card", () => {
 	assert.match(INDEX_SOURCE, /-m-1 min-h-0 min-w-0 flex-1 overflow-y-auto p-1/u);
-	assert.match(INDEX_SOURCE, /buildScrollMaskStyle/u);
 	assert.match(INDEX_SOURCE, /useHasVerticalOverflow/u);
+});
+
+test("edge fades sit on the column plane so they span the full backdrop width", () => {
+	// Mask-image on the inset scrollport left a gutter (padding + scrollbar track)
+	// where cards stayed sharp. Overlays are positioned to the plane instead.
+	assert.match(INDEX_SOURCE, /ScrollMaskEdgeOverlay/u);
+	assert.match(INDEX_SOURCE, /AGENT_SESSION_PLANE_FADE_COLOR = "var\(--color-bg-accent-gray-subtlest\)"/u);
+	assert.match(INDEX_SOURCE, /showTopScrollMask \? \(/u);
+	assert.match(INDEX_SOURCE, /showBottomScrollMask \? \(/u);
+	assert.match(INDEX_SOURCE, /edge="top"/u);
+	assert.match(INDEX_SOURCE, /edge="bottom"/u);
+	assert.doesNotMatch(INDEX_SOURCE, /buildScrollMaskStyle/u);
 });
 
 test("an empty column says so rather than rendering an empty list", () => {
@@ -135,11 +147,16 @@ test("the board column commits through the same captured set as Insights", () =>
 	// One fixture list, read through the same day/scope filter the rail reads.
 	assert.match(BOARD_PAGE_SOURCE, /looseWork: pulseTimeline\.looseWork,/u);
 	// The header's assignee filter narrows the status columns, so it narrows
-	// this column too — routed through the roster boundary, because only some
-	// assignee ids name a session member. Behaviour lives in pulse-sessions.test.js.
+	// this column too. Golden Journeys aliases board assignees onto session
+	// members before the loose-work filter runs.
+	assert.match(BOARD_PAGE_SOURCE, /agentSessionAssigneeIdAliases\?: Readonly<Record<string, string>>;/u);
 	assert.match(
 		BOARD_PAGE_SOURCE,
-		/filterPulseLooseWorkByMember\(pulseTimeline\.looseWork, pulseMemberId\)/u,
+		/toPulseMemberId\(\s*selectedAssigneeIds,\s*PULSE_MEMBER_IDS,\s*agentSessionAssigneeIdAliases,\s*\)/u,
+	);
+	assert.match(
+		BOARD_PAGE_SOURCE,
+		/filterPulseLooseWorkByMember\(pulseTimeline\.looseWork, agentSessionMemberId\)/u,
 	);
 });
 
