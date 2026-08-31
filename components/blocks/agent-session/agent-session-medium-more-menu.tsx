@@ -37,11 +37,13 @@ export function AgentSessionMediumMoreMenu({
 
 	return (
 		<DropdownMenu onOpenChange={setOpen} open={open}>
-			<span
+			<div
 				className={cn(
-					"flex h-6 w-0 shrink-0 overflow-hidden transition-[width] duration-fast ease-out-practical motion-reduce:transition-none",
+					"flex h-6 w-0 shrink-0 overflow-hidden transition-[width] duration-fast ease-out-practical",
 					"group-hover/session-card:w-6 group-has-[:focus-visible]/session-card:w-6",
-					open ? "w-6" : null,
+					"group-has-[:focus-visible]/session-card:overflow-visible",
+					"motion-reduce:transition-none",
+					open ? "w-6 overflow-visible" : null,
 				)}
 			>
 				<DropdownMenuTrigger
@@ -54,7 +56,6 @@ export function AgentSessionMediumMoreMenu({
 								"group-has-[:focus-visible]/session-card:pointer-events-auto group-has-[:focus-visible]/session-card:opacity-100",
 								open ? "pointer-events-auto opacity-100" : null,
 							)}
-							data-popup-open={open || undefined}
 							onPointerDown={stopSessionDrag}
 							size="icon-compact"
 							type="button"
@@ -62,9 +63,9 @@ export function AgentSessionMediumMoreMenu({
 						/>
 					)}
 				>
-					<Icon render={<ShowMoreHorizontalIcon label="" size="small" color="currentColor" />} />
+					<Icon className="text-icon-subtle" render={<ShowMoreHorizontalIcon label="" size="small" color="currentColor" />} />
 				</DropdownMenuTrigger>
-			</span>
+			</div>
 			<DropdownMenuContent align="end" className="min-w-0 w-max">
 				<DropdownMenuItem disabled={!hasSubtasks} onSelect={() => onSubtasks?.()}>
 					Add as a subtask

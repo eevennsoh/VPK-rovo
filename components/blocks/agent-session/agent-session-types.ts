@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 import type { AgentListItem } from "@/components/blocks/agent-list";
 import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
 
@@ -17,6 +19,7 @@ export type AgentSessionVariant = "large" | "medium-detached" | "medium-attached
 
 export interface AgentSessionProps {
 	className?: string;
+	style?: CSSProperties;
 	/** Card footprint. Defaults to the full large uncaptured-work card. */
 	variant?: AgentSessionVariant;
 	/** Sessions to render; defaults to relationship-appropriate built-in sample data. */
@@ -87,6 +90,13 @@ export interface AgentSessionProps {
 	visibilityLabel?: string;
 	/** Called when a card body is activated. */
 	onView?: (item: AgentSessionItem) => void;
+	/**
+	 * Id of the session whose card is selected. Omit to let the list own a
+	 * single-select toggle; pass `null` to control an empty selection.
+	 */
+	selectedItemId?: string | null;
+	/** Called when the viewer selects or deselects a card. */
+	onSelectedItemIdChange?: (itemId: string | null) => void;
 	/** Opt-in: makes each medium-detached row a draggable session that can reattach. */
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
 	/**

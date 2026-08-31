@@ -75,7 +75,7 @@ export function AgentSessionMediumCard({
 					sizePx={16}
 					vpkLogo={item.agent.vpkLogo}
 				/>
-				<span className="min-w-0 flex-1 truncate text-left text-xs font-normal leading-4">
+				<span className="min-w-0 flex-1 truncate text-left text-xs font-normal leading-4 text-text-subtlest">
 					{label}
 				</span>
 			</>
@@ -95,7 +95,7 @@ export function AgentSessionMediumCard({
 					type="button"
 					variant="ghost"
 				>
-					<Icon className="text-icon" render={<AddIcon label="" size="small" />} />
+					<Icon className="text-icon-subtle" render={<AddIcon label="" size="small" />} />
 				</Button>
 				{invoker === undefined ? null : (
 					<span

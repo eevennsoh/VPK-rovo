@@ -343,6 +343,9 @@ function JiraIssueDefault({
 		|| resolvedAgentActivityMode === "awaiting-input"
 		|| hasAgentDoneNotification
 		|| isAttachingSession;
+	const hasAgentActivityChin = activeAgentActivities.length > 0
+		|| hasAgentDoneNotification
+		|| isAttachingSession;
 	const hasIssueRows = hasSubtasks;
 	const hasAgentActivityPresentation = agentActivityMode !== undefined || Boolean(agentActivities?.length) || hasAgentDoneNotification;
 	const usesAgentActivityShell = hasAgentActivityPresentation || Boolean(agentSessionTransfer);
@@ -714,6 +717,13 @@ function JiraIssueDefault({
 						</motion.div>
 					) : null}
 				</AnimatePresence>
+				{hasActiveAgentActivityShell && !hasAgentActivityChin ? (
+					<div
+						aria-hidden
+						className="h-1"
+						data-slot="jira-issue-agent-shell-gutter"
+					/>
+				) : null}
 			</LayoutGroup>
 		</motion.div>
 	);

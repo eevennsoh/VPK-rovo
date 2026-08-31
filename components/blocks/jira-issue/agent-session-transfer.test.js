@@ -27,7 +27,7 @@ const TRANSFER_REGION_BLOCK = TRANSFER_SOURCE.slice(
 	TRANSFER_SOURCE.indexOf("export function JiraIssueAgentSessionTransfer("),
 );
 
-test("Jira issue agent session transfer adds two demo phases gated to the experimental variant", () => {
+test("Jira issue agent session transfer adds demo phases gated to the experimental variant", () => {
 	assert.ok(BASE_DEMO_STATES_START >= 0, "the base demo-state list must exist");
 	assert.ok(
 		TRANSFER_DEMO_STATES_START > BASE_DEMO_STATES_START,
@@ -36,15 +36,15 @@ test("Jira issue agent session transfer adds two demo phases gated to the experi
 	// The two phases are real demo states, not ad-hoc strings.
 	assert.match(
 		PAGE_SOURCE,
-		/type JiraIssueAgentActivityDemoState =[\s\S]*\| "agent-session-unlink"\s*\n\s*\| "agent-session-link";/u,
+		/type JiraIssueAgentActivityDemoState =[\s\S]*\| "agent-session-unlink"\s*\n\s*\| "agent-session-running-unlink"\s*\n\s*\| "agent-session-link";/u,
 	);
 	assert.match(
 		PAGE_SOURCE,
-		/const JIRA_ISSUE_AGENT_SESSION_TRANSFER_DEMO_STATES = \[\s*\n\s*\{ value: "agent-session-unlink", label: "Unlink" \},\s*\n\s*\{ value: "agent-session-link", label: "Link" \},\s*\n\] as const satisfies readonly \{ value: JiraIssueAgentActivityDemoState; label: string \}\[\];/u,
+		/const JIRA_ISSUE_AGENT_SESSION_TRANSFER_DEMO_STATES = \[\s*\n\s*\{ value: "agent-session-unlink", label: "Unlink" \},\s*\n\s*\{ value: "agent-session-running-unlink", label: "1 running \+ 2 unlink" \},\s*\n\s*\{ value: "agent-session-link", label: "Link" \},\s*\n\] as const satisfies readonly \{ value: JiraIssueAgentActivityDemoState; label: string \}\[\];/u,
 	);
 	assert.match(
 		PAGE_SOURCE,
-		/function isSessionTransferDemoState\(state: JiraIssueAgentActivityDemoState\): boolean \{\s*\n\s*return state === "agent-session-unlink" \|\| state === "agent-session-link";/u,
+		/function isSessionTransferDemoState\(state: JiraIssueAgentActivityDemoState\): boolean \{\s*\n\s*return state === "agent-session-unlink"\s*\n\s*\|\| state === "agent-session-running-unlink"\s*\n\s*\|\| state === "agent-session-link";/u,
 	);
 	// Move is gone: no demo phase, no work-item fixtures, no move commit path.
 	assert.doesNotMatch(PAGE_SOURCE, /agent-session-move|JIRA_ISSUE_MOVE_WORK_ITEMS|onMove/u);
@@ -64,24 +64,73 @@ test("Jira issue agent session transfer adds two demo phases gated to the experi
 		PAGE_SOURCE,
 		/const isTransferPhase = showSessionTransferStates && isSessionTransferDemoState\(agentActivityState\);/u,
 	);
-	// A transfer phase is what mounts the transfer config; nothing else does.
+	// Every attached running chin on the experimental demo mounts the well —
+	// 1 agent, 1-n, needs input, Link, and 1 running + 2 unlink — not only the
+	// Unlink / Link tab labels.
+	assert.match(PAGE_SOURCE, /const hasChinToUnlink = Boolean\(agentActivities\?\.length\);/u);
 	assert.match(
 		PAGE_SOURCE,
-		/const agentSessionTransfer: JiraIssueAgentSessionTransferConfig \| undefined = useMemo\(\s*\n\s*\(\) => \(isTransferPhase && !isLinkPhase \? \{ onUnlink: handleSessionUnlink \} : undefined\),/u,
+		/const agentSessionTransfer: JiraIssueAgentSessionTransferConfig \| undefined = useMemo\(\(\) => \{\s*\n\s*if \(!showSessionTransferStates \|\| \(!hasChinToUnlink && !showDetachedSessions\)\) \{\s*\n\s*return undefined;\s*\n\s*\}\s*\n\s*return \{\s*\n\s*onLink: handleSessionLink,\s*\n\s*onUnlink: hasChinToUnlink \? handleSessionUnlink : undefined,\s*\n\s*\};/u,
 	);
 });
 
-test("Jira issue unlink hands the session to the Link phase, detached under the work item", () => {
-	// Dropping on the well is the only commit, and it lands the session in the
-	// detached card that renders below the issue.
+test("Jira issue unlink detaches under the work item; Link remounts the chin", () => {
 	assert.match(
 		PAGE_SOURCE,
-		/const handleSessionUnlink = useCallback\(\(\) => \{\s*\n\s*setAgentActivityState\("agent-session-link"\);\s*\n\s*\}, \[\]\);/u,
+		/const handleSessionUnlink = useCallback\(\(\) => \{\s*\n\s*setAgentActivityState\("agent-session-unlink"\);\s*\n\s*\}, \[\]\);/u,
 	);
-	assert.match(PAGE_SOURCE, /\{isLinkPhase \? \(\s*\n\s*<JiraIssueDetachedAgentSession/u);
-	// The Link phase drops the transfer region, so the detached card is not
-	// offered another drop well while it is already off the card.
-	assert.match(PAGE_SOURCE, /const isLinkPhase = isTransferPhase && agentActivityState === "agent-session-link";/u);
+	assert.match(
+		PAGE_SOURCE,
+		/const handleSessionLink = useCallback\(\(\) => \{\s*\n\s*setAgentActivityState\("agent-session-link"\);\s*\n\s*\}, \[\]\);/u,
+	);
+	assert.match(PAGE_SOURCE, /const isUnlinkPhase = isTransferPhase && agentActivityState === "agent-session-unlink";/u);
+	assert.match(PAGE_SOURCE, /const isRunningUnlinkPhase = isTransferPhase && agentActivityState === "agent-session-running-unlink";/u);
+	// Backdrop stays via `working` mode; the chin stays empty because Unlink
+	// no longer returns an activity row.
+	assert.match(
+		PAGE_SOURCE,
+		/if \(state === "agent-session-unlink"\) \{\s*\n\s*return "working";/u,
+	);
+	assert.doesNotMatch(PAGE_SOURCE, /case "agent-session-unlink":\s*\n\s*return JIRA_ISSUE_AGENT_ACTIVITIES/u);
+	assert.match(PAGE_SOURCE, /sessionTransferAfter=\{showDetachedSessions/u);
+	assert.match(PAGE_SOURCE, /sessionDrag=\{sessionDrag\}/u);
+	assert.match(PAGE_SOURCE, /variant="medium-detached"/u);
+	assert.doesNotMatch(PAGE_SOURCE, /variant="medium-attached"/u);
+	assert.doesNotMatch(PAGE_SOURCE, /JiraIssueDetachedAgentSession/u);
+	// Link is the 1-agent chin, not a sibling attached session card.
+	assert.match(
+		PAGE_SOURCE,
+		/case "single-agent-working":\s*\n\s*case "agent-session-link":\s*\n\s*case "agent-session-running-unlink":\s*\n\s*return JIRA_ISSUE_AGENT_ACTIVITIES\.slice\(0, 1\);/u,
+	);
+});
+
+test("Jira issue experimental demo composes one running chin with two detached unlink cards", () => {
+	// Same chin as "1 agent"; two distinct v4 detached sessions, not a second chin.
+	assert.match(
+		PAGE_SOURCE,
+		/case "single-agent-working":\s*\n\s*case "agent-session-link":\s*\n\s*case "agent-session-running-unlink":\s*\n\s*return JIRA_ISSUE_AGENT_ACTIVITIES\.slice\(0, 1\);/u,
+	);
+	assert.match(PAGE_SOURCE, /import \{ AGENT_SESSION_ITEMS, AgentSession \} from "@\/components\/blocks\/agent-session";/u);
+	assert.match(
+		PAGE_SOURCE,
+		/const detachedSessions = isRunningUnlinkPhase\s*\n\s*\? AGENT_SESSION_ITEMS\.slice\(0, 2\)\s*\n\s*: AGENT_SESSION_ITEMS\.slice\(0, 1\);/u,
+	);
+	assert.doesNotMatch(PAGE_SOURCE, /JIRA_ISSUE_TRANSFER_SESSION|JIRA_ISSUE_SECOND_TRANSFER_SESSION/u);
+	// `#medium-detached` shows the person avatar from `invokedBy` on these items.
+	const sessionDataSource = readFileSync(
+		join(__dirname, "../agent-session/data.ts"),
+		"utf8",
+	);
+	assert.match(sessionDataSource, /export const AGENT_SESSION_ITEMS[\s\S]*invokedBy: \{[\s\S]*avatarSrc: "\/avatar-user\/andrew-park/u);
+	assert.match(PAGE_SOURCE, /const isRunningUnlinkPhase = isTransferPhase && agentActivityState === "agent-session-running-unlink";/u);
+	assert.match(PAGE_SOURCE, /sessionTransferAfter=\{showDetachedSessions/u);
+	assert.match(PAGE_SOURCE, /items=\{detachedSessions\}/u);
+	assert.match(PAGE_SOURCE, /style=\{isRunningUnlinkPhase \? \{ gap: token\("space\.025"\) \} : undefined\}/u);
+	assert.match(PAGE_SOURCE, /variant="medium-detached"/u);
+	assert.doesNotMatch(
+		PAGE_SOURCE,
+		/agentActivityState === "agent-session-running-unlink"[\s\S]{0,80}variant="medium-attached"/u,
+	);
 });
 
 test("Jira issue raised agent activity demo still exposes exactly the original six tabs", () => {
@@ -92,7 +141,7 @@ test("Jira issue raised agent activity demo still exposes exactly the original s
 	}
 	// The transfer phases must never leak into the shared base list, which is
 	// what the raised (non-experimental) demo renders verbatim.
-	for (const value of ["agent-session-unlink", "agent-session-link"]) {
+	for (const value of ["agent-session-unlink", "agent-session-running-unlink", "agent-session-link"]) {
 		assert.doesNotMatch(BASE_DEMO_STATES_BLOCK, new RegExp(`"${value}"`, "u"));
 	}
 	assert.match(PAGE_SOURCE, /agentActivityLayout=\{isExperimentalAgentActivityVariant \? "split" : "merged"\}/u);
