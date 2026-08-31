@@ -8,18 +8,17 @@ import {
 	omnibarReducer,
 } from "./omnibar-machine.ts";
 import {
-	OMNIBAR_CONTENT,
-	OMNIBAR_CONTENT_EXIT,
-	OMNIBAR_CONTEXT_ENTER,
-	OMNIBAR_CONTEXT_EXIT,
-	OMNIBAR_MORPH_ENTER,
-	OMNIBAR_MORPH_EXIT,
+	OMNIBAR_BAR_ZOOM,
 	OMNIBAR_PANEL_ENTER,
 	OMNIBAR_PANEL_EXIT,
+	OMNIBAR_PILL_ZOOM,
 	OMNIBAR_RAIL_ENTER,
 	OMNIBAR_RAIL_EXIT,
 	OMNIBAR_REDUCED,
+	OMNIBAR_SURFACE_ENTER,
+	OMNIBAR_SURFACE_EXIT,
 	resolveOmnibarTransition,
+	resolveOmnibarZoom,
 } from "./omnibar-motion.ts";
 
 const EXPANDED_UNPINNED = { state: "expanded", pinned: false };
@@ -119,26 +118,30 @@ test("Omnibar collapse delay stays short enough to feel immediate", () => {
 });
 
 test("Omnibar exits are shorter than the matching entrances", () => {
-	assert.ok(OMNIBAR_MORPH_EXIT.duration < OMNIBAR_MORPH_ENTER.duration);
-	assert.ok(OMNIBAR_CONTENT_EXIT.duration < OMNIBAR_CONTENT.duration);
-	assert.ok(OMNIBAR_CONTEXT_EXIT.duration < OMNIBAR_CONTEXT_ENTER.duration);
+	assert.ok(OMNIBAR_SURFACE_EXIT.duration < OMNIBAR_SURFACE_ENTER.duration);
 	assert.ok(OMNIBAR_PANEL_EXIT.duration < OMNIBAR_PANEL_ENTER.duration);
 	assert.ok(OMNIBAR_RAIL_EXIT.duration < OMNIBAR_RAIL_ENTER.duration);
 });
 
-test("Omnibar morph uses the large in-place signature, not a 200ms snap", () => {
-	// Pill → 720px bar is a large in-place transform. duration-medium (0.2s) sits
-	// under the trackability threshold; duration-slower + ease-in-out is the
-	// recipe for that role. Content waits until the surface has started growing.
-	assert.deepEqual(OMNIBAR_MORPH_ENTER, { duration: 0.4, ease: [0.4, 0, 0, 1] });
-	assert.deepEqual(OMNIBAR_MORPH_EXIT, { duration: 0.25, ease: [0.6, 0, 0.8, 0.6] });
-	assert.equal(OMNIBAR_CONTENT.delay, 0.15);
-	assert.equal(OMNIBAR_CONTENT.duration, 0.15);
-	assert.ok(!("delay" in OMNIBAR_CONTENT_EXIT));
-	// Timeline staggers in after the prompt has started, and leaves with no delay
-	// so it is gone before the composer morphs back.
-	assert.ok(OMNIBAR_CONTEXT_ENTER.delay > OMNIBAR_CONTENT.delay);
-	assert.ok(!("delay" in OMNIBAR_CONTEXT_EXIT));
+test("Omnibar trades the pill and the bar on one z-axis, not one morphing box", () => {
+	// Expanding moves both surfaces toward the viewer — the pill overshoots past 1 as it
+	// leaves, the bar arrives from behind it. Collapsing is the same move reversed. If
+	// either pair ever scaled the same direction the two would read as a dissolve with no
+	// depth, and if the pill entered from below 1 the transition would reverse mid-flight.
+	assert.ok(OMNIBAR_PILL_ZOOM.exitTo > 1, "the pill leaves toward the viewer");
+	assert.ok(OMNIBAR_BAR_ZOOM.enterFrom < 1, "the bar arrives from behind");
+	assert.ok(OMNIBAR_BAR_ZOOM.exitTo < 1, "the bar leaves away from the viewer");
+	assert.ok(OMNIBAR_PILL_ZOOM.enterFrom > 1, "the pill arrives from in front");
+	// Exits travel further than entrances because they get roughly a third of the time.
+	assert.ok(OMNIBAR_PILL_ZOOM.exitTo > OMNIBAR_PILL_ZOOM.enterFrom);
+	assert.ok(OMNIBAR_BAR_ZOOM.exitTo < OMNIBAR_BAR_ZOOM.enterFrom);
+});
+
+test("Omnibar surfaces use duration-slow in and duration-fast out", () => {
+	// A 720px surface needs the long decelerating landing; a tenth of a second out keeps
+	// the leaving geometry from reading as a double image over the arriving one.
+	assert.deepEqual(OMNIBAR_SURFACE_ENTER, { duration: 0.25, ease: [0, 0.4, 0, 1] });
+	assert.deepEqual(OMNIBAR_SURFACE_EXIT, { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] });
 });
 
 test("Omnibar edge rail enters on the practical curve, not the bold one", () => {
@@ -151,12 +154,8 @@ test("Omnibar edge rail enters on the practical curve, not the bold one", () => 
 
 test("Omnibar zeroes every transition under reduced motion", () => {
 	for (const transition of [
-		OMNIBAR_MORPH_ENTER,
-		OMNIBAR_MORPH_EXIT,
-		OMNIBAR_CONTENT,
-		OMNIBAR_CONTENT_EXIT,
-		OMNIBAR_CONTEXT_ENTER,
-		OMNIBAR_CONTEXT_EXIT,
+		OMNIBAR_SURFACE_ENTER,
+		OMNIBAR_SURFACE_EXIT,
 		OMNIBAR_PANEL_ENTER,
 		OMNIBAR_PANEL_EXIT,
 		OMNIBAR_RAIL_ENTER,
@@ -170,34 +169,53 @@ test("Omnibar zeroes every transition under reduced motion", () => {
 	assert.equal(OMNIBAR_REDUCED.duration, 0);
 });
 
+test("Omnibar flattens the zoom under reduced motion, not just the duration", () => {
+	// A zero-duration transition still paints one frame at `initial`, which on a 720px
+	// surface is a visible pop rather than the absence of motion the user asked for.
+	for (const scale of [OMNIBAR_PILL_ZOOM.enterFrom, OMNIBAR_PILL_ZOOM.exitTo, OMNIBAR_BAR_ZOOM.enterFrom, OMNIBAR_BAR_ZOOM.exitTo]) {
+		assert.equal(resolveOmnibarZoom(scale, true), 1);
+		assert.equal(resolveOmnibarZoom(scale, false), scale);
+		assert.equal(resolveOmnibarZoom(scale, null), scale);
+	}
+});
+
 test("Omnibar pill uses the brand-color Rovo sparkle, not the inverse glyph", () => {
 	const source = readFileSync(new URL("./components/omnibar-pill.tsx", import.meta.url), "utf8");
 	assert.match(source, /<RovoSparkleMark active selected=\{false\} size="default" \/>/u);
 	assert.doesNotMatch(source, /active=\{false\}/u);
 });
 
-test("Omnibar collapsed chrome matches the floating Rovo button, not a light pill", () => {
+test("Omnibar surfaces paint their own chrome so neither inherits a resizing fill", () => {
+	// A fill on a shared ancestor would have to animate between the two geometries, which
+	// is the morph the cross-fade replaces. The pill keeps the floating Rovo button's
+	// chrome and the inverse bar keeps the black composer chrome, each on its own box.
 	const source = readFileSync(new URL("./components/omnibar.tsx", import.meta.url), "utf8");
+	const bar = readFileSync(new URL("./components/omnibar-bar.tsx", import.meta.url), "utf8");
 	const pill = readFileSync(new URL("./components/omnibar-pill.tsx", import.meta.url), "utf8");
-	assert.match(source, /isDefaultTone\s*\?\s*"overflow-visible bg-transparent shadow-none"/u);
-	assert.match(source, /overflow-hidden bg-bg-neutral-bold shadow-overlay/u);
-	assert.match(source, /paintChrome=\{isDefaultTone\}/u);
-	assert.match(pill, /bg-bg-neutral-bold/u);
+
+	assert.match(pill, /h-7 w-24[^"]*rounded-full bg-bg-neutral-bold/u);
 	assert.match(pill, /token\("elevation.shadow.overlay"\)/u);
+	assert.match(bar, /bg-bg-neutral-bold p-3 shadow-overlay/u);
+	assert.doesNotMatch(bar, /bg-transparent p-3 shadow-none/u);
+	// Nothing between the rail and the two surfaces may carry a fill or a clip.
+	assert.doesNotMatch(source, /bg-bg-neutral-bold|shadow-overlay|overflow-hidden/u);
 	assert.doesNotMatch(source, /bg-surface-raised/u);
 });
 
-test("Omnibar hoists the Timeline chip off the composer layout surface", () => {
+test("Omnibar stacks both geometries in one grid cell instead of hoisting the Timeline chip", () => {
+	// Overlapping in a single cell is what lets the outgoing surface stay centred over the
+	// incoming one. It also retires the compact-tone hoist: with no layout animation left,
+	// there is nothing for a held composer or a staggered chip to protect against.
 	const source = readFileSync(new URL("./components/omnibar.tsx", import.meta.url), "utf8");
 	const bar = readFileSync(new URL("./components/omnibar-bar.tsx", import.meta.url), "utf8");
-	assert.match(source, /hideContextPill=\{hoistContextPill\}/u);
-	assert.match(source, /<OmnibarContextPill/u);
-	assert.match(source, /onExitComplete=\{handleContextExitComplete\}/u);
-	assert.match(source, /const composerExpanded = isExpanded \|\| holdComposer/u);
-	assert.match(bar, /!hideContextPill \?/u);
-	assert.match(bar, /data-slot="omnibar-context-pill"/u);
-	assert.doesNotMatch(source, /key="omnibar-surface"\n\s+layout/u);
-	assert.doesNotMatch(source, /key="omnibar-hover"\n\s+layout/u);
+	const pill = readFileSync(new URL("./components/omnibar-pill.tsx", import.meta.url), "utf8");
+
+	assert.match(source, /grid grid-cols-\[minmax\(0,auto\)\]/u);
+	assert.match(source, /w-fit max-w-\[calc\(100%-32px\)\] items-end justify-items-center/u);
+	assert.match(bar, /col-start-1 row-start-1/u);
+	assert.match(pill, /col-start-1 row-start-1/u);
+	assert.doesNotMatch(source, /holdComposer|hoistContextPill|OmnibarContextPill/u);
+	assert.doesNotMatch(bar, /hideContextPill|OmnibarContextPill/u);
 });
 
 test("Omnibar gates the timeline behind entries rather than always rendering it", () => {
@@ -206,7 +224,7 @@ test("Omnibar gates the timeline behind entries rather than always rendering it"
 
 	// No entries means no toggle, so every existing consumer keeps today's bar.
 	assert.match(source, /const timeline = timelineEntries\s*\?/u);
-	assert.match(bar, /\{timeline && !hideContextPill \? \(/u);
+	assert.match(bar, /\{timeline \? \(/u);
 	assert.match(bar, /<OmnibarTimelinePill/u);
 	assert.match(bar, /<ContextBarPill/u);
 	assert.doesNotMatch(bar, /Customize|CustomizeIcon/u);
@@ -215,12 +233,14 @@ test("Omnibar gates the timeline behind entries rather than always rendering it"
 	assert.match(source, /timelineAxis === "y"/u);
 });
 
-test("Omnibar compact tone leaves the existing FloatingComposer chrome in place", () => {
+test("Omnibar defaults to the light PromptInput chrome, with inverse as the opt-in", () => {
 	const source = readFileSync(new URL("./components/omnibar.tsx", import.meta.url), "utf8");
 	const bar = readFileSync(new URL("./components/omnibar-bar.tsx", import.meta.url), "utf8");
 	const hook = readFileSync(new URL("./hooks/use-omnibar-state.ts", import.meta.url), "utf8");
 
-	assert.match(source, /tone = "inverse"/u);
+	// The expanded bar is the same white `PromptInput variant="floating"` form every other
+	// composer in the repo renders; the black re-skin has to be asked for.
+	assert.match(source, /tone = "default"/u);
 	assert.match(bar, /const isInverse = tone === "inverse"/u);
 	assert.match(bar, /isInverse \? OMNIBAR_BAR_SKIN : null/u);
 	assert.match(hook, /if \(onOpenPanelRef\.current\) \{/u);
@@ -244,16 +264,26 @@ test("Omnibar send control stays disabled when the host wires no onSubmit", () =
 	assert.match(source, /if \(!prompt \|\| onSubmit === undefined\) \{/u);
 });
 
-test("Omnibar morphs width and height instead of layout-scaling prompt text", () => {
-	// Motion `layout` projects size with transform:scale, which enlarges
-	// placeholder and button labels while the 96px pill becomes the 720px bar.
+test("Omnibar animates only opacity and scale, never layout", () => {
+	// The defect this replaces: animating `width` from 96px to 720px stretched one box
+	// across the screen, and Motion `layout` projects size with transform:scale, which
+	// enlarges placeholder and button type mid-flight. Both surfaces now transform in
+	// place instead, so nothing reflows and nothing gets scaled by a parent.
 	const source = readFileSync(new URL("./components/omnibar.tsx", import.meta.url), "utf8");
 	const bar = readFileSync(new URL("./components/omnibar-bar.tsx", import.meta.url), "utf8");
 	const pill = readFileSync(new URL("./components/omnibar-pill.tsx", import.meta.url), "utf8");
-	assert.match(source, /const EXPANDED_WIDTH = "min\(720px, calc\(100% - 32px\)\)"/u);
-	assert.match(source, /width: surfaceWidth/u);
-	assert.match(source, /height: surfaceHeight/u);
-	assert.doesNotMatch(source, /^\s+layout\s*$/mu);
-	assert.match(bar, /layout="position"/u);
-	assert.match(pill, /layout="position"/u);
+
+	for (const [name, contents] of [["omnibar.tsx", source], ["omnibar-bar.tsx", bar], ["omnibar-pill.tsx", pill]]) {
+		assert.doesNotMatch(contents, /layout="position"|layoutId/u, `${name} must not use Motion layout`);
+		assert.doesNotMatch(contents, /^\s+layout\s*$/mu, `${name} must not use Motion layout`);
+	}
+	// The stack itself animates nothing — it only holds the two surfaces.
+	assert.doesNotMatch(source, /animate=\{\{/u);
+	// The bar owns its width as a static class, so the stack never animates one.
+	assert.match(bar, /w-\[720px\] max-w-full/u);
+	for (const contents of [bar, pill]) {
+		assert.match(contents, /animate=\{\{ opacity: 1, scale: 1 \}\}/u);
+		assert.match(contents, /scale: resolveOmnibarZoom\(/u);
+		assert.match(contents, /pointerEvents: "none"/u);
+	}
 });

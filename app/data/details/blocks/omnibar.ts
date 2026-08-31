@@ -99,9 +99,9 @@ export const OMNIBAR_DETAIL: ComponentDetail = {
 		{
 			name: "tone",
 			type: '"inverse" | "default"',
-			default: '"inverse"',
+			default: '"default"',
 			description:
-				'"inverse" paints the expanded bar onto the black morphing surface. "default" leaves the existing compact FloatingComposer chrome in place.',
+				'"default" (the default) gives the expanded bar the standard light PromptInput variant="floating" chrome. "inverse" re-skins it onto a black surface.',
 		},
 		{
 			name: "onOpenPanel",
