@@ -808,7 +808,7 @@ test("Jira issue renders explicit unassigned avatars with the shared placeholder
 	assert.match(SUMMARY_SOURCE, /AvatarUnassigned,/);
 	assert.match(SOURCE, /assigneeUnassignedKind\?: AvatarUnassignedKind;/);
 	assert.match(SUMMARY_SOURCE, /function JiraIssueAssignee[\s\S]*size = "sm"[\s\S]*if \(assigneeUnassignedKind\) \{[\s\S]*<AvatarUnassigned[\s\S]*kind=\{assigneeUnassignedKind\}[\s\S]*size=\{size\}/);
-	assert.match(SUMMARY_SOURCE, /usesStrokeChrome \? \([\s\S]*<span className="inline-flex size-6 shrink-0 translate-x-px items-center justify-end">[\s\S]*size="xs"/);
+	assert.match(SUMMARY_SOURCE, /usesStrokeChrome \? \([\s\S]*className="flex size-6 shrink-0 items-center justify-center -mr-1"[\s\S]*data-slot="jira-issue-assignee-slot"[\s\S]*size="xs"/);
 	assert.match(SUMMARY_SOURCE, /size="sm"/);
 });
 
