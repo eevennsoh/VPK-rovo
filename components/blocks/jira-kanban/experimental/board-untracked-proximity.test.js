@@ -36,7 +36,7 @@ test("the experimental page groups Pulse sessions onto the board when Untracked 
 test("proximity AgentSession forwards the Pulse flyout attach handlers", () => {
 	assert.match(CARD_SOURCE, /capturedItemIds=\{capturedItemIds\}/u);
 	assert.match(CARD_SOURCE, /onCreateWorkItem=\{onCreateWorkItem\}/u);
-	assert.match(CARD_SOURCE, /onLinkWorkItem=\{onLinkWorkItem\}/u);
+	assert.match(CARD_SOURCE, /onLinkWorkItem=\{onSessionLink \|\| onLinkWorkItem/u);
 	assert.match(CARD_SOURCE, /onSubtasks=\{onSubtasks\}/u);
 	assert.match(CARD_SOURCE, /variant="medium-detached"/u);
 	assert.match(PAGE_SOURCE, /proximityAgentSession=\{\{/u);

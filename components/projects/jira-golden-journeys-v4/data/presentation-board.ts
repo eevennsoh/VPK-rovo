@@ -88,6 +88,23 @@ export const JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS = [
 	},
 ] as const satisfies readonly JiraKanbanAgentData[];
 
+export function toJiraGoldenJourneysV4AgentActivityFromSession(
+	session: AgentSessionItem,
+): JiraIssueAgentActivity {
+	return {
+		id: session.id,
+		name: session.agent.name,
+		avatarSrc: session.agent.avatarSrc,
+		agentBrandName: session.agent.brandName,
+		label: session.title,
+		state: session.state === "needs-input" || session.state === "attention"
+			? "awaiting-input"
+			: session.state === "complete"
+				? "completed"
+				: "working",
+	};
+}
+
 export function toJiraGoldenJourneysV4DetachedAgentSession(
 	activity: JiraIssueAgentActivity,
 	card: JiraKanbanCardData,

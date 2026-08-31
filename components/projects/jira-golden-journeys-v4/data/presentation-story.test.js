@@ -153,8 +153,9 @@ test("a linked Jira activity becomes a medium-detached Agent Session item", asyn
 
 	assert.ok(card);
 	assert.ok(activity);
+	const detached = story.toJiraGoldenJourneysV4DetachedAgentSession(activity, card);
 	assert.deepEqual(
-		story.toJiraGoldenJourneysV4DetachedAgentSession(activity, card),
+		detached,
 		{
 			id: activity.id,
 			title: activity.label,
@@ -171,6 +172,17 @@ test("a linked Jira activity becomes a medium-detached Agent Session item", asyn
 				issueKey: card.code,
 				issueSummary: card.title,
 			},
+		},
+	);
+	assert.deepEqual(
+		story.toJiraGoldenJourneysV4AgentActivityFromSession(detached),
+		{
+			id: activity.id,
+			name: activity.name,
+			avatarSrc: activity.avatarSrc,
+			agentBrandName: activity.agentBrandName,
+			label: activity.label,
+			state: "working",
 		},
 	);
 });

@@ -1,4 +1,5 @@
 import type { AgentListItem } from "@/components/blocks/agent-list";
+import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
 
 /**
  * An agent session rendered either detached from or attached to a work item.
@@ -86,6 +87,8 @@ export interface AgentSessionProps {
 	visibilityLabel?: string;
 	/** Called when a card body is activated. */
 	onView?: (item: AgentSessionItem) => void;
+	/** Opt-in: makes each medium-detached row a draggable session that can reattach. */
+	sessionDrag?: JiraIssueAgentSessionDragBinding;
 	/**
 	 * Pointer hover on a large column card. `null` when the pointer leaves.
 	 * Compact rows do not fire this.

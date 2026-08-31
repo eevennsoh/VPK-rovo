@@ -43,6 +43,7 @@ async function loadStateHarness() {
 					getCommonJiraKanbanAgentIds,
 					updateJiraKanbanCardAgentAssignment,
 					unlinkJiraKanbanAgentSession,
+					linkJiraKanbanAgentSession,
 				} from "./components/blocks/jira-kanban/state";
 			`,
 			loader: "ts",
@@ -222,7 +223,7 @@ test("Kanban card list gives the first card room for its raised edge", () => {
 test("Experimental kanban card lists drop scroller padding while the default keeps its well", () => {
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/overflowY: "auto",\n\s+display: "flex",\n\s+flexDirection: "column",\n\s+gap: token\("space\.100"\),/,
+		/overflow-y-auto has-\[\[data-session-dragging\]\]:overflow-visible/u,
 	);
 	assert.doesNotMatch(
 		EXPERIMENTAL_SOURCE,
@@ -245,7 +246,7 @@ test("Experimental kanban card gap matches the column gutter", () => {
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/overflowY: "auto",\n\s+display: "flex",\n\s+flexDirection: "column",\n\s+gap: token\("space\.100"\),/,
+		/overflow-y-auto has-\[\[data-session-dragging\]\]:overflow-visible/u,
 	);
 	assert.match(
 		SOURCE,
@@ -446,6 +447,31 @@ test("Kanban agent session unlink removes only the dragged session and derives t
 	assert.equal(withoutTest[0].cards[0].agentActivityMode, "none");
 });
 
+test("Kanban agent session link restores a detached session onto its work item", async () => {
+	const { linkJiraKanbanAgentSession, unlinkJiraKanbanAgentSession } = await loadStateHarness();
+	const activity = { id: "test-agent", state: "working" };
+	const columns = [{
+		title: "In progress",
+		count: 1,
+		cards: [{
+			code: "PAY-123",
+			agentActivityMode: "working",
+			agentActivities: [activity],
+		}],
+	}];
+
+	const unlinked = unlinkJiraKanbanAgentSession(columns, "PAY-123", "test-agent");
+	const relinked = linkJiraKanbanAgentSession(unlinked, "PAY-123", activity);
+
+	assert.deepEqual(relinked[0].cards[0].agentActivities.map((item) => item.id), ["test-agent"]);
+	assert.equal(relinked[0].cards[0].agentActivityMode, "working");
+	assert.equal(
+		linkJiraKanbanAgentSession(relinked, "PAY-123", activity)[0].cards[0].agentActivities.length,
+		1,
+		"linking an already-attached session is a no-op",
+	);
+});
+
 test("Kanban status changes leave selected cards already in the target column in place", async () => {
 	const { moveJiraKanbanCardsToColumn } = await loadStateHarness();
 	const columns = moveJiraKanbanCardsToColumn(
@@ -550,7 +576,7 @@ test("Kanban cards expose and render Jira issue agent lifecycle presentation", (
 	assert.match(SOURCE, /pullRequestNumber=\{card\.pullRequestNumber\}/);
 	assert.match(SOURCE, /pullRequestPreview=\{card\.pullRequestPreview\}/);
 	assert.match(SOURCE, /pullRequestStatus=\{card\.pullRequestStatus\}/);
-	assert.match(EXPERIMENTAL_SOURCE, /pullRequestPreview=\{card\.pullRequestPreview\}/);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /pullRequestPreview=\{card\.pullRequestPreview\}/);
 	assert.match(EXPERIMENTAL_V2_SOURCE, /pullRequestPreview=\{card\.pullRequestPreview\}/);
 	assert.match(DATA_SOURCE, /agentDoneRuns: card\.agentDoneRuns\?\.map\(\(run\) => \(\{ \.\.\.run \}\)\)/);
 });
@@ -667,10 +693,12 @@ test("Experimental kanban cards forward their configured agent activity layout",
 
 test("Experimental kanban cards opt into draggable agent-session unlink when the host handles it", () => {
 	assert.match(EXPERIMENTAL_SOURCE, /onCardAgentSessionUnlink\?: \(/u);
-	assert.match(EXPERIMENTAL_CARD_SOURCE, /agentSessionTransfer=\{canUnlinkAgentSession \? \{/u);
+	assert.match(EXPERIMENTAL_SOURCE, /onCardAgentSessionLink\?: \(/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /const canTransferAgentSession = canUnlinkAgentSession \|\| canLinkAgentSession;/u);
 	assert.match(EXPERIMENTAL_CARD_SOURCE, /onSessionUnlink\?\.\(resolvedSession, card, columnTitle\)/u);
-	assert.match(EXPERIMENTAL_CARD_SOURCE, /className=\{canUnlinkAgentSession \? JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS : undefined\}/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /className=\{canTransferAgentSession \? JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS : undefined\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCardAgentSessionUnlink=\{onCardAgentSessionUnlink\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCardAgentSessionLink=\{onCardAgentSessionLink\}/u);
 });
 
 test("Experimental kanban renders detached sessions beneath their source card with the shared medium-detached variant", () => {
@@ -703,7 +731,7 @@ test("Experimental kanban column card lists reuse the shared top and bottom scro
 	assert.match(EXPERIMENTAL_SOURCE, /import \{ buildScrollMaskStyle \} from "@\/components\/visual\/scroll-mask\/lib";/u);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/const \{ ref: cardListRef, showBottomScrollMask, showTopScrollMask \} = useHasVerticalOverflow<HTMLDivElement>\(\);[\s\S]*buildScrollMaskStyle\(\{\s*fadeBottom: showBottomScrollMask,\s*fadeSize: "3rem",\s*fadeTop: showTopScrollMask,\s*\}\)[\s\S]*ref=\{cardListRef\}[\s\S]*overflowY: "auto",[\s\S]*\.\.\.cardListScrollMaskStyle/u,
+		/const \{ ref: cardListRef, showBottomScrollMask, showTopScrollMask \} = useHasVerticalOverflow<HTMLDivElement>\(\);[\s\S]*buildScrollMaskStyle\(\{\s*fadeBottom: showBottomScrollMask,\s*fadeSize: "3rem",\s*fadeTop: showTopScrollMask,\s*\}\)[\s\S]*ref=\{cardListRef\}[\s\S]*overflow-y-auto has-\[\[data-session-dragging\]\]:overflow-visible[\s\S]*\.\.\.cardListScrollMaskStyle/u,
 	);
 	assert.doesNotMatch(SOURCE, /useHasVerticalOverflow/u);
 	assert.doesNotMatch(SOURCE, /buildScrollMaskStyle/u);
