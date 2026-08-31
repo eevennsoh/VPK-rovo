@@ -110,12 +110,12 @@ interface TopNavigationProps {
  * Studio-style application shell with a resizable, pinned side-nav and a 56px
  * top navigation bar. The header mirrors the Figma global top navigation:
  * left chrome (sidebar toggle, app switcher, product logo) sits in the
-	 * sidebar-aligned region; the search + Create sit in a middle zone that
-	 * left-aligns while the sidebar is pinned, then centers when it is collapsed
-	 * at or above `TOP_NAV_SEARCH_CENTER_BREAKPOINT_PX`;
- * the right cluster (Ask Rovo, notifications, help, settings, avatar) collapses
- * into a "…" overflow popover at narrow widths. The search shrinks fluidly and
- * collapses to an icon button below `TOP_NAV_SEARCH_ICON_BREAKPOINT_PX`.
+ * sidebar-aligned region; the search + Create sit in a middle zone that
+ * left-aligns while the sidebar is pinned, then centers when it is collapsed
+ * at or above `TOP_NAV_SEARCH_CENTER_BREAKPOINT_PX`;
+ * the right cluster (Ask Rovo, notifications, help, settings, theme, avatar)
+ * collapses into a "…" overflow popover at narrow widths. The search shrinks
+ * fluidly and collapses to an icon button below `TOP_NAV_SEARCH_ICON_BREAKPOINT_PX`.
  */
 export default function TopNavigation({
 	product = "studio",
