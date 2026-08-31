@@ -437,9 +437,10 @@ test("in-flow View controls immediately replace lifecycle indicators without col
 	assert.match(CARD_SOURCE, /onView=\{viewItem\}/u);
 	assert.match(
 		CARD_SOURCE,
-		/const showHoverActions = !isSelected &&\s*\(hoverActions\?\.primary !== undefined \|\| hoverActions\?\.secondary !== undefined\);/u,
+		/const showHoverActions = \(!isSelected \|\| showHoverActionsWhenSelected\) &&\s*\(hoverActions\?\.primary !== undefined \|\| hoverActions\?\.secondary !== undefined\);/u,
 	);
 	assert.match(CARD_SOURCE, /\{showHoverActions \? \(\s*<CardActions/u);
+	assert.match(CARD_SOURCE, /event\.stopPropagation\(\);\s*\n\s*action\.onClick\(\)/u);
 	assert.match(
 		CARD_SOURCE,
 		/"flex w-full min-w-0 items-center gap-0",\s*hasSummary \? null : "overflow-hidden",/u,

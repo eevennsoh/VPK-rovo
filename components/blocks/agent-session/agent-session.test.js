@@ -84,6 +84,9 @@ test("renders each session as a solid uncaptured-work card around the shared row
 	);
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*hoverActions=\{hoverActions\}/u);
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*isCompact=\{false\}/u);
+	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*isSelected=\{isSelected\}/u);
+	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*showHoverActionsWhenSelected/u);
+	assert.doesNotMatch(CARD_SOURCE, /isSelected=\{false\}/u);
 });
 
 test("large uncaptured-work Rovo rows use the same 32px hexagon as other agents", () => {
@@ -123,14 +126,16 @@ test("medium matches the 276 by 33 Figma row and reuses shared identity primitiv
 	assert.match(MEDIUM_CARD_SOURCE, /h-\[33px\] w-\[276px\]/u);
 	assert.match(MEDIUM_CARD_SOURCE, /items-center gap-2 rounded-\[10px\] border border-transparent bg-bg-accent-gray-subtlest px-3/u);
 	assert.match(MEDIUM_CARD_SOURCE, /sizePx=\{16\}/u);
-	assert.match(MEDIUM_CARD_SOURCE, /min-w-0 flex-1 truncate text-left text-xs font-normal leading-4/u);
-	assert.match(MEDIUM_CARD_SOURCE, /<AddIcon label="" size="small" \/>/u);
+	assert.match(MEDIUM_CARD_SOURCE, /min-w-0 flex-1 truncate text-left text-xs font-normal leading-4 text-text-subtlest/u);
+	assert.match(MEDIUM_CARD_SOURCE, /<Icon className="text-icon-subtle" render=\{<AddIcon label="" size="small" \/>\} \/>/u);
 	assert.match(MEDIUM_CARD_SOURCE, /size="icon-compact"/u);
 	assert.match(MEDIUM_CARD_SOURCE, /flex shrink-0 items-center gap-0/u);
 	assert.match(
 		MEDIUM_CARD_SOURCE,
 		/className="flex size-6 shrink-0 items-center justify-center -mr-1"/u,
 	);
+	assert.doesNotMatch(MEDIUM_CARD_SOURCE, /size-3|w-\[34px\]/u);
+	assert.doesNotMatch(MEDIUM_CARD_SOURCE, /absolute inset-0/u);
 	assert.doesNotMatch(MEDIUM_CARD_SOURCE, /-mx-0\.5/u);
 	assert.match(MEDIUM_CARD_SOURCE, /Attach \$\{label\} to work item/u);
 	assert.match(MEDIUM_CARD_SOURCE, /onAttach\?\.\(item\)/u);
@@ -188,7 +193,17 @@ test("medium more menu collapses until hover so the label can use the slot", () 
 	assert.match(MORE_MENU_SOURCE, /flex h-6 w-0 shrink-0 overflow-hidden/u);
 	assert.match(MORE_MENU_SOURCE, /group-hover\/session-card:w-6/u);
 	assert.match(MORE_MENU_SOURCE, /group-has-\[:focus-visible\]\/session-card:w-6/u);
-	assert.doesNotMatch(MORE_MENU_SOURCE, /className=\{?["'`][^"'`]*\bhidden\b/u);
+	assert.match(MORE_MENU_SOURCE, /group-has-\[:focus-visible\]\/session-card:overflow-visible/u);
+	assert.match(
+		MORE_MENU_SOURCE,
+		/aria-label=\{`More actions for \$\{label\} session`\}[\s\S]*size="icon-compact"/u,
+	);
+	assert.match(
+		MORE_MENU_SOURCE,
+		/<Icon className="text-icon-subtle" render=\{<ShowMoreHorizontalIcon label="" size="small" color="currentColor" \/>\} \/>/u,
+	);
+	assert.doesNotMatch(MORE_MENU_SOURCE, /size-3|grid-cols-\[0fr\]/u);
+	assert.doesNotMatch(MORE_MENU_SOURCE, /(?:^|[\s"'`])hidden(?:[\s"'`]|$)/u);
 	assert.match(MORE_MENU_SOURCE, /<DropdownMenuContent align="end" className="min-w-0 w-max">/u);
 	assert.match(MORE_MENU_SOURCE, /if \(!hasSubtasks && !hasCreateWorkItem\) \{\s*\n\s*return null;/u);
 	assert.match(MORE_MENU_SOURCE, /<DropdownMenuItem disabled=\{!hasSubtasks\} onSelect=\{\(\) => onSubtasks\?\.\(\)\}>\s*\n\s*Add as a subtask/u);
@@ -266,7 +281,7 @@ test("the row reveals Resume plus a Hide / Show eye where Agent List puts Archiv
 	assert.match(CARD_SOURCE, /visibilityLabel = "Hide"/u);
 	assert.match(CARD_SOURCE, /import EyeOpenIcon from "@atlaskit\/icon\/core\/eye-open";/u);
 	assert.match(CARD_SOURCE, /import EyeOpenStrikethroughIcon from "@atlaskit\/icon\/core\/eye-open-strikethrough";/u);
-	assert.match(CARD_SOURCE, /group\/agent-row relative flex w-full cursor-pointer rounded-none bg-transparent p-3 text-left text-text/u);
+	assert.match(CARD_SOURCE, /group\/agent-row relative flex w-full cursor-pointer rounded-none p-3 text-left text-text/u);
 	assert.doesNotMatch(CARD_SOURCE, /hover:border-border(?!-disabled)/u);
 	assert.doesNotMatch(CARD_SOURCE, /focus-within:border-border(?!-disabled)/u);
 	assert.match(CARD_SOURCE, /hover:bg-surface-hovered/u);
@@ -392,8 +407,46 @@ test("reuses the Agent List row model instead of forking a parallel one", () => 
 test("a coding session body is read-only when the host omits onView", () => {
 	assert.match(
 		INDEX_SOURCE,
-		/isCodingAgentListItem\(item\)\s*\? onView === undefined\s*\? undefined\s*: handleCodingView/u,
+		/isCodingAgentListItem\(item\)\s*\? onView === undefined\s*\? undefined\s*: handleView/u,
 	);
+});
+
+test("a card body click toggles a single selected session on blue-subtlest", () => {
+	assert.match(TYPES_SOURCE, /selectedItemId\?: string \| null;/u);
+	assert.match(TYPES_SOURCE, /onSelectedItemIdChange\?: \(itemId: string \| null\) => void;/u);
+	assert.match(INDEX_SOURCE, /selectedItemId: selectedItemIdProp,/u);
+	assert.match(INDEX_SOURCE, /const isSelectionControlled = selectedItemIdProp !== undefined;/u);
+	assert.match(
+		INDEX_SOURCE,
+		/const nextId = selectedItemId === item\.id \? null : item\.id;/u,
+	);
+	assert.match(INDEX_SOURCE, /onSelectedItemIdChange\?\.\(nextId\);/u);
+	assert.match(
+		INDEX_SOURCE,
+		/if \(nextId !== null\) \{\s*\n\s*onView\?\.\(item\);\s*\n\s*\}/u,
+	);
+	assert.match(INDEX_SOURCE, /isSelected=\{item\.id === selectedItemId\}/u);
+	assert.match(CARD_SOURCE, /isSelected\s*\n\s*\? "bg-bg-accent-blue-subtlest"/u);
+	assert.match(CARD_SOURCE, /"bg-transparent hover:bg-surface-hovered"/u);
+	assert.match(CARD_SOURCE, /data-selected=\{isSelected \|\| undefined\}/u);
+	assert.match(CARD_SOURCE, /aria-current=\{isSelected \? "true" : undefined\}/u);
+	assert.match(CARD_SOURCE, /isSelected=\{isSelected\}/u);
+	assert.match(CARD_SOURCE, /showHoverActionsWhenSelected/u);
+	assert.match(
+		LIST_CARD_SOURCE,
+		/const showHoverActions = \(!isSelected \|\| showHoverActionsWhenSelected\) &&/u,
+	);
+	// The article owns activation so padding and avatar toggle. RowBody must
+	// not also fire handleView, or one click would select then immediately clear.
+	assert.match(CARD_SOURCE, /onClick=\{handleArticleClick\}/u);
+	assert.match(CARD_SOURCE, /onKeyDown=\{handleArticleKeyDown\}/u);
+	assert.match(CARD_SOURCE, /role=\{activateCard === undefined \? undefined : "button"\}/u);
+	assert.match(CARD_SOURCE, /event\.target\.closest\("button"\) !== null/u);
+	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*onView=\{undefined\}/u);
+	assert.match(LIST_CARD_SOURCE, /event\.stopPropagation\(\);\s*\n\s*action\.onClick\(\)/u);
+	assert.doesNotMatch(CARD_SOURCE, /isSelected=\{false\}/u);
+	assert.doesNotMatch(CARD_SOURCE, /bg-bg-selected/u);
+	assert.doesNotMatch(CARD_SOURCE, /bg-\[var\(--ds-/u);
 });
 
 test("ships demo data and catalog entries for every attachment and size variant", () => {
