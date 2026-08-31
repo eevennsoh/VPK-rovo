@@ -1,6 +1,7 @@
 "use client";
 
 import type { DragEventHandler, MouseEvent } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { AgentSession, type AgentSessionItem } from "@/components/blocks/agent-session";
 import {
@@ -13,6 +14,10 @@ import {
 	JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS,
 	type JiraIssueAgentSessionRef,
 } from "@/components/blocks/jira-issue/agent-session-transfer";
+import {
+	getJiraIssuePresenceMotion,
+	JIRA_ISSUE_MOTION_STYLE,
+} from "@/components/blocks/jira-issue/lib";
 import type {
 	JiraKanbanCardData,
 	JiraKanbanProps,
@@ -23,6 +28,7 @@ interface ExperimentalJiraKanbanCardProps {
 	agentActivityLayout: JiraIssueAgentActivityLayout;
 	card: JiraKanbanCardData;
 	columnTitle: string;
+	capturedItemIds?: ReadonlySet<string>;
 	detachedAgentSessions: readonly AgentSessionItem[];
 	dragging: boolean;
 	generativeActionAgents: JiraIssueGenerativeActionConfig["agents"];
@@ -34,13 +40,16 @@ interface ExperimentalJiraKanbanCardProps {
 	onAgentDoneRunView?: JiraKanbanProps["onCardAgentDoneRunView"];
 	onClick: (event: MouseEvent<HTMLButtonElement>) => void;
 	onDragEnd: DragEventHandler<HTMLButtonElement>;
+	onCreateWorkItem?: (item: AgentSessionItem) => void;
 	onDragStart: DragEventHandler<HTMLButtonElement>;
 	onGenerativeActionSubmit?: JiraKanbanProps["onCardGenerativeActionSubmit"];
+	onLinkWorkItem?: (item: AgentSessionItem, workItemKey?: string) => void;
 	onSessionUnlink?: (
 		session: JiraIssueAgentSessionRef,
 		card: JiraKanbanCardData,
 		columnTitle: string,
 	) => void;
+	onSubtasks?: (item: AgentSessionItem) => void;
 	selected: boolean;
 }
 
@@ -54,6 +63,7 @@ function getCardAssigneeAvatarShape(card: JiraKanbanCardData) {
 export function ExperimentalJiraKanbanCard({
 	active,
 	agentActivityLayout,
+	capturedItemIds,
 	card,
 	columnTitle,
 	detachedAgentSessions,
@@ -66,12 +76,17 @@ export function ExperimentalJiraKanbanCard({
 	onAgentDoneRunReview,
 	onAgentDoneRunView,
 	onClick,
+	onCreateWorkItem,
 	onDragEnd,
 	onDragStart,
 	onGenerativeActionSubmit,
+	onLinkWorkItem,
 	onSessionUnlink,
+	onSubtasks,
 	selected,
 }: Readonly<ExperimentalJiraKanbanCardProps>) {
+	const shouldReduceMotion = useReducedMotion();
+	const proximityMotion = getJiraIssuePresenceMotion(shouldReduceMotion);
 	const firstActiveAgentSession = card.agentActivities?.find(
 		(activity) => activity.state !== "completed",
 	);
@@ -133,12 +148,26 @@ export function ExperimentalJiraKanbanCard({
 				summary={card.title}
 				tags={card.tags}
 			/>
-			{detachedAgentSessions.length > 0 ? (
-				<AgentSession
-					items={detachedAgentSessions}
-					variant="medium-detached"
-				/>
-			) : null}
+			<AnimatePresence>
+				{detachedAgentSessions.length > 0 ? (
+					<motion.div
+						animate={proximityMotion.animate}
+						exit={proximityMotion.exit}
+						initial={proximityMotion.initial}
+						key="proximity-sessions"
+						style={JIRA_ISSUE_MOTION_STYLE}
+					>
+						<AgentSession
+							capturedItemIds={capturedItemIds}
+							items={detachedAgentSessions}
+							onCreateWorkItem={onCreateWorkItem}
+							onLinkWorkItem={onLinkWorkItem}
+							onSubtasks={onSubtasks}
+							variant="medium-detached"
+						/>
+					</motion.div>
+				) : null}
+			</AnimatePresence>
 		</>
 	);
 }

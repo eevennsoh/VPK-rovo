@@ -58,6 +58,11 @@ import {
 	type CollapsedBoardColumns,
 } from "./lib/board-column-collapse";
 import { ExperimentalJiraKanbanCard } from "./experimental-jira-kanban-card";
+import {
+	bindBoardProximitySessionActions,
+	resolveBoardUntrackedIssueKey,
+	scrollBoardIssueIntoView,
+} from "./lib/board-untracked-sessions";
 
 import type {
 	JiraKanbanAgentData,
@@ -92,6 +97,18 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	 * left of the board. Omit to render only Jira status columns.
 	 */
 	agentSessionColumn?: AgentSessionColumnProps;
+	/**
+	 * Capture actions for board-adjacent Untracked sessions. Independent of
+	 * {@link agentSessionColumn} so proximity rows still work when the column
+	 * is omitted. Gate Link / Create / Subtask with `actionableSessionIds`.
+	 */
+	proximityAgentSession?: {
+		actionableSessionIds?: ReadonlySet<string>;
+		capturedItemIds?: ReadonlySet<string>;
+		onCreateWorkItem?: AgentSessionColumnProps["onCreateWorkItem"];
+		onLinkWorkItem?: AgentSessionColumnProps["onLinkWorkItem"];
+		onSubtasks?: AgentSessionColumnProps["onSubtasks"];
+	};
 	/**
 	 * Which columns are collapsed, when the host wants to own that.
 	 *
@@ -376,6 +393,7 @@ function BoardColumn({
 
 			<div
 				ref={cardListRef}
+				data-jira-kanban-card-list=""
 				className="min-w-0"
 				style={{
 					flexGrow: 1,
@@ -566,6 +584,7 @@ export function ExperimentalJiraKanban({
 	onCreateAgent,
 	onCollapsedColumnsChange,
 	onToggleColumnAgent,
+	proximityAgentSession,
 	paddingBottom = token("space.150"),
 	paddingTop = token("space.150"),
 	selectionToolbar,
@@ -573,10 +592,12 @@ export function ExperimentalJiraKanban({
 	const cardLayoutGroupId = useId();
 	const shouldReduceMotion = useReducedMotion();
 	const shouldAnimateCardMoves = animateCardMoves && !shouldReduceMotion;
+	const boardScrollportRef = useRef<HTMLElement | null>(null);
 	const dragImageRef = useRef<HTMLDivElement | null>(null);
 	const [uncontrolledCollapsedColumns, setUncontrolledCollapsedColumns] = useState(
 		EMPTY_COLLAPSED_BOARD_COLUMNS,
 	);
+	const [hoveredIssueKey, setHoveredIssueKey] = useState<string | null>(null);
 	const collapsedColumns = controlledCollapsedColumns ?? uncontrolledCollapsedColumns;
 	const selectedCount = selectedCardCodes?.size ?? 0;
 	const selectedStatus = selectedCardCodes
@@ -693,6 +714,18 @@ export function ExperimentalJiraKanban({
 		onCardDragEnd?.();
 	};
 
+	const handleSessionHover = (item: AgentSessionItem | null) => {
+		const issueKey = resolveBoardUntrackedIssueKey(item);
+		const isOnBoard = issueKey !== null && boardColumns.some((column) => (
+			column.cards.some((card) => card.code === issueKey)
+		));
+		const nextKey = isOnBoard ? issueKey : null;
+		setHoveredIssueKey(nextKey);
+		if (nextKey) {
+			scrollBoardIssueIntoView(boardScrollportRef.current, nextKey);
+		}
+	};
+
 	const handleToggleColumnCollapsed = (columnTitle: string) => {
 		const nextCollapsedColumns = toggleCollapsedBoardColumn(collapsedColumns, columnTitle);
 		// Only own the state when the host has not claimed it, so a controlled
@@ -715,10 +748,12 @@ export function ExperimentalJiraKanban({
 						className="flex min-h-0 shrink-0 border-2 border-transparent border-r-0 ps-6"
 						style={{ paddingTop, paddingBottom }}
 					>
-						<AgentSessionColumn {...agentSessionColumn} />
+						<AgentSessionColumn {...agentSessionColumn} onItemHover={handleSessionHover} />
 					</div>
 				) : null}
 				<section
+					ref={boardScrollportRef}
+					data-jira-kanban-scrollport=""
 					tabIndex={0}
 					aria-label={ariaLabel}
 					className="flex min-h-0 min-w-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
@@ -775,6 +810,14 @@ export function ExperimentalJiraKanban({
 										: undefined;
 									const shouldAnimateCardPosition = shouldAnimateCardMoves && cardMovePhase === undefined;
 									const detachedAgentSessions = detachedAgentSessionsByCard?.[card.code] ?? [];
+									const proximityActions = bindBoardProximitySessionActions({
+										actionableSessionIds: proximityAgentSession?.actionableSessionIds,
+										capturedItemIds: proximityAgentSession?.capturedItemIds,
+										onCreateWorkItem: proximityAgentSession?.onCreateWorkItem,
+										onLinkWorkItem: proximityAgentSession?.onLinkWorkItem,
+										onSubtasks: proximityAgentSession?.onSubtasks,
+										sessions: detachedAgentSessions,
+									});
 									const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
 										const modifiers: JiraKanbanCardSelectModifiers = {
 											shiftKey: event.shiftKey,
@@ -802,7 +845,14 @@ export function ExperimentalJiraKanban({
 														? { scale: getJiraKanbanCardScale(cardMovePhase) }
 														: undefined
 												}
-												className="flex w-full min-w-0 max-w-[280px] flex-col gap-2"
+												className={cn(
+													"flex w-full min-w-0 max-w-[280px] flex-col gap-2 rounded-lg",
+													"transition-[background-color,opacity] duration-normal ease-out-practical",
+													"motion-reduce:transition-none",
+													hoveredIssueKey === card.code && "bg-bg-accent-blue-subtlest",
+													hoveredIssueKey !== null && hoveredIssueKey !== card.code && "opacity-40",
+												)}
+												data-issue-key={card.code}
 												initial={false}
 												style={cardMovePhase ? { willChange: "transform" } : undefined}
 												transition={cardMovePhase === "departing" ? JIRA_KANBAN_CARD_DEPART : JIRA_KANBAN_CARD_MOVE}
@@ -810,6 +860,7 @@ export function ExperimentalJiraKanban({
 											<ExperimentalJiraKanbanCard
 												active={isActive}
 												agentActivityLayout={agentActivityLayout}
+												capturedItemIds={proximityActions.capturedItemIds}
 												card={card}
 												columnTitle={column.title}
 												detachedAgentSessions={detachedAgentSessions}
@@ -822,10 +873,13 @@ export function ExperimentalJiraKanban({
 												onAgentDoneRunReview={onCardAgentDoneRunReview}
 												onAgentDoneRunView={onCardAgentDoneRunView}
 												onClick={handleClick}
+												onCreateWorkItem={proximityActions.onCreateWorkItem}
 												onDragEnd={handleCardDragEndInternal}
 												onDragStart={(event) => handleCardDragStartInternal(card, column.title, event)}
 												onGenerativeActionSubmit={onCardGenerativeActionSubmit}
+												onLinkWorkItem={proximityActions.onLinkWorkItem}
 												onSessionUnlink={onCardAgentSessionUnlink}
+												onSubtasks={proximityActions.onSubtasks}
 												selected={isSelected}
 											/>
 											</motion.div>
