@@ -10,12 +10,12 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ThemeToggle } from "@/components/utils/theme-wrapper";
 import { RovoColorIcon } from "@/components/ui/logo";
 import { token } from "@/lib/tokens";
 import NotificationIcon from "@atlaskit/icon/core/notification";
 import QuestionCircleIcon from "@atlaskit/icon/core/question-circle";
 import SettingsIcon from "@atlaskit/icon/core/settings";
-import ThemeIcon from "@atlaskit/icon/core/theme";
 
 export interface RightNavigationSettingsMenuItem {
 	description?: string;
@@ -31,8 +31,6 @@ interface RightNavigationActionsProps {
 	showRovoAction: boolean;
 	isChatOpen: boolean;
 	onToggleChat: () => void;
-	/** When provided, renders a theme-toggle button. Omitted in the Figma cluster. */
-	onToggleTheme?: () => void;
 	settingsMenuItems?: ReadonlyArray<RightNavigationSettingsMenuItem>;
 }
 
@@ -43,7 +41,6 @@ export function RightNavigationActions({
 	showRovoAction,
 	isChatOpen,
 	onToggleChat,
-	onToggleTheme,
 	settingsMenuItems,
 }: Readonly<RightNavigationActionsProps>) {
 	const hasSettingsMenu = Boolean(settingsMenuItems && settingsMenuItems.length > 0);
@@ -112,12 +109,8 @@ export function RightNavigationActions({
 				</Button>
 			)}
 
-			{/* Theme Toggle (opt-in; omitted in the Figma cluster) */}
-			{onToggleTheme ? (
-				<Button aria-label="Toggle theme" size="icon" variant="ghost" onClick={onToggleTheme}>
-					<ThemeIcon label="" color={token("color.icon.subtle")} />
-				</Button>
-			) : null}
+			{/* Theme toggle */}
+			<ThemeToggle />
 
 			{/* Profile */}
 			<div className="flex size-8 items-center justify-center">

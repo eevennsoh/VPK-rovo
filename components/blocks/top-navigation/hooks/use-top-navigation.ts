@@ -6,7 +6,6 @@ import { useWindowWidth } from "@/components/hooks/use-window-width";
 import { useClickOutside } from "@/components/hooks/use-click-outside";
 import { useSidebar } from "@/app/contexts/context-sidebar";
 import { useRovoChat } from "@/app/contexts";
-import { useTheme } from "@/components/utils/theme-wrapper";
 import { token } from "@/lib/tokens";
 import { TOP_NAV_SIDEBAR_PIN_RELEASE_BREAKPOINT_PX } from "../layout-constants";
 
@@ -21,7 +20,6 @@ export function useTopNavigation() {
 	const { isVisible, toggleSidebar, setSidebarVisible, setHovered } = useSidebar();
 	const { toggleChat, openChat, chatSurface } = useRovoChat();
 	const isSidebarChatOpen = chatSurface === "sidebar";
-	const { setTheme, actualTheme } = useTheme();
 	const searchContainerRef = useRef<HTMLDivElement>(null);
 	const searchPanelRef = useRef<HTMLDivElement>(null);
 
@@ -50,10 +48,6 @@ export function useTopNavigation() {
 			setSidebarVisible(true);
 		}
 	}, [windowWidth, isVisible, setSidebarVisible]);
-
-	const toggleTheme = useCallback(() => {
-		setTheme(actualTheme === "light" ? "dark" : "light");
-	}, [setTheme, actualTheme]);
 
 	const handleNavigate = useCallback(
 		(path: string) => {
@@ -134,7 +128,6 @@ export function useTopNavigation() {
 		toggleChat,
 		openChat,
 		isSidebarChatOpen,
-		toggleTheme,
 		searchContainerRef,
 		searchPanelRef,
 		centerSectionStyle,
