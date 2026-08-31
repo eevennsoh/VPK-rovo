@@ -274,7 +274,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"Overnight contract-suite session never captured on PAY-113",
 		"PAY-113",
 		"host local · worktree .worktrees/pay-113-contract-suite · 214 assertions, no work item",
-		["test-agent"],
+		["test-agent", "venn"],
 		{ agentId: "rovo", machineName: "MBP-M4-MAX", timeLabel: "2 hrs ago" },
 	),
 	session(
@@ -282,7 +282,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"Why the kill switch is per-account, still a local Codex session",
 		"PAY-121",
 		"host local · worktree .worktrees/pay-121-per-account · read out of PAY-112, never filed",
-		["release-agent"],
+		["release-agent", "priya"],
 		{ agentId: "codex", machineName: "esoh-mbp", timeLabel: "1 hr ago" },
 	),
 	pullRequest(

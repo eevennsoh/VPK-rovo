@@ -107,6 +107,22 @@ test("every local session becomes one agent-list row with fixture identity", asy
 		allItems.find((item) => item.sessionDetails.issueKey === "PAY-121")?.sessionDetails.issueStatus,
 		"In review",
 	);
+	assert.deepEqual(
+		allItems.find((item) => item.id === "lw-night-suite-session")?.invokedBy,
+		{
+			avatarSrc: PULSE_TIMELINE.members.find((member) => member.id === "venn")?.avatarSrc,
+			name: "Venn",
+		},
+		"the overnight test session should name its human invoker",
+	);
+	assert.deepEqual(
+		allItems.find((item) => item.id === "lw-night-killswitch-session")?.invokedBy,
+		{
+			avatarSrc: PULSE_TIMELINE.members.find((member) => member.id === "priya")?.avatarSrc,
+			name: "Priya Raman",
+		},
+		"the kill-switch session should name its human invoker",
+	);
 
 	const timeLabels = new Set(allItems.map((item) => item.timeLabel));
 	const machineNames = new Set(allItems.map((item) => item.machineName));
