@@ -619,11 +619,23 @@ function CardActions({
 }>) {
 	return (
 		<div
-			className="grid shrink-0 grid-cols-[0fr] transition-[grid-template-columns] duration-normal ease-out-practical group-hover/agent-row:grid-cols-[1fr] group-has-[:focus-visible]/agent-row:grid-cols-[1fr] motion-reduce:transition-none"
+			className={cn(
+				"grid shrink-0 grid-cols-[0fr] transition-[grid-template-columns] duration-normal ease-out-practical",
+				"group-hover/agent-row:grid-cols-[1fr] group-has-[:focus-visible]/agent-row:grid-cols-[1fr]",
+				"motion-reduce:transition-none",
+				// Uncaptured-work rows reveal the eye instantly; Agent List keeps the fade.
+				"group-data-[variant=uncaptured-work]/agent-row:transition-none",
+			)}
 		>
 			<div className="min-w-0 overflow-hidden has-[:focus-visible]:overflow-visible">
 				<div
-					className="pointer-events-none flex shrink-0 items-center gap-1 pl-3 opacity-0 transition-opacity duration-normal ease-out-practical group-hover/agent-row:pointer-events-auto group-hover/agent-row:opacity-100 group-has-[:focus-visible]/agent-row:pointer-events-auto group-has-[:focus-visible]/agent-row:opacity-100 motion-reduce:transition-none"
+					className={cn(
+						"pointer-events-none flex shrink-0 items-center gap-1 pl-3 opacity-0 transition-opacity duration-normal ease-out-practical",
+						"group-hover/agent-row:pointer-events-auto group-hover/agent-row:opacity-100",
+						"group-has-[:focus-visible]/agent-row:pointer-events-auto group-has-[:focus-visible]/agent-row:opacity-100",
+						"motion-reduce:transition-none",
+						"group-data-[variant=uncaptured-work]/agent-row:transition-none",
+					)}
 				>
 					{primary ? <RowAction action={primary} /> : null}
 					{secondary ? <RowAction action={secondary} /> : null}

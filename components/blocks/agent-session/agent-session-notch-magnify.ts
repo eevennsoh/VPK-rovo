@@ -37,12 +37,9 @@ export const AGENT_SESSION_NOTCH_MAGNIFY_RADIUS = 96;
  *
  * `rest` is the canonical mark and must stay in step with the `w-3` the
  * unmagnified mark paints. `peak` is the widest the rail can carry: a 32px
- * column less the sunken plane's 4px padding leaves a 24px channel, so a notch
- * directly under the pointer spans that channel edge to edge and no further. It
- * overruns its own 16px row to get there — the row gives up 4px either side to
- * the focus-ring gutter — which is why the mark does not shrink. A newly synced
- * notch rests part-way up the ramp: already lit, as though the rail were holding
- * the hover open for you.
+ * column with a 24px channel, so a notch directly under the pointer spans that
+ * channel edge to edge and no further. A newly synced notch rests part-way up
+ * the ramp: already lit, as though the rail were holding the hover open for you.
  */
 export const AGENT_SESSION_NOTCH_LENGTH = {
 	newRest: 18,
@@ -51,33 +48,24 @@ export const AGENT_SESSION_NOTCH_LENGTH = {
 } as const;
 
 /**
- * Notch colour, expressed as opacity over `color.icon`.
+ * Notch colour, as the two named icon tokens.
  *
  * Colour is a **selection** signal, not a slope one. Only the notch the pointer
- * has landed on takes full `color.icon`; every other notch — near neighbours on
- * the swell included — stays `color.icon.subtlest`. Spreading the darkening
- * across the mountain the way the length is spread washed the distinction out:
- * seven marks each a shade darker than the last reads as one grey gradient and
- * answers "where am I" for none of them. Length says how close, colour says
- * which one.
+ * has landed on takes `color.icon`; every other notch — near neighbours on the
+ * swell included — stays `color.icon.subtlest`. Spreading the darkening across
+ * the mountain the way the length is spread washed the distinction out: seven
+ * marks each a shade darker than the last reads as one grey gradient and answers
+ * "where am I" for none of them. Length says how close, colour says which one.
  *
- * `rest` is not a taste call, and it is not free-floating either: 0.66 is the
- * alpha at which `color.icon` lands on `color.icon.subtlest` over the plane the
- * rail actually sits on, `color.background.accent.gray.subtlest` — the per-
- * channel alphas run 0.63–0.67 across both themes, so one number lands within a
- * few levels everywhere. That is what lets a single element carry both named
- * colours without a second layer to cross-fade: a resting notch is as legible as
- * the unmagnified mark beside it in the Small variant, and selection only has to
- * lift it to 1.
- *
- * It is therefore tied to the plane's fill. If `AGENT_SESSION_PLANE` ever paints
- * a different background, recompute this — the column test pins the two together
- * so the drift cannot pass silently.
+ * These are the tokens themselves, not an alpha of `color.icon` mixed over the
+ * plane. A 0.66–0.68 opacity used to approximate `icon.subtlest` over the old
+ * fill; once the plane became `bg-surface` that mix was a third grey, and a
+ * 1px hairline has no weight to spare on a wrong one. New notches stay on
+ * `color.icon` — already lit — rather than introducing a fourth hue.
  */
-export const AGENT_SESSION_NOTCH_OPACITY = {
-	newRest: 1,
-	peak: 1,
-	rest: 0.66,
+export const AGENT_SESSION_NOTCH_TONE = {
+	rest: "var(--color-icon-subtlest)",
+	selected: "var(--color-icon)",
 } as const;
 
 /** Swell in at the list-item interaction profile; out faster, as every exit is. */
@@ -149,17 +137,14 @@ export function toAgentSessionNotchLength(magnification: number, isNew: boolean)
 }
 
 /**
- * Opacity for a notch, given how far selection has taken hold of it.
- *
- * `selection` is 0 for every unselected notch and rises to 1 on the one under
- * the pointer, so the caller passes the swell amount only for the selected mark
- * and a flat zero for the rest. Routing it through the same interpolation as the
- * length keeps the two in step on arrival and retreat without letting the
- * neighbours pick up any of the colour.
+ * Named token for a notch. Binary: selected (or newly synced) is `color.icon`,
+ * everything else is `color.icon.subtlest`. `magnify` is only a gate — the
+ * colour does not interpolate along the swell.
  */
-export function toAgentSessionNotchOpacity(selection: number, isNew: boolean): number {
-	const rest = isNew ? AGENT_SESSION_NOTCH_OPACITY.newRest : AGENT_SESSION_NOTCH_OPACITY.rest;
-	return rest + (AGENT_SESSION_NOTCH_OPACITY.peak - rest) * toClampedMagnification(selection);
+export function toAgentSessionNotchTone(isSelected: boolean, isNew: boolean): string {
+	return isNew || isSelected
+		? AGENT_SESSION_NOTCH_TONE.selected
+		: AGENT_SESSION_NOTCH_TONE.rest;
 }
 
 /**

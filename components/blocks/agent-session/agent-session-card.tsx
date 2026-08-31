@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
 import EyeOpenIcon from "@atlaskit/icon/core/eye-open";
+import EyeOpenStrikethroughIcon from "@atlaskit/icon/core/eye-open-strikethrough";
 
 import {
 	AgentListRow,
@@ -15,6 +16,7 @@ import {
 	JiraSessionFlyoutTrigger,
 	type JiraSessionFlyoutHandle,
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
+import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
 import {
@@ -84,7 +86,7 @@ export function AgentSessionCard({
 	// the clipboard before `onCopyResume` ever runs.
 	const canResume = (isResumable?.(item) ?? true) && resumeCommand.length > 0;
 	// The beat, not the mark: a card remounted while still unreviewed keeps the
-	// discovery dash and dot but must not replay its entrance.
+	// discovery border and dot but must not replay its entrance.
 	const shouldPlayArrival = isArriving && !shouldReduceMotion;
 
 	// The same hover/focus-revealed pair Agent List rows use, with Hide / Show
@@ -107,7 +109,14 @@ export function AgentSessionCard({
 			}
 			: undefined,
 		secondary: {
-			icon: <EyeOpenIcon label="" size="small" />,
+			// Hide (active list) is a strikethrough eye; Show (hidden view) is open.
+			icon: (
+				<Icon
+					render={visibilityLabel === "Show"
+						? <EyeOpenIcon label="" size="small" />
+						: <EyeOpenStrikethroughIcon label="" size="small" />}
+				/>
+			),
 			label: visibilityLabel,
 			onClick: () => {
 				onToggleVisibility?.(item);
@@ -142,27 +151,18 @@ export function AgentSessionCard({
 				<article
 					className={cn(
 						"group/agent-row relative flex w-full cursor-pointer rounded-none bg-transparent p-3 text-left text-text",
-						// Stacked list is one dashed well: first card owns the top radius,
+						// Stacked list is one solid well: first card owns the top radius,
 						// last owns the bottom, shared edges collapse to a single stroke.
+						"border border-solid [li:not(:last-child)_&]:border-b-0",
 						"[li:first-child_&]:rounded-t-lg",
 						"[li:last-child_&]:rounded-b-lg",
-						"[li:not(:last-child)_&]:[--dash-bottom-size:0px]",
-						"transition-[border-color] duration-xxshort ease-out-practical",
-						"hover:border-border",
-						"focus-within:border-border",
+						"hover:bg-surface-hovered",
+						"transition-[border-color,background-color] duration-xxshort ease-out-practical",
 						"motion-reduce:transition-none",
-						// Recoloured, not replaced: the dash means "uncaptured" and stays
-						// true while the card is also new, so the one property carries both
-						// facts instead of the arrival mark evicting the card's own state.
-						// Captured sessions use a real solid border. Uncaptured cards must
-						// not set `border` / `border-solid` — that 1px solid sat on the same
-						// edge as `dash-4-2` and read as a double stroke. `dash-4-2` is the
-						// only perimeter (named without `border-*` so twMerge cannot drop it).
-						captured
-							? "border border-solid border-border [li:not(:last-child)_&]:border-b-0"
-							: isNew
-								? "dash-4-2 [--dash-color:var(--color-border-discovery)]"
-								: "dash-4-2 [--dash-color:var(--color-border-disabled)]",
+						// Arrival recolours the same solid frame rather than replacing it.
+						// Resting untracked chrome is `border-border-disabled`; a newly
+						// synced card uses discovery until it is reviewed.
+						!captured && isNew ? "border-border-discovery" : "border-border-disabled",
 					)}
 					data-captured={captured || undefined}
 					data-new={isNew || undefined}

@@ -10,7 +10,7 @@ import {
 	AGENT_SESSION_NOTCH_POINTER_AWAY,
 	toAgentSessionNotchLength,
 	toAgentSessionNotchMagnification,
-	toAgentSessionNotchOpacity,
+	toAgentSessionNotchTone,
 	type AgentSessionNotchProximity,
 } from "./agent-session-notch-magnify";
 
@@ -48,9 +48,10 @@ const NOTCH_STANDALONE = cn(
  *
  * Length and colour answer different questions. Length is continuous — every
  * notch on the slope grows by its distance, which is what makes the rail read as
- * one surface being pushed. Colour is not: `color.icon` lands on the selected
- * notch alone and every other notch holds `color.icon.subtlest`, so the mark the
- * pointer is actually on stays findable inside its own swell.
+ * one surface being pushed. Colour is not: the selected notch paints `bg-icon`
+ * (`color.icon`) and every other notch paints `bg-icon-subtlest`, so the mark
+ * the pointer is actually on stays findable inside its own swell. Neighbours
+ * grow longer without darkening.
  *
  * The dock animates `width` rather than `scaleX` for two reasons. The arrival
  * beat already owns the transform, and a mark absolutely has to be able to grow
@@ -92,11 +93,16 @@ export function AgentSessionNotchMark({
 		return toAgentSessionNotchMagnification(pointer - center) * amount;
 	});
 	const width = useTransform(falloff, (value) => toAgentSessionNotchLength(value, isNew));
-	// Selection is binary, but it still rides `magnify` so the colour arrives and
-	// retreats on the same beat as the swell instead of snapping a frame apart.
-	const opacity = useTransform([nearestIndex, magnify], ([nearest, amount]: number[]) => (
-		toAgentSessionNotchOpacity(index >= 0 && nearest === index ? amount : 0, isNew)
-	));
+	// Binary: nearest + a live swell takes `color.icon`. `magnify` is only a
+	// gate so colour does not linger after the pointer leaves; it must not mix
+	// the two tokens along the slope.
+	const backgroundColor = useTransform(
+		[nearestIndex, magnify],
+		([nearest, amount]: number[]) => toAgentSessionNotchTone(
+			index >= 0 && nearest === index && amount > 0,
+			isNew,
+		),
+	);
 
 	return (
 		<motion.span
@@ -110,16 +116,14 @@ export function AgentSessionNotchMark({
 				"h-px shrink-0",
 				proximity === undefined
 					? cn(NOTCH_STANDALONE, isNew ? NOTCH_EMPHASIS : NOTCH_AT_REST)
-					// Selection hops from notch to notch as the pointer travels, and a
-					// hop is a state change, not a slope: CSS carries it at the
-					// list-item interaction profile so the handover cross-fades rather
-					// than cutting. Width is deliberately left off this transition —
-					// it tracks the pointer per frame and must not lag behind it.
-					: "bg-icon transition-opacity duration-fast ease-out-practical motion-reduce:transition-none",
+					// Docked colour is the named token on `backgroundColor`, not an
+					// alpha of `bg-icon`. Width tracks the pointer per frame and must
+					// not sit on a CSS transition.
+					: isNew ? "bg-icon" : "bg-icon-subtlest",
 			)}
 			initial={shouldPlayArrival ? { scaleX: 0 } : false}
 			style={{
-				opacity: proximity === undefined ? undefined : opacity,
+				backgroundColor: proximity === undefined ? undefined : backgroundColor,
 				width: proximity === undefined ? undefined : width,
 				willChange: shouldPlayArrival ? "transform" : undefined,
 			}}
