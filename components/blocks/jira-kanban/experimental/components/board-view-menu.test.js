@@ -61,6 +61,8 @@ test("Experimental board header opens the production View picker without changin
 	}
 	// ...while the show/hide dimensions are the same control over different
 	// lists, so they route through one shared submenu instead of four copies.
+	// PR state is the only one that passes an icon map; Agent, Columns, and Show
+	// fields stay label-only, so the `icons` prop is optional in the match.
 	for (const [label, list] of [
 		["Columns", "BOARD_COLUMN_OPTIONS"],
 		["PR state", "BOARD_PR_STATE_OPTIONS"],
@@ -69,7 +71,7 @@ test("Experimental board header opens the production View picker without changin
 	]) {
 		assert.match(
 			viewMenu,
-			new RegExp(`<VisibilityToggleSubmenu\\s+checkedIds=\\{[A-Za-z]+\\}\\s+label="${label}"\\s+onToggle=\\{[^}]+\\}\\s+options=\\{${list}\\}`, "u"),
+			new RegExp(`<VisibilityToggleSubmenu\\s+checkedIds=\\{[A-Za-z]+\\}\\s+(?:icons=\\{[A-Z_]+\\}\\s+)?label="${label}"\\s+onToggle=\\{[^}]+\\}\\s+options=\\{${list}\\}`, "u"),
 			`${label} should render through the shared visibility submenu with ${list}`,
 		);
 	}
@@ -117,8 +119,27 @@ test("Experimental board header opens the production View picker without changin
 	);
 	assert.match(
 		viewOptions,
-		/"Idle"[\s\S]*"Working"[\s\S]*"Needs permission"[\s\S]*"Ready for review"[\s\S]*"Failed"/u,
+		/"Working"[\s\S]*"Needs input"[\s\S]*"Finished"/u,
 	);
+	assert.doesNotMatch(viewOptions, /"Idle"/u);
+	// PR state keeps literal ids (`as const satisfies`) so the menu's icon map is
+	// keyed by a union — an unmapped state is a type error, not a row that
+	// quietly loses its glyph. Agent state is label-only, so it needs no union.
+	assert.match(
+		viewOptions,
+		/export const BOARD_PR_STATE_OPTIONS = \[[\s\S]*?\] as const satisfies readonly BoardVisibilityOption\[\];/u,
+		"BOARD_PR_STATE_OPTIONS must keep literal ids for the icon map's key union",
+	);
+	// PR state rows carry a leading glyph, tinted through the ADS `color` prop —
+	// ADS ships its icon CSS unlayered, so a Tailwind text utility on the same
+	// svg silently loses. Agent rows carry no glyph and pass no icon map.
+	const prIcons = viewMenu.match(/const PR_STATE_ICONS = \{[\s\S]*?\} as const satisfies Record</u);
+	assert.ok(prIcons, "PR_STATE_ICONS should be a Record keyed by the option id union");
+	for (const entry of ["open", "draft", "queued", "merged", "closed"]) {
+		assert.match(prIcons[0], new RegExp(`\\n\\t${entry}: \\{ glyph: \\w+Icon, color: token\\("color\\.icon[.\\w]*"\\) \\},`, "u"));
+	}
+	assert.doesNotMatch(viewMenu, /AGENT_STATE_ICONS/u);
+	assert.doesNotMatch(withoutComments(viewMenu), /<Icon[^>]*className="text-icon/u);
 	// Every list is CONTROLLED, seeded from the shared defaults. Base UI unmounts
 	// a submenu's contents on close and the whole popup on dismiss, so an
 	// uncontrolled `defaultValue`/`defaultChecked` row rebuilds from the default
