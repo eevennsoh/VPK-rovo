@@ -36,6 +36,8 @@ interface BoardVisibilityOption {
 	label: string;
 	/** Whether the item starts visible on the board. */
 	shown: boolean;
+	/** Draw a divider above this row so it reads as a new group. */
+	separatorBefore?: boolean;
 }
 
 /**
@@ -73,7 +75,9 @@ export type BoardPrStateId = (typeof BOARD_PR_STATE_OPTIONS)[number]["id"];
 /**
  * Which agent-session states surface on a card's activity row. Ordered by the
  * shape of a session rather than alphabetically: the state an agent holds on
- * its own, then the one that wants a human, then the terminal one.
+ * its own, then the one that wants a human, then the terminal one. Untracked
+ * sits after that lifecycle, separated, because it is the absence of a
+ * session rather than a fourth session shape.
  *
  * Label-only in the menu — unlike PR state these rows carry no leading glyph,
  * so the list needs no literal-id union to key an icon map.
@@ -82,6 +86,7 @@ export const BOARD_AGENT_STATE_OPTIONS: readonly BoardVisibilityOption[] = [
 	{ id: "working", label: "Working", shown: true },
 	{ id: "needs-input", label: "Needs input", shown: true },
 	{ id: "finished", label: "Finished", shown: true },
+	{ id: "untracked", label: "Untracked", shown: true, separatorBefore: true },
 ];
 
 interface BoardFieldOption extends BoardVisibilityOption {
