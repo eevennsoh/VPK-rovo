@@ -1,7 +1,7 @@
 import type { AgentListItem } from "@/components/blocks/agent-list";
 
 /**
- * A local coding session that has not been captured into a work item.
+ * An agent session rendered either detached from or attached to a work item.
  *
  * Structurally identical to an Agent List row — the card renders the shared
  * `AgentListRow` presenter inside a dashed uncaptured-work frame — so this is
@@ -11,14 +11,14 @@ import type { AgentListItem } from "@/components/blocks/agent-list";
  */
 export type AgentSessionItem = AgentListItem;
 
-/** Visual footprint of each session. Large preserves the full uncaptured-work card. */
-export type AgentSessionVariant = "large" | "medium" | "small";
+/** Visual footprint and work-item relationship of each session. */
+export type AgentSessionVariant = "large" | "medium-detached" | "medium-attached" | "small";
 
 export interface AgentSessionProps {
 	className?: string;
 	/** Card footprint. Defaults to the full large uncaptured-work card. */
 	variant?: AgentSessionVariant;
-	/** Sessions to render; defaults to built-in sample data. */
+	/** Sessions to render; defaults to relationship-appropriate built-in sample data. */
 	items?: readonly AgentSessionItem[];
 	/** Ids whose card should read as captured (solid border, still hoverable). */
 	capturedItemIds?: ReadonlySet<string>;

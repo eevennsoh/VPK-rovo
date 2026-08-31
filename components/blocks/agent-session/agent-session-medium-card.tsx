@@ -28,6 +28,7 @@ function actorInitials(name: string): string {
 }
 
 export function AgentSessionMediumCard({
+	flyout,
 	isArriving,
 	isNew,
 	item,
@@ -37,6 +38,7 @@ export function AgentSessionMediumCard({
 	isNew: boolean;
 	item: AgentSessionItem;
 	onView?: (item: AgentSessionItem) => void;
+	flyout: boolean;
 }>) {
 	const shouldReduceMotion = useReducedMotion();
 	const shouldPlayArrival = isArriving && !shouldReduceMotion;
@@ -87,16 +89,16 @@ export function AgentSessionMediumCard({
 			style={{ willChange: shouldPlayArrival ? "opacity, transform" : undefined }}
 			transition={AGENT_SESSION_ARRIVAL_TRANSITION}
 		>
-			{onView === undefined ? (
+			{onView === undefined && !flyout ? (
 				<div className={className}>{content}</div>
 			) : (
 				<Button
-					aria-label={`Open ${label} session`}
+					aria-label={`${onView === undefined ? "Preview" : "Open"} ${label} session`}
 					className={cn(
 						className,
 						"h-[33px]! rounded-[10px]! hover:bg-bg-accent-gray-subtlest-hovered active:bg-bg-accent-gray-subtlest-pressed",
 					)}
-					onClick={() => onView(item)}
+					onClick={onView === undefined ? undefined : () => onView(item)}
 					type="button"
 					variant="ghost"
 				>

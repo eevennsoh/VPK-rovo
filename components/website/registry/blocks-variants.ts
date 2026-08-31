@@ -65,10 +65,17 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"agent-session-demo-medium": dynamic(
+	"agent-session-demo-medium-detached": dynamic(
 		() =>
 			import("../demos/blocks/agent-session-demo").then((mod) => ({
-				default: mod.AgentSessionDemoMedium,
+				default: mod.AgentSessionDemoMediumDetached,
+			})),
+		{ ssr: false },
+	),
+	"agent-session-demo-medium-attached": dynamic(
+		() =>
+			import("../demos/blocks/agent-session-demo").then((mod) => ({
+				default: mod.AgentSessionDemoMediumAttached,
 			})),
 		{ ssr: false },
 	),

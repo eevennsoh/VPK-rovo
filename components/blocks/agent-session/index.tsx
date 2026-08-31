@@ -2,14 +2,18 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import { isCodingAgentListItem } from "@/components/blocks/agent-list";
+import {
+	isCodingAgentListItem,
+	toAgentSessionFlyoutItem,
+} from "@/components/blocks/agent-list";
 import {
 	createJiraSessionFlyoutHandle,
 	JiraSessionFlyoutSurface,
+	JiraSessionFlyoutTrigger,
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import { cn } from "@/lib/utils";
 
-import { AGENT_SESSION_ITEMS } from "./data";
+import { AGENT_SESSION_ATTACHED_ITEMS, AGENT_SESSION_ITEMS } from "./data";
 import { AgentSessionCard } from "./agent-session-card";
 import { AgentSessionCompactCard } from "./agent-session-compact-card";
 import {
@@ -64,13 +68,14 @@ function buildArrivalDelays(
  * Hide / Show eye where Agent List puts Archive. Work-item capture lives on the
  * shared untracked-work session flyout, the same surface
  * `components/blocks/agent-session-flyout` uses, so hovering a card offers
- * Link / Create / Add as a subtask without a footer chin. Medium follows the
- * Jira Agents compact row; Small is the identity notch left behind by a
- * collapsed session column.
+ * Link / Create / Add as a subtask without a footer chin. Medium detached keeps
+ * that uncaptured relationship in the Jira Agents compact row. Medium attached
+ * reuses the Jira Issue activity row and opens session details because its work
+ * relationship already exists. Small is the collapsed-column identity notch.
  */
 export function AgentSession({
 	className,
-	items = AGENT_SESSION_ITEMS,
+	items: itemsProp,
 	arrivingItemIds,
 	canViewItem,
 	capturedItemIds,
@@ -88,6 +93,8 @@ export function AgentSession({
 	variant = "large",
 	visibilityLabel,
 }: Readonly<AgentSessionProps>) {
+	const isAttached = variant === "medium-attached";
+	const items = itemsProp ?? (isAttached ? AGENT_SESSION_ATTACHED_ITEMS : AGENT_SESSION_ITEMS);
 	// Coding rows ignore `canViewItem`: resuming a session the viewer owns is not
 	// a permission question. They still require `onView`, because a read-only
 	// host must not receive a focusable no-op body.
@@ -135,19 +142,23 @@ export function AgentSession({
 							? undefined
 							: onView;
 
+					const flyoutSession = isAttached
+						? toAgentSessionFlyoutItem(item)
+						: toAgentSessionUntrackedWorkFlyoutItem(
+							item,
+							resolveAgentSessionWorkItemKey(
+								item,
+								getSuggestedWorkItemKey,
+								getSuggestedWorkItemKeys,
+							),
+						);
+
 					return variant === "large" ? (
 						<AgentSessionCard
 							arrivalDelaySeconds={arrivalDelays.get(item.id)}
 							captured={capturedItemIds?.has(item.id) ?? false}
 							flyoutHandle={flyoutHandle}
-							flyoutSession={toAgentSessionUntrackedWorkFlyoutItem(
-								item,
-								resolveAgentSessionWorkItemKey(
-									item,
-									getSuggestedWorkItemKey,
-									getSuggestedWorkItemKeys,
-								),
-							)}
+							flyoutSession={flyoutSession}
 							getResumeCommand={getResumeCommand}
 							isArriving={beatItemIds?.has(item.id) ?? false}
 							isNew={newItemIds?.has(item.id) ?? false}
@@ -160,33 +171,38 @@ export function AgentSession({
 							visibilityLabel={visibilityLabel}
 						/>
 					) : (
-						<li data-testid={"agent-session-row-" + item.id} key={item.id}>
+						<JiraSessionFlyoutTrigger
+							closeDelay={160}
+							handle={flyoutHandle}
+							key={item.id}
+							render={<li data-testid={"agent-session-row-" + item.id} />}
+							session={flyoutSession}
+						>
 							<AgentSessionCompactCard
+								flyout
 								isArriving={beatItemIds?.has(item.id) ?? false}
 								isNew={newItemIds?.has(item.id) ?? false}
 								item={item}
 								onView={itemOnView}
 								variant={variant}
 							/>
-						</li>
+						</JiraSessionFlyoutTrigger>
 					);
 				})}
 			</ul>
-			{variant === "large" ? (
-				<JiraSessionFlyoutSurface
-					capturedSessionIds={capturedItemIds}
-					content="untracked-work"
-					handle={flyoutHandle}
-					onAddAsSubtask={flyoutActions.onAddAsSubtask}
-					onCreateWorkItem={flyoutActions.onCreateWorkItem}
-					onLinkWorkItem={flyoutActions.onLinkWorkItem}
-				/>
-			) : null}
+			<JiraSessionFlyoutSurface
+				capturedSessionIds={capturedItemIds}
+				content={isAttached ? "details" : "untracked-work"}
+				handle={flyoutHandle}
+				onAddAsSubtask={flyoutActions.onAddAsSubtask}
+				onCreateWorkItem={flyoutActions.onCreateWorkItem}
+				onLinkWorkItem={flyoutActions.onLinkWorkItem}
+			/>
 		</>
 	);
 }
 
-export { AGENT_SESSION_ITEMS, AGENT_SESSION_MULTI_LINK_KEYS } from "./data";
+export { AGENT_SESSION_ATTACHED_ITEMS, AGENT_SESSION_ITEMS, AGENT_SESSION_MULTI_LINK_KEYS } from "./data";
 export { AgentSessionCard } from "./agent-session-card";
 export {
 	bindAgentSessionFlyoutActions,
