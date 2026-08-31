@@ -67,8 +67,10 @@ export function ScrubberMark({
 				axis={axis}
 				// The button is the hit target; the rule overflows it at full swell
 				// and must not stretch the target into whatever sits beside the rail.
+				// `bg-current` rather than a fixed colour: the rail root owns the tone,
+				// so an inverse host repaints every rule by changing one class.
 				className={cn(
-					"pointer-events-none absolute bg-text",
+					"pointer-events-none absolute bg-current",
 					axis === "y" ? "left-0 h-px" : "bottom-0 left-1/2 w-px -translate-x-1/2",
 				)}
 				magnify={magnify}

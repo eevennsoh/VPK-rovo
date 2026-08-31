@@ -12,6 +12,8 @@ import {
 	OMNIBAR_MORPH_EXIT,
 	OMNIBAR_PANEL_ENTER,
 	OMNIBAR_PANEL_EXIT,
+	OMNIBAR_RAIL_ENTER,
+	OMNIBAR_RAIL_EXIT,
 	OMNIBAR_REDUCED,
 	resolveOmnibarTransition,
 } from "./omnibar-motion.ts";
@@ -99,6 +101,15 @@ test("Omnibar collapse delay stays short enough to feel immediate", () => {
 test("Omnibar exits are shorter than the matching entrances", () => {
 	assert.ok(OMNIBAR_MORPH_EXIT.duration < OMNIBAR_MORPH_ENTER.duration);
 	assert.ok(OMNIBAR_PANEL_EXIT.duration < OMNIBAR_PANEL_ENTER.duration);
+	assert.ok(OMNIBAR_RAIL_EXIT.duration < OMNIBAR_RAIL_ENTER.duration);
+});
+
+test("Omnibar edge rail enters on the practical curve, not the bold one", () => {
+	// A small, high-frequency surface. The bold `ease-out` belongs to the prominent
+	// entrances (the docked panel); using it here would overstate a rail toggle.
+	assert.deepEqual(OMNIBAR_RAIL_ENTER.ease, [0.4, 1, 0.6, 1]);
+	assert.deepEqual(OMNIBAR_RAIL_EXIT.ease, [0.6, 0, 0.8, 0.6]);
+	assert.notDeepEqual(OMNIBAR_RAIL_ENTER.ease, OMNIBAR_PANEL_ENTER.ease);
 });
 
 test("Omnibar zeroes every transition under reduced motion", () => {
@@ -108,6 +119,8 @@ test("Omnibar zeroes every transition under reduced motion", () => {
 		OMNIBAR_CONTENT,
 		OMNIBAR_PANEL_ENTER,
 		OMNIBAR_PANEL_EXIT,
+		OMNIBAR_RAIL_ENTER,
+		OMNIBAR_RAIL_EXIT,
 	]) {
 		assert.equal(resolveOmnibarTransition(transition, true), OMNIBAR_REDUCED);
 		assert.equal(resolveOmnibarTransition(transition, false), transition);
