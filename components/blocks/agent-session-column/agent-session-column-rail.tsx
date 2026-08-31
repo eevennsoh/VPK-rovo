@@ -143,18 +143,6 @@ function useNotchDock(itemCount: number, enabled: boolean) {
 	const magnify = useMotionValue(0);
 	const nearestIndex = useMotionValue(AGENT_SESSION_NOTCH_NO_NEAREST);
 
-	const measure = useCallback(() => {
-		const list = listRef.current;
-		if (list === null) {
-			return;
-		}
-		const listRect = list.getBoundingClientRect();
-		centersRef.current = Array.from(list.children, (child: Element) => {
-			const rect = child.getBoundingClientRect();
-			return rect.top - listRect.top + list.scrollTop + rect.height / 2;
-		});
-	}, []);
-
 	const trackPointer = useCallback((clientY: number) => {
 		const list = listRef.current;
 		if (list === null) {
@@ -166,15 +154,39 @@ function useNotchDock(itemCount: number, enabled: boolean) {
 		nearestIndex.set(toNearestAgentSessionNotchIndex(centersRef.current, offset));
 	}, [nearestIndex, pointerY]);
 
+	// Measuring and republishing are one operation on purpose, because measuring
+	// alone cannot reach the marks: centres live in a ref, and writing a ref
+	// notifies no `useTransform`. Only setting the pointer's motion value
+	// recomputes the slope and the selection against the new geometry. Split into
+	// two functions, a caller could measure and leave a stationary pointer
+	// pointing at where the notches used to be until the next move or scroll.
+	const remeasure = useCallback(() => {
+		const list = listRef.current;
+		if (list === null) {
+			return;
+		}
+		const listRect = list.getBoundingClientRect();
+		centersRef.current = Array.from(list.children, (child: Element) => {
+			const rect = child.getBoundingClientRect();
+			return rect.top - listRect.top + list.scrollTop + rect.height / 2;
+		});
+		const clientY = clientYRef.current;
+		if (clientY !== null) {
+			trackPointer(clientY);
+		}
+	}, [trackPointer]);
+
 	// An arrival slides the notches below it into place over a quarter second. If
 	// the pointer is already on the rail the slope would keep pointing at where
-	// they were, so the new geometry is picked up as soon as the list changes.
+	// they were, so the new geometry is picked up as soon as the list changes —
+	// including when the pointer never moves, which is the whole reason the
+	// republish above is not optional.
 	useEffect(() => {
 		if (!enabled) {
 			return;
 		}
-		measure();
-	}, [enabled, itemCount, measure]);
+		remeasure();
+	}, [enabled, itemCount, remeasure]);
 
 	function handlePointerEnter(event: PointerEvent<HTMLUListElement>) {
 		// Touch has no hover: a finger sliding here is a scroll, and docking under
@@ -182,7 +194,7 @@ function useNotchDock(itemCount: number, enabled: boolean) {
 		if (event.pointerType === "touch") {
 			return;
 		}
-		measure();
+		remeasure();
 	}
 
 	function handlePointerMove(event: PointerEvent<HTMLUListElement>) {

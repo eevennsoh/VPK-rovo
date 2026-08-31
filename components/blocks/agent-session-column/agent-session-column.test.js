@@ -296,9 +296,20 @@ test("the rail is one dock, so notches swell by distance rather than per row", (
 	// pointer through them instead of invalidating them.
 	assert.match(RAIL_COLUMN_SOURCE, /rect\.top - listRect\.top \+ list\.scrollTop \+ rect\.height \/ 2/u);
 	assert.match(RAIL_COLUMN_SOURCE, /onScroll=\{isDocked \? dock\.handleScroll : undefined\}/u);
-	// An arrival slides its neighbours over a quarter second; the slope has to
-	// pick up the new geometry rather than keep pointing at the old rows.
-	assert.match(RAIL_COLUMN_SOURCE, /\}, \[enabled, itemCount, measure\]\);/u);
+	// An arrival changes the geometry the slope is keyed to, so it has to be
+	// re-measured rather than left pointing at the old rows.
+	assert.match(RAIL_COLUMN_SOURCE, /\}, \[enabled, itemCount, remeasure\]\);/u);
+	// Measuring and republishing must stay one operation. Centres live in a ref
+	// and a ref write notifies no `useTransform`, so a measure that does not set
+	// the pointer's motion value leaves a stationary pointer on stale geometry
+	// until the next move or scroll. Behaviour is covered in
+	// `agent-session-notch-magnify.test.ts`.
+	assert.match(
+		RAIL_COLUMN_SOURCE,
+		/const remeasure = useCallback\(\(\) => \{[\s\S]*?const clientY = clientYRef\.current;\s*if \(clientY !== null\) \{\s*trackPointer\(clientY\);/u,
+	);
+	// No second entry point that only writes centres.
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /const measure = useCallback/u);
 	// Touch has no hover, and docking under a finger would fight the scroll.
 	assert.match(RAIL_COLUMN_SOURCE, /event\.pointerType === "touch"/u);
 	// The parked pointer is finite — an Infinity poisons a motion value for good.

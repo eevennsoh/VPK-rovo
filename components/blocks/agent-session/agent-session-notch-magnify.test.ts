@@ -151,3 +151,38 @@ test("a parked pointer or an unmeasured rail selects nothing", () => {
 	// Before the first measure the centres array is empty; no notch may claim it.
 	assert.equal(toNearestAgentSessionNotchIndex([], 100), AGENT_SESSION_NOTCH_NO_NEAREST);
 });
+
+test("an arrival under a stationary pointer re-aims the slope at the new centres", () => {
+	// The dock measures and republishes in one step because measuring alone
+	// cannot reach the marks: centres live in a ref, and writing a ref notifies
+	// no `useTransform`. This is the case that proves the republish is not
+	// bookkeeping — the pointer never moves, and the answer still changes.
+	//
+	// A rail that grows past a resting pointer is the clean demonstration. Until
+	// the new notch is measured the pointer is past the end of the array and the
+	// last notch keeps claiming it; once it is measured the pointer belongs to
+	// the arrival instead.
+	const grown = [...CENTERS, 16 * PITCH + 10];
+	const stationary = grown[16];
+
+	assert.equal(
+		toNearestAgentSessionNotchIndex(CENTERS, stationary),
+		15,
+		"stale centres end early, so the last notch over-claims the pointer",
+	);
+	assert.equal(
+		toNearestAgentSessionNotchIndex(grown, stationary),
+		16,
+		"measured centres hand the pointer to the notch that actually sits under it",
+	);
+
+	// And the crest moves with the selection. Against the stale array the old
+	// last notch is a pitch away and still riding the slope; against the measured
+	// one the arrival takes the peak.
+	assert.ok(toAgentSessionNotchMagnification(stationary - CENTERS[15]) < 1);
+	assert.equal(toAgentSessionNotchMagnification(stationary - grown[16]), 1);
+
+	// The unmeasured tail is the failure mode in full: a notch whose centre has
+	// not been written yet has no place on the slope at all.
+	assert.equal(CENTERS[16], undefined);
+});
