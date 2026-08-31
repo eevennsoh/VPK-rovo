@@ -131,12 +131,12 @@ export interface AgentListItem {
 	timeLabel?: string;
 	/**
 	 * Where the session runs. Defaults to `"cloud"`. Local rows render a static
-	 * timestamp, the devices glyph, and {@link AgentListItem.machineName} instead
-	 * of a live runtime and the agent name.
+	 * timestamp, the invoker's 16px avatar, and {@link AgentListItem.machineName}
+	 * instead of a live runtime and the agent name.
 	 */
 	host?: AgentListHost;
 	/**
-	 * Viewer machine shown beside the devices glyph on local rows
+	 * Viewer machine shown beside the invoker avatar on local rows
 	 * (e.g. `"Geoff’s MacBook"`). Ignored unless `host` is `"local"`.
 	 */
 	machineName?: string;

@@ -6,10 +6,6 @@ export default function AgentSessionDemo() {
 	return <Page />;
 }
 
-export function AgentSessionDemoMultiLink() {
-	return <Page variant="multi-link" />;
-}
-
 export function AgentSessionDemoMedium() {
 	return <Page variant="medium" />;
 }

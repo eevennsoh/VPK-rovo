@@ -10,7 +10,11 @@ import {
 	type AgentListRowHoverActions,
 } from "@/components/blocks/agent-list/agent-list-card";
 import { toAgentListResumeCommand } from "@/components/blocks/agent-list/agent-list-session";
-import { UncapturedWorkChin } from "@/components/blocks/jira-issue/uncaptured-work-chin";
+import type { JiraSidebarSessionItem } from "@/components/blocks/product-sidebar/variants/jira";
+import {
+	JiraSessionFlyoutTrigger,
+	type JiraSessionFlyoutHandle,
+} from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import { cn } from "@/lib/utils";
 
 import {
@@ -37,22 +41,21 @@ async function copyResumeCommand(command: string): Promise<void> {
 export function AgentSessionCard({
 	arrivalDelaySeconds,
 	captured = false,
+	flyoutHandle,
+	flyoutSession,
 	getResumeCommand,
 	isArriving = false,
 	isNew = false,
 	isResumable,
 	item,
 	onCopyResume,
-	onCreateWorkItem,
-	onLinkWorkItem,
-	onSubtasks,
 	onToggleVisibility,
 	onView,
-	suggestedWorkItemKey,
-	suggestedWorkItemKeys,
 }: Readonly<{
 	arrivalDelaySeconds?: number;
 	captured?: boolean;
+	flyoutHandle: JiraSessionFlyoutHandle;
+	flyoutSession: JiraSidebarSessionItem;
 	getResumeCommand?: (item: AgentSessionItem) => string | undefined;
 	/** Play the one-shot arrival beat. A remounted card must not re-arm it. */
 	isArriving?: boolean;
@@ -61,13 +64,8 @@ export function AgentSessionCard({
 	isResumable?: (item: AgentSessionItem) => boolean;
 	item: AgentSessionItem;
 	onCopyResume?: (item: AgentSessionItem) => void;
-	onCreateWorkItem?: () => void;
-	onLinkWorkItem?: (workItemKey?: string) => void;
-	onSubtasks?: () => void;
 	onToggleVisibility?: (item: AgentSessionItem) => void;
 	onView?: (item: AgentSessionItem) => void;
-	suggestedWorkItemKey?: string;
-	suggestedWorkItemKeys?: readonly string[];
 }>) {
 	const shouldReduceMotion = useReducedMotion();
 	const [copiedResume, setCopiedResume] = useState(false);
@@ -77,15 +75,11 @@ export function AgentSessionCard({
 		window.clearTimeout(copiedResetRef.current);
 	}, []);
 
-	const hasWorkItemActions = onCreateWorkItem !== undefined || onLinkWorkItem !== undefined;
 	const resumeCommand = getResumeCommand?.(item) ?? toAgentListResumeCommand(item);
 	// Resume is an affordance, not just a callback: a row the host cannot resume
 	// must not render an enabled control, because the button copies the command to
 	// the clipboard before `onCopyResume` ever runs.
 	const canResume = (isResumable?.(item) ?? true) && resumeCommand.length > 0;
-	// Subtasks counts too: a consumer that wires only that handler still needs
-	// the chin, or its control would be unreachable.
-	const showChin = captured || hasWorkItemActions || onSubtasks !== undefined;
 	// The beat, not the mark: a card remounted while still unreviewed keeps the
 	// discovery dash and dot but must not replay its entrance.
 	const shouldPlayArrival = isArriving && !shouldReduceMotion;
@@ -119,25 +113,41 @@ export function AgentSessionCard({
 	};
 
 	return (
-		<motion.li
-			animate={shouldPlayArrival ? { opacity: 1, y: 0 } : undefined}
-			data-testid={"agent-session-row-" + item.id}
-			// `false` for a settled card, so nothing replays when the list re-renders
-			// or the watermark clears the mark. Only an arrival animates.
-			initial={shouldPlayArrival ? { opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX } : false}
-			// Siblings slide down to make room instead of jumping. `"position"` so a
-			// displaced card is never scaled, only moved.
-			layout={shouldReduceMotion ? false : "position"}
-			style={{ willChange: shouldPlayArrival ? "opacity, transform" : undefined }}
-			transition={{ ...AGENT_SESSION_ARRIVAL_TRANSITION, delay: arrivalDelaySeconds ?? 0 }}
+		<JiraSessionFlyoutTrigger
+			closeDelay={160}
+			handle={flyoutHandle}
+			render={
+				<motion.li
+					animate={shouldPlayArrival ? { opacity: 1, y: 0 } : undefined}
+					data-testid={"agent-session-row-" + item.id}
+					// `false` for a settled card, so nothing replays when the list re-renders
+					// or the watermark clears the mark. Only an arrival animates.
+					initial={shouldPlayArrival ? { opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX } : false}
+					// Siblings slide down to make room instead of jumping. `"position"` so a
+					// displaced card is never scaled, only moved.
+					layout={shouldReduceMotion ? false : "position"}
+					style={{ willChange: shouldPlayArrival ? "opacity, transform" : undefined }}
+					transition={{ ...AGENT_SESSION_ARRIVAL_TRANSITION, delay: arrivalDelaySeconds ?? 0 }}
+				/>
+			}
+			session={flyoutSession}
 		>
 			<article
 				className={cn(
-					"group/uncaptured-work relative flex w-full flex-col overflow-hidden rounded-lg border border-dashed bg-surface text-left",
+					"group/agent-row relative flex w-full cursor-pointer rounded-lg border bg-surface p-3 text-left",
+					"transition-[background-color,border-color] duration-xxshort ease-out-practical",
+					"hover:border-border hover:bg-surface-hovered",
+					"focus-within:border-border focus-within:bg-surface-hovered",
+					"motion-reduce:transition-none",
 					// Recoloured, not replaced: the dash means "uncaptured" and stays
 					// true while the card is also new, so the one property carries both
 					// facts instead of the arrival mark evicting the card's own state.
-					isNew ? "border-border-discovery" : "border-border-disabled",
+					// Captured sessions drop the dash — the work is on the board now.
+					captured
+						? "border-solid border-border"
+						: isNew
+							? "border-dashed border-border-discovery"
+							: "border-dashed border-border-disabled",
 				)}
 				data-captured={captured || undefined}
 				data-new={isNew || undefined}
@@ -147,7 +157,7 @@ export function AgentSessionCard({
 					<>
 						{/* Colour never carries it alone. */}
 						<span className="sr-only">Newly synced, not yet reviewed</span>
-						{/* Parked in the sunken body's 12px padding, so it clears the
+						{/* Parked in the body's 12px padding, so it clears the
 						    avatar on the left and the hover actions on the right. */}
 						<span
 							aria-hidden="true"
@@ -155,35 +165,14 @@ export function AgentSessionCard({
 						/>
 					</>
 				) : null}
-				{/*
-				 * The card is two hit areas, not one. `group/agent-row` scopes the
-				 * hover reveal to this sunken top region so pointing at the chin —
-				 * which owns its own always-visible controls — does not pop Resume
-				 * open above it.
-				 */}
-				<div className="group/agent-row bg-surface-sunken p-3">
-					<AgentListRow
-						hoverActions={hoverActions}
-						isCompact={false}
-						isSelected={false}
-						item={item}
-						onView={onView}
-					/>
-				</div>
-				{showChin ? (
-					<UncapturedWorkChin
-						captured={captured}
-						createUnavailable={onCreateWorkItem === undefined}
-						linkUnavailable={onLinkWorkItem === undefined}
-						onCreateWorkItem={onCreateWorkItem}
-						onLinkWorkItem={onLinkWorkItem}
-						onSubtasks={onSubtasks}
-						suggestedWorkItemKey={suggestedWorkItemKey}
-						suggestedWorkItemKeys={suggestedWorkItemKeys}
-						summary={item.title}
-					/>
-				) : null}
+				<AgentListRow
+					hoverActions={hoverActions}
+					isCompact={false}
+					isSelected={false}
+					item={item}
+					onView={onView}
+				/>
 			</article>
-		</motion.li>
+		</JiraSessionFlyoutTrigger>
 	);
 }

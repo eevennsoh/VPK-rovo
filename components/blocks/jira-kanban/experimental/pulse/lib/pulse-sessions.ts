@@ -7,8 +7,8 @@ import { isPulseAgentSession, type PulseLooseWork, type PulseMember } from "../t
  *
  * Uncaptured GitHub work stays a dashed card with a Link to work item chin. A
  * Claude session uses the same card chrome through the Agent Session block:
- * the shared row (identity, static stamp, viewer machine) sits in the sunken
- * body, and the issue key becomes the chin's Link to work item suggestion. The
+ * the shared row (identity, static stamp, viewer machine) sits on the dashed
+ * surface, and the issue key becomes the untracked-work flyout suggestion. The
  * worktree stays on the flyout payload. Keeping the mapping pure and here means
  * the rail stays a renderer and the fixture never learns the row model.
  */

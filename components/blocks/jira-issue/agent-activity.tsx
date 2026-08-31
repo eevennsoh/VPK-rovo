@@ -529,13 +529,10 @@ function JiraIssueAgentActivityRow({
 				</span>
 			) : (
 				<span
-					className={cn(
-						"grid shrink-0 place-items-center text-icon",
-						usesStrokeChrome ? "size-4" : "-my-1 size-6",
-					)}
+					className="grid size-4 shrink-0 place-items-center text-icon"
 					aria-hidden="true"
 				>
-					<Spinner label="" size="sm" />
+					<Spinner label="" size="xs" />
 				</span>
 			)}
 				</>

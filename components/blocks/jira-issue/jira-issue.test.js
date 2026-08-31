@@ -317,20 +317,23 @@ test("Jira issue shows PR metadata with the specified summary-row spacing", () =
 	assert.match(SOURCE, /const inferredPullRequestNumber = agentDoneRuns\.find\(\(run\) => run\.pullRequestNumber\)\?\.pullRequestNumber;/u);
 	assert.match(SOURCE, /const resolvedPullRequestNumber = pullRequestNumber \?\? inferredPullRequestNumber;/u);
 	assert.match(SUMMARY_SOURCE, /function JiraIssuePullRequestCluster\(/u);
-	assert.match(SUMMARY_BLOCK, /\{issueKey\}[\s\S]*\{pullRequestNumber \? \([\s\S]*<JiraIssuePullRequestCluster[\s\S]*usesStrokeChrome=\{usesStrokeChrome\}/u);
-	assert.doesNotMatch(SUMMARY_BLOCK, /usesStrokeChrome && pullRequestNumber \? \(/u);
+	assert.match(SUMMARY_SOURCE, /const pullRequestCluster = pullRequestNumber \? \([\s\S]*<JiraIssuePullRequestCluster[\s\S]*usesStrokeChrome=\{usesStrokeChrome\}/u);
+	// Default chrome keeps the PR cluster beside the issue key; stroke chrome
+	// moves it next to the priority/assignee (metadata) cluster instead.
+	assert.match(SUMMARY_BLOCK, /\{usesStrokeChrome \? null : pullRequestCluster\}/u);
+	assert.match(SUMMARY_BLOCK, /\{usesStrokeChrome && pullRequestCluster \? \([\s\S]*<div className="flex shrink-0 items-center gap-1\.5">[\s\S]*\{pullRequestCluster\}[\s\S]*\{metadataCluster\}/u);
 	assert.match(TYPES_SOURCE, /export type JiraIssuePullRequestStatus = "open" \| "failed" \| "merged";/u);
 	assert.match(SUMMARY_SOURCE, /function getJiraIssuePullRequestPresentation\(/u);
 	assert.match(SUMMARY_SOURCE, /case "failed":[\s\S]*MergeFailureIcon[\s\S]*text-icon-danger[\s\S]*case "merged":[\s\S]*MergeSuccessIcon[\s\S]*text-icon-accent-purple[\s\S]*case "open":[\s\S]*PullRequestIcon[\s\S]*text-icon-accent-lime/u);
 	assert.match(SOURCE, /pullRequestNumber=\{resolvedPullRequestNumber\}/u);
 	assert.match(SOURCE, /pullRequestStatus=\{pullRequestStatus\}/u);
 	assert.match(SUMMARY_SOURCE, /function JiraIssuePullRequestCluster\([\s\S]*usesStrokeChrome[\s\S]*\? "font-mono text-xs font-normal leading-4 text-text-subtlest"[\s\S]*: "text-xs font-semibold text-text-subtlest"/u);
-	assert.match(SUMMARY_BLOCK, /usesStrokeChrome \? "flex items-center gap-3" : "flex items-center gap-2"/u);
+	assert.match(SUMMARY_BLOCK, /usesStrokeChrome \? "flex min-w-0 items-center" : "flex min-w-0 items-center gap-2"/u);
 });
 
 test("Jira issue stroke chrome matches the work-item key type on the issue-key cluster", () => {
 	assert.match(SUMMARY_SOURCE, /import \{ IconTile \} from "@\/components\/ui\/icon-tile";/);
-	assert.match(SUMMARY_BLOCK, /usesStrokeChrome\s*\n\s*\? "flex items-center gap-1\.5"\s*\n\s*: "flex items-center gap-1"/);
+	assert.match(SUMMARY_BLOCK, /usesStrokeChrome\s*\n\s*\? "flex shrink-0 items-center gap-1\.5"\s*\n\s*: "flex shrink-0 items-center gap-1"/);
 	assert.match(SUMMARY_BLOCK, /usesStrokeChrome\s*\n\s*\? "font-mono text-xs font-normal leading-4 text-text-subtlest"\s*\n\s*: "text-xs font-semibold text-text-subtlest"/);
 	assert.match(SUMMARY_BLOCK, /usesStrokeChrome \? \(\s*<IconTile[\s\S]*icon=\{<TaskIcon label="" color=\{token\("color\.icon\.brand"\)\} size="small" \/>\}[\s\S]*iconSize="small"[\s\S]*label=\{issueTypeLabel\}[\s\S]*size="xxsmall"[\s\S]*variant="transparent"/);
 	assert.match(SUMMARY_BLOCK, /<TaskIcon[\s\S]*label=\{issueTypeLabel\}[\s\S]*color=\{token\("color\.icon\.brand"\)\}/);
@@ -525,7 +528,8 @@ test("Jira issue renders one aggregate agent row with prioritized status and no 
 	assert.match(AGENT_ACTIVITY_SOURCE, /usesStrokeChrome \? "size-4" : "-my-1 size-6"/u);
 	// Both chromes use the standard (non-rainbow) Spinner for the working indicator;
 	// the stroke chrome no longer swaps in a PixelLoader.
-	assert.match(AGENT_ACTIVITY_SOURCE, /aria-hidden="true"\s*\n\s*>\s*\n\s*<Spinner label="" size="sm" \/>/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /aria-hidden="true"\s*\n\s*>\s*\n\s*<Spinner label="" size="xs" \/>/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /className="grid size-4 shrink-0 place-items-center text-icon"/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<HoverCard/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AgentList/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AgentStates/u);

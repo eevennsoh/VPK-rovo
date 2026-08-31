@@ -1,14 +1,22 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { isCodingAgentListItem } from "@/components/blocks/agent-list";
+import {
+	createJiraSessionFlyoutHandle,
+	JiraSessionFlyoutSurface,
+} from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import { cn } from "@/lib/utils";
 
 import { AGENT_SESSION_ITEMS } from "./data";
 import { AgentSessionCard } from "./agent-session-card";
 import { AgentSessionCompactCard } from "./agent-session-compact-card";
-import { suggestedAgentSessionWorkItemKey } from "./agent-session-work-item";
+import {
+	bindAgentSessionFlyoutActions,
+	resolveAgentSessionWorkItemKey,
+	toAgentSessionUntrackedWorkFlyoutItem,
+} from "./agent-session-work-item";
 import type {
 	AgentSessionItem,
 	AgentSessionProps,
@@ -51,13 +59,14 @@ function buildArrivalDelays(
  * Local coding sessions that never became work items.
  *
  * Large sessions are dashed uncaptured-work cards: the shared Agent List row
- * (identity, static stamp, viewer machine) sits in a sunken body and reveals
+ * (identity, static stamp, viewer machine) sits on a single surface and reveals
  * the same hover/focus action pair Agent List rows use — Resume, plus a
- * show/hide eye where Agent List puts Archive. The chin below owns the work
- * item actions: one Link to work item row per candidate key, each with its own
- * trailing Create work item and Subtasks icons. There is no hover flyout, so the
- * card never needs a popup surface. Medium follows the Jira Agents compact row;
- * Small is the identity notch left behind by a collapsed session column.
+ * show/hide eye where Agent List puts Archive. Work-item capture lives on the
+ * shared untracked-work session flyout, the same surface
+ * `components/blocks/agent-session-flyout` uses, so hovering a card offers
+ * Link / Create / Add as a subtask without a footer chin. Medium follows the
+ * Jira Agents compact row; Small is the identity notch left behind by a
+ * collapsed session column.
  */
 export function AgentSession({
 	className,
@@ -91,54 +100,86 @@ export function AgentSession({
 		() => buildArrivalDelays(items, beatItemIds),
 		[items, beatItemIds],
 	);
+	// One payload-aware flyout for the whole list, as Agent List and the
+	// Agent Session flyout block do: the popup stays mounted and follows the
+	// hovered card, so sliding down the list crossfades instead of remounting.
+	const [flyoutHandle] = useState(createJiraSessionFlyoutHandle);
+	const flyoutActions = useMemo(
+		() => bindAgentSessionFlyoutActions(items, {
+			onCreateWorkItem,
+			onLinkWorkItem,
+			onSubtasks,
+		}),
+		[items, onCreateWorkItem, onLinkWorkItem, onSubtasks],
+	);
 
 	return (
-		<ul className={cn("flex flex-col gap-2", className)} data-variant={variant}>
-			{items.map((item: AgentSessionItem) => {
-				const itemOnView = isCodingAgentListItem(item)
-					? onView === undefined
-						? undefined
-						: handleCodingView
-					: onView === undefined || (canViewItem !== undefined && !canViewItem(item))
-						? undefined
-						: onView;
+		<>
+			<ul className={cn("flex flex-col gap-2", className)} data-variant={variant}>
+				{items.map((item: AgentSessionItem) => {
+					const itemOnView = isCodingAgentListItem(item)
+						? onView === undefined
+							? undefined
+							: handleCodingView
+						: onView === undefined || (canViewItem !== undefined && !canViewItem(item))
+							? undefined
+							: onView;
 
-				return variant === "large" ? (
-					<AgentSessionCard
-						arrivalDelaySeconds={arrivalDelays.get(item.id)}
-						captured={capturedItemIds?.has(item.id) ?? false}
-						getResumeCommand={getResumeCommand}
-						isArriving={beatItemIds?.has(item.id) ?? false}
-						isNew={newItemIds?.has(item.id) ?? false}
-						isResumable={isResumable}
-						item={item}
-						key={item.id}
-						onCopyResume={onCopyResume}
-						onCreateWorkItem={onCreateWorkItem === undefined ? undefined : () => onCreateWorkItem(item)}
-						onLinkWorkItem={onLinkWorkItem === undefined ? undefined : (workItemKey) => onLinkWorkItem(item, workItemKey)}
-						onSubtasks={onSubtasks === undefined ? undefined : () => onSubtasks(item)}
-						onToggleVisibility={onToggleVisibility}
-						onView={itemOnView}
-						suggestedWorkItemKey={getSuggestedWorkItemKey?.(item) ?? suggestedAgentSessionWorkItemKey(item)}
-						suggestedWorkItemKeys={getSuggestedWorkItemKeys?.(item)}
-					/>
-				) : (
-					<li data-testid={"agent-session-row-" + item.id} key={item.id}>
-						<AgentSessionCompactCard
+					return variant === "large" ? (
+						<AgentSessionCard
+							arrivalDelaySeconds={arrivalDelays.get(item.id)}
+							captured={capturedItemIds?.has(item.id) ?? false}
+							flyoutHandle={flyoutHandle}
+							flyoutSession={toAgentSessionUntrackedWorkFlyoutItem(
+								item,
+								resolveAgentSessionWorkItemKey(
+									item,
+									getSuggestedWorkItemKey,
+									getSuggestedWorkItemKeys,
+								),
+							)}
+							getResumeCommand={getResumeCommand}
 							isArriving={beatItemIds?.has(item.id) ?? false}
 							isNew={newItemIds?.has(item.id) ?? false}
+							isResumable={isResumable}
 							item={item}
+							key={item.id}
+							onCopyResume={onCopyResume}
+							onToggleVisibility={onToggleVisibility}
 							onView={itemOnView}
-							variant={variant}
 						/>
-					</li>
-				);
-			})}
-		</ul>
+					) : (
+						<li data-testid={"agent-session-row-" + item.id} key={item.id}>
+							<AgentSessionCompactCard
+								isArriving={beatItemIds?.has(item.id) ?? false}
+								isNew={newItemIds?.has(item.id) ?? false}
+								item={item}
+								onView={itemOnView}
+								variant={variant}
+							/>
+						</li>
+					);
+				})}
+			</ul>
+			{variant === "large" ? (
+				<JiraSessionFlyoutSurface
+					content="untracked-work"
+					handle={flyoutHandle}
+					onAddAsSubtask={flyoutActions.onAddAsSubtask}
+					onCreateWorkItem={flyoutActions.onCreateWorkItem}
+					onLinkWorkItem={flyoutActions.onLinkWorkItem}
+				/>
+			) : null}
+		</>
 	);
 }
 
 export { AGENT_SESSION_ITEMS, AGENT_SESSION_MULTI_LINK_KEYS } from "./data";
 export { AgentSessionCard } from "./agent-session-card";
-export { suggestedAgentSessionWorkItemKey } from "./agent-session-work-item";
+export {
+	bindAgentSessionFlyoutActions,
+	resolveAgentSessionWorkItemKey,
+	suggestedAgentSessionWorkItemKey,
+	toAgentSessionUntrackedWorkFlyoutItem,
+} from "./agent-session-work-item";
 export type { AgentSessionItem, AgentSessionProps, AgentSessionVariant } from "./agent-session-types";

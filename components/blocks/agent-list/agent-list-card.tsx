@@ -181,6 +181,18 @@ function AgentListIdentity({
 	);
 }
 
+/** 16px invoker face. Shared by the `by` chip and the local-session metadata line. */
+function InvokerAvatar({ invoker }: Readonly<{ invoker: AgentListInvoker }>) {
+	return (
+		<Avatar className="shrink-0" label={invoker.name} size="xs" title={invoker.name}>
+			{invoker.avatarSrc ? (
+				<AvatarImage alt="" src={invoker.avatarSrc} />
+			) : null}
+			<AvatarFallback>{actorInitials(invoker.name)}</AvatarFallback>
+		</Avatar>
+	);
+}
+
 /** Compact `by <face>` metadata after the relative timestamp. */
 function InvokerBy({ invoker }: Readonly<{ invoker: AgentListInvoker }>) {
 	return (
@@ -188,13 +200,8 @@ function InvokerBy({ invoker }: Readonly<{ invoker: AgentListInvoker }>) {
 			<span>by</span>
 			<TooltipProvider>
 				<Tooltip>
-					<TooltipTrigger render={<span className="inline-flex shrink-0" />}>
-						<Avatar label={invoker.name} size="xs">
-							{invoker.avatarSrc ? (
-								<AvatarImage alt="" src={invoker.avatarSrc} />
-							) : null}
-							<AvatarFallback>{actorInitials(invoker.name)}</AvatarFallback>
-						</Avatar>
+					<TooltipTrigger render={<span className="inline-flex size-4 shrink-0" />}>
+						<InvokerAvatar invoker={invoker} />
 					</TooltipTrigger>
 					<TooltipContent>{invoker.name}</TooltipContent>
 				</Tooltip>
@@ -357,18 +364,24 @@ function rowPrimaryActionLabel(item: AgentListItem): string {
 
 /**
  * Identity on the metadata line. Cloud rows name the agent; local rows name the
- * machine beside the devices glyph, matching the Jira session flyout host chip.
+ * machine beside the invoker's 16px avatar, matching the Jira session flyout
+ * host chip's machine copy. The devices glyph is only a fallback when the row
+ * has no invoker to show.
  */
 function AgentListMetadataIdentity({ item }: Readonly<{ item: AgentListItem }>) {
 	if (isLocalAgentListItem(item) && item.machineName) {
 		return (
-			<span className="flex min-w-0 items-center gap-1">
-				<span
-					aria-hidden="true"
-					className="grid size-4 shrink-0 place-items-center"
-				>
-					<DevicesIcon color="currentColor" label="" size="small" />
-				</span>
+			<span className="flex min-w-0 items-center gap-1 overflow-visible">
+				{item.invokedBy ? (
+					<InvokerAvatar invoker={item.invokedBy} />
+				) : (
+					<span
+						aria-hidden="true"
+						className="grid size-4 shrink-0 place-items-center"
+					>
+						<DevicesIcon color="currentColor" label="" size="small" />
+					</span>
+				)}
 				<span className="min-w-0 truncate">{item.machineName}</span>
 			</span>
 		);
@@ -764,7 +777,7 @@ export function AgentListRow({
 							)}
 							{stateMeta.showDots ? <AnimatedDots /> : null}
 						</span>
-						<span className="flex w-full min-w-0 items-center gap-1 overflow-hidden text-xs text-text-subtlest">
+						<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
 							{item.metadataPrefix ? (
 								<>
 									<span className="shrink-0">{item.metadataPrefix}</span>

@@ -137,7 +137,7 @@ function JiraIssuePullRequestCluster({
 	);
 
 	return (
-		<div className={cn("flex items-center", usesStrokeChrome ? "gap-1.5" : "gap-1")}>
+		<div className={cn("flex shrink-0 items-center", usesStrokeChrome ? "gap-1.5" : "gap-1")}>
 			{usesStrokeChrome ? (
 				<IconTile
 					as="span"
@@ -205,6 +205,39 @@ export function JiraIssueSummary({
 }>) {
 	const PriorityIcon = PRIORITY_ICONS[priority];
 	const priorityColor = PRIORITY_COLORS[priority];
+	const pullRequestCluster = pullRequestNumber ? (
+		<JiraIssuePullRequestCluster
+			pullRequestNumber={pullRequestNumber}
+			pullRequestStatus={pullRequestStatus}
+			usesStrokeChrome={usesStrokeChrome}
+		/>
+	) : null;
+	const metadataCluster = showAutomationIndicator ? (
+		<span className="grid size-6 place-items-center text-icon-accent-orange" aria-label="Automation linked">
+			<AutomationIcon label="" size="small" color="currentColor" />
+		</span>
+	) : (
+		<div className="flex shrink-0 items-center gap-1.5">
+			{showPriorityIndicator ? (
+				<PriorityIcon
+					label={`${priority} priority`}
+					color={priorityColor}
+					size={usesStrokeChrome ? "small" : undefined}
+				/>
+			) : null}
+			{isMounted ? (
+				<JiraIssueAssignee
+					assigneeAvatarLabel={assigneeAvatarLabel}
+					assigneeAvatarShape={assigneeAvatarShape}
+					assigneeAvatarSrc={assigneeAvatarSrc}
+					assigneePulse={assigneePulse}
+					assigneeUnassignedKind={assigneeUnassignedKind}
+					issueKey={issueKey}
+					size={usesStrokeChrome ? "xs" : "sm"}
+				/>
+			) : null}
+		</div>
+	);
 
 	return (
 		<div className="flex min-w-0 flex-col gap-2">
@@ -231,13 +264,13 @@ export function JiraIssueSummary({
 			) : null}
 
 			<div className="pt-0.5">
-				<div className="flex items-center justify-between">
-					<div className={usesStrokeChrome ? "flex items-center gap-3" : "flex items-center gap-2"}>
+				<div className="flex min-w-0 items-center justify-between">
+					<div className={usesStrokeChrome ? "flex min-w-0 items-center" : "flex min-w-0 items-center gap-2"}>
 						<div
 							className={
 								usesStrokeChrome
-									? "flex items-center gap-1.5"
-									: "flex items-center gap-1"
+									? "flex shrink-0 items-center gap-1.5"
+									: "flex shrink-0 items-center gap-1"
 							}
 						>
 							{usesStrokeChrome ? (
@@ -265,40 +298,16 @@ export function JiraIssueSummary({
 								{issueKey}
 							</span>
 						</div>
-						{pullRequestNumber ? (
-							<JiraIssuePullRequestCluster
-								pullRequestNumber={pullRequestNumber}
-								pullRequestStatus={pullRequestStatus}
-								usesStrokeChrome={usesStrokeChrome}
-							/>
-						) : null}
+						{usesStrokeChrome ? null : pullRequestCluster}
 					</div>
 
-					{showAutomationIndicator ? (
-						<span className="grid size-6 place-items-center text-icon-accent-orange" aria-label="Automation linked">
-							<AutomationIcon label="" size="small" color="currentColor" />
-						</span>
-					) : (
-						<div className="flex items-center gap-1.5">
-							{showPriorityIndicator ? (
-								<PriorityIcon
-									label={`${priority} priority`}
-									color={priorityColor}
-									size={usesStrokeChrome ? "small" : undefined}
-								/>
-							) : null}
-							{isMounted ? (
-								<JiraIssueAssignee
-									assigneeAvatarLabel={assigneeAvatarLabel}
-									assigneeAvatarShape={assigneeAvatarShape}
-									assigneeAvatarSrc={assigneeAvatarSrc}
-									assigneePulse={assigneePulse}
-									assigneeUnassignedKind={assigneeUnassignedKind}
-									issueKey={issueKey}
-									size={usesStrokeChrome ? "xs" : "sm"}
-								/>
-							) : null}
+					{usesStrokeChrome && pullRequestCluster ? (
+						<div className="flex shrink-0 items-center gap-1.5">
+							{pullRequestCluster}
+							{metadataCluster}
 						</div>
+					) : (
+						metadataCluster
 					)}
 				</div>
 			</div>

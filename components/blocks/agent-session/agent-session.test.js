@@ -52,18 +52,20 @@ const VARIANT_REGISTRY_SOURCE = readFileSync(
 
 test("renders each session as a dashed uncaptured-work card around the shared row", () => {
 	assert.match(CARD_SOURCE, /data-testid=\{"agent-session-row-" \+ item.id\}/u);
-	// Dashed always — it means "uncaptured". The colour is conditional, because a
-	// newly synced card recolours the same dash rather than replacing it.
-	assert.match(CARD_SOURCE, /border border-dashed/u);
-	assert.match(CARD_SOURCE, /isNew \? "border-border-discovery" : "border-border-disabled"/u);
-	assert.match(CARD_SOURCE, /bg-surface-sunken/u);
+	// Dashed means "uncaptured". The colour is conditional, because a newly
+	// synced card recolours the same dash rather than replacing it. Captured
+	// sessions drop the dash for a solid frame.
+	assert.match(CARD_SOURCE, /border-dashed border-border-discovery/u);
+	assert.match(CARD_SOURCE, /border-dashed border-border-disabled/u);
+	assert.match(CARD_SOURCE, /border-solid border-border/u);
+	assert.doesNotMatch(CARD_SOURCE, /bg-surface-sunken/u);
+	assert.doesNotMatch(CARD_SOURCE, /UncapturedWorkChin/u);
 	// The row presenter stays owned by Agent List; this block only frames it.
 	assert.match(
 		CARD_SOURCE,
 		/import \{\s*AgentListRow,\s*type AgentListRowHoverActions,\s*\} from "@\/components\/blocks\/agent-list\/agent-list-card";/u,
 	);
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*hoverActions=\{hoverActions\}/u);
-	assert.match(CARD_SOURCE, /<UncapturedWorkChin/u);
 });
 
 test("large remains the default while every card receives the selected size variant", () => {
@@ -129,9 +131,11 @@ test("the row reveals Resume plus a show/hide eye where Agent List puts Archive"
 	assert.match(CARD_SOURCE, /label: copiedResume \? "Copied" : "Resume",/u);
 	assert.match(CARD_SOURCE, /icon: <EyeOpenIcon label="" size="small" \/>,\s*label: "Show\/hide",/u);
 	assert.match(CARD_SOURCE, /import EyeOpenIcon from "@atlaskit\/icon\/core\/eye-open";/u);
-	// The card is two hit areas: `group/agent-row` scopes the reveal to the sunken
-	// top region so hovering the chin below cannot pop Resume open above it.
-	assert.match(CARD_SOURCE, /className="group\/agent-row bg-surface-sunken p-3"/u);
+	assert.match(CARD_SOURCE, /group\/agent-row relative flex w-full cursor-pointer rounded-lg border bg-surface p-3/u);
+	assert.match(CARD_SOURCE, /hover:border-border hover:bg-surface-hovered/u);
+	assert.match(CARD_SOURCE, /focus-within:border-border focus-within:bg-surface-hovered/u);
+	assert.match(CARD_SOURCE, /transition-\[background-color,border-color\] duration-xxshort ease-out-practical/u);
+	assert.doesNotMatch(CARD_SOURCE, /hover:shadow-md/u);
 	assert.doesNotMatch(CARD_SOURCE, /group\/agent-row group\/uncaptured-work/u);
 	// Placeholder today: the eye always renders and calls the optional handler.
 	assert.match(CARD_SOURCE, /onToggleVisibility\?\.\(item\)/u);
@@ -139,27 +143,35 @@ test("the row reveals Resume plus a show/hide eye where Agent List puts Archive"
 	assert.match(TYPES_SOURCE, /onToggleVisibility\?: \(item: AgentSessionItem\) => void;/u);
 });
 
-test("the chin owns every action, so no row renders a competing flyout", () => {
-	assert.doesNotMatch(INDEX_SOURCE, /flyout=|Flyout\b/u);
-	assert.doesNotMatch(CARD_SOURCE, /flyout=|Flyout\b/u);
-	assert.match(INDEX_SOURCE, /<AgentSessionCard/u);
+test("the untracked-work flyout owns capture, so the card has no footer chin", () => {
+	assert.match(
+		CARD_SOURCE,
+		/import \{\s*JiraSessionFlyoutTrigger,\s*type JiraSessionFlyoutHandle,\s*\} from "@\/components\/blocks\/product-sidebar\/variants\/jira-session-flyout";/u,
+	);
+	assert.match(CARD_SOURCE, /<JiraSessionFlyoutTrigger/u);
+	assert.match(CARD_SOURCE, /closeDelay=\{160\}/u);
+	assert.match(INDEX_SOURCE, /<JiraSessionFlyoutSurface/u);
+	assert.match(INDEX_SOURCE, /content="untracked-work"/u);
+	assert.match(INDEX_SOURCE, /const \[flyoutHandle\] = useState\(createJiraSessionFlyoutHandle\);/u);
+	assert.match(INDEX_SOURCE, /bindAgentSessionFlyoutActions/u);
 	assert.match(INDEX_SOURCE, /capturedItemIds\?\.has\(item\.id\)/u);
 	assert.match(
 		INDEX_SOURCE,
-		/suggestedWorkItemKey=\{getSuggestedWorkItemKey\?\.\(item\) \?\? suggestedAgentSessionWorkItemKey\(item\)\}/u,
+		/resolveAgentSessionWorkItemKey\(\s*item,\s*getSuggestedWorkItemKey,\s*getSuggestedWorkItemKeys,/u,
 	);
-	assert.match(WORK_ITEM_SOURCE, /item.sessionDetails\?\.issueKey/u);
+	assert.doesNotMatch(CARD_SOURCE, /UncapturedWorkChin/u);
+	assert.doesNotMatch(INDEX_SOURCE, /UncapturedWorkChin/u);
 });
 
 // Fast Refresh can only preserve a component's state when its file exports
-// nothing but components, so the chin's suggestion helper lives on its own.
+// nothing but components, so the flyout's suggestion helper lives on its own.
 test("the card file exports only a component", () => {
 	assert.doesNotMatch(CARD_SOURCE, /suggestedAgentSessionWorkItemKey/u);
 	assert.match(WORK_ITEM_SOURCE, /export function suggestedAgentSessionWorkItemKey/u);
 	assert.match(WORK_ITEM_SOURCE, /item.sessionDetails\?\.issueKey/u);
 	assert.match(
 		INDEX_SOURCE,
-		/import \{ suggestedAgentSessionWorkItemKey \} from "\.\/agent-session-work-item";/u,
+		/import \{\s*bindAgentSessionFlyoutActions,\s*resolveAgentSessionWorkItemKey,\s*toAgentSessionUntrackedWorkFlyoutItem,\s*\} from "\.\/agent-session-work-item";/u,
 	);
 });
 
@@ -173,9 +185,6 @@ test("Resume is gated on host capability before the clipboard write", () => {
 	);
 	assert.match(CARD_SOURCE, /primary: canResume\s*\?\s*\{/u);
 	assert.match(CARD_SOURCE, /: undefined,\s*secondary: \{/u);
-	// A consumer wiring only onSubtasks still needs the chin, or that control
-	// would be unreachable.
-	assert.match(CARD_SOURCE, /const showChin = captured \|\| hasWorkItemActions \|\| onSubtasks !== undefined;/u);
 	assert.match(CARD_SOURCE, /toAgentListResumeCommand\(item\)/u);
 });
 
@@ -217,28 +226,25 @@ test("ships demo data and catalog entries for all three size variants", () => {
 		DETAIL_SOURCE,
 		/import \{ AgentSession \} from "@\/components\/blocks\/agent-session";/u,
 	);
+	assert.doesNotMatch(DEMO_SOURCE, /AgentSessionDemoMultiLink/u);
+	assert.doesNotMatch(VARIANT_REGISTRY_SOURCE, /agent-session-demo-multi-link/u);
+	assert.doesNotMatch(DETAIL_SOURCE, /agent-session-demo-multi-link/u);
 });
 
-// A session usually touches more than the ticket it started from, so the chin
-// can offer several candidates — one linkable row each.
-test("the multi-link variant renders one chin row per candidate work item", () => {
+test("the untracked-work flyout offers the first candidate key", () => {
 	assert.match(DATA_SOURCE, /export const AGENT_SESSION_MULTI_LINK_KEYS/u);
 	assert.match(DATA_SOURCE, /"lw-scope-thread": \["PAY-101", "PAY-121", "PAY-104"\]/u);
 	assert.match(TYPES_SOURCE, /getSuggestedWorkItemKeys\?: \(item: AgentSessionItem\) => readonly string\[\] \| undefined;/u);
 	assert.match(TYPES_SOURCE, /onLinkWorkItem\?: \(item: AgentSessionItem, workItemKey\?: string\) => void;/u);
-	assert.match(INDEX_SOURCE, /suggestedWorkItemKeys=\{getSuggestedWorkItemKeys\?\.\(item\)\}/u);
-	// The picked row's key must reach the host, not just the fact that a link ran.
-	assert.match(
-		INDEX_SOURCE,
-		/onLinkWorkItem=\{onLinkWorkItem === undefined \? undefined : \(workItemKey\) => onLinkWorkItem\(item, workItemKey\)\}/u,
-	);
-	assert.match(CARD_SOURCE, /suggestedWorkItemKeys=\{suggestedWorkItemKeys\}/u);
-	assert.match(PAGE_SOURCE, /variant\?: AgentSessionVariant \| "multi-link"/u);
-	assert.match(PAGE_SOURCE, /AGENT_SESSION_MULTI_LINK_KEYS\[item\.id\]/u);
-	assert.match(DEMO_SOURCE, /export function AgentSessionDemoMultiLink\(\)/u);
-	assert.match(VARIANT_REGISTRY_SOURCE, /"agent-session-demo-multi-link": dynamic\(/u);
-	assert.match(VARIANT_REGISTRY_SOURCE, /default: mod\.AgentSessionDemoMultiLink/u);
-	assert.match(DETAIL_SOURCE, /demoSlug: "agent-session-demo-multi-link"/u);
+	assert.match(WORK_ITEM_SOURCE, /export function resolveAgentSessionWorkItemKey/u);
+	assert.match(WORK_ITEM_SOURCE, /const firstKey = getSuggestedWorkItemKeys\?\.\(item\)\?\.\[0\];/u);
+	assert.match(INDEX_SOURCE, /onLinkWorkItem=\{flyoutActions\.onLinkWorkItem\}/u);
+	assert.match(PAGE_SOURCE, /onSubtasks=\{handleCapture\}/u);
+	assert.match(WORK_ITEM_SOURCE, /export function bindAgentSessionFlyoutActions/u);
+	assert.match(WORK_ITEM_SOURCE, /actions\.onLinkWorkItem\?\.\(item, workItemKey\)/u);
+	assert.match(WORK_ITEM_SOURCE, /actions\.onCreateWorkItem\?\.\(item\)/u);
+	assert.match(WORK_ITEM_SOURCE, /actions\.onSubtasks\?\.\(item\)/u);
+	assert.match(WORK_ITEM_SOURCE, /return \{ \.\.\.session, issueKey \};/u);
 });
 
 test("Pulse's uncaptured column renders sessions through this block", () => {
@@ -253,3 +259,4 @@ test("Pulse's uncaptured column renders sessions through this block", () => {
 	assert.doesNotMatch(RAIL_SOURCE, /<AgentList\b/u);
 	assert.doesNotMatch(RAIL_SOURCE, /variant="uncaptured"/u);
 });
+
