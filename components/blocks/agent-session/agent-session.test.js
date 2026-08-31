@@ -137,7 +137,13 @@ test("small is the collapsed-column notch and stays keyboard operable when view 
 	assert.match(COMPACT_CARD_SOURCE, /aria-label=\{`Open \$\{item\.agent\.name\} session: \$\{item\.title\}`\}/u);
 	assert.match(COMPACT_CARD_SOURCE, /onClick=\{\(\) => onView\(item\)\}/u);
 	assert.match(COMPACT_CARD_SOURCE, /<AgentSessionNotchMark isArriving=\{isArriving\} isNew=\{isNew\} \/>/u);
-	assert.match(NOTCH_SOURCE, /h-0\.5 w-3 rounded-full/u);
+	// One 1px hairline, the same weight as a Pulse ruler rule. It never shrinks:
+	// the magnified path is meant to outgrow its row. Standalone it has no rail
+	// behind it, so `w-3` is its resting length and its own row's hover is the
+	// only affordance available to it.
+	assert.match(NOTCH_SOURCE, /"h-px shrink-0"/u);
+	assert.match(NOTCH_SOURCE, /w-3 transition-\[background-color,scale\]/u);
+	assert.doesNotMatch(COMPACT_CARD_SOURCE, /proximity/u);
 	assert.match(NOTCH_SOURCE, /isNew \? NOTCH_EMPHASIS : NOTCH_AT_REST/u);
 	assert.match(ARRIVAL_MOTION_SOURCE, /duration: 0\.25,\s*ease: \[0, 0\.4, 0, 1\]/u);
 });

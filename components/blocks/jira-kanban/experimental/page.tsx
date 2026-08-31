@@ -10,7 +10,7 @@ import {
 } from "react";
 
 import { useOptionalRovoChat } from "@/app/contexts";
-import type { JiraIssueAgentActivityLayout } from "@/components/blocks/jira-issue";
+import type { JiraIssueAgentActivityLayout, JiraIssueGenerativeActionPresentation } from "@/components/blocks/jira-issue";
 import type {
 	JiraKanbanAgentData,
 	JiraKanbanAssigneeData,
@@ -113,6 +113,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	activeView?: ExperimentalJiraKanbanView;
 	activeCardCode?: string;
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
+	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;
 	agentSessionAssigneeIdAliases?: Readonly<Record<string, string>>;
 	agents?: readonly JiraKanbanAgentData[];
 	ariaLabel?: string;
@@ -155,6 +156,7 @@ export default function ExperimentalJiraKanbanPage({
 	activeView = "board",
 	activeCardCode,
 	agentActivityLayout,
+	cardGenerativeActionPresentation,
 	agentSessionAssigneeIdAliases,
 	agents = BOARD_AGENTS,
 	ariaLabel = "Experimental RFP board columns. Scroll horizontally to review all statuses.",
@@ -600,6 +602,7 @@ export default function ExperimentalJiraKanbanPage({
 						ariaLabel={ariaLabel}
 						assignedAgentIdsByColumn={columnAgentAssignments}
 						boardColumns={filteredBoardColumns}
+						cardGenerativeActionPresentation={cardGenerativeActionPresentation}
 						collapsedColumns={collapsedColumns}
 						onCollapsedColumnsChange={setCollapsedColumns}
 						draggedCardCode={draggedCard?.card.code ?? null}

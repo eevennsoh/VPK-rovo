@@ -51,16 +51,17 @@ test("PR state lists the pull-request lifecycle in order", () => {
 	assert.ok(BOARD_PR_STATE_OPTIONS.every((option) => option.shown));
 });
 
-test("Agent lists the session states by escalation, not alphabetically", () => {
+test("Agent lists the session states by session shape, not alphabetically", () => {
 	assert.deepEqual(
 		BOARD_AGENT_STATE_OPTIONS.map((option) => option.label),
-		["Idle", "Working", "Needs permission", "Ready for review", "Failed"],
+		["Working", "Needs input", "Finished"],
 	);
 	assert.ok(BOARD_AGENT_STATE_OPTIONS.every((option) => option.shown));
-	// The two states that want a human sit together, ahead of failure.
+	// The state that wants a human sits between the one the agent holds on its
+	// own and the terminal one, so the row needing attention is not buried.
 	const labels = BOARD_AGENT_STATE_OPTIONS.map((option) => option.label);
-	assert.equal(labels.indexOf("Ready for review") - labels.indexOf("Needs permission"), 1);
-	assert.equal(labels.at(-1), "Failed");
+	assert.equal(labels.indexOf("Needs input"), 1);
+	assert.equal(labels.at(-1), "Finished");
 });
 
 test("every visibility list shares one row shape", () => {

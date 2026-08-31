@@ -53,6 +53,14 @@ test("the board opts into the experimental Jira issue split agent rows", () => {
 	);
 });
 
+test("the board puts agent and skill assignment in each card's More actions menu", () => {
+	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage[\s\S]*cardGenerativeActionPresentation="more-actions"/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /cardGenerativeActionPresentation\?: JiraIssueGenerativeActionPresentation;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<ExperimentalJiraKanban[\s\S]*cardGenerativeActionPresentation=\{cardGenerativeActionPresentation\}/u);
+	assert.match(EXPERIMENTAL_BOARD_SOURCE, /cardGenerativeActionPresentation = "sparkle",/u);
+	assert.match(EXPERIMENTAL_BOARD_SOURCE, /<JiraIssue[\s\S]*generativeActionPresentation=\{cardGenerativeActionPresentation\}/u);
+});
+
 test("the Jira tab bar groups Board and List under one Work items destination", () => {
 	assert.match(JIRA_HEADER_SOURCE, /export function JiraViewTabs/u);
 	assert.match(JIRA_HEADER_SOURCE, /className=\{isFirst \? "ml-4 flex-none" : "flex-none"\}/u);
@@ -88,19 +96,20 @@ test("the Work items header switches between Board and List views with their ico
 		/<TabsList aria-label="Work items view">[\s\S]*<TabsTrigger value="board">[\s\S]*<BoardIcon[\s\S]*Board[\s\S]*<TabsTrigger value="list">[\s\S]*<TableIcon[\s\S]*List/u,
 	);
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /<TabsList[^>]*className=|<TabsTrigger[^>]*className=/u);
-	// More board controls is a sibling of Filter and View on the toolbar row
-	// (`gap-2`), not a nested View/More wrapper and not the far-right
-	// Board/List switcher cluster.
+	// More board controls stays in the left control cluster, immediately after
+	// Insights and before the far-right Board/List switcher.
 	const filterControlIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("{filterControl}");
 	const viewMenuIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("<BoardViewMenu");
-	const overflowIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf('aria-label={`More ${surfaceLabel} controls`}');
+	const modeToggleIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("{modeToggle}");
 	const viewSwitcherIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf('aria-label="Work items view"');
+	const overflowIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf('aria-label={`More ${surfaceLabel} controls`}');
 	assert.ok(filterControlIndex > 0 && filterControlIndex < viewMenuIndex);
-	assert.ok(viewMenuIndex > 0 && viewMenuIndex < overflowIndex);
+	assert.ok(viewMenuIndex > 0 && viewMenuIndex < modeToggleIndex);
+	assert.ok(modeToggleIndex > 0 && modeToggleIndex < overflowIndex);
 	assert.ok(overflowIndex > 0 && overflowIndex < viewSwitcherIndex);
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
-		/\{filterControl\}\s*<BoardViewMenu[\s\S]*?<Button aria-disabled aria-label=\{`More \$\{surfaceLabel\} controls`\}/u,
+		/\{filterControl\}\s*<BoardViewMenu[\s\S]*?\{modeToggle\}[\s\S]*?<Button aria-disabled aria-label=\{`More \$\{surfaceLabel\} controls`\}/u,
 	);
 	assert.doesNotMatch(
 		EXPERIMENTAL_HEADER_SOURCE,

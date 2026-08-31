@@ -15,6 +15,7 @@ import { AgentSessionColumn, type AgentSessionColumnProps } from "@/components/b
 import {
 	JiraIssue,
 	type JiraIssueAgentActivityLayout,
+	type JiraIssueGenerativeActionPresentation,
 } from "@/components/blocks/jira-issue";
 import {
 	mapAgentToMentionItem,
@@ -72,6 +73,8 @@ import type {
  */
 export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
+	/** Chooses where card agent and skill actions are presented. */
+	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;
 	/**
 	 * Sessions that never became work items, pinned as a sunken column to the
 	 * left of the board. Omit to render only Jira status columns.
@@ -107,24 +110,6 @@ const BOARD_COLUMN_SHELL_TRANSITION = [
 
 const BOARD_COLUMN_ACTION_REVEAL = cn(
 	"pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical",
-	"motion-reduce:transition-none",
-);
-
-/**
- * Hover/focus swap on the collapsed pill's 24px head slot: the count at rest,
- * the expand control once the pointer or keyboard arrives. Both sit in the same
- * slot so the title below never shifts, and the faded one is click-through —
- * the same treatment the Agent Session rail uses.
- */
-const HEAD_AT_REST = cn(
-	"pointer-events-none transition-opacity duration-normal ease-out-practical",
-	"group-hover/collapsed-column:opacity-0 group-has-[:focus-visible]/collapsed-column:opacity-0",
-	"motion-reduce:transition-none",
-);
-
-const HEAD_ON_REVEAL = cn(
-	"opacity-0 transition-opacity duration-normal ease-out-practical",
-	"group-hover/collapsed-column:opacity-100 group-has-[:focus-visible]/collapsed-column:opacity-100",
 	"motion-reduce:transition-none",
 );
 
@@ -356,11 +341,23 @@ function BoardColumnResizeButton({
 }
 
 /**
- * The collapsed form of a board column: a full-height 32px pill. The 24px head
- * slot shows the count at rest and the expand control on hover or focus — the
- * same swap the Agent Session rail uses — then the title reads top-to-bottom
- * below. `writing-mode: vertical-rl` stays on the title only, so the head
- * number and Grow icon stay upright.
+ * The collapsed form of a board column: a 32px pill whose title and count read
+ * top-to-bottom. `writing-mode: vertical-rl` rotates the text while leaving the
+ * icon button upright, so the header's horizontal layout, spacing and truncation
+ * rules all carry over unchanged.
+ *
+ * The pill hugs its content rather than running the column's full height. A
+ * status is a label, and a label stretched down a 700px board reads as an empty
+ * lane with a caption at the top. The shell around it still stretches, so the
+ * drop target keeps the full height every other column has. The Agent Session
+ * column is the deliberate exception — it collapses into a rail of per-session
+ * notches, which is content, and content needs the height.
+ *
+ * No `overflow-hidden` here: the expand control's focus ring extends 3px past a
+ * 24px button, which is exactly the 30px this pill has inside its border, so
+ * clipping to the padding box slices the ring flat on both sides. Nothing else
+ * in the pill can overflow — the title carries its own `truncate` — and the
+ * shell above still clips for the width transition.
  */
 function CollapsedBoardColumn({
 	count,
@@ -369,30 +366,29 @@ function CollapsedBoardColumn({
 }: Readonly<{ count: number; onExpand: () => void; title: string }>) {
 	return (
 		<div
-			className="group/collapsed-column flex h-full w-full flex-col items-center gap-1 overflow-hidden border border-border-disabled"
+			className="group/collapsed-column flex w-full items-center gap-1.5 border border-border-disabled [writing-mode:vertical-rl]"
 			style={{
 				borderRadius: token("radius.large"),
-				paddingBlock: token("space.050"),
+				paddingInlineStart: token("space.150"),
+				paddingInlineEnd: token("space.050"),
 			}}
 		>
-			<div className="relative flex h-6 w-full shrink-0 items-center justify-center">
-				<span
-					aria-hidden="true"
-					className={cn("absolute text-xs font-normal text-text-subtlest", HEAD_AT_REST)}
-				>
-					{count}
-				</span>
-				<span className="sr-only">{count}</span>
-				<BoardColumnResizeButton
-					className={cn("absolute shrink-0", HEAD_ON_REVEAL)}
-					collapsed
-					onToggle={onExpand}
-					title={title}
-				/>
-			</div>
-			<span className="min-h-0 flex-1 truncate text-xs font-medium leading-4 text-text-subtle [writing-mode:vertical-rl]">
+			<span className="min-h-0 truncate text-xs font-medium leading-4 text-text-subtle">
 				{title}
 			</span>
+			<span className="shrink-0 text-xs font-normal text-text-subtlest">
+				{count}
+			</span>
+			<BoardColumnResizeButton
+				className={cn(
+					BOARD_COLUMN_ACTION_REVEAL,
+					"group-hover/collapsed-column:pointer-events-auto group-hover/collapsed-column:opacity-100",
+					"group-has-[:focus-visible]/collapsed-column:pointer-events-auto group-has-[:focus-visible]/collapsed-column:opacity-100",
+				)}
+				collapsed
+				onToggle={onExpand}
+				title={title}
+			/>
 		</div>
 	);
 }
@@ -648,6 +644,7 @@ export function ExperimentalJiraKanban({
 	ariaLabel = "Experimental Jira kanban columns. Scroll horizontally to review all statuses.",
 	assignedAgentIdsByColumn = {},
 	boardColumns,
+	cardGenerativeActionPresentation = "sparkle",
 	cardMoveAnimation,
 	collapsedColumns: controlledCollapsedColumns,
 	draggedCardCode = null,
@@ -931,6 +928,7 @@ export function ExperimentalJiraKanban({
 													},
 													skills: generativeActionSkills,
 												}}
+												generativeActionPresentation={cardGenerativeActionPresentation}
 												onAgentActivityOpenChange={
 													onCardAgentActivityOpenChange
 														? (open) => onCardAgentActivityOpenChange(open, card, column.title)

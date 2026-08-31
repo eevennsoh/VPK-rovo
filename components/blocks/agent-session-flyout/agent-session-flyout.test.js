@@ -104,10 +104,19 @@ test("shared Agent States flyout forwards submission, timing, and stopped lifecy
 
 // Detail panels still reuse the shared design-system property components rather
 // than re-implementing them inside each panel.
-test("shared detail body reuses SmartLink, agent Tag, Lozenge, GitHub logo, and CI progress circle", () => {
+test("shared detail body hides the human assignee avatar while awaiting input", () => {
 	const source = readRepoFile(FLYOUT_BODY_PATH);
 	const jiraSource = readRepoFile("components/blocks/product-sidebar/variants/jira.tsx");
 	assert.match(source, /export function JiraSessionFlyoutBody\b/u);
+	assert.match(source, /import\s*\{[^}]*Avatar[^}]*AvatarFallback[^}]*AvatarImage[^}]*\}\s*from\s*"@\/components\/ui\/avatar"/u);
+	assert.match(
+		source,
+		/session\.assignee && session\.status !== "awaiting-input" \? \(\s*<Avatar[\s\S]*label=\{session\.assignee\.name\}[\s\S]*size="xs"[\s\S]*<AvatarImage alt="" src=\{session\.assignee\.src\} \/>[\s\S]*<AvatarFallback>\{actorInitials\(session\.assignee\.name\)\}<\/AvatarFallback>/u,
+	);
+	assert.match(
+		source,
+		/session\.status === "awaiting-input" \? \(\s*<Lozenge variant="information">Needs input<\/Lozenge>\s*\) : \(\s*<span className="text-\[12px\] leading-4 text-text-subtlest">\s*\{STATUS_UPDATED_LABEL\[session\.status\]\}\s*<\/span>/u,
+	);
 	assert.match(source, /import\s*\{[^}]*SmartLink[^}]*\}\s*from\s*"@\/components\/blocks\/smart-link"/u);
 	assert.match(source, /import\s*\{[^}]*GithubLogo[^}]*\}\s*from\s*"@\/components\/ui\/logo-third-party"/u);
 	assert.match(source, /import\s*\{[^}]*Lozenge[^}]*\}\s*from\s*"@\/components\/ui\/lozenge"/u);
@@ -118,11 +127,11 @@ test("shared detail body reuses SmartLink, agent Tag, Lozenge, GitHub logo, and 
 	assert.match(jiraSource, /vpkLogo\?: "rovo";/u);
 	assert.match(jiraSource, /issueStatus\?: string;/u);
 	assert.match(source, /const workItemRelationship = variant === "untracked-work" \? "suggested" : "primary";/u);
-	assert.match(source, /<SmartLink[\s\S]*item=\{toWorkItem\(session, workItemRelationship\)\}/u);
-	assert.match(source, /showStatus/u);
+	assert.match(source, /<SmartLink[\s\S]*className="min-w-0 max-w-full"[\s\S]*item=\{toWorkItem\(session, workItemRelationship\)\}[\s\S]*showStatus/u);
 	assert.doesNotMatch(source, /showStatus=\{workItemRelationship === "primary"\}/u);
 	assert.match(source, /function toWorkItemStatus\(/u);
 	assert.match(source, /session\.issueStatus\?\.trim\(\)/u);
+	assert.match(source, /status: \{\s*label: workItemStatus\.label/u);
 	assert.match(source, /relationship === "suggested" \? "Suggested" : "Primary"/u);
 	assert.match(source, /\.\.\.\(relationship === "primary" \? \{ actions: SMART_LINK_MODAL_ACTIONS \} : \{\}\)/u);
 	// Agent renders as the canonical at-mention Tag; PR state renders as a Lozenge.
@@ -220,6 +229,7 @@ test("session flyout metadata is compact and property-free", () => {
 	const source = readRepoFile(FLYOUT_BODY_PATH);
 	assert.doesNotMatch(source, /grid-cols-\[16px_84px_minmax\(0,1fr\)\]/u);
 	assert.match(source, /<span className="sr-only">\{label\}<\/span>/u);
+	assert.match(source, /className="flex min-w-0 flex-1 items-center text-text"/u);
 	assert.doesNotMatch(source, /<span className="text-text-subtlest">\{label\}<\/span>/u);
 	assert.doesNotMatch(source, /font-mono/u);
 	assert.match(source, /return \(\s*<div className="flex flex-col gap-2">/u);

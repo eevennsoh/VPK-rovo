@@ -138,6 +138,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/agent-states/agent-states.test.js",
 		"components/blocks/jira-issue/agent-activity-model.test.ts",
 		"components/blocks/jira-issue/agent-session-transfer-model.test.ts",
+		"components/blocks/agent-session/agent-session-notch-magnify.test.ts",
 		"components/ui-audio/live-waveform-layout.test.js",
 		"components/website/demos/utils/gui-demo.test.js",
 		"components/utils/gui.test.js",
