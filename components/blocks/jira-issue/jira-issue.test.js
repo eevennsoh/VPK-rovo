@@ -256,6 +256,8 @@ test("Jira issue can move agent and skill assignment into the More actions menu"
 	assert.match(GENERATIVE_SOURCE, /<DropdownMenuSubTrigger>Assign agent and use skill<\/DropdownMenuSubTrigger>/u);
 	assert.match(GENERATIVE_SOURCE, />Agents<\/DropdownMenuLabel>/u);
 	assert.match(GENERATIVE_SOURCE, />Skills<\/DropdownMenuLabel>/u);
+	assert.match(GENERATIVE_SOURCE, /disabled=\{agent\.disabled\}/u);
+	assert.match(GENERATIVE_SOURCE, /disabled=\{skill\.disabled\}/u);
 });
 
 test("Jira issue renders the more-actions button as a sibling of the card button", () => {

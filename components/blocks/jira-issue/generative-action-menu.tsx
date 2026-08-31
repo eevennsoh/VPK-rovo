@@ -132,6 +132,7 @@ export function JiraIssueAgentAndSkillSubmenu({
 					<DropdownMenuLabel>Agents</DropdownMenuLabel>
 					{agents.map((agent) => (
 						<DropdownMenuItem
+							disabled={agent.disabled}
 							key={agent.id}
 							onSelect={() => submitJiraIssueAssignment(action, issue, "agent", getJiraIssueGenerativeSelectedItem(agent))}
 						>
@@ -144,6 +145,7 @@ export function JiraIssueAgentAndSkillSubmenu({
 					<DropdownMenuLabel>Skills</DropdownMenuLabel>
 					{skills.map((skill) => (
 						<DropdownMenuItem
+							disabled={skill.disabled}
 							key={skill.id}
 							onSelect={() => submitJiraIssueAssignment(action, issue, "skill", getJiraIssueGenerativeSelectedItem(skill))}
 						>
