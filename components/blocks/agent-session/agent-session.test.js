@@ -216,6 +216,10 @@ test("the row reveals Resume plus a Hide / Show eye where Agent List puts Archiv
 	assert.match(CARD_SOURCE, /onPointerEnter=\{\(\) => onItemHover\?\.\(item\)\}/u);
 	assert.match(CARD_SOURCE, /onPointerLeave=\{\(\) => onItemHover\?\.\(null\)\}/u);
 	assert.match(CARD_SOURCE, /onItemHoverRef\.current\?\.\(null\)/u);
+	assert.match(
+		CARD_SOURCE,
+		/useEffect\(\(\) => \{\s*onItemHoverRef\.current = onItemHover;\s*\}, \[onItemHover\]\)/u,
+	);
 	assert.match(CARD_SOURCE, /onItemHover\?\.\(null\);\s*onToggleVisibility\?\.\(item\)/u);
 	// The shared row fades actions in; uncaptured-work snaps them on.
 	assert.match(LIST_CARD_SOURCE, /group-data-\[variant=uncaptured-work\]\/agent-row:transition-none/u);

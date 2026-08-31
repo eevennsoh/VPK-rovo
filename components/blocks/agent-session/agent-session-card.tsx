@@ -78,7 +78,10 @@ export function AgentSessionCard({
 	const [copiedResume, setCopiedResume] = useState(false);
 	const copiedResetRef = useRef<number | undefined>(undefined);
 	const onItemHoverRef = useRef(onItemHover);
-	onItemHoverRef.current = onItemHover;
+
+	useEffect(() => {
+		onItemHoverRef.current = onItemHover;
+	}, [onItemHover]);
 
 	useEffect(() => () => {
 		window.clearTimeout(copiedResetRef.current);
