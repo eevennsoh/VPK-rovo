@@ -25,6 +25,7 @@ import IfElseIcon from "@atlaskit/icon-lab/core/if-else";
 import { AgentStates, type AgentStatesState } from "@/components/blocks/agent-states";
 import { AgentProfileCard } from "@/components/blocks/agent-profile-card";
 import { SmartLink, SMART_LINK_MODAL_ACTIONS, type SmartLinkItem } from "@/components/blocks/smart-link";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
@@ -179,6 +180,15 @@ function formatSessionChecks(checks: JiraSidebarSessionChecks): string {
 	return checks.failed > 0
 		? `${checks.passed}/${total} passed ${checks.failed} failed`
 		: `${checks.passed}/${total} passed`;
+}
+
+function actorInitials(name: string): string {
+	return name
+		.split(/\s+/u)
+		.filter(Boolean)
+		.slice(0, 2)
+		.map((part) => part[0]?.toUpperCase())
+		.join("");
 }
 
 /** Work-item status lozenge derived from the session lifecycle. */
@@ -429,8 +439,20 @@ export function JiraSessionFlyoutBody({
 					<p className="min-w-0 truncate text-sm font-semibold leading-5 text-text" title={session.title}>
 						{session.title}
 					</p>
-					<span className="shrink-0 text-[12px] leading-4 text-text-subtlest">
-						{STATUS_UPDATED_LABEL[session.status]}
+					<span className="flex shrink-0 items-center gap-1">
+						{session.assignee && session.status !== "awaiting-input" ? (
+							<Avatar className="shrink-0" label={session.assignee.name} size="xs">
+								{session.assignee.src ? <AvatarImage alt="" src={session.assignee.src} /> : null}
+								<AvatarFallback>{actorInitials(session.assignee.name)}</AvatarFallback>
+							</Avatar>
+						) : null}
+						{session.status === "awaiting-input" ? (
+							<Lozenge variant="information">Needs input</Lozenge>
+						) : (
+							<span className="text-[12px] leading-4 text-text-subtlest">
+								{STATUS_UPDATED_LABEL[session.status]}
+							</span>
+						)}
 					</span>
 				</div>
 			)}
