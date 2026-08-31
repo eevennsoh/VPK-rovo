@@ -113,6 +113,8 @@ export function toAgentSessionFlyoutItem(item: AgentListItem): JiraSidebarSessio
 		...details,
 		agentAvatarSrc: item.agent.avatarSrc,
 		agentName: item.agent.name,
+		...(item.agent.brandName === undefined ? {} : { brandName: item.agent.brandName }),
+		...(item.agent.vpkLogo === undefined ? {} : { vpkLogo: item.agent.vpkLogo }),
 		branch: details?.branch ?? item.branch,
 		completedAtMs: item.completedAtMs,
 		completedSecondsAgo: item.completedSecondsAgo,

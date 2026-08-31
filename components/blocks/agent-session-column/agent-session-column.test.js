@@ -4,6 +4,11 @@ const { join } = require("node:path");
 const { test } = require("node:test");
 
 const INDEX_SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
+const HOOK_SOURCE = readFileSync(join(__dirname, "use-agent-session-column-hidden.ts"), "utf8");
+const FOOTER_SOURCE = readFileSync(
+	join(__dirname, "agent-session-column-hidden-footer.tsx"),
+	"utf8",
+);
 const RAIL_COLUMN_SOURCE = readFileSync(join(__dirname, "agent-session-column-rail.tsx"), "utf8");
 const NOTCH_MARK_SOURCE = readFileSync(
 	join(__dirname, "../agent-session/agent-session-notch.tsx"),
@@ -72,6 +77,27 @@ test("the column is a filled accent-gray plane, unlike the board's unfilled stat
 	assert.match(INDEX_SOURCE, /borderRadius: token\("radius\.xlarge"\)/u);
 });
 
+test("the session plane matches the flyout list parent's padding, not its gap", () => {
+	// AgentSessionFlyout wraps rows in `flex ... gap-0.5 ... p-1`. The column
+	// keeps that inset on the scrollport, but large uncaptured cards stack as
+	// one dashed well. The plane itself stays unpadded so edge fades span it.
+	assert.match(INDEX_SOURCE, /-m-1 min-h-0 min-w-0 flex-1 overflow-y-auto p-1/u);
+	assert.match(INDEX_SOURCE, /className=\{cn\("gap-0", listClassName\)\}/u);
+	assert.doesNotMatch(INDEX_SOURCE, /className=\{cn\("gap-0\.5", listClassName\)\}/u);
+	assert.doesNotMatch(INDEX_SOURCE, /padding: token\("space\.100"\)/u);
+	assert.doesNotMatch(INDEX_SOURCE, /padding: token\("space\.050"\)/u);
+});
+
+test("the column stacks large session cards as one dashed well", () => {
+	assert.match(INDEX_SOURCE, /className=\{cn\("gap-0", listClassName\)\}/u);
+	assert.match(SESSION_INDEX_SOURCE, /data-stack=\{variant === "large" \? "well" : undefined\}/u);
+	assert.match(CARD_SOURCE, /\[li:first-child_&\]:rounded-t-lg/u);
+	assert.match(CARD_SOURCE, /\[li:last-child_&\]:rounded-b-lg/u);
+	assert.match(CARD_SOURCE, /\[li:not\(:last-child\)_&\]:\[--dash-bottom-size:0px\]/u);
+	assert.match(CARD_SOURCE, /\[li:not\(:last-child\)_&\]:border-b-0/u);
+	assert.match(CARD_SOURCE, /dash-4-2/u);
+});
+
 test("the fill starts below the header, so the title shares the status columns' baseline", () => {
 	// The header has to sit on the board surface at the same inset and baseline
 	// as `To do`. Filling the <section> itself would put the title inside the
@@ -93,8 +119,9 @@ test("card rendering is delegated to the Agent Session block, never re-implement
 	assert.doesNotMatch(INDEX_SOURCE, /border-dashed|UncapturedWorkChin|AgentListRow/u);
 });
 
-test("the header count defaults to the rendered sessions and can be overridden", () => {
-	assert.match(INDEX_SOURCE, /const sessionCount = count \?\? items\.length;/u);
+test("the header count defaults to the visible sessions and can be overridden", () => {
+	assert.match(INDEX_SOURCE, /count \?\? visibleItems\.length/u);
+	assert.match(INDEX_SOURCE, /view === "hidden"\s*\n\s*\? hiddenItems\.length/u);
 	assert.match(TYPES_SOURCE, /count\?: number;/u);
 });
 
@@ -116,7 +143,7 @@ test("edge fades sit on the column plane so they span the full backdrop width", 
 });
 
 test("an empty column says so rather than rendering an empty list", () => {
-	assert.match(INDEX_SOURCE, /items\.length === 0/u);
+	assert.match(INDEX_SOURCE, /viewItems\.length === 0/u);
 	assert.match(INDEX_SOURCE, /emptyLabel = "No untracked sessions"/u);
 });
 
@@ -149,7 +176,10 @@ test("the board column commits through the same captured set as Insights", () =>
 	assert.match(BOARD_PAGE_SOURCE, /capturedItemIds: capturedLooseWorkIds,/u);
 	assert.match(BOARD_PAGE_SOURCE, /onCapture: handleCaptureLooseWork,/u);
 	// One fixture list, read through the same day/scope filter the rail reads.
-	assert.match(BOARD_PAGE_SOURCE, /looseWork: pulseTimeline\.looseWork,/u);
+	assert.match(
+		BOARD_PAGE_SOURCE,
+		/toPulseSessionItems\(\s*filterPulseLooseWorkByMember\(pulseTimeline\.looseWork, agentSessionMemberId\),\s*PULSE_TIMELINE\.members,\s*PULSE_TIMELINE\.workItems,/u,
+	);
 	// The header's assignee filter narrows the status columns, so it narrows
 	// this column too. Golden Journeys aliases board assignees onto session
 	// members before the loose-work filter runs.
@@ -170,6 +200,9 @@ test("the block is registered in the catalog", () => {
 	assert.match(DEMO_SOURCE, /@\/components\/blocks\/agent-session-column\/page/u);
 	assert.match(DETAIL_SOURCE, /export const AGENT_SESSION_COLUMN_DETAIL/u);
 	assert.match(PAGE_SOURCE, /<AgentSessionColumn/u);
+	assert.match(PAGE_SOURCE, /onCreateWorkItem=\{handleCapture\}/u);
+	assert.match(PAGE_SOURCE, /onLinkWorkItem=\{handleCapture\}/u);
+	assert.match(PAGE_SOURCE, /onSubtasks=\{handleCapture\}/u);
 });
 
 test("collapsing swaps the cards for the notch rail, not for a rotated label", () => {
@@ -180,7 +213,7 @@ test("collapsing swaps the cards for the notch rail, not for a rotated label", (
 	assert.match(INDEX_SOURCE, /collapsed \? \(\s*(?:\/\/[^\n]*\n\s*)*<div[\s\S]{0,400}?<AgentSessionColumnRail/u);
 	// Collapsed there is no header to keep clear of the fill, so the plane runs
 	// the full height like the pill the status columns collapse into.
-	assert.match(INDEX_SOURCE, /padding: token\("space\.050"\)/u);
+	assert.match(INDEX_SOURCE, /const AGENT_SESSION_PLANE =\s*\n?\s*"[^"]*bg-bg-accent-gray-subtlest/u);
 	// 32px matches the board's collapsed status pill so the two share a rhythm.
 	assert.match(INDEX_SOURCE, /AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX = 32/u);
 	// Declared locally: a shared block must not import a kanban variant's lib.
@@ -217,9 +250,16 @@ test("each notch opens the shared session flyout rather than a forked preview", 
 	// One payload-aware surface for the whole rail, as Agent List does, so
 	// sliding down the notches crossfades instead of remounting a card each time.
 	assert.match(RAIL_COLUMN_SOURCE, /const \[flyoutHandle\] = useState\(createJiraSessionFlyoutHandle\);/u);
-	assert.match(RAIL_COLUMN_SOURCE, /<JiraSessionFlyoutSurface handle=\{flyoutHandle\} \/>/u);
-	// The row model already maps onto the flyout payload; no local conversion.
-	assert.match(RAIL_COLUMN_SOURCE, /session=\{toAgentSessionFlyoutItem\(item\)\}/u);
+	assert.equal(RAIL_COLUMN_SOURCE.match(/<JiraSessionFlyoutSurface\b/gu)?.length, 1);
+	assert.match(RAIL_COLUMN_SOURCE, /content="untracked-work"/u);
+	assert.match(RAIL_COLUMN_SOURCE, /<JiraSessionFlyoutSurface[\s\S]*handle=\{flyoutHandle\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /flyoutSession=\{toAgentSessionUntrackedWorkFlyoutItem\(/u);
+	assert.match(RAIL_COLUMN_SOURCE, /session=\{flyoutSession\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /closeDelay=\{160\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /render=\{\s*<motion\.li/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /createHoverCardHandle|<HoverCard\b/u);
+	assert.match(INDEX_SOURCE, /capturedItemIds=\{sessionProps\.capturedItemIds\}/u);
+	assert.match(INDEX_SOURCE, /onLinkWorkItem=\{sessionProps\.onLinkWorkItem\}/u);
 });
 
 test("a notch is reachable and legible without a pointer", () => {
@@ -369,9 +409,9 @@ test("newly synced work reaches both the cards and the rail", () => {
 test("an arrival is a transient beat plus a mark that outlives it", () => {
 	// The mark is the load-bearing half: it has to survive a backgrounded tab, a
 	// collapsed column, and reduced motion, so it is never the animation alone.
-	assert.match(CARD_SOURCE, /border-dashed border-border-discovery/u);
-	assert.match(CARD_SOURCE, /border-dashed border-border-disabled/u);
-	assert.match(CARD_SOURCE, /border-solid border-border/u);
+	assert.match(CARD_SOURCE, /dash-4-2 \[--dash-color:var\(--color-border-discovery\)\]/u);
+	assert.match(CARD_SOURCE, /dash-4-2 \[--dash-color:var\(--color-border-disabled\)\]/u);
+	assert.match(CARD_SOURCE, /border border-solid border-border/u);
 	assert.match(NOTCH_MARK_SOURCE, /isNew \? NOTCH_EMPHASIS : NOTCH_AT_REST/u);
 	// A reviewed notch rests quiet and lights up on hover or focus; a new one is
 	// already lit, so "new" reuses the hover vocabulary instead of adding one.
@@ -383,7 +423,7 @@ test("an arrival is a transient beat plus a mark that outlives it", () => {
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /bg-icon-warning|bg-icon-information/u);
 	// The dash is load-bearing too — it means "uncaptured" — so the arrival
 	// recolours it rather than replacing the border style.
-	assert.match(CARD_SOURCE, /border-dashed/u);
+	assert.match(CARD_SOURCE, /dash-4-2/u);
 	// Reduced motion drops the beat and keeps the mark. The beat is keyed on
 	// `isArriving`, never on `isNew` — see the one-shot test below.
 	assert.match(CARD_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
@@ -468,4 +508,68 @@ test("the arrival beat stays one-shot across a collapse toggle", () => {
 	assert.match(SESSION_TYPES_SOURCE, /arrivingItemIds\?: ReadonlySet<string>;/u);
 	// Defaulting to the mark keeps a host that never unmounts the list correct.
 	assert.match(SESSION_INDEX_SOURCE, /const beatItemIds = arrivingItemIds \?\? newItemIds;/u);
+});
+
+test("the column owns a hidden-id set and filters items before AgentSession", () => {
+	assert.match(INDEX_SOURCE, /useAgentSessionColumnHidden\(items\)/u);
+	assert.match(HOOK_SOURCE, /hiddenIds: ReadonlySet<string>/u);
+	assert.match(HOOK_SOURCE, /view: AgentSessionColumnView/u);
+	assert.match(HOOK_SOURCE, /export type AgentSessionColumnView = "active" \| "hidden"/u);
+	assert.match(HOOK_SOURCE, /export function pruneHiddenSessionIds\(/u);
+	assert.match(HOOK_SOURCE, /export function splitSessionItemsByHidden\(/u);
+	assert.doesNotMatch(HOOK_SOURCE, /type: "prune"/u);
+	assert.doesNotMatch(HOOK_SOURCE, /dispatch\(\{ items, type: "prune" \}\)/u);
+	assert.match(INDEX_SOURCE, /const viewItems = view === "hidden" \? hiddenItems : visibleItems/u);
+	assert.match(INDEX_SOURCE, /items=\{viewItems\}/u);
+	assert.match(INDEX_SOURCE, /toggleHidden\(item\)/u);
+	assert.match(INDEX_SOURCE, /onToggleVisibility\?\.\(item\)/u);
+	assert.match(INDEX_SOURCE, /onToggleVisibility=\{handleToggleVisibility\}/u);
+	assert.match(INDEX_SOURCE, /visibilityLabel=\{view === "hidden" \? "Show" : "Hide"\}/u);
+});
+
+test("the sticky footer reads Work hidden N only in the active view", () => {
+	assert.match(FOOTER_SOURCE, /Work hidden \{hiddenCount\}/u);
+	assert.match(FOOTER_SOURCE, /import ChevronRightIcon from "@atlaskit\/icon\/core\/chevron-right"/u);
+	assert.match(FOOTER_SOURCE, /Show \$\{hiddenCount\} hidden \$\{sessionWord\}/u);
+	assert.match(FOOTER_SOURCE, /size="compact"/u);
+	assert.match(FOOTER_SOURCE, /variant="ghost"/u);
+	assert.match(INDEX_SOURCE, /view === "active" && hiddenCount > 0/u);
+	assert.match(INDEX_SOURCE, /<AgentSessionColumnHiddenFooter/u);
+	// Flex sibling of the scrollport, never sticky inside it.
+	assert.match(
+		INDEX_SOURCE,
+		/overflow-y-auto p-1"[\s\S]*?<\/div>\s*\{view === "active" && hiddenCount > 0 \?/u,
+	);
+	assert.doesNotMatch(FOOTER_SOURCE, /sticky/u);
+	assert.doesNotMatch(INDEX_SOURCE, /position:\s*"sticky"|className="[^"]*sticky/u);
+});
+
+test("the hidden view has a back arrow, Hidden work title, and no footer", () => {
+	assert.match(INDEX_SOURCE, /import ArrowLeftIcon from "@atlaskit\/icon\/core\/arrow-left"/u);
+	assert.match(INDEX_SOURCE, /displayTitle = view === "hidden" \? "Hidden work" : title/u);
+	assert.match(INDEX_SOURCE, /aria-label=\{`Back to \$\{title\}`\}/u);
+	assert.match(INDEX_SOURCE, /<TooltipContent>Back<\/TooltipContent>/u);
+	assert.match(INDEX_SOURCE, /view === "hidden" \?/u);
+	assert.match(INDEX_SOURCE, /size="icon-compact"/u);
+	// Footer is gated to the active view, so Hidden work never shows it.
+	assert.match(INDEX_SOURCE, /view === "active" && hiddenCount > 0/u);
+	assert.match(INDEX_SOURCE, /items=\{viewItems\}/u);
+});
+
+test("the collapsed rail receives visible items only and collapse leaves hidden view", () => {
+	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]*items=\{visibleItems\}/u);
+	assert.match(INDEX_SOURCE, /if \(nextCollapsed\) \{\s*closeHiddenView\(\);/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /Work hidden|HiddenFooter/u);
+});
+
+test("unhiding the last session returns to the active view", () => {
+	assert.match(HOOK_SOURCE, /view === "hidden" && hiddenIds\.size === 0 \? "active"/u);
+	assert.match(HOOK_SOURCE, /type: "toggle"/u);
+	assert.match(HOOK_SOURCE, /type: "close"/u);
+});
+
+test("hidden ids survive a temporary items drop so A then B then A stays hidden", () => {
+	assert.match(HOOK_SOURCE, /A → B → A does not unhide/u);
+	assert.doesNotMatch(HOOK_SOURCE, /dispatch\(\{ items, type: "prune" \}\)/u);
+	assert.match(HOOK_SOURCE, /die on remount/u);
 });

@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const PULL_REQUEST_DETAIL: ComponentDetail = {
 	description:
-		"Pull-request summary card in two densities. `compact` is a single-row list card (author avatar, split `#N` + title, diff stats, status lozenge, repo pill, `source → target` branch path) built for selectable lists such as the Jira work-item Pull requests select. `spacious` rearranges the same data into three rows: status lozenge + title, repo pill + branch path, then an author / changed-files / diff footer.",
+		"Pull-request summary card in two densities. `compact` is a single-row list card (author avatar, split `#N` + title, diff stats, status lozenge, repo pill, `source → target` branch path) built for selectable lists such as the Jira work-item Pull requests select. `spacious` rearranges the same data into three rows: status lozenge + title, GitHub mark + `source → target` branch path, then an author / changed-files / diff footer.",
 	importStatement: `import { PullRequest } from "@/components/blocks/pull-request";
 import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 	usage: `import { PullRequest } from "@/components/blocks/pull-request";
@@ -60,7 +60,8 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 		{
 			name: "repository",
 			type: "string",
-			description: "Owner/name path shown in the GitHub repository pill.",
+			description:
+				"Owner/name path shown in the GitHub repository pill on the compact card. Ignored by the spacious card, which keeps the GitHub mark beside the branch path.",
 		},
 		{
 			name: "branch",

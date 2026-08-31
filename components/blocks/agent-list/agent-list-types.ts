@@ -85,6 +85,7 @@ export type AgentListSessionDetails = Partial<
 		JiraSidebarSessionItem,
 		| "agentAvatarSrc"
 		| "agentName"
+		| "brandName"
 		| "completedAtMs"
 		| "completedSecondsAgo"
 		| "id"
@@ -92,6 +93,7 @@ export type AgentListSessionDetails = Partial<
 		| "startedAtMs"
 		| "status"
 		| "title"
+		| "vpkLogo"
 	>
 > & {
 	/** Claude session id used by `claude --resume`. Defaults to the row id. */
@@ -131,12 +133,12 @@ export interface AgentListItem {
 	timeLabel?: string;
 	/**
 	 * Where the session runs. Defaults to `"cloud"`. Local rows render a static
-	 * timestamp, the invoker's 16px avatar, and {@link AgentListItem.machineName}
+	 * timestamp, a devices icon, and {@link AgentListItem.machineName}
 	 * instead of a live runtime and the agent name.
 	 */
 	host?: AgentListHost;
 	/**
-	 * Viewer machine shown beside the invoker avatar on local rows
+	 * Viewer machine shown beside a devices icon on local rows
 	 * (e.g. `"Geoff’s MacBook"`). Ignored unless `host` is `"local"`.
 	 */
 	machineName?: string;

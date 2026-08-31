@@ -3,7 +3,7 @@ export type PullRequestStatus = "Open" | "Merged";
 /**
  * Card density. `compact` is the single-row list card (avatar leads, title and
  * metadata stack beside it). `spacious` is the three-row summary card: status +
- * title, then repo + branch path, then an author/diff footer.
+ * title, then GitHub mark + branch path, then an author/diff footer.
  */
 export type PullRequestVariant = "compact" | "spacious";
 

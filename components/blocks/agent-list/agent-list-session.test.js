@@ -133,3 +133,30 @@ test("session flyout derives lifecycle, issue, and host fallbacks from a row", a
 		"merged",
 	);
 });
+
+test("session flyout carries the row's hexagonal agent mark and work-item status", async () => {
+	const { toAgentSessionFlyoutItem } = await loadSession();
+
+	const claude = toAgentSessionFlyoutItem(sessionItem(
+		{ issueKey: "PAY-101", issueStatus: "Done" },
+		{ agent: { brandName: "claude", id: "claude", kind: "agent", name: "Claude" } },
+	));
+	assert.equal(claude.agentName, "Claude");
+	assert.equal(claude.brandName, "claude");
+	assert.equal(claude.vpkLogo, undefined);
+	assert.equal(claude.issueStatus, "Done");
+
+	const cursor = toAgentSessionFlyoutItem(sessionItem(
+		{ issueKey: "PAY-121", issueStatus: "In review" },
+		{ agent: { brandName: "cursor", id: "cursor", kind: "agent", name: "Cursor" } },
+	));
+	assert.equal(cursor.brandName, "cursor");
+	assert.equal(cursor.issueStatus, "In review");
+
+	const rovo = toAgentSessionFlyoutItem(sessionItem(
+		undefined,
+		{ agent: { id: "rovo-dev", kind: "agent", name: "Rovo", vpkLogo: "rovo" } },
+	));
+	assert.equal(rovo.vpkLogo, "rovo");
+	assert.equal(rovo.brandName, undefined);
+});

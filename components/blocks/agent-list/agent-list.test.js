@@ -139,6 +139,7 @@ test("the leading tile renders the agent or VPK identity at the selected density
 	);
 	assert.match(CARD_SOURCE, /vpkLogo=\{agent\.vpkLogo\}/u);
 	assert.match(CARD_SOURCE, /<AgentListIdentity[\s\S]*sizePx=\{isCompact \? 24 : 32\}/u);
+	assert.doesNotMatch(CARD_SOURCE, /CATALOG_VPK_LOGO_SIZE_PX|agentVisualSizePx/u);
 });
 
 test("people render a circular photo beside the hexagon agents in the same list", () => {
@@ -326,6 +327,8 @@ test("the session adapter derives flyout payloads the row model does not carry",
 		/issueKey: details\?\.issueKey \?\? deriveIssueKeyFromBranch\(item\.branch\),/u,
 	);
 	assert.match(SESSION_SOURCE, /issueSummary: details\?\.issueSummary \?\? item\.title,/u);
+	assert.match(SESSION_SOURCE, /\.\.\.\(item\.agent\.brandName === undefined \? \{\} : \{ brandName: item\.agent\.brandName \}\),/u);
+	assert.match(SESSION_SOURCE, /\.\.\.\(item\.agent\.vpkLogo === undefined \? \{\} : \{ vpkLogo: item\.agent\.vpkLogo \}\),/u);
 	assert.match(SESSION_SOURCE, /completedAtMs: item\.completedAtMs,/u);
 	assert.match(SESSION_SOURCE, /completedSecondsAgo: item\.completedSecondsAgo,/u);
 	assert.match(SESSION_SOURCE, /initialElapsedSeconds: item\.elapsedSeconds,/u);
@@ -334,6 +337,7 @@ test("the session adapter derives flyout payloads the row model does not carry",
 	for (const rowOwnedField of [
 		"agentAvatarSrc",
 		"agentName",
+		"brandName",
 		"completedAtMs",
 		"completedSecondsAgo",
 		"id",
@@ -341,6 +345,7 @@ test("the session adapter derives flyout payloads the row model does not carry",
 		"startedAtMs",
 		"status",
 		"title",
+		"vpkLogo",
 	]) {
 		assert.match(TYPES_SOURCE, new RegExp(`\\| "${rowOwnedField}"`, "u"));
 	}
@@ -719,7 +724,7 @@ test("the session activity header can preserve a consumer-provided completed tim
 	assert.match(CARD_SOURCE, /<AgentListTime fallback=\{timeFallback\} item=\{item\} \/>/u);
 });
 
-test("local sessions show a static timestamp, invoker avatar, and machine name", () => {
+test("local sessions show a static timestamp, devices icon, and machine name", () => {
 	assert.match(TYPES_SOURCE, /export type AgentListHost = "cloud" \| "local";/u);
 	assert.match(TYPES_SOURCE, /host\?: AgentListHost;/u);
 	assert.match(TYPES_SOURCE, /machineName\?: string;/u);
@@ -742,12 +747,23 @@ test("local sessions show a static timestamp, invoker avatar, and machine name",
 	);
 	assert.match(
 		CARD_SOURCE,
+		/import \{ InvokerBy \} from "\.\/agent-list-invoker";/u,
+	);
+	assert.doesNotMatch(
+		CARD_SOURCE,
 		/import \{ InvokerAvatar, InvokerBy \} from "\.\/agent-list-invoker";/u,
 	);
 	assert.match(
 		CARD_SOURCE,
-		/if \(isLocalAgentListItem\(item\) && item\.machineName\) \{[\s\S]*\{item\.invokedBy \? \(\s*<InvokerAvatar invoker=\{item\.invokedBy\} \/>\s*\) : \([\s\S]*<DevicesIcon color="currentColor" label="" size="small" \/>[\s\S]*\{item\.machineName\}/u,
+		/if \(isLocalAgentListItem\(item\) && item\.machineName\) \{[\s\S]*<DevicesIcon color="currentColor" label="" size="small" \/>[\s\S]*\{item\.machineName\}/u,
 	);
+	const metadataIdentitySource = /function AgentListMetadataIdentity[\s\S]*?(?=\nexport function AgentListActivityHeader)/u.exec(
+		CARD_SOURCE,
+	)?.[0];
+	assert.ok(metadataIdentitySource);
+	assert.match(metadataIdentitySource, /<DevicesIcon color="currentColor" label="" size="small" \/>/u);
+	assert.doesNotMatch(metadataIdentitySource, /InvokerAvatar/u);
+	assert.doesNotMatch(metadataIdentitySource, /item\.invokedBy \?/u);
 	const invokerAvatarSource = /export function InvokerAvatar[\s\S]*?(?=\nexport function InvokerBy)/u.exec(
 		INVOKER_SOURCE,
 	)?.[0];
@@ -757,7 +773,8 @@ test("local sessions show a static timestamp, invoker avatar, and machine name",
 	assert.match(DATA_SOURCE, /machineName: "Geoff’s MacBook"/u);
 	assert.match(DATA_SOURCE, /timeLabel: "3 mins ago"/u);
 	assert.match(DETAIL_SOURCE, /Local sessions swap the live runtime and agent name/u);
-	assert.match(DETAIL_SOURCE, /a 16px invoker avatar, and the machine name/u);
+	assert.match(DETAIL_SOURCE, /a devices icon, and the machine name/u);
+	assert.doesNotMatch(DETAIL_SOURCE, /16px invoker avatar, and the machine name/u);
 });
 
 test("hover actions add an Archive icon beside View or Resume", () => {

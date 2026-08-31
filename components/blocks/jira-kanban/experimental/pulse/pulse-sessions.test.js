@@ -1,20 +1,28 @@
 /**
  * Pulse — local coding sessions as an agent list.
  *
- * Uncaptured GitHub work stays a dashed card. A Claude session uses the same
+ * Uncaptured GitHub work stays a dashed card. A coding session uses the same
  * card chrome through AgentList `variant="uncaptured"`, mapped from the fixture
  * onto the shared row model. Only the rail composition is a source contract.
  */
 
+const { readFileSync } = require("node:fs");
+const { join } = require("node:path");
 const { test } = require("node:test");
 
-const {
-	assert,
-	findSnapshotIndex,
-	loadSessionsHarness,
-	snapshotAt,
-	SOURCES,
-} = require("./pulse-test-harness");
+	const {
+		assert,
+		findSnapshotIndex,
+		loadSessionsHarness,
+		snapshotAt,
+		SOURCES,
+		EXPERIMENTAL_PAGE_SOURCE,
+	} = require("./pulse-test-harness");
+
+const CARD_SOURCE = readFileSync(
+	join(__dirname, "../../../agent-list/agent-list-card.tsx"),
+	"utf8",
+);
 
 async function sessionRows(snapshotId) {
 	const { PULSE_TIMELINE, toPulseSessionItems } = await loadSessionsHarness();
@@ -28,14 +36,20 @@ async function sessionRows(snapshotId) {
 	);
 
 	return {
-		items: toPulseSessionItems(looseWork, contributors),
+		items: toPulseSessionItems(looseWork, contributors, PULSE_TIMELINE.workItems),
 		sessions: looseWork.filter((item) => item.kind === "agent-session"),
 		snapshot,
 	};
 }
 
-test("every local session becomes one Claude agent-list row", async () => {
-	const { PULSE_TIMELINE, toPulseSessionItems, toPulseSessionWorktree } = await loadSessionsHarness();
+test("every local session becomes one agent-list row with fixture identity", async () => {
+	const {
+		PULSE_TIMELINE,
+		toPulseSessionAgent,
+		toPulseSessionIssueStatus,
+		toPulseSessionItems,
+		toPulseSessionWorktree,
+	} = await loadSessionsHarness();
 
 	for (const snapshot of PULSE_TIMELINE.snapshots) {
 		const { items, sessions } = await sessionRows(snapshot.id);
@@ -44,17 +58,27 @@ test("every local session becomes one Claude agent-list row", async () => {
 		items.forEach((item, index) => {
 			const session = sessions[index];
 			const where = `${snapshot.id}/${session.id}`;
+			const agent = toPulseSessionAgent(session.agentId);
 
 			assert.equal(item.id, session.id, where);
 			assert.equal(item.title, session.title, where);
 			assert.equal(item.host, "local", where);
 			assert.equal(item.state, "complete", where);
-			assert.equal(item.agent.name, "Claude", where);
-			assert.equal(item.agent.brandName, "claude", where);
+			assert.equal(item.agent.id, agent.id, where);
+			assert.equal(item.agent.name, agent.name, where);
+			assert.equal(item.agent.brandName, agent.brandName, where);
+			assert.equal(item.agent.vpkLogo, agent.vpkLogo, where);
 			assert.equal(item.metadataPrefix, undefined, where);
-			assert.equal(item.timeLabel, "3 mins ago", where);
-			assert.equal(item.machineName, "Venn’s MacBook", where);
+			assert.ok(typeof item.timeLabel === "string" && item.timeLabel.length > 0, where);
+			assert.equal(item.timeLabel, session.timeLabel, where);
+			assert.ok(typeof item.machineName === "string" && item.machineName.length > 0, where);
+			assert.equal(item.machineName, session.machineName, where);
 			assert.equal(item.sessionDetails.issueKey, session.sourceTitle, where);
+			assert.equal(
+				item.sessionDetails.issueStatus,
+				toPulseSessionIssueStatus(session.sourceTitle, PULSE_TIMELINE.workItems),
+				where,
+			);
 			assert.equal(
 				item.sessionDetails.worktreePath,
 				toPulseSessionWorktree(session.detail),
@@ -68,6 +92,45 @@ test("every local session becomes one Claude agent-list row", async () => {
 		PULSE_TIMELINE.members,
 	);
 	assert.equal(githubOnly.length, 0, "GitHub artifacts must not become session rows");
+
+	const allItems = toPulseSessionItems(
+		PULSE_TIMELINE.looseWork,
+		PULSE_TIMELINE.members,
+		PULSE_TIMELINE.workItems,
+	);
+	assert.equal(allItems.length, 16, "the untracked-work column should have sixteen sessions");
+	assert.equal(
+		allItems.find((item) => item.sessionDetails.issueKey === "PAY-101")?.sessionDetails.issueStatus,
+		"Done",
+	);
+	assert.equal(
+		allItems.find((item) => item.sessionDetails.issueKey === "PAY-121")?.sessionDetails.issueStatus,
+		"In review",
+	);
+
+	const timeLabels = new Set(allItems.map((item) => item.timeLabel));
+	const machineNames = new Set(allItems.map((item) => item.machineName));
+	const agentNames = new Set(allItems.map((item) => item.agent.name));
+	const calendarStamp = /Aug|Mon |Tue |Wed |Thu |Fri /u;
+	const relativeStamp = /^(Just now|\d+ mins? ago|\d+ hrs? ago|Yesterday|\d+ days? ago|Last week)$/u;
+	for (const item of allItems) {
+		assert.doesNotMatch(item.timeLabel, calendarStamp, `${item.id} must not use a calendar stamp`);
+		assert.match(item.timeLabel, relativeStamp, `${item.id} timeLabel "${item.timeLabel}" is not relative`);
+	}
+	assert.ok(timeLabels.size > 1, "timestamps must not all be identical");
+	assert.ok(machineNames.size > 1, "machine names must not all be identical");
+	assert.ok(!machineNames.has("Venn’s MacBook"), "do not stamp every row as Venn’s MacBook");
+	for (const name of ["Claude", "Codex", "Cursor", "Rovo"]) {
+		assert.ok(agentNames.has(name), `timeline is missing ${name}`);
+	}
+
+	const metadataIdentitySource = /function AgentListMetadataIdentity[\s\S]*?(?=\nexport function AgentListActivityHeader)/u.exec(
+		CARD_SOURCE,
+	)?.[0];
+	assert.ok(metadataIdentitySource, "expected AgentListMetadataIdentity in the shared row");
+	assert.match(metadataIdentitySource, /<DevicesIcon color="currentColor" label="" size="small" \/>/u);
+	assert.doesNotMatch(metadataIdentitySource, /InvokerAvatar/u);
+	assert.doesNotMatch(metadataIdentitySource, /item\.invokedBy \?/u);
 });
 
 test("session rows name a human invoker when the roster can place one", async () => {
@@ -104,13 +167,35 @@ test("session activation is omitted when the host cannot resume it", async () =>
 	assert.equal(handlers.onView, undefined);
 	assert.equal(handlers.onCopyResume, undefined);
 	assert.equal(handlers.isResumable(item), false);
+	assert.equal(typeof handlers.onCreateWorkItem, "function");
+	assert.equal(typeof handlers.onLinkWorkItem, "function");
+	assert.equal(typeof handlers.onSubtasks, "function");
+});
+
+test("create, link, and subtask capture through the same host callback", async () => {
+	const { PULSE_TIMELINE, toPulseSessionHandlers, toPulseSessionItems } = await loadSessionsHarness();
+	const session = PULSE_TIMELINE.looseWork.find((item) => item.kind === "agent-session");
+	assert.ok(session !== undefined, "fixture should include a local agent session");
+	const item = toPulseSessionItems([session], PULSE_TIMELINE.members)[0];
+	const captured = [];
+	const handlers = toPulseSessionHandlers({
+		looseWork: [session],
+		onCapture(looseWork) {
+			captured.push(looseWork.id);
+		},
+	});
+
+	handlers.onCreateWorkItem(item);
+	handlers.onLinkWorkItem(item);
+	handlers.onSubtasks(item);
+	assert.deepEqual(captured, [session.id, session.id, session.id]);
 });
 
 test("the uncaptured column renders sessions through the Agent Session block", () => {
 	assert.match(SOURCES.rail, /import \{ AgentSession \} from "@\/components\/blocks\/agent-session";/u);
 	assert.match(
 		SOURCES.rail,
-		/const sessionItems = toPulseSessionItems\(\s*looseWork,\s*members,\s*\);/u,
+		/const sessionItems = toPulseSessionItems\(\s*looseWork,\s*members,\s*workItems,\s*\);/u,
 	);
 	assert.match(SOURCES.rail, /githubWork = looseWork\.filter\(isPulseGithubLooseWork\)/u);
 	assert.match(
@@ -122,7 +207,9 @@ test("the uncaptured column renders sessions through the Agent Session block", (
 	// the v2 board's untracked-work column apply one set of rules.
 	assert.match(SOURCES.rail, /\{\.\.\.sessionHandlers\}/u);
 	assert.match(SOURCES.sessions, /onCopyResume: onResume === undefined \? undefined : \(item: AgentSessionItem\) => \{/u);
-	assert.match(SOURCES.sessions, /onLinkWorkItem: \(item: AgentSessionItem\) => \{/u);
+	assert.match(SOURCES.sessions, /onCreateWorkItem: captureSession,/u);
+	assert.match(SOURCES.sessions, /onLinkWorkItem: captureSession,/u);
+	assert.match(SOURCES.sessions, /onSubtasks: captureSession,/u);
 	assert.doesNotMatch(SOURCES.rail, /variant="compact"/u);
 	assert.doesNotMatch(SOURCES.rail, /canViewItem=/u);
 	assert.match(SOURCES.sessions, /onView: onResume === undefined \? undefined : \(item: AgentSessionItem\) => \{/u);
@@ -133,6 +220,21 @@ test("the uncaptured column renders sessions through the Agent Session block", (
 	assert.doesNotMatch(SOURCES.rail, /onResumeAgentSession/u);
 	assert.doesNotMatch(SOURCES.rail, /sourceFacts/u);
 	assert.doesNotMatch(SOURCES.rail, /JiraIssueUncapturedWork/u);
+});
+
+test("lw-spike-webhook-session is the Rovo session that uses the catalog VPK mark", async () => {
+	const { PULSE_TIMELINE, toPulseSessionAgent, toPulseSessionItems } = await loadSessionsHarness();
+	const session = PULSE_TIMELINE.looseWork.find((item) => item.id === "lw-spike-webhook-session");
+	assert.ok(session !== undefined, "fixture should include lw-spike-webhook-session");
+	assert.equal(session.kind, "agent-session");
+	assert.equal(session.agentId, "rovo");
+	const agent = toPulseSessionAgent("rovo");
+	assert.equal(agent.vpkLogo, "rovo");
+	assert.equal(agent.brandName, undefined);
+	const [item] = toPulseSessionItems([session], PULSE_TIMELINE.members);
+	assert.equal(item.id, "lw-spike-webhook-session");
+	assert.equal(item.agent.vpkLogo, "rovo");
+	assert.equal(item.agent.brandName, undefined);
 });
 
 test("the roster filter narrows sessions the way the header narrows board cards", async () => {
@@ -163,4 +265,27 @@ test("the roster filter narrows sessions the way the header narrows board cards"
 	for (const id of boardOnlyIds) {
 		assert.ok(!pulseMemberIds.has(id), `${id} should not name a roster member`);
 	}
+});
+
+test("session flyout status resolves from the unscoped work-item collection", async () => {
+	const { PULSE_TIMELINE, toPulseSessionIssueStatus, toPulseSessionItems } =
+		await loadSessionsHarness();
+	const session = PULSE_TIMELINE.looseWork.find((item) => item.kind === "agent-session");
+	assert.ok(session !== undefined, "fixture should include a local session");
+	const fullStatus = toPulseSessionIssueStatus(session.sourceTitle, PULSE_TIMELINE.workItems);
+	assert.ok(fullStatus !== undefined, `${session.id} should resolve a board status`);
+	const [scopedOut] = toPulseSessionItems([session], PULSE_TIMELINE.members, []);
+	assert.equal(scopedOut.sessionDetails.issueStatus, undefined);
+	const [scopedIn] = toPulseSessionItems(
+		[session],
+		PULSE_TIMELINE.members,
+		PULSE_TIMELINE.workItems,
+	);
+	assert.equal(scopedIn.sessionDetails.issueStatus, fullStatus);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/toPulseSessionItems\(\s*filterPulseLooseWorkByMember\(pulseTimeline\.looseWork, agentSessionMemberId\),\s*PULSE_TIMELINE\.members,\s*PULSE_TIMELINE\.workItems,/u,
+	);
+	assert.match(SOURCES.shell, /workItems=\{sourceTimeline\.workItems\}/u);
+	assert.doesNotMatch(SOURCES.shell, /workItems=\{pulse\.workItems\}/u);
 });

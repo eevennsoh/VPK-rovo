@@ -11,6 +11,7 @@ import { IconTile } from "@/components/ui/icon-tile";
 import { RovoColorIcon } from "@/components/ui/logo";
 import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import { Tag, TagGroup } from "@/components/ui/tag";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 
 export default function TagDemo() {
 	return (
@@ -455,6 +456,39 @@ export function TagDemoMentionTags() {
 				}
 			>
 				Code Planner
+			</Tag>
+			<Tag
+				type="agent"
+				variant="editor"
+				elemBefore={
+					<span aria-hidden>
+						<AgentAvatarVisual
+							avatarClassName="after:border-0"
+							label="Rovo"
+							sizePx={16}
+							vpkLogo="rovo"
+						/>
+					</span>
+				}
+			>
+				Rovo
+			</Tag>
+			<Tag
+				type="agent"
+				variant="editor"
+				elemBefore={
+					<span aria-hidden>
+						<AgentAvatarVisual
+							avatarClassName="after:border-0"
+							brandName="claude"
+							fallbackText="Claude"
+							label="Claude"
+							sizePx={16}
+						/>
+					</span>
+				}
+			>
+				Claude
 			</Tag>
 		</div>
 	);

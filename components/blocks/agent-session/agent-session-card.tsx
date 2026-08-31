@@ -51,6 +51,7 @@ export function AgentSessionCard({
 	onCopyResume,
 	onToggleVisibility,
 	onView,
+	visibilityLabel = "Hide",
 }: Readonly<{
 	arrivalDelaySeconds?: number;
 	captured?: boolean;
@@ -66,6 +67,8 @@ export function AgentSessionCard({
 	onCopyResume?: (item: AgentSessionItem) => void;
 	onToggleVisibility?: (item: AgentSessionItem) => void;
 	onView?: (item: AgentSessionItem) => void;
+	/** Tooltip and accessible name for the hover eye. Hide in the active list, Show in Hidden work. */
+	visibilityLabel?: string;
 }>) {
 	const shouldReduceMotion = useReducedMotion();
 	const [copiedResume, setCopiedResume] = useState(false);
@@ -84,9 +87,9 @@ export function AgentSessionCard({
 	// discovery dash and dot but must not replay its entrance.
 	const shouldPlayArrival = isArriving && !shouldReduceMotion;
 
-	// The same hover/focus-revealed pair Agent List rows use, with show/hide in
-	// the slot Agent List gives to Archive. The eye is a placeholder today: the
-	// deferral behaviour lands with `onToggleVisibility`.
+	// The same hover/focus-revealed pair Agent List rows use, with Hide / Show
+	// in the slot Agent List gives to Archive. The eye always renders; the
+	// column supplies `onToggleVisibility` so Hide actually removes the card.
 	const hoverActions: AgentListRowHoverActions = {
 		primary: canResume
 			? {
@@ -105,74 +108,87 @@ export function AgentSessionCard({
 			: undefined,
 		secondary: {
 			icon: <EyeOpenIcon label="" size="small" />,
-			label: "Show/hide",
+			label: visibilityLabel,
 			onClick: () => {
 				onToggleVisibility?.(item);
 			},
 		},
 	};
 
+	// Arrival layout lives on the list item, not the flyout trigger. Base UI
+	// closes a preview card when its active trigger unmounts, and Motion's layout
+	// projection can replace that host — which made each row open its own flyout
+	// instead of sliding the list's shared popup. The catalog demo uses a stable
+	// `div` as the trigger host so hovering down the list crossfades in place.
 	return (
-		<JiraSessionFlyoutTrigger
-			closeDelay={160}
-			handle={flyoutHandle}
-			render={
-				<motion.li
-					animate={shouldPlayArrival ? { opacity: 1, y: 0 } : undefined}
-					data-testid={"agent-session-row-" + item.id}
-					// `false` for a settled card, so nothing replays when the list re-renders
-					// or the watermark clears the mark. Only an arrival animates.
-					initial={shouldPlayArrival ? { opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX } : false}
-					// Siblings slide down to make room instead of jumping. `"position"` so a
-					// displaced card is never scaled, only moved.
-					layout={shouldReduceMotion ? false : "position"}
-					style={{ willChange: shouldPlayArrival ? "opacity, transform" : undefined }}
-					transition={{ ...AGENT_SESSION_ARRIVAL_TRANSITION, delay: arrivalDelaySeconds ?? 0 }}
-				/>
-			}
-			session={flyoutSession}
+		<motion.li
+			animate={shouldPlayArrival ? { opacity: 1, y: 0 } : undefined}
+			data-testid={"agent-session-row-" + item.id}
+			// `false` for a settled card, so nothing replays when the list re-renders
+			// or the watermark clears the mark. Only an arrival animates.
+			initial={shouldPlayArrival ? { opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX } : false}
+			// Siblings slide down to make room instead of jumping. `"position"` so a
+			// displaced card is never scaled, only moved.
+			layout={shouldReduceMotion ? false : "position"}
+			style={{ willChange: shouldPlayArrival ? "opacity, transform" : undefined }}
+			transition={{ ...AGENT_SESSION_ARRIVAL_TRANSITION, delay: arrivalDelaySeconds ?? 0 }}
 		>
-			<article
-				className={cn(
-					"group/agent-row relative flex w-full cursor-pointer rounded-lg border bg-surface p-3 text-left",
-					"transition-[background-color,border-color] duration-xxshort ease-out-practical",
-					"hover:border-border hover:bg-surface-hovered",
-					"focus-within:border-border focus-within:bg-surface-hovered",
-					"motion-reduce:transition-none",
-					// Recoloured, not replaced: the dash means "uncaptured" and stays
-					// true while the card is also new, so the one property carries both
-					// facts instead of the arrival mark evicting the card's own state.
-					// Captured sessions drop the dash — the work is on the board now.
-					captured
-						? "border-solid border-border"
-						: isNew
-							? "border-dashed border-border-discovery"
-							: "border-dashed border-border-disabled",
-				)}
-				data-captured={captured || undefined}
-				data-new={isNew || undefined}
-				data-variant="uncaptured-work"
+			<JiraSessionFlyoutTrigger
+				closeDelay={160}
+				handle={flyoutHandle}
+				render={<div className="w-full" />}
+				session={flyoutSession}
 			>
-				{isNew ? (
-					<>
-						{/* Colour never carries it alone. */}
-						<span className="sr-only">Newly synced, not yet reviewed</span>
-						{/* Parked in the body's 12px padding, so it clears the
-						    avatar on the left and the hover actions on the right. */}
-						<span
-							aria-hidden="true"
-							className="absolute left-1.5 top-1.5 size-1.5 rounded-full bg-icon-discovery"
-						/>
-					</>
-				) : null}
-				<AgentListRow
-					hoverActions={hoverActions}
-					isCompact={false}
-					isSelected={false}
-					item={item}
-					onView={onView}
-				/>
-			</article>
-		</JiraSessionFlyoutTrigger>
+				<article
+					className={cn(
+						"group/agent-row relative flex w-full cursor-pointer rounded-none bg-transparent p-3 text-left text-text",
+						// Stacked list is one dashed well: first card owns the top radius,
+						// last owns the bottom, shared edges collapse to a single stroke.
+						"[li:first-child_&]:rounded-t-lg",
+						"[li:last-child_&]:rounded-b-lg",
+						"[li:not(:last-child)_&]:[--dash-bottom-size:0px]",
+						"transition-[border-color] duration-xxshort ease-out-practical",
+						"hover:border-border",
+						"focus-within:border-border",
+						"motion-reduce:transition-none",
+						// Recoloured, not replaced: the dash means "uncaptured" and stays
+						// true while the card is also new, so the one property carries both
+						// facts instead of the arrival mark evicting the card's own state.
+						// Captured sessions use a real solid border. Uncaptured cards must
+						// not set `border` / `border-solid` — that 1px solid sat on the same
+						// edge as `dash-4-2` and read as a double stroke. `dash-4-2` is the
+						// only perimeter (named without `border-*` so twMerge cannot drop it).
+						captured
+							? "border border-solid border-border [li:not(:last-child)_&]:border-b-0"
+							: isNew
+								? "dash-4-2 [--dash-color:var(--color-border-discovery)]"
+								: "dash-4-2 [--dash-color:var(--color-border-disabled)]",
+					)}
+					data-captured={captured || undefined}
+					data-new={isNew || undefined}
+					data-variant="uncaptured-work"
+				>
+					{isNew ? (
+						<>
+							{/* Colour never carries it alone. */}
+							<span className="sr-only">Newly synced, not yet reviewed</span>
+							{/* Parked in the body's 12px padding, so it clears the
+							    avatar on the left and the hover actions on the right. */}
+							<span
+								aria-hidden="true"
+								className="absolute left-1.5 top-1.5 size-1.5 rounded-full bg-icon-discovery"
+							/>
+						</>
+					) : null}
+					<AgentListRow
+						hoverActions={hoverActions}
+						isCompact={false}
+						isSelected={false}
+						item={item}
+						onView={onView}
+					/>
+				</article>
+			</JiraSessionFlyoutTrigger>
+		</motion.li>
 	);
 }

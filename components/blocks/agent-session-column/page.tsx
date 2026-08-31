@@ -7,11 +7,25 @@ import { Button } from "@/components/ui/button";
 
 import { AgentSessionColumn } from "./index";
 
-const CLAUDE_AGENT = {
-	brandName: "claude",
-	id: "claude",
+const CODEX_AGENT = {
+	brandName: "openai-codex",
+	id: "codex",
 	kind: "agent",
-	name: "Claude",
+	name: "Codex",
+} as const;
+
+const CURSOR_AGENT = {
+	brandName: "cursor",
+	id: "cursor",
+	kind: "agent",
+	name: "Cursor",
+} as const;
+
+const ROVO_AGENT = {
+	id: "rovo-dev",
+	kind: "agent",
+	name: "Rovo",
+	vpkLogo: "rovo",
 } as const;
 
 /**
@@ -27,9 +41,9 @@ const ARRIVAL_BATCHES: readonly (readonly AgentSessionItem[])[] = [
 			id: "lw-sync-webhook-gap",
 			title: "Challenge webhook gap note never made it out of the session",
 			state: "needs-input",
-			agent: CLAUDE_AGENT,
+			agent: CURSOR_AGENT,
 			host: "local",
-			machineName: "Venn’s MacBook",
+			machineName: "MacBook-Pro.local",
 			timeLabel: "just now",
 			sessionDetails: {
 				host: "local",
@@ -42,9 +56,9 @@ const ARRIVAL_BATCHES: readonly (readonly AgentSessionItem[])[] = [
 			id: "lw-sync-sandbox-root-cause",
 			title: "Root cause of the sandbox 401 is still only in a local thread",
 			state: "running",
-			agent: CLAUDE_AGENT,
+			agent: CODEX_AGENT,
 			host: "local",
-			machineName: "Venn’s MacBook",
+			machineName: "H13XSGKLS1",
 			timeLabel: "just now",
 			sessionDetails: {
 				host: "local",
@@ -59,9 +73,9 @@ const ARRIVAL_BATCHES: readonly (readonly AgentSessionItem[])[] = [
 			id: "lw-sync-replay-blast-radius",
 			title: "Replay-risk blast radius still lives in an unsaved session",
 			state: "attention",
-			agent: CLAUDE_AGENT,
+			agent: ROVO_AGENT,
 			host: "local",
-			machineName: "Venn’s MacBook",
+			machineName: "DESKTOP-7K2M9Q1",
 			timeLabel: "just now",
 			sessionDetails: {
 				host: "local",
@@ -153,6 +167,7 @@ export default function AgentSessionColumnPage() {
 					newItemIds={newIds}
 					onCreateWorkItem={handleCapture}
 					onLinkWorkItem={handleCapture}
+					onSubtasks={handleCapture}
 				/>
 				{/* The collapsed form, so the notch rail and its session flyout are
 				    reachable in the catalog without hunting for the hover control. */}
@@ -163,6 +178,7 @@ export default function AgentSessionColumnPage() {
 					newItemIds={newIds}
 					onCreateWorkItem={handleCapture}
 					onLinkWorkItem={handleCapture}
+					onSubtasks={handleCapture}
 				/>
 			</div>
 		</div>

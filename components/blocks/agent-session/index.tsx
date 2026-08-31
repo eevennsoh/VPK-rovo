@@ -61,7 +61,7 @@ function buildArrivalDelays(
  * Large sessions are dashed uncaptured-work cards: the shared Agent List row
  * (identity, static stamp, viewer machine) sits on a single surface and reveals
  * the same hover/focus action pair Agent List rows use — Resume, plus a
- * show/hide eye where Agent List puts Archive. Work-item capture lives on the
+ * Hide / Show eye where Agent List puts Archive. Work-item capture lives on the
  * shared untracked-work session flyout, the same surface
  * `components/blocks/agent-session-flyout` uses, so hovering a card offers
  * Link / Create / Add as a subtask without a footer chin. Medium follows the
@@ -86,6 +86,7 @@ export function AgentSession({
 	onToggleVisibility,
 	onView,
 	variant = "large",
+	visibilityLabel,
 }: Readonly<AgentSessionProps>) {
 	// Coding rows ignore `canViewItem`: resuming a session the viewer owns is not
 	// a permission question. They still require `onView`, because a read-only
@@ -116,7 +117,15 @@ export function AgentSession({
 
 	return (
 		<>
-			<ul className={cn("flex flex-col gap-2", className)} data-variant={variant}>
+			<ul
+				className={cn(
+					"flex flex-col",
+					variant === "large" ? "gap-0" : "gap-2",
+					className,
+				)}
+				data-stack={variant === "large" ? "well" : undefined}
+				data-variant={variant}
+			>
 				{items.map((item: AgentSessionItem) => {
 					const itemOnView = isCodingAgentListItem(item)
 						? onView === undefined
@@ -148,6 +157,7 @@ export function AgentSession({
 							onCopyResume={onCopyResume}
 							onToggleVisibility={onToggleVisibility}
 							onView={itemOnView}
+							visibilityLabel={visibilityLabel}
 						/>
 					) : (
 						<li data-testid={"agent-session-row-" + item.id} key={item.id}>

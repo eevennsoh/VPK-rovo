@@ -59,10 +59,12 @@ test("renders each session as a dashed uncaptured-work card around the shared ro
 	// Dashed means "uncaptured". The colour is conditional, because a newly
 	// synced card recolours the same dash rather than replacing it. Captured
 	// sessions drop the dash for a solid frame.
-	assert.match(CARD_SOURCE, /border-dashed border-border-discovery/u);
-	assert.match(CARD_SOURCE, /border-dashed border-border-disabled/u);
-	assert.match(CARD_SOURCE, /border-solid border-border/u);
+	assert.match(CARD_SOURCE, /dash-4-2 \[--dash-color:var\(--color-border-discovery\)\]/u);
+	assert.match(CARD_SOURCE, /dash-4-2 \[--dash-color:var\(--color-border-disabled\)\]/u);
+	assert.match(CARD_SOURCE, /border border-solid border-border/u);
 	assert.doesNotMatch(CARD_SOURCE, /bg-surface-sunken/u);
+	assert.doesNotMatch(CARD_SOURCE, /bg-surface(?!-sunken)/u);
+	assert.doesNotMatch(CARD_SOURCE, /bg-bg-accent-gray-subtlest/u);
 	assert.doesNotMatch(CARD_SOURCE, /UncapturedWorkChin/u);
 	// The row presenter stays owned by Agent List; this block only frames it.
 	assert.match(
@@ -70,6 +72,22 @@ test("renders each session as a dashed uncaptured-work card around the shared ro
 		/import \{\s*AgentListRow,\s*type AgentListRowHoverActions,\s*\} from "@\/components\/blocks\/agent-list\/agent-list-card";/u,
 	);
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*hoverActions=\{hoverActions\}/u);
+	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*isCompact=\{false\}/u);
+});
+
+test("large uncaptured-work Rovo rows use the same 32px hexagon as other agents", () => {
+	const listCardSource = readFileSync(
+		join(__dirname, "../agent-list/agent-list-card.tsx"),
+		"utf8",
+	);
+	assert.match(
+		listCardSource,
+		/<AgentAvatarVisual[\s\S]*avatarSrc=\{agent\.avatarSrc\}[\s\S]*sizePx=\{sizePx\}/u,
+	);
+	assert.match(listCardSource, /vpkLogo=\{agent\.vpkLogo\}/u);
+	assert.match(listCardSource, /<AgentListIdentity[\s\S]*sizePx=\{isCompact \? 24 : 32\}/u);
+	assert.doesNotMatch(listCardSource, /CATALOG_VPK_LOGO_SIZE_PX|agentVisualSizePx/u);
+	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*isCompact=\{false\}/u);
 });
 
 test("large remains the default while every card receives the selected size variant", () => {
@@ -130,7 +148,7 @@ test("small is the collapsed-column notch and stays keyboard operable when view 
 	assert.match(ARRIVAL_MOTION_SOURCE, /duration: 0\.25,\s*ease: \[0, 0\.4, 0, 1\]/u);
 });
 
-test("the row reveals Resume plus a show/hide eye where Agent List puts Archive", () => {
+test("the row reveals Resume plus a Hide / Show eye where Agent List puts Archive", () => {
 	// The hover pair is the Agent List row's own generic slot, not a fork of its
 	// markup — the card only supplies the two action descriptors.
 	assert.match(
@@ -139,18 +157,25 @@ test("the row reveals Resume plus a show/hide eye where Agent List puts Archive"
 	);
 	assert.match(CARD_SOURCE, /const hoverActions: AgentListRowHoverActions = \{/u);
 	assert.match(CARD_SOURCE, /label: copiedResume \? "Copied" : "Resume",/u);
-	assert.match(CARD_SOURCE, /icon: <EyeOpenIcon label="" size="small" \/>,\s*label: "Show\/hide",/u);
+	assert.match(CARD_SOURCE, /icon: <EyeOpenIcon label="" size="small" \/>,\s*label: visibilityLabel,/u);
+	assert.match(CARD_SOURCE, /visibilityLabel = "Hide"/u);
 	assert.match(CARD_SOURCE, /import EyeOpenIcon from "@atlaskit\/icon\/core\/eye-open";/u);
-	assert.match(CARD_SOURCE, /group\/agent-row relative flex w-full cursor-pointer rounded-lg border bg-surface p-3/u);
-	assert.match(CARD_SOURCE, /hover:border-border hover:bg-surface-hovered/u);
-	assert.match(CARD_SOURCE, /focus-within:border-border focus-within:bg-surface-hovered/u);
-	assert.match(CARD_SOURCE, /transition-\[background-color,border-color\] duration-xxshort ease-out-practical/u);
+	assert.match(CARD_SOURCE, /group\/agent-row relative flex w-full cursor-pointer rounded-none bg-transparent p-3 text-left text-text/u);
+	assert.match(CARD_SOURCE, /hover:border-border/u);
+	assert.match(CARD_SOURCE, /focus-within:border-border/u);
+	assert.match(CARD_SOURCE, /transition-\[border-color\] duration-xxshort ease-out-practical/u);
+	assert.doesNotMatch(CARD_SOURCE, /hover:bg-/u);
+	assert.doesNotMatch(CARD_SOURCE, /focus-within:bg-/u);
+	assert.doesNotMatch(CARD_SOURCE, /active:bg-/u);
 	assert.doesNotMatch(CARD_SOURCE, /hover:shadow-md/u);
 	assert.doesNotMatch(CARD_SOURCE, /group\/agent-row group\/uncaptured-work/u);
-	// Placeholder today: the eye always renders and calls the optional handler.
+	// The eye always renders and calls the optional handler; the column supplies
+	// Hide vs Show so the tooltip matches the action.
 	assert.match(CARD_SOURCE, /onToggleVisibility\?\.\(item\)/u);
 	assert.match(INDEX_SOURCE, /onToggleVisibility=\{onToggleVisibility\}/u);
+	assert.match(INDEX_SOURCE, /visibilityLabel=\{visibilityLabel\}/u);
 	assert.match(TYPES_SOURCE, /onToggleVisibility\?: \(item: AgentSessionItem\) => void;/u);
+	assert.match(TYPES_SOURCE, /visibilityLabel\?: string;/u);
 });
 
 test("the untracked-work flyout owns capture, so the card has no footer chin", () => {
@@ -172,6 +197,21 @@ test("the untracked-work flyout owns capture, so the card has no footer chin", (
 	);
 	assert.doesNotMatch(CARD_SOURCE, /UncapturedWorkChin/u);
 	assert.doesNotMatch(INDEX_SOURCE, /UncapturedWorkChin/u);
+});
+
+test("sessions share one moving untracked-work flyout instead of a popup per row", () => {
+	// Same contract as agent-session-flyout / Agent List: one payload handle, one
+	// surface, and a stable trigger host so Base UI can slide the popup between
+	// rows. Motion layout on the trigger host remounts it, which closes the card.
+	assert.equal(INDEX_SOURCE.match(/<JiraSessionFlyoutSurface\b/gu)?.length, 1);
+	assert.equal(INDEX_SOURCE.match(/createJiraSessionFlyoutHandle/gu)?.length, 2);
+	assert.doesNotMatch(CARD_SOURCE, /createJiraSessionFlyoutHandle|createHoverCardHandle|<HoverCard\b/u);
+	assert.match(CARD_SOURCE, /<JiraSessionFlyoutTrigger[\s\S]*handle=\{flyoutHandle\}[\s\S]*render=\{<div className="w-full" \/>\}/u);
+	assert.doesNotMatch(CARD_SOURCE, /<JiraSessionFlyoutTrigger[\s\S]*render=\{\s*<motion\.li/u);
+	assert.match(CARD_SOURCE, /<motion\.li[\s\S]*<JiraSessionFlyoutTrigger/u);
+	assert.match(INDEX_SOURCE, /onAddAsSubtask=\{flyoutActions\.onAddAsSubtask\}/u);
+	assert.match(INDEX_SOURCE, /onCreateWorkItem=\{flyoutActions\.onCreateWorkItem\}/u);
+	assert.match(INDEX_SOURCE, /onLinkWorkItem=\{flyoutActions\.onLinkWorkItem\}/u);
 });
 
 // Fast Refresh can only preserve a component's state when its file exports
@@ -219,6 +259,10 @@ test("ships demo data and catalog entries for all three size variants", () => {
 	assert.match(DATA_SOURCE, /export const AGENT_SESSION_ITEMS/u);
 	assert.match(DATA_SOURCE, /id: "lw-scope-thread"/u);
 	assert.match(DATA_SOURCE, /brandName: "claude"/u);
+	assert.match(DATA_SOURCE, /brandName: "cursor"/u);
+	assert.match(DATA_SOURCE, /vpkLogo: "rovo"/u);
+	assert.doesNotMatch(DATA_SOURCE, /Venn’s MacBook/u);
+	assert.doesNotMatch(DATA_SOURCE, /timeLabel: "3 mins ago"/u);
 	assert.match(DATA_SOURCE, /issueKey: "PAY-101"/u);
 	assert.match(PAGE_SOURCE, /<AgentSession/u);
 	assert.match(DEMO_SOURCE, /@\/components\/blocks\/agent-session\/page/u);
@@ -242,9 +286,32 @@ test("ships demo data and catalog entries for all three size variants", () => {
 	assert.doesNotMatch(DETAIL_SOURCE, /agent-session-demo-multi-link/u);
 });
 
+test("large uncaptured-work cards stack as one dashed well", () => {
+	// Figma 3039:2911: no gap, first card rounded on top, last on the bottom,
+	// shared edges collapsed, 4px dash / 2px gap. A single card is both first
+	// and last, so it keeps a full rounded frame.
+	assert.match(INDEX_SOURCE, /variant === "large" \? "gap-0" : "gap-2"/u);
+	assert.match(INDEX_SOURCE, /data-stack=\{variant === "large" \? "well" : undefined\}/u);
+	assert.match(CARD_SOURCE, /\[li:first-child_&\]:rounded-t-lg/u);
+	assert.match(CARD_SOURCE, /\[li:last-child_&\]:rounded-b-lg/u);
+	assert.match(CARD_SOURCE, /\[li:not\(:last-child\)_&\]:\[--dash-bottom-size:0px\]/u);
+	assert.match(CARD_SOURCE, /\[li:not\(:last-child\)_&\]:border-b-0/u);
+	assert.match(CARD_SOURCE, /dash-4-2/u);
+	assert.doesNotMatch(CARD_SOURCE, /rounded-none border bg-transparent/u);
+	assert.doesNotMatch(CARD_SOURCE, /rounded-lg border p-3/u);
+	assert.doesNotMatch(INDEX_SOURCE, /flex flex-col gap-2/u);
+	const themeSource = readFileSync(join(__dirname, "../../../app/dash-4-2.css"), "utf8");
+	assert.match(themeSource, /@utility dash-4-2/u);
+	assert.match(themeSource, /--border-dash-length: 4px/u);
+	assert.match(themeSource, /--border-dash-gap: 2px/u);
+	assert.match(themeSource, /repeating-linear-gradient/u);
+});
+
 test("the untracked-work flyout offers the first candidate key", () => {
 	assert.match(DATA_SOURCE, /export const AGENT_SESSION_MULTI_LINK_KEYS/u);
 	assert.match(DATA_SOURCE, /"lw-scope-thread": \["PAY-101", "PAY-121", "PAY-104"\]/u);
+	assert.match(DATA_SOURCE, /issueStatus: "Done"/u);
+	assert.match(DATA_SOURCE, /issueStatus: "In review"/u);
 	assert.match(TYPES_SOURCE, /getSuggestedWorkItemKeys\?: \(item: AgentSessionItem\) => readonly string\[\] \| undefined;/u);
 	assert.match(TYPES_SOURCE, /onLinkWorkItem\?: \(item: AgentSessionItem, workItemKey\?: string\) => void;/u);
 	assert.match(WORK_ITEM_SOURCE, /export function resolveAgentSessionWorkItemKey/u);

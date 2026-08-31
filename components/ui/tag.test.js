@@ -176,9 +176,20 @@ test("Tag at-mention demo shows rounded human, team, and agent treatments", () =
 	);
 
 	assert.match(TAG_DEMO_SOURCE, /export function TagDemoMentionTags\(\)/u);
+	assert.match(TAG_DEMO_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual";/u);
 	assert.match(TAG_DEMO_SOURCE, /type="user"[\s\S]*variant="editor"[\s\S]*Ee Venn Soh/u);
 	assert.match(TAG_DEMO_SOURCE, /type="other"[\s\S]*variant="editor"[\s\S]*Apple Ecosystem/u);
 	assert.match(TAG_DEMO_SOURCE, /type="agent"[\s\S]*variant="editor"[\s\S]*Code Planner/u);
+	assert.match(TAG_DEMO_SOURCE, /sizePx=\{16\}[\s\S]*vpkLogo="rovo"[\s\S]*Rovo/u);
+	assert.match(TAG_DEMO_SOURCE, /brandName="claude"[\s\S]*Claude/u);
+	assert.doesNotMatch(
+		TAG_DEMO_SOURCE.match(/export function TagDemoMentionTags\(\)[\s\S]*$/u)?.[0] ?? "",
+		/sizePx=\{(?:20|24|32|40)\}/u,
+	);
 	assert.match(tagDetailsSource, /title: "At-mention tags"[\s\S]*demoSlug: "tag-demo-mention-tags"/u);
+	assert.match(
+		tagDetailsSource,
+		/hexagonal Rovo \(`vpkLogo`\) and Claude \(`brandName`\) marks/u,
+	);
 	assert.match(tagRegistrySource, /"tag-demo-mention-tags"[\s\S]*default: mod\.TagDemoMentionTags/u);
 });

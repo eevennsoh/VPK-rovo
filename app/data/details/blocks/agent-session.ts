@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_SESSION_DETAIL: ComponentDetail = {
 	description:
-		'Local coding sessions that never became work items, available in three footprints. Large is the default dashed uncaptured-work card: it reuses the shared Agent List row — hexagon agent identity, a static timestamp, a 16px invoker avatar, and the viewer machine — on a single surface, with Resume and show/hide actions on hover. Work-item capture lives on the shared untracked-work session flyout (the same surface as Agent Session Flyout): hover a card to Link, Create, or add as a subtask. Medium condenses the agent, participant, and add affordance into the Jira Agents row, while Small becomes the collapsed Agent Session Column notch. Ids listed in `capturedItemIds` swap the dashed frame for a solid captured border, and rows the host cannot resume hide the Resume control entirely rather than copying a command that would fail.',
+		'Local coding sessions that never became work items, available in three footprints. Large is the default dashed uncaptured-work card: it reuses the shared Agent List row — hexagon agent identity, a static timestamp, a devices icon, and the viewer machine — on a single surface, with Resume and Hide or Show actions on hover. Work-item capture lives on the shared untracked-work session flyout (the same surface as Agent Session Flyout): hover a card to Link, Create, or add as a subtask. Medium condenses the agent, participant, and add affordance into the Jira Agents row, while Small becomes the collapsed Agent Session Column notch. Ids listed in `capturedItemIds` swap the dashed frame for a solid captured border, and rows the host cannot resume hide the Resume control entirely rather than copying a command that would fail.',
 	demoLayout: { previewHeight: "fit" },
 	examples: [
 		{
@@ -99,7 +99,14 @@ export const AGENT_SESSION_DETAIL: ComponentDetail = {
 			name: "onToggleVisibility",
 			type: "(item: AgentSessionItem) => void",
 			description:
-				"Show/hide-later toggle behind the hover eye control. The button always renders; omit this to leave it a placeholder until the behaviour lands.",
+				"Hide / Show toggle behind the hover eye control. The button always renders; omit this on a bare list to leave the eye a no-op. Agent Session Column supplies it so Hide removes the card and Show restores it.",
+		},
+		{
+			name: "visibilityLabel",
+			type: "string",
+			default: '"Hide"',
+			description:
+				"Tooltip and accessible name for the hover eye. The column passes Show when the list is the hidden-work view.",
 		},
 		{
 			name: "onView",

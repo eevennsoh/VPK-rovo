@@ -33,6 +33,9 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.match(source, /case "composer":/u);
 	assert.match(source, /case "untracked-work":/u);
 	assert.match(source, /<JiraSessionFlyoutBody[\s\S]*session=\{session\}[\s\S]*variant="untracked-work"/u);
+	assert.match(source, /className="w-\[320px\] max-w-\[calc\(100vw-48px\)\] rounded-none shadow-none"/u);
+	assert.equal(source.match(/className="w-\[320px\] bg-surface-overlay p-4 text-text"/gu)?.length, 2);
+	assert.doesNotMatch(source, /w-\[400px\]/u);
 	assert.match(source, /showSeparator/u);
 	assert.match(source, /<JiraSessionSectionHeading meta="High confidence" showSeparator>/u);
 	assert.match(source, /flex min-w-0 shrink-0 items-center gap-1\.5 text-xs font-medium leading-4 text-text-subtle/u);
@@ -55,6 +58,9 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	);
 	assert.match(source, /aria-disabled=\{linkUnavailable\}/u);
 	assert.match(source, /onClick=\{\(\) => onLinkWorkItem\?\.\(issueKey\)\}/u);
+	assert.match(source, /onClick=\{\(\) => onLinkWorkItem\?\.\(issueKey\)\}\s*size="compact"/u);
+	assert.match(source, /size="icon-compact"/u);
+	assert.doesNotMatch(source, /size="icon"/u);
 	assert.match(
 		source,
 		/aria-label=\{hasIssueKey \? `More link options for \$\{issueKey\}` : "More link options"\}/u,
@@ -63,12 +69,13 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.match(source, /Create new/u);
 	assert.match(source, /aria-disabled=\{createUnavailable\}/u);
 	assert.match(source, /onClick=\{onCreateWorkItem\}/u);
+	assert.match(source, /onClick=\{onCreateWorkItem\}\s*size="compact"/u);
 	assert.match(source, /onLinkWorkItem\?: \(session: JiraSidebarSessionItem, workItemKey: string\) => void;/u);
 	assert.match(source, /onCreateWorkItem\?: \(session: JiraSidebarSessionItem\) => void;/u);
 	assert.match(source, /onAddAsSubtask\?: \(session: JiraSidebarSessionItem, workItemKey: string\) => void;/u);
 	assert.match(
 		source,
-		/<AgentStates[\s\S]*agent=\{\{[\s\S]*id: session\.id,[\s\S]*name: session\.agentName,[\s\S]*state=\{toAgentStatesState\(session\.status\)\}/u,
+		/<AgentStates[\s\S]*agent=\{\{[\s\S]*brandName: session\.brandName,[\s\S]*id: session\.id,[\s\S]*name: session\.agentName,[\s\S]*state=\{toAgentStatesState\(session\.status\)\}/u,
 	);
 	assert.match(source, /function toAgentStatesState\(/u);
 	assert.match(source, /status === "awaiting-input"\) return "awaiting-input"/u);
@@ -116,8 +123,14 @@ test("shared detail body hides the human assignee avatar while awaiting input", 
 	assert.match(source, /import\s*\{[^}]*Tag[^}]*\}\s*from\s*"@\/components\/ui\/tag"/u);
 	assert.match(source, /import\s*\{[^}]*ProgressCircle[^}]*\}\s*from\s*"@\/components\/ui-custom\/progress-circle"/u);
 	assert.match(jiraSource, /export interface JiraSidebarSessionChecks \{\s*failed: number;\s*passed: number;\s*\}/u);
+	assert.match(jiraSource, /brandName\?: ThirdPartyLogoName;/u);
+	assert.match(jiraSource, /vpkLogo\?: "rovo";/u);
+	assert.match(jiraSource, /issueStatus\?: string;/u);
 	assert.match(source, /const workItemRelationship = variant === "untracked-work" \? "suggested" : "primary";/u);
 	assert.match(source, /<SmartLink[\s\S]*className="min-w-0 max-w-full"[\s\S]*item=\{toWorkItem\(session, workItemRelationship\)\}[\s\S]*showStatus/u);
+	assert.doesNotMatch(source, /showStatus=\{workItemRelationship === "primary"\}/u);
+	assert.match(source, /function toWorkItemStatus\(/u);
+	assert.match(source, /session\.issueStatus\?\.trim\(\)/u);
 	assert.match(source, /status: \{\s*label: workItemStatus\.label/u);
 	assert.match(source, /relationship === "suggested" \? "Suggested" : "Primary"/u);
 	assert.match(source, /\.\.\.\(relationship === "primary" \? \{ actions: SMART_LINK_MODAL_ACTIONS \} : \{\}\)/u);
@@ -128,7 +141,7 @@ test("shared detail body hides the human assignee avatar while awaiting input", 
 	);
 	assert.match(
 		source,
-		/<AgentAvatarVisual[\s\S]*sizePx=\{16\}/u,
+		/<AgentAvatarVisual[\s\S]*brandName=\{session\.brandName\}[\s\S]*sizePx=\{16\}[\s\S]*vpkLogo=\{session\.vpkLogo\}/u,
 	);
 	assert.doesNotMatch(source, /TileAvatar/u);
 	assert.match(source, /<Lozenge variant=\{prState\.variant\}>/u);

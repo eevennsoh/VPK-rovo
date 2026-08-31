@@ -146,7 +146,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
       {
         title: "At-mention tags",
         description:
-          "Filled at-mention treatment for a human, team, and agent. All three use the same rounded tag shell while preserving their avatar shape.",
+          "Filled at-mention treatment for a human, team, and agents — including hexagonal Rovo (`vpkLogo`) and Claude (`brandName`) marks. All use the same rounded tag shell while preserving their avatar shape.",
         demoSlug: "tag-demo-mention-tags",
       },
       {
