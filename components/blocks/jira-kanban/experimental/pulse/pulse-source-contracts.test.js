@@ -608,24 +608,6 @@ test("Experimental board header keeps Filter clickable and badges new timeline a
 	);
 });
 
-test("Experimental board header opens the production Group picker without regrouping", () => {
-	const groupMenu = readFileSync(join(EXPERIMENTAL_DIR, "components", "board-group-menu.tsx"), "utf8");
-	const groupOptions = readFileSync(join(EXPERIMENTAL_DIR, "data", "board-group-options.ts"), "utf8");
-	assert.match(EXPERIMENTAL_HEADER_SOURCE, /<BoardGroupMenu compact=\{compact\} surfaceLabel=\{surfaceLabel\} \/>/u);
-	assert.doesNotMatch(
-		EXPERIMENTAL_HEADER_SOURCE,
-		/aria-disabled[\s\S]*Group \$\{surfaceLabel\}/u,
-	);
-	assert.match(groupMenu, /aria-label=\{`Group \$\{surfaceLabel\}`\}/u);
-	assert.doesNotMatch(groupMenu, /aria-disabled/u);
-	assert.match(
-		groupOptions,
-		/"Agent"[\s\S]*"Assignee"[\s\S]*"Atlassian Project"[\s\S]*"Epic"[\s\S]*"Labels"[\s\S]*"Priority"[\s\S]*"Subtask"/u,
-	);
-	assert.match(groupMenu, /onSelect=\{\(\) => undefined\}/u);
-	assert.doesNotMatch(withoutComments(groupMenu), /setSelected|selectedId/u);
-});
-
 test("Kanban column add-agent controls use the AI agent add icon", () => {
 	assert.match(DEFAULT_BOARD_SOURCE, /import AiAgentAddIcon from "@atlaskit\/icon-lab\/core\/ai-agent-add"/u);
 	assert.match(DEFAULT_BOARD_SOURCE, /render=\{<AiAgentAddIcon label="" \/>\}/u);

@@ -198,6 +198,14 @@ interface SelectItemProps extends SelectPrimitive.Item.Props {
 	showIndicator?: boolean
 }
 
+/**
+ * Select rows have always carried the check on the trailing edge. The gutter
+ * swap is shared with DropdownMenu's opt-in `indicatorPlacement="end"` via
+ * `dropdownStyles.selectableItemIndicatorEnd`. The indicator colour is kept as
+ * a local literal rather than reusing `dropdownStyles.indicatorEnd` so the two
+ * surfaces stay free to diverge; today they agree on the subtle token, and
+ * neither draws a filled selected surface.
+ */
 function SelectItem({
 	className,
 	textClassName,
@@ -210,8 +218,7 @@ function SelectItem({
 			data-slot="select-item"
 			className={cn(
 				dropdownStyles.selectableItem,
-				"pl-2",
-				showIndicator ? "pr-8" : null,
+				showIndicator ? dropdownStyles.selectableItemIndicatorEnd : "pl-2",
 				"data-selected:text-text data-selected:data-highlighted:text-text",
 				className
 			)}

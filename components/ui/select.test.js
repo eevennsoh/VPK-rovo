@@ -12,7 +12,7 @@ const SELECT_DEMO_SOURCE = fs.readFileSync(
 test("SelectItem renders the selected check mark as a trailing affordance", () => {
 	assert.match(
 		SELECT_SOURCE,
-		/dropdownStyles\.selectableItem,\n\t\t\t\t"pl-2",\n\t\t\t\tshowIndicator \? "pr-8" : null,/,
+		/dropdownStyles\.selectableItem,\n\t\t\t\tshowIndicator \? dropdownStyles\.selectableItemIndicatorEnd : "pl-2",/,
 	);
 	assert.match(
 		SELECT_SOURCE,

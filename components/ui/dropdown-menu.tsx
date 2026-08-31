@@ -27,23 +27,47 @@ export const dropdownStyles = {
   group: "",
   selectableItem:
     "data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex min-h-8 w-full cursor-pointer items-center rounded-lg py-1.5 pr-2 pl-8 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
-  checkedState:
-    "data-checked:text-text data-checked:data-[highlighted]:text-text",
   label: "text-text-subtlest px-2 pt-3 pb-1 text-xs leading-4 font-semibold",
   separator: "bg-border mx-1 my-1 h-px",
+  // Deliberately empty. A checked row is styled exactly like an unchecked one —
+  // no filled surface, no recoloured label, same hover and pressed treatment —
+  // because the check glyph alone is the selected affordance, and it sits on
+  // the subtle icon token. Kept as a named slot so every selectable-item
+  // callsite still has one obvious place to hang checked-state styling if that
+  // decision is ever revisited.
+  checkedState: "",
   indicator:
     "pointer-events-none absolute left-2 inline-flex size-6 items-center justify-center text-icon-subtle [&_[data-slot=icon]]:text-icon-subtle [&_svg]:text-icon-subtle!",
+  // Trailing variant. `selectableItem` reserves the indicator gutter on the
+  // leading edge (`pl-8`), which indents every label past the check column;
+  // this pair moves that gutter to the trailing edge instead, so labels start
+  // flush on the same left edge whether or not a row is checked. Both classes
+  // must be applied together — `indicatorEnd` alone would let a long label run
+  // under the check. Select has always rendered this way; DropdownMenu opts in
+  // per item via `indicatorPlacement="end"`.
+  selectableItemIndicatorEnd: "pr-8 pl-2",
+  indicatorEnd:
+    "pointer-events-none absolute right-2 inline-flex size-6 items-center justify-center text-icon-subtle [&_[data-slot=icon]]:text-icon-subtle [&_svg]:text-icon-subtle!",
 } as const;
+
+/**
+ * Which edge the checked affordance sits on. `"start"` (default) keeps the
+ * historical leading check with its indented labels; `"end"` left-aligns the
+ * labels and moves the check to the trailing gutter.
+ */
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
+export type DropdownMenuIndicatorPlacement = "start" | "end";
 
 const dropdownMenuOverlayShadow = "shadow-2xl";
 // The leading-icon slot defaults to the subtle icon token, but the @atlaskit
 // icon glyph paints its SVG from `currentColor`, so this wrapper's `color` wins
-// over the item's variant rules unless we yield on the destructive/selected
-// states. Scope the subtle default to non-destructive, non-selected items so the
-// item-level `[&_svg]:text-icon-danger` / `[&_svg]:text-icon-selected` rules take
-// effect. (Using group-data so the slot reads the owning item's variant.)
+// over the item's variant rules unless we yield on the destructive state. Scope
+// the subtle default to non-destructive items so the item-level
+// `[&_svg]:text-icon-danger` rule takes effect. (Using group-data so the slot
+// reads the owning item's variant.) Selected items need no exception: their
+// leading icon stays subtle like every other row's.
 const dropdownMenuFrontSlotClassName =
-  "inline-flex size-6 shrink-0 items-center justify-center text-icon-subtle group-data-[variant=destructive]/dropdown-menu-item:text-icon-danger group-data-selected/dropdown-menu-item:text-icon-selected [&_[data-slot=icon]]:text-icon-subtle group-data-[variant=destructive]/dropdown-menu-item:[&_[data-slot=icon]]:text-icon-danger group-data-selected/dropdown-menu-item:[&_[data-slot=icon]]:text-icon-selected [&_svg]:text-icon-subtle group-data-[variant=destructive]/dropdown-menu-item:[&_svg]:text-icon-danger group-data-selected/dropdown-menu-item:[&_svg]:text-icon-selected";
+  "inline-flex size-6 shrink-0 items-center justify-center text-icon-subtle group-data-[variant=destructive]/dropdown-menu-item:text-icon-danger [&_[data-slot=icon]]:text-icon-subtle group-data-[variant=destructive]/dropdown-menu-item:[&_[data-slot=icon]]:text-icon-danger [&_svg]:text-icon-subtle group-data-[variant=destructive]/dropdown-menu-item:[&_svg]:text-icon-danger";
 
 // Single-row items lock to a fixed 32px height (no vertical padding), matching
 // the Menubar standard; rows only gain `min-h-8` + `py-1.5` growth when their
@@ -199,10 +223,11 @@ interface DropdownMenuItemProps extends Omit<MenuPrimitive.Item.Props, "onSelect
    */
   allowTextWrap?: boolean;
   /**
-   * Marks the item as the active choice in a single-select menu. Applies the
-   * selected background (with hover/pressed states), recolors the leading icon
-   * to the selected icon token, and shows a subtle trailing check mark unless the
-   * caller supplies their own `elemAfter`.
+   * Marks the item as the active choice in a single-select menu. Shows a
+   * trailing check mark unless the caller supplies their own `elemAfter`, and
+   * exposes `data-selected` for consumers that need to target the row. The row
+   * is otherwise styled identically to an unselected one — the check glyph is
+   * the whole affordance.
    */
   selected?: boolean;
   elemBefore?: ReactNode;
@@ -243,7 +268,6 @@ function DropdownMenuItem({
   // gets a consistent selected affordance without repeating it.
   const resolvedElemAfter =
     elemAfter ?? (selected ? <CheckMarkIcon label="" size="small" /> : undefined);
-  const usesDefaultSelectedCheck = elemAfter === undefined && selected;
   const isSelected = selected && variant === "default";
   const shouldWrapText = allowTextWrap || Boolean(description);
 
@@ -258,9 +282,10 @@ function DropdownMenuItem({
         // (an explicit `allowTextWrap` or a `description`), matching Menubar.
         "group/dropdown-menu-item data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex w-full cursor-pointer items-center gap-3 rounded-lg px-2 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_svg]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-icon-subtle data-[variant=destructive]:[&_svg]:text-icon-danger",
         shouldWrapText ? dropdownMenuWrappingRowClassName : dropdownMenuRowHeightClassName,
-        // A selected item keeps the default label and neutral interaction surface;
-        // its trailing subtle check is the persistent selection indicator.
-        "data-selected:text-text data-selected:data-[highlighted]:text-text data-selected:[&_svg]:text-icon-selected",
+        // No selected-state styling on purpose. `data-selected` stays on the
+        // element as a hook for consumers, but the trailing check mark is the
+        // only thing that marks the active row — surface and label match every
+        // other row so the list stays quiet.
         className,
       )}
       onClick={handleClick}
@@ -285,16 +310,7 @@ function DropdownMenuItem({
         ) : null}
       </span>
       {resolvedElemAfter ? (
-        <span className={cn(
-          "ml-auto inline-flex h-5 shrink-0 items-center justify-center [&_svg]:size-3",
-          variant === "destructive"
-            ? "text-icon-danger"
-            : usesDefaultSelectedCheck
-              ? "text-icon-subtle [&_svg]:text-icon-subtle!"
-              : isSelected
-                ? "text-icon-selected"
-                : "text-icon-subtle",
-        )}>
+        <span className={cn("ml-auto inline-flex h-5 shrink-0 items-center justify-center [&_svg]:size-3", variant === "destructive" ? "text-icon-danger" : "text-icon-subtle")}>
           {resolvedElemAfter}
         </span>
       ) : null}
@@ -368,6 +384,7 @@ function DropdownMenuSubContent({
 interface DropdownMenuCheckboxItemProps
   extends MenuPrimitive.CheckboxItem.Props {
   inset?: boolean;
+  indicatorPlacement?: DropdownMenuIndicatorPlacement;
 }
 
 function DropdownMenuCheckboxItem({
@@ -375,8 +392,28 @@ function DropdownMenuCheckboxItem({
   children,
   checked,
   inset,
+  indicatorPlacement = "start",
   ...props
 }: Readonly<DropdownMenuCheckboxItemProps>) {
+  const isIndicatorAtEnd = indicatorPlacement === "end";
+  // Absolutely positioned either way, so DOM order is free — keep it matching
+  // the visual order so assistive tech reads "Label, Selected" for a trailing
+  // check rather than announcing the state before the thing it describes.
+  const indicator = (
+    <span
+      className={isIndicatorAtEnd ? dropdownStyles.indicatorEnd : dropdownStyles.indicator}
+      data-slot="dropdown-menu-checkbox-item-indicator"
+    >
+      <MenuPrimitive.CheckboxItemIndicator>
+        <Icon
+          render={<CheckMarkIcon label="" size="small" />}
+          label="Selected"
+          className="text-icon-subtle"
+        />
+      </MenuPrimitive.CheckboxItemIndicator>
+    </span>
+  );
+
   return (
     <MenuPrimitive.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
@@ -384,25 +421,16 @@ function DropdownMenuCheckboxItem({
       className={cn(
         dropdownStyles.selectableItem,
         dropdownStyles.checkedState,
+        isIndicatorAtEnd ? dropdownStyles.selectableItemIndicatorEnd : null,
         "data-inset:pl-8",
         className,
       )}
       checked={checked}
       {...props}
     >
-      <span
-        className={dropdownStyles.indicator}
-        data-slot="dropdown-menu-checkbox-item-indicator"
-      >
-        <MenuPrimitive.CheckboxItemIndicator>
-          <Icon
-            render={<CheckMarkIcon label="" size="small" />}
-            label="Selected"
-            className="text-icon-subtle"
-          />
-        </MenuPrimitive.CheckboxItemIndicator>
-      </span>
+      {isIndicatorAtEnd ? null : indicator}
       {children}
+      {isIndicatorAtEnd ? indicator : null}
     </MenuPrimitive.CheckboxItem>
   );
 }
@@ -420,14 +448,32 @@ function DropdownMenuRadioGroup(props: Readonly<DropdownMenuRadioGroupProps>) {
 
 interface DropdownMenuRadioItemProps extends MenuPrimitive.RadioItem.Props {
   inset?: boolean;
+  indicatorPlacement?: DropdownMenuIndicatorPlacement;
 }
 
 function DropdownMenuRadioItem({
   className,
   children,
   inset,
+  indicatorPlacement = "start",
   ...props
 }: Readonly<DropdownMenuRadioItemProps>) {
+  const isIndicatorAtEnd = indicatorPlacement === "end";
+  const indicator = (
+    <span
+      className={isIndicatorAtEnd ? dropdownStyles.indicatorEnd : dropdownStyles.indicator}
+      data-slot="dropdown-menu-radio-item-indicator"
+    >
+      <MenuPrimitive.RadioItemIndicator>
+        <Icon
+          render={<CheckMarkIcon label="" size="small" />}
+          label="Selected"
+          className="text-icon-subtle"
+        />
+      </MenuPrimitive.RadioItemIndicator>
+    </span>
+  );
+
   return (
     <MenuPrimitive.RadioItem
       data-slot="dropdown-menu-radio-item"
@@ -435,24 +481,15 @@ function DropdownMenuRadioItem({
       className={cn(
         dropdownStyles.selectableItem,
         dropdownStyles.checkedState,
+        isIndicatorAtEnd ? dropdownStyles.selectableItemIndicatorEnd : null,
         "data-inset:pl-8",
         className,
       )}
       {...props}
     >
-      <span
-        className={dropdownStyles.indicator}
-        data-slot="dropdown-menu-radio-item-indicator"
-      >
-        <MenuPrimitive.RadioItemIndicator>
-          <Icon
-            render={<CheckMarkIcon label="" size="small" />}
-            label="Selected"
-            className="text-icon-subtle"
-          />
-        </MenuPrimitive.RadioItemIndicator>
-      </span>
+      {isIndicatorAtEnd ? null : indicator}
       {children}
+      {isIndicatorAtEnd ? indicator : null}
     </MenuPrimitive.RadioItem>
   );
 }

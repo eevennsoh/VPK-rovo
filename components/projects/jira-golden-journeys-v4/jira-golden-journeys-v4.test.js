@@ -88,9 +88,13 @@ test("the Work items header switches between Board and List views with their ico
 		/<TabsList aria-label="Work items view">[\s\S]*<TabsTrigger value="board">[\s\S]*<BoardIcon[\s\S]*Board[\s\S]*<TabsTrigger value="list">[\s\S]*<TableIcon[\s\S]*List/u,
 	);
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /<TabsList[^>]*className=|<TabsTrigger[^>]*className=/u);
+	// The view switcher leads the trailing icon cluster. This used to anchor on
+	// the Board settings button, which is gone: the View menu took over its job
+	// and rendered the same sliders glyph, so the row carried it twice. The
+	// overflow control is now the first thing after the switcher.
 	const viewSwitcherIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf('aria-label="Work items view"');
-	const settingsIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf('aria-label={`${surfaceTitle} settings`}');
-	assert.ok(viewSwitcherIndex > 0 && viewSwitcherIndex < settingsIndex);
+	const overflowIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf('aria-label={`More ${surfaceLabel} controls`}');
+	assert.ok(viewSwitcherIndex > 0 && viewSwitcherIndex < overflowIndex);
 });
 
 test("the board keeps 24px between the Jira tabs and filter controls", () => {
