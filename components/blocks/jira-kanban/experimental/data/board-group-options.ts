@@ -13,3 +13,6 @@ export const BOARD_GROUP_OPTIONS = [
 ] as const;
 
 export type BoardGroupOptionId = (typeof BOARD_GROUP_OPTIONS)[number]["id"];
+
+/** The Display menu opens on the grouping the board is already drawn with. */
+export const BOARD_GROUP_DEFAULT_ID: BoardGroupOptionId = "epic";
