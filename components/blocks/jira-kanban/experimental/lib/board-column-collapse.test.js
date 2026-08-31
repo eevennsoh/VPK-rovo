@@ -84,6 +84,42 @@ test("the resize button swaps its icon without using selected button state", () 
 	assert.doesNotMatch(resizeButtonSource, /aria-(?:expanded|pressed)=/u);
 });
 
+test("the collapsed pill puts the count in a 24px head slot that swaps to expand", () => {
+	const collapsedStart = BOARD_SOURCE.indexOf("function CollapsedBoardColumn");
+	const collapsedEnd = BOARD_SOURCE.indexOf("function BoardColumn(", collapsedStart);
+	const collapsedSource = BOARD_SOURCE.slice(collapsedStart, collapsedEnd);
+
+	// Same 24px head as the Agent Session rail: count at rest, expand on hover.
+	assert.match(collapsedSource, /relative flex h-6 w-full shrink-0 items-center justify-center/u);
+	assert.match(collapsedSource, /HEAD_AT_REST/u);
+	assert.match(collapsedSource, /HEAD_ON_REVEAL/u);
+	assert.match(collapsedSource, /className=\{cn\("absolute shrink-0", HEAD_ON_REVEAL\)\}/u);
+	// Number first (top), title below — not title then count then a trailing icon.
+	assert.ok(
+		collapsedSource.indexOf("{count}") < collapsedSource.indexOf("{title}"),
+		"the count must sit in the head slot above the rotated title",
+	);
+	assert.match(collapsedSource, /\[writing-mode:vertical-rl\]/u);
+	assert.doesNotMatch(collapsedSource, /\[writing-mode:vertical-rl\].*\{count\}/u);
+	// Hover-revealed expand stays in the tab order: opacity swap, never display:none.
+	assert.doesNotMatch(collapsedSource, /group-hover\/collapsed-column:block/u);
+	assert.doesNotMatch(collapsedSource, /group-hover\/collapsed-column:hidden/u);
+	assert.match(BOARD_SOURCE, /group-hover\/collapsed-column:opacity-0/u);
+	assert.match(BOARD_SOURCE, /group-has-\[:focus-visible\]\/collapsed-column:opacity-100/u);
+	assert.match(
+		BOARD_SOURCE,
+		/const HEAD_AT_REST = cn\(\s*"pointer-events-none transition-opacity duration-normal ease-out-practical"/u,
+	);
+	assert.match(
+		BOARD_SOURCE,
+		/const HEAD_ON_REVEAL = cn\(\s*"opacity-0 transition-opacity duration-normal ease-out-practical"/u,
+	);
+	assert.doesNotMatch(
+		BOARD_SOURCE,
+		/const HEAD_ON_REVEAL = cn\(\s*"[^"]*pointer-events-none/u,
+	);
+});
+
 test("the pinned session column shares the status columns' box model", () => {
 	// Status columns carry a 2px transparent drop-target border, so the pinned
 	// wrapper needs it too or the headers sit 2px apart and the gap runs short.

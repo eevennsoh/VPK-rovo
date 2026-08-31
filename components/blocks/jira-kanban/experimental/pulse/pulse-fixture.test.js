@@ -404,6 +404,9 @@ test("Pulse uncaptured work is only GitHub PRs, branches, commits, or local Clau
 			assert.equal(pulseLooseWorkHostLabel(item.host), "Local");
 			assert.equal(pulseLooseWorkCanCreateWorkItem(item.kind), false, `${item.id} must not create a work item`);
 			assert.match(item.detail, /host local/u, `${item.id} detail should name the local host`);
+			assert.ok(item.agentId, `${item.id} is missing a coding agent`);
+			assert.ok(item.machineName.trim().length > 0, `${item.id} is missing a machine name`);
+			assert.ok(item.timeLabel.trim().length > 0, `${item.id} is missing a timestamp`);
 			assert.doesNotMatch(item.sourceTitle, /Slack|Loom|Figma|Confluence/u);
 			continue;
 		}
@@ -415,6 +418,24 @@ test("Pulse uncaptured work is only GitHub PRs, branches, commits, or local Clau
 			assert.ok(item.pullRequest, `${item.id} is a PR without pullRequest fields`);
 			assert.match(item.sourceTitle, /^PRs? #/u, `${item.id} sourceTitle should be PR #N`);
 		}
+	}
+
+	const sessions = PULSE_TIMELINE.looseWork.filter((item) => item.kind === "agent-session");
+	assert.equal(sessions.length, 16, "the untracked-work column should have sixteen sessions");
+	const sessionTimeLabels = new Set(sessions.map((item) => item.timeLabel));
+	const sessionMachines = new Set(sessions.map((item) => item.machineName));
+	const sessionAgents = new Set(sessions.map((item) => item.agentId));
+	const calendarStamp = /Aug|Mon |Tue |Wed |Thu |Fri /u;
+	const relativeStamp = /^(Just now|\d+ mins? ago|\d+ hrs? ago|Yesterday|\d+ days? ago|Last week)$/u;
+	for (const item of sessions) {
+		assert.doesNotMatch(item.timeLabel, calendarStamp, `${item.id} must not use a calendar stamp`);
+		assert.match(item.timeLabel, relativeStamp, `${item.id} timeLabel "${item.timeLabel}" is not relative`);
+	}
+	assert.ok(sessionTimeLabels.size > 1, "session timestamps must not all be identical");
+	assert.ok(sessionMachines.size > 1, "session machine names must not all be identical");
+	assert.ok(!sessionMachines.has("Venn’s MacBook"), "do not stamp every row as Venn’s MacBook");
+	for (const agentId of ["claude", "codex", "cursor", "rovo"]) {
+		assert.ok(sessionAgents.has(agentId), `sessions are missing ${agentId}`);
 	}
 
 	for (const id of [

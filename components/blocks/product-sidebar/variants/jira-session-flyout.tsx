@@ -193,6 +193,39 @@ const STATUS_WORK_ITEM: Record<
 	stopped: { label: "Stopped", variant: "neutral" },
 };
 
+/** Lozenge tone for a board/work-item status label when the session names one. */
+function issueStatusVariant(label: string): LozengeProps["variant"] {
+	switch (label.trim().toLowerCase()) {
+		case "done":
+			return "success";
+		case "in progress":
+		case "in review":
+			return "information";
+		case "blocked":
+			return "danger";
+		case "to do":
+		case "to-do":
+		case "not started":
+		case "cut":
+		case "stopped":
+			return "neutral";
+		default:
+			return "neutral";
+	}
+}
+
+/** Prefers an explicit work-item status; otherwise maps the session lifecycle. */
+function toWorkItemStatus(
+	session: JiraSidebarSessionItem,
+): { label: string; variant: LozengeProps["variant"] } {
+	const issueStatus = session.issueStatus?.trim();
+	if (issueStatus !== undefined && issueStatus.length > 0) {
+		return { label: issueStatus, variant: issueStatusVariant(issueStatus) };
+	}
+
+	return STATUS_WORK_ITEM[session.status];
+}
+
 /**
  * Pull-request row icon, contextual to the merge outcome:
  * - `merged` → merge success
@@ -236,7 +269,7 @@ function toWorkItem(
 	session: JiraSidebarSessionItem,
 	relationship: "primary" | "suggested",
 ): SmartLinkItem {
-	const workItemStatus = STATUS_WORK_ITEM[session.status];
+	const workItemStatus = toWorkItemStatus(session);
 
 	return {
 		id: `${session.id}-work-item`,
@@ -248,16 +281,12 @@ function toWorkItem(
 		description: `${relationship === "suggested" ? "Suggested" : "Primary"} work item for ${session.title}.`,
 		assignee: session.assignee,
 		priority: session.priority,
-		...(relationship === "primary"
-			? {
-					actions: SMART_LINK_MODAL_ACTIONS,
-					status: {
-						label: workItemStatus.label,
-						variant: workItemStatus.variant,
-						options: WORK_ITEM_STATUS_OPTIONS,
-					},
-				}
-			: {}),
+		status: {
+			label: workItemStatus.label,
+			variant: workItemStatus.variant,
+			...(relationship === "primary" ? { options: WORK_ITEM_STATUS_OPTIONS } : {}),
+		},
+		...(relationship === "primary" ? { actions: SMART_LINK_MODAL_ACTIONS } : {}),
 	};
 }
 
@@ -326,6 +355,7 @@ function JiraSessionUntrackedWorkActions({
 					aria-label={linkUnavailable ? `${linkLabel} unavailable` : undefined}
 					className={linkUnavailable ? "cursor-not-allowed opacity-(--opacity-disabled)" : undefined}
 					onClick={() => onLinkWorkItem?.(issueKey)}
+					size="compact"
 					type="button"
 					variant="outline"
 				>
@@ -336,7 +366,7 @@ function JiraSessionUntrackedWorkActions({
 						render={(
 							<Button
 								aria-label={hasIssueKey ? `More link options for ${issueKey}` : "More link options"}
-								size="icon"
+								size="icon-compact"
 								type="button"
 								variant="outline"
 							>
@@ -361,6 +391,7 @@ function JiraSessionUntrackedWorkActions({
 				aria-label={createUnavailable ? "Create new unavailable" : undefined}
 				className={createUnavailable ? "cursor-not-allowed opacity-(--opacity-disabled)" : undefined}
 				onClick={onCreateWorkItem}
+				size="compact"
 				type="button"
 				variant="outline"
 			>
@@ -457,9 +488,11 @@ export function JiraSessionFlyoutBody({
 											<AgentAvatarVisual
 												avatarClassName="after:border-0"
 												avatarSrc={session.agentAvatarSrc}
+												brandName={session.brandName}
 												fallbackText={session.agentName}
 												label={session.agentName}
 												sizePx={16}
+												vpkLogo={session.vpkLogo}
 											/>
 										</span>
 									}
@@ -491,7 +524,7 @@ export function JiraSessionFlyoutBody({
 						align={previewPosition?.align ?? "center"}
 						alignOffset={previewPosition?.alignOffset ?? 0}
 						item={toWorkItem(session, workItemRelationship)}
-						showStatus={workItemRelationship === "primary"}
+						showStatus
 						side={previewPosition?.side ?? "right"}
 					/>
 				</FlyoutRow>
@@ -618,10 +651,11 @@ function JiraSessionFlyoutPayload({
 				<AgentStates
 					agent={{
 						avatarSrc: session.agentAvatarSrc,
+						brandName: session.brandName,
 						id: session.id,
 						name: session.agentName,
 					}}
-					className="w-[400px] max-w-[calc(100vw-48px)] rounded-none shadow-none"
+					className="w-[320px] max-w-[calc(100vw-48px)] rounded-none shadow-none"
 					completedAtMs={session.completedAtMs}
 					completedSecondsAgo={session.completedSecondsAgo}
 					initialElapsedSeconds={session.initialElapsedSeconds}
@@ -633,7 +667,7 @@ function JiraSessionFlyoutPayload({
 			);
 		case "untracked-work":
 			return (
-				<div className="w-[400px] bg-surface-overlay p-4 text-text">
+				<div className="w-[320px] bg-surface-overlay p-4 text-text">
 					<JiraSessionFlyoutBody
 						onAddAsSubtask={
 							captureLocked || onAddAsSubtask === undefined
@@ -657,7 +691,7 @@ function JiraSessionFlyoutPayload({
 			);
 		case "details":
 			return (
-				<div className="w-[400px] bg-surface-overlay p-4 text-text">
+				<div className="w-[320px] bg-surface-overlay p-4 text-text">
 					<JiraSessionFlyoutBody session={session} />
 				</div>
 			);

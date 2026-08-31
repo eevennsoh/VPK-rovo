@@ -340,8 +340,9 @@ export default function ExperimentalV2JiraKanbanPage({
 		() => toPulseSessionItems(
 			filterPulseLooseWorkByMember(pulseTimeline.looseWork, pulseMemberId),
 			PULSE_TIMELINE.members,
+			pulseTimeline.workItems,
 		),
-		[pulseMemberId, pulseTimeline.looseWork],
+		[pulseMemberId, pulseTimeline.looseWork, pulseTimeline.workItems],
 	);
 	const agentSessionHandlers = useMemo(
 		() => toPulseSessionHandlers({

@@ -209,7 +209,9 @@ function loadSessionsHarness() {
 		contents: `
 			export {
 				filterPulseLooseWorkByMember,
+				toPulseSessionAgent,
 				toPulseSessionHandlers,
+				toPulseSessionIssueStatus,
 				toPulseSessionItems,
 				toPulseSessionWorktree,
 			} from "./components/blocks/jira-kanban/experimental/pulse/lib/pulse-sessions";

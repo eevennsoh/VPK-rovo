@@ -34,6 +34,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { Tile, TileAvatar } from "@/components/ui/tile";
 import { STARRED_PROJECTS, JIRA_EXTERNAL_LINKS } from "../data/jira-navigation";
 import AddIcon from "@atlaskit/icon/core/add";
@@ -89,6 +90,10 @@ export interface JiraSidebarSessionChecks {
 export interface JiraSidebarSessionItem {
 	additions?: number;
 	agentAvatarSrc?: string;
+	/** Third-party brand mark for the hexagonal agent identity, when the session has no `agentAvatarSrc`. */
+	brandName?: ThirdPartyLogoName;
+	/** VPK product mark for platform-owned runners such as Rovo. */
+	vpkLogo?: "rovo";
 	agentName: string;
 	assignee?: JiraSidebarAssignee;
 	branch?: string;
@@ -102,6 +107,8 @@ export interface JiraSidebarSessionItem {
 	initialElapsedSeconds?: number;
 	issueKey: string;
 	issueSummary: string;
+	/** Board/work-item status shown on the Jira smart-link chip. Overrides the session-lifecycle default. */
+	issueStatus?: string;
 	priority?: JiraSidebarWorkItemPriority;
 	pullRequestNumber?: number;
 	pullRequestTitle?: string;

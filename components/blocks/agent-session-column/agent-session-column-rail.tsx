@@ -1,14 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
 import GrowHorizontalIcon from "@atlaskit/icon/core/grow-horizontal";
 
-import { toAgentSessionFlyoutItem, type AgentListState } from "@/components/blocks/agent-list";
-import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import type { AgentListState } from "@/components/blocks/agent-list";
 import { AGENT_SESSION_ARRIVAL_TRANSITION } from "@/components/blocks/agent-session/agent-session-arrival-motion";
 import { AgentSessionNotchMark } from "@/components/blocks/agent-session/agent-session-notch";
+import type { AgentSessionItem } from "@/components/blocks/agent-session/agent-session-types";
+import {
+	bindAgentSessionFlyoutActions,
+	resolveAgentSessionWorkItemKey,
+	toAgentSessionUntrackedWorkFlyoutItem,
+} from "@/components/blocks/agent-session/agent-session-work-item";
+import type { JiraSidebarSessionItem } from "@/components/blocks/product-sidebar/variants/jira";
 import {
 	createJiraSessionFlyoutHandle,
 	JiraSessionFlyoutSurface,
@@ -112,12 +118,14 @@ const HEAD_COUNT_MORPH: TextMorphConfig = {
  */
 function AgentSessionNotch({
 	flyoutHandle,
+	flyoutSession,
 	isArriving,
 	isNew,
 	item,
 	onView,
 }: Readonly<{
 	flyoutHandle: JiraSessionFlyoutHandle;
+	flyoutSession: JiraSidebarSessionItem;
 	isArriving: boolean;
 	isNew: boolean;
 	item: AgentSessionItem;
@@ -126,48 +134,63 @@ function AgentSessionNotch({
 	const shouldReduceMotion = useReducedMotion();
 	// The beat, not the mark: expanding and re-collapsing the column remounts the
 	// rail, and a notch that is still unreviewed stays lit without regrowing.
+	// Arrival layout stays on the <li>; the trigger host is a stable div so the
+	// shared popup can slide between notches instead of remounting per row.
 	return (
-		<JiraSessionFlyoutTrigger
-			handle={flyoutHandle}
-			render={
-				<motion.li
-					className="group/notch flex h-5 w-full shrink-0 items-center"
-					layout={shouldReduceMotion ? false : true}
-					transition={AGENT_SESSION_ARRIVAL_TRANSITION}
-				/>
-			}
-			session={toAgentSessionFlyoutItem(item)}
+		<motion.li
+			className="group/notch flex h-5 w-full shrink-0 items-center"
+			layout={shouldReduceMotion ? false : true}
+			transition={AGENT_SESSION_ARRIVAL_TRANSITION}
 		>
-			<button
-				className="focus-visible:ring-ring flex h-5 w-full items-center justify-center rounded-xs outline-none focus-visible:ring-2"
-				data-new={isNew || undefined}
-				data-testid={"agent-session-notch-" + item.id}
-				onClick={onView === undefined ? undefined : () => onView(item)}
-				type="button"
+			<JiraSessionFlyoutTrigger
+				closeDelay={160}
+				handle={flyoutHandle}
+				render={<div className="h-5 w-full" />}
+				session={flyoutSession}
 			>
-				<span className="sr-only">
-					{`${item.title} — ${NOTCH_STATE_LABEL[item.state]}${isNew ? ", newly synced" : ""}`}
-				</span>
-				<AgentSessionNotchMark isArriving={isArriving} isNew={isNew} />
-			</button>
-		</JiraSessionFlyoutTrigger>
+				<button
+					className="focus-visible:ring-ring flex h-5 w-full items-center justify-center rounded-xs outline-none focus-visible:ring-2"
+					data-new={isNew || undefined}
+					data-testid={"agent-session-notch-" + item.id}
+					onClick={onView === undefined ? undefined : () => onView(item)}
+					type="button"
+				>
+					<span className="sr-only">
+						{`${item.title} — ${NOTCH_STATE_LABEL[item.state]}${isNew ? ", newly synced" : ""}`}
+					</span>
+					<AgentSessionNotchMark isArriving={isArriving} isNew={isNew} />
+				</button>
+			</JiraSessionFlyoutTrigger>
+		</motion.li>
 	);
 }
 
 export function AgentSessionColumnRail({
 	arrivingItemIds,
+	capturedItemIds,
+	getSuggestedWorkItemKey,
+	getSuggestedWorkItemKeys,
 	items,
 	newItemIds,
+	onCreateWorkItem,
 	onExpand,
+	onLinkWorkItem,
+	onSubtasks,
 	onView,
 	sessionCount,
 	title,
 }: Readonly<{
 	/** Subset of `newItemIds` whose arrival beat has not played yet. */
 	arrivingItemIds?: ReadonlySet<string>;
+	capturedItemIds?: ReadonlySet<string>;
+	getSuggestedWorkItemKey?: (item: AgentSessionItem) => string | undefined;
+	getSuggestedWorkItemKeys?: (item: AgentSessionItem) => readonly string[] | undefined;
 	items: readonly AgentSessionItem[];
 	newItemIds?: ReadonlySet<string>;
+	onCreateWorkItem?: (item: AgentSessionItem) => void;
 	onExpand: () => void;
+	onLinkWorkItem?: (item: AgentSessionItem, workItemKey?: string) => void;
+	onSubtasks?: (item: AgentSessionItem) => void;
 	onView?: (item: AgentSessionItem) => void;
 	sessionCount: number;
 	title: string;
@@ -176,6 +199,15 @@ export function AgentSessionColumnRail({
 	// the popup stays mounted and follows the hovered notch, so sliding down the
 	// rail crossfades instead of remounting a card per notch.
 	const [flyoutHandle] = useState(createJiraSessionFlyoutHandle);
+	const flyoutActions = useMemo(
+		() => bindAgentSessionFlyoutActions(items, {
+			capturedItemIds,
+			onCreateWorkItem,
+			onLinkWorkItem,
+			onSubtasks,
+		}),
+		[capturedItemIds, items, onCreateWorkItem, onLinkWorkItem, onSubtasks],
+	);
 	const newCount = newItemIds === undefined
 		? 0
 		: items.reduce((total: number, item: AgentSessionItem) => (
@@ -250,6 +282,14 @@ export function AgentSessionColumnRail({
 					{items.map((item: AgentSessionItem) => (
 						<AgentSessionNotch
 							flyoutHandle={flyoutHandle}
+							flyoutSession={toAgentSessionUntrackedWorkFlyoutItem(
+								item,
+								resolveAgentSessionWorkItemKey(
+									item,
+									getSuggestedWorkItemKey,
+									getSuggestedWorkItemKeys,
+								),
+							)}
 							isArriving={(arrivingItemIds ?? newItemIds)?.has(item.id) ?? false}
 							isNew={newItemIds?.has(item.id) ?? false}
 							item={item}
@@ -259,7 +299,14 @@ export function AgentSessionColumnRail({
 					))}
 				</motion.ul>
 			</div>
-			<JiraSessionFlyoutSurface handle={flyoutHandle} />
+			<JiraSessionFlyoutSurface
+				capturedSessionIds={capturedItemIds}
+				content="untracked-work"
+				handle={flyoutHandle}
+				onAddAsSubtask={flyoutActions.onAddAsSubtask}
+				onCreateWorkItem={flyoutActions.onCreateWorkItem}
+				onLinkWorkItem={flyoutActions.onLinkWorkItem}
+			/>
 		</>
 	);
 }

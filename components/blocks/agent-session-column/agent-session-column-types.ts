@@ -9,7 +9,7 @@ import type { AgentSessionProps } from "@/components/blocks/agent-session";
  * on a column it reads as the column surface rather than the inner list.
  */
 export interface AgentSessionColumnProps extends Omit<AgentSessionProps, "className"> {
-	/** Additional classes applied to the sunken column surface. */
+	/** Additional classes applied to the column surface. */
 	className?: string;
 	/** Classes applied to the inner session list. */
 	listClassName?: string;

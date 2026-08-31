@@ -591,7 +591,7 @@ export function ExperimentalV2JiraKanban({
 							"flex min-h-full w-max min-w-full items-stretch",
 							// The pinned column already supplies the board's left inset, so
 							// drop to the inter-column gap and keep one rhythm across all
-							// columns instead of a 24px seam after the sunken one.
+							// columns instead of a 24px seam after the session column.
 							agentSessionColumn ? "ps-2" : "ps-6",
 						)}
 					>

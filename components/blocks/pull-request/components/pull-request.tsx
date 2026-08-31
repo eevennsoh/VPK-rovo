@@ -116,7 +116,20 @@ function PullRequestStatusLozenge({
 	);
 }
 
-/** GitHub-marked repository pill, shared by both densities. */
+function PullRequestGitHubMark() {
+	return (
+		<span className="shrink-0">
+			<BrandLogoMark
+				className="dark:invert [[data-color-mode=dark]_&]:invert"
+				frame="chip"
+				label="GitHub"
+				name="github"
+			/>
+		</span>
+	);
+}
+
+/** GitHub-marked repository pill. Compact density only. */
 function PullRequestRepositoryTag({
 	repository,
 }: Readonly<{ repository?: string }>) {
@@ -125,14 +138,7 @@ function PullRequestRepositoryTag({
 	return (
 		<Tag
 			color="gray"
-			elemBefore={
-				<BrandLogoMark
-					className="dark:invert [[data-color-mode=dark]_&]:invert"
-					frame="chip"
-					label="GitHub"
-					name="github"
-				/>
-			}
+			elemBefore={<PullRequestGitHubMark />}
 			maxWidth="9rem"
 		>
 			{repository}
@@ -215,7 +221,7 @@ function PullRequestCompactBody({
 }
 
 /**
- * Spacious body: status + `#N` + title on row one, repo pill + branch path on
+ * Spacious body: status + `#N` + title on row one, GitHub mark + branch path on
  * row two, and an author / changed-files / diff footer on row three.
  */
 function PullRequestSpaciousBody({
@@ -223,7 +229,6 @@ function PullRequestSpaciousBody({
 	title,
 	status,
 	author,
-	repository,
 	branch,
 	targetBranch,
 	additions,
@@ -236,7 +241,6 @@ function PullRequestSpaciousBody({
 		| "title"
 		| "status"
 		| "author"
-		| "repository"
 		| "branch"
 		| "targetBranch"
 		| "additions"
@@ -254,14 +258,14 @@ function PullRequestSpaciousBody({
 				</span>
 			</div>
 			<div className="flex min-w-0 flex-nowrap items-center gap-1.5 overflow-hidden">
-				<PullRequestRepositoryTag repository={repository} />
+				<PullRequestGitHubMark />
 				<PullRequestBranchPath branch={branch} targetBranch={targetBranch} />
 			</div>
 			<div className="flex min-w-0 items-center gap-2">
 				{author ? (
 					<span className="flex min-w-0 items-center gap-1.5 text-xs leading-4 text-text-subtle">
 						<PullRequestAuthorAvatar author={author} size="xs" />
-						<span className="min-w-0 truncate">Created by {author.name}</span>
+						<span className="min-w-0 truncate">{author.name}</span>
 					</span>
 				) : null}
 				{/* `ms-auto` keeps the metrics trailing-aligned even without an author. */}
@@ -288,7 +292,8 @@ function PullRequestSpaciousBody({
  * - `compact`: one row — author avatar, split `#N` + title, diff stats, then a
  *   metadata line of status lozenge, repo pill, and `source → target` path.
  * - `spacious`: three rows — status lozenge (with glyph) + `#N` + title, then
- *   repo pill + branch path, then an author / changed-files / diff footer.
+ *   GitHub mark + `source → target` path, then an author / changed-files /
+ *   diff footer.
  */
 export function PullRequest({
 	variant = "compact",
@@ -319,7 +324,6 @@ export function PullRequest({
 			deletions={deletions}
 			filesChanged={filesChanged}
 			number={number}
-			repository={repository}
 			status={status}
 			targetBranch={targetBranch}
 			title={title}

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useReducedMotion } from "motion/react";
 
+import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import ShrinkHorizontalIcon from "@atlaskit/icon/core/shrink-horizontal";
 
 import { isCodingAgentListItem } from "@/components/blocks/agent-list";
@@ -16,8 +17,10 @@ import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
+import { AgentSessionColumnHiddenFooter } from "./agent-session-column-hidden-footer";
 import { AgentSessionColumnRail } from "./agent-session-column-rail";
 import type { AgentSessionColumnProps } from "./agent-session-column-types";
+import { useAgentSessionColumnHidden } from "./use-agent-session-column-hidden";
 
 /** Expanded column width in px. */
 const AGENT_SESSION_COLUMN_WIDTH_PX = 280;
@@ -44,8 +47,16 @@ const AGENT_SESSION_COLUMN_TRANSITION = "width var(--duration-medium) var(--ease
  * five column titles read as one row. Filling behind the header instead would
  * push this title 8px in and 8px down from its neighbours and make the column
  * look like a panel docked beside the board rather than a column of it.
+ *
+ * `bg-surface-sunken` is the well — not `bg-surface`, not the chin, and not
+ * the uncaptured-work card grey (`bg-bg-accent-gray-subtlest`). Those erase
+ * the sunken plane.
+ *
+ * `p-1` is the Agent Session Flyout list parent's inset. Large uncaptured
+ * cards stack as one dashed well (`gap-0`), so the column does not inherit
+ * the flyout catalog's `gap-0.5` row rhythm.
  */
-const AGENT_SESSION_PLANE = "flex min-h-0 min-w-0 flex-1 flex-col bg-surface-sunken";
+const AGENT_SESSION_PLANE = "flex min-h-0 min-w-0 flex-1 flex-col bg-surface-sunken p-1";
 
 /**
  * A kanban column of agent sessions that never became work items.
@@ -76,11 +87,23 @@ export function AgentSessionColumn({
 	listClassName,
 	newItemIds,
 	onCollapsedChange,
+	onToggleVisibility,
 	title = "Untracked work",
 	...sessionProps
 }: Readonly<AgentSessionColumnProps>) {
 	const shouldReduceMotion = useReducedMotion();
 	const [collapsed, setCollapsed] = useState(defaultCollapsed);
+	const {
+		closeHiddenView,
+		hiddenCount,
+		hiddenItems,
+		openHiddenView,
+		toggleHidden,
+		view,
+		visibleItems,
+	} = useAgentSessionColumnHidden(items);
+	const viewItems = view === "hidden" ? hiddenItems : visibleItems;
+	const displayTitle = view === "hidden" ? "Hidden work" : title;
 	// The rail and the card list have very different intrinsic widths, so the
 	// overflow has to be clipped for the duration of the width transition. Any
 	// longer and it would clip the 4px focus rings on the cards inside.
@@ -98,7 +121,9 @@ export function AgentSessionColumn({
 		}),
 		[showBottomScrollMask, showTopScrollMask],
 	);
-	const sessionCount = count ?? items.length;
+	const sessionCount = view === "hidden"
+		? hiddenItems.length
+		: (count ?? visibleItems.length);
 	// Collapsing swaps the cards for the rail and back, which remounts them — and
 	// a mount is exactly what re-arms an `initial` animation. The beat is meant to
 	// fire once per arrival, so the column, which survives the toggle, remembers
@@ -150,8 +175,16 @@ export function AgentSessionColumn({
 		if (!shouldReduceMotion) {
 			setIsResizing(true);
 		}
+		if (nextCollapsed) {
+			closeHiddenView();
+		}
 		setCollapsed(nextCollapsed);
 		onCollapsedChange?.(nextCollapsed);
+	};
+
+	const handleToggleVisibility = (item: AgentSessionItem) => {
+		toggleHidden(item);
+		onToggleVisibility?.(item);
 	};
 
 	const handleTransitionEnd = (event: React.TransitionEvent<HTMLElement>) => {
@@ -162,7 +195,7 @@ export function AgentSessionColumn({
 
 	return (
 		<section
-			aria-label={`${title}, ${sessionCount} sessions`}
+			aria-label={`${displayTitle}, ${sessionCount} sessions`}
 			className={cn(
 				"group/session-column flex min-h-0 shrink-0 flex-col",
 				collapsed || isResizing ? "overflow-hidden" : null,
@@ -186,14 +219,19 @@ export function AgentSessionColumn({
 					className={AGENT_SESSION_PLANE}
 					style={{
 						borderRadius: token("radius.xlarge"),
-						padding: token("space.050"),
 					}}
 				>
 					<AgentSessionColumnRail
 						arrivingItemIds={arrivingItemIds}
-						items={items}
+						capturedItemIds={sessionProps.capturedItemIds}
+						getSuggestedWorkItemKey={sessionProps.getSuggestedWorkItemKey}
+						getSuggestedWorkItemKeys={sessionProps.getSuggestedWorkItemKeys}
+						items={visibleItems}
 						newItemIds={newItemIds}
+						onCreateWorkItem={sessionProps.onCreateWorkItem}
 						onExpand={handleToggleCollapsed}
+						onLinkWorkItem={sessionProps.onLinkWorkItem}
+						onSubtasks={sessionProps.onSubtasks}
 						onView={handleNotchView}
 						sessionCount={sessionCount}
 						title={title}
@@ -205,8 +243,29 @@ export function AgentSessionColumn({
 						className="flex min-w-0 items-center gap-1.5"
 						style={{ paddingBottom: token("space.100") }}
 					>
+						{view === "hidden" ? (
+							<TooltipProvider>
+								<Tooltip>
+									<TooltipTrigger
+										render={
+											<Button
+												aria-label={`Back to ${title}`}
+												className="shrink-0"
+												onClick={closeHiddenView}
+												size="icon-compact"
+												type="button"
+												variant="ghost"
+											/>
+										}
+									>
+										<Icon className="text-icon-subtle" render={<ArrowLeftIcon label="" />} />
+									</TooltipTrigger>
+									<TooltipContent>Back</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
+						) : null}
 						<span className="truncate text-xs font-medium leading-4 text-text-subtle">
-							{title}
+							{displayTitle}
 						</span>
 						<span className="shrink-0 text-xs font-normal text-text-subtlest">
 							{sessionCount}
@@ -241,7 +300,6 @@ export function AgentSessionColumn({
 						className={AGENT_SESSION_PLANE}
 						style={{
 							borderRadius: token("radius.xlarge"),
-							padding: token("space.100"),
 						}}
 					>
 						<div
@@ -249,18 +307,26 @@ export function AgentSessionColumn({
 							className="-m-1 min-h-0 min-w-0 flex-1 overflow-y-auto p-1"
 							style={listStyle}
 						>
-							{items.length === 0 ? (
+							{viewItems.length === 0 ? (
 								<p className="text-xs text-text-subtlest">{emptyLabel}</p>
 							) : (
 								<AgentSession
 									arrivingItemIds={arrivingItemIds}
-									className={listClassName}
-									items={items}
+									className={cn("gap-0", listClassName)}
+									items={viewItems}
 									newItemIds={newItemIds}
 									{...sessionProps}
+									onToggleVisibility={handleToggleVisibility}
+									visibilityLabel={view === "hidden" ? "Show" : "Hide"}
 								/>
 							)}
 						</div>
+						{view === "active" && hiddenCount > 0 ? (
+							<AgentSessionColumnHiddenFooter
+								hiddenCount={hiddenCount}
+								onOpen={openHiddenView}
+							/>
+						) : null}
 					</div>
 				</>
 			)}

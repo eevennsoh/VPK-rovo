@@ -424,7 +424,7 @@ test("Pulse rail hangs everything off one left edge and one right edge", () => {
 	assert.match(SOURCES.rail, /githubWork = looseWork\.filter\(isPulseGithubLooseWork\);/u);
 	assert.match(
 		SOURCES.rail,
-		/const sessionItems = toPulseSessionItems\(\s*looseWork,\s*members,\s*\);/u,
+		/const sessionItems = toPulseSessionItems\(\s*looseWork,\s*members,\s*workItems,\s*\);/u,
 	);
 	assert.match(
 		SOURCES.rail,

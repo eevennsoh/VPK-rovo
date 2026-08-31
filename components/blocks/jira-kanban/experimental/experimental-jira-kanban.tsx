@@ -110,6 +110,24 @@ const BOARD_COLUMN_ACTION_REVEAL = cn(
 	"motion-reduce:transition-none",
 );
 
+/**
+ * Hover/focus swap on the collapsed pill's 24px head slot: the count at rest,
+ * the expand control once the pointer or keyboard arrives. Both sit in the same
+ * slot so the title below never shifts, and the faded one is click-through —
+ * the same treatment the Agent Session rail uses.
+ */
+const HEAD_AT_REST = cn(
+	"pointer-events-none transition-opacity duration-normal ease-out-practical",
+	"group-hover/collapsed-column:opacity-0 group-has-[:focus-visible]/collapsed-column:opacity-0",
+	"motion-reduce:transition-none",
+);
+
+const HEAD_ON_REVEAL = cn(
+	"opacity-0 transition-opacity duration-normal ease-out-practical",
+	"group-hover/collapsed-column:opacity-100 group-has-[:focus-visible]/collapsed-column:opacity-100",
+	"motion-reduce:transition-none",
+);
+
 function getJiraKanbanCardScale(
 	phase: JiraKanbanCardMoveAnimation["phase"] | undefined,
 ): number {
@@ -294,8 +312,7 @@ function ColumnAgentAssignment({
 
 /**
  * Hover/focus revealed control that collapses a column into its pill, or grows
- * the pill back into a column. Rendered inside a `writing-mode: vertical-rl`
- * pill it keeps its own horizontal writing mode so the glyph stays upright.
+ * the pill back into a column.
  */
 function BoardColumnResizeButton({
 	className,
@@ -339,10 +356,11 @@ function BoardColumnResizeButton({
 }
 
 /**
- * The collapsed form of a board column: a full-height 32px pill whose title and
- * count read top-to-bottom. `writing-mode: vertical-rl` rotates the text while
- * leaving the icon button upright, so the header's horizontal layout, spacing
- * and truncation rules all carry over unchanged.
+ * The collapsed form of a board column: a full-height 32px pill. The 24px head
+ * slot shows the count at rest and the expand control on hover or focus — the
+ * same swap the Agent Session rail uses — then the title reads top-to-bottom
+ * below. `writing-mode: vertical-rl` stays on the title only, so the head
+ * number and Grow icon stay upright.
  */
 function CollapsedBoardColumn({
 	count,
@@ -351,29 +369,30 @@ function CollapsedBoardColumn({
 }: Readonly<{ count: number; onExpand: () => void; title: string }>) {
 	return (
 		<div
-			className="group/collapsed-column flex h-full w-full items-center gap-1.5 overflow-hidden border border-border-disabled [writing-mode:vertical-rl]"
+			className="group/collapsed-column flex h-full w-full flex-col items-center gap-1 overflow-hidden border border-border-disabled"
 			style={{
 				borderRadius: token("radius.large"),
-				paddingInlineStart: token("space.150"),
-				paddingInlineEnd: token("space.050"),
+				paddingBlock: token("space.050"),
 			}}
 		>
-			<span className="min-h-0 truncate text-xs font-medium leading-4 text-text-subtle">
+			<div className="relative flex h-6 w-full shrink-0 items-center justify-center">
+				<span
+					aria-hidden="true"
+					className={cn("absolute text-xs font-normal text-text-subtlest", HEAD_AT_REST)}
+				>
+					{count}
+				</span>
+				<span className="sr-only">{count}</span>
+				<BoardColumnResizeButton
+					className={cn("absolute shrink-0", HEAD_ON_REVEAL)}
+					collapsed
+					onToggle={onExpand}
+					title={title}
+				/>
+			</div>
+			<span className="min-h-0 flex-1 truncate text-xs font-medium leading-4 text-text-subtle [writing-mode:vertical-rl]">
 				{title}
 			</span>
-			<span className="shrink-0 text-xs font-normal text-text-subtlest">
-				{count}
-			</span>
-			<BoardColumnResizeButton
-				className={cn(
-					BOARD_COLUMN_ACTION_REVEAL,
-					"group-hover/collapsed-column:pointer-events-auto group-hover/collapsed-column:opacity-100",
-					"group-has-[:focus-visible]/collapsed-column:pointer-events-auto group-has-[:focus-visible]/collapsed-column:opacity-100",
-				)}
-				collapsed
-				onToggle={onExpand}
-				title={title}
-			/>
 		</div>
 	);
 }

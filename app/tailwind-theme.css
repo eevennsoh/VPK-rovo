@@ -1057,3 +1057,55 @@
 	will-change: transform;
 	transition: transform var(--duration-normal) var(--ease-linear);
 }
+
+/* 4px dash / 2px gap. Native `border-style: dashed` is not 4/2, and
+   `border-image` ignores radius. Four repeating-linear-gradient strokes sit on
+   the border box. `--dash-bottom-size: 0px` drops the bottom stroke so stacked
+   cards share one divider (the next card's top). `--dash-color` is the paint.
+   Named `dash-4-2` (not `border-*`) so twMerge will not drop the class. */
+@utility dash-4-2 {
+	--border-dash-length: 4px;
+	--border-dash-gap: 2px;
+	--dash-bottom-size: 1px;
+	--dash-color: var(--color-border-disabled);
+	background-color: transparent;
+	background-image:
+		repeating-linear-gradient(
+			to right,
+			var(--dash-color) 0 var(--border-dash-length),
+			transparent var(--border-dash-length) calc(var(--border-dash-length) + var(--border-dash-gap))
+		),
+		repeating-linear-gradient(
+			to right,
+			var(--dash-color) 0 var(--border-dash-length),
+			transparent var(--border-dash-length) calc(var(--border-dash-length) + var(--border-dash-gap))
+		),
+		repeating-linear-gradient(
+			to bottom,
+			var(--dash-color) 0 var(--border-dash-length),
+			transparent var(--border-dash-length) calc(var(--border-dash-length) + var(--border-dash-gap))
+		),
+		repeating-linear-gradient(
+			to bottom,
+			var(--dash-color) 0 var(--border-dash-length),
+			transparent var(--border-dash-length) calc(var(--border-dash-length) + var(--border-dash-gap))
+		);
+	background-origin: border-box;
+	background-position:
+		0 0,
+		0 100%,
+		0 0,
+		100% 0;
+	background-repeat: no-repeat;
+	background-size:
+		100% 1px,
+		100% var(--dash-bottom-size),
+		1px 100%,
+		1px 100%;
+	border-style: none;
+
+	&:hover,
+	&:focus-within {
+		--dash-color: var(--color-border);
+	}
+}
