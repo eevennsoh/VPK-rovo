@@ -1,4 +1,5 @@
 import { toAgentSessionFlyoutItem } from "@/components/blocks/agent-list/agent-list-session";
+import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue/agent-activity";
 import type { JiraSidebarSessionItem } from "@/components/blocks/product-sidebar/variants/jira";
 import type { JiraSessionFlyoutSurfaceProps } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 
@@ -31,6 +32,22 @@ export function resolveAgentSessionWorkItemKey(
 	}
 
 	return getSuggestedWorkItemKey?.(item) ?? suggestedAgentSessionWorkItemKey(item);
+}
+
+/** Restores a chin-row activity from a detached session so drag-in can reattach. */
+export function toJiraIssueAgentActivityFromSession(item: AgentSessionItem): JiraIssueAgentActivity {
+	return {
+		agentBrandName: item.agent.brandName,
+		avatarSrc: item.agent.avatarSrc,
+		id: item.id,
+		label: item.title,
+		name: item.agent.name,
+		state: item.state === "needs-input" || item.state === "attention"
+			? "awaiting-input"
+			: item.state === "complete"
+				? "completed"
+				: "working",
+	};
 }
 
 /** Maps a session row onto the untracked-work flyout payload, with an optional key override. */

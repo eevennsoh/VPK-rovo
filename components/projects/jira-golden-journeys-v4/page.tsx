@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
-import { unlinkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
+import { linkJiraKanbanAgentSession, unlinkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
 import { JiraList, type JiraListRowData } from "@/components/blocks/jira-list";
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
 import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v1/data/agent-chat-data";
@@ -17,6 +17,7 @@ import AppLayout from "@/components/projects/page";
 
 import {
 	createJiraGoldenJourneysV4PayBoardColumns,
+	toJiraGoldenJourneysV4AgentActivityFromSession,
 	toJiraGoldenJourneysV4DetachedAgentSession,
 	JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS,
 	JIRA_GOLDEN_JOURNEYS_V4_PAY_HEADER_ASSIGNEES,
@@ -62,6 +63,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 	const [detachedAgentSessionsByCard, setDetachedAgentSessionsByCard] = useState<
 		Readonly<Record<string, readonly AgentSessionItem[]>>
 	>({});
+	const detachedActivitiesByIdRef = useRef<Record<string, JiraIssueAgentActivity>>({});
 	const [activeView, setActiveView] = useState<"board" | "list">("board");
 	const [selectedTab, setSelectedTab] = useState(1);
 	const handleViewChat = useCallback((activity: JiraIssueAgentActivity, card: JiraKanbanCardData) => {
@@ -78,6 +80,10 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 		const activity = card.agentActivities?.find((candidate) => candidate.id === session.id);
 		if (!activity) return;
 		const detachedSession = toJiraGoldenJourneysV4DetachedAgentSession(activity, card);
+		detachedActivitiesByIdRef.current = {
+			...detachedActivitiesByIdRef.current,
+			[activity.id]: activity,
+		};
 		setDetachedAgentSessionsByCard((current) => {
 			const currentSessions = current[card.code] ?? [];
 			return currentSessions.some((candidate) => candidate.id === detachedSession.id)
@@ -85,6 +91,29 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 				: { ...current, [card.code]: [...currentSessions, detachedSession] };
 		});
 		setBoardColumns((columns) => unlinkJiraKanbanAgentSession(columns, card.code, session.id));
+	}, []);
+	const handleAgentSessionLink = useCallback((session: AgentSessionItem, card: JiraKanbanCardData) => {
+		const activity = detachedActivitiesByIdRef.current[session.id]
+			?? toJiraGoldenJourneysV4AgentActivityFromSession(session);
+		if (session.id in detachedActivitiesByIdRef.current) {
+			const rest = { ...detachedActivitiesByIdRef.current };
+			delete rest[session.id];
+			detachedActivitiesByIdRef.current = rest;
+		}
+		setDetachedAgentSessionsByCard((current) => {
+			const currentSessions = current[card.code] ?? [];
+			const nextSessions = currentSessions.filter((candidate) => candidate.id !== session.id);
+			if (nextSessions.length === currentSessions.length) {
+				return current;
+			}
+			if (nextSessions.length === 0) {
+				const rest = { ...current };
+				delete rest[card.code];
+				return rest;
+			}
+			return { ...current, [card.code]: nextSessions };
+		});
+		setBoardColumns((columns) => linkJiraKanbanAgentSession(columns, card.code, activity));
 	}, []);
 
 	return (
@@ -112,6 +141,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 							setBoardColumns([...columns]);
 						}}
 						onCardAgentActivityViewChat={handleViewChat}
+						onCardAgentSessionLink={handleAgentSessionLink}
 						onCardAgentSessionUnlink={handleAgentSessionUnlink}
 						onViewChange={setActiveView}
 						renderListContent={(columns) => {

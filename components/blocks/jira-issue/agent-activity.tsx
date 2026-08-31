@@ -28,6 +28,7 @@ import type {
 	JiraIssueAgentSessionDragBinding,
 	JiraIssueAgentSessionDragState,
 } from "@/components/blocks/jira-issue/agent-session-drag";
+import { AgentSessionMentionChip } from "@/components/blocks/jira-issue/agent-session-mention-chip";
 import type { QuestionCardQuestion } from "@/components/blocks/question-card/types";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AnimatedDots } from "@/components/ui-custom/animated-dots";
@@ -40,9 +41,7 @@ import { Shimmer } from "@/components/ui-custom/shimmer";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
-import { Tag } from "@/components/ui/tag";
 import { Gooey } from "@/components/visual/gooey";
-import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 export type JiraIssueAgentActivityMode = "none" | "working" | "awaiting-input" | "completed";
@@ -84,15 +83,6 @@ const JIRA_ISSUE_SESSION_DRAG_MORPH = { advanced: { blobInset: 3, bridgeGrow: 7 
 const JIRA_ISSUE_SESSION_DRAG_CHIP_MORPH = { advanced: { blobInset: 14, bridgeGrow: 0 } } as const;
 /** Travel before the grey goo phase hands over to the opaque at-mention chip. */
 const JIRA_ISSUE_SESSION_DRAG_CHIP_DISTANCE_PX = 12;
-/**
- * The chip is off the card once it is out, so it carries overlay elevation to
- * sit above it. `shadow-overlay` is NOT a Tailwind utility here — the theme maps
- * `--ds-shadow-overlay` onto `--shadow-2xl` only — so the class it replaced was
- * silently doing nothing and the tag rendered flat.
- */
-const JIRA_ISSUE_SESSION_DRAG_CHIP_STYLE: CSSProperties = {
-	boxShadow: token("elevation.shadow.overlay"),
-};
 /**
  * Light friction on the dragged tag. Underdamped on purpose: the chip trails a
  * few frames behind the pointer, and that lag is what the gooey filter renders
@@ -266,7 +256,7 @@ function JiraIssueAgentActivityRow({
 	/**
 	 * Session is clear of the chin: show it as the chip it is about to become.
 	 * Held back until the row has actually travelled, because the chip's opaque
-	 * `bg-surface-raised` pill covers the goo silhouette painted behind it —
+	 * opaque mention tag covers the goo silhouette painted behind it —
 	 * swapping on the first pointermove is what made the pull-out snap straight
 	 * to a hard-edged tag with no visible stretch.
 	 */
@@ -421,33 +411,22 @@ function JiraIssueAgentActivityRow({
 				}
 				: {})}
 			className={cn(
-				"flex h-6 items-center gap-2 text-left outline-none transition-[background-color,box-shadow] duration-fast ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none",
+				"flex items-center gap-2 text-left outline-none transition-[background-color,box-shadow] duration-fast ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none",
 				isDraggedOut
-					? "w-fit max-w-full justify-start rounded-full bg-surface-raised px-1"
-					: "w-full min-w-0 justify-between rounded-md px-2 py-1 hover:bg-bg-neutral-subtle-hovered",
+					? "h-auto w-fit max-w-full justify-start bg-transparent p-0"
+					: "h-6 w-full min-w-0 justify-between rounded-md px-2 py-1 hover:bg-bg-neutral-subtle-hovered",
 				sessionDragBind && "touch-none select-none",
 			)}
-			style={isDraggedOut ? JIRA_ISSUE_SESSION_DRAG_CHIP_STYLE : undefined}
 		>
 			{isDraggedOut ? (
 				// Out of the chin the session reads as the at-mention chip it will
 				// become once dropped, so the gesture previews its own result.
-				<Tag
-					color="gray"
-					elemBefore={
-						<AgentAvatarVisual
-							avatarClassName="shrink-0"
-							avatarSrc={featuredActivity?.avatarSrc}
-							brandName={featuredActivity?.agentBrandName}
-							fallbackText={getAgentInitial(featuredActivity?.name ?? "Agent")}
-							label={featuredActivity?.name ?? "Agent"}
-							sizePx={16}
-						/>
-					}
-					variant="editor"
-				>
-					{featuredActivity?.name ?? "Agent"}
-				</Tag>
+				<AgentSessionMentionChip
+					avatarSrc={featuredActivity?.avatarSrc}
+					brandName={featuredActivity?.agentBrandName}
+					elevated
+					name={featuredActivity?.name ?? "Agent"}
+				/>
 			) : (
 				<>
 			<div className={cn("flex min-w-0 flex-1 items-center", usesStrokeChrome ? "gap-1.5" : "gap-2")}>
@@ -711,6 +690,7 @@ export function JiraIssueAgentActivityRows({
 									cancelled,
 									dragging,
 									pointer,
+									source: "chin",
 								});
 							}}
 							onViewChat={onViewChat}

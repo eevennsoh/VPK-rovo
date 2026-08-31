@@ -44,6 +44,11 @@ interface ExperimentalJiraKanbanCardProps {
 	onDragStart: DragEventHandler<HTMLButtonElement>;
 	onGenerativeActionSubmit?: JiraKanbanProps["onCardGenerativeActionSubmit"];
 	onLinkWorkItem?: (item: AgentSessionItem, workItemKey?: string) => void;
+	onSessionLink?: (
+		session: AgentSessionItem,
+		card: JiraKanbanCardData,
+		columnTitle: string,
+	) => void;
 	onSessionUnlink?: (
 		session: JiraIssueAgentSessionRef,
 		card: JiraKanbanCardData,
@@ -81,6 +86,7 @@ export function ExperimentalJiraKanbanCard({
 	onDragStart,
 	onGenerativeActionSubmit,
 	onLinkWorkItem,
+	onSessionLink,
 	onSessionUnlink,
 	onSubtasks,
 	selected,
@@ -91,83 +97,108 @@ export function ExperimentalJiraKanbanCard({
 		(activity) => activity.state !== "completed",
 	);
 	const canUnlinkAgentSession = Boolean(onSessionUnlink && firstActiveAgentSession);
+	const canLinkAgentSession = Boolean(onSessionLink && detachedAgentSessions.length > 0);
+	const canTransferAgentSession = canUnlinkAgentSession || canLinkAgentSession;
+
+	function handleSessionLink(sessionId?: string) {
+		const item = detachedAgentSessions.find((candidate) => candidate.id === sessionId);
+		if (item) {
+			onSessionLink?.(item, card, columnTitle);
+		}
+	}
+
+	function handleLinkWorkItem(item: AgentSessionItem, workItemKey?: string) {
+		if (onSessionLink) {
+			onSessionLink(item, card, columnTitle);
+			return;
+		}
+		onLinkWorkItem?.(item, workItemKey);
+	}
 
 	return (
-		<>
-			<JiraIssue
-				active={active}
-				agentActivities={card.agentActivities}
-				agentActivityLayout={agentActivityLayout}
-				agentActivityMode={card.agentActivityMode}
-				agentDoneRuns={card.agentDoneRuns}
-				agentSessionTransfer={canUnlinkAgentSession ? {
-					onUnlink: (session) => {
+		<JiraIssue
+			active={active}
+			agentActivities={card.agentActivities}
+			agentActivityLayout={agentActivityLayout}
+			agentActivityMode={card.agentActivityMode}
+			agentDoneRuns={card.agentDoneRuns}
+			agentSessionTransfer={canTransferAgentSession ? {
+				onLink: canLinkAgentSession
+					? (session) => handleSessionLink(session?.id)
+					: undefined,
+				onUnlink: canUnlinkAgentSession
+					? (session) => {
 						const resolvedSession = session ?? firstActiveAgentSession;
 						if (resolvedSession) {
 							onSessionUnlink?.(resolvedSession, card, columnTitle);
 						}
-					},
-				} : undefined}
-				assigneeAvatarLabel={card.assignee?.name}
-				assigneeAvatarShape={getCardAssigneeAvatarShape(card)}
-				assigneeAvatarSrc={card.avatarSrc}
-				assigneePulse={card.avatarPulse}
-				assigneeUnassignedKind={card.avatarUnassignedKind}
-				chrome="stroke"
-				className={canUnlinkAgentSession ? JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS : undefined}
-				dragging={dragging}
-				generativeAction={{
-					agents: generativeActionAgents,
-					onSubmit: (request) => {
-						void onGenerativeActionSubmit?.(request, card, columnTitle);
-					},
-					skills: generativeActionSkills,
-				}}
-				generativeActionPresentation={generativeActionPresentation}
-				issueKey={card.code}
-				onAgentActivityOpenChange={onAgentActivityOpenChange
-					? (open) => onAgentActivityOpenChange(open, card, columnTitle)
-					: undefined}
-				onAgentActivityViewChat={onAgentActivityViewChat
-					? (activity) => onAgentActivityViewChat(activity, card, columnTitle)
-					: undefined}
-				onAgentDoneRunReview={onAgentDoneRunReview
-					? (run) => onAgentDoneRunReview(run, card, columnTitle)
-					: undefined}
-				onAgentDoneRunView={onAgentDoneRunView
-					? (run) => onAgentDoneRunView(run, card, columnTitle)
-					: undefined}
-				onClick={onClick}
-				onDragEnd={onDragEnd}
-				onDragStart={onDragStart}
-				priority={card.priority}
-				pullRequestNumber={card.pullRequestNumber}
-				pullRequestPreview={card.pullRequestPreview}
-				pullRequestStatus={card.pullRequestStatus}
-				selected={selected}
-				summary={card.title}
-				tags={card.tags}
-			/>
-			<AnimatePresence>
-				{detachedAgentSessions.length > 0 ? (
-					<motion.div
-						animate={proximityMotion.animate}
-						exit={proximityMotion.exit}
-						initial={proximityMotion.initial}
-						key="proximity-sessions"
-						style={JIRA_ISSUE_MOTION_STYLE}
-					>
-						<AgentSession
-							capturedItemIds={capturedItemIds}
-							items={detachedAgentSessions}
-							onCreateWorkItem={onCreateWorkItem}
-							onLinkWorkItem={onLinkWorkItem}
-							onSubtasks={onSubtasks}
-							variant="medium-detached"
-						/>
-					</motion.div>
-				) : null}
-			</AnimatePresence>
-		</>
+					}
+					: undefined,
+			} : undefined}
+			assigneeAvatarLabel={card.assignee?.name}
+			assigneeAvatarShape={getCardAssigneeAvatarShape(card)}
+			assigneeAvatarSrc={card.avatarSrc}
+			assigneePulse={card.avatarPulse}
+			assigneeUnassignedKind={card.avatarUnassignedKind}
+			chrome="stroke"
+			className={canTransferAgentSession ? JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS : undefined}
+			dragging={dragging}
+			generativeAction={{
+				agents: generativeActionAgents,
+				onSubmit: (request) => {
+					void onGenerativeActionSubmit?.(request, card, columnTitle);
+				},
+				skills: generativeActionSkills,
+			}}
+			generativeActionPresentation={generativeActionPresentation}
+			issueKey={card.code}
+			onAgentActivityOpenChange={onAgentActivityOpenChange
+				? (open) => onAgentActivityOpenChange(open, card, columnTitle)
+				: undefined}
+			onAgentActivityViewChat={onAgentActivityViewChat
+				? (activity) => onAgentActivityViewChat(activity, card, columnTitle)
+				: undefined}
+			onAgentDoneRunReview={onAgentDoneRunReview
+				? (run) => onAgentDoneRunReview(run, card, columnTitle)
+				: undefined}
+			onAgentDoneRunView={onAgentDoneRunView
+				? (run) => onAgentDoneRunView(run, card, columnTitle)
+				: undefined}
+			onClick={onClick}
+			onDragEnd={onDragEnd}
+			onDragStart={onDragStart}
+			priority={card.priority}
+			pullRequestNumber={card.pullRequestNumber}
+			pullRequestPreview={card.pullRequestPreview}
+			pullRequestStatus={card.pullRequestStatus}
+			selected={selected}
+			sessionTransferAfter={(sessionDrag) => (
+				<AnimatePresence>
+					{detachedAgentSessions.length > 0 ? (
+						<motion.div
+							animate={proximityMotion.animate}
+							exit={proximityMotion.exit}
+							initial={proximityMotion.initial}
+							key="proximity-sessions"
+							style={JIRA_ISSUE_MOTION_STYLE}
+						>
+							<AgentSession
+								capturedItemIds={capturedItemIds}
+								items={detachedAgentSessions}
+								onCreateWorkItem={onCreateWorkItem}
+								onLinkWorkItem={onSessionLink || onLinkWorkItem
+									? handleLinkWorkItem
+									: undefined}
+								onSubtasks={onSubtasks}
+								sessionDrag={canLinkAgentSession ? sessionDrag : undefined}
+								variant="medium-detached"
+							/>
+						</motion.div>
+					) : null}
+				</AnimatePresence>
+			)}
+			summary={card.title}
+			tags={card.tags}
+		/>
 	);
 }

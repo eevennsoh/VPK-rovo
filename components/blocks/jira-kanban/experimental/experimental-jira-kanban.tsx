@@ -90,6 +90,11 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 		card: JiraKanbanCardData,
 		columnTitle: string,
 	) => void;
+	onCardAgentSessionLink?: (
+		session: AgentSessionItem,
+		card: JiraKanbanCardData,
+		columnTitle: string,
+	) => void;
 	/** Chooses where card agent and skill actions are presented. */
 	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;
 	/**
@@ -394,10 +399,9 @@ function BoardColumn({
 			<div
 				ref={cardListRef}
 				data-jira-kanban-card-list=""
-				className="min-w-0"
+				className="min-w-0 overflow-y-auto has-[[data-session-dragging]]:overflow-visible"
 				style={{
 					flexGrow: 1,
-					overflowY: "auto",
 					display: "flex",
 					flexDirection: "column",
 					gap: token("space.100"),
@@ -578,6 +582,7 @@ export function ExperimentalJiraKanban({
 	onCardGenerativeActionSubmit,
 	onCardAgentActivityOpenChange,
 	onCardAgentActivityViewChat,
+	onCardAgentSessionLink,
 	onCardAgentSessionUnlink,
 	onCardAgentDoneRunReview,
 	onCardAgentDoneRunView,
@@ -878,6 +883,7 @@ export function ExperimentalJiraKanban({
 												onDragStart={(event) => handleCardDragStartInternal(card, column.title, event)}
 												onGenerativeActionSubmit={onCardGenerativeActionSubmit}
 												onLinkWorkItem={proximityActions.onLinkWorkItem}
+												onSessionLink={onCardAgentSessionLink}
 												onSessionUnlink={onCardAgentSessionUnlink}
 												onSubtasks={proximityActions.onSubtasks}
 												selected={isSelected}
