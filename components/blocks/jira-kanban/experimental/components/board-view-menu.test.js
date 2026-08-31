@@ -119,8 +119,15 @@ test("Experimental board header opens the production View picker without changin
 	);
 	assert.match(
 		viewOptions,
-		/"Working"[\s\S]*"Needs input"[\s\S]*"Finished"/u,
+		/"Working"[\s\S]*"Needs input"[\s\S]*"Finished"[\s\S]*"Untracked"/u,
 	);
+	// Untracked is the absence of a session, so the shared submenu draws a
+	// divider above any row that opts in with `separatorBefore`.
+	assert.match(
+		viewOptions,
+		/id: "untracked", label: "Untracked", shown: true, separatorBefore: true/u,
+	);
+	assert.match(viewMenu, /option\.separatorBefore \? <DropdownMenuSeparator \/> : null/u);
 	assert.doesNotMatch(viewOptions, /"Idle"/u);
 	// PR state keeps literal ids (`as const satisfies`) so the menu's icon map is
 	// keyed by a union — an unmapped state is a type error, not a row that
