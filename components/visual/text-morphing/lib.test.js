@@ -8,10 +8,31 @@ const test = require("node:test");
 const helpers = import("./lib.ts");
 const slotsSource = fs.readFileSync(path.join(__dirname, "slots.tsx"), "utf8");
 
-test("SlotsRenderer clips its expanded fade layer to the value line box", () => {
+test("SlotsRenderer bounds its expanded fade layer with the mask, not by clipping", () => {
+	// `overflow: hidden` on the outer span bounds the layer at exactly the line
+	// box — which is where the fade band starts, so it clips the entire gradient
+	// away and leaves a hard edge. The mask has to be the window instead.
+	assert.doesNotMatch(slotsSource, /overflow: "hidden"/);
 	assert.match(
 		slotsSource,
-		/style=\{\{ display: "inline-flex", position: "relative", \.\.\.style, overflow: "hidden" \}\}/,
+		/style=\{\{ display: "inline-flex", position: "relative", \.\.\.style \}\}/,
+	);
+	// A single tile, or `mask-repeat: repeat` paints the gradient again every
+	// line and the parked digits bleed back in above and below the number.
+	assert.match(slotsSource, /maskRepeat: "no-repeat"/);
+	assert.match(slotsSource, /WebkitMaskRepeat: "no-repeat"/);
+});
+
+test("idle slot digits park clear of the fade band", () => {
+	// Parking at exactly one glyph height puts a neighbour's trailing edge inside
+	// the band, where the mask is already opaque; ten stacked digits then smear
+	// into a permanent grey bar. The extra `FADE_HEIGHT_EM` is what clears it,
+	// and it is expressed in em so the clearance holds at any line-height.
+	assert.match(slotsSource, /const FADE_HEIGHT_EM = 0\.25;/);
+	assert.match(slotsSource, /const FADE_HEIGHT = `\$\{FADE_HEIGHT_EM\}em`;/);
+	assert.match(
+		slotsSource,
+		/return `calc\(\$\{-clamped \* 100\}% - \$\{clamped \* FADE_HEIGHT_EM\}em\)`;/,
 	);
 });
 

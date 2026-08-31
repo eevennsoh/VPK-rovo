@@ -42,6 +42,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/jira-insights/lib/jira-insights-model.test.js",
 		"components/blocks/jira-kanban/experimental/components/board-filter-popover.test.js",
 		"components/blocks/jira-kanban/experimental/data/board-group-options.test.js",
+		"components/blocks/jira-kanban/experimental/lib/board-column-collapse.test.js",
 		"components/blocks/jira-kanban/experimental/lib/board-filter.test.js",
 		"components/blocks/jira-kanban/experimental/lib/pulse-roster-filter.test.js",
 		"components/blocks/jira-kanban/experimental/lib/timeline-activity.test.js",
