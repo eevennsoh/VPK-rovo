@@ -4,7 +4,7 @@ import { motion, useReducedMotion } from "motion/react";
 
 import { cn } from "@/lib/utils";
 
-import { AGENT_SESSION_NOTCH_ARRIVAL } from "./agent-session-notch-motion";
+import { AGENT_SESSION_ARRIVAL_TRANSITION } from "./agent-session-arrival-motion";
 
 /** A newly synced notch rests in the same emphasized state hover reveals. */
 const NOTCH_EMPHASIS = "scale-x-[1.6] bg-icon";
@@ -38,7 +38,7 @@ export function AgentSessionNotchMark({
 			)}
 			initial={shouldPlayArrival ? { scaleX: 0 } : false}
 			style={{ willChange: shouldPlayArrival ? "transform" : undefined }}
-			transition={AGENT_SESSION_NOTCH_ARRIVAL}
+			transition={AGENT_SESSION_ARRIVAL_TRANSITION}
 		/>
 	);
 }

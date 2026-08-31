@@ -13,24 +13,14 @@ import { toAgentListResumeCommand } from "@/components/blocks/agent-list/agent-l
 import { UncapturedWorkChin } from "@/components/blocks/jira-issue/uncaptured-work-chin";
 import { cn } from "@/lib/utils";
 
+import {
+	AGENT_SESSION_ARRIVAL_OFFSET_PX,
+	AGENT_SESSION_ARRIVAL_TRANSITION,
+} from "./agent-session-arrival-motion";
 import type { AgentSessionItem } from "./agent-session-types";
 
 /** How long Resume reads "Copied" after it writes the command to the clipboard. */
 const COPIED_RESET_MS = 2000;
-
-/**
- * The arrival beat: `duration-slow` + bold `ease-out`, the flag recipe, because
- * a newly synced session *is* a notification of arriving work. It enters from
- * above because untracked work comes from outside the board and the header is
- * where sync lives — motion has to start where the thing came from.
- */
-const ARRIVAL_ENTER = {
-	duration: 0.25,
-	ease: [0, 0.4, 0, 1] as [number, number, number, number],
-};
-
-/** Travel of the entrance, in px. Paired with a fade — two properties, no more. */
-const ARRIVAL_OFFSET_PX = -8;
 
 async function copyResumeCommand(command: string): Promise<void> {
 	if (typeof navigator === "undefined" || navigator.clipboard?.writeText === undefined) {
@@ -134,12 +124,12 @@ export function AgentSessionCard({
 			data-testid={"agent-session-row-" + item.id}
 			// `false` for a settled card, so nothing replays when the list re-renders
 			// or the watermark clears the mark. Only an arrival animates.
-			initial={shouldPlayArrival ? { opacity: 0, y: ARRIVAL_OFFSET_PX } : false}
+			initial={shouldPlayArrival ? { opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX } : false}
 			// Siblings slide down to make room instead of jumping. `"position"` so a
 			// displaced card is never scaled, only moved.
 			layout={shouldReduceMotion ? false : "position"}
 			style={{ willChange: shouldPlayArrival ? "opacity, transform" : undefined }}
-			transition={{ ...ARRIVAL_ENTER, delay: arrivalDelaySeconds ?? 0 }}
+			transition={{ ...AGENT_SESSION_ARRIVAL_TRANSITION, delay: arrivalDelaySeconds ?? 0 }}
 		>
 			<article
 				className={cn(

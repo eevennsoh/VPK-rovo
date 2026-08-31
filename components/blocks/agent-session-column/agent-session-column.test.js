@@ -9,8 +9,8 @@ const NOTCH_MARK_SOURCE = readFileSync(
 	join(__dirname, "../agent-session/agent-session-notch.tsx"),
 	"utf8",
 );
-const NOTCH_MOTION_SOURCE = readFileSync(
-	join(__dirname, "../agent-session/agent-session-notch-motion.ts"),
+const ARRIVAL_MOTION_SOURCE = readFileSync(
+	join(__dirname, "../agent-session/agent-session-arrival-motion.ts"),
 	"utf8",
 );
 const TYPES_SOURCE = readFileSync(join(__dirname, "agent-session-column-types.ts"), "utf8");
@@ -259,7 +259,7 @@ test("an arrival is a transient beat plus a mark that outlives it", () => {
 	assert.match(CARD_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
 	assert.match(NOTCH_MARK_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
 	// A settled card must not replay its entrance on an unrelated re-render.
-	assert.match(CARD_SOURCE, /initial=\{shouldPlayArrival \? \{ opacity: 0, y: ARRIVAL_OFFSET_PX \} : false\}/u);
+	assert.match(CARD_SOURCE, /initial=\{shouldPlayArrival \? \{ opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX \} : false\}/u);
 });
 
 test("colour never carries newness on its own", () => {
@@ -290,10 +290,9 @@ test("the head count rolls through the shared Text Morphing slots effect", () =>
 test("arrival motion is tokenised, capped, and spatially anchored", () => {
 	// duration-slow + bold ease-out: the flag recipe, because an arrival is a
 	// notification of work showing up.
-	assert.match(CARD_SOURCE, /duration: 0\.25,\s*ease: \[0, 0\.4, 0, 1\]/u);
-	assert.match(NOTCH_MOTION_SOURCE, /duration: 0\.25,\s*ease: \[0, 0\.4, 0, 1\]/u);
+	assert.match(ARRIVAL_MOTION_SOURCE, /duration: 0\.25,\s*ease: \[0, 0\.4, 0, 1\]/u);
 	// Enters from above, where sync lives; two properties, never three.
-	assert.match(CARD_SOURCE, /ARRIVAL_OFFSET_PX = -8/u);
+	assert.match(ARRIVAL_MOTION_SOURCE, /AGENT_SESSION_ARRIVAL_OFFSET_PX = -8/u);
 	// Past the cap the group lands together instead of stepping in.
 	assert.match(SESSION_INDEX_SOURCE, /ARRIVAL_STAGGER_LIMIT = 4/u);
 	assert.match(SESSION_INDEX_SOURCE, /shouldStagger \? index \* ARRIVAL_STAGGER_SECONDS : 0/u);

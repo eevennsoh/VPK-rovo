@@ -8,9 +8,13 @@ const COMPACT_CARD_SOURCE = readFileSync(
 	join(__dirname, "agent-session-compact-card.tsx"),
 	"utf8",
 );
+const MEDIUM_CARD_SOURCE = readFileSync(
+	join(__dirname, "agent-session-medium-card.tsx"),
+	"utf8",
+);
 const NOTCH_SOURCE = readFileSync(join(__dirname, "agent-session-notch.tsx"), "utf8");
-const NOTCH_MOTION_SOURCE = readFileSync(
-	join(__dirname, "agent-session-notch-motion.ts"),
+const ARRIVAL_MOTION_SOURCE = readFileSync(
+	join(__dirname, "agent-session-arrival-motion.ts"),
 	"utf8",
 );
 const DATA_SOURCE = readFileSync(join(__dirname, "data.ts"), "utf8");
@@ -74,27 +78,44 @@ test("large remains the default while every card receives the selected size vari
 });
 
 test("medium matches the 276 by 33 Figma row and reuses shared identity primitives", () => {
-	assert.match(COMPACT_CARD_SOURCE, /import AddIcon from "@atlaskit\/icon\/core\/add";/u);
-	assert.match(COMPACT_CARD_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual";/u);
-	assert.match(COMPACT_CARD_SOURCE, /import \{ Avatar, AvatarFallback, AvatarImage \} from "@\/components\/ui\/avatar";/u);
-	assert.match(COMPACT_CARD_SOURCE, /h-\[33px\] w-\[276px\]/u);
-	assert.match(COMPACT_CARD_SOURCE, /rounded-\[10px\] bg-bg-accent-gray-subtlest px-3/u);
-	assert.match(COMPACT_CARD_SOURCE, /sizePx=\{16\}/u);
-	assert.match(COMPACT_CARD_SOURCE, /w-\[160px\] truncate text-left text-xs font-normal leading-4/u);
-	assert.match(COMPACT_CARD_SOURCE, /<AddIcon label="" size="small" \/>/u);
-	assert.match(COMPACT_CARD_SOURCE, /<Avatar.*size="xs"/su);
+	assert.match(MEDIUM_CARD_SOURCE, /import AddIcon from "@atlaskit\/icon\/core\/add";/u);
+	assert.match(MEDIUM_CARD_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual";/u);
+	assert.match(MEDIUM_CARD_SOURCE, /import \{ Avatar, AvatarFallback, AvatarImage \} from "@\/components\/ui\/avatar";/u);
+	assert.match(MEDIUM_CARD_SOURCE, /h-\[33px\] w-\[276px\]/u);
+	assert.match(MEDIUM_CARD_SOURCE, /rounded-\[10px\] bg-bg-accent-gray-subtlest px-3/u);
+	assert.match(MEDIUM_CARD_SOURCE, /sizePx=\{16\}/u);
+	assert.match(MEDIUM_CARD_SOURCE, /w-\[160px\] truncate text-left text-xs font-normal leading-4/u);
+	assert.match(MEDIUM_CARD_SOURCE, /<AddIcon label="" size="small" \/>/u);
+	assert.match(MEDIUM_CARD_SOURCE, /<Avatar.*size="xs"/su);
+	assert.doesNotMatch(MEDIUM_CARD_SOURCE, /\?\? \{ name: "person A" \}/u);
+	assert.match(
+		MEDIUM_CARD_SOURCE,
+		/const label = invoker === undefined \? item\.agent\.name : `\$\{item\.agent\.name\} with \$\{invoker\.name\}`;/u,
+	);
+	assert.match(MEDIUM_CARD_SOURCE, /invoker === undefined \? null : \(/u);
+});
+
+test("medium preserves newly synced state and its one-shot arrival beat", () => {
+	assert.match(MEDIUM_CARD_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
+	assert.match(MEDIUM_CARD_SOURCE, /data-new=\{isNew \|\| undefined\}/u);
+	assert.match(MEDIUM_CARD_SOURCE, /isNew \? "ring-1 ring-border-discovery" : null/u);
+	assert.match(MEDIUM_CARD_SOURCE, /Newly synced, not yet reviewed/u);
+	assert.match(MEDIUM_CARD_SOURCE, /initial=\{shouldPlayArrival \? \{ opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX \} : false\}/u);
+	assert.match(MEDIUM_CARD_SOURCE, /animate=\{shouldPlayArrival \? \{ opacity: 1, y: 0 \} : undefined\}/u);
+	assert.match(INDEX_SOURCE, /isArriving=\{beatItemIds\?\.has\(item\.id\) \?\? false\}/u);
+	assert.match(INDEX_SOURCE, /isNew=\{newItemIds\?\.has\(item\.id\) \?\? false\}/u);
 });
 
 test("small is the collapsed-column notch and stays keyboard operable when view is wired", () => {
 	assert.match(COMPACT_CARD_SOURCE, /variant === "small"/u);
 	assert.match(COMPACT_CARD_SOURCE, /import \{ AgentSessionNotchMark \} from "\.\/agent-session-notch";/u);
 	assert.match(COMPACT_CARD_SOURCE, /flex h-5 w-8 items-center justify-center/u);
-	assert.match(COMPACT_CARD_SOURCE, /aria-label=\{`Open \$\{item\.agent\.name\} session`\}/u);
-	assert.match(COMPACT_CARD_SOURCE, /onClick=\{onView === undefined \? undefined : \(\) => onView\(item\)\}/u);
+	assert.match(COMPACT_CARD_SOURCE, /aria-label=\{`Open \$\{item\.agent\.name\} session: \$\{item\.title\}`\}/u);
+	assert.match(COMPACT_CARD_SOURCE, /onClick=\{\(\) => onView\(item\)\}/u);
 	assert.match(COMPACT_CARD_SOURCE, /<AgentSessionNotchMark isArriving=\{isArriving\} isNew=\{isNew\} \/>/u);
 	assert.match(NOTCH_SOURCE, /h-0\.5 w-3 rounded-full/u);
 	assert.match(NOTCH_SOURCE, /isNew \? NOTCH_EMPHASIS : NOTCH_AT_REST/u);
-	assert.match(NOTCH_MOTION_SOURCE, /duration: 0\.25,\s*ease: \[0, 0\.4, 0, 1\]/u);
+	assert.match(ARRIVAL_MOTION_SOURCE, /duration: 0\.25,\s*ease: \[0, 0\.4, 0, 1\]/u);
 });
 
 test("the row reveals Resume plus a show/hide eye where Agent List puts Archive", () => {

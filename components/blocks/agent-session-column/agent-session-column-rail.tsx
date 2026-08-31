@@ -7,8 +7,8 @@ import GrowHorizontalIcon from "@atlaskit/icon/core/grow-horizontal";
 
 import { toAgentSessionFlyoutItem, type AgentListState } from "@/components/blocks/agent-list";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import { AGENT_SESSION_ARRIVAL_TRANSITION } from "@/components/blocks/agent-session/agent-session-arrival-motion";
 import { AgentSessionNotchMark } from "@/components/blocks/agent-session/agent-session-notch";
-import { AGENT_SESSION_NOTCH_ARRIVAL } from "@/components/blocks/agent-session/agent-session-notch-motion";
 import {
 	createJiraSessionFlyoutHandle,
 	JiraSessionFlyoutSurface,
@@ -133,7 +133,7 @@ function AgentSessionNotch({
 				<motion.li
 					className="group/notch flex h-5 w-full shrink-0 items-center"
 					layout={shouldReduceMotion ? false : true}
-					transition={AGENT_SESSION_NOTCH_ARRIVAL}
+					transition={AGENT_SESSION_ARRIVAL_TRANSITION}
 				/>
 			}
 			session={toAgentSessionFlyoutItem(item)}
