@@ -580,6 +580,14 @@ test("Jira issue renders one aggregate agent row with prioritized status and no 
 	assert.match(SOURCE, /const hasAgentDoneNotification = resolvedAgentActivityMode === "completed" && agentDoneRuns\.length > 0;/);
 	assert.match(SOURCE, /const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working"[\s\S]*\|\| resolvedAgentActivityMode === "awaiting-input"[\s\S]*\|\| hasAgentDoneNotification;/);
 	assert.match(SOURCE, /const agentActivitySurfaceInset = hasActiveAgentActivityShell \? 4 : 0;/);
+	assert.match(
+		SOURCE,
+		/const hasAgentActivityChin = activeAgentActivities.length > 0\s*\n\s*\|\| hasAgentDoneNotification\s*\n\s*\|\| isAttachingSession;/u,
+	);
+	assert.match(
+		SOURCE,
+		/\{hasActiveAgentActivityShell && !hasAgentActivityChin \? \(\s*\n\s*<div\s*\n\s*aria-hidden\s*\n\s*className="h-1"\s*\n\s*data-slot="jira-issue-agent-shell-gutter"\s*\n\s*\/>\s*\n\s*\) : null\}/u,
+	);
 	assert.match(SOURCE, /const agentActivitySurfaceClassName = cn\([\s\S]*"pointer-events-none absolute border"[\s\S]*`\$\{agentActivityRestBorderClassName\} bg-surface`/);
 	assert.doesNotMatch(SOURCE, /agentActivityShellPadding/);
 	assert.doesNotMatch(SOURCE, /agentActivityBackdropOutset/);
@@ -647,7 +655,7 @@ test("Jira issue animates agent state transitions with Motion", () => {
 	assert.match(SOURCE, /const hasIssueRows = hasSubtasks;/);
 	assert.match(SOURCE, /const issueRowsClassName = cn\("pt-1", !\(hasSubtasks && resolvedSubtasksExpanded\) && "pb-1"\);/);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*key="agent-review"[\s\S]*<JiraIssueAgentDone[\s\S]*runs=\{agentDoneRuns\}/u);
-	assert.match(SOURCE, /const usesAgentActivityShell = hasAgentActivityPresentation;/);
+	assert.match(SOURCE, /const usesAgentActivityShell = hasAgentActivityPresentation \|\| Boolean\(agentSessionTransfer\);/);
 	assert.match(SOURCE, /const agentActivityBackdropAnimation = \{[\s\S]*left: 0,[\s\S]*opacity: hasActiveAgentActivityShell \? 1 : 0,[\s\S]*right: 0,[\s\S]*top: 0/);
 	assert.match(SOURCE, /an inset of 4\s*\n\t\/\/ puts them 4px from the article edge, flush with the `px-1` gutter the chin/);
 	assert.match(SOURCE, /const agentActivitySurfacePosition = agentActivitySurfaceInset - 1;/);
@@ -712,7 +720,7 @@ test("Jira issue agent activity demo is registered in docs and variant registry"
 	assert.match(PAGE_SOURCE, /\{ value: "agent-dismissed-work", label: "Done" \}/);
 	assert.match(PAGE_SOURCE, /className="relative flex h-full min-h-\[480px\] w-full flex-col bg-surface"/);
 	assert.match(PAGE_SOURCE, /className="sticky top-0 z-10 w-full bg-surface pb-4 pt-6"/);
-	assert.match(PAGE_SOURCE, /className="flex w-full flex-nowrap items-center justify-center gap-2"/);
+	assert.match(PAGE_SOURCE, /className="flex w-full flex-wrap items-center justify-center gap-2"/);
 	assert.match(PAGE_SOURCE, /className="flex flex-1 items-start justify-center overflow-visible px-6 pb-10 pt-6"/);
 	assert.doesNotMatch(PAGE_SOURCE, /flex min-h-0 flex-1 items-start justify-center px-6 pb-6 pt-8/);
 	assert.doesNotMatch(PAGE_SOURCE, /grid w-full grid-cols-5/);
@@ -722,7 +730,7 @@ test("Jira issue agent activity demo is registered in docs and variant registry"
 	assert.doesNotMatch(PAGE_SOURCE, /\{ value: "multiple-agents-working", label: "Multiple agents working" \}/);
 	assert.doesNotMatch(PAGE_SOURCE, /\{ value: "awaiting-user-input", label: "Awaiting user input" \}/);
 	assert.doesNotMatch(PAGE_SOURCE, /\{ value: "agent-completed-work", label: "Agent completed work" \}/);
-	assert.doesNotMatch(PAGE_SOURCE, /flex flex-wrap items-center justify-center gap-2/);
+	assert.doesNotMatch(PAGE_SOURCE, /flex w-full flex-nowrap items-center justify-center gap-2/);
 	// Activity selection moved out of the JSX into a switch so the transfer
 	// phases can decide which rows the chin shows.
 	assert.match(PAGE_SOURCE, /function getDemoAgentActivities\(\s*state: JiraIssueAgentActivityDemoState,\s*\): readonly JiraIssueAgentActivity\[\] \| undefined \{/u);

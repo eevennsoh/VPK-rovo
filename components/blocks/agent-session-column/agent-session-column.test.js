@@ -563,6 +563,19 @@ test("the arrival beat stays one-shot across a collapse toggle", () => {
 	assert.match(SESSION_INDEX_SOURCE, /const beatItemIds = arrivingItemIds \?\? newItemIds;/u);
 });
 
+test("the column keeps the selected session id across collapse remounts", () => {
+	assert.match(INDEX_SOURCE, /selectedItemId: selectedItemIdProp,/u);
+	assert.match(INDEX_SOURCE, /const isSelectionControlled = selectedItemIdProp !== undefined;/u);
+	assert.match(INDEX_SOURCE, /const \[uncontrolledSelectedItemId, setUncontrolledSelectedItemId\]/u);
+	assert.match(INDEX_SOURCE, /selectedItemId=\{selectedItemId\}/u);
+	assert.match(INDEX_SOURCE, /onSelectedItemIdChange=\{handleSelectedItemIdChange\}/u);
+	assert.match(
+		INDEX_SOURCE,
+		/if \(!isSelectionControlled\) \{\s*\n\s*setUncontrolledSelectedItemId\(itemId\);\s*\n\s*\}/u,
+	);
+	assert.match(SESSION_TYPES_SOURCE, /selectedItemId\?: string \| null;/u);
+});
+
 test("the column owns a hidden-id set and filters items before AgentSession", () => {
 	assert.match(INDEX_SOURCE, /useAgentSessionColumnHidden\(items\)/u);
 	assert.match(HOOK_SOURCE, /hiddenIds: ReadonlySet<string>/u);

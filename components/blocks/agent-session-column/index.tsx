@@ -156,12 +156,21 @@ export function AgentSessionColumn({
 	listClassName,
 	newItemIds,
 	onCollapsedChange,
+	onSelectedItemIdChange,
 	onToggleVisibility,
+	selectedItemId: selectedItemIdProp,
 	title = "Untracked work",
 	...sessionProps
 }: Readonly<AgentSessionColumnProps>) {
 	const shouldReduceMotion = useReducedMotion();
 	const [collapsed, setCollapsed] = useState(defaultCollapsed);
+	// Collapse remounts `AgentSession`, so the column keeps the selected id the
+	// same way it keeps arrival-beat history.
+	const isSelectionControlled = selectedItemIdProp !== undefined;
+	const [uncontrolledSelectedItemId, setUncontrolledSelectedItemId] = useState<string | null>(
+		null,
+	);
+	const selectedItemId = isSelectionControlled ? selectedItemIdProp : uncontrolledSelectedItemId;
 	const {
 		closeHiddenView,
 		hiddenCount,
@@ -251,6 +260,13 @@ export function AgentSessionColumn({
 	const handleToggleVisibility = (item: AgentSessionItem) => {
 		toggleHidden(item);
 		onToggleVisibility?.(item);
+	};
+
+	const handleSelectedItemIdChange = (itemId: string | null) => {
+		if (!isSelectionControlled) {
+			setUncontrolledSelectedItemId(itemId);
+		}
+		onSelectedItemIdChange?.(itemId);
 	};
 
 	const handleTransitionEnd = (event: React.TransitionEvent<HTMLElement>) => {
@@ -389,7 +405,9 @@ export function AgentSessionColumn({
 										items={viewItems}
 										newItemIds={newItemIds}
 										{...sessionProps}
+										onSelectedItemIdChange={handleSelectedItemIdChange}
 										onToggleVisibility={handleToggleVisibility}
+										selectedItemId={selectedItemId}
 										visibilityLabel={view === "hidden" ? "Show" : "Hide"}
 									/>
 								</div>

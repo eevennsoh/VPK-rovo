@@ -57,11 +57,15 @@ test("the board opts into the experimental Jira issue split agent rows", () => {
 });
 
 test("the board enables the experimental Jira issue drag-to-unlink session transfer", () => {
-	assert.match(PAGE_SOURCE, /import \{ unlinkJiraKanbanAgentSession \} from "@\/components\/blocks\/jira-kanban\/state"/u);
+	assert.match(PAGE_SOURCE, /import \{ linkJiraKanbanAgentSession, unlinkJiraKanbanAgentSession \} from "@\/components\/blocks\/jira-kanban\/state"/u);
 	assert.match(PAGE_SOURCE, /setBoardColumns\(\(columns\) => unlinkJiraKanbanAgentSession\(columns, card\.code, session\.id\)\)/u);
+	assert.match(PAGE_SOURCE, /setBoardColumns\(\(columns\) => linkJiraKanbanAgentSession\(columns, card\.code, activity\)\)/u);
+	assert.match(PAGE_SOURCE, /onCardAgentSessionLink=\{handleAgentSessionLink\}/u);
 	assert.match(PAGE_SOURCE, /onCardAgentSessionUnlink=\{handleAgentSessionUnlink\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCardAgentSessionUnlink\?: ExperimentalJiraKanbanProps\["onCardAgentSessionUnlink"\];/u);
-	assert.match(EXPERIMENTAL_CARD_SOURCE, /agentSessionTransfer=\{canUnlinkAgentSession \? \{/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /const canTransferAgentSession = canUnlinkAgentSession \|\| canLinkAgentSession;/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /sessionTransferAfter=\{\(sessionDrag\) =>/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /sessionDrag=\{canLinkAgentSession \? sessionDrag : undefined\}/u);
 });
 
 test("unlinked agent sessions remain detached beneath their source Jira card", () => {
@@ -69,6 +73,7 @@ test("unlinked agent sessions remain detached beneath their source Jira card", (
 	assert.match(PAGE_SOURCE, /toJiraGoldenJourneysV4DetachedAgentSession\(activity, card\)/u);
 	assert.match(PAGE_SOURCE, /setDetachedAgentSessionsByCard\(\(current\) =>/u);
 	assert.match(PAGE_SOURCE, /detachedAgentSessionsByCard=\{detachedAgentSessionsByCard\}/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /<AgentSession[\s\S]*variant="medium-detached"/u);
 });
 
 test("the board puts agent and skill assignment in each card's More actions menu", () => {
@@ -150,7 +155,7 @@ test("the route pins the shared Agent Session column beside Jira statuses", () =
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /capturedItemIds: capturedLooseWorkIds,/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /toPulseSessionHandlers/u);
 
-	const columnIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<AgentSessionColumn {...agentSessionColumn} onItemHover={handleSessionHover} />");
+	const columnIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<AgentSessionColumn");
 	const scrollportIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<section");
 	assert.ok(columnIndex > 0, "expected the board to render the Agent Session column");
 	assert.ok(columnIndex < scrollportIndex, "expected untracked work to stay pinned before the status scrollport");

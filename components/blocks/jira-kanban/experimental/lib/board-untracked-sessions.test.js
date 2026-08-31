@@ -8,6 +8,7 @@ const {
 	getNearestScrollDelta,
 	groupBoardUntrackedSessions,
 	resolveBoardUntrackedIssueKey,
+	resolveVisibleFocusedIssueKey,
 	scrollBoardIssueIntoView,
 } = require("./board-untracked-sessions.ts");
 
@@ -128,6 +129,16 @@ test("resolveBoardUntrackedIssueKey reads the Pulse-stamped key and clears on le
 		"PAY-101",
 	);
 	assert.equal(resolveBoardUntrackedIssueKey(null), null);
+});
+
+test("resolveVisibleFocusedIssueKey drops a stored key once that issue leaves the board", () => {
+	const boardColumns = [
+		{ cards: [{ code: "PAY-101" }, { code: "PAY-102" }] },
+	];
+
+	assert.equal(resolveVisibleFocusedIssueKey("PAY-101", boardColumns), "PAY-101");
+	assert.equal(resolveVisibleFocusedIssueKey("PAY-121", boardColumns), null);
+	assert.equal(resolveVisibleFocusedIssueKey(null, boardColumns), null);
 });
 
 test("getCenteredScrollDelta centers a Jira issue inside only the board scrollport", () => {

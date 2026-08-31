@@ -471,10 +471,10 @@ export function JiraSessionFlyoutBody({
 						{session.title}
 					</p>
 					<span className="flex shrink-0 items-center gap-1">
-						{session.assignee && session.status !== "awaiting-input" ? (
-							<Avatar className="shrink-0" label={session.assignee.name} size="xs">
-								{session.assignee.src ? <AvatarImage alt="" src={session.assignee.src} /> : null}
-								<AvatarFallback>{actorInitials(session.assignee.name)}</AvatarFallback>
+						{session.invokedBy && session.status !== "awaiting-input" ? (
+							<Avatar className="shrink-0" label={session.invokedBy.name} size="xs">
+								{session.invokedBy.src ? <AvatarImage alt="" src={session.invokedBy.src} /> : null}
+								<AvatarFallback>{actorInitials(session.invokedBy.name)}</AvatarFallback>
 							</Avatar>
 						) : null}
 						{session.status === "awaiting-input" ? (

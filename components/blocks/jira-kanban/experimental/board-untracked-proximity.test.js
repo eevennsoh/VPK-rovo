@@ -3,7 +3,7 @@
  *
  * The menu lifts Untracked onto the experimental page; Pulse sessions sit
  * under matching Jira cards with the same flyout attach path as the column,
- * exit through AnimatePresence, and column hover spotlights the related issue.
+ * exit through AnimatePresence, and a column click spotlights the related issue.
  */
 
 const assert = require("node:assert/strict");
@@ -16,6 +16,10 @@ const PAGE_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "page.tsx"), "utf8");
 const BOARD_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "experimental-jira-kanban.tsx"), "utf8");
 const CARD_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "experimental-jira-kanban-card.tsx"), "utf8");
 const HELPER_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "lib", "board-untracked-sessions.ts"), "utf8");
+const SESSION_INDEX_SOURCE = readFileSync(
+	join(EXPERIMENTAL_DIR, "..", "..", "agent-session", "index.tsx"),
+	"utf8",
+);
 
 function withoutComments(source) {
 	return source.replace(/\/\*[\s\S]*?\*\//gu, "").replace(/\/\/[^\n]*/gu, "");
@@ -36,7 +40,7 @@ test("the experimental page groups Pulse sessions onto the board when Untracked 
 test("proximity AgentSession forwards the Pulse flyout attach handlers", () => {
 	assert.match(CARD_SOURCE, /capturedItemIds=\{capturedItemIds\}/u);
 	assert.match(CARD_SOURCE, /onCreateWorkItem=\{onCreateWorkItem\}/u);
-	assert.match(CARD_SOURCE, /onLinkWorkItem=\{onLinkWorkItem\}/u);
+	assert.match(CARD_SOURCE, /onLinkWorkItem=\{onSessionLink \|\| onLinkWorkItem/u);
 	assert.match(CARD_SOURCE, /onSubtasks=\{onSubtasks\}/u);
 	assert.match(CARD_SOURCE, /variant="medium-detached"/u);
 	assert.match(PAGE_SOURCE, /proximityAgentSession=\{\{/u);
@@ -63,13 +67,28 @@ test("unchecking Untracked exits board-adjacent sessions through the issue prese
 	assert.doesNotMatch(BOARD_SOURCE, /data-agent-session-column[\s\S]*showUntracked/u);
 });
 
-test("column card hover scrolls the related issue and applies the blue-subtlest spotlight", () => {
-	assert.match(BOARD_SOURCE, /onItemHover=\{handleSessionHover\}/u);
+test("column card hover does not scroll or spotlight a related issue", () => {
+	assert.doesNotMatch(BOARD_SOURCE, /onItemHover=/u);
+	assert.doesNotMatch(BOARD_SOURCE, /handleSessionHover/u);
+	assert.doesNotMatch(BOARD_SOURCE, /hoveredIssueKey/u);
+});
+
+test("column card click scrolls the related issue and applies the blue-subtlest spotlight", () => {
+	assert.match(BOARD_SOURCE, /onView=\{handleSessionView\}/u);
+	assert.match(BOARD_SOURCE, /onSelectedItemIdChange=\{handleSessionSelectionChange\}/u);
+	assert.match(
+		withoutComments(BOARD_SOURCE),
+		/const handleSessionSelectionChange = \(itemId: string \| null\) => \{\s*if \(itemId === null\) \{\s*setFocusedIssueKey\(null\);/u,
+	);
 	assert.match(BOARD_SOURCE, /data-issue-key=\{card\.code\}/u);
-	assert.match(BOARD_SOURCE, /hoveredIssueKey === card\.code && "bg-bg-accent-blue-subtlest"/u);
+	assert.match(BOARD_SOURCE, /spotlightIssueKey === card\.code && "bg-bg-accent-blue-subtlest"/u);
 	assert.match(
 		BOARD_SOURCE,
-		/hoveredIssueKey !== null && hoveredIssueKey !== card\.code && "opacity-40"/u,
+		/spotlightIssueKey !== null && spotlightIssueKey !== card\.code && "opacity-40"/u,
+	);
+	assert.match(
+		BOARD_SOURCE,
+		/const spotlightIssueKey = resolveVisibleFocusedIssueKey\(focusedIssueKey, boardColumns\)/u,
 	);
 	assert.match(
 		BOARD_SOURCE,
@@ -80,6 +99,9 @@ test("column card hover scrolls the related issue and applies the blue-subtlest 
 		BOARD_SOURCE,
 		/scrollBoardIssueIntoView\(boardScrollportRef\.current, nextKey\)/u,
 	);
+	assert.match(BOARD_SOURCE, /agentSessionColumn\?\.onView\?\.\(item\)/u);
+	assert.match(BOARD_SOURCE, /agentSessionColumn\?\.onSelectedItemIdChange\?\.\(itemId\)/u);
+	assert.match(SESSION_INDEX_SOURCE, /if \(nextId !== null\) \{\s*\n\s*onView\?\.\(item\);\s*\n\s*\}/u);
 	assert.match(HELPER_SOURCE, /boardScrollport\.scrollBy\(\{\s*behavior: "instant",\s*left:/u);
 	assert.match(HELPER_SOURCE, /columnScrollport\.scrollBy\(\{\s*behavior: "instant",\s*top:/u);
 	assert.doesNotMatch(HELPER_SOURCE, /scrollIntoView/u);

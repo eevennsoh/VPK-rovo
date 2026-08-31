@@ -1,8 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
-import { isWithinJiraIssueDropZoneHalo } from "./agent-session-transfer-model.ts";
+import {
+	isJiraIssueSessionAttachPreview,
+	isWithinJiraIssueDropZoneHalo,
+	shouldCommitJiraIssueSessionTransferDrop,
+	// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
+} from "./agent-session-transfer-model.ts";
 
 const UNLINK_RECT = { bottom: 40, left: 0, right: 100, top: 0 } as const;
 
@@ -41,4 +45,33 @@ test("both axes must be inside: one axis alone is not enough", () => {
 test("the halo defaults to zero so only rect containment matches", () => {
 	assert.equal(isWithinJiraIssueDropZoneHalo({ x: 50, y: 40 }, UNLINK_RECT), true);
 	assert.equal(isWithinJiraIssueDropZoneHalo({ x: 50, y: 41 }, UNLINK_RECT), false);
+});
+
+test("a transfer drop commits on idle reset while the target was armed", () => {
+	assert.equal(
+		shouldCommitJiraIssueSessionTransferDrop({ armed: true, cancelled: false, dragging: false }),
+		true,
+	);
+	assert.equal(
+		shouldCommitJiraIssueSessionTransferDrop({ armed: false, cancelled: false, dragging: false }),
+		false,
+		"releasing off-target must not attach or unlink",
+	);
+	assert.equal(
+		shouldCommitJiraIssueSessionTransferDrop({ armed: true, cancelled: false, dragging: true }),
+		false,
+		"commit waits for the idle transition, not a move while dragging",
+	);
+	assert.equal(
+		shouldCommitJiraIssueSessionTransferDrop({ armed: true, cancelled: true, dragging: false }),
+		false,
+		"a cancelled gesture must not commit the armed target",
+	);
+});
+
+test("attach chin preview is live-gesture only, not a leftover detached source", () => {
+	assert.equal(isJiraIssueSessionAttachPreview(true, "detached"), true);
+	assert.equal(isJiraIssueSessionAttachPreview(false, "detached"), false);
+	assert.equal(isJiraIssueSessionAttachPreview(true, "chin"), false);
+	assert.equal(isJiraIssueSessionAttachPreview(false, "chin"), false);
 });

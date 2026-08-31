@@ -69,7 +69,8 @@ function buildArrivalDelays(
  * shared untracked-work session flyout, the same surface
  * `components/blocks/agent-session-flyout` uses, so hovering a card offers
  * Link / Create / Add as a subtask without a footer chin. Medium detached keeps
- * that uncaptured relationship in the Jira Agents compact row. Medium attached
+ * that uncaptured relationship in the Jira Agents compact row and opens Create /
+ * Add as a subtask from a click more menu. Medium attached
  * reuses the Jira Issue activity row and opens session details because its work
  * relationship already exists. Small is the collapsed-column identity notch.
  */
@@ -89,19 +90,36 @@ export function AgentSession({
 	onLinkWorkItem,
 	onSubtasks,
 	onItemHover,
+	onSelectedItemIdChange,
 	onToggleVisibility,
 	onView,
+	selectedItemId: selectedItemIdProp,
+	sessionDrag,
+	style,
 	variant = "large",
 	visibilityLabel,
 }: Readonly<AgentSessionProps>) {
 	const isAttached = variant === "medium-attached";
 	const items = itemsProp ?? (isAttached ? AGENT_SESSION_ATTACHED_ITEMS : AGENT_SESSION_ITEMS);
-	// Coding rows ignore `canViewItem`: resuming a session the viewer owns is not
-	// a permission question. They still require `onView`, because a read-only
-	// host must not receive a focusable no-op body.
-	const handleCodingView = useCallback((item: AgentSessionItem) => {
-		onView?.(item);
-	}, [onView]);
+	const isSelectionControlled = selectedItemIdProp !== undefined;
+	const [uncontrolledSelectedItemId, setUncontrolledSelectedItemId] = useState<string | null>(
+		null,
+	);
+	const selectedItemId = isSelectionControlled ? selectedItemIdProp : uncontrolledSelectedItemId;
+	// Card-body activation is the only select/deselect path. Hover Resume / Hide
+	// stay on their own controls so they cannot flip the highlight.
+	const handleView = useCallback((item: AgentSessionItem) => {
+		const nextId = selectedItemId === item.id ? null : item.id;
+		if (!isSelectionControlled) {
+			setUncontrolledSelectedItemId((current) => (current === item.id ? null : item.id));
+		}
+		onSelectedItemIdChange?.(nextId);
+		// Deselect is not another view. Calling onView here would re-spotlight
+		// the related issue and leave the board dimmed.
+		if (nextId !== null) {
+			onView?.(item);
+		}
+	}, [isSelectionControlled, onSelectedItemIdChange, onView, selectedItemId]);
 	// The beat runs for arrivals the viewer has not seen yet; the mark stays on
 	// every unreviewed id. A host that never unmounts the list can pass one set.
 	const beatItemIds = arrivingItemIds ?? newItemIds;
@@ -133,15 +151,16 @@ export function AgentSession({
 				)}
 				data-stack={variant === "large" ? "well" : undefined}
 				data-variant={variant}
+				style={style}
 			>
 				{items.map((item: AgentSessionItem) => {
 					const itemOnView = isCodingAgentListItem(item)
 						? onView === undefined
 							? undefined
-							: handleCodingView
+							: handleView
 						: onView === undefined || (canViewItem !== undefined && !canViewItem(item))
 							? undefined
-							: onView;
+							: handleView;
 
 					const flyoutSession = isAttached
 						? toAgentSessionFlyoutItem(item)
@@ -154,24 +173,57 @@ export function AgentSession({
 							),
 						);
 
-					return variant === "large" ? (
-						<AgentSessionCard
-							arrivalDelaySeconds={arrivalDelays.get(item.id)}
-							captured={capturedItemIds?.has(item.id) ?? false}
-							flyoutHandle={flyoutHandle}
-							flyoutSession={flyoutSession}
-							getResumeCommand={getResumeCommand}
+					if (variant === "large") {
+						return (
+							<AgentSessionCard
+								arrivalDelaySeconds={arrivalDelays.get(item.id)}
+								captured={capturedItemIds?.has(item.id) ?? false}
+								flyoutHandle={flyoutHandle}
+								flyoutSession={flyoutSession}
+								getResumeCommand={getResumeCommand}
+								isArriving={beatItemIds?.has(item.id) ?? false}
+								isNew={newItemIds?.has(item.id) ?? false}
+								isResumable={isResumable}
+								isSelected={item.id === selectedItemId}
+								item={item}
+								key={item.id}
+								onCopyResume={onCopyResume}
+								onItemHover={onItemHover}
+								onToggleVisibility={onToggleVisibility}
+								onView={itemOnView}
+								visibilityLabel={visibilityLabel}
+							/>
+						);
+					}
+
+					const compactCard = (
+						<AgentSessionCompactCard
+							flyout
 							isArriving={beatItemIds?.has(item.id) ?? false}
 							isNew={newItemIds?.has(item.id) ?? false}
-							isResumable={isResumable}
 							item={item}
-							key={item.id}
-							onCopyResume={onCopyResume}
-							onItemHover={onItemHover}
-							onToggleVisibility={onToggleVisibility}
+							onAttach={onLinkWorkItem
+								? () => onLinkWorkItem(
+									item,
+									resolveAgentSessionWorkItemKey(
+										item,
+										getSuggestedWorkItemKey,
+										getSuggestedWorkItemKeys,
+									),
+								)
+								: undefined}
+							onCreateWorkItem={onCreateWorkItem}
+							onSubtasks={onSubtasks}
 							onView={itemOnView}
-							visibilityLabel={visibilityLabel}
+							sessionDrag={variant === "medium-detached" ? sessionDrag : undefined}
+							variant={variant}
 						/>
+					);
+
+					return variant === "medium-detached" ? (
+						<li data-testid={"agent-session-row-" + item.id} key={item.id}>
+							{compactCard}
+						</li>
 					) : (
 						<JiraSessionFlyoutTrigger
 							closeDelay={160}
@@ -180,14 +232,7 @@ export function AgentSession({
 							render={<li data-testid={"agent-session-row-" + item.id} />}
 							session={flyoutSession}
 						>
-							<AgentSessionCompactCard
-								flyout
-								isArriving={beatItemIds?.has(item.id) ?? false}
-								isNew={newItemIds?.has(item.id) ?? false}
-								item={item}
-								onView={itemOnView}
-								variant={variant}
-							/>
+							{compactCard}
 						</JiraSessionFlyoutTrigger>
 					);
 				})}
@@ -211,5 +256,6 @@ export {
 	resolveAgentSessionWorkItemKey,
 	suggestedAgentSessionWorkItemKey,
 	toAgentSessionUntrackedWorkFlyoutItem,
+	toJiraIssueAgentActivityFromSession,
 } from "./agent-session-work-item";
 export type { AgentSessionItem, AgentSessionProps, AgentSessionVariant } from "./agent-session-types";
