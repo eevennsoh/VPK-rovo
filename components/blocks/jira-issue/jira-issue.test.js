@@ -537,7 +537,7 @@ test("Jira issue renders one aggregate agent row with prioritized status and no 
 	);
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,
-		/className=\{cn\(\s*"flex w-full min-w-0 flex-col",[\s\S]*sessionDragging \? "overflow-visible" : "overflow-hidden",[\s\S]*hasActivities && \(sessionDraggedOut \? "px-1" : "px-1 py-1"\),\s*\)\}/u,
+		/className=\{cn\(\s*"flex w-full min-w-0 flex-col",[\s\S]*sessionDragging \? "overflow-visible" : "overflow-hidden",[\s\S]*hasActivities && "px-1 py-1 has-\[\[data-session-chip-out\]\]:py-0",\s*\)\}/u,
 	);
 	assert.match(SOURCE, /"relative w-full min-w-0 overflow-visible rounded-\[10px\] outline-none"/);
 	assert.match(SOURCE, /"group\/jira-issue relative w-full min-w-0 overflow-visible outline-none"/);

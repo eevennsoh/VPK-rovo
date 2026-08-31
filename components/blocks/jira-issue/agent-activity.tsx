@@ -196,7 +196,6 @@ function JiraIssueAgentActivityRow({
 	activities,
 	onOpenChange,
 	onSessionDragChange,
-	onSessionDraggedOutChange,
 	onViewChat,
 	sessionDrag,
 	shouldReduceMotion,
@@ -209,8 +208,6 @@ function JiraIssueAgentActivityRow({
 		pointer: PointerDragPosition | null,
 		cancelled: boolean,
 	) => void;
-	/** Fires when the chip clears the chin, so the row list can close its gutter. */
-	onSessionDraggedOutChange?: (draggedOut: boolean) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
 	shouldReduceMotion: boolean | null;
@@ -282,14 +279,6 @@ function JiraIssueAgentActivityRow({
 		dragOffsetY.set(drag.position.y);
 	}, [dragOffsetX, dragOffsetY, drag.position.x, drag.position.y]);
 
-	// The row owns the handover threshold, but the gutter that has to close
-	// belongs to the list above it, so the flip is published rather than derived
-	// twice. `onSessionDraggedOutChange` is a stable setter, so this settles in
-	// one extra commit on each flip and no-ops on every other render.
-	useEffect(() => {
-		onSessionDraggedOutChange?.(isDraggedOut);
-	}, [isDraggedOut, onSessionDraggedOutChange]);
-
 	function publishSessionDrag(
 		dragging: boolean,
 		event?: ReactPointerEvent<HTMLElement>,
@@ -353,7 +342,21 @@ function JiraIssueAgentActivityRow({
 			// bridging out of the chin. Once the chip is free it collapses, so the
 			// card's grey backdrop closes up and hugs what is left of the card
 			// instead of holding an empty band open under a tag that has gone.
-			<div className={cn("min-w-0", isDragging && "relative w-full", isDragging && (isDraggedOut ? "h-0" : "h-6"))}>
+			//
+			// `data-session-chip-out` is what closes the row list's gutter, via a
+			// `:has()` selector up there. Publishing the flip through a callback
+			// cost an extra render AND landed the collapse in a later commit than
+			// the one the transfer region's hit test measures — so a release with
+			// no further pointer move could commit against the well's pre-collapse
+			// rect. An attribute settles the whole 32px in this same commit.
+			<div
+				className={cn(
+					"min-w-0",
+					isDragging && "relative w-full",
+					isDragging && (isDraggedOut ? "h-0" : "h-6"),
+				)}
+				data-session-chip-out={isDraggedOut || undefined}
+			>
 				{isDragging && !isDraggedOut ? (
 					// The goo bridges BODIES, and a lone item has nothing to stick to —
 					// this is why the drag showed no stretch at all. This blob holds the
@@ -662,7 +665,6 @@ export function JiraIssueAgentActivityRows({
 	usesStrokeChrome: boolean;
 }>) {
 	const [sessionDragging, setSessionDragging] = useState(false);
-	const [sessionDraggedOut, setSessionDraggedOut] = useState(false);
 	const layoutTransition = getJiraIssueLayoutTransition(shouldReduceMotion);
 	const presenceMotion = getJiraIssuePresenceMotion(shouldReduceMotion);
 	const hasActivities = activities.length > 0;
@@ -680,9 +682,11 @@ export function JiraIssueAgentActivityRows({
 				// lift for the duration of a transfer drag.
 				sessionDragging ? "overflow-visible" : "overflow-hidden",
 				// Once the only content is a chip that has left the card, the gutter
-				// is the last thing holding the grey backdrop open — drop it too so
-				// the card hugs what remains instead of trailing an empty band.
-				hasActivities && (sessionDraggedOut ? "px-1" : "px-1 py-1"),
+				// is the last thing holding the grey backdrop open — close it too so
+				// the card hugs what remains instead of trailing an empty band. The
+				// dragged row flags itself with `data-session-chip-out`, so this
+				// resolves in the same commit rather than through a state round-trip.
+				hasActivities && "px-1 py-1 has-[[data-session-chip-out]]:py-0",
 			)}
 			layout={rowLayout}
 			transition={layoutTransition}
@@ -711,7 +715,6 @@ export function JiraIssueAgentActivityRows({
 									pointer,
 								});
 							}}
-							onSessionDraggedOutChange={setSessionDraggedOut}
 							onViewChat={onViewChat}
 							sessionDrag={sessionDrag}
 							shouldReduceMotion={shouldReduceMotion}

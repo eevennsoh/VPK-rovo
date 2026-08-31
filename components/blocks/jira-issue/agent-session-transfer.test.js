@@ -370,23 +370,31 @@ test("Jira issue at-mention chip floats on overlay elevation, not a dead utility
 
 test("Jira issue card hugs its content the moment the chip leaves the chin", () => {
 	// The slot only reserves the row height while the session is still bridging
-	// out; once the chip is free it collapses, and the row list drops its gutter
-	// too, so the grey backdrop closes instead of holding an empty band open.
+	// out; once the chip is free it collapses AND eats the row list's gutter from
+	// the inside, so the grey backdrop closes instead of holding an empty band.
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,
-		/isDragging && "relative w-full", isDragging && \(isDraggedOut \? "h-0" : "h-6"\)/u,
+		/isDragging && \(isDraggedOut \? "h-0" : "h-6"\),/u,
 	);
-	assert.match(AGENT_ACTIVITY_SOURCE, /hasActivities && \(sessionDraggedOut \? "px-1" : "px-1 py-1"\)/u);
-	// The row owns the threshold; the list owns the gutter, so the flip is
-	// published rather than recomputed in two places.
-	assert.match(AGENT_ACTIVITY_SOURCE, /onSessionDraggedOutChange\?: \(draggedOut: boolean\) => void;/u);
-	assert.match(
-		AGENT_ACTIVITY_SOURCE,
-		/useEffect\(\(\) => \{\s*\n\s*onSessionDraggedOutChange\?\.\(isDraggedOut\);\s*\n\s*\}, \[isDraggedOut, onSessionDraggedOutChange\]\);/u,
-	);
-	// A `useState` setter is referentially stable, so the effect cannot loop.
-	assert.match(AGENT_ACTIVITY_SOURCE, /const \[sessionDraggedOut, setSessionDraggedOut\] = useState\(false\);/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /onSessionDraggedOutChange=\{setSessionDraggedOut\}/u);
+	// The row flags itself; the list closes its gutter off that flag with `:has()`.
+	assert.match(AGENT_ACTIVITY_SOURCE, /data-session-chip-out=\{isDraggedOut \|\| undefined\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /hasActivities && "px-1 py-1 has-\[\[data-session-chip-out\]\]:py-0",/u);
+});
+
+test("Jira issue chip handover collapses in one commit, so the hit test measures the settled well", () => {
+	// Publishing the flip up to the row list through a `useEffect` cost an extra
+	// render (react-doctor no-pass-live-state-to-parent) and — worse — landed the
+	// 32px collapse in a LATER commit than the one the transfer region's hit test
+	// measures. Releasing without a further pointer move then committed against
+	// the well's pre-collapse rect: unlinking outside the visible well, or
+	// failing to unlink inside it. The row absorbs the gutter itself instead.
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /onSessionDraggedOutChange/u);
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /sessionDraggedOut/u);
+	// No state crosses the row/list boundary for the handover at all.
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /useEffect\([\s\S]{0,120}isDraggedOut/u);
+	// The hit test still keys only off the gesture, which is only sound because
+	// the target no longer moves in a commit the gesture does not drive.
+	assert.match(TRANSFER_SOURCE, /\}, \[cancelled, dragging, pointer\]\);/u);
 });
 
 // --- Review findings on PR #1445 -------------------------------------------
