@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useReducer } from "react";
+import { useCallback, useMemo, useReducer } from "react";
 
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 
@@ -14,7 +14,6 @@ type HiddenState = {
 type HiddenAction =
 	| { type: "close" }
 	| { type: "open" }
-	| { items: readonly { id: string }[]; type: "prune" }
 	| { id: string; type: "toggle" };
 
 const INITIAL_HIDDEN_STATE: HiddenState = {
@@ -23,8 +22,9 @@ const INITIAL_HIDDEN_STATE: HiddenState = {
 };
 
 /**
- * Drop ids that are no longer in `items` (Pulse snapshot / filter changes).
- * Returns the same set when nothing was pruned, so reducers can bail out.
+ * Drop ids that are no longer in an *authoritative* collection (deleted
+ * sessions, not a filtered view). Callers that pass a filter slice to the
+ * hook must not prune: A → B → A would revive a hidden session as visible.
  */
 export function pruneHiddenSessionIds(
 	hiddenIds: ReadonlySet<string>,
@@ -83,20 +83,12 @@ function reduceHiddenState(state: HiddenState, action: HiddenAction): HiddenStat
 				view: hiddenViewAfterIds(state.view, hiddenIds),
 			};
 		}
-		case "prune": {
-			const hiddenIds = pruneHiddenSessionIds(state.hiddenIds, action.items);
-			const view = hiddenViewAfterIds(state.view, hiddenIds);
-			if (hiddenIds === state.hiddenIds && view === state.view) {
-				return state;
-			}
-			return { hiddenIds, view };
-		}
+		case "close":
+			return state.view === "active" ? state : { ...state, view: "active" };
 		case "open":
 			return state.hiddenIds.size === 0 || state.view === "hidden"
 				? state
 				: { ...state, view: "hidden" };
-		case "close":
-			return state.view === "active" ? state : { ...state, view: "active" };
 		default: {
 			const exhaustive: never = action;
 			return exhaustive;
@@ -107,15 +99,12 @@ function reduceHiddenState(state: HiddenState, action: HiddenAction): HiddenStat
 /**
  * Column-owned hide set and the active / hidden two-pane view.
  *
- * Hidden ids are session state, not a host prop: they die on remount, prune
- * when `items` drops them, and never mix into the collapsed rail.
+ * Hidden ids are session state, not a host prop: they die on remount and
+ * never mix into the collapsed rail. They persist when `items` temporarily
+ * omits a session (assignee / Pulse filters), so A → B → A does not unhide.
  */
 export function useAgentSessionColumnHidden(items: readonly AgentSessionItem[]) {
 	const [state, dispatch] = useReducer(reduceHiddenState, INITIAL_HIDDEN_STATE);
-
-	useEffect(() => {
-		dispatch({ items, type: "prune" });
-	}, [items]);
 
 	const { hiddenItems, visibleItems } = useMemo(
 		() => splitSessionItemsByHidden(items, state.hiddenIds),

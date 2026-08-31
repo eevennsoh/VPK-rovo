@@ -471,7 +471,7 @@ export function ExperimentalPulse({
 						onResumeLooseWork={onResumeLooseWork}
 						onWorkItemClick={onWorkItemClick}
 						selectedMember={pulse.selectedMember}
-						workItems={pulse.workItems}
+						workItems={sourceTimeline.workItems}
 					/>
 				</div>
 			</div>

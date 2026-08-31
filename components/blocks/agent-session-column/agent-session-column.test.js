@@ -176,7 +176,10 @@ test("the board column commits through the same captured set as Insights", () =>
 	assert.match(BOARD_PAGE_SOURCE, /capturedItemIds: capturedLooseWorkIds,/u);
 	assert.match(BOARD_PAGE_SOURCE, /onCapture: handleCaptureLooseWork,/u);
 	// One fixture list, read through the same day/scope filter the rail reads.
-	assert.match(BOARD_PAGE_SOURCE, /looseWork: pulseTimeline\.looseWork,/u);
+	assert.match(
+		BOARD_PAGE_SOURCE,
+		/toPulseSessionItems\(\s*filterPulseLooseWorkByMember\(pulseTimeline\.looseWork, agentSessionMemberId\),\s*PULSE_TIMELINE\.members,\s*PULSE_TIMELINE\.workItems,/u,
+	);
 	// The header's assignee filter narrows the status columns, so it narrows
 	// this column too. Golden Journeys aliases board assignees onto session
 	// members before the loose-work filter runs.
@@ -514,7 +517,8 @@ test("the column owns a hidden-id set and filters items before AgentSession", ()
 	assert.match(HOOK_SOURCE, /export type AgentSessionColumnView = "active" \| "hidden"/u);
 	assert.match(HOOK_SOURCE, /export function pruneHiddenSessionIds\(/u);
 	assert.match(HOOK_SOURCE, /export function splitSessionItemsByHidden\(/u);
-	assert.match(HOOK_SOURCE, /type: "prune"/u);
+	assert.doesNotMatch(HOOK_SOURCE, /type: "prune"/u);
+	assert.doesNotMatch(HOOK_SOURCE, /dispatch\(\{ items, type: "prune" \}\)/u);
 	assert.match(INDEX_SOURCE, /const viewItems = view === "hidden" \? hiddenItems : visibleItems/u);
 	assert.match(INDEX_SOURCE, /items=\{viewItems\}/u);
 	assert.match(INDEX_SOURCE, /toggleHidden\(item\)/u);
@@ -562,4 +566,10 @@ test("unhiding the last session returns to the active view", () => {
 	assert.match(HOOK_SOURCE, /view === "hidden" && hiddenIds\.size === 0 \? "active"/u);
 	assert.match(HOOK_SOURCE, /type: "toggle"/u);
 	assert.match(HOOK_SOURCE, /type: "close"/u);
+});
+
+test("hidden ids survive a temporary items drop so A then B then A stays hidden", () => {
+	assert.match(HOOK_SOURCE, /A → B → A does not unhide/u);
+	assert.doesNotMatch(HOOK_SOURCE, /dispatch\(\{ items, type: "prune" \}\)/u);
+	assert.match(HOOK_SOURCE, /die on remount/u);
 });

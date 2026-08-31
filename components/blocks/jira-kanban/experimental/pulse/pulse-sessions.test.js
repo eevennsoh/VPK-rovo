@@ -10,13 +10,14 @@ const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const { test } = require("node:test");
 
-const {
-	assert,
-	findSnapshotIndex,
-	loadSessionsHarness,
-	snapshotAt,
-	SOURCES,
-} = require("./pulse-test-harness");
+	const {
+		assert,
+		findSnapshotIndex,
+		loadSessionsHarness,
+		snapshotAt,
+		SOURCES,
+		EXPERIMENTAL_PAGE_SOURCE,
+	} = require("./pulse-test-harness");
 
 const CARD_SOURCE = readFileSync(
 	join(__dirname, "../../../agent-list/agent-list-card.tsx"),
@@ -264,4 +265,27 @@ test("the roster filter narrows sessions the way the header narrows board cards"
 	for (const id of boardOnlyIds) {
 		assert.ok(!pulseMemberIds.has(id), `${id} should not name a roster member`);
 	}
+});
+
+test("session flyout status resolves from the unscoped work-item collection", async () => {
+	const { PULSE_TIMELINE, toPulseSessionIssueStatus, toPulseSessionItems } =
+		await loadSessionsHarness();
+	const session = PULSE_TIMELINE.looseWork.find((item) => item.kind === "agent-session");
+	assert.ok(session !== undefined, "fixture should include a local session");
+	const fullStatus = toPulseSessionIssueStatus(session.sourceTitle, PULSE_TIMELINE.workItems);
+	assert.ok(fullStatus !== undefined, `${session.id} should resolve a board status`);
+	const [scopedOut] = toPulseSessionItems([session], PULSE_TIMELINE.members, []);
+	assert.equal(scopedOut.sessionDetails.issueStatus, undefined);
+	const [scopedIn] = toPulseSessionItems(
+		[session],
+		PULSE_TIMELINE.members,
+		PULSE_TIMELINE.workItems,
+	);
+	assert.equal(scopedIn.sessionDetails.issueStatus, fullStatus);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/toPulseSessionItems\(\s*filterPulseLooseWorkByMember\(pulseTimeline\.looseWork, agentSessionMemberId\),\s*PULSE_TIMELINE\.members,\s*PULSE_TIMELINE\.workItems,/u,
+	);
+	assert.match(SOURCES.shell, /workItems=\{sourceTimeline\.workItems\}/u);
+	assert.doesNotMatch(SOURCES.shell, /workItems=\{pulse\.workItems\}/u);
 });
