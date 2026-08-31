@@ -584,7 +584,7 @@ function JiraIssueDefault({
 			</AnimatePresence>
 		</div>
 	);
-	const generativeActionMenu = generativeAction && generativeActionPresentation === "sparkle" ? (
+	const generativeActionMenu = generativeAction && (generativeActionPresentation === "sparkle" || !showMoreAction) ? (
 		<JiraIssueGenerativeActionMenu
 			action={generativeAction}
 			anchor={generativeActionAnchor}
