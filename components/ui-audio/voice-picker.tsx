@@ -162,6 +162,7 @@ function VoicePickerItem({
 
   return (
     <CommandItem
+      data-checked={isSelected}
       value={voice.voiceId!}
       keywords={[
         voice.name,
@@ -214,7 +215,7 @@ function VoicePickerItem({
 
       <Check
         className={cn(
-          "ml-auto size-4 shrink-0",
+          "ml-auto size-4 shrink-0 text-icon-subtle [&_svg]:text-icon-subtle!",
           isSelected ? "opacity-100" : "opacity-0"
         )}
       />

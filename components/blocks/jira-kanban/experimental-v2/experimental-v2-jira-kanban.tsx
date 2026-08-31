@@ -560,10 +560,13 @@ export function ExperimentalV2JiraKanban({
 		<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 			<div className="flex min-h-0 min-w-0 flex-1 items-stretch">
 				{agentSessionColumn ? (
-					// Same vertical padding as the scrollport beside it, so the two
-					// column headers sit on one baseline even though only one scrolls.
+					// Same vertical padding as the scrollport beside it, and the same
+					// 2px transparent border every status column carries for its
+					// drop-target ring — matching the box model, not just the padding,
+					// is what actually puts the five column headers on one baseline
+					// and keeps one 12px gap between every pair of column contents.
 					<div
-						className="flex min-h-0 shrink-0 ps-6"
+						className="flex min-h-0 shrink-0 border-2 border-transparent ps-6"
 						style={{ paddingTop, paddingBottom }}
 					>
 						<AgentSessionColumn {...agentSessionColumn} />

@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 import BoardIcon from "@atlaskit/icon/core/board";
-import CustomizeIcon from "@atlaskit/icon/core/customize";
 import PersonAddIcon from "@atlaskit/icon/core/person-add";
 import SearchIcon from "@atlaskit/icon/core/search";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
@@ -23,7 +22,7 @@ import { JiraProjectAvatar } from "@/components/blocks/product-sidebar/variants/
 import { JIRA_DESIGN_PROJECT } from "@/components/blocks/product-sidebar/data/jira-navigation";
 import { cn } from "@/lib/utils";
 import type { JiraKanbanAssigneeData } from "../index";
-import { BoardGroupMenu } from "./components/board-group-menu";
+import { BoardViewMenu } from "./components/board-view-menu";
 import {
 	JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME,
 	JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS,
@@ -181,7 +180,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 
 					{filterControl}
 
-					<BoardGroupMenu compact={compact} surfaceLabel={surfaceLabel} />
+					<BoardViewMenu compact={compact} surfaceLabel={surfaceLabel} />
 
 					{modeToggle}
 
@@ -207,20 +206,12 @@ export function ExperimentalJiraKanbanBoardHeader({
 								</TabsList>
 							</Tabs>
 						) : null}
-						{compact ? (
-							<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
-								<Icon render={<ShowMoreHorizontalIcon label="" />} />
-							</Button>
-						) : (
-							<>
-								<Button aria-disabled aria-label={`${surfaceTitle} settings`} size="icon" variant="outline">
-									<Icon render={<CustomizeIcon label="" />} />
-								</Button>
-								<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
-									<Icon render={<ShowMoreHorizontalIcon label="" />} />
-								</Button>
-							</>
-						)}
+						{/* The board-settings control retired when the View menu took over
+						    its job — keeping both put the same sliders glyph in the row
+						    twice. Compact and full now render the same single control. */}
+						<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
+							<Icon render={<ShowMoreHorizontalIcon label="" />} />
+						</Button>
 						{endSlot ? endSlot : null}
 					</div>
 				</div>

@@ -12,12 +12,16 @@ const SELECT_DEMO_SOURCE = fs.readFileSync(
 test("SelectItem renders the selected check mark as a trailing affordance", () => {
 	assert.match(
 		SELECT_SOURCE,
-		/dropdownStyles\.selectableItem,\n\t\t\t\t"pl-2",\n\t\t\t\tshowIndicator \? "pr-8" : null,/,
+		/dropdownStyles\.selectableItem,\n\t\t\t\tshowIndicator \? dropdownStyles\.selectableItemIndicatorEnd : "pl-2",/,
 	);
 	assert.match(
 		SELECT_SOURCE,
-		/data-slot="select-item-indicator"\n\t\t\t\t\tclassName="pointer-events-none absolute right-2 inline-flex size-6 items-center justify-center text-icon-selected/,
+		/data-slot="select-item-indicator"\n\t\t\t\t\tclassName="pointer-events-none absolute right-2 inline-flex size-6 items-center justify-center text-icon-subtle/,
 	);
+	assert.match(SELECT_SOURCE, /className="text-icon-subtle"/);
+	assert.match(SELECT_SOURCE, /"data-selected:text-text data-selected:data-highlighted:text-text"/u);
+	assert.doesNotMatch(SELECT_SOURCE, /data-selected:bg-bg-selected/u);
+	assert.doesNotMatch(SELECT_SOURCE, /data-selected:text-text-selected/u);
 	assert.doesNotMatch(
 		SELECT_SOURCE,
 		/<span className=\{dropdownStyles\.indicator\}>[\s\S]*?<SelectPrimitive\.ItemIndicator>/,

@@ -96,12 +96,13 @@ export function MicSelectorDemoWithCheckmark() {
 						devices.length > 0 ? (
 							devices.map((device) => (
 								<MicSelectorItem
+									data-checked={deviceId === device.deviceId}
 									key={device.deviceId}
 									value={device.deviceId}
 								>
 									<CheckIcon
 										className={cn(
-											"mr-2 size-4 shrink-0",
+											"mr-2 size-4 shrink-0 text-icon-subtle! [&_svg]:text-icon-subtle!",
 											deviceId === device.deviceId
 												? "opacity-100"
 												: "opacity-0",

@@ -16,6 +16,31 @@ export interface AgentSessionProps {
 	items?: readonly AgentSessionItem[];
 	/** Ids whose chin should read Captured instead of offering Link / Create. */
 	capturedItemIds?: ReadonlySet<string>;
+	/**
+	 * Ids that arrived in the last sync and the viewer has not reviewed yet.
+	 *
+	 * Two things follow from membership, and they are deliberately separate. The
+	 * card plays a one-shot arrival beat, which only lands if someone is looking;
+	 * and it carries a persistent unreviewed mark, which is what survives a
+	 * backgrounded tab, a collapsed column, and `prefers-reduced-motion`. The mark
+	 * is the load-bearing half — the beat is garnish on top of it.
+	 *
+	 * Same shape as {@link capturedItemIds} on purpose: the host owns the
+	 * watermark that decides when an id leaves the set, and the block just renders
+	 * a boolean.
+	 */
+	newItemIds?: ReadonlySet<string>;
+	/**
+	 * Subset of {@link newItemIds} whose arrival beat has not played yet.
+	 *
+	 * Separate from the mark because the two have different lifetimes: the mark
+	 * lasts until the watermark clears it, while the beat is one-shot per
+	 * arrival. Anything that remounts a card — a host collapsing the surface and
+	 * reopening it — would otherwise re-arm `initial` and replay a beat the
+	 * viewer already saw. Defaults to `newItemIds`, which is correct for a host
+	 * that never unmounts the list.
+	 */
+	arrivingItemIds?: ReadonlySet<string>;
 	/** Suggested Jira key for the chin primary action. Defaults to `sessionDetails.issueKey`. */
 	getSuggestedWorkItemKey?: (item: AgentSessionItem) => string | undefined;
 	/**

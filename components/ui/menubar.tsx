@@ -195,21 +195,21 @@ function MenubarCheckboxItem({
       className={cn(
         menubarRowBaseClassName,
         allowTextWrap ? menubarWrappingRowClassName : menubarRowHeightClassName,
-        "pr-2 pl-10 data-checked:bg-bg-selected data-checked:text-text-selected data-checked:data-[highlighted]:bg-bg-selected-hovered data-checked:data-[highlighted]:text-text-selected data-checked:active:bg-bg-selected-pressed data-inset:pl-10 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
+        "pr-2 pl-10 data-checked:text-text data-checked:data-[highlighted]:text-text data-inset:pl-10 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
         className,
       )}
       checked={checked}
       {...props}
     >
       <span
-        className="pointer-events-none absolute left-2 inline-flex size-6 items-center justify-center"
+        className="pointer-events-none absolute left-2 inline-flex size-6 items-center justify-center text-icon-subtle [&_svg]:text-icon-subtle!"
         data-slot="menubar-checkbox-item-indicator"
       >
         <MenuPrimitive.CheckboxItemIndicator>
           <Icon
             render={<CheckMarkIcon label="" size="small" />}
             label="Selected"
-            className="text-text-selected"
+            className="text-icon-subtle"
           />
         </MenuPrimitive.CheckboxItemIndicator>
       </span>
@@ -243,20 +243,20 @@ function MenubarRadioItem({
       className={cn(
         menubarRowBaseClassName,
         allowTextWrap ? menubarWrappingRowClassName : menubarRowHeightClassName,
-        "pr-2 pl-10 data-checked:bg-bg-selected data-checked:text-text-selected data-checked:data-[highlighted]:bg-bg-selected-hovered data-checked:data-[highlighted]:text-text-selected data-checked:active:bg-bg-selected-pressed data-inset:pl-10 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
+        "pr-2 pl-10 data-checked:text-text data-checked:data-[highlighted]:text-text data-inset:pl-10 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
         className,
       )}
       {...props}
     >
       <span
-        className="pointer-events-none absolute left-2 inline-flex size-6 items-center justify-center"
+        className="pointer-events-none absolute left-2 inline-flex size-6 items-center justify-center text-icon-subtle [&_svg]:text-icon-subtle!"
         data-slot="menubar-radio-item-indicator"
       >
         <MenuPrimitive.RadioItemIndicator>
           <Icon
             render={<CheckMarkIcon label="" size="small" />}
             label="Selected"
-            className="text-text-selected"
+            className="text-icon-subtle"
           />
         </MenuPrimitive.RadioItemIndicator>
       </span>

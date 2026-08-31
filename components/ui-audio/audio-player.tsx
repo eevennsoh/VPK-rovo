@@ -20,7 +20,6 @@ import {
 } from "react"
 import * as SliderPrimitive from "@radix-ui/react-slider"
 import {
-  CheckIcon as Check,
   PauseIcon,
   PlayIcon,
   SettingsIcon as Settings,
@@ -557,11 +556,11 @@ export function AudioPlayerSpeed({
             key={speed}
             onClick={() => player.setPlaybackRate(speed)}
             className="flex items-center justify-between"
+            selected={currentSpeed === speed}
           >
             <span className={speed === 1 ? "" : "font-mono"}>
               {speed === 1 ? "Normal" : `${speed}x`}
             </span>
-            {currentSpeed === speed && <Check className="size-4" />}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

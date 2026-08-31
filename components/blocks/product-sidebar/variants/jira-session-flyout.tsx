@@ -12,6 +12,7 @@ import { preload } from "react-dom";
 
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import BranchIcon from "@atlaskit/icon/core/branch";
+import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import DevicesIcon from "@atlaskit/icon/core/devices";
 import FolderClosedIcon from "@atlaskit/icon/core/folder-closed";
 import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
@@ -24,6 +25,15 @@ import IfElseIcon from "@atlaskit/icon-lab/core/if-else";
 import { AgentStates, type AgentStatesState } from "@/components/blocks/agent-states";
 import { AgentProfileCard } from "@/components/blocks/agent-profile-card";
 import { SmartLink, SMART_LINK_MODAL_ACTIONS, type SmartLinkItem } from "@/components/blocks/smart-link";
+import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
 	HoverCard,
 	HoverCardContent,
@@ -69,6 +79,12 @@ export interface JiraSessionFlyoutSurfaceProps {
 	 * is the Agent States card, and `untracked-work` suggests a related Jira item.
 	 */
 	content?: JiraSessionFlyoutContent;
+	/** Adds the session below the suggested work item. Omit to expose the menu option as unavailable. */
+	onAddAsSubtask?: (session: JiraSidebarSessionItem, workItemKey: string) => void;
+	/** Creates a work item from the session. Omit to expose the action as unavailable. */
+	onCreateWorkItem?: (session: JiraSidebarSessionItem) => void;
+	/** Links the session to the suggested work item. Omit to expose the action as unavailable. */
+	onLinkWorkItem?: (session: JiraSidebarSessionItem, workItemKey: string) => void;
 	onSubmitPrompt?: (session: JiraSidebarSessionItem, prompt: string) => void;
 }
 
@@ -283,6 +299,73 @@ export function JiraSessionSectionHeading({
 	);
 }
 
+function JiraSessionUntrackedWorkActions({
+	issueKey,
+	onAddAsSubtask,
+	onCreateWorkItem,
+	onLinkWorkItem,
+}: Readonly<{
+	issueKey: string;
+	onAddAsSubtask?: (workItemKey: string) => void;
+	onCreateWorkItem?: () => void;
+	onLinkWorkItem?: (workItemKey: string) => void;
+}>) {
+	const addAsSubtaskUnavailable = onAddAsSubtask === undefined;
+	const createUnavailable = onCreateWorkItem === undefined;
+	const linkUnavailable = onLinkWorkItem === undefined;
+
+	return (
+		<div className="flex items-start gap-2 pt-2">
+			<ButtonGroup aria-label={`Link ${issueKey}`} variant="split">
+				<Button
+					aria-disabled={linkUnavailable}
+					aria-label={linkUnavailable ? `Link to ${issueKey} unavailable` : undefined}
+					className={linkUnavailable ? "cursor-not-allowed opacity-(--opacity-disabled)" : undefined}
+					onClick={() => onLinkWorkItem?.(issueKey)}
+					type="button"
+					variant="outline"
+				>
+					Link to {issueKey}
+				</Button>
+				<DropdownMenu>
+					<DropdownMenuTrigger
+						render={(
+							<Button
+								aria-label={`More link options for ${issueKey}`}
+								size="icon"
+								type="button"
+								variant="outline"
+							>
+								<ChevronDownIcon label="" size="small" />
+							</Button>
+						)}
+					/>
+					<DropdownMenuContent align="end">
+						<DropdownMenuGroup>
+							<DropdownMenuItem
+								disabled={addAsSubtaskUnavailable}
+								onSelect={() => onAddAsSubtask?.(issueKey)}
+							>
+								Add as a subtask
+							</DropdownMenuItem>
+						</DropdownMenuGroup>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			</ButtonGroup>
+			<Button
+				aria-disabled={createUnavailable}
+				aria-label={createUnavailable ? "Create new unavailable" : undefined}
+				className={createUnavailable ? "cursor-not-allowed opacity-(--opacity-disabled)" : undefined}
+				onClick={onCreateWorkItem}
+				type="button"
+				variant="outline"
+			>
+				Create new
+			</Button>
+		</div>
+	);
+}
+
 type JiraSessionPreviewPosition = Pick<
 	ComponentProps<typeof HoverCardContent>,
 	"align" | "alignOffset" | "side"
@@ -293,6 +376,9 @@ export function JiraSessionFlyoutBody({
 	session,
 	hideAgentRow = false,
 	hideHeader = false,
+	onAddAsSubtask,
+	onCreateWorkItem,
+	onLinkWorkItem,
 	previewPosition,
 	variant = "details",
 }: Readonly<{
@@ -306,6 +392,12 @@ export function JiraSessionFlyoutBody({
 	 * this `false` because it has no separate header.
 	 */
 	hideHeader?: boolean;
+	/** Adds this session below the suggested work item. */
+	onAddAsSubtask?: (workItemKey: string) => void;
+	/** Creates a work item from this session. */
+	onCreateWorkItem?: () => void;
+	/** Links this session to the suggested work item. */
+	onLinkWorkItem?: (workItemKey: string) => void;
 	/** Override nested Agent and Work item preview placement for constrained surfaces. */
 	previewPosition?: JiraSessionPreviewPosition;
 	/** Replace development metadata with a suggested Jira link rationale. */
@@ -412,6 +504,12 @@ export function JiraSessionFlyoutBody({
 					<p className="text-sm leading-5 text-text">
 						This session appears related to {session.issueKey} because the work item matches its activity and context.
 					</p>
+					<JiraSessionUntrackedWorkActions
+						issueKey={session.issueKey}
+						onAddAsSubtask={onAddAsSubtask}
+						onCreateWorkItem={onCreateWorkItem}
+						onLinkWorkItem={onLinkWorkItem}
+					/>
 				</section>
 			) : hasDevelopment ? (
 				<div className="flex flex-col gap-2">
@@ -488,13 +586,20 @@ export function JiraSessionFlyoutBody({
 
 function JiraSessionFlyoutPayload({
 	content,
+	onAddAsSubtask,
+	onCreateWorkItem,
+	onLinkWorkItem,
 	onSubmitPrompt,
 	session,
-}: Readonly<{
-	content: JiraSessionFlyoutContent;
-	onSubmitPrompt?: (session: JiraSidebarSessionItem, prompt: string) => void;
-	session: JiraSidebarSessionItem;
-}>) {
+}: Readonly<
+	Pick<
+		JiraSessionFlyoutSurfaceProps,
+		"onAddAsSubtask" | "onCreateWorkItem" | "onLinkWorkItem" | "onSubmitPrompt"
+	> & {
+		content: JiraSessionFlyoutContent;
+		session: JiraSidebarSessionItem;
+	}
+>) {
 	switch (content) {
 		case "composer":
 			return (
@@ -517,7 +622,13 @@ function JiraSessionFlyoutPayload({
 		case "untracked-work":
 			return (
 				<div className="w-[400px] bg-surface-overlay p-4 text-text">
-					<JiraSessionFlyoutBody session={session} variant="untracked-work" />
+					<JiraSessionFlyoutBody
+						onAddAsSubtask={onAddAsSubtask ? (workItemKey) => onAddAsSubtask(session, workItemKey) : undefined}
+						onCreateWorkItem={onCreateWorkItem ? () => onCreateWorkItem(session) : undefined}
+						onLinkWorkItem={onLinkWorkItem ? (workItemKey) => onLinkWorkItem(session, workItemKey) : undefined}
+						session={session}
+						variant="untracked-work"
+					/>
 				</div>
 			);
 		case "details":
@@ -545,6 +656,9 @@ function JiraSessionFlyoutPayload({
 export function JiraSessionFlyoutSurface({
 	content = "details",
 	handle,
+	onAddAsSubtask,
+	onCreateWorkItem,
+	onLinkWorkItem,
 	onSubmitPrompt,
 }: Readonly<JiraSessionFlyoutSurfaceProps>) {
 	return (
@@ -562,6 +676,9 @@ export function JiraSessionFlyoutSurface({
 						{payload ? (
 							<JiraSessionFlyoutPayload
 								content={content}
+								onAddAsSubtask={onAddAsSubtask}
+								onCreateWorkItem={onCreateWorkItem}
+								onLinkWorkItem={onLinkWorkItem}
 								onSubmitPrompt={onSubmitPrompt}
 								session={payload}
 							/>

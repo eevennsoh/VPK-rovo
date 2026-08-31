@@ -4,10 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import Image from "next/image";
 import AddIcon from "@atlaskit/icon/core/add";
-import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import EpicIcon from "@atlaskit/icon/core/epic";
 import FilterIcon from "@atlaskit/icon/core/filter";
-import MegaphoneIcon from "@atlaskit/icon/core/megaphone";
 import SearchIcon from "@atlaskit/icon/core/search";
 import SprintIcon from "@atlaskit/icon/core/sprint";
 import SubtasksIcon from "@atlaskit/icon/core/subtasks";
@@ -294,12 +292,6 @@ export function BoardFilterPopover({
 				{hasSelection && !compact ? <Badge variant="information">{model.selectedCount}</Badge> : null}
 			</PopoverTrigger>
 			<PopoverContent align="start" className="w-[640px] max-w-[calc(100vw-32px)] gap-0 overflow-hidden p-0">
-				<div className="flex items-center justify-end border-b border-border px-3 py-2">
-					<Button disabled size="compact" variant="ghost">
-						Saved filters
-						<Icon data-icon="inline-end" render={<ChevronDownIcon label="" size="small" />} />
-					</Button>
-				</div>
 				<div className="grid h-[380px] grid-cols-[220px_minmax(0,1fr)]">
 					<div className="flex min-h-0 flex-col border-r border-border p-3">
 						<div className="flex min-h-0 flex-1 flex-col gap-1">
@@ -317,7 +309,12 @@ export function BoardFilterPopover({
 									</Button>
 								);
 							})}
-							<Button disabled className="mt-1 w-full justify-start" variant="ghost">
+							{/* Prototype chrome: reads as a live control but has no handler.
+							    `aria-disabled` keeps the row at full contrast and in the tab
+							    order — native `disabled` would dim it to the disabled opacity
+							    and drop it from keyboard reach — while still telling assistive
+							    tech the action is unavailable. */}
+							<Button aria-disabled className="mt-1 w-full justify-start" variant="ghost">
 								<Icon data-icon="inline-start" render={<AddIcon label="" size="small" />} />
 								Add field
 							</Button>
@@ -413,13 +410,6 @@ export function BoardFilterPopover({
 							)}
 						</ScrollMask>
 					</div>
-				</div>
-				<div className="flex items-center justify-between gap-3 border-t border-border px-3 py-2">
-					<Button disabled size="compact" variant="ghost">
-						<Icon data-icon="inline-start" render={<MegaphoneIcon label="" size="small" />} />
-						Give feedback
-					</Button>
-					<p className="text-xs text-text-subtle">Press Shift + F to open and close</p>
 				</div>
 			</PopoverContent>
 		</Popover>

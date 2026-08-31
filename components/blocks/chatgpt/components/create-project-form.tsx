@@ -86,9 +86,7 @@ export function CreateProjectForm() {
 								{CATEGORIES.map((category) => (
 									<Badge
 										key={category.id}
-										variant={
-											selectedCategory === category.id ? "information" : "neutral"
-										}
+										variant="neutral"
 										data-checked={selectedCategory === category.id}
 										render={
 											<button
@@ -104,7 +102,7 @@ export function CreateProjectForm() {
 											/>
 										}
 									>
-										<CircleCheckIcon data-icon="inline-start" className="hidden group-data-[checked=true]/badge:inline" />
+										<CircleCheckIcon data-icon="inline-start" className="hidden text-icon-subtle! group-data-[checked=true]/badge:inline" />
 										{category.label}
 									</Badge>
 								))}

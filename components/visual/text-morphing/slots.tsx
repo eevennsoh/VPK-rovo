@@ -14,13 +14,29 @@ import { useEffect, useRef, useState } from "react";
 
 import { isDigit, mod, reconcileDigitKeys, splitGraphemes } from "./lib";
 
-/** One of the ten stacked glyphs in a slot column; its offset tracks `current`. */
+/** Depth of the soft edge at the top and bottom of the slot window. */
+const FADE_HEIGHT_EM = 0.25;
+const FADE_HEIGHT = `${FADE_HEIGHT_EM}em`;
+const FADE_MASK = `linear-gradient(to bottom, transparent 0%, black ${FADE_HEIGHT}, black calc(100% - ${FADE_HEIGHT}), transparent 100%)`;
+
+/**
+ * One of the ten stacked glyphs in a slot column; its offset tracks `current`.
+ *
+ * A neighbour parks one full glyph height away, which puts its trailing edge
+ * exactly on the window's content edge — i.e. *inside* the fade band, where the
+ * mask is already opaque. Nine idle digits stacked there smear into a permanent
+ * grey bar above and below the number. Parking `FADE_HEIGHT` further out puts
+ * them fully clear of the masked box, so the band only ever paints a digit that
+ * is genuinely travelling through it.
+ */
 function DigitNum({ n, current }: { n: number; current: ReturnType<typeof useMotionValue<number>> }) {
 	const y = useTransform(current, (c) => {
 		let offset = mod(n - c, 10);
 		if (offset > 5) offset -= 10;
 		const clamped = Math.max(-1, Math.min(1, offset));
-		return `${-clamped * 100}%`;
+		// Percentage of the glyph's own height plus the em-based fade depth, so
+		// the clearance holds at any line-height rather than at one font size.
+		return `calc(${-clamped * 100}% - ${clamped * FADE_HEIGHT_EM}em)`;
 	});
 
 	return (
@@ -34,9 +50,6 @@ function DigitNum({ n, current }: { n: number; current: ReturnType<typeof useMot
 }
 
 const digits = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
-
-const FADE_HEIGHT = "0.25em";
-const FADE_MASK = `linear-gradient(to bottom, transparent 0%, black ${FADE_HEIGHT}, black calc(100% - ${FADE_HEIGHT}), transparent 100%)`;
 
 /** A single rolling digit column. Spins the cumulative offset toward `digit`. */
 function SlotColumn({
@@ -162,7 +175,7 @@ export function SlotsRenderer({
 			<span
 				aria-label={text}
 				className={className}
-				style={{ display: "inline-flex", position: "relative", ...style, overflow: "hidden" }}
+				style={{ display: "inline-flex", position: "relative", ...style }}
 			>
 				<span
 					style={{
@@ -173,6 +186,13 @@ export function SlotsRenderer({
 						marginBottom: `calc(-1 * ${FADE_HEIGHT})`,
 						maskImage: FADE_MASK,
 						WebkitMaskImage: FADE_MASK,
+						// The mask is the window: it both softens the two edges and hides
+						// the nine off-screen digits. That only works as one tile —
+						// `mask-repeat` defaults to `repeat`, which paints the gradient
+						// again every ~1lh and lets the neighbouring digits bleed back in
+						// above and below the number as grey smudges.
+						maskRepeat: "no-repeat",
+						WebkitMaskRepeat: "no-repeat",
 					}}
 				>
 					<AnimatePresence mode="popLayout" initial={animateInitial}>

@@ -22,6 +22,7 @@ import type {
 import { createJiraKanbanColumns } from "../jira-kanban-data";
 import { BoardFilterPopover } from "./components/board-filter-popover";
 import { ExperimentalJiraKanban } from "./experimental-jira-kanban";
+import { EMPTY_COLLAPSED_BOARD_COLUMNS } from "./lib/board-column-collapse";
 import {
 	ExperimentalJiraKanbanBoardHeader,
 	type ExperimentalJiraKanbanView,
@@ -215,6 +216,10 @@ export default function ExperimentalJiraKanbanPage({
 	// decided, not view state that may quietly reset with the subtree.
 	const [requestedActionIds, setRequestedActionIds] = useState<ReadonlySet<string>>(() => new Set<string>());
 	const [capturedLooseWorkIds, setCapturedLooseWorkIds] = useState<ReadonlySet<string>>(() => new Set<string>());
+	// Owned here rather than inside the board: switching to the list or Pulse
+	// view unmounts `ExperimentalJiraKanban`, and a viewer's collapse choices are
+	// a deliberate setting that must outlive a temporary view switch.
+	const [collapsedColumns, setCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
 	const handleRequestAction = useCallback((action: { id: string }) => {
 		setRequestedActionIds((current) => new Set(current).add(action.id));
 	}, []);
@@ -594,6 +599,8 @@ export default function ExperimentalJiraKanbanPage({
 						ariaLabel={ariaLabel}
 						assignedAgentIdsByColumn={columnAgentAssignments}
 						boardColumns={filteredBoardColumns}
+						collapsedColumns={collapsedColumns}
+						onCollapsedColumnsChange={setCollapsedColumns}
 						draggedCardCode={draggedCard?.card.code ?? null}
 						selectedCardCodes={selection.selectedCardCodes}
 						onCardClick={handleCardClick}
