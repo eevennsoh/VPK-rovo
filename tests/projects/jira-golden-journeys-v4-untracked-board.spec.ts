@@ -45,12 +45,33 @@ test("unchecking Untracked hides board-adjacent rows and leaves the column", asy
 	).toBeVisible();
 });
 
-test("hovering a column session for PAY-121 spotlights that issue", async ({ page }) => {
+test("hovering a column session leaves Jira issues unfocused and unmoved", async ({ page }) => {
+	await openBoard(page);
+
+	const statusScrollport = page.locator("[data-jira-kanban-scrollport]");
+	const pay121 = page.locator("[data-issue-key='PAY-121']");
+	const pay101 = page.locator("[data-issue-key='PAY-101']");
+	const pay121ColumnScrollport = pay121.locator("xpath=ancestor::*[@data-jira-kanban-card-list]");
+	const columnSession = page.locator("[data-agent-session-column]")
+		.getByTestId("agent-session-row-lw-kickoff-killswitch-session");
+
+	const scrollLeftBefore = await statusScrollport.evaluate((element) => element.scrollLeft);
+	const scrollTopBefore = await pay121ColumnScrollport.evaluate((element) => element.scrollTop);
+
+	await columnSession.hover();
+
+	await expect(pay121).not.toHaveClass(/bg-bg-accent-blue-subtlest/);
+	await expect(pay101).not.toHaveClass(/opacity-40/);
+	expect(await statusScrollport.evaluate((element) => element.scrollLeft)).toBe(scrollLeftBefore);
+	expect(await pay121ColumnScrollport.evaluate((element) => element.scrollTop)).toBe(scrollTopBefore);
+});
+
+test("clicking a column session for PAY-121 spotlights that issue", async ({ page }) => {
 	await openBoard(page);
 
 	const columnSession = page.locator("[data-agent-session-column]")
 		.getByTestId("agent-session-row-lw-kickoff-killswitch-session");
-	await columnSession.hover();
+	await columnSession.click();
 
 	const pay121 = page.locator("[data-issue-key='PAY-121']");
 	const pay101 = page.locator("[data-issue-key='PAY-101']");
@@ -59,7 +80,7 @@ test("hovering a column session for PAY-121 spotlights that issue", async ({ pag
 	await expect(page.getByLabel(/^Untracked work,/u)).not.toHaveClass(/opacity-40/);
 });
 
-test("hover auto-scroll keeps Untracked frozen and allows the status pane to scroll back", async ({ page }) => {
+test("click auto-scroll keeps Untracked frozen and allows the status pane to scroll back", async ({ page }) => {
 	await openBoard(page);
 
 	const untrackedColumn = page.getByLabel(/^Untracked work,/u);
@@ -70,7 +91,7 @@ test("hover auto-scroll keeps Untracked frozen and allows the status pane to scr
 	const pay121 = page.locator("[data-issue-key='PAY-121']");
 	const pay121ColumnScrollport = pay121.locator("xpath=ancestor::*[@data-jira-kanban-card-list]");
 
-	await columnSession.hover();
+	await columnSession.click();
 	await expect.poll(
 		() => statusScrollport.evaluate((element) => element.scrollLeft),
 	).toBeGreaterThan(0);
@@ -90,4 +111,25 @@ test("hover auto-scroll keeps Untracked frozen and allows the status pane to scr
 	expect(await pay121ColumnScrollport.evaluate((element) => element.scrollTop)).toBe(0);
 	expect((await untrackedColumn.boundingBox())?.x).toBe(frozenLeft);
 	await expect(pay121).toHaveClass(/bg-bg-accent-blue-subtlest/);
+});
+
+test("Untracked stays frozen while the status pane scrolls", async ({ page }) => {
+	await openBoard(page);
+
+	const untrackedColumn = page.getByLabel(/^Untracked work,/u);
+	const statusScrollport = page.locator("[data-jira-kanban-scrollport]");
+	const frozenLeft = (await untrackedColumn.boundingBox())?.x;
+
+	await statusScrollport.evaluate((element) => {
+		element.scrollTo({ behavior: "instant", left: 400 });
+	});
+
+	expect(await statusScrollport.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+	expect((await untrackedColumn.boundingBox())?.x).toBe(frozenLeft);
+
+	await statusScrollport.evaluate((element) => {
+		element.scrollTo({ behavior: "instant", left: 0 });
+	});
+	expect(await statusScrollport.evaluate((element) => element.scrollLeft)).toBe(0);
+	expect((await untrackedColumn.boundingBox())?.x).toBe(frozenLeft);
 });

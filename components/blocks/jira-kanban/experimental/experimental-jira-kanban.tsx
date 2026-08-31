@@ -61,6 +61,7 @@ import { ExperimentalJiraKanbanCard } from "./experimental-jira-kanban-card";
 import {
 	bindBoardProximitySessionActions,
 	resolveBoardUntrackedIssueKey,
+	resolveVisibleFocusedIssueKey,
 	scrollBoardIssueIntoView,
 } from "./lib/board-untracked-sessions";
 
@@ -602,7 +603,8 @@ export function ExperimentalJiraKanban({
 	const [uncontrolledCollapsedColumns, setUncontrolledCollapsedColumns] = useState(
 		EMPTY_COLLAPSED_BOARD_COLUMNS,
 	);
-	const [hoveredIssueKey, setHoveredIssueKey] = useState<string | null>(null);
+	const [focusedIssueKey, setFocusedIssueKey] = useState<string | null>(null);
+	const spotlightIssueKey = resolveVisibleFocusedIssueKey(focusedIssueKey, boardColumns);
 	const collapsedColumns = controlledCollapsedColumns ?? uncontrolledCollapsedColumns;
 	const selectedCount = selectedCardCodes?.size ?? 0;
 	const selectedStatus = selectedCardCodes
@@ -719,16 +721,16 @@ export function ExperimentalJiraKanban({
 		onCardDragEnd?.();
 	};
 
-	const handleSessionHover = (item: AgentSessionItem | null) => {
-		const issueKey = resolveBoardUntrackedIssueKey(item);
-		const isOnBoard = issueKey !== null && boardColumns.some((column) => (
-			column.cards.some((card) => card.code === issueKey)
-		));
-		const nextKey = isOnBoard ? issueKey : null;
-		setHoveredIssueKey(nextKey);
+	const handleSessionView = (item: AgentSessionItem) => {
+		const nextKey = resolveVisibleFocusedIssueKey(
+			resolveBoardUntrackedIssueKey(item),
+			boardColumns,
+		);
+		setFocusedIssueKey(nextKey);
 		if (nextKey) {
 			scrollBoardIssueIntoView(boardScrollportRef.current, nextKey);
 		}
+		agentSessionColumn?.onView?.(item);
 	};
 
 	const handleToggleColumnCollapsed = (columnTitle: string) => {
@@ -753,7 +755,7 @@ export function ExperimentalJiraKanban({
 						className="flex min-h-0 shrink-0 border-2 border-transparent border-r-0 ps-6"
 						style={{ paddingTop, paddingBottom }}
 					>
-						<AgentSessionColumn {...agentSessionColumn} onItemHover={handleSessionHover} />
+						<AgentSessionColumn {...agentSessionColumn} onView={handleSessionView} />
 					</div>
 				) : null}
 				<section
@@ -854,8 +856,8 @@ export function ExperimentalJiraKanban({
 													"flex w-full min-w-0 max-w-[280px] flex-col gap-2 rounded-lg",
 													"transition-[background-color,opacity] duration-normal ease-out-practical",
 													"motion-reduce:transition-none",
-													hoveredIssueKey === card.code && "bg-bg-accent-blue-subtlest",
-													hoveredIssueKey !== null && hoveredIssueKey !== card.code && "opacity-40",
+													spotlightIssueKey === card.code && "bg-bg-accent-blue-subtlest",
+													spotlightIssueKey !== null && spotlightIssueKey !== card.code && "opacity-40",
 												)}
 												data-issue-key={card.code}
 												initial={false}
