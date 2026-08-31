@@ -40,7 +40,8 @@ test("menubar selection checkmarks use the subtle icon color", () => {
 	assert.match(source, /data-slot="menubar-radio-item-indicator"/u);
 	assert.equal(source.match(/className="text-icon-subtle"/gu)?.length, 2);
 	assert.doesNotMatch(source, /className="text-text-selected"/u);
-	assert.equal(source.match(/data-checked:bg-bg-selected data-checked:text-text\b/gu)?.length, 2);
+	assert.equal(source.match(/data-checked:text-text data-checked:data-\[highlighted\]:text-text/gu)?.length, 2);
+	assert.doesNotMatch(source, /data-checked:bg-bg-selected/u);
 	assert.doesNotMatch(source, /data-checked:text-text-selected/u);
 });
 
@@ -71,7 +72,7 @@ test("menubar rows default to 8px horizontal padding", () => {
 		source,
 		/<DropdownMenuSubTrigger[\s\S]*menubarRowHorizontalPaddingClassName/u,
 	);
-	assert.match(source, /"pr-2 pl-10 data-checked:bg-bg-selected/u);
+	assert.match(source, /"pr-2 pl-10 data-checked:text-text/u);
 	assert.doesNotMatch(source, /\bpx-3\b/u);
 	assert.doesNotMatch(source, /\bpr-3\b/u);
 });

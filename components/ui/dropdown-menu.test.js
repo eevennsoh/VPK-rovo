@@ -30,9 +30,10 @@ test("dropdown menu default selected check stays subtle", () => {
 	assert.match(source, /usesDefaultSelectedCheck[\s\S]*?text-icon-subtle \[&_svg\]:text-icon-subtle!/u);
 });
 
-test("dropdown menu selected rows keep the selected surface and default label color", () => {
-	assert.match(source, /checkedState:\s*"data-checked:bg-bg-selected data-checked:text-text/u);
-	assert.match(source, /"data-selected:bg-bg-selected data-selected:text-text/u);
+test("dropdown menu selected rows use a check without a persistent selected surface", () => {
+	assert.match(source, /checkedState:\s*"data-checked:text-text/u);
+	assert.match(source, /"data-selected:text-text data-selected:data-\[highlighted\]:text-text/u);
+	assert.doesNotMatch(source, /data-(?:checked|selected):bg-bg-selected/u);
 	assert.doesNotMatch(source, /data-(?:checked|selected):text-text-selected/u);
 });
 

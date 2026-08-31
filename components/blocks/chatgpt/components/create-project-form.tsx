@@ -84,12 +84,9 @@ export function CreateProjectForm() {
 							</InputGroup>
 							<FieldDescription className="flex flex-wrap gap-2">
 								{CATEGORIES.map((category) => (
-								<Badge
-									className={selectedCategory === category.id ? "bg-bg-selected text-text hover:bg-bg-selected-hovered active:bg-bg-selected-pressed" : undefined}
-									key={category.id}
-										variant={
-											selectedCategory === category.id ? "information" : "neutral"
-										}
+									<Badge
+										key={category.id}
+										variant="neutral"
 										data-checked={selectedCategory === category.id}
 										render={
 											<button
