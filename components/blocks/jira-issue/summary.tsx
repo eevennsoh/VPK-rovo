@@ -178,7 +178,10 @@ export function JiraIssueSummary({
 			) : null}
 			{isMounted ? (
 				usesStrokeChrome ? (
-					<span className="inline-flex size-6 shrink-0 translate-x-px items-center justify-end">
+					<span
+						className="flex size-6 shrink-0 items-center justify-center -mr-1"
+						data-slot="jira-issue-assignee-slot"
+					>
 						<JiraIssueAssignee
 							assigneeAvatarLabel={assigneeAvatarLabel}
 							assigneeAvatarShape={assigneeAvatarShape}
