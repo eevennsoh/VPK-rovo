@@ -13,6 +13,11 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
+import {
+	JiraIssueAgentAndSkillSubmenu,
+	type JiraIssueGenerativeActionConfig,
+	type JiraIssueGenerativeActionIssue,
+} from "./generative-action-menu";
 
 export type JiraIssueMoreAction =
 	| "move-work-item"
@@ -31,11 +36,13 @@ interface JiraIssueMoreMenuProps {
 	issueKey: string;
 	onActionSelect?: (action: JiraIssueMoreAction) => void;
 	onOpenChange?: (open: boolean) => void;
+	generativeAction?: JiraIssueGenerativeActionConfig;
+	generativeActionIssue?: JiraIssueGenerativeActionIssue;
 }
 
 const CHEVRON = <ChevronRightIcon label="" size="small" color="currentColor" />;
 
-function JiraIssueMoreMenu({ issueKey, onActionSelect, onOpenChange }: Readonly<JiraIssueMoreMenuProps>) {
+function JiraIssueMoreMenu({ generativeAction, generativeActionIssue, issueKey, onActionSelect, onOpenChange }: Readonly<JiraIssueMoreMenuProps>) {
 	function select(action: JiraIssueMoreAction) {
 		return () => onActionSelect?.(action);
 	}
@@ -57,6 +64,12 @@ function JiraIssueMoreMenu({ issueKey, onActionSelect, onOpenChange }: Readonly<
 				<Icon render={<ShowMoreHorizontalIcon label="" size="small" color="currentColor" />} />
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="max-h-none w-[280px]" side="right" sideOffset={8}>
+				{generativeAction && generativeActionIssue ? (
+					<>
+						<JiraIssueAgentAndSkillSubmenu action={generativeAction} issue={generativeActionIssue} />
+						<DropdownMenuSeparator />
+					</>
+				) : null}
 				<DropdownMenuGroup>
 					<DropdownMenuItem elemAfter={CHEVRON} onSelect={select("move-work-item")}>Move work item</DropdownMenuItem>
 					<DropdownMenuItem elemAfter={CHEVRON} onSelect={select("change-status")}>Change status</DropdownMenuItem>
@@ -68,7 +81,7 @@ function JiraIssueMoreMenu({ issueKey, onActionSelect, onOpenChange }: Readonly<
 				</DropdownMenuGroup>
 				<DropdownMenuSeparator />
 				<DropdownMenuGroup>
-					<DropdownMenuItem elemAfter={CHEVRON} onSelect={select("add-agent")}>Add agent</DropdownMenuItem>
+					{generativeAction ? null : <DropdownMenuItem elemAfter={CHEVRON} onSelect={select("add-agent")}>Add agent</DropdownMenuItem>}
 					<DropdownMenuItem elemAfter={CHEVRON} onSelect={select("link-confluence-item")}>Link Confluence item</DropdownMenuItem>
 					<DropdownMenuItem elemAfter={CHEVRON} onSelect={select("link-work-item")}>Link work item</DropdownMenuItem>
 					<DropdownMenuItem elemAfter={CHEVRON} onSelect={select("change-parent")}>Change parent</DropdownMenuItem>

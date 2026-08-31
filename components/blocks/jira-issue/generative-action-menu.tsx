@@ -12,6 +12,15 @@ import {
 	type RovoSparkleSelectedItem,
 } from "@/components/ui-custom/rovo-sparkle";
 import { getMentionChildItems } from "@/components/ui-custom/rich-text-editor";
+import {
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export type JiraIssueGenerativeActionKind = RovoSparkleActionKind;
 
@@ -49,6 +58,11 @@ interface JiraIssueGenerativeActionMenuProps {
 	triggerElement?: ReactElement;
 }
 
+interface JiraIssueAgentAndSkillSubmenuProps {
+	action: JiraIssueGenerativeActionConfig;
+	issue: JiraIssueGenerativeActionIssue;
+}
+
 interface JiraIssueGenerativeActionPosition {
 	bridgeHeight: number;
 	left: number;
@@ -78,6 +92,68 @@ function buildJiraIssueGenerativeAgentPrompt(
 	issue: JiraIssueGenerativeActionIssue,
 ): string {
 	return `Ask "${item.label}" to help with Jira issue ${issue.issueKey}: ${issue.summary}.`;
+}
+
+function submitJiraIssueAssignment(
+	action: JiraIssueGenerativeActionConfig,
+	issue: JiraIssueGenerativeActionIssue,
+	kind: "agent" | "skill",
+	item: JiraIssueGenerativeActionSelectedItem,
+) {
+	const prompt = kind === "agent"
+		? buildJiraIssueGenerativeAgentPrompt(item, issue)
+		: buildJiraIssueGenerativeSkillPrompt(item, issue);
+	void action.onSubmit({ kind, prompt, issue, selectedItem: item });
+}
+
+function getJiraIssueGenerativeSelectedItem(item: RovoSparkleItem): JiraIssueGenerativeActionSelectedItem {
+	return {
+		id: item.id,
+		label: item.label,
+		description: item.description,
+		avatarSrc: item.visual?.kind === "avatar" || item.visual?.kind === "image"
+			? item.visual.src
+			: undefined,
+	};
+}
+
+export function JiraIssueAgentAndSkillSubmenu({
+	action,
+	issue,
+}: Readonly<JiraIssueAgentAndSkillSubmenuProps>) {
+	const agents = action.agents ?? JIRA_ISSUE_GENERATIVE_AGENTS;
+	const skills = action.skills ?? JIRA_ISSUE_GENERATIVE_SKILLS;
+
+	return (
+		<DropdownMenuSub>
+			<DropdownMenuSubTrigger>Assign agent and use skill</DropdownMenuSubTrigger>
+			<DropdownMenuSubContent className="max-h-[min(24rem,var(--available-height,24rem))] w-[280px] overflow-auto">
+				<DropdownMenuGroup>
+					<DropdownMenuLabel>Agents</DropdownMenuLabel>
+					{agents.map((agent) => (
+						<DropdownMenuItem
+							key={agent.id}
+							onSelect={() => submitJiraIssueAssignment(action, issue, "agent", getJiraIssueGenerativeSelectedItem(agent))}
+						>
+							{agent.label}
+						</DropdownMenuItem>
+					))}
+				</DropdownMenuGroup>
+				<DropdownMenuSeparator />
+				<DropdownMenuGroup>
+					<DropdownMenuLabel>Skills</DropdownMenuLabel>
+					{skills.map((skill) => (
+						<DropdownMenuItem
+							key={skill.id}
+							onSelect={() => submitJiraIssueAssignment(action, issue, "skill", getJiraIssueGenerativeSelectedItem(skill))}
+						>
+							{skill.label}
+						</DropdownMenuItem>
+					))}
+				</DropdownMenuGroup>
+			</DropdownMenuSubContent>
+		</DropdownMenuSub>
+	);
 }
 
 function getJiraIssueGenerativeTriggerPosition(anchor: HTMLElement): JiraIssueGenerativeActionPosition {
@@ -169,15 +245,7 @@ export function JiraIssueGenerativeActionMenu({
 			return;
 		}
 
-		const prompt = request.kind === "agent"
-			? buildJiraIssueGenerativeAgentPrompt(request.selectedItem, issue)
-			: buildJiraIssueGenerativeSkillPrompt(request.selectedItem, issue);
-		void action.onSubmit({
-			kind: request.kind,
-			prompt,
-			issue,
-			selectedItem: request.selectedItem,
-		});
+		submitJiraIssueAssignment(action, issue, request.kind, request.selectedItem);
 	}
 
 	const generatedTrigger = triggerPosition ? (

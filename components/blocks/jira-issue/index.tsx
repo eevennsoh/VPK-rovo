@@ -108,6 +108,8 @@ export type {
 } from "@/components/blocks/jira-issue/generative-action-menu";
 export type { JiraIssueMoreAction } from "@/components/blocks/jira-issue/more-menu";
 
+export type JiraIssueGenerativeActionPresentation = "sparkle" | "more-actions";
+
 export interface JiraIssueSubtask {
 	summary: string;
 	issueKey: string;
@@ -196,6 +198,8 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	/** Called after an item is selected from the issue actions menu. */
 	onMoreActionSelect?: (action: JiraIssueMoreAction) => void;
 	generativeAction?: JiraIssueGenerativeActionConfig;
+	/** Chooses whether the agent/skill action appears as a sparkle or within More actions. */
+	generativeActionPresentation?: JiraIssueGenerativeActionPresentation;
 	/** Opt-in: makes the chin rows draggable and adds the unlink/move drop zones below the card. */
 	agentSessionTransfer?: JiraIssueAgentSessionTransferConfig;
 }
@@ -229,6 +233,7 @@ function JiraIssueDefault({
 	dragging = false,
 	draggable = true,
 	generativeAction,
+	generativeActionPresentation = "sparkle",
 	issueKey,
 	issueTypeLabel = "Task",
 	onSubtasksExpandedChange,
@@ -503,6 +508,8 @@ function JiraIssueDefault({
 	const moreActionMenu = showMoreAction ? (
 		<div className="absolute right-3 top-3 z-20 size-6">
 			<JiraIssueMoreMenu
+				generativeAction={generativeActionPresentation === "more-actions" ? generativeAction : undefined}
+				generativeActionIssue={{ issueKey, summary }}
 				issueKey={issueKey}
 				onActionSelect={onMoreActionSelect}
 				onOpenChange={setMoreActionMenuOpen}
@@ -577,7 +584,7 @@ function JiraIssueDefault({
 			</AnimatePresence>
 		</div>
 	);
-	const generativeActionMenu = generativeAction ? (
+	const generativeActionMenu = generativeAction && generativeActionPresentation === "sparkle" ? (
 		<JiraIssueGenerativeActionMenu
 			action={generativeAction}
 			anchor={generativeActionAnchor}

@@ -82,6 +82,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 					<ExperimentalJiraKanbanPage
 						activeView={activeView}
 						agentActivityLayout="split"
+						cardGenerativeActionPresentation="more-actions"
 						agentSessionAssigneeIdAliases={JIRA_GOLDEN_JOURNEYS_V4_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID}
 						agents={JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS}
 						ariaLabel="Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses."
