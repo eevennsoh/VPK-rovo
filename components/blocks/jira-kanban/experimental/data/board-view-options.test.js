@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
+	BOARD_AGENT_SESSION_STATE_IDS,
 	BOARD_AGENT_STATE_OPTIONS,
 	BOARD_COLUMN_OPTIONS,
 	BOARD_COLUMN_SIZE_DEFAULT_ID,
@@ -10,6 +11,7 @@ const {
 	BOARD_HIDE_DONE_DEFAULT_ID,
 	BOARD_HIDE_DONE_OPTIONS,
 	BOARD_PR_STATE_OPTIONS,
+	isBoardAgentSessionStateId,
 } = require("./board-view-options.ts");
 
 test("View menu lists the production done-item windows in order", () => {
@@ -72,6 +74,11 @@ test("Agent lists the session states by session shape, not alphabetically", () =
 			(option) => !option.separatorBefore,
 		),
 	);
+	assert.deepEqual([...BOARD_AGENT_SESSION_STATE_IDS], ["working", "needs-input", "finished"]);
+	assert.ok(isBoardAgentSessionStateId("working"));
+	assert.ok(isBoardAgentSessionStateId("needs-input"));
+	assert.ok(isBoardAgentSessionStateId("finished"));
+	assert.equal(isBoardAgentSessionStateId("untracked"), false);
 });
 
 test("every visibility list shares one row shape", () => {

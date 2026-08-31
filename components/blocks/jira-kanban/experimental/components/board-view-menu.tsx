@@ -11,6 +11,7 @@ import MergeQueueIcon from "@atlaskit/icon-lab/core/merge-queue";
 
 import { BOARD_GROUP_DEFAULT_ID, BOARD_GROUP_OPTIONS } from "../data/board-group-options";
 import {
+	BOARD_AGENT_SESSION_STATE_IDS,
 	BOARD_AGENT_STATE_OPTIONS,
 	BOARD_COLUMN_SIZE_DEFAULT_ID,
 	BOARD_COLUMN_SIZE_OPTIONS,
@@ -18,6 +19,8 @@ import {
 	BOARD_HIDE_DONE_DEFAULT_ID,
 	BOARD_HIDE_DONE_OPTIONS,
 	BOARD_PR_STATE_OPTIONS,
+	isBoardAgentSessionStateId,
+	type BoardAgentSessionStateId,
 	type BoardPrStateId,
 } from "../data/board-view-options";
 import { Button } from "@/components/ui/button";
@@ -41,11 +44,18 @@ interface BoardViewMenuProps {
 	surfaceLabel?: string;
 	/**
 	 * Whether Untracked sessions surface next to related Jira cards.
-	 * Omit to keep the checkbox local chrome, like Working / Needs input / Finished.
+	 * Omit to keep the checkbox local chrome.
 	 */
 	showUntracked?: boolean;
-	/** Writes Untracked. Other Agent rows stay local to this menu. */
+	/** Writes Untracked. */
 	onShowUntrackedChange?: (showUntracked: boolean) => void;
+	/**
+	 * Which linked session states surface on a card's activity row.
+	 * Omit with the writer to keep Working / Needs input / Finished local.
+	 */
+	shownSessionStateIds?: ReadonlySet<BoardAgentSessionStateId>;
+	/** Writes Working / Needs input / Finished. */
+	onShownSessionStateIdsChange?: (shownSessionStateIds: Set<BoardAgentSessionStateId>) => void;
 }
 
 interface VisibilityOption {
@@ -172,17 +182,20 @@ function VisibilityToggleSubmenu({
  * column and card chrome. Each dimension lives behind its own submenu so the
  * list stays scannable.
  *
- * The menu owns its own selections except Untracked, which the board can lift
- * so proximity sessions appear next to related issues. Working / Needs input /
- * Finished stay local chrome. State lives here rather than on the items because
- * Base UI unmounts both the submenu and the menu on close — this component
- * stays mounted with the trigger, so the choices survive.
+ * The menu owns its own selections except the Agent rows the board can lift:
+ * Working / Needs input / Finished hide matching activity chrome on cards, and
+ * Untracked hides proximity sessions next to related issues. State lives here
+ * rather than on the items because Base UI unmounts both the submenu and the
+ * menu on close — this component stays mounted with the trigger, so the
+ * choices survive.
  */
 export function BoardViewMenu({
 	compact = false,
 	surfaceLabel = "board",
 	showUntracked,
 	onShowUntrackedChange,
+	shownSessionStateIds,
+	onShownSessionStateIdsChange,
 }: Readonly<BoardViewMenuProps>) {
 	const [groupId, setGroupId] = useState<string>(BOARD_GROUP_DEFAULT_ID);
 	const [hideDoneId, setHideDoneId] = useState<string>(BOARD_HIDE_DONE_DEFAULT_ID);
@@ -195,22 +208,56 @@ export function BoardViewMenu({
 	);
 	const [shownFieldIds, setShownFieldIds] = useState(() => toShownIds(BOARD_FIELD_OPTIONS));
 	const isUntrackedControlled = showUntracked !== undefined && onShowUntrackedChange !== undefined;
+	const isSessionStatesControlled = (
+		shownSessionStateIds !== undefined && onShownSessionStateIdsChange !== undefined
+	);
 	const shownAgentIds = useMemo(() => {
-		if (!isUntrackedControlled) {
+		if (!isSessionStatesControlled && !isUntrackedControlled) {
 			return shownAgentStateIds;
 		}
 
 		const next = new Set(shownAgentStateIds);
-		if (showUntracked) {
-			next.add("untracked");
-		} else {
-			next.delete("untracked");
+		if (isSessionStatesControlled) {
+			for (const id of BOARD_AGENT_SESSION_STATE_IDS) {
+				if (shownSessionStateIds.has(id)) {
+					next.add(id);
+				} else {
+					next.delete(id);
+				}
+			}
+		}
+		if (isUntrackedControlled) {
+			if (showUntracked) {
+				next.add("untracked");
+			} else {
+				next.delete("untracked");
+			}
 		}
 		return next;
-	}, [isUntrackedControlled, showUntracked, shownAgentStateIds]);
+	}, [
+		isSessionStatesControlled,
+		isUntrackedControlled,
+		showUntracked,
+		shownAgentStateIds,
+		shownSessionStateIds,
+	]);
 	const handleAgentToggle = (id: string) => {
 		if (id === "untracked" && isUntrackedControlled) {
 			onShowUntrackedChange(!showUntracked);
+			return;
+		}
+		if (
+			isBoardAgentSessionStateId(id)
+			&& shownSessionStateIds !== undefined
+			&& onShownSessionStateIdsChange !== undefined
+		) {
+			const next = new Set(shownSessionStateIds);
+			if (next.has(id)) {
+				next.delete(id);
+			} else {
+				next.add(id);
+			}
+			onShownSessionStateIdsChange(next);
 			return;
 		}
 

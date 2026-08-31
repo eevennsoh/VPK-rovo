@@ -1,8 +1,9 @@
 /**
  * Production Jira board "View settings" options, mirrored into the board's View
- * menu. Picking a row moves the menu's own indicator but does not change the
- * board — these lists are the chrome only, matching `BOARD_GROUP_OPTIONS` and
- * `BOARD_SORT_OPTIONS`.
+ * menu. Most lists are chrome only — picking a row moves the menu's own
+ * indicator. Agent session states are the exception: Working, Needs input, and
+ * Finished hide matching activity chrome on the board, and Untracked hides
+ * proximity sessions.
  */
 export const BOARD_HIDE_DONE_OPTIONS = [
 	{ id: "never", label: "Never" },
@@ -73,11 +74,32 @@ export const BOARD_PR_STATE_OPTIONS = [
 export type BoardPrStateId = (typeof BOARD_PR_STATE_OPTIONS)[number]["id"];
 
 /**
- * Which agent-session states surface on a card's activity row. Ordered by the
- * shape of a session rather than alphabetically: the state an agent holds on
- * its own, then the one that wants a human, then the terminal one. Untracked
- * sits after that lifecycle, separated, because it is the absence of a
- * session rather than a fourth session shape.
+ * Linked session states that can surface on a card's activity row. Ordered by
+ * the shape of a session rather than alphabetically: the state an agent holds
+ * on its own, then the one that wants a human, then the terminal one.
+ *
+ * These ids are the ones the board can lift and apply. Untracked is a fourth
+ * Agent row in the menu, but it is the absence of a session rather than a
+ * fourth session shape, so it is not in this list.
+ */
+export const BOARD_AGENT_SESSION_STATE_IDS = ["working", "needs-input", "finished"] as const;
+
+export type BoardAgentSessionStateId = (typeof BOARD_AGENT_SESSION_STATE_IDS)[number];
+
+const BOARD_AGENT_SESSION_STATE_ID_SET: ReadonlySet<string> = new Set(BOARD_AGENT_SESSION_STATE_IDS);
+
+export function isBoardAgentSessionStateId(id: string): id is BoardAgentSessionStateId {
+	return BOARD_AGENT_SESSION_STATE_ID_SET.has(id);
+}
+
+export const ALL_BOARD_AGENT_SESSION_STATE_IDS: ReadonlySet<BoardAgentSessionStateId> = new Set(
+	BOARD_AGENT_SESSION_STATE_IDS,
+);
+
+/**
+ * Which agent-session states surface on a card's activity row, plus Untracked.
+ * Untracked sits after the linked-session lifecycle, separated, because it is
+ * the absence of a session rather than a fourth session shape.
  *
  * Label-only in the menu — unlike PR state these rows carry no leading glyph,
  * so the list needs no literal-id union to key an icon map.
