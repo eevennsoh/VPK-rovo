@@ -44,10 +44,10 @@ import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 import {
-	BOARD_COLUMN_ACTION_REVEAL,
 	BoardColumnResizeButton,
 	CollapsedBoardColumn,
 } from "./components/collapsed-board-column";
+import { BOARD_COLUMN_ACTION_REVEAL } from "./lib/board-column-action-reveal";
 import {
 	EMPTY_COLLAPSED_BOARD_COLUMNS,
 	getBoardColumnOuterWidthPx,

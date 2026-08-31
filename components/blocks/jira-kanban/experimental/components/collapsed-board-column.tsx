@@ -9,10 +9,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-export const BOARD_COLUMN_ACTION_REVEAL = cn(
-	"pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical",
-	"motion-reduce:transition-none",
-);
+import { BOARD_COLUMN_ACTION_REVEAL } from "../lib/board-column-action-reveal";
 
 const COLLAPSED_HEAD_COUNT_AT_REST = cn(
 	"pointer-events-none absolute inset-0 flex items-center justify-center",

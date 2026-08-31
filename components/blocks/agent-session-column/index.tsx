@@ -375,10 +375,10 @@ export function AgentSessionColumn({
 					/>
 				) : (
 					<>
-						{viewItems.length === 0 ? (
-							<p className="text-xs text-text-subtlest">{emptyLabel}</p>
-						) : (
-							<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+						<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+							{viewItems.length === 0 ? (
+								<p className="text-xs text-text-subtlest">{emptyLabel}</p>
+							) : (
 								<div
 									ref={listRef}
 									className="min-h-0 min-w-0 flex-1 overflow-y-auto has-[:focus-visible]:overflow-visible"
@@ -393,29 +393,29 @@ export function AgentSessionColumn({
 										visibilityLabel={view === "hidden" ? "Show" : "Hide"}
 									/>
 								</div>
-								{showTopScrollMask || showBottomScrollMask ? (
-									<div
-										aria-hidden="true"
-										className="pointer-events-none absolute inset-0"
-									>
-										{showTopScrollMask ? (
-											<ScrollMaskEdgeOverlay
-												color={AGENT_SESSION_PLANE_FADE_COLOR}
-												edge="top"
-												fadeSize={AGENT_SESSION_PLANE_FADE_SIZE}
-											/>
-										) : null}
-										{showBottomScrollMask ? (
-											<ScrollMaskEdgeOverlay
-												color={AGENT_SESSION_PLANE_FADE_COLOR}
-												edge="bottom"
-												fadeSize={AGENT_SESSION_PLANE_FADE_SIZE}
-											/>
-										) : null}
-									</div>
-								) : null}
-							</div>
-						)}
+							)}
+							{showTopScrollMask || showBottomScrollMask ? (
+								<div
+									aria-hidden="true"
+									className="pointer-events-none absolute inset-0"
+								>
+									{showTopScrollMask ? (
+										<ScrollMaskEdgeOverlay
+											color={AGENT_SESSION_PLANE_FADE_COLOR}
+											edge="top"
+											fadeSize={AGENT_SESSION_PLANE_FADE_SIZE}
+										/>
+									) : null}
+									{showBottomScrollMask ? (
+										<ScrollMaskEdgeOverlay
+											color={AGENT_SESSION_PLANE_FADE_COLOR}
+											edge="bottom"
+											fadeSize={AGENT_SESSION_PLANE_FADE_SIZE}
+										/>
+									) : null}
+								</div>
+							) : null}
+						</div>
 						{showWellFooter ? (
 							<AgentSessionColumnHiddenFooter
 								count={view === "hidden" ? untrackedCount : hiddenCount}

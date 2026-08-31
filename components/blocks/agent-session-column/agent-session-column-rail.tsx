@@ -303,7 +303,7 @@ export function AgentSessionColumnRail({
 			    property of the distance between them. Focused-notch rings paint past
 			    the plane because the clip lifts for `:focus-visible`. */}
 			<motion.ul
-				className="flex min-h-0 w-full flex-1 flex-col items-center gap-1 overflow-y-auto"
+				className="flex min-h-0 w-full flex-1 flex-col items-center gap-1 overflow-y-auto -mx-1 px-1 has-[:focus-visible]:overflow-visible"
 				layoutScroll
 				onPointerEnter={isDocked ? dock.handlePointerEnter : undefined}
 				onPointerLeave={isDocked ? dock.handlePointerLeave : undefined}

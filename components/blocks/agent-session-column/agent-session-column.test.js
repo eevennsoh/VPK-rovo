@@ -596,6 +596,12 @@ test("the sticky footer reads Work hidden N in the active view", () => {
 	assert.match(FOOTER_SOURCE, /hover:bg-surface-hovered/u);
 	assert.doesNotMatch(FOOTER_SOURCE, /size="compact"|variant="ghost"/u);
 	assert.match(INDEX_SOURCE, /showWellFooter = view === "hidden" \|\| hiddenCount > 0/u);
+	// An empty visible list still occupies the flex-1 cell so Work hidden stays
+	// the bottom sibling instead of jumping under a short empty message.
+	assert.match(
+		INDEX_SOURCE,
+		/relative flex min-h-0 min-w-0 flex-1 flex-col">\s*\{viewItems\.length === 0 \?/u,
+	);
 	assert.match(INDEX_SOURCE, /<AgentSessionColumnHiddenFooter/u);
 	assert.match(INDEX_SOURCE, /mode=\{view === "hidden" \? "back" : "hidden"\}/u);
 	assert.match(INDEX_SOURCE, /count=\{view === "hidden" \? untrackedCount : hiddenCount\}/u);
@@ -603,7 +609,7 @@ test("the sticky footer reads Work hidden N in the active view", () => {
 	// is pinned to the list wrapper so it sits on the last cards, not the footer.
 	assert.match(
 		INDEX_SOURCE,
-		/flex-1 overflow-y-auto has-\[:focus-visible\]:overflow-visible"[\s\S]*?<\/div>\s*\{showTopScrollMask \|\| showBottomScrollMask \?/u,
+		/flex-1 overflow-y-auto has-\[:focus-visible\]:overflow-visible"[\s\S]*?<\/div>\s*\)\}\s*\{showTopScrollMask \|\| showBottomScrollMask \?/u,
 	);
 	assert.match(
 		INDEX_SOURCE,
@@ -626,6 +632,13 @@ test("the hidden view keeps Hidden work in the header and a back footer", () => 
 	assert.match(INDEX_SOURCE, /onClick=\{view === "hidden" \? closeHiddenView : openHiddenView\}/u);
 	assert.match(INDEX_SOURCE, /untrackedCount = count \?\? visibleItems\.length/u);
 	assert.match(INDEX_SOURCE, /items=\{viewItems\}/u);
+});
+
+test("the collapsed rail keeps a focus-ring gutter on its scrollport", () => {
+	assert.match(
+		RAIL_COLUMN_SOURCE,
+		/overflow-y-auto -mx-1 px-1 has-\[:focus-visible\]:overflow-visible/u,
+	);
 });
 
 test("the collapsed rail receives visible items only and collapse leaves hidden view", () => {
