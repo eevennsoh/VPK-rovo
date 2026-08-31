@@ -90,6 +90,11 @@ export interface AgentSessionProps {
 	/** Opt-in: makes each medium-detached row a draggable session that can reattach. */
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
 	/**
+	 * Pointer hover on a large column card. `null` when the pointer leaves.
+	 * Compact rows do not fire this — board spotlight is a column-card concern.
+	 */
+	onItemHover?: (item: AgentSessionItem | null) => void;
+	/**
 	 * When `onView` is set, non-coding rows for which this returns false omit the
 	 * body action. Coding agent rows ignore this permission check but still require
 	 * `onView` before their body becomes interactive. Defaults to every row.

@@ -51,6 +51,7 @@ export function AgentSessionCard({
 	isResumable,
 	item,
 	onCopyResume,
+	onItemHover,
 	onToggleVisibility,
 	onView,
 	visibilityLabel = "Hide",
@@ -67,6 +68,7 @@ export function AgentSessionCard({
 	isResumable?: (item: AgentSessionItem) => boolean;
 	item: AgentSessionItem;
 	onCopyResume?: (item: AgentSessionItem) => void;
+	onItemHover?: (item: AgentSessionItem | null) => void;
 	onToggleVisibility?: (item: AgentSessionItem) => void;
 	onView?: (item: AgentSessionItem) => void;
 	/** Tooltip and accessible name for the hover eye. Hide in the active list, Show in Hidden work. */
@@ -75,9 +77,16 @@ export function AgentSessionCard({
 	const shouldReduceMotion = useReducedMotion();
 	const [copiedResume, setCopiedResume] = useState(false);
 	const copiedResetRef = useRef<number | undefined>(undefined);
+	const onItemHoverRef = useRef(onItemHover);
+
+	useEffect(() => {
+		onItemHoverRef.current = onItemHover;
+	}, [onItemHover]);
 
 	useEffect(() => () => {
 		window.clearTimeout(copiedResetRef.current);
+		// Hide / filter can unmount the hovered row before pointerleave fires.
+		onItemHoverRef.current?.(null);
 	}, []);
 
 	const resumeCommand = getResumeCommand?.(item) ?? toAgentListResumeCommand(item);
@@ -119,6 +128,7 @@ export function AgentSessionCard({
 			),
 			label: visibilityLabel,
 			onClick: () => {
+				onItemHover?.(null);
 				onToggleVisibility?.(item);
 			},
 		},
@@ -133,6 +143,8 @@ export function AgentSessionCard({
 		<motion.li
 			animate={shouldPlayArrival ? { opacity: 1, y: 0 } : undefined}
 			data-testid={"agent-session-row-" + item.id}
+			onPointerEnter={() => onItemHover?.(item)}
+			onPointerLeave={() => onItemHover?.(null)}
 			// `false` for a settled card, so nothing replays when the list re-renders
 			// or the watermark clears the mark. Only an arrival animates.
 			initial={shouldPlayArrival ? { opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX } : false}
