@@ -49,7 +49,6 @@ test("Experimental board header opens the production View picker without changin
 	// Single-select dimensions keep their radio group inline...
 	for (const [trigger, list] of [
 		["Group by", "BOARD_GROUP_OPTIONS"],
-		["Sort by", "BOARD_SORT_OPTIONS"],
 		["Hide done work items", "BOARD_HIDE_DONE_OPTIONS"],
 		["Column size", "BOARD_COLUMN_SIZE_OPTIONS"],
 	]) {
@@ -60,12 +59,11 @@ test("Experimental board header opens the production View picker without changin
 		);
 	}
 	// ...while the show/hide dimensions are the same control over different
-	// lists, so they route through one shared submenu instead of four copies.
-	// PR state is the only one that passes an icon map; Agent, Columns, and Show
+	// lists, so they route through one shared submenu instead of three copies.
+	// Pull request is the only one that passes an icon map; Agent and Show
 	// fields stay label-only, so the `icons` prop is optional in the match.
 	for (const [label, list] of [
-		["Columns", "BOARD_COLUMN_OPTIONS"],
-		["PR state", "BOARD_PR_STATE_OPTIONS"],
+		["Pull request", "BOARD_PR_STATE_OPTIONS"],
 		["Agent", "BOARD_AGENT_STATE_OPTIONS"],
 		["Show fields", "BOARD_FIELD_OPTIONS"],
 	]) {
@@ -80,18 +78,20 @@ test("Experimental board header opens the production View picker without changin
 		1,
 		"checkbox rows should be defined once, in the shared submenu",
 	);
-	assert.match(viewMenu, /<DropdownMenuLabel>Order<\/DropdownMenuLabel>[\s\S]*BOARD_SORT_ORDER_OPTIONS\.map/u);
-	// PR state and Agent sit in their own section between grouping/sorting and
-	// column/card chrome, so they scan as a pair instead of trailing Columns.
-	// Anchor after the Sort submenu closes so the first separator cannot match
-	// the nested Sort/Order divider inside that submenu.
+	assert.doesNotMatch(withoutComments(viewMenu), /Sort by|BOARD_SORT_|label="Columns"|BOARD_COLUMN_OPTIONS/u);
+	// Pull request and Agent lead the menu, then grouping, then column/card chrome.
 	assert.match(
 		viewMenu,
-		/<DropdownMenuSubTrigger>Sort by<\/DropdownMenuSubTrigger>[\s\S]*<\/DropdownMenuSubContent>\s*<\/DropdownMenuSub>\s*<DropdownMenuSeparator \/>\s*<VisibilityToggleSubmenu[\s\S]*label="PR state"[\s\S]*label="Agent"[\s\S]*<DropdownMenuSeparator \/>[\s\S]*Column size[\s\S]*Hide done work items[\s\S]*label="Columns"[\s\S]*label="Show fields"/u,
+		/<VisibilityToggleSubmenu[\s\S]*label="Pull request"[\s\S]*label="Agent"[\s\S]*<DropdownMenuSeparator \/>[\s\S]*<DropdownMenuSubTrigger>Group by<\/DropdownMenuSubTrigger>[\s\S]*<DropdownMenuSeparator \/>[\s\S]*Column size[\s\S]*Hide done work items[\s\S]*label="Show fields"/u,
 	);
 	assert.match(
 		groupOptions,
 		/"Agent"[\s\S]*"Assignee"[\s\S]*"Atlassian Project"[\s\S]*"Epic"[\s\S]*"Labels"[\s\S]*"Priority"[\s\S]*"Subtask"/u,
+	);
+	assert.match(
+		groupOptions,
+		/export const BOARD_GROUP_DEFAULT_ID = "" as const/u,
+		"Group by should seed an empty selection so no dimension starts checked",
 	);
 	assert.match(
 		sortOptions,
@@ -119,8 +119,15 @@ test("Experimental board header opens the production View picker without changin
 	);
 	assert.match(
 		viewOptions,
-		/"Working"[\s\S]*"Needs input"[\s\S]*"Finished"/u,
+		/"Working"[\s\S]*"Needs input"[\s\S]*"Finished"[\s\S]*"Untracked"/u,
 	);
+	// Untracked is the absence of a session, so the shared submenu draws a
+	// divider above any row that opts in with `separatorBefore`.
+	assert.match(
+		viewOptions,
+		/id: "untracked", label: "Untracked", shown: true, separatorBefore: true/u,
+	);
+	assert.match(viewMenu, /option\.separatorBefore \? <DropdownMenuSeparator \/> : null/u);
 	assert.doesNotMatch(viewOptions, /"Idle"/u);
 	// PR state keeps literal ids (`as const satisfies`) so the menu's icon map is
 	// keyed by a union — an unmapped state is a type error, not a row that
@@ -147,8 +154,6 @@ test("Experimental board header opens the production View picker without changin
 	// which stays mounted with the trigger.
 	for (const seed of [
 		"BOARD_GROUP_DEFAULT_ID",
-		"BOARD_SORT_DEFAULT_ID",
-		"BOARD_SORT_ORDER_DEFAULT_ID",
 		"BOARD_HIDE_DONE_DEFAULT_ID",
 		"BOARD_COLUMN_SIZE_DEFAULT_ID",
 	]) {
@@ -166,13 +171,13 @@ test("Experimental board header opens the production View picker without changin
 	);
 	// Each checkbox list keeps its own set, so two lists sharing an option id
 	// cannot toggle each other.
-	assert.equal(withoutComments(viewMenu).match(/useState\(\(\) =>\s*toShownIds\(/gu).length, 4);
+	assert.equal(withoutComments(viewMenu).match(/useState\(\(\) =>\s*toShownIds\(/gu).length, 3);
 	// Self-contained: the menu takes no board data and hands nothing back, so a
-	// row moves this menu's indicator and never re-groups or re-sorts the board.
+	// row moves this menu's indicator and never re-groups the board.
 	assert.match(viewMenu, /interface BoardViewMenuProps \{\s*compact\?: boolean;\s*surfaceLabel\?: string;\s*\}/u);
 	// A single-section submenu is already named by its sub-trigger, so it carries
 	// no group label — the name moves to `aria-label` so the radio group keeps an
-	// accessible name. Only the two-section Sort by submenu still labels sections.
+	// accessible name.
 	for (const label of ["Hide done work items after", "Column size"]) {
 		assert.doesNotMatch(
 			viewMenu,
@@ -182,20 +187,14 @@ test("Experimental board header opens the production View picker without changin
 		assert.match(viewMenu, new RegExp(`aria-label="${label}"`, "u"), `${label} lost its accessible name`);
 	}
 	assert.equal(
-		viewMenu.match(/<DropdownMenuLabel>/gu).length,
-		2,
-		"only the two-section Sort by submenu should carry group labels",
+		viewMenu.match(/<DropdownMenuLabel>/gu)?.length ?? 0,
+		0,
+		"no submenu should carry group labels after Sort by was removed",
 	);
 	// Ticks sit at the trailing edge so every label left-aligns flush.
 	assert.equal(
 		viewMenu.match(/indicatorPlacement="end"/gu).length,
-		6,
+		4,
 		"every radio and checkbox list should place its indicator at the end",
-	);
-	// The Sort by submenu shows all eight rows at once instead of scrolling, but
-	// still yields to a short viewport via `--available-height` inside the min().
-	assert.match(
-		viewMenu,
-		/<DropdownMenuSubContent className="max-h-\[min\(24rem,var\(--available-height,24rem\)\)\]">/u,
 	);
 });

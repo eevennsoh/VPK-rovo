@@ -137,3 +137,45 @@ test("the route pins the shared Agent Session column beside Jira statuses", () =
 	assert.ok(columnIndex < scrollportIndex, "expected untracked work to stay pinned before the status scrollport");
 	assert.match(EXPERIMENTAL_BOARD_SOURCE, /agentSessionColumn \? "ps-2" : "ps-6"/u);
 });
+
+test("the board's single AI entry point is the Omnibar, scrubbing the PAY sprint week", () => {
+	assert.match(PAGE_SOURCE, /<Omnibar[\s\S]*positioning="viewport"/u);
+	assert.match(PAGE_SOURCE, /<Omnibar[\s\S]*timelineEntries=\{SCRUBBER_DEMO_ENTRIES\}/u);
+	// Two bottom-anchored Rovo affordances would compete for the same job, so the
+	// launcher is hidden — but the floating chat stays reachable from card actions,
+	// which is why `chat` is left on `auto`.
+	assert.match(PAGE_SOURCE, /<JgpRovoOverlay[\s\S]*launcher="hidden"/u);
+	assert.doesNotMatch(PAGE_SOURCE, /<JgpRovoOverlay[\s\S]*chat="hidden"/u);
+});
+
+test("the Omnibar block gates the timeline behind entries rather than always rendering it", () => {
+	const OMNIBAR_SOURCE = readProjectFile("components/blocks/omnibar/components/omnibar.tsx");
+	const OMNIBAR_BAR_SOURCE = readProjectFile("components/blocks/omnibar/components/omnibar-bar.tsx");
+
+	// No entries means no toggle, so every existing consumer keeps today's bar.
+	assert.match(OMNIBAR_SOURCE, /const timeline = timelineEntries\s*\?/u);
+	assert.match(OMNIBAR_BAR_SOURCE, /\{timeline \? \(/u);
+	// Only the horizontal axis takes the editor cell; `y` docks a sibling rail.
+	assert.match(OMNIBAR_BAR_SOURCE, /timeline\?\.isTimeline === true && timeline\.axis === "x"/u);
+	assert.match(OMNIBAR_SOURCE, /timelineAxis === "y"/u);
+});
+
+test("the Omnibar send control stays disabled when the host wires no onSubmit", () => {
+	// Regression: v4 is the first consumer to mount the Omnibar without `onSubmit`, and
+	// `OmnibarBar` used to omit `submitDisabled`. `RovoComposerActionButton` resolves
+	// `disabled` as `submitDisabled || !canSubmit`, so the button enabled itself on the
+	// first keystroke and then did nothing — `handleSubmit` returns early with no consumer.
+	const OMNIBAR_SOURCE = readProjectFile("components/blocks/omnibar/components/omnibar.tsx");
+	const OMNIBAR_BAR_SOURCE = readProjectFile("components/blocks/omnibar/components/omnibar-bar.tsx");
+
+	assert.match(OMNIBAR_SOURCE, /<OmnibarBar[\s\S]*submitDisabled=\{onSubmit === undefined\}/u);
+	assert.match(
+		OMNIBAR_BAR_SOURCE,
+		/<RovoComposerActionButton[\s\S]*submitDisabled=\{submitDisabled\}/u,
+		"the bar must forward submitDisabled, not just accept it",
+	);
+	// The runtime guard stays too: Enter reaches requestSubmit() without touching the button.
+	assert.match(OMNIBAR_SOURCE, /if \(!prompt \|\| onSubmit === undefined\) \{/u);
+	// v4 deliberately has no onSubmit, which is what makes the guard reachable there.
+	assert.doesNotMatch(PAGE_SOURCE, /<Omnibar[\s\S]*onSubmit=/u);
+});

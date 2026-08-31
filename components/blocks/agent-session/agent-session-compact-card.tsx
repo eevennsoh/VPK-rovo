@@ -1,12 +1,35 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { motion, useReducedMotion } from "motion/react";
 
+import { JiraIssueAgentActivityRows, type JiraIssueAgentActivity } from "@/components/blocks/jira-issue/agent-activity";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+import {
+	AGENT_SESSION_ARRIVAL_OFFSET_PX,
+	AGENT_SESSION_ARRIVAL_TRANSITION,
+} from "./agent-session-arrival-motion";
 import { AgentSessionMediumCard } from "./agent-session-medium-card";
 import { AgentSessionNotchMark } from "./agent-session-notch";
 import type { AgentSessionItem, AgentSessionVariant } from "./agent-session-types";
 
-function SmallAgentSession({
+function toAttachedActivity(item: AgentSessionItem): JiraIssueAgentActivity {
+	return {
+		agentBrandName: item.agent.brandName,
+		avatarSrc: item.agent.avatarSrc,
+		id: item.id,
+		label: item.title,
+		name: item.agent.name,
+		state: item.state === "needs-input" || item.state === "attention"
+			? "awaiting-input"
+			: item.state === "complete"
+				? "completed"
+				: "working",
+	};
+}
+
+function AttachedAgentSession({
 	isArriving,
 	isNew,
 	item,
@@ -17,9 +40,53 @@ function SmallAgentSession({
 	item: AgentSessionItem;
 	onView?: (item: AgentSessionItem) => void;
 }>) {
+	const shouldReduceMotion = useReducedMotion();
+	const shouldPlayArrival = isArriving && !shouldReduceMotion;
+
+	return (
+		<motion.div
+			animate={shouldPlayArrival ? { opacity: 1, y: 0 } : undefined}
+			className={cn(
+				"relative w-[276px] rounded-[10px] bg-bg-accent-gray-subtlest",
+				isNew ? "ring-1 ring-border-discovery" : null,
+			)}
+			data-new={isNew || undefined}
+			initial={shouldPlayArrival ? { opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX } : false}
+			style={{ willChange: shouldPlayArrival ? "opacity, transform" : undefined }}
+			transition={AGENT_SESSION_ARRIVAL_TRANSITION}
+		>
+			{isNew ? (
+				<>
+					<span className="sr-only">Newly synced, not yet reviewed</span>
+					<span aria-hidden="true" className="absolute left-1 top-1 size-1 rounded-full bg-icon-discovery" />
+				</>
+			) : null}
+			<JiraIssueAgentActivityRows
+				activities={[toAttachedActivity(item)]}
+				onViewChat={onView === undefined ? undefined : () => onView(item)}
+				shouldReduceMotion={shouldReduceMotion}
+				usesStrokeChrome
+			/>
+		</motion.div>
+	);
+}
+
+function SmallAgentSession({
+	flyout,
+	isArriving,
+	isNew,
+	item,
+	onView,
+}: Readonly<{
+	isArriving: boolean;
+	isNew: boolean;
+	item: AgentSessionItem;
+	onView?: (item: AgentSessionItem) => void;
+	flyout: boolean;
+}>) {
 	const content = <AgentSessionNotchMark isArriving={isArriving} isNew={isNew} />;
 
-	return onView === undefined ? (
+	return onView === undefined && !flyout ? (
 		<div
 			aria-label={`${item.agent.name} session: ${item.title}`}
 			className="group/notch flex h-5 w-8 items-center justify-center"
@@ -30,9 +97,9 @@ function SmallAgentSession({
 	) : (
 		<div className="group/notch flex h-5 w-8 items-center justify-center">
 			<Button
-				aria-label={`Open ${item.agent.name} session: ${item.title}`}
+				aria-label={`${onView === undefined ? "Preview" : "Open"} ${item.agent.name} session: ${item.title}`}
 				className="h-5! w-8! rounded-xs! p-0"
-				onClick={() => onView(item)}
+				onClick={onView === undefined ? undefined : () => onView(item)}
 				type="button"
 				variant="ghost"
 			>
@@ -43,6 +110,7 @@ function SmallAgentSession({
 }
 
 export function AgentSessionCompactCard({
+	flyout = false,
 	isArriving = false,
 	isNew = false,
 	item,
@@ -52,11 +120,20 @@ export function AgentSessionCompactCard({
 	isArriving?: boolean;
 	isNew?: boolean;
 	item: AgentSessionItem;
+	flyout?: boolean;
 	onView?: (item: AgentSessionItem) => void;
 	variant: Exclude<AgentSessionVariant, "large">;
 }>) {
 	return variant === "small" ? (
 		<SmallAgentSession
+			flyout={flyout}
+			isArriving={isArriving}
+			isNew={isNew}
+			item={item}
+			onView={onView}
+		/>
+	) : variant === "medium-attached" ? (
+		<AttachedAgentSession
 			isArriving={isArriving}
 			isNew={isNew}
 			item={item}
@@ -64,6 +141,7 @@ export function AgentSessionCompactCard({
 		/>
 	) : (
 		<AgentSessionMediumCard
+			flyout={flyout}
 			isArriving={isArriving}
 			isNew={isNew}
 			item={item}

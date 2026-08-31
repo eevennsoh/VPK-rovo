@@ -9,8 +9,32 @@ import type { ScrubberEntry } from "@/components/blocks/scrubber/lib/scrubber-en
 import { toMarkState, toResolvedIndex } from "@/components/blocks/scrubber/lib/scrubber-geometry";
 import { cn } from "@/lib/utils";
 
+/**
+ * How the rail paints itself against the surface behind it.
+ *
+ * `default` is the light-surface treatment: near-black rules and a black pill.
+ * `inverse` is the same contrast, flipped, for a rail embedded in a dark surface
+ * (the Omnibar's `background.neutral.bold` bar) — where the default rules and
+ * the black pill would both disappear into the fill.
+ *
+ * Only the rail root carries a colour: the rules are `bg-current` and inherit
+ * it, so a new tone means one entry here rather than a prop threaded through
+ * every mark.
+ */
+export type ScrubberTone = "default" | "inverse";
+
+const RAIL_TONE: Record<ScrubberTone, string> = {
+	default: "text-text",
+	inverse: "text-text-inverse",
+};
+
 const PILL =
-	"bg-bg-neutral-bold text-text-inverse inline-flex items-center rounded-md px-2 py-1.5 text-[11px] leading-none font-medium whitespace-nowrap";
+	"inline-flex items-center rounded-md px-2 py-1.5 text-[11px] leading-none font-medium whitespace-nowrap";
+
+const PILL_TONE: Record<ScrubberTone, string> = {
+	default: "bg-bg-neutral-bold text-text-inverse",
+	inverse: "bg-surface text-text",
+};
 
 /**
  * One pill names the active entry, and slides rather than reappearing so the
@@ -25,7 +49,7 @@ const PILL =
  * guard: VPK's duration tokens keep playing otherwise, and unlike a JS check it
  * also holds on the pre-hydration render.
  */
-function ScrubberPill({ axis, entry }: Readonly<{ axis: "x" | "y"; entry: ScrubberEntry }>) {
+function ScrubberPill({ axis, entry, tone }: Readonly<{ axis: "x" | "y"; entry: ScrubberEntry; tone: ScrubberTone }>) {
 	const percent = `${entry.offset * 100}%`;
 	return (
 		<div
@@ -40,7 +64,7 @@ function ScrubberPill({ axis, entry }: Readonly<{ axis: "x" | "y"; entry: Scrubb
 				axis === "y" ? "left-0 transition-[top]" : "top-0 transition-[left,transform]",
 			)}
 		>
-			<span className={PILL}>{entry.heading}</span>
+			<span className={cn(PILL, PILL_TONE[tone])}>{entry.heading}</span>
 		</div>
 	);
 }
@@ -59,6 +83,8 @@ export interface ScrubberRailProps {
 	ariaLabel: string;
 	className?: string;
 	showPill?: boolean;
+	/** Which surface the rail is painted on. `inverse` for a dark host. */
+	tone?: ScrubberTone;
 }
 
 function noop() {}
@@ -87,6 +113,7 @@ export function ScrubberRail({
 	onHoverChange = noop,
 	onSelect,
 	showPill = true,
+	tone = "default",
 }: Readonly<ScrubberRailProps>) {
 	const shouldReduceMotion = useReducedMotion();
 	// One resolved index for everything downstream. An `activeIndex` that
@@ -112,7 +139,7 @@ export function ScrubberRail({
 	return (
 		<div
 			data-slot="scrubber"
-			className={cn("flex min-w-0", axis === "y" ? "h-full gap-1.5" : "flex-col gap-1.5", className)}
+			className={cn("flex min-w-0", RAIL_TONE[tone], axis === "y" ? "h-full gap-1.5" : "flex-col gap-1.5", className)}
 		>
 			<div
 				ref={railRef}
@@ -152,7 +179,7 @@ export function ScrubberRail({
 					aria-hidden="true"
 					className={cn("pointer-events-none relative min-w-0", axis === "y" ? "flex-1" : "h-[22px] w-full")}
 				>
-					{activeEntry === null ? null : <ScrubberPill axis={axis} entry={activeEntry} />}
+					{activeEntry === null ? null : <ScrubberPill axis={axis} entry={activeEntry} tone={tone} />}
 				</div>
 			) : null}
 		</div>

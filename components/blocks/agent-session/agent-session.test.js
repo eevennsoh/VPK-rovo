@@ -94,14 +94,18 @@ test("large uncaptured-work Rovo rows use the same 32px hexagon as other agents"
 });
 
 test("large remains the default while every card receives the selected size variant", () => {
-	assert.match(TYPES_SOURCE, /export type AgentSessionVariant = "large" \| "medium" \| "small";/u);
+	assert.match(
+		TYPES_SOURCE,
+		/export type AgentSessionVariant = "large" \| "medium-detached" \| "medium-attached" \| "small";/u,
+	);
 	assert.match(TYPES_SOURCE, /variant\?: AgentSessionVariant;/u);
 	assert.match(INDEX_SOURCE, /variant = "large"/u);
+	assert.match(INDEX_SOURCE, /const items = itemsProp \?\? \(isAttached \? AGENT_SESSION_ATTACHED_ITEMS : AGENT_SESSION_ITEMS\);/u);
 	assert.match(INDEX_SOURCE, /data-variant=\{variant\}/u);
 	assert.match(INDEX_SOURCE, /variant === "large"/u);
 	assert.match(INDEX_SOURCE, /<AgentSessionCard/u);
 	assert.match(INDEX_SOURCE, /<AgentSessionCompactCard/u);
-	assert.match(INDEX_SOURCE, /<li data-testid=\{"agent-session-row-" \+ item\.id\} key=\{item\.id\}>/u);
+	assert.match(INDEX_SOURCE, /render=\{<li data-testid=\{"agent-session-row-" \+ item\.id\} \/>\}/u);
 });
 
 test("medium matches the 276 by 33 Figma row and reuses shared identity primitives", () => {
@@ -122,6 +126,24 @@ test("medium matches the 276 by 33 Figma row and reuses shared identity primitiv
 	assert.match(MEDIUM_CARD_SOURCE, /invoker === undefined \? null : \(/u);
 });
 
+test("medium attached reuses the Jira issue agent activity row", () => {
+	assert.match(
+		COMPACT_CARD_SOURCE,
+		/import \{ JiraIssueAgentActivityRows, type JiraIssueAgentActivity \} from "@\/components\/blocks\/jira-issue\/agent-activity";/u,
+	);
+	assert.match(COMPACT_CARD_SOURCE, /variant === "medium-attached"/u);
+	assert.match(COMPACT_CARD_SOURCE, /<JiraIssueAgentActivityRows/u);
+	assert.match(COMPACT_CARD_SOURCE, /usesStrokeChrome/u);
+	assert.match(COMPACT_CARD_SOURCE, /item\.state === "needs-input" \|\| item\.state === "attention"/u);
+	assert.match(COMPACT_CARD_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
+	assert.match(COMPACT_CARD_SOURCE, /data-new=\{isNew \|\| undefined\}/u);
+	assert.match(COMPACT_CARD_SOURCE, /isNew \? "ring-1 ring-border-discovery" : null/u);
+	assert.match(COMPACT_CARD_SOURCE, /Newly synced, not yet reviewed/u);
+	assert.match(COMPACT_CARD_SOURCE, /initial=\{shouldPlayArrival \? \{ opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX \} : false\}/u);
+	assert.match(INDEX_SOURCE, /const isAttached = variant === "medium-attached";/u);
+	assert.match(INDEX_SOURCE, /content=\{isAttached \? "details" : "untracked-work"\}/u);
+});
+
 test("medium preserves newly synced state and its one-shot arrival beat", () => {
 	assert.match(MEDIUM_CARD_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
 	assert.match(MEDIUM_CARD_SOURCE, /data-new=\{isNew \|\| undefined\}/u);
@@ -137,8 +159,8 @@ test("small is the collapsed-column notch and stays keyboard operable when view 
 	assert.match(COMPACT_CARD_SOURCE, /variant === "small"/u);
 	assert.match(COMPACT_CARD_SOURCE, /import \{ AgentSessionNotchMark \} from "\.\/agent-session-notch";/u);
 	assert.match(COMPACT_CARD_SOURCE, /flex h-5 w-8 items-center justify-center/u);
-	assert.match(COMPACT_CARD_SOURCE, /aria-label=\{`Open \$\{item\.agent\.name\} session: \$\{item\.title\}`\}/u);
-	assert.match(COMPACT_CARD_SOURCE, /onClick=\{\(\) => onView\(item\)\}/u);
+	assert.match(COMPACT_CARD_SOURCE, /onView === undefined \? "Preview" : "Open"/u);
+	assert.match(COMPACT_CARD_SOURCE, /onClick=\{onView === undefined \? undefined : \(\) => onView\(item\)\}/u);
 	assert.match(COMPACT_CARD_SOURCE, /<AgentSessionNotchMark isArriving=\{isArriving\} isNew=\{isNew\} \/>/u);
 	// One 1px hairline, the same weight as a Pulse ruler rule. It never shrinks:
 	// the magnified path is meant to outgrow its row. Standalone it has no rail
@@ -203,7 +225,7 @@ test("the untracked-work flyout owns capture, so the card has no footer chin", (
 	assert.match(CARD_SOURCE, /closeDelay=\{160\}/u);
 	assert.match(INDEX_SOURCE, /<JiraSessionFlyoutSurface/u);
 	assert.match(INDEX_SOURCE, /capturedSessionIds=\{capturedItemIds\}/u);
-	assert.match(INDEX_SOURCE, /content="untracked-work"/u);
+	assert.match(INDEX_SOURCE, /content=\{isAttached \? "details" : "untracked-work"\}/u);
 	assert.match(INDEX_SOURCE, /const \[flyoutHandle\] = useState\(createJiraSessionFlyoutHandle\);/u);
 	assert.match(INDEX_SOURCE, /bindAgentSessionFlyoutActions/u);
 	assert.match(INDEX_SOURCE, /capturedItemIds\?\.has\(item\.id\)/u);
@@ -228,6 +250,23 @@ test("sessions share one moving untracked-work flyout instead of a popup per row
 	assert.match(INDEX_SOURCE, /onAddAsSubtask=\{flyoutActions\.onAddAsSubtask\}/u);
 	assert.match(INDEX_SOURCE, /onCreateWorkItem=\{flyoutActions\.onCreateWorkItem\}/u);
 	assert.match(INDEX_SOURCE, /onLinkWorkItem=\{flyoutActions\.onLinkWorkItem\}/u);
+});
+
+test("every size variant opens the shared agent-session flyout", () => {
+	// Large connects inside AgentSessionCard; compact variants connect at the
+	// list-item boundary so Medium and Small keep their exact visual geometry.
+	assert.match(CARD_SOURCE, /<JiraSessionFlyoutTrigger/u);
+	assert.match(
+		INDEX_SOURCE,
+		/<JiraSessionFlyoutTrigger[\s\S]*render=\{<li data-testid=\{"agent-session-row-" \+ item\.id\} \/>\}[\s\S]*session=\{flyoutSession\}/u,
+	);
+	assert.match(COMPACT_CARD_SOURCE, /onView === undefined && !flyout/u);
+	assert.match(MEDIUM_CARD_SOURCE, /onView === undefined && !flyout/u);
+	assert.match(
+		INDEX_SOURCE,
+		/<JiraSessionFlyoutSurface[\s\S]*content=\{isAttached \? "details" : "untracked-work"\}[\s\S]*handle=\{flyoutHandle\}/u,
+	);
+	assert.doesNotMatch(INDEX_SOURCE, /\{variant === "large" \? \(\s*<JiraSessionFlyoutSurface/u);
 });
 
 // Fast Refresh can only preserve a component's state when its file exports
@@ -271,7 +310,7 @@ test("a coding session body is read-only when the host omits onView", () => {
 	);
 });
 
-test("ships demo data and catalog entries for all three size variants", () => {
+test("ships demo data and catalog entries for every attachment and size variant", () => {
 	assert.match(DATA_SOURCE, /export const AGENT_SESSION_ITEMS/u);
 	assert.match(DATA_SOURCE, /id: "lw-scope-thread"/u);
 	assert.match(DATA_SOURCE, /brandName: "claude"/u);
@@ -285,14 +324,17 @@ test("ships demo data and catalog entries for all three size variants", () => {
 	assert.match(REGISTRY_SOURCE, /"agent-session": dynamic/u);
 	assert.match(MANIFEST_SOURCE, /blockComponent\("agent-session", "Agent Session"\)/u);
 	assert.match(DETAIL_SOURCE, /export const AGENT_SESSION_DETAIL/u);
-	assert.match(DEMO_SOURCE, /export function AgentSessionDemoMedium\(\)/u);
+	assert.match(DEMO_SOURCE, /export function AgentSessionDemoMediumDetached\(\)/u);
+	assert.match(DEMO_SOURCE, /export function AgentSessionDemoMediumAttached\(\)/u);
 	assert.match(DEMO_SOURCE, /export function AgentSessionDemoSmall\(\)/u);
-	assert.match(VARIANT_REGISTRY_SOURCE, /"agent-session-demo-medium": dynamic\(/u);
+	assert.match(VARIANT_REGISTRY_SOURCE, /"agent-session-demo-medium-detached": dynamic\(/u);
+	assert.match(VARIANT_REGISTRY_SOURCE, /"agent-session-demo-medium-attached": dynamic\(/u);
 	assert.match(VARIANT_REGISTRY_SOURCE, /"agent-session-demo-small": dynamic\(/u);
-	assert.match(DETAIL_SOURCE, /title: "Medium"/u);
+	assert.match(DETAIL_SOURCE, /title: "Medium detached"/u);
+	assert.match(DETAIL_SOURCE, /title: "Medium attached"/u);
 	assert.match(DETAIL_SOURCE, /title: "Small"/u);
 	assert.match(DETAIL_SOURCE, /name: "variant"/u);
-	assert.match(DETAIL_SOURCE, /type: '"large" \| "medium" \| "small"'/u);
+	assert.match(DETAIL_SOURCE, /type: '"large" \| "medium-detached" \| "medium-attached" \| "small"'/u);
 	assert.match(
 		DETAIL_SOURCE,
 		/import \{ AgentSession \} from "@\/components\/blocks\/agent-session";/u,
@@ -360,4 +402,3 @@ test("Pulse's uncaptured column renders sessions through this block", () => {
 	assert.doesNotMatch(RAIL_SOURCE, /<AgentList\b/u);
 	assert.doesNotMatch(RAIL_SOURCE, /variant="uncaptured"/u);
 });
-

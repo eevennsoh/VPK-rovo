@@ -14,5 +14,9 @@ export const BOARD_GROUP_OPTIONS = [
 
 export type BoardGroupOptionId = (typeof BOARD_GROUP_OPTIONS)[number]["id"];
 
-/** The Display menu opens on the grouping the board is already drawn with. */
-export const BOARD_GROUP_DEFAULT_ID: BoardGroupOptionId = "epic";
+/**
+ * Empty on purpose: the View menu opens with no grouping selected. The radio
+ * group still accepts a later pick; nothing matches this value, so no row
+ * starts checked.
+ */
+export const BOARD_GROUP_DEFAULT_ID = "" as const;
