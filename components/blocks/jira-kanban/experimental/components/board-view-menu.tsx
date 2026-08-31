@@ -1,8 +1,13 @@
 "use client";
 
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- DropdownMenuTrigger uses a render-node so the View button owns the visual state.
-import { useState } from "react";
+import { useState, type ComponentType } from "react";
+import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
 import CustomizeIcon from "@atlaskit/icon/core/customize";
+import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
+import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
+import PullRequestIcon from "@atlaskit/icon/core/pull-request";
+import MergeQueueIcon from "@atlaskit/icon-lab/core/merge-queue";
 
 import { BOARD_GROUP_DEFAULT_ID, BOARD_GROUP_OPTIONS } from "../data/board-group-options";
 import {
@@ -20,6 +25,7 @@ import {
 	BOARD_HIDE_DONE_DEFAULT_ID,
 	BOARD_HIDE_DONE_OPTIONS,
 	BOARD_PR_STATE_OPTIONS,
+	type BoardPrStateId,
 } from "../data/board-view-options";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +42,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
+import { token } from "@/lib/tokens";
 
 interface BoardViewMenuProps {
 	compact?: boolean;
@@ -48,6 +55,35 @@ interface VisibilityOption {
 	shown: boolean;
 	locked?: boolean;
 }
+
+/**
+ * The leading glyph for a state row. Colour rides along with the glyph because
+ * ADS ships its icon CSS unlayered, so a Tailwind text utility loses to it —
+ * the `color` prop is the only reliable way to tint one of these.
+ */
+interface StateIcon {
+	glyph: ComponentType<NewCoreIconProps>;
+	color: NewCoreIconProps["color"];
+}
+
+type StateIcons = Readonly<Record<string, StateIcon>>;
+
+/**
+ * PR lifecycle glyphs, keyed by the same ids the option list uses. `satisfies
+ * Record<BoardPrStateId, …>` makes an unmapped state a compile error rather
+ * than a row that silently renders without its icon. Colours follow the
+ * lifecycle the way Bitbucket and Jira already read: green while open, quiet
+ * while a draft, blue in the queue, purple once merged, red when closed unmerged.
+ */
+const PR_STATE_ICONS = {
+	open: { glyph: PullRequestIcon, color: token("color.icon.success") },
+	// Same glyph as Open, just quiet: a draft IS a pull request, so colour alone
+	// carries the difference rather than inventing a second shape for it.
+	draft: { glyph: PullRequestIcon, color: token("color.icon.subtle") },
+	queued: { glyph: MergeQueueIcon, color: token("color.icon.information") },
+	merged: { glyph: MergeSuccessIcon, color: token("color.icon.discovery") },
+	closed: { glyph: MergeFailureIcon, color: token("color.icon.danger") },
+} as const satisfies Record<BoardPrStateId, StateIcon>;
 
 /** The ids a list starts with checked, so state can be seeded once per list. */
 function toShownIds(options: readonly VisibilityOption[]) {
@@ -77,6 +113,8 @@ interface VisibilityToggleSubmenuProps {
 	options: readonly VisibilityOption[];
 	checkedIds: ReadonlySet<string>;
 	onToggle: (id: string) => void;
+	/** Leading glyphs keyed by option id. Lists without one render label-only. */
+	icons?: StateIcons;
 }
 
 /**
@@ -93,23 +131,34 @@ function VisibilityToggleSubmenu({
 	options,
 	checkedIds,
 	onToggle,
+	icons,
 }: Readonly<VisibilityToggleSubmenuProps>) {
 	return (
 		<DropdownMenuSub>
 			<DropdownMenuSubTrigger>{label}</DropdownMenuSubTrigger>
 			<DropdownMenuSubContent>
-				{options.map((option) => (
-					<DropdownMenuCheckboxItem
-						checked={checkedIds.has(option.id)}
-						// Some rows are always on — Jira locks Summary, for instance.
-						disabled={option.locked}
-						indicatorPlacement="end"
-						key={option.id}
-						onCheckedChange={() => onToggle(option.id)}
-					>
-						{option.label}
-					</DropdownMenuCheckboxItem>
-				))}
+				{options.map((option) => {
+					const stateIcon = icons?.[option.id];
+					return (
+						<DropdownMenuCheckboxItem
+							checked={checkedIds.has(option.id)}
+							// `gap-2` only where a glyph is present; the icon-less lists
+							// keep their labels flush against the row's own padding.
+							className={stateIcon ? "gap-2" : undefined}
+							// Some rows are always on — Jira locks Summary, for instance.
+							disabled={option.locked}
+							indicatorPlacement="end"
+							key={option.id}
+							onCheckedChange={() => onToggle(option.id)}
+						>
+							{stateIcon ? (
+								// Decorative: the row's own text already names the state.
+								<Icon render={<stateIcon.glyph color={stateIcon.color} label="" />} />
+							) : null}
+							{option.label}
+						</DropdownMenuCheckboxItem>
+					);
+				})}
 			</DropdownMenuSubContent>
 		</DropdownMenuSub>
 	);
@@ -208,6 +257,7 @@ export function BoardViewMenu({
 
 				<VisibilityToggleSubmenu
 					checkedIds={shownPrStateIds}
+					icons={PR_STATE_ICONS}
 					label="PR state"
 					onToggle={toggleIn(setShownPrStateIds)}
 					options={BOARD_PR_STATE_OPTIONS}
