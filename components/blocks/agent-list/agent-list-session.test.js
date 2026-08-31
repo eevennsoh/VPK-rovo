@@ -134,6 +134,31 @@ test("session flyout derives lifecycle, issue, and host fallbacks from a row", a
 	);
 });
 
+test("session flyout keeps the invoking person separate from the work-item assignee", async () => {
+	const { toAgentSessionFlyoutItem } = await loadSession();
+
+	const session = toAgentSessionFlyoutItem(sessionItem({
+		assignee: {
+			name: "Work item owner",
+			src: "/avatar-user/priya-hansra/color/asow-service-yellow.png",
+		},
+	}, {
+		invokedBy: {
+			avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+			name: "person A",
+		},
+	}));
+
+	assert.deepEqual(session.invokedBy, {
+		name: "person A",
+		src: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+	});
+	assert.deepEqual(session.assignee, {
+		name: "Work item owner",
+		src: "/avatar-user/priya-hansra/color/asow-service-yellow.png",
+	});
+});
+
 test("session flyout carries the row's hexagonal agent mark and work-item status", async () => {
 	const { toAgentSessionFlyoutItem } = await loadSession();
 

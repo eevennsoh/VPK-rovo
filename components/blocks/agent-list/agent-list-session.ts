@@ -113,6 +113,17 @@ export function toAgentSessionFlyoutItem(item: AgentListItem): JiraSidebarSessio
 		...details,
 		agentAvatarSrc: item.agent.avatarSrc,
 		agentName: item.agent.name,
+		// The row owns who started the session. Keep that person distinct from
+		// the Jira work-item assignee while carrying the header avatar into the
+		// shared flyout payload.
+		...(item.invokedBy === undefined
+			? {}
+			: {
+				invokedBy: {
+					name: item.invokedBy.name,
+					...(item.invokedBy.avatarSrc === undefined ? {} : { src: item.invokedBy.avatarSrc }),
+				},
+			}),
 		...(item.agent.brandName === undefined ? {} : { brandName: item.agent.brandName }),
 		...(item.agent.vpkLogo === undefined ? {} : { vpkLogo: item.agent.vpkLogo }),
 		branch: details?.branch ?? item.branch,
