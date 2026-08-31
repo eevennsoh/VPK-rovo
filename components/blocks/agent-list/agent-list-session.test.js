@@ -134,6 +134,22 @@ test("session flyout derives lifecycle, issue, and host fallbacks from a row", a
 	);
 });
 
+test("session flyout carries the invoking person into its timestamp header", async () => {
+	const { toAgentSessionFlyoutItem } = await loadSession();
+
+	const session = toAgentSessionFlyoutItem(sessionItem(undefined, {
+		invokedBy: {
+			avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+			name: "person A",
+		},
+	}));
+
+	assert.deepEqual(session.assignee, {
+		name: "person A",
+		src: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+	});
+});
+
 test("session flyout carries the row's hexagonal agent mark and work-item status", async () => {
 	const { toAgentSessionFlyoutItem } = await loadSession();
 

@@ -113,6 +113,17 @@ export function toAgentSessionFlyoutItem(item: AgentListItem): JiraSidebarSessio
 		...details,
 		agentAvatarSrc: item.agent.avatarSrc,
 		agentName: item.agent.name,
+		// The row owns who started the session. Carry that person into the
+		// flyout's assignee slot so its header keeps the human avatar adjacent to
+		// the relative timestamp, matching the current Agent Session design.
+		...(item.invokedBy === undefined
+			? {}
+			: {
+				assignee: {
+					name: item.invokedBy.name,
+					...(item.invokedBy.avatarSrc === undefined ? {} : { src: item.invokedBy.avatarSrc }),
+				},
+			}),
 		...(item.agent.brandName === undefined ? {} : { brandName: item.agent.brandName }),
 		...(item.agent.vpkLogo === undefined ? {} : { vpkLogo: item.agent.vpkLogo }),
 		branch: details?.branch ?? item.branch,
