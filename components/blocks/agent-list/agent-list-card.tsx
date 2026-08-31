@@ -39,12 +39,12 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
+import { actorInitials, InvokerAvatar, InvokerBy } from "./agent-list-invoker";
 import { isLocalAgentListItem, toAgentSessionFlyoutItem } from "./agent-list-session";
 import type {
 	AgentListAgent,
 	AgentListCustomFlyoutActions,
 	AgentListFlyout,
-	AgentListInvoker,
 	AgentListItem,
 	AgentListPrStatus,
 	AgentListState,
@@ -128,17 +128,6 @@ function MetadataDot() {
 	);
 }
 
-function actorInitials(name: string): string {
-	return (
-		name
-			.split(" ")
-			.filter(Boolean)
-			.slice(0, 2)
-			.map((word) => word[0]?.toUpperCase())
-			.join("") || "?"
-	);
-}
-
 /** The two leading-avatar footprints the row uses, as Avatar size tokens. */
 const PX_TO_PERSON_AVATAR_SIZE: Record<number, NonNullable<AvatarProps["size"]>> = {
 	24: "sm",
@@ -178,35 +167,6 @@ function AgentListIdentity({
 			sizePx={sizePx}
 			vpkLogo={agent.vpkLogo}
 		/>
-	);
-}
-
-/** 16px invoker face. Shared by the `by` chip and the local-session metadata line. */
-function InvokerAvatar({ invoker }: Readonly<{ invoker: AgentListInvoker }>) {
-	return (
-		<Avatar className="shrink-0" label={invoker.name} size="xs" title={invoker.name}>
-			{invoker.avatarSrc ? (
-				<AvatarImage alt="" src={invoker.avatarSrc} />
-			) : null}
-			<AvatarFallback>{actorInitials(invoker.name)}</AvatarFallback>
-		</Avatar>
-	);
-}
-
-/** Compact `by <face>` metadata after the relative timestamp. */
-function InvokerBy({ invoker }: Readonly<{ invoker: AgentListInvoker }>) {
-	return (
-		<span className="flex shrink-0 items-center gap-1">
-			<span>by</span>
-			<TooltipProvider>
-				<Tooltip>
-					<TooltipTrigger render={<span className="inline-flex size-4 shrink-0" />}>
-						<InvokerAvatar invoker={invoker} />
-					</TooltipTrigger>
-					<TooltipContent>{invoker.name}</TooltipContent>
-				</Tooltip>
-			</TooltipProvider>
-		</span>
 	);
 }
 

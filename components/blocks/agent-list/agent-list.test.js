@@ -30,6 +30,10 @@ const SESSION_SOURCE = readFileSync(
 	join(__dirname, "agent-list-session.ts"),
 	"utf8",
 );
+const INVOKER_SOURCE = readFileSync(
+	join(__dirname, "agent-list-invoker.tsx"),
+	"utf8",
+);
 const FOR_YOU_PANEL_SOURCE = readFileSync(
 	join(
 		__dirname,
@@ -687,7 +691,7 @@ test("needs-input activity headers shimmer Needs input with trailing Rovo dots i
 test("the session activity header shows who invoked the agent after the timestamp", () => {
 	assert.match(TYPES_SOURCE, /export interface AgentListInvoker/u);
 	assert.match(TYPES_SOURCE, /invokedBy\?: AgentListInvoker;/u);
-	assert.match(CARD_SOURCE, /function InvokerBy/u);
+	assert.match(INVOKER_SOURCE, /export function InvokerBy/u);
 	assert.match(
 		CARD_SOURCE,
 		/\{messageTimestamp && item\.invokedBy \? \(\s*<InvokerBy invoker=\{item\.invokedBy\} \/>\s*\) : null\}/u,
@@ -697,10 +701,10 @@ test("the session activity header shows who invoked the agent after the timestam
 		/\{!messageTimestamp && item\.invokedBy \? \(\s*<InvokerBy invoker=\{item\.invokedBy\} \/>\s*\) : null\}/u,
 	);
 	assert.match(
-		CARD_SOURCE,
+		INVOKER_SOURCE,
 		/<Avatar className="shrink-0" label=\{invoker\.name\} size="xs" title=\{invoker\.name\}>/u,
 	);
-	assert.match(CARD_SOURCE, /<TooltipContent>\{invoker\.name\}<\/TooltipContent>/u);
+	assert.match(INVOKER_SOURCE, /<TooltipContent>\{invoker\.name\}<\/TooltipContent>/u);
 	assert.match(DATA_SOURCE, /invokedBy: DEMO_INVOKER/u);
 	assert.match(DATA_SOURCE, /name: "Jordan Lee"/u);
 });
@@ -720,19 +724,24 @@ test("local sessions show a static timestamp, invoker avatar, and machine name",
 		/export function isLocalAgentListItem\(item: AgentListItem\): boolean \{\s*return getAgentListHost\(item\) === "local";/u,
 	);
 	assert.match(INDEX_SOURCE, /isLocalAgentListItem,/u);
-	assert.match(CARD_SOURCE, /function InvokerAvatar/u);
+	assert.match(INVOKER_SOURCE, /export function InvokerAvatar/u);
+	assert.match(
+		INVOKER_SOURCE,
+		/<Avatar className="shrink-0" label=\{invoker\.name\} size="xs" title=\{invoker\.name\}>/u,
+	);
 	assert.match(
 		CARD_SOURCE,
-		/<Avatar className="shrink-0" label=\{invoker\.name\} size="xs" title=\{invoker\.name\}>/u,
+		/import \{ actorInitials, InvokerAvatar, InvokerBy \} from "\.\/agent-list-invoker";/u,
 	);
 	assert.match(
 		CARD_SOURCE,
 		/if \(isLocalAgentListItem\(item\) && item\.machineName\) \{[\s\S]*\{item\.invokedBy \? \(\s*<InvokerAvatar invoker=\{item\.invokedBy\} \/>\s*\) : \([\s\S]*<DevicesIcon color="currentColor" label="" size="small" \/>[\s\S]*\{item\.machineName\}/u,
 	);
-	assert.doesNotMatch(
-		CARD_SOURCE,
-		/function InvokerAvatar\([\s\S]*?<Tooltip[\s\S]*?function InvokerBy/u,
-	);
+	const invokerAvatarSource = /export function InvokerAvatar[\s\S]*?(?=\nexport function InvokerBy)/u.exec(
+		INVOKER_SOURCE,
+	)?.[0];
+	assert.ok(invokerAvatarSource);
+	assert.doesNotMatch(invokerAvatarSource, /Tooltip/u);
 	assert.match(DATA_SOURCE, /host: "local"/u);
 	assert.match(DATA_SOURCE, /machineName: "Geoff’s MacBook"/u);
 	assert.match(DATA_SOURCE, /timeLabel: "3 mins ago"/u);
