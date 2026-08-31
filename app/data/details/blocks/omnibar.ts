@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const OMNIBAR_DETAIL: ComponentDetail = {
 	description:
-		"A persistent bottom-center AI bar with three geometries. At rest it is a black lozenge holding the Rovo sparkle. Hovering morphs it into a compact prompt bar — `+`, customize, editor, side-panel, and send — and pressing inside the bar pins it open so a draft survives the pointer leaving. The side-panel button docks a chat surface on the right. Pass `timelineEntries` and the bar also grows a `⌛ Timeline` toggle that scrubs the Scrubber block's notch rail, horizontally in the bar or vertically at the screen edge. Pill and bar are a single `layout` element on `background.neutral.bold`, the same black the floating Rovo button uses.",
+		"A persistent bottom-center AI bar with three geometries. At rest it is a black lozenge holding the Rovo sparkle. Hovering morphs it into a compact prompt bar — `+`, editor, side-panel, and send — and pressing inside the bar pins it open so a draft survives the pointer leaving. The side-panel button docks a chat surface on the right. Pass `timelineEntries` and a Timeline context pill sits above the composer, scrubbing the Scrubber block's notch rail horizontally in the bar or vertically at the screen edge. Pill and bar share one surface whose width and height animate on `background.neutral.bold`, the same black the floating Rovo button uses — never `layout` scale, which would enlarge the prompt text.",
 	demoLayout: { previewHeight: "fixed" },
 	importStatement: `import { Omnibar } from "@/components/blocks/omnibar";`,
 	usage: `import { Omnibar } from "@/components/blocks/omnibar";
@@ -27,7 +27,7 @@ export const OMNIBAR_DETAIL: ComponentDetail = {
 		{
 			title: "Timeline — horizontal",
 			description:
-				"`timelineEntries` adds a `⌛ Timeline` toggle to the leading cluster. On the default `x` axis it swaps the editor cell for the Scrubber's notch rail and turns send into a close; the shell never moves under the click, and the draft comes back when you leave.",
+				"`timelineEntries` adds a Timeline context pill above the composer. On the default `x` axis it swaps the editor cell for the Scrubber's notch rail and turns send into a close; the shell never moves under the click, and the draft comes back when you leave.",
 			demoSlug: "omnibar-demo-timeline",
 		},
 		{
@@ -68,7 +68,7 @@ export const OMNIBAR_DETAIL: ComponentDetail = {
 			name: "timelineEntries",
 			type: "readonly ScrubberEntry[]",
 			description:
-				"Supplying a timeline is what adds the ⌛ Timeline toggle. Omit it and the bar has no toggle at all. Build entries with buildScrubberEntries() from the Scrubber block.",
+				"Supplying a timeline is what adds the Timeline context pill above the composer. Omit it and the bar has no pill at all. Build entries with buildScrubberEntries() from the Scrubber block.",
 		},
 		{
 			name: "timelineAxis",
@@ -95,6 +95,19 @@ export const OMNIBAR_DETAIL: ComponentDetail = {
 			default: "false",
 			description:
 				'Opens the bar straight into Timeline. Only meaningful with timelineEntries and defaultState="expanded".',
+		},
+		{
+			name: "tone",
+			type: '"inverse" | "default"',
+			default: '"inverse"',
+			description:
+				'"inverse" paints the expanded bar onto the black morphing surface. "default" leaves the existing compact FloatingComposer chrome in place.',
+		},
+		{
+			name: "onOpenPanel",
+			type: "() => void",
+			description:
+				"Host-owned panel. When set, the side-panel control calls this and collapses the bar instead of docking the block's own ChatPanel.",
 		},
 		{
 			name: "onSubmit",

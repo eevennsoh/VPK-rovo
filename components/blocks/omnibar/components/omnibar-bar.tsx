@@ -2,7 +2,6 @@
 
 import AddIcon from "@atlaskit/icon/core/add";
 import CrossIcon from "@atlaskit/icon/core/cross";
-import CustomizeIcon from "@atlaskit/icon/core/customize";
 import PanelRightIcon from "@atlaskit/icon/core/panel-right";
 import HourglassIcon from "@atlaskit/icon-lab/core/hourglass";
 import { motion } from "motion/react";
@@ -12,6 +11,7 @@ import type { ScrubberEntry } from "@/components/blocks/scrubber/lib/scrubber-en
 import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
 import { RovoComposerActionButton } from "@/components/projects/shared/components/rovo-composer-send-controls";
 import { floatingComposerTextareaClassName } from "@/components/projects/shared/components/rovo-composer-styles";
+import { ContextBarPill } from "@/components/ui-custom/context-bar";
 import {
 	PromptInputButton,
 	PromptInputTextarea,
@@ -19,7 +19,15 @@ import {
 import { cn } from "@/lib/utils";
 import { token } from "@/lib/tokens";
 
-import { OMNIBAR_CONTENT, resolveOmnibarTransition } from "../omnibar-motion";
+import {
+	OMNIBAR_CONTENT,
+	OMNIBAR_CONTENT_EXIT,
+	OMNIBAR_CONTEXT_ENTER,
+	OMNIBAR_CONTEXT_EXIT,
+	resolveOmnibarTransition,
+} from "../omnibar-motion";
+
+export type OmnibarTone = "inverse" | "default";
 
 /**
  * Inverts the light `PromptInput variant="floating"` chrome onto the black surface.
@@ -56,21 +64,14 @@ const OMNIBAR_SUBMIT_BUTTON = cn(
 );
 
 /**
- * The Timeline toggle, on the inverse skin.
- *
- * `aria-pressed` is both the announced state and the entire selected treatment. The
- * shared button base paints it `background.selected` / `text.selected`, which is a light
- * blue chip designed for a light surface — on the black bar it reads as a foreign object,
- * so the pressed pair is re-pointed at the same `neutral.bold.hovered` fill the other
- * inverse controls use. tailwind-merge resolves these against the base cva's
- * `aria-pressed:*` classes because they land in the same property groups, so no `!` is
- * needed here.
+ * Inverse treatment for the Timeline context pill. The shared `ContextBarPill` is a
+ * light neutral chip; on `background.neutral.bold` that chip has to use the same
+ * hovered/pressed pair as the other inverse controls.
  */
-const OMNIBAR_TOGGLE_BUTTON = cn(
-	OMNIBAR_GHOST_BUTTON,
-	"text-text-inverse",
-	"aria-pressed:bg-bg-neutral-bold-hovered aria-pressed:text-text-inverse aria-pressed:border-transparent",
-	"aria-pressed:hover:bg-bg-neutral-bold-hovered aria-pressed:active:bg-bg-neutral-bold-pressed",
+const OMNIBAR_TIMELINE_PILL_INVERSE = cn(
+	"bg-bg-neutral-bold-hovered text-text-inverse hover:bg-bg-neutral-bold-pressed",
+	"active:bg-bg-neutral-bold-pressed",
+	"aria-pressed:bg-bg-neutral-bold-hovered aria-pressed:text-text-inverse",
 );
 
 /**
@@ -118,6 +119,7 @@ export interface OmnibarBarProps {
 	onValueChange: (value: string) => void;
 	placeholder: string;
 	shouldReduceMotion: boolean | null;
+	tone: OmnibarTone;
 	/**
 	 * True when the Omnibar has no `onSubmit` consumer.
 	 *
@@ -128,125 +130,188 @@ export interface OmnibarBarProps {
 	 */
 	submitDisabled: boolean;
 	timeline?: OmnibarBarTimeline;
+	/**
+	 * Compact tone hoists the Timeline chip above the morphing surface so layout
+	 * cannot scale it with the composer. Inverse keeps it inside the black bar.
+	 */
+	hideContextPill?: boolean;
 	value: string;
 }
 
 /**
- * Expanded state: the shared floating composer, re-skinned black.
+ * Expanded state: the shared floating composer.
+ *
+ * `tone="inverse"` re-skins that composer onto the black morphing surface. `tone="default"`
+ * leaves the existing compact prompt chrome alone — the same FloatingComposer the catalog
+ * already ships.
  *
  * `FloatingComposer` already owns the `[ + ] [ editor ] [ actions ]` row and the measurement
  * that stacks the editor onto its own line once a draft would wrap, so this only supplies
- * the controls and the inverse palette.
+ * the controls and, on inverse, the re-tint.
  *
- * With a `timeline`, the leading cluster grows a `⌛ Timeline` toggle. On the `x` axis that
- * toggle swaps this bar's editor cell for the notch rail and turns the trailing send into a
- * close — the shell, its chrome, and its position never move under the click. On `y` the bar
- * is unchanged and the rail docks to the screen edge instead; the toggle only reads pressed.
+ * With a `timeline`, a `ContextBarPill` sits above the composer — the same context-chip
+ * treatment the compact prompt already uses — rather than a configure control in the
+ * leading cluster. On the `x` axis that pill swaps this bar's editor cell for the notch
+ * rail and turns the trailing send into a close. On `y` the bar is unchanged and the rail
+ * docks to the screen edge instead; the pill only reads pressed.
  */
+function OmnibarTimelinePill({
+	isInverse,
+	isPressed,
+	onToggle,
+}: Readonly<{
+	isInverse: boolean;
+	isPressed: boolean;
+	onToggle: () => void;
+}>) {
+	return (
+		<ContextBarPill
+			aria-label="Timeline"
+			aria-pressed={isPressed}
+			className={isInverse ? OMNIBAR_TIMELINE_PILL_INVERSE : "aria-pressed:bg-bg-selected aria-pressed:text-text-selected"}
+			icon={<HourglassIcon color="currentColor" label="" size="small" />}
+			onClick={onToggle}
+		>
+			Timeline
+		</ContextBarPill>
+	);
+}
+
+/**
+ * Timeline chip with its own presence — fade + 8px slide, popup-family recipe.
+ * Mounted *outside* the composer's `layout` surface on compact tone so mouse-out
+ * cannot scale it with the prompt.
+ */
+export function OmnibarContextPill({
+	isInverse,
+	isPressed,
+	onToggle,
+	shouldReduceMotion,
+}: Readonly<{
+	isInverse: boolean;
+	isPressed: boolean;
+	onToggle: () => void;
+	shouldReduceMotion: boolean | null;
+}>) {
+	const enterTransition = resolveOmnibarTransition(OMNIBAR_CONTEXT_ENTER, shouldReduceMotion);
+	const exitTransition = resolveOmnibarTransition(OMNIBAR_CONTEXT_EXIT, shouldReduceMotion);
+
+	return (
+		<motion.div
+			animate="visible"
+			className="pointer-events-auto"
+			data-slot="omnibar-context-pill"
+			exit="hidden"
+			initial="hidden"
+			style={{ willChange: "opacity, transform" }}
+			variants={{
+				hidden: { opacity: 0, y: 8, transition: exitTransition },
+				visible: { opacity: 1, y: 0, transition: enterTransition },
+			}}
+		>
+			<OmnibarTimelinePill
+				isInverse={isInverse}
+				isPressed={isPressed}
+				onToggle={onToggle}
+			/>
+		</motion.div>
+	);
+}
+
 export function OmnibarBar({
 	onOpenPanel,
 	onSubmit,
 	onValueChange,
 	placeholder,
 	shouldReduceMotion,
+	hideContextPill = false,
 	submitDisabled,
 	timeline,
+	tone,
 	value,
 }: Readonly<OmnibarBarProps>) {
-	const transition = resolveOmnibarTransition(OMNIBAR_CONTENT, shouldReduceMotion);
+	const enterTransition = resolveOmnibarTransition(OMNIBAR_CONTENT, shouldReduceMotion);
+	const exitTransition = resolveOmnibarTransition(OMNIBAR_CONTENT_EXIT, shouldReduceMotion);
 	// Only the horizontal axis takes over this bar. `y` docks its rail to the screen edge
 	// as a sibling surface, so the editor and the trailing controls stay exactly as they
 	// are and the toggle just reads as pressed.
 	const isRailInBar = timeline?.isTimeline === true && timeline.axis === "x";
+	const isInverse = tone === "inverse";
+	const iconColor = isInverse ? token("color.icon.inverse") : "currentColor";
+	const ghostButtonClassName = isInverse ? OMNIBAR_GHOST_BUTTON : undefined;
 
 	return (
 		<motion.div
 			animate={{ opacity: 1 }}
-			className="w-full"
+			className="flex w-full flex-col items-start gap-2 overflow-visible"
 			data-slot="omnibar-bar"
-			exit={{ opacity: 0, transition }}
+			exit={{ opacity: 0, transition: exitTransition }}
 			initial={{ opacity: 0 }}
+			// Position only — a size `layout` here would scale placeholder/button type.
+			layout="position"
 			style={{ willChange: "opacity" }}
-			transition={transition}
+			transition={enterTransition}
 		>
+			{timeline && !hideContextPill ? (
+				<OmnibarTimelinePill
+					isInverse={isInverse}
+					isPressed={timeline.isTimeline}
+					onToggle={timeline.onToggle}
+				/>
+			) : null}
 			<FloatingComposer
 				actions={
 					isRailInBar ? (
 						<PromptInputButton
 							aria-label="Exit timeline"
-							className={OMNIBAR_GHOST_BUTTON}
+							className={ghostButtonClassName}
 							onClick={timeline.onExit}
 							size="icon-sm"
 							tooltip="Exit timeline"
 							variant="ghost"
 						>
-							<CrossIcon color={token("color.icon.inverse")} label="" />
+							<CrossIcon color={iconColor} label="" />
 						</PromptInputButton>
 					) : (
 						<>
 							<PromptInputButton
 								aria-label="Switch to side panel"
-								className={OMNIBAR_GHOST_BUTTON}
+								className={ghostButtonClassName}
 								onClick={onOpenPanel}
 								size="icon-sm"
 								tooltip="Switch to side panel"
 								variant="ghost"
 							>
-								<PanelRightIcon color={token("color.icon.inverse")} label="" />
+								<PanelRightIcon color={iconColor} label="" />
 							</PromptInputButton>
 							<RovoComposerActionButton
 								canSubmit={value.trim().length > 0}
 								composerStatus="ready"
 								onStop={noopStop}
 								showSubmitWhenEmpty
-								submitButtonClassName={OMNIBAR_SUBMIT_BUTTON}
+								submitButtonClassName={isInverse ? OMNIBAR_SUBMIT_BUTTON : undefined}
 								submitDisabled={submitDisabled}
 							/>
 						</>
 					)
 				}
 				addButton={
-					// The leading cluster is identical in both modes on purpose. Dropping the two
-					// decorative controls while scrubbing would slide the Timeline pill left, out
-					// from under the pointer that just pressed it.
-					<>
-						<PromptInputButton
-							aria-label="Add"
-							className={OMNIBAR_GHOST_BUTTON}
-							size="icon-sm"
-							variant="ghost"
-						>
-							<AddIcon color={token("color.icon.inverse")} label="" />
-						</PromptInputButton>
-						<PromptInputButton
-							aria-label="Customize"
-							className={OMNIBAR_GHOST_BUTTON}
-							size="icon-sm"
-							variant="ghost"
-						>
-							<CustomizeIcon color={token("color.icon.inverse")} label="" />
-						</PromptInputButton>
-						{timeline ? (
-							<PromptInputButton
-								aria-label="Timeline"
-								aria-pressed={timeline.isTimeline}
-								className={OMNIBAR_TOGGLE_BUTTON}
-								onClick={timeline.onToggle}
-								size="sm"
-								tooltip="Scrub the timeline"
-								variant="ghost"
-							>
-								{/* ADS ships icon colour as unlayered Compiled CSS, so `currentColor`
-								    is the only way the pressed text colour reaches the glyph. */}
-								<HourglassIcon color="currentColor" label="" />
-								<span>Timeline</span>
-							</PromptInputButton>
-						) : null}
-					</>
+					<PromptInputButton
+						aria-label="Add"
+						className={ghostButtonClassName}
+						size="icon-sm"
+						variant="ghost"
+					>
+						<AddIcon color={iconColor} label="" />
+					</PromptInputButton>
 				}
 				allowOverflow={isRailInBar}
 				aria-label="Ask Rovo"
-				className={cn(OMNIBAR_BAR_SKIN, isRailInBar ? OMNIBAR_TIMELINE_SKIN : null)}
+				className={cn(
+					"w-full",
+					isInverse ? OMNIBAR_BAR_SKIN : null,
+					isRailInBar ? OMNIBAR_TIMELINE_SKIN : null,
+				)}
 				layout={isRailInBar ? "compact" : "auto"}
 				onSubmit={onSubmit}
 			>
@@ -259,13 +324,17 @@ export function OmnibarBar({
 							className={OMNIBAR_RAIL_BLOCK}
 							entries={timeline.entries}
 							onSelect={timeline.onSelect}
-							tone="inverse"
+							tone={isInverse ? "inverse" : undefined}
 						/>
 					</div>
 				) : (
 					<PromptInputTextarea
 						aria-label="Ask Rovo"
-						className={cn(floatingComposerTextareaClassName, "text-sm text-text-inverse")}
+						className={cn(
+							floatingComposerTextareaClassName,
+							"text-sm",
+							isInverse ? "text-text-inverse" : "leading-5",
+						)}
 						onChange={(event) => onValueChange(event.currentTarget.value)}
 						onEditorReady={(editor) => {
 							if (timeline?.consumeFocusRestore() === true) {
