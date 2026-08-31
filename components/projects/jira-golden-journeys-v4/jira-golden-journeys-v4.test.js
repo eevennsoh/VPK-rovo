@@ -53,6 +53,14 @@ test("the board opts into the experimental Jira issue split agent rows", () => {
 	);
 });
 
+test("the board puts agent and skill assignment in each card's More actions menu", () => {
+	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage[\s\S]*cardGenerativeActionPresentation="more-actions"/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /cardGenerativeActionPresentation\?: JiraIssueGenerativeActionPresentation;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<ExperimentalJiraKanban[\s\S]*cardGenerativeActionPresentation=\{cardGenerativeActionPresentation\}/u);
+	assert.match(EXPERIMENTAL_BOARD_SOURCE, /cardGenerativeActionPresentation = "sparkle",/u);
+	assert.match(EXPERIMENTAL_BOARD_SOURCE, /<JiraIssue[\s\S]*generativeActionPresentation=\{cardGenerativeActionPresentation\}/u);
+});
+
 test("the Jira tab bar groups Board and List under one Work items destination", () => {
 	assert.match(JIRA_HEADER_SOURCE, /export function JiraViewTabs/u);
 	assert.match(JIRA_HEADER_SOURCE, /className=\{isFirst \? "ml-4 flex-none" : "flex-none"\}/u);

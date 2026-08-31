@@ -15,6 +15,7 @@ import { AgentSessionColumn, type AgentSessionColumnProps } from "@/components/b
 import {
 	JiraIssue,
 	type JiraIssueAgentActivityLayout,
+	type JiraIssueGenerativeActionPresentation,
 } from "@/components/blocks/jira-issue";
 import {
 	mapAgentToMentionItem,
@@ -72,6 +73,8 @@ import type {
  */
 export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
+	/** Chooses where card agent and skill actions are presented. */
+	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;
 	/**
 	 * Sessions that never became work items, pinned as a sunken column to the
 	 * left of the board. Omit to render only Jira status columns.
@@ -629,6 +632,7 @@ export function ExperimentalJiraKanban({
 	ariaLabel = "Experimental Jira kanban columns. Scroll horizontally to review all statuses.",
 	assignedAgentIdsByColumn = {},
 	boardColumns,
+	cardGenerativeActionPresentation = "sparkle",
 	cardMoveAnimation,
 	collapsedColumns: controlledCollapsedColumns,
 	draggedCardCode = null,
@@ -912,6 +916,7 @@ export function ExperimentalJiraKanban({
 													},
 													skills: generativeActionSkills,
 												}}
+												generativeActionPresentation={cardGenerativeActionPresentation}
 												onAgentActivityOpenChange={
 													onCardAgentActivityOpenChange
 														? (open) => onCardAgentActivityOpenChange(open, card, column.title)
