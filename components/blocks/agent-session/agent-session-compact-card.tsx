@@ -1,10 +1,15 @@
 "use client";
 
-import { useReducedMotion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 
 import { JiraIssueAgentActivityRows, type JiraIssueAgentActivity } from "@/components/blocks/jira-issue/agent-activity";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
+import {
+	AGENT_SESSION_ARRIVAL_OFFSET_PX,
+	AGENT_SESSION_ARRIVAL_TRANSITION,
+} from "./agent-session-arrival-motion";
 import { AgentSessionMediumCard } from "./agent-session-medium-card";
 import { AgentSessionNotchMark } from "./agent-session-notch";
 import type { AgentSessionItem, AgentSessionVariant } from "./agent-session-types";
@@ -25,23 +30,44 @@ function toAttachedActivity(item: AgentSessionItem): JiraIssueAgentActivity {
 }
 
 function AttachedAgentSession({
+	isArriving,
+	isNew,
 	item,
 	onView,
 }: Readonly<{
+	isArriving: boolean;
+	isNew: boolean;
 	item: AgentSessionItem;
 	onView?: (item: AgentSessionItem) => void;
 }>) {
 	const shouldReduceMotion = useReducedMotion();
+	const shouldPlayArrival = isArriving && !shouldReduceMotion;
 
 	return (
-		<div className="w-[276px] rounded-[10px] bg-bg-accent-gray-subtlest">
+		<motion.div
+			animate={shouldPlayArrival ? { opacity: 1, y: 0 } : undefined}
+			className={cn(
+				"relative w-[276px] rounded-[10px] bg-bg-accent-gray-subtlest",
+				isNew ? "ring-1 ring-border-discovery" : null,
+			)}
+			data-new={isNew || undefined}
+			initial={shouldPlayArrival ? { opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX } : false}
+			style={{ willChange: shouldPlayArrival ? "opacity, transform" : undefined }}
+			transition={AGENT_SESSION_ARRIVAL_TRANSITION}
+		>
+			{isNew ? (
+				<>
+					<span className="sr-only">Newly synced, not yet reviewed</span>
+					<span aria-hidden="true" className="absolute left-1 top-1 size-1 rounded-full bg-icon-discovery" />
+				</>
+			) : null}
 			<JiraIssueAgentActivityRows
 				activities={[toAttachedActivity(item)]}
 				onViewChat={onView === undefined ? undefined : () => onView(item)}
 				shouldReduceMotion={shouldReduceMotion}
 				usesStrokeChrome
 			/>
-		</div>
+		</motion.div>
 	);
 }
 
@@ -107,7 +133,12 @@ export function AgentSessionCompactCard({
 			onView={onView}
 		/>
 	) : variant === "medium-attached" ? (
-		<AttachedAgentSession item={item} onView={onView} />
+		<AttachedAgentSession
+			isArriving={isArriving}
+			isNew={isNew}
+			item={item}
+			onView={onView}
+		/>
 	) : (
 		<AgentSessionMediumCard
 			flyout={flyout}

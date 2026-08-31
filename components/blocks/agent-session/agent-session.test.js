@@ -132,6 +132,11 @@ test("medium attached reuses the Jira issue agent activity row", () => {
 	assert.match(COMPACT_CARD_SOURCE, /<JiraIssueAgentActivityRows/u);
 	assert.match(COMPACT_CARD_SOURCE, /usesStrokeChrome/u);
 	assert.match(COMPACT_CARD_SOURCE, /item\.state === "needs-input" \|\| item\.state === "attention"/u);
+	assert.match(COMPACT_CARD_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
+	assert.match(COMPACT_CARD_SOURCE, /data-new=\{isNew \|\| undefined\}/u);
+	assert.match(COMPACT_CARD_SOURCE, /isNew \? "ring-1 ring-border-discovery" : null/u);
+	assert.match(COMPACT_CARD_SOURCE, /Newly synced, not yet reviewed/u);
+	assert.match(COMPACT_CARD_SOURCE, /initial=\{shouldPlayArrival \? \{ opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX \} : false\}/u);
 	assert.match(INDEX_SOURCE, /const isAttached = variant === "medium-attached";/u);
 	assert.match(INDEX_SOURCE, /content=\{isAttached \? "details" : "untracked-work"\}/u);
 });
