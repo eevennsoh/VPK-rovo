@@ -244,6 +244,7 @@ function PulseUncapturedColumn({
 	const sessionItems = toPulseSessionItems(
 		looseWork,
 		members,
+		workItems,
 	);
 	const sessionHandlers = useMemo(
 		() => toPulseSessionHandlers({

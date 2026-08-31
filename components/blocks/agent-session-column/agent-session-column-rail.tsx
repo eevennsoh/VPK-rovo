@@ -1,14 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { animate, motion, useMotionValue, useReducedMotion } from "motion/react";
 
 import GrowHorizontalIcon from "@atlaskit/icon/core/grow-horizontal";
 
-import { toAgentSessionFlyoutItem, type AgentListState } from "@/components/blocks/agent-list";
-import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import type { AgentListState } from "@/components/blocks/agent-list";
 import { AGENT_SESSION_ARRIVAL_TRANSITION } from "@/components/blocks/agent-session/agent-session-arrival-motion";
 import { AgentSessionNotchMark } from "@/components/blocks/agent-session/agent-session-notch";
+import type { AgentSessionItem } from "@/components/blocks/agent-session/agent-session-types";
+import {
+	bindAgentSessionFlyoutActions,
+	resolveAgentSessionWorkItemKey,
+	toAgentSessionUntrackedWorkFlyoutItem,
+} from "@/components/blocks/agent-session/agent-session-work-item";
+import type { JiraSidebarSessionItem } from "@/components/blocks/product-sidebar/variants/jira";
 import {
 	AGENT_SESSION_NOTCH_MAGNIFY_IN,
 	AGENT_SESSION_NOTCH_MAGNIFY_OUT,
@@ -243,6 +249,7 @@ function useNotchDock(itemCount: number, enabled: boolean) {
  */
 function AgentSessionNotch({
 	flyoutHandle,
+	flyoutSession,
 	isArriving,
 	isNew,
 	item,
@@ -250,6 +257,7 @@ function AgentSessionNotch({
 	proximity,
 }: Readonly<{
 	flyoutHandle: JiraSessionFlyoutHandle;
+	flyoutSession: JiraSidebarSessionItem;
 	isArriving: boolean;
 	isNew: boolean;
 	item: AgentSessionItem;
@@ -261,6 +269,7 @@ function AgentSessionNotch({
 	// rail, and a notch that is still unreviewed stays lit without regrowing.
 	return (
 		<JiraSessionFlyoutTrigger
+			closeDelay={160}
 			handle={flyoutHandle}
 			render={
 				<motion.li
@@ -269,7 +278,7 @@ function AgentSessionNotch({
 					transition={AGENT_SESSION_ARRIVAL_TRANSITION}
 				/>
 			}
-			session={toAgentSessionFlyoutItem(item)}
+			session={flyoutSession}
 		>
 			<button
 				className="focus-visible:ring-ring flex h-5 w-full items-center justify-center rounded-xs outline-none focus-visible:ring-2"
@@ -289,18 +298,30 @@ function AgentSessionNotch({
 
 export function AgentSessionColumnRail({
 	arrivingItemIds,
+	capturedItemIds,
+	getSuggestedWorkItemKey,
+	getSuggestedWorkItemKeys,
 	items,
 	newItemIds,
+	onCreateWorkItem,
 	onExpand,
+	onLinkWorkItem,
+	onSubtasks,
 	onView,
 	sessionCount,
 	title,
 }: Readonly<{
 	/** Subset of `newItemIds` whose arrival beat has not played yet. */
 	arrivingItemIds?: ReadonlySet<string>;
+	capturedItemIds?: ReadonlySet<string>;
+	getSuggestedWorkItemKey?: (item: AgentSessionItem) => string | undefined;
+	getSuggestedWorkItemKeys?: (item: AgentSessionItem) => readonly string[] | undefined;
 	items: readonly AgentSessionItem[];
 	newItemIds?: ReadonlySet<string>;
+	onCreateWorkItem?: (item: AgentSessionItem) => void;
 	onExpand: () => void;
+	onLinkWorkItem?: (item: AgentSessionItem, workItemKey?: string) => void;
+	onSubtasks?: (item: AgentSessionItem) => void;
 	onView?: (item: AgentSessionItem) => void;
 	sessionCount: number;
 	title: string;
@@ -309,6 +330,15 @@ export function AgentSessionColumnRail({
 	// the popup stays mounted and follows the hovered notch, so sliding down the
 	// rail crossfades instead of remounting a card per notch.
 	const [flyoutHandle] = useState(createJiraSessionFlyoutHandle);
+	const flyoutActions = useMemo(
+		() => bindAgentSessionFlyoutActions(items, {
+			capturedItemIds,
+			onCreateWorkItem,
+			onLinkWorkItem,
+			onSubtasks,
+		}),
+		[capturedItemIds, items, onCreateWorkItem, onLinkWorkItem, onSubtasks],
+	);
 	const shouldReduceMotion = useReducedMotion();
 	// Under reduced motion the rail keeps its dock switched off entirely and the
 	// marks fall back to their own row's hover treatment, which resolves
@@ -399,6 +429,14 @@ export function AgentSessionColumnRail({
 					{items.map((item: AgentSessionItem, index: number) => (
 						<AgentSessionNotch
 							flyoutHandle={flyoutHandle}
+							flyoutSession={toAgentSessionUntrackedWorkFlyoutItem(
+								item,
+								resolveAgentSessionWorkItemKey(
+									item,
+									getSuggestedWorkItemKey,
+									getSuggestedWorkItemKeys,
+								),
+							)}
 							isArriving={(arrivingItemIds ?? newItemIds)?.has(item.id) ?? false}
 							isNew={newItemIds?.has(item.id) ?? false}
 							item={item}
@@ -415,7 +453,14 @@ export function AgentSessionColumnRail({
 					))}
 				</motion.ul>
 			</div>
-			<JiraSessionFlyoutSurface handle={flyoutHandle} />
+			<JiraSessionFlyoutSurface
+				capturedSessionIds={capturedItemIds}
+				content="untracked-work"
+				handle={flyoutHandle}
+				onAddAsSubtask={flyoutActions.onAddAsSubtask}
+				onCreateWorkItem={flyoutActions.onCreateWorkItem}
+				onLinkWorkItem={flyoutActions.onLinkWorkItem}
+			/>
 		</>
 	);
 }

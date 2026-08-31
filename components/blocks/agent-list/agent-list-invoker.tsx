@@ -11,7 +11,7 @@ import {
 import { actorInitials } from "./agent-list-actor";
 import type { AgentListInvoker } from "./agent-list-types";
 
-/** 16px invoker face. Shared by the `by` chip and the local-session metadata line. */
+/** 16px invoker face. Used by the `by` chip on activity headers. */
 export function InvokerAvatar({ invoker }: Readonly<{ invoker: AgentListInvoker }>) {
 	return (
 		<Avatar className="shrink-0" label={invoker.name} size="xs" title={invoker.name}>

@@ -40,7 +40,7 @@ import {
 import { cn } from "@/lib/utils";
 
 import { actorInitials } from "./agent-list-actor";
-import { InvokerAvatar, InvokerBy } from "./agent-list-invoker";
+import { InvokerBy } from "./agent-list-invoker";
 import { isLocalAgentListItem, toAgentSessionFlyoutItem } from "./agent-list-session";
 import type {
 	AgentListAgent,
@@ -325,24 +325,20 @@ function rowPrimaryActionLabel(item: AgentListItem): string {
 
 /**
  * Identity on the metadata line. Cloud rows name the agent; local rows name the
- * machine beside the invoker's 16px avatar, matching the Jira session flyout
- * host chip's machine copy. The devices glyph is only a fallback when the row
- * has no invoker to show.
+ * machine beside a devices glyph, matching the Jira session flyout host chip's
+ * machine copy. The invoker face belongs on InvokerBy / activity headers, not
+ * next to the machine name.
  */
 function AgentListMetadataIdentity({ item }: Readonly<{ item: AgentListItem }>) {
 	if (isLocalAgentListItem(item) && item.machineName) {
 		return (
 			<span className="flex min-w-0 items-center gap-1 overflow-visible">
-				{item.invokedBy ? (
-					<InvokerAvatar invoker={item.invokedBy} />
-				) : (
-					<span
-						aria-hidden="true"
-						className="grid size-4 shrink-0 place-items-center"
-					>
-						<DevicesIcon color="currentColor" label="" size="small" />
-					</span>
-				)}
+				<span
+					aria-hidden="true"
+					className="grid size-4 shrink-0 place-items-center"
+				>
+					<DevicesIcon color="currentColor" label="" size="small" />
+				</span>
 				<span className="min-w-0 truncate">{item.machineName}</span>
 			</span>
 		);
@@ -570,7 +566,7 @@ export type AgentListRowAction = Readonly<{
 /**
  * The pair of controls a row owner reveals on hover/focus. The row stays
  * generic about what they do: Agent List builds View / Resume + Archive, Agent
- * Session builds Resume + show/hide. Omit both to reveal nothing.
+ * Session builds Resume + Hide / Show. Omit both to reveal nothing.
  */
 export type AgentListRowHoverActions = Readonly<{
 	primary?: AgentListRowAction;

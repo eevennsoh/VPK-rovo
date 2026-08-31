@@ -48,11 +48,14 @@ export interface PulseWorkItem {
 
 /**
  * Uncaptured work in this space is only GitHub (PRs, branches, commits on the
- * configured repo) or Claude (local terminal sessions that refer to this space).
+ * configured repo) or a local coding session that refers to this space.
  */
 export type PulseLooseWorkKind = "pull-request" | "branch" | "commit" | "agent-session";
 
 export type PulseLooseWorkSource = "GitHub" | "Claude";
+
+/** Coding agent on a local Pulse session. Mapped onto the shared row identity. */
+export type PulseCodingAgentId = "claude" | "codex" | "cursor" | "rovo";
 
 /** Flyout fields for a `pull-request` card — feeds `toPullRequestSmartLink`. */
 export interface PulseLooseWorkPullRequest {
@@ -79,7 +82,7 @@ interface PulseLooseWorkBase {
 
 /**
  * Work the team produced that never landed in a work item: an unlinked PR,
- * branch, or commit, or a local Claude session. GitHub artifacts render as
+ * branch, or commit, or a local coding session. GitHub artifacts render as
  * uncaptured-work cards; sessions render through the shared agent list's
  * uncaptured variant.
  */
@@ -89,7 +92,16 @@ export type PulseLooseWork =
 			pullRequest: PulseLooseWorkPullRequest;
 	  })
 	| (PulseLooseWorkBase & { kind: "branch" | "commit" })
-	| (PulseLooseWorkBase & { kind: "agent-session"; host: "local" });
+	| (PulseLooseWorkBase & {
+			kind: "agent-session";
+			host: "local";
+			/** Coding agent that ran the session. */
+			agentId: PulseCodingAgentId;
+			/** Viewer machine shown on the local-session metadata chip. */
+			machineName: string;
+			/** Static stamp. Local rows must not tick. */
+			timeLabel: string;
+	  });
 
 export type PulseGithubLooseWork = Exclude<PulseLooseWork, { kind: "agent-session" }>;
 

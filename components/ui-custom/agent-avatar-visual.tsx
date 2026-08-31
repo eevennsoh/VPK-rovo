@@ -113,8 +113,16 @@ export function AgentAvatarVisual({
 	const insetImageClassName = PX_TO_INSET_IMAGE_CLASS_NAME[sizePx] ?? "size-4";
 	const insetLogoSize = PX_TO_INSET_LOGO_SIZE[sizePx] ?? PX_TO_LOGO_SIZE[sizePx] ?? "xxsmall";
 	const externalLogoSize = PX_TO_EXTERNAL_LOGO_SIZE[sizePx] ?? insetLogoSize;
+	// ADS `xxsmall` is 16px — the same as the xs hexagon — so the Rovo mark
+	// would fill the frame. Inset only that xs/vpkLogo path to 12px; larger
+	// sizes keep their existing inset-token glyphs.
+	const isXsRovoMark = vpkLogo === "rovo" && sizePx === 16;
 	const visual = vpkLogo === "rovo" ? (
-		<RovoColorIcon label="" size={insetLogoSize} />
+		<RovoColorIcon
+			label=""
+			size={insetLogoSize}
+			{...(isXsRovoMark ? { className: "size-3", height: 12, width: 12 } : {})}
+		/>
 	) : logoName ? (
 		<AtlassianLogo label="" name={logoName} size={insetLogoSize} themeAware />
 	) : brandName ? (

@@ -297,8 +297,7 @@ function ColumnAgentAssignment({
 
 /**
  * Hover/focus revealed control that collapses a column into its pill, or grows
- * the pill back into a column. Rendered inside a `writing-mode: vertical-rl`
- * pill it keeps its own horizontal writing mode so the glyph stays upright.
+ * the pill back into a column.
  */
 function BoardColumnResizeButton({
 	className,

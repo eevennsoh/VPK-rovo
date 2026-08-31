@@ -309,7 +309,14 @@ test("agent avatars share one hexagon contract across 1P, 2P, and 3P visuals", (
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /<LogoThirdParty borderless label="" name=\{brandName\} size=\{externalLogoSize\}/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /const hasWhiteBackdrop = isExternalAgent \|\| logoName === "atlassian" \|\| Boolean\(vpkLogo\)/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /import \{ AtlassianLogo, RovoColorIcon,/u);
-	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /vpkLogo === "rovo" \? \(\s*<RovoColorIcon label="" size=\{insetLogoSize\} \/>/u);
+	assert.match(
+		AGENT_AVATAR_VISUAL_SOURCE,
+		/const isXsRovoMark = vpkLogo === "rovo" && sizePx === 16/u,
+	);
+	assert.match(
+		AGENT_AVATAR_VISUAL_SOURCE,
+		/vpkLogo === "rovo" \? \(\s*<RovoColorIcon[\s\S]*size=\{insetLogoSize\}[\s\S]*isXsRovoMark \? \{ className: "size-3", height: 12, width: 12 \}/u,
+	);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /className="flex size-full items-center justify-center bg-\[#fff\]"/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /avatarSrc \? \([\s\S]*<AvatarImage[\s\S]*fallbackText \? <AvatarFallback>\{fallbackText\}<\/AvatarFallback> : null/);
 	assert.match(ENTITY_CARD_AGENT_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual"/);
@@ -327,6 +334,10 @@ test("avatar docs demonstrate Rovo, 1P, 2P, and 3P agent tiers", () => {
 	assert.match(AVATAR_DETAILS_SOURCE, /demoSlug: "avatar-demo-agent-tiers"/);
 	assert.match(REGISTRY_SOURCE, /"avatar-demo-agent-tiers"/);
 	assert.match(REGISTRY_SOURCE, /default: mod\.AvatarDemoAgentTiers/);
+	assert.match(
+		AGENT_AVATAR_VISUAL_SOURCE,
+		/const PX_TO_AVATAR_SIZE:[\s\S]*32: "default"[\s\S]*40: "lg"/,
+	);
 });
 
 test("avatar group overflow count uses 12px text and 14px text for large groups", () => {

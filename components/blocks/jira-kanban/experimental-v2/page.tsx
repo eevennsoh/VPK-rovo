@@ -367,6 +367,7 @@ export default function ExperimentalV2JiraKanbanPage({
 		() => toPulseSessionItems(
 			filterPulseLooseWorkByMember(pulseTimeline.looseWork, agentSessionMemberId),
 			PULSE_TIMELINE.members,
+			PULSE_TIMELINE.workItems,
 		),
 		[agentSessionMemberId, pulseTimeline.looseWork],
 	);
