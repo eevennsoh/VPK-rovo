@@ -39,11 +39,12 @@ export function toAgentSessionUntrackedWorkFlyoutItem(
 	issueKey?: string,
 ): JiraSidebarSessionItem {
 	const session = toAgentSessionFlyoutItem(item);
-	if (issueKey === undefined || issueKey === session.issueKey) {
+	const trimmed = issueKey?.trim();
+	if (trimmed === undefined || trimmed.length === 0 || trimmed === session.issueKey) {
 		return session;
 	}
 
-	return { ...session, issueKey };
+	return { ...session, issueKey: trimmed };
 }
 
 /**
@@ -54,6 +55,7 @@ export function toAgentSessionUntrackedWorkFlyoutItem(
 export function bindAgentSessionFlyoutActions(
 	items: readonly AgentSessionItem[],
 	actions: Readonly<{
+		capturedItemIds?: ReadonlySet<string>;
 		onCreateWorkItem?: (item: AgentSessionItem) => void;
 		onLinkWorkItem?: (item: AgentSessionItem, workItemKey?: string) => void;
 		onSubtasks?: (item: AgentSessionItem) => void;
@@ -64,11 +66,16 @@ export function bindAgentSessionFlyoutActions(
 > {
 	const byId = new Map(items.map((item: AgentSessionItem) => [item.id, item] as const));
 	const resolve = (session: JiraSidebarSessionItem) => byId.get(session.id);
+	const isCaptured = (session: JiraSidebarSessionItem) =>
+		actions.capturedItemIds?.has(session.id) ?? false;
 
 	return {
 		onAddAsSubtask: actions.onSubtasks === undefined
 			? undefined
 			: (session: JiraSidebarSessionItem) => {
+				if (isCaptured(session)) {
+					return;
+				}
 				const item = resolve(session);
 				if (item !== undefined) {
 					actions.onSubtasks?.(item);
@@ -77,6 +84,9 @@ export function bindAgentSessionFlyoutActions(
 		onCreateWorkItem: actions.onCreateWorkItem === undefined
 			? undefined
 			: (session: JiraSidebarSessionItem) => {
+				if (isCaptured(session)) {
+					return;
+				}
 				const item = resolve(session);
 				if (item !== undefined) {
 					actions.onCreateWorkItem?.(item);
@@ -85,9 +95,12 @@ export function bindAgentSessionFlyoutActions(
 		onLinkWorkItem: actions.onLinkWorkItem === undefined
 			? undefined
 			: (session: JiraSidebarSessionItem, workItemKey: string) => {
+				if (isCaptured(session)) {
+					return;
+				}
 				const item = resolve(session);
 				if (item !== undefined) {
-					actions.onLinkWorkItem?.(item, workItemKey);
+					actions.onLinkWorkItem?.(item, workItemKey.length > 0 ? workItemKey : undefined);
 				}
 			},
 	};

@@ -106,11 +106,12 @@ export function AgentSession({
 	const [flyoutHandle] = useState(createJiraSessionFlyoutHandle);
 	const flyoutActions = useMemo(
 		() => bindAgentSessionFlyoutActions(items, {
+			capturedItemIds,
 			onCreateWorkItem,
 			onLinkWorkItem,
 			onSubtasks,
 		}),
-		[items, onCreateWorkItem, onLinkWorkItem, onSubtasks],
+		[capturedItemIds, items, onCreateWorkItem, onLinkWorkItem, onSubtasks],
 	);
 
 	return (
@@ -163,6 +164,7 @@ export function AgentSession({
 			</ul>
 			{variant === "large" ? (
 				<JiraSessionFlyoutSurface
+					capturedSessionIds={capturedItemIds}
 					content="untracked-work"
 					handle={flyoutHandle}
 					onAddAsSubtask={flyoutActions.onAddAsSubtask}

@@ -22,6 +22,10 @@ const INDEX_SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const TYPES_SOURCE = readFileSync(join(__dirname, "agent-session-types.ts"), "utf8");
 const WORK_ITEM_SOURCE = readFileSync(join(__dirname, "agent-session-work-item.ts"), "utf8");
+const FLYOUT_SOURCE = readFileSync(
+	join(__dirname, "../product-sidebar/variants/jira-session-flyout.tsx"),
+	"utf8",
+);
 const DEMO_SOURCE = readFileSync(
 	join(__dirname, "../../website/demos/blocks/agent-session-demo.tsx"),
 	"utf8",
@@ -151,6 +155,7 @@ test("the untracked-work flyout owns capture, so the card has no footer chin", (
 	assert.match(CARD_SOURCE, /<JiraSessionFlyoutTrigger/u);
 	assert.match(CARD_SOURCE, /closeDelay=\{160\}/u);
 	assert.match(INDEX_SOURCE, /<JiraSessionFlyoutSurface/u);
+	assert.match(INDEX_SOURCE, /capturedSessionIds=\{capturedItemIds\}/u);
 	assert.match(INDEX_SOURCE, /content="untracked-work"/u);
 	assert.match(INDEX_SOURCE, /const \[flyoutHandle\] = useState\(createJiraSessionFlyoutHandle\);/u);
 	assert.match(INDEX_SOURCE, /bindAgentSessionFlyoutActions/u);
@@ -241,10 +246,22 @@ test("the untracked-work flyout offers the first candidate key", () => {
 	assert.match(INDEX_SOURCE, /onLinkWorkItem=\{flyoutActions\.onLinkWorkItem\}/u);
 	assert.match(PAGE_SOURCE, /onSubtasks=\{handleCapture\}/u);
 	assert.match(WORK_ITEM_SOURCE, /export function bindAgentSessionFlyoutActions/u);
-	assert.match(WORK_ITEM_SOURCE, /actions\.onLinkWorkItem\?\.\(item, workItemKey\)/u);
+	assert.match(WORK_ITEM_SOURCE, /capturedItemIds\?: ReadonlySet<string>;/u);
+	assert.match(
+		WORK_ITEM_SOURCE,
+		/actions\.onLinkWorkItem\?\.\(item, workItemKey\.length > 0 \? workItemKey : undefined\)/u,
+	);
 	assert.match(WORK_ITEM_SOURCE, /actions\.onCreateWorkItem\?\.\(item\)/u);
 	assert.match(WORK_ITEM_SOURCE, /actions\.onSubtasks\?\.\(item\)/u);
-	assert.match(WORK_ITEM_SOURCE, /return \{ \.\.\.session, issueKey \};/u);
+	assert.match(WORK_ITEM_SOURCE, /if \(isCaptured\(session\)\) \{\s*return;/u);
+	assert.match(
+		WORK_ITEM_SOURCE,
+		/if \(trimmed === undefined \|\| trimmed\.length === 0 \|\| trimmed === session\.issueKey\)/u,
+	);
+	assert.match(WORK_ITEM_SOURCE, /return \{ \.\.\.session, issueKey: trimmed \};/u);
+	assert.match(FLYOUT_SOURCE, /capturedSessionIds\?: ReadonlySet<string>;/u);
+	assert.match(FLYOUT_SOURCE, /const linkLabel = hasIssueKey \? `Link to \$\{issueKey\}` : "Link work item";/u);
+	assert.match(FLYOUT_SOURCE, /captureLocked \|\| onLinkWorkItem === undefined/u);
 });
 
 test("Pulse's uncaptured column renders sessions through this block", () => {

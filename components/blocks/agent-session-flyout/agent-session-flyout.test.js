@@ -34,18 +34,31 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.match(source, /case "untracked-work":/u);
 	assert.match(source, /<JiraSessionFlyoutBody[\s\S]*session=\{session\}[\s\S]*variant="untracked-work"/u);
 	assert.match(source, /showSeparator/u);
-	assert.match(source, /Link to \{session\.issueKey\}/u);
 	assert.match(source, /<JiraSessionSectionHeading meta="High confidence" showSeparator>/u);
 	assert.match(source, /flex min-w-0 shrink-0 items-center gap-1\.5 text-xs font-medium leading-4 text-text-subtle/u);
 	assert.match(source, /className="shrink-0 text-xs font-normal text-text-subtlest"/u);
 	assert.doesNotMatch(source, /<span aria-hidden="true"> · <\/span>/u);
-	assert.match(source, /aria-label=\{`Link to \$\{session\.issueKey\}, High confidence`\}/u);
-	assert.match(source, /This session appears related to \{session\.issueKey\}/u);
-	assert.match(source, /<ButtonGroup aria-label=\{`Link \$\{issueKey\}`\} variant="split">/u);
-	assert.match(source, /Link to \{issueKey\}/u);
+	assert.match(
+		source,
+		/session\.issueKey\.length > 0\s*\? `Link to \$\{session\.issueKey\}, High confidence`\s*: "Link work item, High confidence"/u,
+	);
+	assert.match(
+		source,
+		/session\.issueKey\.length > 0 \? `Link to \$\{session\.issueKey\}` : "Link work item"/u,
+	);
+	assert.match(source, /This session appears related to \$\{session\.issueKey\}/u);
+	assert.match(source, /capturedSessionIds\?: ReadonlySet<string>;/u);
+	assert.match(source, /const linkLabel = hasIssueKey \? `Link to \$\{issueKey\}` : "Link work item";/u);
+	assert.match(
+		source,
+		/<ButtonGroup aria-label=\{hasIssueKey \? `Link \$\{issueKey\}` : "Link work item"\} variant="split">/u,
+	);
 	assert.match(source, /aria-disabled=\{linkUnavailable\}/u);
 	assert.match(source, /onClick=\{\(\) => onLinkWorkItem\?\.\(issueKey\)\}/u);
-	assert.match(source, /aria-label=\{`More link options for \$\{issueKey\}`\}/u);
+	assert.match(
+		source,
+		/aria-label=\{hasIssueKey \? `More link options for \$\{issueKey\}` : "More link options"\}/u,
+	);
 	assert.match(source, /<DropdownMenuItem[\s\S]*disabled=\{addAsSubtaskUnavailable\}[\s\S]*onSelect=\{\(\) => onAddAsSubtask\?\.\(issueKey\)\}[\s\S]*>\s*Add as a subtask/u);
 	assert.match(source, /Create new/u);
 	assert.match(source, /aria-disabled=\{createUnavailable\}/u);

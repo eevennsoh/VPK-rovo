@@ -8,18 +8,8 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+import { actorInitials } from "./agent-list-actor";
 import type { AgentListInvoker } from "./agent-list-types";
-
-export function actorInitials(name: string): string {
-	return (
-		name
-			.split(" ")
-			.filter(Boolean)
-			.slice(0, 2)
-			.map((word) => word[0]?.toUpperCase())
-			.join("") || "?"
-	);
-}
 
 /** 16px invoker face. Shared by the `by` chip and the local-session metadata line. */
 export function InvokerAvatar({ invoker }: Readonly<{ invoker: AgentListInvoker }>) {

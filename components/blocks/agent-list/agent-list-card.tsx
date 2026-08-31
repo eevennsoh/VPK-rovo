@@ -39,7 +39,8 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-import { actorInitials, InvokerAvatar, InvokerBy } from "./agent-list-invoker";
+import { actorInitials } from "./agent-list-actor";
+import { InvokerAvatar, InvokerBy } from "./agent-list-invoker";
 import { isLocalAgentListItem, toAgentSessionFlyoutItem } from "./agent-list-session";
 import type {
 	AgentListAgent,

@@ -30,6 +30,10 @@ const SESSION_SOURCE = readFileSync(
 	join(__dirname, "agent-list-session.ts"),
 	"utf8",
 );
+const ACTOR_SOURCE = readFileSync(
+	join(__dirname, "agent-list-actor.ts"),
+	"utf8",
+);
 const INVOKER_SOURCE = readFileSync(
 	join(__dirname, "agent-list-invoker.tsx"),
 	"utf8",
@@ -729,9 +733,16 @@ test("local sessions show a static timestamp, invoker avatar, and machine name",
 		INVOKER_SOURCE,
 		/<Avatar className="shrink-0" label=\{invoker\.name\} size="xs" title=\{invoker\.name\}>/u,
 	);
+	assert.match(ACTOR_SOURCE, /export function actorInitials/u);
+	assert.match(INVOKER_SOURCE, /import \{ actorInitials \} from "\.\/agent-list-actor";/u);
+	assert.doesNotMatch(INVOKER_SOURCE, /export function actorInitials/u);
 	assert.match(
 		CARD_SOURCE,
-		/import \{ actorInitials, InvokerAvatar, InvokerBy \} from "\.\/agent-list-invoker";/u,
+		/import \{ actorInitials \} from "\.\/agent-list-actor";/u,
+	);
+	assert.match(
+		CARD_SOURCE,
+		/import \{ InvokerAvatar, InvokerBy \} from "\.\/agent-list-invoker";/u,
 	);
 	assert.match(
 		CARD_SOURCE,

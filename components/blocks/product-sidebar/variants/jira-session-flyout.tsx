@@ -79,6 +79,8 @@ export interface JiraSessionFlyoutSurfaceProps {
 	 * is the Agent States card, and `untracked-work` suggests a related Jira item.
 	 */
 	content?: JiraSessionFlyoutContent;
+	/** Captured sessions hide Link / Create / subtask so capture cannot run twice. */
+	capturedSessionIds?: ReadonlySet<string>;
 	/** Adds the session below the suggested work item. Omit to expose the menu option as unavailable. */
 	onAddAsSubtask?: (session: JiraSidebarSessionItem, workItemKey: string) => void;
 	/** Creates a work item from the session. Omit to expose the action as unavailable. */
@@ -313,25 +315,27 @@ function JiraSessionUntrackedWorkActions({
 	const addAsSubtaskUnavailable = onAddAsSubtask === undefined;
 	const createUnavailable = onCreateWorkItem === undefined;
 	const linkUnavailable = onLinkWorkItem === undefined;
+	const hasIssueKey = issueKey.length > 0;
+	const linkLabel = hasIssueKey ? `Link to ${issueKey}` : "Link work item";
 
 	return (
 		<div className="flex items-start gap-2 pt-2">
-			<ButtonGroup aria-label={`Link ${issueKey}`} variant="split">
+			<ButtonGroup aria-label={hasIssueKey ? `Link ${issueKey}` : "Link work item"} variant="split">
 				<Button
 					aria-disabled={linkUnavailable}
-					aria-label={linkUnavailable ? `Link to ${issueKey} unavailable` : undefined}
+					aria-label={linkUnavailable ? `${linkLabel} unavailable` : undefined}
 					className={linkUnavailable ? "cursor-not-allowed opacity-(--opacity-disabled)" : undefined}
 					onClick={() => onLinkWorkItem?.(issueKey)}
 					type="button"
 					variant="outline"
 				>
-					Link to {issueKey}
+					{linkLabel}
 				</Button>
 				<DropdownMenu>
 					<DropdownMenuTrigger
 						render={(
 							<Button
-								aria-label={`More link options for ${issueKey}`}
+								aria-label={hasIssueKey ? `More link options for ${issueKey}` : "More link options"}
 								size="icon"
 								type="button"
 								variant="outline"
@@ -495,14 +499,20 @@ export function JiraSessionFlyoutBody({
 
 			{variant === "untracked-work" ? (
 				<section
-					aria-label={`Link to ${session.issueKey}, High confidence`}
+					aria-label={
+						session.issueKey.length > 0
+							? `Link to ${session.issueKey}, High confidence`
+							: "Link work item, High confidence"
+					}
 					className="flex flex-col gap-2 pt-2"
 				>
 					<JiraSessionSectionHeading meta="High confidence" showSeparator>
-						Link to {session.issueKey}
+						{session.issueKey.length > 0 ? `Link to ${session.issueKey}` : "Link work item"}
 					</JiraSessionSectionHeading>
 					<p className="text-sm leading-5 text-text">
-						This session appears related to {session.issueKey} because the work item matches its activity and context.
+						{session.issueKey.length > 0
+							? `This session appears related to ${session.issueKey} because the work item matches its activity and context.`
+							: "This session appears related to a work item because it matches its activity and context."}
 					</p>
 					<JiraSessionUntrackedWorkActions
 						issueKey={session.issueKey}
@@ -585,6 +595,7 @@ export function JiraSessionFlyoutBody({
 }
 
 function JiraSessionFlyoutPayload({
+	capturedSessionIds,
 	content,
 	onAddAsSubtask,
 	onCreateWorkItem,
@@ -594,12 +605,13 @@ function JiraSessionFlyoutPayload({
 }: Readonly<
 	Pick<
 		JiraSessionFlyoutSurfaceProps,
-		"onAddAsSubtask" | "onCreateWorkItem" | "onLinkWorkItem" | "onSubmitPrompt"
+		"capturedSessionIds" | "onAddAsSubtask" | "onCreateWorkItem" | "onLinkWorkItem" | "onSubmitPrompt"
 	> & {
 		content: JiraSessionFlyoutContent;
 		session: JiraSidebarSessionItem;
 	}
 >) {
+	const captureLocked = capturedSessionIds?.has(session.id) ?? false;
 	switch (content) {
 		case "composer":
 			return (
@@ -623,9 +635,21 @@ function JiraSessionFlyoutPayload({
 			return (
 				<div className="w-[400px] bg-surface-overlay p-4 text-text">
 					<JiraSessionFlyoutBody
-						onAddAsSubtask={onAddAsSubtask ? (workItemKey) => onAddAsSubtask(session, workItemKey) : undefined}
-						onCreateWorkItem={onCreateWorkItem ? () => onCreateWorkItem(session) : undefined}
-						onLinkWorkItem={onLinkWorkItem ? (workItemKey) => onLinkWorkItem(session, workItemKey) : undefined}
+						onAddAsSubtask={
+							captureLocked || onAddAsSubtask === undefined
+								? undefined
+								: (workItemKey) => onAddAsSubtask(session, workItemKey)
+						}
+						onCreateWorkItem={
+							captureLocked || onCreateWorkItem === undefined
+								? undefined
+								: () => onCreateWorkItem(session)
+						}
+						onLinkWorkItem={
+							captureLocked || onLinkWorkItem === undefined
+								? undefined
+								: (workItemKey) => onLinkWorkItem(session, workItemKey)
+						}
 						session={session}
 						variant="untracked-work"
 					/>
@@ -654,6 +678,7 @@ function JiraSessionFlyoutPayload({
  * stale size transition.
  */
 export function JiraSessionFlyoutSurface({
+	capturedSessionIds,
 	content = "details",
 	handle,
 	onAddAsSubtask,
@@ -675,6 +700,7 @@ export function JiraSessionFlyoutSurface({
 					<HoverCardViewport className="relative size-full overflow-clip rounded-[inherit] [&_[data-current]]:w-(--popup-width) [&_[data-current]]:opacity-100 [&_[data-current]]:transition-opacity [&_[data-current]]:duration-medium [&_[data-current]]:ease-in-out [&_[data-current]]:[will-change:opacity] [&_[data-current][data-starting-style]]:opacity-0 [&_[data-previous]]:w-(--popup-width) [&_[data-previous]]:opacity-100 [&_[data-previous]]:transition-opacity [&_[data-previous]]:duration-medium [&_[data-previous]]:ease-in-out [&_[data-previous]]:[will-change:opacity] [&_[data-previous][data-ending-style]]:opacity-0 motion-reduce:[&_[data-current]]:transition-none motion-reduce:[&_[data-current]]:[will-change:auto] motion-reduce:[&_[data-previous]]:transition-none motion-reduce:[&_[data-previous]]:[will-change:auto] data-instant:[&_[data-current]]:transition-none data-instant:[&_[data-previous]]:transition-none">
 						{payload ? (
 							<JiraSessionFlyoutPayload
+								capturedSessionIds={capturedSessionIds}
 								content={content}
 								onAddAsSubtask={onAddAsSubtask}
 								onCreateWorkItem={onCreateWorkItem}
