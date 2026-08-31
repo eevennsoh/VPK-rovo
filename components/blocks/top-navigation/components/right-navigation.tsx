@@ -21,8 +21,6 @@ interface RightNavigationProps {
 	forceShowRovoAction?: boolean;
 	isChatOpen?: boolean;
 	onToggleChat: () => void;
-	/** When provided, renders a theme-toggle button. Omitted in the Figma cluster. */
-	onToggleTheme?: () => void;
 	settingsMenuItems?: ReadonlyArray<RightNavigationSettingsMenuItem>;
 }
 
@@ -33,7 +31,6 @@ export function RightNavigation({
 	forceShowRovoAction = false,
 	isChatOpen = false,
 	onToggleChat,
-	onToggleTheme,
 	settingsMenuItems,
 }: Readonly<RightNavigationProps>) {
 	const [isOverflowOpen, setIsOverflowOpen] = useState(false);
@@ -68,7 +65,6 @@ export function RightNavigation({
 			showRovoAction={showRovoAction}
 			isChatOpen={isChatOpen}
 			onToggleChat={onToggleChat}
-			onToggleTheme={onToggleTheme}
 			settingsMenuItems={settingsMenuItems}
 		/>
 	);

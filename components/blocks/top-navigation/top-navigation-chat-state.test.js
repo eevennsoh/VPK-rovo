@@ -147,13 +147,16 @@ test("standalone top navigation releases its pinned shell sidebar in small conta
 	assert.doesNotMatch(TOP_NAVIGATION_SOURCE, /setSidebarOpen\(\(current\) =>/u);
 });
 
-test("top navigation block omits the theme toggle (matches the Figma cluster)", () => {
-	// The Figma global top navigation cluster is Ask Rovo + notifications + help +
-	// settings + avatar — no theme toggle. The shared cluster keeps the toggle as
-	// an opt-in prop (other shells use it), so the invariant is that the block's
-	// page does NOT pass onToggleTheme, and the toggle is conditionally rendered.
-	assert.doesNotMatch(TOP_NAVIGATION_SOURCE, /onToggleTheme/);
-	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /onToggleTheme \?/);
+test("top navigation renders the shared theme toggle after settings", () => {
+	assert.match(
+		RIGHT_NAVIGATION_ACTIONS_SOURCE,
+		/import \{ ThemeToggle \} from "@\/components\/utils\/theme-wrapper";/u,
+	);
+	assert.match(
+		RIGHT_NAVIGATION_ACTIONS_SOURCE,
+		/aria-label="Settings"[\s\S]*<ThemeToggle \/>[\s\S]*\{\/\* Profile \*\/\}/u,
+	);
+	assert.doesNotMatch(RIGHT_NAVIGATION_ACTIONS_SOURCE, /aria-label="Toggle theme"/u);
 });
 
 test("right navigation settings button can render optional dropdown actions", () => {

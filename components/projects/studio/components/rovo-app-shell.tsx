@@ -4156,7 +4156,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 							forceShowRovoAction={shouldShowAgentConfigPane}
 							isChatOpen={nav.isSidebarChatOpen}
 							onToggleChat={handleToggleAskRovoChat}
-							onToggleTheme={nav.toggleTheme}
 							settingsMenuItems={studioSettingsMenuItems}
 						/>
 					</div>
