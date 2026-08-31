@@ -4,9 +4,10 @@ import type { AgentListItem } from "@/components/blocks/agent-list";
  * A local coding session that has not been captured into a work item.
  *
  * Structurally identical to an Agent List row — the card renders the shared
- * `AgentListRow` presenter inside its sunken body — so this is an alias rather
- * than a parallel model. Consumers that already build `AgentListItem` values
- * (Pulse maps loose-work fixtures into them) need no conversion step.
+ * `AgentListRow` presenter inside a dashed uncaptured-work frame — so this is
+ * an alias rather than a parallel model. Consumers that already build
+ * `AgentListItem` values (Pulse maps loose-work fixtures into them) need no
+ * conversion step.
  */
 export type AgentSessionItem = AgentListItem;
 
@@ -19,7 +20,7 @@ export interface AgentSessionProps {
 	variant?: AgentSessionVariant;
 	/** Sessions to render; defaults to built-in sample data. */
 	items?: readonly AgentSessionItem[];
-	/** Ids whose chin should read Captured instead of offering Link / Create. */
+	/** Ids whose card should read as captured (solid border, still hoverable). */
 	capturedItemIds?: ReadonlySet<string>;
 	/**
 	 * Ids that arrived in the last sync and the viewer has not reviewed yet.
@@ -46,21 +47,20 @@ export interface AgentSessionProps {
 	 * that never unmounts the list.
 	 */
 	arrivingItemIds?: ReadonlySet<string>;
-	/** Suggested Jira key for the chin primary action. Defaults to `sessionDetails.issueKey`. */
+	/** Suggested Jira key for the untracked-work flyout. Defaults to `sessionDetails.issueKey`. */
 	getSuggestedWorkItemKey?: (item: AgentSessionItem) => string | undefined;
 	/**
-	 * Several candidate keys for a session, rendered one linkable chin row each.
-	 * Takes precedence over `getSuggestedWorkItemKey` for the rows it returns.
+	 * Several candidate keys for a session. The untracked-work flyout offers the
+	 * first key; takes precedence over `getSuggestedWorkItemKey` when returned.
 	 */
 	getSuggestedWorkItemKeys?: (item: AgentSessionItem) => readonly string[] | undefined;
-	/** Links a session to a suggested work item. Receives the row's key when several are offered. */
+	/** Links a session to a suggested work item. Receives the flyout's offered key. */
 	onLinkWorkItem?: (item: AgentSessionItem, workItemKey?: string) => void;
 	/** Creates a work item from a session. Omit to expose an unavailable Create action. */
 	onCreateWorkItem?: (item: AgentSessionItem) => void;
 	/**
-	 * Subtasks action behind the chin's trailing subtasks control. The button
-	 * always renders; omit this to leave it a placeholder until the behaviour
-	 * lands.
+	 * Add-as-subtask action behind the untracked-work flyout menu. Omit to expose
+	 * the menu option as unavailable.
 	 */
 	onSubtasks?: (item: AgentSessionItem) => void;
 	/** Overrides the shell command the hover Resume control copies. */

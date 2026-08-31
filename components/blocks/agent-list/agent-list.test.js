@@ -30,6 +30,14 @@ const SESSION_SOURCE = readFileSync(
 	join(__dirname, "agent-list-session.ts"),
 	"utf8",
 );
+const ACTOR_SOURCE = readFileSync(
+	join(__dirname, "agent-list-actor.ts"),
+	"utf8",
+);
+const INVOKER_SOURCE = readFileSync(
+	join(__dirname, "agent-list-invoker.tsx"),
+	"utf8",
+);
 const FOR_YOU_PANEL_SOURCE = readFileSync(
 	join(
 		__dirname,
@@ -195,7 +203,7 @@ test("rows carry an optional summary below metadata, leading metadata, and a sta
 	);
 	assert.match(
 		CARD_SOURCE,
-		/"flex w-full min-w-0 items-center gap-1 overflow-hidden text-xs text-text-subtlest"/u,
+		/"flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest"/u,
 	);
 	assert.match(
 		CARD_SOURCE,
@@ -433,7 +441,7 @@ test("in-flow View controls immediately replace lifecycle indicators without col
 	);
 	assert.match(
 		CARD_SOURCE,
-		/"flex w-full min-w-0 items-center gap-1 overflow-hidden text-xs text-text-subtlest"/u,
+		/"flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest"/u,
 	);
 	assert.match(CARD_SOURCE, /<span className=\{cn\(titleClassName, "text-text"\)\}>/u);
 	assert.match(CARD_SOURCE, /className="min-w-0 truncate">\{item\.agent\.name\}<\/span>/u);
@@ -687,7 +695,7 @@ test("needs-input activity headers shimmer Needs input with trailing Rovo dots i
 test("the session activity header shows who invoked the agent after the timestamp", () => {
 	assert.match(TYPES_SOURCE, /export interface AgentListInvoker/u);
 	assert.match(TYPES_SOURCE, /invokedBy\?: AgentListInvoker;/u);
-	assert.match(CARD_SOURCE, /function InvokerBy/u);
+	assert.match(INVOKER_SOURCE, /export function InvokerBy/u);
 	assert.match(
 		CARD_SOURCE,
 		/\{messageTimestamp && item\.invokedBy \? \(\s*<InvokerBy invoker=\{item\.invokedBy\} \/>\s*\) : null\}/u,
@@ -696,8 +704,11 @@ test("the session activity header shows who invoked the agent after the timestam
 		CARD_SOURCE,
 		/\{!messageTimestamp && item\.invokedBy \? \(\s*<InvokerBy invoker=\{item\.invokedBy\} \/>\s*\) : null\}/u,
 	);
-	assert.match(CARD_SOURCE, /<Avatar label=\{invoker\.name\} size="xs">/u);
-	assert.match(CARD_SOURCE, /<TooltipContent>\{invoker\.name\}<\/TooltipContent>/u);
+	assert.match(
+		INVOKER_SOURCE,
+		/<Avatar className="shrink-0" label=\{invoker\.name\} size="xs" title=\{invoker\.name\}>/u,
+	);
+	assert.match(INVOKER_SOURCE, /<TooltipContent>\{invoker\.name\}<\/TooltipContent>/u);
 	assert.match(DATA_SOURCE, /invokedBy: DEMO_INVOKER/u);
 	assert.match(DATA_SOURCE, /name: "Jordan Lee"/u);
 });
@@ -708,7 +719,7 @@ test("the session activity header can preserve a consumer-provided completed tim
 	assert.match(CARD_SOURCE, /<AgentListTime fallback=\{timeFallback\} item=\{item\} \/>/u);
 });
 
-test("local sessions show a static timestamp, devices glyph, and machine name", () => {
+test("local sessions show a static timestamp, invoker avatar, and machine name", () => {
 	assert.match(TYPES_SOURCE, /export type AgentListHost = "cloud" \| "local";/u);
 	assert.match(TYPES_SOURCE, /host\?: AgentListHost;/u);
 	assert.match(TYPES_SOURCE, /machineName\?: string;/u);
@@ -717,15 +728,36 @@ test("local sessions show a static timestamp, devices glyph, and machine name", 
 		/export function isLocalAgentListItem\(item: AgentListItem\): boolean \{\s*return getAgentListHost\(item\) === "local";/u,
 	);
 	assert.match(INDEX_SOURCE, /isLocalAgentListItem,/u);
-	assert.match(CARD_SOURCE, /import DevicesIcon from "@atlaskit\/icon\/core\/devices";/u);
+	assert.match(INVOKER_SOURCE, /export function InvokerAvatar/u);
+	assert.match(
+		INVOKER_SOURCE,
+		/<Avatar className="shrink-0" label=\{invoker\.name\} size="xs" title=\{invoker\.name\}>/u,
+	);
+	assert.match(ACTOR_SOURCE, /export function actorInitials/u);
+	assert.match(INVOKER_SOURCE, /import \{ actorInitials \} from "\.\/agent-list-actor";/u);
+	assert.doesNotMatch(INVOKER_SOURCE, /export function actorInitials/u);
 	assert.match(
 		CARD_SOURCE,
-		/if \(isLocalAgentListItem\(item\) && item\.machineName\) \{[\s\S]*<DevicesIcon color="currentColor" label="" size="small" \/>[\s\S]*\{item\.machineName\}/u,
+		/import \{ actorInitials \} from "\.\/agent-list-actor";/u,
 	);
+	assert.match(
+		CARD_SOURCE,
+		/import \{ InvokerAvatar, InvokerBy \} from "\.\/agent-list-invoker";/u,
+	);
+	assert.match(
+		CARD_SOURCE,
+		/if \(isLocalAgentListItem\(item\) && item\.machineName\) \{[\s\S]*\{item\.invokedBy \? \(\s*<InvokerAvatar invoker=\{item\.invokedBy\} \/>\s*\) : \([\s\S]*<DevicesIcon color="currentColor" label="" size="small" \/>[\s\S]*\{item\.machineName\}/u,
+	);
+	const invokerAvatarSource = /export function InvokerAvatar[\s\S]*?(?=\nexport function InvokerBy)/u.exec(
+		INVOKER_SOURCE,
+	)?.[0];
+	assert.ok(invokerAvatarSource);
+	assert.doesNotMatch(invokerAvatarSource, /Tooltip/u);
 	assert.match(DATA_SOURCE, /host: "local"/u);
 	assert.match(DATA_SOURCE, /machineName: "Geoff’s MacBook"/u);
 	assert.match(DATA_SOURCE, /timeLabel: "3 mins ago"/u);
 	assert.match(DETAIL_SOURCE, /Local sessions swap the live runtime and agent name/u);
+	assert.match(DETAIL_SOURCE, /a 16px invoker avatar, and the machine name/u);
 });
 
 test("hover actions add an Archive icon beside View or Resume", () => {

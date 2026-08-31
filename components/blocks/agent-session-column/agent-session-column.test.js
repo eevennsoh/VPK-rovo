@@ -84,7 +84,7 @@ test("the fill starts below the header, so the title shares the status columns' 
 test("card rendering is delegated to the Agent Session block, never re-implemented", () => {
 	assert.match(INDEX_SOURCE, /import \{ AGENT_SESSION_ITEMS, AgentSession \} from "@\/components\/blocks\/agent-session"/u);
 	assert.match(INDEX_SOURCE, /<AgentSession\b/u);
-	// No forked card chrome: the dashed border and chin belong to the card.
+	// No forked card chrome: the dashed border and flyout belong to the card.
 	assert.doesNotMatch(INDEX_SOURCE, /border-dashed|UncapturedWorkChin|AgentListRow/u);
 });
 
@@ -254,7 +254,9 @@ test("newly synced work reaches both the cards and the rail", () => {
 test("an arrival is a transient beat plus a mark that outlives it", () => {
 	// The mark is the load-bearing half: it has to survive a backgrounded tab, a
 	// collapsed column, and reduced motion, so it is never the animation alone.
-	assert.match(CARD_SOURCE, /isNew \? "border-border-discovery" : "border-border-disabled"/u);
+	assert.match(CARD_SOURCE, /border-dashed border-border-discovery/u);
+	assert.match(CARD_SOURCE, /border-dashed border-border-disabled/u);
+	assert.match(CARD_SOURCE, /border-solid border-border/u);
 	assert.match(NOTCH_MARK_SOURCE, /isNew \? NOTCH_EMPHASIS : NOTCH_AT_REST/u);
 	// A reviewed notch rests quiet and lights up on hover or focus; a new one is
 	// already lit, so "new" reuses the hover vocabulary instead of adding one.
@@ -266,7 +268,7 @@ test("an arrival is a transient beat plus a mark that outlives it", () => {
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /bg-icon-warning|bg-icon-information/u);
 	// The dash is load-bearing too — it means "uncaptured" — so the arrival
 	// recolours it rather than replacing the border style.
-	assert.match(CARD_SOURCE, /border border-dashed/u);
+	assert.match(CARD_SOURCE, /border-dashed/u);
 	// Reduced motion drops the beat and keeps the mark. The beat is keyed on
 	// `isArriving`, never on `isNew` — see the one-shot test below.
 	assert.match(CARD_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);

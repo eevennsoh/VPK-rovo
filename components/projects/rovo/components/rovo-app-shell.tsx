@@ -2553,7 +2553,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 
 							<CreateButton />
 						</div>
-						<RightNavigation product="rovo" windowWidth={nav.windowWidth} onToggleChat={nav.toggleChat} onToggleTheme={nav.toggleTheme} />
+						<RightNavigation product="rovo" windowWidth={nav.windowWidth} onToggleChat={nav.toggleChat} />
 					</div>
 				) : null}
 				<RovoAppHeader

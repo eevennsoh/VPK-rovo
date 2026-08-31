@@ -39,12 +39,13 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
+import { actorInitials } from "./agent-list-actor";
+import { InvokerAvatar, InvokerBy } from "./agent-list-invoker";
 import { isLocalAgentListItem, toAgentSessionFlyoutItem } from "./agent-list-session";
 import type {
 	AgentListAgent,
 	AgentListCustomFlyoutActions,
 	AgentListFlyout,
-	AgentListInvoker,
 	AgentListItem,
 	AgentListPrStatus,
 	AgentListState,
@@ -128,17 +129,6 @@ function MetadataDot() {
 	);
 }
 
-function actorInitials(name: string): string {
-	return (
-		name
-			.split(" ")
-			.filter(Boolean)
-			.slice(0, 2)
-			.map((word) => word[0]?.toUpperCase())
-			.join("") || "?"
-	);
-}
-
 /** The two leading-avatar footprints the row uses, as Avatar size tokens. */
 const PX_TO_PERSON_AVATAR_SIZE: Record<number, NonNullable<AvatarProps["size"]>> = {
 	24: "sm",
@@ -178,28 +168,6 @@ function AgentListIdentity({
 			sizePx={sizePx}
 			vpkLogo={agent.vpkLogo}
 		/>
-	);
-}
-
-/** Compact `by <face>` metadata after the relative timestamp. */
-function InvokerBy({ invoker }: Readonly<{ invoker: AgentListInvoker }>) {
-	return (
-		<span className="flex shrink-0 items-center gap-1">
-			<span>by</span>
-			<TooltipProvider>
-				<Tooltip>
-					<TooltipTrigger render={<span className="inline-flex shrink-0" />}>
-						<Avatar label={invoker.name} size="xs">
-							{invoker.avatarSrc ? (
-								<AvatarImage alt="" src={invoker.avatarSrc} />
-							) : null}
-							<AvatarFallback>{actorInitials(invoker.name)}</AvatarFallback>
-						</Avatar>
-					</TooltipTrigger>
-					<TooltipContent>{invoker.name}</TooltipContent>
-				</Tooltip>
-			</TooltipProvider>
-		</span>
 	);
 }
 
@@ -357,18 +325,24 @@ function rowPrimaryActionLabel(item: AgentListItem): string {
 
 /**
  * Identity on the metadata line. Cloud rows name the agent; local rows name the
- * machine beside the devices glyph, matching the Jira session flyout host chip.
+ * machine beside the invoker's 16px avatar, matching the Jira session flyout
+ * host chip's machine copy. The devices glyph is only a fallback when the row
+ * has no invoker to show.
  */
 function AgentListMetadataIdentity({ item }: Readonly<{ item: AgentListItem }>) {
 	if (isLocalAgentListItem(item) && item.machineName) {
 		return (
-			<span className="flex min-w-0 items-center gap-1">
-				<span
-					aria-hidden="true"
-					className="grid size-4 shrink-0 place-items-center"
-				>
-					<DevicesIcon color="currentColor" label="" size="small" />
-				</span>
+			<span className="flex min-w-0 items-center gap-1 overflow-visible">
+				{item.invokedBy ? (
+					<InvokerAvatar invoker={item.invokedBy} />
+				) : (
+					<span
+						aria-hidden="true"
+						className="grid size-4 shrink-0 place-items-center"
+					>
+						<DevicesIcon color="currentColor" label="" size="small" />
+					</span>
+				)}
 				<span className="min-w-0 truncate">{item.machineName}</span>
 			</span>
 		);
@@ -764,7 +738,7 @@ export function AgentListRow({
 							)}
 							{stateMeta.showDots ? <AnimatedDots /> : null}
 						</span>
-						<span className="flex w-full min-w-0 items-center gap-1 overflow-hidden text-xs text-text-subtlest">
+						<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
 							{item.metadataPrefix ? (
 								<>
 									<span className="shrink-0">{item.metadataPrefix}</span>

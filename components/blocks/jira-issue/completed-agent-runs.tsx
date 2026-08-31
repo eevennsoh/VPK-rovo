@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import StatusErrorIcon from "@atlaskit/icon/core/status-error";
-import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
+import StrokeWeightLargeIcon from "@atlaskit/icon/core/stroke-weight-large";
 
 import {
 	AgentList,
@@ -187,7 +187,7 @@ function JiraIssueCompletedRunRow({
 					>
 						<span className={cn("flex min-w-0 flex-1 items-center", usesStrokeChrome ? "gap-1.5" : "gap-2")}>
 							<AgentAvatarVisual
-								avatarClassName="shrink-0"
+								avatarClassName={cn("shrink-0", usesStrokeChrome && "ml-px")}
 								avatarSrc={run.agentAvatarSrc}
 								brandName={run.agentBrandName}
 								fallbackText={getCompletedRunInitial(run.agentName)}
@@ -206,7 +206,7 @@ function JiraIssueCompletedRunRow({
 						<span
 							className={cn(
 								"grid shrink-0 place-items-center",
-								hasFailed ? "text-icon-danger" : "text-icon-success",
+								hasFailed ? "text-icon-danger" : "text-icon-information",
 								usesStrokeChrome ? "size-4" : "-my-1 size-6",
 							)}
 							aria-hidden="true"
@@ -214,7 +214,7 @@ function JiraIssueCompletedRunRow({
 							{hasFailed ? (
 								<StatusErrorIcon color="currentColor" label="" size="small" />
 							) : (
-								<StatusSuccessIcon color="currentColor" label="" size="small" />
+								<StrokeWeightLargeIcon color="currentColor" label="" size="small" />
 							)}
 						</span>
 					</button>
@@ -353,7 +353,7 @@ function JiraIssueAgentDoneMerged({
 									<IconTile
 										aria-hidden
 										as="span"
-										className="text-icon-subtle"
+										className="ml-px text-icon-subtle"
 										icon={<AiAgentIcon label="" size="small" />}
 										iconSize="small"
 										label=""
