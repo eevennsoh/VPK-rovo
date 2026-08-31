@@ -135,11 +135,16 @@ test("the board column commits through the same captured set as Insights", () =>
 	// One fixture list, read through the same day/scope filter the rail reads.
 	assert.match(BOARD_PAGE_SOURCE, /looseWork: pulseTimeline\.looseWork,/u);
 	// The header's assignee filter narrows the status columns, so it narrows
-	// this column too — routed through the roster boundary, because only some
-	// assignee ids name a session member. Behaviour lives in pulse-sessions.test.js.
+	// this column too. Golden Journeys aliases board assignees onto session
+	// members before the loose-work filter runs.
+	assert.match(BOARD_PAGE_SOURCE, /agentSessionAssigneeIdAliases\?: Readonly<Record<string, string>>;/u);
 	assert.match(
 		BOARD_PAGE_SOURCE,
-		/filterPulseLooseWorkByMember\(pulseTimeline\.looseWork, pulseMemberId\)/u,
+		/toPulseMemberId\(\s*selectedAssigneeIds,\s*PULSE_MEMBER_IDS,\s*agentSessionAssigneeIdAliases,\s*\)/u,
+	);
+	assert.match(
+		BOARD_PAGE_SOURCE,
+		/filterPulseLooseWorkByMember\(pulseTimeline\.looseWork, agentSessionMemberId\)/u,
 	);
 });
 
