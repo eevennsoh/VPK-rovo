@@ -144,6 +144,37 @@ test("the PAY board fills every existing status with coding work and the full st
 	);
 });
 
+test("a linked Jira activity becomes a medium Agent Session item when detached", async () => {
+	const story = await loadPresentationModule();
+	const card = story.createJiraGoldenJourneysV4PayBoardColumns()
+		.flatMap((column) => column.cards)
+		.find((candidate) => candidate.code === "PAY-105");
+	const activity = card?.agentActivities?.[0];
+
+	assert.ok(card);
+	assert.ok(activity);
+	assert.deepEqual(
+		story.toJiraGoldenJourneysV4DetachedAgentSession(activity, card),
+		{
+			id: activity.id,
+			title: activity.label,
+			state: "running",
+			agent: {
+				avatarSrc: activity.avatarSrc,
+				brandName: activity.agentBrandName,
+				id: activity.id,
+				kind: "agent",
+				name: activity.name,
+			},
+			invokedBy: card.assignee,
+			sessionDetails: {
+				issueKey: card.code,
+				issueSummary: card.title,
+			},
+		},
+	);
+});
+
 test("the board factory returns isolated cards and nested agent state", async () => {
 	const story = await loadPresentationModule();
 	const first = story.createJiraGoldenJourneysV4PayBoardColumns();

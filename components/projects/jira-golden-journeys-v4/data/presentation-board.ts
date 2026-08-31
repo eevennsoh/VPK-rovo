@@ -1,4 +1,5 @@
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
+import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type {
 	JiraIssueAgentActivity,
 	JiraIssueCompletedAgentRun,
@@ -86,6 +87,33 @@ export const JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS = [
 		avatarSrc: PAY_AVATARS.releaseAgent,
 	},
 ] as const satisfies readonly JiraKanbanAgentData[];
+
+export function toJiraGoldenJourneysV4DetachedAgentSession(
+	activity: JiraIssueAgentActivity,
+	card: JiraKanbanCardData,
+): AgentSessionItem {
+	return {
+		id: activity.id,
+		title: activity.label,
+		state: activity.state === "awaiting-input"
+			? "needs-input"
+			: activity.state === "completed"
+				? "complete"
+				: "running",
+		agent: {
+			avatarSrc: activity.avatarSrc,
+			brandName: activity.agentBrandName,
+			id: activity.id,
+			kind: "agent",
+			name: activity.name,
+		},
+		invokedBy: card.assignee,
+		sessionDetails: {
+			issueKey: card.code,
+			issueSummary: card.title,
+		},
+	};
+}
 
 export const JIRA_GOLDEN_JOURNEYS_V4_PAY_COMPOSER_AGENTS = [
 	{
