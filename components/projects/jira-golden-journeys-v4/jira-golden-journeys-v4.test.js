@@ -157,80 +157,12 @@ test("the route pins the shared Agent Session column beside Jira statuses", () =
 	assert.match(EXPERIMENTAL_BOARD_SOURCE, /agentSessionColumn \? "ps-2" : "ps-6"/u);
 });
 
-test("the board's single AI entry point is the Omnibar, scrubbing the PAY sprint week", () => {
-	assert.match(PAGE_SOURCE, /<Omnibar[\s\S]*positioning="viewport"/u);
-	assert.match(PAGE_SOURCE, /<Omnibar[\s\S]*timelineEntries=\{SCRUBBER_DEMO_ENTRIES\}/u);
-	// Two bottom-anchored Rovo affordances would compete for the same job, so the
-	// launcher is hidden — but the floating chat stays reachable from card actions,
-	// which is why `chat` is left on `auto`.
-	assert.match(PAGE_SOURCE, /<JgpRovoOverlay[\s\S]*launcher="hidden"/u);
+test("the board's AI entry point is the floating Rovo button, not the Omnibar", () => {
+	// AppLayout hides its own launcher so JgpRovoOverlay owns the single FAB.
+	assert.match(PAGE_SOURCE, /<AppLayout[\s\S]*hideFloatingRovo[\s\S]*product="jira"/u);
+	assert.match(PAGE_SOURCE, /<JgpRovoOverlay[\s\S]*externalThinkingMessageId=\{externalThinkingMessageId\}/u);
+	assert.doesNotMatch(PAGE_SOURCE, /<JgpRovoOverlay[\s\S]*launcher=/u);
 	assert.doesNotMatch(PAGE_SOURCE, /<JgpRovoOverlay[\s\S]*chat="hidden"/u);
-});
-
-test("the Omnibar expands into the compact prompt and opens the page Ask Rovo sidebar", () => {
-	assert.match(PAGE_SOURCE, /tone="default"/u);
-	assert.match(PAGE_SOURCE, /onOpenPanel=\{handleOmnibarOpenPanel\}/u);
-	assert.match(PAGE_SOURCE, /onSubmit=\{handleOmnibarSubmit\}/u);
-	assert.match(PAGE_SOURCE, /openChat\("sidebar"\)/u);
-	assert.match(PAGE_SOURCE, /sendPrompt\(prompt\)/u);
-	assert.doesNotMatch(PAGE_SOURCE, /sidePanel=/u);
-});
-
-test("the Omnibar unmounts while the Ask Rovo sidebar is open", () => {
-	assert.match(PAGE_SOURCE, /const isSidebarChatOpen = chatSurface === "sidebar"/u);
-	assert.match(PAGE_SOURCE, /\{isSidebarChatOpen \? null : \(/u);
-	assert.match(PAGE_SOURCE, /<Omnibar[\s\S]*tone="default"/u);
-});
-
-test("the Omnibar block gates the timeline behind entries rather than always rendering it", () => {
-	const OMNIBAR_SOURCE = readProjectFile("components/blocks/omnibar/components/omnibar.tsx");
-	const OMNIBAR_BAR_SOURCE = readProjectFile("components/blocks/omnibar/components/omnibar-bar.tsx");
-
-	// No entries means no toggle, so every existing consumer keeps today's bar.
-	assert.match(OMNIBAR_SOURCE, /const timeline = timelineEntries\s*\?/u);
-	assert.match(OMNIBAR_BAR_SOURCE, /\{timeline && !hideContextPill \? \(/u);
-	assert.match(OMNIBAR_BAR_SOURCE, /<OmnibarTimelinePill/u);
-	assert.match(OMNIBAR_BAR_SOURCE, /<ContextBarPill/u);
-	assert.doesNotMatch(OMNIBAR_BAR_SOURCE, /Customize|CustomizeIcon/u);
-	// Only the horizontal axis takes the editor cell; `y` docks a sibling rail.
-	assert.match(OMNIBAR_BAR_SOURCE, /timeline\?\.isTimeline === true && timeline\.axis === "x"/u);
-	assert.match(OMNIBAR_SOURCE, /timelineAxis === "y"/u);
-});
-
-test("the Omnibar compact tone leaves the existing FloatingComposer chrome in place", () => {
-	const OMNIBAR_SOURCE = readProjectFile("components/blocks/omnibar/components/omnibar.tsx");
-	const OMNIBAR_BAR_SOURCE = readProjectFile("components/blocks/omnibar/components/omnibar-bar.tsx");
-	const OMNIBAR_HOOK_SOURCE = readProjectFile("components/blocks/omnibar/hooks/use-omnibar-state.ts");
-
-	assert.match(OMNIBAR_SOURCE, /tone = "inverse"/u);
-	assert.match(OMNIBAR_SOURCE, /isDefaultTone\s*\?\s*"overflow-visible bg-transparent shadow-none"/u);
-	// Compact tone keeps the morphing surface transparent. Collapsed chrome
-	// lives on the pill (`paintChrome`) so a dark leftover cannot sit under
-	// the composer. Inverse still uses the Rovo-button black surface.
-	assert.match(OMNIBAR_SOURCE, /overflow-hidden bg-bg-neutral-bold shadow-overlay/u);
-	assert.match(OMNIBAR_SOURCE, /paintChrome=\{isDefaultTone\}/u);
-	assert.match(OMNIBAR_SOURCE, /hideContextPill=\{hoistContextPill\}/u);
-	assert.doesNotMatch(OMNIBAR_SOURCE, /bg-surface-raised/u);
-	assert.match(OMNIBAR_BAR_SOURCE, /const isInverse = tone === "inverse"/u);
-	assert.match(OMNIBAR_BAR_SOURCE, /isInverse \? OMNIBAR_BAR_SKIN : null/u);
-	assert.match(OMNIBAR_HOOK_SOURCE, /if \(onOpenPanelRef\.current\) \{/u);
-	assert.match(OMNIBAR_HOOK_SOURCE, /dispatch\(\{ type: "collapse" \}\)/u);
-});
-
-test("the Omnibar send control stays disabled when the host wires no onSubmit", () => {
-	// Regression: v4 is the first consumer to mount the Omnibar without `onSubmit`, and
-	// `OmnibarBar` used to omit `submitDisabled`. `RovoComposerActionButton` resolves
-	// `disabled` as `submitDisabled || !canSubmit`, so the button enabled itself on the
-	// first keystroke and then did nothing — `handleSubmit` returns early with no consumer.
-	const OMNIBAR_SOURCE = readProjectFile("components/blocks/omnibar/components/omnibar.tsx");
-	const OMNIBAR_BAR_SOURCE = readProjectFile("components/blocks/omnibar/components/omnibar-bar.tsx");
-
-	assert.match(OMNIBAR_SOURCE, /<OmnibarBar[\s\S]*submitDisabled=\{onSubmit === undefined\}/u);
-	assert.match(
-		OMNIBAR_BAR_SOURCE,
-		/<RovoComposerActionButton[\s\S]*submitDisabled=\{submitDisabled\}/u,
-		"the bar must forward submitDisabled, not just accept it",
-	);
-	// The runtime guard stays too: Enter reaches requestSubmit() without touching the button.
-	assert.match(OMNIBAR_SOURCE, /if \(!prompt \|\| onSubmit === undefined\) \{/u);
+	assert.doesNotMatch(PAGE_SOURCE, /Omnibar|SCRUBBER_DEMO_ENTRIES|handleOmnibar/u);
+	assert.doesNotMatch(PAGE_SOURCE, /useRovoChat|isSidebarChatOpen/u);
 });
