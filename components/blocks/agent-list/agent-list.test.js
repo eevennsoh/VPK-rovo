@@ -458,6 +458,11 @@ test("in-flow View controls immediately replace lifecycle indicators without col
 		CARD_SOURCE,
 		/"pointer-events-none flex shrink-0 items-center gap-1 pl-3 opacity-0/u,
 	);
+	assert.match(CARD_SOURCE, /transition-opacity duration-normal ease-out-practical/u);
+	assert.match(
+		CARD_SOURCE,
+		/group-data-\[variant=uncaptured-work\]\/agent-row:transition-none/u,
+	);
 	assert.doesNotMatch(CARD_SOURCE, /className="ml-3 hidden shrink-0 items-center gap-1/u);
 	assert.doesNotMatch(CARD_SOURCE, /isVisible/u);
 	assert.match(

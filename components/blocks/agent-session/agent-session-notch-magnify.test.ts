@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 // @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
-import { AGENT_SESSION_NOTCH_LENGTH, AGENT_SESSION_NOTCH_MAGNIFY_RADIUS, AGENT_SESSION_NOTCH_NO_NEAREST, AGENT_SESSION_NOTCH_POINTER_AWAY, toAgentSessionNotchLength, toAgentSessionNotchMagnification, toAgentSessionNotchOpacity, toNearestAgentSessionNotchIndex } from "./agent-session-notch-magnify.ts";
+import { AGENT_SESSION_NOTCH_LENGTH, AGENT_SESSION_NOTCH_MAGNIFY_RADIUS, AGENT_SESSION_NOTCH_NO_NEAREST, AGENT_SESSION_NOTCH_POINTER_AWAY, AGENT_SESSION_NOTCH_TONE, toAgentSessionNotchLength, toAgentSessionNotchMagnification, toAgentSessionNotchTone, toNearestAgentSessionNotchIndex } from "./agent-session-notch-magnify.ts";
 
 /** The rail's pitch: a 20px notch row plus the list's 4px gap. */
 const PITCH = 24;
@@ -73,42 +73,19 @@ test("out-of-range magnification is clamped, never extrapolated", () => {
 	assert.equal(toAgentSessionNotchLength(4, false), AGENT_SESSION_NOTCH_LENGTH.peak);
 	assert.equal(toAgentSessionNotchLength(-3, false), AGENT_SESSION_NOTCH_LENGTH.rest);
 	assert.equal(toAgentSessionNotchLength(Number.NaN, false), AGENT_SESSION_NOTCH_LENGTH.rest);
-	assert.equal(toAgentSessionNotchOpacity(4, false), 1);
-	assert.equal(toAgentSessionNotchOpacity(-3, false), 0.66);
-	assert.equal(toAgentSessionNotchOpacity(Number.NaN, true), 1);
 });
 
-test("a resting notch is as legible as the unmagnified mark beside it", () => {
-	// The rail sits on `color.background.accent.gray.subtlest`, and 0.66 alpha of
-	// `color.icon` over it resolves to `color.icon.subtlest` in both themes. A 1px
-	// hairline has no weight to spare, so the swell brightens from that floor
-	// rather than dimming below it.
-	//
-	// Every channel is checked, not just one: the plane is a neutral grey and
-	// `icon.subtlest` carries a slight blue lean, so a single alpha cannot land
-	// all three exactly. Five levels out of 255 is the widest gap and is not
-	// visible on a hairline; anything beyond that means the plane's fill moved
-	// and the alpha needs recomputing.
-	const blend = (fg: number, bg: number, alpha: number) => Math.round(alpha * fg + (1 - alpha) * bg);
-	const rest = toAgentSessionNotchOpacity(0, false);
-	const resolvesToSubtlest = (
-		theme: string,
-		icon: readonly number[],
-		plane: readonly number[],
-		subtlest: readonly number[],
-	) => {
-		for (let channel = 0; channel < 3; channel += 1) {
-			const actual = blend(icon[channel], plane[channel], rest);
-			assert.ok(
-				Math.abs(actual - subtlest[channel]) <= 5,
-				`${theme} channel ${channel}: resting notch resolved to ${actual}, expected near icon.subtlest ${subtlest[channel]}`,
-			);
-		}
-	};
-	// icon #292A2E over background.accent.gray.subtlest #F0F1F2 → icon.subtlest #6B6E76
-	resolvesToSubtlest("light", [0x29, 0x2a, 0x2e], [0xf0, 0xf1, 0xf2], [0x6b, 0x6e, 0x76]);
-	// icon #CECFD2 over background.accent.gray.subtlest #303134 → icon.subtlest #96999E
-	resolvesToSubtlest("dark", [0xce, 0xcf, 0xd2], [0x30, 0x31, 0x34], [0x96, 0x99, 0x9e]);
+test("colour is the named icon tokens, never an alpha mix", () => {
+	// Resting marks paint `color.icon.subtlest` and the selected mark paints
+	// `color.icon`. A 0.66–0.68 alpha of `color.icon` used to approximate
+	// subtlest over the old plane; that mix is a third grey on `bg-surface`.
+	assert.equal(AGENT_SESSION_NOTCH_TONE.rest, "var(--color-icon-subtlest)");
+	assert.equal(AGENT_SESSION_NOTCH_TONE.selected, "var(--color-icon)");
+	assert.equal(toAgentSessionNotchTone(false, false), AGENT_SESSION_NOTCH_TONE.rest);
+	assert.equal(toAgentSessionNotchTone(true, false), AGENT_SESSION_NOTCH_TONE.selected);
+	// Newly synced notches stay on `color.icon` whether or not they are nearest.
+	assert.equal(toAgentSessionNotchTone(false, true), AGENT_SESSION_NOTCH_TONE.selected);
+	assert.equal(toAgentSessionNotchTone(true, true), AGENT_SESSION_NOTCH_TONE.selected);
 });
 
 test("colour marks the selected notch alone, never the slope around it", () => {
@@ -116,10 +93,16 @@ test("colour marks the selected notch alone, never the slope around it", () => {
 	// distance turned seven marks into one grey gradient, and the notch actually
 	// under the pointer stopped being findable. Length carries proximity; colour
 	// carries selection, and selection is one notch.
-	const selected = toAgentSessionNotchOpacity(1, false);
-	const neighbour = toAgentSessionNotchOpacity(0, false);
-	assert.equal(selected, 1, "the selected notch takes full color.icon");
-	assert.equal(neighbour, 0.66, "an unselected notch holds color.icon.subtlest");
+	assert.equal(
+		toAgentSessionNotchTone(true, false),
+		AGENT_SESSION_NOTCH_TONE.selected,
+		"the selected notch takes color.icon",
+	);
+	assert.equal(
+		toAgentSessionNotchTone(false, false),
+		AGENT_SESSION_NOTCH_TONE.rest,
+		"an unselected notch holds color.icon.subtlest",
+	);
 	// Its neighbour is still visibly longer — the slope is intact, unpainted.
 	assert.ok(
 		toAgentSessionNotchLength(toAgentSessionNotchMagnification(PITCH), false)

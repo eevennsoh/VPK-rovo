@@ -7,6 +7,10 @@ const BOARD_SOURCE = readFileSync(
 	join(__dirname, "../experimental-jira-kanban.tsx"),
 	"utf8",
 );
+const V2_BOARD_SOURCE = readFileSync(
+	join(__dirname, "../../experimental-v2/experimental-v2-jira-kanban.tsx"),
+	"utf8",
+);
 const PAGE_SOURCE = readFileSync(join(__dirname, "../page.tsx"), "utf8");
 
 const {
@@ -86,8 +90,10 @@ test("the resize button swaps its icon without using selected button state", () 
 
 test("the pinned session column shares the status columns' box model", () => {
 	// Status columns carry a 2px transparent drop-target border, so the pinned
-	// wrapper needs it too or the headers sit 2px apart and the gap runs short.
-	assert.match(BOARD_SOURCE, /className="flex min-h-0 shrink-0 border-2 border-transparent ps-6"/u);
+	// wrapper keeps top/left/bottom or the headers sit 2px apart. It drops the
+	// right edge — Untracked work is not a drop target, and that 2px reads as
+	// a white seam against `bg-surface`.
+	assert.match(BOARD_SOURCE, /className="flex min-h-0 shrink-0 border-2 border-transparent border-r-0 ps-6"/u);
 });
 
 test("a collapsed status pill hugs its label while the shell keeps the drop lane", () => {
@@ -114,4 +120,45 @@ test("a collapsed status pill hugs its label while the shell keeps the drop lane
 	// The shell still clips for the width transition, which is what that
 	// `overflow-hidden` was ever needed for.
 	assert.match(BOARD_SOURCE, /collapsed \|\| isResizing \? "overflow-hidden" : "overflow-visible"/u);
+});
+
+test("a collapsed status count sits in the header outside the pill", () => {
+	for (const [label, source] of [
+		["experimental", BOARD_SOURCE],
+		["experimental-v2", V2_BOARD_SOURCE],
+	]) {
+		const pillStart = source.indexOf("function CollapsedBoardColumn");
+		const pillEnd = source.indexOf("function BoardColumn(", pillStart);
+		assert.ok(pillStart !== -1 && pillEnd > pillStart, `expected to find CollapsedBoardColumn in ${label}`);
+		const pillSource = source.slice(pillStart, pillEnd);
+
+		// Same header geometry as expanded: `space.100` below a 24px row, so the
+		// tally does not jump when the column collapses. Count and expand share
+		// one centered 32px slot — the number is not left-aligned, and the
+		// expand icon must not sit on top of it.
+		assert.match(pillSource, /paddingBottom: token\("space\.100"\)/u);
+		assert.match(pillSource, /relative flex h-6 w-full items-center justify-center/u);
+		assert.match(pillSource, /COLLAPSED_HEAD_COUNT_AT_REST/u);
+		assert.match(source, /group-hover\/collapsed-column:opacity-0/u);
+		assert.match(source, /group-has-\[:focus-visible\]\/collapsed-column:opacity-0/u);
+		assert.match(pillSource, /BOARD_COLUMN_ACTION_REVEAL/u);
+		assert.doesNotMatch(pillSource, /BOARD_COLUMN_ACTION_REVEAL,\s*"absolute"/u);
+		const countIndex = pillSource.indexOf("{count}");
+		const borderIndex = pillSource.indexOf("border border-border-disabled");
+		const writingModeIndex = pillSource.indexOf("[writing-mode:vertical-rl]");
+		assert.ok(
+			countIndex > 0 && borderIndex > countIndex,
+			`expected the ${label} count above the bordered pill`,
+		);
+		assert.ok(
+			writingModeIndex > borderIndex,
+			`expected the ${label} rotated title inside the pill`,
+		);
+		assert.doesNotMatch(pillSource, /group\/collapsed-column[^"]*\[writing-mode:vertical-rl\]/u);
+		assert.doesNotMatch(pillSource, /writing-mode:vertical-rl.*\{count\}/u);
+		assert.match(pillSource, /paddingBlock: token\("space\.150"\)/u);
+		assert.match(pillSource, /flex-col items-center justify-center/u);
+		assert.doesNotMatch(pillSource, /paddingBlockStart: token\("space\.150"\)/u);
+		assert.doesNotMatch(pillSource, /paddingBlockEnd: token\("space\.050"\)/u);
+	}
 });

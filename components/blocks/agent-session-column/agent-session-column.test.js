@@ -69,43 +69,56 @@ const MANIFEST_SOURCE = readFileSync(
 	"utf8",
 );
 
-test("the column is a filled accent-gray plane, unlike the board's unfilled status columns", () => {
-	assert.match(INDEX_SOURCE, /bg-bg-accent-gray-subtlest/u);
-	// The fill is the whole point of the column, so it must not be reachable only
-	// through a caller-supplied class.
+test("the column plane is the board surface, not a grey well", () => {
+	assert.match(INDEX_SOURCE, /bg-surface/u);
+	assert.doesNotMatch(INDEX_SOURCE, /bg-bg-accent-gray-subtlest/u);
+	assert.doesNotMatch(INDEX_SOURCE, /bg-white\b/u);
+	// The fill must not be reachable only through a caller-supplied class.
 	assert.doesNotMatch(INDEX_SOURCE, /className=\{cn\(\s*className/u);
-	assert.match(INDEX_SOURCE, /borderRadius: token\("radius\.xlarge"\)/u);
+	assert.doesNotMatch(INDEX_SOURCE, /borderRadius: token\("radius\.xlarge"\)/u);
 });
 
-test("the session plane matches the flyout list parent's padding, not its gap", () => {
-	// AgentSessionFlyout wraps rows in `flex ... gap-0.5 ... p-1`. The column
-	// keeps that inset on the scrollport, but large uncaptured cards stack as
-	// one dashed well. The plane itself stays unpadded so edge fades span it.
-	assert.match(INDEX_SOURCE, /-m-1 min-h-0 min-w-0 flex-1 overflow-y-auto p-1/u);
-	assert.match(INDEX_SOURCE, /className=\{cn\("gap-0", listClassName\)\}/u);
+test("the session list sits flush in the plane with no gutter wrapper", () => {
+	// The old `-m-1 p-1` scrollport painted a 4px gap around the cards and
+	// clipped the scrollbar against the plane's radius. The list is the
+	// scrollport now; the plane stays unpadded so edge fades span it.
+	assert.match(INDEX_SOURCE, /min-h-0 min-w-0 flex-1 overflow-y-auto/u);
+	assert.doesNotMatch(INDEX_SOURCE, /-m-1 min-h-0 min-w-0 flex-1 overflow-y-auto p-1/u);
+	assert.match(INDEX_SOURCE, /overflow-y-auto has-\[:focus-visible\]:overflow-visible/u);
+	assert.doesNotMatch(INDEX_SOURCE, /const AGENT_SESSION_PLANE =\s*\n?\s*"[^"]*overflow-hidden/u);
+	assert.match(INDEX_SOURCE, /className=\{cn\(AGENT_SESSION_WELL_LIST, listClassName\)\}/u);
 	assert.doesNotMatch(INDEX_SOURCE, /className=\{cn\("gap-0\.5", listClassName\)\}/u);
 	assert.doesNotMatch(INDEX_SOURCE, /padding: token\("space\.100"\)/u);
 	assert.doesNotMatch(INDEX_SOURCE, /padding: token\("space\.050"\)/u);
 });
 
-test("the column stacks large session cards as one dashed well", () => {
-	assert.match(INDEX_SOURCE, /className=\{cn\("gap-0", listClassName\)\}/u);
+test("the column stacks large session cards as one solid well", () => {
+	// The expanded plane owns the outer 1px + radius.xlarge so fades cannot
+	// paint over the stroke. Cards in this column keep only internal dividers.
+	assert.match(INDEX_SOURCE, /const AGENT_SESSION_WELL =/u);
+	assert.match(INDEX_SOURCE, /overflow-hidden rounded-xl border border-solid border-border-disabled/u);
+	assert.match(INDEX_SOURCE, /collapsed \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL/u);
+	assert.match(INDEX_SOURCE, /className=\{cn\(AGENT_SESSION_WELL_LIST, listClassName\)\}/u);
+	assert.match(INDEX_SOURCE, /\[&_article\]:rounded-none \[&_article\]:border-x-0/u);
+	assert.match(INDEX_SOURCE, /\[&_li:first-child_article\]:border-t-0/u);
+	assert.match(INDEX_SOURCE, /\[&_li:last-child_article\]:rounded-none \[&_li:last-child_article\]:rounded-b-none \[&_li:last-child_article\]:border-b-0/u);
 	assert.match(SESSION_INDEX_SOURCE, /data-stack=\{variant === "large" \? "well" : undefined\}/u);
+	// Standalone Agent Session still draws a full well; the column strips it.
 	assert.match(CARD_SOURCE, /\[li:first-child_&\]:rounded-t-lg/u);
 	assert.match(CARD_SOURCE, /\[li:last-child_&\]:rounded-b-lg/u);
-	assert.match(CARD_SOURCE, /\[li:not\(:last-child\)_&\]:\[--dash-bottom-size:0px\]/u);
 	assert.match(CARD_SOURCE, /\[li:not\(:last-child\)_&\]:border-b-0/u);
-	assert.match(CARD_SOURCE, /dash-4-2/u);
+	assert.match(CARD_SOURCE, /border border-solid/u);
+	assert.doesNotMatch(CARD_SOURCE, /dash-4-2/u);
 });
 
 test("the fill starts below the header, so the title shares the status columns' baseline", () => {
 	// The header has to sit on the board surface at the same inset and baseline
-	// as `To do`. Filling the <section> itself would put the title inside the
-	// grey and push it 8px in and 8px down from every other column title.
-	assert.doesNotMatch(INDEX_SOURCE, /<section[\s\S]*?className=\{cn\(\s*"[^"]*bg-bg-accent-gray-subtlest/u);
-	assert.doesNotMatch(INDEX_SOURCE, /"group\/session-column[^"]*bg-bg-accent-gray-subtlest/u);
+	// as `To do`. Filling the <section> itself would push the title 8px in and
+	// 8px down from every other column title.
+	assert.doesNotMatch(INDEX_SOURCE, /<section[\s\S]*?className=\{cn\(\s*"[^"]*bg-surface/u);
+	assert.doesNotMatch(INDEX_SOURCE, /"group\/session-column[^"]*bg-surface/u);
 	// The fill is a plane the header is a sibling of, not an ancestor of.
-	assert.match(INDEX_SOURCE, /bg-bg-accent-gray-subtlest/u);
+	assert.match(INDEX_SOURCE, /bg-surface/u);
 	assert.match(INDEX_SOURCE, /const AGENT_SESSION_PLANE =/u);
 	// The section carries no padding of its own either — that would inset the
 	// header just as surely as the fill would.
@@ -115,18 +128,21 @@ test("the fill starts below the header, so the title shares the status columns' 
 test("card rendering is delegated to the Agent Session block, never re-implemented", () => {
 	assert.match(INDEX_SOURCE, /import \{ AGENT_SESSION_ITEMS, AgentSession \} from "@\/components\/blocks\/agent-session"/u);
 	assert.match(INDEX_SOURCE, /<AgentSession\b/u);
-	// No forked card chrome: the dashed border and flyout belong to the card.
+	// No forked card chrome: the solid border and flyout belong to the card.
 	assert.doesNotMatch(INDEX_SOURCE, /border-dashed|UncapturedWorkChin|AgentListRow/u);
 });
 
 test("the header count defaults to the visible sessions and can be overridden", () => {
-	assert.match(INDEX_SOURCE, /count \?\? visibleItems\.length/u);
-	assert.match(INDEX_SOURCE, /view === "hidden"\s*\n\s*\? hiddenItems\.length/u);
+	assert.match(INDEX_SOURCE, /untrackedCount = count \?\? visibleItems\.length/u);
+	assert.match(INDEX_SOURCE, /sessionCount = view === "hidden" \? hiddenItems\.length : untrackedCount/u);
 	assert.match(TYPES_SOURCE, /count\?: number;/u);
 });
 
-test("the scrollport reserves the focus-ring gutter instead of clipping a focused card", () => {
-	assert.match(INDEX_SOURCE, /-m-1 min-h-0 min-w-0 flex-1 overflow-y-auto p-1/u);
+test("the scrollport sits flush and lifts overflow for a focused card", () => {
+	assert.match(INDEX_SOURCE, /min-h-0 min-w-0 flex-1 overflow-y-auto/u);
+	assert.doesNotMatch(INDEX_SOURCE, /-m-1 min-h-0 min-w-0 flex-1 overflow-y-auto p-1/u);
+	assert.match(INDEX_SOURCE, /overflow-y-auto has-\[:focus-visible\]:overflow-visible/u);
+	assert.doesNotMatch(INDEX_SOURCE, /const AGENT_SESSION_PLANE =\s*\n?\s*"[^"]*overflow-hidden/u);
 	assert.match(INDEX_SOURCE, /useHasVerticalOverflow/u);
 });
 
@@ -134,9 +150,16 @@ test("edge fades sit on the column plane so they span the full backdrop width", 
 	// Mask-image on the inset scrollport left a gutter (padding + scrollbar track)
 	// where cards stayed sharp. Overlays are positioned to the plane instead.
 	assert.match(INDEX_SOURCE, /ScrollMaskEdgeOverlay/u);
-	assert.match(INDEX_SOURCE, /AGENT_SESSION_PLANE_FADE_COLOR = "var\(--color-bg-accent-gray-subtlest\)"/u);
+	assert.match(INDEX_SOURCE, /AGENT_SESSION_PLANE_FADE_COLOR = "var\(--color-surface\)"/u);
 	assert.match(INDEX_SOURCE, /showTopScrollMask \? \(/u);
 	assert.match(INDEX_SOURCE, /showBottomScrollMask \? \(/u);
+	assert.match(INDEX_SOURCE, /showTopScrollMask \|\| showBottomScrollMask/u);
+	// The footer is a sibling under the scrollport, not overflow. At the end
+	// of the list the last card is fully revealed and the bottom fade is off.
+	assert.doesNotMatch(INDEX_SOURCE, /showBottomFade|showBottomScrollMask \|\| showHiddenFooter/u);
+	assert.match(INDEX_SOURCE, /relative flex min-h-0 min-w-0 flex-1 flex-col/u);
+	assert.match(INDEX_SOURCE, /pointer-events-none absolute inset-0/u);
+	assert.doesNotMatch(INDEX_SOURCE, /pointer-events-none absolute inset-px/u);
 	assert.match(INDEX_SOURCE, /edge="top"/u);
 	assert.match(INDEX_SOURCE, /edge="bottom"/u);
 	assert.doesNotMatch(INDEX_SOURCE, /buildScrollMaskStyle/u);
@@ -158,10 +181,10 @@ test("the v2 board pins the column outside its horizontal scrollport", () => {
 	// The pinned column supplies the board's left inset, so the scroll row drops
 	// to the inter-column gap and every column keeps one rhythm.
 	assert.match(BOARD_SOURCE, /agentSessionColumn \? "ps-2" : "ps-6"/u);
-	// Both share the scrollport's vertical padding *and* the 2px transparent
-	// drop-target border each status column carries, so the headers share a
-	// baseline and every pair of column contents shares one gap.
-	assert.match(BOARD_SOURCE, /className="flex min-h-0 shrink-0 border-2 border-transparent ps-6"\s*style=\{\{ paddingTop, paddingBottom \}\}/u);
+	// Both share the scrollport's vertical padding and the status columns'
+	// 2px top/left/bottom box so the headers share a baseline. No right
+	// border — that 2px reads as a white seam against `bg-surface`.
+	assert.match(BOARD_SOURCE, /className="flex min-h-0 shrink-0 border-2 border-transparent border-r-0 ps-6"\s*style=\{\{ paddingTop, paddingBottom \}\}/u);
 });
 
 test("the board column and the Insights rail share one loose-work adapter", () => {
@@ -205,15 +228,32 @@ test("the block is registered in the catalog", () => {
 	assert.match(PAGE_SOURCE, /onSubtasks=\{handleCapture\}/u);
 });
 
+test("the collapsed count lives in the header above the plane, not on the rail", () => {
+	// Same header slot as expanded (`space.100` below, 24px row) so the number
+	// does not jump. The rail is notches only.
+	assert.match(INDEX_SOURCE, /paddingBottom: token\("space\.100"\)/u);
+	assert.match(INDEX_SOURCE, /relative flex h-6 w-full min-w-0 items-center justify-center/u);
+	assert.match(INDEX_SOURCE, /absolute inset-0 flex items-center justify-center text-xs/u);
+	assert.match(INDEX_SOURCE, /HEADER_COUNT_AT_REST/u);
+	assert.match(INDEX_SOURCE, /HEADER_CONTROL_ON_REVEAL/u);
+	assert.doesNotMatch(INDEX_SOURCE, /className=\{cn\("absolute shrink-0", HEADER_CONTROL_ON_REVEAL\)\}/u);
+	assert.match(INDEX_SOURCE, /<TextMorphing/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /<TextMorphing/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /sessionCount/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /onExpand/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /pt-3/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /group\/session-rail/u);
+});
+
 test("collapsing swaps the cards for the notch rail, not for a rotated label", () => {
-	// A status column collapses into a `writing-mode: vertical-rl` pill. This one
-	// must not: its contents are live sessions, so it collapses into the rail.
+	// A status column collapses into a `writing-mode: vertical-rl` title. This
+	// one must not: its contents are live sessions, so it collapses into the rail.
 	assert.doesNotMatch(INDEX_SOURCE, /writing-mode/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /writing-mode/u);
-	assert.match(INDEX_SOURCE, /collapsed \? \(\s*(?:\/\/[^\n]*\n\s*)*<div[\s\S]{0,400}?<AgentSessionColumnRail/u);
-	// Collapsed there is no header to keep clear of the fill, so the plane runs
-	// the full height like the pill the status columns collapse into.
-	assert.match(INDEX_SOURCE, /const AGENT_SESSION_PLANE =\s*\n?\s*"[^"]*bg-bg-accent-gray-subtlest/u);
+	assert.match(INDEX_SOURCE, /collapsed \?[\s\S]{0,400}?<AgentSessionColumnRail/u);
+	// The header stays a sibling of the plane in both states, so the fill
+	// never runs behind the count.
+	assert.match(INDEX_SOURCE, /const AGENT_SESSION_PLANE =\s*\n?\s*"[^"]*bg-surface/u);
 	// 32px matches the board's collapsed status pill so the two share a rhythm.
 	assert.match(INDEX_SOURCE, /AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX = 32/u);
 	// Declared locally: a shared block must not import a kanban variant's lib.
@@ -227,13 +267,24 @@ test("column resize buttons swap icons without using selected button state", () 
 	assert.match(INDEX_SOURCE, /aria-label=\{`Collapse \$\{title\} column`\}/u);
 	assert.match(INDEX_SOURCE, /<ShrinkHorizontalIcon/u);
 	assert.match(INDEX_SOURCE, /<TooltipContent>Collapse<\/TooltipContent>/u);
-	assert.match(RAIL_COLUMN_SOURCE, /aria-label=\{`Expand \$\{title\} column`\}/u);
-	assert.match(RAIL_COLUMN_SOURCE, /<GrowHorizontalIcon/u);
-	assert.match(RAIL_COLUMN_SOURCE, /<TooltipContent>Expand<\/TooltipContent>/u);
+	assert.match(INDEX_SOURCE, /aria-label=\{`Expand \$\{title\} column`\}/u);
+	assert.match(INDEX_SOURCE, /<GrowHorizontalIcon/u);
+	assert.match(INDEX_SOURCE, /<TooltipContent>Expand<\/TooltipContent>/u);
 	assert.doesNotMatch(INDEX_SOURCE, /<TooltipContent>Collapse column<\/TooltipContent>/u);
-	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /<TooltipContent>Expand column<\/TooltipContent>/u);
+	assert.doesNotMatch(INDEX_SOURCE, /<TooltipContent>Expand column<\/TooltipContent>/u);
 	assert.doesNotMatch(INDEX_SOURCE, /\baria-(?:expanded|pressed)(?:\s|=)/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /\baria-(?:expanded|pressed)(?:\s|=)/u);
+});
+
+test("notch flyouts use a stable trigger host so the shared popup follows the rail", () => {
+	// Same contract as expanded AgentSessionCard: layout on the `li`, a plain
+	// `div` as the HoverCard trigger. Putting `layout` on the trigger remounts
+	// the host and opens a new flyout per notch.
+	assert.match(RAIL_COLUMN_SOURCE, /layout=\{shouldReduceMotion \? false : "position"\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /<JiraSessionFlyoutTrigger[\s\S]{0,200}?render=\{\s*<div className="w-full" \/>/u);
+	assert.match(RAIL_COLUMN_SOURCE, /closeDelay=\{160\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /content="untracked-work"/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /render=\{\s*<motion\.li/u);
 });
 
 test("each notch opens the shared session flyout rather than a forked preview", () => {
@@ -256,7 +307,8 @@ test("each notch opens the shared session flyout rather than a forked preview", 
 	assert.match(RAIL_COLUMN_SOURCE, /flyoutSession=\{toAgentSessionUntrackedWorkFlyoutItem\(/u);
 	assert.match(RAIL_COLUMN_SOURCE, /session=\{flyoutSession\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /closeDelay=\{160\}/u);
-	assert.match(RAIL_COLUMN_SOURCE, /render=\{\s*<motion\.li/u);
+	assert.match(RAIL_COLUMN_SOURCE, /render=\{\s*<div className="w-full" \/>/u);
+	assert.match(RAIL_COLUMN_SOURCE, /<motion\.li/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /createHoverCardHandle|<HoverCard\b/u);
 	assert.match(INDEX_SOURCE, /capturedItemIds=\{sessionProps\.capturedItemIds\}/u);
 	assert.match(INDEX_SOURCE, /onLinkWorkItem=\{sessionProps\.onLinkWorkItem\}/u);
@@ -270,10 +322,10 @@ test("a notch is reachable and legible without a pointer", () => {
 	assert.match(RAIL_COLUMN_SOURCE, /\$\{item\.title\} — \$\{NOTCH_STATE_LABEL\[item\.state\]\}/u);
 	// Colour alone never carries the state.
 	assert.match(RAIL_COLUMN_SOURCE, /const NOTCH_STATE_LABEL: Record<AgentListState, string>/u);
-	// The expand control stays in the tab order while faded, and unfades on
-	// keyboard focus — `hidden` would drop it out of reach entirely.
-	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /group-hover\/session-rail:block/u);
-	assert.match(RAIL_COLUMN_SOURCE, /group-has-\[:focus-visible\]\/session-rail:opacity-100/u);
+	// The expand control stays in the header tab order while faded, and
+	// unfades on keyboard focus — `hidden` would drop it out of reach entirely.
+	assert.doesNotMatch(INDEX_SOURCE, /group-hover\/session-column:block/u);
+	assert.match(INDEX_SOURCE, /group-has-\[:focus-visible\]\/session-column:opacity-100/u);
 });
 
 test("collapsed motion is tokenised and honours reduced motion", () => {
@@ -305,18 +357,18 @@ test("collapsed motion is tokenised and honours reduced motion", () => {
 	assert.match(INDEX_SOURCE, /event\.propertyName === "width"/u);
 });
 
-test("the resting notch alpha stays pinned to the plane it is painted on", () => {
-	// The mark is one element carrying two named colours: `color.icon` at an
-	// alpha chosen so it resolves to `color.icon.subtlest` over the plane behind
-	// it. That makes the constant a function of the plane's fill, and a fill
-	// change would silently leave every resting notch the wrong grey. Pin the two
-	// together here — the arithmetic itself is covered in
-	// `agent-session-notch-magnify.test.ts`.
-	assert.match(INDEX_SOURCE, /const AGENT_SESSION_PLANE =\s*\n?\s*"[^"]*bg-bg-accent-gray-subtlest/u);
-	assert.match(NOTCH_MAGNIFY_SOURCE, /color\.background\.accent\.gray\.subtlest/u);
-	assert.match(NOTCH_MAGNIFY_SOURCE, /rest: 0\.66,/u);
-	// The old sunken plane must not linger in the rationale.
+test("the resting notch paints icon.subtlest, not an alpha of icon", () => {
+	// Two named tokens, opaque. An alpha of `color.icon` over the plane used to
+	// approximate subtlest; on `bg-surface` that mix is a third grey.
+	assert.match(INDEX_SOURCE, /const AGENT_SESSION_PLANE =\s*\n?\s*"[^"]*bg-surface/u);
+	assert.match(NOTCH_MAGNIFY_SOURCE, /rest: "var\(--color-icon-subtlest\)"/u);
+	assert.match(NOTCH_MAGNIFY_SOURCE, /selected: "var\(--color-icon\)"/u);
+	assert.match(NOTCH_MAGNIFY_SOURCE, /export function toAgentSessionNotchTone\(/u);
+	assert.doesNotMatch(NOTCH_MAGNIFY_SOURCE, /AGENT_SESSION_NOTCH_OPACITY|rest: 0\.6[68]/u);
+	assert.doesNotMatch(NOTCH_MARK_SOURCE, /toAgentSessionNotchOpacity|transition-opacity/u);
+	// The old grey / sunken planes must not linger in the rationale.
 	assert.doesNotMatch(NOTCH_MAGNIFY_SOURCE, /elevation\.surface\.sunken/u);
+	assert.doesNotMatch(NOTCH_MAGNIFY_SOURCE, /color\.background\.accent\.gray\.subtlest/u);
 });
 
 test("the rail is one dock, so notches swell by distance rather than per row", () => {
@@ -354,7 +406,7 @@ test("the rail is one dock, so notches swell by distance rather than per row", (
 	assert.match(RAIL_COLUMN_SOURCE, /event\.pointerType === "touch"/u);
 	// The parked pointer is finite — an Infinity poisons a motion value for good.
 	assert.match(NOTCH_MAGNIFY_SOURCE, /AGENT_SESSION_NOTCH_POINTER_AWAY = -1;/u);
-	// Peak length is the rail's own channel: 32px less the plane's 4px padding.
+	// Peak length is the rail's own 24px channel inside the 32px column.
 	assert.match(NOTCH_MAGNIFY_SOURCE, /peak: 24,/u);
 });
 
@@ -364,9 +416,11 @@ test("length carries proximity, colour carries selection — one notch, not the 
 	// Length still tapers across neighbours; the darker `color.icon` lands on the
 	// selected notch alone and everything else holds `color.icon.subtlest`.
 	assert.match(NOTCH_MARK_SOURCE, /const width = useTransform\(falloff,/u);
-	assert.match(NOTCH_MARK_SOURCE, /const opacity = useTransform\(\[nearestIndex, magnify\]/u);
-	assert.match(NOTCH_MARK_SOURCE, /nearest === index \? amount : 0/u);
-	assert.doesNotMatch(NOTCH_MARK_SOURCE, /const opacity = useTransform\(falloff,/u);
+	assert.match(NOTCH_MARK_SOURCE, /const backgroundColor = useTransform\(\s*\[nearestIndex, magnify\]/u);
+	assert.match(NOTCH_MARK_SOURCE, /nearest === index && amount > 0/u);
+	assert.match(NOTCH_MARK_SOURCE, /toAgentSessionNotchTone\(/u);
+	assert.doesNotMatch(NOTCH_MARK_SOURCE, /const opacity = useTransform\(/u);
+	assert.doesNotMatch(NOTCH_MARK_SOURCE, /const backgroundColor = useTransform\(falloff,/u);
 	// Selection is the rail's to resolve: a mark cannot know it is the nearest.
 	assert.match(RAIL_COLUMN_SOURCE, /const nearestIndex = useMotionValue\(AGENT_SESSION_NOTCH_NO_NEAREST\);/u);
 	assert.match(RAIL_COLUMN_SOURCE, /nearestIndex\.set\(toNearestAgentSessionNotchIndex\(centersRef\.current, offset\)\)/u);
@@ -375,10 +429,11 @@ test("length carries proximity, colour carries selection — one notch, not the 
 	// a half-pitch threshold would leave dead gaps between sliding rows.
 	assert.match(NOTCH_MAGNIFY_SOURCE, /export function toNearestAgentSessionNotchIndex\(/u);
 	assert.match(NOTCH_MAGNIFY_SOURCE, /AGENT_SESSION_NOTCH_NO_NEAREST = -1;/u);
-	// The handover between notches is a state change, so CSS cross-fades it at
-	// the list-item interaction profile. Width stays off that transition — it
-	// tracks the pointer per frame and must not lag a beat behind it.
-	assert.match(NOTCH_MARK_SOURCE, /bg-icon transition-opacity duration-fast ease-out-practical motion-reduce:transition-none/u);
+	// Docked colour is the named token, snapped — a CSS colour transition would
+	// mix a third grey between the two. Width stays off any transition so it
+	// can track the pointer per frame.
+	assert.match(NOTCH_MARK_SOURCE, /isNew \? "bg-icon" : "bg-icon-subtlest"/u);
+	assert.doesNotMatch(NOTCH_MARK_SOURCE, /bg-icon transition-opacity/u);
 	// Colour drains on the same beat as the swell, not a frame ahead of it.
 	assert.match(
 		RAIL_COLUMN_SOURCE,
@@ -409,9 +464,8 @@ test("newly synced work reaches both the cards and the rail", () => {
 test("an arrival is a transient beat plus a mark that outlives it", () => {
 	// The mark is the load-bearing half: it has to survive a backgrounded tab, a
 	// collapsed column, and reduced motion, so it is never the animation alone.
-	assert.match(CARD_SOURCE, /dash-4-2 \[--dash-color:var\(--color-border-discovery\)\]/u);
-	assert.match(CARD_SOURCE, /dash-4-2 \[--dash-color:var\(--color-border-disabled\)\]/u);
-	assert.match(CARD_SOURCE, /border border-solid border-border/u);
+	assert.match(CARD_SOURCE, /!captured && isNew \? "border-border-discovery" : "border-border-disabled"/u);
+	assert.match(CARD_SOURCE, /border border-solid/u);
 	assert.match(NOTCH_MARK_SOURCE, /isNew \? NOTCH_EMPHASIS : NOTCH_AT_REST/u);
 	// A reviewed notch rests quiet and lights up on hover or focus; a new one is
 	// already lit, so "new" reuses the hover vocabulary instead of adding one.
@@ -421,9 +475,8 @@ test("an arrival is a transient beat plus a mark that outlives it", () => {
 	assert.match(NOTCH_MARK_SOURCE, /group-has-\[:focus-visible\]\/notch:bg-icon/u);
 	// State is spoken, not painted — no per-lifecycle hue at 12x2px.
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /bg-icon-warning|bg-icon-information/u);
-	// The dash is load-bearing too — it means "uncaptured" — so the arrival
-	// recolours it rather than replacing the border style.
-	assert.match(CARD_SOURCE, /dash-4-2/u);
+	// Arrival recolours the same solid frame rather than replacing the border.
+	assert.doesNotMatch(CARD_SOURCE, /dash-4-2/u);
 	// Reduced motion drops the beat and keeps the mark. The beat is keyed on
 	// `isArriving`, never on `isNew` — see the one-shot test below.
 	assert.match(CARD_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
@@ -435,26 +488,26 @@ test("an arrival is a transient beat plus a mark that outlives it", () => {
 test("colour never carries newness on its own", () => {
 	assert.match(CARD_SOURCE, /<span className="sr-only">Newly synced, not yet reviewed<\/span>/u);
 	assert.match(RAIL_COLUMN_SOURCE, /isNew \? ", newly synced" : ""/u);
-	// The rail's head answers "how many did I miss" for notches below the fold,
-	// and the spoken form keeps the total the visible `+N` gives up.
-	assert.match(RAIL_COLUMN_SOURCE, /\$\{sessionCount\} sessions, \$\{newCount\} newly synced/u);
+	// The collapsed header answers "how many did I miss" for notches below the
+	// fold, and the spoken form keeps the total the visible `+N` gives up.
+	assert.match(INDEX_SOURCE, /\$\{sessionCount\} sessions, \$\{newCount\} newly synced/u);
 });
 
-test("the head count rolls through the shared Text Morphing slots effect", () => {
-	// Reused, never re-implemented: the rail must not hand-roll a digit animation.
-	assert.match(RAIL_COLUMN_SOURCE, /import TextMorphing from "@\/components\/visual\/text-morphing"/u);
-	assert.match(RAIL_COLUMN_SOURCE, /<TextMorphing\s+config=\{HEAD_COUNT_MORPH\}/u);
-	assert.match(RAIL_COLUMN_SOURCE, /variant: "slots"/u);
-	// `autoSize` eases the slot's width across the `+N` ↔ total swap, so the
-	// notches below it never jump.
-	assert.match(RAIL_COLUMN_SOURCE, /autoSize: true/u);
-	// A rail that mounts already collapsed must not spin its count in.
-	assert.match(RAIL_COLUMN_SOURCE, /initial: false/u);
+test("the collapsed header count rolls through the shared Text Morphing slots effect", () => {
+	// Reused, never re-implemented: the header must not hand-roll a digit animation.
+	assert.match(INDEX_SOURCE, /import TextMorphing from "@\/components\/visual\/text-morphing"/u);
+	assert.match(INDEX_SOURCE, /<TextMorphing\s+config=\{HEAD_COUNT_MORPH\}/u);
+	assert.match(INDEX_SOURCE, /variant: "slots"/u);
+	// `autoSize` eases the slot's width across the `+N` ↔ total swap.
+	assert.match(INDEX_SOURCE, /autoSize: true/u);
+	// A column that mounts already collapsed must not spin its count in.
+	assert.match(INDEX_SOURCE, /initial: false/u);
 	// The renderer sets its own `aria-label`; the wrapper's `aria-hidden` has to
 	// suppress it so the sibling `sr-only` stays the single spoken source.
-	assert.match(RAIL_COLUMN_SOURCE, /aria-hidden="true"[\s\S]{0,400}?<TextMorphing/u);
+	assert.match(INDEX_SOURCE, /aria-hidden="true"[\s\S]{0,400}?<TextMorphing/u);
 	// `text` must be a string — `sessionCount` is a number.
-	assert.match(RAIL_COLUMN_SOURCE, /String\(sessionCount\)/u);
+	assert.match(INDEX_SOURCE, /String\(sessionCount\)/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /TextMorphing/u);
 });
 
 test("arrival motion is tokenised, capped, and spatially anchored", () => {
@@ -474,7 +527,7 @@ test("arrival motion is tokenised, capped, and spatially anchored", () => {
 	assert.doesNotMatch(NOTCH_MARK_SOURCE, /times:/u);
 	// Arriving notches push the ones below them down instead of teleporting, and
 	// the scrollport is declared so the slide starts from the right place.
-	assert.match(RAIL_COLUMN_SOURCE, /layout=\{shouldReduceMotion \? false : true\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /layout=\{shouldReduceMotion \? false : "position"\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /layoutScroll/u);
 });
 
@@ -527,32 +580,51 @@ test("the column owns a hidden-id set and filters items before AgentSession", ()
 	assert.match(INDEX_SOURCE, /visibilityLabel=\{view === "hidden" \? "Show" : "Hide"\}/u);
 });
 
-test("the sticky footer reads Work hidden N only in the active view", () => {
-	assert.match(FOOTER_SOURCE, /Work hidden \{hiddenCount\}/u);
+test("the sticky footer reads Work hidden N in the active view", () => {
+	assert.match(FOOTER_SOURCE, /Work hidden/u);
+	assert.match(FOOTER_SOURCE, /\{count\}/u);
+	assert.match(FOOTER_SOURCE, /truncate text-xs font-medium leading-4 text-text-subtle/u);
+	assert.match(FOOTER_SOURCE, /shrink-0 text-xs font-normal text-text-subtlest/u);
+	assert.match(FOOTER_SOURCE, /flex min-w-0 items-center gap-1\.5/u);
+	assert.match(FOOTER_SOURCE, /className="text-icon-subtle"/u);
 	assert.match(FOOTER_SOURCE, /import ChevronRightIcon from "@atlaskit\/icon\/core\/chevron-right"/u);
-	assert.match(FOOTER_SOURCE, /Show \$\{hiddenCount\} hidden \$\{sessionWord\}/u);
-	assert.match(FOOTER_SOURCE, /size="compact"/u);
-	assert.match(FOOTER_SOURCE, /variant="ghost"/u);
-	assert.match(INDEX_SOURCE, /view === "active" && hiddenCount > 0/u);
+	assert.match(FOOTER_SOURCE, /<ChevronRightIcon label="" size="small" \/>/u);
+	assert.match(FOOTER_SOURCE, /Show \$\{count\} hidden \$\{sessionWord\}/u);
+	assert.match(FOOTER_SOURCE, /rounded-none rounded-b-none border-0 border-t border-solid border-border-disabled/u);
+	assert.doesNotMatch(FOOTER_SOURCE, /rounded-b-lg/u);
+	assert.match(FOOTER_SOURCE, /\bp-3\b/u);
+	assert.match(FOOTER_SOURCE, /hover:bg-surface-hovered/u);
+	assert.doesNotMatch(FOOTER_SOURCE, /size="compact"|variant="ghost"/u);
+	assert.match(INDEX_SOURCE, /showWellFooter = view === "hidden" \|\| hiddenCount > 0/u);
 	assert.match(INDEX_SOURCE, /<AgentSessionColumnHiddenFooter/u);
-	// Flex sibling of the scrollport, never sticky inside it.
+	assert.match(INDEX_SOURCE, /mode=\{view === "hidden" \? "back" : "hidden"\}/u);
+	assert.match(INDEX_SOURCE, /count=\{view === "hidden" \? untrackedCount : hiddenCount\}/u);
+	// Flex sibling of the scrollport, never sticky inside it. The bottom fade
+	// is pinned to the list wrapper so it sits on the last cards, not the footer.
 	assert.match(
 		INDEX_SOURCE,
-		/overflow-y-auto p-1"[\s\S]*?<\/div>\s*\{view === "active" && hiddenCount > 0 \?/u,
+		/flex-1 overflow-y-auto has-\[:focus-visible\]:overflow-visible"[\s\S]*?<\/div>\s*\{showTopScrollMask \|\| showBottomScrollMask \?/u,
+	);
+	assert.match(
+		INDEX_SOURCE,
+		/edge="bottom"[\s\S]*?\{showWellFooter \?/u,
 	);
 	assert.doesNotMatch(FOOTER_SOURCE, /sticky/u);
 	assert.doesNotMatch(INDEX_SOURCE, /position:\s*"sticky"|className="[^"]*sticky/u);
 });
 
-test("the hidden view has a back arrow, Hidden work title, and no footer", () => {
-	assert.match(INDEX_SOURCE, /import ArrowLeftIcon from "@atlaskit\/icon\/core\/arrow-left"/u);
+test("the hidden view keeps Hidden work in the header and a back footer", () => {
+	assert.doesNotMatch(INDEX_SOURCE, /ArrowLeftIcon|arrow-left/u);
+	assert.doesNotMatch(INDEX_SOURCE, /<TooltipContent>Back<\/TooltipContent>/u);
+	assert.doesNotMatch(INDEX_SOURCE, /aria-label=\{`Back to \$\{title\}`\}[\s\S]*size="icon-compact"/u);
 	assert.match(INDEX_SOURCE, /displayTitle = view === "hidden" \? "Hidden work" : title/u);
-	assert.match(INDEX_SOURCE, /aria-label=\{`Back to \$\{title\}`\}/u);
-	assert.match(INDEX_SOURCE, /<TooltipContent>Back<\/TooltipContent>/u);
-	assert.match(INDEX_SOURCE, /view === "hidden" \?/u);
 	assert.match(INDEX_SOURCE, /size="icon-compact"/u);
-	// Footer is gated to the active view, so Hidden work never shows it.
-	assert.match(INDEX_SOURCE, /view === "active" && hiddenCount > 0/u);
+	assert.match(FOOTER_SOURCE, /Back to untracked work/u);
+	assert.match(FOOTER_SOURCE, /import ChevronLeftIcon from "@atlaskit\/icon\/core\/chevron-left"/u);
+	assert.match(FOOTER_SOURCE, /<ChevronLeftIcon label="" size="small" \/>/u);
+	assert.match(FOOTER_SOURCE, /Back to \$\{title\}/u);
+	assert.match(INDEX_SOURCE, /onClick=\{view === "hidden" \? closeHiddenView : openHiddenView\}/u);
+	assert.match(INDEX_SOURCE, /untrackedCount = count \?\? visibleItems\.length/u);
 	assert.match(INDEX_SOURCE, /items=\{viewItems\}/u);
 });
 

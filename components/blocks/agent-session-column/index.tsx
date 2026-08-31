@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useReducedMotion } from "motion/react";
 
-import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
+import GrowHorizontalIcon from "@atlaskit/icon/core/grow-horizontal";
 import ShrinkHorizontalIcon from "@atlaskit/icon/core/shrink-horizontal";
 
 import { isCodingAgentListItem } from "@/components/blocks/agent-list";
@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollMaskEdgeOverlay } from "@/components/visual/scroll-mask";
+import TextMorphing from "@/components/visual/text-morphing";
+import type { TextMorphConfig } from "@/components/visual/text-morphing/data";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
@@ -48,15 +50,77 @@ const AGENT_SESSION_COLUMN_TRANSITION = "width var(--duration-medium) var(--ease
  * push this title 8px in and 8px down from its neighbours and make the column
  * look like a panel docked beside the board rather than a column of it.
  *
- * `relative overflow-hidden` keeps the edge fades positioned to this plane and
- * clipped to its radius, so they span the full backdrop rather than the inset
- * scrollport.
+ * The list is the scrollport and sits flush in the fill — no padded gutter
+ * around the cards. Expanded, the plane is a bordered well (`radius.xlarge`)
+ * that clips cards, fades, and the hidden-work footer so they cannot paint
+ * over the 1px stroke. Collapsed, the rail sits in the same fill without that
+ * frame. Cards inside the well drop their outer outline and keep only
+ * inter-row dividers.
  */
 const AGENT_SESSION_PLANE =
-	"relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-bg-accent-gray-subtlest";
+	"relative flex min-h-0 min-w-0 flex-1 flex-col bg-surface";
 
-/** Matches `bg-bg-accent-gray-subtlest` so edge fades dissolve into the plane. */
-const AGENT_SESSION_PLANE_FADE_COLOR = "var(--color-bg-accent-gray-subtlest)";
+const AGENT_SESSION_WELL = cn(
+	AGENT_SESSION_PLANE,
+	"overflow-hidden rounded-xl border border-solid border-border-disabled",
+);
+
+/**
+ * Column-only: the well already draws the outer rectangle, so stacked cards
+ * must not. First/last lose the edges that would double the well stroke;
+ * neighbours keep a top border as the divider.
+ */
+const AGENT_SESSION_WELL_LIST = cn(
+	"gap-0",
+	"[&_article]:rounded-none [&_article]:border-x-0",
+	"[&_li:first-child_article]:border-t-0",
+	// Beats the card's `[li:last-child_&]:rounded-b-lg` so only the well curves.
+	"[&_li:last-child_article]:rounded-none [&_li:last-child_article]:rounded-b-none [&_li:last-child_article]:border-b-0",
+);
+
+/**
+ * Hover/focus swap on the collapsed header slot: the count at rest, the expand
+ * control once the pointer or keyboard arrives. Both sit in the same 24px row
+ * the expanded collapse control uses, so the number does not move.
+ */
+const HEADER_COUNT_AT_REST = cn(
+	"pointer-events-none transition-opacity duration-normal ease-out-practical",
+	"group-hover/session-column:opacity-0 group-has-[:focus-visible]/session-column:opacity-0",
+	"motion-reduce:transition-none",
+);
+
+const HEADER_CONTROL_ON_REVEAL = cn(
+	"opacity-0 transition-opacity duration-normal ease-out-practical",
+	"group-hover/session-column:opacity-100 group-has-[:focus-visible]/session-column:opacity-100",
+	"motion-reduce:transition-none",
+);
+
+/**
+ * Count morphing for the collapsed header.
+ *
+ * `slots` spins each digit behind a fade mask, which suits a value that changes
+ * because work arrived rather than because the viewer acted. It also survives
+ * the `+N` ↔ total swap: the `+` is a non-digit prefix that slides via layout
+ * while the digits spin, so `4` → `+2` is one motion rather than a hard cut.
+ *
+ * `autoSize` eases the slot's width across that swap so the header never jumps.
+ * `initial: false` keeps a column that mounts already collapsed from spinning
+ * its count in on first paint. `TextMorphing` degrades to static text under
+ * `prefers-reduced-motion`.
+ */
+const HEAD_COUNT_MORPH: TextMorphConfig = {
+	variant: "slots",
+	animation: "snappy",
+	driftX: 0,
+	driftY: 0,
+	trend: 0,
+	stagger: 0.02,
+	initial: false,
+	autoSize: true,
+};
+
+/** Matches `bg-surface` so edge fades dissolve into the plane. */
+const AGENT_SESSION_PLANE_FADE_COLOR = "var(--color-surface)";
 
 const AGENT_SESSION_PLANE_FADE_SIZE = "3rem";
 
@@ -64,16 +128,19 @@ const AGENT_SESSION_PLANE_FADE_SIZE = "3rem";
  * A kanban column of agent sessions that never became work items.
  *
  * The board's status columns are unfilled — they read as regions of the board
- * surface. This one fills the area *below its header* with
- * `bg-bg-accent-gray-subtlest`, because its contents are not on the board yet:
- * the filled plane is what says "outside the workflow" without needing a label
- * to explain it. The header stays outside that fill so it shares an inset and a
- * baseline with the status column titles. Everything below the header is the
- * Agent Session block verbatim, so a card's untracked-work flyout, captured
- * state, and resume gating behave identically here and in the standalone block.
+ * surface. This one still wraps the area *below its header* so the list and
+ * edge fades share one column, but that plane is `bg-surface` — the same white
+ * (or dark) board surface. Expanded, it is also a 1px well: the outer stroke
+ * and `radius.xlarge` live on the plane so scroll masks cannot wash them out.
+ * The header stays outside that plane so it shares an inset and a
+ * baseline with the status column titles.
+ * Everything below the header is the Agent Session block verbatim, so a card's
+ * untracked-work flyout, captured state, and resume gating behave identically
+ * here and in the standalone block.
  *
- * The column is a scrollport, so it reserves the 4px focus-ring gutter VPK's
- * widest ring needs (`-m-1 p-1`) rather than clipping a focused card's ring.
+ * The list sits flush in the well and is the scrollport. Fades sit on the list
+ * wrapper, already inside the well's padding box, so they stop at the inner
+ * edge of the stroke.
  *
  * It collapses like the status columns beside it, but not *into* the same thing:
  * a status pill is a rotated label, while this becomes a full-height rail of
@@ -115,9 +182,14 @@ export function AgentSessionColumn({
 		showBottomScrollMask,
 		showTopScrollMask,
 	} = useHasVerticalOverflow<HTMLDivElement>();
-	const sessionCount = view === "hidden"
-		? hiddenItems.length
-		: (count ?? visibleItems.length);
+	const untrackedCount = count ?? visibleItems.length;
+	const showWellFooter = view === "hidden" || hiddenCount > 0;
+	const sessionCount = view === "hidden" ? hiddenItems.length : untrackedCount;
+	const newCount = newItemIds === undefined
+		? 0
+		: visibleItems.reduce((total: number, item: AgentSessionItem) => (
+			newItemIds.has(item.id) ? total + 1 : total
+		), 0);
 	// Collapsing swaps the cards for the rail and back, which remounts them — and
 	// a mount is exactly what re-arms an `initial` animation. The beat is meant to
 	// fire once per arrival, so the column, which survives the toggle, remembers
@@ -205,59 +277,54 @@ export function AgentSessionColumn({
 					: `${AGENT_SESSION_COLUMN_WIDTH_PX}px`,
 			}}
 		>
-			{collapsed ? (
-				// Collapsed, there is no header to keep out of the fill — the rail's
-				// head slot carries the count — so the plane runs the full height,
-				// matching the full-height pill the status columns collapse into.
-				<div
-					className={AGENT_SESSION_PLANE}
-					style={{
-						borderRadius: token("radius.xlarge"),
-					}}
-				>
-					<AgentSessionColumnRail
-						arrivingItemIds={arrivingItemIds}
-						capturedItemIds={sessionProps.capturedItemIds}
-						getSuggestedWorkItemKey={sessionProps.getSuggestedWorkItemKey}
-						getSuggestedWorkItemKeys={sessionProps.getSuggestedWorkItemKeys}
-						items={visibleItems}
-						newItemIds={newItemIds}
-						onCreateWorkItem={sessionProps.onCreateWorkItem}
-						onExpand={handleToggleCollapsed}
-						onLinkWorkItem={sessionProps.onLinkWorkItem}
-						onSubtasks={sessionProps.onSubtasks}
-						onView={handleNotchView}
-						sessionCount={sessionCount}
-						title={title}
-					/>
-				</div>
-			) : (
-				<>
-					<div
-						className="flex min-w-0 items-center gap-1.5"
-						style={{ paddingBottom: token("space.100") }}
-					>
-						{view === "hidden" ? (
-							<TooltipProvider>
-								<Tooltip>
-									<TooltipTrigger
-										render={
-											<Button
-												aria-label={`Back to ${title}`}
-												className="shrink-0"
-												onClick={closeHiddenView}
-												size="icon-compact"
-												type="button"
-												variant="ghost"
-											/>
-										}
-									>
-										<Icon className="text-icon-subtle" render={<ArrowLeftIcon label="" />} />
-									</TooltipTrigger>
-									<TooltipContent>Back</TooltipContent>
-								</Tooltip>
-							</TooltipProvider>
-						) : null}
+			<div
+				className="flex min-w-0 items-center gap-1.5"
+				style={{ paddingBottom: token("space.100") }}
+			>
+				{collapsed ? (
+					<div className="relative flex h-6 w-full min-w-0 items-center justify-center">
+						<span
+							aria-hidden="true"
+							className={cn(
+								"absolute inset-0 flex items-center justify-center text-xs",
+								newCount > 0
+									? "font-medium text-text-discovery"
+									: "font-normal text-text-subtlest",
+								HEADER_COUNT_AT_REST,
+							)}
+						>
+							<TextMorphing
+								config={HEAD_COUNT_MORPH}
+								text={newCount > 0 ? `+${newCount}` : String(sessionCount)}
+							/>
+						</span>
+						<span className="sr-only">
+							{newCount > 0
+								? `${sessionCount} sessions, ${newCount} newly synced`
+								: `${sessionCount} sessions`}
+						</span>
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger
+									render={
+										<Button
+											aria-label={`Expand ${title} column`}
+											className={HEADER_CONTROL_ON_REVEAL}
+											onClick={handleToggleCollapsed}
+											size="icon-compact"
+											type="button"
+											variant="ghost"
+										/>
+									}
+								>
+									<Icon className="text-icon-subtle" render={<GrowHorizontalIcon label="" />} />
+								</TooltipTrigger>
+								<TooltipContent>Expand</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+					</div>
+				) : (
+					<>
 						<span className="truncate text-xs font-medium leading-4 text-text-subtle">
 							{displayTitle}
 						</span>
@@ -288,57 +355,78 @@ export function AgentSessionColumn({
 								<TooltipContent>Collapse</TooltipContent>
 							</Tooltip>
 						</TooltipProvider>
-					</div>
+					</>
+				)}
+			</div>
 
-					<div
-						className={AGENT_SESSION_PLANE}
-						style={{
-							borderRadius: token("radius.xlarge"),
-						}}
-					>
-						<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-							<div
-								ref={listRef}
-								className="-m-1 min-h-0 min-w-0 flex-1 overflow-y-auto p-1"
-							>
-								{viewItems.length === 0 ? (
-									<p className="text-xs text-text-subtlest">{emptyLabel}</p>
-								) : (
+			<div className={collapsed ? AGENT_SESSION_PLANE : AGENT_SESSION_WELL}>
+				{collapsed ? (
+					<AgentSessionColumnRail
+						arrivingItemIds={arrivingItemIds}
+						capturedItemIds={sessionProps.capturedItemIds}
+						getSuggestedWorkItemKey={sessionProps.getSuggestedWorkItemKey}
+						getSuggestedWorkItemKeys={sessionProps.getSuggestedWorkItemKeys}
+						items={visibleItems}
+						newItemIds={newItemIds}
+						onCreateWorkItem={sessionProps.onCreateWorkItem}
+						onLinkWorkItem={sessionProps.onLinkWorkItem}
+						onSubtasks={sessionProps.onSubtasks}
+						onView={handleNotchView}
+					/>
+				) : (
+					<>
+						{viewItems.length === 0 ? (
+							<p className="text-xs text-text-subtlest">{emptyLabel}</p>
+						) : (
+							<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+								<div
+									ref={listRef}
+									className="min-h-0 min-w-0 flex-1 overflow-y-auto has-[:focus-visible]:overflow-visible"
+								>
 									<AgentSession
 										arrivingItemIds={arrivingItemIds}
-										className={cn("gap-0", listClassName)}
+										className={cn(AGENT_SESSION_WELL_LIST, listClassName)}
 										items={viewItems}
 										newItemIds={newItemIds}
 										{...sessionProps}
 										onToggleVisibility={handleToggleVisibility}
 										visibilityLabel={view === "hidden" ? "Show" : "Hide"}
 									/>
-								)}
+								</div>
+								{showTopScrollMask || showBottomScrollMask ? (
+									<div
+										aria-hidden="true"
+										className="pointer-events-none absolute inset-0"
+									>
+										{showTopScrollMask ? (
+											<ScrollMaskEdgeOverlay
+												color={AGENT_SESSION_PLANE_FADE_COLOR}
+												edge="top"
+												fadeSize={AGENT_SESSION_PLANE_FADE_SIZE}
+											/>
+										) : null}
+										{showBottomScrollMask ? (
+											<ScrollMaskEdgeOverlay
+												color={AGENT_SESSION_PLANE_FADE_COLOR}
+												edge="bottom"
+												fadeSize={AGENT_SESSION_PLANE_FADE_SIZE}
+											/>
+										) : null}
+									</div>
+								) : null}
 							</div>
-							{showTopScrollMask ? (
-								<ScrollMaskEdgeOverlay
-									color={AGENT_SESSION_PLANE_FADE_COLOR}
-									edge="top"
-									fadeSize={AGENT_SESSION_PLANE_FADE_SIZE}
-								/>
-							) : null}
-							{showBottomScrollMask ? (
-								<ScrollMaskEdgeOverlay
-									color={AGENT_SESSION_PLANE_FADE_COLOR}
-									edge="bottom"
-									fadeSize={AGENT_SESSION_PLANE_FADE_SIZE}
-								/>
-							) : null}
-						</div>
-						{view === "active" && hiddenCount > 0 ? (
+						)}
+						{showWellFooter ? (
 							<AgentSessionColumnHiddenFooter
-								hiddenCount={hiddenCount}
-								onOpen={openHiddenView}
+								count={view === "hidden" ? untrackedCount : hiddenCount}
+								mode={view === "hidden" ? "back" : "hidden"}
+								onClick={view === "hidden" ? closeHiddenView : openHiddenView}
+								title={title}
 							/>
 						) : null}
-					</div>
-				</>
-			)}
+					</>
+				)}
+			</div>
 		</section>
 	);
 }
