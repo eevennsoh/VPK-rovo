@@ -94,6 +94,27 @@ export const AGENT_SESSION_ITEMS: readonly AgentSessionItem[] = [
 	},
 ];
 
+/** Attached session used to demonstrate the Jira issue activity-row footprint. */
+export const AGENT_SESSION_ATTACHED_ITEMS: readonly AgentSessionItem[] = [
+	{
+		agent: {
+			avatarSrc: "/avatar-agent/teamwork-agents/decision-director.svg",
+			id: "review-agent",
+			kind: "agent",
+			name: "Review Agent",
+		},
+		host: "cloud",
+		id: "PAY-112:review-agent",
+		sessionDetails: {
+			host: "cloud",
+			issueKey: "PAY-112",
+			issueSummary: "Confirm the sandbox key retention window before replay",
+		},
+		state: "needs-input",
+		title: "Needs the retention window",
+	},
+];
+
 /**
  * Candidate work items per session, keyed by session id.
  *
