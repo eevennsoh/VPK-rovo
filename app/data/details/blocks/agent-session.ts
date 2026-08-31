@@ -2,9 +2,21 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_SESSION_DETAIL: ComponentDetail = {
 	description:
-		'Local coding sessions that never became work items, rendered as dashed uncaptured-work cards. Each card reuses the shared Agent List row — hexagon agent identity, a static timestamp, a devices glyph, and the viewer machine — inside a sunken body, and reveals the same hover/focus action pair Agent List rows use: Resume, plus a show/hide eye in the slot Agent List gives to Archive. Beneath it hangs the shared uncaptured-work chin, a second hit area of its own: a Link to <key> button plus trailing Create work item and Subtasks icons, grouped by a hover container. There is no hover flyout, so the row never puts a competing popup in the way. Ids listed in `capturedItemIds` swap the chin for a Captured state, and rows the host cannot resume hide the Resume control entirely rather than copying a command that would fail. Extracted from the Agent List block, which now owns only the list surface.',
+		'Local coding sessions that never became work items, available in three footprints. Large is the default dashed uncaptured-work card: it reuses the shared Agent List row — hexagon agent identity, a static timestamp, a devices glyph, and the viewer machine — inside a sunken body, with Resume and show/hide actions plus the shared Link to <key> chin. Medium condenses the agent, participant, and add affordance into the Jira Agents row, while Small becomes the collapsed Agent Session Column notch. Ids listed in `capturedItemIds` swap the Large chin for a Captured state, and rows the host cannot resume hide the Resume control entirely rather than copying a command that would fail.',
 	demoLayout: { previewHeight: "fit" },
 	examples: [
+		{
+			title: "Medium",
+			description:
+				"A compact 276px session row for denser surfaces, retaining the agent identity, participant, and add affordance from the Jira Agents design.",
+			demoSlug: "agent-session-demo-medium",
+		},
+		{
+			title: "Small",
+			description:
+				"The shared 12×2px session mark from the collapsed Agent Session Column rail.",
+			demoSlug: "agent-session-demo-small",
+		},
 		{
 			title: "Multiple work items",
 			description:
@@ -20,6 +32,13 @@ export const AGENT_SESSION_DETAIL: ComponentDetail = {
   onLinkWorkItem={(item) => console.log("link", item.id)}
 />`,
 	props: [
+		{
+			name: "variant",
+			type: '"large" | "medium" | "small"',
+			default: '"large"',
+			description:
+				"Visual footprint for each session. Large is the full uncaptured-work card, Medium is the compact participant row, and Small is the collapsed-column notch.",
+		},
 		{
 			name: "items",
 			type: "readonly AgentSessionItem[]",

@@ -9,3 +9,11 @@ export default function AgentSessionDemo() {
 export function AgentSessionDemoMultiLink() {
 	return <Page variant="multi-link" />;
 }
+
+export function AgentSessionDemoMedium() {
+	return <Page variant="medium" />;
+}
+
+export function AgentSessionDemoSmall() {
+	return <Page variant="small" />;
+}
