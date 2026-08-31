@@ -118,6 +118,20 @@ export function resolveBoardUntrackedIssueKey(item: AgentSessionItem | null): st
 	return item?.sessionDetails?.issueKey ?? null;
 }
 
+export function resolveVisibleFocusedIssueKey(
+	focusedIssueKey: string | null,
+	boardColumns: readonly { cards: readonly { code: string }[] }[],
+): string | null {
+	if (focusedIssueKey === null) {
+		return null;
+	}
+
+	const isOnBoard = boardColumns.some((column) => (
+		column.cards.some((card) => card.code === focusedIssueKey)
+	));
+	return isOnBoard ? focusedIssueKey : null;
+}
+
 interface ScrollBounds {
 	containerEnd: number;
 	containerStart: number;

@@ -72,10 +72,14 @@ test("column card hover does not scroll or spotlight a related issue", () => {
 test("column card click scrolls the related issue and applies the blue-subtlest spotlight", () => {
 	assert.match(BOARD_SOURCE, /onView=\{handleSessionView\}/u);
 	assert.match(BOARD_SOURCE, /data-issue-key=\{card\.code\}/u);
-	assert.match(BOARD_SOURCE, /focusedIssueKey === card\.code && "bg-bg-accent-blue-subtlest"/u);
+	assert.match(BOARD_SOURCE, /spotlightIssueKey === card\.code && "bg-bg-accent-blue-subtlest"/u);
 	assert.match(
 		BOARD_SOURCE,
-		/focusedIssueKey !== null && focusedIssueKey !== card\.code && "opacity-40"/u,
+		/spotlightIssueKey !== null && spotlightIssueKey !== card\.code && "opacity-40"/u,
+	);
+	assert.match(
+		BOARD_SOURCE,
+		/const spotlightIssueKey = resolveVisibleFocusedIssueKey\(focusedIssueKey, boardColumns\)/u,
 	);
 	assert.match(
 		BOARD_SOURCE,
