@@ -365,12 +365,12 @@ test("Jira issue switches rich variants to an article with internal controls", (
 	assert.match(SOURCE, /const shouldRenderIssueClickButton = Boolean\(props\.onClick && !parentEpicControl\);/);
 	assert.match(SOURCE, /<article[\s\S]*data-selected=\{selected \|\| undefined\}/);
 	assert.match(SOURCE, /draggable=\{draggable\}/);
-	assert.match(SOURCE, /shouldRenderIssueClickButton \? \([\s\S]*usesStrokeChrome \? \([\s\S]*<div[\s\S]*onClick=\{props\.onClick as ComponentProps<"div">\["onClick"\]\}[\s\S]*: \([\s\S]*<button[\s\S]*aria-pressed=\{ariaPressed \?\? selected\}/);
+	assert.match(SOURCE, /shouldRenderIssueClickButton \? \([\s\S]*usesStrokeChrome \? \([\s\S]*<div[\s\S]*role="button"[\s\S]*tabIndex=\{props\.disabled \? -1 : 0\}[\s\S]*: \([\s\S]*<button[\s\S]*aria-pressed=\{ariaPressed \?\? selected\}/);
 	assert.match(SOURCE, /parentEpicControl\?: ReactNode;/);
 	assert.match(SOURCE, /parentEpicControl=\{parentEpicControl\}/);
 	assert.match(SUMMARY_SOURCE, /<p className="text-sm font-semibold leading-5 text-text-subtle">Parent<\/p>/);
 	assert.match(SOURCE, /showPriorityIndicator\?: boolean;/);
-	assert.match(SUMMARY_SOURCE, /\{showPriorityIndicator \? \([\s\S]*usesStrokeChrome \? \([\s\S]*<Button[\s\S]*aria-label=\{`\$\{priority\} priority`\}[\s\S]*size="icon-compact"[\s\S]*variant="ghost"/);
+	assert.match(SUMMARY_SOURCE, /\{showPriorityIndicator \? \([\s\S]*usesStrokeChrome \? \([\s\S]*<span[\s\S]*aria-label=\{`\$\{priority\} priority`\}[\s\S]*buttonVariants\(\{ size: "icon-compact", variant: "ghost" \}\)/);
 	assert.match(SOURCE, /className="w-full px-3 pt-3 pb-2 text-left outline-none/);
 	assert.match(SOURCE, /className="w-full p-3 text-left outline-none/);
 	assert.match(SOURCE, /<div className=\{usesStrokeChrome \? "px-3 pt-3 pb-2" : "p-3"\}>\{summaryContent\}<\/div>/);

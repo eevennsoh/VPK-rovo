@@ -1,6 +1,6 @@
 "use client";
 
-import type { MouseEvent, PointerEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
 import AutomationIcon from "@atlaskit/icon/core/automation";
 import PriorityMajorIcon from "@atlaskit/icon/core/priority-major";
 import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
@@ -15,7 +15,7 @@ import {
 	type AvatarProps,
 	type AvatarUnassignedKind,
 } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Tag, TagGroup } from "@/components/ui/tag";
@@ -42,10 +42,6 @@ const PRIORITY_COLORS = {
 	medium: token("color.icon.information"),
 	minor: token("color.icon.success"),
 } as const;
-
-function stopNestedActivation(event: MouseEvent<HTMLElement> | PointerEvent<HTMLElement>) {
-	event.stopPropagation();
-}
 
 function JiraIssueAssignee({
 	assigneeAvatarLabel,
@@ -145,17 +141,15 @@ export function JiraIssueSummary({
 	) : null;
 	const metadataCluster = showAutomationIndicator ? (
 		usesStrokeChrome ? (
-			<Button
+			<span
 				aria-label="Automation linked"
-				className="text-icon-accent-orange [&_svg]:text-current"
-				onClick={stopNestedActivation}
-				onPointerDown={stopNestedActivation}
-				size="icon-compact"
-				type="button"
-				variant="ghost"
+				className={cn(
+					buttonVariants({ size: "icon-compact", variant: "ghost" }),
+					"text-icon-accent-orange [&_svg]:text-current",
+				)}
 			>
 				<Icon render={<AutomationIcon label="" size="small" color="currentColor" />} />
-			</Button>
+			</span>
 		) : (
 			<span className="grid size-6 place-items-center text-icon-accent-orange" aria-label="Automation linked">
 				<AutomationIcon label="" size="small" color="currentColor" />
@@ -165,18 +159,16 @@ export function JiraIssueSummary({
 		<div className={cn("flex shrink-0 items-center", usesStrokeChrome ? "gap-0" : "gap-1.5")}>
 			{showPriorityIndicator ? (
 				usesStrokeChrome ? (
-					<Button
+					<span
 						aria-label={`${priority} priority`}
-						className="[&_svg]:text-current"
-						onClick={stopNestedActivation}
-						onPointerDown={stopNestedActivation}
-						size="icon-compact"
+						className={cn(
+							buttonVariants({ size: "icon-compact", variant: "ghost" }),
+							"[&_svg]:text-current",
+						)}
 						style={{ color: priorityColor }}
-						type="button"
-						variant="ghost"
 					>
 						<Icon render={<PriorityIcon label="" size="small" color="currentColor" />} />
-					</Button>
+					</span>
 				) : (
 					<PriorityIcon
 						label={`${priority} priority`}
