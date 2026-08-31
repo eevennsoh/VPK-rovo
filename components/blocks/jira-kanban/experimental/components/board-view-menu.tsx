@@ -117,9 +117,9 @@ function VisibilityToggleSubmenu({
 
 /**
  * Production View picker chrome, mirroring Jira's board View settings panel.
- * Each dimension — grouping, sorting, the done-item window, column size,
- * column visibility, PR and agent state, and card fields — lives behind its own
- * submenu so the top level stays scannable.
+ * The top level is three sections: grouping and sorting, then PR and agent
+ * state, then column and card chrome. Each dimension lives behind its own
+ * submenu so the list stays scannable.
  *
  * The menu owns its own selections and nothing else: it takes no board data and
  * hands nothing back, so a row moves this menu's indicator and never re-groups,
@@ -206,6 +206,39 @@ export function BoardViewMenu({
 
 				<DropdownMenuSeparator />
 
+				<VisibilityToggleSubmenu
+					checkedIds={shownPrStateIds}
+					label="PR state"
+					onToggle={toggleIn(setShownPrStateIds)}
+					options={BOARD_PR_STATE_OPTIONS}
+				/>
+
+				<VisibilityToggleSubmenu
+					checkedIds={shownAgentStateIds}
+					label="Agent"
+					onToggle={toggleIn(setShownAgentStateIds)}
+					options={BOARD_AGENT_STATE_OPTIONS}
+				/>
+
+				<DropdownMenuSeparator />
+
+				<DropdownMenuSub>
+					<DropdownMenuSubTrigger>Column size</DropdownMenuSubTrigger>
+					<DropdownMenuSubContent>
+						<DropdownMenuRadioGroup
+							aria-label="Column size"
+							onValueChange={setColumnSizeId}
+							value={columnSizeId}
+						>
+							{BOARD_COLUMN_SIZE_OPTIONS.map((option) => (
+								<DropdownMenuRadioItem indicatorPlacement="end" key={option.id} value={option.id}>
+									{option.label}
+								</DropdownMenuRadioItem>
+							))}
+						</DropdownMenuRadioGroup>
+					</DropdownMenuSubContent>
+				</DropdownMenuSub>
+
 				<DropdownMenuSub>
 					<DropdownMenuSubTrigger>Hide done work items</DropdownMenuSubTrigger>
 					<DropdownMenuSubContent>
@@ -226,42 +259,11 @@ export function BoardViewMenu({
 					</DropdownMenuSubContent>
 				</DropdownMenuSub>
 
-				<DropdownMenuSub>
-					<DropdownMenuSubTrigger>Column size</DropdownMenuSubTrigger>
-					<DropdownMenuSubContent>
-						<DropdownMenuRadioGroup
-							aria-label="Column size"
-							onValueChange={setColumnSizeId}
-							value={columnSizeId}
-						>
-							{BOARD_COLUMN_SIZE_OPTIONS.map((option) => (
-								<DropdownMenuRadioItem indicatorPlacement="end" key={option.id} value={option.id}>
-									{option.label}
-								</DropdownMenuRadioItem>
-							))}
-						</DropdownMenuRadioGroup>
-					</DropdownMenuSubContent>
-				</DropdownMenuSub>
-
 				<VisibilityToggleSubmenu
 					checkedIds={shownColumnIds}
 					label="Columns"
 					onToggle={toggleIn(setShownColumnIds)}
 					options={BOARD_COLUMN_OPTIONS}
-				/>
-
-				<VisibilityToggleSubmenu
-					checkedIds={shownPrStateIds}
-					label="PR state"
-					onToggle={toggleIn(setShownPrStateIds)}
-					options={BOARD_PR_STATE_OPTIONS}
-				/>
-
-				<VisibilityToggleSubmenu
-					checkedIds={shownAgentStateIds}
-					label="Agent"
-					onToggle={toggleIn(setShownAgentStateIds)}
-					options={BOARD_AGENT_STATE_OPTIONS}
 				/>
 
 				<VisibilityToggleSubmenu
