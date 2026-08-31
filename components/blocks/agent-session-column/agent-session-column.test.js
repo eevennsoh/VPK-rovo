@@ -9,6 +9,10 @@ const NOTCH_MARK_SOURCE = readFileSync(
 	join(__dirname, "../agent-session/agent-session-notch.tsx"),
 	"utf8",
 );
+const NOTCH_MAGNIFY_SOURCE = readFileSync(
+	join(__dirname, "../agent-session/agent-session-notch-magnify.ts"),
+	"utf8",
+);
 const ARRIVAL_MOTION_SOURCE = readFileSync(
 	join(__dirname, "../agent-session/agent-session-arrival-motion.ts"),
 	"utf8",
@@ -182,6 +186,8 @@ test("collapsing swaps the cards for the notch rail, not for a rotated label", (
 	// Declared locally: a shared block must not import a kanban variant's lib.
 	assert.doesNotMatch(INDEX_SOURCE, /jira-kanban\/experimental/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /jira-kanban\/experimental/u);
+	assert.doesNotMatch(NOTCH_MARK_SOURCE, /jira-kanban\/experimental/u);
+	assert.doesNotMatch(NOTCH_MAGNIFY_SOURCE, /jira-kanban\/experimental/u);
 });
 
 test("column resize buttons swap icons without using selected button state", () => {
@@ -237,15 +243,107 @@ test("collapsed motion is tokenised and honours reduced motion", () => {
 	assert.match(INDEX_SOURCE, /transition: shouldReduceMotion \? "none" : AGENT_SESSION_COLUMN_TRANSITION/u);
 	assert.match(NOTCH_MARK_SOURCE, /duration-xxshort ease-out-practical/u);
 	assert.match(NOTCH_MARK_SOURCE, /motion-reduce:transition-none/u);
-	// Hover swells the rule by transform, never by animating its width. The
-	// group is the row and the button inside it takes focus, so keyboard parity
-	// needs `group-has-[:focus-visible]` — `group-focus-visible` never matches.
+	// The dock's fade in and out are tokenised as resolved cubic-beziers, because
+	// Motion cannot read `var()`: duration-normal + ease-out-practical arriving,
+	// and the shorter duration-fast + ease-in leaving, as every exit is.
+	assert.match(NOTCH_MAGNIFY_SOURCE, /AGENT_SESSION_NOTCH_MAGNIFY_IN = \{\s*duration: 0\.15,\s*ease: \[0\.4, 1, 0\.6, 1\]/u);
+	assert.match(NOTCH_MAGNIFY_SOURCE, /AGENT_SESSION_NOTCH_MAGNIFY_OUT = \{\s*duration: 0\.1,\s*ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
+	// A slope that tracks the cursor is ambient motion, so reduced motion drops
+	// the dock outright rather than shortening it — the marks then fall back to
+	// their own row's hover, which resolves instantly.
+	assert.match(RAIL_COLUMN_SOURCE, /const isDocked = shouldReduceMotion !== true;/u);
+	assert.match(RAIL_COLUMN_SOURCE, /proximity=\{isDocked \? \{/u);
+	// A mark with no rail behind it keeps the transform hover it has always had.
+	// The group is the row and the button inside it takes focus, so keyboard
+	// parity needs `group-has-[:focus-visible]` — `group-focus-visible` never
+	// matches.
 	assert.match(NOTCH_MARK_SOURCE, /group-hover\/notch:scale-x-\[1\.6\]/u);
 	assert.match(NOTCH_MARK_SOURCE, /group-has-\[:focus-visible\]\/notch:scale-x-\[1\.6\]/u);
 	assert.doesNotMatch(NOTCH_MARK_SOURCE, /group-focus-visible\/notch:/u);
 	// Clipping is scoped to the resize, so a focused card's ring is never cut.
 	assert.match(INDEX_SOURCE, /collapsed \|\| isResizing \? "overflow-hidden" : null/u);
 	assert.match(INDEX_SOURCE, /event\.propertyName === "width"/u);
+});
+
+test("the resting notch alpha stays pinned to the plane it is painted on", () => {
+	// The mark is one element carrying two named colours: `color.icon` at an
+	// alpha chosen so it resolves to `color.icon.subtlest` over the plane behind
+	// it. That makes the constant a function of the plane's fill, and a fill
+	// change would silently leave every resting notch the wrong grey. Pin the two
+	// together here — the arithmetic itself is covered in
+	// `agent-session-notch-magnify.test.ts`.
+	assert.match(INDEX_SOURCE, /const AGENT_SESSION_PLANE =\s*\n?\s*"[^"]*bg-bg-accent-gray-subtlest/u);
+	assert.match(NOTCH_MAGNIFY_SOURCE, /color\.background\.accent\.gray\.subtlest/u);
+	assert.match(NOTCH_MAGNIFY_SOURCE, /rest: 0\.66,/u);
+	// The old sunken plane must not linger in the rationale.
+	assert.doesNotMatch(NOTCH_MAGNIFY_SOURCE, /elevation\.surface\.sunken/u);
+});
+
+test("the rail is one dock, so notches swell by distance rather than per row", () => {
+	// The whole point of the effect: the notch nearest the cursor is the longest
+	// and its neighbours taper off, which only works if one owner holds the
+	// pointer position for every mark. A hover handler per notch cannot express
+	// a distance.
+	assert.match(RAIL_COLUMN_SOURCE, /function useNotchDock\(itemCount: number, enabled: boolean\)/u);
+	assert.match(RAIL_COLUMN_SOURCE, /<motion\.ul[\s\S]{0,600}?onPointerMove=\{isDocked \? dock\.handlePointerMove : undefined\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /onPointerLeave=\{isDocked \? dock\.handlePointerLeave : undefined\}/u);
+	// Motion values, never React state: a rail of marks re-rendering on every
+	// mouse pixel would stall the column.
+	assert.match(RAIL_COLUMN_SOURCE, /const pointerY = useMotionValue\(AGENT_SESSION_NOTCH_POINTER_AWAY\);/u);
+	assert.match(NOTCH_MARK_SOURCE, /useTransform\(\[pointerY, magnify\]/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /useState[^\n]*hoveredNotch/u);
+	// Centres are measured in the list's content space, so scrolling moves the
+	// pointer through them instead of invalidating them.
+	assert.match(RAIL_COLUMN_SOURCE, /rect\.top - listRect\.top \+ list\.scrollTop \+ rect\.height \/ 2/u);
+	assert.match(RAIL_COLUMN_SOURCE, /onScroll=\{isDocked \? dock\.handleScroll : undefined\}/u);
+	// An arrival changes the geometry the slope is keyed to, so it has to be
+	// re-measured rather than left pointing at the old rows.
+	assert.match(RAIL_COLUMN_SOURCE, /\}, \[enabled, itemCount, remeasure\]\);/u);
+	// Measuring and republishing must stay one operation. Centres live in a ref
+	// and a ref write notifies no `useTransform`, so a measure that does not set
+	// the pointer's motion value leaves a stationary pointer on stale geometry
+	// until the next move or scroll. Behaviour is covered in
+	// `agent-session-notch-magnify.test.ts`.
+	assert.match(
+		RAIL_COLUMN_SOURCE,
+		/const remeasure = useCallback\(\(\) => \{[\s\S]*?const clientY = clientYRef\.current;\s*if \(clientY !== null\) \{\s*trackPointer\(clientY\);/u,
+	);
+	// No second entry point that only writes centres.
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /const measure = useCallback/u);
+	// Touch has no hover, and docking under a finger would fight the scroll.
+	assert.match(RAIL_COLUMN_SOURCE, /event\.pointerType === "touch"/u);
+	// The parked pointer is finite — an Infinity poisons a motion value for good.
+	assert.match(NOTCH_MAGNIFY_SOURCE, /AGENT_SESSION_NOTCH_POINTER_AWAY = -1;/u);
+	// Peak length is the rail's own channel: 32px less the plane's 4px padding.
+	assert.match(NOTCH_MAGNIFY_SOURCE, /peak: 24,/u);
+});
+
+test("length carries proximity, colour carries selection — one notch, not the slope", () => {
+	// Darkening every notch in proportion to its distance turned the swell into
+	// one grey gradient and lost the mark actually under the pointer inside it.
+	// Length still tapers across neighbours; the darker `color.icon` lands on the
+	// selected notch alone and everything else holds `color.icon.subtlest`.
+	assert.match(NOTCH_MARK_SOURCE, /const width = useTransform\(falloff,/u);
+	assert.match(NOTCH_MARK_SOURCE, /const opacity = useTransform\(\[nearestIndex, magnify\]/u);
+	assert.match(NOTCH_MARK_SOURCE, /nearest === index \? amount : 0/u);
+	assert.doesNotMatch(NOTCH_MARK_SOURCE, /const opacity = useTransform\(falloff,/u);
+	// Selection is the rail's to resolve: a mark cannot know it is the nearest.
+	assert.match(RAIL_COLUMN_SOURCE, /const nearestIndex = useMotionValue\(AGENT_SESSION_NOTCH_NO_NEAREST\);/u);
+	assert.match(RAIL_COLUMN_SOURCE, /nearestIndex\.set\(toNearestAgentSessionNotchIndex\(centersRef\.current, offset\)\)/u);
+	assert.match(RAIL_COLUMN_SOURCE, /nearestIndex: dock\.nearestIndex,/u);
+	// Nearest wins outright, so the pointer always belongs to exactly one notch —
+	// a half-pitch threshold would leave dead gaps between sliding rows.
+	assert.match(NOTCH_MAGNIFY_SOURCE, /export function toNearestAgentSessionNotchIndex\(/u);
+	assert.match(NOTCH_MAGNIFY_SOURCE, /AGENT_SESSION_NOTCH_NO_NEAREST = -1;/u);
+	// The handover between notches is a state change, so CSS cross-fades it at
+	// the list-item interaction profile. Width stays off that transition — it
+	// tracks the pointer per frame and must not lag a beat behind it.
+	assert.match(NOTCH_MARK_SOURCE, /bg-icon transition-opacity duration-fast ease-out-practical motion-reduce:transition-none/u);
+	// Colour drains on the same beat as the swell, not a frame ahead of it.
+	assert.match(
+		RAIL_COLUMN_SOURCE,
+		/animate\(magnify, 0, AGENT_SESSION_NOTCH_MAGNIFY_OUT\)\.then\(\(\) => \{[\s\S]{0,200}?nearestIndex\.set\(AGENT_SESSION_NOTCH_NO_NEAREST\)/u,
+	);
 });
 
 test("the collapsed rail is opt-in state the column owns", () => {
