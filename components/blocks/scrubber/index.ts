@@ -2,7 +2,11 @@ export {
 	ScrubberComposer,
 	type ScrubberComposerProps,
 } from "@/components/blocks/scrubber/components/scrubber-composer";
-export { ScrubberRail, type ScrubberRailProps } from "@/components/blocks/scrubber/components/scrubber-rail";
+export {
+	ScrubberRail,
+	type ScrubberRailProps,
+	type ScrubberTone,
+} from "@/components/blocks/scrubber/components/scrubber-rail";
 export {
 	SCRUBBER_DEMO_ENTRIES,
 	SCRUBBER_DEMO_GROUPS,

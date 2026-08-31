@@ -21,6 +21,16 @@ export {
 	omnibarReducer,
 } from "../omnibar-machine";
 
+/**
+ * Satellite surfaces that belong to the Omnibar but are not inside the morphing bar —
+ * currently the edge-docked timeline rail, which has to be a sibling to escape the
+ * bottom rail's clipping and pointer-events wrapper.
+ *
+ * Without this, scrubbing the rail would read as an outside click and collapse the very
+ * bar that opened it.
+ */
+const OMNIBAR_SURFACE_SELECTOR = "[data-omnibar-surface]";
+
 export interface UseOmnibarStateOptions {
 	defaultState?: OmnibarState;
 	onStateChange?: (state: OmnibarState) => void;
@@ -128,6 +138,9 @@ export function useOmnibarState({
 		const handleDocumentPointerDown = (event: PointerEvent) => {
 			const surface = surfaceRef.current;
 			if (surface && event.target instanceof Node && surface.contains(event.target)) {
+				return;
+			}
+			if (event.target instanceof Element && event.target.closest(OMNIBAR_SURFACE_SELECTOR)) {
 				return;
 			}
 			clearCollapseTimer();
