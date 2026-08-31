@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { useScrubberComposer } from "@/components/blocks/scrubber/hooks/use-scrubber-composer";
@@ -123,6 +123,7 @@ export function Omnibar({
 	tone = "inverse",
 }: Readonly<OmnibarProps>) {
 	const shouldReduceMotion = useReducedMotion();
+	const pillFocusRequestRef = useRef(false);
 	const {
 		activeIndex,
 		consumeFocusRestore,
@@ -137,6 +138,12 @@ export function Omnibar({
 		defaultMode: defaultTimelineOpen && timelineEntries !== undefined ? "timeline" : "idle",
 		onActiveIndexChange: onTimelineActiveIndexChange,
 	});
+	const consumeEditorFocusRequest = useCallback(() => {
+		const shouldRestoreTimelineFocus = consumeFocusRestore();
+		const shouldRestorePillFocus = pillFocusRequestRef.current;
+		pillFocusRequestRef.current = false;
+		return shouldRestoreTimelineFocus || shouldRestorePillFocus;
+	}, [consumeFocusRestore]);
 
 	/**
 	 * Any geometry other than the expanded bar takes the toggle away with it, so the mode has
@@ -187,6 +194,10 @@ export function Omnibar({
 		onOpenPanel,
 		onStateChange: handleStateChange,
 	});
+	const handlePillActivate = useCallback((shouldFocusEditor: boolean) => {
+		pillFocusRequestRef.current = shouldFocusEditor;
+		handlePin();
+	}, [handlePin]);
 
 	const handleSubmit = useCallback(() => {
 		const prompt = draft.trim();
@@ -232,7 +243,6 @@ export function Omnibar({
 		? {
 			activeIndex,
 			axis: timelineAxis,
-			consumeFocusRestore,
 			entries: timelineEntries,
 			isTimeline,
 			onExit: exitTimeline,
@@ -353,6 +363,7 @@ export function Omnibar({
 								<AnimatePresence initial={false} mode="popLayout">
 									{composerExpanded ? (
 										<OmnibarBar
+											consumeFocusRestore={consumeEditorFocusRequest}
 											hideContextPill={hoistContextPill}
 											key="bar"
 											onOpenPanel={openPanel}
@@ -369,7 +380,7 @@ export function Omnibar({
 										<OmnibarPill
 											key="pill"
 											label="Ask Rovo"
-											onActivate={handlePin}
+											onActivate={handlePillActivate}
 											paintChrome={isDefaultTone}
 											shouldReduceMotion={shouldReduceMotion}
 										/>

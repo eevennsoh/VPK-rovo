@@ -9,7 +9,7 @@ import { OMNIBAR_CONTENT, OMNIBAR_CONTENT_EXIT, resolveOmnibarTransition } from 
 
 export interface OmnibarPillProps {
 	label: string;
-	onActivate: () => void;
+	onActivate: (shouldFocusEditor: boolean) => void;
 	/**
 	 * Compact `tone="default"` leaves the morphing surface transparent so a dark
 	 * leftover cannot sit under the composer. The pill then paints the floating
@@ -57,7 +57,7 @@ export function OmnibarPill({
 						? "flex h-7 w-24 cursor-pointer items-center justify-center rounded-full bg-bg-neutral-bold"
 						: "flex size-full cursor-pointer items-center justify-center"
 				}
-				onClick={onActivate}
+				onClick={(event) => onActivate(event.detail === 0)}
 				style={paintChrome ? { boxShadow: token("elevation.shadow.overlay") } : undefined}
 				type="button"
 			>
