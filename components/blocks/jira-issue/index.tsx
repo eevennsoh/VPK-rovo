@@ -515,7 +515,7 @@ function JiraIssueDefault({
 				usesStrokeChrome ? (
 					<div
 						className="w-full px-3 pt-3 pb-2 text-left outline-none transition-colors duration-normal ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-						onClick={props.onClick}
+						onClick={props.onClick as ComponentProps<"div">["onClick"]}
 					>
 						{summaryContent}
 					</div>

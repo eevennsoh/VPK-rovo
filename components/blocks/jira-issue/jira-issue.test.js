@@ -365,7 +365,7 @@ test("Jira issue switches rich variants to an article with internal controls", (
 	assert.match(SOURCE, /const shouldRenderIssueClickButton = Boolean\(props\.onClick && !parentEpicControl\);/);
 	assert.match(SOURCE, /<article[\s\S]*data-selected=\{selected \|\| undefined\}/);
 	assert.match(SOURCE, /draggable=\{draggable\}/);
-	assert.match(SOURCE, /shouldRenderIssueClickButton \? \([\s\S]*usesStrokeChrome \? \([\s\S]*<div[\s\S]*onClick=\{props\.onClick\}[\s\S]*: \([\s\S]*<button[\s\S]*aria-pressed=\{ariaPressed \?\? selected\}/);
+	assert.match(SOURCE, /shouldRenderIssueClickButton \? \([\s\S]*usesStrokeChrome \? \([\s\S]*<div[\s\S]*onClick=\{props\.onClick as ComponentProps<"div">\["onClick"\]\}[\s\S]*: \([\s\S]*<button[\s\S]*aria-pressed=\{ariaPressed \?\? selected\}/);
 	assert.match(SOURCE, /parentEpicControl\?: ReactNode;/);
 	assert.match(SOURCE, /parentEpicControl=\{parentEpicControl\}/);
 	assert.match(SUMMARY_SOURCE, /<p className="text-sm font-semibold leading-5 text-text-subtle">Parent<\/p>/);
