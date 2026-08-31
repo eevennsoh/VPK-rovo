@@ -22,7 +22,7 @@ export {
 } from "../omnibar-machine";
 
 /**
- * Satellite surfaces that belong to the Omnibar but are not inside the morphing bar —
+ * Satellite surfaces that belong to the Omnibar but sit outside its stack —
  * currently the edge-docked timeline rail, which has to be a sibling to escape the
  * bottom rail's clipping and pointer-events wrapper.
  *
@@ -42,7 +42,7 @@ export interface UseOmnibarStateOptions {
 }
 
 export interface UseOmnibarStateResult extends OmnibarMachineState {
-	/** Attach to the morphing surface so outside clicks can be told apart from inside ones. */
+	/** Attach to the surface stack so outside clicks can be told apart from inside ones. */
 	surfaceRef: React.RefObject<HTMLDivElement | null>;
 	handlePointerEnter: () => void;
 	handlePointerLeave: () => void;

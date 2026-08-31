@@ -1,20 +1,15 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useCallback, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useCallback } from "react";
+import { AnimatePresence, useReducedMotion } from "motion/react";
 
 import { useScrubberComposer } from "@/components/blocks/scrubber/hooks/use-scrubber-composer";
 import type { ScrubberEntry } from "@/components/blocks/scrubber/lib/scrubber-entries";
 import { cn } from "@/lib/utils";
 
-import {
-	OMNIBAR_MORPH_ENTER,
-	OMNIBAR_MORPH_EXIT,
-	resolveOmnibarTransition,
-} from "../omnibar-motion";
 import { useOmnibarState, type OmnibarState } from "../hooks/use-omnibar-state";
-import { OmnibarBar, OmnibarContextPill, type OmnibarTone } from "./omnibar-bar";
+import { OmnibarBar, type OmnibarTone } from "./omnibar-bar";
 import { OmnibarPanel } from "./omnibar-panel";
 import { OmnibarPill } from "./omnibar-pill";
 import { OmnibarTimelineRail } from "./omnibar-timeline-rail";
@@ -23,15 +18,24 @@ export type { OmnibarTone };
 
 const DEFAULT_PLACEHOLDER = "Describe any changes you want to make...";
 
-// Radii are "fully rounded" at each geometry: half of the 28px pill, half of the 56px bar.
-// Compact tone matches `PromptInput variant="floating"` (`rounded-xl` = 12px).
-// Width/height are Motion-animated (not `layout` scale) so type stays native size.
-const PILL_RADIUS = 14;
-const PILL_WIDTH = 96; // w-24
-const PILL_HEIGHT = 28; // h-7
-const BAR_RADIUS = 28;
-const COMPACT_RADIUS = 12;
-const EXPANDED_WIDTH = "min(720px, calc(100% - 32px))";
+/**
+ * The stack that holds both geometries.
+ *
+ * `grid` with both surfaces in cell 1/1 is what lets them overlap during the cross-fade
+ * without either one displacing the other, and it keeps the box sized to whichever surface
+ * is currently the larger — so the collapsed hit area is the pill's 96px, not the bar's.
+ * `items-end` bottom-aligns the two the way the bottom-anchored rail implies;
+ * `justify-items-center` keeps the pill on the bar's centre line while they trade places.
+ *
+ * `minmax(0,auto)` rather than a plain `auto` track: the bar's width is definite, so an auto
+ * track takes 720px as its *minimum* and overflows to the right of a narrower container —
+ * `max-width` on this element alone clamps the box but not the track inside it. A zero min
+ * lets the track shrink, and the bar's own `max-w-full` then follows it down.
+ */
+const OMNIBAR_STACK = cn(
+	"pointer-events-auto grid grid-cols-[minmax(0,auto)]",
+	"w-fit max-w-[calc(100%-32px)] items-end justify-items-center",
+);
 
 export interface OmnibarProps {
 	className?: string;
@@ -83,23 +87,23 @@ export interface OmnibarProps {
 	 */
 	timelineEntries?: readonly ScrubberEntry[];
 	/**
-	 * `inverse` (default) paints the expanded bar onto the black morphing surface.
-	 * `default` leaves the existing compact `FloatingComposer` chrome in place.
+	 * `default` gives the expanded bar the standard light `PromptInput variant="floating"`
+	 * chrome — the same white composer every other surface in the repo renders. `inverse`
+	 * re-skins it onto a black surface instead.
 	 */
 	tone?: OmnibarTone;
 }
 
 /**
  * A persistent bottom-center AI bar with three geometries: a black sparkle pill, an expanded
- * prompt bar, and a right-docked chat panel.
+ * light prompt bar, and a right-docked chat panel.
  *
  * Hovering expands the pill; pressing inside the bar pins it open so a draft survives the
- * pointer leaving. The pill and composer share one surface whose width and height
- * animate — never Motion `layout` scale, which would enlarge placeholder and button
- * labels during the morph. Shared `layoutId` is also avoided: it hijacks
- * `transform-origin` and breaks the morph. The Timeline chip is *not* inside that
- * box: compact tone hoists it and staggers it so mouse-out cannot scale the stack
- * as one shape.
+ * pointer leaving. The pill and the bar are two independent surfaces that cross-fade through
+ * each other on a shared z-axis rather than one box whose width morphs — see
+ * `omnibar-motion.ts`. Each therefore paints its own chrome and owns its own width, and
+ * nothing here animates layout, so placeholder and button labels never get scaled by a
+ * parent's size projection.
  *
  * With `timelineEntries`, the bar also gains a scrubbable notch rail. The draft deliberately
  * lives in `useScrubberComposer` rather than in a local `useState` here: the `x` axis unmounts
@@ -120,7 +124,7 @@ export function Omnibar({
 	timelineActiveIndex,
 	timelineAxis = "x",
 	timelineEntries,
-	tone = "inverse",
+	tone = "default",
 }: Readonly<OmnibarProps>) {
 	const shouldReduceMotion = useReducedMotion();
 	const {
@@ -147,31 +151,16 @@ export function Omnibar({
 	 * wrong when the bar simply collapsed — the next hover would then steal focus into the
 	 * editor. Reading the flag here disarms it.
 	 */
-	const hoistContextPill = tone === "default" && timelineEntries !== undefined;
-	const [holdComposer, setHoldComposer] = useState(false);
-
 	const handleStateChange = useCallback(
 		(next: OmnibarState) => {
-			if (next === "collapsed" && hoistContextPill) {
-				// Keep the composer at expanded geometry until the Timeline chip
-				// finishes leaving. Collapsing both in one `layout` tick is what
-				// scaled the stack as one box on mouse-out.
-				setHoldComposer(true);
-			} else if (next !== "collapsed") {
-				setHoldComposer(false);
-			}
 			if (next !== "expanded") {
 				setMode("idle");
 				consumeFocusRestore();
 			}
 			onStateChange?.(next);
 		},
-		[consumeFocusRestore, hoistContextPill, onStateChange, setMode],
+		[consumeFocusRestore, onStateChange, setMode],
 	);
-
-	const handleContextExitComplete = useCallback(() => {
-		setHoldComposer(false);
-	}, []);
 
 	const {
 		closePanel,
@@ -213,20 +202,6 @@ export function Omnibar({
 	const exitTimeline = useCallback(() => setMode("idle"), [setMode]);
 
 	const isExpanded = state === "expanded";
-	const isDefaultTone = tone === "default";
-	const composerExpanded = isExpanded || holdComposer;
-	const isCompactExpanded = composerExpanded && isDefaultTone;
-	const morphTransition = resolveOmnibarTransition(
-		composerExpanded ? OMNIBAR_MORPH_ENTER : OMNIBAR_MORPH_EXIT,
-		shouldReduceMotion,
-	);
-	const surfaceWidth = composerExpanded ? EXPANDED_WIDTH : PILL_WIDTH;
-	const surfaceHeight = composerExpanded ? "auto" : PILL_HEIGHT;
-	const surfaceRadius = isCompactExpanded
-		? COMPACT_RADIUS
-		: composerExpanded
-			? BAR_RADIUS
-			: PILL_RADIUS;
 
 	const timeline = timelineEntries
 		? {
@@ -258,8 +233,8 @@ export function Omnibar({
 			<div
 				className={cn(
 					"z-[510] flex justify-center",
-					// The rail spans the full width so the surface can centre itself without a
-					// translate that Motion's `layout` would overwrite.
+					// The rail spans the full width and centres the stack, so neither surface
+					// needs a translate of its own — scale is the only transform in play.
 					"pointer-events-none inset-x-0 bottom-5",
 					positioning === "container" ? "absolute" : "fixed",
 					// An open edge rail owns the right gutter. Padding rather than a narrower
@@ -275,110 +250,42 @@ export function Omnibar({
 				data-timeline={isTimeline || undefined}
 				data-tone={tone}
 			>
-				<AnimatePresence initial={false}>
-					{state === "docked" ? null : (
-						<motion.div
-							animate={{ opacity: 1, width: surfaceWidth }}
-							className={cn(
-								"pointer-events-auto relative",
-								// Own the width so the inner surface does not circularly
-								// shrink to the composer's min-content inside this
-								// `justify-center` rail. Motion animates the same value
-								// so the box grows from center without `layout` scale.
-								composerExpanded ? "w-[min(720px,calc(100%-32px))]" : "w-24",
-							)}
-							data-omnibar-surface=""
-							exit={{ opacity: 0, transition: morphTransition }}
-							initial={{ opacity: 0, width: surfaceWidth }}
-							key="omnibar-hover"
-							onPointerDown={handlePin}
-							onPointerEnter={handlePointerEnter}
-							onPointerLeave={handlePointerLeave}
-							ref={surfaceRef}
-							style={{ willChange: "opacity" }}
-							transition={morphTransition}
-						>
-							{hoistContextPill && (isExpanded || holdComposer) ? (
-								<div className="absolute inset-x-0 bottom-full z-10 flex justify-start pb-2">
-									<AnimatePresence
-										initial={false}
-										onExitComplete={handleContextExitComplete}
-									>
-										{isExpanded && timeline ? (
-											<OmnibarContextPill
-												isInverse={false}
-												isPressed={timeline.isTimeline}
-												key="context-pill"
-												onToggle={timeline.onToggle}
-												shouldReduceMotion={shouldReduceMotion}
-											/>
-										) : null}
-									</AnimatePresence>
-								</div>
-							) : null}
-							<motion.div
-								animate={{
-									opacity: 1,
-									borderRadius: surfaceRadius,
-									height: surfaceHeight,
-								}}
-								className={cn(
-									// Compact tone keeps this surface transparent in both
-									// geometries: the pill paints Rovo-button chrome itself,
-									// and FloatingComposer owns the light expanded chrome.
-									// Dark fill here is what left a leftover under the composer
-									// and what layout-scaled into a dark paper-plane on leave.
-									isDefaultTone
-										? "overflow-visible bg-transparent shadow-none"
-										: "overflow-hidden bg-bg-neutral-bold shadow-overlay",
-									// Always fill the width-animating hover box. A `layout`
-									// size projection here is what scaled the textarea and
-									// trailing labels. Height is Motion-animated instead.
-									"w-full",
-									composerExpanded ? null : "h-7",
-								)}
-								initial={{
-									opacity: 0,
-									borderRadius: surfaceRadius,
-									height: surfaceHeight,
-								}}
-								key="omnibar-surface"
-								// Only pins once the bar is already open. Firing while collapsed would
-								// expand on Tab, unmounting the pill the focus is on and dropping focus
-								// to the document — the keyboard user could not get in at all.
-								onFocusCapture={composerExpanded ? handlePin : undefined}
-								style={{ willChange: "opacity" }}
-								transition={morphTransition}
-							>
-								<AnimatePresence initial={false} mode="popLayout">
-									{composerExpanded ? (
-										<OmnibarBar
-											hideContextPill={hoistContextPill}
-											key="bar"
-											onOpenPanel={openPanel}
-											onSubmit={handleSubmit}
-											onValueChange={setDraft}
-											placeholder={placeholder}
-											shouldReduceMotion={shouldReduceMotion}
-											submitDisabled={onSubmit === undefined}
-											timeline={timeline}
-											tone={tone}
-											value={draft}
-										/>
-									) : (
-										<OmnibarPill
-											key="pill"
-											label="Ask Rovo"
-											onActivate={handlePin}
-											paintChrome={isDefaultTone}
-											shouldReduceMotion={shouldReduceMotion}
-										/>
-									)}
-								</AnimatePresence>
-							</motion.div>
-						</motion.div>
-					)}
-				</AnimatePresence>
+				<div
+					className={OMNIBAR_STACK}
+					data-omnibar-surface=""
+					// Only pins once the bar is already open. Firing while collapsed would
+					// expand on Tab, unmounting the pill the focus is on and dropping focus
+					// to the document — the keyboard user could not get in at all.
+					onFocusCapture={isExpanded ? handlePin : undefined}
+					onPointerDown={handlePin}
+					onPointerEnter={handlePointerEnter}
+					onPointerLeave={handlePointerLeave}
+					ref={surfaceRef}
+				>
+					<AnimatePresence initial={false}>
+						{state === "docked" ? null : isExpanded ? (
+							<OmnibarBar
+								key="bar"
+								onOpenPanel={openPanel}
+								onSubmit={handleSubmit}
+								onValueChange={setDraft}
+								placeholder={placeholder}
+								shouldReduceMotion={shouldReduceMotion}
+								submitDisabled={onSubmit === undefined}
+								timeline={timeline}
+								tone={tone}
+								value={draft}
+							/>
+						) : (
+							<OmnibarPill
+								key="pill"
+								label="Ask Rovo"
+								onActivate={handlePin}
+								shouldReduceMotion={shouldReduceMotion}
+							/>
+						)}
+					</AnimatePresence>
+				</div>
 			</div>
 
 			{/* Siblings of the rail, not children: the rail is a bottom-anchored strip with
