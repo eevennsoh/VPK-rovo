@@ -13,3 +13,11 @@ export function OmnibarDemoExpanded() {
 export function OmnibarDemoDocked() {
 	return <Page defaultState="docked" />;
 }
+
+export function OmnibarDemoTimeline() {
+	return <Page defaultState="expanded" timeline="x" />;
+}
+
+export function OmnibarDemoTimelineVertical() {
+	return <Page defaultState="expanded" timeline="y" />;
+}

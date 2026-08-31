@@ -30,6 +30,20 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"omnibar-demo-timeline": dynamic(
+		() =>
+			import("../demos/blocks/omnibar-demo").then((mod) => ({
+				default: mod.OmnibarDemoTimeline,
+			})),
+		{ ssr: false },
+	),
+	"omnibar-demo-timeline-vertical": dynamic(
+		() =>
+			import("../demos/blocks/omnibar-demo").then((mod) => ({
+				default: mod.OmnibarDemoTimelineVertical,
+			})),
+		{ ssr: false },
+	),
 	"scrubber-demo-timeline": dynamic(
 		() =>
 			import("../demos/blocks/scrubber-demo").then((mod) => ({

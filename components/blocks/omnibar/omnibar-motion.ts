@@ -34,6 +34,21 @@ export const OMNIBAR_PANEL_EXIT = {
 	ease: [0.6, 0, 0.8, 0.6],
 } as const; // duration-medium + ease-in
 
+/**
+ * The edge-docked timeline rail. A small, high-frequency surface that slides in from
+ * the edge it belongs to, so it takes the practical entrance rather than the bold one
+ * — the same signature the popup family uses.
+ */
+export const OMNIBAR_RAIL_ENTER = {
+	duration: 0.15,
+	ease: [0.4, 1, 0.6, 1],
+} as const; // duration-normal + ease-out-practical
+
+export const OMNIBAR_RAIL_EXIT = {
+	duration: 0.1,
+	ease: [0.6, 0, 0.8, 0.6],
+} as const; // duration-fast + ease-in
+
 export const OMNIBAR_REDUCED = { duration: 0 } as const;
 
 /**

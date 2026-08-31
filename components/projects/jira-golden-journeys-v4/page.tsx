@@ -9,6 +9,8 @@ import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/bloc
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
 import { unlinkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
 import { JiraList, type JiraListRowData } from "@/components/blocks/jira-list";
+import { Omnibar } from "@/components/blocks/omnibar";
+import { SCRUBBER_DEMO_ENTRIES } from "@/components/blocks/scrubber";
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
 import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v1/data/agent-chat-data";
 import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journeys-v1/hooks/use-jira-golden-journeys-v1-agent-chat-demo";
@@ -134,9 +136,25 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 					/>
 				</div>
 			</AppLayout>
+			{/*
+			 * The Omnibar is this board's single AI entry point, so the launcher is hidden —
+			 * two bottom-anchored Rovo affordances would compete for the same job. The
+			 * floating chat stays reachable: card "View chat" actions still open it.
+			 *
+			 * `positioning="viewport"` because the board fills the window and the bar has to
+			 * clear the horizontally scrolling columns rather than ride inside them. The
+			 * timeline is the same PAY sprint week the board narrates, so scrubbing it reads
+			 * as moving through this project's history.
+			 */}
+			<Omnibar
+				positioning="viewport"
+				timelineAxis="x"
+				timelineEntries={SCRUBBER_DEMO_ENTRIES}
+			/>
 			<JgpRovoOverlay
 				chatContextBar={chatContextBar}
 				externalThinkingMessageId={externalThinkingMessageId}
+				launcher="hidden"
 			/>
 		</>
 	);
