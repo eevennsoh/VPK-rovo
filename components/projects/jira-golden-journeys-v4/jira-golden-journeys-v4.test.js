@@ -88,13 +88,24 @@ test("the Work items header switches between Board and List views with their ico
 		/<TabsList aria-label="Work items view">[\s\S]*<TabsTrigger value="board">[\s\S]*<BoardIcon[\s\S]*Board[\s\S]*<TabsTrigger value="list">[\s\S]*<TableIcon[\s\S]*List/u,
 	);
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /<TabsList[^>]*className=|<TabsTrigger[^>]*className=/u);
-	// The view switcher leads the trailing icon cluster. This used to anchor on
-	// the Board settings button, which is gone: the View menu took over its job
-	// and rendered the same sliders glyph, so the row carried it twice. The
-	// overflow control is now the first thing after the switcher.
-	const viewSwitcherIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf('aria-label="Work items view"');
+	// More board controls is a sibling of Filter and View on the toolbar row
+	// (`gap-2`), not a nested View/More wrapper and not the far-right
+	// Board/List switcher cluster.
+	const filterControlIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("{filterControl}");
+	const viewMenuIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("<BoardViewMenu");
 	const overflowIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf('aria-label={`More ${surfaceLabel} controls`}');
-	assert.ok(viewSwitcherIndex > 0 && viewSwitcherIndex < overflowIndex);
+	const viewSwitcherIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf('aria-label="Work items view"');
+	assert.ok(filterControlIndex > 0 && filterControlIndex < viewMenuIndex);
+	assert.ok(viewMenuIndex > 0 && viewMenuIndex < overflowIndex);
+	assert.ok(overflowIndex > 0 && overflowIndex < viewSwitcherIndex);
+	assert.match(
+		EXPERIMENTAL_HEADER_SOURCE,
+		/\{filterControl\}\s*<BoardViewMenu[\s\S]*?<Button aria-disabled aria-label=\{`More \$\{surfaceLabel\} controls`\}/u,
+	);
+	assert.doesNotMatch(
+		EXPERIMENTAL_HEADER_SOURCE,
+		/<div className="flex items-center gap-1">\s*<BoardViewMenu/u,
+	);
 });
 
 test("the board keeps 24px between the Jira tabs and filter controls", () => {
