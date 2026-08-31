@@ -23,10 +23,15 @@ import type {
 import { createJiraKanbanColumns } from "../jira-kanban-data";
 import { BoardFilterPopover } from "./components/board-filter-popover";
 import {
+	ALL_BOARD_AGENT_SESSION_STATE_IDS,
+	type BoardAgentSessionStateId,
+} from "./data/board-view-options";
+import {
 	ExperimentalJiraKanban,
 	type ExperimentalJiraKanbanProps,
 } from "./experimental-jira-kanban";
 import { EMPTY_COLLAPSED_BOARD_COLUMNS } from "./lib/board-column-collapse";
+import { filterJiraKanbanColumnsByAgentSessionState } from "./lib/board-agent-session-visibility";
 import {
 	collectBoardIssueKeys,
 	groupBoardUntrackedSessions,
@@ -238,6 +243,9 @@ export default function ExperimentalJiraKanbanPage({
 	// a deliberate setting that must outlive a temporary view switch.
 	const [collapsedColumns, setCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
 	const [showUntracked, setShowUntracked] = useState(true);
+	const [shownSessionStateIds, setShownSessionStateIds] = useState(
+		() => new Set<BoardAgentSessionStateId>(ALL_BOARD_AGENT_SESSION_STATE_IDS),
+	);
 	const handleRequestAction = useCallback((action: { id: string }) => {
 		setRequestedActionIds((current) => new Set(current).add(action.id));
 	}, []);
@@ -360,8 +368,11 @@ export default function ExperimentalJiraKanbanPage({
 		agentSessionAssigneeIdAliases,
 	);
 	const filteredBoardColumns = useMemo(
-		() => filterJiraKanbanColumnsByAssignee(boardColumns, selectedAssigneeIds),
-		[boardColumns, selectedAssigneeIds],
+		() => filterJiraKanbanColumnsByAgentSessionState(
+			filterJiraKanbanColumnsByAssignee(boardColumns, selectedAssigneeIds),
+			shownSessionStateIds,
+		),
+		[boardColumns, selectedAssigneeIds, shownSessionStateIds],
 	);
 	// Days first, then scope. Both narrow the same timeline and both come from
 	// the same control, so they compose rather than competing: a sprint scope
@@ -572,11 +583,13 @@ export default function ExperimentalJiraKanbanPage({
 				assignees={assignees}
 				compact={compactHeader}
 				onSelectedAssigneeIdsChange={handleAssigneeFilterChange}
+				onShownSessionStateIdsChange={setShownSessionStateIds}
 				onShowUntrackedChange={setShowUntracked}
 				onViewChange={renderListContent ? onViewChange : undefined}
 				searchPlaceholder={`Search ${activeView}`}
 				selectedAssigneeIds={selectedAssigneeIds}
 				showBoardControls={showBoardContent}
+				shownSessionStateIds={shownSessionStateIds}
 				showUntracked={showUntracked}
 				facepile={isPulse ? (
 					<PulseRosterFacepile

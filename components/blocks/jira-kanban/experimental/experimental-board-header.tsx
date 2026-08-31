@@ -23,6 +23,7 @@ import { JIRA_DESIGN_PROJECT } from "@/components/blocks/product-sidebar/data/ji
 import { cn } from "@/lib/utils";
 import type { JiraKanbanAssigneeData } from "../index";
 import { BoardViewMenu } from "./components/board-view-menu";
+import type { BoardAgentSessionStateId } from "./data/board-view-options";
 import {
 	JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME,
 	JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS,
@@ -61,6 +62,8 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	 */
 	endSlot?: ReactNode;
 	surfaceLabel?: string;
+	shownSessionStateIds?: ReadonlySet<BoardAgentSessionStateId>;
+	onShownSessionStateIdsChange?: (shownSessionStateIds: Set<BoardAgentSessionStateId>) => void;
 	showUntracked?: boolean;
 	onShowUntrackedChange?: (showUntracked: boolean) => void;
 	viewTabs?: ReactNode;
@@ -109,6 +112,8 @@ export function ExperimentalJiraKanbanBoardHeader({
 	modeToggle,
 	endSlot,
 	surfaceLabel = "board",
+	shownSessionStateIds,
+	onShownSessionStateIdsChange,
 	showUntracked,
 	onShowUntrackedChange,
 	viewTabs,
@@ -186,7 +191,9 @@ export function ExperimentalJiraKanbanBoardHeader({
 
 					<BoardViewMenu
 						compact={compact}
+						onShownSessionStateIdsChange={onShownSessionStateIdsChange}
 						onShowUntrackedChange={onShowUntrackedChange}
+						shownSessionStateIds={shownSessionStateIds}
 						showUntracked={showUntracked}
 						surfaceLabel={surfaceLabel}
 					/>

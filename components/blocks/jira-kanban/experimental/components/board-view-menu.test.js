@@ -35,7 +35,7 @@ test("Experimental board header opens the production View picker without changin
 	const viewOptions = readFileSync(join(EXPERIMENTAL_DIR, "data", "board-view-options.ts"), "utf8");
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
-		/<BoardViewMenu\s+compact=\{compact\}\s+onShowUntrackedChange=\{onShowUntrackedChange\}\s+showUntracked=\{showUntracked\}\s+surfaceLabel=\{surfaceLabel\}\s+\/>/u,
+		/<BoardViewMenu\s+compact=\{compact\}\s+onShownSessionStateIdsChange=\{onShownSessionStateIdsChange\}\s+onShowUntrackedChange=\{onShowUntrackedChange\}\s+shownSessionStateIds=\{shownSessionStateIds\}\s+showUntracked=\{showUntracked\}\s+surfaceLabel=\{surfaceLabel\}\s+\/>/u,
 	);
 	assert.doesNotMatch(
 		EXPERIMENTAL_HEADER_SOURCE,
@@ -179,19 +179,32 @@ test("Experimental board header opens the production View picker without changin
 	// Each checkbox list keeps its own set, so two lists sharing an option id
 	// cannot toggle each other.
 	assert.equal(withoutComments(viewMenu).match(/useState\(\(\) =>\s*toShownIds\(/gu).length, 3);
-	// Untracked is the one Agent row the board can lift; Working / Needs input /
-	// Finished stay local chrome and never re-group the columns.
+	// Agent rows the board can lift: Working / Needs input / Finished hide
+	// matching activity chrome, and Untracked hides proximity sessions. They
+	// never re-group the columns.
 	assert.match(viewMenu, /showUntracked\?: boolean;/u);
 	assert.match(viewMenu, /onShowUntrackedChange\?: \(showUntracked: boolean\) => void;/u);
+	assert.match(viewMenu, /shownSessionStateIds\?: ReadonlySet<BoardAgentSessionStateId>;/u);
+	assert.match(viewMenu, /onShownSessionStateIdsChange\?: \(shownSessionStateIds: Set<BoardAgentSessionStateId>\) => void;/u);
 	assert.match(viewMenu, /if \(id === "untracked" && isUntrackedControlled\)/u);
 	assert.match(viewMenu, /onShowUntrackedChange\(!showUntracked\);/u);
+	assert.match(viewMenu, /isBoardAgentSessionStateId\(id\)/u);
+	assert.match(viewMenu, /onShownSessionStateIdsChange\(next\);/u);
 	assert.match(viewMenu, /toggleIn\(setShownAgentStateIds\)\(id\);/u);
 	assert.doesNotMatch(viewMenu, /onShowWorkingChange|onShowNeedsInputChange|onShowFinishedChange/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const \[showUntracked, setShowUntracked\] = useState\(true\)/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onShowUntrackedChange=\{setShowUntracked\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showUntracked=\{showUntracked\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /shownSessionStateIds=\{shownSessionStateIds\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onShownSessionStateIdsChange=\{setShownSessionStateIds\}/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/filterJiraKanbanColumnsByAgentSessionState\(\s*filterJiraKanbanColumnsByAssignee\(boardColumns, selectedAssigneeIds\),\s*shownSessionStateIds,\s*\)/u,
+	);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /showUntracked\?: boolean;/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /onShowUntrackedChange\?: \(showUntracked: boolean\) => void;/u);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /shownSessionStateIds\?: ReadonlySet<BoardAgentSessionStateId>;/u);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /onShownSessionStateIdsChange\?: \(shownSessionStateIds: Set<BoardAgentSessionStateId>\) => void;/u);
 	// A single-section submenu is already named by its sub-trigger, so it carries
 	// no group label — the name moves to `aria-label` so the radio group keeps an
 	// accessible name.
