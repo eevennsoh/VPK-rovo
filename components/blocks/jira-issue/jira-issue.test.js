@@ -478,7 +478,7 @@ test("Jira issue renders a reusable generative action command menu", () => {
 	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /const colorTransition = shouldReduceMotion[\s\S]*\? SPARKLE_REDUCED/);
 	assert.match(ROVO_SPARKLE_SOURCE, /className="rich-text-command-menu-borderless rich-text-command-menu-search-selects"/);
 	assert.match(RICH_TEXT_EDITOR_CSS_SOURCE, /\.rich-text-command-menu-search-selects:focus-within \.rich-text-command-menu-item-selected,[\s\S]*\.rich-text-command-menu-search-selects:focus-within \.rich-text-command-menu-item-selected:hover,[\s\S]*background-color: var\(--ds-background-neutral-subtle-hovered, #f1f2f4\);/);
-	assert.match(RICH_TEXT_EDITOR_CSS_SOURCE, /\.rich-text-command-menu-search-selects:focus-within \.rich-text-command-menu-item-selected:hover \.rich-text-command-menu-copy \{\s*padding-right: 28px;/);
+	assert.match(RICH_TEXT_EDITOR_CSS_SOURCE, /\.rich-text-command-menu-search-selects:focus-within \.rich-text-command-menu-item-selected:not\(\[data-has-actions="true"\]\):hover \.rich-text-command-menu-copy \{\s*padding-right: 28px;/);
 	assert.match(RICH_TEXT_EDITOR_CSS_SOURCE, /\.rich-text-command-menu-search-selects:focus-within \.rich-text-command-menu-return-shortcut \{\s*display: inline-flex;/);
 	assert.match(ROVO_SPARKLE_SOURCE, /emptyState=\{false\}/);
 	assert.match(ROVO_SPARKLE_SOURCE, /<RichTextCommandMenuSearchField[\s\S]*icon=\{<RovoColorIcon size="xxsmall" \/>\}[\s\S]*label="Ask Rovo"/);
