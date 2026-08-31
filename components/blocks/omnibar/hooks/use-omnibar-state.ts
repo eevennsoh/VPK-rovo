@@ -33,6 +33,11 @@ const OMNIBAR_SURFACE_SELECTOR = "[data-omnibar-surface]";
 
 export interface UseOmnibarStateOptions {
 	defaultState?: OmnibarState;
+	/**
+	 * Host-owned panel. When set, the side-panel control calls this and collapses
+	 * the bar instead of docking the block's own ChatPanel.
+	 */
+	onOpenPanel?: () => void;
 	onStateChange?: (state: OmnibarState) => void;
 }
 
@@ -57,6 +62,7 @@ export interface UseOmnibarStateResult extends OmnibarMachineState {
  */
 export function useOmnibarState({
 	defaultState = "collapsed",
+	onOpenPanel,
 	onStateChange,
 }: Readonly<UseOmnibarStateOptions> = {}): UseOmnibarStateResult {
 	const [machine, setMachine] = useState<OmnibarMachineState>({
@@ -68,7 +74,12 @@ export function useOmnibarState({
 	// Mirrors `machine` so `dispatch` can compute the next state without an updater.
 	const machineRef = useRef<OmnibarMachineState>({ state: defaultState, pinned: false });
 	// Kept current in an effect rather than during render, which must stay pure.
+	const onOpenPanelRef = useRef(onOpenPanel);
 	const onStateChangeRef = useRef(onStateChange);
+
+	useEffect(() => {
+		onOpenPanelRef.current = onOpenPanel;
+	}, [onOpenPanel]);
 
 	useEffect(() => {
 		onStateChangeRef.current = onStateChange;
@@ -121,6 +132,11 @@ export function useOmnibarState({
 
 	const openPanel = useCallback(() => {
 		clearCollapseTimer();
+		if (onOpenPanelRef.current) {
+			onOpenPanelRef.current();
+			dispatch({ type: "collapse" });
+			return;
+		}
 		dispatch({ type: "open-panel" });
 	}, [clearCollapseTimer, dispatch]);
 

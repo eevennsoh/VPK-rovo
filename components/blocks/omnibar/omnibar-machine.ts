@@ -21,7 +21,8 @@ export type OmnibarEvent =
 	| { type: "pin" }
 	| { type: "outside-click" }
 	| { type: "open-panel" }
-	| { type: "close-panel" };
+	| { type: "close-panel" }
+	| { type: "collapse" };
 
 export const OMNIBAR_INITIAL_STATE: OmnibarMachineState = {
 	state: "collapsed",
@@ -80,7 +81,16 @@ export function omnibarReducer(
 			}
 			return { state: "collapsed", pinned: false };
 
-		default:
+		case "collapse":
+			if (current.state === "collapsed" && !current.pinned) {
+				return current;
+			}
+			return { state: "collapsed", pinned: false };
+
+		default: {
+			const _exhaustive: never = event;
+			void _exhaustive;
 			return current;
+		}
 	}
 }

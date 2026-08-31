@@ -1,28 +1,56 @@
 /**
  * Motion signatures for the Omnibar's three geometries.
  *
- * The pill -> bar change is an *in-place transform*, not an entrance, so it takes the bold
+ * The pill → bar change is an *in-place transform*, not an entrance, so it takes the bold
  * `ease-in-out` curve rather than `ease-out` (see `.agents/rules/motion-decisions.md`). The
  * docked panel is a separate medium surface that enters and leaves on its own signature.
+ *
+ * The morph is a large width change (96px pill → 720px bar), so it uses `duration-slower`
+ * rather than `duration-medium` — 200ms sits under the trackability threshold and reads as
+ * a snap. Width and height animate as layout values, not Motion `layout` scale, so
+ * placeholder and button labels stay native size. Inner chrome staggers after the
+ * surface has started growing.
  *
  * Motion for React cannot read `var()`, so these are the resolved token values with the
  * token name kept in the comment.
  */
 
 export const OMNIBAR_MORPH_ENTER = {
-	duration: 0.2,
+	duration: 0.4,
 	ease: [0.4, 0, 0, 1],
-} as const; // duration-medium + ease-in-out
+} as const; // duration-slower + ease-in-out
 
 export const OMNIBAR_MORPH_EXIT = {
-	duration: 0.1,
+	duration: 0.25,
 	ease: [0.6, 0, 0.8, 0.6],
-} as const; // duration-fast + ease-in
+} as const; // duration-slow + ease-in
 
 export const OMNIBAR_CONTENT = {
-	duration: 0.1,
+	delay: 0.15,
+	duration: 0.15,
 	ease: [0.4, 1, 0.6, 1],
-} as const; // duration-fast + ease-out-practical
+} as const; // duration-normal + ease-out-practical, delayed until the surface has grown
+
+export const OMNIBAR_CONTENT_EXIT = {
+	duration: 0.1,
+	ease: [0.6, 0, 0.8, 0.6],
+} as const; // duration-fast + ease-in — content leaves before the surface shrinks
+
+/**
+ * Timeline context pill. A small popup-family surface that staggers *after* the
+ * composer morph has started, and leaves *before* the composer morphs back.
+ * Fade + 8px slide — never a shared layout scale with the composer.
+ */
+export const OMNIBAR_CONTEXT_ENTER = {
+	delay: 0.3,
+	duration: 0.15,
+	ease: [0.4, 1, 0.6, 1],
+} as const; // duration-normal + ease-out-practical, after the prompt has started
+
+export const OMNIBAR_CONTEXT_EXIT = {
+	duration: 0.1,
+	ease: [0.6, 0, 0.8, 0.6],
+} as const; // duration-fast + ease-in — out first, then the composer morphs
 
 export const OMNIBAR_PANEL_ENTER = {
 	duration: 0.25,
@@ -49,7 +77,7 @@ export const OMNIBAR_RAIL_EXIT = {
 	ease: [0.6, 0, 0.8, 0.6],
 } as const; // duration-fast + ease-in
 
-export const OMNIBAR_REDUCED = { duration: 0 } as const;
+export const OMNIBAR_REDUCED = { delay: 0, duration: 0 } as const;
 
 /**
  * VPK duration tokens resolve to literal milliseconds and keep playing when the user has

@@ -13,7 +13,7 @@ export { Omnibar, type OmnibarProps } from "@/components/blocks/omnibar/componen
  * ancestor and a bounded height that stands in for a real prototype screen.
  *
  * `timeline` is opt-in on the block, so the page opts in: without it there is no
- * `⌛ Timeline` toggle to show. The demo rail is the same one-sprint-week fixture the
+ * Timeline context pill to show. The demo rail is the same one-sprint-week fixture the
  * standalone Scrubber block ships, so the two read as one product.
  */
 export default function OmnibarPage({

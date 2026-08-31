@@ -167,16 +167,54 @@ test("the board's single AI entry point is the Omnibar, scrubbing the PAY sprint
 	assert.doesNotMatch(PAGE_SOURCE, /<JgpRovoOverlay[\s\S]*chat="hidden"/u);
 });
 
+test("the Omnibar expands into the compact prompt and opens the page Ask Rovo sidebar", () => {
+	assert.match(PAGE_SOURCE, /tone="default"/u);
+	assert.match(PAGE_SOURCE, /onOpenPanel=\{handleOmnibarOpenPanel\}/u);
+	assert.match(PAGE_SOURCE, /onSubmit=\{handleOmnibarSubmit\}/u);
+	assert.match(PAGE_SOURCE, /openChat\("sidebar"\)/u);
+	assert.match(PAGE_SOURCE, /sendPrompt\(prompt\)/u);
+	assert.doesNotMatch(PAGE_SOURCE, /sidePanel=/u);
+});
+
+test("the Omnibar unmounts while the Ask Rovo sidebar is open", () => {
+	assert.match(PAGE_SOURCE, /const isSidebarChatOpen = chatSurface === "sidebar"/u);
+	assert.match(PAGE_SOURCE, /\{isSidebarChatOpen \? null : \(/u);
+	assert.match(PAGE_SOURCE, /<Omnibar[\s\S]*tone="default"/u);
+});
+
 test("the Omnibar block gates the timeline behind entries rather than always rendering it", () => {
 	const OMNIBAR_SOURCE = readProjectFile("components/blocks/omnibar/components/omnibar.tsx");
 	const OMNIBAR_BAR_SOURCE = readProjectFile("components/blocks/omnibar/components/omnibar-bar.tsx");
 
 	// No entries means no toggle, so every existing consumer keeps today's bar.
 	assert.match(OMNIBAR_SOURCE, /const timeline = timelineEntries\s*\?/u);
-	assert.match(OMNIBAR_BAR_SOURCE, /\{timeline \? \(/u);
+	assert.match(OMNIBAR_BAR_SOURCE, /\{timeline && !hideContextPill \? \(/u);
+	assert.match(OMNIBAR_BAR_SOURCE, /<OmnibarTimelinePill/u);
+	assert.match(OMNIBAR_BAR_SOURCE, /<ContextBarPill/u);
+	assert.doesNotMatch(OMNIBAR_BAR_SOURCE, /Customize|CustomizeIcon/u);
 	// Only the horizontal axis takes the editor cell; `y` docks a sibling rail.
 	assert.match(OMNIBAR_BAR_SOURCE, /timeline\?\.isTimeline === true && timeline\.axis === "x"/u);
 	assert.match(OMNIBAR_SOURCE, /timelineAxis === "y"/u);
+});
+
+test("the Omnibar compact tone leaves the existing FloatingComposer chrome in place", () => {
+	const OMNIBAR_SOURCE = readProjectFile("components/blocks/omnibar/components/omnibar.tsx");
+	const OMNIBAR_BAR_SOURCE = readProjectFile("components/blocks/omnibar/components/omnibar-bar.tsx");
+	const OMNIBAR_HOOK_SOURCE = readProjectFile("components/blocks/omnibar/hooks/use-omnibar-state.ts");
+
+	assert.match(OMNIBAR_SOURCE, /tone = "inverse"/u);
+	assert.match(OMNIBAR_SOURCE, /isDefaultTone\s*\?\s*"overflow-visible bg-transparent shadow-none"/u);
+	// Compact tone keeps the morphing surface transparent. Collapsed chrome
+	// lives on the pill (`paintChrome`) so a dark leftover cannot sit under
+	// the composer. Inverse still uses the Rovo-button black surface.
+	assert.match(OMNIBAR_SOURCE, /overflow-hidden bg-bg-neutral-bold shadow-overlay/u);
+	assert.match(OMNIBAR_SOURCE, /paintChrome=\{isDefaultTone\}/u);
+	assert.match(OMNIBAR_SOURCE, /hideContextPill=\{hoistContextPill\}/u);
+	assert.doesNotMatch(OMNIBAR_SOURCE, /bg-surface-raised/u);
+	assert.match(OMNIBAR_BAR_SOURCE, /const isInverse = tone === "inverse"/u);
+	assert.match(OMNIBAR_BAR_SOURCE, /isInverse \? OMNIBAR_BAR_SKIN : null/u);
+	assert.match(OMNIBAR_HOOK_SOURCE, /if \(onOpenPanelRef\.current\) \{/u);
+	assert.match(OMNIBAR_HOOK_SOURCE, /dispatch\(\{ type: "collapse" \}\)/u);
 });
 
 test("the Omnibar send control stays disabled when the host wires no onSubmit", () => {
@@ -195,6 +233,4 @@ test("the Omnibar send control stays disabled when the host wires no onSubmit", 
 	);
 	// The runtime guard stays too: Enter reaches requestSubmit() without touching the button.
 	assert.match(OMNIBAR_SOURCE, /if \(!prompt \|\| onSubmit === undefined\) \{/u);
-	// v4 deliberately has no onSubmit, which is what makes the guard reachable there.
-	assert.doesNotMatch(PAGE_SOURCE, /<Omnibar[\s\S]*onSubmit=/u);
 });
