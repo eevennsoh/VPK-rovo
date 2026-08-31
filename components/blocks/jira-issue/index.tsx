@@ -287,7 +287,13 @@ function JiraIssueDefault({
 		&& !generativeActionRevealSuppressed
 		&& (generativeActionPointerActive || generativeActionFocusActive);
 	const agentSessionDragBinding: JiraIssueAgentSessionDragBinding | undefined = agentSessionTransfer
-		? { onDragStateChange: setAgentSessionDragState }
+		? {
+			onDragStateChange: setAgentSessionDragState,
+			onFocusedActivitiesChange: (activities) => setAgentSessionDragState((current) => ({
+				...current,
+				activities,
+			})),
+		}
 		: undefined;
 	const hasSubtasks = Boolean(subtasks?.length);
 	const resolvedSubtasksExpanded = subtasksExpanded ?? internalSubtasksExpanded;

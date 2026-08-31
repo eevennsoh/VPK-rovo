@@ -10,6 +10,7 @@ const DATA_SOURCE = readFileSync(join(__dirname, "jira-kanban-data.ts"), "utf8")
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const HEADER_SOURCE = readFileSync(join(__dirname, "board-header.tsx"), "utf8");
 const EXPERIMENTAL_SOURCE = readFileSync(join(__dirname, "experimental", "experimental-jira-kanban.tsx"), "utf8");
+const EXPERIMENTAL_CARD_SOURCE = readFileSync(join(__dirname, "experimental", "experimental-jira-kanban-card.tsx"), "utf8");
 const EXPERIMENTAL_PAGE_SOURCE = readFileSync(join(__dirname, "experimental", "page.tsx"), "utf8");
 const EXPERIMENTAL_HEADER_SOURCE = readFileSync(join(__dirname, "experimental", "experimental-board-header.tsx"), "utf8");
 const EXPERIMENTAL_V2_SOURCE = readFileSync(join(__dirname, "experimental-v2", "experimental-v2-jira-kanban.tsx"), "utf8");
@@ -41,6 +42,7 @@ async function loadStateHarness() {
 					selectJiraKanbanCard,
 					getCommonJiraKanbanAgentIds,
 					updateJiraKanbanCardAgentAssignment,
+					unlinkJiraKanbanAgentSession,
 				} from "./components/blocks/jira-kanban/state";
 			`,
 			loader: "ts",
@@ -420,6 +422,30 @@ test("Kanban selected cards move together and keep derived column counts accurat
 	assert.equal(columns.find((column) => column.title === "Drafting").count, 2);
 });
 
+test("Kanban agent session unlink removes only the dragged session and derives the remaining activity mode", async () => {
+	const { unlinkJiraKanbanAgentSession } = await loadStateHarness();
+	const columns = [{
+		title: "In progress",
+		count: 1,
+		cards: [{
+			code: "PAY-123",
+			agentActivityMode: "awaiting-input",
+			agentActivities: [
+				{ id: "test-agent", state: "working" },
+				{ id: "review-agent", state: "awaiting-input" },
+			],
+		}],
+	}];
+
+	const withoutReview = unlinkJiraKanbanAgentSession(columns, "PAY-123", "review-agent");
+	assert.deepEqual(withoutReview[0].cards[0].agentActivities.map((activity) => activity.id), ["test-agent"]);
+	assert.equal(withoutReview[0].cards[0].agentActivityMode, "working");
+
+	const withoutTest = unlinkJiraKanbanAgentSession(withoutReview, "PAY-123", "test-agent");
+	assert.deepEqual(withoutTest[0].cards[0].agentActivities, []);
+	assert.equal(withoutTest[0].cards[0].agentActivityMode, "none");
+});
+
 test("Kanban status changes leave selected cards already in the target column in place", async () => {
 	const { moveJiraKanbanCardsToColumn } = await loadStateHarness();
 	const columns = moveJiraKanbanCardsToColumn(
@@ -629,20 +655,36 @@ test("Experimental kanban column headers keep bottom padding without top padding
 });
 
 test("Experimental kanban cards use stroke chrome instead of raised elevation", () => {
-	assert.match(EXPERIMENTAL_SOURCE, /<JiraIssue[\s\S]*chrome="stroke"/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*chrome="stroke"/u);
 	assert.match(EXPERIMENTAL_PULSE_RAIL_SOURCE, /<JiraIssue[\s\S]*chrome="stroke"/u);
 	assert.doesNotMatch(SOURCE, /chrome="stroke"/u);
 });
 
 test("Experimental kanban cards forward their configured agent activity layout", () => {
 	assert.match(EXPERIMENTAL_SOURCE, /agentActivityLayout\?: JiraIssueAgentActivityLayout;/u);
-	assert.match(EXPERIMENTAL_SOURCE, /<JiraIssue[\s\S]*agentActivityLayout=\{agentActivityLayout\}/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*agentActivityLayout=\{agentActivityLayout\}/u);
+});
+
+test("Experimental kanban cards opt into draggable agent-session unlink when the host handles it", () => {
+	assert.match(EXPERIMENTAL_SOURCE, /onCardAgentSessionUnlink\?: \(/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /agentSessionTransfer=\{canUnlinkAgentSession \? \{/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /onSessionUnlink\?\.\(resolvedSession, card, columnTitle\)/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /className=\{canUnlinkAgentSession \? JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS : undefined\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCardAgentSessionUnlink=\{onCardAgentSessionUnlink\}/u);
+});
+
+test("Experimental kanban renders detached sessions beneath their source card with the shared medium-detached variant", () => {
+	assert.match(EXPERIMENTAL_SOURCE, /detachedAgentSessionsByCard\?: Readonly<Record<string, readonly AgentSessionItem\[\]>>;/u);
+	assert.match(EXPERIMENTAL_SOURCE, /const detachedAgentSessions = detachedAgentSessionsByCard\?\.\[card\.code\] \?\? \[\];/u);
+	assert.match(EXPERIMENTAL_SOURCE, /className="flex w-full min-w-0 max-w-\[280px\] flex-col gap-2"/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*<AgentSession[\s\S]*items=\{detachedAgentSessions\}[\s\S]*variant="medium-detached"/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /detachedAgentSessionsByCard=\{detachedAgentSessionsByCard\}/u);
 });
 
 test("Experimental kanban cards use the hexagon avatar for agent assignees", () => {
-	assert.match(EXPERIMENTAL_SOURCE, /function getCardAssigneeAvatarShape\(card: JiraKanbanCardData\)/);
-	assert.match(EXPERIMENTAL_SOURCE, /card\.avatarSrc\?\.startsWith\("\/avatar-agent\/"\) \? "hexagon" as const : undefined/);
-	assert.match(EXPERIMENTAL_SOURCE, /assigneeAvatarShape=\{getCardAssigneeAvatarShape\(card\)\}/);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /function getCardAssigneeAvatarShape\(card: JiraKanbanCardData\)/);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /card\.avatarSrc\?\.startsWith\("\/avatar-agent\/"\) \? "hexagon" as const : undefined/);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /assigneeAvatarShape=\{getCardAssigneeAvatarShape\(card\)\}/);
 	assert.match(
 		EXPERIMENTAL_PULSE_RAIL_SOURCE,
 		/assigneeAvatarShape=\{face\.kind === "agent" \? "hexagon" : "circle"\}/,

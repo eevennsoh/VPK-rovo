@@ -1,5 +1,6 @@
 import type {
 	JiraKanbanAssigneeData,
+	JiraKanbanCardData,
 	JiraKanbanCardSelectModifiers,
 	JiraKanbanColumnData,
 } from "./index";
@@ -122,6 +123,48 @@ export function moveJiraKanbanCardsToColumn(
 			count: cards.length,
 		};
 	});
+}
+
+function getAgentActivityModeAfterUnlink(
+	card: JiraKanbanCardData,
+	remainingActivities: NonNullable<JiraKanbanCardData["agentActivities"]>,
+): JiraKanbanCardData["agentActivityMode"] {
+	if (remainingActivities.some((activity) => activity.state === "awaiting-input")) {
+		return "awaiting-input";
+	}
+	if (remainingActivities.some((activity) => activity.state === "working")) {
+		return "working";
+	}
+	return card.agentDoneRuns?.length ? "completed" : "none";
+}
+
+export function unlinkJiraKanbanAgentSession(
+	columns: readonly JiraKanbanColumnData[],
+	cardCode: string,
+	sessionId: string,
+): JiraKanbanColumnData[] {
+	let changed = false;
+	const nextColumns = columns.map((column) => {
+		const cards = column.cards.map((card) => {
+			if (card.code !== cardCode || !card.agentActivities?.some((activity) => activity.id === sessionId)) {
+				return card;
+			}
+
+			changed = true;
+			const agentActivities = card.agentActivities.filter((activity) => activity.id !== sessionId);
+			return {
+				...card,
+				agentActivities,
+				agentActivityMode: getAgentActivityModeAfterUnlink(card, agentActivities),
+			};
+		});
+
+		return cards.some((card, index) => card !== column.cards[index])
+			? { ...column, cards }
+			: column;
+	});
+
+	return changed ? nextColumns : [...columns];
 }
 
 export function getCommonJiraKanbanAgentIds(

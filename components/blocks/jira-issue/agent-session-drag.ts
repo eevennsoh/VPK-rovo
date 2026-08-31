@@ -36,6 +36,8 @@ export interface JiraIssueAgentSessionDragBinding {
 	/** Clamp for the row translate, in px relative to its resting position. */
 	bounds?: PointerDragBounds;
 	onDragStateChange: (state: JiraIssueAgentSessionDragState) => void;
+	/** Retains the row keyboard focus came from while focus moves to the drop zone. */
+	onFocusedActivitiesChange: (activities: readonly JiraIssueAgentActivity[]) => void;
 }
 
 export const JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE: JiraIssueAgentSessionDragState = {
