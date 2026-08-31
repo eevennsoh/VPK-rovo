@@ -3,62 +3,69 @@
 import { motion } from "motion/react";
 
 import { RovoSparkleMark } from "@/components/ui-custom/rovo-sparkle";
+import { cn } from "@/lib/utils";
 import { token } from "@/lib/tokens";
 
-import { OMNIBAR_CONTENT, OMNIBAR_CONTENT_EXIT, resolveOmnibarTransition } from "../omnibar-motion";
+import {
+	OMNIBAR_PILL_ZOOM,
+	OMNIBAR_SURFACE_ENTER,
+	OMNIBAR_SURFACE_EXIT,
+	resolveOmnibarTransition,
+	resolveOmnibarZoom,
+} from "../omnibar-motion";
 
 export interface OmnibarPillProps {
+	className?: string;
 	label: string;
 	onActivate: () => void;
-	/**
-	 * Compact `tone="default"` leaves the morphing surface transparent so a dark
-	 * leftover cannot sit under the composer. The pill then paints the floating
-	 * Rovo button chrome itself — `bg-bg-neutral-bold` + overlay elevation — at the
-	 * collapsed lozenge size, not `size-full` of a growing surface.
-	 */
-	paintChrome?: boolean;
 	shouldReduceMotion: boolean | null;
 }
 
 /**
  * Collapsed state: a lozenge holding nothing but the Rovo sparkle.
  *
- * Inverse tone paints the fill on the morphing surface above this. Compact tone
- * paints the same Rovo-button chrome here so the surface can stay transparent.
- * Either way the glyph is the canonical `RovoSparkleMark` in its brand-color
- * format — the same four-quadrant mark the catalog `RovoSparkle` trigger shows
- * when active.
+ * The pill paints its own floating-Rovo-button chrome rather than inheriting a fill from a
+ * shared morphing surface. That is what lets it cross-fade with the bar as an independent
+ * object: a fill on a common ancestor would have to resize between the two geometries, and
+ * resizing is the thing this transition replaces.
+ *
+ * The glyph is the canonical `RovoSparkleMark` in its brand-color format — the same
+ * four-quadrant mark the catalog `RovoSparkle` trigger shows when active.
  */
 export function OmnibarPill({
+	className,
 	label,
 	onActivate,
-	paintChrome = false,
 	shouldReduceMotion,
 }: Readonly<OmnibarPillProps>) {
-	const enterTransition = resolveOmnibarTransition(OMNIBAR_CONTENT, shouldReduceMotion);
-	const exitTransition = resolveOmnibarTransition(OMNIBAR_CONTENT_EXIT, shouldReduceMotion);
+	const enterTransition = resolveOmnibarTransition(OMNIBAR_SURFACE_ENTER, shouldReduceMotion);
+	const exitTransition = resolveOmnibarTransition(OMNIBAR_SURFACE_EXIT, shouldReduceMotion);
 
 	return (
 		<motion.div
-			animate={{ opacity: 1 }}
-			className="flex size-full items-center justify-center"
+			animate={{ opacity: 1, scale: 1 }}
+			className={cn("col-start-1 row-start-1", className)}
 			data-slot="omnibar-pill"
-			exit={{ opacity: 0, transition: exitTransition }}
-			initial={{ opacity: 0 }}
-			// Position only — a size `layout` here would scale the sparkle during the morph.
-			layout="position"
-			style={{ willChange: "opacity" }}
+			exit={{
+				opacity: 0,
+				// The ghost overlaps the arriving bar for a tenth of a second, and its button
+				// would otherwise swallow a click meant for the composer.
+				pointerEvents: "none",
+				scale: resolveOmnibarZoom(OMNIBAR_PILL_ZOOM.exitTo, shouldReduceMotion),
+				transition: exitTransition,
+			}}
+			initial={{
+				opacity: 0,
+				scale: resolveOmnibarZoom(OMNIBAR_PILL_ZOOM.enterFrom, shouldReduceMotion),
+			}}
+			style={{ willChange: "opacity, transform" }}
 			transition={enterTransition}
 		>
 			<button
 				aria-label={label}
-				className={
-					paintChrome
-						? "flex h-7 w-24 cursor-pointer items-center justify-center rounded-full bg-bg-neutral-bold"
-						: "flex size-full cursor-pointer items-center justify-center"
-				}
+				className="flex h-7 w-24 cursor-pointer items-center justify-center rounded-full bg-bg-neutral-bold"
 				onClick={onActivate}
-				style={paintChrome ? { boxShadow: token("elevation.shadow.overlay") } : undefined}
+				style={{ boxShadow: token("elevation.shadow.overlay") }}
 				type="button"
 			>
 				<RovoSparkleMark active selected={false} size="default" />

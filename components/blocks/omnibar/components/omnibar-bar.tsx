@@ -20,27 +20,34 @@ import { cn } from "@/lib/utils";
 import { token } from "@/lib/tokens";
 
 import {
-	OMNIBAR_CONTENT,
-	OMNIBAR_CONTENT_EXIT,
-	OMNIBAR_CONTEXT_ENTER,
-	OMNIBAR_CONTEXT_EXIT,
+	OMNIBAR_BAR_ZOOM,
+	OMNIBAR_SURFACE_ENTER,
+	OMNIBAR_SURFACE_EXIT,
 	resolveOmnibarTransition,
+	resolveOmnibarZoom,
 } from "../omnibar-motion";
 
 export type OmnibarTone = "inverse" | "default";
 
 /**
- * Inverts the light `PromptInput variant="floating"` chrome onto the black surface.
+ * Inverts the light `PromptInput variant="floating"` chrome onto a black surface.
  *
- * The morphing surface above already paints `bg-bg-neutral-bold`, so the form itself goes
- * fully transparent and only the content is re-tinted. `text.inverse.subtle` does not exist
- * as an ADS token, so the placeholder uses the repo's established `text-text-inverse` +
- * `opacity-60` pairing.
+ * The fill and elevation live here rather than on an ancestor: the bar cross-fades with the
+ * pill as an independent object, so each geometry has to carry its own chrome. A shared
+ * ancestor fill would have to resize between the two, which is the morph this transition
+ * replaces. `text.inverse.subtle` does not exist as an ADS token, so the placeholder uses
+ * the repo's established `text-text-inverse` + `opacity-60` pairing.
  */
 const OMNIBAR_BAR_SKIN = cn(
-	"rounded-[28px] border-transparent bg-transparent p-3 shadow-none",
+	"rounded-[28px] border-transparent bg-bg-neutral-bold p-3 shadow-overlay",
 	"[&_[data-slot=prompt-input-placeholder]]:text-text-inverse [&_[data-slot=prompt-input-placeholder]]:opacity-60",
 );
+
+/**
+ * The bar's design width. `max-w-full` hands it back whatever width the Omnibar's stack
+ * actually got, so a container narrower than 720px narrows the bar instead of overflowing.
+ */
+const OMNIBAR_BAR_WIDTH = "w-[720px] max-w-full";
 
 /**
  * The ghost button variant hovers on a light neutral, which disappears against
@@ -80,11 +87,10 @@ const OMNIBAR_TIMELINE_PILL_INVERSE = cn(
  * `ScrubberComposer` documents.
  *
  * The headroom above it is the part specific to this host. A major's rule swells to 46px
- * from a 14px rail, so it overhangs the cell by 32px, and the Omnibar's morphing surface
- * is `overflow-hidden` (it has to be — that clip is what makes the pill/bar morph read as
- * one shape). `allowOverflow` frees the swell from the composer's own `InputGroup`, and
- * `pt-8` gives it exactly those 32px inside the surface. The bar grows upward because the
- * whole rail is bottom-anchored, so the controls stay put.
+ * from a 14px rail, so it overhangs the cell by 32px. `allowOverflow` frees the swell from
+ * the composer's own `InputGroup`, and `pt-8` gives it exactly those 32px inside the bar's
+ * own chrome. The bar grows upward because the whole rail is bottom-anchored, so the
+ * controls stay put.
  */
 const OMNIBAR_RAIL_CELL = "relative h-9 w-full";
 const OMNIBAR_RAIL_BLOCK = "absolute inset-x-0 bottom-0 gap-0";
@@ -130,30 +136,12 @@ export interface OmnibarBarProps {
 	 */
 	submitDisabled: boolean;
 	timeline?: OmnibarBarTimeline;
-	/**
-	 * Compact tone hoists the Timeline chip above the morphing surface so layout
-	 * cannot scale it with the composer. Inverse keeps it inside the black bar.
-	 */
-	hideContextPill?: boolean;
 	value: string;
 }
 
 /**
- * Expanded state: the shared floating composer.
- *
- * `tone="inverse"` re-skins that composer onto the black morphing surface. `tone="default"`
- * leaves the existing compact prompt chrome alone — the same FloatingComposer the catalog
- * already ships.
- *
- * `FloatingComposer` already owns the `[ + ] [ editor ] [ actions ]` row and the measurement
- * that stacks the editor onto its own line once a draft would wrap, so this only supplies
- * the controls and, on inverse, the re-tint.
- *
- * With a `timeline`, a `ContextBarPill` sits above the composer — the same context-chip
- * treatment the compact prompt already uses — rather than a configure control in the
- * leading cluster. On the `x` axis that pill swaps this bar's editor cell for the notch
- * rail and turns the trailing send into a close. On `y` the bar is unchanged and the rail
- * docks to the screen edge instead; the pill only reads pressed.
+ * The Timeline affordance: the same `ContextBarPill` context chip the compact prompt uses,
+ * sitting above the composer rather than as a configure control in the leading cluster.
  */
 function OmnibarTimelinePill({
 	isInverse,
@@ -178,60 +166,35 @@ function OmnibarTimelinePill({
 }
 
 /**
- * Timeline chip with its own presence — fade + 8px slide, popup-family recipe.
- * Mounted *outside* the composer's `layout` surface on compact tone so mouse-out
- * cannot scale it with the prompt.
+ * Expanded state: the shared floating composer, painted onto its own chrome.
+ *
+ * `tone="inverse"` re-skins that composer as the black bar. `tone="default"` leaves the
+ * existing compact prompt chrome alone — the same FloatingComposer the catalog already
+ * ships. Either way the chrome belongs to this component, because the bar cross-fades with
+ * the pill instead of sharing a surface that resizes between the two.
+ *
+ * `FloatingComposer` already owns the `[ + ] [ editor ] [ actions ]` row and the measurement
+ * that stacks the editor onto its own line once a draft would wrap, so this only supplies
+ * the controls and, on inverse, the re-tint.
+ *
+ * With a `timeline`, the Timeline chip sits above the composer and fades with the bar as one
+ * object. On the `x` axis that chip swaps this bar's editor cell for the notch rail and turns
+ * the trailing send into a close. On `y` the bar is unchanged and the rail docks to the
+ * screen edge instead; the chip only reads pressed.
  */
-export function OmnibarContextPill({
-	isInverse,
-	isPressed,
-	onToggle,
-	shouldReduceMotion,
-}: Readonly<{
-	isInverse: boolean;
-	isPressed: boolean;
-	onToggle: () => void;
-	shouldReduceMotion: boolean | null;
-}>) {
-	const enterTransition = resolveOmnibarTransition(OMNIBAR_CONTEXT_ENTER, shouldReduceMotion);
-	const exitTransition = resolveOmnibarTransition(OMNIBAR_CONTEXT_EXIT, shouldReduceMotion);
-
-	return (
-		<motion.div
-			animate="visible"
-			className="pointer-events-auto"
-			data-slot="omnibar-context-pill"
-			exit="hidden"
-			initial="hidden"
-			style={{ willChange: "opacity, transform" }}
-			variants={{
-				hidden: { opacity: 0, y: 8, transition: exitTransition },
-				visible: { opacity: 1, y: 0, transition: enterTransition },
-			}}
-		>
-			<OmnibarTimelinePill
-				isInverse={isInverse}
-				isPressed={isPressed}
-				onToggle={onToggle}
-			/>
-		</motion.div>
-	);
-}
-
 export function OmnibarBar({
 	onOpenPanel,
 	onSubmit,
 	onValueChange,
 	placeholder,
 	shouldReduceMotion,
-	hideContextPill = false,
 	submitDisabled,
 	timeline,
 	tone,
 	value,
 }: Readonly<OmnibarBarProps>) {
-	const enterTransition = resolveOmnibarTransition(OMNIBAR_CONTENT, shouldReduceMotion);
-	const exitTransition = resolveOmnibarTransition(OMNIBAR_CONTENT_EXIT, shouldReduceMotion);
+	const enterTransition = resolveOmnibarTransition(OMNIBAR_SURFACE_ENTER, shouldReduceMotion);
+	const exitTransition = resolveOmnibarTransition(OMNIBAR_SURFACE_EXIT, shouldReduceMotion);
 	// Only the horizontal axis takes over this bar. `y` docks its rail to the screen edge
 	// as a sibling surface, so the editor and the trailing controls stay exactly as they
 	// are and the toggle just reads as pressed.
@@ -242,17 +205,28 @@ export function OmnibarBar({
 
 	return (
 		<motion.div
-			animate={{ opacity: 1 }}
-			className="flex w-full flex-col items-start gap-2 overflow-visible"
+			animate={{ opacity: 1, scale: 1 }}
+			className={cn(
+				"col-start-1 row-start-1 flex flex-col items-start gap-2 overflow-visible",
+				OMNIBAR_BAR_WIDTH,
+			)}
 			data-slot="omnibar-bar"
-			exit={{ opacity: 0, transition: exitTransition }}
-			initial={{ opacity: 0 }}
-			// Position only — a size `layout` here would scale placeholder/button type.
-			layout="position"
-			style={{ willChange: "opacity" }}
+			exit={{
+				opacity: 0,
+				// The receding bar still covers the pill for a tenth of a second; without this
+				// its panel and send controls stay clickable behind a surface that is leaving.
+				pointerEvents: "none",
+				scale: resolveOmnibarZoom(OMNIBAR_BAR_ZOOM.exitTo, shouldReduceMotion),
+				transition: exitTransition,
+			}}
+			initial={{
+				opacity: 0,
+				scale: resolveOmnibarZoom(OMNIBAR_BAR_ZOOM.enterFrom, shouldReduceMotion),
+			}}
+			style={{ willChange: "opacity, transform" }}
 			transition={enterTransition}
 		>
-			{timeline && !hideContextPill ? (
+			{timeline ? (
 				<OmnibarTimelinePill
 					isInverse={isInverse}
 					isPressed={timeline.isTimeline}
