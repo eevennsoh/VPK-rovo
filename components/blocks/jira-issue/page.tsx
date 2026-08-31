@@ -14,6 +14,7 @@ import {
 	type JiraIssueChrome,
 	type JiraIssueCompletedAgentRun,
 	type JiraIssueGenerativeActionRequest,
+	type JiraIssuePullRequestPreview,
 	type JiraIssuePullRequestStatus,
 } from "@/components/blocks/jira-issue";
 import { JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS } from "@/components/blocks/jira-issue/agent-session-transfer";
@@ -476,6 +477,20 @@ export default function JiraIssuePage({ variant = "default" }: Readonly<JiraIssu
 const JIRA_ISSUE_CHAT_ISSUE_KEY = "PD-40";
 const JIRA_ISSUE_CHAT_ISSUE_SUMMARY = "Implement advanced date-range filter";
 
+const EXPERIMENTAL_DEMO_PULL_REQUEST_PREVIEW: JiraIssuePullRequestPreview = {
+	additions: 86,
+	author: {
+		avatarUrl: "/avatar-user/andrea-wilson/color/asow-service-yellow.png",
+		name: "Andrea Wilson",
+	},
+	branch: "feat/pd-40-date-range-filter",
+	deletions: 21,
+	filesChanged: 6,
+	repository: "eevensoh/vpk-rovo",
+	targetBranch: "main",
+	title: "Add date-range filter query params",
+};
+
 interface JiraIssueAgentActivityStatesDemoProps {
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	chrome?: JiraIssueChrome;
@@ -600,7 +615,9 @@ function JiraIssueAgentActivityStatesDemo({
 						onAgentDoneRunView={handleAgentDoneRunView}
 						priority="major"
 						pullRequestNumber={experimentalPullRequest.pullRequestNumber}
+						pullRequestPreview={experimentalPullRequest.pullRequestNumber ? EXPERIMENTAL_DEMO_PULL_REQUEST_PREVIEW : undefined}
 						pullRequestStatus={experimentalPullRequest.pullRequestStatus}
+						pullRequestTitle={experimentalPullRequest.pullRequestNumber ? JIRA_ISSUE_CHAT_ISSUE_SUMMARY : undefined}
 						subtasks={JIRA_ISSUE_DEMO_SUBTASKS}
 						subtasksCompleted={0}
 						summary="Implement advanced date-range filter"

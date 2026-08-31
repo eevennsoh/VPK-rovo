@@ -263,11 +263,14 @@ test("Jira issue splits the finished review chin into one row per completed run"
 	assert.match(COMPLETED_RUNS_SOURCE, /className="flex h-6 w-full min-w-0 items-center justify-between gap-2 rounded-md px-2 py-1[^"]*"/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /<AgentAvatarVisual[\s\S]*avatarSrc=\{run\.agentAvatarSrc\}[\s\S]*label=\{run\.agentName\}[\s\S]*sizePx=\{16\}/u);
 	// Per-run outcome icon replaces the aggregate's failure-only indicator.
-	// Both outcomes use the ADS filled status pair, so the row reads as a status
-	// rather than a bare glyph: StatusErrorIcon / StatusSuccessIcon.
-	assert.match(COMPLETED_RUNS_SOURCE, /hasFailed \? \([\s\S]*<StatusErrorIcon[\s\S]*: \([\s\S]*<StatusSuccessIcon/u);
+	// Failed stays the filled error status; finished uses the large-stroke
+	// ADS dot in information color, not the smaller tree Node glyph.
+	assert.match(COMPLETED_RUNS_SOURCE, /import StrokeWeightLargeIcon from "@atlaskit\/icon\/core\/stroke-weight-large";/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /hasFailed \? \([\s\S]*<StatusErrorIcon[\s\S]*: \([\s\S]*<StrokeWeightLargeIcon/u);
+	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /StatusSuccessIcon/u);
 	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /CheckMarkIcon/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /hasFailed \? "text-icon-danger" : "text-icon-success"/u);
+	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /NodeIcon/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /hasFailed \? "text-icon-danger" : "text-icon-information"/u);
 	// Each row opens its own run's detail card rather than the shared AgentList.
 	assert.match(COMPLETED_RUNS_SOURCE, /<HoverCard open=\{open\} onOpenChange=\{handleOpenChange\}>/u);
 	assert.match(SOURCE, /<JiraIssueAgentDone[\s\S]*layout=\{agentActivityLayout\}/u);
