@@ -88,6 +88,7 @@ export function AgentSession({
 	onCreateWorkItem,
 	onLinkWorkItem,
 	onSubtasks,
+	onItemHover,
 	onToggleVisibility,
 	onView,
 	variant = "large",
@@ -166,6 +167,7 @@ export function AgentSession({
 							item={item}
 							key={item.id}
 							onCopyResume={onCopyResume}
+							onItemHover={onItemHover}
 							onToggleVisibility={onToggleVisibility}
 							onView={itemOnView}
 							visibilityLabel={visibilityLabel}

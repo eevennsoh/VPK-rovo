@@ -1,7 +1,7 @@
 "use client";
 
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- DropdownMenuTrigger uses a render-node so the View button owns the visual state.
-import { Fragment, useState, type ComponentType } from "react";
+import { Fragment, useMemo, useState, type ComponentType } from "react";
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
 import CustomizeIcon from "@atlaskit/icon/core/customize";
 import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
@@ -39,6 +39,13 @@ import { token } from "@/lib/tokens";
 interface BoardViewMenuProps {
 	compact?: boolean;
 	surfaceLabel?: string;
+	/**
+	 * Whether Untracked sessions surface next to related Jira cards.
+	 * Omit to keep the checkbox local chrome, like Working / Needs input / Finished.
+	 */
+	showUntracked?: boolean;
+	/** Writes Untracked. Other Agent rows stay local to this menu. */
+	onShowUntrackedChange?: (showUntracked: boolean) => void;
 }
 
 interface VisibilityOption {
@@ -165,15 +172,17 @@ function VisibilityToggleSubmenu({
  * column and card chrome. Each dimension lives behind its own submenu so the
  * list stays scannable.
  *
- * The menu owns its own selections and nothing else: it takes no board data and
- * hands nothing back, so a row moves this menu's indicator and never re-groups
- * or re-renders the board. State lives here rather than on the items because
+ * The menu owns its own selections except Untracked, which the board can lift
+ * so proximity sessions appear next to related issues. Working / Needs input /
+ * Finished stay local chrome. State lives here rather than on the items because
  * Base UI unmounts both the submenu and the menu on close — this component
  * stays mounted with the trigger, so the choices survive.
  */
 export function BoardViewMenu({
 	compact = false,
 	surfaceLabel = "board",
+	showUntracked,
+	onShowUntrackedChange,
 }: Readonly<BoardViewMenuProps>) {
 	const [groupId, setGroupId] = useState<string>(BOARD_GROUP_DEFAULT_ID);
 	const [hideDoneId, setHideDoneId] = useState<string>(BOARD_HIDE_DONE_DEFAULT_ID);
@@ -185,6 +194,28 @@ export function BoardViewMenu({
 		toShownIds(BOARD_AGENT_STATE_OPTIONS),
 	);
 	const [shownFieldIds, setShownFieldIds] = useState(() => toShownIds(BOARD_FIELD_OPTIONS));
+	const isUntrackedControlled = showUntracked !== undefined && onShowUntrackedChange !== undefined;
+	const shownAgentIds = useMemo(() => {
+		if (!isUntrackedControlled) {
+			return shownAgentStateIds;
+		}
+
+		const next = new Set(shownAgentStateIds);
+		if (showUntracked) {
+			next.add("untracked");
+		} else {
+			next.delete("untracked");
+		}
+		return next;
+	}, [isUntrackedControlled, showUntracked, shownAgentStateIds]);
+	const handleAgentToggle = (id: string) => {
+		if (id === "untracked" && isUntrackedControlled) {
+			onShowUntrackedChange(!showUntracked);
+			return;
+		}
+
+		toggleIn(setShownAgentStateIds)(id);
+	};
 
 	return (
 		<DropdownMenu>
@@ -210,9 +241,9 @@ export function BoardViewMenu({
 				/>
 
 				<VisibilityToggleSubmenu
-					checkedIds={shownAgentStateIds}
+					checkedIds={shownAgentIds}
 					label="Agent"
-					onToggle={toggleIn(setShownAgentStateIds)}
+					onToggle={handleAgentToggle}
 					options={BOARD_AGENT_STATE_OPTIONS}
 				/>
 

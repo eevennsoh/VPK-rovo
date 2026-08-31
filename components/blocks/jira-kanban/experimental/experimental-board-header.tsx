@@ -61,6 +61,8 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	 */
 	endSlot?: ReactNode;
 	surfaceLabel?: string;
+	showUntracked?: boolean;
+	onShowUntrackedChange?: (showUntracked: boolean) => void;
 	viewTabs?: ReactNode;
 }
 
@@ -107,6 +109,8 @@ export function ExperimentalJiraKanbanBoardHeader({
 	modeToggle,
 	endSlot,
 	surfaceLabel = "board",
+	showUntracked,
+	onShowUntrackedChange,
 	viewTabs,
 }: Readonly<ExperimentalJiraKanbanBoardHeaderProps>) {
 	const hasSelection = selectedAssigneeIds.size > 0;
@@ -180,7 +184,12 @@ export function ExperimentalJiraKanbanBoardHeader({
 
 					{filterControl}
 
-					<BoardViewMenu compact={compact} surfaceLabel={surfaceLabel} />
+					<BoardViewMenu
+						compact={compact}
+						onShowUntrackedChange={onShowUntrackedChange}
+						showUntracked={showUntracked}
+						surfaceLabel={surfaceLabel}
+					/>
 
 					{modeToggle}
 					<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">

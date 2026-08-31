@@ -18,6 +18,10 @@ const EXPERIMENTAL_HEADER_SOURCE = readFileSync(
 	join(EXPERIMENTAL_DIR, "experimental-board-header.tsx"),
 	"utf8",
 );
+const EXPERIMENTAL_PAGE_SOURCE = readFileSync(
+	join(EXPERIMENTAL_DIR, "page.tsx"),
+	"utf8",
+);
 
 /** Executable text only, so a comment naming a banned token cannot fail a scan. */
 function withoutComments(source) {
@@ -29,7 +33,10 @@ test("Experimental board header opens the production View picker without changin
 	const groupOptions = readFileSync(join(EXPERIMENTAL_DIR, "data", "board-group-options.ts"), "utf8");
 	const sortOptions = readFileSync(join(EXPERIMENTAL_DIR, "data", "board-sort-options.ts"), "utf8");
 	const viewOptions = readFileSync(join(EXPERIMENTAL_DIR, "data", "board-view-options.ts"), "utf8");
-	assert.match(EXPERIMENTAL_HEADER_SOURCE, /<BoardViewMenu compact=\{compact\} surfaceLabel=\{surfaceLabel\} \/>/u);
+	assert.match(
+		EXPERIMENTAL_HEADER_SOURCE,
+		/<BoardViewMenu\s+compact=\{compact\}\s+onShowUntrackedChange=\{onShowUntrackedChange\}\s+showUntracked=\{showUntracked\}\s+surfaceLabel=\{surfaceLabel\}\s+\/>/u,
+	);
 	assert.doesNotMatch(
 		EXPERIMENTAL_HEADER_SOURCE,
 		/aria-disabled[\s\S]*Configure \$\{surfaceLabel\} view/u,
@@ -172,9 +179,19 @@ test("Experimental board header opens the production View picker without changin
 	// Each checkbox list keeps its own set, so two lists sharing an option id
 	// cannot toggle each other.
 	assert.equal(withoutComments(viewMenu).match(/useState\(\(\) =>\s*toShownIds\(/gu).length, 3);
-	// Self-contained: the menu takes no board data and hands nothing back, so a
-	// row moves this menu's indicator and never re-groups the board.
-	assert.match(viewMenu, /interface BoardViewMenuProps \{\s*compact\?: boolean;\s*surfaceLabel\?: string;\s*\}/u);
+	// Untracked is the one Agent row the board can lift; Working / Needs input /
+	// Finished stay local chrome and never re-group the columns.
+	assert.match(viewMenu, /showUntracked\?: boolean;/u);
+	assert.match(viewMenu, /onShowUntrackedChange\?: \(showUntracked: boolean\) => void;/u);
+	assert.match(viewMenu, /if \(id === "untracked" && isUntrackedControlled\)/u);
+	assert.match(viewMenu, /onShowUntrackedChange\(!showUntracked\);/u);
+	assert.match(viewMenu, /toggleIn\(setShownAgentStateIds\)\(id\);/u);
+	assert.doesNotMatch(viewMenu, /onShowWorkingChange|onShowNeedsInputChange|onShowFinishedChange/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const \[showUntracked, setShowUntracked\] = useState\(true\)/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onShowUntrackedChange=\{setShowUntracked\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showUntracked=\{showUntracked\}/u);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /showUntracked\?: boolean;/u);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /onShowUntrackedChange\?: \(showUntracked: boolean\) => void;/u);
 	// A single-section submenu is already named by its sub-trigger, so it carries
 	// no group label — the name moves to `aria-label` so the radio group keeps an
 	// accessible name.

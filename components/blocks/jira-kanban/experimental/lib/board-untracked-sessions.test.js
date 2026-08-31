@@ -1,0 +1,170 @@
+const assert = require("node:assert/strict");
+const test = require("node:test");
+
+const {
+	collectBoardIssueKeys,
+	getCenteredScrollDelta,
+	getNearestScrollDelta,
+	groupBoardUntrackedSessions,
+	resolveBoardUntrackedIssueKey,
+	scrollBoardIssueIntoView,
+} = require("./board-untracked-sessions.ts");
+
+function session(id, issueKey) {
+	return {
+		agent: { id: "claude", kind: "agent", name: "Claude" },
+		host: "local",
+		id,
+		sessionDetails: {
+			host: "local",
+			issueKey,
+			issueSummary: `${issueKey} work`,
+		},
+		state: "complete",
+		title: `${id} title`,
+	};
+}
+
+test("collectBoardIssueKeys reads card codes from every column", () => {
+	assert.deepEqual(
+		[...collectBoardIssueKeys([
+			{ cards: [{ code: "PAY-101" }, { code: "PAY-102" }] },
+			{ cards: [{ code: "PAY-121" }] },
+		])].sort(),
+		["PAY-101", "PAY-102", "PAY-121"],
+	);
+});
+
+test("groupBoardUntrackedSessions maps Pulse sessions onto board issue keys", () => {
+	const grouped = groupBoardUntrackedSessions({
+		boardIssueKeys: new Set(["PAY-101", "PAY-121"]),
+		sessions: [
+			session("lw-scope-thread", "PAY-101"),
+			session("lw-kickoff-killswitch-session", "PAY-121"),
+			session("lw-off-board", "PAY-999"),
+			{
+				...session("lw-no-key", "PAY-101"),
+				sessionDetails: { host: "local", issueSummary: "No key" },
+			},
+		],
+	});
+
+	assert.deepEqual(grouped["PAY-101"].map((item) => item.id), ["lw-scope-thread"]);
+	assert.deepEqual(grouped["PAY-121"].map((item) => item.id), ["lw-kickoff-killswitch-session"]);
+	assert.equal(grouped["PAY-999"], undefined);
+});
+
+test("groupBoardUntrackedSessions drops captured ids and stacks several rows on one issue", () => {
+	const grouped = groupBoardUntrackedSessions({
+		boardIssueKeys: new Set(["PAY-121"]),
+		capturedItemIds: new Set(["lw-captured"]),
+		sessions: [
+			session("lw-kickoff-killswitch-session", "PAY-121"),
+			session("lw-night-killswitch-session", "PAY-121"),
+			session("lw-captured", "PAY-121"),
+		],
+	});
+
+	assert.deepEqual(
+		grouped["PAY-121"].map((item) => item.id),
+		["lw-kickoff-killswitch-session", "lw-night-killswitch-session"],
+	);
+});
+
+test("groupBoardUntrackedSessions merges unlinked detached sessions without duplicating ids", () => {
+	const unlinked = session("PAY-101:claude-code", "PAY-101");
+	const grouped = groupBoardUntrackedSessions({
+		boardIssueKeys: new Set(["PAY-101", "PAY-102"]),
+		capturedItemIds: new Set(["lw-captured-detached"]),
+		detachedByCard: {
+			"PAY-101": [unlinked, session("lw-scope-thread", "PAY-101")],
+			"PAY-102": [session("lw-captured-detached", "PAY-102")],
+			"PAY-999": [session("lw-off-board-detached", "PAY-999")],
+		},
+		sessions: [session("lw-scope-thread", "PAY-101")],
+	});
+
+	assert.deepEqual(
+		grouped["PAY-101"].map((item) => item.id),
+		["lw-scope-thread", "PAY-101:claude-code"],
+	);
+	assert.equal(grouped["PAY-102"], undefined);
+	assert.equal(grouped["PAY-999"], undefined);
+});
+
+test("resolveBoardUntrackedIssueKey reads the Pulse-stamped key and clears on leave", () => {
+	assert.equal(
+		resolveBoardUntrackedIssueKey(session("lw-scope-thread", "PAY-101")),
+		"PAY-101",
+	);
+	assert.equal(resolveBoardUntrackedIssueKey(null), null);
+});
+
+test("getCenteredScrollDelta centers a Jira issue inside only the board scrollport", () => {
+	assert.equal(
+		getCenteredScrollDelta({
+			containerEnd: 1000,
+			containerStart: 400,
+			targetEnd: 1380,
+			targetStart: 1100,
+		}),
+		540,
+	);
+});
+
+test("getNearestScrollDelta moves a clipped issue within its vertical column and leaves visible issues alone", () => {
+	assert.equal(
+		getNearestScrollDelta({
+			containerEnd: 700,
+			containerStart: 200,
+			targetEnd: 860,
+			targetStart: 720,
+		}),
+		160,
+	);
+	assert.equal(
+		getNearestScrollDelta({
+			containerEnd: 700,
+			containerStart: 200,
+			targetEnd: 520,
+			targetStart: 320,
+		}),
+		0,
+	);
+});
+
+test("scrollBoardIssueIntoView scrolls only the status pane and matching vertical card list", () => {
+	const boardScrollCalls = [];
+	const columnScrollCalls = [];
+	const columnScrollport = {
+		getBoundingClientRect: () => ({ bottom: 700, top: 200 }),
+		scrollBy: (options) => columnScrollCalls.push(options),
+	};
+	const issue = {
+		closest: (selector) => selector === "[data-jira-kanban-card-list]"
+			? columnScrollport
+			: null,
+		dataset: { issueKey: "PAY-121" },
+		getBoundingClientRect: () => ({
+			bottom: 860,
+			left: 1100,
+			right: 1380,
+			top: 720,
+		}),
+	};
+	const boardScrollport = {
+		getBoundingClientRect: () => ({
+			bottom: 900,
+			left: 400,
+			right: 1000,
+			top: 100,
+		}),
+		querySelectorAll: () => [issue],
+		scrollBy: (options) => boardScrollCalls.push(options),
+	};
+
+	scrollBoardIssueIntoView(boardScrollport, "PAY-121");
+
+	assert.deepEqual(boardScrollCalls, [{ behavior: "instant", left: 540 }]);
+	assert.deepEqual(columnScrollCalls, [{ behavior: "instant", top: 160 }]);
+});

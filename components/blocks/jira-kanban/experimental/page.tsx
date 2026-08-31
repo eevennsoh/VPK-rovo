@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import { useOptionalRovoChat } from "@/app/contexts";
+import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraIssueAgentActivityLayout, JiraIssueGenerativeActionPresentation } from "@/components/blocks/jira-issue";
 import type {
 	JiraKanbanAgentData,
@@ -26,6 +27,10 @@ import {
 	type ExperimentalJiraKanbanProps,
 } from "./experimental-jira-kanban";
 import { EMPTY_COLLAPSED_BOARD_COLUMNS } from "./lib/board-column-collapse";
+import {
+	collectBoardIssueKeys,
+	groupBoardUntrackedSessions,
+} from "./lib/board-untracked-sessions";
 import {
 	ExperimentalJiraKanbanBoardHeader,
 	type ExperimentalJiraKanbanView,
@@ -82,6 +87,7 @@ import { BOARD_COLUMNS } from "@/components/projects/jira/data/board-data";
 
 const DEFAULT_CREATED_COLUMN_AGENT_ID = "readiness-checker";
 const PULSE_MEMBER_IDS = new Set(PULSE_TIMELINE.members.map((member) => member.id));
+const EMPTY_PROXIMITY_SESSIONS: Readonly<Record<string, readonly AgentSessionItem[]>> = {};
 
 /** Stable identity, so an unscoped article does not re-render on every tick. */
 const EMPTY_ANSWERS: readonly PulseAnswer[] = [];
@@ -229,6 +235,7 @@ export default function ExperimentalJiraKanbanPage({
 	// view unmounts `ExperimentalJiraKanban`, and a viewer's collapse choices are
 	// a deliberate setting that must outlive a temporary view switch.
 	const [collapsedColumns, setCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
+	const [showUntracked, setShowUntracked] = useState(true);
 	const handleRequestAction = useCallback((action: { id: string }) => {
 		setRequestedActionIds((current) => new Set(current).add(action.id));
 	}, []);
@@ -394,6 +401,27 @@ export default function ExperimentalJiraKanbanPage({
 			pulseTimeline.looseWork,
 		],
 	);
+	const boardIssueKeys = useMemo(
+		() => collectBoardIssueKeys(filteredBoardColumns),
+		[filteredBoardColumns],
+	);
+	const proximityAgentSessionsByCard = useMemo(
+		() => showUntracked
+			? groupBoardUntrackedSessions({
+				boardIssueKeys,
+				capturedItemIds: capturedLooseWorkIds,
+				detachedByCard: detachedAgentSessionsByCard,
+				sessions: agentSessionItems,
+			})
+			: EMPTY_PROXIMITY_SESSIONS,
+		[
+			agentSessionItems,
+			boardIssueKeys,
+			capturedLooseWorkIds,
+			detachedAgentSessionsByCard,
+			showUntracked,
+		],
+	);
 	const selectedAgentIds = useMemo(
 		() => getCommonJiraKanbanAgentIds(assignedAgentIdsByCard, selection.selectedCardCodes),
 		[assignedAgentIdsByCard, selection.selectedCardCodes],
@@ -538,10 +566,12 @@ export default function ExperimentalJiraKanbanPage({
 				assignees={assignees}
 				compact={compactHeader}
 				onSelectedAssigneeIdsChange={handleAssigneeFilterChange}
+				onShowUntrackedChange={setShowUntracked}
 				onViewChange={renderListContent ? onViewChange : undefined}
 				searchPlaceholder={`Search ${activeView}`}
 				selectedAssigneeIds={selectedAssigneeIds}
 				showBoardControls={showBoardContent}
+				showUntracked={showUntracked}
 				facepile={isPulse ? (
 					<PulseRosterFacepile
 						members={PULSE_TIMELINE.members}
@@ -611,7 +641,7 @@ export default function ExperimentalJiraKanbanPage({
 						boardColumns={filteredBoardColumns}
 						cardGenerativeActionPresentation={cardGenerativeActionPresentation}
 						collapsedColumns={collapsedColumns}
-						detachedAgentSessionsByCard={detachedAgentSessionsByCard}
+						detachedAgentSessionsByCard={proximityAgentSessionsByCard}
 						onCollapsedColumnsChange={setCollapsedColumns}
 						draggedCardCode={draggedCard?.card.code ?? null}
 						selectedCardCodes={selection.selectedCardCodes}

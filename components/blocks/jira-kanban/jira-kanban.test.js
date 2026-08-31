@@ -676,9 +676,9 @@ test("Experimental kanban cards opt into draggable agent-session unlink when the
 test("Experimental kanban renders detached sessions beneath their source card with the shared medium-detached variant", () => {
 	assert.match(EXPERIMENTAL_SOURCE, /detachedAgentSessionsByCard\?: Readonly<Record<string, readonly AgentSessionItem\[\]>>;/u);
 	assert.match(EXPERIMENTAL_SOURCE, /const detachedAgentSessions = detachedAgentSessionsByCard\?\.\[card\.code\] \?\? \[\];/u);
-	assert.match(EXPERIMENTAL_SOURCE, /className="flex w-full min-w-0 max-w-\[280px\] flex-col gap-2"/u);
+	assert.match(EXPERIMENTAL_SOURCE, /"flex w-full min-w-0 max-w-\[280px\] flex-col gap-2 rounded-lg"/u);
 	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*<AgentSession[\s\S]*items=\{detachedAgentSessions\}[\s\S]*variant="medium-detached"/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /detachedAgentSessionsByCard=\{detachedAgentSessionsByCard\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /detachedAgentSessionsByCard=\{proximityAgentSessionsByCard\}/u);
 });
 
 test("Experimental kanban cards use the hexagon avatar for agent assignees", () => {
@@ -764,8 +764,8 @@ test("Experimental kanban variant owns its own tree without touching the default
 	assert.match(EXPERIMENTAL_SOURCE, /export function ExperimentalJiraKanban\(\{/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /export function ExperimentalJiraKanbanBoardHeader\(\{/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /export default function ExperimentalJiraKanbanPage\(\{/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /import \{ ExperimentalJiraKanban \} from "\.\/experimental-jira-kanban";/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /import \{ ExperimentalJiraKanbanBoardHeader \} from "\.\/experimental-board-header";/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /from "\.\/experimental-jira-kanban"/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /from "\.\/experimental-board-header"/u);
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /from "\.\.\/board-header"/u);
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /from "\.\.\/page"/u);
 	// Default variant stays free of any experimental import.
