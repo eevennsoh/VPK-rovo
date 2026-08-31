@@ -111,7 +111,7 @@ test("JGP Kanban reuses the Jira Issue aggregate row for working agents", () => 
 	assert.equal(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE.match(/<AgentAvatarVisual/g)?.length, 2);
 	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /activities\.map\([\s\S]{0,400}<AgentAvatarVisual/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<AiAgentIcon label="" \/>/u);
-	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<Spinner label="" size="sm" \/>/u);
+	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<Spinner label="" size="xs" \/>/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /\$\{summary\.activityCount\} agents: \$\{summary\.label\}/u);
 	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /variant="rainbow"/u);
 	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /phaseOffsetMs=/u);

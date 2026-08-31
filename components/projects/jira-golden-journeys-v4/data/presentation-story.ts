@@ -22,6 +22,10 @@ export {
 	JIRA_GOLDEN_JOURNEYS_V4_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID,
 	JIRA_GOLDEN_JOURNEYS_V4_PAY_STATUS_PHASES,
 } from "./presentation-board";
+export {
+	getJiraGoldenJourneysV4PullRequestPreview,
+	JIRA_GOLDEN_JOURNEYS_V4_PULL_REQUEST_PREVIEWS,
+} from "./presentation-pull-requests";
 
 export {
 	createJiraGoldenJourneysV4Pay101BuildState,

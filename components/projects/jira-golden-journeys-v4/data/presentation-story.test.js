@@ -121,6 +121,27 @@ test("the PAY board fills every existing status with coding work and the full st
 	const pay101 = cards.find((card) => card.code === "PAY-101");
 	assert.equal(pay101.pullRequestNumber, 1839);
 	assert.equal(pay101.pullRequestStatus, "merged");
+	assert.equal(pay101.pullRequestPreview.title, "Call-site inventory across four services");
+	assert.equal(pay101.pullRequestPreview.additions, 312);
+	assert.equal(pay101.pullRequestPreview.deletions, 8);
+
+	const prCards = cards.filter((card) => card.pullRequestNumber);
+	assert.ok(prCards.length >= 12);
+	assert.ok(prCards.every((card) => {
+		const preview = card.pullRequestPreview;
+		return (
+			preview
+			&& preview.additions > 0
+			&& preview.repository
+			&& preview.branch
+			&& preview.author?.name
+		);
+	}));
+	assert.notEqual(
+		prCards.find((card) => card.code === "PAY-105")?.pullRequestPreview.title,
+		prCards.find((card) => card.code === "PAY-104")?.pullRequestPreview.title,
+		"shared PR numbers still get issue-keyed dummy titles",
+	);
 });
 
 test("the board factory returns isolated cards and nested agent state", async () => {

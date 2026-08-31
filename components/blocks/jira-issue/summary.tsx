@@ -1,13 +1,10 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { MouseEvent, PointerEvent, ReactNode } from "react";
 import AutomationIcon from "@atlaskit/icon/core/automation";
-import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
-import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PriorityMajorIcon from "@atlaskit/icon/core/priority-major";
 import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
 import PriorityMinorIcon from "@atlaskit/icon/core/priority-minor";
-import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import TaskIcon from "@atlaskit/icon/core/task";
 
 import {
@@ -18,14 +15,18 @@ import {
 	type AvatarProps,
 	type AvatarUnassignedKind,
 } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Tag, TagGroup } from "@/components/ui/tag";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 import { getIssueInitial } from "@/components/blocks/jira-issue/lib";
+import { JiraIssuePullRequestCluster } from "@/components/blocks/jira-issue/pull-request-cluster";
 import type {
 	JiraIssuePriority,
+	JiraIssuePullRequestPreview,
 	JiraIssuePullRequestStatus,
 	JiraIssueTag,
 } from "@/components/blocks/jira-issue/types";
@@ -41,6 +42,10 @@ const PRIORITY_COLORS = {
 	medium: token("color.icon.information"),
 	minor: token("color.icon.success"),
 } as const;
+
+function stopNestedActivation(event: MouseEvent<HTMLElement> | PointerEvent<HTMLElement>) {
+	event.stopPropagation();
+}
 
 function JiraIssueAssignee({
 	assigneeAvatarLabel,
@@ -86,86 +91,6 @@ function JiraIssueAssignee({
 	);
 }
 
-function getJiraIssuePullRequestPresentation(status: JiraIssuePullRequestStatus | undefined): {
-	Icon: typeof PullRequestIcon;
-	colorClass: string;
-	label: string;
-} {
-	switch (status) {
-		case "failed":
-			return {
-				Icon: MergeFailureIcon,
-				colorClass: "text-icon-danger",
-				label: "Pull request failed",
-			};
-		case "merged":
-			return {
-				Icon: MergeSuccessIcon,
-				colorClass: "text-icon-accent-purple",
-				label: "Pull request merged",
-			};
-		case "open":
-		case undefined:
-			return {
-				Icon: PullRequestIcon,
-				colorClass: "text-icon-accent-lime",
-				label: "Pull request",
-			};
-		default: {
-			const exhaustive: never = status;
-			throw new Error(`Unhandled pull request status: ${String(exhaustive)}`);
-		}
-	}
-}
-
-function JiraIssuePullRequestCluster({
-	pullRequestNumber,
-	pullRequestStatus,
-	usesStrokeChrome,
-}: Readonly<{
-	pullRequestNumber: number;
-	pullRequestStatus?: JiraIssuePullRequestStatus;
-	usesStrokeChrome: boolean;
-}>) {
-	const { Icon, colorClass, label } = getJiraIssuePullRequestPresentation(pullRequestStatus);
-	const icon = (
-		<Icon
-			label={usesStrokeChrome ? "" : label}
-			color="currentColor"
-			size={usesStrokeChrome ? "small" : undefined}
-		/>
-	);
-
-	return (
-		<div className={cn("flex items-center", usesStrokeChrome ? "gap-1.5" : "gap-1")}>
-			{usesStrokeChrome ? (
-				<IconTile
-					as="span"
-					className={colorClass}
-					icon={icon}
-					iconSize="small"
-					label={label}
-					size="xxsmall"
-					variant="transparent"
-				/>
-			) : (
-				<span className={colorClass}>
-					{icon}
-				</span>
-			)}
-			<span
-				className={
-					usesStrokeChrome
-						? "font-mono text-xs font-normal leading-4 text-text-subtlest"
-						: "text-xs font-semibold text-text-subtlest"
-				}
-			>
-				#{pullRequestNumber}
-			</span>
-		</div>
-	);
-}
-
 export function JiraIssueSummary({
 	assigneeAvatarLabel,
 	assigneeAvatarShape,
@@ -178,7 +103,9 @@ export function JiraIssueSummary({
 	parentEpicControl,
 	priority,
 	pullRequestNumber,
+	pullRequestPreview,
 	pullRequestStatus,
+	pullRequestTitle,
 	showAutomationIndicator,
 	showPriorityIndicator,
 	summary,
@@ -196,7 +123,9 @@ export function JiraIssueSummary({
 	parentEpicControl?: ReactNode;
 	priority: JiraIssuePriority;
 	pullRequestNumber?: number;
+	pullRequestPreview?: JiraIssuePullRequestPreview;
 	pullRequestStatus?: JiraIssuePullRequestStatus;
+	pullRequestTitle?: string;
 	showAutomationIndicator: boolean;
 	showPriorityIndicator: boolean;
 	summary: string;
@@ -205,6 +134,83 @@ export function JiraIssueSummary({
 }>) {
 	const PriorityIcon = PRIORITY_ICONS[priority];
 	const priorityColor = PRIORITY_COLORS[priority];
+	const pullRequestCluster = pullRequestNumber ? (
+		<JiraIssuePullRequestCluster
+			pullRequestNumber={pullRequestNumber}
+			pullRequestPreview={pullRequestPreview}
+			pullRequestStatus={pullRequestStatus}
+			pullRequestTitle={pullRequestTitle ?? summary}
+			usesStrokeChrome={usesStrokeChrome}
+		/>
+	) : null;
+	const metadataCluster = showAutomationIndicator ? (
+		usesStrokeChrome ? (
+			<Button
+				aria-label="Automation linked"
+				className="text-icon-accent-orange [&_svg]:text-current"
+				onClick={stopNestedActivation}
+				onPointerDown={stopNestedActivation}
+				size="icon-compact"
+				type="button"
+				variant="ghost"
+			>
+				<Icon render={<AutomationIcon label="" size="small" color="currentColor" />} />
+			</Button>
+		) : (
+			<span className="grid size-6 place-items-center text-icon-accent-orange" aria-label="Automation linked">
+				<AutomationIcon label="" size="small" color="currentColor" />
+			</span>
+		)
+	) : (
+		<div className={cn("flex shrink-0 items-center", usesStrokeChrome ? "gap-0" : "gap-1.5")}>
+			{showPriorityIndicator ? (
+				usesStrokeChrome ? (
+					<Button
+						aria-label={`${priority} priority`}
+						className="[&_svg]:text-current"
+						onClick={stopNestedActivation}
+						onPointerDown={stopNestedActivation}
+						size="icon-compact"
+						style={{ color: priorityColor }}
+						type="button"
+						variant="ghost"
+					>
+						<Icon render={<PriorityIcon label="" size="small" color="currentColor" />} />
+					</Button>
+				) : (
+					<PriorityIcon
+						label={`${priority} priority`}
+						color={priorityColor}
+					/>
+				)
+			) : null}
+			{isMounted ? (
+				usesStrokeChrome ? (
+					<span className="inline-flex size-6 shrink-0 translate-x-px items-center justify-end">
+						<JiraIssueAssignee
+							assigneeAvatarLabel={assigneeAvatarLabel}
+							assigneeAvatarShape={assigneeAvatarShape}
+							assigneeAvatarSrc={assigneeAvatarSrc}
+							assigneePulse={assigneePulse}
+							assigneeUnassignedKind={assigneeUnassignedKind}
+							issueKey={issueKey}
+							size="xs"
+						/>
+					</span>
+				) : (
+					<JiraIssueAssignee
+						assigneeAvatarLabel={assigneeAvatarLabel}
+						assigneeAvatarShape={assigneeAvatarShape}
+						assigneeAvatarSrc={assigneeAvatarSrc}
+						assigneePulse={assigneePulse}
+						assigneeUnassignedKind={assigneeUnassignedKind}
+						issueKey={issueKey}
+						size="sm"
+					/>
+				)
+			) : null}
+		</div>
+	);
 
 	return (
 		<div className="flex min-w-0 flex-col gap-2">
@@ -231,13 +237,13 @@ export function JiraIssueSummary({
 			) : null}
 
 			<div className="pt-0.5">
-				<div className="flex items-center justify-between">
-					<div className={usesStrokeChrome ? "flex items-center gap-3" : "flex items-center gap-2"}>
+				<div className="flex min-w-0 items-center justify-between">
+					<div className={usesStrokeChrome ? "flex min-w-0 items-center" : "flex min-w-0 items-center gap-2"}>
 						<div
 							className={
 								usesStrokeChrome
-									? "flex items-center gap-1.5"
-									: "flex items-center gap-1"
+									? "flex shrink-0 items-center gap-1.5"
+									: "flex shrink-0 items-center gap-1"
 							}
 						>
 							{usesStrokeChrome ? (
@@ -265,40 +271,16 @@ export function JiraIssueSummary({
 								{issueKey}
 							</span>
 						</div>
-						{pullRequestNumber ? (
-							<JiraIssuePullRequestCluster
-								pullRequestNumber={pullRequestNumber}
-								pullRequestStatus={pullRequestStatus}
-								usesStrokeChrome={usesStrokeChrome}
-							/>
-						) : null}
+						{usesStrokeChrome ? null : pullRequestCluster}
 					</div>
 
-					{showAutomationIndicator ? (
-						<span className="grid size-6 place-items-center text-icon-accent-orange" aria-label="Automation linked">
-							<AutomationIcon label="" size="small" color="currentColor" />
-						</span>
-					) : (
-						<div className="flex items-center gap-1.5">
-							{showPriorityIndicator ? (
-								<PriorityIcon
-									label={`${priority} priority`}
-									color={priorityColor}
-									size={usesStrokeChrome ? "small" : undefined}
-								/>
-							) : null}
-							{isMounted ? (
-								<JiraIssueAssignee
-									assigneeAvatarLabel={assigneeAvatarLabel}
-									assigneeAvatarShape={assigneeAvatarShape}
-									assigneeAvatarSrc={assigneeAvatarSrc}
-									assigneePulse={assigneePulse}
-									assigneeUnassignedKind={assigneeUnassignedKind}
-									issueKey={issueKey}
-									size={usesStrokeChrome ? "xs" : "sm"}
-								/>
-							) : null}
+					{usesStrokeChrome && pullRequestCluster ? (
+						<div className="flex shrink-0 items-center gap-0">
+							{pullRequestCluster}
+							{metadataCluster}
 						</div>
+					) : (
+						metadataCluster
 					)}
 				</div>
 			</div>
