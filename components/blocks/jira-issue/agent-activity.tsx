@@ -42,6 +42,7 @@ import { IconTile } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
 import { Tag } from "@/components/ui/tag";
 import { Gooey } from "@/components/visual/gooey";
+import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 export type JiraIssueAgentActivityMode = "none" | "working" | "awaiting-input" | "completed";
@@ -74,8 +75,24 @@ const JIRA_ISSUE_SESSION_DRAG_ORIGIN: PointerDragPosition = { x: 0, y: 0 };
 const JIRA_ISSUE_SESSION_DRAG_DISSOLVE_FADE_MS = 240;
 const JIRA_ISSUE_SESSION_DRAG_DISSOLVE_SINK = 0.8;
 const JIRA_ISSUE_SESSION_DRAG_MORPH = { advanced: { blobInset: 3, bridgeGrow: 7 } } as const;
+/**
+ * Once the chip is out, the item stays registered with the group (unmounting it
+ * mid-gesture would drop the button's pointer capture), so its liquid is inset
+ * far enough to vanish under the opaque pill instead. Anything less leaves a
+ * grey goo slab reading through behind a tag that is supposed to be free.
+ */
+const JIRA_ISSUE_SESSION_DRAG_CHIP_MORPH = { advanced: { blobInset: 14, bridgeGrow: 0 } } as const;
 /** Travel before the grey goo phase hands over to the opaque at-mention chip. */
-const JIRA_ISSUE_SESSION_DRAG_CHIP_DISTANCE_PX = 28;
+const JIRA_ISSUE_SESSION_DRAG_CHIP_DISTANCE_PX = 12;
+/**
+ * The chip is off the card once it is out, so it carries overlay elevation to
+ * sit above it. `shadow-overlay` is NOT a Tailwind utility here — the theme maps
+ * `--ds-shadow-overlay` onto `--shadow-2xl` only — so the class it replaced was
+ * silently doing nothing and the tag rendered flat.
+ */
+const JIRA_ISSUE_SESSION_DRAG_CHIP_STYLE: CSSProperties = {
+	boxShadow: token("elevation.shadow.overlay"),
+};
 /**
  * Light friction on the dragged tag. Underdamped on purpose: the chip trails a
  * few frames behind the pointer, and that lag is what the gooey filter renders
@@ -179,6 +196,7 @@ function JiraIssueAgentActivityRow({
 	activities,
 	onOpenChange,
 	onSessionDragChange,
+	onSessionDraggedOutChange,
 	onViewChat,
 	sessionDrag,
 	shouldReduceMotion,
@@ -191,6 +209,8 @@ function JiraIssueAgentActivityRow({
 		pointer: PointerDragPosition | null,
 		cancelled: boolean,
 	) => void;
+	/** Fires when the chip clears the chin, so the row list can close its gutter. */
+	onSessionDraggedOutChange?: (draggedOut: boolean) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
 	shouldReduceMotion: boolean | null;
@@ -262,6 +282,14 @@ function JiraIssueAgentActivityRow({
 		dragOffsetY.set(drag.position.y);
 	}, [dragOffsetX, dragOffsetY, drag.position.x, drag.position.y]);
 
+	// The row owns the handover threshold, but the gutter that has to close
+	// belongs to the list above it, so the flip is published rather than derived
+	// twice. `onSessionDraggedOutChange` is a stable setter, so this settles in
+	// one extra commit on each flip and no-ops on every other render.
+	useEffect(() => {
+		onSessionDraggedOutChange?.(isDraggedOut);
+	}, [isDraggedOut, onSessionDraggedOutChange]);
+
 	function publishSessionDrag(
 		dragging: boolean,
 		event?: ReactPointerEvent<HTMLElement>,
@@ -321,13 +349,19 @@ function JiraIssueAgentActivityRow({
 		}
 
 		return (
-			<div className={cn("min-w-0", isDragging && "relative h-6 w-full")}>
-				{isDragging ? (
+			// The slot only reserves the row's height while the session is still
+			// bridging out of the chin. Once the chip is free it collapses, so the
+			// card's grey backdrop closes up and hugs what is left of the card
+			// instead of holding an empty band open under a tag that has gone.
+			<div className={cn("min-w-0", isDragging && "relative w-full", isDragging && (isDraggedOut ? "h-0" : "h-6"))}>
+				{isDragging && !isDraggedOut ? (
 					// The goo bridges BODIES, and a lone item has nothing to stick to —
 					// this is why the drag showed no stretch at all. This blob holds the
 					// row's vacated slot so the merged silhouette keeps one end anchored
 					// in the chin while the other travels, drawing the neck between them.
 					// It paints nothing itself; the `<Gooey>` root fills the silhouette.
+					// It goes the moment the chip is out: with no second body there is
+					// nothing left to bridge, so the neck snaps instead of trailing.
 					<Gooey.Item observe>
 						<div aria-hidden className="pointer-events-none h-6 w-full rounded-md" />
 					</Gooey.Item>
@@ -335,19 +369,25 @@ function JiraIssueAgentActivityRow({
 				<Gooey.Item
 					observe
 					dissolve={{
-						active: !shouldReduceMotion && drag.dragging,
+						active: !shouldReduceMotion && drag.dragging && !isDraggedOut,
 						fadeMs: JIRA_ISSUE_SESSION_DRAG_DISSOLVE_FADE_MS,
 						sink: JIRA_ISSUE_SESSION_DRAG_DISSOLVE_SINK,
 					}}
-					morph={JIRA_ISSUE_SESSION_DRAG_MORPH}
+					morph={isDraggedOut ? JIRA_ISSUE_SESSION_DRAG_CHIP_MORPH : JIRA_ISSUE_SESSION_DRAG_MORPH}
 				>
 					{/* The spring lives on the wrapper, not the row: `AgentAssignment`
 					    clones the trigger and `Gooey.Item` forwards no ref, so neither
 					    can carry motion values of its own. While dragging it also has to
 					    outrank the drop wells, which are later siblings and would
-					    otherwise paint over the travelling chip. */}
+					    otherwise paint over the travelling chip. Once the chip is out the
+					    wrapper hugs it: the liquid tracks THIS rect, so a full-width
+					    wrapper is what drew a row-wide slab behind a small pill. */}
 					<motion.div
-						className={cn("min-w-0", isDragging && "absolute inset-x-0 top-0 z-20")}
+						className={cn(
+							"min-w-0",
+							isDragging && "absolute top-0 z-20",
+							isDragging && (isDraggedOut ? "left-0 w-fit" : "inset-x-0"),
+						)}
 						style={{ x: dragX, y: dragY }}
 					>
 						{node}
@@ -379,10 +419,11 @@ function JiraIssueAgentActivityRow({
 			className={cn(
 				"flex h-6 items-center gap-2 text-left outline-none transition-[background-color,box-shadow] duration-fast ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none",
 				isDraggedOut
-					? "w-fit max-w-full justify-start rounded-full bg-surface-raised px-1 shadow-overlay"
+					? "w-fit max-w-full justify-start rounded-full bg-surface-raised px-1"
 					: "w-full min-w-0 justify-between rounded-md px-2 py-1 hover:bg-bg-neutral-subtle-hovered",
 				sessionDragBind && "touch-none select-none",
 			)}
+			style={isDraggedOut ? JIRA_ISSUE_SESSION_DRAG_CHIP_STYLE : undefined}
 		>
 			{isDraggedOut ? (
 				// Out of the chin the session reads as the at-mention chip it will
@@ -621,6 +662,7 @@ export function JiraIssueAgentActivityRows({
 	usesStrokeChrome: boolean;
 }>) {
 	const [sessionDragging, setSessionDragging] = useState(false);
+	const [sessionDraggedOut, setSessionDraggedOut] = useState(false);
 	const layoutTransition = getJiraIssueLayoutTransition(shouldReduceMotion);
 	const presenceMotion = getJiraIssuePresenceMotion(shouldReduceMotion);
 	const hasActivities = activities.length > 0;
@@ -637,7 +679,10 @@ export function JiraIssueAgentActivityRows({
 				// The goo silhouette paints outside the row box, so the clip has to
 				// lift for the duration of a transfer drag.
 				sessionDragging ? "overflow-visible" : "overflow-hidden",
-				hasActivities && "px-1 py-1",
+				// Once the only content is a chip that has left the card, the gutter
+				// is the last thing holding the grey backdrop open — drop it too so
+				// the card hugs what remains instead of trailing an empty band.
+				hasActivities && (sessionDraggedOut ? "px-1" : "px-1 py-1"),
 			)}
 			layout={rowLayout}
 			transition={layoutTransition}
@@ -666,6 +711,7 @@ export function JiraIssueAgentActivityRows({
 									pointer,
 								});
 							}}
+							onSessionDraggedOutChange={setSessionDraggedOut}
 							onViewChat={onViewChat}
 							sessionDrag={sessionDrag}
 							shouldReduceMotion={shouldReduceMotion}

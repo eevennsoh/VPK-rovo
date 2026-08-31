@@ -3,8 +3,8 @@ const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const { test } = require("node:test");
 
-// Source contracts for the agent-session transfer surface: the Unlink/Move/Link
-// demo phases, the drop wells, the gooey pull-out, and the split review chin.
+// Source contracts for the agent-session transfer surface: the Unlink/Link
+// demo phases, the drop well, the gooey pull-out, and the split review chin.
 // Split out of jira-issue.test.js to keep both files under the 1000-line budget.
 const SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 const AGENT_ACTIVITY_SOURCE = readFileSync(join(__dirname, "agent-activity.tsx"), "utf8");
@@ -25,28 +25,29 @@ const TRANSFER_DEMO_STATES_START = PAGE_SOURCE.indexOf(
 const BASE_DEMO_STATES_BLOCK = PAGE_SOURCE.slice(BASE_DEMO_STATES_START, TRANSFER_DEMO_STATES_START);
 const TRANSFER_REGION_BLOCK = TRANSFER_SOURCE.slice(
 	TRANSFER_SOURCE.indexOf("export function JiraIssueAgentSessionTransfer("),
-	TRANSFER_SOURCE.indexOf("export function JiraIssueAgentSessionNotice("),
 );
 
-test("Jira issue agent session transfer adds three demo phases gated to the experimental variant", () => {
+test("Jira issue agent session transfer adds two demo phases gated to the experimental variant", () => {
 	assert.ok(BASE_DEMO_STATES_START >= 0, "the base demo-state list must exist");
 	assert.ok(
 		TRANSFER_DEMO_STATES_START > BASE_DEMO_STATES_START,
 		"the transfer demo-state list must be declared after the base list so it can be concatenated onto it",
 	);
-	// The three phases are real demo states, not ad-hoc strings.
+	// The two phases are real demo states, not ad-hoc strings.
 	assert.match(
 		PAGE_SOURCE,
-		/type JiraIssueAgentActivityDemoState =[\s\S]*\| "agent-session-unlink"\s*\n\s*\| "agent-session-move"\s*\n\s*\| "agent-session-link";/u,
+		/type JiraIssueAgentActivityDemoState =[\s\S]*\| "agent-session-unlink"\s*\n\s*\| "agent-session-link";/u,
 	);
 	assert.match(
 		PAGE_SOURCE,
-		/const JIRA_ISSUE_AGENT_SESSION_TRANSFER_DEMO_STATES = \[\s*\n\s*\{ value: "agent-session-unlink", label: "Unlink" \},\s*\n\s*\{ value: "agent-session-move", label: "Move" \},\s*\n\s*\{ value: "agent-session-link", label: "Link" \},\s*\n\] as const satisfies readonly \{ value: JiraIssueAgentActivityDemoState; label: string \}\[\];/u,
+		/const JIRA_ISSUE_AGENT_SESSION_TRANSFER_DEMO_STATES = \[\s*\n\s*\{ value: "agent-session-unlink", label: "Unlink" \},\s*\n\s*\{ value: "agent-session-link", label: "Link" \},\s*\n\] as const satisfies readonly \{ value: JiraIssueAgentActivityDemoState; label: string \}\[\];/u,
 	);
 	assert.match(
 		PAGE_SOURCE,
-		/function isSessionTransferDemoState\(state: JiraIssueAgentActivityDemoState\): boolean \{\s*\n\s*return state === "agent-session-unlink" \|\| state === "agent-session-move" \|\| state === "agent-session-link";/u,
+		/function isSessionTransferDemoState\(state: JiraIssueAgentActivityDemoState\): boolean \{\s*\n\s*return state === "agent-session-unlink" \|\| state === "agent-session-link";/u,
 	);
+	// Move is gone: no demo phase, no work-item fixtures, no move commit path.
+	assert.doesNotMatch(PAGE_SOURCE, /agent-session-move|JIRA_ISSUE_MOVE_WORK_ITEMS|onMove/u);
 	// Gating: the extra tabs only exist when the demo is told to show them, and
 	// only the experimental (stroke) variant asks for that.
 	assert.match(PAGE_SOURCE, /showSessionTransferStates\?: boolean;/u);
@@ -66,8 +67,21 @@ test("Jira issue agent session transfer adds three demo phases gated to the expe
 	// A transfer phase is what mounts the transfer config; nothing else does.
 	assert.match(
 		PAGE_SOURCE,
-		/const agentSessionTransfer: JiraIssueAgentSessionTransferConfig \| undefined = useMemo\(\s*\n\s*\(\) => \(isTransferPhase && !isLinkPhase\s*\n\s*\? \{ moveWorkItems: JIRA_ISSUE_MOVE_WORK_ITEMS, onMove: handleSessionMove, onUnlink: handleSessionUnlink \}\s*\n\s*: undefined\),/u,
+		/const agentSessionTransfer: JiraIssueAgentSessionTransferConfig \| undefined = useMemo\(\s*\n\s*\(\) => \(isTransferPhase && !isLinkPhase \? \{ onUnlink: handleSessionUnlink \} : undefined\),/u,
 	);
+});
+
+test("Jira issue unlink hands the session to the Link phase, detached under the work item", () => {
+	// Dropping on the well is the only commit, and it lands the session in the
+	// detached card that renders below the issue.
+	assert.match(
+		PAGE_SOURCE,
+		/const handleSessionUnlink = useCallback\(\(\) => \{\s*\n\s*setAgentActivityState\("agent-session-link"\);\s*\n\s*\}, \[\]\);/u,
+	);
+	assert.match(PAGE_SOURCE, /\{isLinkPhase \? \(\s*\n\s*<JiraIssueDetachedAgentSession/u);
+	// The Link phase drops the transfer region, so the detached card is not
+	// offered another drop well while it is already off the card.
+	assert.match(PAGE_SOURCE, /const isLinkPhase = isTransferPhase && agentActivityState === "agent-session-link";/u);
 });
 
 test("Jira issue raised agent activity demo still exposes exactly the original six tabs", () => {
@@ -76,34 +90,33 @@ test("Jira issue raised agent activity demo still exposes exactly the original s
 	for (const value of ["default", "single-agent-working", "multiple-agents-working", "awaiting-user-input", "agent-completed-work", "agent-dismissed-work"]) {
 		assert.match(BASE_DEMO_STATES_BLOCK, new RegExp(`\\{ value: "${value}", label: "[^"]+" \\},`, "u"));
 	}
-	// The three transfer phases must never leak into the shared base list, which
-	// is what the raised (non-experimental) demo renders verbatim.
-	for (const value of ["agent-session-unlink", "agent-session-move", "agent-session-link"]) {
+	// The transfer phases must never leak into the shared base list, which is
+	// what the raised (non-experimental) demo renders verbatim.
+	for (const value of ["agent-session-unlink", "agent-session-link"]) {
 		assert.doesNotMatch(BASE_DEMO_STATES_BLOCK, new RegExp(`"${value}"`, "u"));
 	}
 	assert.match(PAGE_SOURCE, /agentActivityLayout=\{isExperimentalAgentActivityVariant \? "split" : "merged"\}/u);
 	assert.match(PAGE_SOURCE, /chrome=\{isExperimentalAgentActivityVariant \? "stroke" : "raised"\}/u);
 });
 
-test("Jira issue session transfer drop zones stay mounted and reveal with opacity, not display", () => {
+test("Jira issue session transfer drop zone stays mounted and reveals with opacity, not display", () => {
 	// Always rendered: the region has no early return and no conditional around
-	// either zone, so both stay in the DOM and in the tab order.
+	// the zone, so it stays in the DOM and in the tab order.
 	assert.doesNotMatch(TRANSFER_REGION_BLOCK, /return null/u);
-	assert.doesNotMatch(TRANSFER_REGION_BLOCK, /\{revealed \? </u);
 	assert.doesNotMatch(TRANSFER_REGION_BLOCK, /\{dragging \? </u);
 	assert.equal(
 		(TRANSFER_REGION_BLOCK.match(/<TransferDropZone/gu) ?? []).length,
-		2,
-		"the region renders exactly the Unlink and Move zones",
+		1,
+		"the region renders exactly the one Unlink zone",
 	);
 	// Revealed purely through opacity + pointer-events.
 	assert.match(
 		TRANSFER_SOURCE,
-		/const TRANSFER_REVEAL_CLASS =\s*\n\s*"opacity-0 transition-\[opacity,translate\] duration-fast ease-out-practical motion-reduce:transition-none group-hover\/jira-issue-transfer:pointer-events-auto group-hover\/jira-issue-transfer:opacity-100 group-has-\[:focus-visible\]\/jira-issue-transfer:pointer-events-auto group-has-\[:focus-visible\]\/jira-issue-transfer:opacity-100";/u,
+		/const TRANSFER_REVEAL_CLASS =\s*\n\s*"opacity-0 transition-\[opacity,translate\] duration-fast ease-out-practical motion-reduce:transition-none group-has-\[\[data-slot=jira-issue-agent-row\]:hover\]\/jira-issue-transfer:pointer-events-auto group-has-\[\[data-slot=jira-issue-agent-row\]:hover\]\/jira-issue-transfer:opacity-100 group-has-\[\[data-slot=jira-issue-session-transfer\]:hover\]\/jira-issue-transfer:pointer-events-auto group-has-\[\[data-slot=jira-issue-session-transfer\]:hover\]\/jira-issue-transfer:opacity-100 group-has-\[:focus-visible\]\/jira-issue-transfer:pointer-events-auto group-has-\[:focus-visible\]\/jira-issue-transfer:opacity-100";/u,
 	);
 	assert.match(
 		TRANSFER_REGION_BLOCK,
-		/className=\{cn\(\s*"flex flex-col gap-2 pt-2",\s*TRANSFER_REVEAL_CLASS,\s*revealed \? "pointer-events-auto opacity-100" : "pointer-events-none",\s*dragging \? TRANSFER_DRAG_SHIFT_CLASS : null,\s*\)\}/u,
+		/className=\{cn\(\s*"flex flex-col pt-2",\s*TRANSFER_REVEAL_CLASS,\s*dragging \? "pointer-events-auto opacity-100" : "pointer-events-none",\s*dragging \? TRANSFER_DRAG_SHIFT_CLASS : null,\s*\)\}/u,
 	);
 	assert.match(TRANSFER_REGION_BLOCK, /data-slot="jira-issue-session-transfer"/u);
 	// `group-focus-within` would pin the reveal open after a click; the repo
@@ -111,8 +124,8 @@ test("Jira issue session transfer drop zones stay mounted and reveal with opacit
 	assert.doesNotMatch(TRANSFER_SOURCE, /group-focus-within/u);
 	assert.doesNotMatch(TRANSFER_SOURCE, /className="[^"]*\bhidden\b/u);
 	assert.doesNotMatch(TRANSFER_SOURCE, /display: *"?none/u);
-	// The host card has to carry the group so hover/focus anywhere in the card
-	// reveals the zones.
+	// The host card has to carry the group so an agent row anywhere inside it can
+	// drive the reveal.
 	assert.match(
 		TRANSFER_SOURCE,
 		/export const JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS = "group\/jira-issue-transfer";/u,
@@ -123,33 +136,49 @@ test("Jira issue session transfer drop zones stay mounted and reveal with opacit
 	);
 });
 
-test("Jira issue session transfer drop zones are labelled buttons reachable by keyboard", () => {
+test("Jira issue session transfer well is offered by the session row, not the whole card", () => {
+	// A bare `group-hover` meant hovering the summary, the tags, or the subtasks
+	// row put a drop target under the pointer for a session it had never
+	// touched. The reveal now needs an agent session row under the pointer.
+	assert.doesNotMatch(TRANSFER_SOURCE, /group-hover\/jira-issue-transfer/u);
+	assert.match(TRANSFER_SOURCE, /group-has-\[\[data-slot=jira-issue-agent-row\]:hover\]\/jira-issue-transfer:opacity-100/u);
+	// The row's slot is the hook, so it has to still be on the row the gesture
+	// starts from.
+	assert.match(AGENT_ACTIVITY_SOURCE, /data-slot="jira-issue-agent-row"/u);
+	// Travel path: the region itself is the second trigger, so crossing its own
+	// `pt-2` gap on the way to the well does not drop the reveal. It is
+	// `pointer-events-none` at rest, so it cannot self-trigger from nothing.
+	assert.match(
+		TRANSFER_SOURCE,
+		/group-has-\[\[data-slot=jira-issue-session-transfer\]:hover\]\/jira-issue-transfer:opacity-100/u,
+	);
+	assert.match(TRANSFER_REGION_BLOCK, /dragging \? "pointer-events-auto opacity-100" : "pointer-events-none"/u);
+	// Keyboard reveal stays card-wide: the well is tabbable, and narrowing focus
+	// to the row would leave it reachable while invisible.
+	assert.match(TRANSFER_SOURCE, /group-has-\[:focus-visible\]\/jira-issue-transfer:opacity-100/u);
+});
+
+test("Jira issue session transfer drop zone is a labelled button reachable by keyboard", () => {
 	assert.match(
 		TRANSFER_SOURCE,
 		/<button\s*\n\s*aria-label=\{description\}[\s\S]*type="button"/u,
 	);
 	assert.match(TRANSFER_SOURCE, /description: string;/u);
-	// Each zone carries a distinct, action-describing accessible name.
+	// The zone carries an action-describing accessible name, and its visible
+	// label states the gesture now that there is no separator prompt above it.
 	assert.match(TRANSFER_REGION_BLOCK, /description=\{`Unlink \$\{sessionLabel\} from this work item`\}/u);
-	assert.match(TRANSFER_REGION_BLOCK, /description=\{`Move \$\{sessionLabel\} to another work item`\}/u);
+	assert.match(TRANSFER_REGION_BLOCK, /label=\{config\.unlinkLabel \?\? "Drag here to unlink"\}/u);
 	assert.match(TRANSFER_SOURCE, /sessionLabel = "agent session",/u);
-	// Keyboard activation runs the same callbacks as a drop.
-	// A click and a drop must run the same commit, and both must say WHICH session
-	// they acted on — split layout renders one row per agent against one config.
+	// Keyboard activation runs the same callback as a drop, and both must say
+	// WHICH session they acted on — split layout renders one row per agent
+	// against one config.
 	assert.match(TRANSFER_REGION_BLOCK, /onClick=\{\(\) => config\.onUnlink\?\.\(session\)\}/u);
-	assert.match(TRANSFER_REGION_BLOCK, /<PopoverTrigger\s*\n\s*render=\{\s*\n\s*<TransferDropZone/u);
 	assert.match(TRANSFER_SOURCE, /const TRANSFER_ZONE_BASE_CLASS =\s*\n\s*"[^"]*outline-none[^"]*focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring\/50[^"]*"/u);
 	// A drop commits exactly what the zone's own click handler commits. The
-	// handlers are read through a committed ref so the arming effect does not
+	// handler is read through a committed ref so the arming effect does not
 	// resubscribe on every parent render, so assert the ref stays in sync too.
-	assert.match(
-		TRANSFER_SOURCE,
-		/commitRef\.current = \{ onUnlink: config\.onUnlink, session, setMenu \};/u,
-	);
-	assert.match(
-		TRANSFER_SOURCE,
-		/if \(dropped === "unlink"\) commitRef\.current\?\.onUnlink\?\.\(commitRef\.current\?\.session\);\s*\n\s*if \(dropped === "move"\) commitRef\.current\?\.setMenu\(true\);/u,
-	);
+	assert.match(TRANSFER_SOURCE, /commitRef\.current = \{ onUnlink: config\.onUnlink, session \};/u);
+	assert.match(TRANSFER_SOURCE, /if \(dropped\) commitRef\.current\?\.onUnlink\?\.\(commitRef\.current\?\.session\);/u);
 });
 
 test("Jira issue session transfer motion honours reduced motion at every layer", () => {
@@ -168,7 +197,7 @@ test("Jira issue session transfer motion honours reduced motion at every layer",
 	// dissolve is gated by the caller.
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,
-		/dissolve=\{\{\s*active: !shouldReduceMotion && drag\.dragging,/u,
+		/dissolve=\{\{\s*active: !shouldReduceMotion && drag\.dragging && !isDraggedOut,/u,
 	);
 	// A pointer drag must not fight Motion's layout projection.
 	assert.match(
@@ -177,29 +206,12 @@ test("Jira issue session transfer motion honours reduced motion at every layer",
 	);
 });
 
-test("Jira issue move notice timeout is cleared on unmount and on every tab change", () => {
-	assert.match(PAGE_SOURCE, /const moveNoticeTimeoutRef = useRef<ReturnType<typeof setTimeout> \| null>\(null\);/u);
-	assert.match(
-		PAGE_SOURCE,
-		/const clearMoveNoticeTimeout = useCallback\(\(\) => \{\s*\n\s*if \(moveNoticeTimeoutRef\.current !== null\) \{\s*\n\s*clearTimeout\(moveNoticeTimeoutRef\.current\);\s*\n\s*moveNoticeTimeoutRef\.current = null;/u,
-	);
-	// Unmount: the cleanup function IS the clear helper.
-	assert.match(PAGE_SOURCE, /useEffect\(\(\) => clearMoveNoticeTimeout, \[clearMoveNoticeTimeout\]\);/u);
-	// Tab change: every tab click goes through `selectDemoState`, which clears
-	// the pending timer before switching phase so a hidden demo cannot advance.
-	assert.match(
-		PAGE_SOURCE,
-		/const selectDemoState = useCallback\(\(value: JiraIssueAgentActivityDemoState\) => \{\s*\n\s*clearMoveNoticeTimeout\(\);\s*\n\s*setMovedWorkItemKey\(null\);\s*\n\s*setAgentActivityState\(value\);\s*\n\s*\}, \[clearMoveNoticeTimeout\]\);/u,
-	);
-	assert.match(PAGE_SOURCE, /onClick=\{\(\) => selectDemoState\(state\.value\)\}/u);
-	// Re-arming also clears first, so overlapping moves cannot stack timers, and
-	// the ref is nulled from inside the callback once it has fired.
-	assert.match(
-		PAGE_SOURCE,
-		/const handleSessionMove = useCallback\(\(workItemKey: string\) => \{\s*\n\s*clearMoveNoticeTimeout\(\);\s*\n\s*setMovedWorkItemKey\(workItemKey\);\s*\n\s*moveNoticeTimeoutRef\.current = setTimeout\(\(\) => \{\s*\n\s*moveNoticeTimeoutRef\.current = null;/u,
-	);
-	assert.match(PAGE_SOURCE, /const JIRA_ISSUE_MOVE_NOTICE_MS = 2400;/u);
-	assert.match(PAGE_SOURCE, /\}, JIRA_ISSUE_MOVE_NOTICE_MS\);/u);
+test("Jira issue agent activity demo runs no background timers", () => {
+	// The Move phase parked a confirmation timer that could advance a hidden
+	// demo; the tab handler had to clear it on every switch. With Move gone the
+	// demo is timer-free, so a plain state setter is enough — keep it that way.
+	assert.doesNotMatch(PAGE_SOURCE, /setTimeout|setInterval/u);
+	assert.match(PAGE_SOURCE, /onClick=\{\(\) => setAgentActivityState\(state\.value\)\}/u);
 });
 
 test("Jira issue agentSessionTransfer is opt-in so existing consumers are unaffected", () => {
@@ -220,7 +232,7 @@ test("Jira issue agentSessionTransfer is opt-in so existing consumers are unaffe
 	// No config -> the sparkle reveal expression is unchanged in practice.
 	assert.match(
 		SOURCE,
-		/const agentSessionTransferRevealed = Boolean\(agentSessionTransfer\)\s*\n\s*&& \(agentSessionDragState\.dragging \|\| agentSessionTransferMenuOpen\);/u,
+		/const agentSessionTransferRevealed = Boolean\(agentSessionTransfer\) && agentSessionDragState\.dragging;/u,
 	);
 	// No binding -> the chin row keeps its plain click behaviour and skips the
 	// gooey wrapper entirely.
@@ -261,32 +273,27 @@ test("Jira issue splits the finished review chin into one row per completed run"
 	assert.match(SOURCE, /<JiraIssueAgentDone[\s\S]*layout=\{agentActivityLayout\}/u);
 });
 
-test("Jira issue session transfer redesigns the drop wells around the drag phase", () => {
-	// At rest the wells are the compact 24px solid-stroke affordance; once the
-	// session is out of the chin they grow to 48px dashed drop wells.
+test("Jira issue session transfer redesigns the drop well around the drag phase", () => {
+	// At rest the well is the compact 24px solid-stroke affordance; once the
+	// session is out of the chin it grows to a 48px dashed drop well.
 	assert.match(TRANSFER_SOURCE, /const TRANSFER_ZONE_REST_CLASS =\s*\n\s*"h-6 border-solid border-border[^"]*"/u);
 	assert.match(TRANSFER_SOURCE, /const TRANSFER_ZONE_DRAG_CLASS = "h-12 border-dashed border-border-bold[^"]*"/u);
 	assert.match(TRANSFER_SOURCE, /dragging \? TRANSFER_ZONE_DRAG_CLASS : TRANSFER_ZONE_REST_CLASS/u);
-	// Pointer over a well paints border, fill, and label blue together.
+	// Pointer over the well paints border, fill, and label blue together. With a
+	// single zone this is the whole hit feedback: the armed-share widening only
+	// read against a sibling competing for the row, so it is gone with Move.
 	assert.match(
 		TRANSFER_SOURCE,
 		/const TRANSFER_ZONE_ARMED_CLASS = "border-dashed border-border-selected bg-bg-selected text-text-selected";/u,
 	);
 	assert.match(TRANSFER_SOURCE, /armed \? TRANSFER_ZONE_ARMED_CLASS : null/u);
-	// Hit feedback is the armed well widening, not the wells leaning at the
-	// cursor: the magnet was removed because a moving drop rect fights the aim.
-	assert.match(TRANSFER_SOURCE, /const TRANSFER_ZONE_SHARE_REST_CLASS = "flex-1";/u);
-	assert.match(TRANSFER_SOURCE, /const TRANSFER_ZONE_SHARE_ARMED_CLASS = "flex-\[1\.7_1_0%\]";/u);
-	assert.match(
-		TRANSFER_SOURCE,
-		/armed \? TRANSFER_ZONE_SHARE_ARMED_CLASS : TRANSFER_ZONE_SHARE_REST_CLASS/u,
-	);
-	assert.match(TRANSFER_SOURCE, /transition-\[flex-grow,height,background-color,border-color,color\]/u);
+	assert.doesNotMatch(TRANSFER_SOURCE, /TRANSFER_ZONE_SHARE_|flex-\[1\.7/u);
+	assert.doesNotMatch(TRANSFER_SOURCE, /flex-grow/u);
+	assert.match(TRANSFER_SOURCE, /transition-\[height,background-color,border-color,color\]/u);
 	assert.doesNotMatch(TRANSFER_SOURCE, /useMagneticProximity|TRANSFER_MAGNET_DISTANCE_PX/u);
-	// The prompt collapses to zero height rather than unmounting, so the wells
-	// take its space instead of the region growing.
-	assert.match(TRANSFER_SOURCE, /dragging \? "grid-rows-\[0fr\] opacity-0" : "grid-rows-\[1fr\] opacity-100"/u);
-	assert.match(TRANSFER_SOURCE, /data-slot="jira-issue-session-transfer-prompt"/u);
+	// The "Drag here to" separator is gone; the well's own label carries the
+	// instruction, so there is no collapsing prompt row left to animate.
+	assert.doesNotMatch(TRANSFER_SOURCE, /jira-issue-session-transfer-prompt|grid-rows-\[0fr\]|Drag here to"/u);
 	assert.match(TRANSFER_SOURCE, /const TRANSFER_DRAG_SHIFT_CLASS = "translate-y-2";/u);
 	// Size and colour changes are token-driven and reduced-motion safe.
 	assert.doesNotMatch(TRANSFER_SOURCE, /duration-\[|duration-200|duration-150/u);
@@ -303,13 +310,37 @@ test("Jira issue dragged session reads as the at-mention chip it becomes", () =>
 	assert.match(AGENT_ACTIVITY_SOURCE, /const dragX = shouldReduceMotion \? dragOffsetX : springX;/u);
 	// A raw transform string would bypass the spring entirely.
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /transform: `translate\(\$\{drag\.position/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /className=\{cn\("min-w-0", isDragging && "absolute inset-x-0 top-0 z-20"\)\}\s*\n\s*style=\{\{ x: dragX, y: dragY \}\}/u);
-	// The goo bridges two bodies, so the vacated slot keeps an anchor blob and the
-	// opaque chip is held back until the row has travelled clear of it — without
-	// both, the pull-out snaps to a hard-edged tag with no visible stretch.
-	assert.match(AGENT_ACTIVITY_SOURCE, /const JIRA_ISSUE_SESSION_DRAG_CHIP_DISTANCE_PX = 28;/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /isDragging && \(isDraggedOut \? "left-0 w-fit" : "inset-x-0"\),/u);
+	// The goo bridges two bodies, so the vacated slot keeps an anchor blob while
+	// the row travels — without it the pull-out has no visible stretch at all.
+	assert.match(AGENT_ACTIVITY_SOURCE, /const JIRA_ISSUE_SESSION_DRAG_CHIP_DISTANCE_PX = 12;/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const isDraggedOut = isDragging\s*\n\s*&& Math\.hypot\(drag\.position\.x, drag\.position\.y\) >= JIRA_ISSUE_SESSION_DRAG_CHIP_DISTANCE_PX;/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /isDragging \? \([\s\S]*<Gooey\.Item observe>[\s\S]*aria-hidden className="pointer-events-none h-6 w-full rounded-md"/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /isDragging && !isDraggedOut \? \([\s\S]*<Gooey\.Item observe>[\s\S]*aria-hidden className="pointer-events-none h-6 w-full rounded-md"/u);
+});
+
+test("Jira issue at-mention chip snaps clear of the goo instead of dragging it along", () => {
+	// Three things kept grey liquid painted under a tag that is meant to be free:
+	// the anchor blob still bridging to it, the dissolve still melting it into a
+	// neighbour, and — the loudest one — a full-width wrapper, since the liquid
+	// tracks the WRAPPER's rect, not the pill's. All three are gated on
+	// `isDraggedOut` now.
+	assert.match(AGENT_ACTIVITY_SOURCE, /\{isDragging && !isDraggedOut \? \(/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /active: !shouldReduceMotion && drag\.dragging && !isDraggedOut,/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /isDraggedOut \? "left-0 w-fit" : "inset-x-0"/u);
+	// The item itself stays mounted: swapping it out mid-gesture would drop the
+	// button's pointer capture and kill the drag, so the liquid is inset under
+	// the opaque pill rather than unregistered.
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/const JIRA_ISSUE_SESSION_DRAG_CHIP_MORPH = \{ advanced: \{ blobInset: 14, bridgeGrow: 0 \} \} as const;/u,
+	);
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/morph=\{isDraggedOut \? JIRA_ISSUE_SESSION_DRAG_CHIP_MORPH : JIRA_ISSUE_SESSION_DRAG_MORPH\}/u,
+	);
+});
+
+test("Jira issue dragged session paints its goo in the chin's grey", () => {
 	// The merged silhouette has to be painted in the chin's grey, not white.
 	assert.match(SOURCE, /const AGENT_SESSION_TRANSFER_GOO = \{[\s\S]*fill: "var\(--color-bg-accent-gray-subtlest\)",/u);
 	assert.doesNotMatch(SOURCE, /AGENT_SESSION_TRANSFER_GOO[\s\S]{0,200}fill: "var\(--color-surface\)"/u);
@@ -317,7 +348,45 @@ test("Jira issue dragged session reads as the at-mention chip it becomes", () =>
 	assert.match(AGENT_ACTIVITY_SOURCE, /const isDragging = Boolean\(sessionDrag\) && drag\.dragging;/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ Tag \} from "@\/components\/ui\/tag";/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /isDraggedOut \? \(\s*\n[\s\S]*<Tag\s*\n\s*color="gray"[\s\S]*variant="editor"/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /isDraggedOut\s*\n\s*\? "w-fit max-w-full justify-start rounded-full bg-surface-raised px-1 shadow-overlay"/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /isDraggedOut\s*\n\s*\? "w-fit max-w-full justify-start rounded-full bg-surface-raised px-1"/u);
+});
+
+test("Jira issue at-mention chip floats on overlay elevation, not a dead utility", () => {
+	// `shadow-overlay` is not a utility in this theme — `--ds-shadow-overlay` is
+	// only mapped onto `--shadow-2xl` — so the class silently rendered no shadow
+	// and the chip read as flat against the card. (The source still names it in a
+	// comment, so match a class position, not the bare word.)
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /[\s"']shadow-overlay[\s"']/u);
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/const JIRA_ISSUE_SESSION_DRAG_CHIP_STYLE: CSSProperties = \{\s*\n\s*boxShadow: token\("elevation\.shadow\.overlay"\),\s*\n\};/u,
+	);
+	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ token \} from "@\/lib\/tokens";/u);
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/style=\{isDraggedOut \? JIRA_ISSUE_SESSION_DRAG_CHIP_STYLE : undefined\}/u,
+	);
+});
+
+test("Jira issue card hugs its content the moment the chip leaves the chin", () => {
+	// The slot only reserves the row height while the session is still bridging
+	// out; once the chip is free it collapses, and the row list drops its gutter
+	// too, so the grey backdrop closes instead of holding an empty band open.
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/isDragging && "relative w-full", isDragging && \(isDraggedOut \? "h-0" : "h-6"\)/u,
+	);
+	assert.match(AGENT_ACTIVITY_SOURCE, /hasActivities && \(sessionDraggedOut \? "px-1" : "px-1 py-1"\)/u);
+	// The row owns the threshold; the list owns the gutter, so the flip is
+	// published rather than recomputed in two places.
+	assert.match(AGENT_ACTIVITY_SOURCE, /onSessionDraggedOutChange\?: \(draggedOut: boolean\) => void;/u);
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/useEffect\(\(\) => \{\s*\n\s*onSessionDraggedOutChange\?\.\(isDraggedOut\);\s*\n\s*\}, \[isDraggedOut, onSessionDraggedOutChange\]\);/u,
+	);
+	// A `useState` setter is referentially stable, so the effect cannot loop.
+	assert.match(AGENT_ACTIVITY_SOURCE, /const \[sessionDraggedOut, setSessionDraggedOut\] = useState\(false\);/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /onSessionDraggedOutChange=\{setSessionDraggedOut\}/u);
 });
 
 // --- Review findings on PR #1445 -------------------------------------------
@@ -334,7 +403,7 @@ test("Jira issue pointer cancellation aborts the drag instead of committing the 
 	assert.match(AGENT_ACTIVITY_SOURCE, /onPointerCancel: cancelSessionDrag,/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /onPointerCancel: endSessionDrag,/u);
 	// The commit gate itself must exclude a cancelled gesture.
-	assert.match(TRANSFER_SOURCE, /const dropped = dragging \|\| cancelled \? null : armedRef\.current;/u);
+	assert.match(TRANSFER_SOURCE, /const dropped = dragging \|\| cancelled \? false : armedRef\.current;/u);
 	assert.match(TRANSFER_SOURCE, /\}, \[cancelled, dragging, pointer\]\);/u);
 });
 
@@ -348,15 +417,13 @@ test("Jira issue session rows do not install the shared hook's incomplete keyboa
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /\n\t\t\t\.\.\.drag\.bind,/u);
 });
 
-test("Jira issue transfer callbacks identify which session was dragged", () => {
+test("Jira issue transfer callback identifies which session was dragged", () => {
 	// Split layout renders one row per agent against a single shared config, so a
-	// bare `onUnlink()` / `onMove(key)` left the host unable to tell which session
-	// to act on — and free to update the wrong one.
+	// bare `onUnlink()` left the host unable to tell which session to act on —
+	// and free to update the wrong one.
 	assert.match(TRANSFER_SOURCE, /export interface JiraIssueAgentSessionRef \{[\s\S]*id: string;[\s\S]*name: string;/u);
-	assert.match(TRANSFER_SOURCE, /onMove\?: \(workItemKey: string, session\?: JiraIssueAgentSessionRef\) => void;/u);
 	assert.match(TRANSFER_SOURCE, /onUnlink\?: \(session\?: JiraIssueAgentSessionRef\) => void;/u);
 	assert.match(TRANSFER_SOURCE, /session\?: JiraIssueAgentSessionRef;/u);
-	assert.match(TRANSFER_SOURCE, /config\.onMove\?\.\(key, session\);/u);
 	// The card feeds the dragged row's own activity through as that identity.
 	assert.match(SOURCE, /session=\{agentSessionDragState\.activities\[0\]\}/u);
 	assert.match(SOURCE, /cancelled=\{agentSessionDragState\.cancelled\}/u);

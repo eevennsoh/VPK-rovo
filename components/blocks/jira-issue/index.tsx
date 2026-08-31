@@ -267,11 +267,9 @@ function JiraIssueDefault({
 	const [agentSessionDragState, setAgentSessionDragState] = useState<JiraIssueAgentSessionDragState>(
 		JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE,
 	);
-	const [agentSessionTransferMenuOpen, setAgentSessionTransferMenuOpen] = useState(false);
-	// While the transfer drop zones are revealed they own the gesture, so the
+	// While the transfer drop zone is revealed it owns the gesture, so the
 	// hover-revealed sparkle stands down rather than competing for the pointer.
-	const agentSessionTransferRevealed = Boolean(agentSessionTransfer)
-		&& (agentSessionDragState.dragging || agentSessionTransferMenuOpen);
+	const agentSessionTransferRevealed = Boolean(agentSessionTransfer) && agentSessionDragState.dragging;
 	const generativeActionRevealActive = !agentActivityHoverOpen
 		&& !agentSessionTransferRevealed
 		&& !moreActionMenuOpen
@@ -637,7 +635,7 @@ function JiraIssueDefault({
 			</LayoutGroup>
 		</motion.div>
 	);
-	// One `<Gooey>` group has to span the dragged chin row and the drop zones:
+	// One `<Gooey>` group has to span the dragged chin row and the drop zone:
 	// dissolve only bridges items registered with the same root.
 	const agentActivityShellWithTransfer = agentSessionTransfer ? (
 		<Gooey {...AGENT_SESSION_TRANSFER_GOO} className="relative w-full min-w-0 overflow-visible">
@@ -646,7 +644,6 @@ function JiraIssueDefault({
 				cancelled={agentSessionDragState.cancelled}
 				config={agentSessionTransfer}
 				dragging={agentSessionDragState.dragging}
-				onMenuOpenChange={setAgentSessionTransferMenuOpen}
 				pointer={agentSessionDragState.pointer}
 				session={agentSessionDragState.activities[0]}
 				sessionLabel={agentSessionDragState.activities[0]?.name}

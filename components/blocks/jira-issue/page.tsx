@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { RovoChatProvider } from "@/app/contexts";
 import { JiraEpic } from "@/components/blocks/jira-epic";
@@ -16,11 +16,7 @@ import {
 	type JiraIssueGenerativeActionRequest,
 	type JiraIssuePullRequestStatus,
 } from "@/components/blocks/jira-issue";
-import {
-	JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS,
-	JiraIssueAgentSessionNotice,
-} from "@/components/blocks/jira-issue/agent-session-transfer";
-import type { JiraIssueMoveWorkItem } from "@/components/blocks/jira-issue/agent-session-transfer-model";
+import { JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS } from "@/components/blocks/jira-issue/agent-session-transfer";
 import { JiraIssueDetachedAgentSession } from "@/components/blocks/jira-issue/detached-agent-session";
 import {
 	GITHUB_BRANCH_SMART_LINK_ICON,
@@ -282,7 +278,6 @@ type JiraIssueAgentActivityDemoState =
 	| "agent-completed-work"
 	| "agent-dismissed-work"
 	| "agent-session-unlink"
-	| "agent-session-move"
 	| "agent-session-link";
 
 const JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES = [
@@ -297,19 +292,8 @@ const JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES = [
 /** Only concatenated onto the tab list for the experimental (stroke) demo. */
 const JIRA_ISSUE_AGENT_SESSION_TRANSFER_DEMO_STATES = [
 	{ value: "agent-session-unlink", label: "Unlink" },
-	{ value: "agent-session-move", label: "Move" },
 	{ value: "agent-session-link", label: "Link" },
 ] as const satisfies readonly { value: JiraIssueAgentActivityDemoState; label: string }[];
-
-/** Recently viewed work items offered by the Move search menu. */
-const JIRA_ISSUE_MOVE_WORK_ITEMS = [
-	{ key: "VENN-1", summary: "Coding Agents in Jira", type: "Epic" },
-	{ key: "VENN-7", summary: "Try: Implement this work item from your IDE or terminal", type: "Task" },
-	{ key: "VENN-8", summary: "Discover more agentic features", type: "Story" },
-	{ key: "VENN-12", summary: "Bring agent sessions to the backlog view", type: "Story" },
-	{ key: "PAY-105", summary: "Rate limit the payments adapter retries", type: "Bug" },
-	{ key: "PAY-118", summary: "Split the date-range filter into its own subtask", type: "Subtask" },
-] as const satisfies readonly JiraIssueMoveWorkItem[];
 
 /** The session that leaves the card in the Unlink flow, then proposes a new home. */
 const JIRA_ISSUE_DETACHED_SESSION = {
@@ -325,16 +309,12 @@ const JIRA_ISSUE_DETACHED_SESSION_PROPOSAL = {
 	suggestedWorkItemKey: "PAY-105",
 } as const;
 
-/** How long the post-move confirmation stays up before the demo settles. */
-const JIRA_ISSUE_MOVE_NOTICE_MS = 2400;
-
 function isSessionTransferDemoState(state: JiraIssueAgentActivityDemoState): boolean {
-	return state === "agent-session-unlink" || state === "agent-session-move" || state === "agent-session-link";
+	return state === "agent-session-unlink" || state === "agent-session-link";
 }
 
 function getDemoAgentActivities(
 	state: JiraIssueAgentActivityDemoState,
-	sessionMoved: boolean,
 ): readonly JiraIssueAgentActivity[] | undefined {
 	switch (state) {
 		case "single-agent-working":
@@ -344,8 +324,7 @@ function getDemoAgentActivities(
 		case "awaiting-user-input":
 			return JIRA_ISSUE_AWAITING_INPUT_ACTIVITIES;
 		case "agent-session-unlink":
-		case "agent-session-move":
-			return sessionMoved ? undefined : JIRA_ISSUE_AGENT_ACTIVITIES.slice(0, 1);
+			return JIRA_ISSUE_AGENT_ACTIVITIES.slice(0, 1);
 		default:
 			return undefined;
 	}
@@ -385,7 +364,6 @@ function getExperimentalDemoPullRequest(
 		case "single-agent-working":
 		case "multiple-agents-working":
 		case "agent-session-unlink":
-		case "agent-session-move":
 		case "agent-session-link":
 			return {};
 		default: {
@@ -511,9 +489,6 @@ function JiraIssueAgentActivityStatesDemo({
 	showSessionTransferStates = false,
 }: Readonly<JiraIssueAgentActivityStatesDemoProps> = {}): React.ReactElement {
 	const [agentActivityState, setAgentActivityState] = useState<JiraIssueAgentActivityDemoState>("default");
-	const [movedWorkItemKey, setMovedWorkItemKey] = useState<string | null>(null);
-	const moveNoticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const transferStageRef = useRef<HTMLDivElement | null>(null);
 	// View chat / question submit / generative actions all drop into the shared
 	// Rovo floating chat with the activity's agent already selected — matching the
 	// ASX Kanban "View chat" behavior instead of a blank vanilla Rovo chat.
@@ -522,58 +497,18 @@ function JiraIssueAgentActivityStatesDemo({
 	const experimentalPullRequest = getExperimentalDemoPullRequest(chrome, agentActivityState);
 	const isTransferPhase = showSessionTransferStates && isSessionTransferDemoState(agentActivityState);
 	const isLinkPhase = isTransferPhase && agentActivityState === "agent-session-link";
-	const sessionMoved = movedWorkItemKey !== null;
-	const agentActivities = getDemoAgentActivities(agentActivityState, sessionMoved);
+	const agentActivities = getDemoAgentActivities(agentActivityState);
 	const demoStates = showSessionTransferStates
 		? [...JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES, ...JIRA_ISSUE_AGENT_SESSION_TRANSFER_DEMO_STATES]
 		: JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES;
-	const clearMoveNoticeTimeout = useCallback(() => {
-		if (moveNoticeTimeoutRef.current !== null) {
-			clearTimeout(moveNoticeTimeoutRef.current);
-			moveNoticeTimeoutRef.current = null;
-		}
-	}, []);
-	// A hidden demo must never advance in the background: the notice timer is
-	// dropped on unmount and on every tab change.
-	useEffect(() => clearMoveNoticeTimeout, [clearMoveNoticeTimeout]);
-	const selectDemoState = useCallback((value: JiraIssueAgentActivityDemoState) => {
-		clearMoveNoticeTimeout();
-		setMovedWorkItemKey(null);
-		setAgentActivityState(value);
-	}, [clearMoveNoticeTimeout]);
-	// The Move phase is defined by its open search menu, and the transfer region
-	// owns that state internally, so the demo opens it the way a person would.
-	useEffect(() => {
-		if (agentActivityState !== "agent-session-move") {
-			return;
-		}
-
-		const frame = requestAnimationFrame(() => {
-			const zones = transferStageRef.current?.querySelectorAll<HTMLButtonElement>(
-				"[data-slot='jira-issue-session-transfer'] button",
-			);
-			zones?.[zones.length - 1]?.click();
-		});
-
-		return () => cancelAnimationFrame(frame);
-	}, [agentActivityState]);
+	// Unlinking hands the session to the Link phase, where it sits detached
+	// underneath the work item and proposes a new home.
 	const handleSessionUnlink = useCallback(() => {
-		selectDemoState("agent-session-link");
-	}, [selectDemoState]);
-	const handleSessionMove = useCallback((workItemKey: string) => {
-		clearMoveNoticeTimeout();
-		setMovedWorkItemKey(workItemKey);
-		moveNoticeTimeoutRef.current = setTimeout(() => {
-			moveNoticeTimeoutRef.current = null;
-			setMovedWorkItemKey(null);
-			setAgentActivityState("default");
-		}, JIRA_ISSUE_MOVE_NOTICE_MS);
-	}, [clearMoveNoticeTimeout]);
+		setAgentActivityState("agent-session-link");
+	}, []);
 	const agentSessionTransfer: JiraIssueAgentSessionTransferConfig | undefined = useMemo(
-		() => (isTransferPhase && !isLinkPhase
-			? { moveWorkItems: JIRA_ISSUE_MOVE_WORK_ITEMS, onMove: handleSessionMove, onUnlink: handleSessionUnlink }
-			: undefined),
-		[handleSessionMove, handleSessionUnlink, isLinkPhase, isTransferPhase],
+		() => (isTransferPhase && !isLinkPhase ? { onUnlink: handleSessionUnlink } : undefined),
+		[handleSessionUnlink, isLinkPhase, isTransferPhase],
 	);
 	// Opens the floating chat for the activity's agent. When the activity is
 	// awaiting input, the chat replays its question card; answering it there is
@@ -635,7 +570,7 @@ function JiraIssueAgentActivityStatesDemo({
 						<Button
 							key={state.value}
 							aria-pressed={agentActivityState === state.value}
-							onClick={() => selectDemoState(state.value)}
+							onClick={() => setAgentActivityState(state.value)}
 							size="compact"
 							variant={agentActivityState === state.value ? "default" : "outline"}
 						>
@@ -645,7 +580,7 @@ function JiraIssueAgentActivityStatesDemo({
 				</div>
 			</div>
 			<div className="flex flex-1 items-start justify-center overflow-visible px-6 pb-10 pt-6">
-				<div ref={transferStageRef} className="flex w-[260px] flex-col gap-2">
+				<div className="flex w-[260px] flex-col gap-2">
 					<JiraIssue
 						key={isTransferPhase ? agentActivityState : "base"}
 						agentActivities={agentActivities}
@@ -671,15 +606,12 @@ function JiraIssueAgentActivityStatesDemo({
 						summary="Implement advanced date-range filter"
 						tags={[{ text: "FE Development", color: "purple" }]}
 					/>
-					{movedWorkItemKey === null ? null : (
-						<JiraIssueAgentSessionNotice message={`Moved to ${movedWorkItemKey}`} />
-					)}
 					{isLinkPhase ? (
 						<JiraIssueDetachedAgentSession
 							confidenceLabel={JIRA_ISSUE_DETACHED_SESSION_PROPOSAL.confidenceLabel}
-							onCreateWorkItem={() => selectDemoState("agent-session-unlink")}
-							onDismiss={() => selectDemoState("default")}
-							onLinkWorkItem={() => selectDemoState("agent-session-unlink")}
+							onCreateWorkItem={() => setAgentActivityState("agent-session-unlink")}
+							onDismiss={() => setAgentActivityState("default")}
+							onLinkWorkItem={() => setAgentActivityState("agent-session-unlink")}
 							reason={JIRA_ISSUE_DETACHED_SESSION_PROPOSAL.reason}
 							session={JIRA_ISSUE_DETACHED_SESSION}
 							suggestedWorkItemKey={JIRA_ISSUE_DETACHED_SESSION_PROPOSAL.suggestedWorkItemKey}
