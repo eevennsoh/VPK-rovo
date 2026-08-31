@@ -54,14 +54,24 @@ test("PR state lists the pull-request lifecycle in order", () => {
 test("Agent lists the session states by session shape, not alphabetically", () => {
 	assert.deepEqual(
 		BOARD_AGENT_STATE_OPTIONS.map((option) => option.label),
-		["Working", "Needs input", "Finished"],
+		["Working", "Needs input", "Finished", "Untracked"],
 	);
 	assert.ok(BOARD_AGENT_STATE_OPTIONS.every((option) => option.shown));
 	// The state that wants a human sits between the one the agent holds on its
 	// own and the terminal one, so the row needing attention is not buried.
+	// Untracked is the absence of a session, so it sits after that lifecycle
+	// rather than mixing into it.
 	const labels = BOARD_AGENT_STATE_OPTIONS.map((option) => option.label);
 	assert.equal(labels.indexOf("Needs input"), 1);
-	assert.equal(labels.at(-1), "Finished");
+	assert.equal(labels.indexOf("Finished"), 2);
+	assert.equal(labels.at(-1), "Untracked");
+	const untracked = BOARD_AGENT_STATE_OPTIONS.find((option) => option.id === "untracked");
+	assert.equal(untracked?.separatorBefore, true);
+	assert.ok(
+		BOARD_AGENT_STATE_OPTIONS.filter((option) => option.id !== "untracked").every(
+			(option) => !option.separatorBefore,
+		),
+	);
 });
 
 test("every visibility list shares one row shape", () => {

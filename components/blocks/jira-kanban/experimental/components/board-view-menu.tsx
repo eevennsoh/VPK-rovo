@@ -1,7 +1,7 @@
 "use client";
 
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- DropdownMenuTrigger uses a render-node so the View button owns the visual state.
-import { useState, type ComponentType } from "react";
+import { Fragment, useState, type ComponentType } from "react";
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
 import CustomizeIcon from "@atlaskit/icon/core/customize";
 import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
@@ -46,6 +46,7 @@ interface VisibilityOption {
 	label: string;
 	shown: boolean;
 	locked?: boolean;
+	separatorBefore?: boolean;
 }
 
 /**
@@ -132,23 +133,25 @@ function VisibilityToggleSubmenu({
 				{options.map((option) => {
 					const stateIcon = icons?.[option.id];
 					return (
-						<DropdownMenuCheckboxItem
-							checked={checkedIds.has(option.id)}
-							// `gap-2` only where a glyph is present; the icon-less lists
-							// keep their labels flush against the row's own padding.
-							className={stateIcon ? "gap-2" : undefined}
-							// Some rows are always on — Jira locks Summary, for instance.
-							disabled={option.locked}
-							indicatorPlacement="end"
-							key={option.id}
-							onCheckedChange={() => onToggle(option.id)}
-						>
-							{stateIcon ? (
-								// Decorative: the row's own text already names the state.
-								<Icon render={<stateIcon.glyph color={stateIcon.color} label="" />} />
-							) : null}
-							{option.label}
-						</DropdownMenuCheckboxItem>
+						<Fragment key={option.id}>
+							{option.separatorBefore ? <DropdownMenuSeparator /> : null}
+							<DropdownMenuCheckboxItem
+								checked={checkedIds.has(option.id)}
+								// `gap-2` only where a glyph is present; the icon-less lists
+								// keep their labels flush against the row's own padding.
+								className={stateIcon ? "gap-2" : undefined}
+								// Some rows are always on — Jira locks Summary, for instance.
+								disabled={option.locked}
+								indicatorPlacement="end"
+								onCheckedChange={() => onToggle(option.id)}
+							>
+								{stateIcon ? (
+									// Decorative: the row's own text already names the state.
+									<Icon render={<stateIcon.glyph color={stateIcon.color} label="" />} />
+								) : null}
+								{option.label}
+							</DropdownMenuCheckboxItem>
+						</Fragment>
 					);
 				})}
 			</DropdownMenuSubContent>
