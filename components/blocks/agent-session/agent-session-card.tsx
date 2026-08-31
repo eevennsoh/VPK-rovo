@@ -48,6 +48,7 @@ export function AgentSessionCard({
 	arrivalDelaySeconds,
 	captured = false,
 	getResumeCommand,
+	isArriving = false,
 	isNew = false,
 	isResumable,
 	item,
@@ -63,6 +64,9 @@ export function AgentSessionCard({
 	arrivalDelaySeconds?: number;
 	captured?: boolean;
 	getResumeCommand?: (item: AgentSessionItem) => string | undefined;
+	/** Play the one-shot arrival beat. A remounted card must not re-arm it. */
+	isArriving?: boolean;
+	/** Carry the persistent unreviewed mark. Outlives the beat. */
 	isNew?: boolean;
 	isResumable?: (item: AgentSessionItem) => boolean;
 	item: AgentSessionItem;
@@ -92,7 +96,9 @@ export function AgentSessionCard({
 	// Subtasks counts too: a consumer that wires only that handler still needs
 	// the chin, or its control would be unreachable.
 	const showChin = captured || hasWorkItemActions || onSubtasks !== undefined;
-	const shouldPlayArrival = isNew && !shouldReduceMotion;
+	// The beat, not the mark: a card remounted while still unreviewed keeps the
+	// discovery dash and dot but must not replay its entrance.
+	const shouldPlayArrival = isArriving && !shouldReduceMotion;
 
 	// The same hover/focus-revealed pair Agent List rows use, with show/hide in
 	// the slot Agent List gives to Archive. The eye is a placeholder today: the

@@ -30,6 +30,17 @@ export interface AgentSessionProps {
 	 * a boolean.
 	 */
 	newItemIds?: ReadonlySet<string>;
+	/**
+	 * Subset of {@link newItemIds} whose arrival beat has not played yet.
+	 *
+	 * Separate from the mark because the two have different lifetimes: the mark
+	 * lasts until the watermark clears it, while the beat is one-shot per
+	 * arrival. Anything that remounts a card — a host collapsing the surface and
+	 * reopening it — would otherwise re-arm `initial` and replay a beat the
+	 * viewer already saw. Defaults to `newItemIds`, which is correct for a host
+	 * that never unmounts the list.
+	 */
+	arrivingItemIds?: ReadonlySet<string>;
 	/** Suggested Jira key for the chin primary action. Defaults to `sessionDetails.issueKey`. */
 	getSuggestedWorkItemKey?: (item: AgentSessionItem) => string | undefined;
 	/**

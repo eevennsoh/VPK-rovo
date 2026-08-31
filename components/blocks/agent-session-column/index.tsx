@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useReducedMotion } from "motion/react";
 
 import ShrinkHorizontalIcon from "@atlaskit/icon/core/shrink-horizontal";
@@ -99,6 +99,40 @@ export function AgentSessionColumn({
 		[showBottomScrollMask, showTopScrollMask],
 	);
 	const sessionCount = count ?? items.length;
+	// Collapsing swaps the cards for the rail and back, which remounts them — and
+	// a mount is exactly what re-arms an `initial` animation. The beat is meant to
+	// fire once per arrival, so the column, which survives the toggle, remembers
+	// which ids have already played. This is history, not derived state: nothing
+	// in the current props can say whether a beat has already run.
+	const [playedArrivalIds, setPlayedArrivalIds] = useState<ReadonlySet<string>>(
+		() => new Set<string>(),
+	);
+	const arrivingItemIds = useMemo(() => {
+		if (newItemIds === undefined || newItemIds.size === 0) {
+			return undefined;
+		}
+
+		const arriving = new Set<string>();
+		for (const id of newItemIds) {
+			if (!playedArrivalIds.has(id)) {
+				arriving.add(id);
+			}
+		}
+		return arriving;
+	}, [newItemIds, playedArrivalIds]);
+
+	useEffect(() => {
+		setPlayedArrivalIds((current) => {
+			// Mirror `newItemIds` rather than accumulating, so an id the watermark
+			// clears is forgotten and a later re-arrival of it animates again.
+			const next = newItemIds === undefined
+				? new Set<string>()
+				: new Set<string>(newItemIds);
+			const isUnchanged = next.size === current.size
+				&& [...next].every((id: string) => current.has(id));
+			return isUnchanged ? current : next;
+		});
+	}, [newItemIds]);
 	// The rail's notches activate on the same terms the cards do: coding sessions
 	// are always activatable, person rows only when `canViewItem` allows it.
 	const canActivateNotch = (item: AgentSessionItem) =>
@@ -156,6 +190,7 @@ export function AgentSessionColumn({
 					}}
 				>
 					<AgentSessionColumnRail
+						arrivingItemIds={arrivingItemIds}
 						items={items}
 						newItemIds={newItemIds}
 						onExpand={handleToggleCollapsed}
@@ -218,7 +253,13 @@ export function AgentSessionColumn({
 							{items.length === 0 ? (
 								<p className="text-xs text-text-subtlest">{emptyLabel}</p>
 							) : (
-								<AgentSession className={listClassName} items={items} newItemIds={newItemIds} {...sessionProps} />
+								<AgentSession
+									arrivingItemIds={arrivingItemIds}
+									className={listClassName}
+									items={items}
+									newItemIds={newItemIds}
+									{...sessionProps}
+								/>
 							)}
 						</div>
 					</div>

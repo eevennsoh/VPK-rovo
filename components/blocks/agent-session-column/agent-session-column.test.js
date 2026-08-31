@@ -241,9 +241,10 @@ test("an arrival is a transient beat plus a mark that outlives it", () => {
 	// The dash is load-bearing too — it means "uncaptured" — so the arrival
 	// recolours it rather than replacing the border style.
 	assert.match(CARD_SOURCE, /border border-dashed/u);
-	// Reduced motion drops the beat and keeps the mark.
-	assert.match(CARD_SOURCE, /const shouldPlayArrival = isNew && !shouldReduceMotion;/u);
-	assert.match(RAIL_COLUMN_SOURCE, /const shouldPlayArrival = isNew && !shouldReduceMotion;/u);
+	// Reduced motion drops the beat and keeps the mark. The beat is keyed on
+	// `isArriving`, never on `isNew` — see the one-shot test below.
+	assert.match(CARD_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
+	assert.match(RAIL_COLUMN_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
 	// A settled card must not replay its entrance on an unrelated re-render.
 	assert.match(CARD_SOURCE, /initial=\{shouldPlayArrival \? \{ opacity: 0, y: ARRIVAL_OFFSET_PX \} : false\}/u);
 });
@@ -308,4 +309,21 @@ test("the demo drives an arrival through both forms at once", () => {
 	// Updaters stay pure: no sibling setState from inside one.
 	assert.doesNotMatch(PAGE_SOURCE, /setSyncedBatches\(\(/u);
 	assert.match(DETAIL_SOURCE, /name: "newItemIds"/u);
+});
+
+test("the arrival beat stays one-shot across a collapse toggle", () => {
+	// Collapsing swaps the cards for the rail and back, remounting them — and a
+	// mount re-arms `initial`. The column survives the toggle, so it owns the
+	// history of which ids have already played; the two branches only render it.
+	assert.match(INDEX_SOURCE, /const \[playedArrivalIds, setPlayedArrivalIds\]/u);
+	assert.match(INDEX_SOURCE, /if \(!playedArrivalIds\.has\(id\)\)/u);
+	// Mirrored, not accumulated, so a cleared id can legitimately arrive again.
+	assert.match(INDEX_SOURCE, /Mirror `newItemIds` rather than accumulating/u);
+	assert.match(INDEX_SOURCE, /return isUnchanged \? current : next;/u);
+	// Both branches get the beat set and the mark set, and they are distinct.
+	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,200}?arrivingItemIds=\{arrivingItemIds\}/u);
+	assert.match(INDEX_SOURCE, /<AgentSession[\s\S]{0,200}?arrivingItemIds=\{arrivingItemIds\}/u);
+	assert.match(SESSION_TYPES_SOURCE, /arrivingItemIds\?: ReadonlySet<string>;/u);
+	// Defaulting to the mark keeps a host that never unmounts the list correct.
+	assert.match(SESSION_INDEX_SOURCE, /const beatItemIds = arrivingItemIds \?\? newItemIds;/u);
 });

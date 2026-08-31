@@ -151,17 +151,21 @@ const HEAD_COUNT_MORPH: TextMorphConfig = {
  */
 function AgentSessionNotch({
 	flyoutHandle,
+	isArriving,
 	isNew,
 	item,
 	onView,
 }: Readonly<{
 	flyoutHandle: JiraSessionFlyoutHandle;
+	isArriving: boolean;
 	isNew: boolean;
 	item: AgentSessionItem;
 	onView?: (item: AgentSessionItem) => void;
 }>) {
 	const shouldReduceMotion = useReducedMotion();
-	const shouldPlayArrival = isNew && !shouldReduceMotion;
+	// The beat, not the mark: expanding and re-collapsing the column remounts the
+	// rail, and a notch that is still unreviewed stays lit without regrowing.
+	const shouldPlayArrival = isArriving && !shouldReduceMotion;
 
 	return (
 		<JiraSessionFlyoutTrigger
@@ -205,6 +209,7 @@ function AgentSessionNotch({
 }
 
 export function AgentSessionColumnRail({
+	arrivingItemIds,
 	items,
 	newItemIds,
 	onExpand,
@@ -212,6 +217,8 @@ export function AgentSessionColumnRail({
 	sessionCount,
 	title,
 }: Readonly<{
+	/** Subset of `newItemIds` whose arrival beat has not played yet. */
+	arrivingItemIds?: ReadonlySet<string>;
 	items: readonly AgentSessionItem[];
 	newItemIds?: ReadonlySet<string>;
 	onExpand: () => void;
@@ -298,6 +305,7 @@ export function AgentSessionColumnRail({
 					{items.map((item: AgentSessionItem) => (
 						<AgentSessionNotch
 							flyoutHandle={flyoutHandle}
+							isArriving={(arrivingItemIds ?? newItemIds)?.has(item.id) ?? false}
 							isNew={newItemIds?.has(item.id) ?? false}
 							item={item}
 							key={item.id}

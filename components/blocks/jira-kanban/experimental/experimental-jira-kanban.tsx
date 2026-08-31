@@ -50,6 +50,7 @@ import {
 	isBoardColumnCollapsed,
 	toggleCollapsedBoardColumn,
 	BOARD_COLUMN_WIDTH_PX,
+	type CollapsedBoardColumns,
 } from "./lib/board-column-collapse";
 
 import type {
@@ -76,6 +77,18 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	 * left of the board. Omit to render only Jira status columns.
 	 */
 	agentSessionColumn?: AgentSessionColumnProps;
+	/**
+	 * Which columns are collapsed, when the host wants to own that.
+	 *
+	 * Collapse is a viewer's deliberate choice, so it has to outlive anything
+	 * that unmounts this board — switching to the list or Pulse view and back is
+	 * a temporary view switch, not a reason to re-expand every column. A host
+	 * that renders the board in such a branch should lift this state above the
+	 * branch. Omit both props to let the board keep it locally.
+	 */
+	collapsedColumns?: CollapsedBoardColumns;
+	/** Called with the next collapsed set when a column is collapsed or expanded. */
+	onCollapsedColumnsChange?: (collapsedColumns: CollapsedBoardColumns) => void;
 }
 
 const JIRA_KANBAN_CARD_MOVE: Transition = { duration: 0.6, ease: [0.4, 0, 0, 1] }; // duration-slowest + ease-in-out
@@ -618,6 +631,7 @@ export function ExperimentalJiraKanban({
 	assignedAgentIdsByColumn = {},
 	boardColumns,
 	cardMoveAnimation,
+	collapsedColumns: controlledCollapsedColumns,
 	draggedCardCode = null,
 	selectedCardCodes,
 	onCardClick,
@@ -631,6 +645,7 @@ export function ExperimentalJiraKanban({
 	onCardAgentDoneRunReview,
 	onCardAgentDoneRunView,
 	onCreateAgent,
+	onCollapsedColumnsChange,
 	onToggleColumnAgent,
 	paddingBottom = token("space.150"),
 	paddingTop = token("space.150"),
@@ -640,7 +655,10 @@ export function ExperimentalJiraKanban({
 	const shouldReduceMotion = useReducedMotion();
 	const shouldAnimateCardMoves = animateCardMoves && !shouldReduceMotion;
 	const dragImageRef = useRef<HTMLDivElement | null>(null);
-	const [collapsedColumns, setCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
+	const [uncontrolledCollapsedColumns, setUncontrolledCollapsedColumns] = useState(
+		EMPTY_COLLAPSED_BOARD_COLUMNS,
+	);
+	const collapsedColumns = controlledCollapsedColumns ?? uncontrolledCollapsedColumns;
 	const selectedCount = selectedCardCodes?.size ?? 0;
 	const selectedStatus = selectedCardCodes
 		? getCommonSelectedCardStatus(boardColumns, selectedCardCodes)
@@ -757,15 +775,25 @@ export function ExperimentalJiraKanban({
 	};
 
 	const handleToggleColumnCollapsed = (columnTitle: string) => {
-		setCollapsedColumns((previous) => toggleCollapsedBoardColumn(previous, columnTitle));
+		const nextCollapsedColumns = toggleCollapsedBoardColumn(collapsedColumns, columnTitle);
+		// Only own the state when the host has not claimed it, so a controlled
+		// host stays the single source of truth.
+		if (controlledCollapsedColumns === undefined) {
+			setUncontrolledCollapsedColumns(nextCollapsedColumns);
+		}
+		onCollapsedColumnsChange?.(nextCollapsedColumns);
 	};
 
 	return (
 		<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 			<div className="flex min-h-0 min-w-0 flex-1 items-stretch">
 				{agentSessionColumn ? (
+					// The same 2px transparent border every status column carries for
+					// its drop-target ring. Matching the box model, not just the
+					// padding, is what puts the column headers on one baseline and
+					// keeps one gap between every pair of column contents.
 					<div
-						className="flex min-h-0 shrink-0 ps-6"
+						className="flex min-h-0 shrink-0 border-2 border-transparent ps-6"
 						style={{ paddingTop, paddingBottom }}
 					>
 						<AgentSessionColumn {...agentSessionColumn} />

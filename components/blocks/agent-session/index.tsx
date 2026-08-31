@@ -60,6 +60,7 @@ function buildArrivalDelays(
 export function AgentSession({
 	className,
 	items = AGENT_SESSION_ITEMS,
+	arrivingItemIds,
 	canViewItem,
 	capturedItemIds,
 	getResumeCommand,
@@ -80,9 +81,12 @@ export function AgentSession({
 	const handleCodingView = useCallback((item: AgentSessionItem) => {
 		onView?.(item);
 	}, [onView]);
+	// The beat runs for arrivals the viewer has not seen yet; the mark stays on
+	// every unreviewed id. A host that never unmounts the list can pass one set.
+	const beatItemIds = arrivingItemIds ?? newItemIds;
 	const arrivalDelays = useMemo(
-		() => buildArrivalDelays(items, newItemIds),
-		[items, newItemIds],
+		() => buildArrivalDelays(items, beatItemIds),
+		[items, beatItemIds],
 	);
 
 	return (
@@ -92,6 +96,7 @@ export function AgentSession({
 					arrivalDelaySeconds={arrivalDelays.get(item.id)}
 					captured={capturedItemIds?.has(item.id) ?? false}
 					getResumeCommand={getResumeCommand}
+					isArriving={beatItemIds?.has(item.id) ?? false}
 					isNew={newItemIds?.has(item.id) ?? false}
 					isResumable={isResumable}
 					item={item}
