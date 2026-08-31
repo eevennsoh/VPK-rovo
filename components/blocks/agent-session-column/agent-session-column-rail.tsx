@@ -300,10 +300,14 @@ export function AgentSessionColumnRail({
 
 			    It is also the dock's pointer surface — one listener for the whole
 			    rail, rather than a hover handler per notch, because the swell is a
-			    property of the distance between them. Focused-notch rings paint past
-			    the plane because the clip lifts for `:focus-visible`. */}
+			    property of the distance between them. `px-1` keeps the 4px
+			    focus-ring gutter *inside* the 32px column so the notches stay
+			    centered; a negative horizontal margin here shifts them 4px left
+			    once the collapsed section clips overflow. Focused-notch rings
+			    still paint past the scrollport because the clip lifts for
+			    `:focus-visible`. */}
 			<motion.ul
-				className="flex min-h-0 w-full flex-1 flex-col items-center gap-1 overflow-y-auto -mx-1 px-1 has-[:focus-visible]:overflow-visible"
+				className="flex min-h-0 w-full flex-1 flex-col items-center gap-1 overflow-y-auto px-1 has-[:focus-visible]:overflow-visible"
 				layoutScroll
 				onPointerEnter={isDocked ? dock.handlePointerEnter : undefined}
 				onPointerLeave={isDocked ? dock.handlePointerLeave : undefined}

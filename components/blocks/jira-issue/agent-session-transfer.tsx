@@ -13,24 +13,33 @@ import { cn } from "@/lib/utils";
 /** Slack around the zone rect that still counts as a drop, so the edges are forgiving. */
 const TRANSFER_DROP_HALO_PX = 24;
 /**
- * Hidden at rest. Hover reveal is scoped to the agent session rows, not the
- * whole card: hovering the summary, tags, or subtasks must not offer a drop
- * target for a session the pointer never touched. The region's own slot is the
- * second hover trigger so the pointer can travel down from the row, across this
- * element's `pt-2` gap, and onto the well without the target vanishing
- * mid-reach — at rest the region is `pointer-events-none`, so it cannot arm
- * that trigger on its own.
+ * Collapsed at rest (`0fr`) so a stacked board does not reserve a well-sized
+ * gap under every card. Hovering an agent session row, focusing inside the
+ * card, or starting a drag opens the well; neighboring cards follow the height
+ * change. Hover reveal is scoped to the agent session rows, not the whole
+ * card: hovering the summary, tags, or subtasks must not offer a drop target
+ * for a session the pointer never touched.
+ *
+ * The region's own slot is the second hover trigger so the pointer can travel
+ * down from the row, across this element's `pt-2` gap, and onto the well
+ * without the target vanishing mid-reach — at rest the region is
+ * `pointer-events-none` and zero height, so it cannot arm that trigger on
+ * its own.
  *
  * Keyboard reveal stays card-wide on purpose. The well is a tabbable button, so
  * narrowing focus to the row would leave it reachable while invisible the
  * moment focus moved onto it.
  *
- * `translate` rides the same declaration as `opacity` on purpose: two
- * `transition-*` utilities on one element collapse to the last one, so the
- * drag shift would snap if it declared its own.
+ * Two properties only: height (`grid-template-rows`) so the stack reacts, and
+ * opacity so the well fades with that open. The drag shift is a transform on
+ * this same node; adding it to the transition list would be a third property.
  */
-const TRANSFER_REVEAL_CLASS =
-	"opacity-0 transition-[opacity,translate] duration-fast ease-out-practical motion-reduce:transition-none group-has-[[data-slot=jira-issue-agent-row]:hover]/jira-issue-transfer:pointer-events-auto group-has-[[data-slot=jira-issue-agent-row]:hover]/jira-issue-transfer:opacity-100 group-has-[[data-slot=jira-issue-session-transfer]:hover]/jira-issue-transfer:pointer-events-auto group-has-[[data-slot=jira-issue-session-transfer]:hover]/jira-issue-transfer:opacity-100 group-has-[:focus-visible]/jira-issue-transfer:pointer-events-auto group-has-[:focus-visible]/jira-issue-transfer:opacity-100";
+const TRANSFER_REVEAL_CLASS = cn(
+	"grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-fast ease-out-practical motion-reduce:transition-none",
+	"group-has-[[data-slot=jira-issue-agent-row]:hover]/jira-issue-transfer:pointer-events-auto group-has-[[data-slot=jira-issue-agent-row]:hover]/jira-issue-transfer:grid-rows-[1fr] group-has-[[data-slot=jira-issue-agent-row]:hover]/jira-issue-transfer:opacity-100",
+	"group-has-[[data-slot=jira-issue-session-transfer]:hover]/jira-issue-transfer:pointer-events-auto group-has-[[data-slot=jira-issue-session-transfer]:hover]/jira-issue-transfer:grid-rows-[1fr] group-has-[[data-slot=jira-issue-session-transfer]:hover]/jira-issue-transfer:opacity-100",
+	"group-has-[:focus-visible]/jira-issue-transfer:pointer-events-auto group-has-[:focus-visible]/jira-issue-transfer:grid-rows-[1fr] group-has-[:focus-visible]/jira-issue-transfer:opacity-100",
+);
 const TRANSFER_ZONE_BASE_CLASS =
 	"flex w-full select-none items-center justify-center rounded-lg border px-3 text-center outline-none transition-[height,background-color,border-color,color] duration-medium ease-in-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none";
 /** Resting affordance: compact 24px row with a solid stroke. */
@@ -205,23 +214,24 @@ export function JiraIssueAgentSessionTransfer({
 	return (
 		<div
 			className={cn(
-				"flex flex-col pt-2",
 				TRANSFER_REVEAL_CLASS,
-				dragging ? "pointer-events-auto opacity-100" : "pointer-events-none",
+				dragging ? "pointer-events-auto grid-rows-[1fr] opacity-100" : "pointer-events-none",
 				dragging ? TRANSFER_DRAG_SHIFT_CLASS : null,
 			)}
 			data-slot="jira-issue-session-transfer"
 		>
-			<TransferDropZone
-				armed={armed}
-				description={`Unlink ${sessionLabel} from this work item`}
-				dragging={dragging}
-				label={config.unlinkLabel ?? "Drag here to unlink"}
-				measureRef={unlinkRef}
-				onClick={() => {
-					config.onUnlink?.(session);
-				}}
-			/>
+			<div className="min-h-0 overflow-hidden has-[:focus-visible]:overflow-visible">
+				<div className="flex flex-col pt-2">
+					<TransferDropZone
+						armed={armed}
+						description={`Unlink ${sessionLabel} from this work item`}
+						dragging={dragging}
+						label={config.unlinkLabel ?? "Drag here to unlink"}
+						measureRef={unlinkRef}
+						onClick={() => config.onUnlink?.(session)}
+					/>
+				</div>
+			</div>
 		</div>
 	);
 }

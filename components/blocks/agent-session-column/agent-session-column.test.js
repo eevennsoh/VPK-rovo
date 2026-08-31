@@ -635,10 +635,13 @@ test("the hidden view keeps Hidden work in the header and a back footer", () => 
 });
 
 test("the collapsed rail keeps a focus-ring gutter on its scrollport", () => {
+	// Internal padding only: `-mx-1` on a 32px overflow-hidden column shifts
+	// the notches 4px off center. The clip lifts for `:focus-visible` instead.
 	assert.match(
 		RAIL_COLUMN_SOURCE,
-		/overflow-y-auto -mx-1 px-1 has-\[:focus-visible\]:overflow-visible/u,
+		/overflow-y-auto px-1 has-\[:focus-visible\]:overflow-visible/u,
 	);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /-mx-1/u);
 });
 
 test("the collapsed rail receives visible items only and collapse leaves hidden view", () => {
