@@ -244,6 +244,23 @@ test("Jira issue reserves a stable title action slot and opens the built-in acti
 	assert.doesNotMatch(MORE_MENU_SOURCE, /Lozenge|>New</u);
 });
 
+test("Jira issue can move agent and skill assignment into the More actions menu", () => {
+	assert.match(SOURCE, /export type JiraIssueGenerativeActionPresentation = "sparkle" \| "more-actions";/u);
+	assert.match(SOURCE, /generativeActionPresentation\?: JiraIssueGenerativeActionPresentation;/u);
+	assert.match(SOURCE, /generativeActionPresentation = "sparkle",/u);
+	assert.match(SOURCE, /const generativeActionMenu = generativeAction && \(generativeActionPresentation === "sparkle" \|\| !showMoreAction\) \?/u);
+	assert.match(SOURCE, /<JiraIssueMoreMenu[\s\S]*generativeAction=\{generativeActionPresentation === "more-actions" \? generativeAction : undefined\}[\s\S]*generativeActionIssue=\{\{ issueKey, summary \}\}/u);
+	assert.match(MORE_MENU_SOURCE, /<JiraIssueAgentAndSkillSubmenu[\s\S]*action=\{generativeAction\}[\s\S]*issue=\{generativeActionIssue\}/u);
+	assert.match(MORE_MENU_SOURCE, /<JiraIssueAgentAndSkillSubmenu action=\{generativeAction\} issue=\{generativeActionIssue\} \/>[\s\S]*<DropdownMenuSeparator \/>[\s\S]*Move work item/u);
+	assert.match(MORE_MENU_SOURCE, /generativeAction \? null : <DropdownMenuItem[\s\S]*Add agent/u);
+	assert.match(GENERATIVE_SOURCE, /export function JiraIssueAgentAndSkillSubmenu/u);
+	assert.match(GENERATIVE_SOURCE, /<DropdownMenuSubTrigger>Assign agent and use skill<\/DropdownMenuSubTrigger>/u);
+	assert.match(GENERATIVE_SOURCE, />Agents<\/DropdownMenuLabel>/u);
+	assert.match(GENERATIVE_SOURCE, />Skills<\/DropdownMenuLabel>/u);
+	assert.match(GENERATIVE_SOURCE, /disabled=\{agent\.disabled\}/u);
+	assert.match(GENERATIVE_SOURCE, /disabled=\{skill\.disabled\}/u);
+});
+
 test("Jira issue renders the more-actions button as a sibling of the card button", () => {
 	assert.doesNotMatch(SUMMARY_BLOCK, /<JiraIssueMoreMenu/u);
 	assert.match(
@@ -389,7 +406,7 @@ test("Jira issue renders a reusable generative action command menu", () => {
 	assert.match(SOURCE, /import \{[\s\S]*JiraIssueGenerativeActionMenu,[\s\S]*type JiraIssueGenerativeActionConfig,[\s\S]*\} from "@\/components\/blocks\/jira-issue\/generative-action-menu";/);
 	assert.match(SOURCE, /generativeAction,/);
 	assert.doesNotMatch(SOURCE, /DEFAULT_JIRA_ISSUE_GENERATIVE_ACTION|onSubmit: \(\) => undefined/u);
-	assert.match(SOURCE, /const generativeActionMenu = generativeAction \? \([\s\S]*<JiraIssueGenerativeActionMenu[\s\S]*action=\{generativeAction\}[\s\S]*issue=\{\{ issueKey, summary \}\}[\s\S]*revealActive=\{generativeActionRevealActive\}[\s\S]*\/>[\s\S]*\) : null;/);
+	assert.match(SOURCE, /const generativeActionMenu = generativeAction && \(generativeActionPresentation === "sparkle" \|\| !showMoreAction\) \? \([\s\S]*<JiraIssueGenerativeActionMenu[\s\S]*action=\{generativeAction\}[\s\S]*issue=\{\{ issueKey, summary \}\}[\s\S]*revealActive=\{generativeActionRevealActive\}[\s\S]*\/>[\s\S]*\) : null;/);
 	assert.match(SOURCE, /const hasInteractiveContent = showMoreAction \|\| hasSubtasks \|\| Boolean\(parentEpicControl\) \|\| hasAgentActivityPresentation \|\| Boolean\(generativeAction\) \|\| Boolean\(agentSessionTransfer\) \|\| usesStrokeChrome;/);
 	assert.match(SOURCE, /\{generativeActionMenu\}/);
 	assert.match(SOURCE, /"group\/jira-issue relative w-full min-w-0 overflow-visible outline-none"/);
