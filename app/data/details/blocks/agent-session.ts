@@ -2,19 +2,25 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_SESSION_DETAIL: ComponentDetail = {
 	description:
-		'Local coding sessions that never became work items, available in three footprints. Large is the default dashed uncaptured-work card: it reuses the shared Agent List row — hexagon agent identity, a static timestamp, a devices icon, and the viewer machine — on a single surface, with Resume and Hide or Show actions on hover. Work-item capture lives on the shared untracked-work session flyout (the same surface as Agent Session Flyout): hover a card to Link, Create, or add as a subtask. Medium condenses the agent, participant, and add affordance into the Jira Agents row, while Small becomes the collapsed Agent Session Column notch. Ids listed in `capturedItemIds` swap the dashed frame for a solid captured border, and rows the host cannot resume hide the Resume control entirely rather than copying a command that would fail.',
+		'Agent sessions in four footprints and relationship states. Large is the default detached, dashed uncaptured-work card: it reuses the shared Agent List row with a static timestamp, devices icon, viewer machine, and Resume plus Hide or Show actions. Medium detached condenses that local session into the Jira Agents row, while Medium attached reuses the exact Jira Issue activity row for a session already connected to work. Small becomes the collapsed Agent Session Column notch. Detached footprints open the untracked-work Agent Session Flyout with Link, Create, and add-as-subtask actions; Medium attached opens session details because its Jira relationship already exists. Captured ids use a solid border, and rows the host cannot resume omit Resume.',
 	demoLayout: { previewHeight: "fit" },
 	examples: [
 		{
-			title: "Medium",
+			title: "Medium detached",
 			description:
-				"A compact 276px session row for denser surfaces, retaining the agent identity, participant, and add affordance from the Jira Agents design.",
-			demoSlug: "agent-session-demo-medium",
+				"A compact 276px local-session row that is still detached from Jira work and opens the untracked-work flyout.",
+			demoSlug: "agent-session-demo-medium-detached",
+		},
+		{
+			title: "Medium attached",
+			description:
+				"The Jira Issue agent activity row for a session already attached to work, with its session-details flyout available on hover or focus.",
+			demoSlug: "agent-session-demo-medium-attached",
 		},
 		{
 			title: "Small",
 			description:
-				"The shared 12×2px session mark from the collapsed Agent Session Column rail.",
+				"The shared 12×2px session mark from the collapsed Agent Session Column rail, with the same session flyout available on hover or focus.",
 			demoSlug: "agent-session-demo-small",
 		},
 	],
@@ -28,10 +34,10 @@ export const AGENT_SESSION_DETAIL: ComponentDetail = {
 	props: [
 		{
 			name: "variant",
-			type: '"large" | "medium" | "small"',
+			type: '"large" | "medium-detached" | "medium-attached" | "small"',
 			default: '"large"',
 			description:
-				"Visual footprint for each session. Large is the full uncaptured-work card, Medium is the compact participant row, and Small is the collapsed-column notch.",
+				"Visual footprint and Jira relationship. Medium detached is uncaptured local work; Medium attached is the canonical Jira Issue activity row for work with an existing relationship.",
 		},
 		{
 			name: "items",
