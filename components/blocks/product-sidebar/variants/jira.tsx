@@ -95,6 +95,9 @@ export interface JiraSidebarSessionItem {
 	/** VPK product mark for platform-owned runners such as Rovo. */
 	vpkLogo?: "rovo";
 	agentName: string;
+	/** Human who started the agent session, shown beside the session timestamp. */
+	invokedBy?: JiraSidebarAssignee;
+	/** Human accountable for the Jira work item, shown in the work-item Smart Link. */
 	assignee?: JiraSidebarAssignee;
 	branch?: string;
 	checks?: JiraSidebarSessionChecks;

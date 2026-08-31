@@ -694,6 +694,16 @@ test("Experimental kanban cards forward their configured agent activity layout",
 test("Experimental kanban cards opt into draggable agent-session unlink when the host handles it", () => {
 	assert.match(EXPERIMENTAL_SOURCE, /onCardAgentSessionUnlink\?: \(/u);
 	assert.match(EXPERIMENTAL_SOURCE, /onCardAgentSessionLink\?: \(/u);
+	// Any non-completed chin is unlinkable — 1 agent, 1-n, and needs-input —
+	// not a dedicated transfer-phase card.
+	assert.match(
+		EXPERIMENTAL_CARD_SOURCE,
+		/const firstActiveAgentSession = card\.agentActivities\?\.find\(\s*\n\s*\(activity\) => activity\.state !== "completed",\s*\n\s*\);/u,
+	);
+	assert.match(
+		EXPERIMENTAL_CARD_SOURCE,
+		/const canUnlinkAgentSession = Boolean\(onSessionUnlink && firstActiveAgentSession\);/u,
+	);
 	assert.match(EXPERIMENTAL_CARD_SOURCE, /const canTransferAgentSession = canUnlinkAgentSession \|\| canLinkAgentSession;/u);
 	assert.match(EXPERIMENTAL_CARD_SOURCE, /onSessionUnlink\?\.\(resolvedSession, card, columnTitle\)/u);
 	assert.match(EXPERIMENTAL_CARD_SOURCE, /className=\{canTransferAgentSession \? JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS : undefined\}/u);

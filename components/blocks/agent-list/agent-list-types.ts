@@ -90,6 +90,7 @@ export type AgentListSessionDetails = Partial<
 		| "completedSecondsAgo"
 		| "id"
 		| "initialElapsedSeconds"
+		| "invokedBy"
 		| "startedAtMs"
 		| "status"
 		| "title"

@@ -73,6 +73,7 @@ test("unlinked agent sessions remain detached beneath their source Jira card", (
 	assert.match(PAGE_SOURCE, /toJiraGoldenJourneysV4DetachedAgentSession\(activity, card\)/u);
 	assert.match(PAGE_SOURCE, /setDetachedAgentSessionsByCard\(\(current\) =>/u);
 	assert.match(PAGE_SOURCE, /detachedAgentSessionsByCard=\{detachedAgentSessionsByCard\}/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /<AgentSession[\s\S]*variant="medium-detached"/u);
 });
 
 test("the board puts agent and skill assignment in each card's More actions menu", () => {
@@ -154,7 +155,7 @@ test("the route pins the shared Agent Session column beside Jira statuses", () =
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /capturedItemIds: capturedLooseWorkIds,/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /toPulseSessionHandlers/u);
 
-	const columnIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<AgentSessionColumn {...agentSessionColumn} onView={handleSessionView} />");
+	const columnIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<AgentSessionColumn");
 	const scrollportIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<section");
 	assert.ok(columnIndex > 0, "expected the board to render the Agent Session column");
 	assert.ok(columnIndex < scrollportIndex, "expected untracked work to stay pinned before the status scrollport");

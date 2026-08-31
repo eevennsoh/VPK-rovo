@@ -104,14 +104,14 @@ test("shared Agent States flyout forwards submission, timing, and stopped lifecy
 
 // Detail panels still reuse the shared design-system property components rather
 // than re-implementing them inside each panel.
-test("shared detail body hides the human assignee avatar while awaiting input", () => {
+test("shared detail body renders the session invoker beside its timestamp", () => {
 	const source = readRepoFile(FLYOUT_BODY_PATH);
 	const jiraSource = readRepoFile("components/blocks/product-sidebar/variants/jira.tsx");
 	assert.match(source, /export function JiraSessionFlyoutBody\b/u);
 	assert.match(source, /import\s*\{[^}]*Avatar[^}]*AvatarFallback[^}]*AvatarImage[^}]*\}\s*from\s*"@\/components\/ui\/avatar"/u);
 	assert.match(
 		source,
-		/session\.assignee && session\.status !== "awaiting-input" \? \(\s*<Avatar[\s\S]*label=\{session\.assignee\.name\}[\s\S]*size="xs"[\s\S]*<AvatarImage alt="" src=\{session\.assignee\.src\} \/>[\s\S]*<AvatarFallback>\{actorInitials\(session\.assignee\.name\)\}<\/AvatarFallback>/u,
+		/session\.invokedBy && session\.status !== "awaiting-input" \? \(\s*<Avatar[\s\S]*label=\{session\.invokedBy\.name\}[\s\S]*size="xs"[\s\S]*<AvatarImage alt="" src=\{session\.invokedBy\.src\} \/>[\s\S]*<AvatarFallback>\{actorInitials\(session\.invokedBy\.name\)\}<\/AvatarFallback>/u,
 	);
 	assert.match(
 		source,
@@ -126,6 +126,7 @@ test("shared detail body hides the human assignee avatar while awaiting input", 
 	assert.match(jiraSource, /brandName\?: ThirdPartyLogoName;/u);
 	assert.match(jiraSource, /vpkLogo\?: "rovo";/u);
 	assert.match(jiraSource, /issueStatus\?: string;/u);
+	assert.match(jiraSource, /invokedBy\?: JiraSidebarAssignee;/u);
 	assert.match(source, /const workItemRelationship = variant === "untracked-work" \? "suggested" : "primary";/u);
 	assert.match(source, /<SmartLink[\s\S]*className="min-w-0 max-w-full"[\s\S]*item=\{toWorkItem\(session, workItemRelationship\)\}[\s\S]*showStatus/u);
 	assert.doesNotMatch(source, /showStatus=\{workItemRelationship === "primary"\}/u);

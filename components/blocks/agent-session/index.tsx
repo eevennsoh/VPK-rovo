@@ -90,20 +90,36 @@ export function AgentSession({
 	onLinkWorkItem,
 	onSubtasks,
 	onItemHover,
+	onSelectedItemIdChange,
 	onToggleVisibility,
 	onView,
+	selectedItemId: selectedItemIdProp,
 	sessionDrag,
+	style,
 	variant = "large",
 	visibilityLabel,
 }: Readonly<AgentSessionProps>) {
 	const isAttached = variant === "medium-attached";
 	const items = itemsProp ?? (isAttached ? AGENT_SESSION_ATTACHED_ITEMS : AGENT_SESSION_ITEMS);
-	// Coding rows ignore `canViewItem`: resuming a session the viewer owns is not
-	// a permission question. They still require `onView`, because a read-only
-	// host must not receive a focusable no-op body.
-	const handleCodingView = useCallback((item: AgentSessionItem) => {
-		onView?.(item);
-	}, [onView]);
+	const isSelectionControlled = selectedItemIdProp !== undefined;
+	const [uncontrolledSelectedItemId, setUncontrolledSelectedItemId] = useState<string | null>(
+		null,
+	);
+	const selectedItemId = isSelectionControlled ? selectedItemIdProp : uncontrolledSelectedItemId;
+	// Card-body activation is the only select/deselect path. Hover Resume / Hide
+	// stay on their own controls so they cannot flip the highlight.
+	const handleView = useCallback((item: AgentSessionItem) => {
+		const nextId = selectedItemId === item.id ? null : item.id;
+		if (!isSelectionControlled) {
+			setUncontrolledSelectedItemId((current) => (current === item.id ? null : item.id));
+		}
+		onSelectedItemIdChange?.(nextId);
+		// Deselect is not another view. Calling onView here would re-spotlight
+		// the related issue and leave the board dimmed.
+		if (nextId !== null) {
+			onView?.(item);
+		}
+	}, [isSelectionControlled, onSelectedItemIdChange, onView, selectedItemId]);
 	// The beat runs for arrivals the viewer has not seen yet; the mark stays on
 	// every unreviewed id. A host that never unmounts the list can pass one set.
 	const beatItemIds = arrivingItemIds ?? newItemIds;
@@ -135,15 +151,16 @@ export function AgentSession({
 				)}
 				data-stack={variant === "large" ? "well" : undefined}
 				data-variant={variant}
+				style={style}
 			>
 				{items.map((item: AgentSessionItem) => {
 					const itemOnView = isCodingAgentListItem(item)
 						? onView === undefined
 							? undefined
-							: handleCodingView
+							: handleView
 						: onView === undefined || (canViewItem !== undefined && !canViewItem(item))
 							? undefined
-							: onView;
+							: handleView;
 
 					const flyoutSession = isAttached
 						? toAgentSessionFlyoutItem(item)
@@ -167,6 +184,7 @@ export function AgentSession({
 								isArriving={beatItemIds?.has(item.id) ?? false}
 								isNew={newItemIds?.has(item.id) ?? false}
 								isResumable={isResumable}
+								isSelected={item.id === selectedItemId}
 								item={item}
 								key={item.id}
 								onCopyResume={onCopyResume}
