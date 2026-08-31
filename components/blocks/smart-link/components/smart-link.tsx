@@ -158,10 +158,9 @@ function SmartLinkTrigger({
 		// Match the gap beside a trailing status lozenge to the chip's
 		// top/bottom gap (see triggerStatusPaddingClasses).
 		status ? triggerStatusPaddingClasses[size] : null,
-		// Cap the chip at the parent's available width (`max-w-full`) so a long
-		// label truncates in place instead of pushing a trailing status lozenge
-		// outside the container. Without a status the chip keeps its own
-		// content-hugging cap so short inline references stay compact.
+		// Status chips hug icon + title + lozenge, then cap at the parent so a
+		// long title truncates against the lozenge instead of overflowing. Without
+		// a status the chip keeps the compact inline Tag cap.
 		status ? "max-w-full" : "max-w-[11.25rem]",
 		open && "border-border-selected",
 		onActivate &&
@@ -181,7 +180,8 @@ function SmartLinkTrigger({
 			</span>
 			<span
 				className={cn(
-					"min-w-0 grow truncate whitespace-nowrap",
+					"min-w-0 truncate whitespace-nowrap",
+					status ? null : "grow",
 					removable &&
 						!status &&
 						"group-hover/smart-link-remove:[mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-has-[:focus-visible]/smart-link-remove:[mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-hover/smart-link-remove:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-has-[:focus-visible]/smart-link-remove:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))]",
