@@ -258,16 +258,12 @@ function toWorkItem(
 		description: `${relationship === "suggested" ? "Suggested" : "Primary"} work item for ${session.title}.`,
 		assignee: session.assignee,
 		priority: session.priority,
-		...(relationship === "primary"
-			? {
-					actions: SMART_LINK_MODAL_ACTIONS,
-					status: {
-						label: workItemStatus.label,
-						variant: workItemStatus.variant,
-						options: WORK_ITEM_STATUS_OPTIONS,
-					},
-				}
-			: {}),
+		status: {
+			label: workItemStatus.label,
+			variant: workItemStatus.variant,
+			options: WORK_ITEM_STATUS_OPTIONS,
+		},
+		...(relationship === "primary" ? { actions: SMART_LINK_MODAL_ACTIONS } : {}),
 	};
 }
 
@@ -285,7 +281,7 @@ export function FlyoutRow({
 				{icon}
 			</span>
 			<span className="sr-only">{label}</span>
-			<span className="flex min-w-0 items-center text-text">{children}</span>
+			<span className="flex min-w-0 flex-1 items-center text-text">{children}</span>
 		</div>
 	);
 }
@@ -512,8 +508,9 @@ export function JiraSessionFlyoutBody({
 					<SmartLink
 						align={previewPosition?.align ?? "center"}
 						alignOffset={previewPosition?.alignOffset ?? 0}
+						className="min-w-0 max-w-full"
 						item={toWorkItem(session, workItemRelationship)}
-						showStatus={workItemRelationship === "primary"}
+						showStatus
 						side={previewPosition?.side ?? "right"}
 					/>
 				</FlyoutRow>

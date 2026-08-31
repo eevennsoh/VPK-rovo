@@ -117,10 +117,10 @@ test("shared detail body hides the human assignee avatar while awaiting input", 
 	assert.match(source, /import\s*\{[^}]*ProgressCircle[^}]*\}\s*from\s*"@\/components\/ui-custom\/progress-circle"/u);
 	assert.match(jiraSource, /export interface JiraSidebarSessionChecks \{\s*failed: number;\s*passed: number;\s*\}/u);
 	assert.match(source, /const workItemRelationship = variant === "untracked-work" \? "suggested" : "primary";/u);
-	assert.match(source, /<SmartLink[\s\S]*item=\{toWorkItem\(session, workItemRelationship\)\}/u);
-	assert.match(source, /showStatus=\{workItemRelationship === "primary"\}/u);
+	assert.match(source, /<SmartLink[\s\S]*className="min-w-0 max-w-full"[\s\S]*item=\{toWorkItem\(session, workItemRelationship\)\}[\s\S]*showStatus/u);
+	assert.match(source, /status: \{\s*label: workItemStatus\.label/u);
 	assert.match(source, /relationship === "suggested" \? "Suggested" : "Primary"/u);
-	assert.match(source, /\.\.\.\(relationship === "primary"[\s\S]*actions: SMART_LINK_MODAL_ACTIONS/u);
+	assert.match(source, /\.\.\.\(relationship === "primary" \? \{ actions: SMART_LINK_MODAL_ACTIONS \} : \{\}\)/u);
 	// Agent renders as the canonical at-mention Tag; PR state renders as a Lozenge.
 	assert.match(
 		source,
@@ -216,6 +216,7 @@ test("session flyout metadata is compact and property-free", () => {
 	const source = readRepoFile(FLYOUT_BODY_PATH);
 	assert.doesNotMatch(source, /grid-cols-\[16px_84px_minmax\(0,1fr\)\]/u);
 	assert.match(source, /<span className="sr-only">\{label\}<\/span>/u);
+	assert.match(source, /className="flex min-w-0 flex-1 items-center text-text"/u);
 	assert.doesNotMatch(source, /<span className="text-text-subtlest">\{label\}<\/span>/u);
 	assert.doesNotMatch(source, /font-mono/u);
 	assert.match(source, /return \(\s*<div className="flex flex-col gap-2">/u);
