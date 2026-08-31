@@ -77,9 +77,13 @@ export function AgentSessionCard({
 	const shouldReduceMotion = useReducedMotion();
 	const [copiedResume, setCopiedResume] = useState(false);
 	const copiedResetRef = useRef<number | undefined>(undefined);
+	const onItemHoverRef = useRef(onItemHover);
+	onItemHoverRef.current = onItemHover;
 
 	useEffect(() => () => {
 		window.clearTimeout(copiedResetRef.current);
+		// Hide / filter can unmount the hovered row before pointerleave fires.
+		onItemHoverRef.current?.(null);
 	}, []);
 
 	const resumeCommand = getResumeCommand?.(item) ?? toAgentListResumeCommand(item);
@@ -121,6 +125,7 @@ export function AgentSessionCard({
 			),
 			label: visibilityLabel,
 			onClick: () => {
+				onItemHover?.(null);
 				onToggleVisibility?.(item);
 			},
 		},

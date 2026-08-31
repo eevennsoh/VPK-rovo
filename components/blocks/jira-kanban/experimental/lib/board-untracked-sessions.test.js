@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
+	bindBoardProximitySessionActions,
 	collectBoardIssueKeys,
 	getCenteredScrollDelta,
 	getNearestScrollDelta,
@@ -90,6 +91,35 @@ test("groupBoardUntrackedSessions merges unlinked detached sessions without dupl
 	);
 	assert.equal(grouped["PAY-102"], undefined);
 	assert.equal(grouped["PAY-999"], undefined);
+});
+
+test("bindBoardProximitySessionActions keeps Pulse capture and omits unlinked no-ops", () => {
+	const pulse = session("lw-scope-thread", "PAY-101");
+	const unlinked = session("PAY-101:claude-code", "PAY-101");
+	const handlers = {
+		onCreateWorkItem: () => undefined,
+		onLinkWorkItem: () => undefined,
+		onSubtasks: () => undefined,
+	};
+
+	const pulseBound = bindBoardProximitySessionActions({
+		actionableSessionIds: new Set(["lw-scope-thread"]),
+		capturedItemIds: new Set(),
+		sessions: [pulse],
+		...handlers,
+	});
+	assert.equal(pulseBound.onCreateWorkItem, handlers.onCreateWorkItem);
+	assert.equal(pulseBound.onLinkWorkItem, handlers.onLinkWorkItem);
+	assert.equal(pulseBound.onSubtasks, handlers.onSubtasks);
+
+	const mixedBound = bindBoardProximitySessionActions({
+		actionableSessionIds: new Set(["lw-scope-thread"]),
+		sessions: [pulse, unlinked],
+		...handlers,
+	});
+	assert.equal(mixedBound.onCreateWorkItem, undefined);
+	assert.equal(mixedBound.onLinkWorkItem, undefined);
+	assert.equal(mixedBound.onSubtasks, undefined);
 });
 
 test("resolveBoardUntrackedIssueKey reads the Pulse-stamped key and clears on leave", () => {

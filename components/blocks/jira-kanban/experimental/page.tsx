@@ -401,6 +401,10 @@ export default function ExperimentalJiraKanbanPage({
 			pulseTimeline.looseWork,
 		],
 	);
+	const proximityActionableSessionIds = useMemo(
+		() => new Set(agentSessionItems.map((session) => session.id)),
+		[agentSessionItems],
+	);
 	const boardIssueKeys = useMemo(
 		() => collectBoardIssueKeys(filteredBoardColumns),
 		[filteredBoardColumns],
@@ -635,6 +639,13 @@ export default function ExperimentalJiraKanbanPage({
 							items: agentSessionItems,
 							...agentSessionHandlers,
 						} : undefined}
+						proximityAgentSession={{
+							actionableSessionIds: proximityActionableSessionIds,
+							capturedItemIds: capturedLooseWorkIds,
+							onCreateWorkItem: agentSessionHandlers.onCreateWorkItem,
+							onLinkWorkItem: agentSessionHandlers.onLinkWorkItem,
+							onSubtasks: agentSessionHandlers.onSubtasks,
+						}}
 						agents={agents}
 						ariaLabel={ariaLabel}
 						assignedAgentIdsByColumn={columnAgentAssignments}

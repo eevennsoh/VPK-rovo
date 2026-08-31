@@ -39,10 +39,14 @@ test("proximity AgentSession forwards the Pulse flyout attach handlers", () => {
 	assert.match(CARD_SOURCE, /onLinkWorkItem=\{onLinkWorkItem\}/u);
 	assert.match(CARD_SOURCE, /onSubtasks=\{onSubtasks\}/u);
 	assert.match(CARD_SOURCE, /variant="medium-detached"/u);
-	assert.match(BOARD_SOURCE, /capturedItemIds=\{agentSessionColumn\?\.capturedItemIds\}/u);
-	assert.match(BOARD_SOURCE, /onCreateWorkItem=\{agentSessionColumn\?\.onCreateWorkItem\}/u);
-	assert.match(BOARD_SOURCE, /onLinkWorkItem=\{agentSessionColumn\?\.onLinkWorkItem\}/u);
-	assert.match(BOARD_SOURCE, /onSubtasks=\{agentSessionColumn\?\.onSubtasks\}/u);
+	assert.match(PAGE_SOURCE, /proximityAgentSession=\{\{/u);
+	assert.match(PAGE_SOURCE, /actionableSessionIds: proximityActionableSessionIds/u);
+	assert.match(BOARD_SOURCE, /bindBoardProximitySessionActions\(/u);
+	assert.match(BOARD_SOURCE, /capturedItemIds=\{proximityActions\.capturedItemIds\}/u);
+	assert.match(BOARD_SOURCE, /onCreateWorkItem=\{proximityActions\.onCreateWorkItem\}/u);
+	assert.match(BOARD_SOURCE, /onLinkWorkItem=\{proximityActions\.onLinkWorkItem\}/u);
+	assert.match(BOARD_SOURCE, /onSubtasks=\{proximityActions\.onSubtasks\}/u);
+	assert.doesNotMatch(BOARD_SOURCE, /onCreateWorkItem=\{agentSessionColumn\?\.onCreateWorkItem\}/u);
 });
 
 test("unchecking Untracked exits board-adjacent sessions through the issue presence recipe", () => {

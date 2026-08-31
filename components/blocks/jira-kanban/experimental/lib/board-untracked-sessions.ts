@@ -79,6 +79,45 @@ export function resolveBoardUntrackedIssueKey(item: AgentSessionItem | null): st
 	return item?.sessionDetails?.issueKey ?? null;
 }
 
+/**
+ * Proximity flyout actions are independent of the optional Untracked column.
+ *
+ * Pulse rows resolve to known session ids and keep Link / Create / Subtask.
+ * Unlinked non-Pulse rows omit the callbacks so the flyout does not show
+ * enabled controls that cannot capture.
+ */
+export function bindBoardProximitySessionActions({
+	actionableSessionIds,
+	capturedItemIds,
+	onCreateWorkItem,
+	onLinkWorkItem,
+	onSubtasks,
+	sessions,
+}: {
+	actionableSessionIds?: ReadonlySet<string>;
+	capturedItemIds?: ReadonlySet<string>;
+	onCreateWorkItem?: (item: AgentSessionItem) => void;
+	onLinkWorkItem?: (item: AgentSessionItem, workItemKey?: string) => void;
+	onSubtasks?: (item: AgentSessionItem) => void;
+	sessions: readonly AgentSessionItem[];
+}): {
+	capturedItemIds?: ReadonlySet<string>;
+	onCreateWorkItem?: (item: AgentSessionItem) => void;
+	onLinkWorkItem?: (item: AgentSessionItem, workItemKey?: string) => void;
+	onSubtasks?: (item: AgentSessionItem) => void;
+} {
+	const canAct = sessions.length > 0
+		&& actionableSessionIds !== undefined
+		&& sessions.every((session) => actionableSessionIds.has(session.id));
+
+	return {
+		capturedItemIds,
+		onCreateWorkItem: canAct ? onCreateWorkItem : undefined,
+		onLinkWorkItem: canAct ? onLinkWorkItem : undefined,
+		onSubtasks: canAct ? onSubtasks : undefined,
+	};
+}
+
 interface ScrollBounds {
 	containerEnd: number;
 	containerStart: number;
