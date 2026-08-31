@@ -88,19 +88,20 @@ test("the Work items header switches between Board and List views with their ico
 		/<TabsList aria-label="Work items view">[\s\S]*<TabsTrigger value="board">[\s\S]*<BoardIcon[\s\S]*Board[\s\S]*<TabsTrigger value="list">[\s\S]*<TableIcon[\s\S]*List/u,
 	);
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /<TabsList[^>]*className=|<TabsTrigger[^>]*className=/u);
-	// More board controls is a sibling of Filter and View on the toolbar row
-	// (`gap-2`), not a nested View/More wrapper and not the far-right
-	// Board/List switcher cluster.
+	// More board controls stays in the left control cluster, immediately after
+	// Insights and before the far-right Board/List switcher.
 	const filterControlIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("{filterControl}");
 	const viewMenuIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("<BoardViewMenu");
-	const overflowIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf('aria-label={`More ${surfaceLabel} controls`}');
+	const modeToggleIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("{modeToggle}");
 	const viewSwitcherIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf('aria-label="Work items view"');
+	const overflowIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf('aria-label={`More ${surfaceLabel} controls`}');
 	assert.ok(filterControlIndex > 0 && filterControlIndex < viewMenuIndex);
-	assert.ok(viewMenuIndex > 0 && viewMenuIndex < overflowIndex);
+	assert.ok(viewMenuIndex > 0 && viewMenuIndex < modeToggleIndex);
+	assert.ok(modeToggleIndex > 0 && modeToggleIndex < overflowIndex);
 	assert.ok(overflowIndex > 0 && overflowIndex < viewSwitcherIndex);
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
-		/\{filterControl\}\s*<BoardViewMenu[\s\S]*?<Button aria-disabled aria-label=\{`More \$\{surfaceLabel\} controls`\}/u,
+		/\{filterControl\}\s*<BoardViewMenu[\s\S]*?\{modeToggle\}[\s\S]*?<Button aria-disabled aria-label=\{`More \$\{surfaceLabel\} controls`\}/u,
 	);
 	assert.doesNotMatch(
 		EXPERIMENTAL_HEADER_SOURCE,

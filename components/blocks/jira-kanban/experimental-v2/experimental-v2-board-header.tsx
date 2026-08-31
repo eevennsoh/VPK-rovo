@@ -1,10 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
-import CustomizeIcon from "@atlaskit/icon/core/customize";
+import BoardIcon from "@atlaskit/icon/core/board";
 import PersonAddIcon from "@atlaskit/icon/core/person-add";
 import SearchIcon from "@atlaskit/icon/core/search";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
+import TableIcon from "@atlaskit/icon/core/table";
 import {
 	Avatar,
 	AvatarFallback,
@@ -16,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { JiraProjectAvatar } from "@/components/blocks/product-sidebar/variants/jira";
 import { JIRA_DESIGN_PROJECT } from "@/components/blocks/product-sidebar/data/jira-navigation";
 import { cn } from "@/lib/utils";
@@ -31,9 +33,11 @@ import {
  * Starts identical to the experimental board header and diverges independently.
  */
 interface ExperimentalV2JiraKanbanBoardHeaderProps {
+	activeView?: ExperimentalV2JiraKanbanView;
 	assignees: readonly JiraKanbanAssigneeData[];
 	compact?: boolean;
 	onSelectedAssigneeIdsChange: (assigneeIds: Set<string>) => void;
+	onViewChange?: (view: ExperimentalV2JiraKanbanView) => void;
 	searchPlaceholder?: string;
 	selectedAssigneeIds: ReadonlySet<string>;
 	/**
@@ -53,12 +57,14 @@ interface ExperimentalV2JiraKanbanBoardHeaderProps {
 	/** Mode control, rendered inline with Filter and Group. */
 	modeToggle?: ReactNode;
 	/**
-	 * Trailing cluster end slot — after the more/ellipsis control.
+	 * Trailing cluster end slot — after the board/list view switcher.
 	 */
 	endSlot?: ReactNode;
 	surfaceLabel?: string;
 	viewTabs?: ReactNode;
 }
+
+export type ExperimentalV2JiraKanbanView = "board" | "list";
 
 function AssigneeAvatar({
 	assignee,
@@ -88,9 +94,11 @@ function AssigneeAvatar({
 }
 
 export function ExperimentalV2JiraKanbanBoardHeader({
+	activeView = "board",
 	assignees,
 	compact = false,
 	onSelectedAssigneeIdsChange,
+	onViewChange,
 	searchPlaceholder = "Search board",
 	selectedAssigneeIds,
 	showBoardControls = true,
@@ -131,7 +139,7 @@ export function ExperimentalV2JiraKanbanBoardHeader({
 			{viewTabs ? <div className="mt-2">{viewTabs}</div> : null}
 
 			{showBoardControls ? (
-				<div className="mt-4 flex flex-wrap items-center gap-2 px-6">
+				<div className="mt-6 flex flex-wrap items-center gap-2 px-6">
 					<InputGroup className="w-44">
 						<InputGroupAddon>
 							<Icon render={<SearchIcon label="" size="small" />} />
@@ -175,22 +183,32 @@ export function ExperimentalV2JiraKanbanBoardHeader({
 					<BoardViewMenu compact={compact} surfaceLabel={surfaceLabel} />
 
 					{modeToggle}
+					<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
+						<Icon render={<ShowMoreHorizontalIcon label="" />} />
+					</Button>
 
 					<div className={cn("flex items-center gap-1", compact ? undefined : "ml-auto")}>
-						{compact ? (
-							<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
-								<Icon render={<ShowMoreHorizontalIcon label="" />} />
-							</Button>
-						) : (
-							<>
-								<Button aria-disabled aria-label={`${surfaceTitle} settings`} size="icon" variant="outline">
-									<Icon render={<CustomizeIcon label="" />} />
-								</Button>
-								<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
-									<Icon render={<ShowMoreHorizontalIcon label="" />} />
-								</Button>
-							</>
-						)}
+						{onViewChange ? (
+							<Tabs
+								onValueChange={(value) => {
+									if (value === "board" || value === "list") {
+										onViewChange(value);
+									}
+								}}
+								value={activeView}
+							>
+								<TabsList aria-label="Work items view">
+									<TabsTrigger value="board">
+										<Icon aria-hidden render={<BoardIcon label="" />} />
+										Board
+									</TabsTrigger>
+									<TabsTrigger value="list">
+										<Icon aria-hidden render={<TableIcon label="" />} />
+										List
+									</TabsTrigger>
+								</TabsList>
+							</Tabs>
+						) : null}
 						{endSlot ? endSlot : null}
 					</div>
 				</div>
