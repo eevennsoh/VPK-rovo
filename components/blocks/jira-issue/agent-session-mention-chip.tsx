@@ -9,7 +9,7 @@ import { token } from "@/lib/tokens";
  * Overlay elevation lives on the mention tag itself. A raised wrapper behind
  * this pill is what read as a sharp white rectangle under the chip.
  */
-export const AGENT_SESSION_MENTION_CHIP_ELEVATION: CSSProperties = {
+const AGENT_SESSION_MENTION_CHIP_ELEVATION: CSSProperties = {
 	boxShadow: token("elevation.shadow.overlay"),
 };
 
