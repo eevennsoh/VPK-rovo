@@ -3,7 +3,7 @@
  *
  * The menu lifts Untracked onto the experimental page; Pulse sessions sit
  * under matching Jira cards with the same flyout attach path as the column,
- * exit through AnimatePresence, and column hover spotlights the related issue.
+ * exit through AnimatePresence, and a column click spotlights the related issue.
  */
 
 const assert = require("node:assert/strict");
@@ -63,13 +63,19 @@ test("unchecking Untracked exits board-adjacent sessions through the issue prese
 	assert.doesNotMatch(BOARD_SOURCE, /data-agent-session-column[\s\S]*showUntracked/u);
 });
 
-test("column card hover scrolls the related issue and applies the blue-subtlest spotlight", () => {
-	assert.match(BOARD_SOURCE, /onItemHover=\{handleSessionHover\}/u);
+test("column card hover does not scroll or spotlight a related issue", () => {
+	assert.doesNotMatch(BOARD_SOURCE, /onItemHover=/u);
+	assert.doesNotMatch(BOARD_SOURCE, /handleSessionHover/u);
+	assert.doesNotMatch(BOARD_SOURCE, /hoveredIssueKey/u);
+});
+
+test("column card click scrolls the related issue and applies the blue-subtlest spotlight", () => {
+	assert.match(BOARD_SOURCE, /onView=\{handleSessionView\}/u);
 	assert.match(BOARD_SOURCE, /data-issue-key=\{card\.code\}/u);
-	assert.match(BOARD_SOURCE, /hoveredIssueKey === card\.code && "bg-bg-accent-blue-subtlest"/u);
+	assert.match(BOARD_SOURCE, /focusedIssueKey === card\.code && "bg-bg-accent-blue-subtlest"/u);
 	assert.match(
 		BOARD_SOURCE,
-		/hoveredIssueKey !== null && hoveredIssueKey !== card\.code && "opacity-40"/u,
+		/focusedIssueKey !== null && focusedIssueKey !== card\.code && "opacity-40"/u,
 	);
 	assert.match(
 		BOARD_SOURCE,
@@ -80,6 +86,7 @@ test("column card hover scrolls the related issue and applies the blue-subtlest 
 		BOARD_SOURCE,
 		/scrollBoardIssueIntoView\(boardScrollportRef\.current, nextKey\)/u,
 	);
+	assert.match(BOARD_SOURCE, /agentSessionColumn\?\.onView\?\.\(item\)/u);
 	assert.match(HELPER_SOURCE, /boardScrollport\.scrollBy\(\{\s*behavior: "instant",\s*left:/u);
 	assert.match(HELPER_SOURCE, /columnScrollport\.scrollBy\(\{\s*behavior: "instant",\s*top:/u);
 	assert.doesNotMatch(HELPER_SOURCE, /scrollIntoView/u);

@@ -75,10 +75,6 @@ export function groupBoardUntrackedSessions({
 	return Object.fromEntries(grouped);
 }
 
-export function resolveBoardUntrackedIssueKey(item: AgentSessionItem | null): string | null {
-	return item?.sessionDetails?.issueKey ?? null;
-}
-
 /**
  * Proximity flyout actions are independent of the optional Untracked column.
  *
@@ -116,6 +112,10 @@ export function bindBoardProximitySessionActions({
 		onLinkWorkItem: canAct ? onLinkWorkItem : undefined,
 		onSubtasks: canAct ? onSubtasks : undefined,
 	};
+}
+
+export function resolveBoardUntrackedIssueKey(item: AgentSessionItem | null): string | null {
+	return item?.sessionDetails?.issueKey ?? null;
 }
 
 interface ScrollBounds {

@@ -88,7 +88,7 @@ export interface AgentSessionProps {
 	onView?: (item: AgentSessionItem) => void;
 	/**
 	 * Pointer hover on a large column card. `null` when the pointer leaves.
-	 * Compact rows do not fire this — board spotlight is a column-card concern.
+	 * Compact rows do not fire this.
 	 */
 	onItemHover?: (item: AgentSessionItem | null) => void;
 	/**
