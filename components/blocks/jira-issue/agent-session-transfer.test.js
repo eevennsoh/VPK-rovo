@@ -99,7 +99,7 @@ test("Jira issue raised agent activity demo still exposes exactly the original s
 	assert.match(PAGE_SOURCE, /chrome=\{isExperimentalAgentActivityVariant \? "stroke" : "raised"\}/u);
 });
 
-test("Jira issue session transfer drop zone stays mounted and reveals with opacity, not display", () => {
+test("Jira issue session transfer drop zone stays mounted and collapses height at rest", () => {
 	// Always rendered: the region has no early return and no conditional around
 	// the zone, so it stays in the DOM and in the tab order.
 	assert.doesNotMatch(TRANSFER_REGION_BLOCK, /return null/u);
@@ -109,21 +109,28 @@ test("Jira issue session transfer drop zone stays mounted and reveals with opaci
 		1,
 		"the region renders exactly the one Unlink zone",
 	);
-	// Revealed purely through opacity + pointer-events.
-	assert.match(
-		TRANSFER_SOURCE,
-		/const TRANSFER_REVEAL_CLASS =\s*\n\s*"opacity-0 transition-\[opacity,translate\] duration-fast ease-out-practical motion-reduce:transition-none group-has-\[\[data-slot=jira-issue-agent-row\]:hover\]\/jira-issue-transfer:pointer-events-auto group-has-\[\[data-slot=jira-issue-agent-row\]:hover\]\/jira-issue-transfer:opacity-100 group-has-\[\[data-slot=jira-issue-session-transfer\]:hover\]\/jira-issue-transfer:pointer-events-auto group-has-\[\[data-slot=jira-issue-session-transfer\]:hover\]\/jira-issue-transfer:opacity-100 group-has-\[:focus-visible\]\/jira-issue-transfer:pointer-events-auto group-has-\[:focus-visible\]\/jira-issue-transfer:opacity-100";/u,
-	);
+	// Height collapses at rest so stacked cards do not reserve a well-sized gap.
+	// Hover/focus/drag open `1fr`; opacity fades with that open. The button
+	// stays mounted — this is a hover-revealed action, not closed UI.
+	assert.match(TRANSFER_SOURCE, /grid grid-rows-\[0fr\] opacity-0/u);
+	assert.match(TRANSFER_SOURCE, /transition-\[grid-template-rows,opacity\] duration-fast ease-out-practical/u);
+	assert.match(TRANSFER_SOURCE, /group-has-\[\[data-slot=jira-issue-agent-row\]:hover\]\/jira-issue-transfer:grid-rows-\[1fr\]/u);
+	assert.match(TRANSFER_SOURCE, /group-has-\[\[data-slot=jira-issue-session-transfer\]:hover\]\/jira-issue-transfer:grid-rows-\[1fr\]/u);
+	assert.match(TRANSFER_SOURCE, /group-has-\[:focus-visible\]\/jira-issue-transfer:grid-rows-\[1fr\]/u);
 	assert.match(
 		TRANSFER_REGION_BLOCK,
-		/className=\{cn\(\s*"flex flex-col pt-2",\s*TRANSFER_REVEAL_CLASS,\s*dragging \? "pointer-events-auto opacity-100" : "pointer-events-none",\s*dragging \? TRANSFER_DRAG_SHIFT_CLASS : null,\s*\)\}/u,
+		/dragging \? "pointer-events-auto grid-rows-\[1fr\] opacity-100" : "pointer-events-none"/u,
 	);
 	assert.match(TRANSFER_REGION_BLOCK, /data-slot="jira-issue-session-transfer"/u);
+	// The 0fr clipper must not swallow the well's focus ring once it is open.
+	assert.match(TRANSFER_REGION_BLOCK, /min-h-0 overflow-hidden has-\[:focus-visible\]:overflow-visible/u);
+	assert.match(TRANSFER_REGION_BLOCK, /className="flex flex-col pt-2"/u);
 	// `group-focus-within` would pin the reveal open after a click; the repo
 	// convention is `group-has-[:focus-visible]`.
 	assert.doesNotMatch(TRANSFER_SOURCE, /group-focus-within/u);
-	assert.doesNotMatch(TRANSFER_SOURCE, /className="[^"]*\bhidden\b/u);
+	assert.doesNotMatch(TRANSFER_SOURCE, /(?:^|[\s"'`])hidden(?:[\s"'`]|$)/u);
 	assert.doesNotMatch(TRANSFER_SOURCE, /display: *"?none/u);
+	assert.doesNotMatch(TRANSFER_SOURCE, /\binert\b/u);
 	// The host card has to carry the group so an agent row anywhere inside it can
 	// drive the reveal.
 	assert.match(
@@ -152,7 +159,7 @@ test("Jira issue session transfer well is offered by the session row, not the wh
 		TRANSFER_SOURCE,
 		/group-has-\[\[data-slot=jira-issue-session-transfer\]:hover\]\/jira-issue-transfer:opacity-100/u,
 	);
-	assert.match(TRANSFER_REGION_BLOCK, /dragging \? "pointer-events-auto opacity-100" : "pointer-events-none"/u);
+	assert.match(TRANSFER_REGION_BLOCK, /dragging \? "pointer-events-auto grid-rows-\[1fr\] opacity-100" : "pointer-events-none"/u);
 	// Keyboard reveal stays card-wide: the well is tabbable, and narrowing focus
 	// to the row would leave it reachable while invisible.
 	assert.match(TRANSFER_SOURCE, /group-has-\[:focus-visible\]\/jira-issue-transfer:opacity-100/u);
@@ -307,8 +314,9 @@ test("Jira issue session transfer redesigns the drop well around the drag phase"
 	assert.match(TRANSFER_SOURCE, /transition-\[height,background-color,border-color,color\]/u);
 	assert.doesNotMatch(TRANSFER_SOURCE, /useMagneticProximity|TRANSFER_MAGNET_DISTANCE_PX/u);
 	// The "Drag here to" separator is gone; the well's own label carries the
-	// instruction, so there is no collapsing prompt row left to animate.
-	assert.doesNotMatch(TRANSFER_SOURCE, /jira-issue-session-transfer-prompt|grid-rows-\[0fr\]|Drag here to"/u);
+	// instruction. `grid-rows-[0fr]` now collapses the well itself at rest, not
+	// a prompt row above it.
+	assert.doesNotMatch(TRANSFER_SOURCE, /jira-issue-session-transfer-prompt|Drag here to"/u);
 	assert.match(TRANSFER_SOURCE, /const TRANSFER_DRAG_SHIFT_CLASS = "translate-y-2";/u);
 	// Size and colour changes are token-driven and reduced-motion safe.
 	assert.doesNotMatch(TRANSFER_SOURCE, /duration-\[|duration-200|duration-150/u);
