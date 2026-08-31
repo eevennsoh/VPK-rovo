@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ComponentProps, type CSSProperties, type FocusEvent, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
+import { useId, useState, type ComponentProps, type CSSProperties, type FocusEvent, type PointerEvent, type ReactNode } from "react";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
 
 import {
@@ -513,23 +513,21 @@ function JiraIssueDefault({
 		<div className="relative z-10 flex flex-col">
 			{shouldRenderIssueClickButton ? (
 				usesStrokeChrome ? (
-					<div
-						aria-disabled={props.disabled || undefined}
-						aria-pressed={ariaPressed ?? selected}
-						className="w-full px-3 pt-3 pb-2 text-left outline-none transition-colors duration-normal ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-						onClick={props.disabled ? undefined : props.onClick as ComponentProps<"div">["onClick"]}
-						onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => {
-							if (props.disabled || (event.key !== "Enter" && event.key !== " ")) {
-								return;
-							}
-
-							event.preventDefault();
-							props.onClick?.(event as unknown as Parameters<NonNullable<typeof props.onClick>>[0]);
-						}}
-						role="button"
-						tabIndex={props.disabled ? -1 : 0}
-					>
-						{summaryContent}
+					<div className="relative w-full px-3 pt-3 pb-2 text-left outline-none transition-colors duration-normal ease-out has-[:focus-visible]:border-ring has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50">
+						<button
+							aria-pressed={ariaPressed ?? selected}
+							className="sr-only"
+							disabled={props.disabled}
+							onClick={props.onClick}
+							type={type}
+						>
+							{issueKey}: {summary}
+						</button>
+						<div
+							onClick={props.disabled ? undefined : props.onClick as ComponentProps<"div">["onClick"]}
+						>
+							{summaryContent}
+						</div>
 					</div>
 				) : (
 					<button
