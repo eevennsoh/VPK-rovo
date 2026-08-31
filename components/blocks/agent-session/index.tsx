@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 
 import { AGENT_SESSION_ITEMS } from "./data";
 import { AgentSessionCard } from "./agent-session-card";
+import { AgentSessionCompactCard } from "./agent-session-compact-card";
 import { suggestedAgentSessionWorkItemKey } from "./agent-session-work-item";
 import type {
 	AgentSessionItem,
@@ -49,13 +50,14 @@ function buildArrivalDelays(
 /**
  * Local coding sessions that never became work items.
  *
- * Each session is a dashed uncaptured-work card: the shared Agent List row
+ * Large sessions are dashed uncaptured-work cards: the shared Agent List row
  * (identity, static stamp, viewer machine) sits in a sunken body and reveals
  * the same hover/focus action pair Agent List rows use — Resume, plus a
  * show/hide eye where Agent List puts Archive. The chin below owns the work
  * item actions: one Link to work item row per candidate key, each with its own
  * trailing Create work item and Subtasks icons. There is no hover flyout, so the
- * card never needs a popup surface.
+ * card never needs a popup surface. Medium follows the Jira Agents compact row;
+ * Small is the identity notch left behind by a collapsed session column.
  */
 export function AgentSession({
 	className,
@@ -74,6 +76,7 @@ export function AgentSession({
 	onSubtasks,
 	onToggleVisibility,
 	onView,
+	variant = "large",
 }: Readonly<AgentSessionProps>) {
 	// Coding rows ignore `canViewItem`: resuming a session the viewer owns is not
 	// a permission question. They still require `onView`, because a read-only
@@ -90,35 +93,47 @@ export function AgentSession({
 	);
 
 	return (
-		<ul className={cn("flex flex-col gap-2", className)}>
-			{items.map((item: AgentSessionItem) => (
-				<AgentSessionCard
-					arrivalDelaySeconds={arrivalDelays.get(item.id)}
-					captured={capturedItemIds?.has(item.id) ?? false}
-					getResumeCommand={getResumeCommand}
-					isArriving={beatItemIds?.has(item.id) ?? false}
-					isNew={newItemIds?.has(item.id) ?? false}
-					isResumable={isResumable}
-					item={item}
-					key={item.id}
-					onCopyResume={onCopyResume}
-					onCreateWorkItem={onCreateWorkItem === undefined ? undefined : () => onCreateWorkItem(item)}
-					onLinkWorkItem={onLinkWorkItem === undefined ? undefined : (workItemKey) => onLinkWorkItem(item, workItemKey)}
-					onSubtasks={onSubtasks === undefined ? undefined : () => onSubtasks(item)}
-					onToggleVisibility={onToggleVisibility}
-					onView={
-						isCodingAgentListItem(item)
-							? onView === undefined
-								? undefined
-								: handleCodingView
-							: onView === undefined || (canViewItem !== undefined && !canViewItem(item))
-								? undefined
-								: onView
-					}
-					suggestedWorkItemKey={getSuggestedWorkItemKey?.(item) ?? suggestedAgentSessionWorkItemKey(item)}
-					suggestedWorkItemKeys={getSuggestedWorkItemKeys?.(item)}
-				/>
-			))}
+		<ul className={cn("flex flex-col gap-2", className)} data-variant={variant}>
+			{items.map((item: AgentSessionItem) => {
+				const itemOnView = isCodingAgentListItem(item)
+					? onView === undefined
+						? undefined
+						: handleCodingView
+					: onView === undefined || (canViewItem !== undefined && !canViewItem(item))
+						? undefined
+						: onView;
+
+				return variant === "large" ? (
+					<AgentSessionCard
+						arrivalDelaySeconds={arrivalDelays.get(item.id)}
+						captured={capturedItemIds?.has(item.id) ?? false}
+						getResumeCommand={getResumeCommand}
+						isArriving={beatItemIds?.has(item.id) ?? false}
+						isNew={newItemIds?.has(item.id) ?? false}
+						isResumable={isResumable}
+						item={item}
+						key={item.id}
+						onCopyResume={onCopyResume}
+						onCreateWorkItem={onCreateWorkItem === undefined ? undefined : () => onCreateWorkItem(item)}
+						onLinkWorkItem={onLinkWorkItem === undefined ? undefined : (workItemKey) => onLinkWorkItem(item, workItemKey)}
+						onSubtasks={onSubtasks === undefined ? undefined : () => onSubtasks(item)}
+						onToggleVisibility={onToggleVisibility}
+						onView={itemOnView}
+						suggestedWorkItemKey={getSuggestedWorkItemKey?.(item) ?? suggestedAgentSessionWorkItemKey(item)}
+						suggestedWorkItemKeys={getSuggestedWorkItemKeys?.(item)}
+					/>
+				) : (
+					<li data-testid={"agent-session-row-" + item.id} key={item.id}>
+						<AgentSessionCompactCard
+							isArriving={beatItemIds?.has(item.id) ?? false}
+							isNew={newItemIds?.has(item.id) ?? false}
+							item={item}
+							onView={itemOnView}
+							variant={variant}
+						/>
+					</li>
+				);
+			})}
 		</ul>
 	);
 }
@@ -126,4 +141,4 @@ export function AgentSession({
 export { AGENT_SESSION_ITEMS, AGENT_SESSION_MULTI_LINK_KEYS } from "./data";
 export { AgentSessionCard } from "./agent-session-card";
 export { suggestedAgentSessionWorkItemKey } from "./agent-session-work-item";
-export type { AgentSessionItem, AgentSessionProps } from "./agent-session-types";
+export type { AgentSessionItem, AgentSessionProps, AgentSessionVariant } from "./agent-session-types";

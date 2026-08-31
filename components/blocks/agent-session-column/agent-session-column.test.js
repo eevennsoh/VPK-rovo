@@ -5,6 +5,14 @@ const { test } = require("node:test");
 
 const INDEX_SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 const RAIL_COLUMN_SOURCE = readFileSync(join(__dirname, "agent-session-column-rail.tsx"), "utf8");
+const NOTCH_MARK_SOURCE = readFileSync(
+	join(__dirname, "../agent-session/agent-session-notch.tsx"),
+	"utf8",
+);
+const ARRIVAL_MOTION_SOURCE = readFileSync(
+	join(__dirname, "../agent-session/agent-session-arrival-motion.ts"),
+	"utf8",
+);
 const TYPES_SOURCE = readFileSync(join(__dirname, "agent-session-column-types.ts"), "utf8");
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const CARD_SOURCE = readFileSync(
@@ -162,6 +170,11 @@ test("collapsing swaps the cards for the notch rail, not for a rotated label", (
 test("each notch opens the shared session flyout rather than a forked preview", () => {
 	assert.match(
 		RAIL_COLUMN_SOURCE,
+		/import \{ AgentSessionNotchMark \} from "@\/components\/blocks\/agent-session\/agent-session-notch";/u,
+	);
+	assert.match(RAIL_COLUMN_SOURCE, /<AgentSessionNotchMark/u);
+	assert.match(
+		RAIL_COLUMN_SOURCE,
 		/from "@\/components\/blocks\/product-sidebar\/variants\/jira-session-flyout"/u,
 	);
 	assert.match(RAIL_COLUMN_SOURCE, /<JiraSessionFlyoutTrigger/u);
@@ -192,14 +205,14 @@ test("collapsed motion is tokenised and honours reduced motion", () => {
 	// in-place profile; the notch swell is a list-item interaction.
 	assert.match(INDEX_SOURCE, /width var\(--duration-medium\) var\(--ease-in-out\)/u);
 	assert.match(INDEX_SOURCE, /transition: shouldReduceMotion \? "none" : AGENT_SESSION_COLUMN_TRANSITION/u);
-	assert.match(RAIL_COLUMN_SOURCE, /duration-xxshort ease-out-practical/u);
-	assert.match(RAIL_COLUMN_SOURCE, /motion-reduce:transition-none/u);
+	assert.match(NOTCH_MARK_SOURCE, /duration-xxshort ease-out-practical/u);
+	assert.match(NOTCH_MARK_SOURCE, /motion-reduce:transition-none/u);
 	// Hover swells the rule by transform, never by animating its width. The
 	// group is the row and the button inside it takes focus, so keyboard parity
 	// needs `group-has-[:focus-visible]` — `group-focus-visible` never matches.
-	assert.match(RAIL_COLUMN_SOURCE, /group-hover\/notch:scale-x-\[1\.6\]/u);
-	assert.match(RAIL_COLUMN_SOURCE, /group-has-\[:focus-visible\]\/notch:scale-x-\[1\.6\]/u);
-	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /group-focus-visible\/notch:/u);
+	assert.match(NOTCH_MARK_SOURCE, /group-hover\/notch:scale-x-\[1\.6\]/u);
+	assert.match(NOTCH_MARK_SOURCE, /group-has-\[:focus-visible\]\/notch:scale-x-\[1\.6\]/u);
+	assert.doesNotMatch(NOTCH_MARK_SOURCE, /group-focus-visible\/notch:/u);
 	// Clipping is scoped to the resize, so a focused card's ring is never cut.
 	assert.match(INDEX_SOURCE, /collapsed \|\| isResizing \? "overflow-hidden" : null/u);
 	assert.match(INDEX_SOURCE, /event\.propertyName === "width"/u);
@@ -229,13 +242,13 @@ test("an arrival is a transient beat plus a mark that outlives it", () => {
 	// The mark is the load-bearing half: it has to survive a backgrounded tab, a
 	// collapsed column, and reduced motion, so it is never the animation alone.
 	assert.match(CARD_SOURCE, /isNew \? "border-border-discovery" : "border-border-disabled"/u);
-	assert.match(RAIL_COLUMN_SOURCE, /isNew \? NOTCH_EMPHASIS : NOTCH_AT_REST/u);
+	assert.match(NOTCH_MARK_SOURCE, /isNew \? NOTCH_EMPHASIS : NOTCH_AT_REST/u);
 	// A reviewed notch rests quiet and lights up on hover or focus; a new one is
 	// already lit, so "new" reuses the hover vocabulary instead of adding one.
-	assert.match(RAIL_COLUMN_SOURCE, /const NOTCH_EMPHASIS = "scale-x-\[1\.6\] bg-icon";/u);
-	assert.match(RAIL_COLUMN_SOURCE, /"bg-icon-subtlest",/u);
-	assert.match(RAIL_COLUMN_SOURCE, /group-hover\/notch:bg-icon/u);
-	assert.match(RAIL_COLUMN_SOURCE, /group-has-\[:focus-visible\]\/notch:bg-icon/u);
+	assert.match(NOTCH_MARK_SOURCE, /const NOTCH_EMPHASIS = "scale-x-\[1\.6\] bg-icon";/u);
+	assert.match(NOTCH_MARK_SOURCE, /"bg-icon-subtlest",/u);
+	assert.match(NOTCH_MARK_SOURCE, /group-hover\/notch:bg-icon/u);
+	assert.match(NOTCH_MARK_SOURCE, /group-has-\[:focus-visible\]\/notch:bg-icon/u);
 	// State is spoken, not painted — no per-lifecycle hue at 12x2px.
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /bg-icon-warning|bg-icon-information/u);
 	// The dash is load-bearing too — it means "uncaptured" — so the arrival
@@ -244,9 +257,9 @@ test("an arrival is a transient beat plus a mark that outlives it", () => {
 	// Reduced motion drops the beat and keeps the mark. The beat is keyed on
 	// `isArriving`, never on `isNew` — see the one-shot test below.
 	assert.match(CARD_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
-	assert.match(RAIL_COLUMN_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
+	assert.match(NOTCH_MARK_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
 	// A settled card must not replay its entrance on an unrelated re-render.
-	assert.match(CARD_SOURCE, /initial=\{shouldPlayArrival \? \{ opacity: 0, y: ARRIVAL_OFFSET_PX \} : false\}/u);
+	assert.match(CARD_SOURCE, /initial=\{shouldPlayArrival \? \{ opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX \} : false\}/u);
 });
 
 test("colour never carries newness on its own", () => {
@@ -277,19 +290,18 @@ test("the head count rolls through the shared Text Morphing slots effect", () =>
 test("arrival motion is tokenised, capped, and spatially anchored", () => {
 	// duration-slow + bold ease-out: the flag recipe, because an arrival is a
 	// notification of work showing up.
-	assert.match(CARD_SOURCE, /duration: 0\.25,\s*ease: \[0, 0\.4, 0, 1\]/u);
-	assert.match(RAIL_COLUMN_SOURCE, /duration: 0\.25,\s*ease: \[0, 0\.4, 0, 1\]/u);
+	assert.match(ARRIVAL_MOTION_SOURCE, /duration: 0\.25,\s*ease: \[0, 0\.4, 0, 1\]/u);
 	// Enters from above, where sync lives; two properties, never three.
-	assert.match(CARD_SOURCE, /ARRIVAL_OFFSET_PX = -8/u);
+	assert.match(ARRIVAL_MOTION_SOURCE, /AGENT_SESSION_ARRIVAL_OFFSET_PX = -8/u);
 	// Past the cap the group lands together instead of stepping in.
 	assert.match(SESSION_INDEX_SOURCE, /ARRIVAL_STAGGER_LIMIT = 4/u);
 	assert.match(SESSION_INDEX_SOURCE, /shouldStagger \? index \* ARRIVAL_STAGGER_SECONDS : 0/u);
 	// The rail's arrival grows from the centre to full size — no overshoot
 	// keyframes, and no second property competing with the scale.
-	assert.match(RAIL_COLUMN_SOURCE, /initial=\{shouldPlayArrival \? \{ scaleX: 0 \} : false\}/u);
-	assert.match(RAIL_COLUMN_SOURCE, /animate=\{shouldPlayArrival \? \{ scaleX: 1 \} : undefined\}/u);
-	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /scaleX: \[/u);
-	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /times:/u);
+	assert.match(NOTCH_MARK_SOURCE, /initial=\{shouldPlayArrival \? \{ scaleX: 0 \} : false\}/u);
+	assert.match(NOTCH_MARK_SOURCE, /animate=\{shouldPlayArrival \? \{ scaleX: 1 \} : undefined\}/u);
+	assert.doesNotMatch(NOTCH_MARK_SOURCE, /scaleX: \[/u);
+	assert.doesNotMatch(NOTCH_MARK_SOURCE, /times:/u);
 	// Arriving notches push the ones below them down instead of teleporting, and
 	// the scrollport is declared so the slide starts from the right place.
 	assert.match(RAIL_COLUMN_SOURCE, /layout=\{shouldReduceMotion \? false : true\}/u);

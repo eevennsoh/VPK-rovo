@@ -7,6 +7,8 @@ import GrowHorizontalIcon from "@atlaskit/icon/core/grow-horizontal";
 
 import { toAgentSessionFlyoutItem, type AgentListState } from "@/components/blocks/agent-list";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import { AGENT_SESSION_ARRIVAL_TRANSITION } from "@/components/blocks/agent-session/agent-session-arrival-motion";
+import { AgentSessionNotchMark } from "@/components/blocks/agent-session/agent-session-notch";
 import {
 	createJiraSessionFlyoutHandle,
 	JiraSessionFlyoutSurface,
@@ -52,47 +54,6 @@ const NOTCH_STATE_LABEL: Record<AgentListState, string> = {
 	complete: "complete",
 	"needs-input": "needs input",
 	running: "running",
-};
-
-/**
- * The magnitude a notch swells to under the pointer.
- *
- * A newly synced notch simply rests here instead: "new" is the rail already
- * holding the gesture open for you, rather than a separate mark you have to
- * learn. One vocabulary, two triggers.
- */
-const NOTCH_EMPHASIS = "scale-x-[1.6] bg-icon";
-
-/**
- * Rest appearance of a reviewed notch: quiet until pointed at.
- *
- * Only two properties ever move — colour and scale — so the reveal reads as one
- * gesture at the list-item interaction profile.
- */
-const NOTCH_AT_REST = cn(
-	"bg-icon-subtlest",
-	// `group-has-[:focus-visible]`, not `group-focus-visible`: the group is the
-	// row, and the button inside it is what takes focus.
-	"group-hover/notch:scale-x-[1.6] group-hover/notch:bg-icon",
-	"group-has-[:focus-visible]/notch:scale-x-[1.6] group-has-[:focus-visible]/notch:bg-icon",
-);
-
-/**
- * The arrival: the notch grows from its centre to full size, and the notches
- * below it slide down to make room.
- *
- * Scale alone, with no overshoot and no fade — at `scaleX: 0` a 2px rule is
- * already invisible, so a second property would only add noise to a 250ms beat.
- * `duration-slow` + bold `ease-out` is the flag recipe: an arrival is work
- * announcing itself.
- *
- * Motion writes `transform` while Tailwind's `scale-x-*` compiles to the
- * standalone `scale` property, so the beat multiplies cleanly with the resting
- * emphasis instead of fighting it — 0 → 1 here renders as 0 → 1.6 on a new notch.
- */
-const NOTCH_ARRIVAL = {
-	duration: 0.25,
-	ease: [0, 0.4, 0, 1] as [number, number, number, number],
 };
 
 /**
@@ -165,8 +126,6 @@ function AgentSessionNotch({
 	const shouldReduceMotion = useReducedMotion();
 	// The beat, not the mark: expanding and re-collapsing the column remounts the
 	// rail, and a notch that is still unreviewed stays lit without regrowing.
-	const shouldPlayArrival = isArriving && !shouldReduceMotion;
-
 	return (
 		<JiraSessionFlyoutTrigger
 			handle={flyoutHandle}
@@ -174,7 +133,7 @@ function AgentSessionNotch({
 				<motion.li
 					className="group/notch flex h-5 w-full shrink-0 items-center"
 					layout={shouldReduceMotion ? false : true}
-					transition={NOTCH_ARRIVAL}
+					transition={AGENT_SESSION_ARRIVAL_TRANSITION}
 				/>
 			}
 			session={toAgentSessionFlyoutItem(item)}
@@ -189,20 +148,7 @@ function AgentSessionNotch({
 				<span className="sr-only">
 					{`${item.title} — ${NOTCH_STATE_LABEL[item.state]}${isNew ? ", newly synced" : ""}`}
 				</span>
-				<motion.span
-					animate={shouldPlayArrival ? { scaleX: 1 } : undefined}
-					aria-hidden="true"
-					className={cn(
-						// `scale` and `background-color` are separate properties in
-						// Tailwind v4, so both have to be named for the hover to ease.
-						"h-0.5 w-3 rounded-full transition-[background-color,scale] duration-xxshort ease-out-practical",
-						"motion-reduce:transition-none",
-						isNew ? NOTCH_EMPHASIS : NOTCH_AT_REST,
-					)}
-					initial={shouldPlayArrival ? { scaleX: 0 } : false}
-					style={{ willChange: shouldPlayArrival ? "transform" : undefined }}
-					transition={NOTCH_ARRIVAL}
-				/>
+				<AgentSessionNotchMark isArriving={isArriving} isNew={isNew} />
 			</button>
 		</JiraSessionFlyoutTrigger>
 	);
