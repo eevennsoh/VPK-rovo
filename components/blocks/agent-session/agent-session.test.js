@@ -4,6 +4,15 @@ const { join } = require("node:path");
 const { test } = require("node:test");
 
 const CARD_SOURCE = readFileSync(join(__dirname, "agent-session-card.tsx"), "utf8");
+const COMPACT_CARD_SOURCE = readFileSync(
+	join(__dirname, "agent-session-compact-card.tsx"),
+	"utf8",
+);
+const NOTCH_SOURCE = readFileSync(join(__dirname, "agent-session-notch.tsx"), "utf8");
+const NOTCH_MOTION_SOURCE = readFileSync(
+	join(__dirname, "agent-session-notch-motion.ts"),
+	"utf8",
+);
 const DATA_SOURCE = readFileSync(join(__dirname, "data.ts"), "utf8");
 const INDEX_SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
@@ -51,6 +60,41 @@ test("renders each session as a dashed uncaptured-work card around the shared ro
 	);
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*hoverActions=\{hoverActions\}/u);
 	assert.match(CARD_SOURCE, /<UncapturedWorkChin/u);
+});
+
+test("large remains the default while every card receives the selected size variant", () => {
+	assert.match(TYPES_SOURCE, /export type AgentSessionVariant = "large" \| "medium" \| "small";/u);
+	assert.match(TYPES_SOURCE, /variant\?: AgentSessionVariant;/u);
+	assert.match(INDEX_SOURCE, /variant = "large"/u);
+	assert.match(INDEX_SOURCE, /data-variant=\{variant\}/u);
+	assert.match(INDEX_SOURCE, /variant === "large"/u);
+	assert.match(INDEX_SOURCE, /<AgentSessionCard/u);
+	assert.match(INDEX_SOURCE, /<AgentSessionCompactCard/u);
+	assert.match(INDEX_SOURCE, /<li data-testid=\{"agent-session-row-" \+ item\.id\} key=\{item\.id\}>/u);
+});
+
+test("medium matches the 276 by 33 Figma row and reuses shared identity primitives", () => {
+	assert.match(COMPACT_CARD_SOURCE, /import AddIcon from "@atlaskit\/icon\/core\/add";/u);
+	assert.match(COMPACT_CARD_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual";/u);
+	assert.match(COMPACT_CARD_SOURCE, /import \{ Avatar, AvatarFallback, AvatarImage \} from "@\/components\/ui\/avatar";/u);
+	assert.match(COMPACT_CARD_SOURCE, /h-\[33px\] w-\[276px\]/u);
+	assert.match(COMPACT_CARD_SOURCE, /rounded-\[10px\] bg-bg-accent-gray-subtlest px-3/u);
+	assert.match(COMPACT_CARD_SOURCE, /sizePx=\{16\}/u);
+	assert.match(COMPACT_CARD_SOURCE, /w-\[160px\] truncate text-left text-xs font-normal leading-4/u);
+	assert.match(COMPACT_CARD_SOURCE, /<AddIcon label="" size="small" \/>/u);
+	assert.match(COMPACT_CARD_SOURCE, /<Avatar.*size="xs"/su);
+});
+
+test("small is the collapsed-column notch and stays keyboard operable when view is wired", () => {
+	assert.match(COMPACT_CARD_SOURCE, /variant === "small"/u);
+	assert.match(COMPACT_CARD_SOURCE, /import \{ AgentSessionNotchMark \} from "\.\/agent-session-notch";/u);
+	assert.match(COMPACT_CARD_SOURCE, /flex h-5 w-8 items-center justify-center/u);
+	assert.match(COMPACT_CARD_SOURCE, /aria-label=\{`Open \$\{item\.agent\.name\} session`\}/u);
+	assert.match(COMPACT_CARD_SOURCE, /onClick=\{onView === undefined \? undefined : \(\) => onView\(item\)\}/u);
+	assert.match(COMPACT_CARD_SOURCE, /<AgentSessionNotchMark isArriving=\{isArriving\} isNew=\{isNew\} \/>/u);
+	assert.match(NOTCH_SOURCE, /h-0\.5 w-3 rounded-full/u);
+	assert.match(NOTCH_SOURCE, /isNew \? NOTCH_EMPHASIS : NOTCH_AT_REST/u);
+	assert.match(NOTCH_MOTION_SOURCE, /duration: 0\.25,\s*ease: \[0, 0\.4, 0, 1\]/u);
 });
 
 test("the row reveals Resume plus a show/hide eye where Agent List puts Archive", () => {
@@ -130,7 +174,7 @@ test("a coding session body is read-only when the host omits onView", () => {
 	);
 });
 
-test("ships demo data and a catalog entry", () => {
+test("ships demo data and catalog entries for all three size variants", () => {
 	assert.match(DATA_SOURCE, /export const AGENT_SESSION_ITEMS/u);
 	assert.match(DATA_SOURCE, /id: "lw-scope-thread"/u);
 	assert.match(DATA_SOURCE, /brandName: "claude"/u);
@@ -140,6 +184,14 @@ test("ships demo data and a catalog entry", () => {
 	assert.match(REGISTRY_SOURCE, /"agent-session": dynamic/u);
 	assert.match(MANIFEST_SOURCE, /blockComponent\("agent-session", "Agent Session"\)/u);
 	assert.match(DETAIL_SOURCE, /export const AGENT_SESSION_DETAIL/u);
+	assert.match(DEMO_SOURCE, /export function AgentSessionDemoMedium\(\)/u);
+	assert.match(DEMO_SOURCE, /export function AgentSessionDemoSmall\(\)/u);
+	assert.match(VARIANT_REGISTRY_SOURCE, /"agent-session-demo-medium": dynamic\(/u);
+	assert.match(VARIANT_REGISTRY_SOURCE, /"agent-session-demo-small": dynamic\(/u);
+	assert.match(DETAIL_SOURCE, /title: "Medium"/u);
+	assert.match(DETAIL_SOURCE, /title: "Small"/u);
+	assert.match(DETAIL_SOURCE, /name: "variant"/u);
+	assert.match(DETAIL_SOURCE, /type: '"large" \| "medium" \| "small"'/u);
 	assert.match(
 		DETAIL_SOURCE,
 		/import \{ AgentSession \} from "@\/components\/blocks\/agent-session";/u,
@@ -160,7 +212,7 @@ test("the multi-link variant renders one chin row per candidate work item", () =
 		/onLinkWorkItem=\{onLinkWorkItem === undefined \? undefined : \(workItemKey\) => onLinkWorkItem\(item, workItemKey\)\}/u,
 	);
 	assert.match(CARD_SOURCE, /suggestedWorkItemKeys=\{suggestedWorkItemKeys\}/u);
-	assert.match(PAGE_SOURCE, /variant\?: "default" \| "multi-link"/u);
+	assert.match(PAGE_SOURCE, /variant\?: AgentSessionVariant \| "multi-link"/u);
 	assert.match(PAGE_SOURCE, /AGENT_SESSION_MULTI_LINK_KEYS\[item\.id\]/u);
 	assert.match(DEMO_SOURCE, /export function AgentSessionDemoMultiLink\(\)/u);
 	assert.match(VARIANT_REGISTRY_SOURCE, /"agent-session-demo-multi-link": dynamic\(/u);

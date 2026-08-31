@@ -7,14 +7,15 @@ import {
 	AGENT_SESSION_MULTI_LINK_KEYS,
 	AgentSession,
 	type AgentSessionItem,
+	type AgentSessionVariant,
 } from "./index";
 
 // One card is the whole story here — a second only repeats the same states.
 const AGENT_SESSION_DEMO_ITEMS = AGENT_SESSION_ITEMS.slice(0, 1);
 
 export default function AgentSessionPage({
-	variant = "default",
-}: Readonly<{ variant?: "default" | "multi-link" }>) {
+	variant = "large",
+}: Readonly<{ variant?: AgentSessionVariant | "multi-link" }>) {
 	const [capturedIds, setCapturedIds] = useState<ReadonlySet<string>>(() => new Set());
 
 	const handleCapture = useCallback((item: AgentSessionItem) => {
@@ -30,7 +31,7 @@ export default function AgentSessionPage({
 		<div className="flex h-full min-h-[360px] w-full flex-col items-center justify-center gap-2 bg-surface p-6">
 			<AgentSession
 				capturedItemIds={capturedIds}
-				className="w-[320px]"
+				className={variant === "large" || variant === "multi-link" ? "w-[320px]" : "w-fit"}
 				getSuggestedWorkItemKeys={
 					variant === "multi-link"
 						? (item) => AGENT_SESSION_MULTI_LINK_KEYS[item.id]
@@ -39,6 +40,7 @@ export default function AgentSessionPage({
 				items={AGENT_SESSION_DEMO_ITEMS}
 				onCreateWorkItem={handleCapture}
 				onLinkWorkItem={handleLink}
+				variant={variant === "multi-link" ? "large" : variant}
 			/>
 		</div>
 	);

@@ -37,6 +37,20 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"agent-session-demo-medium": dynamic(
+		() =>
+			import("../demos/blocks/agent-session-demo").then((mod) => ({
+				default: mod.AgentSessionDemoMedium,
+			})),
+		{ ssr: false },
+	),
+	"agent-session-demo-small": dynamic(
+		() =>
+			import("../demos/blocks/agent-session-demo").then((mod) => ({
+				default: mod.AgentSessionDemoSmall,
+			})),
+		{ ssr: false },
+	),
 	"jira-kanban-demo-standard": dynamic(
 		() =>
 			import("../demos/blocks/jira-kanban-demo").then((mod) => ({

@@ -20,6 +20,10 @@ export const AGENT_SESSION_ITEMS: readonly AgentSessionItem[] = [
 		state: "complete",
 		agent: CLAUDE_AGENT,
 		host: "local",
+		invokedBy: {
+			avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+			name: "person A",
+		},
 		machineName: "Venn’s MacBook",
 		timeLabel: "3 mins ago",
 		sessionDetails: {
@@ -35,6 +39,10 @@ export const AGENT_SESSION_ITEMS: readonly AgentSessionItem[] = [
 		state: "complete",
 		agent: CLAUDE_AGENT,
 		host: "local",
+		invokedBy: {
+			avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+			name: "person A",
+		},
 		machineName: "Venn’s MacBook",
 		timeLabel: "3 mins ago",
 		sessionDetails: {

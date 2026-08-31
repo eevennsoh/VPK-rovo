@@ -10,8 +10,13 @@ import type { AgentListItem } from "@/components/blocks/agent-list";
  */
 export type AgentSessionItem = AgentListItem;
 
+/** Visual footprint of each session. Large preserves the full uncaptured-work card. */
+export type AgentSessionVariant = "large" | "medium" | "small";
+
 export interface AgentSessionProps {
 	className?: string;
+	/** Card footprint. Defaults to the full large uncaptured-work card. */
+	variant?: AgentSessionVariant;
 	/** Sessions to render; defaults to built-in sample data. */
 	items?: readonly AgentSessionItem[];
 	/** Ids whose chin should read Captured instead of offering Link / Create. */
