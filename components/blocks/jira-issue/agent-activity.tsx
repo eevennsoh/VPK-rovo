@@ -310,6 +310,7 @@ function JiraIssueAgentActivityRow({
 	const sessionDragBind = sessionDrag
 		? {
 			...dragBindWithoutKeyboard,
+			onFocus: () => sessionDrag.onFocusedActivitiesChange(activities),
 			// The card `<article>` is `draggable`, so a plain pointerdown would hand
 			// the gesture to native HTML5 drag. Cancelling the compatibility
 			// mousedown suppresses `dragstart`; focus has to be restored by hand.

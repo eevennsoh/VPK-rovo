@@ -181,6 +181,18 @@ test("Jira issue session transfer drop zone is a labelled button reachable by ke
 	assert.match(TRANSFER_SOURCE, /if \(dropped\) commitRef\.current\?\.onUnlink\?\.\(commitRef\.current\?\.session\);/u);
 });
 
+test("Jira issue keyboard unlink preserves the focused split-row session", () => {
+	assert.match(DRAG_SOURCE, /onFocusedActivitiesChange: \(activities: readonly JiraIssueAgentActivity\[\]\) => void;/u);
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/onFocus: \(\) => sessionDrag\.onFocusedActivitiesChange\(activities\),/u,
+	);
+	assert.match(
+		SOURCE,
+		/onFocusedActivitiesChange: \(activities\) => setAgentSessionDragState\(\(current\) => \(\{[\s\S]*\.\.\.current,[\s\S]*activities,[\s\S]*\}\)\),/u,
+	);
+});
+
 test("Jira issue session transfer motion honours reduced motion at every layer", () => {
 	// CSS transitions on the region and the zones.
 	assert.match(TRANSFER_SOURCE, /const TRANSFER_REVEAL_CLASS =[\s\S]*motion-reduce:transition-none/u);
@@ -222,7 +234,7 @@ test("Jira issue agentSessionTransfer is opt-in so existing consumers are unaffe
 	// No config -> no drag binding handed to the chin rows.
 	assert.match(
 		SOURCE,
-		/const agentSessionDragBinding: JiraIssueAgentSessionDragBinding \| undefined = agentSessionTransfer\s*\n\s*\? \{ onDragStateChange: setAgentSessionDragState \}\s*\n\s*: undefined;/u,
+		/const agentSessionDragBinding: JiraIssueAgentSessionDragBinding \| undefined = agentSessionTransfer[\s\S]*onDragStateChange: setAgentSessionDragState,[\s\S]*onFocusedActivitiesChange:[\s\S]*: undefined;/u,
 	);
 	// No config -> no `<Gooey>` root and no transfer region in the tree.
 	assert.match(

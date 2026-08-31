@@ -47,6 +47,31 @@ test("the Jira tabs switch away from and back to the board", async ({ page }) =>
 	await expect(page.locator("[data-jira-kanban-column]")).toHaveCount(4);
 });
 
+test("keyboard unlink keeps the focused session beneath its card across Board to List to Board", async ({ page }) => {
+	await openBoard(page);
+
+	const card = page.locator("article", {
+		has: page.getByText("PAY-123", { exact: true }),
+	});
+	await card.getByRole("button", { name: "Open Claude Code in Rovo chat: Working" }).focus();
+	await page.keyboard.press("Tab");
+	await expect(page.getByRole("button", {
+		name: "Unlink Claude Code from this work item",
+	})).toBeFocused();
+	await page.keyboard.press("Enter");
+
+	const detachedSession = page.getByTestId("agent-session-row-PAY-123:claude-code");
+	await expect(detachedSession).toContainText("Claude Code with Jordan Okafor");
+	await expect(card.getByRole("button", {
+		name: "Open Claude Code in Rovo chat: Working",
+	})).toHaveCount(0);
+
+	await page.getByRole("tab", { name: "List" }).click();
+	await expect(detachedSession).toHaveCount(0);
+	await page.getByRole("tab", { name: "Board" }).click();
+	await expect(detachedSession).toBeVisible();
+});
+
 test("Insights controls and content are absent from v4", async ({ page }) => {
 	await openBoard(page);
 
