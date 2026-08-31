@@ -257,6 +257,7 @@ export function Omnibar({
 										onValueChange={setDraft}
 										placeholder={placeholder}
 										shouldReduceMotion={shouldReduceMotion}
+										submitDisabled={onSubmit === undefined}
 										timeline={timeline}
 										value={draft}
 									/>

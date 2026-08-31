@@ -159,3 +159,23 @@ test("the Omnibar block gates the timeline behind entries rather than always ren
 	assert.match(OMNIBAR_BAR_SOURCE, /timeline\?\.isTimeline === true && timeline\.axis === "x"/u);
 	assert.match(OMNIBAR_SOURCE, /timelineAxis === "y"/u);
 });
+
+test("the Omnibar send control stays disabled when the host wires no onSubmit", () => {
+	// Regression: v4 is the first consumer to mount the Omnibar without `onSubmit`, and
+	// `OmnibarBar` used to omit `submitDisabled`. `RovoComposerActionButton` resolves
+	// `disabled` as `submitDisabled || !canSubmit`, so the button enabled itself on the
+	// first keystroke and then did nothing — `handleSubmit` returns early with no consumer.
+	const OMNIBAR_SOURCE = readProjectFile("components/blocks/omnibar/components/omnibar.tsx");
+	const OMNIBAR_BAR_SOURCE = readProjectFile("components/blocks/omnibar/components/omnibar-bar.tsx");
+
+	assert.match(OMNIBAR_SOURCE, /<OmnibarBar[\s\S]*submitDisabled=\{onSubmit === undefined\}/u);
+	assert.match(
+		OMNIBAR_BAR_SOURCE,
+		/<RovoComposerActionButton[\s\S]*submitDisabled=\{submitDisabled\}/u,
+		"the bar must forward submitDisabled, not just accept it",
+	);
+	// The runtime guard stays too: Enter reaches requestSubmit() without touching the button.
+	assert.match(OMNIBAR_SOURCE, /if \(!prompt \|\| onSubmit === undefined\) \{/u);
+	// v4 deliberately has no onSubmit, which is what makes the guard reachable there.
+	assert.doesNotMatch(PAGE_SOURCE, /<Omnibar[\s\S]*onSubmit=/u);
+});

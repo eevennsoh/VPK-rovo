@@ -36,6 +36,10 @@ export default function OmnibarPage({
 			<Omnibar
 				defaultState={defaultState}
 				defaultTimelineOpen={timeline !== "none"}
+				// Without a consumer the send control is disabled by contract, which makes the
+				// catalog preview look broken rather than opinionated. The Scrubber demo host
+				// takes the same no-op for the same reason.
+				onSubmit={() => undefined}
 				timelineAxis={timeline === "none" ? undefined : timeline}
 				timelineEntries={timeline === "none" ? undefined : SCRUBBER_DEMO_ENTRIES}
 			/>

@@ -118,6 +118,15 @@ export interface OmnibarBarProps {
 	onValueChange: (value: string) => void;
 	placeholder: string;
 	shouldReduceMotion: boolean | null;
+	/**
+	 * True when the Omnibar has no `onSubmit` consumer.
+	 *
+	 * `RovoComposerActionButton` resolves `disabled` as `submitDisabled || !canSubmit`, so
+	 * without this the control enables on the first keystroke and then does nothing — the
+	 * shell's submit guard drops the draft on the floor rather than destroying it, but the
+	 * button has already promised an action it cannot perform.
+	 */
+	submitDisabled: boolean;
 	timeline?: OmnibarBarTimeline;
 	value: string;
 }
@@ -140,6 +149,7 @@ export function OmnibarBar({
 	onValueChange,
 	placeholder,
 	shouldReduceMotion,
+	submitDisabled,
 	timeline,
 	value,
 }: Readonly<OmnibarBarProps>) {
@@ -190,6 +200,7 @@ export function OmnibarBar({
 								onStop={noopStop}
 								showSubmitWhenEmpty
 								submitButtonClassName={OMNIBAR_SUBMIT_BUTTON}
+								submitDisabled={submitDisabled}
 							/>
 						</>
 					)
