@@ -73,7 +73,7 @@ import type {
 export interface ExperimentalV2JiraKanbanProps extends JiraKanbanProps {
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	/**
-	 * Sessions that never became work items, pinned as a sunken column to the
+	 * Sessions that never became work items, pinned as a column to the
 	 * left of the board. Omit to render only Jira status columns.
 	 */
 	agentSessionColumn?: AgentSessionColumnProps;
@@ -107,6 +107,14 @@ const BOARD_COLUMN_SHELL_TRANSITION = [
 
 const BOARD_COLUMN_ACTION_REVEAL = cn(
 	"pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical",
+	"motion-reduce:transition-none",
+);
+
+const COLLAPSED_HEAD_COUNT_AT_REST = cn(
+	"pointer-events-none absolute inset-0 flex items-center justify-center",
+	"text-xs font-normal text-text-subtlest",
+	"transition-opacity duration-normal ease-out-practical",
+	"group-hover/collapsed-column:opacity-0 group-has-[:focus-visible]/collapsed-column:opacity-0",
 	"motion-reduce:transition-none",
 );
 
@@ -293,8 +301,9 @@ function ColumnAgentAssignment({
 
 /**
  * Hover/focus revealed control that collapses a column into its pill, or grows
- * the pill back into a column. Rendered inside a `writing-mode: vertical-rl`
- * pill it keeps its own horizontal writing mode so the glyph stays upright.
+ * the pill back into a column. The collapsed head is already horizontal, so
+ * the glyph stays upright without a writing-mode override — the class remains
+ * so the same control is safe if it is ever nested in a vertical title again.
  */
 function BoardColumnResizeButton({
 	className,
@@ -338,10 +347,11 @@ function BoardColumnResizeButton({
 }
 
 /**
- * The collapsed form of a board column: a full-height 32px pill whose title and
- * count read top-to-bottom. `writing-mode: vertical-rl` rotates the text while
- * leaving the icon button upright, so the header's horizontal layout, spacing
- * and truncation rules all carry over unchanged.
+ * The collapsed form of a board column: the count stays in the same header
+ * row the expanded column uses (`space.100` below, `text-xs` tally), and the
+ * title reads top-to-bottom inside the full-height pill under that header. A
+ * number painted on the pill would sit inside the bordered container instead
+ * of on the board surface next to the session count.
  */
 function CollapsedBoardColumn({
 	count,
@@ -349,30 +359,38 @@ function CollapsedBoardColumn({
 	title,
 }: Readonly<{ count: number; onExpand: () => void; title: string }>) {
 	return (
-		<div
-			className="group/collapsed-column flex h-full w-full items-center gap-1.5 overflow-hidden border border-border-disabled [writing-mode:vertical-rl]"
-			style={{
-				borderRadius: token("radius.large"),
-				paddingInlineStart: token("space.150"),
-				paddingInlineEnd: token("space.050"),
-			}}
-		>
-			<span className="min-h-0 truncate text-xs font-medium leading-4 text-text-subtle">
-				{title}
-			</span>
-			<span className="shrink-0 text-xs font-normal text-text-subtlest">
-				{count}
-			</span>
-			<BoardColumnResizeButton
-				className={cn(
-					BOARD_COLUMN_ACTION_REVEAL,
-					"group-hover/collapsed-column:pointer-events-auto group-hover/collapsed-column:opacity-100",
-					"group-has-[:focus-visible]/collapsed-column:pointer-events-auto group-has-[:focus-visible]/collapsed-column:opacity-100",
-				)}
-				collapsed
-				onToggle={onExpand}
-				title={title}
-			/>
+		<div className="flex h-full w-full min-w-0 flex-col">
+			<div
+				className="group/collapsed-column w-full shrink-0"
+				style={{ paddingBottom: token("space.100") }}
+			>
+				<div className="relative flex h-6 w-full items-center justify-center">
+					<span className={COLLAPSED_HEAD_COUNT_AT_REST}>
+						{count}
+					</span>
+					<BoardColumnResizeButton
+						className={cn(
+							BOARD_COLUMN_ACTION_REVEAL,
+							"group-hover/collapsed-column:pointer-events-auto group-hover/collapsed-column:opacity-100",
+							"group-has-[:focus-visible]/collapsed-column:pointer-events-auto group-has-[:focus-visible]/collapsed-column:opacity-100",
+						)}
+						collapsed
+						onToggle={onExpand}
+						title={title}
+					/>
+				</div>
+			</div>
+			<div
+				className="flex min-h-0 w-full flex-1 flex-col items-center justify-center overflow-hidden border border-border-disabled"
+				style={{
+					borderRadius: token("radius.large"),
+					paddingBlock: token("space.150"),
+				}}
+			>
+				<span className="min-h-0 truncate text-xs font-medium leading-4 text-text-subtle [writing-mode:vertical-rl]">
+					{title}
+				</span>
+			</div>
 		</div>
 	);
 }
@@ -786,12 +804,12 @@ export function ExperimentalV2JiraKanban({
 		<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 			<div className="flex min-h-0 min-w-0 flex-1 items-stretch">
 				{agentSessionColumn ? (
-					// The same 2px transparent border every status column carries for
-					// its drop-target ring. Matching the box model, not just the
-					// padding, is what puts the column headers on one baseline and
-					// keeps one gap between every pair of column contents.
+					// Top/left/bottom match the status columns' 2px drop-target
+					// box so the headers share a baseline. No right border:
+					// Untracked work is not a drop target, and that 2px reads as
+					// a white seam once the plane is `bg-surface`.
 					<div
-						className="flex min-h-0 shrink-0 border-2 border-transparent ps-6"
+						className="flex min-h-0 shrink-0 border-2 border-transparent border-r-0 ps-6"
 						style={{ paddingTop, paddingBottom }}
 					>
 						<AgentSessionColumn {...agentSessionColumn} />
