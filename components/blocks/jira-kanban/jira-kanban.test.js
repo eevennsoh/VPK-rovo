@@ -516,12 +516,16 @@ test("Kanban cards expose and render Jira issue agent lifecycle presentation", (
 	assert.match(SOURCE, /agentActivityMode\?: JiraIssueAgentActivityMode;/);
 	assert.match(SOURCE, /agentDoneRuns\?: readonly JiraIssueCompletedAgentRun\[\];/);
 	assert.match(SOURCE, /pullRequestNumber\?: number;/);
+	assert.match(SOURCE, /pullRequestPreview\?: JiraIssuePullRequestPreview;/);
 	assert.match(SOURCE, /pullRequestStatus\?: JiraIssuePullRequestStatus;/);
 	assert.match(SOURCE, /agentActivities=\{card\.agentActivities\}/);
 	assert.match(SOURCE, /agentActivityMode=\{card\.agentActivityMode\}/);
 	assert.match(SOURCE, /agentDoneRuns=\{card\.agentDoneRuns\}/);
 	assert.match(SOURCE, /pullRequestNumber=\{card\.pullRequestNumber\}/);
+	assert.match(SOURCE, /pullRequestPreview=\{card\.pullRequestPreview\}/);
 	assert.match(SOURCE, /pullRequestStatus=\{card\.pullRequestStatus\}/);
+	assert.match(EXPERIMENTAL_SOURCE, /pullRequestPreview=\{card\.pullRequestPreview\}/);
+	assert.match(EXPERIMENTAL_V2_SOURCE, /pullRequestPreview=\{card\.pullRequestPreview\}/);
 	assert.match(DATA_SOURCE, /agentDoneRuns: card\.agentDoneRuns\?\.map\(\(run\) => \(\{ \.\.\.run \}\)\)/);
 });
 

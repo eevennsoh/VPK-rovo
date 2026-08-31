@@ -17,6 +17,7 @@ import {
 	PAY_101_INVENTORY_COMMIT_ARTIFACT,
 	PAY_101_INVENTORY_PR_ARTIFACT,
 } from "./presentation-build";
+import { getJiraGoldenJourneysV4PullRequestPreview } from "./presentation-pull-requests";
 
 const PAY_AVATARS = {
 	diego: "/avatar-user/dev-rana/color/asow-product-purple.png",
@@ -136,6 +137,22 @@ export const JIRA_GOLDEN_JOURNEYS_V4_PAY_HEADER_ASSIGNEES = [
 	},
 ] as const satisfies readonly JiraKanbanAssigneeData[];
 
+function attachPullRequestPreview(
+	code: string,
+	pullRequestNumber: number | undefined,
+): JiraKanbanCardData["pullRequestPreview"] {
+	if (!pullRequestNumber) {
+		return undefined;
+	}
+
+	const preview = getJiraGoldenJourneysV4PullRequestPreview(code);
+	if (!preview) {
+		throw new Error(`Missing dummy pull-request preview for ${code}`);
+	}
+
+	return preview;
+}
+
 function createCard({
 	agentActivities,
 	agentDoneRuns,
@@ -168,6 +185,7 @@ function createCard({
 		code,
 		priority,
 		pullRequestNumber,
+		pullRequestPreview: attachPullRequestPreview(code, pullRequestNumber),
 		pullRequestStatus,
 		tags,
 		title,
@@ -532,6 +550,14 @@ function cloneBoardCard(card: JiraKanbanCardData): JiraKanbanCardData {
 				}
 				: undefined,
 		})),
+		pullRequestPreview: card.pullRequestPreview
+			? {
+				...card.pullRequestPreview,
+				author: card.pullRequestPreview.author
+					? { ...card.pullRequestPreview.author }
+					: undefined,
+			}
+			: undefined,
 		agentDoneRuns: card.agentDoneRuns?.map((run) => ({
 			...run,
 			outputs: run.outputs?.map((output) => ({

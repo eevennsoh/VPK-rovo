@@ -2,12 +2,9 @@
 
 import type { ReactNode } from "react";
 import AutomationIcon from "@atlaskit/icon/core/automation";
-import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
-import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PriorityMajorIcon from "@atlaskit/icon/core/priority-major";
 import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
 import PriorityMinorIcon from "@atlaskit/icon/core/priority-minor";
-import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import TaskIcon from "@atlaskit/icon/core/task";
 
 import {
@@ -18,14 +15,18 @@ import {
 	type AvatarProps,
 	type AvatarUnassignedKind,
 } from "@/components/ui/avatar";
+import { buttonVariants } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Tag, TagGroup } from "@/components/ui/tag";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 import { getIssueInitial } from "@/components/blocks/jira-issue/lib";
+import { JiraIssuePullRequestCluster } from "@/components/blocks/jira-issue/pull-request-cluster";
 import type {
 	JiraIssuePriority,
+	JiraIssuePullRequestPreview,
 	JiraIssuePullRequestStatus,
 	JiraIssueTag,
 } from "@/components/blocks/jira-issue/types";
@@ -86,86 +87,6 @@ function JiraIssueAssignee({
 	);
 }
 
-function getJiraIssuePullRequestPresentation(status: JiraIssuePullRequestStatus | undefined): {
-	Icon: typeof PullRequestIcon;
-	colorClass: string;
-	label: string;
-} {
-	switch (status) {
-		case "failed":
-			return {
-				Icon: MergeFailureIcon,
-				colorClass: "text-icon-danger",
-				label: "Pull request failed",
-			};
-		case "merged":
-			return {
-				Icon: MergeSuccessIcon,
-				colorClass: "text-icon-accent-purple",
-				label: "Pull request merged",
-			};
-		case "open":
-		case undefined:
-			return {
-				Icon: PullRequestIcon,
-				colorClass: "text-icon-accent-lime",
-				label: "Pull request",
-			};
-		default: {
-			const exhaustive: never = status;
-			throw new Error(`Unhandled pull request status: ${String(exhaustive)}`);
-		}
-	}
-}
-
-function JiraIssuePullRequestCluster({
-	pullRequestNumber,
-	pullRequestStatus,
-	usesStrokeChrome,
-}: Readonly<{
-	pullRequestNumber: number;
-	pullRequestStatus?: JiraIssuePullRequestStatus;
-	usesStrokeChrome: boolean;
-}>) {
-	const { Icon, colorClass, label } = getJiraIssuePullRequestPresentation(pullRequestStatus);
-	const icon = (
-		<Icon
-			label={usesStrokeChrome ? "" : label}
-			color="currentColor"
-			size={usesStrokeChrome ? "small" : undefined}
-		/>
-	);
-
-	return (
-		<div className={cn("flex shrink-0 items-center", usesStrokeChrome ? "gap-1.5" : "gap-1")}>
-			{usesStrokeChrome ? (
-				<IconTile
-					as="span"
-					className={colorClass}
-					icon={icon}
-					iconSize="small"
-					label={label}
-					size="xxsmall"
-					variant="transparent"
-				/>
-			) : (
-				<span className={colorClass}>
-					{icon}
-				</span>
-			)}
-			<span
-				className={
-					usesStrokeChrome
-						? "font-mono text-xs font-normal leading-4 text-text-subtlest"
-						: "text-xs font-semibold text-text-subtlest"
-				}
-			>
-				#{pullRequestNumber}
-			</span>
-		</div>
-	);
-}
-
 export function JiraIssueSummary({
 	assigneeAvatarLabel,
 	assigneeAvatarShape,
@@ -178,7 +99,9 @@ export function JiraIssueSummary({
 	parentEpicControl,
 	priority,
 	pullRequestNumber,
+	pullRequestPreview,
 	pullRequestStatus,
+	pullRequestTitle,
 	showAutomationIndicator,
 	showPriorityIndicator,
 	summary,
@@ -196,7 +119,9 @@ export function JiraIssueSummary({
 	parentEpicControl?: ReactNode;
 	priority: JiraIssuePriority;
 	pullRequestNumber?: number;
+	pullRequestPreview?: JiraIssuePullRequestPreview;
 	pullRequestStatus?: JiraIssuePullRequestStatus;
+	pullRequestTitle?: string;
 	showAutomationIndicator: boolean;
 	showPriorityIndicator: boolean;
 	summary: string;
@@ -208,33 +133,73 @@ export function JiraIssueSummary({
 	const pullRequestCluster = pullRequestNumber ? (
 		<JiraIssuePullRequestCluster
 			pullRequestNumber={pullRequestNumber}
+			pullRequestPreview={pullRequestPreview}
 			pullRequestStatus={pullRequestStatus}
+			pullRequestTitle={pullRequestTitle ?? summary}
 			usesStrokeChrome={usesStrokeChrome}
 		/>
 	) : null;
 	const metadataCluster = showAutomationIndicator ? (
-		<span className="grid size-6 place-items-center text-icon-accent-orange" aria-label="Automation linked">
-			<AutomationIcon label="" size="small" color="currentColor" />
-		</span>
+		usesStrokeChrome ? (
+			<span
+				aria-label="Automation linked"
+				className={cn(
+					buttonVariants({ size: "icon-compact", variant: "ghost" }),
+					"text-icon-accent-orange [&_svg]:text-current",
+				)}
+			>
+				<Icon render={<AutomationIcon label="" size="small" color="currentColor" />} />
+			</span>
+		) : (
+			<span className="grid size-6 place-items-center text-icon-accent-orange" aria-label="Automation linked">
+				<AutomationIcon label="" size="small" color="currentColor" />
+			</span>
+		)
 	) : (
-		<div className="flex shrink-0 items-center gap-1.5">
+		<div className={cn("flex shrink-0 items-center", usesStrokeChrome ? "gap-0" : "gap-1.5")}>
 			{showPriorityIndicator ? (
-				<PriorityIcon
-					label={`${priority} priority`}
-					color={priorityColor}
-					size={usesStrokeChrome ? "small" : undefined}
-				/>
+				usesStrokeChrome ? (
+					<span
+						aria-label={`${priority} priority`}
+						className={cn(
+							buttonVariants({ size: "icon-compact", variant: "ghost" }),
+							"[&_svg]:text-current",
+						)}
+						style={{ color: priorityColor }}
+					>
+						<Icon render={<PriorityIcon label="" size="small" color="currentColor" />} />
+					</span>
+				) : (
+					<PriorityIcon
+						label={`${priority} priority`}
+						color={priorityColor}
+					/>
+				)
 			) : null}
 			{isMounted ? (
-				<JiraIssueAssignee
-					assigneeAvatarLabel={assigneeAvatarLabel}
-					assigneeAvatarShape={assigneeAvatarShape}
-					assigneeAvatarSrc={assigneeAvatarSrc}
-					assigneePulse={assigneePulse}
-					assigneeUnassignedKind={assigneeUnassignedKind}
-					issueKey={issueKey}
-					size={usesStrokeChrome ? "xs" : "sm"}
-				/>
+				usesStrokeChrome ? (
+					<span className="inline-flex size-6 shrink-0 translate-x-px items-center justify-end">
+						<JiraIssueAssignee
+							assigneeAvatarLabel={assigneeAvatarLabel}
+							assigneeAvatarShape={assigneeAvatarShape}
+							assigneeAvatarSrc={assigneeAvatarSrc}
+							assigneePulse={assigneePulse}
+							assigneeUnassignedKind={assigneeUnassignedKind}
+							issueKey={issueKey}
+							size="xs"
+						/>
+					</span>
+				) : (
+					<JiraIssueAssignee
+						assigneeAvatarLabel={assigneeAvatarLabel}
+						assigneeAvatarShape={assigneeAvatarShape}
+						assigneeAvatarSrc={assigneeAvatarSrc}
+						assigneePulse={assigneePulse}
+						assigneeUnassignedKind={assigneeUnassignedKind}
+						issueKey={issueKey}
+						size="sm"
+					/>
+				)
 			) : null}
 		</div>
 	);
@@ -302,7 +267,7 @@ export function JiraIssueSummary({
 					</div>
 
 					{usesStrokeChrome && pullRequestCluster ? (
-						<div className="flex shrink-0 items-center gap-1.5">
+						<div className="flex shrink-0 items-center gap-0">
 							{pullRequestCluster}
 							{metadataCluster}
 						</div>

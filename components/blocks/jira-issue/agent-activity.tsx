@@ -452,7 +452,7 @@ function JiraIssueAgentActivityRow({
 			<div className={cn("flex min-w-0 flex-1 items-center", usesStrokeChrome ? "gap-1.5" : "gap-2")}>
 				{featuredActivity ? (
 					<AgentAvatarVisual
-						avatarClassName="shrink-0"
+						avatarClassName={cn("shrink-0", usesStrokeChrome && "ml-px")}
 						avatarSrc={featuredActivity.avatarSrc}
 						brandName={featuredActivity.agentBrandName}
 						fallbackText={getAgentInitial(featuredActivity.name)}
@@ -463,7 +463,7 @@ function JiraIssueAgentActivityRow({
 					<IconTile
 						aria-hidden
 						as="span"
-						className="text-icon-subtle"
+						className="ml-px text-icon-subtle"
 						icon={<AiAgentIcon label="" size="small" />}
 						iconSize="small"
 						label=""
