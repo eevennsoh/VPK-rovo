@@ -339,10 +339,23 @@ function BoardColumnResizeButton({
 }
 
 /**
- * The collapsed form of a board column: a full-height 32px pill whose title and
- * count read top-to-bottom. `writing-mode: vertical-rl` rotates the text while
- * leaving the icon button upright, so the header's horizontal layout, spacing
- * and truncation rules all carry over unchanged.
+ * The collapsed form of a board column: a 32px pill whose title and count read
+ * top-to-bottom. `writing-mode: vertical-rl` rotates the text while leaving the
+ * icon button upright, so the header's horizontal layout, spacing and truncation
+ * rules all carry over unchanged.
+ *
+ * The pill hugs its content rather than running the column's full height. A
+ * status is a label, and a label stretched down a 700px board reads as an empty
+ * lane with a caption at the top. The shell around it still stretches, so the
+ * drop target keeps the full height every other column has. The Agent Session
+ * column is the deliberate exception — it collapses into a rail of per-session
+ * notches, which is content, and content needs the height.
+ *
+ * No `overflow-hidden` here: the expand control's focus ring extends 3px past a
+ * 24px button, which is exactly the 30px this pill has inside its border, so
+ * clipping to the padding box slices the ring flat on both sides. Nothing else
+ * in the pill can overflow — the title carries its own `truncate` — and the
+ * shell above still clips for the width transition.
  */
 function CollapsedBoardColumn({
 	count,
@@ -351,7 +364,7 @@ function CollapsedBoardColumn({
 }: Readonly<{ count: number; onExpand: () => void; title: string }>) {
 	return (
 		<div
-			className="group/collapsed-column flex h-full w-full items-center gap-1.5 overflow-hidden border border-border-disabled [writing-mode:vertical-rl]"
+			className="group/collapsed-column flex w-full items-center gap-1.5 border border-border-disabled [writing-mode:vertical-rl]"
 			style={{
 				borderRadius: token("radius.large"),
 				paddingInlineStart: token("space.150"),

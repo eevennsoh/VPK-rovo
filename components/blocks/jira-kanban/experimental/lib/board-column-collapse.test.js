@@ -89,3 +89,29 @@ test("the pinned session column shares the status columns' box model", () => {
 	// wrapper needs it too or the headers sit 2px apart and the gap runs short.
 	assert.match(BOARD_SOURCE, /className="flex min-h-0 shrink-0 border-2 border-transparent ps-6"/u);
 });
+
+test("a collapsed status pill hugs its label while the shell keeps the drop lane", () => {
+	const pillStart = BOARD_SOURCE.indexOf("function CollapsedBoardColumn");
+	const pillEnd = BOARD_SOURCE.indexOf("function BoardColumn(", pillStart);
+	assert.ok(pillStart !== -1 && pillEnd > pillStart, "expected to find CollapsedBoardColumn");
+	const pillSource = BOARD_SOURCE.slice(pillStart, pillEnd);
+
+	// A status is a label. Stretched down a 700px board it reads as an empty
+	// lane with a caption on top, so the pill sizes to its own content. The
+	// Agent Session column is the deliberate exception — it collapses into a
+	// rail of notches, which is content, and keeps `h-full`.
+	assert.doesNotMatch(pillSource, /\bh-full\b/u);
+	// The shell around it still stretches, so a collapsed column is as easy to
+	// drop onto as an expanded one.
+	assert.match(BOARD_SOURCE, /className=\{cn\(\s*"flex min-h-full w-max min-w-full items-stretch"/u);
+
+	// The expand control's focus ring extends 3px past a 24px button, which is
+	// exactly the 30px inside this 32px pill's border. Clipping to the padding
+	// box slices the ring flat on both sides, and nothing in the pill can
+	// overflow anyway — the title carries its own `truncate`.
+	assert.doesNotMatch(pillSource, /overflow-hidden/u);
+	assert.match(pillSource, /min-h-0 truncate/u);
+	// The shell still clips for the width transition, which is what that
+	// `overflow-hidden` was ever needed for.
+	assert.match(BOARD_SOURCE, /collapsed \|\| isResizing \? "overflow-hidden" : "overflow-visible"/u);
+});
