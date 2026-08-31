@@ -746,10 +746,42 @@ test("Experimental v2 is exposed as an independently owned copy of Experimental"
 	assert.match(EXPERIMENTAL_V2_HEADER_SOURCE, /export function ExperimentalV2JiraKanbanBoardHeader\(\{/u);
 	assert.match(EXPERIMENTAL_V2_PAGE_SOURCE, /export default function ExperimentalV2JiraKanbanPage\(\{/u);
 	assert.match(EXPERIMENTAL_V2_PAGE_SOURCE, /import \{ ExperimentalV2JiraKanban \} from "\.\/experimental-v2-jira-kanban";/u);
-	assert.match(EXPERIMENTAL_V2_PAGE_SOURCE, /import \{ ExperimentalV2JiraKanbanBoardHeader \} from "\.\/experimental-v2-board-header";/u);
+	assert.match(
+		EXPERIMENTAL_V2_PAGE_SOURCE,
+		/import \{\s*ExperimentalV2JiraKanbanBoardHeader,\s*type ExperimentalV2JiraKanbanView,\s*\} from "\.\/experimental-v2-board-header";/u,
+	);
 	assert.doesNotMatch(EXPERIMENTAL_V2_PAGE_SOURCE, /from "\.\.\/experimental\/page"/u);
 	assert.match(EXPERIMENTAL_V2_PREVIEW_SOURCE, /<div className="h-dvh">/u);
 	assert.doesNotMatch(EXPERIMENTAL_V2_PREVIEW_SOURCE, /<main/u);
+});
+
+test("Experimental v2 mirrors the Golden Journeys v4 board and list contract", () => {
+	assert.match(EXPERIMENTAL_V2_PAGE_SOURCE, /activeView\?: ExperimentalV2JiraKanbanView;/u);
+	assert.match(EXPERIMENTAL_V2_PAGE_SOURCE, /insightsEnabled\?: boolean;/u);
+	assert.match(
+		EXPERIMENTAL_V2_PAGE_SOURCE,
+		/renderListContent\?: \(columns: readonly JiraKanbanColumnData\[\]\) => ReactNode;/u,
+	);
+	assert.match(EXPERIMENTAL_V2_PAGE_SOURCE, /activeView === "list" && renderListContent/u);
+	assert.match(EXPERIMENTAL_V2_PAGE_SOURCE, /modeToggle=\{insightsEnabled \? \(/u);
+	assert.match(EXPERIMENTAL_V2_PAGE_SOURCE, /showAgentSessionColumn\?: boolean;/u);
+	assert.match(EXPERIMENTAL_V2_SOURCE, /agentActivityLayout\?: JiraIssueAgentActivityLayout;/u);
+	assert.match(EXPERIMENTAL_V2_SOURCE, /collapsedColumns\?: CollapsedBoardColumns;/u);
+	assert.match(
+		EXPERIMENTAL_V2_HEADER_SOURCE,
+		/<TabsList aria-label="Work items view">[\s\S]*<TabsTrigger value="board">[\s\S]*Board[\s\S]*<TabsTrigger value="list">[\s\S]*List/u,
+	);
+	const v2ModeToggleIndex = EXPERIMENTAL_V2_HEADER_SOURCE.indexOf("{modeToggle}");
+	const v2OverflowIndex = EXPERIMENTAL_V2_HEADER_SOURCE.indexOf('aria-label={`More ${surfaceLabel} controls`}');
+	const v2ViewSwitcherIndex = EXPERIMENTAL_V2_HEADER_SOURCE.indexOf('aria-label="Work items view"');
+	assert.ok(v2ModeToggleIndex > 0 && v2ModeToggleIndex < v2OverflowIndex);
+	assert.ok(v2OverflowIndex > 0 && v2OverflowIndex < v2ViewSwitcherIndex);
+	assert.match(DEMO_SOURCE, /createJiraGoldenJourneysV4PayBoardColumns/u);
+	assert.match(DEMO_SOURCE, /JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS/u);
+	assert.match(DEMO_SOURCE, /<ExperimentalV2Page[\s\S]*insightsEnabled=\{false\}/u);
+	assert.match(DEMO_SOURCE, /activeView=\{activeView\}[\s\S]*onViewChange=\{setActiveView\}/u);
+	assert.match(DEMO_SOURCE, /renderListContent=\{\(columns\) =>/u);
+	assert.match(DEMO_SOURCE, /<JiraList[\s\S]*rows=\{listRows\}/u);
 });
 
 test("Experimental kanban header keeps only configure and more actions", () => {

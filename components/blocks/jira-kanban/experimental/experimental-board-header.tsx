@@ -181,11 +181,11 @@ export function ExperimentalJiraKanbanBoardHeader({
 					{filterControl}
 
 					<BoardViewMenu compact={compact} surfaceLabel={surfaceLabel} />
+
+					{modeToggle}
 					<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
 						<Icon render={<ShowMoreHorizontalIcon label="" />} />
 					</Button>
-
-					{modeToggle}
 
 					<div className={cn("flex items-center gap-1", compact ? undefined : "ml-auto")}>
 						{onViewChange ? (
