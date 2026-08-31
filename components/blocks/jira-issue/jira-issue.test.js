@@ -537,7 +537,7 @@ test("Jira issue renders one aggregate agent row with prioritized status and no 
 	);
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,
-		/className=\{cn\(\s*"flex w-full min-w-0 flex-col",[\s\S]*sessionDragging \? "overflow-visible" : "overflow-hidden",\s*hasActivities && "px-1 py-1",\s*\)\}/u,
+		/className=\{cn\(\s*"flex w-full min-w-0 flex-col",[\s\S]*sessionDragging \? "overflow-visible" : "overflow-hidden",[\s\S]*hasActivities && "px-1 py-1 has-\[\[data-session-chip-out\]\]:py-0",\s*\)\}/u,
 	);
 	assert.match(SOURCE, /"relative w-full min-w-0 overflow-visible rounded-\[10px\] outline-none"/);
 	assert.match(SOURCE, /"group\/jira-issue relative w-full min-w-0 overflow-visible outline-none"/);
@@ -688,14 +688,14 @@ test("Jira issue agent activity demo is registered in docs and variant registry"
 	assert.doesNotMatch(PAGE_SOURCE, /\{ value: "agent-completed-work", label: "Agent completed work" \}/);
 	assert.doesNotMatch(PAGE_SOURCE, /flex flex-wrap items-center justify-center gap-2/);
 	// Activity selection moved out of the JSX into a switch so the transfer
-	// phases can drop the row once a session has been moved away.
-	assert.match(PAGE_SOURCE, /function getDemoAgentActivities\(\s*state: JiraIssueAgentActivityDemoState,\s*sessionMoved: boolean,\s*\): readonly JiraIssueAgentActivity\[\] \| undefined \{/u);
+	// phases can decide which rows the chin shows.
+	assert.match(PAGE_SOURCE, /function getDemoAgentActivities\(\s*state: JiraIssueAgentActivityDemoState,\s*\): readonly JiraIssueAgentActivity\[\] \| undefined \{/u);
 	assert.match(PAGE_SOURCE, /case "awaiting-user-input":\s*\n\s*return JIRA_ISSUE_AWAITING_INPUT_ACTIVITIES;/u);
 	assert.match(PAGE_SOURCE, /subtasks=\{JIRA_ISSUE_DEMO_SUBTASKS\}/);
 	assert.doesNotMatch(PAGE_SOURCE, /subtasks=\{agentActivityState === "agent-completed-work" \? JIRA_ISSUE_DEMO_SUBTASKS : undefined\}/);
-	// Tab clicks route through `selectDemoState`, which also drops the pending
-	// notice timer and any moved-session state before switching phase.
-	assert.match(PAGE_SOURCE, /onClick=\{\(\) => selectDemoState\(state\.value\)\}/u);
+	// Tab clicks are a plain phase switch: the demo carries no timers or moved-
+	// session bookkeeping to unwind first.
+	assert.match(PAGE_SOURCE, /onClick=\{\(\) => setAgentActivityState\(state\.value\)\}/u);
 	assert.match(PAGE_SOURCE, /function getExperimentalDemoPullRequest\(/);
 	assert.match(PAGE_SOURCE, /case "awaiting-user-input":[\s\S]*pullRequestNumber: 812[\s\S]*pullRequestStatus: "open"/);
 	assert.match(PAGE_SOURCE, /case "agent-completed-work":[\s\S]*pullRequestStatus: "failed"/);
