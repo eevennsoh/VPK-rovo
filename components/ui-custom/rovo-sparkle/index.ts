@@ -1,4 +1,10 @@
-export { RovoSparkleButton, type RovoSparkleButtonProps, type RovoSparkleSize } from "./button";
+export {
+	RovoSparkleButton,
+	RovoSparkleMark,
+	type RovoSparkleButtonProps,
+	type RovoSparkleMarkProps,
+	type RovoSparkleSize,
+} from "./button";
 export {
 	RovoSparkle,
 	type RovoSparkleActionKind,

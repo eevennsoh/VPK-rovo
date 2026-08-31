@@ -28,11 +28,25 @@ const SPARKLE_TRANSFORM_ENTER: Transition = { duration: 0.4, ease: [0.4, 0, 0, 1
 const SPARKLE_TRANSFORM_EXIT: Transition = { duration: 0.25, ease: [0.6, 0, 0.8, 0.6] }; // duration-slow + ease-in
 const SPARKLE_REDUCED: Transition = { duration: 0 };
 
-function RovoSparkleMark({
+export interface RovoSparkleMarkProps {
+	/** Runs the rotate/scale flourish and swaps the glyph to the four Rovo brand quadrants. */
+	active: boolean;
+	/** Tints the glyph with `color.icon.selected` instead of the inverse white. */
+	selected: boolean;
+	/** Compact is a 12px glyph; default is 16px. */
+	size: RovoSparkleSize;
+}
+
+/**
+ * The bare sparkle glyph, without the surrounding button. Exported so surfaces that already
+ * own a black background — for example the Omnibar's collapsed pill — can render the
+ * canonical mark instead of re-declaring its path.
+ */
+export function RovoSparkleMark({
 	active,
 	selected,
 	size,
-}: Readonly<{ active: boolean; selected: boolean; size: RovoSparkleSize }>) {
+}: Readonly<RovoSparkleMarkProps>) {
 	const shouldReduceMotion = useReducedMotion();
 	const clipId = useId().replaceAll(":", "");
 	const colorActive = active && !selected;

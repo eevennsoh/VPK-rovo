@@ -5403,7 +5403,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 429,
+			"manifestEntryCount": 431,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5445,7 +5445,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 108,
+				"entryCount": 110,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5809,6 +5809,12 @@
 					},
 					{
 						"category": "blocks",
+						"slug": "omnibar",
+						"name": "Omnibar",
+						"importPath": "@/components/blocks/omnibar"
+					},
+					{
+						"category": "blocks",
 						"slug": "product-sidebar",
 						"name": "Product Sidebar",
 						"importPath": "@/components/blocks/product-sidebar"
@@ -5854,6 +5860,12 @@
 						"slug": "rovo-canvas",
 						"name": "Rovo Canvas",
 						"importPath": "@/components/blocks/rovo-canvas"
+					},
+					{
+						"category": "blocks",
+						"slug": "scrubber",
+						"name": "Scrubber",
+						"importPath": "@/components/blocks/scrubber"
 					},
 					{
 						"category": "blocks",
