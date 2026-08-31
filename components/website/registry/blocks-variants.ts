@@ -16,6 +16,27 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"omnibar-demo-expanded": dynamic(
+		() =>
+			import("../demos/blocks/omnibar-demo").then((mod) => ({
+				default: mod.OmnibarDemoExpanded,
+			})),
+		{ ssr: false },
+	),
+	"omnibar-demo-docked": dynamic(
+		() =>
+			import("../demos/blocks/omnibar-demo").then((mod) => ({
+				default: mod.OmnibarDemoDocked,
+			})),
+		{ ssr: false },
+	),
+	"scrubber-demo-timeline": dynamic(
+		() =>
+			import("../demos/blocks/scrubber-demo").then((mod) => ({
+				default: mod.ScrubberDemoTimeline,
+			})),
+		{ ssr: false },
+	),
 	"agent-session-flyout-demo-composer": dynamic(
 		() =>
 			import("../demos/blocks/agent-session-flyout-demo").then((mod) => ({

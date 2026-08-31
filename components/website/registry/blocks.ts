@@ -157,6 +157,12 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 		() => import("../demos/blocks/agent-session-flyout-demo"),
 		{ ssr: false },
 	),
+	omnibar: dynamic(() => import("../demos/blocks/omnibar-demo"), {
+		ssr: false,
+	}),
+	scrubber: dynamic(() => import("../demos/blocks/scrubber-demo"), {
+		ssr: false,
+	}),
 	"jira-work-item-demo-standard": dynamic(
 		() =>
 			import("../demos/blocks/jira-work-item-demo").then((mod) => ({
