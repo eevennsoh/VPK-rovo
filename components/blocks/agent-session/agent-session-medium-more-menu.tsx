@@ -28,6 +28,12 @@ export function AgentSessionMediumMoreMenu({
 	onSubtasks?: () => void;
 }>) {
 	const [open, setOpen] = useState(false);
+	const hasSubtasks = onSubtasks !== undefined;
+	const hasCreateWorkItem = onCreateWorkItem !== undefined;
+
+	if (!hasSubtasks && !hasCreateWorkItem) {
+		return null;
+	}
 
 	return (
 		<DropdownMenu onOpenChange={setOpen} open={open}>
@@ -60,10 +66,10 @@ export function AgentSessionMediumMoreMenu({
 				</DropdownMenuTrigger>
 			</span>
 			<DropdownMenuContent align="end" className="min-w-0 w-max">
-				<DropdownMenuItem onSelect={() => onSubtasks?.()}>
+				<DropdownMenuItem disabled={!hasSubtasks} onSelect={() => onSubtasks?.()}>
 					Add as a subtask
 				</DropdownMenuItem>
-				<DropdownMenuItem onSelect={() => onCreateWorkItem?.()}>
+				<DropdownMenuItem disabled={!hasCreateWorkItem} onSelect={() => onCreateWorkItem?.()}>
 					Create new
 				</DropdownMenuItem>
 			</DropdownMenuContent>

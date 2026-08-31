@@ -172,14 +172,27 @@ test("medium drag keeps pointer capture on the motion host instead of swapping a
 	assert.match(MEDIUM_DRAG_SOURCE, /window\.addEventListener\("pointercancel", onPointerCancel\)/u);
 });
 
+test("medium drag publishes the attach transfer only after the pointer moves", () => {
+	// Publishing on pointerdown grows the card chin under the pill and arms
+	// onLink, so a click without movement reattaches the session.
+	assert.match(MEDIUM_DRAG_SOURCE, /SESSION_DRAG_PUBLISH_THRESHOLD_PX = 2/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /pointerOriginRef\.current = \{ x: event\.clientX, y: event\.clientY \}/u);
+	assert.doesNotMatch(
+		MEDIUM_DRAG_SOURCE,
+		/onPointerDown: \(event: ReactPointerEvent<HTMLElement>\) => \{\s*\n\s*drag\.bind\.onPointerDown\(event\);\s*\n\s*publishSessionDrag\(true, event\);/u,
+	);
+	assert.match(MEDIUM_DRAG_SOURCE, /if \(moved\) \{\s*\n\s*publishSessionDrag\(true, event\);/u);
+});
+
 test("medium more menu collapses until hover so the label can use the slot", () => {
 	assert.match(MORE_MENU_SOURCE, /flex h-6 w-0 shrink-0 overflow-hidden/u);
 	assert.match(MORE_MENU_SOURCE, /group-hover\/session-card:w-6/u);
 	assert.match(MORE_MENU_SOURCE, /group-has-\[:focus-visible\]\/session-card:w-6/u);
 	assert.doesNotMatch(MORE_MENU_SOURCE, /className=\{?["'`][^"'`]*\bhidden\b/u);
 	assert.match(MORE_MENU_SOURCE, /<DropdownMenuContent align="end" className="min-w-0 w-max">/u);
-	assert.match(MORE_MENU_SOURCE, /<DropdownMenuItem onSelect=\{\(\) => onSubtasks\?\.\(\)\}>\s*\n\s*Add as a subtask/u);
-	assert.match(MORE_MENU_SOURCE, /<DropdownMenuItem onSelect=\{\(\) => onCreateWorkItem\?\.\(\)\}>\s*\n\s*Create new/u);
+	assert.match(MORE_MENU_SOURCE, /if \(!hasSubtasks && !hasCreateWorkItem\) \{\s*\n\s*return null;/u);
+	assert.match(MORE_MENU_SOURCE, /<DropdownMenuItem disabled=\{!hasSubtasks\} onSelect=\{\(\) => onSubtasks\?\.\(\)\}>\s*\n\s*Add as a subtask/u);
+	assert.match(MORE_MENU_SOURCE, /<DropdownMenuItem disabled=\{!hasCreateWorkItem\} onSelect=\{\(\) => onCreateWorkItem\?\.\(\)\}>\s*\n\s*Create new/u);
 	assert.match(INDEX_SOURCE, /onCreateWorkItem=\{onCreateWorkItem\}/u);
 	assert.match(INDEX_SOURCE, /onSubtasks=\{onSubtasks\}/u);
 });

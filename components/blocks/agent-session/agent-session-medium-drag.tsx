@@ -23,6 +23,8 @@ import { toJiraIssueAgentActivityFromSession } from "./agent-session-work-item";
 import type { AgentSessionItem } from "./agent-session-types";
 
 const SESSION_DRAG_ORIGIN: PointerDragPosition = { x: 0, y: 0 };
+/** Same 2px threshold as `usePointerDrag` — publish/arm only after a real move. */
+const SESSION_DRAG_PUBLISH_THRESHOLD_PX = 2;
 const SESSION_DRAG_DISSOLVE_FADE_MS = 240;
 const SESSION_DRAG_DISSOLVE_SINK = 0.8;
 const SESSION_DRAG_MORPH = { advanced: { blobInset: 3, bridgeGrow: 7 } } as const;
@@ -59,6 +61,8 @@ export function AgentSessionMediumDrag({
 		dragOffsetY.set(drag.position.y);
 	}, [dragOffsetX, dragOffsetY, drag.position.x, drag.position.y]);
 
+	const pointerOriginRef = useRef<PointerDragPosition | null>(null);
+
 	function publishSessionDrag(
 		dragging: boolean,
 		event?: ReactPointerEvent<HTMLElement>,
@@ -75,12 +79,14 @@ export function AgentSessionMediumDrag({
 
 	function endSessionDrag(event: ReactPointerEvent<HTMLElement>) {
 		drag.bind.onPointerUp(event);
+		pointerOriginRef.current = null;
 		setDragOffset(SESSION_DRAG_ORIGIN);
 		publishSessionDrag(false, event);
 	}
 
 	function cancelSessionDrag(event: ReactPointerEvent<HTMLElement>) {
 		drag.bind.onPointerCancel(event);
+		pointerOriginRef.current = null;
 		setDragOffset(SESSION_DRAG_ORIGIN);
 		publishSessionDrag(false, undefined, true);
 	}
@@ -138,11 +144,19 @@ export function AgentSessionMediumDrag({
 			onPointerCancel: cancelSessionDrag,
 			onPointerDown: (event: ReactPointerEvent<HTMLElement>) => {
 				drag.bind.onPointerDown(event);
-				publishSessionDrag(true, event);
+				pointerOriginRef.current = { x: event.clientX, y: event.clientY };
 			},
 			onPointerMove: (event: ReactPointerEvent<HTMLElement>) => {
 				drag.bind.onPointerMove(event);
-				if (drag.dragging) {
+				const origin = pointerOriginRef.current;
+				const moved = Boolean(
+					origin
+					&& (
+						Math.abs(event.clientX - origin.x) > SESSION_DRAG_PUBLISH_THRESHOLD_PX
+						|| Math.abs(event.clientY - origin.y) > SESSION_DRAG_PUBLISH_THRESHOLD_PX
+					),
+				);
+				if (moved) {
 					publishSessionDrag(true, event);
 				}
 			},
