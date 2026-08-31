@@ -57,7 +57,7 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	/** Mode control, rendered inline with Filter and Group. */
 	modeToggle?: ReactNode;
 	/**
-	 * Trailing cluster end slot — after the more/ellipsis control.
+	 * Trailing cluster end slot — after the board/list view switcher.
 	 */
 	endSlot?: ReactNode;
 	surfaceLabel?: string;
@@ -181,6 +181,9 @@ export function ExperimentalJiraKanbanBoardHeader({
 					{filterControl}
 
 					<BoardViewMenu compact={compact} surfaceLabel={surfaceLabel} />
+					<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
+						<Icon render={<ShowMoreHorizontalIcon label="" />} />
+					</Button>
 
 					{modeToggle}
 
@@ -206,12 +209,6 @@ export function ExperimentalJiraKanbanBoardHeader({
 								</TabsList>
 							</Tabs>
 						) : null}
-						{/* The board-settings control retired when the View menu took over
-						    its job — keeping both put the same sliders glyph in the row
-						    twice. Compact and full now render the same single control. */}
-						<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
-							<Icon render={<ShowMoreHorizontalIcon label="" />} />
-						</Button>
 						{endSlot ? endSlot : null}
 					</div>
 				</div>
