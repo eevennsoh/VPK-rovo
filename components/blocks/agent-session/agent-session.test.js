@@ -300,7 +300,7 @@ test("large uncaptured-work cards stack as one dashed well", () => {
 	assert.doesNotMatch(CARD_SOURCE, /rounded-none border bg-transparent/u);
 	assert.doesNotMatch(CARD_SOURCE, /rounded-lg border p-3/u);
 	assert.doesNotMatch(INDEX_SOURCE, /flex flex-col gap-2/u);
-	const themeSource = readFileSync(join(__dirname, "../../../app/tailwind-theme.css"), "utf8");
+	const themeSource = readFileSync(join(__dirname, "../../../app/dash-4-2.css"), "utf8");
 	assert.match(themeSource, /@utility dash-4-2/u);
 	assert.match(themeSource, /--border-dash-length: 4px/u);
 	assert.match(themeSource, /--border-dash-gap: 2px/u);
