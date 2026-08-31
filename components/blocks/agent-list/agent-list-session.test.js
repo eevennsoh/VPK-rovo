@@ -134,19 +134,28 @@ test("session flyout derives lifecycle, issue, and host fallbacks from a row", a
 	);
 });
 
-test("session flyout carries the invoking person into its timestamp header", async () => {
+test("session flyout keeps the invoking person separate from the work-item assignee", async () => {
 	const { toAgentSessionFlyoutItem } = await loadSession();
 
-	const session = toAgentSessionFlyoutItem(sessionItem(undefined, {
+	const session = toAgentSessionFlyoutItem(sessionItem({
+		assignee: {
+			name: "Work item owner",
+			src: "/avatar-user/priya-hansra/color/asow-service-yellow.png",
+		},
+	}, {
 		invokedBy: {
 			avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
 			name: "person A",
 		},
 	}));
 
-	assert.deepEqual(session.assignee, {
+	assert.deepEqual(session.invokedBy, {
 		name: "person A",
 		src: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+	});
+	assert.deepEqual(session.assignee, {
+		name: "Work item owner",
+		src: "/avatar-user/priya-hansra/color/asow-service-yellow.png",
 	});
 });
 

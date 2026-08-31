@@ -113,13 +113,13 @@ export function toAgentSessionFlyoutItem(item: AgentListItem): JiraSidebarSessio
 		...details,
 		agentAvatarSrc: item.agent.avatarSrc,
 		agentName: item.agent.name,
-		// The row owns who started the session. Carry that person into the
-		// flyout's assignee slot so its header keeps the human avatar adjacent to
-		// the relative timestamp, matching the current Agent Session design.
+		// The row owns who started the session. Keep that person distinct from
+		// the Jira work-item assignee while carrying the header avatar into the
+		// shared flyout payload.
 		...(item.invokedBy === undefined
 			? {}
 			: {
-				assignee: {
+				invokedBy: {
 					name: item.invokedBy.name,
 					...(item.invokedBy.avatarSrc === undefined ? {} : { src: item.invokedBy.avatarSrc }),
 				},
