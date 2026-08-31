@@ -314,7 +314,6 @@ function BoardColumnResizeButton({
 				<TooltipTrigger
 					render={
 						<Button
-							aria-expanded={!collapsed}
 							aria-label={collapsed ? `Expand ${title} column` : `Collapse ${title} column`}
 							className={cn("shrink-0 [writing-mode:horizontal-tb]", className)}
 							onClick={onToggle}
@@ -333,7 +332,7 @@ function BoardColumnResizeButton({
 						}
 					/>
 				</TooltipTrigger>
-				<TooltipContent>{collapsed ? "Expand column" : "Collapse column"}</TooltipContent>
+				<TooltipContent>{collapsed ? "Expand" : "Collapse"}</TooltipContent>
 			</Tooltip>
 		</TooltipProvider>
 	);

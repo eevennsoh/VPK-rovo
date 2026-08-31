@@ -65,6 +65,25 @@ test("collapse survives a switch to the list or Pulse view", () => {
 	assert.match(PAGE_SOURCE, /onCollapsedColumnsChange=\{setCollapsedColumns\}/u);
 });
 
+test("the resize button swaps its icon without using selected button state", () => {
+	const resizeButtonStart = BOARD_SOURCE.indexOf("function BoardColumnResizeButton");
+	const resizeButtonEnd = BOARD_SOURCE.indexOf("/**", resizeButtonStart);
+	const resizeButtonSource = BOARD_SOURCE.slice(resizeButtonStart, resizeButtonEnd);
+
+	assert.match(resizeButtonSource, /collapsed\s*\?\s*<GrowHorizontalIcon/u);
+	assert.match(resizeButtonSource, /:\s*<ShrinkHorizontalIcon/u);
+	assert.match(
+		resizeButtonSource,
+		/aria-label=\{collapsed \? `Expand \$\{title\} column` : `Collapse \$\{title\} column`\}/u,
+	);
+	assert.match(
+		resizeButtonSource,
+		/<TooltipContent>\{collapsed \? "Expand" : "Collapse"\}<\/TooltipContent>/u,
+	);
+	assert.doesNotMatch(resizeButtonSource, /"Expand column"|"Collapse column"/u);
+	assert.doesNotMatch(resizeButtonSource, /aria-(?:expanded|pressed)=/u);
+});
+
 test("the pinned session column shares the status columns' box model", () => {
 	// Status columns carry a 2px transparent drop-target border, so the pinned
 	// wrapper needs it too or the headers sit 2px apart and the gap runs short.
