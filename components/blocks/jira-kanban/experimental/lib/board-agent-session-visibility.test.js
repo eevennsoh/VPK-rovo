@@ -86,6 +86,18 @@ test("hiding Finished also drops completed activities on the card", () => {
 	assert.equal(next.agentActivityMode, undefined);
 });
 
+test("hiding linked states clears a leftover mode-only agent shell", () => {
+	const unlinked = card({
+		agentActivities: [],
+		agentActivityMode: "none",
+	});
+
+	const next = applyCardAgentSessionVisibility(unlinked, new Set());
+	assert.notEqual(next, unlinked);
+	assert.equal(next.agentActivityMode, undefined);
+	assert.equal(next.agentActivities, undefined);
+});
+
 test("hiding every linked state leaves the issue on the board without agent chrome", () => {
 	const working = card({
 		agentActivities: [activity("working-agent", "working")],

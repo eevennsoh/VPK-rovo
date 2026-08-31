@@ -57,21 +57,27 @@ export function applyCardAgentSessionVisibility(
 	shownStateIds: ReadonlySet<string>,
 ): JiraKanbanCardData {
 	const visibility = toVisibility(shownStateIds);
+	if (visibility.showWorking && visibility.showNeedsInput && visibility.showFinished) {
+		return card;
+	}
+
 	const visibleActivities = (card.agentActivities ?? []).filter((activity) => (
 		isActivityVisible(activity, visibility)
 	));
 	const visibleDoneRuns = visibility.showFinished ? card.agentDoneRuns : undefined;
+	const nextMode = resolveVisibleAgentActivityMode(visibleActivities, visibleDoneRuns);
 	const activitiesUnchanged = visibleActivities.length === (card.agentActivities?.length ?? 0);
 	const doneRunsUnchanged = (visibleDoneRuns?.length ?? 0) === (card.agentDoneRuns?.length ?? 0);
+	const modeUnchanged = nextMode === card.agentActivityMode;
 
-	if (activitiesUnchanged && doneRunsUnchanged) {
+	if (activitiesUnchanged && doneRunsUnchanged && modeUnchanged) {
 		return card;
 	}
 
 	return {
 		...card,
 		agentActivities: visibleActivities.length > 0 ? visibleActivities : undefined,
-		agentActivityMode: resolveVisibleAgentActivityMode(visibleActivities, visibleDoneRuns),
+		agentActivityMode: nextMode,
 		agentDoneRuns: visibleDoneRuns?.length ? visibleDoneRuns : undefined,
 	};
 }
