@@ -74,28 +74,41 @@ test("out-of-range magnification is clamped, never extrapolated", () => {
 	assert.equal(toAgentSessionNotchLength(-3, false), AGENT_SESSION_NOTCH_LENGTH.rest);
 	assert.equal(toAgentSessionNotchLength(Number.NaN, false), AGENT_SESSION_NOTCH_LENGTH.rest);
 	assert.equal(toAgentSessionNotchOpacity(4, false), 1);
-	assert.equal(toAgentSessionNotchOpacity(-3, false), 0.69);
+	assert.equal(toAgentSessionNotchOpacity(-3, false), 0.66);
 	assert.equal(toAgentSessionNotchOpacity(Number.NaN, true), 1);
 });
 
 test("a resting notch is as legible as the unmagnified mark beside it", () => {
-	// 0.69 alpha of `color.icon` over `elevation.surface.sunken` resolves to
-	// `color.icon.subtlest` in both themes — the exact alphas are 0.681 light and
-	// 0.692 dark, so one number lands within a channel level or two of each. A
-	// 1px hairline has no weight to spare, so the swell brightens from that floor
+	// The rail sits on `color.background.accent.gray.subtlest`, and 0.66 alpha of
+	// `color.icon` over it resolves to `color.icon.subtlest` in both themes. A 1px
+	// hairline has no weight to spare, so the swell brightens from that floor
 	// rather than dimming below it.
+	//
+	// Every channel is checked, not just one: the plane is a neutral grey and
+	// `icon.subtlest` carries a slight blue lean, so a single alpha cannot land
+	// all three exactly. Five levels out of 255 is the widest gap and is not
+	// visible on a hairline; anything beyond that means the plane's fill moved
+	// and the alpha needs recomputing.
 	const blend = (fg: number, bg: number, alpha: number) => Math.round(alpha * fg + (1 - alpha) * bg);
 	const rest = toAgentSessionNotchOpacity(0, false);
-	const near = (actual: number, target: number, theme: string) => {
-		assert.ok(
-			Math.abs(actual - target) <= 2,
-			`${theme}: resting notch resolved to ${actual}, expected within 2 of icon.subtlest ${target}`,
-		);
+	const resolvesToSubtlest = (
+		theme: string,
+		icon: readonly number[],
+		plane: readonly number[],
+		subtlest: readonly number[],
+	) => {
+		for (let channel = 0; channel < 3; channel += 1) {
+			const actual = blend(icon[channel], plane[channel], rest);
+			assert.ok(
+				Math.abs(actual - subtlest[channel]) <= 5,
+				`${theme} channel ${channel}: resting notch resolved to ${actual}, expected near icon.subtlest ${subtlest[channel]}`,
+			);
+		}
 	};
-	// light: color.icon #292A2E over elevation.surface.sunken #F8F8F8 → #6B6E76
-	near(blend(0x29, 0xf8, rest), 0x6b, "light");
-	// dark: color.icon #CECFD2 over elevation.surface.sunken #18191A → #96999E
-	near(blend(0xce, 0x18, rest), 0x96, "dark");
+	// icon #292A2E over background.accent.gray.subtlest #F0F1F2 → icon.subtlest #6B6E76
+	resolvesToSubtlest("light", [0x29, 0x2a, 0x2e], [0xf0, 0xf1, 0xf2], [0x6b, 0x6e, 0x76]);
+	// icon #CECFD2 over background.accent.gray.subtlest #303134 → icon.subtlest #96999E
+	resolvesToSubtlest("dark", [0xce, 0xcf, 0xd2], [0x30, 0x31, 0x34], [0x96, 0x99, 0x9e]);
 });
 
 test("colour marks the selected notch alone, never the slope around it", () => {
@@ -106,7 +119,7 @@ test("colour marks the selected notch alone, never the slope around it", () => {
 	const selected = toAgentSessionNotchOpacity(1, false);
 	const neighbour = toAgentSessionNotchOpacity(0, false);
 	assert.equal(selected, 1, "the selected notch takes full color.icon");
-	assert.equal(neighbour, 0.69, "an unselected notch holds color.icon.subtlest");
+	assert.equal(neighbour, 0.66, "an unselected notch holds color.icon.subtlest");
 	// Its neighbour is still visibly longer — the slope is intact, unpainted.
 	assert.ok(
 		toAgentSessionNotchLength(toAgentSessionNotchMagnification(PITCH), false)

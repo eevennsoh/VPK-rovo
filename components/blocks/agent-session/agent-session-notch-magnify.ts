@@ -61,17 +61,23 @@ export const AGENT_SESSION_NOTCH_LENGTH = {
  * answers "where am I" for none of them. Length says how close, colour says
  * which one.
  *
- * `rest` is not a taste call. 0.69 is the alpha at which `color.icon` over
- * `elevation.surface.sunken` lands on `color.icon.subtlest` — the exact figures
- * are 0.681 in the light theme and 0.692 in dark, close enough to share one
- * number. That is what lets a single element carry both named colours without a
- * second layer to cross-fade: a resting notch is as legible as the unmagnified
- * mark beside it in the Small variant, and selection only has to lift it to 1.
+ * `rest` is not a taste call, and it is not free-floating either: 0.66 is the
+ * alpha at which `color.icon` lands on `color.icon.subtlest` over the plane the
+ * rail actually sits on, `color.background.accent.gray.subtlest` — the per-
+ * channel alphas run 0.63–0.67 across both themes, so one number lands within a
+ * few levels everywhere. That is what lets a single element carry both named
+ * colours without a second layer to cross-fade: a resting notch is as legible as
+ * the unmagnified mark beside it in the Small variant, and selection only has to
+ * lift it to 1.
+ *
+ * It is therefore tied to the plane's fill. If `AGENT_SESSION_PLANE` ever paints
+ * a different background, recompute this — the column test pins the two together
+ * so the drift cannot pass silently.
  */
 export const AGENT_SESSION_NOTCH_OPACITY = {
 	newRest: 1,
 	peak: 1,
-	rest: 0.69,
+	rest: 0.66,
 } as const;
 
 /** Swell in at the list-item interaction profile; out faster, as every exit is. */

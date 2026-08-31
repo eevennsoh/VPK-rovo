@@ -265,6 +265,20 @@ test("collapsed motion is tokenised and honours reduced motion", () => {
 	assert.match(INDEX_SOURCE, /event\.propertyName === "width"/u);
 });
 
+test("the resting notch alpha stays pinned to the plane it is painted on", () => {
+	// The mark is one element carrying two named colours: `color.icon` at an
+	// alpha chosen so it resolves to `color.icon.subtlest` over the plane behind
+	// it. That makes the constant a function of the plane's fill, and a fill
+	// change would silently leave every resting notch the wrong grey. Pin the two
+	// together here — the arithmetic itself is covered in
+	// `agent-session-notch-magnify.test.ts`.
+	assert.match(INDEX_SOURCE, /const AGENT_SESSION_PLANE =\s*\n?\s*"[^"]*bg-bg-accent-gray-subtlest/u);
+	assert.match(NOTCH_MAGNIFY_SOURCE, /color\.background\.accent\.gray\.subtlest/u);
+	assert.match(NOTCH_MAGNIFY_SOURCE, /rest: 0\.66,/u);
+	// The old sunken plane must not linger in the rationale.
+	assert.doesNotMatch(NOTCH_MAGNIFY_SOURCE, /elevation\.surface\.sunken/u);
+});
+
 test("the rail is one dock, so notches swell by distance rather than per row", () => {
 	// The whole point of the effect: the notch nearest the cursor is the longest
 	// and its neighbours taper off, which only works if one owner holds the
