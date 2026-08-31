@@ -673,11 +673,11 @@ test("Experimental kanban cards opt into draggable agent-session unlink when the
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCardAgentSessionUnlink=\{onCardAgentSessionUnlink\}/u);
 });
 
-test("Experimental kanban renders detached sessions beneath their source card with the shared medium variant", () => {
+test("Experimental kanban renders detached sessions beneath their source card with the shared medium-detached variant", () => {
 	assert.match(EXPERIMENTAL_SOURCE, /detachedAgentSessionsByCard\?: Readonly<Record<string, readonly AgentSessionItem\[\]>>;/u);
 	assert.match(EXPERIMENTAL_SOURCE, /const detachedAgentSessions = detachedAgentSessionsByCard\?\.\[card\.code\] \?\? \[\];/u);
 	assert.match(EXPERIMENTAL_SOURCE, /className="flex w-full min-w-0 max-w-\[280px\] flex-col gap-2"/u);
-	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*<AgentSession[\s\S]*items=\{detachedAgentSessions\}[\s\S]*variant="medium"/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*<AgentSession[\s\S]*items=\{detachedAgentSessions\}[\s\S]*variant="medium-detached"/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /detachedAgentSessionsByCard=\{detachedAgentSessionsByCard\}/u);
 });
 

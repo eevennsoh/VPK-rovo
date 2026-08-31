@@ -144,7 +144,7 @@ test("the PAY board fills every existing status with coding work and the full st
 	);
 });
 
-test("a linked Jira activity becomes a medium Agent Session item when detached", async () => {
+test("a linked Jira activity becomes a medium-detached Agent Session item", async () => {
 	const story = await loadPresentationModule();
 	const card = story.createJiraGoldenJourneysV4PayBoardColumns()
 		.flatMap((column) => column.cards)

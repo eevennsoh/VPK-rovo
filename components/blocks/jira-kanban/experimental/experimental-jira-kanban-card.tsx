@@ -136,7 +136,7 @@ export function ExperimentalJiraKanbanCard({
 			{detachedAgentSessions.length > 0 ? (
 				<AgentSession
 					items={detachedAgentSessions}
-					variant="medium"
+					variant="medium-detached"
 				/>
 			) : null}
 		</>
