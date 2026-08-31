@@ -7,6 +7,10 @@ const BOARD_SOURCE = readFileSync(
 	join(__dirname, "../experimental-jira-kanban.tsx"),
 	"utf8",
 );
+const COLLAPSED_COLUMN_SOURCE = readFileSync(
+	join(__dirname, "../components/collapsed-board-column.tsx"),
+	"utf8",
+);
 const V2_BOARD_SOURCE = readFileSync(
 	join(__dirname, "../../experimental-v2/experimental-v2-jira-kanban.tsx"),
 	"utf8",
@@ -70,9 +74,9 @@ test("collapse survives a switch to the list or Pulse view", () => {
 });
 
 test("the resize button swaps its icon without using selected button state", () => {
-	const resizeButtonStart = BOARD_SOURCE.indexOf("function BoardColumnResizeButton");
-	const resizeButtonEnd = BOARD_SOURCE.indexOf("/**", resizeButtonStart);
-	const resizeButtonSource = BOARD_SOURCE.slice(resizeButtonStart, resizeButtonEnd);
+	const resizeButtonStart = COLLAPSED_COLUMN_SOURCE.indexOf("function BoardColumnResizeButton");
+	const resizeButtonEnd = COLLAPSED_COLUMN_SOURCE.indexOf("/**", resizeButtonStart);
+	const resizeButtonSource = COLLAPSED_COLUMN_SOURCE.slice(resizeButtonStart, resizeButtonEnd);
 
 	assert.match(resizeButtonSource, /collapsed\s*\?\s*<GrowHorizontalIcon/u);
 	assert.match(resizeButtonSource, /:\s*<ShrinkHorizontalIcon/u);
@@ -97,10 +101,10 @@ test("the pinned session column shares the status columns' box model", () => {
 });
 
 test("a collapsed status pill hugs its label while the shell keeps the drop lane", () => {
-	const pillStart = BOARD_SOURCE.indexOf("function CollapsedBoardColumn");
-	const pillEnd = BOARD_SOURCE.indexOf("function BoardColumn(", pillStart);
-	assert.ok(pillStart !== -1 && pillEnd > pillStart, "expected to find CollapsedBoardColumn");
-	const pillSource = BOARD_SOURCE.slice(pillStart, pillEnd);
+	const pillStart = COLLAPSED_COLUMN_SOURCE.indexOf("function CollapsedBoardColumn");
+	const pillEnd = COLLAPSED_COLUMN_SOURCE.length;
+	assert.ok(pillStart !== -1, "expected to find CollapsedBoardColumn");
+	const pillSource = COLLAPSED_COLUMN_SOURCE.slice(pillStart, pillEnd);
 
 	// A status is a label. Stretched down a 700px board it reads as an empty
 	// lane with a caption on top, so the pill sizes to its own content. The
@@ -124,11 +128,12 @@ test("a collapsed status pill hugs its label while the shell keeps the drop lane
 
 test("a collapsed status count sits in the header outside the pill", () => {
 	for (const [label, source] of [
-		["experimental", BOARD_SOURCE],
+		["experimental", COLLAPSED_COLUMN_SOURCE],
 		["experimental-v2", V2_BOARD_SOURCE],
 	]) {
 		const pillStart = source.indexOf("function CollapsedBoardColumn");
-		const pillEnd = source.indexOf("function BoardColumn(", pillStart);
+		const nextBoardColumn = source.indexOf("function BoardColumn(", pillStart);
+		const pillEnd = nextBoardColumn === -1 ? source.length : nextBoardColumn;
 		assert.ok(pillStart !== -1 && pillEnd > pillStart, `expected to find CollapsedBoardColumn in ${label}`);
 		const pillSource = source.slice(pillStart, pillEnd);
 
