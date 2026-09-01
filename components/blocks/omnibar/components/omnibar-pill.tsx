@@ -17,7 +17,7 @@ import {
 export interface OmnibarPillProps {
 	className?: string;
 	label: string;
-	onActivate: () => void;
+	onActivate: (shouldFocusEditor: boolean) => void;
 	shouldReduceMotion: boolean | null;
 }
 
@@ -64,7 +64,7 @@ export function OmnibarPill({
 			<button
 				aria-label={label}
 				className="flex h-7 w-24 cursor-pointer items-center justify-center rounded-full bg-bg-neutral-bold"
-				onClick={onActivate}
+				onClick={(event) => onActivate(event.detail === 0)}
 				style={{ boxShadow: token("elevation.shadow.overlay") }}
 				type="button"
 			>
