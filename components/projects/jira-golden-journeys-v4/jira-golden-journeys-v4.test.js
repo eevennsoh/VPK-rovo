@@ -74,16 +74,40 @@ test("the board opts into the experimental Jira issue split agent rows", () => {
 	);
 });
 
-test("the board enables the experimental Jira issue drag-to-unlink session transfer", () => {
-	assert.match(PAGE_SOURCE, /import \{ linkJiraKanbanAgentSession, unlinkJiraKanbanAgentSession \} from "@\/components\/blocks\/jira-kanban\/state"/u);
+test("the board enables board-wide Jira issue agent-session transfer", () => {
+	assert.match(PAGE_SOURCE, /import \{ linkJiraKanbanAgentSession, moveJiraKanbanAgentSession, unlinkJiraKanbanAgentSession \} from "@\/components\/blocks\/jira-kanban\/state"/u);
 	assert.match(PAGE_SOURCE, /setBoardColumns\(\(columns\) => unlinkJiraKanbanAgentSession\(columns, card\.code, session\.id\)\)/u);
 	assert.match(PAGE_SOURCE, /setBoardColumns\(\(columns\) => linkJiraKanbanAgentSession\(columns, card\.code, activity\)\)/u);
+	assert.match(
+		PAGE_SOURCE,
+		/setBoardColumns\(\(columns\) => moveJiraKanbanAgentSession\(\s*columns,\s*sourceCard\.code,\s*targetCard\.code,\s*session\.id,?\s*\)\)/u,
+	);
 	assert.match(PAGE_SOURCE, /onCardAgentSessionLink=\{handleAgentSessionLink\}/u);
+	assert.match(PAGE_SOURCE, /onCardAgentSessionMove=\{handleAgentSessionMove\}/u);
 	assert.match(PAGE_SOURCE, /onCardAgentSessionUnlink=\{handleAgentSessionUnlink\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCardAgentSessionMove\?: ExperimentalJiraKanbanProps\["onCardAgentSessionMove"\];/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/const handleCardAgentSessionMove: ExperimentalJiraKanbanProps\["onCardAgentSessionMove"\][\s\S]*onCardAgentSessionMove\?\.\(\s*session,\s*sourceCard,\s*targetCard,\s*sourceColumnTitle,\s*targetColumnTitle,?\s*\);/u,
+	);
+	const moveHandlerStart = EXPERIMENTAL_PAGE_SOURCE.indexOf("const handleCardAgentSessionMove:");
+	const unlinkHandlerStart = EXPERIMENTAL_PAGE_SOURCE.indexOf("const handleCardAgentSessionUnlink:");
+	assert.ok(moveHandlerStart > 0 && unlinkHandlerStart > moveHandlerStart);
+	assert.doesNotMatch(
+		EXPERIMENTAL_PAGE_SOURCE.slice(moveHandlerStart, unlinkHandlerStart),
+		/setCapturedLooseWorkIds/u,
+		"moving an already-linked session must not change its captured status",
+	);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCardAgentSessionUnlink\?: ExperimentalJiraKanbanProps\["onCardAgentSessionUnlink"\];/u);
-	assert.match(EXPERIMENTAL_CARD_SOURCE, /const canTransferAgentSession = canUnlinkAgentSession \|\| canLinkAgentSession;/u);
-	assert.match(EXPERIMENTAL_CARD_SOURCE, /sessionTransferAfter=\{\(sessionDrag\) =>/u);
-	assert.match(EXPERIMENTAL_CARD_SOURCE, /sessionDrag=\{canLinkAgentSession \? sessionDrag : undefined\}/u);
+	assert.match(
+		EXPERIMENTAL_CARD_SOURCE,
+		/const canTransferAgentSession = canUnlinkAgentSession \|\| canLinkAgentSession \|\| isBoardDropTarget;/u,
+	);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /sessionTransferAfter=\{\(localSessionDrag\) =>/u);
+	assert.match(
+		EXPERIMENTAL_CARD_SOURCE,
+		/sessionDrag=\{canLinkAgentSession[\s\S]*\? detachedSessionDrag \?\? localSessionDrag[\s\S]*: undefined\}/u,
+	);
 });
 
 test("unlinked agent sessions remain detached beneath their source Jira card", () => {
@@ -110,6 +134,30 @@ test("unlinked agent sessions remain detached beneath their source Jira card", (
 		EXPERIMENTAL_CARD_SOURCE,
 		/resolveRelatedJiraIssueAgentActivityMode\(\s*\n\s*card\.agentActivityMode,\s*\n\s*detachedAgentSessions\.length > 0,/u,
 	);
+});
+
+test("attaching a session removes every detached copy before linking it", () => {
+	assert.match(
+		PAGE_SOURCE,
+		/Object\.entries\(current\)[\s\S]*sessions\.filter\(\(candidate\) => candidate\.id !== session\.id\)/u,
+	);
+	assert.match(
+		PAGE_SOURCE,
+		/if \(nextSessions\.length > 0\) \{[\s\S]*next\[cardCode\] = nextSessions;[\s\S]*\}/u,
+	);
+});
+
+test("Jira session flyouts are suspended for both session and whole-card drags", () => {
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/import \{ JiraSessionFlyoutSuspensionProvider \} from "@\/components\/blocks\/product-sidebar\/variants\/jira-session-flyout";/u,
+	);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/const sessionFlyoutsSuspended = sessionDragTransaction !== null \|\| draggedCardCode !== null;/u,
+	);
+	assert.match(EXPERIMENTAL_BOARD_SOURCE, /<JiraSessionFlyoutSuspensionProvider[\s\S]*suspended=\{sessionFlyoutsSuspended\}[\s\S]*<ExperimentalJiraKanbanCard/u);
+	assert.match(EXPERIMENTAL_BOARD_SOURCE, /<\/JiraSessionFlyoutSuspensionProvider>/u);
 });
 
 test("the board puts agent and skill assignment in each card's More actions menu", () => {

@@ -156,18 +156,26 @@ test("medium matches the 276 by 33 Figma row and reuses shared identity primitiv
 });
 
 test("medium drag chip is the shared agent mention tag with overlay elevation", () => {
+	assert.match(MEDIUM_DRAG_SOURCE, /import \{ createPortal \} from "react-dom";/u);
 	assert.match(
 		MEDIUM_DRAG_SOURCE,
 		/import \{ AgentSessionMentionChip \} from "@\/components\/blocks\/jira-issue\/agent-session-mention-chip";/u,
 	);
 	assert.match(MEDIUM_DRAG_SOURCE, /<AgentSessionMentionChip[\s\S]*elevated[\s\S]*name=\{item\.agent\.name\}/u);
-	assert.match(MEDIUM_DRAG_SOURCE, /\{isDragging \? chip : children\(undefined\)\}/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /\{children\(sessionDragBind\)\}/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /isDragging \? createPortal\([\s\S]*\{chip\}/u);
 	assert.match(
 		MEDIUM_DRAG_SOURCE,
 		/className="pointer-events-none flex w-fit max-w-full -translate-x-1\/2 -translate-y-1\/2 items-center justify-start"/u,
 	);
 	assert.match(MEDIUM_DRAG_SOURCE, /useSessionDragChipPointer/u);
-	assert.match(MEDIUM_DRAG_SOURCE, /sessionDragChipViewportStyle\(isDragging\)/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /sessionDragChipViewportStyle\(true\)/u);
+	assert.match(
+		MEDIUM_DRAG_SOURCE,
+		/createPortal\([\s\S]*data-session-drag-overlay=""[\s\S]*document\.body/u,
+	);
+	assert.match(MEDIUM_DRAG_SOURCE, /chipPointer\.snapToPointer\(\s*\{ x: event\.clientX, y: event\.clientY \},?\s*\);/u);
+	assert.doesNotMatch(MEDIUM_DRAG_SOURCE, /chipPointer\.(?:snapToPointer|followPointer)\([\s\S]{0,100}event\.currentTarget/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /-translate-x-1\/2 -translate-y-1\/2/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /data-session-chip-centered=""/u);
 	assert.doesNotMatch(MEDIUM_DRAG_SOURCE, /bg-surface-raised/u);
@@ -181,8 +189,8 @@ test("medium drag keeps pointer capture on the motion host instead of swapping a
 	// unmounted the node that called setPointerCapture. pointerup never fired,
 	// so the card stuck on an empty grey attach chin.
 	assert.doesNotMatch(MEDIUM_DRAG_SOURCE, /isDragging \? chip : children\(sessionDragBind\)/u);
-	assert.match(MEDIUM_DRAG_SOURCE, /<motion\.div\s*\n\s*ref=\{hostRef\}/u);
-	assert.match(MEDIUM_DRAG_SOURCE, /\{\.\.\.sessionDragBind\}/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /\{children\(sessionDragBind\)\}/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /pointer-events-none absolute inset-x-0 top-0 opacity-0/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /window\.addEventListener\("pointerup", onPointerUp\)/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /window\.addEventListener\("pointercancel", onPointerCancel\)/u);
 });
@@ -196,7 +204,27 @@ test("medium drag publishes the attach transfer only after the pointer moves", (
 		MEDIUM_DRAG_SOURCE,
 		/onPointerDown: \(event: ReactPointerEvent<HTMLElement>\) => \{\s*\n\s*drag\.bind\.onPointerDown\(event\);\s*\n\s*publishSessionDrag\(true, event\);/u,
 	);
-	assert.match(MEDIUM_DRAG_SOURCE, /if \(moved\) \{\s*\n\s*publishSessionDrag\(true, event\);/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /if \(moved\) \{[\s\S]*publishSessionDrag\(true, event\);/u);
+});
+
+test("large untracked-work cards opt into the shared session drag without collapsing their row", () => {
+	assert.match(CARD_SOURCE, /sessionDrag\?: JiraIssueAgentSessionDragBinding;/u);
+	assert.match(CARD_SOURCE, /<AgentSessionMediumDrag[\s\S]*preserveSourceFootprint[\s\S]*source="untracked"/u);
+	assert.match(CARD_SOURCE, /\{\(bind\) => \([\s\S]*<article[\s\S]*\{\.\.\.bind\}/u);
+	assert.match(INDEX_SOURCE, /<AgentSessionCard[\s\S]*sessionDrag=\{sessionDrag\}/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /preserveSourceFootprint \? sourceHeight : undefined/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /source: source/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /data-session-drag-placeholder=\{preserveSourceFootprint \|\| undefined\}/u);
+});
+
+test("session drag ignores nested controls and suppresses the click after a real pointer drag", () => {
+	assert.match(MEDIUM_DRAG_SOURCE, /SESSION_DRAG_INTERACTIVE_SELECTOR/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /event\.target\.closest\(SESSION_DRAG_INTERACTIVE_SELECTOR\)/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /interactiveTarget !== null && interactiveTarget !== event\.currentTarget/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /didPublishDragRef\.current = true/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /onClickCapture: \(event: ReactMouseEvent<HTMLElement>\)/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /event\.preventDefault\(\);\s*event\.stopPropagation\(\)/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /onPointerCancel: cancelSessionDrag/u);
 });
 
 test("medium more menu collapses until hover so the label can use the slot", () => {

@@ -16,6 +16,7 @@ import {
 	type JiraIssueGenerativeActionPresentation,
 } from "@/components/blocks/jira-issue";
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
+import { JiraSessionFlyoutSuspensionProvider } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import {
 	mapAgentToMentionItem,
 	mapSkillToMentionItem,
@@ -64,6 +65,7 @@ import {
 	resolveVisibleFocusedIssueKey,
 	scrollBoardIssueIntoView,
 } from "./lib/board-untracked-sessions";
+import { useBoardAgentSessionDrag } from "./use-board-agent-session-drag";
 
 import type {
 	JiraKanbanAgentData,
@@ -95,6 +97,13 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 		session: AgentSessionItem,
 		card: JiraKanbanCardData,
 		columnTitle: string,
+	) => void;
+	onCardAgentSessionMove?: (
+		session: JiraIssueAgentSessionRef,
+		sourceCard: JiraKanbanCardData,
+		targetCard: JiraKanbanCardData,
+		sourceColumnTitle: string,
+		targetColumnTitle: string,
 	) => void;
 	/** Chooses where card agent and skill actions are presented. */
 	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;
@@ -585,6 +594,7 @@ export function ExperimentalJiraKanban({
 	onCardAgentActivityOpenChange,
 	onCardAgentActivityViewChat,
 	onCardAgentSessionLink,
+	onCardAgentSessionMove,
 	onCardAgentSessionUnlink,
 	onCardAgentDoneRunReview,
 	onCardAgentDoneRunView,
@@ -611,6 +621,25 @@ export function ExperimentalJiraKanban({
 	const selectedStatus = selectedCardCodes
 		? getCommonSelectedCardStatus(boardColumns, selectedCardCodes)
 		: null;
+	const boardSessionDragEnabled = Boolean(
+		onCardAgentSessionLink
+		&& onCardAgentSessionMove
+		&& onCardAgentSessionUnlink,
+	);
+	const {
+		boardRootRef,
+		getCardDragState,
+		transaction: sessionDragTransaction,
+		untrackedBinding: untrackedSessionDragBinding,
+	} = useBoardAgentSessionDrag({
+		boardColumns,
+		detachedSessionsByCard: detachedAgentSessionsByCard,
+		enabled: boardSessionDragEnabled,
+		onLink: onCardAgentSessionLink,
+		onMove: onCardAgentSessionMove,
+		onUnlink: onCardAgentSessionUnlink,
+		untrackedSessions: agentSessionColumn?.items,
+	});
 	const generativeActionAgents = useMemo(
 		() => selectionToolbar?.agents
 			? getMentionChildItems(
@@ -752,9 +781,18 @@ export function ExperimentalJiraKanban({
 		}
 		onCollapsedColumnsChange?.(nextCollapsedColumns);
 	};
+	const sessionFlyoutsSuspended = sessionDragTransaction !== null || draggedCardCode !== null;
 
 	return (
-		<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+		<JiraSessionFlyoutSuspensionProvider
+			suspended={sessionFlyoutsSuspended}
+		>
+		<div
+			ref={boardRootRef}
+			className="relative flex min-h-0 min-w-0 flex-1 flex-col"
+			data-board-agent-session-dragging={sessionDragTransaction !== null || undefined}
+			data-board-agent-session-origin={sessionDragTransaction?.origin.kind}
+		>
 			<div className="flex min-h-0 min-w-0 flex-1 items-stretch">
 				{agentSessionColumn ? (
 					// Top/left/bottom match the status columns' 2px drop-target
@@ -769,6 +807,9 @@ export function ExperimentalJiraKanban({
 							{...agentSessionColumn}
 							onSelectedItemIdChange={handleSessionSelectionChange}
 							onView={handleSessionView}
+							sessionDrag={boardSessionDragEnabled
+								? untrackedSessionDragBinding
+								: agentSessionColumn.sessionDrag}
 						/>
 					</div>
 				) : null}
@@ -831,15 +872,20 @@ export function ExperimentalJiraKanban({
 										: undefined;
 									const shouldAnimateCardPosition = shouldAnimateCardMoves && cardMovePhase === undefined;
 									const detachedAgentSessions = detachedAgentSessionsByCard?.[card.code] ?? [];
-									const proximityActions = bindBoardProximitySessionActions({
+										const proximityActions = bindBoardProximitySessionActions({
 										actionableSessionIds: proximityAgentSession?.actionableSessionIds,
 										capturedItemIds: proximityAgentSession?.capturedItemIds,
 										onCreateWorkItem: proximityAgentSession?.onCreateWorkItem,
 										onLinkWorkItem: proximityAgentSession?.onLinkWorkItem,
 										onSubtasks: proximityAgentSession?.onSubtasks,
-										sessions: detachedAgentSessions,
-									});
-									const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+											sessions: detachedAgentSessions,
+										});
+										const {
+											control: agentSessionDragControl,
+											detachedBinding: detachedSessionDragBinding,
+											dropTarget: cardDropTarget,
+										} = getCardDragState(card, column.title);
+										const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
 										const modifiers: JiraKanbanCardSelectModifiers = {
 											shiftKey: event.shiftKey,
 											metaOrCtrlKey: event.metaKey || event.ctrlKey,
@@ -873,18 +919,22 @@ export function ExperimentalJiraKanban({
 													spotlightIssueKey === card.code && "bg-bg-accent-blue-subtlest",
 													spotlightIssueKey !== null && spotlightIssueKey !== card.code && "opacity-40",
 												)}
+												data-board-agent-session-drop-zone="issue"
+												data-board-agent-session-target={cardDropTarget ?? undefined}
 												data-issue-key={card.code}
 												initial={false}
 												style={cardMovePhase ? { willChange: "transform" } : undefined}
 												transition={cardMovePhase === "departing" ? JIRA_KANBAN_CARD_DEPART : JIRA_KANBAN_CARD_MOVE}
 											>
-											<ExperimentalJiraKanbanCard
+												<ExperimentalJiraKanbanCard
 												active={isActive}
-												agentActivityLayout={agentActivityLayout}
+													agentActivityLayout={agentActivityLayout}
+													agentSessionDragControl={agentSessionDragControl}
 												capturedItemIds={proximityActions.capturedItemIds}
 												card={card}
 												columnTitle={column.title}
-												detachedAgentSessions={detachedAgentSessions}
+													detachedAgentSessions={detachedAgentSessions}
+													detachedSessionDrag={detachedSessionDragBinding}
 												dragging={isCardBeingDragged || isSelectedCardBeingDragged}
 												generativeActionAgents={generativeActionAgents}
 												generativeActionPresentation={cardGenerativeActionPresentation}
@@ -942,6 +992,7 @@ export function ExperimentalJiraKanban({
 						statusOptions={boardColumns.map((column) => column.title)}
 					/>
 				) : null}
-			</div>
+		</div>
+		</JiraSessionFlyoutSuspensionProvider>
 	);
 }

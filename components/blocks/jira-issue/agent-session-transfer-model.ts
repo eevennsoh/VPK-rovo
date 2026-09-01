@@ -92,7 +92,7 @@ export function nextJiraIssueSessionTransferArmed({
  */
 export function isJiraIssueSessionAttachPreview(
 	dragging: boolean,
-	source: "chin" | "detached",
+	source: "chin" | "detached" | "untracked",
 ): boolean {
-	return dragging && source === "detached";
+	return dragging && source !== "chin";
 }

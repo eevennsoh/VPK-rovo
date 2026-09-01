@@ -15,6 +15,7 @@ const EXPERIMENTAL_DIR = __dirname;
 const PAGE_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "page.tsx"), "utf8");
 const BOARD_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "experimental-jira-kanban.tsx"), "utf8");
 const CARD_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "experimental-jira-kanban-card.tsx"), "utf8");
+const DRAG_HOOK_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "use-board-agent-session-drag.ts"), "utf8");
 const HELPER_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "lib", "board-untracked-sessions.ts"), "utf8");
 const SESSION_INDEX_SOURCE = readFileSync(
 	join(EXPERIMENTAL_DIR, "..", "..", "agent-session", "index.tsx"),
@@ -69,6 +70,32 @@ test("proximity AgentSession forwards the Pulse flyout attach handlers", () => {
 	assert.match(BOARD_SOURCE, /onLinkWorkItem=\{proximityActions\.onLinkWorkItem\}/u);
 	assert.match(BOARD_SOURCE, /onSubtasks=\{proximityActions\.onSubtasks\}/u);
 	assert.doesNotMatch(BOARD_SOURCE, /onCreateWorkItem=\{agentSessionColumn\?\.onCreateWorkItem\}/u);
+});
+
+test("one board transaction coordinates every session source and suppresses previews during either drag", () => {
+	assert.match(BOARD_SOURCE, /useBoardAgentSessionDrag/u);
+	assert.match(DRAG_HOOK_SOURCE, /createBoardAgentSessionDragTransaction/u);
+	assert.match(DRAG_HOOK_SOURCE, /resolveBoardAgentSessionDropAction/u);
+	assert.match(BOARD_SOURCE, /JiraSessionFlyoutSuspensionProvider/u);
+	assert.match(BOARD_SOURCE, /const sessionFlyoutsSuspended = sessionDragTransaction !== null \|\| draggedCardCode !== null;/u);
+	assert.match(BOARD_SOURCE, /suspended=\{sessionFlyoutsSuspended\}/u);
+	assert.match(BOARD_SOURCE, /sessionDrag=\{boardSessionDragEnabled[\s\S]*\? untrackedSessionDragBinding[\s\S]*: agentSessionColumn\.sessionDrag\}/u);
+	assert.match(BOARD_SOURCE, /data-board-agent-session-drop-zone="issue"/u);
+	assert.match(CARD_SOURCE, /agentSessionDragControl=\{agentSessionDragControl\}/u);
+	assert.match(CARD_SOURCE, /sessionDrag=\{canLinkAgentSession[\s\S]*\? detachedSessionDrag \?\? localSessionDrag[\s\S]*: undefined\}/u);
+	assert.match(BOARD_SOURCE, /data-board-agent-session-target/u);
+});
+
+test("board-wide drag stays opt-in for zero and partial callback consumers", () => {
+	assert.match(
+		BOARD_SOURCE,
+		/const boardSessionDragEnabled = Boolean\(\s*onCardAgentSessionLink\s*&& onCardAgentSessionMove\s*&& onCardAgentSessionUnlink,?\s*\);/u,
+	);
+	assert.match(BOARD_SOURCE, /enabled: boardSessionDragEnabled/u);
+	assert.match(DRAG_HOOK_SOURCE, /const control: JiraIssueAgentSessionDragControl \| undefined = enabled/u);
+	assert.match(DRAG_HOOK_SOURCE, /detachedBinding: enabled[\s\S]*\? createBinding\(\{ kind: "detached"/u);
+	assert.match(DRAG_HOOK_SOURCE, /untrackedBinding: enabled \? createBinding\(\{ kind: "untracked" \}\) : undefined/u);
+	assert.match(CARD_SOURCE, /detachedSessionDrag \?\? localSessionDrag/u);
 });
 
 test("unchecking Untracked exits board-adjacent sessions through the issue presence recipe", () => {

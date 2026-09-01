@@ -97,7 +97,7 @@ export interface AgentSessionProps {
 	selectedItemId?: string | null;
 	/** Called when the viewer selects or deselects a card. */
 	onSelectedItemIdChange?: (itemId: string | null) => void;
-	/** Opt-in: makes each medium-detached row a draggable session that can reattach. */
+	/** Opt-in: makes large untracked and medium-detached sessions draggable onto work items. */
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
 	/** Work item key for the detached link tooltip (`Link to KEY`). */
 	issueKey?: string;

@@ -9,10 +9,11 @@ import type {
 	JiraIssueCompletedAgentRun,
 } from "@/components/blocks/jira-issue";
 import { toJiraIssueDemoAttachedActivity } from "@/components/blocks/jira-issue/agent-session-demo-attach";
+import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
 import { isPulseAgentSession, type PulseLooseWork } from "@/components/blocks/jira-kanban/experimental/pulse/types";
-import { linkJiraKanbanAgentSession, unlinkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
+import { linkJiraKanbanAgentSession, moveJiraKanbanAgentSession, unlinkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
 import { JiraList, type JiraListRowData } from "@/components/blocks/jira-list";
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
 import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v1/data/agent-chat-data";
@@ -125,19 +126,32 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 			detachedActivitiesByIdRef.current = rest;
 		}
 		setDetachedAgentSessionsByCard((current) => {
-			const currentSessions = current[card.code] ?? [];
-			const nextSessions = currentSessions.filter((candidate) => candidate.id !== session.id);
-			if (nextSessions.length === currentSessions.length) {
-				return current;
+			let changed = false;
+			const next: Record<string, readonly AgentSessionItem[]> = {};
+			for (const [cardCode, sessions] of Object.entries(current)) {
+				const nextSessions = sessions.filter((candidate) => candidate.id !== session.id);
+				if (nextSessions.length !== sessions.length) {
+					changed = true;
+				}
+				if (nextSessions.length > 0) {
+					next[cardCode] = nextSessions;
+				}
 			}
-			if (nextSessions.length === 0) {
-				const rest = { ...current };
-				delete rest[card.code];
-				return rest;
-			}
-			return { ...current, [card.code]: nextSessions };
+			return changed ? next : current;
 		});
 		setBoardColumns((columns) => linkJiraKanbanAgentSession(columns, card.code, activity));
+	}, []);
+	const handleAgentSessionMove = useCallback((
+		session: JiraIssueAgentSessionRef,
+		sourceCard: JiraKanbanCardData,
+		targetCard: JiraKanbanCardData,
+	) => {
+		setBoardColumns((columns) => moveJiraKanbanAgentSession(
+			columns,
+			sourceCard.code,
+			targetCard.code,
+			session.id,
+		));
 	}, []);
 
 	return (
@@ -168,6 +182,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						onCardAgentActivityViewChat={handleViewChat}
 						onCardAgentDoneRunView={handleViewCompletedRun}
 						onCardAgentSessionLink={handleAgentSessionLink}
+						onCardAgentSessionMove={handleAgentSessionMove}
 						onCardAgentSessionUnlink={handleAgentSessionUnlink}
 						onResumeLooseWork={handleResumeLooseWork}
 						onViewChange={setActiveView}

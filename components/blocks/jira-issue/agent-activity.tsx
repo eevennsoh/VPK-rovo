@@ -10,6 +10,7 @@ import {
 	type PointerEvent as ReactPointerEvent,
 	type ReactElement,
 } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring, type Transition } from "motion/react";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import StatusInformationIcon from "@atlaskit/icon/core/status-information";
@@ -357,14 +358,12 @@ function JiraIssueAgentActivityRow({
 				pointerOriginRef.current = { x: event.clientX, y: event.clientY };
 				chipPointer.snapToPointer(
 					{ x: event.clientX, y: event.clientY },
-					event.currentTarget.parentElement,
 				);
 			},
 			onPointerMove: (event: ReactPointerEvent<HTMLElement>) => {
 				drag.bind.onPointerMove(event);
 				chipPointer.followPointer(
 					{ x: event.clientX, y: event.clientY },
-					event.currentTarget.parentElement,
 				);
 				const origin = pointerOriginRef.current;
 				const moved = Boolean(
@@ -381,6 +380,19 @@ function JiraIssueAgentActivityRow({
 			onPointerUp: endSessionDrag,
 		}
 		: undefined;
+	const dragChip = (
+		<div
+			className="pointer-events-none -translate-x-1/2 -translate-y-1/2"
+			data-session-chip-centered=""
+		>
+			<AgentSessionMentionChip
+				avatarSrc={featuredActivity?.avatarSrc}
+				brandName={featuredActivity?.agentBrandName}
+				elevated
+				name={featuredActivity?.name ?? "Agent"}
+			/>
+		</div>
+	);
 
 	function withSessionDrag(node: ReactElement) {
 		if (!sessionDrag) {
@@ -417,17 +429,32 @@ function JiraIssueAgentActivityRow({
 				<motion.div
 					className={cn(
 						"min-w-0",
-						isDragging && "z-20",
-						isDragging && (isDraggedOut ? "left-0 top-0 w-fit" : "absolute inset-x-0 top-0"),
+						isDragging && "absolute inset-x-0 top-0",
+						isDraggedOut && "pointer-events-none opacity-0",
 					)}
 					style={{
-						x: isDraggedOut ? chipPointer.x : dragX,
-						y: isDraggedOut ? chipPointer.y : dragY,
-						...sessionDragChipViewportStyle(isDraggedOut),
+						x: dragX,
+						y: dragY,
 					}}
 				>
 					{node}
 				</motion.div>
+				{isDraggedOut ? createPortal(
+					<motion.div
+						aria-hidden
+						className="pointer-events-none left-0 top-0 z-[300] w-fit"
+						data-session-drag-overlay=""
+						data-session-dragging=""
+						style={{
+							x: chipPointer.x,
+							y: chipPointer.y,
+							...sessionDragChipViewportStyle(true),
+						}}
+					>
+						{dragChip}
+					</motion.div>,
+					document.body,
+				) : null}
 			</div>
 		);
 	}
@@ -476,28 +503,11 @@ function JiraIssueAgentActivityRow({
 				: {})}
 			className={cn(
 				"flex min-w-0 items-center gap-2 text-left outline-none transition-[background-color,box-shadow] duration-fast ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none",
-				isDraggedOut
-					? "h-auto w-fit max-w-full justify-start bg-transparent p-0"
-					: cn("h-full min-w-0 flex-1", showUnlinkControl ? "justify-start" : "justify-between"),
+				cn("h-full min-w-0 flex-1", showUnlinkControl ? "justify-start" : "justify-between"),
 				sessionDragBind && "touch-none select-none",
 			)}
 		>
-			{isDraggedOut ? (
-				// Out of the chin the session reads as the at-mention chip it will
-				// become once dropped, so the gesture previews its own result.
-				<div
-					className="-translate-x-1/2 -translate-y-1/2"
-					data-session-chip-centered=""
-				>
-					<AgentSessionMentionChip
-						avatarSrc={featuredActivity?.avatarSrc}
-						brandName={featuredActivity?.agentBrandName}
-						elevated
-						name={featuredActivity?.name ?? "Agent"}
-					/>
-				</div>
-			) : (
-				<>
+			<>
 			<div className={cn("flex min-w-0 flex-1 items-center", usesStrokeChrome ? "gap-1.5" : "gap-2")}>
 				{featuredActivity ? (
 					<AgentAvatarVisual
@@ -567,8 +577,7 @@ function JiraIssueAgentActivityRow({
 				)}
 			</div>
 			{showUnlinkControl ? null : statusIcon}
-				</>
-			)}
+			</>
 		</button>
 	);
 	const assignedRowHandle = isSingleAgent || sessionFlyout ? rowHandle : (
@@ -700,6 +709,7 @@ function JiraIssueCyclingAgentLabel(props: Readonly<{
 
 export function JiraIssueAgentActivityRows({
 	activities,
+	instantSessionTransfer = false,
 	layout = "merged",
 	onOpenChange,
 	onViewChat,
@@ -709,6 +719,8 @@ export function JiraIssueAgentActivityRows({
 	usesStrokeChrome,
 }: Readonly<{
 	activities: readonly JiraIssueAgentActivity[];
+	/** Board-controlled moves remount the presence boundary so one row cannot linger in two cards. */
+	instantSessionTransfer?: boolean;
 	/** `split` gives every active agent its own chin row instead of one merged row. */
 	layout?: JiraIssueAgentActivityLayout;
 	onOpenChange?: (open: boolean) => void;
@@ -725,6 +737,9 @@ export function JiraIssueAgentActivityRows({
 	const presenceMotion = getJiraIssuePresenceMotion(shouldReduceMotion);
 	const hasActivities = activities.length > 0;
 	const rowGroups = groupJiraIssueAgentActivityRows(activities, layout);
+	const rowPresenceKey = instantSessionTransfer
+		? rowGroups.map((rowGroup) => rowGroup.key).join("|")
+		: "animated";
 	const [flyoutHandle] = useState(createJiraSessionFlyoutHandle);
 	// A pointer drag re-renders the row on every move. Freezing `layout` for the
 	// duration keeps Motion from re-measuring the whole LayoutGroup projection
@@ -748,7 +763,7 @@ export function JiraIssueAgentActivityRows({
 			layout={rowLayout}
 			transition={layoutTransition}
 		>
-			<AnimatePresence initial={false} mode="popLayout">
+			<AnimatePresence key={rowPresenceKey} initial={false} mode="popLayout">
 				{rowGroups.map((rowGroup) => {
 					const row = (
 						<JiraIssueAgentActivityRow

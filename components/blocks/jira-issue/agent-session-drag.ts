@@ -14,7 +14,7 @@ import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue/agen
  * transfer region so it can reveal drop zones and hit-test the pointer.
  * `pointer` is in client coordinates and is `null` once the drag ends.
  */
-export type JiraIssueAgentSessionDragSource = "chin" | "detached";
+export type JiraIssueAgentSessionDragSource = "chin" | "detached" | "untracked";
 
 export interface JiraIssueAgentSessionDragState {
 	activities: readonly JiraIssueAgentActivity[];
@@ -29,8 +29,9 @@ export interface JiraIssueAgentSessionDragState {
 	pointer: PointerDragPosition | null;
 	/**
 	 * `chin` is a session leaving the work item; `detached` is a session coming
-	 * back. The transfer well commits unlink vs link from this, not from which
-	 * zone the pointer hit.
+	 * back from an issue bucket; `untracked` comes from the board's uncaptured
+	 * column. The transfer well commits unlink vs link from this origin, not from
+	 * which zone the pointer hit.
 	 */
 	source: JiraIssueAgentSessionDragSource;
 }

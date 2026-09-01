@@ -240,6 +240,17 @@ test("demo sessions share one moving shell with a fade-only content viewport", (
 	assert.match(hoverCardSource, /positionerClassName\?: string/u);
 });
 
+test("board-scoped suspension closes Jira session flyouts and blocks trigger opens", () => {
+	const flyoutSource = readRepoFile(FLYOUT_BODY_PATH);
+
+	assert.match(flyoutSource, /export function JiraSessionFlyoutSuspensionProvider/u);
+	assert.match(flyoutSource, /<JiraSessionFlyoutSuspensionContext value=\{suspended \? inactiveHandle : null\}>/u);
+	assert.match(flyoutSource, /const suspensionHandle = use\(JiraSessionFlyoutSuspensionContext\);/u);
+	assert.match(flyoutSource, /if \(suspended\) \{\s*handle\.close\(\);/u);
+	assert.match(flyoutSource, /!suspended &&[\s\S]*handle\.open\(triggerId\)/u);
+	assert.match(flyoutSource, /handle=\{suspensionHandle \?\? handle\}/u);
+});
+
 // SCM fields remain available to full detail panels. Visible rows are icon +
 // value only; the property name is screen-reader-only so a label column cannot
 // regress back into the flyout.

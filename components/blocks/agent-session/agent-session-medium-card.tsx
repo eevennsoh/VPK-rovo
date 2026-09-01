@@ -152,6 +152,7 @@ export function AgentSessionMediumCard({
 					<span className="flex min-w-0 flex-1 items-center gap-1">{identity}</span>
 				) : (
 					<Button
+						{...bind}
 						aria-label={`${onView === undefined ? "Preview" : "Open"} ${sessionTitle} — ${identityLabel} session`}
 						aria-roledescription={bind ? "Draggable agent session" : undefined}
 						className="h-auto! min-w-0 flex-1 justify-start gap-1 rounded-none! border-0 px-0! py-0! hover:bg-transparent active:bg-transparent"
@@ -160,7 +161,6 @@ export function AgentSessionMediumCard({
 						onClick={onView === undefined ? undefined : () => onView(item)}
 						type="button"
 						variant="ghost"
-						{...bind}
 					>
 						{identity}
 					</Button>
