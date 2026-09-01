@@ -6,6 +6,7 @@ import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/r
 import {
 	JiraIssueAgentActivityRows,
 	type JiraIssueAgentActivity,
+	type JiraIssueAgentActivityIndicatorRenderer,
 	type JiraIssueAgentActivityLayout,
 	type JiraIssueAgentActivityMode,
 	type JiraIssueAgentSessionFlyoutContext,
@@ -79,6 +80,7 @@ export type {
 } from "@/components/blocks/jira-issue/types";
 export type {
 	JiraIssueAgentActivity,
+	JiraIssueAgentActivityIndicatorRenderer,
 	JiraIssueAgentActivityLayout,
 	JiraIssueAgentActivityMode,
 	JiraIssueAgentActivityState,
@@ -194,6 +196,8 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	agentSessionFlyout?: JiraIssueAgentSessionFlyoutContext;
 	onAgentActivityOpenChange?: (open: boolean) => void;
 	onAgentActivityViewChat?: (activity: JiraIssueAgentActivity) => void;
+	/** Optional host-owned visual override for active agent-session states. */
+	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	onAgentDoneRunSubmit?: (run: JiraIssueCompletedAgentRun, prompt: string) => void;
 	onAgentDoneRunReview?: (run: JiraIssueCompletedAgentRun) => void;
 	onAgentDoneRunView?: (run: JiraIssueCompletedAgentRun) => void;
@@ -254,6 +258,7 @@ function JiraIssueDefault({
 	onSubtasksExpandedChange,
 	onAgentActivityOpenChange,
 	onAgentActivityViewChat,
+	renderAgentActivityIndicator,
 	onAgentDoneRunSubmit,
 	onAgentDoneRunReview,
 	onAgentDoneRunView,
@@ -710,6 +715,7 @@ function JiraIssueDefault({
 					layout={agentActivityLayout}
 					onOpenChange={handleAgentActivityOpenChange}
 					onViewChat={onAgentActivityViewChat}
+					renderAgentActivityIndicator={renderAgentActivityIndicator}
 					sessionFlyout={agentSessionFlyout}
 					sessionDrag={agentSessionDragBinding}
 					shouldReduceMotion={shouldReduceMotion}

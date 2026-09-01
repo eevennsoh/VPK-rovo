@@ -134,6 +134,19 @@ test("the dim opacity floor matches the pixel-loader-pulse keyframe", () => {
 	assert.match(keyframe, /50%\s*\{\s*opacity:\s*1;/u, "the pulse must peak at full opacity");
 });
 
+test("the pattern gallery grades every default loader from icon subtle", () => {
+	const playground = readFileSync(
+		path.join(process.cwd(), "components/website/demos/ui-custom/pixel-loader-playground-demo.tsx"),
+		"utf8",
+	);
+
+	assert.match(
+		playground,
+		/<PixelLoader[\s\S]*className="text-icon-subtle"[\s\S]*pattern=\{pattern\}/u,
+		"the peak cell should use color.icon.subtle while the opacity stops grade the remaining cells",
+	);
+});
+
 test("the loader animates without a JS frame loop and honours reduced motion", () => {
 	const component = readFileSync(
 		path.join(process.cwd(), "components/ui-custom/pixel-loader/pixel-loader.tsx"),

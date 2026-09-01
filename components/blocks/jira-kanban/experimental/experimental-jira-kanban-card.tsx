@@ -6,6 +6,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { AgentSession, type AgentSessionItem } from "@/components/blocks/agent-session";
 import {
 	JiraIssue,
+	type JiraIssueAgentActivityIndicatorRenderer,
 	type JiraIssueAgentActivityLayout,
 	type JiraIssueAgentSessionDragControl,
 	type JiraIssueGenerativeActionConfig,
@@ -50,6 +51,7 @@ interface ExperimentalJiraKanbanCardProps {
 	onDragStart: DragEventHandler<HTMLButtonElement>;
 	onGenerativeActionSubmit?: JiraKanbanProps["onCardGenerativeActionSubmit"];
 	onLinkWorkItem?: (item: AgentSessionItem, workItemKey?: string) => void;
+	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	onSessionLink?: (
 		session: AgentSessionItem,
 		card: JiraKanbanCardData,
@@ -101,6 +103,7 @@ export function ExperimentalJiraKanbanCard({
 	onDragStart,
 	onGenerativeActionSubmit,
 	onLinkWorkItem,
+	renderAgentActivityIndicator,
 	onSessionLink,
 	onSessionUnlink,
 	onSubtasks,
@@ -206,6 +209,7 @@ export function ExperimentalJiraKanbanCard({
 			pullRequestPreview={card.pullRequestPreview}
 			pullRequestStatus={card.pullRequestStatus}
 			selected={selected}
+			renderAgentActivityIndicator={renderAgentActivityIndicator}
 			sessionTransferAfter={(localSessionDrag) => (
 				<AnimatePresence>
 					{detachedAgentSessions.length > 0 ? (

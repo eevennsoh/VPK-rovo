@@ -45,10 +45,10 @@ import {
 	usePointerDrag,
 	type PointerDragPosition,
 } from "@/components/ui-custom/hooks/use-pointer-drag";
-import { PixelLoader } from "@/components/ui-custom/pixel-loader";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { IconTile } from "@/components/ui/icon-tile";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import type {
 	JiraSidebarAssignee,
@@ -58,6 +58,9 @@ import type {
 
 export type JiraIssueAgentActivityMode = "none" | "working" | "awaiting-input" | "completed";
 export type JiraIssueAgentActivityState = "working" | "awaiting-input" | "completed";
+export type JiraIssueAgentActivityIndicatorRenderer = (
+	state: Exclude<JiraIssueAgentActivityState, "completed">,
+) => ReactElement;
 export type { JiraIssueAgentActivityLayout } from "@/components/blocks/jira-issue/agent-activity-model";
 export type {
 	JiraIssueAgentSessionDragBinding,
@@ -226,6 +229,7 @@ function JiraIssueAgentActivityRow({
 	onOpenChange,
 	onSessionDragChange,
 	onViewChat,
+	renderAgentActivityIndicator,
 	sessionFlyout,
 	sessionDrag,
 	shouldReduceMotion,
@@ -239,6 +243,7 @@ function JiraIssueAgentActivityRow({
 		cancelled: boolean,
 	) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
+	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	sessionFlyout?: JiraIssueAgentSessionFlyoutContext;
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
 	shouldReduceMotion: boolean | null;
@@ -460,7 +465,17 @@ function JiraIssueAgentActivityRow({
 	}
 
 	const showUnlinkControl = Boolean(sessionDrag?.onUnlink) && !isDraggedOut;
-	const statusIcon = isAwaitingInput ? (
+	const statusIcon = renderAgentActivityIndicator ? (
+		<span
+			className={cn(
+				"grid shrink-0 place-items-center text-icon",
+				usesStrokeChrome ? "size-4" : "-my-1 size-6",
+			)}
+			aria-hidden="true"
+		>
+			{renderAgentActivityIndicator(isAwaitingInput ? "awaiting-input" : "working")}
+		</span>
+	) : isAwaitingInput ? (
 		<span
 			className={cn(
 				"grid shrink-0 place-items-center text-icon-information",
@@ -475,12 +490,7 @@ function JiraIssueAgentActivityRow({
 			className="grid size-4 shrink-0 place-items-center text-icon"
 			aria-hidden="true"
 		>
-			<PixelLoader
-				className="size-3 justify-center"
-				pattern="diagonal-top-left"
-				shape="dot"
-				size="small"
-			/>
+			<Spinner label="" size="xs" />
 		</span>
 	);
 	const rowHandle = (
@@ -713,6 +723,7 @@ export function JiraIssueAgentActivityRows({
 	layout = "merged",
 	onOpenChange,
 	onViewChat,
+	renderAgentActivityIndicator,
 	sessionFlyout,
 	sessionDrag,
 	shouldReduceMotion,
@@ -725,6 +736,7 @@ export function JiraIssueAgentActivityRows({
 	layout?: JiraIssueAgentActivityLayout;
 	onOpenChange?: (open: boolean) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
+	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	/** Opt-in for board rows: show the shared session details instead of a composer. */
 	sessionFlyout?: JiraIssueAgentSessionFlyoutContext;
 	/** Opt-in: makes every chin row a draggable session handle. */
@@ -780,6 +792,7 @@ export function JiraIssueAgentActivityRows({
 								});
 							}}
 							onViewChat={onViewChat}
+							renderAgentActivityIndicator={renderAgentActivityIndicator}
 							sessionDrag={sessionDrag}
 							sessionFlyout={sessionFlyout}
 							shouldReduceMotion={shouldReduceMotion}
