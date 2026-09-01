@@ -19,10 +19,6 @@ import { Switch } from "@/components/ui/switch";
 
 import { collectLinkableAgentSessions, linkAllAgentSessions } from "./agent-session-column-overflow";
 
-function suppressMenuDismissal(event: { preventDefault: () => void }) {
-	event.preventDefault();
-}
-
 export interface AgentSessionColumnOverflowMenuProps {
 	capturedItemIds?: ReadonlySet<string>;
 	getSuggestedWorkItemKey?: (item: AgentSessionItem) => string | undefined;
@@ -35,29 +31,27 @@ export interface AgentSessionColumnOverflowMenuProps {
 function OverflowToggleRow({
 	checked,
 	label,
-	onCheckedChange,
+	onToggle,
 }: Readonly<{
 	checked: boolean;
 	label: string;
-	onCheckedChange: (enabled: boolean) => void;
+	onToggle: () => void;
 }>) {
 	return (
 		<DropdownMenuItem
 			closeOnClick={false}
-			className="text-text [&>span:last-child]:h-auto [&_[data-slot=switch]]:pointer-events-auto [&_[data-slot=switch]_svg]:size-full"
+			className="text-text [&>span:last-child]:h-auto [&_[data-slot=switch]_svg]:size-full"
 			elemAfter={(
+				// The menu item owns focus and activation; the switch only displays its state.
 				<Switch
-					aria-label={`${checked ? "Disable" : "Enable"} ${label}`}
+					aria-hidden="true"
 					checked={checked}
-					onCheckedChange={onCheckedChange}
-					onMouseDown={suppressMenuDismissal}
-					onPointerDown={suppressMenuDismissal}
+					className="pointer-events-none"
 					size="sm"
+					tabIndex={-1}
 				/>
 			)}
-			onSelect={() => {
-				onCheckedChange(!checked);
-			}}
+			onSelect={onToggle}
 		>
 			{label}
 		</DropdownMenuItem>
@@ -120,12 +114,16 @@ export function AgentSessionColumnOverflowMenu({
 					<OverflowToggleRow
 						checked={autoSync}
 						label="Auto sync"
-						onCheckedChange={setAutoSync}
+						onToggle={() => {
+							setAutoSync((current) => !current);
+						}}
 					/>
 					<OverflowToggleRow
 						checked={autoLink}
 						label="Suggest link"
-						onCheckedChange={setAutoLink}
+						onToggle={() => {
+							setAutoLink((current) => !current);
+						}}
 					/>
 				</DropdownMenuGroup>
 			</DropdownMenuContent>

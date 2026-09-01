@@ -41,6 +41,10 @@ const SELECTED_BUTTON_STATE_CLASSES = [
 	"aria-expanded:bg-bg-selected",
 	"aria-expanded:text-text-selected",
 	"aria-expanded:border-border-selected",
+	"aria-pressed:[&_[data-slot=icon]]:text-icon-selected!",
+	"aria-pressed:[&_svg]:text-icon-selected!",
+	"aria-expanded:[&_[data-slot=icon]]:text-icon-selected!",
+	"aria-expanded:[&_svg]:text-icon-selected!",
 ];
 
 test("the split variation preserves connected geometry and uses the correct seams", () => {
