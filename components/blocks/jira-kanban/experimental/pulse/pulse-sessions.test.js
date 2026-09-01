@@ -193,6 +193,42 @@ test("session activation is omitted when the host cannot resume it", async () =>
 	assert.equal(typeof handlers.onSubtasks, "function");
 });
 
+test("session callbacks ignore stale rows and host-denied resume requests", async () => {
+	const { PULSE_TIMELINE, toPulseSessionHandlers, toPulseSessionItems } = await loadSessionsHarness();
+	const session = PULSE_TIMELINE.looseWork.find((item) => item.kind === "agent-session");
+	assert.ok(session !== undefined, "fixture should include a local agent session");
+	const [item] = toPulseSessionItems([session], PULSE_TIMELINE.members);
+	const calls = [];
+	const handlers = toPulseSessionHandlers({
+		isLooseWorkResumable: () => false,
+		looseWork: [session],
+		onCapture(looseWork) {
+			calls.push(`capture:${looseWork.id}`);
+		},
+		onResume(looseWork) {
+			calls.push(`resume:${looseWork.id}`);
+		},
+	});
+	const staleItem = { ...item, id: "lw-session-no-longer-on-this-board" };
+
+	// Rows can outlive a timeline update. A stale id must not capture or resume
+	// another session just because its display payload still looks legitimate.
+	handlers.onCreateWorkItem(staleItem);
+	handlers.onLinkWorkItem(staleItem);
+	handlers.onSubtasks(staleItem);
+	handlers.onCopyResume(staleItem);
+	handlers.onView(staleItem);
+	assert.deepEqual(calls, []);
+
+	// The host decision gates both resume entry points. Capture remains available
+	// because it is the independent recovery path for an uncaptured session.
+	assert.equal(handlers.isResumable(item), false);
+	handlers.onCopyResume(item);
+	handlers.onView(item);
+	handlers.onCreateWorkItem(item);
+	assert.deepEqual(calls, [`capture:${session.id}`]);
+});
+
 test("create, link, and subtask capture through the same host callback", async () => {
 	const { PULSE_TIMELINE, toPulseSessionHandlers, toPulseSessionItems } = await loadSessionsHarness();
 	const session = PULSE_TIMELINE.looseWork.find((item) => item.kind === "agent-session");
