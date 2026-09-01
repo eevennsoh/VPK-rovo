@@ -135,7 +135,9 @@ function getAgentActivityModeAfterUnlink(
 	if (remainingActivities.some((activity) => activity.state === "working")) {
 		return "working";
 	}
-	return card.agentDoneRuns?.length ? "completed" : "none";
+	return remainingActivities.some((activity) => activity.state === "completed") || card.agentDoneRuns?.length
+		? "completed"
+		: "none";
 }
 
 export function unlinkJiraKanbanAgentSession(
@@ -194,6 +196,55 @@ export function linkJiraKanbanAgentSession(
 	});
 
 	return changed ? nextColumns : [...columns];
+}
+
+export function moveJiraKanbanAgentSession(
+	columns: readonly JiraKanbanColumnData[],
+	sourceCardCode: string,
+	targetCardCode: string,
+	sessionId: string,
+): JiraKanbanColumnData[] {
+	if (sourceCardCode === targetCardCode) {
+		return [...columns];
+	}
+
+	const cards = columns.flatMap((column) => column.cards);
+	const sourceCard = cards.find((card) => card.code === sourceCardCode);
+	const targetCard = cards.find((card) => card.code === targetCardCode);
+	const activity = sourceCard?.agentActivities?.find((candidate) => candidate.id === sessionId);
+
+	if (!sourceCard || !targetCard || !activity || targetCard.agentActivities?.some((candidate) => candidate.id === sessionId)) {
+		return [...columns];
+	}
+
+	return columns.map((column) => {
+		let changed = false;
+		const nextCards = column.cards.map((card) => {
+			if (card.code === sourceCardCode) {
+				changed = true;
+				const agentActivities = (card.agentActivities ?? []).filter((candidate) => candidate.id !== sessionId);
+				return {
+					...card,
+					agentActivities,
+					agentActivityMode: getAgentActivityModeAfterUnlink(card, agentActivities),
+				};
+			}
+
+			if (card.code === targetCardCode) {
+				changed = true;
+				const agentActivities = [...(card.agentActivities ?? []), activity];
+				return {
+					...card,
+					agentActivities,
+					agentActivityMode: getAgentActivityModeAfterUnlink(card, agentActivities),
+				};
+			}
+
+			return card;
+		});
+
+		return changed ? { ...column, cards: nextCards } : column;
+	});
 }
 
 export function getCommonJiraKanbanAgentIds(

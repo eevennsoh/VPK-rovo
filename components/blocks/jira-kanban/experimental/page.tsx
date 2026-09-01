@@ -148,6 +148,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	onCardAgentActivityViewChat?: JiraKanbanProps["onCardAgentActivityViewChat"];
 	onCardAgentDoneRunView?: JiraKanbanProps["onCardAgentDoneRunView"];
 	onCardAgentSessionLink?: ExperimentalJiraKanbanProps["onCardAgentSessionLink"];
+	onCardAgentSessionMove?: ExperimentalJiraKanbanProps["onCardAgentSessionMove"];
 	onCardAgentSessionUnlink?: ExperimentalJiraKanbanProps["onCardAgentSessionUnlink"];
 	onInsightsWorkItemClick?: (workItem: PulseWorkItem) => void;
 	onModeChange?: (mode: ExperimentalJiraKanbanMode) => void;
@@ -196,6 +197,7 @@ export default function ExperimentalJiraKanbanPage({
 	onCardAgentActivityViewChat,
 	onCardAgentDoneRunView,
 	onCardAgentSessionLink,
+	onCardAgentSessionMove,
 	onCardAgentSessionUnlink,
 	onInsightsWorkItemClick,
 	onModeChange,
@@ -548,6 +550,22 @@ export default function ExperimentalJiraKanbanPage({
 		onCardAgentSessionLink?.(session, card, columnTitle);
 	};
 
+	const handleCardAgentSessionMove: ExperimentalJiraKanbanProps["onCardAgentSessionMove"] = (
+		session,
+		sourceCard,
+		targetCard,
+		sourceColumnTitle,
+		targetColumnTitle,
+	) => {
+		onCardAgentSessionMove?.(
+			session,
+			sourceCard,
+			targetCard,
+			sourceColumnTitle,
+			targetColumnTitle,
+		);
+	};
+
 	const handleCardAgentSessionUnlink: ExperimentalJiraKanbanProps["onCardAgentSessionUnlink"] = (
 		session,
 		card,
@@ -723,6 +741,9 @@ export default function ExperimentalJiraKanbanPage({
 						onCardAgentDoneRunView={onCardAgentDoneRunView}
 						onCardAgentSessionLink={onCardAgentSessionLink
 							? handleCardAgentSessionLink
+							: undefined}
+						onCardAgentSessionMove={onCardAgentSessionMove
+							? handleCardAgentSessionMove
 							: undefined}
 						onCardAgentSessionUnlink={onCardAgentSessionUnlink
 							? handleCardAgentSessionUnlink

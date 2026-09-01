@@ -202,6 +202,7 @@ export function AgentSession({
 								onItemHover={onItemHover}
 								onToggleVisibility={onToggleVisibility}
 								onView={itemOnView}
+								sessionDrag={sessionDrag}
 								visibilityLabel={visibilityLabel}
 							/>
 						);

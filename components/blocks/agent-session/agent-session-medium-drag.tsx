@@ -8,11 +8,13 @@ import {
 	type PointerEvent as ReactPointerEvent,
 	type ReactElement,
 } from "react";
-import { motion, useMotionValue, useSpring } from "motion/react";
+import { createPortal } from "react-dom";
+import { motion } from "motion/react";
 
 import {
 	sessionDragChipViewportStyle,
 	type JiraIssueAgentSessionDragBinding,
+	type JiraIssueAgentSessionDragSource,
 } from "@/components/blocks/jira-issue/agent-session-drag";
 import { AgentSessionMentionChip } from "@/components/blocks/jira-issue/agent-session-mention-chip";
 import { useSessionDragChipPointer } from "@/components/blocks/jira-issue/use-session-drag-chip-pointer";
@@ -29,39 +31,44 @@ const SESSION_DRAG_ORIGIN: PointerDragPosition = { x: 0, y: 0 };
 /** Same 2px threshold as `usePointerDrag` — publish/arm only after a real move. */
 const SESSION_DRAG_PUBLISH_THRESHOLD_PX = 2;
 const SESSION_DRAG_CHIP_DISTANCE_PX = 12;
-const SESSION_DRAG_SPRING = { damping: 26, mass: 0.6, stiffness: 420, restDelta: 0.01 } as const;
+const SESSION_DRAG_INTERACTIVE_SELECTOR = [
+	"button",
+	"a",
+	"input",
+	"select",
+	"textarea",
+	"[role=menuitem]",
+	"[data-session-drag-ignore]",
+].join(", ");
 
 export function AgentSessionMediumDrag({
 	item,
+	preserveSourceFootprint = false,
 	sessionDrag,
 	shouldReduceMotion,
+	source = "detached",
 	children,
 }: Readonly<{
 	item: AgentSessionItem;
+	preserveSourceFootprint?: boolean;
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
 	shouldReduceMotion: boolean | null;
+	source?: JiraIssueAgentSessionDragSource;
 	children: (bind: Record<string, unknown> | undefined) => ReactElement;
 }>) {
 	const activity = toJiraIssueAgentActivityFromSession(item);
 	const [dragOffset, setDragOffset] = useState<PointerDragPosition>(SESSION_DRAG_ORIGIN);
+	const [publishedDragging, setPublishedDragging] = useState(false);
+	const [sourceHeight, setSourceHeight] = useState<number | undefined>(undefined);
 	const drag = usePointerDrag(dragOffset, setDragOffset, sessionDrag?.bounds);
-	const dragOffsetX = useMotionValue(0);
-	const dragOffsetY = useMotionValue(0);
-	const springX = useSpring(dragOffsetX, SESSION_DRAG_SPRING);
-	const springY = useSpring(dragOffsetY, SESSION_DRAG_SPRING);
-	const dragX = shouldReduceMotion ? dragOffsetX : springX;
-	const dragY = shouldReduceMotion ? dragOffsetY : springY;
 	const chipPointer = useSessionDragChipPointer(shouldReduceMotion);
-	const isDragging = Boolean(sessionDrag) && drag.dragging;
+	const isDragging = Boolean(sessionDrag) && drag.dragging && publishedDragging;
 	const isDraggedOut = isDragging
 		&& Math.hypot(drag.position.x, drag.position.y) >= SESSION_DRAG_CHIP_DISTANCE_PX;
 
-	useEffect(() => {
-		dragOffsetX.set(drag.position.x);
-		dragOffsetY.set(drag.position.y);
-	}, [dragOffsetX, dragOffsetY, drag.position.x, drag.position.y]);
-
 	const pointerOriginRef = useRef<PointerDragPosition | null>(null);
+	const didPublishDragRef = useRef(false);
+	const dragTargetRef = useRef<HTMLElement | null>(null);
 
 	function publishSessionDrag(
 		dragging: boolean,
@@ -73,25 +80,38 @@ export function AgentSessionMediumDrag({
 			cancelled,
 			dragging,
 			pointer: event ? { x: event.clientX, y: event.clientY } : null,
-			source: "detached",
+			source: source,
 		});
 	}
 
 	function endSessionDrag(event: ReactPointerEvent<HTMLElement>) {
+		if (pointerOriginRef.current === null) {
+			return;
+		}
 		drag.bind.onPointerUp(event);
 		pointerOriginRef.current = null;
+		dragTargetRef.current = null;
+		setPublishedDragging(false);
+		setSourceHeight(undefined);
 		setDragOffset(SESSION_DRAG_ORIGIN);
 		publishSessionDrag(false, event);
 	}
 
 	function cancelSessionDrag(event: ReactPointerEvent<HTMLElement>) {
+		if (pointerOriginRef.current === null) {
+			return;
+		}
 		drag.bind.onPointerCancel(event);
+		drag.bind.onClick();
 		pointerOriginRef.current = null;
+		dragTargetRef.current = null;
+		didPublishDragRef.current = false;
+		setPublishedDragging(false);
+		setSourceHeight(undefined);
 		setDragOffset(SESSION_DRAG_ORIGIN);
 		publishSessionDrag(false, undefined, true);
 	}
 
-	const hostRef = useRef<HTMLDivElement | null>(null);
 	const endSessionDragRef = useRef(endSessionDrag);
 	const cancelSessionDragRef = useRef(cancelSessionDrag);
 
@@ -110,7 +130,7 @@ export function AgentSessionMediumDrag({
 
 		function toHostEvent(event: PointerEvent): ReactPointerEvent<HTMLElement> {
 			return {
-				currentTarget: hostRef.current ?? (event.target as HTMLElement),
+				currentTarget: dragTargetRef.current ?? (event.target as HTMLElement),
 				pointerId: event.pointerId,
 				clientX: event.clientX,
 				clientY: event.clientY,
@@ -140,22 +160,44 @@ export function AgentSessionMediumDrag({
 			...dragBindWithoutKeyboard,
 			onFocus: () => sessionDrag.onFocusedActivitiesChange([activity]),
 			onMouseDown: (event: ReactMouseEvent<HTMLElement>) => {
+				const interactiveTarget = event.target instanceof Element
+					? event.target.closest(SESSION_DRAG_INTERACTIVE_SELECTOR)
+					: null;
+				if (interactiveTarget !== null && interactiveTarget !== event.currentTarget) {
+					return;
+				}
 				event.preventDefault();
+			},
+			onClickCapture: (event: ReactMouseEvent<HTMLElement>) => {
+				if (!didPublishDragRef.current) {
+					return;
+				}
+				didPublishDragRef.current = false;
+				drag.bind.onClick();
+				event.preventDefault();
+				event.stopPropagation();
 			},
 			onPointerCancel: cancelSessionDrag,
 			onPointerDown: (event: ReactPointerEvent<HTMLElement>) => {
+				const interactiveTarget = event.target instanceof Element
+					? event.target.closest(SESSION_DRAG_INTERACTIVE_SELECTOR)
+					: null;
+				if (interactiveTarget !== null && interactiveTarget !== event.currentTarget) {
+					return;
+				}
+				didPublishDragRef.current = false;
+				dragTargetRef.current = event.currentTarget;
+				setSourceHeight(event.currentTarget.getBoundingClientRect().height);
 				drag.bind.onPointerDown(event);
 				pointerOriginRef.current = { x: event.clientX, y: event.clientY };
 				chipPointer.snapToPointer(
 					{ x: event.clientX, y: event.clientY },
-					event.currentTarget,
 				);
 			},
 			onPointerMove: (event: ReactPointerEvent<HTMLElement>) => {
 				drag.bind.onPointerMove(event);
 				chipPointer.followPointer(
 					{ x: event.clientX, y: event.clientY },
-					event.currentTarget,
 				);
 				const origin = pointerOriginRef.current;
 				const moved = Boolean(
@@ -166,6 +208,8 @@ export function AgentSessionMediumDrag({
 					),
 				);
 				if (moved) {
+					didPublishDragRef.current = true;
+					setPublishedDragging(true);
 					publishSessionDrag(true, event);
 				}
 			},
@@ -198,34 +242,40 @@ export function AgentSessionMediumDrag({
 			className={cn(
 				"min-w-0",
 				isDragging && "relative w-full",
-				isDragging && (isDraggedOut ? "h-0" : "h-[33px]"),
+				isDragging && !preserveSourceFootprint && (isDraggedOut ? "h-0" : "h-[33px]"),
 			)}
 			data-session-chip-out={isDraggedOut || undefined}
+			data-session-drag-placeholder={preserveSourceFootprint || undefined}
+			style={{ height: isDragging && preserveSourceFootprint ? sourceHeight : undefined }}
 		>
-			{/* Bind stays on this host for the whole gesture. Swapping in a
-			    new chip button on drag-start dropped pointer capture, so
-			    pointerup never fired and the card stuck on an empty chin. */}
-			<motion.div
-				ref={hostRef}
-				aria-label={isDragging ? `Attach ${item.agent.name} to this work item` : undefined}
-				aria-roledescription={isDragging ? "Draggable agent session" : undefined}
+			{/* The bound source stays mounted (but transparent) for the whole
+			    gesture, preserving pointer capture while the chip travels. */}
+			<div
 				className={cn(
-					"min-w-0 outline-none",
-					isDragging && "left-0 top-0 z-20 w-fit",
+					"min-w-0",
+					isDragging && "pointer-events-none absolute inset-x-0 top-0 opacity-0",
 					sessionDragBind && "touch-none select-none",
 				)}
-				data-session-chip-out={isDraggedOut || undefined}
-				data-session-dragging={isDragging || undefined}
-				data-slot="jira-issue-agent-row"
-				style={{
-					x: isDragging ? chipPointer.x : dragX,
-					y: isDragging ? chipPointer.y : dragY,
-					...sessionDragChipViewportStyle(isDragging),
-				}}
-				{...sessionDragBind}
 			>
-				{isDragging ? chip : children(undefined)}
-			</motion.div>
+				{children(sessionDragBind)}
+			</div>
+			{isDragging ? createPortal(
+				<motion.div
+					aria-hidden
+					className="pointer-events-none left-0 top-0 z-[300] w-fit"
+					data-session-chip-out={isDraggedOut || undefined}
+					data-session-drag-overlay=""
+					data-session-dragging=""
+					style={{
+						x: chipPointer.x,
+						y: chipPointer.y,
+						...sessionDragChipViewportStyle(true),
+					}}
+				>
+					{chip}
+				</motion.div>,
+				document.body,
+			) : null}
 		</div>
 	);
 }

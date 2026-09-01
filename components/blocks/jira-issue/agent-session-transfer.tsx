@@ -72,6 +72,10 @@ export interface JiraIssueAgentSessionTransferProps {
 	/** The drag was interrupted rather than released: clear the armed zone
 	 *  without committing it. */
 	cancelled?: boolean;
+	/** Board-owned arming state. Omit to keep the component's local hit test. */
+	controlledArmed?: boolean;
+	/** False when a board coordinator owns the one-and-only drop commit. */
+	commitDrops?: boolean;
 	config: Readonly<JiraIssueAgentSessionTransferConfig>;
 	/** True while a session row is dragged; keeps the region revealed. */
 	dragging?: boolean;
@@ -80,7 +84,7 @@ export interface JiraIssueAgentSessionTransferProps {
 	/** Which session the gesture is carrying, forwarded to the commit callback. */
 	session?: JiraIssueAgentSessionRef;
 	sessionLabel?: string;
-	/** `detached` attaches via the card chin, not this unlink well. */
+	/** Detached and untracked sources attach via the card chin, not this unlink well. */
 	source?: JiraIssueAgentSessionDragSource;
 	/** Work-item card rect, so a detached session can drop onto the card itself. */
 	cardMeasureRef?: RefObject<HTMLElement | null>;
@@ -119,6 +123,8 @@ export function JiraIssueAgentSessionTransfer({
 	config,
 	cancelled = false,
 	cardMeasureRef,
+	commitDrops = true,
+	controlledArmed,
 	dragging = false,
 	pointer,
 	session,
@@ -129,7 +135,8 @@ export function JiraIssueAgentSessionTransfer({
 	const [armed, setArmed] = useState(false);
 	const armedRef = useRef(false);
 	const lastPointerKeyRef = useRef("");
-	const isLinking = source === "detached";
+	const isLinking = source !== "chin";
+	const resolvedArmed = controlledArmed ?? armed;
 	// Attach has no dashed well: the card backdrop/chin is the drop target.
 	const showUnlinkWell = !isLinking && Boolean(config.onUnlink);
 	// Drag from the chin keeps the well open after the pointer leaves the row.
@@ -164,6 +171,9 @@ export function JiraIssueAgentSessionTransfer({
 	// Arms the zone as the pointer moves, then commits on release. The well is
 	// a drop target only; click-to-unlink lives on the chin link-broken.
 	useEffect(() => {
+		if (controlledArmed !== undefined || !commitDrops) {
+			return;
+		}
 		const wellRect = unlinkRef.current?.getBoundingClientRect();
 		const cardRect = cardMeasureRef?.current?.getBoundingClientRect();
 		const overWell = Boolean(
@@ -206,13 +216,13 @@ export function JiraIssueAgentSessionTransfer({
 			if (!commit) {
 				return;
 			}
-			if (commit.source === "detached") {
+			if (commit.source !== "chin") {
 				commit.onLink?.(commit.session);
 			} else {
 				commit.onUnlink?.(commit.session);
 			}
 		}
-	}, [cancelled, cardMeasureRef, dragging, isLinking, pointer]);
+	}, [cancelled, cardMeasureRef, commitDrops, controlledArmed, dragging, isLinking, pointer]);
 
 	if (!showUnlinkWell) {
 		return null;
@@ -224,12 +234,13 @@ export function JiraIssueAgentSessionTransfer({
 				TRANSFER_REVEAL_CLASS,
 				revealUnlinkWell ? "pointer-events-auto grid-rows-[1fr] opacity-100" : "pointer-events-none",
 			)}
+			data-board-agent-session-drop-zone="unlink"
 			data-slot="jira-issue-session-transfer"
 		>
 			<div className="min-h-0 overflow-hidden">
 				<div className="flex flex-col px-px py-2">
 					<TransferDropZone
-						armed={armed}
+						armed={resolvedArmed}
 						description={`Unlink ${sessionLabel} from this work item`}
 						dragging={revealUnlinkWell}
 						label={config.unlinkLabel ?? "Drag here to unlink"}
