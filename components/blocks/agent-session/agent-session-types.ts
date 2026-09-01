@@ -107,6 +107,16 @@ export interface AgentSessionProps {
 	 */
 	onItemHover?: (item: AgentSessionItem | null) => void;
 	/**
+	 * Id of the compact row to light while the pointer sits somewhere else.
+	 *
+	 * The board pairs this with {@link onItemHover}: the Untracked work column
+	 * reports the session under the pointer, and every proximity row carrying the
+	 * same id lights up beside its work item. Distinct from
+	 * {@link selectedItemId}, which is a committed choice; this is a transient
+	 * preview of a relationship the viewer has not acted on yet.
+	 */
+	highlightedItemId?: string | null;
+	/**
 	 * When `onView` is set, non-coding rows for which this returns false omit the
 	 * body action. Coding agent rows ignore this permission check but still require
 	 * `onView` before their body becomes interactive. Defaults to every row.

@@ -84,6 +84,7 @@ export function AgentSession({
 	getResumeCommand,
 	getSuggestedWorkItemKey,
 	getSuggestedWorkItemKeys,
+	highlightedItemId,
 	issueKey,
 	isResumable,
 	newItemIds,
@@ -211,6 +212,10 @@ export function AgentSession({
 						<AgentSessionCompactCard
 							flyout
 							isArriving={beatItemIds?.has(item.id) ?? false}
+							// The column and the board hold the same session ids, so an id
+							// match is the whole relationship test: hovering an Untracked
+							// card lights its twin beside the work item it already names.
+							isHighlighted={item.id === highlightedItemId}
 							isNew={newItemIds?.has(item.id) ?? false}
 							issueKey={issueKey}
 							item={item}

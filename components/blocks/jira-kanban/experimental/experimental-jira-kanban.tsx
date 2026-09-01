@@ -615,6 +615,7 @@ export function ExperimentalJiraKanban({
 		EMPTY_COLLAPSED_BOARD_COLUMNS,
 	);
 	const [focusedIssueKey, setFocusedIssueKey] = useState<string | null>(null);
+	const [hoveredSessionId, setHoveredSessionId] = useState<string | null>(null);
 	const spotlightIssueKey = resolveVisibleFocusedIssueKey(focusedIssueKey, boardColumns);
 	const collapsedColumns = controlledCollapsedColumns ?? uncontrolledCollapsedColumns;
 	const selectedCount = selectedCardCodes?.size ?? 0;
@@ -763,6 +764,17 @@ export function ExperimentalJiraKanban({
 		agentSessionColumn?.onView?.(item);
 	};
 
+	// Hovering an Untracked card lights its twin beside the work item it already
+	// names. Both surfaces render the same session ids — the column holds every
+	// untracked session, the board holds the subset naming an issue on it — so an
+	// id match is the whole relationship test, and a session with no board
+	// relationship simply has no row to light. Preview only: the click spotlight
+	// above still owns focus, scroll, and dimming.
+	const handleSessionHover = (item: AgentSessionItem | null) => {
+		setHoveredSessionId(item?.id ?? null);
+		agentSessionColumn?.onItemHover?.(item);
+	};
+
 	const handleSessionSelectionChange = (itemId: string | null) => {
 		// Card deselect is not a view. Clear the session-driven spotlight so
 		// status columns drop `opacity-40` instead of staying veiled.
@@ -805,6 +817,7 @@ export function ExperimentalJiraKanban({
 					>
 						<AgentSessionColumn
 							{...agentSessionColumn}
+							onItemHover={handleSessionHover}
 							onSelectedItemIdChange={handleSessionSelectionChange}
 							onView={handleSessionView}
 							sessionDrag={boardSessionDragEnabled
@@ -939,6 +952,7 @@ export function ExperimentalJiraKanban({
 												generativeActionAgents={generativeActionAgents}
 												generativeActionPresentation={cardGenerativeActionPresentation}
 												generativeActionSkills={generativeActionSkills}
+												highlightedSessionId={hoveredSessionId}
 												onAgentActivityOpenChange={onCardAgentActivityOpenChange}
 												onAgentActivityViewChat={onCardAgentActivityViewChat}
 												onAgentDoneRunReview={onCardAgentDoneRunReview}

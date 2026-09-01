@@ -99,6 +99,7 @@ function SmallAgentSession({
 export function AgentSessionCompactCard({
 	flyout = false,
 	isArriving = false,
+	isHighlighted = false,
 	isNew = false,
 	issueKey,
 	item,
@@ -110,6 +111,12 @@ export function AgentSessionCompactCard({
 	variant,
 }: Readonly<{
 	isArriving?: boolean;
+	/**
+	 * Light this row for a pointer that is somewhere else — the Untracked work
+	 * column hovering the same session. Only the detached row can carry it; a
+	 * session already attached to its work item has no relationship to preview.
+	 */
+	isHighlighted?: boolean;
 	isNew?: boolean;
 	item: AgentSessionItem;
 	flyout?: boolean;
@@ -140,6 +147,7 @@ export function AgentSessionCompactCard({
 		<AgentSessionMediumCard
 			flyout={flyout}
 			isArriving={isArriving}
+			isHighlighted={isHighlighted}
 			isNew={isNew}
 			issueKey={issueKey}
 			item={item}
