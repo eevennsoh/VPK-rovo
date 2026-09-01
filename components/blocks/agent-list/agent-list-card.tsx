@@ -766,10 +766,6 @@ export function AgentListRow({
 									<MetadataDot />
 								</>
 							) : null}
-							<span className="shrink-0" title={timeSlotTitle(item)}>
-								<AgentListTime item={item} />
-							</span>
-							<MetadataDot />
 							<AgentListMetadataIdentity item={item} />
 							{prMeta && PrIcon ? (
 								<>
@@ -787,6 +783,10 @@ export function AgentListRow({
 									</span>
 								</>
 							) : null}
+							<MetadataDot />
+							<span className="shrink-0" title={timeSlotTitle(item)}>
+								<AgentListTime item={item} />
+							</span>
 						</span>
 					</RowBody>
 					{stateMeta.showLifecycle ? (
