@@ -282,14 +282,20 @@ export function JiraList({
 							) : null}
 							<IssueTypeGlyph issueType={row.issueType} />
 							<div className="group/issue-key flex shrink-0 items-center">
-								<Button
-									className="h-auto shrink-0 px-0 text-link hover:underline focus-visible:underline"
-									onClick={() => onIssueKeyClick?.(row)}
-									size="compact"
-									variant="link"
-								>
-									{row.issueKey}
-								</Button>
+								{onIssueKeyClick ? (
+									<Button
+										className="h-auto shrink-0 px-0 text-link hover:underline focus-visible:underline"
+										onClick={() => onIssueKeyClick(row)}
+										size="compact"
+										variant="link"
+									>
+										{row.issueKey}
+									</Button>
+								) : (
+									<span className="shrink-0 text-[13px] font-medium text-text-subtle">
+										{row.issueKey}
+									</span>
+								)}
 								{onCopyLink ? (
 									<span
 										className={cn(
