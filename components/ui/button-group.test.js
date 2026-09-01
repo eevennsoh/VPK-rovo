@@ -41,6 +41,10 @@ const SELECTED_BUTTON_STATE_CLASSES = [
 	"aria-expanded:bg-bg-selected",
 	"aria-expanded:text-text-selected",
 	"aria-expanded:border-border-selected",
+	"aria-pressed:[&_[data-slot=icon]]:text-icon-selected",
+	"aria-pressed:[&_svg]:text-icon-selected",
+	"aria-expanded:[&_[data-slot=icon]]:text-icon-selected",
+	"aria-expanded:[&_svg]:text-icon-selected",
 ];
 
 test("the split variation preserves connected geometry and uses the correct seams", () => {
@@ -119,6 +123,10 @@ test("focus-visible segments after the first paint a leading ring-colored stroke
 
 test("all button variants inherit one shared pressed and expanded state contract", () => {
 	assert.match(BUTTON_SOURCE, /const buttonVariants = cva\(\n\t`\$\{selectedButtonState\} /u);
+	assert.doesNotMatch(
+		BUTTON_SOURCE,
+		/aria-(?:pressed|expanded):\[&_(?:svg|\[data-slot=icon\])\]:text-icon-selected!/u,
+	);
 
 	for (const className of SELECTED_BUTTON_STATE_CLASSES) {
 		assert.equal(

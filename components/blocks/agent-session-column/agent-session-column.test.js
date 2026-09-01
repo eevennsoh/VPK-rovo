@@ -703,7 +703,12 @@ test("the overflow menu is Link all suggestions, then Auto sync and Suggest link
 	assert.match(OVERFLOW_MENU_SOURCE, /label="Suggest link"/u);
 	assert.match(OVERFLOW_MENU_SOURCE, /const \[autoLink, setAutoLink\] = useState\(true\)/u);
 	assert.match(OVERFLOW_MENU_SOURCE, /elemAfter=\{\(/u);
-	assert.match(OVERFLOW_MENU_SOURCE, /<Switch/u);
+	assert.match(OVERFLOW_MENU_SOURCE, /<SwitchIndicator/u);
+	assert.match(OVERFLOW_MENU_SOURCE, /aria-checked=\{checked\}/u);
+	assert.match(OVERFLOW_MENU_SOURCE, /role="menuitemcheckbox"/u);
+	assert.doesNotMatch(OVERFLOW_MENU_SOURCE, /<Switch[\s>]/u);
+	assert.doesNotMatch(OVERFLOW_MENU_SOURCE, /suppressMenuDismissal/u);
+	assert.doesNotMatch(OVERFLOW_MENU_SOURCE, /onCheckedChange=\{onCheckedChange\}/u);
 	assert.match(OVERFLOW_MENU_SOURCE, /closeOnClick=\{false\}/u);
 	assert.match(OVERFLOW_MENU_SOURCE, /linkAllAgentSessions/u);
 	assert.match(OVERFLOW_SOURCE, /export function collectLinkableAgentSessions/u);
