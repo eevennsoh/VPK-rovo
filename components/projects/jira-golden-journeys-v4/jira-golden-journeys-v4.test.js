@@ -17,6 +17,9 @@ const EXPERIMENTAL_PAGE_SOURCE = readProjectFile("components/blocks/jira-kanban/
 const EXPERIMENTAL_BOARD_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/experimental-jira-kanban.tsx",
 );
+const EXPERIMENTAL_CARD_SOURCE = readProjectFile(
+	"components/blocks/jira-kanban/experimental/experimental-jira-kanban-card.tsx",
+);
 
 test("the route renders the Payments board directly inside Jira app chrome", () => {
 	assert.match(PAGE_SOURCE, /import AppLayout from "@\/components\/projects\/page"/u);
@@ -39,9 +42,27 @@ test("the board disables Insights while keeping card agent chat in the Jira shel
 	assert.match(PAGE_SOURCE, /insightsEnabled=\{false\}/u);
 	assert.doesNotMatch(PAGE_SOURCE, /PULSE_|InsightsNudge|boardRef|timelineLastViewedAt/u);
 	assert.match(PAGE_SOURCE, /onCardAgentActivityViewChat=\{handleViewChat\}/u);
+	assert.match(PAGE_SOURCE, /onCardAgentDoneRunView=\{handleViewCompletedRun\}/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/onCardAgentDoneRunView\?: JiraKanbanProps\["onCardAgentDoneRunView"\];/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/<ExperimentalJiraKanban[\s\S]*onCardAgentDoneRunView=\{onCardAgentDoneRunView\}/u,
+	);
 	assert.match(PAGE_SOURCE, /openAgentChat\(\{[\s\S]*agentId: activity\.id,[\s\S]*issueKey: card\.code/u);
+	assert.match(PAGE_SOURCE, /const handleViewCompletedRun = useCallback\([\s\S]*agentId: run\.agentName\.toLowerCase\(\)\.replace\(\/\\s\+\/g, "-"\),[\s\S]*issueKey: run\.issueKey/u);
 	assert.match(PAGE_SOURCE, /<JgpRovoOverlay[\s\S]*externalThinkingMessageId=\{externalThinkingMessageId\}/u);
 	assert.doesNotMatch(PAGE_SOURCE, /<JgpRovoOverlay[\s\S]*insights=/u);
+});
+
+test("the route imports the Pulse session guard used by its resume callback", () => {
+	assert.match(
+		PAGE_SOURCE,
+		/import \{ isPulseAgentSession, type PulseLooseWork \} from "@\/components\/blocks\/jira-kanban\/experimental\/pulse\/types";/u,
+	);
+	assert.match(PAGE_SOURCE, /if \(!isPulseAgentSession\(item\)\) return;/u);
 });
 
 test("the board opts into the experimental Jira issue split agent rows", () => {
@@ -51,6 +72,53 @@ test("the board opts into the experimental Jira issue split agent rows", () => {
 		EXPERIMENTAL_PAGE_SOURCE,
 		/<ExperimentalJiraKanban[\s\S]*agentActivityLayout=\{agentActivityLayout\}/u,
 	);
+});
+
+test("the board enables the experimental Jira issue drag-to-unlink session transfer", () => {
+	assert.match(PAGE_SOURCE, /import \{ linkJiraKanbanAgentSession, unlinkJiraKanbanAgentSession \} from "@\/components\/blocks\/jira-kanban\/state"/u);
+	assert.match(PAGE_SOURCE, /setBoardColumns\(\(columns\) => unlinkJiraKanbanAgentSession\(columns, card\.code, session\.id\)\)/u);
+	assert.match(PAGE_SOURCE, /setBoardColumns\(\(columns\) => linkJiraKanbanAgentSession\(columns, card\.code, activity\)\)/u);
+	assert.match(PAGE_SOURCE, /onCardAgentSessionLink=\{handleAgentSessionLink\}/u);
+	assert.match(PAGE_SOURCE, /onCardAgentSessionUnlink=\{handleAgentSessionUnlink\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCardAgentSessionUnlink\?: ExperimentalJiraKanbanProps\["onCardAgentSessionUnlink"\];/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /const canTransferAgentSession = canUnlinkAgentSession \|\| canLinkAgentSession;/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /sessionTransferAfter=\{\(sessionDrag\) =>/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /sessionDrag=\{canLinkAgentSession \? sessionDrag : undefined\}/u);
+});
+
+test("unlinked agent sessions remain detached beneath their source Jira card", () => {
+	assert.match(PAGE_SOURCE, /const \[detachedAgentSessionsByCard, setDetachedAgentSessionsByCard\] = useState/u);
+	assert.match(PAGE_SOURCE, /toJiraGoldenJourneysV4DetachedAgentSession\(activity, card\)/u);
+	assert.match(PAGE_SOURCE, /setDetachedAgentSessionsByCard\(\(current\) =>/u);
+	assert.match(PAGE_SOURCE, /detachedAgentSessionsByCard=\{detachedAgentSessionsByCard\}/u);
+	assert.match(
+		PAGE_SOURCE,
+		/const activity = detachedActivitiesByIdRef\.current\[session\.id\]\s*\?\? toJiraIssueDemoAttachedActivity\(session\);/u,
+		"re-attaching a complete detached fixture must normalize it to an active chin row",
+	);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /<AgentSession[\s\S]*variant="medium-detached"/u);
+	assert.match(
+		EXPERIMENTAL_CARD_SOURCE,
+		/<AgentSession[\s\S]*style=\{\{ marginTop: token\("space\.025"\) \}\}/u,
+	);
+	assert.match(
+		EXPERIMENTAL_CARD_SOURCE,
+		/className="has-\[\[data-session-dragging\]\]:relative has-\[\[data-session-dragging\]\]:z-30"/u,
+		"the detached-session Motion stacking context must rise above the Jira issue shell while dragging",
+	);
+	assert.match(
+		EXPERIMENTAL_CARD_SOURCE,
+		/resolveRelatedJiraIssueAgentActivityMode\(\s*\n\s*card\.agentActivityMode,\s*\n\s*detachedAgentSessions\.length > 0,/u,
+	);
+});
+
+test("the board puts agent and skill assignment in each card's More actions menu", () => {
+	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage[\s\S]*cardGenerativeActionPresentation="more-actions"/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /cardGenerativeActionPresentation\?: JiraIssueGenerativeActionPresentation;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<ExperimentalJiraKanban[\s\S]*cardGenerativeActionPresentation=\{cardGenerativeActionPresentation\}/u);
+	assert.match(EXPERIMENTAL_BOARD_SOURCE, /cardGenerativeActionPresentation = "sparkle",/u);
+	assert.match(EXPERIMENTAL_BOARD_SOURCE, /<ExperimentalJiraKanbanCard[\s\S]*generativeActionPresentation=\{cardGenerativeActionPresentation\}/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*generativeActionPresentation=\{generativeActionPresentation\}/u);
 });
 
 test("the Jira tab bar groups Board and List under one Work items destination", () => {
@@ -88,9 +156,25 @@ test("the Work items header switches between Board and List views with their ico
 		/<TabsList aria-label="Work items view">[\s\S]*<TabsTrigger value="board">[\s\S]*<BoardIcon[\s\S]*Board[\s\S]*<TabsTrigger value="list">[\s\S]*<TableIcon[\s\S]*List/u,
 	);
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /<TabsList[^>]*className=|<TabsTrigger[^>]*className=/u);
+	// More board controls stays in the left control cluster, immediately after
+	// Insights and before the far-right Board/List switcher.
+	const filterControlIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("{filterControl}");
+	const viewMenuIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("<BoardViewMenu");
+	const modeToggleIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("{modeToggle}");
 	const viewSwitcherIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf('aria-label="Work items view"');
-	const settingsIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf('aria-label={`${surfaceTitle} settings`}');
-	assert.ok(viewSwitcherIndex > 0 && viewSwitcherIndex < settingsIndex);
+	const overflowIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf('aria-label={`More ${surfaceLabel} controls`}');
+	assert.ok(filterControlIndex > 0 && filterControlIndex < viewMenuIndex);
+	assert.ok(viewMenuIndex > 0 && viewMenuIndex < modeToggleIndex);
+	assert.ok(modeToggleIndex > 0 && modeToggleIndex < overflowIndex);
+	assert.ok(overflowIndex > 0 && overflowIndex < viewSwitcherIndex);
+	assert.match(
+		EXPERIMENTAL_HEADER_SOURCE,
+		/\{filterControl\}\s*<BoardViewMenu[\s\S]*?\{modeToggle\}[\s\S]*?<Button aria-disabled aria-label=\{`More \$\{surfaceLabel\} controls`\}/u,
+	);
+	assert.doesNotMatch(
+		EXPERIMENTAL_HEADER_SOURCE,
+		/<div className="flex items-center gap-1">\s*<BoardViewMenu/u,
+	);
 });
 
 test("the board keeps 24px between the Jira tabs and filter controls", () => {
@@ -107,9 +191,19 @@ test("the route pins the shared Agent Session column beside Jira statuses", () =
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /capturedItemIds: capturedLooseWorkIds,/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /toPulseSessionHandlers/u);
 
-	const columnIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<AgentSessionColumn {...agentSessionColumn} />");
+	const columnIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<AgentSessionColumn");
 	const scrollportIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<section");
 	assert.ok(columnIndex > 0, "expected the board to render the Agent Session column");
 	assert.ok(columnIndex < scrollportIndex, "expected untracked work to stay pinned before the status scrollport");
 	assert.match(EXPERIMENTAL_BOARD_SOURCE, /agentSessionColumn \? "ps-2" : "ps-6"/u);
+});
+
+test("the board's AI entry point is the floating Rovo button, not the Omnibar", () => {
+	// AppLayout hides its own launcher so JgpRovoOverlay owns the single FAB.
+	assert.match(PAGE_SOURCE, /<AppLayout[\s\S]*hideFloatingRovo[\s\S]*product="jira"/u);
+	assert.match(PAGE_SOURCE, /<JgpRovoOverlay[\s\S]*externalThinkingMessageId=\{externalThinkingMessageId\}/u);
+	assert.doesNotMatch(PAGE_SOURCE, /<JgpRovoOverlay[\s\S]*launcher=/u);
+	assert.doesNotMatch(PAGE_SOURCE, /<JgpRovoOverlay[\s\S]*chat="hidden"/u);
+	assert.doesNotMatch(PAGE_SOURCE, /Omnibar|SCRUBBER_DEMO_ENTRIES|handleOmnibar/u);
+	assert.doesNotMatch(PAGE_SOURCE, /useRovoChat|isSidebarChatOpen/u);
 });

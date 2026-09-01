@@ -110,7 +110,7 @@ export function ModelSelectorDemoWithSearch() {
 							>
 								<ModelSelectorName>{m.label}</ModelSelectorName>
 								{selected === m.value ? (
-									<CheckIcon size="small" className="ml-auto text-text-selected" />
+									<CheckIcon size="small" className="ml-auto text-icon-subtle! [&_svg]:text-icon-subtle!" />
 								) : null}
 							</ModelSelectorItem>
 						))}
@@ -125,7 +125,7 @@ export function ModelSelectorDemoWithSearch() {
 							>
 								<ModelSelectorName>{m.label}</ModelSelectorName>
 								{selected === m.value ? (
-									<CheckIcon size="small" className="ml-auto text-text-selected" />
+									<CheckIcon size="small" className="ml-auto text-icon-subtle! [&_svg]:text-icon-subtle!" />
 								) : null}
 							</ModelSelectorItem>
 						))}
@@ -140,7 +140,7 @@ export function ModelSelectorDemoWithSearch() {
 							>
 								<ModelSelectorName>{m.label}</ModelSelectorName>
 								{selected === m.value ? (
-									<CheckIcon size="small" className="ml-auto text-text-selected" />
+									<CheckIcon size="small" className="ml-auto text-icon-subtle! [&_svg]:text-icon-subtle!" />
 								) : null}
 							</ModelSelectorItem>
 						))}
@@ -188,7 +188,7 @@ export function ModelSelectorDemoWithLogos() {
 								<ModelSelectorLogo provider="anthropic" />
 								<ModelSelectorName>{m.label}</ModelSelectorName>
 								{selected === m.value ? (
-									<CheckIcon size="small" className="ml-auto text-text-selected" />
+									<CheckIcon size="small" className="ml-auto text-icon-subtle! [&_svg]:text-icon-subtle!" />
 								) : null}
 							</ModelSelectorItem>
 						))}
@@ -205,7 +205,7 @@ export function ModelSelectorDemoWithLogos() {
 								<ModelSelectorLogo provider="openai" />
 								<ModelSelectorName>{m.label}</ModelSelectorName>
 								{selected === m.value ? (
-									<CheckIcon size="small" className="ml-auto text-text-selected" />
+									<CheckIcon size="small" className="ml-auto text-icon-subtle! [&_svg]:text-icon-subtle!" />
 								) : null}
 							</ModelSelectorItem>
 						))}
@@ -222,7 +222,7 @@ export function ModelSelectorDemoWithLogos() {
 								<ModelSelectorLogo provider="google" />
 								<ModelSelectorName>{m.label}</ModelSelectorName>
 								{selected === m.value ? (
-									<CheckIcon size="small" className="ml-auto text-text-selected" />
+									<CheckIcon size="small" className="ml-auto text-icon-subtle! [&_svg]:text-icon-subtle!" />
 								) : null}
 							</ModelSelectorItem>
 						))}
@@ -239,7 +239,7 @@ export function ModelSelectorDemoWithLogos() {
 								<ModelSelectorLogo provider="mistral" />
 								<ModelSelectorName>{m.label}</ModelSelectorName>
 								{selected === m.value ? (
-									<CheckIcon size="small" className="ml-auto text-text-selected" />
+									<CheckIcon size="small" className="ml-auto text-icon-subtle! [&_svg]:text-icon-subtle!" />
 								) : null}
 							</ModelSelectorItem>
 						))}
@@ -282,7 +282,7 @@ export function ModelSelectorDemoMultiProvider() {
 								<ModelSelectorLogo provider="anthropic" />
 								<ModelSelectorName>{m.label}</ModelSelectorName>
 								{selected === m.value ? (
-									<CheckIcon size="small" className="ml-auto text-text-selected" />
+									<CheckIcon size="small" className="ml-auto text-icon-subtle! [&_svg]:text-icon-subtle!" />
 								) : null}
 							</ModelSelectorItem>
 						))}
@@ -298,7 +298,7 @@ export function ModelSelectorDemoMultiProvider() {
 								<ModelSelectorLogo provider="openai" />
 								<ModelSelectorName>{m.label}</ModelSelectorName>
 								{selected === m.value ? (
-									<CheckIcon size="small" className="ml-auto text-text-selected" />
+									<CheckIcon size="small" className="ml-auto text-icon-subtle! [&_svg]:text-icon-subtle!" />
 								) : null}
 							</ModelSelectorItem>
 						))}
@@ -314,7 +314,7 @@ export function ModelSelectorDemoMultiProvider() {
 								<ModelSelectorLogo provider="google" />
 								<ModelSelectorName>{m.label}</ModelSelectorName>
 								{selected === m.value ? (
-									<CheckIcon size="small" className="ml-auto text-text-selected" />
+									<CheckIcon size="small" className="ml-auto text-icon-subtle! [&_svg]:text-icon-subtle!" />
 								) : null}
 							</ModelSelectorItem>
 						))}
@@ -364,7 +364,7 @@ export function ModelSelectorDemoReasoningModes() {
 								>
 									<ModelSelectorName>{option.label}</ModelSelectorName>
 									{selected === option.value ? (
-										<CheckIcon size="small" className="ml-auto text-text-selected" />
+										<CheckIcon size="small" className="ml-auto text-icon-subtle! [&_svg]:text-icon-subtle!" />
 									) : null}
 								</ModelSelectorItem>
 							))}

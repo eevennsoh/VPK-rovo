@@ -21,10 +21,11 @@ test("the Payments board is the only Golden Journeys content inside Jira chrome"
 		name: "Open a software delivery story chapter",
 	})).toHaveCount(0);
 	await expect(page.getByRole("button", { name: "Jump to chapter" })).toHaveCount(0);
-	const tabs = page.getByRole("tablist");
-	await expect(tabs).toBeVisible();
-	await expect(tabs.getByRole("tab")).toHaveCount(7);
-	await expect(tabs.getByRole("tab", { name: "Board" })).toHaveAttribute("aria-selected", "true");
+	const jiraTabs = page.getByRole("tablist").first();
+	const workItemTabs = page.getByRole("tablist", { name: "Work items view" });
+	await expect(jiraTabs).toBeVisible();
+	await expect(jiraTabs.getByRole("tab")).toHaveCount(6);
+	await expect(workItemTabs.getByRole("tab", { name: "Board" })).toHaveAttribute("aria-selected", "true");
 
 	const columns = page.locator("[data-jira-kanban-column]");
 	await expect(columns).toHaveCount(4);
@@ -43,8 +44,38 @@ test("the Jira tabs switch away from and back to the board", async ({ page }) =>
 	).toBeVisible();
 	await expect(page.locator("[data-jira-kanban-column]")).toHaveCount(0);
 
-	await page.getByRole("tab", { name: "Board" }).click();
+	await page.getByRole("tab", { name: "Work items" }).click();
 	await expect(page.locator("[data-jira-kanban-column]")).toHaveCount(4);
+});
+
+test("keyboard unlink keeps the focused session beneath its card across Board to List to Board", async ({ page }) => {
+	await openBoard(page);
+
+	const card = page.locator("article", {
+		has: page.getByText("PAY-123", { exact: true }),
+	});
+	const claudeSession = card.locator("[data-slot='jira-issue-agent-row-wrap']", {
+		has: page.getByRole("button", { name: "Open Claude Code in Rovo chat: Working" }),
+	});
+	await claudeSession.getByRole("button", { name: "Open Claude Code in Rovo chat: Working" }).focus();
+	await page.keyboard.press("Tab");
+	await expect(claudeSession.getByRole("button", { name: "Unlink", exact: true })).toBeFocused();
+	await page.keyboard.press("Enter");
+
+	const board = page.getByRole("region", {
+		name: "Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses.",
+	});
+	const detachedSession = board.getByTestId("agent-session-row-PAY-123:claude-code");
+	await expect(detachedSession).toContainText("Wiring recorded fixtures into the v2 client");
+	await expect(card.getByRole("button", {
+		name: "Open Claude Code in Rovo chat: Working",
+	})).toHaveCount(0);
+
+	const workItemTabs = page.getByRole("tablist", { name: "Work items view" });
+	await workItemTabs.getByRole("tab", { name: "List" }).click();
+	await expect(detachedSession).toHaveCount(0);
+	await workItemTabs.getByRole("tab", { name: "Board" }).click();
+	await expect(detachedSession).toBeVisible();
 });
 
 test("Insights controls and content are absent from v4", async ({ page }) => {
@@ -60,9 +91,11 @@ test("Insights controls and content are absent from v4", async ({ page }) => {
 
 test("PAY-101 no longer leaves the board for a Build phase", async ({ page }) => {
 	await openBoard(page);
-	await page.getByRole("button", {
-		name: /^Inventory every v1 call site across services and name an owner for each/u,
-	}).click();
+	const pay101 = page.getByRole("button", {
+		name: /^PAY-101: Inventory every v1 call site across services and name an owner for each/u,
+	});
+	await pay101.focus();
+	await page.keyboard.press("Enter");
 
 	await expect(page.locator("[data-jira-kanban-column]")).toHaveCount(4);
 	await expect(page.getByRole("region", {

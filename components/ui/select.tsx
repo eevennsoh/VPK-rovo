@@ -198,6 +198,14 @@ interface SelectItemProps extends SelectPrimitive.Item.Props {
 	showIndicator?: boolean
 }
 
+/**
+ * Select rows have always carried the check on the trailing edge. The gutter
+ * swap is shared with DropdownMenu's opt-in `indicatorPlacement="end"` via
+ * `dropdownStyles.selectableItemIndicatorEnd`. The indicator colour is kept as
+ * a local literal rather than reusing `dropdownStyles.indicatorEnd` so the two
+ * surfaces stay free to diverge; today they agree on the subtle token, and
+ * neither draws a filled selected surface.
+ */
 function SelectItem({
 	className,
 	textClassName,
@@ -210,9 +218,8 @@ function SelectItem({
 			data-slot="select-item"
 			className={cn(
 				dropdownStyles.selectableItem,
-				"pl-2",
-				showIndicator ? "pr-8" : null,
-				"data-selected:bg-bg-selected data-selected:data-highlighted:bg-bg-selected-hovered data-selected:active:bg-bg-selected-pressed",
+				showIndicator ? dropdownStyles.selectableItemIndicatorEnd : "pl-2",
+				"data-selected:text-text data-selected:data-highlighted:text-text",
 				className
 			)}
 			{...props}
@@ -220,13 +227,13 @@ function SelectItem({
 			{showIndicator ? (
 				<span
 					data-slot="select-item-indicator"
-					className="pointer-events-none absolute right-2 inline-flex size-6 items-center justify-center text-icon-selected [&_[data-slot=icon]]:text-icon-selected [&_svg]:text-icon-selected"
+					className="pointer-events-none absolute right-2 inline-flex size-6 items-center justify-center text-icon-subtle [&_[data-slot=icon]]:text-icon-subtle [&_svg]:text-icon-subtle!"
 				>
 					<SelectPrimitive.ItemIndicator>
 						<Icon
 							render={<CheckMarkIcon label="" size="small" />}
 							label="Selected"
-							className="text-text-selected"
+							className="text-icon-subtle"
 						/>
 					</SelectPrimitive.ItemIndicator>
 				</span>

@@ -9,7 +9,7 @@ import type { AgentSessionProps } from "@/components/blocks/agent-session";
  * on a column it reads as the column surface rather than the inner list.
  */
 export interface AgentSessionColumnProps extends Omit<AgentSessionProps, "className"> {
-	/** Additional classes applied to the sunken column surface. */
+	/** Additional classes applied to the column surface. */
 	className?: string;
 	/** Classes applied to the inner session list. */
 	listClassName?: string;
@@ -22,4 +22,11 @@ export interface AgentSessionColumnProps extends Omit<AgentSessionProps, "classN
 	count?: number;
 	/** Copy shown in place of the list when there are no sessions. */
 	emptyLabel?: string;
+	/**
+	 * Whether the column starts collapsed into its notch rail. The column owns
+	 * the state from there — the hover-revealed shrink/grow control toggles it.
+	 */
+	defaultCollapsed?: boolean;
+	/** Called after the viewer collapses or expands the column. */
+	onCollapsedChange?: (collapsed: boolean) => void;
 }

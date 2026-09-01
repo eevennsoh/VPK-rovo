@@ -2,14 +2,26 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_SESSION_DETAIL: ComponentDetail = {
 	description:
-		'Local coding sessions that never became work items, rendered as dashed uncaptured-work cards. Each card reuses the shared Agent List row — hexagon agent identity, a static timestamp, a devices glyph, and the viewer machine — inside a sunken body, and reveals the same hover/focus action pair Agent List rows use: Resume, plus a show/hide eye in the slot Agent List gives to Archive. Beneath it hangs the shared uncaptured-work chin, a second hit area of its own: a Link to <key> button plus trailing Create work item and Subtasks icons, grouped by a hover container. There is no hover flyout, so the row never puts a competing popup in the way. Ids listed in `capturedItemIds` swap the chin for a Captured state, and rows the host cannot resume hide the Resume control entirely rather than copying a command that would fail. Extracted from the Agent List block, which now owns only the list surface.',
+		'Agent sessions in four footprints and relationship states. Large is the default detached, dashed uncaptured-work card: it reuses the shared Agent List row with a static timestamp, devices icon, viewer machine, and Resume plus Hide or Show actions. Medium detached condenses that local session into the Jira Agents row, while Medium attached reuses the exact Jira Issue activity row for a session already connected to work. Small becomes the collapsed Agent Session Column notch. Detached footprints open the untracked-work Agent Session Flyout with Link, Create, and add-as-subtask actions; Medium attached opens session details because its Jira relationship already exists. Captured ids use a solid border, and rows the host cannot resume omit Resume.',
 	demoLayout: { previewHeight: "fit" },
 	examples: [
 		{
-			title: "Multiple work items",
+			title: "Medium detached",
 			description:
-				"A session that touches several work items offers one linkable chin row per candidate key. Every row carries its own Create work item and Subtasks icons, so each row is a complete choice.",
-			demoSlug: "agent-session-demo-multi-link",
+				"A compact 276px local-session row that is still detached from Jira work and opens the untracked-work flyout.",
+			demoSlug: "agent-session-demo-medium-detached",
+		},
+		{
+			title: "Medium attached",
+			description:
+				"The Jira Issue agent activity row for a session already attached to work, with its session-details flyout available on hover or focus.",
+			demoSlug: "agent-session-demo-medium-attached",
+		},
+		{
+			title: "Small",
+			description:
+				"The shared 12×2px session mark from the collapsed Agent Session Column rail, with the same session flyout available on hover or focus.",
+			demoSlug: "agent-session-demo-small",
 		},
 	],
 	importStatement: `import { AgentSession } from "@/components/blocks/agent-session";`,
@@ -21,47 +33,54 @@ export const AGENT_SESSION_DETAIL: ComponentDetail = {
 />`,
 	props: [
 		{
+			name: "variant",
+			type: '"large" | "medium-detached" | "medium-attached" | "small"',
+			default: '"large"',
+			description:
+				"Visual footprint and Jira relationship. Medium detached is uncaptured local work; Medium attached is the canonical Jira Issue activity row for work with an existing relationship.",
+		},
+		{
 			name: "items",
 			type: "readonly AgentSessionItem[]",
 			default: "built-in sample data",
 			description:
-				"Sessions to render. `AgentSessionItem` is the Agent List row model, so a surface that already builds those rows needs no conversion. `sessionDetails.issueKey` seeds the chin's suggested work item and `sessionDetails.worktreePath` the copied resume command; local rows (`host: \"local\"`) take `machineName` and `timeLabel` for the static stamp.",
+				"Sessions to render. `AgentSessionItem` is the Agent List row model, so a surface that already builds those rows needs no conversion. `sessionDetails.issueKey` seeds the untracked-work flyout suggestion and `sessionDetails.worktreePath` the copied resume command; local rows (`host: \"local\"`) take `machineName` and `timeLabel` for the static stamp.",
 		},
 		{
 			name: "capturedItemIds",
 			type: "ReadonlySet<string>",
 			description:
-				"Ids of sessions whose chin should read Captured instead of offering Link and Create.",
+				"Ids of sessions whose dashed uncaptured frame should become a solid captured border.",
 		},
 		{
 			name: "onLinkWorkItem",
 			type: "(item: AgentSessionItem, workItemKey?: string) => void",
 			description:
-				"Links a session to a suggested work item. Receives the row's key when several are offered.",
+				"Links a session to a suggested work item from the untracked-work flyout. Receives the flyout's offered key.",
 		},
 		{
 			name: "onCreateWorkItem",
 			type: "(item: AgentSessionItem) => void",
 			description:
-				"Creates a work item from a session via the chin's trailing add control. When omitted, the control is exposed as unavailable.",
+				"Creates a work item from a session via the untracked-work flyout. When omitted, the action is exposed as unavailable.",
 		},
 		{
 			name: "onSubtasks",
 			type: "(item: AgentSessionItem) => void",
 			description:
-				"Subtasks action behind the chin's trailing subtasks control. The button always renders; omit this to leave it a placeholder until the behaviour lands.",
+				"Add-as-subtask action behind the untracked-work flyout menu. Omit to expose the menu option as unavailable.",
 		},
 		{
 			name: "getSuggestedWorkItemKeys",
 			type: "(item: AgentSessionItem) => readonly string[] | undefined",
 			description:
-				"Several candidate keys for a session, rendered one linkable chin row each. Takes precedence over `getSuggestedWorkItemKey` for the rows it returns.",
+				"Several candidate keys for a session. The untracked-work flyout offers the first key, taking precedence over `getSuggestedWorkItemKey`.",
 		},
 		{
 			name: "getSuggestedWorkItemKey",
 			type: "(item: AgentSessionItem) => string | undefined",
 			description:
-				"Suggested Jira key for the chin primary action. Defaults to `sessionDetails.issueKey`.",
+				"Suggested Jira key for the untracked-work flyout. Defaults to `sessionDetails.issueKey`.",
 		},
 		{
 			name: "getResumeCommand",
@@ -86,7 +105,14 @@ export const AGENT_SESSION_DETAIL: ComponentDetail = {
 			name: "onToggleVisibility",
 			type: "(item: AgentSessionItem) => void",
 			description:
-				"Show/hide-later toggle behind the hover eye control. The button always renders; omit this to leave it a placeholder until the behaviour lands.",
+				"Hide / Show toggle behind the hover eye control. The button always renders; omit this on a bare list to leave the eye a no-op. Agent Session Column supplies it so Hide removes the card and Show restores it.",
+		},
+		{
+			name: "visibilityLabel",
+			type: "string",
+			default: '"Hide"',
+			description:
+				"Tooltip and accessible name for the hover eye. The column passes Show when the list is the hidden-work view.",
 		},
 		{
 			name: "onView",

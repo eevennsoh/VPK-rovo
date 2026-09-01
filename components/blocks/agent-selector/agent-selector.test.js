@@ -220,7 +220,7 @@ test("AgentSelector hides command checkmarks for single-select usage by default"
 	assert.match(COMPONENT_SOURCE, /selectionMode = "multiple"/u);
 	assert.match(COMPONENT_SOURCE, /const supportsMultipleSelection = selectionMode === "multiple";/u);
 	// CommandItem's built-in check lane is multiple-select only. Single-select uses
-	// a separate custom blue tile (below); in-progress rows never show a tick.
+	// a separate custom subtle tile (below); in-progress rows never show a tick.
 	assert.match(COMPONENT_SOURCE, /const showCheckIcon = supportsMultipleSelection && !isInProgress && !isSubmenuTrigger;/u);
 	assert.match(COMPONENT_SOURCE, /showCheckIcon=\{showCheckIcon\}/u);
 	assert.match(COMPONENT_SOURCE, /data-checked=\{showCheckIcon && isChecked \? true : undefined\}/u);
@@ -269,7 +269,7 @@ test("AgentSelector single-select tick uses the VPK check in a transparent icon 
 		COMPONENT_SOURCE,
 		/const showSingleSelectTick =\s*!isInProgress\s*&& !isSubmenuTrigger\s*&& !supportsMultipleSelection\s*&& showSelectedTickInSingleSelect\s*&& isChecked;/u,
 	);
-	// Rendered as the VPK CheckIcon in selected color, inside a 24px transparent
+	// Rendered as the VPK CheckIcon in subtle color, inside a 24px transparent
 	// IconTile (small = size-6). `iconSize="small"` is required: transparent tiles
 	// default their glyph to the medium (16px) icon size, so without it the check
 	// renders oversized instead of the intended small (12px) tick.
@@ -277,8 +277,11 @@ test("AgentSelector single-select tick uses the VPK check in a transparent icon 
 	assert.match(COMPONENT_SOURCE, /import \{[^}]*\bCheckIcon\b[^}]*\} from "@\/components\/ui\/vpk-icons";/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/<IconTile[\s\S]*className="ml-1 mr-1 text-icon-selected"[\s\S]*icon=\{<CheckIcon size="small" \/>\}[\s\S]*iconSize="small"[\s\S]*size="small"[\s\S]*variant="transparent"[\s\S]*\/>/u,
+		/<IconTile[\s\S]*className="ml-1 mr-1 text-icon-subtle"[\s\S]*icon=\{<CheckIcon size="small" \/>\}[\s\S]*iconSize="small"[\s\S]*size="small"[\s\S]*variant="transparent"[\s\S]*\/>/u,
 	);
+	assert.doesNotMatch(COMPONENT_SOURCE, /showSingleSelectTick && "[^"]*bg-bg-selected/u);
+	assert.match(COMPONENT_SOURCE, /const AGENT_LABEL_CLASS = "menu-row-title text-left";/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /showSingleSelectTick && "[^"]*text-text-selected/u);
 	// The default and selected-agent-actions demo variants turn it on; jira does
 	// not. Jira / Assign agent never treat selection as a filled pin.
 	assert.match(

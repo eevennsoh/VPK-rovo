@@ -424,7 +424,7 @@ test("Pulse rail hangs everything off one left edge and one right edge", () => {
 	assert.match(SOURCES.rail, /githubWork = looseWork\.filter\(isPulseGithubLooseWork\);/u);
 	assert.match(
 		SOURCES.rail,
-		/const sessionItems = toPulseSessionItems\(\s*looseWork,\s*members,\s*\);/u,
+		/const sessionItems = toPulseSessionItems\(\s*looseWork,\s*members,\s*workItems,\s*\);/u,
 	);
 	assert.match(
 		SOURCES.rail,
@@ -443,8 +443,12 @@ test("Pulse rail hangs everything off one left edge and one right edge", () => {
 	assert.doesNotMatch(SOURCES.rail, /name: "claude"/u);
 	assert.doesNotMatch(SOURCES.rail, /Slack: \{ kind: "third-party", name: "slack" \}/u);
 	assert.doesNotMatch(SOURCES.rail, /Loom: \{ kind: "atlassian", name: "loom" \}/u);
-	assert.match(SOURCES.data, /export \{ PULSE_SPACE_REPOSITORY \} from "\.\/pulse-loose-work"/u);
+	assert.match(SOURCES.data, /export \{ PULSE_SPACE_REPOSITORY, PULSE_VIEWER_MACHINE_NAME \} from "\.\/pulse-loose-work"/u);
 	assert.match(SOURCES.looseWork, /export const PULSE_SPACE_REPOSITORY = "eevensoh\/vpk-rovo"/u);
+	// Resume is gated on the viewer's own device, so the fixture names it once
+	// and the machine name on a row is the only thing that grants the action.
+	assert.match(SOURCES.looseWork, /export const PULSE_VIEWER_MACHINE_NAME = "Venn’s MacBook"/u);
+	assert.match(SOURCES.looseWork, /machineName: PULSE_VIEWER_MACHINE_NAME/u);
 	assert.match(SOURCES.looseWork, /kind: "pull-request"/u);
 	assert.match(SOURCES.looseWork, /kind: "agent-session"/u);
 	assert.match(SOURCES.looseWork, /kind: "commit"/u);
@@ -606,24 +610,6 @@ test("Experimental board header keeps Filter clickable and badges new timeline a
 		readFileSync(join(EXPERIMENTAL_DIR, "components", "board-filter-popover.tsx"), "utf8"),
 		/Filter board is unavailable/u,
 	);
-});
-
-test("Experimental board header opens the production Group picker without regrouping", () => {
-	const groupMenu = readFileSync(join(EXPERIMENTAL_DIR, "components", "board-group-menu.tsx"), "utf8");
-	const groupOptions = readFileSync(join(EXPERIMENTAL_DIR, "data", "board-group-options.ts"), "utf8");
-	assert.match(EXPERIMENTAL_HEADER_SOURCE, /<BoardGroupMenu compact=\{compact\} surfaceLabel=\{surfaceLabel\} \/>/u);
-	assert.doesNotMatch(
-		EXPERIMENTAL_HEADER_SOURCE,
-		/aria-disabled[\s\S]*Group \$\{surfaceLabel\}/u,
-	);
-	assert.match(groupMenu, /aria-label=\{`Group \$\{surfaceLabel\}`\}/u);
-	assert.doesNotMatch(groupMenu, /aria-disabled/u);
-	assert.match(
-		groupOptions,
-		/"Agent"[\s\S]*"Assignee"[\s\S]*"Atlassian Project"[\s\S]*"Epic"[\s\S]*"Labels"[\s\S]*"Priority"[\s\S]*"Subtask"/u,
-	);
-	assert.match(groupMenu, /onSelect=\{\(\) => undefined\}/u);
-	assert.doesNotMatch(withoutComments(groupMenu), /setSelected|selectedId/u);
 });
 
 test("Kanban column add-agent controls use the AI agent add icon", () => {

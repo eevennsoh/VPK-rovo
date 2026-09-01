@@ -8,7 +8,6 @@
 
 import { useCallback, useEffect, useState } from "react"
 import {
-  CheckIcon as Check,
   ChevronsUpDownIcon as ChevronsUpDown,
   MicIcon as Mic,
   MicOffIcon as MicOff,
@@ -141,11 +140,9 @@ export function MicSelector({
               onClick={(e) => handleDeviceSelect(device.deviceId, e)}
               onSelect={(e) => e.preventDefault()}
               className="flex items-center justify-between"
+              selected={selectedDevice === device.deviceId}
             >
               <span className="truncate">{device.label}</span>
-              {selectedDevice === device.deviceId && (
-                <Check className="h-4 w-4 flex-shrink-0" />
-              )}
             </DropdownMenuItem>
           ))
         )}

@@ -42,6 +42,20 @@ test("buildScrollMaskStyle resolves numeric fade and scrollbar values to pixels"
 	assert.equal(style.maskSize, "calc(100% - 12px) 100%, 12px 100%");
 });
 
+test("buildScrollMaskStyle can fade the full width without reserving a scrollbar track", () => {
+	const style = buildScrollMaskStyle({ fadeSize: 48, scrollbarWidth: 0 });
+
+	assert.equal(style["--scroll-mask-scrollbar-width"], "0px");
+	assert.equal(
+		style.maskImage,
+		"linear-gradient(to bottom, transparent 0, black var(--scroll-mask-fade-size), black calc(100% - var(--scroll-mask-fade-size)), transparent 100%)",
+	);
+	assert.equal(style.WebkitMaskImage, style.maskImage);
+	assert.equal(style.maskPosition, "0 0");
+	assert.equal(style.maskRepeat, "no-repeat");
+	assert.equal(style.maskSize, "100% 100%");
+});
+
 test("buildHorizontalScrollMaskStyle can fade before an opaque trailing gutter", () => {
 	const style = buildHorizontalScrollMaskStyle({ edge: "end", endGutterWidth: 24, fadeSize: 20 });
 
@@ -187,10 +201,25 @@ test("buildScrollMaskOverlayStyle fades visually without clipping hit-testing", 
 	);
 });
 
+test("buildScrollMaskOverlayStyle can fade into a parent backdrop other than surface", () => {
+	const color = "var(--color-bg-accent-gray-subtlest)";
+	const top = buildScrollMaskOverlayStyle({ color, edge: "top", fadeSize: "3rem" });
+	assert.equal(
+		top.backgroundImage,
+		"linear-gradient(to bottom, var(--color-bg-accent-gray-subtlest) 0, transparent 100%)",
+	);
+	const bottom = buildScrollMaskOverlayStyle({ color, edge: "bottom" });
+	assert.equal(
+		bottom.backgroundImage,
+		"linear-gradient(to top, var(--color-bg-accent-gray-subtlest) 0, transparent 100%)",
+	);
+});
+
 test("ScrollMaskEdgeOverlay is a pointer-events-none band gated by the caller", () => {
 	assert.match(SCROLL_MASK_SOURCE, /export function ScrollMaskEdgeOverlay/u);
 	assert.match(SCROLL_MASK_SOURCE, /data-scroll-mask-overlay=\{edge\}/u);
 	assert.match(SCROLL_MASK_SOURCE, /pointer-events-none absolute inset-x-0/u);
+	assert.match(SCROLL_MASK_SOURCE, /buildScrollMaskOverlayStyle\(\{ color, edge, fadeSize \}\)/u);
 });
 
 test("Scroll Mask is wired into the Visual catalog route and demo registry", () => {

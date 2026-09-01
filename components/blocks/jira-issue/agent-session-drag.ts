@@ -14,6 +14,8 @@ import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue/agen
  * transfer region so it can reveal drop zones and hit-test the pointer.
  * `pointer` is in client coordinates and is `null` once the drag ends.
  */
+export type JiraIssueAgentSessionDragSource = "chin" | "detached";
+
 export interface JiraIssueAgentSessionDragState {
 	activities: readonly JiraIssueAgentActivity[];
 	/**
@@ -25,17 +27,27 @@ export interface JiraIssueAgentSessionDragState {
 	cancelled: boolean;
 	dragging: boolean;
 	pointer: PointerDragPosition | null;
+	/**
+	 * `chin` is a session leaving the work item; `detached` is a session coming
+	 * back. The transfer well commits unlink vs link from this, not from which
+	 * zone the pointer hit.
+	 */
+	source: JiraIssueAgentSessionDragSource;
 }
 
 /**
  * Opt-in binding that turns each chin row into a draggable session handle.
- * Supplying it is what mounts the gooey wrapper and the pointer-drag bind;
+ * Supplying it is what mounts the drag wrapper and the pointer-drag bind;
  * without it the rows render exactly as before.
  */
 export interface JiraIssueAgentSessionDragBinding {
 	/** Clamp for the row translate, in px relative to its resting position. */
 	bounds?: PointerDragBounds;
 	onDragStateChange: (state: JiraIssueAgentSessionDragState) => void;
+	/** Retains the row keyboard focus came from while focus moves to the drop zone. */
+	onFocusedActivitiesChange: (activities: readonly JiraIssueAgentActivity[]) => void;
+	/** Immediate unlink from the chin link-broken — same commit as a well drop. */
+	onUnlink?: (session?: { id: string; name: string }) => void;
 }
 
 export const JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE: JiraIssueAgentSessionDragState = {
@@ -43,4 +55,36 @@ export const JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE: JiraIssueAgentSessionDragState 
 	cancelled: false,
 	dragging: false,
 	pointer: null,
+	source: "chin",
 };
+
+/**
+ * Pins a travelling mention chip to the viewport so a collapsing row or a
+ * growing attach chin cannot shove it off the pointer.
+ */
+export function sessionDragChipViewportStyle(enabled: boolean): {
+	left: 0;
+	position: "fixed";
+	top: 0;
+} | undefined {
+	if (!enabled) {
+		return undefined;
+	}
+
+	return { left: 0, position: "fixed", top: 0 };
+}
+
+/**
+ * `position: fixed` is viewport-relative unless an ancestor creates a
+ * containing block. Subtract that origin so the chip still sits on the
+ * pointer inside a transformed card or preview frame.
+ */
+export function measureSessionDragChipPointer(
+	pointer: PointerDragPosition,
+	containingBlock: Pick<DOMRect, "left" | "top">,
+): PointerDragPosition {
+	return {
+		x: pointer.x - containingBlock.left,
+		y: pointer.y - containingBlock.top,
+	};
+}

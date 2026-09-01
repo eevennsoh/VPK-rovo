@@ -13,3 +13,10 @@ export const BOARD_GROUP_OPTIONS = [
 ] as const;
 
 export type BoardGroupOptionId = (typeof BOARD_GROUP_OPTIONS)[number]["id"];
+
+/**
+ * Empty on purpose: the View menu opens with no grouping selected. The radio
+ * group still accepts a later pick; nothing matches this value, so no row
+ * starts checked.
+ */
+export const BOARD_GROUP_DEFAULT_ID = "" as const;

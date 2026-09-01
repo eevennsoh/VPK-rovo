@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 import BoardIcon from "@atlaskit/icon/core/board";
-import CustomizeIcon from "@atlaskit/icon/core/customize";
 import PersonAddIcon from "@atlaskit/icon/core/person-add";
 import SearchIcon from "@atlaskit/icon/core/search";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
@@ -23,7 +22,8 @@ import { JiraProjectAvatar } from "@/components/blocks/product-sidebar/variants/
 import { JIRA_DESIGN_PROJECT } from "@/components/blocks/product-sidebar/data/jira-navigation";
 import { cn } from "@/lib/utils";
 import type { JiraKanbanAssigneeData } from "../index";
-import { BoardGroupMenu } from "./components/board-group-menu";
+import { BoardViewMenu } from "./components/board-view-menu";
+import type { BoardAgentSessionStateId } from "./data/board-view-options";
 import {
 	JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME,
 	JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS,
@@ -58,10 +58,14 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	/** Mode control, rendered inline with Filter and Group. */
 	modeToggle?: ReactNode;
 	/**
-	 * Trailing cluster end slot — after the more/ellipsis control.
+	 * Trailing cluster end slot — after the board/list view switcher.
 	 */
 	endSlot?: ReactNode;
 	surfaceLabel?: string;
+	shownSessionStateIds?: ReadonlySet<BoardAgentSessionStateId>;
+	onShownSessionStateIdsChange?: (shownSessionStateIds: Set<BoardAgentSessionStateId>) => void;
+	showUntracked?: boolean;
+	onShowUntrackedChange?: (showUntracked: boolean) => void;
 	viewTabs?: ReactNode;
 }
 
@@ -108,6 +112,10 @@ export function ExperimentalJiraKanbanBoardHeader({
 	modeToggle,
 	endSlot,
 	surfaceLabel = "board",
+	shownSessionStateIds,
+	onShownSessionStateIdsChange,
+	showUntracked,
+	onShowUntrackedChange,
 	viewTabs,
 }: Readonly<ExperimentalJiraKanbanBoardHeaderProps>) {
 	const hasSelection = selectedAssigneeIds.size > 0;
@@ -181,9 +189,19 @@ export function ExperimentalJiraKanbanBoardHeader({
 
 					{filterControl}
 
-					<BoardGroupMenu compact={compact} surfaceLabel={surfaceLabel} />
+					<BoardViewMenu
+						compact={compact}
+						onShownSessionStateIdsChange={onShownSessionStateIdsChange}
+						onShowUntrackedChange={onShowUntrackedChange}
+						shownSessionStateIds={shownSessionStateIds}
+						showUntracked={showUntracked}
+						surfaceLabel={surfaceLabel}
+					/>
 
 					{modeToggle}
+					<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
+						<Icon render={<ShowMoreHorizontalIcon label="" />} />
+					</Button>
 
 					<div className={cn("flex items-center gap-1", compact ? undefined : "ml-auto")}>
 						{onViewChange ? (
@@ -207,20 +225,6 @@ export function ExperimentalJiraKanbanBoardHeader({
 								</TabsList>
 							</Tabs>
 						) : null}
-						{compact ? (
-							<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
-								<Icon render={<ShowMoreHorizontalIcon label="" />} />
-							</Button>
-						) : (
-							<>
-								<Button aria-disabled aria-label={`${surfaceTitle} settings`} size="icon" variant="outline">
-									<Icon render={<CustomizeIcon label="" />} />
-								</Button>
-								<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
-									<Icon render={<ShowMoreHorizontalIcon label="" />} />
-								</Button>
-							</>
-						)}
 						{endSlot ? endSlot : null}
 					</div>
 				</div>

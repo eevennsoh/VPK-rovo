@@ -1,16 +1,28 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
+import { motion, useReducedMotion } from "motion/react";
 
 import EyeOpenIcon from "@atlaskit/icon/core/eye-open";
+import EyeOpenStrikethroughIcon from "@atlaskit/icon/core/eye-open-strikethrough";
 
 import {
 	AgentListRow,
 	type AgentListRowHoverActions,
 } from "@/components/blocks/agent-list/agent-list-card";
 import { toAgentListResumeCommand } from "@/components/blocks/agent-list/agent-list-session";
-import { UncapturedWorkChin } from "@/components/blocks/jira-issue/uncaptured-work-chin";
+import type { JiraSidebarSessionItem } from "@/components/blocks/product-sidebar/variants/jira";
+import {
+	JiraSessionFlyoutTrigger,
+	type JiraSessionFlyoutHandle,
+} from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
+import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
 
+import {
+	AGENT_SESSION_ARRIVAL_OFFSET_PX,
+	AGENT_SESSION_ARRIVAL_TRANSITION,
+} from "./agent-session-arrival-motion";
 import type { AgentSessionItem } from "./agent-session-types";
 
 /** How long Resume reads "Copied" after it writes the command to the clipboard. */
@@ -29,52 +41,97 @@ async function copyResumeCommand(command: string): Promise<void> {
 }
 
 export function AgentSessionCard({
+	arrivalDelaySeconds,
 	captured = false,
+	flyoutHandle,
+	flyoutSession,
 	getResumeCommand,
+	isArriving = false,
+	isNew = false,
 	isResumable,
+	isSelected = false,
 	item,
 	onCopyResume,
-	onCreateWorkItem,
-	onLinkWorkItem,
-	onSubtasks,
+	onItemHover,
 	onToggleVisibility,
 	onView,
-	suggestedWorkItemKey,
-	suggestedWorkItemKeys,
+	visibilityLabel = "Hide",
 }: Readonly<{
+	arrivalDelaySeconds?: number;
 	captured?: boolean;
+	flyoutHandle: JiraSessionFlyoutHandle;
+	flyoutSession: JiraSidebarSessionItem;
 	getResumeCommand?: (item: AgentSessionItem) => string | undefined;
+	/** Play the one-shot arrival beat. A remounted card must not re-arm it. */
+	isArriving?: boolean;
+	/** Carry the persistent unreviewed mark. Outlives the beat. */
+	isNew?: boolean;
 	isResumable?: (item: AgentSessionItem) => boolean;
+	/** Single-select highlight owned by the list, not this card. */
+	isSelected?: boolean;
 	item: AgentSessionItem;
 	onCopyResume?: (item: AgentSessionItem) => void;
-	onCreateWorkItem?: () => void;
-	onLinkWorkItem?: (workItemKey?: string) => void;
-	onSubtasks?: () => void;
+	onItemHover?: (item: AgentSessionItem | null) => void;
 	onToggleVisibility?: (item: AgentSessionItem) => void;
 	onView?: (item: AgentSessionItem) => void;
-	suggestedWorkItemKey?: string;
-	suggestedWorkItemKeys?: readonly string[];
+	/** Tooltip and accessible name for the hover eye. Hide in the active list, Show in Hidden work. */
+	visibilityLabel?: string;
 }>) {
+	const shouldReduceMotion = useReducedMotion();
 	const [copiedResume, setCopiedResume] = useState(false);
 	const copiedResetRef = useRef<number | undefined>(undefined);
+	const onItemHoverRef = useRef(onItemHover);
+
+	useEffect(() => {
+		onItemHoverRef.current = onItemHover;
+	}, [onItemHover]);
 
 	useEffect(() => () => {
 		window.clearTimeout(copiedResetRef.current);
+		// Hide / filter can unmount the hovered row before pointerleave fires.
+		onItemHoverRef.current?.(null);
 	}, []);
 
-	const hasWorkItemActions = onCreateWorkItem !== undefined || onLinkWorkItem !== undefined;
 	const resumeCommand = getResumeCommand?.(item) ?? toAgentListResumeCommand(item);
 	// Resume is an affordance, not just a callback: a row the host cannot resume
 	// must not render an enabled control, because the button copies the command to
 	// the clipboard before `onCopyResume` ever runs.
 	const canResume = (isResumable?.(item) ?? true) && resumeCommand.length > 0;
-	// Subtasks counts too: a consumer that wires only that handler still needs
-	// the chin, or its control would be unreachable.
-	const showChin = captured || hasWorkItemActions || onSubtasks !== undefined;
+	// The beat, not the mark: a card remounted while still unreviewed keeps the
+	// discovery border and dot but must not replay its entrance.
+	const shouldPlayArrival = isArriving && !shouldReduceMotion;
 
-	// The same hover/focus-revealed pair Agent List rows use, with show/hide in
-	// the slot Agent List gives to Archive. The eye is a placeholder today: the
-	// deferral behaviour lands with `onToggleVisibility`.
+	// The same hover/focus-revealed pair Agent List rows use, with Hide / Show
+	// in the slot Agent List gives to Archive. The eye always renders; the
+	// column supplies `onToggleVisibility` so Hide actually removes the card.
+	// The article is the hit area. RowBody would otherwise wrap only the title
+	// column, leaving avatar and padding inert. Hover actions stay buttons so
+	// they can stop the article from toggling.
+	const activateCard = onView === undefined
+		? undefined
+		: () => {
+			onView(item);
+		};
+	const handleArticleClick = activateCard === undefined
+		? undefined
+		: (event: MouseEvent<HTMLElement>) => {
+			if (event.target instanceof Element && event.target.closest("button") !== null) {
+				return;
+			}
+			activateCard();
+		};
+	const handleArticleKeyDown = activateCard === undefined
+		? undefined
+		: (event: KeyboardEvent<HTMLElement>) => {
+			if (event.target !== event.currentTarget) {
+				return;
+			}
+			if (event.key === "Enter" || event.key === " ") {
+				event.preventDefault();
+				activateCard();
+			}
+		};
+
 	const hoverActions: AgentListRowHoverActions = {
 		primary: canResume
 			? {
@@ -92,50 +149,104 @@ export function AgentSessionCard({
 			}
 			: undefined,
 		secondary: {
-			icon: <EyeOpenIcon label="" size="small" />,
-			label: "Show/hide",
+			// Hide (active list) is a strikethrough eye; Show (hidden view) is open.
+			icon: (
+				<Icon
+					render={visibilityLabel === "Show"
+						? <EyeOpenIcon label="" size="small" />
+						: <EyeOpenStrikethroughIcon label="" size="small" />}
+				/>
+			),
+			label: visibilityLabel,
 			onClick: () => {
+				onItemHover?.(null);
 				onToggleVisibility?.(item);
 			},
 		},
 	};
 
+	// Arrival layout lives on the list item, not the flyout trigger. Base UI
+	// closes a preview card when its active trigger unmounts, and Motion's layout
+	// projection can replace that host — which made each row open its own flyout
+	// instead of sliding the list's shared popup. The catalog demo uses a stable
+	// `div` as the trigger host so hovering down the list crossfades in place.
 	return (
-		<li data-testid={"agent-session-row-" + item.id}>
-			<article
-				className="group/uncaptured-work flex w-full flex-col overflow-hidden rounded-lg border border-dashed border-border-disabled bg-surface text-left"
-				data-captured={captured || undefined}
-				data-variant="uncaptured-work"
+		<motion.li
+			animate={shouldPlayArrival ? { opacity: 1, y: 0 } : undefined}
+			data-testid={"agent-session-row-" + item.id}
+			onPointerEnter={() => onItemHover?.(item)}
+			onPointerLeave={() => onItemHover?.(null)}
+			// `false` for a settled card, so nothing replays when the list re-renders
+			// or the watermark clears the mark. Only an arrival animates.
+			initial={shouldPlayArrival ? { opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX } : false}
+			// Siblings slide down to make room instead of jumping. `"position"` so a
+			// displaced card is never scaled, only moved.
+			layout={shouldReduceMotion ? false : "position"}
+			style={{ willChange: shouldPlayArrival ? "opacity, transform" : undefined }}
+			transition={{ ...AGENT_SESSION_ARRIVAL_TRANSITION, delay: arrivalDelaySeconds ?? 0 }}
+		>
+			<JiraSessionFlyoutTrigger
+				closeDelay={160}
+				handle={flyoutHandle}
+				render={<div className="w-full" />}
+				session={flyoutSession}
 			>
-				{/*
-				 * The card is two hit areas, not one. `group/agent-row` scopes the
-				 * hover reveal to this sunken top region so pointing at the chin —
-				 * which owns its own always-visible controls — does not pop Resume
-				 * open above it.
-				 */}
-				<div className="group/agent-row bg-surface-sunken p-3">
+				<article
+					aria-current={isSelected ? "true" : undefined}
+					aria-pressed={activateCard === undefined ? undefined : isSelected}
+					className={cn(
+						"group/agent-row relative flex w-full cursor-pointer rounded-none p-3 text-left text-text",
+						// Stacked list is one solid well: first card owns the top radius,
+						// last owns the bottom, shared edges collapse to a single stroke.
+						"border border-solid [li:not(:last-child)_&]:border-b-0",
+						"[li:first-child_&]:rounded-t-lg",
+						"[li:last-child_&]:rounded-b-lg",
+						"transition-[border-color,background-color] duration-xxshort ease-out-practical",
+						"motion-reduce:transition-none",
+						// Arrival recolours the same solid frame rather than replacing it.
+						// Resting untracked chrome is `border-border-disabled`; a newly
+						// synced card uses discovery until it is reviewed.
+						!captured && isNew ? "border-border-discovery" : "border-border-disabled",
+						// Selected keeps the same blue-subtlest token as a spotlighted
+						// board card. No mapped hovered sibling exists, so hover stays blue.
+						isSelected
+							? "bg-bg-accent-blue-subtlest"
+							: "bg-transparent hover:bg-surface-hovered",
+						activateCard === undefined
+							? null
+							: "outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+					)}
+					data-captured={captured || undefined}
+					data-new={isNew || undefined}
+					data-selected={isSelected || undefined}
+					data-variant="uncaptured-work"
+					onClick={handleArticleClick}
+					onKeyDown={handleArticleKeyDown}
+					role={activateCard === undefined ? undefined : "button"}
+					tabIndex={activateCard === undefined ? undefined : 0}
+				>
+					{isNew ? (
+						<>
+							{/* Colour never carries it alone. */}
+							<span className="sr-only">Newly synced, not yet reviewed</span>
+							{/* Parked in the body's 12px padding, so it clears the
+							    avatar on the left and the hover actions on the right. */}
+							<span
+								aria-hidden="true"
+								className="absolute left-1.5 top-1.5 size-1.5 rounded-full bg-icon-discovery"
+							/>
+						</>
+					) : null}
 					<AgentListRow
 						hoverActions={hoverActions}
 						isCompact={false}
-						isSelected={false}
+						isSelected={isSelected}
 						item={item}
-						onView={onView}
+						onView={undefined}
+						showHoverActionsWhenSelected
 					/>
-				</div>
-				{showChin ? (
-					<UncapturedWorkChin
-						captured={captured}
-						createUnavailable={onCreateWorkItem === undefined}
-						linkUnavailable={onLinkWorkItem === undefined}
-						onCreateWorkItem={onCreateWorkItem}
-						onLinkWorkItem={onLinkWorkItem}
-						onSubtasks={onSubtasks}
-						suggestedWorkItemKey={suggestedWorkItemKey}
-						suggestedWorkItemKeys={suggestedWorkItemKeys}
-						summary={item.title}
-					/>
-				) : null}
-			</article>
-		</li>
+				</article>
+			</JiraSessionFlyoutTrigger>
+		</motion.li>
 	);
 }

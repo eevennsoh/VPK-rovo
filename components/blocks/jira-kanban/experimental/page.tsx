@@ -10,7 +10,8 @@ import {
 } from "react";
 
 import { useOptionalRovoChat } from "@/app/contexts";
-import type { JiraIssueAgentActivityLayout } from "@/components/blocks/jira-issue";
+import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import type { JiraIssueAgentActivityLayout, JiraIssueGenerativeActionPresentation } from "@/components/blocks/jira-issue";
 import type {
 	JiraKanbanAgentData,
 	JiraKanbanAssigneeData,
@@ -21,7 +22,21 @@ import type {
 } from "../index";
 import { createJiraKanbanColumns } from "../jira-kanban-data";
 import { BoardFilterPopover } from "./components/board-filter-popover";
-import { ExperimentalJiraKanban } from "./experimental-jira-kanban";
+import {
+	ALL_BOARD_AGENT_SESSION_STATE_IDS,
+	type BoardAgentSessionStateId,
+} from "./data/board-view-options";
+import {
+	ExperimentalJiraKanban,
+	type ExperimentalJiraKanbanProps,
+} from "./experimental-jira-kanban";
+import { EMPTY_COLLAPSED_BOARD_COLUMNS } from "./lib/board-column-collapse";
+import { filterJiraKanbanColumnsByAgentSessionState } from "./lib/board-agent-session-visibility";
+import {
+	collectBoardIssueKeys,
+	groupBoardUntrackedSessions,
+	selectBoardUntrackedSessions,
+} from "./lib/board-untracked-sessions";
 import {
 	ExperimentalJiraKanbanBoardHeader,
 	type ExperimentalJiraKanbanView,
@@ -60,6 +75,7 @@ import {
 import { scopeTimelineToWorkItemKeys } from "./pulse/hooks/use-pulse-timeline";
 import {
 	filterPulseLooseWorkByMember,
+	isPulseLooseWorkOnViewerMachine,
 	toPulseSessionHandlers,
 	toPulseSessionItems,
 } from "./pulse/lib/pulse-sessions";
@@ -78,6 +94,7 @@ import { BOARD_COLUMNS } from "@/components/projects/jira/data/board-data";
 
 const DEFAULT_CREATED_COLUMN_AGENT_ID = "readiness-checker";
 const PULSE_MEMBER_IDS = new Set(PULSE_TIMELINE.members.map((member) => member.id));
+const EMPTY_PROXIMITY_SESSIONS: Readonly<Record<string, readonly AgentSessionItem[]>> = {};
 
 /** Stable identity, so an unscoped article does not re-render on every tick. */
 const EMPTY_ANSWERS: readonly PulseAnswer[] = [];
@@ -112,6 +129,8 @@ export interface ExperimentalJiraKanbanPageProps {
 	activeView?: ExperimentalJiraKanbanView;
 	activeCardCode?: string;
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
+	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;
+	detachedAgentSessionsByCard?: ExperimentalJiraKanbanProps["detachedAgentSessionsByCard"];
 	agentSessionAssigneeIdAliases?: Readonly<Record<string, string>>;
 	agents?: readonly JiraKanbanAgentData[];
 	ariaLabel?: string;
@@ -126,6 +145,9 @@ export interface ExperimentalJiraKanbanPageProps {
 	onBoardColumnsChange?: (columns: readonly JiraKanbanColumnData[]) => void;
 	onCardClick?: (card: JiraKanbanCardData, columnTitle: string) => void;
 	onCardAgentActivityViewChat?: JiraKanbanProps["onCardAgentActivityViewChat"];
+	onCardAgentDoneRunView?: JiraKanbanProps["onCardAgentDoneRunView"];
+	onCardAgentSessionLink?: ExperimentalJiraKanbanProps["onCardAgentSessionLink"];
+	onCardAgentSessionUnlink?: ExperimentalJiraKanbanProps["onCardAgentSessionUnlink"];
 	onInsightsWorkItemClick?: (workItem: PulseWorkItem) => void;
 	onModeChange?: (mode: ExperimentalJiraKanbanMode) => void;
 	onResumeLooseWork?: (item: PulseLooseWork) => void;
@@ -154,6 +176,8 @@ export default function ExperimentalJiraKanbanPage({
 	activeView = "board",
 	activeCardCode,
 	agentActivityLayout,
+	cardGenerativeActionPresentation,
+	detachedAgentSessionsByCard,
 	agentSessionAssigneeIdAliases,
 	agents = BOARD_AGENTS,
 	ariaLabel = "Experimental RFP board columns. Scroll horizontally to review all statuses.",
@@ -163,11 +187,14 @@ export default function ExperimentalJiraKanbanPage({
 	insightsEnabled = true,
 	insightsDefaultAssigneeIds,
 	isInsightsWorkItemInteractive,
-	isLooseWorkResumable,
+	isLooseWorkResumable = isPulseLooseWorkOnViewerMachine,
 	mode: controlledMode,
 	onBoardColumnsChange,
 	onCardClick,
 	onCardAgentActivityViewChat,
+	onCardAgentDoneRunView,
+	onCardAgentSessionLink,
+	onCardAgentSessionUnlink,
 	onInsightsWorkItemClick,
 	onModeChange,
 	onResumeLooseWork,
@@ -215,6 +242,14 @@ export default function ExperimentalJiraKanbanPage({
 	// decided, not view state that may quietly reset with the subtree.
 	const [requestedActionIds, setRequestedActionIds] = useState<ReadonlySet<string>>(() => new Set<string>());
 	const [capturedLooseWorkIds, setCapturedLooseWorkIds] = useState<ReadonlySet<string>>(() => new Set<string>());
+	// Owned here rather than inside the board: switching to the list or Pulse
+	// view unmounts `ExperimentalJiraKanban`, and a viewer's collapse choices are
+	// a deliberate setting that must outlive a temporary view switch.
+	const [collapsedColumns, setCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
+	const [showUntracked, setShowUntracked] = useState(true);
+	const [shownSessionStateIds, setShownSessionStateIds] = useState(
+		() => new Set<BoardAgentSessionStateId>(ALL_BOARD_AGENT_SESSION_STATE_IDS),
+	);
 	const handleRequestAction = useCallback((action: { id: string }) => {
 		setRequestedActionIds((current) => new Set(current).add(action.id));
 	}, []);
@@ -337,8 +372,11 @@ export default function ExperimentalJiraKanbanPage({
 		agentSessionAssigneeIdAliases,
 	);
 	const filteredBoardColumns = useMemo(
-		() => filterJiraKanbanColumnsByAssignee(boardColumns, selectedAssigneeIds),
-		[boardColumns, selectedAssigneeIds],
+		() => filterJiraKanbanColumnsByAgentSessionState(
+			filterJiraKanbanColumnsByAssignee(boardColumns, selectedAssigneeIds),
+			shownSessionStateIds,
+		),
+		[boardColumns, selectedAssigneeIds, shownSessionStateIds],
 	);
 	// Days first, then scope. Both narrow the same timeline and both come from
 	// the same control, so they compose rather than competing: a sprint scope
@@ -362,8 +400,17 @@ export default function ExperimentalJiraKanbanPage({
 		() => toPulseSessionItems(
 			filterPulseLooseWorkByMember(pulseTimeline.looseWork, agentSessionMemberId),
 			PULSE_TIMELINE.members,
+			PULSE_TIMELINE.workItems,
 		),
 		[agentSessionMemberId, pulseTimeline.looseWork],
+	);
+	const untrackedAgentSessionItems = useMemo(
+		() => selectBoardUntrackedSessions({
+			capturedItemIds: capturedLooseWorkIds,
+			detachedByCard: detachedAgentSessionsByCard,
+			sessions: agentSessionItems,
+		}),
+		[agentSessionItems, capturedLooseWorkIds, detachedAgentSessionsByCard],
 	);
 	const agentSessionHandlers = useMemo(
 		() => toPulseSessionHandlers({
@@ -377,6 +424,31 @@ export default function ExperimentalJiraKanbanPage({
 			isLooseWorkResumable,
 			onResumeLooseWork,
 			pulseTimeline.looseWork,
+		],
+	);
+	const proximityActionableSessionIds = useMemo(
+		() => new Set(agentSessionItems.map((session) => session.id)),
+		[agentSessionItems],
+	);
+	const boardIssueKeys = useMemo(
+		() => collectBoardIssueKeys(filteredBoardColumns),
+		[filteredBoardColumns],
+	);
+	const proximityAgentSessionsByCard = useMemo(
+		() => showUntracked
+			? groupBoardUntrackedSessions({
+				boardIssueKeys,
+				capturedItemIds: capturedLooseWorkIds,
+				detachedByCard: detachedAgentSessionsByCard,
+				sessions: agentSessionItems,
+			})
+			: EMPTY_PROXIMITY_SESSIONS,
+		[
+			agentSessionItems,
+			boardIssueKeys,
+			capturedLooseWorkIds,
+			detachedAgentSessionsByCard,
+			showUntracked,
 		],
 	);
 	const selectedAgentIds = useMemo(
@@ -459,6 +531,36 @@ export default function ExperimentalJiraKanbanPage({
 		setDraggedCard(null);
 	};
 
+	const handleCardAgentSessionLink: ExperimentalJiraKanbanProps["onCardAgentSessionLink"] = (
+		session,
+		card,
+		columnTitle,
+	) => {
+		setCapturedLooseWorkIds((current) => {
+			if (current.has(session.id)) {
+				return current;
+			}
+			return new Set(current).add(session.id);
+		});
+		onCardAgentSessionLink?.(session, card, columnTitle);
+	};
+
+	const handleCardAgentSessionUnlink: ExperimentalJiraKanbanProps["onCardAgentSessionUnlink"] = (
+		session,
+		card,
+		columnTitle,
+	) => {
+		setCapturedLooseWorkIds((current) => {
+			if (!current.has(session.id)) {
+				return current;
+			}
+			const next = new Set(current);
+			next.delete(session.id);
+			return next;
+		});
+		onCardAgentSessionUnlink?.(session, card, columnTitle);
+	};
+
 	const handleAssigneeFilterChange = (assigneeIds: Set<string>) => {
 		setSelection(createJiraKanbanSelectionState());
 		setDraggedCard(null);
@@ -523,10 +625,14 @@ export default function ExperimentalJiraKanbanPage({
 				assignees={assignees}
 				compact={compactHeader}
 				onSelectedAssigneeIdsChange={handleAssigneeFilterChange}
+				onShownSessionStateIdsChange={setShownSessionStateIds}
+				onShowUntrackedChange={setShowUntracked}
 				onViewChange={renderListContent ? onViewChange : undefined}
 				searchPlaceholder={`Search ${activeView}`}
 				selectedAssigneeIds={selectedAssigneeIds}
 				showBoardControls={showBoardContent}
+				shownSessionStateIds={shownSessionStateIds}
+				showUntracked={showUntracked}
 				facepile={isPulse ? (
 					<PulseRosterFacepile
 						members={PULSE_TIMELINE.members}
@@ -587,17 +693,35 @@ export default function ExperimentalJiraKanbanPage({
 						agentActivityLayout={agentActivityLayout}
 						agentSessionColumn={showAgentSessionColumn ? {
 							capturedItemIds: capturedLooseWorkIds,
-							items: agentSessionItems,
+							items: untrackedAgentSessionItems,
 							...agentSessionHandlers,
 						} : undefined}
+						proximityAgentSession={{
+							actionableSessionIds: proximityActionableSessionIds,
+							capturedItemIds: capturedLooseWorkIds,
+							onCreateWorkItem: agentSessionHandlers.onCreateWorkItem,
+							onLinkWorkItem: agentSessionHandlers.onLinkWorkItem,
+							onSubtasks: agentSessionHandlers.onSubtasks,
+						}}
 						agents={agents}
 						ariaLabel={ariaLabel}
 						assignedAgentIdsByColumn={columnAgentAssignments}
 						boardColumns={filteredBoardColumns}
+						cardGenerativeActionPresentation={cardGenerativeActionPresentation}
+						collapsedColumns={collapsedColumns}
+						detachedAgentSessionsByCard={proximityAgentSessionsByCard}
+						onCollapsedColumnsChange={setCollapsedColumns}
 						draggedCardCode={draggedCard?.card.code ?? null}
 						selectedCardCodes={selection.selectedCardCodes}
 						onCardClick={handleCardClick}
 						onCardAgentActivityViewChat={onCardAgentActivityViewChat}
+						onCardAgentDoneRunView={onCardAgentDoneRunView}
+						onCardAgentSessionLink={onCardAgentSessionLink
+							? handleCardAgentSessionLink
+							: undefined}
+						onCardAgentSessionUnlink={onCardAgentSessionUnlink
+							? handleCardAgentSessionUnlink
+							: undefined}
 						onCardSelect={handleCardSelect}
 						onCardDragStart={handleCardDragStart}
 						onCardDrop={handleCardDrop}

@@ -8,9 +8,14 @@ import { LayoutGroup, motion, useReducedMotion, type Transition } from "motion/r
 import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import AddIcon from "@atlaskit/icon/core/add";
+import GrowHorizontalIcon from "@atlaskit/icon/core/grow-horizontal";
+import ShrinkHorizontalIcon from "@atlaskit/icon/core/shrink-horizontal";
 
 import { AgentSessionColumn, type AgentSessionColumnProps } from "@/components/blocks/agent-session-column";
-import { JiraIssue } from "@/components/blocks/jira-issue";
+import {
+	JiraIssue,
+	type JiraIssueAgentActivityLayout,
+} from "@/components/blocks/jira-issue";
 import {
 	mapAgentToMentionItem,
 	mapSkillToMentionItem,
@@ -39,6 +44,15 @@ import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
+import {
+	EMPTY_COLLAPSED_BOARD_COLUMNS,
+	getBoardColumnOuterWidthPx,
+	isBoardColumnCollapsed,
+	toggleCollapsedBoardColumn,
+	BOARD_COLUMN_WIDTH_PX,
+	type CollapsedBoardColumns,
+} from "../experimental/lib/board-column-collapse";
+
 import type {
 	JiraKanbanAgentData,
 	JiraKanbanCardData,
@@ -56,22 +70,53 @@ import type {
  * contracts (`JiraKanban*` types, `state.ts`, `jira-kanban-data.ts`) stay
  * shared so both variants remain interchangeable inside an owning surface.
  */
-export type ExperimentalV2JiraKanbanProps = JiraKanbanProps & {
+export interface ExperimentalV2JiraKanbanProps extends JiraKanbanProps {
+	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	/**
-	 * Sessions that never became work items, pinned as a sunken column to the
-	 * left of the board.
-	 *
-	 * It sits outside the horizontal scrollport rather than inside
-	 * `boardColumns`, because untracked work is not a status: it has no place in
-	 * the left-to-right progression the board's columns describe, and it must
-	 * stay reachable while the reader scrolls to Submitted. Omit to render the
-	 * board without it.
+	 * Sessions that never became work items, pinned as a column to the
+	 * left of the board. Omit to render only Jira status columns.
 	 */
 	agentSessionColumn?: AgentSessionColumnProps;
-};
+	/**
+	 * Which columns are collapsed, when the host wants to own that.
+	 *
+	 * Collapse is a viewer's deliberate choice, so it has to outlive anything
+	 * that unmounts this board — switching to the list or Pulse view and back is
+	 * a temporary view switch, not a reason to re-expand every column. A host
+	 * that renders the board in such a branch should lift this state above the
+	 * branch. Omit both props to let the board keep it locally.
+	 */
+	collapsedColumns?: CollapsedBoardColumns;
+	/** Called with the next collapsed set when a column is collapsed or expanded. */
+	onCollapsedColumnsChange?: (collapsedColumns: CollapsedBoardColumns) => void;
+}
 
 const JIRA_KANBAN_CARD_MOVE: Transition = { duration: 0.6, ease: [0.4, 0, 0, 1] }; // duration-slowest + ease-in-out
 const JIRA_KANBAN_CARD_DEPART: Transition = { duration: 0.4, ease: [0.6, 0, 0.8, 0.6] }; // duration-slower + ease-in
+
+/**
+ * Collapsing a column repositions everything to its right, so the width change
+ * uses the bold in-place transition profile (`duration-medium` + `ease-in-out`).
+ * The drag-target border keeps its own interaction profile.
+ */
+const BOARD_COLUMN_SHELL_TRANSITION = [
+	"min-width var(--duration-medium) var(--ease-in-out)",
+	"max-width var(--duration-medium) var(--ease-in-out)",
+	"border-color var(--duration-normal) var(--ease-out-practical)",
+].join(", ");
+
+const BOARD_COLUMN_ACTION_REVEAL = cn(
+	"pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical",
+	"motion-reduce:transition-none",
+);
+
+const COLLAPSED_HEAD_COUNT_AT_REST = cn(
+	"pointer-events-none absolute inset-0 flex items-center justify-center",
+	"text-xs font-normal text-text-subtlest",
+	"transition-opacity duration-normal ease-out-practical",
+	"group-hover/collapsed-column:opacity-0 group-has-[:focus-visible]/collapsed-column:opacity-0",
+	"motion-reduce:transition-none",
+);
 
 function getJiraKanbanCardScale(
 	phase: JiraKanbanCardMoveAnimation["phase"] | undefined,
@@ -254,11 +299,108 @@ function ColumnAgentAssignment({
 	);
 }
 
+/**
+ * Hover/focus revealed control that collapses a column into its pill, or grows
+ * the pill back into a column. The collapsed head is already horizontal, so
+ * the glyph stays upright without a writing-mode override — the class remains
+ * so the same control is safe if it is ever nested in a vertical title again.
+ */
+function BoardColumnResizeButton({
+	className,
+	collapsed,
+	onToggle,
+	title,
+}: Readonly<{
+	className?: string;
+	collapsed: boolean;
+	onToggle: () => void;
+	title: string;
+}>) {
+	return (
+		<TooltipProvider>
+			<Tooltip>
+				<TooltipTrigger
+					render={
+						<Button
+							aria-label={collapsed ? `Expand ${title} column` : `Collapse ${title} column`}
+							className={cn("shrink-0 [writing-mode:horizontal-tb]", className)}
+							onClick={onToggle}
+							size="icon-compact"
+							type="button"
+							variant="ghost"
+						/>
+					}
+				>
+					<Icon
+						className="text-icon-subtle"
+						render={
+							collapsed
+								? <GrowHorizontalIcon label="" />
+								: <ShrinkHorizontalIcon label="" />
+						}
+					/>
+				</TooltipTrigger>
+				<TooltipContent>{collapsed ? "Expand" : "Collapse"}</TooltipContent>
+			</Tooltip>
+		</TooltipProvider>
+	);
+}
+
+/**
+ * The collapsed form of a board column: the count stays in the same header
+ * row the expanded column uses (`space.100` below, `text-xs` tally), and the
+ * title reads top-to-bottom inside the full-height pill under that header. A
+ * number painted on the pill would sit inside the bordered container instead
+ * of on the board surface next to the session count.
+ */
+function CollapsedBoardColumn({
+	count,
+	onExpand,
+	title,
+}: Readonly<{ count: number; onExpand: () => void; title: string }>) {
+	return (
+		<div className="flex h-full w-full min-w-0 flex-col">
+			<div
+				className="group/collapsed-column w-full shrink-0"
+				style={{ paddingBottom: token("space.100") }}
+			>
+				<div className="relative flex h-6 w-full items-center justify-center">
+					<span className={COLLAPSED_HEAD_COUNT_AT_REST}>
+						{count}
+					</span>
+					<BoardColumnResizeButton
+						className={cn(
+							BOARD_COLUMN_ACTION_REVEAL,
+							"group-hover/collapsed-column:pointer-events-auto group-hover/collapsed-column:opacity-100",
+							"group-has-[:focus-visible]/collapsed-column:pointer-events-auto group-has-[:focus-visible]/collapsed-column:opacity-100",
+						)}
+						collapsed
+						onToggle={onExpand}
+						title={title}
+					/>
+				</div>
+			</div>
+			<div
+				className="flex min-h-0 w-full flex-1 flex-col items-center justify-center overflow-hidden border border-border-disabled"
+				style={{
+					borderRadius: token("radius.large"),
+					paddingBlock: token("space.150"),
+				}}
+			>
+				<span className="min-h-0 truncate text-xs font-medium leading-4 text-text-subtle [writing-mode:vertical-rl]">
+					{title}
+				</span>
+			</div>
+		</div>
+	);
+}
+
 function BoardColumn({
 	agents,
 	assignedAgentIds,
 	children,
 	count,
+	onCollapse,
 	onCreateAgent,
 	onToggleAgent,
 	title,
@@ -267,6 +409,7 @@ function BoardColumn({
 	assignedAgentIds: readonly string[];
 	children: ReactNode;
 	count: number;
+	onCollapse: () => void;
 	onCreateAgent?: (columnTitle: string) => void;
 	onToggleAgent?: (agentId: string) => void;
 	title: string;
@@ -278,6 +421,7 @@ function BoardColumn({
 			fadeBottom: showBottomScrollMask,
 			fadeSize: "3rem",
 			fadeTop: showTopScrollMask,
+			scrollbarWidth: 0,
 		}),
 		[showBottomScrollMask, showTopScrollMask],
 	);
@@ -289,12 +433,15 @@ function BoardColumn({
 				display: "flex",
 				flexDirection: "column",
 				width: "100%",
+				// Pin the layout width so the column never reflows while the shell
+				// animates back open from the collapsed pill.
+				minWidth: `${BOARD_COLUMN_WIDTH_PX}px`,
 				height: "100%",
 				borderRadius: token("radius.xlarge"),
 			}}
 		>
 			<div
-				className={cn("flex min-w-0 items-center gap-2", showAgentAssignment && "justify-between")}
+				className="flex min-w-0 items-center justify-between gap-2"
 				style={{ paddingBottom: token("space.100") }}
 			>
 				<div className="flex min-w-0 items-center gap-1.5">
@@ -305,15 +452,27 @@ function BoardColumn({
 						{count}
 					</span>
 				</div>
-				{showAgentAssignment && agents && onCreateAgent && onToggleAgent ? (
-					<ColumnAgentAssignment
-						agents={agents}
-						assignedAgentIds={assignedAgentIds}
-						columnTitle={title}
-						onCreateAgent={onCreateAgent}
-						onToggleAgent={onToggleAgent}
+				<div className="flex shrink-0 items-center gap-0.5">
+					{showAgentAssignment && agents && onCreateAgent && onToggleAgent ? (
+						<ColumnAgentAssignment
+							agents={agents}
+							assignedAgentIds={assignedAgentIds}
+							columnTitle={title}
+							onCreateAgent={onCreateAgent}
+							onToggleAgent={onToggleAgent}
+						/>
+					) : null}
+					<BoardColumnResizeButton
+						className={cn(
+							BOARD_COLUMN_ACTION_REVEAL,
+							"group-hover/board-column:pointer-events-auto group-hover/board-column:opacity-100",
+							"group-has-[:focus-visible]/board-column:pointer-events-auto group-has-[:focus-visible]/board-column:opacity-100",
+						)}
+						collapsed={false}
+						onToggle={onCollapse}
+						title={title}
 					/>
-				) : null}
+				</div>
 			</div>
 
 			<div
@@ -333,20 +492,89 @@ function BoardColumn({
 
 			<div className="w-full" style={{ paddingBlock: token("space.050") }}>
 				<Button
+					aria-label={`Create in ${title}`}
 					className={cn(
-						"w-full justify-start gap-2 rounded-lg",
+						"w-full",
 						"pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical",
 						"group-hover/board-column:pointer-events-auto group-hover/board-column:opacity-100",
 						"group-has-[:focus-visible]/board-column:pointer-events-auto group-has-[:focus-visible]/board-column:opacity-100",
 						"motion-reduce:transition-none",
 					)}
-					size="default"
-					variant="ghost"
+					size="compact"
+					variant="outline"
 				>
 					<Icon render={<AddIcon label="" size="small" />} />
-					Create
 				</Button>
 			</div>
+		</div>
+	);
+}
+
+function BoardColumnShell({
+	children,
+	collapsed,
+	count,
+	onDragLeave,
+	onDragOver,
+	onDrop,
+	onToggleCollapsed,
+	title,
+}: Readonly<{
+	/** Receives the collapse handler so the column header can render the control. */
+	children: (onCollapse: () => void) => ReactNode;
+	collapsed: boolean;
+	count: number;
+	onDragLeave: (event: React.DragEvent<HTMLDivElement>) => void;
+	onDragOver: (event: React.DragEvent<HTMLDivElement>) => void;
+	onDrop: (event: React.DragEvent<HTMLDivElement>) => void;
+	onToggleCollapsed: () => void;
+	title: string;
+}>) {
+	const shouldReduceMotion = useReducedMotion();
+	// The column keeps its full layout width while the shell animates, so the
+	// overflow has to be clipped for the duration of the width transition. Doing
+	// it any longer would clip the 4px focus rings on the cards inside.
+	const [isResizing, setIsResizing] = useState(false);
+	const outerWidth = `${getBoardColumnOuterWidthPx(collapsed)}px`;
+
+	const handleToggleCollapsed = () => {
+		if (!shouldReduceMotion) {
+			setIsResizing(true);
+		}
+		onToggleCollapsed();
+	};
+
+	const handleTransitionEnd = (event: React.TransitionEvent<HTMLDivElement>) => {
+		if (event.target === event.currentTarget && event.propertyName === "max-width") {
+			setIsResizing(false);
+		}
+	};
+
+	return (
+		<div
+			data-jira-kanban-column={title}
+			data-collapsed={collapsed || undefined}
+			className={cn(
+				"min-w-0 border-2 border-transparent",
+				collapsed || isResizing ? "overflow-hidden" : "overflow-visible",
+			)}
+			onDragOver={onDragOver}
+			onDragLeave={onDragLeave}
+			onDrop={onDrop}
+			onTransitionEnd={handleTransitionEnd}
+			style={{
+				flex: "1 1 0",
+				minWidth: outerWidth,
+				maxWidth: outerWidth,
+				borderRadius: token("radius.xlarge"),
+				transition: shouldReduceMotion ? "none" : BOARD_COLUMN_SHELL_TRANSITION,
+			}}
+		>
+			{collapsed ? (
+				<CollapsedBoardColumn count={count} onExpand={handleToggleCollapsed} title={title} />
+			) : (
+				children(handleToggleCollapsed)
+			)}
 		</div>
 	);
 }
@@ -412,6 +640,7 @@ function getCommonSelectedCardStatus(
 
 export function ExperimentalV2JiraKanban({
 	activeCardCode,
+	agentActivityLayout = "merged",
 	agentSessionColumn,
 	agents,
 	animateCardMoves = false,
@@ -419,6 +648,7 @@ export function ExperimentalV2JiraKanban({
 	assignedAgentIdsByColumn = {},
 	boardColumns,
 	cardMoveAnimation,
+	collapsedColumns: controlledCollapsedColumns,
 	draggedCardCode = null,
 	selectedCardCodes,
 	onCardClick,
@@ -432,6 +662,7 @@ export function ExperimentalV2JiraKanban({
 	onCardAgentDoneRunReview,
 	onCardAgentDoneRunView,
 	onCreateAgent,
+	onCollapsedColumnsChange,
 	onToggleColumnAgent,
 	paddingBottom = token("space.150"),
 	paddingTop = token("space.150"),
@@ -441,6 +672,10 @@ export function ExperimentalV2JiraKanban({
 	const shouldReduceMotion = useReducedMotion();
 	const shouldAnimateCardMoves = animateCardMoves && !shouldReduceMotion;
 	const dragImageRef = useRef<HTMLDivElement | null>(null);
+	const [uncontrolledCollapsedColumns, setUncontrolledCollapsedColumns] = useState(
+		EMPTY_COLLAPSED_BOARD_COLUMNS,
+	);
+	const collapsedColumns = controlledCollapsedColumns ?? uncontrolledCollapsedColumns;
 	const selectedCount = selectedCardCodes?.size ?? 0;
 	const selectedStatus = selectedCardCodes
 		? getCommonSelectedCardStatus(boardColumns, selectedCardCodes)
@@ -556,14 +791,26 @@ export function ExperimentalV2JiraKanban({
 		onCardDragEnd?.();
 	};
 
+	const handleToggleColumnCollapsed = (columnTitle: string) => {
+		const nextCollapsedColumns = toggleCollapsedBoardColumn(collapsedColumns, columnTitle);
+		// Only own the state when the host has not claimed it, so a controlled
+		// host stays the single source of truth.
+		if (controlledCollapsedColumns === undefined) {
+			setUncontrolledCollapsedColumns(nextCollapsedColumns);
+		}
+		onCollapsedColumnsChange?.(nextCollapsedColumns);
+	};
+
 	return (
 		<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 			<div className="flex min-h-0 min-w-0 flex-1 items-stretch">
 				{agentSessionColumn ? (
-					// Same vertical padding as the scrollport beside it, so the two
-					// column headers sit on one baseline even though only one scrolls.
+					// Top/left/bottom match the status columns' 2px drop-target
+					// box so the headers share a baseline. No right border:
+					// Untracked work is not a drop target, and that 2px reads as
+					// a white seam once the plane is `bg-surface`.
 					<div
-						className="flex min-h-0 shrink-0 ps-6"
+						className="flex min-h-0 shrink-0 border-2 border-transparent border-r-0 ps-6"
 						style={{ paddingTop, paddingBottom }}
 					>
 						<AgentSessionColumn {...agentSessionColumn} />
@@ -586,27 +833,27 @@ export function ExperimentalV2JiraKanban({
 					<div
 						className={cn(
 							"flex min-h-full w-max min-w-full items-stretch",
-							// The pinned column already supplies the board's left inset, so
-							// drop to the inter-column gap and keep one rhythm across all
-							// columns instead of a 24px seam after the sunken one.
 							agentSessionColumn ? "ps-2" : "ps-6",
 						)}
 					>
 						<div className="flex min-h-full flex-1 items-stretch gap-2">
 						{boardColumns.map((column) => (
-						<div
-							data-jira-kanban-column={column.title}
+						<BoardColumnShell
+							collapsed={isBoardColumnCollapsed(collapsedColumns, column.title)}
+							count={column.cards.length}
 							key={column.title}
-							className="min-w-0 overflow-visible border-2 border-transparent transition-colors"
 							onDragOver={handleColumnDragOver}
 							onDragLeave={handleColumnDragLeave}
 							onDrop={(event) => handleColumnDrop(event, column.title)}
-							style={{ flex: "1 1 0", minWidth: "280px", maxWidth: "280px", borderRadius: token("radius.xlarge") }}
+							onToggleCollapsed={() => handleToggleColumnCollapsed(column.title)}
+							title={column.title}
 						>
+							{(handleCollapseColumn) => (
 							<BoardColumn
 								agents={agents}
 								assignedAgentIds={assignedAgentIdsByColumn[column.title] ?? []}
 								count={column.cards.length}
+								onCollapse={handleCollapseColumn}
 								onCreateAgent={onCreateAgent}
 								onToggleAgent={
 									onToggleColumnAgent
@@ -665,6 +912,7 @@ export function ExperimentalV2JiraKanban({
 												tags={card.tags}
 												priority={card.priority}
 												pullRequestNumber={card.pullRequestNumber}
+												pullRequestPreview={card.pullRequestPreview}
 												pullRequestStatus={card.pullRequestStatus}
 												assigneeAvatarLabel={card.assignee?.name}
 												assigneeAvatarSrc={card.avatarSrc}
@@ -672,6 +920,7 @@ export function ExperimentalV2JiraKanban({
 												assigneeUnassignedKind={card.avatarUnassignedKind}
 												assigneePulse={card.avatarPulse}
 												agentActivities={card.agentActivities}
+												agentActivityLayout={agentActivityLayout}
 												agentActivityMode={card.agentActivityMode}
 												agentDoneRuns={card.agentDoneRuns}
 												generativeAction={{
@@ -712,7 +961,8 @@ export function ExperimentalV2JiraKanban({
 									);
 								})}
 							</BoardColumn>
-						</div>
+							)}
+						</BoardColumnShell>
 						))}
 						<BoardAddColumnButton />
 						</div>

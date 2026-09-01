@@ -30,6 +30,14 @@ const SESSION_SOURCE = readFileSync(
 	join(__dirname, "agent-list-session.ts"),
 	"utf8",
 );
+const ACTOR_SOURCE = readFileSync(
+	join(__dirname, "agent-list-actor.ts"),
+	"utf8",
+);
+const INVOKER_SOURCE = readFileSync(
+	join(__dirname, "agent-list-invoker.tsx"),
+	"utf8",
+);
 const FOR_YOU_PANEL_SOURCE = readFileSync(
 	join(
 		__dirname,
@@ -131,6 +139,7 @@ test("the leading tile renders the agent or VPK identity at the selected density
 	);
 	assert.match(CARD_SOURCE, /vpkLogo=\{agent\.vpkLogo\}/u);
 	assert.match(CARD_SOURCE, /<AgentListIdentity[\s\S]*sizePx=\{isCompact \? 24 : 32\}/u);
+	assert.doesNotMatch(CARD_SOURCE, /CATALOG_VPK_LOGO_SIZE_PX|agentVisualSizePx/u);
 });
 
 test("people render a circular photo beside the hexagon agents in the same list", () => {
@@ -195,7 +204,7 @@ test("rows carry an optional summary below metadata, leading metadata, and a sta
 	);
 	assert.match(
 		CARD_SOURCE,
-		/"flex w-full min-w-0 items-center gap-1 overflow-hidden text-xs text-text-subtlest"/u,
+		/"flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest"/u,
 	);
 	assert.match(
 		CARD_SOURCE,
@@ -318,6 +327,8 @@ test("the session adapter derives flyout payloads the row model does not carry",
 		/issueKey: details\?\.issueKey \?\? deriveIssueKeyFromBranch\(item\.branch\),/u,
 	);
 	assert.match(SESSION_SOURCE, /issueSummary: details\?\.issueSummary \?\? item\.title,/u);
+	assert.match(SESSION_SOURCE, /\.\.\.\(item\.agent\.brandName === undefined \? \{\} : \{ brandName: item\.agent\.brandName \}\),/u);
+	assert.match(SESSION_SOURCE, /\.\.\.\(item\.agent\.vpkLogo === undefined \? \{\} : \{ vpkLogo: item\.agent\.vpkLogo \}\),/u);
 	assert.match(SESSION_SOURCE, /completedAtMs: item\.completedAtMs,/u);
 	assert.match(SESSION_SOURCE, /completedSecondsAgo: item\.completedSecondsAgo,/u);
 	assert.match(SESSION_SOURCE, /initialElapsedSeconds: item\.elapsedSeconds,/u);
@@ -326,13 +337,16 @@ test("the session adapter derives flyout payloads the row model does not carry",
 	for (const rowOwnedField of [
 		"agentAvatarSrc",
 		"agentName",
+		"brandName",
 		"completedAtMs",
 		"completedSecondsAgo",
 		"id",
 		"initialElapsedSeconds",
+		"invokedBy",
 		"startedAtMs",
 		"status",
 		"title",
+		"vpkLogo",
 	]) {
 		assert.match(TYPES_SOURCE, new RegExp(`\\| "${rowOwnedField}"`, "u"));
 	}
@@ -424,16 +438,17 @@ test("in-flow View controls immediately replace lifecycle indicators without col
 	assert.match(CARD_SOURCE, /onView=\{viewItem\}/u);
 	assert.match(
 		CARD_SOURCE,
-		/const showHoverActions = !isSelected &&\s*\(hoverActions\?\.primary !== undefined \|\| hoverActions\?\.secondary !== undefined\);/u,
+		/const showHoverActions = \(!isSelected \|\| showHoverActionsWhenSelected\) &&\s*\(hoverActions\?\.primary !== undefined \|\| hoverActions\?\.secondary !== undefined\);/u,
 	);
 	assert.match(CARD_SOURCE, /\{showHoverActions \? \(\s*<CardActions/u);
+	assert.match(CARD_SOURCE, /event\.stopPropagation\(\);\s*\n\s*action\.onClick\(\)/u);
 	assert.match(
 		CARD_SOURCE,
 		/"flex w-full min-w-0 items-center gap-0",\s*hasSummary \? null : "overflow-hidden",/u,
 	);
 	assert.match(
 		CARD_SOURCE,
-		/"flex w-full min-w-0 items-center gap-1 overflow-hidden text-xs text-text-subtlest"/u,
+		/"flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest"/u,
 	);
 	assert.match(CARD_SOURCE, /<span className=\{cn\(titleClassName, "text-text"\)\}>/u);
 	assert.match(CARD_SOURCE, /className="min-w-0 truncate">\{item\.agent\.name\}<\/span>/u);
@@ -444,6 +459,11 @@ test("in-flow View controls immediately replace lifecycle indicators without col
 	assert.match(
 		CARD_SOURCE,
 		/"pointer-events-none flex shrink-0 items-center gap-1 pl-3 opacity-0/u,
+	);
+	assert.match(CARD_SOURCE, /transition-opacity duration-normal ease-out-practical/u);
+	assert.match(
+		CARD_SOURCE,
+		/group-data-\[variant=uncaptured-work\]\/agent-row:transition-none/u,
 	);
 	assert.doesNotMatch(CARD_SOURCE, /className="ml-3 hidden shrink-0 items-center gap-1/u);
 	assert.doesNotMatch(CARD_SOURCE, /isVisible/u);
@@ -687,7 +707,7 @@ test("needs-input activity headers shimmer Needs input with trailing Rovo dots i
 test("the session activity header shows who invoked the agent after the timestamp", () => {
 	assert.match(TYPES_SOURCE, /export interface AgentListInvoker/u);
 	assert.match(TYPES_SOURCE, /invokedBy\?: AgentListInvoker;/u);
-	assert.match(CARD_SOURCE, /function InvokerBy/u);
+	assert.match(INVOKER_SOURCE, /export function InvokerBy/u);
 	assert.match(
 		CARD_SOURCE,
 		/\{messageTimestamp && item\.invokedBy \? \(\s*<InvokerBy invoker=\{item\.invokedBy\} \/>\s*\) : null\}/u,
@@ -696,8 +716,11 @@ test("the session activity header shows who invoked the agent after the timestam
 		CARD_SOURCE,
 		/\{!messageTimestamp && item\.invokedBy \? \(\s*<InvokerBy invoker=\{item\.invokedBy\} \/>\s*\) : null\}/u,
 	);
-	assert.match(CARD_SOURCE, /<Avatar label=\{invoker\.name\} size="xs">/u);
-	assert.match(CARD_SOURCE, /<TooltipContent>\{invoker\.name\}<\/TooltipContent>/u);
+	assert.match(
+		INVOKER_SOURCE,
+		/<Avatar className="shrink-0" label=\{invoker\.name\} size="xs" title=\{invoker\.name\}>/u,
+	);
+	assert.match(INVOKER_SOURCE, /<TooltipContent>\{invoker\.name\}<\/TooltipContent>/u);
 	assert.match(DATA_SOURCE, /invokedBy: DEMO_INVOKER/u);
 	assert.match(DATA_SOURCE, /name: "Jordan Lee"/u);
 });
@@ -708,7 +731,7 @@ test("the session activity header can preserve a consumer-provided completed tim
 	assert.match(CARD_SOURCE, /<AgentListTime fallback=\{timeFallback\} item=\{item\} \/>/u);
 });
 
-test("local sessions show a static timestamp, devices glyph, and machine name", () => {
+test("local sessions show a static timestamp, devices icon, and machine name", () => {
 	assert.match(TYPES_SOURCE, /export type AgentListHost = "cloud" \| "local";/u);
 	assert.match(TYPES_SOURCE, /host\?: AgentListHost;/u);
 	assert.match(TYPES_SOURCE, /machineName\?: string;/u);
@@ -717,15 +740,48 @@ test("local sessions show a static timestamp, devices glyph, and machine name", 
 		/export function isLocalAgentListItem\(item: AgentListItem\): boolean \{\s*return getAgentListHost\(item\) === "local";/u,
 	);
 	assert.match(INDEX_SOURCE, /isLocalAgentListItem,/u);
-	assert.match(CARD_SOURCE, /import DevicesIcon from "@atlaskit\/icon\/core\/devices";/u);
+	assert.match(INVOKER_SOURCE, /export function InvokerAvatar/u);
+	assert.match(
+		INVOKER_SOURCE,
+		/<Avatar className="shrink-0" label=\{invoker\.name\} size="xs" title=\{invoker\.name\}>/u,
+	);
+	assert.match(ACTOR_SOURCE, /export function actorInitials/u);
+	assert.match(INVOKER_SOURCE, /import \{ actorInitials \} from "\.\/agent-list-actor";/u);
+	assert.doesNotMatch(INVOKER_SOURCE, /export function actorInitials/u);
+	assert.match(
+		CARD_SOURCE,
+		/import \{ actorInitials \} from "\.\/agent-list-actor";/u,
+	);
+	assert.match(
+		CARD_SOURCE,
+		/import \{ InvokerBy \} from "\.\/agent-list-invoker";/u,
+	);
+	assert.doesNotMatch(
+		CARD_SOURCE,
+		/import \{ InvokerAvatar, InvokerBy \} from "\.\/agent-list-invoker";/u,
+	);
 	assert.match(
 		CARD_SOURCE,
 		/if \(isLocalAgentListItem\(item\) && item\.machineName\) \{[\s\S]*<DevicesIcon color="currentColor" label="" size="small" \/>[\s\S]*\{item\.machineName\}/u,
 	);
+	const metadataIdentitySource = /function AgentListMetadataIdentity[\s\S]*?(?=\nexport function AgentListActivityHeader)/u.exec(
+		CARD_SOURCE,
+	)?.[0];
+	assert.ok(metadataIdentitySource);
+	assert.match(metadataIdentitySource, /<DevicesIcon color="currentColor" label="" size="small" \/>/u);
+	assert.doesNotMatch(metadataIdentitySource, /InvokerAvatar/u);
+	assert.doesNotMatch(metadataIdentitySource, /item\.invokedBy \?/u);
+	const invokerAvatarSource = /export function InvokerAvatar[\s\S]*?(?=\nexport function InvokerBy)/u.exec(
+		INVOKER_SOURCE,
+	)?.[0];
+	assert.ok(invokerAvatarSource);
+	assert.doesNotMatch(invokerAvatarSource, /Tooltip/u);
 	assert.match(DATA_SOURCE, /host: "local"/u);
 	assert.match(DATA_SOURCE, /machineName: "Geoff’s MacBook"/u);
 	assert.match(DATA_SOURCE, /timeLabel: "3 mins ago"/u);
 	assert.match(DETAIL_SOURCE, /Local sessions swap the live runtime and agent name/u);
+	assert.match(DETAIL_SOURCE, /a devices icon, and the machine name/u);
+	assert.doesNotMatch(DETAIL_SOURCE, /16px invoker avatar, and the machine name/u);
 });
 
 test("hover actions add an Archive icon beside View or Resume", () => {

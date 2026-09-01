@@ -1,44 +1,113 @@
+import type { AgentListAgent } from "@/components/blocks/agent-list";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 
-import { isPulseAgentSession, type PulseLooseWork, type PulseMember } from "../types";
+import { PULSE_VIEWER_MACHINE_NAME } from "../data/pulse-loose-work";
+import {
+	isPulseAgentSession,
+	type PulseCodingAgentId,
+	type PulseLooseWork,
+	type PulseMember,
+	type PulseWorkItem,
+} from "../types";
 
 /**
  * Boundary between a Pulse local coding session and the shared Agent Session card.
  *
  * Uncaptured GitHub work stays a dashed card with a Link to work item chin. A
- * Claude session uses the same card chrome through the Agent Session block:
- * the shared row (identity, static stamp, viewer machine) sits in the sunken
- * body, and the issue key becomes the chin's Link to work item suggestion. The
- * worktree stays on the flyout payload. Keeping the mapping pure and here means
- * the rail stays a renderer and the fixture never learns the row model.
+ * coding session uses the same card chrome through the Agent Session block:
+ * the shared row (identity, static stamp, viewer machine) sits on the dashed
+ * surface, and the issue key becomes the untracked-work flyout suggestion. The
+ * worktree stays on the flyout payload. Machine name, stamp, and agent identity
+ * are authored on the fixture and passed through here so a 16-session column
+ * does not look copy-pasted.
  */
 
 const WORKTREE_PATTERN = /worktree (\S+)/u;
 
-/** Viewer machine for Pulse local sessions. Venn is the Insights persona. */
-const PULSE_LOCAL_MACHINE_NAME = "Venn’s MacBook";
+/**
+ * Whether a row is a local session running on the viewer's own device.
+ *
+ * A local session can only be picked back up from the machine it is running
+ * on, so this — not a hand-listed set of session ids — is the default gate on
+ * the Resume affordance. Hosts that want a narrower rule (a scripted demo
+ * resuming exactly one row) pass their own predicate instead.
+ */
+export function isPulseLooseWorkOnViewerMachine(item: PulseLooseWork): boolean {
+	return isPulseAgentSession(item) && item.machineName === PULSE_VIEWER_MACHINE_NAME;
+}
 
 /**
- * Static stamp matching the Agent List local-session row. Local rows must not
- * tick, and they must not reuse the host word "Local" as a timestamp.
+ * Row identity for a Pulse coding agent. Claude / Codex / Cursor use third-party
+ * brand marks already in the logo catalog; Rovo uses the VPK product mark.
+ * Directory profiles are not imported here so this mapper stays a test-harness
+ * leaf — ids and marks match `getRovoAgentProfile("rovo-dev")` and the existing
+ * Claude / Codex / Cursor brand objects elsewhere in the repo.
  */
-const PULSE_LOCAL_TIME_LABEL = "3 mins ago";
+export function toPulseSessionAgent(agentId: PulseCodingAgentId): AgentListAgent {
+	switch (agentId) {
+		case "claude":
+			return {
+				brandName: "claude",
+				id: "claude",
+				kind: "agent",
+				name: "Claude",
+			};
+		case "codex":
+			return {
+				brandName: "openai-codex",
+				id: "codex",
+				kind: "agent",
+				name: "Codex",
+			};
+		case "cursor":
+			return {
+				brandName: "cursor",
+				id: "cursor",
+				kind: "agent",
+				name: "Cursor",
+			};
+		case "rovo":
+			return {
+				id: "rovo-dev",
+				kind: "agent",
+				name: "Rovo",
+				vpkLogo: "rovo",
+			};
+		default: {
+			const _exhaustive: never = agentId;
+			return _exhaustive;
+		}
+	}
+}
 
 /** Worktree path from a session detail line, when the fixture named one. */
 export function toPulseSessionWorktree(detail: string): string | undefined {
 	return WORKTREE_PATTERN.exec(detail)?.[1];
 }
 
+/** Board status for the issue a session names, when that work item is on the timeline. */
+export function toPulseSessionIssueStatus(
+	issueKey: string,
+	workItems: readonly PulseWorkItem[],
+): string | undefined {
+	return workItems.find((item) => item.key === issueKey)?.status;
+}
+
 /**
  * Maps one window's loose work onto agent-list rows for the local sessions.
  *
  * GitHub artifacts are skipped. A session whose members are all unknown to the
- * roster still renders: the row leads with Claude, not a teammate, so a missing
- * invoker is omission rather than a faceless row.
+ * roster still renders: the row leads with the coding agent, not a teammate, so
+ * a missing invoker is omission rather than a faceless row. Invoker stays on
+ * the row for flyouts; the metadata chip always shows the devices glyph and
+ * machine name. When `workItems` is passed, the session's issue key is resolved
+ * onto that work item's board status so the untracked-work flyout chip can
+ * show it.
  */
 export function toPulseSessionItems(
 	looseWork: readonly PulseLooseWork[],
 	members: readonly PulseMember[],
+	workItems: readonly PulseWorkItem[] = [],
 ): readonly AgentSessionItem[] {
 	const byId = new Map(members.map((member) => [member.id, member]));
 
@@ -51,14 +120,10 @@ export function toPulseSessionItems(
 			.map((id) => byId.get(id))
 			.find((member) => member !== undefined && member.kind === "human");
 		const worktree = toPulseSessionWorktree(item.detail);
+		const issueStatus = toPulseSessionIssueStatus(item.sourceTitle, workItems);
 
 		return [{
-			agent: {
-				brandName: "claude",
-				id: "claude",
-				kind: "agent",
-				name: "Claude",
-			},
+			agent: toPulseSessionAgent(item.agentId),
 			host: "local",
 			id: item.id,
 			invokedBy: invoker === undefined
@@ -67,15 +132,17 @@ export function toPulseSessionItems(
 					avatarSrc: invoker.avatarSrc,
 					name: invoker.name,
 				},
-			machineName: PULSE_LOCAL_MACHINE_NAME,
+			machineName: item.machineName,
 			sessionDetails: {
 				host: "local",
 				issueKey: item.sourceTitle,
 				issueSummary: item.title,
+				...(issueStatus === undefined ? {} : { issueStatus }),
 				worktreePath: worktree,
 			},
+			shortTitle: item.shortTitle,
 			state: "complete",
-			timeLabel: PULSE_LOCAL_TIME_LABEL,
+			timeLabel: item.timeLabel,
 			title: item.title,
 		} satisfies AgentSessionItem];
 	});
@@ -118,6 +185,10 @@ export function filterPulseLooseWorkByMember(
  * to a known session — so it lives here once and is shared by every surface
  * that shows these sessions (the Insights rail and the board's untracked-work
  * column). A second hand-rolled copy is how the two would drift.
+ *
+ * Create, link, and add-as-subtask all capture: the prototype has one capture
+ * path, the same one uncaptured GitHub cards already use. Omitting create or
+ * subtask is what greyed those flyout actions out.
  */
 export function toPulseSessionHandlers({
 	isLooseWorkResumable,
@@ -133,6 +204,11 @@ export function toPulseSessionHandlers({
 	const sessionById = new Map(
 		looseWork.filter(isPulseAgentSession).map((item) => [item.id, item] as const),
 	);
+	const captureSession = (item: AgentSessionItem) => {
+		const session = sessionById.get(item.id);
+		if (session === undefined) return;
+		onCapture(session);
+	};
 	const resolveResumable = (item: AgentSessionItem): PulseLooseWork | undefined => {
 		if (onResume === undefined) return undefined;
 		const session = sessionById.get(item.id);
@@ -147,11 +223,9 @@ export function toPulseSessionHandlers({
 			if (session === undefined) return;
 			onResume(session);
 		},
-		onLinkWorkItem: (item: AgentSessionItem) => {
-			const session = sessionById.get(item.id);
-			if (session === undefined) return;
-			onCapture(session);
-		},
+		onCreateWorkItem: captureSession,
+		onLinkWorkItem: captureSession,
+		onSubtasks: captureSession,
 		onView: onResume === undefined ? undefined : (item: AgentSessionItem) => {
 			const session = resolveResumable(item);
 			if (session === undefined) return;

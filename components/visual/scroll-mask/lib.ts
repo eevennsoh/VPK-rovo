@@ -79,7 +79,15 @@ export type ScrollMaskOverlayEdge = "top" | "bottom";
 export interface ScrollMaskOverlayStyleOptions {
 	edge: ScrollMaskOverlayEdge;
 	fadeSize?: number | string;
+	/**
+	 * Fade color. Defaults to the page surface so overlays match a `bg-surface`
+	 * parent. Pass the parent backdrop token when the scrollport sits on a
+	 * different fill (for example `var(--color-bg-accent-gray-subtlest)`).
+	 */
+	color?: string;
 }
+
+const SCROLL_MASK_OVERLAY_DEFAULT_COLOR = "var(--color-surface)";
 
 /**
  * Visual-only edge fade. Use this instead of `fadeTop` on `buildScrollMaskStyle`
@@ -90,11 +98,12 @@ export interface ScrollMaskOverlayStyleOptions {
 export function buildScrollMaskOverlayStyle({
 	edge,
 	fadeSize = SCROLL_MASK_DEFAULT_FADE_SIZE,
+	color = SCROLL_MASK_OVERLAY_DEFAULT_COLOR,
 }: ScrollMaskOverlayStyleOptions): ScrollMaskCssProperties {
 	const resolvedFadeSize = toCssLength(fadeSize);
 	const backgroundImage = edge === "top"
-		? "linear-gradient(to bottom, var(--color-surface) 0, transparent 100%)"
-		: "linear-gradient(to top, var(--color-surface) 0, transparent 100%)";
+		? `linear-gradient(to bottom, ${color} 0, transparent 100%)`
+		: `linear-gradient(to top, ${color} 0, transparent 100%)`;
 
 	return {
 		"--scroll-mask-fade-size": resolvedFadeSize,
@@ -112,6 +121,7 @@ export function buildScrollMaskStyle({
 }: ScrollMaskStyleOptions = {}): VerticalScrollMaskCssProperties {
 	const resolvedFadeSize = toCssLength(fadeSize);
 	const resolvedScrollbarWidth = toCssLength(scrollbarWidth);
+	const preservesScrollbarTrack = resolvedScrollbarWidth !== "0px";
 	// Only fade an edge that has content scrolled past it, so a menu at rest (or one that
 	// does not overflow) shows no fade. Both default true to preserve the full both-edge mask.
 	// `fadeTop` uses mask-image and can clip hit-testing; prefer
@@ -120,21 +130,25 @@ export function buildScrollMaskStyle({
 	const bottomStops = fadeBottom
 		? "black calc(100% - var(--scroll-mask-fade-size)), transparent 100%"
 		: "black 100%";
-	const maskImage = [
-		`linear-gradient(to bottom, ${topStops}, ${bottomStops})`,
-		"linear-gradient(black, black)",
-	].join(", ");
-	const maskSize = `calc(100% - ${resolvedScrollbarWidth}) 100%, ${resolvedScrollbarWidth} 100%`;
+	const fadeMaskImage = `linear-gradient(to bottom, ${topStops}, ${bottomStops})`;
+	const maskImage = preservesScrollbarTrack
+		? [fadeMaskImage, "linear-gradient(black, black)"].join(", ")
+		: fadeMaskImage;
+	const maskPosition = preservesScrollbarTrack ? "0 0, 100% 0" : "0 0";
+	const maskRepeat = preservesScrollbarTrack ? "no-repeat, no-repeat" : "no-repeat";
+	const maskSize = preservesScrollbarTrack
+		? `calc(100% - ${resolvedScrollbarWidth}) 100%, ${resolvedScrollbarWidth} 100%`
+		: "100% 100%";
 
 	return {
 		"--scroll-mask-fade-size": resolvedFadeSize,
 		"--scroll-mask-scrollbar-width": resolvedScrollbarWidth,
 		maskImage,
 		WebkitMaskImage: maskImage,
-		maskPosition: "0 0, 100% 0",
-		WebkitMaskPosition: "0 0, 100% 0",
-		maskRepeat: "no-repeat, no-repeat",
-		WebkitMaskRepeat: "no-repeat, no-repeat",
+		maskPosition,
+		WebkitMaskPosition: maskPosition,
+		maskRepeat,
+		WebkitMaskRepeat: maskRepeat,
 		maskSize,
 		WebkitMaskSize: maskSize,
 	};

@@ -104,14 +104,14 @@ test("JGP Kanban reuses the Jira Issue aggregate row for working agents", () => 
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual";/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /agentBrandName\?: ThirdPartyLogoName;/u);
-	// Two avatar sites, never both on screen: the two arms of the
-	// `isDraggedOut ? at-mention chip : chin row` ternary. The guard that matters
-	// is that neither is rendered per-agent — the aggregate row shows exactly one
-	// featured avatar however many agents are working.
-	assert.equal(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE.match(/<AgentAvatarVisual/g)?.length, 2);
+	// Dragged-out uses the shared mention chip (avatar lives inside it). The chin
+	// row keeps one AgentAvatarVisual. Neither site maps per-agent — the
+	// aggregate row shows exactly one featured avatar however many agents work.
+	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<AgentSessionMentionChip/u);
+	assert.equal(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE.match(/<AgentAvatarVisual/g)?.length, 1);
 	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /activities\.map\([\s\S]{0,400}<AgentAvatarVisual/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<AiAgentIcon label="" \/>/u);
-	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<Spinner label="" size="sm" \/>/u);
+	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<Spinner label="" size="xs" \/>/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /\$\{summary\.activityCount\} agents: \$\{summary\.label\}/u);
 	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /variant="rainbow"/u);
 	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /phaseOffsetMs=/u);
@@ -122,8 +122,8 @@ test("completed Jira agent rows aggregate finished and failed states without hid
 	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /const finishedLabel = `\$\{runs\.length\} Finished`;/u);
 	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /const hasFailedRun = runs\.some\(\(run\) => run\.state === "failed"\);/u);
 	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /<StatusErrorIcon color="currentColor" label="" size="small" \/>/u);
-	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /renderFlyout=\{renderCompletedRunFlyout\}/u);
-	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /outputs: run\.outputs \?\? \[\]/u);
+	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /<AgentList[\s\S]*flyout="session"[\s\S]*items=\{completedItems\}/u);
+	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /<JiraSessionFlyoutTrigger[\s\S]*session=\{\{ \.\.\.session,/u);
 });
 
 test("Kanban lifecycle uses deterministic generation and completion delays", () => {

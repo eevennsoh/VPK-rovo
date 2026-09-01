@@ -10,6 +10,7 @@ const DATA_SOURCE = readFileSync(join(__dirname, "jira-kanban-data.ts"), "utf8")
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const HEADER_SOURCE = readFileSync(join(__dirname, "board-header.tsx"), "utf8");
 const EXPERIMENTAL_SOURCE = readFileSync(join(__dirname, "experimental", "experimental-jira-kanban.tsx"), "utf8");
+const EXPERIMENTAL_CARD_SOURCE = readFileSync(join(__dirname, "experimental", "experimental-jira-kanban-card.tsx"), "utf8");
 const EXPERIMENTAL_PAGE_SOURCE = readFileSync(join(__dirname, "experimental", "page.tsx"), "utf8");
 const EXPERIMENTAL_HEADER_SOURCE = readFileSync(join(__dirname, "experimental", "experimental-board-header.tsx"), "utf8");
 const EXPERIMENTAL_V2_SOURCE = readFileSync(join(__dirname, "experimental-v2", "experimental-v2-jira-kanban.tsx"), "utf8");
@@ -41,6 +42,8 @@ async function loadStateHarness() {
 					selectJiraKanbanCard,
 					getCommonJiraKanbanAgentIds,
 					updateJiraKanbanCardAgentAssignment,
+					unlinkJiraKanbanAgentSession,
+					linkJiraKanbanAgentSession,
 				} from "./components/blocks/jira-kanban/state";
 			`,
 			loader: "ts",
@@ -220,7 +223,7 @@ test("Kanban card list gives the first card room for its raised edge", () => {
 test("Experimental kanban card lists drop scroller padding while the default keeps its well", () => {
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/overflowY: "auto",\n\s+display: "flex",\n\s+flexDirection: "column",\n\s+gap: token\("space\.100"\),/,
+		/overflow-y-auto has-\[\[data-session-dragging\]\]:overflow-visible/u,
 	);
 	assert.doesNotMatch(
 		EXPERIMENTAL_SOURCE,
@@ -243,7 +246,7 @@ test("Experimental kanban card gap matches the column gutter", () => {
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/overflowY: "auto",\n\s+display: "flex",\n\s+flexDirection: "column",\n\s+gap: token\("space\.100"\),/,
+		/overflow-y-auto has-\[\[data-session-dragging\]\]:overflow-visible/u,
 	);
 	assert.match(
 		SOURCE,
@@ -420,6 +423,55 @@ test("Kanban selected cards move together and keep derived column counts accurat
 	assert.equal(columns.find((column) => column.title === "Drafting").count, 2);
 });
 
+test("Kanban agent session unlink removes only the dragged session and derives the remaining activity mode", async () => {
+	const { unlinkJiraKanbanAgentSession } = await loadStateHarness();
+	const columns = [{
+		title: "In progress",
+		count: 1,
+		cards: [{
+			code: "PAY-123",
+			agentActivityMode: "awaiting-input",
+			agentActivities: [
+				{ id: "test-agent", state: "working" },
+				{ id: "review-agent", state: "awaiting-input" },
+			],
+		}],
+	}];
+
+	const withoutReview = unlinkJiraKanbanAgentSession(columns, "PAY-123", "review-agent");
+	assert.deepEqual(withoutReview[0].cards[0].agentActivities.map((activity) => activity.id), ["test-agent"]);
+	assert.equal(withoutReview[0].cards[0].agentActivityMode, "working");
+
+	const withoutTest = unlinkJiraKanbanAgentSession(withoutReview, "PAY-123", "test-agent");
+	assert.deepEqual(withoutTest[0].cards[0].agentActivities, []);
+	assert.equal(withoutTest[0].cards[0].agentActivityMode, "none");
+});
+
+test("Kanban agent session link restores a detached session onto its work item", async () => {
+	const { linkJiraKanbanAgentSession, unlinkJiraKanbanAgentSession } = await loadStateHarness();
+	const activity = { id: "test-agent", state: "working" };
+	const columns = [{
+		title: "In progress",
+		count: 1,
+		cards: [{
+			code: "PAY-123",
+			agentActivityMode: "working",
+			agentActivities: [activity],
+		}],
+	}];
+
+	const unlinked = unlinkJiraKanbanAgentSession(columns, "PAY-123", "test-agent");
+	const relinked = linkJiraKanbanAgentSession(unlinked, "PAY-123", activity);
+
+	assert.deepEqual(relinked[0].cards[0].agentActivities.map((item) => item.id), ["test-agent"]);
+	assert.equal(relinked[0].cards[0].agentActivityMode, "working");
+	assert.equal(
+		linkJiraKanbanAgentSession(relinked, "PAY-123", activity)[0].cards[0].agentActivities.length,
+		1,
+		"linking an already-attached session is a no-op",
+	);
+});
+
 test("Kanban status changes leave selected cards already in the target column in place", async () => {
 	const { moveJiraKanbanCardsToColumn } = await loadStateHarness();
 	const columns = moveJiraKanbanCardsToColumn(
@@ -516,12 +568,16 @@ test("Kanban cards expose and render Jira issue agent lifecycle presentation", (
 	assert.match(SOURCE, /agentActivityMode\?: JiraIssueAgentActivityMode;/);
 	assert.match(SOURCE, /agentDoneRuns\?: readonly JiraIssueCompletedAgentRun\[\];/);
 	assert.match(SOURCE, /pullRequestNumber\?: number;/);
+	assert.match(SOURCE, /pullRequestPreview\?: JiraIssuePullRequestPreview;/);
 	assert.match(SOURCE, /pullRequestStatus\?: JiraIssuePullRequestStatus;/);
 	assert.match(SOURCE, /agentActivities=\{card\.agentActivities\}/);
 	assert.match(SOURCE, /agentActivityMode=\{card\.agentActivityMode\}/);
 	assert.match(SOURCE, /agentDoneRuns=\{card\.agentDoneRuns\}/);
 	assert.match(SOURCE, /pullRequestNumber=\{card\.pullRequestNumber\}/);
+	assert.match(SOURCE, /pullRequestPreview=\{card\.pullRequestPreview\}/);
 	assert.match(SOURCE, /pullRequestStatus=\{card\.pullRequestStatus\}/);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /pullRequestPreview=\{card\.pullRequestPreview\}/);
+	assert.match(EXPERIMENTAL_V2_SOURCE, /pullRequestPreview=\{card\.pullRequestPreview\}/);
 	assert.match(DATA_SOURCE, /agentDoneRuns: card\.agentDoneRuns\?\.map\(\(run\) => \(\{ \.\.\.run \}\)\)/);
 });
 
@@ -625,20 +681,60 @@ test("Experimental kanban column headers keep bottom padding without top padding
 });
 
 test("Experimental kanban cards use stroke chrome instead of raised elevation", () => {
-	assert.match(EXPERIMENTAL_SOURCE, /<JiraIssue[\s\S]*chrome="stroke"/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*chrome="stroke"/u);
 	assert.match(EXPERIMENTAL_PULSE_RAIL_SOURCE, /<JiraIssue[\s\S]*chrome="stroke"/u);
 	assert.doesNotMatch(SOURCE, /chrome="stroke"/u);
 });
 
 test("Experimental kanban cards forward their configured agent activity layout", () => {
 	assert.match(EXPERIMENTAL_SOURCE, /agentActivityLayout\?: JiraIssueAgentActivityLayout;/u);
-	assert.match(EXPERIMENTAL_SOURCE, /<JiraIssue[\s\S]*agentActivityLayout=\{agentActivityLayout\}/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*agentActivityLayout=\{agentActivityLayout\}/u);
+});
+
+test("Experimental kanban cards opt into draggable agent-session unlink when the host handles it", () => {
+	assert.match(EXPERIMENTAL_SOURCE, /onCardAgentSessionUnlink\?: \(/u);
+	assert.match(EXPERIMENTAL_SOURCE, /onCardAgentSessionLink\?: \(/u);
+	// Any non-completed chin is unlinkable — 1 agent, 1-n, and needs-input —
+	// not a dedicated transfer-phase card.
+	assert.match(
+		EXPERIMENTAL_CARD_SOURCE,
+		/const firstActiveAgentSession = card\.agentActivities\?\.find\(\s*\n\s*\(activity\) => activity\.state !== "completed",\s*\n\s*\);/u,
+	);
+	assert.match(
+		EXPERIMENTAL_CARD_SOURCE,
+		/const canUnlinkAgentSession = Boolean\(onSessionUnlink && firstActiveAgentSession\);/u,
+	);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /const canTransferAgentSession = canUnlinkAgentSession \|\| canLinkAgentSession;/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /onSessionUnlink\?\.\(resolvedSession, card, columnTitle\)/u);
+	assert.doesNotMatch(EXPERIMENTAL_CARD_SOURCE, /JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCardAgentSessionUnlink=\{onCardAgentSessionUnlink\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCardAgentSessionLink=\{onCardAgentSessionLink\}/u);
+});
+
+test("Experimental kanban keeps the Unlink grey backdrop when a related session stays detached", () => {
+	assert.match(
+		EXPERIMENTAL_CARD_SOURCE,
+		/const agentActivityMode = resolveRelatedJiraIssueAgentActivityMode\(\s*\n\s*card\.agentActivityMode,\s*\n\s*detachedAgentSessions\.length > 0,\s*\n\s*\);/u,
+	);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /agentActivityMode=\{agentActivityMode\}/u);
+	assert.match(
+		EXPERIMENTAL_CARD_SOURCE,
+		/Related detached sessions keep the Unlink grey backdrop even after the/u,
+	);
+});
+
+test("Experimental kanban renders detached sessions beneath their source card with the shared medium-detached variant", () => {
+	assert.match(EXPERIMENTAL_SOURCE, /detachedAgentSessionsByCard\?: Readonly<Record<string, readonly AgentSessionItem\[\]>>;/u);
+	assert.match(EXPERIMENTAL_SOURCE, /const detachedAgentSessions = detachedAgentSessionsByCard\?\.\[card\.code\] \?\? \[\];/u);
+	assert.match(EXPERIMENTAL_SOURCE, /"flex w-full min-w-0 max-w-\[280px\] flex-col gap-2 rounded-lg"/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*<AgentSession[\s\S]*issueKey=\{card\.code\}[\s\S]*items=\{detachedAgentSessions\}[\s\S]*style=\{\{ marginTop: token\("space\.025"\) \}\}[\s\S]*variant="medium-detached"/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /detachedAgentSessionsByCard=\{proximityAgentSessionsByCard\}/u);
 });
 
 test("Experimental kanban cards use the hexagon avatar for agent assignees", () => {
-	assert.match(EXPERIMENTAL_SOURCE, /function getCardAssigneeAvatarShape\(card: JiraKanbanCardData\)/);
-	assert.match(EXPERIMENTAL_SOURCE, /card\.avatarSrc\?\.startsWith\("\/avatar-agent\/"\) \? "hexagon" as const : undefined/);
-	assert.match(EXPERIMENTAL_SOURCE, /assigneeAvatarShape=\{getCardAssigneeAvatarShape\(card\)\}/);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /function getCardAssigneeAvatarShape\(card: JiraKanbanCardData\)/);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /card\.avatarSrc\?\.startsWith\("\/avatar-agent\/"\) \? "hexagon" as const : undefined/);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /assigneeAvatarShape=\{getCardAssigneeAvatarShape\(card\)\}/);
 	assert.match(
 		EXPERIMENTAL_PULSE_RAIL_SOURCE,
 		/assigneeAvatarShape=\{face\.kind === "agent" \? "hexagon" : "circle"\}/,
@@ -657,8 +753,9 @@ test("Experimental kanban column card lists reuse the shared top and bottom scro
 	assert.match(EXPERIMENTAL_SOURCE, /import \{ buildScrollMaskStyle \} from "@\/components\/visual\/scroll-mask\/lib";/u);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/const \{ ref: cardListRef, showBottomScrollMask, showTopScrollMask \} = useHasVerticalOverflow<HTMLDivElement>\(\);[\s\S]*buildScrollMaskStyle\(\{\s*fadeBottom: showBottomScrollMask,\s*fadeSize: "3rem",\s*fadeTop: showTopScrollMask,\s*\}\)[\s\S]*ref=\{cardListRef\}[\s\S]*overflowY: "auto",[\s\S]*\.\.\.cardListScrollMaskStyle/u,
+		/const \{ ref: cardListRef, showBottomScrollMask, showTopScrollMask \} = useHasVerticalOverflow<HTMLDivElement>\(\);[\s\S]*buildScrollMaskStyle\(\{\s*fadeBottom: showBottomScrollMask,\s*fadeSize: "3rem",\s*fadeTop: showTopScrollMask,\s*scrollbarWidth: 0,\s*\}\)[\s\S]*ref=\{cardListRef\}[\s\S]*overflow-y-auto has-\[\[data-session-dragging\]\]:overflow-visible[\s\S]*\.\.\.cardListScrollMaskStyle/u,
 	);
+	assert.match(EXPERIMENTAL_V2_SOURCE, /buildScrollMaskStyle\(\{[\s\S]*scrollbarWidth: 0,[\s\S]*\}\)/u);
 	assert.doesNotMatch(SOURCE, /useHasVerticalOverflow/u);
 	assert.doesNotMatch(SOURCE, /buildScrollMaskStyle/u);
 });
@@ -718,8 +815,8 @@ test("Experimental kanban variant owns its own tree without touching the default
 	assert.match(EXPERIMENTAL_SOURCE, /export function ExperimentalJiraKanban\(\{/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /export function ExperimentalJiraKanbanBoardHeader\(\{/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /export default function ExperimentalJiraKanbanPage\(\{/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /import \{ ExperimentalJiraKanban \} from "\.\/experimental-jira-kanban";/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /import \{ ExperimentalJiraKanbanBoardHeader \} from "\.\/experimental-board-header";/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /from "\.\/experimental-jira-kanban"/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /from "\.\/experimental-board-header"/u);
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /from "\.\.\/board-header"/u);
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /from "\.\.\/page"/u);
 	// Default variant stays free of any experimental import.
@@ -742,10 +839,42 @@ test("Experimental v2 is exposed as an independently owned copy of Experimental"
 	assert.match(EXPERIMENTAL_V2_HEADER_SOURCE, /export function ExperimentalV2JiraKanbanBoardHeader\(\{/u);
 	assert.match(EXPERIMENTAL_V2_PAGE_SOURCE, /export default function ExperimentalV2JiraKanbanPage\(\{/u);
 	assert.match(EXPERIMENTAL_V2_PAGE_SOURCE, /import \{ ExperimentalV2JiraKanban \} from "\.\/experimental-v2-jira-kanban";/u);
-	assert.match(EXPERIMENTAL_V2_PAGE_SOURCE, /import \{ ExperimentalV2JiraKanbanBoardHeader \} from "\.\/experimental-v2-board-header";/u);
+	assert.match(
+		EXPERIMENTAL_V2_PAGE_SOURCE,
+		/import \{\s*ExperimentalV2JiraKanbanBoardHeader,\s*type ExperimentalV2JiraKanbanView,\s*\} from "\.\/experimental-v2-board-header";/u,
+	);
 	assert.doesNotMatch(EXPERIMENTAL_V2_PAGE_SOURCE, /from "\.\.\/experimental\/page"/u);
 	assert.match(EXPERIMENTAL_V2_PREVIEW_SOURCE, /<div className="h-dvh">/u);
 	assert.doesNotMatch(EXPERIMENTAL_V2_PREVIEW_SOURCE, /<main/u);
+});
+
+test("Experimental v2 mirrors the Golden Journeys v4 board and list contract", () => {
+	assert.match(EXPERIMENTAL_V2_PAGE_SOURCE, /activeView\?: ExperimentalV2JiraKanbanView;/u);
+	assert.match(EXPERIMENTAL_V2_PAGE_SOURCE, /insightsEnabled\?: boolean;/u);
+	assert.match(
+		EXPERIMENTAL_V2_PAGE_SOURCE,
+		/renderListContent\?: \(columns: readonly JiraKanbanColumnData\[\]\) => ReactNode;/u,
+	);
+	assert.match(EXPERIMENTAL_V2_PAGE_SOURCE, /activeView === "list" && renderListContent/u);
+	assert.match(EXPERIMENTAL_V2_PAGE_SOURCE, /modeToggle=\{insightsEnabled \? \(/u);
+	assert.match(EXPERIMENTAL_V2_PAGE_SOURCE, /showAgentSessionColumn\?: boolean;/u);
+	assert.match(EXPERIMENTAL_V2_SOURCE, /agentActivityLayout\?: JiraIssueAgentActivityLayout;/u);
+	assert.match(EXPERIMENTAL_V2_SOURCE, /collapsedColumns\?: CollapsedBoardColumns;/u);
+	assert.match(
+		EXPERIMENTAL_V2_HEADER_SOURCE,
+		/<TabsList aria-label="Work items view">[\s\S]*<TabsTrigger value="board">[\s\S]*Board[\s\S]*<TabsTrigger value="list">[\s\S]*List/u,
+	);
+	const v2ModeToggleIndex = EXPERIMENTAL_V2_HEADER_SOURCE.indexOf("{modeToggle}");
+	const v2OverflowIndex = EXPERIMENTAL_V2_HEADER_SOURCE.indexOf('aria-label={`More ${surfaceLabel} controls`}');
+	const v2ViewSwitcherIndex = EXPERIMENTAL_V2_HEADER_SOURCE.indexOf('aria-label="Work items view"');
+	assert.ok(v2ModeToggleIndex > 0 && v2ModeToggleIndex < v2OverflowIndex);
+	assert.ok(v2OverflowIndex > 0 && v2OverflowIndex < v2ViewSwitcherIndex);
+	assert.match(DEMO_SOURCE, /createJiraGoldenJourneysV4PayBoardColumns/u);
+	assert.match(DEMO_SOURCE, /JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS/u);
+	assert.match(DEMO_SOURCE, /<ExperimentalV2Page[\s\S]*insightsEnabled=\{false\}/u);
+	assert.match(DEMO_SOURCE, /activeView=\{activeView\}[\s\S]*onViewChange=\{setActiveView\}/u);
+	assert.match(DEMO_SOURCE, /renderListContent=\{\(columns\) =>/u);
+	assert.match(DEMO_SOURCE, /<JiraList[\s\S]*rows=\{listRows\}/u);
 });
 
 test("Experimental kanban header keeps only configure and more actions", () => {

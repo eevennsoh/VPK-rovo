@@ -6,12 +6,14 @@ import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palet
 import {
 	RovoSparkle,
 	RovoSparkleButton,
+	RovoSparkleMenu,
 	type RovoSparkleActionKind,
 	type RovoSparkleActionRequest,
 	type RovoSparkleItem,
 	type RovoSparkleSelectedItem,
 } from "@/components/ui-custom/rovo-sparkle";
 import { getMentionChildItems } from "@/components/ui-custom/rich-text-editor";
+import { DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from "@/components/ui/dropdown-menu";
 
 export type JiraIssueGenerativeActionKind = RovoSparkleActionKind;
 
@@ -49,6 +51,12 @@ interface JiraIssueGenerativeActionMenuProps {
 	triggerElement?: ReactElement;
 }
 
+interface JiraIssueAgentAndSkillSubmenuProps {
+	action: JiraIssueGenerativeActionConfig;
+	issue: JiraIssueGenerativeActionIssue;
+	onRequestClose: () => void;
+}
+
 interface JiraIssueGenerativeActionPosition {
 	bridgeHeight: number;
 	left: number;
@@ -78,6 +86,63 @@ function buildJiraIssueGenerativeAgentPrompt(
 	issue: JiraIssueGenerativeActionIssue,
 ): string {
 	return `Ask "${item.label}" to help with Jira issue ${issue.issueKey}: ${issue.summary}.`;
+}
+
+function submitJiraIssueAssignment(
+	action: JiraIssueGenerativeActionConfig,
+	issue: JiraIssueGenerativeActionIssue,
+	kind: "agent" | "skill",
+	item: JiraIssueGenerativeActionSelectedItem,
+) {
+	const prompt = kind === "agent"
+		? buildJiraIssueGenerativeAgentPrompt(item, issue)
+		: buildJiraIssueGenerativeSkillPrompt(item, issue);
+	void action.onSubmit({ kind, prompt, issue, selectedItem: item });
+}
+
+function submitJiraIssueGenerativeAction(
+	action: JiraIssueGenerativeActionConfig,
+	issue: JiraIssueGenerativeActionIssue,
+	request: RovoSparkleActionRequest,
+) {
+	if (request.kind === "ask-rovo") {
+		void action.onSubmit({
+			kind: request.kind,
+			prompt: buildJiraIssueGenerativeAskRovoPrompt(request.prompt, issue),
+			issue,
+		});
+		return;
+	}
+
+	submitJiraIssueAssignment(action, issue, request.kind, request.selectedItem);
+}
+
+export function JiraIssueAgentAndSkillSubmenu({
+	action,
+	issue,
+	onRequestClose,
+}: Readonly<JiraIssueAgentAndSkillSubmenuProps>) {
+	const agents = action.agents ?? JIRA_ISSUE_GENERATIVE_AGENTS;
+	const skills = action.skills ?? JIRA_ISSUE_GENERATIVE_SKILLS;
+
+	return (
+		<DropdownMenuSub>
+			<DropdownMenuSubTrigger>Assign agent and use skill</DropdownMenuSubTrigger>
+			<DropdownMenuSubContent
+				className="max-h-none min-w-0 overflow-visible rounded-none bg-transparent p-0 shadow-none"
+				onClick={(event) => event.stopPropagation()}
+			>
+				<RovoSparkleMenu
+					agents={agents}
+					emptyLabel="No Jira issue actions found"
+					menuTitle="Jira issue actions"
+					onRequestClose={onRequestClose}
+					onSubmit={(request) => submitJiraIssueGenerativeAction(action, issue, request)}
+					skills={skills}
+				/>
+			</DropdownMenuSubContent>
+		</DropdownMenuSub>
+	);
 }
 
 function getJiraIssueGenerativeTriggerPosition(anchor: HTMLElement): JiraIssueGenerativeActionPosition {
@@ -160,24 +225,7 @@ export function JiraIssueGenerativeActionMenu({
 	}, [anchor, open, revealActive]);
 
 	function handleRovoSparkleSubmit(request: RovoSparkleActionRequest) {
-		if (request.kind === "ask-rovo") {
-			void action.onSubmit({
-				kind: request.kind,
-				prompt: buildJiraIssueGenerativeAskRovoPrompt(request.prompt, issue),
-				issue,
-			});
-			return;
-		}
-
-		const prompt = request.kind === "agent"
-			? buildJiraIssueGenerativeAgentPrompt(request.selectedItem, issue)
-			: buildJiraIssueGenerativeSkillPrompt(request.selectedItem, issue);
-		void action.onSubmit({
-			kind: request.kind,
-			prompt,
-			issue,
-			selectedItem: request.selectedItem,
-		});
+		submitJiraIssueGenerativeAction(action, issue, request);
 	}
 
 	const generatedTrigger = triggerPosition ? (

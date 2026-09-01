@@ -35,9 +35,15 @@ export type FloatingComposerProps = Omit<
 	 * `auto` (default) measures the draft and only stacks once the text would wrap
 	 * at compact-row width. `stacked` pins the editor to its own row regardless of
 	 * content — for surfaces whose expanded state always reserves a full-width
-	 * editor above the control row (e.g. the Pull Request Review card).
+	 * editor above the control row (e.g. the Pull Request Review card). `compact`
+	 * pins the opposite: the editor cell stays inside the single
+	 * `[ + ] [ cell ] [ actions ]` row and is never promoted. Use it when the cell
+	 * holds something other than a text field — the `auto` probe hunts for a
+	 * `textarea` or `[contenteditable]` inside it and polls every 50ms until one
+	 * appears, so a non-text cell would leave a 20Hz timer running for the life of
+	 * the composer.
 	 */
-	layout?: "auto" | "stacked";
+	layout?: "auto" | "stacked" | "compact";
 };
 
 function observeResizeTargets(observer: ResizeObserver, ...targets: Element[]): void {
@@ -80,13 +86,17 @@ export function FloatingComposer({
 	const textFieldRef = useRef<HTMLDivElement>(null);
 	const actionsRef = useRef<HTMLDivElement>(null);
 	const [isMeasuredExpanded, setIsMeasuredExpanded] = useState(false);
-	const isExpanded = layout === "stacked" || isMeasuredExpanded;
+	// Only `auto` consults the measurement, so a stale `true` left over from a
+	// previous draft cannot leak into a caller-pinned layout.
+	const isExpanded = layout === "stacked" || (layout === "auto" && isMeasuredExpanded);
 	const hasInputContext = inputContext != null;
 
 	useEffect(() => {
-		// `stacked` is a caller-pinned layout, so the probe would only burn frames
-		// measuring a decision that cannot change the rendered rows.
-		if (layout === "stacked") {
+		// Both pinned layouts skip the probe: it would only burn frames measuring a
+		// decision that cannot change the rendered rows, and under `compact` the
+		// cell may hold no text field at all, which would leave the 50ms bind poll
+		// below running forever.
+		if (layout !== "auto") {
 			return () => undefined;
 		}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ComponentProps, type CSSProperties, type FocusEvent, type PointerEvent, type ReactNode } from "react";
+import { useId, useRef, useState, type ComponentProps, type CSSProperties, type FocusEvent, type PointerEvent, type ReactNode } from "react";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
 
 import {
@@ -8,11 +8,14 @@ import {
 	type JiraIssueAgentActivity,
 	type JiraIssueAgentActivityLayout,
 	type JiraIssueAgentActivityMode,
+	type JiraIssueAgentSessionFlyoutContext,
 	type JiraIssueAgentSessionDragBinding,
 	type JiraIssueAgentSessionDragState,
 } from "@/components/blocks/jira-issue/agent-activity";
 import { JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE } from "@/components/blocks/jira-issue/agent-session-drag";
+import { isJiraIssueSessionAttachPreview } from "@/components/blocks/jira-issue/agent-session-transfer-model";
 import {
+	JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS,
 	JiraIssueAgentSessionTransfer,
 	type JiraIssueAgentSessionTransferConfig,
 } from "@/components/blocks/jira-issue/agent-session-transfer";
@@ -37,13 +40,13 @@ import { JiraIssueSummary } from "@/components/blocks/jira-issue/summary";
 import type {
 	JiraIssueChrome,
 	JiraIssuePriority,
+	JiraIssuePullRequestPreview,
 	JiraIssuePullRequestStatus,
 	JiraIssueTag,
 } from "@/components/blocks/jira-issue/types";
 import type { SmartLinkItem } from "@/components/blocks/smart-link";
 import { useIsMounted } from "@/components/hooks/use-is-mounted";
 import type { AvatarProps, AvatarUnassignedKind } from "@/components/ui/avatar";
-import { Gooey } from "@/components/visual/gooey";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
@@ -66,20 +69,10 @@ const AGENT_ACTIVITY_SURFACE_STYLE: CSSProperties = {
 	transformOrigin: "top center",
 };
 
-// One `<Gooey>` group spans the dragged chin row and the drop zones. The root
-// paints the MERGED silhouette of its items, so the fill has to be the chin's
-// own grey: a white fill stamped a light slab over the grey backdrop instead of
-// bridging it, which is why the pull-out read as a hard-edged tag with no goo.
-// `blur` is how far apart two bodies still bridge — it sets the neck length.
-const AGENT_SESSION_TRANSFER_GOO = {
-	blur: 12,
-	fill: "var(--color-bg-accent-gray-subtlest)",
-	filterPadding: 64,
-} as const;
-
 export type {
 	JiraIssueChrome,
 	JiraIssuePriority,
+	JiraIssuePullRequestPreview,
 	JiraIssuePullRequestStatus,
 	JiraIssueTag,
 	JiraIssueVariant,
@@ -105,6 +98,8 @@ export type {
 	JiraIssueGenerativeActionSelectedItem,
 } from "@/components/blocks/jira-issue/generative-action-menu";
 export type { JiraIssueMoreAction } from "@/components/blocks/jira-issue/more-menu";
+
+export type JiraIssueGenerativeActionPresentation = "sparkle" | "more-actions";
 
 export interface JiraIssueSubtask {
 	summary: string;
@@ -154,7 +149,9 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	/** Jira issue key, e.g. RFP-101. */
 	issueKey: string;
 	pullRequestNumber?: number;
+	pullRequestPreview?: JiraIssuePullRequestPreview;
 	pullRequestStatus?: JiraIssuePullRequestStatus;
+	pullRequestTitle?: string;
 	tags?: readonly JiraIssueTag[];
 	priority?: JiraIssuePriority;
 	issueTypeLabel?: string;
@@ -182,6 +179,8 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	agentActivityMode?: JiraIssueAgentActivityMode;
 	/** Merged collapses active agents into one prioritized chin row; split gives each agent its own row. */
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
+	/** Optional board context that makes attached activity rows open session details on hover. */
+	agentSessionFlyout?: JiraIssueAgentSessionFlyoutContext;
 	onAgentActivityOpenChange?: (open: boolean) => void;
 	onAgentActivityViewChat?: (activity: JiraIssueAgentActivity) => void;
 	onAgentDoneRunSubmit?: (run: JiraIssueCompletedAgentRun, prompt: string) => void;
@@ -192,8 +191,17 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	/** Called after an item is selected from the issue actions menu. */
 	onMoreActionSelect?: (action: JiraIssueMoreAction) => void;
 	generativeAction?: JiraIssueGenerativeActionConfig;
+	/** Chooses whether the agent/skill action appears as a sparkle or within More actions. */
+	generativeActionPresentation?: JiraIssueGenerativeActionPresentation;
 	/** Opt-in: makes the chin rows draggable and adds the unlink/move drop zones below the card. */
 	agentSessionTransfer?: JiraIssueAgentSessionTransferConfig;
+	/**
+	 * Rendered after the drop well so a detached session can drag back onto
+	 * the card.
+	 */
+	sessionTransferAfter?: (
+		sessionDrag: JiraIssueAgentSessionDragBinding,
+	) => ReactNode;
 }
 
 export type JiraIssueProps = JiraIssueDefaultProps | JiraIssueUncapturedWorkProps;
@@ -212,6 +220,7 @@ function JiraIssueDefault({
 	agentActivities,
 	agentActivityMode,
 	agentActivityLayout = "merged",
+	agentSessionFlyout,
 	agentDoneRuns = [],
 	agentSessionTransfer,
 	assigneeAvatarLabel,
@@ -225,6 +234,7 @@ function JiraIssueDefault({
 	dragging = false,
 	draggable = true,
 	generativeAction,
+	generativeActionPresentation = "sparkle",
 	issueKey,
 	issueTypeLabel = "Task",
 	onSubtasksExpandedChange,
@@ -237,8 +247,11 @@ function JiraIssueDefault({
 	parentEpicControl,
 	priority = "major",
 	pullRequestNumber,
+	pullRequestPreview,
 	pullRequestStatus,
+	pullRequestTitle,
 	selected = false,
+	sessionTransferAfter,
 	showAutomationIndicator = false,
 	showMoreAction = true,
 	showPriorityIndicator = true,
@@ -267,18 +280,36 @@ function JiraIssueDefault({
 	const [agentSessionDragState, setAgentSessionDragState] = useState<JiraIssueAgentSessionDragState>(
 		JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE,
 	);
-	const [agentSessionTransferMenuOpen, setAgentSessionTransferMenuOpen] = useState(false);
-	// While the transfer drop zones are revealed they own the gesture, so the
+	const cardMeasureRef = useRef<HTMLElement | null>(null);
+	// While the transfer drop zone is revealed it owns the gesture, so the
 	// hover-revealed sparkle stands down rather than competing for the pointer.
-	const agentSessionTransferRevealed = Boolean(agentSessionTransfer)
-		&& (agentSessionDragState.dragging || agentSessionTransferMenuOpen);
+	const agentSessionTransferRevealed = Boolean(agentSessionTransfer) && agentSessionDragState.dragging;
 	const generativeActionRevealActive = !agentActivityHoverOpen
 		&& !agentSessionTransferRevealed
 		&& !moreActionMenuOpen
 		&& !generativeActionRevealSuppressed
 		&& (generativeActionPointerActive || generativeActionFocusActive);
 	const agentSessionDragBinding: JiraIssueAgentSessionDragBinding | undefined = agentSessionTransfer
-		? { onDragStateChange: setAgentSessionDragState }
+		? {
+			onDragStateChange: (state) => {
+				// A finished gesture must not leave `source: "detached"` on the
+				// transfer state or the next hover still treats the card as an
+				// attach target. Keep `cancelled` for one commit so the well can
+				// clear without linking.
+				setAgentSessionDragState(
+					state.cancelled
+						? { ...JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE, cancelled: true }
+						: state.dragging
+							? state
+							: JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE,
+				);
+			},
+			onFocusedActivitiesChange: (activities) => setAgentSessionDragState((current) => ({
+				...current,
+				activities,
+			})),
+			onUnlink: agentSessionTransfer.onUnlink,
+		}
 		: undefined;
 	const hasSubtasks = Boolean(subtasks?.length);
 	const resolvedSubtasksExpanded = subtasksExpanded ?? internalSubtasksExpanded;
@@ -298,18 +329,28 @@ function JiraIssueDefault({
 	const hasAgentDoneNotification = resolvedAgentActivityMode === "completed" && agentDoneRuns.length > 0;
 	const inferredPullRequestNumber = agentDoneRuns.find((run) => run.pullRequestNumber)?.pullRequestNumber;
 	const resolvedPullRequestNumber = pullRequestNumber ?? inferredPullRequestNumber;
+	const isAttachingSession = isJiraIssueSessionAttachPreview(
+		agentSessionDragState.dragging,
+		agentSessionDragState.source,
+	);
+	// Unlink keeps `working` with an empty chin so the grey backdrop stays
+	// around the issue. The shell keys off mode, not a mounted row.
 	const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working"
 		|| resolvedAgentActivityMode === "awaiting-input"
-		|| hasAgentDoneNotification;
+		|| hasAgentDoneNotification
+		|| isAttachingSession;
+	const hasAgentActivityChin = activeAgentActivities.length > 0
+		|| hasAgentDoneNotification
+		|| isAttachingSession;
 	const hasIssueRows = hasSubtasks;
 	const hasAgentActivityPresentation = agentActivityMode !== undefined || Boolean(agentActivities?.length) || hasAgentDoneNotification;
-	const usesAgentActivityShell = hasAgentActivityPresentation;
-	const hasInteractiveContent = showMoreAction || hasSubtasks || Boolean(parentEpicControl) || hasAgentActivityPresentation || Boolean(generativeAction) || Boolean(agentSessionTransfer);
+	const usesAgentActivityShell = hasAgentActivityPresentation || Boolean(agentSessionTransfer);
+	const usesStrokeChrome = chrome === "stroke";
+	const hasInteractiveContent = showMoreAction || hasSubtasks || Boolean(parentEpicControl) || hasAgentActivityPresentation || Boolean(generativeAction) || Boolean(agentSessionTransfer) || usesStrokeChrome;
 	const shouldRenderIssueClickButton = Boolean(props.onClick && !parentEpicControl);
 	const issueRowsClassName = cn("pt-1", !(hasSubtasks && resolvedSubtasksExpanded) && "pb-1");
 	const layoutTransition = getJiraIssueLayoutTransition(shouldReduceMotion);
 	const presenceMotion = getJiraIssuePresenceMotion(shouldReduceMotion);
-	const usesStrokeChrome = chrome === "stroke";
 	const idleBorderClassName = usesStrokeChrome
 		? "border-border-disabled hover:border-border group-hover/jira-issue:border-border"
 		: "border-transparent";
@@ -362,6 +403,14 @@ function JiraIssueDefault({
 				? `${agentActivityIdleBorderClassName} bg-bg-selected`
 				: `${agentActivityRestBorderClassName} bg-surface`,
 	);
+	// Last chin row is the travelling chip: keep the grey backdrop and close
+	// the open chin so the well hugs the white card. A 4px bottom pad matches
+	// the empty-chin gutter. Keys off `data-session-chip-out` in the same
+	// commit as the row collapse — do not lift that flag into React or the
+	// transfer hit test measures a stale well. Remaining docked rows keep the
+	// open chin.
+	const agentActivitySessionChipOutCloseClass =
+		"has-[[data-session-chip-out]]:not-has-[[data-slot=jira-issue-agent-row-wrap]:not([data-session-chip-out])]:pb-1";
 	const agentActivityShellClassName = cn(
 		"relative w-full min-w-0 overflow-visible rounded-[10px] outline-none",
 		"transition-[opacity,background-color,border-color] duration-normal ease-out",
@@ -370,6 +419,7 @@ function JiraIssueDefault({
 		// z-index on the dragged chip cannot escape it. Lift the whole shell above
 		// the drop wells — a later sibling — for the duration of the drag.
 		agentSessionDragState.dragging && "z-20",
+		agentActivitySessionChipOutCloseClass,
 	);
 	const agentActivityArticleClassName = cn(
 		"group/jira-issue relative w-full min-w-0 overflow-visible outline-none",
@@ -486,7 +536,9 @@ function JiraIssueDefault({
 			parentEpicControl={parentEpicControl}
 			priority={priority}
 			pullRequestNumber={resolvedPullRequestNumber}
+			pullRequestPreview={pullRequestPreview}
 			pullRequestStatus={pullRequestStatus}
+			pullRequestTitle={pullRequestTitle}
 			showAutomationIndicator={showAutomationIndicator}
 			showPriorityIndicator={showPriorityIndicator}
 			summary={summary}
@@ -497,6 +549,8 @@ function JiraIssueDefault({
 	const moreActionMenu = showMoreAction ? (
 		<div className="absolute right-3 top-3 z-20 size-6">
 			<JiraIssueMoreMenu
+				generativeAction={generativeActionPresentation === "more-actions" ? generativeAction : undefined}
+				generativeActionIssue={{ issueKey, summary }}
 				issueKey={issueKey}
 				onActionSelect={onMoreActionSelect}
 				onOpenChange={setMoreActionMenuOpen}
@@ -506,17 +560,36 @@ function JiraIssueDefault({
 	const richIssueContent = (
 		<div className="relative z-10 flex flex-col">
 			{shouldRenderIssueClickButton ? (
-				<button
-					type={type}
-					aria-pressed={ariaPressed ?? selected}
-					className="w-full p-3 text-left outline-none transition-colors duration-normal ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-					disabled={props.disabled}
-					onClick={props.onClick}
-				>
-					{summaryContent}
-				</button>
+				usesStrokeChrome ? (
+					<div className="relative w-full px-3 pt-3 pb-2 text-left outline-none transition-colors duration-normal ease-out has-[:focus-visible]:border-ring has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50">
+						<button
+							aria-pressed={ariaPressed ?? selected}
+							className="sr-only"
+							disabled={props.disabled}
+							onClick={props.onClick}
+							type={type}
+						>
+							{issueKey}: {summary}
+						</button>
+						<div
+							onClick={props.disabled ? undefined : props.onClick as ComponentProps<"div">["onClick"]}
+						>
+							{summaryContent}
+						</div>
+					</div>
+				) : (
+					<button
+						type={type}
+						aria-pressed={ariaPressed ?? selected}
+						className="w-full p-3 text-left outline-none transition-colors duration-normal ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+						disabled={props.disabled}
+						onClick={props.onClick}
+					>
+						{summaryContent}
+					</button>
+				)
 			) : (
-				<div className="p-3">{summaryContent}</div>
+				<div className={usesStrokeChrome ? "px-3 pt-3 pb-2" : "p-3"}>{summaryContent}</div>
 			)}
 			{moreActionMenu}
 			<AnimatePresence initial={false} mode="popLayout">
@@ -552,7 +625,7 @@ function JiraIssueDefault({
 			</AnimatePresence>
 		</div>
 	);
-	const generativeActionMenu = generativeAction ? (
+	const generativeActionMenu = generativeAction && (generativeActionPresentation === "sparkle" || !showMoreAction) ? (
 		<JiraIssueGenerativeActionMenu
 			action={generativeAction}
 			anchor={generativeActionAnchor}
@@ -567,7 +640,11 @@ function JiraIssueDefault({
 	) : null;
 	const agentActivityShell = (
 		<motion.div
+			ref={(node) => {
+				cardMeasureRef.current = node;
+			}}
 			className={agentActivityShellClassName}
+			data-slot="jira-issue-agent-shell"
 			initial={false}
 			layout={shouldReduceMotion ? false : "size"}
 			style={AGENT_ACTIVITY_SHELL_STYLE}
@@ -577,6 +654,7 @@ function JiraIssueDefault({
 				aria-hidden="true"
 				animate={shouldReduceMotion ? undefined : agentActivityBackdropAnimation}
 				className="pointer-events-none absolute bg-bg-accent-gray-subtlest"
+				data-slot="jira-issue-agent-backdrop"
 				initial={false}
 				style={shouldReduceMotion ? { ...AGENT_ACTIVITY_BACKDROP_STYLE, ...agentActivityBackdropAnimation } : AGENT_ACTIVITY_BACKDROP_STYLE}
 				transition={layoutTransition}
@@ -607,10 +685,20 @@ function JiraIssueDefault({
 					layout={agentActivityLayout}
 					onOpenChange={handleAgentActivityOpenChange}
 					onViewChat={onAgentActivityViewChat}
+					sessionFlyout={agentSessionFlyout}
 					sessionDrag={agentSessionDragBinding}
 					shouldReduceMotion={shouldReduceMotion}
 					usesStrokeChrome={usesStrokeChrome}
 				/>
+				{isAttachingSession ? (
+					<div className="px-1 py-1" data-slot="jira-issue-attach-chin">
+						<div
+							aria-hidden
+							className="pointer-events-none h-6 w-full rounded-md"
+							data-slot="jira-issue-attach-chin-slot"
+						/>
+					</div>
+				) : null}
 				<AnimatePresence initial={false} mode="popLayout">
 					{hasAgentDoneNotification ? (
 						<motion.div
@@ -634,24 +722,33 @@ function JiraIssueDefault({
 						</motion.div>
 					) : null}
 				</AnimatePresence>
+				{hasActiveAgentActivityShell && !hasAgentActivityChin ? (
+					<div
+						aria-hidden
+						className="h-1"
+						data-slot="jira-issue-agent-shell-gutter"
+					/>
+				) : null}
 			</LayoutGroup>
 		</motion.div>
 	);
-	// One `<Gooey>` group has to span the dragged chin row and the drop zones:
-	// dissolve only bridges items registered with the same root.
 	const agentActivityShellWithTransfer = agentSessionTransfer ? (
-		<Gooey {...AGENT_SESSION_TRANSFER_GOO} className="relative w-full min-w-0 overflow-visible">
+		<div className={cn("relative w-full min-w-0 overflow-visible", JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS)}>
 			{agentActivityShell}
 			<JiraIssueAgentSessionTransfer
 				cancelled={agentSessionDragState.cancelled}
+				cardMeasureRef={cardMeasureRef}
 				config={agentSessionTransfer}
 				dragging={agentSessionDragState.dragging}
-				onMenuOpenChange={setAgentSessionTransferMenuOpen}
 				pointer={agentSessionDragState.pointer}
 				session={agentSessionDragState.activities[0]}
 				sessionLabel={agentSessionDragState.activities[0]?.name}
+				source={agentSessionDragState.source}
 			/>
-		</Gooey>
+			{agentSessionDragBinding && sessionTransferAfter
+				? sessionTransferAfter(agentSessionDragBinding)
+				: null}
+		</div>
 	) : agentActivityShell;
 
 	if (hasInteractiveContent) {
@@ -663,6 +760,7 @@ function JiraIssueDefault({
 					className={agentActivityArticleClassName}
 					data-active={active || undefined}
 					data-dragging={dragging || undefined}
+					data-session-dragging={agentSessionDragState.dragging || undefined}
 					data-selected={selected || undefined}
 					data-variant={variant}
 					data-agent-activity-mode={resolvedAgentActivityMode}

@@ -114,11 +114,34 @@ test("PullRequest spacious variant rearranges the same data into three rows", ()
 	assert.match(COMPONENT_SOURCE, /function PullRequestSpaciousBody/u);
 	assert.match(COMPONENT_SOURCE, /function PullRequestStatusLozenge/u);
 	assert.match(COMPONENT_SOURCE, /function PullRequestRepositoryTag/u);
+	assert.match(COMPONENT_SOURCE, /function PullRequestGitHubMark/u);
 	// Spacious leads with a glyph-bearing lozenge and closes with an author footer.
 	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/pull-request"/u);
 	assert.match(COMPONENT_SOURCE, /<PullRequestStatusLozenge status=\{status\} withIcon \/>/u);
+	// Title + #N share ADS body 14px / 20px (`text-sm leading-5`) on both densities.
+	assert.match(
+		COMPONENT_SOURCE,
+		/function PullRequestCompactBody[\s\S]*text-sm font-medium leading-5[\s\S]*function PullRequestSpaciousBody/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/function PullRequestSpaciousBody[\s\S]*text-sm font-medium leading-5/u,
+	);
 	assert.match(COMPONENT_SOURCE, /PullRequestAuthorAvatar author=\{author\} size="xs"/u);
-	assert.match(COMPONENT_SOURCE, /Created by \{author\.name\}/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/<span className="min-w-0 truncate">\{author\.name\}<\/span>/u,
+	);
+	assert.doesNotMatch(COMPONENT_SOURCE, /Created by \{author\.name\}/u);
+	// GitHub mark + existing branch path; no repository name chip.
+	assert.match(
+		COMPONENT_SOURCE,
+		/function PullRequestSpaciousBody[\s\S]*<PullRequestGitHubMark \/>[\s\S]*<PullRequestBranchPath branch=\{branch\} targetBranch=\{targetBranch\} \/>/u,
+	);
+	assert.doesNotMatch(
+		COMPONENT_SOURCE,
+		/function PullRequestSpaciousBody[\s\S]*<PullRequestRepositoryTag /u,
+	);
 	assert.match(
 		COMPONENT_SOURCE,
 		/\{filesChanged\} \{filesChanged === 1 \? "file" : "files"\}/u,

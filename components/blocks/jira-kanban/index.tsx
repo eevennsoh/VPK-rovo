@@ -16,6 +16,7 @@ import {
 	type JiraIssueCompletedAgentRun,
 	type JiraIssueGenerativeActionRequest,
 	type JiraIssuePriority,
+	type JiraIssuePullRequestPreview,
 	type JiraIssuePullRequestStatus,
 	type JiraIssueTag,
 } from "@/components/blocks/jira-issue";
@@ -76,6 +77,7 @@ export interface JiraKanbanCardData {
 	agentActivityMode?: JiraIssueAgentActivityMode;
 	agentDoneRuns?: readonly JiraIssueCompletedAgentRun[];
 	pullRequestNumber?: number;
+	pullRequestPreview?: JiraIssuePullRequestPreview;
 	pullRequestStatus?: JiraIssuePullRequestStatus;
 }
 
@@ -694,6 +696,7 @@ export function JiraKanban({
 												tags={card.tags}
 												priority={card.priority}
 												pullRequestNumber={card.pullRequestNumber}
+												pullRequestPreview={card.pullRequestPreview}
 												pullRequestStatus={card.pullRequestStatus}
 												assigneeAvatarLabel={card.assignee?.name}
 												assigneeAvatarSrc={card.avatarSrc}

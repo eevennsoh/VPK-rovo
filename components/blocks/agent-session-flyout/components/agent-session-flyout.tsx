@@ -12,6 +12,7 @@ import {
 	JiraSessionFlyoutTrigger,
 	createJiraSessionFlyoutHandle,
 	type JiraSessionFlyoutContent,
+	type JiraSessionFlyoutSurfaceProps,
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import { AGENT_SESSION_FLYOUT_SESSIONS } from "@/components/blocks/agent-session-flyout/agent-session-flyout-data";
 import { cn } from "@/lib/utils";
@@ -23,7 +24,10 @@ import { cn } from "@/lib/utils";
  * into the Agent States composer or an untracked-work suggestion.
  */
 
-export interface AgentSessionFlyoutProps {
+export interface AgentSessionFlyoutProps extends Pick<
+	JiraSessionFlyoutSurfaceProps,
+	"onAddAsSubtask" | "onCreateWorkItem" | "onLinkWorkItem"
+> {
 	/** Sessions to render in the compact list. Defaults to the `/jira-golden-journeys-v0` queue seeds. */
 	sessions?: readonly JiraSidebarSessionItem[];
 	/**
@@ -78,6 +82,9 @@ function AgentSessionFlyoutTrigger({
 export function AgentSessionFlyout({
 	className,
 	content = "details",
+	onAddAsSubtask,
+	onCreateWorkItem,
+	onLinkWorkItem,
 	sessions = AGENT_SESSION_FLYOUT_SESSIONS,
 }: Readonly<AgentSessionFlyoutProps>) {
 	const [flyoutHandle] = useState(createJiraSessionFlyoutHandle);
@@ -95,7 +102,13 @@ export function AgentSessionFlyout({
 					<AgentSessionFlyoutTrigger session={session} />
 				</JiraSessionFlyoutTrigger>
 			))}
-			<JiraSessionFlyoutSurface content={content} handle={flyoutHandle} />
+			<JiraSessionFlyoutSurface
+				content={content}
+				handle={flyoutHandle}
+				onAddAsSubtask={onAddAsSubtask}
+				onCreateWorkItem={onCreateWorkItem}
+				onLinkWorkItem={onLinkWorkItem}
+			/>
 		</div>
 	);
 }

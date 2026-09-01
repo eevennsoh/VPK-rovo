@@ -85,13 +85,16 @@ export type AgentListSessionDetails = Partial<
 		JiraSidebarSessionItem,
 		| "agentAvatarSrc"
 		| "agentName"
+		| "brandName"
 		| "completedAtMs"
 		| "completedSecondsAgo"
 		| "id"
 		| "initialElapsedSeconds"
+		| "invokedBy"
 		| "startedAtMs"
 		| "status"
 		| "title"
+		| "vpkLogo"
 	>
 > & {
 	/** Claude session id used by `claude --resume`. Defaults to the row id. */
@@ -101,6 +104,20 @@ export type AgentListSessionDetails = Partial<
 export interface AgentListItem {
 	id: string;
 	title: string;
+	/**
+	 * Agent-authored session name for single-line rows (e.g. `"Sandbox 401 root
+	 * cause"`), the way a coding agent auto-names a thread from its opening
+	 * prompt.
+	 *
+	 * Separate from {@link AgentListItem.title} because the two answer different
+	 * questions at different sizes. `title` is the narrative a full card needs —
+	 * why this session matters and what it is still missing — and it is written
+	 * to wrap onto two lines. A compact row has roughly 26 characters between the
+	 * agent mark and its hover actions, so it needs the name of the work rather
+	 * than the argument about it. Rows fall back to `title` when a session has no
+	 * short name.
+	 */
+	shortTitle?: string;
 	/** Row state — see {@link AgentListState}. */
 	state: AgentListState;
 	/** The agent or person the row is about; rendered in the leading avatar. */
@@ -131,12 +148,12 @@ export interface AgentListItem {
 	timeLabel?: string;
 	/**
 	 * Where the session runs. Defaults to `"cloud"`. Local rows render a static
-	 * timestamp, the devices glyph, and {@link AgentListItem.machineName} instead
-	 * of a live runtime and the agent name.
+	 * timestamp, a devices icon, and {@link AgentListItem.machineName}
+	 * instead of a live runtime and the agent name.
 	 */
 	host?: AgentListHost;
 	/**
-	 * Viewer machine shown beside the devices glyph on local rows
+	 * Viewer machine shown beside a devices icon on local rows
 	 * (e.g. `"Geoff’s MacBook"`). Ignored unless `host` is `"local"`.
 	 */
 	machineName?: string;

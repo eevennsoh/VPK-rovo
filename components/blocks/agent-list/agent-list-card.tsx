@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type MouseEvent, type ReactNode } from "react";
 
 import ArchiveBoxIcon from "@atlaskit/icon/core/archive-box";
 import DevicesIcon from "@atlaskit/icon/core/devices";
@@ -39,12 +39,13 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
+import { actorInitials } from "./agent-list-actor";
+import { InvokerBy } from "./agent-list-invoker";
 import { isLocalAgentListItem, toAgentSessionFlyoutItem } from "./agent-list-session";
 import type {
 	AgentListAgent,
 	AgentListCustomFlyoutActions,
 	AgentListFlyout,
-	AgentListInvoker,
 	AgentListItem,
 	AgentListPrStatus,
 	AgentListState,
@@ -128,17 +129,6 @@ function MetadataDot() {
 	);
 }
 
-function actorInitials(name: string): string {
-	return (
-		name
-			.split(" ")
-			.filter(Boolean)
-			.slice(0, 2)
-			.map((word) => word[0]?.toUpperCase())
-			.join("") || "?"
-	);
-}
-
 /** The two leading-avatar footprints the row uses, as Avatar size tokens. */
 const PX_TO_PERSON_AVATAR_SIZE: Record<number, NonNullable<AvatarProps["size"]>> = {
 	24: "sm",
@@ -178,28 +168,6 @@ function AgentListIdentity({
 			sizePx={sizePx}
 			vpkLogo={agent.vpkLogo}
 		/>
-	);
-}
-
-/** Compact `by <face>` metadata after the relative timestamp. */
-function InvokerBy({ invoker }: Readonly<{ invoker: AgentListInvoker }>) {
-	return (
-		<span className="flex shrink-0 items-center gap-1">
-			<span>by</span>
-			<TooltipProvider>
-				<Tooltip>
-					<TooltipTrigger render={<span className="inline-flex shrink-0" />}>
-						<Avatar label={invoker.name} size="xs">
-							{invoker.avatarSrc ? (
-								<AvatarImage alt="" src={invoker.avatarSrc} />
-							) : null}
-							<AvatarFallback>{actorInitials(invoker.name)}</AvatarFallback>
-						</Avatar>
-					</TooltipTrigger>
-					<TooltipContent>{invoker.name}</TooltipContent>
-				</Tooltip>
-			</TooltipProvider>
-		</span>
 	);
 }
 
@@ -357,12 +325,14 @@ function rowPrimaryActionLabel(item: AgentListItem): string {
 
 /**
  * Identity on the metadata line. Cloud rows name the agent; local rows name the
- * machine beside the devices glyph, matching the Jira session flyout host chip.
+ * machine beside a devices glyph, matching the Jira session flyout host chip's
+ * machine copy. The invoker face belongs on InvokerBy / activity headers, not
+ * next to the machine name.
  */
 function AgentListMetadataIdentity({ item }: Readonly<{ item: AgentListItem }>) {
 	if (isLocalAgentListItem(item) && item.machineName) {
 		return (
-			<span className="flex min-w-0 items-center gap-1">
+			<span className="flex min-w-0 items-center gap-1 overflow-visible">
 				<span
 					aria-hidden="true"
 					className="grid size-4 shrink-0 place-items-center"
@@ -596,7 +566,7 @@ export type AgentListRowAction = Readonly<{
 /**
  * The pair of controls a row owner reveals on hover/focus. The row stays
  * generic about what they do: Agent List builds View / Resume + Archive, Agent
- * Session builds Resume + show/hide. Omit both to reveal nothing.
+ * Session builds Resume + Hide / Show. Omit both to reveal nothing.
  */
 export type AgentListRowHoverActions = Readonly<{
 	primary?: AgentListRowAction;
@@ -604,9 +574,14 @@ export type AgentListRowHoverActions = Readonly<{
 }>;
 
 function RowAction({ action }: Readonly<{ action: AgentListRowAction }>) {
+	const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+		event.stopPropagation();
+		action.onClick();
+	};
+
 	if (action.icon === undefined) {
 		return (
-			<Button onClick={action.onClick} size="compact" type="button" variant="outline">
+			<Button onClick={handleClick} size="compact" type="button" variant="outline">
 				{action.label}
 			</Button>
 		);
@@ -619,7 +594,7 @@ function RowAction({ action }: Readonly<{ action: AgentListRowAction }>) {
 					render={
 						<Button
 							aria-label={action.label}
-							onClick={action.onClick}
+							onClick={handleClick}
 							size="icon-compact"
 							type="button"
 							variant="outline"
@@ -649,11 +624,23 @@ function CardActions({
 }>) {
 	return (
 		<div
-			className="grid shrink-0 grid-cols-[0fr] transition-[grid-template-columns] duration-normal ease-out-practical group-hover/agent-row:grid-cols-[1fr] group-has-[:focus-visible]/agent-row:grid-cols-[1fr] motion-reduce:transition-none"
+			className={cn(
+				"grid shrink-0 grid-cols-[0fr] transition-[grid-template-columns] duration-normal ease-out-practical",
+				"group-hover/agent-row:grid-cols-[1fr] group-has-[:focus-visible]/agent-row:grid-cols-[1fr]",
+				"motion-reduce:transition-none",
+				// Uncaptured-work rows reveal the eye instantly; Agent List keeps the fade.
+				"group-data-[variant=uncaptured-work]/agent-row:transition-none",
+			)}
 		>
 			<div className="min-w-0 overflow-hidden has-[:focus-visible]:overflow-visible">
 				<div
-					className="pointer-events-none flex shrink-0 items-center gap-1 pl-3 opacity-0 transition-opacity duration-normal ease-out-practical group-hover/agent-row:pointer-events-auto group-hover/agent-row:opacity-100 group-has-[:focus-visible]/agent-row:pointer-events-auto group-has-[:focus-visible]/agent-row:opacity-100 motion-reduce:transition-none"
+					className={cn(
+						"pointer-events-none flex shrink-0 items-center gap-1 pl-3 opacity-0 transition-opacity duration-normal ease-out-practical",
+						"group-hover/agent-row:pointer-events-auto group-hover/agent-row:opacity-100",
+						"group-has-[:focus-visible]/agent-row:pointer-events-auto group-has-[:focus-visible]/agent-row:opacity-100",
+						"motion-reduce:transition-none",
+						"group-data-[variant=uncaptured-work]/agent-row:transition-none",
+					)}
 				>
 					{primary ? <RowAction action={primary} /> : null}
 					{secondary ? <RowAction action={secondary} /> : null}
@@ -683,6 +670,7 @@ export function AgentListRow({
 	isSelected,
 	item,
 	onView,
+	showHoverActionsWhenSelected = false,
 }: Readonly<{
 	/** Controls revealed on hover/focus. Omit to render a row with no actions. */
 	hoverActions?: AgentListRowHoverActions;
@@ -690,6 +678,12 @@ export function AgentListRow({
 	isSelected: boolean;
 	item: AgentListItem;
 	onView?: (item: AgentListItem) => void;
+	/**
+	 * Keep Resume / Hide visible on a selected row. Agent List leaves this off
+	 * because a selected list row is already the destination; session cards still
+	 * need the hover pair after the article is highlighted.
+	 */
+	showHoverActionsWhenSelected?: boolean;
 }>) {
 	const stateMeta = STATE_META[item.state];
 	const prMeta = item.prStatus ? PR_STATUS_META[item.prStatus] : null;
@@ -705,9 +699,10 @@ export function AgentListRow({
 	);
 
 	const viewItem = onView === undefined ? undefined : () => onView(item);
-	// A selected row is already the destination, so it keeps its lifecycle
-	// indicator instead of swapping in controls that would navigate nowhere.
-	const showHoverActions = !isSelected &&
+	// A selected Agent List row is already the destination, so it keeps its
+	// lifecycle indicator. Session cards opt back in because Hide / Resume still
+	// apply after the article is highlighted.
+	const showHoverActions = (!isSelected || showHoverActionsWhenSelected) &&
 		(hoverActions?.primary !== undefined || hoverActions?.secondary !== undefined);
 
 	return (
@@ -764,7 +759,7 @@ export function AgentListRow({
 							)}
 							{stateMeta.showDots ? <AnimatedDots /> : null}
 						</span>
-						<span className="flex w-full min-w-0 items-center gap-1 overflow-hidden text-xs text-text-subtlest">
+						<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
 							{item.metadataPrefix ? (
 								<>
 									<span className="shrink-0">{item.metadataPrefix}</span>

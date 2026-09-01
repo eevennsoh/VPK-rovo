@@ -1,4 +1,5 @@
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
+import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type {
 	JiraIssueAgentActivity,
 	JiraIssueCompletedAgentRun,
@@ -17,6 +18,7 @@ import {
 	PAY_101_INVENTORY_COMMIT_ARTIFACT,
 	PAY_101_INVENTORY_PR_ARTIFACT,
 } from "./presentation-build";
+import { getJiraGoldenJourneysV4PullRequestPreview } from "./presentation-pull-requests";
 
 const PAY_AVATARS = {
 	diego: "/avatar-user/dev-rana/color/asow-product-purple.png",
@@ -86,6 +88,50 @@ export const JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS = [
 	},
 ] as const satisfies readonly JiraKanbanAgentData[];
 
+export function toJiraGoldenJourneysV4AgentActivityFromSession(
+	session: AgentSessionItem,
+): JiraIssueAgentActivity {
+	return {
+		id: session.id,
+		name: session.agent.name,
+		avatarSrc: session.agent.avatarSrc,
+		agentBrandName: session.agent.brandName,
+		label: session.title,
+		state: session.state === "needs-input" || session.state === "attention"
+			? "awaiting-input"
+			: session.state === "complete"
+				? "completed"
+				: "working",
+	};
+}
+
+export function toJiraGoldenJourneysV4DetachedAgentSession(
+	activity: JiraIssueAgentActivity,
+	card: JiraKanbanCardData,
+): AgentSessionItem {
+	return {
+		id: activity.id,
+		title: activity.label,
+		state: activity.state === "awaiting-input"
+			? "needs-input"
+			: activity.state === "completed"
+				? "complete"
+				: "running",
+		agent: {
+			avatarSrc: activity.avatarSrc,
+			brandName: activity.agentBrandName,
+			id: activity.id,
+			kind: "agent",
+			name: activity.name,
+		},
+		invokedBy: card.assignee,
+		sessionDetails: {
+			issueKey: card.code,
+			issueSummary: card.title,
+		},
+	};
+}
+
 export const JIRA_GOLDEN_JOURNEYS_V4_PAY_COMPOSER_AGENTS = [
 	{
 		id: "claude-code",
@@ -136,6 +182,22 @@ export const JIRA_GOLDEN_JOURNEYS_V4_PAY_HEADER_ASSIGNEES = [
 	},
 ] as const satisfies readonly JiraKanbanAssigneeData[];
 
+function attachPullRequestPreview(
+	code: string,
+	pullRequestNumber: number | undefined,
+): JiraKanbanCardData["pullRequestPreview"] {
+	if (!pullRequestNumber) {
+		return undefined;
+	}
+
+	const preview = getJiraGoldenJourneysV4PullRequestPreview(code);
+	if (!preview) {
+		throw new Error(`Missing dummy pull-request preview for ${code}`);
+	}
+
+	return preview;
+}
+
 function createCard({
 	agentActivities,
 	agentDoneRuns,
@@ -168,6 +230,7 @@ function createCard({
 		code,
 		priority,
 		pullRequestNumber,
+		pullRequestPreview: attachPullRequestPreview(code, pullRequestNumber),
 		pullRequestStatus,
 		tags,
 		title,
@@ -532,6 +595,14 @@ function cloneBoardCard(card: JiraKanbanCardData): JiraKanbanCardData {
 				}
 				: undefined,
 		})),
+		pullRequestPreview: card.pullRequestPreview
+			? {
+				...card.pullRequestPreview,
+				author: card.pullRequestPreview.author
+					? { ...card.pullRequestPreview.author }
+					: undefined,
+			}
+			: undefined,
 		agentDoneRuns: card.agentDoneRuns?.map((run) => ({
 			...run,
 			outputs: run.outputs?.map((output) => ({

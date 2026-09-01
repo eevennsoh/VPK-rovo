@@ -36,6 +36,8 @@ import { JIRA_WORK_ITEM_DETAIL } from "./blocks/jira-work-item";
 import { AGENT_SESSION_DETAIL } from "./blocks/agent-session";
 import { AGENT_SESSION_COLUMN_DETAIL } from "./blocks/agent-session-column";
 import { AGENT_SESSION_FLYOUT_DETAIL } from "./blocks/agent-session-flyout";
+import { OMNIBAR_DETAIL } from "./blocks/omnibar";
+import { SCRUBBER_DETAIL } from "./blocks/scrubber";
 import { TASK_PROGRESS_DETAIL } from "./blocks/task-progress";
 import { TRIGGERS_DETAIL } from "./blocks/triggers";
 import { APP_SIDEBAR_DETAIL } from "./blocks/app-sidebar";
@@ -146,6 +148,8 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"agent-session": AGENT_SESSION_DETAIL,
 	"agent-session-column": AGENT_SESSION_COLUMN_DETAIL,
 	"agent-session-flyout": AGENT_SESSION_FLYOUT_DETAIL,
+	omnibar: OMNIBAR_DETAIL,
+	scrubber: SCRUBBER_DETAIL,
 	"task-progress": TASK_PROGRESS_DETAIL,
 	triggers: TRIGGERS_DETAIL,
 	"app-sidebar": APP_SIDEBAR_DETAIL,

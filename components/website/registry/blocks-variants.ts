@@ -16,6 +16,41 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"omnibar-demo-expanded": dynamic(
+		() =>
+			import("../demos/blocks/omnibar-demo").then((mod) => ({
+				default: mod.OmnibarDemoExpanded,
+			})),
+		{ ssr: false },
+	),
+	"omnibar-demo-docked": dynamic(
+		() =>
+			import("../demos/blocks/omnibar-demo").then((mod) => ({
+				default: mod.OmnibarDemoDocked,
+			})),
+		{ ssr: false },
+	),
+	"omnibar-demo-timeline": dynamic(
+		() =>
+			import("../demos/blocks/omnibar-demo").then((mod) => ({
+				default: mod.OmnibarDemoTimeline,
+			})),
+		{ ssr: false },
+	),
+	"omnibar-demo-timeline-vertical": dynamic(
+		() =>
+			import("../demos/blocks/omnibar-demo").then((mod) => ({
+				default: mod.OmnibarDemoTimelineVertical,
+			})),
+		{ ssr: false },
+	),
+	"scrubber-demo-timeline": dynamic(
+		() =>
+			import("../demos/blocks/scrubber-demo").then((mod) => ({
+				default: mod.ScrubberDemoTimeline,
+			})),
+		{ ssr: false },
+	),
 	"agent-session-flyout-demo-composer": dynamic(
 		() =>
 			import("../demos/blocks/agent-session-flyout-demo").then((mod) => ({
@@ -30,10 +65,24 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	"agent-session-demo-multi-link": dynamic(
+	"agent-session-demo-medium-detached": dynamic(
 		() =>
 			import("../demos/blocks/agent-session-demo").then((mod) => ({
-				default: mod.AgentSessionDemoMultiLink,
+				default: mod.AgentSessionDemoMediumDetached,
+			})),
+		{ ssr: false },
+	),
+	"agent-session-demo-medium-attached": dynamic(
+		() =>
+			import("../demos/blocks/agent-session-demo").then((mod) => ({
+				default: mod.AgentSessionDemoMediumAttached,
+			})),
+		{ ssr: false },
+	),
+	"agent-session-demo-small": dynamic(
+		() =>
+			import("../demos/blocks/agent-session-demo").then((mod) => ({
+				default: mod.AgentSessionDemoSmall,
 			})),
 		{ ssr: false },
 	),

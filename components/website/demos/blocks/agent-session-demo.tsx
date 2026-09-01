@@ -6,6 +6,14 @@ export default function AgentSessionDemo() {
 	return <Page />;
 }
 
-export function AgentSessionDemoMultiLink() {
-	return <Page variant="multi-link" />;
+export function AgentSessionDemoMediumDetached() {
+	return <Page variant="medium-detached" />;
+}
+
+export function AgentSessionDemoMediumAttached() {
+	return <Page variant="medium-attached" />;
+}
+
+export function AgentSessionDemoSmall() {
+	return <Page variant="small" />;
 }

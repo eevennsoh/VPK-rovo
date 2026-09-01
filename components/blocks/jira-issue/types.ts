@@ -6,6 +6,21 @@ export type JiraIssuePriority = "major" | "medium" | "minor";
 export type JiraIssuePullRequestStatus = "open" | "failed" | "merged";
 export type JiraIssueVariant = "default" | "uncaptured-work";
 
+/** Dummy or live overlay fields for the spacious Pull Request hover card. */
+export interface JiraIssuePullRequestPreview {
+	title: string;
+	author?: {
+		name: string;
+		avatarUrl?: string;
+	};
+	repository?: string;
+	branch?: string;
+	targetBranch?: string;
+	additions: number;
+	deletions: number;
+	filesChanged?: number;
+}
+
 export interface JiraIssueTag {
 	text: string;
 	color: TagColor;

@@ -25,7 +25,7 @@ export const JIRA_ISSUE_DETAIL: ComponentDetail = {
 		{ title: "Subtasks expanded", description: "Expanded subtasks with nested issue cards.", demoSlug: "jira-issue-demo-subtasks-expanded" },
 		{ title: "Parent epic", description: "Issue card with a parent epic selector embedded through the Jira epic block.", demoSlug: "jira-issue-demo-parent-epic" },
 		{ title: "Agent activity states", description: "Interactive issue card states for agents working, awaiting input, and completed work.", demoSlug: "jira-issue-demo-agent-activity-states" },
-		{ id: "agent-activity-states-experimental", title: "Agent activity states (experimental)", description: "The same agent activity states rendered with the experimental stroke-only card chrome, with each active agent split onto its own chin row instead of one merged count row, plus the session transfer phases: unlink drags a session off the card, move searches for a new work item to hand it to, and link offers the detached session a home.", demoSlug: "jira-issue-demo-agent-activity-states-experimental" },
+		{ id: "agent-activity-states-experimental", title: "Agent activity states (experimental)", description: "The same agent activity states rendered with the experimental stroke-only card chrome, with each active agent split onto its own chin row instead of one merged count row, plus the session transfer phases: unlink drags a session off the card, 1 running + 2 unlink keeps one chin and two detached sessions, and link or drag-in attaches any number of those detached sessions as extra chin rows.", demoSlug: "jira-issue-demo-agent-activity-states-experimental" },
 	],
 	props: [
 		{ name: "variant", type: '"default" | "uncaptured-work"', default: '"default"', description: "Selects the standard Jira issue card or the uncaptured-work presentation." },
@@ -59,7 +59,7 @@ export const JIRA_ISSUE_DETAIL: ComponentDetail = {
 		{ name: "onAgentActivityViewChat", type: "(activity: JiraIssueAgentActivity) => void", description: "Called when a single agent row is activated or an agent is selected from the multi-agent flyout." },
 		{ name: "onAgentDoneRunView", type: "(run: JiraIssueCompletedAgentRun) => void", description: "Called when View is selected from a completed agent run." },
 		{ name: "onAgentDoneRunSubmit", type: "(run: JiraIssueCompletedAgentRun, prompt: string) => void", description: "Receives prompts submitted from a completed run's immediately visible composer." },
-		{ name: "agentSessionTransfer", type: "JiraIssueAgentSessionTransferConfig", description: "Adds the hover-revealed Unlink and Move drop zones below the card so an agent session can be dragged off its chin row. Supplies the recently viewed work items for the Move search menu plus the onUnlink and onMove commit handlers; the host card must also carry JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS for the reveal to fire." },
+		{ name: "agentSessionTransfer", type: "JiraIssueAgentSessionTransferConfig", description: "Adds the Unlink drop zone below the card so an agent session can be dragged off its chin row. Collapsed at rest so stacked cards do not reserve a gap. Hovering or focusing a linked chin row, or dragging that row out, opens the well. Hovering an already detached session does not. Supplies the onUnlink commit handler." },
 		{ name: "generativeAction", type: "JiraIssueGenerativeActionConfig", description: "Optional hover-revealed generative action menu that can submit Ask Rovo, skill, or agent prompts with issue context." },
 	],
 };
