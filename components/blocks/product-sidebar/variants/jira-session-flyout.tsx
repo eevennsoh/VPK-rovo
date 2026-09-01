@@ -465,15 +465,15 @@ export function JiraSessionFlyoutBody({
 	return (
 		<div className="flex flex-col gap-2">
 			{hideHeader ? null : (
-				<div className="flex items-center justify-between gap-3">
-					<p className="min-w-0 truncate text-sm font-semibold leading-5 text-text" title={session.title}>
+				<div className="flex items-start justify-between gap-3">
+					<p className="min-w-0 text-xs font-medium leading-5 text-text" title={session.title}>
 						{session.title}
 					</p>
 					<span className="flex shrink-0 items-center gap-1">
 						{session.status === "awaiting-input" ? (
 							<Lozenge variant="information">Needs input</Lozenge>
 						) : (
-							<span className="text-[12px] leading-4 text-text-subtlest">
+							<span className="text-[12px] leading-5 text-text-subtlest">
 								{STATUS_UPDATED_LABEL[session.status]}
 							</span>
 						)}
