@@ -244,6 +244,18 @@ test("the metadata line uses elapsed runtime, agent name, and asx PR-status colo
 	assert.doesNotMatch(CARD_SOURCE, /item\.issueKey|item\.spaceName|ISSUE_TYPE/);
 });
 
+test("the metadata line always renders the timestamp last", () => {
+	const rowSource = /export function AgentListRow[\s\S]*?(?=\nexport function AgentListCard)/u.exec(
+		CARD_SOURCE,
+	)?.[0];
+
+	assert.ok(rowSource);
+	assert.match(
+		rowSource,
+		/<AgentListMetadataIdentity item=\{item\} \/>[\s\S]*\{prMeta && PrIcon \? \([\s\S]*<MetadataDot \/>\s*<span className="shrink-0" title=\{timeSlotTitle\(item\)\}>\s*<AgentListTime item=\{item\} \/>/u,
+	);
+});
+
 test("sample data: PRs on created/merged rows, none on the awaiting row", () => {
 	assert.match(DATA_SOURCE, /prStatus: "created"/);
 	assert.match(DATA_SOURCE, /prStatus: "merged"/);
