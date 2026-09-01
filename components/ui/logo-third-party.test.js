@@ -1,5 +1,5 @@
 const assert = require("node:assert/strict");
-const { readFileSync, readdirSync } = require("node:fs");
+const { existsSync, readFileSync, readdirSync } = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 
@@ -248,6 +248,32 @@ test("every declared package entrypoint has an icon-module binding", async () =>
 		unbound,
 		[],
 		`manifest entrypoints with no import in logo-third-party-icons.ts: ${unbound.join(", ")}`,
+	);
+});
+
+/**
+ * Next.js resolves every static import at compile time. A leftover
+ * `entry-points/<brand>` import that the package no longer ships is a
+ * "Module not found" build error, even when the manifest no longer claims it.
+ */
+test("icon-module imports exist in the installed package", () => {
+	const packageRoot = path.dirname(require.resolve("@atlassian/logo-third-party/package.json"));
+	const iconsSource = readFileSync(
+		path.join(__dirname, "data", "logo-third-party-icons.ts"),
+		"utf8",
+	);
+	const imported = [...iconsSource.matchAll(/entry-points\/([a-z0-9-]+)"/gu)].map(
+		([, entrypoint]) => entrypoint,
+	);
+	const missing = imported.filter(
+		(entrypoint) =>
+			!existsSync(path.join(packageRoot, "dist", "esm", "entry-points", `${entrypoint}.js`)),
+	);
+
+	assert.deepEqual(
+		missing,
+		[],
+		`logo-third-party-icons.ts imports entrypoints the package does not ship: ${missing.join(", ")}`,
 	);
 });
 
