@@ -8,12 +8,14 @@ import {
 	type JiraIssueAgentActivity,
 	type JiraIssueAgentActivityLayout,
 	type JiraIssueAgentActivityMode,
+	type JiraIssueAgentSessionFlyoutContext,
 	type JiraIssueAgentSessionDragBinding,
 	type JiraIssueAgentSessionDragState,
 } from "@/components/blocks/jira-issue/agent-activity";
 import { JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE } from "@/components/blocks/jira-issue/agent-session-drag";
 import { isJiraIssueSessionAttachPreview } from "@/components/blocks/jira-issue/agent-session-transfer-model";
 import {
+	JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS,
 	JiraIssueAgentSessionTransfer,
 	type JiraIssueAgentSessionTransferConfig,
 } from "@/components/blocks/jira-issue/agent-session-transfer";
@@ -45,7 +47,6 @@ import type {
 import type { SmartLinkItem } from "@/components/blocks/smart-link";
 import { useIsMounted } from "@/components/hooks/use-is-mounted";
 import type { AvatarProps, AvatarUnassignedKind } from "@/components/ui/avatar";
-import { Gooey } from "@/components/visual/gooey";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
@@ -67,17 +68,6 @@ const AGENT_ACTIVITY_SURFACE_STYLE: CSSProperties = {
 	boxShadow: token("elevation.shadow.raised"),
 	transformOrigin: "top center",
 };
-
-// One `<Gooey>` group spans the dragged chin row and the drop zones. The root
-// paints the MERGED silhouette of its items, so the fill has to be the chin's
-// own grey: a white fill stamped a light slab over the grey backdrop instead of
-// bridging it, which is why the pull-out read as a hard-edged tag with no goo.
-// `blur` is how far apart two bodies still bridge — it sets the neck length.
-const AGENT_SESSION_TRANSFER_GOO = {
-	blur: 12,
-	fill: "var(--color-bg-accent-gray-subtlest)",
-	filterPadding: 64,
-} as const;
 
 export type {
 	JiraIssueChrome,
@@ -189,6 +179,8 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	agentActivityMode?: JiraIssueAgentActivityMode;
 	/** Merged collapses active agents into one prioritized chin row; split gives each agent its own row. */
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
+	/** Optional board context that makes attached activity rows open session details on hover. */
+	agentSessionFlyout?: JiraIssueAgentSessionFlyoutContext;
 	onAgentActivityOpenChange?: (open: boolean) => void;
 	onAgentActivityViewChat?: (activity: JiraIssueAgentActivity) => void;
 	onAgentDoneRunSubmit?: (run: JiraIssueCompletedAgentRun, prompt: string) => void;
@@ -204,8 +196,8 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	/** Opt-in: makes the chin rows draggable and adds the unlink/move drop zones below the card. */
 	agentSessionTransfer?: JiraIssueAgentSessionTransferConfig;
 	/**
-	 * Rendered inside the transfer `<Gooey>` after the drop well, so a detached
-	 * session can share the same liquid group and drag back onto the card.
+	 * Rendered after the drop well so a detached session can drag back onto
+	 * the card.
 	 */
 	sessionTransferAfter?: (
 		sessionDrag: JiraIssueAgentSessionDragBinding,
@@ -228,6 +220,7 @@ function JiraIssueDefault({
 	agentActivities,
 	agentActivityMode,
 	agentActivityLayout = "merged",
+	agentSessionFlyout,
 	agentDoneRuns = [],
 	agentSessionTransfer,
 	assigneeAvatarLabel,
@@ -315,6 +308,7 @@ function JiraIssueDefault({
 				...current,
 				activities,
 			})),
+			onUnlink: agentSessionTransfer.onUnlink,
 		}
 		: undefined;
 	const hasSubtasks = Boolean(subtasks?.length);
@@ -339,6 +333,8 @@ function JiraIssueDefault({
 		agentSessionDragState.dragging,
 		agentSessionDragState.source,
 	);
+	// Unlink keeps `working` with an empty chin so the grey backdrop stays
+	// around the issue. The shell keys off mode, not a mounted row.
 	const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working"
 		|| resolvedAgentActivityMode === "awaiting-input"
 		|| hasAgentDoneNotification
@@ -407,6 +403,14 @@ function JiraIssueDefault({
 				? `${agentActivityIdleBorderClassName} bg-bg-selected`
 				: `${agentActivityRestBorderClassName} bg-surface`,
 	);
+	// Last chin row is the travelling chip: keep the grey backdrop and close
+	// the open chin so the well hugs the white card. A 4px bottom pad matches
+	// the empty-chin gutter. Keys off `data-session-chip-out` in the same
+	// commit as the row collapse — do not lift that flag into React or the
+	// transfer hit test measures a stale well. Remaining docked rows keep the
+	// open chin.
+	const agentActivitySessionChipOutCloseClass =
+		"has-[[data-session-chip-out]]:not-has-[[data-slot=jira-issue-agent-row-wrap]:not([data-session-chip-out])]:pb-1";
 	const agentActivityShellClassName = cn(
 		"relative w-full min-w-0 overflow-visible rounded-[10px] outline-none",
 		"transition-[opacity,background-color,border-color] duration-normal ease-out",
@@ -415,6 +419,7 @@ function JiraIssueDefault({
 		// z-index on the dragged chip cannot escape it. Lift the whole shell above
 		// the drop wells — a later sibling — for the duration of the drag.
 		agentSessionDragState.dragging && "z-20",
+		agentActivitySessionChipOutCloseClass,
 	);
 	const agentActivityArticleClassName = cn(
 		"group/jira-issue relative w-full min-w-0 overflow-visible outline-none",
@@ -649,6 +654,7 @@ function JiraIssueDefault({
 				aria-hidden="true"
 				animate={shouldReduceMotion ? undefined : agentActivityBackdropAnimation}
 				className="pointer-events-none absolute bg-bg-accent-gray-subtlest"
+				data-slot="jira-issue-agent-backdrop"
 				initial={false}
 				style={shouldReduceMotion ? { ...AGENT_ACTIVITY_BACKDROP_STYLE, ...agentActivityBackdropAnimation } : AGENT_ACTIVITY_BACKDROP_STYLE}
 				transition={layoutTransition}
@@ -679,19 +685,18 @@ function JiraIssueDefault({
 					layout={agentActivityLayout}
 					onOpenChange={handleAgentActivityOpenChange}
 					onViewChat={onAgentActivityViewChat}
+					sessionFlyout={agentSessionFlyout}
 					sessionDrag={agentSessionDragBinding}
 					shouldReduceMotion={shouldReduceMotion}
 					usesStrokeChrome={usesStrokeChrome}
 				/>
 				{isAttachingSession ? (
 					<div className="px-1 py-1" data-slot="jira-issue-attach-chin">
-						<Gooey.Item observe>
-							<div
-								aria-hidden
-								className="pointer-events-none h-6 w-full rounded-md"
-								data-slot="jira-issue-attach-chin-slot"
-							/>
-						</Gooey.Item>
+						<div
+							aria-hidden
+							className="pointer-events-none h-6 w-full rounded-md"
+							data-slot="jira-issue-attach-chin-slot"
+						/>
 					</div>
 				) : null}
 				<AnimatePresence initial={false} mode="popLayout">
@@ -727,10 +732,8 @@ function JiraIssueDefault({
 			</LayoutGroup>
 		</motion.div>
 	);
-	// One `<Gooey>` group has to span the dragged chin row and the drop zone:
-	// dissolve only bridges items registered with the same root.
 	const agentActivityShellWithTransfer = agentSessionTransfer ? (
-		<Gooey {...AGENT_SESSION_TRANSFER_GOO} className="relative w-full min-w-0 overflow-visible">
+		<div className={cn("relative w-full min-w-0 overflow-visible", JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS)}>
 			{agentActivityShell}
 			<JiraIssueAgentSessionTransfer
 				cancelled={agentSessionDragState.cancelled}
@@ -745,7 +748,7 @@ function JiraIssueDefault({
 			{agentSessionDragBinding && sessionTransferAfter
 				? sessionTransferAfter(agentSessionDragBinding)
 				: null}
-		</Gooey>
+		</div>
 	) : agentActivityShell;
 
 	if (hasInteractiveContent) {

@@ -12,12 +12,12 @@ import { preload } from "react-dom";
 
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import BranchIcon from "@atlaskit/icon/core/branch";
-import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import DevicesIcon from "@atlaskit/icon/core/devices";
 import FolderClosedIcon from "@atlaskit/icon/core/folder-closed";
 import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
+import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import TaskIcon from "@atlaskit/icon/core/task";
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import IfElseIcon from "@atlaskit/icon-lab/core/if-else";
@@ -50,6 +50,7 @@ import { Tag } from "@/components/ui/tag";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { ProgressCircle } from "@/components/ui-custom/progress-circle";
 import { getAgentProfileBannerSrc } from "@/lib/agent-avatars";
+import { cn } from "@/lib/utils";
 
 import type {
 	JiraSidebarSessionHost,
@@ -358,12 +359,15 @@ function JiraSessionUntrackedWorkActions({
 	const linkLabel = hasIssueKey ? `Link to ${issueKey}` : "Link work item";
 
 	return (
-		<div className="flex items-start gap-2 pt-2">
-			<ButtonGroup aria-label={hasIssueKey ? `Link ${issueKey}` : "Link work item"} variant="split">
+		<div className="w-full pt-2">
+			<ButtonGroup aria-label={hasIssueKey ? `Link ${issueKey}` : "Link work item"} className="w-full" variant="separated">
 				<Button
 					aria-disabled={linkUnavailable}
 					aria-label={linkUnavailable ? `${linkLabel} unavailable` : undefined}
-					className={linkUnavailable ? "cursor-not-allowed opacity-(--opacity-disabled)" : undefined}
+					className={cn(
+						"w-full flex-1 justify-center text-center",
+						linkUnavailable ? "cursor-not-allowed opacity-(--opacity-disabled)" : undefined,
+					)}
 					onClick={() => onLinkWorkItem?.(issueKey)}
 					size="compact"
 					type="button"
@@ -375,38 +379,33 @@ function JiraSessionUntrackedWorkActions({
 					<DropdownMenuTrigger
 						render={(
 							<Button
-								aria-label={hasIssueKey ? `More link options for ${issueKey}` : "More link options"}
+								aria-label={hasIssueKey ? `More actions for ${issueKey}` : "More work item actions"}
 								size="icon-compact"
 								type="button"
 								variant="outline"
 							>
-								<ChevronDownIcon label="" size="small" />
+								<ShowMoreHorizontalIcon label="" size="small" />
 							</Button>
 						)}
 					/>
 					<DropdownMenuContent align="end">
 						<DropdownMenuGroup>
 							<DropdownMenuItem
-								disabled={addAsSubtaskUnavailable}
+								disabled={addAsSubtaskUnavailable || !hasIssueKey}
 								onSelect={() => onAddAsSubtask?.(issueKey)}
 							>
-								Add as a subtask
+								{hasIssueKey ? `Add new subtask to ${issueKey}` : "Add new subtask"}
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								disabled={createUnavailable}
+								onSelect={() => onCreateWorkItem?.()}
+							>
+								Create new work item
 							</DropdownMenuItem>
 						</DropdownMenuGroup>
 					</DropdownMenuContent>
 				</DropdownMenu>
 			</ButtonGroup>
-			<Button
-				aria-disabled={createUnavailable}
-				aria-label={createUnavailable ? "Create new unavailable" : undefined}
-				className={createUnavailable ? "cursor-not-allowed opacity-(--opacity-disabled)" : undefined}
-				onClick={onCreateWorkItem}
-				size="compact"
-				type="button"
-				variant="outline"
-			>
-				Create new
-			</Button>
 		</div>
 	);
 }
@@ -471,12 +470,6 @@ export function JiraSessionFlyoutBody({
 						{session.title}
 					</p>
 					<span className="flex shrink-0 items-center gap-1">
-						{session.invokedBy && session.status !== "awaiting-input" ? (
-							<Avatar className="shrink-0" label={session.invokedBy.name} size="xs">
-								{session.invokedBy.src ? <AvatarImage alt="" src={session.invokedBy.src} /> : null}
-								<AvatarFallback>{actorInitials(session.invokedBy.name)}</AvatarFallback>
-							</Avatar>
-						) : null}
 						{session.status === "awaiting-input" ? (
 							<Lozenge variant="information">Needs input</Lozenge>
 						) : (
@@ -484,6 +477,12 @@ export function JiraSessionFlyoutBody({
 								{STATUS_UPDATED_LABEL[session.status]}
 							</span>
 						)}
+						{session.invokedBy && session.status !== "awaiting-input" ? (
+							<Avatar className="shrink-0" label={session.invokedBy.name} size="xs">
+								{session.invokedBy.src ? <AvatarImage alt="" src={session.invokedBy.src} /> : null}
+								<AvatarFallback>{actorInitials(session.invokedBy.name)}</AvatarFallback>
+							</Avatar>
+						) : null}
 					</span>
 				</div>
 			)}

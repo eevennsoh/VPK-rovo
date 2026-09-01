@@ -49,6 +49,15 @@ export interface RovoSparkleProps {
 	triggerPortalContainer?: HTMLElement | null;
 }
 
+export interface RovoSparkleMenuProps {
+	agents: readonly RovoSparkleItem[];
+	emptyLabel?: string;
+	menuTitle?: string;
+	onRequestClose: () => void;
+	onSubmit: (request: RovoSparkleActionRequest) => void | Promise<void>;
+	skills: readonly RovoSparkleItem[];
+}
+
 const SKILLS_HEADING_ID = "rovo-sparkle-skills-heading";
 const AGENTS_HEADING_ID = "rovo-sparkle-agents-heading";
 const SKILLS_BROWSE_ALL_ID = "rovo-sparkle-skills-browse-all";
@@ -146,32 +155,71 @@ export function RovoSparkle({
 	triggerPortalContainer,
 }: Readonly<RovoSparkleProps>) {
 	const [internalOpen, setInternalOpen] = useState(defaultOpen);
+	const [menuKey, setMenuKey] = useState(0);
+	const resolvedOpen = open ?? internalOpen;
+
+	function handleOpenChange(nextOpen: boolean) {
+		if (open === undefined) {
+			setInternalOpen(nextOpen);
+		}
+		if (!nextOpen) {
+			setMenuKey((currentKey) => currentKey + 1);
+		}
+		onOpenChange?.(nextOpen);
+	}
+
+	const resolvedTrigger = triggerElement ?? (
+		<RovoSparkleButton active={resolvedOpen} aria-label={ariaLabel} size={size} />
+	);
+	const trigger = <PopoverTrigger render={resolvedTrigger} />;
+	const renderedTrigger = triggerPortalContainer ? createPortal(trigger, triggerPortalContainer) : trigger;
+
+	return (
+		<Popover onOpenChange={handleOpenChange} open={resolvedOpen}>
+			{renderedTrigger}
+			<PopoverContent
+				align={align}
+				alignOffset={alignOffset}
+				className="z-[600] w-auto gap-0 border-0 bg-transparent p-0 text-text shadow-none"
+				positionerClassName="z-[600]"
+				side={side}
+				sideOffset={sideOffset}
+			>
+				<PopoverTitle className="sr-only">{popoverTitle}</PopoverTitle>
+				<RovoSparkleMenu
+					agents={agents}
+					emptyLabel={emptyLabel}
+					key={menuKey}
+					menuTitle={menuTitle}
+					onRequestClose={() => handleOpenChange(false)}
+					onSubmit={onSubmit}
+					skills={skills}
+				/>
+			</PopoverContent>
+		</Popover>
+	);
+}
+
+export function RovoSparkleMenu({
+	agents,
+	emptyLabel = "No Rovo actions found",
+	menuTitle = "Rovo actions",
+	onRequestClose,
+	onSubmit,
+	skills,
+}: Readonly<RovoSparkleMenuProps>) {
 	const [askPrompt, setAskPrompt] = useState("");
 	const [selectedIndex, setSelectedIndex] = useState(-1);
 	const [showAllAgents, setShowAllAgents] = useState(false);
 	const [showAllSkills, setShowAllSkills] = useState(false);
-	const resolvedOpen = open ?? internalOpen;
 	const rows = useMemo(
 		() => getRows(agents, skills, askPrompt, showAllAgents, showAllSkills),
 		[agents, askPrompt, showAllAgents, showAllSkills, skills],
 	);
 	const agentIds = useMemo(() => new Set(agents.map((item) => item.id)), [agents]);
 
-	function handleOpenChange(nextOpen: boolean) {
-		if (open === undefined) {
-			setInternalOpen(nextOpen);
-		}
-		onOpenChange?.(nextOpen);
-		if (!nextOpen) {
-			setAskPrompt("");
-			setSelectedIndex(-1);
-			setShowAllAgents(false);
-			setShowAllSkills(false);
-		}
-	}
-
 	function submitRequest(request: RovoSparkleActionRequest) {
-		handleOpenChange(false);
+		onRequestClose();
 		void onSubmit(request);
 	}
 
@@ -218,49 +266,30 @@ export function RovoSparkle({
 		}
 	}
 
-	const resolvedTrigger = triggerElement ?? (
-		<RovoSparkleButton active={resolvedOpen} aria-label={ariaLabel} size={size} />
-	);
-	const trigger = <PopoverTrigger render={resolvedTrigger} />;
-	const renderedTrigger = triggerPortalContainer ? createPortal(trigger, triggerPortalContainer) : trigger;
-
 	return (
-		<Popover onOpenChange={handleOpenChange} open={resolvedOpen}>
-			{renderedTrigger}
-			<PopoverContent
-				align={align}
-				alignOffset={alignOffset}
-				className="z-[600] w-auto gap-0 border-0 bg-transparent p-0 text-text shadow-none"
-				positionerClassName="z-[600]"
-				side={side}
-				sideOffset={sideOffset}
-			>
-				<PopoverTitle className="sr-only">{popoverTitle}</PopoverTitle>
-				<RichTextSuggestionMenu
-					className="rich-text-command-menu-borderless rich-text-command-menu-search-selects"
-					emptyLabel={emptyLabel}
-					emptyState={false}
-					header={(
-						<RichTextCommandMenuSearchField
-							autoFocus
-							icon={<RovoColorIcon size="xxsmall" />}
-							label="Ask Rovo"
-							onClear={() => handleAskPromptChange("")}
-							onEscape={() => handleOpenChange(false)}
-							onKeyDown={handleMenuKeyDown}
-							onSubmit={handleAskRovoSubmit}
-							onValueChange={handleAskPromptChange}
-							placeholder="Ask Rovo"
-							value={askPrompt}
-						/>
-					)}
-					items={rows}
-					onHover={setSelectedIndex}
-					onSelect={handleSelectItem}
-					selectedIndex={selectedIndex}
-					title={menuTitle}
+		<RichTextSuggestionMenu
+			className="rich-text-command-menu-borderless rich-text-command-menu-search-selects"
+			emptyLabel={emptyLabel}
+			emptyState={false}
+			header={(
+				<RichTextCommandMenuSearchField
+					autoFocus
+					icon={<RovoColorIcon size="xxsmall" />}
+					label="Ask Rovo"
+					onClear={() => handleAskPromptChange("")}
+					onEscape={onRequestClose}
+					onKeyDown={handleMenuKeyDown}
+					onSubmit={handleAskRovoSubmit}
+					onValueChange={handleAskPromptChange}
+					placeholder="Ask Rovo"
+					value={askPrompt}
 				/>
-			</PopoverContent>
-		</Popover>
+			)}
+			items={rows}
+			onHover={setSelectedIndex}
+			onSelect={handleSelectItem}
+			selectedIndex={selectedIndex}
+			title={menuTitle}
+		/>
 	);
 }

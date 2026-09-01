@@ -109,17 +109,14 @@ export interface OmnibarBarTimeline {
 	axis: "x" | "y";
 	entries: readonly ScrubberEntry[];
 	isTimeline: boolean;
-	/**
-	 * True on the one editor mount that follows leaving Timeline. The `x` axis destroys the
-	 * tiptap instance, so without this the draft comes back but the caret does not.
-	 */
-	consumeFocusRestore: () => boolean;
 	onExit: () => void;
 	onSelect: (id: string) => void;
 	onToggle: () => void;
 }
 
 export interface OmnibarBarProps {
+	/** True once after keyboard activation or leaving Timeline remounts the editor. */
+	consumeFocusRestore: () => boolean;
 	onOpenPanel: () => void;
 	onSubmit: () => void;
 	onValueChange: (value: string) => void;
@@ -183,6 +180,7 @@ function OmnibarTimelinePill({
  * screen edge instead; the chip only reads pressed.
  */
 export function OmnibarBar({
+	consumeFocusRestore,
 	onOpenPanel,
 	onSubmit,
 	onValueChange,
@@ -311,7 +309,7 @@ export function OmnibarBar({
 						)}
 						onChange={(event) => onValueChange(event.currentTarget.value)}
 						onEditorReady={(editor) => {
-							if (timeline?.consumeFocusRestore() === true) {
+							if (consumeFocusRestore()) {
 								editor.commands.focus("end");
 							}
 						}}

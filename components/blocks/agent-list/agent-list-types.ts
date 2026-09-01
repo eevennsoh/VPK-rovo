@@ -104,6 +104,20 @@ export type AgentListSessionDetails = Partial<
 export interface AgentListItem {
 	id: string;
 	title: string;
+	/**
+	 * Agent-authored session name for single-line rows (e.g. `"Sandbox 401 root
+	 * cause"`), the way a coding agent auto-names a thread from its opening
+	 * prompt.
+	 *
+	 * Separate from {@link AgentListItem.title} because the two answer different
+	 * questions at different sizes. `title` is the narrative a full card needs —
+	 * why this session matters and what it is still missing — and it is written
+	 * to wrap onto two lines. A compact row has roughly 26 characters between the
+	 * agent mark and its hover actions, so it needs the name of the work rather
+	 * than the argument about it. Rows fall back to `title` when a session has no
+	 * short name.
+	 */
+	shortTitle?: string;
 	/** Row state — see {@link AgentListState}. */
 	state: AgentListState;
 	/** The agent or person the row is about; rendered in the leading avatar. */

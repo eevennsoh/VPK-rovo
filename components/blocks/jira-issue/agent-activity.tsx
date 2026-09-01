@@ -3,6 +3,7 @@
 import {
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 	type CSSProperties,
 	type MouseEvent as ReactMouseEvent,
@@ -24,25 +25,35 @@ import {
 	summarizeJiraIssueAgentActivities,
 	type JiraIssueAgentActivityLayout,
 } from "@/components/blocks/jira-issue/agent-activity-model";
-import type {
-	JiraIssueAgentSessionDragBinding,
-	JiraIssueAgentSessionDragState,
+import {
+	sessionDragChipViewportStyle,
+	type JiraIssueAgentSessionDragBinding,
 } from "@/components/blocks/jira-issue/agent-session-drag";
 import { AgentSessionMentionChip } from "@/components/blocks/jira-issue/agent-session-mention-chip";
+import { useSessionDragChipPointer } from "@/components/blocks/jira-issue/use-session-drag-chip-pointer";
+import { JiraIssueAgentSessionUnlinkButton } from "@/components/blocks/jira-issue/agent-session-unlink-button";
+import {
+	createJiraSessionFlyoutHandle,
+	JiraSessionFlyoutSurface,
+	JiraSessionFlyoutTrigger,
+} from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import type { QuestionCardQuestion } from "@/components/blocks/question-card/types";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AnimatedDots } from "@/components/ui-custom/animated-dots";
 import {
 	usePointerDrag,
-	type PointerDragBounds,
 	type PointerDragPosition,
 } from "@/components/ui-custom/hooks/use-pointer-drag";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
-import { Gooey } from "@/components/visual/gooey";
 import { cn } from "@/lib/utils";
+import type {
+	JiraSidebarAssignee,
+	JiraSidebarSessionItem,
+	JiraSidebarWorkItemPriority,
+} from "@/components/blocks/product-sidebar/variants/jira";
 
 export type JiraIssueAgentActivityMode = "none" | "working" | "awaiting-input" | "completed";
 export type JiraIssueAgentActivityState = "working" | "awaiting-input" | "completed";
@@ -70,24 +81,51 @@ export interface JiraIssueAgentActivity {
 	state: JiraIssueAgentActivityState;
 }
 
+/** Card context which turns a board activity row into the shared session-flyout payload. */
+export interface JiraIssueAgentSessionFlyoutContext {
+	assignee?: JiraSidebarAssignee;
+	issueKey: string;
+	issueStatus?: string;
+	issueSummary: string;
+	priority?: JiraSidebarWorkItemPriority;
+	pullRequestNumber?: number;
+	pullRequestTitle?: string;
+}
+
+function toJiraIssueAgentSessionFlyoutItem(
+	activity: JiraIssueAgentActivity,
+	context: JiraIssueAgentSessionFlyoutContext,
+): JiraSidebarSessionItem {
+	const status = activity.state === "awaiting-input" ? "awaiting-input" : "running";
+
+	return {
+		agentAvatarSrc: activity.avatarSrc,
+		agentName: activity.name,
+		assignee: context.assignee,
+		branch: `rovo/${context.issueKey.toLowerCase()}-${activity.id.split(":").at(-1) ?? "session"}`,
+		brandName: activity.agentBrandName,
+		checks: { failed: status === "awaiting-input" ? 1 : 0, passed: 12 },
+		commit: "a8c4e2d",
+		host: "cloud",
+		id: activity.id,
+		issueKey: context.issueKey,
+		issueStatus: context.issueStatus,
+		issueSummary: context.issueSummary,
+		priority: context.priority,
+		pullRequestNumber: context.pullRequestNumber,
+		pullRequestTitle: context.pullRequestTitle,
+		repository: "payments-platform/payments",
+		status,
+		title: activity.label,
+	};
+}
+
 const JIRA_ISSUE_SESSION_DRAG_ORIGIN: PointerDragPosition = { x: 0, y: 0 };
-const JIRA_ISSUE_SESSION_DRAG_DISSOLVE_FADE_MS = 240;
-const JIRA_ISSUE_SESSION_DRAG_DISSOLVE_SINK = 0.8;
-const JIRA_ISSUE_SESSION_DRAG_MORPH = { advanced: { blobInset: 3, bridgeGrow: 7 } } as const;
-/**
- * Once the chip is out, the item stays registered with the group (unmounting it
- * mid-gesture would drop the button's pointer capture), so its liquid is inset
- * far enough to vanish under the opaque pill instead. Anything less leaves a
- * grey goo slab reading through behind a tag that is supposed to be free.
- */
-const JIRA_ISSUE_SESSION_DRAG_CHIP_MORPH = { advanced: { blobInset: 14, bridgeGrow: 0 } } as const;
-/** Travel before the grey goo phase hands over to the opaque at-mention chip. */
+/** Same 2px threshold as `usePointerDrag` — publish/arm only after a real move. */
+const JIRA_ISSUE_SESSION_DRAG_PUBLISH_THRESHOLD_PX = 2;
+/** Travel before the chin row hands over to the opaque at-mention chip. */
 const JIRA_ISSUE_SESSION_DRAG_CHIP_DISTANCE_PX = 12;
-/**
- * Light friction on the dragged tag. Underdamped on purpose: the chip trails a
- * few frames behind the pointer, and that lag is what the gooey filter renders
- * as a sticky tail stretching back toward the chin before it snaps free.
- */
+/** Light friction so the dragged tag trails a few frames behind the pointer. */
 const JIRA_ISSUE_SESSION_DRAG_SPRING = { damping: 26, mass: 0.6, stiffness: 420, restDelta: 0.01 } as const;
 
 const JIRA_ISSUE_MOTION_ENTER: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] }; // duration-normal + ease-out-practical
@@ -187,6 +225,7 @@ function JiraIssueAgentActivityRow({
 	onOpenChange,
 	onSessionDragChange,
 	onViewChat,
+	sessionFlyout,
 	sessionDrag,
 	shouldReduceMotion,
 	usesStrokeChrome,
@@ -199,6 +238,7 @@ function JiraIssueAgentActivityRow({
 		cancelled: boolean,
 	) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
+	sessionFlyout?: JiraIssueAgentSessionFlyoutContext;
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
 	shouldReduceMotion: boolean | null;
 	usesStrokeChrome: boolean;
@@ -253,16 +293,16 @@ function JiraIssueAgentActivityRow({
 	const springY = useSpring(dragOffsetY, JIRA_ISSUE_SESSION_DRAG_SPRING);
 	const dragX = shouldReduceMotion ? dragOffsetX : springX;
 	const dragY = shouldReduceMotion ? dragOffsetY : springY;
+	const chipPointer = useSessionDragChipPointer(shouldReduceMotion);
 	/**
 	 * Session is clear of the chin: show it as the chip it is about to become.
-	 * Held back until the row has actually travelled, because the chip's opaque
-	 * opaque mention tag covers the goo silhouette painted behind it —
-	 * swapping on the first pointermove is what made the pull-out snap straight
-	 * to a hard-edged tag with no visible stretch.
+	 * Held back until the row has actually travelled so the first pointermove
+	 * does not snap straight to a hard-edged tag.
 	 */
 	const isDragging = Boolean(sessionDrag) && drag.dragging;
 	const isDraggedOut = isDragging
 		&& Math.hypot(drag.position.x, drag.position.y) >= JIRA_ISSUE_SESSION_DRAG_CHIP_DISTANCE_PX;
+	const pointerOriginRef = useRef<PointerDragPosition | null>(null);
 
 	useEffect(() => {
 		dragOffsetX.set(drag.position.x);
@@ -279,14 +319,16 @@ function JiraIssueAgentActivityRow({
 
 	function endSessionDrag(event: ReactPointerEvent<HTMLElement>) {
 		drag.bind.onPointerUp(event);
+		pointerOriginRef.current = null;
 		setDragOffset(JIRA_ISSUE_SESSION_DRAG_ORIGIN);
-		publishSessionDrag(false);
+		publishSessionDrag(false, event);
 	}
 
 	// `pointercancel` is an interruption, not a release: end the gesture but flag
 	// it so the transfer region drops its armed target instead of committing it.
 	function cancelSessionDrag(event: ReactPointerEvent<HTMLElement>) {
 		drag.bind.onPointerCancel(event);
+		pointerOriginRef.current = null;
 		setDragOffset(JIRA_ISSUE_SESSION_DRAG_ORIGIN);
 		publishSessionDrag(false, undefined, true);
 	}
@@ -294,9 +336,10 @@ function JiraIssueAgentActivityRow({
 	// `onKeyDown` is deliberately dropped from the spread: the shared pointer-drag
 	// hook nudges position with arrow keys, but only the pointer handlers publish
 	// transfer state, so keyboard movement would displace a focused row with no
-	// way to arm, drop, or reset it. Keyboard users get the drop zones directly —
-	// they are tabbable buttons that fire the same callbacks as a drop.
+	// way to arm, drop, or reset it. Keyboard users unlink from the chin link-broken;
+	// the well is a drop target only.
 	const { onKeyDown: _ignoredPointerDragKeyDown, ...dragBindWithoutKeyboard } = drag.bind;
+	void _ignoredPointerDragKeyDown;
 	const sessionDragBind = sessionDrag
 		? {
 			...dragBindWithoutKeyboard,
@@ -311,11 +354,27 @@ function JiraIssueAgentActivityRow({
 			onPointerCancel: cancelSessionDrag,
 			onPointerDown: (event: ReactPointerEvent<HTMLElement>) => {
 				drag.bind.onPointerDown(event);
-				publishSessionDrag(true, event);
+				pointerOriginRef.current = { x: event.clientX, y: event.clientY };
+				chipPointer.snapToPointer(
+					{ x: event.clientX, y: event.clientY },
+					event.currentTarget.parentElement,
+				);
 			},
 			onPointerMove: (event: ReactPointerEvent<HTMLElement>) => {
 				drag.bind.onPointerMove(event);
-				if (drag.dragging) {
+				chipPointer.followPointer(
+					{ x: event.clientX, y: event.clientY },
+					event.currentTarget.parentElement,
+				);
+				const origin = pointerOriginRef.current;
+				const moved = Boolean(
+					origin
+					&& (
+						Math.abs(event.clientX - origin.x) > JIRA_ISSUE_SESSION_DRAG_PUBLISH_THRESHOLD_PX
+						|| Math.abs(event.clientY - origin.y) > JIRA_ISSUE_SESSION_DRAG_PUBLISH_THRESHOLD_PX
+					),
+				);
+				if (moved) {
 					publishSessionDrag(true, event);
 				}
 			},
@@ -323,16 +382,16 @@ function JiraIssueAgentActivityRow({
 		}
 		: undefined;
 
-	function withSessionDragGoo(node: ReactElement) {
+	function withSessionDrag(node: ReactElement) {
 		if (!sessionDrag) {
 			return node;
 		}
 
 		return (
 			// The slot only reserves the row's height while the session is still
-			// bridging out of the chin. Once the chip is free it collapses, so the
-			// card's grey backdrop closes up and hugs what is left of the card
-			// instead of holding an empty band open under a tag that has gone.
+			// leaving the chin. Once the chip is free it collapses, so the card's
+			// grey backdrop closes up and hugs what is left of the card instead of
+			// holding an empty band open under a tag that has gone.
 			//
 			// `data-session-chip-out` is what closes the row list's gutter, via a
 			// `:has()` selector up there. Publishing the flip through a callback
@@ -347,51 +406,52 @@ function JiraIssueAgentActivityRow({
 					isDragging && (isDraggedOut ? "h-0" : "h-6"),
 				)}
 				data-session-chip-out={isDraggedOut || undefined}
+				data-slot="jira-issue-agent-row-wrap"
 			>
-				{isDragging && !isDraggedOut ? (
-					// The goo bridges BODIES, and a lone item has nothing to stick to —
-					// this is why the drag showed no stretch at all. This blob holds the
-					// row's vacated slot so the merged silhouette keeps one end anchored
-					// in the chin while the other travels, drawing the neck between them.
-					// It paints nothing itself; the `<Gooey>` root fills the silhouette.
-					// It goes the moment the chip is out: with no second body there is
-					// nothing left to bridge, so the neck snaps instead of trailing.
-					<Gooey.Item observe>
-						<div aria-hidden className="pointer-events-none h-6 w-full rounded-md" />
-					</Gooey.Item>
-				) : null}
-				<Gooey.Item
-					observe
-					dissolve={{
-						active: !shouldReduceMotion && drag.dragging && !isDraggedOut,
-						fadeMs: JIRA_ISSUE_SESSION_DRAG_DISSOLVE_FADE_MS,
-						sink: JIRA_ISSUE_SESSION_DRAG_DISSOLVE_SINK,
+				{/* The spring lives on the wrapper, not the row: `AgentAssignment`
+				    clones the trigger and forwards no ref, so the row cannot carry
+				    motion values of its own. While dragging it also has to outrank
+				    the drop wells, which are later siblings and would otherwise
+				    paint over the travelling chip. Once the chip is out the wrapper
+				    hugs it so a full-width box is not left behind a small pill. */}
+				<motion.div
+					className={cn(
+						"min-w-0",
+						isDragging && "z-20",
+						isDragging && (isDraggedOut ? "left-0 top-0 w-fit" : "absolute inset-x-0 top-0"),
+					)}
+					style={{
+						x: isDraggedOut ? chipPointer.x : dragX,
+						y: isDraggedOut ? chipPointer.y : dragY,
+						...sessionDragChipViewportStyle(isDraggedOut),
 					}}
-					morph={isDraggedOut ? JIRA_ISSUE_SESSION_DRAG_CHIP_MORPH : JIRA_ISSUE_SESSION_DRAG_MORPH}
 				>
-					{/* The spring lives on the wrapper, not the row: `AgentAssignment`
-					    clones the trigger and `Gooey.Item` forwards no ref, so neither
-					    can carry motion values of its own. While dragging it also has to
-					    outrank the drop wells, which are later siblings and would
-					    otherwise paint over the travelling chip. Once the chip is out the
-					    wrapper hugs it: the liquid tracks THIS rect, so a full-width
-					    wrapper is what drew a row-wide slab behind a small pill. */}
-					<motion.div
-						className={cn(
-							"min-w-0",
-							isDragging && "absolute top-0 z-20",
-							isDragging && (isDraggedOut ? "left-0 w-fit" : "inset-x-0"),
-						)}
-						style={{ x: dragX, y: dragY }}
-					>
-						{node}
-					</motion.div>
-				</Gooey.Item>
+					{node}
+				</motion.div>
 			</div>
 		);
 	}
 
-	const rowButton = (
+	const showUnlinkControl = Boolean(sessionDrag?.onUnlink) && !isDraggedOut;
+	const statusIcon = isAwaitingInput ? (
+		<span
+			className={cn(
+				"grid shrink-0 place-items-center text-icon-information",
+				usesStrokeChrome ? "size-4" : "-my-1 size-6",
+			)}
+			aria-hidden="true"
+		>
+			<StatusInformationIcon label="" size="small" color="currentColor" />
+		</span>
+	) : (
+		<span
+			className="grid size-4 shrink-0 place-items-center text-icon"
+			aria-hidden="true"
+		>
+			<Spinner label="" size="xs" />
+		</span>
+	);
+	const rowHandle = (
 		<button
 			type="button"
 			aria-label={
@@ -401,7 +461,6 @@ function JiraIssueAgentActivityRow({
 						? `${activities[0]?.name ?? "Agent"}: ${summary.label}`
 						: `${summary.activityCount} agents: ${summary.label}`
 			}
-			data-slot="jira-issue-agent-row"
 			{...(sessionDragBind ?? { onClick: handleOpenChat })}
 			{...(sessionDragBind
 				? {
@@ -411,22 +470,27 @@ function JiraIssueAgentActivityRow({
 				}
 				: {})}
 			className={cn(
-				"flex items-center gap-2 text-left outline-none transition-[background-color,box-shadow] duration-fast ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none",
+				"flex min-w-0 items-center gap-2 text-left outline-none transition-[background-color,box-shadow] duration-fast ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none",
 				isDraggedOut
 					? "h-auto w-fit max-w-full justify-start bg-transparent p-0"
-					: "h-6 w-full min-w-0 justify-between rounded-md px-2 py-1 hover:bg-bg-neutral-subtle-hovered",
+					: cn("h-full min-w-0 flex-1", showUnlinkControl ? "justify-start" : "justify-between"),
 				sessionDragBind && "touch-none select-none",
 			)}
 		>
 			{isDraggedOut ? (
 				// Out of the chin the session reads as the at-mention chip it will
 				// become once dropped, so the gesture previews its own result.
-				<AgentSessionMentionChip
-					avatarSrc={featuredActivity?.avatarSrc}
-					brandName={featuredActivity?.agentBrandName}
-					elevated
-					name={featuredActivity?.name ?? "Agent"}
-				/>
+				<div
+					className="-translate-x-1/2 -translate-y-1/2"
+					data-session-chip-centered=""
+				>
+					<AgentSessionMentionChip
+						avatarSrc={featuredActivity?.avatarSrc}
+						brandName={featuredActivity?.agentBrandName}
+						elevated
+						name={featuredActivity?.name ?? "Agent"}
+					/>
+				</div>
 			) : (
 				<>
 			<div className={cn("flex min-w-0 flex-1 items-center", usesStrokeChrome ? "gap-1.5" : "gap-2")}>
@@ -497,37 +561,12 @@ function JiraIssueAgentActivityRow({
 					</span>
 				)}
 			</div>
-			{isAwaitingInput ? (
-				<span
-					className={cn(
-						"grid shrink-0 place-items-center text-icon-information",
-						usesStrokeChrome ? "size-4" : "-my-1 size-6",
-					)}
-					aria-hidden="true"
-				>
-					<StatusInformationIcon label="" size="small" color="currentColor" />
-				</span>
-			) : (
-				<span
-					className="grid size-4 shrink-0 place-items-center text-icon"
-					aria-hidden="true"
-				>
-					<Spinner label="" size="xs" />
-				</span>
-			)}
+			{showUnlinkControl ? null : statusIcon}
 				</>
 			)}
 		</button>
 	);
-
-	if (isSingleAgent) {
-		return withSessionDragGoo(rowButton);
-	}
-
-	// The gooey wrapper goes around `AgentAssignment`, never around `rowButton`
-	// itself: the hover card clones the trigger to inject `aria-expanded` and
-	// merges its own ref, and `Gooey.Item` forwards neither.
-	return withSessionDragGoo(
+	const assignedRowHandle = isSingleAgent || sessionFlyout ? rowHandle : (
 		<AgentAssignment
 			agents={catalogAgents}
 			assignedAgents={assignedAgents}
@@ -541,8 +580,40 @@ function JiraIssueAgentActivityRow({
 			onOpenChange={onOpenChange}
 			openMode="hover"
 			positionerClassName="z-[575]"
-			trigger={rowButton}
-		/>,
+			trigger={rowHandle}
+		/>
+	);
+
+	return withSessionDrag(
+		<div
+			className={cn(
+				"group/agent-chin-row flex min-w-0 items-center",
+				isDraggedOut
+					? "h-auto w-fit max-w-full justify-start bg-transparent p-0"
+					: "h-6 w-full justify-between rounded-md px-2 py-1 hover:bg-bg-neutral-subtle-hovered",
+			)}
+			data-session-chin=""
+			data-slot="jira-issue-agent-row"
+		>
+			{assignedRowHandle}
+			{showUnlinkControl ? (
+				<div className="flex shrink-0 items-center gap-0">
+					<JiraIssueAgentSessionUnlinkButton
+						onUnlink={() => sessionDrag?.onUnlink?.({
+							id: featuredActivity?.id ?? activities[0]?.id ?? "",
+							name: featuredActivity?.name ?? activities[0]?.name ?? "Agent",
+						})}
+					/>
+					{/* Same trailing slot as the detached link — avatar column, size-6 -mr-1. */}
+					<span
+						className="flex size-6 shrink-0 items-center justify-center -mr-1"
+						data-slot="jira-issue-assignee-slot"
+					>
+						{statusIcon}
+					</span>
+				</div>
+			) : null}
+		</div>,
 	);
 }
 
@@ -627,6 +698,7 @@ export function JiraIssueAgentActivityRows({
 	layout = "merged",
 	onOpenChange,
 	onViewChat,
+	sessionFlyout,
 	sessionDrag,
 	shouldReduceMotion,
 	usesStrokeChrome,
@@ -636,7 +708,9 @@ export function JiraIssueAgentActivityRows({
 	layout?: JiraIssueAgentActivityLayout;
 	onOpenChange?: (open: boolean) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
-	/** Opt-in: makes every chin row a draggable session handle. Requires a `<Gooey>` ancestor. */
+	/** Opt-in for board rows: show the shared session details instead of a composer. */
+	sessionFlyout?: JiraIssueAgentSessionFlyoutContext;
+	/** Opt-in: makes every chin row a draggable session handle. */
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
 	shouldReduceMotion: boolean | null;
 	usesStrokeChrome: boolean;
@@ -646,6 +720,7 @@ export function JiraIssueAgentActivityRows({
 	const presenceMotion = getJiraIssuePresenceMotion(shouldReduceMotion);
 	const hasActivities = activities.length > 0;
 	const rowGroups = groupJiraIssueAgentActivityRows(activities, layout);
+	const [flyoutHandle] = useState(createJiraSessionFlyoutHandle);
 	// A pointer drag re-renders the row on every move. Freezing `layout` for the
 	// duration keeps Motion from re-measuring the whole LayoutGroup projection
 	// tree each frame, and stops popLayout from animating the dragged row.
@@ -655,9 +730,9 @@ export function JiraIssueAgentActivityRows({
 		<motion.div
 			className={cn(
 				"flex w-full min-w-0 flex-col",
-				// The goo silhouette paints outside the row box, so the clip has to
+				// The travelling chip paints outside the row box, so the clip has to
 				// lift for the duration of a transfer drag.
-				sessionDragging ? "overflow-visible" : "overflow-hidden",
+				sessionDragging ? "overflow-visible" : "overflow-hidden has-[:focus-visible]:overflow-visible",
 				// Once the only content is a chip that has left the card, the gutter
 				// is the last thing holding the grey backdrop open — close it too so
 				// the card hugs what remains instead of trailing an empty band. The
@@ -669,17 +744,8 @@ export function JiraIssueAgentActivityRows({
 			transition={layoutTransition}
 		>
 			<AnimatePresence initial={false} mode="popLayout">
-				{rowGroups.map((rowGroup) => (
-					<motion.div
-						key={rowGroup.key}
-						animate={presenceMotion.animate}
-						className="min-w-0"
-						exit={presenceMotion.exit}
-						initial={presenceMotion.initial}
-						layout={rowLayout}
-						style={shouldReduceMotion ? undefined : JIRA_ISSUE_MOTION_STYLE}
-						transition={layoutTransition}
-					>
+				{rowGroups.map((rowGroup) => {
+					const row = (
 						<JiraIssueAgentActivityRow
 							activities={rowGroup.activities}
 							onOpenChange={onOpenChange}
@@ -695,12 +761,38 @@ export function JiraIssueAgentActivityRows({
 							}}
 							onViewChat={onViewChat}
 							sessionDrag={sessionDrag}
+							sessionFlyout={sessionFlyout}
 							shouldReduceMotion={shouldReduceMotion}
 							usesStrokeChrome={usesStrokeChrome}
 						/>
+					);
+
+					return (
+						<motion.div
+						key={rowGroup.key}
+						animate={presenceMotion.animate}
+						className="min-w-0"
+						exit={presenceMotion.exit}
+						initial={presenceMotion.initial}
+						layout={rowLayout}
+						style={shouldReduceMotion ? undefined : JIRA_ISSUE_MOTION_STYLE}
+						transition={layoutTransition}
+					>
+							{sessionFlyout ? (
+								<JiraSessionFlyoutTrigger
+									closeDelay={160}
+									handle={flyoutHandle}
+									render={<div className="min-w-0" />}
+									session={toJiraIssueAgentSessionFlyoutItem(rowGroup.activities[0], sessionFlyout)}
+								>
+									{row}
+								</JiraSessionFlyoutTrigger>
+							) : row}
 					</motion.div>
-				))}
+					);
+				})}
 			</AnimatePresence>
+			{sessionFlyout ? <JiraSessionFlyoutSurface handle={flyoutHandle} /> : null}
 		</motion.div>
 	);
 }

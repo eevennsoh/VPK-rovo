@@ -103,6 +103,7 @@ export interface JiraListProps {
 	onDraftWorkItemSubmit?: () => void;
 	onDraftWorkItemSummaryChange?: (summary: string) => void;
 	onIssueClick?: (row: JiraListRowData) => void;
+	/** Activates an issue key. Omit to render issue keys as plain text. */
 	onIssueKeyClick?: (row: JiraListRowData) => void;
 	onMoveRow?: (issueKey: string, targetIndex: number) => void;
 	onRefresh?: () => void;

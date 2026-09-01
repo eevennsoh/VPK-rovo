@@ -99,6 +99,8 @@ export interface AgentSessionProps {
 	onSelectedItemIdChange?: (itemId: string | null) => void;
 	/** Opt-in: makes each medium-detached row a draggable session that can reattach. */
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
+	/** Work item key for the detached link tooltip (`Link to KEY`). */
+	issueKey?: string;
 	/**
 	 * Pointer hover on a large column card. `null` when the pointer leaves.
 	 * Compact rows do not fire this.
