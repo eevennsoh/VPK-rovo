@@ -63,7 +63,7 @@ export AGENT_BROWSER_RESTORE="$SESSION"
 .agents/skills/vpk-verify/scripts/control-vpk browser open --headed "$ORIGIN/"
 ```
 
-Prefer ARIA roles, accessible names, and `id` / `href` handles from the feature map. Do not use click coordinates. Stable handles:
+Prefer ARIA roles, accessible names, and `id` / `href` handles from the feature map. Do not use click coordinates. `find` requires an action (`click`, `fill`, `check`, `hover`, `text`). Presence checks use `find role … text --name`. A bare `find role … --name` fails as `assertion_failure`. Stable handles:
 
 | Handle | What it is |
 | --- | --- |

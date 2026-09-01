@@ -51,4 +51,5 @@ Keep implementation details out of the map. Name only user paths, stable handles
 - [Jira Golden Journeys v0](./jira-golden-journeys-v0.md) covers the original pattern gallery, keyboard selection, local terminal theme, and narrow layout.
 - [Jira Golden Journeys v1](./jira-golden-journeys-v1.md) covers local/global session walkthroughs, screen navigation, keyboard selection, and narrow layout.
 - [Jira Golden Journeys v2](./jira-golden-journeys-v2.md) covers story chapters, Details/Activity, guided pull-request detail, keyboard focus, and narrow layout.
-- [Jira Golden Journeys v3](./jira-golden-journeys-v3.md) covers section navigation, Activity/Insights, pull-request detail, focus restoration, and narrow layout.
+- [Jira Golden Journeys v3](./jira-golden-journeys-v3.md) covers Track/Learn/Build/Terminal, PAY-101 sections, PR #1839, and narrow `Jump to chapter`.
+- [Jira Golden Journeys v4](./jira-golden-journeys-v4.md) covers the Payments SDK board/list in Jira chrome, Untracked work, and view controls.

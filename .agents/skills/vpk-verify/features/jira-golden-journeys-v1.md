@@ -35,3 +35,5 @@ Preconditions:
 - Window-level ArrowLeft/ArrowRight deliberately does not steal keys from focused controls. Use named buttons while verifying keyboard behavior.
 - Theme cycling is only terminal-local while a Terminal screen is active.
 - On narrow viewports, use `Jump to section`; the full desktop run controls are intentionally replaced.
+- Sarah's first screen is the Kanban board. Heading `Jira Design` is the board chrome, not the later Kanban & List workspace.
+- `wait --text "Back to Rovo"` can time out. Assert `button[aria-label='Back to Rovo']` (or a snapshot) and region `Clarification questions — answer or skip to continue chatting`.
