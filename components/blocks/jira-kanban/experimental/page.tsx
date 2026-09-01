@@ -136,6 +136,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	ariaLabel?: string;
 	boardColumns?: readonly JiraKanbanColumnData[];
 	compactHeader?: boolean;
+	defaultAgentSessionColumnCollapsed?: boolean;
 	headerAssignees?: readonly JiraKanbanAssigneeData[];
 	insightsEnabled?: boolean;
 	insightsDefaultAssigneeIds?: readonly string[];
@@ -177,6 +178,7 @@ export default function ExperimentalJiraKanbanPage({
 	activeCardCode,
 	agentActivityLayout,
 	cardGenerativeActionPresentation,
+	defaultAgentSessionColumnCollapsed = false,
 	detachedAgentSessionsByCard,
 	agentSessionAssigneeIdAliases,
 	agents = BOARD_AGENTS,
@@ -245,6 +247,7 @@ export default function ExperimentalJiraKanbanPage({
 	// Owned here rather than inside the board: switching to the list or Pulse
 	// view unmounts `ExperimentalJiraKanban`, and a viewer's collapse choices are
 	// a deliberate setting that must outlive a temporary view switch.
+	const [agentSessionColumnCollapsed, setAgentSessionColumnCollapsed] = useState(defaultAgentSessionColumnCollapsed);
 	const [collapsedColumns, setCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
 	const [showUntracked, setShowUntracked] = useState(true);
 	const [shownSessionStateIds, setShownSessionStateIds] = useState(
@@ -693,8 +696,10 @@ export default function ExperimentalJiraKanbanPage({
 						agentActivityLayout={agentActivityLayout}
 						agentSessionColumn={showAgentSessionColumn ? {
 							capturedItemIds: capturedLooseWorkIds,
+							defaultCollapsed: agentSessionColumnCollapsed,
 							items: untrackedAgentSessionItems,
 							...agentSessionHandlers,
+							onCollapsedChange: setAgentSessionColumnCollapsed,
 						} : undefined}
 						proximityAgentSession={{
 							actionableSessionIds: proximityActionableSessionIds,

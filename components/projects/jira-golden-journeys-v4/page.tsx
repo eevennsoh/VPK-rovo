@@ -158,6 +158,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						agents={JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS}
 						ariaLabel="Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses."
 						boardColumns={boardColumns}
+						defaultAgentSessionColumnCollapsed
 						detachedAgentSessionsByCard={detachedAgentSessionsByCard}
 						headerAssignees={JIRA_GOLDEN_JOURNEYS_V4_PAY_HEADER_ASSIGNEES}
 						insightsEnabled={false}

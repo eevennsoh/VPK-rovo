@@ -116,6 +116,14 @@ test("shared detail body renders the session invoker beside its timestamp", () =
 	const source = readRepoFile(FLYOUT_BODY_PATH);
 	const jiraSource = readRepoFile("components/blocks/product-sidebar/variants/jira.tsx");
 	assert.match(source, /export function JiraSessionFlyoutBody\b/u);
+	assert.match(source, /<div className="flex items-start justify-between gap-3">/u);
+	assert.doesNotMatch(source, /<div className="flex items-center justify-between gap-3">/u);
+	assert.match(
+		source,
+		/<p className="min-w-0 text-xs font-medium leading-5 text-text" title=\{session\.title\}>/u,
+	);
+	assert.doesNotMatch(source, /<p className="min-w-0 truncate[^"]*" title=\{session\.title\}>/u);
+	assert.doesNotMatch(source, /<p className="[^"]*text-balance[^"]*" title=\{session\.title\}>/u);
 	assert.match(source, /import\s*\{[^}]*Avatar[^}]*AvatarFallback[^}]*AvatarImage[^}]*\}\s*from\s*"@\/components\/ui\/avatar"/u);
 	assert.match(
 		source,
@@ -123,8 +131,9 @@ test("shared detail body renders the session invoker beside its timestamp", () =
 	);
 	assert.match(
 		source,
-		/session\.status === "awaiting-input" \? \(\s*<Lozenge variant="information">Needs input<\/Lozenge>\s*\) : \(\s*<span className="text-\[12px\] leading-4 text-text-subtlest">\s*\{STATUS_UPDATED_LABEL\[session\.status\]\}\s*<\/span>/u,
+		/session\.status === "awaiting-input" \? \(\s*<Lozenge variant="information">Needs input<\/Lozenge>\s*\) : \(\s*<span className="text-\[12px\] leading-5 text-text-subtlest">\s*\{STATUS_UPDATED_LABEL\[session\.status\]\}\s*<\/span>/u,
 	);
+	assert.doesNotMatch(source, /text-\[12px\] leading-4 text-text-subtlest/u);
 	assert.match(source, /import\s*\{[^}]*SmartLink[^}]*\}\s*from\s*"@\/components\/blocks\/smart-link"/u);
 	assert.match(source, /import\s*\{[^}]*GithubLogo[^}]*\}\s*from\s*"@\/components\/ui\/logo-third-party"/u);
 	assert.match(source, /import\s*\{[^}]*Lozenge[^}]*\}\s*from\s*"@\/components\/ui\/lozenge"/u);
