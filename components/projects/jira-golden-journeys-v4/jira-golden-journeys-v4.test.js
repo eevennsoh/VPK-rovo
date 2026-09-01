@@ -154,7 +154,7 @@ test("Jira session flyouts are suspended for both session and whole-card drags",
 	);
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
-		/const sessionFlyoutsSuspended = sessionDragTransaction !== null \|\| draggedCardCode !== null;/u,
+		/const sessionFlyoutsSuspended = boardSessionDrag\.transaction !== null \|\| draggedCardCode !== null;/u,
 	);
 	assert.match(EXPERIMENTAL_BOARD_SOURCE, /<JiraSessionFlyoutSuspensionProvider[\s\S]*suspended=\{sessionFlyoutsSuspended\}[\s\S]*<ExperimentalJiraKanbanCard/u);
 	assert.match(EXPERIMENTAL_BOARD_SOURCE, /<\/JiraSessionFlyoutSuspensionProvider>/u);

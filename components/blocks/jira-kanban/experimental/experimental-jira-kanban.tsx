@@ -98,13 +98,7 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 		card: JiraKanbanCardData,
 		columnTitle: string,
 	) => void;
-	onCardAgentSessionMove?: (
-		session: JiraIssueAgentSessionRef,
-		sourceCard: JiraKanbanCardData,
-		targetCard: JiraKanbanCardData,
-		sourceColumnTitle: string,
-		targetColumnTitle: string,
-	) => void;
+	onCardAgentSessionMove?: (session: JiraIssueAgentSessionRef, sourceCard: JiraKanbanCardData, targetCard: JiraKanbanCardData, sourceColumnTitle: string, targetColumnTitle: string) => void;
 	/** Chooses where card agent and skill actions are presented. */
 	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;
 	/**
@@ -622,20 +616,10 @@ export function ExperimentalJiraKanban({
 	const selectedStatus = selectedCardCodes
 		? getCommonSelectedCardStatus(boardColumns, selectedCardCodes)
 		: null;
-	const boardSessionDragEnabled = Boolean(
-		onCardAgentSessionLink
-		&& onCardAgentSessionMove
-		&& onCardAgentSessionUnlink,
-	);
-	const {
-		boardRootRef,
-		getCardDragState,
-		transaction: sessionDragTransaction,
-		untrackedBinding: untrackedSessionDragBinding,
-	} = useBoardAgentSessionDrag({
+	const boardSessionDrag = useBoardAgentSessionDrag({
+		agentActivityLayout,
 		boardColumns,
 		detachedSessionsByCard: detachedAgentSessionsByCard,
-		enabled: boardSessionDragEnabled,
 		onLink: onCardAgentSessionLink,
 		onMove: onCardAgentSessionMove,
 		onUnlink: onCardAgentSessionUnlink,
@@ -793,17 +777,17 @@ export function ExperimentalJiraKanban({
 		}
 		onCollapsedColumnsChange?.(nextCollapsedColumns);
 	};
-	const sessionFlyoutsSuspended = sessionDragTransaction !== null || draggedCardCode !== null;
+	const sessionFlyoutsSuspended = boardSessionDrag.transaction !== null || draggedCardCode !== null;
 
 	return (
 		<JiraSessionFlyoutSuspensionProvider
 			suspended={sessionFlyoutsSuspended}
 		>
 		<div
-			ref={boardRootRef}
+			ref={boardSessionDrag.boardRootRef}
 			className="relative flex min-h-0 min-w-0 flex-1 flex-col"
-			data-board-agent-session-dragging={sessionDragTransaction !== null || undefined}
-			data-board-agent-session-origin={sessionDragTransaction?.origin.kind}
+			data-board-agent-session-dragging={boardSessionDrag.transaction !== null || undefined}
+			data-board-agent-session-origin={boardSessionDrag.transaction?.origin.kind}
 		>
 			<div className="flex min-h-0 min-w-0 flex-1 items-stretch">
 				{agentSessionColumn ? (
@@ -820,8 +804,8 @@ export function ExperimentalJiraKanban({
 							onItemHover={handleSessionHover}
 							onSelectedItemIdChange={handleSessionSelectionChange}
 							onView={handleSessionView}
-							sessionDrag={boardSessionDragEnabled
-								? untrackedSessionDragBinding
+							sessionDrag={boardSessionDrag.enabled
+								? boardSessionDrag.untrackedBinding
 								: agentSessionColumn.sessionDrag}
 						/>
 					</div>
@@ -897,7 +881,7 @@ export function ExperimentalJiraKanban({
 											control: agentSessionDragControl,
 											detachedBinding: detachedSessionDragBinding,
 											dropTarget: cardDropTarget,
-										} = getCardDragState(card, column.title);
+										} = boardSessionDrag.getCardDragState(card, column.title);
 										const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
 										const modifiers: JiraKanbanCardSelectModifiers = {
 											shiftKey: event.shiftKey,

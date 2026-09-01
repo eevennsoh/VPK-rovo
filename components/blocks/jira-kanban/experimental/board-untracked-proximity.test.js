@@ -82,9 +82,9 @@ test("one board transaction coordinates every session source and suppresses prev
 	assert.match(DRAG_HOOK_SOURCE, /createBoardAgentSessionDragTransaction/u);
 	assert.match(DRAG_HOOK_SOURCE, /resolveBoardAgentSessionDropAction/u);
 	assert.match(BOARD_SOURCE, /JiraSessionFlyoutSuspensionProvider/u);
-	assert.match(BOARD_SOURCE, /const sessionFlyoutsSuspended = sessionDragTransaction !== null \|\| draggedCardCode !== null;/u);
+	assert.match(BOARD_SOURCE, /const sessionFlyoutsSuspended = boardSessionDrag\.transaction !== null \|\| draggedCardCode !== null;/u);
 	assert.match(BOARD_SOURCE, /suspended=\{sessionFlyoutsSuspended\}/u);
-	assert.match(BOARD_SOURCE, /sessionDrag=\{boardSessionDragEnabled[\s\S]*\? untrackedSessionDragBinding[\s\S]*: agentSessionColumn\.sessionDrag\}/u);
+	assert.match(BOARD_SOURCE, /sessionDrag=\{boardSessionDrag\.enabled[\s\S]*\? boardSessionDrag\.untrackedBinding[\s\S]*: agentSessionColumn\.sessionDrag\}/u);
 	assert.match(BOARD_SOURCE, /data-board-agent-session-drop-zone="issue"/u);
 	assert.match(CARD_SOURCE, /agentSessionDragControl=\{agentSessionDragControl\}/u);
 	assert.match(CARD_SOURCE, /sessionDrag=\{canLinkAgentSession[\s\S]*\? detachedSessionDrag \?\? localSessionDrag[\s\S]*: undefined\}/u);
@@ -93,14 +93,23 @@ test("one board transaction coordinates every session source and suppresses prev
 
 test("board-wide drag stays opt-in for zero and partial callback consumers", () => {
 	assert.match(
-		BOARD_SOURCE,
-		/const boardSessionDragEnabled = Boolean\(\s*onCardAgentSessionLink\s*&& onCardAgentSessionMove\s*&& onCardAgentSessionUnlink,?\s*\);/u,
+		DRAG_HOOK_SOURCE,
+		/const enabled = Boolean\(\s*agentActivityLayout === "split"\s*&& onLink\s*&& onMove\s*&& onUnlink,?\s*\);/u,
 	);
-	assert.match(BOARD_SOURCE, /enabled: boardSessionDragEnabled/u);
+	assert.match(BOARD_SOURCE, /agentActivityLayout,/u);
+	assert.match(DRAG_HOOK_SOURCE, /\n\s*enabled,\s*\n/u);
 	assert.match(DRAG_HOOK_SOURCE, /const control: JiraIssueAgentSessionDragControl \| undefined = enabled/u);
 	assert.match(DRAG_HOOK_SOURCE, /detachedBinding: enabled[\s\S]*\? createBinding\(\{ kind: "detached"/u);
 	assert.match(DRAG_HOOK_SOURCE, /untrackedBinding: enabled \? createBinding\(\{ kind: "untracked" \}\) : undefined/u);
 	assert.match(CARD_SOURCE, /detachedSessionDrag \?\? localSessionDrag/u);
+});
+
+test("release re-hit-tests the current pointer against current board geometry", () => {
+	assert.match(
+		DRAG_HOOK_SOURCE,
+		/const finalTransaction = state\.pointer[\s\S]*\? updateBoardAgentSessionDragTransaction\([\s\S]*current,[\s\S]*state\.pointer,[\s\S]*collectDropZones\(boardRootRef\.current\),?[\s\S]*\)[\s\S]*: current;/u,
+	);
+	assert.match(DRAG_HOOK_SOURCE, /commitDrop\(finalTransaction\)/u);
 });
 
 test("unchecking Untracked exits board-adjacent sessions through the issue presence recipe", () => {

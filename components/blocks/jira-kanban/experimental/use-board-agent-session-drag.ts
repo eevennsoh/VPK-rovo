@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react";
 
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type {
+	JiraIssueAgentActivityLayout,
 	JiraIssueAgentSessionDragControl,
 	JiraIssueAgentSessionDragState,
 } from "@/components/blocks/jira-issue";
@@ -61,17 +62,17 @@ function findBoardCard(
 }
 
 export function useBoardAgentSessionDrag({
+	agentActivityLayout,
 	boardColumns,
 	detachedSessionsByCard,
-	enabled,
 	onLink,
 	onMove,
 	onUnlink,
 	untrackedSessions,
 }: Readonly<{
+	agentActivityLayout: JiraIssueAgentActivityLayout;
 	boardColumns: readonly JiraKanbanColumnData[];
 	detachedSessionsByCard?: Readonly<Record<string, readonly AgentSessionItem[]>>;
-	enabled: boolean;
 	onLink?: (session: AgentSessionItem, card: JiraKanbanCardData, columnTitle: string) => void;
 	onMove?: (
 		session: JiraIssueAgentSessionRef,
@@ -88,6 +89,12 @@ export function useBoardAgentSessionDrag({
 	const [transaction, setTransaction] = useState<BoardAgentSessionDragTransaction<JiraIssueAgentSessionRef> | null>(null);
 	const [dragState, setDragState] = useState<JiraIssueAgentSessionDragState>(
 		JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE,
+	);
+	const enabled = Boolean(
+		agentActivityLayout === "split"
+		&& onLink
+		&& onMove
+		&& onUnlink,
 	);
 
 	const commitDrop = useCallback((
@@ -144,7 +151,16 @@ export function useBoardAgentSessionDrag({
 		}
 
 		const current = transactionRef.current;
-		if (current && !state.cancelled) commitDrop(current);
+		if (current && !state.cancelled) {
+			const finalTransaction = state.pointer
+				? updateBoardAgentSessionDragTransaction(
+					current,
+					state.pointer,
+					collectDropZones(boardRootRef.current),
+				)
+				: current;
+			commitDrop(finalTransaction);
+		}
 		transactionRef.current = null;
 		setTransaction(null);
 		setDragState(
@@ -202,6 +218,7 @@ export function useBoardAgentSessionDrag({
 	return {
 		boardRootRef,
 		dragState,
+		enabled,
 		getCardDragState,
 		transaction,
 		untrackedBinding: enabled ? createBinding({ kind: "untracked" }) : undefined,
