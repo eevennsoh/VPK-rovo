@@ -126,7 +126,13 @@ test("medium matches the 276 by 33 Figma row and reuses shared identity primitiv
 	assert.match(MEDIUM_CARD_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual";/u);
 	assert.match(MEDIUM_CARD_SOURCE, /import \{ Avatar, AvatarFallback, AvatarImage \} from "@\/components\/ui\/avatar";/u);
 	assert.match(MEDIUM_CARD_SOURCE, /h-\[33px\] w-\[276px\]/u);
-	assert.match(MEDIUM_CARD_SOURCE, /items-center gap-2 rounded-\[10px\] border border-transparent bg-bg-accent-gray-subtlest px-3/u);
+	assert.match(MEDIUM_CARD_SOURCE, /items-center gap-2 rounded-\[10px\] border border-transparent px-3/u);
+	// Resting surface moved out of the base string when the column-hover
+	// highlight added a pressed branch; the rest/hover pair itself is unchanged.
+	assert.match(
+		MEDIUM_CARD_SOURCE,
+		/"bg-bg-accent-gray-subtlest hover:bg-bg-accent-gray-subtlest-hovered"/u,
+	);
 	assert.match(MEDIUM_CARD_SOURCE, /sizePx=\{16\}/u);
 	assert.match(MEDIUM_CARD_SOURCE, /min-w-0 flex-1 truncate text-left text-xs font-normal leading-4 text-text-subtlest/u);
 	assert.match(MEDIUM_CARD_SOURCE, /<Icon className="text-icon-subtle" render=\{<LinkIcon label="" size="small" \/>\} \/>/u);
