@@ -406,13 +406,13 @@ test("Jira issue splits the finished review chin into one row per completed run"
 	assert.match(COMPLETED_RUNS_SOURCE, /<AgentAvatarVisual[\s\S]*avatarSrc=\{run\.agentAvatarSrc\}[\s\S]*label=\{run\.agentName\}[\s\S]*sizePx=\{16\}/u);
 	// Per-run outcome icon replaces the aggregate's failure-only indicator.
 	// Failed stays the filled error status; finished uses the extra-large
-	// stroke ADS dot in information color, not the smaller tree Node glyph.
+	// stroke ADS dot in subtle icon color, not the smaller tree Node glyph.
 	assert.match(COMPLETED_RUNS_SOURCE, /import StrokeWeightExtraLargeIcon from "@atlaskit\/icon\/core\/stroke-weight-extra-large";/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /hasFailed \? \([\s\S]*<StatusErrorIcon[\s\S]*: \([\s\S]*<StrokeWeightExtraLargeIcon/u);
 	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /StatusSuccessIcon/u);
 	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /CheckMarkIcon/u);
 	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /NodeIcon/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /hasFailed \? "text-icon-danger" : "text-icon-information"/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /hasFailed \? "text-icon-danger" : "text-icon-subtle"/u);
 	// Each row opens its own run's shared session flyout rather than the aggregate AgentList.
 	assert.match(COMPLETED_RUNS_SOURCE, /<JiraSessionFlyoutTrigger[\s\S]*session=\{\{ \.\.\.session,/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /<JiraSessionFlyoutSurface handle=\{flyoutHandle\} \/>/u);

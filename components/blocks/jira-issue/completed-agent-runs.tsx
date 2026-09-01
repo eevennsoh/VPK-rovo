@@ -132,7 +132,7 @@ function JiraIssueCompletedRunRow({
 						<span
 							className={cn(
 								"grid shrink-0 place-items-center",
-								hasFailed ? "text-icon-danger" : "text-icon-information",
+								hasFailed ? "text-icon-danger" : "text-icon-subtle",
 								usesStrokeChrome ? "size-4" : "-my-1 size-6",
 							)}
 							aria-hidden="true"
