@@ -136,6 +136,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	ariaLabel?: string;
 	boardColumns?: readonly JiraKanbanColumnData[];
 	compactHeader?: boolean;
+	defaultAgentSessionColumnCollapsed?: boolean;
 	headerAssignees?: readonly JiraKanbanAssigneeData[];
 	insightsEnabled?: boolean;
 	insightsDefaultAssigneeIds?: readonly string[];
@@ -177,6 +178,7 @@ export default function ExperimentalJiraKanbanPage({
 	activeCardCode,
 	agentActivityLayout,
 	cardGenerativeActionPresentation,
+	defaultAgentSessionColumnCollapsed = false,
 	detachedAgentSessionsByCard,
 	agentSessionAssigneeIdAliases,
 	agents = BOARD_AGENTS,
@@ -693,6 +695,7 @@ export default function ExperimentalJiraKanbanPage({
 						agentActivityLayout={agentActivityLayout}
 						agentSessionColumn={showAgentSessionColumn ? {
 							capturedItemIds: capturedLooseWorkIds,
+							defaultCollapsed: defaultAgentSessionColumnCollapsed,
 							items: untrackedAgentSessionItems,
 							...agentSessionHandlers,
 						} : undefined}
