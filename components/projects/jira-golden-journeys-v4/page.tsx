@@ -42,7 +42,7 @@ const renderJiraGoldenJourneysV4AgentActivityIndicator: JiraIssueAgentActivityIn
 	<PixelLoader
 		className="size-3 justify-center text-icon-subtle"
 		pattern={state === "awaiting-input" ? "solo" : "diagonal-top-left"}
-		shape={state === "awaiting-input" ? "square" : "dot"}
+		shape="dot"
 		size="small"
 	/>
 );
