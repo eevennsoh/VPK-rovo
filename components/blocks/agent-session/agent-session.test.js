@@ -116,6 +116,7 @@ test("large remains the default while every card receives the selected size vari
 	assert.match(INDEX_SOURCE, /variant === "large"/u);
 	assert.match(INDEX_SOURCE, /<AgentSessionCard/u);
 	assert.match(INDEX_SOURCE, /<AgentSessionCompactCard/u);
+	assert.match(INDEX_SOURCE, /captured=\{capturedItemIds\?\.has\(item\.id\) \?\? false\}/u);
 	assert.match(TYPES_SOURCE, /issueKey\?: string;/u);
 	assert.match(INDEX_SOURCE, /issueKey=\{issueKey\}/u);
 	assert.match(INDEX_SOURCE, /render=\{<li data-testid=\{"agent-session-row-" \+ item\.id\} \/>\}/u);
@@ -126,13 +127,22 @@ test("medium matches the 276 by 33 Figma row and reuses shared identity primitiv
 	assert.match(MEDIUM_CARD_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual";/u);
 	assert.match(MEDIUM_CARD_SOURCE, /import \{ Avatar, AvatarFallback, AvatarImage \} from "@\/components\/ui\/avatar";/u);
 	assert.match(MEDIUM_CARD_SOURCE, /h-\[33px\] w-\[276px\]/u);
-	assert.match(MEDIUM_CARD_SOURCE, /items-center gap-2 rounded-\[10px\] border border-transparent px-3/u);
-	// Resting surface moved out of the base string when the column-hover
-	// highlight added a pressed branch; the rest/hover pair itself is unchanged.
+	assert.match(MEDIUM_CARD_SOURCE, /items-center gap-2 rounded-\[10px\] border border-solid px-3/u);
+	assert.match(MEDIUM_CARD_SOURCE, /hover:border-border focus-within:border-border/u);
+	assert.match(MEDIUM_CARD_SOURCE, /isNew \? "border-border-discovery" : "border-border-disabled"/u);
+	assert.doesNotMatch(MEDIUM_CARD_SOURCE, /dash-4-4/u);
 	assert.match(
 		MEDIUM_CARD_SOURCE,
-		/"bg-bg-accent-gray-subtlest hover:bg-bg-accent-gray-subtlest-hovered"/u,
+		/"bg-surface hover:bg-surface-hovered"/u,
 	);
+	assert.doesNotMatch(MEDIUM_CARD_SOURCE, /bg-bg-accent-gray-subtlest/u);
+	assert.doesNotMatch(MEDIUM_CARD_SOURCE, /["'`]border-dashed["'`]/u);
+	assert.doesNotMatch(MEDIUM_CARD_SOURCE, /["'`]dash-4-2["'`]/u);
+	assert.doesNotMatch(MEDIUM_CARD_SOURCE, /ring-2/u);
+	assert.doesNotMatch(MEDIUM_CARD_SOURCE, /<svg/u);
+	assert.doesNotMatch(MEDIUM_CARD_SOURCE, /ring-1 ring-border-discovery/u);
+	assert.match(COMPACT_CARD_SOURCE, /captured=\{captured\}/u);
+	assert.match(MEDIUM_CARD_SOURCE, /data-captured=\{captured \|\| undefined\}/u);
 	assert.match(MEDIUM_CARD_SOURCE, /sizePx=\{16\}/u);
 	assert.match(MEDIUM_CARD_SOURCE, /min-w-0 flex-1 truncate text-left text-xs font-normal leading-4 text-text-subtlest/u);
 	assert.match(MEDIUM_CARD_SOURCE, /<Icon className="text-icon-subtle" render=\{<LinkIcon label="" size="small" \/>\} \/>/u);
@@ -159,6 +169,8 @@ test("medium matches the 276 by 33 Figma row and reuses shared identity primitiv
 		/const identityLabel = invoker === undefined[\s\S]*\? item\.agent\.name[\s\S]*: `\$\{item\.agent\.name\} with \$\{invoker\.name\}`;/u,
 	);
 	assert.match(MEDIUM_CARD_SOURCE, /invoker === undefined \? null : \(/u);
+	const dashSource = readFileSync(join(__dirname, "../../../app/dash-4-2.css"), "utf8");
+	assert.doesNotMatch(dashSource, /@utility dash-4-4/u);
 });
 
 test("medium drag chip is the shared agent mention tag with overlay elevation", () => {
@@ -278,7 +290,7 @@ test("medium attached reuses the Jira issue agent activity row", () => {
 test("medium preserves newly synced state and its one-shot arrival beat", () => {
 	assert.match(MEDIUM_CARD_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
 	assert.match(MEDIUM_CARD_SOURCE, /data-new=\{isNew \|\| undefined\}/u);
-	assert.match(MEDIUM_CARD_SOURCE, /isNew \? "ring-1 ring-border-discovery" : null/u);
+	assert.match(MEDIUM_CARD_SOURCE, /isNew \? "border-border-discovery" : "border-border-disabled"/u);
 	assert.match(MEDIUM_CARD_SOURCE, /Newly synced, not yet reviewed/u);
 	assert.match(MEDIUM_CARD_SOURCE, /initial=\{shouldPlayArrival \? \{ opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX \} : false\}/u);
 	assert.match(MEDIUM_CARD_SOURCE, /animate=\{shouldPlayArrival \? \{ opacity: 1, y: 0 \} : undefined\}/u);

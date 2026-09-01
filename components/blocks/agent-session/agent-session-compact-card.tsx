@@ -97,6 +97,7 @@ function SmallAgentSession({
 }
 
 export function AgentSessionCompactCard({
+	captured = false,
 	flyout = false,
 	isArriving = false,
 	isHighlighted = false,
@@ -110,6 +111,7 @@ export function AgentSessionCompactCard({
 	sessionDrag,
 	variant,
 }: Readonly<{
+	captured?: boolean;
 	isArriving?: boolean;
 	/**
 	 * Light this row for a pointer that is somewhere else — the Untracked work
@@ -145,6 +147,7 @@ export function AgentSessionCompactCard({
 		/>
 	) : (
 		<AgentSessionMediumCard
+			captured={captured}
 			flyout={flyout}
 			isArriving={isArriving}
 			isHighlighted={isHighlighted}

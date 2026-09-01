@@ -2,13 +2,13 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_SESSION_DETAIL: ComponentDetail = {
 	description:
-		'Agent sessions in four footprints and relationship states. Large is the default detached, dashed uncaptured-work card: it reuses the shared Agent List row with a devices icon, viewer machine, then a static timestamp, and Resume plus Hide or Show actions. Medium detached condenses that local session into the Jira Agents row, while Medium attached reuses the exact Jira Issue activity row for a session already connected to work. Small becomes the collapsed Agent Session Column notch. Detached footprints open the untracked-work Agent Session Flyout with Link, Create, and add-as-subtask actions; Medium attached opens session details because its Jira relationship already exists. Captured ids use a solid border, and rows the host cannot resume omit Resume.',
+		'Agent sessions in four footprints and relationship states. Large is the default detached, solid uncaptured-work card: it reuses the shared Agent List row with a devices icon, viewer machine, then a static timestamp, and Resume plus Hide or Show actions. Medium detached condenses that local session into the Jira Agents row — a 276px surface card with a solid disabled stroke — while Medium attached reuses the exact Jira Issue activity row for a session already connected to work. Small becomes the collapsed Agent Session Column notch. Detached footprints open the untracked-work Agent Session Flyout with Link, Create, and add-as-subtask actions; Medium attached opens session details because its Jira relationship already exists. Captured ids use a solid border, and rows the host cannot resume omit Resume.',
 	demoLayout: { previewHeight: "fit" },
 	examples: [
 		{
 			title: "Medium detached",
 			description:
-				"A compact 276px local-session row that is still detached from Jira work and opens the untracked-work flyout.",
+				"A compact 276px local-session row that is still detached from Jira work: a solid disabled border that darkens to default on hover, and it opens the untracked-work flyout.",
 			demoSlug: "agent-session-demo-medium-detached",
 		},
 		{
@@ -50,7 +50,7 @@ export const AGENT_SESSION_DETAIL: ComponentDetail = {
 			name: "capturedItemIds",
 			type: "ReadonlySet<string>",
 			description:
-				"Ids of sessions whose dashed uncaptured frame should become a solid captured border.",
+				"Ids of sessions marked captured. Medium detached uses the same solid disabled border at rest, and the default border on hover.",
 		},
 		{
 			name: "onLinkWorkItem",
