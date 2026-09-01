@@ -387,7 +387,7 @@ test("experimental v2 Development starts with a searchable provider-branded repo
 	);
 	assert.doesNotMatch(repositoryPickerSource, /selectedRepository|DEFAULT_REPOSITORY_ID|Select repository,/u);
 	assert.match(developmentRepositoriesSource, /provider: "github"[\s\S]*provider: "bitbucket"/u);
-	assert.match(repositoryPickerSource, /<GithubLogo borderless className="dark:invert \[\[data-color-mode=dark\]_&\]:invert" label="" size="small" \/>/u);
+	assert.match(repositoryPickerSource, /<GithubLogo borderless label="" size="small" \/>/u);
 	assert.match(repositoryPickerSource, /<BitbucketLogo appearance="brand" label="" size="small" \/>/u);
 	assert.match(developmentRepositoriesSource, /symphony-explainer[\s\S]*proximity[\s\S]*vpk-rovo[\s\S]*vpk-rovodev/u);
 	// Full URLs stay on the option data (search / future links); bylines strip the scheme.

@@ -200,9 +200,13 @@ test("app mentions render as product BrandLogoMark tags, not hexagon agent avata
 		SEGMENTS_SOURCE,
 		/case "app-mention":[\s\S]*?>\s*@\{segment\.text\}\s*<\/Tag>/u,
 	);
-	assert.match(
+	// GitHub's near-black glyph is inverted for dark mode by `BrandLogoMark`
+	// itself, not here. CSS filters on nested elements compose, so a caller-level
+	// `dark:invert` around the mark would double-invert it back to near-black.
+	assert.doesNotMatch(
 		SEGMENTS_SOURCE,
-		/segment\.brandName === "github"[\s\S]*dark:invert \[\[data-color-mode=dark\]_&\]:invert/u,
+		/dark:(?:\[[^\]]*\]:)*invert/u,
+		"dark-mode glyph inversion is centralized in BrandLogoMark — a caller-level invert double-inverts",
 	);
 	assert.doesNotMatch(
 		SEGMENTS_SOURCE,

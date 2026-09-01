@@ -45,7 +45,7 @@ test("PullRequest card reuses Avatar, Tag, Lozenge, BrandLogoMark, and ArrowRigh
 	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/arrow-right"/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/BrandLogoMark[\s\S]*className="dark:invert \[\[data-color-mode=dark\]_&\]:invert"[\s\S]*name="github"/u,
+		/BrandLogoMark[\s\S]*name="github"/u,
 	);
 	// Compact keeps the 24px avatar by default; spacious opts down to 16px.
 	assert.match(COMPONENT_SOURCE, /function PullRequestAuthorAvatar\([\s\S]*size = "sm",/u);

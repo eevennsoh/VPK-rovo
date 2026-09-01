@@ -246,12 +246,7 @@ function ScmProviderMark({ name }: Readonly<{ name: string }>) {
 	}
 	if (normalizedName.includes("github")) {
 		return (
-			<BrandLogoMark
-				className="dark:invert [[data-color-mode=dark]_&]:invert"
-				frame="chip"
-				label={name}
-				name="github"
-			/>
+			<BrandLogoMark frame="chip" label={name} name="github" />
 		);
 	}
 
@@ -721,12 +716,7 @@ export function PullRequestHeader({
 									<Tag
 										color="gray"
 										elemBefore={
-											<BrandLogoMark
-												className="dark:invert [[data-color-mode=dark]_&]:invert"
-												frame="chip"
-												label="GitHub"
-												name="github"
-											/>
+											<BrandLogoMark frame="chip" label="GitHub" name="github" />
 										}
 										maxWidth="14rem"
 									>

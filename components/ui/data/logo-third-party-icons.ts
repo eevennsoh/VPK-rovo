@@ -31,6 +31,7 @@ import * as canva from "@atlassian/logo-third-party/dist/esm/entry-points/canva"
 import * as claude from "@atlassian/logo-third-party/dist/esm/entry-points/claude";
 import * as clickup from "@atlassian/logo-third-party/dist/esm/entry-points/clickup";
 import * as cloudflare from "@atlassian/logo-third-party/dist/esm/entry-points/cloudflare";
+import * as codex from "@atlassian/logo-third-party/dist/esm/entry-points/codex";
 import * as cursor from "@atlassian/logo-third-party/dist/esm/entry-points/cursor";
 import * as daloopa from "@atlassian/logo-third-party/dist/esm/entry-points/daloopa";
 import * as databricks from "@atlassian/logo-third-party/dist/esm/entry-points/databricks";
@@ -57,6 +58,7 @@ import * as googleCalendar from "@atlassian/logo-third-party/dist/esm/entry-poin
 import * as googleCloudPlatform from "@atlassian/logo-third-party/dist/esm/entry-points/google-cloud-platform";
 import * as googleDocs from "@atlassian/logo-third-party/dist/esm/entry-points/google-docs";
 import * as googleDrive from "@atlassian/logo-third-party/dist/esm/entry-points/google-drive";
+import * as googleGemini from "@atlassian/logo-third-party/dist/esm/entry-points/google-gemini";
 import * as googleSheets from "@atlassian/logo-third-party/dist/esm/entry-points/google-sheets";
 import * as googleSlides from "@atlassian/logo-third-party/dist/esm/entry-points/google-slides";
 import * as hubspot from "@atlassian/logo-third-party/dist/esm/entry-points/hubspot";
@@ -108,6 +110,7 @@ import * as simpplr from "@atlassian/logo-third-party/dist/esm/entry-points/simp
 import * as slack from "@atlassian/logo-third-party/dist/esm/entry-points/slack";
 import * as smartsheet from "@atlassian/logo-third-party/dist/esm/entry-points/smartsheet";
 import * as snowflake from "@atlassian/logo-third-party/dist/esm/entry-points/snowflake";
+import * as spinnaker from "@atlassian/logo-third-party/dist/esm/entry-points/spinnaker";
 import * as splunk from "@atlassian/logo-third-party/dist/esm/entry-points/splunk";
 import * as square from "@atlassian/logo-third-party/dist/esm/entry-points/square";
 import * as stackOverflow from "@atlassian/logo-third-party/dist/esm/entry-points/stack-overflow";
@@ -182,6 +185,7 @@ const THIRD_PARTY_LOGO_PACKAGE_MODULES = {
 	claude,
 	clickup,
 	cloudflare,
+	codex,
 	cursor,
 	daloopa,
 	databricks,
@@ -208,6 +212,7 @@ const THIRD_PARTY_LOGO_PACKAGE_MODULES = {
 	"google-cloud-platform": googleCloudPlatform,
 	"google-docs": googleDocs,
 	"google-drive": googleDrive,
+	"google-gemini": googleGemini,
 	"google-sheets": googleSheets,
 	"google-slides": googleSlides,
 	hubspot,
@@ -259,6 +264,7 @@ const THIRD_PARTY_LOGO_PACKAGE_MODULES = {
 	slack,
 	smartsheet,
 	snowflake,
+	spinnaker,
 	splunk,
 	square,
 	"stack-overflow": stackOverflow,

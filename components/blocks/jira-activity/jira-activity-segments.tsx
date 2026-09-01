@@ -154,7 +154,8 @@ function SegmentContent({
 			);
 		case "app-mention":
 			// Product tag (BrandLogoMark chip) — not a hexagon agent/app avatar.
-			// Matches PullRequest repo pills / Tag demos; GitHub inverts in dark mode.
+			// Matches PullRequest repo pills / Tag demos. BrandLogoMark handles the
+			// dark-mode treatment for near-black marks itself.
 			return (
 				<Tag
 					className="mx-0.5 align-middle"
@@ -163,11 +164,6 @@ function SegmentContent({
 					elemBefore={
 						segment.brandName ? (
 							<BrandLogoMark
-								className={
-									segment.brandName === "github"
-										? "dark:invert [[data-color-mode=dark]_&]:invert"
-										: undefined
-								}
 								frame="chip"
 								label={segment.text}
 								name={segment.brandName}

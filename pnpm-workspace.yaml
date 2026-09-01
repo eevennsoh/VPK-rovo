@@ -19,6 +19,12 @@ minimumReleaseAgeExclude:
   # Trusted internal Platform Labs package (atlassian-npm, not public npm), so
   # the public-supply-chain release-age gate does not apply.
   - "@atlassian/logo-third-party"
+  # First-party ADS transitives required by @atlassian/logo-third-party@3.1.0.
+  # Version-pinned so the gate re-applies automatically on any future bump; both
+  # clear the 7-day window on their own (css 2026-09-02, feature-flags
+  # 2026-09-05), so these two lines can simply be deleted after that.
+  - "@atlaskit/css@1.1.0"
+  - "@atlaskit/platform-feature-flags@2.2.0"
   # Well-established security-header middleware; 8.3.0 taken ahead of the 7-day
   # gate by explicit request (minor CSP update). Version-pinned so the gate
   # re-applies automatically on any future helmet bump.
