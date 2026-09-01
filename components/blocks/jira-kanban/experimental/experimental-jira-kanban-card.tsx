@@ -34,6 +34,8 @@ interface ExperimentalJiraKanbanCardProps {
 	generativeActionAgents: JiraIssueGenerativeActionConfig["agents"];
 	generativeActionPresentation: JiraIssueGenerativeActionPresentation;
 	generativeActionSkills: JiraIssueGenerativeActionConfig["skills"];
+	/** Session hovered in the Untracked work column; lights its row here. */
+	highlightedSessionId?: string | null;
 	onAgentActivityOpenChange?: JiraKanbanProps["onCardAgentActivityOpenChange"];
 	onAgentActivityViewChat?: JiraKanbanProps["onCardAgentActivityViewChat"];
 	onAgentDoneRunReview?: JiraKanbanProps["onCardAgentDoneRunReview"];
@@ -82,6 +84,7 @@ export function ExperimentalJiraKanbanCard({
 	generativeActionAgents,
 	generativeActionPresentation,
 	generativeActionSkills,
+	highlightedSessionId,
 	onAgentActivityOpenChange,
 	onAgentActivityViewChat,
 	onAgentDoneRunReview,
@@ -207,6 +210,7 @@ export function ExperimentalJiraKanbanCard({
 						>
 							<AgentSession
 								capturedItemIds={capturedItemIds}
+								highlightedItemId={highlightedSessionId}
 								issueKey={card.code}
 								items={detachedAgentSessions}
 								onCreateWorkItem={onCreateWorkItem}
