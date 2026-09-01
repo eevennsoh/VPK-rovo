@@ -65,15 +65,29 @@ export const THIRD_PARTY_DARK_GLYPH_LOGO_IDS: ReadonlySet<string> = new Set(
 );
 
 /**
+ * The dark-mode inversion applied to a near-black glyph. Both selectors are
+ * emitted because `theme-wrapper.tsx` sets the `dark` class and the
+ * `data-color-mode` attribute on the same root, and surfaces rendered outside
+ * the wrapper (exported HTML) may only carry the attribute. They target the same
+ * element, so a single `filter: invert(1)` resolves — they do not compound.
+ */
+const DARK_GLYPH_INVERT = "dark:invert [[data-color-mode=dark]_&]:invert";
+
+/**
  * Tailwind classes that keep a monochrome near-black 3P glyph legible on a dark
  * themed surface, or `undefined` when the mark already has enough contrast.
  *
  * `invert` must land on the glyph itself, never on the surface behind it —
  * inverting the wrapper would flip the backdrop too and reinstate the very
  * contrast failure this fixes.
+ *
+ * This is the ONLY place the treatment is decided. CSS filters on *nested*
+ * elements compose, so a caller that adds its own `dark:invert` around a logo
+ * component double-inverts the glyph straight back to near-black. Callers must
+ * not pass their own inversion class.
  */
 export function darkModeGlyphContrastClassName(id: string | undefined): string | undefined {
-	return id && THIRD_PARTY_DARK_GLYPH_LOGO_IDS.has(id) ? "dark:invert" : undefined;
+	return id && THIRD_PARTY_DARK_GLYPH_LOGO_IDS.has(id) ? DARK_GLYPH_INVERT : undefined;
 }
 
 /**

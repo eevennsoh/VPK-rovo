@@ -205,6 +205,9 @@ function contrastRatio(hex, against) {
 
 const NAMED_FILLS = { black: "#000", white: "#fff" };
 
+/** The exact class list the shared helper emits for a near-black glyph. */
+const EXPECTED_INVERT = "dark:invert [[data-color-mode=dark]_&]:invert";
+
 /** Every literal fill color in a brand's shipped markup, package or local asset. */
 function glyphFillColors(id, entrypoint) {
 	const packageFile = entrypoint
@@ -323,8 +326,11 @@ test("every dark-glyph mark clears WCAG non-text contrast once inverted", async 
 test("darkModeGlyphContrastClassName inverts only the near-black marks", async () => {
 	const { darkModeGlyphContrastClassName } = await loadLogoUsageModule();
 
-	assert.equal(darkModeGlyphContrastClassName("github"), "dark:invert");
-	assert.equal(darkModeGlyphContrastClassName("notion"), "dark:invert");
+	// Both selectors: theme-wrapper.tsx sets the `dark` class and the
+	// `data-color-mode` attribute on the same root, and surfaces rendered outside
+	// the wrapper may carry only the attribute. Same element, so one filter wins.
+	assert.equal(darkModeGlyphContrastClassName("github"), EXPECTED_INVERT);
+	assert.equal(darkModeGlyphContrastClassName("notion"), EXPECTED_INVERT);
 
 	// Colored marks must keep their brand hue.
 	for (const id of ["claude", "figma", "slack", "google-gemini", "datadog"]) {
@@ -346,8 +352,8 @@ test("darkModeGlyphContrastClassName inverts only the near-black marks", async (
 test("darkModeGlyphContrastClassNameForSrc inverts near-black 3P assets only", async () => {
 	const { darkModeGlyphContrastClassNameForSrc } = await loadLogoUsageModule();
 
-	assert.equal(darkModeGlyphContrastClassNameForSrc("/3p/github-copilot/24.svg"), "dark:invert");
-	assert.equal(darkModeGlyphContrastClassNameForSrc("/3p/github/16-borderless.svg"), "dark:invert");
+	assert.equal(darkModeGlyphContrastClassNameForSrc("/3p/github-copilot/24.svg"), EXPECTED_INVERT);
+	assert.equal(darkModeGlyphContrastClassNameForSrc("/3p/github/16-borderless.svg"), EXPECTED_INVERT);
 
 	// Colored marks keep their hue.
 	assert.equal(darkModeGlyphContrastClassNameForSrc("/3p/vs-code/24.svg"), undefined);
@@ -357,4 +363,88 @@ test("darkModeGlyphContrastClassNameForSrc inverts near-black 3P assets only", a
 	assert.equal(darkModeGlyphContrastClassNameForSrc("/2p/appfire.png"), undefined);
 	assert.equal(darkModeGlyphContrastClassNameForSrc("/illustration/foo.svg"), undefined);
 	assert.equal(darkModeGlyphContrastClassNameForSrc(undefined), undefined);
+});
+
+/**
+ * Dark-mode glyph inversion is centralized in the logo components themselves
+ * (`LogoThirdParty`, `CustomLogo`, `BrandLogoMark`). A caller that wraps one of
+ * them in its own `dark:invert` double-inverts the glyph straight back to
+ * near-black, because CSS filters on *nested* elements compose — which is
+ * exactly how GitHub, Cursor and Codex avatars went invisible once.
+ *
+ * `filter` does not compound when two utilities land on the SAME element, which
+ * is why this is easy to get wrong by inspection. Only nesting composes.
+ */
+const INVERT_OWNERS = new Set([
+	// Declares the treatment.
+	"components/ui/data/logo-usage.ts",
+	// Apply it internally, on the glyph node.
+	"components/ui/logo-third-party.tsx",
+	"components/ui/logo.tsx",
+	"components/ui/logo-mark.tsx",
+	// Plain <img> for AI provider marks — not routed through a logo component,
+	// so nothing else inverts it and there is nothing to compose with.
+	"components/ui-custom/model-selector.tsx",
+]);
+
+const DARK_INVERT_UTILITY = /(?:^|\s)dark:(?:\[[^\]]*\]:)*invert(?:$|\s)/u;
+
+/**
+ * Whether a string literal is an applied Tailwind class list rather than prose
+ * that merely names the utility. Docs and demo copy legitimately mention
+ * `dark:invert` in a sentence; only a real class list is a bug.
+ */
+function isClassListContainingInvert(literal) {
+	if (!DARK_INVERT_UTILITY.test(` ${literal} `)) {
+		return false;
+	}
+	return literal
+		.trim()
+		.split(/\s+/u)
+		.every((tokenText) => /^[a-z0-9][a-z0-9:_\-[\]&>./%#()!]*$/u.test(tokenText));
+}
+
+test("dark-mode glyph inversion stays centralized in the logo components", () => {
+	const repoRoot = path.join(__dirname, "..", "..", "..");
+	const roots = ["components", "app"];
+	const offenders = [];
+
+	const walk = (dir) => {
+		for (const entry of readdirSync(dir, { withFileTypes: true })) {
+			const full = path.join(dir, entry.name);
+			if (entry.isDirectory()) {
+				if (entry.name !== "node_modules") {
+					walk(full);
+				}
+				continue;
+			}
+			if (!/\.tsx?$/u.test(entry.name) || /\.test\.tsx?$/u.test(entry.name)) {
+				continue;
+			}
+			const rel = path.relative(repoRoot, full);
+			if (INVERT_OWNERS.has(rel)) {
+				continue;
+			}
+			const source = readFileSync(full, "utf8");
+			const literals = [...source.matchAll(/"([^"\n]*)"|'([^'\n]*)'|`([^`]*)`/gu)].map(
+				(match) => match[1] ?? match[2] ?? match[3] ?? "",
+			);
+			if (literals.some(isClassListContainingInvert)) {
+				offenders.push(rel);
+			}
+		}
+	};
+
+	for (const root of roots) {
+		walk(path.join(repoRoot, root));
+	}
+
+	assert.deepEqual(
+		offenders.sort(),
+		[],
+		"These files apply their own dark-mode invert around a brand mark. The logo " +
+			"components already invert near-black glyphs, and filters on nested elements " +
+			"compose, so this double-inverts back to near-black. Remove the caller-level " +
+			"class, or add the file to INVERT_OWNERS if it genuinely owns an un-nested mark.",
+	);
 });

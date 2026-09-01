@@ -168,7 +168,7 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/logo-mark"/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/BrandLogoMark[\s\S]*className="dark:invert \[\[data-color-mode=dark\]_&\]:invert"[\s\S]*name="github"/u,
+		/BrandLogoMark[\s\S]*name="github"/u,
 	);
 	assert.doesNotMatch(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/comment"/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /aria-label="Chat"/u);
@@ -286,7 +286,7 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.match(COMPONENT_SOURCE, /BrandLogoMark[\s\S]*name="gitlab"/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/BrandLogoMark[\s\S]*className="dark:invert \[\[data-color-mode=dark\]_&\]:invert"[\s\S]*name="github"/u,
+		/BrandLogoMark[\s\S]*name="github"/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,

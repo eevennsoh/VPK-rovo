@@ -106,8 +106,14 @@ function tileChromeOverride(
  * `bg-surface-raised` back into a near-white block and reinstating exactly the
  * contrast failure this fixes. `[&>span>span]` reaches past the fill to the
  * glyph alone.
+ *
+ * Both theme selectors are emitted for the reason given on
+ * `darkModeGlyphContrastClassName`. Callers must NOT add their own inversion:
+ * filters on nested elements compose, so a wrapper-level `dark:invert` would
+ * double-invert the glyph back to near-black.
  */
-const DARK_GLYPH_INVERT = "dark:[&>span>span]:invert";
+const DARK_GLYPH_INVERT =
+	"dark:[&>span>span]:invert [[data-color-mode=dark]_&]:[&>span>span]:invert";
 
 /**
  * Renders a third-party brand logo from the upstream `@atlassian/logo-third-party`

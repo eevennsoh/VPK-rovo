@@ -330,17 +330,18 @@ test("agent avatars share one hexagon contract across 1P, 2P, and 3P visuals", (
 		"the agent hexagon backdrop must stay themeable — no hardcoded white",
 	);
 	// Themed backdrop + monochrome-black glyph = ~1.1:1, so the mark disappears.
-	// The invert must land on the glyph wrapper, never on the backdrop span:
-	// inverting the backdrop would flip #1F1F21 back to near-white and reinstate
-	// the failure it is meant to fix.
-	assert.match(
+	// The inversion is applied by the logo components themselves; this file must
+	// NOT add its own. CSS filters on nested elements compose, so a wrapper-level
+	// invert here would double-invert the glyph straight back to near-black.
+	assert.doesNotMatch(
 		AGENT_AVATAR_VISUAL_SOURCE,
-		/const glyphContrastClassName = darkModeGlyphContrastClassName\(brandName\)/u,
+		/dark:(?:\[[^\]]*\]:)*invert/u,
+		"agent avatars must not apply their own inversion — LogoThirdParty already inverts near-black glyphs, and nested filters compose",
 	);
 	assert.match(
 		AGENT_AVATAR_VISUAL_SOURCE,
-		/bg-surface">\s*\{glyphContrastClassName \? \(\s*<span className=\{cn\("flex items-center justify-center", glyphContrastClassName\)\}>\{visual\}<\/span>/u,
-		"invert must wrap the glyph inside the backdrop, not the backdrop itself",
+		/bg-surface">\{visual\}<\/span>/u,
+		"the themed backdrop wraps the visual directly, with no inverting wrapper in between",
 	);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /avatarSrc \? \([\s\S]*<AvatarImage[\s\S]*fallbackText \? <AvatarFallback>\{fallbackText\}<\/AvatarFallback> : null/);
 	assert.match(ENTITY_CARD_AGENT_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual"/);

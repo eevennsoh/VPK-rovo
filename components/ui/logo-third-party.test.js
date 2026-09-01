@@ -414,8 +414,8 @@ test("dark-glyph marks invert only when the white tile is removed", () => {
 test("the dark-glyph invert targets the glyph span, never the tile fill", () => {
 	assert.match(
 		LOGO_THIRD_PARTY_SOURCE,
-		/const DARK_GLYPH_INVERT = "dark:\[&>span>span\]:invert";/u,
-		"invert must reach past the Tile fill ([&>span]) to the glyph ([&>span>span])",
+		/const DARK_GLYPH_INVERT =\s*\n?\s*"dark:\[&>span>span\]:invert \[\[data-color-mode=dark\]_&\]:\[&>span>span\]:invert";/u,
+		"invert must reach past the Tile fill ([&>span]) to the glyph ([&>span>span]), under both theme selectors",
 	);
 	assert.doesNotMatch(
 		LOGO_THIRD_PARTY_SOURCE,
