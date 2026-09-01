@@ -15,7 +15,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
-import { Switch } from "@/components/ui/switch";
+import { SwitchIndicator } from "@/components/ui/switch";
 
 import { collectLinkableAgentSessions, linkAllAgentSessions } from "./agent-session-column-overflow";
 
@@ -39,19 +39,18 @@ function OverflowToggleRow({
 }>) {
 	return (
 		<DropdownMenuItem
+			aria-checked={checked}
 			closeOnClick={false}
-			className="text-text [&>span:last-child]:h-auto [&_[data-slot=switch]_svg]:size-full"
+			className="text-text [&>span:last-child]:h-auto [&_[data-slot=switch-indicator]_svg]:size-full"
 			elemAfter={(
 				// The menu item owns focus and activation; the switch only displays its state.
-				<Switch
-					aria-hidden="true"
+				<SwitchIndicator
 					checked={checked}
-					className="pointer-events-none"
 					size="sm"
-					tabIndex={-1}
 				/>
 			)}
 			onSelect={onToggle}
+			role="menuitemcheckbox"
 		>
 			{label}
 		</DropdownMenuItem>
