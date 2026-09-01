@@ -81,6 +81,9 @@ export function AgentSessionCard({
 	const [copiedResume, setCopiedResume] = useState(false);
 	const copiedResetRef = useRef<number | undefined>(undefined);
 	const onItemHoverRef = useRef(onItemHover);
+	// Whether the pointer is on *this* row, so unmount cleanup can tell "I was
+	// the hovered row" from "a sibling went away".
+	const isHoveredRef = useRef(false);
 
 	useEffect(() => {
 		onItemHoverRef.current = onItemHover;
@@ -89,7 +92,12 @@ export function AgentSessionCard({
 	useEffect(() => () => {
 		window.clearTimeout(copiedResetRef.current);
 		// Hide / filter can unmount the hovered row before pointerleave fires.
-		onItemHoverRef.current?.(null);
+		// Only the row that owns the hover may clear it: a filter or capture that
+		// unmounts a sibling must not wipe a highlight the pointer still rests on,
+		// because no pointerenter would fire to put it back.
+		if (isHoveredRef.current) {
+			onItemHoverRef.current?.(null);
+		}
 	}, []);
 
 	const resumeCommand = getResumeCommand?.(item) ?? toAgentListResumeCommand(item);
@@ -174,8 +182,14 @@ export function AgentSessionCard({
 		<motion.li
 			animate={shouldPlayArrival ? { opacity: 1, y: 0 } : undefined}
 			data-testid={"agent-session-row-" + item.id}
-			onPointerEnter={() => onItemHover?.(item)}
-			onPointerLeave={() => onItemHover?.(null)}
+			onPointerEnter={() => {
+				isHoveredRef.current = true;
+				onItemHover?.(item);
+			}}
+			onPointerLeave={() => {
+				isHoveredRef.current = false;
+				onItemHover?.(null);
+			}}
 			// `false` for a settled card, so nothing replays when the list re-renders
 			// or the watermark clears the mark. Only an arrival animates.
 			initial={shouldPlayArrival ? { opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX } : false}

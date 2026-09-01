@@ -84,7 +84,7 @@ export function AgentSessionMediumCard({
 	const linkLabel = uncapturedWorkLinkLabel(issueKey ?? item.sessionDetails?.issueKey);
 	const className = cn(
 		"group/session-card relative flex h-[33px] w-[276px] items-center gap-2 rounded-[10px] border border-transparent px-3 text-text",
-		"transition-[background-color] duration-normal ease-out-practical motion-reduce:transition-none",
+		"transition-[background-color] duration-xxshort ease-out-practical motion-reduce:transition-none",
 		// Lit from the column, the pointer is nowhere near this row, so it borrows
 		// the row's own hover rung: the board reads as if the pointer were on the
 		// twin, which is exactly the relationship the column hover is claiming.

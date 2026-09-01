@@ -123,9 +123,10 @@ test("a hovered column session lights its board twin at the row hover rung", () 
 		MEDIUM_CARD_SOURCE,
 		/:\s*"bg-bg-accent-gray-subtlest hover:bg-bg-accent-gray-subtlest-hovered"/u,
 	);
+	// List-item hover recipe: 50ms, practical easing, background-color only.
 	assert.match(
 		MEDIUM_CARD_SOURCE,
-		/transition-\[background-color\] duration-normal ease-out-practical motion-reduce:transition-none/u,
+		/transition-\[background-color\] duration-xxshort ease-out-practical motion-reduce:transition-none/u,
 	);
 });
 

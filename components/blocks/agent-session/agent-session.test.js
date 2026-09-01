@@ -316,9 +316,21 @@ test("the row reveals Resume plus a Hide / Show eye where Agent List puts Archiv
 	assert.match(TYPES_SOURCE, /visibilityLabel\?: string;/u);
 	assert.match(TYPES_SOURCE, /onItemHover\?: \(item: AgentSessionItem \| null\) => void;/u);
 	assert.match(INDEX_SOURCE, /onItemHover=\{onItemHover\}/u);
-	assert.match(CARD_SOURCE, /onPointerEnter=\{\(\) => onItemHover\?\.\(item\)\}/u);
-	assert.match(CARD_SOURCE, /onPointerLeave=\{\(\) => onItemHover\?\.\(null\)\}/u);
-	assert.match(CARD_SOURCE, /onItemHoverRef\.current\?\.\(null\)/u);
+	assert.match(
+		CARD_SOURCE,
+		/onPointerEnter=\{\(\) => \{\s*isHoveredRef\.current = true;\s*onItemHover\?\.\(item\);\s*\}\}/u,
+	);
+	assert.match(
+		CARD_SOURCE,
+		/onPointerLeave=\{\(\) => \{\s*isHoveredRef\.current = false;\s*onItemHover\?\.\(null\);\s*\}\}/u,
+	);
+	// Regression: unmount cleanup may only clear the hover it owns. Firing it
+	// unconditionally let a filtered/captured sibling wipe a highlight the
+	// pointer was still resting on, with no pointerenter left to restore it.
+	assert.match(
+		CARD_SOURCE,
+		/if \(isHoveredRef\.current\) \{\s*onItemHoverRef\.current\?\.\(null\);\s*\}/u,
+	);
 	assert.match(
 		CARD_SOURCE,
 		/useEffect\(\(\) => \{\s*onItemHoverRef\.current = onItemHover;\s*\}, \[onItemHover\]\)/u,
