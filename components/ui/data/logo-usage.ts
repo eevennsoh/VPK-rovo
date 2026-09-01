@@ -17,11 +17,18 @@
  * - 3P logos with no borderless sibling are full-bleed, solid-fill marks (their
  *   own colored superellipse fills the tile). They need no border — same as the
  *   solid-background 1P product logos.
+ * - 3P logos listed in `threeP.borderedIds` are the exception to that last rule:
+ *   transparent-glyph marks (GitHub Copilot, VS Code) that paint no background
+ *   of their own and ship no `16-borderless.svg` to swap to. Without an entry
+ *   they fall through to the solid-fill branch and render bare — visibly
+ *   inconsistent beside every bordered package mark in the same grid. They get a
+ *   border with their base `src` unchanged.
  *
  * `THIRD_PARTY_BORDERLESS_LOGO_IDS` MUST stay in sync with `/public/3p` — the
  * folders that contain a `16-borderless.svg`. `logo-usage.test.js` reads the
  * directory and fails if the JSON drifts, so new 3P assets can't silently bypass
- * the border treatment.
+ * the border treatment. The same test asserts `borderedIds` stays disjoint from
+ * `borderlessIds`, since `borderlessIds` is checked first.
  */
 import type { AtlassianLogoName } from "./logo-data";
 import logoUsage from "./logo-usage.json" with { type: "json" };
@@ -36,6 +43,51 @@ const ONE_P_BORDER_BY_ID: Readonly<Record<string, boolean>> = ONE_P.borderById;
 export const THIRD_PARTY_BORDERLESS_LOGO_IDS: ReadonlySet<string> = new Set(
 	THREE_P.borderlessIds,
 );
+
+/**
+ * The 3P logo ids whose base asset is a bare transparent glyph: they need a
+ * bordered tile but have no borderless variant to swap to.
+ */
+export const THIRD_PARTY_BORDERED_LOGO_IDS: ReadonlySet<string> = new Set(
+	(THREE_P as { borderedIds?: readonly string[] }).borderedIds ?? [],
+);
+
+/**
+ * The 3P logo ids whose glyph is monochrome near-black. They disappear against a
+ * dark themed surface, so consumers that render the bare glyph (agent avatars,
+ * `LogoThirdParty` with `tileBackground="surface"`) invert them in dark mode.
+ *
+ * Colored dark marks are deliberately excluded — inverting them would corrupt
+ * the brand hue. See the `$darkGlyphIdsComment` in `logo-usage.json`.
+ */
+export const THIRD_PARTY_DARK_GLYPH_LOGO_IDS: ReadonlySet<string> = new Set(
+	(THREE_P as { darkGlyphIds?: readonly string[] }).darkGlyphIds ?? [],
+);
+
+/**
+ * Tailwind classes that keep a monochrome near-black 3P glyph legible on a dark
+ * themed surface, or `undefined` when the mark already has enough contrast.
+ *
+ * `invert` must land on the glyph itself, never on the surface behind it —
+ * inverting the wrapper would flip the backdrop too and reinstate the very
+ * contrast failure this fixes.
+ */
+export function darkModeGlyphContrastClassName(id: string | undefined): string | undefined {
+	return id && THIRD_PARTY_DARK_GLYPH_LOGO_IDS.has(id) ? "dark:invert" : undefined;
+}
+
+/**
+ * Same treatment as {@link darkModeGlyphContrastClassName}, keyed off a
+ * `/3p/<id>/…` asset path for consumers that only hold a src (`CustomLogo`,
+ * `BrandLogoMark`). Non-3P paths never qualify: 1P/2P art is not in the
+ * near-black list and `/2p/` marks are opaque PNGs we cannot measure.
+ */
+export function darkModeGlyphContrastClassNameForSrc(src: string | undefined): string | undefined {
+	if (!src?.startsWith("/3p/")) {
+		return undefined;
+	}
+	return darkModeGlyphContrastClassName(src.split("/")[2]);
+}
 
 export interface BrandLogoPresentation {
 	/** The src to render — swapped to the borderless variant for white-tile 3P logos. */
@@ -60,6 +112,10 @@ export function resolveBrandLogoPresentation(src: string): BrandLogoPresentation
 		// White-tile 3P logos: use the borderless glyph inside our bordered tile.
 		if (THIRD_PARTY_BORDERLESS_LOGO_IDS.has(id)) {
 			return { src: `/3p/${id}/${THREE_P.borderlessVariantFile}`, hasBorder: true };
+		}
+		// Transparent-glyph 3P logos: bordered tile, but no variant to swap to.
+		if (THIRD_PARTY_BORDERED_LOGO_IDS.has(id)) {
+			return { src, hasBorder: true };
 		}
 		// Solid-fill 3P logos paint their own background — no border needed.
 		return { src, hasBorder: THREE_P.defaultHasBorder };

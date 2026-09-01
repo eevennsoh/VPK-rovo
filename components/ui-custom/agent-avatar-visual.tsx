@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage, type AvatarProps, type AvatarStatus } from "@/components/ui/avatar";
+import { darkModeGlyphContrastClassName } from "@/components/ui/data/logo-usage";
 import { AtlassianLogo, RovoColorIcon, type AtlassianLogoName, type LogoProps } from "@/components/ui/logo";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
@@ -87,6 +88,11 @@ export interface AgentAvatarVisualProps {
  * Renders every agent identity through the shared hexagon avatar. 1P agent art
  * stays full-bleed; 2P partner marks are inset from `/public/2p`; and 3P marks
  * use the borderless glyph from `@atlassian/logo-third-party`.
+ *
+ * External marks sit on a themed `--ds-surface` backdrop rather than a hardcoded
+ * white one, so the hexagon follows light/dark. Monochrome near-black glyphs are
+ * inverted in dark mode (see `darkModeGlyphContrastClassName`) — without that the
+ * backdrop change would make them invisible instead of merely off-theme.
  */
 export function AgentAvatarVisual({
 	avatarSrc,
@@ -109,6 +115,11 @@ export function AgentAvatarVisual({
 	const isThirdPartyAgent = Boolean(brandName);
 	const isExternalAgent = isSecondPartyAgent || isThirdPartyAgent;
 	const hasWhiteBackdrop = isExternalAgent || logoName === "atlassian" || Boolean(vpkLogo);
+	// The backdrop follows the theme, so a monochrome near-black mark (GitHub,
+	// Notion, Cursor, Codex, …) would sit at ~1.1:1 on the dark surface. Invert
+	// just those glyphs; colored marks keep their brand hue. 2P marks are opaque
+	// PNGs we cannot measure, so they are left alone.
+	const glyphContrastClassName = darkModeGlyphContrastClassName(brandName);
 	const shouldInsetImage = inset || isExternalAgent;
 	const insetImageClassName = PX_TO_INSET_IMAGE_CLASS_NAME[sizePx] ?? "size-4";
 	const insetLogoSize = PX_TO_INSET_LOGO_SIZE[sizePx] ?? PX_TO_LOGO_SIZE[sizePx] ?? "xxsmall";
@@ -150,7 +161,13 @@ export function AgentAvatarVisual({
 			status={status}
 		>
 			{hasWhiteBackdrop ? (
-				<span className="flex size-full items-center justify-center bg-[#fff]">{visual}</span>
+				<span className="flex size-full items-center justify-center bg-surface">
+					{glyphContrastClassName ? (
+						<span className={cn("flex items-center justify-center", glyphContrastClassName)}>{visual}</span>
+					) : (
+						visual
+					)}
+				</span>
 			) : (
 				visual
 			)}
