@@ -579,16 +579,15 @@ test("Jira issue renders one aggregate agent row with prioritized status and no 
 	assert.match(AGENT_ACTIVITY_SOURCE, /status: activity\.label,[\s\S]*statusSequence: activity\.state === "working" \? getJiraIssueAgentWorkingLabels\(activity\) : undefined,[\s\S]*statusCycleIntervalMs: activity\.cycleIntervalMs[\s\S]*statusCycleJitterMs: activity\.cycleIntervalJitterMs/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /duration=\{JIRA_ISSUE_AGENT_SHIMMER_DURATION\}[\s\S]*spread=\{JIRA_ISSUE_AGENT_SHIMMER_SPREAD\}[\s\S]*\{summary\.label\}[\s\S]*<AnimatedDots/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /usesStrokeChrome \? "text-xs leading-4" : "text-sm leading-5"/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ PixelLoader \} from "@\/components\/ui-custom\/pixel-loader";/u);
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /PixelLoader/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /usesStrokeChrome \? "gap-1\.5" : "gap-2"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /usesStrokeChrome \? "size-4" : "-my-1 size-6"/u);
-	// Every active agent-session row uses the same compact pixel-loader treatment.
-	assert.match(
-		AGENT_ACTIVITY_SOURCE,
-		/aria-hidden="true"\s*\n\s*>\s*\n\s*<PixelLoader[\s\S]*className="size-3 justify-center"[\s\S]*pattern="diagonal-top-left"[\s\S]*shape="dot"[\s\S]*size="small"/u,
-	);
-	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<Spinner/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<Spinner label="" size="xs" \/>/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /className="grid size-4 shrink-0 place-items-center text-icon"/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /renderAgentActivityIndicator\?: JiraIssueAgentActivityIndicatorRenderer;/u);
+	assert.match(SOURCE, /renderAgentActivityIndicator\?: JiraIssueAgentActivityIndicatorRenderer;/u);
+	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*renderAgentActivityIndicator=\{renderAgentActivityIndicator\}/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<HoverCard/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AgentList/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AgentStates/u);
@@ -670,7 +669,7 @@ test("Jira issue animates agent state transitions with Motion", () => {
 	assert.match(LIB_SOURCE, /export const JIRA_ISSUE_MOTION_REDUCED: Transition = \{ duration: 0 \};/);
 	assert.match(SOURCE, /const shouldReduceMotion = useReducedMotion\(\);/);
 	assert.match(LIB_SOURCE, /export function getJiraIssuePresenceMotion\(shouldReduceMotion: boolean \| null\)[\s\S]*initial: false/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*\{rowGroups\.map\(\(rowGroup\) => \{[\s\S]*<motion\.div[\s\S]*key=\{rowGroup\.key\}[\s\S]*exit=\{presenceMotion\.exit\}[\s\S]*initial=\{presenceMotion\.initial\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<AnimatePresence key=\{rowPresenceKey\} initial=\{false\} mode="popLayout">[\s\S]*\{rowGroups\.map\(\(rowGroup\) => \{[\s\S]*<motion\.div[\s\S]*key=\{rowGroup\.key\}[\s\S]*exit=\{presenceMotion\.exit\}[\s\S]*initial=\{presenceMotion\.initial\}/u);
 	assert.match(SOURCE, /const hasIssueRows = hasSubtasks;/);
 	assert.match(SOURCE, /const issueRowsClassName = cn\("pt-1", !\(hasSubtasks && resolvedSubtasksExpanded\) && "pb-1"\);/);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*key="agent-review"[\s\S]*<JiraIssueAgentDone[\s\S]*runs=\{agentDoneRuns\}/u);

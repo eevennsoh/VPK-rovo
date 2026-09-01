@@ -155,6 +155,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	onResumeLooseWork?: (item: PulseLooseWork) => void;
 	onViewChange?: (view: ExperimentalJiraKanbanView) => void;
 	renderListContent?: (columns: readonly JiraKanbanColumnData[]) => ReactNode;
+	renderAgentActivityIndicator?: ExperimentalJiraKanbanProps["renderAgentActivityIndicator"];
 	showBoardContent?: boolean;
 	showAgentSessionColumn?: boolean;
 	/**
@@ -204,6 +205,7 @@ export default function ExperimentalJiraKanbanPage({
 	onResumeLooseWork,
 	onViewChange,
 	renderListContent,
+	renderAgentActivityIndicator,
 	onTimelineLastViewedAtChange,
 	ref,
 	showAgentSessionColumn = false,
@@ -754,6 +756,7 @@ export default function ExperimentalJiraKanbanPage({
 						onCardDragEnd={handleCardDragEnd}
 						onCreateAgent={handleCreateColumnAgent}
 						onToggleColumnAgent={handleToggleColumnAgent}
+						renderAgentActivityIndicator={renderAgentActivityIndicator}
 						paddingTop={0}
 						selectionToolbar={{
 							onAgentAssignmentChange: handleSelectedCardsAgentAssignmentChange,

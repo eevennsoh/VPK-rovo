@@ -6,6 +6,7 @@ import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type {
 	JiraIssueAgentActivity,
+	JiraIssueAgentActivityIndicatorRenderer,
 	JiraIssueCompletedAgentRun,
 } from "@/components/blocks/jira-issue";
 import { toJiraIssueDemoAttachedActivity } from "@/components/blocks/jira-issue/agent-session-demo-attach";
@@ -15,6 +16,7 @@ import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experime
 import { isPulseAgentSession, type PulseLooseWork } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { linkJiraKanbanAgentSession, moveJiraKanbanAgentSession, unlinkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
 import { JiraList, type JiraListRowData } from "@/components/blocks/jira-list";
+import { PixelLoader } from "@/components/ui-custom/pixel-loader";
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
 import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v1/data/agent-chat-data";
 import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journeys-v1/hooks/use-jira-golden-journeys-v1-agent-chat-demo";
@@ -35,6 +37,15 @@ const STATUS_VARIANTS: Readonly<Record<string, JiraListRowData["statusVariant"]>
 	"In review": "warning",
 	Done: "success",
 };
+
+const renderJiraGoldenJourneysV4AgentActivityIndicator: JiraIssueAgentActivityIndicatorRenderer = (state) => (
+	<PixelLoader
+		className="size-3 justify-center text-icon-subtle"
+		pattern={state === "awaiting-input" ? "solo" : "diagonal-top-left"}
+		shape={state === "awaiting-input" ? "square" : "dot"}
+		size="small"
+	/>
+);
 
 function createListRows(columns: readonly JiraKanbanColumnData[]): JiraListRowData[] {
 	return columns.flatMap((column) => column.cards.map((card) => ({
@@ -200,6 +211,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 								</div>
 							);
 						}}
+						renderAgentActivityIndicator={renderJiraGoldenJourneysV4AgentActivityIndicator}
 						showAgentSessionColumn
 						showBoardContent={selectedTab === 1}
 						viewTabs={<JiraViewTabs selectedTab={selectedTab} onTabChange={setSelectedTab} />}

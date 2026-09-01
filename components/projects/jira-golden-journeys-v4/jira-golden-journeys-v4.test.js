@@ -74,6 +74,19 @@ test("the board opts into the experimental Jira issue split agent rows", () => {
 	);
 });
 
+test("the route alone overrides agent activity indicators with pixel loaders", () => {
+	assert.match(PAGE_SOURCE, /import \{ PixelLoader \} from "@\/components\/ui-custom\/pixel-loader";/u);
+	assert.match(PAGE_SOURCE, /const renderJiraGoldenJourneysV4AgentActivityIndicator: JiraIssueAgentActivityIndicatorRenderer/u);
+	assert.match(PAGE_SOURCE, /pattern=\{state === "awaiting-input" \? "solo" : "diagonal-top-left"\}/u);
+	assert.match(PAGE_SOURCE, /shape=\{state === "awaiting-input" \? "square" : "dot"\}/u);
+	assert.match(PAGE_SOURCE, /className="size-3 justify-center text-icon-subtle"/u);
+	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage[\s\S]*renderAgentActivityIndicator=\{renderJiraGoldenJourneysV4AgentActivityIndicator\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /renderAgentActivityIndicator\?: ExperimentalJiraKanbanProps\["renderAgentActivityIndicator"\];/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<ExperimentalJiraKanban[\s\S]*renderAgentActivityIndicator=\{renderAgentActivityIndicator\}/u);
+	assert.match(EXPERIMENTAL_BOARD_SOURCE, /<ExperimentalJiraKanbanCard[\s\S]*renderAgentActivityIndicator=\{renderAgentActivityIndicator\}/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*renderAgentActivityIndicator=\{renderAgentActivityIndicator\}/u);
+});
+
 test("the board enables board-wide Jira issue agent-session transfer", () => {
 	assert.match(PAGE_SOURCE, /import \{ linkJiraKanbanAgentSession, moveJiraKanbanAgentSession, unlinkJiraKanbanAgentSession \} from "@\/components\/blocks\/jira-kanban\/state"/u);
 	assert.match(PAGE_SOURCE, /setBoardColumns\(\(columns\) => unlinkJiraKanbanAgentSession\(columns, card\.code, session\.id\)\)/u);

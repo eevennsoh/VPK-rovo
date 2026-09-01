@@ -13,6 +13,7 @@ import { AgentSessionColumn, type AgentSessionColumnProps } from "@/components/b
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import {
 	type JiraIssueAgentActivityLayout,
+	type JiraIssueAgentActivityIndicatorRenderer,
 	type JiraIssueGenerativeActionPresentation,
 } from "@/components/blocks/jira-issue";
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
@@ -101,6 +102,8 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	onCardAgentSessionMove?: (session: JiraIssueAgentSessionRef, sourceCard: JiraKanbanCardData, targetCard: JiraKanbanCardData, sourceColumnTitle: string, targetColumnTitle: string) => void;
 	/** Chooses where card agent and skill actions are presented. */
 	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;
+	/** Optional host-owned visual override for active card session states. */
+	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	/**
 	 * Sessions that never became work items, pinned as a column to the
 	 * left of the board. Omit to render only Jira status columns.
@@ -596,6 +599,7 @@ export function ExperimentalJiraKanban({
 	onCollapsedColumnsChange,
 	onToggleColumnAgent,
 	proximityAgentSession,
+	renderAgentActivityIndicator,
 	paddingBottom = token("space.150"),
 	paddingTop = token("space.150"),
 	selectionToolbar,
@@ -946,8 +950,9 @@ export function ExperimentalJiraKanban({
 												onDragEnd={handleCardDragEndInternal}
 												onDragStart={(event) => handleCardDragStartInternal(card, column.title, event)}
 												onGenerativeActionSubmit={onCardGenerativeActionSubmit}
-												onLinkWorkItem={proximityActions.onLinkWorkItem}
-												onSessionLink={onCardAgentSessionLink}
+											onLinkWorkItem={proximityActions.onLinkWorkItem}
+											renderAgentActivityIndicator={renderAgentActivityIndicator}
+											onSessionLink={onCardAgentSessionLink}
 												onSessionUnlink={onCardAgentSessionUnlink}
 												onSubtasks={proximityActions.onSubtasks}
 												selected={isSelected}
