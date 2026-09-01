@@ -52,19 +52,19 @@ export const AGENT_SESSION_NOTCH_LENGTH = {
  *
  * Colour is a **selection** signal, not a slope one. Only the notch the pointer
  * has landed on takes `color.icon`; every other notch — near neighbours on the
- * swell included — stays `color.icon.subtlest`. Spreading the darkening across
+ * swell included — stays `color.icon.disabled`. Spreading the darkening across
  * the mountain the way the length is spread washed the distinction out: seven
  * marks each a shade darker than the last reads as one grey gradient and answers
  * "where am I" for none of them. Length says how close, colour says which one.
  *
  * These are the tokens themselves, not an alpha of `color.icon` mixed over the
- * plane. A 0.66–0.68 opacity used to approximate `icon.subtlest` over the old
+ * plane. A 0.66–0.68 opacity used to approximate a subtler grey over the old
  * fill; once the plane became `bg-surface` that mix was a third grey, and a
  * 1px hairline has no weight to spare on a wrong one. New notches stay on
  * `color.icon` — already lit — rather than introducing a fourth hue.
  */
 export const AGENT_SESSION_NOTCH_TONE = {
-	rest: "var(--color-icon-subtlest)",
+	rest: "var(--color-icon-disabled)",
 	selected: "var(--color-icon)",
 } as const;
 
@@ -138,7 +138,7 @@ export function toAgentSessionNotchLength(magnification: number, isNew: boolean)
 
 /**
  * Named token for a notch. Binary: selected (or newly synced) is `color.icon`,
- * everything else is `color.icon.subtlest`. `magnify` is only a gate — the
+ * everything else is `color.icon.disabled`. `magnify` is only a gate — the
  * colour does not interpolate along the swell.
  */
 export function toAgentSessionNotchTone(isSelected: boolean, isNew: boolean): string {
