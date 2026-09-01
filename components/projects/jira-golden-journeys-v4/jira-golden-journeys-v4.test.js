@@ -78,7 +78,7 @@ test("the route alone overrides agent activity indicators with pixel loaders", (
 	assert.match(PAGE_SOURCE, /import \{ PixelLoader \} from "@\/components\/ui-custom\/pixel-loader";/u);
 	assert.match(PAGE_SOURCE, /const renderJiraGoldenJourneysV4AgentActivityIndicator: JiraIssueAgentActivityIndicatorRenderer/u);
 	assert.match(PAGE_SOURCE, /pattern=\{state === "awaiting-input" \? "solo" : "diagonal-top-left"\}/u);
-	assert.match(PAGE_SOURCE, /shape=\{state === "awaiting-input" \? "square" : "dot"\}/u);
+	assert.match(PAGE_SOURCE, /shape="dot"/u);
 	assert.match(PAGE_SOURCE, /className="size-3 justify-center text-icon-subtle"/u);
 	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage[\s\S]*renderAgentActivityIndicator=\{renderJiraGoldenJourneysV4AgentActivityIndicator\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /renderAgentActivityIndicator\?: ExperimentalJiraKanbanProps\["renderAgentActivityIndicator"\];/u);
