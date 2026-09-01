@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 // @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
-import { groupJiraIssueAgentActivityRows, summarizeJiraIssueAgentActivities } from "./agent-activity-model.ts";
+import { groupJiraIssueAgentActivityRows, resolveRelatedJiraIssueAgentActivityMode, summarizeJiraIssueAgentActivities } from "./agent-activity-model.ts";
 
 test("single working agent uses the direct Working label", () => {
 	assert.deepEqual(
@@ -121,4 +121,14 @@ test("completed agents never take a chin row in either layout", () => {
 		[{ activities: [{ id: "dependency-mapper", state: "working" }], key: "working-1" }],
 	);
 	assert.deepEqual(groupJiraIssueAgentActivityRows([{ id: "only", state: "completed" }], "split"), []);
+});
+
+test("related detached sessions keep working mode so the grey backdrop stays", () => {
+	assert.equal(resolveRelatedJiraIssueAgentActivityMode("none", true), "working");
+	assert.equal(resolveRelatedJiraIssueAgentActivityMode(undefined, true), "working");
+	assert.equal(resolveRelatedJiraIssueAgentActivityMode("none", false), "none");
+	assert.equal(resolveRelatedJiraIssueAgentActivityMode(undefined, false), undefined);
+	assert.equal(resolveRelatedJiraIssueAgentActivityMode("working", true), "working");
+	assert.equal(resolveRelatedJiraIssueAgentActivityMode("awaiting-input", true), "awaiting-input");
+	assert.equal(resolveRelatedJiraIssueAgentActivityMode("completed", true), "completed");
 });

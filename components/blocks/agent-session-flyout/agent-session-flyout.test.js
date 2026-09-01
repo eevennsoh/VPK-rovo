@@ -54,22 +54,30 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.match(source, /const linkLabel = hasIssueKey \? `Link to \$\{issueKey\}` : "Link work item";/u);
 	assert.match(
 		source,
-		/<ButtonGroup aria-label=\{hasIssueKey \? `Link \$\{issueKey\}` : "Link work item"\} variant="split">/u,
+		/<ButtonGroup aria-label=\{hasIssueKey \? `Link \$\{issueKey\}` : "Link work item"\} className="w-full" variant="separated">/u,
 	);
 	assert.match(source, /aria-disabled=\{linkUnavailable\}/u);
+	assert.match(source, /"w-full flex-1 justify-center text-center"/u);
 	assert.match(source, /onClick=\{\(\) => onLinkWorkItem\?\.\(issueKey\)\}/u);
 	assert.match(source, /onClick=\{\(\) => onLinkWorkItem\?\.\(issueKey\)\}\s*size="compact"/u);
 	assert.match(source, /size="icon-compact"/u);
 	assert.doesNotMatch(source, /size="icon"/u);
+	assert.match(source, /ShowMoreHorizontalIcon/u);
+	assert.doesNotMatch(source, /ChevronDownIcon/u);
 	assert.match(
 		source,
-		/aria-label=\{hasIssueKey \? `More link options for \$\{issueKey\}` : "More link options"\}/u,
+		/aria-label=\{hasIssueKey \? `More actions for \$\{issueKey\}` : "More work item actions"\}/u,
 	);
-	assert.match(source, /<DropdownMenuItem[\s\S]*disabled=\{addAsSubtaskUnavailable\}[\s\S]*onSelect=\{\(\) => onAddAsSubtask\?\.\(issueKey\)\}[\s\S]*>\s*Add as a subtask/u);
-	assert.match(source, /Create new/u);
-	assert.match(source, /aria-disabled=\{createUnavailable\}/u);
-	assert.match(source, /onClick=\{onCreateWorkItem\}/u);
-	assert.match(source, /onClick=\{onCreateWorkItem\}\s*size="compact"/u);
+	assert.match(
+		source,
+		/<DropdownMenuItem[\s\S]*disabled=\{addAsSubtaskUnavailable \|\| !hasIssueKey\}[\s\S]*onSelect=\{\(\) => onAddAsSubtask\?\.\(issueKey\)\}[\s\S]*>\s*\{hasIssueKey \? `Add new subtask to \$\{issueKey\}` : "Add new subtask"\}/u,
+	);
+	assert.match(
+		source,
+		/<DropdownMenuItem[\s\S]*disabled=\{createUnavailable\}[\s\S]*onSelect=\{\(\) => onCreateWorkItem\?\.\(\)\}[\s\S]*>\s*Create new work item/u,
+	);
+	assert.doesNotMatch(source, /onClick=\{onCreateWorkItem\}/u);
+	assert.doesNotMatch(source, /aria-disabled=\{createUnavailable\}/u);
 	assert.match(source, /onLinkWorkItem\?: \(session: JiraSidebarSessionItem, workItemKey: string\) => void;/u);
 	assert.match(source, /onCreateWorkItem\?: \(session: JiraSidebarSessionItem\) => void;/u);
 	assert.match(source, /onAddAsSubtask\?: \(session: JiraSidebarSessionItem, workItemKey: string\) => void;/u);
@@ -104,14 +112,14 @@ test("shared Agent States flyout forwards submission, timing, and stopped lifecy
 
 // Detail panels still reuse the shared design-system property components rather
 // than re-implementing them inside each panel.
-test("shared detail body hides the human assignee avatar while awaiting input", () => {
+test("shared detail body renders the session invoker beside its timestamp", () => {
 	const source = readRepoFile(FLYOUT_BODY_PATH);
 	const jiraSource = readRepoFile("components/blocks/product-sidebar/variants/jira.tsx");
 	assert.match(source, /export function JiraSessionFlyoutBody\b/u);
 	assert.match(source, /import\s*\{[^}]*Avatar[^}]*AvatarFallback[^}]*AvatarImage[^}]*\}\s*from\s*"@\/components\/ui\/avatar"/u);
 	assert.match(
 		source,
-		/session\.assignee && session\.status !== "awaiting-input" \? \(\s*<Avatar[\s\S]*label=\{session\.assignee\.name\}[\s\S]*size="xs"[\s\S]*<AvatarImage alt="" src=\{session\.assignee\.src\} \/>[\s\S]*<AvatarFallback>\{actorInitials\(session\.assignee\.name\)\}<\/AvatarFallback>/u,
+		/session\.invokedBy && session\.status !== "awaiting-input" \? \(\s*<Avatar[\s\S]*label=\{session\.invokedBy\.name\}[\s\S]*size="xs"[\s\S]*<AvatarImage alt="" src=\{session\.invokedBy\.src\} \/>[\s\S]*<AvatarFallback>\{actorInitials\(session\.invokedBy\.name\)\}<\/AvatarFallback>/u,
 	);
 	assert.match(
 		source,
@@ -126,6 +134,7 @@ test("shared detail body hides the human assignee avatar while awaiting input", 
 	assert.match(jiraSource, /brandName\?: ThirdPartyLogoName;/u);
 	assert.match(jiraSource, /vpkLogo\?: "rovo";/u);
 	assert.match(jiraSource, /issueStatus\?: string;/u);
+	assert.match(jiraSource, /invokedBy\?: JiraSidebarAssignee;/u);
 	assert.match(source, /const workItemRelationship = variant === "untracked-work" \? "suggested" : "primary";/u);
 	assert.match(source, /<SmartLink[\s\S]*className="min-w-0 max-w-full"[\s\S]*item=\{toWorkItem\(session, workItemRelationship\)\}[\s\S]*showStatus/u);
 	assert.doesNotMatch(source, /showStatus=\{workItemRelationship === "primary"\}/u);

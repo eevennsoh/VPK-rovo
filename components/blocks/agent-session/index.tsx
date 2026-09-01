@@ -11,6 +11,7 @@ import {
 	JiraSessionFlyoutSurface,
 	JiraSessionFlyoutTrigger,
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
+import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 import { AGENT_SESSION_ATTACHED_ITEMS, AGENT_SESSION_ITEMS } from "./data";
@@ -83,6 +84,7 @@ export function AgentSession({
 	getResumeCommand,
 	getSuggestedWorkItemKey,
 	getSuggestedWorkItemKeys,
+	issueKey,
 	isResumable,
 	newItemIds,
 	onCopyResume,
@@ -90,20 +92,36 @@ export function AgentSession({
 	onLinkWorkItem,
 	onSubtasks,
 	onItemHover,
+	onSelectedItemIdChange,
 	onToggleVisibility,
 	onView,
+	selectedItemId: selectedItemIdProp,
 	sessionDrag,
+	style,
 	variant = "large",
 	visibilityLabel,
 }: Readonly<AgentSessionProps>) {
 	const isAttached = variant === "medium-attached";
 	const items = itemsProp ?? (isAttached ? AGENT_SESSION_ATTACHED_ITEMS : AGENT_SESSION_ITEMS);
-	// Coding rows ignore `canViewItem`: resuming a session the viewer owns is not
-	// a permission question. They still require `onView`, because a read-only
-	// host must not receive a focusable no-op body.
-	const handleCodingView = useCallback((item: AgentSessionItem) => {
-		onView?.(item);
-	}, [onView]);
+	const isSelectionControlled = selectedItemIdProp !== undefined;
+	const [uncontrolledSelectedItemId, setUncontrolledSelectedItemId] = useState<string | null>(
+		null,
+	);
+	const selectedItemId = isSelectionControlled ? selectedItemIdProp : uncontrolledSelectedItemId;
+	// Card-body activation is the only select/deselect path. Hover Resume / Hide
+	// stay on their own controls so they cannot flip the highlight.
+	const handleView = useCallback((item: AgentSessionItem) => {
+		const nextId = selectedItemId === item.id ? null : item.id;
+		if (!isSelectionControlled) {
+			setUncontrolledSelectedItemId((current) => (current === item.id ? null : item.id));
+		}
+		onSelectedItemIdChange?.(nextId);
+		// Deselect is not another view. Calling onView here would re-spotlight
+		// the related issue and leave the board dimmed.
+		if (nextId !== null) {
+			onView?.(item);
+		}
+	}, [isSelectionControlled, onSelectedItemIdChange, onView, selectedItemId]);
 	// The beat runs for arrivals the viewer has not seen yet; the mark stays on
 	// every unreviewed id. A host that never unmounts the list can pass one set.
 	const beatItemIds = arrivingItemIds ?? newItemIds;
@@ -130,20 +148,29 @@ export function AgentSession({
 			<ul
 				className={cn(
 					"flex flex-col",
-					variant === "large" ? "gap-0" : "gap-2",
+					variant === "large"
+						? "gap-0"
+						: variant === "medium-detached"
+							? undefined
+							: "gap-2",
 					className,
 				)}
 				data-stack={variant === "large" ? "well" : undefined}
 				data-variant={variant}
+				// Detached compact rows sit 2px apart. Hosts keep the matching
+				// 2px card-to-list offset (`space.025`).
+				style={variant === "medium-detached"
+					? { ...style, gap: token("space.025") }
+					: style}
 			>
 				{items.map((item: AgentSessionItem) => {
 					const itemOnView = isCodingAgentListItem(item)
 						? onView === undefined
 							? undefined
-							: handleCodingView
+							: handleView
 						: onView === undefined || (canViewItem !== undefined && !canViewItem(item))
 							? undefined
-							: onView;
+							: handleView;
 
 					const flyoutSession = isAttached
 						? toAgentSessionFlyoutItem(item)
@@ -167,6 +194,7 @@ export function AgentSession({
 								isArriving={beatItemIds?.has(item.id) ?? false}
 								isNew={newItemIds?.has(item.id) ?? false}
 								isResumable={isResumable}
+								isSelected={item.id === selectedItemId}
 								item={item}
 								key={item.id}
 								onCopyResume={onCopyResume}
@@ -183,6 +211,7 @@ export function AgentSession({
 							flyout
 							isArriving={beatItemIds?.has(item.id) ?? false}
 							isNew={newItemIds?.has(item.id) ?? false}
+							issueKey={issueKey}
 							item={item}
 							onAttach={onLinkWorkItem
 								? () => onLinkWorkItem(
@@ -202,11 +231,7 @@ export function AgentSession({
 						/>
 					);
 
-					return variant === "medium-detached" ? (
-						<li data-testid={"agent-session-row-" + item.id} key={item.id}>
-							{compactCard}
-						</li>
-					) : (
+					return (
 						<JiraSessionFlyoutTrigger
 							closeDelay={160}
 							handle={flyoutHandle}

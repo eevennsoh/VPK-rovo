@@ -55,6 +55,38 @@ export function shouldCommitJiraIssueSessionTransferDrop({
 }
 
 /**
+ * Keep an armed well armed across layout-only updates. Pulling the chin chip
+ * out collapses its slot, which slides the well under a still pointer and
+ * would otherwise disarm — the well can still look selected while the next
+ * release does nothing.
+ */
+export function nextJiraIssueSessionTransferArmed({
+	dragging,
+	overTarget,
+	pointerMoved,
+	previousArmed,
+}: {
+	dragging: boolean;
+	overTarget: boolean;
+	pointerMoved: boolean;
+	previousArmed: boolean;
+}): boolean {
+	if (!dragging) {
+		return false;
+	}
+
+	if (overTarget) {
+		return true;
+	}
+
+	if (pointerMoved) {
+		return false;
+	}
+
+	return previousArmed;
+}
+
+/**
  * The attach chin/backdrop is a live-gesture preview only. A leftover
  * `source: "detached"` after release must not keep an empty grey slab open.
  */

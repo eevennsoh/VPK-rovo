@@ -23,13 +23,19 @@ import type {
 import { createJiraKanbanColumns } from "../jira-kanban-data";
 import { BoardFilterPopover } from "./components/board-filter-popover";
 import {
+	ALL_BOARD_AGENT_SESSION_STATE_IDS,
+	type BoardAgentSessionStateId,
+} from "./data/board-view-options";
+import {
 	ExperimentalJiraKanban,
 	type ExperimentalJiraKanbanProps,
 } from "./experimental-jira-kanban";
 import { EMPTY_COLLAPSED_BOARD_COLUMNS } from "./lib/board-column-collapse";
+import { filterJiraKanbanColumnsByAgentSessionState } from "./lib/board-agent-session-visibility";
 import {
 	collectBoardIssueKeys,
 	groupBoardUntrackedSessions,
+	selectBoardUntrackedSessions,
 } from "./lib/board-untracked-sessions";
 import {
 	ExperimentalJiraKanbanBoardHeader,
@@ -69,6 +75,7 @@ import {
 import { scopeTimelineToWorkItemKeys } from "./pulse/hooks/use-pulse-timeline";
 import {
 	filterPulseLooseWorkByMember,
+	isPulseLooseWorkOnViewerMachine,
 	toPulseSessionHandlers,
 	toPulseSessionItems,
 } from "./pulse/lib/pulse-sessions";
@@ -138,6 +145,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	onBoardColumnsChange?: (columns: readonly JiraKanbanColumnData[]) => void;
 	onCardClick?: (card: JiraKanbanCardData, columnTitle: string) => void;
 	onCardAgentActivityViewChat?: JiraKanbanProps["onCardAgentActivityViewChat"];
+	onCardAgentDoneRunView?: JiraKanbanProps["onCardAgentDoneRunView"];
 	onCardAgentSessionLink?: ExperimentalJiraKanbanProps["onCardAgentSessionLink"];
 	onCardAgentSessionUnlink?: ExperimentalJiraKanbanProps["onCardAgentSessionUnlink"];
 	onInsightsWorkItemClick?: (workItem: PulseWorkItem) => void;
@@ -179,11 +187,12 @@ export default function ExperimentalJiraKanbanPage({
 	insightsEnabled = true,
 	insightsDefaultAssigneeIds,
 	isInsightsWorkItemInteractive,
-	isLooseWorkResumable,
+	isLooseWorkResumable = isPulseLooseWorkOnViewerMachine,
 	mode: controlledMode,
 	onBoardColumnsChange,
 	onCardClick,
 	onCardAgentActivityViewChat,
+	onCardAgentDoneRunView,
 	onCardAgentSessionLink,
 	onCardAgentSessionUnlink,
 	onInsightsWorkItemClick,
@@ -238,6 +247,9 @@ export default function ExperimentalJiraKanbanPage({
 	// a deliberate setting that must outlive a temporary view switch.
 	const [collapsedColumns, setCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
 	const [showUntracked, setShowUntracked] = useState(true);
+	const [shownSessionStateIds, setShownSessionStateIds] = useState(
+		() => new Set<BoardAgentSessionStateId>(ALL_BOARD_AGENT_SESSION_STATE_IDS),
+	);
 	const handleRequestAction = useCallback((action: { id: string }) => {
 		setRequestedActionIds((current) => new Set(current).add(action.id));
 	}, []);
@@ -360,8 +372,11 @@ export default function ExperimentalJiraKanbanPage({
 		agentSessionAssigneeIdAliases,
 	);
 	const filteredBoardColumns = useMemo(
-		() => filterJiraKanbanColumnsByAssignee(boardColumns, selectedAssigneeIds),
-		[boardColumns, selectedAssigneeIds],
+		() => filterJiraKanbanColumnsByAgentSessionState(
+			filterJiraKanbanColumnsByAssignee(boardColumns, selectedAssigneeIds),
+			shownSessionStateIds,
+		),
+		[boardColumns, selectedAssigneeIds, shownSessionStateIds],
 	);
 	// Days first, then scope. Both narrow the same timeline and both come from
 	// the same control, so they compose rather than competing: a sprint scope
@@ -388,6 +403,14 @@ export default function ExperimentalJiraKanbanPage({
 			PULSE_TIMELINE.workItems,
 		),
 		[agentSessionMemberId, pulseTimeline.looseWork],
+	);
+	const untrackedAgentSessionItems = useMemo(
+		() => selectBoardUntrackedSessions({
+			capturedItemIds: capturedLooseWorkIds,
+			detachedByCard: detachedAgentSessionsByCard,
+			sessions: agentSessionItems,
+		}),
+		[agentSessionItems, capturedLooseWorkIds, detachedAgentSessionsByCard],
 	);
 	const agentSessionHandlers = useMemo(
 		() => toPulseSessionHandlers({
@@ -508,6 +531,36 @@ export default function ExperimentalJiraKanbanPage({
 		setDraggedCard(null);
 	};
 
+	const handleCardAgentSessionLink: ExperimentalJiraKanbanProps["onCardAgentSessionLink"] = (
+		session,
+		card,
+		columnTitle,
+	) => {
+		setCapturedLooseWorkIds((current) => {
+			if (current.has(session.id)) {
+				return current;
+			}
+			return new Set(current).add(session.id);
+		});
+		onCardAgentSessionLink?.(session, card, columnTitle);
+	};
+
+	const handleCardAgentSessionUnlink: ExperimentalJiraKanbanProps["onCardAgentSessionUnlink"] = (
+		session,
+		card,
+		columnTitle,
+	) => {
+		setCapturedLooseWorkIds((current) => {
+			if (!current.has(session.id)) {
+				return current;
+			}
+			const next = new Set(current);
+			next.delete(session.id);
+			return next;
+		});
+		onCardAgentSessionUnlink?.(session, card, columnTitle);
+	};
+
 	const handleAssigneeFilterChange = (assigneeIds: Set<string>) => {
 		setSelection(createJiraKanbanSelectionState());
 		setDraggedCard(null);
@@ -572,11 +625,13 @@ export default function ExperimentalJiraKanbanPage({
 				assignees={assignees}
 				compact={compactHeader}
 				onSelectedAssigneeIdsChange={handleAssigneeFilterChange}
+				onShownSessionStateIdsChange={setShownSessionStateIds}
 				onShowUntrackedChange={setShowUntracked}
 				onViewChange={renderListContent ? onViewChange : undefined}
 				searchPlaceholder={`Search ${activeView}`}
 				selectedAssigneeIds={selectedAssigneeIds}
 				showBoardControls={showBoardContent}
+				shownSessionStateIds={shownSessionStateIds}
 				showUntracked={showUntracked}
 				facepile={isPulse ? (
 					<PulseRosterFacepile
@@ -638,7 +693,7 @@ export default function ExperimentalJiraKanbanPage({
 						agentActivityLayout={agentActivityLayout}
 						agentSessionColumn={showAgentSessionColumn ? {
 							capturedItemIds: capturedLooseWorkIds,
-							items: agentSessionItems,
+							items: untrackedAgentSessionItems,
 							...agentSessionHandlers,
 						} : undefined}
 						proximityAgentSession={{
@@ -660,8 +715,13 @@ export default function ExperimentalJiraKanbanPage({
 						selectedCardCodes={selection.selectedCardCodes}
 						onCardClick={handleCardClick}
 						onCardAgentActivityViewChat={onCardAgentActivityViewChat}
-						onCardAgentSessionLink={onCardAgentSessionLink}
-						onCardAgentSessionUnlink={onCardAgentSessionUnlink}
+						onCardAgentDoneRunView={onCardAgentDoneRunView}
+						onCardAgentSessionLink={onCardAgentSessionLink
+							? handleCardAgentSessionLink
+							: undefined}
+						onCardAgentSessionUnlink={onCardAgentSessionUnlink
+							? handleCardAgentSessionUnlink
+							: undefined}
 						onCardSelect={handleCardSelect}
 						onCardDragStart={handleCardDragStart}
 						onCardDrop={handleCardDrop}

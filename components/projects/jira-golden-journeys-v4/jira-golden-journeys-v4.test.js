@@ -42,9 +42,27 @@ test("the board disables Insights while keeping card agent chat in the Jira shel
 	assert.match(PAGE_SOURCE, /insightsEnabled=\{false\}/u);
 	assert.doesNotMatch(PAGE_SOURCE, /PULSE_|InsightsNudge|boardRef|timelineLastViewedAt/u);
 	assert.match(PAGE_SOURCE, /onCardAgentActivityViewChat=\{handleViewChat\}/u);
+	assert.match(PAGE_SOURCE, /onCardAgentDoneRunView=\{handleViewCompletedRun\}/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/onCardAgentDoneRunView\?: JiraKanbanProps\["onCardAgentDoneRunView"\];/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/<ExperimentalJiraKanban[\s\S]*onCardAgentDoneRunView=\{onCardAgentDoneRunView\}/u,
+	);
 	assert.match(PAGE_SOURCE, /openAgentChat\(\{[\s\S]*agentId: activity\.id,[\s\S]*issueKey: card\.code/u);
+	assert.match(PAGE_SOURCE, /const handleViewCompletedRun = useCallback\([\s\S]*agentId: run\.agentName\.toLowerCase\(\)\.replace\(\/\\s\+\/g, "-"\),[\s\S]*issueKey: run\.issueKey/u);
 	assert.match(PAGE_SOURCE, /<JgpRovoOverlay[\s\S]*externalThinkingMessageId=\{externalThinkingMessageId\}/u);
 	assert.doesNotMatch(PAGE_SOURCE, /<JgpRovoOverlay[\s\S]*insights=/u);
+});
+
+test("the route imports the Pulse session guard used by its resume callback", () => {
+	assert.match(
+		PAGE_SOURCE,
+		/import \{ isPulseAgentSession, type PulseLooseWork \} from "@\/components\/blocks\/jira-kanban\/experimental\/pulse\/types";/u,
+	);
+	assert.match(PAGE_SOURCE, /if \(!isPulseAgentSession\(item\)\) return;/u);
 });
 
 test("the board opts into the experimental Jira issue split agent rows", () => {
@@ -73,6 +91,25 @@ test("unlinked agent sessions remain detached beneath their source Jira card", (
 	assert.match(PAGE_SOURCE, /toJiraGoldenJourneysV4DetachedAgentSession\(activity, card\)/u);
 	assert.match(PAGE_SOURCE, /setDetachedAgentSessionsByCard\(\(current\) =>/u);
 	assert.match(PAGE_SOURCE, /detachedAgentSessionsByCard=\{detachedAgentSessionsByCard\}/u);
+	assert.match(
+		PAGE_SOURCE,
+		/const activity = detachedActivitiesByIdRef\.current\[session\.id\]\s*\?\? toJiraIssueDemoAttachedActivity\(session\);/u,
+		"re-attaching a complete detached fixture must normalize it to an active chin row",
+	);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /<AgentSession[\s\S]*variant="medium-detached"/u);
+	assert.match(
+		EXPERIMENTAL_CARD_SOURCE,
+		/<AgentSession[\s\S]*style=\{\{ marginTop: token\("space\.025"\) \}\}/u,
+	);
+	assert.match(
+		EXPERIMENTAL_CARD_SOURCE,
+		/className="has-\[\[data-session-dragging\]\]:relative has-\[\[data-session-dragging\]\]:z-30"/u,
+		"the detached-session Motion stacking context must rise above the Jira issue shell while dragging",
+	);
+	assert.match(
+		EXPERIMENTAL_CARD_SOURCE,
+		/resolveRelatedJiraIssueAgentActivityMode\(\s*\n\s*card\.agentActivityMode,\s*\n\s*detachedAgentSessions\.length > 0,/u,
+	);
 });
 
 test("the board puts agent and skill assignment in each card's More actions menu", () => {
@@ -154,7 +191,7 @@ test("the route pins the shared Agent Session column beside Jira statuses", () =
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /capturedItemIds: capturedLooseWorkIds,/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /toPulseSessionHandlers/u);
 
-	const columnIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<AgentSessionColumn {...agentSessionColumn} onView={handleSessionView} />");
+	const columnIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<AgentSessionColumn");
 	const scrollportIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<section");
 	assert.ok(columnIndex > 0, "expected the board to render the Agent Session column");
 	assert.ok(columnIndex < scrollportIndex, "expected untracked work to stay pinned before the status scrollport");

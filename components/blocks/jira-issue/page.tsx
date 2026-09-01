@@ -17,8 +17,12 @@ import {
 	type JiraIssuePullRequestPreview,
 	type JiraIssuePullRequestStatus,
 } from "@/components/blocks/jira-issue";
-import { JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS } from "@/components/blocks/jira-issue/agent-session-transfer";
-import { JiraIssueDetachedAgentSession } from "@/components/blocks/jira-issue/detached-agent-session";
+import { AGENT_SESSION_ITEMS, AgentSession, type AgentSessionItem } from "@/components/blocks/agent-session";
+import {
+	nextJiraIssueDemoLinkedIds,
+	splitJiraIssueDemoSessionsById,
+	toJiraIssueDemoAttachedActivity,
+} from "@/components/blocks/jira-issue/agent-session-demo-attach";
 import {
 	GITHUB_BRANCH_SMART_LINK_ICON,
 	GITHUB_COMMIT_SMART_LINK_ICON,
@@ -31,7 +35,7 @@ import { AsxRovoOverlay } from "@/components/projects/jira-golden-journeys-v0/co
 import { useAsxAgentChatDemo } from "@/components/projects/jira-golden-journeys-v0/hooks/use-jira-golden-journeys-v0-agent-chat-demo";
 import { Button } from "@/components/ui/button";
 import { getDeterministicAgentAvatarSrc } from "@/lib/agent-avatars";
-import { cn } from "@/lib/utils";
+import { token } from "@/lib/tokens";
 
 const JIRA_ISSUE_DEMO_TAGS = [
 	{ text: "Acmecorp", color: "discovery" },
@@ -279,6 +283,7 @@ type JiraIssueAgentActivityDemoState =
 	| "agent-completed-work"
 	| "agent-dismissed-work"
 	| "agent-session-unlink"
+	| "agent-session-running-unlink"
 	| "agent-session-link";
 
 const JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES = [
@@ -293,25 +298,44 @@ const JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES = [
 /** Only concatenated onto the tab list for the experimental (stroke) demo. */
 const JIRA_ISSUE_AGENT_SESSION_TRANSFER_DEMO_STATES = [
 	{ value: "agent-session-unlink", label: "Unlink" },
+	{ value: "agent-session-running-unlink", label: "1 running + 2 unlink" },
 	{ value: "agent-session-link", label: "Link" },
 ] as const satisfies readonly { value: JiraIssueAgentActivityDemoState; label: string }[];
 
-/** The session that leaves the card in the Unlink flow, then proposes a new home. */
-const JIRA_ISSUE_DETACHED_SESSION = {
-	id: JIRA_ISSUE_AGENT_ACTIVITIES[0].id,
-	name: JIRA_ISSUE_AGENT_ACTIVITIES[0].name,
-	title: "Mapping affected services for the date-range filter",
-	avatarSrc: JIRA_ISSUE_AGENT_ACTIVITIES[0].avatarSrc,
-} as const;
-
-const JIRA_ISSUE_DETACHED_SESSION_PROPOSAL = {
-	confidenceLabel: "High confidence",
-	reason: "Some reasons why I think I should be linked here",
-	suggestedWorkItemKey: "PAY-105",
-} as const;
-
 function isSessionTransferDemoState(state: JiraIssueAgentActivityDemoState): boolean {
-	return state === "agent-session-unlink" || state === "agent-session-link";
+	return state === "agent-session-unlink"
+		|| state === "agent-session-running-unlink"
+		|| state === "agent-session-link";
+}
+
+const UNLINKED_SESSION_INVOKER = {
+	avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+	name: "person A",
+} as const;
+
+/** Claude + Cursor sample rows used by Unlink / 1 running + 2 unlink. */
+const DETACHABLE_DEMO_SESSION_IDS = new Set(
+	AGENT_SESSION_ITEMS.slice(0, 2).map((item) => item.id),
+);
+
+/** Chin activity → medium-detached card after a drop or minus unlink. */
+function toUnlinkedAgentSession(activity: JiraIssueAgentActivity): AgentSessionItem {
+	return {
+		id: activity.id,
+		title: activity.name,
+		state: "complete",
+		agent: {
+			avatarSrc: activity.avatarSrc,
+			brandName: activity.agentBrandName,
+			id: activity.id,
+			kind: "agent",
+			name: activity.name,
+		},
+		host: "local",
+		invokedBy: UNLINKED_SESSION_INVOKER,
+		machineName: "Local",
+		timeLabel: "Just now",
+	};
 }
 
 function getDemoAgentActivities(
@@ -319,13 +343,13 @@ function getDemoAgentActivities(
 ): readonly JiraIssueAgentActivity[] | undefined {
 	switch (state) {
 		case "single-agent-working":
+		case "agent-session-link":
+		case "agent-session-running-unlink":
 			return JIRA_ISSUE_AGENT_ACTIVITIES.slice(0, 1);
 		case "multiple-agents-working":
 			return JIRA_ISSUE_AGENT_ACTIVITIES.slice(0, 2);
 		case "awaiting-user-input":
 			return JIRA_ISSUE_AWAITING_INPUT_ACTIVITIES;
-		case "agent-session-unlink":
-			return JIRA_ISSUE_AGENT_ACTIVITIES.slice(0, 1);
 		default:
 			return undefined;
 	}
@@ -337,6 +361,12 @@ function getDemoAgentActivityMode(
 ): JiraIssueAgentActivityMode {
 	if (state === "agent-completed-work") {
 		return "completed";
+	}
+
+	// Unlink keeps the grey agent-activity backdrop around the issue without
+	// mounting a chin row. `working` is what lights `hasActiveAgentActivityShell`.
+	if (state === "agent-session-unlink") {
+		return "working";
 	}
 
 	if (!activities?.length) {
@@ -365,6 +395,7 @@ function getExperimentalDemoPullRequest(
 		case "single-agent-working":
 		case "multiple-agents-working":
 		case "agent-session-unlink":
+		case "agent-session-running-unlink":
 		case "agent-session-link":
 			return {};
 		default: {
@@ -510,21 +541,72 @@ function JiraIssueAgentActivityStatesDemo({
 	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useAsxAgentChatDemo();
 	const [pendingChatQuestion, setPendingChatQuestion] = useState<Readonly<{ submit: () => void }> | null>(null);
 	const experimentalPullRequest = getExperimentalDemoPullRequest(chrome, agentActivityState);
+	const [unlinkedSessionIds, setUnlinkedSessionIds] = useState<readonly string[]>([]);
+	const [linkedDetachedIds, setLinkedDetachedIds] = useState<readonly string[]>([]);
 	const isTransferPhase = showSessionTransferStates && isSessionTransferDemoState(agentActivityState);
-	const isLinkPhase = isTransferPhase && agentActivityState === "agent-session-link";
-	const agentActivities = getDemoAgentActivities(agentActivityState);
+	const isUnlinkPhase = isTransferPhase && agentActivityState === "agent-session-unlink";
+	const isRunningUnlinkPhase = isTransferPhase && agentActivityState === "agent-session-running-unlink";
+	const fixtureActivities = getDemoAgentActivities(agentActivityState);
+	const remainingFixtureActivities = fixtureActivities?.filter((activity) => !unlinkedSessionIds.includes(activity.id));
+	const unlinkedSessions = (fixtureActivities ?? [])
+		.filter((activity) => unlinkedSessionIds.includes(activity.id))
+		.map(toUnlinkedAgentSession);
+	// Same sample sessions as `#medium-detached` so the person avatar is present.
+	const fixtureDetachedSessions = isRunningUnlinkPhase
+		? AGENT_SESSION_ITEMS.slice(0, 2)
+		: isUnlinkPhase
+			? AGENT_SESSION_ITEMS.slice(0, 1)
+			: [];
+	const { linked: linkedDetachedSessions, remaining: remainingFixtureDetached } = splitJiraIssueDemoSessionsById(
+		fixtureDetachedSessions,
+		linkedDetachedIds,
+	);
+	const linkedDetachedActivities = linkedDetachedSessions.map(toJiraIssueDemoAttachedActivity);
+	const agentActivities = remainingFixtureActivities === undefined && linkedDetachedActivities.length === 0
+		? undefined
+		: [...(remainingFixtureActivities ?? []), ...linkedDetachedActivities];
+	const detachedSessions = [...unlinkedSessions, ...remainingFixtureDetached];
 	const demoStates = showSessionTransferStates
 		? [...JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES, ...JIRA_ISSUE_AGENT_SESSION_TRANSFER_DEMO_STATES]
 		: JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES;
-	// Unlinking hands the session to the Link phase, where it sits detached
-	// underneath the work item and proposes a new home.
-	const handleSessionUnlink = useCallback(() => {
-		setAgentActivityState("agent-session-link");
+	const hasChinToUnlink = Boolean(agentActivities?.length);
+	const showDetachedSessions = detachedSessions.length > 0;
+	// Tabs pick the fixture. A drop or chin-minus unlink keeps that fixture and
+	// moves the session into the detached list — hopping Unlink/Link remounted
+	// the card (`key={agentActivityState}`) and tore the playground down.
+	const handleSessionUnlink = useCallback((session?: { id: string }) => {
+		if (!session?.id) {
+			return;
+		}
+		setUnlinkedSessionIds((current) => (
+			current.includes(session.id) ? current : [...current, session.id]
+		));
+		setLinkedDetachedIds((current) => nextJiraIssueDemoLinkedIds(current, session.id, false));
 	}, []);
-	const agentSessionTransfer: JiraIssueAgentSessionTransferConfig | undefined = useMemo(
-		() => (isTransferPhase && !isLinkPhase ? { onUnlink: handleSessionUnlink } : undefined),
-		[handleSessionUnlink, isLinkPhase, isTransferPhase],
-	);
+	const handleSessionLink = useCallback((session?: { id: string }) => {
+		if (!session?.id) {
+			return;
+		}
+		setUnlinkedSessionIds((current) => current.filter((id) => id !== session.id));
+		if (DETACHABLE_DEMO_SESSION_IDS.has(session.id)) {
+			setLinkedDetachedIds((current) => nextJiraIssueDemoLinkedIds(current, session.id, true));
+		}
+	}, []);
+	const agentSessionTransfer: JiraIssueAgentSessionTransferConfig | undefined = useMemo(() => {
+		if (!showSessionTransferStates || (!hasChinToUnlink && !showDetachedSessions)) {
+			return undefined;
+		}
+		return {
+			onLink: handleSessionLink,
+			onUnlink: hasChinToUnlink ? handleSessionUnlink : undefined,
+		};
+	}, [
+		handleSessionLink,
+		handleSessionUnlink,
+		hasChinToUnlink,
+		showDetachedSessions,
+		showSessionTransferStates,
+	]);
 	// Opens the floating chat for the activity's agent. When the activity is
 	// awaiting input, the chat replays its question card; answering it there is
 	// intercepted (via `pendingChatQuestion`) so the agent acknowledges and
@@ -580,12 +662,16 @@ function JiraIssueAgentActivityStatesDemo({
 	return (
 		<div className="relative flex h-full min-h-[480px] w-full flex-col bg-surface">
 			<div className="sticky top-0 z-10 w-full bg-surface pb-4 pt-6">
-				<div className="flex w-full flex-nowrap items-center justify-center gap-2">
+				<div className="flex w-full flex-wrap items-center justify-center gap-2">
 					{demoStates.map((state) => (
 						<Button
 							key={state.value}
 							aria-pressed={agentActivityState === state.value}
-							onClick={() => setAgentActivityState(state.value)}
+							onClick={() => {
+								setUnlinkedSessionIds([]);
+								setLinkedDetachedIds([]);
+								setAgentActivityState(state.value);
+							}}
 							size="compact"
 							variant={agentActivityState === state.value ? "default" : "outline"}
 						>
@@ -595,7 +681,7 @@ function JiraIssueAgentActivityStatesDemo({
 				</div>
 			</div>
 			<div className="flex flex-1 items-start justify-center overflow-visible px-6 pb-10 pt-6">
-				<div className="flex w-[260px] flex-col gap-2">
+				<div className="flex w-[276px] flex-col gap-2">
 					<JiraIssue
 						key={isTransferPhase ? agentActivityState : "base"}
 						agentActivities={agentActivities}
@@ -605,7 +691,7 @@ function JiraIssueAgentActivityStatesDemo({
 						agentSessionTransfer={agentSessionTransfer}
 						assigneeAvatarSrc="/avatar-user/andrea-wilson/color/asow-service-yellow.png"
 						chrome={chrome}
-						className={cn("w-full", agentSessionTransfer ? JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS : undefined)}
+						className="w-full"
 						generativeAction={{
 							onSubmit: handleGenerativeActionSubmit,
 						}}
@@ -618,23 +704,25 @@ function JiraIssueAgentActivityStatesDemo({
 						pullRequestPreview={experimentalPullRequest.pullRequestNumber ? EXPERIMENTAL_DEMO_PULL_REQUEST_PREVIEW : undefined}
 						pullRequestStatus={experimentalPullRequest.pullRequestStatus}
 						pullRequestTitle={experimentalPullRequest.pullRequestNumber ? JIRA_ISSUE_CHAT_ISSUE_SUMMARY : undefined}
+						sessionTransferAfter={showDetachedSessions
+							? (sessionDrag) => (
+								<AgentSession
+									issueKey="PD-40"
+									items={detachedSessions}
+									onCreateWorkItem={(item) => handleSessionLink(item)}
+									onLinkWorkItem={(item) => handleSessionLink(item)}
+									onSubtasks={(item) => handleSessionLink(item)}
+									sessionDrag={sessionDrag}
+									style={{ marginTop: token("space.025") }}
+									variant="medium-detached"
+								/>
+							)
+							: undefined}
 						subtasks={JIRA_ISSUE_DEMO_SUBTASKS}
 						subtasksCompleted={0}
 						summary="Implement advanced date-range filter"
 						tags={[{ text: "FE Development", color: "purple" }]}
 					/>
-					{isLinkPhase ? (
-						<JiraIssueDetachedAgentSession
-							confidenceLabel={JIRA_ISSUE_DETACHED_SESSION_PROPOSAL.confidenceLabel}
-							onCreateWorkItem={() => setAgentActivityState("agent-session-unlink")}
-							onDismiss={() => setAgentActivityState("default")}
-							onLinkWorkItem={() => setAgentActivityState("agent-session-unlink")}
-							reason={JIRA_ISSUE_DETACHED_SESSION_PROPOSAL.reason}
-							session={JIRA_ISSUE_DETACHED_SESSION}
-							suggestedWorkItemKey={JIRA_ISSUE_DETACHED_SESSION_PROPOSAL.suggestedWorkItemKey}
-							usesStrokeChrome={chrome === "stroke"}
-						/>
-					) : null}
 				</div>
 			</div>
 			<AsxRovoOverlay

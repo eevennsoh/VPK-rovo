@@ -4,6 +4,7 @@ import test from "node:test";
 import {
 	isJiraIssueSessionAttachPreview,
 	isWithinJiraIssueDropZoneHalo,
+	nextJiraIssueSessionTransferArmed,
 	shouldCommitJiraIssueSessionTransferDrop,
 	// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 } from "./agent-session-transfer-model.ts";
@@ -66,6 +67,57 @@ test("a transfer drop commits on idle reset while the target was armed", () => {
 		shouldCommitJiraIssueSessionTransferDrop({ armed: true, cancelled: true, dragging: false }),
 		false,
 		"a cancelled gesture must not commit the armed target",
+	);
+});
+
+test("an armed well stays armed when the target slides under a still pointer", () => {
+	assert.equal(
+		nextJiraIssueSessionTransferArmed({
+			dragging: true,
+			overTarget: true,
+			pointerMoved: false,
+			previousArmed: false,
+		}),
+		true,
+	);
+	assert.equal(
+		nextJiraIssueSessionTransferArmed({
+			dragging: true,
+			overTarget: false,
+			pointerMoved: false,
+			previousArmed: true,
+		}),
+		true,
+		"chin collapse must not disarm a well the pointer has not left",
+	);
+	assert.equal(
+		nextJiraIssueSessionTransferArmed({
+			dragging: true,
+			overTarget: false,
+			pointerMoved: true,
+			previousArmed: true,
+		}),
+		false,
+		"moving off the well still disarms",
+	);
+	assert.equal(
+		nextJiraIssueSessionTransferArmed({
+			dragging: false,
+			overTarget: false,
+			pointerMoved: false,
+			previousArmed: true,
+		}),
+		false,
+		"idle clears the arm so a later hover cannot commit",
+	);
+	assert.equal(
+		nextJiraIssueSessionTransferArmed({
+			dragging: true,
+			overTarget: false,
+			pointerMoved: false,
+			previousArmed: false,
+		}),
+		false,
 	);
 });
 

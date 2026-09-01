@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
@@ -43,12 +44,19 @@ interface JiraIssueMoreMenuProps {
 const CHEVRON = <ChevronRightIcon label="" size="small" color="currentColor" />;
 
 function JiraIssueMoreMenu({ generativeAction, generativeActionIssue, issueKey, onActionSelect, onOpenChange }: Readonly<JiraIssueMoreMenuProps>) {
+	const [open, setOpen] = useState(false);
+
+	function handleOpenChange(nextOpen: boolean) {
+		setOpen(nextOpen);
+		onOpenChange?.(nextOpen);
+	}
+
 	function select(action: JiraIssueMoreAction) {
 		return () => onActionSelect?.(action);
 	}
 
 	return (
-		<DropdownMenu onOpenChange={onOpenChange}>
+		<DropdownMenu open={open} onOpenChange={handleOpenChange}>
 			<DropdownMenuTrigger
 				render={
 					<Button
@@ -66,7 +74,11 @@ function JiraIssueMoreMenu({ generativeAction, generativeActionIssue, issueKey, 
 			<DropdownMenuContent align="start" className="max-h-none w-[280px]" side="right" sideOffset={8}>
 				{generativeAction && generativeActionIssue ? (
 					<>
-						<JiraIssueAgentAndSkillSubmenu action={generativeAction} issue={generativeActionIssue} />
+						<JiraIssueAgentAndSkillSubmenu
+							action={generativeAction}
+							issue={generativeActionIssue}
+							onRequestClose={() => handleOpenChange(false)}
+						/>
 						<DropdownMenuSeparator />
 					</>
 				) : null}

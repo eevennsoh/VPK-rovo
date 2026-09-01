@@ -344,6 +344,7 @@ function BoardColumn({
 			fadeBottom: showBottomScrollMask,
 			fadeSize: "3rem",
 			fadeTop: showTopScrollMask,
+			scrollbarWidth: 0,
 		}),
 		[showBottomScrollMask, showTopScrollMask],
 	);
@@ -733,6 +734,15 @@ export function ExperimentalJiraKanban({
 		agentSessionColumn?.onView?.(item);
 	};
 
+	const handleSessionSelectionChange = (itemId: string | null) => {
+		// Card deselect is not a view. Clear the session-driven spotlight so
+		// status columns drop `opacity-40` instead of staying veiled.
+		if (itemId === null) {
+			setFocusedIssueKey(null);
+		}
+		agentSessionColumn?.onSelectedItemIdChange?.(itemId);
+	};
+
 	const handleToggleColumnCollapsed = (columnTitle: string) => {
 		const nextCollapsedColumns = toggleCollapsedBoardColumn(collapsedColumns, columnTitle);
 		// Only own the state when the host has not claimed it, so a controlled
@@ -755,7 +765,11 @@ export function ExperimentalJiraKanban({
 						className="flex min-h-0 shrink-0 border-2 border-transparent border-r-0 ps-6"
 						style={{ paddingTop, paddingBottom }}
 					>
-						<AgentSessionColumn {...agentSessionColumn} onView={handleSessionView} />
+						<AgentSessionColumn
+							{...agentSessionColumn}
+							onSelectedItemIdChange={handleSessionSelectionChange}
+							onView={handleSessionView}
+						/>
 					</div>
 				) : null}
 				<section

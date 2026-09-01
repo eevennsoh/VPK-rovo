@@ -42,6 +42,20 @@ test("buildScrollMaskStyle resolves numeric fade and scrollbar values to pixels"
 	assert.equal(style.maskSize, "calc(100% - 12px) 100%, 12px 100%");
 });
 
+test("buildScrollMaskStyle can fade the full width without reserving a scrollbar track", () => {
+	const style = buildScrollMaskStyle({ fadeSize: 48, scrollbarWidth: 0 });
+
+	assert.equal(style["--scroll-mask-scrollbar-width"], "0px");
+	assert.equal(
+		style.maskImage,
+		"linear-gradient(to bottom, transparent 0, black var(--scroll-mask-fade-size), black calc(100% - var(--scroll-mask-fade-size)), transparent 100%)",
+	);
+	assert.equal(style.WebkitMaskImage, style.maskImage);
+	assert.equal(style.maskPosition, "0 0");
+	assert.equal(style.maskRepeat, "no-repeat");
+	assert.equal(style.maskSize, "100% 100%");
+});
+
 test("buildHorizontalScrollMaskStyle can fade before an opaque trailing gutter", () => {
 	const style = buildHorizontalScrollMaskStyle({ edge: "end", endGutterWidth: 24, fadeSize: 20 });
 

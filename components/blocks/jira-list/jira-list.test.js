@@ -322,6 +322,24 @@ test("JiraList renders summaries as plain text when no issue action is available
 	assert.match(workCellSource, /\) : \([\s\S]*?<span className="min-w-0 flex-1 truncate text-\[13px\] font-medium text-text">/u);
 });
 
+test("JiraList renders issue keys as plain text when no issue-key action is available", () => {
+	const workCellSource = SOURCE.match(
+		/id: "work",([\s\S]*?)\n\t\t\{\n\t\t\tid: "status"/u,
+	)?.[1] ?? "";
+	const issueKeyGroupSource = workCellSource.match(
+		/<div className="group\/issue-key[\s\S]*?\n\t\t\t\t\t\t\t\{onIssueClick \? \(/u,
+	)?.[0] ?? "";
+
+	assert.match(
+		issueKeyGroupSource,
+		/\{onIssueKeyClick \? \([\s\S]*?<Button[\s\S]*?onClick=\{\(\) => onIssueKeyClick\(row\)\}/u,
+	);
+	assert.match(
+		issueKeyGroupSource,
+		/\) : \([\s\S]*?<span className="shrink-0 text-\[13px\] font-medium text-text-subtle">\s*\{row\.issueKey\}/u,
+	);
+});
+
 test("JiraList reveals copy link only beside the focused or hovered issue key", () => {
 	const workCellSource = SOURCE.match(
 		/id: "work",([\s\S]*?)\n\t\t\{\n\t\t\tid: "status"/u,
@@ -333,7 +351,6 @@ test("JiraList reveals copy link only beside the focused or hovered issue key", 
 		/<div className="flex shrink-0 items-center gap-1 opacity-0[\s\S]*?<\/div>\s*\) : null\}/u,
 	)?.[0] ?? "";
 
-	assert.match(issueKeyGroupSource, /onIssueKeyClick\?\.\(row\)/u);
 	assert.match(issueKeyGroupSource, /group\/issue-key flex shrink-0 items-center/u);
 	assert.doesNotMatch(issueKeyGroupSource, /group\/issue-key[^"]*gap-/u);
 	assert.match(issueKeyGroupSource, /pointer-events-none max-w-0 overflow-hidden opacity-0/u);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
 import EyeOpenIcon from "@atlaskit/icon/core/eye-open";
@@ -49,6 +49,7 @@ export function AgentSessionCard({
 	isArriving = false,
 	isNew = false,
 	isResumable,
+	isSelected = false,
 	item,
 	onCopyResume,
 	onItemHover,
@@ -66,6 +67,8 @@ export function AgentSessionCard({
 	/** Carry the persistent unreviewed mark. Outlives the beat. */
 	isNew?: boolean;
 	isResumable?: (item: AgentSessionItem) => boolean;
+	/** Single-select highlight owned by the list, not this card. */
+	isSelected?: boolean;
 	item: AgentSessionItem;
 	onCopyResume?: (item: AgentSessionItem) => void;
 	onItemHover?: (item: AgentSessionItem | null) => void;
@@ -101,6 +104,34 @@ export function AgentSessionCard({
 	// The same hover/focus-revealed pair Agent List rows use, with Hide / Show
 	// in the slot Agent List gives to Archive. The eye always renders; the
 	// column supplies `onToggleVisibility` so Hide actually removes the card.
+	// The article is the hit area. RowBody would otherwise wrap only the title
+	// column, leaving avatar and padding inert. Hover actions stay buttons so
+	// they can stop the article from toggling.
+	const activateCard = onView === undefined
+		? undefined
+		: () => {
+			onView(item);
+		};
+	const handleArticleClick = activateCard === undefined
+		? undefined
+		: (event: MouseEvent<HTMLElement>) => {
+			if (event.target instanceof Element && event.target.closest("button") !== null) {
+				return;
+			}
+			activateCard();
+		};
+	const handleArticleKeyDown = activateCard === undefined
+		? undefined
+		: (event: KeyboardEvent<HTMLElement>) => {
+			if (event.target !== event.currentTarget) {
+				return;
+			}
+			if (event.key === "Enter" || event.key === " ") {
+				event.preventDefault();
+				activateCard();
+			}
+		};
+
 	const hoverActions: AgentListRowHoverActions = {
 		primary: canResume
 			? {
@@ -161,24 +192,38 @@ export function AgentSessionCard({
 				session={flyoutSession}
 			>
 				<article
+					aria-current={isSelected ? "true" : undefined}
+					aria-pressed={activateCard === undefined ? undefined : isSelected}
 					className={cn(
-						"group/agent-row relative flex w-full cursor-pointer rounded-none bg-transparent p-3 text-left text-text",
+						"group/agent-row relative flex w-full cursor-pointer rounded-none p-3 text-left text-text",
 						// Stacked list is one solid well: first card owns the top radius,
 						// last owns the bottom, shared edges collapse to a single stroke.
 						"border border-solid [li:not(:last-child)_&]:border-b-0",
 						"[li:first-child_&]:rounded-t-lg",
 						"[li:last-child_&]:rounded-b-lg",
-						"hover:bg-surface-hovered",
 						"transition-[border-color,background-color] duration-xxshort ease-out-practical",
 						"motion-reduce:transition-none",
 						// Arrival recolours the same solid frame rather than replacing it.
 						// Resting untracked chrome is `border-border-disabled`; a newly
 						// synced card uses discovery until it is reviewed.
 						!captured && isNew ? "border-border-discovery" : "border-border-disabled",
+						// Selected keeps the same blue-subtlest token as a spotlighted
+						// board card. No mapped hovered sibling exists, so hover stays blue.
+						isSelected
+							? "bg-bg-accent-blue-subtlest"
+							: "bg-transparent hover:bg-surface-hovered",
+						activateCard === undefined
+							? null
+							: "outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
 					)}
 					data-captured={captured || undefined}
 					data-new={isNew || undefined}
+					data-selected={isSelected || undefined}
 					data-variant="uncaptured-work"
+					onClick={handleArticleClick}
+					onKeyDown={handleArticleKeyDown}
+					role={activateCard === undefined ? undefined : "button"}
+					tabIndex={activateCard === undefined ? undefined : 0}
 				>
 					{isNew ? (
 						<>
@@ -195,9 +240,10 @@ export function AgentSessionCard({
 					<AgentListRow
 						hoverActions={hoverActions}
 						isCompact={false}
-						isSelected={false}
+						isSelected={isSelected}
 						item={item}
-						onView={onView}
+						onView={undefined}
+						showHoverActionsWhenSelected
 					/>
 				</article>
 			</JiraSessionFlyoutTrigger>

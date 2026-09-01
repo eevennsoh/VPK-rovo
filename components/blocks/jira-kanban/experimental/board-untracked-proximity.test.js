@@ -16,13 +16,17 @@ const PAGE_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "page.tsx"), "utf8");
 const BOARD_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "experimental-jira-kanban.tsx"), "utf8");
 const CARD_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "experimental-jira-kanban-card.tsx"), "utf8");
 const HELPER_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "lib", "board-untracked-sessions.ts"), "utf8");
+const SESSION_INDEX_SOURCE = readFileSync(
+	join(EXPERIMENTAL_DIR, "..", "..", "agent-session", "index.tsx"),
+	"utf8",
+);
 
 function withoutComments(source) {
 	return source.replace(/\/\*[\s\S]*?\*\//gu, "").replace(/\/\/[^\n]*/gu, "");
 }
 
 test("the experimental page groups Pulse sessions onto the board when Untracked is on", () => {
-	assert.match(PAGE_SOURCE, /import \{\s*collectBoardIssueKeys,\s*groupBoardUntrackedSessions,\s*\} from "\.\/lib\/board-untracked-sessions"/u);
+	assert.match(PAGE_SOURCE, /import \{\s*collectBoardIssueKeys,\s*groupBoardUntrackedSessions,\s*selectBoardUntrackedSessions,\s*\} from "\.\/lib\/board-untracked-sessions"/u);
 	assert.match(PAGE_SOURCE, /const \[showUntracked, setShowUntracked\] = useState\(true\)/u);
 	assert.match(
 		PAGE_SOURCE,
@@ -31,6 +35,24 @@ test("the experimental page groups Pulse sessions onto the board when Untracked 
 	assert.match(PAGE_SOURCE, /detachedAgentSessionsByCard=\{proximityAgentSessionsByCard\}/u);
 	assert.match(HELPER_SOURCE, /session\.sessionDetails\?\.issueKey/u);
 	assert.match(HELPER_SOURCE, /capturedItemIds\.has\(session\.id\)/u);
+});
+
+test("the Untracked column follows card session link and unlink state", () => {
+	assert.match(
+		PAGE_SOURCE,
+		/const untrackedAgentSessionItems = useMemo\([\s\S]*selectBoardUntrackedSessions\(\{[\s\S]*capturedItemIds: capturedLooseWorkIds,[\s\S]*detachedByCard: detachedAgentSessionsByCard,[\s\S]*sessions: agentSessionItems,/u,
+	);
+	assert.match(PAGE_SOURCE, /items: untrackedAgentSessionItems/u);
+	assert.match(
+		PAGE_SOURCE,
+		/const handleCardAgentSessionLink:[\s\S]*setCapturedLooseWorkIds\([\s\S]*new Set\(current\)\.add\(session\.id\)/u,
+	);
+	assert.match(
+		PAGE_SOURCE,
+		/const handleCardAgentSessionUnlink:[\s\S]*setCapturedLooseWorkIds\([\s\S]*next\.delete\(session\.id\)/u,
+	);
+	assert.match(PAGE_SOURCE, /onCardAgentSessionLink\?\.\(session, card, columnTitle\)/u);
+	assert.match(PAGE_SOURCE, /onCardAgentSessionUnlink\?\.\(session, card, columnTitle\)/u);
 });
 
 test("proximity AgentSession forwards the Pulse flyout attach handlers", () => {
@@ -71,6 +93,11 @@ test("column card hover does not scroll or spotlight a related issue", () => {
 
 test("column card click scrolls the related issue and applies the blue-subtlest spotlight", () => {
 	assert.match(BOARD_SOURCE, /onView=\{handleSessionView\}/u);
+	assert.match(BOARD_SOURCE, /onSelectedItemIdChange=\{handleSessionSelectionChange\}/u);
+	assert.match(
+		withoutComments(BOARD_SOURCE),
+		/const handleSessionSelectionChange = \(itemId: string \| null\) => \{\s*if \(itemId === null\) \{\s*setFocusedIssueKey\(null\);/u,
+	);
 	assert.match(BOARD_SOURCE, /data-issue-key=\{card\.code\}/u);
 	assert.match(BOARD_SOURCE, /spotlightIssueKey === card\.code && "bg-bg-accent-blue-subtlest"/u);
 	assert.match(
@@ -91,6 +118,8 @@ test("column card click scrolls the related issue and applies the blue-subtlest 
 		/scrollBoardIssueIntoView\(boardScrollportRef\.current, nextKey\)/u,
 	);
 	assert.match(BOARD_SOURCE, /agentSessionColumn\?\.onView\?\.\(item\)/u);
+	assert.match(BOARD_SOURCE, /agentSessionColumn\?\.onSelectedItemIdChange\?\.\(itemId\)/u);
+	assert.match(SESSION_INDEX_SOURCE, /if \(nextId !== null\) \{\s*\n\s*onView\?\.\(item\);\s*\n\s*\}/u);
 	assert.match(HELPER_SOURCE, /boardScrollport\.scrollBy\(\{\s*behavior: "instant",\s*left:/u);
 	assert.match(HELPER_SOURCE, /columnScrollport\.scrollBy\(\{\s*behavior: "instant",\s*top:/u);
 	assert.doesNotMatch(HELPER_SOURCE, /scrollIntoView/u);

@@ -20,6 +20,7 @@ import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 import { AgentSessionColumnHiddenFooter } from "./agent-session-column-hidden-footer";
+import { AgentSessionColumnOverflowMenu } from "./agent-session-column-overflow-menu";
 import { AgentSessionColumnRail } from "./agent-session-column-rail";
 import type { AgentSessionColumnProps } from "./agent-session-column-types";
 import { useAgentSessionColumnHidden } from "./use-agent-session-column-hidden";
@@ -96,6 +97,17 @@ const HEADER_CONTROL_ON_REVEAL = cn(
 );
 
 /**
+ * Expanded header actions: overflow + collapse, revealed together. Stay
+ * painted while the overflow menu is open so the trigger does not vanish
+ * under the portalled popup.
+ */
+const HEADER_ACTIONS_REVEAL = cn(
+	"ms-auto flex shrink-0 items-center",
+	HEADER_CONTROL_ON_REVEAL,
+	"has-[[data-popup-open]]:opacity-100",
+);
+
+/**
  * Count morphing for the collapsed header.
  *
  * `slots` spins each digit behind a fade mask, which suits a value that changes
@@ -156,12 +168,21 @@ export function AgentSessionColumn({
 	listClassName,
 	newItemIds,
 	onCollapsedChange,
+	onSelectedItemIdChange,
 	onToggleVisibility,
+	selectedItemId: selectedItemIdProp,
 	title = "Untracked work",
 	...sessionProps
 }: Readonly<AgentSessionColumnProps>) {
 	const shouldReduceMotion = useReducedMotion();
 	const [collapsed, setCollapsed] = useState(defaultCollapsed);
+	// Collapse remounts `AgentSession`, so the column keeps the selected id the
+	// same way it keeps arrival-beat history.
+	const isSelectionControlled = selectedItemIdProp !== undefined;
+	const [uncontrolledSelectedItemId, setUncontrolledSelectedItemId] = useState<string | null>(
+		null,
+	);
+	const selectedItemId = isSelectionControlled ? selectedItemIdProp : uncontrolledSelectedItemId;
 	const {
 		closeHiddenView,
 		hiddenCount,
@@ -253,6 +274,13 @@ export function AgentSessionColumn({
 		onToggleVisibility?.(item);
 	};
 
+	const handleSelectedItemIdChange = (itemId: string | null) => {
+		if (!isSelectionControlled) {
+			setUncontrolledSelectedItemId(itemId);
+		}
+		onSelectedItemIdChange?.(itemId);
+	};
+
 	const handleTransitionEnd = (event: React.TransitionEvent<HTMLElement>) => {
 		if (event.target === event.currentTarget && event.propertyName === "width") {
 			setIsResizing(false);
@@ -331,30 +359,34 @@ export function AgentSessionColumn({
 						<span className="shrink-0 text-xs font-normal text-text-subtlest">
 							{sessionCount}
 						</span>
-						<TooltipProvider>
-							<Tooltip>
-								<TooltipTrigger
-									render={
-										<Button
-											aria-label={`Collapse ${title} column`}
-											className={cn(
-												"ms-auto shrink-0 opacity-0 transition-opacity duration-normal ease-out-practical",
-												"group-hover/session-column:opacity-100",
-												"group-has-[:focus-visible]/session-column:opacity-100",
-												"motion-reduce:transition-none",
-											)}
-											onClick={handleToggleCollapsed}
-											size="icon-compact"
-											type="button"
-											variant="ghost"
-										/>
-									}
-								>
-									<Icon className="text-icon-subtle" render={<ShrinkHorizontalIcon label="" />} />
-								</TooltipTrigger>
-								<TooltipContent>Collapse</TooltipContent>
-							</Tooltip>
-						</TooltipProvider>
+						<div className={HEADER_ACTIONS_REVEAL}>
+							<AgentSessionColumnOverflowMenu
+								capturedItemIds={sessionProps.capturedItemIds}
+								getSuggestedWorkItemKey={sessionProps.getSuggestedWorkItemKey}
+								getSuggestedWorkItemKeys={sessionProps.getSuggestedWorkItemKeys}
+								items={viewItems}
+								onLinkWorkItem={sessionProps.onLinkWorkItem}
+								title={title}
+							/>
+							<TooltipProvider>
+								<Tooltip>
+									<TooltipTrigger
+										render={
+											<Button
+												aria-label={`Collapse ${title} column`}
+												onClick={handleToggleCollapsed}
+												size="icon-compact"
+												type="button"
+												variant="ghost"
+											/>
+										}
+									>
+										<Icon className="text-icon-subtle" render={<ShrinkHorizontalIcon label="" />} />
+									</TooltipTrigger>
+									<TooltipContent>Collapse</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
+						</div>
 					</>
 				)}
 			</div>
@@ -389,7 +421,9 @@ export function AgentSessionColumn({
 										items={viewItems}
 										newItemIds={newItemIds}
 										{...sessionProps}
+										onSelectedItemIdChange={handleSelectedItemIdChange}
 										onToggleVisibility={handleToggleVisibility}
+										selectedItemId={selectedItemId}
 										visibilityLabel={view === "hidden" ? "Show" : "Hide"}
 									/>
 								</div>

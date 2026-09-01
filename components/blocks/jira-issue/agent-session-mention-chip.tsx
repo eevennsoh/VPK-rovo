@@ -8,8 +8,12 @@ import { token } from "@/lib/tokens";
 /**
  * Overlay elevation lives on the mention tag itself. A raised wrapper behind
  * this pill is what read as a sharp white rectangle under the chip.
+ *
+ * Editor tags paint `bg-bg-neutral`, which is alpha. The travelling chip has
+ * to cover the drop well, so `elevated` swaps that fill for opaque `bg-surface`.
  */
 const AGENT_SESSION_MENTION_CHIP_ELEVATION: CSSProperties = {
+	backgroundColor: "var(--color-surface)",
 	boxShadow: token("elevation.shadow.overlay"),
 };
 
@@ -36,6 +40,7 @@ export function AgentSessionMentionChip({
 }>) {
 	return (
 		<Tag
+			className={elevated ? "bg-surface" : undefined}
 			color="gray"
 			data-session-mention-chip=""
 			elemBefore={

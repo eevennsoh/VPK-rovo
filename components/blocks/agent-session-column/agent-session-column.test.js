@@ -23,6 +23,11 @@ const ARRIVAL_MOTION_SOURCE = readFileSync(
 	"utf8",
 );
 const TYPES_SOURCE = readFileSync(join(__dirname, "agent-session-column-types.ts"), "utf8");
+const OVERFLOW_MENU_SOURCE = readFileSync(
+	join(__dirname, "agent-session-column-overflow-menu.tsx"),
+	"utf8",
+);
+const OVERFLOW_SOURCE = readFileSync(join(__dirname, "agent-session-column-overflow.ts"), "utf8");
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const CARD_SOURCE = readFileSync(
 	join(__dirname, "../agent-session/agent-session-card.tsx"),
@@ -563,6 +568,19 @@ test("the arrival beat stays one-shot across a collapse toggle", () => {
 	assert.match(SESSION_INDEX_SOURCE, /const beatItemIds = arrivingItemIds \?\? newItemIds;/u);
 });
 
+test("the column keeps the selected session id across collapse remounts", () => {
+	assert.match(INDEX_SOURCE, /selectedItemId: selectedItemIdProp,/u);
+	assert.match(INDEX_SOURCE, /const isSelectionControlled = selectedItemIdProp !== undefined;/u);
+	assert.match(INDEX_SOURCE, /const \[uncontrolledSelectedItemId, setUncontrolledSelectedItemId\]/u);
+	assert.match(INDEX_SOURCE, /selectedItemId=\{selectedItemId\}/u);
+	assert.match(INDEX_SOURCE, /onSelectedItemIdChange=\{handleSelectedItemIdChange\}/u);
+	assert.match(
+		INDEX_SOURCE,
+		/if \(!isSelectionControlled\) \{\s*\n\s*setUncontrolledSelectedItemId\(itemId\);\s*\n\s*\}/u,
+	);
+	assert.match(SESSION_TYPES_SOURCE, /selectedItemId\?: string \| null;/u);
+});
+
 test("the column owns a hidden-id set and filters items before AgentSession", () => {
 	assert.match(INDEX_SOURCE, /useAgentSessionColumnHidden\(items\)/u);
 	assert.match(HOOK_SOURCE, /hiddenIds: ReadonlySet<string>/u);
@@ -660,4 +678,36 @@ test("hidden ids survive a temporary items drop so A then B then A stays hidden"
 	assert.match(HOOK_SOURCE, /A → B → A does not unhide/u);
 	assert.doesNotMatch(HOOK_SOURCE, /dispatch\(\{ items, type: "prune" \}\)/u);
 	assert.match(HOOK_SOURCE, /die on remount/u);
+});
+
+test("the expanded header keeps an overflow menu next to collapse", () => {
+	assert.match(INDEX_SOURCE, /HEADER_ACTIONS_REVEAL/u);
+	assert.match(INDEX_SOURCE, /<AgentSessionColumnOverflowMenu/u);
+	assert.match(INDEX_SOURCE, /aria-label=\{`Collapse \$\{title\} column`\}/u);
+	assert.match(OVERFLOW_MENU_SOURCE, /\$\{title\} column actions/u);
+	assert.match(OVERFLOW_MENU_SOURCE, /<ShowMoreHorizontalIcon/u);
+	assert.match(OVERFLOW_MENU_SOURCE, /size="icon-compact"/u);
+	// Both actions stay in the tab order while faded — `hidden` would drop them.
+	assert.doesNotMatch(INDEX_SOURCE, /group-hover\/session-column:block/u);
+	assert.match(INDEX_SOURCE, /has-\[\[data-popup-open\]\]:opacity-100/u);
+	assert.match(INDEX_SOURCE, /items=\{viewItems\}/u);
+	assert.match(INDEX_SOURCE, /onLinkWorkItem=\{sessionProps\.onLinkWorkItem\}/u);
+});
+
+test("the overflow menu is Link all suggestions, then Auto sync and Suggest link toggles", () => {
+	assert.match(OVERFLOW_MENU_SOURCE, /Link all suggestions/u);
+	assert.doesNotMatch(OVERFLOW_MENU_SOURCE, />\s*Link all\s*</u);
+	assert.match(OVERFLOW_MENU_SOURCE, /<DropdownMenuSeparator/u);
+	assert.match(OVERFLOW_MENU_SOURCE, /label="Auto sync"/u);
+	assert.match(OVERFLOW_MENU_SOURCE, /const \[autoSync, setAutoSync\] = useState\(true\)/u);
+	assert.match(OVERFLOW_MENU_SOURCE, /label="Suggest link"/u);
+	assert.match(OVERFLOW_MENU_SOURCE, /const \[autoLink, setAutoLink\] = useState\(true\)/u);
+	assert.match(OVERFLOW_MENU_SOURCE, /elemAfter=\{\(/u);
+	assert.match(OVERFLOW_MENU_SOURCE, /<Switch/u);
+	assert.match(OVERFLOW_MENU_SOURCE, /closeOnClick=\{false\}/u);
+	assert.match(OVERFLOW_MENU_SOURCE, /linkAllAgentSessions/u);
+	assert.match(OVERFLOW_SOURCE, /export function collectLinkableAgentSessions/u);
+	assert.match(OVERFLOW_SOURCE, /export function linkAllAgentSessions/u);
+	assert.match(DETAIL_SOURCE, /header overflow's Link all suggestions action/u);
+	assert.doesNotMatch(DETAIL_SOURCE, /header overflow's Link all action/u);
 });

@@ -694,18 +694,40 @@ test("Experimental kanban cards forward their configured agent activity layout",
 test("Experimental kanban cards opt into draggable agent-session unlink when the host handles it", () => {
 	assert.match(EXPERIMENTAL_SOURCE, /onCardAgentSessionUnlink\?: \(/u);
 	assert.match(EXPERIMENTAL_SOURCE, /onCardAgentSessionLink\?: \(/u);
+	// Any non-completed chin is unlinkable — 1 agent, 1-n, and needs-input —
+	// not a dedicated transfer-phase card.
+	assert.match(
+		EXPERIMENTAL_CARD_SOURCE,
+		/const firstActiveAgentSession = card\.agentActivities\?\.find\(\s*\n\s*\(activity\) => activity\.state !== "completed",\s*\n\s*\);/u,
+	);
+	assert.match(
+		EXPERIMENTAL_CARD_SOURCE,
+		/const canUnlinkAgentSession = Boolean\(onSessionUnlink && firstActiveAgentSession\);/u,
+	);
 	assert.match(EXPERIMENTAL_CARD_SOURCE, /const canTransferAgentSession = canUnlinkAgentSession \|\| canLinkAgentSession;/u);
 	assert.match(EXPERIMENTAL_CARD_SOURCE, /onSessionUnlink\?\.\(resolvedSession, card, columnTitle\)/u);
-	assert.match(EXPERIMENTAL_CARD_SOURCE, /className=\{canTransferAgentSession \? JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS : undefined\}/u);
+	assert.doesNotMatch(EXPERIMENTAL_CARD_SOURCE, /JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCardAgentSessionUnlink=\{onCardAgentSessionUnlink\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCardAgentSessionLink=\{onCardAgentSessionLink\}/u);
+});
+
+test("Experimental kanban keeps the Unlink grey backdrop when a related session stays detached", () => {
+	assert.match(
+		EXPERIMENTAL_CARD_SOURCE,
+		/const agentActivityMode = resolveRelatedJiraIssueAgentActivityMode\(\s*\n\s*card\.agentActivityMode,\s*\n\s*detachedAgentSessions\.length > 0,\s*\n\s*\);/u,
+	);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /agentActivityMode=\{agentActivityMode\}/u);
+	assert.match(
+		EXPERIMENTAL_CARD_SOURCE,
+		/Related detached sessions keep the Unlink grey backdrop even after the/u,
+	);
 });
 
 test("Experimental kanban renders detached sessions beneath their source card with the shared medium-detached variant", () => {
 	assert.match(EXPERIMENTAL_SOURCE, /detachedAgentSessionsByCard\?: Readonly<Record<string, readonly AgentSessionItem\[\]>>;/u);
 	assert.match(EXPERIMENTAL_SOURCE, /const detachedAgentSessions = detachedAgentSessionsByCard\?\.\[card\.code\] \?\? \[\];/u);
 	assert.match(EXPERIMENTAL_SOURCE, /"flex w-full min-w-0 max-w-\[280px\] flex-col gap-2 rounded-lg"/u);
-	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*<AgentSession[\s\S]*items=\{detachedAgentSessions\}[\s\S]*variant="medium-detached"/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*<AgentSession[\s\S]*issueKey=\{card\.code\}[\s\S]*items=\{detachedAgentSessions\}[\s\S]*style=\{\{ marginTop: token\("space\.025"\) \}\}[\s\S]*variant="medium-detached"/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /detachedAgentSessionsByCard=\{proximityAgentSessionsByCard\}/u);
 });
 
@@ -731,8 +753,9 @@ test("Experimental kanban column card lists reuse the shared top and bottom scro
 	assert.match(EXPERIMENTAL_SOURCE, /import \{ buildScrollMaskStyle \} from "@\/components\/visual\/scroll-mask\/lib";/u);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/const \{ ref: cardListRef, showBottomScrollMask, showTopScrollMask \} = useHasVerticalOverflow<HTMLDivElement>\(\);[\s\S]*buildScrollMaskStyle\(\{\s*fadeBottom: showBottomScrollMask,\s*fadeSize: "3rem",\s*fadeTop: showTopScrollMask,\s*\}\)[\s\S]*ref=\{cardListRef\}[\s\S]*overflow-y-auto has-\[\[data-session-dragging\]\]:overflow-visible[\s\S]*\.\.\.cardListScrollMaskStyle/u,
+		/const \{ ref: cardListRef, showBottomScrollMask, showTopScrollMask \} = useHasVerticalOverflow<HTMLDivElement>\(\);[\s\S]*buildScrollMaskStyle\(\{\s*fadeBottom: showBottomScrollMask,\s*fadeSize: "3rem",\s*fadeTop: showTopScrollMask,\s*scrollbarWidth: 0,\s*\}\)[\s\S]*ref=\{cardListRef\}[\s\S]*overflow-y-auto has-\[\[data-session-dragging\]\]:overflow-visible[\s\S]*\.\.\.cardListScrollMaskStyle/u,
 	);
+	assert.match(EXPERIMENTAL_V2_SOURCE, /buildScrollMaskStyle\(\{[\s\S]*scrollbarWidth: 0,[\s\S]*\}\)/u);
 	assert.doesNotMatch(SOURCE, /useHasVerticalOverflow/u);
 	assert.doesNotMatch(SOURCE, /buildScrollMaskStyle/u);
 });

@@ -122,8 +122,8 @@ test("completed Jira agent rows aggregate finished and failed states without hid
 	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /const finishedLabel = `\$\{runs\.length\} Finished`;/u);
 	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /const hasFailedRun = runs\.some\(\(run\) => run\.state === "failed"\);/u);
 	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /<StatusErrorIcon color="currentColor" label="" size="small" \/>/u);
-	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /renderFlyout=\{renderCompletedRunFlyout\}/u);
-	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /outputs: run\.outputs \?\? \[\]/u);
+	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /<AgentList[\s\S]*flyout="session"[\s\S]*items=\{completedItems\}/u);
+	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /<JiraSessionFlyoutTrigger[\s\S]*session=\{\{ \.\.\.session,/u);
 });
 
 test("Kanban lifecycle uses deterministic generation and completion delays", () => {

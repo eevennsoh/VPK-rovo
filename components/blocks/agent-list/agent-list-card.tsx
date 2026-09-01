@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type MouseEvent, type ReactNode } from "react";
 
 import ArchiveBoxIcon from "@atlaskit/icon/core/archive-box";
 import DevicesIcon from "@atlaskit/icon/core/devices";
@@ -574,9 +574,14 @@ export type AgentListRowHoverActions = Readonly<{
 }>;
 
 function RowAction({ action }: Readonly<{ action: AgentListRowAction }>) {
+	const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+		event.stopPropagation();
+		action.onClick();
+	};
+
 	if (action.icon === undefined) {
 		return (
-			<Button onClick={action.onClick} size="compact" type="button" variant="outline">
+			<Button onClick={handleClick} size="compact" type="button" variant="outline">
 				{action.label}
 			</Button>
 		);
@@ -589,7 +594,7 @@ function RowAction({ action }: Readonly<{ action: AgentListRowAction }>) {
 					render={
 						<Button
 							aria-label={action.label}
-							onClick={action.onClick}
+							onClick={handleClick}
 							size="icon-compact"
 							type="button"
 							variant="outline"
@@ -665,6 +670,7 @@ export function AgentListRow({
 	isSelected,
 	item,
 	onView,
+	showHoverActionsWhenSelected = false,
 }: Readonly<{
 	/** Controls revealed on hover/focus. Omit to render a row with no actions. */
 	hoverActions?: AgentListRowHoverActions;
@@ -672,6 +678,12 @@ export function AgentListRow({
 	isSelected: boolean;
 	item: AgentListItem;
 	onView?: (item: AgentListItem) => void;
+	/**
+	 * Keep Resume / Hide visible on a selected row. Agent List leaves this off
+	 * because a selected list row is already the destination; session cards still
+	 * need the hover pair after the article is highlighted.
+	 */
+	showHoverActionsWhenSelected?: boolean;
 }>) {
 	const stateMeta = STATE_META[item.state];
 	const prMeta = item.prStatus ? PR_STATUS_META[item.prStatus] : null;
@@ -687,9 +699,10 @@ export function AgentListRow({
 	);
 
 	const viewItem = onView === undefined ? undefined : () => onView(item);
-	// A selected row is already the destination, so it keeps its lifecycle
-	// indicator instead of swapping in controls that would navigate nowhere.
-	const showHoverActions = !isSelected &&
+	// A selected Agent List row is already the destination, so it keeps its
+	// lifecycle indicator. Session cards opt back in because Hide / Resume still
+	// apply after the article is highlighted.
+	const showHoverActions = (!isSelected || showHoverActionsWhenSelected) &&
 		(hoverActions?.primary !== undefined || hoverActions?.secondary !== undefined);
 
 	return (

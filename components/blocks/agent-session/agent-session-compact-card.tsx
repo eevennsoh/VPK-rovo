@@ -100,6 +100,7 @@ export function AgentSessionCompactCard({
 	flyout = false,
 	isArriving = false,
 	isNew = false,
+	issueKey,
 	item,
 	onAttach,
 	onCreateWorkItem,
@@ -112,6 +113,7 @@ export function AgentSessionCompactCard({
 	isNew?: boolean;
 	item: AgentSessionItem;
 	flyout?: boolean;
+	issueKey?: string;
 	onAttach?: (item: AgentSessionItem) => void;
 	onCreateWorkItem?: (item: AgentSessionItem) => void;
 	onSubtasks?: (item: AgentSessionItem) => void;
@@ -139,6 +141,7 @@ export function AgentSessionCompactCard({
 			flyout={flyout}
 			isArriving={isArriving}
 			isNew={isNew}
+			issueKey={issueKey}
 			item={item}
 			onAttach={onAttach}
 			onCreateWorkItem={onCreateWorkItem}

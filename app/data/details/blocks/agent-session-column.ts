@@ -68,7 +68,7 @@ export const AGENT_SESSION_COLUMN_DETAIL: ComponentDetail = {
 			name: "onLinkWorkItem",
 			type: "(item: AgentSessionItem, workItemKey?: string) => void",
 			description:
-				"Links a session to a suggested work item from the chin. Receives the row's key when several are offered.",
+				"Links a session to a suggested work item from the chin. Receives the row's key when several are offered. The header overflow's Link all suggestions action calls this once per uncaptured session in the current view.",
 		},
 		{
 			name: "onCreateWorkItem",
