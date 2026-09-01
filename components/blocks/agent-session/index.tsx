@@ -11,6 +11,7 @@ import {
 	JiraSessionFlyoutSurface,
 	JiraSessionFlyoutTrigger,
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
+import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 import { AGENT_SESSION_ATTACHED_ITEMS, AGENT_SESSION_ITEMS } from "./data";
@@ -83,6 +84,7 @@ export function AgentSession({
 	getResumeCommand,
 	getSuggestedWorkItemKey,
 	getSuggestedWorkItemKeys,
+	issueKey,
 	isResumable,
 	newItemIds,
 	onCopyResume,
@@ -146,12 +148,20 @@ export function AgentSession({
 			<ul
 				className={cn(
 					"flex flex-col",
-					variant === "large" ? "gap-0" : "gap-2",
+					variant === "large"
+						? "gap-0"
+						: variant === "medium-detached"
+							? undefined
+							: "gap-2",
 					className,
 				)}
 				data-stack={variant === "large" ? "well" : undefined}
 				data-variant={variant}
-				style={style}
+				// Detached compact rows sit 2px apart. Hosts keep the matching
+				// 2px card-to-list offset (`space.025`).
+				style={variant === "medium-detached"
+					? { ...style, gap: token("space.025") }
+					: style}
 			>
 				{items.map((item: AgentSessionItem) => {
 					const itemOnView = isCodingAgentListItem(item)
@@ -201,6 +211,7 @@ export function AgentSession({
 							flyout
 							isArriving={beatItemIds?.has(item.id) ?? false}
 							isNew={newItemIds?.has(item.id) ?? false}
+							issueKey={issueKey}
 							item={item}
 							onAttach={onLinkWorkItem
 								? () => onLinkWorkItem(
@@ -220,11 +231,7 @@ export function AgentSession({
 						/>
 					);
 
-					return variant === "medium-detached" ? (
-						<li data-testid={"agent-session-row-" + item.id} key={item.id}>
-							{compactCard}
-						</li>
-					) : (
+					return (
 						<JiraSessionFlyoutTrigger
 							closeDelay={160}
 							handle={flyoutHandle}

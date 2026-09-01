@@ -1,6 +1,7 @@
 import type { AgentListAgent } from "@/components/blocks/agent-list";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 
+import { PULSE_VIEWER_MACHINE_NAME } from "../data/pulse-loose-work";
 import {
 	isPulseAgentSession,
 	type PulseCodingAgentId,
@@ -22,6 +23,18 @@ import {
  */
 
 const WORKTREE_PATTERN = /worktree (\S+)/u;
+
+/**
+ * Whether a row is a local session running on the viewer's own device.
+ *
+ * A local session can only be picked back up from the machine it is running
+ * on, so this — not a hand-listed set of session ids — is the default gate on
+ * the Resume affordance. Hosts that want a narrower rule (a scripted demo
+ * resuming exactly one row) pass their own predicate instead.
+ */
+export function isPulseLooseWorkOnViewerMachine(item: PulseLooseWork): boolean {
+	return isPulseAgentSession(item) && item.machineName === PULSE_VIEWER_MACHINE_NAME;
+}
 
 /**
  * Row identity for a Pulse coding agent. Claude / Codex / Cursor use third-party
@@ -127,6 +140,7 @@ export function toPulseSessionItems(
 				...(issueStatus === undefined ? {} : { issueStatus }),
 				worktreePath: worktree,
 			},
+			shortTitle: item.shortTitle,
 			state: "complete",
 			timeLabel: item.timeLabel,
 			title: item.title,

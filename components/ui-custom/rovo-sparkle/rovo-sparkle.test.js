@@ -87,7 +87,9 @@ test("Rovo Sparkle preserves the shared selector interaction contract", () => {
 	assert.match(SPARKLE_SOURCE, /function filterItems[\s\S]*toLowerCase\(\)[\s\S]*includes\(normalizedQuery\)/);
 	assert.match(SPARKLE_SOURCE, /event\.key === "ArrowDown" \|\| event\.key === "ArrowUp"/);
 	assert.match(SPARKLE_SOURCE, /event\.key === "Enter" && isSelectableRow\(rows\[selectedIndex\]\)/);
-	assert.match(SPARKLE_SOURCE, /autoFocus[\s\S]*label="Ask Rovo"[\s\S]*onEscape=\{\(\) => handleOpenChange\(false\)\}/);
+	assert.match(SPARKLE_SOURCE, /export function RovoSparkleMenu[\s\S]*autoFocus[\s\S]*label="Ask Rovo"[\s\S]*onEscape=\{onRequestClose\}/);
+	assert.match(INDEX_SOURCE, /RovoSparkleMenu,[\s\S]*type RovoSparkleMenuProps/);
+	assert.match(SPARKLE_SOURCE, /const \[menuKey, setMenuKey\] = useState\(0\);[\s\S]*if \(!nextOpen\) \{[\s\S]*setMenuKey\(\(currentKey\) => currentKey \+ 1\);[\s\S]*<RovoSparkleMenu[\s\S]*key=\{menuKey\}/);
 	assert.match(SPARKLE_SOURCE, /submitRequest\(\{ kind: "ask-rovo", prompt \}\)/);
 	assert.match(SPARKLE_SOURCE, /kind: agentIds\.has\(item\.id\) \? "agent" : "skill"/);
 });

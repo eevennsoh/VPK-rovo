@@ -97,6 +97,12 @@ export type PulseLooseWork =
 			host: "local";
 			/** Coding agent that ran the session. */
 			agentId: PulseCodingAgentId;
+			/**
+			 * Agent-authored session name for the compact session row — the short
+			 * label a coding agent derives from its opening prompt. `title` stays
+			 * the two-line narrative the large uncaptured card needs.
+			 */
+			shortTitle: string;
 			/** Viewer machine shown on the local-session metadata chip. */
 			machineName: string;
 			/** Static stamp. Local rows must not tick. */

@@ -3,6 +3,45 @@ import type { AgentSessionItem } from "@/components/blocks/agent-session";
 const EMPTY_CAPTURED_IDS: ReadonlySet<string> = new Set();
 const EMPTY_DETACHED_BY_CARD: Readonly<Record<string, readonly AgentSessionItem[]>> = {};
 
+/**
+ * Every session that currently belongs in Untracked work.
+ *
+ * Pulse supplies the baseline loose-work sessions. Jira card unlinking supplies
+ * detached sessions that may not exist in Pulse at all (for example, a running
+ * agent). Captured ids are already tracked and therefore leave this list.
+ */
+export function selectBoardUntrackedSessions({
+	sessions,
+	capturedItemIds = EMPTY_CAPTURED_IDS,
+	detachedByCard = EMPTY_DETACHED_BY_CARD,
+}: {
+	sessions: readonly AgentSessionItem[];
+	capturedItemIds?: ReadonlySet<string>;
+	detachedByCard?: Readonly<Record<string, readonly AgentSessionItem[]>>;
+}): readonly AgentSessionItem[] {
+	const untrackedSessions: AgentSessionItem[] = [];
+	const seenIds = new Set<string>();
+
+	const addIfUntracked = (session: AgentSessionItem) => {
+		if (capturedItemIds.has(session.id) || seenIds.has(session.id)) {
+			return;
+		}
+		untrackedSessions.push(session);
+		seenIds.add(session.id);
+	};
+
+	for (const session of sessions) {
+		addIfUntracked(session);
+	}
+	for (const detachedSessions of Object.values(detachedByCard)) {
+		for (const session of detachedSessions) {
+			addIfUntracked(session);
+		}
+	}
+
+	return untrackedSessions;
+}
+
 export function collectBoardIssueKeys(
 	columns: readonly { cards: readonly { code: string }[] }[],
 ): ReadonlySet<string> {
@@ -19,8 +58,8 @@ export function collectBoardIssueKeys(
  * Board-adjacent untracked sessions: Pulse rows grouped by the issue they
  * already name, plus any sessions the viewer unlinked from a card.
  *
- * Captured ids drop out so a linked session keeps captured chrome in the
- * Untracked work column and no longer sits under the issue.
+ * Captured ids drop out because a linked session is tracked work and no longer
+ * belongs beside its issue or in the Untracked work column.
  */
 export function groupBoardUntrackedSessions({
 	sessions,

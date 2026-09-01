@@ -35,6 +35,7 @@ import { filterJiraKanbanColumnsByAgentSessionState } from "./lib/board-agent-se
 import {
 	collectBoardIssueKeys,
 	groupBoardUntrackedSessions,
+	selectBoardUntrackedSessions,
 } from "./lib/board-untracked-sessions";
 import {
 	ExperimentalJiraKanbanBoardHeader,
@@ -74,6 +75,7 @@ import {
 import { scopeTimelineToWorkItemKeys } from "./pulse/hooks/use-pulse-timeline";
 import {
 	filterPulseLooseWorkByMember,
+	isPulseLooseWorkOnViewerMachine,
 	toPulseSessionHandlers,
 	toPulseSessionItems,
 } from "./pulse/lib/pulse-sessions";
@@ -143,6 +145,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	onBoardColumnsChange?: (columns: readonly JiraKanbanColumnData[]) => void;
 	onCardClick?: (card: JiraKanbanCardData, columnTitle: string) => void;
 	onCardAgentActivityViewChat?: JiraKanbanProps["onCardAgentActivityViewChat"];
+	onCardAgentDoneRunView?: JiraKanbanProps["onCardAgentDoneRunView"];
 	onCardAgentSessionLink?: ExperimentalJiraKanbanProps["onCardAgentSessionLink"];
 	onCardAgentSessionUnlink?: ExperimentalJiraKanbanProps["onCardAgentSessionUnlink"];
 	onInsightsWorkItemClick?: (workItem: PulseWorkItem) => void;
@@ -184,11 +187,12 @@ export default function ExperimentalJiraKanbanPage({
 	insightsEnabled = true,
 	insightsDefaultAssigneeIds,
 	isInsightsWorkItemInteractive,
-	isLooseWorkResumable,
+	isLooseWorkResumable = isPulseLooseWorkOnViewerMachine,
 	mode: controlledMode,
 	onBoardColumnsChange,
 	onCardClick,
 	onCardAgentActivityViewChat,
+	onCardAgentDoneRunView,
 	onCardAgentSessionLink,
 	onCardAgentSessionUnlink,
 	onInsightsWorkItemClick,
@@ -400,6 +404,14 @@ export default function ExperimentalJiraKanbanPage({
 		),
 		[agentSessionMemberId, pulseTimeline.looseWork],
 	);
+	const untrackedAgentSessionItems = useMemo(
+		() => selectBoardUntrackedSessions({
+			capturedItemIds: capturedLooseWorkIds,
+			detachedByCard: detachedAgentSessionsByCard,
+			sessions: agentSessionItems,
+		}),
+		[agentSessionItems, capturedLooseWorkIds, detachedAgentSessionsByCard],
+	);
 	const agentSessionHandlers = useMemo(
 		() => toPulseSessionHandlers({
 			isLooseWorkResumable,
@@ -517,6 +529,36 @@ export default function ExperimentalJiraKanbanPage({
 
 	const handleCardDragEnd = () => {
 		setDraggedCard(null);
+	};
+
+	const handleCardAgentSessionLink: ExperimentalJiraKanbanProps["onCardAgentSessionLink"] = (
+		session,
+		card,
+		columnTitle,
+	) => {
+		setCapturedLooseWorkIds((current) => {
+			if (current.has(session.id)) {
+				return current;
+			}
+			return new Set(current).add(session.id);
+		});
+		onCardAgentSessionLink?.(session, card, columnTitle);
+	};
+
+	const handleCardAgentSessionUnlink: ExperimentalJiraKanbanProps["onCardAgentSessionUnlink"] = (
+		session,
+		card,
+		columnTitle,
+	) => {
+		setCapturedLooseWorkIds((current) => {
+			if (!current.has(session.id)) {
+				return current;
+			}
+			const next = new Set(current);
+			next.delete(session.id);
+			return next;
+		});
+		onCardAgentSessionUnlink?.(session, card, columnTitle);
 	};
 
 	const handleAssigneeFilterChange = (assigneeIds: Set<string>) => {
@@ -651,7 +693,7 @@ export default function ExperimentalJiraKanbanPage({
 						agentActivityLayout={agentActivityLayout}
 						agentSessionColumn={showAgentSessionColumn ? {
 							capturedItemIds: capturedLooseWorkIds,
-							items: agentSessionItems,
+							items: untrackedAgentSessionItems,
 							...agentSessionHandlers,
 						} : undefined}
 						proximityAgentSession={{
@@ -673,8 +715,13 @@ export default function ExperimentalJiraKanbanPage({
 						selectedCardCodes={selection.selectedCardCodes}
 						onCardClick={handleCardClick}
 						onCardAgentActivityViewChat={onCardAgentActivityViewChat}
-						onCardAgentSessionLink={onCardAgentSessionLink}
-						onCardAgentSessionUnlink={onCardAgentSessionUnlink}
+						onCardAgentDoneRunView={onCardAgentDoneRunView}
+						onCardAgentSessionLink={onCardAgentSessionLink
+							? handleCardAgentSessionLink
+							: undefined}
+						onCardAgentSessionUnlink={onCardAgentSessionUnlink
+							? handleCardAgentSessionUnlink
+							: undefined}
 						onCardSelect={handleCardSelect}
 						onCardDragStart={handleCardDragStart}
 						onCardDrop={handleCardDrop}

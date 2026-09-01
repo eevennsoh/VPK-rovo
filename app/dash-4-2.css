@@ -1,7 +1,9 @@
 /* 4px dash / 2px gap. Native `border-style: dashed` is not 4/2, and
    `border-image` ignores radius. Four repeating-linear-gradient strokes sit on
-   the border box. `--dash-bottom-size: 0px` drops the bottom stroke so stacked
-   cards share one divider (the next card's top). `--dash-color` is the paint.
+   the border box. Do not combine with `border-radius`: backgrounds clip to the
+   rounded box, which erases the vertical strokes at the corners.
+   `--dash-bottom-size: 0px` drops the bottom stroke so stacked cards share one
+   divider (the next card's top). `--dash-color` is the paint.
    Named `dash-4-2` (not `border-*`) so twMerge will not drop the class. */
 @utility dash-4-2 {
 	--border-dash-length: 4px;

@@ -2,13 +2,20 @@
 
 import { motion, useReducedMotion } from "motion/react";
 
-import AddIcon from "@atlaskit/icon/core/add";
+import LinkIcon from "@atlaskit/icon/core/link";
 
 import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
+import { uncapturedWorkLinkLabel } from "@/components/blocks/jira-issue/lib";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import {
@@ -38,6 +45,7 @@ export function AgentSessionMediumCard({
 	flyout,
 	isArriving,
 	isNew,
+	issueKey,
 	item,
 	onAttach,
 	onCreateWorkItem,
@@ -47,6 +55,7 @@ export function AgentSessionMediumCard({
 }: Readonly<{
 	isArriving: boolean;
 	isNew: boolean;
+	issueKey?: string;
 	item: AgentSessionItem;
 	flyout: boolean;
 	onAttach?: (item: AgentSessionItem) => void;
@@ -58,7 +67,18 @@ export function AgentSessionMediumCard({
 	const shouldReduceMotion = useReducedMotion();
 	const shouldPlayArrival = isArriving && !shouldReduceMotion;
 	const invoker = item.invokedBy;
-	const label = invoker === undefined ? item.agent.name : `${item.agent.name} with ${invoker.name}`;
+	/**
+	 * The row shows what the session is about, not who is in it. Both the agent
+	 * mark and the invoker avatar already sit on this row, so spending its one
+	 * line of copy on "Claude with Jordan Okafor" says nothing the two avatars
+	 * have not said. Identity still carries the accessible names, where there is
+	 * no avatar to read it off.
+	 */
+	const sessionTitle = item.shortTitle ?? item.title;
+	const identityLabel = invoker === undefined
+		? item.agent.name
+		: `${item.agent.name} with ${invoker.name}`;
+	const linkLabel = uncapturedWorkLinkLabel(issueKey ?? item.sessionDetails?.issueKey);
 	const className = cn(
 		"group/session-card relative flex h-[33px] w-[276px] items-center gap-2 rounded-[10px] border border-transparent bg-bg-accent-gray-subtlest px-3 text-text hover:bg-bg-accent-gray-subtlest-hovered",
 		isNew ? "ring-1 ring-border-discovery" : null,
@@ -76,27 +96,36 @@ export function AgentSessionMediumCard({
 					vpkLogo={item.agent.vpkLogo}
 				/>
 				<span className="min-w-0 flex-1 truncate text-left text-xs font-normal leading-4 text-text-subtlest">
-					{label}
+					{sessionTitle}
 				</span>
 			</>
 		);
 		const actions = (
 			<span className="flex shrink-0 items-center gap-0">
 				<AgentSessionMediumMoreMenu
-					label={label}
+					label={`${sessionTitle} — ${identityLabel}`}
 					onCreateWorkItem={onCreateWorkItem ? () => onCreateWorkItem(item) : undefined}
 					onSubtasks={onSubtasks ? () => onSubtasks(item) : undefined}
 				/>
-				<Button
-					aria-label={`Attach ${label} to work item`}
-					onClick={() => onAttach?.(item)}
-					onPointerDown={stopSessionDrag}
-					size="icon-compact"
-					type="button"
-					variant="ghost"
-				>
-					<Icon className="text-icon-subtle" render={<AddIcon label="" size="small" />} />
-				</Button>
+				<TooltipProvider>
+					<Tooltip>
+						<TooltipTrigger
+							render={
+								<Button
+									aria-label={linkLabel}
+									onClick={() => onAttach?.(item)}
+									onPointerDown={stopSessionDrag}
+									size="icon-compact"
+									type="button"
+									variant="ghost"
+								/>
+							}
+						>
+							<Icon className="text-icon-subtle" render={<LinkIcon label="" size="small" />} />
+						</TooltipTrigger>
+						<TooltipContent>{linkLabel}</TooltipContent>
+					</Tooltip>
+				</TooltipProvider>
 				{invoker === undefined ? null : (
 					<span
 						className="flex size-6 shrink-0 items-center justify-center -mr-1"
@@ -123,7 +152,7 @@ export function AgentSessionMediumCard({
 					<span className="flex min-w-0 flex-1 items-center gap-1">{identity}</span>
 				) : (
 					<Button
-						aria-label={`${onView === undefined ? "Preview" : "Open"} ${label} session`}
+						aria-label={`${onView === undefined ? "Preview" : "Open"} ${sessionTitle} — ${identityLabel} session`}
 						aria-roledescription={bind ? "Draggable agent session" : undefined}
 						className="h-auto! min-w-0 flex-1 justify-start gap-1 rounded-none! border-0 px-0! py-0! hover:bg-transparent active:bg-transparent"
 						data-slot={bind ? "jira-issue-agent-row" : undefined}

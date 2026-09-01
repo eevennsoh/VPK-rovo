@@ -10,14 +10,14 @@ import {
 	type JiraIssueGenerativeActionConfig,
 	type JiraIssueGenerativeActionPresentation,
 } from "@/components/blocks/jira-issue";
-import {
-	JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS,
-	type JiraIssueAgentSessionRef,
-} from "@/components/blocks/jira-issue/agent-session-transfer";
+import { resolveRelatedJiraIssueAgentActivityMode } from "@/components/blocks/jira-issue/agent-activity-model";
+import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
 import {
 	getJiraIssuePresenceMotion,
 	JIRA_ISSUE_MOTION_STYLE,
 } from "@/components/blocks/jira-issue/lib";
+import { token } from "@/lib/tokens";
+
 import type {
 	JiraKanbanCardData,
 	JiraKanbanProps,
@@ -65,6 +65,12 @@ function getCardAssigneeAvatarShape(card: JiraKanbanCardData) {
 	return card.avatarSrc?.startsWith("/avatar-agent/") ? "hexagon" as const : undefined;
 }
 
+function toSessionFlyoutPriority(priority: JiraKanbanCardData["priority"]) {
+	if (priority === "major") return "high" as const;
+	if (priority === "minor") return "low" as const;
+	return "medium" as const;
+}
+
 export function ExperimentalJiraKanbanCard({
 	active,
 	agentActivityLayout,
@@ -99,6 +105,12 @@ export function ExperimentalJiraKanbanCard({
 	const canUnlinkAgentSession = Boolean(onSessionUnlink && firstActiveAgentSession);
 	const canLinkAgentSession = Boolean(onSessionLink && detachedAgentSessions.length > 0);
 	const canTransferAgentSession = canUnlinkAgentSession || canLinkAgentSession;
+	// Related detached sessions keep the Unlink grey backdrop even after the
+	// last chin row leaves. Stored mode stays `none`; presentation lights `working`.
+	const agentActivityMode = resolveRelatedJiraIssueAgentActivityMode(
+		card.agentActivityMode,
+		detachedAgentSessions.length > 0,
+	);
 
 	function handleSessionLink(sessionId?: string) {
 		const item = detachedAgentSessions.find((candidate) => candidate.id === sessionId);
@@ -120,7 +132,18 @@ export function ExperimentalJiraKanbanCard({
 			active={active}
 			agentActivities={card.agentActivities}
 			agentActivityLayout={agentActivityLayout}
-			agentActivityMode={card.agentActivityMode}
+			agentActivityMode={agentActivityMode}
+			agentSessionFlyout={{
+			assignee: card.assignee
+				? { name: card.assignee.name, src: card.assignee.avatarSrc }
+				: undefined,
+			issueKey: card.code,
+			issueStatus: columnTitle,
+			issueSummary: card.title,
+			priority: toSessionFlyoutPriority(card.priority),
+			pullRequestNumber: card.pullRequestNumber,
+			pullRequestTitle: card.pullRequestPreview?.title,
+		}}
 			agentDoneRuns={card.agentDoneRuns}
 			agentSessionTransfer={canTransferAgentSession ? {
 				onLink: canLinkAgentSession
@@ -141,7 +164,6 @@ export function ExperimentalJiraKanbanCard({
 			assigneePulse={card.avatarPulse}
 			assigneeUnassignedKind={card.avatarUnassignedKind}
 			chrome="stroke"
-			className={canTransferAgentSession ? JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS : undefined}
 			dragging={dragging}
 			generativeAction={{
 				agents: generativeActionAgents,
@@ -177,6 +199,7 @@ export function ExperimentalJiraKanbanCard({
 					{detachedAgentSessions.length > 0 ? (
 						<motion.div
 							animate={proximityMotion.animate}
+							className="has-[[data-session-dragging]]:relative has-[[data-session-dragging]]:z-30"
 							exit={proximityMotion.exit}
 							initial={proximityMotion.initial}
 							key="proximity-sessions"
@@ -184,6 +207,7 @@ export function ExperimentalJiraKanbanCard({
 						>
 							<AgentSession
 								capturedItemIds={capturedItemIds}
+								issueKey={card.code}
 								items={detachedAgentSessions}
 								onCreateWorkItem={onCreateWorkItem}
 								onLinkWorkItem={onSessionLink || onLinkWorkItem
@@ -191,6 +215,7 @@ export function ExperimentalJiraKanbanCard({
 									: undefined}
 								onSubtasks={onSubtasks}
 								sessionDrag={canLinkAgentSession ? sessionDrag : undefined}
+								style={{ marginTop: token("space.025") }}
 								variant="medium-detached"
 							/>
 						</motion.div>

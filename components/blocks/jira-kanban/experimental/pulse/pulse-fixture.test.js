@@ -433,7 +433,13 @@ test("Pulse uncaptured work is only GitHub PRs, branches, commits, or local Clau
 	}
 	assert.ok(sessionTimeLabels.size > 1, "session timestamps must not all be identical");
 	assert.ok(sessionMachines.size > 1, "session machine names must not all be identical");
-	assert.ok(!sessionMachines.has("Venn’s MacBook"), "do not stamp every row as Venn’s MacBook");
+	// The viewer's own machine is what grants Resume, so a couple of rows carry
+	// it on purpose. The fixture still has to look like a team's week, not one
+	// laptop: most sessions belong to somebody else.
+	assert.ok(
+		sessions.filter((item) => item.machineName === "Venn’s MacBook").length < sessions.length / 2,
+		"do not stamp every row as Venn’s MacBook",
+	);
 	for (const agentId of ["claude", "codex", "cursor", "rovo"]) {
 		assert.ok(sessionAgents.has(agentId), `sessions are missing ${agentId}`);
 	}

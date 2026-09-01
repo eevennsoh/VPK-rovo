@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, type ComponentProps, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 
 import type { JiraIssueAgentSessionDragSource } from "@/components/blocks/jira-issue/agent-session-drag";
 import {
 	isWithinJiraIssueDropZoneHalo,
+	nextJiraIssueSessionTransferArmed,
 	shouldCommitJiraIssueSessionTransferDrop,
 	type JiraIssueSessionPointer,
 } from "@/components/blocks/jira-issue/agent-session-transfer-model";
@@ -14,47 +15,41 @@ import { cn } from "@/lib/utils";
 const TRANSFER_DROP_HALO_PX = 24;
 /**
  * Collapsed at rest (`0fr`) so a stacked board does not reserve a well-sized
- * gap under every card. Hovering an agent session row, focusing inside the
- * card, or starting a drag opens the well; neighboring cards follow the height
- * change. Hover reveal is scoped to the agent session rows, not the whole
- * card: hovering the summary, tags, or subtasks must not offer a drop target
- * for a session the pointer never touched.
+ * gap under every card. Hovering or focusing a linked chin row, or dragging
+ * that row out, opens the well. Detached sessions reuse
+ * `data-slot=jira-issue-agent-row`, so the hover hook is `data-session-chin`
+ * on the attached row only.
  *
  * The region's own slot is the second hover trigger so the pointer can travel
- * down from the row, across this element's `pt-2` gap, and onto the well
+ * down from the chin, across this element's 8px top gap, and onto the well
  * without the target vanishing mid-reach — at rest the region is
  * `pointer-events-none` and zero height, so it cannot arm that trigger on
  * its own.
  *
- * Keyboard reveal stays card-wide on purpose. The well is a tabbable button, so
- * narrowing focus to the row would leave it reachable while invisible the
- * moment focus moved onto it.
- *
  * Two properties only: height (`grid-template-rows`) so the stack reacts, and
- * opacity so the well fades with that open. The drag shift is a transform on
- * this same node; adding it to the transition list would be a third property.
+ * opacity so the well fades with that open.
+ *
+ * `py-2` gives the open well an 8px gap above and below, while still
+ * collapsing completely at rest.
+ * `px-px` keeps the rounded border inside the `0fr` clipper.
  */
 const TRANSFER_REVEAL_CLASS = cn(
 	"grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-fast ease-out-practical motion-reduce:transition-none",
-	"group-has-[[data-slot=jira-issue-agent-row]:hover]/jira-issue-transfer:pointer-events-auto group-has-[[data-slot=jira-issue-agent-row]:hover]/jira-issue-transfer:grid-rows-[1fr] group-has-[[data-slot=jira-issue-agent-row]:hover]/jira-issue-transfer:opacity-100",
+	"group-has-[[data-session-chin]:hover]/jira-issue-transfer:pointer-events-auto group-has-[[data-session-chin]:hover]/jira-issue-transfer:grid-rows-[1fr] group-has-[[data-session-chin]:hover]/jira-issue-transfer:opacity-100",
 	"group-has-[[data-slot=jira-issue-session-transfer]:hover]/jira-issue-transfer:pointer-events-auto group-has-[[data-slot=jira-issue-session-transfer]:hover]/jira-issue-transfer:grid-rows-[1fr] group-has-[[data-slot=jira-issue-session-transfer]:hover]/jira-issue-transfer:opacity-100",
-	"group-has-[:focus-visible]/jira-issue-transfer:pointer-events-auto group-has-[:focus-visible]/jira-issue-transfer:grid-rows-[1fr] group-has-[:focus-visible]/jira-issue-transfer:opacity-100",
+	"group-has-[[data-session-chin]:has(:focus-visible)]/jira-issue-transfer:pointer-events-auto group-has-[[data-session-chin]:has(:focus-visible)]/jira-issue-transfer:grid-rows-[1fr] group-has-[[data-session-chin]:has(:focus-visible)]/jira-issue-transfer:opacity-100",
 );
-const TRANSFER_ZONE_BASE_CLASS =
-	"flex w-full select-none items-center justify-center rounded-lg border px-3 text-center outline-none transition-[height,background-color,border-color,color] duration-medium ease-in-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none";
-/** Resting affordance: compact 24px row with a solid stroke. */
-const TRANSFER_ZONE_REST_CLASS =
-	"h-6 border-solid border-border text-xs leading-4 text-text-subtle hover:bg-bg-neutral-subtle-hovered";
-/** Once a session is pulled out the target grows into a 48px dashed drop well. */
-const TRANSFER_ZONE_DRAG_CLASS = "h-12 border-dashed border-border-bold text-sm leading-5 text-text-subtle";
-/** Pointer is over the well: blue stroke, fill, and label together. */
-const TRANSFER_ZONE_ARMED_CLASS = "border-dashed border-border-selected bg-bg-selected text-text-selected";
-/** The whole region eases down as the session leaves the chin, opening a gap. */
-const TRANSFER_DRAG_SHIFT_CLASS = "translate-y-2";
-
-/** The host card must carry this; the reveal keys off an agent session row
- *  inside this group being hovered, or any focus-visible within it. */
+/** The transfer group must carry this so chin-row hover can open the well. */
 export const JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS = "group/jira-issue-transfer";
+/** Native dashes retain the standard rounded control geometry without clipping. */
+const TRANSFER_ZONE_BASE_CLASS =
+	"flex w-full select-none items-center justify-center rounded-lg border border-dashed border-border px-3 text-center transition-[height,background-color,border-color,color] duration-medium ease-in-out motion-reduce:transition-none";
+/** Resting affordance: compact 24px row. */
+const TRANSFER_ZONE_REST_CLASS = "h-6 text-xs leading-4 text-text-subtle";
+/** Once a session is pulled out the target grows into a 48px dashed drop well. */
+const TRANSFER_ZONE_DRAG_CLASS = "h-12 text-sm leading-5 text-text-subtle";
+/** Pointer is over the well: selected border, fill, and label together. */
+const TRANSFER_ZONE_ARMED_CLASS = "border-border-selected bg-bg-selected text-text-selected";
 
 /** Identity of the session a transfer acted on. Split layout renders one row per
  *  agent against a single config, so the callback has to say which one. */
@@ -91,21 +86,19 @@ export interface JiraIssueAgentSessionTransferProps {
 	cardMeasureRef?: RefObject<HTMLElement | null>;
 }
 
-type TransferDropZoneProps = Readonly<
-	Omit<ComponentProps<"button">, "children" | "ref"> & {
-		armed: boolean;
-		description: string;
-		/** True once a session is out of the chin: grow the well and go dashed. */
-		dragging: boolean;
-		label: string;
-		/** Read by the drop-zone hit test. */
-		measureRef: React.RefObject<HTMLButtonElement | null>;
-	}
->;
+type TransferDropZoneProps = Readonly<{
+	armed: boolean;
+	description: string;
+	/** True once a session is out of the chin: grow the well. */
+	dragging: boolean;
+	label: string;
+	/** Read by the drop-zone hit test. */
+	measureRef: React.RefObject<HTMLDivElement | null>;
+}>;
 
-function TransferDropZone({ armed, description, dragging, label, measureRef, ...buttonProps }: TransferDropZoneProps) {
+function TransferDropZone({ armed, description, dragging, label, measureRef }: TransferDropZoneProps) {
 	return (
-		<button
+		<div
 			aria-label={description}
 			className={cn(
 				TRANSFER_ZONE_BASE_CLASS,
@@ -114,12 +107,11 @@ function TransferDropZone({ armed, description, dragging, label, measureRef, ...
 			)}
 			data-armed={armed || undefined}
 			data-dragging={dragging || undefined}
-			type="button"
-			{...buttonProps}
 			ref={measureRef}
+			role="img"
 		>
 			{label}
-		</button>
+		</div>
 	);
 }
 
@@ -133,12 +125,17 @@ export function JiraIssueAgentSessionTransfer({
 	sessionLabel = "agent session",
 	source = "chin",
 }: Readonly<JiraIssueAgentSessionTransferProps>) {
-	const unlinkRef = useRef<HTMLButtonElement | null>(null);
+	const unlinkRef = useRef<HTMLDivElement | null>(null);
 	const [armed, setArmed] = useState(false);
 	const armedRef = useRef(false);
+	const lastPointerKeyRef = useRef("");
 	const isLinking = source === "detached";
 	// Attach has no dashed well: the card backdrop/chin is the drop target.
 	const showUnlinkWell = !isLinking && Boolean(config.onUnlink);
+	// Drag from the chin keeps the well open after the pointer leaves the row.
+	// A detached attach gesture also sets `dragging`, but that path unmounts
+	// the well via `showUnlinkWell`.
+	const revealUnlinkWell = dragging && !isLinking;
 
 	// The commit handler changes identity on every render, so the drop effect
 	// reads it from a committed ref rather than resubscribing (and re-running its
@@ -164,8 +161,8 @@ export function JiraIssueAgentSessionTransfer({
 		};
 	});
 
-	// Arms the zone as the pointer moves, then commits on release — a drop runs
-	// exactly the callback the zone's click handler runs.
+	// Arms the zone as the pointer moves, then commits on release. The well is
+	// a drop target only; click-to-unlink lives on the chin link-broken.
 	useEffect(() => {
 		const wellRect = unlinkRef.current?.getBoundingClientRect();
 		const cardRect = cardMeasureRef?.current?.getBoundingClientRect();
@@ -183,7 +180,17 @@ export function JiraIssueAgentSessionTransfer({
 			&& cardRect
 			&& isWithinJiraIssueDropZoneHalo(pointer, cardRect, TRANSFER_DROP_HALO_PX),
 		);
-		const next = overWell || overCard;
+		const pointerKey = pointer ? `${pointer.x},${pointer.y}` : "";
+		const pointerMoved = Boolean(pointer) && pointerKey !== lastPointerKeyRef.current;
+		if (pointer) {
+			lastPointerKeyRef.current = pointerKey;
+		}
+		const next = nextJiraIssueSessionTransferArmed({
+			dragging,
+			overTarget: overWell || overCard,
+			pointerMoved,
+			previousArmed: armedRef.current,
+		});
 		// A cancelled gesture ends the drag without being a drop: clear the armed
 		// target rather than committing it, or an interrupted pointer would
 		// silently unlink a session the user never released.
@@ -215,20 +222,18 @@ export function JiraIssueAgentSessionTransfer({
 		<div
 			className={cn(
 				TRANSFER_REVEAL_CLASS,
-				dragging ? "pointer-events-auto grid-rows-[1fr] opacity-100" : "pointer-events-none",
-				dragging ? TRANSFER_DRAG_SHIFT_CLASS : null,
+				revealUnlinkWell ? "pointer-events-auto grid-rows-[1fr] opacity-100" : "pointer-events-none",
 			)}
 			data-slot="jira-issue-session-transfer"
 		>
-			<div className="min-h-0 overflow-hidden has-[:focus-visible]:overflow-visible">
-				<div className="flex flex-col pt-2">
+			<div className="min-h-0 overflow-hidden">
+				<div className="flex flex-col px-px py-2">
 					<TransferDropZone
 						armed={armed}
 						description={`Unlink ${sessionLabel} from this work item`}
-						dragging={dragging}
+						dragging={revealUnlinkWell}
 						label={config.unlinkLabel ?? "Drag here to unlink"}
 						measureRef={unlinkRef}
-						onClick={() => config.onUnlink?.(session)}
 					/>
 				</div>
 			</div>

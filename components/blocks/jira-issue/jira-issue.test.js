@@ -11,7 +11,6 @@ const SUMMARY_SOURCE = readFileSync(join(__dirname, "summary.tsx"), "utf8");
 const PULL_REQUEST_CLUSTER_SOURCE = readFileSync(join(__dirname, "pull-request-cluster.tsx"), "utf8");
 const TYPES_SOURCE = readFileSync(join(__dirname, "types.ts"), "utf8");
 const MODEL_SOURCE = readFileSync(join(__dirname, "agent-activity-model.ts"), "utf8");
-const AGENT_STATES_SOURCE = readFileSync(join(__dirname, "../agent-states/index.tsx"), "utf8");
 const COMPLETED_RUNS_SOURCE = readFileSync(join(__dirname, "completed-agent-runs.tsx"), "utf8");
 const CHANGED_FILES_SOURCE = readFileSync(join(__dirname, "../jira-activity/jira-activity-changed-files.tsx"), "utf8");
 const COUNT_BADGE_SOURCE = readFileSync(join(__dirname, "count-badge.tsx"), "utf8");
@@ -233,7 +232,7 @@ test("Jira issue reserves a stable title action slot and opens the built-in acti
 	assert.match(SUMMARY_SOURCE, /<div className="size-6 shrink-0" data-slot="jira-issue-more-action" \/>/u);
 	assert.match(SOURCE, /<JiraIssueMoreMenu[\s\S]*issueKey=\{issueKey\}[\s\S]*onActionSelect=\{onMoreActionSelect\}[\s\S]*onOpenChange=\{setMoreActionMenuOpen\}/u);
 	assert.match(MORE_MENU_SOURCE, /import ShowMoreHorizontalIcon from "@atlaskit\/icon\/core\/show-more-horizontal";/u);
-	assert.match(MORE_MENU_SOURCE, /<DropdownMenu onOpenChange=\{onOpenChange\}>/u);
+	assert.match(MORE_MENU_SOURCE, /<DropdownMenu open=\{open\} onOpenChange=\{handleOpenChange\}>/u);
 	assert.match(MORE_MENU_SOURCE, /aria-label=\{`More actions for \$\{issueKey\}`\}/u);
 	assert.match(MORE_MENU_SOURCE, /pointer-events-none size-6 opacity-0[^"]*group-hover\/jira-issue:pointer-events-auto group-hover\/jira-issue:opacity-100[^"]*group-has-\[:focus-visible\]\/jira-issue:pointer-events-auto group-has-\[:focus-visible\]\/jira-issue:opacity-100[^"]*data-popup-open:pointer-events-auto data-popup-open:opacity-100/u);
 	assert.match(MORE_MENU_SOURCE, /motion-reduce:transition-none/u);
@@ -251,14 +250,15 @@ test("Jira issue can move agent and skill assignment into the More actions menu"
 	assert.match(SOURCE, /const generativeActionMenu = generativeAction && \(generativeActionPresentation === "sparkle" \|\| !showMoreAction\) \?/u);
 	assert.match(SOURCE, /<JiraIssueMoreMenu[\s\S]*generativeAction=\{generativeActionPresentation === "more-actions" \? generativeAction : undefined\}[\s\S]*generativeActionIssue=\{\{ issueKey, summary \}\}/u);
 	assert.match(MORE_MENU_SOURCE, /<JiraIssueAgentAndSkillSubmenu[\s\S]*action=\{generativeAction\}[\s\S]*issue=\{generativeActionIssue\}/u);
-	assert.match(MORE_MENU_SOURCE, /<JiraIssueAgentAndSkillSubmenu action=\{generativeAction\} issue=\{generativeActionIssue\} \/>[\s\S]*<DropdownMenuSeparator \/>[\s\S]*Move work item/u);
+	assert.match(MORE_MENU_SOURCE, /<JiraIssueAgentAndSkillSubmenu[\s\S]*action=\{generativeAction\}[\s\S]*issue=\{generativeActionIssue\}[\s\S]*onRequestClose=\{\(\) => handleOpenChange\(false\)\}[\s\S]*<DropdownMenuSeparator \/>[\s\S]*Move work item/u);
 	assert.match(MORE_MENU_SOURCE, /generativeAction \? null : <DropdownMenuItem[\s\S]*Add agent/u);
 	assert.match(GENERATIVE_SOURCE, /export function JiraIssueAgentAndSkillSubmenu/u);
 	assert.match(GENERATIVE_SOURCE, /<DropdownMenuSubTrigger>Assign agent and use skill<\/DropdownMenuSubTrigger>/u);
-	assert.match(GENERATIVE_SOURCE, />Agents<\/DropdownMenuLabel>/u);
-	assert.match(GENERATIVE_SOURCE, />Skills<\/DropdownMenuLabel>/u);
-	assert.match(GENERATIVE_SOURCE, /disabled=\{agent\.disabled\}/u);
-	assert.match(GENERATIVE_SOURCE, /disabled=\{skill\.disabled\}/u);
+	assert.match(GENERATIVE_SOURCE, /<RovoSparkleMenu[\s\S]*agents=\{agents\}[\s\S]*skills=\{skills\}/u);
+	assert.doesNotMatch(GENERATIVE_SOURCE, /agents\.map|skills\.map/u);
+	assert.match(GENERATIVE_SOURCE, /<DropdownMenuSubContent\s*\n\s*className="[^"]+"\s*\n\s*onClick=\{\(event\) => event\.stopPropagation\(\)\}/u);
+	assert.match(MORE_MENU_SOURCE, /<DropdownMenu open=\{open\} onOpenChange=\{handleOpenChange\}>/u);
+	assert.match(MORE_MENU_SOURCE, /onRequestClose=\{\(\) => handleOpenChange\(false\)\}/u);
 });
 
 test("Jira issue renders the more-actions button as a sibling of the card button", () => {
@@ -295,7 +295,7 @@ test("Jira issue exposes agent activity state props", () => {
 	assert.match(SOURCE, /export type \{[\s\S]*JiraIssueGenerativeActionConfig,[\s\S]*JiraIssueGenerativeActionRequest,[\s\S]*\} from "@\/components\/blocks\/jira-issue\/generative-action-menu";/);
 });
 
-test("Jira issue aggregates active agents into one priority row without a hover flyout", () => {
+test("Jira issue keeps generic activity rows composer-free unless board flyout context is supplied", () => {
 	assert.match(AGENT_ACTIVITY_SOURCE, /import AiAgentIcon from "@atlaskit\/icon\/core\/ai-agent";/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ IconTile \} from "@\/components\/ui\/icon-tile";/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /summarizeJiraIssueAgentActivities\(activities\)/u);
@@ -303,10 +303,10 @@ test("Jira issue aggregates active agents into one priority row without a hover 
 	assert.match(AGENT_ACTIVITY_SOURCE, /className="ml-px grid size-4 shrink-0 place-items-center text-icon-subtle"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<AiAgentIcon label="" \/>/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AvatarFallback[\s\S]*\{summary\.activityCount\}/u);
-	// At rest the row is the full-width chin row; dragged out it collapses to the
-	// at-mention chip, so the width/shape classes live on the two branches.
-	assert.match(AGENT_ACTIVITY_SOURCE, /className=\{cn\(\s*"flex h-6 items-center[^"]*",\s*\n\s*isDraggedOut/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /: "w-full min-w-0 justify-between rounded-md px-2 py-1 hover:bg-bg-neutral-subtle-hovered"/u);
+	// At rest the row shell is the full-width chin row; dragged out it collapses
+	// to the at-mention chip, so the width/shape classes live on the two branches.
+	assert.match(AGENT_ACTIVITY_SOURCE, /"group\/agent-chin-row flex min-w-0 items-center"/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /: "h-6 w-full justify-between rounded-md px-2 py-1 hover:bg-bg-neutral-subtle-hovered"/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /className="flex h-6 w-full[^"]*rounded-b-\[6px\] rounded-t-sm[^"]*"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const isSingleAgent = summary\.activityCount === 1;/u);
 	// The open-chat handler is hoisted so the drag hook can own `bind.onClick`
@@ -314,20 +314,44 @@ test("Jira issue aggregates active agents into one priority row without a hover 
 	// binding the row falls back to a plain `onClick`.
 	assert.match(AGENT_ACTIVITY_SOURCE, /const handleOpenChat = canOpenChat \? \(\) => onViewChat\?\.\(activities\[0\]\) : undefined;/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /\{\.\.\.\(sessionDragBind \?\? \{ onClick: handleOpenChat \}\)\}/u);
+	// A click on a linked session is activation, not the start of a transfer.
+	// Publishing on pointerdown reveals and can arm the adjacent unlink well,
+	// so pointerup detaches the session before the click can open Rovo chat.
+	assert.match(AGENT_ACTIVITY_SOURCE, /JIRA_ISSUE_SESSION_DRAG_PUBLISH_THRESHOLD_PX = 2/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /pointerOriginRef\.current = \{ x: event\.clientX, y: event\.clientY \}/u);
+	assert.doesNotMatch(
+		AGENT_ACTIVITY_SOURCE,
+		/onPointerDown: \(event: ReactPointerEvent<HTMLElement>\) => \{[\s\S]*?publishSessionDrag\(true, event\);[\s\S]*?\},\s*\n\s*onPointerMove:/u,
+	);
+	assert.match(AGENT_ACTIVITY_SOURCE, /if \(moved\) \{\s*\n\s*publishSessionDrag\(true, event\);/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /from "@\/components\/blocks\/agent-assignment"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /openMode="hover"/u);
-	// The gooey wrapper is applied around the whole `AgentAssignment` on the
-	// multi-agent path, never around `rowButton`, so the hover card keeps the
-	// cloned `aria-expanded` and its merged trigger ref.
-	assert.match(AGENT_ACTIVITY_SOURCE, /if \(isSingleAgent\) \{[\s\S]*return withSessionDragGoo\(rowButton\);[\s\S]*withSessionDragGoo\(\s*<AgentAssignment/u);
+	// The drag wrapper is applied around the row shell. AgentAssignment still
+	// clones only the drag handle so the hover card keeps `aria-expanded`.
+	assert.match(AGENT_ACTIVITY_SOURCE, /const assignedRowHandle = isSingleAgent \|\| sessionFlyout \? rowHandle : \(/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /trigger=\{rowHandle\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /return withSessionDrag\(/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /from "@\/components\/blocks\/agent-list"/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /from "@\/components\/blocks\/agent-states"/u);
-	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /from "@\/components\/ui\/hover-card"/u);
-	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<HoverCard/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /sessionFlyout \? \(\s*<JiraSessionFlyoutTrigger/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /\) : row\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<JiraSessionFlyoutSurface handle=\{flyoutHandle\} \/>/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AgentList/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AgentStates/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /className="w-full shadow-overlay"/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /activities\.map\(\(activity, index\)/u);
+});
+
+test("Jira issue split completed rows preserve Rovo chat activation", () => {
+	assert.match(COMPLETED_RUNS_SOURCE, /onView\?: \(run: JiraIssueCompletedAgentRun\) => void;/u);
+	assert.match(
+		COMPLETED_RUNS_SOURCE,
+		/<JiraSessionFlyoutTrigger[\s\S]*onClick=\{\(\) => onView\?\.\(run\)\}[\s\S]*render=/u,
+	);
+	assert.match(
+		COMPLETED_RUNS_SOURCE,
+		/<JiraIssueCompletedRunRow[\s\S]*onView=\{props\.onView\}[\s\S]*run=\{run\}/u,
+	);
 });
 
 test("Jira issue shows PR metadata with the specified summary-row spacing", () => {
@@ -573,7 +597,7 @@ test("Jira issue renders one aggregate agent row with prioritized status and no 
 	);
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,
-		/className=\{cn\(\s*"flex w-full min-w-0 flex-col",[\s\S]*sessionDragging \? "overflow-visible" : "overflow-hidden",[\s\S]*hasActivities && "px-1 py-1 has-\[\[data-session-chip-out\]\]:py-0",\s*\)\}/u,
+		/className=\{cn\(\s*"flex w-full min-w-0 flex-col",[\s\S]*sessionDragging \? "overflow-visible" : "overflow-hidden has-\[:focus-visible\]:overflow-visible",[\s\S]*hasActivities && "px-1 py-1 has-\[\[data-session-chip-out\]\]:py-0",\s*\)\}/u,
 	);
 	assert.match(SOURCE, /"relative w-full min-w-0 overflow-visible rounded-\[10px\] outline-none"/);
 	assert.match(SOURCE, /"group\/jira-issue relative w-full min-w-0 overflow-visible outline-none"/);
@@ -588,6 +612,13 @@ test("Jira issue renders one aggregate agent row with prioritized status and no 
 		SOURCE,
 		/\{hasActiveAgentActivityShell && !hasAgentActivityChin \? \(\s*\n\s*<div\s*\n\s*aria-hidden\s*\n\s*className="h-1"\s*\n\s*data-slot="jira-issue-agent-shell-gutter"\s*\n\s*\/>\s*\n\s*\) : null\}/u,
 	);
+	assert.match(SOURCE, /data-slot="jira-issue-agent-backdrop"/u);
+	assert.match(
+		SOURCE,
+		/has-\[\[data-session-chip-out\]\]:not-has-\[\[data-slot=jira-issue-agent-row-wrap\]:not\(\[data-session-chip-out\]\)\]:pb-1/u,
+	);
+	assert.doesNotMatch(SOURCE, /\[&_\[data-slot=jira-issue-agent-backdrop\]\]:opacity-0/u);
+	assert.doesNotMatch(SOURCE, /\[&_\[data-slot=jira-issue-surface\]\]:-inset-px/u);
 	assert.match(SOURCE, /const agentActivitySurfaceClassName = cn\([\s\S]*"pointer-events-none absolute border"[\s\S]*`\$\{agentActivityRestBorderClassName\} bg-surface`/);
 	assert.doesNotMatch(SOURCE, /agentActivityShellPadding/);
 	assert.doesNotMatch(SOURCE, /agentActivityBackdropOutset/);
@@ -604,8 +635,8 @@ test("Jira issue completed agent flyouts retain hover through their visible shad
 test("Jira issue aggregates completed agents into a Finished row with failure priority", () => {
 	assert.match(COMPLETED_RUNS_SOURCE, /export interface JiraIssueCompletedAgentRun \{[\s\S]*summary: string;[\s\S]*agentName: string;[\s\S]*agentAvatarSrc\?: string;[\s\S]*agentBrandName\?: ThirdPartyLogoName;[\s\S]*issueKey: string;[\s\S]*issueSummary: string;[\s\S]*relativeTime\?: string;[\s\S]*completedAtMs\?: number;[\s\S]*completedSecondsAgo\?: number;[\s\S]*state: JiraIssueCompletedAgentRunState;/);
 	assert.match(COMPLETED_RUNS_SOURCE, /completedAtMs: run\.completedAtMs,[\s\S]*completedSecondsAgo: run\.completedSecondsAgo,/u);
-	assert.equal((COMPLETED_RUNS_SOURCE.match(/brandName: run\.agentBrandName,/gu) ?? []).length, 3);
-	assert.match(COMPLETED_RUNS_SOURCE, /import \{[\s\S]*AgentList,[\s\S]*type AgentListItem,[\s\S]*\} from "@\/components\/blocks\/agent-list";/u);
+	assert.equal((COMPLETED_RUNS_SOURCE.match(/brandName: run\.agentBrandName,/gu) ?? []).length, 1);
+	assert.match(COMPLETED_RUNS_SOURCE, /import \{[\s\S]*AgentList,[\s\S]*type AgentListItem,[\s\S]*toAgentSessionFlyoutItem,[\s\S]*\} from "@\/components\/blocks\/agent-list";/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /import AiAgentIcon from "@atlaskit\/icon\/core\/ai-agent";/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /function toCompletedAgentListItem\(run: JiraIssueCompletedAgentRun\): AgentListItem \{[\s\S]*state: "complete",[\s\S]*title: run\.summary,/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /const finishedLabel = `\$\{runs\.length\} Finished`;/u);
@@ -613,30 +644,15 @@ test("Jira issue aggregates completed agents into a Finished row with failure pr
 	assert.match(COMPLETED_RUNS_SOURCE, /<section aria-label="Agent review" className="flex w-full min-w-0 flex-col overflow-hidden px-1 py-1">/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /<HoverCard open=\{aggregateOpen\} onOpenChange=\{handleAggregateOpenChange\}>[\s\S]*aria-label=\{hasFailedRun \? `\$\{finishedLabel\}, includes errors` : finishedLabel\}[\s\S]*data-slot="jira-issue-agent-row"[\s\S]*usesStrokeChrome \? \(\s*<IconTile[\s\S]*icon=\{<AiAgentIcon label="" size="small" \/>\}[\s\S]*: \([\s\S]*<AiAgentIcon label="" \/>[\s\S]*\{finishedLabel\}[\s\S]*hasFailedRun \? \([\s\S]*<StatusErrorIcon/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /className="flex h-6 w-full[^"]*rounded-b-\[6px\] rounded-t-sm[^"]*"/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /<AgentList[\s\S]*className="w-full border-0 bg-surface-overlay shadow-2xl"[\s\S]*flyout="none"[\s\S]*items=\{completedItems\}[\s\S]*renderFlyout=\{renderCompletedRunFlyout\}[\s\S]*variant="compact"/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /import \{ JiraActivityChangedFiles \}/u);
-	// The changed-files detail card is shared: the merged aggregate flyout and each
-	// split row both render CompletedRunFlyoutCard, so the two layouts cannot drift.
-	assert.match(COMPLETED_RUNS_SOURCE, /function renderCompletedRunFlyout\([\s\S]*item: AgentListItem,[\s\S]*\{ close \}: AgentListCustomFlyoutActions,[\s\S]*\)[\s\S]*<CompletedRunFlyoutCard[\s\S]*run=\{run\}/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /function CompletedRunFlyoutCard\([\s\S]*<JiraActivityChangedFiles[\s\S]*entry=\{getCompletedRunEntry\(run\)\}[\s\S]*status=\{run\.state\}/u);
-	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /pullRequestNumber=\{run\.pullRequestNumber\}/u);
-	assert.match(CHANGED_FILES_SOURCE, /<ArtifactList[\s\S]*onOpen=\{onOutputOpen\}/u);
-	assert.match(
-		COMPLETED_RUNS_SOURCE,
-		/onOutputOpen=\{\(output\) => \{[\s\S]*if \(output\.pullRequest\) \{[\s\S]*onClose\(\);[\s\S]*onReview\?\.\(run\);/u,
-		"opening a pull-request review should dismiss its agent flyout first",
-	);
-	assert.match(
-		COMPLETED_RUNS_SOURCE,
-		/onClose=\{\(\) => \{[\s\S]*close\(\);[\s\S]*handleAggregateOpenChange\(false\);/u,
-		"the merged aggregate must close both the per-run flyout and the aggregate hover card",
-	);
+	assert.match(COMPLETED_RUNS_SOURCE, /<AgentList[\s\S]*className="w-full border-0 bg-surface-overlay shadow-2xl"[\s\S]*flyout="session"[\s\S]*items=\{completedItems\}[\s\S]*variant="compact"/u);
 	assert.match(SOURCE, /onAgentDoneRunReview\?: \(run: JiraIssueCompletedAgentRun\) => void;/u);
 	assert.match(SOURCE, /<JiraIssueAgentDone[\s\S]*onReview=\{onAgentDoneRunReview\}[\s\S]*usesStrokeChrome=\{usesStrokeChrome\}/u);
 	assert.match(CHANGED_FILES_SOURCE, /const statusPresentation = status === "failed"[\s\S]*<StatusErrorIcon[\s\S]*: null/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /footer=\{[\s\S]*<AgentStatesComposer[\s\S]*onSubmit=\{\(prompt\) => onSubmit\?\.\(run, prompt\)\}/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /className="w-full"[\s\S]*variant="jira-issue"/u);
-	assert.match(AGENT_STATES_SOURCE, /export function AgentStatesComposer/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /import \{[\s\S]*toAgentSessionFlyoutItem,[\s\S]*\} from "@\/components\/blocks\/agent-list"/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /<JiraSessionFlyoutTrigger[\s\S]*session=\{\{ \.\.\.session, status: run\.state === "failed" \? "stopped" : session\.status \}\}/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /<JiraSessionFlyoutSurface handle=\{flyoutHandle\} \/>/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /flyout="session"/u);
+	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /AgentStatesComposer/u);
 	assert.doesNotMatch(SOURCE, /showSeparator/);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*onOpenChange=\{handleAgentActivityOpenChange\}[\s\S]*<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*key="agent-review"[\s\S]*<JiraIssueAgentDone[\s\S]*onOpenChange=\{handleAgentActivityOpenChange\}[\s\S]*runs=\{agentDoneRuns\}/u);
 });
@@ -651,7 +667,7 @@ test("Jira issue animates agent state transitions with Motion", () => {
 	assert.match(LIB_SOURCE, /export const JIRA_ISSUE_MOTION_REDUCED: Transition = \{ duration: 0 \};/);
 	assert.match(SOURCE, /const shouldReduceMotion = useReducedMotion\(\);/);
 	assert.match(LIB_SOURCE, /export function getJiraIssuePresenceMotion\(shouldReduceMotion: boolean \| null\)[\s\S]*initial: false/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*\{rowGroups\.map\(\(rowGroup\) => \([\s\S]*<motion\.div[\s\S]*key=\{rowGroup\.key\}[\s\S]*exit=\{presenceMotion\.exit\}[\s\S]*initial=\{presenceMotion\.initial\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*\{rowGroups\.map\(\(rowGroup\) => \{[\s\S]*<motion\.div[\s\S]*key=\{rowGroup\.key\}[\s\S]*exit=\{presenceMotion\.exit\}[\s\S]*initial=\{presenceMotion\.initial\}/u);
 	assert.match(SOURCE, /const hasIssueRows = hasSubtasks;/);
 	assert.match(SOURCE, /const issueRowsClassName = cn\("pt-1", !\(hasSubtasks && resolvedSubtasksExpanded\) && "pb-1"\);/);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*key="agent-review"[\s\S]*<JiraIssueAgentDone[\s\S]*runs=\{agentDoneRuns\}/u);
@@ -739,7 +755,10 @@ test("Jira issue agent activity demo is registered in docs and variant registry"
 	assert.doesNotMatch(PAGE_SOURCE, /subtasks=\{agentActivityState === "agent-completed-work" \? JIRA_ISSUE_DEMO_SUBTASKS : undefined\}/);
 	// Tab clicks are a plain phase switch: the demo carries no timers or moved-
 	// session bookkeeping to unwind first.
-	assert.match(PAGE_SOURCE, /onClick=\{\(\) => setAgentActivityState\(state\.value\)\}/u);
+	assert.match(
+		PAGE_SOURCE,
+		/onClick=\{\(\) => \{\s*\n\s*setUnlinkedSessionIds\(\[\]\);\s*\n\s*setLinkedDetachedIds\(\[\]\);\s*\n\s*setAgentActivityState\(state\.value\);\s*\n\s*\}\}/u,
+	);
 	assert.match(PAGE_SOURCE, /function getExperimentalDemoPullRequest\(/);
 	assert.match(PAGE_SOURCE, /case "awaiting-user-input":[\s\S]*pullRequestNumber: 812[\s\S]*pullRequestStatus: "open"/);
 	assert.match(PAGE_SOURCE, /case "agent-completed-work":[\s\S]*pullRequestStatus: "failed"/);
