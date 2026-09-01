@@ -87,6 +87,12 @@ export interface AgentAvatarVisualProps {
  * Renders every agent identity through the shared hexagon avatar. 1P agent art
  * stays full-bleed; 2P partner marks are inset from `/public/2p`; and 3P marks
  * use the borderless glyph from `@atlassian/logo-third-party`.
+ *
+ * External marks sit on a themed `--ds-surface` backdrop rather than a hardcoded
+ * white one, so the hexagon follows light/dark. Monochrome near-black glyphs are
+ * inverted for contrast by the logo components themselves — this file must NOT
+ * add its own inversion, because CSS filters on nested elements compose and a
+ * second `invert` would return the glyph to near-black.
  */
 export function AgentAvatarVisual({
 	avatarSrc,
@@ -150,7 +156,7 @@ export function AgentAvatarVisual({
 			status={status}
 		>
 			{hasWhiteBackdrop ? (
-				<span className="flex size-full items-center justify-center bg-[#fff]">{visual}</span>
+				<span className="flex size-full items-center justify-center bg-surface">{visual}</span>
 			) : (
 				visual
 			)}

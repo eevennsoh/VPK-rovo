@@ -117,12 +117,10 @@ type CodingAgent = Readonly<{
 }>;
 
 function thirdPartyAgentLogo(name: ThirdPartyLogoName, size: LogoSize = "small"): ReactNode {
-	const darkModeClassName =
-		name === "cursor" || name === "github-copilot"
-			? "dark:brightness-0 dark:invert"
-			: undefined;
-
-	return <LogoThirdParty name={name} size={size} borderless className={darkModeClassName} />;
+	// No dark-mode class here: LogoThirdParty inverts near-black glyphs itself,
+	// and CSS filters on nested elements compose — a second invert would return
+	// the glyph to near-black.
+	return <LogoThirdParty name={name} size={size} borderless />;
 }
 
 /**

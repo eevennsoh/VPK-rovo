@@ -739,7 +739,7 @@ test("Code Review moves its shared artefact identity into the canvas header", ()
 	assert.match(header, /variant="blue"/u);
 	assert.match(
 		header,
-		/<GithubLogo[\s\S]*className="dark:invert \[\[data-color-mode=dark\]_&\]:invert"[\s\S]*size="xxsmall"/u,
+		/<GithubLogo[\s\S]*borderless[\s\S]*size="xxsmall"/u,
 	);
 	assert.match(
 		header,

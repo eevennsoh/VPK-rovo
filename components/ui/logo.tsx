@@ -18,6 +18,7 @@ import {
 	CUSTOM_LOGO_SIZES,
 } from "@/components/ui/data/logo-data";
 import {
+	darkModeGlyphContrastClassNameForSrc,
 	resolveAtlassianLogoBorder,
 	resolveBrandLogoInsetScale,
 	resolveBrandLogoPresentation,
@@ -196,6 +197,11 @@ export function CustomLogo({
 	// Custom-app art (project avatars) are full-bleed square tiles, so soften the
 	// corners with the 8px (radius.large) tile radius. Brand marks are unaffected.
 	const isCustomAvatar = Boolean(src && src.startsWith("/avatar-project/"));
+	// A monochrome near-black 3P mark is invisible on the themed `bg-surface`
+	// tile below (and on any dark surface when rendered bare), so invert just the
+	// glyph image in dark mode. The Tile keeps its own fill — inverting the Tile
+	// instead would flip the surface back to near-white.
+	const glyphContrastClassName = darkModeGlyphContrastClassNameForSrc(brand?.src ?? src);
 	const shouldRenderBorderedTile = Boolean(!borderless && brand?.hasBorder && isTileLogoSize(size));
 	const borderedTileSrc = shouldRenderBorderedTile ? brand?.src : undefined;
 	const borderClassName =
@@ -211,7 +217,14 @@ export function CustomLogo({
 			size={size}
 			variant="transparent"
 		>
-			<Image src={borderedTileSrc} alt="" aria-hidden width={px} height={px} className="object-contain" />
+			<Image
+				src={borderedTileSrc}
+				alt=""
+				aria-hidden
+				width={px}
+				height={px}
+				className={cn("object-contain", glyphContrastClassName)}
+			/>
 		</Tile>
 	) : brand ? (
 		<Image
@@ -220,7 +233,7 @@ export function CustomLogo({
 			aria-hidden
 			width={insetPx}
 			height={insetPx}
-			className={cn("object-contain", isCustomAvatar && "rounded-lg")}
+			className={cn("object-contain", isCustomAvatar && "rounded-lg", glyphContrastClassName)}
 			style={{ width: insetPx, height: insetPx }}
 		/>
 	) : svg ? (

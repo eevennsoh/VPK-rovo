@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/data/logo-third-party-data";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
 import {
+	darkModeGlyphContrastClassNameForSrc,
 	isBackgroundlessAtlassianLogo,
 	resolveAtlassianLogoBorder,
 	resolveBrandLogoPresentation,
@@ -256,6 +257,10 @@ export function BrandLogoMark({
 	}
 
 	const presentation = resolveBrandLogoPresentation(assetSrc);
+	// Monochrome near-black marks vanish on the themed `bg-surface` tile below and
+	// on whatever surface a bare chip sits on, so invert the glyph itself in dark
+	// mode. Never the Tile — that would flip the surface back to near-white.
+	const glyphContrastClassName = darkModeGlyphContrastClassNameForSrc(presentation.src);
 
 	if (frame === "chip") {
 		return (
@@ -271,7 +276,11 @@ export function BrandLogoMark({
 					alt=""
 					aria-hidden
 					src={presentation.src}
-					className={cn("block object-contain", presentation.hasBorder ? "size-3" : "size-4")}
+					className={cn(
+						"block object-contain",
+						presentation.hasBorder ? "size-3" : "size-4",
+						glyphContrastClassName,
+					)}
 				/>
 			</span>
 		);
@@ -293,7 +302,7 @@ export function BrandLogoMark({
 			)}
 		>
 			{/* eslint-disable-next-line @next/next/no-img-element -- Tile child-sizing CSS targets [&_img]; mirrors mention-visual.tsx */}
-			<img alt="" aria-hidden className="object-contain" src={presentation.src} />
+			<img alt="" aria-hidden className={cn("object-contain", glyphContrastClassName)} src={presentation.src} />
 		</Tile>
 	);
 }

@@ -62,7 +62,7 @@ function RepositoryProviderLogo({ provider }: Readonly<Pick<DevelopmentRepositor
 	return provider === "bitbucket" ? (
 		<BitbucketLogo appearance="brand" label="" size="small" />
 	) : (
-		<GithubLogo borderless className="dark:invert [[data-color-mode=dark]_&]:invert" label="" size="small" />
+		<GithubLogo borderless label="" size="small" />
 	);
 }
 
