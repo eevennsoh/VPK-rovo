@@ -13,13 +13,47 @@
 			"defaultHasBorder": true
 		},
 		"threeP": {
-			"description": "Third-party marks at /public/3p/<id>/<size>.svg. Solid-fill marks paint their own background and render bare. White-tile marks ship a 16-borderless.svg sibling: render the borderless glyph inside a VPK-drawn bordered tile so borders don't double up.",
+			"description": "Third-party marks at /public/3p/<id>/<size>.svg. Solid-fill marks paint their own background and render bare. White-tile marks ship a 16-borderless.svg sibling: render the borderless glyph inside a VPK-drawn bordered tile so borders don't double up. Transparent-glyph marks ship no borderless sibling but still need a tile — list those in borderedIds.",
 			"defaultHasBorder": false,
 			"borderlessVariantFile": "16-borderless.svg",
 			"$insetScaleComment": "Optional per-id inset: the glyph renders at size*scale, centered in the full size box, so a full-bleed mark can sit inset with padding (e.g. VS Code at 20px inside a 24px box = 20/24). Defaults to 1 (no inset).",
 			"insetScaleById": {
 				"vs-code": 0.8333333333333334
 			},
+			"$darkGlyphIdsComment": "Marks whose glyph is monochrome near-black, so they vanish on a dark backdrop (e.g. GitHub #1d2022 scores 1.0:1 against --ds-surface #1F1F21; WCAG non-text wants 3:1). Consumers that place a bare glyph on a themed surface invert these in dark mode. DERIVED, not hand-written: an id belongs here when every fill in its package entrypoint (or /public/3p/<id>/24.svg) scores below 1.5:1 against the dark surface. logo-usage.test.js recomputes this from the shipped markup, so a package upgrade that recolors a mark fails the build instead of silently regressing contrast. Genuinely colored dark marks (Datadog purple, Box blue) are excluded on purpose — inverting them would corrupt the brand hue.",
+			"darkGlyphIds": [
+				"cursor",
+				"daloopa",
+				"docker",
+				"dovetail",
+				"generic-mcp-server",
+				"github",
+				"github-copilot",
+				"intercom",
+				"launchdarkly",
+				"linear",
+				"lucid-co",
+				"mural",
+				"notion",
+				"okta",
+				"openai-codex",
+				"powerbi",
+				"sentry",
+				"simpplr",
+				"smartsheet",
+				"splunk",
+				"square",
+				"stych",
+				"tempo-timesheets",
+				"vercel",
+				"wix",
+				"zendesk"
+			],
+			"$borderedIdsComment": "Transparent-glyph marks that paint no background and ship no 16-borderless.svg sibling. They still need a bordered tile, rendered from the base <size>.svg with no variant swap. MUST stay disjoint from borderlessIds (checked first). An id belongs here only while no upstream @atlassian/logo-third-party entrypoint exists — prefer wiring packageIcon in logo-third-party-data.ts, which gets the border from the package tile.",
+			"borderedIds": [
+				"github-copilot",
+				"vs-code"
+			],
 			"borderlessIds": [
 				"airtable",
 				"clickup",

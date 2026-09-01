@@ -317,7 +317,32 @@ test("agent avatars share one hexagon contract across 1P, 2P, and 3P visuals", (
 		AGENT_AVATAR_VISUAL_SOURCE,
 		/vpkLogo === "rovo" \? \(\s*<RovoColorIcon[\s\S]*size=\{insetLogoSize\}[\s\S]*isXsRovoMark \? \{ className: "size-3", height: 12, width: 12 \}/u,
 	);
-	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /className="flex size-full items-center justify-center bg-\[#fff\]"/);
+	// The external-mark backdrop follows the theme instead of a hardcoded `#fff`,
+	// so the hexagon stops punching a white hole in a dark surface. Pinned as an
+	// exact class because a literal color here is exactly the regression.
+	assert.match(
+		AGENT_AVATAR_VISUAL_SOURCE,
+		/className="flex size-full items-center justify-center bg-surface"/u,
+	);
+	assert.doesNotMatch(
+		AGENT_AVATAR_VISUAL_SOURCE,
+		/bg-\[#fff\]|bg-white/u,
+		"the agent hexagon backdrop must stay themeable — no hardcoded white",
+	);
+	// Themed backdrop + monochrome-black glyph = ~1.1:1, so the mark disappears.
+	// The inversion is applied by the logo components themselves; this file must
+	// NOT add its own. CSS filters on nested elements compose, so a wrapper-level
+	// invert here would double-invert the glyph straight back to near-black.
+	assert.doesNotMatch(
+		AGENT_AVATAR_VISUAL_SOURCE,
+		/dark:(?:\[[^\]]*\]:)*invert/u,
+		"agent avatars must not apply their own inversion — LogoThirdParty already inverts near-black glyphs, and nested filters compose",
+	);
+	assert.match(
+		AGENT_AVATAR_VISUAL_SOURCE,
+		/bg-surface">\{visual\}<\/span>/u,
+		"the themed backdrop wraps the visual directly, with no inverting wrapper in between",
+	);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /avatarSrc \? \([\s\S]*<AvatarImage[\s\S]*fallbackText \? <AvatarFallback>\{fallbackText\}<\/AvatarFallback> : null/);
 	assert.match(ENTITY_CARD_AGENT_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual"/);
 	assert.match(ENTITY_CARD_AGENT_SOURCE, /<AgentAvatarVisual[\s\S]*brandName=\{brandName\}[\s\S]*sizePx=\{32\}/);

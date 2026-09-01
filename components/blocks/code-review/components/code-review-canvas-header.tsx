@@ -37,7 +37,6 @@ export function CodeReviewCanvasHeader({
 						<GithubLogo
 							aria-hidden
 							borderless
-							className="dark:invert [[data-color-mode=dark]_&]:invert"
 							label=""
 							size="xxsmall"
 						/>

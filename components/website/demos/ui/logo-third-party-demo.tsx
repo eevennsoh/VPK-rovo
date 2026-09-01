@@ -9,6 +9,7 @@ import {
 	ZoomLogo,
 	THIRD_PARTY_LOGO_NAMES,
 	THIRD_PARTY_LOGO_LABELS,
+	type LogoThirdPartyProps,
 	type ThirdPartyLogoName,
 } from "@/components/ui/logo-third-party";
 import {
@@ -135,6 +136,77 @@ export function LogoThirdPartyDemoBorderless() {
 				<code className="rounded bg-bg-neutral px-1 py-0.5">borderless</code> to strip the tile
 				background + border and render just the brand glyph — for placement on an existing surface,
 				avatar, or row where the tile would double up.
+			</p>
+		</div>
+	);
+}
+
+/* ── Demo: Tile background (dark-mode override) ──────────────────── */
+
+// Colored marks that stay legible on either fill, plus two monochrome-dark
+// marks (GitHub, Notion) that show why a dark fill alone is not always enough.
+const TILE_BACKGROUND_SAMPLES: ReadonlyArray<ThirdPartyLogoName> = [
+	"figma",
+	"slack",
+	"salesforce",
+	"zoom",
+	"github",
+	"notion",
+];
+
+const TILE_BACKGROUND_TREATMENTS: ReadonlyArray<{
+	label: string;
+	description: string;
+	tileBackground: NonNullable<LogoThirdPartyProps["tileBackground"]>;
+}> = [
+	{
+		label: 'tileBackground="white" (default)',
+		description: "Upstream behaviour — a hardcoded #fff that stays white in dark mode.",
+		tileBackground: "white",
+	},
+	{
+		label: 'tileBackground="surface"',
+		description: "Themeable — --ds-surface-raised. Identical in light mode, dark in dark mode.",
+		tileBackground: "surface",
+	},
+	{
+		label: 'tileBackground="transparent"',
+		description: "Fill removed, hairline border kept (--ds-border already themes).",
+		tileBackground: "transparent",
+	},
+];
+
+export function LogoThirdPartyDemoTileBackground() {
+	return (
+		<div className="flex flex-col gap-4">
+			{TILE_BACKGROUND_TREATMENTS.map((treatment) => (
+				<div key={treatment.label} className="flex flex-col gap-2">
+					<span className="font-semibold text-text-subtle text-xs">{treatment.label}</span>
+					<div className="flex flex-wrap items-center gap-4">
+						{TILE_BACKGROUND_SAMPLES.map((name) => (
+							<LogoThirdParty
+								key={name}
+								name={name}
+								size="large"
+								tileBackground={treatment.tileBackground}
+							/>
+						))}
+					</div>
+					<span className="text-text-subtlest text-xs">{treatment.description}</span>
+				</div>
+			))}
+			<p className="text-text-subtle text-xs">
+				The package renders every mark inside{" "}
+				<code className="rounded bg-bg-neutral px-1 py-0.5">
+					&lt;Tile backgroundColor=&quot;white&quot;&gt;
+				</code>
+				, which <code className="rounded bg-bg-neutral px-1 py-0.5">@atlaskit/tile</code> compiles to a
+				literal <code className="rounded bg-bg-neutral px-1 py-0.5">background-color:#fff</code> — not a
+				token — so it never follows the theme. Any treatment that removes that white tile also inverts
+				monochrome-dark glyphs (GitHub, Cursor, Codex, Notion, Vercel, …) in dark mode, so they stay
+				legible without a per-callsite{" "}
+				<code className="rounded bg-bg-neutral px-1 py-0.5">dark:invert</code>. Coloured marks keep
+				their brand hue.
 			</p>
 		</div>
 	);

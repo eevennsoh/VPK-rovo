@@ -425,6 +425,13 @@ export const UI_ATLASSIAN_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"logo-third-party-demo-tile-background": dynamic(
+		() =>
+			import("../../demos/ui/logo-third-party-demo").then((mod) => ({
+				default: mod.LogoThirdPartyDemoTileBackground,
+			})),
+		{ ssr: false },
+	),
 	"logo-third-party-demo-lockups": dynamic(
 		() =>
 			import("../../demos/ui/logo-third-party-demo").then((mod) => ({

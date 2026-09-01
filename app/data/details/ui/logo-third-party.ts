@@ -13,7 +13,9 @@ export const LOGO_THIRD_PARTY_DETAIL: ComponentDetail = {
 {/* Optional wordmark for a lockup layout */}
 <LogoThirdParty name="github" wordmark="GitHub" size="small" />
 {/* Borderless: just the glyph, no white tile + border */}
-<LogoThirdParty name="figma" size="small" borderless />`,
+<LogoThirdParty name="figma" size="small" borderless />
+{/* Themeable tile fill — upstream hardcodes #fff, which never follows the theme */}
+<LogoThirdParty name="figma" size="small" tileBackground="surface" />`,
     props: [
       {
         name: "name",
@@ -37,7 +39,14 @@ export const LOGO_THIRD_PARTY_DETAIL: ComponentDetail = {
         type: "boolean",
         default: "false",
         description:
-          "Render the bare brand glyph without the package's white tile + border. The mark sits transparently on the surrounding surface — for placement on a row, avatar, or container where the tile would double up.",
+          "Render the bare brand glyph without the package's white tile + border. The mark sits transparently on the surrounding surface — for placement on a row, avatar, or container where the tile would double up. Takes precedence over tileBackground.",
+      },
+      {
+        name: "tileBackground",
+        type: '"white" | "surface" | "transparent"',
+        default: '"white"',
+        description:
+          "Override the tile's fill. Upstream hardcodes backgroundColor=\"white\", which @atlaskit/tile compiles to a literal background-color:#fff (not a token), so the tile stays white in dark mode while its border already themes. \"surface\" swaps it for --ds-surface-raised (identical in light mode, dark in dark mode); \"transparent\" drops the fill but keeps the hairline border. Any treatment that removes the white tile also inverts monochrome-dark glyphs (GitHub, Cursor, Codex, Notion, Vercel) in dark mode, so they stay legible without a per-callsite dark:invert.",
       },
       {
         name: "label",
@@ -68,6 +77,12 @@ export const LOGO_THIRD_PARTY_DETAIL: ComponentDetail = {
         description:
           "Pass borderless to strip the package's white tile + border and render just the brand glyph.",
         demoSlug: "logo-third-party-demo-borderless",
+      },
+      {
+        title: "Tile Background",
+        description:
+          "The upstream tile fill is a hardcoded #fff, not a token, so it never follows the theme. Pass tileBackground=\"surface\" for a themeable fill that stays white in light mode and goes dark in dark mode, or \"transparent\" to drop the fill while keeping the hairline border.",
+        demoSlug: "logo-third-party-demo-tile-background",
       },
       {
         title: "Lockups",

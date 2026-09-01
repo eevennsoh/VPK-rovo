@@ -227,6 +227,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/website/component-doc/components/demo-preview-shell.test.js",
 		"components/website/website-preview-visibility.test.js",
 		"components/ui/data/logo-usage.test.js",
+		"components/ui/logo-third-party.test.js",
 		"components/ui/avatar.test.js",
 		"components/ui/breadcrumb.test.js",
 		"components/ui/badge.test.js",

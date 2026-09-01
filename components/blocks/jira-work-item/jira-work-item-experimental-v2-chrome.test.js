@@ -377,7 +377,7 @@ test("experimental v2 scopes ContextResources to the left column and the Details
 	);
 	assert.match(
 		titleActionsSource,
-		/name === "cursor" \|\| name === "github-copilot"[\s\S]*"dark:brightness-0 dark:invert"[\s\S]*className=\{darkModeClassName\}/u,
+		/return <LogoThirdParty name=\{name\} size=\{size\} borderless \/>;/u,
 	);
 	assert.match(
 		titleActionsSource,

@@ -14,11 +14,23 @@ import {
 	THIRD_PARTY_LOGO_ICONS,
 	toThirdPartyLogoTileSize,
 } from "@/components/ui/data/logo-third-party-icons";
+import { darkModeGlyphContrastClassName } from "@/components/ui/data/logo-usage";
 import { CustomLogo, type CustomLogoProps, type LogoSize } from "@/components/ui/logo";
 import { cn } from "@/lib/utils";
 
 export { THIRD_PARTY_LOGO_NAMES, THIRD_PARTY_LOGO_LABELS };
 export type { ThirdPartyLogoName };
+
+/**
+ * Fill treatment for the upstream package's tile.
+ *
+ * - `"white"` — upstream default. Always `#fff`, in both themes.
+ * - `"surface"` — themeable. Resolves to `--ds-surface-raised`, so light mode is
+ *   visually identical to `"white"` and dark mode gets the raised dark surface.
+ * - `"transparent"` — no fill; the hairline border (already `--ds-border`, so
+ *   already themeable) is kept. Use `borderless` to drop the border too.
+ */
+export type LogoThirdPartyTileBackground = "white" | "surface" | "transparent";
 
 export interface LogoThirdPartyProps extends Omit<CustomLogoProps, "src" | "svg" | "size"> {
 	/** Third-party brand id from `THIRD_PARTY_LOGO_NAMES`. */
@@ -32,16 +44,76 @@ export interface LogoThirdPartyProps extends Omit<CustomLogoProps, "src" | "svg"
 	 * the Tile chrome with `!important` overrides (its `@compiled` CSS is
 	 * unlayered and beats layered Tailwind utilities). The glyph SVG is
 	 * transparent-backed, so only the colored mark remains. Defaults to off.
+	 *
+	 * Takes precedence over `tileBackground` — there is no tile left to fill.
+	 * Also forwarded to the `public/3p` fallback path, where it suppresses the
+	 * VPK-drawn tile that asset's usage metadata would otherwise call for.
 	 */
 	borderless?: boolean;
+	/**
+	 * Override the tile's fill. Upstream hardcodes `backgroundColor="white"`,
+	 * which `@atlaskit/tile` compiles to a literal `background-color:#fff` (not a
+	 * token), so the tile stays white in dark mode while its sibling
+	 * `border-color:var(--ds-border)` themes correctly. Pass `"surface"` to swap
+	 * the fill for a themeable ADS surface token. Defaults to `"white"`
+	 * (upstream behaviour, unchanged).
+	 *
+	 * Note: brands whose glyph is monochrome dark (GitHub, Cursor, Codex, Notion,
+	 * Vercel, …) would vanish on a dark fill, so any treatment that removes the
+	 * white tile also inverts those glyphs in dark mode automatically. Callsites
+	 * no longer need their own `dark:invert`. Colored marks keep their brand hue.
+	 */
+	tileBackground?: LogoThirdPartyTileBackground;
 }
 
 /**
- * Suppress the upstream `@atlaskit/tile` chrome (white `background-color:#fff` +
- * `border-width:1px`) wrapping a package mark, leaving only the transparent-backed
- * glyph. ADS `@compiled` styles are unlayered, so `!` (important) is required to win.
+ * Overrides for the upstream `@atlaskit/tile` chrome wrapping a package mark.
+ * ADS `@compiled` styles are unlayered, so `!` (important) is required to win —
+ * unlayered rules beat every layered Tailwind utility regardless of specificity.
  */
-const BORDERLESS_TILE_OVERRIDE = "[&>span]:bg-transparent! [&>span]:border-0!";
+const TILE_CHROME_OVERRIDES = {
+	/** Strip the whole tile — `background-color:#fff` and the 1px border. */
+	borderless: "[&>span]:bg-transparent! [&>span]:border-0!",
+	/** Swap the hardcoded `#fff` for the themeable raised-surface token. */
+	surface: "[&>span]:bg-surface-raised!",
+	/** Drop the fill, keep the (already themeable) hairline border. */
+	transparent: "[&>span]:bg-transparent!",
+} as const;
+
+/**
+ * Resolve the Tile chrome override for a treatment, or `null` to leave the
+ * upstream Tile untouched. `borderless` wins outright rather than composing with
+ * `tileBackground`, so two `!important` `background-color` rules can never race
+ * on stylesheet order.
+ */
+function tileChromeOverride(
+	borderless: boolean,
+	tileBackground: LogoThirdPartyTileBackground,
+): string | null {
+	if (borderless) {
+		return TILE_CHROME_OVERRIDES.borderless;
+	}
+	return tileBackground === "white" ? null : TILE_CHROME_OVERRIDES[tileBackground];
+}
+
+/**
+ * Invert a monochrome near-black glyph in dark mode, targeting the package's
+ * glyph span rather than our wrapper.
+ *
+ * The upstream DOM is `wrapper > Tile span > glyph span > svg`, and
+ * {@link TILE_CHROME_OVERRIDES} paints the Tile span at `[&>span]`. Inverting
+ * the wrapper would therefore flip the tile fill too — turning
+ * `bg-surface-raised` back into a near-white block and reinstating exactly the
+ * contrast failure this fixes. `[&>span>span]` reaches past the fill to the
+ * glyph alone.
+ *
+ * Both theme selectors are emitted for the reason given on
+ * `darkModeGlyphContrastClassName`. Callers must NOT add their own inversion:
+ * filters on nested elements compose, so a wrapper-level `dark:invert` would
+ * double-invert the glyph back to near-black.
+ */
+const DARK_GLYPH_INVERT =
+	"dark:[&>span>span]:invert [[data-color-mode=dark]_&]:[&>span>span]:invert";
 
 /**
  * Renders a third-party brand logo from the upstream `@atlassian/logo-third-party`
@@ -51,6 +123,10 @@ const BORDERLESS_TILE_OVERRIDE = "[&>span]:bg-transparent! [&>span]:border-0!";
  * Manifest-declared local fallback brands render from `public/3p/<name>/`
  * assets via `CustomLogo`. The accessible label defaults to the brand's display
  * name; an optional `wordmark` renders beside the mark as an inline lockup.
+ *
+ * The upstream tile fill is a hardcoded `#fff` rather than a token, so it does
+ * not follow the theme. Pass `tileBackground="surface"` for a themeable fill, or
+ * `borderless` to drop the tile chrome entirely.
  */
 export function LogoThirdParty({
 	name,
@@ -59,16 +135,19 @@ export function LogoThirdParty({
 	wordmark,
 	className,
 	borderless = false,
+	tileBackground = "white",
 }: Readonly<LogoThirdPartyProps>) {
 	const accessibleLabel = label ?? THIRD_PARTY_LOGO_LABELS[name];
 	const Icon = THIRD_PARTY_LOGO_ICONS[name];
 
 	if (!Icon) {
 		// No package icon: only manifest-declared local fallback brands render
-		// from `public/3p`. `borderless` targets the package Tile chrome, so it
-		// has no effect on the CustomLogo fallback.
+		// from `public/3p`. `CustomLogo` draws its own tile from the asset's usage
+		// metadata, so `borderless` forwards; `tileBackground` targets the package
+		// Tile chrome specifically and has no effect on this path.
 		return isLocalFallbackThirdPartyLogoName(name) ? (
 			<CustomLogo
+				borderless={borderless}
 				className={className}
 				label={accessibleLabel}
 				size={size}
@@ -79,11 +158,17 @@ export function LogoThirdParty({
 	}
 
 	// The package tile already encapsulates the accessible label and sizing. When
-	// `borderless`, wrap it so the Tile's white background + border are stripped.
+	// a treatment is requested, wrap it so the Tile's fill/border can be overridden.
 	const resolvedSize = toThirdPartyLogoTileSize(size);
 	const rawIcon = <Icon label={wordmark ? "" : accessibleLabel} size={resolvedSize} />;
-	const icon = borderless ? (
-		<span className={cn("inline-flex", BORDERLESS_TILE_OVERRIDE)}>{rawIcon}</span>
+	const chromeOverride = tileChromeOverride(borderless, tileBackground);
+	// A chrome override is exactly the set of treatments that remove the upstream
+	// white tile, so it is also exactly when a near-black glyph loses its canvas.
+	// The default `"white"` tile keeps the mark on `#fff` in both themes and must
+	// never be inverted.
+	const glyphContrast = chromeOverride ? darkModeGlyphContrastClassName(name) : undefined;
+	const icon = chromeOverride ? (
+		<span className={cn("inline-flex", chromeOverride, glyphContrast && DARK_GLYPH_INVERT)}>{rawIcon}</span>
 	) : (
 		rawIcon
 	);
