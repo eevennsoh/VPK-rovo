@@ -54,22 +54,30 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.match(source, /const linkLabel = hasIssueKey \? `Link to \$\{issueKey\}` : "Link work item";/u);
 	assert.match(
 		source,
-		/<ButtonGroup aria-label=\{hasIssueKey \? `Link \$\{issueKey\}` : "Link work item"\} variant="split">/u,
+		/<ButtonGroup aria-label=\{hasIssueKey \? `Link \$\{issueKey\}` : "Link work item"\} className="w-full" variant="separated">/u,
 	);
 	assert.match(source, /aria-disabled=\{linkUnavailable\}/u);
+	assert.match(source, /"w-full flex-1 justify-center text-center"/u);
 	assert.match(source, /onClick=\{\(\) => onLinkWorkItem\?\.\(issueKey\)\}/u);
 	assert.match(source, /onClick=\{\(\) => onLinkWorkItem\?\.\(issueKey\)\}\s*size="compact"/u);
 	assert.match(source, /size="icon-compact"/u);
 	assert.doesNotMatch(source, /size="icon"/u);
+	assert.match(source, /ShowMoreHorizontalIcon/u);
+	assert.doesNotMatch(source, /ChevronDownIcon/u);
 	assert.match(
 		source,
-		/aria-label=\{hasIssueKey \? `More link options for \$\{issueKey\}` : "More link options"\}/u,
+		/aria-label=\{hasIssueKey \? `More actions for \$\{issueKey\}` : "More work item actions"\}/u,
 	);
-	assert.match(source, /<DropdownMenuItem[\s\S]*disabled=\{addAsSubtaskUnavailable\}[\s\S]*onSelect=\{\(\) => onAddAsSubtask\?\.\(issueKey\)\}[\s\S]*>\s*Add as a subtask/u);
-	assert.match(source, /Create new/u);
-	assert.match(source, /aria-disabled=\{createUnavailable\}/u);
-	assert.match(source, /onClick=\{onCreateWorkItem\}/u);
-	assert.match(source, /onClick=\{onCreateWorkItem\}\s*size="compact"/u);
+	assert.match(
+		source,
+		/<DropdownMenuItem[\s\S]*disabled=\{addAsSubtaskUnavailable \|\| !hasIssueKey\}[\s\S]*onSelect=\{\(\) => onAddAsSubtask\?\.\(issueKey\)\}[\s\S]*>\s*\{hasIssueKey \? `Add new subtask to \$\{issueKey\}` : "Add new subtask"\}/u,
+	);
+	assert.match(
+		source,
+		/<DropdownMenuItem[\s\S]*disabled=\{createUnavailable\}[\s\S]*onSelect=\{\(\) => onCreateWorkItem\?\.\(\)\}[\s\S]*>\s*Create new work item/u,
+	);
+	assert.doesNotMatch(source, /onClick=\{onCreateWorkItem\}/u);
+	assert.doesNotMatch(source, /aria-disabled=\{createUnavailable\}/u);
 	assert.match(source, /onLinkWorkItem\?: \(session: JiraSidebarSessionItem, workItemKey: string\) => void;/u);
 	assert.match(source, /onCreateWorkItem\?: \(session: JiraSidebarSessionItem\) => void;/u);
 	assert.match(source, /onAddAsSubtask\?: \(session: JiraSidebarSessionItem, workItemKey: string\) => void;/u);

@@ -10,13 +10,16 @@ import {
 } from "react";
 import { motion, useMotionValue, useSpring } from "motion/react";
 
-import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
+import {
+	sessionDragChipViewportStyle,
+	type JiraIssueAgentSessionDragBinding,
+} from "@/components/blocks/jira-issue/agent-session-drag";
 import { AgentSessionMentionChip } from "@/components/blocks/jira-issue/agent-session-mention-chip";
+import { useSessionDragChipPointer } from "@/components/blocks/jira-issue/use-session-drag-chip-pointer";
 import {
 	usePointerDrag,
 	type PointerDragPosition,
 } from "@/components/ui-custom/hooks/use-pointer-drag";
-import { Gooey } from "@/components/visual/gooey";
 import { cn } from "@/lib/utils";
 
 import { toJiraIssueAgentActivityFromSession } from "./agent-session-work-item";
@@ -25,10 +28,6 @@ import type { AgentSessionItem } from "./agent-session-types";
 const SESSION_DRAG_ORIGIN: PointerDragPosition = { x: 0, y: 0 };
 /** Same 2px threshold as `usePointerDrag` — publish/arm only after a real move. */
 const SESSION_DRAG_PUBLISH_THRESHOLD_PX = 2;
-const SESSION_DRAG_DISSOLVE_FADE_MS = 240;
-const SESSION_DRAG_DISSOLVE_SINK = 0.8;
-const SESSION_DRAG_MORPH = { advanced: { blobInset: 3, bridgeGrow: 7 } } as const;
-const SESSION_DRAG_CHIP_MORPH = { advanced: { blobInset: 14, bridgeGrow: 0 } } as const;
 const SESSION_DRAG_CHIP_DISTANCE_PX = 12;
 const SESSION_DRAG_SPRING = { damping: 26, mass: 0.6, stiffness: 420, restDelta: 0.01 } as const;
 
@@ -52,6 +51,7 @@ export function AgentSessionMediumDrag({
 	const springY = useSpring(dragOffsetY, SESSION_DRAG_SPRING);
 	const dragX = shouldReduceMotion ? dragOffsetX : springX;
 	const dragY = shouldReduceMotion ? dragOffsetY : springY;
+	const chipPointer = useSessionDragChipPointer(shouldReduceMotion);
 	const isDragging = Boolean(sessionDrag) && drag.dragging;
 	const isDraggedOut = isDragging
 		&& Math.hypot(drag.position.x, drag.position.y) >= SESSION_DRAG_CHIP_DISTANCE_PX;
@@ -134,6 +134,7 @@ export function AgentSessionMediumDrag({
 	}, [isDragging]);
 
 	const { onKeyDown: _ignoredPointerDragKeyDown, ...dragBindWithoutKeyboard } = drag.bind;
+	void _ignoredPointerDragKeyDown;
 	const sessionDragBind = sessionDrag
 		? {
 			...dragBindWithoutKeyboard,
@@ -145,9 +146,17 @@ export function AgentSessionMediumDrag({
 			onPointerDown: (event: ReactPointerEvent<HTMLElement>) => {
 				drag.bind.onPointerDown(event);
 				pointerOriginRef.current = { x: event.clientX, y: event.clientY };
+				chipPointer.snapToPointer(
+					{ x: event.clientX, y: event.clientY },
+					event.currentTarget,
+				);
 			},
 			onPointerMove: (event: ReactPointerEvent<HTMLElement>) => {
 				drag.bind.onPointerMove(event);
+				chipPointer.followPointer(
+					{ x: event.clientX, y: event.clientY },
+					event.currentTarget,
+				);
 				const origin = pointerOriginRef.current;
 				const moved = Boolean(
 					origin
@@ -171,7 +180,8 @@ export function AgentSessionMediumDrag({
 	const chip = (
 		<div
 			aria-hidden
-			className="pointer-events-none flex w-fit max-w-full items-center justify-start"
+			className="pointer-events-none flex w-fit max-w-full -translate-x-1/2 -translate-y-1/2 items-center justify-start"
+			data-session-chip-centered=""
 		>
 			<AgentSessionMentionChip
 				avatarSrc={item.agent.avatarSrc}
@@ -192,42 +202,30 @@ export function AgentSessionMediumDrag({
 			)}
 			data-session-chip-out={isDraggedOut || undefined}
 		>
-			{isDragging && !isDraggedOut ? (
-				<Gooey.Item observe>
-					<div aria-hidden className="pointer-events-none h-[33px] w-full rounded-[10px]" />
-				</Gooey.Item>
-			) : null}
-			<Gooey.Item
-				observe
-				dissolve={{
-					active: !shouldReduceMotion && drag.dragging && !isDraggedOut,
-					fadeMs: SESSION_DRAG_DISSOLVE_FADE_MS,
-					sink: SESSION_DRAG_DISSOLVE_SINK,
+			{/* Bind stays on this host for the whole gesture. Swapping in a
+			    new chip button on drag-start dropped pointer capture, so
+			    pointerup never fired and the card stuck on an empty chin. */}
+			<motion.div
+				ref={hostRef}
+				aria-label={isDragging ? `Attach ${item.agent.name} to this work item` : undefined}
+				aria-roledescription={isDragging ? "Draggable agent session" : undefined}
+				className={cn(
+					"min-w-0 outline-none",
+					isDragging && "left-0 top-0 z-20 w-fit",
+					sessionDragBind && "touch-none select-none",
+				)}
+				data-session-chip-out={isDraggedOut || undefined}
+				data-session-dragging={isDragging || undefined}
+				data-slot="jira-issue-agent-row"
+				style={{
+					x: isDragging ? chipPointer.x : dragX,
+					y: isDragging ? chipPointer.y : dragY,
+					...sessionDragChipViewportStyle(isDragging),
 				}}
-				morph={isDraggedOut ? SESSION_DRAG_CHIP_MORPH : SESSION_DRAG_MORPH}
+				{...sessionDragBind}
 			>
-				{/* Bind stays on this host for the whole gesture. Swapping in a
-				    new chip button on drag-start dropped pointer capture, so
-				    pointerup never fired and the card stuck on an empty chin. */}
-				<motion.div
-					ref={hostRef}
-					aria-label={isDragging ? `Attach ${item.agent.name} to this work item` : undefined}
-					aria-roledescription={isDragging ? "Draggable agent session" : undefined}
-					className={cn(
-						"min-w-0 outline-none",
-						isDragging && "absolute top-0 z-20",
-						isDragging && (isDraggedOut ? "left-0 w-fit" : "inset-x-0"),
-						sessionDragBind && "touch-none select-none",
-					)}
-					data-session-chip-out={isDraggedOut || undefined}
-					data-session-dragging={isDragging || undefined}
-					data-slot="jira-issue-agent-row"
-					style={{ x: dragX, y: dragY }}
-					{...sessionDragBind}
-				>
-					{isDragging ? chip : children(undefined)}
-				</motion.div>
-			</Gooey.Item>
+				{isDragging ? chip : children(undefined)}
+			</motion.div>
 		</div>
 	);
 }

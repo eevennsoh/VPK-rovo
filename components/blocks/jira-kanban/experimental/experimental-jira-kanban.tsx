@@ -344,6 +344,7 @@ function BoardColumn({
 			fadeBottom: showBottomScrollMask,
 			fadeSize: "3rem",
 			fadeTop: showTopScrollMask,
+			scrollbarWidth: 0,
 		}),
 		[showBottomScrollMask, showTopScrollMask],
 	);

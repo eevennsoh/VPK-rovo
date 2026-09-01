@@ -26,7 +26,7 @@ function withoutComments(source) {
 }
 
 test("the experimental page groups Pulse sessions onto the board when Untracked is on", () => {
-	assert.match(PAGE_SOURCE, /import \{\s*collectBoardIssueKeys,\s*groupBoardUntrackedSessions,\s*\} from "\.\/lib\/board-untracked-sessions"/u);
+	assert.match(PAGE_SOURCE, /import \{\s*collectBoardIssueKeys,\s*groupBoardUntrackedSessions,\s*selectBoardUntrackedSessions,\s*\} from "\.\/lib\/board-untracked-sessions"/u);
 	assert.match(PAGE_SOURCE, /const \[showUntracked, setShowUntracked\] = useState\(true\)/u);
 	assert.match(
 		PAGE_SOURCE,
@@ -35,6 +35,24 @@ test("the experimental page groups Pulse sessions onto the board when Untracked 
 	assert.match(PAGE_SOURCE, /detachedAgentSessionsByCard=\{proximityAgentSessionsByCard\}/u);
 	assert.match(HELPER_SOURCE, /session\.sessionDetails\?\.issueKey/u);
 	assert.match(HELPER_SOURCE, /capturedItemIds\.has\(session\.id\)/u);
+});
+
+test("the Untracked column follows card session link and unlink state", () => {
+	assert.match(
+		PAGE_SOURCE,
+		/const untrackedAgentSessionItems = useMemo\([\s\S]*selectBoardUntrackedSessions\(\{[\s\S]*capturedItemIds: capturedLooseWorkIds,[\s\S]*detachedByCard: detachedAgentSessionsByCard,[\s\S]*sessions: agentSessionItems,/u,
+	);
+	assert.match(PAGE_SOURCE, /items: untrackedAgentSessionItems/u);
+	assert.match(
+		PAGE_SOURCE,
+		/const handleCardAgentSessionLink:[\s\S]*setCapturedLooseWorkIds\([\s\S]*new Set\(current\)\.add\(session\.id\)/u,
+	);
+	assert.match(
+		PAGE_SOURCE,
+		/const handleCardAgentSessionUnlink:[\s\S]*setCapturedLooseWorkIds\([\s\S]*next\.delete\(session\.id\)/u,
+	);
+	assert.match(PAGE_SOURCE, /onCardAgentSessionLink\?\.\(session, card, columnTitle\)/u);
+	assert.match(PAGE_SOURCE, /onCardAgentSessionUnlink\?\.\(session, card, columnTitle\)/u);
 });
 
 test("proximity AgentSession forwards the Pulse flyout attach handlers", () => {
