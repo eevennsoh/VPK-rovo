@@ -42,9 +42,10 @@ test("ASX Kanban reuses the Jira Issue aggregate row for working agents", () => 
 	assert.match(STAGE_SOURCE, /<JiraKanban/u);
 	assert.match(JIRA_KANBAN_SOURCE, /agentActivities=\{card\.agentActivities\}/u);
 	assert.match(JIRA_KANBAN_SOURCE, /agentActivityMode=\{card\.agentActivityMode\}/u);
-	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
+	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /import \{ PixelLoader \} from "@\/components\/ui-custom\/pixel-loader";/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<AiAgentIcon label="" \/>/u);
-	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<Spinner label="" size="xs" \/>/u);
+	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<PixelLoader[\s\S]*pattern="diagonal-top-left"[\s\S]*shape="dot"[\s\S]*size="small"/u);
+	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<Spinner/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /\$\{summary\.activityCount\} agents: \$\{summary\.label\}/u);
 	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /phaseOffsetMs=/u);
 	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /variant="rainbow"/u);

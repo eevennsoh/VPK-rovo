@@ -44,10 +44,10 @@ import {
 	usePointerDrag,
 	type PointerDragPosition,
 } from "@/components/ui-custom/hooks/use-pointer-drag";
+import { PixelLoader } from "@/components/ui-custom/pixel-loader";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { IconTile } from "@/components/ui/icon-tile";
-import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import type {
 	JiraSidebarAssignee,
@@ -448,7 +448,12 @@ function JiraIssueAgentActivityRow({
 			className="grid size-4 shrink-0 place-items-center text-icon"
 			aria-hidden="true"
 		>
-			<Spinner label="" size="xs" />
+			<PixelLoader
+				className="size-3 justify-center"
+				pattern="diagonal-top-left"
+				shape="dot"
+				size="small"
+			/>
 		</span>
 	);
 	const rowHandle = (

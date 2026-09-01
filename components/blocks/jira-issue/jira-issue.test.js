@@ -579,12 +579,15 @@ test("Jira issue renders one aggregate agent row with prioritized status and no 
 	assert.match(AGENT_ACTIVITY_SOURCE, /status: activity\.label,[\s\S]*statusSequence: activity\.state === "working" \? getJiraIssueAgentWorkingLabels\(activity\) : undefined,[\s\S]*statusCycleIntervalMs: activity\.cycleIntervalMs[\s\S]*statusCycleJitterMs: activity\.cycleIntervalJitterMs/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /duration=\{JIRA_ISSUE_AGENT_SHIMMER_DURATION\}[\s\S]*spread=\{JIRA_ISSUE_AGENT_SHIMMER_SPREAD\}[\s\S]*\{summary\.label\}[\s\S]*<AnimatedDots/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /usesStrokeChrome \? "text-xs leading-4" : "text-sm leading-5"/u);
-	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /PixelLoader/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ PixelLoader \} from "@\/components\/ui-custom\/pixel-loader";/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /usesStrokeChrome \? "gap-1\.5" : "gap-2"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /usesStrokeChrome \? "size-4" : "-my-1 size-6"/u);
-	// Both chromes use the standard (non-rainbow) Spinner for the working indicator;
-	// the stroke chrome no longer swaps in a PixelLoader.
-	assert.match(AGENT_ACTIVITY_SOURCE, /aria-hidden="true"\s*\n\s*>\s*\n\s*<Spinner label="" size="xs" \/>/u);
+	// Every active agent-session row uses the same compact pixel-loader treatment.
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/aria-hidden="true"\s*\n\s*>\s*\n\s*<PixelLoader[\s\S]*className="size-3 justify-center"[\s\S]*pattern="diagonal-top-left"[\s\S]*shape="dot"[\s\S]*size="small"/u,
+	);
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<Spinner/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /className="grid size-4 shrink-0 place-items-center text-icon"/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<HoverCard/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AgentList/u);
