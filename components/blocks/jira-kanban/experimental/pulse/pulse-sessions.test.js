@@ -135,7 +135,12 @@ test("every local session becomes one agent-list row with fixture identity", asy
 	}
 	assert.ok(timeLabels.size > 1, "timestamps must not all be identical");
 	assert.ok(machineNames.size > 1, "machine names must not all be identical");
-	assert.ok(!machineNames.has("Venn’s MacBook"), "do not stamp every row as Venn’s MacBook");
+	// A couple of rows sit on the viewer's own machine so Untracked work has
+	// something to resume; the rest must still belong to teammates.
+	assert.ok(
+		allItems.filter((item) => item.machineName === "Venn’s MacBook").length < allItems.length / 2,
+		"do not stamp every row as Venn’s MacBook",
+	);
 	for (const name of ["Claude", "Codex", "Cursor", "Rovo"]) {
 		assert.ok(agentNames.has(name), `timeline is missing ${name}`);
 	}

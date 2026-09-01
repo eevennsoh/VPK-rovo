@@ -7,7 +7,7 @@ import type {
 } from "../types";
 import { PULSE_LOOSE_WORK } from "./pulse-loose-work";
 
-export { PULSE_SPACE_REPOSITORY } from "./pulse-loose-work";
+export { PULSE_SPACE_REPOSITORY, PULSE_VIEWER_MACHINE_NAME } from "./pulse-loose-work";
 
 /**
  * Pulse fixture — one sprint week of the `PAY` Payments SDK v2 migration.

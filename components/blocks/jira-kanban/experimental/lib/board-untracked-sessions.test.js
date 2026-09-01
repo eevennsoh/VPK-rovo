@@ -9,6 +9,7 @@ const {
 	groupBoardUntrackedSessions,
 	resolveBoardUntrackedIssueKey,
 	resolveVisibleFocusedIssueKey,
+	selectBoardUntrackedSessions,
 	scrollBoardIssueIntoView,
 } = require("./board-untracked-sessions.ts");
 
@@ -92,6 +93,33 @@ test("groupBoardUntrackedSessions merges unlinked detached sessions without dupl
 	);
 	assert.equal(grouped["PAY-102"], undefined);
 	assert.equal(grouped["PAY-999"], undefined);
+});
+
+test("selectBoardUntrackedSessions removes linked sessions from untracked work", () => {
+	const selected = selectBoardUntrackedSessions({
+		capturedItemIds: new Set(["lw-linked"]),
+		sessions: [
+			session("lw-untracked", "PAY-101"),
+			session("lw-linked", "PAY-121"),
+		],
+	});
+
+	assert.deepEqual(selected.map((item) => item.id), ["lw-untracked"]);
+});
+
+test("selectBoardUntrackedSessions adds newly unlinked card sessions once", () => {
+	const selected = selectBoardUntrackedSessions({
+		detachedByCard: {
+			"PAY-101": [session("running-unlinked", "PAY-101")],
+			"PAY-121": [session("lw-existing", "PAY-121")],
+		},
+		sessions: [session("lw-existing", "PAY-121")],
+	});
+
+	assert.deepEqual(
+		selected.map((item) => item.id),
+		["lw-existing", "running-unlinked"],
+	);
 });
 
 test("bindBoardProximitySessionActions keeps Pulse capture and omits unlinked no-ops", () => {

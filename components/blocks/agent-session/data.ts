@@ -35,6 +35,7 @@ export const AGENT_SESSION_ITEMS: readonly AgentSessionItem[] = [
 	{
 		id: "lw-scope-thread",
 		title: "The adapter keep-or-delete argument still lives in a local Claude session",
+		shortTitle: "Keep or delete the adapter",
 		state: "complete",
 		agent: CLAUDE_AGENT,
 		host: "local",
@@ -55,6 +56,7 @@ export const AGENT_SESSION_ITEMS: readonly AgentSessionItem[] = [
 	{
 		id: "lw-kickoff-killswitch-session",
 		title: "Kill switch as a prerequisite still lives in a local Cursor session",
+		shortTitle: "Kill switch as port gate",
 		state: "complete",
 		agent: CURSOR_AGENT,
 		host: "local",
@@ -75,6 +77,7 @@ export const AGENT_SESSION_ITEMS: readonly AgentSessionItem[] = [
 	{
 		id: "lw-night-suite-session",
 		title: "Overnight contract-suite session never captured on PAY-113",
+		shortTitle: "3-D Secure suite run",
 		state: "complete",
 		agent: createRovoAgent(),
 		host: "local",

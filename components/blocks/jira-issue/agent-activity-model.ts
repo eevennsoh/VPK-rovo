@@ -1,5 +1,22 @@
 export type JiraIssueActiveAgentState = "working" | "awaiting-input";
 
+type RelatedAgentActivityMode = "none" | JiraIssueActiveAgentState | "completed";
+
+/**
+ * Unlinked-but-related sessions keep the grey agent-activity backdrop.
+ * JiraIssue lights that shell from `working` with an empty chin — the same
+ * contract the experimental Unlink fixture uses — without inventing a chin row.
+ */
+export function resolveRelatedJiraIssueAgentActivityMode(
+	mode: RelatedAgentActivityMode | undefined,
+	hasRelatedSessions: boolean,
+): RelatedAgentActivityMode | undefined {
+	if (hasRelatedSessions && (mode === "none" || mode === undefined)) {
+		return "working";
+	}
+	return mode;
+}
+
 /**
  * `merged` collapses every active agent into one prioritized chin row
  * (`2 Working`). `split` gives each active agent its own row.
