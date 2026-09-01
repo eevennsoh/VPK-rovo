@@ -126,7 +126,13 @@ test("medium matches the 276 by 33 Figma row and reuses shared identity primitiv
 	assert.match(MEDIUM_CARD_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual";/u);
 	assert.match(MEDIUM_CARD_SOURCE, /import \{ Avatar, AvatarFallback, AvatarImage \} from "@\/components\/ui\/avatar";/u);
 	assert.match(MEDIUM_CARD_SOURCE, /h-\[33px\] w-\[276px\]/u);
-	assert.match(MEDIUM_CARD_SOURCE, /items-center gap-2 rounded-\[10px\] border border-transparent bg-bg-accent-gray-subtlest px-3/u);
+	assert.match(MEDIUM_CARD_SOURCE, /items-center gap-2 rounded-\[10px\] border border-transparent px-3/u);
+	// Resting surface moved out of the base string when the column-hover
+	// highlight added a pressed branch; the rest/hover pair itself is unchanged.
+	assert.match(
+		MEDIUM_CARD_SOURCE,
+		/"bg-bg-accent-gray-subtlest hover:bg-bg-accent-gray-subtlest-hovered"/u,
+	);
 	assert.match(MEDIUM_CARD_SOURCE, /sizePx=\{16\}/u);
 	assert.match(MEDIUM_CARD_SOURCE, /min-w-0 flex-1 truncate text-left text-xs font-normal leading-4 text-text-subtlest/u);
 	assert.match(MEDIUM_CARD_SOURCE, /<Icon className="text-icon-subtle" render=\{<LinkIcon label="" size="small" \/>\} \/>/u);
@@ -156,18 +162,26 @@ test("medium matches the 276 by 33 Figma row and reuses shared identity primitiv
 });
 
 test("medium drag chip is the shared agent mention tag with overlay elevation", () => {
+	assert.match(MEDIUM_DRAG_SOURCE, /import \{ createPortal \} from "react-dom";/u);
 	assert.match(
 		MEDIUM_DRAG_SOURCE,
 		/import \{ AgentSessionMentionChip \} from "@\/components\/blocks\/jira-issue\/agent-session-mention-chip";/u,
 	);
 	assert.match(MEDIUM_DRAG_SOURCE, /<AgentSessionMentionChip[\s\S]*elevated[\s\S]*name=\{item\.agent\.name\}/u);
-	assert.match(MEDIUM_DRAG_SOURCE, /\{isDragging \? chip : children\(undefined\)\}/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /\{children\(sessionDragBind\)\}/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /isDragging \? createPortal\([\s\S]*\{chip\}/u);
 	assert.match(
 		MEDIUM_DRAG_SOURCE,
 		/className="pointer-events-none flex w-fit max-w-full -translate-x-1\/2 -translate-y-1\/2 items-center justify-start"/u,
 	);
 	assert.match(MEDIUM_DRAG_SOURCE, /useSessionDragChipPointer/u);
-	assert.match(MEDIUM_DRAG_SOURCE, /sessionDragChipViewportStyle\(isDragging\)/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /sessionDragChipViewportStyle\(true\)/u);
+	assert.match(
+		MEDIUM_DRAG_SOURCE,
+		/createPortal\([\s\S]*data-session-drag-overlay=""[\s\S]*document\.body/u,
+	);
+	assert.match(MEDIUM_DRAG_SOURCE, /chipPointer\.snapToPointer\(\s*\{ x: event\.clientX, y: event\.clientY \},?\s*\);/u);
+	assert.doesNotMatch(MEDIUM_DRAG_SOURCE, /chipPointer\.(?:snapToPointer|followPointer)\([\s\S]{0,100}event\.currentTarget/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /-translate-x-1\/2 -translate-y-1\/2/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /data-session-chip-centered=""/u);
 	assert.doesNotMatch(MEDIUM_DRAG_SOURCE, /bg-surface-raised/u);
@@ -181,8 +195,8 @@ test("medium drag keeps pointer capture on the motion host instead of swapping a
 	// unmounted the node that called setPointerCapture. pointerup never fired,
 	// so the card stuck on an empty grey attach chin.
 	assert.doesNotMatch(MEDIUM_DRAG_SOURCE, /isDragging \? chip : children\(sessionDragBind\)/u);
-	assert.match(MEDIUM_DRAG_SOURCE, /<motion\.div\s*\n\s*ref=\{hostRef\}/u);
-	assert.match(MEDIUM_DRAG_SOURCE, /\{\.\.\.sessionDragBind\}/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /\{children\(sessionDragBind\)\}/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /pointer-events-none absolute inset-x-0 top-0 opacity-0/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /window\.addEventListener\("pointerup", onPointerUp\)/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /window\.addEventListener\("pointercancel", onPointerCancel\)/u);
 });
@@ -196,7 +210,27 @@ test("medium drag publishes the attach transfer only after the pointer moves", (
 		MEDIUM_DRAG_SOURCE,
 		/onPointerDown: \(event: ReactPointerEvent<HTMLElement>\) => \{\s*\n\s*drag\.bind\.onPointerDown\(event\);\s*\n\s*publishSessionDrag\(true, event\);/u,
 	);
-	assert.match(MEDIUM_DRAG_SOURCE, /if \(moved\) \{\s*\n\s*publishSessionDrag\(true, event\);/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /if \(moved\) \{[\s\S]*publishSessionDrag\(true, event\);/u);
+});
+
+test("large untracked-work cards opt into the shared session drag without collapsing their row", () => {
+	assert.match(CARD_SOURCE, /sessionDrag\?: JiraIssueAgentSessionDragBinding;/u);
+	assert.match(CARD_SOURCE, /<AgentSessionMediumDrag[\s\S]*preserveSourceFootprint[\s\S]*source="untracked"/u);
+	assert.match(CARD_SOURCE, /\{\(bind\) => \([\s\S]*<article[\s\S]*\{\.\.\.bind\}/u);
+	assert.match(INDEX_SOURCE, /<AgentSessionCard[\s\S]*sessionDrag=\{sessionDrag\}/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /preserveSourceFootprint \? sourceHeight : undefined/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /source: source/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /data-session-drag-placeholder=\{preserveSourceFootprint \|\| undefined\}/u);
+});
+
+test("session drag ignores nested controls and suppresses the click after a real pointer drag", () => {
+	assert.match(MEDIUM_DRAG_SOURCE, /SESSION_DRAG_INTERACTIVE_SELECTOR/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /event\.target\.closest\(SESSION_DRAG_INTERACTIVE_SELECTOR\)/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /interactiveTarget !== null && interactiveTarget !== event\.currentTarget/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /didPublishDragRef\.current = true/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /onClickCapture: \(event: ReactMouseEvent<HTMLElement>\)/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /event\.preventDefault\(\);\s*event\.stopPropagation\(\)/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /onPointerCancel: cancelSessionDrag/u);
 });
 
 test("medium more menu collapses until hover so the label can use the slot", () => {
@@ -268,7 +302,7 @@ test("small is the collapsed-column notch and stays keyboard operable when view 
 	assert.doesNotMatch(COMPACT_CARD_SOURCE, /proximity/u);
 	assert.match(NOTCH_SOURCE, /isNew \? NOTCH_EMPHASIS : NOTCH_AT_REST/u);
 	assert.match(NOTCH_SOURCE, /const NOTCH_EMPHASIS = "scale-x-\[1\.6\] bg-icon";/u);
-	assert.match(NOTCH_SOURCE, /"bg-icon-subtlest",/u);
+	assert.match(NOTCH_SOURCE, /"bg-icon-disabled",/u);
 	assert.match(NOTCH_SOURCE, /group-hover\/notch:bg-icon/u);
 	assert.match(NOTCH_SOURCE, /toAgentSessionNotchTone\(/u);
 	assert.doesNotMatch(NOTCH_SOURCE, /toAgentSessionNotchOpacity|transition-opacity/u);
@@ -310,9 +344,21 @@ test("the row reveals Resume plus a Hide / Show eye where Agent List puts Archiv
 	assert.match(TYPES_SOURCE, /visibilityLabel\?: string;/u);
 	assert.match(TYPES_SOURCE, /onItemHover\?: \(item: AgentSessionItem \| null\) => void;/u);
 	assert.match(INDEX_SOURCE, /onItemHover=\{onItemHover\}/u);
-	assert.match(CARD_SOURCE, /onPointerEnter=\{\(\) => onItemHover\?\.\(item\)\}/u);
-	assert.match(CARD_SOURCE, /onPointerLeave=\{\(\) => onItemHover\?\.\(null\)\}/u);
-	assert.match(CARD_SOURCE, /onItemHoverRef\.current\?\.\(null\)/u);
+	assert.match(
+		CARD_SOURCE,
+		/onPointerEnter=\{\(\) => \{\s*isHoveredRef\.current = true;\s*onItemHover\?\.\(item\);\s*\}\}/u,
+	);
+	assert.match(
+		CARD_SOURCE,
+		/onPointerLeave=\{\(\) => \{\s*isHoveredRef\.current = false;\s*onItemHover\?\.\(null\);\s*\}\}/u,
+	);
+	// Regression: unmount cleanup may only clear the hover it owns. Firing it
+	// unconditionally let a filtered/captured sibling wipe a highlight the
+	// pointer was still resting on, with no pointerenter left to restore it.
+	assert.match(
+		CARD_SOURCE,
+		/if \(isHoveredRef\.current\) \{\s*onItemHoverRef\.current\?\.\(null\);\s*\}/u,
+	);
 	assert.match(
 		CARD_SOURCE,
 		/useEffect\(\(\) => \{\s*onItemHoverRef\.current = onItemHover;\s*\}, \[onItemHover\]\)/u,

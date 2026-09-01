@@ -44,6 +44,7 @@ function stopSessionDrag(event: { stopPropagation: () => void }) {
 export function AgentSessionMediumCard({
 	flyout,
 	isArriving,
+	isHighlighted = false,
 	isNew,
 	issueKey,
 	item,
@@ -54,6 +55,8 @@ export function AgentSessionMediumCard({
 	sessionDrag,
 }: Readonly<{
 	isArriving: boolean;
+	/** Lit from the Untracked work column hovering this same session. */
+	isHighlighted?: boolean;
 	isNew: boolean;
 	issueKey?: string;
 	item: AgentSessionItem;
@@ -80,7 +83,14 @@ export function AgentSessionMediumCard({
 		: `${item.agent.name} with ${invoker.name}`;
 	const linkLabel = uncapturedWorkLinkLabel(issueKey ?? item.sessionDetails?.issueKey);
 	const className = cn(
-		"group/session-card relative flex h-[33px] w-[276px] items-center gap-2 rounded-[10px] border border-transparent bg-bg-accent-gray-subtlest px-3 text-text hover:bg-bg-accent-gray-subtlest-hovered",
+		"group/session-card relative flex h-[33px] w-[276px] items-center gap-2 rounded-[10px] border border-transparent px-3 text-text",
+		"transition-[background-color] duration-xxshort ease-out-practical motion-reduce:transition-none",
+		// Lit from the column, the pointer is nowhere near this row, so it borrows
+		// the row's own hover rung: the board reads as if the pointer were on the
+		// twin, which is exactly the relationship the column hover is claiming.
+		isHighlighted
+			? "bg-bg-accent-gray-subtlest-hovered"
+			: "bg-bg-accent-gray-subtlest hover:bg-bg-accent-gray-subtlest-hovered",
 		isNew ? "ring-1 ring-border-discovery" : null,
 	);
 
@@ -141,7 +151,7 @@ export function AgentSessionMediumCard({
 		);
 
 		return (
-			<div className={className} data-new={isNew || undefined}>
+			<div className={className} data-highlighted={isHighlighted || undefined} data-new={isNew || undefined}>
 				{isNew ? (
 					<>
 						<span className="sr-only">Newly synced, not yet reviewed</span>
@@ -152,6 +162,7 @@ export function AgentSessionMediumCard({
 					<span className="flex min-w-0 flex-1 items-center gap-1">{identity}</span>
 				) : (
 					<Button
+						{...bind}
 						aria-label={`${onView === undefined ? "Preview" : "Open"} ${sessionTitle} — ${identityLabel} session`}
 						aria-roledescription={bind ? "Draggable agent session" : undefined}
 						className="h-auto! min-w-0 flex-1 justify-start gap-1 rounded-none! border-0 px-0! py-0! hover:bg-transparent active:bg-transparent"
@@ -160,7 +171,6 @@ export function AgentSessionMediumCard({
 						onClick={onView === undefined ? undefined : () => onView(item)}
 						type="button"
 						variant="ghost"
-						{...bind}
 					>
 						{identity}
 					</Button>

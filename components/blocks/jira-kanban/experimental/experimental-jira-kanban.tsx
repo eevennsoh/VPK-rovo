@@ -13,9 +13,11 @@ import { AgentSessionColumn, type AgentSessionColumnProps } from "@/components/b
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import {
 	type JiraIssueAgentActivityLayout,
+	type JiraIssueAgentActivityIndicatorRenderer,
 	type JiraIssueGenerativeActionPresentation,
 } from "@/components/blocks/jira-issue";
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
+import { JiraSessionFlyoutSuspensionProvider } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import {
 	mapAgentToMentionItem,
 	mapSkillToMentionItem,
@@ -64,6 +66,7 @@ import {
 	resolveVisibleFocusedIssueKey,
 	scrollBoardIssueIntoView,
 } from "./lib/board-untracked-sessions";
+import { useBoardAgentSessionDrag } from "./use-board-agent-session-drag";
 
 import type {
 	JiraKanbanAgentData,
@@ -96,8 +99,10 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 		card: JiraKanbanCardData,
 		columnTitle: string,
 	) => void;
+	onCardAgentSessionMove?: (session: JiraIssueAgentSessionRef, sourceCard: JiraKanbanCardData, targetCard: JiraKanbanCardData, sourceColumnTitle: string, targetColumnTitle: string) => void;
 	/** Chooses where card agent and skill actions are presented. */
 	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;
+	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	/**
 	 * Sessions that never became work items, pinned as a column to the
 	 * left of the board. Omit to render only Jira status columns.
@@ -585,6 +590,7 @@ export function ExperimentalJiraKanban({
 	onCardAgentActivityOpenChange,
 	onCardAgentActivityViewChat,
 	onCardAgentSessionLink,
+	onCardAgentSessionMove,
 	onCardAgentSessionUnlink,
 	onCardAgentDoneRunReview,
 	onCardAgentDoneRunView,
@@ -592,6 +598,7 @@ export function ExperimentalJiraKanban({
 	onCollapsedColumnsChange,
 	onToggleColumnAgent,
 	proximityAgentSession,
+	renderAgentActivityIndicator,
 	paddingBottom = token("space.150"),
 	paddingTop = token("space.150"),
 	selectionToolbar,
@@ -605,12 +612,22 @@ export function ExperimentalJiraKanban({
 		EMPTY_COLLAPSED_BOARD_COLUMNS,
 	);
 	const [focusedIssueKey, setFocusedIssueKey] = useState<string | null>(null);
+	const [hoveredSessionId, setHoveredSessionId] = useState<string | null>(null);
 	const spotlightIssueKey = resolveVisibleFocusedIssueKey(focusedIssueKey, boardColumns);
 	const collapsedColumns = controlledCollapsedColumns ?? uncontrolledCollapsedColumns;
 	const selectedCount = selectedCardCodes?.size ?? 0;
 	const selectedStatus = selectedCardCodes
 		? getCommonSelectedCardStatus(boardColumns, selectedCardCodes)
 		: null;
+	const boardSessionDrag = useBoardAgentSessionDrag({
+		agentActivityLayout,
+		boardColumns,
+		detachedSessionsByCard: detachedAgentSessionsByCard,
+		onLink: onCardAgentSessionLink,
+		onMove: onCardAgentSessionMove,
+		onUnlink: onCardAgentSessionUnlink,
+		untrackedSessions: agentSessionColumn?.items,
+	});
 	const generativeActionAgents = useMemo(
 		() => selectionToolbar?.agents
 			? getMentionChildItems(
@@ -734,6 +751,17 @@ export function ExperimentalJiraKanban({
 		agentSessionColumn?.onView?.(item);
 	};
 
+	// Hovering an Untracked card lights its twin beside the work item it already
+	// names. Both surfaces render the same session ids — the column holds every
+	// untracked session, the board holds the subset naming an issue on it — so an
+	// id match is the whole relationship test, and a session with no board
+	// relationship simply has no row to light. Preview only: the click spotlight
+	// above still owns focus, scroll, and dimming.
+	const handleSessionHover = (item: AgentSessionItem | null) => {
+		setHoveredSessionId(item?.id ?? null);
+		agentSessionColumn?.onItemHover?.(item);
+	};
+
 	const handleSessionSelectionChange = (itemId: string | null) => {
 		// Card deselect is not a view. Clear the session-driven spotlight so
 		// status columns drop `opacity-40` instead of staying veiled.
@@ -752,9 +780,18 @@ export function ExperimentalJiraKanban({
 		}
 		onCollapsedColumnsChange?.(nextCollapsedColumns);
 	};
+	const sessionFlyoutsSuspended = boardSessionDrag.transaction !== null || draggedCardCode !== null;
 
 	return (
-		<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+		<JiraSessionFlyoutSuspensionProvider
+			suspended={sessionFlyoutsSuspended}
+		>
+		<div
+			ref={boardSessionDrag.boardRootRef}
+			className="relative flex min-h-0 min-w-0 flex-1 flex-col"
+			data-board-agent-session-dragging={boardSessionDrag.transaction !== null || undefined}
+			data-board-agent-session-origin={boardSessionDrag.transaction?.origin.kind}
+		>
 			<div className="flex min-h-0 min-w-0 flex-1 items-stretch">
 				{agentSessionColumn ? (
 					// Top/left/bottom match the status columns' 2px drop-target
@@ -767,8 +804,12 @@ export function ExperimentalJiraKanban({
 					>
 						<AgentSessionColumn
 							{...agentSessionColumn}
+							onItemHover={handleSessionHover}
 							onSelectedItemIdChange={handleSessionSelectionChange}
 							onView={handleSessionView}
+							sessionDrag={boardSessionDrag.enabled
+								? boardSessionDrag.untrackedBinding
+								: agentSessionColumn.sessionDrag}
 						/>
 					</div>
 				) : null}
@@ -831,15 +872,20 @@ export function ExperimentalJiraKanban({
 										: undefined;
 									const shouldAnimateCardPosition = shouldAnimateCardMoves && cardMovePhase === undefined;
 									const detachedAgentSessions = detachedAgentSessionsByCard?.[card.code] ?? [];
-									const proximityActions = bindBoardProximitySessionActions({
+										const proximityActions = bindBoardProximitySessionActions({
 										actionableSessionIds: proximityAgentSession?.actionableSessionIds,
 										capturedItemIds: proximityAgentSession?.capturedItemIds,
 										onCreateWorkItem: proximityAgentSession?.onCreateWorkItem,
 										onLinkWorkItem: proximityAgentSession?.onLinkWorkItem,
 										onSubtasks: proximityAgentSession?.onSubtasks,
-										sessions: detachedAgentSessions,
-									});
-									const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+											sessions: detachedAgentSessions,
+										});
+										const {
+											control: agentSessionDragControl,
+											detachedBinding: detachedSessionDragBinding,
+											dropTarget: cardDropTarget,
+										} = boardSessionDrag.getCardDragState(card, column.title);
+										const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
 										const modifiers: JiraKanbanCardSelectModifiers = {
 											shiftKey: event.shiftKey,
 											metaOrCtrlKey: event.metaKey || event.ctrlKey,
@@ -873,22 +919,27 @@ export function ExperimentalJiraKanban({
 													spotlightIssueKey === card.code && "bg-bg-accent-blue-subtlest",
 													spotlightIssueKey !== null && spotlightIssueKey !== card.code && "opacity-40",
 												)}
+												data-board-agent-session-drop-zone="issue"
+												data-board-agent-session-target={cardDropTarget ?? undefined}
 												data-issue-key={card.code}
 												initial={false}
 												style={cardMovePhase ? { willChange: "transform" } : undefined}
 												transition={cardMovePhase === "departing" ? JIRA_KANBAN_CARD_DEPART : JIRA_KANBAN_CARD_MOVE}
 											>
-											<ExperimentalJiraKanbanCard
+												<ExperimentalJiraKanbanCard
 												active={isActive}
-												agentActivityLayout={agentActivityLayout}
+													agentActivityLayout={agentActivityLayout}
+													agentSessionDragControl={agentSessionDragControl}
 												capturedItemIds={proximityActions.capturedItemIds}
 												card={card}
 												columnTitle={column.title}
-												detachedAgentSessions={detachedAgentSessions}
+													detachedAgentSessions={detachedAgentSessions}
+													detachedSessionDrag={detachedSessionDragBinding}
 												dragging={isCardBeingDragged || isSelectedCardBeingDragged}
 												generativeActionAgents={generativeActionAgents}
 												generativeActionPresentation={cardGenerativeActionPresentation}
 												generativeActionSkills={generativeActionSkills}
+												highlightedSessionId={hoveredSessionId}
 												onAgentActivityOpenChange={onCardAgentActivityOpenChange}
 												onAgentActivityViewChat={onCardAgentActivityViewChat}
 												onAgentDoneRunReview={onCardAgentDoneRunReview}
@@ -898,8 +949,9 @@ export function ExperimentalJiraKanban({
 												onDragEnd={handleCardDragEndInternal}
 												onDragStart={(event) => handleCardDragStartInternal(card, column.title, event)}
 												onGenerativeActionSubmit={onCardGenerativeActionSubmit}
-												onLinkWorkItem={proximityActions.onLinkWorkItem}
-												onSessionLink={onCardAgentSessionLink}
+											onLinkWorkItem={proximityActions.onLinkWorkItem}
+											renderAgentActivityIndicator={renderAgentActivityIndicator}
+											onSessionLink={onCardAgentSessionLink}
 												onSessionUnlink={onCardAgentSessionUnlink}
 												onSubtasks={proximityActions.onSubtasks}
 												selected={isSelected}
@@ -942,6 +994,7 @@ export function ExperimentalJiraKanban({
 						statusOptions={boardColumns.map((column) => column.title)}
 					/>
 				) : null}
-			</div>
+		</div>
+		</JiraSessionFlyoutSuspensionProvider>
 	);
 }

@@ -6,14 +6,17 @@ import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type {
 	JiraIssueAgentActivity,
+	JiraIssueAgentActivityIndicatorRenderer,
 	JiraIssueCompletedAgentRun,
 } from "@/components/blocks/jira-issue";
 import { toJiraIssueDemoAttachedActivity } from "@/components/blocks/jira-issue/agent-session-demo-attach";
+import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
 import { isPulseAgentSession, type PulseLooseWork } from "@/components/blocks/jira-kanban/experimental/pulse/types";
-import { linkJiraKanbanAgentSession, unlinkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
+import { linkJiraKanbanAgentSession, moveJiraKanbanAgentSession, unlinkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
 import { JiraList, type JiraListRowData } from "@/components/blocks/jira-list";
+import { PixelLoader } from "@/components/ui-custom/pixel-loader";
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
 import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v1/data/agent-chat-data";
 import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journeys-v1/hooks/use-jira-golden-journeys-v1-agent-chat-demo";
@@ -34,6 +37,15 @@ const STATUS_VARIANTS: Readonly<Record<string, JiraListRowData["statusVariant"]>
 	"In review": "warning",
 	Done: "success",
 };
+
+const renderJiraGoldenJourneysV4AgentActivityIndicator: JiraIssueAgentActivityIndicatorRenderer = (state) => (
+	<PixelLoader
+		className="size-3 justify-center text-icon-subtle"
+		pattern={state === "awaiting-input" ? "solo" : "diagonal-top-left"}
+		shape={state === "awaiting-input" ? "square" : "dot"}
+		size="small"
+	/>
+);
 
 function createListRows(columns: readonly JiraKanbanColumnData[]): JiraListRowData[] {
 	return columns.flatMap((column) => column.cards.map((card) => ({
@@ -125,19 +137,32 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 			detachedActivitiesByIdRef.current = rest;
 		}
 		setDetachedAgentSessionsByCard((current) => {
-			const currentSessions = current[card.code] ?? [];
-			const nextSessions = currentSessions.filter((candidate) => candidate.id !== session.id);
-			if (nextSessions.length === currentSessions.length) {
-				return current;
+			let changed = false;
+			const next: Record<string, readonly AgentSessionItem[]> = {};
+			for (const [cardCode, sessions] of Object.entries(current)) {
+				const nextSessions = sessions.filter((candidate) => candidate.id !== session.id);
+				if (nextSessions.length !== sessions.length) {
+					changed = true;
+				}
+				if (nextSessions.length > 0) {
+					next[cardCode] = nextSessions;
+				}
 			}
-			if (nextSessions.length === 0) {
-				const rest = { ...current };
-				delete rest[card.code];
-				return rest;
-			}
-			return { ...current, [card.code]: nextSessions };
+			return changed ? next : current;
 		});
 		setBoardColumns((columns) => linkJiraKanbanAgentSession(columns, card.code, activity));
+	}, []);
+	const handleAgentSessionMove = useCallback((
+		session: JiraIssueAgentSessionRef,
+		sourceCard: JiraKanbanCardData,
+		targetCard: JiraKanbanCardData,
+	) => {
+		setBoardColumns((columns) => moveJiraKanbanAgentSession(
+			columns,
+			sourceCard.code,
+			targetCard.code,
+			session.id,
+		));
 	}, []);
 
 	return (
@@ -158,6 +183,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						agents={JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS}
 						ariaLabel="Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses."
 						boardColumns={boardColumns}
+						defaultAgentSessionColumnCollapsed
 						detachedAgentSessionsByCard={detachedAgentSessionsByCard}
 						headerAssignees={JIRA_GOLDEN_JOURNEYS_V4_PAY_HEADER_ASSIGNEES}
 						insightsEnabled={false}
@@ -167,6 +193,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						onCardAgentActivityViewChat={handleViewChat}
 						onCardAgentDoneRunView={handleViewCompletedRun}
 						onCardAgentSessionLink={handleAgentSessionLink}
+						onCardAgentSessionMove={handleAgentSessionMove}
 						onCardAgentSessionUnlink={handleAgentSessionUnlink}
 						onResumeLooseWork={handleResumeLooseWork}
 						onViewChange={setActiveView}
@@ -184,6 +211,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 								</div>
 							);
 						}}
+						renderAgentActivityIndicator={renderJiraGoldenJourneysV4AgentActivityIndicator}
 						showAgentSessionColumn
 						showBoardContent={selectedTab === 1}
 						viewTabs={<JiraViewTabs selectedTab={selectedTab} onTabChange={setSelectedTab} />}

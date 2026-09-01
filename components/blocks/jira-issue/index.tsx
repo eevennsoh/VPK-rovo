@@ -6,6 +6,7 @@ import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/r
 import {
 	JiraIssueAgentActivityRows,
 	type JiraIssueAgentActivity,
+	type JiraIssueAgentActivityIndicatorRenderer,
 	type JiraIssueAgentActivityLayout,
 	type JiraIssueAgentActivityMode,
 	type JiraIssueAgentSessionFlyoutContext,
@@ -79,6 +80,7 @@ export type {
 } from "@/components/blocks/jira-issue/types";
 export type {
 	JiraIssueAgentActivity,
+	JiraIssueAgentActivityIndicatorRenderer,
 	JiraIssueAgentActivityLayout,
 	JiraIssueAgentActivityMode,
 	JiraIssueAgentActivityState,
@@ -116,6 +118,17 @@ export interface JiraIssueParticipant {
 	name: string;
 	avatarSrc: string;
 	avatarShape?: NonNullable<AvatarProps["shape"]>;
+}
+
+/**
+ * Optional board ownership for a session drag. Shared Jira issue demos keep
+ * their local transfer state when this is absent.
+ */
+export interface JiraIssueAgentSessionDragControl {
+	binding: JiraIssueAgentSessionDragBinding;
+	dropTarget?: "attach" | "unlink" | null;
+	sourceActive: boolean;
+	state: JiraIssueAgentSessionDragState;
 }
 
 export interface JiraIssueUncapturedWorkProps extends Omit<ComponentProps<"article">, "children"> {
@@ -183,6 +196,8 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	agentSessionFlyout?: JiraIssueAgentSessionFlyoutContext;
 	onAgentActivityOpenChange?: (open: boolean) => void;
 	onAgentActivityViewChat?: (activity: JiraIssueAgentActivity) => void;
+	/** Optional host-owned visual override for active agent-session states. */
+	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	onAgentDoneRunSubmit?: (run: JiraIssueCompletedAgentRun, prompt: string) => void;
 	onAgentDoneRunReview?: (run: JiraIssueCompletedAgentRun) => void;
 	onAgentDoneRunView?: (run: JiraIssueCompletedAgentRun) => void;
@@ -195,6 +210,8 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	generativeActionPresentation?: JiraIssueGenerativeActionPresentation;
 	/** Opt-in: makes the chin rows draggable and adds the unlink/move drop zones below the card. */
 	agentSessionTransfer?: JiraIssueAgentSessionTransferConfig;
+	/** Board-owned drag state and target preview. Omit for the local transfer model. */
+	agentSessionDragControl?: JiraIssueAgentSessionDragControl;
 	/**
 	 * Rendered after the drop well so a detached session can drag back onto
 	 * the card.
@@ -221,6 +238,7 @@ function JiraIssueDefault({
 	agentActivityMode,
 	agentActivityLayout = "merged",
 	agentSessionFlyout,
+	agentSessionDragControl,
 	agentDoneRuns = [],
 	agentSessionTransfer,
 	assigneeAvatarLabel,
@@ -240,6 +258,7 @@ function JiraIssueDefault({
 	onSubtasksExpandedChange,
 	onAgentActivityOpenChange,
 	onAgentActivityViewChat,
+	renderAgentActivityIndicator,
 	onAgentDoneRunSubmit,
 	onAgentDoneRunReview,
 	onAgentDoneRunView,
@@ -277,26 +296,31 @@ function JiraIssueDefault({
 	const [generativeActionRevealSuppressed, setGenerativeActionRevealSuppressed] = useState(false);
 	const [agentActivityHoverOpen, setAgentActivityHoverOpen] = useState(false);
 	const [moreActionMenuOpen, setMoreActionMenuOpen] = useState(false);
-	const [agentSessionDragState, setAgentSessionDragState] = useState<JiraIssueAgentSessionDragState>(
+	const [internalAgentSessionDragState, setInternalAgentSessionDragState] = useState<JiraIssueAgentSessionDragState>(
 		JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE,
 	);
+	const resolvedAgentSessionDragState = agentSessionDragControl?.state ?? internalAgentSessionDragState;
 	const cardMeasureRef = useRef<HTMLElement | null>(null);
 	// While the transfer drop zone is revealed it owns the gesture, so the
 	// hover-revealed sparkle stands down rather than competing for the pointer.
-	const agentSessionTransferRevealed = Boolean(agentSessionTransfer) && agentSessionDragState.dragging;
+	const agentSessionTransferRevealed = Boolean(agentSessionTransfer)
+		&& resolvedAgentSessionDragState.dragging
+		&& (agentSessionDragControl === undefined
+			|| agentSessionDragControl.sourceActive
+			|| agentSessionDragControl.dropTarget !== null);
 	const generativeActionRevealActive = !agentActivityHoverOpen
 		&& !agentSessionTransferRevealed
 		&& !moreActionMenuOpen
 		&& !generativeActionRevealSuppressed
 		&& (generativeActionPointerActive || generativeActionFocusActive);
-	const agentSessionDragBinding: JiraIssueAgentSessionDragBinding | undefined = agentSessionTransfer
+	const localAgentSessionDragBinding: JiraIssueAgentSessionDragBinding | undefined = agentSessionTransfer
 		? {
 			onDragStateChange: (state) => {
 				// A finished gesture must not leave `source: "detached"` on the
 				// transfer state or the next hover still treats the card as an
 				// attach target. Keep `cancelled` for one commit so the well can
 				// clear without linking.
-				setAgentSessionDragState(
+				setInternalAgentSessionDragState(
 					state.cancelled
 						? { ...JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE, cancelled: true }
 						: state.dragging
@@ -304,13 +328,14 @@ function JiraIssueDefault({
 							: JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE,
 				);
 			},
-			onFocusedActivitiesChange: (activities) => setAgentSessionDragState((current) => ({
+			onFocusedActivitiesChange: (activities) => setInternalAgentSessionDragState((current) => ({
 				...current,
 				activities,
 			})),
 			onUnlink: agentSessionTransfer.onUnlink,
 		}
 		: undefined;
+	const agentSessionDragBinding: JiraIssueAgentSessionDragBinding | undefined = agentSessionDragControl?.binding ?? localAgentSessionDragBinding;
 	const hasSubtasks = Boolean(subtasks?.length);
 	const resolvedSubtasksExpanded = subtasksExpanded ?? internalSubtasksExpanded;
 	const completedSubtaskCount = getCompletedCount(subtasksCompleted, subtasks?.length ?? 0);
@@ -329,10 +354,12 @@ function JiraIssueDefault({
 	const hasAgentDoneNotification = resolvedAgentActivityMode === "completed" && agentDoneRuns.length > 0;
 	const inferredPullRequestNumber = agentDoneRuns.find((run) => run.pullRequestNumber)?.pullRequestNumber;
 	const resolvedPullRequestNumber = pullRequestNumber ?? inferredPullRequestNumber;
-	const isAttachingSession = isJiraIssueSessionAttachPreview(
-		agentSessionDragState.dragging,
-		agentSessionDragState.source,
-	);
+	const isAttachingSession = agentSessionDragControl
+		? agentSessionDragControl.dropTarget === "attach"
+		: isJiraIssueSessionAttachPreview(
+			resolvedAgentSessionDragState.dragging,
+			resolvedAgentSessionDragState.source,
+		);
 	// Unlink keeps `working` with an empty chin so the grey backdrop stays
 	// around the issue. The shell keys off mode, not a mounted row.
 	const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working"
@@ -418,7 +445,9 @@ function JiraIssueDefault({
 		// Motion's layout transform makes the shell its own stacking context, so a
 		// z-index on the dragged chip cannot escape it. Lift the whole shell above
 		// the drop wells — a later sibling — for the duration of the drag.
-		agentSessionDragState.dragging && "z-20",
+		resolvedAgentSessionDragState.dragging
+			&& (agentSessionDragControl?.sourceActive ?? true)
+			&& "z-20",
 		agentActivitySessionChipOutCloseClass,
 	);
 	const agentActivityArticleClassName = cn(
@@ -680,11 +709,13 @@ function JiraIssueDefault({
 					/>
 					{richIssueContent}
 				</motion.div>
-				<JiraIssueAgentActivityRows
-					activities={activeAgentActivities}
+					<JiraIssueAgentActivityRows
+						activities={activeAgentActivities}
+						instantSessionTransfer={agentSessionDragControl !== undefined}
 					layout={agentActivityLayout}
 					onOpenChange={handleAgentActivityOpenChange}
 					onViewChat={onAgentActivityViewChat}
+					renderAgentActivityIndicator={renderAgentActivityIndicator}
 					sessionFlyout={agentSessionFlyout}
 					sessionDrag={agentSessionDragBinding}
 					shouldReduceMotion={shouldReduceMotion}
@@ -735,15 +766,17 @@ function JiraIssueDefault({
 	const agentActivityShellWithTransfer = agentSessionTransfer ? (
 		<div className={cn("relative w-full min-w-0 overflow-visible", JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS)}>
 			{agentActivityShell}
-			<JiraIssueAgentSessionTransfer
-				cancelled={agentSessionDragState.cancelled}
-				cardMeasureRef={cardMeasureRef}
-				config={agentSessionTransfer}
-				dragging={agentSessionDragState.dragging}
-				pointer={agentSessionDragState.pointer}
-				session={agentSessionDragState.activities[0]}
-				sessionLabel={agentSessionDragState.activities[0]?.name}
-				source={agentSessionDragState.source}
+				<JiraIssueAgentSessionTransfer
+					cancelled={resolvedAgentSessionDragState.cancelled}
+					cardMeasureRef={cardMeasureRef}
+					commitDrops={agentSessionDragControl === undefined}
+					config={agentSessionTransfer}
+					controlledArmed={agentSessionDragControl ? agentSessionDragControl.dropTarget === "unlink" : undefined}
+					dragging={resolvedAgentSessionDragState.dragging}
+					pointer={resolvedAgentSessionDragState.pointer}
+					session={resolvedAgentSessionDragState.activities[0]}
+					sessionLabel={resolvedAgentSessionDragState.activities[0]?.name}
+					source={resolvedAgentSessionDragState.source}
 			/>
 			{agentSessionDragBinding && sessionTransferAfter
 				? sessionTransferAfter(agentSessionDragBinding)
@@ -760,7 +793,7 @@ function JiraIssueDefault({
 					className={agentActivityArticleClassName}
 					data-active={active || undefined}
 					data-dragging={dragging || undefined}
-					data-session-dragging={agentSessionDragState.dragging || undefined}
+					data-session-dragging={resolvedAgentSessionDragState.dragging || undefined}
 					data-selected={selected || undefined}
 					data-variant={variant}
 					data-agent-activity-mode={resolvedAgentActivityMode}

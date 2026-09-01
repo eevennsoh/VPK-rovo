@@ -76,10 +76,10 @@ test("out-of-range magnification is clamped, never extrapolated", () => {
 });
 
 test("colour is the named icon tokens, never an alpha mix", () => {
-	// Resting marks paint `color.icon.subtlest` and the selected mark paints
-	// `color.icon`. A 0.66–0.68 alpha of `color.icon` used to approximate
-	// subtlest over the old plane; that mix is a third grey on `bg-surface`.
-	assert.equal(AGENT_SESSION_NOTCH_TONE.rest, "var(--color-icon-subtlest)");
+	// Resting marks paint `color.icon.disabled` and the selected mark paints
+	// `color.icon`. A 0.66–0.68 alpha of `color.icon` used to approximate the
+	// resting grey over the old plane; that mix is a third grey on `bg-surface`.
+	assert.equal(AGENT_SESSION_NOTCH_TONE.rest, "var(--color-icon-disabled)");
 	assert.equal(AGENT_SESSION_NOTCH_TONE.selected, "var(--color-icon)");
 	assert.equal(toAgentSessionNotchTone(false, false), AGENT_SESSION_NOTCH_TONE.rest);
 	assert.equal(toAgentSessionNotchTone(true, false), AGENT_SESSION_NOTCH_TONE.selected);

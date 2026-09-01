@@ -582,10 +582,12 @@ test("Jira issue renders one aggregate agent row with prioritized status and no 
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /PixelLoader/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /usesStrokeChrome \? "gap-1\.5" : "gap-2"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /usesStrokeChrome \? "size-4" : "-my-1 size-6"/u);
-	// Both chromes use the standard (non-rainbow) Spinner for the working indicator;
-	// the stroke chrome no longer swaps in a PixelLoader.
-	assert.match(AGENT_ACTIVITY_SOURCE, /aria-hidden="true"\s*\n\s*>\s*\n\s*<Spinner label="" size="xs" \/>/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<Spinner label="" size="xs" \/>/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /className="grid size-4 shrink-0 place-items-center text-icon"/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /renderAgentActivityIndicator\?: JiraIssueAgentActivityIndicatorRenderer;/u);
+	assert.match(SOURCE, /renderAgentActivityIndicator\?: JiraIssueAgentActivityIndicatorRenderer;/u);
+	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*renderAgentActivityIndicator=\{renderAgentActivityIndicator\}/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<HoverCard/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AgentList/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AgentStates/u);
@@ -667,7 +669,7 @@ test("Jira issue animates agent state transitions with Motion", () => {
 	assert.match(LIB_SOURCE, /export const JIRA_ISSUE_MOTION_REDUCED: Transition = \{ duration: 0 \};/);
 	assert.match(SOURCE, /const shouldReduceMotion = useReducedMotion\(\);/);
 	assert.match(LIB_SOURCE, /export function getJiraIssuePresenceMotion\(shouldReduceMotion: boolean \| null\)[\s\S]*initial: false/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*\{rowGroups\.map\(\(rowGroup\) => \{[\s\S]*<motion\.div[\s\S]*key=\{rowGroup\.key\}[\s\S]*exit=\{presenceMotion\.exit\}[\s\S]*initial=\{presenceMotion\.initial\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<AnimatePresence key=\{rowPresenceKey\} initial=\{false\} mode="popLayout">[\s\S]*\{rowGroups\.map\(\(rowGroup\) => \{[\s\S]*<motion\.div[\s\S]*key=\{rowGroup\.key\}[\s\S]*exit=\{presenceMotion\.exit\}[\s\S]*initial=\{presenceMotion\.initial\}/u);
 	assert.match(SOURCE, /const hasIssueRows = hasSubtasks;/);
 	assert.match(SOURCE, /const issueRowsClassName = cn\("pt-1", !\(hasSubtasks && resolvedSubtasksExpanded\) && "pb-1"\);/);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*key="agent-review"[\s\S]*<JiraIssueAgentDone[\s\S]*runs=\{agentDoneRuns\}/u);

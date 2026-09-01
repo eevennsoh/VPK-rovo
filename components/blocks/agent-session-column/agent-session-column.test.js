@@ -362,11 +362,11 @@ test("collapsed motion is tokenised and honours reduced motion", () => {
 	assert.match(INDEX_SOURCE, /event\.propertyName === "width"/u);
 });
 
-test("the resting notch paints icon.subtlest, not an alpha of icon", () => {
+test("the resting notch paints icon.disabled, not an alpha of icon", () => {
 	// Two named tokens, opaque. An alpha of `color.icon` over the plane used to
-	// approximate subtlest; on `bg-surface` that mix is a third grey.
+	// approximate the resting grey; on `bg-surface` that mix is a third grey.
 	assert.match(INDEX_SOURCE, /const AGENT_SESSION_PLANE =\s*\n?\s*"[^"]*bg-surface/u);
-	assert.match(NOTCH_MAGNIFY_SOURCE, /rest: "var\(--color-icon-subtlest\)"/u);
+	assert.match(NOTCH_MAGNIFY_SOURCE, /rest: "var\(--color-icon-disabled\)"/u);
 	assert.match(NOTCH_MAGNIFY_SOURCE, /selected: "var\(--color-icon\)"/u);
 	assert.match(NOTCH_MAGNIFY_SOURCE, /export function toAgentSessionNotchTone\(/u);
 	assert.doesNotMatch(NOTCH_MAGNIFY_SOURCE, /AGENT_SESSION_NOTCH_OPACITY|rest: 0\.6[68]/u);
@@ -437,7 +437,7 @@ test("length carries proximity, colour carries selection — one notch, not the 
 	// Docked colour is the named token, snapped — a CSS colour transition would
 	// mix a third grey between the two. Width stays off any transition so it
 	// can track the pointer per frame.
-	assert.match(NOTCH_MARK_SOURCE, /isNew \? "bg-icon" : "bg-icon-subtlest"/u);
+	assert.match(NOTCH_MARK_SOURCE, /isNew \? "bg-icon" : "bg-icon-disabled"/u);
 	assert.doesNotMatch(NOTCH_MARK_SOURCE, /bg-icon transition-opacity/u);
 	// Colour drains on the same beat as the swell, not a frame ahead of it.
 	assert.match(
@@ -475,7 +475,7 @@ test("an arrival is a transient beat plus a mark that outlives it", () => {
 	// A reviewed notch rests quiet and lights up on hover or focus; a new one is
 	// already lit, so "new" reuses the hover vocabulary instead of adding one.
 	assert.match(NOTCH_MARK_SOURCE, /const NOTCH_EMPHASIS = "scale-x-\[1\.6\] bg-icon";/u);
-	assert.match(NOTCH_MARK_SOURCE, /"bg-icon-subtlest",/u);
+	assert.match(NOTCH_MARK_SOURCE, /"bg-icon-disabled",/u);
 	assert.match(NOTCH_MARK_SOURCE, /group-hover\/notch:bg-icon/u);
 	assert.match(NOTCH_MARK_SOURCE, /group-has-\[:focus-visible\]\/notch:bg-icon/u);
 	// State is spoken, not painted — no per-lifecycle hue at 12x2px.
@@ -703,7 +703,12 @@ test("the overflow menu is Link all suggestions, then Auto sync and Suggest link
 	assert.match(OVERFLOW_MENU_SOURCE, /label="Suggest link"/u);
 	assert.match(OVERFLOW_MENU_SOURCE, /const \[autoLink, setAutoLink\] = useState\(true\)/u);
 	assert.match(OVERFLOW_MENU_SOURCE, /elemAfter=\{\(/u);
-	assert.match(OVERFLOW_MENU_SOURCE, /<Switch/u);
+	assert.match(OVERFLOW_MENU_SOURCE, /<SwitchIndicator/u);
+	assert.match(OVERFLOW_MENU_SOURCE, /aria-checked=\{checked\}/u);
+	assert.match(OVERFLOW_MENU_SOURCE, /role="menuitemcheckbox"/u);
+	assert.doesNotMatch(OVERFLOW_MENU_SOURCE, /<Switch[\s>]/u);
+	assert.doesNotMatch(OVERFLOW_MENU_SOURCE, /suppressMenuDismissal/u);
+	assert.doesNotMatch(OVERFLOW_MENU_SOURCE, /onCheckedChange=\{onCheckedChange\}/u);
 	assert.match(OVERFLOW_MENU_SOURCE, /closeOnClick=\{false\}/u);
 	assert.match(OVERFLOW_MENU_SOURCE, /linkAllAgentSessions/u);
 	assert.match(OVERFLOW_SOURCE, /export function collectLinkableAgentSessions/u);

@@ -89,7 +89,13 @@ export default function PixelLoaderPlaygroundDemo() {
 								key={pattern}
 								className="flex min-h-24 flex-col items-center justify-center gap-3 rounded-lg border border-border bg-surface p-3"
 							>
-								<PixelLoader pattern={pattern} shape={shape} size={size} color={color} />
+								<PixelLoader
+									className="text-icon-subtle"
+									pattern={pattern}
+									shape={shape}
+									size={size}
+									color={color}
+								/>
 								<span className="text-center text-[11px] leading-tight text-text-subtlest">
 									{toCaption(pattern)}
 								</span>

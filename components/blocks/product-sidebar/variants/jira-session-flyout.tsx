@@ -2,8 +2,12 @@
 
 import {
 	cloneElement,
+	createContext,
 	isValidElement,
+	use,
+	useEffect,
 	useId,
+	useState,
 	type ComponentProps,
 	type FocusEventHandler,
 	type ReactNode,
@@ -58,9 +62,9 @@ import type {
 	JiraSidebarSessionItem,
 	JiraSidebarSessionStatus,
 } from "./jira";
-import { prStateLozenge } from "./jira-session-flyout-data";
+import { createJiraSessionFlyoutHandle, prStateLozenge } from "./jira-session-flyout-data";
 
-export { createJiraSessionFlyoutHandle, prStateLozenge } from "./jira-session-flyout-data";
+export { createJiraSessionFlyoutHandle, prStateLozenge };
 
 export type JiraSessionFlyoutHandle = HoverCardHandle<JiraSidebarSessionItem>;
 
@@ -96,6 +100,25 @@ interface FocusCaptureChildProps {
 	onFocusCapture?: FocusEventHandler<HTMLElement>;
 }
 
+const JiraSessionFlyoutSuspensionContext = createContext<JiraSessionFlyoutHandle | null>(null);
+
+/** Temporarily closes and disables Jira session previews during board drags. */
+export function JiraSessionFlyoutSuspensionProvider({
+	children,
+	suspended,
+}: Readonly<{
+	children: ReactNode;
+	suspended: boolean;
+}>) {
+	const [inactiveHandle] = useState(createJiraSessionFlyoutHandle);
+
+	return (
+		<JiraSessionFlyoutSuspensionContext value={suspended ? inactiveHandle : null}>
+			{children}
+		</JiraSessionFlyoutSuspensionContext>
+	);
+}
+
 /** Connects a session row to the list's shared flyout and carries its payload. */
 export function JiraSessionFlyoutTrigger({
 	closeDelay = 80,
@@ -106,8 +129,17 @@ export function JiraSessionFlyoutTrigger({
 	session,
 	...props
 }: Readonly<JiraSessionFlyoutTriggerProps>) {
+	const suspensionHandle = use(JiraSessionFlyoutSuspensionContext);
+	const suspended = suspensionHandle !== null;
 	const generatedId = useId();
 	const triggerId = idProp ?? generatedId;
+
+	useEffect(() => {
+		if (suspended) {
+			handle.close();
+		}
+	}, [handle, suspended]);
+
 	const childElement = isValidElement<FocusCaptureChildProps>(children)
 		? children
 		: null;
@@ -116,6 +148,7 @@ export function JiraSessionFlyoutTrigger({
 			onFocusCapture: (event) => {
 				childElement.props.onFocusCapture?.(event);
 				if (
+					!suspended &&
 					!event.defaultPrevented &&
 					event.target.matches(":focus-visible") &&
 					!event.currentTarget.contains(event.relatedTarget as Node | null)
@@ -130,7 +163,7 @@ export function JiraSessionFlyoutTrigger({
 		<HoverCardTrigger<JiraSidebarSessionItem>
 			closeDelay={closeDelay}
 			delay={delay}
-			handle={handle}
+			handle={suspensionHandle ?? handle}
 			id={triggerId}
 			payload={session}
 			{...props}
@@ -465,15 +498,15 @@ export function JiraSessionFlyoutBody({
 	return (
 		<div className="flex flex-col gap-2">
 			{hideHeader ? null : (
-				<div className="flex items-center justify-between gap-3">
-					<p className="min-w-0 truncate text-sm font-semibold leading-5 text-text" title={session.title}>
+				<div className="flex items-start justify-between gap-3">
+					<p className="min-w-0 text-xs font-medium leading-5 text-text" title={session.title}>
 						{session.title}
 					</p>
 					<span className="flex shrink-0 items-center gap-1">
 						{session.status === "awaiting-input" ? (
 							<Lozenge variant="information">Needs input</Lozenge>
 						) : (
-							<span className="text-[12px] leading-4 text-text-subtlest">
+							<span className="text-[12px] leading-5 text-text-subtlest">
 								{STATUS_UPDATED_LABEL[session.status]}
 							</span>
 						)}

@@ -15,13 +15,9 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
-import { Switch } from "@/components/ui/switch";
+import { SwitchIndicator } from "@/components/ui/switch";
 
 import { collectLinkableAgentSessions, linkAllAgentSessions } from "./agent-session-column-overflow";
-
-function suppressMenuDismissal(event: { preventDefault: () => void }) {
-	event.preventDefault();
-}
 
 export interface AgentSessionColumnOverflowMenuProps {
 	capturedItemIds?: ReadonlySet<string>;
@@ -35,29 +31,26 @@ export interface AgentSessionColumnOverflowMenuProps {
 function OverflowToggleRow({
 	checked,
 	label,
-	onCheckedChange,
+	onToggle,
 }: Readonly<{
 	checked: boolean;
 	label: string;
-	onCheckedChange: (enabled: boolean) => void;
+	onToggle: () => void;
 }>) {
 	return (
 		<DropdownMenuItem
+			aria-checked={checked}
 			closeOnClick={false}
-			className="text-text [&>span:last-child]:h-auto [&_[data-slot=switch]]:pointer-events-auto [&_[data-slot=switch]_svg]:size-full"
+			className="text-text [&>span:last-child]:h-auto [&_[data-slot=switch-indicator]_svg]:size-full"
 			elemAfter={(
-				<Switch
-					aria-label={`${checked ? "Disable" : "Enable"} ${label}`}
+				// The menu item owns focus and activation; the switch only displays its state.
+				<SwitchIndicator
 					checked={checked}
-					onCheckedChange={onCheckedChange}
-					onMouseDown={suppressMenuDismissal}
-					onPointerDown={suppressMenuDismissal}
 					size="sm"
 				/>
 			)}
-			onSelect={() => {
-				onCheckedChange(!checked);
-			}}
+			onSelect={onToggle}
+			role="menuitemcheckbox"
 		>
 			{label}
 		</DropdownMenuItem>
@@ -120,12 +113,16 @@ export function AgentSessionColumnOverflowMenu({
 					<OverflowToggleRow
 						checked={autoSync}
 						label="Auto sync"
-						onCheckedChange={setAutoSync}
+						onToggle={() => {
+							setAutoSync((current) => !current);
+						}}
 					/>
 					<OverflowToggleRow
 						checked={autoLink}
 						label="Suggest link"
-						onCheckedChange={setAutoLink}
+						onToggle={() => {
+							setAutoLink((current) => !current);
+						}}
 					/>
 				</DropdownMenuGroup>
 			</DropdownMenuContent>

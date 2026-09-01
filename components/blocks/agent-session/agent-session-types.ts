@@ -97,7 +97,7 @@ export interface AgentSessionProps {
 	selectedItemId?: string | null;
 	/** Called when the viewer selects or deselects a card. */
 	onSelectedItemIdChange?: (itemId: string | null) => void;
-	/** Opt-in: makes each medium-detached row a draggable session that can reattach. */
+	/** Opt-in: makes large untracked and medium-detached sessions draggable onto work items. */
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
 	/** Work item key for the detached link tooltip (`Link to KEY`). */
 	issueKey?: string;
@@ -106,6 +106,16 @@ export interface AgentSessionProps {
 	 * Compact rows do not fire this.
 	 */
 	onItemHover?: (item: AgentSessionItem | null) => void;
+	/**
+	 * Id of the compact row to light while the pointer sits somewhere else.
+	 *
+	 * The board pairs this with {@link onItemHover}: the Untracked work column
+	 * reports the session under the pointer, and every proximity row carrying the
+	 * same id lights up beside its work item. Distinct from
+	 * {@link selectedItemId}, which is a committed choice; this is a transient
+	 * preview of a relationship the viewer has not acted on yet.
+	 */
+	highlightedItemId?: string | null;
 	/**
 	 * When `onView` is set, non-coding rows for which this returns false omit the
 	 * body action. Coding agent rows ignore this permission check but still require

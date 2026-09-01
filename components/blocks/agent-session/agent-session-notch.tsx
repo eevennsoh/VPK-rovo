@@ -19,7 +19,7 @@ const NOTCH_EMPHASIS = "scale-x-[1.6] bg-icon";
 
 /** Reviewed notches stay quiet until their shared row is hovered or focused. */
 const NOTCH_AT_REST = cn(
-	"bg-icon-subtlest",
+	"bg-icon-disabled",
 	"group-hover/notch:scale-x-[1.6] group-hover/notch:bg-icon",
 	"group-has-[:focus-visible]/notch:scale-x-[1.6] group-has-[:focus-visible]/notch:bg-icon",
 );
@@ -49,7 +49,7 @@ const NOTCH_STANDALONE = cn(
  * Length and colour answer different questions. Length is continuous — every
  * notch on the slope grows by its distance, which is what makes the rail read as
  * one surface being pushed. Colour is not: the selected notch paints `bg-icon`
- * (`color.icon`) and every other notch paints `bg-icon-subtlest`, so the mark
+ * (`color.icon`) and every other notch paints `bg-icon-disabled`, so the mark
  * the pointer is actually on stays findable inside its own swell. Neighbours
  * grow longer without darkening.
  *
@@ -119,7 +119,7 @@ export function AgentSessionNotchMark({
 					// Docked colour is the named token on `backgroundColor`, not an
 					// alpha of `bg-icon`. Width tracks the pointer per frame and must
 					// not sit on a CSS transition.
-					: isNew ? "bg-icon" : "bg-icon-subtlest",
+					: isNew ? "bg-icon" : "bg-icon-disabled",
 			)}
 			initial={shouldPlayArrival ? { scaleX: 0 } : false}
 			style={{

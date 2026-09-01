@@ -147,8 +147,8 @@ export interface AgentListItem {
 	 */
 	timeLabel?: string;
 	/**
-	 * Where the session runs. Defaults to `"cloud"`. Local rows render a static
-	 * timestamp, a devices icon, and {@link AgentListItem.machineName}
+	 * Where the session runs. Defaults to `"cloud"`. Local rows render a devices
+	 * icon and {@link AgentListItem.machineName}, followed by a static timestamp,
 	 * instead of a live runtime and the agent name.
 	 */
 	host?: AgentListHost;

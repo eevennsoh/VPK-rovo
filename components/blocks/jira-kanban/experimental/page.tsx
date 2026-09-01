@@ -136,6 +136,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	ariaLabel?: string;
 	boardColumns?: readonly JiraKanbanColumnData[];
 	compactHeader?: boolean;
+	defaultAgentSessionColumnCollapsed?: boolean;
 	headerAssignees?: readonly JiraKanbanAssigneeData[];
 	insightsEnabled?: boolean;
 	insightsDefaultAssigneeIds?: readonly string[];
@@ -147,12 +148,14 @@ export interface ExperimentalJiraKanbanPageProps {
 	onCardAgentActivityViewChat?: JiraKanbanProps["onCardAgentActivityViewChat"];
 	onCardAgentDoneRunView?: JiraKanbanProps["onCardAgentDoneRunView"];
 	onCardAgentSessionLink?: ExperimentalJiraKanbanProps["onCardAgentSessionLink"];
+	onCardAgentSessionMove?: ExperimentalJiraKanbanProps["onCardAgentSessionMove"];
 	onCardAgentSessionUnlink?: ExperimentalJiraKanbanProps["onCardAgentSessionUnlink"];
 	onInsightsWorkItemClick?: (workItem: PulseWorkItem) => void;
 	onModeChange?: (mode: ExperimentalJiraKanbanMode) => void;
 	onResumeLooseWork?: (item: PulseLooseWork) => void;
 	onViewChange?: (view: ExperimentalJiraKanbanView) => void;
 	renderListContent?: (columns: readonly JiraKanbanColumnData[]) => ReactNode;
+	renderAgentActivityIndicator?: ExperimentalJiraKanbanProps["renderAgentActivityIndicator"];
 	showBoardContent?: boolean;
 	showAgentSessionColumn?: boolean;
 	/**
@@ -177,6 +180,7 @@ export default function ExperimentalJiraKanbanPage({
 	activeCardCode,
 	agentActivityLayout,
 	cardGenerativeActionPresentation,
+	defaultAgentSessionColumnCollapsed = false,
 	detachedAgentSessionsByCard,
 	agentSessionAssigneeIdAliases,
 	agents = BOARD_AGENTS,
@@ -194,12 +198,14 @@ export default function ExperimentalJiraKanbanPage({
 	onCardAgentActivityViewChat,
 	onCardAgentDoneRunView,
 	onCardAgentSessionLink,
+	onCardAgentSessionMove,
 	onCardAgentSessionUnlink,
 	onInsightsWorkItemClick,
 	onModeChange,
 	onResumeLooseWork,
 	onViewChange,
 	renderListContent,
+	renderAgentActivityIndicator,
 	onTimelineLastViewedAtChange,
 	ref,
 	showAgentSessionColumn = false,
@@ -245,6 +251,7 @@ export default function ExperimentalJiraKanbanPage({
 	// Owned here rather than inside the board: switching to the list or Pulse
 	// view unmounts `ExperimentalJiraKanban`, and a viewer's collapse choices are
 	// a deliberate setting that must outlive a temporary view switch.
+	const [agentSessionColumnCollapsed, setAgentSessionColumnCollapsed] = useState(defaultAgentSessionColumnCollapsed);
 	const [collapsedColumns, setCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
 	const [showUntracked, setShowUntracked] = useState(true);
 	const [shownSessionStateIds, setShownSessionStateIds] = useState(
@@ -545,6 +552,22 @@ export default function ExperimentalJiraKanbanPage({
 		onCardAgentSessionLink?.(session, card, columnTitle);
 	};
 
+	const handleCardAgentSessionMove: ExperimentalJiraKanbanProps["onCardAgentSessionMove"] = (
+		session,
+		sourceCard,
+		targetCard,
+		sourceColumnTitle,
+		targetColumnTitle,
+	) => {
+		onCardAgentSessionMove?.(
+			session,
+			sourceCard,
+			targetCard,
+			sourceColumnTitle,
+			targetColumnTitle,
+		);
+	};
+
 	const handleCardAgentSessionUnlink: ExperimentalJiraKanbanProps["onCardAgentSessionUnlink"] = (
 		session,
 		card,
@@ -693,8 +716,10 @@ export default function ExperimentalJiraKanbanPage({
 						agentActivityLayout={agentActivityLayout}
 						agentSessionColumn={showAgentSessionColumn ? {
 							capturedItemIds: capturedLooseWorkIds,
+							defaultCollapsed: agentSessionColumnCollapsed,
 							items: untrackedAgentSessionItems,
 							...agentSessionHandlers,
+							onCollapsedChange: setAgentSessionColumnCollapsed,
 						} : undefined}
 						proximityAgentSession={{
 							actionableSessionIds: proximityActionableSessionIds,
@@ -719,6 +744,9 @@ export default function ExperimentalJiraKanbanPage({
 						onCardAgentSessionLink={onCardAgentSessionLink
 							? handleCardAgentSessionLink
 							: undefined}
+						onCardAgentSessionMove={onCardAgentSessionMove
+							? handleCardAgentSessionMove
+							: undefined}
 						onCardAgentSessionUnlink={onCardAgentSessionUnlink
 							? handleCardAgentSessionUnlink
 							: undefined}
@@ -728,6 +756,7 @@ export default function ExperimentalJiraKanbanPage({
 						onCardDragEnd={handleCardDragEnd}
 						onCreateAgent={handleCreateColumnAgent}
 						onToggleColumnAgent={handleToggleColumnAgent}
+						renderAgentActivityIndicator={renderAgentActivityIndicator}
 						paddingTop={0}
 						selectionToolbar={{
 							onAgentAssignmentChange: handleSelectedCardsAgentAssignmentChange,

@@ -6,11 +6,14 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { AgentSession, type AgentSessionItem } from "@/components/blocks/agent-session";
 import {
 	JiraIssue,
+	type JiraIssueAgentActivityIndicatorRenderer,
 	type JiraIssueAgentActivityLayout,
+	type JiraIssueAgentSessionDragControl,
 	type JiraIssueGenerativeActionConfig,
 	type JiraIssueGenerativeActionPresentation,
 } from "@/components/blocks/jira-issue";
 import { resolveRelatedJiraIssueAgentActivityMode } from "@/components/blocks/jira-issue/agent-activity-model";
+import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
 import {
 	getJiraIssuePresenceMotion,
@@ -26,14 +29,18 @@ import type {
 interface ExperimentalJiraKanbanCardProps {
 	active: boolean;
 	agentActivityLayout: JiraIssueAgentActivityLayout;
+	agentSessionDragControl?: JiraIssueAgentSessionDragControl;
 	card: JiraKanbanCardData;
 	columnTitle: string;
 	capturedItemIds?: ReadonlySet<string>;
 	detachedAgentSessions: readonly AgentSessionItem[];
+	detachedSessionDrag?: JiraIssueAgentSessionDragBinding;
 	dragging: boolean;
 	generativeActionAgents: JiraIssueGenerativeActionConfig["agents"];
 	generativeActionPresentation: JiraIssueGenerativeActionPresentation;
 	generativeActionSkills: JiraIssueGenerativeActionConfig["skills"];
+	/** Session hovered in the Untracked work column; lights its row here. */
+	highlightedSessionId?: string | null;
 	onAgentActivityOpenChange?: JiraKanbanProps["onCardAgentActivityOpenChange"];
 	onAgentActivityViewChat?: JiraKanbanProps["onCardAgentActivityViewChat"];
 	onAgentDoneRunReview?: JiraKanbanProps["onCardAgentDoneRunReview"];
@@ -44,6 +51,7 @@ interface ExperimentalJiraKanbanCardProps {
 	onDragStart: DragEventHandler<HTMLButtonElement>;
 	onGenerativeActionSubmit?: JiraKanbanProps["onCardGenerativeActionSubmit"];
 	onLinkWorkItem?: (item: AgentSessionItem, workItemKey?: string) => void;
+	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	onSessionLink?: (
 		session: AgentSessionItem,
 		card: JiraKanbanCardData,
@@ -74,14 +82,17 @@ function toSessionFlyoutPriority(priority: JiraKanbanCardData["priority"]) {
 export function ExperimentalJiraKanbanCard({
 	active,
 	agentActivityLayout,
+	agentSessionDragControl,
 	capturedItemIds,
 	card,
 	columnTitle,
 	detachedAgentSessions,
+	detachedSessionDrag,
 	dragging,
 	generativeActionAgents,
 	generativeActionPresentation,
 	generativeActionSkills,
+	highlightedSessionId,
 	onAgentActivityOpenChange,
 	onAgentActivityViewChat,
 	onAgentDoneRunReview,
@@ -92,6 +103,7 @@ export function ExperimentalJiraKanbanCard({
 	onDragStart,
 	onGenerativeActionSubmit,
 	onLinkWorkItem,
+	renderAgentActivityIndicator,
 	onSessionLink,
 	onSessionUnlink,
 	onSubtasks,
@@ -104,7 +116,9 @@ export function ExperimentalJiraKanbanCard({
 	);
 	const canUnlinkAgentSession = Boolean(onSessionUnlink && firstActiveAgentSession);
 	const canLinkAgentSession = Boolean(onSessionLink && detachedAgentSessions.length > 0);
-	const canTransferAgentSession = canUnlinkAgentSession || canLinkAgentSession;
+	const isBoardDropTarget = agentSessionDragControl?.dropTarget !== null
+		&& agentSessionDragControl?.dropTarget !== undefined;
+	const canTransferAgentSession = canUnlinkAgentSession || canLinkAgentSession || isBoardDropTarget;
 	// Related detached sessions keep the Unlink grey backdrop even after the
 	// last chin row leaves. Stored mode stays `none`; presentation lights `working`.
 	const agentActivityMode = resolveRelatedJiraIssueAgentActivityMode(
@@ -133,6 +147,7 @@ export function ExperimentalJiraKanbanCard({
 			agentActivities={card.agentActivities}
 			agentActivityLayout={agentActivityLayout}
 			agentActivityMode={agentActivityMode}
+			agentSessionDragControl={agentSessionDragControl}
 			agentSessionFlyout={{
 			assignee: card.assignee
 				? { name: card.assignee.name, src: card.assignee.avatarSrc }
@@ -194,7 +209,8 @@ export function ExperimentalJiraKanbanCard({
 			pullRequestPreview={card.pullRequestPreview}
 			pullRequestStatus={card.pullRequestStatus}
 			selected={selected}
-			sessionTransferAfter={(sessionDrag) => (
+			renderAgentActivityIndicator={renderAgentActivityIndicator}
+			sessionTransferAfter={(localSessionDrag) => (
 				<AnimatePresence>
 					{detachedAgentSessions.length > 0 ? (
 						<motion.div
@@ -207,6 +223,7 @@ export function ExperimentalJiraKanbanCard({
 						>
 							<AgentSession
 								capturedItemIds={capturedItemIds}
+								highlightedItemId={highlightedSessionId}
 								issueKey={card.code}
 								items={detachedAgentSessions}
 								onCreateWorkItem={onCreateWorkItem}
@@ -214,7 +231,9 @@ export function ExperimentalJiraKanbanCard({
 									? handleLinkWorkItem
 									: undefined}
 								onSubtasks={onSubtasks}
-								sessionDrag={canLinkAgentSession ? sessionDrag : undefined}
+							sessionDrag={canLinkAgentSession
+								? detachedSessionDrag ?? localSessionDrag
+								: undefined}
 								style={{ marginTop: token("space.025") }}
 								variant="medium-detached"
 							/>

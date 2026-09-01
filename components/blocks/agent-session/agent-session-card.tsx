@@ -16,6 +16,7 @@ import {
 	JiraSessionFlyoutTrigger,
 	type JiraSessionFlyoutHandle,
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
+import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ import {
 	AGENT_SESSION_ARRIVAL_OFFSET_PX,
 	AGENT_SESSION_ARRIVAL_TRANSITION,
 } from "./agent-session-arrival-motion";
+import { AgentSessionMediumDrag } from "./agent-session-medium-drag";
 import type { AgentSessionItem } from "./agent-session-types";
 
 /** How long Resume reads "Copied" after it writes the command to the clipboard. */
@@ -55,6 +57,7 @@ export function AgentSessionCard({
 	onItemHover,
 	onToggleVisibility,
 	onView,
+	sessionDrag,
 	visibilityLabel = "Hide",
 }: Readonly<{
 	arrivalDelaySeconds?: number;
@@ -74,6 +77,7 @@ export function AgentSessionCard({
 	onItemHover?: (item: AgentSessionItem | null) => void;
 	onToggleVisibility?: (item: AgentSessionItem) => void;
 	onView?: (item: AgentSessionItem) => void;
+	sessionDrag?: JiraIssueAgentSessionDragBinding;
 	/** Tooltip and accessible name for the hover eye. Hide in the active list, Show in Hidden work. */
 	visibilityLabel?: string;
 }>) {
@@ -81,6 +85,9 @@ export function AgentSessionCard({
 	const [copiedResume, setCopiedResume] = useState(false);
 	const copiedResetRef = useRef<number | undefined>(undefined);
 	const onItemHoverRef = useRef(onItemHover);
+	// Whether the pointer is on *this* row, so unmount cleanup can tell "I was
+	// the hovered row" from "a sibling went away".
+	const isHoveredRef = useRef(false);
 
 	useEffect(() => {
 		onItemHoverRef.current = onItemHover;
@@ -89,7 +96,12 @@ export function AgentSessionCard({
 	useEffect(() => () => {
 		window.clearTimeout(copiedResetRef.current);
 		// Hide / filter can unmount the hovered row before pointerleave fires.
-		onItemHoverRef.current?.(null);
+		// Only the row that owns the hover may clear it: a filter or capture that
+		// unmounts a sibling must not wipe a highlight the pointer still rests on,
+		// because no pointerenter would fire to put it back.
+		if (isHoveredRef.current) {
+			onItemHoverRef.current?.(null);
+		}
 	}, []);
 
 	const resumeCommand = getResumeCommand?.(item) ?? toAgentListResumeCommand(item);
@@ -174,8 +186,14 @@ export function AgentSessionCard({
 		<motion.li
 			animate={shouldPlayArrival ? { opacity: 1, y: 0 } : undefined}
 			data-testid={"agent-session-row-" + item.id}
-			onPointerEnter={() => onItemHover?.(item)}
-			onPointerLeave={() => onItemHover?.(null)}
+			onPointerEnter={() => {
+				isHoveredRef.current = true;
+				onItemHover?.(item);
+			}}
+			onPointerLeave={() => {
+				isHoveredRef.current = false;
+				onItemHover?.(null);
+			}}
 			// `false` for a settled card, so nothing replays when the list re-renders
 			// or the watermark clears the mark. Only an arrival animates.
 			initial={shouldPlayArrival ? { opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX } : false}
@@ -185,16 +203,25 @@ export function AgentSessionCard({
 			style={{ willChange: shouldPlayArrival ? "opacity, transform" : undefined }}
 			transition={{ ...AGENT_SESSION_ARRIVAL_TRANSITION, delay: arrivalDelaySeconds ?? 0 }}
 		>
-			<JiraSessionFlyoutTrigger
-				closeDelay={160}
-				handle={flyoutHandle}
-				render={<div className="w-full" />}
-				session={flyoutSession}
+			<AgentSessionMediumDrag
+				item={item}
+				preserveSourceFootprint
+				sessionDrag={sessionDrag}
+				shouldReduceMotion={shouldReduceMotion}
+				source="untracked"
 			>
-				<article
-					aria-current={isSelected ? "true" : undefined}
-					aria-pressed={activateCard === undefined ? undefined : isSelected}
-					className={cn(
+				{(bind) => (
+					<JiraSessionFlyoutTrigger
+						closeDelay={160}
+						handle={flyoutHandle}
+						render={<div className="w-full" />}
+						session={flyoutSession}
+					>
+						<article
+							{...bind}
+							aria-current={isSelected ? "true" : undefined}
+							aria-pressed={activateCard === undefined ? undefined : isSelected}
+							className={cn(
 						"group/agent-row relative flex w-full cursor-pointer rounded-none p-3 text-left text-text",
 						// Stacked list is one solid well: first card owns the top radius,
 						// last owns the bottom, shared edges collapse to a single stroke.
@@ -215,17 +242,17 @@ export function AgentSessionCard({
 						activateCard === undefined
 							? null
 							: "outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-					)}
-					data-captured={captured || undefined}
-					data-new={isNew || undefined}
-					data-selected={isSelected || undefined}
-					data-variant="uncaptured-work"
-					onClick={handleArticleClick}
-					onKeyDown={handleArticleKeyDown}
-					role={activateCard === undefined ? undefined : "button"}
-					tabIndex={activateCard === undefined ? undefined : 0}
-				>
-					{isNew ? (
+							)}
+							data-captured={captured || undefined}
+							data-new={isNew || undefined}
+							data-selected={isSelected || undefined}
+							data-variant="uncaptured-work"
+							onClick={handleArticleClick}
+							onKeyDown={handleArticleKeyDown}
+							role={activateCard === undefined ? undefined : "button"}
+							tabIndex={activateCard === undefined ? undefined : 0}
+						>
+							{isNew ? (
 						<>
 							{/* Colour never carries it alone. */}
 							<span className="sr-only">Newly synced, not yet reviewed</span>
@@ -236,17 +263,19 @@ export function AgentSessionCard({
 								className="absolute left-1.5 top-1.5 size-1.5 rounded-full bg-icon-discovery"
 							/>
 						</>
-					) : null}
-					<AgentListRow
-						hoverActions={hoverActions}
-						isCompact={false}
-						isSelected={isSelected}
-						item={item}
-						onView={undefined}
-						showHoverActionsWhenSelected
-					/>
-				</article>
-			</JiraSessionFlyoutTrigger>
+							) : null}
+							<AgentListRow
+								hoverActions={hoverActions}
+								isCompact={false}
+								isSelected={isSelected}
+								item={item}
+								onView={undefined}
+								showHoverActionsWhenSelected
+							/>
+						</article>
+					</JiraSessionFlyoutTrigger>
+				)}
+			</AgentSessionMediumDrag>
 		</motion.li>
 	);
 }

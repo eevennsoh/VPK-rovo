@@ -115,7 +115,7 @@ test("JGP Kanban reuses the Jira Issue aggregate row for working agents", () => 
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /\$\{summary\.activityCount\} agents: \$\{summary\.label\}/u);
 	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /variant="rainbow"/u);
 	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /phaseOffsetMs=/u);
-	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<Spinner[^>]*animate-spin/u);
+	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /PixelLoader/u);
 });
 
 test("completed Jira agent rows aggregate finished and failed states without hiding hover artifacts", () => {
