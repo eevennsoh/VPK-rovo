@@ -102,7 +102,6 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	onCardAgentSessionMove?: (session: JiraIssueAgentSessionRef, sourceCard: JiraKanbanCardData, targetCard: JiraKanbanCardData, sourceColumnTitle: string, targetColumnTitle: string) => void;
 	/** Chooses where card agent and skill actions are presented. */
 	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;
-	/** Optional host-owned visual override for active card session states. */
 	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	/**
 	 * Sessions that never became work items, pinned as a column to the
