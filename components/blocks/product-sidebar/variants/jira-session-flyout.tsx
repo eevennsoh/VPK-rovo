@@ -102,7 +102,7 @@ interface FocusCaptureChildProps {
 
 const JiraSessionFlyoutSuspensionContext = createContext<JiraSessionFlyoutHandle | null>(null);
 
-/** Closes and disables Jira session previews for a suspended surface. */
+/** Suspends Jira session previews throughout a subtree and closes active ones. */
 export function JiraSessionFlyoutSuspensionProvider({
 	children,
 	suspended,

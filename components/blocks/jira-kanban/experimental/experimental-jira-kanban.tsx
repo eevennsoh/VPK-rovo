@@ -783,9 +783,6 @@ export function ExperimentalJiraKanban({
 	const sessionFlyoutsSuspended = boardSessionDrag.transaction !== null || draggedCardCode !== null;
 
 	return (
-		<JiraSessionFlyoutSuspensionProvider
-			suspended={sessionFlyoutsSuspended}
-		>
 		<div
 			ref={boardSessionDrag.boardRootRef}
 			className="relative flex min-h-0 min-w-0 flex-1 flex-col"
@@ -798,6 +795,7 @@ export function ExperimentalJiraKanban({
 					// box so the headers share a baseline. No right border:
 					// Untracked work is not a drop target, and that 2px reads as
 					// a white seam once the plane is `bg-surface`.
+					<JiraSessionFlyoutSuspensionProvider suspended={sessionFlyoutsSuspended}>
 					<div
 						className="flex min-h-0 shrink-0 border-2 border-transparent border-r-0 ps-6"
 						style={{ paddingTop, paddingBottom }}
@@ -812,9 +810,8 @@ export function ExperimentalJiraKanban({
 								: agentSessionColumn.sessionDrag}
 						/>
 					</div>
+					</JiraSessionFlyoutSuspensionProvider>
 				) : null}
-				{/* Board-column session previews are intentionally disabled; the dedicated
-				    Untracked work rail remains interactive. */}
 				<JiraSessionFlyoutSuspensionProvider suspended>
 				<section
 					ref={boardScrollportRef}
@@ -999,6 +996,5 @@ export function ExperimentalJiraKanban({
 					/>
 				) : null}
 		</div>
-		</JiraSessionFlyoutSuspensionProvider>
 	);
 }
