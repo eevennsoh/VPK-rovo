@@ -147,7 +147,6 @@ const BOARD_COLUMN_SHELL_TRANSITION = [
 	"max-width var(--duration-medium) var(--ease-in-out)",
 	"border-color var(--duration-normal) var(--ease-out-practical)",
 ].join(", ");
-
 function getJiraKanbanCardScale(
 	phase: JiraKanbanCardMoveAnimation["phase"] | undefined,
 ): number {
@@ -167,7 +166,6 @@ function orderPickerItems<T extends Readonly<{ id: string }>>(
 		...items.filter((item) => !pinnedIdSet.has(item.id)),
 	];
 }
-
 function getAgentInitials(name: string): string {
 	return name
 		.split(/\s+/u)
@@ -176,7 +174,6 @@ function getAgentInitials(name: string): string {
 		.map((part) => part[0]?.toUpperCase() ?? "")
 		.join("");
 }
-
 function AgentAvatar({ agent, className }: Readonly<{ agent: JiraKanbanAgentData; className?: string }>) {
 	if (agent.brandName) {
 		return (
