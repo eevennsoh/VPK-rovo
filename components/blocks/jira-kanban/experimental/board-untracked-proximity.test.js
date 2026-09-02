@@ -153,16 +153,16 @@ test("a hovered column session lights its board twin at the row hover rung", () 
 	assert.match(SESSION_INDEX_SOURCE, /isHighlighted=\{item\.id === highlightedItemId\}/u);
 	// Same rung the row reaches on its own hover, so a remote pointer reads the
 	// way a local one would. Notably not the blue the click spotlight owns.
-	assert.match(MEDIUM_CARD_SOURCE, /isHighlighted\s*\?\s*"bg-bg-accent-gray-subtlest-hovered"/u);
+	assert.match(MEDIUM_CARD_SOURCE, /isHighlighted\s*\?\s*"bg-surface-hovered"/u);
 	assert.doesNotMatch(MEDIUM_CARD_SOURCE, /bg-bg-accent-blue-subtlest/u);
 	assert.match(
 		MEDIUM_CARD_SOURCE,
-		/:\s*"bg-bg-accent-gray-subtlest hover:bg-bg-accent-gray-subtlest-hovered"/u,
+		/:\s*"bg-surface hover:bg-surface-hovered"/u,
 	);
 	// List-item hover recipe: 50ms, practical easing, background-color only.
 	assert.match(
 		MEDIUM_CARD_SOURCE,
-		/transition-\[background-color\] duration-xxshort ease-out-practical motion-reduce:transition-none/u,
+		/transition-\[background-color,border-color\] duration-xxshort ease-out-practical motion-reduce:transition-none/u,
 	);
 });
 

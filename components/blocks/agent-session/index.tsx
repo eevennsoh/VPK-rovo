@@ -70,10 +70,11 @@ function buildArrivalDelays(
  * shared untracked-work session flyout, the same surface
  * `components/blocks/agent-session-flyout` uses, so hovering a card offers
  * Link / Create / Add as a subtask without a footer chin. Medium detached keeps
- * that uncaptured relationship in the Jira Agents compact row and opens Create /
- * Add as a subtask from a click more menu. Medium attached
- * reuses the Jira Issue activity row and opens session details because its work
- * relationship already exists. Small is the collapsed-column identity notch.
+ * that uncaptured relationship in the Jira Agents compact row: a 276×33
+ * surface card with a solid disabled stroke, and Create / Add as a subtask
+ * from a hover more menu. Medium attached reuses the Jira Issue activity row
+ * and opens session details because its work relationship already exists.
+ * Small is the collapsed-column identity notch.
  */
 export function AgentSession({
 	className,
@@ -210,6 +211,7 @@ export function AgentSession({
 
 					const compactCard = (
 						<AgentSessionCompactCard
+							captured={capturedItemIds?.has(item.id) ?? false}
 							flyout
 							isArriving={beatItemIds?.has(item.id) ?? false}
 							// The column and the board hold the same session ids, so an id

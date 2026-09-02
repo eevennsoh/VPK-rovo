@@ -42,6 +42,7 @@ function stopSessionDrag(event: { stopPropagation: () => void }) {
 }
 
 export function AgentSessionMediumCard({
+	captured = false,
 	flyout,
 	isArriving,
 	isHighlighted = false,
@@ -54,6 +55,8 @@ export function AgentSessionMediumCard({
 	onView,
 	sessionDrag,
 }: Readonly<{
+	/** Same 1px solid disabled frame as the resting detached row. */
+	captured?: boolean;
 	isArriving: boolean;
 	/** Lit from the Untracked work column hovering this same session. */
 	isHighlighted?: boolean;
@@ -82,16 +85,22 @@ export function AgentSessionMediumCard({
 		? item.agent.name
 		: `${item.agent.name} with ${invoker.name}`;
 	const linkLabel = uncapturedWorkLinkLabel(issueKey ?? item.sessionDetails?.issueKey);
+	const strokeToken = !captured && isNew ? "border-border-discovery" : "border-border-disabled";
 	const className = cn(
-		"group/session-card relative flex h-[33px] w-[276px] items-center gap-2 rounded-[10px] border border-transparent px-3 text-text",
-		"transition-[background-color] duration-xxshort ease-out-practical motion-reduce:transition-none",
+		"group/session-card relative flex h-[33px] w-[276px] items-center gap-2 rounded-[10px] border border-solid px-3 text-text",
+		"transition-[background-color,border-color] duration-xxshort ease-out-practical motion-reduce:transition-none",
+		// Jira Agents detached row: surface fill, 10px tile radius, 1px solid
+		// disabled at rest. Hover / focus-within / highlight use color.border.
+		// Newly synced rows keep discovery until hover / focus-within.
+		// Capture wins over new, same as the large uncaptured-work card.
+		isHighlighted ? "border-border" : strokeToken,
+		isHighlighted ? null : "hover:border-border focus-within:border-border",
 		// Lit from the column, the pointer is nowhere near this row, so it borrows
 		// the row's own hover rung: the board reads as if the pointer were on the
 		// twin, which is exactly the relationship the column hover is claiming.
 		isHighlighted
-			? "bg-bg-accent-gray-subtlest-hovered"
-			: "bg-bg-accent-gray-subtlest hover:bg-bg-accent-gray-subtlest-hovered",
-		isNew ? "ring-1 ring-border-discovery" : null,
+			? "bg-surface-hovered"
+			: "bg-surface hover:bg-surface-hovered",
 	);
 
 	function renderCard(bind: Record<string, unknown> | undefined) {
@@ -151,7 +160,7 @@ export function AgentSessionMediumCard({
 		);
 
 		return (
-			<div className={className} data-highlighted={isHighlighted || undefined} data-new={isNew || undefined}>
+			<div className={className} data-captured={captured || undefined} data-highlighted={isHighlighted || undefined} data-new={isNew || undefined}>
 				{isNew ? (
 					<>
 						<span className="sr-only">Newly synced, not yet reviewed</span>
