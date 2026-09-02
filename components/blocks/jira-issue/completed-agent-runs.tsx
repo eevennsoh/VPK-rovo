@@ -179,7 +179,14 @@ export function JiraIssueAgentDone({
 		);
 	}
 
-	return <JiraIssueAgentDoneMerged {...props} />;
+	return (
+		<JiraIssueAgentDoneMerged
+			onOpenChange={props.onOpenChange}
+			onView={props.onView}
+			runs={props.runs}
+			usesStrokeChrome={props.usesStrokeChrome}
+		/>
+	);
 }
 
 function JiraIssueAgentDoneMerged({
@@ -189,8 +196,6 @@ function JiraIssueAgentDoneMerged({
 	usesStrokeChrome,
 }: Readonly<{
 	onOpenChange?: (open: boolean) => void;
-	onReview?: (run: JiraIssueCompletedAgentRun) => void;
-	onSubmit?: (run: JiraIssueCompletedAgentRun, prompt: string) => void;
 	onView?: (run: JiraIssueCompletedAgentRun) => void;
 	runs: readonly JiraIssueCompletedAgentRun[];
 	usesStrokeChrome: boolean;
