@@ -147,7 +147,6 @@ const BOARD_COLUMN_SHELL_TRANSITION = [
 	"max-width var(--duration-medium) var(--ease-in-out)",
 	"border-color var(--duration-normal) var(--ease-out-practical)",
 ].join(", ");
-
 function getJiraKanbanCardScale(
 	phase: JiraKanbanCardMoveAnimation["phase"] | undefined,
 ): number {
@@ -167,7 +166,6 @@ function orderPickerItems<T extends Readonly<{ id: string }>>(
 		...items.filter((item) => !pinnedIdSet.has(item.id)),
 	];
 }
-
 function getAgentInitials(name: string): string {
 	return name
 		.split(/\s+/u)
@@ -176,7 +174,6 @@ function getAgentInitials(name: string): string {
 		.map((part) => part[0]?.toUpperCase() ?? "")
 		.join("");
 }
-
 function AgentAvatar({ agent, className }: Readonly<{ agent: JiraKanbanAgentData; className?: string }>) {
 	if (agent.brandName) {
 		return (
@@ -783,9 +780,6 @@ export function ExperimentalJiraKanban({
 	const sessionFlyoutsSuspended = boardSessionDrag.transaction !== null || draggedCardCode !== null;
 
 	return (
-		<JiraSessionFlyoutSuspensionProvider
-			suspended={sessionFlyoutsSuspended}
-		>
 		<div
 			ref={boardSessionDrag.boardRootRef}
 			className="relative flex min-h-0 min-w-0 flex-1 flex-col"
@@ -798,6 +792,7 @@ export function ExperimentalJiraKanban({
 					// box so the headers share a baseline. No right border:
 					// Untracked work is not a drop target, and that 2px reads as
 					// a white seam once the plane is `bg-surface`.
+					<JiraSessionFlyoutSuspensionProvider suspended={sessionFlyoutsSuspended}>
 					<div
 						className="flex min-h-0 shrink-0 border-2 border-transparent border-r-0 ps-6"
 						style={{ paddingTop, paddingBottom }}
@@ -813,7 +808,9 @@ export function ExperimentalJiraKanban({
 								: agentSessionColumn.sessionDrag}
 						/>
 					</div>
+					</JiraSessionFlyoutSuspensionProvider>
 				) : null}
+				<JiraSessionFlyoutSuspensionProvider suspended>
 				<section
 					ref={boardScrollportRef}
 					data-jira-kanban-scrollport=""
@@ -972,6 +969,7 @@ export function ExperimentalJiraKanban({
 					</div>
 				</LayoutGroup>
 				</section>
+				</JiraSessionFlyoutSuspensionProvider>
 			</div>
 				{selectionToolbar ? (
 					<JiraToolbar
@@ -997,6 +995,5 @@ export function ExperimentalJiraKanban({
 					/>
 				) : null}
 		</div>
-		</JiraSessionFlyoutSuspensionProvider>
 	);
 }

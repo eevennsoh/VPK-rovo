@@ -226,7 +226,7 @@ test("Untracked stays frozen beside the independently scrolling Jira status pane
 	assert.match(BOARD_SOURCE, /const boardScrollportRef = useRef<HTMLElement \| null>\(null\)/u);
 	assert.match(
 		BOARD_SOURCE,
-		/<AgentSessionColumn[\s\S]*<\/div>\s*\) : null\}\s*<section[\s\S]*ref=\{boardScrollportRef\}[\s\S]*data-jira-kanban-scrollport=""[\s\S]*overflowX: "auto"/u,
+		/<AgentSessionColumn[\s\S]*<\/div>\s*<\/JiraSessionFlyoutSuspensionProvider>\s*\) : null\}\s*<JiraSessionFlyoutSuspensionProvider suspended>\s*<section[\s\S]*ref=\{boardScrollportRef\}[\s\S]*data-jira-kanban-scrollport=""[\s\S]*overflowX: "auto"/u,
 	);
 	assert.doesNotMatch(statusScrollportSource, /AgentSessionColumn/u);
 	assert.match(BOARD_SOURCE, /data-jira-kanban-card-list=""/u);
