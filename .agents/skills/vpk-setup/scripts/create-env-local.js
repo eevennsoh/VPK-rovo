@@ -128,7 +128,7 @@ ${preservedOpenaiModel ? `OPENAI_MODEL=${preservedOpenaiModel}` : '# OPENAI_MODE
 
 # Google/Gemini endpoint (for provider: "google" chat/image requests and Google TTS route derivation)
 AI_GATEWAY_URL_GOOGLE=${resolvedGoogleGatewayUrl}
-${preservedGoogleImageModel ? `GOOGLE_IMAGE_MODEL=${preservedGoogleImageModel}` : 'GOOGLE_IMAGE_MODEL=gemini-3-pro-image-preview'}
+${preservedGoogleImageModel ? `GOOGLE_IMAGE_MODEL=${preservedGoogleImageModel}` : 'GOOGLE_IMAGE_MODEL=gemini-3-pro-image'}
 ${preservedGoogleTtsModel ? `GOOGLE_TTS_MODEL=${preservedGoogleTtsModel}` : 'GOOGLE_TTS_MODEL=tts-latest'}
 ${preservedGoogleSttModel ? `GOOGLE_STT_MODEL=${preservedGoogleSttModel}` : 'GOOGLE_STT_MODEL=gemini-3-flash-preview'}
 
