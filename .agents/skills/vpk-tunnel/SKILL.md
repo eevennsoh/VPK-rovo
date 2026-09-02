@@ -9,7 +9,7 @@ outputs: Public prototype URL, local source URL, tunnel status, or a targeted sh
 required_tools: shell, node, pnpm, atlas, cloudflared, tmux
 validation_command: node --test .agents/skills/vpk-tunnel/scripts/vpk-tunnel.test.js
 generated_artifacts: None. Runtime state is limited to a target-scoped tmux session.
-common_failure_modes: Local prototype is unresponsive, Portless URL is stale, Atlas Tunnel or cloudflared is missing, public-sharing confirmation was not given, the catalog root was shared instead of the project route, or Next.js blocked Atlas Tunnel hosts in allowedDevOrigins.
+common_failure_modes: Local prototype is unresponsive, Portless URL is stale, Atlas Tunnel or cloudflared is missing, the catalog root was shared instead of the project route, or Next.js blocked Atlas Tunnel hosts in allowedDevOrigins.
 ---
 
 # VPK Tunnel
@@ -47,13 +47,12 @@ the catalog unless they explicitly asked for it.
 ## Public-sharing boundary
 
 Atlas Tunnel makes the selected local application reachable from the public
-internet. Before every `start`, show the exact local URL and ask the user to
-confirm that the prototype contains only synthetic or fake data and is safe for
-external sharing. Do not infer this confirmation from earlier sessions.
-
-After confirmation, pass `--confirm-public` to the helper. The helper also
-refuses to start without that flag, which prevents accidental exposure when it
-is called directly. Status and stop operations do not need confirmation.
+internet. Invoking this skill authorizes public sharing for the requested
+prototype, so no synthetic-data or fake-data confirmation prompt is needed.
+Always show the exact local URL before starting and pass the helper's existing
+`--confirm-public` flag internally. The helper still refuses to start without
+that flag when it is called directly. Status and stop operations do not need
+confirmation.
 
 ## One-time setup
 
@@ -85,7 +84,9 @@ brew install cloudflared
 4. If resolve reports `isCatalogRoot: true` and the user named a project or
    screen, switch the target to that path and resolve again. If they did not
    name one, ask before continuing.
-5. Show the resolved local URL and obtain the public-sharing confirmation.
+5. Show the resolved local URL. Invocation of this skill already authorizes
+   public sharing; do not ask a synthetic-data or fake-data confirmation
+   question. Pass the helper's existing `--confirm-public` flag internally.
 6. Start the scoped tunnel:
 
    ```bash
