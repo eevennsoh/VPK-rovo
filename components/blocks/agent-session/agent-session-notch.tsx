@@ -6,8 +6,10 @@ import { cn } from "@/lib/utils";
 
 import { AGENT_SESSION_ARRIVAL_TRANSITION } from "./agent-session-arrival-motion";
 import {
+	AGENT_SESSION_NOTCH_LENGTH,
 	AGENT_SESSION_NOTCH_NO_NEAREST,
 	AGENT_SESSION_NOTCH_POINTER_AWAY,
+	AGENT_SESSION_NOTCH_TONE,
 	toAgentSessionNotchLength,
 	toAgentSessionNotchMagnification,
 	toAgentSessionNotchTone,
@@ -62,10 +64,13 @@ const NOTCH_STANDALONE = cn(
  */
 export function AgentSessionNotchMark({
 	isArriving = false,
+	isHighlighted = false,
 	isNew = false,
 	proximity,
 }: Readonly<{
 	isArriving?: boolean;
+	/** Match the rail notch to a remotely hovered session twin. */
+	isHighlighted?: boolean;
 	isNew?: boolean;
 	proximity?: AgentSessionNotchProximity;
 }>) {
@@ -115,7 +120,10 @@ export function AgentSessionNotchMark({
 				// peak silently clamps to 16px and the slope flattens at the crest.
 				"h-px shrink-0",
 				proximity === undefined
-					? cn(NOTCH_STANDALONE, isNew ? NOTCH_EMPHASIS : NOTCH_AT_REST)
+					? cn(
+						NOTCH_STANDALONE,
+						isNew || isHighlighted ? NOTCH_EMPHASIS : NOTCH_AT_REST,
+					)
 					// Docked colour is the named token on `backgroundColor`, not an
 					// alpha of `bg-icon`. Width tracks the pointer per frame and must
 					// not sit on a CSS transition.
@@ -123,8 +131,16 @@ export function AgentSessionNotchMark({
 			)}
 			initial={shouldPlayArrival ? { scaleX: 0 } : false}
 			style={{
-				backgroundColor: proximity === undefined ? undefined : backgroundColor,
-				width: proximity === undefined ? undefined : width,
+				backgroundColor: proximity === undefined
+					? undefined
+					: isHighlighted
+						? AGENT_SESSION_NOTCH_TONE.selected
+						: backgroundColor,
+				width: proximity === undefined
+					? undefined
+					: isHighlighted
+						? AGENT_SESSION_NOTCH_LENGTH.peak
+						: width,
 				willChange: shouldPlayArrival ? "transform" : undefined,
 			}}
 			transition={AGENT_SESSION_ARRIVAL_TRANSITION}

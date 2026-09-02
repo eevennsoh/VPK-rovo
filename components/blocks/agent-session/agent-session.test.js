@@ -312,7 +312,7 @@ test("small is the collapsed-column notch and stays keyboard operable when view 
 	assert.match(NOTCH_SOURCE, /"h-px shrink-0"/u);
 	assert.match(NOTCH_SOURCE, /w-3 transition-\[background-color,scale\]/u);
 	assert.doesNotMatch(COMPACT_CARD_SOURCE, /proximity/u);
-	assert.match(NOTCH_SOURCE, /isNew \? NOTCH_EMPHASIS : NOTCH_AT_REST/u);
+	assert.match(NOTCH_SOURCE, /isNew \|\| isHighlighted \? NOTCH_EMPHASIS : NOTCH_AT_REST/u);
 	assert.match(NOTCH_SOURCE, /const NOTCH_EMPHASIS = "scale-x-\[1\.6\] bg-icon";/u);
 	assert.match(NOTCH_SOURCE, /"bg-icon-disabled",/u);
 	assert.match(NOTCH_SOURCE, /group-hover\/notch:bg-icon/u);
