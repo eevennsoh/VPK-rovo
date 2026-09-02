@@ -129,7 +129,7 @@ test("medium matches the 276 by 33 Figma row and reuses shared identity primitiv
 	assert.match(MEDIUM_CARD_SOURCE, /h-\[33px\] w-\[276px\]/u);
 	assert.match(MEDIUM_CARD_SOURCE, /items-center gap-2 rounded-\[10px\] border border-solid px-3/u);
 	assert.match(MEDIUM_CARD_SOURCE, /hover:border-border focus-within:border-border/u);
-	assert.match(MEDIUM_CARD_SOURCE, /isNew \? "border-border-discovery" : "border-border-disabled"/u);
+	assert.match(MEDIUM_CARD_SOURCE, /!captured && isNew \? "border-border-discovery" : "border-border-disabled"/u);
 	assert.doesNotMatch(MEDIUM_CARD_SOURCE, /dash-4-4/u);
 	assert.match(
 		MEDIUM_CARD_SOURCE,
@@ -290,7 +290,7 @@ test("medium attached reuses the Jira issue agent activity row", () => {
 test("medium preserves newly synced state and its one-shot arrival beat", () => {
 	assert.match(MEDIUM_CARD_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
 	assert.match(MEDIUM_CARD_SOURCE, /data-new=\{isNew \|\| undefined\}/u);
-	assert.match(MEDIUM_CARD_SOURCE, /isNew \? "border-border-discovery" : "border-border-disabled"/u);
+	assert.match(MEDIUM_CARD_SOURCE, /!captured && isNew \? "border-border-discovery" : "border-border-disabled"/u);
 	assert.match(MEDIUM_CARD_SOURCE, /Newly synced, not yet reviewed/u);
 	assert.match(MEDIUM_CARD_SOURCE, /initial=\{shouldPlayArrival \? \{ opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX \} : false\}/u);
 	assert.match(MEDIUM_CARD_SOURCE, /animate=\{shouldPlayArrival \? \{ opacity: 1, y: 0 \} : undefined\}/u);

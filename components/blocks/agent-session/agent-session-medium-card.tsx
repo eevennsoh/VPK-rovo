@@ -85,13 +85,14 @@ export function AgentSessionMediumCard({
 		? item.agent.name
 		: `${item.agent.name} with ${invoker.name}`;
 	const linkLabel = uncapturedWorkLinkLabel(issueKey ?? item.sessionDetails?.issueKey);
-	const strokeToken = isNew ? "border-border-discovery" : "border-border-disabled";
+	const strokeToken = !captured && isNew ? "border-border-discovery" : "border-border-disabled";
 	const className = cn(
 		"group/session-card relative flex h-[33px] w-[276px] items-center gap-2 rounded-[10px] border border-solid px-3 text-text",
 		"transition-[background-color,border-color] duration-xxshort ease-out-practical motion-reduce:transition-none",
 		// Jira Agents detached row: surface fill, 10px tile radius, 1px solid
 		// disabled at rest. Hover / focus-within / highlight use color.border.
 		// Newly synced rows keep discovery until hover / focus-within.
+		// Capture wins over new, same as the large uncaptured-work card.
 		isHighlighted ? "border-border" : strokeToken,
 		isHighlighted ? null : "hover:border-border focus-within:border-border",
 		// Lit from the column, the pointer is nowhere near this row, so it borrows
