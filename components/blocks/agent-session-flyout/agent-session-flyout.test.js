@@ -19,6 +19,7 @@ function readRepoFile(relativePath) {
 const FLYOUT_BODY_PATH = "components/blocks/product-sidebar/variants/jira-session-flyout.tsx";
 const FLYOUT_HANDLE_PATH = "components/blocks/product-sidebar/variants/jira-session-flyout-data.ts";
 const FLYOUT_DEMO_DATA_PATH = "components/blocks/agent-session-flyout/agent-session-flyout-data.ts";
+const QUEUE_SESSION_DATA_PATH = "components/projects/jira-queue/data/queue-sessions.ts";
 const HOVER_CARD_PATH = "components/ui/hover-card.tsx";
 const HOVER_CARD_HANDLE_PATH = "components/ui/hover-card-handle.ts";
 const QUEUE_DETAIL_ARTIFACTS_PATH = "components/projects/jira-queue/components/queue-detail-artifacts.tsx";
@@ -115,6 +116,7 @@ test("shared Agent States flyout forwards submission, timing, and stopped lifecy
 test("shared detail body renders the session invoker beside its timestamp", () => {
 	const source = readRepoFile(FLYOUT_BODY_PATH);
 	const jiraSource = readRepoFile("components/blocks/product-sidebar/variants/jira.tsx");
+	const queueSessionSource = readRepoFile(QUEUE_SESSION_DATA_PATH);
 	assert.match(source, /export function JiraSessionFlyoutBody\b/u);
 	assert.match(source, /<div className="flex items-start justify-between gap-3">/u);
 	assert.doesNotMatch(source, /<div className="flex items-center justify-between gap-3">/u);
@@ -133,6 +135,9 @@ test("shared detail body renders the session invoker beside its timestamp", () =
 		source,
 		/session\.status === "awaiting-input" \? \(\s*<Lozenge variant="information">Needs input<\/Lozenge>\s*\) : \(\s*<span className="text-\[12px\] leading-5 text-text-subtlest">\s*\{STATUS_UPDATED_LABEL\[session\.status\]\}\s*<\/span>/u,
 	);
+	assert.match(queueSessionSource, /invokedBy\?: AsxQueueAssignee;/u);
+	assert.match(queueSessionSource, /invokedBy: ASX_QUEUE_INVOKER,/u);
+	assert.match(queueSessionSource, /invokedBy: session\.invokedBy,/u);
 	assert.doesNotMatch(source, /text-\[12px\] leading-4 text-text-subtlest/u);
 	assert.match(source, /import\s*\{[^}]*SmartLink[^}]*\}\s*from\s*"@\/components\/blocks\/smart-link"/u);
 	assert.match(source, /import\s*\{[^}]*GithubLogo[^}]*\}\s*from\s*"@\/components\/ui\/logo-third-party"/u);

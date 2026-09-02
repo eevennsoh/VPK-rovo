@@ -46,6 +46,8 @@ export interface AsxQueueSession {
 	agentId: string;
 	/** Human accountable for the Jira work item (shown in the work-item smart link). */
 	assignee?: AsxQueueAssignee;
+	/** Human who started the agent session (shown beside the flyout timestamp). */
+	invokedBy?: AsxQueueAssignee;
 	branch?: string;
 	checks?: JiraSidebarSessionChecks;
 	commit?: string;
@@ -79,6 +81,11 @@ function message(id: string, role: "assistant" | "user", text: string): RovoUIMe
 		parts: [{ type: "text", text, state: "done" }],
 	};
 }
+
+const ASX_QUEUE_INVOKER: AsxQueueAssignee = {
+	name: "Jordan Lee",
+	src: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+};
 
 /**
  * Builds the trailing chain-of-thought message for a "running" session: two
@@ -190,6 +197,7 @@ export const ASX_QUEUE_SESSION_SEEDS: readonly AsxQueueSession[] = [
 		priorityRank: 1,
 		updatedRank: 2,
 		assignee: { name: "Priya Hansra", src: "/avatar-user/priya-hansra/color/asow-service-yellow.png" },
+		invokedBy: ASX_QUEUE_INVOKER,
 		repository: "acme-corp/rfp-response-platform",
 		question: {
 			prompt: "What target go-live date should I use for the readiness assessment?",
@@ -264,6 +272,7 @@ export const ASX_QUEUE_SESSION_SEEDS: readonly AsxQueueSession[] = [
 		priorityRank: 2,
 		updatedRank: 1,
 		assignee: { name: "Darius Pavri", src: "/avatar-user/darius-pavri/color/asow-strategy-orange.png" },
+		invokedBy: ASX_QUEUE_INVOKER,
 		repository: "acme-corp/rfp-response-platform",
 		branch: "rovo/rfp-102-evidence-sync",
 		worktreePath: "~/src/rfp-response-platform/.worktrees/rfp-102",
@@ -328,6 +337,7 @@ export const ASX_QUEUE_SESSION_SEEDS: readonly AsxQueueSession[] = [
 		priorityRank: 3,
 		updatedRank: 3,
 		assignee: { name: "Olivia Yang", src: "/avatar-user/olivia-yang/color/asow-service-yellow.png" },
+		invokedBy: ASX_QUEUE_INVOKER,
 		repository: "acme-corp/rfp-response-platform",
 		branch: "rovo/rfp-103-response-validation",
 		worktreePath: "~/src/rfp-response-platform/.worktrees/rfp-103",
@@ -392,6 +402,7 @@ export const ASX_QUEUE_SESSION_SEEDS: readonly AsxQueueSession[] = [
 		priorityRank: 4,
 		updatedRank: 4,
 		assignee: { name: "Michael Chu", src: "/avatar-user/michael-chu/color/asow-service-yellow.png" },
+		invokedBy: ASX_QUEUE_INVOKER,
 		repository: "acme-corp/rfp-response-platform",
 		messages: [
 			message(
@@ -509,6 +520,7 @@ export function createAsxQueueSidebarSessionItem(
 		agentAvatarSrc: agent.avatarSrc,
 		agentName: agent.name,
 		assignee: session.assignee,
+		invokedBy: session.invokedBy,
 		branch: session.branch,
 		checks: session.checks,
 		commit: session.commit,
