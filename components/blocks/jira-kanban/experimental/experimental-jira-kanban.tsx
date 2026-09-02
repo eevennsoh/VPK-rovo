@@ -813,6 +813,9 @@ export function ExperimentalJiraKanban({
 						/>
 					</div>
 				) : null}
+				{/* Board-column session previews are intentionally disabled; the dedicated
+				    Untracked work rail remains interactive. */}
+				<JiraSessionFlyoutSuspensionProvider suspended>
 				<section
 					ref={boardScrollportRef}
 					data-jira-kanban-scrollport=""
@@ -970,6 +973,7 @@ export function ExperimentalJiraKanban({
 					</div>
 				</LayoutGroup>
 				</section>
+				</JiraSessionFlyoutSuspensionProvider>
 			</div>
 				{selectionToolbar ? (
 					<JiraToolbar
