@@ -1,9 +1,16 @@
 "use client";
 
 import { useEffect } from "react";
-import { formatDocumentTitleWithPrefix, getDocumentTitlePrefix } from "@/lib/document-title-prefix";
+import { usePathname } from "next/navigation";
+import { formatDocumentTitleForPath, getDocumentTitlePrefix } from "@/lib/document-title-prefix";
 
-export function DocumentTitlePrefix() {
+interface DocumentTitlePrefixProps {
+	projectNamesBySlug: Readonly<Record<string, string>>;
+}
+
+export function DocumentTitlePrefix({ projectNamesBySlug }: Readonly<DocumentTitlePrefixProps>) {
+	const pathname = usePathname();
+
 	useEffect(() => {
 		const titlePrefix = getDocumentTitlePrefix(window.location);
 
@@ -12,7 +19,12 @@ export function DocumentTitlePrefix() {
 		}
 
 		const applyTitlePrefix = () => {
-			const nextTitle = formatDocumentTitleWithPrefix(document.title, titlePrefix);
+			const nextTitle = formatDocumentTitleForPath(
+				document.title,
+				titlePrefix,
+				pathname,
+				projectNamesBySlug,
+			);
 
 			if (document.title !== nextTitle) {
 				document.title = nextTitle;
@@ -38,7 +50,7 @@ export function DocumentTitlePrefix() {
 		return () => {
 			observer.disconnect();
 		};
-	}, []);
+	}, [pathname, projectNamesBySlug]);
 
 	return null;
 }

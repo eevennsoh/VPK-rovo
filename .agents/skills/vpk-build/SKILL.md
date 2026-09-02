@@ -26,11 +26,29 @@ backend behavior.
 - Preserve repo-relative source paths and copy source files verbatim where
   possible; put extraction-specific behavior in the target harness.
 - Copy the full `public/` tree because runtime data can reference untraced assets.
+- Resolve `catalog:` against the source `pnpm-workspace.yaml` catalog when
+  writing the target `package.json`. The sibling is not a pnpm workspace.
+- Copy the source token-free `.npmrc` so `@atlassian/*` registry routing works.
+- Always keep `shadcn` (dep + CSS), like `tw-animate-css`. Never strip its
+  import; rewrite `@import "shadcn/tailwind.css"` to
+  `@import "../node_modules/shadcn/dist/tailwind.css";`.
+- Copy every local `cssImports` path and local `@import "./…"` files from the
+  generated `globals.css`.
+- Copy ambient `types/*.d.ts`, sibling `*.d.ts` next to copied `.js`, a
+  minimal `next-env.d.ts` (no `.next/dev` imports), and
+  `types/jsx-namespace.d.ts` for React 19 `JSX.Element`.
+- Import `getThemeStyles` from `@atlaskit/tokens/get-theme-styles`. Skip
+  providers whose required props are not children-only
+  (`WorkItemModalProvider` at minimum).
+- Set `allowedDevOrigins: ["127.0.2.2", "localhost"]` in generated
+  `next.config`. Preview via `http://localhost:3001`.
 - Do not treat a successful static build as proof that API, SSE, WebSocket,
   realtime, AI, voice, or scripted-tour behavior works.
+- After `verify-target.sh`, inspect computed layout in a real viewport. Jira
+  header tabs must be `flex-direction: column` when `data-horizontal`.
 - Do not create fake local API shims unless the user explicitly requests a mock.
-- Do not edit, move, or rename the scripts in this skill. They are tested and
-  pinned by repository validation.
+- Keep the script filenames and paths in this skill. Encode extraction-contract
+  fixes in those scripts and their tests, not as one-off target edits.
 
 ## Interface
 
@@ -75,10 +93,11 @@ node .agents/skills/vpk-build/scripts/scaffold-target.mjs \
 ```
 
 The script creates the sibling project, preserves repo-relative paths, copies
-planned source plus `public`, rewrites the route entry to its direct demo import,
-generates the provider/layout harness, filters unresolved CSS package sources,
-adds the Micros scaffold, initializes Git, and wires only the approved setup and
-deploy skills.
+planned source plus `public`, local CSS, ambient `.d.ts`, and `.npmrc`, resolves
+`catalog:` versions, rewrites the route entry to its direct demo import,
+generates the provider/layout harness (skipping unsafe providers), keeps
+always-on `shadcn` CSS, adds the Micros scaffold, initializes Git, and wires
+only the approved setup and deploy skills.
 
 Static scaffold inputs live under [scaffold references](references/scaffold/).
 Micros templates live under [Micros references](references/micros/). Do not edit
@@ -93,8 +112,11 @@ the source route to compensate for an extraction-only concern.
 This runs install, typecheck, and build in the extracted project. Resolve
 failures at their owner: dependency versions in target `package.json`, missing
 graph edges in the plan/trace, source parity in copied files, and CSS/runtime
-setup in the generated harness. Then run the extracted app and verify the real
-route, assets, console, and every required interaction.
+setup in the generated harness. If a copied CSS file exists and the bundler
+still cannot resolve it, delete the target `.next` cache and rebuild. Then run
+the extracted app at `http://localhost:3001` and verify the real route, assets,
+console, computed layout (not only an a11y snapshot), and every required
+interaction.
 
 Backend-backed extracts must also prove the source backend starts, API proxies
 work, `/api/realtime/ws-url` resolves correctly, WebSocket upgrades succeed,
@@ -116,7 +138,9 @@ node --test .agents/skills/vpk-build/scripts/*.test.js
 ```
 
 For an actual extraction, the required proof is a passing `verify-target.sh`
-run plus live browser verification of the extracted route.
+run plus live browser verification of the extracted route, including computed
+layout in a headed/narrow viewport. Successful typecheck/build can still hide
+missing `shadcn` variants.
 
 ## Scripts and references
 

@@ -100,6 +100,75 @@ function parseProviderExports(source) {
 	return [...names];
 }
 
+const PROVIDERS_REQUIRING_INSTANCE_PROPS = new Set(["WorkItemModalProvider"]);
+
+/**
+ * Skip providers that cannot mount from `{children}` alone. Parse the
+ * colocated `*ProviderProps` type when present; always skip known
+ * instance-owned providers such as WorkItemModalProvider.
+ */
+function providerNeedsInstanceProps(source, name) {
+	if (PROVIDERS_REQUIRING_INSTANCE_PROPS.has(name)) return true;
+	const ifaceRe = new RegExp(
+		`(?:interface|type)\\s+${name}Props\\b[^{]*\\{([\\s\\S]*?)\\n\\}`,
+	);
+	const iface = source.match(ifaceRe);
+	if (!iface) return false;
+	const propRe = /^\s*([A-Za-z0-9_]+)(\?)?\s*:/gm;
+	let match;
+	while ((match = propRe.exec(iface[1])) !== null) {
+		if (match[1] === "children") continue;
+		if (!match[2]) return true;
+	}
+	return false;
+}
+
+function readPnpmCatalog(repoRoot) {
+	const yamlPath = path.join(repoRoot, "pnpm-workspace.yaml");
+	if (!fs.existsSync(yamlPath)) return {};
+	const catalog = {};
+	let inCatalog = false;
+	for (const rawLine of fs.readFileSync(yamlPath, "utf8").split("\n")) {
+		const line = rawLine.replace(/\s+#.*$/, "");
+		if (!inCatalog) {
+			if (/^catalog:\s*$/.test(line)) inCatalog = true;
+			continue;
+		}
+		if (/^\S/.test(line) && line.trim() !== "") break;
+		const match = line.match(/^\s+['"]?([^'"#:]+)['"]?\s*:\s*['"]?([^'"#\s]+)['"]?\s*$/);
+		if (match) catalog[match[1].trim()] = match[2].trim();
+	}
+	return catalog;
+}
+
+function resolveCatalogSpecifier(pkgName, version, catalog) {
+	if (version !== "catalog:") return version;
+	return catalog[pkgName] || version;
+}
+
+function resolvePinnedVersion(pkgName, rootManifest) {
+	const deps = rootManifest.dependencies || {};
+	const dev = rootManifest.devDependencies || {};
+	return deps[pkgName] || dev[pkgName] || null;
+}
+
+function collectLocalCssImportsFromText(cssText, fromDir) {
+	const found = [];
+	const re = /@import\s+["'](\.\.?\/[^"']+\.css)["']/g;
+	let match;
+	while ((match = re.exec(cssText)) !== null) {
+		found.push(path.posix.normalize(path.posix.join(fromDir, match[1])));
+	}
+	return found;
+}
+
+function rewriteShadcnCssImport(css) {
+	return css.replace(
+		/@import\s+["']shadcn\/tailwind\.css["']/g,
+		'@import "../node_modules/shadcn/dist/tailwind.css"',
+	);
+}
+
 /**
  * Build a layout.tsx that injects @atlaskit/tokens CSS at runtime (the
  * package ships no static CSS file — all tokens are generated via the
@@ -140,7 +209,7 @@ import "./feature-flags-shim";
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import localFont from "next/font/local";
-import { getThemeStyles } from "@atlaskit/tokens";
+import { getThemeStyles } from "@atlaskit/tokens/get-theme-styles";
 
 // globals.css orchestrates the CSS pipeline:
 //   1. tailwind-theme.css  — @theme vars aliased to --ds-* tokens
@@ -230,6 +299,7 @@ const ALWAYS_AVAILABLE_PACKAGES = new Set([
 	"tailwindcss",
 	"@tailwindcss/postcss",
 	"tw-animate-css", // auto-injected into the dep block by the scaffolder
+	"shadcn", // owns data-* custom variants; never strip (Turbopack needs the node_modules path)
 ]);
 
 /**
@@ -261,8 +331,9 @@ function extractPackageFromCssDirective(line) {
  * `@import` / `@source` lines whose packages aren't in the resolved dep
  * set. Keeps a single source of truth (VPK-Rovo's file) while avoiding
  * build-time failures for heavy optional deps (excalidraw, streamdown,
- * katex, leaflet, shadcn preset, etc.) that the extracted route doesn't
- * pull in.
+ * katex, leaflet, etc.) that the extracted route doesn't pull in.
+ * `shadcn` is always kept — its Tailwind preset owns `data-horizontal`,
+ * `data-open`, and `data-active` variants.
  *
  * Stripped lines are replaced with a commented marker so diffs against
  * the source stay readable.
@@ -289,7 +360,7 @@ function buildGlobalsCssFromSource(sourceCss, availablePackages) {
 		);
 	}
 
-	return out.join("\n");
+	return rewriteShadcnCssImport(out.join("\n"));
 }
 
 // -------- Copy helpers ---------------------------------------------------
@@ -324,6 +395,118 @@ function buildDependenciesBlock(npmPackages) {
 	if (entries.length === 0) return "{}";
 	const lines = entries.map(([name, version]) => `\t\t"${name}": "${version}"`);
 	return `{\n${lines.join(",\n")}\n\t}`;
+}
+
+const HOST_PACKAGE_PEERS = [
+	{ host: "react-leaflet", runtime: ["leaflet"], types: ["@types/leaflet"] },
+	{ host: "three", runtime: [], types: ["@types/three"] },
+];
+
+function resolveExtractedDependencies({ planPackages, sourceManifest, catalog }) {
+	const resolved = {};
+	for (const [name, version] of Object.entries(planPackages || {})) {
+		resolved[name] = resolveCatalogSpecifier(name, version, catalog);
+	}
+	const fromSource = (pkgName) => {
+		const raw = resolvePinnedVersion(pkgName, sourceManifest);
+		return raw ? resolveCatalogSpecifier(pkgName, raw, catalog) : null;
+	};
+	if (!resolved["tw-animate-css"]) {
+		resolved["tw-animate-css"] = fromSource("tw-animate-css") || "^1.4.0";
+	}
+	if (!resolved.shadcn) {
+		const shadcnVersion = fromSource("shadcn");
+		if (shadcnVersion) resolved.shadcn = shadcnVersion;
+	}
+	for (const { host, runtime, types } of HOST_PACKAGE_PEERS) {
+		if (!resolved[host]) continue;
+		for (const peer of [...runtime, ...types]) {
+			if (resolved[peer]) continue;
+			const version = fromSource(peer);
+			if (version) resolved[peer] = version;
+		}
+	}
+	return resolved;
+}
+
+function writeTargetPackageJson({ targetDir, tmpl, targetName, dependencies }) {
+	const runtimeDeps = {};
+	const typeDeps = {};
+	for (const [name, version] of Object.entries(dependencies)) {
+		if (name.startsWith("@types/")) typeDeps[name] = version;
+		else runtimeDeps[name] = version;
+	}
+	const pkgFilled = substituteTemplate(tmpl, {
+		TARGET_NAME: targetName,
+		DEPENDENCIES_JSON: buildDependenciesBlock(runtimeDeps),
+	});
+	const pkg = JSON.parse(pkgFilled);
+	pkg.devDependencies = Object.fromEntries(
+		Object.entries({ ...pkg.devDependencies, ...typeDeps }).sort(([a], [b]) => a.localeCompare(b)),
+	);
+	fs.writeFileSync(path.join(targetDir, "package.json"), `${JSON.stringify(pkg, null, "\t")}\n`);
+}
+
+function copySiblingDeclarationFile(repoRoot, targetDir, rel) {
+	if (!/\.(mjs|cjs|js)$/.test(rel)) return;
+	const dtsRel = rel.replace(/\.(mjs|cjs|js)$/, ".d.ts");
+	const srcAbs = path.join(repoRoot, dtsRel);
+	if (!fs.existsSync(srcAbs)) return;
+	copyFileVerbatim(srcAbs, path.join(targetDir, dtsRel));
+}
+
+function copyLocalCssGraph({ repoRoot, targetDir, cssImports, globalsCss }) {
+	const queued = new Set();
+	for (const spec of cssImports) {
+		queued.add(spec);
+	}
+	for (const rel of collectLocalCssImportsFromText(globalsCss, "app")) {
+		queued.add(rel);
+	}
+	for (const rel of queued) {
+		if (rel.includes("node_modules")) continue;
+		const srcAbs = path.join(repoRoot, rel);
+		if (!fs.existsSync(srcAbs) || !fs.statSync(srcAbs).isFile()) continue;
+		copyFileVerbatim(srcAbs, path.join(targetDir, rel));
+	}
+}
+
+function copyAmbientTypeGraph(repoRoot, targetDir) {
+	const typesDir = path.join(repoRoot, "types");
+	if (fs.existsSync(typesDir) && fs.statSync(typesDir).isDirectory()) {
+		copyTreeVerbatim(typesDir, path.join(targetDir, "types"));
+	}
+}
+
+function writeHarnessTypeFiles(targetDir) {
+	writeFileEnsuring(
+		path.join(targetDir, "next-env.d.ts"),
+		`/// <reference types="next" />
+/// <reference types="next/image-types/global" />
+
+// NOTE: This file should not be edited
+// see https://nextjs.org/docs/app/api-reference/config/typescript for more information.
+`,
+	);
+	writeFileEnsuring(
+		path.join(targetDir, "types", "jsx-namespace.d.ts"),
+		`import type { JSX as ReactJSX } from "react";
+
+declare global {
+	namespace JSX {
+		type Element = ReactJSX.Element;
+	}
+}
+
+export {};
+`,
+	);
+}
+
+function copySourceNpmrc(repoRoot, targetDir) {
+	const npmrcSrc = path.join(repoRoot, ".npmrc");
+	if (!fs.existsSync(npmrcSrc)) return;
+	copyFileVerbatim(npmrcSrc, path.join(targetDir, ".npmrc"));
 }
 
 // -------- Main ----------------------------------------------------------
@@ -365,9 +548,11 @@ function main() {
 		const srcAbs = path.join(repoRoot, rel);
 		// Route entry + route layout get special handling — skip here.
 		if (srcAbs === entryAbs || srcAbs === layoutAbs) continue;
+		if (!fs.existsSync(srcAbs)) continue;
 
 		const destAbs = path.join(targetDir, rel);
 		copyFileVerbatim(srcAbs, destAbs);
+		copySiblingDeclarationFile(repoRoot, targetDir, rel);
 	}
 
 	// ---- 2. Promote the route to the root ----
@@ -423,10 +608,15 @@ export function FeatureFlagsShim() {
 	for (const ctxRel of plan.contextFiles || []) {
 		const ctxAbs = path.join(repoRoot, ctxRel);
 		if (!fs.existsSync(ctxAbs)) continue;
-		const providerNames = parseProviderExports(fs.readFileSync(ctxAbs, "utf8"));
+		const ctxSource = fs.readFileSync(ctxAbs, "utf8");
+		const providerNames = parseProviderExports(ctxSource);
 		// Convert "app/contexts/context-rovo-chat.tsx" -> "@/app/contexts/context-rovo-chat"
 		const importPath = "@/" + ctxRel.replace(/\.(tsx|ts|jsx|js)$/, "");
 		for (const name of providerNames) {
+			if (providerNeedsInstanceProps(ctxSource, name)) {
+				console.error(`  Skipping ${name} — required props are not children-only`);
+				continue;
+			}
 			providers.push({ name, importPath });
 		}
 	}
@@ -456,17 +646,30 @@ export function FeatureFlagsShim() {
 	const sourceGlobalsCss = fs.existsSync(globalsCssSrc)
 		? fs.readFileSync(globalsCssSrc, "utf8")
 		: "";
-	// The "available packages" set for filtering must reflect what the
-	// extracted project will actually install — same set we hand to
-	// buildDependenciesBlock() below. Declared here so it's the single
-	// source of truth for both CSS filtering and package.json generation.
-	const augmentedNpm = { ...plan.npmPackages };
-	if (!augmentedNpm["tw-animate-css"]) augmentedNpm["tw-animate-css"] = "^1.4.0";
+	const sourceManifest = fs.existsSync(path.join(repoRoot, "package.json"))
+		? readJSON(path.join(repoRoot, "package.json"))
+		: { dependencies: {}, devDependencies: {} };
+	const catalog = readPnpmCatalog(repoRoot);
+	const augmentedNpm = resolveExtractedDependencies({
+		planPackages: plan.npmPackages,
+		sourceManifest,
+		catalog,
+	});
 	const availablePackages = new Set(Object.keys(augmentedNpm));
+	const generatedGlobalsCss = buildGlobalsCssFromSource(sourceGlobalsCss, availablePackages);
 	writeFileEnsuring(
 		path.join(targetDir, "app", "globals.css"),
-		buildGlobalsCssFromSource(sourceGlobalsCss, availablePackages),
+		generatedGlobalsCss,
 	);
+	copyLocalCssGraph({
+		repoRoot,
+		targetDir,
+		cssImports: plan.cssImports || [],
+		globalsCss: generatedGlobalsCss,
+	});
+	copyAmbientTypeGraph(repoRoot, targetDir);
+	writeHarnessTypeFiles(targetDir);
+	copySourceNpmrc(repoRoot, targetDir);
 
 	// ---- 4b. Copy public/ (if any) ----
 	// Studio and catalog surfaces derive some image URLs at runtime from ids
@@ -504,11 +707,12 @@ export function FeatureFlagsShim() {
 	// drove CSS filtering, so dep list and resolved CSS imports stay in
 	// sync by construction.
 	const pkgTmpl = fs.readFileSync(path.join(SCAFFOLD_DIR, "package.json.tmpl"), "utf8");
-	const pkgFilled = substituteTemplate(pkgTmpl, {
-		TARGET_NAME: targetName,
-		DEPENDENCIES_JSON: buildDependenciesBlock(augmentedNpm),
+	writeTargetPackageJson({
+		targetDir,
+		tmpl: pkgTmpl,
+		targetName,
+		dependencies: augmentedNpm,
 	});
-	fs.writeFileSync(path.join(targetDir, "package.json"), pkgFilled);
 
 	// ---- 8. Fill and write README.md from template ----
 	const sha = safeGitSha(repoRoot);

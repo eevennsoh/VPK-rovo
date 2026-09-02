@@ -6,6 +6,7 @@ import "streamdown/styles.css";
 import "leaflet/dist/leaflet.css";
 import { getSSRAutoScript } from "@atlaskit/tokens/get-ssr-auto-script";
 import { getThemeStyles } from "@atlaskit/tokens/get-theme-styles";
+import { PROJECT_COMPONENTS } from "@/app/data/component-manifest";
 import { Providers } from "@/app/providers";
 import { DevRootTools } from "@/components/utils/dev-root-tools";
 import { DocumentTitlePrefix } from "@/components/utils/document-title-prefix";
@@ -41,6 +42,9 @@ const departureMono = localFont({
 const THEME_STORAGE_KEY = "ui-theme";
 const APP_TITLE = "V—P—K: Venn Prototype Kit";
 const APP_DESCRIPTION = "A prototype kit to vibe code Atlassian products";
+const PROJECT_NAMES_BY_SLUG = Object.fromEntries(
+	PROJECT_COMPONENTS.map(({ name, slug }) => [slug, name]),
+);
 
 type FaviconLink = {
 	href: string;
@@ -247,7 +251,7 @@ ${devStylesheetGuardScript}
 			</head>
 			<body suppressHydrationWarning className="antialiased">
 				<PreHydrationScript id="vpk-pre-hydration" html={preHydrationScript} />
-				<DocumentTitlePrefix />
+				<DocumentTitlePrefix projectNamesBySlug={PROJECT_NAMES_BY_SLUG} />
 				<a
 					href="#main-content"
 					className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] focus:rounded-sm focus:bg-surface-raised focus:px-3 focus:py-2 focus:text-text focus:shadow-overlay focus:outline-2 focus:outline-offset-2 focus:outline-[color:var(--color-ring)]"

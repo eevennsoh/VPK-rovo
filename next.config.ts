@@ -4,7 +4,13 @@ const projectRoot = process.cwd();
 
 const nextConfig: NextConfig = {
 	devIndicators: false,
-	allowedDevOrigins: ["vpk-rovo.localhost", "*.vpk-rovo.localhost"],
+	allowedDevOrigins: [
+		"vpk-rovo.localhost",
+		"*.vpk-rovo.localhost",
+		// Atlas Tunnel public hosts are ephemeral (`<id>.public.atlastunnel.com`).
+		"*.public.atlastunnel.com",
+		"*.atlastunnel.com",
+	],
 	...(process.env.NODE_ENV === "development" && {
 		env: {
 			NEXT_PUBLIC_VPK_REPO_ROOT: projectRoot,

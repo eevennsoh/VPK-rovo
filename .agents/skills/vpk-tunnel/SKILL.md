@@ -9,7 +9,7 @@ outputs: Public prototype URL, local source URL, tunnel status, or a targeted sh
 required_tools: shell, node, pnpm, atlas, cloudflared, tmux
 validation_command: node --test .agents/skills/vpk-tunnel/scripts/vpk-tunnel.test.js
 generated_artifacts: None. Runtime state is limited to a target-scoped tmux session.
-common_failure_modes: Local prototype is unresponsive, Portless URL is stale, Atlas Tunnel or cloudflared is missing, or public-sharing confirmation was not given.
+common_failure_modes: Local prototype is unresponsive, Portless URL is stale, Atlas Tunnel or cloudflared is missing, public-sharing confirmation was not given, the catalog root was shared instead of the project route, or Next.js blocked Atlas Tunnel hosts in allowedDevOrigins.
 ---
 
 # VPK Tunnel
@@ -31,6 +31,18 @@ With no URL, target `https://vpk-rovo.localhost`. This is the persistent main
 worktree's stable Portless hostname, regardless of which Git branch that
 checkout currently has checked out. A supplied Portless URL selects another
 live frontend. Preserve its path, query, and fragment in the public link.
+
+## Share the route people should open
+
+The catalog homepage (`/`) embeds project cards in iframes. Those previews look
+empty on a public tunnel even when the real project works. Do not hand reviewers
+the catalog unless they explicitly asked for it.
+
+- If the user named a project or path, share that route
+  (for example `/jira-golden-journeys-v4`), not `/` or `/preview/projects/...`.
+- If `vpk-tunnel` is invoked with no path, resolve the hostname, then ask which
+  route people should open before starting. Do not infer the catalog.
+- After resolve, `isCatalogRoot: true` means you still need a share path.
 
 ## Public-sharing boundary
 
@@ -70,17 +82,29 @@ brew install cloudflared
    whether the prototype must be started, its route fixed, or its Portless URL
    corrected. Use `pnpm run dev:tmux:start` in the owning worktree only when the
    user asks to start it.
-4. Show the resolved local URL and obtain the public-sharing confirmation.
-5. Start the scoped tunnel:
+4. If resolve reports `isCatalogRoot: true` and the user named a project or
+   screen, switch the target to that path and resolve again. If they did not
+   name one, ask before continuing.
+5. Show the resolved local URL and obtain the public-sharing confirmation.
+6. Start the scoped tunnel:
 
    ```bash
    node .agents/skills/vpk-tunnel/scripts/vpk-tunnel.js start [Portless URL] --confirm-public
    ```
 
+   The helper refuses to start when `next.config.ts` `allowedDevOrigins` is
+   missing `*.public.atlastunnel.com` and `*.atlastunnel.com`. Add those hosts,
+   restart that worktree's frontend, re-resolve (the port may change), then
+   start again. Do not leave a tunnel bound to the previous port.
+
    Atlas commands may need permission to write their machine-local cache or use
    the network. Request that permission through the active tool rather than
    weakening the preflight.
-6. Report the returned `publicUrl` as the shareable link and include the
+7. Open the returned `publicUrl` and confirm it is not a blank shell. Body text
+   that is only `Skip to content` means Next.js blocked `/_next` chunks from the
+   tunnel host. HTTP 200 is not enough. Do not hand off the link until the
+   intended UI is visible.
+8. Report the returned `publicUrl` as the shareable link and include the
    `localUrl`. State that the link works only while the local server, scoped
    tunnel session, laptop, and network connection remain active.
 
@@ -109,7 +133,8 @@ node .agents/skills/vpk-tunnel/scripts/vpk-tunnel.js stop [Portless URL]
 
 Never use `atlas tunnel clean`: it deletes every Atlas Tunnel created by the
 CLI and can disrupt unrelated prototype sessions. Do not stop the VPK dev
-server unless the user separately asks for it.
+server unless the user separately asks for it, or `allowedDevOrigins` must
+change. After any frontend restart, re-resolve and start the tunnel again.
 
 ## Troubleshooting
 
@@ -117,6 +142,17 @@ server unless the user separately asks for it.
 - **Recorded route but dead port:** start or repair that worktree's frontend.
 - **HTTP probe times out or returns an error:** open the local route and fix it
   before exposing it; port liveness alone is not enough.
+- **Public page is blank / catalog cards are empty white boxes:** Next.js
+  blocked `/_next` chunks from the Atlas Tunnel host. Confirm
+  `allowedDevOrigins` includes `*.public.atlastunnel.com` and
+  `*.atlastunnel.com`, restart the owning frontend, re-resolve, then start
+  again. Check `.next/dev/logs/next-development.log` for
+  `Blocked cross-origin request` if the page is still empty.
+- **Shared the homepage and it looks empty:** share the project route
+  (for example `/jira-golden-journeys-v4`), not the catalog iframe.
+- **Frontend restarted and the tunnel died:** the frontend port likely
+  changed. Re-resolve, then start again. The helper replaces a session whose
+  stored port no longer matches.
 - **Missing Atlas Tunnel plugin:** run the one-time Atlas commands after user
   approval, then retry.
 - **Missing `cloudflared`:** install it with Homebrew after user approval.

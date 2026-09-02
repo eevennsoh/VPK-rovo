@@ -143,3 +143,133 @@ test("trace-imports follows imported JSON files and records their public asset r
 		fixture.cleanup();
 	}
 });
+
+function runTrace(repoRoot, route, planPath) {
+	execFileSync(
+		process.execPath,
+		[TRACE_IMPORTS_PATH, route, "--repo", repoRoot, "--out", planPath],
+		{ encoding: "utf8", stdio: "pipe" },
+	);
+	return JSON.parse(fs.readFileSync(planPath, "utf8"));
+}
+
+function createMinimalRepo(extraFiles = {}) {
+	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "vpk-build-trace-"));
+	const repoRoot = path.join(tempDir, "repo");
+	const planPath = path.join(tempDir, "plan.json");
+	try {
+		writeFile(
+			path.join(repoRoot, "package.json"),
+			JSON.stringify(
+				{
+					dependencies: {
+						next: "16.2.6",
+						react: "19.2.6",
+						"@tiptap/core": "catalog:",
+						"react-leaflet": "^5.0.0",
+						leaflet: "^1.9.4",
+						three: "^0.185.1",
+					},
+					devDependencies: {
+						typescript: "6.0.3",
+						"@types/leaflet": "^1.9.22",
+						"@types/three": "^0.185.4",
+					},
+				},
+				null,
+				2,
+			),
+		);
+		writeFile(
+			path.join(repoRoot, "pnpm-workspace.yaml"),
+			`packages:
+  - .
+catalog:
+  '@tiptap/core': 3.30.0
+  '@json-render/core': 0.19.0
+  remotion: 4.0.508
+`,
+		);
+		writeFile(
+			path.join(repoRoot, "app", "globals.css"),
+			`@import "./tailwind-theme.css";
+@import "./dash-4-2.css";
+@import "./typeset.css";
+`,
+		);
+		writeFile(path.join(repoRoot, "app", "dash-4-2.css"), "/* dash */\n");
+		writeFile(path.join(repoRoot, "app", "typeset.css"), "/* typeset */\n");
+		writeFile(path.join(repoRoot, "app", "tailwind-theme.css"), "/* theme */\n");
+		writeFile(path.join(repoRoot, "types", "speech-recognition.d.ts"), "interface SpeechRecognition {}\n");
+		writeFile(path.join(repoRoot, "types", "atlassian-logo-third-party.d.ts"), "export {};\n");
+		writeFile(
+			path.join(repoRoot, "lib", "studio-agent-data-flow.js"),
+			`export function normalizeAgentDataFlowConfig(value) { return value; }\n`,
+		);
+		writeFile(
+			path.join(repoRoot, "lib", "studio-agent-data-flow.d.ts"),
+			`export function normalizeAgentDataFlowConfig(value: unknown): unknown;\n`,
+		);
+		writeFile(
+			path.join(repoRoot, "app", "demo", "page.tsx"),
+			`import { Editor } from "@tiptap/core";
+import { MapContainer } from "react-leaflet";
+import { Scene } from "three";
+import { normalizeAgentDataFlowConfig } from "@/lib/studio-agent-data-flow";
+import "./panel.module.css";
+
+export default function Page() {
+	return <div>{String(Editor)}{String(MapContainer)}{String(Scene)}{String(normalizeAgentDataFlowConfig)}</div>;
+}
+`,
+		);
+		writeFile(path.join(repoRoot, "app", "demo", "panel.module.css"), ".panel { display: flex; }\n");
+		for (const [rel, contents] of Object.entries(extraFiles)) {
+			writeFile(path.join(repoRoot, rel), contents);
+		}
+		return {
+			planPath,
+			repoRoot,
+			cleanup() {
+				fs.rmSync(tempDir, { recursive: true, force: true });
+			},
+		};
+	} catch (error) {
+		fs.rmSync(tempDir, { recursive: true, force: true });
+		throw error;
+	}
+}
+
+test("trace-imports resolves catalog: versions and host-package peers", () => {
+	const fixture = createMinimalRepo();
+
+	try {
+		const plan = runTrace(fixture.repoRoot, "/demo", fixture.planPath);
+
+		assert.equal(plan.npmPackages["@tiptap/core"], "3.30.0");
+		assert.notEqual(plan.npmPackages["@tiptap/core"], "catalog:");
+		assert.equal(plan.npmPackages.leaflet, "^1.9.4");
+		assert.equal(plan.npmPackages["@types/leaflet"], "^1.9.22");
+		assert.equal(plan.npmPackages["@types/three"], "^0.185.4");
+	} finally {
+		fixture.cleanup();
+	}
+});
+
+test("trace-imports adds ambient dts, sibling dts, and local CSS imports", () => {
+	const fixture = createMinimalRepo();
+
+	try {
+		const plan = runTrace(fixture.repoRoot, "/demo", fixture.planPath);
+
+		assert.ok(plan.files.includes("types/speech-recognition.d.ts"));
+		assert.ok(plan.files.includes("types/atlassian-logo-third-party.d.ts"));
+		assert.ok(plan.files.includes("lib/studio-agent-data-flow.js"));
+		assert.ok(plan.files.includes("lib/studio-agent-data-flow.d.ts"));
+		assert.ok(plan.cssImports.includes("app/demo/panel.module.css"));
+		assert.ok(plan.cssImports.includes("app/dash-4-2.css"));
+		assert.ok(plan.cssImports.includes("app/typeset.css"));
+	} finally {
+		fixture.cleanup();
+	}
+});

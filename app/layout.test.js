@@ -142,7 +142,15 @@ test("RootLayout mounts the runtime document title prefixer", () => {
 	);
 	assert.match(
 		ROOT_LAYOUT_SOURCE,
-		/<PreHydrationScript id="vpk-pre-hydration" html=\{preHydrationScript\} \/>\s*<DocumentTitlePrefix \/>/,
+		/import \{ PROJECT_COMPONENTS \} from "@\/app\/data\/component-manifest";/,
+	);
+	assert.match(
+		ROOT_LAYOUT_SOURCE,
+		/const PROJECT_NAMES_BY_SLUG = Object\.fromEntries\(\s*PROJECT_COMPONENTS\.map\(\(\{ name, slug \}\) => \[slug, name\]\),\s*\);/,
+	);
+	assert.match(
+		ROOT_LAYOUT_SOURCE,
+		/<PreHydrationScript id="vpk-pre-hydration" html=\{preHydrationScript\} \/>\s*<DocumentTitlePrefix projectNamesBySlug=\{PROJECT_NAMES_BY_SLUG\} \/>/,
 	);
 });
 

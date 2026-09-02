@@ -13,6 +13,10 @@ const DEFAULT_TARGET_URL = "https://vpk-rovo.localhost";
 const SESSION_PREFIX = "vpk-tunnel-";
 const START_TIMEOUT_MS = 30_000;
 const START_POLL_INTERVAL_MS = 250;
+const REQUIRED_TUNNEL_DEV_ORIGINS = Object.freeze([
+	"*.public.atlastunnel.com",
+	"*.atlastunnel.com",
+]);
 
 function normalizeTargetUrl(value = DEFAULT_TARGET_URL) {
 	let parsed;
@@ -98,7 +102,56 @@ async function resolvePortlessTarget({
 		localUrl: parsed.href,
 		port,
 		sourceWorktree: findSourceWorktree(port, worktrees),
+		...describeShareTarget(parsed.href),
 	};
+}
+
+function describeShareTarget(localUrl) {
+	const parsed = normalizeTargetUrl(localUrl);
+	const pathname = parsed.pathname || "/";
+	return {
+		isCatalogRoot: pathname === "/",
+		pathname,
+	};
+}
+
+function nextConfigPathForTarget(target) {
+	const worktreePath = target?.sourceWorktree?.path;
+	return path.join(worktreePath || process.cwd(), "next.config.ts");
+}
+
+function extractAllowedDevOrigins(configSource) {
+	const match = String(configSource).match(/allowedDevOrigins\s*:\s*\[([\s\S]*?)\]/u);
+	if (!match) return [];
+	return [...match[1].matchAll(/["']([^"']+)["']/gu)].map((entry) => entry[1]);
+}
+
+function missingTunnelDevOrigins(origins) {
+	const present = new Set(origins);
+	return REQUIRED_TUNNEL_DEV_ORIGINS.filter((origin) => !present.has(origin));
+}
+
+function assertTunnelDevOrigins({
+	configPath,
+	readFile = (filePath) => fs.readFileSync(filePath, "utf8"),
+} = {}) {
+	if (!configPath) {
+		throw new Error("Could not locate next.config.ts to verify allowedDevOrigins.");
+	}
+
+	let configSource;
+	try {
+		configSource = readFile(configPath);
+	} catch {
+		throw new Error(`Could not read ${configPath} to verify allowedDevOrigins.`);
+	}
+
+	const missing = missingTunnelDevOrigins(extractAllowedDevOrigins(configSource));
+	if (missing.length === 0) return;
+
+	throw new Error(
+		`Next.js will serve a blank public page because allowedDevOrigins is missing ${missing.join(", ")}. Add those hosts in next.config.ts, restart that worktree's frontend, re-resolve the Portless URL (the port may change), then start the tunnel again.`,
+	);
 }
 
 function sessionNameForHostname(hostname) {
@@ -309,6 +362,7 @@ async function startTunnel({
 	resolveTarget = resolvePortlessTarget,
 	sleep = delay,
 	waitForUrl = waitForPublicUrl,
+	readFile = (filePath) => fs.readFileSync(filePath, "utf8"),
 } = {}) {
 	if (!confirmPublic) {
 		throw new Error(
@@ -316,8 +370,12 @@ async function startTunnel({
 		);
 	}
 
-	checkDependencies(run);
 	const target = await resolveTarget({ targetUrl });
+	assertTunnelDevOrigins({
+		configPath: nextConfigPathForTarget(target),
+		readFile,
+	});
+	checkDependencies(run);
 	const httpStatus = verifyHttpTarget(target.localUrl, run);
 	const sessionName = sessionNameForHostname(target.hostname);
 	let reused = tmuxSessionExists(sessionName, run);
@@ -351,6 +409,7 @@ async function startTunnel({
 		reused,
 		sessionName,
 		sourceWorktree: target.sourceWorktree ?? null,
+		...describeShareTarget(target.localUrl),
 	};
 }
 
@@ -440,12 +499,18 @@ if (require.main === module) {
 
 module.exports = {
 	DEFAULT_TARGET_URL,
+	REQUIRED_TUNNEL_DEV_ORIGINS,
+	assertTunnelDevOrigins,
 	buildPublicUrl,
 	checkDependencies,
 	chooseRoute,
 	createRunner,
 	dependencySetupMessage,
+	describeShareTarget,
+	extractAllowedDevOrigins,
 	extractPublicBaseUrl,
+	missingTunnelDevOrigins,
+	nextConfigPathForTarget,
 	normalizeTargetUrl,
 	parseCliArguments,
 	readStoredPublicBaseUrl,

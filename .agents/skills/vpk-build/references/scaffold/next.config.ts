@@ -11,6 +11,11 @@ const nextConfig: NextConfig = {
 	// as iframes where the badge is visual noise. Re-enable if you need the
 	// hydration/build indicators while debugging.
 	devIndicators: false,
+	// Next advertises a Network URL on 127.0.2.2; without this, that origin
+	// is blocked from /_next/* and the page renders as unstyled HTML.
+	// Preview via http://localhost:3001 unless you intentionally use the
+	// Network URL after this allow-list is in place.
+	allowedDevOrigins: ["127.0.2.2", "localhost"],
 	// Pin Turbopack's workspace root to the project directory. Without this,
 	// Next walks up the filesystem looking for a pnpm-lock.yaml and may find
 	// an unrelated lockfile in a parent directory (e.g. the user's home dir),

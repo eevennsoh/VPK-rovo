@@ -2,9 +2,15 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 const {
 	DEFAULT_TARGET_URL,
+	REQUIRED_TUNNEL_DEV_ORIGINS,
+	assertTunnelDevOrigins,
 	buildPublicUrl,
 	checkDependencies,
+	describeShareTarget,
+	extractAllowedDevOrigins,
 	extractPublicBaseUrl,
+	missingTunnelDevOrigins,
+	nextConfigPathForTarget,
 	normalizeTargetUrl,
 	parseCliArguments,
 	resolvePortlessTarget,
@@ -14,6 +20,15 @@ const {
 	stopTunnel,
 	verifyHttpTarget,
 } = require("./vpk-tunnel");
+
+const ALLOWED_NEXT_CONFIG = `
+	allowedDevOrigins: [
+		"vpk-rovo.localhost",
+		"*.vpk-rovo.localhost",
+		"*.public.atlastunnel.com",
+		"*.atlastunnel.com",
+	],
+`;
 
 function result(status = 0, stdout = "", stderr = "") {
 	return { error: null, status, stderr, stdout };
@@ -38,6 +53,8 @@ test("resolves an exact custom Portless route and preserves its full local URL",
 		target.localUrl,
 		"https://feature.vpk-rovo.localhost/jira?view=board#activity",
 	);
+	assert.equal(target.isCatalogRoot, false);
+	assert.equal(target.pathname, "/jira");
 });
 
 test("rejects unknown and dead Portless routes", async () => {
@@ -99,6 +116,49 @@ test("extracts an external URL but ignores Portless URLs", () => {
 		"https://research.atlastunnel.com",
 	);
 	assert.equal(extractPublicBaseUrl("Help: https://example.com/tunnel"), null);
+});
+
+test("flags catalog-root shares separately from project routes", () => {
+	assert.deepEqual(describeShareTarget("https://vpk-rovo.localhost"), {
+		isCatalogRoot: true,
+		pathname: "/",
+	});
+	assert.deepEqual(describeShareTarget("https://vpk-rovo.localhost/jira-golden-journeys-v4"), {
+		isCatalogRoot: false,
+		pathname: "/jira-golden-journeys-v4",
+	});
+});
+
+test("extracts allowedDevOrigins and reports missing Atlas Tunnel hosts", () => {
+	assert.deepEqual(
+		extractAllowedDevOrigins(ALLOWED_NEXT_CONFIG),
+		[
+			"vpk-rovo.localhost",
+			"*.vpk-rovo.localhost",
+			"*.public.atlastunnel.com",
+			"*.atlastunnel.com",
+		],
+	);
+	assert.deepEqual(
+		missingTunnelDevOrigins(["vpk-rovo.localhost", "*.vpk-rovo.localhost"]),
+		[...REQUIRED_TUNNEL_DEV_ORIGINS],
+	);
+	assert.deepEqual(missingTunnelDevOrigins([...REQUIRED_TUNNEL_DEV_ORIGINS]), []);
+	assert.equal(
+		nextConfigPathForTarget({ sourceWorktree: { path: "/tmp/worktree" } }),
+		"/tmp/worktree/next.config.ts",
+	);
+	assert.throws(
+		() => assertTunnelDevOrigins({
+			configPath: "/tmp/worktree/next.config.ts",
+			readFile: () => `allowedDevOrigins: ["vpk-rovo.localhost"]`,
+		}),
+		/allowedDevOrigins is missing \*\.public\.atlastunnel\.com, \*\.atlastunnel\.com/u,
+	);
+	assert.doesNotThrow(() => assertTunnelDevOrigins({
+		configPath: "/tmp/worktree/next.config.ts",
+		readFile: () => ALLOWED_NEXT_CONFIG,
+	}));
 });
 
 test("requires a successful local HTTP response", () => {
@@ -168,6 +228,7 @@ test("reuses an existing scoped tunnel without starting another", async () => {
 	};
 	const tunnel = await startTunnel({
 		confirmPublic: true,
+		readFile: () => ALLOWED_NEXT_CONFIG,
 		resolveTarget: async () => ({
 			hostname: "feature.localhost",
 			localUrl: "https://feature.localhost/demo",
@@ -210,6 +271,7 @@ test("restarts a scoped tunnel when its resolved frontend port changes", async (
 	};
 	const tunnel = await startTunnel({
 		confirmPublic: true,
+		readFile: () => ALLOWED_NEXT_CONFIG,
 		resolveTarget: async () => ({
 			hostname: "feature.localhost",
 			localUrl: "https://feature.localhost/demo",
@@ -247,6 +309,7 @@ test("starts the canonical public Atlas command in a new scoped session", async 
 	};
 	const tunnel = await startTunnel({
 		confirmPublic: true,
+		readFile: () => ALLOWED_NEXT_CONFIG,
 		resolveTarget: async () => ({
 			hostname: "feature.localhost",
 			localUrl: "https://feature.localhost/demo",
@@ -300,6 +363,28 @@ test("starts the canonical public Atlas command in a new scoped session", async 
 			],
 		],
 	);
+});
+
+test("refuses to start when Next.js allowedDevOrigins omits Atlas Tunnel hosts", async () => {
+	let calls = 0;
+	await assert.rejects(
+		startTunnel({
+			confirmPublic: true,
+			readFile: () => `allowedDevOrigins: ["vpk-rovo.localhost"]`,
+			resolveTarget: async () => ({
+				hostname: "feature.localhost",
+				localUrl: "https://feature.localhost/demo",
+				port: 4321,
+				sourceWorktree: { path: "/tmp/worktree" },
+			}),
+			run: () => {
+				calls += 1;
+				return result();
+			},
+		}),
+		/blank public page because allowedDevOrigins is missing/u,
+	);
+	assert.equal(calls, 0);
 });
 
 test("reports a stored public URL after startup logs scroll away", () => {

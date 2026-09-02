@@ -81,3 +81,26 @@ export function formatDocumentTitleWithPrefix(title: string, prefix: string): st
 		? `${normalizedPrefix}${DOCUMENT_TITLE_PREFIX_SEPARATOR}${baseTitle}`
 		: normalizedPrefix;
 }
+
+export function formatDocumentTitleForPath(
+	title: string,
+	prefix: string,
+	pathname: string | null,
+	projectNamesBySlug: Readonly<Record<string, string>>,
+): string {
+	const baseTitle = stripDocumentTitlePrefix(title, prefix);
+
+	if (UNPREFIXED_DOCUMENT_TITLES.has(baseTitle)) {
+		return baseTitle;
+	}
+
+	const routeMatch = normalizeString(pathname).match(/^\/([^/]+)\/?$/u);
+	const projectName = routeMatch
+		? normalizeString(projectNamesBySlug[routeMatch[1]])
+		: "";
+	const resolvedTitle = projectName
+		? `${projectName} — Projects — VPK`
+		: title;
+
+	return formatDocumentTitleWithPrefix(resolvedTitle, prefix);
+}

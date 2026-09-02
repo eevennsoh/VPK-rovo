@@ -72,19 +72,42 @@ before patching application behavior.
 ## Scaffold behavior
 
 The scaffold keeps repo-relative paths so `@/*` imports remain unchanged. It
-copies the full `public` tree, replaces the catalog-dispatched route entry with
-a direct demo import, generates layout/provider ordering, creates the Micros
-files, initializes Git, and links only `vpk-setup` and `vpk-deploy`.
+copies the full `public` tree, local `cssImports`, ambient `types/*.d.ts`,
+sibling `*.d.ts` next to copied `.js`, and the source token-free `.npmrc`.
+It replaces the catalog-dispatched route entry with a direct demo import,
+generates layout/provider ordering, creates the Micros files, initializes Git,
+and links only `vpk-setup` and `vpk-deploy`.
 
 The generated `app/globals.css` begins from VPK's source file and filters
 `@import`/`@source` directives whose packages are absent from the traced set.
-It always keeps Tailwind, PostCSS, and `tw-animate-css`; the scaffold injects
-`tw-animate-css` because TypeScript tracing cannot see CSS dependencies.
+It always keeps Tailwind, PostCSS, `tw-animate-css`, and `shadcn`. Bare
+`@import "shadcn/tailwind.css"` is rewritten to
+`@import "../node_modules/shadcn/dist/tailwind.css";` because Turbopack cannot
+resolve the bare specifier from an extracted project (`FileSystemPath("").join`
+leaves the filesystem root). The scaffold injects `tw-animate-css` and `shadcn`
+because TypeScript tracing cannot see CSS dependencies.
 
-The generated layout loads the default Atlassian and demo font families and
-mounts the client feature-flag shim. Keep font links for any family referenced
-by the copied route. `next.config.ts` disables the floating Next dev indicator
-for demos; remove that setting only when debugging requires it.
+Target `package.json` must not contain `"catalog:"`. Resolve those specifiers
+against the source `pnpm-workspace.yaml` `catalog:` block. When the graph has
+`react-leaflet`, also add `leaflet` + `@types/leaflet`; when it has `three`,
+add `@types/three`.
+
+The generated layout imports `getThemeStyles` from
+`@atlaskit/tokens/get-theme-styles` (not `@atlaskit/tokens`), loads the default
+Atlassian and demo font families, and mounts the client feature-flag shim.
+It wraps only providers whose required props are children-only; skip
+`WorkItemModalProvider` and any export that needs instance props such as
+`isOpen` / `onClose` / `workItem`. Keep font links for any family referenced
+by the copied route.
+
+`next.config.ts` disables the floating Next dev indicator and sets
+`allowedDevOrigins: ["127.0.2.2", "localhost"]`. Preview via
+`http://localhost:3001`. The Network URL on `127.0.2.2` is blocked from
+`/_next/*` without that allow-list, which renders as unstyled overlapping HTML.
+
+The harness also writes a minimal `next-env.d.ts` (no `.next/dev` imports) and
+`types/jsx-namespace.d.ts` so React 19 files that still use `JSX.Element`
+typecheck without rewriting copied source.
 
 The linked skills use relative paths back to VPK-Rovo and will break if the
 source checkout moves independently. Re-run the scaffold or repair the symlinks
@@ -98,9 +121,18 @@ narrowest owner:
 | Symptom | Likely owner |
 | --- | --- |
 | Install failure | Target dependency version mismatch |
+| `ERR_PNPM_CATALOG_ENTRY_NOT_FOUND_FOR_SPEC` | Target `package.json` still has `"catalog:"` — resolve against source `pnpm-workspace.yaml` |
+| `@atlassian/logo-third-party` 404 / wrong registry | Source token-free `.npmrc` was not copied |
 | Missing `@/` import | Trace edge or copied file missing |
 | Unresolved Tailwind class/build failure | `app/globals.css` import chain |
+| Missing CSS / module not found | Local `cssImports` or `globals.css` `@import "./…"` not copied. If the file exists and the bundler still cannot resolve it, delete target `.next` and rebuild |
+| Overlapping tabs / unstyled chrome | `shadcn` CSS stripped or bare `@import "shadcn/tailwind.css"` crashed Turbopack. Restore `@import "../node_modules/shadcn/dist/tailwind.css";` and the `shadcn` dep. Proof: tabs `getComputedStyle(...).flexDirection === "column"` and `hasShadcnCss` |
 | Blank or unstyled runtime | Tailwind utilities were not emitted |
+| Unstyled overlapping HTML on Network URL | `/_next/*` blocked from `127.0.2.2`. Add `allowedDevOrigins` and preview via `http://localhost:3001` |
+| `getThemeStyles` is not a function | Layout imported from `@atlaskit/tokens` instead of `@atlaskit/tokens/get-theme-styles` |
+| Layout crash on `WorkItemModalProvider` | Provider requires `isOpen` / `onClose` / `workItem`. Skip providers whose required props are not children-only |
+| `JSX.Element` / missing ambient types | Copy `types/*.d.ts`, sibling `lib/*.d.ts`, generate `next-env.d.ts` (no `.next/dev`) and `types/jsx-namespace.d.ts` |
+| `leaflet` / `three` type or runtime miss | Add `leaflet` + `@types/leaflet` with `react-leaflet`, and `@types/three` with `three` |
 | Named fonts fall back | Generated layout lacks the font link |
 | Feature-gate console warning | Client shim missing or not mounted |
 | Broken logos/product icons | Full `public` tree not copied |
@@ -116,11 +148,18 @@ After the build, run the target and inspect its actual route, console, fonts,
 assets, navigation, and stateful behavior. Backend-backed flows require live API
 and WebSocket proof.
 
+`verify-target.sh` plus a headless a11y snapshot can still hide a broken
+headed/narrow window when CSS variants are missing. After verify, inspect
+computed layout (Jira header tabs `flex-direction: column` when
+`data-horizontal`) in a real viewport, not only an accessibility snapshot.
+
 ## Ports and local runtime
 
 Extracted frontends default to port 3001 so VPK-Rovo can remain on 3000. An
 `EADDRINUSE` on 3001 is a listener collision, not a build failure. Stop the
-existing frontend or select another port. Backend-backed `pnpm run dev` must
+existing frontend or select another port. Preview via `http://localhost:3001`.
+Next may advertise a Network URL on `127.0.2.2`; that origin needs
+`allowedDevOrigins` or `/_next/*` is blocked. Backend-backed `pnpm run dev` must
 start or reuse the source backend as well as the extracted frontend.
 
 ## Deployment handoff
