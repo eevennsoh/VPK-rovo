@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
 import LinkIcon from "@atlaskit/icon/core/link";
@@ -51,6 +52,7 @@ export function AgentSessionMediumCard({
 	item,
 	onAttach,
 	onCreateWorkItem,
+	onItemHover,
 	onSubtasks,
 	onView,
 	sessionDrag,
@@ -66,6 +68,7 @@ export function AgentSessionMediumCard({
 	flyout: boolean;
 	onAttach?: (item: AgentSessionItem) => void;
 	onCreateWorkItem?: (item: AgentSessionItem) => void;
+	onItemHover?: (item: AgentSessionItem | null) => void;
 	onSubtasks?: (item: AgentSessionItem) => void;
 	onView?: (item: AgentSessionItem) => void;
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
@@ -86,6 +89,19 @@ export function AgentSessionMediumCard({
 		: `${item.agent.name} with ${invoker.name}`;
 	const linkLabel = uncapturedWorkLinkLabel(issueKey ?? item.sessionDetails?.issueKey);
 	const strokeToken = !captured && isNew ? "border-border-discovery" : "border-border-disabled";
+	const onItemHoverRef = useRef(onItemHover);
+	const isHoveredRef = useRef(false);
+
+	useEffect(() => {
+		onItemHoverRef.current = onItemHover;
+	}, [onItemHover]);
+
+	useEffect(() => () => {
+		if (isHoveredRef.current) {
+			onItemHoverRef.current?.(null);
+		}
+	}, []);
+
 	const className = cn(
 		"group/session-card relative flex h-[33px] w-[276px] items-center gap-2 rounded-[10px] border border-solid px-3 text-text",
 		"transition-[background-color,border-color] duration-xxshort ease-out-practical motion-reduce:transition-none",
@@ -160,7 +176,20 @@ export function AgentSessionMediumCard({
 		);
 
 		return (
-			<div className={className} data-captured={captured || undefined} data-highlighted={isHighlighted || undefined} data-new={isNew || undefined}>
+			<div
+				className={className}
+				data-captured={captured || undefined}
+				data-highlighted={isHighlighted || undefined}
+				data-new={isNew || undefined}
+				onPointerEnter={() => {
+					isHoveredRef.current = true;
+					onItemHover?.(item);
+				}}
+				onPointerLeave={() => {
+					isHoveredRef.current = false;
+					onItemHover?.(null);
+				}}
+			>
 				{isNew ? (
 					<>
 						<span className="sr-only">Newly synced, not yet reviewed</span>

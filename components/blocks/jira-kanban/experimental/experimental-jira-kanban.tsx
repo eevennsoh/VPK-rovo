@@ -804,6 +804,7 @@ export function ExperimentalJiraKanban({
 					>
 						<AgentSessionColumn
 							{...agentSessionColumn}
+							highlightedItemId={hoveredSessionId}
 							onItemHover={handleSessionHover}
 							onSelectedItemIdChange={handleSessionSelectionChange}
 							onView={handleSessionView}
@@ -950,6 +951,7 @@ export function ExperimentalJiraKanban({
 												onDragStart={(event) => handleCardDragStartInternal(card, column.title, event)}
 												onGenerativeActionSubmit={onCardGenerativeActionSubmit}
 											onLinkWorkItem={proximityActions.onLinkWorkItem}
+											onItemHover={handleSessionHover}
 											renderAgentActivityIndicator={renderAgentActivityIndicator}
 											onSessionLink={onCardAgentSessionLink}
 												onSessionUnlink={onCardAgentSessionUnlink}

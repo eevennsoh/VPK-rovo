@@ -194,6 +194,7 @@ export function AgentSession({
 								flyoutSession={flyoutSession}
 								getResumeCommand={getResumeCommand}
 								isArriving={beatItemIds?.has(item.id) ?? false}
+								isHighlighted={item.id === highlightedItemId}
 								isNew={newItemIds?.has(item.id) ?? false}
 								isResumable={isResumable}
 								isSelected={item.id === selectedItemId}
@@ -232,6 +233,7 @@ export function AgentSession({
 								)
 								: undefined}
 							onCreateWorkItem={onCreateWorkItem}
+							onItemHover={variant === "medium-detached" ? onItemHover : undefined}
 							onSubtasks={onSubtasks}
 							onView={itemOnView}
 							sessionDrag={variant === "medium-detached" ? sessionDrag : undefined}

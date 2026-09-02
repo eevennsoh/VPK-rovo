@@ -26,6 +26,10 @@ const MEDIUM_CARD_SOURCE = readFileSync(
 	join(EXPERIMENTAL_DIR, "..", "..", "agent-session", "agent-session-medium-card.tsx"),
 	"utf8",
 );
+const LARGE_CARD_SOURCE = readFileSync(
+	join(EXPERIMENTAL_DIR, "..", "..", "agent-session", "agent-session-card.tsx"),
+	"utf8",
+);
 
 function withoutComments(source) {
 	return source.replace(/\/\*[\s\S]*?\*\//gu, "").replace(/\/\/[^\n]*/gu, "");
@@ -164,6 +168,19 @@ test("a hovered column session lights its board twin at the row hover rung", () 
 		MEDIUM_CARD_SOURCE,
 		/transition-\[background-color,border-color\] duration-xxshort ease-out-practical motion-reduce:transition-none/u,
 	);
+});
+
+test("a hovered detached board session lights its column twin", () => {
+	// Hover is transient relationship preview in either direction. The board
+	// owns the shared id and feeds it to the column, while the medium row
+	// reports pointer entry/exit through the same session callback as the
+	// column's large row.
+	assert.match(BOARD_SOURCE, /highlightedItemId=\{hoveredSessionId\}/u);
+	assert.match(CARD_SOURCE, /onItemHover=\{onItemHover\}/u);
+	assert.match(MEDIUM_CARD_SOURCE, /onPointerEnter=\{\(\) => \{\s*[\s\S]*?onItemHover\?\.\(item\);\s*\}\}/u);
+	assert.match(MEDIUM_CARD_SOURCE, /onPointerLeave=\{\(\) => \{\s*[\s\S]*?onItemHover\?\.\(null\);\s*\}\}/u);
+	assert.match(SESSION_INDEX_SOURCE, /isHighlighted=\{item\.id === highlightedItemId\}/u);
+	assert.match(LARGE_CARD_SOURCE, /!isSelected && isHighlighted && "bg-surface-hovered"/u);
 });
 
 test("column card click scrolls the related issue and applies the blue-subtlest spotlight", () => {

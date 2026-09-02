@@ -48,6 +48,7 @@ interface ExperimentalJiraKanbanCardProps {
 	onClick: (event: MouseEvent<HTMLButtonElement>) => void;
 	onDragEnd: DragEventHandler<HTMLButtonElement>;
 	onCreateWorkItem?: (item: AgentSessionItem) => void;
+	onItemHover?: (item: AgentSessionItem | null) => void;
 	onDragStart: DragEventHandler<HTMLButtonElement>;
 	onGenerativeActionSubmit?: JiraKanbanProps["onCardGenerativeActionSubmit"];
 	onLinkWorkItem?: (item: AgentSessionItem, workItemKey?: string) => void;
@@ -103,6 +104,7 @@ export function ExperimentalJiraKanbanCard({
 	onDragStart,
 	onGenerativeActionSubmit,
 	onLinkWorkItem,
+	onItemHover,
 	renderAgentActivityIndicator,
 	onSessionLink,
 	onSessionUnlink,
@@ -227,6 +229,7 @@ export function ExperimentalJiraKanbanCard({
 								issueKey={card.code}
 								items={detachedAgentSessions}
 								onCreateWorkItem={onCreateWorkItem}
+								onItemHover={onItemHover}
 								onLinkWorkItem={onSessionLink || onLinkWorkItem
 									? handleLinkWorkItem
 									: undefined}

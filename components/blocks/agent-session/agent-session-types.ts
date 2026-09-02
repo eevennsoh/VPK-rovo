@@ -102,18 +102,18 @@ export interface AgentSessionProps {
 	/** Work item key for the detached link tooltip (`Link to KEY`). */
 	issueKey?: string;
 	/**
-	 * Pointer hover on a large column card. `null` when the pointer leaves.
-	 * Compact rows do not fire this.
+	 * Pointer hover on a session row. `null` when the pointer leaves.
 	 */
 	onItemHover?: (item: AgentSessionItem | null) => void;
 	/**
-	 * Id of the compact row to light while the pointer sits somewhere else.
+	 * Id of the session row to light while the pointer sits somewhere else.
 	 *
 	 * The board pairs this with {@link onItemHover}: the Untracked work column
 	 * reports the session under the pointer, and every proximity row carrying the
 	 * same id lights up beside its work item. Distinct from
 	 * {@link selectedItemId}, which is a committed choice; this is a transient
-	 * preview of a relationship the viewer has not acted on yet.
+	 * preview of a relationship the viewer has not acted on yet. The same
+	 * relationship can be previewed in either direction.
 	 */
 	highlightedItemId?: string | null;
 	/**

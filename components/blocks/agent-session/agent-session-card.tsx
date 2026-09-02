@@ -49,6 +49,7 @@ export function AgentSessionCard({
 	flyoutSession,
 	getResumeCommand,
 	isArriving = false,
+	isHighlighted = false,
 	isNew = false,
 	isResumable,
 	isSelected = false,
@@ -67,6 +68,8 @@ export function AgentSessionCard({
 	getResumeCommand?: (item: AgentSessionItem) => string | undefined;
 	/** Play the one-shot arrival beat. A remounted card must not re-arm it. */
 	isArriving?: boolean;
+	/** Light this row for a pointer hovering its matching board session. */
+	isHighlighted?: boolean;
 	/** Carry the persistent unreviewed mark. Outlives the beat. */
 	isNew?: boolean;
 	isResumable?: (item: AgentSessionItem) => boolean;
@@ -236,14 +239,15 @@ export function AgentSessionCard({
 						!captured && isNew ? "border-border-discovery" : "border-border-disabled",
 						// Selected keeps the same blue-subtlest token as a spotlighted
 						// board card. No mapped hovered sibling exists, so hover stays blue.
-						isSelected
-							? "bg-bg-accent-blue-subtlest"
-							: "bg-transparent hover:bg-surface-hovered",
+						isSelected && "bg-bg-accent-blue-subtlest",
+						!isSelected && isHighlighted && "bg-surface-hovered",
+						!isSelected && !isHighlighted && "bg-transparent hover:bg-surface-hovered",
 						activateCard === undefined
 							? null
 							: "outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
 							)}
 							data-captured={captured || undefined}
+							data-highlighted={isHighlighted || undefined}
 							data-new={isNew || undefined}
 							data-selected={isSelected || undefined}
 							data-variant="uncaptured-work"

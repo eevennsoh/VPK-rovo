@@ -502,8 +502,8 @@ test("a card body click toggles a single selected session on blue-subtlest", () 
 		/if \(nextId !== null\) \{\s*\n\s*onView\?\.\(item\);\s*\n\s*\}/u,
 	);
 	assert.match(INDEX_SOURCE, /isSelected=\{item\.id === selectedItemId\}/u);
-	assert.match(CARD_SOURCE, /isSelected\s*\n\s*\? "bg-bg-accent-blue-subtlest"/u);
-	assert.match(CARD_SOURCE, /"bg-transparent hover:bg-surface-hovered"/u);
+	assert.match(CARD_SOURCE, /isSelected && "bg-bg-accent-blue-subtlest"/u);
+	assert.match(CARD_SOURCE, /!isSelected && !isHighlighted && "bg-transparent hover:bg-surface-hovered"/u);
 	assert.match(CARD_SOURCE, /data-selected=\{isSelected \|\| undefined\}/u);
 	assert.match(CARD_SOURCE, /aria-current=\{isSelected \? "true" : undefined\}/u);
 	assert.match(CARD_SOURCE, /isSelected=\{isSelected\}/u);

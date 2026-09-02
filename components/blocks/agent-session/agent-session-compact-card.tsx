@@ -106,6 +106,7 @@ export function AgentSessionCompactCard({
 	item,
 	onAttach,
 	onCreateWorkItem,
+	onItemHover,
 	onSubtasks,
 	onView,
 	sessionDrag,
@@ -125,6 +126,7 @@ export function AgentSessionCompactCard({
 	issueKey?: string;
 	onAttach?: (item: AgentSessionItem) => void;
 	onCreateWorkItem?: (item: AgentSessionItem) => void;
+	onItemHover?: (item: AgentSessionItem | null) => void;
 	onSubtasks?: (item: AgentSessionItem) => void;
 	onView?: (item: AgentSessionItem) => void;
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
@@ -156,6 +158,7 @@ export function AgentSessionCompactCard({
 			item={item}
 			onAttach={onAttach}
 			onCreateWorkItem={onCreateWorkItem}
+			onItemHover={onItemHover}
 			onSubtasks={onSubtasks}
 			onView={onView}
 			sessionDrag={sessionDrag}
