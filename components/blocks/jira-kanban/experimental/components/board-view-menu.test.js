@@ -67,8 +67,7 @@ test("Experimental board header opens the production View picker without changin
 	}
 	// ...while the show/hide dimensions are the same control over different
 	// lists, so they route through one shared submenu instead of three copies.
-	// Pull request is the only one that passes an icon map; Agent and Show
-	// fields stay label-only, so the `icons` prop is optional in the match.
+	// Pull request and Agent pass icon maps. Show fields stays label-only.
 	for (const [label, list] of [
 		["Pull request", "BOARD_PR_STATE_OPTIONS"],
 		["Agent", "BOARD_AGENT_STATE_OPTIONS"],
@@ -136,23 +135,28 @@ test("Experimental board header opens the production View picker without changin
 	);
 	assert.match(viewMenu, /option\.separatorBefore \? <DropdownMenuSeparator \/> : null/u);
 	assert.doesNotMatch(viewOptions, /"Idle"/u);
-	// PR state keeps literal ids (`as const satisfies`) so the menu's icon map is
-	// keyed by a union — an unmapped state is a type error, not a row that
-	// quietly loses its glyph. Agent state is label-only, so it needs no union.
+	// PR and Agent state keep literal ids so each icon map is keyed by a union.
+	// An unmapped state is a type error, not a row that quietly loses its glyph.
 	assert.match(
 		viewOptions,
 		/export const BOARD_PR_STATE_OPTIONS = \[[\s\S]*?\] as const satisfies readonly BoardVisibilityOption\[\];/u,
 		"BOARD_PR_STATE_OPTIONS must keep literal ids for the icon map's key union",
 	);
-	// PR state rows carry a leading glyph, tinted through the ADS `color` prop —
+	// State rows carry a leading glyph, tinted through the ADS `color` prop —
 	// ADS ships its icon CSS unlayered, so a Tailwind text utility on the same
-	// svg silently loses. Agent rows carry no glyph and pass no icon map.
+	// svg silently loses. Untracked uses the empty-task glyph in subtlest.
 	const prIcons = viewMenu.match(/const PR_STATE_ICONS = \{[\s\S]*?\} as const satisfies Record</u);
 	assert.ok(prIcons, "PR_STATE_ICONS should be a Record keyed by the option id union");
 	for (const entry of ["open", "draft", "queued", "merged", "closed"]) {
 		assert.match(prIcons[0], new RegExp(`\\n\\t${entry}: \\{ glyph: \\w+Icon, color: token\\("color\\.icon[.\\w]*"\\) \\},`, "u"));
 	}
-	assert.doesNotMatch(viewMenu, /AGENT_STATE_ICONS/u);
+	assert.match(prIcons[0], /draft: \{ glyph: PullRequestIcon, color: token\("color\.icon\.subtlest"\) \}/u);
+	const agentIcons = viewMenu.match(/const AGENT_STATE_ICONS = \{[\s\S]*?\} as const satisfies Record</u);
+	assert.ok(agentIcons, "AGENT_STATE_ICONS should be a Record keyed by the session-state id union");
+	assert.match(agentIcons[0], /working: \{ glyph: TaskInProgressIcon, color: token\("color\.icon\.subtlest"\) \}/u);
+	assert.match(agentIcons[0], /"needs-input": \{ glyph: QuestionCircleFilledIcon, color: token\("color\.icon\.information"\) \}/u);
+	assert.match(agentIcons[0], /finished: \{ glyph: StatusSuccessIcon, color: token\("color\.icon\.success"\) \}/u);
+	assert.match(agentIcons[0], /untracked: \{ glyph: TaskToDoIcon, color: token\("color\.icon\.subtlest"\) \}/u);
 	assert.doesNotMatch(withoutComments(viewMenu), /<Icon[^>]*className="text-icon/u);
 	// Every list is CONTROLLED, seeded from the shared defaults. Base UI unmounts
 	// a submenu's contents on close and the whole popup on dismiss, so an

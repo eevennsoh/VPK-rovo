@@ -194,6 +194,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	onCardAgentSessionLink?: ExperimentalJiraKanbanProps["onCardAgentSessionLink"];
 	onCardAgentSessionMove?: ExperimentalJiraKanbanProps["onCardAgentSessionMove"];
 	onCardAgentSessionUnlink?: ExperimentalJiraKanbanProps["onCardAgentSessionUnlink"];
+	showAgentSessionUnlinkWell?: ExperimentalJiraKanbanProps["showAgentSessionUnlinkWell"];
 	onInsightsWorkItemClick?: (workItem: PulseWorkItem) => void;
 	onModeChange?: (mode: ExperimentalJiraKanbanMode) => void;
 	onResumeLooseWork?: (item: PulseLooseWork) => void;
@@ -246,6 +247,7 @@ export default function ExperimentalJiraKanbanPage({
 	onCardAgentSessionLink,
 	onCardAgentSessionMove,
 	onCardAgentSessionUnlink,
+	showAgentSessionUnlinkWell = true,
 	onInsightsWorkItemClick,
 	onModeChange,
 	onResumeLooseWork,
@@ -302,6 +304,7 @@ export default function ExperimentalJiraKanbanPage({
 	// or collapses it back to the 32px notch rail. There is deliberately no
 	// closed state — nothing outside the rail could bring it back.
 	const [agentSessionColumnCollapsed, setAgentSessionColumnCollapsed] = useState(defaultAgentSessionColumnCollapsed);
+	const [agentSessionPanelWidthPx, setAgentSessionPanelWidthPx] = useState(AGENT_SESSION_PANEL_WIDTH_PX);
 	const [collapsedColumns, setCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
 	const [showUntracked, setShowUntracked] = useState(defaultShowUntracked);
 	const [appliedShowUntrackedDefault, setAppliedShowUntrackedDefault] = useState(defaultShowUntracked);
@@ -518,14 +521,14 @@ export default function ExperimentalJiraKanbanPage({
 	const boardScrollEndInset = showAgentSessionPanel
 		? (agentSessionColumnCollapsed
 			? AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX
-			: AGENT_SESSION_PANEL_WIDTH_PX)
+			: agentSessionPanelWidthPx)
 		: 0;
 	// Scroll inset and FAB inset are different numbers. The last column still
 	// needs the 32px rail reserved; the viewport FAB does not — collapsed is
-	// the original 24px corner (`0` extra). Only the expanded 360px panel
-	// pushes it. First paint follows `defaultAgentSessionColumnCollapsed`.
+	// the original 24px corner (`0` extra). Only the expanded panel pushes it.
+	// First paint follows `defaultAgentSessionColumnCollapsed`.
 	const untrackedPanelFabInsetPx = showAgentSessionPanel && !agentSessionColumnCollapsed
-		? AGENT_SESSION_PANEL_WIDTH_PX
+		? agentSessionPanelWidthPx
 		: 0;
 	// The floating Rovo button is portalled to `document.body`, so it cannot
 	// inherit this variable from the board. Publish on `:root` (and the board
@@ -873,6 +876,7 @@ export default function ExperimentalJiraKanbanPage({
 								onCardAgentSessionUnlink={onCardAgentSessionUnlink
 									? handleCardAgentSessionUnlink
 									: undefined}
+								showAgentSessionUnlinkWell={showAgentSessionUnlinkWell}
 								onCardSelect={handleCardSelect}
 								onCardDragStart={handleCardDragStart}
 								onCardDrop={handleCardDrop}
@@ -913,6 +917,7 @@ export default function ExperimentalJiraKanbanPage({
 						}}
 						collapsed={agentSessionColumnCollapsed}
 						onCollapsedChange={setAgentSessionColumnCollapsed}
+						onExpandedWidthChange={setAgentSessionPanelWidthPx}
 						sessionDragging={boardSessionDrag.transaction !== null}
 						topInset={BOARD_HEADER_TAB_STRIP_BOTTOM_PX}
 						untrackedDropArmed={boardSessionDrag.transaction?.target?.kind === "untracked"}

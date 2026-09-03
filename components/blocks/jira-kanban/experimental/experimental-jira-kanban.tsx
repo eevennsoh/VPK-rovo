@@ -110,6 +110,11 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 		card: JiraKanbanCardData,
 		columnTitle: string,
 	) => void;
+	/**
+	 * Dashed "Drag here to unlink" well under a card. Defaults on. A host can
+	 * keep chin drag and click-unlink without mounting that well.
+	 */
+	showAgentSessionUnlinkWell?: boolean;
 	onCardAgentSessionLink?: (
 		session: AgentSessionItem,
 		card: JiraKanbanCardData,
@@ -617,6 +622,7 @@ function ExperimentalJiraKanbanView({
 	onCardAgentSessionLink,
 	onCardAgentSessionMove,
 	onCardAgentSessionUnlink,
+	showAgentSessionUnlinkWell = true,
 	onCardAgentDoneRunReview,
 	onCardAgentDoneRunView,
 	onCreateAgent,
@@ -983,6 +989,7 @@ function ExperimentalJiraKanbanView({
 											onSessionLink={onCardAgentSessionLink}
 												onSessionUnlink={onCardAgentSessionUnlink}
 												onSubtasks={proximityActions.onSubtasks}
+												showUnlinkWell={showAgentSessionUnlinkWell}
 												selected={isSelected}
 											/>
 											</motion.div>

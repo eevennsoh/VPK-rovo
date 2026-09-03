@@ -14,7 +14,7 @@ import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/bloc
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
 import { isPulseAgentSession, type PulseLooseWork } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { linkJiraKanbanAgentSession, moveJiraKanbanAgentSession, unlinkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
-import { JiraList, type JiraListRowData } from "@/components/blocks/jira-list";
+import { JiraList, type JiraListAssignedAgent } from "@/components/blocks/jira-list";
 import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { useDesignVariation } from "@/components/hooks/use-design-variation";
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
@@ -38,31 +38,7 @@ import {
 	JIRA_GOLDEN_JOURNEYS_V4_PAY_HEADER_ASSIGNEES,
 	JIRA_GOLDEN_JOURNEYS_V4_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID,
 } from "./data/presentation-story";
-
-const STATUS_VARIANTS: Readonly<Record<string, JiraListRowData["statusVariant"]>> = {
-	"To do": "neutral",
-	"In progress": "information",
-	"In review": "warning",
-	Done: "success",
-};
-
-function createListRows(columns: readonly JiraKanbanColumnData[]): JiraListRowData[] {
-	return columns.flatMap((column) => column.cards.map((card) => ({
-		issueKey: card.code,
-		summary: card.title,
-		issueType: "task",
-		priority: card.priority,
-		status: column.title,
-		statusVariant: STATUS_VARIANTS[column.title],
-		assignee: card.assignee,
-		agentSessions: [
-			...(card.agentActivities?.map((activity) => activity.name) ?? []),
-			...(card.agentDoneRuns?.map((run) => run.agentName) ?? []),
-		],
-		labels: card.tags,
-		contributors: card.assignee ? [card.assignee] : [],
-	})));
-}
+import { useJiraGoldenJourneysV4List } from "./hooks/use-jira-golden-journeys-v4-list";
 
 export default function JiraGoldenJourneysV4Page(): React.ReactElement {
 	return (
@@ -143,6 +119,54 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 			intro: run.description,
 		});
 	}, [openAgentChat]);
+	const handleListAssignedAgentSelect = useCallback((
+		issueKey: string,
+		agent: JiraListAssignedAgent,
+	) => {
+		const card = boardColumns
+			.flatMap((column) => column.cards)
+			.find((candidate) => candidate.code === issueKey);
+		if (!card) {
+			openAgentChat({
+				agentId: agent.id,
+				agentName: agent.name,
+				issueKey,
+				issueSummary: "",
+			});
+			return;
+		}
+
+		const activity = card.agentActivities?.find((candidate) => (
+			candidate.id === agent.id
+			|| candidate.id.endsWith(`:${agent.id}`)
+			|| candidate.name === agent.name
+		));
+		if (activity) {
+			handleViewChat(activity, card);
+			return;
+		}
+
+		const run = card.agentDoneRuns?.find((candidate) => (
+			candidate.id === agent.id
+			|| candidate.agentName === agent.name
+		));
+		if (run) {
+			handleViewCompletedRun(run);
+			return;
+		}
+
+		openAgentChat({
+			agentId: agent.id,
+			agentName: agent.name,
+			issueKey: card.code,
+			issueSummary: card.title,
+		});
+	}, [boardColumns, handleViewChat, handleViewCompletedRun, openAgentChat]);
+	const { getProps: getListProps } = useJiraGoldenJourneysV4List({
+		boardColumns,
+		onAssignedAgentSelect: handleListAssignedAgentSelect,
+		setBoardColumns,
+	});
 	// Unlink always lands in `detachedAgentSessionsByCard`. The Untracked list
 	// reads that map, so the session reappears there immediately. Team EU keeps
 	// `showUntrackedProximity` off, so it never parks beside the card.
@@ -231,19 +255,14 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						onCardAgentSessionLink={handleAgentSessionLink}
 						onCardAgentSessionMove={handleAgentSessionMove}
 						onCardAgentSessionUnlink={handleAgentSessionUnlink}
+						showAgentSessionUnlinkWell={designVariation !== "team-eu"}
 						onResumeLooseWork={handleResumeLooseWork}
 						onViewChange={tabOwnsView ? undefined : setWorkItemView}
 						renderListContent={(columns) => {
-							const listRows = createListRows(columns);
+							const listProps = getListProps(columns);
 							return (
-								<div className="min-h-0 flex-1 overflow-auto p-4 md:p-5">
-									<JiraList
-										ariaLabel="Payments SDK v2 migration work items list"
-										className="max-h-full"
-										rows={listRows}
-										totalCountLabel={`${listRows.length}`}
-										visibleCount={listRows.length}
-									/>
+								<div className="min-h-0 flex-1 overflow-hidden p-4 md:p-5">
+									<JiraList {...listProps} />
 								</div>
 							);
 						}}

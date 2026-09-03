@@ -72,6 +72,7 @@ import type {
 } from "@/components/blocks/jira-list/jira-list-types";
 
 export type {
+	JiraListAssignedAgent,
 	JiraListBaseColumnId,
 	JiraListColumnAnchorId,
 	JiraListDraftWorkItem,
@@ -144,7 +145,11 @@ export function JiraList({
 	copiedIssueKey = null,
 	draftWorkItem = null,
 	extraColumns = [],
+	agentCatalog,
 	statusOptions = [],
+	onAssignedAgentIdsChange,
+	onAssignedAgentSelect,
+	onAgentAssign,
 	onCreate,
 	onCopyLink,
 	onDraftWorkItemCancel,
@@ -170,6 +175,7 @@ export function JiraList({
 	const {
 		ref: tableScrollRef,
 		showBottomScrollMask,
+		showTopScrollMask,
 	} = useHasVerticalOverflow<HTMLDivElement>();
 	const rowIds = useMemo(() => rows.map((row) => row.issueKey), [rows]);
 	const sensors = useSensors(
@@ -439,7 +445,27 @@ export function JiraList({
 			id: "agentSessions",
 			label: "Agent sessions",
 			widthClassName: "w-[247px]",
-			renderCell: (row) => <JiraListAgentSessionsCell agentSessions={row.agentSessions} />,
+			renderCell: (row) => (
+				<JiraListAgentSessionsCell
+					agentCatalog={agentCatalog}
+					agentSessions={row.agentSessions}
+					onAgentAssign={
+						onAgentAssign
+							? (agent) => onAgentAssign(row.issueKey, agent)
+							: undefined
+					}
+					onAssignedAgentIdsChange={
+						onAssignedAgentIdsChange
+							? (agentIds) => onAssignedAgentIdsChange(row.issueKey, agentIds)
+							: undefined
+					}
+					onAssignedAgentSelect={
+						onAssignedAgentSelect
+							? (agent) => onAssignedAgentSelect(row.issueKey, agent)
+							: undefined
+					}
+				/>
+			),
 		},
 		{
 			id: "priority",
@@ -680,6 +706,8 @@ export function JiraList({
 			return null;
 		}
 
+		const isLastRow = insertAtIndex === rows.length;
+
 		return (
 			<TableRow
 				className="group/row border-0 hover:bg-transparent focus-within:bg-transparent"
@@ -688,7 +716,7 @@ export function JiraList({
 			>
 				<TableCell
 					className={cn(
-						getBodyCellClassName({ isSelected: false, align: "center" }),
+						getBodyCellClassName({ isLastRow, isSelected: false, align: "center" }),
 						"sticky left-0 z-10 px-0",
 					)}
 				>
@@ -701,7 +729,7 @@ export function JiraList({
 				</TableCell>
 				<TableCell
 					className={cn(
-						getBodyCellClassName({ isSelected: false, isLastColumn: true }),
+						getBodyCellClassName({ isLastColumn: true, isLastRow, isSelected: false }),
 						"px-2",
 					)}
 					colSpan={orderedColumns.length}
@@ -727,11 +755,10 @@ export function JiraList({
 			data-testid="jira-list"
 		>
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[inherit]">
-				{/* Positioned wrapper so the fade anchors to the bottom of the
-				    scrollport — i.e. directly above the footer. It cannot live inside
-				    the scrollport (it would scroll away with the rows) and the footer
-				    itself must stay unpositioned, because its centred pagination is
-				    absolutely positioned against the card. */}
+				{/* Positioned wrapper so the fades stay on the scrollport
+				    edges instead of scrolling away with the rows. The footer
+				    itself must stay unpositioned, because its centred
+				    pagination is absolutely positioned against the card. */}
 				<div className="relative flex min-h-0 flex-1 flex-col">
 				<div
 					className="min-h-0 flex-1 overflow-auto"
@@ -823,6 +850,8 @@ export function JiraList({
 									? activeInsertionTarget.position
 									: dragInsertionPosition;
 								const insertionLineClassName = getInsertionLineClassName(insertionLinePosition);
+								const isLastRow = rowIndex === rows.length - 1
+									&& draftWorkItem?.insertAtIndex !== rows.length;
 
 								return (
 									<Fragment key={row.issueKey}>
@@ -848,7 +877,11 @@ export function JiraList({
 										>
 											<TableCell
 												className={cn(
-													getBodyCellClassName({ isSelected: isHighlighted, align: "center" }),
+													getBodyCellClassName({
+														isLastRow,
+														isSelected: isHighlighted,
+														align: "center",
+													}),
 													"sticky left-0 isolate overflow-visible bg-surface! px-0 before:pointer-events-none before:absolute before:inset-0 before:z-0 before:transition-colors",
 													isHighlighted
 														? "before:bg-bg-selected"
@@ -874,6 +907,7 @@ export function JiraList({
 															isSelected: isHighlighted,
 															align: column.align,
 															isLastColumn: columnIndex === orderedColumns.length - 1,
+															isLastRow,
 														}),
 														insertionLineClassName,
 													)}
@@ -893,6 +927,13 @@ export function JiraList({
 					</Table>
 					</DndContext>
 				</div>
+				{showTopScrollMask ? (
+					<ScrollMaskEdgeOverlay
+						className="top-10 z-20"
+						data-testid="jira-list-scroll-fade-top"
+						edge="top"
+					/>
+				) : null}
 				{showBottomScrollMask ? (
 					<ScrollMaskEdgeOverlay
 						data-testid="jira-list-scroll-fade"
@@ -901,7 +942,7 @@ export function JiraList({
 				) : null}
 				</div>
 				<div
-					className="sticky bottom-0 z-20 flex h-10 min-h-10 items-center gap-3 bg-surface px-1 py-1 text-[13px] shrink-0"
+					className="sticky bottom-0 z-20 flex h-10 min-h-10 items-center gap-3 border-t border-border bg-surface px-1 py-1 text-[13px] shrink-0"
 					data-footer-state={isFooterDraft ? "editing" : "default"}
 					data-testid="jira-list-sticky-footer"
 				>

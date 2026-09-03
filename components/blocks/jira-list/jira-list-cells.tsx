@@ -1,3 +1,5 @@
+"use client";
+
 import type { ReactNode } from "react";
 import BugIcon from "@atlaskit/icon/core/bug";
 import EpicIcon from "@atlaskit/icon/core/epic";
@@ -8,6 +10,12 @@ import StoryIcon from "@atlaskit/icon/core/story";
 import SubtasksIcon from "@atlaskit/icon/core/subtasks";
 import TaskIcon from "@atlaskit/icon/core/task";
 
+import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
+import {
+	AgentAssignment,
+	type AgentAssignmentAgent,
+} from "@/components/blocks/agent-assignment";
+import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import {
 	Avatar,
 	AvatarFallback,
@@ -22,6 +30,7 @@ import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
 
 import type {
+	JiraListAssignedAgent,
 	JiraListIssueType,
 	JiraListGoal,
 	JiraListPerson,
@@ -29,20 +38,7 @@ import type {
 	JiraListTag,
 } from "@/components/blocks/jira-list/jira-list-types";
 
-const AGENT_SESSION_AVATAR_SRCS: Readonly<Record<string, string>> = {
-	"Survey summarizer": "/avatar-agent/product-agents/feedback-analyzer.svg",
-	"Readiness checker": "/avatar-agent/teamwork-agents/readiness-checker.svg",
-	"Theme analyzer": "/avatar-agent/teamwork-agents/jira-theme-analyzer.svg",
-	"Signal monitor": "/avatar-agent/dev-agents/code-observer-signalfx.svg",
-	"Checklist drafter": "/avatar-agent/teamwork-agents/workflow-builder.svg",
-	"Content reviewer": "/avatar-agent/dev-agents/code-reviewer.svg",
-	"Launch planner": "/avatar-agent/dev-agents/code-planner.svg",
-	"Release notes drafter": "/avatar-agent/teamwork-agents/release-notes-drafter.svg",
-	"Approval tracker": "/avatar-agent/teamwork-agents/progress-tracker.svg",
-	"Bug triage": "/avatar-agent/teamwork-agents/bug-report-assistant.svg",
-	"Insight summarizer": "/avatar-agent/strategy-agents/strategic-insight.svg",
-	"Editor": "/avatar-agent/dev-agents/code-documentation-writer.svg",
-};
+const LIST_ASSIGNED_AGENT_MAX_VISIBLE = 3;
 
 const PRIORITY_ICONS = {
 	major: PriorityMajorIcon,
@@ -178,44 +174,72 @@ function OverflowMenu({
 	);
 }
 
-function AgentSessionTag({ session }: Readonly<{ session: string }>) {
-	const avatarSrc = AGENT_SESSION_AVATAR_SRCS[session];
-
-	return (
-		<Tag
-			className="max-w-full self-center"
-			elemBefore={
-				<Avatar label={`${session} agent`} shape="hexagon" size="xs">
-					{avatarSrc ? <AvatarImage alt="" src={avatarSrc} /> : null}
-					<AvatarFallback>AI</AvatarFallback>
-				</Avatar>
-			}
-			maxWidth="100%"
-		>
-			{session}
-		</Tag>
-	);
+function toAssignmentAgent(assigned: JiraListAssignedAgent): AgentAssignmentAgent {
+	return {
+		id: assigned.id,
+		name: assigned.name,
+		byline: assigned.byline ?? "",
+		...(assigned.avatarSrc ? { avatarSrc: assigned.avatarSrc } : {}),
+		...(assigned.brandName ? { brandName: assigned.brandName } : {}),
+		...(assigned.statusKind ? { statusKind: assigned.statusKind } : {}),
+		statusLabel: assigned.statusLabel,
+	};
 }
 
-export function JiraListAgentSessionsCell({ agentSessions }: Readonly<{ agentSessions: readonly string[] | undefined }>) {
-	if (!agentSessions || agentSessions.length === 0) {
-		return <span className="text-text-subtle text-sm">None</span>;
-	}
+function toSelectorAgent(assigned: JiraListAssignedAgent): AgentSelectorAgent {
+	return {
+		id: assigned.id,
+		name: assigned.name,
+		byline: assigned.byline ?? "",
+		...(assigned.avatarSrc ? { avatarSrc: assigned.avatarSrc } : {}),
+		...(assigned.brandName ? { brandName: assigned.brandName } : {}),
+	};
+}
 
-	const [visibleSession, ...overflowSessions] = agentSessions;
+function toListAssignedAgent(agent: AgentAssignmentAgent): JiraListAssignedAgent {
+	return {
+		id: agent.id,
+		name: agent.name,
+		byline: agent.byline,
+		...(agent.avatarSrc ? { avatarSrc: agent.avatarSrc } : {}),
+		...(agent.brandName ? { brandName: agent.brandName } : {}),
+		...(agent.statusKind ? { statusKind: agent.statusKind } : {}),
+		statusLabel: agent.statusLabel,
+	};
+}
+
+export function JiraListAgentSessionsCell({
+	agentCatalog = ROVO_AGENT_SELECTOR_AGENTS,
+	agentSessions,
+	onAgentAssign,
+	onAssignedAgentIdsChange,
+	onAssignedAgentSelect,
+}: Readonly<{
+	agentCatalog?: readonly AgentSelectorAgent[];
+	agentSessions: readonly JiraListAssignedAgent[] | undefined;
+	onAgentAssign?: (agent: AgentSelectorAgent) => void;
+	onAssignedAgentIdsChange?: (agentIds: readonly string[]) => void;
+	onAssignedAgentSelect?: (agent: JiraListAssignedAgent) => void;
+}>) {
+	const assignedAgents = (agentSessions ?? []).map(toAssignmentAgent);
+	const extraAgents = assignedAgents
+		.filter((assigned) => !agentCatalog.some((agent) => agent.id === assigned.id))
+		.map(toSelectorAgent);
+	const agents = extraAgents.length > 0
+		? [...extraAgents, ...agentCatalog]
+		: agentCatalog;
+
 	return (
-		<div className="flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden">
-			<div className="flex min-w-0 items-center">
-				<AgentSessionTag session={visibleSession} />
-			</div>
-			<OverflowMenu count={overflowSessions.length} label="agent sessions">
-				{overflowSessions.map((session, sessionIndex) => (
-					<li className="flex" key={`${session}-${sessionIndex}`}>
-						<AgentSessionTag session={session} />
-					</li>
-				))}
-			</OverflowMenu>
-		</div>
+		<AgentAssignment
+			agents={agents}
+			assignedAgents={assignedAgents}
+			maxVisibleAgents={LIST_ASSIGNED_AGENT_MAX_VISIBLE}
+			onAgentAssign={onAgentAssign}
+			onAssignedAgentIdsChange={onAssignedAgentIdsChange ?? (() => undefined)}
+			onAssignedAgentSelect={(agent) => {
+				onAssignedAgentSelect?.(toListAssignedAgent(agent));
+			}}
+		/>
 	);
 }
 

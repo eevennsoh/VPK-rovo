@@ -2,8 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
+
 import {
 	JiraList,
+	type JiraListAssignedAgent,
 	type JiraListInsertion,
 	type JiraListIssueType,
 	type JiraListPerson,
@@ -181,6 +184,38 @@ export default function JiraListPage() {
 		)));
 	};
 
+	const handleAssignedAgentIdsChange = (issueKey: string, agentIds: readonly string[]) => {
+		setDemoRows((currentRows) => currentRows.map((row) => {
+			if (row.issueKey !== issueKey) {
+				return row;
+			}
+
+			const currentById = new Map((row.agentSessions ?? []).map((agent) => [agent.id, agent]));
+			const catalogById = new Map(ROVO_AGENT_SELECTOR_AGENTS.map((agent) => [agent.id, agent]));
+			const agentSessions = agentIds.flatMap((agentId): JiraListAssignedAgent[] => {
+				const existing = currentById.get(agentId);
+				if (existing) {
+					return [existing];
+				}
+				const catalogAgent = catalogById.get(agentId);
+				if (!catalogAgent) {
+					return [];
+				}
+				return [{
+					id: catalogAgent.id,
+					name: catalogAgent.name,
+					byline: catalogAgent.byline,
+					avatarSrc: catalogAgent.avatarSrc,
+					brandName: catalogAgent.brandName,
+					statusKind: "idle",
+					statusLabel: "Assigned",
+				}];
+			});
+
+			return { ...row, agentSessions };
+		}));
+	};
+
 	return (
 		<div className="rounded-lg bg-surface p-4 md:p-5">
 			<JiraList
@@ -209,6 +244,7 @@ export default function JiraListPage() {
 				onDraftWorkItemSummaryChange={(summary) => {
 					setDraftWorkItem((currentDraft) => currentDraft ? { ...currentDraft, summary } : currentDraft);
 				}}
+				onAssignedAgentIdsChange={handleAssignedAgentIdsChange}
 				onIssueClick={() => undefined}
 				onIssueKeyClick={() => undefined}
 				onMoveRow={handleMoveRow}

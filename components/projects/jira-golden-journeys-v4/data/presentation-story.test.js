@@ -187,6 +187,39 @@ test("a linked Jira activity becomes a medium-detached Agent Session item", asyn
 	);
 });
 
+test("unlinking a chin session restores it to the Untracked work list", async () => {
+	const { unlinkJiraKanbanAgentSession } = require("../../../blocks/jira-kanban/state.ts");
+	const { selectBoardUntrackedSessions } = require(
+		"../../../blocks/jira-kanban/experimental/lib/board-untracked-sessions.ts",
+	);
+	const story = await loadPresentationModule();
+	const columns = story.createJiraGoldenJourneysV4PayBoardColumns();
+	const card = columns.flatMap((column) => column.cards).find((candidate) => candidate.code === "PAY-105");
+	const activity = card?.agentActivities?.[0];
+	const pulseSession = {
+		agent: { id: "claude", kind: "agent", name: "Claude" },
+		id: "lw-existing",
+		sessionDetails: { host: "local", issueKey: "PAY-121", issueSummary: "Kill switch" },
+		state: "complete",
+		title: "Existing untracked session",
+	};
+
+	assert.ok(card);
+	assert.ok(activity);
+
+	const detached = story.toJiraGoldenJourneysV4DetachedAgentSession(activity, card);
+	const nextColumns = unlinkJiraKanbanAgentSession(columns, card.code, activity.id);
+	const unlinkedCard = nextColumns.flatMap((column) => column.cards).find((candidate) => candidate.code === "PAY-105");
+	const untracked = selectBoardUntrackedSessions({
+		detachedByCard: { [card.code]: [detached] },
+		sessions: [pulseSession],
+	});
+
+	assert.equal(unlinkedCard?.agentActivities?.some((candidate) => candidate.id === activity.id), false);
+	assert.deepEqual(untracked.map((session) => session.id), [pulseSession.id, activity.id]);
+	assert.equal(untracked.at(-1)?.title, activity.label);
+});
+
 test("the board factory returns isolated cards and nested agent state", async () => {
 	const story = await loadPresentationModule();
 	const first = story.createJiraGoldenJourneysV4PayBoardColumns();

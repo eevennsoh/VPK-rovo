@@ -1,6 +1,21 @@
-import type { JiraListRowData } from "./index";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
+
+import type { JiraListAssignedAgent, JiraListRowData } from "./jira-list-types";
 
 export type JiraListSampleRow = JiraListRowData;
+
+function sampleAssignedAgent(
+	name: string,
+	visual: { avatarSrc?: string; brandName?: ThirdPartyLogoName } = {},
+): JiraListAssignedAgent {
+	return {
+		id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""),
+		name,
+		...visual,
+		statusKind: "idle",
+		statusLabel: "Assigned",
+	};
+}
 
 export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 	{
@@ -15,7 +30,17 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 			name: "Maya Chen",
 			avatarSrc: "/avatar-user/andrea-wilson/color/asow-service-yellow.png",
 		},
-		agentSessions: ["Survey summarizer", "Readiness checker", "Theme analyzer"],
+		agentSessions: [
+			sampleAssignedAgent("Survey summarizer", {
+				avatarSrc: "/avatar-agent/product-agents/feedback-analyzer.svg",
+			}),
+			sampleAssignedAgent("Readiness checker", {
+				avatarSrc: "/avatar-agent/teamwork-agents/readiness-checker.svg",
+			}),
+			sampleAssignedAgent("Theme analyzer", {
+				avatarSrc: "/avatar-agent/teamwork-agents/jira-theme-analyzer.svg",
+			}),
+		],
 		goals: [{ text: "Improve response quality" }],
 		labels: [
 			{ text: "research", color: "teal" },
@@ -60,7 +85,11 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 			name: "Priya Shah",
 			avatarSrc: "/avatar-user/annie-clare/color/asow-strategy-orange.png",
 		},
-		agentSessions: ["Signal monitor"],
+		agentSessions: [
+			sampleAssignedAgent("Signal monitor", {
+				avatarSrc: "/avatar-agent/dev-agents/code-observer-signalfx.svg",
+			}),
+		],
 		goals: [{ text: "Reduce escalation volume", emphasis: "warning" }],
 		labels: [
 			{ text: "signals", color: "orange" },
@@ -92,7 +121,14 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 			name: "Jordan Lee",
 			avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
 		},
-		agentSessions: ["Checklist drafter", "Content reviewer"],
+		agentSessions: [
+			sampleAssignedAgent("Checklist drafter", {
+				avatarSrc: "/avatar-agent/teamwork-agents/workflow-builder.svg",
+			}),
+			sampleAssignedAgent("Content reviewer", {
+				avatarSrc: "/avatar-agent/dev-agents/code-reviewer.svg",
+			}),
+		],
 		goals: [{ text: "Publish checklist" }],
 		labels: [
 			{ text: "ops", color: "blue" },
@@ -119,7 +155,14 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 			name: "David Hsieh",
 			avatarSrc: "/avatar-user/david-hsieh/color/asow-service-yellow.png",
 		},
-		agentSessions: ["Launch planner", "Release notes drafter"],
+		agentSessions: [
+			sampleAssignedAgent("Launch planner", {
+				avatarSrc: "/avatar-agent/dev-agents/code-planner.svg",
+			}),
+			sampleAssignedAgent("Release notes drafter", {
+				avatarSrc: "/avatar-agent/teamwork-agents/release-notes-drafter.svg",
+			}),
+		],
 		goals: [{ text: "Align launch narrative" }],
 		labels: [
 			{ text: "launch", color: "red" },
@@ -151,7 +194,11 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 			name: "Elena Ruiz",
 			avatarSrc: "/avatar-user/aoife-burke/color/asow-service-yellow.png",
 		},
-		agentSessions: ["Approval tracker"],
+		agentSessions: [
+			sampleAssignedAgent("Approval tracker", {
+				avatarSrc: "/avatar-agent/teamwork-agents/progress-tracker.svg",
+			}),
+		],
 		goals: [{ text: "Unblock launch brief", emphasis: "warning" }],
 		labels: [{ text: "approvals", color: "yellow" }],
 		dueDate: "Jul 21, 2026",
@@ -175,7 +222,11 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 			name: "Florence Garcia",
 			avatarSrc: "/avatar-user/florence-garcia/color/asow-strategy-orange.png",
 		},
-		agentSessions: ["Bug triage"],
+		agentSessions: [
+			sampleAssignedAgent("Bug triage", {
+				avatarSrc: "/avatar-agent/teamwork-agents/bug-report-assistant.svg",
+			}),
+		],
 		goals: [{ text: "Restore export accuracy" }],
 		labels: [
 			{ text: "bug", color: "red" },
@@ -207,7 +258,14 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 			name: "Maya Chen",
 			avatarSrc: "/avatar-user/andrea-wilson/color/asow-service-yellow.png",
 		},
-		agentSessions: ["Insight summarizer", "Editor"],
+		agentSessions: [
+			sampleAssignedAgent("Insight summarizer", {
+				avatarSrc: "/avatar-agent/strategy-agents/strategic-insight.svg",
+			}),
+			sampleAssignedAgent("Editor", {
+				avatarSrc: "/avatar-agent/dev-agents/code-documentation-writer.svg",
+			}),
+		],
 		goals: [{ text: "Increase stakeholder adoption" }],
 		labels: [
 			{ text: "analytics", color: "lime" },

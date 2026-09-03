@@ -65,6 +65,11 @@ export interface JiraIssueAgentSessionTransferConfig {
 	onUnlink?: (session?: JiraIssueAgentSessionRef) => void;
 	/** Receives the detached session that was dropped back onto this work item. */
 	onLink?: (session?: JiraIssueAgentSessionRef) => void;
+	/**
+	 * Dashed "Drag here to unlink" well. Defaults on whenever `onUnlink` is
+	 * set. A host can keep chin drag and click-unlink without the well.
+	 */
+	showUnlinkWell?: boolean;
 	unlinkLabel?: string;
 }
 
@@ -138,7 +143,9 @@ export function JiraIssueAgentSessionTransfer({
 	const isLinking = source !== "chin";
 	const resolvedArmed = controlledArmed ?? armed;
 	// Attach has no dashed well: the card backdrop/chin is the drop target.
-	const showUnlinkWell = !isLinking && Boolean(config.onUnlink);
+	const showUnlinkWell = !isLinking
+		&& Boolean(config.onUnlink)
+		&& config.showUnlinkWell !== false;
 	// Drag from the chin keeps the well open after the pointer leaves the row.
 	// A detached attach gesture also sets `dragging`, but that path unmounts
 	// the well via `showUnlinkWell`.

@@ -20,7 +20,6 @@ import {
 	isAssignedAgentAttentionKind,
 	useAssignedAgentAttention,
 } from "@/components/blocks/agent-assignment/components/use-assigned-agent-attention";
-import { Avatar } from "@/components/ui/avatar";
 import {
 	HoverCard,
 	HoverCardContent,
@@ -31,7 +30,6 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { PlusIcon } from "@/components/ui/vpk-icons";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -355,13 +353,17 @@ export function AgentAssignment({
 						<PopoverTrigger
 							render={
 								<button
-									aria-label={triggerLabel}
+									aria-label={shown.length === 0 ? "Assign agent" : triggerLabel}
 									className="absolute inset-0 z-0 rounded-md outline-none"
 									type="button"
 								/>
 							}
 						/>
-						{shown.map((agent, index) => {
+						{shown.length === 0 ? (
+							<span className="pointer-events-none relative z-10 text-sm text-text-subtlest">
+								Assign agent
+							</span>
+						) : shown.map((agent, index) => {
 							const statusKind = resolveAssignedAgentStatusKind(agent);
 							const attentionAcknowledged = isAttentionAcknowledged(agent.id);
 							const seeksAttention = isAssignedAgentAttentionKind(statusKind)
@@ -380,16 +382,6 @@ export function AgentAssignment({
 								/>
 							);
 						})}
-						<Avatar
-							aria-hidden
-							className="pointer-events-none relative z-10 text-icon-subtle"
-							shape="hexagon"
-							size="sm"
-						>
-							<span className="flex size-full items-center justify-center bg-bg-neutral text-icon-subtle">
-								<PlusIcon size="small" />
-							</span>
-						</Avatar>
 					</div>
 				)}
 				<PopoverContent

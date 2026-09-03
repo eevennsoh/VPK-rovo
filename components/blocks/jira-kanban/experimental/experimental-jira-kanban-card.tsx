@@ -63,6 +63,8 @@ interface ExperimentalJiraKanbanCardProps {
 		card: JiraKanbanCardData,
 		columnTitle: string,
 	) => void;
+	/** When false, chin rows stay draggable but the dashed unlink well is omitted. */
+	showUnlinkWell?: boolean;
 	onSubtasks?: (item: AgentSessionItem) => void;
 	selected: boolean;
 }
@@ -110,6 +112,7 @@ export function ExperimentalJiraKanbanCard({
 	onSessionUnlink,
 	onSubtasks,
 	selected,
+	showUnlinkWell = true,
 }: Readonly<ExperimentalJiraKanbanCardProps>) {
 	const shouldReduceMotion = useReducedMotion();
 	const proximityMotion = getJiraIssuePresenceMotion(shouldReduceMotion);
@@ -174,6 +177,7 @@ export function ExperimentalJiraKanbanCard({
 						}
 					}
 					: undefined,
+				showUnlinkWell,
 			} : undefined}
 			assigneeAvatarLabel={card.assignee?.name}
 			assigneeAvatarShape={getCardAssigneeAvatarShape(card)}

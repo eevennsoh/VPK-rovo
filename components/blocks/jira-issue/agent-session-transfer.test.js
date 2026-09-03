@@ -234,7 +234,10 @@ test("Jira issue session transfer well opens on a linked chin row, not a detache
 	);
 	assert.match(AGENT_ACTIVITY_SOURCE, /data-session-chin=""/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /data-slot="jira-issue-agent-row"/u);
-	assert.match(TRANSFER_SOURCE, /const showUnlinkWell = !isLinking && Boolean\(config\.onUnlink\);/u);
+	assert.match(
+		TRANSFER_SOURCE,
+		/const showUnlinkWell = !isLinking\s*\n\s*&& Boolean\(config\.onUnlink\)\s*\n\s*&& config\.showUnlinkWell !== false;/u,
+	);
 });
 
 test("Jira issue session transfer drop zone is a labelled rounded dashed target, not a button", () => {
@@ -398,6 +401,7 @@ test("Jira issue splits the finished review chin into one row per completed run"
 	assert.match(COMPLETED_RUNS_SOURCE, /layout = "merged",/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /layout\?: JiraIssueAgentActivityLayout;/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /if \(layout === "split"\) \{[\s\S]*props\.runs\.map\(\(run\) => \([\s\S]*<JiraIssueCompletedRunRow/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /if \(props\.runs\.length === 1\) \{[\s\S]*<JiraIssueCompletedRunRow[\s\S]*showFlyout=\{false\}/u);
 	assert.match(
 		COMPLETED_RUNS_SOURCE,
 		/return \(\s*<JiraIssueAgentDoneMerged[\s\S]*onOpenChange=\{props\.onOpenChange\}[\s\S]*onView=\{props\.onView\}[\s\S]*runs=\{props\.runs\}[\s\S]*usesStrokeChrome=\{props\.usesStrokeChrome\}/u,
@@ -659,6 +663,7 @@ test("Jira issue transfer callback identifies which session was dragged", () => 
 	// and free to update the wrong one.
 	assert.match(TRANSFER_SOURCE, /export interface JiraIssueAgentSessionRef \{[\s\S]*id: string;[\s\S]*name: string;/u);
 	assert.match(TRANSFER_SOURCE, /onUnlink\?: \(session\?: JiraIssueAgentSessionRef\) => void;/u);
+	assert.match(TRANSFER_SOURCE, /showUnlinkWell\?: boolean;/u);
 	assert.match(TRANSFER_SOURCE, /session\?: JiraIssueAgentSessionRef;/u);
 	// The card feeds the dragged row's own activity through as that identity.
 	assert.match(SOURCE, /session=\{resolvedAgentSessionDragState\.activities\[0\]\}/u);
@@ -669,7 +674,10 @@ test("Jira issue transfer callback identifies which session was dragged", () => 
 });
 
 test("Jira issue attach has no dashed well and grows the backdrop chin instead", () => {
-	assert.match(TRANSFER_SOURCE, /const showUnlinkWell = !isLinking && Boolean\(config\.onUnlink\);/u);
+	assert.match(
+		TRANSFER_SOURCE,
+		/const showUnlinkWell = !isLinking\s*\n\s*&& Boolean\(config\.onUnlink\)\s*\n\s*&& config\.showUnlinkWell !== false;/u,
+	);
 	assert.match(TRANSFER_SOURCE, /if \(!showUnlinkWell\) \{\s*\n\s*return null;/u);
 	assert.doesNotMatch(TRANSFER_SOURCE, /Drag here to attach/u);
 	assert.match(
