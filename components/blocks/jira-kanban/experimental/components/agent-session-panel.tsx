@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type ReactElement } from "react";
+import { useLayoutEffect, useRef, type ReactElement } from "react";
 
 import ShrinkHorizontalIcon from "@atlaskit/icon/core/shrink-horizontal";
 import { motion, useReducedMotion, type Variants } from "motion/react";
@@ -12,6 +12,7 @@ import {
 	type AgentSessionColumnProps,
 } from "@/components/blocks/agent-session-column";
 import { AgentSessionColumnOverflowMenu } from "@/components/blocks/agent-session-column/agent-session-column-overflow-menu";
+import { useAgentSessionPanelResize } from "@/components/blocks/jira-kanban/experimental/hooks/use-agent-session-panel-resize";
 import {
 	PanelAction,
 	PanelActionGroup,
@@ -20,6 +21,7 @@ import {
 	PanelHeader,
 	PanelTitle,
 } from "@/components/ui/panel";
+import { SidebarResizeHandle } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
 /**
@@ -79,12 +81,7 @@ const AGENT_SESSION_PANEL_REDUCED_MOTION_VARIANTS: Variants = {
  */
 const AGENT_SESSION_PANEL_WIDTH_TRANSITION = "width var(--duration-medium) var(--ease-in-out)";
 
-/**
- * Expanded docked-rail width in px. The in-flow board column stays 280; this
- * surface is the one the user sized. Exported so the board can reserve the
- * same trailing scroll inset the rail occupies.
- */
-export const AGENT_SESSION_PANEL_WIDTH_PX = 360;
+export { AGENT_SESSION_PANEL_WIDTH_PX } from "@/components/blocks/jira-kanban/experimental/hooks/use-agent-session-panel-resize";
 
 /**
  * Width of the docked rail's leading hairline.
@@ -121,6 +118,11 @@ export interface AgentSessionPanelProps {
 	 * full-height overlay to anything that measures the DOM.
 	 */
 	topInset?: number;
+	/**
+	 * Live expanded width so the board can reserve the same trailing scroll
+	 * inset and FAB offset the rail occupies. Collapsed width is not reported.
+	 */
+	onExpandedWidthChange?: (widthPx: number) => void;
 }
 
 /**
@@ -146,6 +148,7 @@ export function AgentSessionPanel({
 	agentSessionColumn,
 	collapsed,
 	onCollapsedChange,
+	onExpandedWidthChange,
 	sessionDragging = false,
 	topInset = 0,
 	untrackedDropArmed = false,
@@ -153,6 +156,14 @@ export function AgentSessionPanel({
 	const shouldReduceMotion = useReducedMotion();
 	const containerRef = useRef<HTMLElement>(null);
 	const title = agentSessionColumn.title ?? AGENT_SESSION_PANEL_TITLE;
+	const items = agentSessionColumn.items ?? AGENT_SESSION_ITEMS;
+	const untrackedCount = agentSessionColumn.count ?? items.length;
+	const panelResize = useAgentSessionPanelResize();
+	const expandedWidthPx = panelResize.sidebarWidth;
+
+	useLayoutEffect(() => {
+		onExpandedWidthChange?.(expandedWidthPx);
+	}, [expandedWidthPx, onExpandedWidthChange]);
 
 	// Collapsing unmounts the header the user just clicked, which would drop
 	// focus to <body>. Parking focus on the panel itself first keeps the
@@ -169,14 +180,11 @@ export function AgentSessionPanel({
 			// the portalled session flyout and drag chip, so both keep working
 			// over the panel.
 			//
-			// `border-l` rather than an elevation shadow: this is a docked rail
-			// flush to the board's trailing edge, not a floating card, so a
-			// single hairline is the separation. (`shadow-overlay` would also
-			// have been a no-op — there is no `--shadow-overlay` in the theme,
-			// only `--shadow-xl`/`--shadow-2xl` aliasing `--ds-shadow-overlay`.)
+			// No host `border-l`: SidebarResizeHandle paints the leading
+			// hairline the same way Ask Rovo chat does. A second `border-l`
+			// would stack two translucent `color.border` lines.
 			className={cn(
 				"absolute bottom-0 right-0 z-40 rounded-none",
-				collapsed ? null : "border-l border-border",
 				sessionDragging ? "pointer-events-none" : null,
 			)}
 			data-board-agent-session-drop-zone="untracked"
@@ -190,10 +198,13 @@ export function AgentSessionPanel({
 				// strip, not merely look like it does. `bottom: 0` with no radius
 				// so it is flush to the page — no floating inset under the rail.
 				top: topInset,
-				transition: shouldReduceMotion ? undefined : AGENT_SESSION_PANEL_WIDTH_TRANSITION,
+				transition:
+					shouldReduceMotion || panelResize.isResizing
+						? undefined
+						: AGENT_SESSION_PANEL_WIDTH_TRANSITION,
 				width: collapsed
 					? AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX
-					: AGENT_SESSION_PANEL_WIDTH_PX,
+					: expandedWidthPx,
 				willChange: shouldReduceMotion ? undefined : "opacity, transform",
 			}}
 			variants={
@@ -216,7 +227,13 @@ export function AgentSessionPanel({
 			>
 				{collapsed ? null : (
 					<PanelHeader>
-						<PanelTitle>{title}</PanelTitle>
+						<PanelTitle>
+							{title}
+							{" "}
+							<span className="ms-1.5 shrink-0 font-normal text-text-subtlest">
+								{untrackedCount}
+							</span>
+						</PanelTitle>
 						<PanelActionGroup>
 							{/*
 							 * `chrome="none"` takes the column's overflow menu with the
@@ -260,12 +277,30 @@ export function AgentSessionPanel({
 						chrome="none"
 						className="flex-1"
 						collapsed={collapsed}
-						expandedWidthPx={AGENT_SESSION_PANEL_WIDTH_PX - AGENT_SESSION_PANEL_BORDER_PX}
+						expandedWidthPx={expandedWidthPx - AGENT_SESSION_PANEL_BORDER_PX}
 						listClassName={cn("gap-1 p-1", agentSessionColumn.listClassName)}
 						onCollapsedChange={onCollapsedChange}
 					/>
 				</PanelContent>
 			</PanelContainer>
+			{collapsed ? null : (
+				<SidebarResizeHandle
+					aria-label={`Resize ${title} panel`}
+					aria-orientation="vertical"
+					aria-valuemax={panelResize.maxWidth}
+					aria-valuemin={panelResize.minWidth}
+					aria-valuenow={expandedWidthPx}
+					data-active={panelResize.isResizing ? "" : undefined}
+					onDoubleClick={panelResize.onResizeHandleDoubleClick}
+					onKeyDown={panelResize.onResizeHandleKeyDown}
+					onPointerDown={panelResize.onResizeHandlePointerDown}
+					onPointerEnter={panelResize.onResizeHandlePointerEnter}
+					onPointerLeave={panelResize.onResizeHandlePointerLeave}
+					role="separator"
+					side="left"
+					tabIndex={0}
+				/>
+			)}
 		</motion.div>
 	);
 }

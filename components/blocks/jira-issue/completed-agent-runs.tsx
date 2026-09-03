@@ -91,20 +91,74 @@ function getCompletedRunInitial(name: string): string {
  * block's filled error status.
  */
 function JiraIssueCompletedRunRow({
+	label,
 	onView,
 	renderAgentActivityIndicator,
 	run,
+	showFlyout = true,
 	usesStrokeChrome,
 }: Readonly<{
+	/** Overrides the run summary, e.g. a single merged chin that just says Finished. */
+	label?: string;
 	onView?: (run: JiraIssueCompletedAgentRun) => void;
 	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	run: JiraIssueCompletedAgentRun;
+	showFlyout?: boolean;
 	usesStrokeChrome: boolean;
 }>) {
 	const [flyoutHandle] = useState(createJiraSessionFlyoutHandle);
 	const hasFailed = run.state === "failed";
 	const outcomeLabel = hasFailed ? "failed" : "finished";
+	const displayText = label ?? run.summary;
 	const session = toAgentSessionFlyoutItem(toCompletedAgentListItem(run));
+	const trigger = (
+		<button
+			aria-label={label ? `${run.agentName} ${label}` : `${run.agentName} ${outcomeLabel}: ${run.summary}`}
+			className="flex h-6 w-full min-w-0 items-center justify-between gap-2 rounded-md px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+			data-slot="jira-issue-agent-row"
+			onClick={showFlyout ? undefined : () => onView?.(run)}
+			type="button"
+		>
+			<span className={cn("flex min-w-0 flex-1 items-center", usesStrokeChrome ? "gap-1.5" : "gap-2")}>
+				<AgentAvatarVisual
+					avatarClassName={cn("shrink-0", usesStrokeChrome && "ml-px")}
+					avatarSrc={run.agentAvatarSrc}
+					brandName={run.agentBrandName}
+					fallbackText={getCompletedRunInitial(run.agentName)}
+					label={run.agentName}
+					sizePx={16}
+				/>
+				<span
+					className={cn(
+						"block min-w-0 flex-1 truncate text-text-subtlest",
+						usesStrokeChrome ? "text-xs leading-4" : "text-sm leading-5",
+					)}
+				>
+					{displayText}
+				</span>
+			</span>
+			<span
+				className={cn(
+					"grid shrink-0 place-items-center",
+					hasFailed ? "text-icon-danger" : "text-icon-subtle",
+					usesStrokeChrome ? "size-4" : "-my-1 size-6",
+				)}
+				aria-hidden="true"
+			>
+				{hasFailed ? (
+					<StatusErrorIcon color="currentColor" label="" size="small" />
+				) : renderAgentActivityIndicator ? (
+					renderAgentActivityIndicator("finished")
+				) : (
+					<StrokeWeightExtraLargeIcon color="currentColor" label="" size="small" />
+				)}
+			</span>
+		</button>
+	);
+
+	if (!showFlyout) {
+		return trigger;
+	}
 
 	return (
 		<>
@@ -113,49 +167,7 @@ function JiraIssueCompletedRunRow({
 				delay={120}
 				handle={flyoutHandle}
 				onClick={() => onView?.(run)}
-				render={(
-					<button
-						aria-label={`${run.agentName} ${outcomeLabel}: ${run.summary}`}
-						className="flex h-6 w-full min-w-0 items-center justify-between gap-2 rounded-md px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-						data-slot="jira-issue-agent-row"
-						type="button"
-					>
-						<span className={cn("flex min-w-0 flex-1 items-center", usesStrokeChrome ? "gap-1.5" : "gap-2")}>
-							<AgentAvatarVisual
-								avatarClassName={cn("shrink-0", usesStrokeChrome && "ml-px")}
-								avatarSrc={run.agentAvatarSrc}
-								brandName={run.agentBrandName}
-								fallbackText={getCompletedRunInitial(run.agentName)}
-								label={run.agentName}
-								sizePx={16}
-							/>
-							<span
-								className={cn(
-									"block min-w-0 flex-1 truncate text-text-subtlest",
-									usesStrokeChrome ? "text-xs leading-4" : "text-sm leading-5",
-								)}
-							>
-								{run.summary}
-							</span>
-						</span>
-						<span
-							className={cn(
-								"grid shrink-0 place-items-center",
-								hasFailed ? "text-icon-danger" : "text-icon-subtle",
-								usesStrokeChrome ? "size-4" : "-my-1 size-6",
-							)}
-							aria-hidden="true"
-						>
-							{hasFailed ? (
-								<StatusErrorIcon color="currentColor" label="" size="small" />
-							) : renderAgentActivityIndicator ? (
-								renderAgentActivityIndicator("finished")
-							) : (
-								<StrokeWeightExtraLargeIcon color="currentColor" label="" size="small" />
-							)}
-						</span>
-					</button>
-				)}
+				render={trigger}
 				session={{ ...session, status: run.state === "failed" ? "stopped" : session.status }}
 			/>
 			<JiraSessionFlyoutSurface handle={flyoutHandle} />
@@ -188,6 +200,25 @@ export function JiraIssueAgentDone({
 						usesStrokeChrome={props.usesStrokeChrome}
 					/>
 				))}
+			</section>
+		);
+	}
+
+	if (props.runs.length === 1) {
+		const run = props.runs[0];
+		if (!run) {
+			return null;
+		}
+		return (
+			<section aria-label="Agent review" className="flex w-full min-w-0 flex-col overflow-hidden px-1 py-1">
+				<JiraIssueCompletedRunRow
+					label={run.state === "failed" ? "Failed" : "Finished"}
+					onView={props.onView}
+					renderAgentActivityIndicator={props.renderAgentActivityIndicator}
+					run={run}
+					showFlyout={false}
+					usesStrokeChrome={props.usesStrokeChrome}
+				/>
 			</section>
 		);
 	}

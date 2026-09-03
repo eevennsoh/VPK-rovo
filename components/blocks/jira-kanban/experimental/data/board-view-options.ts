@@ -101,8 +101,8 @@ export const ALL_BOARD_AGENT_SESSION_STATE_IDS: ReadonlySet<BoardAgentSessionSta
  * Untracked sits after the linked-session lifecycle, separated, because it is
  * the absence of a session rather than a fourth session shape.
  *
- * Label-only in the menu — unlike PR state these rows carry no leading glyph,
- * so the list needs no literal-id union to key an icon map.
+ * Every Agent row carries a leading glyph in the View menu. Linked states are
+ * keyed by `BoardAgentSessionStateId`. Untracked uses its own empty-task glyph.
  */
 export const BOARD_AGENT_STATE_OPTIONS: readonly BoardVisibilityOption[] = [
 	{ id: "working", label: "Working", shown: true },

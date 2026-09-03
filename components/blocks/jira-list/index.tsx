@@ -28,11 +28,7 @@ import {
 import AddIcon from "@atlaskit/icon/core/add";
 import AppSwitcherIcon from "@atlaskit/icon/core/app-switcher";
 import CalendarIcon from "@atlaskit/icon/core/calendar";
-import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
-import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
-import LinkIcon from "@atlaskit/icon/core/link";
-import PanelRightIcon from "@atlaskit/icon/core/panel-right";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
 
 import { EditorPaletteAssigneePicker } from "@/components/blocks/editor-palette/page";
@@ -59,10 +55,8 @@ import {
 	InputGroupButton,
 	InputGroupInput,
 } from "@/components/ui/input-group";
-import { Lozenge, LozengeDropdownTrigger } from "@/components/ui/lozenge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import type {
@@ -72,6 +66,7 @@ import type {
 } from "@/components/blocks/jira-list/jira-list-types";
 
 export type {
+	JiraListAssignedAgent,
 	JiraListBaseColumnId,
 	JiraListColumnAnchorId,
 	JiraListDraftWorkItem,
@@ -100,19 +95,12 @@ import {
 	type JiraListInsertionTarget,
 	type JiraListRowTarget,
 } from "@/components/blocks/jira-list/jira-list-dnd";
+import { createJiraListBaseColumns } from "@/components/blocks/jira-list/jira-list-base-columns";
 import {
-	HierarchyConnector,
 	IssueTypeGlyph,
-	JiraListAgentSessionsCell,
 	JiraListAvatar,
-	JiraListLabelsCell,
-	PriorityGlyph,
 } from "@/components/blocks/jira-list/jira-list-cells";
-import {
-	getOrderedColumns,
-	type JiraListColumnDefinition,
-} from "@/components/blocks/jira-list/jira-list-column-model";
-import { PRIORITY_LABELS } from "@/components/blocks/jira-list/jira-list-cell-data";
+import { getOrderedColumns } from "@/components/blocks/jira-list/jira-list-column-model";
 import {
 	JiraListSortableRow,
 	RowBoundaryCreateControls,
@@ -144,7 +132,11 @@ export function JiraList({
 	copiedIssueKey = null,
 	draftWorkItem = null,
 	extraColumns = [],
+	agentCatalog,
 	statusOptions = [],
+	onAssignedAgentIdsChange,
+	onAssignedAgentSelect,
+	onAgentAssign,
 	onCreate,
 	onCopyLink,
 	onDraftWorkItemCancel,
@@ -170,6 +162,7 @@ export function JiraList({
 	const {
 		ref: tableScrollRef,
 		showBottomScrollMask,
+		showTopScrollMask,
 	} = useHasVerticalOverflow<HTMLDivElement>();
 	const rowIds = useMemo(() => rows.map((row) => row.issueKey), [rows]);
 	const sensors = useSensors(
@@ -198,7 +191,6 @@ export function JiraList({
 	const selectedRowCount = rows.filter((row) => selectedIssueKeys.has(row.issueKey)).length;
 	const allRowsSelected = selectableRowCount > 0 && selectedRowCount === selectableRowCount;
 	const someRowsSelected = selectedRowCount > 0 && !allRowsSelected;
-	const hasHoverRowActions = Boolean(onIssueClick);
 	const isFooterDraft = Boolean(
 		draftWorkItem && draftWorkItem.insertAtIndex === null,
 	);
@@ -255,220 +247,21 @@ export function JiraList({
 			onMoveRow?.(String(active.id), targetIndex);
 		}
 	};
-	const baseColumns: readonly JiraListColumnDefinition[] = [
-		{
-			id: "work",
-			label: "Work",
-			widthClassName: "w-[438px]",
-			renderCell: (row) => {
-				const indentLevel = row.indentLevel ?? 0;
-				const isCopiedRow = copiedIssueKey === row.issueKey;
-
-				return (
-					<div className="flex min-w-0 items-center gap-2">
-						<div className="flex min-w-0 flex-1 items-center gap-1.5">
-							<HierarchyConnector indentLevel={indentLevel} />
-							{row.hasChildren ? (
-								<Button
-									aria-label={`${row.isExpanded ? "Collapse" : "Expand"} ${row.issueKey}`}
-									className="size-5 shrink-0 rounded-sm px-0 hover:bg-transparent focus-visible:bg-bg-neutral-subtle-hovered"
-									onClick={() => onToggleExpand?.(row.issueKey)}
-									size="icon-compact"
-									variant="ghost"
-								>
-									<Icon
-										className="text-icon-subtle"
-										render={
-											row.isExpanded ? (
-												<ChevronDownIcon label="" size="small" />
-											) : (
-												<ChevronRightIcon label="" size="small" />
-											)
-										}
-									/>
-								</Button>
-							) : indentLevel > 0 ? (
-								<span aria-hidden="true" className="block size-5 shrink-0" />
-							) : null}
-							<IssueTypeGlyph issueType={row.issueType} />
-							<div className="group/issue-key flex shrink-0 items-center">
-								{onIssueKeyClick ? (
-									<Button
-										className="h-auto shrink-0 px-0 text-link hover:underline focus-visible:underline"
-										onClick={() => onIssueKeyClick(row)}
-										size="compact"
-										variant="link"
-									>
-										{row.issueKey}
-									</Button>
-								) : (
-									<span className="shrink-0 text-[13px] font-medium text-text-subtle">
-										{row.issueKey}
-									</span>
-								)}
-								{onCopyLink ? (
-									<span
-										className={cn(
-													"pointer-events-none max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity] duration-normal ease-out-practical motion-reduce:transition-none group-hover/issue-key:pointer-events-auto group-hover/issue-key:max-w-7 group-hover/issue-key:opacity-100 group-has-[:focus-visible]/issue-key:pointer-events-auto group-has-[:focus-visible]/issue-key:max-w-7 group-has-[:focus-visible]/issue-key:opacity-100",
-											isCopiedRow && "pointer-events-auto max-w-7 opacity-100",
-										)}
-										data-testid={`copy-link-reveal-${row.issueKey}`}
-									>
-										<Tooltip
-											onOpenChange={(open) => setOpenCopyTooltipIssueKey(open ? row.issueKey : null)}
-											open={isCopiedRow || openCopyTooltipIssueKey === row.issueKey}
-										>
-											<TooltipTrigger
-												render={
-													<Button
-														aria-label={`${isCopiedRow ? "Copied link" : "Copy link"} for ${row.issueKey}`}
-														className={cn(
-															"ms-0.5 size-6 shrink-0 translate-x-1 scale-95 transition-[translate,scale] duration-normal ease-out-practical motion-reduce:transition-none group-hover/issue-key:translate-x-0 group-hover/issue-key:scale-100 group-has-[:focus-visible]/issue-key:translate-x-0 group-has-[:focus-visible]/issue-key:scale-100",
-															isCopiedRow && "translate-x-0 scale-100",
-														)}
-														onClick={() => onCopyLink(row)}
-														size="icon-compact"
-														variant="ghost"
-													/>
-												}
-											>
-												<Icon
-													className={isCopiedRow ? "text-icon-success" : "text-icon-subtle"}
-													render={
-														isCopiedRow ? (
-															<CheckMarkIcon label="" size="small" />
-														) : (
-															<LinkIcon label="" size="small" />
-														)
-													}
-												/>
-											</TooltipTrigger>
-											<TooltipContent>{isCopiedRow ? "Copied" : "Copy link"}</TooltipContent>
-										</Tooltip>
-									</span>
-								) : null}
-							</div>
-							{onIssueClick ? (
-								<button
-									className="min-w-0 flex-1 truncate rounded-sm text-left text-[13px] font-medium text-text hover:text-link focus-visible:text-link focus-visible:outline-none"
-									onClick={() => onIssueClick(row)}
-									type="button"
-								>
-									{row.summary}
-								</button>
-							) : (
-								<span className="min-w-0 flex-1 truncate text-[13px] font-medium text-text">
-									{row.summary}
-								</span>
-							)}
-						</div>
-						{hasHoverRowActions ? (
-							<div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover/row:opacity-100 group-focus-within/row:opacity-100">
-								{onIssueClick ? (
-									<Tooltip>
-										<TooltipTrigger
-											render={
-												<Button
-													aria-label="Open work item"
-													className="text-text-subtle hover:text-text"
-													onClick={() => onIssueClick(row)}
-													size="icon-compact"
-													variant="ghost"
-												/>
-											}
-										>
-											<Icon render={<PanelRightIcon label="" size="small" />} />
-										</TooltipTrigger>
-										<TooltipContent>Open work item</TooltipContent>
-									</Tooltip>
-								) : null}
-							</div>
-						) : null}
-					</div>
-				);
-			},
-		},
-		{
-			id: "status",
-			label: "Status",
-			widthClassName: "w-[126px]",
-			renderCell: (row) => onStatusChange && statusOptions.length > 0 ? (
-				<DropdownMenu>
-					<DropdownMenuTrigger
-						render={
-							<LozengeDropdownTrigger
-								aria-label={`Change status for ${row.issueKey}. Current status: ${row.status}`}
-								variant={row.statusVariant ?? "neutral"}
-							/>
-						}
-					>
-						{row.status}
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="start" className="w-40" sideOffset={6}>
-						{statusOptions.map((option) => (
-							<DropdownMenuItem
-								key={option.status}
-								onSelect={() => onStatusChange(row.issueKey, option)}
-								selected={option.status === row.status}
-							>
-								<Lozenge variant={option.statusVariant ?? "neutral"}>
-									{option.status}
-								</Lozenge>
-							</DropdownMenuItem>
-						))}
-					</DropdownMenuContent>
-				</DropdownMenu>
-			) : (
-				<Lozenge variant={row.statusVariant ?? "neutral"}>{row.status}</Lozenge>
-			),
-		},
-		{
-			id: "assignee",
-			label: "Assignee",
-			widthClassName: "w-[214px]",
-			renderCell: (row) => row.assignee ? (
-				<div className="flex min-w-0 items-center gap-2">
-					<JiraListAvatar person={row.assignee} />
-					<span className="truncate text-sm text-text">{row.assignee.name}</span>
-				</div>
-			) : (
-				<span className="text-text-subtle text-sm">Unassigned</span>
-			),
-		},
-		{
-			id: "agentSessions",
-			label: "Agent sessions",
-			widthClassName: "w-[247px]",
-			renderCell: (row) => <JiraListAgentSessionsCell agentSessions={row.agentSessions} />,
-		},
-		{
-			id: "priority",
-			label: "Priority",
-			widthClassName: "w-[112px]",
-			renderCell: (row) => (
-				<div className="flex items-center gap-2">
-					<span aria-hidden="true">
-						<PriorityGlyph priority={row.priority} />
-					</span>
-					<span className="text-sm text-text">{PRIORITY_LABELS[row.priority]}</span>
-				</div>
-			),
-		},
-		{
-			id: "labels",
-			label: "Labels",
-			widthClassName: "w-[180px]",
-			renderCell: (row) => <JiraListLabelsCell labels={row.labels} />,
-		},
-		{
-			id: "dueDate",
-			label: "Due date",
-			widthClassName: "w-[114px]",
-			renderCell: (row) => (
-				<span className="text-sm text-text">{row.dueDate ?? "No due date"}</span>
-			),
-		},
-	];
+	const baseColumns = createJiraListBaseColumns({
+		agentCatalog,
+		copiedIssueKey,
+		onAgentAssign,
+		onAssignedAgentIdsChange,
+		onAssignedAgentSelect,
+		onCopyLink,
+		onIssueClick,
+		onIssueKeyClick,
+		onStatusChange,
+		onToggleExpand,
+		openCopyTooltipIssueKey,
+		setOpenCopyTooltipIssueKey,
+		statusOptions,
+	});
 	const orderedColumns = getOrderedColumns(baseColumns, extraColumns);
 	const columnBoundaries = orderedColumns.flatMap((column, columnIndex) => {
 		const endBoundary = {
@@ -680,6 +473,8 @@ export function JiraList({
 			return null;
 		}
 
+		const isLastRow = insertAtIndex === rows.length;
+
 		return (
 			<TableRow
 				className="group/row border-0 hover:bg-transparent focus-within:bg-transparent"
@@ -688,7 +483,7 @@ export function JiraList({
 			>
 				<TableCell
 					className={cn(
-						getBodyCellClassName({ isSelected: false, align: "center" }),
+						getBodyCellClassName({ isLastRow, isSelected: false, align: "center" }),
 						"sticky left-0 z-10 px-0",
 					)}
 				>
@@ -701,7 +496,7 @@ export function JiraList({
 				</TableCell>
 				<TableCell
 					className={cn(
-						getBodyCellClassName({ isSelected: false, isLastColumn: true }),
+						getBodyCellClassName({ isLastColumn: true, isLastRow, isSelected: false }),
 						"px-2",
 					)}
 					colSpan={orderedColumns.length}
@@ -727,11 +522,10 @@ export function JiraList({
 			data-testid="jira-list"
 		>
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[inherit]">
-				{/* Positioned wrapper so the fade anchors to the bottom of the
-				    scrollport — i.e. directly above the footer. It cannot live inside
-				    the scrollport (it would scroll away with the rows) and the footer
-				    itself must stay unpositioned, because its centred pagination is
-				    absolutely positioned against the card. */}
+				{/* Positioned wrapper so the fades stay on the scrollport
+				    edges instead of scrolling away with the rows. The footer
+				    itself must stay unpositioned, because its centred
+				    pagination is absolutely positioned against the card. */}
 				<div className="relative flex min-h-0 flex-1 flex-col">
 				<div
 					className="min-h-0 flex-1 overflow-auto"
@@ -823,6 +617,8 @@ export function JiraList({
 									? activeInsertionTarget.position
 									: dragInsertionPosition;
 								const insertionLineClassName = getInsertionLineClassName(insertionLinePosition);
+								const isLastRow = rowIndex === rows.length - 1
+									&& draftWorkItem?.insertAtIndex !== rows.length;
 
 								return (
 									<Fragment key={row.issueKey}>
@@ -848,7 +644,11 @@ export function JiraList({
 										>
 											<TableCell
 												className={cn(
-													getBodyCellClassName({ isSelected: isHighlighted, align: "center" }),
+													getBodyCellClassName({
+														isLastRow,
+														isSelected: isHighlighted,
+														align: "center",
+													}),
 													"sticky left-0 isolate overflow-visible bg-surface! px-0 before:pointer-events-none before:absolute before:inset-0 before:z-0 before:transition-colors",
 													isHighlighted
 														? "before:bg-bg-selected"
@@ -874,6 +674,7 @@ export function JiraList({
 															isSelected: isHighlighted,
 															align: column.align,
 															isLastColumn: columnIndex === orderedColumns.length - 1,
+															isLastRow,
 														}),
 														insertionLineClassName,
 													)}
@@ -893,6 +694,13 @@ export function JiraList({
 					</Table>
 					</DndContext>
 				</div>
+				{showTopScrollMask ? (
+					<ScrollMaskEdgeOverlay
+						className="top-10 z-20"
+						data-testid="jira-list-scroll-fade-top"
+						edge="top"
+					/>
+				) : null}
 				{showBottomScrollMask ? (
 					<ScrollMaskEdgeOverlay
 						data-testid="jira-list-scroll-fade"
@@ -901,7 +709,7 @@ export function JiraList({
 				) : null}
 				</div>
 				<div
-					className="sticky bottom-0 z-20 flex h-10 min-h-10 items-center gap-3 bg-surface px-1 py-1 text-[13px] shrink-0"
+					className="sticky bottom-0 z-20 flex h-10 min-h-10 items-center gap-3 border-t border-border bg-surface px-1 py-1 text-[13px] shrink-0"
 					data-footer-state={isFooterDraft ? "editing" : "default"}
 					data-testid="jira-list-sticky-footer"
 				>

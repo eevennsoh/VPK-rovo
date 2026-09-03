@@ -422,7 +422,7 @@ test("the rail is one dock, so notches swell by distance rather than per row", (
 	// pointer position for every mark. A hover handler per notch cannot express
 	// a distance.
 	assert.match(RAIL_COLUMN_SOURCE, /function useNotchDock\(itemCount: number, enabled: boolean\)/u);
-	assert.match(RAIL_COLUMN_SOURCE, /<motion\.ul[\s\S]{0,600}?onPointerMove=\{isDocked \? dock\.handlePointerMove : undefined\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /<ul[\s\S]{0,800}?onPointerMove=\{isDocked \? dock\.handlePointerMove : undefined\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /onPointerLeave=\{isDocked \? dock\.handlePointerLeave : undefined\}/u);
 	// Motion values, never React state: a rail of marks re-rendering on every
 	// mouse pixel would stall the column.
@@ -645,10 +645,11 @@ test("arrival motion is tokenised, capped, and spatially anchored", () => {
 	assert.match(NOTCH_MARK_SOURCE, /animate=\{shouldPlayArrival \? \{ scaleX: 1 \} : undefined\}/u);
 	assert.doesNotMatch(NOTCH_MARK_SOURCE, /scaleX: \[/u);
 	assert.doesNotMatch(NOTCH_MARK_SOURCE, /times:/u);
-	// Arriving notches push the ones below them down instead of teleporting, and
-	// the scrollport is declared so the slide starts from the right place.
+	// Arriving notches push the ones below them down instead of teleporting.
+	// The scrollport stays a plain `ul` so mask-image can fade the marks;
+	// layout lives on each notch, not on a Motion scroll host.
 	assert.match(RAIL_COLUMN_SOURCE, /layout=\{shouldReduceMotion \? false : "position"\}/u);
-	assert.match(RAIL_COLUMN_SOURCE, /layoutScroll/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /layoutScroll/u);
 });
 
 test("the demo drives an arrival through both forms at once", () => {
@@ -775,6 +776,21 @@ test("the collapsed rail keeps a focus-ring gutter on its scrollport", () => {
 		/overflow-y-auto px-1 has-\[:focus-visible\]:overflow-visible/u,
 	);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /-mx-1/u);
+});
+
+test("the collapsed rail fades notches with ScrollMask viewport mask-image", () => {
+	// Overlay-on-surface cannot fade 1px marks. The scrollport uses the same
+	// `buildScrollMaskStyle` helper `ScrollMask` applies to its viewport.
+	assert.match(RAIL_COLUMN_SOURCE, /import \{ buildScrollMaskStyle \} from "@\/components\/visual\/scroll-mask\/lib"/u);
+	assert.match(RAIL_COLUMN_SOURCE, /useHasVerticalOverflow<HTMLUListElement>/u);
+	assert.match(RAIL_COLUMN_SOURCE, /AGENT_SESSION_RAIL_FADE_SIZE = "6rem"/u);
+	assert.match(
+		RAIL_COLUMN_SOURCE,
+		/buildScrollMaskStyle\(\{\s*fadeBottom: showBottomScrollMask,\s*fadeSize: AGENT_SESSION_RAIL_FADE_SIZE,\s*fadeTop: showTopScrollMask,\s*scrollbarWidth: 0,\s*\}\)/u,
+	);
+	assert.match(RAIL_COLUMN_SOURCE, /style=\{scrollMaskStyle\}/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /<motion\.ul/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /ScrollMaskEdgeOverlay/u);
 });
 
 test("the collapsed rail receives visible items only and collapse leaves hidden view", () => {

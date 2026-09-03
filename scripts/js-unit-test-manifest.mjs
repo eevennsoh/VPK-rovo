@@ -126,6 +126,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/jira-work-item/experimental-v6/lib/work-item-section-tabs.test.js",
 		"components/projects/jira-golden-journeys-v3/data/presentation-story.test.js",
 		"components/projects/jira-golden-journeys-v4/data/presentation-story.test.js",
+		"components/projects/jira-golden-journeys-v4/lib/list-rows.test.js",
 		"components/projects/jira/lib/jira-tab-model.test.js",
 		"components/projects/jira-golden-journeys-v3/terminal-story.test.js",
 		"components/projects/jira-golden-journeys-v4/terminal-story.test.js",

@@ -119,6 +119,12 @@ test("Agent Assignment preserves the work-item trigger and two-stage menu behavi
 	assert.match(source, /import \{ token \} from "@\/lib\/tokens";/u);
 	assert.match(source, /<PopoverContent[\s\S]*style=\{\{ boxShadow: token\("elevation\.shadow\.overlay"\) \}\}/u);
 	assert.match(source, /className="absolute inset-0 z-0 rounded-md outline-none"/u);
+	assert.match(source, /aria-label=\{shown\.length === 0 \? "Assign agent" : triggerLabel\}/u);
+	assert.match(
+		source,
+		/shown\.length === 0 \? \(\s*<span className="pointer-events-none relative z-10 text-sm text-text-subtlest">\s*Assign agent\s*<\/span>/u,
+	);
+	assert.doesNotMatch(source, /PlusIcon/u);
 	assert.match(
 		source,
 		/const showSessionView = view === "session" && pendingSessionAgent !== null;[\s\S]*const effectiveView = showSessionView[\s\S]*assignedAgents\.length === 0 \|\| view === "session"[\s\S]*"selector"/u,

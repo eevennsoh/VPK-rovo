@@ -2,42 +2,20 @@
 
 import { useState } from "react";
 
-import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import Page from "@/components/blocks/jira-kanban/page";
 import ExperimentalPage from "@/components/blocks/jira-kanban/experimental/page";
 import ExperimentalV2Page from "@/components/blocks/jira-kanban/experimental-v2/page";
-import { JiraList, type JiraListRowData } from "@/components/blocks/jira-list";
+import { JiraList } from "@/components/blocks/jira-list";
 import {
 	createJiraGoldenJourneysV4PayBoardColumns,
 	JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS,
 	JIRA_GOLDEN_JOURNEYS_V4_PAY_HEADER_ASSIGNEES,
 	JIRA_GOLDEN_JOURNEYS_V4_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID,
 } from "@/components/projects/jira-golden-journeys-v4/data/presentation-story";
-
-const STATUS_VARIANTS: Readonly<Record<string, JiraListRowData["statusVariant"]>> = {
-	"To do": "neutral",
-	"In progress": "information",
-	"In review": "warning",
-	Done: "success",
-};
-
-function createListRows(columns: readonly JiraKanbanColumnData[]): JiraListRowData[] {
-	return columns.flatMap((column) => column.cards.map((card) => ({
-		issueKey: card.code,
-		summary: card.title,
-		issueType: "task",
-		priority: card.priority,
-		status: column.title,
-		statusVariant: STATUS_VARIANTS[column.title],
-		assignee: card.assignee,
-		agentSessions: [
-			...(card.agentActivities?.map((activity) => activity.name) ?? []),
-			...(card.agentDoneRuns?.map((run) => run.agentName) ?? []),
-		],
-		labels: card.tags,
-		contributors: card.assignee ? [card.assignee] : [],
-	})));
-}
+import {
+	applyAssignedAgentIdsToColumns,
+	createListRows,
+} from "@/components/projects/jira-golden-journeys-v4/lib/list-rows";
 
 export default function JiraKanbanDemo() {
 	return <Page />;
@@ -68,12 +46,21 @@ export function JiraKanbanDemoExperimentalV2() {
 			onBoardColumnsChange={(columns) => setBoardColumns([...columns])}
 			onViewChange={setActiveView}
 			renderListContent={(columns) => {
-				const listRows = createListRows(columns);
+				const listRows = createListRows(columns, JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS);
 				return (
 					<div className="min-h-0 flex-1 overflow-auto p-4 md:p-5">
 						<JiraList
+							agentCatalog={JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS}
 							ariaLabel="Payments SDK v2 migration work items list"
 							className="max-h-full"
+							onAssignedAgentIdsChange={(issueKey, agentIds) => {
+								setBoardColumns((columns) => applyAssignedAgentIdsToColumns(
+									columns,
+									issueKey,
+									agentIds,
+									JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS,
+								));
+							}}
 							rows={listRows}
 							totalCountLabel={`${listRows.length}`}
 							visibleCount={listRows.length}

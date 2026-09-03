@@ -7,12 +7,17 @@ import CustomizeIcon from "@atlaskit/icon/core/customize";
 import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
+import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
+import TaskInProgressIcon from "@atlaskit/icon/core/task-in-progress";
+import TaskToDoIcon from "@atlaskit/icon/core/task-to-do";
 import MergeQueueIcon from "@atlaskit/icon-lab/core/merge-queue";
+import QuestionCircleFilledIcon from "@atlaskit/icon-lab/core/question-circle-filled";
 
 import { BOARD_GROUP_DEFAULT_ID, BOARD_GROUP_OPTIONS } from "../data/board-group-options";
 import {
 	BOARD_AGENT_SESSION_STATE_IDS,
 	BOARD_AGENT_STATE_OPTIONS,
+	type BoardAgentSessionStateId,
 	BOARD_COLUMN_SIZE_DEFAULT_ID,
 	BOARD_COLUMN_SIZE_OPTIONS,
 	BOARD_FIELD_OPTIONS,
@@ -20,7 +25,6 @@ import {
 	BOARD_HIDE_DONE_OPTIONS,
 	BOARD_PR_STATE_OPTIONS,
 	isBoardAgentSessionStateId,
-	type BoardAgentSessionStateId,
 	type BoardPrStateId,
 } from "../data/board-view-options";
 import { Button } from "@/components/ui/button";
@@ -89,11 +93,23 @@ const PR_STATE_ICONS = {
 	open: { glyph: PullRequestIcon, color: token("color.icon.success") },
 	// Same glyph as Open, just quiet: a draft IS a pull request, so colour alone
 	// carries the difference rather than inventing a second shape for it.
-	draft: { glyph: PullRequestIcon, color: token("color.icon.subtle") },
+	draft: { glyph: PullRequestIcon, color: token("color.icon.subtlest") },
 	queued: { glyph: MergeQueueIcon, color: token("color.icon.information") },
 	merged: { glyph: MergeSuccessIcon, color: token("color.icon.discovery") },
 	closed: { glyph: MergeFailureIcon, color: token("color.icon.danger") },
 } as const satisfies Record<BoardPrStateId, StateIcon>;
+
+/**
+ * Agent submenu glyphs. Linked states reuse the Team EU chin shapes. Untracked
+ * is the empty-task glyph because it is the absence of a session rather than a
+ * live one.
+ */
+const AGENT_STATE_ICONS = {
+	working: { glyph: TaskInProgressIcon, color: token("color.icon.subtlest") },
+	"needs-input": { glyph: QuestionCircleFilledIcon, color: token("color.icon.information") },
+	finished: { glyph: StatusSuccessIcon, color: token("color.icon.success") },
+	untracked: { glyph: TaskToDoIcon, color: token("color.icon.subtlest") },
+} as const satisfies Record<BoardAgentSessionStateId | "untracked", StateIcon>;
 
 /** The ids a list starts with checked, so state can be seeded once per list. */
 function toShownIds(options: readonly VisibilityOption[]) {
@@ -289,6 +305,7 @@ export function BoardViewMenu({
 
 				<VisibilityToggleSubmenu
 					checkedIds={shownAgentIds}
+					icons={AGENT_STATE_ICONS}
 					label="Agent"
 					onToggle={handleAgentToggle}
 					options={BOARD_AGENT_STATE_OPTIONS}

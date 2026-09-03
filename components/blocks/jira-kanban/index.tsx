@@ -73,6 +73,8 @@ export interface JiraKanbanCardData {
 	avatarUnassignedKind?: AvatarUnassignedKind;
 	avatarPulse?: boolean;
 	assignee?: JiraKanbanAssigneeData;
+	dueDate?: string;
+	issueType?: "epic" | "task" | "story" | "subtask" | "bug";
 	agentActivities?: readonly JiraIssueAgentActivity[];
 	agentActivityMode?: JiraIssueAgentActivityMode;
 	agentDoneRuns?: readonly JiraIssueCompletedAgentRun[];

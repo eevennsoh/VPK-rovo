@@ -188,8 +188,20 @@ export function createJiraDesignListRows(
 			? column.title as JiraForYouStatus
 			: item.jiraStatus;
 
+		const hasAwaitingAgent = item.status?.toLocaleLowerCase().includes("needs input") ?? false;
+
 		return [{
-			agentSessions: item.agents?.map((agent) => agent.name) ?? [],
+			agentSessions: (item.agents ?? []).map((agent, index) => {
+				const needsInput = hasAwaitingAgent && index === 0;
+				return {
+					id: agent.id ?? agent.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""),
+					name: agent.name,
+					...(agent.avatarSrc ? { avatarSrc: agent.avatarSrc } : {}),
+					...(agent.brandName ? { brandName: agent.brandName } : {}),
+					statusKind: needsInput ? "needs-input" as const : "working" as const,
+					statusLabel: needsInput ? "Needs input" : "Working",
+				};
+			}),
 			issueKey: item.issueKey,
 			issueType: item.issueType,
 			labels: [{ color: "blue", text: item.spaceName }],
