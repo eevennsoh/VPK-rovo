@@ -464,7 +464,6 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(PAGE_SOURCE, /const \[workItemView, setWorkItemView\] = useState<JiraWorkItemView>\(DEFAULT_JIRA_WORK_ITEM_VIEW\)/u);
 	assert.match(PAGE_SOURCE, /const activeView = activeTab\?\.view \?\? workItemView;/u);
 	assert.match(PAGE_SOURCE, /activeView=\{activeView\}/u);
-	// Team EU's tab bar owns the switch, so the header's own switcher stands down.
 	assert.match(PAGE_SOURCE, /const tabOwnsView = activeTab\?\.view !== undefined;/u);
 	assert.match(PAGE_SOURCE, /onViewChange=\{tabOwnsView \? undefined : setWorkItemView\}/u);
 	assert.match(PAGE_SOURCE, /renderListContent=\{\(columns, \{ agentSessionDropIntent \}\) =>/u);
@@ -483,8 +482,6 @@ test("the Work items header switches between Board and List views with their ico
 		LIST_HOOK_SOURCE.slice(createFromSessionStart, createFromSessionEnd),
 		/setDraftWorkItem|draftWorkItem/u,
 	);
-	// The list card owns vertical scroll. An overflow-auto wrapper around it
-	// clips the whole table under the Filter/View chrome with a hard cut.
 	assert.match(
 		PAGE_SOURCE,
 		/className="min-h-0 flex-1 overflow-hidden p-4 md:p-5"[\s\S]*<JiraList \{\.\.\.listProps\}/u,

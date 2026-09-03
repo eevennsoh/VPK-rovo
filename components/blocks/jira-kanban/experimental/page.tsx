@@ -124,24 +124,6 @@ const UNTRACKED_PANEL_WIDTH_CSS_VAR = "--untracked-panel-width";
 /** Stable identity, so an unscoped article does not re-render on every tick. */
 const EMPTY_ANSWERS: readonly PulseAnswer[] = [];
 
-/**
- * Experimental Jira Kanban page.
- *
- * Standalone fork of `components/blocks/jira-kanban/page.tsx`. It owns its own
- * board and header components so the experimental variant can diverge without
- * touching the default variant, while reusing the shared board state helpers.
- */
-/**
- * Imperative entry into Insights, for an owner that renders its own affordance.
- *
- * The board's daily-insights nudge lives on the floating Rovo button, which is
- * portalled to `document.body` and therefore mounted by the route rather than
- * by this page. It still has to open Insights *the board's way*: opening also
- * advances the unread watermark and applies the roster default, and a caller
- * that merely set `mode="pulse"` would leave a stale badge over an article the
- * reader is looking at. Handing out `handleOpenTimeline` itself keeps that rule
- * in one place instead of copying its steps into every owner.
- */
 export interface ExperimentalJiraKanbanListRenderContext {
 	agentSessionDropIntent?: JiraListAgentSessionDropIntent;
 }
@@ -859,11 +841,6 @@ export default function ExperimentalJiraKanbanPage({
 					timeline={pulseTimeline}
 				/>
 			) : (
-				// The panel's positioning context, and the reason one overlay can
-				// serve both the board and the list: they are the same region.
-				// Insights stays outside it — it asserts its own `lg:min-h-[40rem]`
-				// floor, which an intermediate `min-h-0` box would turn into
-				// overflow.
 				<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 					{isListContent ? (
 						renderListContent?.(filteredBoardColumns, {

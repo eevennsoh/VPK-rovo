@@ -159,10 +159,6 @@ export function JiraList({
 	agentSessionDropIntent,
 }: Readonly<JiraListProps>) {
 	const insertionAnchorId = useId().replaceAll(":", "");
-	// Rows that continue below the fold should dissolve into the sticky footer
-	// rather than being guillotined by it. `showBottomScrollMask` is false both
-	// when the card hugs its rows and when the reader has scrolled to the end, so
-	// the fade only appears while there is genuinely more list underneath.
 	const {
 		ref: tableScrollRef,
 		showBottomScrollMask,
