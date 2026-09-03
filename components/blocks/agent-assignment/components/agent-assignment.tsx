@@ -124,9 +124,8 @@ export function AgentAssignment({
 	}));
 	const {
 		acknowledgeAttention,
-		attentionAgentId,
 		isAttentionAcknowledged,
-	} = useAssignedAgentAttention(attentionAgents, open);
+	} = useAssignedAgentAttention(attentionAgents);
 	const overlayPositionerClassName = openMode === "hover"
 		? cn(
 			positionerClassName,
@@ -372,7 +371,6 @@ export function AgentAssignment({
 								<AssignmentAvatar
 									agent={agent}
 									attentionAcknowledged={attentionAcknowledged}
-									autoRevealAttention={agent.id === attentionAgentId}
 									key={agent.id}
 									menuOpen={open}
 									onOpen={() => handleOpenChange(true)}

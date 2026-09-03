@@ -159,6 +159,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/html-selector/lib/prompt-composer.test.js",
 		"components/blocks/product-sidebar/components/navigation-item-actions.test.js",
 		"components/blocks/task-progress/lib/progress-bar-state.test.js",
+		"components/blocks/agent-assignment/components/use-assigned-agent-attention.test.js",
 		"components/blocks/agent-states/agent-states.test.js",
 		"components/blocks/jira-issue/agent-activity-model.test.ts",
 		"components/blocks/jira-issue/agent-session-drag.test.ts",

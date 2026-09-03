@@ -56,7 +56,6 @@ const ATTENTION_TOOLTIP_SIDE_OFFSET_PX = 6;
 export function AssignmentAvatar({
 	agent,
 	attentionAcknowledged = false,
-	autoRevealAttention = false,
 	menuOpen = false,
 	onOpen,
 	positionerClassName,
@@ -65,7 +64,6 @@ export function AssignmentAvatar({
 }: Readonly<{
 	agent: AgentAssignmentAgent;
 	attentionAcknowledged?: boolean;
-	autoRevealAttention?: boolean;
 	menuOpen?: boolean;
 	onOpen: () => void;
 	positionerClassName?: string;
@@ -75,7 +73,7 @@ export function AssignmentAvatar({
 	const avatarStatus = attentionAcknowledged ? undefined : getAssignmentAvatarStatus(statusKind);
 	const tooltipLabel = getAssignmentAvatarTooltipLabel(statusKind, agent.statusLabel);
 	const [hoverOpen, setHoverOpen] = useState(false);
-	const tooltipOpen = !menuOpen && (hoverOpen || autoRevealAttention);
+	const tooltipOpen = !menuOpen && hoverOpen;
 
 	const handleTooltipOpenChange = (nextOpen: boolean) => {
 		if (menuOpen && nextOpen) {
