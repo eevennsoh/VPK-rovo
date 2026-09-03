@@ -398,7 +398,12 @@ test("Jira issue splits the finished review chin into one row per completed run"
 	assert.match(COMPLETED_RUNS_SOURCE, /layout = "merged",/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /layout\?: JiraIssueAgentActivityLayout;/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /if \(layout === "split"\) \{[\s\S]*props\.runs\.map\(\(run\) => \([\s\S]*<JiraIssueCompletedRunRow/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /return <JiraIssueAgentDoneMerged \{\.\.\.props\} \/>;/u);
+	assert.match(
+		COMPLETED_RUNS_SOURCE,
+		/return \(\s*<JiraIssueAgentDoneMerged[\s\S]*onOpenChange=\{props\.onOpenChange\}[\s\S]*onView=\{props\.onView\}[\s\S]*runs=\{props\.runs\}[\s\S]*usesStrokeChrome=\{props\.usesStrokeChrome\}/u,
+	);
+	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /function JiraIssueAgentDoneMerged\([\s\S]*onReview/u);
+	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /function JiraIssueAgentDoneMerged\([\s\S]*onSubmit/u);
 	// Split rows reuse the working-row chrome so Review reads like 1-n agents.
 	assert.match(COMPLETED_RUNS_SOURCE, /function JiraIssueCompletedRunRow\(/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /<JiraIssueCompletedRunRow[\s\S]*key=\{run\.id\}/u);
