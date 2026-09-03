@@ -5,8 +5,10 @@ import { animate, motion, useMotionValue, useReducedMotion } from "motion/react"
 
 import type { AgentListState } from "@/components/blocks/agent-list";
 import { AGENT_SESSION_ARRIVAL_TRANSITION } from "@/components/blocks/agent-session/agent-session-arrival-motion";
+import { AgentSessionMediumDrag } from "@/components/blocks/agent-session/agent-session-medium-drag";
 import { AgentSessionNotchMark } from "@/components/blocks/agent-session/agent-session-notch";
 import type { AgentSessionItem } from "@/components/blocks/agent-session/agent-session-types";
+import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
 import {
 	bindAgentSessionFlyoutActions,
 	resolveAgentSessionWorkItemKey,
@@ -198,25 +200,53 @@ function useNotchDock(itemCount: number, enabled: boolean) {
  * so sliding down the notches crossfades in place, the same as the expanded
  * cards. The row still carries `layout="position"` so an arrival slides the
  * notches below it down instead of jumping them.
+ *
+ * A notch is also a drag handle, so a session can be pulled onto a work item
+ * from the collapsed rail exactly as it can from the expanded cards. The drag
+ * host wraps the flyout trigger rather than sitting between the trigger and the
+ * button: `JiraSessionFlyoutTrigger` clones its child to add `onFocusCapture`,
+ * and a component child would swallow that prop and cost the rail its
+ * keyboard-opens-the-flyout behavior. `preserveSourceFootprint` holds the row at
+ * its measured 20px while the chip travels, so lifting a notch out never
+ * reflows the rail under the pointer.
  */
 function AgentSessionNotch({
 	flyoutHandle,
 	flyoutSession,
 	isArriving,
+	isHighlighted,
 	isNew,
 	item,
+	onItemHover,
 	onView,
 	proximity,
+	sessionDrag,
 }: Readonly<{
 	flyoutHandle: JiraSessionFlyoutHandle;
 	flyoutSession: JiraSidebarSessionItem;
 	isArriving: boolean;
+	isHighlighted: boolean;
 	isNew: boolean;
 	item: AgentSessionItem;
+	onItemHover?: (item: AgentSessionItem | null) => void;
 	onView?: (item: AgentSessionItem) => void;
 	proximity?: AgentSessionNotchProximity;
+	sessionDrag?: JiraIssueAgentSessionDragBinding;
 }>) {
 	const shouldReduceMotion = useReducedMotion();
+	const isHoveredRef = useRef(false);
+	const onItemHoverRef = useRef(onItemHover);
+
+	useEffect(() => {
+		onItemHoverRef.current = onItemHover;
+	}, [onItemHover]);
+
+	useEffect(() => () => {
+		if (isHoveredRef.current) {
+			onItemHoverRef.current?.(null);
+		}
+	}, []);
+
 	// The beat, not the mark: expanding and re-collapsing the column remounts the
 	// rail, and a notch that is still unreviewed stays lit without regrowing.
 	return (
@@ -225,25 +255,61 @@ function AgentSessionNotch({
 			layout={shouldReduceMotion ? false : "position"}
 			transition={AGENT_SESSION_ARRIVAL_TRANSITION}
 		>
-			<JiraSessionFlyoutTrigger
-				closeDelay={160}
-				handle={flyoutHandle}
-				render={<div className="w-full" />}
-				session={flyoutSession}
-			>
-				<button
-					className="focus-visible:ring-ring flex h-5 w-full items-center justify-center rounded-xs outline-none focus-visible:ring-2"
-					data-new={isNew || undefined}
-					data-testid={"agent-session-notch-" + item.id}
-					onClick={onView === undefined ? undefined : () => onView(item)}
-					type="button"
+			{/* The drag host is a block child rather than the flex item itself, so
+			    the trigger keeps filling the rail whether or not a binding mounted
+			    a wrapper around it. */}
+			<div className="w-full min-w-0">
+				<AgentSessionMediumDrag
+					item={item}
+					preserveSourceFootprint
+					sessionDrag={sessionDrag}
+					shouldReduceMotion={shouldReduceMotion}
+					source="untracked"
 				>
-					<span className="sr-only">
-						{`${item.title} — ${NOTCH_STATE_LABEL[item.state]}${isNew ? ", newly synced" : ""}`}
-					</span>
-					<AgentSessionNotchMark isArriving={isArriving} isNew={isNew} proximity={proximity} />
-				</button>
-			</JiraSessionFlyoutTrigger>
+					{(bind) => (
+						<JiraSessionFlyoutTrigger
+							closeDelay={160}
+							handle={flyoutHandle}
+							render={<div className="w-full" />}
+							session={flyoutSession}
+						>
+							<button
+								{...bind}
+								aria-roledescription={bind ? "Draggable agent session" : undefined}
+								className="focus-visible:ring-ring flex h-5 w-full items-center justify-center rounded-xs outline-none focus-visible:ring-2"
+								data-highlighted={isHighlighted || undefined}
+								data-new={isNew || undefined}
+								data-testid={"agent-session-notch-" + item.id}
+								draggable={false}
+								// Spread first, then override: `usePointerDrag`'s own
+								// `onClick` is not the activation guard here — the drag
+								// host's `onClickCapture` already swallows the click that
+								// follows a published drag.
+								onClick={onView === undefined ? undefined : () => onView(item)}
+								onPointerEnter={() => {
+									isHoveredRef.current = true;
+									onItemHover?.(item);
+								}}
+								onPointerLeave={() => {
+									isHoveredRef.current = false;
+									onItemHover?.(null);
+								}}
+								type="button"
+							>
+								<span className="sr-only">
+									{`${item.title} — ${NOTCH_STATE_LABEL[item.state]}${isNew ? ", newly synced" : ""}`}
+								</span>
+								<AgentSessionNotchMark
+									isArriving={isArriving}
+									isHighlighted={isHighlighted}
+									isNew={isNew}
+									proximity={proximity}
+								/>
+							</button>
+						</JiraSessionFlyoutTrigger>
+					)}
+				</AgentSessionMediumDrag>
+			</div>
 		</motion.li>
 	);
 }
@@ -253,24 +319,35 @@ export function AgentSessionColumnRail({
 	capturedItemIds,
 	getSuggestedWorkItemKey,
 	getSuggestedWorkItemKeys,
+	highlightedItemId,
 	items,
 	newItemIds,
 	onCreateWorkItem,
+	onItemHover,
 	onLinkWorkItem,
 	onSubtasks,
 	onView,
+	sessionDrag,
 }: Readonly<{
 	/** Subset of `newItemIds` whose arrival beat has not played yet. */
 	arrivingItemIds?: ReadonlySet<string>;
 	capturedItemIds?: ReadonlySet<string>;
 	getSuggestedWorkItemKey?: (item: AgentSessionItem) => string | undefined;
 	getSuggestedWorkItemKeys?: (item: AgentSessionItem) => readonly string[] | undefined;
+	highlightedItemId?: string | null;
 	items: readonly AgentSessionItem[];
 	newItemIds?: ReadonlySet<string>;
 	onCreateWorkItem?: (item: AgentSessionItem) => void;
+	onItemHover?: (item: AgentSessionItem | null) => void;
 	onLinkWorkItem?: (item: AgentSessionItem, workItemKey?: string) => void;
 	onSubtasks?: (item: AgentSessionItem) => void;
 	onView?: (item: AgentSessionItem) => void;
+	/**
+	 * Makes each notch a drag handle, so a session can be pulled onto a work item
+	 * without expanding the column first. The same binding the expanded cards
+	 * take — without it the notches render exactly as before.
+	 */
+	sessionDrag?: JiraIssueAgentSessionDragBinding;
 }>) {
 	// One payload-aware flyout for the whole rail, exactly as Agent List does:
 	// the popup stays mounted and follows the hovered notch, so sliding down the
@@ -327,9 +404,11 @@ export function AgentSessionColumnRail({
 							),
 						)}
 						isArriving={(arrivingItemIds ?? newItemIds)?.has(item.id) ?? false}
+						isHighlighted={item.id === highlightedItemId}
 						isNew={newItemIds?.has(item.id) ?? false}
 						item={item}
 						key={item.id}
+						onItemHover={onItemHover}
 						onView={onView}
 						proximity={isDocked ? {
 							centersRef: dock.centersRef,
@@ -338,6 +417,7 @@ export function AgentSessionColumnRail({
 							nearestIndex: dock.nearestIndex,
 							pointerY: dock.pointerY,
 						} : undefined}
+						sessionDrag={sessionDrag}
 					/>
 				))}
 			</motion.ul>

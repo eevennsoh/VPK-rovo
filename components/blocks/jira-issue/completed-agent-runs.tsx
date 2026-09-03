@@ -11,6 +11,9 @@ import {
 	type AgentListItem,
 	toAgentSessionFlyoutItem,
 } from "@/components/blocks/agent-list";
+import type {
+	JiraIssueAgentActivityIndicatorRenderer,
+} from "@/components/blocks/jira-issue/agent-activity";
 import type { JiraIssueAgentActivityLayout } from "@/components/blocks/jira-issue/agent-activity-model";
 import {
 	createJiraSessionFlyoutHandle,
@@ -82,13 +85,19 @@ function getCompletedRunInitial(name: string): string {
  * One finished run as its own chin row, mirroring the split working rows: the
  * run's own agent avatar, its summary, and a per-run outcome icon. Hovering a
  * row opens that run's detail card instead of the shared aggregate list.
+ *
+ * A host renderer owns the finished glyph when one is supplied, so a design
+ * variation can say "success" in its own vocabulary. Failed always stays the
+ * block's filled error status.
  */
 function JiraIssueCompletedRunRow({
 	onView,
+	renderAgentActivityIndicator,
 	run,
 	usesStrokeChrome,
 }: Readonly<{
 	onView?: (run: JiraIssueCompletedAgentRun) => void;
+	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	run: JiraIssueCompletedAgentRun;
 	usesStrokeChrome: boolean;
 }>) {
@@ -139,6 +148,8 @@ function JiraIssueCompletedRunRow({
 						>
 							{hasFailed ? (
 								<StatusErrorIcon color="currentColor" label="" size="small" />
+							) : renderAgentActivityIndicator ? (
+								renderAgentActivityIndicator("finished")
 							) : (
 								<StrokeWeightExtraLargeIcon color="currentColor" label="" size="small" />
 							)}
@@ -161,6 +172,7 @@ export function JiraIssueAgentDone({
 	onReview?: (run: JiraIssueCompletedAgentRun) => void;
 	onSubmit?: (run: JiraIssueCompletedAgentRun, prompt: string) => void;
 	onView?: (run: JiraIssueCompletedAgentRun) => void;
+	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	runs: readonly JiraIssueCompletedAgentRun[];
 	usesStrokeChrome: boolean;
 }>) {
@@ -171,6 +183,7 @@ export function JiraIssueAgentDone({
 					<JiraIssueCompletedRunRow
 						key={run.id}
 						onView={props.onView}
+						renderAgentActivityIndicator={props.renderAgentActivityIndicator}
 						run={run}
 						usesStrokeChrome={props.usesStrokeChrome}
 					/>
@@ -192,6 +205,8 @@ function JiraIssueAgentDoneMerged({
 	onReview?: (run: JiraIssueCompletedAgentRun) => void;
 	onSubmit?: (run: JiraIssueCompletedAgentRun, prompt: string) => void;
 	onView?: (run: JiraIssueCompletedAgentRun) => void;
+	/** Accepted so `{...props}` type-checks; the merged row shows no per-run glyph. */
+	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	runs: readonly JiraIssueCompletedAgentRun[];
 	usesStrokeChrome: boolean;
 }>) {

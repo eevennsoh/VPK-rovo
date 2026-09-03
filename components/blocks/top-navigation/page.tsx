@@ -27,6 +27,7 @@ import {
 	ROVO_APP_SIDEBAR_MAX_WIDTH_PX,
 	ROVO_APP_SIDEBAR_MIN_WIDTH_PX,
 	TOP_NAV_COLLAPSED_LEFT_SECTION_WIDTH_PX,
+	getCenteredSearchInsetPx,
 	getCollapsedHeaderPaddingPx,
 	TOP_NAV_HEADER_HEIGHT_PX,
 	TOP_NAV_LEFT_SECTION_WIDTH_PX,
@@ -107,6 +108,36 @@ interface TopNavigationProps {
 }
 
 /**
+ * Tracks a rendered element's width, returning a callback ref to attach and the
+ * latest measurement. Both the responsive breakpoints and the centered search's
+ * side reserve are driven off real geometry rather than assumed widths.
+ */
+function useMeasuredWidth(): readonly [(node: HTMLElement | null) => void, number] {
+	const [node, setNode] = useState<HTMLElement | null>(null);
+	const [width, setWidth] = useState(0);
+
+	useEffect(() => {
+		if (!node) return;
+
+		const updateWidth = () => {
+			setWidth(node.getBoundingClientRect().width);
+		};
+
+		updateWidth();
+		if (typeof ResizeObserver === "undefined") {
+			window.addEventListener("resize", updateWidth);
+			return () => window.removeEventListener("resize", updateWidth);
+		}
+
+		const resizeObserver = new ResizeObserver(updateWidth);
+		resizeObserver.observe(node);
+		return () => resizeObserver.disconnect();
+	}, [node]);
+
+	return [setNode, width] as const;
+}
+
+/**
  * Studio-style application shell with a resizable, pinned side-nav and a 56px
  * top navigation bar. The header mirrors the Figma global top navigation:
  * left chrome (sidebar toggle, app switcher, product logo) sits in the
@@ -130,26 +161,8 @@ export default function TopNavigation({
 	children,
 }: Readonly<TopNavigationProps>) {
 	const nav = useTopNavigation();
-	const [navigationContainer, setNavigationContainer] = useState<HTMLElement | null>(null);
-	const [containerWidth, setContainerWidth] = useState(0);
-
-	useEffect(() => {
-		if (!navigationContainer) return;
-
-		const updateContainerWidth = () => {
-			setContainerWidth(navigationContainer.getBoundingClientRect().width);
-		};
-
-		updateContainerWidth();
-		if (typeof ResizeObserver === "undefined") {
-			window.addEventListener("resize", updateContainerWidth);
-			return () => window.removeEventListener("resize", updateContainerWidth);
-		}
-
-		const resizeObserver = new ResizeObserver(updateContainerWidth);
-		resizeObserver.observe(navigationContainer);
-		return () => resizeObserver.disconnect();
-	}, [navigationContainer]);
+	const [setNavigationContainer, containerWidth] = useMeasuredWidth();
+	const [setRightClusterNode, rightClusterWidth] = useMeasuredWidth();
 
 	const responsiveWidth = containerWidth || nav.windowWidth;
 
@@ -206,6 +219,11 @@ export default function TopNavigation({
 	const centerSearch = !isPersistentSidebarVisible
 		&& (responsiveWidth === 0 || responsiveWidth >= TOP_NAV_SEARCH_CENTER_BREAKPOINT_PX);
 
+	// The centered middle zone is an overlay spanning the whole bar, so it has to
+	// reserve the side chrome itself or it slides underneath it — see
+	// `getCenteredSearchInsetPx`.
+	const centeredZoneInsetPx = getCenteredSearchInsetPx(product, rightClusterWidth);
+
 	const handleExpandSearchIcon = useCallback(() => {
 		setIsSearchIconExpanded(true);
 		nav.handleFocusSearch();
@@ -247,9 +265,10 @@ export default function TopNavigation({
 			className={cn(
 				"flex min-w-0 flex-1 items-center gap-2",
 				centerSearch
-					? "pointer-events-none absolute inset-x-0 justify-center px-3 [&>*]:pointer-events-auto"
+					? "pointer-events-none absolute inset-x-0 justify-center [&>*]:pointer-events-auto"
 					: "justify-start",
 			)}
+			style={centerSearch ? { paddingInline: `${centeredZoneInsetPx}px` } : undefined}
 		>
 			{showSearch ? (
 				showSearchField ? (
@@ -327,6 +346,7 @@ export default function TopNavigation({
 
 	const rightCluster = (
 		<RightNavigation
+			ref={setRightClusterNode}
 			product={product}
 			windowWidth={responsiveWidth}
 			hideRovoAction={hideRovoAction}

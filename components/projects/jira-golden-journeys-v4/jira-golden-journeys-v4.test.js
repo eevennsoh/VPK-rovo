@@ -20,6 +20,12 @@ const EXPERIMENTAL_BOARD_SOURCE = readProjectFile(
 const EXPERIMENTAL_CARD_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/experimental-jira-kanban-card.tsx",
 );
+const PANEL_SOURCE = readProjectFile(
+	"components/blocks/jira-kanban/experimental/components/agent-session-panel.tsx",
+);
+const INDICATORS_SOURCE = readProjectFile(
+	"components/projects/jira-golden-journeys-v4/data/agent-activity-indicators.tsx",
+);
 
 test("the route renders the Payments board directly inside Jira app chrome", () => {
 	assert.match(PAGE_SOURCE, /import AppLayout from "@\/components\/projects\/page"/u);
@@ -74,13 +80,61 @@ test("the board opts into the experimental Jira issue split agent rows", () => {
 	);
 });
 
-test("the route alone overrides agent activity indicators with pixel loaders", () => {
-	assert.match(PAGE_SOURCE, /import \{ PixelLoader \} from "@\/components\/ui-custom\/pixel-loader";/u);
-	assert.match(PAGE_SOURCE, /const renderJiraGoldenJourneysV4AgentActivityIndicator: JiraIssueAgentActivityIndicatorRenderer/u);
-	assert.match(PAGE_SOURCE, /pattern=\{state === "awaiting-input" \? "solo" : "diagonal-top-left"\}/u);
-	assert.match(PAGE_SOURCE, /shape="dot"/u);
-	assert.match(PAGE_SOURCE, /className="size-3 justify-center text-icon-subtle"/u);
-	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage[\s\S]*renderAgentActivityIndicator=\{renderJiraGoldenJourneysV4AgentActivityIndicator\}/u);
+test("chin-row agent activity indicators follow the design variation", () => {
+	// Team EU is the baseline, so working rows keep the block's own spinner.
+	// Awaiting-input departs from it: a question circle reads as "blocked on
+	// you", which the pixel loader's solo dot did not. The filled glyph lives in
+	// icon-lab (>= 7.8.0), not @atlaskit/icon, and carries the information color.
+	assert.match(
+		INDICATORS_SOURCE,
+		/import QuestionCircleFilledIcon from "@atlaskit\/icon-lab\/core\/question-circle-filled";/u,
+	);
+	assert.match(INDICATORS_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
+	assert.match(
+		INDICATORS_SOURCE,
+		/renderTeamEuAgentActivityIndicator[\s\S]*state === "awaiting-input" \? \(\s*<QuestionCircleFilledIcon color=\{token\("color\.icon\.information"\)\} label="" size="small" \/>\s*\) : \(\s*<Spinner label="" size="xs" \/>\s*\)/u,
+	);
+	// A finished run gets the filled success status in the ADS success green,
+	// pairing with the filled error status a failed run already shows. The
+	// block's own fallback dot only said the row had ended.
+	assert.match(INDICATORS_SOURCE, /import StatusSuccessIcon from "@atlaskit\/icon\/core\/status-success";/u);
+	assert.match(
+		INDICATORS_SOURCE,
+		/renderTeamEuAgentActivityIndicator[\s\S]*if \(state === "finished"\) \{\s*return <StatusSuccessIcon color=\{token\("color\.icon\.success"\)\} label="" size="small" \/>;\s*\}/u,
+	);
+	// Only the exploration keeps the pixel aesthetic — and only for the live
+	// states. A finished run has nothing left to animate, so it restates the
+	// block's own neutral dot rather than borrowing a loader glyph.
+	assert.match(INDICATORS_SOURCE, /import \{ PixelLoader \} from "@\/components\/ui-custom\/pixel-loader";/u);
+	assert.match(
+		INDICATORS_SOURCE,
+		/render2000YearsLaterAgentActivityIndicator[\s\S]*pattern=\{state === "awaiting-input" \? "solo" : "diagonal-top-left"\}[\s\S]*shape="dot"/u,
+	);
+	assert.match(
+		INDICATORS_SOURCE,
+		/render2000YearsLaterAgentActivityIndicator[\s\S]*if \(state === "finished"\) \{\s*return <StrokeWeightExtraLargeIcon color="currentColor" label="" size="small" \/>;\s*\}/u,
+	);
+	assert.match(
+		INDICATORS_SOURCE,
+		/Record<DesignVariationId, JiraIssueAgentActivityIndicatorRenderer>\s*> = \{\s*"team-eu": renderTeamEuAgentActivityIndicator,\s*"2000-years-later": render2000YearsLaterAgentActivityIndicator,\s*\};/u,
+	);
+	assert.match(
+		INDICATORS_SOURCE,
+		/export function getJiraGoldenJourneysV4AgentActivityIndicator\(\s*variation: DesignVariationId,\s*\): JiraIssueAgentActivityIndicatorRenderer/u,
+	);
+	// The route reads the variation; the shared block still takes a plain prop.
+	assert.doesNotMatch(PAGE_SOURCE, /PixelLoader/u);
+	assert.match(PAGE_SOURCE, /import \{ useDesignVariation \} from "@\/components\/hooks\/use-design-variation";/u);
+	assert.match(
+		PAGE_SOURCE,
+		/import \{ getJiraGoldenJourneysV4AgentActivityIndicator \} from "\.\/data\/agent-activity-indicators";/u,
+	);
+	assert.match(PAGE_SOURCE, /const \{ designVariation \} = useDesignVariation\(\);/u);
+	assert.match(
+		PAGE_SOURCE,
+		/const renderAgentActivityIndicator = getJiraGoldenJourneysV4AgentActivityIndicator\(designVariation\);/u,
+	);
+	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage[\s\S]*renderAgentActivityIndicator=\{renderAgentActivityIndicator\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /renderAgentActivityIndicator\?: ExperimentalJiraKanbanProps\["renderAgentActivityIndicator"\];/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<ExperimentalJiraKanban[\s\S]*renderAgentActivityIndicator=\{renderAgentActivityIndicator\}/u);
 	assert.match(EXPERIMENTAL_BOARD_SOURCE, /<ExperimentalJiraKanbanCard[\s\S]*renderAgentActivityIndicator=\{renderAgentActivityIndicator\}/u);
@@ -182,28 +236,39 @@ test("the board puts agent and skill assignment in each card's More actions menu
 	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*generativeActionPresentation=\{generativeActionPresentation\}/u);
 });
 
-test("the Jira tab bar groups Board and List under one Work items destination", () => {
+test("the Jira tab bar splits or collapses work items per design variation", () => {
 	assert.match(JIRA_HEADER_SOURCE, /export function JiraViewTabs/u);
 	assert.match(JIRA_HEADER_SOURCE, /className=\{isFirst \? "ml-4 flex-none" : "flex-none"\}/u);
 	assert.match(JIRA_HEADER_SOURCE, /<IconComponent[\s\S]*label=""/u);
-	assert.match(JIRA_HEADER_SOURCE, /<JiraViewTabs selectedTab=\{selectedTab\} onTabChange=\{onTabChange\} \/>/u);
+	assert.match(JIRA_HEADER_SOURCE, /const tabs = useJiraTabs\(supportedWorkItemViews\)/u);
+	assert.match(JIRA_HEADER_SOURCE, /const activeTab = resolveJiraTab\(tabs, selectedTabLabel, workItemView\)/u);
+	assert.match(JIRA_HEADER_SOURCE, /<JiraViewTabs\s+selectedTabLabel=\{selectedTabLabel\}/u);
+	// Team EU restores Board and List as sibling destinations; 2000 years later
+	// keeps the single Work items tab and lets the board header switch views.
 	assert.match(JIRA_TABS_SOURCE, /import WorkItemIcon from "@atlaskit\/icon\/core\/work-item"/u);
-	assert.match(JIRA_TABS_SOURCE, /\{ label: "Work items", icon: WorkItemIcon, hasContent: true \}/u);
-	assert.doesNotMatch(JIRA_TABS_SOURCE, /label: "(?:Board|List)"/u);
+	assert.match(JIRA_TABS_SOURCE, /"team-eu": \[[\s\S]*\{ label: "Board", icon: BoardIcon, hasContent: true, view: "board" \}[\s\S]*\{ label: "List", icon: TableIcon, hasContent: true, view: "list" \}/u);
+	assert.match(JIRA_TABS_SOURCE, /"2000-years-later": \[[\s\S]*\{ label: "Work items", icon: WorkItemIcon, hasContent: true \}/u);
+	assert.doesNotMatch(
+		JIRA_TABS_SOURCE,
+		/"2000-years-later": \[[\s\S]*label: "(?:Board|List)"/u,
+	);
 	assert.match(PAGE_SOURCE, /import \{ JiraViewTabs \} from "@\/components\/projects\/jira\/components\/jira-header"/u);
 	assert.match(
 		PAGE_SOURCE,
-		/viewTabs=\{<JiraViewTabs selectedTab=\{selectedTab\} onTabChange=\{setSelectedTab\} \/>\}/u,
+		/viewTabs=\{\(\s*<JiraViewTabs\s+selectedTabLabel=\{selectedTabLabel\}\s+onTabChange=\{handleTabChange\}\s+workItemView=\{workItemView\}\s*\/>\s*\)\}/u,
 	);
-	assert.match(PAGE_SOURCE, /showBoardContent=\{selectedTab === 1\}/u);
+	assert.match(PAGE_SOURCE, /showBoardContent=\{activeTab\?\.hasContent === true\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showBoardContent\?: boolean;/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showBoardControls=\{showBoardContent\}/u);
 });
 
 test("the Work items header switches between Board and List views with their icons", () => {
-	assert.match(PAGE_SOURCE, /const \[activeView, setActiveView\] = useState<"board" \| "list">\("board"\)/u);
+	assert.match(PAGE_SOURCE, /const \[workItemView, setWorkItemView\] = useState<JiraWorkItemView>\(DEFAULT_JIRA_WORK_ITEM_VIEW\)/u);
+	assert.match(PAGE_SOURCE, /const activeView = activeTab\?\.view \?\? workItemView;/u);
 	assert.match(PAGE_SOURCE, /activeView=\{activeView\}/u);
-	assert.match(PAGE_SOURCE, /onViewChange=\{setActiveView\}/u);
+	// Team EU's tab bar owns the switch, so the header's own switcher stands down.
+	assert.match(PAGE_SOURCE, /const tabOwnsView = activeTab\?\.view !== undefined;/u);
+	assert.match(PAGE_SOURCE, /onViewChange=\{tabOwnsView \? undefined : setWorkItemView\}/u);
 	assert.match(PAGE_SOURCE, /renderListContent=\{\(columns\) =>/u);
 	assert.match(PAGE_SOURCE, /<JiraList[\s\S]*rows=\{listRows\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /activeView\?: ExperimentalJiraKanbanView;/u);
@@ -239,9 +304,12 @@ test("the Work items header switches between Board and List views with their ico
 });
 
 test("the board keeps 24px between the Jira tabs and filter controls", () => {
+	// The control row's opening tag is multi-line (it carries `controlsInsetEnd`
+	// as a style), so match the className string rather than the whole tag —
+	// `mt-6` after the tabs is the contract, its formatting is not.
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
-		/\{viewTabs \? <div className="mt-2">\{viewTabs\}<\/div> : null\}[\s\S]*<div className="mt-6 flex flex-wrap items-center gap-2 px-6">/u,
+		/\{viewTabs \? <div className="mt-2">\{viewTabs\}<\/div> : null\}[\s\S]*className="mt-6 flex flex-wrap items-center gap-2 px-6"/u,
 	);
 });
 
@@ -265,6 +333,100 @@ test("the route pins the shared Agent Session column beside Jira statuses", () =
 	assert.ok(columnIndex > 0, "expected the board to render the Agent Session column");
 	assert.ok(columnIndex < scrollportIndex, "expected untracked work to stay pinned before the status scrollport");
 	assert.match(EXPERIMENTAL_BOARD_SOURCE, /agentSessionColumn \? "ps-2" : "ps-6"/u);
+});
+
+test("the Panel design variant floats untracked work over the board and the list", () => {
+	// The route is the only place the global variant store meets the board, and
+	// it must reach the block as a presentation choice — the block itself stays
+	// variant-agnostic.
+	assert.match(PAGE_SOURCE, /import \{ useDesignVariants \} from "@\/components\/hooks\/use-design-variants";/u);
+	assert.match(PAGE_SOURCE, /const \{ designVariants \} = useDesignVariants\(\);/u);
+	assert.match(
+		PAGE_SOURCE,
+		/<ExperimentalJiraKanbanPage[\s\S]*agentSessionPresentation=\{designVariants\.panel \? "panel" : "column"\}/u,
+	);
+	assert.doesNotMatch(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/useDesignVariants|design-variants/u,
+		"the shared block must take a presentation prop, not read the global variant store",
+	);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /agentSessionPresentation\?: "column" \| "panel";/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /agentSessionPresentation = "column",/u);
+
+	// One config, two mutually exclusive hosts: panel mode must hand the column
+	// to the overlay, never render both.
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/const agentSessionColumnConfig: AgentSessionColumnProps \| undefined = showAgentSessionColumn \?/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/agentSessionColumn=\{agentSessionPresentation === "panel"\s*\?\s*undefined\s*:\s*agentSessionColumnConfig\}/u,
+		"panel mode must suppress the in-flow column so the two presentations cannot coexist",
+	);
+	// Insights swaps the whole content region for an article, and a tab with no
+	// content renders nothing — neither has a board to float over.
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/const showAgentSessionPanel = agentSessionPresentation === "panel"\s*&& agentSessionColumnConfig !== undefined\s*&& showBoardContent\s*&& !showPulseContent;/u,
+	);
+
+	// The rail is persistent: it is its own entry point, so there is deliberately
+	// no board-header show/hide control and no closed state. A close action would
+	// strand the surface — nothing outside the rail could bring it back.
+	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /agentSessionPanelOpen/u);
+	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /onToggleAgentSessionPanel/u);
+	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /agentSessionPanelOpen/u);
+	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /onToggleAgentSessionPanel/u);
+	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /Untracked work panel/u);
+	assert.doesNotMatch(PANEL_SOURCE, /PanelActionClose|onClose/u);
+	// Collapse is the only way out of the expanded panel.
+	assert.match(
+		PANEL_SOURCE,
+		/<PanelAction\s+icon=\{ShrinkHorizontalIcon\}\s+label="Collapse panel"\s+onClick=\{handleCollapse\}/u,
+	);
+
+	// Board and list share one positioning context, which is what lets a single
+	// overlay serve both views; Insights stays outside it.
+	const contentRegionIndex = EXPERIMENTAL_PAGE_SOURCE.indexOf(
+		'className="relative flex min-h-0 min-w-0 flex-1 flex-col',
+	);
+	const listBranchIndex = EXPERIMENTAL_PAGE_SOURCE.indexOf("{isListContent ? (");
+	const panelIndex = EXPERIMENTAL_PAGE_SOURCE.indexOf("<AgentSessionPanel");
+	assert.ok(contentRegionIndex > 0, "expected a relative content region to anchor the floating panel");
+	assert.ok(contentRegionIndex < listBranchIndex, "the board and list branches must live inside that region");
+	assert.ok(
+		listBranchIndex > 0 && listBranchIndex < panelIndex,
+		"the panel must render after the content so it wins the z-40 stacking tie with the list column controls",
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/import \{ AgentSessionPanel \} from "\.\/components\/agent-session-panel";/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/<AgentSessionPanel\s+agentSessionColumn=\{agentSessionColumnConfig\}\s+collapsed=\{agentSessionColumnCollapsed\}\s+onCollapsedChange=\{setAgentSessionColumnCollapsed\}/u,
+		"the panel is controlled: its collapse state is the same state the in-flow column uses",
+	);
+	// The panel is pinned to the RIGHT edge. That is what lets the list scroll
+	// under it like the board does: the list's leading checkbox and summary
+	// cells are `sticky left-0`, so a right-pinned panel never covers them and
+	// no width needs reserving. Guard both halves — the right pin, and the
+	// absence of the inset that a left pin would have required.
+	assert.match(PANEL_SOURCE, /className="absolute bottom-0 right-0 z-40/u);
+	assert.doesNotMatch(PANEL_SOURCE, /\binset-y-0 left-0\b/u);
+	// The rail STOPS at the tab strip: a real `top` offset, never `inset-y-0`
+	// plus `paddingTop`. Spanning the board root and padding the content would
+	// leave an invisible slab over the tabs that swallows pointer events and
+	// reads as a full-height overlay to anything measuring the DOM.
+	assert.doesNotMatch(PANEL_SOURCE, /\binset-y-0\b/u);
+	assert.doesNotMatch(PANEL_SOURCE, /paddingTop:/u);
+	assert.match(PANEL_SOURCE, /\btop: topInset,/u);
+	// With the rail no longer reaching the tabs, the header needs no opaque
+	// z-50 band to paint over its head.
+	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /relative z-50 bg-surface/u);
+	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /listAgentSessionPanelInset/u);
+	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /paddingInline(?:Start|End)/u);
 });
 
 test("the board's AI entry point is the floating Rovo button, not the Omnibar", () => {

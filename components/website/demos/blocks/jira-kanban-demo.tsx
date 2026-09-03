@@ -73,7 +73,7 @@ export function JiraKanbanDemoExperimentalV2() {
 					<div className="min-h-0 flex-1 overflow-auto p-4 md:p-5">
 						<JiraList
 							ariaLabel="Payments SDK v2 migration work items list"
-							className="h-full max-h-none"
+							className="max-h-full"
 							rows={listRows}
 							totalCountLabel={`${listRows.length}`}
 							visibleCount={listRows.length}

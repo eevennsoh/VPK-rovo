@@ -36,6 +36,8 @@ import PanelRightIcon from "@atlaskit/icon/core/panel-right";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
 
 import { EditorPaletteAssigneePicker } from "@/components/blocks/editor-palette/page";
+import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
+import { ScrollMaskEdgeOverlay } from "@/components/visual/scroll-mask";
 import {
 	JiraListColumnActions,
 	JiraListColumnBoundary,
@@ -161,6 +163,14 @@ export function JiraList({
 	onToggleExpand,
 }: Readonly<JiraListProps>) {
 	const insertionAnchorId = useId().replaceAll(":", "");
+	// Rows that continue below the fold should dissolve into the sticky footer
+	// rather than being guillotined by it. `showBottomScrollMask` is false both
+	// when the card hugs its rows and when the reader has scrolled to the end, so
+	// the fade only appears while there is genuinely more list underneath.
+	const {
+		ref: tableScrollRef,
+		showBottomScrollMask,
+	} = useHasVerticalOverflow<HTMLDivElement>();
 	const rowIds = useMemo(() => rows.map((row) => row.issueKey), [rows]);
 	const sensors = useSensors(
 		useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -705,6 +715,11 @@ export function JiraList({
 	return (
 		<section
 			aria-label={ariaLabel}
+			// The card hugs its rows and only scrolls once they outgrow the cap, so
+			// the footer follows short content instead of stranding a gap above
+			// itself. Callers that need it to fill a taller container must override
+			// the cap with `max-h-full`, never a definite height like `h-full` — a
+			// definite height hands the slack to the scrollport and reopens the gap.
 			className={cn(
 				"relative flex max-h-[640px] flex-col overflow-visible rounded-xl border border-border bg-surface",
 				className,
@@ -712,9 +727,16 @@ export function JiraList({
 			data-testid="jira-list"
 		>
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[inherit]">
+				{/* Positioned wrapper so the fade anchors to the bottom of the
+				    scrollport — i.e. directly above the footer. It cannot live inside
+				    the scrollport (it would scroll away with the rows) and the footer
+				    itself must stay unpositioned, because its centred pagination is
+				    absolutely positioned against the card. */}
+				<div className="relative flex min-h-0 flex-1 flex-col">
 				<div
 					className="min-h-0 flex-1 overflow-auto"
 					data-testid="jira-list-table-scroll"
+					ref={tableScrollRef}
 				>
 					<DndContext
 						collisionDetection={closestCenter}
@@ -870,6 +892,13 @@ export function JiraList({
 					</TableBody>
 					</Table>
 					</DndContext>
+				</div>
+				{showBottomScrollMask ? (
+					<ScrollMaskEdgeOverlay
+						data-testid="jira-list-scroll-fade"
+						edge="bottom"
+					/>
+				) : null}
 				</div>
 				<div
 					className="sticky bottom-0 z-20 flex h-10 min-h-10 items-center gap-3 bg-surface px-1 py-1 text-[13px] shrink-0"

@@ -87,6 +87,19 @@ import type {
  */
 export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
+	/**
+	 * Trailing scroll inset in px, added to the scrollable content rather than to
+	 * the scrollport.
+	 *
+	 * A floating side panel is `absolute`, so board content is *meant* to pass
+	 * underneath it. But at maximum scroll the trailing column's edge lands flush
+	 * with the scrollport's edge — permanently under the panel, with no scroll
+	 * left to pull it clear. Padding the content extends the scroll extent by the
+	 * panel's width, so the column still slides under the panel while scrolling
+	 * and can still be scrolled fully into view. Padding the *scrollport* would
+	 * reserve dead space instead and defeat the overlay.
+	 */
+	scrollEndInset?: number;
 	/** Detached sessions keyed by the Jira card they should remain beneath. */
 	detachedAgentSessionsByCard?: Readonly<Record<string, readonly AgentSessionItem[]>>;
 	onCardAgentSessionUnlink?: (
@@ -571,6 +584,7 @@ export function ExperimentalJiraKanban({
 	animateCardMoves = false,
 	ariaLabel = "Experimental Jira kanban columns. Scroll horizontally to review all statuses.",
 	assignedAgentIdsByColumn = {},
+	scrollEndInset = 0,
 	boardColumns,
 	cardGenerativeActionPresentation = "sparkle",
 	cardMoveAnimation,
@@ -827,12 +841,12 @@ export function ExperimentalJiraKanban({
 					}}
 				>
 				<LayoutGroup id={cardLayoutGroupId}>
-					<div
-						className={cn(
-							"flex min-h-full w-max min-w-full items-stretch",
-							agentSessionColumn ? "ps-2" : "ps-6",
-						)}
-					>
+						<div
+							className={cn(
+								"flex min-h-full w-max min-w-full items-stretch",
+								agentSessionColumn ? "ps-2" : "ps-6",
+							)}
+						>
 						<div className="flex min-h-full flex-1 items-stretch gap-2">
 						{boardColumns.map((column) => (
 						<BoardColumnShell
@@ -965,7 +979,16 @@ export function ExperimentalJiraKanban({
 						))}
 						<BoardAddColumnButton />
 						</div>
-						<div aria-hidden className="w-6 shrink-0" />
+						{/* Trailing gutter. It also absorbs `scrollEndInset`: the outer
+						    `w-max min-w-full` box is clamped to the scrollport by its
+						    min-width, so padding it moves nothing — the scroll extent
+						    comes from this row's own children. Widening the spacer is
+						    what lets the last column scroll clear of a floating panel. */}
+						<div
+							aria-hidden
+							className="shrink-0"
+							style={{ width: `calc(var(--spacing) * 6 + ${scrollEndInset}px)` }}
+						/>
 					</div>
 				</LayoutGroup>
 				</section>

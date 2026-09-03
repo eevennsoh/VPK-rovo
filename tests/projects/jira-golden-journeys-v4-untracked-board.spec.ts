@@ -15,6 +15,14 @@ async function openBoard(page: Page): Promise<void> {
 	}
 }
 
+async function openCollapsedBoard(page: Page): Promise<void> {
+	await page.goto(JIRA_GOLDEN_JOURNEYS_V4_URL, { waitUntil: "domcontentloaded" });
+	await expect(page.getByRole("heading", { name: "Jira Design" })).toBeVisible({
+		timeout: 15_000,
+	});
+	await expect(page.getByRole("button", { name: "Expand Untracked work column" })).toBeVisible();
+}
+
 async function openAgentViewMenu(page: Page): Promise<void> {
 	await page.getByRole("button", { name: "Configure board view" }).click();
 	// Click, not hover: Base UI does not reliably expand this submenu on hover.
@@ -80,6 +88,27 @@ test("Untracked is on by default and PAY-101 shows a nearby untracked row", asyn
 
 	await openAgentViewMenu(page);
 	await expect(page.getByRole("menuitemcheckbox", { name: "Untracked" })).toBeChecked();
+});
+
+test("the collapsed Untracked rail previews matching board sessions in both directions", async ({ page }) => {
+	await openCollapsedBoard(page);
+
+	const sessionId = "lw-figma-parked";
+	const boardSession = page.locator("[data-issue-key='PAY-118']")
+		.getByTestId(`agent-session-row-${sessionId}`);
+	const boardSessionSurface = boardSession.locator("[data-highlighted]");
+	const railNotch = page.getByTestId(`agent-session-notch-${sessionId}`);
+	const railMark = railNotch.locator("[aria-hidden='true']");
+
+	await boardSession.getByRole("button", { name: /^Preview Why the wallet was cut/u }).hover();
+	await expect(railNotch).toHaveAttribute("data-highlighted", "true");
+	await expect(railMark).toHaveCSS("width", "24px");
+
+	await page.getByRole("heading", { name: "Jira Design" }).hover();
+	await expect(railNotch).not.toHaveAttribute("data-highlighted", "true");
+
+	await railNotch.hover();
+	await expect(boardSessionSurface).toHaveAttribute("data-highlighted", "true");
 });
 
 test("unchecking Untracked hides board-adjacent rows and leaves the column", async ({ page }) => {

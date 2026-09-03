@@ -1,0 +1,24 @@
+"use client";
+
+import { useDesignVariation } from "@/components/hooks/use-design-variation";
+
+import { getJiraTabs, type TabDefinition } from "../data/tabs";
+import {
+	ALL_JIRA_WORK_ITEM_VIEWS,
+	selectJiraTabs,
+	type JiraWorkItemView,
+} from "../lib/jira-tab-model";
+
+/**
+ * The space tab bar for the active design variation. Team EU shows Board and
+ * List as sibling tabs; 2000 years later shows a single Work items tab.
+ *
+ * Routes that only render one of the two surfaces pass `supportedWorkItemViews`
+ * so the tab bar never offers a destination they would leave empty.
+ */
+export function useJiraTabs(
+	supportedWorkItemViews: readonly JiraWorkItemView[] = ALL_JIRA_WORK_ITEM_VIEWS,
+): readonly TabDefinition[] {
+	const { designVariation } = useDesignVariation();
+	return selectJiraTabs(getJiraTabs(designVariation), supportedWorkItemViews);
+}

@@ -89,6 +89,29 @@ test("top navigation caps search globally and centers it only when the persisten
 	}
 });
 
+test("the centered search overlay reserves the right cluster it would otherwise overlap", () => {
+	// Regression: the centered middle zone is an overlay spanning the whole bar,
+	// so `px-3` alone let a 780px search run over the Ask Rovo pill. The bar
+	// measures the cluster and pads both sides by the reserve instead.
+	assert.match(TOP_NAVIGATION_SOURCE, /const \[setRightClusterNode, rightClusterWidth\] = useMeasuredWidth\(\);/u);
+	assert.match(TOP_NAVIGATION_SOURCE, /ref=\{setRightClusterNode\}/u);
+	assert.match(
+		TOP_NAVIGATION_SOURCE,
+		/const centeredZoneInsetPx = getCenteredSearchInsetPx\(product, rightClusterWidth\);/u,
+	);
+	assert.match(
+		TOP_NAVIGATION_SOURCE,
+		/style=\{centerSearch \? \{ paddingInline: `\$\{centeredZoneInsetPx\}px` \} : undefined\}/u,
+	);
+	// The overlay must not re-introduce its own flat padding alongside the reserve.
+	assert.doesNotMatch(
+		TOP_NAVIGATION_SOURCE,
+		/"pointer-events-none absolute inset-x-0 justify-center px-3/u,
+	);
+	assert.match(RIGHT_NAVIGATION_SOURCE, /ref\?: Ref<HTMLDivElement>;/u);
+	assert.match(LAYOUT_CONSTANTS_SOURCE, /export function getCenteredSearchInsetPx\(/u);
+});
+
 test("top navigation keeps the legacy sidebar inset without overriding collapsed centering", () => {
 	assert.match(TOP_NAVIGATION_SOURCE, /searchAlignment\?: "responsive" \| "sidebar";/);
 	assert.match(TOP_NAVIGATION_SOURCE, /searchAlignment = "responsive"/);
@@ -163,7 +186,15 @@ test("right navigation settings button can render optional dropdown actions", ()
 	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /interface RightNavigationSettingsMenuItem/);
 	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /settingsMenuItems\?: ReadonlyArray<RightNavigationSettingsMenuItem>/);
 	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /const hasSettingsMenu = Boolean\(settingsMenuItems && settingsMenuItems\.length > 0\);/);
-	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /hasSettingsMenu \? \([\s\S]*<DropdownMenu>/u);
+	// The settings dropdown itself is now unconditional — it owns the global
+	// design-variation picker and the design-variant toggles. What stays gated
+	// on hasSettingsMenu is the caller-supplied block, so an empty
+	// settingsMenuItems cannot leave a dangling separator and empty group
+	// hanging off the bottom of the menu.
+	assert.match(
+		RIGHT_NAVIGATION_ACTIONS_SOURCE,
+		/hasSettingsMenu \? \([\s\S]*<DropdownMenuSeparator \/>[\s\S]*<DropdownMenuGroup>[\s\S]*onSelect=\{item\.onSelect\}/u,
+	);
 	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /aria-label="Settings"[\s\S]*<DropdownMenuContent align="end" className="w-64">/u);
 	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /onSelect=\{item\.onSelect\}/);
 	assert.match(RIGHT_NAVIGATION_SOURCE, /settingsMenuItems\?: ReadonlyArray<RightNavigationSettingsMenuItem>/);
