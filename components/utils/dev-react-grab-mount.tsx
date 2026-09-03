@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { shouldDisableReactGrab } from "@/components/utils/dev-react-grab";
 
 const REACT_GRAB_SCRIPT_ID = "vpk-dev-react-grab-script";
 const REACT_GRAB_MCP_SCRIPT_ID = "vpk-dev-react-grab-mcp-script";
@@ -14,25 +15,6 @@ type ReactGrabWindow = Window & {
 		setEnabled?: (enabled: boolean) => void;
 	};
 };
-
-function isReactGrabDisabledPath(pathname: string | null): boolean {
-	if (!pathname) {
-		return false;
-	}
-
-	return (
-		pathname === "/make"
-		|| pathname.startsWith("/make/")
-		|| pathname === "/preview/projects/make"
-		|| pathname.startsWith("/preview/projects/make/")
-		|| pathname === "/html"
-		|| pathname.startsWith("/html/")
-		|| pathname === "/preview/projects/html"
-		|| pathname.startsWith("/preview/projects/html/")
-		|| pathname === "/awake"
-		|| pathname.startsWith("/awake/")
-	);
-}
 
 function ensureScript({
 	id,
@@ -72,7 +54,7 @@ export function DevReactGrabMount() {
 			return;
 		}
 
-		if (isReactGrabDisabledPath(pathname)) {
+		if (shouldDisableReactGrab({ hostname: window.location.hostname, pathname })) {
 			const reactGrab = (window as ReactGrabWindow).__REACT_GRAB__;
 			reactGrab?.deactivate?.();
 			reactGrab?.setEnabled?.(false);

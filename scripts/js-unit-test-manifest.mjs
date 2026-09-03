@@ -174,6 +174,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/utils/gui.test.js",
 		"components/utils/gui-color.test.js",
 		"components/utils/gui-values.test.js",
+		"components/utils/dev-react-grab.test.ts",
 		"components/utils/user-invalid-sync.test.js",
 		"components/arts/awake/city-storage.test.js",
 		"components/arts/awake/use-cities.test.js",

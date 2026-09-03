@@ -30,6 +30,11 @@ const UNTRACKED = {
 	bounds: { bottom: 200, left: 400, right: 760, top: 0 },
 	kind: "untracked",
 };
+const CREATE_WORK_ITEM = {
+	bounds: { bottom: 280, left: 220, right: 420, top: 220 },
+	columnTitle: "In review",
+	kind: "create",
+};
 const ZONES = [SOURCE_ISSUE, SOURCE_UNLINK, TARGET_ISSUE];
 
 function session(id = "review-agent") {
@@ -134,6 +139,64 @@ test("detached and untracked drags attach to any issue and never resolve unlink 
 			{ cardCode: "PAY-128", kind: "attach" },
 		);
 	}
+});
+
+test("only untracked sessions resolve a create-work-item column target", () => {
+	assert.deepEqual(
+		resolveBoardAgentSessionDropTarget(
+			{ kind: "untracked" },
+			{ x: 300, y: 250 },
+			[CREATE_WORK_ITEM],
+		),
+		{ columnTitle: "In review", kind: "create" },
+	);
+	assert.deepEqual(
+		resolveBoardAgentSessionDropAction(
+			createBoardAgentSessionDragTransaction(
+				session(),
+				{ kind: "untracked" },
+				{ x: 300, y: 250 },
+				[CREATE_WORK_ITEM],
+			),
+		),
+		{ columnTitle: "In review", kind: "create", sessionId: "review-agent" },
+	);
+	assert.equal(
+		resolveBoardAgentSessionDropTarget(
+			{ kind: "attached", sourceCardCode: "PAY-121" },
+			{ x: 300, y: 250 },
+			[CREATE_WORK_ITEM],
+		),
+		null,
+	);
+	assert.equal(
+		resolveBoardAgentSessionDropTarget(
+			{ kind: "detached", sourceCardCode: "PAY-121" },
+			{ x: 300, y: 250 },
+			[CREATE_WORK_ITEM],
+		),
+		null,
+	);
+});
+
+test("an explicit create target wins over an overlapping issue card", () => {
+	const overlappingIssue = {
+		bounds: CREATE_WORK_ITEM.bounds,
+		cardCode: "PAY-127",
+		kind: "issue",
+	};
+	const transaction = createBoardAgentSessionDragTransaction(
+		session(),
+		{ kind: "untracked" },
+		{ x: 300, y: 250 },
+		[overlappingIssue, CREATE_WORK_ITEM],
+	);
+
+	assert.deepEqual(transaction.target, { columnTitle: "In review", kind: "create" });
+	assert.deepEqual(
+		resolveBoardAgentSessionDropAction(transaction),
+		{ columnTitle: "In review", kind: "create", sessionId: "review-agent" },
+	);
 });
 
 test("overlapping eligible issues are ambiguous instead of arming multiple targets", () => {

@@ -18,6 +18,11 @@ export type BoardAgentSessionDragOrigin =
 export type BoardAgentSessionDropZone =
 	| {
 		bounds: BoardAgentSessionDropBounds;
+		columnTitle: string;
+		kind: "create";
+	}
+	| {
+		bounds: BoardAgentSessionDropBounds;
 		cardCode: string;
 		kind: "issue" | "unlink";
 	}
@@ -28,6 +33,7 @@ export type BoardAgentSessionDropZone =
 
 export type BoardAgentSessionDropTarget =
 	| { cardCode: string; kind: "attach" }
+	| { columnTitle: string; kind: "create" }
 	| { cardCode: string; kind: "unlink" }
 	| { kind: "untracked" };
 
@@ -42,6 +48,7 @@ export interface BoardAgentSessionDragTransaction<
 
 export type BoardAgentSessionDropAction =
 	| { kind: "none" }
+	| { kind: "create"; sessionId: string; columnTitle: string }
 	| { kind: "detach"; sessionId: string; sourceCardCode: string }
 	| { kind: "move"; sessionId: string; sourceCardCode: string; targetCardCode: string }
 	| { kind: "attach"; sessionId: string; targetCardCode: string };
@@ -58,6 +65,8 @@ function containsPointer(
 
 function dropTargetKey(target: BoardAgentSessionDropTarget): string {
 	switch (target.kind) {
+		case "create":
+			return `create:${target.columnTitle}`;
 		case "untracked":
 			return "untracked";
 		case "attach":
@@ -75,6 +84,10 @@ function toEligibleTarget(
 	zone: BoardAgentSessionDropZone,
 ): BoardAgentSessionDropTarget | null {
 	switch (zone.kind) {
+		case "create":
+			return origin.kind === "untracked"
+				? { columnTitle: zone.columnTitle, kind: "create" }
+				: null;
 		case "untracked":
 			return origin.kind === "attached" ? { kind: "untracked" } : null;
 		case "unlink":
@@ -109,6 +122,18 @@ export function resolveBoardAgentSessionDropTarget(
 		if (target) {
 			targetsByKey.set(dropTargetKey(target), target);
 		}
+	}
+
+	// The footer target can overlap the final issue because the card list reveals
+	// overflow during a session drag. The explicit create well wins that overlap;
+	// two create wells would still be ambiguous rather than choosing by DOM order.
+	const createTargets = [...targetsByKey.values()].filter(
+		(target): target is Extract<BoardAgentSessionDropTarget, { kind: "create" }> => (
+			target.kind === "create"
+		),
+	);
+	if (createTargets.length > 0) {
+		return createTargets.length === 1 ? createTargets[0] : null;
 	}
 
 	// The Untracked rail overlays the trailing status columns. When an attached
@@ -170,6 +195,10 @@ export function resolveBoardAgentSessionDropAction(
 	}
 
 	switch (target.kind) {
+		case "create":
+			return origin.kind === "untracked"
+				? { columnTitle: target.columnTitle, kind: "create", sessionId: session.id }
+				: { kind: "none" };
 		case "untracked":
 			return origin.kind === "attached"
 				? { kind: "detach", sessionId: session.id, sourceCardCode: origin.sourceCardCode }
