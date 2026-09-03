@@ -137,7 +137,7 @@ node ./.agents/skills/vpk-setup/scripts/create-env-local.js YOUR-USE-CASE-ID
 # AI Gateway Configuration
 AI_GATEWAY_URL=https://ai-gateway.us-east-1.staging.atl-paas.net/v1/bedrock/model/anthropic.claude-sonnet-5/invoke-with-response-stream
 AI_GATEWAY_URL_GOOGLE=https://ai-gateway.us-east-1.staging.atl-paas.net/v1/google/publishers/google/v1/chat/completions
-GOOGLE_IMAGE_MODEL=gemini-3-pro-image-preview
+GOOGLE_IMAGE_MODEL=gemini-3-pro-image
 GOOGLE_TTS_MODEL=tts-latest
 GOOGLE_STT_MODEL=gemini-3-flash-preview
 
@@ -210,7 +210,7 @@ OPENAI_REALTIME_VOICE=alloy
 | `AI_GATEWAY_CLOUD_ID` | Yes | Cloud ID. For staging/local, use `internal-dummy-<use-case-id>` (Proximity's dummy CloudID). Tenant UUIDs and `local-testing` are rejected by staging AI Gateway. |
 | `AI_GATEWAY_USER_ID` | Yes | Your Atlassian email |
 | `OPENAI_MODEL` | Optional | GPT model ID (default: `gpt-5.6-terra`) |
-| `GOOGLE_IMAGE_MODEL` | Yes | Gemini image model (default: `gemini-3-pro-image-preview`) |
+| `GOOGLE_IMAGE_MODEL` | Yes | Gemini image model (default: `gemini-3-pro-image`) |
 | `GOOGLE_TTS_MODEL` | Yes | TTS model (default: `tts-latest`) |
 | `GOOGLE_STT_MODEL` | Yes | Google speech-to-text model used when `STT_PRESET=google` |
 | `STT_PRESET` | Yes | Active speech-to-text preset for live voice mode (`whisper-tiny`, `whisper-large-v3`, `google`, `qwen3-0.6b`, `qwen3-asr`) |
@@ -272,7 +272,7 @@ separately via `STT_PRESET`.
 | -------- | ----- | -------- |
 | **Claude (Default)** | `anthropic.claude-sonnet-5` | `/v1/bedrock/model/{MODEL_ID}/invoke-with-response-stream` |
 | **GPT** | `gpt-5.6-terra` | `/v1/openai/v1/chat/completions` |
-| **Gemini** | `gemini-3-pro-image-preview` | `/v1/google/publishers/google/v1/chat/completions` |
+| **Gemini** | `gemini-3-pro-image` | `/v1/google/publishers/google/v1/chat/completions` |
 
 Update `AI_GATEWAY_URL` in `.env.local` then restart with `pnpm run rovo`.
 
