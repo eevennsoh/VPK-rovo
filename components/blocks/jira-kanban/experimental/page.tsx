@@ -919,6 +919,7 @@ export default function ExperimentalJiraKanbanPage({
 						onCollapsedChange={setAgentSessionColumnCollapsed}
 						onExpandedWidthChange={setAgentSessionPanelWidthPx}
 						sessionDragging={boardSessionDrag.transaction !== null}
+						showLeadingScrollFade={isListContent}
 						topInset={BOARD_HEADER_TAB_STRIP_BOTTOM_PX}
 						untrackedDropArmed={boardSessionDrag.transaction?.target?.kind === "untracked"}
 					/>
