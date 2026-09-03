@@ -16,7 +16,7 @@ model routing.
 |----------|----------|---------------|
 | **Claude (Default)** | `anthropic.claude-sonnet-5` | `/v1/bedrock/model/{MODEL_ID}/invoke-with-response-stream` |
 | **GPT** | `gpt-5.6-terra` | `/v1/openai/v1/chat/completions` |
-| **Gemini (Google)** | `gemini-3-pro-image-preview` | `/v1/google/publishers/google/v1/chat/completions` |
+| **Gemini (Google)** | `gemini-3-pro-image` | `/v1/google/publishers/google/v1/chat/completions` |
 | **TTS (Audio Speech)** | `tts-latest` | `/v1/google/v1/text:synthesize` (when model maps to `vendor: GOOGLE`) |
 
 ---
@@ -149,7 +149,7 @@ AI_GATEWAY_URL=https://ai-gateway.us-east-1.staging.atl-paas.net/v1/bedrock/mode
 const DEFAULT_MODELS = {
   bedrock: "anthropic.claude-sonnet-5",  // Claude - model ID in URL
   openai: "gpt-5.6-terra",                              // GPT - model ID in payload
-  google: "gemini-3-pro-image-preview",                 // Gemini - supports image generation
+  google: "gemini-3-pro-image",                         // Gemini - supports image generation
 };
 ```
 
@@ -195,7 +195,7 @@ Look for the `offerings` section in the output.
 Before changing models, verify provider/category for a specific model:
 
 ```bash
-atlas ml aigateway model view --modelId gemini-3-pro-image-preview
+atlas ml aigateway model view --modelId gemini-3-pro-image
 atlas ml aigateway model view --modelId tts-latest
 ```
 
@@ -212,7 +212,7 @@ Provider mappings can vary by environment, so treat Atlas CLI output as the sour
 - `gpt-5.6-terra` (latest)
 
 **Gemini (Google):**
-- `gemini-3-pro-image-preview` (image generation + text)
+- `gemini-3-pro-image` (image generation + text)
 
 **TTS (Audio):**
 - `tts-latest` (text to speech via `/v1/google/v1/text:synthesize` when mapped to Google)
@@ -316,7 +316,7 @@ pnpm run dev
 
 ```json
 {
-  "model": "gemini-3-pro-image-preview",
+  "model": "gemini-3-pro-image",
   "messages": [
     { "role": "system", "content": "You are an AI assistant..." },
     { "role": "user", "content": "Hello" }
@@ -350,7 +350,7 @@ The backend handles all formats automatically. For Gemini image responses, the b
 
 ### Image Generation (Gemini Only)
 
-When using the Gemini endpoint with a model that supports image generation (e.g., `gemini-3-pro-image-preview`):
+When using the Gemini endpoint with a model that supports image generation (e.g., `gemini-3-pro-image`):
 
 - The system prompt automatically enables image generation for Google endpoints
 - Ask the model to "generate an image" and it will return inline base64 image data

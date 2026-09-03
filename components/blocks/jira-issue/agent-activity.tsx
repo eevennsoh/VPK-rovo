@@ -58,8 +58,18 @@ import type {
 
 export type JiraIssueAgentActivityMode = "none" | "working" | "awaiting-input" | "completed";
 export type JiraIssueAgentActivityState = "working" | "awaiting-input" | "completed";
+/**
+ * The chin-row glyph states a host may override. `working` and `awaiting-input`
+ * come from a live activity row; `finished` is the per-run outcome the split
+ * review chin paints for a completed run that did not fail. A failed run is
+ * deliberately absent — it keeps the block's own error status so a failure can
+ * never be softened by a host renderer.
+ */
+export type JiraIssueAgentActivityIndicatorState =
+	| Exclude<JiraIssueAgentActivityState, "completed">
+	| "finished";
 export type JiraIssueAgentActivityIndicatorRenderer = (
-	state: Exclude<JiraIssueAgentActivityState, "completed">,
+	state: JiraIssueAgentActivityIndicatorState,
 ) => ReactElement;
 export type { JiraIssueAgentActivityLayout } from "@/components/blocks/jira-issue/agent-activity-model";
 export type {

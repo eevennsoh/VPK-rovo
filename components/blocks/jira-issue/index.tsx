@@ -81,6 +81,7 @@ export type {
 export type {
 	JiraIssueAgentActivity,
 	JiraIssueAgentActivityIndicatorRenderer,
+	JiraIssueAgentActivityIndicatorState,
 	JiraIssueAgentActivityLayout,
 	JiraIssueAgentActivityMode,
 	JiraIssueAgentActivityState,
@@ -747,6 +748,7 @@ function JiraIssueDefault({
 								onReview={onAgentDoneRunReview}
 								onSubmit={onAgentDoneRunSubmit}
 								onView={onAgentDoneRunView}
+								renderAgentActivityIndicator={renderAgentActivityIndicator}
 								runs={agentDoneRuns}
 								usesStrokeChrome={usesStrokeChrome}
 							/>
