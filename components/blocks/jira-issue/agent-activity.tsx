@@ -790,16 +790,18 @@ export function JiraIssueAgentActivityRows({
 					// A grouped chin is many agents, not one session. Session
 					// details belong on a single-agent row; the merged row
 					// opens assignment instead so hover lists every agent.
-					const rowSessionFlyout = rowGroup.activities.length === 1
-						? sessionFlyout
-						: undefined;
+					// Drag uses the same gate: transferring `activities[0]`
+					// would silently move one agent while the row still says "N".
+					const isSingleAgentRow = rowGroup.activities.length === 1;
+					const rowSessionFlyout = isSingleAgentRow ? sessionFlyout : undefined;
+					const rowSessionDrag = isSingleAgentRow ? sessionDrag : undefined;
 					const row = (
 						<JiraIssueAgentActivityRow
 							activities={rowGroup.activities}
 							onOpenChange={onOpenChange}
 							onSessionDragChange={(dragging, pointer, cancelled) => {
 								setSessionDragging(dragging);
-								sessionDrag?.onDragStateChange({
+								rowSessionDrag?.onDragStateChange({
 									activities: rowGroup.activities,
 									cancelled,
 									dragging,
@@ -809,7 +811,7 @@ export function JiraIssueAgentActivityRows({
 							}}
 							onViewChat={onViewChat}
 							renderAgentActivityIndicator={renderAgentActivityIndicator}
-							sessionDrag={sessionDrag}
+							sessionDrag={rowSessionDrag}
 							sessionFlyout={rowSessionFlyout}
 							shouldReduceMotion={shouldReduceMotion}
 							usesStrokeChrome={usesStrokeChrome}

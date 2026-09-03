@@ -111,8 +111,17 @@ test("chin-row layout follows the design variation", () => {
 	// sessionFlyout on multi-agent rows is what lets AgentAssignment open.
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,
-		/const rowSessionFlyout = rowGroup\.activities\.length === 1\s*\? sessionFlyout\s*: undefined;/u,
+		/const isSingleAgentRow = rowGroup\.activities\.length === 1;/u,
 	);
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/const rowSessionFlyout = isSingleAgentRow \? sessionFlyout : undefined;/u,
+	);
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/const rowSessionDrag = isSingleAgentRow \? sessionDrag : undefined;/u,
+	);
+	assert.match(AGENT_ACTIVITY_SOURCE, /sessionDrag=\{rowSessionDrag\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const assignedRowHandle = isSingleAgent \|\| sessionFlyout \? rowHandle : \(/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /openMode="hover"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /rowSessionFlyout \? \(\s*<JiraSessionFlyoutTrigger/u);
@@ -532,6 +541,10 @@ test("the Panel design variant floats untracked work over the board and the list
 	);
 	assert.match(PANEL_SOURCE, /sessionDragging \? "pointer-events-none" : null/u);
 	assert.match(PANEL_SOURCE, /data-board-agent-session-drop-zone="untracked"/u);
+	assert.match(
+		PANEL_SOURCE,
+		/untrackedDropArmed \? "bg-bg-accent-blue-subtlest" : "bg-surface"/u,
+	);
 	assert.match(PANEL_SOURCE, /<AgentSessionColumn\s+\{\.\.\.agentSessionColumn\}/u);
 	// The panel is pinned to the RIGHT edge. That is what lets the list scroll
 	// under it like the board does: the list's leading checkbox and summary

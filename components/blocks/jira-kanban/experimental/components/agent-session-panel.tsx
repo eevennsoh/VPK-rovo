@@ -178,7 +178,6 @@ export function AgentSessionPanel({
 				"absolute bottom-0 right-0 z-40 rounded-none",
 				collapsed ? null : "border-l border-border",
 				sessionDragging ? "pointer-events-none" : null,
-				untrackedDropArmed ? "bg-bg-accent-blue-subtlest" : null,
 			)}
 			data-board-agent-session-drop-zone="untracked"
 			data-board-agent-session-target={untrackedDropArmed ? "untracked" : undefined}
@@ -209,7 +208,10 @@ export function AgentSessionPanel({
 				// `<section>` already announces "{title}, N sessions", and two
 				// nested regions must not share one name.
 				aria-label={`${title} panel`}
-				className="h-full bg-surface"
+				className={cn(
+					"h-full",
+					untrackedDropArmed ? "bg-bg-accent-blue-subtlest" : "bg-surface",
+				)}
 				tabIndex={-1}
 			>
 				{collapsed ? null : (

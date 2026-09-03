@@ -44,6 +44,7 @@ import {
 	resolveFloatingRovoButtonPersistentBarSide,
 	resolveFloatingRovoButtonPlacement,
 	FLOATING_ROVO_BUTTON_DRAG_CLICK_THRESHOLD,
+	FLOATING_ROVO_BUTTON_END_INSET_VAR,
 	type FloatingRovoButtonDragConstraints,
 	type FloatingRovoButtonDragStart,
 	type FloatingRovoButtonSnapTarget,
@@ -217,6 +218,7 @@ export function FloatingRovoButtonSurface({
 	const collapsedButtonRef = useRef<HTMLButtonElement | null>(null);
 	const previousCardOpenRef = useRef<boolean>(cardOpen);
 	const [logoAnimating, setLogoAnimating] = useState(false);
+	const [endInset, setEndInset] = useState("");
 	const surfaceTransition = shouldReduceMotion
 		? { duration: 0 }
 		: FLOATING_ROVO_BUTTON_MORPH_SPRING;
@@ -335,7 +337,20 @@ export function FloatingRovoButtonSurface({
 	}, [buttonX, buttonY, configuredBarSide, placement, positioning]);
 
 	useEffect(() => {
-		const positionKey = `${positioning}:${resolvedPlacement.right}:${resolvedPlacement.bottom}`;
+		const root = document.documentElement;
+		const readEndInset = () => {
+			setEndInset(
+				getComputedStyle(root).getPropertyValue(FLOATING_ROVO_BUTTON_END_INSET_VAR).trim(),
+			);
+		};
+		readEndInset();
+		const observer = new MutationObserver(readEndInset);
+		observer.observe(root, { attributes: true, attributeFilter: ["style"] });
+		return () => observer.disconnect();
+	}, []);
+
+	useEffect(() => {
+		const positionKey = `${positioning}:${resolvedPlacement.right}:${resolvedPlacement.bottom}:${endInset}`;
 
 		if (initializedPositionKeyRef.current === positionKey) {
 			return;
@@ -345,9 +360,12 @@ export function FloatingRovoButtonSurface({
 			return;
 		}
 
-		anchorToDefaultTarget();
 		initializedPositionKeyRef.current = positionKey;
-	}, [anchorToDefaultTarget, positioning, resolvedPlacement.bottom, resolvedPlacement.right]);
+		if (hasUserDraggedRef.current) {
+			return;
+		}
+		anchorToDefaultTarget();
+	}, [anchorToDefaultTarget, endInset, positioning, resolvedPlacement.bottom, resolvedPlacement.right]);
 
 	useEffect(() => {
 		return () => {

@@ -337,7 +337,15 @@ test("Jira issue keeps generic activity rows composer-free unless board flyout c
 	// single-agent rows; grouped rows drop it so AgentAssignment can open.
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,
-		/const rowSessionFlyout = rowGroup\.activities\.length === 1\s*\? sessionFlyout\s*: undefined;/u,
+		/const isSingleAgentRow = rowGroup\.activities\.length === 1;/u,
+	);
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/const rowSessionFlyout = isSingleAgentRow \? sessionFlyout : undefined;/u,
+	);
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/const rowSessionDrag = isSingleAgentRow \? sessionDrag : undefined;/u,
 	);
 	assert.match(AGENT_ACTIVITY_SOURCE, /sessionFlyout=\{rowSessionFlyout\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /rowSessionFlyout \? \(\s*<JiraSessionFlyoutTrigger/u);
