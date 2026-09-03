@@ -60,20 +60,18 @@ test("Agent Assignment exposes a reusable controlled block contract", () => {
 	assert.match(avatar, /open=\{tooltipOpen\}/u);
 	assert.doesNotMatch(avatar, /animate=\{false\}/u);
 	assert.match(avatar, /const \[hoverOpen, setHoverOpen\] = useState\(false\);/u);
-	assert.match(avatar, /const tooltipOpen = !menuOpen && \(hoverOpen \|\| autoRevealAttention\);/u);
-	assert.doesNotMatch(avatar, /useState\(autoRevealAttention\)/u);
-	assert.doesNotMatch(avatar, /setTooltipOpen\(autoRevealAttention\)/u);
+	assert.match(avatar, /const tooltipOpen = !menuOpen && hoverOpen;/u);
+	assert.doesNotMatch(avatar, /autoRevealAttention/u);
 	assert.match(source, /statusKind=\{statusKind\}/u);
 	assert.match(source, /menuOpen=\{open\}/u);
 	assert.match(source, /overflow-visible px-2/u);
 	assert.match(source, /stackZIndex=\{seeksAttention \? 30 - index : 10\}/u);
 	assert.match(source, /attentionAcknowledged=\{attentionAcknowledged\}/u);
-	assert.match(source, /autoRevealAttention=\{agent\.id === attentionAgentId\}/u);
-	assert.match(source, /useAssignedAgentAttention\(attentionAgents, open\)/u);
+	assert.match(source, /useAssignedAgentAttention\(attentionAgents\)/u);
 	assert.match(source, /acknowledgeAttention\(agent\.id\);/u);
 	assert.match(source, /isAssignedAgentAttentionKind\(statusKind\)/u);
 	assert.match(avatar, /attentionAcknowledged \? undefined : getAssignmentAvatarStatus\(statusKind\)/u);
-	assert.doesNotMatch(source, /tooltipSide|attentionStackIndex/u);
+	assert.doesNotMatch(source, /tooltipSide|attentionStackIndex|autoRevealAttention|attentionAgentId/u);
 	assert.match(avatar, /side="top"/u);
 	assert.match(avatar, /align="center"/u);
 	assert.match(avatar, /sideOffset=\{ATTENTION_TOOLTIP_SIDE_OFFSET_PX\}/u);
@@ -86,20 +84,12 @@ test("Agent Assignment exposes a reusable controlled block contract", () => {
 	assert.doesNotMatch(avatar, /align="end"|side="bottom"|tooltipSide/u);
 
 	const attention = readProjectFile("components/blocks/agent-assignment/components/use-assigned-agent-attention.ts");
-	const sonner = readProjectFile("components/ui/sonner.tsx");
-	assert.match(sonner, /const SONNER_TOAST_AUTO_DISMISS_MS = 8_000;/u);
-	assert.match(attention, /export const ASSIGNED_AGENT_ATTENTION_TOOLTIP_MS = SONNER_TOAST_AUTO_DISMISS_MS;/u);
-	assert.match(attention, /import \{ SONNER_TOAST_AUTO_DISMISS_MS \} from "@\/components\/ui\/sonner"/u);
-	assert.match(attention, /const \[attentionEpoch, setAttentionEpoch\] = useState\(0\);/u);
-	assert.match(attention, /window\.setTimeout\(\(\) => \{\s*setActiveId\(null\);\s*\}, ASSIGNED_AGENT_ATTENTION_TOOLTIP_MS\)/u);
-	assert.match(attention, /\}, \[activeId, attentionEpoch, menuOpen\]\);/u);
-	assert.match(attention, /if \(isAssignedAgentAttentionKind\(agent\.statusKind\) && previousKind !== agent\.statusKind\) \{\s*enterId = agent\.id;/u);
+	assert.match(attention, /export function resolveAssignedAgentAttentionChanges\(/u);
 	assert.match(attention, /if \(previousKind !== undefined && previousKind !== agent\.statusKind\) \{\s*changedIds\.push\(agent\.id\);/u);
 	assert.match(attention, /export function acknowledgeAssignedAgentAttention\(/u);
 	assert.match(attention, /export function clearAcknowledgedAssignedAgentIds\(/u);
 	assert.match(attention, /setAcknowledgedIds\(\(current\) => clearAcknowledgedAssignedAgentIds\(current, changedIds\)\);/u);
-	assert.match(attention, /else if \(enterId\) \{\s*setActiveId\(enterId\);\s*setAttentionEpoch\(\(epoch\) => epoch \+ 1\);/u);
-	assert.doesNotMatch(attention, /attentionGenerationRef|previousKindsRef/u);
+	assert.doesNotMatch(attention, /enterId|attentionAgentId|attentionEpoch|ASSIGNED_AGENT_ATTENTION_TOOLTIP_MS|SONNER_TOAST_AUTO_DISMISS_MS|setActiveId|autoReveal/u);
 });
 
 test("Agent Assignment preserves the work-item trigger and two-stage menu behavior", () => {
@@ -569,11 +559,9 @@ async function loadAgentAssignmentClickHarness() {
 									export function useAssignedAgentAttention() {
 										return {
 											acknowledgeAttention() {},
-											attentionAgentId: null,
 											isAttentionAcknowledged() { return false; },
 										};
 									}
-									export function useAssignedAgentAttentionId() { return null; }
 								`,
 								loader: "tsx",
 								resolveDir,
@@ -708,7 +696,13 @@ async function loadAssignedAgentPipHarness() {
 			`
 				import React from "react";
 				export function TooltipProvider(props) { return props.children; }
-				export function Tooltip(props) { return props.children; }
+				export function Tooltip(props) {
+					return React.createElement(
+						"div",
+						{ "data-assignment-tooltip": "", "data-open": props.open ? "true" : "false" },
+						props.children,
+					);
+				}
 				export function TooltipTrigger(props) {
 					if (props.render) {
 						return React.cloneElement(props.render, {}, props.children);
@@ -869,6 +863,12 @@ test("clicking an assigned-agents row dismisses that agent's needs-input field p
 		assert.equal(fieldAvatarStatus(window.document, "Release Notes Drafter"), "needs-input");
 		assert.equal(fieldAvatarStatus(window.document, "Code Reviewer"), "finished");
 		assert.equal(fieldAvatarStatus(window.document, "Readiness Checker"), "");
+		assert.equal(
+			[...window.document.querySelectorAll("[data-assignment-tooltip]")]
+				.filter((node) => node.getAttribute("data-open") === "true")
+				.length,
+			0,
+		);
 
 		await React.act(async () => {
 			window.document.querySelector("[data-assigned-agent-row='release-notes-drafter']").click();
