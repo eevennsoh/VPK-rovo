@@ -139,7 +139,11 @@ test("the v6 TeamEU rail keeps the compact reference field set", () => {
 		/label="Assignee">[\s\S]*label="Status">[\s\S]*label="Priority">[\s\S]*label="Agents">/u,
 	);
 	assert.match(detailsTabSource, /Needs input/u);
-	assert.doesNotMatch(detailsTabSource, /label="Reporter"|label="Project"|label="Start date"/u);
+	assert.match(
+		detailsTabSource,
+		/showMore \? \([\s\S]*label="Reporter"[\s\S]*label="Due date"/u,
+	);
+	assert.doesNotMatch(detailsTabSource, /label="Project"|label="Start date"/u);
 	assert.match(detailsTabSource, /grid-cols-\[6\.5rem_minmax\(0,1fr\)\]/u);
 	assert.match(readBlockFile("experimental-v6/components/metadata-rail.tsx"), /title: "Development"/u);
 	assert.match(
@@ -153,7 +157,7 @@ test("the v6 dialog owns the TeamEU identity and action row", () => {
 	assert.match(dialogSource, /grid-rows-\[auto_minmax\(0,1fr\)\]/u);
 	assert.match(
 		dialogSource,
-		/data-jira-work-item-header-band[\s\S]*<WorkItemKeyCopy \/>[\s\S]*aria-label="Add to work item"[\s\S]*<ExperimentalHeaderOverflowMenu \/>[\s\S]*<ContextTitleBar \/>/u,
+		/data-jira-work-item-header-band[\s\S]*<WorkItemKeyCopy \/>[\s\S]*controlRow \? controlRow\(true\)[\s\S]*<ExperimentalHeaderOverflowMenu \/>[\s\S]*aria-label="Close work item"[\s\S]*<ContextTitleBar \/>[\s\S]*\{navigation\}/u,
 	);
 	assert.doesNotMatch(dialogSource, /position:\s*sticky|sticky top-0/u);
 

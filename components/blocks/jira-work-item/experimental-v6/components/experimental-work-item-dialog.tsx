@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { Dialog } from "@base-ui/react/dialog";
-import AddIcon from "@atlaskit/icon/core/add";
+import CloseIcon from "@atlaskit/icon/core/close";
 
 import { ExperimentalHeaderOverflowMenu } from "@/components/blocks/jira-work-item/experimental-v6/components/experimental-header-overflow-menu";
 import {
@@ -42,6 +42,8 @@ export function ExperimentalWorkItemDialog({
 	workItemTitle,
 	children,
 	blanketContent,
+	controlRow,
+	navigation,
 	sidebar,
 	sidebarOpen,
 	sidebarResizeHandle,
@@ -112,13 +114,17 @@ export function ExperimentalWorkItemDialog({
 					>
 						<WorkItemKeyCopy />
 						<div className="flex shrink-0 items-center gap-1">
-							<Button aria-label="Add to work item" size="icon" type="button" variant="outline">
-								<AddIcon label="" />
-							</Button>
+							{controlRow ? controlRow(true) : null}
 							<ExperimentalHeaderOverflowMenu />
+							{presentation === "modal" ? (
+								<Button aria-label="Close work item" onClick={onClose} size="icon" type="button" variant="ghost">
+									<CloseIcon label="" />
+								</Button>
+							) : null}
 						</div>
 					</div>
 					<ContextTitleBar />
+					{navigation ? <div className="px-10">{navigation}</div> : null}
 				</div>
 				<div style={{ minHeight: 0, minWidth: 0, display: "grid", overflow: "hidden" }}>
 					{children}

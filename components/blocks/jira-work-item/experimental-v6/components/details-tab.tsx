@@ -7,11 +7,13 @@ import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import type { AgentPlannerMetadata } from "@/components/blocks/jira-work-item/data/planner-state";
 import {
+	DateRowField,
 	PersonRowField,
 	PriorityRowField,
 	StatusPill,
 } from "@/components/blocks/jira-work-item/experimental-v6/components/detail-field-editors";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { Icon } from "@/components/ui/icon";
 
 export { seedMetadataDraft } from "@/components/blocks/jira-work-item/data/planner-state";
@@ -65,6 +67,28 @@ export function DetailsTab({
 					Needs input
 				</Button>
 			</DetailRow>
+			{showMore ? (
+				<>
+					<DetailRow label="Reporter">
+						<PersonRowField
+							ariaLabel="Change reporter"
+							onChange={(person) => onChange({ reporter: person })}
+							people={people}
+							placeholder="Unassigned"
+							value={draft.reporter}
+						/>
+					</DetailRow>
+					<DetailRow label="Due date">
+						<DateRowField
+							ariaLabel="Change due date"
+							CalendarComponent={Calendar}
+							onChange={(dueDate) => onChange({ dueDate })}
+							placeholder="Add due date"
+							value={draft.dueDate}
+						/>
+					</DetailRow>
+				</>
+			) : null}
 			<Button
 				className="mt-1 self-start px-0 text-text-subtle"
 				onClick={() => onShowMoreChange(!showMore)}
