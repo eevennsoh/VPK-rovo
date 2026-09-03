@@ -201,6 +201,24 @@ test("buildScrollMaskOverlayStyle fades visually without clipping hit-testing", 
 	);
 });
 
+test("buildScrollMaskOverlayStyle rotates the visual fade onto horizontal edges", () => {
+	const left = buildScrollMaskOverlayStyle({ edge: "left", fadeSize: "3rem" });
+	assert.equal(left.width, "3rem");
+	assert.equal(left.height, undefined);
+	assert.equal(
+		left.backgroundImage,
+		"linear-gradient(to right, var(--color-surface) 0, transparent 100%)",
+	);
+
+	const right = buildScrollMaskOverlayStyle({ edge: "right" });
+	assert.equal(right.width, "var(--ds-space-400)");
+	assert.equal(right.height, undefined);
+	assert.equal(
+		right.backgroundImage,
+		"linear-gradient(to left, var(--color-surface) 0, transparent 100%)",
+	);
+});
+
 test("buildScrollMaskOverlayStyle can fade into a parent backdrop other than surface", () => {
 	const color = "var(--color-bg-accent-gray-subtlest)";
 	const top = buildScrollMaskOverlayStyle({ color, edge: "top", fadeSize: "3rem" });
@@ -218,7 +236,8 @@ test("buildScrollMaskOverlayStyle can fade into a parent backdrop other than sur
 test("ScrollMaskEdgeOverlay is a pointer-events-none band gated by the caller", () => {
 	assert.match(SCROLL_MASK_SOURCE, /export function ScrollMaskEdgeOverlay/u);
 	assert.match(SCROLL_MASK_SOURCE, /data-scroll-mask-overlay=\{edge\}/u);
-	assert.match(SCROLL_MASK_SOURCE, /pointer-events-none absolute inset-x-0/u);
+	assert.match(SCROLL_MASK_SOURCE, /const isHorizontal = edge === "left" \|\| edge === "right"/u);
+	assert.match(SCROLL_MASK_SOURCE, /isHorizontal \? "inset-y-0" : "inset-x-0"/u);
 	assert.match(SCROLL_MASK_SOURCE, /buildScrollMaskOverlayStyle\(\{ color, edge, fadeSize \}\)/u);
 });
 

@@ -22,6 +22,7 @@ import {
 	PanelTitle,
 } from "@/components/ui/panel";
 import { SidebarResizeHandle } from "@/components/ui/sidebar";
+import { ScrollMaskEdgeOverlay } from "@/components/visual/scroll-mask";
 import { cn } from "@/lib/utils";
 
 /**
@@ -123,6 +124,11 @@ export interface AgentSessionPanelProps {
 	 * inset and FAB offset the rail occupies. Collapsed width is not reported.
 	 */
 	onExpandedWidthChange?: (widthPx: number) => void;
+	/**
+	 * Fade content that continues beneath the collapsed rail's leading edge.
+	 * The expanded panel already has a border separator, so it never fades.
+	 */
+	showLeadingScrollFade?: boolean;
 }
 
 /**
@@ -150,6 +156,7 @@ export function AgentSessionPanel({
 	onCollapsedChange,
 	onExpandedWidthChange,
 	sessionDragging = false,
+	showLeadingScrollFade = false,
 	topInset = 0,
 	untrackedDropArmed = false,
 }: Readonly<AgentSessionPanelProps>): ReactElement {
@@ -213,6 +220,13 @@ export function AgentSessionPanel({
 					: AGENT_SESSION_PANEL_VARIANTS
 			}
 		>
+			{showLeadingScrollFade && collapsed ? (
+				<ScrollMaskEdgeOverlay
+					className="right-full"
+					edge="right"
+					fadeSize="3rem"
+				/>
+			) : null}
 			<PanelContainer
 				ref={containerRef}
 				// Named for the surface, not the list: the column's own
