@@ -35,10 +35,13 @@ export type DesignVariantId = (typeof DESIGN_VARIANTS)[number]["id"];
 export type DesignVariantState = Readonly<Record<DesignVariantId, boolean>>;
 
 /**
- * The baseline state: every variant off. Frozen and held in one place so the
- * server/hydration snapshot keeps a stable identity across renders.
+ * The baseline state. Frozen and held in one place so the server/hydration
+ * snapshot keeps a stable identity across renders.
+ *
+ * Panel starts on: Golden Journeys v4 ships untracked work in the floating
+ * side surface unless the user turns it off.
  */
-const DEFAULT_DESIGN_VARIANTS: DesignVariantState = Object.freeze({ panel: false });
+const DEFAULT_DESIGN_VARIANTS: DesignVariantState = Object.freeze({ panel: true });
 
 export function isDesignVariantId(value: unknown): value is DesignVariantId {
 	return DESIGN_VARIANTS.some((variant) => variant.id === value);
@@ -77,8 +80,9 @@ export function getDefaultDesignVariants(): DesignVariantState {
 /**
  * Read the persisted map, normalising it against the known variant ids so a
  * partial, stale, or hostile payload can never produce a state object with a
- * missing key. Unknown keys are dropped and non-boolean values coerce to off.
- * Returns `null` only when there is nothing usable to adopt.
+ * missing key. Unknown keys are dropped. Present non-boolean values coerce to
+ * off; absent keys keep the store default. Returns `null` only when there is
+ * nothing usable to adopt.
  */
 export function readStoredDesignVariants(): DesignVariantState | null {
 	try {
@@ -95,7 +99,9 @@ export function readStoredDesignVariants(): DesignVariantState | null {
 		const record = parsed as Record<string, unknown>;
 		const next: Record<DesignVariantId, boolean> = { ...DEFAULT_DESIGN_VARIANTS };
 		for (const variant of DESIGN_VARIANTS) {
-			next[variant.id] = record[variant.id] === true;
+			if (Object.hasOwn(record, variant.id)) {
+				next[variant.id] = record[variant.id] === true;
+			}
 		}
 		return Object.freeze(next);
 	} catch {

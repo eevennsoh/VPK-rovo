@@ -22,10 +22,11 @@ interface UseDesignVariantsResult {
 /**
  * Reads and writes the global design-variant toggles.
  *
- * Hydration-safe: `useSyncExternalStore` renders the all-off default on the
+ * Hydration-safe: `useSyncExternalStore` renders the store default on the
  * server and during hydration, then an effect adopts the stored preferences —
  * the same shape `useDesignVariation` uses for `ui-design-variation`. Any
- * variant-driven UI must therefore tolerate one paint with every variant off.
+ * variant-driven UI must therefore tolerate one paint at the default before
+ * a stored override applies.
  */
 export function useDesignVariants(): UseDesignVariantsResult {
 	const designVariants = useSyncExternalStore(
