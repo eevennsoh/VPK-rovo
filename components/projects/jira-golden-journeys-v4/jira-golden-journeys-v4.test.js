@@ -578,6 +578,21 @@ test("the Panel design variant floats untracked work over the board and the list
 		EXPERIMENTAL_PAGE_SOURCE,
 		/untrackedDropArmed=\{boardSessionDrag\.transaction\?\.target\?\.kind === "untracked"\}/u,
 	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/showLeadingScrollFade=\{isListContent\}/u,
+		"only the List view asks the panel for a scroll underlap fade",
+	);
+	assert.match(PANEL_SOURCE, /showLeadingScrollFade\?: boolean;/u);
+	assert.match(
+		PANEL_SOURCE,
+		/\{showLeadingScrollFade && collapsed \? \(/u,
+		"the expanded panel border remains the sole separator",
+	);
+	assert.match(
+		PANEL_SOURCE,
+		/<ScrollMaskEdgeOverlay\s+className="right-full"\s+edge="right"\s+fadeSize="3rem"\s*\/>/u,
+	);
 	assert.match(PANEL_SOURCE, /sessionDragging \? "pointer-events-none" : null/u);
 	assert.match(PANEL_SOURCE, /data-board-agent-session-drop-zone="untracked"/u);
 	assert.match(

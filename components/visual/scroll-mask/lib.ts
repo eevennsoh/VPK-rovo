@@ -74,7 +74,7 @@ export function buildScrollMaskBlurLayerStyles(edge: ScrollMaskBlurEdge): CSSPro
 	});
 }
 
-export type ScrollMaskOverlayEdge = "top" | "bottom";
+export type ScrollMaskOverlayEdge = "top" | "right" | "bottom" | "left";
 
 export interface ScrollMaskOverlayStyleOptions {
 	edge: ScrollMaskOverlayEdge;
@@ -101,14 +101,18 @@ export function buildScrollMaskOverlayStyle({
 	color = SCROLL_MASK_OVERLAY_DEFAULT_COLOR,
 }: ScrollMaskOverlayStyleOptions): ScrollMaskCssProperties {
 	const resolvedFadeSize = toCssLength(fadeSize);
-	const backgroundImage = edge === "top"
-		? `linear-gradient(to bottom, ${color} 0, transparent 100%)`
-		: `linear-gradient(to top, ${color} 0, transparent 100%)`;
+	const gradientDirection = {
+		top: "to bottom",
+		right: "to left",
+		bottom: "to top",
+		left: "to right",
+	}[edge];
+	const isHorizontal = edge === "left" || edge === "right";
 
 	return {
 		"--scroll-mask-fade-size": resolvedFadeSize,
-		backgroundImage,
-		height: resolvedFadeSize,
+		backgroundImage: `linear-gradient(${gradientDirection}, ${color} 0, transparent 100%)`,
+		...(isHorizontal ? { width: resolvedFadeSize } : { height: resolvedFadeSize }),
 		pointerEvents: "none",
 	};
 }
