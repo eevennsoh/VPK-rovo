@@ -9,7 +9,8 @@ import {
 	type RefObject,
 } from "react";
 
-import { isKeyboardFocus, shouldCaptureWheel } from "./lib";
+import { SCROLLING_WHEEL_LINE_PX } from "./data";
+import { isKeyboardFocus, shouldCaptureWheel, wheelDeltaPx } from "./lib";
 import type { ScrollingOffset } from "./scrolling-offset-bridge";
 
 /**
@@ -104,12 +105,26 @@ export function useScrollingGestures({
 			// the predicate still owns the axis rule and the non-finite guard.
 			if (!shouldCaptureWheel(true, event.deltaX, event.deltaY)) return;
 			event.preventDefault();
+			// `deltaY` is pixels ONLY in `DOM_DELTA_PIXEL`. Firefox line mode and
+			// page-mode inputs report counts, and subtracting those raw made a
+			// notch worth 3px or 1px respectively. `clientHeight` is the live
+			// scrollport rather than the `viewportHeight` prop, so a CSS override
+			// or a clamp can never desync one page unit from what is on screen.
+			const deltaPx = wheelDeltaPx(
+				event.deltaY,
+				event.deltaMode,
+				SCROLLING_WHEEL_LINE_PX,
+				container.clientHeight,
+			);
+			// Only reachable from an unmeasured scrollport in page mode. The event
+			// is still ours (it was claimed above); there is just nowhere to go.
+			if (deltaPx === 0) return;
 			// A drag throw is a running inertia animation writing `offset` every
 			// frame; `set` alone would be overwritten immediately.
 			offset.stop();
 			// 1:1 with the wheel delta. The OS already supplies trackpad momentum,
 			// so layering a glide of our own would double it.
-			offset.set(offset.get() - event.deltaY);
+			offset.set(offset.get() - deltaPx);
 		};
 
 		// The wheel listener is ADDED and REMOVED on engagement rather than left

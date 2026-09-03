@@ -11,9 +11,10 @@
  *    opacity knots. The rest of the entrance geometry (the anchor, and which
  *    DOM copies take part) lives in `stack-layout.ts`, because it is shared
  *    with the deck/depth knobs that file owns.
- * 2. **Input-origin predicates** — {@link shouldCaptureWheel} and
- *    {@link isKeyboardFocus}. Both answer "is this input ours?" for a listener,
- *    and both are the single authority for a rule two hooks depend on.
+ * 2. **Input normalisation** — {@link shouldCaptureWheel} and
+ *    {@link isKeyboardFocus} answer "is this input ours?" for a listener, and
+ *    both are the single authority for a rule two hooks depend on;
+ *    {@link wheelDeltaPx} then puts the claimed wheel delta into pixels.
  * 3. **The focus-reveal solver** — {@link focusRevealOffset} and its geometry
  *    record, used only by `use-scrolling-focus.ts`.
  *
@@ -122,6 +123,51 @@ export function shouldCaptureWheel(engaged: boolean, deltaX: number, deltaY: num
 	if (!isFiniteNumber(deltaX) || !isFiniteNumber(deltaY)) return false;
 	if (Math.abs(deltaX) > Math.abs(deltaY)) return false;
 	return deltaY !== 0;
+}
+
+/**
+ * `WheelEvent.deltaMode` values, written out because the named constants live on
+ * the `WheelEvent` class and this file is deliberately DOM-library-free so
+ * `lib.test.ts` can run it under bare `node --test`.
+ */
+const DOM_DELTA_LINE = 1;
+const DOM_DELTA_PAGE = 2;
+
+/**
+ * A wheel event's vertical delta converted to PIXELS.
+ *
+ * `deltaY` is only ever in pixels when `deltaMode` is `DOM_DELTA_PIXEL`. Firefox
+ * on Windows and Linux reports `DOM_DELTA_LINE`, where a notch is 3 units, and
+ * some devices and assistive/remote inputs report `DOM_DELTA_PAGE`, where a
+ * notch is 1 unit meaning one scrollport. Subtracting the raw number from the
+ * ticker offset treats those units as pixels, so a Firefox notch crawled the
+ * list 3px and a page notch moved it 1px — and any input that scales its units
+ * up the other way jumps whole loops per notch.
+ *
+ * `linePx` and `pagePx` are the caller's real measurements, not guesses:
+ * `SCROLLING_WHEEL_LINE_PX` in `data.ts` for the line, and the scrollport's own
+ * live `clientHeight` for the page.
+ *
+ * Total for every input — a non-finite delta, an unrecognised mode, or an
+ * unmeasured scrollport all return `0` — for the reason in this file's header:
+ * the result is subtracted straight into the ticker's offset `MotionValue`, and
+ * one `NaN` frame poisons it permanently.
+ */
+export function wheelDeltaPx(
+	deltaY: number,
+	deltaMode: number,
+	linePx: number,
+	pagePx: number,
+): number {
+	if (!isFiniteNumber(deltaY)) return 0;
+	// An unknown mode falls through to pixels, which is what every browser that
+	// has never reported anything else is already sending.
+	const scale = deltaMode === DOM_DELTA_LINE ? linePx : deltaMode === DOM_DELTA_PAGE ? pagePx : 1;
+	// A missing or unmeasured scale means we cannot know how far the user asked
+	// to travel. Refusing to move beats writing a guess into the offset.
+	if (!isFiniteNumber(scale) || scale <= 0) return 0;
+	const pixels = deltaY * scale;
+	return isFiniteNumber(pixels) ? unsigned(pixels) : 0;
 }
 
 /**

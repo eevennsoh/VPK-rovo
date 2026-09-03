@@ -12,6 +12,20 @@ import type { AgentListAgent } from "@/components/blocks/agent-list";
 export const SCROLLING_GAP_PX = 12;
 
 /**
+ * Pixels one `WheelEvent.deltaMode === DOM_DELTA_LINE` unit is worth.
+ *
+ * `20` is ADS `space.250`, which is also the line-height of the `font.body`
+ * ramp the session rows are set in (`14px/20px`) — so a Firefox line-mode notch
+ * (3 units) advances three lines of card text, which is what the same notch
+ * moves in any ordinary text scroller.
+ *
+ * Deliberately NOT the card pitch. A "line" in `WheelEvent` is a line of TEXT,
+ * not a row of content: paying a whole 74px card per unit would send one notch
+ * 222px, most of the way across the 480px default scrollport.
+ */
+export const SCROLLING_WHEEL_LINE_PX = 20;
+
+/**
  * Depth of the edge fade mask, in px. Roughly one card tall, so the loop seam
  * and the top of the entrance stack both resolve out of a soft edge rather than
  * a hard clip line. Also a raw-number Ticker prop.

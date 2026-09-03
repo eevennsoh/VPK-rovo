@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 // @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
-import { fanOffset, fanOpacity, focusRevealOffset, isKeyboardFocus, shouldCaptureWheel, FAN_OPACITY_INPUT, FAN_OPACITY_OUTPUT } from "./lib.ts";
+import { fanOffset, fanOpacity, focusRevealOffset, isKeyboardFocus, shouldCaptureWheel, wheelDeltaPx, FAN_OPACITY_INPUT, FAN_OPACITY_OUTPUT } from "./lib.ts";
 
 const NON_FINITE = [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, undefined];
 
@@ -117,6 +117,65 @@ test("shouldCaptureWheel refuses every non-finite delta", () => {
 		assert.equal(shouldCaptureWheel(true, bad as number, 120), false, `deltaX=${String(bad)}`);
 		assert.equal(shouldCaptureWheel(true, 0, bad as number), false, `deltaY=${String(bad)}`);
 	}
+});
+
+/* --------------------------------------------------- wheel delta conversion */
+
+/** Matches `SCROLLING_WHEEL_LINE_PX` in `data.ts` (ADS `space.250`). */
+const LINE_PX = 20;
+/** The default scrollport, i.e. what one `DOM_DELTA_PAGE` unit is worth. */
+const PAGE_PX = 480;
+
+test("wheelDeltaPx passes a DOM_DELTA_PIXEL delta straight through", () => {
+	assert.equal(wheelDeltaPx(120, 0, LINE_PX, PAGE_PX), 120);
+	assert.equal(wheelDeltaPx(-53.5, 0, LINE_PX, PAGE_PX), -53.5);
+	assert.equal(wheelDeltaPx(0, 0, LINE_PX, PAGE_PX), 0);
+});
+
+test("wheelDeltaPx scales a DOM_DELTA_LINE notch by the line height", () => {
+	// Firefox reports 3 units per notch. Raw, that advanced the list 3px.
+	assert.equal(wheelDeltaPx(3, 1, LINE_PX, PAGE_PX), 60);
+	assert.equal(wheelDeltaPx(-3, 1, LINE_PX, PAGE_PX), -60);
+});
+
+test("wheelDeltaPx scales a DOM_DELTA_PAGE notch by the scrollport", () => {
+	// One unit is one screenful, not one pixel.
+	assert.equal(wheelDeltaPx(1, 2, LINE_PX, PAGE_PX), 480);
+	assert.equal(wheelDeltaPx(-2, 2, LINE_PX, PAGE_PX), -960);
+});
+
+test("wheelDeltaPx treats an unrecognised mode as pixels", () => {
+	// The safest reading of a mode we do not know: every browser that has only
+	// ever sent one mode sends pixels.
+	for (const mode of [3, -1, 99, Number.NaN, undefined]) {
+		assert.equal(wheelDeltaPx(120, mode as number, LINE_PX, PAGE_PX), 120, `mode=${String(mode)}`);
+	}
+});
+
+test("wheelDeltaPx returns 0 for every non-finite delta", () => {
+	for (const bad of NON_FINITE) {
+		for (const mode of [0, 1, 2]) {
+			assert.equal(
+				wheelDeltaPx(bad as number, mode, LINE_PX, PAGE_PX),
+				0,
+				`deltaY=${String(bad)} mode=${mode}`,
+			);
+		}
+	}
+});
+
+test("wheelDeltaPx refuses a non-finite or unmeasured scale rather than guessing", () => {
+	// `clientHeight` is 0 before layout, and a poisoned constant must never
+	// reach the offset MotionValue: one NaN frame kills it for good.
+	for (const bad of [...NON_FINITE, 0, -20]) {
+		assert.equal(wheelDeltaPx(3, 1, bad as number, PAGE_PX), 0, `linePx=${String(bad)}`);
+		assert.equal(wheelDeltaPx(1, 2, LINE_PX, bad as number), 0, `pagePx=${String(bad)}`);
+	}
+	// A finite delta against a finite scale can still overflow to Infinity.
+	assert.equal(wheelDeltaPx(Number.MAX_VALUE, 1, LINE_PX, PAGE_PX), 0);
+	// The unused scale never matters, in either direction.
+	assert.equal(wheelDeltaPx(3, 1, LINE_PX, Number.NaN), 60);
+	assert.equal(wheelDeltaPx(1, 2, Number.NaN, PAGE_PX), 480);
 });
 
 /* ------------------------------------------------------------- focus origin */

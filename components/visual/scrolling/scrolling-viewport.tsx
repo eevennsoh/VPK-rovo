@@ -23,6 +23,7 @@ import { ScrollingEntranceStarter } from "./use-scrolling-entrance";
 import { useScrollingDrag } from "./use-scrolling-drag";
 import { useScrollingFocusScroll } from "./use-scrolling-focus";
 import { useScrollingGestures } from "./use-scrolling-gestures";
+import { useScrollingVisibility } from "./use-scrolling-visibility";
 
 export interface ScrollingProps {
 	items?: readonly AgentSessionItem[];
@@ -66,20 +67,26 @@ export function ScrollingViewport({
 	const gestures = useScrollingGestures({ containerRef, offset, wheel });
 	const dragProps = useScrollingDrag(offset);
 	useScrollingFocusScroll({ containerRef, geometryRef, offset });
+	// The card's hover eye is rendered by the block whether or not anyone binds
+	// it, so it is bound here rather than left as a focusable no-op; see
+	// {@link useScrollingVisibility}.
+	const { toggleVisibility, visibilityLabel, visibleItems } = useScrollingVisibility(items);
 	// Ticker's remeasure effect depends on the `items` array identity; an inline
 	// `.map()` would tear down and rebuild two ResizeObservers every render.
 	const cards = useMemo(
 		() =>
-			items.map((item) => (
+			visibleItems.map((item) => (
 				<ScrollingCard
 					depth={depth}
 					entranceOrigin={entranceOrigin}
 					item={item}
 					key={item.id}
+					onToggleVisibility={toggleVisibility}
 					stackOrder={stackOrder}
+					visibilityLabel={visibilityLabel}
 				/>
 			)),
-		[depth, entranceOrigin, items, stackOrder],
+		[depth, entranceOrigin, stackOrder, toggleVisibility, visibilityLabel, visibleItems],
 	);
 
 	return (

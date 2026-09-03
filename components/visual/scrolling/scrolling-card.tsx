@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef } from "react";
-import { motion, useTransform } from "motion/react";
+import { motion, useReducedMotion, useTransform } from "motion/react";
 import { useTicker, useTickerItem } from "motion-plus/react";
 
 import { AgentSession, type AgentSessionItem } from "@/components/blocks/agent-session";
@@ -54,6 +54,14 @@ export interface ScrollingCardProps {
 	stackOrder: ScrollingStackOrder;
 	/** Which scrollport edges get the scale-and-tuck tail. */
 	depth: ScrollingDepth;
+	/**
+	 * Bound to the block's hover eye. Required, not optional: the block renders
+	 * that control unconditionally, so leaving it unbound ships an enabled,
+	 * keyboard-focusable button that does nothing.
+	 */
+	onToggleVisibility: (item: AgentSessionItem) => void;
+	/** `"Hide"`, or `"Show"` on the last card. See `use-scrolling-visibility.ts`. */
+	visibilityLabel: string;
 }
 
 /**
@@ -69,12 +77,32 @@ export function ScrollingCard({
 	depth,
 	entranceOrigin,
 	item,
+	onToggleVisibility,
 	stackOrder,
+	visibilityLabel,
 }: Readonly<ScrollingCardProps>) {
 	const { collapse, willChange } = useScrollingEntrance();
 	const { containerLength, gap, inset, totalItemLength } = useTicker();
 	const { cloneIndex, end, start } = useTickerItem();
 	const wrapperRef = useRef<HTMLDivElement | null>(null);
+	// Reduced motion disables the depth tail the same way the entrance
+	// (`use-scrolling-entrance.ts`) and the inertia throw (`use-scrolling-drag.ts`)
+	// are disabled: by removing the effect, never the interaction. Without this
+	// the shipped default (`depth="bottom"`) kept running — `cardTop` drives
+	// `tail`, so EVERY drag and wheel frame re-applied the tuck and the shrink,
+	// which is exactly the large-area sweep `.agents/rules/motion-decisions.md`
+	// forbids under reduced motion.
+	//
+	// Routing it through `depth` rather than branching in each transform is
+	// deliberate: `"none"` is the configuration that already means "no tail", so
+	// the guard reuses a path that is tested and documented instead of adding a
+	// second one. `depthProgress("none")` is a hard `0`, and `0` is the identity
+	// for both consumers — `depthLift` returns `0` (no lift) and `depthScale`
+	// returns exactly `1` (no shrink) — so drag and the loop keep working while
+	// the transform stays an identity. It also drops `transformOrigin`, which
+	// only ever existed to aim a scale that no longer happens.
+	const shouldReduceMotion = useReducedMotion() === true;
+	const activeDepth: ScrollingDepth = shouldReduceMotion ? "none" : depth;
 	// `cloneIndex` is set to the ITEM index for clones, so index 0 is a real
 	// clone. Branch on `undefined`, never on falsiness — Ticker does the same.
 	const isClone = cloneIndex !== undefined;
@@ -138,12 +166,12 @@ export function ScrollingCard({
 	// Signed progress into an edge zone, computed once and shared by the tuck and
 	// the shrink so they cannot drift apart.
 	const tail = useTransform([cardTop, collapse], ([top, collapsed]: number[]) => {
-		if (depth === "none") return 0;
+		if (activeDepth === "none") return 0;
 		const raw = depthProgress(
 			top + cardHeight / 2 + safeInset,
 			containerLength,
 			SCROLLING_DEPTH_ZONE_PX,
-			depth,
+			activeDepth,
 		);
 		// Ramp the tail in only once the entrance's opacity ramp has finished,
 		// so no more than two properties are ever in flight; see `depthGate`.
@@ -202,7 +230,7 @@ export function ScrollingCard({
 			style={{
 				opacity,
 				scale,
-				transformOrigin: DEPTH_ORIGIN[depth],
+				transformOrigin: DEPTH_ORIGIN[activeDepth],
 				// Not gated on `isClone` any more: a clone is exactly as likely to
 				// be the copy that runs the unfurl (see {@link fansIn}). The hint
 				// is live only while the ~600ms spring runs — `use-scrolling-
@@ -230,7 +258,16 @@ export function ScrollingCard({
 				// `components/blocks/agent-session-column/index.tsx`.
 				className="w-full min-w-0 [&_li:last-child_article]:border-b"
 				items={listItems}
+				// The block's hover pair is not optional: `AgentSessionCard` always
+				// builds the eye, and its handler only optional-chains this callback.
+				// Unbound, it is an enabled, keyboard-reachable control that does
+				// nothing — so it is bound to real state instead. `visibilityLabel`
+				// also picks the icon (open eye for "Show", struck-through for
+				// "Hide"), so the two always agree. Resume needs nothing: it copies
+				// the resume command and flips itself to "Copied" on its own.
+				onToggleVisibility={onToggleVisibility}
 				variant="large"
+				visibilityLabel={visibilityLabel}
 			/>
 		</motion.div>
 	);
