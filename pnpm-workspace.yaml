@@ -32,6 +32,16 @@ minimumReleaseAgeExclude:
   # Adopted before the maturity gate by explicit request. Version-pinned so
   # the gate re-applies automatically on any future cn bump.
   - cn@0.2.4
+  # First-party ADS icons. `question-circle-filled` first ships in icon-lab
+  # 7.8.0 (the only filled question glyph in the design system) and is required
+  # by the jira-golden-journeys-v4 Team EU variation; icon-lab 7.8.0 in turn
+  # needs @atlaskit/icon >= 37.6.0. Taken ahead of the 7-day gate by explicit
+  # request, matching the @atlaskit/tokens carve-out above. Version-pinned so
+  # the gate re-applies automatically on any future bump; both clear the window
+  # on their own (icon 2026-09-05, icon-lab 2026-09-09), so these two lines can
+  # simply be deleted after that.
+  - "@atlaskit/icon@37.6.0"
+  - "@atlaskit/icon-lab@7.8.0"
 trustPolicy: no-downgrade
 trustPolicyExclude:
   # Existing transitive dependency blocks lockfile refresh under no-downgrade.

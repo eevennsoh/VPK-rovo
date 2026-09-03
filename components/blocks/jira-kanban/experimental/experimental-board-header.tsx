@@ -37,6 +37,13 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	activeView?: ExperimentalJiraKanbanView;
 	assignees: readonly JiraKanbanAssigneeData[];
 	compact?: boolean;
+	/**
+	 * Trailing inset in px for the control row, matching the width of a docked
+	 * side panel. The panel covers this band, so without it the row's trailing
+	 * cluster (the view switcher) would sit underneath and be unclickable. Board
+	 * columns below still slide under the panel.
+	 */
+	controlsInsetEnd?: number;
 	onSelectedAssigneeIdsChange: (assigneeIds: Set<string>) => void;
 	onViewChange?: (view: ExperimentalJiraKanbanView) => void;
 	searchPlaceholder?: string;
@@ -71,6 +78,30 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 
 export type ExperimentalJiraKanbanView = "board" | "list";
 
+/**
+ * Offset in px from the board root's top edge to the *underside of the tab
+ * strip's rule* — the header's `pt-3` (12) plus the title+tabs band (71), plus
+ * one for the rule itself (84).
+ *
+ * That last pixel is the whole point of this constant, and is why it is not
+ * simply the band's height. The `line` tabs variant draws its rule as an inset
+ * box-shadow on the list's own bottom edge, and the list carries `-mb-px pb-px`
+ * so that edge hangs 1px *below* the band's content box. A docked side panel
+ * placed at the band height (83) therefore starts on the rule's own row and
+ * punches a hole in it for the panel's width. Landing at 84 puts the panel
+ * immediately beneath the rule, so the rule runs unbroken across the board.
+ *
+ * The panel takes this as a real `top` offset rather than spanning the board
+ * root and padding its content — the element must genuinely stop at the tabs,
+ * not just appear to.
+ *
+ * Browser-measured, not nominal. `tests/blocks/agent-session-panel.spec.ts`
+ * asserts the panel's top equals the tab strip's bottom *exactly*; the
+ * tolerance there is zero precisely because a 1px drift is invisible to review
+ * but very visible on screen.
+ */
+export const BOARD_HEADER_TAB_STRIP_BOTTOM_PX = 84;
+
 function AssigneeAvatar({
 	assignee,
 	muted,
@@ -102,6 +133,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 	activeView = "board",
 	assignees,
 	compact = false,
+	controlsInsetEnd = 0,
 	onSelectedAssigneeIdsChange,
 	onViewChange,
 	searchPlaceholder = "Search board",
@@ -148,7 +180,12 @@ export function ExperimentalJiraKanbanBoardHeader({
 			{viewTabs ? <div className="mt-2">{viewTabs}</div> : null}
 
 			{showBoardControls ? (
-				<div className="mt-6 flex flex-wrap items-center gap-2 px-6">
+				<div
+					className="mt-6 flex flex-wrap items-center gap-2 px-6"
+					// Board columns are meant to slide under the panel, but the row's
+					// trailing cluster (view switcher, panel toggle) must stay clickable.
+					style={controlsInsetEnd > 0 ? { paddingInlineEnd: controlsInsetEnd } : undefined}
+				>
 					<InputGroup className="w-44">
 						<InputGroupAddon>
 							<Icon render={<SearchIcon label="" size="small" />} />

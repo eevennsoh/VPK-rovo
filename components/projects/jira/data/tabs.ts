@@ -1,21 +1,68 @@
 import AttachmentIcon from "@atlaskit/icon/core/attachment";
+import BoardIcon from "@atlaskit/icon/core/board";
 import CalendarIcon from "@atlaskit/icon/core/calendar";
 import FormIcon from "@atlaskit/icon/core/form";
 import GlobeIcon from "@atlaskit/icon/core/globe";
 import PageIcon from "@atlaskit/icon/core/page";
+import TableIcon from "@atlaskit/icon/core/table";
 import WorkItemIcon from "@atlaskit/icon/core/work-item";
 
-export interface TabDefinition {
-	label: string;
+import {
+	DEFAULT_DESIGN_VARIATION,
+	type DesignVariationId,
+} from "@/components/utils/design-variation";
+
+import type { JiraTabSelection, JiraWorkItemView } from "../lib/jira-tab-model";
+import { getJiraWorkItemsTabLabel } from "../lib/jira-tab-model";
+
+export type { JiraWorkItemView } from "../lib/jira-tab-model";
+
+export interface TabDefinition extends JiraTabSelection {
 	icon: typeof GlobeIcon;
-	hasContent: boolean;
 }
 
-export const JIRA_TABS: readonly TabDefinition[] = [
-	{ label: "Summary", icon: GlobeIcon, hasContent: false },
-	{ label: "Work items", icon: WorkItemIcon, hasContent: true },
+const SUMMARY_TAB: TabDefinition = { label: "Summary", icon: GlobeIcon, hasContent: false };
+
+/** Everything after the work items destination is identical in both variations. */
+const SUPPORTING_TABS: readonly TabDefinition[] = [
 	{ label: "Forms", icon: FormIcon, hasContent: false },
 	{ label: "Pages", icon: PageIcon, hasContent: false },
 	{ label: "Attachments", icon: AttachmentIcon, hasContent: false },
 	{ label: "Calendar", icon: CalendarIcon, hasContent: false },
-] as const;
+];
+
+/**
+ * Team EU keeps Board and List as sibling destinations, so the tab bar itself
+ * is the view switcher. 2000 years later folds them into one Work items tab and
+ * hands the switch to the board header.
+ */
+const JIRA_TABS_BY_DESIGN_VARIATION: Readonly<Record<DesignVariationId, readonly TabDefinition[]>> = {
+	"team-eu": [
+		SUMMARY_TAB,
+		{ label: "Board", icon: BoardIcon, hasContent: true, view: "board" },
+		{ label: "List", icon: TableIcon, hasContent: true, view: "list" },
+		...SUPPORTING_TABS,
+	],
+	"2000-years-later": [
+		SUMMARY_TAB,
+		{ label: "Work items", icon: WorkItemIcon, hasContent: true },
+		...SUPPORTING_TABS,
+	],
+};
+
+export function getJiraTabs(variation: DesignVariationId): readonly TabDefinition[] {
+	return JIRA_TABS_BY_DESIGN_VARIATION[variation];
+}
+
+/** Baseline tab set, for callers that do not read the design variation. */
+export const JIRA_TABS: readonly TabDefinition[] = getJiraTabs(DEFAULT_DESIGN_VARIATION);
+
+/**
+ * Hydration-stable starting label for routes that open on work items. Both
+ * server and first client render use the default variation, matching
+ * `useDesignVariation`'s server snapshot; the stored variation is adopted after
+ * mount and `resolveJiraTab` carries the selection over.
+ */
+export const DEFAULT_JIRA_WORK_ITEMS_TAB_LABEL: string = getJiraWorkItemsTabLabel(JIRA_TABS);
+
+export const DEFAULT_JIRA_WORK_ITEM_VIEW: JiraWorkItemView = "board";

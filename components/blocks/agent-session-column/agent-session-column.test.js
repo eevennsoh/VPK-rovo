@@ -292,6 +292,38 @@ test("notch flyouts use a stable trigger host so the shared popup follows the ra
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /render=\{\s*<motion\.li/u);
 });
 
+test("a notch is a drag handle, so a session leaves the collapsed rail too", () => {
+	// Parity with the expanded cards: the same binding, reaching the same board
+	// transfer machinery, without making the reader expand the column first.
+	// The column inherits the binding from AgentSessionProps, so the rail is
+	// reached with the prop the expanded cards already take.
+	assert.match(SESSION_TYPES_SOURCE, /sessionDrag\?: JiraIssueAgentSessionDragBinding;/u);
+	assert.match(TYPES_SOURCE, /extends Omit<AgentSessionProps, "className">/u);
+	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,500}?sessionDrag=\{sessionProps\.sessionDrag\}/u);
+	assert.match(
+		RAIL_COLUMN_SOURCE,
+		/import \{ AgentSessionMediumDrag \} from "@\/components\/blocks\/agent-session\/agent-session-medium-drag";/u,
+	);
+	assert.match(RAIL_COLUMN_SOURCE, /sessionDrag\?: JiraIssueAgentSessionDragBinding;/u);
+	// The drag host must wrap the flyout trigger, not sit inside it:
+	// JiraSessionFlyoutTrigger clones its child to add onFocusCapture, and a
+	// component child would swallow that prop and cost the rail its
+	// keyboard-opens-the-flyout behavior.
+	assert.match(
+		RAIL_COLUMN_SOURCE,
+		/<AgentSessionMediumDrag[\s\S]{0,400}?<JiraSessionFlyoutTrigger/u,
+	);
+	// The row holds its measured height while the chip travels, so lifting a
+	// notch out never reflows the rail under the pointer. Scoped to the JSX tag:
+	// the prose above it names the prop too.
+	assert.match(RAIL_COLUMN_SOURCE, /<AgentSessionMediumDrag[\s\S]{0,200}?preserveSourceFootprint/u);
+	assert.match(RAIL_COLUMN_SOURCE, /<AgentSessionMediumDrag[\s\S]{0,200}?source="untracked"/u);
+	// The bind lands on the button itself. On a wrapper the drag host's
+	// interactive-target guard would find the inner button and bail.
+	assert.match(RAIL_COLUMN_SOURCE, /<button\s*\n\s*\{\.\.\.bind\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /aria-roledescription=\{bind \? "Draggable agent session" : undefined\}/u);
+});
+
 test("each notch opens the shared session flyout rather than a forked preview", () => {
 	assert.match(
 		RAIL_COLUMN_SOURCE,
@@ -451,8 +483,73 @@ test("the collapsed rail is opt-in state the column owns", () => {
 	assert.match(TYPES_SOURCE, /onCollapsedChange\?: \(collapsed: boolean\) => void;/u);
 	// The change callback must not fire from inside a state updater.
 	assert.doesNotMatch(INDEX_SOURCE, /setCollapsed\(\(/u);
+	assert.doesNotMatch(INDEX_SOURCE, /setUncontrolledCollapsed\(\(/u);
 	assert.match(PAGE_SOURCE, /defaultCollapsed/u);
 	assert.match(DETAIL_SOURCE, /name: "defaultCollapsed"/u);
+});
+
+test("a host can take over the collapse state without the column fighting it", () => {
+	// Same shape as the board's `collapsedColumns` and this file's selection
+	// contract: prop wins when supplied, internal state otherwise.
+	assert.match(TYPES_SOURCE, /collapsed\?: boolean;/u);
+	assert.match(INDEX_SOURCE, /collapsed: collapsedProp,/u);
+	assert.match(INDEX_SOURCE, /const isCollapsedControlled = collapsedProp !== undefined;/u);
+	assert.match(INDEX_SOURCE, /const \[uncontrolledCollapsed, setUncontrolledCollapsed\] = useState\(defaultCollapsed\);/u);
+	assert.match(INDEX_SOURCE, /const collapsed = collapsedProp \?\? uncontrolledCollapsed;/u);
+	// Controlled: the column defers the write but still reports the toggle, so a
+	// host that never echoes the value back simply sees no change.
+	assert.match(
+		INDEX_SOURCE,
+		/if \(!isCollapsedControlled\) \{\s*\n\s*setUncontrolledCollapsed\(nextCollapsed\);\s*\n\s*\}\s*\n\s*onCollapsedChange\?\.\(nextCollapsed\);/u,
+	);
+	// `useState(defaultCollapsed)` ignores later prop changes, so a host that
+	// flips `collapsed` from its own control never runs the column's handler.
+	// The committed change has to arm the resize clip and leave the hidden view
+	// itself, or the rail spills during the 200ms width transition.
+	assert.match(INDEX_SOURCE, /const lastCollapsedRef = useRef\(collapsed\);/u);
+	assert.match(
+		INDEX_SOURCE,
+		/if \(lastCollapsedRef\.current === collapsed\) \{\s*\n\s*return;\s*\n\s*\}/u,
+	);
+	assert.match(INDEX_SOURCE, /\}, \[closeHiddenView, collapsed, shouldReduceMotion\]\);/u);
+});
+
+test("chrome none drops the expanded header only, never the column's name", () => {
+	assert.match(TYPES_SOURCE, /chrome\?: "default" \| "none";/u);
+	assert.match(INDEX_SOURCE, /chrome = "default",/u);
+	// One gate, on the header row alone.
+	assert.match(INDEX_SOURCE, /\{collapsed \|\| chrome === "default" \? \(/u);
+	assert.equal(INDEX_SOURCE.match(/chrome === "default"/gu)?.length, 1);
+	assert.doesNotMatch(INDEX_SOURCE, /chrome === "none"/u);
+	// The section keeps its label: with the visible title suppressed it is the
+	// list's only accessible name.
+	assert.match(INDEX_SOURCE, /<section\s*\n\s*aria-label=\{`\$\{displayTitle\}, \$\{sessionCount\} sessions`\}/u);
+	// The plane, the well, and the sessions inside them are untouched by chrome.
+	assert.match(INDEX_SOURCE, /\) : null\}\s*\n\s*\n\s*<div className=\{collapsed \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL\}>/u);
+});
+
+test("the collapsed rail keeps its compact header whatever the host asks for", () => {
+	// At 32px that header *is* the chrome, and it carries the only control that
+	// can expand the column again — gating it on `chrome` would strand the rail.
+	assert.match(INDEX_SOURCE, /\{collapsed \|\| chrome === "default" \? \(/u);
+	assert.doesNotMatch(INDEX_SOURCE, /collapsed && chrome === "default"/u);
+	// Still the count-at-rest / expand-on-reveal slot, inside the gated row.
+	assert.match(
+		INDEX_SOURCE,
+		/\{collapsed \|\| chrome === "default" \? \([\s\S]{0,400}?\{collapsed \? \([\s\S]{0,1200}?aria-label=\{`Expand \$\{title\} column`\}/u,
+	);
+	// The rail itself still has no header of its own to fall back on.
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /onExpand/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /sessionCount/u);
+});
+
+test("both column widths are exported so a host surface can size itself to them", () => {
+	assert.match(INDEX_SOURCE, /export const AGENT_SESSION_COLUMN_WIDTH_PX = 280;/u);
+	assert.match(INDEX_SOURCE, /export const AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX = 32;/u);
+	// Exporting the numbers must not turn into importing a kanban variant's.
+	assert.doesNotMatch(INDEX_SOURCE, /jira-kanban/u);
+	assert.doesNotMatch(INDEX_SOURCE, /components\/ui\/panel/u);
+	assert.doesNotMatch(TYPES_SOURCE, /jira-kanban|components\/ui\/panel/u);
 });
 
 test("newly synced work reaches both the cards and the rail", () => {

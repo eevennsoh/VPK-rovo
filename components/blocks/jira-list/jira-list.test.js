@@ -85,8 +85,10 @@ test("JiraList frame constrains vertical overflow while preserving 40px footer g
 		SOURCE.slice(footerStart, SOURCE.indexOf("</section>", footerStart)),
 		/sticky bottom-0[\s\S]*?h-10 min-h-10[\s\S]*?shrink-0/u,
 	);
+	// Strip line comments first: the frame documents the `h-full` trap it is
+	// guarding against, and the guard should police classes, not prose.
 	assert.doesNotMatch(
-		SOURCE.slice(0, SOURCE.indexOf("</section>", footerStart)),
+		SOURCE.slice(0, SOURCE.indexOf("</section>", footerStart)).replace(/^\s*\/\/.*$/gmu, ""),
 		/\bh-full\b|min-h-\[640px\]/u,
 	);
 });
