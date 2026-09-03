@@ -66,6 +66,7 @@ import type {
 } from "@/components/blocks/jira-list/jira-list-types";
 
 export type {
+	JiraListAgentSessionDropIntent,
 	JiraListAssignedAgent,
 	JiraListBaseColumnId,
 	JiraListColumnAnchorId,
@@ -84,6 +85,8 @@ export type {
 } from "@/components/blocks/jira-list/jira-list-types";
 
 import {
+	getAgentSessionAttachCellClassName,
+	getAgentSessionInsertionTarget,
 	getBodyCellClassName,
 	getColumnAnchorName,
 	getColumnBoundaryIndex,
@@ -153,6 +156,7 @@ export function JiraList({
 	onSelectRow,
 	onStatusChange,
 	onToggleExpand,
+	agentSessionDropIntent,
 }: Readonly<JiraListProps>) {
 	const insertionAnchorId = useId().replaceAll(":", "");
 	// Rows that continue below the fold should dissolve into the sticky footer
@@ -180,7 +184,8 @@ export function JiraList({
 	const [draggingIssueKey, setDraggingIssueKey] = useState<string | null>(null);
 	const [dragOverIssueKey, setDragOverIssueKey] = useState<string | null>(null);
 	const [openCopyTooltipIssueKey, setOpenCopyTooltipIssueKey] = useState<string | null>(null);
-	const activeInsertionTarget = focusedCreateTarget ?? hoveredCreateTarget;
+	const sessionInsertionTarget = getAgentSessionInsertionTarget(agentSessionDropIntent);
+	const activeInsertionTarget = sessionInsertionTarget ?? focusedCreateTarget ?? hoveredCreateTarget;
 	const draggingIndex = draggingIssueKey
 		? rows.findIndex((row) => row.issueKey === draggingIssueKey)
 		: -1;
@@ -249,6 +254,9 @@ export function JiraList({
 	};
 	const baseColumns = createJiraListBaseColumns({
 		agentCatalog,
+		agentSessionAttachIssueKey: agentSessionDropIntent?.kind === "attach"
+			? agentSessionDropIntent.issueKey
+			: undefined,
 		copiedIssueKey,
 		onAgentAssign,
 		onAssignedAgentIdsChange,
@@ -624,6 +632,7 @@ export function JiraList({
 									<Fragment key={row.issueKey}>
 										{renderDraftWorkItemRow(rowIndex)}
 										<JiraListSortableRow
+											agentSessionDropEnabled={agentSessionDropIntent !== undefined}
 											aria-selected={isHighlighted || undefined}
 											className="group/row border-0 hover:bg-transparent focus-within:bg-transparent data-[state=selected]:bg-transparent"
 											data-active={isActive || undefined}
@@ -677,6 +686,12 @@ export function JiraList({
 															isLastRow,
 														}),
 														insertionLineClassName,
+														column.id === "agentSessions"
+															? getAgentSessionAttachCellClassName(
+																agentSessionDropIntent?.kind === "attach"
+																&& agentSessionDropIntent.issueKey === row.issueKey,
+															)
+															: undefined,
 													)}
 													data-insertion-line={insertionLinePosition}
 													key={column.id}

@@ -1,6 +1,8 @@
-import { cn } from "@/lib/utils";
+import { cn } from "../../../lib/utils.ts";
 
 import type {
+	JiraListAgentSessionDropIntent,
+	JiraListInsertion,
 	JiraListInsertionPosition,
 } from "@/components/blocks/jira-list/jira-list-types";
 
@@ -29,8 +31,10 @@ export function getColumnBoundaryIndex(
 	return columnIndex + 1;
 }
 
+export const JIRA_LIST_ROW_ZONE_BAND = 1 / 3;
+
 export function getRowZone(rowOffset: number, rowHeight: number): JiraListRowZone {
-	const rowThird = rowHeight / 3;
+	const rowThird = rowHeight * JIRA_LIST_ROW_ZONE_BAND;
 
 	if (rowOffset < rowThird) {
 		return "before";
@@ -41,6 +45,43 @@ export function getRowZone(rowOffset: number, rowHeight: number): JiraListRowZon
 	}
 
 	return "drag";
+}
+
+export function getInsertionFromRowZone(
+	zone: JiraListRowZone,
+	row: Readonly<{ issueKey: string; rowIndex: number }>,
+): JiraListInsertion | null {
+	if (zone === "drag") {
+		return null;
+	}
+
+	return {
+		insertAtIndex: zone === "before" ? row.rowIndex : row.rowIndex + 1,
+		position: zone,
+		relativeToIssueKey: row.issueKey,
+	};
+}
+
+export function getAgentSessionInsertionTarget(
+	intent: JiraListAgentSessionDropIntent | undefined,
+): JiraListInsertionTarget | null {
+	return intent?.kind === "create"
+		? {
+			issueKey: intent.insertion.relativeToIssueKey,
+			position: intent.insertion.position,
+		}
+		: null;
+}
+
+export function isAgentSessionAttachTarget(
+	intent: JiraListAgentSessionDropIntent | undefined,
+	issueKey: string,
+): boolean {
+	return intent?.kind === "attach" && intent.issueKey === issueKey;
+}
+
+export function getAgentSessionAttachCellClassName(isTarget: boolean): string | undefined {
+	return isTarget ? "bg-bg-selected ring-1 ring-inset ring-border-selected" : undefined;
 }
 
 export function getDragInsertionPosition(

@@ -213,12 +213,14 @@ function toListAssignedAgent(agent: AgentAssignmentAgent): JiraListAssignedAgent
 export function JiraListAgentSessionsCell({
 	agentCatalog = ROVO_AGENT_SELECTOR_AGENTS,
 	agentSessions,
+	isAttachTarget = false,
 	onAgentAssign,
 	onAssignedAgentIdsChange,
 	onAssignedAgentSelect,
 }: Readonly<{
 	agentCatalog?: readonly AgentSelectorAgent[];
 	agentSessions: readonly JiraListAssignedAgent[] | undefined;
+	isAttachTarget?: boolean;
 	onAgentAssign?: (agent: AgentSelectorAgent) => void;
 	onAssignedAgentIdsChange?: (agentIds: readonly string[]) => void;
 	onAssignedAgentSelect?: (agent: JiraListAssignedAgent) => void;
@@ -237,9 +239,15 @@ export function JiraListAgentSessionsCell({
 	if (!canMutateAgents) {
 		const shown = assignedAgents.slice(0, LIST_ASSIGNED_AGENT_MAX_VISIBLE);
 		return shown.length === 0 ? (
-			<span className="text-sm text-text-subtle" />
+			<span
+				className="text-sm text-text-subtle"
+				data-agent-session-attach-target={isAttachTarget || undefined}
+			/>
 		) : (
-			<div className="flex min-h-8 min-w-0 items-center gap-0.5 overflow-visible px-2">
+			<div
+				className="flex min-h-8 min-w-0 items-center gap-0.5 overflow-visible px-2"
+				data-agent-session-attach-target={isAttachTarget || undefined}
+			>
 				{shown.map((agent) => {
 					const statusKind = resolveAssignedAgentStatusKind(agent);
 					const avatarStatus = statusKind === "needs-input" || statusKind === "finished"
@@ -263,16 +271,18 @@ export function JiraListAgentSessionsCell({
 	}
 
 	return (
-		<AgentAssignment
-			agents={agents}
-			assignedAgents={assignedAgents}
-			maxVisibleAgents={LIST_ASSIGNED_AGENT_MAX_VISIBLE}
-			onAgentAssign={onAgentAssign}
-			onAssignedAgentIdsChange={onAssignedAgentIdsChange ?? (() => undefined)}
-			onAssignedAgentSelect={(agent) => {
-				onAssignedAgentSelect?.(toListAssignedAgent(agent));
-			}}
-		/>
+		<div data-agent-session-attach-target={isAttachTarget || undefined}>
+			<AgentAssignment
+				agents={agents}
+				assignedAgents={assignedAgents}
+				maxVisibleAgents={LIST_ASSIGNED_AGENT_MAX_VISIBLE}
+				onAgentAssign={onAgentAssign}
+				onAssignedAgentIdsChange={onAssignedAgentIdsChange ?? (() => undefined)}
+				onAssignedAgentSelect={(agent) => {
+					onAssignedAgentSelect?.(toListAssignedAgent(agent));
+				}}
+			/>
+		</div>
 	);
 }
 

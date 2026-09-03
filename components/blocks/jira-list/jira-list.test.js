@@ -475,7 +475,8 @@ test("JiraList uses equal top, drag, and bottom row interaction zones", () => {
 	assert.match(SOURCE, /type JiraListRowZone = "before" \| "drag" \| "after"/u);
 	assert.match(SOURCE, /function getRowZone\(rowOffset: number, rowHeight: number\)/u);
 	assert.match(SOURCE, /const rowOffset = event\.clientY - rowBounds\.top/u);
-	assert.match(SOURCE, /const rowThird = rowHeight \/ 3/u);
+	assert.match(SOURCE, /export const JIRA_LIST_ROW_ZONE_BAND = 1 \/ 3/u);
+	assert.match(SOURCE, /const rowThird = rowHeight \* JIRA_LIST_ROW_ZONE_BAND/u);
 	assert.match(SOURCE, /rowOffset < rowThird/u);
 	assert.match(SOURCE, /rowOffset > rowThird \* 2/u);
 	assert.match(SOURCE, /return "before"/u);
@@ -677,6 +678,25 @@ test("JiraList highlights an active issue independently from bulk checkbox selec
 	assert.match(SOURCE, /data-active=\{isActive \|\| undefined\}/u);
 	assert.match(SOURCE, /checked=\{isSelected\}/u);
 	assert.doesNotMatch(SOURCE, /checked=\{isHighlighted\}/u);
+});
+
+test("JiraList stamps list-row session drop metadata only when an intent is passed", () => {
+	assert.match(
+		TYPES_SOURCE,
+		/export type JiraListAgentSessionDropIntent =\s*\| \{ kind: "none" \}\s*\| \{ kind: "attach"; issueKey: string \}\s*\| \{ kind: "create"; insertion: JiraListInsertion \};/u,
+	);
+	assert.match(TYPES_SOURCE, /agentSessionDropIntent\?: JiraListAgentSessionDropIntent;/u);
+	assert.match(SOURCE, /data-board-agent-session-drop-zone=\{agentSessionDropEnabled \? "list-row" : undefined\}/u);
+	assert.match(SOURCE, /data-issue-key=\{agentSessionDropEnabled \? row\.issueKey : undefined\}/u);
+	assert.match(SOURCE, /data-list-row-index=\{agentSessionDropEnabled \? rowIndex : undefined\}/u);
+	assert.match(SOURCE, /agentSessionDropEnabled=\{agentSessionDropIntent !== undefined\}/u);
+	assert.match(SOURCE, /function getInsertionFromRowZone/u);
+	assert.match(SOURCE, /getAgentSessionInsertionTarget\(agentSessionDropIntent\)/u);
+	assert.match(SOURCE, /sessionInsertionTarget \?\? focusedCreateTarget \?\? hoveredCreateTarget/u);
+	assert.match(SOURCE, /column\.id === "agentSessions"/u);
+	assert.match(SOURCE, /bg-bg-selected ring-1 ring-inset ring-border-selected/u);
+	assert.match(SOURCE, /data-drop-target=\{isDropTarget \|\| undefined\}/u);
+	assert.doesNotMatch(SOURCE, /jira-kanban\/experimental/u);
 });
 
 test("JiraList is registered in block docs and manifests", () => {

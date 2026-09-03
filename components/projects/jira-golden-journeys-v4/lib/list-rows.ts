@@ -4,8 +4,10 @@ import type {
 	JiraKanbanCardData,
 	JiraKanbanColumnData,
 } from "@/components/blocks/jira-kanban";
+import { linkJiraKanbanAgentSession } from "../../../blocks/jira-kanban/state.ts";
 import type {
 	JiraListAssignedAgent,
+	JiraListInsertion,
 	JiraListPerson,
 	JiraListRowData,
 	JiraListStatusOption,
@@ -383,5 +385,66 @@ export function toKanbanCardFromDraft(input: Readonly<{
 		priority: "medium",
 		tags: [],
 		title: input.summary,
+	};
+}
+
+export interface CreateListWorkItemFromSessionInput {
+	activity: JiraIssueAgentActivity;
+	columns: readonly JiraKanbanColumnData[];
+	insertion: JiraListInsertion;
+	listOrder: readonly string[];
+	session: Readonly<{ id: string; title: string }>;
+	visibleKeys: readonly string[];
+}
+
+export type CreateListWorkItemFromSessionResult =
+	| {
+		kind: "created";
+		columns: readonly JiraKanbanColumnData[];
+		issueKey: string;
+		listOrder: readonly string[];
+	}
+	| {
+		kind: "already-attached";
+		columns: readonly JiraKanbanColumnData[];
+		issueKey: string;
+		listOrder: readonly string[];
+	};
+
+export function createListWorkItemFromSession(
+	input: CreateListWorkItemFromSessionInput,
+): CreateListWorkItemFromSessionResult {
+	const attachedCard = input.columns
+		.flatMap((column) => column.cards)
+		.find((card) => card.agentActivities?.some((activity) => activity.id === input.activity.id));
+	if (attachedCard) {
+		return {
+			kind: "already-attached",
+			columns: input.columns,
+			issueKey: attachedCard.code,
+			listOrder: input.listOrder,
+		};
+	}
+
+	const issueKey = getNextPayIssueKey(input.columns);
+	const card = toKanbanCardFromDraft({
+		issueKey,
+		issueType: "task",
+		summary: input.session.title,
+	});
+	const columnsWithCard = insertWorkItemCard(input.columns, card, "To do");
+	const columns = linkJiraKanbanAgentSession(columnsWithCard, issueKey, input.activity);
+	const listOrder = insertListOrderKey(
+		input.listOrder,
+		input.visibleKeys,
+		issueKey,
+		input.insertion.insertAtIndex,
+	);
+
+	return {
+		kind: "created",
+		columns,
+		issueKey,
+		listOrder,
 	};
 }

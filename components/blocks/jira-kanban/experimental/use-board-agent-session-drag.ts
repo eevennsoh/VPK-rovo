@@ -13,17 +13,49 @@ import {
 } from "@/components/blocks/jira-issue/agent-session-drag";
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
 
+import type { JiraListInsertion } from "@/components/blocks/jira-list/jira-list-types";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "../index";
 import {
 	createBoardAgentSessionDragTransaction,
+	parseListRowDropZone,
 	resolveBoardAgentSessionDropAction,
+	toListSessionDropIntent,
 	updateBoardAgentSessionDragTransaction,
 	type BoardAgentSessionDragOrigin,
 	type BoardAgentSessionDragTransaction,
+	type BoardAgentSessionDropBounds,
 	type BoardAgentSessionDropZone,
 } from "./lib/board-agent-session-drag";
 
 const SESSION_UNLINK_DROP_HALO_PX = 24;
+
+function clipBoundsToScrollport(
+	node: HTMLElement,
+	rect: DOMRect,
+): BoardAgentSessionDropBounds | null {
+	const scrollport = node.closest<HTMLElement>("[data-testid='jira-list-table-scroll']");
+	if (!scrollport) {
+		return {
+			bottom: rect.bottom,
+			left: rect.left,
+			right: rect.right,
+			top: rect.top,
+		};
+	}
+
+	const clip = scrollport.getBoundingClientRect();
+	const header = scrollport.querySelector("thead");
+	const headerBottom = header?.getBoundingClientRect().bottom ?? clip.top;
+	const top = Math.max(rect.top, headerBottom, clip.top);
+	const bottom = Math.min(rect.bottom, clip.bottom);
+	const left = Math.max(rect.left, clip.left);
+	const right = Math.min(rect.right, clip.right);
+	if (bottom <= top || right <= left) {
+		return null;
+	}
+
+	return { bottom, left, right, top };
+}
 
 function collectDropZones(root: HTMLElement | null): BoardAgentSessionDropZone[] {
 	if (!root) return [];
@@ -57,8 +89,14 @@ function collectDropZones(root: HTMLElement | null): BoardAgentSessionDropZone[]
 				kind: "untracked",
 			}];
 		}
-		const cardCode = node.closest<HTMLElement>("[data-issue-key]")?.dataset.issueKey;
-		if (!cardCode || (kind !== "issue" && kind !== "unlink")) return [];
+		const issueKey = node.closest<HTMLElement>("[data-issue-key]")?.dataset.issueKey;
+		if (kind === "list-row") {
+			const bounds = clipBoundsToScrollport(node, rect);
+			if (!bounds) return [];
+			const zone = parseListRowDropZone(issueKey, node.dataset.listRowIndex, bounds);
+			return zone ? [zone] : [];
+		}
+		if (!issueKey || (kind !== "issue" && kind !== "unlink")) return [];
 		const halo = kind === "unlink" ? SESSION_UNLINK_DROP_HALO_PX : 0;
 		return [{
 			bounds: {
@@ -67,7 +105,7 @@ function collectDropZones(root: HTMLElement | null): BoardAgentSessionDropZone[]
 				right: rect.right + halo,
 				top: rect.top - halo,
 			},
-			cardCode,
+			cardCode: issueKey,
 			kind,
 		}];
 	});
@@ -84,10 +122,27 @@ function findBoardCard(
 	return undefined;
 }
 
+function resolveDraggedAgentSession(
+	transaction: BoardAgentSessionDragTransaction<JiraIssueAgentSessionRef>,
+	untrackedSessions: readonly AgentSessionItem[] | undefined,
+	detachedSessionsByCard:
+		| Readonly<Record<string, readonly AgentSessionItem[]>>
+		| undefined,
+): AgentSessionItem | undefined {
+	if (transaction.origin.kind === "untracked") {
+		return untrackedSessions?.find((candidate) => candidate.id === transaction.session.id);
+	}
+
+	return detachedSessionsByCard?.[transaction.origin.sourceCardCode]?.find(
+		(candidate) => candidate.id === transaction.session.id,
+	);
+}
+
 export function useBoardAgentSessionDrag({
 	boardColumns,
 	detachedSessionsByCard,
 	onCreate,
+	onListCreate,
 	onLink,
 	onMove,
 	onUnlink,
@@ -96,6 +151,10 @@ export function useBoardAgentSessionDrag({
 	boardColumns: readonly JiraKanbanColumnData[];
 	detachedSessionsByCard?: Readonly<Record<string, readonly AgentSessionItem[]>>;
 	onCreate?: (session: AgentSessionItem, columnTitle: string) => void;
+	onListCreate?: (
+		session: AgentSessionItem,
+		insertion: JiraListInsertion,
+	) => void;
 	onLink?: (session: AgentSessionItem, card: JiraKanbanCardData, columnTitle: string) => void;
 	onMove?: (
 		session: JiraIssueAgentSessionRef,
@@ -121,8 +180,22 @@ export function useBoardAgentSessionDrag({
 		const action = resolveBoardAgentSessionDropAction(current);
 		if (action.kind === "none") return;
 		if (action.kind === "create") {
-			const item = untrackedSessions?.find((candidate) => candidate.id === action.sessionId);
+			const item = resolveDraggedAgentSession(
+				current,
+				untrackedSessions,
+				detachedSessionsByCard,
+			);
 			if (item) onCreate?.(item, action.columnTitle);
+			return;
+		}
+
+		if (action.kind === "create-list") {
+			const item = resolveDraggedAgentSession(
+				current,
+				untrackedSessions,
+				detachedSessionsByCard,
+			);
+			if (item) onListCreate?.(item, action.insertion);
 			return;
 		}
 
@@ -148,13 +221,13 @@ export function useBoardAgentSessionDrag({
 		}
 
 		const target = findBoardCard(boardColumns, action.targetCardCode);
-		const item = current.origin.kind === "untracked"
-			? untrackedSessions?.find((candidate) => candidate.id === action.sessionId)
-			: detachedSessionsByCard?.[current.origin.sourceCardCode]?.find(
-				(candidate) => candidate.id === action.sessionId,
-			);
+		const item = resolveDraggedAgentSession(
+			current,
+			untrackedSessions,
+			detachedSessionsByCard,
+		);
 		if (target && item) onLink?.(item, target.card, target.columnTitle);
-	}, [boardColumns, detachedSessionsByCard, onCreate, onLink, onMove, onUnlink, untrackedSessions]);
+	}, [boardColumns, detachedSessionsByCard, onCreate, onLink, onListCreate, onMove, onUnlink, untrackedSessions]);
 
 	const onDragStateChange = useCallback((
 		origin: BoardAgentSessionDragOrigin,
@@ -246,6 +319,9 @@ export function useBoardAgentSessionDrag({
 		dragState,
 		enabled,
 		getCardDragState,
+		listDropIntent: onListCreate
+			? toListSessionDropIntent(transaction?.target ?? null)
+			: undefined,
 		transaction,
 		untrackedBinding: enabled ? createBinding({ kind: "untracked" }) : undefined,
 	};

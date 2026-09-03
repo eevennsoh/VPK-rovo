@@ -13,6 +13,10 @@ import {
 
 import { useOptionalRovoChat } from "@/app/contexts";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import type {
+	JiraListAgentSessionDropIntent,
+	JiraListInsertion,
+} from "@/components/blocks/jira-list";
 import {
 	AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX,
 	type AgentSessionColumnProps,
@@ -138,6 +142,10 @@ const EMPTY_ANSWERS: readonly PulseAnswer[] = [];
  * reader is looking at. Handing out `handleOpenTimeline` itself keeps that rule
  * in one place instead of copying its steps into every owner.
  */
+export interface ExperimentalJiraKanbanListRenderContext {
+	agentSessionDropIntent?: JiraListAgentSessionDropIntent;
+}
+
 export interface ExperimentalJiraKanbanPageHandle {
 	/**
 	 * Open Insights, mark the timeline viewed, and land on `snapshotId`.
@@ -195,12 +203,19 @@ export interface ExperimentalJiraKanbanPageProps {
 	onCardAgentSessionLink?: ExperimentalJiraKanbanProps["onCardAgentSessionLink"];
 	onCardAgentSessionMove?: ExperimentalJiraKanbanProps["onCardAgentSessionMove"];
 	onCardAgentSessionUnlink?: ExperimentalJiraKanbanProps["onCardAgentSessionUnlink"];
+	onListAgentSessionCreate?: (
+		session: AgentSessionItem,
+		insertion: JiraListInsertion,
+	) => void;
 	showAgentSessionUnlinkWell?: ExperimentalJiraKanbanProps["showAgentSessionUnlinkWell"];
 	onInsightsWorkItemClick?: (workItem: PulseWorkItem) => void;
 	onModeChange?: (mode: ExperimentalJiraKanbanMode) => void;
 	onResumeLooseWork?: (item: PulseLooseWork) => void;
 	onViewChange?: (view: ExperimentalJiraKanbanView) => void;
-	renderListContent?: (columns: readonly JiraKanbanColumnData[]) => ReactNode;
+	renderListContent?: (
+		columns: readonly JiraKanbanColumnData[],
+		context: ExperimentalJiraKanbanListRenderContext,
+	) => ReactNode;
 	renderAgentActivityIndicator?: ExperimentalJiraKanbanProps["renderAgentActivityIndicator"];
 	showBoardContent?: boolean;
 	showAgentSessionColumn?: boolean;
@@ -249,6 +264,7 @@ export default function ExperimentalJiraKanbanPage({
 	onCardAgentSessionLink,
 	onCardAgentSessionMove,
 	onCardAgentSessionUnlink,
+	onListAgentSessionCreate,
 	showAgentSessionUnlinkWell = true,
 	onInsightsWorkItemClick,
 	onModeChange,
@@ -658,6 +674,19 @@ export default function ExperimentalJiraKanbanPage({
 		onCardAgentSessionLink?.(session, card, columnTitle);
 	};
 
+	const handleListAgentSessionCreate = (
+		session: AgentSessionItem,
+		insertion: JiraListInsertion,
+	) => {
+		setCapturedLooseWorkIds((current) => {
+			if (current.has(session.id)) {
+				return current;
+			}
+			return new Set(current).add(session.id);
+		});
+		onListAgentSessionCreate?.(session, insertion);
+	};
+
 	const handleCardAgentSessionMove: ExperimentalJiraKanbanProps["onCardAgentSessionMove"] = (
 		session,
 		sourceCard,
@@ -751,6 +780,7 @@ export default function ExperimentalJiraKanbanPage({
 		boardColumns: filteredBoardColumns,
 		detachedSessionsByCard: proximityAgentSessionsByCard,
 		onCreate: agentSessionHandlers.onCreateWorkItem,
+		onListCreate: onListAgentSessionCreate ? handleListAgentSessionCreate : undefined,
 		onLink: onCardAgentSessionLink ? handleCardAgentSessionLink : undefined,
 		onMove: onCardAgentSessionMove ? handleCardAgentSessionMove : undefined,
 		onUnlink: onCardAgentSessionUnlink ? handleCardAgentSessionUnlink : undefined,
@@ -836,7 +866,9 @@ export default function ExperimentalJiraKanbanPage({
 				// overflow.
 				<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 					{isListContent ? (
-						renderListContent?.(filteredBoardColumns)
+						renderListContent?.(filteredBoardColumns, {
+							agentSessionDropIntent: boardSessionDrag.listDropIntent,
+						})
 					) : (
 						<div className="flex min-h-0 min-w-0 flex-1">
 							<ExperimentalJiraKanban
