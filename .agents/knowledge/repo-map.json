@@ -5403,7 +5403,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 432,
+			"manifestEntryCount": 433,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -7443,7 +7443,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 101,
+				"entryCount": 102,
 				"entries": [
 					{
 						"category": "visual",
@@ -7960,6 +7960,12 @@
 						"slug": "scroll-mask",
 						"name": "Scroll Mask",
 						"importPath": "@/components/visual/scroll-mask"
+					},
+					{
+						"category": "visual",
+						"slug": "scrolling",
+						"name": "Scrolling",
+						"importPath": "@/components/visual/scrolling"
 					},
 					{
 						"category": "visual",

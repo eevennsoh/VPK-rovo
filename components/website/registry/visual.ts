@@ -32,6 +32,9 @@ export const VISUAL_DEMOS: Record<string, ComponentType> = {
 	"scroll-mask": dynamic(() => import("../demos/visual/scroll-mask-demo"), {
 		ssr: false,
 	}),
+	scrolling: dynamic(() => import("../demos/visual/scrolling-demo"), {
+		ssr: false,
+	}),
 	motion: dynamic(() => import("../demos/visual/motion-demo"), {
 		ssr: false,
 	}),
