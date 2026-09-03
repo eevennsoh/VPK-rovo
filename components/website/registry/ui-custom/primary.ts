@@ -2,7 +2,9 @@ import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 
 export const UI_CUSTOM_PRIMARY_DEMOS: Record<string, ComponentType> = {
-
+	"agent-loading": dynamic(() => import("../../demos/ui-custom/agent-loading-demo"), {
+		ssr: false,
+	}),
 	footer: dynamic(() => import("../../demos/ui-custom/footer-demo"), { ssr: false }),
 	"hover-reveal-row": dynamic(
 		() => import("../../demos/ui-custom/hover-reveal-row-demo"),
