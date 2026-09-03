@@ -436,9 +436,11 @@ export function AgentSessionColumn({
 						capturedItemIds={sessionProps.capturedItemIds}
 						getSuggestedWorkItemKey={sessionProps.getSuggestedWorkItemKey}
 						getSuggestedWorkItemKeys={sessionProps.getSuggestedWorkItemKeys}
+						highlightedItemId={sessionProps.highlightedItemId}
 						items={visibleItems}
 						newItemIds={newItemIds}
 						onCreateWorkItem={sessionProps.onCreateWorkItem}
+						onItemHover={sessionProps.onItemHover}
 						onLinkWorkItem={sessionProps.onLinkWorkItem}
 						onSubtasks={sessionProps.onSubtasks}
 						onView={handleNotchView}

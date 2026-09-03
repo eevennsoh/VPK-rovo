@@ -214,8 +214,10 @@ function AgentSessionNotch({
 	flyoutHandle,
 	flyoutSession,
 	isArriving,
+	isHighlighted,
 	isNew,
 	item,
+	onItemHover,
 	onView,
 	proximity,
 	sessionDrag,
@@ -223,13 +225,28 @@ function AgentSessionNotch({
 	flyoutHandle: JiraSessionFlyoutHandle;
 	flyoutSession: JiraSidebarSessionItem;
 	isArriving: boolean;
+	isHighlighted: boolean;
 	isNew: boolean;
 	item: AgentSessionItem;
+	onItemHover?: (item: AgentSessionItem | null) => void;
 	onView?: (item: AgentSessionItem) => void;
 	proximity?: AgentSessionNotchProximity;
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
 }>) {
 	const shouldReduceMotion = useReducedMotion();
+	const isHoveredRef = useRef(false);
+	const onItemHoverRef = useRef(onItemHover);
+
+	useEffect(() => {
+		onItemHoverRef.current = onItemHover;
+	}, [onItemHover]);
+
+	useEffect(() => () => {
+		if (isHoveredRef.current) {
+			onItemHoverRef.current?.(null);
+		}
+	}, []);
+
 	// The beat, not the mark: expanding and re-collapsing the column remounts the
 	// rail, and a notch that is still unreviewed stays lit without regrowing.
 	return (
@@ -260,6 +277,7 @@ function AgentSessionNotch({
 								{...bind}
 								aria-roledescription={bind ? "Draggable agent session" : undefined}
 								className="focus-visible:ring-ring flex h-5 w-full items-center justify-center rounded-xs outline-none focus-visible:ring-2"
+								data-highlighted={isHighlighted || undefined}
 								data-new={isNew || undefined}
 								data-testid={"agent-session-notch-" + item.id}
 								draggable={false}
@@ -268,12 +286,25 @@ function AgentSessionNotch({
 								// host's `onClickCapture` already swallows the click that
 								// follows a published drag.
 								onClick={onView === undefined ? undefined : () => onView(item)}
+								onPointerEnter={() => {
+									isHoveredRef.current = true;
+									onItemHover?.(item);
+								}}
+								onPointerLeave={() => {
+									isHoveredRef.current = false;
+									onItemHover?.(null);
+								}}
 								type="button"
 							>
 								<span className="sr-only">
 									{`${item.title} — ${NOTCH_STATE_LABEL[item.state]}${isNew ? ", newly synced" : ""}`}
 								</span>
-								<AgentSessionNotchMark isArriving={isArriving} isNew={isNew} proximity={proximity} />
+								<AgentSessionNotchMark
+									isArriving={isArriving}
+									isHighlighted={isHighlighted}
+									isNew={isNew}
+									proximity={proximity}
+								/>
 							</button>
 						</JiraSessionFlyoutTrigger>
 					)}
@@ -288,9 +319,11 @@ export function AgentSessionColumnRail({
 	capturedItemIds,
 	getSuggestedWorkItemKey,
 	getSuggestedWorkItemKeys,
+	highlightedItemId,
 	items,
 	newItemIds,
 	onCreateWorkItem,
+	onItemHover,
 	onLinkWorkItem,
 	onSubtasks,
 	onView,
@@ -301,9 +334,11 @@ export function AgentSessionColumnRail({
 	capturedItemIds?: ReadonlySet<string>;
 	getSuggestedWorkItemKey?: (item: AgentSessionItem) => string | undefined;
 	getSuggestedWorkItemKeys?: (item: AgentSessionItem) => readonly string[] | undefined;
+	highlightedItemId?: string | null;
 	items: readonly AgentSessionItem[];
 	newItemIds?: ReadonlySet<string>;
 	onCreateWorkItem?: (item: AgentSessionItem) => void;
+	onItemHover?: (item: AgentSessionItem | null) => void;
 	onLinkWorkItem?: (item: AgentSessionItem, workItemKey?: string) => void;
 	onSubtasks?: (item: AgentSessionItem) => void;
 	onView?: (item: AgentSessionItem) => void;
@@ -369,9 +404,11 @@ export function AgentSessionColumnRail({
 							),
 						)}
 						isArriving={(arrivingItemIds ?? newItemIds)?.has(item.id) ?? false}
+						isHighlighted={item.id === highlightedItemId}
 						isNew={newItemIds?.has(item.id) ?? false}
 						item={item}
 						key={item.id}
+						onItemHover={onItemHover}
 						onView={onView}
 						proximity={isDocked ? {
 							centersRef: dock.centersRef,

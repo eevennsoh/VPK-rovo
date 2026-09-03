@@ -299,7 +299,7 @@ test("a notch is a drag handle, so a session leaves the collapsed rail too", () 
 	// reached with the prop the expanded cards already take.
 	assert.match(SESSION_TYPES_SOURCE, /sessionDrag\?: JiraIssueAgentSessionDragBinding;/u);
 	assert.match(TYPES_SOURCE, /extends Omit<AgentSessionProps, "className">/u);
-	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,500}?sessionDrag=\{sessionProps\.sessionDrag\}/u);
+	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,800}?sessionDrag=\{sessionProps\.sessionDrag\}/u);
 	assert.match(
 		RAIL_COLUMN_SOURCE,
 		/import \{ AgentSessionMediumDrag \} from "@\/components\/blocks\/agent-session\/agent-session-medium-drag";/u,
@@ -563,12 +563,23 @@ test("newly synced work reaches both the cards and the rail", () => {
 	assert.match(SESSION_TYPES_SOURCE, /newItemIds\?: ReadonlySet<string>;/u);
 });
 
+test("the collapsed rail preserves session twin hover previews", () => {
+	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,500}?highlightedItemId=\{sessionProps\.highlightedItemId\}/u);
+	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,500}?onItemHover=\{sessionProps\.onItemHover\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /isHighlighted=\{item\.id === highlightedItemId\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /onPointerEnter=\{\(\) => \{[\s\S]{0,150}?onItemHover\?\.\(item\)/u);
+	assert.match(RAIL_COLUMN_SOURCE, /onPointerLeave=\{\(\) => \{[\s\S]{0,150}?onItemHover\?\.\(null\)/u);
+	assert.match(RAIL_COLUMN_SOURCE, /data-highlighted=\{isHighlighted \|\| undefined\}/u);
+	assert.match(NOTCH_MARK_SOURCE, /isHighlighted\s*\? AGENT_SESSION_NOTCH_TONE\.selected/u);
+	assert.match(NOTCH_MARK_SOURCE, /isHighlighted[\s\S]{0,100}?AGENT_SESSION_NOTCH_LENGTH\.peak/u);
+});
+
 test("an arrival is a transient beat plus a mark that outlives it", () => {
 	// The mark is the load-bearing half: it has to survive a backgrounded tab, a
 	// collapsed column, and reduced motion, so it is never the animation alone.
 	assert.match(CARD_SOURCE, /!captured && isNew \? "border-border-discovery" : "border-border-disabled"/u);
 	assert.match(CARD_SOURCE, /border border-solid/u);
-	assert.match(NOTCH_MARK_SOURCE, /isNew \? NOTCH_EMPHASIS : NOTCH_AT_REST/u);
+	assert.match(NOTCH_MARK_SOURCE, /isNew \|\| isHighlighted \? NOTCH_EMPHASIS : NOTCH_AT_REST/u);
 	// A reviewed notch rests quiet and lights up on hover or focus; a new one is
 	// already lit, so "new" reuses the hover vocabulary instead of adding one.
 	assert.match(NOTCH_MARK_SOURCE, /const NOTCH_EMPHASIS = "scale-x-\[1\.6\] bg-icon";/u);
