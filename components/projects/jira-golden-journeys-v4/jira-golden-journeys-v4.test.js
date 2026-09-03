@@ -23,6 +23,9 @@ const EXPERIMENTAL_BOARD_SOURCE = readProjectFile(
 const EXPERIMENTAL_CARD_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/experimental-jira-kanban-card.tsx",
 );
+const CREATE_WORK_ITEM_DROP_ZONE_SOURCE = readProjectFile(
+	"components/blocks/jira-kanban/experimental/components/create-work-item-drop-zone.tsx",
+);
 const PANEL_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/components/agent-session-panel.tsx",
 );
@@ -229,6 +232,67 @@ test("Team EU keeps only attached agent sessions on status columns", () => {
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
 		/if \(defaultShowUntracked !== appliedShowUntrackedDefault\) \{\s*setAppliedShowUntrackedDefault\(defaultShowUntracked\);\s*setShowUntracked\(defaultShowUntracked\);\s*\}/u,
+	);
+});
+
+test("2000 years later reveals a create-work-item drop zone in every board column during an agent-session drag", () => {
+	assert.match(
+		PAGE_SOURCE,
+		/const createWorkItemDropZoneLabel = designVariation === "2000-years-later"\s*\? "Create new work item"\s*: undefined;/u,
+	);
+	assert.match(
+		PAGE_SOURCE,
+		/<ExperimentalJiraKanbanPage[\s\S]*createWorkItemDropZoneLabel=\{createWorkItemDropZoneLabel\}/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/createWorkItemDropZoneLabel\?: ExperimentalJiraKanbanProps\["createWorkItemDropZoneLabel"\];/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/<ExperimentalJiraKanban[\s\S]*createWorkItemDropZoneLabel=\{createWorkItemDropZoneLabel\}/u,
+	);
+	assert.doesNotMatch(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/useDesignVariation|design-variation/u,
+		"the shared board must receive variation-owned copy through a prop",
+	);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/sessionDragging=\{boardSessionDrag\.transaction !== null\}/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/sessionDragging && dropZoneLabel \? \(/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/className="[^"]*h-12[^"]*border-dashed[^"]*text-text-subtlest"[\s\S]*data-board-agent-session-create-work-item-drop-zone=\{title\}[\s\S]*\{label\}/u,
+	);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/<BoardColumnCreateAction[\s\S]*dropZoneLabel=\{createWorkItemDropZoneLabel\}[\s\S]*sessionDragging=\{sessionDragging\}[\s\S]*title=\{title\}/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/import \{ useMagneticProximity \} from "@\/components\/ui-custom\/hooks\/use-magnetic-proximity";/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/const magnet = useMagneticProximity\(targetRef\);/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/<motion\.div[\s\S]*style=\{\{ x: magnet\.x, y: magnet\.y \}\}[\s\S]*ref=\{targetRef\}[\s\S]*<motion\.span[\s\S]*style=\{\{ x: magnet\.labelX, y: magnet\.labelY \}\}/u,
+	);
+	assert.match(CREATE_WORK_ITEM_DROP_ZONE_SOURCE, /data-board-agent-session-drop-zone="create"/u);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/data-board-agent-session-column-title=\{title\}/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/useBoardAgentSessionDrag\(\{[\s\S]*onCreate: agentSessionHandlers\.onCreateWorkItem,/u,
 	);
 });
 

@@ -73,6 +73,9 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 	// to a work item. Untracked Pulse rows stay in the dedicated Untracked
 	// surface. 2000 years later keeps proximity rows beside the related cards.
 	const showUntrackedProximity = designVariation !== "team-eu";
+	const createWorkItemDropZoneLabel = designVariation === "2000-years-later"
+		? "Create new work item"
+		: undefined;
 	// Chin rows follow the same variation split. Team EU groups every active
 	// agent into one merged row (hover opens assignment). 2000 years later
 	// keeps a row per agent so the split exploration stays intact.
@@ -237,6 +240,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						activeView={activeView}
 						agentActivityLayout={agentActivityLayout}
 						cardGenerativeActionPresentation="more-actions"
+						createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
 						agentSessionAssigneeIdAliases={JIRA_GOLDEN_JOURNEYS_V4_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID}
 						agentSessionPresentation={designVariants.panel ? "panel" : "column"}
 						agents={JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS}
