@@ -84,9 +84,9 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 	// collapses them into one Work items tab and the switcher owns it instead.
 	// Both write the same state, so the choice survives flipping variations.
 	const tabs = useJiraTabs();
-	// The one place the global variant store meets the board. "Panel" lifts
-	// untracked work out of the board's flow into a floating side surface that
-	// the list view gets too; off, it stays the in-flow column.
+	// The one place the global variant store meets the board. Panel is on by
+	// default, so untracked work starts in the floating side surface the list
+	// view gets too; off, it stays the in-flow column.
 	const { designVariants } = useDesignVariants();
 	// Chin-row status glyphs are a variation choice too: Team EU keeps the stock
 	// spinner (question circle while an agent waits on an answer), 2000 years

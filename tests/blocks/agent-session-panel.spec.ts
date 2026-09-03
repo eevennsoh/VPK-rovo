@@ -20,7 +20,14 @@ function getAgentSessionColumn(page: Page): Locator {
 }
 
 async function openBoard(page: Page, options?: { panelVariant?: boolean }): Promise<void> {
-	if (options?.panelVariant) {
+	if (options?.panelVariant === false) {
+		await page.addInitScript(
+			([key, value]) => {
+				window.localStorage.setItem(key, value);
+			},
+			[DESIGN_VARIANTS_STORAGE_KEY, JSON.stringify({ panel: false })] as const,
+		);
+	} else if (options?.panelVariant) {
 		// Seeding the store before navigation is deterministic and keeps the
 		// overlay tests independent of the settings dropdown; one test below
 		// drives the real menu to prove the toggle is wired.
@@ -215,7 +222,7 @@ test("the panel survives the switch to the List view", async ({ page }) => {
 });
 
 test("with the variant off the column stays in flow and no panel renders", async ({ page }) => {
-	await openBoard(page);
+	await openBoard(page, { panelVariant: false });
 
 	await expect(getPanel(page)).toHaveCount(0);
 
@@ -232,23 +239,23 @@ test("with the variant off the column stays in flow and no panel renders", async
 
 test("the settings menu toggles the Panel variant on the live board", async ({ page }) => {
 	await openBoard(page);
-	await expect(getPanel(page)).toHaveCount(0);
-	const inFlowColumnSpan = await readSpan(getAgentSessionColumn(page));
+	const panel = getPanel(page);
+	await expect(panel).toBeVisible();
+	const panelSpan = await readSpan(panel);
 
 	await page.getByRole("button", { name: "Settings" }).click();
 	const panelVariantItem = page.getByRole("menuitemcheckbox", { name: "Panel" });
-	await expect(panelVariantItem).not.toBeChecked();
+	await expect(panelVariantItem).toBeChecked();
 	await panelVariantItem.click();
 
-	const panel = getPanel(page);
-	await expect(panel).toBeVisible();
-	// The presentations never coexist: the one column moved into the panel.
-	await expect(getAgentSessionColumn(page)).toHaveCount(1);
-	await expect(panel.locator("[data-agent-session-column]")).toHaveCount(1);
-	const panelSpan = await readSpan(panel);
-	// Turning the variant on moves the column from the board's leading edge to
-	// the trailing edge as a floating panel.
-	expect(panelSpan.left).toBeGreaterThan(inFlowColumnSpan.left);
+	await expect(getPanel(page)).toHaveCount(0);
+	// The presentations never coexist: the one column returned to the board.
+	const column = getAgentSessionColumn(page);
+	await expect(column).toHaveCount(1);
+	const inFlowColumnSpan = await readSpan(column);
+	// Turning the variant off moves the column from the trailing overlay back
+	// to the board's leading edge.
+	expect(inFlowColumnSpan.left).toBeLessThan(panelSpan.left);
 
 	// The choice is persisted under the shared storage key.
 	expect(
@@ -256,5 +263,5 @@ test("the settings menu toggles the Panel variant on the live board", async ({ p
 			(key) => window.localStorage.getItem(key),
 			DESIGN_VARIANTS_STORAGE_KEY,
 		),
-	).toBe(JSON.stringify({ panel: true }));
+	).toBe(JSON.stringify({ panel: false }));
 });
