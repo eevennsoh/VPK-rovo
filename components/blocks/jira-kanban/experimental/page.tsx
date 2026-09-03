@@ -11,6 +11,11 @@ import {
 
 import { useOptionalRovoChat } from "@/app/contexts";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import {
+	AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX,
+	AGENT_SESSION_COLUMN_WIDTH_PX,
+	type AgentSessionColumnProps,
+} from "@/components/blocks/agent-session-column";
 import type { JiraIssueAgentActivityLayout, JiraIssueGenerativeActionPresentation } from "@/components/blocks/jira-issue";
 import type {
 	JiraKanbanAgentData,
@@ -21,6 +26,7 @@ import type {
 	JiraKanbanProps,
 } from "../index";
 import { createJiraKanbanColumns } from "../jira-kanban-data";
+import { AgentSessionPanel } from "./components/agent-session-panel";
 import { BoardFilterPopover } from "./components/board-filter-popover";
 import {
 	ALL_BOARD_AGENT_SESSION_STATE_IDS,
@@ -38,6 +44,7 @@ import {
 	selectBoardUntrackedSessions,
 } from "./lib/board-untracked-sessions";
 import {
+	BOARD_HEADER_TAB_STRIP_BOTTOM_PX,
 	ExperimentalJiraKanbanBoardHeader,
 	type ExperimentalJiraKanbanView,
 } from "./experimental-board-header";
@@ -132,6 +139,20 @@ export interface ExperimentalJiraKanbanPageProps {
 	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;
 	detachedAgentSessionsByCard?: ExperimentalJiraKanbanProps["detachedAgentSessionsByCard"];
 	agentSessionAssigneeIdAliases?: Readonly<Record<string, string>>;
+	/**
+	 * Where untracked work lives on this board.
+	 *
+	 * `"column"` keeps it in flow, as a 280px column left of the status
+	 * scrollport — board view only. `"panel"` lifts the same column into a
+	 * floating side surface pinned to the inline-start edge of the content
+	 * region, which the board *and* the list scroll beneath, so untracked work
+	 * survives a view switch.
+	 *
+	 * The choice is a prop rather than a read of the global variant store: this
+	 * block stays generic and unit-testable, and the route that owns the store
+	 * decides. Only one presentation ever mounts, so the two can never drift.
+	 */
+	agentSessionPresentation?: "column" | "panel";
 	agents?: readonly JiraKanbanAgentData[];
 	ariaLabel?: string;
 	boardColumns?: readonly JiraKanbanColumnData[];
@@ -183,6 +204,7 @@ export default function ExperimentalJiraKanbanPage({
 	defaultAgentSessionColumnCollapsed = false,
 	detachedAgentSessionsByCard,
 	agentSessionAssigneeIdAliases,
+	agentSessionPresentation = "column",
 	agents = BOARD_AGENTS,
 	ariaLabel = "Experimental RFP board columns. Scroll horizontally to review all statuses.",
 	boardColumns: controlledBoardColumns,
@@ -251,6 +273,10 @@ export default function ExperimentalJiraKanbanPage({
 	// Owned here rather than inside the board: switching to the list or Pulse
 	// view unmounts `ExperimentalJiraKanban`, and a viewer's collapse choices are
 	// a deliberate setting that must outlive a temporary view switch.
+	// Collapsed is the panel's ONLY axis. The docked rail is persistent: it is
+	// always on the board's trailing edge, and the viewer expands it to the panel
+	// or collapses it back to the 32px notch rail. There is deliberately no
+	// closed state — nothing outside the rail could bring it back.
 	const [agentSessionColumnCollapsed, setAgentSessionColumnCollapsed] = useState(defaultAgentSessionColumnCollapsed);
 	const [collapsedColumns, setCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
 	const [showUntracked, setShowUntracked] = useState(true);
@@ -437,6 +463,34 @@ export default function ExperimentalJiraKanbanPage({
 		() => new Set(agentSessionItems.map((session) => session.id)),
 		[agentSessionItems],
 	);
+	// One config, both presentations. The in-flow column and the floating panel
+	// render the same `AgentSessionColumn` with the same data and handlers, so
+	// building it once is what stops them drifting as either host evolves.
+	const agentSessionColumnConfig: AgentSessionColumnProps | undefined = showAgentSessionColumn ? {
+		capturedItemIds: capturedLooseWorkIds,
+		defaultCollapsed: agentSessionColumnCollapsed,
+		items: untrackedAgentSessionItems,
+		...agentSessionHandlers,
+		onCollapsedChange: setAgentSessionColumnCollapsed,
+	} : undefined;
+	const isListContent = activeView === "list" && renderListContent !== undefined;
+	// Insights replaces the whole content region with an article; a floating
+	// untracked-work surface over prose is chrome with nothing to attach to.
+	const showPulseContent = isPulse && !isListContent;
+	const showAgentSessionPanel = agentSessionPresentation === "panel"
+		&& agentSessionColumnConfig !== undefined
+		&& showBoardContent
+		&& !showPulseContent;
+	// The panel is absolute, so board content passes *under* it by design. But at
+	// maximum scroll the trailing column would land flush with the scrollport's
+	// edge and stay under the panel with no scroll left to free it. Extending the
+	// scrollable content by the panel's own width keeps the pass-under behavior
+	// and still lets the last column be scrolled fully clear.
+	const boardScrollEndInset = showAgentSessionPanel
+		? (agentSessionColumnCollapsed
+			? AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX
+			: AGENT_SESSION_COLUMN_WIDTH_PX)
+		: 0;
 	const boardIssueKeys = useMemo(
 		() => collectBoardIssueKeys(filteredBoardColumns),
 		[filteredBoardColumns],
@@ -642,11 +696,12 @@ export default function ExperimentalJiraKanbanPage({
 	};
 
 	return (
-		<div className="flex h-full min-h-[640px] flex-col rounded-lg bg-surface">
+		<div className="relative flex h-full min-h-[640px] flex-col rounded-lg bg-surface">
 			<ExperimentalJiraKanbanBoardHeader
 				activeView={activeView}
 				assignees={assignees}
 				compact={compactHeader}
+				controlsInsetEnd={boardScrollEndInset}
 				onSelectedAssigneeIdsChange={handleAssigneeFilterChange}
 				onShownSessionStateIdsChange={setShownSessionStateIds}
 				onShowUntrackedChange={setShowUntracked}
@@ -689,9 +744,7 @@ export default function ExperimentalJiraKanbanPage({
 				surfaceLabel={activeView}
 				viewTabs={viewTabs}
 			/>
-			{showBoardContent ? (activeView === "list" && renderListContent ? (
-				renderListContent(filteredBoardColumns)
-			) : isPulse ? (
+			{showBoardContent ? (showPulseContent ? (
 				<ExperimentalPulse
 					answers={answers}
 					capturedLooseWorkIds={capturedLooseWorkIds}
@@ -710,63 +763,91 @@ export default function ExperimentalJiraKanbanPage({
 					timeline={pulseTimeline}
 				/>
 			) : (
-				<div className="flex min-h-0 min-w-0 flex-1">
-					<ExperimentalJiraKanban
-						activeCardCode={activeCardCode}
-						agentActivityLayout={agentActivityLayout}
-						agentSessionColumn={showAgentSessionColumn ? {
-							capturedItemIds: capturedLooseWorkIds,
-							defaultCollapsed: agentSessionColumnCollapsed,
-							items: untrackedAgentSessionItems,
-							...agentSessionHandlers,
-							onCollapsedChange: setAgentSessionColumnCollapsed,
-						} : undefined}
-						proximityAgentSession={{
-							actionableSessionIds: proximityActionableSessionIds,
-							capturedItemIds: capturedLooseWorkIds,
-							onCreateWorkItem: agentSessionHandlers.onCreateWorkItem,
-							onLinkWorkItem: agentSessionHandlers.onLinkWorkItem,
-							onSubtasks: agentSessionHandlers.onSubtasks,
-						}}
-						agents={agents}
-						ariaLabel={ariaLabel}
-						assignedAgentIdsByColumn={columnAgentAssignments}
-						boardColumns={filteredBoardColumns}
-						cardGenerativeActionPresentation={cardGenerativeActionPresentation}
-						collapsedColumns={collapsedColumns}
-						detachedAgentSessionsByCard={proximityAgentSessionsByCard}
-						onCollapsedColumnsChange={setCollapsedColumns}
-						draggedCardCode={draggedCard?.card.code ?? null}
-						selectedCardCodes={selection.selectedCardCodes}
-						onCardClick={handleCardClick}
-						onCardAgentActivityViewChat={onCardAgentActivityViewChat}
-						onCardAgentDoneRunView={onCardAgentDoneRunView}
-						onCardAgentSessionLink={onCardAgentSessionLink
-							? handleCardAgentSessionLink
-							: undefined}
-						onCardAgentSessionMove={onCardAgentSessionMove
-							? handleCardAgentSessionMove
-							: undefined}
-						onCardAgentSessionUnlink={onCardAgentSessionUnlink
-							? handleCardAgentSessionUnlink
-							: undefined}
-						onCardSelect={handleCardSelect}
-						onCardDragStart={handleCardDragStart}
-						onCardDrop={handleCardDrop}
-						onCardDragEnd={handleCardDragEnd}
-						onCreateAgent={handleCreateColumnAgent}
-						onToggleColumnAgent={handleToggleColumnAgent}
-						renderAgentActivityIndicator={renderAgentActivityIndicator}
-						paddingTop={0}
-						selectionToolbar={{
-							onAgentAssignmentChange: handleSelectedCardsAgentAssignmentChange,
-							onClearSelection: () => setSelection(createJiraKanbanSelectionState()),
-							onStatusChange: handleSelectedCardsStatusChange,
-							selectedAgentIds,
-						}}
-					/>
+				// The panel's positioning context, and the reason one overlay can
+				// serve both the board and the list: they are the same region.
+				// Insights stays outside it — it asserts its own `lg:min-h-[40rem]`
+				// floor, which an intermediate `min-h-0` box would turn into
+				// overflow.
+				<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+					{isListContent ? (
+						renderListContent?.(filteredBoardColumns)
+					) : (
+						<div className="flex min-h-0 min-w-0 flex-1">
+							<ExperimentalJiraKanban
+								activeCardCode={activeCardCode}
+								agentActivityLayout={agentActivityLayout}
+								// Panel mode hands the column to the overlay instead, so
+								// the two presentations can never render at once.
+								agentSessionColumn={agentSessionPresentation === "panel"
+									? undefined
+									: agentSessionColumnConfig}
+								scrollEndInset={boardScrollEndInset}
+								proximityAgentSession={{
+									actionableSessionIds: proximityActionableSessionIds,
+									capturedItemIds: capturedLooseWorkIds,
+									onCreateWorkItem: agentSessionHandlers.onCreateWorkItem,
+									onLinkWorkItem: agentSessionHandlers.onLinkWorkItem,
+									onSubtasks: agentSessionHandlers.onSubtasks,
+								}}
+								agents={agents}
+								ariaLabel={ariaLabel}
+								assignedAgentIdsByColumn={columnAgentAssignments}
+								boardColumns={filteredBoardColumns}
+								cardGenerativeActionPresentation={cardGenerativeActionPresentation}
+								collapsedColumns={collapsedColumns}
+								detachedAgentSessionsByCard={proximityAgentSessionsByCard}
+								onCollapsedColumnsChange={setCollapsedColumns}
+								draggedCardCode={draggedCard?.card.code ?? null}
+								selectedCardCodes={selection.selectedCardCodes}
+								onCardClick={handleCardClick}
+								onCardAgentActivityViewChat={onCardAgentActivityViewChat}
+								onCardAgentDoneRunView={onCardAgentDoneRunView}
+								onCardAgentSessionLink={onCardAgentSessionLink
+									? handleCardAgentSessionLink
+									: undefined}
+								onCardAgentSessionMove={onCardAgentSessionMove
+									? handleCardAgentSessionMove
+									: undefined}
+								onCardAgentSessionUnlink={onCardAgentSessionUnlink
+									? handleCardAgentSessionUnlink
+									: undefined}
+								onCardSelect={handleCardSelect}
+								onCardDragStart={handleCardDragStart}
+								onCardDrop={handleCardDrop}
+								onCardDragEnd={handleCardDragEnd}
+								onCreateAgent={handleCreateColumnAgent}
+								onToggleColumnAgent={handleToggleColumnAgent}
+								renderAgentActivityIndicator={renderAgentActivityIndicator}
+								paddingTop={0}
+								selectionToolbar={{
+									onAgentAssignmentChange: handleSelectedCardsAgentAssignmentChange,
+									onClearSelection: () => setSelection(createJiraKanbanSelectionState()),
+									onStatusChange: handleSelectedCardsStatusChange,
+									selectedAgentIds,
+								}}
+							/>
+						</div>
+					)}
 				</div>
 			)) : null}
+			{/*
+			 * A board-root child, not a content-region one: the panel is a docked
+			 * rail whose top edge is the tab strip's bottom border, so it has to span
+			 * the control-row band the region excludes. The header's title+tabs
+			 * wrapper sits at z-50 over it and is what clips it to that line.
+			 *
+			 * Still the last child. `jira-list-column-controls` also sits at z-40 and
+			 * neither the region nor this root creates a stacking context between
+			 * them, so a tie is broken by DOM order.
+			 */}
+			{showAgentSessionPanel && agentSessionColumnConfig ? (
+				<AgentSessionPanel
+					agentSessionColumn={agentSessionColumnConfig}
+					collapsed={agentSessionColumnCollapsed}
+					onCollapsedChange={setAgentSessionColumnCollapsed}
+					topInset={BOARD_HEADER_TAB_STRIP_BOTTOM_PX}
+				/>
+			) : null}
 		</div>
 	);
 }

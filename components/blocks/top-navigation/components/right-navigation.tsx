@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type Ref } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useIsMounted } from "@/components/hooks/use-is-mounted";
@@ -22,6 +22,12 @@ interface RightNavigationProps {
 	isChatOpen?: boolean;
 	onToggleChat: () => void;
 	settingsMenuItems?: ReadonlyArray<RightNavigationSettingsMenuItem>;
+	/**
+	 * Exposes the cluster's container so the bar can measure how much room the
+	 * right side needs. The centered search overlay reserves that width on both
+	 * sides so it can never slide underneath these actions.
+	 */
+	ref?: Ref<HTMLDivElement>;
 }
 
 export function RightNavigation({
@@ -32,6 +38,7 @@ export function RightNavigation({
 	isChatOpen = false,
 	onToggleChat,
 	settingsMenuItems,
+	ref,
 }: Readonly<RightNavigationProps>) {
 	const [isOverflowOpen, setIsOverflowOpen] = useState(false);
 	// Gate the responsive collapse on mount: `windowWidth` is 0 during SSR and the
@@ -73,7 +80,7 @@ export function RightNavigation({
 	// that renders the same actions in a horizontal row (matches production).
 	if (isMounted && windowWidth < TOP_NAV_OVERFLOW_BREAKPOINT_PX) {
 		return (
-			<div style={containerStyle}>
+			<div ref={ref} style={containerStyle}>
 				<Popover open={isOverflowOpen} onOpenChange={setIsOverflowOpen}>
 					<PopoverTrigger
 						render={
@@ -95,5 +102,5 @@ export function RightNavigation({
 		);
 	}
 
-	return <div style={containerStyle}>{actions}</div>;
+	return <div ref={ref} style={containerStyle}>{actions}</div>;
 }

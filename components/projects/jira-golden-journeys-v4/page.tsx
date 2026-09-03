@@ -6,7 +6,6 @@ import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type {
 	JiraIssueAgentActivity,
-	JiraIssueAgentActivityIndicatorRenderer,
 	JiraIssueCompletedAgentRun,
 } from "@/components/blocks/jira-issue";
 import { toJiraIssueDemoAttachedActivity } from "@/components/blocks/jira-issue/agent-session-demo-attach";
@@ -16,13 +15,22 @@ import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experime
 import { isPulseAgentSession, type PulseLooseWork } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { linkJiraKanbanAgentSession, moveJiraKanbanAgentSession, unlinkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
 import { JiraList, type JiraListRowData } from "@/components/blocks/jira-list";
-import { PixelLoader } from "@/components/ui-custom/pixel-loader";
+import { useDesignVariants } from "@/components/hooks/use-design-variants";
+import { useDesignVariation } from "@/components/hooks/use-design-variation";
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
 import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys-v1/data/agent-chat-data";
 import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journeys-v1/hooks/use-jira-golden-journeys-v1-agent-chat-demo";
 import { JiraViewTabs } from "@/components/projects/jira/components/jira-header";
+import {
+	DEFAULT_JIRA_WORK_ITEM_VIEW,
+	DEFAULT_JIRA_WORK_ITEMS_TAB_LABEL,
+	type JiraWorkItemView,
+} from "@/components/projects/jira/data/tabs";
+import { useJiraTabs } from "@/components/projects/jira/hooks/use-jira-tabs";
+import { resolveJiraTab } from "@/components/projects/jira/lib/jira-tab-model";
 import AppLayout from "@/components/projects/page";
 
+import { getJiraGoldenJourneysV4AgentActivityIndicator } from "./data/agent-activity-indicators";
 import {
 	createJiraGoldenJourneysV4PayBoardColumns,
 	toJiraGoldenJourneysV4DetachedAgentSession,
@@ -37,15 +45,6 @@ const STATUS_VARIANTS: Readonly<Record<string, JiraListRowData["statusVariant"]>
 	"In review": "warning",
 	Done: "success",
 };
-
-const renderJiraGoldenJourneysV4AgentActivityIndicator: JiraIssueAgentActivityIndicatorRenderer = (state) => (
-	<PixelLoader
-		className="size-3 justify-center text-icon-subtle"
-		pattern={state === "awaiting-input" ? "solo" : "diagonal-top-left"}
-		shape="dot"
-		size="small"
-	/>
-);
 
 function createListRows(columns: readonly JiraKanbanColumnData[]): JiraListRowData[] {
 	return columns.flatMap((column) => column.cards.map((card) => ({
@@ -80,8 +79,32 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 		Readonly<Record<string, readonly AgentSessionItem[]>>
 	>({});
 	const detachedActivitiesByIdRef = useRef<Record<string, JiraIssueAgentActivity>>({});
-	const [activeView, setActiveView] = useState<"board" | "list">("board");
-	const [selectedTab, setSelectedTab] = useState(1);
+	// Team EU splits work items into Board and List tabs, so the tab bar owns the
+	// view and the board header's own switcher stands down. 2000 years later
+	// collapses them into one Work items tab and the switcher owns it instead.
+	// Both write the same state, so the choice survives flipping variations.
+	const tabs = useJiraTabs();
+	// The one place the global variant store meets the board. "Panel" lifts
+	// untracked work out of the board's flow into a floating side surface that
+	// the list view gets too; off, it stays the in-flow column.
+	const { designVariants } = useDesignVariants();
+	// Chin-row status glyphs are a variation choice too: Team EU keeps the stock
+	// spinner (question circle while an agent waits on an answer), 2000 years
+	// later runs the pixel loader.
+	const { designVariation } = useDesignVariation();
+	const renderAgentActivityIndicator = getJiraGoldenJourneysV4AgentActivityIndicator(designVariation);
+	const [workItemView, setWorkItemView] = useState<JiraWorkItemView>(DEFAULT_JIRA_WORK_ITEM_VIEW);
+	const [selectedTabLabel, setSelectedTabLabel] = useState(DEFAULT_JIRA_WORK_ITEMS_TAB_LABEL);
+	const activeTab = resolveJiraTab(tabs, selectedTabLabel, workItemView);
+	const tabOwnsView = activeTab?.view !== undefined;
+	const activeView = activeTab?.view ?? workItemView;
+	const handleTabChange = useCallback((tabLabel: string) => {
+		setSelectedTabLabel(tabLabel);
+		const tabView = tabs.find((tab) => tab.label === tabLabel)?.view;
+		if (tabView) {
+			setWorkItemView(tabView);
+		}
+	}, [tabs]);
 	const [resumeAnnouncement, setResumeAnnouncement] = useState("");
 	// Untracked work offers Resume on the rows running on the viewer's own
 	// device; that gate is the board's default, so this route only supplies the
@@ -180,6 +203,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						agentActivityLayout="split"
 						cardGenerativeActionPresentation="more-actions"
 						agentSessionAssigneeIdAliases={JIRA_GOLDEN_JOURNEYS_V4_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID}
+						agentSessionPresentation={designVariants.panel ? "panel" : "column"}
 						agents={JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS}
 						ariaLabel="Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses."
 						boardColumns={boardColumns}
@@ -196,14 +220,14 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						onCardAgentSessionMove={handleAgentSessionMove}
 						onCardAgentSessionUnlink={handleAgentSessionUnlink}
 						onResumeLooseWork={handleResumeLooseWork}
-						onViewChange={setActiveView}
+						onViewChange={tabOwnsView ? undefined : setWorkItemView}
 						renderListContent={(columns) => {
 							const listRows = createListRows(columns);
 							return (
 								<div className="min-h-0 flex-1 overflow-auto p-4 md:p-5">
 									<JiraList
 										ariaLabel="Payments SDK v2 migration work items list"
-										className="h-full max-h-none"
+										className="max-h-full"
 										rows={listRows}
 										totalCountLabel={`${listRows.length}`}
 										visibleCount={listRows.length}
@@ -211,10 +235,16 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 								</div>
 							);
 						}}
-						renderAgentActivityIndicator={renderJiraGoldenJourneysV4AgentActivityIndicator}
+						renderAgentActivityIndicator={renderAgentActivityIndicator}
 						showAgentSessionColumn
-						showBoardContent={selectedTab === 1}
-						viewTabs={<JiraViewTabs selectedTab={selectedTab} onTabChange={setSelectedTab} />}
+						showBoardContent={activeTab?.hasContent === true}
+						viewTabs={(
+							<JiraViewTabs
+								selectedTabLabel={selectedTabLabel}
+								onTabChange={handleTabChange}
+								workItemView={workItemView}
+							/>
+						)}
 					/>
 				</div>
 			</AppLayout>

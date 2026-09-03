@@ -89,6 +89,41 @@ export const TOP_NAV_SEARCH_MIN_WIDTH_PX = 180;
 // it at 1440/1768). Below it, the search left-aligns next to the sidebar chrome.
 export const TOP_NAV_SEARCH_CENTER_BREAKPOINT_PX = 1200;
 
+// The centered middle zone is an overlay spanning the whole bar, so it has to
+// reserve the side chrome itself or it slides underneath it. The reserve is
+// applied symmetrically (that is what keeps the search centered on the bar), and
+// this is the minimum clearance kept between the centered group and the right
+// cluster once the search has shrunk down to meet it.
+export const TOP_NAV_CENTERED_SEARCH_CLUSTER_GAP_PX = 24;
+
+// First-paint estimate for the right cluster's width, used until the real
+// measurement lands. Deliberately generous: over-reserving for one frame only
+// narrows the search, while under-reserving would flash the overlap this
+// reserve exists to prevent.
+export const TOP_NAV_RIGHT_CLUSTER_FALLBACK_WIDTH_PX = 300;
+
+/**
+ * Horizontal reserve for the centered middle zone (search + Create).
+ *
+ * Centering makes that zone an overlay spanning the whole bar, so nothing in
+ * normal flow keeps it away from the side chrome: without a reserve the search
+ * slides under the collapsed product button on the left and the right cluster
+ * ("Ask Rovo" and the utility icons) on the right. Reserving the larger of the
+ * two on *both* sides is what keeps the group centered on the bar — the search
+ * shrinks toward its flex-basis instead of overlapping.
+ *
+ * @param product Drives the collapsed left chrome's width (the product label).
+ * @param rightClusterWidthPx Measured right-cluster width; `0` (not yet
+ *   measured) falls back to {@link TOP_NAV_RIGHT_CLUSTER_FALLBACK_WIDTH_PX}.
+ */
+export function getCenteredSearchInsetPx(product: string, rightClusterWidthPx: number): number {
+	const rightClusterPx = rightClusterWidthPx || TOP_NAV_RIGHT_CLUSTER_FALLBACK_WIDTH_PX;
+	return Math.max(
+		getCollapsedHeaderPaddingPx(product),
+		rightClusterPx + TOP_NAV_PADDING_PX + TOP_NAV_CENTERED_SEARCH_CLUSTER_GAP_PX,
+	);
+}
+
 // Below this viewport width the search field collapses to an icon-only button
 // (Figma shows an icon at 320 but a field at 480, so the cutoff sits between).
 export const TOP_NAV_SEARCH_ICON_BREAKPOINT_PX = 360;

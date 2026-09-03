@@ -6,33 +6,50 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { JIRA_TABS } from "../data/tabs";
+import { DEFAULT_JIRA_WORK_ITEM_VIEW, type JiraWorkItemView } from "../data/tabs";
+import { useJiraTabs } from "../hooks/use-jira-tabs";
+import { resolveJiraTab } from "../lib/jira-tab-model";
 import ExpandHorizontalIcon from "@atlaskit/icon/core/expand-horizontal";
 import ShareIcon from "@atlaskit/icon/core/share";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import TeamsIcon from "@atlaskit/icon/core/teams";
 
-interface JiraHeaderProps {
-	selectedTab: number;
-	onTabChange: (tabIndex: number) => void;
+interface JiraViewTabsProps {
+	/**
+	 * Selection is tracked by label, not index: the design variation decides
+	 * whether work items is one tab or two, so an index would silently point at
+	 * a different destination after a flip.
+	 */
+	selectedTabLabel: string;
+	onTabChange: (tabLabel: string) => void;
+	/**
+	 * Current board/list choice. Only consulted when the selected label is absent
+	 * from this variation's tabs, so the reader keeps their view across a flip.
+	 */
+	workItemView?: JiraWorkItemView;
+	/**
+	 * Work item surfaces this route renders. A board-only route omits `list` so
+	 * Team EU shows `Board` instead of splitting into a `List` tab it cannot fill.
+	 */
+	supportedWorkItemViews?: readonly JiraWorkItemView[];
 }
 
-export function JiraViewTabs({ selectedTab, onTabChange }: Readonly<JiraHeaderProps>) {
+export function JiraViewTabs({
+	selectedTabLabel,
+	onTabChange,
+	workItemView = DEFAULT_JIRA_WORK_ITEM_VIEW,
+	supportedWorkItemViews,
+}: Readonly<JiraViewTabsProps>) {
+	const tabs = useJiraTabs(supportedWorkItemViews);
+	const activeTab = resolveJiraTab(tabs, selectedTabLabel, workItemView);
+
 	return (
-		<Tabs
-			value={JIRA_TABS[selectedTab]?.label ?? JIRA_TABS[0]?.label}
-			onValueChange={(value) => {
-				const nextIndex = JIRA_TABS.findIndex((tab) => tab.label === value);
-				if (nextIndex !== -1) {
-					onTabChange(nextIndex);
-				}
-			}}
-		>
+		<Tabs value={activeTab?.label} onValueChange={onTabChange}>
 			<TabsList variant="line" className="w-full justify-start">
-				{JIRA_TABS.map((tab, index) => {
+				{tabs.map((tab, index) => {
 					const IconComponent = tab.icon;
 					const isFirst = index === 0;
-					const isSelected = selectedTab === index;
+					const isSelected = activeTab?.label === tab.label;
 
 					return (
 						<TabsTrigger
@@ -53,7 +70,7 @@ export function JiraViewTabs({ selectedTab, onTabChange }: Readonly<JiraHeaderPr
 					);
 				})}
 			</TabsList>
-			{JIRA_TABS.map((tab) => (
+			{tabs.map((tab) => (
 				<TabsContent key={tab.label} value={tab.label}>
 					{tab.hasContent ? (
 						<div />
@@ -70,7 +87,12 @@ export function JiraViewTabs({ selectedTab, onTabChange }: Readonly<JiraHeaderPr
 	);
 }
 
-export default function JiraHeader({ selectedTab, onTabChange }: Readonly<JiraHeaderProps>) {
+export default function JiraHeader({
+	selectedTabLabel,
+	onTabChange,
+	workItemView,
+	supportedWorkItemViews,
+}: Readonly<JiraViewTabsProps>) {
 	return (
 		<div className="pt-4">
 			<div className="flex flex-col gap-1">
@@ -113,7 +135,12 @@ export default function JiraHeader({ selectedTab, onTabChange }: Readonly<JiraHe
 
 				{/* Tabs */}
 				<div>
-					<JiraViewTabs selectedTab={selectedTab} onTabChange={onTabChange} />
+					<JiraViewTabs
+						selectedTabLabel={selectedTabLabel}
+						onTabChange={onTabChange}
+						supportedWorkItemViews={supportedWorkItemViews}
+						workItemView={workItemView}
+					/>
 				</div>
 			</div>
 		</div>

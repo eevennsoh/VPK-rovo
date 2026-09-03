@@ -405,10 +405,25 @@ test("Jira issue splits the finished review chin into one row per completed run"
 	assert.match(COMPLETED_RUNS_SOURCE, /className="flex h-6 w-full min-w-0 items-center justify-between gap-2 rounded-md px-2 py-1[^"]*"/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /<AgentAvatarVisual[\s\S]*avatarSrc=\{run\.agentAvatarSrc\}[\s\S]*label=\{run\.agentName\}[\s\S]*sizePx=\{16\}/u);
 	// Per-run outcome icon replaces the aggregate's failure-only indicator.
-	// Failed stays the filled error status; finished uses the extra-large
-	// stroke ADS dot in subtle icon color, not the smaller tree Node glyph.
+	// Failed stays the filled error status — never a host renderer's call — and
+	// an unhandled finished run falls back to the extra-large stroke ADS dot in
+	// subtle icon color, not the smaller tree Node glyph.
 	assert.match(COMPLETED_RUNS_SOURCE, /import StrokeWeightExtraLargeIcon from "@atlaskit\/icon\/core\/stroke-weight-extra-large";/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /hasFailed \? \([\s\S]*<StatusErrorIcon[\s\S]*: \([\s\S]*<StrokeWeightExtraLargeIcon/u);
+	assert.match(
+		COMPLETED_RUNS_SOURCE,
+		/hasFailed \? \([\s\S]*<StatusErrorIcon[\s\S]*\) : renderAgentActivityIndicator \? \(\s*renderAgentActivityIndicator\("finished"\)\s*\) : \([\s\S]*<StrokeWeightExtraLargeIcon/u,
+	);
+	// The finished glyph is the existing chin-row renderer seam, not a second
+	// prop chain, so a host that already styles working rows styles this too.
+	assert.match(COMPLETED_RUNS_SOURCE, /renderAgentActivityIndicator\?: JiraIssueAgentActivityIndicatorRenderer;/u);
+	assert.match(
+		COMPLETED_RUNS_SOURCE,
+		/<JiraIssueCompletedRunRow[\s\S]*renderAgentActivityIndicator=\{props\.renderAgentActivityIndicator\}/u,
+	);
+	assert.match(
+		SOURCE,
+		/<JiraIssueAgentDone[\s\S]*renderAgentActivityIndicator=\{renderAgentActivityIndicator\}/u,
+	);
 	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /StatusSuccessIcon/u);
 	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /CheckMarkIcon/u);
 	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /NodeIcon/u);

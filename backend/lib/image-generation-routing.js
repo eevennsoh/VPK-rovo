@@ -40,7 +40,7 @@ function resolveGoogleImageGatewayConfig({
 			statusCode: 500,
 			error: "Image model is not configured",
 			details:
-				"Set GOOGLE_IMAGE_MODEL to an image-capable model (for example: gemini-3-pro-image-preview).",
+				"Set GOOGLE_IMAGE_MODEL to an image-capable model (for example: gemini-3-pro-image).",
 		};
 	}
 

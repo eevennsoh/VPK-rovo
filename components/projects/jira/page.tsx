@@ -16,6 +16,10 @@ import {
 	type JiraKanbanCardData,
 } from "@/components/blocks/jira-kanban";
 import JiraHeader from "./components/jira-header";
+import { DEFAULT_JIRA_WORK_ITEMS_TAB_LABEL } from "./data/tabs";
+import { useJiraTabs } from "./hooks/use-jira-tabs";
+import { resolveJiraTab } from "./lib/jira-tab-model";
+import type { JiraWorkItemView } from "./lib/jira-tab-model";
 import BoardToolbar from "./components/board-toolbar";
 import JiraWorkItemModal from "./components/jira-work-item-modal";
 import { AgentsWorkItemInlinePage } from "./components/agents-work-item-inline-page";
@@ -43,6 +47,8 @@ import {
 } from "./lib/rfp-demo-state";
 
 const WORK_ITEM_FLOATING_PIN_REASON = "agents-work-item-modal";
+/** The RFP demo renders a board only — no list surface exists for this route. */
+const SUPPORTED_WORK_ITEM_VIEWS: readonly JiraWorkItemView[] = ["board"];
 const AGENTS_RFP_DEMO_TOASTER_ID = "agents-rfp-demo-notifications";
 const RFP_DEMO_HUMAN_ASSIGNEES: Record<string, { avatarUrl: string; role: string }> = {
 	"David Hsieh": {
@@ -93,7 +99,11 @@ export default function AgentsView({
 	chatGreeting,
 	customAgentTabs,
 }: Readonly<AgentsViewProps>) {
-	const [selectedTab, setSelectedTab] = useState(1);
+	// The RFP demo only ships the board surface, so it opts out of Team EU's
+	// board/list split and shows a single work items destination either way.
+	const tabs = useJiraTabs(SUPPORTED_WORK_ITEM_VIEWS);
+	const [selectedTabLabel, setSelectedTabLabel] = useState(DEFAULT_JIRA_WORK_ITEMS_TAB_LABEL);
+	const activeTab = resolveJiraTab(tabs, selectedTabLabel, "board");
 	const [attachmentHighlight, setAttachmentHighlight] = useState<{ id: string; key: number } | null>(null);
 	const [previewAttachment, setPreviewAttachment] = useState<WorkItemAttachment | null>(null);
 	const nextAttachmentHighlightKeyRef = useRef(0);
@@ -489,10 +499,14 @@ export default function AgentsView({
 			}}
 		>
 			{/* Header Section */}
-			<JiraHeader selectedTab={selectedTab} onTabChange={setSelectedTab} />
+			<JiraHeader
+				selectedTabLabel={selectedTabLabel}
+				onTabChange={setSelectedTabLabel}
+				supportedWorkItemViews={SUPPORTED_WORK_ITEM_VIEWS}
+			/>
 
 			{/* Board Tab Content */}
-			{selectedTab === 1 ? (
+			{activeTab?.hasContent ? (
 				<div
 					style={{ flexGrow: 1, display: "flex", flexDirection: "column", position: "relative", minHeight: 0 }}
 				>

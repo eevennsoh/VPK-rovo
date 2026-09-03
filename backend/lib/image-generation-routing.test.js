@@ -23,7 +23,7 @@ test("resolveGoogleImageGatewayConfig fails when endpoint is not google", () => 
 	const result = resolveGoogleImageGatewayConfig({
 		envVars: {
 			AI_GATEWAY_URL_GOOGLE: "https://example.com/v1/openai/chat/completions",
-			GOOGLE_IMAGE_MODEL: "gemini-3-pro-image-preview",
+			GOOGLE_IMAGE_MODEL: "gemini-3-pro-image",
 		},
 		resolveGatewayUrl: (value) => value,
 		detectEndpointType: () => "openai",
@@ -52,7 +52,7 @@ test("resolveGoogleImageGatewayConfig prefers requested model override", () => {
 	const result = resolveGoogleImageGatewayConfig({
 		envVars: {
 			AI_GATEWAY_URL_GOOGLE: "https://example.com/v1/google/chat/completions",
-			GOOGLE_IMAGE_MODEL: "gemini-3-pro-image-preview",
+			GOOGLE_IMAGE_MODEL: "gemini-3-pro-image",
 		},
 		requestedModel: "gemini-3-custom-image",
 		resolveGatewayUrl: (value) => value,
