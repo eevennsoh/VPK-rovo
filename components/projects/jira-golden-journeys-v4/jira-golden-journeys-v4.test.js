@@ -508,7 +508,8 @@ test("the Work items header switches between Board and List views with their ico
 		/renderListContent\?: \(\s*columns: readonly JiraKanbanColumnData\[\],\s*context: ExperimentalJiraKanbanListRenderContext,\s*\) => ReactNode;/u,
 	);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /agentSessionDropIntent: boardSessionDrag\.listDropIntent/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCreate: onListAgentSessionCreate \? handleListAgentSessionCreate : undefined/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCreate: agentSessionHandlers.onCreateWorkItem/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onListCreate: onListAgentSessionCreate \? handleListAgentSessionCreate : undefined/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /activeView === "list" && renderListContent/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<BoardFilterPopover[\s\S]*surfaceLabel=\{activeView\}/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs"/u);
