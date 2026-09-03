@@ -151,6 +151,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	activeCardCode?: string;
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;
+	createWorkItemDropZoneLabel?: ExperimentalJiraKanbanProps["createWorkItemDropZoneLabel"];
 	detachedAgentSessionsByCard?: ExperimentalJiraKanbanProps["detachedAgentSessionsByCard"];
 	agentSessionAssigneeIdAliases?: Readonly<Record<string, string>>;
 	/**
@@ -225,6 +226,7 @@ export default function ExperimentalJiraKanbanPage({
 	activeCardCode,
 	agentActivityLayout,
 	cardGenerativeActionPresentation,
+	createWorkItemDropZoneLabel,
 	defaultAgentSessionColumnCollapsed = false,
 	defaultShowUntracked = true,
 	detachedAgentSessionsByCard,
@@ -748,6 +750,7 @@ export default function ExperimentalJiraKanbanPage({
 	const boardSessionDrag = useBoardAgentSessionDrag({
 		boardColumns: filteredBoardColumns,
 		detachedSessionsByCard: proximityAgentSessionsByCard,
+		onCreate: agentSessionHandlers.onCreateWorkItem,
 		onLink: onCardAgentSessionLink ? handleCardAgentSessionLink : undefined,
 		onMove: onCardAgentSessionMove ? handleCardAgentSessionMove : undefined,
 		onUnlink: onCardAgentSessionUnlink ? handleCardAgentSessionUnlink : undefined,
@@ -860,6 +863,7 @@ export default function ExperimentalJiraKanbanPage({
 								boardColumns={filteredBoardColumns}
 								cardGenerativeActionPresentation={cardGenerativeActionPresentation}
 								collapsedColumns={collapsedColumns}
+								createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
 								detachedAgentSessionsByCard={proximityAgentSessionsByCard}
 								onCollapsedColumnsChange={setCollapsedColumns}
 								draggedCardCode={draggedCard?.card.code ?? null}

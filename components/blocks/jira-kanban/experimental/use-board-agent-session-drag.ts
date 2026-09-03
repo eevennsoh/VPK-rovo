@@ -33,6 +33,19 @@ function collectDropZones(root: HTMLElement | null): BoardAgentSessionDropZone[]
 	).flatMap((node): BoardAgentSessionDropZone[] => {
 		const kind = node.dataset.boardAgentSessionDropZone;
 		const rect = node.getBoundingClientRect();
+		if (kind === "create") {
+			const columnTitle = node.dataset.boardAgentSessionColumnTitle;
+			return columnTitle ? [{
+				bounds: {
+					bottom: rect.bottom,
+					left: rect.left,
+					right: rect.right,
+					top: rect.top,
+				},
+				columnTitle,
+				kind: "create",
+			}] : [];
+		}
 		if (kind === "untracked") {
 			return [{
 				bounds: {
@@ -74,6 +87,7 @@ function findBoardCard(
 export function useBoardAgentSessionDrag({
 	boardColumns,
 	detachedSessionsByCard,
+	onCreate,
 	onLink,
 	onMove,
 	onUnlink,
@@ -81,6 +95,7 @@ export function useBoardAgentSessionDrag({
 }: Readonly<{
 	boardColumns: readonly JiraKanbanColumnData[];
 	detachedSessionsByCard?: Readonly<Record<string, readonly AgentSessionItem[]>>;
+	onCreate?: (session: AgentSessionItem, columnTitle: string) => void;
 	onLink?: (session: AgentSessionItem, card: JiraKanbanCardData, columnTitle: string) => void;
 	onMove?: (
 		session: JiraIssueAgentSessionRef,
@@ -105,6 +120,11 @@ export function useBoardAgentSessionDrag({
 	) => {
 		const action = resolveBoardAgentSessionDropAction(current);
 		if (action.kind === "none") return;
+		if (action.kind === "create") {
+			const item = untrackedSessions?.find((candidate) => candidate.id === action.sessionId);
+			if (item) onCreate?.(item, action.columnTitle);
+			return;
+		}
 
 		if (action.kind === "detach") {
 			const source = findBoardCard(boardColumns, action.sourceCardCode);
@@ -134,7 +154,7 @@ export function useBoardAgentSessionDrag({
 				(candidate) => candidate.id === action.sessionId,
 			);
 		if (target && item) onLink?.(item, target.card, target.columnTitle);
-	}, [boardColumns, detachedSessionsByCard, onLink, onMove, onUnlink, untrackedSessions]);
+	}, [boardColumns, detachedSessionsByCard, onCreate, onLink, onMove, onUnlink, untrackedSessions]);
 
 	const onDragStateChange = useCallback((
 		origin: BoardAgentSessionDragOrigin,
@@ -192,7 +212,9 @@ export function useBoardAgentSessionDrag({
 			&& origin.sourceCardCode === card.code,
 		);
 		const target = transaction?.target;
-		const dropTarget = target && target.kind !== "untracked" && target.cardCode === card.code
+		const dropTarget = target
+			&& (target.kind === "attach" || target.kind === "unlink")
+			&& target.cardCode === card.code
 			? target.kind
 			: null;
 		const attachedBinding = createBinding(

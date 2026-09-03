@@ -50,6 +50,7 @@ import {
 	BoardColumnResizeButton,
 	CollapsedBoardColumn,
 } from "./components/collapsed-board-column";
+import { BoardColumnCreateAction } from "./components/create-work-item-drop-zone";
 import { BOARD_COLUMN_ACTION_REVEAL } from "./lib/board-column-action-reveal";
 import {
 	EMPTY_COLLAPSED_BOARD_COLUMNS,
@@ -90,6 +91,12 @@ import type {
  */
 export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
+	/**
+	 * Replaces each status column's resting create button with a visible drop
+	 * target while an agent session is being dragged. The owning route supplies
+	 * the copy so this shared board stays variation-agnostic.
+	 */
+	createWorkItemDropZoneLabel?: string;
 	/**
 	 * Trailing scroll inset in px, added to the scrollable content rather than to
 	 * the scrollport.
@@ -357,18 +364,22 @@ function BoardColumn({
 	assignedAgentIds,
 	children,
 	count,
+	createWorkItemDropZoneLabel,
 	onCollapse,
 	onCreateAgent,
 	onToggleAgent,
+	sessionDragging,
 	title,
 }: Readonly<{
 	agents?: readonly JiraKanbanAgentData[];
 	assignedAgentIds: readonly string[];
 	children: ReactNode;
 	count: number;
+	createWorkItemDropZoneLabel?: string;
 	onCollapse: () => void;
 	onCreateAgent?: (columnTitle: string) => void;
 	onToggleAgent?: (agentId: string) => void;
+	sessionDragging: boolean;
 	title: string;
 }>) {
 	const showAgentAssignment = Boolean(agents?.length && onCreateAgent && onToggleAgent);
@@ -447,22 +458,11 @@ function BoardColumn({
 				{children}
 			</div>
 
-			<div className="w-full" style={{ paddingBlock: token("space.050") }}>
-				<Button
-					aria-label={`Create in ${title}`}
-					className={cn(
-						"w-full",
-						"pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical",
-						"group-hover/board-column:pointer-events-auto group-hover/board-column:opacity-100",
-						"group-has-[:focus-visible]/board-column:pointer-events-auto group-has-[:focus-visible]/board-column:opacity-100",
-						"motion-reduce:transition-none",
-					)}
-					size="compact"
-					variant="outline"
-				>
-					<Icon render={<AddIcon label="" size="small" />} />
-				</Button>
-			</div>
+			<BoardColumnCreateAction
+				dropZoneLabel={createWorkItemDropZoneLabel}
+				sessionDragging={sessionDragging}
+				title={title}
+			/>
 		</div>
 	);
 }
@@ -608,6 +608,7 @@ function ExperimentalJiraKanbanView({
 	cardGenerativeActionPresentation = "sparkle",
 	cardMoveAnimation,
 	collapsedColumns: controlledCollapsedColumns,
+	createWorkItemDropZoneLabel,
 	detachedAgentSessionsByCard,
 	draggedCardCode = null,
 	selectedCardCodes,
@@ -886,6 +887,7 @@ function ExperimentalJiraKanbanView({
 								agents={agents}
 								assignedAgentIds={assignedAgentIdsByColumn[column.title] ?? []}
 								count={column.cards.length}
+								createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
 								onCollapse={handleCollapseColumn}
 								onCreateAgent={onCreateAgent}
 								onToggleAgent={
@@ -893,6 +895,7 @@ function ExperimentalJiraKanbanView({
 										? (agentId) => onToggleColumnAgent(column.title, agentId)
 										: undefined
 								}
+								sessionDragging={boardSessionDrag.transaction !== null}
 								title={column.title}
 							>
 								{column.cards.map((card, cardIndex) => {
@@ -1048,6 +1051,7 @@ function ExperimentalJiraKanbanOwned(props: Readonly<ExperimentalJiraKanbanProps
 	const boardSessionDrag = useBoardAgentSessionDrag({
 		boardColumns: props.boardColumns,
 		detachedSessionsByCard: props.detachedAgentSessionsByCard,
+		onCreate: props.proximityAgentSession?.onCreateWorkItem,
 		onLink: props.onCardAgentSessionLink,
 		onMove: props.onCardAgentSessionMove,
 		onUnlink: props.onCardAgentSessionUnlink,
