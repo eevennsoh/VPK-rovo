@@ -192,7 +192,7 @@ test("Experimental board header opens the production View picker without changin
 	assert.match(viewMenu, /onShownSessionStateIdsChange\(next\);/u);
 	assert.match(viewMenu, /toggleIn\(setShownAgentStateIds\)\(id\);/u);
 	assert.doesNotMatch(viewMenu, /onShowWorkingChange|onShowNeedsInputChange|onShowFinishedChange/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const \[showUntracked, setShowUntracked\] = useState\(true\)/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const \[showUntracked, setShowUntracked\] = useState\(defaultShowUntracked\)/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onShowUntrackedChange=\{setShowUntracked\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showUntracked=\{showUntracked\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /shownSessionStateIds=\{shownSessionStateIds\}/u);

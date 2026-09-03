@@ -225,9 +225,10 @@ export function FloatingRovoButtonSurface({
 		: { duration: 0.28, ease: "linear" as const };
 	const surfaceStyle: MotionStyle = {
 		// Un-dragged: pin with CSS so the browser re-anchors the corner on every
-		// resize frame. Dragged: use the measured origin the drag math owns.
-		// Both resolve to the same pixel (EDGE_GAP === DEFAULT_BUTTON_* === 24),
-		// so promoting to `left`/`top` at drag start does not jump.
+		// resize frame — including `--untracked-panel-width` changes, which the
+		// default `right` calc reads without a React re-measure. Dragged: use
+		// the measured origin the drag math owns. Promoting to `left`/`top` at
+		// drag start measures the already-inset box, so it does not jump.
 		...(dragOrigin && hasUserDragged
 			? {
 					left: dragOrigin.left,

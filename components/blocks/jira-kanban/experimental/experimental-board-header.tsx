@@ -88,17 +88,19 @@ export type ExperimentalJiraKanbanView = "board" | "list";
  * box-shadow on the list's own bottom edge, and the list carries `-mb-px pb-px`
  * so that edge hangs 1px *below* the band's content box. A docked side panel
  * placed at the band height (83) therefore starts on the rule's own row and
- * punches a hole in it for the panel's width. Landing at 84 puts the panel
- * immediately beneath the rule, so the rule runs unbroken across the board.
+ * punches a hole in it for the panel's width. Landing at 84 is immediately
+ * beneath the rule, so the rule runs unbroken across the board.
  *
- * The panel takes this as a real `top` offset rather than spanning the board
- * root and padding its content — the element must genuinely stop at the tabs,
- * not just appear to.
+ * The untracked-work rail takes this as a real `top` offset rather than
+ * spanning the board root and padding its content — the element must
+ * genuinely stop at the tabs, not just appear to. Full height from this
+ * line to the page bottom wins over lining the header up with the
+ * search/filter row.
  *
  * Browser-measured, not nominal. `tests/blocks/agent-session-panel.spec.ts`
  * asserts the panel's top equals the tab strip's bottom *exactly*; the
- * tolerance there is zero precisely because a 1px drift is invisible to review
- * but very visible on screen.
+ * tolerance there is zero precisely because a 1px drift is invisible to
+ * review but very visible on screen.
  */
 export const BOARD_HEADER_TAB_STRIP_BOTTOM_PX = 84;
 

@@ -787,6 +787,12 @@ export function JiraIssueAgentActivityRows({
 		>
 			<AnimatePresence key={rowPresenceKey} initial={false} mode="popLayout">
 				{rowGroups.map((rowGroup) => {
+					// A grouped chin is many agents, not one session. Session
+					// details belong on a single-agent row; the merged row
+					// opens assignment instead so hover lists every agent.
+					const rowSessionFlyout = rowGroup.activities.length === 1
+						? sessionFlyout
+						: undefined;
 					const row = (
 						<JiraIssueAgentActivityRow
 							activities={rowGroup.activities}
@@ -804,7 +810,7 @@ export function JiraIssueAgentActivityRows({
 							onViewChat={onViewChat}
 							renderAgentActivityIndicator={renderAgentActivityIndicator}
 							sessionDrag={sessionDrag}
-							sessionFlyout={sessionFlyout}
+							sessionFlyout={rowSessionFlyout}
 							shouldReduceMotion={shouldReduceMotion}
 							usesStrokeChrome={usesStrokeChrome}
 						/>
@@ -821,12 +827,12 @@ export function JiraIssueAgentActivityRows({
 						style={shouldReduceMotion ? undefined : JIRA_ISSUE_MOTION_STYLE}
 						transition={layoutTransition}
 					>
-							{sessionFlyout ? (
+							{rowSessionFlyout ? (
 								<JiraSessionFlyoutTrigger
 									closeDelay={160}
 									handle={flyoutHandle}
 									render={<div className="min-w-0" />}
-									session={toJiraIssueAgentSessionFlyoutItem(rowGroup.activities[0], sessionFlyout)}
+									session={toJiraIssueAgentSessionFlyoutItem(rowGroup.activities[0], rowSessionFlyout)}
 								>
 									{row}
 								</JiraSessionFlyoutTrigger>

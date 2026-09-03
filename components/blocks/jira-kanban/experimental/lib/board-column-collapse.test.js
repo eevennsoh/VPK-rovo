@@ -95,9 +95,13 @@ test("the resize button swaps its icon without using selected button state", () 
 test("the pinned session column shares the status columns' box model", () => {
 	// Status columns carry a 2px transparent drop-target border, so the pinned
 	// wrapper keeps top/left/bottom or the headers sit 2px apart. It drops the
-	// right edge — Untracked work is not a drop target, and that 2px reads as
-	// a white seam against `bg-surface`.
-	assert.match(BOARD_SOURCE, /className="flex min-h-0 shrink-0 border-2 border-transparent border-r-0 ps-6"/u);
+	// right edge — a 2px stroke there reads as a white seam against `bg-surface`.
+	// The column itself is the Untracked drop zone; the ring lights when armed.
+	assert.match(
+		BOARD_SOURCE,
+		/className=\{cn\(\s*"flex min-h-0 shrink-0 border-2 border-r-0 ps-6",\s*untrackedDropArmed \? "border-ring" : "border-transparent",\s*\)\}/u,
+	);
+	assert.match(BOARD_SOURCE, /data-board-agent-session-drop-zone="untracked"/u);
 });
 
 test("a collapsed status pill hugs its label while the shell keeps the drop lane", () => {

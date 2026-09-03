@@ -26,6 +26,10 @@ const TARGET_ISSUE = {
 	cardCode: "PAY-128",
 	kind: "issue",
 };
+const UNTRACKED = {
+	bounds: { bottom: 200, left: 400, right: 760, top: 0 },
+	kind: "untracked",
+};
 const ZONES = [SOURCE_ISSUE, SOURCE_UNLINK, TARGET_ISSUE];
 
 function session(id = "review-agent") {
@@ -196,6 +200,48 @@ test("drop actions distinguish detach, cross-card move, attach, and invalid canc
 		const transaction = createBoardAgentSessionDragTransaction(draggedSession, origin, pointer, ZONES);
 		assert.deepEqual(resolveBoardAgentSessionDropAction(transaction), expected);
 	}
+});
+
+test("attached drags prefer Untracked over an issue the rail overlays", () => {
+	const origin = { kind: "attached", sourceCardCode: "PAY-121" };
+	const overlayingIssue = {
+		bounds: UNTRACKED.bounds,
+		cardCode: "PAY-128",
+		kind: "issue",
+	};
+
+	assert.deepEqual(
+		resolveBoardAgentSessionDropTarget(origin, { x: 500, y: 80 }, [overlayingIssue, UNTRACKED]),
+		{ kind: "untracked" },
+	);
+	assert.deepEqual(
+		resolveBoardAgentSessionDropAction(
+			createBoardAgentSessionDragTransaction(
+				session(),
+				origin,
+				{ x: 500, y: 80 },
+				[overlayingIssue, UNTRACKED],
+			),
+		),
+		{ kind: "detach", sessionId: "review-agent", sourceCardCode: "PAY-121" },
+	);
+});
+
+test("untracked origins ignore the Untracked rail and still attach to issues underneath", () => {
+	const overlayingIssue = {
+		bounds: UNTRACKED.bounds,
+		cardCode: "PAY-128",
+		kind: "issue",
+	};
+
+	assert.deepEqual(
+		resolveBoardAgentSessionDropTarget(
+			{ kind: "untracked" },
+			{ x: 500, y: 80 },
+			[overlayingIssue, UNTRACKED],
+		),
+		{ cardCode: "PAY-128", kind: "attach" },
+	);
 });
 
 test("cancelling a transaction clears its armed target and resolves to no action", () => {
