@@ -45,3 +45,10 @@ test("preserves an explicitly configured Google image model", () => {
 		/^GOOGLE_IMAGE_MODEL=custom-image-model$/mu,
 	);
 });
+
+test("migrates the previous generated Google image model default", () => {
+	assert.match(
+		runSetup("GOOGLE_IMAGE_MODEL=gemini-3-pro-image-preview\n"),
+		/^GOOGLE_IMAGE_MODEL=gemini-3-pro-image$/mu,
+	);
+});

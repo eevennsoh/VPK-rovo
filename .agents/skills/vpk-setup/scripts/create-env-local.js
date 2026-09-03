@@ -10,6 +10,8 @@ const fs = require('fs');
 const { execSync } = require('child_process');
 const DEFAULT_GOOGLE_GATEWAY_URL =
 	'https://ai-gateway.us-east-1.staging.atl-paas.net/v1/google/publishers/google/v1/chat/completions';
+const DEFAULT_GOOGLE_IMAGE_MODEL = 'gemini-3-pro-image';
+const LEGACY_GENERATED_GOOGLE_IMAGE_MODEL = 'gemini-3-pro-image-preview';
 const DEFAULT_ROVO_BILLING_URL = 'https://product-fabric.atlassian.net';
 
 function getEnvValueFromText(envText, key) {
@@ -32,6 +34,19 @@ function isGoogleGatewayUrl(url) {
 	}
 
 	return /\/v1\/google\//.test(url.trim());
+}
+
+function resolveGoogleImageModel(preserved) {
+	if (!preserved || typeof preserved !== 'string') {
+		return DEFAULT_GOOGLE_IMAGE_MODEL;
+	}
+
+	const trimmed = preserved.trim();
+	if (trimmed.length === 0 || trimmed === LEGACY_GENERATED_GOOGLE_IMAGE_MODEL) {
+		return DEFAULT_GOOGLE_IMAGE_MODEL;
+	}
+
+	return trimmed;
 }
 
 // Get use case ID from args (REQUIRED)
@@ -128,7 +143,7 @@ ${preservedOpenaiModel ? `OPENAI_MODEL=${preservedOpenaiModel}` : '# OPENAI_MODE
 
 # Google/Gemini endpoint (for provider: "google" chat/image requests and Google TTS route derivation)
 AI_GATEWAY_URL_GOOGLE=${resolvedGoogleGatewayUrl}
-${preservedGoogleImageModel ? `GOOGLE_IMAGE_MODEL=${preservedGoogleImageModel}` : 'GOOGLE_IMAGE_MODEL=gemini-3-pro-image'}
+GOOGLE_IMAGE_MODEL=${resolveGoogleImageModel(preservedGoogleImageModel)}
 ${preservedGoogleTtsModel ? `GOOGLE_TTS_MODEL=${preservedGoogleTtsModel}` : 'GOOGLE_TTS_MODEL=tts-latest'}
 ${preservedGoogleSttModel ? `GOOGLE_STT_MODEL=${preservedGoogleSttModel}` : 'GOOGLE_STT_MODEL=gemini-3-flash-preview'}
 
