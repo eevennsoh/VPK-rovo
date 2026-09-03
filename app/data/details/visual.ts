@@ -23,6 +23,7 @@ import { SVG_TRACING_DETAIL } from "./visual/svg-tracing";
 import { VISUAL_TRACING_DETAIL } from "./visual/visual-tracing";
 import { THINKING_ORBS_DETAIL } from "./visual/thinking-orbs";
 import { SCROLL_MASK_DETAIL } from "./visual/scroll-mask";
+import { SCROLLING_DETAIL } from "./visual/scrolling";
 import { TEXT_EFFECTS_DETAIL } from "./visual/text-effects";
 import { TEXT_MORPHING_DETAIL } from "./visual/text-morphing";
 import { ASCII_DETAIL } from "./visual/ascii";
@@ -179,6 +180,7 @@ export const VISUAL_DETAILS: Record<string, ComponentDetail> = {
 	"visual-tracing": VISUAL_TRACING_DETAIL,
 	"thinking-orbs": THINKING_ORBS_DETAIL,
 	"scroll-mask": SCROLL_MASK_DETAIL,
+	scrolling: SCROLLING_DETAIL,
 	"text-effects": TEXT_EFFECTS_DETAIL,
 	"text-morphing": TEXT_MORPHING_DETAIL,
 	ascii: ASCII_DETAIL,
