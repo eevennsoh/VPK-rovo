@@ -16,7 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const AGENT_LOADING_HOLD_MS = 2_000;
-const AGENT_LOADING_SWAP_MS = 1_009;
+const AGENT_LOADING_SWAP_MS = 150; // duration-normal
 
 type AgentLoadingAvatar = Omit<
 	AgentAvatarVisualProps,
@@ -69,6 +69,16 @@ function getAgentLoadingAnnouncement(
 	const names = agents.map((agent) => agent.name).filter(Boolean).join(", ");
 
 	return [`${countLabel} ${stateLabel}`, names].filter(Boolean).join(". ");
+}
+
+function AgentLoadingAnnouncementText({
+	announce,
+	customLabel,
+	announcement,
+}: Readonly<{ announce: boolean; customLabel?: string; announcement: string }>) {
+	if (!announce || customLabel) return null;
+
+	return <span className="sr-only">{announcement}. </span>;
 }
 
 /**
@@ -144,11 +154,16 @@ export function AgentLoading({
 
 	return (
 		<span
-			aria-label={announce ? announcement : undefined}
+			aria-label={announce ? ariaLabel : undefined}
 			aria-live={announce ? "polite" : undefined}
 			className={cn("inline-flex min-w-0 items-center gap-2", className)}
 			role={announce ? "status" : undefined}
 		>
+			<AgentLoadingAnnouncementText
+				announce={announce}
+				announcement={announcement}
+				customLabel={ariaLabel}
+			/>
 			<span
 				aria-hidden="true"
 				className="agent-loading"
@@ -162,7 +177,7 @@ export function AgentLoading({
 				<AgentLoadingAvatar agent={slots.front} slot="front" />
 			</span>
 			{label ? (
-				<span aria-hidden="true" className="min-w-0 self-center whitespace-nowrap text-sm text-text">
+				<span className="min-w-0 self-center whitespace-nowrap text-sm text-text">
 					{label}
 				</span>
 			) : null}

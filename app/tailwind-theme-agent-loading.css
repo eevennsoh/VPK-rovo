@@ -34,16 +34,8 @@
 }
 
 @utility agent-loading {
-	--agent-loading-swap-duration: 1009ms;
-	--agent-loading-spring: linear(
-		0 0%, 0.0855 4.17%, 0.2724 8.33%, 0.4844 12.5%,
-		0.677 16.67%, 0.8294 20.83%, 0.9369 25%, 1.0039 29.17%,
-		1.0389 33.33%, 1.0515 37.5%, 1.0503 41.67%, 1.0418 45.83%,
-		1.0309 50%, 1.0203 54.17%, 1.0115 58.33%, 1.005 62.5%,
-		1.0008 66.67%, 0.9985 70.83%, 0.9974 75%, 0.9973 79.17%,
-		0.9976 83.33%, 0.9982 87.5%, 0.9988 91.67%, 0.9992 95.83%,
-		0.9996 100%
-	);
+	--agent-loading-swap-duration: var(--duration-normal);
+	--agent-loading-swap-easing: var(--ease-out-practical);
 	position: relative;
 	width: calc(var(--spacing) * 6);
 	height: calc(var(--spacing) * 6);
@@ -81,7 +73,7 @@
 
 	&[data-swapping="true"] [data-agent-loading-slot] {
 		animation-duration: var(--agent-loading-swap-duration);
-		animation-timing-function: var(--agent-loading-spring);
+		animation-timing-function: var(--agent-loading-swap-easing);
 		animation-fill-mode: forwards;
 	}
 
