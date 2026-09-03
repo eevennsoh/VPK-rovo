@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 
-const TREES = ["experimental-v2", "experimental-v3", "experimental-v4", "experimental-v5"];
+const TREES = ["experimental-v2", "experimental-v3", "experimental-v4", "experimental-v5", "experimental-v6"];
 
 for (const tree of TREES) {
 	const rootSource = fs.readFileSync(
@@ -23,7 +23,12 @@ for (const tree of TREES) {
 
 	test(`${tree} host-owned bar replaces only the standard context-pill row`, () => {
 		assert.match(composerSource, /composerContextBar\?: ReactNode;/u);
-		if (tree === "experimental-v3" || tree === "experimental-v4" || tree === "experimental-v5") {
+		if (tree === "experimental-v6") {
+			assert.match(
+				composerSource,
+				/hasExpandedPullRequestComposer \|\| composerContextBar == null \? null : \([\s\S]*<ActivityComposerContextPills[\s\S]*contextBar=\{composerContextBar\}/u,
+			);
+		} else if (tree !== "experimental-v2") {
 			assert.match(
 				composerSource,
 				/hasExpandedPullRequestComposer \? null : \([\s\S]*<ActivityComposerContextPills[\s\S]*contextBar=\{composerContextBar\}/u,
