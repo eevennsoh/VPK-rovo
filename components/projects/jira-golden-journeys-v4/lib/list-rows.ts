@@ -226,13 +226,14 @@ export function createListRows(
 	return columns.flatMap((column) => column.cards.map((card) => ({
 		issueKey: card.code,
 		summary: card.title,
-		issueType: "task",
+		issueType: card.issueType ?? "task",
 		priority: card.priority,
 		status: column.title,
 		statusVariant: STATUS_VARIANTS[column.title],
 		assignee: card.assignee,
 		agentSessions: assignedAgentsFromCard(card, catalog),
 		labels: card.tags,
+		dueDate: card.dueDate,
 		contributors: card.assignee ? [card.assignee] : [],
 	})));
 }
@@ -363,7 +364,9 @@ export function insertWorkItemCard(
 
 export function toKanbanCardFromDraft(input: Readonly<{
 	assignee?: JiraListPerson;
+	dueDate?: string;
 	issueKey: string;
+	issueType?: JiraKanbanCardData["issueType"];
 	summary: string;
 }>): JiraKanbanCardData {
 	return {
@@ -375,6 +378,8 @@ export function toKanbanCardFromDraft(input: Readonly<{
 			}
 			: undefined,
 		code: input.issueKey,
+		dueDate: input.dueDate,
+		issueType: input.issueType ?? "task",
 		priority: "medium",
 		tags: [],
 		title: input.summary,

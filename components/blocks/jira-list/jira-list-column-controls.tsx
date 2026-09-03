@@ -85,7 +85,7 @@ export function JiraListColumnBoundary({
 									<Button
 										aria-label={`Add column ${positionLabel}`}
 										className={cn(
-											"pointer-events-none absolute top-0 left-0 z-10 size-6 -translate-x-1/2 -translate-y-1/2 border border-border bg-surface-overlay! text-icon-subtle shadow-[0_8px_12px_rgb(30_31_33/0.15)] opacity-0 transition-opacity duration-fast hover:bg-surface-overlay-hovered! active:bg-surface-overlay-pressed! focus-visible:pointer-events-auto focus-visible:bg-surface-overlay! focus-visible:opacity-100",
+											"pointer-events-none absolute top-0 left-0 z-10 size-6 -translate-x-1/2 -translate-y-1/2 border border-border bg-surface-overlay! text-icon-subtle shadow-2xl opacity-0 transition-opacity duration-fast hover:bg-surface-overlay-hovered! active:bg-surface-overlay-pressed! focus-visible:pointer-events-auto focus-visible:bg-surface-overlay! focus-visible:opacity-100",
 											isVisible && "pointer-events-auto opacity-100",
 										)}
 										data-boundary-control

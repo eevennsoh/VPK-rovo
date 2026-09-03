@@ -149,6 +149,24 @@ test("getNextPayIssueKey increments the highest PAY issue number", () => {
 	assert.equal(getNextPayIssueKey(COLUMNS), "PAY-119");
 });
 
+test("toKanbanCardFromDraft keeps the create editor issue type and due date", () => {
+	const card = toKanbanCardFromDraft({
+		issueKey: "PAY-200",
+		summary: "New work",
+		issueType: "bug",
+		dueDate: "2026-09-04",
+	});
+	const rows = createListRows(
+		[{ title: "To do", count: 1, cards: [card] }],
+		PAY_BOARD_CATALOG,
+	);
+
+	assert.equal(card.issueType, "bug");
+	assert.equal(card.dueDate, "2026-09-04");
+	assert.equal(rows[0]?.issueType, "bug");
+	assert.equal(rows[0]?.dueDate, "2026-09-04");
+});
+
 test("insertWorkItemCard appends to the named status column", () => {
 	const card = toKanbanCardFromDraft({
 		issueKey: "PAY-200",

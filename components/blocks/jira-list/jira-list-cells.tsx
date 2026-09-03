@@ -13,9 +13,11 @@ import TaskIcon from "@atlaskit/icon/core/task";
 import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
 import {
 	AgentAssignment,
+	resolveAssignedAgentStatusKind,
 	type AgentAssignmentAgent,
 } from "@/components/blocks/agent-assignment";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import {
 	Avatar,
 	AvatarFallback,
@@ -228,6 +230,37 @@ export function JiraListAgentSessionsCell({
 	const agents = extraAgents.length > 0
 		? [...extraAgents, ...agentCatalog]
 		: agentCatalog;
+	const canMutateAgents = Boolean(
+		onAssignedAgentIdsChange || onAgentAssign || onAssignedAgentSelect,
+	);
+
+	if (!canMutateAgents) {
+		const shown = assignedAgents.slice(0, LIST_ASSIGNED_AGENT_MAX_VISIBLE);
+		return shown.length === 0 ? (
+			<span className="text-sm text-text-subtle" />
+		) : (
+			<div className="flex min-h-8 min-w-0 items-center gap-0.5 overflow-visible px-2">
+				{shown.map((agent) => {
+					const statusKind = resolveAssignedAgentStatusKind(agent);
+					const avatarStatus = statusKind === "needs-input" || statusKind === "finished"
+						? statusKind
+						: undefined;
+					return (
+						<AgentAvatarVisual
+							avatarClassName="shrink-0 overflow-visible"
+							avatarSrc={agent.avatarSrc}
+							brandName={agent.brandName}
+							fallbackText={agent.name.slice(0, 2).toUpperCase()}
+							key={agent.id}
+							label={`${agent.name}. ${agent.statusLabel}`}
+							sizePx={24}
+							status={avatarStatus}
+						/>
+					);
+				})}
+			</div>
+		);
+	}
 
 	return (
 		<AgentAssignment

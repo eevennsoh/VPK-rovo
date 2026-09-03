@@ -204,6 +204,8 @@ test("JiraList agent sessions reuse AgentAssignment instead of a custom menu", (
 	assert.match(CELLS_SOURCE, /const LIST_ASSIGNED_AGENT_MAX_VISIBLE = 3/u);
 	assert.match(agentSessionsRendererSource, /maxVisibleAgents=\{LIST_ASSIGNED_AGENT_MAX_VISIBLE\}/u);
 	assert.match(agentSessionsRendererSource, /assignedAgents=\{assignedAgents\}/u);
+	assert.match(agentSessionsRendererSource, /const canMutateAgents = Boolean\(/u);
+	assert.match(agentSessionsRendererSource, /<AgentAvatarVisual/u);
 	assert.doesNotMatch(agentSessionsRendererSource, /<ul[\s\S]*Agents/u);
 	assert.doesNotMatch(agentSessionsRendererSource, /aria-label="Agent assignment"/u);
 	assert.doesNotMatch(agentSessionsRendererSource, />None</u);
@@ -268,7 +270,7 @@ test("JiraList column controls use outside-top overlay geometry without reservin
 	assert.doesNotMatch(SOURCE, /pt-4|pt-\[16px\]|paddingTop/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /absolute top-0 bottom-10 z-40/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /size-6 -translate-x-1\/2 -translate-y-1\/2/u);
-	assert.match(COLUMN_CONTROLS_SOURCE, /bg-surface-overlay! text-icon-subtle shadow-2xl/u);
+	assert.match(COLUMN_CONTROLS_SOURCE, /border border-border bg-surface-overlay! text-icon-subtle shadow-2xl/u);
 	assert.match(
 		COLUMN_CONTROLS_SOURCE,
 		/left: anchorSide === "left" \? "anchor\(left\)" : "anchor\(right\)"/u,
@@ -493,8 +495,8 @@ test("JiraList middle zone exposes an anchored accessible drag handle", () => {
 	assert.match(SOURCE, /aria-label="Drag to reorder"/u);
 	assert.match(SOURCE, /<TooltipContent side="right">Drag to reorder<\/TooltipContent>/u);
 	assert.match(SOURCE, /<DragHandleVerticalIcon/u);
-	assert.match(SOURCE, /cursor-grab touch-none border-0 bg-surface-overlay! text-icon-subtle shadow-2xl/u);
-	assert.match(SOURCE, /absolute z-30 isolate size-6 -translate-x-1\/2 -translate-y-1\/2/u);
+	assert.match(SOURCE, /cursor-grab touch-none border border-border bg-surface-overlay! text-icon-subtle shadow-2xl/u);
+	assert.match(SOURCE, /absolute z-30 size-6 -translate-x-1\/2 -translate-y-1\/2/u);
 	assert.match(SOURCE, /hover:bg-surface-overlay-hovered!/u);
 	assert.match(SOURCE, /active:cursor-grabbing active:bg-surface-overlay-pressed!/u);
 	assert.match(SOURCE, /top: "anchor\(center\)"/u);
@@ -550,14 +552,11 @@ test("JiraList row boundary controls are absolute opaque overlays", () => {
 		/function RowBoundaryCreateControls\([\s\S]*?\n\}\n\n(?:export )?function JiraListSortableRow/u,
 	)?.[0] ?? "";
 
-	assert.match(controlsSource, /absolute z-30 isolate size-6 -translate-x-1\/2 -translate-y-1\/2/u);
-	assert.match(controlsSource, /isolate/u);
-	assert.match(controlsSource, /bg-surface-overlay! text-icon-subtle shadow-2xl/u);
+	assert.match(controlsSource, /absolute z-30 size-6 -translate-x-1\/2 -translate-y-1\/2/u);
+	assert.match(controlsSource, /border border-border bg-surface-overlay! text-icon-subtle shadow-2xl/u);
 	assert.match(controlsSource, /hover:bg-surface-overlay-hovered!/u);
 	assert.match(controlsSource, /active:bg-surface-overlay-pressed!/u);
 	assert.match(controlsSource, /focus-visible:bg-surface-overlay!/u);
-	assert.match(controlsSource, /before:-inset-0\.5/u);
-	assert.match(controlsSource, /before:bg-surface-overlay/u);
 	assert.doesNotMatch(controlsSource, /bg-surface-raised/u);
 });
 

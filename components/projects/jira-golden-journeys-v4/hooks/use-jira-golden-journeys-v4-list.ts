@@ -85,13 +85,19 @@ export function useJiraGoldenJourneysV4List({
 	}, []);
 
 	const handleMoveRow = useCallback((issueKey: string, targetIndex: number) => {
-		setListOrder((currentOrder) => moveListOrder(
-			currentOrder,
-			visibleKeysRef.current,
-			issueKey,
-			targetIndex,
-		));
-	}, []);
+		setListOrder((currentOrder) => {
+			const allKeys = createListRows(
+				boardColumns,
+				JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS,
+			).map((row) => row.issueKey);
+			return moveListOrder(
+				currentOrder.length === 0 ? allKeys : currentOrder,
+				visibleKeysRef.current,
+				issueKey,
+				targetIndex,
+			);
+		});
+	}, [boardColumns]);
 
 	const handleCreateWorkItem = useCallback((insertion?: JiraListInsertion) => {
 		const visibleKeys = visibleKeysRef.current;
@@ -112,7 +118,9 @@ export function useJiraGoldenJourneysV4List({
 		const issueKey = getNextPayIssueKey(boardColumns);
 		const card = toKanbanCardFromDraft({
 			assignee: draftWorkItem.assignee,
+			dueDate: draftWorkItem.dueDate,
 			issueKey,
+			issueType: draftWorkItem.issueType,
 			summary: draftWorkItem.summary.trim(),
 		});
 		setBoardColumns((columns) => insertWorkItemCard(columns, card, "To do"));
