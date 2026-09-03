@@ -6939,8 +6939,14 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 72,
+				"entryCount": 73,
 				"entries": [
+					{
+						"category": "ui-custom",
+						"slug": "agent-loading",
+						"name": "Agent Loading",
+						"importPath": "@/components/ui-custom/agent-loading"
+					},
 					{
 						"category": "ui-custom",
 						"slug": "animated-dots",

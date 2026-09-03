@@ -154,6 +154,7 @@ const PAPER_SHADER_COMPONENTS = [
 ] as const;
 
 export const CUSTOM_COMPONENTS: ComponentEntry[] = sortEntriesByName([
+	customComponent("agent-loading", "Agent Loading"),
 	customComponent("animated-dots", "Animated Dots"),
 	customComponent("animated-icon", "Animated Icons"),
 	customComponent("animated-rovo", "Animated Rovo"),

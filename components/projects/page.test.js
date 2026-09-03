@@ -326,6 +326,24 @@ test("floating Rovo button can be dragged and snapped to a 4x4 viewport grid", (
 	);
 });
 
+test("floating Rovo button default right reads the untracked panel width var", () => {
+	// A hardcoded `right: 24px` parks the launcher on a 360px docked rail.
+	// The default placement adds `--untracked-panel-width` (0px when unset) so
+	// a host can push the button without inventing a second positioning system.
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/export const FLOATING_ROVO_BUTTON_END_INSET_VAR = "--untracked-panel-width";/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/const DEFAULT_BUTTON_RIGHT = `calc\(\$\{FLOATING_ROVO_BUTTON_EDGE_GAP\}px \+ var\(\$\{FLOATING_ROVO_BUTTON_END_INSET_VAR\}, 0px\)\)`;/u,
+	);
+	assert.doesNotMatch(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/const DEFAULT_BUTTON_RIGHT = "24px";/u,
+	);
+});
+
 test("floating Rovo button applies collapsed elevation to the button surface", () => {
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,

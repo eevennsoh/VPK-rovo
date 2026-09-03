@@ -26,6 +26,18 @@ const PANEL_SOURCE = readProjectFile(
 const INDICATORS_SOURCE = readProjectFile(
 	"components/projects/jira-golden-journeys-v4/data/agent-activity-indicators.tsx",
 );
+const COMPLETED_RUNS_SOURCE = readProjectFile(
+	"components/blocks/jira-issue/completed-agent-runs.tsx",
+);
+const AGENT_ACTIVITY_SOURCE = readProjectFile(
+	"components/blocks/jira-issue/agent-activity.tsx",
+);
+const TRANSFER_SOURCE = readProjectFile(
+	"components/blocks/jira-issue/agent-session-transfer.tsx",
+);
+const FAB_GEOMETRY_SOURCE = readProjectFile(
+	"components/projects/shared/components/floating-rovo-button/geometry.ts",
+);
 
 test("the route renders the Payments board directly inside Jira app chrome", () => {
 	assert.match(PAGE_SOURCE, /import AppLayout from "@\/components\/projects\/page"/u);
@@ -71,13 +83,48 @@ test("the route imports the Pulse session guard used by its resume callback", ()
 	assert.match(PAGE_SOURCE, /if \(!isPulseAgentSession\(item\)\) return;/u);
 });
 
-test("the board opts into the experimental Jira issue split agent rows", () => {
-	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage[\s\S]*agentActivityLayout="split"/u);
+test("chin-row layout follows the design variation", () => {
+	// Team EU groups every active agent into one merged chin. 2000 years later
+	// keeps a row per agent. The route owns the choice; the shared board stays
+	// variation-agnostic, matching Panel and untracked proximity.
+	assert.match(
+		PAGE_SOURCE,
+		/const agentActivityLayout = designVariation === "team-eu" \? "merged" : "split";/u,
+	);
+	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage[\s\S]*agentActivityLayout=\{agentActivityLayout\}/u);
+	assert.doesNotMatch(
+		PAGE_SOURCE,
+		/agentActivityLayout="split"/u,
+		"Team EU must not hardcode split; that stacked every agent as its own chin row",
+	);
+	assert.doesNotMatch(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/useDesignVariation|design-variation/u,
+		"the shared block must take an agentActivityLayout prop, not read the global variation store",
+	);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /agentActivityLayout\?: JiraIssueAgentActivityLayout;/u);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
 		/<ExperimentalJiraKanban[\s\S]*agentActivityLayout=\{agentActivityLayout\}/u,
 	);
+	// Grouped chins must not steal hover for a single-session flyout. Dropping
+	// sessionFlyout on multi-agent rows is what lets AgentAssignment open.
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/const isSingleAgentRow = rowGroup\.activities\.length === 1;/u,
+	);
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/const rowSessionFlyout = isSingleAgentRow \? sessionFlyout : undefined;/u,
+	);
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/const rowSessionDrag = isSingleAgentRow \? sessionDrag : undefined;/u,
+	);
+	assert.match(AGENT_ACTIVITY_SOURCE, /sessionDrag=\{rowSessionDrag\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /const assignedRowHandle = isSingleAgent \|\| sessionFlyout \? rowHandle : \(/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /openMode="hover"/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /rowSessionFlyout \? \(\s*<JiraSessionFlyoutTrigger/u);
 });
 
 test("chin-row agent activity indicators follow the design variation", () => {
@@ -88,6 +135,10 @@ test("chin-row agent activity indicators follow the design variation", () => {
 	assert.match(
 		INDICATORS_SOURCE,
 		/import QuestionCircleFilledIcon from "@atlaskit\/icon-lab\/core\/question-circle-filled";/u,
+	);
+	assert.doesNotThrow(
+		() => require.resolve("@atlaskit/icon-lab/core/question-circle-filled"),
+		"icon-lab must export question-circle-filled (7.8.0+); a stale 7.5.0 install breaks the Team EU chin",
 	);
 	assert.match(INDICATORS_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
 	assert.match(
@@ -139,6 +190,40 @@ test("chin-row agent activity indicators follow the design variation", () => {
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<ExperimentalJiraKanban[\s\S]*renderAgentActivityIndicator=\{renderAgentActivityIndicator\}/u);
 	assert.match(EXPERIMENTAL_BOARD_SOURCE, /<ExperimentalJiraKanbanCard[\s\S]*renderAgentActivityIndicator=\{renderAgentActivityIndicator\}/u);
 	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*renderAgentActivityIndicator=\{renderAgentActivityIndicator\}/u);
+	// Team EU's Done-column chin is the merged "N Finished" row, not a split
+	// per-run row. That path must call the same finished renderer in the
+	// trailing status slot so PAY-101's check sits on the far right, matching
+	// working/awaiting-input.
+	assert.match(
+		COMPLETED_RUNS_SOURCE,
+		/const finishedIndicator = !hasFailedRun && renderAgentActivityIndicator\s*\n\s*\? renderAgentActivityIndicator\("finished"\)\s*\n\s*: null;/u,
+	);
+	assert.match(
+		COMPLETED_RUNS_SOURCE,
+		/hasFailedRun \? \([\s\S]*<StatusErrorIcon[\s\S]*: finishedIndicator \? \(\s*<span[\s\S]*\{finishedIndicator\}/u,
+	);
+});
+
+test("Team EU keeps only attached agent sessions on status columns", () => {
+	// Team EU is "what ships today": Pulse proximity rows leave the status
+	// columns so only chin rows attached to a work item remain. Untracked work
+	// still lives in its dedicated column/panel. 2000 years later keeps the
+	// proximity rows. The route owns the default; the shared block stays
+	// variation-agnostic, matching Panel.
+	assert.match(PAGE_SOURCE, /const showUntrackedProximity = designVariation !== "team-eu";/u);
+	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage[\s\S]*defaultShowUntracked=\{showUntrackedProximity\}/u);
+	assert.doesNotMatch(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/useDesignVariation|design-variation/u,
+		"the shared block must take a defaultShowUntracked prop, not read the global variation store",
+	);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /defaultShowUntracked\?: boolean;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /defaultShowUntracked = true,/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const \[showUntracked, setShowUntracked\] = useState\(defaultShowUntracked\)/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/if \(defaultShowUntracked !== appliedShowUntrackedDefault\) \{\s*setAppliedShowUntrackedDefault\(defaultShowUntracked\);\s*setShowUntracked\(defaultShowUntracked\);\s*\}/u,
+	);
 });
 
 test("the board enables board-wide Jira issue agent-session transfer", () => {
@@ -175,6 +260,39 @@ test("the board enables board-wide Jira issue agent-session transfer", () => {
 		EXPERIMENTAL_CARD_SOURCE,
 		/sessionDrag=\{canLinkAgentSession[\s\S]*\? detachedSessionDrag \?\? localSessionDrag[\s\S]*: undefined\}/u,
 	);
+});
+
+test("Team EU returns unlinked sessions to Untracked without parking them on status columns", () => {
+	// Both variations pass the same transfer handlers so Untracked sessions
+	// can attach to issues and chins can drag back. Team EU still turns
+	// proximity off: unlinked copies go into detachedByCard, which the
+	// Untracked list reads, instead of rendering under the card.
+	assert.doesNotMatch(PAGE_SOURCE, /allowAgentSessionUnlink/u);
+	assert.match(PAGE_SOURCE, /onCardAgentSessionUnlink=\{handleAgentSessionUnlink\}/u);
+	assert.match(PAGE_SOURCE, /const showUntrackedProximity = designVariation !== "team-eu";/u);
+	assert.match(PAGE_SOURCE, /const handleAgentSessionUnlink = useCallback/u);
+	assert.doesNotMatch(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/useDesignVariation|design-variation/u,
+		"the shared block must take unlink as an optional handler, not read the global variation store",
+	);
+	assert.match(
+		EXPERIMENTAL_CARD_SOURCE,
+		/const canUnlinkAgentSession = Boolean\(onSessionUnlink && firstActiveAgentSession\);/u,
+	);
+	assert.match(
+		EXPERIMENTAL_CARD_SOURCE,
+		/onUnlink: canUnlinkAgentSession[\s\S]*\? \(session\) => \{[\s\S]*onSessionUnlink\?\.\(resolvedSession, card, columnTitle\);/u,
+	);
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/const showUnlinkControl = Boolean\(sessionDrag\?\.onUnlink\) && !isDraggedOut;/u,
+	);
+	assert.match(
+		TRANSFER_SOURCE,
+		/const showUnlinkWell = !isLinking && Boolean\(config\.onUnlink\);/u,
+	);
+	assert.match(TRANSFER_SOURCE, /config\.unlinkLabel \?\? "Drag here to unlink"/u);
 });
 
 test("unlinked agent sessions remain detached beneath their source Jira card", () => {
@@ -401,29 +519,73 @@ test("the Panel design variant floats untracked work over the board and the list
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/import \{ AgentSessionPanel \} from "\.\/components\/agent-session-panel";/u,
+		/import \{\s*AGENT_SESSION_PANEL_WIDTH_PX,\s*AgentSessionPanel,\s*\} from "\.\/components\/agent-session-panel";/u,
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/<AgentSessionPanel\s+agentSessionColumn=\{agentSessionColumnConfig\}\s+collapsed=\{agentSessionColumnCollapsed\}\s+onCollapsedChange=\{setAgentSessionColumnCollapsed\}/u,
+		/<AgentSessionPanel\s+agentSessionColumn=\{\{\s*\.\.\.agentSessionColumnConfig,\s*sessionDrag: boardSessionDrag\.untrackedBinding,\s*\}\}/u,
 		"the panel is controlled: its collapse state is the same state the in-flow column uses",
 	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/<JiraSessionFlyoutSuspensionProvider\s+suspended=\{boardSessionDrag\.transaction !== null\}\s*>/u,
+		"panel session flyouts suspend during the same board drag transaction as the in-flow column",
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/sessionDragging=\{boardSessionDrag\.transaction !== null\}/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/untrackedDropArmed=\{boardSessionDrag\.transaction\?\.target\?\.kind === "untracked"\}/u,
+	);
+	assert.match(PANEL_SOURCE, /sessionDragging \? "pointer-events-none" : null/u);
+	assert.match(PANEL_SOURCE, /data-board-agent-session-drop-zone="untracked"/u);
+	assert.match(
+		PANEL_SOURCE,
+		/untrackedDropArmed \? "bg-bg-accent-blue-subtlest" : "bg-surface"/u,
+	);
+	assert.match(PANEL_SOURCE, /<AgentSessionColumn\s+\{\.\.\.agentSessionColumn\}/u);
 	// The panel is pinned to the RIGHT edge. That is what lets the list scroll
 	// under it like the board does: the list's leading checkbox and summary
 	// cells are `sticky left-0`, so a right-pinned panel never covers them and
 	// no width needs reserving. Guard both halves — the right pin, and the
 	// absence of the inset that a left pin would have required.
-	assert.match(PANEL_SOURCE, /className="absolute bottom-0 right-0 z-40/u);
+	assert.match(PANEL_SOURCE, /"absolute bottom-0 right-0 z-40 rounded-none"/u);
+	assert.match(PANEL_SOURCE, /collapsed \? null : "border-l border-border"/u);
+	assert.match(PANEL_SOURCE, /className=\{collapsed \? "pt-1" : "pt-0"\}/u);
+	assert.doesNotMatch(PANEL_SOURCE, /AGENT_SESSION_PANEL_CONTENT_INSET/u);
+	// Panel list only: 4px side inset and 4px row gap (`space.050`). Do not
+	// widen either axis to `gap-2 p-2` (`space.100` / 8px).
+	assert.match(PANEL_SOURCE, /listClassName=\{cn\("gap-1 p-1", agentSessionColumn.listClassName\)\}/u);
+	assert.doesNotMatch(PANEL_SOURCE, /listClassName=\{cn\("gap-2 p-2"/u);
+	assert.match(PANEL_SOURCE, /chrome="none"/u);
 	assert.doesNotMatch(PANEL_SOURCE, /\binset-y-0 left-0\b/u);
 	// The rail STOPS at the tab strip: a real `top` offset, never `inset-y-0`
 	// plus `paddingTop`. Spanning the board root and padding the content would
 	// leave an invisible slab over the tabs that swallows pointer events and
-	// reads as a full-height overlay to anything measuring the DOM.
+	// reads as a full-height overlay to anything measuring the DOM. Full
+	// height from that line to `bottom: 0` wins over lining the header up
+	// with the search/filter row — an `mt-6` pin left a hole under the tabs.
 	assert.doesNotMatch(PANEL_SOURCE, /\binset-y-0\b/u);
 	assert.doesNotMatch(PANEL_SOURCE, /paddingTop:/u);
 	assert.match(PANEL_SOURCE, /\btop: topInset,/u);
-	// With the rail no longer reaching the tabs, the header needs no opaque
-	// z-50 band to paint over its head.
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/topInset=\{BOARD_HEADER_TAB_STRIP_BOTTOM_PX\}/u,
+	);
+	assert.match(PANEL_SOURCE, /export const AGENT_SESSION_PANEL_WIDTH_PX = 360;/u);
+	// Default PanelHeader gap (`h-14` / `py-4`) — no extra top pad to chase
+	// the filter row.
+	assert.match(PANEL_SOURCE, /<PanelHeader>/u);
+	assert.doesNotMatch(PANEL_SOURCE, /AGENT_SESSION_PANEL_HEADER_CLASS|pt-6 pb-0/u);
+	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /rounded-lg bg-surface/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/agentSessionColumnCollapsed\s*\?\s*AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX\s*:\s*AGENT_SESSION_PANEL_WIDTH_PX/u,
+	);
+	// The rail stops at the tabs via a real `top`, so the header needs no
+	// opaque z-50 band to paint over its head.
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /relative z-50 bg-surface/u);
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /listAgentSessionPanelInset/u);
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /paddingInline(?:Start|End)/u);
@@ -437,4 +599,38 @@ test("the board's AI entry point is the floating Rovo button, not the Omnibar", 
 	assert.doesNotMatch(PAGE_SOURCE, /<JgpRovoOverlay[\s\S]*chat="hidden"/u);
 	assert.doesNotMatch(PAGE_SOURCE, /Omnibar|SCRUBBER_DEMO_ENTRIES|handleOmnibar/u);
 	assert.doesNotMatch(PAGE_SOURCE, /useRovoChat|isSidebarChatOpen/u);
+	// The overlay does not pass `placement`; the button's default `right` must
+	// read `--untracked-panel-width` or a hardcoded 24px parks it on the rail.
+	assert.match(
+		FAB_GEOMETRY_SOURCE,
+		/export const FLOATING_ROVO_BUTTON_END_INSET_VAR = "--untracked-panel-width";/u,
+	);
+	assert.match(
+		FAB_GEOMETRY_SOURCE,
+		/const DEFAULT_BUTTON_RIGHT = `calc\(\$\{FLOATING_ROVO_BUTTON_EDGE_GAP\}px \+ var\(\$\{FLOATING_ROVO_BUTTON_END_INSET_VAR\}, 0px\)\)`;/u,
+	);
+	assert.doesNotMatch(FAB_GEOMETRY_SOURCE, /const DEFAULT_BUTTON_RIGHT = "24px";/u);
+});
+
+test("the untracked panel publishes its occupied width for the floating Rovo button", () => {
+	// FAB inset is not the scroll inset. Collapsed stays 0 (original corner);
+	// only the expanded 360px panel pushes the launcher. Publishing
+	// `boardScrollEndInset` would leave a 32px or 360px hole on first paint.
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const UNTRACKED_PANEL_WIDTH_CSS_VAR = "--untracked-panel-width";/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/const untrackedPanelFabInsetPx = showAgentSessionPanel && !agentSessionColumnCollapsed\s*\?\s*AGENT_SESSION_PANEL_WIDTH_PX\s*:\s*0;/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/root\.style\.setProperty\(UNTRACKED_PANEL_WIDTH_CSS_VAR, `\$\{untrackedPanelFabInsetPx\}px`\)/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/\[UNTRACKED_PANEL_WIDTH_CSS_VAR\]: `\$\{untrackedPanelFabInsetPx\}px`/u,
+	);
+	assert.doesNotMatch(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/setProperty\(UNTRACKED_PANEL_WIDTH_CSS_VAR, `\$\{boardScrollEndInset\}px`\)/u,
+	);
 });

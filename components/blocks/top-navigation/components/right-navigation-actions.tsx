@@ -122,7 +122,7 @@ export function RightNavigationActions({
 					<DropdownMenuGroup>
 						{/* Same Base UI constraint as above — the label is a group part and
 						    must be nested inside the group it names. */}
-						<DropdownMenuLabel>Variants</DropdownMenuLabel>
+						<DropdownMenuLabel>Properties</DropdownMenuLabel>
 						{DESIGN_VARIANTS.map((variant) => (
 							<DropdownMenuCheckboxItem
 								checked={designVariants[variant.id]}

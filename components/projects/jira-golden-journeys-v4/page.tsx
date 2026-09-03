@@ -84,15 +84,23 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 	// collapses them into one Work items tab and the switcher owns it instead.
 	// Both write the same state, so the choice survives flipping variations.
 	const tabs = useJiraTabs();
-	// The one place the global variant store meets the board. "Panel" lifts
-	// untracked work out of the board's flow into a floating side surface that
-	// the list view gets too; off, it stays the in-flow column.
+	// The one place the global variant store meets the board. Panel is on by
+	// default, so untracked work starts in the floating side surface the list
+	// view gets too; off, it stays the in-flow column.
 	const { designVariants } = useDesignVariants();
 	// Chin-row status glyphs are a variation choice too: Team EU keeps the stock
 	// spinner (question circle while an agent waits on an answer), 2000 years
 	// later runs the pixel loader.
 	const { designVariation } = useDesignVariation();
 	const renderAgentActivityIndicator = getJiraGoldenJourneysV4AgentActivityIndicator(designVariation);
+	// Team EU is "what ships today": status columns only show sessions attached
+	// to a work item. Untracked Pulse rows stay in the dedicated Untracked
+	// surface. 2000 years later keeps proximity rows beside the related cards.
+	const showUntrackedProximity = designVariation !== "team-eu";
+	// Chin rows follow the same variation split. Team EU groups every active
+	// agent into one merged row (hover opens assignment). 2000 years later
+	// keeps a row per agent so the split exploration stays intact.
+	const agentActivityLayout = designVariation === "team-eu" ? "merged" : "split";
 	const [workItemView, setWorkItemView] = useState<JiraWorkItemView>(DEFAULT_JIRA_WORK_ITEM_VIEW);
 	const [selectedTabLabel, setSelectedTabLabel] = useState(DEFAULT_JIRA_WORK_ITEMS_TAB_LABEL);
 	const activeTab = resolveJiraTab(tabs, selectedTabLabel, workItemView);
@@ -135,6 +143,9 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 			intro: run.description,
 		});
 	}, [openAgentChat]);
+	// Unlink always lands in `detachedAgentSessionsByCard`. The Untracked list
+	// reads that map, so the session reappears there immediately. Team EU keeps
+	// `showUntrackedProximity` off, so it never parks beside the card.
 	const handleAgentSessionUnlink = useCallback((session: { id: string }, card: JiraKanbanCardData) => {
 		const activity = card.agentActivities?.find((candidate) => candidate.id === session.id);
 		if (!activity) return;
@@ -200,7 +211,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 				<div className="h-full min-h-0 min-w-0 overflow-hidden bg-surface [&>div]:min-h-0">
 					<ExperimentalJiraKanbanPage
 						activeView={activeView}
-						agentActivityLayout="split"
+						agentActivityLayout={agentActivityLayout}
 						cardGenerativeActionPresentation="more-actions"
 						agentSessionAssigneeIdAliases={JIRA_GOLDEN_JOURNEYS_V4_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID}
 						agentSessionPresentation={designVariants.panel ? "panel" : "column"}
@@ -208,6 +219,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						ariaLabel="Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses."
 						boardColumns={boardColumns}
 						defaultAgentSessionColumnCollapsed
+						defaultShowUntracked={showUntrackedProximity}
 						detachedAgentSessionsByCard={detachedAgentSessionsByCard}
 						headerAssignees={JIRA_GOLDEN_JOURNEYS_V4_PAY_HEADER_ASSIGNEES}
 						insightsEnabled={false}

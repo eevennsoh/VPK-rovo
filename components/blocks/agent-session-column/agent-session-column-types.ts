@@ -57,4 +57,10 @@ export interface AgentSessionColumnProps extends Omit<AgentSessionProps, "classN
 	 * it becomes the list's only accessible name.
 	 */
 	chrome?: "default" | "none";
+	/**
+	 * Expanded width in px. Defaults to the board column's 280. A wider host
+	 * (the docked rail) passes its content-box width so the well fills that
+	 * surface instead of leaving a 280px column inside a larger panel.
+	 */
+	expandedWidthPx?: number;
 }

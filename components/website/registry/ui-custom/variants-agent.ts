@@ -2,6 +2,13 @@ import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 
 export const UI_CUSTOM_AGENT_VARIANT_DEMOS: Record<string, ComponentType> = {
+	"agent-loading-demo-finished": dynamic(
+		() =>
+			import("../../demos/ui-custom/agent-loading-demo").then((mod) => ({
+				default: mod.AgentLoadingDemoFinished,
+			})),
+		{ ssr: false },
+	),
 	"prompt-input-demo-chat-composer": dynamic(
 		() =>
 			import("../../demos/ui-custom/prompt-input-demo").then((mod) => ({

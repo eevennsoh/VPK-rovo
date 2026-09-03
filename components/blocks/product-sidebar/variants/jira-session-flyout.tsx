@@ -167,6 +167,12 @@ export function JiraSessionFlyoutTrigger({
 			id={triggerId}
 			payload={session}
 			{...props}
+			onPointerDownCapture={(event) => {
+				props.onPointerDownCapture?.(event);
+				// Press-to-drag must dismiss the hover preview immediately.
+				// Waiting for the 2px drag transaction leaves the flyout up.
+				handle.close();
+			}}
 		>
 			{triggerChild}
 		</HoverCardTrigger>
@@ -775,6 +781,15 @@ export function JiraSessionFlyoutSurface({
 	onLinkWorkItem,
 	onSubmitPrompt,
 }: Readonly<JiraSessionFlyoutSurfaceProps>) {
+	const suspensionHandle = use(JiraSessionFlyoutSuspensionContext);
+	const suspended = suspensionHandle !== null;
+
+	useEffect(() => {
+		if (suspended) {
+			handle.close();
+		}
+	}, [handle, suspended]);
+
 	return (
 		<HoverCard<JiraSidebarSessionItem> handle={handle}>
 			{({ payload }) => (

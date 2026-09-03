@@ -254,7 +254,8 @@ export function AgentSessionMediumDrag({
 				className={cn(
 					"min-w-0",
 					isDragging && "pointer-events-none absolute inset-x-0 top-0 opacity-0",
-					sessionDragBind && "touch-none select-none",
+					sessionDragBind && "cursor-grab touch-none select-none",
+					isDragging && "cursor-grabbing [&_article]:cursor-grabbing",
 				)}
 			>
 				{children(sessionDragBind)}
@@ -262,7 +263,8 @@ export function AgentSessionMediumDrag({
 			{isDragging ? createPortal(
 				<motion.div
 					aria-hidden
-					className="pointer-events-none left-0 top-0 z-[300] w-fit"
+					// Above the docked panel (z-40) and session hover flyout (z-200).
+					className="pointer-events-none left-0 top-0 z-[400] w-fit"
 					data-session-chip-out={isDraggedOut || undefined}
 					data-session-drag-overlay=""
 					data-session-dragging=""
