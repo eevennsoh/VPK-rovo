@@ -87,6 +87,21 @@ export const JIRA_WORK_ITEM_DETAIL: ComponentDetail = {
 			description: "Experimental v5 seeded with the running preset: several work-item-scoped agents progressing concurrently on a deterministic metronome, with live status pills and progress.",
 			demoSlug: "jira-work-item-demo-experimental-v5-running",
 		},
+		{
+			title: "Experimental v6 · Filled context",
+			description: "VITA-1-inspired Jira work item view with a spacious activity timeline, a persistent details rail, and work-item-scoped agent status, rebuilt with VPK components and design tokens.",
+			demoSlug: "jira-work-item-demo-experimental-v6",
+		},
+		{
+			title: "Experimental v6 · Empty context",
+			description: "Experimental v6 empty-context preset with the VITA-1-inspired activity and details layout, automatic deterministic AI planning, natural-language refinement, and one explicit confirmation action.",
+			demoSlug: "jira-work-item-demo-experimental-v6-empty",
+		},
+		{
+			title: "Experimental v6 · Multiple agents running",
+			description: "Experimental v6 running preset pairs the VITA-1-inspired work item view with several concurrent, work-item-scoped agents and deterministic progress.",
+			demoSlug: "jira-work-item-demo-experimental-v6-running",
+		},
 	],
 	props: [
 		{
@@ -102,7 +117,7 @@ export const JIRA_WORK_ITEM_DETAIL: ComponentDetail = {
 		},
 		{
 			name: "variant",
-			type: "\"default\" | \"experimental\" | \"experimental-v2\" | \"experimental-v3\" | \"experimental-v4\" | \"experimental-v5\"",
+			type: "\"default\" | \"experimental\" | \"experimental-v2\" | \"experimental-v3\" | \"experimental-v4\" | \"experimental-v5\" | \"experimental-v6\"",
 			default: "\"default\"",
 			description: "Opt-in layout variation with independently versioned experimental component trees.",
 		},
