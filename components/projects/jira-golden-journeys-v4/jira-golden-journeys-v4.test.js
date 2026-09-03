@@ -89,6 +89,10 @@ test("chin-row agent activity indicators follow the design variation", () => {
 		INDICATORS_SOURCE,
 		/import QuestionCircleFilledIcon from "@atlaskit\/icon-lab\/core\/question-circle-filled";/u,
 	);
+	assert.doesNotThrow(
+		() => require.resolve("@atlaskit/icon-lab/core/question-circle-filled"),
+		"icon-lab must export question-circle-filled (7.8.0+); a stale 7.5.0 install breaks the Team EU chin",
+	);
 	assert.match(INDICATORS_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
 	assert.match(
 		INDICATORS_SOURCE,
