@@ -157,10 +157,10 @@ export function AgentSession({
 							: "gap-2",
 					className,
 				)}
-				data-stack={variant === "large" ? "well" : undefined}
 				data-variant={variant}
-				// Detached compact rows sit 2px apart. Hosts keep the matching
-				// 2px card-to-list offset (`space.025`).
+				// In-flow large column stays flush. A panel host overrides
+				// `gap-0` via `listClassName`. Detached compact rows sit 2px
+				// apart (`space.025`).
 				style={variant === "medium-detached"
 					? { ...style, gap: token("space.025") }
 					: style}

@@ -44,6 +44,7 @@ import {
 	resolveFloatingRovoButtonPersistentBarSide,
 	resolveFloatingRovoButtonPlacement,
 	FLOATING_ROVO_BUTTON_DRAG_CLICK_THRESHOLD,
+	FLOATING_ROVO_BUTTON_END_INSET_VAR,
 	type FloatingRovoButtonDragConstraints,
 	type FloatingRovoButtonDragStart,
 	type FloatingRovoButtonSnapTarget,
@@ -217,6 +218,7 @@ export function FloatingRovoButtonSurface({
 	const collapsedButtonRef = useRef<HTMLButtonElement | null>(null);
 	const previousCardOpenRef = useRef<boolean>(cardOpen);
 	const [logoAnimating, setLogoAnimating] = useState(false);
+	const [endInset, setEndInset] = useState("");
 	const surfaceTransition = shouldReduceMotion
 		? { duration: 0 }
 		: FLOATING_ROVO_BUTTON_MORPH_SPRING;
@@ -225,9 +227,10 @@ export function FloatingRovoButtonSurface({
 		: { duration: 0.28, ease: "linear" as const };
 	const surfaceStyle: MotionStyle = {
 		// Un-dragged: pin with CSS so the browser re-anchors the corner on every
-		// resize frame. Dragged: use the measured origin the drag math owns.
-		// Both resolve to the same pixel (EDGE_GAP === DEFAULT_BUTTON_* === 24),
-		// so promoting to `left`/`top` at drag start does not jump.
+		// resize frame — including `--untracked-panel-width` changes, which the
+		// default `right` calc reads without a React re-measure. Dragged: use
+		// the measured origin the drag math owns. Promoting to `left`/`top` at
+		// drag start measures the already-inset box, so it does not jump.
 		...(dragOrigin && hasUserDragged
 			? {
 					left: dragOrigin.left,
@@ -334,7 +337,20 @@ export function FloatingRovoButtonSurface({
 	}, [buttonX, buttonY, configuredBarSide, placement, positioning]);
 
 	useEffect(() => {
-		const positionKey = `${positioning}:${resolvedPlacement.right}:${resolvedPlacement.bottom}`;
+		const root = document.documentElement;
+		const readEndInset = () => {
+			setEndInset(
+				getComputedStyle(root).getPropertyValue(FLOATING_ROVO_BUTTON_END_INSET_VAR).trim(),
+			);
+		};
+		readEndInset();
+		const observer = new MutationObserver(readEndInset);
+		observer.observe(root, { attributes: true, attributeFilter: ["style"] });
+		return () => observer.disconnect();
+	}, []);
+
+	useEffect(() => {
+		const positionKey = `${positioning}:${resolvedPlacement.right}:${resolvedPlacement.bottom}:${endInset}`;
 
 		if (initializedPositionKeyRef.current === positionKey) {
 			return;
@@ -344,9 +360,12 @@ export function FloatingRovoButtonSurface({
 			return;
 		}
 
-		anchorToDefaultTarget();
 		initializedPositionKeyRef.current = positionKey;
-	}, [anchorToDefaultTarget, positioning, resolvedPlacement.bottom, resolvedPlacement.right]);
+		if (hasUserDraggedRef.current) {
+			return;
+		}
+		anchorToDefaultTarget();
+	}, [anchorToDefaultTarget, endInset, positioning, resolvedPlacement.bottom, resolvedPlacement.right]);
 
 	useEffect(() => {
 		return () => {

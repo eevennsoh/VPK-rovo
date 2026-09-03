@@ -37,7 +37,13 @@ function withoutComments(source) {
 
 test("the experimental page groups Pulse sessions onto the board when Untracked is on", () => {
 	assert.match(PAGE_SOURCE, /import \{\s*collectBoardIssueKeys,\s*groupBoardUntrackedSessions,\s*selectBoardUntrackedSessions,\s*\} from "\.\/lib\/board-untracked-sessions"/u);
-	assert.match(PAGE_SOURCE, /const \[showUntracked, setShowUntracked\] = useState\(true\)/u);
+	assert.match(PAGE_SOURCE, /defaultShowUntracked\?: boolean;/u);
+	assert.match(PAGE_SOURCE, /defaultShowUntracked = true,/u);
+	assert.match(PAGE_SOURCE, /const \[showUntracked, setShowUntracked\] = useState\(defaultShowUntracked\)/u);
+	assert.match(
+		PAGE_SOURCE,
+		/if \(defaultShowUntracked !== appliedShowUntrackedDefault\) \{\s*setAppliedShowUntrackedDefault\(defaultShowUntracked\);\s*setShowUntracked\(defaultShowUntracked\);\s*\}/u,
+	);
 	assert.match(
 		PAGE_SOURCE,
 		/showUntracked\s*\?\s*groupBoardUntrackedSessions\(\{\s*boardIssueKeys,\s*capturedItemIds: capturedLooseWorkIds,\s*detachedByCard: detachedAgentSessionsByCard,\s*sessions: agentSessionItems,\s*\}\)\s*:\s*EMPTY_PROXIMITY_SESSIONS/u,
@@ -89,7 +95,29 @@ test("one board transaction coordinates every session source and suppresses prev
 	assert.match(BOARD_SOURCE, /const sessionFlyoutsSuspended = boardSessionDrag\.transaction !== null \|\| draggedCardCode !== null;/u);
 	assert.match(BOARD_SOURCE, /suspended=\{sessionFlyoutsSuspended\}/u);
 	assert.match(BOARD_SOURCE, /sessionDrag=\{boardSessionDrag\.enabled[\s\S]*\? boardSessionDrag\.untrackedBinding[\s\S]*: agentSessionColumn\.sessionDrag\}/u);
+	assert.match(PAGE_SOURCE, /boardAgentSessionDrag=\{boardSessionDrag\}/u);
+	assert.match(PAGE_SOURCE, /sessionDrag: boardSessionDrag\.untrackedBinding/u);
+	assert.match(
+		PAGE_SOURCE,
+		/import \{ JiraSessionFlyoutSuspensionProvider \} from "@\/components\/blocks\/product-sidebar\/variants\/jira-session-flyout"/u,
+	);
+	assert.match(
+		PAGE_SOURCE,
+		/<JiraSessionFlyoutSuspensionProvider\s+suspended=\{boardSessionDrag\.transaction !== null\}\s*>/u,
+	);
+	assert.match(
+		PAGE_SOURCE,
+		/sessionDragging=\{boardSessionDrag\.transaction !== null\}/u,
+	);
+	assert.match(BOARD_SOURCE, /untrackedSessions: props\.agentSessionColumn\?\.items \?\? props\.untrackedSessions/u);
 	assert.match(BOARD_SOURCE, /data-board-agent-session-drop-zone="issue"/u);
+	assert.match(BOARD_SOURCE, /data-board-agent-session-drop-zone="untracked"/u);
+	assert.match(PAGE_SOURCE, /ref=\{boardSessionDrag\.boardRootRef\}/u);
+	assert.match(BOARD_SOURCE, /captureBoardSessionDragRoot=\{false\}/u);
+	assert.match(
+		PAGE_SOURCE,
+		/untrackedDropArmed=\{boardSessionDrag\.transaction\?\.target\?\.kind === "untracked"\}/u,
+	);
 	assert.match(CARD_SOURCE, /agentSessionDragControl=\{agentSessionDragControl\}/u);
 	assert.match(CARD_SOURCE, /sessionDrag=\{canLinkAgentSession[\s\S]*\? detachedSessionDrag \?\? localSessionDrag[\s\S]*: undefined\}/u);
 	assert.match(BOARD_SOURCE, /data-board-agent-session-target/u);
@@ -98,9 +126,13 @@ test("one board transaction coordinates every session source and suppresses prev
 test("board-wide drag stays opt-in for zero and partial callback consumers", () => {
 	assert.match(
 		DRAG_HOOK_SOURCE,
-		/const enabled = Boolean\(\s*agentActivityLayout === "split"\s*&& onLink\s*&& onMove\s*&& onUnlink,?\s*\);/u,
+		/const enabled = Boolean\(onLink && onMove && onUnlink\);/u,
 	);
-	assert.match(BOARD_SOURCE, /agentActivityLayout,/u);
+	assert.doesNotMatch(
+		DRAG_HOOK_SOURCE,
+		/agentActivityLayout === "split"/u,
+		"merged Team EU chins must be able to drag onto Untracked and issues",
+	);
 	assert.match(DRAG_HOOK_SOURCE, /\n\s*enabled,\s*\n/u);
 	assert.match(DRAG_HOOK_SOURCE, /const control: JiraIssueAgentSessionDragControl \| undefined = enabled/u);
 	assert.match(DRAG_HOOK_SOURCE, /detachedBinding: enabled[\s\S]*\? createBinding\(\{ kind: "detached"/u);

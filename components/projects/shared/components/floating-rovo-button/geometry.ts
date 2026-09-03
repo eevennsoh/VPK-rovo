@@ -4,11 +4,18 @@ import type {
 	FloatingRovoButtonPositioning,
 } from "./types";
 
-const DEFAULT_BUTTON_RIGHT = "24px";
-const DEFAULT_BUTTON_BOTTOM = "24px";
 export const FLOATING_ROVO_BUTTON_EDGE_GAP = 24;
 export const FLOATING_ROVO_BUTTON_SNAP_GRID_SIZE = 4;
 export const FLOATING_ROVO_BUTTON_DRAG_CLICK_THRESHOLD = 6;
+
+/**
+ * Occupied trailing chrome (docked untracked-work rail, etc.). Hosts publish
+ * the pixel width; `0px` when unset keeps the button in the default corner.
+ */
+export const FLOATING_ROVO_BUTTON_END_INSET_VAR = "--untracked-panel-width";
+
+const DEFAULT_BUTTON_RIGHT = `calc(${FLOATING_ROVO_BUTTON_EDGE_GAP}px + var(${FLOATING_ROVO_BUTTON_END_INSET_VAR}, 0px))`;
+const DEFAULT_BUTTON_BOTTOM = `${FLOATING_ROVO_BUTTON_EDGE_GAP}px`;
 
 export interface FloatingRovoButtonSnapTarget {
 	left: number;

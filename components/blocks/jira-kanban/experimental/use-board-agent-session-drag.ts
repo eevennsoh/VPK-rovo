@@ -4,7 +4,6 @@ import { useCallback, useRef, useState } from "react";
 
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type {
-	JiraIssueAgentActivityLayout,
 	JiraIssueAgentSessionDragControl,
 	JiraIssueAgentSessionDragState,
 } from "@/components/blocks/jira-issue";
@@ -31,11 +30,22 @@ function collectDropZones(root: HTMLElement | null): BoardAgentSessionDropZone[]
 
 	return Array.from(
 		root.querySelectorAll<HTMLElement>("[data-board-agent-session-drop-zone]"),
-	).flatMap((node) => {
-		const cardCode = node.closest<HTMLElement>("[data-issue-key]")?.dataset.issueKey;
+	).flatMap((node): BoardAgentSessionDropZone[] => {
 		const kind = node.dataset.boardAgentSessionDropZone;
-		if (!cardCode || (kind !== "issue" && kind !== "unlink")) return [];
 		const rect = node.getBoundingClientRect();
+		if (kind === "untracked") {
+			return [{
+				bounds: {
+					bottom: rect.bottom,
+					left: rect.left,
+					right: rect.right,
+					top: rect.top,
+				},
+				kind: "untracked",
+			}];
+		}
+		const cardCode = node.closest<HTMLElement>("[data-issue-key]")?.dataset.issueKey;
+		if (!cardCode || (kind !== "issue" && kind !== "unlink")) return [];
 		const halo = kind === "unlink" ? SESSION_UNLINK_DROP_HALO_PX : 0;
 		return [{
 			bounds: {
@@ -62,7 +72,6 @@ function findBoardCard(
 }
 
 export function useBoardAgentSessionDrag({
-	agentActivityLayout,
 	boardColumns,
 	detachedSessionsByCard,
 	onLink,
@@ -70,7 +79,6 @@ export function useBoardAgentSessionDrag({
 	onUnlink,
 	untrackedSessions,
 }: Readonly<{
-	agentActivityLayout: JiraIssueAgentActivityLayout;
 	boardColumns: readonly JiraKanbanColumnData[];
 	detachedSessionsByCard?: Readonly<Record<string, readonly AgentSessionItem[]>>;
 	onLink?: (session: AgentSessionItem, card: JiraKanbanCardData, columnTitle: string) => void;
@@ -90,12 +98,7 @@ export function useBoardAgentSessionDrag({
 	const [dragState, setDragState] = useState<JiraIssueAgentSessionDragState>(
 		JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE,
 	);
-	const enabled = Boolean(
-		agentActivityLayout === "split"
-		&& onLink
-		&& onMove
-		&& onUnlink,
-	);
+	const enabled = Boolean(onLink && onMove && onUnlink);
 
 	const commitDrop = useCallback((
 		current: BoardAgentSessionDragTransaction<JiraIssueAgentSessionRef>,
@@ -188,8 +191,9 @@ export function useBoardAgentSessionDrag({
 			&& origin.kind !== "untracked"
 			&& origin.sourceCardCode === card.code,
 		);
-		const dropTarget = transaction?.target?.cardCode === card.code
-			? transaction.target.kind
+		const target = transaction?.target;
+		const dropTarget = target && target.kind !== "untracked" && target.cardCode === card.code
+			? target.kind
 			: null;
 		const attachedBinding = createBinding(
 			{ kind: "attached", sourceCardCode: card.code },
@@ -224,3 +228,5 @@ export function useBoardAgentSessionDrag({
 		untrackedBinding: enabled ? createBinding({ kind: "untracked" }) : undefined,
 	};
 }
+
+export type BoardAgentSessionDrag = ReturnType<typeof useBoardAgentSessionDrag>;

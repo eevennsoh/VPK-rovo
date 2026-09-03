@@ -113,7 +113,7 @@ export function AgentSessionCard({
 	// the clipboard before `onCopyResume` ever runs.
 	const canResume = (isResumable?.(item) ?? true) && resumeCommand.length > 0;
 	// The beat, not the mark: a card remounted while still unreviewed keeps the
-	// discovery border and dot but must not replay its entrance.
+	// discovery dot but must not replay its entrance.
 	const shouldPlayArrival = isArriving && !shouldReduceMotion;
 
 	// The same hover/focus-revealed pair Agent List rows use, with Hide / Show
@@ -224,19 +224,14 @@ export function AgentSessionCard({
 							{...bind}
 							aria-current={isSelected ? "true" : undefined}
 							aria-pressed={activateCard === undefined ? undefined : isSelected}
+							aria-roledescription={bind ? "Draggable agent session" : undefined}
 							className={cn(
-						"group/agent-row relative flex w-full cursor-pointer rounded-none p-3 text-left text-text",
-						// Stacked list is one solid well: first card owns the top radius,
-						// last owns the bottom, shared edges collapse to a single stroke.
-						"border border-solid [li:not(:last-child)_&]:border-b-0",
-						"[li:first-child_&]:rounded-t-lg",
-						"[li:last-child_&]:rounded-b-lg",
-						"transition-[border-color,background-color] duration-xxshort ease-out-practical",
+						"group/agent-row relative flex w-full rounded-lg p-3 text-left text-text",
+						bind ? "cursor-grab" : "cursor-pointer",
+						// Borderless tiles, 8px radius — same chrome as editor-palette
+						// suggestion rows. The list owns the gap between them.
+						"transition-[background-color] duration-xxshort ease-out-practical",
 						"motion-reduce:transition-none",
-						// Arrival recolours the same solid frame rather than replacing it.
-						// Resting untracked chrome is `border-border-disabled`; a newly
-						// synced card uses discovery until it is reviewed.
-						!captured && isNew ? "border-border-discovery" : "border-border-disabled",
 						// Selected keeps the same blue-subtlest token as a spotlighted
 						// board card. No mapped hovered sibling exists, so hover stays blue.
 						isSelected && "bg-bg-accent-blue-subtlest",

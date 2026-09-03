@@ -333,7 +333,22 @@ test("Jira issue keeps generic activity rows composer-free unless board flyout c
 	assert.match(AGENT_ACTIVITY_SOURCE, /return withSessionDrag\(/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /from "@\/components\/blocks\/agent-list"/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /from "@\/components\/blocks\/agent-states"/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /sessionFlyout \? \(\s*<JiraSessionFlyoutTrigger/u);
+	// A merged chin is many agents, not one session. Session flyout stays on
+	// single-agent rows; grouped rows drop it so AgentAssignment can open.
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/const isSingleAgentRow = rowGroup\.activities\.length === 1;/u,
+	);
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/const rowSessionFlyout = isSingleAgentRow \? sessionFlyout : undefined;/u,
+	);
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/const rowSessionDrag = isSingleAgentRow \? sessionDrag : undefined;/u,
+	);
+	assert.match(AGENT_ACTIVITY_SOURCE, /sessionFlyout=\{rowSessionFlyout\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /rowSessionFlyout \? \(\s*<JiraSessionFlyoutTrigger/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /\) : row\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<JiraSessionFlyoutSurface handle=\{flyoutHandle\} \/>/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AgentList/u);
@@ -644,7 +659,19 @@ test("Jira issue aggregates completed agents into a Finished row with failure pr
 	assert.match(COMPLETED_RUNS_SOURCE, /const finishedLabel = `\$\{runs\.length\} Finished`;/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /const hasFailedRun = runs\.some\(\(run\) => run\.state === "failed"\);/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /<section aria-label="Agent review" className="flex w-full min-w-0 flex-col overflow-hidden px-1 py-1">/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /<HoverCard open=\{aggregateOpen\} onOpenChange=\{handleAggregateOpenChange\}>[\s\S]*aria-label=\{hasFailedRun \? `\$\{finishedLabel\}, includes errors` : finishedLabel\}[\s\S]*data-slot="jira-issue-agent-row"[\s\S]*usesStrokeChrome \? \(\s*<IconTile[\s\S]*icon=\{<AiAgentIcon label="" size="small" \/>\}[\s\S]*: \([\s\S]*<AiAgentIcon label="" \/>[\s\S]*\{finishedLabel\}[\s\S]*hasFailedRun \? \([\s\S]*<StatusErrorIcon/u);
+	// The merged "N Finished" chin is what Team EU ships. Leading stays the
+	// generic agent mark; a host renderer owns the trailing finished glyph so
+	// it lines up with working/awaiting-input. Failed aggregates keep the
+	// trailing error so success never paints over a failure.
+	assert.match(
+		COMPLETED_RUNS_SOURCE,
+		/<JiraIssueAgentDoneMerged[\s\S]*renderAgentActivityIndicator=\{props\.renderAgentActivityIndicator\}/u,
+	);
+	assert.match(
+		COMPLETED_RUNS_SOURCE,
+		/const finishedIndicator = !hasFailedRun && renderAgentActivityIndicator\s*\n\s*\? renderAgentActivityIndicator\("finished"\)\s*\n\s*: null;/u,
+	);
+	assert.match(COMPLETED_RUNS_SOURCE, /<HoverCard open=\{aggregateOpen\} onOpenChange=\{handleAggregateOpenChange\}>[\s\S]*aria-label=\{hasFailedRun \? `\$\{finishedLabel\}, includes errors` : finishedLabel\}[\s\S]*data-slot="jira-issue-agent-row"[\s\S]*usesStrokeChrome \? \(\s*<IconTile[\s\S]*icon=\{<AiAgentIcon label="" size="small" \/>\}[\s\S]*: \([\s\S]*<AiAgentIcon label="" \/>[\s\S]*\{finishedLabel\}[\s\S]*hasFailedRun \? \([\s\S]*<StatusErrorIcon[\s\S]*: finishedIndicator \? \(\s*<span[\s\S]*\{finishedIndicator\}/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /className="flex h-6 w-full[^"]*rounded-b-\[6px\] rounded-t-sm[^"]*"/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /<AgentList[\s\S]*className="w-full border-0 bg-surface-overlay shadow-2xl"[\s\S]*flyout="session"[\s\S]*items=\{completedItems\}[\s\S]*variant="compact"/u);
 	assert.match(SOURCE, /onAgentDoneRunReview\?: \(run: JiraIssueCompletedAgentRun\) => void;/u);

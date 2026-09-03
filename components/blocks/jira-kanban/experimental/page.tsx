@@ -3,8 +3,10 @@
 import {
 	useCallback,
 	useImperativeHandle,
+	useLayoutEffect,
 	useMemo,
 	useState,
+	type CSSProperties,
 	type ReactNode,
 	type Ref,
 } from "react";
@@ -13,10 +15,10 @@ import { useOptionalRovoChat } from "@/app/contexts";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import {
 	AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX,
-	AGENT_SESSION_COLUMN_WIDTH_PX,
 	type AgentSessionColumnProps,
 } from "@/components/blocks/agent-session-column";
 import type { JiraIssueAgentActivityLayout, JiraIssueGenerativeActionPresentation } from "@/components/blocks/jira-issue";
+import { JiraSessionFlyoutSuspensionProvider } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import type {
 	JiraKanbanAgentData,
 	JiraKanbanAssigneeData,
@@ -26,7 +28,10 @@ import type {
 	JiraKanbanProps,
 } from "../index";
 import { createJiraKanbanColumns } from "../jira-kanban-data";
-import { AgentSessionPanel } from "./components/agent-session-panel";
+import {
+	AGENT_SESSION_PANEL_WIDTH_PX,
+	AgentSessionPanel,
+} from "./components/agent-session-panel";
 import { BoardFilterPopover } from "./components/board-filter-popover";
 import {
 	ALL_BOARD_AGENT_SESSION_STATE_IDS,
@@ -37,6 +42,7 @@ import {
 	type ExperimentalJiraKanbanProps,
 } from "./experimental-jira-kanban";
 import { EMPTY_COLLAPSED_BOARD_COLUMNS } from "./lib/board-column-collapse";
+import { useBoardAgentSessionDrag } from "./use-board-agent-session-drag";
 import { filterJiraKanbanColumnsByAgentSessionState } from "./lib/board-agent-session-visibility";
 import {
 	collectBoardIssueKeys,
@@ -103,6 +109,14 @@ const DEFAULT_CREATED_COLUMN_AGENT_ID = "readiness-checker";
 const PULSE_MEMBER_IDS = new Set(PULSE_TIMELINE.members.map((member) => member.id));
 const EMPTY_PROXIMITY_SESSIONS: Readonly<Record<string, readonly AgentSessionItem[]>> = {};
 
+/**
+ * Extra trailing inset for the viewport FAB. `0` while the rail is
+ * collapsed (original corner); the expanded panel width when it is not.
+ * The launcher is portalled to `document.body`, so `:root` is the common
+ * ancestor. The same name is set on the board root.
+ */
+const UNTRACKED_PANEL_WIDTH_CSS_VAR = "--untracked-panel-width";
+
 /** Stable identity, so an unscoped article does not re-render on every tick. */
 const EMPTY_ANSWERS: readonly PulseAnswer[] = [];
 
@@ -158,6 +172,15 @@ export interface ExperimentalJiraKanbanPageProps {
 	boardColumns?: readonly JiraKanbanColumnData[];
 	compactHeader?: boolean;
 	defaultAgentSessionColumnCollapsed?: boolean;
+	/**
+	 * Whether Untracked sessions also sit next to related Jira cards.
+	 *
+	 * The View menu can still hide them after mount. The route owns the
+	 * starting value so a design variation can land on "attached sessions
+	 * only" without this block reading the global store. Switching the
+	 * default resets the menu back to that variation's starting point.
+	 */
+	defaultShowUntracked?: boolean;
 	headerAssignees?: readonly JiraKanbanAssigneeData[];
 	insightsEnabled?: boolean;
 	insightsDefaultAssigneeIds?: readonly string[];
@@ -202,6 +225,7 @@ export default function ExperimentalJiraKanbanPage({
 	agentActivityLayout,
 	cardGenerativeActionPresentation,
 	defaultAgentSessionColumnCollapsed = false,
+	defaultShowUntracked = true,
 	detachedAgentSessionsByCard,
 	agentSessionAssigneeIdAliases,
 	agentSessionPresentation = "column",
@@ -279,10 +303,15 @@ export default function ExperimentalJiraKanbanPage({
 	// closed state — nothing outside the rail could bring it back.
 	const [agentSessionColumnCollapsed, setAgentSessionColumnCollapsed] = useState(defaultAgentSessionColumnCollapsed);
 	const [collapsedColumns, setCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
-	const [showUntracked, setShowUntracked] = useState(true);
+	const [showUntracked, setShowUntracked] = useState(defaultShowUntracked);
+	const [appliedShowUntrackedDefault, setAppliedShowUntrackedDefault] = useState(defaultShowUntracked);
 	const [shownSessionStateIds, setShownSessionStateIds] = useState(
 		() => new Set<BoardAgentSessionStateId>(ALL_BOARD_AGENT_SESSION_STATE_IDS),
 	);
+	if (defaultShowUntracked !== appliedShowUntrackedDefault) {
+		setAppliedShowUntrackedDefault(defaultShowUntracked);
+		setShowUntracked(defaultShowUntracked);
+	}
 	const handleRequestAction = useCallback((action: { id: string }) => {
 		setRequestedActionIds((current) => new Set(current).add(action.id));
 	}, []);
@@ -489,8 +518,26 @@ export default function ExperimentalJiraKanbanPage({
 	const boardScrollEndInset = showAgentSessionPanel
 		? (agentSessionColumnCollapsed
 			? AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX
-			: AGENT_SESSION_COLUMN_WIDTH_PX)
+			: AGENT_SESSION_PANEL_WIDTH_PX)
 		: 0;
+	// Scroll inset and FAB inset are different numbers. The last column still
+	// needs the 32px rail reserved; the viewport FAB does not — collapsed is
+	// the original 24px corner (`0` extra). Only the expanded 360px panel
+	// pushes it. First paint follows `defaultAgentSessionColumnCollapsed`.
+	const untrackedPanelFabInsetPx = showAgentSessionPanel && !agentSessionColumnCollapsed
+		? AGENT_SESSION_PANEL_WIDTH_PX
+		: 0;
+	// The floating Rovo button is portalled to `document.body`, so it cannot
+	// inherit this variable from the board. Publish on `:root` (and the board
+	// root below). Always write the current value so a leftover 360px from a
+	// previous expand cannot stick through a collapsed first paint.
+	useLayoutEffect(() => {
+		const root = document.documentElement;
+		root.style.setProperty(UNTRACKED_PANEL_WIDTH_CSS_VAR, `${untrackedPanelFabInsetPx}px`);
+		return () => {
+			root.style.removeProperty(UNTRACKED_PANEL_WIDTH_CSS_VAR);
+		};
+	}, [untrackedPanelFabInsetPx]);
 	const boardIssueKeys = useMemo(
 		() => collectBoardIssueKeys(filteredBoardColumns),
 		[filteredBoardColumns],
@@ -695,8 +742,21 @@ export default function ExperimentalJiraKanbanPage({
 		});
 	};
 
+	const boardSessionDrag = useBoardAgentSessionDrag({
+		boardColumns: filteredBoardColumns,
+		detachedSessionsByCard: proximityAgentSessionsByCard,
+		onLink: onCardAgentSessionLink ? handleCardAgentSessionLink : undefined,
+		onMove: onCardAgentSessionMove ? handleCardAgentSessionMove : undefined,
+		onUnlink: onCardAgentSessionUnlink ? handleCardAgentSessionUnlink : undefined,
+		untrackedSessions: agentSessionColumnConfig?.items,
+	});
+
 	return (
-		<div className="relative flex h-full min-h-[640px] flex-col rounded-lg bg-surface">
+		<div
+			className="relative flex h-full min-h-[640px] flex-col bg-surface"
+			ref={boardSessionDrag.boardRootRef}
+			style={{ [UNTRACKED_PANEL_WIDTH_CSS_VAR]: `${untrackedPanelFabInsetPx}px` } as CSSProperties}
+		>
 			<ExperimentalJiraKanbanBoardHeader
 				activeView={activeView}
 				assignees={assignees}
@@ -776,6 +836,8 @@ export default function ExperimentalJiraKanbanPage({
 							<ExperimentalJiraKanban
 								activeCardCode={activeCardCode}
 								agentActivityLayout={agentActivityLayout}
+								boardAgentSessionDrag={boardSessionDrag}
+								untrackedSessions={agentSessionColumnConfig?.items}
 								// Panel mode hands the column to the overlay instead, so
 								// the two presentations can never render at once.
 								agentSessionColumn={agentSessionPresentation === "panel"
@@ -832,21 +894,30 @@ export default function ExperimentalJiraKanbanPage({
 			)) : null}
 			{/*
 			 * A board-root child, not a content-region one: the panel is a docked
-			 * rail whose top edge is the tab strip's bottom border, so it has to span
-			 * the control-row band the region excludes. The header's title+tabs
-			 * wrapper sits at z-50 over it and is what clips it to that line.
+			 * rail whose top edge is the tab strip's bottom border, so it spans
+			 * from the tabs to the page bottom. Title+tabs stay above it — a
+			 * real `top`, never `inset-y-0` through the tabs.
 			 *
 			 * Still the last child. `jira-list-column-controls` also sits at z-40 and
 			 * neither the region nor this root creates a stacking context between
 			 * them, so a tie is broken by DOM order.
 			 */}
 			{showAgentSessionPanel && agentSessionColumnConfig ? (
-				<AgentSessionPanel
-					agentSessionColumn={agentSessionColumnConfig}
-					collapsed={agentSessionColumnCollapsed}
-					onCollapsedChange={setAgentSessionColumnCollapsed}
-					topInset={BOARD_HEADER_TAB_STRIP_BOTTOM_PX}
-				/>
+				<JiraSessionFlyoutSuspensionProvider
+					suspended={boardSessionDrag.transaction !== null}
+				>
+					<AgentSessionPanel
+						agentSessionColumn={{
+							...agentSessionColumnConfig,
+							sessionDrag: boardSessionDrag.untrackedBinding,
+						}}
+						collapsed={agentSessionColumnCollapsed}
+						onCollapsedChange={setAgentSessionColumnCollapsed}
+						sessionDragging={boardSessionDrag.transaction !== null}
+						topInset={BOARD_HEADER_TAB_STRIP_BOTTOM_PX}
+						untrackedDropArmed={boardSessionDrag.transaction?.target?.kind === "untracked"}
+					/>
+				</JiraSessionFlyoutSuspensionProvider>
 			) : null}
 		</div>
 	);

@@ -66,7 +66,10 @@ import {
 	resolveVisibleFocusedIssueKey,
 	scrollBoardIssueIntoView,
 } from "./lib/board-untracked-sessions";
-import { useBoardAgentSessionDrag } from "./use-board-agent-session-drag";
+import {
+	useBoardAgentSessionDrag,
+	type BoardAgentSessionDrag,
+} from "./use-board-agent-session-drag";
 
 import type {
 	JiraKanbanAgentData,
@@ -121,6 +124,17 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	 * left of the board. Omit to render only Jira status columns.
 	 */
 	agentSessionColumn?: AgentSessionColumnProps;
+	/**
+	 * Untracked sessions when the in-flow column is omitted (panel mode).
+	 * Keeps the board drag hook able to resolve a drop onto an issue.
+	 */
+	untrackedSessions?: readonly AgentSessionItem[];
+	/**
+	 * Injected board-session drag API. The page supplies this when the
+	 * floating panel also needs `untrackedBinding`; omit to let the board
+	 * own the hook (standalone demos).
+	 */
+	boardAgentSessionDrag?: BoardAgentSessionDrag;
 	/**
 	 * Capture actions for board-adjacent Untracked sessions. Independent of
 	 * {@link agentSessionColumn} so proximity rows still work when the column
@@ -576,7 +590,7 @@ function getCommonSelectedCardStatus(
 	return foundSelectedCard ? commonStatus : null;
 }
 
-export function ExperimentalJiraKanban({
+function ExperimentalJiraKanbanView({
 	activeCardCode,
 	agentActivityLayout = "merged",
 	agentSessionColumn,
@@ -608,12 +622,17 @@ export function ExperimentalJiraKanban({
 	onCreateAgent,
 	onCollapsedColumnsChange,
 	onToggleColumnAgent,
+	boardSessionDrag,
 	proximityAgentSession,
 	renderAgentActivityIndicator,
 	paddingBottom = token("space.150"),
 	paddingTop = token("space.150"),
 	selectionToolbar,
-}: Readonly<ExperimentalJiraKanbanProps>) {
+	captureBoardSessionDragRoot = true,
+}: Readonly<ExperimentalJiraKanbanProps> & {
+	boardSessionDrag: BoardAgentSessionDrag;
+	captureBoardSessionDragRoot?: boolean;
+}) {
 	const cardLayoutGroupId = useId();
 	const shouldReduceMotion = useReducedMotion();
 	const shouldAnimateCardMoves = animateCardMoves && !shouldReduceMotion;
@@ -630,15 +649,6 @@ export function ExperimentalJiraKanban({
 	const selectedStatus = selectedCardCodes
 		? getCommonSelectedCardStatus(boardColumns, selectedCardCodes)
 		: null;
-	const boardSessionDrag = useBoardAgentSessionDrag({
-		agentActivityLayout,
-		boardColumns,
-		detachedSessionsByCard: detachedAgentSessionsByCard,
-		onLink: onCardAgentSessionLink,
-		onMove: onCardAgentSessionMove,
-		onUnlink: onCardAgentSessionUnlink,
-		untrackedSessions: agentSessionColumn?.items,
-	});
 	const generativeActionAgents = useMemo(
 		() => selectionToolbar?.agents
 			? getMentionChildItems(
@@ -792,10 +802,11 @@ export function ExperimentalJiraKanban({
 		onCollapsedColumnsChange?.(nextCollapsedColumns);
 	};
 	const sessionFlyoutsSuspended = boardSessionDrag.transaction !== null || draggedCardCode !== null;
+	const untrackedDropArmed = boardSessionDrag.transaction?.target?.kind === "untracked";
 
 	return (
 		<div
-			ref={boardSessionDrag.boardRootRef}
+			ref={captureBoardSessionDragRoot ? boardSessionDrag.boardRootRef : undefined}
 			className="relative flex min-h-0 min-w-0 flex-1 flex-col"
 			data-board-agent-session-dragging={boardSessionDrag.transaction !== null || undefined}
 			data-board-agent-session-origin={boardSessionDrag.transaction?.origin.kind}
@@ -803,12 +814,17 @@ export function ExperimentalJiraKanban({
 			<div className="flex min-h-0 min-w-0 flex-1 items-stretch">
 				{agentSessionColumn ? (
 					// Top/left/bottom match the status columns' 2px drop-target
-					// box so the headers share a baseline. No right border:
-					// Untracked work is not a drop target, and that 2px reads as
-					// a white seam once the plane is `bg-surface`.
+					// box so the headers share a baseline. No right border: a
+					// 2px stroke there reads as a white seam on `bg-surface`.
+					// The column itself is the Untracked drop zone.
 					<JiraSessionFlyoutSuspensionProvider suspended={sessionFlyoutsSuspended}>
 					<div
-						className="flex min-h-0 shrink-0 border-2 border-transparent border-r-0 ps-6"
+						className={cn(
+							"flex min-h-0 shrink-0 border-2 border-r-0 ps-6",
+							untrackedDropArmed ? "border-ring" : "border-transparent",
+						)}
+						data-board-agent-session-drop-zone="untracked"
+						data-board-agent-session-target={untrackedDropArmed ? "untracked" : undefined}
 						style={{ paddingTop, paddingBottom }}
 					>
 						<AgentSessionColumn
@@ -1019,4 +1035,29 @@ export function ExperimentalJiraKanban({
 				) : null}
 		</div>
 	);
+}
+
+function ExperimentalJiraKanbanOwned(props: Readonly<ExperimentalJiraKanbanProps>) {
+	const boardSessionDrag = useBoardAgentSessionDrag({
+		boardColumns: props.boardColumns,
+		detachedSessionsByCard: props.detachedAgentSessionsByCard,
+		onLink: props.onCardAgentSessionLink,
+		onMove: props.onCardAgentSessionMove,
+		onUnlink: props.onCardAgentSessionUnlink,
+		untrackedSessions: props.agentSessionColumn?.items ?? props.untrackedSessions,
+	});
+	return <ExperimentalJiraKanbanView {...props} boardSessionDrag={boardSessionDrag} />;
+}
+
+export function ExperimentalJiraKanban(props: Readonly<ExperimentalJiraKanbanProps>) {
+	if (props.boardAgentSessionDrag) {
+		return (
+			<ExperimentalJiraKanbanView
+				{...props}
+				boardSessionDrag={props.boardAgentSessionDrag}
+				captureBoardSessionDragRoot={false}
+			/>
+		);
+	}
+	return <ExperimentalJiraKanbanOwned {...props} />;
 }

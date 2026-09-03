@@ -787,13 +787,21 @@ export function JiraIssueAgentActivityRows({
 		>
 			<AnimatePresence key={rowPresenceKey} initial={false} mode="popLayout">
 				{rowGroups.map((rowGroup) => {
+					// A grouped chin is many agents, not one session. Session
+					// details belong on a single-agent row; the merged row
+					// opens assignment instead so hover lists every agent.
+					// Drag uses the same gate: transferring `activities[0]`
+					// would silently move one agent while the row still says "N".
+					const isSingleAgentRow = rowGroup.activities.length === 1;
+					const rowSessionFlyout = isSingleAgentRow ? sessionFlyout : undefined;
+					const rowSessionDrag = isSingleAgentRow ? sessionDrag : undefined;
 					const row = (
 						<JiraIssueAgentActivityRow
 							activities={rowGroup.activities}
 							onOpenChange={onOpenChange}
 							onSessionDragChange={(dragging, pointer, cancelled) => {
 								setSessionDragging(dragging);
-								sessionDrag?.onDragStateChange({
+								rowSessionDrag?.onDragStateChange({
 									activities: rowGroup.activities,
 									cancelled,
 									dragging,
@@ -803,8 +811,8 @@ export function JiraIssueAgentActivityRows({
 							}}
 							onViewChat={onViewChat}
 							renderAgentActivityIndicator={renderAgentActivityIndicator}
-							sessionDrag={sessionDrag}
-							sessionFlyout={sessionFlyout}
+							sessionDrag={rowSessionDrag}
+							sessionFlyout={rowSessionFlyout}
 							shouldReduceMotion={shouldReduceMotion}
 							usesStrokeChrome={usesStrokeChrome}
 						/>
@@ -821,12 +829,12 @@ export function JiraIssueAgentActivityRows({
 						style={shouldReduceMotion ? undefined : JIRA_ISSUE_MOTION_STYLE}
 						transition={layoutTransition}
 					>
-							{sessionFlyout ? (
+							{rowSessionFlyout ? (
 								<JiraSessionFlyoutTrigger
 									closeDelay={160}
 									handle={flyoutHandle}
 									render={<div className="min-w-0" />}
-									session={toJiraIssueAgentSessionFlyoutItem(rowGroup.activities[0], sessionFlyout)}
+									session={toJiraIssueAgentSessionFlyoutItem(rowGroup.activities[0], rowSessionFlyout)}
 								>
 									{row}
 								</JiraSessionFlyoutTrigger>

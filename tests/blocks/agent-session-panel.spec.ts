@@ -5,13 +5,18 @@ const JIRA_GOLDEN_JOURNEYS_V4_URL = (
 ) + "/jira-golden-journeys-v4";
 
 const DESIGN_VARIANTS_STORAGE_KEY = "ui-design-variants";
-const AGENT_SESSION_COLUMN_WIDTH_PX = 280;
+const AGENT_SESSION_PANEL_WIDTH_PX = 360;
 const AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX = 32;
 
 function getPanel(page: Page): Locator {
 	// The panel is a <section> with an accessible name, so it exposes role
 	// "region".
 	return page.getByRole("region", { name: "Untracked work panel" });
+}
+
+/** The absolutely positioned rail host that owns `width` / `top`. */
+function getPanelHost(page: Page): Locator {
+	return getPanel(page).locator("..");
 }
 
 /** The untracked-work column itself, wherever it currently lives. */
@@ -45,11 +50,11 @@ async function openBoard(page: Page, options?: { panelVariant?: boolean }): Prom
 	});
 }
 
-/** The panel mounts minimised; open it to its full 280px. */
+/** The panel mounts minimised; open it to its full 360px. */
 async function expandPanel(page: Page): Promise<void> {
 	await page.getByRole("button", { name: "Expand Untracked work column" }).click();
-	await expect.poll(async () => (await getPanel(page).boundingBox())?.width)
-		.toBe(AGENT_SESSION_COLUMN_WIDTH_PX);
+	await expect.poll(async () => (await getPanelHost(page).boundingBox())?.width)
+		.toBe(AGENT_SESSION_PANEL_WIDTH_PX);
 }
 
 interface HorizontalSpan {
@@ -99,7 +104,7 @@ test("the panel floats over the board instead of taking a column of its own", as
 	expect(panelOwnsItsPixels).toBe(true);
 });
 
-test("the panel docks from the tab strip down, clear of the board header", async ({ page }) => {
+test("the panel docks from the tab strip down, flush to the page bottom", async ({ page }) => {
 	await openBoard(page, { panelVariant: true });
 	await expandPanel(page);
 
@@ -108,22 +113,31 @@ test("the panel docks from the tab strip down, clear of the board header", async
 	expect(tabsBox).not.toBeNull();
 	if (!tabsBox) throw new Error("tab strip is not laid out");
 	const tabsBottom = tabsBox.y + tabsBox.height;
-	const panelBox = await getPanel(page).boundingBox();
-	expect(panelBox).not.toBeNull();
-	if (!panelBox) throw new Error("panel is not laid out");
+
+	const host = getPanelHost(page);
+	const hostBox = await host.boundingBox();
+	expect(hostBox).not.toBeNull();
+	if (!hostBox) throw new Error("panel host is not laid out");
 
 	// The panel takes a real `top` offset, so its top edge must land exactly on
-	// the underside of the tab strip's rule — not near it. This is the guard on
-	// BOARD_HEADER_TAB_STRIP_BOTTOM_PX, and the tolerance is zero on purpose: at
-	// 83 (the band's height) the panel starts on the rule's own 1px row and
-	// punches a visible hole in it for the rail's width. A ±2px tolerance let
-	// exactly that ship once already.
-	expect(panelBox.y).toBe(tabsBottom);
+	// the underside of the tab strip's rule — not the control row. Pinning at
+	// the search row left an `mt-6` hole under the tabs. Tolerance is zero:
+	// at 83 the panel starts on the rule's own 1px row and punches a hole.
+	expect(hostBox.y).toBe(tabsBottom);
+	expect(hostBox.width).toBe(AGENT_SESSION_PANEL_WIDTH_PX);
 
-	// Its own header sits below the tabs and is fully visible, not clipped.
+	// Flush to the page bottom: no rounded-card inset, no FAB clearance.
+	const viewport = page.viewportSize();
+	expect(viewport).not.toBeNull();
+	expect(hostBox.y + hostBox.height).toBe(viewport!.height);
+	await expect(host).toHaveCSS("border-bottom-right-radius", "0px");
+	await expect(host).toHaveCSS("bottom", "0px");
+
 	const headerBox = await page.locator("[data-slot=panel-header]").boundingBox();
 	expect(headerBox).not.toBeNull();
-	expect(headerBox!.y).toBeGreaterThanOrEqual(tabsBottom);
+	expect(headerBox!.y).toBe(tabsBottom);
+	await expect(page.locator("[data-slot=panel-header]")).toHaveClass(/py-4/);
+	await expect(page.locator("[data-slot=panel-header]")).not.toHaveClass(/pt-6/);
 	await expect(page.getByRole("button", { name: "Collapse panel" })).toBeVisible();
 });
 
@@ -175,7 +189,24 @@ test("the docked rail is persistent — nothing can dismiss it", async ({ page }
 test("collapse shrinks the panel to the rail and the rail expands it back", async ({ page }) => {
 	await openBoard(page, { panelVariant: true });
 	const panel = getPanel(page);
+	const panelHost = panel.locator("..");
+	const expandButton = page.getByRole("button", { name: "Expand Untracked work column" });
+	const [hostBox, expandButtonBox] = await Promise.all([
+		panelHost.boundingBox(),
+		expandButton.boundingBox(),
+	]);
+	expect(hostBox).not.toBeNull();
+	expect(expandButtonBox).not.toBeNull();
+	if (!hostBox || !expandButtonBox) throw new Error("collapsed rail is not laid out");
+	const topInset = expandButtonBox.y - hostBox.y;
+	const leftInset = expandButtonBox.x - hostBox.x;
+	const rightInset = hostBox.x + hostBox.width - expandButtonBox.x - expandButtonBox.width;
+	expect(topInset).toBe(leftInset);
+	expect(topInset).toBe(rightInset);
+	await expect(panelHost).toHaveCSS("border-left-width", "0px");
+
 	await expandPanel(page);
+	await expect(panelHost).toHaveCSS("border-left-width", "1px");
 	await expect(page.getByRole("button", { name: "Collapse panel" })).toBeVisible();
 
 	await page.getByRole("button", { name: "Collapse panel" }).click();
@@ -203,8 +234,8 @@ test("the panel survives the switch to the List view", async ({ page }) => {
 	// views because both render into the same content region.
 	await expect(panel).toBeVisible();
 	await expect(panel.locator("[data-agent-session-column]")).toHaveCount(1);
-	const panelSpan = await readSpan(panel);
-	expect(panelSpan.right - panelSpan.left).toBe(AGENT_SESSION_COLUMN_WIDTH_PX);
+	const panelSpan = await readSpan(getPanelHost(page));
+	expect(panelSpan.right - panelSpan.left).toBe(AGENT_SESSION_PANEL_WIDTH_PX);
 
 	// The panel is pinned to the trailing edge and the list's leading cells are
 	// `sticky left-0`, so nothing sticky sits under it and the list needs no
@@ -235,6 +266,28 @@ test("with the variant off the column stays in flow and no panel renders", async
 		page.locator("[data-jira-kanban-card-list]").first(),
 	);
 	expect(firstColumnSpan.left).toBeGreaterThanOrEqual(columnSpan.right);
+
+	const inFlowMetrics = await column.locator("ul[data-variant=large]").evaluate((list) => {
+		const styles = getComputedStyle(list);
+		const articles = [...list.querySelectorAll("article")];
+		if (articles.length < 2) {
+			return null;
+		}
+		const first = articles[0].getBoundingClientRect();
+		const second = articles[1].getBoundingClientRect();
+		return {
+			articleGap: second.top - first.bottom,
+			gap: Number.parseFloat(styles.rowGap || styles.gap),
+			paddingLeft: Number.parseFloat(styles.paddingLeft),
+		};
+	});
+	expect(inFlowMetrics).not.toBeNull();
+	if (!inFlowMetrics) {
+		return;
+	}
+	expect(inFlowMetrics.gap).toBe(0);
+	expect(inFlowMetrics.articleGap).toBeLessThan(1);
+	expect(inFlowMetrics.paddingLeft).toBe(0);
 });
 
 test("the settings menu toggles the Panel variant on the live board", async ({ page }) => {
@@ -264,4 +317,100 @@ test("the settings menu toggles the Panel variant on the live board", async ({ p
 			DESIGN_VARIANTS_STORAGE_KEY,
 		),
 	).toBe(JSON.stringify({ panel: false }));
+});
+
+const FLOATING_ROVO_BUTTON_EDGE_GAP = 24;
+const FAB_INSET_TOLERANCE_PX = 8;
+
+function getFloatingRovoButton(page: Page): Locator {
+	return page.getByRole("button", { name: "Open Rovo chat" });
+}
+
+async function readFabGeometry(page: Page) {
+	return page.evaluate(() => {
+		const fab = document.querySelector('[aria-label="Open Rovo chat"]');
+		const panel = document.querySelector('[aria-label="Untracked work panel"]');
+		if (!(fab instanceof HTMLElement) || !(panel instanceof HTMLElement)) {
+			return null;
+		}
+		const fabRect = fab.getBoundingClientRect();
+		return {
+			cssVar: getComputedStyle(document.documentElement).getPropertyValue("--untracked-panel-width").trim(),
+			distRight: window.innerWidth - (fabRect.x + fabRect.width),
+			fabRight: fabRect.x + fabRect.width,
+			viewportWidth: window.innerWidth,
+		};
+	});
+}
+
+test("an expanded untracked panel insets the floating Rovo button off the session rows", async ({ page }) => {
+	await openBoard(page, { panelVariant: true });
+	await expandPanel(page);
+
+	const fab = getFloatingRovoButton(page);
+	await expect(fab).toBeVisible();
+
+	const geometry = await readFabGeometry(page);
+	expect(geometry).not.toBeNull();
+	if (!geometry) {
+		return;
+	}
+
+	expect(geometry.cssVar).toBe(`${AGENT_SESSION_PANEL_WIDTH_PX}px`);
+	expect(geometry.fabRight).toBeLessThanOrEqual(
+		geometry.viewportWidth - AGENT_SESSION_PANEL_WIDTH_PX + 1,
+	);
+	expect(Math.abs(geometry.distRight - (AGENT_SESSION_PANEL_WIDTH_PX + FLOATING_ROVO_BUTTON_EDGE_GAP)))
+		.toBeLessThanOrEqual(FAB_INSET_TOLERANCE_PX);
+});
+
+test("panel session rows use a 4px gutter on both axes", async ({ page }) => {
+	await openBoard(page, { panelVariant: true });
+	await expandPanel(page);
+
+	const metrics = await getPanel(page).locator("ul[data-variant=large]").evaluate((list) => {
+		const styles = getComputedStyle(list);
+		const articles = [...list.querySelectorAll("article")];
+		if (articles.length < 2) {
+			return null;
+		}
+		const first = articles[0].getBoundingClientRect();
+		const second = articles[1].getBoundingClientRect();
+		return {
+			articleGap: second.top - first.bottom,
+			gap: Number.parseFloat(styles.rowGap || styles.gap),
+			paddingLeft: Number.parseFloat(styles.paddingLeft),
+			paddingRight: Number.parseFloat(styles.paddingRight),
+		};
+	});
+
+	expect(metrics).not.toBeNull();
+	if (!metrics) {
+		return;
+	}
+
+	expect(metrics.paddingLeft).toBe(4);
+	expect(metrics.paddingRight).toBe(4);
+	expect(metrics.gap).toBe(4);
+	expect(Math.abs(metrics.articleGap - 4)).toBeLessThan(0.5);
+});
+
+test("a collapsed untracked rail keeps the FAB in the original corner", async ({ page }) => {
+	await openBoard(page, { panelVariant: true });
+
+	const fab = getFloatingRovoButton(page);
+	await expect(fab).toBeVisible();
+
+	const geometry = await readFabGeometry(page);
+	expect(geometry).not.toBeNull();
+	if (!geometry) {
+		return;
+	}
+
+	// First paint is collapsed (`defaultAgentSessionColumnCollapsed`). Extra
+	// inset is 0 — not the 32px rail and never the 360px expanded hole.
+	expect(geometry.cssVar === "0px" || geometry.cssVar === "").toBe(true);
+	expect(geometry.distRight).toBeLessThan(AGENT_SESSION_PANEL_WIDTH_PX);
+	expect(Math.abs(geometry.distRight - FLOATING_ROVO_BUTTON_EDGE_GAP))
+		.toBeLessThanOrEqual(FAB_INSET_TOLERANCE_PX);
 });

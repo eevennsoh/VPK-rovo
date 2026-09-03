@@ -8,7 +8,6 @@ import { motion, useReducedMotion, type Variants } from "motion/react";
 import { AGENT_SESSION_ITEMS } from "@/components/blocks/agent-session";
 import {
 	AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX,
-	AGENT_SESSION_COLUMN_WIDTH_PX,
 	AgentSessionColumn,
 	type AgentSessionColumnProps,
 } from "@/components/blocks/agent-session-column";
@@ -21,6 +20,7 @@ import {
 	PanelHeader,
 	PanelTitle,
 } from "@/components/ui/panel";
+import { cn } from "@/lib/utils";
 
 /**
  * Default column title, mirrored from `AgentSessionColumn`'s own default so the
@@ -80,19 +80,18 @@ const AGENT_SESSION_PANEL_REDUCED_MOTION_VARIANTS: Variants = {
 const AGENT_SESSION_PANEL_WIDTH_TRANSITION = "width var(--duration-medium) var(--ease-in-out)";
 
 /**
- * `chrome="none"` removes the column's expanded header, and with it the
- * `space.100` the header contributed above the bordered well. The panel owns
- * that gap instead so the well does not sit flush under the panel header.
+ * Expanded docked-rail width in px. The in-flow board column stays 280; this
+ * surface is the one the user sized. Exported so the board can reserve the
+ * same trailing scroll inset the rail occupies.
  */
-const AGENT_SESSION_PANEL_CONTENT_INSET = "pt-2";
+export const AGENT_SESSION_PANEL_WIDTH_PX = 360;
 
 /**
  * Width of the docked rail's leading hairline.
  *
- * Added on top of the column's own width rather than absorbed into it: the
- * element is `border-box`, so without this the 1px border would eat into the
- * content box and leave the 280px `AgentSessionColumn` inside overflowing its
- * host by a pixel.
+ * The host is `border-box` at `AGENT_SESSION_PANEL_WIDTH_PX`, so this pixel is
+ * subtracted from the inner column rather than added to the host — otherwise
+ * the well overflows the rail by 1px. Collapsed drops the border entirely.
  */
 const AGENT_SESSION_PANEL_BORDER_PX = 1;
 
@@ -101,14 +100,25 @@ export interface AgentSessionPanelProps {
 	collapsed: boolean;
 	onCollapsedChange: (collapsed: boolean) => void;
 	/**
+	 * True while a board session drag is in flight. The rail stops receiving
+	 * hits so the captured pointer can drop on issue cards underneath it.
+	 */
+	sessionDragging?: boolean;
+	/**
+	 * True while an attached chin session is hovering the rail as a drop
+	 * target. Coordinate hit-testing still uses the rail's box; this only
+	 * paints the armed state.
+	 */
+	untrackedDropArmed?: boolean;
+	/**
 	 * Distance in px from the top of the positioning ancestor at which the rail
 	 * starts — normally the bottom edge of the board's tab strip.
 	 *
 	 * This is a real `top` offset, not top padding: the element itself must stop
 	 * at the tab strip rather than spanning the whole board root and relying on
 	 * an opaque band to paint over its head. Padding would leave an invisible
-	 * 83px-tall slab covering the tabs, swallowing pointer events and reading as
-	 * a full-height overlay to anything that measures the DOM.
+	 * slab covering the tabs, swallowing pointer events and reading as a
+	 * full-height overlay to anything that measures the DOM.
 	 */
 	topInset?: number;
 }
@@ -121,7 +131,7 @@ export interface AgentSessionPanelProps {
  * scrolls underneath it, and it sizes itself from the column's own exported
  * widths so the panel edge and the column edge can never disagree.
  *
- * Two states, and only two: expanded (280px panel) and collapsed (32px notch
+ * Two states, and only two: expanded (360px panel) and collapsed (32px notch
  * rail). There is no closed state — the rail is always on the board's trailing
  * edge, which is exactly what lets it be its own entry point. Collapsing drops
  * the panel header rather than hiding it: the column's collapsed rail carries
@@ -136,7 +146,9 @@ export function AgentSessionPanel({
 	agentSessionColumn,
 	collapsed,
 	onCollapsedChange,
+	sessionDragging = false,
 	topInset = 0,
+	untrackedDropArmed = false,
 }: Readonly<AgentSessionPanelProps>): ReactElement {
 	const shouldReduceMotion = useReducedMotion();
 	const containerRef = useRef<HTMLElement>(null);
@@ -162,20 +174,26 @@ export function AgentSessionPanel({
 			// single hairline is the separation. (`shadow-overlay` would also
 			// have been a no-op — there is no `--shadow-overlay` in the theme,
 			// only `--shadow-xl`/`--shadow-2xl` aliasing `--ds-shadow-overlay`.)
-			className="absolute bottom-0 right-0 z-40 border-l border-border"
+			className={cn(
+				"absolute bottom-0 right-0 z-40 rounded-none",
+				collapsed ? null : "border-l border-border",
+				sessionDragging ? "pointer-events-none" : null,
+			)}
+			data-board-agent-session-drop-zone="untracked"
+			data-board-agent-session-target={untrackedDropArmed ? "untracked" : undefined}
 			// No `AnimatePresence`/`exit`: the rail is persistent, so the only
 			// unmount is the design variant being switched off — a mode change,
 			// not a dismissal, and nothing for an exit animation to narrate.
 			initial="hidden"
 			style={{
-				// A real `top`, not top padding: the rail must END at the tab strip,
-				// not merely look like it does. Spanning the full board root and
-				// padding the content would leave an invisible slab over the tabs.
+				// A real `top`, not top padding: the rail must END at the tab
+				// strip, not merely look like it does. `bottom: 0` with no radius
+				// so it is flush to the page — no floating inset under the rail.
 				top: topInset,
 				transition: shouldReduceMotion ? undefined : AGENT_SESSION_PANEL_WIDTH_TRANSITION,
-				width: (collapsed
+				width: collapsed
 					? AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX
-					: AGENT_SESSION_COLUMN_WIDTH_PX) + AGENT_SESSION_PANEL_BORDER_PX,
+					: AGENT_SESSION_PANEL_WIDTH_PX,
 				willChange: shouldReduceMotion ? undefined : "opacity, transform",
 			}}
 			variants={
@@ -190,11 +208,14 @@ export function AgentSessionPanel({
 				// `<section>` already announces "{title}, N sessions", and two
 				// nested regions must not share one name.
 				aria-label={`${title} panel`}
-				className="h-full bg-surface"
+				className={cn(
+					"h-full",
+					untrackedDropArmed ? "bg-bg-accent-blue-subtlest" : "bg-surface",
+				)}
 				tabIndex={-1}
 			>
 				{collapsed ? null : (
-					<PanelHeader className="h-14 px-4 py-3">
+					<PanelHeader>
 						<PanelTitle>{title}</PanelTitle>
 						<PanelActionGroup>
 							{/*
@@ -226,19 +247,21 @@ export function AgentSessionPanel({
 					</PanelHeader>
 				)}
 
-				<PanelContent
-					className={collapsed ? undefined : AGENT_SESSION_PANEL_CONTENT_INSET}
-				>
+				<PanelContent className={collapsed ? "pt-1" : "pt-0"}>
 					{/*
 					 * `flex-1` because the column sizes itself to its content — it is
 					 * built to stand on a board, not to fill a docked surface — and
-					 * the bordered well has to reach the bottom of the panel.
+					 * the list has to reach the bottom of the panel. Row gap and
+					 * side inset share `space.050` (`gap-1 p-1`, 4px). The in-flow
+					 * column keeps `gap-0` and is not passed this class.
 					 */}
 					<AgentSessionColumn
 						{...agentSessionColumn}
 						chrome="none"
 						className="flex-1"
 						collapsed={collapsed}
+						expandedWidthPx={AGENT_SESSION_PANEL_WIDTH_PX - AGENT_SESSION_PANEL_BORDER_PX}
+						listClassName={cn("gap-1 p-1", agentSessionColumn.listClassName)}
 						onCollapsedChange={onCollapsedChange}
 					/>
 				</PanelContent>

@@ -68,10 +68,10 @@ const VARIANT_REGISTRY_SOURCE = readFileSync(
 
 test("renders each session as a solid uncaptured-work card around the shared row", () => {
 	assert.match(CARD_SOURCE, /data-testid=\{"agent-session-row-" \+ item.id\}/u);
-	// Solid disabled frame. A newly synced card recolours the same border to
-	// discovery rather than replacing it. Resting untracked chrome stays disabled.
-	assert.match(CARD_SOURCE, /!captured && isNew \? "border-border-discovery" : "border-border-disabled"/u);
-	assert.match(CARD_SOURCE, /border border-solid/u);
+	// Borderless rounded tiles. Newness is the discovery dot, not a stroke.
+	assert.match(CARD_SOURCE, /rounded-lg p-3 text-left text-text/u);
+	assert.doesNotMatch(CARD_SOURCE, /border border-solid/u);
+	assert.doesNotMatch(CARD_SOURCE, /\[li:not\(:last-child\)_&\]:border-b-0/u);
 	assert.doesNotMatch(CARD_SOURCE, /dash-4-2/u);
 	assert.doesNotMatch(CARD_SOURCE, /bg-surface-sunken/u);
 	assert.doesNotMatch(CARD_SOURCE, /(?<!hover:)bg-surface(?!-sunken|-hovered)/u);
@@ -337,11 +337,16 @@ test("the row reveals Resume plus a Hide / Show eye where Agent List puts Archiv
 	assert.match(CARD_SOURCE, /visibilityLabel = "Hide"/u);
 	assert.match(CARD_SOURCE, /import EyeOpenIcon from "@atlaskit\/icon\/core\/eye-open";/u);
 	assert.match(CARD_SOURCE, /import EyeOpenStrikethroughIcon from "@atlaskit\/icon\/core\/eye-open-strikethrough";/u);
-	assert.match(CARD_SOURCE, /group\/agent-row relative flex w-full cursor-pointer rounded-none p-3 text-left text-text/u);
+	assert.match(CARD_SOURCE, /group\/agent-row relative flex w-full rounded-lg p-3 text-left text-text/u);
+	assert.match(CARD_SOURCE, /bind \? "cursor-grab" : "cursor-pointer"/u);
+	assert.match(CARD_SOURCE, /aria-roledescription=\{bind \? "Draggable agent session" : undefined\}/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /sessionDragBind && "cursor-grab touch-none select-none"/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /isDragging && "cursor-grabbing \[&_article\]:cursor-grabbing"/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /z-\[400\]/u);
 	assert.doesNotMatch(CARD_SOURCE, /hover:border-border(?!-disabled)/u);
 	assert.doesNotMatch(CARD_SOURCE, /focus-within:border-border(?!-disabled)/u);
 	assert.match(CARD_SOURCE, /hover:bg-surface-hovered/u);
-	assert.match(CARD_SOURCE, /transition-\[border-color,background-color\] duration-xxshort ease-out-practical/u);
+	assert.match(CARD_SOURCE, /transition-\[background-color\] duration-xxshort ease-out-practical/u);
 	assert.doesNotMatch(CARD_SOURCE, /hover:bg-white/u);
 	assert.doesNotMatch(CARD_SOURCE, /focus-within:bg-/u);
 	assert.doesNotMatch(CARD_SOURCE, /active:bg-/u);
@@ -388,6 +393,12 @@ test("the untracked-work flyout owns capture, so the card has no footer chin", (
 	);
 	assert.match(CARD_SOURCE, /<JiraSessionFlyoutTrigger/u);
 	assert.match(CARD_SOURCE, /closeDelay=\{160\}/u);
+	assert.match(FLYOUT_SOURCE, /onPointerDownCapture=\{\(event\) => \{/u);
+	assert.match(FLYOUT_SOURCE, /handle\.close\(\);/u);
+	assert.match(
+		FLYOUT_SOURCE,
+		/const suspensionHandle = use\(JiraSessionFlyoutSuspensionContext\);/u,
+	);
 	assert.match(INDEX_SOURCE, /<JiraSessionFlyoutSurface/u);
 	assert.match(INDEX_SOURCE, /capturedSessionIds=\{capturedItemIds\}/u);
 	assert.match(INDEX_SOURCE, /content=\{isAttached \? "details" : "untracked-work"\}/u);
@@ -400,6 +411,24 @@ test("the untracked-work flyout owns capture, so the card has no footer chin", (
 	);
 	assert.doesNotMatch(CARD_SOURCE, /UncapturedWorkChin/u);
 	assert.doesNotMatch(INDEX_SOURCE, /UncapturedWorkChin/u);
+});
+
+test("drag suspension keeps the shared flyout consistently uncontrolled", () => {
+	// Regression: conditionally spreading `open={false}` only while suspended
+	// changed Base UI from uncontrolled to controlled and back after every drag.
+	assert.match(
+		FLYOUT_SOURCE,
+		/<HoverCard<JiraSidebarSessionItem> handle=\{handle\}>/u,
+	);
+	assert.doesNotMatch(
+		FLYOUT_SOURCE,
+		/\.\.\.\(suspended \? \{ open: false \} : \{\}\)/u,
+	);
+	assert.match(
+		FLYOUT_SOURCE,
+		/if \(suspended\) \{\s*handle\.close\(\);\s*\}/u,
+	);
+	assert.match(FLYOUT_SOURCE, /handle=\{suspensionHandle \?\? handle\}/u);
 });
 
 test("sessions share one moving untracked-work flyout instead of a popup per row", () => {
@@ -559,20 +588,20 @@ test("ships demo data and catalog entries for every attachment and size variant"
 	assert.doesNotMatch(DETAIL_SOURCE, /agent-session-demo-multi-link/u);
 });
 
-test("large uncaptured-work cards stack as one solid well", () => {
-	// No gap, first card rounded on top, last on the bottom, shared edges
-	// collapsed to a single stroke. A single card is both first and last, so
-	// it keeps a full rounded frame.
-	assert.match(INDEX_SOURCE, /variant === "large"\s*\n\s*\? "gap-0"\s*\n\s*: variant === "medium-detached"\s*\n\s*\? undefined\s*\n\s*: "gap-2"/u);
+test("large uncaptured-work cards are borderless and flush in-flow", () => {
+	// In-flow large list is `gap-0`. Panel hosts override via `listClassName`.
+	// Cards stay `rounded-lg` with no stroke — no fused shared edges.
+	assert.match(INDEX_SOURCE, /variant === "large"\s*\n\s*\? "gap-0"\s*\n\s*: variant === "medium-detached"/u);
 	assert.match(INDEX_SOURCE, /gap: token\("space\.025"\)/u);
-	assert.match(INDEX_SOURCE, /data-stack=\{variant === "large" \? "well" : undefined\}/u);
-	assert.match(CARD_SOURCE, /\[li:first-child_&\]:rounded-t-lg/u);
-	assert.match(CARD_SOURCE, /\[li:last-child_&\]:rounded-b-lg/u);
-	assert.match(CARD_SOURCE, /\[li:not\(:last-child\)_&\]:border-b-0/u);
-	assert.match(CARD_SOURCE, /border border-solid/u);
+	assert.doesNotMatch(INDEX_SOURCE, /data-stack=/u);
+	assert.doesNotMatch(INDEX_SOURCE, /gap: token\("space\.100"\)/u);
+	assert.match(CARD_SOURCE, /rounded-lg p-3 text-left text-text/u);
+	assert.doesNotMatch(CARD_SOURCE, /\[li:first-child_&\]:rounded-t-lg/u);
+	assert.doesNotMatch(CARD_SOURCE, /\[li:last-child_&\]:rounded-b-lg/u);
+	assert.doesNotMatch(CARD_SOURCE, /\[li:not\(:last-child\)_&\]:border-b-0/u);
+	assert.doesNotMatch(CARD_SOURCE, /border border-solid/u);
 	assert.doesNotMatch(CARD_SOURCE, /dash-4-2/u);
 	assert.doesNotMatch(CARD_SOURCE, /rounded-none border bg-transparent/u);
-	assert.doesNotMatch(CARD_SOURCE, /rounded-lg border p-3/u);
 	assert.doesNotMatch(INDEX_SOURCE, /flex flex-col gap-2/u);
 });
 

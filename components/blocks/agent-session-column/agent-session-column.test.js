@@ -86,33 +86,39 @@ test("the column plane is the board surface, not a grey well", () => {
 test("the session list sits flush in the plane with no gutter wrapper", () => {
 	// The old `-m-1 p-1` scrollport painted a 4px gap around the cards and
 	// clipped the scrollbar against the plane's radius. The list is the
-	// scrollport now; the plane stays unpadded so edge fades span it.
+	// scrollport now; the plane stays unpadded so edge fades span it. Panel
+	// inset lives on the panel's `listClassName`, not a column wrapper.
 	assert.match(INDEX_SOURCE, /min-h-0 min-w-0 flex-1 overflow-y-auto/u);
 	assert.doesNotMatch(INDEX_SOURCE, /-m-1 min-h-0 min-w-0 flex-1 overflow-y-auto p-1/u);
 	assert.match(INDEX_SOURCE, /overflow-y-auto has-\[:focus-visible\]:overflow-visible/u);
 	assert.doesNotMatch(INDEX_SOURCE, /const AGENT_SESSION_PLANE =\s*\n?\s*"[^"]*overflow-hidden/u);
-	assert.match(INDEX_SOURCE, /className=\{cn\(AGENT_SESSION_WELL_LIST, listClassName\)\}/u);
+	assert.match(INDEX_SOURCE, /className=\{listClassName\}/u);
+	assert.doesNotMatch(INDEX_SOURCE, /AGENT_SESSION_WELL_LIST/u);
 	assert.doesNotMatch(INDEX_SOURCE, /className=\{cn\("gap-0\.5", listClassName\)\}/u);
 	assert.doesNotMatch(INDEX_SOURCE, /padding: token\("space\.100"\)/u);
 	assert.doesNotMatch(INDEX_SOURCE, /padding: token\("space\.050"\)/u);
 });
 
-test("the column stacks large session cards as one solid well", () => {
+test("the column does not fuse large session cards into one stroke", () => {
 	// The expanded plane owns the outer 1px + radius.xlarge so fades cannot
-	// paint over the stroke. Cards in this column keep only internal dividers.
+	// paint over the stroke. Cards keep their own radius and gap; the column
+	// must not strip borders into shared dividers.
 	assert.match(INDEX_SOURCE, /const AGENT_SESSION_WELL =/u);
 	assert.match(INDEX_SOURCE, /overflow-hidden rounded-xl border border-solid border-border-disabled/u);
-	assert.match(INDEX_SOURCE, /collapsed \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL/u);
-	assert.match(INDEX_SOURCE, /className=\{cn\(AGENT_SESSION_WELL_LIST, listClassName\)\}/u);
-	assert.match(INDEX_SOURCE, /\[&_article\]:rounded-none \[&_article\]:border-x-0/u);
-	assert.match(INDEX_SOURCE, /\[&_li:first-child_article\]:border-t-0/u);
-	assert.match(INDEX_SOURCE, /\[&_li:last-child_article\]:rounded-none \[&_li:last-child_article\]:rounded-b-none \[&_li:last-child_article\]:border-b-0/u);
-	assert.match(SESSION_INDEX_SOURCE, /data-stack=\{variant === "large" \? "well" : undefined\}/u);
-	// Standalone Agent Session still draws a full well; the column strips it.
-	assert.match(CARD_SOURCE, /\[li:first-child_&\]:rounded-t-lg/u);
-	assert.match(CARD_SOURCE, /\[li:last-child_&\]:rounded-b-lg/u);
-	assert.match(CARD_SOURCE, /\[li:not\(:last-child\)_&\]:border-b-0/u);
-	assert.match(CARD_SOURCE, /border border-solid/u);
+	assert.match(INDEX_SOURCE, /collapsed \|\| chrome === "none" \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL/u);
+	assert.match(INDEX_SOURCE, /className=\{listClassName\}/u);
+	assert.doesNotMatch(INDEX_SOURCE, /AGENT_SESSION_WELL_LIST/u);
+	assert.doesNotMatch(INDEX_SOURCE, /\[&_article\]:rounded-none \[&_article\]:border-x-0/u);
+	assert.doesNotMatch(INDEX_SOURCE, /\[&_li:first-child_article\]:border-t-0/u);
+	assert.doesNotMatch(INDEX_SOURCE, /\[&_li:last-child_article\]:border-b-0/u);
+	assert.doesNotMatch(SESSION_INDEX_SOURCE, /data-stack=/u);
+	assert.match(SESSION_INDEX_SOURCE, /variant === "large"\s*\n\s*\? "gap-0"/u);
+	assert.doesNotMatch(SESSION_INDEX_SOURCE, /gap: token\("space\.100"\)/u);
+	assert.match(CARD_SOURCE, /rounded-lg p-3 text-left text-text/u);
+	assert.doesNotMatch(CARD_SOURCE, /\[li:first-child_&\]:rounded-t-lg/u);
+	assert.doesNotMatch(CARD_SOURCE, /\[li:last-child_&\]:rounded-b-lg/u);
+	assert.doesNotMatch(CARD_SOURCE, /\[li:not\(:last-child\)_&\]:border-b-0/u);
+	assert.doesNotMatch(CARD_SOURCE, /border border-solid/u);
 	assert.doesNotMatch(CARD_SOURCE, /dash-4-2/u);
 });
 
@@ -235,8 +241,10 @@ test("the block is registered in the catalog", () => {
 
 test("the collapsed count lives in the header above the plane, not on the rail", () => {
 	// Same header slot as expanded (`space.100` below, 24px row) so the number
-	// does not jump. The rail is notches only.
+	// does not jump. Collapsed adds matching top pad so the count is not flush
+	// under the panel header. The rail is notches only.
 	assert.match(INDEX_SOURCE, /paddingBottom: token\("space\.100"\)/u);
+	assert.match(INDEX_SOURCE, /paddingTop: collapsed \? token\("space\.100"\) : undefined/u);
 	assert.match(INDEX_SOURCE, /relative flex h-6 w-full min-w-0 items-center justify-center/u);
 	assert.match(INDEX_SOURCE, /absolute inset-0 flex items-center justify-center text-xs/u);
 	assert.match(INDEX_SOURCE, /HEADER_COUNT_AT_REST/u);
@@ -517,15 +525,14 @@ test("a host can take over the collapse state without the column fighting it", (
 test("chrome none drops the expanded header only, never the column's name", () => {
 	assert.match(TYPES_SOURCE, /chrome\?: "default" \| "none";/u);
 	assert.match(INDEX_SOURCE, /chrome = "default",/u);
-	// One gate, on the header row alone.
+	// Header gate stays on the title row. The well frame is a second chrome
+	// gate so a docked panel does not nest a rounded box inside `border-l`.
 	assert.match(INDEX_SOURCE, /\{collapsed \|\| chrome === "default" \? \(/u);
 	assert.equal(INDEX_SOURCE.match(/chrome === "default"/gu)?.length, 1);
-	assert.doesNotMatch(INDEX_SOURCE, /chrome === "none"/u);
+	assert.match(INDEX_SOURCE, /collapsed \|\| chrome === "none" \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL/u);
 	// The section keeps its label: with the visible title suppressed it is the
 	// list's only accessible name.
 	assert.match(INDEX_SOURCE, /<section\s*\n\s*aria-label=\{`\$\{displayTitle\}, \$\{sessionCount\} sessions`\}/u);
-	// The plane, the well, and the sessions inside them are untouched by chrome.
-	assert.match(INDEX_SOURCE, /\) : null\}\s*\n\s*\n\s*<div className=\{collapsed \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL\}>/u);
 });
 
 test("the collapsed rail keeps its compact header whatever the host asks for", () => {
@@ -577,8 +584,8 @@ test("the collapsed rail preserves session twin hover previews", () => {
 test("an arrival is a transient beat plus a mark that outlives it", () => {
 	// The mark is the load-bearing half: it has to survive a backgrounded tab, a
 	// collapsed column, and reduced motion, so it is never the animation alone.
-	assert.match(CARD_SOURCE, /!captured && isNew \? "border-border-discovery" : "border-border-disabled"/u);
-	assert.match(CARD_SOURCE, /border border-solid/u);
+	assert.match(CARD_SOURCE, /<span className="sr-only">Newly synced, not yet reviewed<\/span>/u);
+	assert.match(CARD_SOURCE, /size-1\.5 rounded-full bg-icon-discovery/u);
 	assert.match(NOTCH_MARK_SOURCE, /isNew \|\| isHighlighted \? NOTCH_EMPHASIS : NOTCH_AT_REST/u);
 	// A reviewed notch rests quiet and lights up on hover or focus; a new one is
 	// already lit, so "new" reuses the hover vocabulary instead of adding one.

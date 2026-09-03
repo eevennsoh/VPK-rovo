@@ -53,12 +53,13 @@ const AGENT_SESSION_COLUMN_TRANSITION = "width var(--duration-medium) var(--ease
  * push this title 8px in and 8px down from its neighbours and make the column
  * look like a panel docked beside the board rather than a column of it.
  *
- * The list is the scrollport and sits flush in the fill — no padded gutter
- * around the cards. Expanded, the plane is a bordered well (`radius.xlarge`)
- * that clips cards, fades, and the hidden-work footer so they cannot paint
- * over the 1px stroke. Collapsed, the rail sits in the same fill without that
- * frame. Cards inside the well drop their outer outline and keep only
- * inter-row dividers.
+ * The list is the scrollport. Expanded in-flow, the plane is a bordered
+ * well (`radius.xlarge`) that clips fades and the hidden-work footer so
+ * they cannot paint over the 1px stroke. A host with `chrome="none"`
+ * (the docked panel) keeps the fill without that nested frame — the
+ * panel already draws `border-l`. Collapsed, the rail sits in the same
+ * fill without a frame. Cards are borderless; the in-flow list stays
+ * flush (`gap-0`).
  */
 const AGENT_SESSION_PLANE =
 	"relative flex min-h-0 min-w-0 flex-1 flex-col bg-surface";
@@ -66,19 +67,6 @@ const AGENT_SESSION_PLANE =
 const AGENT_SESSION_WELL = cn(
 	AGENT_SESSION_PLANE,
 	"overflow-hidden rounded-xl border border-solid border-border-disabled",
-);
-
-/**
- * Column-only: the well already draws the outer rectangle, so stacked cards
- * must not. First/last lose the edges that would double the well stroke;
- * neighbours keep a top border as the divider.
- */
-const AGENT_SESSION_WELL_LIST = cn(
-	"gap-0",
-	"[&_article]:rounded-none [&_article]:border-x-0",
-	"[&_li:first-child_article]:border-t-0",
-	// Beats the card's `[li:last-child_&]:rounded-b-lg` so only the well curves.
-	"[&_li:last-child_article]:rounded-none [&_li:last-child_article]:rounded-b-none [&_li:last-child_article]:border-b-0",
 );
 
 /**
@@ -152,9 +140,8 @@ const AGENT_SESSION_PLANE_FADE_SIZE = "3rem";
  * untracked-work flyout, captured state, and resume gating behave identically
  * here and in the standalone block.
  *
- * The list sits flush in the well and is the scrollport. Fades sit on the list
- * wrapper, already inside the well's padding box, so they stop at the inner
- * edge of the stroke.
+ * The list is the scrollport. Fades sit on the list wrapper, already inside
+ * the well's padding box, so they stop at the inner edge of the stroke.
  *
  * It collapses like the status columns beside it, but not *into* the same thing:
  * a status pill is a rotated label, while this becomes a full-height rail of
@@ -174,6 +161,7 @@ export function AgentSessionColumn({
 	count,
 	defaultCollapsed = false,
 	emptyLabel = "No untracked sessions",
+	expandedWidthPx = AGENT_SESSION_COLUMN_WIDTH_PX,
 	items = AGENT_SESSION_ITEMS,
 	listClassName,
 	newItemIds,
@@ -338,13 +326,18 @@ export function AgentSessionColumn({
 				transition: shouldReduceMotion ? "none" : AGENT_SESSION_COLUMN_TRANSITION,
 				width: collapsed
 					? `${AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX}px`
-					: `${AGENT_SESSION_COLUMN_WIDTH_PX}px`,
+					: `${expandedWidthPx}px`,
 			}}
 		>
 			{collapsed || chrome === "default" ? (
 				<div
 					className="flex min-w-0 items-center gap-1.5"
-					style={{ paddingBottom: token("space.100") }}
+					style={{
+						paddingBottom: token("space.100"),
+						// Collapsed rail: match the 8px bottom so the count is
+						// not flush under the panel header hairline.
+						paddingTop: collapsed ? token("space.100") : undefined,
+					}}
 				>
 					{collapsed ? (
 						<div className="relative flex h-6 w-full min-w-0 items-center justify-center">
@@ -429,7 +422,7 @@ export function AgentSessionColumn({
 				</div>
 			) : null}
 
-			<div className={collapsed ? AGENT_SESSION_PLANE : AGENT_SESSION_WELL}>
+			<div className={collapsed || chrome === "none" ? AGENT_SESSION_PLANE : AGENT_SESSION_WELL}>
 				{collapsed ? (
 					<AgentSessionColumnRail
 						arrivingItemIds={arrivingItemIds}
@@ -458,7 +451,7 @@ export function AgentSessionColumn({
 								>
 									<AgentSession
 										arrivingItemIds={arrivingItemIds}
-										className={cn(AGENT_SESSION_WELL_LIST, listClassName)}
+										className={listClassName}
 										items={viewItems}
 										newItemIds={newItemIds}
 										{...sessionProps}

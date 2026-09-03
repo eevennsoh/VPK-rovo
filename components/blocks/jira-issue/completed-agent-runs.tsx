@@ -196,6 +196,7 @@ export function JiraIssueAgentDone({
 		<JiraIssueAgentDoneMerged
 			onOpenChange={props.onOpenChange}
 			onView={props.onView}
+			renderAgentActivityIndicator={props.renderAgentActivityIndicator}
 			runs={props.runs}
 			usesStrokeChrome={props.usesStrokeChrome}
 		/>
@@ -205,12 +206,18 @@ export function JiraIssueAgentDone({
 function JiraIssueAgentDoneMerged({
 	onOpenChange,
 	onView,
+	renderAgentActivityIndicator,
 	runs,
 	usesStrokeChrome,
 }: Readonly<{
 	onOpenChange?: (open: boolean) => void;
 	onView?: (run: JiraIssueCompletedAgentRun) => void;
-	/** Accepted so `{...props}` type-checks; the merged row shows no per-run glyph. */
+	/**
+	 * Host-owned finished glyph for the aggregate "N Finished" chin. It paints
+	 * in the trailing status slot, same as working/awaiting-input. Without it
+	 * the slot stays empty; a failed aggregate still uses the trailing error
+	 * so success never paints over a failure.
+	 */
 	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	runs: readonly JiraIssueCompletedAgentRun[];
 	usesStrokeChrome: boolean;
@@ -218,6 +225,9 @@ function JiraIssueAgentDoneMerged({
 	const [aggregateOpen, setAggregateOpen] = useState(false);
 	const finishedLabel = `${runs.length} Finished`;
 	const hasFailedRun = runs.some((run) => run.state === "failed");
+	const finishedIndicator = !hasFailedRun && renderAgentActivityIndicator
+		? renderAgentActivityIndicator("finished")
+		: null;
 	const completedItems = runs.map(toCompletedAgentListItem);
 
 	function handleAggregateOpenChange(open: boolean) {
@@ -287,6 +297,16 @@ function JiraIssueAgentDoneMerged({
 									aria-hidden="true"
 								>
 									<StatusErrorIcon color="currentColor" label="" size="small" />
+								</span>
+							) : finishedIndicator ? (
+								<span
+									className={cn(
+										"grid shrink-0 place-items-center text-icon-subtle",
+										usesStrokeChrome ? "size-4" : "-my-1 size-6",
+									)}
+									aria-hidden="true"
+								>
+									{finishedIndicator}
 								</span>
 							) : null}
 						</button>
