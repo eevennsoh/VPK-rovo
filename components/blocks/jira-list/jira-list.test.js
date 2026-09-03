@@ -11,6 +11,7 @@ const SOURCE = [
 	"index.tsx",
 	"jira-list-base-columns.tsx",
 	"jira-list-dnd.ts",
+	"jira-list-row-zone.js",
 	"jira-list-cell-data.ts",
 	"jira-list-cells.tsx",
 	"jira-list-column-model.tsx",
@@ -473,7 +474,7 @@ test("JiraList exposes keyboard-accessible create controls at both row boundarie
 
 test("JiraList uses equal top, drag, and bottom row interaction zones", () => {
 	assert.match(SOURCE, /type JiraListRowZone = "before" \| "drag" \| "after"/u);
-	assert.match(SOURCE, /function getRowZone\(rowOffset: number, rowHeight: number\)/u);
+	assert.match(SOURCE, /function getRowZone\(rowOffset, rowHeight\)/u);
 	assert.match(SOURCE, /const rowOffset = event\.clientY - rowBounds\.top/u);
 	assert.match(SOURCE, /export const JIRA_LIST_ROW_ZONE_BAND = 1 \/ 3/u);
 	assert.match(SOURCE, /const rowThird = rowHeight \* JIRA_LIST_ROW_ZONE_BAND/u);

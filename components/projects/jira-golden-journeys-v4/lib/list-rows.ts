@@ -4,7 +4,6 @@ import type {
 	JiraKanbanCardData,
 	JiraKanbanColumnData,
 } from "@/components/blocks/jira-kanban";
-import { linkJiraKanbanAgentSession } from "../../../blocks/jira-kanban/state.ts";
 import type {
 	JiraListAssignedAgent,
 	JiraListInsertion,
@@ -392,6 +391,11 @@ export interface CreateListWorkItemFromSessionInput {
 	activity: JiraIssueAgentActivity;
 	columns: readonly JiraKanbanColumnData[];
 	insertion: JiraListInsertion;
+	linkSession: (
+		columns: readonly JiraKanbanColumnData[],
+		issueKey: string,
+		activity: JiraIssueAgentActivity,
+	) => readonly JiraKanbanColumnData[];
 	listOrder: readonly string[];
 	session: Readonly<{ id: string; title: string }>;
 	visibleKeys: readonly string[];
@@ -433,7 +437,7 @@ export function createListWorkItemFromSession(
 		summary: input.session.title,
 	});
 	const columnsWithCard = insertWorkItemCard(input.columns, card, "To do");
-	const columns = linkJiraKanbanAgentSession(columnsWithCard, issueKey, input.activity);
+	const columns = input.linkSession(columnsWithCard, issueKey, input.activity);
 	const listOrder = insertListOrderKey(
 		input.listOrder,
 		input.visibleKeys,

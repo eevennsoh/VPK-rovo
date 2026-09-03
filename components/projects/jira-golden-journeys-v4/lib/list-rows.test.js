@@ -1,6 +1,8 @@
 const assert = require("node:assert/strict");
 const { test } = require("node:test");
 
+const { linkJiraKanbanAgentSession } = require("../../../blocks/jira-kanban/state.ts");
+
 const {
 	applyAssignedAgentIdsToColumns,
 	applyListOrder,
@@ -224,6 +226,7 @@ test("createListWorkItemFromSession mints a To-do card titled from the session a
 		activity,
 		columns: COLUMNS,
 		insertion: { insertAtIndex: 1, position: "after", relativeToIssueKey: "PAY-118" },
+		linkSession: linkJiraKanbanAgentSession,
 		listOrder: ["PAY-118", "PAY-107", "PAY-101"],
 		session: { id: "lw-scope-thread", title: "Scope the adapter keep-or-delete argument" },
 		visibleKeys: ["PAY-118", "PAY-107", "PAY-101"],
@@ -244,6 +247,7 @@ test("createListWorkItemFromSession mints a To-do card titled from the session a
 		activity,
 		columns: created.columns,
 		insertion: { insertAtIndex: 0, position: "before", relativeToIssueKey: "PAY-118" },
+		linkSession: linkJiraKanbanAgentSession,
 		listOrder: created.listOrder,
 		session: { id: "lw-scope-thread", title: "Scope the adapter keep-or-delete argument" },
 		visibleKeys: created.listOrder,

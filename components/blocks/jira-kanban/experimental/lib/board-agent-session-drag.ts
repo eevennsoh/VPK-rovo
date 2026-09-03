@@ -5,7 +5,7 @@ import type {
 import {
 	getInsertionFromRowZone,
 	getRowZone,
-} from "../../../jira-list/jira-list-dnd.ts";
+} from "../../../jira-list/jira-list-row-zone.js";
 
 export interface BoardAgentSessionDragPointer {
 	x: number;

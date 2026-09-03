@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 
 import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
-import { moveJiraKanbanCardsToColumn } from "@/components/blocks/jira-kanban/state";
+import { linkJiraKanbanAgentSession, moveJiraKanbanCardsToColumn } from "@/components/blocks/jira-kanban/state";
 import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import type {
 	JiraListAssignedAgent,
@@ -190,6 +190,7 @@ export function useJiraGoldenJourneysV4List({
 			activity: input.activity,
 			columns: boardColumns,
 			insertion: input.insertion,
+			linkSession: linkJiraKanbanAgentSession,
 			listOrder,
 			session: input.session,
 			visibleKeys: visibleKeysRef.current,

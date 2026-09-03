@@ -1,10 +1,20 @@
-import { cn } from "../../../lib/utils.ts";
+import { cn } from "@/lib/utils";
 
 import type {
 	JiraListAgentSessionDropIntent,
-	JiraListInsertion,
 	JiraListInsertionPosition,
 } from "@/components/blocks/jira-list/jira-list-types";
+import {
+	getInsertionFromRowZone,
+	getRowZone,
+	JIRA_LIST_ROW_ZONE_BAND,
+} from "./jira-list-row-zone.js";
+
+export {
+	getInsertionFromRowZone,
+	getRowZone,
+	JIRA_LIST_ROW_ZONE_BAND,
+};
 
 export interface JiraListInsertionTarget {
 	issueKey: string;
@@ -29,37 +39,6 @@ export function getColumnBoundaryIndex(
 	}
 
 	return columnIndex + 1;
-}
-
-export const JIRA_LIST_ROW_ZONE_BAND = 1 / 3;
-
-export function getRowZone(rowOffset: number, rowHeight: number): JiraListRowZone {
-	const rowThird = rowHeight * JIRA_LIST_ROW_ZONE_BAND;
-
-	if (rowOffset < rowThird) {
-		return "before";
-	}
-
-	if (rowOffset > rowThird * 2) {
-		return "after";
-	}
-
-	return "drag";
-}
-
-export function getInsertionFromRowZone(
-	zone: JiraListRowZone,
-	row: Readonly<{ issueKey: string; rowIndex: number }>,
-): JiraListInsertion | null {
-	if (zone === "drag") {
-		return null;
-	}
-
-	return {
-		insertAtIndex: zone === "before" ? row.rowIndex : row.rowIndex + 1,
-		position: zone,
-		relativeToIssueKey: row.issueKey,
-	};
 }
 
 export function getAgentSessionInsertionTarget(
