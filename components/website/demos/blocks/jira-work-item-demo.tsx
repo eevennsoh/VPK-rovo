@@ -44,6 +44,9 @@ export function JiraWorkItemDemoExperimentalV4() {
 export function JiraWorkItemDemoExperimentalV5() {
 	return <JiraWorkItem variant="experimental-v5" initialExperimentalPreset="filled" />;
 }
+export function JiraWorkItemDemoExperimentalV6() {
+	return <JiraWorkItem variant="experimental-v6" initialExperimentalPreset="filled" />;
+}
 
 export function JiraWorkItemDemoExperimentalV3Empty() {
 	return <JiraWorkItem variant="experimental-v3" initialExperimentalPreset="empty" />;
@@ -54,6 +57,9 @@ export function JiraWorkItemDemoExperimentalV4Empty() {
 export function JiraWorkItemDemoExperimentalV5Empty() {
 	return <JiraWorkItem variant="experimental-v5" initialExperimentalPreset="empty" />;
 }
+export function JiraWorkItemDemoExperimentalV6Empty() {
+	return <JiraWorkItem variant="experimental-v6" initialExperimentalPreset="empty" />;
+}
 
 export function JiraWorkItemDemoExperimentalV3Running() {
 	return <JiraWorkItem variant="experimental-v3" initialExperimentalPreset="running" />;
@@ -63,4 +69,7 @@ export function JiraWorkItemDemoExperimentalV4Running() {
 }
 export function JiraWorkItemDemoExperimentalV5Running() {
 	return <JiraWorkItem variant="experimental-v5" initialExperimentalPreset="running" />;
+}
+export function JiraWorkItemDemoExperimentalV6Running() {
+	return <JiraWorkItem variant="experimental-v6" initialExperimentalPreset="running" />;
 }

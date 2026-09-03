@@ -28,7 +28,7 @@ export default function JiraWorkItemPage() {
 	}
 
 	return (
-		<div className="flex h-full min-h-screen items-center justify-center gap-3 p-4">
+		<div className="flex h-full min-h-screen flex-wrap content-center items-center justify-center gap-3 p-4">
 			<Button type="button" variant="outline" onClick={() => setActiveVariant("default")}>
 				Open standard session
 			</Button>
@@ -44,8 +44,11 @@ export default function JiraWorkItemPage() {
 			<Button type="button" variant="outline" onClick={() => setActiveVariant("experimental-v4")}>
 				Open experimental v4 session
 			</Button>
-			<Button type="button" onClick={() => setActiveVariant("experimental-v5")}>
+			<Button type="button" variant="outline" onClick={() => setActiveVariant("experimental-v5")}>
 				Open experimental v5 session
+			</Button>
+			<Button type="button" onClick={() => setActiveVariant("experimental-v6")}>
+				Open experimental v6 session
 			</Button>
 		</div>
 	);
@@ -68,4 +71,8 @@ export function JiraWorkItemExperimentalV4Page() {
 
 export function JiraWorkItemExperimentalV5Page() {
 	return <JiraWorkItem variant="experimental-v5" initialExperimentalPreset="filled" />;
+}
+
+export function JiraWorkItemExperimentalV6Page() {
+	return <JiraWorkItem variant="experimental-v6" initialExperimentalPreset="filled" />;
 }
