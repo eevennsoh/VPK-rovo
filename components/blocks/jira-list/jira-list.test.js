@@ -9,6 +9,7 @@ const { test } = require("node:test");
 // owns part of that contract rather than a single file.
 const SOURCE = [
 	"index.tsx",
+	"jira-list-base-columns.tsx",
 	"jira-list-dnd.ts",
 	"jira-list-cell-data.ts",
 	"jira-list-cells.tsx",
