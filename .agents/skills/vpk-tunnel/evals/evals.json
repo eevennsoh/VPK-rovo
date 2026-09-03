@@ -44,7 +44,19 @@
 				"The public link path is /jira-golden-journeys-v4 rather than /.",
 				"The catalog homepage is not handed to reviewers as the project surface.",
 				"A public URL that only renders Skip to content is not reported as live.",
-				"Missing allowedDevOrigins Atlas Tunnel hosts require a frontend restart, re-resolve, and a new start."
+				"Missing allowedDevOrigins Atlas Tunnel hosts require a frontend restart, re-resolve, and a new start.",
+				"The public page must hide the react-grab development control."
+			]
+		},
+		{
+			"id": 5,
+			"prompt": "vpk-tunnel jira-golden-journeys-v4. Hide the react-grab control for testers.",
+			"expected_output": "Starts the public tunnel and confirms the react-grab development control is absent on the public URL.",
+			"files": [],
+			"expectations": [
+				"Public Atlas Tunnel hosts hide the react-grab development control automatically.",
+				"A public page that still shows the floating cursor/chevron react-grab pill is not reported as ready to share.",
+				"Injected CSS or clicking the pill is not treated as a substitute for the host-based hide."
 			]
 		}
 	]
