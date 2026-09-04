@@ -275,12 +275,14 @@ export function AgentSessionMediumDrag({
 			{/* The bound source stays mounted (but transparent) for the whole
 			    gesture, preserving pointer capture while the chip travels. */}
 			<div
+				aria-hidden={isDragging || isFollower || undefined}
 				className={cn(
 					"min-w-0",
 					(isDragging || isFollower) && "pointer-events-none absolute inset-x-0 top-0 opacity-0",
 					sessionDragBind && "cursor-grab touch-none select-none",
 					isDragging && "cursor-grabbing [&_article]:cursor-grabbing",
 				)}
+				inert={isDragging || isFollower || undefined}
 			>
 				{children(sessionDragBind)}
 			</div>

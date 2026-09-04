@@ -66,8 +66,14 @@ export function useJiraGoldenJourneysV4List({
 	const visibleKeysRef = useRef<readonly string[]>([]);
 	const boardColumnsRef = useRef(boardColumns);
 	const listOrderRef = useRef(listOrder);
-	boardColumnsRef.current = boardColumns;
-	listOrderRef.current = listOrder;
+
+	useEffect(() => {
+		boardColumnsRef.current = boardColumns;
+	}, [boardColumns]);
+
+	useEffect(() => {
+		listOrderRef.current = listOrder;
+	}, [listOrder]);
 
 	useEffect(() => {
 		if (!copiedIssueKey) {
