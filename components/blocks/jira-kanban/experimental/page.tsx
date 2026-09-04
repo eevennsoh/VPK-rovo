@@ -5,10 +5,12 @@ import {
 	useImperativeHandle,
 	useLayoutEffect,
 	useMemo,
+	useRef,
 	useState,
 	type CSSProperties,
 	type ReactNode,
 	type Ref,
+	type RefObject,
 } from "react";
 
 import { useOptionalRovoChat } from "@/app/contexts";
@@ -133,6 +135,9 @@ const EMPTY_ANSWERS: readonly PulseAnswer[] = [];
 
 export interface ExperimentalJiraKanbanListRenderContext {
 	agentSessionDropIntent?: JiraListAgentSessionDropIntent;
+	onTrailingContentUnderlapChange: (hasUnderlap: boolean) => void;
+	scrollEndInset: number;
+	trailingOverlayRef: RefObject<HTMLElement | null>;
 }
 
 export interface ExperimentalJiraKanbanPageHandle {
@@ -313,6 +318,8 @@ export default function ExperimentalJiraKanbanPage({
 	// closed state — nothing outside the rail could bring it back.
 	const [agentSessionColumnCollapsed, setAgentSessionColumnCollapsed] = useState(defaultAgentSessionColumnCollapsed);
 	const [agentSessionPanelWidthPx, setAgentSessionPanelWidthPx] = useState(AGENT_SESSION_PANEL_WIDTH_PX);
+	const agentSessionPanelRef = useRef<HTMLDivElement | null>(null);
+	const [listContentUnderlapsPanel, setListContentUnderlapsPanel] = useState(false);
 	const [collapsedColumns, setCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
 	const [showUntracked, setShowUntracked] = useState(defaultShowUntracked);
 	const [appliedShowUntrackedDefault, setAppliedShowUntrackedDefault] = useState(defaultShowUntracked);
@@ -882,6 +889,9 @@ export default function ExperimentalJiraKanbanPage({
 					{isListContent ? (
 						renderListContent?.(filteredBoardColumns, {
 							agentSessionDropIntent: boardSessionDrag.listDropIntent,
+							onTrailingContentUnderlapChange: setListContentUnderlapsPanel,
+							scrollEndInset: boardScrollEndInset,
+							trailingOverlayRef: agentSessionPanelRef,
 						})
 					) : (
 						<div className="flex min-h-0 min-w-0 flex-1">
@@ -968,8 +978,9 @@ export default function ExperimentalJiraKanbanPage({
 						collapsed={agentSessionColumnCollapsed}
 						onCollapsedChange={setAgentSessionColumnCollapsed}
 						onExpandedWidthChange={setAgentSessionPanelWidthPx}
+						ref={agentSessionPanelRef}
 						sessionDragging={boardSessionDrag.transaction !== null}
-						showLeadingScrollFade={isListContent}
+						showLeadingScrollFade={isListContent && listContentUnderlapsPanel}
 						topInset={BOARD_HEADER_TAB_STRIP_BOTTOM_PX}
 						untrackedDropArmed={boardSessionDrag.transaction?.target?.kind === "untracked"}
 					/>

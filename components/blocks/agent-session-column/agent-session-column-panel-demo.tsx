@@ -1,0 +1,235 @@
+"use client";
+
+import { useCallback, useMemo, useState } from "react";
+
+import {
+	AGENT_SESSION_ITEMS,
+	type AgentSessionItem,
+	type UntrackedWorkTriage,
+} from "@/components/blocks/agent-session";
+import { Button } from "@/components/ui/button";
+import {
+	PanelContainer,
+	PanelContent,
+} from "@/components/ui/panel";
+
+import {
+	AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX,
+	AgentSessionColumn,
+} from "./index";
+
+/**
+ * Catalog stand-in for the docked rail's content-box width.
+ *
+ * Declared locally so this block demo does not import kanban internals.
+ */
+const AGENT_SESSION_PANEL_DEMO_WIDTH_PX = 360;
+
+const CODEX_AGENT = {
+	brandName: "openai-codex",
+	id: "codex",
+	kind: "agent",
+	name: "Codex",
+} as const;
+
+const CURSOR_AGENT = {
+	brandName: "cursor",
+	id: "cursor",
+	kind: "agent",
+	name: "Cursor",
+} as const;
+
+const ROVO_AGENT = {
+	id: "rovo-dev",
+	kind: "agent",
+	name: "Rovo",
+	vpkLogo: "rovo",
+} as const;
+
+/**
+ * Work the next sync will discover, in the batches it arrives in.
+ *
+ * Two batches rather than one flat list, because the two sizes demonstrate
+ * different halves of the design: the first shows arrivals stepping in one
+ * after another, the second shows a single arrival landing on its own.
+ */
+const ARRIVAL_BATCHES: readonly (readonly AgentSessionItem[])[] = [
+	[
+		{
+			id: "lw-sync-webhook-gap",
+			title: "Challenge webhook gap note never made it out of the session",
+			state: "needs-input",
+			agent: CURSOR_AGENT,
+			host: "local",
+			machineName: "MacBook-Pro.local",
+			timeLabel: "just now",
+			sessionDetails: {
+				host: "local",
+				issueKey: "PAY-107",
+				issueSummary: "Challenge webhook gap note never made it out of the session",
+				worktreePath: ".worktrees/pay-107-webhook-gap",
+			},
+		},
+		{
+			id: "lw-sync-sandbox-root-cause",
+			title: "Root cause of the sandbox 401 is still only in a local thread",
+			state: "running",
+			agent: CODEX_AGENT,
+			host: "local",
+			machineName: "H13XSGKLS1",
+			timeLabel: "just now",
+			sessionDetails: {
+				host: "local",
+				issueKey: "PAY-112",
+				issueSummary: "Root cause of the sandbox 401 is still only in a local thread",
+				worktreePath: ".worktrees/pay-112-sandbox-401",
+			},
+		},
+	],
+	[
+		{
+			id: "lw-sync-replay-blast-radius",
+			title: "Replay-risk blast radius still lives in an unsaved session",
+			state: "attention",
+			agent: ROVO_AGENT,
+			host: "local",
+			machineName: "DESKTOP-7K2M9Q1",
+			timeLabel: "just now",
+			sessionDetails: {
+				host: "local",
+				issueKey: "PAY-118",
+				issueSummary: "Replay-risk blast radius still lives in an unsaved session",
+				worktreePath: ".worktrees/pay-118-replay-risk",
+			},
+		},
+	],
+];
+
+interface PanelDemoAttachTarget {
+	readonly key: string;
+}
+
+export function AgentSessionColumnPanelDemo() {
+	const [capturedIds, setCapturedIds] = useState<ReadonlySet<string>>(() => new Set());
+	const [collapsed, setCollapsed] = useState(false);
+	const [items, setItems] = useState<readonly AgentSessionItem[]>(AGENT_SESSION_ITEMS);
+	const [newIds, setNewIds] = useState<ReadonlySet<string>>(() => new Set());
+	const [syncedBatches, setSyncedBatches] = useState(0);
+
+	const handleCapture = useCallback((item: AgentSessionItem) => {
+		setCapturedIds((current) => new Set(current).add(item.id));
+	}, []);
+
+	const triage = useMemo<UntrackedWorkTriage<PanelDemoAttachTarget>>(() => ({
+		archive: (item) => {
+			setItems((currentItems) => currentItems.filter((session) => session.id !== item.id));
+		},
+		attach: (item) => {
+			handleCapture(item);
+		},
+		createFrom: (item) => {
+			handleCapture(item);
+		},
+		locateTarget: (_session, workItemKey) => {
+			if (workItemKey.length === 0) {
+				return undefined;
+			}
+
+			return { key: workItemKey };
+		},
+	}), [handleCapture]);
+
+	// Arrivals land at the top, under the header, because that is where sync sits
+	// and where the entrance animation starts from.
+	const handleSync = useCallback(() => {
+		const batch = ARRIVAL_BATCHES[syncedBatches];
+		if (batch === undefined) {
+			return;
+		}
+
+		setItems((currentItems) => [...batch, ...currentItems]);
+		setNewIds((currentNew) => {
+			const next = new Set(currentNew);
+			for (const item of batch) {
+				next.add(item.id);
+			}
+			return next;
+		});
+		setSyncedBatches(syncedBatches + 1);
+	}, [syncedBatches]);
+
+	const handleMarkReviewed = useCallback(() => {
+		setNewIds(new Set());
+	}, []);
+
+	const handleReset = useCallback(() => {
+		setItems(AGENT_SESSION_ITEMS);
+		setNewIds(new Set());
+		setCapturedIds(new Set());
+		setCollapsed(false);
+		setSyncedBatches(0);
+	}, []);
+
+	const hasArrivals = newIds.size > 0;
+	const canSync = syncedBatches < ARRIVAL_BATCHES.length;
+	const hostWidthPx = collapsed
+		? AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX
+		: AGENT_SESSION_PANEL_DEMO_WIDTH_PX;
+
+	return (
+		<div className="flex min-h-[560px] w-full flex-col gap-4">
+			<div className="flex shrink-0 flex-wrap items-center gap-2">
+				<Button disabled={!canSync} onClick={handleSync} size="compact" variant="default">
+					{canSync ? "Sync new work" : "Nothing left to sync"}
+				</Button>
+				<Button
+					disabled={!hasArrivals}
+					onClick={handleMarkReviewed}
+					size="compact"
+					variant="outline"
+				>
+					Mark reviewed
+				</Button>
+				<Button onClick={handleReset} size="compact" variant="ghost">
+					Reset
+				</Button>
+				<p className="text-xs text-text-subtlest">
+					Sync prepends untracked work: the cards step in from above and hold a
+					discovery-toned dash, while each new notch grows from its centre and
+					pushes the ones below it down, then stays lit — exactly the state a
+					reviewed notch reaches on hover. Mark reviewed decays the mark, which
+					is what the watermark does when the column is expanded. Hover a card
+					to select it; the header then offers Link, Create, Archive, and Clear.
+				</p>
+			</div>
+
+			<div
+				className="flex h-[560px] min-h-[560px] shrink-0 flex-col"
+				style={{ width: hostWidthPx }}
+			>
+				<PanelContainer
+					aria-label="Untracked work panel"
+					className="h-full"
+				>
+					<PanelContent className={collapsed ? "pt-1" : "pt-0"}>
+						<AgentSessionColumn
+							capturedItemIds={capturedIds}
+							className="flex-1"
+							collapsed={collapsed}
+							expandedWidthPx={AGENT_SESSION_PANEL_DEMO_WIDTH_PX}
+							headerSurface="panel"
+							items={items}
+							listClassName="gap-1 p-1"
+							newItemIds={newIds}
+							onCollapsedChange={setCollapsed}
+							onCreateWorkItem={handleCapture}
+							onLinkWorkItem={handleCapture}
+							onSubtasks={handleCapture}
+							triage={triage}
+						/>
+					</PanelContent>
+				</PanelContainer>
+			</div>
+		</div>
+	);
+}
