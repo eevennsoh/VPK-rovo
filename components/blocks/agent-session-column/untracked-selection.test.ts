@@ -125,10 +125,73 @@ test("the selecting header counts only rows Approve can attach", () => {
 
 	assert.equal(model.count, 3);
 	assert.deepEqual(model.actions, [
-		{ id: "approve", label: "Link", eligibleCount: 1 },
-		{ id: "create", label: "Create", eligibleCount: 2 },
-		{ id: "archive", label: "Archive", eligibleCount: 3 },
-		{ id: "clear", label: "Clear", eligibleCount: 3 },
+		{
+			id: "approve",
+			eligibleCount: 1,
+			hint: { kind: "available", text: "Link agent sessions" },
+		},
+		{
+			id: "create",
+			eligibleCount: 2,
+			hint: { kind: "available", text: "Create 3 work items" },
+		},
+		{
+			id: "archive",
+			eligibleCount: 3,
+			hint: { kind: "available", text: "Archive 3 agent sessions" },
+		},
+		{
+			id: "clear",
+			eligibleCount: 3,
+			hint: { kind: "available", text: "Clear" },
+		},
+	]);
+});
+
+test("header Create copy uses selectedCount, not eligibleCount", () => {
+	const linkable = session("lw-a", "PAY-101");
+	const captured = session("lw-c", "PAY-102");
+	const model = buildUntrackedHeaderModel({
+		approveTargetById: new Map([
+			["lw-a", { kind: "work-item", key: "PAY-101", target: { code: "PAY-101" } }],
+			["lw-c", { kind: "unavailable", reason: "already-attached" }],
+		]),
+		count: 2,
+		selection: { kind: "active", items: [linkable, captured] },
+		title: "Untracked work",
+	});
+
+	assert.equal(model.kind, "selecting");
+	if (model.kind !== "selecting") {
+		return;
+	}
+
+	const create = model.actions.find((action) => action.id === "create");
+	assert.equal(create?.eligibleCount, 1);
+	assert.deepEqual(create?.hint, { kind: "available", text: "Create 2 work items" });
+});
+
+test("header copy table pins exact available and unavailable strings", () => {
+	const captured = session("lw-c", "PAY-102");
+	const model = buildUntrackedHeaderModel({
+		approveTargetById: new Map([
+			["lw-c", { kind: "unavailable", reason: "already-attached" }],
+		]),
+		count: 1,
+		selection: { kind: "active", items: [captured] },
+		title: "Untracked work",
+	});
+
+	assert.equal(model.kind, "selecting");
+	if (model.kind !== "selecting") {
+		return;
+	}
+
+	assert.deepEqual(model.actions.map((action) => action.hint), [
+		{ kind: "unavailable", text: "No selected sessions have a work item to link" },
+		{ kind: "unavailable", text: "No selected sessions can create a work item" },
+		{ kind: "available", text: "Archive 1 agent session" },
+		{ kind: "available", text: "Clear" },
 	]);
 });
 

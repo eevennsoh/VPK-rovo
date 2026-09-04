@@ -27,6 +27,14 @@ const HEADER_SOURCE = readFileSync(
 	join(__dirname, "agent-session-column-header.tsx"),
 	"utf8",
 );
+const SELECTION_COPY_SOURCE = readFileSync(
+	join(__dirname, "untracked-selection.ts"),
+	"utf8",
+);
+const PANEL_SOURCE = readFileSync(
+	join(__dirname, "../../ui/panel.tsx"),
+	"utf8",
+);
 const OVERFLOW_MENU_SOURCE = readFileSync(
 	join(__dirname, "agent-session-column-overflow-menu.tsx"),
 	"utf8",
@@ -762,11 +770,12 @@ test("the column owns a hidden-id set and filters items before AgentSession", ()
 	assert.match(INDEX_SOURCE, /toggleHidden\(item\)/u);
 	assert.match(INDEX_SOURCE, /onToggleVisibility\?\.\(item\)/u);
 	assert.match(INDEX_SOURCE, /onToggleVisibility=\{handleToggleVisibility\}/u);
-	assert.match(INDEX_SOURCE, /visibilityLabel=\{view === "hidden" \? "Show" : "Hide"\}/u);
+	assert.match(INDEX_SOURCE, /visibilityLabel=\{view === "hidden" \? "Unarchive" : "Archive"\}/u);
 });
 
-test("the sticky footer reads Work hidden N in the active view", () => {
-	assert.match(FOOTER_SOURCE, /Work hidden/u);
+test("the sticky footer reads Archived N in the active view", () => {
+	assert.match(FOOTER_SOURCE, /"Archived"/u);
+	assert.doesNotMatch(FOOTER_SOURCE, /Work hidden/u);
 	assert.match(FOOTER_SOURCE, /\{count\}/u);
 	assert.match(FOOTER_SOURCE, /truncate text-xs font-medium leading-4 text-text-subtle/u);
 	assert.match(FOOTER_SOURCE, /shrink-0 text-xs font-normal text-text-subtlest/u);
@@ -774,14 +783,14 @@ test("the sticky footer reads Work hidden N in the active view", () => {
 	assert.match(FOOTER_SOURCE, /className="text-icon-subtle"/u);
 	assert.match(FOOTER_SOURCE, /import ChevronRightIcon from "@atlaskit\/icon\/core\/chevron-right"/u);
 	assert.match(FOOTER_SOURCE, /<ChevronRightIcon label="" size="small" \/>/u);
-	assert.match(FOOTER_SOURCE, /Show \$\{count\} hidden \$\{sessionWord\}/u);
+	assert.match(FOOTER_SOURCE, /Show \$\{count\} archived \$\{sessionWord\}/u);
 	assert.match(FOOTER_SOURCE, /rounded-none rounded-b-none border-0 border-t border-solid border-border-disabled/u);
 	assert.doesNotMatch(FOOTER_SOURCE, /rounded-b-lg/u);
 	assert.match(FOOTER_SOURCE, /\bp-3\b/u);
 	assert.match(FOOTER_SOURCE, /hover:bg-surface-hovered/u);
 	assert.doesNotMatch(FOOTER_SOURCE, /size="compact"|variant="ghost"/u);
 	assert.match(INDEX_SOURCE, /showWellFooter = view === "hidden" \|\| hiddenCount > 0/u);
-	// An empty visible list still occupies the flex-1 cell so Work hidden stays
+	// An empty visible list still occupies the flex-1 cell so Archived stays
 	// the bottom sibling instead of jumping under a short empty message.
 	assert.match(
 		INDEX_SOURCE,
@@ -804,11 +813,11 @@ test("the sticky footer reads Work hidden N in the active view", () => {
 	assert.doesNotMatch(INDEX_SOURCE, /position:\s*"sticky"|className="[^"]*sticky/u);
 });
 
-test("the hidden view keeps Hidden work in the header and a back footer", () => {
+test("the archived view keeps Archived in the header and a back footer", () => {
 	assert.doesNotMatch(INDEX_SOURCE, /ArrowLeftIcon|arrow-left/u);
 	assert.doesNotMatch(INDEX_SOURCE, /<TooltipContent>Back<\/TooltipContent>/u);
 	assert.doesNotMatch(INDEX_SOURCE, /aria-label=\{`Back to \$\{title\}`\}[\s\S]*size="icon-compact"/u);
-	assert.match(INDEX_SOURCE, /displayTitle = view === "hidden" \? "Hidden work" : title/u);
+	assert.match(INDEX_SOURCE, /displayTitle = view === "hidden" \? "Archived" : title/u);
 	assert.match(INDEX_SOURCE, /size="icon-compact"/u);
 	assert.match(FOOTER_SOURCE, /Back to untracked work/u);
 	assert.match(FOOTER_SOURCE, /import ChevronLeftIcon from "@atlaskit\/icon\/core\/chevron-left"/u);
@@ -847,7 +856,7 @@ test("the collapsed rail fades notches with ScrollMask viewport mask-image", () 
 test("the collapsed rail receives visible items only and collapse leaves hidden view", () => {
 	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]*items=\{visibleItems\}/u);
 	assert.match(INDEX_SOURCE, /if \(nextCollapsed\) \{\s*closeHiddenView\(\);/u);
-	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /Work hidden|HiddenFooter/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /Work hidden|Archived|HiddenFooter/u);
 });
 
 test("unhiding the last session returns to the active view", () => {
@@ -880,6 +889,12 @@ test("the expanded header sizes its overflow trigger for the host surface", () =
 	assert.match(INDEX_SOURCE, /onLinkWorkItem=\{sessionProps\.onLinkWorkItem\}/u);
 });
 
+test("the selecting header Link action uses a CheckMark icon", () => {
+	assert.match(HEADER_SOURCE, /import CheckMarkIcon from "@atlaskit\/icon\/core\/check-mark";/u);
+	assert.match(HEADER_SOURCE, /approve: CheckMarkIcon,/u);
+	assert.doesNotMatch(HEADER_SOURCE, /LinkIcon/u);
+});
+
 test("the selecting header omits collapse so Clear is the only exit", () => {
 	const columnSelecting = HEADER_SOURCE.slice(
 		HEADER_SOURCE.indexOf("function renderColumnChrome"),
@@ -892,6 +907,30 @@ test("the selecting header omits collapse so Clear is the only exit", () => {
 	assert.doesNotMatch(panelSelectingBranch, /ShrinkHorizontalIcon/u);
 	assert.match(columnSelectingBranch, /<HeaderIconButton/u);
 	assert.match(panelSelectingBranch, /<PanelAction/u);
+});
+
+test("selecting header hover copy comes from the selectedCount table", () => {
+	assert.match(SELECTION_COPY_SOURCE, /Link agent sessions/u);
+	assert.match(SELECTION_COPY_SOURCE, /Create \$\{selectedCount\} work item/u);
+	assert.match(SELECTION_COPY_SOURCE, /Create \$\{selectedCount\} work items/u);
+	assert.match(SELECTION_COPY_SOURCE, /Archive \$\{selectedCount\} agent session/u);
+	assert.match(SELECTION_COPY_SOURCE, /Archive \$\{selectedCount\} agent sessions/u);
+	assert.match(SELECTION_COPY_SOURCE, /clear: \(\) => "Clear"/u);
+	assert.match(SELECTION_COPY_SOURCE, /No selected sessions have a work item to link/u);
+	assert.match(SELECTION_COPY_SOURCE, /No selected sessions can create a work item/u);
+	assert.match(
+		SELECTION_COPY_SOURCE,
+		/SELECTION_ACTION_AVAILABLE_COPY\[id\]\(counts\.selectedCount\)/u,
+	);
+	assert.doesNotMatch(SELECTION_COPY_SOURCE, /eligibleCount\).*work item/u);
+	assert.doesNotMatch(HEADER_SOURCE, /headerActionUnavailableReason/u);
+	assert.match(HEADER_SOURCE, /function toHeaderActionAffordance/u);
+	assert.match(HEADER_SOURCE, /TooltipTrigger render=\{<span className="inline-flex" \/>\}/u);
+	assert.match(HEADER_SOURCE, /disabled=\{affordance\.disabled\}/u);
+	assert.doesNotMatch(HEADER_SOURCE, /aria-disabled/u);
+	assert.match(HEADER_SOURCE, /tooltip=\{affordance\.text\}/u);
+	assert.match(PANEL_SOURCE, /tooltip\?: ReactNode/u);
+	assert.match(PANEL_SOURCE, /tooltip === undefined \? action : wrapPanelActionTooltip/u);
 });
 
 test("the overflow menu is Link all suggestions, then Auto sync and Suggest link toggles", () => {

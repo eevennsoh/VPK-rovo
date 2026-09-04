@@ -261,3 +261,47 @@ test("createListWorkItemFromSession mints a To-do card titled from the session a
 		1,
 	);
 });
+
+test("two session creates on one gap keep both issue keys", () => {
+	const firstActivity = {
+		id: "lw-a",
+		label: "First marked session",
+		name: "Claude Code",
+		state: "complete",
+	};
+	const secondActivity = {
+		id: "lw-b",
+		label: "Second marked session",
+		name: "Claude Code",
+		state: "complete",
+	};
+	const first = createListWorkItemFromSession({
+		activity: firstActivity,
+		columns: COLUMNS,
+		insertion: { insertAtIndex: 1, position: "after", relativeToIssueKey: "PAY-118" },
+		linkSession: linkJiraKanbanAgentSession,
+		listOrder: ["PAY-118", "PAY-107", "PAY-101"],
+		session: { id: "lw-a", title: "First marked session" },
+		visibleKeys: ["PAY-118", "PAY-107", "PAY-101"],
+	});
+	const second = createListWorkItemFromSession({
+		activity: secondActivity,
+		columns: first.columns,
+		insertion: { insertAtIndex: 2, position: "after", relativeToIssueKey: "PAY-118" },
+		linkSession: linkJiraKanbanAgentSession,
+		listOrder: first.listOrder,
+		session: { id: "lw-b", title: "Second marked session" },
+		visibleKeys: first.listOrder,
+	});
+
+	assert.equal(first.kind, "created");
+	assert.equal(second.kind, "created");
+	assert.equal(first.issueKey, "PAY-119");
+	assert.equal(second.issueKey, "PAY-120");
+	assert.deepEqual(second.listOrder, ["PAY-118", "PAY-119", "PAY-120", "PAY-107", "PAY-101"]);
+	const todoCards = second.columns
+		.find((column) => column.title === "To do")
+		?.cards ?? [];
+	assert.equal(todoCards.some((card) => card.code === "PAY-119"), true);
+	assert.equal(todoCards.some((card) => card.code === "PAY-120"), true);
+});

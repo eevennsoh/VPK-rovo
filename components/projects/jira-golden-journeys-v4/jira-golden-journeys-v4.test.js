@@ -550,8 +550,10 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(LIST_HOOK_SOURCE, /createFromAgentSession/u);
 	assert.match(LIST_HOOK_SOURCE, /createListWorkItemFromSession/u);
 	const createFromSessionStart = LIST_HOOK_SOURCE.indexOf("const createFromAgentSession = useCallback");
-	const createFromSessionEnd = LIST_HOOK_SOURCE.indexOf("}, [boardColumns, listOrder, setBoardColumns]);");
+	const createFromSessionEnd = LIST_HOOK_SOURCE.indexOf("}, [setBoardColumns]);", createFromSessionStart);
 	assert.ok(createFromSessionStart > 0 && createFromSessionEnd > createFromSessionStart);
+	assert.match(LIST_HOOK_SOURCE, /boardColumnsRef\.current = result\.columns/u);
+	assert.match(LIST_HOOK_SOURCE, /listOrderRef\.current = result\.listOrder/u);
 	assert.doesNotMatch(
 		LIST_HOOK_SOURCE.slice(createFromSessionStart, createFromSessionEnd),
 		/setDraftWorkItem|draftWorkItem/u,
@@ -672,7 +674,7 @@ test("the Panel design variant floats untracked work over the board and the list
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/agentSessionColumn=\{agentSessionPresentation === "panel"\s*\?\s*undefined\s*:\s*agentSessionColumnConfig\}/u,
+		/agentSessionColumn=\{agentSessionPresentation === "panel"\s*\|\| agentSessionColumnConfig === undefined\s*\?\s*undefined\s*:\s*\{/u,
 		"panel mode must suppress the in-flow column so the two presentations cannot coexist",
 	);
 	// Insights swaps the whole content region for an article, and a tab with no
@@ -714,7 +716,7 @@ test("the Panel design variant floats untracked work over the board and the list
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/<AgentSessionPanel\s+agentSessionColumn=\{\{\s*\.\.\.agentSessionColumnConfig,\s*sessionDrag: boardSessionDrag\.untrackedBinding,\s*\}\}/u,
+		/<AgentSessionPanel\s+agentSessionColumn=\{\{\s*\.\.\.agentSessionColumnConfig,\s*draggingIds: boardSessionDrag\.draggingIds,\s*sessionDrag: boardSessionDrag\.untrackedBinding,\s*\}\}/u,
 		"the panel is controlled: its collapse state is the same state the in-flow column uses",
 	);
 	assert.match(

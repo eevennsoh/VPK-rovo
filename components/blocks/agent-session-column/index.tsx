@@ -205,7 +205,7 @@ export function AgentSessionColumn({
 			},
 		};
 	}, [forgetHidden, triage]);
-	const displayTitle = view === "hidden" ? "Hidden work" : title;
+	const displayTitle = view === "hidden" ? "Archived" : title;
 	// The rail and the card list have very different intrinsic widths, so the
 	// overflow has to be clipped for the duration of the width transition. Any
 	// longer and it would clip the 4px focus rings on the cards inside.
@@ -488,7 +488,7 @@ export function AgentSessionColumn({
 										onToggleVisibility={handleToggleVisibility}
 										rowTriage={untrackedSelection.rows}
 										selectedItemId={selectedItemId}
-										visibilityLabel={view === "hidden" ? "Show" : "Hide"}
+										visibilityLabel={view === "hidden" ? "Unarchive" : "Archive"}
 									/>
 								</div>
 							)}

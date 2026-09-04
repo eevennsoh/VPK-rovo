@@ -67,9 +67,9 @@ export function ScrollingViewport({
 	const gestures = useScrollingGestures({ containerRef, offset, wheel });
 	const dragProps = useScrollingDrag(offset);
 	useScrollingFocusScroll({ containerRef, geometryRef, offset });
-	// The card's hover eye is rendered by the block whether or not anyone binds
-	// it, so it is bound here rather than left as a focusable no-op; see
-	// {@link useScrollingVisibility}.
+	// The card's hover archive control is rendered by the block whether or not
+	// anyone binds it, so it is bound here rather than left as a focusable
+	// no-op; see {@link useScrollingVisibility}.
 	const { toggleVisibility, visibilityLabel, visibleItems } = useScrollingVisibility(items);
 	// Ticker's remeasure effect depends on the `items` array identity; an inline
 	// `.map()` would tear down and rebuild two ResizeObservers every render.

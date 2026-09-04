@@ -43,6 +43,10 @@ function session(id = "review-agent") {
 	return { id, label: "Review Agent", name: "Review Agent", state: "working" };
 }
 
+function cohortOf(member = session()) {
+	return { key: member.id, members: [member] };
+}
+
 test("moving an attached session atomically preserves the exact activity and derives both card modes", () => {
 	const movingActivity = {
 		id: "review-agent",
@@ -155,13 +159,13 @@ test("only untracked sessions resolve a create-work-item column target", () => {
 	assert.deepEqual(
 		resolveBoardAgentSessionDropAction(
 			createBoardAgentSessionDragTransaction(
-				session(),
+				cohortOf(session()),
 				{ kind: "untracked" },
 				{ x: 300, y: 250 },
 				[CREATE_WORK_ITEM],
 			),
 		),
-		{ columnTitle: "In review", kind: "create", sessionId: "review-agent" },
+		{ columnTitle: "In review", kind: "create", sessionIds: ["review-agent"] },
 	);
 	assert.equal(
 		resolveBoardAgentSessionDropTarget(
@@ -188,7 +192,7 @@ test("an explicit create target wins over an overlapping issue card", () => {
 		kind: "issue",
 	};
 	const transaction = createBoardAgentSessionDragTransaction(
-		session(),
+		cohortOf(session()),
 		{ kind: "untracked" },
 		{ x: 300, y: 250 },
 		[overlappingIssue, CREATE_WORK_ITEM],
@@ -197,7 +201,7 @@ test("an explicit create target wins over an overlapping issue card", () => {
 	assert.deepEqual(transaction.target, { columnTitle: "In review", kind: "create" });
 	assert.deepEqual(
 		resolveBoardAgentSessionDropAction(transaction),
-		{ columnTitle: "In review", kind: "create", sessionId: "review-agent" },
+		{ columnTitle: "In review", kind: "create", sessionIds: ["review-agent"] },
 	);
 });
 
@@ -215,42 +219,43 @@ test("overlapping eligible issues are ambiguous instead of arming multiple targe
 
 test("transactions record the session, origin, pointer, and one current target", () => {
 	const draggedSession = session();
+	const draggedCohort = cohortOf(draggedSession);
 	const transaction = createBoardAgentSessionDragTransaction(
-		draggedSession,
+		draggedCohort,
 		{ kind: "attached", sourceCardCode: "PAY-121" },
 		{ x: 100, y: 80 },
 		ZONES,
 	);
-	assert.equal(transaction.session, draggedSession);
+	assert.equal(transaction.cohort, draggedCohort);
 	assert.deepEqual(transaction.pointer, { x: 100, y: 80 });
 	assert.equal(transaction.target, null);
 
 	const updated = updateBoardAgentSessionDragTransaction(transaction, { x: 300, y: 80 }, ZONES);
 	assert.deepEqual(updated.target, { cardCode: "PAY-128", kind: "attach" });
 	assert.deepEqual(updated.pointer, { x: 300, y: 80 });
-	assert.equal(updated.session, draggedSession);
+	assert.equal(updated.cohort, draggedCohort);
 });
 
 test("drop actions distinguish detach, cross-card move, attach, and invalid cancellation", () => {
 	const draggedSession = session();
 	const cases = [
 		{
-			expected: { kind: "detach", sessionId: "review-agent", sourceCardCode: "PAY-121" },
+			expected: { kind: "detach", sessionIds: ["review-agent"], sourceCardCode: "PAY-121" },
 			origin: { kind: "attached", sourceCardCode: "PAY-121" },
 			pointer: { x: 100, y: 175 },
 		},
 		{
-			expected: { kind: "move", sessionId: "review-agent", sourceCardCode: "PAY-121", targetCardCode: "PAY-128" },
+			expected: { kind: "move", sessionIds: ["review-agent"], sourceCardCode: "PAY-121", targetCardCode: "PAY-128" },
 			origin: { kind: "attached", sourceCardCode: "PAY-121" },
 			pointer: { x: 300, y: 80 },
 		},
 		{
-			expected: { kind: "attach", sessionId: "review-agent", targetCardCode: "PAY-128" },
+			expected: { kind: "attach", sessionIds: ["review-agent"], targetCardCode: "PAY-128" },
 			origin: { kind: "detached", sourceCardCode: "PAY-121" },
 			pointer: { x: 300, y: 80 },
 		},
 		{
-			expected: { kind: "attach", sessionId: "review-agent", targetCardCode: "PAY-128" },
+			expected: { kind: "attach", sessionIds: ["review-agent"], targetCardCode: "PAY-128" },
 			origin: { kind: "untracked" },
 			pointer: { x: 300, y: 80 },
 		},
@@ -262,7 +267,12 @@ test("drop actions distinguish detach, cross-card move, attach, and invalid canc
 	];
 
 	for (const { expected, origin, pointer } of cases) {
-		const transaction = createBoardAgentSessionDragTransaction(draggedSession, origin, pointer, ZONES);
+		const transaction = createBoardAgentSessionDragTransaction(
+			cohortOf(draggedSession),
+			origin,
+			pointer,
+			ZONES,
+		);
 		assert.deepEqual(resolveBoardAgentSessionDropAction(transaction), expected);
 	}
 });
@@ -282,13 +292,13 @@ test("attached drags prefer Untracked over an issue the rail overlays", () => {
 	assert.deepEqual(
 		resolveBoardAgentSessionDropAction(
 			createBoardAgentSessionDragTransaction(
-				session(),
+				cohortOf(session()),
 				origin,
 				{ x: 500, y: 80 },
 				[overlayingIssue, UNTRACKED],
 			),
 		),
-		{ kind: "detach", sessionId: "review-agent", sourceCardCode: "PAY-121" },
+		{ kind: "detach", sessionIds: ["review-agent"], sourceCardCode: "PAY-121" },
 	);
 });
 
@@ -395,7 +405,7 @@ test("overlapping list-row attach cards stay ambiguous", () => {
 test("list-row create actions carry insertion and cancel to none", () => {
 	const draggedSession = session();
 	const createTransaction = createBoardAgentSessionDragTransaction(
-		draggedSession,
+		cohortOf(draggedSession),
 		{ kind: "untracked" },
 		{ x: 40, y: 10 },
 		LIST_ZONES,
@@ -405,7 +415,7 @@ test("list-row create actions carry insertion and cancel to none", () => {
 		{
 			insertion: { insertAtIndex: 0, position: "before", relativeToIssueKey: "PAY-118" },
 			kind: "create-list",
-			sessionId: "review-agent",
+			sessionIds: ["review-agent"],
 		},
 	);
 	assert.deepEqual(
@@ -442,7 +452,7 @@ test("malformed list-row attributes yield no zone", () => {
 
 test("cancelling a transaction clears its armed target and resolves to no action", () => {
 	const transaction = createBoardAgentSessionDragTransaction(
-		session(),
+		cohortOf(session()),
 		{ kind: "attached", sourceCardCode: "PAY-121" },
 		{ x: 300, y: 80 },
 		ZONES,

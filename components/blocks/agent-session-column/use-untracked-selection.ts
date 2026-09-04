@@ -4,6 +4,7 @@ import { useCallback, useMemo, useReducer } from "react";
 
 import { resolveApproveTarget } from "@/components/blocks/agent-session/agent-session-approve";
 import type { ApproveTarget } from "@/components/blocks/agent-session/agent-session-approve";
+import { selectDragCohort } from "@/components/blocks/agent-session/session-cohort";
 import type {
 	AgentSessionItem,
 	AgentSessionTriageRow,
@@ -101,6 +102,9 @@ export function useUntrackedSelection<T>(
 						}
 					},
 					target,
+				},
+				drag: {
+					cohort: () => selectDragCohort(item.id, marks, input.visibleItems),
 				},
 				mark: {
 					isMarked: marks.markedIds.has(item.id),
