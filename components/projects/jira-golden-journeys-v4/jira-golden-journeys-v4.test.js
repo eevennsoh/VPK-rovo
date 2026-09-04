@@ -617,11 +617,9 @@ test("the Panel design variant floats untracked work over the board and the list
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /onToggleAgentSessionPanel/u);
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /Untracked work panel/u);
 	assert.doesNotMatch(PANEL_SOURCE, /PanelActionClose|onClose/u);
-	// Collapse is the only way out of the expanded panel.
-	assert.match(
-		PANEL_SOURCE,
-		/<PanelAction\s+icon=\{ShrinkHorizontalIcon\}\s+label="Collapse panel"\s+onClick=\{handleCollapse\}/u,
-	);
+	// Collapse stays on the column-owned header so the rail is not a trap.
+	assert.match(PANEL_SOURCE, /headerSurface="panel"/u);
+	assert.doesNotMatch(PANEL_SOURCE, /handleCollapse/u);
 
 	// Board and list share one positioning context, which is what lets a single
 	// overlay serve both views; Insights stays outside it.
@@ -695,7 +693,8 @@ test("the Panel design variant floats untracked work over the board and the list
 	// widen either axis to `gap-2 p-2` (`space.100` / 8px).
 	assert.match(PANEL_SOURCE, /listClassName=\{cn\("gap-1 p-1", agentSessionColumn.listClassName\)\}/u);
 	assert.doesNotMatch(PANEL_SOURCE, /listClassName=\{cn\("gap-2 p-2"/u);
-	assert.match(PANEL_SOURCE, /chrome="none"/u);
+	assert.match(PANEL_SOURCE, /headerSurface="panel"/u);
+	assert.doesNotMatch(PANEL_SOURCE, /chrome="none"/u);
 	assert.doesNotMatch(PANEL_SOURCE, /\binset-y-0 left-0\b/u);
 	// The rail STOPS at the tab strip: a real `top` offset, never `inset-y-0`
 	// plus `paddingTop`. Spanning the board root and padding the content would
@@ -717,14 +716,11 @@ test("the Panel design variant floats untracked work over the board and the list
 		PANEL_SOURCE,
 		/onExpandedWidthChange\?: \(widthPx: number\) => void/u,
 	);
-	// Default PanelHeader gap (`h-14` / `py-4`) — no extra top pad to chase
-	// the filter row.
-	assert.match(PANEL_SOURCE, /<PanelHeader>/u);
-	assert.match(
-		PANEL_SOURCE,
-		/<PanelTitle>\s*\{title\}\s*\{" "\}\s*<span className="ms-1.5 shrink-0 font-normal text-text-subtlest">\s*\{untrackedCount\}\s*<\/span>\s*<\/PanelTitle>/u,
-		"the expanded panel header shows the untracked count in regular subtlest text",
-	);
+	// The column owns the panel header. This host must not restack title,
+	// count, or overflow under the column's own Selected N / browse chrome.
+	assert.doesNotMatch(PANEL_SOURCE, /<PanelHeader>/u);
+	assert.doesNotMatch(PANEL_SOURCE, /<PanelTitle>/u);
+	assert.doesNotMatch(PANEL_SOURCE, /untrackedCount/u);
 	assert.doesNotMatch(PANEL_SOURCE, /AGENT_SESSION_PANEL_HEADER_CLASS|pt-6 pb-0/u);
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /rounded-lg bg-surface/u);
 	assert.match(

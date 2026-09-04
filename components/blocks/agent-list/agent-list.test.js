@@ -7,6 +7,10 @@ const CARD_SOURCE = readFileSync(
 	join(__dirname, "agent-list-card.tsx"),
 	"utf8",
 );
+const ROW_ACTION_SOURCE = readFileSync(
+	join(__dirname, "agent-list-row-action.tsx"),
+	"utf8",
+);
 const INDEX_SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const DEMO_SOURCE = readFileSync(
@@ -453,7 +457,8 @@ test("in-flow View controls immediately replace lifecycle indicators without col
 		/const showHoverActions = \(!isSelected \|\| showHoverActionsWhenSelected\) &&\s*\(hoverActions\?\.primary !== undefined \|\| hoverActions\?\.secondary !== undefined\);/u,
 	);
 	assert.match(CARD_SOURCE, /\{showHoverActions \? \(\s*<CardActions/u);
-	assert.match(CARD_SOURCE, /event\.stopPropagation\(\);\s*\n\s*action\.onClick\(\)/u);
+	assert.match(CARD_SOURCE, /<AgentListRowActionButton action=\{primary\}/u);
+	assert.match(ROW_ACTION_SOURCE, /event\.stopPropagation\(\);\s*\n\s*action\.onClick\(\)/u);
 	assert.match(
 		CARD_SOURCE,
 		/"flex w-full min-w-0 items-center gap-0",\s*hasSummary \? null : "overflow-hidden",/u,
@@ -807,10 +812,10 @@ test("hover actions add an Archive icon beside View or Resume", () => {
 	// An action with an icon renders icon-only, with its label as both the
 	// tooltip and the accessible name.
 	assert.match(
-		CARD_SOURCE,
+		ROW_ACTION_SOURCE,
 		/<Button\s*aria-label=\{action\.label\}[\s\S]*size="icon-compact"[\s\S]*\{action\.icon\}/u,
 	);
-	assert.match(CARD_SOURCE, /<TooltipContent>\{action\.label\}<\/TooltipContent>/u);
+	assert.match(ROW_ACTION_SOURCE, /<TooltipContent>\{action\.label\}<\/TooltipContent>/u);
 	assert.match(PAGE_SOURCE, /onArchive=\{handleArchive\}/u);
 	assert.match(DETAIL_SOURCE, /name: "onArchive"/u);
 	assert.match(DETAIL_SOURCE, /Resume on local sessions/u);

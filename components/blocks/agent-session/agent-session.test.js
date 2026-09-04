@@ -8,6 +8,10 @@ const LIST_CARD_SOURCE = readFileSync(
 	join(__dirname, "../agent-list/agent-list-card.tsx"),
 	"utf8",
 );
+const LIST_ROW_ACTION_SOURCE = readFileSync(
+	join(__dirname, "../agent-list/agent-list-row-action.tsx"),
+	"utf8",
+);
 const COMPACT_CARD_SOURCE = readFileSync(
 	join(__dirname, "agent-session-compact-card.tsx"),
 	"utf8",
@@ -84,7 +88,7 @@ test("renders each session as a solid uncaptured-work card around the shared row
 	);
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*hoverActions=\{hoverActions\}/u);
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*isCompact=\{false\}/u);
-	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*isSelected=\{isSelected\}/u);
+	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*isSelected=\{showSelectedFill\}/u);
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*showHoverActionsWhenSelected/u);
 	assert.doesNotMatch(CARD_SOURCE, /isSelected=\{false\}/u);
 });
@@ -236,6 +240,9 @@ test("large untracked-work cards opt into the shared session drag without collap
 });
 
 test("session drag ignores nested controls and suppresses the click after a real pointer drag", () => {
+	assert.match(CARD_SOURCE, /from "\.\/agent-session-drag-interactive"/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /from "\.\/agent-session-drag-interactive"/u);
+	assert.doesNotMatch(MEDIUM_DRAG_SOURCE, /export const SESSION_DRAG_INTERACTIVE_SELECTOR/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /SESSION_DRAG_INTERACTIVE_SELECTOR/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /event\.target\.closest\(SESSION_DRAG_INTERACTIVE_SELECTOR\)/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /interactiveTarget !== null && interactiveTarget !== event\.currentTarget/u);
@@ -330,6 +337,9 @@ test("the row reveals Resume plus a Hide / Show eye where Agent List puts Archiv
 	);
 	assert.match(CARD_SOURCE, /const hoverActions: AgentListRowHoverActions = \{/u);
 	assert.match(CARD_SOURCE, /label: copiedResume \? "Copied" : "Resume",/u);
+	assert.match(CARD_SOURCE, /primary: approve\s*\?\s*\{/u);
+	assert.match(CARD_SOURCE, /<CheckMarkIcon label="" size="small" \/>/u);
+	assert.match(CARD_SOURCE, /approveActionLabel\(approve\.target\)/u);
 	assert.match(CARD_SOURCE, /visibilityLabel === "Show"/u);
 	assert.match(CARD_SOURCE, /<EyeOpenIcon label="" size="small" \/>/u);
 	assert.match(CARD_SOURCE, /<EyeOpenStrikethroughIcon label="" size="small" \/>/u);
@@ -346,7 +356,7 @@ test("the row reveals Resume plus a Hide / Show eye where Agent List puts Archiv
 	assert.doesNotMatch(CARD_SOURCE, /hover:border-border(?!-disabled)/u);
 	assert.doesNotMatch(CARD_SOURCE, /focus-within:border-border(?!-disabled)/u);
 	assert.match(CARD_SOURCE, /hover:bg-surface-hovered/u);
-	assert.match(CARD_SOURCE, /transition-\[background-color\] duration-xxshort ease-out-practical/u);
+	assert.match(CARD_SOURCE, /transition-\[background-color,border-radius\] duration-xxshort ease-out-practical/u);
 	assert.doesNotMatch(CARD_SOURCE, /hover:bg-white/u);
 	assert.doesNotMatch(CARD_SOURCE, /focus-within:bg-/u);
 	assert.doesNotMatch(CARD_SOURCE, /active:bg-/u);
@@ -495,8 +505,9 @@ test("Resume is gated on host capability before the clipboard write", () => {
 		CARD_SOURCE,
 		/const canResume = \(isResumable\?\.\(item\) \?\? true\) && resumeCommand\.length > 0;/u,
 	);
-	assert.match(CARD_SOURCE, /primary: canResume\s*\?\s*\{/u);
+	assert.match(CARD_SOURCE, /: canResume\s*\?\s*\{/u);
 	assert.match(CARD_SOURCE, /: undefined,\s*secondary: \{/u);
+	assert.match(CARD_SOURCE, /primary: approve\s*\?\s*\{/u);
 	assert.match(CARD_SOURCE, /toAgentListResumeCommand\(item\)/u);
 });
 
@@ -516,7 +527,7 @@ test("a coding session body is read-only when the host omits onView", () => {
 	);
 });
 
-test("a card body click toggles a single selected session on blue-subtlest", () => {
+test("a card body click toggles a single selected session on the selected token", () => {
 	assert.match(TYPES_SOURCE, /selectedItemId\?: string \| null;/u);
 	assert.match(TYPES_SOURCE, /onSelectedItemIdChange\?: \(itemId: string \| null\) => void;/u);
 	assert.match(INDEX_SOURCE, /selectedItemId: selectedItemIdProp,/u);
@@ -531,11 +542,15 @@ test("a card body click toggles a single selected session on blue-subtlest", () 
 		/if \(nextId !== null\) \{\s*\n\s*onView\?\.\(item\);\s*\n\s*\}/u,
 	);
 	assert.match(INDEX_SOURCE, /isSelected=\{item\.id === selectedItemId\}/u);
-	assert.match(CARD_SOURCE, /isSelected && "bg-bg-accent-blue-subtlest"/u);
-	assert.match(CARD_SOURCE, /!isSelected && !isHighlighted && "bg-transparent hover:bg-surface-hovered"/u);
+	assert.match(CARD_SOURCE, /showSelectedFill && "bg-bg-selected"/u);
+	assert.match(
+		CARD_SOURCE,
+		/const showSelectedFill = isMarked \|\| \(isSelected && mark == null\);/u,
+	);
+	assert.match(CARD_SOURCE, /!showSelectedFill && !isHighlighted && "bg-transparent hover:bg-surface-hovered"/u);
 	assert.match(CARD_SOURCE, /data-selected=\{isSelected \|\| undefined\}/u);
 	assert.match(CARD_SOURCE, /aria-current=\{isSelected \? "true" : undefined\}/u);
-	assert.match(CARD_SOURCE, /isSelected=\{isSelected\}/u);
+	assert.match(CARD_SOURCE, /isSelected=\{showSelectedFill\}/u);
 	assert.match(CARD_SOURCE, /showHoverActionsWhenSelected/u);
 	assert.match(
 		LIST_CARD_SOURCE,
@@ -546,11 +561,11 @@ test("a card body click toggles a single selected session on blue-subtlest", () 
 	assert.match(CARD_SOURCE, /onClick=\{handleArticleClick\}/u);
 	assert.match(CARD_SOURCE, /onKeyDown=\{handleArticleKeyDown\}/u);
 	assert.match(CARD_SOURCE, /role=\{activateCard === undefined \? undefined : "button"\}/u);
-	assert.match(CARD_SOURCE, /event\.target\.closest\("button"\) !== null/u);
+	assert.match(CARD_SOURCE, /event\.target\.closest\(SESSION_DRAG_INTERACTIVE_SELECTOR\) !== null/u);
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*onView=\{undefined\}/u);
-	assert.match(LIST_CARD_SOURCE, /event\.stopPropagation\(\);\s*\n\s*action\.onClick\(\)/u);
+	assert.match(LIST_ROW_ACTION_SOURCE, /event\.stopPropagation\(\);\s*\n\s*action\.onClick\(\)/u);
 	assert.doesNotMatch(CARD_SOURCE, /isSelected=\{false\}/u);
-	assert.doesNotMatch(CARD_SOURCE, /bg-bg-selected/u);
+	assert.doesNotMatch(CARD_SOURCE, /bg-bg-accent-blue-subtlest/u);
 	assert.doesNotMatch(CARD_SOURCE, /bg-\[var\(--ds-/u);
 });
 
@@ -590,12 +605,17 @@ test("ships demo data and catalog entries for every attachment and size variant"
 
 test("large uncaptured-work cards are borderless and flush in-flow", () => {
 	// In-flow large list is `gap-0`. Panel hosts override via `listClassName`.
-	// Cards stay `rounded-lg` with no stroke — no fused shared edges.
+	// Cards stay `rounded-lg` with no stroke. Adjacent marked rows fuse;
+	// the rest of the list does not share edges.
 	assert.match(INDEX_SOURCE, /variant === "large"\s*\n\s*\? "gap-0"\s*\n\s*: variant === "medium-detached"/u);
 	assert.match(INDEX_SOURCE, /gap: token\("space\.025"\)/u);
 	assert.doesNotMatch(INDEX_SOURCE, /data-stack=/u);
 	assert.doesNotMatch(INDEX_SOURCE, /gap: token\("space\.100"\)/u);
 	assert.match(CARD_SOURCE, /rounded-lg p-3 text-left text-text/u);
+	assert.match(CARD_SOURCE, /data-marked=\{isMarked \|\| undefined\}/u);
+	assert.match(CARD_SOURCE, /isMarked \? "has-\[\+\[data-marked\]\]:\[&_article\]:rounded-b-none" : null/u);
+	assert.match(CARD_SOURCE, /\[\[data-marked\]\+&\[data-marked\]\]:\[&_article\]:rounded-t-none/u);
+	assert.match(CARD_SOURCE, /\[\[data-marked\]\+&\[data-marked\]\]:in-\[\.gap-1\]:-mt-1/u);
 	assert.doesNotMatch(CARD_SOURCE, /\[li:first-child_&\]:rounded-t-lg/u);
 	assert.doesNotMatch(CARD_SOURCE, /\[li:last-child_&\]:rounded-b-lg/u);
 	assert.doesNotMatch(CARD_SOURCE, /\[li:not\(:last-child\)_&\]:border-b-0/u);

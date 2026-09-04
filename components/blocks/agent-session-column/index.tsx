@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 
 import GrowHorizontalIcon from "@atlaskit/icon/core/grow-horizontal";
-import ShrinkHorizontalIcon from "@atlaskit/icon/core/shrink-horizontal";
 
 import { isCodingAgentListItem } from "@/components/blocks/agent-list";
 import { AGENT_SESSION_ITEMS, AgentSession } from "@/components/blocks/agent-session";
@@ -19,11 +18,13 @@ import type { TextMorphConfig } from "@/components/visual/text-morphing/data";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
+import { AgentSessionColumnHeader } from "./agent-session-column-header";
 import { AgentSessionColumnHiddenFooter } from "./agent-session-column-hidden-footer";
 import { AgentSessionColumnOverflowMenu } from "./agent-session-column-overflow-menu";
 import { AgentSessionColumnRail } from "./agent-session-column-rail";
 import type { AgentSessionColumnProps } from "./agent-session-column-types";
 import { useAgentSessionColumnHidden } from "./use-agent-session-column-hidden";
+import { useUntrackedSelection } from "./use-untracked-selection";
 
 /** Expanded column width in px. Exported so a host surface can size itself to match. */
 export const AGENT_SESSION_COLUMN_WIDTH_PX = 280;
@@ -55,9 +56,9 @@ const AGENT_SESSION_COLUMN_TRANSITION = "width var(--duration-medium) var(--ease
  *
  * The list is the scrollport. Expanded in-flow, the plane is a bordered
  * well (`radius.xlarge`) that clips fades and the hidden-work footer so
- * they cannot paint over the 1px stroke. A host with `chrome="none"`
+ * they cannot paint over the 1px stroke. A host with `headerSurface="panel"`
  * (the docked panel) keeps the fill without that nested frame — the
- * panel already draws `border-l`. Collapsed, the rail sits in the same
+ * panel already draws its leading hairline. Collapsed, the rail sits in the same
  * fill without a frame. Cards are borderless; the in-flow list stays
  * flush (`gap-0`).
  */
@@ -91,12 +92,6 @@ const HEADER_CONTROL_ON_REVEAL = cn(
  * painted while the overflow menu is open so the trigger does not vanish
  * under the portalled popup.
  */
-const HEADER_ACTIONS_REVEAL = cn(
-	"ms-auto flex shrink-0 items-center",
-	HEADER_CONTROL_ON_REVEAL,
-	"has-[[data-popup-open]]:opacity-100",
-);
-
 /**
  * Count morphing for the collapsed header.
  *
@@ -150,12 +145,11 @@ const AGENT_SESSION_PLANE_FADE_SIZE = "3rem";
  *
  * Two capabilities exist for hosts that dock the column into their own surface
  * rather than stand it on the board: `collapsed` makes the rail state
- * controlled, and `chrome="none"` drops the expanded header so the surface can
- * own the title and actions. Both are generic options — the column knows
- * nothing about who is hosting it.
+ * controlled, and `headerSurface="panel"` wears the docked header skin. Both
+ * are generic options — the column knows nothing about who is hosting it.
  */
 export function AgentSessionColumn({
-	chrome = "default",
+	headerSurface = "column",
 	className,
 	collapsed: collapsedProp,
 	count,
@@ -170,6 +164,7 @@ export function AgentSessionColumn({
 	onToggleVisibility,
 	selectedItemId: selectedItemIdProp,
 	title = "Untracked work",
+	triage,
 	...sessionProps
 }: Readonly<AgentSessionColumnProps>) {
 	const shouldReduceMotion = useReducedMotion();
@@ -188,6 +183,7 @@ export function AgentSessionColumn({
 	const selectedItemId = isSelectionControlled ? selectedItemIdProp : uncontrolledSelectedItemId;
 	const {
 		closeHiddenView,
+		forgetHidden,
 		hiddenCount,
 		hiddenItems,
 		openHiddenView,
@@ -196,6 +192,19 @@ export function AgentSessionColumn({
 		visibleItems,
 	} = useAgentSessionColumnHidden(items);
 	const viewItems = view === "hidden" ? hiddenItems : visibleItems;
+	const selectionTriage = useMemo(() => {
+		if (triage === undefined) {
+			return undefined;
+		}
+
+		return {
+			...triage,
+			archive: (session: AgentSessionItem) => {
+				triage.archive(session);
+				forgetHidden(session.id);
+			},
+		};
+	}, [forgetHidden, triage]);
 	const displayTitle = view === "hidden" ? "Hidden work" : title;
 	// The rail and the card list have very different intrinsic widths, so the
 	// overflow has to be clipped for the duration of the width transition. Any
@@ -206,9 +215,29 @@ export function AgentSessionColumn({
 		showBottomScrollMask,
 		showTopScrollMask,
 	} = useHasVerticalOverflow<HTMLDivElement>();
+	const columnRef = useRef<HTMLElement>(null);
 	const untrackedCount = count ?? visibleItems.length;
 	const showWellFooter = view === "hidden" || hiddenCount > 0;
 	const sessionCount = view === "hidden" ? hiddenItems.length : untrackedCount;
+	const untrackedSelection = useUntrackedSelection({
+		capturedItemIds: sessionProps.capturedItemIds,
+		count: sessionCount,
+		getSuggestedWorkItemKey: sessionProps.getSuggestedWorkItemKey,
+		getSuggestedWorkItemKeys: sessionProps.getSuggestedWorkItemKeys,
+		title: displayTitle,
+		triage: selectionTriage,
+		visibleItems: viewItems,
+	});
+	const overflowMenu = (
+		<AgentSessionColumnOverflowMenu
+			capturedItemIds={sessionProps.capturedItemIds}
+			getSuggestedWorkItemKey={sessionProps.getSuggestedWorkItemKey}
+			getSuggestedWorkItemKeys={sessionProps.getSuggestedWorkItemKeys}
+			items={viewItems}
+			onLinkWorkItem={sessionProps.onLinkWorkItem}
+			title={title}
+		/>
+	);
 	const newCount = newItemIds === undefined
 		? 0
 		: visibleItems.reduce((total: number, item: AgentSessionItem) => (
@@ -279,6 +308,9 @@ export function AgentSessionColumn({
 
 	const handleToggleCollapsed = () => {
 		const nextCollapsed = !collapsed;
+		if (nextCollapsed) {
+			columnRef.current?.focus();
+		}
 		if (!shouldReduceMotion) {
 			setIsResizing(true);
 		}
@@ -313,6 +345,7 @@ export function AgentSessionColumn({
 
 	return (
 		<section
+			ref={columnRef}
 			aria-label={`${displayTitle}, ${sessionCount} sessions`}
 			className={cn(
 				"group/session-column flex min-h-0 shrink-0 flex-col",
@@ -322,6 +355,7 @@ export function AgentSessionColumn({
 			data-agent-session-column={title}
 			data-collapsed={collapsed || undefined}
 			onTransitionEnd={handleTransitionEnd}
+			tabIndex={-1}
 			style={{
 				transition: shouldReduceMotion ? "none" : AGENT_SESSION_COLUMN_TRANSITION,
 				width: collapsed
@@ -329,100 +363,70 @@ export function AgentSessionColumn({
 					: `${expandedWidthPx}px`,
 			}}
 		>
-			{collapsed || chrome === "default" ? (
+			{collapsed ? (
 				<div
 					className="flex min-w-0 items-center gap-1.5"
 					style={{
 						paddingBottom: token("space.100"),
-						// Collapsed rail: match the 8px bottom so the count is
-						// not flush under the panel header hairline.
-						paddingTop: collapsed ? token("space.100") : undefined,
+						paddingTop: token("space.100"),
 					}}
 				>
-					{collapsed ? (
-						<div className="relative flex h-6 w-full min-w-0 items-center justify-center">
-							<span
-								aria-hidden="true"
-								className={cn(
-									"absolute inset-0 flex items-center justify-center text-xs",
-									newCount > 0
-										? "font-medium text-text-discovery"
-										: "font-normal text-text-subtlest",
-									HEADER_COUNT_AT_REST,
-								)}
-							>
-								<TextMorphing
-									config={HEAD_COUNT_MORPH}
-									text={newCount > 0 ? `+${newCount}` : String(sessionCount)}
-								/>
-							</span>
-							<span className="sr-only">
-								{newCount > 0
-									? `${sessionCount} sessions, ${newCount} newly synced`
-									: `${sessionCount} sessions`}
-							</span>
-							<TooltipProvider>
-								<Tooltip>
-									<TooltipTrigger
-										render={
-											<Button
-												aria-label={`Expand ${title} column`}
-												className={HEADER_CONTROL_ON_REVEAL}
-												onClick={handleToggleCollapsed}
-												size="icon-compact"
-												type="button"
-												variant="ghost"
-											/>
-										}
-									>
-										<Icon className="text-icon-subtle" render={<GrowHorizontalIcon label="" />} />
-									</TooltipTrigger>
-									<TooltipContent>Expand</TooltipContent>
-								</Tooltip>
-							</TooltipProvider>
-						</div>
-					) : (
-						<>
-							<span className="truncate text-xs font-medium leading-4 text-text-subtle">
-								{displayTitle}
-							</span>
-							<span className="shrink-0 text-xs font-normal text-text-subtlest">
-								{sessionCount}
-							</span>
-							<div className={HEADER_ACTIONS_REVEAL}>
-								<AgentSessionColumnOverflowMenu
-									capturedItemIds={sessionProps.capturedItemIds}
-									getSuggestedWorkItemKey={sessionProps.getSuggestedWorkItemKey}
-									getSuggestedWorkItemKeys={sessionProps.getSuggestedWorkItemKeys}
-									items={viewItems}
-									onLinkWorkItem={sessionProps.onLinkWorkItem}
-									title={title}
-								/>
-								<TooltipProvider>
-									<Tooltip>
-										<TooltipTrigger
-											render={
-												<Button
-													aria-label={`Collapse ${title} column`}
-													onClick={handleToggleCollapsed}
-													size="icon-compact"
-													type="button"
-													variant="ghost"
-												/>
-											}
-										>
-											<Icon className="text-icon-subtle" render={<ShrinkHorizontalIcon label="" />} />
-										</TooltipTrigger>
-										<TooltipContent>Collapse</TooltipContent>
-									</Tooltip>
-								</TooltipProvider>
-							</div>
-						</>
-					)}
+					<div className="relative flex h-6 w-full min-w-0 items-center justify-center">
+						<span
+							aria-hidden="true"
+							className={cn(
+								"absolute inset-0 flex items-center justify-center text-xs",
+								newCount > 0
+									? "font-medium text-text-discovery"
+									: "font-normal text-text-subtlest",
+								HEADER_COUNT_AT_REST,
+							)}
+						>
+							<TextMorphing
+								config={HEAD_COUNT_MORPH}
+								text={newCount > 0 ? `+${newCount}` : String(sessionCount)}
+							/>
+						</span>
+						<span className="sr-only">
+							{newCount > 0
+								? `${sessionCount} sessions, ${newCount} newly synced`
+								: `${sessionCount} sessions`}
+						</span>
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger
+									render={
+										<Button
+											aria-label={`Expand ${title} column`}
+											className={HEADER_CONTROL_ON_REVEAL}
+											onClick={handleToggleCollapsed}
+											size="icon-compact"
+											type="button"
+											variant="ghost"
+										/>
+									}
+								>
+									<Icon className="text-icon-subtle" render={<GrowHorizontalIcon label="" />} />
+								</TooltipTrigger>
+								<TooltipContent>Expand</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+					</div>
 				</div>
-			) : null}
+			) : (
+				<AgentSessionColumnHeader
+					collapseLabel={headerSurface === "panel"
+						? "Collapse panel"
+						: `Collapse ${title} column`}
+					model={untrackedSelection.header}
+					onAction={untrackedSelection.onHeaderAction}
+					onCollapse={handleToggleCollapsed}
+					overflow={overflowMenu}
+					surface={headerSurface}
+				/>
+			)}
 
-			<div className={collapsed || chrome === "none" ? AGENT_SESSION_PLANE : AGENT_SESSION_WELL}>
+			<div className={collapsed || headerSurface === "panel" ? AGENT_SESSION_PLANE : AGENT_SESSION_WELL}>
 				{collapsed ? (
 					<AgentSessionColumnRail
 						arrivingItemIds={arrivingItemIds}
@@ -457,6 +461,7 @@ export function AgentSessionColumn({
 										{...sessionProps}
 										onSelectedItemIdChange={handleSelectedItemIdChange}
 										onToggleVisibility={handleToggleVisibility}
+										rowTriage={untrackedSelection.rows}
 										selectedItemId={selectedItemId}
 										visibilityLabel={view === "hidden" ? "Show" : "Hide"}
 									/>

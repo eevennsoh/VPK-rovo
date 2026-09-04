@@ -46,7 +46,7 @@ test("the experimental page groups Pulse sessions onto the board when Untracked 
 	);
 	assert.match(
 		PAGE_SOURCE,
-		/showUntracked\s*\?\s*groupBoardUntrackedSessions\(\{\s*boardIssueKeys,\s*capturedItemIds: capturedLooseWorkIds,\s*detachedByCard: detachedAgentSessionsByCard,\s*sessions: agentSessionItems,\s*\}\)\s*:\s*EMPTY_PROXIMITY_SESSIONS/u,
+		/showUntracked\s*\?\s*groupBoardUntrackedSessions\(\{\s*archivedItemIds: archivedLooseWorkIds,\s*boardIssueKeys,\s*capturedItemIds: capturedLooseWorkIds,\s*detachedByCard: detachedAgentSessionsByCard,\s*sessions: agentSessionItems,\s*\}\)\s*:\s*EMPTY_PROXIMITY_SESSIONS/u,
 	);
 	assert.match(PAGE_SOURCE, /detachedAgentSessionsByCard=\{proximityAgentSessionsByCard\}/u);
 	assert.match(HELPER_SOURCE, /session\.sessionDetails\?\.issueKey/u);
@@ -56,7 +56,7 @@ test("the experimental page groups Pulse sessions onto the board when Untracked 
 test("the Untracked column follows card session link and unlink state", () => {
 	assert.match(
 		PAGE_SOURCE,
-		/const untrackedAgentSessionItems = useMemo\([\s\S]*selectBoardUntrackedSessions\(\{[\s\S]*capturedItemIds: capturedLooseWorkIds,[\s\S]*detachedByCard: detachedAgentSessionsByCard,[\s\S]*sessions: agentSessionItems,/u,
+		/const untrackedAgentSessionItems = useMemo\([\s\S]*selectBoardUntrackedSessions\(\{[\s\S]*archivedItemIds: archivedLooseWorkIds,[\s\S]*capturedItemIds: capturedLooseWorkIds,[\s\S]*detachedByCard: detachedAgentSessionsByCard,[\s\S]*sessions: agentSessionItems,/u,
 	);
 	assert.match(PAGE_SOURCE, /items: untrackedAgentSessionItems/u);
 	assert.match(
@@ -212,7 +212,7 @@ test("a hovered detached board session lights its column twin", () => {
 	assert.match(MEDIUM_CARD_SOURCE, /onPointerEnter=\{\(\) => \{\s*[\s\S]*?onItemHover\?\.\(item\);\s*\}\}/u);
 	assert.match(MEDIUM_CARD_SOURCE, /onPointerLeave=\{\(\) => \{\s*[\s\S]*?onItemHover\?\.\(null\);\s*\}\}/u);
 	assert.match(SESSION_INDEX_SOURCE, /isHighlighted=\{item\.id === highlightedItemId\}/u);
-	assert.match(LARGE_CARD_SOURCE, /!isSelected && isHighlighted && "bg-surface-hovered"/u);
+	assert.match(LARGE_CARD_SOURCE, /!showSelectedFill && isHighlighted && "bg-surface-hovered"/u);
 });
 
 test("column card click scrolls the related issue and applies the blue-subtlest spotlight", () => {
