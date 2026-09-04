@@ -5,33 +5,40 @@ const {
 	hasTrailingContentUnderlap,
 } = require("./jira-list-horizontal-underlap.ts");
 
-test("trailing content underlap stays visible until the measured scroll end", () => {
+test("trailing content underlap ends when the table clears the measured panel edge", () => {
+	const narrowMetrics = {
+		panelLeadingEdge: 432,
+		scrollportLeft: 17,
+		scrollWidth: 1602,
+		trailingInset: 32,
+	};
+
 	assert.equal(hasTrailingContentUnderlap({
-		clientWidth: 1158,
+		...narrowMetrics,
 		scrollLeft: 0,
-		scrollWidth: 1602,
-		trailingInset: 32,
 	}), true);
 
 	assert.equal(hasTrailingContentUnderlap({
-		clientWidth: 1158,
-		scrollLeft: 412,
-		scrollWidth: 1602,
-		trailingInset: 32,
+		...narrowMetrics,
+		scrollLeft: 1153,
 	}), true);
 
 	assert.equal(hasTrailingContentUnderlap({
-		clientWidth: 1158,
-		scrollLeft: 444,
-		scrollWidth: 1602,
-		trailingInset: 32,
+		...narrowMetrics,
+		scrollLeft: 1155,
+	}), false);
+
+	assert.equal(hasTrailingContentUnderlap({
+		...narrowMetrics,
+		scrollLeft: 1172,
 	}), false);
 });
 
 test("trailing content underlap is disabled without reserved panel space", () => {
 	assert.equal(hasTrailingContentUnderlap({
-		clientWidth: 1000,
+		panelLeadingEdge: 968,
 		scrollLeft: 0,
+		scrollportLeft: 0,
 		scrollWidth: 1400,
 		trailingInset: 0,
 	}), false);
@@ -39,8 +46,9 @@ test("trailing content underlap is disabled without reserved panel space", () =>
 
 test("trailing content underlap tolerates fractional scroll metrics at the end", () => {
 	assert.equal(hasTrailingContentUnderlap({
-		clientWidth: 1000,
+		panelLeadingEdge: 968,
 		scrollLeft: 399.4,
+		scrollportLeft: 0,
 		scrollWidth: 1400,
 		trailingInset: 32,
 	}), false);

@@ -468,7 +468,7 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(PAGE_SOURCE, /onViewChange=\{tabOwnsView \? undefined : setWorkItemView\}/u);
 	assert.match(
 		PAGE_SOURCE,
-		/renderListContent=\{\(\s*columns,\s*\{\s*agentSessionDropIntent,\s*onTrailingContentUnderlapChange,\s*scrollEndInset,\s*\},\s*\) =>/u,
+		/renderListContent=\{\(\s*columns,\s*\{\s*agentSessionDropIntent,\s*onTrailingContentUnderlapChange,\s*scrollEndInset,\s*trailingOverlayRef,\s*\},\s*\) =>/u,
 	);
 	assert.match(PAGE_SOURCE, /useJiraGoldenJourneysV4List/u);
 	assert.match(PAGE_SOURCE, /<JiraList\s+\{\.\.\.listProps\}/u);
@@ -477,7 +477,13 @@ test("the Work items header switches between Board and List views with their ico
 		PAGE_SOURCE,
 		/onTrailingContentUnderlapChange=\{onTrailingContentUnderlapChange\}/u,
 	);
-	assert.match(PAGE_SOURCE, /scrollEndInset=\{scrollEndInset\}/u);
+	assert.match(PAGE_SOURCE, /const JIRA_LIST_PANEL_END_GAP_PX = 24;/u);
+	assert.match(
+		PAGE_SOURCE,
+		/const listScrollEndInset = scrollEndInset > 0\s*\?\s*scrollEndInset \+ JIRA_LIST_PANEL_END_GAP_PX\s*:\s*0;/u,
+	);
+	assert.match(PAGE_SOURCE, /scrollEndInset=\{listScrollEndInset\}/u);
+	assert.match(PAGE_SOURCE, /trailingOverlayRef=\{trailingOverlayRef\}/u);
 	assert.match(PAGE_SOURCE, /onListAgentSessionCreate=\{handleListAgentSessionCreate\}/u);
 	assert.match(PAGE_SOURCE, /createFromAgentSession/u);
 	assert.match(PAGE_SOURCE, /consumeDetachedAgentSession/u);
@@ -492,7 +498,7 @@ test("the Work items header switches between Board and List views with their ico
 	);
 	assert.match(
 		PAGE_SOURCE,
-		/className="min-h-0 flex-1 overflow-hidden p-4 md:p-5"[\s\S]*<JiraList\s+\{\.\.\.listProps\}/u,
+		/"min-h-0 flex-1 overflow-hidden py-4 ps-4 md:py-5 md:ps-5"[\s\S]*scrollEndInset > 0 \? "pe-0" : "pe-4 md:pe-5"[\s\S]*<JiraList\s+\{\.\.\.listProps\}/u,
 	);
 	assert.doesNotMatch(
 		PAGE_SOURCE,
@@ -671,8 +677,9 @@ test("the Panel design variant floats untracked work over the board and the list
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/onTrailingContentUnderlapChange: setListContentUnderlapsPanel,\s*scrollEndInset: boardScrollEndInset,/u,
+		/onTrailingContentUnderlapChange: setListContentUnderlapsPanel,\s*scrollEndInset: boardScrollEndInset,\s*trailingOverlayRef: agentSessionPanelRef,/u,
 	);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /ref=\{agentSessionPanelRef\}/u);
 	assert.match(PANEL_SOURCE, /showLeadingScrollFade\?: boolean;/u);
 	assert.match(
 		PANEL_SOURCE,

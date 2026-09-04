@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type RefCallback } from "react";
+import {
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+	type RefCallback,
+	type RefObject,
+} from "react";
 
 import { hasTrailingContentUnderlap } from "@/components/blocks/jira-list/jira-list-horizontal-underlap";
 
@@ -10,6 +17,7 @@ export interface JiraListHorizontalUnderlapResult<T extends HTMLElement> {
 
 export function useJiraListHorizontalUnderlap<T extends HTMLElement>(
 	trailingInset: number,
+	trailingOverlayRef: RefObject<HTMLElement | null> | undefined,
 	onUnderlapChange?: (hasUnderlap: boolean) => void,
 ): JiraListHorizontalUnderlapResult<T> {
 	const elementRef = useRef<T | null>(null);
@@ -17,22 +25,24 @@ export function useJiraListHorizontalUnderlap<T extends HTMLElement>(
 	const [element, setElement] = useState<T | null>(null);
 
 	const updateUnderlap = useCallback(() => {
-		const node = elementRef.current;
-		if (node === null) {
+		const scrollport = elementRef.current;
+		const trailingOverlay = trailingOverlayRef?.current;
+		if (!scrollport || !trailingOverlay) {
 			return;
 		}
 
 		const nextUnderlap = hasTrailingContentUnderlap({
-			clientWidth: node.clientWidth,
-			scrollLeft: node.scrollLeft,
-			scrollWidth: node.scrollWidth,
+			panelLeadingEdge: trailingOverlay.getBoundingClientRect().left,
+			scrollLeft: scrollport.scrollLeft,
+			scrollportLeft: scrollport.getBoundingClientRect().left,
+			scrollWidth: scrollport.scrollWidth,
 			trailingInset,
 		});
 		if (nextUnderlap !== lastUnderlapRef.current) {
 			lastUnderlapRef.current = nextUnderlap;
 			onUnderlapChange?.(nextUnderlap);
 		}
-	}, [onUnderlapChange, trailingInset]);
+	}, [onUnderlapChange, trailingInset, trailingOverlayRef]);
 
 	const ref = useCallback<RefCallback<T>>((node) => {
 		elementRef.current = node;
@@ -49,9 +59,10 @@ export function useJiraListHorizontalUnderlap<T extends HTMLElement>(
 		}
 
 		element.addEventListener("scroll", updateUnderlap, { passive: true });
+		window.addEventListener("resize", updateUnderlap);
+		updateUnderlap();
 
 		if (typeof ResizeObserver === "undefined") {
-			window.addEventListener("resize", updateUnderlap);
 			return () => {
 				element.removeEventListener("scroll", updateUnderlap);
 				window.removeEventListener("resize", updateUnderlap);
@@ -63,12 +74,17 @@ export function useJiraListHorizontalUnderlap<T extends HTMLElement>(
 		if (element.firstElementChild !== null) {
 			resizeObserver.observe(element.firstElementChild);
 		}
+		const trailingOverlay = trailingOverlayRef?.current;
+		if (trailingOverlay) {
+			resizeObserver.observe(trailingOverlay);
+		}
 
 		return () => {
 			element.removeEventListener("scroll", updateUnderlap);
+			window.removeEventListener("resize", updateUnderlap);
 			resizeObserver.disconnect();
 		};
-	}, [element, updateUnderlap]);
+	}, [element, trailingOverlayRef, updateUnderlap]);
 
 	return {
 		ref,

@@ -1,6 +1,7 @@
 export interface JiraListHorizontalUnderlapMetrics {
-	clientWidth: number;
+	panelLeadingEdge: number;
 	scrollLeft: number;
+	scrollportLeft: number;
 	scrollWidth: number;
 	trailingInset: number;
 }
@@ -12,8 +13,9 @@ const SCROLL_END_TOLERANCE_PX = 1;
  * trailing panel. The reserved inset is scroll room, not list content.
  */
 export function hasTrailingContentUnderlap({
-	clientWidth,
+	panelLeadingEdge,
 	scrollLeft,
+	scrollportLeft,
 	scrollWidth,
 	trailingInset,
 }: JiraListHorizontalUnderlapMetrics): boolean {
@@ -21,8 +23,7 @@ export function hasTrailingContentUnderlap({
 		return false;
 	}
 
-	const contentEnd = scrollWidth - trailingInset;
-	const panelLeadingEdge = scrollLeft + clientWidth - trailingInset;
+	const contentEnd = scrollportLeft + scrollWidth - trailingInset - scrollLeft;
 
 	return contentEnd - panelLeadingEdge > SCROLL_END_TOLERANCE_PX;
 }

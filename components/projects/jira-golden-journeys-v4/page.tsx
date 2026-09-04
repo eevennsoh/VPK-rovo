@@ -29,6 +29,7 @@ import {
 import { useJiraTabs } from "@/components/projects/jira/hooks/use-jira-tabs";
 import { resolveJiraTab } from "@/components/projects/jira/lib/jira-tab-model";
 import AppLayout from "@/components/projects/page";
+import { cn } from "@/lib/utils";
 
 import { getJiraGoldenJourneysV4AgentActivityIndicator } from "./data/agent-activity-indicators";
 import {
@@ -39,6 +40,8 @@ import {
 	JIRA_GOLDEN_JOURNEYS_V4_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID,
 } from "./data/presentation-story";
 import { useJiraGoldenJourneysV4List } from "./hooks/use-jira-golden-journeys-v4-list";
+
+const JIRA_LIST_PANEL_END_GAP_PX = 24;
 
 export default function JiraGoldenJourneysV4Page(): React.ReactElement {
 	return (
@@ -284,16 +287,26 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 								agentSessionDropIntent,
 								onTrailingContentUnderlapChange,
 								scrollEndInset,
+								trailingOverlayRef,
 							},
 						) => {
 							const listProps = getListProps(columns);
+							const listScrollEndInset = scrollEndInset > 0
+								? scrollEndInset + JIRA_LIST_PANEL_END_GAP_PX
+								: 0;
 							return (
-								<div className="min-h-0 flex-1 overflow-hidden p-4 md:p-5">
+								<div
+									className={cn(
+										"min-h-0 flex-1 overflow-hidden py-4 ps-4 md:py-5 md:ps-5",
+										scrollEndInset > 0 ? "pe-0" : "pe-4 md:pe-5",
+									)}
+								>
 									<JiraList
 										{...listProps}
 										agentSessionDropIntent={agentSessionDropIntent}
 										onTrailingContentUnderlapChange={onTrailingContentUnderlapChange}
-										scrollEndInset={scrollEndInset}
+										scrollEndInset={listScrollEndInset}
+										trailingOverlayRef={trailingOverlayRef}
 									/>
 								</div>
 							);

@@ -71,6 +71,39 @@ test("JiraList keeps the footer outside the table scroll coordinate space", () =
 	);
 });
 
+test("JiraList restores the rounded table edge before a trailing panel scroll inset", () => {
+	assert.match(SOURCE, /const hasScrollEndInset = scrollEndInset > 0;/u);
+	assert.match(
+		SOURCE,
+		/rounded-xl border-x border-b border-border[\s\S]*?!hasScrollEndInset && "border-t"/u,
+	);
+	assert.match(
+		SOURCE,
+		/const headerCellClassName = cn\(\s*HEADER_CELL_CLASS,\s*hasScrollEndInset && "border-t",?\s*\);/u,
+	);
+	assert.match(
+		SOURCE,
+		/<TableHead className=\{cn\(headerCellClassName, "sticky left-0 z-30 px-0"\)\}/u,
+	);
+	assert.match(
+		SOURCE,
+		/isLastColumn && hasScrollEndInset && "rounded-tr-xl"/u,
+	);
+	assert.match(
+		SOURCE,
+		/isLastColumn && !hasScrollEndInset && "border-r-0"/u,
+	);
+	assert.match(
+		SOURCE,
+		/isLastColumn:\s*\(\s*columnIndex === orderedColumns\.length - 1\s*&& !hasScrollEndInset\s*\)/u,
+	);
+	assert.doesNotMatch(
+		SOURCE,
+		/rounded-xl border border-border bg-surface/u,
+	);
+	assert.doesNotMatch(SOURCE, /scrollEndInset > 0 \? "border-l border-border" : null/u);
+});
+
 test("JiraList dissolves overflowing rows under the sticky header", () => {
 	const tableScrollMarker = SOURCE.indexOf('data-testid="jira-list-table-scroll"');
 	const tableScrollStart = SOURCE.lastIndexOf("<div", tableScrollMarker);
@@ -266,7 +299,7 @@ test("JiraList renders one keyboard-accessible overlay control per unique data b
 
 test("JiraList column controls use outside-top overlay geometry without reserving space", () => {
 	assert.match(SOURCE, /data-testid="jira-list-column-boundary-overlay"/u);
-	assert.match(SOURCE, /overflow-visible rounded-xl border/u);
+	assert.match(SOURCE, /overflow-visible rounded-xl border-x border-b/u);
 	assert.match(SOURCE, /data-testid="jira-list-table-scroll"/u);
 	assert.doesNotMatch(SOURCE, /pt-4|pt-\[16px\]|paddingTop/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /absolute top-0 bottom-10 z-40/u);
@@ -568,7 +601,10 @@ test("JiraList anchors row controls in an unclipped frame overlay", () => {
 	const tableScrollEnd = SOURCE.indexOf("</div>", SOURCE.indexOf("</Table>", tableScrollStart));
 	const overlayInvocation = SOURCE.lastIndexOf("<RowBoundaryCreateControls");
 
-	assert.match(SOURCE, /relative flex max-h-\[640px\] flex-col overflow-visible/u);
+	assert.match(
+		SOURCE,
+		/relative flex max-h-\[640px\] flex-col overflow-visible rounded-xl border-x border-b/u,
+	);
 	assert.match(SOURCE, /flex min-h-0 flex-1 flex-col overflow-hidden rounded-\[inherit\]/u);
 	assert.ok(overlayInvocation > tableScrollEnd);
 	assert.match(SOURCE, /data-testid="jira-list-row-boundary-overlay"/u);
@@ -667,7 +703,10 @@ test("JiraList owns explicit grid separators and selected row cell treatment", (
 	assert.match(SOURCE, /aria-selected=\{isHighlighted \|\| undefined\}/u);
 	assert.match(SOURCE, /flex max-h-\[640px\] flex-col/u);
 	assert.match(SOURCE, /min-h-0 flex-1 overflow-auto/u);
-	assert.match(SOURCE, /containerClassName="overflow-visible"/u);
+	assert.match(
+		SOURCE,
+		/containerClassName="min-w-\[1570px\] shrink-0 overflow-visible"/u,
+	);
 	assert.match(SOURCE, /group-focus-within\/row:bg-bg-neutral-subtle-hovered/u);
 	assert.doesNotMatch(SOURCE, /min-h-\[640px\]/u);
 });

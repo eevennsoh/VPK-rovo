@@ -124,7 +124,7 @@ const ISSUE_TYPE_OPTIONS: readonly {
 ];
 
 const HEADER_CELL_CLASS =
-	"h-10 border-b border-r border-border bg-surface-sunken px-3 py-0 text-left align-middle text-xs font-semibold text-text-subtle whitespace-nowrap last:border-r-0";
+	"h-10 border-b border-r border-border bg-surface-sunken px-3 py-0 text-left align-middle text-xs font-semibold text-text-subtle whitespace-nowrap";
 
 export function JiraList({
 	rows,
@@ -162,6 +162,7 @@ export function JiraList({
 	agentSessionDropIntent,
 	onTrailingContentUnderlapChange,
 	scrollEndInset = 0,
+	trailingOverlayRef,
 }: Readonly<JiraListProps>) {
 	const insertionAnchorId = useId().replaceAll(":", "");
 	const {
@@ -173,6 +174,7 @@ export function JiraList({
 		ref: horizontalUnderlapRef,
 	} = useJiraListHorizontalUnderlap<HTMLDivElement>(
 		scrollEndInset,
+		trailingOverlayRef,
 		onTrailingContentUnderlapChange,
 	);
 	const tableScrollRef = useCallback<RefCallback<HTMLDivElement>>((node) => {
@@ -197,6 +199,11 @@ export function JiraList({
 	const [openCopyTooltipIssueKey, setOpenCopyTooltipIssueKey] = useState<string | null>(null);
 	const sessionInsertionTarget = getAgentSessionInsertionTarget(agentSessionDropIntent);
 	const activeInsertionTarget = sessionInsertionTarget ?? focusedCreateTarget ?? hoveredCreateTarget;
+	const hasScrollEndInset = scrollEndInset > 0;
+	const headerCellClassName = cn(
+		HEADER_CELL_CLASS,
+		hasScrollEndInset && "border-t",
+	);
 	const draggingIndex = draggingIssueKey
 		? rows.findIndex((row) => row.issueKey === draggingIssueKey)
 		: -1;
@@ -515,7 +522,11 @@ export function JiraList({
 				</TableCell>
 				<TableCell
 					className={cn(
-						getBodyCellClassName({ isLastColumn: true, isLastRow, isSelected: false }),
+						getBodyCellClassName({
+							isLastColumn: !hasScrollEndInset,
+							isLastRow,
+							isSelected: false,
+						}),
 						"px-2",
 					)}
 					colSpan={orderedColumns.length}
@@ -535,7 +546,8 @@ export function JiraList({
 			// the cap with `max-h-full`, never a definite height like `h-full` — a
 			// definite height hands the slack to the scrollport and reopens the gap.
 			className={cn(
-				"relative flex max-h-[640px] flex-col overflow-visible rounded-xl border border-border bg-surface",
+				"relative flex max-h-[640px] flex-col overflow-visible rounded-xl border-x border-b border-border bg-surface",
+				!hasScrollEndInset && "border-t",
 				className,
 			)}
 			data-testid="jira-list"
@@ -576,7 +588,7 @@ export function JiraList({
 					</colgroup>
 					<TableHeader className="sticky top-0 z-20 bg-surface-sunken shadow-[inset_0_-1px_0_var(--ds-border)]">
 						<TableRow className="border-0 hover:bg-transparent">
-							<TableHead className={cn(HEADER_CELL_CLASS, "sticky left-0 z-30 px-0")}>
+							<TableHead className={cn(headerCellClassName, "sticky left-0 z-30 px-0")}>
 								<div className="flex items-center justify-center">
 									<Checkbox
 										aria-label="Select all work items"
@@ -593,9 +605,10 @@ export function JiraList({
 								return (
 									<TableHead
 										className={cn(
-											HEADER_CELL_CLASS,
+											headerCellClassName,
 											column.align === "center" && "text-center",
-											isLastColumn && "border-r-0",
+											isLastColumn && hasScrollEndInset && "rounded-tr-xl",
+											isLastColumn && !hasScrollEndInset && "border-r-0",
 											"relative overflow-visible",
 										)}
 										key={column.id}
@@ -697,7 +710,10 @@ export function JiraList({
 														getBodyCellClassName({
 															isSelected: isHighlighted,
 															align: column.align,
-															isLastColumn: columnIndex === orderedColumns.length - 1,
+															isLastColumn: (
+																columnIndex === orderedColumns.length - 1
+																&& !hasScrollEndInset
+															),
 															isLastRow,
 														}),
 														insertionLineClassName,
