@@ -116,9 +116,9 @@ test("selectable rows can move the check to the trailing edge for left-aligned l
 	assert.equal(source.match(/indicatorPlacement = "start",/gu).length, 2);
 	assert.match(source, /export type DropdownMenuIndicatorPlacement = "start" \| "end";/u);
 
-	// The gutter and the indicator must move together: `indicatorEnd` alone
-	// would float the check over a long label, and the padding swap alone would
-	// leave the check in the vacated leading gutter.
+	// The leading gutter and the indicator must move together: dropping `pl-8`
+	// without moving the glyph would leave a vacant start column, and moving
+	// the glyph without dropping `pl-8` would indent labels past nothing.
 	assert.equal(
 		source.match(/isIndicatorAtEnd \? dropdownStyles\.selectableItemIndicatorEnd : null,/gu).length,
 		2,
@@ -127,9 +127,11 @@ test("selectable rows can move the check to the trailing edge for left-aligned l
 		source.match(/isIndicatorAtEnd \? dropdownStyles\.indicatorEnd : dropdownStyles\.indicator/gu).length,
 		2,
 	);
-	// Reserved gutter swaps sides; tailwind-merge resolves these over
-	// `selectableItem`'s `pr-2 pl-8`.
-	assert.match(source, /selectableItemIndicatorEnd: "pr-8 pl-2",/u);
+	// Trailing tick is in-flow `ml-auto` like SubTrigger; undoing `pl-8` is
+	// enough because the glyph no longer needs a reserved 24px gutter.
+	assert.match(source, /selectableItemIndicatorEnd: "pl-2",/u);
+	assert.match(source, /indicatorEnd:\s*"pointer-events-none ml-auto inline-flex shrink-0/u);
+	assert.match(source, /dropdownStyles\.indicatorEnd, variant === "destructive"/u);
 
 	// DOM order follows visual order so a trailing check is announced after the
 	// label it qualifies, not before it.
@@ -139,13 +141,14 @@ test("selectable rows can move the check to the trailing edge for left-aligned l
 	);
 });
 
-test("the two indicator placements stay identical apart from the edge they sit on", () => {
-	// Two literals rather than one composed string, because the leading variant
-	// is asserted verbatim elsewhere. This is the drift guard that keeps them
-	// honest: change one side's colour or box and this fails.
-	const read = (key) => source.match(new RegExp(`\\b${key}:\\s*\\n?\\s*"([^"]*)"`, "u"))?.[1];
-	const start = read("indicator");
-	const end = read("indicatorEnd");
-	assert.ok(start && end, "both indicator placements should be defined");
-	assert.equal(start.replace("left-2", "SIDE"), end.replace("right-2", "SIDE"));
+test("trailing selected indicators keep the tick and match the submenu chevron slot", () => {
+	// Selected rows stay a check mark. End placement is in-flow `ml-auto` at
+	// `size="small"` so the tick shares padding and size with SubTrigger's `>`.
+	assert.match(source, /function DropdownMenuSelectionGlyph\(/u);
+	assert.match(source, /render=\{<CheckMarkIcon label="" size="small" \/>\}/u);
+	assert.doesNotMatch(
+		source,
+		/const IndicatorIcon = atEnd \? ChevronRightIcon : CheckMarkIcon/u,
+	);
+	assert.equal(source.match(/<DropdownMenuSelectionGlyph \/>/gu).length, 2);
 });

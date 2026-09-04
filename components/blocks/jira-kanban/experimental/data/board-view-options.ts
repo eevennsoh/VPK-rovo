@@ -3,7 +3,8 @@
  * menu. Most lists are chrome only — picking a row moves the menu's own
  * indicator. Agent session states are the exception: Working, Needs input, and
  * Finished hide matching activity chrome on the board, and Untracked hides
- * proximity sessions.
+ * proximity sessions. All / Cloud / Local is also chrome: it retitles the
+ * nested Agent trigger and swaps its leading glyph.
  */
 export const BOARD_HIDE_DONE_OPTIONS = [
 	{ id: "never", label: "Never" },
@@ -99,7 +100,9 @@ export const ALL_BOARD_AGENT_SESSION_STATE_IDS: ReadonlySet<BoardAgentSessionSta
 /**
  * Which agent-session states surface on a card's activity row, plus Untracked.
  * Untracked sits after the linked-session lifecycle, separated, because it is
- * the absence of a session rather than a fourth session shape.
+ * the absence of a session rather than a fourth session shape. The host-scope
+ * picker (All / Cloud / Local) is a different control and lives in its own
+ * section between Finished and that Untracked divider.
  *
  * Every Agent row carries a leading glyph in the View menu. Linked states are
  * keyed by `BoardAgentSessionStateId`. Untracked uses its own empty-task glyph.
@@ -110,6 +113,42 @@ export const BOARD_AGENT_STATE_OPTIONS: readonly BoardVisibilityOption[] = [
 	{ id: "finished", label: "Finished", shown: true },
 	{ id: "untracked", label: "Untracked", shown: true, separatorBefore: true },
 ];
+
+/**
+ * Where sessions run. Single-select, so the Agent submenu trigger can read
+ * "Show all agents" / "Show cloud agents" / "Show local agents" from the id.
+ */
+export const BOARD_AGENT_HOST_OPTIONS = [
+	{ id: "all", label: "All" },
+	{ id: "cloud", label: "Cloud" },
+	{ id: "local", label: "Local" },
+] as const;
+
+export type BoardAgentHostId = (typeof BOARD_AGENT_HOST_OPTIONS)[number]["id"];
+
+export const BOARD_AGENT_HOST_DEFAULT_ID: BoardAgentHostId = "all";
+
+const BOARD_AGENT_HOST_ID_SET: ReadonlySet<string> = new Set(
+	BOARD_AGENT_HOST_OPTIONS.map((option) => option.id),
+);
+
+export function isBoardAgentHostId(id: string): id is BoardAgentHostId {
+	return BOARD_AGENT_HOST_ID_SET.has(id);
+}
+
+/** Dynamic Agent submenu label: "Show all agents", "Show cloud agents", … */
+export function boardAgentHostFilterLabel(hostId: BoardAgentHostId): string {
+	switch (hostId) {
+		case "all":
+		case "cloud":
+		case "local":
+			return `Show ${hostId} agents`;
+		default: {
+			const _exhaustive: never = hostId;
+			return _exhaustive;
+		}
+	}
+}
 
 interface BoardFieldOption extends BoardVisibilityOption {
 	/** Summary always renders, so Jira locks its toggle on. */

@@ -2,8 +2,11 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
+	BOARD_AGENT_HOST_DEFAULT_ID,
+	BOARD_AGENT_HOST_OPTIONS,
 	BOARD_AGENT_SESSION_STATE_IDS,
 	BOARD_AGENT_STATE_OPTIONS,
+	boardAgentHostFilterLabel,
 	BOARD_COLUMN_OPTIONS,
 	BOARD_COLUMN_SIZE_DEFAULT_ID,
 	BOARD_COLUMN_SIZE_OPTIONS,
@@ -11,6 +14,7 @@ const {
 	BOARD_HIDE_DONE_DEFAULT_ID,
 	BOARD_HIDE_DONE_OPTIONS,
 	BOARD_PR_STATE_OPTIONS,
+	isBoardAgentHostId,
 	isBoardAgentSessionStateId,
 } = require("./board-view-options.ts");
 
@@ -79,6 +83,25 @@ test("Agent lists the session states by session shape, not alphabetically", () =
 	assert.ok(isBoardAgentSessionStateId("needs-input"));
 	assert.ok(isBoardAgentSessionStateId("finished"));
 	assert.equal(isBoardAgentSessionStateId("untracked"), false);
+});
+
+test("Agent host scope is All / Cloud / Local and labels the nested trigger", () => {
+	assert.deepEqual(
+		BOARD_AGENT_HOST_OPTIONS.map((option) => option.id),
+		["all", "cloud", "local"],
+	);
+	assert.deepEqual(
+		BOARD_AGENT_HOST_OPTIONS.map((option) => option.label),
+		["All", "Cloud", "Local"],
+	);
+	assert.equal(BOARD_AGENT_HOST_DEFAULT_ID, "all");
+	assert.equal(boardAgentHostFilterLabel("all"), "Show all agents");
+	assert.equal(boardAgentHostFilterLabel("cloud"), "Show cloud agents");
+	assert.equal(boardAgentHostFilterLabel("local"), "Show local agents");
+	assert.ok(isBoardAgentHostId("all"));
+	assert.ok(isBoardAgentHostId("cloud"));
+	assert.ok(isBoardAgentHostId("local"));
+	assert.equal(isBoardAgentHostId("untracked"), false);
 });
 
 test("every visibility list shares one row shape", () => {

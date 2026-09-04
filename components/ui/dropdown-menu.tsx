@@ -39,21 +39,20 @@ export const dropdownStyles = {
   indicator:
     "pointer-events-none absolute left-2 inline-flex size-6 items-center justify-center text-icon-subtle [&_[data-slot=icon]]:text-icon-subtle [&_svg]:text-icon-subtle!",
   // Trailing variant. `selectableItem` reserves the indicator gutter on the
-  // leading edge (`pl-8`), which indents every label past the check column;
-  // this pair moves that gutter to the trailing edge instead, so labels start
-  // flush on the same left edge whether or not a row is checked. Both classes
-  // must be applied together — `indicatorEnd` alone would let a long label run
-  // under the check. Select has always rendered this way; DropdownMenu opts in
-  // per item via `indicatorPlacement="end"`.
-  selectableItemIndicatorEnd: "pr-8 pl-2",
+  // leading edge (`pl-8`); this pair drops that gutter so labels start flush.
+  // The tick is in-flow `ml-auto` at the same 12px / 8px inset as
+  // `DropdownMenuSubTrigger`'s chevron, so Select and DropdownMenu share one
+  // trailing column. Both classes must be applied together.
+  selectableItemIndicatorEnd: "pl-2",
   indicatorEnd:
-    "pointer-events-none absolute right-2 inline-flex size-6 items-center justify-center text-icon-subtle [&_[data-slot=icon]]:text-icon-subtle [&_svg]:text-icon-subtle!",
+    "pointer-events-none ml-auto inline-flex shrink-0 items-center justify-center text-icon-subtle [&_[data-slot=icon]]:text-icon-subtle [&_svg]:text-icon-subtle!",
 } as const;
 
 /**
  * Which edge the checked affordance sits on. `"start"` (default) keeps the
  * historical leading check with its indented labels; `"end"` left-aligns the
- * labels and moves the check to the trailing gutter.
+ * labels and puts the tick in the same in-flow trailing slot as a submenu
+ * chevron so a mixed list lines up.
  */
 // react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export type DropdownMenuIndicatorPlacement = "start" | "end";
@@ -310,7 +309,7 @@ function DropdownMenuItem({
         ) : null}
       </span>
       {resolvedElemAfter ? (
-        <span className={cn("ml-auto inline-flex h-5 shrink-0 items-center justify-center [&_svg]:size-3", variant === "destructive" ? "text-icon-danger" : "text-icon-subtle")}>
+        <span className={cn(dropdownStyles.indicatorEnd, variant === "destructive" ? "text-icon-danger" : null)}>
           {resolvedElemAfter}
         </span>
       ) : null}
@@ -381,6 +380,17 @@ function DropdownMenuSubContent({
   );
 }
 
+/** Selected-state tick. Same 12px small glyph as the submenu chevron. */
+function DropdownMenuSelectionGlyph() {
+  return (
+    <Icon
+      render={<CheckMarkIcon label="" size="small" />}
+      label="Selected"
+      className="text-icon-subtle"
+    />
+  );
+}
+
 interface DropdownMenuCheckboxItemProps
   extends MenuPrimitive.CheckboxItem.Props {
   inset?: boolean;
@@ -396,20 +406,16 @@ function DropdownMenuCheckboxItem({
   ...props
 }: Readonly<DropdownMenuCheckboxItemProps>) {
   const isIndicatorAtEnd = indicatorPlacement === "end";
-  // Absolutely positioned either way, so DOM order is free — keep it matching
-  // the visual order so assistive tech reads "Label, Selected" for a trailing
-  // check rather than announcing the state before the thing it describes.
+  // Start stays absolutely positioned in the leading gutter. End is in-flow
+  // `ml-auto` so it shares a column with SubTrigger. DOM order still matches
+  // visual order so assistive tech reads "Label, Selected".
   const indicator = (
     <span
       className={isIndicatorAtEnd ? dropdownStyles.indicatorEnd : dropdownStyles.indicator}
       data-slot="dropdown-menu-checkbox-item-indicator"
     >
       <MenuPrimitive.CheckboxItemIndicator>
-        <Icon
-          render={<CheckMarkIcon label="" size="small" />}
-          label="Selected"
-          className="text-icon-subtle"
-        />
+        <DropdownMenuSelectionGlyph />
       </MenuPrimitive.CheckboxItemIndicator>
     </span>
   );
@@ -465,11 +471,7 @@ function DropdownMenuRadioItem({
       data-slot="dropdown-menu-radio-item-indicator"
     >
       <MenuPrimitive.RadioItemIndicator>
-        <Icon
-          render={<CheckMarkIcon label="" size="small" />}
-          label="Selected"
-          className="text-icon-subtle"
-        />
+        <DropdownMenuSelectionGlyph />
       </MenuPrimitive.RadioItemIndicator>
     </span>
   );
