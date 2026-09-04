@@ -278,11 +278,23 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						showAgentSessionUnlinkWell={designVariation !== "team-eu"}
 						onResumeLooseWork={handleResumeLooseWork}
 						onViewChange={tabOwnsView ? undefined : setWorkItemView}
-						renderListContent={(columns, { agentSessionDropIntent }) => {
+						renderListContent={(
+							columns,
+							{
+								agentSessionDropIntent,
+								onTrailingContentUnderlapChange,
+								scrollEndInset,
+							},
+						) => {
 							const listProps = getListProps(columns);
 							return (
 								<div className="min-h-0 flex-1 overflow-hidden p-4 md:p-5">
-									<JiraList {...listProps} agentSessionDropIntent={agentSessionDropIntent} />
+									<JiraList
+										{...listProps}
+										agentSessionDropIntent={agentSessionDropIntent}
+										onTrailingContentUnderlapChange={onTrailingContentUnderlapChange}
+										scrollEndInset={scrollEndInset}
+									/>
 								</div>
 							);
 						}}

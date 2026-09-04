@@ -133,6 +133,8 @@ const EMPTY_ANSWERS: readonly PulseAnswer[] = [];
 
 export interface ExperimentalJiraKanbanListRenderContext {
 	agentSessionDropIntent?: JiraListAgentSessionDropIntent;
+	onTrailingContentUnderlapChange: (hasUnderlap: boolean) => void;
+	scrollEndInset: number;
 }
 
 export interface ExperimentalJiraKanbanPageHandle {
@@ -313,6 +315,7 @@ export default function ExperimentalJiraKanbanPage({
 	// closed state — nothing outside the rail could bring it back.
 	const [agentSessionColumnCollapsed, setAgentSessionColumnCollapsed] = useState(defaultAgentSessionColumnCollapsed);
 	const [agentSessionPanelWidthPx, setAgentSessionPanelWidthPx] = useState(AGENT_SESSION_PANEL_WIDTH_PX);
+	const [listContentUnderlapsPanel, setListContentUnderlapsPanel] = useState(false);
 	const [collapsedColumns, setCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
 	const [showUntracked, setShowUntracked] = useState(defaultShowUntracked);
 	const [appliedShowUntrackedDefault, setAppliedShowUntrackedDefault] = useState(defaultShowUntracked);
@@ -882,6 +885,8 @@ export default function ExperimentalJiraKanbanPage({
 					{isListContent ? (
 						renderListContent?.(filteredBoardColumns, {
 							agentSessionDropIntent: boardSessionDrag.listDropIntent,
+							onTrailingContentUnderlapChange: setListContentUnderlapsPanel,
+							scrollEndInset: boardScrollEndInset,
 						})
 					) : (
 						<div className="flex min-h-0 min-w-0 flex-1">
@@ -969,7 +974,7 @@ export default function ExperimentalJiraKanbanPage({
 						onCollapsedChange={setAgentSessionColumnCollapsed}
 						onExpandedWidthChange={setAgentSessionPanelWidthPx}
 						sessionDragging={boardSessionDrag.transaction !== null}
-						showLeadingScrollFade={isListContent}
+						showLeadingScrollFade={isListContent && listContentUnderlapsPanel}
 						topInset={BOARD_HEADER_TAB_STRIP_BOTTOM_PX}
 						untrackedDropArmed={boardSessionDrag.transaction?.target?.kind === "untracked"}
 					/>

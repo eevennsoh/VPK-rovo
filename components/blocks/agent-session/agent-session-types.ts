@@ -70,6 +70,8 @@ export interface AgentSessionProps {
 	 * that never unmounts the list.
 	 */
 	arrivingItemIds?: ReadonlySet<string>;
+	/** Called when a card's one-shot arrival beat reaches its visible resting state. */
+	onArrivalComplete?: (itemId: string) => void;
 	/** Suggested Jira key for the untracked-work flyout. Defaults to `sessionDetails.issueKey`. */
 	getSuggestedWorkItemKey?: (item: AgentSessionItem) => string | undefined;
 	/**

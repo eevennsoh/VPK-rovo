@@ -66,16 +66,23 @@ export function AgentSessionNotchMark({
 	isArriving = false,
 	isHighlighted = false,
 	isNew = false,
+	onArrivalComplete,
 	proximity,
 }: Readonly<{
 	isArriving?: boolean;
 	/** Match the rail notch to a remotely hovered session twin. */
 	isHighlighted?: boolean;
 	isNew?: boolean;
+	onArrivalComplete?: () => void;
 	proximity?: AgentSessionNotchProximity;
 }>) {
 	const shouldReduceMotion = useReducedMotion();
 	const shouldPlayArrival = isArriving && !shouldReduceMotion;
+	const handleArrivalComplete = () => {
+		if (shouldPlayArrival) {
+			onArrivalComplete?.();
+		}
+	};
 	// Hooks cannot be conditional, so a mark with no dock transforms a pointer
 	// that is parked forever: the falloff is a constant zero, the motion values
 	// are never read, and the standalone classes own the paint.
@@ -130,6 +137,7 @@ export function AgentSessionNotchMark({
 					: isNew ? "bg-icon" : "bg-icon-disabled",
 			)}
 			initial={shouldPlayArrival ? { scaleX: 0 } : false}
+			onAnimationComplete={handleArrivalComplete}
 			style={{
 				backgroundColor: proximity === undefined
 					? undefined

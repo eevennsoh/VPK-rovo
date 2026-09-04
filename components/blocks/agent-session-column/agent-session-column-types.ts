@@ -10,7 +10,10 @@ import type { UntrackedWorkTriage } from "@/components/blocks/agent-session/untr
  * on a column it reads as the column surface rather than the inner list.
  * `rowTriage` is omitted because the column builds it.
  */
-export interface AgentSessionColumnProps extends Omit<AgentSessionProps, "className" | "rowTriage"> {
+export interface AgentSessionColumnProps extends Omit<
+	AgentSessionProps,
+	"arrivingItemIds" | "className" | "onArrivalComplete" | "rowTriage"
+> {
 	/** Additional classes applied to the column surface. */
 	className?: string;
 	/** Classes applied to the inner session list. */

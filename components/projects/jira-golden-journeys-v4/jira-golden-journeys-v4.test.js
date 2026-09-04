@@ -466,10 +466,18 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(PAGE_SOURCE, /activeView=\{activeView\}/u);
 	assert.match(PAGE_SOURCE, /const tabOwnsView = activeTab\?\.view !== undefined;/u);
 	assert.match(PAGE_SOURCE, /onViewChange=\{tabOwnsView \? undefined : setWorkItemView\}/u);
-	assert.match(PAGE_SOURCE, /renderListContent=\{\(columns, \{ agentSessionDropIntent \}\) =>/u);
+	assert.match(
+		PAGE_SOURCE,
+		/renderListContent=\{\(\s*columns,\s*\{\s*agentSessionDropIntent,\s*onTrailingContentUnderlapChange,\s*scrollEndInset,\s*\},\s*\) =>/u,
+	);
 	assert.match(PAGE_SOURCE, /useJiraGoldenJourneysV4List/u);
-	assert.match(PAGE_SOURCE, /<JiraList \{\.\.\.listProps\}/u);
+	assert.match(PAGE_SOURCE, /<JiraList\s+\{\.\.\.listProps\}/u);
 	assert.match(PAGE_SOURCE, /agentSessionDropIntent=\{agentSessionDropIntent\}/u);
+	assert.match(
+		PAGE_SOURCE,
+		/onTrailingContentUnderlapChange=\{onTrailingContentUnderlapChange\}/u,
+	);
+	assert.match(PAGE_SOURCE, /scrollEndInset=\{scrollEndInset\}/u);
 	assert.match(PAGE_SOURCE, /onListAgentSessionCreate=\{handleListAgentSessionCreate\}/u);
 	assert.match(PAGE_SOURCE, /createFromAgentSession/u);
 	assert.match(PAGE_SOURCE, /consumeDetachedAgentSession/u);
@@ -484,11 +492,11 @@ test("the Work items header switches between Board and List views with their ico
 	);
 	assert.match(
 		PAGE_SOURCE,
-		/className="min-h-0 flex-1 overflow-hidden p-4 md:p-5"[\s\S]*<JiraList \{\.\.\.listProps\}/u,
+		/className="min-h-0 flex-1 overflow-hidden p-4 md:p-5"[\s\S]*<JiraList\s+\{\.\.\.listProps\}/u,
 	);
 	assert.doesNotMatch(
 		PAGE_SOURCE,
-		/overflow-auto p-4 md:p-5"[\s\S]*<JiraList \{\.\.\.listProps\}/u,
+		/overflow-auto p-4 md:p-5"[\s\S]*<JiraList\s+\{\.\.\.listProps\}/u,
 	);
 	// Drag handles only portal when onMoveRow is set. A display-only JiraList
 	// (rows + counts, no capability callbacks) is what hid rearrange on hover.
@@ -658,8 +666,12 @@ test("the Panel design variant floats untracked work over the board and the list
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/showLeadingScrollFade=\{isListContent\}/u,
-		"only the List view asks the panel for a scroll underlap fade",
+		/showLeadingScrollFade=\{isListContent && listContentUnderlapsPanel\}/u,
+		"the List view only asks for a fade while real content still underlaps the panel",
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/onTrailingContentUnderlapChange: setListContentUnderlapsPanel,\s*scrollEndInset: boardScrollEndInset,/u,
 	);
 	assert.match(PANEL_SOURCE, /showLeadingScrollFade\?: boolean;/u);
 	assert.match(

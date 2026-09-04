@@ -2,11 +2,13 @@
 
 import {
 	Fragment,
+	useCallback,
 	useId,
 	useMemo,
 	useState,
 	type KeyboardEvent as ReactKeyboardEvent,
 	type PointerEvent as ReactPointerEvent,
+	type RefCallback,
 } from "react";
 import {
 	DndContext,
@@ -108,6 +110,7 @@ import {
 	JiraListSortableRow,
 	RowBoundaryCreateControls,
 } from "@/components/blocks/jira-list/jira-list-rows";
+import { useJiraListHorizontalUnderlap } from "@/components/blocks/jira-list/use-jira-list-horizontal-underlap";
 
 const ISSUE_TYPE_OPTIONS: readonly {
 	label: string;
@@ -157,13 +160,25 @@ export function JiraList({
 	onStatusChange,
 	onToggleExpand,
 	agentSessionDropIntent,
+	onTrailingContentUnderlapChange,
+	scrollEndInset = 0,
 }: Readonly<JiraListProps>) {
 	const insertionAnchorId = useId().replaceAll(":", "");
 	const {
-		ref: tableScrollRef,
+		ref: verticalOverflowRef,
 		showBottomScrollMask,
 		showTopScrollMask,
 	} = useHasVerticalOverflow<HTMLDivElement>();
+	const {
+		ref: horizontalUnderlapRef,
+	} = useJiraListHorizontalUnderlap<HTMLDivElement>(
+		scrollEndInset,
+		onTrailingContentUnderlapChange,
+	);
+	const tableScrollRef = useCallback<RefCallback<HTMLDivElement>>((node) => {
+		verticalOverflowRef(node);
+		horizontalUnderlapRef(node);
+	}, [horizontalUnderlapRef, verticalOverflowRef]);
 	const rowIds = useMemo(() => rows.map((row) => row.issueKey), [rows]);
 	const sensors = useSensors(
 		useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -536,6 +551,10 @@ export function JiraList({
 					data-testid="jira-list-table-scroll"
 					ref={tableScrollRef}
 				>
+					<div
+						className="flex min-w-full items-start"
+						data-testid="jira-list-horizontal-content"
+					>
 					<DndContext
 						collisionDetection={closestCenter}
 						modifiers={[restrictToVerticalAxis]}
@@ -547,7 +566,7 @@ export function JiraList({
 					>
 					<Table
 					className="min-w-[1570px] table-fixed border-separate border-spacing-0"
-					containerClassName="overflow-visible"
+					containerClassName="min-w-[1570px] shrink-0 overflow-visible"
 					>
 					<colgroup>
 						<col className="w-10" />
@@ -704,6 +723,13 @@ export function JiraList({
 					</TableBody>
 					</Table>
 					</DndContext>
+						<div
+							aria-hidden
+							className="shrink-0 self-stretch"
+							data-testid="jira-list-scroll-end-inset"
+							style={{ width: scrollEndInset }}
+						/>
+					</div>
 				</div>
 				{showTopScrollMask ? (
 					<ScrollMaskEdgeOverlay

@@ -133,4 +133,10 @@ export interface JiraListProps {
 	onStatusChange?: (issueKey: string, status: JiraListStatusOption) => void;
 	onToggleExpand?: (issueKey: string) => void;
 	agentSessionDropIntent?: JiraListAgentSessionDropIntent;
+	/**
+	 * Scroll room after the table, used when a docked trailing surface overlaps
+	 * the list viewport.
+	 */
+	scrollEndInset?: number;
+	onTrailingContentUnderlapChange?: (hasUnderlap: boolean) => void;
 }
