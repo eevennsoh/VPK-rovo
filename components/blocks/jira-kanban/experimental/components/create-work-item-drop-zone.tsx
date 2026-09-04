@@ -11,6 +11,8 @@ import type { MagneticPointerRelation } from "@/components/ui-custom/hooks/magne
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
+import { useExclusiveCreateWellProximity } from "./create-work-item-exclusive-proximity-context";
+import { CREATE_WORK_ITEM_PROXIMITY_HOVER_AREA_PX } from "../lib/create-work-item-exclusive-proximity";
 import type { BoardAgentSessionDrag } from "../use-board-agent-session-drag";
 
 export function BoardColumnCreateAction({
@@ -65,35 +67,46 @@ function CreateWorkItemDropZone({
 	title: string;
 }>) {
 	const targetRef = useRef<HTMLDivElement>(null);
-	const magnet = useMagneticProximity(targetRef);
-	const [proximity, setProximity] = useState<MagneticPointerRelation>("outside");
-	useMotionValueEvent(magnet.proximity, "change", setProximity);
+	const magnet = useMagneticProximity(targetRef, {
+		hoverArea: CREATE_WORK_ITEM_PROXIMITY_HOVER_AREA_PX,
+	});
+	const [rawProximity, setRawProximity] = useState<MagneticPointerRelation>("outside");
+	useMotionValueEvent(magnet.proximity, "change", setRawProximity);
+	const isExclusiveWinner = useExclusiveCreateWellProximity(title, targetRef);
+	const proximity = isExclusiveWinner ? rawProximity : "outside";
 	const expanded = proximity !== "outside";
 
 	return (
 		<motion.div
 			className="w-full will-change-transform"
-			style={{ x: magnet.x, y: magnet.y }}
+			style={{
+				x: isExclusiveWinner ? magnet.x : 0,
+				y: isExclusiveWinner ? magnet.y : 0,
+			}}
 		>
 			<div
 				aria-label={`${label} in ${title}${armed ? ", selected drop target" : ""}`}
 				className={cn(
 					"flex w-full select-none items-center justify-center rounded-lg border border-dashed px-3 text-center",
 					"transition-[height,background-color] duration-normal ease-out-practical motion-reduce:transition-none",
-					expanded ? "h-12 text-sm leading-5" : "h-6 text-xs leading-4",
-					armed ? "border-border-selected bg-bg-selected text-text-selected" : "border-border text-text-subtlest",
+					expanded ? "h-16 text-sm leading-5" : "h-6 text-xs leading-4",
+					armed ? "border-border-selected bg-bg-selected text-text-selected" : "border-border bg-surface text-text-subtlest",
 				)}
 				data-armed={armed || undefined}
 				data-board-agent-session-column-title={title}
 				data-board-agent-session-create-work-item-drop-zone={title}
 				data-board-agent-session-drop-zone="create"
+				data-exclusive-winner={isExclusiveWinner || undefined}
 				data-proximity={proximity}
 				ref={targetRef}
 				role="img"
 			>
 				<motion.span
 					className="inline-block will-change-transform"
-					style={{ x: magnet.labelX, y: magnet.labelY }}
+					style={{
+						x: isExclusiveWinner ? magnet.labelX : 0,
+						y: isExclusiveWinner ? magnet.labelY : 0,
+					}}
 				>
 					{label}
 				</motion.span>

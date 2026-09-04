@@ -26,6 +26,12 @@ const EXPERIMENTAL_CARD_SOURCE = readProjectFile(
 const CREATE_WORK_ITEM_DROP_ZONE_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/components/create-work-item-drop-zone.tsx",
 );
+const CREATE_WORK_ITEM_EXCLUSIVE_PROXIMITY_SOURCE = readProjectFile(
+	"components/blocks/jira-kanban/experimental/lib/create-work-item-exclusive-proximity.ts",
+);
+const CREATE_WORK_ITEM_EXCLUSIVE_PROXIMITY_CONTEXT_SOURCE = readProjectFile(
+	"components/blocks/jira-kanban/experimental/components/create-work-item-exclusive-proximity-context.tsx",
+);
 const PANEL_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/components/agent-session-panel.tsx",
 );
@@ -272,11 +278,16 @@ test("both design variations reveal compact magnetic create targets that expand 
 	);
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
-		/expanded \? "h-12 text-sm leading-5" : "h-6 text-xs leading-4"/u,
+		/expanded \? "h-16 text-sm leading-5" : "h-6 text-xs leading-4"/u,
 	);
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
-		/armed \? "border-border-selected bg-bg-selected text-text-selected" : "border-border text-text-subtlest"/u,
+		/armed \? "border-border-selected bg-bg-selected text-text-selected" : "border-border bg-surface text-text-subtlest"/u,
+	);
+	assert.doesNotMatch(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/bg-\[var\(--ds-|transparent|bg-transparent/u,
+		"create wells must use an opaque semantic surface fill, not a raw token or transparent hole",
 	);
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
@@ -287,16 +298,44 @@ test("both design variations reveal compact magnetic create targets that expand 
 		/<BoardColumnCreateAction[\s\S]*dropZoneLabel=\{createWorkItemDropZoneLabel\}[\s\S]*sessionDragTransaction=\{sessionDragTransaction\}[\s\S]*title=\{title\}/u,
 	);
 	assert.match(
+		CREATE_WORK_ITEM_EXCLUSIVE_PROXIMITY_SOURCE,
+		/export const CREATE_WORK_ITEM_PROXIMITY_HOVER_AREA_PX = 120;/u,
+	);
+	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
 		/import \{ useMagneticProximity \} from "@\/components\/ui-custom\/hooks\/use-magnetic-proximity";/u,
 	);
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
-		/const magnet = useMagneticProximity\(targetRef\);/u,
+		/import \{ useExclusiveCreateWellProximity \} from "\.\/create-work-item-exclusive-proximity-context";/u,
 	);
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
-		/useMotionValueEvent\(magnet\.proximity, "change", setProximity\);/u,
+		/const magnet = useMagneticProximity\(targetRef, \{\s*hoverArea: CREATE_WORK_ITEM_PROXIMITY_HOVER_AREA_PX,\s*\}\);/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/useMotionValueEvent\(magnet\.proximity, "change", setRawProximity\);/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/const isExclusiveWinner = useExclusiveCreateWellProximity\(title, targetRef\);/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/const proximity = isExclusiveWinner \? rawProximity : "outside";/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_EXCLUSIVE_PROXIMITY_SOURCE,
+		/export function resolveExclusiveProximityWinner\(/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_EXCLUSIVE_PROXIMITY_CONTEXT_SOURCE,
+		/resolveExclusiveProximityWinner\(/u,
+	);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/<ExclusiveCreateWellProximityProvider>[\s\S]*\{boardColumns\.map\(/u,
 	);
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
@@ -304,7 +343,7 @@ test("both design variations reveal compact magnetic create targets that expand 
 	);
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
-		/<motion\.div[\s\S]*style=\{\{ x: magnet\.x, y: magnet\.y \}\}[\s\S]*ref=\{targetRef\}[\s\S]*<motion\.span[\s\S]*style=\{\{ x: magnet\.labelX, y: magnet\.labelY \}\}/u,
+		/<motion\.div[\s\S]*x: isExclusiveWinner \? magnet\.x : 0,[\s\S]*ref=\{targetRef\}[\s\S]*<motion\.span[\s\S]*x: isExclusiveWinner \? magnet\.labelX : 0,/u,
 	);
 	assert.match(CREATE_WORK_ITEM_DROP_ZONE_SOURCE, /data-board-agent-session-drop-zone="create"/u);
 	assert.match(
