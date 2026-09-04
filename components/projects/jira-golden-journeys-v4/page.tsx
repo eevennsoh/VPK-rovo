@@ -14,7 +14,7 @@ import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/bloc
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
 import { isPulseAgentSession, type PulseLooseWork } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { linkJiraKanbanAgentSession, moveJiraKanbanAgentSession, unlinkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
-import { JiraList, type JiraListAssignedAgent } from "@/components/blocks/jira-list";
+import { JiraList, type JiraListAssignedAgent, type JiraListInsertion } from "@/components/blocks/jira-list";
 import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { useDesignVariation } from "@/components/hooks/use-design-variation";
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
@@ -165,7 +165,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 			issueSummary: card.title,
 		});
 	}, [boardColumns, handleViewChat, handleViewCompletedRun, openAgentChat]);
-	const { getProps: getListProps } = useJiraGoldenJourneysV4List({
+	const { createFromAgentSession, getProps: getListProps } = useJiraGoldenJourneysV4List({
 		boardColumns,
 		onAssignedAgentSelect: handleListAssignedAgentSelect,
 		setBoardColumns,
@@ -189,7 +189,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 		});
 		setBoardColumns((columns) => unlinkJiraKanbanAgentSession(columns, card.code, session.id));
 	}, []);
-	const handleAgentSessionLink = useCallback((session: AgentSessionItem, card: JiraKanbanCardData) => {
+	const consumeDetachedAgentSession = useCallback((session: AgentSessionItem) => {
 		const activity = detachedActivitiesByIdRef.current[session.id]
 			?? toJiraIssueDemoAttachedActivity(session);
 		if (session.id in detachedActivitiesByIdRef.current) {
@@ -211,8 +211,23 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 			}
 			return changed ? next : current;
 		});
-		setBoardColumns((columns) => linkJiraKanbanAgentSession(columns, card.code, activity));
+		return activity;
 	}, []);
+	const handleAgentSessionLink = useCallback((session: AgentSessionItem, card: JiraKanbanCardData) => {
+		const activity = consumeDetachedAgentSession(session);
+		setBoardColumns((columns) => linkJiraKanbanAgentSession(columns, card.code, activity));
+	}, [consumeDetachedAgentSession]);
+	const handleListAgentSessionCreate = useCallback((
+		session: AgentSessionItem,
+		insertion: JiraListInsertion,
+	) => {
+		const activity = consumeDetachedAgentSession(session);
+		createFromAgentSession({
+			activity,
+			insertion,
+			session,
+		});
+	}, [consumeDetachedAgentSession, createFromAgentSession]);
 	const handleAgentSessionMove = useCallback((
 		session: JiraIssueAgentSessionRef,
 		sourceCard: JiraKanbanCardData,
@@ -259,14 +274,15 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						onCardAgentSessionLink={handleAgentSessionLink}
 						onCardAgentSessionMove={handleAgentSessionMove}
 						onCardAgentSessionUnlink={handleAgentSessionUnlink}
+						onListAgentSessionCreate={handleListAgentSessionCreate}
 						showAgentSessionUnlinkWell={designVariation !== "team-eu"}
 						onResumeLooseWork={handleResumeLooseWork}
 						onViewChange={tabOwnsView ? undefined : setWorkItemView}
-						renderListContent={(columns) => {
+						renderListContent={(columns, { agentSessionDropIntent }) => {
 							const listProps = getListProps(columns);
 							return (
 								<div className="min-h-0 flex-1 overflow-hidden p-4 md:p-5">
-									<JiraList {...listProps} />
+									<JiraList {...listProps} agentSessionDropIntent={agentSessionDropIntent} />
 								</div>
 							);
 						}}
