@@ -598,7 +598,7 @@ test("the Panel design variant floats untracked work over the board and the list
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/agentSessionColumn=\{agentSessionPresentation === "panel"\s*\?\s*undefined\s*:\s*agentSessionColumnConfig\}/u,
+		/agentSessionColumn=\{agentSessionPresentation === "panel"\s*\|\| agentSessionColumnConfig === undefined\s*\?\s*undefined\s*:\s*\{/u,
 		"panel mode must suppress the in-flow column so the two presentations cannot coexist",
 	);
 	// Insights swaps the whole content region for an article, and a tab with no
@@ -640,7 +640,7 @@ test("the Panel design variant floats untracked work over the board and the list
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/<AgentSessionPanel\s+agentSessionColumn=\{\{\s*\.\.\.agentSessionColumnConfig,\s*sessionDrag: boardSessionDrag\.untrackedBinding,\s*\}\}/u,
+		/<AgentSessionPanel\s+agentSessionColumn=\{\{\s*\.\.\.agentSessionColumnConfig,\s*draggingIds: boardSessionDrag\.draggingIds,\s*sessionDrag: boardSessionDrag\.untrackedBinding,\s*\}\}/u,
 		"the panel is controlled: its collapse state is the same state the in-flow column uses",
 	);
 	assert.match(

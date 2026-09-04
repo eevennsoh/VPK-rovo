@@ -16,6 +16,7 @@ import {
 
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Icon } from "@/components/ui/icon"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
 type PanelActionIcon = ComponentType<NewCoreIconProps>
@@ -81,6 +82,7 @@ interface PanelActionProps
 	spacing?: "default" | "compact"
 	target?: string
 	testId?: string
+	tooltip?: ReactNode
 }
 
 interface PanelActionCloseProps
@@ -346,6 +348,17 @@ function panelButtonVariant(appearance: PanelActionProps["appearance"]) {
 	return "ghost"
 }
 
+function wrapPanelActionTooltip(action: ReactNode, tooltip: ReactNode) {
+	return (
+		<Tooltip>
+			<TooltipTrigger render={<span className="inline-flex" />}>
+				{action}
+			</TooltipTrigger>
+			<TooltipContent>{tooltip}</TooltipContent>
+		</Tooltip>
+	)
+}
+
 function PanelAction({
 	appearance = "subtle",
 	children,
@@ -358,6 +371,7 @@ function PanelAction({
 	spacing = "default",
 	target,
 	testId,
+	tooltip,
 	...props
 }: Readonly<PanelActionProps>) {
 	const iconOnly = Boolean(IconComponent)
@@ -367,37 +381,33 @@ function PanelAction({
 			: "icon"
 		: "compact"
 
-	if (href) {
-		return (
-			<a
-				data-slot="panel-action"
-				data-testid={testId}
-				aria-label={iconOnly ? label ?? props["aria-label"] : props["aria-label"]}
-				href={href}
-				onClick={onClick}
-				rel={rel}
-				target={target}
-				className={cn(
-					buttonVariants({ variant: panelButtonVariant(appearance), size }),
-					className
-				)}
-				{...(props as ComponentProps<"a">)}
-			>
-				{IconComponent ? (
-					<Icon
-						render={
-							<IconComponent label="" color="currentColor" />
-						}
-						aria-hidden
-					/>
-				) : (
-					children
-				)}
-			</a>
-		)
-	}
-
-	return (
+	const action = href ? (
+		<a
+			data-slot="panel-action"
+			data-testid={testId}
+			aria-label={iconOnly ? label ?? props["aria-label"] : props["aria-label"]}
+			href={href}
+			onClick={onClick}
+			rel={rel}
+			target={target}
+			className={cn(
+				buttonVariants({ variant: panelButtonVariant(appearance), size }),
+				className
+			)}
+			{...(props as ComponentProps<"a">)}
+		>
+			{IconComponent ? (
+				<Icon
+					render={
+						<IconComponent label="" color="currentColor" />
+					}
+					aria-hidden
+				/>
+			) : (
+				children
+			)}
+		</a>
+	) : (
 		<Button
 			data-slot="panel-action"
 			data-testid={testId}
@@ -420,6 +430,8 @@ function PanelAction({
 			)}
 		</Button>
 	)
+
+	return tooltip === undefined ? action : wrapPanelActionTooltip(action, tooltip)
 }
 
 function PanelActionBack({

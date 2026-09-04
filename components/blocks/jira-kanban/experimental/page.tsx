@@ -893,8 +893,12 @@ export default function ExperimentalJiraKanbanPage({
 								// Panel mode hands the column to the overlay instead, so
 								// the two presentations can never render at once.
 								agentSessionColumn={agentSessionPresentation === "panel"
+									|| agentSessionColumnConfig === undefined
 									? undefined
-									: agentSessionColumnConfig}
+									: {
+										...agentSessionColumnConfig,
+										draggingIds: boardSessionDrag.draggingIds,
+									}}
 								scrollEndInset={boardScrollEndInset}
 								proximityAgentSession={{
 									actionableSessionIds: proximityActionableSessionIds,
@@ -963,6 +967,7 @@ export default function ExperimentalJiraKanbanPage({
 					<AgentSessionPanel
 						agentSessionColumn={{
 							...agentSessionColumnConfig,
+							draggingIds: boardSessionDrag.draggingIds,
 							sessionDrag: boardSessionDrag.untrackedBinding,
 						}}
 						collapsed={agentSessionColumnCollapsed}
