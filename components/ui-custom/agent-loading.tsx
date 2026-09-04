@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useReducedMotion } from "motion/react";
 
 import {
 	AgentAvatarVisual,
@@ -13,6 +12,7 @@ import {
 	shouldCycleAgentLoading,
 	type AgentLoadingStatus,
 } from "@/components/ui-custom/agent-loading-model";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 
 const AGENT_LOADING_HOLD_MS = 2_000;
@@ -93,7 +93,7 @@ export function AgentLoading({
 	announce = true,
 	className,
 }: Readonly<AgentLoadingProps>) {
-	const reduceMotion = useReducedMotion();
+	const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
 	const [frontAgentId, setFrontAgentId] = useState<string | null>(
 		() => agents[0]?.id ?? null,
 	);
@@ -117,7 +117,13 @@ export function AgentLoading({
 	}, [agents]);
 
 	useEffect(() => {
-		if (!canCycle) return undefined;
+		// Reduced motion can interrupt a swap mid-flight. Clearing the latch here
+		// keeps `isSwapping` from resurfacing the half-applied swapped layout when
+		// motion is re-enabled before a new swap timer exists.
+		if (!canCycle) {
+			setActiveSwapKey(null);
+			return undefined;
+		}
 
 		let holdTimer = 0;
 		let swapTimer = 0;
