@@ -43,6 +43,9 @@ test("Experimental board header opens the production View picker without changin
 	);
 	// Trigger reads as the configure affordance Jira uses for View settings.
 	assert.match(viewMenu, /import CustomizeIcon from "@atlaskit\/icon\/core\/customize"/u);
+	assert.match(viewMenu, /import AiAgentIcon from "@atlaskit\/icon\/core\/ai-agent"/u);
+	assert.match(viewMenu, /import DevicesIcon from "@atlaskit\/icon\/core\/devices"/u);
+	assert.match(viewMenu, /import CloudIcon from "@atlaskit\/icon-lab\/core\/cloud"/u);
 	assert.match(viewMenu, /render=\{<CustomizeIcon label="" \/>\}/u);
 	// ...and it is the ONLY place that glyph appears in the control row. The
 	// header's old board-settings button did the same job and rendered the same
@@ -127,6 +130,12 @@ test("Experimental board header opens the production View picker without changin
 		viewOptions,
 		/"Working"[\s\S]*"Needs input"[\s\S]*"Finished"[\s\S]*"Untracked"/u,
 	);
+	assert.match(
+		viewOptions,
+		/"All"[\s\S]*"Cloud"[\s\S]*"Local"/u,
+	);
+	assert.match(viewOptions, /export const BOARD_AGENT_HOST_DEFAULT_ID: BoardAgentHostId = "all"/u);
+	assert.match(viewOptions, /return `Show \$\{hostId\} agents`/u);
 	// Untracked is the absence of a session, so the shared submenu draws a
 	// divider above any row that opts in with `separatorBefore`.
 	assert.match(
@@ -212,7 +221,7 @@ test("Experimental board header opens the production View picker without changin
 	// A single-section submenu is already named by its sub-trigger, so it carries
 	// no group label — the name moves to `aria-label` so the radio group keeps an
 	// accessible name.
-	for (const label of ["Hide done work items after", "Column size"]) {
+	for (const label of ["Hide done work items after", "Column size", "Show agents"]) {
 		assert.doesNotMatch(
 			viewMenu,
 			new RegExp(`<DropdownMenuLabel>${label}</DropdownMenuLabel>`, "u"),
@@ -228,7 +237,35 @@ test("Experimental board header opens the production View picker without changin
 	// Ticks sit at the trailing edge so every label left-aligns flush.
 	assert.equal(
 		viewMenu.match(/indicatorPlacement="end"/gu).length,
-		4,
+		5,
 		"every radio and checkbox list should place its indicator at the end",
 	);
+	// Host scope is its own section above Untracked: a nested All / Cloud / Local
+	// picker whose trigger label follows the selection.
+	assert.match(viewMenu, /index === firstSeparatedIndex \? children : null/u);
+	assert.match(
+		viewMenu,
+		/<VisibilityToggleSubmenu[\s\S]*label="Agent"[\s\S]*options=\{BOARD_AGENT_STATE_OPTIONS\}[\s\S]*>\s*<DropdownMenuSeparator \/>\s*<AgentHostFilterSubmenu/u,
+	);
+	assert.match(viewMenu, /const hostIcon = AGENT_HOST_ICONS\[hostId\]/u);
+	assert.match(
+		viewMenu,
+		/<DropdownMenuSubTrigger>\s*<MenuLeadingIcon icon=\{hostIcon\} \/>\s*\{boardAgentHostFilterLabel\(hostId\)\}/u,
+	);
+	assert.match(viewMenu, /function MenuLeadingIcon\(/u);
+	assert.match(viewMenu, /size="small"/u);
+	assert.match(viewMenu, /className="size-3 \[&_svg\]:size-3!"/u);
+	assert.equal(
+		viewMenu.match(/<MenuLeadingIcon icon=\{/gu).length,
+		3,
+		"PR, Agent, and host-scope rows should share the 12px leading icon",
+	);
+	assert.match(viewMenu, /useState<BoardAgentHostId>\(BOARD_AGENT_HOST_DEFAULT_ID\)/u);
+	assert.match(viewMenu, /BOARD_AGENT_HOST_OPTIONS\.map/u);
+	assert.match(viewMenu, /aria-label="Show agents"/u);
+	const hostIcons = viewMenu.match(/const AGENT_HOST_ICONS = \{[\s\S]*?\} as const satisfies Record</u);
+	assert.ok(hostIcons, "AGENT_HOST_ICONS should be a Record keyed by the host id union");
+	assert.match(hostIcons[0], /all: \{ glyph: AiAgentIcon, color: token\("color\.icon\.subtle"\) \}/u);
+	assert.match(hostIcons[0], /cloud: \{ glyph: CloudIcon, color: token\("color\.icon\.subtle"\) \}/u);
+	assert.match(hostIcons[0], /local: \{ glyph: DevicesIcon, color: token\("color\.icon\.subtle"\) \}/u);
 });
