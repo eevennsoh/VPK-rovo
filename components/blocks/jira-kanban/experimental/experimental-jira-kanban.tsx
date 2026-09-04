@@ -50,6 +50,8 @@ import {
 	BoardColumnResizeButton,
 	CollapsedBoardColumn,
 } from "./components/collapsed-board-column";
+import { BoardColumnCreateAction } from "./components/create-work-item-drop-zone";
+import { ExclusiveCreateWellProximityProvider } from "./components/create-work-item-exclusive-proximity-context";
 import { BOARD_COLUMN_ACTION_REVEAL } from "./lib/board-column-action-reveal";
 import {
 	EMPTY_COLLAPSED_BOARD_COLUMNS,
@@ -91,6 +93,12 @@ import type {
 export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	/**
+	 * Replaces each status column's resting create button with a visible drop
+	 * target while an agent session is being dragged. The owning route supplies
+	 * the copy so this shared board stays variation-agnostic.
+	 */
+	createWorkItemDropZoneLabel?: string;
+	/**
 	 * Trailing scroll inset in px, added to the scrollable content rather than to
 	 * the scrollport.
 	 *
@@ -110,6 +118,11 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 		card: JiraKanbanCardData,
 		columnTitle: string,
 	) => void;
+	/**
+	 * Dashed "Drag here to unlink" well under a card. Defaults on. A host can
+	 * keep chin drag and click-unlink without mounting that well.
+	 */
+	showAgentSessionUnlinkWell?: boolean;
 	onCardAgentSessionLink?: (
 		session: AgentSessionItem,
 		card: JiraKanbanCardData,
@@ -352,18 +365,22 @@ function BoardColumn({
 	assignedAgentIds,
 	children,
 	count,
+	createWorkItemDropZoneLabel,
 	onCollapse,
 	onCreateAgent,
 	onToggleAgent,
+	sessionDragTransaction,
 	title,
 }: Readonly<{
 	agents?: readonly JiraKanbanAgentData[];
 	assignedAgentIds: readonly string[];
 	children: ReactNode;
 	count: number;
+	createWorkItemDropZoneLabel?: string;
 	onCollapse: () => void;
 	onCreateAgent?: (columnTitle: string) => void;
 	onToggleAgent?: (agentId: string) => void;
+	sessionDragTransaction: BoardAgentSessionDrag["transaction"];
 	title: string;
 }>) {
 	const showAgentAssignment = Boolean(agents?.length && onCreateAgent && onToggleAgent);
@@ -442,22 +459,11 @@ function BoardColumn({
 				{children}
 			</div>
 
-			<div className="w-full" style={{ paddingBlock: token("space.050") }}>
-				<Button
-					aria-label={`Create in ${title}`}
-					className={cn(
-						"w-full",
-						"pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical",
-						"group-hover/board-column:pointer-events-auto group-hover/board-column:opacity-100",
-						"group-has-[:focus-visible]/board-column:pointer-events-auto group-has-[:focus-visible]/board-column:opacity-100",
-						"motion-reduce:transition-none",
-					)}
-					size="compact"
-					variant="outline"
-				>
-					<Icon render={<AddIcon label="" size="small" />} />
-				</Button>
-			</div>
+			<BoardColumnCreateAction
+				dropZoneLabel={createWorkItemDropZoneLabel}
+				sessionDragTransaction={sessionDragTransaction}
+				title={title}
+			/>
 		</div>
 	);
 }
@@ -603,6 +609,7 @@ function ExperimentalJiraKanbanView({
 	cardGenerativeActionPresentation = "sparkle",
 	cardMoveAnimation,
 	collapsedColumns: controlledCollapsedColumns,
+	createWorkItemDropZoneLabel,
 	detachedAgentSessionsByCard,
 	draggedCardCode = null,
 	selectedCardCodes,
@@ -617,6 +624,7 @@ function ExperimentalJiraKanbanView({
 	onCardAgentSessionLink,
 	onCardAgentSessionMove,
 	onCardAgentSessionUnlink,
+	showAgentSessionUnlinkWell = true,
 	onCardAgentDoneRunReview,
 	onCardAgentDoneRunView,
 	onCreateAgent,
@@ -833,7 +841,7 @@ function ExperimentalJiraKanbanView({
 							onItemHover={handleSessionHover}
 							onSelectedItemIdChange={handleSessionSelectionChange}
 							onView={handleSessionView}
-							sessionDrag={boardSessionDrag.enabled
+							sessionDrag={boardSessionDrag.enablement.transferable
 								? boardSessionDrag.untrackedBinding
 								: agentSessionColumn.sessionDrag}
 						/>
@@ -863,6 +871,7 @@ function ExperimentalJiraKanbanView({
 								agentSessionColumn ? "ps-2" : "ps-6",
 							)}
 						>
+						<ExclusiveCreateWellProximityProvider>
 						<div className="flex min-h-full flex-1 items-stretch gap-2">
 						{boardColumns.map((column) => (
 						<BoardColumnShell
@@ -880,6 +889,7 @@ function ExperimentalJiraKanbanView({
 								agents={agents}
 								assignedAgentIds={assignedAgentIdsByColumn[column.title] ?? []}
 								count={column.cards.length}
+								createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
 								onCollapse={handleCollapseColumn}
 								onCreateAgent={onCreateAgent}
 								onToggleAgent={
@@ -887,6 +897,7 @@ function ExperimentalJiraKanbanView({
 										? (agentId) => onToggleColumnAgent(column.title, agentId)
 										: undefined
 								}
+								sessionDragTransaction={boardSessionDrag.transaction}
 								title={column.title}
 							>
 								{column.cards.map((card, cardIndex) => {
@@ -983,6 +994,7 @@ function ExperimentalJiraKanbanView({
 											onSessionLink={onCardAgentSessionLink}
 												onSessionUnlink={onCardAgentSessionUnlink}
 												onSubtasks={proximityActions.onSubtasks}
+												showUnlinkWell={showAgentSessionUnlinkWell}
 												selected={isSelected}
 											/>
 											</motion.div>
@@ -995,6 +1007,7 @@ function ExperimentalJiraKanbanView({
 						))}
 						<BoardAddColumnButton />
 						</div>
+						</ExclusiveCreateWellProximityProvider>
 						{/* Trailing gutter. It also absorbs `scrollEndInset`: the outer
 						    `w-max min-w-full` box is clamped to the scrollport by its
 						    min-width, so padding it moves nothing — the scroll extent
@@ -1041,6 +1054,7 @@ function ExperimentalJiraKanbanOwned(props: Readonly<ExperimentalJiraKanbanProps
 	const boardSessionDrag = useBoardAgentSessionDrag({
 		boardColumns: props.boardColumns,
 		detachedSessionsByCard: props.detachedAgentSessionsByCard,
+		onCreate: props.proximityAgentSession?.onCreateWorkItem,
 		onLink: props.onCardAgentSessionLink,
 		onMove: props.onCardAgentSessionMove,
 		onUnlink: props.onCardAgentSessionUnlink,

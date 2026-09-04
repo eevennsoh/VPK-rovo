@@ -234,7 +234,10 @@ test("Jira issue session transfer well opens on a linked chin row, not a detache
 	);
 	assert.match(AGENT_ACTIVITY_SOURCE, /data-session-chin=""/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /data-slot="jira-issue-agent-row"/u);
-	assert.match(TRANSFER_SOURCE, /const showUnlinkWell = !isLinking && Boolean\(config\.onUnlink\);/u);
+	assert.match(
+		TRANSFER_SOURCE,
+		/const showUnlinkWell = !isLinking\s*\n\s*&& Boolean\(config\.onUnlink\)\s*\n\s*&& config\.showUnlinkWell !== false;/u,
+	);
 });
 
 test("Jira issue session transfer drop zone is a labelled rounded dashed target, not a button", () => {
@@ -279,12 +282,16 @@ test("Jira issue session transfer motion honours reduced motion at every layer",
 	// CSS transitions on the region and the zones.
 	assert.match(TRANSFER_SOURCE, /const TRANSFER_REVEAL_CLASS =[\s\S]*motion-reduce:transition-none/u);
 	assert.match(TRANSFER_SOURCE, /const TRANSFER_ZONE_BASE_CLASS =[\s\S]*motion-reduce:transition-none"/u);
-	// The magnet hook gates itself rather than pushing the decision onto callers,
-	// and pins both motion values to 0 when reduced motion is on.
+	// The magnet hook pins translation to 0 under reduced motion while retaining
+	// pointer relation state for non-motion feedback such as selected colors.
 	assert.match(MAGNETIC_PROXIMITY_SOURCE, /const shouldReduceMotion = useReducedMotion\(\);/u);
 	assert.match(
 		MAGNETIC_PROXIMITY_SOURCE,
-		/if \(shouldReduceMotion\) \{\s*\n\s*magnetX\.set\(0\);\s*\n\s*magnetY\.set\(0\);\s*\n\s*return;\s*\n\s*\}/u,
+		/const reset = \(\) => \{[\s\S]*magnetX\.set\(0\);\s*\n\s*magnetY\.set\(0\);\s*\n\s*\};[\s\S]*if \(shouldReduceMotion\) reset\(\);/u,
+	);
+	assert.match(
+		MAGNETIC_PROXIMITY_SOURCE,
+		/if \(nextProximity !== "outside" && !shouldReduceMotion\) \{/u,
 	);
 	assert.match(MAGNETIC_PROXIMITY_SOURCE, /shouldReduceMotion,\s*targetRef,?\s*\]\);/u);
 	// A pointer drag must not fight Motion's layout projection.
@@ -398,6 +405,7 @@ test("Jira issue splits the finished review chin into one row per completed run"
 	assert.match(COMPLETED_RUNS_SOURCE, /layout = "merged",/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /layout\?: JiraIssueAgentActivityLayout;/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /if \(layout === "split"\) \{[\s\S]*props\.runs\.map\(\(run\) => \([\s\S]*<JiraIssueCompletedRunRow/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /if \(props\.runs\.length === 1\) \{[\s\S]*<JiraIssueCompletedRunRow[\s\S]*showFlyout=\{false\}/u);
 	assert.match(
 		COMPLETED_RUNS_SOURCE,
 		/return \(\s*<JiraIssueAgentDoneMerged[\s\S]*onOpenChange=\{props\.onOpenChange\}[\s\S]*onView=\{props\.onView\}[\s\S]*runs=\{props\.runs\}[\s\S]*usesStrokeChrome=\{props\.usesStrokeChrome\}/u,
@@ -659,6 +667,7 @@ test("Jira issue transfer callback identifies which session was dragged", () => 
 	// and free to update the wrong one.
 	assert.match(TRANSFER_SOURCE, /export interface JiraIssueAgentSessionRef \{[\s\S]*id: string;[\s\S]*name: string;/u);
 	assert.match(TRANSFER_SOURCE, /onUnlink\?: \(session\?: JiraIssueAgentSessionRef\) => void;/u);
+	assert.match(TRANSFER_SOURCE, /showUnlinkWell\?: boolean;/u);
 	assert.match(TRANSFER_SOURCE, /session\?: JiraIssueAgentSessionRef;/u);
 	// The card feeds the dragged row's own activity through as that identity.
 	assert.match(SOURCE, /session=\{resolvedAgentSessionDragState\.activities\[0\]\}/u);
@@ -669,7 +678,10 @@ test("Jira issue transfer callback identifies which session was dragged", () => 
 });
 
 test("Jira issue attach has no dashed well and grows the backdrop chin instead", () => {
-	assert.match(TRANSFER_SOURCE, /const showUnlinkWell = !isLinking && Boolean\(config\.onUnlink\);/u);
+	assert.match(
+		TRANSFER_SOURCE,
+		/const showUnlinkWell = !isLinking\s*\n\s*&& Boolean\(config\.onUnlink\)\s*\n\s*&& config\.showUnlinkWell !== false;/u,
+	);
 	assert.match(TRANSFER_SOURCE, /if \(!showUnlinkWell\) \{\s*\n\s*return null;/u);
 	assert.doesNotMatch(TRANSFER_SOURCE, /Drag here to attach/u);
 	assert.match(

@@ -1,26 +1,38 @@
 "use client";
 
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- DropdownMenuTrigger uses a render-node so the View button owns the visual state.
-import { Fragment, useMemo, useState, type ComponentType } from "react";
+import { Fragment, useMemo, useState, type ComponentType, type ReactNode } from "react";
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
+import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import CustomizeIcon from "@atlaskit/icon/core/customize";
+import DevicesIcon from "@atlaskit/icon/core/devices";
 import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
+import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
+import TaskInProgressIcon from "@atlaskit/icon/core/task-in-progress";
+import TaskToDoIcon from "@atlaskit/icon/core/task-to-do";
+import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import MergeQueueIcon from "@atlaskit/icon-lab/core/merge-queue";
+import QuestionCircleFilledIcon from "@atlaskit/icon-lab/core/question-circle-filled";
 
 import { BOARD_GROUP_DEFAULT_ID, BOARD_GROUP_OPTIONS } from "../data/board-group-options";
 import {
+	BOARD_AGENT_HOST_DEFAULT_ID,
+	BOARD_AGENT_HOST_OPTIONS,
 	BOARD_AGENT_SESSION_STATE_IDS,
 	BOARD_AGENT_STATE_OPTIONS,
+	boardAgentHostFilterLabel,
+	type BoardAgentHostId,
+	type BoardAgentSessionStateId,
 	BOARD_COLUMN_SIZE_DEFAULT_ID,
 	BOARD_COLUMN_SIZE_OPTIONS,
 	BOARD_FIELD_OPTIONS,
 	BOARD_HIDE_DONE_DEFAULT_ID,
 	BOARD_HIDE_DONE_OPTIONS,
 	BOARD_PR_STATE_OPTIONS,
+	isBoardAgentHostId,
 	isBoardAgentSessionStateId,
-	type BoardAgentSessionStateId,
 	type BoardPrStateId,
 } from "../data/board-view-options";
 import { Button } from "@/components/ui/button";
@@ -79,6 +91,19 @@ interface StateIcon {
 type StateIcons = Readonly<Record<string, StateIcon>>;
 
 /**
+ * Leading menu glyph at ADS `small` (12px). The shared item rule forces
+ * unclassed SVGs to 16px, so the size class has to win on the wrapper.
+ */
+function MenuLeadingIcon({ icon }: Readonly<{ icon: StateIcon }>) {
+	return (
+		<Icon
+			className="size-3 [&_svg]:size-3!"
+			render={<icon.glyph color={icon.color} label="" size="small" />}
+		/>
+	);
+}
+
+/**
  * PR lifecycle glyphs, keyed by the same ids the option list uses. `satisfies
  * Record<BoardPrStateId, …>` makes an unmapped state a compile error rather
  * than a row that silently renders without its icon. Colours follow the
@@ -89,11 +114,33 @@ const PR_STATE_ICONS = {
 	open: { glyph: PullRequestIcon, color: token("color.icon.success") },
 	// Same glyph as Open, just quiet: a draft IS a pull request, so colour alone
 	// carries the difference rather than inventing a second shape for it.
-	draft: { glyph: PullRequestIcon, color: token("color.icon.subtle") },
+	draft: { glyph: PullRequestIcon, color: token("color.icon.subtlest") },
 	queued: { glyph: MergeQueueIcon, color: token("color.icon.information") },
 	merged: { glyph: MergeSuccessIcon, color: token("color.icon.discovery") },
 	closed: { glyph: MergeFailureIcon, color: token("color.icon.danger") },
 } as const satisfies Record<BoardPrStateId, StateIcon>;
+
+/**
+ * Agent submenu glyphs. Linked states reuse the Team EU chin shapes. Untracked
+ * is the empty-task glyph because it is the absence of a session rather than a
+ * live one.
+ */
+const AGENT_STATE_ICONS = {
+	working: { glyph: TaskInProgressIcon, color: token("color.icon.subtlest") },
+	"needs-input": { glyph: QuestionCircleFilledIcon, color: token("color.icon.information") },
+	finished: { glyph: StatusSuccessIcon, color: token("color.icon.success") },
+	untracked: { glyph: TaskToDoIcon, color: token("color.icon.subtlest") },
+} as const satisfies Record<BoardAgentSessionStateId | "untracked", StateIcon>;
+
+/**
+ * Host-scope glyphs for the nested All / Cloud / Local picker. Identity icons,
+ * not lifecycle traffic lights, so they share the quiet icon token.
+ */
+const AGENT_HOST_ICONS = {
+	all: { glyph: AiAgentIcon, color: token("color.icon.subtle") },
+	cloud: { glyph: CloudIcon, color: token("color.icon.subtle") },
+	local: { glyph: DevicesIcon, color: token("color.icon.subtle") },
+} as const satisfies Record<BoardAgentHostId, StateIcon>;
 
 /** The ids a list starts with checked, so state can be seeded once per list. */
 function toShownIds(options: readonly VisibilityOption[]) {
@@ -125,6 +172,11 @@ interface VisibilityToggleSubmenuProps {
 	onToggle: (id: string) => void;
 	/** Leading glyphs keyed by option id. Lists without one render label-only. */
 	icons?: StateIcons;
+	/**
+	 * Inserted before the first `separatorBefore` row so a different control
+	 * (the host-scope picker) can sit as its own section above Untracked.
+	 */
+	children?: ReactNode;
 }
 
 /**
@@ -142,15 +194,19 @@ function VisibilityToggleSubmenu({
 	checkedIds,
 	onToggle,
 	icons,
+	children,
 }: Readonly<VisibilityToggleSubmenuProps>) {
+	const firstSeparatedIndex = options.findIndex((option) => option.separatorBefore);
+
 	return (
 		<DropdownMenuSub>
 			<DropdownMenuSubTrigger>{label}</DropdownMenuSubTrigger>
 			<DropdownMenuSubContent>
-				{options.map((option) => {
+				{options.map((option, index) => {
 					const stateIcon = icons?.[option.id];
 					return (
 						<Fragment key={option.id}>
+							{index === firstSeparatedIndex ? children : null}
 							{option.separatorBefore ? <DropdownMenuSeparator /> : null}
 							<DropdownMenuCheckboxItem
 								checked={checkedIds.has(option.id)}
@@ -164,13 +220,65 @@ function VisibilityToggleSubmenu({
 							>
 								{stateIcon ? (
 									// Decorative: the row's own text already names the state.
-									<Icon render={<stateIcon.glyph color={stateIcon.color} label="" />} />
+									<MenuLeadingIcon icon={stateIcon} />
 								) : null}
 								{option.label}
 							</DropdownMenuCheckboxItem>
 						</Fragment>
 					);
 				})}
+			</DropdownMenuSubContent>
+		</DropdownMenuSub>
+	);
+}
+
+interface AgentHostFilterSubmenuProps {
+	hostId: BoardAgentHostId;
+	onHostIdChange: (hostId: BoardAgentHostId) => void;
+}
+
+/**
+ * Nested All / Cloud / Local picker. The trigger label and leading glyph both
+ * follow the selection so "Show all agents" becomes "Show cloud agents" with
+ * the cloud icon after Cloud.
+ */
+function AgentHostFilterSubmenu({
+	hostId,
+	onHostIdChange,
+}: Readonly<AgentHostFilterSubmenuProps>) {
+	const hostIcon = AGENT_HOST_ICONS[hostId];
+
+	return (
+		<DropdownMenuSub>
+			<DropdownMenuSubTrigger>
+				<MenuLeadingIcon icon={hostIcon} />
+				{boardAgentHostFilterLabel(hostId)}
+			</DropdownMenuSubTrigger>
+			<DropdownMenuSubContent>
+				<DropdownMenuRadioGroup
+					aria-label="Show agents"
+					onValueChange={(id) => {
+						if (isBoardAgentHostId(id)) {
+							onHostIdChange(id);
+						}
+					}}
+					value={hostId}
+				>
+					{BOARD_AGENT_HOST_OPTIONS.map((option) => {
+						const hostIcon = AGENT_HOST_ICONS[option.id];
+						return (
+							<DropdownMenuRadioItem
+								className="gap-2"
+								indicatorPlacement="end"
+								key={option.id}
+								value={option.id}
+							>
+								<MenuLeadingIcon icon={hostIcon} />
+								{option.label}
+							</DropdownMenuRadioItem>
+						);
+					})}
+				</DropdownMenuRadioGroup>
 			</DropdownMenuSubContent>
 		</DropdownMenuSub>
 	);
@@ -184,10 +292,11 @@ function VisibilityToggleSubmenu({
  *
  * The menu owns its own selections except the Agent rows the board can lift:
  * Working / Needs input / Finished hide matching activity chrome on cards, and
- * Untracked hides proximity sessions next to related issues. State lives here
- * rather than on the items because Base UI unmounts both the submenu and the
- * menu on close — this component stays mounted with the trigger, so the
- * choices survive.
+ * Untracked hides proximity sessions next to related issues. All / Cloud /
+ * Local retitles the nested trigger and swaps its leading glyph. State lives
+ * here rather than on the
+ * items because Base UI unmounts both the submenu and the menu on close — this
+ * component stays mounted with the trigger, so the choices survive.
  */
 export function BoardViewMenu({
 	compact = false,
@@ -207,6 +316,7 @@ export function BoardViewMenu({
 		toShownIds(BOARD_AGENT_STATE_OPTIONS),
 	);
 	const [shownFieldIds, setShownFieldIds] = useState(() => toShownIds(BOARD_FIELD_OPTIONS));
+	const [agentHostId, setAgentHostId] = useState<BoardAgentHostId>(BOARD_AGENT_HOST_DEFAULT_ID);
 	const isUntrackedControlled = showUntracked !== undefined && onShowUntrackedChange !== undefined;
 	const isSessionStatesControlled = (
 		shownSessionStateIds !== undefined && onShownSessionStateIdsChange !== undefined
@@ -289,10 +399,14 @@ export function BoardViewMenu({
 
 				<VisibilityToggleSubmenu
 					checkedIds={shownAgentIds}
+					icons={AGENT_STATE_ICONS}
 					label="Agent"
 					onToggle={handleAgentToggle}
 					options={BOARD_AGENT_STATE_OPTIONS}
-				/>
+				>
+					<DropdownMenuSeparator />
+					<AgentHostFilterSubmenu hostId={agentHostId} onHostIdChange={setAgentHostId} />
+				</VisibilityToggleSubmenu>
 
 				<DropdownMenuSeparator />
 

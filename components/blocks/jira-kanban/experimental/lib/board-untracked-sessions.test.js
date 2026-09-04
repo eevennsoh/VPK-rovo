@@ -57,6 +57,22 @@ test("groupBoardUntrackedSessions maps Pulse sessions onto board issue keys", ()
 	assert.equal(grouped["PAY-999"], undefined);
 });
 
+test("groupBoardUntrackedSessions drops archived ids the same way it drops captured ids", () => {
+	const grouped = groupBoardUntrackedSessions({
+		archivedItemIds: new Set(["lw-archived"]),
+		boardIssueKeys: new Set(["PAY-121"]),
+		sessions: [
+			session("lw-kickoff-killswitch-session", "PAY-121"),
+			session("lw-archived", "PAY-121"),
+		],
+	});
+
+	assert.deepEqual(
+		grouped["PAY-121"].map((item) => item.id),
+		["lw-kickoff-killswitch-session"],
+	);
+});
+
 test("groupBoardUntrackedSessions drops captured ids and stacks several rows on one issue", () => {
 	const grouped = groupBoardUntrackedSessions({
 		boardIssueKeys: new Set(["PAY-121"]),
@@ -100,6 +116,20 @@ test("selectBoardUntrackedSessions removes linked sessions from untracked work",
 		capturedItemIds: new Set(["lw-linked"]),
 		sessions: [
 			session("lw-untracked", "PAY-101"),
+			session("lw-linked", "PAY-121"),
+		],
+	});
+
+	assert.deepEqual(selected.map((item) => item.id), ["lw-untracked"]);
+});
+
+test("selectBoardUntrackedSessions removes archived sessions from untracked work", () => {
+	const selected = selectBoardUntrackedSessions({
+		archivedItemIds: new Set(["lw-archived"]),
+		capturedItemIds: new Set(["lw-linked"]),
+		sessions: [
+			session("lw-untracked", "PAY-101"),
+			session("lw-archived", "PAY-118"),
 			session("lw-linked", "PAY-121"),
 		],
 	});

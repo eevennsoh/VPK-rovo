@@ -3,6 +3,9 @@ import type { CSSProperties } from "react";
 import type { AgentListItem } from "@/components/blocks/agent-list";
 import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
 
+import type { ApproveTarget } from "./agent-session-approve";
+import type { SessionCohort } from "./session-cohort";
+
 /**
  * An agent session rendered either detached from or attached to a work item.
  *
@@ -16,6 +19,26 @@ export type AgentSessionItem = AgentListItem;
 
 /** Visual footprint and work-item relationship of each session. */
 export type AgentSessionVariant = "large" | "medium-detached" | "medium-attached" | "small";
+
+/**
+ * Per-row triage affordances, or `null` on a surface that has none.
+ *
+ * Mark and Approve fail independently: a captured row can still be marked
+ * for archive, and Approve can exist without multi-select.
+ */
+export interface AgentSessionTriageRow {
+	readonly approve: {
+		readonly onApprove: () => void;
+		readonly target: ApproveTarget;
+	} | null;
+	readonly drag: {
+		readonly cohort: () => SessionCohort<AgentSessionItem>;
+	} | null;
+	readonly mark: {
+		readonly isMarked: boolean;
+		readonly onToggle: () => void;
+	} | null;
+}
 
 export interface AgentSessionProps {
 	className?: string;
@@ -51,6 +74,8 @@ export interface AgentSessionProps {
 	 * that never unmounts the list.
 	 */
 	arrivingItemIds?: ReadonlySet<string>;
+	/** Called when a card's one-shot arrival beat reaches its visible resting state. */
+	onArrivalComplete?: (itemId: string) => void;
 	/** Suggested Jira key for the untracked-work flyout. Defaults to `sessionDetails.issueKey`. */
 	getSuggestedWorkItemKey?: (item: AgentSessionItem) => string | undefined;
 	/**
@@ -78,14 +103,14 @@ export interface AgentSessionProps {
 	/** Called after the hover Resume control copies the resume command. */
 	onCopyResume?: (item: AgentSessionItem) => void;
 	/**
-	 * Hide / Show toggle behind the hover eye control. The button always
-	 * renders; omit this on a bare list to leave the eye a no-op. The column
-	 * supplies it so Hide removes the card and Show restores it.
+	 * Archive / Unarchive toggle behind the hover archive control. The button
+	 * always renders; omit this on a bare list to leave the control a no-op. The
+	 * column supplies it so Archive removes the card and Unarchive restores it.
 	 */
 	onToggleVisibility?: (item: AgentSessionItem) => void;
 	/**
-	 * Tooltip and accessible name for the hover eye. Defaults to Hide. The
-	 * column passes Show when the list is the hidden-work view.
+	 * Tooltip and accessible name for the hover archive control. Defaults to
+	 * Archive. The column passes Unarchive when the list is the hidden-work view.
 	 */
 	visibilityLabel?: string;
 	/** Called when a card body is activated. */
@@ -93,12 +118,23 @@ export interface AgentSessionProps {
 	/**
 	 * Id of the session whose card is selected. Omit to let the list own a
 	 * single-select toggle; pass `null` to control an empty selection.
+	 *
+	 * Distinct from {@link AgentSessionProps.rowTriage} marks. Clear must
+	 * not touch this field.
 	 */
 	selectedItemId?: string | null;
+	/**
+	 * Column-built triage bindings per session id.
+	 *
+	 * Not merged into {@link selectedItemId}. That field plus `onView` is
+	 * the board spotlight. Marks are a different relation.
+	 */
+	rowTriage?: ReadonlyMap<string, AgentSessionTriageRow>;
 	/** Called when the viewer selects or deselects a card. */
 	onSelectedItemIdChange?: (itemId: string | null) => void;
 	/** Opt-in: makes large untracked and medium-detached sessions draggable onto work items. */
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
+	draggingIds?: ReadonlySet<string>;
 	/** Work item key for the detached link tooltip (`Link to KEY`). */
 	issueKey?: string;
 	/**

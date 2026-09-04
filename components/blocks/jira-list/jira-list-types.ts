@@ -1,7 +1,10 @@
-import type { ComponentProps } from "react";
+import type { ComponentProps, RefObject } from "react";
 
+import type { AgentAssignmentStatusKind } from "@/components/blocks/agent-assignment";
+import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { JiraIssuePriority, JiraIssueTag } from "@/components/blocks/jira-issue";
 import type { AvatarProps, AvatarUnassignedKind } from "@/components/ui/avatar";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import type { Lozenge } from "@/components/ui/lozenge";
 
 export type JiraListPriority = JiraIssuePriority;
@@ -39,6 +42,16 @@ export interface JiraListGoal {
 	emphasis?: "default" | "warning";
 }
 
+export interface JiraListAssignedAgent {
+	id: string;
+	name: string;
+	byline?: string;
+	avatarSrc?: string;
+	brandName?: ThirdPartyLogoName;
+	statusKind?: AgentAssignmentStatusKind;
+	statusLabel: string;
+}
+
 export interface JiraListRowData {
 	issueKey: string;
 	summary: string;
@@ -50,8 +63,7 @@ export interface JiraListRowData {
 	hasChildren?: boolean;
 	isExpanded?: boolean;
 	assignee?: JiraListPerson;
-	// Display labels only; labels are not stable IDs and may repeat.
-	agentSessions?: readonly string[];
+	agentSessions?: readonly JiraListAssignedAgent[];
 	goals?: readonly JiraListGoal[];
 	labels?: readonly JiraListTag[];
 	dueDate?: string;
@@ -80,6 +92,11 @@ export interface JiraListDraftWorkItem {
 	summary: string;
 }
 
+export type JiraListAgentSessionDropIntent =
+	| { kind: "none" }
+	| { kind: "attach"; issueKey: string }
+	| { kind: "create"; insertion: JiraListInsertion };
+
 export interface JiraListProps {
 	rows: readonly JiraListRowData[];
 	activeIssueKey?: string;
@@ -92,7 +109,11 @@ export interface JiraListProps {
 	copiedIssueKey?: string | null;
 	draftWorkItem?: JiraListDraftWorkItem | null;
 	extraColumns?: readonly JiraListExtraColumn[];
+	agentCatalog?: readonly AgentSelectorAgent[];
 	statusOptions?: readonly JiraListStatusOption[];
+	onAssignedAgentIdsChange?: (issueKey: string, agentIds: readonly string[]) => void;
+	onAssignedAgentSelect?: (issueKey: string, agent: JiraListAssignedAgent) => void;
+	onAgentAssign?: (issueKey: string, agent: AgentSelectorAgent) => void;
 	onCreate?: (insertion?: JiraListInsertion) => void;
 	onAddColumn?: (afterColumnId: JiraListColumnAnchorId) => void;
 	onCopyLink?: (row: JiraListRowData) => void;
@@ -111,4 +132,12 @@ export interface JiraListProps {
 	onSelectRow?: (issueKey: string, checked: boolean) => void;
 	onStatusChange?: (issueKey: string, status: JiraListStatusOption) => void;
 	onToggleExpand?: (issueKey: string) => void;
+	agentSessionDropIntent?: JiraListAgentSessionDropIntent;
+	/**
+	 * Scroll room after the table, used when a docked trailing surface overlaps
+	 * the list viewport.
+	 */
+	scrollEndInset?: number;
+	trailingOverlayRef?: RefObject<HTMLElement | null>;
+	onTrailingContentUnderlapChange?: (hasUnderlap: boolean) => void;
 }

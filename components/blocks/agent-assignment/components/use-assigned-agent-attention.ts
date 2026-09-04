@@ -1,26 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import type { AgentAssignmentStatusKind } from "@/components/blocks/agent-assignment/components/assigned-agent-status";
-import { SONNER_TOAST_AUTO_DISMISS_MS } from "@/components/ui/sonner";
-
-export const ASSIGNED_AGENT_ATTENTION_TOOLTIP_MS = SONNER_TOAST_AUTO_DISMISS_MS;
 
 export function isAssignedAgentAttentionKind(kind: AgentAssignmentStatusKind): boolean {
 	return kind === "needs-input" || kind === "finished";
 }
 
-export function resolveAssignedAgentAttentionEnterId(
+export function resolveAssignedAgentAttentionChanges(
 	agents: readonly { id: string; statusKind: AgentAssignmentStatusKind }[],
 	previousKinds: ReadonlyMap<string, AgentAssignmentStatusKind>,
 ): {
 	changedIds: readonly string[];
-	enterId: string | null;
 	nextKinds: Map<string, AgentAssignmentStatusKind>;
 } {
 	const nextKinds = new Map(previousKinds);
-	let enterId: string | null = null;
 	const seen = new Set<string>();
 	const changedIds: string[] = [];
 
@@ -31,9 +26,6 @@ export function resolveAssignedAgentAttentionEnterId(
 		if (previousKind !== undefined && previousKind !== agent.statusKind) {
 			changedIds.push(agent.id);
 		}
-		if (isAssignedAgentAttentionKind(agent.statusKind) && previousKind !== agent.statusKind) {
-			enterId = agent.id;
-		}
 	}
 
 	for (const id of nextKinds.keys()) {
@@ -43,7 +35,7 @@ export function resolveAssignedAgentAttentionEnterId(
 		}
 	}
 
-	return { changedIds, enterId, nextKinds };
+	return { changedIds, nextKinds };
 }
 
 export function acknowledgeAssignedAgentAttention(
@@ -81,64 +73,29 @@ export function clearAcknowledgedAssignedAgentIds(
 
 export function useAssignedAgentAttention(
 	agents: readonly { id: string; statusKind: AgentAssignmentStatusKind }[],
-	menuOpen: boolean,
 ): {
 	acknowledgeAttention: (agentId: string) => void;
-	attentionAgentId: string | null;
 	isAttentionAcknowledged: (agentId: string) => boolean;
 } {
-	const [activeId, setActiveId] = useState<string | null>(null);
-	const [attentionEpoch, setAttentionEpoch] = useState(0);
 	const [acknowledgedIds, setAcknowledgedIds] = useState<ReadonlySet<string>>(() => new Set());
 	const [previousKinds, setPreviousKinds] = useState<ReadonlyMap<string, AgentAssignmentStatusKind>>(
 		() => new Map(),
 	);
-	const attentionSignature = `${menuOpen ? "open" : "closed"}|${agents
+	const attentionSignature = agents
 		.map((agent) => `${agent.id}:${agent.statusKind}`)
-		.join(",")}`;
+		.join(",");
 	const [seenSignature, setSeenSignature] = useState<string | null>(null);
 
 	if (attentionSignature !== seenSignature) {
 		setSeenSignature(attentionSignature);
 
-		const { changedIds, enterId, nextKinds } = resolveAssignedAgentAttentionEnterId(
+		const { changedIds, nextKinds } = resolveAssignedAgentAttentionChanges(
 			agents,
 			previousKinds,
 		);
 		setPreviousKinds(nextKinds);
 		setAcknowledgedIds((current) => clearAcknowledgedAssignedAgentIds(current, changedIds));
-
-		if (menuOpen) {
-			setActiveId(null);
-		} else if (enterId) {
-			setActiveId(enterId);
-			setAttentionEpoch((epoch) => epoch + 1);
-		} else {
-			setActiveId((current) => {
-				if (!current) {
-					return null;
-				}
-				const stillAttention = agents.some((agent) => (
-					agent.id === current && isAssignedAgentAttentionKind(agent.statusKind)
-				));
-				return stillAttention ? current : null;
-			});
-		}
 	}
-
-	useEffect(() => {
-		if (!activeId || menuOpen) {
-			return undefined;
-		}
-
-		const timeoutId = window.setTimeout(() => {
-			setActiveId(null);
-		}, ASSIGNED_AGENT_ATTENTION_TOOLTIP_MS);
-
-		return () => {
-			window.clearTimeout(timeoutId);
-		};
-	}, [activeId, attentionEpoch, menuOpen]);
 
 	const acknowledgeAttention = (agentId: string) => {
 		const agent = agents.find((candidate) => candidate.id === agentId);
@@ -152,14 +109,6 @@ export function useAssignedAgentAttention(
 
 	return {
 		acknowledgeAttention,
-		attentionAgentId: menuOpen ? null : activeId,
 		isAttentionAcknowledged: (agentId: string) => acknowledgedIds.has(agentId),
 	};
-}
-
-export function useAssignedAgentAttentionId(
-	agents: readonly { id: string; statusKind: AgentAssignmentStatusKind }[],
-	menuOpen: boolean,
-): string | null {
-	return useAssignedAgentAttention(agents, menuOpen).attentionAgentId;
 }

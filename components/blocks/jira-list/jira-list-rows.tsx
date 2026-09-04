@@ -66,7 +66,7 @@ export function RowBoundaryCreateControls({
 						<Button
 							aria-label={`Create work item ${position} ${row.issueKey}`}
 							className={cn(
-								"absolute z-30 isolate size-6 -translate-x-1/2 -translate-y-1/2 border-0 bg-surface-overlay! text-icon-subtle shadow-2xl opacity-0 transition-opacity duration-fast before:pointer-events-none before:absolute before:-inset-0.5 before:-z-10 before:rounded-md before:bg-surface-overlay before:content-[''] hover:bg-surface-overlay-hovered! active:bg-surface-overlay-pressed! focus-visible:pointer-events-auto focus-visible:bg-surface-overlay! focus-visible:opacity-100",
+								"absolute z-30 size-6 -translate-x-1/2 -translate-y-1/2 border border-border bg-surface-overlay! text-icon-subtle shadow-2xl opacity-0 transition-opacity duration-fast hover:bg-surface-overlay-hovered! active:bg-surface-overlay-pressed! focus-visible:pointer-events-auto focus-visible:bg-surface-overlay! focus-visible:opacity-100",
 								isVisible && "pointer-events-auto opacity-100",
 							)}
 							data-insertion-position={position}
@@ -123,8 +123,10 @@ export function JiraListSortableRow({
 	row,
 	rowIndex,
 	rowCount,
+	agentSessionDropEnabled,
 	...rowProps
 }: Readonly<{
+	agentSessionDropEnabled?: boolean;
 	children: ReactNode;
 	handleOverlayElement: HTMLDivElement | null;
 	instanceId: string;
@@ -171,7 +173,7 @@ export function JiraListSortableRow({
 						{...listeners}
 						aria-label="Drag to reorder"
 						className={cn(
-							"absolute z-30 isolate size-6 -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none border-0 bg-surface-overlay! text-icon-subtle shadow-2xl opacity-0 transition-opacity duration-fast before:pointer-events-none before:absolute before:-inset-0.5 before:-z-10 before:rounded-md before:bg-surface-overlay before:content-[''] hover:bg-surface-overlay-hovered! active:cursor-grabbing active:bg-surface-overlay-pressed! focus-visible:bg-surface-overlay! focus-visible:opacity-100",
+							"absolute z-30 size-6 -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none border border-border bg-surface-overlay! text-icon-subtle shadow-2xl opacity-0 transition-opacity duration-fast hover:bg-surface-overlay-hovered! active:cursor-grabbing active:bg-surface-overlay-pressed! focus-visible:bg-surface-overlay! focus-visible:opacity-100",
 							showHandle && "pointer-events-auto opacity-100",
 						)}
 						data-testid={`jira-list-drag-handle-${row.issueKey}`}
@@ -205,6 +207,9 @@ export function JiraListSortableRow({
 					rowProps.className,
 					isDragging && "z-30 opacity-80 shadow-lg [&>td]:bg-bg-selected",
 				)}
+				data-board-agent-session-drop-zone={agentSessionDropEnabled ? "list-row" : undefined}
+				data-issue-key={agentSessionDropEnabled ? row.issueKey : undefined}
+				data-list-row-index={agentSessionDropEnabled ? rowIndex : undefined}
 				data-dragging={isDragging || undefined}
 				data-drop-target={isDropTarget || undefined}
 				ref={setNodeRef}

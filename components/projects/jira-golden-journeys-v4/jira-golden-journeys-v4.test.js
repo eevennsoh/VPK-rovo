@@ -8,6 +8,9 @@ function readProjectFile(relativePath) {
 }
 
 const PAGE_SOURCE = readProjectFile("components/projects/jira-golden-journeys-v4/page.tsx");
+const LIST_HOOK_SOURCE = readProjectFile(
+	"components/projects/jira-golden-journeys-v4/hooks/use-jira-golden-journeys-v4-list.ts",
+);
 const JIRA_HEADER_SOURCE = readProjectFile("components/projects/jira/components/jira-header.tsx");
 const JIRA_TABS_SOURCE = readProjectFile("components/projects/jira/data/tabs.ts");
 const EXPERIMENTAL_HEADER_SOURCE = readProjectFile(
@@ -20,8 +23,20 @@ const EXPERIMENTAL_BOARD_SOURCE = readProjectFile(
 const EXPERIMENTAL_CARD_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/experimental-jira-kanban-card.tsx",
 );
+const CREATE_WORK_ITEM_DROP_ZONE_SOURCE = readProjectFile(
+	"components/blocks/jira-kanban/experimental/components/create-work-item-drop-zone.tsx",
+);
+const CREATE_WORK_ITEM_EXCLUSIVE_PROXIMITY_SOURCE = readProjectFile(
+	"components/blocks/jira-kanban/experimental/lib/create-work-item-exclusive-proximity.ts",
+);
+const CREATE_WORK_ITEM_EXCLUSIVE_PROXIMITY_CONTEXT_SOURCE = readProjectFile(
+	"components/blocks/jira-kanban/experimental/components/create-work-item-exclusive-proximity-context.tsx",
+);
 const PANEL_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/components/agent-session-panel.tsx",
+);
+const PANEL_RESIZE_HOOK_SOURCE = readProjectFile(
+	"components/blocks/jira-kanban/experimental/hooks/use-agent-session-panel-resize.ts",
 );
 const INDICATORS_SOURCE = readProjectFile(
 	"components/projects/jira-golden-journeys-v4/data/agent-activity-indicators.tsx",
@@ -226,6 +241,121 @@ test("Team EU keeps only attached agent sessions on status columns", () => {
 	);
 });
 
+test("both design variations reveal compact magnetic create targets that expand and arm during an agent-session drag", () => {
+	assert.match(
+		PAGE_SOURCE,
+		/const createWorkItemDropZoneLabel = "Create new work item";/u,
+	);
+	assert.doesNotMatch(PAGE_SOURCE, /createWorkItemDropZoneLabel = designVariation/u);
+	assert.match(
+		PAGE_SOURCE,
+		/<ExperimentalJiraKanbanPage[\s\S]*createWorkItemDropZoneLabel=\{createWorkItemDropZoneLabel\}/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/createWorkItemDropZoneLabel\?: ExperimentalJiraKanbanProps\["createWorkItemDropZoneLabel"\];/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/<ExperimentalJiraKanban[\s\S]*createWorkItemDropZoneLabel=\{createWorkItemDropZoneLabel\}/u,
+	);
+	assert.doesNotMatch(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/useDesignVariation|design-variation/u,
+		"the shared board must receive variation-owned copy through a prop",
+	);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/sessionDragTransaction=\{boardSessionDrag\.transaction\}/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/sessionDragTransaction && dropZoneLabel \? \(/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/const expanded = proximity !== "outside";/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/expanded \? "h-16 text-sm leading-5" : "h-6 text-xs leading-4"/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/armed \? "border-border-selected bg-bg-selected text-text-selected" : "border-border bg-surface text-text-subtlest"/u,
+	);
+	assert.doesNotMatch(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/bg-\[var\(--ds-|transparent|bg-transparent/u,
+		"create wells must use an opaque semantic surface fill, not a raw token or transparent hole",
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/transition-\[height,background-color\] duration-normal ease-out-practical motion-reduce:transition-none/u,
+	);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/<BoardColumnCreateAction[\s\S]*dropZoneLabel=\{createWorkItemDropZoneLabel\}[\s\S]*sessionDragTransaction=\{sessionDragTransaction\}[\s\S]*title=\{title\}/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_EXCLUSIVE_PROXIMITY_SOURCE,
+		/export const CREATE_WORK_ITEM_PROXIMITY_HOVER_AREA_PX = 120;/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/import \{ useMagneticProximity \} from "@\/components\/ui-custom\/hooks\/use-magnetic-proximity";/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/import \{ useExclusiveCreateWellProximity \} from "\.\/create-work-item-exclusive-proximity-context";/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/const magnet = useMagneticProximity\(targetRef, \{\s*hoverArea: CREATE_WORK_ITEM_PROXIMITY_HOVER_AREA_PX,\s*\}\);/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/useMotionValueEvent\(magnet\.proximity, "change", setRawProximity\);/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/const isExclusiveWinner = useExclusiveCreateWellProximity\(title, targetRef\);/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/const proximity = isExclusiveWinner \? rawProximity : "outside";/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_EXCLUSIVE_PROXIMITY_SOURCE,
+		/export function resolveExclusiveProximityWinner\(/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_EXCLUSIVE_PROXIMITY_CONTEXT_SOURCE,
+		/resolveExclusiveProximityWinner\(/u,
+	);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/<ExclusiveCreateWellProximityProvider>[\s\S]*\{boardColumns\.map\(/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/const armed = Boolean\([\s\S]*sessionDragTransaction\?\.target\?\.kind === "create"[\s\S]*sessionDragTransaction\.target\.columnTitle === title,/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/<motion\.div[\s\S]*x: isExclusiveWinner \? magnet\.x : 0,[\s\S]*ref=\{targetRef\}[\s\S]*<motion\.span[\s\S]*x: isExclusiveWinner \? magnet\.labelX : 0,/u,
+	);
+	assert.match(CREATE_WORK_ITEM_DROP_ZONE_SOURCE, /data-board-agent-session-drop-zone="create"/u);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/data-board-agent-session-column-title=\{title\}/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/useBoardAgentSessionDrag\(\{[\s\S]*onCreate: agentSessionHandlers\.onCreateWorkItem,/u,
+	);
+});
+
 test("the board enables board-wide Jira issue agent-session transfer", () => {
 	assert.match(PAGE_SOURCE, /import \{ linkJiraKanbanAgentSession, moveJiraKanbanAgentSession, unlinkJiraKanbanAgentSession \} from "@\/components\/blocks\/jira-kanban\/state"/u);
 	assert.match(PAGE_SOURCE, /setBoardColumns\(\(columns\) => unlinkJiraKanbanAgentSession\(columns, card\.code, session\.id\)\)/u);
@@ -264,11 +394,12 @@ test("the board enables board-wide Jira issue agent-session transfer", () => {
 
 test("Team EU returns unlinked sessions to Untracked without parking them on status columns", () => {
 	// Both variations pass the same transfer handlers so Untracked sessions
-	// can attach to issues and chins can drag back. Team EU still turns
-	// proximity off: unlinked copies go into detachedByCard, which the
-	// Untracked list reads, instead of rendering under the card.
+	// can attach to issues and chins can drag. Team EU hides the dashed
+	// unlink well, and still turns proximity off: unlinked copies go into
+	// detachedByCard, which the Untracked list reads.
 	assert.doesNotMatch(PAGE_SOURCE, /allowAgentSessionUnlink/u);
 	assert.match(PAGE_SOURCE, /onCardAgentSessionUnlink=\{handleAgentSessionUnlink\}/u);
+	assert.match(PAGE_SOURCE, /showAgentSessionUnlinkWell=\{designVariation !== "team-eu"\}/u);
 	assert.match(PAGE_SOURCE, /const showUntrackedProximity = designVariation !== "team-eu";/u);
 	assert.match(PAGE_SOURCE, /const handleAgentSessionUnlink = useCallback/u);
 	assert.doesNotMatch(
@@ -277,20 +408,29 @@ test("Team EU returns unlinked sessions to Untracked without parking them on sta
 		"the shared block must take unlink as an optional handler, not read the global variation store",
 	);
 	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/showAgentSessionUnlinkWell\?: ExperimentalJiraKanbanProps\["showAgentSessionUnlinkWell"\];/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/showAgentSessionUnlinkWell=\{showAgentSessionUnlinkWell\}/u,
+	);
+	assert.match(
 		EXPERIMENTAL_CARD_SOURCE,
 		/const canUnlinkAgentSession = Boolean\(onSessionUnlink && firstActiveAgentSession\);/u,
 	);
 	assert.match(
 		EXPERIMENTAL_CARD_SOURCE,
-		/onUnlink: canUnlinkAgentSession[\s\S]*\? \(session\) => \{[\s\S]*onSessionUnlink\?\.\(resolvedSession, card, columnTitle\);/u,
+		/onUnlink: canUnlinkAgentSession[\s\S]*\? \(session\) => \{[\s\S]*onSessionUnlink\?\.\(resolvedSession, card, columnTitle\);[\s\S]*showUnlinkWell,/u,
 	);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /showUnlinkWell = true,/u);
 	assert.match(
 		AGENT_ACTIVITY_SOURCE,
 		/const showUnlinkControl = Boolean\(sessionDrag\?\.onUnlink\) && !isDraggedOut;/u,
 	);
 	assert.match(
 		TRANSFER_SOURCE,
-		/const showUnlinkWell = !isLinking && Boolean\(config\.onUnlink\);/u,
+		/const showUnlinkWell = !isLinking\s*&& Boolean\(config\.onUnlink\)\s*&& config\.showUnlinkWell !== false;/u,
 	);
 	assert.match(TRANSFER_SOURCE, /config\.unlinkLabel \?\? "Drag here to unlink"/u);
 });
@@ -384,13 +524,68 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(PAGE_SOURCE, /const \[workItemView, setWorkItemView\] = useState<JiraWorkItemView>\(DEFAULT_JIRA_WORK_ITEM_VIEW\)/u);
 	assert.match(PAGE_SOURCE, /const activeView = activeTab\?\.view \?\? workItemView;/u);
 	assert.match(PAGE_SOURCE, /activeView=\{activeView\}/u);
-	// Team EU's tab bar owns the switch, so the header's own switcher stands down.
 	assert.match(PAGE_SOURCE, /const tabOwnsView = activeTab\?\.view !== undefined;/u);
 	assert.match(PAGE_SOURCE, /onViewChange=\{tabOwnsView \? undefined : setWorkItemView\}/u);
-	assert.match(PAGE_SOURCE, /renderListContent=\{\(columns\) =>/u);
-	assert.match(PAGE_SOURCE, /<JiraList[\s\S]*rows=\{listRows\}/u);
+	assert.match(
+		PAGE_SOURCE,
+		/renderListContent=\{\(\s*columns,\s*\{\s*agentSessionDropIntent,\s*onTrailingContentUnderlapChange,\s*scrollEndInset,\s*trailingOverlayRef,\s*\},\s*\) =>/u,
+	);
+	assert.match(PAGE_SOURCE, /useJiraGoldenJourneysV4List/u);
+	assert.match(PAGE_SOURCE, /<JiraList\s+\{\.\.\.listProps\}/u);
+	assert.match(PAGE_SOURCE, /agentSessionDropIntent=\{agentSessionDropIntent\}/u);
+	assert.match(
+		PAGE_SOURCE,
+		/onTrailingContentUnderlapChange=\{onTrailingContentUnderlapChange\}/u,
+	);
+	assert.match(PAGE_SOURCE, /const JIRA_LIST_PANEL_END_GAP_PX = 24;/u);
+	assert.match(
+		PAGE_SOURCE,
+		/const listScrollEndInset = scrollEndInset > 0\s*\?\s*scrollEndInset \+ JIRA_LIST_PANEL_END_GAP_PX\s*:\s*0;/u,
+	);
+	assert.match(PAGE_SOURCE, /scrollEndInset=\{listScrollEndInset\}/u);
+	assert.match(PAGE_SOURCE, /trailingOverlayRef=\{trailingOverlayRef\}/u);
+	assert.match(PAGE_SOURCE, /onListAgentSessionCreate=\{handleListAgentSessionCreate\}/u);
+	assert.match(PAGE_SOURCE, /createFromAgentSession/u);
+	assert.match(PAGE_SOURCE, /consumeDetachedAgentSession/u);
+	assert.match(LIST_HOOK_SOURCE, /createFromAgentSession/u);
+	assert.match(LIST_HOOK_SOURCE, /createListWorkItemFromSession/u);
+	const createFromSessionStart = LIST_HOOK_SOURCE.indexOf("const createFromAgentSession = useCallback");
+	const createFromSessionEnd = LIST_HOOK_SOURCE.indexOf("}, [setBoardColumns]);", createFromSessionStart);
+	assert.ok(createFromSessionStart > 0 && createFromSessionEnd > createFromSessionStart);
+	assert.match(LIST_HOOK_SOURCE, /boardColumnsRef\.current = result\.columns/u);
+	assert.match(LIST_HOOK_SOURCE, /listOrderRef\.current = result\.listOrder/u);
+	assert.doesNotMatch(
+		LIST_HOOK_SOURCE.slice(createFromSessionStart, createFromSessionEnd),
+		/setDraftWorkItem|draftWorkItem/u,
+	);
+	assert.match(
+		PAGE_SOURCE,
+		/"min-h-0 flex-1 overflow-hidden py-4 ps-4 md:py-5 md:ps-5"[\s\S]*scrollEndInset > 0 \? "pe-0" : "pe-4 md:pe-5"[\s\S]*<JiraList\s+\{\.\.\.listProps\}/u,
+	);
+	assert.doesNotMatch(
+		PAGE_SOURCE,
+		/overflow-auto p-4 md:p-5"[\s\S]*<JiraList\s+\{\.\.\.listProps\}/u,
+	);
+	// Drag handles only portal when onMoveRow is set. A display-only JiraList
+	// (rows + counts, no capability callbacks) is what hid rearrange on hover.
+	assert.match(LIST_HOOK_SOURCE, /onMoveRow: handleMoveRow/u);
+	assert.match(LIST_HOOK_SOURCE, /onSelectRow: handleSelectRow/u);
+	assert.match(LIST_HOOK_SOURCE, /onCreate: handleCreateWorkItem/u);
+	assert.match(LIST_HOOK_SOURCE, /onStatusChange: handleStatusChange/u);
+	assert.match(LIST_HOOK_SOURCE, /onAssignedAgentIdsChange: handleAssignedAgentIdsChange/u);
+	assert.match(LIST_HOOK_SOURCE, /issueType: draftWorkItem.issueType/u);
+	assert.match(LIST_HOOK_SOURCE, /dueDate: draftWorkItem.dueDate/u);
+	assert.match(LIST_HOOK_SOURCE, /currentOrder.length === 0 \? allKeys : currentOrder/u);
+	assert.match(LIST_HOOK_SOURCE, /agentCatalog: JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS/u);
+	assert.match(LIST_HOOK_SOURCE, /statusOptions: JIRA_GOLDEN_JOURNEYS_V4_LIST_STATUS_OPTIONS/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /activeView\?: ExperimentalJiraKanbanView;/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /renderListContent\?: \(columns: readonly JiraKanbanColumnData\[\]\) => ReactNode;/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/renderListContent\?: \(\s*columns: readonly JiraKanbanColumnData\[\],\s*context: ExperimentalJiraKanbanListRenderContext,\s*\) => ReactNode;/u,
+	);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /agentSessionDropIntent: boardSessionDrag\.listDropIntent/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCreate: agentSessionHandlers.onCreateWorkItem/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onListCreate: onListAgentSessionCreate \? handleListAgentSessionCreate : undefined/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /activeView === "list" && renderListContent/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<BoardFilterPopover[\s\S]*surfaceLabel=\{activeView\}/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs"/u);
@@ -479,7 +674,7 @@ test("the Panel design variant floats untracked work over the board and the list
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/agentSessionColumn=\{agentSessionPresentation === "panel"\s*\?\s*undefined\s*:\s*agentSessionColumnConfig\}/u,
+		/agentSessionColumn=\{agentSessionPresentation === "panel"\s*\|\| agentSessionColumnConfig === undefined\s*\?\s*undefined\s*:\s*\{/u,
 		"panel mode must suppress the in-flow column so the two presentations cannot coexist",
 	);
 	// Insights swaps the whole content region for an article, and a tab with no
@@ -498,11 +693,9 @@ test("the Panel design variant floats untracked work over the board and the list
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /onToggleAgentSessionPanel/u);
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /Untracked work panel/u);
 	assert.doesNotMatch(PANEL_SOURCE, /PanelActionClose|onClose/u);
-	// Collapse is the only way out of the expanded panel.
-	assert.match(
-		PANEL_SOURCE,
-		/<PanelAction\s+icon=\{ShrinkHorizontalIcon\}\s+label="Collapse panel"\s+onClick=\{handleCollapse\}/u,
-	);
+	// Collapse stays on the column-owned header so the rail is not a trap.
+	assert.match(PANEL_SOURCE, /headerSurface="panel"/u);
+	assert.doesNotMatch(PANEL_SOURCE, /handleCollapse/u);
 
 	// Board and list share one positioning context, which is what lets a single
 	// overlay serve both views; Insights stays outside it.
@@ -523,7 +716,7 @@ test("the Panel design variant floats untracked work over the board and the list
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/<AgentSessionPanel\s+agentSessionColumn=\{\{\s*\.\.\.agentSessionColumnConfig,\s*sessionDrag: boardSessionDrag\.untrackedBinding,\s*\}\}/u,
+		/<AgentSessionPanel\s+agentSessionColumn=\{\{\s*\.\.\.agentSessionColumnConfig,\s*draggingIds: boardSessionDrag\.draggingIds,\s*sessionDrag: boardSessionDrag\.untrackedBinding,\s*\}\}/u,
 		"the panel is controlled: its collapse state is the same state the in-flow column uses",
 	);
 	assert.match(
@@ -539,6 +732,26 @@ test("the Panel design variant floats untracked work over the board and the list
 		EXPERIMENTAL_PAGE_SOURCE,
 		/untrackedDropArmed=\{boardSessionDrag\.transaction\?\.target\?\.kind === "untracked"\}/u,
 	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/showLeadingScrollFade=\{isListContent && listContentUnderlapsPanel\}/u,
+		"the List view only asks for a fade while real content still underlaps the panel",
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/onTrailingContentUnderlapChange: setListContentUnderlapsPanel,\s*scrollEndInset: boardScrollEndInset,\s*trailingOverlayRef: agentSessionPanelRef,/u,
+	);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /ref=\{agentSessionPanelRef\}/u);
+	assert.match(PANEL_SOURCE, /showLeadingScrollFade\?: boolean;/u);
+	assert.match(
+		PANEL_SOURCE,
+		/\{showLeadingScrollFade && collapsed \? \(/u,
+		"the expanded panel border remains the sole separator",
+	);
+	assert.match(
+		PANEL_SOURCE,
+		/<ScrollMaskEdgeOverlay\s+className="right-full"\s+edge="right"\s+fadeSize="3rem"\s*\/>/u,
+	);
 	assert.match(PANEL_SOURCE, /sessionDragging \? "pointer-events-none" : null/u);
 	assert.match(PANEL_SOURCE, /data-board-agent-session-drop-zone="untracked"/u);
 	assert.match(
@@ -552,14 +765,17 @@ test("the Panel design variant floats untracked work over the board and the list
 	// no width needs reserving. Guard both halves — the right pin, and the
 	// absence of the inset that a left pin would have required.
 	assert.match(PANEL_SOURCE, /"absolute bottom-0 right-0 z-40 rounded-none"/u);
-	assert.match(PANEL_SOURCE, /collapsed \? null : "border-l border-border"/u);
+	assert.match(PANEL_SOURCE, /<SidebarResizeHandle/u);
+	assert.match(PANEL_SOURCE, /side="left"/u);
+	assert.doesNotMatch(PANEL_SOURCE, /border-l border-border/u);
 	assert.match(PANEL_SOURCE, /className=\{collapsed \? "pt-1" : "pt-0"\}/u);
 	assert.doesNotMatch(PANEL_SOURCE, /AGENT_SESSION_PANEL_CONTENT_INSET/u);
 	// Panel list only: 4px side inset and 4px row gap (`space.050`). Do not
 	// widen either axis to `gap-2 p-2` (`space.100` / 8px).
 	assert.match(PANEL_SOURCE, /listClassName=\{cn\("gap-1 p-1", agentSessionColumn.listClassName\)\}/u);
 	assert.doesNotMatch(PANEL_SOURCE, /listClassName=\{cn\("gap-2 p-2"/u);
-	assert.match(PANEL_SOURCE, /chrome="none"/u);
+	assert.match(PANEL_SOURCE, /headerSurface="panel"/u);
+	assert.doesNotMatch(PANEL_SOURCE, /chrome="none"/u);
 	assert.doesNotMatch(PANEL_SOURCE, /\binset-y-0 left-0\b/u);
 	// The rail STOPS at the tab strip: a real `top` offset, never `inset-y-0`
 	// plus `paddingTop`. Spanning the board root and padding the content would
@@ -574,15 +790,27 @@ test("the Panel design variant floats untracked work over the board and the list
 		EXPERIMENTAL_PAGE_SOURCE,
 		/topInset=\{BOARD_HEADER_TAB_STRIP_BOTTOM_PX\}/u,
 	);
-	assert.match(PANEL_SOURCE, /export const AGENT_SESSION_PANEL_WIDTH_PX = 360;/u);
-	// Default PanelHeader gap (`h-14` / `py-4`) — no extra top pad to chase
-	// the filter row.
-	assert.match(PANEL_SOURCE, /<PanelHeader>/u);
+	assert.match(PANEL_SOURCE, /export \{ AGENT_SESSION_PANEL_WIDTH_PX \}/u);
+	assert.match(PANEL_RESIZE_HOOK_SOURCE, /export const AGENT_SESSION_PANEL_WIDTH_PX = 360;/u);
+	assert.match(PANEL_RESIZE_HOOK_SOURCE, /direction: "rtl"/u);
+	assert.match(
+		PANEL_SOURCE,
+		/onExpandedWidthChange\?: \(widthPx: number\) => void/u,
+	);
+	// The column owns the panel header. This host must not restack title,
+	// count, or overflow under the column's own Selected N / browse chrome.
+	assert.doesNotMatch(PANEL_SOURCE, /<PanelHeader>/u);
+	assert.doesNotMatch(PANEL_SOURCE, /<PanelTitle>/u);
+	assert.doesNotMatch(PANEL_SOURCE, /untrackedCount/u);
 	assert.doesNotMatch(PANEL_SOURCE, /AGENT_SESSION_PANEL_HEADER_CLASS|pt-6 pb-0/u);
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /rounded-lg bg-surface/u);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/agentSessionColumnCollapsed\s*\?\s*AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX\s*:\s*AGENT_SESSION_PANEL_WIDTH_PX/u,
+		/agentSessionColumnCollapsed\s*\?\s*AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX\s*:\s*agentSessionPanelWidthPx/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/onExpandedWidthChange=\{setAgentSessionPanelWidthPx\}/u,
 	);
 	// The rail stops at the tabs via a real `top`, so the header needs no
 	// opaque z-50 band to paint over its head.
@@ -619,7 +847,7 @@ test("the untracked panel publishes its occupied width for the floating Rovo but
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const UNTRACKED_PANEL_WIDTH_CSS_VAR = "--untracked-panel-width";/u);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/const untrackedPanelFabInsetPx = showAgentSessionPanel && !agentSessionColumnCollapsed\s*\?\s*AGENT_SESSION_PANEL_WIDTH_PX\s*:\s*0;/u,
+		/const untrackedPanelFabInsetPx = showAgentSessionPanel && !agentSessionColumnCollapsed\s*\?\s*agentSessionPanelWidthPx\s*:\s*0;/u,
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,

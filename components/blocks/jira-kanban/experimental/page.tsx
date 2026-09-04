@@ -5,14 +5,23 @@ import {
 	useImperativeHandle,
 	useLayoutEffect,
 	useMemo,
+	useRef,
 	useState,
 	type CSSProperties,
 	type ReactNode,
 	type Ref,
+	type RefObject,
 } from "react";
 
 import { useOptionalRovoChat } from "@/app/contexts";
-import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import {
+	resolveAgentSessionWorkItemKey,
+	type AgentSessionItem,
+} from "@/components/blocks/agent-session";
+import type {
+	JiraListAgentSessionDropIntent,
+	JiraListInsertion,
+} from "@/components/blocks/jira-list";
 import {
 	AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX,
 	type AgentSessionColumnProps,
@@ -49,6 +58,10 @@ import {
 	groupBoardUntrackedSessions,
 	selectBoardUntrackedSessions,
 } from "./lib/board-untracked-sessions";
+import {
+	locateBoardUntrackedTarget,
+	useBoardUntrackedTriage,
+} from "./lib/board-untracked-triage";
 import {
 	BOARD_HEADER_TAB_STRIP_BOTTOM_PX,
 	ExperimentalJiraKanbanBoardHeader,
@@ -120,24 +133,13 @@ const UNTRACKED_PANEL_WIDTH_CSS_VAR = "--untracked-panel-width";
 /** Stable identity, so an unscoped article does not re-render on every tick. */
 const EMPTY_ANSWERS: readonly PulseAnswer[] = [];
 
-/**
- * Experimental Jira Kanban page.
- *
- * Standalone fork of `components/blocks/jira-kanban/page.tsx`. It owns its own
- * board and header components so the experimental variant can diverge without
- * touching the default variant, while reusing the shared board state helpers.
- */
-/**
- * Imperative entry into Insights, for an owner that renders its own affordance.
- *
- * The board's daily-insights nudge lives on the floating Rovo button, which is
- * portalled to `document.body` and therefore mounted by the route rather than
- * by this page. It still has to open Insights *the board's way*: opening also
- * advances the unread watermark and applies the roster default, and a caller
- * that merely set `mode="pulse"` would leave a stale badge over an article the
- * reader is looking at. Handing out `handleOpenTimeline` itself keeps that rule
- * in one place instead of copying its steps into every owner.
- */
+export interface ExperimentalJiraKanbanListRenderContext {
+	agentSessionDropIntent?: JiraListAgentSessionDropIntent;
+	onTrailingContentUnderlapChange: (hasUnderlap: boolean) => void;
+	scrollEndInset: number;
+	trailingOverlayRef: RefObject<HTMLElement | null>;
+}
+
 export interface ExperimentalJiraKanbanPageHandle {
 	/**
 	 * Open Insights, mark the timeline viewed, and land on `snapshotId`.
@@ -151,6 +153,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	activeCardCode?: string;
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;
+	createWorkItemDropZoneLabel?: ExperimentalJiraKanbanProps["createWorkItemDropZoneLabel"];
 	detachedAgentSessionsByCard?: ExperimentalJiraKanbanProps["detachedAgentSessionsByCard"];
 	agentSessionAssigneeIdAliases?: Readonly<Record<string, string>>;
 	/**
@@ -194,11 +197,19 @@ export interface ExperimentalJiraKanbanPageProps {
 	onCardAgentSessionLink?: ExperimentalJiraKanbanProps["onCardAgentSessionLink"];
 	onCardAgentSessionMove?: ExperimentalJiraKanbanProps["onCardAgentSessionMove"];
 	onCardAgentSessionUnlink?: ExperimentalJiraKanbanProps["onCardAgentSessionUnlink"];
+	onListAgentSessionCreate?: (
+		session: AgentSessionItem,
+		insertion: JiraListInsertion,
+	) => void;
+	showAgentSessionUnlinkWell?: ExperimentalJiraKanbanProps["showAgentSessionUnlinkWell"];
 	onInsightsWorkItemClick?: (workItem: PulseWorkItem) => void;
 	onModeChange?: (mode: ExperimentalJiraKanbanMode) => void;
 	onResumeLooseWork?: (item: PulseLooseWork) => void;
 	onViewChange?: (view: ExperimentalJiraKanbanView) => void;
-	renderListContent?: (columns: readonly JiraKanbanColumnData[]) => ReactNode;
+	renderListContent?: (
+		columns: readonly JiraKanbanColumnData[],
+		context: ExperimentalJiraKanbanListRenderContext,
+	) => ReactNode;
 	renderAgentActivityIndicator?: ExperimentalJiraKanbanProps["renderAgentActivityIndicator"];
 	showBoardContent?: boolean;
 	showAgentSessionColumn?: boolean;
@@ -224,6 +235,7 @@ export default function ExperimentalJiraKanbanPage({
 	activeCardCode,
 	agentActivityLayout,
 	cardGenerativeActionPresentation,
+	createWorkItemDropZoneLabel,
 	defaultAgentSessionColumnCollapsed = false,
 	defaultShowUntracked = true,
 	detachedAgentSessionsByCard,
@@ -246,6 +258,8 @@ export default function ExperimentalJiraKanbanPage({
 	onCardAgentSessionLink,
 	onCardAgentSessionMove,
 	onCardAgentSessionUnlink,
+	onListAgentSessionCreate,
+	showAgentSessionUnlinkWell = true,
 	onInsightsWorkItemClick,
 	onModeChange,
 	onResumeLooseWork,
@@ -294,6 +308,7 @@ export default function ExperimentalJiraKanbanPage({
 	// decided, not view state that may quietly reset with the subtree.
 	const [requestedActionIds, setRequestedActionIds] = useState<ReadonlySet<string>>(() => new Set<string>());
 	const [capturedLooseWorkIds, setCapturedLooseWorkIds] = useState<ReadonlySet<string>>(() => new Set<string>());
+	const [archivedLooseWorkIds, setArchivedLooseWorkIds] = useState<ReadonlySet<string>>(() => new Set<string>());
 	// Owned here rather than inside the board: switching to the list or Pulse
 	// view unmounts `ExperimentalJiraKanban`, and a viewer's collapse choices are
 	// a deliberate setting that must outlive a temporary view switch.
@@ -302,6 +317,9 @@ export default function ExperimentalJiraKanbanPage({
 	// or collapses it back to the 32px notch rail. There is deliberately no
 	// closed state — nothing outside the rail could bring it back.
 	const [agentSessionColumnCollapsed, setAgentSessionColumnCollapsed] = useState(defaultAgentSessionColumnCollapsed);
+	const [agentSessionPanelWidthPx, setAgentSessionPanelWidthPx] = useState(AGENT_SESSION_PANEL_WIDTH_PX);
+	const agentSessionPanelRef = useRef<HTMLDivElement | null>(null);
+	const [listContentUnderlapsPanel, setListContentUnderlapsPanel] = useState(false);
 	const [collapsedColumns, setCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
 	const [showUntracked, setShowUntracked] = useState(defaultShowUntracked);
 	const [appliedShowUntrackedDefault, setAppliedShowUntrackedDefault] = useState(defaultShowUntracked);
@@ -317,6 +335,9 @@ export default function ExperimentalJiraKanbanPage({
 	}, []);
 	const handleCaptureLooseWork = useCallback((item: { id: string }) => {
 		setCapturedLooseWorkIds((current) => new Set(current).add(item.id));
+	}, []);
+	const handleArchiveLooseWork = useCallback((item: { id: string }) => {
+		setArchivedLooseWorkIds((current) => new Set(current).add(item.id));
 	}, []);
 	// Questions are stored per scope rather than cleared when the scope changes.
 	// An answer about Sprint 24 read as a reply to a question asked of PAY-90
@@ -468,11 +489,12 @@ export default function ExperimentalJiraKanbanPage({
 	);
 	const untrackedAgentSessionItems = useMemo(
 		() => selectBoardUntrackedSessions({
+			archivedItemIds: archivedLooseWorkIds,
 			capturedItemIds: capturedLooseWorkIds,
 			detachedByCard: detachedAgentSessionsByCard,
 			sessions: agentSessionItems,
 		}),
-		[agentSessionItems, capturedLooseWorkIds, detachedAgentSessionsByCard],
+		[agentSessionItems, archivedLooseWorkIds, capturedLooseWorkIds, detachedAgentSessionsByCard],
 	);
 	const agentSessionHandlers = useMemo(
 		() => toPulseSessionHandlers({
@@ -492,6 +514,39 @@ export default function ExperimentalJiraKanbanPage({
 		() => new Set(agentSessionItems.map((session) => session.id)),
 		[agentSessionItems],
 	);
+	const handleCardAgentSessionLink: ExperimentalJiraKanbanProps["onCardAgentSessionLink"] = (
+		session,
+		card,
+		columnTitle,
+	) => {
+		setCapturedLooseWorkIds((current) => {
+			if (current.has(session.id)) {
+				return current;
+			}
+			return new Set(current).add(session.id);
+		});
+		onCardAgentSessionLink?.(session, card, columnTitle);
+	};
+	const untrackedTriage = useBoardUntrackedTriage({
+		boardColumns: filteredBoardColumns,
+		onArchive: handleArchiveLooseWork,
+		onCreateWorkItem: handleCaptureLooseWork,
+		onLink: onCardAgentSessionLink ? handleCardAgentSessionLink : undefined,
+	});
+	const handleUntrackedLinkWorkItem = (
+		item: AgentSessionItem,
+		workItemKey?: string,
+	) => {
+		const key = workItemKey ?? resolveAgentSessionWorkItemKey(item);
+		const target = key === undefined
+			? undefined
+			: locateBoardUntrackedTarget(filteredBoardColumns, key)
+				?? untrackedTriage.locateTarget(item, key);
+		if (target === undefined) {
+			return;
+		}
+		untrackedTriage.attach(item, target);
+	};
 	// One config, both presentations. The in-flow column and the floating panel
 	// render the same `AgentSessionColumn` with the same data and handlers, so
 	// building it once is what stops them drifting as either host evolves.
@@ -501,6 +556,10 @@ export default function ExperimentalJiraKanbanPage({
 		items: untrackedAgentSessionItems,
 		...agentSessionHandlers,
 		onCollapsedChange: setAgentSessionColumnCollapsed,
+		onLinkWorkItem: onCardAgentSessionLink === undefined
+			? undefined
+			: handleUntrackedLinkWorkItem,
+		triage: untrackedTriage,
 	} : undefined;
 	const isListContent = activeView === "list" && renderListContent !== undefined;
 	// Insights replaces the whole content region with an article; a floating
@@ -518,14 +577,14 @@ export default function ExperimentalJiraKanbanPage({
 	const boardScrollEndInset = showAgentSessionPanel
 		? (agentSessionColumnCollapsed
 			? AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX
-			: AGENT_SESSION_PANEL_WIDTH_PX)
+			: agentSessionPanelWidthPx)
 		: 0;
 	// Scroll inset and FAB inset are different numbers. The last column still
 	// needs the 32px rail reserved; the viewport FAB does not — collapsed is
-	// the original 24px corner (`0` extra). Only the expanded 360px panel
-	// pushes it. First paint follows `defaultAgentSessionColumnCollapsed`.
+	// the original 24px corner (`0` extra). Only the expanded panel pushes it.
+	// First paint follows `defaultAgentSessionColumnCollapsed`.
 	const untrackedPanelFabInsetPx = showAgentSessionPanel && !agentSessionColumnCollapsed
-		? AGENT_SESSION_PANEL_WIDTH_PX
+		? agentSessionPanelWidthPx
 		: 0;
 	// The floating Rovo button is portalled to `document.body`, so it cannot
 	// inherit this variable from the board. Publish on `:root` (and the board
@@ -545,6 +604,7 @@ export default function ExperimentalJiraKanbanPage({
 	const proximityAgentSessionsByCard = useMemo(
 		() => showUntracked
 			? groupBoardUntrackedSessions({
+				archivedItemIds: archivedLooseWorkIds,
 				boardIssueKeys,
 				capturedItemIds: capturedLooseWorkIds,
 				detachedByCard: detachedAgentSessionsByCard,
@@ -553,6 +613,7 @@ export default function ExperimentalJiraKanbanPage({
 			: EMPTY_PROXIMITY_SESSIONS,
 		[
 			agentSessionItems,
+			archivedLooseWorkIds,
 			boardIssueKeys,
 			capturedLooseWorkIds,
 			detachedAgentSessionsByCard,
@@ -639,10 +700,9 @@ export default function ExperimentalJiraKanbanPage({
 		setDraggedCard(null);
 	};
 
-	const handleCardAgentSessionLink: ExperimentalJiraKanbanProps["onCardAgentSessionLink"] = (
-		session,
-		card,
-		columnTitle,
+	const handleListAgentSessionCreate = (
+		session: AgentSessionItem,
+		insertion: JiraListInsertion,
 	) => {
 		setCapturedLooseWorkIds((current) => {
 			if (current.has(session.id)) {
@@ -650,7 +710,7 @@ export default function ExperimentalJiraKanbanPage({
 			}
 			return new Set(current).add(session.id);
 		});
-		onCardAgentSessionLink?.(session, card, columnTitle);
+		onListAgentSessionCreate?.(session, insertion);
 	};
 
 	const handleCardAgentSessionMove: ExperimentalJiraKanbanProps["onCardAgentSessionMove"] = (
@@ -745,6 +805,8 @@ export default function ExperimentalJiraKanbanPage({
 	const boardSessionDrag = useBoardAgentSessionDrag({
 		boardColumns: filteredBoardColumns,
 		detachedSessionsByCard: proximityAgentSessionsByCard,
+		onCreate: agentSessionHandlers.onCreateWorkItem,
+		onListCreate: onListAgentSessionCreate ? handleListAgentSessionCreate : undefined,
 		onLink: onCardAgentSessionLink ? handleCardAgentSessionLink : undefined,
 		onMove: onCardAgentSessionMove ? handleCardAgentSessionMove : undefined,
 		onUnlink: onCardAgentSessionUnlink ? handleCardAgentSessionUnlink : undefined,
@@ -823,14 +885,14 @@ export default function ExperimentalJiraKanbanPage({
 					timeline={pulseTimeline}
 				/>
 			) : (
-				// The panel's positioning context, and the reason one overlay can
-				// serve both the board and the list: they are the same region.
-				// Insights stays outside it — it asserts its own `lg:min-h-[40rem]`
-				// floor, which an intermediate `min-h-0` box would turn into
-				// overflow.
 				<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 					{isListContent ? (
-						renderListContent?.(filteredBoardColumns)
+						renderListContent?.(filteredBoardColumns, {
+							agentSessionDropIntent: boardSessionDrag.listDropIntent,
+							onTrailingContentUnderlapChange: setListContentUnderlapsPanel,
+							scrollEndInset: boardScrollEndInset,
+							trailingOverlayRef: agentSessionPanelRef,
+						})
 					) : (
 						<div className="flex min-h-0 min-w-0 flex-1">
 							<ExperimentalJiraKanban
@@ -841,8 +903,12 @@ export default function ExperimentalJiraKanbanPage({
 								// Panel mode hands the column to the overlay instead, so
 								// the two presentations can never render at once.
 								agentSessionColumn={agentSessionPresentation === "panel"
+									|| agentSessionColumnConfig === undefined
 									? undefined
-									: agentSessionColumnConfig}
+									: {
+										...agentSessionColumnConfig,
+										draggingIds: boardSessionDrag.draggingIds,
+									}}
 								scrollEndInset={boardScrollEndInset}
 								proximityAgentSession={{
 									actionableSessionIds: proximityActionableSessionIds,
@@ -857,6 +923,7 @@ export default function ExperimentalJiraKanbanPage({
 								boardColumns={filteredBoardColumns}
 								cardGenerativeActionPresentation={cardGenerativeActionPresentation}
 								collapsedColumns={collapsedColumns}
+								createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
 								detachedAgentSessionsByCard={proximityAgentSessionsByCard}
 								onCollapsedColumnsChange={setCollapsedColumns}
 								draggedCardCode={draggedCard?.card.code ?? null}
@@ -873,6 +940,7 @@ export default function ExperimentalJiraKanbanPage({
 								onCardAgentSessionUnlink={onCardAgentSessionUnlink
 									? handleCardAgentSessionUnlink
 									: undefined}
+								showAgentSessionUnlinkWell={showAgentSessionUnlinkWell}
 								onCardSelect={handleCardSelect}
 								onCardDragStart={handleCardDragStart}
 								onCardDrop={handleCardDrop}
@@ -909,11 +977,15 @@ export default function ExperimentalJiraKanbanPage({
 					<AgentSessionPanel
 						agentSessionColumn={{
 							...agentSessionColumnConfig,
+							draggingIds: boardSessionDrag.draggingIds,
 							sessionDrag: boardSessionDrag.untrackedBinding,
 						}}
 						collapsed={agentSessionColumnCollapsed}
 						onCollapsedChange={setAgentSessionColumnCollapsed}
+						onExpandedWidthChange={setAgentSessionPanelWidthPx}
+						ref={agentSessionPanelRef}
 						sessionDragging={boardSessionDrag.transaction !== null}
+						showLeadingScrollFade={isListContent && listContentUnderlapsPanel}
 						topInset={BOARD_HEADER_TAB_STRIP_BOTTOM_PX}
 						untrackedDropArmed={boardSessionDrag.transaction?.target?.kind === "untracked"}
 					/>

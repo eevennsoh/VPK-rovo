@@ -13,6 +13,7 @@ type HiddenState = {
 
 type HiddenAction =
 	| { type: "close" }
+	| { id: string; type: "forget" }
 	| { type: "open" }
 	| { id: string; type: "toggle" };
 
@@ -41,6 +42,19 @@ export function pruneHiddenSessionIds(
 		}
 	}
 	return changed ? next : hiddenIds;
+}
+
+export function forgetHiddenSessionIds(
+	hiddenIds: ReadonlySet<string>,
+	id: string,
+): ReadonlySet<string> {
+	if (!hiddenIds.has(id)) {
+		return hiddenIds;
+	}
+
+	const next = new Set(hiddenIds);
+	next.delete(id);
+	return next;
 }
 
 export function splitSessionItemsByHidden(
@@ -85,6 +99,16 @@ function reduceHiddenState(state: HiddenState, action: HiddenAction): HiddenStat
 		}
 		case "close":
 			return state.view === "active" ? state : { ...state, view: "active" };
+		case "forget": {
+			const hiddenIds = forgetHiddenSessionIds(state.hiddenIds, action.id);
+			if (hiddenIds === state.hiddenIds) {
+				return state;
+			}
+			return {
+				hiddenIds,
+				view: hiddenViewAfterIds(state.view, hiddenIds),
+			};
+		}
 		case "open":
 			return state.hiddenIds.size === 0 || state.view === "hidden"
 				? state
@@ -120,9 +144,13 @@ export function useAgentSessionColumnHidden(items: readonly AgentSessionItem[]) 
 	const closeHiddenView = useCallback(() => {
 		dispatch({ type: "close" });
 	}, []);
+	const forgetHidden = useCallback((id: string) => {
+		dispatch({ id, type: "forget" });
+	}, []);
 
 	return {
 		closeHiddenView,
+		forgetHidden,
 		hiddenCount: state.hiddenIds.size,
 		hiddenItems,
 		openHiddenView,

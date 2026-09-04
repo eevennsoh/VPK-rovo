@@ -38,8 +38,8 @@ export interface ScrollMaskProps
 }
 
 /**
- * Pointer-events-none edge fade. Pair with `showTopScrollMask` /
- * `showBottomScrollMask` so the band is visual only and never steals clicks.
+ * Pointer-events-none edge fade. Gate scrollport edges on real overflow, or
+ * place one beside an overlapping pinned surface so it softens the underlap.
  */
 export function ScrollMaskEdgeOverlay({
 	className,
@@ -55,13 +55,22 @@ export function ScrollMaskEdgeOverlay({
 		fadeSize?: number | string;
 	}
 >) {
+	const isHorizontal = edge === "left" || edge === "right";
+	const edgePositionClassName = {
+		top: "top-0",
+		right: "right-0",
+		bottom: "bottom-0",
+		left: "left-0",
+	}[edge];
+
 	return (
 		<div
 			{...props}
 			aria-hidden="true"
 			className={cn(
-				"pointer-events-none absolute inset-x-0",
-				edge === "top" ? "top-0" : "bottom-0",
+				"pointer-events-none absolute",
+				isHorizontal ? "inset-y-0" : "inset-x-0",
+				edgePositionClassName,
 				className,
 			)}
 			data-scroll-mask-overlay={edge}

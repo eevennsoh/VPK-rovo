@@ -657,12 +657,14 @@ test("Jira issue aggregates completed agents into a Finished row with failure pr
 	assert.match(COMPLETED_RUNS_SOURCE, /import AiAgentIcon from "@atlaskit\/icon\/core\/ai-agent";/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /function toCompletedAgentListItem\(run: JiraIssueCompletedAgentRun\): AgentListItem \{[\s\S]*state: "complete",[\s\S]*title: run\.summary,/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /const finishedLabel = `\$\{runs\.length\} Finished`;/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /if \(props\.runs\.length === 1\) \{[\s\S]*label=\{run\.state === "failed" \? "Failed" : "Finished"\}[\s\S]*showFlyout=\{false\}/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /const hasFailedRun = runs\.some\(\(run\) => run\.state === "failed"\);/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /<section aria-label="Agent review" className="flex w-full min-w-0 flex-col overflow-hidden px-1 py-1">/u);
-	// The merged "N Finished" chin is what Team EU ships. Leading stays the
-	// generic agent mark; a host renderer owns the trailing finished glyph so
-	// it lines up with working/awaiting-input. Failed aggregates keep the
-	// trailing error so success never paints over a failure.
+	// One finished agent reuses the split chin (avatar + "Finished") and
+	// skips the aggregate flyout. Two or more stay on the Team EU "N Finished"
+	// chin: generic agent mark, host-owned trailing glyph, HoverCard list.
+	// Failed aggregates keep the trailing error so success never paints over
+	// a failure.
 	assert.match(
 		COMPLETED_RUNS_SOURCE,
 		/<JiraIssueAgentDoneMerged[\s\S]*renderAgentActivityIndicator=\{props\.renderAgentActivityIndicator\}/u,

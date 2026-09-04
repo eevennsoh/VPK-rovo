@@ -104,6 +104,7 @@ function JiraListFeed({
 			<div className="min-h-0 flex-1 overflow-auto p-4 md:p-5">
 				<JiraList
 					activeIssueKey={activeIssueKey}
+					agentCatalog={JIRA_DESIGN_KANBAN_AGENTS}
 					ariaLabel="For you work items list"
 					onIssueClick={(row) => {
 						const item = workItemsByKey.get(row.issueKey);

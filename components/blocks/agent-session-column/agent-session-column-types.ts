@@ -1,4 +1,5 @@
 import type { AgentSessionProps } from "@/components/blocks/agent-session";
+import type { UntrackedWorkTriage } from "@/components/blocks/agent-session/untracked-work-triage";
 
 /**
  * Column chrome around the Agent Session cards.
@@ -7,8 +8,12 @@ import type { AgentSessionProps } from "@/components/blocks/agent-session";
  * host wires `onLinkWorkItem`, `onCreateWorkItem`, `capturedItemIds` and friends
  * exactly as it would on the bare block. Only `className` is reclaimed, because
  * on a column it reads as the column surface rather than the inner list.
+ * `rowTriage` is omitted because the column builds it.
  */
-export interface AgentSessionColumnProps extends Omit<AgentSessionProps, "className"> {
+export interface AgentSessionColumnProps extends Omit<
+	AgentSessionProps,
+	"arrivingItemIds" | "className" | "onArrivalComplete" | "rowTriage"
+> {
 	/** Additional classes applied to the column surface. */
 	className?: string;
 	/** Classes applied to the inner session list. */
@@ -43,20 +48,19 @@ export interface AgentSessionColumnProps extends Omit<AgentSessionProps, "classN
 	/** Called after the column collapses or expands, controlled or not. */
 	onCollapsedChange?: (collapsed: boolean) => void;
 	/**
-	 * How much chrome the column draws around the sessions.
-	 *
-	 * `"default"` keeps the expanded header row — title, count, overflow menu
-	 * and collapse control — so the column reads as one of the board's columns.
-	 *
-	 * `"none"` drops that row only, for a host surface that already draws a
-	 * title bar and wants to own those actions rather than stack a second
-	 * header under its own. It is deliberately narrow: the collapsed rail keeps
-	 * its compact header in both modes, because at 32px that header *is* the
-	 * chrome and it carries the only control that can expand the column again.
-	 * The `<section>` keeps its `aria-label` too — with the visible title gone
-	 * it becomes the list's only accessible name.
+	 * Enables hover select, the Selected N header, and row Approve.
+	 * Omit it and the column stays a read-only list with Resume and Archive.
 	 */
-	chrome?: "default" | "none";
+	triage?: UntrackedWorkTriage;
+	/**
+	 * Which chrome the header wears.
+	 *
+	 * `"column"` is the in-flow board title row. `"panel"` is the docked
+	 * rail's PanelHeader skin. The collapsed rail keeps its compact header
+	 * in both modes, because at 32px that header is the chrome and it
+	 * carries the only control that can expand the column again.
+	 */
+	headerSurface?: "column" | "panel";
 	/**
 	 * Expanded width in px. Defaults to the board column's 280. A wider host
 	 * (the docked rail) passes its content-box width so the well fills that

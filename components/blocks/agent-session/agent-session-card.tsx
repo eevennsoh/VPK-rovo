@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
-import EyeOpenIcon from "@atlaskit/icon/core/eye-open";
-import EyeOpenStrikethroughIcon from "@atlaskit/icon/core/eye-open-strikethrough";
+import ArchiveBoxIcon from "@atlaskit/icon/core/archive-box";
+import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
+import LibraryIcon from "@atlaskit/icon/core/library";
 
 import {
 	AgentListRow,
@@ -24,8 +25,12 @@ import {
 	AGENT_SESSION_ARRIVAL_OFFSET_PX,
 	AGENT_SESSION_ARRIVAL_TRANSITION,
 } from "./agent-session-arrival-motion";
+import { approveActionLabel } from "./agent-session-approve";
+import { SESSION_DRAG_INTERACTIVE_SELECTOR } from "./agent-session-drag-interactive";
 import { AgentSessionMediumDrag } from "./agent-session-medium-drag";
-import type { AgentSessionItem } from "./agent-session-types";
+import { AgentSessionSelectMark } from "./agent-session-select-mark";
+import { isTransferSourceFaded } from "./session-cohort";
+import type { AgentSessionItem, AgentSessionTriageRow } from "./agent-session-types";
 
 /** How long Resume reads "Copied" after it writes the command to the clipboard. */
 const COPIED_RESET_MS = 2000;
@@ -54,12 +59,15 @@ export function AgentSessionCard({
 	isResumable,
 	isSelected = false,
 	item,
+	onArrivalComplete,
 	onCopyResume,
 	onItemHover,
 	onToggleVisibility,
 	onView,
 	sessionDrag,
-	visibilityLabel = "Hide",
+	triageRow,
+	draggingIds,
+	visibilityLabel = "Archive",
 }: Readonly<{
 	arrivalDelaySeconds?: number;
 	captured?: boolean;
@@ -76,12 +84,15 @@ export function AgentSessionCard({
 	/** Single-select highlight owned by the list, not this card. */
 	isSelected?: boolean;
 	item: AgentSessionItem;
+	onArrivalComplete?: () => void;
 	onCopyResume?: (item: AgentSessionItem) => void;
 	onItemHover?: (item: AgentSessionItem | null) => void;
 	onToggleVisibility?: (item: AgentSessionItem) => void;
 	onView?: (item: AgentSessionItem) => void;
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
-	/** Tooltip and accessible name for the hover eye. Hide in the active list, Show in Hidden work. */
+	triageRow?: AgentSessionTriageRow | null;
+	draggingIds?: ReadonlySet<string>;
+	/** Tooltip and accessible name for the hover archive control. Archive in the active list, Unarchive in the archived view. */
 	visibilityLabel?: string;
 }>) {
 	const shouldReduceMotion = useReducedMotion();
@@ -115,22 +126,44 @@ export function AgentSessionCard({
 	// The beat, not the mark: a card remounted while still unreviewed keeps the
 	// discovery dot but must not replay its entrance.
 	const shouldPlayArrival = isArriving && !shouldReduceMotion;
+	const handleArrivalComplete = () => {
+		if (shouldPlayArrival) {
+			onArrivalComplete?.();
+		}
+	};
 
-	// The same hover/focus-revealed pair Agent List rows use, with Hide / Show
-	// in the slot Agent List gives to Archive. The eye always renders; the
-	// column supplies `onToggleVisibility` so Hide actually removes the card.
+	const approve = triageRow?.approve;
+	const mark = triageRow?.mark;
+	const isMarked = mark?.isMarked ?? false;
+	const showSelectedFill = isMarked || (isSelected && mark == null);
+
+	// The same hover/focus-revealed pair Agent List rows use, with Archive /
+	// Unarchive in the slot Agent List gives to Archive. The control always
+	// renders; the column supplies `onToggleVisibility` so Archive removes the card.
 	// The article is the hit area. RowBody would otherwise wrap only the title
-	// column, leaving avatar and padding inert. Hover actions stay buttons so
-	// they can stop the article from toggling.
-	const activateCard = onView === undefined
+	// column, leaving avatar and padding inert. A triage mark uses that same
+	// path so selection is not avatar-only. Hover actions stay buttons so they
+	// can stop the article from toggling.
+	const activateCard = onView === undefined && mark == null
 		? undefined
 		: () => {
-			onView(item);
+			if (mark != null) {
+				const selecting = !mark.isMarked;
+				mark.onToggle();
+				if (selecting !== isSelected) {
+					onView?.(item);
+				}
+				return;
+			}
+			onView?.(item);
 		};
 	const handleArticleClick = activateCard === undefined
 		? undefined
 		: (event: MouseEvent<HTMLElement>) => {
-			if (event.target instanceof Element && event.target.closest("button") !== null) {
+			if (
+				event.target instanceof Element
+				&& event.target.closest(SESSION_DRAG_INTERACTIVE_SELECTOR) !== null
+			) {
 				return;
 			}
 			activateCard();
@@ -146,30 +179,37 @@ export function AgentSessionCard({
 				activateCard();
 			}
 		};
-
 	const hoverActions: AgentListRowHoverActions = {
-		primary: canResume
+		primary: approve
 			? {
-				label: copiedResume ? "Copied" : "Resume",
-				onClick: () => {
-					void copyResumeCommand(resumeCommand).then(() => {
-						onCopyResume?.(item);
-						setCopiedResume(true);
-						window.clearTimeout(copiedResetRef.current);
-						copiedResetRef.current = window.setTimeout(() => {
-							setCopiedResume(false);
-						}, COPIED_RESET_MS);
-					});
-				},
+				disabled: approve.target.kind === "unavailable",
+				icon: <Icon render={<CheckMarkIcon label="" size="small" />} />,
+				label: approveActionLabel(approve.target),
+				onClick: approve.onApprove,
 			}
-			: undefined,
+			: canResume
+				? {
+					label: copiedResume ? "Copied" : "Resume",
+					onClick: () => {
+						void copyResumeCommand(resumeCommand).then(() => {
+							onCopyResume?.(item);
+							setCopiedResume(true);
+							window.clearTimeout(copiedResetRef.current);
+							copiedResetRef.current = window.setTimeout(() => {
+								setCopiedResume(false);
+							}, COPIED_RESET_MS);
+						});
+					},
+				}
+				: undefined,
 		secondary: {
-			// Hide (active list) is a strikethrough eye; Show (hidden view) is open.
+			// Archive (active list) uses the archive box; Unarchive (hidden view)
+			// uses Library so the restore action is distinct from hide.
 			icon: (
 				<Icon
-					render={visibilityLabel === "Show"
-						? <EyeOpenIcon label="" size="small" />
-						: <EyeOpenStrikethroughIcon label="" size="small" />}
+					render={visibilityLabel === "Unarchive"
+						? <LibraryIcon label="" size="small" />
+						: <ArchiveBoxIcon label="" size="small" />}
 				/>
 			),
 			label: visibilityLabel,
@@ -188,7 +228,14 @@ export function AgentSessionCard({
 	return (
 		<motion.li
 			animate={shouldPlayArrival ? { opacity: 1, y: 0 } : undefined}
+			className={cn(
+				isMarked ? "has-[+[data-marked]]:[&_article]:rounded-b-none" : null,
+				"[[data-marked]+&[data-marked]]:[&_article]:rounded-t-none",
+				"[[data-marked]+&[data-marked]]:in-[.gap-1]:-mt-1",
+			)}
+			data-marked={isMarked || undefined}
 			data-testid={"agent-session-row-" + item.id}
+			onAnimationComplete={handleArrivalComplete}
 			onPointerEnter={() => {
 				isHoveredRef.current = true;
 				onItemHover?.(item);
@@ -207,6 +254,8 @@ export function AgentSessionCard({
 			transition={{ ...AGENT_SESSION_ARRIVAL_TRANSITION, delay: arrivalDelaySeconds ?? 0 }}
 		>
 			<AgentSessionMediumDrag
+				cohort={triageRow?.drag?.cohort}
+				cohortFollower={isTransferSourceFaded(item.id, draggingIds, false)}
 				item={item}
 				preserveSourceFootprint
 				sessionDrag={sessionDrag}
@@ -223,26 +272,25 @@ export function AgentSessionCard({
 						<article
 							{...bind}
 							aria-current={isSelected ? "true" : undefined}
-							aria-pressed={activateCard === undefined ? undefined : isSelected}
+							aria-pressed={activateCard === undefined ? undefined : showSelectedFill}
 							aria-roledescription={bind ? "Draggable agent session" : undefined}
 							className={cn(
 						"group/agent-row relative flex w-full rounded-lg p-3 text-left text-text",
 						bind ? "cursor-grab" : "cursor-pointer",
 						// Borderless tiles, 8px radius — same chrome as editor-palette
 						// suggestion rows. The list owns the gap between them.
-						"transition-[background-color] duration-xxshort ease-out-practical",
+						"transition-[background-color,border-radius] duration-xxshort ease-out-practical",
 						"motion-reduce:transition-none",
-						// Selected keeps the same blue-subtlest token as a spotlighted
-						// board card. No mapped hovered sibling exists, so hover stays blue.
-						isSelected && "bg-bg-accent-blue-subtlest",
-						!isSelected && isHighlighted && "bg-surface-hovered",
-						!isSelected && !isHighlighted && "bg-transparent hover:bg-surface-hovered",
+						showSelectedFill && "bg-bg-selected",
+						!showSelectedFill && isHighlighted && "bg-surface-hovered",
+						!showSelectedFill && !isHighlighted && "bg-transparent hover:bg-surface-hovered",
 						activateCard === undefined
 							? null
 							: "outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
 							)}
 							data-captured={captured || undefined}
 							data-highlighted={isHighlighted || undefined}
+							data-marked={isMarked || undefined}
 							data-new={isNew || undefined}
 							data-selected={isSelected || undefined}
 							data-variant="uncaptured-work"
@@ -266,9 +314,19 @@ export function AgentSessionCard({
 							<AgentListRow
 								hoverActions={hoverActions}
 								isCompact={false}
-								isSelected={isSelected}
+								isSelected={showSelectedFill}
 								item={item}
 								onView={undefined}
+								renderIdentity={mark === undefined || mark === null
+									? undefined
+									: (identity) => (
+										<AgentSessionSelectMark
+											identity={identity}
+											isMarked={mark.isMarked}
+											label={`Select "${item.title}"`}
+											onToggle={activateCard ?? mark.onToggle}
+										/>
+									)}
 								showHoverActionsWhenSelected
 							/>
 						</article>

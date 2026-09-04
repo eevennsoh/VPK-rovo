@@ -704,11 +704,23 @@ test("Experimental kanban cards opt into draggable agent-session unlink when the
 		EXPERIMENTAL_CARD_SOURCE,
 		/const canUnlinkAgentSession = Boolean\(onSessionUnlink && firstActiveAgentSession\);/u,
 	);
-	assert.match(EXPERIMENTAL_CARD_SOURCE, /const canTransferAgentSession = canUnlinkAgentSession \|\| canLinkAgentSession;/u);
+	assert.match(
+		EXPERIMENTAL_CARD_SOURCE,
+		/const canTransferAgentSession = canUnlinkAgentSession \|\| canLinkAgentSession \|\| isBoardDropTarget;/u,
+	);
 	assert.match(EXPERIMENTAL_CARD_SOURCE, /onSessionUnlink\?\.\(resolvedSession, card, columnTitle\)/u);
 	assert.doesNotMatch(EXPERIMENTAL_CARD_SOURCE, /JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCardAgentSessionUnlink=\{onCardAgentSessionUnlink\}/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCardAgentSessionLink=\{onCardAgentSessionLink\}/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/onCardAgentSessionUnlink=\{onCardAgentSessionUnlink\s*\n\s*\? handleCardAgentSessionUnlink\s*\n\s*: undefined\}/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/onCardAgentSessionLink=\{onCardAgentSessionLink\s*\n\s*\? handleCardAgentSessionLink\s*\n\s*: undefined\}/u,
+	);
+	assert.match(EXPERIMENTAL_SOURCE, /showAgentSessionUnlinkWell\?: boolean;/u);
+	assert.match(EXPERIMENTAL_SOURCE, /showUnlinkWell=\{showAgentSessionUnlinkWell\}/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /showUnlinkWell,/u);
 });
 
 test("Experimental kanban keeps the Unlink grey backdrop when a related session stays detached", () => {

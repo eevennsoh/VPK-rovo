@@ -1,8 +1,20 @@
 import { cn } from "@/lib/utils";
 
 import type {
+	JiraListAgentSessionDropIntent,
 	JiraListInsertionPosition,
 } from "@/components/blocks/jira-list/jira-list-types";
+import {
+	getInsertionFromRowZone,
+	getRowZone,
+	JIRA_LIST_ROW_ZONE_BAND,
+} from "./jira-list-row-zone.js";
+
+export {
+	getInsertionFromRowZone,
+	getRowZone,
+	JIRA_LIST_ROW_ZONE_BAND,
+};
 
 export interface JiraListInsertionTarget {
 	issueKey: string;
@@ -29,18 +41,26 @@ export function getColumnBoundaryIndex(
 	return columnIndex + 1;
 }
 
-export function getRowZone(rowOffset: number, rowHeight: number): JiraListRowZone {
-	const rowThird = rowHeight / 3;
+export function getAgentSessionInsertionTarget(
+	intent: JiraListAgentSessionDropIntent | undefined,
+): JiraListInsertionTarget | null {
+	return intent?.kind === "create"
+		? {
+			issueKey: intent.insertion.relativeToIssueKey,
+			position: intent.insertion.position,
+		}
+		: null;
+}
 
-	if (rowOffset < rowThird) {
-		return "before";
-	}
+export function isAgentSessionAttachTarget(
+	intent: JiraListAgentSessionDropIntent | undefined,
+	issueKey: string,
+): boolean {
+	return intent?.kind === "attach" && intent.issueKey === issueKey;
+}
 
-	if (rowOffset > rowThird * 2) {
-		return "after";
-	}
-
-	return "drag";
+export function getAgentSessionAttachCellClassName(isTarget: boolean): string | undefined {
+	return isTarget ? "bg-bg-selected ring-1 ring-inset ring-border-selected" : undefined;
 }
 
 export function getDragInsertionPosition(
@@ -58,16 +78,19 @@ export function getDragInsertionPosition(
 export function getBodyCellClassName({
 	isSelected,
 	isLastColumn = false,
+	isLastRow = false,
 	align = "left",
 }: Readonly<{
 	isSelected: boolean;
 	isLastColumn?: boolean;
+	isLastRow?: boolean;
 	align?: "left" | "center";
 }>) {
 	return cn(
 		"relative h-10 border-b border-r border-border px-3 py-0 align-middle whitespace-nowrap transition-colors",
 		align === "center" && "text-center",
 		isLastColumn && "border-r-0",
+		isLastRow && "border-b-0",
 		isSelected
 			? "bg-bg-selected"
 			: "bg-surface group-hover/row:bg-bg-neutral-subtle-hovered group-focus-within/row:bg-bg-neutral-subtle-hovered",

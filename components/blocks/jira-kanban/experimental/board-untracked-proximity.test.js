@@ -46,7 +46,7 @@ test("the experimental page groups Pulse sessions onto the board when Untracked 
 	);
 	assert.match(
 		PAGE_SOURCE,
-		/showUntracked\s*\?\s*groupBoardUntrackedSessions\(\{\s*boardIssueKeys,\s*capturedItemIds: capturedLooseWorkIds,\s*detachedByCard: detachedAgentSessionsByCard,\s*sessions: agentSessionItems,\s*\}\)\s*:\s*EMPTY_PROXIMITY_SESSIONS/u,
+		/showUntracked\s*\?\s*groupBoardUntrackedSessions\(\{\s*archivedItemIds: archivedLooseWorkIds,\s*boardIssueKeys,\s*capturedItemIds: capturedLooseWorkIds,\s*detachedByCard: detachedAgentSessionsByCard,\s*sessions: agentSessionItems,\s*\}\)\s*:\s*EMPTY_PROXIMITY_SESSIONS/u,
 	);
 	assert.match(PAGE_SOURCE, /detachedAgentSessionsByCard=\{proximityAgentSessionsByCard\}/u);
 	assert.match(HELPER_SOURCE, /session\.sessionDetails\?\.issueKey/u);
@@ -56,7 +56,7 @@ test("the experimental page groups Pulse sessions onto the board when Untracked 
 test("the Untracked column follows card session link and unlink state", () => {
 	assert.match(
 		PAGE_SOURCE,
-		/const untrackedAgentSessionItems = useMemo\([\s\S]*selectBoardUntrackedSessions\(\{[\s\S]*capturedItemIds: capturedLooseWorkIds,[\s\S]*detachedByCard: detachedAgentSessionsByCard,[\s\S]*sessions: agentSessionItems,/u,
+		/const untrackedAgentSessionItems = useMemo\([\s\S]*selectBoardUntrackedSessions\(\{[\s\S]*archivedItemIds: archivedLooseWorkIds,[\s\S]*capturedItemIds: capturedLooseWorkIds,[\s\S]*detachedByCard: detachedAgentSessionsByCard,[\s\S]*sessions: agentSessionItems,/u,
 	);
 	assert.match(PAGE_SOURCE, /items: untrackedAgentSessionItems/u);
 	assert.match(
@@ -94,7 +94,7 @@ test("one board transaction coordinates every session source and suppresses prev
 	assert.match(BOARD_SOURCE, /JiraSessionFlyoutSuspensionProvider/u);
 	assert.match(BOARD_SOURCE, /const sessionFlyoutsSuspended = boardSessionDrag\.transaction !== null \|\| draggedCardCode !== null;/u);
 	assert.match(BOARD_SOURCE, /suspended=\{sessionFlyoutsSuspended\}/u);
-	assert.match(BOARD_SOURCE, /sessionDrag=\{boardSessionDrag\.enabled[\s\S]*\? boardSessionDrag\.untrackedBinding[\s\S]*: agentSessionColumn\.sessionDrag\}/u);
+	assert.match(BOARD_SOURCE, /sessionDrag=\{boardSessionDrag\.enablement\.transferable[\s\S]*\? boardSessionDrag\.untrackedBinding[\s\S]*: agentSessionColumn\.sessionDrag\}/u);
 	assert.match(PAGE_SOURCE, /boardAgentSessionDrag=\{boardSessionDrag\}/u);
 	assert.match(PAGE_SOURCE, /sessionDrag: boardSessionDrag\.untrackedBinding/u);
 	assert.match(
@@ -124,19 +124,16 @@ test("one board transaction coordinates every session source and suppresses prev
 });
 
 test("board-wide drag stays opt-in for zero and partial callback consumers", () => {
-	assert.match(
-		DRAG_HOOK_SOURCE,
-		/const enabled = Boolean\(onLink && onMove && onUnlink\);/u,
-	);
+	assert.match(DRAG_HOOK_SOURCE, /const enablement = resolveDragEnablement\(ports\);/u);
 	assert.doesNotMatch(
 		DRAG_HOOK_SOURCE,
 		/agentActivityLayout === "split"/u,
 		"merged Team EU chins must be able to drag onto Untracked and issues",
 	);
-	assert.match(DRAG_HOOK_SOURCE, /\n\s*enabled,\s*\n/u);
-	assert.match(DRAG_HOOK_SOURCE, /const control: JiraIssueAgentSessionDragControl \| undefined = enabled/u);
-	assert.match(DRAG_HOOK_SOURCE, /detachedBinding: enabled[\s\S]*\? createBinding\(\{ kind: "detached"/u);
-	assert.match(DRAG_HOOK_SOURCE, /untrackedBinding: enabled \? createBinding\(\{ kind: "untracked" \}\) : undefined/u);
+	assert.match(DRAG_HOOK_SOURCE, /\n\s*enablement,\s*\n/u);
+	assert.match(DRAG_HOOK_SOURCE, /const control: JiraIssueAgentSessionDragControl \| undefined = enablement\.attached/u);
+	assert.match(DRAG_HOOK_SOURCE, /detachedBinding: enablement\.transferable[\s\S]*\? createBinding\(\{ kind: "detached"/u);
+	assert.match(DRAG_HOOK_SOURCE, /untrackedBinding: enablement\.transferable \? createBinding\(\{ kind: "untracked" \}\) : undefined/u);
 	assert.match(CARD_SOURCE, /detachedSessionDrag \?\? localSessionDrag/u);
 });
 
@@ -212,7 +209,7 @@ test("a hovered detached board session lights its column twin", () => {
 	assert.match(MEDIUM_CARD_SOURCE, /onPointerEnter=\{\(\) => \{\s*[\s\S]*?onItemHover\?\.\(item\);\s*\}\}/u);
 	assert.match(MEDIUM_CARD_SOURCE, /onPointerLeave=\{\(\) => \{\s*[\s\S]*?onItemHover\?\.\(null\);\s*\}\}/u);
 	assert.match(SESSION_INDEX_SOURCE, /isHighlighted=\{item\.id === highlightedItemId\}/u);
-	assert.match(LARGE_CARD_SOURCE, /!isSelected && isHighlighted && "bg-surface-hovered"/u);
+	assert.match(LARGE_CARD_SOURCE, /!showSelectedFill && isHighlighted && "bg-surface-hovered"/u);
 });
 
 test("column card click scrolls the related issue and applies the blue-subtlest spotlight", () => {

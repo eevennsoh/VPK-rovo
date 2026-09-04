@@ -199,12 +199,9 @@ interface SelectItemProps extends SelectPrimitive.Item.Props {
 }
 
 /**
- * Select rows have always carried the check on the trailing edge. The gutter
- * swap is shared with DropdownMenu's opt-in `indicatorPlacement="end"` via
- * `dropdownStyles.selectableItemIndicatorEnd`. The indicator colour is kept as
- * a local literal rather than reusing `dropdownStyles.indicatorEnd` so the two
- * surfaces stay free to diverge; today they agree on the subtle token, and
- * neither draws a filled selected surface.
+ * Select rows have always carried the check on the trailing edge. Gutter and
+ * glyph share DropdownMenu's `indicatorPlacement="end"` tokens so the tick
+ * sits in the same in-flow 12px slot as a submenu chevron.
  */
 function SelectItem({
 	className,
@@ -224,10 +221,18 @@ function SelectItem({
 			)}
 			{...props}
 		>
+			<SelectPrimitive.ItemText
+				className={cn(
+					"flex min-w-0 flex-1 items-center gap-2 whitespace-nowrap",
+					textClassName,
+				)}
+			>
+				{children}
+			</SelectPrimitive.ItemText>
 			{showIndicator ? (
 				<span
 					data-slot="select-item-indicator"
-					className="pointer-events-none absolute right-2 inline-flex size-6 items-center justify-center text-icon-subtle [&_[data-slot=icon]]:text-icon-subtle [&_svg]:text-icon-subtle!"
+					className={dropdownStyles.indicatorEnd}
 				>
 					<SelectPrimitive.ItemIndicator>
 						<Icon
@@ -238,14 +243,6 @@ function SelectItem({
 					</SelectPrimitive.ItemIndicator>
 				</span>
 			) : null}
-			<SelectPrimitive.ItemText
-				className={cn(
-					"flex min-w-0 flex-1 items-center gap-2 whitespace-nowrap",
-					textClassName,
-				)}
-			>
-				{children}
-			</SelectPrimitive.ItemText>
 		</SelectPrimitive.Item>
 	)
 }

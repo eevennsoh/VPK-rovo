@@ -14,7 +14,7 @@ import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/bloc
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
 import { isPulseAgentSession, type PulseLooseWork } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { linkJiraKanbanAgentSession, moveJiraKanbanAgentSession, unlinkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
-import { JiraList, type JiraListRowData } from "@/components/blocks/jira-list";
+import { JiraList, type JiraListAssignedAgent, type JiraListInsertion } from "@/components/blocks/jira-list";
 import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { useDesignVariation } from "@/components/hooks/use-design-variation";
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
@@ -29,6 +29,7 @@ import {
 import { useJiraTabs } from "@/components/projects/jira/hooks/use-jira-tabs";
 import { resolveJiraTab } from "@/components/projects/jira/lib/jira-tab-model";
 import AppLayout from "@/components/projects/page";
+import { cn } from "@/lib/utils";
 
 import { getJiraGoldenJourneysV4AgentActivityIndicator } from "./data/agent-activity-indicators";
 import {
@@ -38,31 +39,9 @@ import {
 	JIRA_GOLDEN_JOURNEYS_V4_PAY_HEADER_ASSIGNEES,
 	JIRA_GOLDEN_JOURNEYS_V4_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID,
 } from "./data/presentation-story";
+import { useJiraGoldenJourneysV4List } from "./hooks/use-jira-golden-journeys-v4-list";
 
-const STATUS_VARIANTS: Readonly<Record<string, JiraListRowData["statusVariant"]>> = {
-	"To do": "neutral",
-	"In progress": "information",
-	"In review": "warning",
-	Done: "success",
-};
-
-function createListRows(columns: readonly JiraKanbanColumnData[]): JiraListRowData[] {
-	return columns.flatMap((column) => column.cards.map((card) => ({
-		issueKey: card.code,
-		summary: card.title,
-		issueType: "task",
-		priority: card.priority,
-		status: column.title,
-		statusVariant: STATUS_VARIANTS[column.title],
-		assignee: card.assignee,
-		agentSessions: [
-			...(card.agentActivities?.map((activity) => activity.name) ?? []),
-			...(card.agentDoneRuns?.map((run) => run.agentName) ?? []),
-		],
-		labels: card.tags,
-		contributors: card.assignee ? [card.assignee] : [],
-	})));
-}
+const JIRA_LIST_PANEL_END_GAP_PX = 24;
 
 export default function JiraGoldenJourneysV4Page(): React.ReactElement {
 	return (
@@ -97,6 +76,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 	// to a work item. Untracked Pulse rows stay in the dedicated Untracked
 	// surface. 2000 years later keeps proximity rows beside the related cards.
 	const showUntrackedProximity = designVariation !== "team-eu";
+	const createWorkItemDropZoneLabel = "Create new work item";
 	// Chin rows follow the same variation split. Team EU groups every active
 	// agent into one merged row (hover opens assignment). 2000 years later
 	// keeps a row per agent so the split exploration stays intact.
@@ -143,6 +123,54 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 			intro: run.description,
 		});
 	}, [openAgentChat]);
+	const handleListAssignedAgentSelect = useCallback((
+		issueKey: string,
+		agent: JiraListAssignedAgent,
+	) => {
+		const card = boardColumns
+			.flatMap((column) => column.cards)
+			.find((candidate) => candidate.code === issueKey);
+		if (!card) {
+			openAgentChat({
+				agentId: agent.id,
+				agentName: agent.name,
+				issueKey,
+				issueSummary: "",
+			});
+			return;
+		}
+
+		const activity = card.agentActivities?.find((candidate) => (
+			candidate.id === agent.id
+			|| candidate.id.endsWith(`:${agent.id}`)
+			|| candidate.name === agent.name
+		));
+		if (activity) {
+			handleViewChat(activity, card);
+			return;
+		}
+
+		const run = card.agentDoneRuns?.find((candidate) => (
+			candidate.id === agent.id
+			|| candidate.agentName === agent.name
+		));
+		if (run) {
+			handleViewCompletedRun(run);
+			return;
+		}
+
+		openAgentChat({
+			agentId: agent.id,
+			agentName: agent.name,
+			issueKey: card.code,
+			issueSummary: card.title,
+		});
+	}, [boardColumns, handleViewChat, handleViewCompletedRun, openAgentChat]);
+	const { createFromAgentSession, getProps: getListProps } = useJiraGoldenJourneysV4List({
+		boardColumns,
+		onAssignedAgentSelect: handleListAssignedAgentSelect,
+		setBoardColumns,
+	});
 	// Unlink always lands in `detachedAgentSessionsByCard`. The Untracked list
 	// reads that map, so the session reappears there immediately. Team EU keeps
 	// `showUntrackedProximity` off, so it never parks beside the card.
@@ -162,7 +190,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 		});
 		setBoardColumns((columns) => unlinkJiraKanbanAgentSession(columns, card.code, session.id));
 	}, []);
-	const handleAgentSessionLink = useCallback((session: AgentSessionItem, card: JiraKanbanCardData) => {
+	const consumeDetachedAgentSession = useCallback((session: AgentSessionItem) => {
 		const activity = detachedActivitiesByIdRef.current[session.id]
 			?? toJiraIssueDemoAttachedActivity(session);
 		if (session.id in detachedActivitiesByIdRef.current) {
@@ -184,8 +212,23 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 			}
 			return changed ? next : current;
 		});
-		setBoardColumns((columns) => linkJiraKanbanAgentSession(columns, card.code, activity));
+		return activity;
 	}, []);
+	const handleAgentSessionLink = useCallback((session: AgentSessionItem, card: JiraKanbanCardData) => {
+		const activity = consumeDetachedAgentSession(session);
+		setBoardColumns((columns) => linkJiraKanbanAgentSession(columns, card.code, activity));
+	}, [consumeDetachedAgentSession]);
+	const handleListAgentSessionCreate = useCallback((
+		session: AgentSessionItem,
+		insertion: JiraListInsertion,
+	) => {
+		const activity = consumeDetachedAgentSession(session);
+		createFromAgentSession({
+			activity,
+			insertion,
+			session,
+		});
+	}, [consumeDetachedAgentSession, createFromAgentSession]);
 	const handleAgentSessionMove = useCallback((
 		session: JiraIssueAgentSessionRef,
 		sourceCard: JiraKanbanCardData,
@@ -213,6 +256,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						activeView={activeView}
 						agentActivityLayout={agentActivityLayout}
 						cardGenerativeActionPresentation="more-actions"
+						createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
 						agentSessionAssigneeIdAliases={JIRA_GOLDEN_JOURNEYS_V4_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID}
 						agentSessionPresentation={designVariants.panel ? "panel" : "column"}
 						agents={JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS}
@@ -231,18 +275,36 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						onCardAgentSessionLink={handleAgentSessionLink}
 						onCardAgentSessionMove={handleAgentSessionMove}
 						onCardAgentSessionUnlink={handleAgentSessionUnlink}
+						onListAgentSessionCreate={handleListAgentSessionCreate}
+						showAgentSessionUnlinkWell={designVariation !== "team-eu"}
 						onResumeLooseWork={handleResumeLooseWork}
 						onViewChange={tabOwnsView ? undefined : setWorkItemView}
-						renderListContent={(columns) => {
-							const listRows = createListRows(columns);
+						renderListContent={(
+							columns,
+							{
+								agentSessionDropIntent,
+								onTrailingContentUnderlapChange,
+								scrollEndInset,
+								trailingOverlayRef,
+							},
+						) => {
+							const listProps = getListProps(columns);
+							const listScrollEndInset = scrollEndInset > 0
+								? scrollEndInset + JIRA_LIST_PANEL_END_GAP_PX
+								: 0;
 							return (
-								<div className="min-h-0 flex-1 overflow-auto p-4 md:p-5">
+								<div
+									className={cn(
+										"min-h-0 flex-1 overflow-hidden py-4 ps-4 md:py-5 md:ps-5",
+										scrollEndInset > 0 ? "pe-0" : "pe-4 md:pe-5",
+									)}
+								>
 									<JiraList
-										ariaLabel="Payments SDK v2 migration work items list"
-										className="max-h-full"
-										rows={listRows}
-										totalCountLabel={`${listRows.length}`}
-										visibleCount={listRows.length}
+										{...listProps}
+										agentSessionDropIntent={agentSessionDropIntent}
+										onTrailingContentUnderlapChange={onTrailingContentUnderlapChange}
+										scrollEndInset={listScrollEndInset}
+										trailingOverlayRef={trailingOverlayRef}
 									/>
 								</div>
 							);

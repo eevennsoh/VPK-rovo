@@ -12,10 +12,12 @@ const EMPTY_DETACHED_BY_CARD: Readonly<Record<string, readonly AgentSessionItem[
  */
 export function selectBoardUntrackedSessions({
 	sessions,
+	archivedItemIds = EMPTY_CAPTURED_IDS,
 	capturedItemIds = EMPTY_CAPTURED_IDS,
 	detachedByCard = EMPTY_DETACHED_BY_CARD,
 }: {
 	sessions: readonly AgentSessionItem[];
+	archivedItemIds?: ReadonlySet<string>;
 	capturedItemIds?: ReadonlySet<string>;
 	detachedByCard?: Readonly<Record<string, readonly AgentSessionItem[]>>;
 }): readonly AgentSessionItem[] {
@@ -23,7 +25,11 @@ export function selectBoardUntrackedSessions({
 	const seenIds = new Set<string>();
 
 	const addIfUntracked = (session: AgentSessionItem) => {
-		if (capturedItemIds.has(session.id) || seenIds.has(session.id)) {
+		if (
+			capturedItemIds.has(session.id)
+			|| archivedItemIds.has(session.id)
+			|| seenIds.has(session.id)
+		) {
 			return;
 		}
 		untrackedSessions.push(session);
@@ -63,11 +69,13 @@ export function collectBoardIssueKeys(
  */
 export function groupBoardUntrackedSessions({
 	sessions,
+	archivedItemIds = EMPTY_CAPTURED_IDS,
 	boardIssueKeys,
 	capturedItemIds = EMPTY_CAPTURED_IDS,
 	detachedByCard = EMPTY_DETACHED_BY_CARD,
 }: {
 	sessions: readonly AgentSessionItem[];
+	archivedItemIds?: ReadonlySet<string>;
 	boardIssueKeys: ReadonlySet<string>;
 	capturedItemIds?: ReadonlySet<string>;
 	detachedByCard?: Readonly<Record<string, readonly AgentSessionItem[]>>;
@@ -79,6 +87,7 @@ export function groupBoardUntrackedSessions({
 		if (
 			issueKey === undefined
 			|| !boardIssueKeys.has(issueKey)
+			|| archivedItemIds.has(session.id)
 			|| capturedItemIds.has(session.id)
 		) {
 			continue;
@@ -100,7 +109,11 @@ export function groupBoardUntrackedSessions({
 		const existing = grouped.get(cardCode) ?? [];
 		const seenIds = new Set(existing.map((session) => session.id));
 		for (const session of detachedSessions) {
-			if (capturedItemIds.has(session.id) || seenIds.has(session.id)) {
+			if (
+				archivedItemIds.has(session.id)
+				|| capturedItemIds.has(session.id)
+				|| seenIds.has(session.id)
+			) {
 				continue;
 			}
 			existing.push(session);

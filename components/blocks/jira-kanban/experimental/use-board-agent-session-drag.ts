@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import { createSessionCohort } from "@/components/blocks/agent-session/session-cohort";
 import type {
 	JiraIssueAgentSessionDragControl,
 	JiraIssueAgentSessionDragState,
@@ -10,20 +11,60 @@ import type {
 import {
 	JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE,
 	type JiraIssueAgentSessionDragBinding,
+	type JiraIssueAgentSessionTransferMember,
 } from "@/components/blocks/jira-issue/agent-session-drag";
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
 
+import type { JiraListInsertion } from "@/components/blocks/jira-list/jira-list-types";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "../index";
 import {
 	createBoardAgentSessionDragTransaction,
+	parseListRowDropZone,
 	resolveBoardAgentSessionDropAction,
+	toListSessionDropIntent,
 	updateBoardAgentSessionDragTransaction,
 	type BoardAgentSessionDragOrigin,
 	type BoardAgentSessionDragTransaction,
+	type BoardAgentSessionDropBounds,
 	type BoardAgentSessionDropZone,
 } from "./lib/board-agent-session-drag";
+import {
+	executeSessionTransferPlan,
+	planSessionTransfer,
+	resolveDragEnablement,
+	type SessionTransferLookups,
+	type SessionTransferPorts,
+} from "./lib/session-transfer-plan";
 
 const SESSION_UNLINK_DROP_HALO_PX = 24;
+
+function clipBoundsToScrollport(
+	node: HTMLElement,
+	rect: DOMRect,
+): BoardAgentSessionDropBounds | null {
+	const scrollport = node.closest<HTMLElement>("[data-testid='jira-list-table-scroll']");
+	if (!scrollport) {
+		return {
+			bottom: rect.bottom,
+			left: rect.left,
+			right: rect.right,
+			top: rect.top,
+		};
+	}
+
+	const clip = scrollport.getBoundingClientRect();
+	const header = scrollport.querySelector("thead");
+	const headerBottom = header?.getBoundingClientRect().bottom ?? clip.top;
+	const top = Math.max(rect.top, headerBottom, clip.top);
+	const bottom = Math.min(rect.bottom, clip.bottom);
+	const left = Math.max(rect.left, clip.left);
+	const right = Math.min(rect.right, clip.right);
+	if (bottom <= top || right <= left) {
+		return null;
+	}
+
+	return { bottom, left, right, top };
+}
 
 function collectDropZones(root: HTMLElement | null): BoardAgentSessionDropZone[] {
 	if (!root) return [];
@@ -33,6 +74,19 @@ function collectDropZones(root: HTMLElement | null): BoardAgentSessionDropZone[]
 	).flatMap((node): BoardAgentSessionDropZone[] => {
 		const kind = node.dataset.boardAgentSessionDropZone;
 		const rect = node.getBoundingClientRect();
+		if (kind === "create") {
+			const columnTitle = node.dataset.boardAgentSessionColumnTitle;
+			return columnTitle ? [{
+				bounds: {
+					bottom: rect.bottom,
+					left: rect.left,
+					right: rect.right,
+					top: rect.top,
+				},
+				columnTitle,
+				kind: "create",
+			}] : [];
+		}
 		if (kind === "untracked") {
 			return [{
 				bounds: {
@@ -44,8 +98,14 @@ function collectDropZones(root: HTMLElement | null): BoardAgentSessionDropZone[]
 				kind: "untracked",
 			}];
 		}
-		const cardCode = node.closest<HTMLElement>("[data-issue-key]")?.dataset.issueKey;
-		if (!cardCode || (kind !== "issue" && kind !== "unlink")) return [];
+		const issueKey = node.closest<HTMLElement>("[data-issue-key]")?.dataset.issueKey;
+		if (kind === "list-row") {
+			const bounds = clipBoundsToScrollport(node, rect);
+			if (!bounds) return [];
+			const zone = parseListRowDropZone(issueKey, node.dataset.listRowIndex, bounds);
+			return zone ? [zone] : [];
+		}
+		if (!issueKey || (kind !== "issue" && kind !== "unlink")) return [];
 		const halo = kind === "unlink" ? SESSION_UNLINK_DROP_HALO_PX : 0;
 		return [{
 			bounds: {
@@ -54,7 +114,7 @@ function collectDropZones(root: HTMLElement | null): BoardAgentSessionDropZone[]
 				right: rect.right + halo,
 				top: rect.top - halo,
 			},
-			cardCode,
+			cardCode: issueKey,
 			kind,
 		}];
 	});
@@ -74,6 +134,8 @@ function findBoardCard(
 export function useBoardAgentSessionDrag({
 	boardColumns,
 	detachedSessionsByCard,
+	onCreate,
+	onListCreate,
 	onLink,
 	onMove,
 	onUnlink,
@@ -81,6 +143,11 @@ export function useBoardAgentSessionDrag({
 }: Readonly<{
 	boardColumns: readonly JiraKanbanColumnData[];
 	detachedSessionsByCard?: Readonly<Record<string, readonly AgentSessionItem[]>>;
+	onCreate?: (session: AgentSessionItem, columnTitle: string) => void;
+	onListCreate?: (
+		session: AgentSessionItem,
+		insertion: JiraListInsertion,
+	) => void;
 	onLink?: (session: AgentSessionItem, card: JiraKanbanCardData, columnTitle: string) => void;
 	onMove?: (
 		session: JiraIssueAgentSessionRef,
@@ -93,60 +160,64 @@ export function useBoardAgentSessionDrag({
 	untrackedSessions?: readonly AgentSessionItem[];
 }>) {
 	const boardRootRef = useRef<HTMLDivElement | null>(null);
-	const transactionRef = useRef<BoardAgentSessionDragTransaction<JiraIssueAgentSessionRef> | null>(null);
-	const [transaction, setTransaction] = useState<BoardAgentSessionDragTransaction<JiraIssueAgentSessionRef> | null>(null);
+	const transactionRef = useRef<BoardAgentSessionDragTransaction<JiraIssueAgentSessionTransferMember> | null>(null);
+	const [transaction, setTransaction] = useState<BoardAgentSessionDragTransaction<JiraIssueAgentSessionTransferMember> | null>(null);
 	const [dragState, setDragState] = useState<JiraIssueAgentSessionDragState>(
 		JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE,
 	);
-	const enabled = Boolean(onLink && onMove && onUnlink);
+	const ports: SessionTransferPorts = {
+		onCreate,
+		onLink,
+		onListCreate,
+		onMove,
+		onUnlink,
+	};
+	const enablement = resolveDragEnablement(ports);
 
 	const commitDrop = useCallback((
-		current: BoardAgentSessionDragTransaction<JiraIssueAgentSessionRef>,
+		current: BoardAgentSessionDragTransaction<JiraIssueAgentSessionTransferMember>,
 	) => {
-		const action = resolveBoardAgentSessionDropAction(current);
-		if (action.kind === "none") return;
-
-		if (action.kind === "detach") {
-			const source = findBoardCard(boardColumns, action.sourceCardCode);
-			if (source) onUnlink?.(current.session, source.card, source.columnTitle);
-			return;
-		}
-
-		if (action.kind === "move") {
-			const source = findBoardCard(boardColumns, action.sourceCardCode);
-			const target = findBoardCard(boardColumns, action.targetCardCode);
-			if (source && target) {
-				onMove?.(
-					current.session,
-					source.card,
-					target.card,
-					source.columnTitle,
-					target.columnTitle,
-				);
-			}
-			return;
-		}
-
-		const target = findBoardCard(boardColumns, action.targetCardCode);
-		const item = current.origin.kind === "untracked"
-			? untrackedSessions?.find((candidate) => candidate.id === action.sessionId)
-			: detachedSessionsByCard?.[current.origin.sourceCardCode]?.find(
-				(candidate) => candidate.id === action.sessionId,
-			);
-		if (target && item) onLink?.(item, target.card, target.columnTitle);
-	}, [boardColumns, detachedSessionsByCard, onLink, onMove, onUnlink, untrackedSessions]);
+		const lookups: SessionTransferLookups = {
+			findCard: (cardCode) => findBoardCard(boardColumns, cardCode),
+			resolveAttached: (_sourceCardCode, sessionId) => (
+				current.cohort.members.find((member) => member.id === sessionId)
+			),
+			resolveTransferable: (origin, sessionId) => {
+				if (origin.kind === "untracked") {
+					return untrackedSessions?.find((candidate) => candidate.id === sessionId);
+				}
+				if (origin.kind === "detached") {
+					return detachedSessionsByCard?.[origin.sourceCardCode]?.find(
+						(candidate) => candidate.id === sessionId,
+					);
+				}
+				return undefined;
+			},
+		};
+		executeSessionTransferPlan(
+			planSessionTransfer(
+				resolveBoardAgentSessionDropAction(current),
+				current.origin,
+				lookups,
+			),
+			ports,
+		);
+	}, [boardColumns, detachedSessionsByCard, onCreate, onLink, onListCreate, onMove, onUnlink, untrackedSessions]);
 
 	const onDragStateChange = useCallback((
 		origin: BoardAgentSessionDragOrigin,
 		state: JiraIssueAgentSessionDragState,
 	) => {
-		const session = state.activities[0];
-		if (state.dragging && state.pointer && session) {
+		if (state.dragging && state.pointer) {
+			const cohort = createSessionCohort(state.transfer.members);
+			if (cohort === null) {
+				return;
+			}
 			const zones = collectDropZones(boardRootRef.current);
 			const current = transactionRef.current;
-			const next = current && current.session.id === session.id
+			const next = current && current.cohort.key === cohort.key
 				? updateBoardAgentSessionDragTransaction(current, state.pointer, zones)
-				: createBoardAgentSessionDragTransaction(session, origin, state.pointer, zones);
+				: createBoardAgentSessionDragTransaction(cohort, origin, state.pointer, zones);
 			transactionRef.current = next;
 			setTransaction(next);
 			setDragState(state);
@@ -192,7 +263,9 @@ export function useBoardAgentSessionDrag({
 			&& origin.sourceCardCode === card.code,
 		);
 		const target = transaction?.target;
-		const dropTarget = target && target.kind !== "untracked" && target.cardCode === card.code
+		const dropTarget = target
+			&& (target.kind === "attach" || target.kind === "unlink")
+			&& target.cardCode === card.code
 			? target.kind
 			: null;
 		const attachedBinding = createBinding(
@@ -201,7 +274,7 @@ export function useBoardAgentSessionDrag({
 				if (session) onUnlink?.(session, card, columnTitle);
 			},
 		);
-		const control: JiraIssueAgentSessionDragControl | undefined = enabled
+		const control: JiraIssueAgentSessionDragControl | undefined = enablement.attached
 			? {
 				binding: attachedBinding,
 				dropTarget,
@@ -212,20 +285,31 @@ export function useBoardAgentSessionDrag({
 
 		return {
 			control,
-			detachedBinding: enabled
+			detachedBinding: enablement.transferable
 				? createBinding({ kind: "detached", sourceCardCode: card.code })
 				: undefined,
 			dropTarget,
 		};
 	}
 
+	const draggingIds = useMemo(() => {
+		if (!dragState.dragging) {
+			return new Set<string>();
+		}
+		return new Set(dragState.transfer.members.map((member) => member.id));
+	}, [dragState]);
+
 	return {
 		boardRootRef,
+		draggingIds,
 		dragState,
-		enabled,
+		enablement,
 		getCardDragState,
+		listDropIntent: onLink || onListCreate
+			? toListSessionDropIntent(transaction?.target ?? null)
+			: undefined,
 		transaction,
-		untrackedBinding: enabled ? createBinding({ kind: "untracked" }) : undefined,
+		untrackedBinding: enablement.transferable ? createBinding({ kind: "untracked" }) : undefined,
 	};
 }
 

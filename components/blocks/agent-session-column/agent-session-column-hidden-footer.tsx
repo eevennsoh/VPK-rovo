@@ -13,7 +13,7 @@ export type AgentSessionColumnWellFooterMode = "hidden" | "back";
  * row under the scrollport, square corners, hover fill, 12px chevron — so the
  * well can own the outer stroke and bottom radius.
  *
- * `hidden` is Work hidden N and opens the hidden-work list. `back` is Back to
+ * `hidden` is Archived N and opens the archived list. `back` is Back to
  * untracked work N (the active/untracked count) and returns to that list.
  */
 export function AgentSessionColumnHiddenFooter({
@@ -32,7 +32,7 @@ export function AgentSessionColumnHiddenFooter({
 
 	return (
 		<button
-			aria-label={isBack ? `Back to ${title}` : `Show ${count} hidden ${sessionWord}`}
+			aria-label={isBack ? `Back to ${title}` : `Show ${count} archived ${sessionWord}`}
 			className={cn(
 				"flex w-full shrink-0 cursor-pointer items-center justify-between",
 				"rounded-none rounded-b-none border-0 border-t border-solid border-border-disabled bg-transparent p-3 text-left",
@@ -45,7 +45,7 @@ export function AgentSessionColumnHiddenFooter({
 		>
 			<span className="flex min-w-0 items-center gap-1.5">
 				<span className="truncate text-xs font-medium leading-4 text-text-subtle">
-					{isBack ? "Back to untracked work" : "Work hidden"}
+					{isBack ? "Back to untracked work" : "Archived"}
 				</span>
 				<span className="shrink-0 text-xs font-normal text-text-subtlest">
 					{count}

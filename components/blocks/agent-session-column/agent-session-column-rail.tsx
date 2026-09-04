@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent, type RefCallback } from "react";
 import { animate, motion, useMotionValue, useReducedMotion } from "motion/react";
 
 import type { AgentListState } from "@/components/blocks/agent-list";
@@ -29,6 +29,8 @@ import {
 	JiraSessionFlyoutTrigger,
 	type JiraSessionFlyoutHandle,
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
+import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
+import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 
 /**
  * The collapsed form of the Agent Session column.
@@ -58,6 +60,9 @@ import {
  * column outside its horizontal scrollport, it stays put while the reader
  * scrolls to the last status column.
  */
+
+/** Reach centered 1px marks: a 3rem band ends before the last visible notch. */
+const AGENT_SESSION_RAIL_FADE_SIZE = "6rem";
 
 /** Spoken state, so the rail still names a lifecycle it no longer paints. */
 const NOTCH_STATE_LABEL: Record<AgentListState, string> = {
@@ -217,6 +222,7 @@ function AgentSessionNotch({
 	isHighlighted,
 	isNew,
 	item,
+	onArrivalComplete,
 	onItemHover,
 	onView,
 	proximity,
@@ -228,6 +234,7 @@ function AgentSessionNotch({
 	isHighlighted: boolean;
 	isNew: boolean;
 	item: AgentSessionItem;
+	onArrivalComplete?: () => void;
 	onItemHover?: (item: AgentSessionItem | null) => void;
 	onView?: (item: AgentSessionItem) => void;
 	proximity?: AgentSessionNotchProximity;
@@ -303,6 +310,7 @@ function AgentSessionNotch({
 									isArriving={isArriving}
 									isHighlighted={isHighlighted}
 									isNew={isNew}
+									onArrivalComplete={onArrivalComplete}
 									proximity={proximity}
 								/>
 							</button>
@@ -322,6 +330,7 @@ export function AgentSessionColumnRail({
 	highlightedItemId,
 	items,
 	newItemIds,
+	onArrivalComplete,
 	onCreateWorkItem,
 	onItemHover,
 	onLinkWorkItem,
@@ -337,6 +346,7 @@ export function AgentSessionColumnRail({
 	highlightedItemId?: string | null;
 	items: readonly AgentSessionItem[];
 	newItemIds?: ReadonlySet<string>;
+	onArrivalComplete?: (itemId: string) => void;
 	onCreateWorkItem?: (item: AgentSessionItem) => void;
 	onItemHover?: (item: AgentSessionItem | null) => void;
 	onLinkWorkItem?: (item: AgentSessionItem, workItemKey?: string) => void;
@@ -369,6 +379,29 @@ export function AgentSessionColumnRail({
 	// motion the setting asks us to drop.
 	const isDocked = shouldReduceMotion !== true;
 	const dock = useNotchDock(items.length, isDocked);
+	const {
+		ref: overflowRef,
+		showBottomScrollMask,
+		showTopScrollMask,
+	} = useHasVerticalOverflow<HTMLUListElement>();
+	const listRef = dock.listRef;
+	const setListRef = useCallback<RefCallback<HTMLUListElement>>((node) => {
+		listRef.current = node;
+		overflowRef(node);
+	}, [listRef, overflowRef]);
+	// Mask-image on a plain scrollport — the same style `ScrollMask` puts on
+	// `[data-slot="scroll-mask-viewport"]`. A surface overlay cannot fade 1px
+	// marks (white-on-hairline). This node is not a Motion host, so a transform
+	// cannot create a containing box that ignores the mask.
+	const scrollMaskStyle = useMemo(
+		() => buildScrollMaskStyle({
+			fadeBottom: showBottomScrollMask,
+			fadeSize: AGENT_SESSION_RAIL_FADE_SIZE,
+			fadeTop: showTopScrollMask,
+			scrollbarWidth: 0,
+		}),
+		[showBottomScrollMask, showTopScrollMask],
+	);
 
 	return (
 		<>
@@ -382,15 +415,15 @@ export function AgentSessionColumnRail({
 			    centered; a negative horizontal margin here shifts them 4px left
 			    once the collapsed section clips overflow. Focused-notch rings
 			    still paint past the scrollport because the clip lifts for
-			    `:focus-visible`. */}
-			<motion.ul
+			    `:focus-visible`. Arrival layout stays on each `motion.li`. */}
+			<ul
 				className="flex min-h-0 w-full flex-1 flex-col items-center gap-1 overflow-y-auto px-1 has-[:focus-visible]:overflow-visible"
-				layoutScroll
 				onPointerEnter={isDocked ? dock.handlePointerEnter : undefined}
 				onPointerLeave={isDocked ? dock.handlePointerLeave : undefined}
 				onPointerMove={isDocked ? dock.handlePointerMove : undefined}
 				onScroll={isDocked ? dock.handleScroll : undefined}
-				ref={dock.listRef}
+				ref={setListRef}
+				style={scrollMaskStyle}
 			>
 				{items.map((item: AgentSessionItem, index: number) => (
 					<AgentSessionNotch
@@ -408,6 +441,9 @@ export function AgentSessionColumnRail({
 						isNew={newItemIds?.has(item.id) ?? false}
 						item={item}
 						key={item.id}
+						onArrivalComplete={onArrivalComplete === undefined
+							? undefined
+							: () => onArrivalComplete(item.id)}
 						onItemHover={onItemHover}
 						onView={onView}
 						proximity={isDocked ? {
@@ -420,7 +456,7 @@ export function AgentSessionColumnRail({
 						sessionDrag={sessionDrag}
 					/>
 				))}
-			</motion.ul>
+			</ul>
 			<JiraSessionFlyoutSurface
 				capturedSessionIds={capturedItemIds}
 				content="untracked-work"

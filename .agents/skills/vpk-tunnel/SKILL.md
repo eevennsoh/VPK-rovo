@@ -1,6 +1,6 @@
 ---
 name: vpk-tunnel
-description: "Share a live VPK localhost prototype with external participants through a public Atlas Tunnel URL. Use when the user says \"vpk-tunnel\", \"share my prototype\", \"make this localhost link public\", \"send a customer a prototype link\", or asks to start, inspect, or stop an Atlas Tunnel for a VPK Portless URL."
+description: "Share a live VPK localhost prototype with external participants through a public Atlas Tunnel URL. Hides the react-grab development control on public tunnel hosts. Use when the user says \"vpk-tunnel\", \"share my prototype\", \"make this localhost link public\", \"send a customer a prototype link\", or asks to start, inspect, or stop an Atlas Tunnel for a VPK Portless URL."
 purpose: Expose one live VPK Portless frontend through a scoped, short-lived public Atlas Tunnel.
 owner: VPK
 category: workflow
@@ -9,7 +9,7 @@ outputs: Public prototype URL, local source URL, tunnel status, or a targeted sh
 required_tools: shell, node, pnpm, atlas, cloudflared, tmux
 validation_command: node --test .agents/skills/vpk-tunnel/scripts/vpk-tunnel.test.js
 generated_artifacts: None. Runtime state is limited to a target-scoped tmux session.
-common_failure_modes: Local prototype is unresponsive, Portless URL is stale, Atlas Tunnel or cloudflared is missing, the catalog root was shared instead of the project route, or Next.js blocked Atlas Tunnel hosts in allowedDevOrigins.
+common_failure_modes: Local prototype is unresponsive, Portless URL is stale, Atlas Tunnel or cloudflared is missing, the catalog root was shared instead of the project route, Next.js blocked Atlas Tunnel hosts in allowedDevOrigins, or the react-grab development control is still visible on the public URL.
 ---
 
 # VPK Tunnel
@@ -103,8 +103,12 @@ brew install cloudflared
    weakening the preflight.
 7. Open the returned `publicUrl` and confirm it is not a blank shell. Body text
    that is only `Skip to content` means Next.js blocked `/_next` chunks from the
-   tunnel host. HTTP 200 is not enough. Do not hand off the link until the
-   intended UI is visible.
+   tunnel host. HTTP 200 is not enough. Also confirm the react-grab development
+   control is hidden — the floating cursor/chevron pill and any
+   `[data-react-grab]` or `[data-react-grab-toolbar]` nodes. Atlas Tunnel hosts
+   skip that tooling automatically. Do not hide it with injected CSS or by
+   clicking the pill. Do not hand off the link until the intended UI is visible
+   and that control is gone.
 8. Report the returned `publicUrl` as the shareable link and include the
    `localUrl`. State that the link works only while the local server, scoped
    tunnel session, laptop, and network connection remain active.
@@ -117,6 +121,9 @@ atlas tunnel start --port <resolved-frontend-port> --public
 
 Starting the same hostname again reuses its existing tunnel. Different paths
 on that hostname share one tunnel but receive path-specific public links.
+
+Public Atlas Tunnel hosts automatically hide the react-grab development
+control. Local Portless URLs keep it for development.
 
 ## Status and stop
 
@@ -151,6 +158,10 @@ change. After any frontend restart, re-resolve and start the tunnel again.
   `Blocked cross-origin request` if the page is still empty.
 - **Shared the homepage and it looks empty:** share the project route
   (for example `/jira-golden-journeys-v4`), not the catalog iframe.
+- **Public page still shows the react-grab control:** Atlas Tunnel hosts skip
+  `DevReactGrabMount`. Hard-refresh the public URL. If the floating
+  cursor/chevron pill remains, the frontend may be serving a stale bundle —
+  restart that worktree's frontend, re-resolve, then start again.
 - **Frontend restarted and the tunnel died:** the frontend port likely
   changed. Re-resolve, then start again. The helper replaces a session whose
   stored port no longer matches.
