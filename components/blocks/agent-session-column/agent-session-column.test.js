@@ -27,6 +27,14 @@ const HEADER_SOURCE = readFileSync(
 	join(__dirname, "agent-session-column-header.tsx"),
 	"utf8",
 );
+const SELECTION_COPY_SOURCE = readFileSync(
+	join(__dirname, "untracked-selection.ts"),
+	"utf8",
+);
+const PANEL_SOURCE = readFileSync(
+	join(__dirname, "../../ui/panel.tsx"),
+	"utf8",
+);
 const OVERFLOW_MENU_SOURCE = readFileSync(
 	join(__dirname, "agent-session-column-overflow-menu.tsx"),
 	"utf8",
@@ -892,6 +900,30 @@ test("the selecting header omits collapse so Clear is the only exit", () => {
 	assert.doesNotMatch(panelSelectingBranch, /ShrinkHorizontalIcon/u);
 	assert.match(columnSelectingBranch, /<HeaderIconButton/u);
 	assert.match(panelSelectingBranch, /<PanelAction/u);
+});
+
+test("selecting header hover copy comes from the selectedCount table", () => {
+	assert.match(SELECTION_COPY_SOURCE, /Link agent sessions/u);
+	assert.match(SELECTION_COPY_SOURCE, /Create \$\{selectedCount\} work item/u);
+	assert.match(SELECTION_COPY_SOURCE, /Create \$\{selectedCount\} work items/u);
+	assert.match(SELECTION_COPY_SOURCE, /Archive \$\{selectedCount\} agent session/u);
+	assert.match(SELECTION_COPY_SOURCE, /Archive \$\{selectedCount\} agent sessions/u);
+	assert.match(SELECTION_COPY_SOURCE, /clear: \(\) => "Clear"/u);
+	assert.match(SELECTION_COPY_SOURCE, /No selected sessions have a work item to link/u);
+	assert.match(SELECTION_COPY_SOURCE, /No selected sessions can create a work item/u);
+	assert.match(
+		SELECTION_COPY_SOURCE,
+		/SELECTION_ACTION_AVAILABLE_COPY\[id\]\(counts\.selectedCount\)/u,
+	);
+	assert.doesNotMatch(SELECTION_COPY_SOURCE, /eligibleCount\).*work item/u);
+	assert.doesNotMatch(HEADER_SOURCE, /headerActionUnavailableReason/u);
+	assert.match(HEADER_SOURCE, /function toHeaderActionAffordance/u);
+	assert.match(HEADER_SOURCE, /TooltipTrigger render=\{<span className="inline-flex" \/>\}/u);
+	assert.match(HEADER_SOURCE, /disabled=\{affordance\.disabled\}/u);
+	assert.doesNotMatch(HEADER_SOURCE, /aria-disabled/u);
+	assert.match(HEADER_SOURCE, /tooltip=\{affordance\.text\}/u);
+	assert.match(PANEL_SOURCE, /tooltip\?: ReactNode/u);
+	assert.match(PANEL_SOURCE, /tooltip === undefined \? action : wrapPanelActionTooltip/u);
 });
 
 test("the overflow menu is Link all suggestions, then Auto sync and Suggest link toggles", () => {

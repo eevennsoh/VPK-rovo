@@ -16,7 +16,6 @@ import {
 	type JiraIssueAgentSessionDragBinding,
 	type JiraIssueAgentSessionDragSource,
 } from "@/components/blocks/jira-issue/agent-session-drag";
-import { AgentSessionMentionChip } from "@/components/blocks/jira-issue/agent-session-mention-chip";
 import { useSessionDragChipPointer } from "@/components/blocks/jira-issue/use-session-drag-chip-pointer";
 import {
 	usePointerDrag,
@@ -24,8 +23,10 @@ import {
 } from "@/components/ui-custom/hooks/use-pointer-drag";
 import { cn } from "@/lib/utils";
 
+import { AgentSessionCohortChip } from "./agent-session-cohort-chip";
 import { SESSION_DRAG_INTERACTIVE_SELECTOR } from "./agent-session-drag-interactive";
 import { toJiraIssueAgentActivityFromSession } from "./agent-session-work-item";
+import { singletonSessionCohort, type SessionCohort } from "./session-cohort";
 import type { AgentSessionItem } from "./agent-session-types";
 
 const SESSION_DRAG_ORIGIN: PointerDragPosition = { x: 0, y: 0 };
@@ -34,6 +35,8 @@ const SESSION_DRAG_PUBLISH_THRESHOLD_PX = 2;
 const SESSION_DRAG_CHIP_DISTANCE_PX = 12;
 
 export function AgentSessionMediumDrag({
+	cohort,
+	cohortFollower = false,
 	item,
 	preserveSourceFootprint = false,
 	sessionDrag,
@@ -41,6 +44,8 @@ export function AgentSessionMediumDrag({
 	source = "detached",
 	children,
 }: Readonly<{
+	cohort?: () => SessionCohort<AgentSessionItem>;
+	cohortFollower?: boolean;
 	item: AgentSessionItem;
 	preserveSourceFootprint?: boolean;
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
@@ -51,10 +56,12 @@ export function AgentSessionMediumDrag({
 	const activity = toJiraIssueAgentActivityFromSession(item);
 	const [dragOffset, setDragOffset] = useState<PointerDragPosition>(SESSION_DRAG_ORIGIN);
 	const [publishedDragging, setPublishedDragging] = useState(false);
+	const [ghostCohort, setGhostCohort] = useState<SessionCohort<AgentSessionItem> | null>(null);
 	const [sourceHeight, setSourceHeight] = useState<number | undefined>(undefined);
 	const drag = usePointerDrag(dragOffset, setDragOffset, sessionDrag?.bounds);
 	const chipPointer = useSessionDragChipPointer(shouldReduceMotion);
 	const isDragging = Boolean(sessionDrag) && drag.dragging && publishedDragging;
+	const isFollower = cohortFollower && !isDragging;
 	const isDraggedOut = isDragging
 		&& Math.hypot(drag.position.x, drag.position.y) >= SESSION_DRAG_CHIP_DISTANCE_PX;
 
@@ -67,10 +74,34 @@ export function AgentSessionMediumDrag({
 		event?: ReactPointerEvent<HTMLElement>,
 		cancelled = false,
 	) {
+		if (dragging && event) {
+			const next = cohort?.() ?? singletonSessionCohort(item);
+			const [first, ...rest] = next.members;
+			setGhostCohort(next);
+			sessionDrag?.onDragStateChange({
+				activities: [activity],
+				cancelled: false,
+				dragging: true,
+				pointer: { x: event.clientX, y: event.clientY },
+				source: source,
+				transfer: {
+					key: next.key,
+					members: [
+						{ id: first.id, name: first.agent.name },
+						...rest.map((member) => ({
+							id: member.id,
+							name: member.agent.name,
+						})),
+					],
+				},
+			});
+			return;
+		}
+
 		sessionDrag?.onDragStateChange({
 			activities: [activity],
 			cancelled,
-			dragging,
+			dragging: false,
 			pointer: event ? { x: event.clientX, y: event.clientY } : null,
 			source: source,
 		});
@@ -84,6 +115,7 @@ export function AgentSessionMediumDrag({
 		pointerOriginRef.current = null;
 		dragTargetRef.current = null;
 		setPublishedDragging(false);
+		setGhostCohort(null);
 		setSourceHeight(undefined);
 		setDragOffset(SESSION_DRAG_ORIGIN);
 		publishSessionDrag(false, event);
@@ -99,6 +131,7 @@ export function AgentSessionMediumDrag({
 		dragTargetRef.current = null;
 		didPublishDragRef.current = false;
 		setPublishedDragging(false);
+		setGhostCohort(null);
 		setSourceHeight(undefined);
 		setDragOffset(SESSION_DRAG_ORIGIN);
 		publishSessionDrag(false, undefined, true);
@@ -219,12 +252,9 @@ export function AgentSessionMediumDrag({
 			className="pointer-events-none flex w-fit max-w-full -translate-x-1/2 -translate-y-1/2 items-center justify-start"
 			data-session-chip-centered=""
 		>
-			<AgentSessionMentionChip
-				avatarSrc={item.agent.avatarSrc}
-				brandName={item.agent.brandName}
+			<AgentSessionCohortChip
+				cohort={ghostCohort ?? singletonSessionCohort(item)}
 				elevated
-				name={item.agent.name}
-				vpkLogo={item.agent.vpkLogo}
 			/>
 		</div>
 	);
@@ -234,21 +264,25 @@ export function AgentSessionMediumDrag({
 			className={cn(
 				"min-w-0",
 				isDragging && "relative w-full",
+				isFollower && "h-0 overflow-hidden",
 				isDragging && !preserveSourceFootprint && (isDraggedOut ? "h-0" : "h-[33px]"),
 			)}
 			data-session-chip-out={isDraggedOut || undefined}
 			data-session-drag-placeholder={preserveSourceFootprint || undefined}
+			data-session-transfer-faded={isFollower || undefined}
 			style={{ height: isDragging && preserveSourceFootprint ? sourceHeight : undefined }}
 		>
 			{/* The bound source stays mounted (but transparent) for the whole
 			    gesture, preserving pointer capture while the chip travels. */}
 			<div
+				aria-hidden={isDragging || isFollower || undefined}
 				className={cn(
 					"min-w-0",
-					isDragging && "pointer-events-none absolute inset-x-0 top-0 opacity-0",
+					(isDragging || isFollower) && "pointer-events-none absolute inset-x-0 top-0 opacity-0",
 					sessionDragBind && "cursor-grab touch-none select-none",
 					isDragging && "cursor-grabbing [&_article]:cursor-grabbing",
 				)}
+				inert={isDragging || isFollower || undefined}
 			>
 				{children(sessionDragBind)}
 			</div>

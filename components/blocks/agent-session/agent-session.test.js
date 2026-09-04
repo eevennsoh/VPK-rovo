@@ -179,11 +179,8 @@ test("medium matches the 276 by 33 Figma row and reuses shared identity primitiv
 
 test("medium drag chip is the shared agent mention tag with overlay elevation", () => {
 	assert.match(MEDIUM_DRAG_SOURCE, /import \{ createPortal \} from "react-dom";/u);
-	assert.match(
-		MEDIUM_DRAG_SOURCE,
-		/import \{ AgentSessionMentionChip \} from "@\/components\/blocks\/jira-issue\/agent-session-mention-chip";/u,
-	);
-	assert.match(MEDIUM_DRAG_SOURCE, /<AgentSessionMentionChip[\s\S]*elevated[\s\S]*name=\{item\.agent\.name\}/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /AgentSessionCohortChip/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /<AgentSessionCohortChip[\s\S]*elevated/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /\{children\(sessionDragBind\)\}/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /isDragging \? createPortal\([\s\S]*\{chip\}/u);
 	assert.match(
@@ -213,6 +210,8 @@ test("medium drag keeps pointer capture on the motion host instead of swapping a
 	assert.doesNotMatch(MEDIUM_DRAG_SOURCE, /isDragging \? chip : children\(sessionDragBind\)/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /\{children\(sessionDragBind\)\}/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /pointer-events-none absolute inset-x-0 top-0 opacity-0/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /aria-hidden=\{isDragging \|\| isFollower \|\| undefined\}/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /inert=\{isDragging \|\| isFollower \|\| undefined\}/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /window\.addEventListener\("pointerup", onPointerUp\)/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /window\.addEventListener\("pointercancel", onPointerCancel\)/u);
 });

@@ -64,6 +64,16 @@ export function useJiraGoldenJourneysV4List({
 	const [copiedIssueKey, setCopiedIssueKey] = useState<string | null>(null);
 	const [draftWorkItem, setDraftWorkItem] = useState<ListDraftWorkItem | null>(null);
 	const visibleKeysRef = useRef<readonly string[]>([]);
+	const boardColumnsRef = useRef(boardColumns);
+	const listOrderRef = useRef(listOrder);
+
+	useEffect(() => {
+		boardColumnsRef.current = boardColumns;
+	}, [boardColumns]);
+
+	useEffect(() => {
+		listOrderRef.current = listOrder;
+	}, [listOrder]);
 
 	useEffect(() => {
 		if (!copiedIssueKey) {
@@ -188,17 +198,19 @@ export function useJiraGoldenJourneysV4List({
 	const createFromAgentSession = useCallback((input: CreateFromAgentSessionInput) => {
 		const result = createListWorkItemFromSession({
 			activity: input.activity,
-			columns: boardColumns,
+			columns: boardColumnsRef.current,
 			insertion: input.insertion,
 			linkSession: linkJiraKanbanAgentSession,
-			listOrder,
+			listOrder: listOrderRef.current,
 			session: input.session,
 			visibleKeys: visibleKeysRef.current,
 		});
+		boardColumnsRef.current = result.columns;
+		listOrderRef.current = result.listOrder;
 		setBoardColumns([...result.columns]);
 		setListOrder(result.listOrder);
 		setSelectedIssueKeys(new Set([result.issueKey]));
-	}, [boardColumns, listOrder, setBoardColumns]);
+	}, [setBoardColumns]);
 
 	const getProps = useCallback((columns: readonly JiraKanbanColumnData[]): JiraListProps => {
 		const rows = applyListOrder(

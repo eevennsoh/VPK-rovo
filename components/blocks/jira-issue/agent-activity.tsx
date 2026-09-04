@@ -801,10 +801,25 @@ export function JiraIssueAgentActivityRows({
 							onOpenChange={onOpenChange}
 							onSessionDragChange={(dragging, pointer, cancelled) => {
 								setSessionDragging(dragging);
+								const activity = rowGroup.activities[0];
+								if (dragging && pointer && activity) {
+									rowSessionDrag?.onDragStateChange({
+										activities: rowGroup.activities,
+										cancelled: false,
+										dragging: true,
+										pointer,
+										source: "chin",
+										transfer: {
+											key: activity.id,
+											members: [{ id: activity.id, name: activity.name }],
+										},
+									});
+									return;
+								}
 								rowSessionDrag?.onDragStateChange({
 									activities: rowGroup.activities,
 									cancelled,
-									dragging,
+									dragging: false,
 									pointer,
 									source: "chin",
 								});

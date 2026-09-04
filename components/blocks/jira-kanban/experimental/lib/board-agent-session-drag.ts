@@ -1,3 +1,4 @@
+import type { SessionCohort } from "@/components/blocks/agent-session/session-cohort";
 import type {
 	JiraListAgentSessionDropIntent,
 	JiraListInsertion,
@@ -56,19 +57,26 @@ export type BoardAgentSessionDropTarget =
 export interface BoardAgentSessionDragTransaction<
 	TSession extends Readonly<{ id: string }> = Readonly<{ id: string }>,
 > {
+	cohort: SessionCohort<TSession>;
 	origin: BoardAgentSessionDragOrigin;
 	pointer: BoardAgentSessionDragPointer;
-	session: TSession;
 	target: BoardAgentSessionDropTarget | null;
 }
 
 export type BoardAgentSessionDropAction =
 	| { kind: "none" }
-	| { kind: "create"; sessionId: string; columnTitle: string }
-	| { kind: "create-list"; insertion: JiraListInsertion; sessionId: string }
-	| { kind: "detach"; sessionId: string; sourceCardCode: string }
-	| { kind: "move"; sessionId: string; sourceCardCode: string; targetCardCode: string }
-	| { kind: "attach"; sessionId: string; targetCardCode: string };
+	| { kind: "create"; sessionIds: readonly [string, ...string[]]; columnTitle: string }
+	| { kind: "create-list"; insertion: JiraListInsertion; sessionIds: readonly [string, ...string[]] }
+	| { kind: "detach"; sessionIds: readonly [string, ...string[]]; sourceCardCode: string }
+	| { kind: "move"; sessionIds: readonly [string, ...string[]]; sourceCardCode: string; targetCardCode: string }
+	| { kind: "attach"; sessionIds: readonly [string, ...string[]]; targetCardCode: string };
+
+function dropActionSessionIds<TSession extends Readonly<{ id: string }>>(
+	cohort: SessionCohort<TSession>,
+): readonly [string, ...string[]] {
+	const [first, ...rest] = cohort.members;
+	return [first.id, ...rest.map((member) => member.id)];
+}
 
 function containsPointer(
 	bounds: BoardAgentSessionDropBounds,
@@ -234,15 +242,15 @@ export function resolveBoardAgentSessionDropTarget(
 export function createBoardAgentSessionDragTransaction<
 	TSession extends Readonly<{ id: string }>,
 >(
-	session: TSession,
+	cohort: SessionCohort<TSession>,
 	origin: BoardAgentSessionDragOrigin,
 	pointer: BoardAgentSessionDragPointer,
 	zones: readonly BoardAgentSessionDropZone[],
 ): BoardAgentSessionDragTransaction<TSession> {
 	return {
+		cohort,
 		origin,
 		pointer,
-		session,
 		target: resolveBoardAgentSessionDropTarget(origin, pointer, zones),
 	};
 }
@@ -272,39 +280,41 @@ export function cancelBoardAgentSessionDragTransaction<
 export function resolveBoardAgentSessionDropAction(
 	transaction: BoardAgentSessionDragTransaction,
 ): BoardAgentSessionDropAction {
-	const { origin, session, target } = transaction;
+	const { cohort, origin, target } = transaction;
 	if (!target) {
 		return { kind: "none" };
 	}
 
+	const sessionIds = dropActionSessionIds(cohort);
+
 	switch (target.kind) {
 		case "create":
 			return origin.kind === "untracked"
-				? { columnTitle: target.columnTitle, kind: "create", sessionId: session.id }
+				? { columnTitle: target.columnTitle, kind: "create", sessionIds }
 				: { kind: "none" };
 		case "untracked":
 			return origin.kind === "attached"
-				? { kind: "detach", sessionId: session.id, sourceCardCode: origin.sourceCardCode }
+				? { kind: "detach", sessionIds, sourceCardCode: origin.sourceCardCode }
 				: { kind: "none" };
 		case "unlink":
 			return origin.kind === "attached" && target.cardCode === origin.sourceCardCode
-				? { kind: "detach", sessionId: session.id, sourceCardCode: origin.sourceCardCode }
+				? { kind: "detach", sessionIds, sourceCardCode: origin.sourceCardCode }
 				: { kind: "none" };
 		case "attach":
 			if (origin.kind === "attached") {
 				return target.cardCode !== origin.sourceCardCode
 					? {
 						kind: "move",
-						sessionId: session.id,
+						sessionIds,
 						sourceCardCode: origin.sourceCardCode,
 						targetCardCode: target.cardCode,
 					}
 					: { kind: "none" };
 			}
-			return { kind: "attach", sessionId: session.id, targetCardCode: target.cardCode };
+			return { kind: "attach", sessionIds, targetCardCode: target.cardCode };
 		case "create-list":
 			return origin.kind === "untracked"
-				? { kind: "create-list", insertion: target.insertion, sessionId: session.id }
+				? { kind: "create-list", insertion: target.insertion, sessionIds }
 				: { kind: "none" };
 		default: {
 			const exhaustive: never = target;

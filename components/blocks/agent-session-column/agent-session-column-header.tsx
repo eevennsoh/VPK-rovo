@@ -38,22 +38,33 @@ const HEADER_ACTION_ICON: Record<SelectionActionId, ComponentType<NewCoreIconPro
 	create: AddIcon,
 };
 
-function headerActionUnavailableReason(action: SelectionActionModel): string | undefined {
-	if (action.eligibleCount > 0) {
-		return undefined;
-	}
+interface HeaderActionAffordance {
+	readonly disabled: boolean;
+	readonly onActivate: (() => void) | undefined;
+	readonly text: string;
+}
 
-	switch (action.id) {
-		case "approve":
-			return "No selected sessions have a work item to link";
-		case "archive":
-			return undefined;
-		case "clear":
-			return undefined;
-		case "create":
-			return "No selected sessions can create a work item";
+function toHeaderActionAffordance(
+	action: SelectionActionModel,
+	onAction: (id: SelectionActionId) => void,
+): HeaderActionAffordance {
+	switch (action.hint.kind) {
+		case "unavailable":
+			return {
+				disabled: true,
+				onActivate: undefined,
+				text: action.hint.text,
+			};
+		case "available":
+			return {
+				disabled: false,
+				onActivate: () => {
+					onAction(action.id);
+				},
+				text: action.hint.text,
+			};
 		default: {
-			const exhaustive: never = action.id;
+			const exhaustive: never = action.hint;
 			return exhaustive;
 		}
 	}
@@ -67,30 +78,24 @@ function HeaderIconButton({
 	onAction: (id: SelectionActionId) => void;
 }>): ReactElement {
 	const IconComponent = HEADER_ACTION_ICON[action.id];
-	const unavailableReason = headerActionUnavailableReason(action);
-	const disabled = action.eligibleCount === 0;
-	const label = unavailableReason ?? action.label;
+	const affordance = toHeaderActionAffordance(action, onAction);
 
 	return (
 		<TooltipProvider>
 			<Tooltip>
-				<TooltipTrigger
-					render={
-						<Button
-							aria-label={label}
-							disabled={disabled}
-							onClick={() => {
-								onAction(action.id);
-							}}
-							size="icon-compact"
-							type="button"
-							variant="ghost"
-						/>
-					}
-				>
-					<Icon className="text-icon-subtle" render={<IconComponent label="" />} />
+				<TooltipTrigger render={<span className="inline-flex" />}>
+					<Button
+						aria-label={affordance.text}
+						disabled={affordance.disabled}
+						onClick={affordance.onActivate}
+						size="icon-compact"
+						type="button"
+						variant="ghost"
+					>
+						<Icon className="text-icon-subtle" render={<IconComponent label="" />} />
+					</Button>
 				</TooltipTrigger>
-				<TooltipContent>{label}</TooltipContent>
+				<TooltipContent>{affordance.text}</TooltipContent>
 			</Tooltip>
 		</TooltipProvider>
 	);
@@ -273,17 +278,16 @@ function renderPanelChrome({
 					</PanelTitle>
 					<PanelActionGroup>
 						{model.actions.map((action: SelectionActionModel) => {
-							const unavailableReason = headerActionUnavailableReason(action);
 							const IconComponent = HEADER_ACTION_ICON[action.id];
+							const affordance = toHeaderActionAffordance(action, onAction);
 							return (
 								<PanelAction
-									disabled={action.eligibleCount === 0}
+									disabled={affordance.disabled}
 									icon={IconComponent}
 									key={action.id}
-									label={unavailableReason ?? action.label}
-									onClick={() => {
-										onAction(action.id);
-									}}
+									label={affordance.text}
+									onClick={affordance.onActivate}
+									tooltip={affordance.text}
 								/>
 							);
 						})}

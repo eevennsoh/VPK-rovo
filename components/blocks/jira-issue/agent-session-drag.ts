@@ -16,25 +16,35 @@ import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue/agen
  */
 export type JiraIssueAgentSessionDragSource = "chin" | "detached" | "untracked";
 
-export interface JiraIssueAgentSessionDragState {
-	activities: readonly JiraIssueAgentActivity[];
-	/**
-	 * The gesture was aborted (`pointercancel`) rather than released. Consumers
-	 * must clear any armed drop target WITHOUT committing it: an interrupted
-	 * pointer is not a drop, and treating it as one silently unlinks or moves a
-	 * session the user never dropped.
-	 */
-	cancelled: boolean;
-	dragging: boolean;
-	pointer: PointerDragPosition | null;
-	/**
-	 * `chin` is a session leaving the work item; `detached` is a session coming
-	 * back from an issue bucket; `untracked` comes from the board's uncaptured
-	 * column. The transfer well commits unlink vs link from this origin, not from
-	 * which zone the pointer hit.
-	 */
-	source: JiraIssueAgentSessionDragSource;
+export interface JiraIssueAgentSessionTransferMember {
+	readonly id: string;
+	readonly name: string;
 }
+
+export interface JiraIssueAgentSessionTransfer {
+	readonly key: string;
+	readonly members: readonly [
+		JiraIssueAgentSessionTransferMember,
+		...JiraIssueAgentSessionTransferMember[],
+	];
+}
+
+export type JiraIssueAgentSessionDragState =
+	| {
+		activities: readonly JiraIssueAgentActivity[];
+		cancelled: boolean;
+		dragging: false;
+		pointer: PointerDragPosition | null;
+		source: JiraIssueAgentSessionDragSource;
+	}
+	| {
+		activities: readonly JiraIssueAgentActivity[];
+		cancelled: false;
+		dragging: true;
+		pointer: PointerDragPosition;
+		source: JiraIssueAgentSessionDragSource;
+		transfer: JiraIssueAgentSessionTransfer;
+	};
 
 /**
  * Opt-in binding that turns each chin row into a draggable session handle.
@@ -51,7 +61,10 @@ export interface JiraIssueAgentSessionDragBinding {
 	onUnlink?: (session?: { id: string; name: string }) => void;
 }
 
-export const JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE: JiraIssueAgentSessionDragState = {
+export const JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE: Extract<
+	JiraIssueAgentSessionDragState,
+	{ dragging: false }
+> = {
 	activities: [],
 	cancelled: false,
 	dragging: false,

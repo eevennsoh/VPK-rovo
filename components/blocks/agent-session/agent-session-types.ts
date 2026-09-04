@@ -4,6 +4,7 @@ import type { AgentListItem } from "@/components/blocks/agent-list";
 import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
 
 import type { ApproveTarget } from "./agent-session-approve";
+import type { SessionCohort } from "./session-cohort";
 
 /**
  * An agent session rendered either detached from or attached to a work item.
@@ -29,6 +30,9 @@ export interface AgentSessionTriageRow {
 	readonly approve: {
 		readonly onApprove: () => void;
 		readonly target: ApproveTarget;
+	} | null;
+	readonly drag: {
+		readonly cohort: () => SessionCohort<AgentSessionItem>;
 	} | null;
 	readonly mark: {
 		readonly isMarked: boolean;
@@ -130,6 +134,7 @@ export interface AgentSessionProps {
 	onSelectedItemIdChange?: (itemId: string | null) => void;
 	/** Opt-in: makes large untracked and medium-detached sessions draggable onto work items. */
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
+	draggingIds?: ReadonlySet<string>;
 	/** Work item key for the detached link tooltip (`Link to KEY`). */
 	issueKey?: string;
 	/**

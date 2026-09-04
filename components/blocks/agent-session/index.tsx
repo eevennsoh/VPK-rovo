@@ -101,6 +101,7 @@ export function AgentSession({
 	rowTriage,
 	selectedItemId: selectedItemIdProp,
 	sessionDrag,
+	draggingIds,
 	style,
 	variant = "large",
 	visibilityLabel,
@@ -211,6 +212,7 @@ export function AgentSession({
 								onView={itemOnView}
 								sessionDrag={sessionDrag}
 								triageRow={rowTriage?.get(item.id)}
+								draggingIds={draggingIds}
 								visibilityLabel={visibilityLabel}
 							/>
 						);

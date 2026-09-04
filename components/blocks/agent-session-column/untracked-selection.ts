@@ -62,10 +62,53 @@ export type SelectionActionId = "approve" | "create" | "archive" | "clear";
 
 export type BulkActionId = Exclude<SelectionActionId, "clear">;
 
+export type SelectionActionHint =
+	| { readonly kind: "available"; readonly text: string }
+	| { readonly kind: "unavailable"; readonly text: string };
+
+export const SELECTION_ACTION_AVAILABLE_COPY: Readonly<
+	Record<SelectionActionId, (selectedCount: number) => string>
+> = {
+	approve: () => "Link agent sessions",
+	archive: (selectedCount: number) => (
+		selectedCount === 1
+			? `Archive ${selectedCount} agent session`
+			: `Archive ${selectedCount} agent sessions`
+	),
+	clear: () => "Clear",
+	create: (selectedCount: number) => (
+		selectedCount === 1
+			? `Create ${selectedCount} work item`
+			: `Create ${selectedCount} work items`
+	),
+};
+
+export const SELECTION_ACTION_UNAVAILABLE_COPY: Readonly<
+	Partial<Record<SelectionActionId, string>>
+> = {
+	approve: "No selected sessions have a work item to link",
+	create: "No selected sessions can create a work item",
+};
+
+export function describeSelectionAction(
+	id: SelectionActionId,
+	counts: Readonly<{ eligibleCount: number; selectedCount: number }>,
+): SelectionActionHint {
+	const unavailable = SELECTION_ACTION_UNAVAILABLE_COPY[id];
+	if (counts.eligibleCount === 0 && unavailable !== undefined) {
+		return { kind: "unavailable", text: unavailable };
+	}
+
+	return {
+		kind: "available",
+		text: SELECTION_ACTION_AVAILABLE_COPY[id](counts.selectedCount),
+	};
+}
+
 export interface SelectionActionModel {
-	readonly id: SelectionActionId;
-	readonly label: string;
 	readonly eligibleCount: number;
+	readonly hint: SelectionActionHint;
+	readonly id: SelectionActionId;
 }
 
 export type UntrackedHeaderModel =
@@ -116,14 +159,32 @@ export function buildUntrackedHeaderModel<T>(
 		}
 	}
 
+	const selectedCount = input.selection.items.length;
+
 	return {
 		kind: "selecting",
-		count: input.selection.items.length,
+		count: selectedCount,
 		actions: [
-			{ id: "approve", label: "Link", eligibleCount: approveCount },
-			{ id: "create", label: "Create", eligibleCount: createCount },
-			{ id: "archive", label: "Archive", eligibleCount: input.selection.items.length },
-			{ id: "clear", label: "Clear", eligibleCount: input.selection.items.length },
+			{
+				id: "approve",
+				eligibleCount: approveCount,
+				hint: describeSelectionAction("approve", { eligibleCount: approveCount, selectedCount }),
+			},
+			{
+				id: "create",
+				eligibleCount: createCount,
+				hint: describeSelectionAction("create", { eligibleCount: createCount, selectedCount }),
+			},
+			{
+				id: "archive",
+				eligibleCount: selectedCount,
+				hint: describeSelectionAction("archive", { eligibleCount: selectedCount, selectedCount }),
+			},
+			{
+				id: "clear",
+				eligibleCount: selectedCount,
+				hint: describeSelectionAction("clear", { eligibleCount: selectedCount, selectedCount }),
+			},
 		],
 	};
 }

@@ -29,6 +29,7 @@ import { approveActionLabel } from "./agent-session-approve";
 import { SESSION_DRAG_INTERACTIVE_SELECTOR } from "./agent-session-drag-interactive";
 import { AgentSessionMediumDrag } from "./agent-session-medium-drag";
 import { AgentSessionSelectMark } from "./agent-session-select-mark";
+import { isTransferSourceFaded } from "./session-cohort";
 import type { AgentSessionItem, AgentSessionTriageRow } from "./agent-session-types";
 
 /** How long Resume reads "Copied" after it writes the command to the clipboard. */
@@ -65,6 +66,7 @@ export function AgentSessionCard({
 	onView,
 	sessionDrag,
 	triageRow,
+	draggingIds,
 	visibilityLabel = "Hide",
 }: Readonly<{
 	arrivalDelaySeconds?: number;
@@ -89,6 +91,7 @@ export function AgentSessionCard({
 	onView?: (item: AgentSessionItem) => void;
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
 	triageRow?: AgentSessionTriageRow | null;
+	draggingIds?: ReadonlySet<string>;
 	/** Tooltip and accessible name for the hover eye. Hide in the active list, Show in Hidden work. */
 	visibilityLabel?: string;
 }>) {
@@ -241,6 +244,8 @@ export function AgentSessionCard({
 			transition={{ ...AGENT_SESSION_ARRIVAL_TRANSITION, delay: arrivalDelaySeconds ?? 0 }}
 		>
 			<AgentSessionMediumDrag
+				cohort={triageRow?.drag?.cohort}
+				cohortFollower={isTransferSourceFaded(item.id, draggingIds, false)}
 				item={item}
 				preserveSourceFootprint
 				sessionDrag={sessionDrag}

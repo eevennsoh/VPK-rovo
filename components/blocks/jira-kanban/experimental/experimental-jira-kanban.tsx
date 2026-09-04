@@ -840,7 +840,7 @@ function ExperimentalJiraKanbanView({
 							onItemHover={handleSessionHover}
 							onSelectedItemIdChange={handleSessionSelectionChange}
 							onView={handleSessionView}
-							sessionDrag={boardSessionDrag.enabled
+							sessionDrag={boardSessionDrag.enablement.transferable
 								? boardSessionDrag.untrackedBinding
 								: agentSessionColumn.sessionDrag}
 						/>
