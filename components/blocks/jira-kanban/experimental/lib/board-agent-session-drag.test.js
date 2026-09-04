@@ -6,8 +6,10 @@ const { moveJiraKanbanAgentSession } = require("../../state.ts");
 const {
 	cancelBoardAgentSessionDragTransaction,
 	createBoardAgentSessionDragTransaction,
+	parseListRowDropZone,
 	resolveBoardAgentSessionDropAction,
 	resolveBoardAgentSessionDropTarget,
+	toListSessionDropIntent,
 	updateBoardAgentSessionDragTransaction,
 } = require("./board-agent-session-drag.ts");
 
@@ -304,6 +306,137 @@ test("untracked origins ignore the Untracked rail and still attach to issues und
 			[overlayingIssue, UNTRACKED],
 		),
 		{ cardCode: "PAY-128", kind: "attach" },
+	);
+});
+
+const LIST_ROW = {
+	bounds: { bottom: 90, left: 0, right: 400, top: 0 },
+	issueKey: "PAY-118",
+	kind: "list-row",
+	rowIndex: 0,
+};
+const NEXT_LIST_ROW = {
+	bounds: { bottom: 180, left: 0, right: 400, top: 90 },
+	issueKey: "PAY-107",
+	kind: "list-row",
+	rowIndex: 1,
+};
+const LIST_ZONES = [LIST_ROW, NEXT_LIST_ROW];
+
+test("untracked list-row middle thirds attach and boundary thirds create at insertAtIndex", () => {
+	const origin = { kind: "untracked" };
+
+	assert.deepEqual(
+		resolveBoardAgentSessionDropTarget(origin, { x: 40, y: 45 }, LIST_ZONES),
+		{ cardCode: "PAY-118", kind: "attach" },
+	);
+	assert.deepEqual(
+		resolveBoardAgentSessionDropTarget(origin, { x: 40, y: 10 }, LIST_ZONES),
+		{
+			insertion: { insertAtIndex: 0, position: "before", relativeToIssueKey: "PAY-118" },
+			kind: "create-list",
+		},
+	);
+	const afterFirst = resolveBoardAgentSessionDropTarget(origin, { x: 40, y: 80 }, LIST_ZONES);
+	const beforeSecond = resolveBoardAgentSessionDropTarget(origin, { x: 40, y: 100 }, LIST_ZONES);
+	const sharedEdge = resolveBoardAgentSessionDropTarget(origin, { x: 40, y: 90 }, LIST_ZONES);
+	assert.deepEqual(afterFirst, {
+		insertion: { insertAtIndex: 1, position: "after", relativeToIssueKey: "PAY-118" },
+		kind: "create-list",
+	});
+	assert.deepEqual(beforeSecond, {
+		insertion: { insertAtIndex: 1, position: "before", relativeToIssueKey: "PAY-107" },
+		kind: "create-list",
+	});
+	assert.equal(afterFirst.insertion.insertAtIndex, beforeSecond.insertion.insertAtIndex);
+	assert.equal(sharedEdge?.kind, "create-list");
+	assert.equal(sharedEdge?.insertion.insertAtIndex, 1);
+});
+
+test("list-row create is untracked-only and attached origins ignore create strips", () => {
+	assert.equal(
+		resolveBoardAgentSessionDropTarget(
+			{ kind: "attached", sourceCardCode: "PAY-121" },
+			{ x: 40, y: 10 },
+			LIST_ZONES,
+		),
+		null,
+	);
+	assert.equal(
+		resolveBoardAgentSessionDropTarget(
+			{ kind: "detached", sourceCardCode: "PAY-121" },
+			{ x: 40, y: 10 },
+			LIST_ZONES,
+		),
+		null,
+	);
+	assert.deepEqual(
+		resolveBoardAgentSessionDropTarget(
+			{ kind: "detached", sourceCardCode: "PAY-121" },
+			{ x: 40, y: 45 },
+			LIST_ZONES,
+		),
+		{ cardCode: "PAY-118", kind: "attach" },
+	);
+});
+
+test("overlapping list-row attach cards stay ambiguous", () => {
+	const overlappingRows = [
+		LIST_ROW,
+		{ ...LIST_ROW, issueKey: "PAY-130", rowIndex: 2 },
+	];
+
+	assert.equal(
+		resolveBoardAgentSessionDropTarget({ kind: "untracked" }, { x: 40, y: 45 }, overlappingRows),
+		null,
+	);
+});
+
+test("list-row create actions carry insertion and cancel to none", () => {
+	const draggedSession = session();
+	const createTransaction = createBoardAgentSessionDragTransaction(
+		draggedSession,
+		{ kind: "untracked" },
+		{ x: 40, y: 10 },
+		LIST_ZONES,
+	);
+	assert.deepEqual(
+		resolveBoardAgentSessionDropAction(createTransaction),
+		{
+			insertion: { insertAtIndex: 0, position: "before", relativeToIssueKey: "PAY-118" },
+			kind: "create-list",
+			sessionId: "review-agent",
+		},
+	);
+	assert.deepEqual(
+		toListSessionDropIntent(createTransaction.target),
+		{
+			insertion: { insertAtIndex: 0, position: "before", relativeToIssueKey: "PAY-118" },
+			kind: "create",
+		},
+	);
+	assert.deepEqual(
+		toListSessionDropIntent({ cardCode: "PAY-118", kind: "attach" }),
+		{ issueKey: "PAY-118", kind: "attach" },
+	);
+	assert.deepEqual(toListSessionDropIntent({ kind: "untracked" }), { kind: "none" });
+	assert.deepEqual(toListSessionDropIntent(null), { kind: "none" });
+
+	const cancelled = cancelBoardAgentSessionDragTransaction(createTransaction);
+	assert.equal(cancelled.target, null);
+	assert.deepEqual(resolveBoardAgentSessionDropAction(cancelled), { kind: "none" });
+});
+
+test("malformed list-row attributes yield no zone", () => {
+	const bounds = { bottom: 90, left: 0, right: 400, top: 0 };
+	assert.equal(parseListRowDropZone(undefined, "0", bounds), null);
+	assert.equal(parseListRowDropZone("PAY-118", undefined, bounds), null);
+	assert.equal(parseListRowDropZone("PAY-118", "", bounds), null);
+	assert.equal(parseListRowDropZone("PAY-118", "1.5", bounds), null);
+	assert.equal(parseListRowDropZone("PAY-118", "row", bounds), null);
+	assert.deepEqual(
+		parseListRowDropZone("PAY-118", "0", bounds),
+		{ bounds, issueKey: "PAY-118", kind: "list-row", rowIndex: 0 },
 	);
 });
 

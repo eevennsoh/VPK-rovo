@@ -464,14 +464,24 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(PAGE_SOURCE, /const \[workItemView, setWorkItemView\] = useState<JiraWorkItemView>\(DEFAULT_JIRA_WORK_ITEM_VIEW\)/u);
 	assert.match(PAGE_SOURCE, /const activeView = activeTab\?\.view \?\? workItemView;/u);
 	assert.match(PAGE_SOURCE, /activeView=\{activeView\}/u);
-	// Team EU's tab bar owns the switch, so the header's own switcher stands down.
 	assert.match(PAGE_SOURCE, /const tabOwnsView = activeTab\?\.view !== undefined;/u);
 	assert.match(PAGE_SOURCE, /onViewChange=\{tabOwnsView \? undefined : setWorkItemView\}/u);
-	assert.match(PAGE_SOURCE, /renderListContent=\{\(columns\) =>/u);
+	assert.match(PAGE_SOURCE, /renderListContent=\{\(columns, \{ agentSessionDropIntent \}\) =>/u);
 	assert.match(PAGE_SOURCE, /useJiraGoldenJourneysV4List/u);
 	assert.match(PAGE_SOURCE, /<JiraList \{\.\.\.listProps\}/u);
-	// The list card owns vertical scroll. An overflow-auto wrapper around it
-	// clips the whole table under the Filter/View chrome with a hard cut.
+	assert.match(PAGE_SOURCE, /agentSessionDropIntent=\{agentSessionDropIntent\}/u);
+	assert.match(PAGE_SOURCE, /onListAgentSessionCreate=\{handleListAgentSessionCreate\}/u);
+	assert.match(PAGE_SOURCE, /createFromAgentSession/u);
+	assert.match(PAGE_SOURCE, /consumeDetachedAgentSession/u);
+	assert.match(LIST_HOOK_SOURCE, /createFromAgentSession/u);
+	assert.match(LIST_HOOK_SOURCE, /createListWorkItemFromSession/u);
+	const createFromSessionStart = LIST_HOOK_SOURCE.indexOf("const createFromAgentSession = useCallback");
+	const createFromSessionEnd = LIST_HOOK_SOURCE.indexOf("}, [boardColumns, listOrder, setBoardColumns]);");
+	assert.ok(createFromSessionStart > 0 && createFromSessionEnd > createFromSessionStart);
+	assert.doesNotMatch(
+		LIST_HOOK_SOURCE.slice(createFromSessionStart, createFromSessionEnd),
+		/setDraftWorkItem|draftWorkItem/u,
+	);
 	assert.match(
 		PAGE_SOURCE,
 		/className="min-h-0 flex-1 overflow-hidden p-4 md:p-5"[\s\S]*<JiraList \{\.\.\.listProps\}/u,
@@ -493,7 +503,13 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(LIST_HOOK_SOURCE, /agentCatalog: JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS/u);
 	assert.match(LIST_HOOK_SOURCE, /statusOptions: JIRA_GOLDEN_JOURNEYS_V4_LIST_STATUS_OPTIONS/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /activeView\?: ExperimentalJiraKanbanView;/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /renderListContent\?: \(columns: readonly JiraKanbanColumnData\[\]\) => ReactNode;/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/renderListContent\?: \(\s*columns: readonly JiraKanbanColumnData\[\],\s*context: ExperimentalJiraKanbanListRenderContext,\s*\) => ReactNode;/u,
+	);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /agentSessionDropIntent: boardSessionDrag\.listDropIntent/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCreate: agentSessionHandlers.onCreateWorkItem/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onListCreate: onListAgentSessionCreate \? handleListAgentSessionCreate : undefined/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /activeView === "list" && renderListContent/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<BoardFilterPopover[\s\S]*surfaceLabel=\{activeView\}/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs"/u);

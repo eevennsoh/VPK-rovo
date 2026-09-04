@@ -1,10 +1,13 @@
 const assert = require("node:assert/strict");
 const { test } = require("node:test");
 
+const { linkJiraKanbanAgentSession } = require("../../../blocks/jira-kanban/state.ts");
+
 const {
 	applyAssignedAgentIdsToColumns,
 	applyListOrder,
 	createListRows,
+	createListWorkItemFromSession,
 	getNextPayIssueKey,
 	insertListOrderKey,
 	insertWorkItemCard,
@@ -210,4 +213,51 @@ test("applyAssignedAgentIdsToColumns archives and assigns against board columns"
 		?.cards.find((card) => card.code === "PAY-101");
 	assert.equal(unchangedCard?.agentActivities?.[0]?.name, "Claude Code");
 	assert.equal(unchangedCard?.agentDoneRuns?.[0]?.agentName, "Review Agent");
+});
+
+test("createListWorkItemFromSession mints a To-do card titled from the session and attaches the activity", () => {
+	const activity = {
+		id: "lw-scope-thread",
+		label: "Scope the adapter thread",
+		name: "Claude Code",
+		state: "working",
+	};
+	const created = createListWorkItemFromSession({
+		activity,
+		columns: COLUMNS,
+		insertion: { insertAtIndex: 1, position: "after", relativeToIssueKey: "PAY-118" },
+		linkSession: linkJiraKanbanAgentSession,
+		listOrder: ["PAY-118", "PAY-107", "PAY-101"],
+		session: { id: "lw-scope-thread", title: "Scope the adapter keep-or-delete argument" },
+		visibleKeys: ["PAY-118", "PAY-107", "PAY-101"],
+	});
+
+	assert.equal(created.kind, "created");
+	assert.equal(created.issueKey, "PAY-119");
+	assert.deepEqual(created.listOrder, ["PAY-118", "PAY-119", "PAY-107", "PAY-101"]);
+	const todoCard = created.columns
+		.find((column) => column.title === "To do")
+		?.cards.find((card) => card.code === "PAY-119");
+	assert.equal(todoCard?.title, "Scope the adapter keep-or-delete argument");
+	assert.equal(todoCard?.issueType, "task");
+	assert.equal(todoCard?.agentActivities?.[0], activity);
+	assert.equal(todoCard?.agentActivities?.[0]?.id, "lw-scope-thread");
+
+	const again = createListWorkItemFromSession({
+		activity,
+		columns: created.columns,
+		insertion: { insertAtIndex: 0, position: "before", relativeToIssueKey: "PAY-118" },
+		linkSession: linkJiraKanbanAgentSession,
+		listOrder: created.listOrder,
+		session: { id: "lw-scope-thread", title: "Scope the adapter keep-or-delete argument" },
+		visibleKeys: created.listOrder,
+	});
+	assert.equal(again.kind, "already-attached");
+	assert.equal(again.issueKey, "PAY-119");
+	assert.equal(again.columns, created.columns);
+	assert.equal(again.listOrder, created.listOrder);
+	assert.equal(
+		created.columns.flatMap((column) => column.cards).filter((card) => card.code === "PAY-119").length,
+		1,
+	);
 });

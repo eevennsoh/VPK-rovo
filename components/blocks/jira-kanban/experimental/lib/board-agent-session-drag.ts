@@ -1,3 +1,12 @@
+import type {
+	JiraListAgentSessionDropIntent,
+	JiraListInsertion,
+} from "@/components/blocks/jira-list/jira-list-types";
+import {
+	getInsertionFromRowZone,
+	getRowZone,
+} from "../../../jira-list/jira-list-row-zone.js";
+
 export interface BoardAgentSessionDragPointer {
 	x: number;
 	y: number;
@@ -28,12 +37,19 @@ export type BoardAgentSessionDropZone =
 	}
 	| {
 		bounds: BoardAgentSessionDropBounds;
+		issueKey: string;
+		kind: "list-row";
+		rowIndex: number;
+	}
+	| {
+		bounds: BoardAgentSessionDropBounds;
 		kind: "untracked";
 	};
 
 export type BoardAgentSessionDropTarget =
 	| { cardCode: string; kind: "attach" }
 	| { columnTitle: string; kind: "create" }
+	| { insertion: JiraListInsertion; kind: "create-list" }
 	| { cardCode: string; kind: "unlink" }
 	| { kind: "untracked" };
 
@@ -49,6 +65,7 @@ export interface BoardAgentSessionDragTransaction<
 export type BoardAgentSessionDropAction =
 	| { kind: "none" }
 	| { kind: "create"; sessionId: string; columnTitle: string }
+	| { kind: "create-list"; insertion: JiraListInsertion; sessionId: string }
 	| { kind: "detach"; sessionId: string; sourceCardCode: string }
 	| { kind: "move"; sessionId: string; sourceCardCode: string; targetCardCode: string }
 	| { kind: "attach"; sessionId: string; targetCardCode: string };
@@ -67,6 +84,8 @@ function dropTargetKey(target: BoardAgentSessionDropTarget): string {
 	switch (target.kind) {
 		case "create":
 			return `create:${target.columnTitle}`;
+		case "create-list":
+			return `create-list:${target.insertion.insertAtIndex}`;
 		case "untracked":
 			return "untracked";
 		case "attach":
@@ -82,6 +101,7 @@ function dropTargetKey(target: BoardAgentSessionDropTarget): string {
 function toEligibleTarget(
 	origin: BoardAgentSessionDragOrigin,
 	zone: BoardAgentSessionDropZone,
+	pointer: BoardAgentSessionDragPointer,
 ): BoardAgentSessionDropTarget | null {
 	switch (zone.kind) {
 		case "create":
@@ -99,8 +119,71 @@ function toEligibleTarget(
 				return null;
 			}
 			return { cardCode: zone.cardCode, kind: "attach" };
+		case "list-row": {
+			const rowHeight = zone.bounds.bottom - zone.bounds.top;
+			const rowZone = getRowZone(pointer.y - zone.bounds.top, rowHeight);
+			if (rowZone === "drag") {
+				if (origin.kind === "attached" && zone.issueKey === origin.sourceCardCode) {
+					return null;
+				}
+				return { cardCode: zone.issueKey, kind: "attach" };
+			}
+			if (origin.kind !== "untracked") {
+				return null;
+			}
+			const insertion = getInsertionFromRowZone(rowZone, {
+				issueKey: zone.issueKey,
+				rowIndex: zone.rowIndex,
+			});
+			return insertion ? { insertion, kind: "create-list" } : null;
+		}
 		default: {
 			const exhaustive: never = zone;
+			return exhaustive;
+		}
+	}
+}
+
+export function parseListRowDropZone(
+	issueKey: string | undefined,
+	rowIndexRaw: string | undefined,
+	bounds: BoardAgentSessionDropBounds,
+): Extract<BoardAgentSessionDropZone, { kind: "list-row" }> | null {
+	if (!issueKey || rowIndexRaw === undefined || rowIndexRaw === "") {
+		return null;
+	}
+
+	const rowIndex = Number(rowIndexRaw);
+	if (!Number.isInteger(rowIndex) || rowIndex < 0) {
+		return null;
+	}
+
+	return {
+		bounds,
+		issueKey,
+		kind: "list-row",
+		rowIndex,
+	};
+}
+
+export function toListSessionDropIntent(
+	target: BoardAgentSessionDropTarget | null,
+): JiraListAgentSessionDropIntent {
+	if (!target) {
+		return { kind: "none" };
+	}
+
+	switch (target.kind) {
+		case "attach":
+			return { kind: "attach", issueKey: target.cardCode };
+		case "create-list":
+			return { kind: "create", insertion: target.insertion };
+		case "create":
+		case "unlink":
+		case "untracked":
+			return { kind: "none" };
+		default: {
+			const exhaustive: never = target;
 			return exhaustive;
 		}
 	}
@@ -118,7 +201,7 @@ export function resolveBoardAgentSessionDropTarget(
 			continue;
 		}
 
-		const target = toEligibleTarget(origin, zone);
+		const target = toEligibleTarget(origin, zone, pointer);
 		if (target) {
 			targetsByKey.set(dropTargetKey(target), target);
 		}
@@ -219,6 +302,10 @@ export function resolveBoardAgentSessionDropAction(
 					: { kind: "none" };
 			}
 			return { kind: "attach", sessionId: session.id, targetCardCode: target.cardCode };
+		case "create-list":
+			return origin.kind === "untracked"
+				? { kind: "create-list", insertion: target.insertion, sessionId: session.id }
+				: { kind: "none" };
 		default: {
 			const exhaustive: never = target;
 			return exhaustive;

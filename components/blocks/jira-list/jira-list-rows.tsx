@@ -123,8 +123,10 @@ export function JiraListSortableRow({
 	row,
 	rowIndex,
 	rowCount,
+	agentSessionDropEnabled,
 	...rowProps
 }: Readonly<{
+	agentSessionDropEnabled?: boolean;
 	children: ReactNode;
 	handleOverlayElement: HTMLDivElement | null;
 	instanceId: string;
@@ -205,6 +207,9 @@ export function JiraListSortableRow({
 					rowProps.className,
 					isDragging && "z-30 opacity-80 shadow-lg [&>td]:bg-bg-selected",
 				)}
+				data-board-agent-session-drop-zone={agentSessionDropEnabled ? "list-row" : undefined}
+				data-issue-key={agentSessionDropEnabled ? row.issueKey : undefined}
+				data-list-row-index={agentSessionDropEnabled ? rowIndex : undefined}
 				data-dragging={isDragging || undefined}
 				data-drop-target={isDropTarget || undefined}
 				ref={setNodeRef}

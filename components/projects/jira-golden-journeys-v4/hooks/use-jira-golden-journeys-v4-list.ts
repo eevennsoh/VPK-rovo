@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 
-import { moveJiraKanbanCardsToColumn } from "@/components/blocks/jira-kanban/state";
+import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
+import { linkJiraKanbanAgentSession, moveJiraKanbanCardsToColumn } from "@/components/blocks/jira-kanban/state";
 import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import type {
 	JiraListAssignedAgent,
@@ -20,6 +21,7 @@ import {
 	applyAssignedAgentIdsToColumns,
 	applyListOrder,
 	createListRows,
+	createListWorkItemFromSession,
 	getNextPayIssueKey,
 	insertListOrderKey,
 	insertWorkItemCard,
@@ -37,7 +39,14 @@ interface ListDraftWorkItem {
 	summary: string;
 }
 
+export interface CreateFromAgentSessionInput {
+	activity: JiraIssueAgentActivity;
+	insertion: JiraListInsertion;
+	session: Readonly<{ id: string; title: string }>;
+}
+
 export interface UseJiraGoldenJourneysV4ListResult {
+	createFromAgentSession: (input: CreateFromAgentSessionInput) => void;
 	getProps: (columns: readonly JiraKanbanColumnData[]) => JiraListProps;
 }
 
@@ -176,6 +185,21 @@ export function useJiraGoldenJourneysV4List({
 		));
 	}, [setBoardColumns]);
 
+	const createFromAgentSession = useCallback((input: CreateFromAgentSessionInput) => {
+		const result = createListWorkItemFromSession({
+			activity: input.activity,
+			columns: boardColumns,
+			insertion: input.insertion,
+			linkSession: linkJiraKanbanAgentSession,
+			listOrder,
+			session: input.session,
+			visibleKeys: visibleKeysRef.current,
+		});
+		setBoardColumns([...result.columns]);
+		setListOrder(result.listOrder);
+		setSelectedIssueKeys(new Set([result.issueKey]));
+	}, [boardColumns, listOrder, setBoardColumns]);
+
 	const getProps = useCallback((columns: readonly JiraKanbanColumnData[]): JiraListProps => {
 		const rows = applyListOrder(
 			createListRows(columns, JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS),
@@ -258,5 +282,5 @@ export function useJiraGoldenJourneysV4List({
 		selectedIssueKeys,
 	]);
 
-	return { getProps };
+	return { createFromAgentSession, getProps };
 }

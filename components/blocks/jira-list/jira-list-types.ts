@@ -92,6 +92,11 @@ export interface JiraListDraftWorkItem {
 	summary: string;
 }
 
+export type JiraListAgentSessionDropIntent =
+	| { kind: "none" }
+	| { kind: "attach"; issueKey: string }
+	| { kind: "create"; insertion: JiraListInsertion };
+
 export interface JiraListProps {
 	rows: readonly JiraListRowData[];
 	activeIssueKey?: string;
@@ -127,4 +132,5 @@ export interface JiraListProps {
 	onSelectRow?: (issueKey: string, checked: boolean) => void;
 	onStatusChange?: (issueKey: string, status: JiraListStatusOption) => void;
 	onToggleExpand?: (issueKey: string) => void;
+	agentSessionDropIntent?: JiraListAgentSessionDropIntent;
 }

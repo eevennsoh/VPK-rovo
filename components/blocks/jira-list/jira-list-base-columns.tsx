@@ -49,8 +49,10 @@ export function createJiraListBaseColumns({
 	openCopyTooltipIssueKey,
 	setOpenCopyTooltipIssueKey,
 	statusOptions,
+	agentSessionAttachIssueKey,
 }: Readonly<{
 	agentCatalog?: readonly AgentSelectorAgent[];
+	agentSessionAttachIssueKey?: string;
 	copiedIssueKey: string | null;
 	onAgentAssign?: JiraListProps["onAgentAssign"];
 	onAssignedAgentIdsChange?: JiraListProps["onAssignedAgentIdsChange"];
@@ -254,6 +256,7 @@ export function createJiraListBaseColumns({
 				<JiraListAgentSessionsCell
 					agentCatalog={agentCatalog}
 					agentSessions={row.agentSessions}
+					isAttachTarget={agentSessionAttachIssueKey === row.issueKey}
 					onAgentAssign={
 						onAgentAssign
 							? (agent) => onAgentAssign(row.issueKey, agent)
