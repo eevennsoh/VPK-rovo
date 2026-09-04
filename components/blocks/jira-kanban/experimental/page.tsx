@@ -50,6 +50,10 @@ import {
 	selectBoardUntrackedSessions,
 } from "./lib/board-untracked-sessions";
 import {
+	locateBoardUntrackedTarget,
+	useBoardUntrackedTriage,
+} from "./lib/board-untracked-triage";
+import {
 	BOARD_HEADER_TAB_STRIP_BOTTOM_PX,
 	ExperimentalJiraKanbanBoardHeader,
 	type ExperimentalJiraKanbanView,
@@ -298,6 +302,7 @@ export default function ExperimentalJiraKanbanPage({
 	// decided, not view state that may quietly reset with the subtree.
 	const [requestedActionIds, setRequestedActionIds] = useState<ReadonlySet<string>>(() => new Set<string>());
 	const [capturedLooseWorkIds, setCapturedLooseWorkIds] = useState<ReadonlySet<string>>(() => new Set<string>());
+	const [archivedLooseWorkIds, setArchivedLooseWorkIds] = useState<ReadonlySet<string>>(() => new Set<string>());
 	// Owned here rather than inside the board: switching to the list or Pulse
 	// view unmounts `ExperimentalJiraKanban`, and a viewer's collapse choices are
 	// a deliberate setting that must outlive a temporary view switch.
@@ -322,6 +327,9 @@ export default function ExperimentalJiraKanbanPage({
 	}, []);
 	const handleCaptureLooseWork = useCallback((item: { id: string }) => {
 		setCapturedLooseWorkIds((current) => new Set(current).add(item.id));
+	}, []);
+	const handleArchiveLooseWork = useCallback((item: { id: string }) => {
+		setArchivedLooseWorkIds((current) => new Set(current).add(item.id));
 	}, []);
 	// Questions are stored per scope rather than cleared when the scope changes.
 	// An answer about Sprint 24 read as a reply to a question asked of PAY-90
@@ -473,11 +481,12 @@ export default function ExperimentalJiraKanbanPage({
 	);
 	const untrackedAgentSessionItems = useMemo(
 		() => selectBoardUntrackedSessions({
+			archivedItemIds: archivedLooseWorkIds,
 			capturedItemIds: capturedLooseWorkIds,
 			detachedByCard: detachedAgentSessionsByCard,
 			sessions: agentSessionItems,
 		}),
-		[agentSessionItems, capturedLooseWorkIds, detachedAgentSessionsByCard],
+		[agentSessionItems, archivedLooseWorkIds, capturedLooseWorkIds, detachedAgentSessionsByCard],
 	);
 	const agentSessionHandlers = useMemo(
 		() => toPulseSessionHandlers({
@@ -497,6 +506,36 @@ export default function ExperimentalJiraKanbanPage({
 		() => new Set(agentSessionItems.map((session) => session.id)),
 		[agentSessionItems],
 	);
+	const handleCardAgentSessionLink: ExperimentalJiraKanbanProps["onCardAgentSessionLink"] = (
+		session,
+		card,
+		columnTitle,
+	) => {
+		setCapturedLooseWorkIds((current) => {
+			if (current.has(session.id)) {
+				return current;
+			}
+			return new Set(current).add(session.id);
+		});
+		onCardAgentSessionLink?.(session, card, columnTitle);
+	};
+	const untrackedTriage = useBoardUntrackedTriage({
+		boardColumns: filteredBoardColumns,
+		onArchive: handleArchiveLooseWork,
+		onCreateWorkItem: handleCaptureLooseWork,
+		onLink: onCardAgentSessionLink ? handleCardAgentSessionLink : undefined,
+	});
+	const handleUntrackedLinkWorkItem = (
+		item: AgentSessionItem,
+		workItemKey?: string,
+	) => {
+		const target = locateBoardUntrackedTarget(filteredBoardColumns, workItemKey)
+			?? untrackedTriage.locateTarget(item);
+		if (target === undefined) {
+			return;
+		}
+		untrackedTriage.attach(item, target);
+	};
 	// One config, both presentations. The in-flow column and the floating panel
 	// render the same `AgentSessionColumn` with the same data and handlers, so
 	// building it once is what stops them drifting as either host evolves.
@@ -506,6 +545,10 @@ export default function ExperimentalJiraKanbanPage({
 		items: untrackedAgentSessionItems,
 		...agentSessionHandlers,
 		onCollapsedChange: setAgentSessionColumnCollapsed,
+		onLinkWorkItem: onCardAgentSessionLink === undefined
+			? undefined
+			: handleUntrackedLinkWorkItem,
+		triage: untrackedTriage,
 	} : undefined;
 	const isListContent = activeView === "list" && renderListContent !== undefined;
 	// Insights replaces the whole content region with an article; a floating
@@ -550,6 +593,7 @@ export default function ExperimentalJiraKanbanPage({
 	const proximityAgentSessionsByCard = useMemo(
 		() => showUntracked
 			? groupBoardUntrackedSessions({
+				archivedItemIds: archivedLooseWorkIds,
 				boardIssueKeys,
 				capturedItemIds: capturedLooseWorkIds,
 				detachedByCard: detachedAgentSessionsByCard,
@@ -558,6 +602,7 @@ export default function ExperimentalJiraKanbanPage({
 			: EMPTY_PROXIMITY_SESSIONS,
 		[
 			agentSessionItems,
+			archivedLooseWorkIds,
 			boardIssueKeys,
 			capturedLooseWorkIds,
 			detachedAgentSessionsByCard,
@@ -642,20 +687,6 @@ export default function ExperimentalJiraKanbanPage({
 
 	const handleCardDragEnd = () => {
 		setDraggedCard(null);
-	};
-
-	const handleCardAgentSessionLink: ExperimentalJiraKanbanProps["onCardAgentSessionLink"] = (
-		session,
-		card,
-		columnTitle,
-	) => {
-		setCapturedLooseWorkIds((current) => {
-			if (current.has(session.id)) {
-				return current;
-			}
-			return new Set(current).add(session.id);
-		});
-		onCardAgentSessionLink?.(session, card, columnTitle);
 	};
 
 	const handleCardAgentSessionMove: ExperimentalJiraKanbanProps["onCardAgentSessionMove"] = (

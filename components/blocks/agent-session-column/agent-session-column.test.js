@@ -23,6 +23,10 @@ const ARRIVAL_MOTION_SOURCE = readFileSync(
 	"utf8",
 );
 const TYPES_SOURCE = readFileSync(join(__dirname, "agent-session-column-types.ts"), "utf8");
+const HEADER_SOURCE = readFileSync(
+	join(__dirname, "agent-session-column-header.tsx"),
+	"utf8",
+);
 const OVERFLOW_MENU_SOURCE = readFileSync(
 	join(__dirname, "agent-session-column-overflow-menu.tsx"),
 	"utf8",
@@ -105,7 +109,7 @@ test("the column does not fuse large session cards into one stroke", () => {
 	// must not strip borders into shared dividers.
 	assert.match(INDEX_SOURCE, /const AGENT_SESSION_WELL =/u);
 	assert.match(INDEX_SOURCE, /overflow-hidden rounded-xl border border-solid border-border-disabled/u);
-	assert.match(INDEX_SOURCE, /collapsed \|\| chrome === "none" \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL/u);
+	assert.match(INDEX_SOURCE, /collapsed \|\| headerSurface === "panel" \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL/u);
 	assert.match(INDEX_SOURCE, /className=\{listClassName\}/u);
 	assert.doesNotMatch(INDEX_SOURCE, /AGENT_SESSION_WELL_LIST/u);
 	assert.doesNotMatch(INDEX_SOURCE, /\[&_article\]:rounded-none \[&_article\]:border-x-0/u);
@@ -244,7 +248,7 @@ test("the collapsed count lives in the header above the plane, not on the rail",
 	// does not jump. Collapsed adds matching top pad so the count is not flush
 	// under the panel header. The rail is notches only.
 	assert.match(INDEX_SOURCE, /paddingBottom: token\("space\.100"\)/u);
-	assert.match(INDEX_SOURCE, /paddingTop: collapsed \? token\("space\.100"\) : undefined/u);
+	assert.match(INDEX_SOURCE, /paddingTop: token\("space\.100"\)/u);
 	assert.match(INDEX_SOURCE, /relative flex h-6 w-full min-w-0 items-center justify-center/u);
 	assert.match(INDEX_SOURCE, /absolute inset-0 flex items-center justify-center text-xs/u);
 	assert.match(INDEX_SOURCE, /HEADER_COUNT_AT_REST/u);
@@ -277,9 +281,9 @@ test("collapsing swaps the cards for the notch rail, not for a rotated label", (
 });
 
 test("column resize buttons swap icons without using selected button state", () => {
-	assert.match(INDEX_SOURCE, /aria-label=\{`Collapse \$\{title\} column`\}/u);
-	assert.match(INDEX_SOURCE, /<ShrinkHorizontalIcon/u);
-	assert.match(INDEX_SOURCE, /<TooltipContent>Collapse<\/TooltipContent>/u);
+	assert.match(INDEX_SOURCE, /collapseLabel=\{headerSurface === "panel"/u);
+	assert.match(HEADER_SOURCE, /<ShrinkHorizontalIcon/u);
+	assert.match(HEADER_SOURCE, /<TooltipContent>Collapse<\/TooltipContent>/u);
 	assert.match(INDEX_SOURCE, /aria-label=\{`Expand \$\{title\} column`\}/u);
 	assert.match(INDEX_SOURCE, /<GrowHorizontalIcon/u);
 	assert.match(INDEX_SOURCE, /<TooltipContent>Expand<\/TooltipContent>/u);
@@ -306,7 +310,7 @@ test("a notch is a drag handle, so a session leaves the collapsed rail too", () 
 	// The column inherits the binding from AgentSessionProps, so the rail is
 	// reached with the prop the expanded cards already take.
 	assert.match(SESSION_TYPES_SOURCE, /sessionDrag\?: JiraIssueAgentSessionDragBinding;/u);
-	assert.match(TYPES_SOURCE, /extends Omit<AgentSessionProps, "className">/u);
+	assert.match(TYPES_SOURCE, /extends Omit<AgentSessionProps, "className" \| "rowTriage">/u);
 	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,800}?sessionDrag=\{sessionProps\.sessionDrag\}/u);
 	assert.match(
 		RAIL_COLUMN_SOURCE,
@@ -522,29 +526,23 @@ test("a host can take over the collapse state without the column fighting it", (
 	assert.match(INDEX_SOURCE, /\}, \[closeHiddenView, collapsed, shouldReduceMotion\]\);/u);
 });
 
-test("chrome none drops the expanded header only, never the column's name", () => {
-	assert.match(TYPES_SOURCE, /chrome\?: "default" \| "none";/u);
-	assert.match(INDEX_SOURCE, /chrome = "default",/u);
-	// Header gate stays on the title row. The well frame is a second chrome
-	// gate so a docked panel does not nest a rounded box inside `border-l`.
-	assert.match(INDEX_SOURCE, /\{collapsed \|\| chrome === "default" \? \(/u);
-	assert.equal(INDEX_SOURCE.match(/chrome === "default"/gu)?.length, 1);
-	assert.match(INDEX_SOURCE, /collapsed \|\| chrome === "none" \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL/u);
-	// The section keeps its label: with the visible title suppressed it is the
-	// list's only accessible name.
-	assert.match(INDEX_SOURCE, /<section\s*\n\s*aria-label=\{`\$\{displayTitle\}, \$\{sessionCount\} sessions`\}/u);
+test("headerSurface panel keeps the column-owned header and drops the nested well", () => {
+	assert.match(TYPES_SOURCE, /headerSurface\?: "column" \| "panel";/u);
+	assert.match(INDEX_SOURCE, /headerSurface = "column",/u);
+	assert.doesNotMatch(TYPES_SOURCE, /chrome\?: "default" \| "none";/u);
+	assert.doesNotMatch(INDEX_SOURCE, /\bchrome=/u);
+	assert.match(INDEX_SOURCE, /<AgentSessionColumnHeader/u);
+	assert.match(INDEX_SOURCE, /collapsed \|\| headerSurface === "panel" \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL/u);
+	assert.match(INDEX_SOURCE, /<section\s*\n\s*ref=\{columnRef\}\s*\n\s*aria-label=\{`\$\{displayTitle\}, \$\{sessionCount\} sessions`\}/u);
+	assert.match(INDEX_SOURCE, /tabIndex=\{-1\}/u);
+	assert.match(INDEX_SOURCE, /columnRef\.current\?\.focus\(\)/u);
 });
 
 test("the collapsed rail keeps its compact header whatever the host asks for", () => {
 	// At 32px that header *is* the chrome, and it carries the only control that
-	// can expand the column again — gating it on `chrome` would strand the rail.
-	assert.match(INDEX_SOURCE, /\{collapsed \|\| chrome === "default" \? \(/u);
-	assert.doesNotMatch(INDEX_SOURCE, /collapsed && chrome === "default"/u);
-	// Still the count-at-rest / expand-on-reveal slot, inside the gated row.
-	assert.match(
-		INDEX_SOURCE,
-		/\{collapsed \|\| chrome === "default" \? \([\s\S]{0,400}?\{collapsed \? \([\s\S]{0,1200}?aria-label=\{`Expand \$\{title\} column`\}/u,
-	);
+	// can expand the column again — gating it on `headerSurface` would strand the rail.
+	assert.match(INDEX_SOURCE, /\{collapsed \? \(/u);
+	assert.match(INDEX_SOURCE, /aria-label=\{`Expand \$\{title\} column`\}/u);
 	// The rail itself still has no header of its own to fall back on.
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /onExpand/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /sessionCount/u);
@@ -812,17 +810,30 @@ test("hidden ids survive a temporary items drop so A then B then A stays hidden"
 });
 
 test("the expanded header keeps an overflow menu next to collapse", () => {
-	assert.match(INDEX_SOURCE, /HEADER_ACTIONS_REVEAL/u);
+	assert.match(HEADER_SOURCE, /HEADER_ACTIONS_REVEAL/u);
 	assert.match(INDEX_SOURCE, /<AgentSessionColumnOverflowMenu/u);
-	assert.match(INDEX_SOURCE, /aria-label=\{`Collapse \$\{title\} column`\}/u);
+	assert.match(HEADER_SOURCE, /`Collapse \$\{title\} column`|collapseLabel/u);
 	assert.match(OVERFLOW_MENU_SOURCE, /\$\{title\} column actions/u);
 	assert.match(OVERFLOW_MENU_SOURCE, /<ShowMoreHorizontalIcon/u);
 	assert.match(OVERFLOW_MENU_SOURCE, /size="icon-compact"/u);
-	// Both actions stay in the tab order while faded — `hidden` would drop them.
-	assert.doesNotMatch(INDEX_SOURCE, /group-hover\/session-column:block/u);
-	assert.match(INDEX_SOURCE, /has-\[\[data-popup-open\]\]:opacity-100/u);
+	assert.doesNotMatch(HEADER_SOURCE, /group-hover\/session-column:block/u);
+	assert.match(HEADER_SOURCE, /has-\[\[data-popup-open\]\]:opacity-100/u);
 	assert.match(INDEX_SOURCE, /items=\{viewItems\}/u);
 	assert.match(INDEX_SOURCE, /onLinkWorkItem=\{sessionProps\.onLinkWorkItem\}/u);
+});
+
+test("the selecting header omits collapse so Clear is the only exit", () => {
+	const columnSelecting = HEADER_SOURCE.slice(
+		HEADER_SOURCE.indexOf("function renderColumnChrome"),
+		HEADER_SOURCE.indexOf("function renderPanelChrome"),
+	);
+	const columnSelectingBranch = columnSelecting.slice(columnSelecting.lastIndexOf('case "selecting":'));
+	assert.doesNotMatch(columnSelectingBranch, /<CollapseButton/u);
+	const panelSelecting = HEADER_SOURCE.slice(HEADER_SOURCE.indexOf("function renderPanelChrome"));
+	const panelSelectingBranch = panelSelecting.slice(panelSelecting.lastIndexOf('case "selecting":'));
+	assert.doesNotMatch(panelSelectingBranch, /ShrinkHorizontalIcon/u);
+	assert.match(columnSelectingBranch, /<HeaderIconButton/u);
+	assert.match(panelSelectingBranch, /<PanelAction/u);
 });
 
 test("the overflow menu is Link all suggestions, then Auto sync and Suggest link toggles", () => {

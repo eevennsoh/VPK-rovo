@@ -97,6 +97,7 @@ export function AgentSession({
 	onSelectedItemIdChange,
 	onToggleVisibility,
 	onView,
+	rowTriage,
 	selectedItemId: selectedItemIdProp,
 	sessionDrag,
 	style,
@@ -205,6 +206,7 @@ export function AgentSession({
 								onToggleVisibility={onToggleVisibility}
 								onView={itemOnView}
 								sessionDrag={sessionDrag}
+								triageRow={rowTriage?.get(item.id)}
 								visibilityLabel={visibilityLabel}
 							/>
 						);
@@ -267,6 +269,8 @@ export function AgentSession({
 }
 
 export { AGENT_SESSION_ATTACHED_ITEMS, AGENT_SESSION_ITEMS, AGENT_SESSION_MULTI_LINK_KEYS } from "./data";
+export { approveActionLabel, resolveApproveTarget } from "./agent-session-approve";
+export type { ApproveTarget, ApproveUnavailableReason } from "./agent-session-approve";
 export { AgentSessionCard } from "./agent-session-card";
 export {
 	bindAgentSessionFlyoutActions,
@@ -275,4 +279,10 @@ export {
 	toAgentSessionUntrackedWorkFlyoutItem,
 	toJiraIssueAgentActivityFromSession,
 } from "./agent-session-work-item";
-export type { AgentSessionItem, AgentSessionProps, AgentSessionVariant } from "./agent-session-types";
+export type {
+	AgentSessionItem,
+	AgentSessionProps,
+	AgentSessionTriageRow,
+	AgentSessionVariant,
+} from "./agent-session-types";
+export type { UntrackedWorkTriage } from "./untracked-work-triage";

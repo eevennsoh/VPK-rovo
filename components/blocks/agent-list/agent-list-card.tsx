@@ -558,6 +558,7 @@ function RowBody({
  * label is the button text.
  */
 export type AgentListRowAction = Readonly<{
+	disabled?: boolean;
 	icon?: ReactNode;
 	label: string;
 	onClick: () => void;
@@ -581,7 +582,13 @@ function RowAction({ action }: Readonly<{ action: AgentListRowAction }>) {
 
 	if (action.icon === undefined) {
 		return (
-			<Button onClick={handleClick} size="compact" type="button" variant="outline">
+			<Button
+				disabled={action.disabled}
+				onClick={handleClick}
+				size="compact"
+				type="button"
+				variant="outline"
+			>
 				{action.label}
 			</Button>
 		);
@@ -594,6 +601,7 @@ function RowAction({ action }: Readonly<{ action: AgentListRowAction }>) {
 					render={
 						<Button
 							aria-label={action.label}
+							disabled={action.disabled}
 							onClick={handleClick}
 							size="icon-compact"
 							type="button"
@@ -670,6 +678,7 @@ export function AgentListRow({
 	isSelected,
 	item,
 	onView,
+	renderIdentity,
 	showHoverActionsWhenSelected = false,
 }: Readonly<{
 	/** Controls revealed on hover/focus. Omit to render a row with no actions. */
@@ -678,6 +687,10 @@ export function AgentListRow({
 	isSelected: boolean;
 	item: AgentListItem;
 	onView?: (item: AgentListItem) => void;
+	/**
+	 * Wrap the row's leading identity. Agent List never passes it.
+	 */
+	renderIdentity?: (identity: ReactNode) => ReactNode;
 	/**
 	 * Keep Resume / Hide visible on a selected row. Agent List leaves this off
 	 * because a selected list row is already the destination; session cards still
@@ -704,6 +717,13 @@ export function AgentListRow({
 	// apply after the article is highlighted.
 	const showHoverActions = (!isSelected || showHoverActionsWhenSelected) &&
 		(hoverActions?.primary !== undefined || hoverActions?.secondary !== undefined);
+	const identity = (
+		<AgentListIdentity
+			agent={item.agent}
+			className={hasSummary ? "mt-0.5" : undefined}
+			sizePx={isCompact ? 24 : 32}
+		/>
+	);
 
 	return (
 		<div
@@ -715,11 +735,9 @@ export function AgentListRow({
 				hasSummary ? "items-start" : "items-center",
 			)}
 		>
-			<AgentListIdentity
-				agent={item.agent}
-				className={cn("mr-3 shrink-0", hasSummary ? "mt-0.5" : null)}
-				sizePx={isCompact ? 24 : 32}
-			/>
+			<div className="mr-3 shrink-0">
+				{renderIdentity === undefined ? identity : renderIdentity(identity)}
+			</div>
 			<div className="flex min-w-0 flex-1 flex-col">
 				<div
 					className={cn(

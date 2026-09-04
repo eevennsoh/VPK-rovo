@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
+import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import EyeOpenIcon from "@atlaskit/icon/core/eye-open";
 import EyeOpenStrikethroughIcon from "@atlaskit/icon/core/eye-open-strikethrough";
 
@@ -24,8 +25,10 @@ import {
 	AGENT_SESSION_ARRIVAL_OFFSET_PX,
 	AGENT_SESSION_ARRIVAL_TRANSITION,
 } from "./agent-session-arrival-motion";
-import { AgentSessionMediumDrag } from "./agent-session-medium-drag";
-import type { AgentSessionItem } from "./agent-session-types";
+import { approveActionLabel } from "./agent-session-approve";
+import { AgentSessionMediumDrag, SESSION_DRAG_INTERACTIVE_SELECTOR } from "./agent-session-medium-drag";
+import { AgentSessionSelectMark } from "./agent-session-select-mark";
+import type { AgentSessionItem, AgentSessionTriageRow } from "./agent-session-types";
 
 /** How long Resume reads "Copied" after it writes the command to the clipboard. */
 const COPIED_RESET_MS = 2000;
@@ -59,6 +62,7 @@ export function AgentSessionCard({
 	onToggleVisibility,
 	onView,
 	sessionDrag,
+	triageRow,
 	visibilityLabel = "Hide",
 }: Readonly<{
 	arrivalDelaySeconds?: number;
@@ -81,6 +85,7 @@ export function AgentSessionCard({
 	onToggleVisibility?: (item: AgentSessionItem) => void;
 	onView?: (item: AgentSessionItem) => void;
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
+	triageRow?: AgentSessionTriageRow | null;
 	/** Tooltip and accessible name for the hover eye. Hide in the active list, Show in Hidden work. */
 	visibilityLabel?: string;
 }>) {
@@ -130,7 +135,10 @@ export function AgentSessionCard({
 	const handleArticleClick = activateCard === undefined
 		? undefined
 		: (event: MouseEvent<HTMLElement>) => {
-			if (event.target instanceof Element && event.target.closest("button") !== null) {
+			if (
+				event.target instanceof Element
+				&& event.target.closest(SESSION_DRAG_INTERACTIVE_SELECTOR) !== null
+			) {
 				return;
 			}
 			activateCard();
@@ -147,22 +155,33 @@ export function AgentSessionCard({
 			}
 		};
 
+	const approve = triageRow?.approve;
+	const mark = triageRow?.mark;
+	const isMarked = mark?.isMarked ?? false;
+	const showSelectedFill = isMarked || (isSelected && mark == null);
 	const hoverActions: AgentListRowHoverActions = {
-		primary: canResume
+		primary: approve
 			? {
-				label: copiedResume ? "Copied" : "Resume",
-				onClick: () => {
-					void copyResumeCommand(resumeCommand).then(() => {
-						onCopyResume?.(item);
-						setCopiedResume(true);
-						window.clearTimeout(copiedResetRef.current);
-						copiedResetRef.current = window.setTimeout(() => {
-							setCopiedResume(false);
-						}, COPIED_RESET_MS);
-					});
-				},
+				disabled: approve.target.kind === "unavailable",
+				icon: <Icon render={<CheckMarkIcon label="" size="small" />} />,
+				label: approveActionLabel(approve.target),
+				onClick: approve.onApprove,
 			}
-			: undefined,
+			: canResume
+				? {
+					label: copiedResume ? "Copied" : "Resume",
+					onClick: () => {
+						void copyResumeCommand(resumeCommand).then(() => {
+							onCopyResume?.(item);
+							setCopiedResume(true);
+							window.clearTimeout(copiedResetRef.current);
+							copiedResetRef.current = window.setTimeout(() => {
+								setCopiedResume(false);
+							}, COPIED_RESET_MS);
+						});
+					},
+				}
+				: undefined,
 		secondary: {
 			// Hide (active list) is a strikethrough eye; Show (hidden view) is open.
 			icon: (
@@ -188,6 +207,12 @@ export function AgentSessionCard({
 	return (
 		<motion.li
 			animate={shouldPlayArrival ? { opacity: 1, y: 0 } : undefined}
+			className={cn(
+				isMarked ? "has-[+[data-marked]]:[&_article]:rounded-b-none" : null,
+				"[[data-marked]+&[data-marked]]:[&_article]:rounded-t-none",
+				"[[data-marked]+&[data-marked]]:in-[.gap-1]:-mt-1",
+			)}
+			data-marked={isMarked || undefined}
 			data-testid={"agent-session-row-" + item.id}
 			onPointerEnter={() => {
 				isHoveredRef.current = true;
@@ -230,19 +255,18 @@ export function AgentSessionCard({
 						bind ? "cursor-grab" : "cursor-pointer",
 						// Borderless tiles, 8px radius — same chrome as editor-palette
 						// suggestion rows. The list owns the gap between them.
-						"transition-[background-color] duration-xxshort ease-out-practical",
+						"transition-[background-color,border-radius] duration-xxshort ease-out-practical",
 						"motion-reduce:transition-none",
-						// Selected keeps the same blue-subtlest token as a spotlighted
-						// board card. No mapped hovered sibling exists, so hover stays blue.
-						isSelected && "bg-bg-accent-blue-subtlest",
-						!isSelected && isHighlighted && "bg-surface-hovered",
-						!isSelected && !isHighlighted && "bg-transparent hover:bg-surface-hovered",
+						showSelectedFill && "bg-bg-selected",
+						!showSelectedFill && isHighlighted && "bg-surface-hovered",
+						!showSelectedFill && !isHighlighted && "bg-transparent hover:bg-surface-hovered",
 						activateCard === undefined
 							? null
 							: "outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
 							)}
 							data-captured={captured || undefined}
 							data-highlighted={isHighlighted || undefined}
+							data-marked={isMarked || undefined}
 							data-new={isNew || undefined}
 							data-selected={isSelected || undefined}
 							data-variant="uncaptured-work"
@@ -266,9 +290,19 @@ export function AgentSessionCard({
 							<AgentListRow
 								hoverActions={hoverActions}
 								isCompact={false}
-								isSelected={isSelected}
+								isSelected={showSelectedFill}
 								item={item}
 								onView={undefined}
+								renderIdentity={mark === undefined || mark === null
+									? undefined
+									: (identity) => (
+										<AgentSessionSelectMark
+											identity={identity}
+											isMarked={mark.isMarked}
+											label={`Select "${item.title}"`}
+											onToggle={mark.onToggle}
+										/>
+									)}
 								showHoverActionsWhenSelected
 							/>
 						</article>
