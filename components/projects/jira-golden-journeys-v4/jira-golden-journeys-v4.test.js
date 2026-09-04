@@ -476,8 +476,10 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(LIST_HOOK_SOURCE, /createFromAgentSession/u);
 	assert.match(LIST_HOOK_SOURCE, /createListWorkItemFromSession/u);
 	const createFromSessionStart = LIST_HOOK_SOURCE.indexOf("const createFromAgentSession = useCallback");
-	const createFromSessionEnd = LIST_HOOK_SOURCE.indexOf("}, [boardColumns, listOrder, setBoardColumns]);");
+	const createFromSessionEnd = LIST_HOOK_SOURCE.indexOf("}, [setBoardColumns]);");
 	assert.ok(createFromSessionStart > 0 && createFromSessionEnd > createFromSessionStart);
+	assert.match(LIST_HOOK_SOURCE, /boardColumnsRef\.current = result\.columns/u);
+	assert.match(LIST_HOOK_SOURCE, /listOrderRef\.current = result\.listOrder/u);
 	assert.doesNotMatch(
 		LIST_HOOK_SOURCE.slice(createFromSessionStart, createFromSessionEnd),
 		/setDraftWorkItem|draftWorkItem/u,
