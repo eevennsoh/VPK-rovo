@@ -55,12 +55,12 @@ export interface ScrollingCardProps {
 	/** Which scrollport edges get the scale-and-tuck tail. */
 	depth: ScrollingDepth;
 	/**
-	 * Bound to the block's hover eye. Required, not optional: the block renders
-	 * that control unconditionally, so leaving it unbound ships an enabled,
-	 * keyboard-focusable button that does nothing.
+	 * Bound to the block's hover archive control. Required, not optional: the
+	 * block renders that control unconditionally, so leaving it unbound ships an
+	 * enabled, keyboard-focusable button that does nothing.
 	 */
 	onToggleVisibility: (item: AgentSessionItem) => void;
-	/** `"Hide"`, or `"Show"` on the last card. See `use-scrolling-visibility.ts`. */
+	/** `"Archive"`, or `"Unarchive"` on the last card. See `use-scrolling-visibility.ts`. */
 	visibilityLabel: string;
 }
 
@@ -259,12 +259,13 @@ export function ScrollingCard({
 				className="w-full min-w-0 [&_li:last-child_article]:border-b"
 				items={listItems}
 				// The block's hover pair is not optional: `AgentSessionCard` always
-				// builds the eye, and its handler only optional-chains this callback.
-				// Unbound, it is an enabled, keyboard-reachable control that does
-				// nothing — so it is bound to real state instead. `visibilityLabel`
-				// also picks the icon (open eye for "Show", struck-through for
-				// "Hide"), so the two always agree. Resume needs nothing: it copies
-				// the resume command and flips itself to "Copied" on its own.
+				// builds the archive control, and its handler only optional-chains
+				// this callback. Unbound, it is an enabled, keyboard-reachable
+				// control that does nothing — so it is bound to real state instead.
+				// `visibilityLabel` also picks the icon (Library for "Unarchive",
+				// archive box for "Archive"), so the two always agree. Resume needs
+				// nothing: it copies the resume command and flips itself to
+				// "Copied" on its own.
 				onToggleVisibility={onToggleVisibility}
 				variant="large"
 				visibilityLabel={visibilityLabel}

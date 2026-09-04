@@ -65,8 +65,8 @@ function buildArrivalDelays(
  *
  * Large sessions are solid uncaptured-work cards: the shared Agent List row
  * (identity, static stamp, viewer machine) sits on a single surface and reveals
- * the same hover/focus action pair Agent List rows use — Resume, plus a
- * Hide / Show eye where Agent List puts Archive. Work-item capture lives on the
+ * the same hover/focus action pair Agent List rows use — Resume, plus
+ * Archive / Unarchive where Agent List puts Archive. Work-item capture lives on the
  * shared untracked-work session flyout, the same surface
  * `components/blocks/agent-session-flyout` uses, so hovering a card offers
  * Link / Create / Add as a subtask without a footer chin. Medium detached keeps
@@ -91,6 +91,7 @@ export function AgentSession({
 	newItemIds,
 	onCopyResume,
 	onCreateWorkItem,
+	onArrivalComplete,
 	onLinkWorkItem,
 	onSubtasks,
 	onItemHover,
@@ -100,6 +101,7 @@ export function AgentSession({
 	rowTriage,
 	selectedItemId: selectedItemIdProp,
 	sessionDrag,
+	draggingIds,
 	style,
 	variant = "large",
 	visibilityLabel,
@@ -111,8 +113,8 @@ export function AgentSession({
 		null,
 	);
 	const selectedItemId = isSelectionControlled ? selectedItemIdProp : uncontrolledSelectedItemId;
-	// Card-body activation is the only select/deselect path. Hover Resume / Hide
-	// stay on their own controls so they cannot flip the highlight.
+	// Card-body activation is the only select/deselect path. Hover Resume /
+	// Archive stay on their own controls so they cannot flip the highlight.
 	const handleView = useCallback((item: AgentSessionItem) => {
 		const nextId = selectedItemId === item.id ? null : item.id;
 		if (!isSelectionControlled) {
@@ -202,11 +204,15 @@ export function AgentSession({
 								item={item}
 								key={item.id}
 								onCopyResume={onCopyResume}
+								onArrivalComplete={onArrivalComplete === undefined
+									? undefined
+									: () => onArrivalComplete(item.id)}
 								onItemHover={onItemHover}
 								onToggleVisibility={onToggleVisibility}
 								onView={itemOnView}
 								sessionDrag={sessionDrag}
 								triageRow={rowTriage?.get(item.id)}
+								draggingIds={draggingIds}
 								visibilityLabel={visibilityLabel}
 							/>
 						);

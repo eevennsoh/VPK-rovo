@@ -1,28 +1,42 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useMotionValueEvent } from "motion/react";
 import AddIcon from "@atlaskit/icon/core/add";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { useMagneticProximity } from "@/components/ui-custom/hooks/use-magnetic-proximity";
+import type { MagneticPointerRelation } from "@/components/ui-custom/hooks/magnetic-proximity-model";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
+import { useExclusiveCreateWellProximity } from "./create-work-item-exclusive-proximity-context";
+import { CREATE_WORK_ITEM_PROXIMITY_HOVER_AREA_PX } from "../lib/create-work-item-exclusive-proximity";
+import type { BoardAgentSessionDrag } from "../use-board-agent-session-drag";
+
 export function BoardColumnCreateAction({
 	dropZoneLabel,
-	sessionDragging,
+	sessionDragTransaction,
 	title,
 }: Readonly<{
 	dropZoneLabel?: string;
-	sessionDragging: boolean;
+	sessionDragTransaction: BoardAgentSessionDrag["transaction"];
 	title: string;
 }>) {
+	const armed = Boolean(
+		sessionDragTransaction?.target?.kind === "create"
+		&& sessionDragTransaction.target.columnTitle === title,
+	);
+
 	return (
 		<div className="w-full" style={{ paddingBlock: token("space.050") }}>
-			{sessionDragging && dropZoneLabel ? (
-				<CreateWorkItemDropZone label={dropZoneLabel} title={title} />
+			{sessionDragTransaction && dropZoneLabel ? (
+				<CreateWorkItemDropZone
+					armed={armed}
+					label={dropZoneLabel}
+					title={title}
+				/>
 			) : (
 				<Button
 					aria-label={`Create in ${title}`}
@@ -44,32 +58,55 @@ export function BoardColumnCreateAction({
 }
 
 function CreateWorkItemDropZone({
+	armed,
 	label,
 	title,
 }: Readonly<{
+	armed: boolean;
 	label: string;
 	title: string;
 }>) {
 	const targetRef = useRef<HTMLDivElement>(null);
-	const magnet = useMagneticProximity(targetRef);
+	const magnet = useMagneticProximity(targetRef, {
+		hoverArea: CREATE_WORK_ITEM_PROXIMITY_HOVER_AREA_PX,
+	});
+	const [rawProximity, setRawProximity] = useState<MagneticPointerRelation>("outside");
+	useMotionValueEvent(magnet.proximity, "change", setRawProximity);
+	const isExclusiveWinner = useExclusiveCreateWellProximity(title, targetRef);
+	const proximity = isExclusiveWinner ? rawProximity : "outside";
+	const expanded = proximity !== "outside";
 
 	return (
 		<motion.div
 			className="w-full will-change-transform"
-			style={{ x: magnet.x, y: magnet.y }}
+			style={{
+				x: isExclusiveWinner ? magnet.x : 0,
+				y: isExclusiveWinner ? magnet.y : 0,
+			}}
 		>
 			<div
-				aria-label={`${label} in ${title}`}
-				className="flex h-12 w-full select-none items-center justify-center rounded-lg border border-dashed border-border px-3 text-center text-sm leading-5 text-text-subtlest"
+				aria-label={`${label} in ${title}${armed ? ", selected drop target" : ""}`}
+				className={cn(
+					"flex w-full select-none items-center justify-center rounded-lg border border-dashed px-3 text-center",
+					"transition-[height,background-color] duration-normal ease-out-practical motion-reduce:transition-none",
+					expanded ? "h-16 text-sm leading-5" : "h-6 text-xs leading-4",
+					armed ? "border-border-selected bg-bg-selected text-text-selected" : "border-border bg-surface text-text-subtlest",
+				)}
+				data-armed={armed || undefined}
 				data-board-agent-session-column-title={title}
 				data-board-agent-session-create-work-item-drop-zone={title}
 				data-board-agent-session-drop-zone="create"
+				data-exclusive-winner={isExclusiveWinner || undefined}
+				data-proximity={proximity}
 				ref={targetRef}
 				role="img"
 			>
 				<motion.span
 					className="inline-block will-change-transform"
-					style={{ x: magnet.labelX, y: magnet.labelY }}
+					style={{
+						x: isExclusiveWinner ? magnet.labelX : 0,
+						y: isExclusiveWinner ? magnet.labelY : 0,
+					}}
 				>
 					{label}
 				</motion.span>

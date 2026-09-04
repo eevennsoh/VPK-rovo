@@ -94,7 +94,7 @@ test("one board transaction coordinates every session source and suppresses prev
 	assert.match(BOARD_SOURCE, /JiraSessionFlyoutSuspensionProvider/u);
 	assert.match(BOARD_SOURCE, /const sessionFlyoutsSuspended = boardSessionDrag\.transaction !== null \|\| draggedCardCode !== null;/u);
 	assert.match(BOARD_SOURCE, /suspended=\{sessionFlyoutsSuspended\}/u);
-	assert.match(BOARD_SOURCE, /sessionDrag=\{boardSessionDrag\.enabled[\s\S]*\? boardSessionDrag\.untrackedBinding[\s\S]*: agentSessionColumn\.sessionDrag\}/u);
+	assert.match(BOARD_SOURCE, /sessionDrag=\{boardSessionDrag\.enablement\.transferable[\s\S]*\? boardSessionDrag\.untrackedBinding[\s\S]*: agentSessionColumn\.sessionDrag\}/u);
 	assert.match(PAGE_SOURCE, /boardAgentSessionDrag=\{boardSessionDrag\}/u);
 	assert.match(PAGE_SOURCE, /sessionDrag: boardSessionDrag\.untrackedBinding/u);
 	assert.match(
@@ -124,19 +124,16 @@ test("one board transaction coordinates every session source and suppresses prev
 });
 
 test("board-wide drag stays opt-in for zero and partial callback consumers", () => {
-	assert.match(
-		DRAG_HOOK_SOURCE,
-		/const enabled = Boolean\(onLink && onMove && onUnlink\);/u,
-	);
+	assert.match(DRAG_HOOK_SOURCE, /const enablement = resolveDragEnablement\(ports\);/u);
 	assert.doesNotMatch(
 		DRAG_HOOK_SOURCE,
 		/agentActivityLayout === "split"/u,
 		"merged Team EU chins must be able to drag onto Untracked and issues",
 	);
-	assert.match(DRAG_HOOK_SOURCE, /\n\s*enabled,\s*\n/u);
-	assert.match(DRAG_HOOK_SOURCE, /const control: JiraIssueAgentSessionDragControl \| undefined = enabled/u);
-	assert.match(DRAG_HOOK_SOURCE, /detachedBinding: enabled[\s\S]*\? createBinding\(\{ kind: "detached"/u);
-	assert.match(DRAG_HOOK_SOURCE, /untrackedBinding: enabled \? createBinding\(\{ kind: "untracked" \}\) : undefined/u);
+	assert.match(DRAG_HOOK_SOURCE, /\n\s*enablement,\s*\n/u);
+	assert.match(DRAG_HOOK_SOURCE, /const control: JiraIssueAgentSessionDragControl \| undefined = enablement\.attached/u);
+	assert.match(DRAG_HOOK_SOURCE, /detachedBinding: enablement\.transferable[\s\S]*\? createBinding\(\{ kind: "detached"/u);
+	assert.match(DRAG_HOOK_SOURCE, /untrackedBinding: enablement\.transferable \? createBinding\(\{ kind: "untracked" \}\) : undefined/u);
 	assert.match(CARD_SOURCE, /detachedSessionDrag \?\? localSessionDrag/u);
 });
 

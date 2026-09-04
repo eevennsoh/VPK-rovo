@@ -26,6 +26,12 @@ const EXPERIMENTAL_CARD_SOURCE = readProjectFile(
 const CREATE_WORK_ITEM_DROP_ZONE_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/components/create-work-item-drop-zone.tsx",
 );
+const CREATE_WORK_ITEM_EXCLUSIVE_PROXIMITY_SOURCE = readProjectFile(
+	"components/blocks/jira-kanban/experimental/lib/create-work-item-exclusive-proximity.ts",
+);
+const CREATE_WORK_ITEM_EXCLUSIVE_PROXIMITY_CONTEXT_SOURCE = readProjectFile(
+	"components/blocks/jira-kanban/experimental/components/create-work-item-exclusive-proximity-context.tsx",
+);
 const PANEL_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/components/agent-session-panel.tsx",
 );
@@ -235,11 +241,12 @@ test("Team EU keeps only attached agent sessions on status columns", () => {
 	);
 });
 
-test("2000 years later reveals a create-work-item drop zone in every board column during an agent-session drag", () => {
+test("both design variations reveal compact magnetic create targets that expand and arm during an agent-session drag", () => {
 	assert.match(
 		PAGE_SOURCE,
-		/const createWorkItemDropZoneLabel = designVariation === "2000-years-later"\s*\? "Create new work item"\s*: undefined;/u,
+		/const createWorkItemDropZoneLabel = "Create new work item";/u,
 	);
+	assert.doesNotMatch(PAGE_SOURCE, /createWorkItemDropZoneLabel = designVariation/u);
 	assert.match(
 		PAGE_SOURCE,
 		/<ExperimentalJiraKanbanPage[\s\S]*createWorkItemDropZoneLabel=\{createWorkItemDropZoneLabel\}/u,
@@ -259,19 +266,40 @@ test("2000 years later reveals a create-work-item drop zone in every board colum
 	);
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
-		/sessionDragging=\{boardSessionDrag\.transaction !== null\}/u,
+		/sessionDragTransaction=\{boardSessionDrag\.transaction\}/u,
 	);
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
-		/sessionDragging && dropZoneLabel \? \(/u,
+		/sessionDragTransaction && dropZoneLabel \? \(/u,
 	);
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
-		/className="[^"]*h-12[^"]*border-dashed[^"]*text-text-subtlest"[\s\S]*data-board-agent-session-create-work-item-drop-zone=\{title\}[\s\S]*\{label\}/u,
+		/const expanded = proximity !== "outside";/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/expanded \? "h-16 text-sm leading-5" : "h-6 text-xs leading-4"/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/armed \? "border-border-selected bg-bg-selected text-text-selected" : "border-border bg-surface text-text-subtlest"/u,
+	);
+	assert.doesNotMatch(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/bg-\[var\(--ds-|transparent|bg-transparent/u,
+		"create wells must use an opaque semantic surface fill, not a raw token or transparent hole",
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/transition-\[height,background-color\] duration-normal ease-out-practical motion-reduce:transition-none/u,
 	);
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
-		/<BoardColumnCreateAction[\s\S]*dropZoneLabel=\{createWorkItemDropZoneLabel\}[\s\S]*sessionDragging=\{sessionDragging\}[\s\S]*title=\{title\}/u,
+		/<BoardColumnCreateAction[\s\S]*dropZoneLabel=\{createWorkItemDropZoneLabel\}[\s\S]*sessionDragTransaction=\{sessionDragTransaction\}[\s\S]*title=\{title\}/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_EXCLUSIVE_PROXIMITY_SOURCE,
+		/export const CREATE_WORK_ITEM_PROXIMITY_HOVER_AREA_PX = 120;/u,
 	);
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
@@ -279,11 +307,43 @@ test("2000 years later reveals a create-work-item drop zone in every board colum
 	);
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
-		/const magnet = useMagneticProximity\(targetRef\);/u,
+		/import \{ useExclusiveCreateWellProximity \} from "\.\/create-work-item-exclusive-proximity-context";/u,
 	);
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
-		/<motion\.div[\s\S]*style=\{\{ x: magnet\.x, y: magnet\.y \}\}[\s\S]*ref=\{targetRef\}[\s\S]*<motion\.span[\s\S]*style=\{\{ x: magnet\.labelX, y: magnet\.labelY \}\}/u,
+		/const magnet = useMagneticProximity\(targetRef, \{\s*hoverArea: CREATE_WORK_ITEM_PROXIMITY_HOVER_AREA_PX,\s*\}\);/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/useMotionValueEvent\(magnet\.proximity, "change", setRawProximity\);/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/const isExclusiveWinner = useExclusiveCreateWellProximity\(title, targetRef\);/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/const proximity = isExclusiveWinner \? rawProximity : "outside";/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_EXCLUSIVE_PROXIMITY_SOURCE,
+		/export function resolveExclusiveProximityWinner\(/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_EXCLUSIVE_PROXIMITY_CONTEXT_SOURCE,
+		/resolveExclusiveProximityWinner\(/u,
+	);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/<ExclusiveCreateWellProximityProvider>[\s\S]*\{boardColumns\.map\(/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/const armed = Boolean\([\s\S]*sessionDragTransaction\?\.target\?\.kind === "create"[\s\S]*sessionDragTransaction\.target\.columnTitle === title,/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/<motion\.div[\s\S]*x: isExclusiveWinner \? magnet\.x : 0,[\s\S]*ref=\{targetRef\}[\s\S]*<motion\.span[\s\S]*x: isExclusiveWinner \? magnet\.labelX : 0,/u,
 	);
 	assert.match(CREATE_WORK_ITEM_DROP_ZONE_SOURCE, /data-board-agent-session-drop-zone="create"/u);
 	assert.match(
@@ -466,29 +526,45 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(PAGE_SOURCE, /activeView=\{activeView\}/u);
 	assert.match(PAGE_SOURCE, /const tabOwnsView = activeTab\?\.view !== undefined;/u);
 	assert.match(PAGE_SOURCE, /onViewChange=\{tabOwnsView \? undefined : setWorkItemView\}/u);
-	assert.match(PAGE_SOURCE, /renderListContent=\{\(columns, \{ agentSessionDropIntent \}\) =>/u);
+	assert.match(
+		PAGE_SOURCE,
+		/renderListContent=\{\(\s*columns,\s*\{\s*agentSessionDropIntent,\s*onTrailingContentUnderlapChange,\s*scrollEndInset,\s*trailingOverlayRef,\s*\},\s*\) =>/u,
+	);
 	assert.match(PAGE_SOURCE, /useJiraGoldenJourneysV4List/u);
-	assert.match(PAGE_SOURCE, /<JiraList \{\.\.\.listProps\}/u);
+	assert.match(PAGE_SOURCE, /<JiraList\s+\{\.\.\.listProps\}/u);
 	assert.match(PAGE_SOURCE, /agentSessionDropIntent=\{agentSessionDropIntent\}/u);
+	assert.match(
+		PAGE_SOURCE,
+		/onTrailingContentUnderlapChange=\{onTrailingContentUnderlapChange\}/u,
+	);
+	assert.match(PAGE_SOURCE, /const JIRA_LIST_PANEL_END_GAP_PX = 24;/u);
+	assert.match(
+		PAGE_SOURCE,
+		/const listScrollEndInset = scrollEndInset > 0\s*\?\s*scrollEndInset \+ JIRA_LIST_PANEL_END_GAP_PX\s*:\s*0;/u,
+	);
+	assert.match(PAGE_SOURCE, /scrollEndInset=\{listScrollEndInset\}/u);
+	assert.match(PAGE_SOURCE, /trailingOverlayRef=\{trailingOverlayRef\}/u);
 	assert.match(PAGE_SOURCE, /onListAgentSessionCreate=\{handleListAgentSessionCreate\}/u);
 	assert.match(PAGE_SOURCE, /createFromAgentSession/u);
 	assert.match(PAGE_SOURCE, /consumeDetachedAgentSession/u);
 	assert.match(LIST_HOOK_SOURCE, /createFromAgentSession/u);
 	assert.match(LIST_HOOK_SOURCE, /createListWorkItemFromSession/u);
 	const createFromSessionStart = LIST_HOOK_SOURCE.indexOf("const createFromAgentSession = useCallback");
-	const createFromSessionEnd = LIST_HOOK_SOURCE.indexOf("}, [boardColumns, listOrder, setBoardColumns]);");
+	const createFromSessionEnd = LIST_HOOK_SOURCE.indexOf("}, [setBoardColumns]);", createFromSessionStart);
 	assert.ok(createFromSessionStart > 0 && createFromSessionEnd > createFromSessionStart);
+	assert.match(LIST_HOOK_SOURCE, /boardColumnsRef\.current = result\.columns/u);
+	assert.match(LIST_HOOK_SOURCE, /listOrderRef\.current = result\.listOrder/u);
 	assert.doesNotMatch(
 		LIST_HOOK_SOURCE.slice(createFromSessionStart, createFromSessionEnd),
 		/setDraftWorkItem|draftWorkItem/u,
 	);
 	assert.match(
 		PAGE_SOURCE,
-		/className="min-h-0 flex-1 overflow-hidden p-4 md:p-5"[\s\S]*<JiraList \{\.\.\.listProps\}/u,
+		/"min-h-0 flex-1 overflow-hidden py-4 ps-4 md:py-5 md:ps-5"[\s\S]*scrollEndInset > 0 \? "pe-0" : "pe-4 md:pe-5"[\s\S]*<JiraList\s+\{\.\.\.listProps\}/u,
 	);
 	assert.doesNotMatch(
 		PAGE_SOURCE,
-		/overflow-auto p-4 md:p-5"[\s\S]*<JiraList \{\.\.\.listProps\}/u,
+		/overflow-auto p-4 md:p-5"[\s\S]*<JiraList\s+\{\.\.\.listProps\}/u,
 	);
 	// Drag handles only portal when onMoveRow is set. A display-only JiraList
 	// (rows + counts, no capability callbacks) is what hid rearrange on hover.
@@ -598,7 +674,7 @@ test("the Panel design variant floats untracked work over the board and the list
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/agentSessionColumn=\{agentSessionPresentation === "panel"\s*\?\s*undefined\s*:\s*agentSessionColumnConfig\}/u,
+		/agentSessionColumn=\{agentSessionPresentation === "panel"\s*\|\| agentSessionColumnConfig === undefined\s*\?\s*undefined\s*:\s*\{/u,
 		"panel mode must suppress the in-flow column so the two presentations cannot coexist",
 	);
 	// Insights swaps the whole content region for an article, and a tab with no
@@ -640,7 +716,7 @@ test("the Panel design variant floats untracked work over the board and the list
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/<AgentSessionPanel\s+agentSessionColumn=\{\{\s*\.\.\.agentSessionColumnConfig,\s*sessionDrag: boardSessionDrag\.untrackedBinding,\s*\}\}/u,
+		/<AgentSessionPanel\s+agentSessionColumn=\{\{\s*\.\.\.agentSessionColumnConfig,\s*draggingIds: boardSessionDrag\.draggingIds,\s*sessionDrag: boardSessionDrag\.untrackedBinding,\s*\}\}/u,
 		"the panel is controlled: its collapse state is the same state the in-flow column uses",
 	);
 	assert.match(
@@ -658,9 +734,14 @@ test("the Panel design variant floats untracked work over the board and the list
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/showLeadingScrollFade=\{isListContent\}/u,
-		"only the List view asks the panel for a scroll underlap fade",
+		/showLeadingScrollFade=\{isListContent && listContentUnderlapsPanel\}/u,
+		"the List view only asks for a fade while real content still underlaps the panel",
 	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/onTrailingContentUnderlapChange: setListContentUnderlapsPanel,\s*scrollEndInset: boardScrollEndInset,\s*trailingOverlayRef: agentSessionPanelRef,/u,
+	);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /ref=\{agentSessionPanelRef\}/u);
 	assert.match(PANEL_SOURCE, /showLeadingScrollFade\?: boolean;/u);
 	assert.match(
 		PANEL_SOURCE,

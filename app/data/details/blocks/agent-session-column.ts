@@ -2,16 +2,19 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_SESSION_COLUMN_DETAIL: ComponentDetail = {
 	description:
-		'A kanban column of agent sessions that never became work items. The board\'s status columns are unfilled — they read as regions of the board surface — so this one is filled with `surface-sunken`: the sunken plane is what says "outside the workflow" without a label having to explain it. The fill starts below the header rather than behind it, so the title and count share an inset and a baseline with the status column titles beside them and the five headers read as one row. Inside the plane the column renders the Agent Session block verbatim, so each card keeps its dashed uncaptured-work chrome, its untracked-work flyout with Link / Create / Add as a subtask, its hover Resume and Hide / Show eye, its Captured state, and its resume gating. Hide removes a session from the active list; when any are hidden a sticky Work hidden N footer opens a Hidden work view of those sessions, with a header back arrow to return, and unhiding the last one returns automatically. The list is a scrollport with top and bottom fade masks and a reserved 4px focus-ring gutter, so a focused card\'s ring is never clipped. In the experimental v2 Jira Kanban board it is pinned to the left of the horizontal scrollport rather than added to `boardColumns`, because untracked work is not a status: it has no place in the left-to-right progression the status columns describe, and it stays visible while the reader scrolls to the last column. A hover-revealed control collapses it, but not into the rotated label a status column becomes: a status is only a name, while these are live sessions, so the collapsed column is a full-height 32px rail of mini notches — visible sessions only, resting quiet in `icon-subtlest` and lighting up to `icon` with a slight scale under the pointer or keyboard focus — and hovering or focusing a notch opens the same payload-driven session flyout an Agent List row opens. Collapsing exits Hidden work so the rail never mixes the two lists; collapsed, the column loses the cards and keeps every visible session one hover away.',
+		'A kanban column of agent sessions that never became work items. It has two hosts: an in-flow board column (`headerSurface="column"`, the default) and a docked Panel (`headerSurface="panel"`). The catalog shows both. The board\'s status columns are unfilled — they read as regions of the board surface — so this one is filled with `surface-sunken`: the sunken plane is what says "outside the workflow" without a label having to explain it. The fill starts below the header rather than behind it, so the title and count share an inset and a baseline with the status column titles beside them and the five headers read as one row. Inside the plane the column renders the Agent Session block verbatim, so each card keeps its dashed uncaptured-work chrome, its untracked-work flyout with Link / Create / Add as a subtask, its hover Resume and Archive / Unarchive, its Captured state, and its resume gating. Archive removes a session from the active list; when any are archived a sticky Archived N footer opens an Archived view of those sessions, with a header back arrow to return, and unarchiving the last one returns automatically. The list is a scrollport with top and bottom fade masks and a reserved 4px focus-ring gutter, so a focused card\'s ring is never clipped. On the experimental board the in-flow host is pinned to the left of the horizontal scrollport rather than added to `boardColumns`, because untracked work is not a status: it has no place in the left-to-right progression the status columns describe, and it stays visible while the reader scrolls to the last column. A hover-revealed control collapses it, but not into the rotated label a status column becomes: a status is only a name, while these are live sessions, so the collapsed column is a full-height 32px rail of mini notches — visible sessions only, resting quiet in `icon-subtlest` and lighting up to `icon` with a slight scale under the pointer or keyboard focus — and hovering or focusing a notch opens the same payload-driven session flyout an Agent List row opens. Collapsing exits Archived so the rail never mixes the two lists; collapsed, the column loses the cards and keeps every visible session one hover away.',
 	demoLayout: { previewHeight: "fit" },
 	importStatement: `import { AgentSessionColumn } from "@/components/blocks/agent-session-column";`,
 	usage: `import { AgentSessionColumn } from "@/components/blocks/agent-session-column";
 
 <AgentSessionColumn
   title="Untracked work"
+  headerSurface="panel"
   onCreateWorkItem={(item) => console.log("create", item.id)}
   onLinkWorkItem={(item) => console.log("link", item.id)}
-/>`,
+/>
+
+// The board omits headerSurface — it defaults to "column".`,
 	props: [
 		{
 			name: "title",
@@ -51,6 +54,19 @@ export const AGENT_SESSION_COLUMN_DETAIL: ComponentDetail = {
 			name: "onCollapsedChange",
 			type: "(collapsed: boolean) => void",
 			description: "Called after the viewer collapses or expands the column.",
+		},
+		{
+			name: "headerSurface",
+			type: '"column" | "panel"',
+			default: '"column"',
+			description:
+				'Which chrome the header wears. `"column"` is the in-flow board title row. `"panel"` is the docked rail\'s PanelHeader skin. The collapsed rail keeps its compact header in both modes. The board omits this prop so it stays on the default.',
+		},
+		{
+			name: "triage",
+			type: "UntrackedWorkTriage",
+			description:
+				"Enables hover select, the Selected N header, and bulk Link / Create / Archive / Clear. Omit it and the column stays a read-only list with Resume and Archive. `locateTarget` is the only lookup — `attach` consumes that value.",
 		},
 		{
 			name: "capturedItemIds",

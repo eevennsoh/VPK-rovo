@@ -32,8 +32,7 @@ export function AgentSessionSelectMark({
 		>
 			<span
 				className={cn(
-					"pointer-events-none col-start-1 row-start-1 transition-opacity duration-normal ease-out-practical",
-					"motion-reduce:transition-none",
+					"pointer-events-none col-start-1 row-start-1 transition-none",
 					isMarked
 						? "opacity-0"
 						: "opacity-100 group-hover/agent-row:opacity-0 group-has-[:focus-visible]/agent-row:opacity-0",
@@ -45,8 +44,7 @@ export function AgentSessionSelectMark({
 				aria-checked={isMarked}
 				aria-label={label}
 				className={cn(
-					"relative z-10 col-start-1 row-start-1 grid place-items-center rounded-full",
-					"transition-opacity duration-normal ease-out-practical motion-reduce:transition-none",
+					"relative z-10 col-start-1 row-start-1 grid place-items-center rounded-full transition-none",
 					isCompact ? "size-6" : "size-8",
 					isMarked
 						? "pointer-events-auto text-icon-selected opacity-100"

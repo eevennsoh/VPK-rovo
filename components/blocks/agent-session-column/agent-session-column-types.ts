@@ -10,7 +10,10 @@ import type { UntrackedWorkTriage } from "@/components/blocks/agent-session/untr
  * on a column it reads as the column surface rather than the inner list.
  * `rowTriage` is omitted because the column builds it.
  */
-export interface AgentSessionColumnProps extends Omit<AgentSessionProps, "className" | "rowTriage"> {
+export interface AgentSessionColumnProps extends Omit<
+	AgentSessionProps,
+	"arrivingItemIds" | "className" | "onArrivalComplete" | "rowTriage"
+> {
 	/** Additional classes applied to the column surface. */
 	className?: string;
 	/** Classes applied to the inner session list. */
@@ -46,7 +49,7 @@ export interface AgentSessionColumnProps extends Omit<AgentSessionProps, "classN
 	onCollapsedChange?: (collapsed: boolean) => void;
 	/**
 	 * Enables hover select, the Selected N header, and row Approve.
-	 * Omit it and the column stays a read-only list with Resume and Hide.
+	 * Omit it and the column stays a read-only list with Resume and Archive.
 	 */
 	triage?: UntrackedWorkTriage;
 	/**

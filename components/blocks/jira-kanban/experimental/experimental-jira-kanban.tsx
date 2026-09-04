@@ -51,6 +51,7 @@ import {
 	CollapsedBoardColumn,
 } from "./components/collapsed-board-column";
 import { BoardColumnCreateAction } from "./components/create-work-item-drop-zone";
+import { ExclusiveCreateWellProximityProvider } from "./components/create-work-item-exclusive-proximity-context";
 import { BOARD_COLUMN_ACTION_REVEAL } from "./lib/board-column-action-reveal";
 import {
 	EMPTY_COLLAPSED_BOARD_COLUMNS,
@@ -368,7 +369,7 @@ function BoardColumn({
 	onCollapse,
 	onCreateAgent,
 	onToggleAgent,
-	sessionDragging,
+	sessionDragTransaction,
 	title,
 }: Readonly<{
 	agents?: readonly JiraKanbanAgentData[];
@@ -379,7 +380,7 @@ function BoardColumn({
 	onCollapse: () => void;
 	onCreateAgent?: (columnTitle: string) => void;
 	onToggleAgent?: (agentId: string) => void;
-	sessionDragging: boolean;
+	sessionDragTransaction: BoardAgentSessionDrag["transaction"];
 	title: string;
 }>) {
 	const showAgentAssignment = Boolean(agents?.length && onCreateAgent && onToggleAgent);
@@ -460,7 +461,7 @@ function BoardColumn({
 
 			<BoardColumnCreateAction
 				dropZoneLabel={createWorkItemDropZoneLabel}
-				sessionDragging={sessionDragging}
+				sessionDragTransaction={sessionDragTransaction}
 				title={title}
 			/>
 		</div>
@@ -840,7 +841,7 @@ function ExperimentalJiraKanbanView({
 							onItemHover={handleSessionHover}
 							onSelectedItemIdChange={handleSessionSelectionChange}
 							onView={handleSessionView}
-							sessionDrag={boardSessionDrag.enabled
+							sessionDrag={boardSessionDrag.enablement.transferable
 								? boardSessionDrag.untrackedBinding
 								: agentSessionColumn.sessionDrag}
 						/>
@@ -870,6 +871,7 @@ function ExperimentalJiraKanbanView({
 								agentSessionColumn ? "ps-2" : "ps-6",
 							)}
 						>
+						<ExclusiveCreateWellProximityProvider>
 						<div className="flex min-h-full flex-1 items-stretch gap-2">
 						{boardColumns.map((column) => (
 						<BoardColumnShell
@@ -895,7 +897,7 @@ function ExperimentalJiraKanbanView({
 										? (agentId) => onToggleColumnAgent(column.title, agentId)
 										: undefined
 								}
-								sessionDragging={boardSessionDrag.transaction !== null}
+								sessionDragTransaction={boardSessionDrag.transaction}
 								title={column.title}
 							>
 								{column.cards.map((card, cardIndex) => {
@@ -1005,6 +1007,7 @@ function ExperimentalJiraKanbanView({
 						))}
 						<BoardAddColumnButton />
 						</div>
+						</ExclusiveCreateWellProximityProvider>
 						{/* Trailing gutter. It also absorbs `scrollEndInset`: the outer
 						    `w-max min-w-full` box is clamped to the scrollport by its
 						    min-width, so padding it moves nothing — the scroll extent

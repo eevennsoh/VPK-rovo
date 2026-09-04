@@ -27,12 +27,24 @@ const HEADER_SOURCE = readFileSync(
 	join(__dirname, "agent-session-column-header.tsx"),
 	"utf8",
 );
+const SELECTION_COPY_SOURCE = readFileSync(
+	join(__dirname, "untracked-selection.ts"),
+	"utf8",
+);
+const PANEL_SOURCE = readFileSync(
+	join(__dirname, "../../ui/panel.tsx"),
+	"utf8",
+);
 const OVERFLOW_MENU_SOURCE = readFileSync(
 	join(__dirname, "agent-session-column-overflow-menu.tsx"),
 	"utf8",
 );
 const OVERFLOW_SOURCE = readFileSync(join(__dirname, "agent-session-column-overflow.ts"), "utf8");
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
+const PANEL_DEMO_SOURCE = readFileSync(
+	join(__dirname, "agent-session-column-panel-demo.tsx"),
+	"utf8",
+);
 const CARD_SOURCE = readFileSync(
 	join(__dirname, "../agent-session/agent-session-card.tsx"),
 	"utf8",
@@ -237,10 +249,41 @@ test("the block is registered in the catalog", () => {
 	assert.match(REGISTRY_SOURCE, /"agent-session-column": dynamic\(/u);
 	assert.match(DEMO_SOURCE, /@\/components\/blocks\/agent-session-column\/page/u);
 	assert.match(DETAIL_SOURCE, /export const AGENT_SESSION_COLUMN_DETAIL/u);
-	assert.match(PAGE_SOURCE, /<AgentSessionColumn/u);
-	assert.match(PAGE_SOURCE, /onCreateWorkItem=\{handleCapture\}/u);
-	assert.match(PAGE_SOURCE, /onLinkWorkItem=\{handleCapture\}/u);
-	assert.match(PAGE_SOURCE, /onSubtasks=\{handleCapture\}/u);
+	assert.match(PAGE_SOURCE, /<AgentSessionColumnPanelDemo/u);
+	assert.match(PANEL_DEMO_SOURCE, /<AgentSessionColumn/u);
+	assert.match(PANEL_DEMO_SOURCE, /onCreateWorkItem=\{handleCapture\}/u);
+	assert.match(PANEL_DEMO_SOURCE, /onLinkWorkItem=\{handleCapture\}/u);
+	assert.match(PANEL_DEMO_SOURCE, /onSubtasks=\{handleCapture\}/u);
+});
+
+test("the catalog page shows a Panel wrap and an in-flow kanban host", () => {
+	assert.match(PAGE_SOURCE, /label="Panel"/u);
+	assert.match(PAGE_SOURCE, /label="Kanban board"/u);
+	assert.match(PANEL_DEMO_SOURCE, /<PanelContainer/u);
+	assert.match(PANEL_DEMO_SOURCE, /<PanelContent/u);
+	assert.match(PANEL_DEMO_SOURCE, /headerSurface="panel"/u);
+	assert.match(PANEL_DEMO_SOURCE, /className="flex-1"/u);
+	assert.match(PANEL_DEMO_SOURCE, /listClassName="gap-1 p-1"/u);
+	assert.match(PANEL_DEMO_SOURCE, /AGENT_SESSION_PANEL_DEMO_WIDTH_PX = 360/u);
+	assert.match(PANEL_DEMO_SOURCE, /triage=\{triage\}/u);
+	assert.match(PANEL_DEMO_SOURCE, /locateTarget:/u);
+	assert.match(PANEL_DEMO_SOURCE, /attach:/u);
+	assert.match(PANEL_DEMO_SOURCE, /createFrom:/u);
+	assert.match(PANEL_DEMO_SOURCE, /archive:/u);
+	assert.doesNotMatch(PANEL_DEMO_SOURCE, /jira-kanban/u);
+	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage/u);
+	assert.match(PAGE_SOURCE, /showAgentSessionColumn/u);
+	assert.match(PAGE_SOURCE, /agentSessionPresentation="column"/u);
+	assert.match(PAGE_SOURCE, /insightsEnabled=\{false\}/u);
+	assert.match(DETAIL_SOURCE, /name: "headerSurface"/u);
+	assert.match(DETAIL_SOURCE, /name: "triage"/u);
+	assert.match(DETAIL_SOURCE, /headerSurface="panel"/u);
+	assert.match(DETAIL_SOURCE, /two hosts/u);
+	assert.doesNotMatch(
+		REGISTRY_SOURCE,
+		/"agent-session-column":[\s\S]{0,200}?variants/u,
+	);
+	assert.doesNotMatch(DETAIL_SOURCE, /examples:/u);
 });
 
 test("the collapsed count lives in the header above the plane, not on the rail", () => {
@@ -310,7 +353,10 @@ test("a notch is a drag handle, so a session leaves the collapsed rail too", () 
 	// The column inherits the binding from AgentSessionProps, so the rail is
 	// reached with the prop the expanded cards already take.
 	assert.match(SESSION_TYPES_SOURCE, /sessionDrag\?: JiraIssueAgentSessionDragBinding;/u);
-	assert.match(TYPES_SOURCE, /extends Omit<AgentSessionProps, "className" \| "rowTriage">/u);
+	assert.match(
+		TYPES_SOURCE,
+		/extends Omit<\s*AgentSessionProps,\s*"arrivingItemIds" \| "className" \| "onArrivalComplete" \| "rowTriage"\s*>/u,
+	);
 	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,800}?sessionDrag=\{sessionProps\.sessionDrag\}/u);
 	assert.match(
 		RAIL_COLUMN_SOURCE,
@@ -496,7 +542,6 @@ test("the collapsed rail is opt-in state the column owns", () => {
 	// The change callback must not fire from inside a state updater.
 	assert.doesNotMatch(INDEX_SOURCE, /setCollapsed\(\(/u);
 	assert.doesNotMatch(INDEX_SOURCE, /setUncontrolledCollapsed\(\(/u);
-	assert.match(PAGE_SOURCE, /defaultCollapsed/u);
 	assert.match(DETAIL_SOURCE, /name: "defaultCollapsed"/u);
 });
 
@@ -650,34 +695,45 @@ test("arrival motion is tokenised, capped, and spatially anchored", () => {
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /layoutScroll/u);
 });
 
-test("the demo drives an arrival through both forms at once", () => {
-	assert.match(PAGE_SOURCE, /ARRIVAL_BATCHES/u);
-	// One shared set across the expanded and collapsed columns, so one click
-	// shows both treatments.
-	const newIdUses = PAGE_SOURCE.match(/newItemIds=\{newIds\}/gu) ?? [];
-	assert.equal(newIdUses.length, 2, "expected both demo columns to receive the arrivals");
+test("the panel demo drives an arrival through the Panel wrap", () => {
+	assert.match(PANEL_DEMO_SOURCE, /ARRIVAL_BATCHES/u);
+	const newIdUses = PANEL_DEMO_SOURCE.match(/newItemIds=\{newIds\}/gu) ?? [];
+	assert.equal(newIdUses.length, 1, "expected the panel column to receive the arrivals");
 	// Arrivals prepend, matching the entrance that starts above the list.
-	assert.match(PAGE_SOURCE, /\[\.\.\.batch, \.\.\.currentItems\]/u);
+	assert.match(PANEL_DEMO_SOURCE, /\[\.\.\.batch, \.\.\.currentItems\]/u);
 	// Reviewing decays the mark, standing in for the watermark advancing.
-	assert.match(PAGE_SOURCE, /handleMarkReviewed/u);
+	assert.match(PANEL_DEMO_SOURCE, /handleMarkReviewed/u);
+	// Sync / Mark reviewed / Reset stay on the panel variant only.
+	assert.match(PANEL_DEMO_SOURCE, /Sync new work/u);
+	assert.doesNotMatch(PAGE_SOURCE, /Sync new work/u);
 	// Updaters stay pure: no sibling setState from inside one.
-	assert.doesNotMatch(PAGE_SOURCE, /setSyncedBatches\(\(/u);
+	assert.doesNotMatch(PANEL_DEMO_SOURCE, /setSyncedBatches\(\(/u);
 	assert.match(DETAIL_SOURCE, /name: "newItemIds"/u);
 });
 
-test("the arrival beat stays one-shot across a collapse toggle", () => {
+test("the arrival target survives until Motion finishes, then stays one-shot", () => {
 	// Collapsing swaps the cards for the rail and back, remounting them — and a
 	// mount re-arms `initial`. The column survives the toggle, so it owns the
 	// history of which ids have already played; the two branches only render it.
 	assert.match(INDEX_SOURCE, /const \[playedArrivalIds, setPlayedArrivalIds\]/u);
 	assert.match(INDEX_SOURCE, /if \(!playedArrivalIds\.has\(id\)\)/u);
-	// Mirrored, not accumulated, so a cleared id can legitimately arrive again.
-	assert.match(INDEX_SOURCE, /Mirror `newItemIds` rather than accumulating/u);
-	assert.match(INDEX_SOURCE, /return isUnchanged \? current : next;/u);
-	// Both branches get the beat set and the mark set, and they are distinct.
-	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,200}?arrivingItemIds=\{arrivingItemIds\}/u);
-	assert.match(INDEX_SOURCE, /<AgentSession[\s\S]{0,200}?arrivingItemIds=\{arrivingItemIds\}/u);
+	// Do not eagerly mirror every new id into played history. That removes the
+	// card's animate target one effect after mount and strands it at opacity 0.
+	assert.doesNotMatch(INDEX_SOURCE, /new Set<string>\(newItemIds\)/u);
+	assert.match(INDEX_SOURCE, /const handleArrivalComplete = useCallback/u);
+	assert.match(CARD_SOURCE, /onAnimationComplete=\{handleArrivalComplete\}/u);
+	assert.match(NOTCH_MARK_SOURCE, /onAnimationComplete=\{handleArrivalComplete\}/u);
+	// Both branches report completion and keep the beat set distinct from the mark.
+	assert.match(
+		INDEX_SOURCE,
+		/<AgentSessionColumnRail[\s\S]{0,400}?onArrivalComplete=\{handleArrivalComplete\}/u,
+	);
+	assert.match(
+		INDEX_SOURCE,
+		/<AgentSession[\s\S]{0,400}?onArrivalComplete=\{handleArrivalComplete\}/u,
+	);
 	assert.match(SESSION_TYPES_SOURCE, /arrivingItemIds\?: ReadonlySet<string>;/u);
+	assert.match(SESSION_TYPES_SOURCE, /onArrivalComplete\?: \(itemId: string\) => void;/u);
 	// Defaulting to the mark keeps a host that never unmounts the list correct.
 	assert.match(SESSION_INDEX_SOURCE, /const beatItemIds = arrivingItemIds \?\? newItemIds;/u);
 });
@@ -714,11 +770,12 @@ test("the column owns a hidden-id set and filters items before AgentSession", ()
 	assert.match(INDEX_SOURCE, /toggleHidden\(item\)/u);
 	assert.match(INDEX_SOURCE, /onToggleVisibility\?\.\(item\)/u);
 	assert.match(INDEX_SOURCE, /onToggleVisibility=\{handleToggleVisibility\}/u);
-	assert.match(INDEX_SOURCE, /visibilityLabel=\{view === "hidden" \? "Show" : "Hide"\}/u);
+	assert.match(INDEX_SOURCE, /visibilityLabel=\{view === "hidden" \? "Unarchive" : "Archive"\}/u);
 });
 
-test("the sticky footer reads Work hidden N in the active view", () => {
-	assert.match(FOOTER_SOURCE, /Work hidden/u);
+test("the sticky footer reads Archived N in the active view", () => {
+	assert.match(FOOTER_SOURCE, /"Archived"/u);
+	assert.doesNotMatch(FOOTER_SOURCE, /Work hidden/u);
 	assert.match(FOOTER_SOURCE, /\{count\}/u);
 	assert.match(FOOTER_SOURCE, /truncate text-xs font-medium leading-4 text-text-subtle/u);
 	assert.match(FOOTER_SOURCE, /shrink-0 text-xs font-normal text-text-subtlest/u);
@@ -726,14 +783,14 @@ test("the sticky footer reads Work hidden N in the active view", () => {
 	assert.match(FOOTER_SOURCE, /className="text-icon-subtle"/u);
 	assert.match(FOOTER_SOURCE, /import ChevronRightIcon from "@atlaskit\/icon\/core\/chevron-right"/u);
 	assert.match(FOOTER_SOURCE, /<ChevronRightIcon label="" size="small" \/>/u);
-	assert.match(FOOTER_SOURCE, /Show \$\{count\} hidden \$\{sessionWord\}/u);
+	assert.match(FOOTER_SOURCE, /Show \$\{count\} archived \$\{sessionWord\}/u);
 	assert.match(FOOTER_SOURCE, /rounded-none rounded-b-none border-0 border-t border-solid border-border-disabled/u);
 	assert.doesNotMatch(FOOTER_SOURCE, /rounded-b-lg/u);
 	assert.match(FOOTER_SOURCE, /\bp-3\b/u);
 	assert.match(FOOTER_SOURCE, /hover:bg-surface-hovered/u);
 	assert.doesNotMatch(FOOTER_SOURCE, /size="compact"|variant="ghost"/u);
 	assert.match(INDEX_SOURCE, /showWellFooter = view === "hidden" \|\| hiddenCount > 0/u);
-	// An empty visible list still occupies the flex-1 cell so Work hidden stays
+	// An empty visible list still occupies the flex-1 cell so Archived stays
 	// the bottom sibling instead of jumping under a short empty message.
 	assert.match(
 		INDEX_SOURCE,
@@ -756,11 +813,11 @@ test("the sticky footer reads Work hidden N in the active view", () => {
 	assert.doesNotMatch(INDEX_SOURCE, /position:\s*"sticky"|className="[^"]*sticky/u);
 });
 
-test("the hidden view keeps Hidden work in the header and a back footer", () => {
+test("the archived view keeps Archived in the header and a back footer", () => {
 	assert.doesNotMatch(INDEX_SOURCE, /ArrowLeftIcon|arrow-left/u);
 	assert.doesNotMatch(INDEX_SOURCE, /<TooltipContent>Back<\/TooltipContent>/u);
 	assert.doesNotMatch(INDEX_SOURCE, /aria-label=\{`Back to \$\{title\}`\}[\s\S]*size="icon-compact"/u);
-	assert.match(INDEX_SOURCE, /displayTitle = view === "hidden" \? "Hidden work" : title/u);
+	assert.match(INDEX_SOURCE, /displayTitle = view === "hidden" \? "Archived" : title/u);
 	assert.match(INDEX_SOURCE, /size="icon-compact"/u);
 	assert.match(FOOTER_SOURCE, /Back to untracked work/u);
 	assert.match(FOOTER_SOURCE, /import ChevronLeftIcon from "@atlaskit\/icon\/core\/chevron-left"/u);
@@ -799,7 +856,7 @@ test("the collapsed rail fades notches with ScrollMask viewport mask-image", () 
 test("the collapsed rail receives visible items only and collapse leaves hidden view", () => {
 	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]*items=\{visibleItems\}/u);
 	assert.match(INDEX_SOURCE, /if \(nextCollapsed\) \{\s*closeHiddenView\(\);/u);
-	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /Work hidden|HiddenFooter/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /Work hidden|Archived|HiddenFooter/u);
 });
 
 test("unhiding the last session returns to the active view", () => {
@@ -814,17 +871,28 @@ test("hidden ids survive a temporary items drop so A then B then A stays hidden"
 	assert.match(HOOK_SOURCE, /die on remount/u);
 });
 
-test("the expanded header keeps an overflow menu next to collapse", () => {
+test("the expanded header sizes its overflow trigger for the host surface", () => {
 	assert.match(HEADER_SOURCE, /HEADER_ACTIONS_REVEAL/u);
 	assert.match(INDEX_SOURCE, /<AgentSessionColumnOverflowMenu/u);
 	assert.match(HEADER_SOURCE, /`Collapse \$\{title\} column`|collapseLabel/u);
 	assert.match(OVERFLOW_MENU_SOURCE, /\$\{title\} column actions/u);
 	assert.match(OVERFLOW_MENU_SOURCE, /<ShowMoreHorizontalIcon/u);
-	assert.match(OVERFLOW_MENU_SOURCE, /size="icon-compact"/u);
+	assert.match(OVERFLOW_MENU_SOURCE, /size: "icon" \| "icon-compact";/u);
+	assert.match(OVERFLOW_MENU_SOURCE, /size=\{size\}/u);
+	assert.match(
+		INDEX_SOURCE,
+		/size=\{headerSurface === "column" \? "icon-compact" : "icon"\}/u,
+	);
 	assert.doesNotMatch(HEADER_SOURCE, /group-hover\/session-column:block/u);
 	assert.match(HEADER_SOURCE, /has-\[\[data-popup-open\]\]:opacity-100/u);
 	assert.match(INDEX_SOURCE, /items=\{viewItems\}/u);
 	assert.match(INDEX_SOURCE, /onLinkWorkItem=\{sessionProps\.onLinkWorkItem\}/u);
+});
+
+test("the selecting header Link action uses a CheckMark icon", () => {
+	assert.match(HEADER_SOURCE, /import CheckMarkIcon from "@atlaskit\/icon\/core\/check-mark";/u);
+	assert.match(HEADER_SOURCE, /approve: CheckMarkIcon,/u);
+	assert.doesNotMatch(HEADER_SOURCE, /LinkIcon/u);
 });
 
 test("the selecting header omits collapse so Clear is the only exit", () => {
@@ -839,6 +907,30 @@ test("the selecting header omits collapse so Clear is the only exit", () => {
 	assert.doesNotMatch(panelSelectingBranch, /ShrinkHorizontalIcon/u);
 	assert.match(columnSelectingBranch, /<HeaderIconButton/u);
 	assert.match(panelSelectingBranch, /<PanelAction/u);
+});
+
+test("selecting header hover copy comes from the selectedCount table", () => {
+	assert.match(SELECTION_COPY_SOURCE, /Link agent sessions/u);
+	assert.match(SELECTION_COPY_SOURCE, /Create \$\{selectedCount\} work item/u);
+	assert.match(SELECTION_COPY_SOURCE, /Create \$\{selectedCount\} work items/u);
+	assert.match(SELECTION_COPY_SOURCE, /Archive \$\{selectedCount\} agent session/u);
+	assert.match(SELECTION_COPY_SOURCE, /Archive \$\{selectedCount\} agent sessions/u);
+	assert.match(SELECTION_COPY_SOURCE, /clear: \(\) => "Clear"/u);
+	assert.match(SELECTION_COPY_SOURCE, /No selected sessions have a work item to link/u);
+	assert.match(SELECTION_COPY_SOURCE, /No selected sessions can create a work item/u);
+	assert.match(
+		SELECTION_COPY_SOURCE,
+		/SELECTION_ACTION_AVAILABLE_COPY\[id\]\(counts\.selectedCount\)/u,
+	);
+	assert.doesNotMatch(SELECTION_COPY_SOURCE, /eligibleCount\).*work item/u);
+	assert.doesNotMatch(HEADER_SOURCE, /headerActionUnavailableReason/u);
+	assert.match(HEADER_SOURCE, /function toHeaderActionAffordance/u);
+	assert.match(HEADER_SOURCE, /TooltipTrigger render=\{<span className="inline-flex" \/>\}/u);
+	assert.match(HEADER_SOURCE, /disabled=\{affordance\.disabled\}/u);
+	assert.doesNotMatch(HEADER_SOURCE, /aria-disabled/u);
+	assert.match(HEADER_SOURCE, /tooltip=\{affordance\.text\}/u);
+	assert.match(PANEL_SOURCE, /tooltip\?: ReactNode/u);
+	assert.match(PANEL_SOURCE, /tooltip === undefined \? action : wrapPanelActionTooltip/u);
 });
 
 test("the overflow menu is Link all suggestions, then Auto sync and Suggest link toggles", () => {

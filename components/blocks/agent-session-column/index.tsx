@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 
 import GrowHorizontalIcon from "@atlaskit/icon/core/grow-horizontal";
@@ -205,7 +205,7 @@ export function AgentSessionColumn({
 			},
 		};
 	}, [forgetHidden, triage]);
-	const displayTitle = view === "hidden" ? "Hidden work" : title;
+	const displayTitle = view === "hidden" ? "Archived" : title;
 	// The rail and the card list have very different intrinsic widths, so the
 	// overflow has to be clipped for the duration of the width transition. Any
 	// longer and it would clip the 4px focus rings on the cards inside.
@@ -235,6 +235,7 @@ export function AgentSessionColumn({
 			getSuggestedWorkItemKeys={sessionProps.getSuggestedWorkItemKeys}
 			items={viewItems}
 			onLinkWorkItem={sessionProps.onLinkWorkItem}
+			size={headerSurface === "column" ? "icon-compact" : "icon"}
 			title={title}
 		/>
 	);
@@ -265,18 +266,40 @@ export function AgentSessionColumn({
 		return arriving;
 	}, [newItemIds, playedArrivalIds]);
 
+	const handleArrivalComplete = useCallback((itemId: string) => {
+		if (newItemIds?.has(itemId) !== true) {
+			return;
+		}
+		setPlayedArrivalIds((current) => {
+			if (current.has(itemId)) {
+				return current;
+			}
+			const next = new Set(current);
+			next.add(itemId);
+			return next;
+		});
+	}, [newItemIds]);
+
 	useEffect(() => {
 		setPlayedArrivalIds((current) => {
-			// Mirror `newItemIds` rather than accumulating, so an id the watermark
-			// clears is forgotten and a later re-arrival of it animates again.
-			const next = newItemIds === undefined
-				? new Set<string>()
-				: new Set<string>(newItemIds);
+			// Forget reviewed ids so a later re-arrival can animate again. Reduced
+			// motion has no completion callback, so mark those ids as played now.
+			const next = new Set<string>();
+			for (const id of current) {
+				if (newItemIds?.has(id) === true) {
+					next.add(id);
+				}
+			}
+			if (shouldReduceMotion) {
+				for (const id of newItemIds ?? []) {
+					next.add(id);
+				}
+			}
 			const isUnchanged = next.size === current.size
 				&& [...next].every((id: string) => current.has(id));
 			return isUnchanged ? current : next;
 		});
-	}, [newItemIds]);
+	}, [newItemIds, shouldReduceMotion]);
 	// A controlled host can flip `collapsed` from its own affordance, which never
 	// runs `handleToggleCollapsed`. React to the committed change so an external
 	// collapse behaves like an internal one: clip the overflow for the width
@@ -436,6 +459,7 @@ export function AgentSessionColumn({
 						highlightedItemId={sessionProps.highlightedItemId}
 						items={visibleItems}
 						newItemIds={newItemIds}
+						onArrivalComplete={handleArrivalComplete}
 						onCreateWorkItem={sessionProps.onCreateWorkItem}
 						onItemHover={sessionProps.onItemHover}
 						onLinkWorkItem={sessionProps.onLinkWorkItem}
@@ -458,12 +482,13 @@ export function AgentSessionColumn({
 										className={listClassName}
 										items={viewItems}
 										newItemIds={newItemIds}
+										onArrivalComplete={handleArrivalComplete}
 										{...sessionProps}
 										onSelectedItemIdChange={handleSelectedItemIdChange}
 										onToggleVisibility={handleToggleVisibility}
 										rowTriage={untrackedSelection.rows}
 										selectedItemId={selectedItemId}
-										visibilityLabel={view === "hidden" ? "Show" : "Hide"}
+										visibilityLabel={view === "hidden" ? "Unarchive" : "Archive"}
 									/>
 								</div>
 							)}

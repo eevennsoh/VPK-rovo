@@ -222,6 +222,7 @@ function AgentSessionNotch({
 	isHighlighted,
 	isNew,
 	item,
+	onArrivalComplete,
 	onItemHover,
 	onView,
 	proximity,
@@ -233,6 +234,7 @@ function AgentSessionNotch({
 	isHighlighted: boolean;
 	isNew: boolean;
 	item: AgentSessionItem;
+	onArrivalComplete?: () => void;
 	onItemHover?: (item: AgentSessionItem | null) => void;
 	onView?: (item: AgentSessionItem) => void;
 	proximity?: AgentSessionNotchProximity;
@@ -308,6 +310,7 @@ function AgentSessionNotch({
 									isArriving={isArriving}
 									isHighlighted={isHighlighted}
 									isNew={isNew}
+									onArrivalComplete={onArrivalComplete}
 									proximity={proximity}
 								/>
 							</button>
@@ -327,6 +330,7 @@ export function AgentSessionColumnRail({
 	highlightedItemId,
 	items,
 	newItemIds,
+	onArrivalComplete,
 	onCreateWorkItem,
 	onItemHover,
 	onLinkWorkItem,
@@ -342,6 +346,7 @@ export function AgentSessionColumnRail({
 	highlightedItemId?: string | null;
 	items: readonly AgentSessionItem[];
 	newItemIds?: ReadonlySet<string>;
+	onArrivalComplete?: (itemId: string) => void;
 	onCreateWorkItem?: (item: AgentSessionItem) => void;
 	onItemHover?: (item: AgentSessionItem | null) => void;
 	onLinkWorkItem?: (item: AgentSessionItem, workItemKey?: string) => void;
@@ -436,6 +441,9 @@ export function AgentSessionColumnRail({
 						isNew={newItemIds?.has(item.id) ?? false}
 						item={item}
 						key={item.id}
+						onArrivalComplete={onArrivalComplete === undefined
+							? undefined
+							: () => onArrivalComplete(item.id)}
 						onItemHover={onItemHover}
 						onView={onView}
 						proximity={isDocked ? {

@@ -29,6 +29,7 @@ import {
 import { useJiraTabs } from "@/components/projects/jira/hooks/use-jira-tabs";
 import { resolveJiraTab } from "@/components/projects/jira/lib/jira-tab-model";
 import AppLayout from "@/components/projects/page";
+import { cn } from "@/lib/utils";
 
 import { getJiraGoldenJourneysV4AgentActivityIndicator } from "./data/agent-activity-indicators";
 import {
@@ -39,6 +40,8 @@ import {
 	JIRA_GOLDEN_JOURNEYS_V4_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID,
 } from "./data/presentation-story";
 import { useJiraGoldenJourneysV4List } from "./hooks/use-jira-golden-journeys-v4-list";
+
+const JIRA_LIST_PANEL_END_GAP_PX = 24;
 
 export default function JiraGoldenJourneysV4Page(): React.ReactElement {
 	return (
@@ -73,9 +76,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 	// to a work item. Untracked Pulse rows stay in the dedicated Untracked
 	// surface. 2000 years later keeps proximity rows beside the related cards.
 	const showUntrackedProximity = designVariation !== "team-eu";
-	const createWorkItemDropZoneLabel = designVariation === "2000-years-later"
-		? "Create new work item"
-		: undefined;
+	const createWorkItemDropZoneLabel = "Create new work item";
 	// Chin rows follow the same variation split. Team EU groups every active
 	// agent into one merged row (hover opens assignment). 2000 years later
 	// keeps a row per agent so the split exploration stays intact.
@@ -278,11 +279,33 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						showAgentSessionUnlinkWell={designVariation !== "team-eu"}
 						onResumeLooseWork={handleResumeLooseWork}
 						onViewChange={tabOwnsView ? undefined : setWorkItemView}
-						renderListContent={(columns, { agentSessionDropIntent }) => {
+						renderListContent={(
+							columns,
+							{
+								agentSessionDropIntent,
+								onTrailingContentUnderlapChange,
+								scrollEndInset,
+								trailingOverlayRef,
+							},
+						) => {
 							const listProps = getListProps(columns);
+							const listScrollEndInset = scrollEndInset > 0
+								? scrollEndInset + JIRA_LIST_PANEL_END_GAP_PX
+								: 0;
 							return (
-								<div className="min-h-0 flex-1 overflow-hidden p-4 md:p-5">
-									<JiraList {...listProps} agentSessionDropIntent={agentSessionDropIntent} />
+								<div
+									className={cn(
+										"min-h-0 flex-1 overflow-hidden py-4 ps-4 md:py-5 md:ps-5",
+										scrollEndInset > 0 ? "pe-0" : "pe-4 md:pe-5",
+									)}
+								>
+									<JiraList
+										{...listProps}
+										agentSessionDropIntent={agentSessionDropIntent}
+										onTrailingContentUnderlapChange={onTrailingContentUnderlapChange}
+										scrollEndInset={listScrollEndInset}
+										trailingOverlayRef={trailingOverlayRef}
+									/>
 								</div>
 							);
 						}}
