@@ -555,7 +555,7 @@ export type { AgentListRowAction };
 /**
  * The pair of controls a row owner reveals on hover/focus. The row stays
  * generic about what they do: Agent List builds View / Resume + Archive, Agent
- * Session builds Resume + Hide / Show. Omit both to reveal nothing.
+ * Session builds Resume + Archive / Unarchive. Omit both to reveal nothing.
  */
 export type AgentListRowHoverActions = Readonly<{
 	primary?: AgentListRowAction;
@@ -658,8 +658,8 @@ export function AgentListRow({
 
 	const viewItem = onView === undefined ? undefined : () => onView(item);
 	// A selected Agent List row is already the destination, so it keeps its
-	// lifecycle indicator. Session cards opt back in because Hide / Resume still
-	// apply after the article is highlighted.
+	// lifecycle indicator. Session cards opt back in because Archive / Resume
+	// still apply after the article is highlighted.
 	const showHoverActions = (!isSelected || showHoverActionsWhenSelected) &&
 		(hoverActions?.primary !== undefined || hoverActions?.secondary !== undefined);
 	const identity = (

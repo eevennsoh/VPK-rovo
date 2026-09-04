@@ -49,7 +49,7 @@ export interface AgentSessionColumnProps extends Omit<
 	onCollapsedChange?: (collapsed: boolean) => void;
 	/**
 	 * Enables hover select, the Selected N header, and row Approve.
-	 * Omit it and the column stays a read-only list with Resume and Hide.
+	 * Omit it and the column stays a read-only list with Resume and Archive.
 	 */
 	triage?: UntrackedWorkTriage;
 	/**

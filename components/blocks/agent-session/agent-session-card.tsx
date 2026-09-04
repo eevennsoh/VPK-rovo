@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
+import ArchiveBoxIcon from "@atlaskit/icon/core/archive-box";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
-import EyeOpenIcon from "@atlaskit/icon/core/eye-open";
-import EyeOpenStrikethroughIcon from "@atlaskit/icon/core/eye-open-strikethrough";
+import LibraryIcon from "@atlaskit/icon/core/library";
 
 import {
 	AgentListRow,
@@ -67,7 +67,7 @@ export function AgentSessionCard({
 	sessionDrag,
 	triageRow,
 	draggingIds,
-	visibilityLabel = "Hide",
+	visibilityLabel = "Archive",
 }: Readonly<{
 	arrivalDelaySeconds?: number;
 	captured?: boolean;
@@ -92,7 +92,7 @@ export function AgentSessionCard({
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
 	triageRow?: AgentSessionTriageRow | null;
 	draggingIds?: ReadonlySet<string>;
-	/** Tooltip and accessible name for the hover eye. Hide in the active list, Show in Hidden work. */
+	/** Tooltip and accessible name for the hover archive control. Archive in the active list, Unarchive in the archived view. */
 	visibilityLabel?: string;
 }>) {
 	const shouldReduceMotion = useReducedMotion();
@@ -132,16 +132,30 @@ export function AgentSessionCard({
 		}
 	};
 
-	// The same hover/focus-revealed pair Agent List rows use, with Hide / Show
-	// in the slot Agent List gives to Archive. The eye always renders; the
-	// column supplies `onToggleVisibility` so Hide actually removes the card.
+	const approve = triageRow?.approve;
+	const mark = triageRow?.mark;
+	const isMarked = mark?.isMarked ?? false;
+	const showSelectedFill = isMarked || (isSelected && mark == null);
+
+	// The same hover/focus-revealed pair Agent List rows use, with Archive /
+	// Unarchive in the slot Agent List gives to Archive. The control always
+	// renders; the column supplies `onToggleVisibility` so Archive removes the card.
 	// The article is the hit area. RowBody would otherwise wrap only the title
-	// column, leaving avatar and padding inert. Hover actions stay buttons so
-	// they can stop the article from toggling.
-	const activateCard = onView === undefined
+	// column, leaving avatar and padding inert. A triage mark uses that same
+	// path so selection is not avatar-only. Hover actions stay buttons so they
+	// can stop the article from toggling.
+	const activateCard = onView === undefined && mark == null
 		? undefined
 		: () => {
-			onView(item);
+			if (mark != null) {
+				const selecting = !mark.isMarked;
+				mark.onToggle();
+				if (selecting !== isSelected) {
+					onView?.(item);
+				}
+				return;
+			}
+			onView?.(item);
 		};
 	const handleArticleClick = activateCard === undefined
 		? undefined
@@ -165,11 +179,6 @@ export function AgentSessionCard({
 				activateCard();
 			}
 		};
-
-	const approve = triageRow?.approve;
-	const mark = triageRow?.mark;
-	const isMarked = mark?.isMarked ?? false;
-	const showSelectedFill = isMarked || (isSelected && mark == null);
 	const hoverActions: AgentListRowHoverActions = {
 		primary: approve
 			? {
@@ -194,12 +203,13 @@ export function AgentSessionCard({
 				}
 				: undefined,
 		secondary: {
-			// Hide (active list) is a strikethrough eye; Show (hidden view) is open.
+			// Archive (active list) uses the archive box; Unarchive (hidden view)
+			// uses Library so the restore action is distinct from hide.
 			icon: (
 				<Icon
-					render={visibilityLabel === "Show"
-						? <EyeOpenIcon label="" size="small" />
-						: <EyeOpenStrikethroughIcon label="" size="small" />}
+					render={visibilityLabel === "Unarchive"
+						? <LibraryIcon label="" size="small" />
+						: <ArchiveBoxIcon label="" size="small" />}
 				/>
 			),
 			label: visibilityLabel,
@@ -262,7 +272,7 @@ export function AgentSessionCard({
 						<article
 							{...bind}
 							aria-current={isSelected ? "true" : undefined}
-							aria-pressed={activateCard === undefined ? undefined : isSelected}
+							aria-pressed={activateCard === undefined ? undefined : showSelectedFill}
 							aria-roledescription={bind ? "Draggable agent session" : undefined}
 							className={cn(
 						"group/agent-row relative flex w-full rounded-lg p-3 text-left text-text",
@@ -314,7 +324,7 @@ export function AgentSessionCard({
 											identity={identity}
 											isMarked={mark.isMarked}
 											label={`Select "${item.title}"`}
-											onToggle={mark.onToggle}
+											onToggle={activateCard ?? mark.onToggle}
 										/>
 									)}
 								showHoverActionsWhenSelected

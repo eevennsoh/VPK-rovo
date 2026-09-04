@@ -5,8 +5,8 @@ import type { ComponentType, ReactElement } from "react";
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
 import AddIcon from "@atlaskit/icon/core/add";
 import ArchiveBoxIcon from "@atlaskit/icon/core/archive-box";
+import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import CrossIcon from "@atlaskit/icon/core/cross";
-import LinkIcon from "@atlaskit/icon/core/link";
 import ShrinkHorizontalIcon from "@atlaskit/icon/core/shrink-horizontal";
 
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,7 @@ const HEADER_ACTIONS_REVEAL = cn(
 );
 
 const HEADER_ACTION_ICON: Record<SelectionActionId, ComponentType<NewCoreIconProps>> = {
-	approve: LinkIcon,
+	approve: CheckMarkIcon,
 	archive: ArchiveBoxIcon,
 	clear: CrossIcon,
 	create: AddIcon,

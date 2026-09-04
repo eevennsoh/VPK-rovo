@@ -4,6 +4,7 @@ const { join } = require("node:path");
 const { test } = require("node:test");
 
 const CARD_SOURCE = readFileSync(join(__dirname, "agent-session-card.tsx"), "utf8");
+const SELECT_MARK_SOURCE = readFileSync(join(__dirname, "agent-session-select-mark.tsx"), "utf8");
 const LIST_CARD_SOURCE = readFileSync(
 	join(__dirname, "../agent-list/agent-list-card.tsx"),
 	"utf8",
@@ -327,7 +328,7 @@ test("small is the collapsed-column notch and stays keyboard operable when view 
 	assert.match(ARRIVAL_MOTION_SOURCE, /duration: 0\.25,\s*ease: \[0, 0\.4, 0, 1\]/u);
 });
 
-test("the row reveals Resume plus a Hide / Show eye where Agent List puts Archive", () => {
+test("the row reveals Resume plus Archive / Unarchive where Agent List puts Archive", () => {
 	// The hover pair is the Agent List row's own generic slot, not a fork of its
 	// markup — the card only supplies the two action descriptors.
 	assert.match(
@@ -339,13 +340,14 @@ test("the row reveals Resume plus a Hide / Show eye where Agent List puts Archiv
 	assert.match(CARD_SOURCE, /primary: approve\s*\?\s*\{/u);
 	assert.match(CARD_SOURCE, /<CheckMarkIcon label="" size="small" \/>/u);
 	assert.match(CARD_SOURCE, /approveActionLabel\(approve\.target\)/u);
-	assert.match(CARD_SOURCE, /visibilityLabel === "Show"/u);
-	assert.match(CARD_SOURCE, /<EyeOpenIcon label="" size="small" \/>/u);
-	assert.match(CARD_SOURCE, /<EyeOpenStrikethroughIcon label="" size="small" \/>/u);
+	assert.match(CARD_SOURCE, /visibilityLabel === "Unarchive"/u);
+	assert.match(CARD_SOURCE, /<LibraryIcon label="" size="small" \/>/u);
+	assert.match(CARD_SOURCE, /<ArchiveBoxIcon label="" size="small" \/>/u);
 	assert.match(CARD_SOURCE, /label: visibilityLabel,/u);
-	assert.match(CARD_SOURCE, /visibilityLabel = "Hide"/u);
-	assert.match(CARD_SOURCE, /import EyeOpenIcon from "@atlaskit\/icon\/core\/eye-open";/u);
-	assert.match(CARD_SOURCE, /import EyeOpenStrikethroughIcon from "@atlaskit\/icon\/core\/eye-open-strikethrough";/u);
+	assert.match(CARD_SOURCE, /visibilityLabel = "Archive"/u);
+	assert.match(CARD_SOURCE, /import ArchiveBoxIcon from "@atlaskit\/icon\/core\/archive-box";/u);
+	assert.match(CARD_SOURCE, /import LibraryIcon from "@atlaskit\/icon\/core\/library";/u);
+	assert.doesNotMatch(CARD_SOURCE, /EyeOpenIcon|EyeOpenStrikethroughIcon|visibilityLabel = "Hide"|visibilityLabel === "Show"/u);
 	assert.match(CARD_SOURCE, /group\/agent-row relative flex w-full rounded-lg p-3 text-left text-text/u);
 	assert.match(CARD_SOURCE, /bind \? "cursor-grab" : "cursor-pointer"/u);
 	assert.match(CARD_SOURCE, /aria-roledescription=\{bind \? "Draggable agent session" : undefined\}/u);
@@ -361,8 +363,8 @@ test("the row reveals Resume plus a Hide / Show eye where Agent List puts Archiv
 	assert.doesNotMatch(CARD_SOURCE, /active:bg-/u);
 	assert.doesNotMatch(CARD_SOURCE, /hover:shadow-md/u);
 	assert.doesNotMatch(CARD_SOURCE, /group\/agent-row group\/uncaptured-work/u);
-	// The eye always renders and calls the optional handler; the column supplies
-	// Hide vs Show so the tooltip matches the action.
+	// The archive control always renders and calls the optional handler; the
+	// column supplies Archive vs Unarchive so the tooltip matches the action.
 	assert.match(CARD_SOURCE, /onToggleVisibility\?\.\(item\)/u);
 	assert.match(INDEX_SOURCE, /onToggleVisibility=\{onToggleVisibility\}/u);
 	assert.match(INDEX_SOURCE, /visibilityLabel=\{visibilityLabel\}/u);
@@ -393,6 +395,17 @@ test("the row reveals Resume plus a Hide / Show eye where Agent List puts Archiv
 	// The shared row fades actions in; uncaptured-work snaps them on.
 	assert.match(LIST_CARD_SOURCE, /group-data-\[variant=uncaptured-work\]\/agent-row:transition-none/u);
 	assert.match(CARD_SOURCE, /data-variant="uncaptured-work"/u);
+});
+
+test("the hover checkbox replaces the avatar instantly, with no opacity transition", () => {
+	assert.match(CARD_SOURCE, /<AgentSessionSelectMark/u);
+	assert.match(CARD_SOURCE, /selection is not avatar-only/u);
+	assert.match(SELECT_MARK_SOURCE, /role="checkbox"/u);
+	assert.match(SELECT_MARK_SOURCE, /group-hover\/agent-row:opacity-100/u);
+	assert.match(SELECT_MARK_SOURCE, /group-hover\/agent-row:opacity-0/u);
+	assert.match(SELECT_MARK_SOURCE, /col-start-1 row-start-1 transition-none/u);
+	assert.match(SELECT_MARK_SOURCE, /place-items-center rounded-full transition-none/u);
+	assert.doesNotMatch(SELECT_MARK_SOURCE, /transition-opacity|duration-normal|ease-out-practical/u);
 });
 
 test("the untracked-work flyout owns capture, so the card has no footer chin", () => {
@@ -499,7 +512,7 @@ test("the card file exports only a component", () => {
 test("Resume is gated on host capability before the clipboard write", () => {
 	// The hover Resume button copies the command before `onCopyResume` ever runs,
 	// so a row the host cannot resume must render no control rather than a
-	// failing one. The eye stays regardless — it is not a resume affordance.
+	// failing one. The archive control stays regardless — it is not a resume affordance.
 	assert.match(
 		CARD_SOURCE,
 		/const canResume = \(isResumable\?\.\(item\) \?\? true\) && resumeCommand\.length > 0;/u,
@@ -555,13 +568,20 @@ test("a card body click toggles a single selected session on the selected token"
 		LIST_CARD_SOURCE,
 		/const showHoverActions = \(!isSelected \|\| showHoverActionsWhenSelected\) &&/u,
 	);
-	// The article owns activation so padding and avatar toggle. RowBody must
-	// not also fire handleView, or one click would select then immediately clear.
+	// The article owns activation so padding, title, and avatar toggle. A
+	// triage mark uses that same path — the hover checkbox is not the only
+	// select hit target. RowBody must not also fire handleView, or one click
+	// would select then immediately clear.
 	assert.match(CARD_SOURCE, /onClick=\{handleArticleClick\}/u);
 	assert.match(CARD_SOURCE, /onKeyDown=\{handleArticleKeyDown\}/u);
+	assert.match(CARD_SOURCE, /onView === undefined && mark == null/u);
+	assert.match(CARD_SOURCE, /mark\.onToggle\(\)/u);
+	assert.match(CARD_SOURCE, /if \(selecting !== isSelected\)/u);
 	assert.match(CARD_SOURCE, /role=\{activateCard === undefined \? undefined : "button"\}/u);
+	assert.match(CARD_SOURCE, /aria-pressed=\{activateCard === undefined \? undefined : showSelectedFill\}/u);
 	assert.match(CARD_SOURCE, /event\.target\.closest\(SESSION_DRAG_INTERACTIVE_SELECTOR\) !== null/u);
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*onView=\{undefined\}/u);
+	assert.match(CARD_SOURCE, /onToggle=\{activateCard \?\? mark\.onToggle\}/u);
 	assert.match(LIST_ROW_ACTION_SOURCE, /event\.stopPropagation\(\);\s*\n\s*action\.onClick\(\)/u);
 	assert.doesNotMatch(CARD_SOURCE, /isSelected=\{false\}/u);
 	assert.doesNotMatch(CARD_SOURCE, /bg-bg-accent-blue-subtlest/u);

@@ -14,14 +14,14 @@ const NONE_HIDDEN: ReadonlySet<string> = new Set<string>();
 export interface ScrollingVisibility {
 	/** The sessions the ticker should loop. Never empty while `items` is not. */
 	visibleItems: readonly AgentSessionItem[];
-	/** Bound to every card's hover eye. */
+	/** Bound to every card's hover archive control. */
 	toggleVisibility: (item: AgentSessionItem) => void;
-	/** Accessible name, tooltip and icon for that eye; see the note below. */
+	/** Accessible name, tooltip and icon for that control; see the note below. */
 	visibilityLabel: string;
 }
 
 /**
- * Local Hide / Show state for the scroller's cards.
+ * Local Archive / Unarchive state for the scroller's cards.
  *
  * ## Why this hook exists at all
  *
@@ -34,14 +34,14 @@ export interface ScrollingVisibility {
  *
  * ## The floor, and why the label flips
  *
- * Hiding removes the session from the loop. Ticker's whole geometry — pitch,
+ * Archiving removes the session from the loop. Ticker's whole geometry — pitch,
  * clone count, the fade — is derived from the items it is given, so letting the
  * list empty would leave a scroller with nothing to scroll AND no control left
- * to undo it with. So the LAST remaining card's eye becomes "Show" (the open-eye
- * icon, per the block's own `visibilityLabel === "Show"` branch) and restores
- * every hidden session instead. The label always matches what the button does,
- * the toggle is always reversible, and no state is reachable that the keyboard
- * cannot get back out of.
+ * to undo it with. So the LAST remaining card's control becomes "Unarchive"
+ * (the Library icon, per the block's own `visibilityLabel === "Unarchive"`
+ * branch) and restores every hidden session instead. The label always matches
+ * what the button does, the toggle is always reversible, and no state is
+ * reachable that the keyboard cannot get back out of.
  *
  * Degenerate case, stated rather than hidden: a caller that passes a single
  * item has one card that can neither be hidden (the floor) nor restore anything
@@ -76,7 +76,7 @@ export function useScrollingVisibility(
 
 	return {
 		toggleVisibility,
-		visibilityLabel: visibleItems.length <= 1 ? "Show" : "Hide",
+		visibilityLabel: visibleItems.length <= 1 ? "Unarchive" : "Archive",
 		visibleItems,
 	};
 }

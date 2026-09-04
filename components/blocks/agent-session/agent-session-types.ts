@@ -103,14 +103,14 @@ export interface AgentSessionProps {
 	/** Called after the hover Resume control copies the resume command. */
 	onCopyResume?: (item: AgentSessionItem) => void;
 	/**
-	 * Hide / Show toggle behind the hover eye control. The button always
-	 * renders; omit this on a bare list to leave the eye a no-op. The column
-	 * supplies it so Hide removes the card and Show restores it.
+	 * Archive / Unarchive toggle behind the hover archive control. The button
+	 * always renders; omit this on a bare list to leave the control a no-op. The
+	 * column supplies it so Archive removes the card and Unarchive restores it.
 	 */
 	onToggleVisibility?: (item: AgentSessionItem) => void;
 	/**
-	 * Tooltip and accessible name for the hover eye. Defaults to Hide. The
-	 * column passes Show when the list is the hidden-work view.
+	 * Tooltip and accessible name for the hover archive control. Defaults to
+	 * Archive. The column passes Unarchive when the list is the hidden-work view.
 	 */
 	visibilityLabel?: string;
 	/** Called when a card body is activated. */
