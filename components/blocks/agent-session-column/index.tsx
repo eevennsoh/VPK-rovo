@@ -183,6 +183,7 @@ export function AgentSessionColumn({
 	const selectedItemId = isSelectionControlled ? selectedItemIdProp : uncontrolledSelectedItemId;
 	const {
 		closeHiddenView,
+		forgetHidden,
 		hiddenCount,
 		hiddenItems,
 		openHiddenView,
@@ -191,6 +192,19 @@ export function AgentSessionColumn({
 		visibleItems,
 	} = useAgentSessionColumnHidden(items);
 	const viewItems = view === "hidden" ? hiddenItems : visibleItems;
+	const selectionTriage = useMemo(() => {
+		if (triage === undefined) {
+			return undefined;
+		}
+
+		return {
+			...triage,
+			archive: (session: AgentSessionItem) => {
+				triage.archive(session);
+				forgetHidden(session.id);
+			},
+		};
+	}, [forgetHidden, triage]);
 	const displayTitle = view === "hidden" ? "Hidden work" : title;
 	// The rail and the card list have very different intrinsic widths, so the
 	// overflow has to be clipped for the duration of the width transition. Any
@@ -211,7 +225,7 @@ export function AgentSessionColumn({
 		getSuggestedWorkItemKey: sessionProps.getSuggestedWorkItemKey,
 		getSuggestedWorkItemKeys: sessionProps.getSuggestedWorkItemKeys,
 		title: displayTitle,
-		triage,
+		triage: selectionTriage,
 		visibleItems: viewItems,
 	});
 	const overflowMenu = (

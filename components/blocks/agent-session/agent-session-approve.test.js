@@ -56,9 +56,10 @@ test("locateTarget is the value attach will consume", () => {
 	let locateCalls = 0;
 
 	const resolved = resolveApproveTarget(item, {
-		locateTarget: (sessionItem) => {
+		locateTarget: (sessionItem, workItemKey) => {
 			locateCalls += 1;
 			assert.equal(sessionItem.id, item.id);
+			assert.equal(workItemKey, "PAY-107");
 			return located;
 		},
 	});
@@ -76,13 +77,18 @@ test("suggested-key overrides win over the session details key", () => {
 	const item = session("lw-open", "PAY-101");
 	const located = { code: "PAY-201" };
 
+	let locatedKey;
 	assert.deepEqual(
 		resolveApproveTarget(item, {
 			getSuggestedWorkItemKeys: () => ["PAY-201", "PAY-101"],
-			locateTarget: () => located,
+			locateTarget: (_sessionItem, workItemKey) => {
+				locatedKey = workItemKey;
+				return located;
+			},
 		}),
 		{ kind: "work-item", key: "PAY-201", target: located },
 	);
+	assert.equal(locatedKey, "PAY-201");
 });
 
 test("approveActionLabel names the work item or the reason", () => {

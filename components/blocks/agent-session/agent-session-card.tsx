@@ -26,7 +26,8 @@ import {
 	AGENT_SESSION_ARRIVAL_TRANSITION,
 } from "./agent-session-arrival-motion";
 import { approveActionLabel } from "./agent-session-approve";
-import { AgentSessionMediumDrag, SESSION_DRAG_INTERACTIVE_SELECTOR } from "./agent-session-medium-drag";
+import { SESSION_DRAG_INTERACTIVE_SELECTOR } from "./agent-session-drag-interactive";
+import { AgentSessionMediumDrag } from "./agent-session-medium-drag";
 import { AgentSessionSelectMark } from "./agent-session-select-mark";
 import type { AgentSessionItem, AgentSessionTriageRow } from "./agent-session-types";
 

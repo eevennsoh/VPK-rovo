@@ -51,7 +51,9 @@ export function useUntrackedSelection<T>(
 				capturedItemIds: input.capturedItemIds,
 				getSuggestedWorkItemKey: input.getSuggestedWorkItemKey,
 				getSuggestedWorkItemKeys: input.getSuggestedWorkItemKeys,
-				locateTarget: (session: AgentSessionItem) => triage.locateTarget(session),
+				locateTarget: (session: AgentSessionItem, workItemKey: string) => (
+					triage.locateTarget(session, workItemKey)
+				),
 			}));
 		}
 

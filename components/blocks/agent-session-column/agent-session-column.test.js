@@ -701,11 +701,16 @@ test("the column owns a hidden-id set and filters items before AgentSession", ()
 	assert.match(HOOK_SOURCE, /view: AgentSessionColumnView/u);
 	assert.match(HOOK_SOURCE, /export type AgentSessionColumnView = "active" \| "hidden"/u);
 	assert.match(HOOK_SOURCE, /export function pruneHiddenSessionIds\(/u);
+	assert.match(HOOK_SOURCE, /export function forgetHiddenSessionIds\(/u);
+	assert.match(HOOK_SOURCE, /type: "forget"/u);
+	assert.match(HOOK_SOURCE, /forgetHidden,/u);
 	assert.match(HOOK_SOURCE, /export function splitSessionItemsByHidden\(/u);
 	assert.doesNotMatch(HOOK_SOURCE, /type: "prune"/u);
 	assert.doesNotMatch(HOOK_SOURCE, /dispatch\(\{ items, type: "prune" \}\)/u);
 	assert.match(INDEX_SOURCE, /const viewItems = view === "hidden" \? hiddenItems : visibleItems/u);
 	assert.match(INDEX_SOURCE, /items=\{viewItems\}/u);
+	assert.match(INDEX_SOURCE, /forgetHidden\(session\.id\)/u);
+	assert.match(INDEX_SOURCE, /triage: selectionTriage,/u);
 	assert.match(INDEX_SOURCE, /toggleHidden\(item\)/u);
 	assert.match(INDEX_SOURCE, /onToggleVisibility\?\.\(item\)/u);
 	assert.match(INDEX_SOURCE, /onToggleVisibility=\{handleToggleVisibility\}/u);

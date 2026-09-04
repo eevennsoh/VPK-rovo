@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 
-import { resolveAgentSessionWorkItemKey } from "@/components/blocks/agent-session";
 import type { AgentSessionItem, UntrackedWorkTriage } from "@/components/blocks/agent-session";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 
@@ -53,15 +52,12 @@ export function createBoardUntrackedTriage(
 		createFrom: (session: AgentSessionItem) => {
 			input.onCreateWorkItem(session);
 		},
-		locateTarget: (session: AgentSessionItem) => {
+		locateTarget: (_session: AgentSessionItem, workItemKey: string) => {
 			if (input.onLink === undefined) {
 				return undefined;
 			}
 
-			return locateBoardUntrackedTarget(
-				input.boardColumns,
-				resolveAgentSessionWorkItemKey(session),
-			);
+			return locateBoardUntrackedTarget(input.boardColumns, workItemKey);
 		},
 	};
 }

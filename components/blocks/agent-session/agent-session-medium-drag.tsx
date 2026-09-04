@@ -24,6 +24,7 @@ import {
 } from "@/components/ui-custom/hooks/use-pointer-drag";
 import { cn } from "@/lib/utils";
 
+import { SESSION_DRAG_INTERACTIVE_SELECTOR } from "./agent-session-drag-interactive";
 import { toJiraIssueAgentActivityFromSession } from "./agent-session-work-item";
 import type { AgentSessionItem } from "./agent-session-types";
 
@@ -31,15 +32,6 @@ const SESSION_DRAG_ORIGIN: PointerDragPosition = { x: 0, y: 0 };
 /** Same 2px threshold as `usePointerDrag` — publish/arm only after a real move. */
 const SESSION_DRAG_PUBLISH_THRESHOLD_PX = 2;
 const SESSION_DRAG_CHIP_DISTANCE_PX = 12;
-export const SESSION_DRAG_INTERACTIVE_SELECTOR = [
-	"button",
-	"a",
-	"input",
-	"select",
-	"textarea",
-	"[role=menuitem]",
-	"[data-session-drag-ignore]",
-].join(", ");
 
 export function AgentSessionMediumDrag({
 	item,

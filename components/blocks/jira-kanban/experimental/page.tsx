@@ -12,7 +12,10 @@ import {
 } from "react";
 
 import { useOptionalRovoChat } from "@/app/contexts";
-import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import {
+	resolveAgentSessionWorkItemKey,
+	type AgentSessionItem,
+} from "@/components/blocks/agent-session";
 import {
 	AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX,
 	type AgentSessionColumnProps,
@@ -529,8 +532,11 @@ export default function ExperimentalJiraKanbanPage({
 		item: AgentSessionItem,
 		workItemKey?: string,
 	) => {
-		const target = locateBoardUntrackedTarget(filteredBoardColumns, workItemKey)
-			?? untrackedTriage.locateTarget(item);
+		const key = workItemKey ?? resolveAgentSessionWorkItemKey(item);
+		const target = key === undefined
+			? undefined
+			: locateBoardUntrackedTarget(filteredBoardColumns, key)
+				?? untrackedTriage.locateTarget(item, key);
 		if (target === undefined) {
 			return;
 		}

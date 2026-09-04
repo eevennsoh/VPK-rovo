@@ -13,7 +13,7 @@ export interface ApproveContext<T = unknown> {
 	readonly capturedItemIds?: ReadonlySet<string>;
 	readonly getSuggestedWorkItemKey?: (item: AgentSessionItem) => string | undefined;
 	readonly getSuggestedWorkItemKeys?: (item: AgentSessionItem) => readonly string[] | undefined;
-	readonly locateTarget: (session: AgentSessionItem) => T | undefined;
+	readonly locateTarget: (session: AgentSessionItem, workItemKey: string) => T | undefined;
 }
 
 function resolveSuggestedWorkItemKey(
@@ -46,7 +46,7 @@ export function resolveApproveTarget<T>(
 		return { kind: "unavailable", reason: "no-suggestion" };
 	}
 
-	const target = context.locateTarget(item);
+	const target = context.locateTarget(item, key);
 	if (target === undefined) {
 		return { kind: "unavailable", reason: "unknown-work-item" };
 	}

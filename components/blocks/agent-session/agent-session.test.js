@@ -236,6 +236,9 @@ test("large untracked-work cards opt into the shared session drag without collap
 });
 
 test("session drag ignores nested controls and suppresses the click after a real pointer drag", () => {
+	assert.match(CARD_SOURCE, /from "\.\/agent-session-drag-interactive"/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /from "\.\/agent-session-drag-interactive"/u);
+	assert.doesNotMatch(MEDIUM_DRAG_SOURCE, /export const SESSION_DRAG_INTERACTIVE_SELECTOR/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /SESSION_DRAG_INTERACTIVE_SELECTOR/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /event\.target\.closest\(SESSION_DRAG_INTERACTIVE_SELECTOR\)/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /interactiveTarget !== null && interactiveTarget !== event\.currentTarget/u);
