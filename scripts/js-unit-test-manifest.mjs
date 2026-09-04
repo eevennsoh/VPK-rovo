@@ -73,6 +73,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/jira-work-item/experimental-v4/lib/development-commands.test.js",
 		"components/blocks/jira-work-item/experimental-v5/lib/development-commands.test.js",
 		"components/blocks/jira-work-item/experimental-v6/lib/development-commands.test.js",
+		"components/blocks/jira-work-item/experimental-v6/lib/activity-composer-session-routing.test.js",
 		"components/blocks/jira-work-item/experimental-v3/lib/jira-activity-adapter.test.js",
 		"components/blocks/jira-work-item/experimental-v4/lib/jira-activity-adapter.test.js",
 		"components/blocks/jira-work-item/experimental-v5/lib/jira-activity-adapter.test.js",
