@@ -267,6 +267,9 @@ function DropdownMenuItem({
   // gets a consistent selected affordance without repeating it.
   const resolvedElemAfter =
     elemAfter ?? (selected ? <CheckMarkIcon label="" size="small" /> : undefined);
+  // `indicatorEnd` includes `pointer-events-none` for the default tick. Caller
+  // `elemAfter` can be a Switch or other control, so it keeps a live slot.
+  const isDefaultSelectionGlyph = Boolean(selected) && elemAfter === undefined;
   const isSelected = selected && variant === "default";
   const shouldWrapText = allowTextWrap || Boolean(description);
 
@@ -309,7 +312,14 @@ function DropdownMenuItem({
         ) : null}
       </span>
       {resolvedElemAfter ? (
-        <span className={cn(dropdownStyles.indicatorEnd, variant === "destructive" ? "text-icon-danger" : null)}>
+        <span
+          className={cn(
+            isDefaultSelectionGlyph
+              ? dropdownStyles.indicatorEnd
+              : "ml-auto inline-flex h-5 shrink-0 items-center justify-center [&_svg]:size-3 text-icon-subtle",
+            variant === "destructive" ? "text-icon-danger" : null,
+          )}
+        >
           {resolvedElemAfter}
         </span>
       ) : null}

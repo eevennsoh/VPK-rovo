@@ -131,7 +131,8 @@ test("selectable rows can move the check to the trailing edge for left-aligned l
 	// enough because the glyph no longer needs a reserved 24px gutter.
 	assert.match(source, /selectableItemIndicatorEnd: "pl-2",/u);
 	assert.match(source, /indicatorEnd:\s*"pointer-events-none ml-auto inline-flex shrink-0/u);
-	assert.match(source, /dropdownStyles\.indicatorEnd, variant === "destructive"/u);
+	assert.match(source, /const isDefaultSelectionGlyph = Boolean\(selected\) && elemAfter === undefined/u);
+	assert.match(source, /isDefaultSelectionGlyph\s*\n\s*\? dropdownStyles\.indicatorEnd/u);
 
 	// DOM order follows visual order so a trailing check is announced after the
 	// label it qualifies, not before it.
@@ -151,4 +152,14 @@ test("trailing selected indicators keep the tick and match the submenu chevron s
 		/const IndicatorIcon = atEnd \? ChevronRightIcon : CheckMarkIcon/u,
 	);
 	assert.equal(source.match(/<DropdownMenuSelectionGlyph \/>/gu).length, 2);
+});
+
+test("caller elemAfter stays pointer-interactive", () => {
+	// The default tick can sit in `indicatorEnd` (`pointer-events-none`). A
+	// caller-supplied trailing control, like the Auto merge Switch, must not.
+	assert.match(source, /const isDefaultSelectionGlyph = Boolean\(selected\) && elemAfter === undefined/u);
+	assert.doesNotMatch(
+		source,
+		/resolvedElemAfter \? \(\s*<span\s+className=\{cn\(\s*dropdownStyles\.indicatorEnd/u,
+	);
 });
