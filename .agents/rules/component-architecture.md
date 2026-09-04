@@ -18,6 +18,11 @@ Quick rules:
   `components/projects/shared/**` owners must not import an experimental
   variant. Move reusable behavior behind a shared model or require an explicit
   capability at the feature boundary.
+- Render an interactive affordance only when its consumer supplies the real
+  capability. Missing callbacks must produce display-only, disabled, or omitted
+  UI, never an enabled control backed by an optional call or no-op handler.
+  Register advertised drop targets with the owning transaction, and cover both
+  capability-present and capability-absent behavior in focused tests.
 
 Context pattern (`State/Actions/Meta`) lives in:
 
