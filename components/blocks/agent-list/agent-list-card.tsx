@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type MouseEvent, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import ArchiveBoxIcon from "@atlaskit/icon/core/archive-box";
 import DevicesIcon from "@atlaskit/icon/core/devices";
@@ -31,16 +31,14 @@ import {
 	createHoverCardHandle,
 } from "@/components/ui/hover-card";
 import { IconTile } from "@/components/ui/icon-tile";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import { actorInitials } from "./agent-list-actor";
 import { InvokerBy } from "./agent-list-invoker";
+import {
+	AgentListRowActionButton,
+	type AgentListRowAction,
+} from "./agent-list-row-action";
 import { isLocalAgentListItem, toAgentSessionFlyoutItem } from "./agent-list-session";
 import type {
 	AgentListAgent,
@@ -552,17 +550,7 @@ function RowBody({
 	);
 }
 
-/**
- * One hover-revealed row control. With an `icon` it renders as an icon-only
- * button whose tooltip and accessible name are both `label`; without one the
- * label is the button text.
- */
-export type AgentListRowAction = Readonly<{
-	disabled?: boolean;
-	icon?: ReactNode;
-	label: string;
-	onClick: () => void;
-}>;
+export type { AgentListRowAction };
 
 /**
  * The pair of controls a row owner reveals on hover/focus. The row stays
@@ -573,49 +561,6 @@ export type AgentListRowHoverActions = Readonly<{
 	primary?: AgentListRowAction;
 	secondary?: AgentListRowAction;
 }>;
-
-function RowAction({ action }: Readonly<{ action: AgentListRowAction }>) {
-	const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
-		event.stopPropagation();
-		action.onClick();
-	};
-
-	if (action.icon === undefined) {
-		return (
-			<Button
-				disabled={action.disabled}
-				onClick={handleClick}
-				size="compact"
-				type="button"
-				variant="outline"
-			>
-				{action.label}
-			</Button>
-		);
-	}
-
-	return (
-		<TooltipProvider>
-			<Tooltip>
-				<TooltipTrigger
-					render={
-						<Button
-							aria-label={action.label}
-							disabled={action.disabled}
-							onClick={handleClick}
-							size="icon-compact"
-							type="button"
-							variant="outline"
-						/>
-					}
-				>
-					{action.icon}
-				</TooltipTrigger>
-				<TooltipContent>{action.label}</TooltipContent>
-			</Tooltip>
-		</TooltipProvider>
-	);
-}
 
 /**
  * The hover/focus-revealed action pair. Kept in the tab order rather than
@@ -650,8 +595,8 @@ function CardActions({
 						"group-data-[variant=uncaptured-work]/agent-row:transition-none",
 					)}
 				>
-					{primary ? <RowAction action={primary} /> : null}
-					{secondary ? <RowAction action={secondary} /> : null}
+					{primary ? <AgentListRowActionButton action={primary} /> : null}
+					{secondary ? <AgentListRowActionButton action={secondary} /> : null}
 				</div>
 			</div>
 		</div>

@@ -8,6 +8,10 @@ const LIST_CARD_SOURCE = readFileSync(
 	join(__dirname, "../agent-list/agent-list-card.tsx"),
 	"utf8",
 );
+const LIST_ROW_ACTION_SOURCE = readFileSync(
+	join(__dirname, "../agent-list/agent-list-row-action.tsx"),
+	"utf8",
+);
 const COMPACT_CARD_SOURCE = readFileSync(
 	join(__dirname, "agent-session-compact-card.tsx"),
 	"utf8",
@@ -559,7 +563,7 @@ test("a card body click toggles a single selected session on the selected token"
 	assert.match(CARD_SOURCE, /role=\{activateCard === undefined \? undefined : "button"\}/u);
 	assert.match(CARD_SOURCE, /event\.target\.closest\(SESSION_DRAG_INTERACTIVE_SELECTOR\) !== null/u);
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*onView=\{undefined\}/u);
-	assert.match(LIST_CARD_SOURCE, /event\.stopPropagation\(\);\s*\n\s*action\.onClick\(\)/u);
+	assert.match(LIST_ROW_ACTION_SOURCE, /event\.stopPropagation\(\);\s*\n\s*action\.onClick\(\)/u);
 	assert.doesNotMatch(CARD_SOURCE, /isSelected=\{false\}/u);
 	assert.doesNotMatch(CARD_SOURCE, /bg-bg-accent-blue-subtlest/u);
 	assert.doesNotMatch(CARD_SOURCE, /bg-\[var\(--ds-/u);
