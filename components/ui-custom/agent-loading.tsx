@@ -117,7 +117,13 @@ export function AgentLoading({
 	}, [agents]);
 
 	useEffect(() => {
-		if (!canCycle) return undefined;
+		// Reduced motion can interrupt a swap mid-flight. Clearing the latch here
+		// keeps `isSwapping` from resurfacing the half-applied swapped layout when
+		// motion is re-enabled before a new swap timer exists.
+		if (!canCycle) {
+			setActiveSwapKey(null);
+			return undefined;
+		}
 
 		let holdTimer = 0;
 		let swapTimer = 0;
