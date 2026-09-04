@@ -212,7 +212,7 @@ test("a hovered detached board session lights its column twin", () => {
 	assert.match(MEDIUM_CARD_SOURCE, /onPointerEnter=\{\(\) => \{\s*[\s\S]*?onItemHover\?\.\(item\);\s*\}\}/u);
 	assert.match(MEDIUM_CARD_SOURCE, /onPointerLeave=\{\(\) => \{\s*[\s\S]*?onItemHover\?\.\(null\);\s*\}\}/u);
 	assert.match(SESSION_INDEX_SOURCE, /isHighlighted=\{item\.id === highlightedItemId\}/u);
-	assert.match(LARGE_CARD_SOURCE, /!isSelected && !isMarked && isHighlighted && "bg-surface-hovered"/u);
+	assert.match(LARGE_CARD_SOURCE, /!showSelectedFill && isHighlighted && "bg-surface-hovered"/u);
 });
 
 test("column card click scrolls the related issue and applies the blue-subtlest spotlight", () => {
