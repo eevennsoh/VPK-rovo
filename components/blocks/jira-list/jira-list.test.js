@@ -72,31 +72,47 @@ test("JiraList keeps the footer outside the table scroll coordinate space", () =
 });
 
 test("JiraList restores the rounded table edge before a trailing panel scroll inset", () => {
-	assert.match(SOURCE, /const hasScrollEndInset = scrollEndInset > 0;/u);
+	const componentStart = SOURCE.indexOf("export function JiraList(");
+	const componentSource = SOURCE.slice(
+		componentStart,
+		SOURCE.indexOf("\n}\n", componentStart),
+	);
+
+	assert.match(SOURCE, /function getJiraListTrailingEdgeLayout\(/u);
+	assert.match(SOURCE, /if \(scrollEndInset > 0\)/u);
 	assert.match(
 		SOURCE,
-		/rounded-xl border-x border-b border-border[\s\S]*?!hasScrollEndInset && "border-t"/u,
+		/rounded-xl border-x border-b border-border[\s\S]*?trailingEdgeLayout\.frameTopBorderClassName/u,
 	);
 	assert.match(
 		SOURCE,
-		/const headerCellClassName = cn\(\s*HEADER_CELL_CLASS,\s*hasScrollEndInset && "border-t",?\s*\);/u,
+		/headerCellClassName: cn\(HEADER_CELL_CLASS, "border-t"\)/u,
 	);
 	assert.match(
 		SOURCE,
-		/<TableHead className=\{cn\(headerCellClassName, "sticky left-0 z-30 px-0"\)\}/u,
+		/trailingEdgeLayout\.headerCellClassName,\s*"sticky left-0 z-30 px-0"/u,
 	);
 	assert.match(
 		SOURCE,
-		/isLastColumn && hasScrollEndInset && "rounded-tr-xl"/u,
+		/lastHeaderCellClassName: "rounded-tr-xl"/u,
 	);
 	assert.match(
 		SOURCE,
-		/isLastColumn && !hasScrollEndInset && "border-r-0"/u,
+		/lastHeaderCellClassName: "border-r-0"/u,
 	);
 	assert.match(
 		SOURCE,
-		/isLastColumn:\s*\(\s*columnIndex === orderedColumns\.length - 1\s*&& !hasScrollEndInset\s*\)/u,
+		/isLastColumn:\s*columnIndex === trailingEdgeLayout\.lastBodyColumnIndex/u,
 	);
+	assert.match(SOURCE, /lastBodyColumnIndex: null/u);
+	assert.match(SOURCE, /function getJiraListLastHeaderCellClassName\(/u);
+	assert.match(SOURCE, /if \(columnIndex !== columnCount - 1\)/u);
+	assert.match(
+		SOURCE,
+		/getJiraListLastHeaderCellClassName\(\s*trailingEdgeLayout,\s*columnIndex,\s*orderedColumns\.length/u,
+	);
+	assert.doesNotMatch(componentSource, /if \(scrollEndInset > 0\)/u);
+	assert.doesNotMatch(componentSource, /isLastColumn && trailingEdgeLayout/u);
 	assert.doesNotMatch(
 		SOURCE,
 		/rounded-xl border border-border bg-surface/u,
@@ -286,7 +302,12 @@ test("JiraList maps each data column half to one deterministically owned boundar
 });
 
 test("JiraList renders one keyboard-accessible overlay control per unique data boundary", () => {
-	assert.match(SOURCE, /orderedColumns\.flatMap\(\(column, columnIndex\)/u);
+	assert.match(SOURCE, /function getJiraListColumnBoundaries\(/u);
+	assert.match(SOURCE, /columns\.flatMap\(\(column, columnIndex\)/u);
+	assert.match(
+		SOURCE,
+		/getJiraListColumnBoundaries\(\s*orderedColumns,\s*insertionAnchorId/u,
+	);
 	assert.match(SOURCE, /if \(columnIndex !== 0\) \{\s*return \[endBoundary\]/u);
 	assert.match(SOURCE, /boundaryIndex: columnIndex/u);
 	assert.match(SOURCE, /boundaryIndex: columnIndex \+ 1/u);
