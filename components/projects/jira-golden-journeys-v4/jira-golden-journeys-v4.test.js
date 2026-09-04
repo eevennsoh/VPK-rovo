@@ -268,7 +268,7 @@ test("both design variations reveal compact magnetic create targets that expand 
 	);
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
-		/const expanded = proximity !== "outside" && !shouldReduceMotion;/u,
+		/const expanded = proximity !== "outside";/u,
 	);
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
@@ -277,6 +277,10 @@ test("both design variations reveal compact magnetic create targets that expand 
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
 		/armed \? "border-border-selected bg-bg-selected text-text-selected" : "border-border text-text-subtlest"/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/transition-\[height,background-color\] duration-normal ease-out-practical motion-reduce:transition-none/u,
 	);
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,

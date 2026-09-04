@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useMotionValueEvent, useReducedMotion } from "motion/react";
+import { motion, useMotionValueEvent } from "motion/react";
 import AddIcon from "@atlaskit/icon/core/add";
 import { useRef, useState } from "react";
 
@@ -66,10 +66,9 @@ function CreateWorkItemDropZone({
 }>) {
 	const targetRef = useRef<HTMLDivElement>(null);
 	const magnet = useMagneticProximity(targetRef);
-	const shouldReduceMotion = useReducedMotion();
 	const [proximity, setProximity] = useState<MagneticPointerRelation>("outside");
 	useMotionValueEvent(magnet.proximity, "change", setProximity);
-	const expanded = proximity !== "outside" && !shouldReduceMotion;
+	const expanded = proximity !== "outside";
 
 	return (
 		<motion.div
@@ -80,7 +79,7 @@ function CreateWorkItemDropZone({
 				aria-label={`${label} in ${title}${armed ? ", selected drop target" : ""}`}
 				className={cn(
 					"flex w-full select-none items-center justify-center rounded-lg border border-dashed px-3 text-center",
-					"transition-[height,background-color,border-color,color] duration-medium ease-in-out motion-reduce:transition-none",
+					"transition-[height,background-color] duration-normal ease-out-practical motion-reduce:transition-none",
 					expanded ? "h-12 text-sm leading-5" : "h-6 text-xs leading-4",
 					armed ? "border-border-selected bg-bg-selected text-text-selected" : "border-border text-text-subtlest",
 				)}
