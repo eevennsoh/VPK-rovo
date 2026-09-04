@@ -2,11 +2,13 @@
 
 import {
 	Fragment,
+	useCallback,
 	useId,
 	useMemo,
 	useState,
 	type KeyboardEvent as ReactKeyboardEvent,
 	type PointerEvent as ReactPointerEvent,
+	type RefCallback,
 } from "react";
 import {
 	DndContext,
@@ -103,11 +105,15 @@ import {
 	IssueTypeGlyph,
 	JiraListAvatar,
 } from "@/components/blocks/jira-list/jira-list-cells";
-import { getOrderedColumns } from "@/components/blocks/jira-list/jira-list-column-model";
+import {
+	getOrderedColumns,
+	type JiraListColumnDefinition,
+} from "@/components/blocks/jira-list/jira-list-column-model";
 import {
 	JiraListSortableRow,
 	RowBoundaryCreateControls,
 } from "@/components/blocks/jira-list/jira-list-rows";
+import { useJiraListHorizontalUnderlap } from "@/components/blocks/jira-list/use-jira-list-horizontal-underlap";
 
 const ISSUE_TYPE_OPTIONS: readonly {
 	label: string;
@@ -121,7 +127,81 @@ const ISSUE_TYPE_OPTIONS: readonly {
 ];
 
 const HEADER_CELL_CLASS =
-	"h-10 border-b border-r border-border bg-surface-sunken px-3 py-0 text-left align-middle text-xs font-semibold text-text-subtle whitespace-nowrap last:border-r-0";
+	"h-10 border-b border-r border-border bg-surface-sunken px-3 py-0 text-left align-middle text-xs font-semibold text-text-subtle whitespace-nowrap";
+
+interface JiraListTrailingEdgeLayout {
+	draftRowIsLastColumn: boolean;
+	frameTopBorderClassName?: string;
+	headerCellClassName: string;
+	lastBodyColumnIndex: number | null;
+	lastHeaderCellClassName: string;
+}
+
+function getJiraListTrailingEdgeLayout(
+	scrollEndInset: number,
+	columnCount: number,
+): JiraListTrailingEdgeLayout {
+	if (scrollEndInset > 0) {
+		return {
+			draftRowIsLastColumn: false,
+			headerCellClassName: cn(HEADER_CELL_CLASS, "border-t"),
+			lastBodyColumnIndex: null,
+			lastHeaderCellClassName: "rounded-tr-xl",
+		};
+	}
+
+	return {
+		draftRowIsLastColumn: true,
+		frameTopBorderClassName: "border-t",
+		headerCellClassName: HEADER_CELL_CLASS,
+		lastBodyColumnIndex: columnCount - 1,
+		lastHeaderCellClassName: "border-r-0",
+	};
+}
+
+function getJiraListLastHeaderCellClassName(
+	layout: JiraListTrailingEdgeLayout,
+	columnIndex: number,
+	columnCount: number,
+): string | undefined {
+	if (columnIndex !== columnCount - 1) {
+		return undefined;
+	}
+
+	return layout.lastHeaderCellClassName;
+}
+
+function getJiraListColumnBoundaries(
+	columns: readonly JiraListColumnDefinition[],
+	insertionAnchorId: string,
+) {
+	return columns.flatMap((column, columnIndex) => {
+		const endBoundary = {
+			anchorLabel: column.label,
+			anchorSide: "right" as const,
+			boundaryIndex: columnIndex + 1,
+			positionAnchor: getColumnAnchorName(insertionAnchorId, columnIndex),
+			positionLabel: columnIndex === columns.length - 1
+				? `after ${column.label}`
+				: `between ${column.label} and ${columns[columnIndex + 1]?.label ?? ""}`,
+		};
+
+		if (columnIndex !== 0) {
+			return [endBoundary];
+		}
+
+		return [
+			{
+				anchorLabel: column.label,
+				anchorSide: "left" as const,
+				boundaryIndex: columnIndex,
+				positionAnchor: getColumnAnchorName(insertionAnchorId, columnIndex),
+				positionLabel: `before ${column.label}`,
+			},
+			endBoundary,
+		];
+	});
+}
 
 export function JiraList({
 	rows,
@@ -157,13 +237,27 @@ export function JiraList({
 	onStatusChange,
 	onToggleExpand,
 	agentSessionDropIntent,
+	onTrailingContentUnderlapChange,
+	scrollEndInset = 0,
+	trailingOverlayRef,
 }: Readonly<JiraListProps>) {
 	const insertionAnchorId = useId().replaceAll(":", "");
 	const {
-		ref: tableScrollRef,
+		ref: verticalOverflowRef,
 		showBottomScrollMask,
 		showTopScrollMask,
 	} = useHasVerticalOverflow<HTMLDivElement>();
+	const {
+		ref: horizontalUnderlapRef,
+	} = useJiraListHorizontalUnderlap<HTMLDivElement>(
+		scrollEndInset,
+		trailingOverlayRef,
+		onTrailingContentUnderlapChange,
+	);
+	const tableScrollRef = useCallback<RefCallback<HTMLDivElement>>((node) => {
+		verticalOverflowRef(node);
+		horizontalUnderlapRef(node);
+	}, [horizontalUnderlapRef, verticalOverflowRef]);
 	const rowIds = useMemo(() => rows.map((row) => row.issueKey), [rows]);
 	const sensors = useSensors(
 		useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -267,32 +361,14 @@ export function JiraList({
 		statusOptions,
 	});
 	const orderedColumns = getOrderedColumns(baseColumns, extraColumns);
-	const columnBoundaries = orderedColumns.flatMap((column, columnIndex) => {
-		const endBoundary = {
-			anchorLabel: column.label,
-			anchorSide: "right" as const,
-			boundaryIndex: columnIndex + 1,
-			positionAnchor: getColumnAnchorName(insertionAnchorId, columnIndex),
-			positionLabel: columnIndex === orderedColumns.length - 1
-				? `after ${column.label}`
-				: `between ${column.label} and ${orderedColumns[columnIndex + 1]?.label ?? ""}`,
-		};
-
-		if (columnIndex !== 0) {
-			return [endBoundary];
-		}
-
-		return [
-			{
-				anchorLabel: column.label,
-				anchorSide: "left" as const,
-				boundaryIndex: columnIndex,
-				positionAnchor: getColumnAnchorName(insertionAnchorId, columnIndex),
-				positionLabel: `before ${column.label}`,
-			},
-			endBoundary,
-		];
-	});
+	const trailingEdgeLayout = getJiraListTrailingEdgeLayout(
+		scrollEndInset,
+		orderedColumns.length,
+	);
+	const columnBoundaries = getJiraListColumnBoundaries(
+		orderedColumns,
+		insertionAnchorId,
+	);
 
 	const handleDraftWorkItemKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
 		if (event.key === "Enter") {
@@ -500,7 +576,11 @@ export function JiraList({
 				</TableCell>
 				<TableCell
 					className={cn(
-						getBodyCellClassName({ isLastColumn: true, isLastRow, isSelected: false }),
+						getBodyCellClassName({
+							isLastColumn: trailingEdgeLayout.draftRowIsLastColumn,
+							isLastRow,
+							isSelected: false,
+						}),
 						"px-2",
 					)}
 					colSpan={orderedColumns.length}
@@ -520,7 +600,8 @@ export function JiraList({
 			// the cap with `max-h-full`, never a definite height like `h-full` — a
 			// definite height hands the slack to the scrollport and reopens the gap.
 			className={cn(
-				"relative flex max-h-[640px] flex-col overflow-visible rounded-xl border border-border bg-surface",
+				"relative flex max-h-[640px] flex-col overflow-visible rounded-xl border-x border-b border-border bg-surface",
+				trailingEdgeLayout.frameTopBorderClassName,
 				className,
 			)}
 			data-testid="jira-list"
@@ -536,6 +617,10 @@ export function JiraList({
 					data-testid="jira-list-table-scroll"
 					ref={tableScrollRef}
 				>
+					<div
+						className="flex min-w-full items-start"
+						data-testid="jira-list-horizontal-content"
+					>
 					<DndContext
 						collisionDetection={closestCenter}
 						modifiers={[restrictToVerticalAxis]}
@@ -547,7 +632,7 @@ export function JiraList({
 					>
 					<Table
 					className="min-w-[1570px] table-fixed border-separate border-spacing-0"
-					containerClassName="overflow-visible"
+					containerClassName="min-w-[1570px] shrink-0 overflow-visible"
 					>
 					<colgroup>
 						<col className="w-10" />
@@ -557,7 +642,12 @@ export function JiraList({
 					</colgroup>
 					<TableHeader className="sticky top-0 z-20 bg-surface-sunken shadow-[inset_0_-1px_0_var(--ds-border)]">
 						<TableRow className="border-0 hover:bg-transparent">
-							<TableHead className={cn(HEADER_CELL_CLASS, "sticky left-0 z-30 px-0")}>
+							<TableHead
+								className={cn(
+									trailingEdgeLayout.headerCellClassName,
+									"sticky left-0 z-30 px-0",
+								)}
+							>
 								<div className="flex items-center justify-center">
 									<Checkbox
 										aria-label="Select all work items"
@@ -569,14 +659,16 @@ export function JiraList({
 								</div>
 							</TableHead>
 							{orderedColumns.map((column, columnIndex) => {
-								const isLastColumn = columnIndex === orderedColumns.length - 1;
-
 								return (
 									<TableHead
 										className={cn(
-											HEADER_CELL_CLASS,
+											trailingEdgeLayout.headerCellClassName,
 											column.align === "center" && "text-center",
-											isLastColumn && "border-r-0",
+											getJiraListLastHeaderCellClassName(
+												trailingEdgeLayout,
+												columnIndex,
+												orderedColumns.length,
+											),
 											"relative overflow-visible",
 										)}
 										key={column.id}
@@ -678,7 +770,8 @@ export function JiraList({
 														getBodyCellClassName({
 															isSelected: isHighlighted,
 															align: column.align,
-															isLastColumn: columnIndex === orderedColumns.length - 1,
+															isLastColumn:
+																columnIndex === trailingEdgeLayout.lastBodyColumnIndex,
 															isLastRow,
 														}),
 														insertionLineClassName,
@@ -704,6 +797,13 @@ export function JiraList({
 					</TableBody>
 					</Table>
 					</DndContext>
+						<div
+							aria-hidden
+							className="shrink-0 self-stretch"
+							data-testid="jira-list-scroll-end-inset"
+							style={{ width: scrollEndInset }}
+						/>
+					</div>
 				</div>
 				{showTopScrollMask ? (
 					<ScrollMaskEdgeOverlay

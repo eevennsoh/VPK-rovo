@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, type ReactElement } from "react";
+import { useLayoutEffect, type ReactElement, type Ref } from "react";
 
 import { motion, useReducedMotion, type Variants } from "motion/react";
 
@@ -90,6 +90,7 @@ export interface AgentSessionPanelProps {
 	agentSessionColumn: AgentSessionColumnProps;
 	collapsed: boolean;
 	onCollapsedChange: (collapsed: boolean) => void;
+	ref?: Ref<HTMLDivElement>;
 	/**
 	 * True while a board session drag is in flight. The rail stops receiving
 	 * hits so the captured pointer can drop on issue cards underneath it.
@@ -147,6 +148,7 @@ export function AgentSessionPanel({
 	collapsed,
 	onCollapsedChange,
 	onExpandedWidthChange,
+	ref,
 	sessionDragging = false,
 	showLeadingScrollFade = false,
 	topInset = 0,
@@ -181,6 +183,7 @@ export function AgentSessionPanel({
 			// unmount is the design variant being switched off — a mode change,
 			// not a dismissal, and nothing for an exit animation to narrate.
 			initial="hidden"
+			ref={ref}
 			style={{
 				// A real `top`, not top padding: the rail must END at the tab
 				// strip, not merely look like it does. `bottom: 0` with no radius

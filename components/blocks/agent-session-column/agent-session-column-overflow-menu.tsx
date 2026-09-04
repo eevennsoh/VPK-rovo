@@ -25,6 +25,7 @@ export interface AgentSessionColumnOverflowMenuProps {
 	getSuggestedWorkItemKeys?: (item: AgentSessionItem) => readonly string[] | undefined;
 	items: readonly AgentSessionItem[];
 	onLinkWorkItem?: (item: AgentSessionItem, workItemKey?: string) => void;
+	size: "icon" | "icon-compact";
 	title: string;
 }
 
@@ -67,6 +68,7 @@ export function AgentSessionColumnOverflowMenu({
 	getSuggestedWorkItemKeys,
 	items,
 	onLinkWorkItem,
+	size,
 	title,
 }: Readonly<AgentSessionColumnOverflowMenuProps>) {
 	const [autoSync, setAutoSync] = useState(true);
@@ -94,7 +96,7 @@ export function AgentSessionColumnOverflowMenu({
 					<Button
 						aria-label={`${title} column actions`}
 						data-agent-session-column-overflow=""
-						size="icon-compact"
+						size={size}
 						type="button"
 						variant="ghost"
 					/>
