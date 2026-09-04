@@ -41,6 +41,10 @@ const OVERFLOW_MENU_SOURCE = readFileSync(
 );
 const OVERFLOW_SOURCE = readFileSync(join(__dirname, "agent-session-column-overflow.ts"), "utf8");
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
+const PANEL_DEMO_SOURCE = readFileSync(
+	join(__dirname, "agent-session-column-panel-demo.tsx"),
+	"utf8",
+);
 const CARD_SOURCE = readFileSync(
 	join(__dirname, "../agent-session/agent-session-card.tsx"),
 	"utf8",
@@ -245,10 +249,41 @@ test("the block is registered in the catalog", () => {
 	assert.match(REGISTRY_SOURCE, /"agent-session-column": dynamic\(/u);
 	assert.match(DEMO_SOURCE, /@\/components\/blocks\/agent-session-column\/page/u);
 	assert.match(DETAIL_SOURCE, /export const AGENT_SESSION_COLUMN_DETAIL/u);
-	assert.match(PAGE_SOURCE, /<AgentSessionColumn/u);
-	assert.match(PAGE_SOURCE, /onCreateWorkItem=\{handleCapture\}/u);
-	assert.match(PAGE_SOURCE, /onLinkWorkItem=\{handleCapture\}/u);
-	assert.match(PAGE_SOURCE, /onSubtasks=\{handleCapture\}/u);
+	assert.match(PAGE_SOURCE, /<AgentSessionColumnPanelDemo/u);
+	assert.match(PANEL_DEMO_SOURCE, /<AgentSessionColumn/u);
+	assert.match(PANEL_DEMO_SOURCE, /onCreateWorkItem=\{handleCapture\}/u);
+	assert.match(PANEL_DEMO_SOURCE, /onLinkWorkItem=\{handleCapture\}/u);
+	assert.match(PANEL_DEMO_SOURCE, /onSubtasks=\{handleCapture\}/u);
+});
+
+test("the catalog page shows a Panel wrap and an in-flow kanban host", () => {
+	assert.match(PAGE_SOURCE, /label="Panel"/u);
+	assert.match(PAGE_SOURCE, /label="Kanban board"/u);
+	assert.match(PANEL_DEMO_SOURCE, /<PanelContainer/u);
+	assert.match(PANEL_DEMO_SOURCE, /<PanelContent/u);
+	assert.match(PANEL_DEMO_SOURCE, /headerSurface="panel"/u);
+	assert.match(PANEL_DEMO_SOURCE, /className="flex-1"/u);
+	assert.match(PANEL_DEMO_SOURCE, /listClassName="gap-1 p-1"/u);
+	assert.match(PANEL_DEMO_SOURCE, /AGENT_SESSION_PANEL_DEMO_WIDTH_PX = 360/u);
+	assert.match(PANEL_DEMO_SOURCE, /triage=\{triage\}/u);
+	assert.match(PANEL_DEMO_SOURCE, /locateTarget:/u);
+	assert.match(PANEL_DEMO_SOURCE, /attach:/u);
+	assert.match(PANEL_DEMO_SOURCE, /createFrom:/u);
+	assert.match(PANEL_DEMO_SOURCE, /archive:/u);
+	assert.doesNotMatch(PANEL_DEMO_SOURCE, /jira-kanban/u);
+	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage/u);
+	assert.match(PAGE_SOURCE, /showAgentSessionColumn/u);
+	assert.match(PAGE_SOURCE, /agentSessionPresentation="column"/u);
+	assert.match(PAGE_SOURCE, /insightsEnabled=\{false\}/u);
+	assert.match(DETAIL_SOURCE, /name: "headerSurface"/u);
+	assert.match(DETAIL_SOURCE, /name: "triage"/u);
+	assert.match(DETAIL_SOURCE, /headerSurface="panel"/u);
+	assert.match(DETAIL_SOURCE, /two hosts/u);
+	assert.doesNotMatch(
+		REGISTRY_SOURCE,
+		/"agent-session-column":[\s\S]{0,200}?variants/u,
+	);
+	assert.doesNotMatch(DETAIL_SOURCE, /examples:/u);
 });
 
 test("the collapsed count lives in the header above the plane, not on the rail", () => {
@@ -318,7 +353,10 @@ test("a notch is a drag handle, so a session leaves the collapsed rail too", () 
 	// The column inherits the binding from AgentSessionProps, so the rail is
 	// reached with the prop the expanded cards already take.
 	assert.match(SESSION_TYPES_SOURCE, /sessionDrag\?: JiraIssueAgentSessionDragBinding;/u);
-	assert.match(TYPES_SOURCE, /extends Omit<AgentSessionProps, "className" \| "rowTriage">/u);
+	assert.match(
+		TYPES_SOURCE,
+		/extends Omit<\s*AgentSessionProps,\s*"arrivingItemIds" \| "className" \| "onArrivalComplete" \| "rowTriage"\s*>/u,
+	);
 	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,800}?sessionDrag=\{sessionProps\.sessionDrag\}/u);
 	assert.match(
 		RAIL_COLUMN_SOURCE,
@@ -504,7 +542,6 @@ test("the collapsed rail is opt-in state the column owns", () => {
 	// The change callback must not fire from inside a state updater.
 	assert.doesNotMatch(INDEX_SOURCE, /setCollapsed\(\(/u);
 	assert.doesNotMatch(INDEX_SOURCE, /setUncontrolledCollapsed\(\(/u);
-	assert.match(PAGE_SOURCE, /defaultCollapsed/u);
 	assert.match(DETAIL_SOURCE, /name: "defaultCollapsed"/u);
 });
 
@@ -658,34 +695,45 @@ test("arrival motion is tokenised, capped, and spatially anchored", () => {
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /layoutScroll/u);
 });
 
-test("the demo drives an arrival through both forms at once", () => {
-	assert.match(PAGE_SOURCE, /ARRIVAL_BATCHES/u);
-	// One shared set across the expanded and collapsed columns, so one click
-	// shows both treatments.
-	const newIdUses = PAGE_SOURCE.match(/newItemIds=\{newIds\}/gu) ?? [];
-	assert.equal(newIdUses.length, 2, "expected both demo columns to receive the arrivals");
+test("the panel demo drives an arrival through the Panel wrap", () => {
+	assert.match(PANEL_DEMO_SOURCE, /ARRIVAL_BATCHES/u);
+	const newIdUses = PANEL_DEMO_SOURCE.match(/newItemIds=\{newIds\}/gu) ?? [];
+	assert.equal(newIdUses.length, 1, "expected the panel column to receive the arrivals");
 	// Arrivals prepend, matching the entrance that starts above the list.
-	assert.match(PAGE_SOURCE, /\[\.\.\.batch, \.\.\.currentItems\]/u);
+	assert.match(PANEL_DEMO_SOURCE, /\[\.\.\.batch, \.\.\.currentItems\]/u);
 	// Reviewing decays the mark, standing in for the watermark advancing.
-	assert.match(PAGE_SOURCE, /handleMarkReviewed/u);
+	assert.match(PANEL_DEMO_SOURCE, /handleMarkReviewed/u);
+	// Sync / Mark reviewed / Reset stay on the panel variant only.
+	assert.match(PANEL_DEMO_SOURCE, /Sync new work/u);
+	assert.doesNotMatch(PAGE_SOURCE, /Sync new work/u);
 	// Updaters stay pure: no sibling setState from inside one.
-	assert.doesNotMatch(PAGE_SOURCE, /setSyncedBatches\(\(/u);
+	assert.doesNotMatch(PANEL_DEMO_SOURCE, /setSyncedBatches\(\(/u);
 	assert.match(DETAIL_SOURCE, /name: "newItemIds"/u);
 });
 
-test("the arrival beat stays one-shot across a collapse toggle", () => {
+test("the arrival target survives until Motion finishes, then stays one-shot", () => {
 	// Collapsing swaps the cards for the rail and back, remounting them — and a
 	// mount re-arms `initial`. The column survives the toggle, so it owns the
 	// history of which ids have already played; the two branches only render it.
 	assert.match(INDEX_SOURCE, /const \[playedArrivalIds, setPlayedArrivalIds\]/u);
 	assert.match(INDEX_SOURCE, /if \(!playedArrivalIds\.has\(id\)\)/u);
-	// Mirrored, not accumulated, so a cleared id can legitimately arrive again.
-	assert.match(INDEX_SOURCE, /Mirror `newItemIds` rather than accumulating/u);
-	assert.match(INDEX_SOURCE, /return isUnchanged \? current : next;/u);
-	// Both branches get the beat set and the mark set, and they are distinct.
-	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,200}?arrivingItemIds=\{arrivingItemIds\}/u);
-	assert.match(INDEX_SOURCE, /<AgentSession[\s\S]{0,200}?arrivingItemIds=\{arrivingItemIds\}/u);
+	// Do not eagerly mirror every new id into played history. That removes the
+	// card's animate target one effect after mount and strands it at opacity 0.
+	assert.doesNotMatch(INDEX_SOURCE, /new Set<string>\(newItemIds\)/u);
+	assert.match(INDEX_SOURCE, /const handleArrivalComplete = useCallback/u);
+	assert.match(CARD_SOURCE, /onAnimationComplete=\{handleArrivalComplete\}/u);
+	assert.match(NOTCH_MARK_SOURCE, /onAnimationComplete=\{handleArrivalComplete\}/u);
+	// Both branches report completion and keep the beat set distinct from the mark.
+	assert.match(
+		INDEX_SOURCE,
+		/<AgentSessionColumnRail[\s\S]{0,400}?onArrivalComplete=\{handleArrivalComplete\}/u,
+	);
+	assert.match(
+		INDEX_SOURCE,
+		/<AgentSession[\s\S]{0,400}?onArrivalComplete=\{handleArrivalComplete\}/u,
+	);
 	assert.match(SESSION_TYPES_SOURCE, /arrivingItemIds\?: ReadonlySet<string>;/u);
+	assert.match(SESSION_TYPES_SOURCE, /onArrivalComplete\?: \(itemId: string\) => void;/u);
 	// Defaulting to the mark keeps a host that never unmounts the list correct.
 	assert.match(SESSION_INDEX_SOURCE, /const beatItemIds = arrivingItemIds \?\? newItemIds;/u);
 });
@@ -822,13 +870,18 @@ test("hidden ids survive a temporary items drop so A then B then A stays hidden"
 	assert.match(HOOK_SOURCE, /die on remount/u);
 });
 
-test("the expanded header keeps an overflow menu next to collapse", () => {
+test("the expanded header sizes its overflow trigger for the host surface", () => {
 	assert.match(HEADER_SOURCE, /HEADER_ACTIONS_REVEAL/u);
 	assert.match(INDEX_SOURCE, /<AgentSessionColumnOverflowMenu/u);
 	assert.match(HEADER_SOURCE, /`Collapse \$\{title\} column`|collapseLabel/u);
 	assert.match(OVERFLOW_MENU_SOURCE, /\$\{title\} column actions/u);
 	assert.match(OVERFLOW_MENU_SOURCE, /<ShowMoreHorizontalIcon/u);
-	assert.match(OVERFLOW_MENU_SOURCE, /size="icon-compact"/u);
+	assert.match(OVERFLOW_MENU_SOURCE, /size: "icon" \| "icon-compact";/u);
+	assert.match(OVERFLOW_MENU_SOURCE, /size=\{size\}/u);
+	assert.match(
+		INDEX_SOURCE,
+		/size=\{headerSurface === "column" \? "icon-compact" : "icon"\}/u,
+	);
 	assert.doesNotMatch(HEADER_SOURCE, /group-hover\/session-column:block/u);
 	assert.match(HEADER_SOURCE, /has-\[\[data-popup-open\]\]:opacity-100/u);
 	assert.match(INDEX_SOURCE, /items=\{viewItems\}/u);

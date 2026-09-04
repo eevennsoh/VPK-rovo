@@ -1,4 +1,4 @@
-import type { ComponentProps } from "react";
+import type { ComponentProps, RefObject } from "react";
 
 import type { AgentAssignmentStatusKind } from "@/components/blocks/agent-assignment";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
@@ -133,4 +133,11 @@ export interface JiraListProps {
 	onStatusChange?: (issueKey: string, status: JiraListStatusOption) => void;
 	onToggleExpand?: (issueKey: string) => void;
 	agentSessionDropIntent?: JiraListAgentSessionDropIntent;
+	/**
+	 * Scroll room after the table, used when a docked trailing surface overlaps
+	 * the list viewport.
+	 */
+	scrollEndInset?: number;
+	trailingOverlayRef?: RefObject<HTMLElement | null>;
+	onTrailingContentUnderlapChange?: (hasUnderlap: boolean) => void;
 }

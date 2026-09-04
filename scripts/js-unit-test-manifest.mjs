@@ -29,6 +29,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/jira-kanban/experimental/lib/board-agent-session-drag.test.js",
 		"components/blocks/jira-kanban/experimental/lib/session-transfer-plan.test.js",
 		"components/blocks/jira-kanban/experimental/lib/board-untracked-sessions.test.js",
+		"components/blocks/jira-list/jira-list-horizontal-underlap.test.js",
 		"components/blocks/omnibar/omnibar.test.js",
 		"components/blocks/scrubber/scrubber.test.js",
 		"components/blocks/top-navigation/layout-constants.test.js",

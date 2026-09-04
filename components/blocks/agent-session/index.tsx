@@ -91,6 +91,7 @@ export function AgentSession({
 	newItemIds,
 	onCopyResume,
 	onCreateWorkItem,
+	onArrivalComplete,
 	onLinkWorkItem,
 	onSubtasks,
 	onItemHover,
@@ -203,6 +204,9 @@ export function AgentSession({
 								item={item}
 								key={item.id}
 								onCopyResume={onCopyResume}
+								onArrivalComplete={onArrivalComplete === undefined
+									? undefined
+									: () => onArrivalComplete(item.id)}
 								onItemHover={onItemHover}
 								onToggleVisibility={onToggleVisibility}
 								onView={itemOnView}

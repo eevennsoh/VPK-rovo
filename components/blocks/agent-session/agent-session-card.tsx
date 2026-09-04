@@ -59,6 +59,7 @@ export function AgentSessionCard({
 	isResumable,
 	isSelected = false,
 	item,
+	onArrivalComplete,
 	onCopyResume,
 	onItemHover,
 	onToggleVisibility,
@@ -83,6 +84,7 @@ export function AgentSessionCard({
 	/** Single-select highlight owned by the list, not this card. */
 	isSelected?: boolean;
 	item: AgentSessionItem;
+	onArrivalComplete?: () => void;
 	onCopyResume?: (item: AgentSessionItem) => void;
 	onItemHover?: (item: AgentSessionItem | null) => void;
 	onToggleVisibility?: (item: AgentSessionItem) => void;
@@ -124,6 +126,11 @@ export function AgentSessionCard({
 	// The beat, not the mark: a card remounted while still unreviewed keeps the
 	// discovery dot but must not replay its entrance.
 	const shouldPlayArrival = isArriving && !shouldReduceMotion;
+	const handleArrivalComplete = () => {
+		if (shouldPlayArrival) {
+			onArrivalComplete?.();
+		}
+	};
 
 	// The same hover/focus-revealed pair Agent List rows use, with Hide / Show
 	// in the slot Agent List gives to Archive. The eye always renders; the
@@ -218,6 +225,7 @@ export function AgentSessionCard({
 			)}
 			data-marked={isMarked || undefined}
 			data-testid={"agent-session-row-" + item.id}
+			onAnimationComplete={handleArrivalComplete}
 			onPointerEnter={() => {
 				isHoveredRef.current = true;
 				onItemHover?.(item);
