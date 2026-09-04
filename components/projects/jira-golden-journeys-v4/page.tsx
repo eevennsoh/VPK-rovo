@@ -73,9 +73,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 	// to a work item. Untracked Pulse rows stay in the dedicated Untracked
 	// surface. 2000 years later keeps proximity rows beside the related cards.
 	const showUntrackedProximity = designVariation !== "team-eu";
-	const createWorkItemDropZoneLabel = designVariation === "2000-years-later"
-		? "Create new work item"
-		: undefined;
+	const createWorkItemDropZoneLabel = "Create new work item";
 	// Chin rows follow the same variation split. Team EU groups every active
 	// agent into one merged row (hover opens assignment). 2000 years later
 	// keeps a row per agent so the split exploration stays intact.

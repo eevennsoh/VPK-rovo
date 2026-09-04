@@ -235,11 +235,12 @@ test("Team EU keeps only attached agent sessions on status columns", () => {
 	);
 });
 
-test("2000 years later reveals a create-work-item drop zone in every board column during an agent-session drag", () => {
+test("both design variations reveal compact magnetic create targets that expand and arm during an agent-session drag", () => {
 	assert.match(
 		PAGE_SOURCE,
-		/const createWorkItemDropZoneLabel = designVariation === "2000-years-later"\s*\? "Create new work item"\s*: undefined;/u,
+		/const createWorkItemDropZoneLabel = "Create new work item";/u,
 	);
+	assert.doesNotMatch(PAGE_SOURCE, /createWorkItemDropZoneLabel = designVariation/u);
 	assert.match(
 		PAGE_SOURCE,
 		/<ExperimentalJiraKanbanPage[\s\S]*createWorkItemDropZoneLabel=\{createWorkItemDropZoneLabel\}/u,
@@ -259,19 +260,27 @@ test("2000 years later reveals a create-work-item drop zone in every board colum
 	);
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
-		/sessionDragging=\{boardSessionDrag\.transaction !== null\}/u,
+		/sessionDragTransaction=\{boardSessionDrag\.transaction\}/u,
 	);
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
-		/sessionDragging && dropZoneLabel \? \(/u,
+		/sessionDragTransaction && dropZoneLabel \? \(/u,
 	);
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
-		/className="[^"]*h-12[^"]*border-dashed[^"]*text-text-subtlest"[\s\S]*data-board-agent-session-create-work-item-drop-zone=\{title\}[\s\S]*\{label\}/u,
+		/const expanded = proximity !== "outside" && !shouldReduceMotion;/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/expanded \? "h-12 text-sm leading-5" : "h-6 text-xs leading-4"/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/armed \? "border-border-selected bg-bg-selected text-text-selected" : "border-border text-text-subtlest"/u,
 	);
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
-		/<BoardColumnCreateAction[\s\S]*dropZoneLabel=\{createWorkItemDropZoneLabel\}[\s\S]*sessionDragging=\{sessionDragging\}[\s\S]*title=\{title\}/u,
+		/<BoardColumnCreateAction[\s\S]*dropZoneLabel=\{createWorkItemDropZoneLabel\}[\s\S]*sessionDragTransaction=\{sessionDragTransaction\}[\s\S]*title=\{title\}/u,
 	);
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
@@ -280,6 +289,14 @@ test("2000 years later reveals a create-work-item drop zone in every board colum
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
 		/const magnet = useMagneticProximity\(targetRef\);/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/useMotionValueEvent\(magnet\.proximity, "change", setProximity\);/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/const armed = Boolean\([\s\S]*sessionDragTransaction\?\.target\?\.kind === "create"[\s\S]*sessionDragTransaction\.target\.columnTitle === title,/u,
 	);
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,

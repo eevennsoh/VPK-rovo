@@ -1,28 +1,40 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useMotionValueEvent, useReducedMotion } from "motion/react";
 import AddIcon from "@atlaskit/icon/core/add";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { useMagneticProximity } from "@/components/ui-custom/hooks/use-magnetic-proximity";
+import type { MagneticPointerRelation } from "@/components/ui-custom/hooks/magnetic-proximity-model";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
+import type { BoardAgentSessionDrag } from "../use-board-agent-session-drag";
+
 export function BoardColumnCreateAction({
 	dropZoneLabel,
-	sessionDragging,
+	sessionDragTransaction,
 	title,
 }: Readonly<{
 	dropZoneLabel?: string;
-	sessionDragging: boolean;
+	sessionDragTransaction: BoardAgentSessionDrag["transaction"];
 	title: string;
 }>) {
+	const armed = Boolean(
+		sessionDragTransaction?.target?.kind === "create"
+		&& sessionDragTransaction.target.columnTitle === title,
+	);
+
 	return (
 		<div className="w-full" style={{ paddingBlock: token("space.050") }}>
-			{sessionDragging && dropZoneLabel ? (
-				<CreateWorkItemDropZone label={dropZoneLabel} title={title} />
+			{sessionDragTransaction && dropZoneLabel ? (
+				<CreateWorkItemDropZone
+					armed={armed}
+					label={dropZoneLabel}
+					title={title}
+				/>
 			) : (
 				<Button
 					aria-label={`Create in ${title}`}
@@ -44,14 +56,20 @@ export function BoardColumnCreateAction({
 }
 
 function CreateWorkItemDropZone({
+	armed,
 	label,
 	title,
 }: Readonly<{
+	armed: boolean;
 	label: string;
 	title: string;
 }>) {
 	const targetRef = useRef<HTMLDivElement>(null);
 	const magnet = useMagneticProximity(targetRef);
+	const shouldReduceMotion = useReducedMotion();
+	const [proximity, setProximity] = useState<MagneticPointerRelation>("outside");
+	useMotionValueEvent(magnet.proximity, "change", setProximity);
+	const expanded = proximity !== "outside" && !shouldReduceMotion;
 
 	return (
 		<motion.div
@@ -59,11 +77,18 @@ function CreateWorkItemDropZone({
 			style={{ x: magnet.x, y: magnet.y }}
 		>
 			<div
-				aria-label={`${label} in ${title}`}
-				className="flex h-12 w-full select-none items-center justify-center rounded-lg border border-dashed border-border px-3 text-center text-sm leading-5 text-text-subtlest"
+				aria-label={`${label} in ${title}${armed ? ", selected drop target" : ""}`}
+				className={cn(
+					"flex w-full select-none items-center justify-center rounded-lg border border-dashed px-3 text-center",
+					"transition-[height,background-color,border-color,color] duration-medium ease-in-out motion-reduce:transition-none",
+					expanded ? "h-12 text-sm leading-5" : "h-6 text-xs leading-4",
+					armed ? "border-border-selected bg-bg-selected text-text-selected" : "border-border text-text-subtlest",
+				)}
+				data-armed={armed || undefined}
 				data-board-agent-session-column-title={title}
 				data-board-agent-session-create-work-item-drop-zone={title}
 				data-board-agent-session-drop-zone="create"
+				data-proximity={proximity}
 				ref={targetRef}
 				role="img"
 			>
