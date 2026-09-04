@@ -282,12 +282,16 @@ test("Jira issue session transfer motion honours reduced motion at every layer",
 	// CSS transitions on the region and the zones.
 	assert.match(TRANSFER_SOURCE, /const TRANSFER_REVEAL_CLASS =[\s\S]*motion-reduce:transition-none/u);
 	assert.match(TRANSFER_SOURCE, /const TRANSFER_ZONE_BASE_CLASS =[\s\S]*motion-reduce:transition-none"/u);
-	// The magnet hook gates itself rather than pushing the decision onto callers,
-	// and pins both motion values to 0 when reduced motion is on.
+	// The magnet hook pins translation to 0 under reduced motion while retaining
+	// pointer relation state for non-motion feedback such as selected colors.
 	assert.match(MAGNETIC_PROXIMITY_SOURCE, /const shouldReduceMotion = useReducedMotion\(\);/u);
 	assert.match(
 		MAGNETIC_PROXIMITY_SOURCE,
-		/if \(shouldReduceMotion\) \{\s*\n\s*magnetX\.set\(0\);\s*\n\s*magnetY\.set\(0\);\s*\n\s*return;\s*\n\s*\}/u,
+		/const reset = \(\) => \{[\s\S]*magnetX\.set\(0\);\s*\n\s*magnetY\.set\(0\);\s*\n\s*\};[\s\S]*if \(shouldReduceMotion\) reset\(\);/u,
+	);
+	assert.match(
+		MAGNETIC_PROXIMITY_SOURCE,
+		/if \(nextProximity !== "outside" && !shouldReduceMotion\) \{/u,
 	);
 	assert.match(MAGNETIC_PROXIMITY_SOURCE, /shouldReduceMotion,\s*targetRef,?\s*\]\);/u);
 	// A pointer drag must not fight Motion's layout projection.

@@ -368,7 +368,7 @@ function BoardColumn({
 	onCollapse,
 	onCreateAgent,
 	onToggleAgent,
-	sessionDragging,
+	sessionDragTransaction,
 	title,
 }: Readonly<{
 	agents?: readonly JiraKanbanAgentData[];
@@ -379,7 +379,7 @@ function BoardColumn({
 	onCollapse: () => void;
 	onCreateAgent?: (columnTitle: string) => void;
 	onToggleAgent?: (agentId: string) => void;
-	sessionDragging: boolean;
+	sessionDragTransaction: BoardAgentSessionDrag["transaction"];
 	title: string;
 }>) {
 	const showAgentAssignment = Boolean(agents?.length && onCreateAgent && onToggleAgent);
@@ -460,7 +460,7 @@ function BoardColumn({
 
 			<BoardColumnCreateAction
 				dropZoneLabel={createWorkItemDropZoneLabel}
-				sessionDragging={sessionDragging}
+				sessionDragTransaction={sessionDragTransaction}
 				title={title}
 			/>
 		</div>
@@ -895,7 +895,7 @@ function ExperimentalJiraKanbanView({
 										? (agentId) => onToggleColumnAgent(column.title, agentId)
 										: undefined
 								}
-								sessionDragging={boardSessionDrag.transaction !== null}
+								sessionDragTransaction={boardSessionDrag.transaction}
 								title={column.title}
 							>
 								{column.cards.map((card, cardIndex) => {

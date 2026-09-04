@@ -5,6 +5,11 @@ import type { MotionValue, SpringOptions } from "motion/react";
 import { useEffect, useMemo } from "react";
 import type { RefObject } from "react";
 
+import {
+	resolveMagneticPointerRelation,
+	type MagneticPointerRelation,
+} from "./magnetic-proximity-model";
+
 /** Reverse-engineered from the "Magnetic Hover" component shipped on
  * magnet.learnframer.site (chunk-ND35KM2X.mjs). */
 export const MAGNETIC_PROXIMITY_DISTANCE = 10;
@@ -32,6 +37,8 @@ export interface MagneticProximityValues {
 	y: MotionValue<number>;
 	labelX: MotionValue<number>;
 	labelY: MotionValue<number>;
+	/** Pointer relation remains available when reduced motion pins translation. */
+	proximity: MotionValue<MagneticPointerRelation>;
 }
 
 /**
@@ -40,8 +47,9 @@ export interface MagneticProximityValues {
  * While the pointer sits inside the target rect (grown by `hoverArea`), `x`/`y`
  * lean up to `distance` px toward it, normalized against the rect's half-size,
  * and `labelX`/`labelY` follow at `labelRatio` for a nested parallax layer.
- * Leaving the activation box, unmounting, or `prefers-reduced-motion` all pin
- * every value to 0.
+ * Leaving the activation box or unmounting returns every value to rest.
+ * `prefers-reduced-motion` pins translation at 0 while retaining proximity
+ * relation state for non-motion feedback such as selected colors.
  *
  * Touch pointers are ignored: they would otherwise freeze the lean at its last
  * offset once the finger lifts, since there is no hover state to leave.
@@ -75,33 +83,47 @@ export function useMagneticProximity(
 
 	const magnetX = useMotionValue(0);
 	const magnetY = useMotionValue(0);
+	const proximity = useMotionValue<MagneticPointerRelation>("outside");
 	const x = useSpring(magnetX, springConfig);
 	const y = useSpring(magnetY, springConfig);
 	const labelX = useTransform(x, (nextValue) => nextValue * labelRatio);
 	const labelY = useTransform(y, (nextValue) => nextValue * labelRatio);
 
 	useEffect(() => {
-		if (shouldReduceMotion) {
-			magnetX.set(0);
-			magnetY.set(0);
-			return;
-		}
 		if (typeof document === "undefined") return;
 
+		const reset = () => {
+			if (proximity.get() !== "outside") {
+				proximity.set("outside");
+			}
+			magnetX.set(0);
+			magnetY.set(0);
+		};
+		if (shouldReduceMotion) reset();
+
 		const handleMove = (event: PointerEvent) => {
-			if (event.pointerType === "touch") return;
+			if (event.pointerType === "touch") {
+				reset();
+				return;
+			}
 			const element = targetRef.current;
 			if (!element) return;
 			const rect = element.getBoundingClientRect();
-			if (rect.width <= 0 || rect.height <= 0) return;
+			if (rect.width <= 0 || rect.height <= 0) {
+				reset();
+				return;
+			}
 
-			const inActivation =
-				event.clientX >= rect.left - hoverArea &&
-				event.clientX <= rect.right + hoverArea &&
-				event.clientY >= rect.top - hoverArea &&
-				event.clientY <= rect.bottom + hoverArea;
+			const nextProximity = resolveMagneticPointerRelation(
+				{ x: event.clientX, y: event.clientY },
+				rect,
+				hoverArea,
+			);
+			if (proximity.get() !== nextProximity) {
+				proximity.set(nextProximity);
+			}
 
-			if (inActivation) {
+			if (nextProximity !== "outside" && !shouldReduceMotion) {
 				const dx = event.clientX - (rect.left + rect.width / 2);
 				const dy = event.clientY - (rect.top + rect.height / 2);
 				magnetX.set((dx / (rect.width / 2)) * distance);
@@ -116,10 +138,9 @@ export function useMagneticProximity(
 		document.addEventListener("pointermove", handleMove, { passive: true });
 		return () => {
 			document.removeEventListener("pointermove", handleMove);
-			magnetX.set(0);
-			magnetY.set(0);
+			reset();
 		};
-	}, [distance, hoverArea, magnetX, magnetY, shouldReduceMotion, targetRef]);
+	}, [distance, hoverArea, magnetX, magnetY, proximity, shouldReduceMotion, targetRef]);
 
-	return { x, y, labelX, labelY };
+	return { x, y, labelX, labelY, proximity };
 }
