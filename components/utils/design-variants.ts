@@ -28,7 +28,10 @@
 
 export const DESIGN_VARIANTS_STORAGE_KEY = "ui-design-variants";
 
-export const DESIGN_VARIANTS = [{ id: "panel", label: "Panel" }] as const;
+export const DESIGN_VARIANTS = [
+	{ id: "panel", label: "Panel" },
+	{ id: "simpleKanban", label: "Simple kanban" },
+] as const;
 
 export type DesignVariantId = (typeof DESIGN_VARIANTS)[number]["id"];
 
@@ -39,9 +42,13 @@ export type DesignVariantState = Readonly<Record<DesignVariantId, boolean>>;
  * snapshot keeps a stable identity across renders.
  *
  * Panel starts on: Golden Journeys v4 ships untracked work in the floating
- * side surface unless the user turns it off.
+ * side surface unless the user turns it off. Simple kanban starts off: expanded
+ * columns keep the sunken well unless the user turns it on.
  */
-const DEFAULT_DESIGN_VARIANTS: DesignVariantState = Object.freeze({ panel: true });
+const DEFAULT_DESIGN_VARIANTS: DesignVariantState = Object.freeze({
+	panel: true,
+	simpleKanban: false,
+});
 
 export function isDesignVariantId(value: unknown): value is DesignVariantId {
 	return DESIGN_VARIANTS.some((variant) => variant.id === value);
