@@ -154,6 +154,23 @@ test("rejects a user-entry route that the generated repo map cannot resolve", ()
 	}
 });
 
+test("accepts concrete URLs matched by generated dynamic route patterns", () => {
+	const fixture = writeFixture({
+		features: {
+			"skill-detail": feature({ id: "skill-detail", route: "/rovo/skills/app/my-skill" }),
+			"studio-child": feature({ id: "studio-child", route: "/studio/foo" }),
+		},
+		routes: ["/studio/[[...id]]", "/rovo/skills/[category]/[name]"],
+	});
+	try {
+		const report = verifyFeatureMap(fixture);
+		assert.equal(report.ok, true);
+		assert.deepEqual(report.failures, []);
+	} finally {
+		rmSync(fixture.root, { force: true, recursive: true });
+	}
+});
+
 test("repository validation gates run the feature-map verifier", () => {
 	const repoRoot = path.resolve(__dirname, "../../../..");
 	const packageJson = require(path.join(repoRoot, "package.json"));

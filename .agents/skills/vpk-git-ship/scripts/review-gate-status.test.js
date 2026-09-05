@@ -3,6 +3,7 @@ const test = require("node:test");
 
 const {
 	collectReviewGateStatus,
+	runGhJson,
 } = require("./review-gate-status");
 
 function fixtureRunner({
@@ -178,4 +179,26 @@ test("retries a temporarily incomplete GraphQL-to-REST reconciliation", async ()
 	assert.equal(status.consistencyAttempts, 2);
 	assert.deepEqual(status.missingRestCommentIds, []);
 	assert.deepEqual(delays, [5000]);
+});
+
+test("retries read-only gh calls without an invalid injected GITHUB_TOKEN", () => {
+	const calls = [];
+	const result = runGhJson(["repo", "view", "--json", "nameWithOwner"], {
+		env: {
+			GITHUB_TOKEN: "invalid-test-token",
+			PATH: "/usr/bin",
+		},
+		spawn: (_command, _args, options) => {
+			calls.push(options.env);
+			return calls.length === 1
+				? { status: 1, stderr: "HTTP 401: Bad credentials", stdout: "" }
+				: { status: 0, stderr: "", stdout: '{"nameWithOwner":"owner/repo"}' };
+		},
+	});
+
+	assert.deepEqual(result, { nameWithOwner: "owner/repo" });
+	assert.equal(calls.length, 2);
+	assert.equal(calls[0].GITHUB_TOKEN, "invalid-test-token");
+	assert.equal("GITHUB_TOKEN" in calls[1], false);
+	assert.equal(calls[1].PATH, "/usr/bin");
 });

@@ -79,6 +79,31 @@ function resolvableRoutes(repoMap) {
 	return routes;
 }
 
+function escapeRegExp(value) {
+	return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+}
+
+function dynamicRouteMatchers(repoMap) {
+	return (repoMap.appPages?.pages ?? [])
+		.map((page) => page.routePath)
+		.filter((routePath) => (
+			typeof routePath === "string" &&
+			routePath.includes("[") &&
+			routePath !== "/[category]" &&
+			routePath !== "/components/[category]/[slug]"
+		))
+		.map((routePath) => {
+			const segments = routePath.split("/").slice(1);
+			const source = segments.map((segment) => {
+				if (/^\[\[\.\.\.[^\]]+\]\]$/u.test(segment)) return "(?:/.*)?";
+				if (/^\[\.\.\.[^\]]+\]$/u.test(segment)) return "/.+";
+				if (/^\[[^\]]+\]$/u.test(segment)) return "/[^/]+";
+				return `/${escapeRegExp(segment)}`;
+			}).join("");
+			return new RegExp(`^${source}$`, "u");
+		});
+}
+
 function verifyFeatureMap({
 	featuresDir = DEFAULT_FEATURES_DIR,
 	repoMapPath = DEFAULT_REPO_MAP_PATH,
@@ -123,6 +148,7 @@ function verifyFeatureMap({
 
 	const repoMap = JSON.parse(fs.readFileSync(repoMapPath, "utf8"));
 	const knownRoutes = resolvableRoutes(repoMap);
+	const dynamicMatchers = dynamicRouteMatchers(repoMap);
 	const allEntryRoutes = new Set();
 	const idOwners = new Map();
 	let subFeatureCount = 0;
@@ -158,7 +184,7 @@ function verifyFeatureMap({
 
 		for (const route of entryRoutes(content)) {
 			allEntryRoutes.add(route);
-			if (!knownRoutes.has(route)) {
+			if (!knownRoutes.has(route) && !dynamicMatchers.some((pattern) => pattern.test(route))) {
 				failures.push({
 					file,
 					message: `User-entry route is not present in the generated repo map: ${route}`,
@@ -220,6 +246,7 @@ if (require.main === module) {
 
 module.exports = {
 	entryRoutes,
+	dynamicRouteMatchers,
 	indexedFeatureFiles,
 	resolvableRoutes,
 	sectionBody,

@@ -18,13 +18,32 @@ const GRAPHQL_QUERY = `query($owner:String!,$name:String!,$number:Int!,$after:St
 const PASSING_CONCLUSIONS = new Set(["NEUTRAL", "SKIPPED", "SUCCESS"]);
 const PENDING_STATES = new Set(["EXPECTED", "IN_PROGRESS", "PENDING", "QUEUED", "REQUESTED", "WAITING"]);
 
-function runGhJson(args) {
-	const result = spawnSync("gh", args, {
+function spawnGhJson(spawn, args, env) {
+	return spawn("gh", args, {
 		encoding: "utf8",
+		env,
 		maxBuffer: 20 * 1024 * 1024,
 	});
+}
+
+function isAuthenticationFailure(result) {
+	return /bad credentials|authentication|HTTP 401|invalid token|requires authentication/iu
+		.test(`${result.stderr ?? ""}\n${result.stdout ?? ""}`);
+}
+
+function runGhJson(args, { env = process.env, spawn = spawnSync } = {}) {
+	let result = spawnGhJson(spawn, args, env);
+	if (
+		result.status !== 0 &&
+		Object.prototype.hasOwnProperty.call(env, "GITHUB_TOKEN") &&
+		isAuthenticationFailure(result)
+	) {
+		const keyringEnv = { ...env };
+		delete keyringEnv.GITHUB_TOKEN;
+		result = spawnGhJson(spawn, args, keyringEnv);
+	}
 	if (result.status !== 0) {
-		const detail = result.stderr.trim().split("\n")[0] || `exit ${result.status ?? 1}`;
+		const detail = (result.stderr ?? "").trim().split("\n")[0] || `exit ${result.status ?? 1}`;
 		throw new Error(`gh ${args.slice(0, 2).join(" ")} failed: ${detail}`);
 	}
 	try {
