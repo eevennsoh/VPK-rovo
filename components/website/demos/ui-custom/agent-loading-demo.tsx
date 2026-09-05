@@ -57,3 +57,7 @@ export default function AgentLoadingDemo() {
 export function AgentLoadingDemoFinished() {
 	return <AgentLoading agents={withFinishedStatus(true)} label="Completed" />;
 }
+
+export function AgentLoadingDemoSmall() {
+	return <AgentLoading agents={withFinishedStatus(false)} label="Needs input…" size="small" />;
+}

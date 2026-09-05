@@ -651,6 +651,10 @@ test("the Work items header switches between Board and List views with their ico
 		EXPERIMENTAL_HEADER_SOURCE,
 		/showCustomizeControl \? \(\s*<Button aria-disabled aria-label="Customize" size="icon" variant="outline">/u,
 	);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /className="text-xs text-text-subtlest">Spaces</u);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /<Heading as="h1" className="min-w-0 truncate" size="medium">\{title\}<\/Heading>/u);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /aria-label="Share"/u);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /aria-label="Expand"/u);
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
 		/className=\{cn\("flex items-center gap-2", compact \? undefined : "ml-auto"\)\}/u,
@@ -668,8 +672,10 @@ test("the Work items header switches between Board and List views with their ico
 	);
 	const customizeIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("{customizeControl}");
 	assert.ok(inlineMoreIndex > 0 && inlineMoreIndex < viewSwitcherIndex);
-	assert.ok(viewSwitcherIndex > 0 && viewSwitcherIndex < endMoreIndex);
-	assert.ok(endMoreIndex > 0 && endMoreIndex < customizeIndex);
+	assert.ok(viewSwitcherIndex > 0 && viewSwitcherIndex < customizeIndex);
+	assert.ok(customizeIndex > 0 && customizeIndex < endMoreIndex);
+	const endSlotIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("{endSlot ? endSlot : null}");
+	assert.ok(endSlotIndex > 0 && viewSwitcherIndex < endSlotIndex && endSlotIndex < customizeIndex);
 	const filterControlIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("{filterControl}");
 	const viewMenuIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("<BoardViewMenu");
 	const modeToggleIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("{modeToggle}");

@@ -12,7 +12,6 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring, type Transition } from "motion/react";
-import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import StatusInformationIcon from "@atlaskit/icon/core/status-information";
 
 import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
@@ -40,6 +39,7 @@ import {
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import type { QuestionCardQuestion } from "@/components/blocks/question-card/types";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { AgentLoading, type AgentLoadingAgent } from "@/components/ui-custom/agent-loading";
 import { AnimatedDots } from "@/components/ui-custom/animated-dots";
 import {
 	usePointerDrag,
@@ -47,7 +47,6 @@ import {
 } from "@/components/ui-custom/hooks/use-pointer-drag";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
-import { IconTile } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import type {
@@ -220,6 +219,19 @@ function toSelectorAgent(activity: JiraIssueAgentActivity): AgentSelectorAgent {
 		byline: "",
 		...(activity.avatarSrc ? { avatarSrc: activity.avatarSrc } : {}),
 		...(activity.agentBrandName ? { brandName: activity.agentBrandName } : {}),
+	};
+}
+
+function toAgentLoadingAgent(activity: JiraIssueAgentActivity): AgentLoadingAgent {
+	return {
+		id: activity.id,
+		name: activity.name,
+		status: activity.state === "completed" ? "finished" : "working",
+		avatar: {
+			...(activity.avatarSrc ? { avatarSrc: activity.avatarSrc } : {}),
+			...(activity.agentBrandName ? { brandName: activity.agentBrandName } : {}),
+			fallbackText: getAgentInitial(activity.name),
+		},
 	};
 }
 
@@ -538,24 +550,13 @@ function JiraIssueAgentActivityRow({
 						label={featuredActivity.name}
 						sizePx={16}
 					/>
-				) : usesStrokeChrome ? (
-					<IconTile
-						aria-hidden
-						as="span"
-						className="ml-px text-icon-subtle"
-						icon={<AiAgentIcon label="" size="small" />}
-						iconSize="small"
-						label=""
-						size="xxsmall"
-						variant="transparent"
-					/>
 				) : (
-					<span
-						className="ml-px grid size-4 shrink-0 place-items-center text-icon-subtle"
-						aria-hidden="true"
-					>
-						<AiAgentIcon label="" />
-					</span>
+					<AgentLoading
+						agents={activities.map(toAgentLoadingAgent)}
+						announce={false}
+						className={cn("shrink-0", usesStrokeChrome && "ml-px")}
+						size="small"
+					/>
 				)}
 				{isAwaitingInput ? (
 					<span

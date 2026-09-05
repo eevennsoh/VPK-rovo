@@ -920,9 +920,13 @@ test("Experimental v2 mirrors the Golden Journeys v4 board and list contract", (
 
 test("Experimental kanban header keeps only configure and more actions", () => {
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /import CustomizeIcon from "@atlaskit\/icon\/core\/customize";/u);
-	assert.match(EXPERIMENTAL_HEADER_SOURCE, /aria-label=\{`\$\{surfaceTitle\} settings`\}[\s\S]*<CustomizeIcon label="" \/>/u);
+	assert.match(
+		EXPERIMENTAL_HEADER_SOURCE,
+		/showCustomizeControl \? \(\s*<Button aria-disabled aria-label="Customize" size="icon" variant="outline">/u,
+	);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /aria-label=\{`More \$\{surfaceLabel\} controls`\}/u);
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /aria-label="(?:View insights|Undo board change|Board announcements)"/u);
+	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /\$\{surfaceTitle\} settings/u);
 });
 
 test("Insights keeps the seven-item header facepile at one reserved width", () => {
