@@ -100,7 +100,8 @@ export default function AgentsView({
 	customAgentTabs,
 }: Readonly<AgentsViewProps>) {
 	// The RFP demo only ships the board surface, so it opts out of Team EU's
-	// board/list split and shows a single work items destination either way.
+	// Board/List split when Simple views is off and shows a single work items
+	// destination either way.
 	const tabs = useJiraTabs(SUPPORTED_WORK_ITEM_VIEWS);
 	const [selectedTabLabel, setSelectedTabLabel] = useState(DEFAULT_JIRA_WORK_ITEMS_TAB_LABEL);
 	const activeTab = resolveJiraTab(tabs, selectedTabLabel, "board");

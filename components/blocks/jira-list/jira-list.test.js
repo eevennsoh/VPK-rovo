@@ -325,12 +325,21 @@ test("JiraList column controls use outside-top overlay geometry without reservin
 	assert.doesNotMatch(SOURCE, /pt-4|pt-\[16px\]|paddingTop/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /absolute top-0 bottom-10 z-40/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /size-6 -translate-x-1\/2 -translate-y-1\/2/u);
-	assert.match(COLUMN_CONTROLS_SOURCE, /border border-border bg-surface-overlay! text-icon-subtle shadow-2xl/u);
+	assert.match(COLUMN_CONTROLS_SOURCE, /border border-border bg-surface-overlay! text-icon-subtle/u);
 	assert.match(
 		COLUMN_CONTROLS_SOURCE,
 		/left: anchorSide === "left" \? "anchor\(left\)" : "anchor\(right\)"/u,
 	);
 	assert.match(COLUMN_CONTROLS_SOURCE, /top: 0/u);
+});
+
+test("JiraList column add controls match the grid border without a second shadow edge", () => {
+	const boundaryButtonClass = COLUMN_CONTROLS_SOURCE.match(
+		/aria-label=\{`Add column \$\{positionLabel\}`\}[\s\S]*?className=\{cn\(\s*"([^"]+)"/u,
+	)?.[1] ?? "";
+
+	assert.match(boundaryButtonClass, /border border-border/u);
+	assert.doesNotMatch(boundaryButtonClass, /shadow-/u);
 });
 
 test("JiraList shows the exact boundary line only while its add control is hovered or focused", () => {
@@ -547,11 +556,16 @@ test("JiraList uses equal top, drag, and bottom row interaction zones", () => {
 });
 
 test("JiraList middle zone exposes an anchored accessible drag handle", () => {
+	const dragHandleClass = SOURCE.match(
+		/aria-label="Drag to reorder"[\s\S]*?className=\{cn\(\s*"([^"]+)"/u,
+	)?.[1] ?? "";
+
 	assert.match(SOURCE, /function JiraListSortableRow/u);
 	assert.match(SOURCE, /aria-label="Drag to reorder"/u);
 	assert.match(SOURCE, /<TooltipContent side="right">Drag to reorder<\/TooltipContent>/u);
 	assert.match(SOURCE, /<DragHandleVerticalIcon/u);
-	assert.match(SOURCE, /cursor-grab touch-none border border-border bg-surface-overlay! text-icon-subtle shadow-2xl/u);
+	assert.match(dragHandleClass, /cursor-grab touch-none border border-border bg-surface-overlay! text-icon-subtle/u);
+	assert.doesNotMatch(dragHandleClass, /shadow-/u);
 	assert.match(SOURCE, /absolute z-30 size-6 -translate-x-1\/2 -translate-y-1\/2/u);
 	assert.match(SOURCE, /hover:bg-surface-overlay-hovered!/u);
 	assert.match(SOURCE, /active:cursor-grabbing active:bg-surface-overlay-pressed!/u);
@@ -609,7 +623,8 @@ test("JiraList row boundary controls are absolute opaque overlays", () => {
 	)?.[0] ?? "";
 
 	assert.match(controlsSource, /absolute z-30 size-6 -translate-x-1\/2 -translate-y-1\/2/u);
-	assert.match(controlsSource, /border border-border bg-surface-overlay! text-icon-subtle shadow-2xl/u);
+	assert.match(controlsSource, /border border-border bg-surface-overlay! text-icon-subtle/u);
+	assert.doesNotMatch(controlsSource, /shadow-/u);
 	assert.match(controlsSource, /hover:bg-surface-overlay-hovered!/u);
 	assert.match(controlsSource, /active:bg-surface-overlay-pressed!/u);
 	assert.match(controlsSource, /focus-visible:bg-surface-overlay!/u);

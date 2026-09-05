@@ -35,7 +35,7 @@ async function readListFooterGeometry(page: Page): Promise<ListFooterGeometry> {
 async function openWorkItemsList(page: Page) {
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await page.goto(JIRA_GOLDEN_JOURNEYS_V4_URL, { waitUntil: "domcontentloaded" });
-	// Team EU splits work items into Board and List tabs.
+	// Team EU without Simple views splits work items into Board and List tabs.
 	await page.getByRole("tab", { name: "List", exact: true }).click();
 	await expect(page.getByTestId("jira-list")).toBeVisible();
 }

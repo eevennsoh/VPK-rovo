@@ -16,9 +16,9 @@ import TeamsIcon from "@atlaskit/icon/core/teams";
 
 interface JiraViewTabsProps {
 	/**
-	 * Selection is tracked by label, not index: the design variation decides
-	 * whether work items is one tab or two, so an index would silently point at
-	 * a different destination after a flip.
+	 * Selection is tracked by label, not index: the design variation and Simple
+	 * views property decide whether work items is one tab or two, so an index
+	 * would silently point at a different destination after a flip.
 	 */
 	selectedTabLabel: string;
 	onTabChange: (tabLabel: string) => void;
@@ -29,7 +29,8 @@ interface JiraViewTabsProps {
 	workItemView?: JiraWorkItemView;
 	/**
 	 * Work item surfaces this route renders. A board-only route omits `list` so
-	 * Team EU shows `Board` instead of splitting into a `List` tab it cannot fill.
+	 * Team EU without Simple views shows `Board` instead of splitting into a
+	 * `List` tab it cannot fill.
 	 */
 	supportedWorkItemViews?: readonly JiraWorkItemView[];
 }
