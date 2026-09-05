@@ -7,6 +7,7 @@ import {
 	useMemo,
 	useRef,
 	useState,
+	type CSSProperties,
 } from "react";
 
 import { useOptionalRovoChat } from "@/app/contexts";
@@ -224,6 +225,7 @@ export default function ExperimentalJiraKanbanPage({
 	const [agentSessionPanelWidthPx, setAgentSessionPanelWidthPx] = useState(AGENT_SESSION_PANEL_WIDTH_PX);
 	const agentSessionPanelRef = useRef<HTMLDivElement | null>(null);
 	const [listContentUnderlapsPanel, setListContentUnderlapsPanel] = useState(false);
+	const [untrackedHoveredSessionId, setUntrackedHoveredSessionId] = useState<string | null>(null);
 	const [collapsedColumns, setCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
 	const [showUntracked, setShowUntracked] = useState(defaultShowUntracked);
 	const [appliedShowUntrackedDefault, setAppliedShowUntrackedDefault] = useState(defaultShowUntracked);
@@ -792,44 +794,36 @@ export default function ExperimentalJiraKanbanPage({
 				/>
 			) : (
 				<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-					{isListContent ? (
-						<div className="flex min-h-0 min-w-0 flex-1 items-stretch">
-							{showInFlowAgentSessionColumn && agentSessionColumnConfig ? (
-								<InFlowAgentSessionColumn
-									agentSessionColumn={{
-										...agentSessionColumnConfig,
-										draggingIds: boardSessionDrag.draggingIds,
-										sessionDrag: boardSessionDrag.untrackedBinding,
-									}}
-									className="pb-4 md:pb-5"
-									sessionFlyoutsSuspended={boardSessionDrag.transaction !== null}
-									untrackedDropArmed={boardSessionDrag.transaction?.target?.kind === "untracked"}
-								/>
-							) : null}
-							{renderListContent?.(filteredBoardColumns, {
+					<div className="flex min-h-0 min-w-0 flex-1 items-stretch">
+						{showInFlowAgentSessionColumn && agentSessionColumnConfig ? (
+							<InFlowAgentSessionColumn
+								agentSessionColumn={{
+									...agentSessionColumnConfig,
+									draggingIds: boardSessionDrag.draggingIds,
+									highlightedItemId: untrackedHoveredSessionId,
+									onItemHover: (item) => setUntrackedHoveredSessionId(item?.id ?? null),
+									sessionDrag: boardSessionDrag.untrackedBinding,
+								}}
+								className="pb-4 md:pb-5"
+								sessionFlyoutsSuspended={boardSessionDrag.transaction !== null}
+								untrackedDropArmed={boardSessionDrag.transaction?.target?.kind === "untracked"}
+							/>
+						) : null}
+						{isListContent ? (
+							renderListContent?.(filteredBoardColumns, {
 								agentSessionDropIntent: boardSessionDrag.listDropIntent,
 								inFlowAgentSessionColumn: showInFlowAgentSessionColumn,
 								onTrailingContentUnderlapChange: setListContentUnderlapsPanel,
 								scrollEndInset: boardScrollEndInset,
 								trailingOverlayRef: agentSessionPanelRef,
-							})}
-						</div>
-					) : (
-						<div className="flex min-h-0 min-w-0 flex-1">
+							})
+						) : (
 							<ExperimentalJiraKanban
 								activeCardCode={activeCardCode}
 								agentActivityLayout={agentActivityLayout}
 								boardAgentSessionDrag={boardSessionDrag}
 								untrackedSessions={agentSessionColumnConfig?.items}
-								// Panel mode hands the column to the overlay instead, so
-								// the two presentations can never render at once.
-								agentSessionColumn={agentSessionPresentation === "panel"
-									|| agentSessionColumnConfig === undefined
-									? undefined
-									: {
-										...agentSessionColumnConfig,
-										draggingIds: boardSessionDrag.draggingIds,
-									}}
+								proximityHighlightedSessionId={untrackedHoveredSessionId}
 								scrollEndInset={boardScrollEndInset}
 								proximityAgentSession={{
 									actionableSessionIds: proximityActionableSessionIds,
@@ -877,8 +871,8 @@ export default function ExperimentalJiraKanbanPage({
 									selectedAgentIds,
 								}}
 							/>
-						</div>
-					)}
+						)}
+					</div>
 				</div>
 			)) : null}
 			{/*

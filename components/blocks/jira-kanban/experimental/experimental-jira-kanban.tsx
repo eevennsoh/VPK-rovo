@@ -144,6 +144,12 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	 */
 	untrackedSessions?: readonly AgentSessionItem[];
 	/**
+	 * Hovered Untracked session id from a host-owned column. Lights the board
+	 * twin when the in-flow column lives outside this tree so it can survive
+	 * a Board/List switch.
+	 */
+	proximityHighlightedSessionId?: string | null;
+	/**
 	 * Injected board-session drag API. The page supplies this when the
 	 * floating panel also needs `untrackedBinding`; omit to let the board
 	 * own the hook (standalone demos).
@@ -633,6 +639,7 @@ function ExperimentalJiraKanbanView({
 	onToggleColumnAgent,
 	boardSessionDrag,
 	proximityAgentSession,
+	proximityHighlightedSessionId = null,
 	renderAgentActivityIndicator,
 	paddingBottom = token("space.150"),
 	paddingTop = token("space.150"),
@@ -652,6 +659,7 @@ function ExperimentalJiraKanbanView({
 	);
 	const [focusedIssueKey, setFocusedIssueKey] = useState<string | null>(null);
 	const [hoveredSessionId, setHoveredSessionId] = useState<string | null>(null);
+	const highlightedSessionId = hoveredSessionId ?? proximityHighlightedSessionId;
 	const spotlightIssueKey = resolveVisibleFocusedIssueKey(focusedIssueKey, boardColumns);
 	const collapsedColumns = controlledCollapsedColumns ?? uncontrolledCollapsedColumns;
 	const selectedCount = selectedCardCodes?.size ?? 0;
@@ -825,7 +833,7 @@ function ExperimentalJiraKanbanView({
 					<InFlowAgentSessionColumn
 						agentSessionColumn={{
 							...agentSessionColumn,
-							highlightedItemId: hoveredSessionId,
+							highlightedItemId: highlightedSessionId,
 							onItemHover: handleSessionHover,
 							onSelectedItemIdChange: handleSessionSelectionChange,
 							onView: handleSessionView,
@@ -969,7 +977,7 @@ function ExperimentalJiraKanbanView({
 												generativeActionAgents={generativeActionAgents}
 												generativeActionPresentation={cardGenerativeActionPresentation}
 												generativeActionSkills={generativeActionSkills}
-												highlightedSessionId={hoveredSessionId}
+												highlightedSessionId={highlightedSessionId}
 												onAgentActivityOpenChange={onCardAgentActivityOpenChange}
 												onAgentActivityViewChat={onCardAgentActivityViewChat}
 												onAgentDoneRunReview={onCardAgentDoneRunReview}

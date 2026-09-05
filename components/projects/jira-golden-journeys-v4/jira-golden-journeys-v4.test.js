@@ -688,8 +688,13 @@ test("the Panel design variant floats untracked work over the board and the list
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/agentSessionColumn=\{agentSessionPresentation === "panel"\s*\|\| agentSessionColumnConfig === undefined\s*\?\s*undefined\s*:\s*\{/u,
-		"panel mode must suppress the in-flow column so the two presentations cannot coexist",
+		/\{showInFlowAgentSessionColumn && agentSessionColumnConfig \? \(\s*<InFlowAgentSessionColumn/u,
+		"panel mode must not mount the in-flow column; column mode keeps one instance above Board and List",
+	);
+	assert.doesNotMatch(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/agentSessionColumn=\{agentSessionPresentation === "panel"/u,
+		"the page-owned column must not also mount inside ExperimentalJiraKanban",
 	);
 	// Insights swaps the whole content region for an article, and a tab with no
 	// content renders nothing — neither has a board to float over.
@@ -705,7 +710,7 @@ test("the Panel design variant floats untracked work over the board and the list
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<InFlowAgentSessionColumn/u);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/\{isListContent \? \(\s*<div className="flex min-h-0 min-w-0 flex-1 items-stretch">/u,
+		/<InFlowAgentSessionColumn[\s\S]*\{isListContent \? \(/u,
 	);
 
 	// The rail is persistent: it is its own entry point, so there is deliberately

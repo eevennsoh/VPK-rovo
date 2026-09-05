@@ -184,7 +184,7 @@ test("column card hover lights related board sessions without scrolling or spotl
 	assert.doesNotMatch(hoverHandlerBody, /setFocusedIssueKey/u);
 	assert.doesNotMatch(hoverHandlerBody, /scrollBoardIssueIntoView/u);
 	assert.doesNotMatch(BOARD_SOURCE, /hoveredIssueKey/u);
-	assert.match(BOARD_SOURCE, /highlightedSessionId=\{hoveredSessionId\}/u);
+	assert.match(BOARD_SOURCE, /highlightedSessionId=\{highlightedSessionId\}/u);
 	assert.match(CARD_SOURCE, /highlightedItemId=\{highlightedSessionId\}/u);
 });
 
@@ -212,7 +212,7 @@ test("a hovered detached board session lights its column twin", () => {
 	// owns the shared id and feeds it to the column, while the medium row
 	// reports pointer entry/exit through the same session callback as the
 	// column's large row.
-	assert.match(BOARD_SOURCE, /highlightedItemId: hoveredSessionId,/u);
+	assert.match(BOARD_SOURCE, /highlightedItemId: highlightedSessionId,/u);
 	assert.match(CARD_SOURCE, /onItemHover=\{onItemHover\}/u);
 	assert.match(MEDIUM_CARD_SOURCE, /onPointerEnter=\{\(\) => \{\s*[\s\S]*?onItemHover\?\.\(item\);\s*\}\}/u);
 	assert.match(MEDIUM_CARD_SOURCE, /onPointerLeave=\{\(\) => \{\s*[\s\S]*?onItemHover\?\.\(null\);\s*\}\}/u);
@@ -276,7 +276,17 @@ test("column presentation pins Untracked beside the list as well as the board", 
 	);
 	assert.match(
 		PAGE_SOURCE,
-		/\{isListContent \? \(\s*<div className="flex min-h-0 min-w-0 flex-1 items-stretch">\s*\{showInFlowAgentSessionColumn && agentSessionColumnConfig \? \(\s*<InFlowAgentSessionColumn/u,
+		/\{showInFlowAgentSessionColumn && agentSessionColumnConfig \? \(\s*<InFlowAgentSessionColumn/u,
 	);
 	assert.match(PAGE_SOURCE, /inFlowAgentSessionColumn: showInFlowAgentSessionColumn,/u);
+	assert.match(
+		PAGE_SOURCE,
+		/<InFlowAgentSessionColumn[\s\S]*\{isListContent \? \(/u,
+		"one Untracked column instance must wrap both Board and List so hide/archive state survives the switch",
+	);
+	assert.doesNotMatch(
+		PAGE_SOURCE,
+		/agentSessionColumn=\{agentSessionPresentation === "panel"/u,
+		"the page-owned column must not also mount inside ExperimentalJiraKanban",
+	);
 });
