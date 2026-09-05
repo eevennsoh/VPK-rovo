@@ -51,6 +51,8 @@ import type { AvatarProps, AvatarUnassignedKind } from "@/components/ui/avatar";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
+import { resolveJiraIssueChrome } from "./chrome";
+
 const AGENT_ACTIVITY_SHELL_STYLE: CSSProperties = {
 	borderRadius: "10px",
 	transformOrigin: "top center",
@@ -66,7 +68,6 @@ const AGENT_ACTIVITY_INNER_STYLE: CSSProperties = {
 };
 const AGENT_ACTIVITY_SURFACE_STYLE: CSSProperties = {
 	borderRadius: token("radius.large"),
-	boxShadow: token("elevation.shadow.raised"),
 	transformOrigin: "top center",
 };
 
@@ -373,18 +374,18 @@ function JiraIssueDefault({
 	const hasIssueRows = hasSubtasks;
 	const hasAgentActivityPresentation = agentActivityMode !== undefined || Boolean(agentActivities?.length) || hasAgentDoneNotification;
 	const usesAgentActivityShell = hasAgentActivityPresentation || Boolean(agentSessionTransfer);
+	const chromeStyles = resolveJiraIssueChrome(chrome);
 	const usesStrokeChrome = chrome === "stroke";
 	const hasInteractiveContent = showMoreAction || hasSubtasks || Boolean(parentEpicControl) || hasAgentActivityPresentation || Boolean(generativeAction) || Boolean(agentSessionTransfer) || usesStrokeChrome;
 	const shouldRenderIssueClickButton = Boolean(props.onClick && !parentEpicControl);
 	const issueRowsClassName = cn("pt-1", !(hasSubtasks && resolvedSubtasksExpanded) && "pb-1");
 	const layoutTransition = getJiraIssueLayoutTransition(shouldReduceMotion);
 	const presenceMotion = getJiraIssuePresenceMotion(shouldReduceMotion);
-	const idleBorderClassName = usesStrokeChrome
-		? "border-border-disabled hover:border-border group-hover/jira-issue:border-border"
-		: "border-transparent";
-	const agentActivityIdleBorderClassName = usesStrokeChrome
-		? "border-border-disabled group-hover/jira-issue-card:border-border"
-		: "border-transparent";
+	const issueChromeClassName = cn(chromeStyles.restClassName, chromeStyles.hoverClassName);
+	const agentSurfaceChromeClassName = cn(
+		chromeStyles.restClassName,
+		chromeStyles.agentSurfaceHoverClassName,
+	);
 	// The resting surface hairline only reads as gutter while the card sits on the
 	// grey agent backdrop: `border-border-disabled` is a 6%-alpha dark tint, and
 	// composited over the card's own white it lands within a hair of
@@ -393,13 +394,13 @@ function JiraIssueDefault({
 	// still needs its stroke outline. Selected and active keep their own treatment
 	// because they do not sit on a white fill.
 	const agentActivityRestBorderClassName = !hasActiveAgentActivityShell
-		? agentActivityIdleBorderClassName
+		? agentSurfaceChromeClassName
 		: usesStrokeChrome
-			? "border-surface group-hover/jira-issue-card:border-border"
-			: "border-transparent";
+			? cn("border-surface", chromeStyles.agentSurfaceHoverClassName)
+			: agentSurfaceChromeClassName;
 	const rootBaseStyle: CSSProperties = {
 		borderRadius: token("radius.large"),
-		...(usesStrokeChrome ? undefined : { boxShadow: token("elevation.shadow.raised") }),
+		boxShadow: chromeStyles.boxShadow,
 		cursor: dragging ? "grabbing" : draggable ? "grab" : "default",
 		opacity: dragging ? 0.5 : 1,
 		textAlign: "left",
@@ -417,8 +418,12 @@ function JiraIssueDefault({
 			: selected
 				? "border-border-selected bg-bg-selected"
 				: active
-					? `${idleBorderClassName} bg-bg-selected`
-					: `${idleBorderClassName} bg-surface`,
+					? cn(
+						chromeStyles.restClassName,
+						usesStrokeChrome ? chromeStyles.hoverClassName : undefined,
+						"bg-bg-selected",
+					)
+					: cn(issueChromeClassName, "bg-surface"),
 		"transition-[opacity,background-color,border-color] duration-normal ease-out",
 		"data-starting-style:opacity-0 data-starting-style:-translate-y-1",
 		!usesAgentActivityShell && className,
@@ -428,8 +433,12 @@ function JiraIssueDefault({
 		selected
 			? "border-border-selected bg-bg-selected"
 			: active
-				? `${agentActivityIdleBorderClassName} bg-bg-selected`
-				: `${agentActivityRestBorderClassName} bg-surface`,
+				? cn(
+					chromeStyles.restClassName,
+					usesStrokeChrome ? chromeStyles.agentSurfaceHoverClassName : undefined,
+					"bg-bg-selected",
+				)
+				: cn(agentActivityRestBorderClassName, "bg-surface"),
 	);
 	// Last chin row is the travelling chip: keep the grey backdrop and close
 	// the open chin so the well hugs the white card. A 4px bottom pad matches
@@ -485,7 +494,7 @@ function JiraIssueDefault({
 	};
 	const agentActivitySurfaceStyle: CSSProperties = {
 		...AGENT_ACTIVITY_SURFACE_STYLE,
-		...(usesStrokeChrome ? { boxShadow: "none" } : undefined),
+		boxShadow: chromeStyles.boxShadow,
 	};
 
 	function handleSubtasksToggle() {
@@ -639,6 +648,7 @@ function JiraIssueDefault({
 						/>
 						<div className={issueRowsClassName}>
 							<JiraIssueSubtasks
+								chrome={chrome}
 								completedCount={completedSubtaskCount}
 								controlId={subtasksPanelId}
 								expanded={resolvedSubtasksExpanded}
@@ -647,7 +657,6 @@ function JiraIssueDefault({
 								onToggle={handleSubtasksToggle}
 								shouldReduceMotion={shouldReduceMotion}
 								subtasks={subtasks}
-								usesStrokeChrome={usesStrokeChrome}
 							/>
 						</div>
 					</motion.div>

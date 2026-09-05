@@ -22,13 +22,19 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-function JiraIssueSubtaskCard({ subtask }: Readonly<{ subtask: JiraIssueSubtask }>) {
+import { resolveJiraIssueChrome, type JiraIssueChromeStyles } from "./chrome";
+import type { JiraIssueChrome } from "./types";
+
+function JiraIssueSubtaskCard({
+	chromeStyles,
+	subtask,
+}: Readonly<{ chromeStyles: JiraIssueChromeStyles; subtask: JiraIssueSubtask }>) {
 	return (
 		<div
-			className="border border-transparent bg-surface p-3"
+			className={cn("border bg-surface p-3", chromeStyles.restClassName, chromeStyles.hoverClassName)}
 			style={{
 				borderRadius: token("radius.large"),
-				boxShadow: token("elevation.shadow.raised"),
+				boxShadow: chromeStyles.boxShadow,
 			}}
 		>
 			<div className="flex flex-col gap-4">
@@ -77,6 +83,7 @@ export function JiraIssueSeparator({
 }
 
 export function JiraIssueSubtasks({
+	chrome,
 	completedCount,
 	controlId,
 	expanded,
@@ -85,8 +92,8 @@ export function JiraIssueSubtasks({
 	onToggle,
 	shouldReduceMotion,
 	subtasks,
-	usesStrokeChrome,
 }: Readonly<{
+	chrome: JiraIssueChrome;
 	completedCount: number;
 	controlId: string;
 	expanded: boolean;
@@ -95,8 +102,9 @@ export function JiraIssueSubtasks({
 	onToggle: () => void;
 	shouldReduceMotion: boolean | null;
 	subtasks: readonly JiraIssueSubtask[];
-	usesStrokeChrome: boolean;
 }>) {
+	const chromeStyles = resolveJiraIssueChrome(chrome);
+	const usesStrokeChrome = chrome === "stroke";
 	const totalCount = subtasks.length;
 	const subtasksToggleLabel = `${expanded ? "Hide" : "Show"} ${label.toLowerCase()}`;
 	const layoutTransition = getJiraIssueLayoutTransition(shouldReduceMotion);
@@ -183,7 +191,7 @@ export function JiraIssueSubtasks({
 						transition={layoutTransition}
 					>
 						{subtasks.map((subtask) => (
-							<JiraIssueSubtaskCard key={subtask.issueKey} subtask={subtask} />
+							<JiraIssueSubtaskCard chromeStyles={chromeStyles} key={subtask.issueKey} subtask={subtask} />
 						))}
 					</motion.div>
 				) : null}
