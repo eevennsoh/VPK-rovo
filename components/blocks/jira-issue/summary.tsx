@@ -37,6 +37,10 @@ const PRIORITY_ICONS = {
 	minor: PriorityMinorIcon,
 } as const;
 
+/** Rest as the default gray Tag; reveal the label color while the issue card is hovered or focused. */
+const ISSUE_TAG_IDLE_BORDER_CLASS =
+	"duration-fast ease-out-practical [@media(hover:hover)]:group-[:not(:hover):not(:focus-within)]/jira-issue:border-border-accent-gray-subtle";
+
 const PRIORITY_COLORS = {
 	major: token("color.icon.danger"),
 	medium: token("color.icon.information"),
@@ -224,7 +228,11 @@ export function JiraIssueSummary({
 			{tags && tags.length > 0 ? (
 				<TagGroup className="min-w-0 gap-1 overflow-hidden">
 					{tags.map((tag, index) => (
-						<Tag key={`${tag.text}-${index}`} color={tag.color}>
+						<Tag
+							key={`${tag.text}-${index}`}
+							className={ISSUE_TAG_IDLE_BORDER_CLASS}
+							color={tag.color}
+						>
 							{tag.text}
 						</Tag>
 					))}
