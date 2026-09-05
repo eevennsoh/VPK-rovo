@@ -26,6 +26,7 @@ import ExperimentalV2JiraKanbanPage from "@/components/blocks/jira-kanban/experi
 		},
 	],
 	props: [
+		{ name: "columnChrome", type: '"default" | "simple"', description: "Expanded column backdrop. \"default\" is the sunken well. \"simple\" is no well. Omit for \"default\"." },
 		{ name: "selectionToolbar", type: "JiraKanbanSelectionToolbarConfig", description: "Optional Jira Toolbar actions shown while controlled card selection is non-empty." },
 	],
 };

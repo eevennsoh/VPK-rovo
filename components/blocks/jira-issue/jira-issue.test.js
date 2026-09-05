@@ -61,10 +61,11 @@ test("Jira issue stroke chrome drops the raised shadow and uses the disabled bor
 	assert.match(TYPES_SOURCE, /export type JiraIssueChrome = "raised" \| "stroke";/u);
 	assert.match(SOURCE, /chrome\?: JiraIssueChrome;/u);
 	assert.match(SOURCE, /chrome = "raised",/u);
+	assert.match(SOURCE, /import \{ resolveJiraIssueChrome \} from "\.\/chrome";/u);
+	assert.match(SOURCE, /const chromeStyles = resolveJiraIssueChrome\(chrome\);/u);
 	assert.match(SOURCE, /const usesStrokeChrome = chrome === "stroke";/u);
-	assert.match(SOURCE, /const idleBorderClassName = usesStrokeChrome\s*\n\t\t\? "border-border-disabled hover:border-border group-hover\/jira-issue:border-border"\s*\n\t\t: "border-transparent";/u);
-	assert.match(SOURCE, /\.\.\.\(usesStrokeChrome \? undefined : \{ boxShadow: token\("elevation\.shadow\.raised"\) \}\)/u);
-	assert.match(SOURCE, /\.\.\.\(usesStrokeChrome \? \{ boxShadow: "none" \} : undefined\)/u);
+	assert.match(SOURCE, /boxShadow: chromeStyles\.boxShadow,/u);
+	assert.doesNotMatch(SOURCE, /export \{[\s\S]*resolveJiraIssueChrome/u);
 	assert.match(SUMMARY_SOURCE, /usesStrokeChrome: boolean;/u);
 	assert.match(SOURCE, /usesStrokeChrome=\{usesStrokeChrome\}/u);
 	assert.match(
@@ -76,8 +77,8 @@ test("Jira issue stroke chrome drops the raised shadow and uses the disabled bor
 });
 
 test("Jira issue stroke chrome keeps its rest border everywhere except the agent shell's white surface", () => {
-	assert.match(SOURCE, /const idleBorderClassName = usesStrokeChrome\s*\n\t\t\? "border-border-disabled hover:border-border group-hover\/jira-issue:border-border"\s*\n\t\t: "border-transparent";/u);
-	assert.match(SOURCE, /const agentActivityIdleBorderClassName = usesStrokeChrome\s*\n\t\t\? "border-border-disabled group-hover\/jira-issue-card:border-border"\s*\n\t\t: "border-transparent";/u);
+	assert.match(SOURCE, /const issueChromeClassName = cn\(chromeStyles\.restClassName, chromeStyles\.hoverClassName\);/u);
+	assert.match(SOURCE, /const agentSurfaceChromeClassName = cn\(\s*\n\t\tchromeStyles\.restClassName,\s*\n\t\tchromeStyles\.agentSurfaceHoverClassName,\s*\n\t\);/u);
 	assert.match(SOURCE, /usesAgentActivityShell\s*\n\t\t\t\? "group\/jira-issue-card border-transparent bg-transparent"/u);
 	assert.doesNotMatch(
 		SOURCE,
@@ -85,14 +86,14 @@ test("Jira issue stroke chrome keeps its rest border everywhere except the agent
 	);
 	assert.match(
 		ROOT_CLASS_BLOCK,
-		/const agentActivitySurfaceClassName = cn\([\s\S]*selected[\s\S]*\? "border-border-selected bg-bg-selected"[\s\S]*: active[\s\S]*\? `\$\{agentActivityIdleBorderClassName\} bg-bg-selected`[\s\S]*: `\$\{agentActivityRestBorderClassName\} bg-surface`/u,
+		/const agentActivitySurfaceClassName = cn\([\s\S]*"pointer-events-none absolute border"[\s\S]*selected[\s\S]*\? "border-border-selected bg-bg-selected"[\s\S]*: active[\s\S]*\? cn\([\s\S]*chromeStyles\.restClassName[\s\S]*chromeStyles\.agentSurfaceHoverClassName[\s\S]*"bg-bg-selected"[\s\S]*: cn\(agentActivityRestBorderClassName, "bg-surface"\)/u,
 	);
 	// Only the resting white surface ON THE GREY AGENT BACKDROP swaps to a
 	// surface-coloured hairline: a disabled-grey border over white composites to
 	// the gutter colour, which read as the card being 1px narrower than the chin
 	// rows. With no active shell the card is on the page background and keeps its
 	// stroke outline. Hover still darkens; selected/active are not on white.
-	assert.match(SOURCE, /const agentActivityRestBorderClassName = !hasActiveAgentActivityShell\s*\n\t\t\? agentActivityIdleBorderClassName\s*\n\t\t: usesStrokeChrome\s*\n\t\t\t\? "border-surface group-hover\/jira-issue-card:border-border"\s*\n\t\t\t: "border-transparent";/u);
+	assert.match(SOURCE, /const agentActivityRestBorderClassName = !hasActiveAgentActivityShell\s*\n\t\t\? agentSurfaceChromeClassName\s*\n\t\t: usesStrokeChrome\s*\n\t\t\t\? cn\("border-surface", chromeStyles\.agentSurfaceHoverClassName\)\s*\n\t\t\t: agentSurfaceChromeClassName;/u);
 });
 
 test("Jira issue exposes the experimental stroke visual as a catalog example", () => {
@@ -220,8 +221,8 @@ test("Jira issue owns an uncaptured-work variant with a suggested-link chin", ()
 });
 
 test("Jira issue distinguishes an active card background from bulk selection", () => {
-	assert.match(ROOT_CLASS_BLOCK, /selected[\s\S]*\? "border-border-selected bg-bg-selected"[\s\S]*: active[\s\S]*\? `\$\{idleBorderClassName\} bg-bg-selected`[\s\S]*: `\$\{idleBorderClassName\} bg-surface`/u);
-	assert.match(ROOT_CLASS_BLOCK, /const agentActivitySurfaceClassName = cn\([\s\S]*selected[\s\S]*\? "border-border-selected bg-bg-selected"[\s\S]*: active[\s\S]*\? `\$\{agentActivityIdleBorderClassName\} bg-bg-selected`/u);
+	assert.match(ROOT_CLASS_BLOCK, /selected[\s\S]*\? "border-border-selected bg-bg-selected"[\s\S]*: active[\s\S]*\? cn\([\s\S]*chromeStyles\.restClassName[\s\S]*"bg-bg-selected"[\s\S]*: cn\(issueChromeClassName, "bg-surface"\)/u);
+	assert.match(ROOT_CLASS_BLOCK, /const agentActivitySurfaceClassName = cn\([\s\S]*selected[\s\S]*\? "border-border-selected bg-bg-selected"[\s\S]*: active[\s\S]*\? cn\([\s\S]*chromeStyles\.restClassName[\s\S]*"bg-bg-selected"/u);
 	assert.doesNotMatch(SOURCE, /aria-pressed=\{ariaPressed \?\? active\}/u);
 });
 
@@ -574,9 +575,10 @@ test("Jira issue stroke chrome uses compact inline subtask counts", () => {
 	assert.match(COUNT_BADGE_SOURCE, /compact = false/);
 	assert.match(COUNT_BADGE_SOURCE, /return compact \? \(/);
 	assert.match(COUNT_BADGE_SOURCE, /<span className="shrink-0 text-xs font-normal leading-4 text-text-subtlest">/);
-	assert.match(SUBTASKS_BLOCK, /usesStrokeChrome: boolean;/);
+	assert.match(SUBTASKS_BLOCK, /chrome: JiraIssueChrome;/);
+	assert.match(SUBTASKS_BLOCK, /const usesStrokeChrome = chrome === "stroke";/);
 	assert.match(SUBTASKS_BLOCK, /usesStrokeChrome\s*\n\s*\? "flex items-center gap-1\.5 text-xs font-medium leading-4 text-text-subtle"\s*\n\s*: "flex items-center gap-2 text-sm font-medium leading-5 text-text-subtle"/);
-	assert.match(SOURCE, /<JiraIssueSubtasks[\s\S]*usesStrokeChrome=\{usesStrokeChrome\}/);
+	assert.match(SOURCE, /<JiraIssueSubtasks[\s\S]*chrome=\{chrome\}/);
 });
 
 test("Jira issue renders one aggregate agent row with prioritized status and no hover flyout", () => {
@@ -636,7 +638,7 @@ test("Jira issue renders one aggregate agent row with prioritized status and no 
 	);
 	assert.doesNotMatch(SOURCE, /\[&_\[data-slot=jira-issue-agent-backdrop\]\]:opacity-0/u);
 	assert.doesNotMatch(SOURCE, /\[&_\[data-slot=jira-issue-surface\]\]:-inset-px/u);
-	assert.match(SOURCE, /const agentActivitySurfaceClassName = cn\([\s\S]*"pointer-events-none absolute border"[\s\S]*`\$\{agentActivityRestBorderClassName\} bg-surface`/);
+	assert.match(SOURCE, /const agentActivitySurfaceClassName = cn\([\s\S]*"pointer-events-none absolute border"[\s\S]*cn\(agentActivityRestBorderClassName, "bg-surface"\)/);
 	assert.doesNotMatch(SOURCE, /agentActivityShellPadding/);
 	assert.doesNotMatch(SOURCE, /agentActivityBackdropOutset/);
 	assert.match(SOURCE, /data-agent-activity-mode=\{resolvedAgentActivityMode\}/);
@@ -757,7 +759,7 @@ test("Jira issue agent activity demo is registered in docs and variant registry"
 	assert.match(PAGE_SOURCE, /const openActivityChat = useCallback\(\(activity: JiraIssueAgentActivity\) => \{[\s\S]*openAgentChat\(\{[\s\S]*agentId: activity\.id,[\s\S]*agentName: activity\.name,[\s\S]*question: activity\.question,[\s\S]*\}\);[\s\S]*\}, \[openAgentChat\]\);/);
 	assert.match(PAGE_SOURCE, /const handleAgentActivityViewChat = openActivityChat;/);
 	assert.match(PAGE_SOURCE, /const handleGenerativeActionSubmit = useCallback\(\(request: JiraIssueGenerativeActionRequest\) => \{[\s\S]*openAgentChat\(\{[\s\S]*request: request\.prompt,[\s\S]*\}\);[\s\S]*\}, \[openAgentChat\]\);/);
-	assert.match(PAGE_SOURCE, /<RovoChatProvider agentProfiles=\{ASX_CHAT_AGENT_PROFILES\}>[\s\S]*<JiraIssueAgentActivityStatesDemo[\s\S]*agentActivityLayout=\{isExperimentalAgentActivityVariant \? "split" : "merged"\}[\s\S]*chrome=\{isExperimentalAgentActivityVariant \? "stroke" : "raised"\}[\s\S]*\/>[\s\S]*<\/RovoChatProvider>/);
+	assert.match(PAGE_SOURCE, /<RovoChatProvider agentProfiles=\{ASX_CHAT_AGENT_PROFILES\}>[\s\S]*<JiraIssueAgentActivityStatesDemo[\s\S]*agentActivityLayout="merged"[\s\S]*chrome="raised"[\s\S]*\/>[\s\S]*<\/RovoChatProvider>/);
 	assert.doesNotMatch(PAGE_SOURCE, /request-review-agent/);
 	assert.match(PAGE_SOURCE, /\{ value: "default", label: "Default" \}/);
 	assert.match(PAGE_SOURCE, /\{ value: "single-agent-working", label: "1 agent" \}/);
@@ -816,14 +818,20 @@ test("Jira issue agent activity demo is registered in docs and variant registry"
 });
 
 test("Jira issue agent activity demo has an experimental stroke-chrome duplicate", () => {
-	// The experimental duplicate reuses the same demo component and only swaps
-	// the card chrome plus the split agent-activity chin layout, so the two
-	// sections cannot drift apart.
-	assert.match(PAGE_SOURCE, /const isAgentActivityVariant = variant === "agent-activity-states" \|\| variant === "agent-activity-states-experimental";/);
-	assert.match(PAGE_SOURCE, /const isExperimentalAgentActivityVariant = variant === "agent-activity-states-experimental";/);
-	assert.match(PAGE_SOURCE, /interface JiraIssueAgentActivityStatesDemoProps \{[\s\S]*agentActivityLayout\?: JiraIssueAgentActivityLayout;[\s\S]*chrome\?: JiraIssueChrome;[\s\S]*\}/);
-	assert.match(PAGE_SOURCE, /function JiraIssueAgentActivityStatesDemo\(\{[\s\S]*agentActivityLayout = "merged",[\s\S]*chrome = "raised",[\s\S]*\}: Readonly<JiraIssueAgentActivityStatesDemoProps> = \{\}\): React\.ReactElement \{/);
+	// The experimental duplicate reuses the same demo component. A module-scope
+	// page child owns chrome state so Raised/Stroke can toggle without a rename
+	// of the demo's existing `chrome` prop. The non-experimental example stays
+	// raised with no toggle.
+	assert.match(PAGE_SOURCE, /variant === "agent-activity-states-experimental"/);
+	assert.match(PAGE_SOURCE, /variant === "agent-activity-states"/);
+	assert.match(PAGE_SOURCE, /function JiraIssueExperimentalAgentActivityStatesPage\(\): React\.ReactElement \{/);
+	assert.match(PAGE_SOURCE, /const \[chrome, setChrome\] = useState<JiraIssueChrome>\("stroke"\);/);
+	assert.match(PAGE_SOURCE, /interface JiraIssueAgentActivityStatesDemoProps \{[\s\S]*agentActivityLayout\?: JiraIssueAgentActivityLayout;[\s\S]*chrome\?: JiraIssueChrome;[\s\S]*onChromeChange\?: \(chrome: JiraIssueChrome\) => void;[\s\S]*\}/);
+	assert.match(PAGE_SOURCE, /function JiraIssueAgentActivityStatesDemo\(\{[\s\S]*agentActivityLayout = "merged",[\s\S]*chrome = "raised",[\s\S]*onChromeChange,[\s\S]*\}: Readonly<JiraIssueAgentActivityStatesDemoProps> = \{\}\): React\.ReactElement \{/);
 	assert.match(PAGE_SOURCE, /<JiraIssue[\s\S]*agentActivityLayout=\{agentActivityLayout\}[\s\S]*chrome=\{chrome\}/);
+	assert.match(PAGE_SOURCE, /onChromeChange=\{setChrome\}/);
+	assert.match(PAGE_SOURCE, /aria-pressed=\{chrome === "raised"\}/);
+	assert.match(PAGE_SOURCE, /aria-pressed=\{chrome === "stroke"\}/);
 	assert.match(DEMO_SOURCE, /export function JiraIssueDemoAgentActivityStatesExperimental\(\)/);
 	assert.match(DEMO_SOURCE, /<JiraIssuePage variant="agent-activity-states-experimental" \/>/);
 	assert.match(DETAILS_SOURCE, /id: "agent-activity-states-experimental"[\s\S]*demoSlug: "jira-issue-demo-agent-activity-states-experimental"/);
@@ -872,9 +880,13 @@ test("Jira issue renders expandable subtasks with nested subtask cards", () => {
 	assert.doesNotMatch(SUBTASKS_BLOCK, /hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring[\s\S]*onClick=\{onToggle\}/);
 	assert.doesNotMatch(SOURCE, /role="progressbar"/);
 	assert.doesNotMatch(SOURCE, /progressPercent/);
-	assert.match(SUBTASKS_SOURCE, /<JiraIssueSubtaskCard key=\{subtask\.issueKey\} subtask=\{subtask\} \/>/);
-	assert.match(SUBTASKS_SOURCE, /className="border border-transparent bg-surface p-3"/);
-	assert.match(SOURCE, /boxShadow: token\("elevation\.shadow\.raised"\)/);
+	assert.match(SUBTASKS_SOURCE, /<JiraIssueSubtaskCard chromeStyles=\{chromeStyles\} key=\{subtask\.issueKey\} subtask=\{subtask\} \/>/);
+	assert.match(SUBTASKS_SOURCE, /className=\{cn\("border bg-surface p-3", chromeStyles\.restClassName, chromeStyles\.hoverClassName\)\}/);
+	assert.match(SUBTASKS_SOURCE, /boxShadow: chromeStyles\.boxShadow/);
+	assert.doesNotMatch(
+		SUBTASKS_SOURCE.slice(0, SUBTASKS_SOURCE.indexOf("export function JiraIssueSeparator")),
+		/group-hover\/jira-issue/,
+	);
 	assert.doesNotMatch(SUBTASKS_SOURCE, /className="border border-transparent bg-surface px-4 py-3"/);
 	assert.doesNotMatch(SUBTASKS_SOURCE, /rounded-lg border border-border bg-surface px-3 py-3 shadow-sm/);
 });

@@ -445,7 +445,6 @@ export default function JiraIssuePage({ variant = "default" }: Readonly<JiraIssu
 	const isUncapturedWorkVariant = variant === "uncaptured-work";
 	const isSubtasksVariant = variant === "subtasks-collapsed" || variant === "subtasks-expanded";
 	const isParentEpicVariant = variant === "parent-epic";
-	const isAgentActivityVariant = variant === "agent-activity-states" || variant === "agent-activity-states-experimental";
 	const hasCompactIssueContext = isSubtasksVariant || isParentEpicVariant;
 	const issueKey = isParentEpicVariant ? "JDSN-157" : isSubtasksVariant ? "JDSN-229" : "RFP-101";
 	const summary = isParentEpicVariant
@@ -454,14 +453,16 @@ export default function JiraIssuePage({ variant = "default" }: Readonly<JiraIssu
 			? "Venn's test"
 			: "Acmecorp: Prepare for bid recommendation for ESM RFP";
 
-	if (isAgentActivityVariant) {
-		const isExperimentalAgentActivityVariant = variant === "agent-activity-states-experimental";
+	if (variant === "agent-activity-states-experimental") {
+		return <JiraIssueExperimentalAgentActivityStatesPage />;
+	}
+
+	if (variant === "agent-activity-states") {
 		return (
 			<RovoChatProvider agentProfiles={ASX_CHAT_AGENT_PROFILES}>
 				<JiraIssueAgentActivityStatesDemo
-					agentActivityLayout={isExperimentalAgentActivityVariant ? "split" : "merged"}
-					chrome={isExperimentalAgentActivityVariant ? "stroke" : "raised"}
-					showSessionTransferStates={isExperimentalAgentActivityVariant}
+					agentActivityLayout="merged"
+					chrome="raised"
 				/>
 			</RovoChatProvider>
 		);
@@ -525,13 +526,30 @@ const EXPERIMENTAL_DEMO_PULL_REQUEST_PREVIEW: JiraIssuePullRequestPreview = {
 interface JiraIssueAgentActivityStatesDemoProps {
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	chrome?: JiraIssueChrome;
+	onChromeChange?: (chrome: JiraIssueChrome) => void;
 	/** Adds the Unlink / Move / Link session-transfer phases to the tab list. */
 	showSessionTransferStates?: boolean;
+}
+
+function JiraIssueExperimentalAgentActivityStatesPage(): React.ReactElement {
+	const [chrome, setChrome] = useState<JiraIssueChrome>("stroke");
+
+	return (
+		<RovoChatProvider agentProfiles={ASX_CHAT_AGENT_PROFILES}>
+			<JiraIssueAgentActivityStatesDemo
+				agentActivityLayout="split"
+				chrome={chrome}
+				onChromeChange={setChrome}
+				showSessionTransferStates
+			/>
+		</RovoChatProvider>
+	);
 }
 
 function JiraIssueAgentActivityStatesDemo({
 	agentActivityLayout = "merged",
 	chrome = "raised",
+	onChromeChange,
 	showSessionTransferStates = false,
 }: Readonly<JiraIssueAgentActivityStatesDemoProps> = {}): React.ReactElement {
 	const [agentActivityState, setAgentActivityState] = useState<JiraIssueAgentActivityDemoState>("default");
@@ -679,6 +697,26 @@ function JiraIssueAgentActivityStatesDemo({
 						</Button>
 					))}
 				</div>
+				{onChromeChange ? (
+					<div className="mt-2 flex w-full flex-wrap items-center justify-center gap-2">
+						<Button
+							aria-pressed={chrome === "raised"}
+							onClick={() => onChromeChange("raised")}
+							size="compact"
+							variant={chrome === "raised" ? "default" : "outline"}
+						>
+							Raised
+						</Button>
+						<Button
+							aria-pressed={chrome === "stroke"}
+							onClick={() => onChromeChange("stroke")}
+							size="compact"
+							variant={chrome === "stroke" ? "default" : "outline"}
+						>
+							Stroke
+						</Button>
+					</div>
+				) : null}
 			</div>
 			<div className="flex flex-1 items-start justify-center overflow-visible px-6 pb-10 pt-6">
 				<div className="flex w-[276px] flex-col gap-2">

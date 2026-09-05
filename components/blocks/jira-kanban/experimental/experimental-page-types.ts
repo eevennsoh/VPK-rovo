@@ -66,6 +66,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	agents?: readonly JiraKanbanAgentData[];
 	ariaLabel?: string;
 	boardColumns?: readonly JiraKanbanColumnData[];
+	columnChrome?: JiraKanbanProps["columnChrome"];
 	compactHeader?: boolean;
 	defaultAgentSessionColumnCollapsed?: boolean;
 	/**

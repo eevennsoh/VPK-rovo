@@ -9,6 +9,7 @@ import {
 	type JiraIssueAgentActivityIndicatorRenderer,
 	type JiraIssueAgentActivityLayout,
 	type JiraIssueAgentSessionDragControl,
+	type JiraIssueChrome,
 	type JiraIssueGenerativeActionConfig,
 	type JiraIssueGenerativeActionPresentation,
 } from "@/components/blocks/jira-issue";
@@ -31,6 +32,7 @@ interface ExperimentalJiraKanbanCardProps {
 	agentActivityLayout: JiraIssueAgentActivityLayout;
 	agentSessionDragControl?: JiraIssueAgentSessionDragControl;
 	card: JiraKanbanCardData;
+	chrome: JiraIssueChrome;
 	columnTitle: string;
 	capturedItemIds?: ReadonlySet<string>;
 	detachedAgentSessions: readonly AgentSessionItem[];
@@ -88,6 +90,7 @@ export function ExperimentalJiraKanbanCard({
 	agentSessionDragControl,
 	capturedItemIds,
 	card,
+	chrome,
 	columnTitle,
 	detachedAgentSessions,
 	detachedSessionDrag,
@@ -184,7 +187,7 @@ export function ExperimentalJiraKanbanCard({
 			assigneeAvatarSrc={card.avatarSrc}
 			assigneePulse={card.avatarPulse}
 			assigneeUnassignedKind={card.avatarUnassignedKind}
-			chrome="stroke"
+			chrome={chrome}
 			dragging={dragging}
 			generativeAction={{
 				agents: generativeActionAgents,

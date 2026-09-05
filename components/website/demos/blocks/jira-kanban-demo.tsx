@@ -26,7 +26,7 @@ export function JiraKanbanDemoStandard() {
 }
 
 export function JiraKanbanDemoExperimental() {
-	return <ExperimentalPage />;
+	return <ExperimentalPage columnChrome="simple" />;
 }
 
 export function JiraKanbanDemoExperimentalV2() {
@@ -41,6 +41,7 @@ export function JiraKanbanDemoExperimentalV2() {
 			agents={JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS}
 			ariaLabel="Track the Payments SDK v2 migration. Scroll horizontally to review all delivery statuses."
 			boardColumns={boardColumns}
+			columnChrome="simple"
 			headerAssignees={JIRA_GOLDEN_JOURNEYS_V4_PAY_HEADER_ASSIGNEES}
 			insightsEnabled={false}
 			onBoardColumnsChange={(columns) => setBoardColumns([...columns])}

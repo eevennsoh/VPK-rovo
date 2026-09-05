@@ -50,6 +50,15 @@ import { getMentionChildItems } from "@/components/ui-custom/rich-text-editor";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
+import {
+	DEFAULT_KANBAN_COLUMN_CHROME,
+	resolveKanbanColumnChrome,
+	type KanbanColumnChrome,
+	type KanbanColumnChromeStyles,
+} from "./column-chrome";
+
+export type { KanbanColumnChrome };
+
 export type JiraKanbanPriority = JiraIssuePriority;
 
 export type JiraKanbanCardTag = JiraIssueTag;
@@ -142,6 +151,13 @@ export interface JiraKanbanProps {
 	assignedAgentIdsByColumn?: Readonly<Record<string, readonly string[]>>;
 	ariaLabel?: string;
 	cardMoveAnimation?: JiraKanbanCardMoveAnimation;
+	/**
+	 * Expanded column backdrop. `"default"` is the sunken well. `"simple"`
+	 * is no well. Omit for `"default"`.
+	 *
+	 * Do not pass a Properties checkbox boolean. Parse at the host.
+	 */
+	columnChrome?: KanbanColumnChrome;
 	columnHeaderPaddingBlock?: CSSProperties["paddingBlock"];
 	draggedCardCode?: string | null;
 	activeCardCode?: string;
@@ -356,6 +372,8 @@ function BoardColumn({
 	agents,
 	assignedAgentIds,
 	children,
+	chrome,
+	columnChrome,
 	count,
 	headerPaddingBlock,
 	onCreateAgent,
@@ -365,6 +383,8 @@ function BoardColumn({
 	agents?: readonly JiraKanbanAgentData[];
 	assignedAgentIds: readonly string[];
 	children: ReactNode;
+	chrome: KanbanColumnChromeStyles;
+	columnChrome: KanbanColumnChrome;
 	count: number;
 	headerPaddingBlock: CSSProperties["paddingBlock"];
 	onCreateAgent?: (columnTitle: string) => void;
@@ -375,17 +395,17 @@ function BoardColumn({
 
 	return (
 		<div
-			className="group/board-column"
+			className={cn("group/board-column", chrome.columnClassName)}
+			data-kanban-column-chrome={columnChrome}
 			style={{
 				display: "flex",
 				flexDirection: "column",
 				width: "100%",
 				height: "100%",
-				backgroundColor: token("elevation.surface.sunken"),
 				borderRadius: token("radius.xlarge"),
 			}}
 		>
-			<div style={{ paddingTop: token("space.150"), paddingBottom: headerPaddingBlock, paddingInline: token("space.150") }}>
+			<div style={{ ...chrome.header, paddingBottom: headerPaddingBlock }}>
 				<div className={cn("flex min-w-0 items-center gap-2", showAgentAssignment && "justify-between")}>
 					<div className="flex min-w-0 items-center gap-2">
 						<span
@@ -416,18 +436,16 @@ function BoardColumn({
 				style={{
 					flexGrow: 1,
 					overflowY: "auto",
-					paddingTop: token("space.050"),
-					paddingBottom: token("space.100"),
-					paddingInline: token("space.050"),
 					display: "flex",
 					flexDirection: "column",
 					gap: token("space.050"),
+					...chrome.cardList,
 				}}
 			>
 				{children}
 			</div>
 
-			<div className="w-full" style={{ paddingBlock: token("space.050"), paddingInline: token("space.050") }}>
+			<div className="w-full" style={{ paddingBlock: token("space.050"), ...chrome.footer }}>
 				<Button className="w-full justify-start gap-2 rounded-lg" size="default" variant="ghost">
 					<Icon render={<AddIcon label="" size="small" />} />
 					Create
@@ -471,6 +489,7 @@ export function JiraKanban({
 	assignedAgentIdsByColumn = {},
 	boardColumns,
 	cardMoveAnimation,
+	columnChrome = DEFAULT_KANBAN_COLUMN_CHROME,
 	columnHeaderPaddingBlock = token("space.100"),
 	draggedCardCode = null,
 	selectedCardCodes,
@@ -490,6 +509,7 @@ export function JiraKanban({
 	paddingTop = token("space.150"),
 	selectionToolbar,
 }: Readonly<JiraKanbanProps>) {
+	const chrome = resolveKanbanColumnChrome(columnChrome);
 	const cardLayoutGroupId = useId();
 	const shouldReduceMotion = useReducedMotion();
 	const shouldAnimateCardMoves = animateCardMoves && !shouldReduceMotion;
@@ -640,6 +660,8 @@ export function JiraKanban({
 							<BoardColumn
 								agents={agents}
 								assignedAgentIds={assignedAgentIdsByColumn[column.title] ?? []}
+								chrome={chrome}
+								columnChrome={columnChrome}
 								count={column.cards.length}
 								headerPaddingBlock={columnHeaderPaddingBlock}
 								onCreateAgent={onCreateAgent}
@@ -693,6 +715,7 @@ export function JiraKanban({
 											>
 											<JiraIssue
 												active={isActive}
+												chrome={chrome.cardChrome}
 												summary={card.title}
 												issueKey={card.code}
 												tags={card.tags}

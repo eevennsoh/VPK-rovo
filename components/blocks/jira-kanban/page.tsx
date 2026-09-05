@@ -7,6 +7,7 @@ import {
 	type JiraKanbanCardData,
 	type JiraKanbanCardSelectModifiers,
 	type JiraKanbanColumnData,
+	type JiraKanbanProps,
 } from "./index";
 import { createJiraKanbanColumns } from "./jira-kanban-data";
 import { JiraKanbanBoardHeader } from "./board-header";
@@ -29,6 +30,7 @@ export interface JiraKanbanPageProps {
 	agents?: readonly JiraKanbanAgentData[];
 	ariaLabel?: string;
 	boardColumns?: readonly JiraKanbanColumnData[];
+	columnChrome?: JiraKanbanProps["columnChrome"];
 	compactHeader?: boolean;
 	onBoardColumnsChange?: (columns: readonly JiraKanbanColumnData[]) => void;
 	onCardClick?: (card: JiraKanbanCardData, columnTitle: string) => void;
@@ -45,6 +47,7 @@ export default function JiraKanbanPage({
 	agents = BOARD_AGENTS,
 	ariaLabel = "RFP board columns. Scroll horizontally to review all statuses.",
 	boardColumns: controlledBoardColumns,
+	columnChrome,
 	compactHeader = false,
 	onBoardColumnsChange,
 	onCardClick,
@@ -224,6 +227,7 @@ export default function JiraKanbanPage({
 					ariaLabel={ariaLabel}
 					assignedAgentIdsByColumn={columnAgentAssignments}
 					boardColumns={filteredBoardColumns}
+					columnChrome={columnChrome}
 					draggedCardCode={draggedCard?.card.code ?? null}
 					selectedCardCodes={selection.selectedCardCodes}
 					onCardClick={handleCardClick}

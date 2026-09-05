@@ -274,6 +274,7 @@ test("the catalog page shows a Panel wrap and an in-flow kanban host", () => {
 	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage/u);
 	assert.match(PAGE_SOURCE, /showAgentSessionColumn/u);
 	assert.match(PAGE_SOURCE, /agentSessionPresentation="column"/u);
+	assert.match(PAGE_SOURCE, /columnChrome="simple"/u);
 	assert.match(PAGE_SOURCE, /insightsEnabled=\{false\}/u);
 	assert.match(DETAIL_SOURCE, /name: "headerSurface"/u);
 	assert.match(DETAIL_SOURCE, /name: "triage"/u);

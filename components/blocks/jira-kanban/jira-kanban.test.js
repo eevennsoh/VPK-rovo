@@ -219,7 +219,7 @@ test("Kanban card focus border stays inside the card and uses the focused border
 test("Kanban card list gives the first card room for its raised edge", () => {
 	assert.match(
 		SOURCE,
-		/overflowY: "auto",\n\s+paddingTop: token\("space\.050"\),\n\s+paddingBottom: token\("space\.100"\),/,
+		/overflowY: "auto",\n\s+display: "flex",\n\s+flexDirection: "column",\n\s+gap: token\("space\.050"\),\n\s+\.\.\.chrome\.cardList,/u,
 	);
 });
 
@@ -234,7 +234,7 @@ test("Experimental kanban card lists drop scroller padding while the default kee
 	);
 	assert.match(
 		SOURCE,
-		/overflowY: "auto",\n\s+paddingTop: token\("space\.050"\),\n\s+paddingBottom: token\("space\.100"\),\n\s+paddingInline: token\("space\.050"\),/,
+		/overflowY: "auto",\n\s+display: "flex",\n\s+flexDirection: "column",\n\s+gap: token\("space\.050"\),\n\s+\.\.\.chrome\.cardList,/u,
 	);
 });
 
@@ -253,7 +253,7 @@ test("Experimental kanban card gap matches the column gutter", () => {
 	);
 	assert.match(
 		SOURCE,
-		/overflowY: "auto",\n\s+paddingTop: token\("space\.050"\),\n\s+paddingBottom: token\("space\.100"\),\n\s+paddingInline: token\("space\.050"\),\n\s+display: "flex",\n\s+flexDirection: "column",\n\s+gap: token\("space\.050"\),/,
+		/overflowY: "auto",\n\s+display: "flex",\n\s+flexDirection: "column",\n\s+gap: token\("space\.050"\),\n\s+\.\.\.chrome\.cardList,/u,
 	);
 });
 
@@ -306,7 +306,7 @@ test("Kanban columns stretch through the available board height", () => {
 	assert.match(SOURCE, /<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">/u);
 	assert.match(SOURCE, /<section[\s\S]*className="flex min-h-0 flex-1 focus-visible:outline-none/u);
 	assert.match(SOURCE, /<div className="flex min-h-full items-stretch gap-2" style=\{\{ minWidth: "100%" \}\}>/u);
-	assert.match(SOURCE, /className="group\/board-column"[\s\S]*height: "100%"/u);
+	assert.match(SOURCE, /className=\{cn\("group\/board-column", chrome\.columnClassName\)\}[\s\S]*height: "100%"/u);
 });
 
 test("Kanban board renders no scroll-for-more affordance or its measurement listeners", () => {
@@ -663,15 +663,19 @@ test("Kanban derives visible column counts from rendered cards", () => {
 	assert.doesNotMatch(SOURCE, /count=\{column\.count\}/);
 });
 
-test("Experimental kanban columns sit on the board surface without a sunken fill", () => {
+test("Kanban column wells come from the shared chrome recipe", () => {
+	assert.match(SOURCE, /resolveKanbanColumnChrome\(columnChrome\)/u);
+	assert.match(SOURCE, /data-kanban-column-chrome=\{columnChrome\}/u);
+	assert.match(EXPERIMENTAL_SOURCE, /resolveKanbanColumnChrome\(columnChrome\)/u);
+	assert.match(EXPERIMENTAL_SOURCE, /data-kanban-column-chrome=\{columnChrome\}/u);
+	assert.doesNotMatch(SOURCE, /backgroundColor: token\("elevation.surface.sunken"\)/u);
 	assert.doesNotMatch(EXPERIMENTAL_SOURCE, /backgroundColor: token\("elevation.surface.sunken"\)/u);
-	assert.match(SOURCE, /backgroundColor: token\("elevation.surface.sunken"\)/u);
 });
 
 test("Experimental kanban column headers keep bottom padding without top padding", () => {
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/style=\{\{ paddingBottom: token\("space\.100"\) \}\}/u,
+		/style=\{\{ \.\.\.chrome\.header, paddingBottom: token\("space\.100"\) \}\}/u,
 	);
 	assert.doesNotMatch(
 		EXPERIMENTAL_SOURCE,
@@ -679,14 +683,21 @@ test("Experimental kanban column headers keep bottom padding without top padding
 	);
 	assert.match(
 		SOURCE,
-		/paddingTop: token\("space\.150"\), paddingBottom: headerPaddingBlock, paddingInline: token\("space\.150"\)/u,
+		/\.\.\.chrome\.header, paddingBottom: headerPaddingBlock/u,
 	);
 });
 
-test("Experimental kanban cards use stroke chrome instead of raised elevation", () => {
-	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*chrome="stroke"/u);
+test("Kanban cards take issue chrome from the column well recipe", () => {
+	assert.match(SOURCE, /chrome=\{chrome\.cardChrome\}/u);
+	assert.match(EXPERIMENTAL_SOURCE, /chrome=\{chrome\.cardChrome\}/u);
+	assert.match(EXPERIMENTAL_V2_SOURCE, /chrome=\{chrome\.cardChrome\}/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*chrome=\{chrome\}/u);
 	assert.match(EXPERIMENTAL_PULSE_RAIL_SOURCE, /<JiraIssue[\s\S]*chrome="stroke"/u);
 	assert.doesNotMatch(SOURCE, /chrome="stroke"/u);
+	assert.doesNotMatch(EXPERIMENTAL_CARD_SOURCE, /chrome="stroke"/u);
+	assert.doesNotMatch(EXPERIMENTAL_V2_SOURCE, /chrome="stroke"/u);
+	assert.doesNotMatch(EXPERIMENTAL_SOURCE, /issueChrome/u);
+	assert.doesNotMatch(SOURCE, /issueChrome/u);
 });
 
 test("Experimental kanban cards forward their configured agent activity layout", () => {
@@ -758,7 +769,7 @@ test("Experimental kanban cards use the hexagon avatar for agent assignees", () 
 });
 
 test("Experimental kanban column wrappers stay overflow-visible so card strokes are not clipped", () => {
-	assert.match(EXPERIMENTAL_SOURCE, /className="group\/board-column min-w-0 overflow-visible"/u);
+	assert.match(EXPERIMENTAL_SOURCE, /className=\{cn\("group\/board-column min-w-0 overflow-visible", chrome\.columnClassName\)\}/u);
 	assert.match(EXPERIMENTAL_SOURCE, /className="min-w-0 overflow-visible border-2 border-transparent transition-colors"/u);
 	assert.doesNotMatch(SOURCE, /group\/board-column overflow-visible/u);
 });
@@ -786,7 +797,7 @@ test("Kanban Create footers stretch to the same width as column cards", () => {
 	);
 	assert.match(
 		SOURCE,
-		/paddingInline: token\("space\.050"\)[\s\S]*<div className="w-full" style=\{\{ paddingBlock: token\("space\.050"\), paddingInline: token\("space\.050"\) \}\}>[\s\S]*<Button className="w-full justify-start gap-2 rounded-lg"/u,
+		/<div className="w-full" style=\{\{ paddingBlock: token\("space\.050"\), \.\.\.chrome\.footer \}\}>[\s\S]*<Button className="w-full justify-start gap-2 rounded-lg"/u,
 	);
 });
 

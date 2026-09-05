@@ -735,7 +735,7 @@ test("the Panel design variant floats untracked work over the board and the list
 	);
 	assert.match(
 		PAGE_SOURCE,
-		/<ExperimentalJiraKanbanPage[\s\S]*agentSessionPresentation=\{designVariants\.panel \? "panel" : "column"\}/u,
+		/<ExperimentalJiraKanbanPage[\s\S]*columnChrome=\{designVariants\.simpleKanban \? "simple" : "default"\}/u,
 	);
 	assert.doesNotMatch(
 		EXPERIMENTAL_PAGE_SOURCE,
@@ -954,5 +954,27 @@ test("the untracked panel publishes its occupied width for the floating Rovo but
 	assert.doesNotMatch(
 		EXPERIMENTAL_PAGE_SOURCE,
 		/setProperty\(UNTRACKED_PANEL_WIDTH_CSS_VAR, `\$\{boardScrollEndInset\}px`\)/u,
+	);
+});
+
+test("the Simple kanban design variant reaches the board as column chrome", () => {
+	assert.match(
+		PAGE_SOURCE,
+		/columnChrome=\{designVariants\.simpleKanban \? "simple" : "default"\}/u,
+	);
+	assert.doesNotMatch(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/useDesignVariants|design-variants/u,
+		"the shared page must take columnChrome, not read the global variant store",
+	);
+	assert.doesNotMatch(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/useDesignVariants|design-variants/u,
+		"the shared board must take columnChrome, not read the global variant store",
+	);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /columnChrome\?: JiraKanbanProps\["columnChrome"\];/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/<ExperimentalJiraKanban[\s\S]*columnChrome=\{columnChrome\}/u,
 	);
 });
