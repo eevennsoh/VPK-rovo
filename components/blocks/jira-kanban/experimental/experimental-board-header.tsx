@@ -35,6 +35,23 @@ import {
 
 const EMPTY_ASSIGNEE_IDS: ReadonlySet<string> = new Set();
 
+function toggleSelectedAssigneeId(
+	selectedAssigneeIds: ReadonlySet<string>,
+	assigneeId: string,
+	onSelectedAssigneeIdsChange?: (assigneeIds: Set<string>) => void,
+) {
+	if (!onSelectedAssigneeIdsChange) {
+		return;
+	}
+	const nextSelection = new Set(selectedAssigneeIds);
+	if (nextSelection.has(assigneeId)) {
+		nextSelection.delete(assigneeId);
+	} else {
+		nextSelection.add(assigneeId);
+	}
+	onSelectedAssigneeIdsChange(nextSelection);
+}
+
 /**
  * Experimental fork of `components/blocks/jira-kanban/board-header.tsx`.
  * Starts identical to the default board header and diverges independently.
@@ -190,22 +207,6 @@ export function ExperimentalJiraKanbanBoardHeader({
 	viewTabs,
 	title = JIRA_DESIGN_PROJECT.name,
 }: Readonly<ExperimentalJiraKanbanBoardHeaderProps>) {
-	const hasSelection = selectedAssigneeIds.size > 0;
-	const surfaceTitle = `${surfaceLabel.slice(0, 1).toLocaleUpperCase()}${surfaceLabel.slice(1)}`;
-
-	const toggleAssignee = (assigneeId: string) => {
-		if (!onSelectedAssigneeIdsChange) {
-			return;
-		}
-		const nextSelection = new Set(selectedAssigneeIds);
-		if (nextSelection.has(assigneeId)) {
-			nextSelection.delete(assigneeId);
-		} else {
-			nextSelection.add(assigneeId);
-		}
-		onSelectedAssigneeIdsChange(nextSelection);
-	};
-
 	const moreControls = showMoreControls ? (
 		<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
 			<Icon render={<ShowMoreHorizontalIcon label="" />} />
@@ -219,31 +220,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 
 	return (
 		<header className={cn("shrink-0 pt-3", showBoardControls ? "pb-6" : "pb-0")}>
-			<div className="flex min-w-0 items-center justify-between gap-2 px-6">
-				<div className="flex min-w-0 flex-col gap-0.5">
-					<span className="text-xs text-text-subtlest">Spaces</span>
-					<div className="flex min-w-0 items-center gap-2">
-						<JiraProjectAvatar label={title} src={JIRA_DESIGN_PROJECT.imageSrc} />
-						<Heading as="h1" className="min-w-0 truncate" size="medium">{title}</Heading>
-						<div className="flex shrink-0 items-center gap-1">
-							<Button aria-disabled aria-label="Add people" size="icon" variant="ghost">
-								<Icon render={<PersonAddIcon label="" />} />
-							</Button>
-							<Button aria-disabled aria-label={`More ${surfaceLabel} actions`} size="icon" variant="ghost">
-								<Icon render={<ShowMoreHorizontalIcon label="" />} />
-							</Button>
-						</div>
-					</div>
-				</div>
-				<div className="flex shrink-0 gap-2">
-					<Button aria-disabled aria-label="Share" size="icon" variant="ghost">
-						<Icon render={<ShareIcon label="" />} />
-					</Button>
-					<Button aria-disabled aria-label="Expand" size="icon" variant="ghost">
-						<Icon render={<ExpandHorizontalIcon label="" />} />
-					</Button>
-				</div>
-			</div>
+			<BoardHeaderTitleCluster surfaceLabel={surfaceLabel} title={title} />
 			{viewTabs ? <div className="mt-2">{viewTabs}</div> : null}
 
 			{showBoardControls ? (
@@ -267,34 +244,12 @@ export function ExperimentalJiraKanbanBoardHeader({
 					</InputGroup>
 
 					{facepile ?? (
-						<>
-						{/* Facepile stacks leftmost-on-top: keep DOM order (so tab order matches
-					    left→right visual order) and assign descending z-index instead. `isolate`
-					    contains these low z-indexes; `[&>*]:relative` is required because the
-					    face <button> wrappers are position:static, where z-index is inert. */}
-					<AvatarGroup
-						className={JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME}
-						label={`${surfaceTitle} assignees`}
-					>
-						<AvatarUnassigned kind="person" label="Unassigned" size="sm" />
-						{assignees.slice(0, JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS - 1).map((assignee) => (
-							<button
-								aria-label={`Filter ${surfaceLabel} by ${assignee.name}`}
-								aria-pressed={selectedAssigneeIds.has(assignee.id)}
-								className="rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-								key={assignee.id}
-								onClick={() => toggleAssignee(assignee.id)}
-								type="button"
-							>
-								<AssigneeAvatar
-									assignee={assignee}
-									muted={hasSelection && !selectedAssigneeIds.has(assignee.id)}
-									selected={selectedAssigneeIds.has(assignee.id)}
-								/>
-							</button>
-						))}
-					</AvatarGroup>
-						</>
+						<BoardHeaderDefaultFacepile
+							assignees={assignees}
+							onSelectedAssigneeIdsChange={onSelectedAssigneeIdsChange}
+							selectedAssigneeIds={selectedAssigneeIds}
+							surfaceLabel={surfaceLabel}
+						/>
 					)}
 
 					{filterControl}
@@ -341,5 +296,93 @@ export function ExperimentalJiraKanbanBoardHeader({
 				</div>
 			) : null}
 		</header>
+	);
+}
+
+function BoardHeaderTitleCluster({
+	surfaceLabel,
+	title,
+}: Readonly<{
+	surfaceLabel: string;
+	title: string;
+}>) {
+	return (
+		<div className="flex min-w-0 items-center justify-between gap-2 px-6">
+			<div className="flex min-w-0 flex-col gap-0.5">
+				<span className="text-xs text-text-subtlest">Spaces</span>
+				<div className="flex min-w-0 items-center gap-2">
+					<JiraProjectAvatar label={title} src={JIRA_DESIGN_PROJECT.imageSrc} />
+					<Heading as="h1" className="min-w-0 truncate" size="medium">{title}</Heading>
+					<div className="flex shrink-0 items-center gap-1">
+						<Button aria-disabled aria-label="Add people" size="icon" variant="ghost">
+							<Icon render={<PersonAddIcon label="" />} />
+						</Button>
+						<Button aria-disabled aria-label={`More ${surfaceLabel} actions`} size="icon" variant="ghost">
+							<Icon render={<ShowMoreHorizontalIcon label="" />} />
+						</Button>
+					</div>
+				</div>
+			</div>
+			<div className="flex shrink-0 gap-2">
+				<Button aria-disabled aria-label="Share" size="icon" variant="ghost">
+					<Icon render={<ShareIcon label="" />} />
+				</Button>
+				<Button aria-disabled aria-label="Expand" size="icon" variant="ghost">
+					<Icon render={<ExpandHorizontalIcon label="" />} />
+				</Button>
+			</div>
+		</div>
+	);
+}
+
+function BoardHeaderDefaultFacepile({
+	assignees,
+	onSelectedAssigneeIdsChange,
+	selectedAssigneeIds,
+	surfaceLabel,
+}: Readonly<{
+	assignees: readonly JiraKanbanAssigneeData[];
+	onSelectedAssigneeIdsChange?: (assigneeIds: Set<string>) => void;
+	selectedAssigneeIds: ReadonlySet<string>;
+	surfaceLabel: string;
+}>) {
+	const hasSelection = selectedAssigneeIds.size > 0;
+	const surfaceTitle = `${surfaceLabel.slice(0, 1).toLocaleUpperCase()}${surfaceLabel.slice(1)}`;
+
+	return (
+		<>
+			{/* Facepile stacks leftmost-on-top: keep DOM order (so tab order matches
+		    left→right visual order) and assign descending z-index instead. `isolate`
+		    contains these low z-indexes; `[&>*]:relative` is required because the
+		    face <button> wrappers are position:static, where z-index is inert. */}
+			<AvatarGroup
+				className={JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME}
+				label={`${surfaceTitle} assignees`}
+			>
+				<AvatarUnassigned kind="person" label="Unassigned" size="sm" />
+				{assignees.slice(0, JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS - 1).map((assignee) => (
+					<button
+						aria-label={`Filter ${surfaceLabel} by ${assignee.name}`}
+						aria-pressed={selectedAssigneeIds.has(assignee.id)}
+						className="rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+						key={assignee.id}
+						onClick={() => {
+							toggleSelectedAssigneeId(
+								selectedAssigneeIds,
+								assignee.id,
+								onSelectedAssigneeIdsChange,
+							);
+						}}
+						type="button"
+					>
+						<AssigneeAvatar
+							assignee={assignee}
+							muted={hasSelection && !selectedAssigneeIds.has(assignee.id)}
+							selected={selectedAssigneeIds.has(assignee.id)}
+						/>
+					</button>
+				))}
+			</AvatarGroup>
+		</>
 	);
 }
