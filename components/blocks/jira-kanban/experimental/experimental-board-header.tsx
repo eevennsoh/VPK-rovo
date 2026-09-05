@@ -3,8 +3,10 @@
 import type { ReactNode } from "react";
 import BoardIcon from "@atlaskit/icon/core/board";
 import CustomizeIcon from "@atlaskit/icon/core/customize";
+import ExpandHorizontalIcon from "@atlaskit/icon/core/expand-horizontal";
 import PersonAddIcon from "@atlaskit/icon/core/person-add";
 import SearchIcon from "@atlaskit/icon/core/search";
+import ShareIcon from "@atlaskit/icon/core/share";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import TableIcon from "@atlaskit/icon/core/table";
 import {
@@ -31,13 +33,15 @@ import {
 	JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS,
 } from "./header-facepile";
 
+const EMPTY_ASSIGNEE_IDS: ReadonlySet<string> = new Set();
+
 /**
  * Experimental fork of `components/blocks/jira-kanban/board-header.tsx`.
  * Starts identical to the default board header and diverges independently.
  */
 interface ExperimentalJiraKanbanBoardHeaderProps {
 	activeView?: ExperimentalJiraKanbanView;
-	assignees: readonly JiraKanbanAssigneeData[];
+	assignees?: readonly JiraKanbanAssigneeData[];
 	compact?: boolean;
 	/**
 	 * Trailing inset in px for the control row, matching the width of a docked
@@ -48,10 +52,10 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	 * slide under the panel.
 	 */
 	controlsInsetEnd?: number;
-	onSelectedAssigneeIdsChange: (assigneeIds: Set<string>) => void;
+	onSelectedAssigneeIdsChange?: (assigneeIds: Set<string>) => void;
 	onViewChange?: (view: ExperimentalJiraKanbanView) => void;
 	searchPlaceholder?: string;
-	selectedAssigneeIds: ReadonlySet<string>;
+	selectedAssigneeIds?: ReadonlySet<string>;
 	/**
 	 * The control row (search, facepile, filter, group, right-hand icon
 	 * buttons). Pulse deliberately keeps it: the facepile is its roster filter
@@ -65,17 +69,18 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	 */
 	facepile?: ReactNode;
 	/** Clickable Filter control, including the two-pane popover. */
-	filterControl: ReactNode;
+	filterControl?: ReactNode;
 	/** Mode control, rendered inline with Filter and Group. */
 	modeToggle?: ReactNode;
 	/**
-	 * Trailing cluster end slot — after the board/list view switcher.
+	 * Trailing cluster slot after the board/list view switcher and before
+	 * the Configure / More pair.
 	 */
 	endSlot?: ReactNode;
 	/**
 	 * Where the overflow ("…") control sits when it is shown. `"inline"` keeps
-	 * it with Filter / Group (2000 years later). `"end"` parks it with
-	 * Customize on the far right, which is Team EU's shipping chrome.
+	 * it with Filter / Group (2000 years later). `"end"` parks it after
+	 * Customize, which is Team EU's shipping chrome.
 	 */
 	moreControlsPlacement?: "inline" | "end";
 	/**
@@ -84,8 +89,8 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	 */
 	showMoreControls?: boolean;
 	/**
-	 * Outline Customize control on the far right. Team EU shows it when Simple
-	 * views is off; missing capability stays display-only.
+	 * Outline Customize control before More when both sit at the end. Team EU
+	 * shows it when Simple views is off; missing capability stays display-only.
 	 */
 	showCustomizeControl?: boolean;
 	surfaceLabel?: string;
@@ -99,21 +104,24 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	 */
 	simpleViews?: boolean;
 	viewTabs?: ReactNode;
+	/** Project name in the title cluster. Defaults to the Jira Design space. */
+	title?: string;
 }
 
 export type ExperimentalJiraKanbanView = "board" | "list";
 
 /**
  * Offset in px from the board root's top edge to the *underside of the tab
- * strip's rule* — the header's `pt-3` (12) plus the title+tabs band (71), plus
- * one for the rule itself (84).
+ * strip's rule* — the header's `pt-3` (12) plus the title+tabs band (93), plus
+ * one for the rule itself (106). The Spaces label sits above the heading, so
+ * this band is taller than the previous 71px title+tabs stack.
  *
  * That last pixel is the whole point of this constant, and is why it is not
  * simply the band's height. The `line` tabs variant draws its rule as an inset
  * box-shadow on the list's own bottom edge, and the list carries `-mb-px pb-px`
  * so that edge hangs 1px *below* the band's content box. A docked side panel
- * placed at the band height (83) therefore starts on the rule's own row and
- * punches a hole in it for the panel's width. Landing at 84 is immediately
+ * placed at the band height (105) therefore starts on the rule's own row and
+ * punches a hole in it for the panel's width. Landing at 106 is immediately
  * beneath the rule, so the rule runs unbroken across the board.
  *
  * The untracked-work rail takes this as a real `top` offset rather than
@@ -127,7 +135,7 @@ export type ExperimentalJiraKanbanView = "board" | "list";
  * tolerance there is zero precisely because a 1px drift is invisible to
  * review but very visible on screen.
  */
-export const BOARD_HEADER_TAB_STRIP_BOTTOM_PX = 84;
+export const BOARD_HEADER_TAB_STRIP_BOTTOM_PX = 106;
 
 function AssigneeAvatar({
 	assignee,
@@ -158,13 +166,13 @@ function AssigneeAvatar({
 
 export function ExperimentalJiraKanbanBoardHeader({
 	activeView = "board",
-	assignees,
+	assignees = [],
 	compact = false,
 	controlsInsetEnd = 0,
 	onSelectedAssigneeIdsChange,
 	onViewChange,
 	searchPlaceholder = "Search board",
-	selectedAssigneeIds,
+	selectedAssigneeIds = EMPTY_ASSIGNEE_IDS,
 	showBoardControls = true,
 	facepile,
 	filterControl,
@@ -180,11 +188,15 @@ export function ExperimentalJiraKanbanBoardHeader({
 	onShowUntrackedChange,
 	simpleViews,
 	viewTabs,
+	title = JIRA_DESIGN_PROJECT.name,
 }: Readonly<ExperimentalJiraKanbanBoardHeaderProps>) {
 	const hasSelection = selectedAssigneeIds.size > 0;
 	const surfaceTitle = `${surfaceLabel.slice(0, 1).toLocaleUpperCase()}${surfaceLabel.slice(1)}`;
 
 	const toggleAssignee = (assigneeId: string) => {
+		if (!onSelectedAssigneeIdsChange) {
+			return;
+		}
 		const nextSelection = new Set(selectedAssigneeIds);
 		if (nextSelection.has(assigneeId)) {
 			nextSelection.delete(assigneeId);
@@ -207,15 +219,28 @@ export function ExperimentalJiraKanbanBoardHeader({
 
 	return (
 		<header className={cn("shrink-0 pt-3", showBoardControls ? "pb-6" : "pb-0")}>
-			<div className="flex min-w-0 items-center gap-2 px-6">
-				<JiraProjectAvatar label={JIRA_DESIGN_PROJECT.name} src={JIRA_DESIGN_PROJECT.imageSrc} />
-				<Heading as="h1" className="truncate" size="large">Jira Design</Heading>
-				<div className="flex items-center gap-1">
-					<Button aria-disabled aria-label="Add people" size="icon" variant="ghost">
-						<Icon render={<PersonAddIcon label="" />} />
+			<div className="flex min-w-0 items-center justify-between gap-2 px-6">
+				<div className="flex min-w-0 flex-col gap-0.5">
+					<span className="text-xs text-text-subtlest">Spaces</span>
+					<div className="flex min-w-0 items-center gap-2">
+						<JiraProjectAvatar label={title} src={JIRA_DESIGN_PROJECT.imageSrc} />
+						<Heading as="h1" className="min-w-0 truncate" size="medium">{title}</Heading>
+						<div className="flex shrink-0 items-center gap-1">
+							<Button aria-disabled aria-label="Add people" size="icon" variant="ghost">
+								<Icon render={<PersonAddIcon label="" />} />
+							</Button>
+							<Button aria-disabled aria-label={`More ${surfaceLabel} actions`} size="icon" variant="ghost">
+								<Icon render={<ShowMoreHorizontalIcon label="" />} />
+							</Button>
+						</div>
+					</div>
+				</div>
+				<div className="flex shrink-0 gap-2">
+					<Button aria-disabled aria-label="Share" size="icon" variant="ghost">
+						<Icon render={<ShareIcon label="" />} />
 					</Button>
-					<Button aria-disabled aria-label={`More ${surfaceLabel} actions`} size="icon" variant="ghost">
-						<Icon render={<ShowMoreHorizontalIcon label="" />} />
+					<Button aria-disabled aria-label="Expand" size="icon" variant="ghost">
+						<Icon render={<ExpandHorizontalIcon label="" />} />
 					</Button>
 				</div>
 			</div>
@@ -309,9 +334,9 @@ export function ExperimentalJiraKanbanBoardHeader({
 								</TabsList>
 							</Tabs>
 						) : null}
-						{moreControlsPlacement === "end" ? moreControls : null}
-						{customizeControl}
 						{endSlot ? endSlot : null}
+						{customizeControl}
+						{moreControlsPlacement === "end" ? moreControls : null}
 					</div>
 				</div>
 			) : null}

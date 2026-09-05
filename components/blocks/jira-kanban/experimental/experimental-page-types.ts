@@ -133,8 +133,8 @@ export interface ExperimentalJiraKanbanPageProps {
 	 */
 	simpleViews?: boolean;
 	/**
-	 * Outline Customize control on the far right of the header. Display-only
-	 * unless a later owner supplies a real configure capability.
+	 * Outline Customize control before More when both sit at the end.
+	 * Display-only unless a later owner supplies a real configure capability.
 	 */
 	showCustomizeControl?: boolean;
 }
