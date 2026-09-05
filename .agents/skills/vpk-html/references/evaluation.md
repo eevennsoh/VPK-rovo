@@ -46,8 +46,13 @@ improve the underlying reader job across multiple scenarios.
    the prompt, skill revision, model, viewport, artifact, screenshot, timing,
    check results, and reviewer feedback. Evaluation output is disposable review
    evidence, not a durable user artifact.
-5. Review outputs blind when practical. Use the skill-creator evaluation viewer
-   for side-by-side human review rather than building a second review UI.
+5. Review outputs blind when practical. If an installed `skill-creator` provides
+   `eval-viewer/generate_review.py`, use its documented static or local-server
+   command for side-by-side human review. If no compatible viewer is installed,
+   create `review.md` inside the round folder: randomly label the matched outputs
+   A and B, link each artifact and screenshot, copy the scenario's human rubric,
+   and record the reviewer's choice and corrections there. A missing optional
+   viewer must not stop a comparison round or trigger a bespoke review app.
 6. Rerun affected scenarios after a correction. At milestones, run the full
    corpus and compare it with the saved baseline.
 

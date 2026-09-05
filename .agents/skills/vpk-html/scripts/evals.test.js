@@ -100,10 +100,13 @@ test("catalog documentation check catches stale prose even when its snapshot is 
 test("build command exposes the vpk-html evaluation health check", () => {
 	const buildSource = fs.readFileSync(path.join(__dirname, "build.mjs"), "utf8");
 	const skillSource = fs.readFileSync(path.join(SKILL_ROOT, "SKILL.md"), "utf8");
+	const evaluationSource = fs.readFileSync(path.join(SKILL_ROOT, "references", "evaluation.md"), "utf8");
 
 	assert.match(buildSource, /--check-evals/);
 	assert.match(skillSource, /references\/evaluation\.md/);
 	assert.match(skillSource, /reader's job/i);
+	assert.match(evaluationSource, /If no compatible viewer is installed/);
+	assert.match(evaluationSource, /review\.md/);
 });
 
 test("design-system demo derives catalog metrics instead of hard-coding them", () => {
