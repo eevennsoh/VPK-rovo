@@ -352,3 +352,14 @@ test("RFP reset action lives in the board toolbar next to grouping", () => {
 	assert.doesNotMatch(AGENTS_VIEW_SOURCE, /Ask Rovo for RFP help/u);
 	assert.doesNotMatch(AGENTS_VIEW_SOURCE, /Answer qualification questions/u);
 });
+
+test("the RFP More control is display-only until a menu capability exists", () => {
+	assert.match(
+		BOARD_TOOLBAR_SOURCE,
+		/<Button aria-disabled aria-label="More board controls" size="icon" variant="outline">/u,
+	);
+	assert.doesNotMatch(
+		BOARD_TOOLBAR_SOURCE,
+		/<Button aria-label="More board controls" size="icon" variant="outline">/u,
+	);
+});

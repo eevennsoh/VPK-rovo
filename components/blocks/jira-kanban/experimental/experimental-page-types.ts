@@ -116,4 +116,19 @@ export interface ExperimentalJiraKanbanPageProps {
 	ref?: Ref<ExperimentalJiraKanbanPageHandle>;
 	timelineLastViewedAt?: string | null;
 	viewTabs?: ReactNode;
+	/**
+	 * Where the overflow ("…") control sits in the board header. The route
+	 * owns the choice so Team EU can park it on the far right without this
+	 * block reading the global variation store.
+	 */
+	moreControlsPlacement?: "inline" | "end";
+	/**
+	 * Whether the overflow ("…") control mounts. Simple views omits it.
+	 */
+	showMoreControls?: boolean;
+	/**
+	 * Outline Customize control on the far right of the header. Display-only
+	 * unless a later owner supplies a real configure capability.
+	 */
+	showCustomizeControl?: boolean;
 }

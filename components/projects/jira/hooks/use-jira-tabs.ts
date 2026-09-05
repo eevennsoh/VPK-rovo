@@ -1,6 +1,7 @@
 "use client";
 
 import { useDesignVariation } from "@/components/hooks/use-design-variation";
+import { useDesignVariants } from "@/components/hooks/use-design-variants";
 
 import { getJiraTabs, type TabDefinition } from "../data/tabs";
 import {
@@ -10,8 +11,9 @@ import {
 } from "../lib/jira-tab-model";
 
 /**
- * The space tab bar for the active design variation. Team EU shows Board and
- * List as sibling tabs; 2000 years later shows a single Work items tab.
+ * The space tab bar for the active design variation and Simple views property.
+ * Team EU without Simple views shows Board and List as sibling tabs; Simple
+ * views (and 2000 years later) show a single Work items tab.
  *
  * Routes that only render one of the two surfaces pass `supportedWorkItemViews`
  * so the tab bar never offers a destination they would leave empty.
@@ -20,5 +22,9 @@ export function useJiraTabs(
 	supportedWorkItemViews: readonly JiraWorkItemView[] = ALL_JIRA_WORK_ITEM_VIEWS,
 ): readonly TabDefinition[] {
 	const { designVariation } = useDesignVariation();
-	return selectJiraTabs(getJiraTabs(designVariation), supportedWorkItemViews);
+	const { designVariants } = useDesignVariants();
+	return selectJiraTabs(
+		getJiraTabs(designVariation, designVariants["simple-views"]),
+		supportedWorkItemViews,
+	);
 }

@@ -58,10 +58,11 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 		Readonly<Record<string, readonly AgentSessionItem[]>>
 	>({});
 	const detachedActivitiesByIdRef = useRef<Record<string, JiraIssueAgentActivity>>({});
-	// Team EU splits work items into Board and List tabs, so the tab bar owns the
-	// view and the board header's own switcher stands down. 2000 years later
-	// collapses them into one Work items tab and the switcher owns it instead.
-	// Both write the same state, so the choice survives flipping variations.
+	// Team EU without Simple views splits work items into Board and List tabs,
+	// so the tab bar owns the view and the board header's own switcher stands
+	// down. Simple views (and 2000 years later) collapse them into one Work
+	// items tab and the switcher owns it instead. Both write the same state, so
+	// the choice survives flipping the property or the variation.
 	const tabs = useJiraTabs();
 	// The one place the global variant store meets the board. Panel is off by
 	// default, so untracked work starts as the in-flow column on both Board
@@ -314,6 +315,9 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						renderAgentActivityIndicator={renderAgentActivityIndicator}
 						showAgentSessionColumn
 						showBoardContent={activeTab?.hasContent === true}
+						moreControlsPlacement={designVariation === "team-eu" ? "end" : "inline"}
+						showMoreControls={!designVariants["simple-views"]}
+						showCustomizeControl={designVariation === "team-eu" && !designVariants["simple-views"]}
 						viewTabs={(
 							<JiraViewTabs
 								selectedTabLabel={selectedTabLabel}

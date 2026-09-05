@@ -177,6 +177,9 @@ export default function ExperimentalJiraKanbanPage({
 	showBoardContent = true,
 	timelineLastViewedAt: controlledTimelineLastViewedAt,
 	viewTabs,
+	moreControlsPlacement,
+	showMoreControls,
+	showCustomizeControl,
 }: Readonly<ExperimentalJiraKanbanPageProps>) {
 	const [localBoardColumns, setLocalBoardColumns] = useState<JiraKanbanColumnData[]>(
 		() => createJiraKanbanColumns(BOARD_COLUMNS),
@@ -773,6 +776,9 @@ export default function ExperimentalJiraKanbanPage({
 				) : undefined}
 				surfaceLabel={activeView}
 				viewTabs={viewTabs}
+				moreControlsPlacement={moreControlsPlacement}
+				showMoreControls={showMoreControls}
+				showCustomizeControl={showCustomizeControl}
 			/>
 			{showBoardContent ? (showPulseContent ? (
 				<ExperimentalPulse

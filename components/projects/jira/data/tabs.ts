@@ -11,6 +11,7 @@ import {
 	DEFAULT_DESIGN_VARIATION,
 	type DesignVariationId,
 } from "@/components/utils/design-variation";
+import { getDefaultDesignVariants } from "@/components/utils/design-variants";
 
 import type { JiraTabSelection, JiraWorkItemView } from "../lib/jira-tab-model";
 import { getJiraWorkItemsTabLabel } from "../lib/jira-tab-model";
@@ -34,7 +35,8 @@ const SUPPORTING_TABS: readonly TabDefinition[] = [
 /**
  * Team EU keeps Board and List as sibling destinations, so the tab bar itself
  * is the view switcher. 2000 years later folds them into one Work items tab and
- * hands the switch to the board header.
+ * hands the switch to the board header. Simple views applies that collapsed
+ * catalog on top of whichever variation is active.
  */
 const JIRA_TABS_BY_DESIGN_VARIATION: Readonly<Record<DesignVariationId, readonly TabDefinition[]>> = {
 	"team-eu": [
@@ -50,18 +52,28 @@ const JIRA_TABS_BY_DESIGN_VARIATION: Readonly<Record<DesignVariationId, readonly
 	],
 };
 
-export function getJiraTabs(variation: DesignVariationId): readonly TabDefinition[] {
+export function getJiraTabs(
+	variation: DesignVariationId,
+	simpleViews = false,
+): readonly TabDefinition[] {
+	if (simpleViews) {
+		return JIRA_TABS_BY_DESIGN_VARIATION["2000-years-later"];
+	}
 	return JIRA_TABS_BY_DESIGN_VARIATION[variation];
 }
 
-/** Baseline tab set, for callers that do not read the design variation. */
-export const JIRA_TABS: readonly TabDefinition[] = getJiraTabs(DEFAULT_DESIGN_VARIATION);
+/** Baseline tab set, for callers that do not read the design stores. */
+export const JIRA_TABS: readonly TabDefinition[] = getJiraTabs(
+	DEFAULT_DESIGN_VARIATION,
+	getDefaultDesignVariants()["simple-views"],
+);
 
 /**
  * Hydration-stable starting label for routes that open on work items. Both
- * server and first client render use the default variation, matching
- * `useDesignVariation`'s server snapshot; the stored variation is adopted after
- * mount and `resolveJiraTab` carries the selection over.
+ * server and first client render use the default variation and variant map,
+ * matching `useDesignVariation` / `useDesignVariants` server snapshots; stored
+ * preferences are adopted after mount and `resolveJiraTab` carries the
+ * selection over.
  */
 export const DEFAULT_JIRA_WORK_ITEMS_TAB_LABEL: string = getJiraWorkItemsTabLabel(JIRA_TABS);
 

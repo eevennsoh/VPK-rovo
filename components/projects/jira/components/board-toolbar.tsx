@@ -21,6 +21,7 @@ import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import CustomizeIcon from "@atlaskit/icon/core/customize";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
 import SearchIcon from "@atlaskit/icon/core/search";
+import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import StatusWarningIcon from "@atlaskit/icon/core/status-warning";
 import type { AvatarData } from "../data/avatars";
 
@@ -139,6 +140,9 @@ export default function BoardToolbar({ avatars, onReset }: Readonly<BoardToolbar
 					<Button className="gap-2" variant="outline">
 						<span>Group: RFP stage</span>
 						<ChevronDownIcon label="" size="small" />
+					</Button>
+					<Button aria-disabled aria-label="More board controls" size="icon" variant="outline">
+						<ShowMoreHorizontalIcon label="" />
 					</Button>
 					<Button aria-label="Customize" size="icon" variant="ghost">
 						<CustomizeIcon label="" />

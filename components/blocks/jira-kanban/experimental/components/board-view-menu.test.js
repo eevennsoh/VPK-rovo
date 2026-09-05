@@ -47,10 +47,15 @@ test("Experimental board header opens the production View picker without changin
 	assert.match(viewMenu, /import DevicesIcon from "@atlaskit\/icon\/core\/devices"/u);
 	assert.match(viewMenu, /import CloudIcon from "@atlaskit\/icon-lab\/core\/cloud"/u);
 	assert.match(viewMenu, /render=\{<CustomizeIcon label="" \/>\}/u);
-	// ...and it is the ONLY place that glyph appears in the control row. The
-	// header's old board-settings button did the same job and rendered the same
-	// sliders icon, so the row carried it twice until the View menu replaced it.
-	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /CustomizeIcon/u);
+	// View settings keep that glyph on the View trigger. Team EU without Simple
+	// views also parks a display-only Customize control on the far right; it is
+	// a different job (board chrome, not the picker) and stays `aria-disabled`
+	// until a real configure capability exists.
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /import CustomizeIcon from "@atlaskit\/icon\/core\/customize"/u);
+	assert.match(
+		EXPERIMENTAL_HEADER_SOURCE,
+		/showCustomizeControl \? \(\s*<Button aria-disabled aria-label="Customize" size="icon" variant="outline">/u,
+	);
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /\$\{surfaceTitle\} settings/u);
 	assert.match(viewMenu, /aria-label=\{`Configure \$\{surfaceLabel\} view`\}/u);
 	assert.match(viewMenu, /\{compact \? null : "View"\}/u);
