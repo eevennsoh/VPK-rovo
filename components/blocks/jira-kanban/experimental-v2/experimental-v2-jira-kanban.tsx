@@ -61,6 +61,12 @@ import type {
 	JiraKanbanColumnData,
 	JiraKanbanProps,
 } from "../index";
+import {
+	DEFAULT_KANBAN_COLUMN_CHROME,
+	resolveKanbanColumnChrome,
+	type KanbanColumnChrome,
+	type KanbanColumnChromeStyles,
+} from "../column-chrome";
 
 /**
  * Experimental v2 Jira Kanban board.
@@ -399,6 +405,8 @@ function BoardColumn({
 	agents,
 	assignedAgentIds,
 	children,
+	chrome,
+	columnChrome,
 	count,
 	onCollapse,
 	onCreateAgent,
@@ -408,6 +416,8 @@ function BoardColumn({
 	agents?: readonly JiraKanbanAgentData[];
 	assignedAgentIds: readonly string[];
 	children: ReactNode;
+	chrome: KanbanColumnChromeStyles;
+	columnChrome: KanbanColumnChrome;
 	count: number;
 	onCollapse: () => void;
 	onCreateAgent?: (columnTitle: string) => void;
@@ -428,7 +438,8 @@ function BoardColumn({
 
 	return (
 		<div
-			className="group/board-column min-w-0 overflow-visible"
+			className={cn("group/board-column min-w-0 overflow-visible", chrome.columnClassName)}
+			data-kanban-column-chrome={columnChrome}
 			style={{
 				display: "flex",
 				flexDirection: "column",
@@ -442,7 +453,7 @@ function BoardColumn({
 		>
 			<div
 				className="flex min-w-0 items-center justify-between gap-2"
-				style={{ paddingBottom: token("space.100") }}
+				style={{ ...chrome.header, paddingBottom: token("space.100") }}
 			>
 				<div className="flex min-w-0 items-center gap-1.5">
 					<span className="truncate text-xs font-medium leading-4 text-text-subtle">
@@ -485,12 +496,13 @@ function BoardColumn({
 					flexDirection: "column",
 					gap: token("space.100"),
 					...cardListScrollMaskStyle,
+					...chrome.cardList,
 				}}
 			>
 				{children}
 			</div>
 
-			<div className="w-full" style={{ paddingBlock: token("space.050") }}>
+			<div className="w-full" style={{ paddingBlock: token("space.050"), ...chrome.footer }}>
 				<Button
 					aria-label={`Create in ${title}`}
 					className={cn(
@@ -649,6 +661,7 @@ export function ExperimentalV2JiraKanban({
 	boardColumns,
 	cardMoveAnimation,
 	collapsedColumns: controlledCollapsedColumns,
+	columnChrome = DEFAULT_KANBAN_COLUMN_CHROME,
 	draggedCardCode = null,
 	selectedCardCodes,
 	onCardClick,
@@ -668,6 +681,7 @@ export function ExperimentalV2JiraKanban({
 	paddingTop = token("space.150"),
 	selectionToolbar,
 }: Readonly<ExperimentalV2JiraKanbanProps>) {
+	const chrome = resolveKanbanColumnChrome(columnChrome);
 	const cardLayoutGroupId = useId();
 	const shouldReduceMotion = useReducedMotion();
 	const shouldAnimateCardMoves = animateCardMoves && !shouldReduceMotion;
@@ -852,6 +866,8 @@ export function ExperimentalV2JiraKanban({
 							<BoardColumn
 								agents={agents}
 								assignedAgentIds={assignedAgentIdsByColumn[column.title] ?? []}
+								chrome={chrome}
+								columnChrome={columnChrome}
 								count={column.cards.length}
 								onCollapse={handleCollapseColumn}
 								onCreateAgent={onCreateAgent}

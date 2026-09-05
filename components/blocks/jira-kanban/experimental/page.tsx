@@ -173,6 +173,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	agents?: readonly JiraKanbanAgentData[];
 	ariaLabel?: string;
 	boardColumns?: readonly JiraKanbanColumnData[];
+	columnChrome?: JiraKanbanProps["columnChrome"];
 	compactHeader?: boolean;
 	defaultAgentSessionColumnCollapsed?: boolean;
 	/**
@@ -244,6 +245,7 @@ export default function ExperimentalJiraKanbanPage({
 	agents = BOARD_AGENTS,
 	ariaLabel = "Experimental RFP board columns. Scroll horizontally to review all statuses.",
 	boardColumns: controlledBoardColumns,
+	columnChrome,
 	compactHeader = false,
 	headerAssignees,
 	insightsEnabled = true,
@@ -923,6 +925,7 @@ export default function ExperimentalJiraKanbanPage({
 								boardColumns={filteredBoardColumns}
 								cardGenerativeActionPresentation={cardGenerativeActionPresentation}
 								collapsedColumns={collapsedColumns}
+								columnChrome={columnChrome}
 								createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
 								detachedAgentSessionsByCard={proximityAgentSessionsByCard}
 								onCollapsedColumnsChange={setCollapsedColumns}

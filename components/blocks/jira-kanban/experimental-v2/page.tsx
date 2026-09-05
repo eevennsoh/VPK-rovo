@@ -117,6 +117,7 @@ export interface ExperimentalV2JiraKanbanPageProps {
 	agents?: readonly JiraKanbanAgentData[];
 	ariaLabel?: string;
 	boardColumns?: readonly JiraKanbanColumnData[];
+	columnChrome?: JiraKanbanProps["columnChrome"];
 	compactHeader?: boolean;
 	headerAssignees?: readonly JiraKanbanAssigneeData[];
 	insightsEnabled?: boolean;
@@ -159,6 +160,7 @@ export default function ExperimentalV2JiraKanbanPage({
 	agents = BOARD_AGENTS,
 	ariaLabel = "Experimental v2 RFP board columns. Scroll horizontally to review all statuses.",
 	boardColumns: controlledBoardColumns,
+	columnChrome,
 	compactHeader = false,
 	headerAssignees,
 	insightsEnabled = true,
@@ -601,6 +603,7 @@ export default function ExperimentalV2JiraKanbanPage({
 						assignedAgentIdsByColumn={columnAgentAssignments}
 						boardColumns={filteredBoardColumns}
 						collapsedColumns={collapsedColumns}
+						columnChrome={columnChrome}
 						onCollapsedColumnsChange={setCollapsedColumns}
 						draggedCardCode={draggedCard?.card.code ?? null}
 						selectedCardCodes={selection.selectedCardCodes}

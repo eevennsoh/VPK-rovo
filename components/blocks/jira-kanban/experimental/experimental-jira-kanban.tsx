@@ -81,6 +81,12 @@ import type {
 	JiraKanbanColumnData,
 	JiraKanbanProps,
 } from "../index";
+import {
+	DEFAULT_KANBAN_COLUMN_CHROME,
+	resolveKanbanColumnChrome,
+	type KanbanColumnChrome,
+	type KanbanColumnChromeStyles,
+} from "../column-chrome";
 
 /**
  * Experimental Jira Kanban board.
@@ -364,6 +370,8 @@ function BoardColumn({
 	agents,
 	assignedAgentIds,
 	children,
+	chrome,
+	columnChrome,
 	count,
 	createWorkItemDropZoneLabel,
 	onCollapse,
@@ -375,6 +383,8 @@ function BoardColumn({
 	agents?: readonly JiraKanbanAgentData[];
 	assignedAgentIds: readonly string[];
 	children: ReactNode;
+	chrome: KanbanColumnChromeStyles;
+	columnChrome: KanbanColumnChrome;
 	count: number;
 	createWorkItemDropZoneLabel?: string;
 	onCollapse: () => void;
@@ -397,7 +407,8 @@ function BoardColumn({
 
 	return (
 		<div
-			className="group/board-column min-w-0 overflow-visible"
+			className={cn("group/board-column min-w-0 overflow-visible", chrome.columnClassName)}
+			data-kanban-column-chrome={columnChrome}
 			style={{
 				display: "flex",
 				flexDirection: "column",
@@ -411,7 +422,7 @@ function BoardColumn({
 		>
 			<div
 				className="flex min-w-0 items-center justify-between gap-2"
-				style={{ paddingBottom: token("space.100") }}
+				style={{ ...chrome.header, paddingBottom: token("space.100") }}
 			>
 				<div className="flex min-w-0 items-center gap-1.5">
 					<span className="truncate text-xs font-medium leading-4 text-text-subtle">
@@ -454,16 +465,19 @@ function BoardColumn({
 					flexDirection: "column",
 					gap: token("space.100"),
 					...cardListScrollMaskStyle,
+					...chrome.cardList,
 				}}
 			>
 				{children}
 			</div>
 
-			<BoardColumnCreateAction
-				dropZoneLabel={createWorkItemDropZoneLabel}
-				sessionDragTransaction={sessionDragTransaction}
-				title={title}
-			/>
+			<div style={chrome.footer}>
+				<BoardColumnCreateAction
+					dropZoneLabel={createWorkItemDropZoneLabel}
+					sessionDragTransaction={sessionDragTransaction}
+					title={title}
+				/>
+			</div>
 		</div>
 	);
 }
@@ -609,6 +623,7 @@ function ExperimentalJiraKanbanView({
 	cardGenerativeActionPresentation = "sparkle",
 	cardMoveAnimation,
 	collapsedColumns: controlledCollapsedColumns,
+	columnChrome = DEFAULT_KANBAN_COLUMN_CHROME,
 	createWorkItemDropZoneLabel,
 	detachedAgentSessionsByCard,
 	draggedCardCode = null,
@@ -641,6 +656,7 @@ function ExperimentalJiraKanbanView({
 	boardSessionDrag: BoardAgentSessionDrag;
 	captureBoardSessionDragRoot?: boolean;
 }) {
+	const chrome = resolveKanbanColumnChrome(columnChrome);
 	const cardLayoutGroupId = useId();
 	const shouldReduceMotion = useReducedMotion();
 	const shouldAnimateCardMoves = animateCardMoves && !shouldReduceMotion;
@@ -888,6 +904,8 @@ function ExperimentalJiraKanbanView({
 							<BoardColumn
 								agents={agents}
 								assignedAgentIds={assignedAgentIdsByColumn[column.title] ?? []}
+								chrome={chrome}
+								columnChrome={columnChrome}
 								count={column.cards.length}
 								createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
 								onCollapse={handleCollapseColumn}
