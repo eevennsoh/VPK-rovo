@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
 
 import GrowHorizontalIcon from "@atlaskit/icon/core/grow-horizontal";
@@ -22,6 +22,11 @@ import { AgentSessionColumnHeader } from "./agent-session-column-header";
 import { AgentSessionColumnHiddenFooter } from "./agent-session-column-hidden-footer";
 import { AgentSessionColumnOverflowMenu } from "./agent-session-column-overflow-menu";
 import { AgentSessionColumnRail } from "./agent-session-column-rail";
+import {
+	DEFAULT_AGENT_SESSION_COLUMN_FRAME,
+	resolveAgentSessionColumnLayout,
+	type AgentSessionColumnLayout,
+} from "./agent-session-column-frame";
 import type { AgentSessionColumnProps } from "./agent-session-column-types";
 import { useAgentSessionColumnHidden } from "./use-agent-session-column-hidden";
 import { useUntrackedSelection } from "./use-untracked-selection";
@@ -48,27 +53,122 @@ const AGENT_SESSION_COLUMN_TRANSITION = "width var(--duration-medium) var(--ease
 /**
  * The filled plane that holds the sessions.
  *
- * It wraps only the list, never the header: the header has to sit on the board
- * surface at the same inset and baseline as `To do` and `In progress`, so the
- * five column titles read as one row. Filling behind the header instead would
- * push this title 8px in and 8px down from its neighbours and make the column
- * look like a panel docked beside the board rather than a column of it.
+ * Caption (simple / default omit): the header is a sibling of this plane so
+ * it shares an inset and baseline with `To do`. Enclosed (default board
+ * chrome): the expanded header is a child of the well, matching the status
+ * columns that wrap title and cards in one painted object. Collapsed never
+ * wears that well — a 32px bordered capsule next to a hugging status pill
+ * reads as a different object, and the extra inset knocks the two counts
+ * off the same row. Panel ignores framing and keeps the fill without a
+ * nested well — the docked chrome already draws the leading hairline.
  *
- * The list is the scrollport. Expanded in-flow, the plane is a bordered
- * well (`radius.xlarge`) that clips fades and the hidden-work footer so
- * they cannot paint over the 1px stroke. A host with `headerSurface="panel"`
- * (the docked panel) keeps the fill without that nested frame — the
- * panel already draws its leading hairline. Collapsed, the rail sits in the same
- * fill without a frame. Cards are borderless; the in-flow list stays
- * flush (`gap-0`).
+ * The list is the scrollport. Expanded in-flow caption, the plane is a
+ * bordered well (`radius.xlarge`) that clips fades and the hidden-work
+ * footer so they cannot paint over the 1px stroke. Enclosed moves
+ * `overflow-hidden` onto the list/footer region so header focus rings are
+ * not sliced. Collapsed, the rail sits in the unframed fill. Cards are
+ * borderless. Expanded in-flow uses the same 4px list inset and row gap as
+ * the panel; adjacent marked cards fuse across that gap.
  */
 const AGENT_SESSION_PLANE =
 	"relative flex min-h-0 min-w-0 flex-1 flex-col bg-surface";
+
+const AGENT_SESSION_WELL_PAINT = cn(
+	AGENT_SESSION_PLANE,
+	"rounded-xl border border-solid border-border-disabled",
+);
 
 const AGENT_SESSION_WELL = cn(
 	AGENT_SESSION_PLANE,
 	"overflow-hidden rounded-xl border border-solid border-border-disabled",
 );
+
+/**
+ * Row gap and side inset share `space.050` (`gap-1 p-1`, 4px). Adjacent
+ * marked cards close that gap (`-mt-1`) and flatten the shared corners.
+ * Panel hosts pass the same class via `listClassName`.
+ */
+const AGENT_SESSION_LIST_SPACING = "gap-1 p-1";
+
+function resolveAgentSessionPlaneClassName(
+	layout: AgentSessionColumnLayout,
+	collapsed: boolean,
+): string {
+	switch (layout) {
+		case "panel":
+			return AGENT_SESSION_PLANE;
+		case "caption":
+			return collapsed ? AGENT_SESSION_PLANE : AGENT_SESSION_WELL;
+		case "enclosed":
+			return collapsed ? AGENT_SESSION_PLANE : AGENT_SESSION_WELL_PAINT;
+		default: {
+			const exhaustive: never = layout;
+			return exhaustive;
+		}
+	}
+}
+
+function renderAgentSessionColumnFrame({
+	body,
+	collapsed,
+	header,
+	layout,
+	planeClassName,
+}: Readonly<{
+	body: ReactNode;
+	collapsed: boolean;
+	header: ReactNode;
+	layout: AgentSessionColumnLayout;
+	planeClassName: string;
+}>): ReactNode {
+	switch (layout) {
+		case "panel":
+		case "caption":
+			return (
+				<>
+					{header}
+					<div className={planeClassName}>{body}</div>
+				</>
+			);
+		case "enclosed":
+			return collapsed ? (
+				<>
+					{header}
+					<div className={planeClassName}>{body}</div>
+				</>
+			) : (
+				<div className={planeClassName}>
+					{header}
+					<div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+						{body}
+					</div>
+				</div>
+			);
+		default: {
+			const exhaustive: never = layout;
+			return exhaustive;
+		}
+	}
+}
+
+function resolveCollapsedHeaderStyle(
+	layout: AgentSessionColumnLayout,
+): { paddingBottom: string; paddingTop?: string } {
+	switch (layout) {
+		case "panel":
+		case "enclosed":
+			return {
+				paddingBottom: token("space.100"),
+				paddingTop: token("space.100"),
+			};
+		case "caption":
+			return { paddingBottom: token("space.100") };
+		default: {
+			const exhaustive: never = layout;
+			return exhaustive;
+		}
+	}
+}
 
 /**
  * Hover/focus swap on the collapsed header slot: the count at rest, the expand
@@ -124,13 +224,15 @@ const AGENT_SESSION_PLANE_FADE_SIZE = "3rem";
 /**
  * A kanban column of agent sessions that never became work items.
  *
- * The board's status columns are unfilled — they read as regions of the board
- * surface. This one still wraps the area *below its header* so the list and
- * edge fades share one column, but that plane is `bg-surface` — the same white
- * (or dark) board surface. Expanded, it is also a 1px well: the outer stroke
- * and `radius.xlarge` live on the plane so scroll masks cannot wash them out.
- * The header stays outside that plane so it shares an inset and a
- * baseline with the status column titles.
+ * The board's status columns are unfilled under simple chrome — they read as
+ * regions of the board surface. This one wraps its list in a `bg-surface`
+ * plane that is also a 1px well when expanded in-flow: the outer stroke and
+ * `radius.xlarge` live on the plane so scroll masks cannot wash them out.
+ * Caption framing leaves the header on the host surface so it shares an
+ * inset and a baseline with the status titles. Enclosed framing (default
+ * board chrome) moves that same title row inside the well, matching the
+ * status columns that wrap header and cards in one painted object. The well
+ * stays `bg-surface`, not sunken: Untracked is outside the workflow.
  * Everything below the header is the Agent Session block verbatim, so a card's
  * untracked-work flyout, captured state, and resume gating behave identically
  * here and in the standalone block.
@@ -141,15 +243,19 @@ const AGENT_SESSION_PLANE_FADE_SIZE = "3rem";
  * It collapses like the status columns beside it, but not *into* the same thing:
  * a status pill is a rotated label, while this becomes a full-height rail of
  * per-session notches that still open the session flyout on hover. See
- * {@link AgentSessionColumnRail}.
+ * {@link AgentSessionColumnRail}. Collapsed drops the well so the count
+ * shares the status pill's 24px header slot instead of sitting inside a
+ * full-height bordered rail.
  *
  * Two capabilities exist for hosts that dock the column into their own surface
  * rather than stand it on the board: `collapsed` makes the rail state
  * controlled, and `headerSurface="panel"` wears the docked header skin. Both
  * are generic options — the column knows nothing about who is hosting it.
+ * `columnFrame` is in-flow only; panel ignores it.
  */
 export function AgentSessionColumn({
 	headerSurface = "column",
+	columnFrame = DEFAULT_AGENT_SESSION_COLUMN_FRAME,
 	className,
 	collapsed: collapsedProp,
 	count,
@@ -366,6 +472,150 @@ export function AgentSessionColumn({
 		}
 	};
 
+	const layout = resolveAgentSessionColumnLayout(headerSurface, columnFrame);
+	const planeClassName = resolveAgentSessionPlaneClassName(layout, collapsed);
+	const collapsedHeader = (
+		<div
+			className={cn(
+				"flex min-w-0 items-center gap-1.5",
+				layout === "enclosed" ? "border border-solid border-transparent" : null,
+			)}
+			style={resolveCollapsedHeaderStyle(layout)}
+		>
+			<div className="relative flex h-6 w-full min-w-0 items-center justify-center">
+				<span
+					aria-hidden="true"
+					className={cn(
+						"absolute inset-0 flex items-center justify-center text-xs",
+						newCount > 0
+							? "font-medium text-text-discovery"
+							: "font-normal text-text-subtlest",
+						HEADER_COUNT_AT_REST,
+					)}
+				>
+					<TextMorphing
+						config={HEAD_COUNT_MORPH}
+						text={newCount > 0 ? `+${newCount}` : String(sessionCount)}
+					/>
+				</span>
+				<span className="sr-only">
+					{newCount > 0
+						? `${sessionCount} sessions, ${newCount} newly synced`
+						: `${sessionCount} sessions`}
+				</span>
+				<TooltipProvider>
+					<Tooltip>
+						<TooltipTrigger
+							render={
+								<Button
+									aria-label={`Expand ${title} column`}
+									className={HEADER_CONTROL_ON_REVEAL}
+									onClick={handleToggleCollapsed}
+									size="icon-compact"
+									type="button"
+									variant="ghost"
+								/>
+							}
+						>
+							<Icon className="text-icon-subtle" render={<GrowHorizontalIcon label="" />} />
+						</TooltipTrigger>
+						<TooltipContent>Expand</TooltipContent>
+					</Tooltip>
+				</TooltipProvider>
+			</div>
+		</div>
+	);
+	const expandedHeader = (
+		<AgentSessionColumnHeader
+			collapseLabel={headerSurface === "panel"
+				? "Collapse panel"
+				: `Collapse ${title} column`}
+			frame={columnFrame}
+			model={untrackedSelection.header}
+			onAction={untrackedSelection.onHeaderAction}
+			onCollapse={handleToggleCollapsed}
+			overflow={overflowMenu}
+			surface={headerSurface}
+		/>
+	);
+	const body = collapsed ? (
+		<AgentSessionColumnRail
+			arrivingItemIds={arrivingItemIds}
+			capturedItemIds={sessionProps.capturedItemIds}
+			getSuggestedWorkItemKey={sessionProps.getSuggestedWorkItemKey}
+			getSuggestedWorkItemKeys={sessionProps.getSuggestedWorkItemKeys}
+			highlightedItemId={sessionProps.highlightedItemId}
+			items={visibleItems}
+			newItemIds={newItemIds}
+			onArrivalComplete={handleArrivalComplete}
+			onCreateWorkItem={sessionProps.onCreateWorkItem}
+			onItemHover={sessionProps.onItemHover}
+			onLinkWorkItem={sessionProps.onLinkWorkItem}
+			onSubtasks={sessionProps.onSubtasks}
+			onView={handleNotchView}
+			sessionDrag={sessionProps.sessionDrag}
+		/>
+	) : (
+		<>
+			<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+				{viewItems.length === 0 ? (
+					<p className="text-xs text-text-subtlest">{emptyLabel}</p>
+				) : (
+					<div
+						ref={listRef}
+						className="min-h-0 min-w-0 flex-1 overflow-y-auto has-[:focus-visible]:overflow-visible"
+					>
+						<AgentSession
+							arrivingItemIds={arrivingItemIds}
+							className={cn(
+								headerSurface === "column" ? AGENT_SESSION_LIST_SPACING : null,
+								listClassName,
+							)}
+							items={viewItems}
+							newItemIds={newItemIds}
+							onArrivalComplete={handleArrivalComplete}
+							{...sessionProps}
+							onSelectedItemIdChange={handleSelectedItemIdChange}
+							onToggleVisibility={handleToggleVisibility}
+							rowTriage={untrackedSelection.rows}
+							selectedItemId={selectedItemId}
+							visibilityLabel={view === "hidden" ? "Unarchive" : "Archive"}
+						/>
+					</div>
+				)}
+				{showTopScrollMask || showBottomScrollMask ? (
+					<div
+						aria-hidden="true"
+						className="pointer-events-none absolute inset-0"
+					>
+						{showTopScrollMask ? (
+							<ScrollMaskEdgeOverlay
+								color={AGENT_SESSION_PLANE_FADE_COLOR}
+								edge="top"
+								fadeSize={AGENT_SESSION_PLANE_FADE_SIZE}
+							/>
+						) : null}
+						{showBottomScrollMask ? (
+							<ScrollMaskEdgeOverlay
+								color={AGENT_SESSION_PLANE_FADE_COLOR}
+								edge="bottom"
+								fadeSize={AGENT_SESSION_PLANE_FADE_SIZE}
+							/>
+						) : null}
+					</div>
+				) : null}
+			</div>
+			{showWellFooter ? (
+				<AgentSessionColumnHiddenFooter
+					count={view === "hidden" ? untrackedCount : hiddenCount}
+					mode={view === "hidden" ? "back" : "hidden"}
+					onClick={view === "hidden" ? closeHiddenView : openHiddenView}
+					title={title}
+				/>
+			) : null}
+		</>
+	);
+
 	return (
 		<section
 			ref={columnRef}
@@ -377,6 +627,7 @@ export function AgentSessionColumn({
 			)}
 			data-agent-session-column={title}
 			data-collapsed={collapsed || undefined}
+			data-column-frame={layout === "panel" ? undefined : layout}
 			onTransitionEnd={handleTransitionEnd}
 			tabIndex={-1}
 			style={{
@@ -386,152 +637,24 @@ export function AgentSessionColumn({
 					: `${expandedWidthPx}px`,
 			}}
 		>
-			{collapsed ? (
-				<div
-					className="flex min-w-0 items-center gap-1.5"
-					style={{
-						paddingBottom: token("space.100"),
-						// In-flow matches CollapsedBoardColumn: `space.100` below a
-						// 24px row, no top pad, so the count sits on the same
-						// baseline as `To do`. Panel keeps the extra top pad so
-						// the count is not flush under the docked chrome.
-						paddingTop: headerSurface === "panel" ? token("space.100") : undefined,
-					}}
-				>
-					<div className="relative flex h-6 w-full min-w-0 items-center justify-center">
-						<span
-							aria-hidden="true"
-							className={cn(
-								"absolute inset-0 flex items-center justify-center text-xs",
-								newCount > 0
-									? "font-medium text-text-discovery"
-									: "font-normal text-text-subtlest",
-								HEADER_COUNT_AT_REST,
-							)}
-						>
-							<TextMorphing
-								config={HEAD_COUNT_MORPH}
-								text={newCount > 0 ? `+${newCount}` : String(sessionCount)}
-							/>
-						</span>
-						<span className="sr-only">
-							{newCount > 0
-								? `${sessionCount} sessions, ${newCount} newly synced`
-								: `${sessionCount} sessions`}
-						</span>
-						<TooltipProvider>
-							<Tooltip>
-								<TooltipTrigger
-									render={
-										<Button
-											aria-label={`Expand ${title} column`}
-											className={HEADER_CONTROL_ON_REVEAL}
-											onClick={handleToggleCollapsed}
-											size="icon-compact"
-											type="button"
-											variant="ghost"
-										/>
-									}
-								>
-									<Icon className="text-icon-subtle" render={<GrowHorizontalIcon label="" />} />
-								</TooltipTrigger>
-								<TooltipContent>Expand</TooltipContent>
-							</Tooltip>
-						</TooltipProvider>
-					</div>
-				</div>
-			) : (
-				<AgentSessionColumnHeader
-					collapseLabel={headerSurface === "panel"
-						? "Collapse panel"
-						: `Collapse ${title} column`}
-					model={untrackedSelection.header}
-					onAction={untrackedSelection.onHeaderAction}
-					onCollapse={handleToggleCollapsed}
-					overflow={overflowMenu}
-					surface={headerSurface}
-				/>
-			)}
-
-			<div className={collapsed || headerSurface === "panel" ? AGENT_SESSION_PLANE : AGENT_SESSION_WELL}>
-				{collapsed ? (
-					<AgentSessionColumnRail
-						arrivingItemIds={arrivingItemIds}
-						capturedItemIds={sessionProps.capturedItemIds}
-						getSuggestedWorkItemKey={sessionProps.getSuggestedWorkItemKey}
-						getSuggestedWorkItemKeys={sessionProps.getSuggestedWorkItemKeys}
-						highlightedItemId={sessionProps.highlightedItemId}
-						items={visibleItems}
-						newItemIds={newItemIds}
-						onArrivalComplete={handleArrivalComplete}
-						onCreateWorkItem={sessionProps.onCreateWorkItem}
-						onItemHover={sessionProps.onItemHover}
-						onLinkWorkItem={sessionProps.onLinkWorkItem}
-						onSubtasks={sessionProps.onSubtasks}
-						onView={handleNotchView}
-						sessionDrag={sessionProps.sessionDrag}
-					/>
-				) : (
-					<>
-						<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-							{viewItems.length === 0 ? (
-								<p className="text-xs text-text-subtlest">{emptyLabel}</p>
-							) : (
-								<div
-									ref={listRef}
-									className="min-h-0 min-w-0 flex-1 overflow-y-auto has-[:focus-visible]:overflow-visible"
-								>
-									<AgentSession
-										arrivingItemIds={arrivingItemIds}
-										className={listClassName}
-										items={viewItems}
-										newItemIds={newItemIds}
-										onArrivalComplete={handleArrivalComplete}
-										{...sessionProps}
-										onSelectedItemIdChange={handleSelectedItemIdChange}
-										onToggleVisibility={handleToggleVisibility}
-										rowTriage={untrackedSelection.rows}
-										selectedItemId={selectedItemId}
-										visibilityLabel={view === "hidden" ? "Unarchive" : "Archive"}
-									/>
-								</div>
-							)}
-							{showTopScrollMask || showBottomScrollMask ? (
-								<div
-									aria-hidden="true"
-									className="pointer-events-none absolute inset-0"
-								>
-									{showTopScrollMask ? (
-										<ScrollMaskEdgeOverlay
-											color={AGENT_SESSION_PLANE_FADE_COLOR}
-											edge="top"
-											fadeSize={AGENT_SESSION_PLANE_FADE_SIZE}
-										/>
-									) : null}
-									{showBottomScrollMask ? (
-										<ScrollMaskEdgeOverlay
-											color={AGENT_SESSION_PLANE_FADE_COLOR}
-											edge="bottom"
-											fadeSize={AGENT_SESSION_PLANE_FADE_SIZE}
-										/>
-									) : null}
-								</div>
-							) : null}
-						</div>
-						{showWellFooter ? (
-							<AgentSessionColumnHiddenFooter
-								count={view === "hidden" ? untrackedCount : hiddenCount}
-								mode={view === "hidden" ? "back" : "hidden"}
-								onClick={view === "hidden" ? closeHiddenView : openHiddenView}
-								title={title}
-							/>
-						) : null}
-					</>
-				)}
-			</div>
+			{renderAgentSessionColumnFrame({
+				body,
+				collapsed,
+				header: collapsed ? collapsedHeader : expandedHeader,
+				layout,
+				planeClassName,
+			})}
 		</section>
 	);
 }
 
 export { AgentSessionColumnRail } from "./agent-session-column-rail";
+export {
+	DEFAULT_AGENT_SESSION_COLUMN_FRAME,
+	resolveAgentSessionColumnLayout,
+} from "./agent-session-column-frame";
+export type {
+	AgentSessionColumnFrame,
+	AgentSessionColumnLayout,
+} from "./agent-session-column-frame";
 export type { AgentSessionColumnProps } from "./agent-session-column-types";

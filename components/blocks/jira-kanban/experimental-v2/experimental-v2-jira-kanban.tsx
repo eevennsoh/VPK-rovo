@@ -9,7 +9,7 @@ import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import AddIcon from "@atlaskit/icon/core/add";
 
-import { AgentSessionColumn, type AgentSessionColumnProps } from "@/components/blocks/agent-session-column";
+import { type AgentSessionColumnProps } from "@/components/blocks/agent-session-column";
 import {
 	JiraIssue,
 	type JiraIssueAgentActivityLayout,
@@ -46,6 +46,7 @@ import {
 	BoardColumnResizeButton,
 	CollapsedBoardColumn,
 } from "../experimental/components/collapsed-board-column";
+import { InFlowAgentSessionColumn } from "../experimental/components/in-flow-agent-session-column";
 import { BOARD_COLUMN_ACTION_REVEAL } from "../experimental/lib/board-column-action-reveal";
 import {
 	EMPTY_COLLAPSED_BOARD_COLUMNS,
@@ -419,7 +420,9 @@ function BoardColumn({
 
 function BoardColumnShell({
 	children,
+	chrome,
 	collapsed,
+	columnChrome,
 	count,
 	onDragLeave,
 	onDragOver,
@@ -429,7 +432,9 @@ function BoardColumnShell({
 }: Readonly<{
 	/** Receives the collapse handler so the column header can render the control. */
 	children: (onCollapse: () => void) => ReactNode;
+	chrome: KanbanColumnChromeStyles;
 	collapsed: boolean;
+	columnChrome: KanbanColumnChrome;
 	count: number;
 	onDragLeave: (event: React.DragEvent<HTMLDivElement>) => void;
 	onDragOver: (event: React.DragEvent<HTMLDivElement>) => void;
@@ -460,6 +465,7 @@ function BoardColumnShell({
 	return (
 		<div
 			data-jira-kanban-column={title}
+			data-kanban-column-chrome={columnChrome}
 			data-collapsed={collapsed || undefined}
 			className={cn(
 				"min-w-0 border-2 border-transparent",
@@ -478,7 +484,13 @@ function BoardColumnShell({
 			}}
 		>
 			{collapsed ? (
-				<CollapsedBoardColumn count={count} onExpand={handleToggleCollapsed} title={title} />
+				<CollapsedBoardColumn
+					chrome={chrome.collapsed}
+					count={count}
+					headerFrame={chrome.headerFrame}
+					onExpand={handleToggleCollapsed}
+					title={title}
+				/>
 			) : (
 				children(handleToggleCollapsed)
 			)}
@@ -681,16 +693,14 @@ export function ExperimentalV2JiraKanban({
 		<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 			<div className="flex min-h-0 min-w-0 flex-1 items-stretch">
 				{agentSessionColumn ? (
-					// Top/left/bottom match the status columns' 2px drop-target
-					// box so the headers share a baseline. No right border:
-					// Untracked work is not a drop target, and that 2px reads as
-					// a white seam once the plane is `bg-surface`.
-					<div
-						className="flex min-h-0 shrink-0 border-2 border-transparent border-r-0 ps-6"
-						style={{ paddingTop, paddingBottom }}
-					>
-						<AgentSessionColumn {...agentSessionColumn} />
-					</div>
+					<InFlowAgentSessionColumn
+						agentSessionColumn={agentSessionColumn}
+						columnFrame={chrome.headerFrame}
+						paddingBottom={paddingBottom}
+						paddingTop={paddingTop}
+						sessionFlyoutsSuspended={draggedCardCode !== null}
+						untrackedDropArmed={false}
+					/>
 				) : null}
 				<section
 					tabIndex={0}
@@ -715,7 +725,9 @@ export function ExperimentalV2JiraKanban({
 						<div className="flex min-h-full flex-1 items-stretch gap-2">
 						{boardColumns.map((column) => (
 						<BoardColumnShell
+							chrome={chrome}
 							collapsed={isBoardColumnCollapsed(collapsedColumns, column.title)}
+							columnChrome={columnChrome}
 							count={column.cards.length}
 							key={column.title}
 							onDragOver={handleColumnDragOver}

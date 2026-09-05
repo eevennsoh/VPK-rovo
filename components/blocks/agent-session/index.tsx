@@ -161,9 +161,9 @@ export function AgentSession({
 					className,
 				)}
 				data-variant={variant}
-				// In-flow large column stays flush. A panel host overrides
-				// `gap-0` via `listClassName`. Detached compact rows sit 2px
-				// apart (`space.025`).
+				// Large defaults to flush. Column and panel hosts override
+				// `gap-0` via `listClassName` (`gap-1 p-1`) so marked rows can
+				// fuse. Detached compact rows sit 2px apart (`space.025`).
 				style={variant === "medium-detached"
 					? { ...style, gap: token("space.025") }
 					: style}

@@ -4,6 +4,7 @@ import type { CSSProperties, ReactNode } from "react";
 
 import {
 	AgentSessionColumn,
+	type AgentSessionColumnFrame,
 	type AgentSessionColumnProps,
 } from "@/components/blocks/agent-session-column";
 import { JiraSessionFlyoutSuspensionProvider } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
@@ -12,6 +13,7 @@ import { cn } from "@/lib/utils";
 export interface InFlowAgentSessionColumnProps {
 	agentSessionColumn: AgentSessionColumnProps;
 	className?: string;
+	columnFrame: AgentSessionColumnFrame;
 	paddingBottom?: CSSProperties["paddingBottom"];
 	paddingTop?: CSSProperties["paddingTop"];
 	sessionFlyoutsSuspended: boolean;
@@ -28,6 +30,7 @@ export interface InFlowAgentSessionColumnProps {
 export function InFlowAgentSessionColumn({
 	agentSessionColumn,
 	className,
+	columnFrame,
 	paddingBottom,
 	paddingTop,
 	sessionFlyoutsSuspended,
@@ -45,7 +48,7 @@ export function InFlowAgentSessionColumn({
 				data-board-agent-session-target={untrackedDropArmed ? "untracked" : undefined}
 				style={{ paddingTop, paddingBottom }}
 			>
-				<AgentSessionColumn {...agentSessionColumn} />
+				<AgentSessionColumn {...agentSessionColumn} columnFrame={columnFrame} />
 			</div>
 		</JiraSessionFlyoutSuspensionProvider>
 	);

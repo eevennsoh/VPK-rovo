@@ -102,13 +102,17 @@ test("the column plane is the board surface, not a grey well", () => {
 test("the session list sits flush in the plane with no gutter wrapper", () => {
 	// The old `-m-1 p-1` scrollport painted a 4px gap around the cards and
 	// clipped the scrollbar against the plane's radius. The list is the
-	// scrollport now; the plane stays unpadded so edge fades span it. Panel
-	// inset lives on the panel's `listClassName`, not a column wrapper.
+	// scrollport now; the plane stays unpadded so edge fades span it. The
+	// 4px inset lives on the `<ul>` via `listClassName`, not a column wrapper.
 	assert.match(INDEX_SOURCE, /min-h-0 min-w-0 flex-1 overflow-y-auto/u);
 	assert.doesNotMatch(INDEX_SOURCE, /-m-1 min-h-0 min-w-0 flex-1 overflow-y-auto p-1/u);
 	assert.match(INDEX_SOURCE, /overflow-y-auto has-\[:focus-visible\]:overflow-visible/u);
 	assert.doesNotMatch(INDEX_SOURCE, /const AGENT_SESSION_PLANE =\s*\n?\s*"[^"]*overflow-hidden/u);
-	assert.match(INDEX_SOURCE, /className=\{listClassName\}/u);
+	assert.match(INDEX_SOURCE, /const AGENT_SESSION_LIST_SPACING = "gap-1 p-1"/u);
+	assert.match(
+		INDEX_SOURCE,
+		/className=\{cn\(\s*headerSurface === "column" \? AGENT_SESSION_LIST_SPACING : null,\s*listClassName,\s*\)\}/u,
+	);
 	assert.doesNotMatch(INDEX_SOURCE, /AGENT_SESSION_WELL_LIST/u);
 	assert.doesNotMatch(INDEX_SOURCE, /className=\{cn\("gap-0\.5", listClassName\)\}/u);
 	assert.doesNotMatch(INDEX_SOURCE, /padding: token\("space\.100"\)/u);
@@ -121,8 +125,12 @@ test("the column does not fuse large session cards into one stroke", () => {
 	// must not strip borders into shared dividers.
 	assert.match(INDEX_SOURCE, /const AGENT_SESSION_WELL =/u);
 	assert.match(INDEX_SOURCE, /overflow-hidden rounded-xl border border-solid border-border-disabled/u);
-	assert.match(INDEX_SOURCE, /collapsed \|\| headerSurface === "panel" \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL/u);
-	assert.match(INDEX_SOURCE, /className=\{listClassName\}/u);
+	assert.match(INDEX_SOURCE, /case "caption":\s*\n\s*return collapsed \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL;/u);
+	assert.match(INDEX_SOURCE, /case "enclosed":\s*\n\s*return collapsed \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL_PAINT;/u);
+	assert.match(
+		INDEX_SOURCE,
+		/className=\{cn\(\s*headerSurface === "column" \? AGENT_SESSION_LIST_SPACING : null,\s*listClassName,\s*\)\}/u,
+	);
 	assert.doesNotMatch(INDEX_SOURCE, /AGENT_SESSION_WELL_LIST/u);
 	assert.doesNotMatch(INDEX_SOURCE, /\[&_article\]:rounded-none \[&_article\]:border-x-0/u);
 	assert.doesNotMatch(INDEX_SOURCE, /\[&_li:first-child_article\]:border-t-0/u);
@@ -131,6 +139,7 @@ test("the column does not fuse large session cards into one stroke", () => {
 	assert.match(SESSION_INDEX_SOURCE, /variant === "large"\s*\n\s*\? "gap-0"/u);
 	assert.doesNotMatch(SESSION_INDEX_SOURCE, /gap: token\("space\.100"\)/u);
 	assert.match(CARD_SOURCE, /rounded-lg p-3 text-left text-text/u);
+	assert.match(CARD_SOURCE, /\[\[data-marked\]\+&\[data-marked\]\]:in-\[\.gap-1\]:-mt-1/u);
 	assert.doesNotMatch(CARD_SOURCE, /\[li:first-child_&\]:rounded-t-lg/u);
 	assert.doesNotMatch(CARD_SOURCE, /\[li:last-child_&\]:rounded-b-lg/u);
 	assert.doesNotMatch(CARD_SOURCE, /\[li:not\(:last-child\)_&\]:border-b-0/u);
@@ -201,17 +210,14 @@ test("the v2 board pins the column outside its horizontal scrollport", () => {
 	assert.match(BOARD_SOURCE, /agentSessionColumn\?: AgentSessionColumnProps;/u);
 	// Pinned, so it precedes the <section> scrollport rather than joining the
 	// boardColumns map inside it.
-	const columnIndex = BOARD_SOURCE.indexOf("<AgentSessionColumn {...agentSessionColumn} />");
+	const columnIndex = BOARD_SOURCE.indexOf("<InFlowAgentSessionColumn");
 	const sectionIndex = BOARD_SOURCE.indexOf("<section");
 	assert.ok(columnIndex > 0, "expected the board to render the pinned column");
 	assert.ok(columnIndex < sectionIndex, "expected the pinned column before the scrollport");
 	// The pinned column supplies the board's left inset, so the scroll row drops
 	// to the inter-column gap and every column keeps one rhythm.
 	assert.match(BOARD_SOURCE, /agentSessionColumn \? "ps-2" : "ps-6"/u);
-	// Both share the scrollport's vertical padding and the status columns'
-	// 2px top/left/bottom box so the headers share a baseline. No right
-	// border — that 2px reads as a white seam against `bg-surface`.
-	assert.match(BOARD_SOURCE, /className="flex min-h-0 shrink-0 border-2 border-transparent border-r-0 ps-6"\s*style=\{\{ paddingTop, paddingBottom \}\}/u);
+	assert.match(BOARD_SOURCE, /columnFrame=\{chrome\.headerFrame\}/u);
 });
 
 test("the board column and the Insights rail share one loose-work adapter", () => {
@@ -274,7 +280,10 @@ test("the catalog page shows a Panel wrap and an in-flow kanban host", () => {
 	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage/u);
 	assert.match(PAGE_SOURCE, /showAgentSessionColumn/u);
 	assert.match(PAGE_SOURCE, /agentSessionPresentation="column"/u);
-	assert.match(PAGE_SOURCE, /columnChrome="simple"/u);
+	assert.match(PAGE_SOURCE, /columnChrome=\{columnChrome\}/u);
+	assert.match(PAGE_SOURCE, /aria-label="Kanban column chrome"/u);
+	assert.match(PAGE_SOURCE, /<ToggleGroupItem value="default">Default<\/ToggleGroupItem>/u);
+	assert.match(PAGE_SOURCE, /<ToggleGroupItem value="simple">Simple<\/ToggleGroupItem>/u);
 	assert.match(PAGE_SOURCE, /insightsEnabled=\{false\}/u);
 	assert.match(DETAIL_SOURCE, /name: "headerSurface"/u);
 	assert.match(DETAIL_SOURCE, /name: "triage"/u);
@@ -284,18 +293,28 @@ test("the catalog page shows a Panel wrap and an in-flow kanban host", () => {
 		REGISTRY_SOURCE,
 		/"agent-session-column":[\s\S]{0,200}?variants/u,
 	);
-	assert.doesNotMatch(DETAIL_SOURCE, /examples:/u);
+	assert.match(DETAIL_SOURCE, /examples:/u);
+	assert.match(DETAIL_SOURCE, /examplesContentWidth: "bleed"/u);
 });
 
 test("the collapsed count lives in the header above the plane, not on the rail", () => {
-	// Same header slot as expanded (`space.100` below, 24px row) so the number
-	// does not jump. In-flow matches CollapsedBoardColumn (no top pad) so the
-	// count shares a baseline with `To do`. Panel keeps matching top pad so
-	// the count is not flush under the docked chrome. The rail is notches only.
+	// Same 24px row as expanded. Enclosed in-flow uses the expanded well's
+	// top inset (`space.100` plus a 1px transparent border) so a collapsed
+	// Untracked count shares a row with an expanded status count. Caption
+	// stays flush so it still matches a simple collapsed pill. Panel keeps
+	// matching top pad under the docked chrome. The rail is notches only.
 	assert.match(INDEX_SOURCE, /paddingBottom: token\("space\.100"\)/u);
 	assert.match(
 		INDEX_SOURCE,
-		/paddingTop: headerSurface === "panel" \? token\("space\.100"\) : undefined/u,
+		/case "panel":\s*\n\s*case "enclosed":\s*\n\s*return \{\s*\n\s*paddingBottom: token\("space\.100"\),\s*\n\s*paddingTop: token\("space\.100"\),\s*\n\s*\};/u,
+	);
+	assert.match(
+		INDEX_SOURCE,
+		/case "caption":\s*\n\s*return \{ paddingBottom: token\("space\.100"\) \};/u,
+	);
+	assert.match(
+		INDEX_SOURCE,
+		/layout === "enclosed" \? "border border-solid border-transparent" : null/u,
 	);
 	assert.match(INDEX_SOURCE, /relative flex h-6 w-full min-w-0 items-center justify-center/u);
 	assert.match(INDEX_SOURCE, /absolute inset-0 flex items-center justify-center text-xs/u);
@@ -316,9 +335,11 @@ test("collapsing swaps the cards for the notch rail, not for a rotated label", (
 	assert.doesNotMatch(INDEX_SOURCE, /writing-mode/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /writing-mode/u);
 	assert.match(INDEX_SOURCE, /collapsed \?[\s\S]{0,400}?<AgentSessionColumnRail/u);
-	// The header stays a sibling of the plane in both states, so the fill
-	// never runs behind the count.
 	assert.match(INDEX_SOURCE, /const AGENT_SESSION_PLANE =\s*\n?\s*"[^"]*bg-surface/u);
+	assert.match(
+		INDEX_SOURCE,
+		/case "enclosed":\s*\n\s*return collapsed \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL_PAINT;/u,
+	);
 	// 32px matches the board's collapsed status pill so the two share a rhythm.
 	assert.match(INDEX_SOURCE, /AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX = 32/u);
 	// Declared locally: a shared block must not import a kanban variant's lib.
@@ -582,7 +603,7 @@ test("headerSurface panel keeps the column-owned header and drops the nested wel
 	assert.doesNotMatch(TYPES_SOURCE, /chrome\?: "default" \| "none";/u);
 	assert.doesNotMatch(INDEX_SOURCE, /\bchrome=/u);
 	assert.match(INDEX_SOURCE, /<AgentSessionColumnHeader/u);
-	assert.match(INDEX_SOURCE, /collapsed \|\| headerSurface === "panel" \? AGENT_SESSION_PLANE : AGENT_SESSION_WELL/u);
+	assert.match(INDEX_SOURCE, /case "panel":\s*\n\s*return AGENT_SESSION_PLANE;/u);
 	assert.match(INDEX_SOURCE, /<section\s*\n\s*ref=\{columnRef\}\s*\n\s*aria-label=\{`\$\{displayTitle\}, \$\{sessionCount\} sessions`\}/u);
 	assert.match(INDEX_SOURCE, /tabIndex=\{-1\}/u);
 	assert.match(INDEX_SOURCE, /columnRef\.current\?\.focus\(\)/u);
@@ -591,7 +612,7 @@ test("headerSurface panel keeps the column-owned header and drops the nested wel
 test("the collapsed rail keeps its compact header whatever the host asks for", () => {
 	// At 32px that header *is* the chrome, and it carries the only control that
 	// can expand the column again — gating it on `headerSurface` would strand the rail.
-	assert.match(INDEX_SOURCE, /\{collapsed \? \(/u);
+	assert.match(INDEX_SOURCE, /header: collapsed \? collapsedHeader : expandedHeader/u);
 	assert.match(INDEX_SOURCE, /aria-label=\{`Expand \$\{title\} column`\}/u);
 	// The rail itself still has no header of its own to fall back on.
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /onExpand/u);

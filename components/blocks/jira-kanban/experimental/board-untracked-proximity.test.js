@@ -280,7 +280,7 @@ test("column presentation pins Untracked beside the list as well as the board", 
 	);
 	assert.match(PAGE_SOURCE, /inFlowAgentSessionColumn: showInFlowAgentSessionColumn,/u);
 	assert.match(PAGE_SOURCE, /inFlowAgentSessionColumn=\{showInFlowAgentSessionColumn\}/u);
-	assert.match(PAGE_SOURCE, /paddingTop=\{columnChromeStyles\.header\.paddingTop\}/u);
+	assert.match(PAGE_SOURCE, /columnFrame=\{columnChromeStyles\.headerFrame\}/u);
 	assert.match(
 		PAGE_SOURCE,
 		/<InFlowAgentSessionColumn[\s\S]*\{isListContent \? \(/u,

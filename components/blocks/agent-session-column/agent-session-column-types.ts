@@ -1,6 +1,8 @@
 import type { AgentSessionProps } from "@/components/blocks/agent-session";
 import type { UntrackedWorkTriage } from "@/components/blocks/agent-session/untracked-work-triage";
 
+import type { AgentSessionColumnFrame } from "./agent-session-column-frame";
+
 /**
  * Column chrome around the Agent Session cards.
  *
@@ -61,6 +63,11 @@ export interface AgentSessionColumnProps extends Omit<
 	 * carries the only control that can expand the column again.
 	 */
 	headerSurface?: "column" | "panel";
+	/**
+	 * In-flow only. Ignored when `headerSurface` is `"panel"`.
+	 * Omit for `"caption"`. Kanban hosts overwrite this from `columnChrome`.
+	 */
+	columnFrame?: AgentSessionColumnFrame;
 	/**
 	 * Expanded width in px. Defaults to the board column's 280. A wider host
 	 * (the docked rail) passes its content-box width so the well fills that
