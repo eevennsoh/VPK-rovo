@@ -7,6 +7,7 @@ examples:
 node .agents/skills/vpk-html/scripts/ensure-fonts.mjs
 node .agents/skills/vpk-html/scripts/build.mjs --sync
 node .agents/skills/vpk-html/scripts/build.mjs --check-templates
+node .agents/skills/vpk-html/scripts/build.mjs --check-evals
 pnpm run lint
 pnpm run typecheck
 ```

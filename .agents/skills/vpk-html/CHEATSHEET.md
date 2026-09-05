@@ -116,7 +116,7 @@ illustrations use the grayscale `--ill-*` figure ramp. SMIL motion must use
 
 ```
 1. Confirm /vpk-html invocation
-2. Extract intent (purpose / audience / constraint / success)
+2. Frame the reader job (30-second decision/action + deeper evidence audit)
 3. Pick template from table above
 4. Source + material pass (for branded / fact-heavy docs)
 5. Distill raw content (if input is unstructured)

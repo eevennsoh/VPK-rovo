@@ -26,8 +26,17 @@ a separate explicit request naming the exact artifact path.
 
 ## Intent and template selection
 
-Infer purpose, audience, hard constraints, and the success outcome. Ask one
-compact question only when at least two dimensions are genuinely unclear.
+Infer purpose, audience, hard constraints, and the success outcome. Before
+choosing a template, write a private two-line reader-job note:
+
+- **Quick read:** what must the reader understand, decide, or change within
+  about 30 seconds?
+- **Deep audit:** what evidence must remain available when they inspect the
+  artifact closely?
+
+Use that job to choose and adapt the template. Do not let available slots decide
+the information architecture. Ask one compact question only when at least two
+dimensions are genuinely unclear.
 
 ### General documents
 
