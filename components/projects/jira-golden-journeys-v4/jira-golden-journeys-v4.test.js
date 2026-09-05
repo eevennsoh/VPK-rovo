@@ -13,6 +13,7 @@ const LIST_HOOK_SOURCE = readProjectFile(
 );
 const JIRA_HEADER_SOURCE = readProjectFile("components/projects/jira/components/jira-header.tsx");
 const JIRA_TABS_SOURCE = readProjectFile("components/projects/jira/data/tabs.ts");
+const USE_JIRA_TABS_SOURCE = readProjectFile("components/projects/jira/hooks/use-jira-tabs.ts");
 const EXPERIMENTAL_HEADER_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/experimental-board-header.tsx",
 );
@@ -501,11 +502,23 @@ test("the Jira tab bar splits or collapses work items per design variation", () 
 	assert.match(JIRA_HEADER_SOURCE, /const tabs = useJiraTabs\(supportedWorkItemViews\)/u);
 	assert.match(JIRA_HEADER_SOURCE, /const activeTab = resolveJiraTab\(tabs, selectedTabLabel, workItemView\)/u);
 	assert.match(JIRA_HEADER_SOURCE, /<JiraViewTabs\s+selectedTabLabel=\{selectedTabLabel\}/u);
-	// Team EU restores Board and List as sibling destinations; 2000 years later
-	// keeps the single Work items tab and lets the board header switch views.
+	// Team EU without Simple views restores Board and List as sibling
+	// destinations; Simple views (default on) and 2000 years later keep the
+	// single Work items tab and let the board header switch views.
 	assert.match(JIRA_TABS_SOURCE, /import WorkItemIcon from "@atlaskit\/icon\/core\/work-item"/u);
 	assert.match(JIRA_TABS_SOURCE, /"team-eu": \[[\s\S]*\{ label: "Board", icon: BoardIcon, hasContent: true, view: "board" \}[\s\S]*\{ label: "List", icon: TableIcon, hasContent: true, view: "list" \}/u);
 	assert.match(JIRA_TABS_SOURCE, /"2000-years-later": \[[\s\S]*\{ label: "Work items", icon: WorkItemIcon, hasContent: true \}/u);
+	assert.match(JIRA_TABS_SOURCE, /export function getJiraTabs\(/u);
+	assert.match(JIRA_TABS_SOURCE, /simpleViews = false/u);
+	assert.match(
+		JIRA_TABS_SOURCE,
+		/if \(simpleViews\) \{\s*return JIRA_TABS_BY_DESIGN_VARIATION\["2000-years-later"\];/u,
+	);
+	assert.match(USE_JIRA_TABS_SOURCE, /designVariants\["simple-views"\]/u);
+	assert.match(
+		USE_JIRA_TABS_SOURCE,
+		/getJiraTabs\(designVariation, designVariants\["simple-views"\]\)/u,
+	);
 	assert.doesNotMatch(
 		JIRA_TABS_SOURCE,
 		/"2000-years-later": \[[\s\S]*label: "(?:Board|List)"/u,
@@ -595,20 +608,64 @@ test("the Work items header switches between Board and List views with their ico
 		/<TabsList aria-label="Work items view">[\s\S]*<TabsTrigger value="board">[\s\S]*<BoardIcon[\s\S]*Board[\s\S]*<TabsTrigger value="list">[\s\S]*<TableIcon[\s\S]*List/u,
 	);
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /<TabsList[^>]*className=|<TabsTrigger[^>]*className=/u);
-	// More board controls stays in the left control cluster, immediately after
-	// Insights and before the far-right Board/List switcher.
+	assert.match(PAGE_SOURCE, /moreControlsPlacement=\{designVariation === "team-eu" \? "end" : "inline"\}/u);
+	assert.match(PAGE_SOURCE, /showMoreControls=\{!designVariants\["simple-views"\]\}/u);
+	assert.match(
+		PAGE_SOURCE,
+		/showCustomizeControl=\{designVariation === "team-eu" && !designVariants\["simple-views"\]\}/u,
+	);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /moreControlsPlacement\?: "inline" \| "end";/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showMoreControls\?: boolean;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showCustomizeControl\?: boolean;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /moreControlsPlacement=\{moreControlsPlacement\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showMoreControls=\{showMoreControls\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showCustomizeControl=\{showCustomizeControl\}/u);
+	assert.doesNotMatch(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/useDesignVariation|design-variation/u,
+		"the shared block must take moreControlsPlacement, not read the global variation store",
+	);
+	assert.match(
+		EXPERIMENTAL_HEADER_SOURCE,
+		/moreControlsPlacement === "inline" \? moreControls : null/u,
+	);
+	assert.match(
+		EXPERIMENTAL_HEADER_SOURCE,
+		/moreControlsPlacement === "end" \? moreControls : null/u,
+	);
+	assert.match(EXPERIMENTAL_HEADER_SOURCE, /aria-label="Customize"/u);
+	assert.match(
+		EXPERIMENTAL_HEADER_SOURCE,
+		/showCustomizeControl \? \(\s*<Button aria-disabled aria-label="Customize" size="icon" variant="outline">/u,
+	);
+	assert.match(
+		EXPERIMENTAL_HEADER_SOURCE,
+		/className=\{cn\("flex items-center gap-2", compact \? undefined : "ml-auto"\)\}/u,
+	);
+	assert.match(
+		EXPERIMENTAL_HEADER_SOURCE,
+		/showMoreControls \? \(\s*<Button aria-disabled aria-label=\{`More \$\{surfaceLabel\} controls`\}/u,
+	);
+	const inlineMoreIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf(
+		'{moreControlsPlacement === "inline" ? moreControls : null}',
+	);
+	const viewSwitcherIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf('aria-label="Work items view"');
+	const endMoreIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf(
+		'{moreControlsPlacement === "end" ? moreControls : null}',
+	);
+	const customizeIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("{customizeControl}");
+	assert.ok(inlineMoreIndex > 0 && inlineMoreIndex < viewSwitcherIndex);
+	assert.ok(viewSwitcherIndex > 0 && viewSwitcherIndex < endMoreIndex);
+	assert.ok(endMoreIndex > 0 && endMoreIndex < customizeIndex);
 	const filterControlIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("{filterControl}");
 	const viewMenuIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("<BoardViewMenu");
 	const modeToggleIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf("{modeToggle}");
-	const viewSwitcherIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf('aria-label="Work items view"');
-	const overflowIndex = EXPERIMENTAL_HEADER_SOURCE.indexOf('aria-label={`More ${surfaceLabel} controls`}');
 	assert.ok(filterControlIndex > 0 && filterControlIndex < viewMenuIndex);
 	assert.ok(viewMenuIndex > 0 && viewMenuIndex < modeToggleIndex);
-	assert.ok(modeToggleIndex > 0 && modeToggleIndex < overflowIndex);
-	assert.ok(overflowIndex > 0 && overflowIndex < viewSwitcherIndex);
+	assert.ok(modeToggleIndex > 0 && modeToggleIndex < inlineMoreIndex);
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
-		/\{filterControl\}\s*<BoardViewMenu[\s\S]*?\{modeToggle\}[\s\S]*?<Button aria-disabled aria-label=\{`More \$\{surfaceLabel\} controls`\}/u,
+		/\{filterControl\}\s*<BoardViewMenu[\s\S]*?\{modeToggle\}[\s\S]*?moreControlsPlacement === "inline"/u,
 	);
 	assert.doesNotMatch(
 		EXPERIMENTAL_HEADER_SOURCE,
@@ -623,6 +680,10 @@ test("the board keeps 24px between the Jira tabs and filter controls", () => {
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
 		/\{viewTabs \? <div className="mt-2">\{viewTabs\}<\/div> : null\}[\s\S]*className="mt-6 flex flex-wrap items-center gap-2 px-6"/u,
+	);
+	assert.match(
+		EXPERIMENTAL_HEADER_SOURCE,
+		/paddingInlineEnd: `calc\(\$\{controlsInsetEnd\}px \+ \$\{token\("space\.300"\)\}\)`/u,
 	);
 });
 
@@ -654,6 +715,10 @@ test("the Panel design variant floats untracked work over the board and the list
 	// variant-agnostic.
 	assert.match(PAGE_SOURCE, /import \{ useDesignVariants \} from "@\/components\/hooks\/use-design-variants";/u);
 	assert.match(PAGE_SOURCE, /const \{ designVariants \} = useDesignVariants\(\);/u);
+	assert.match(
+		PAGE_SOURCE,
+		/<ExperimentalJiraKanbanPage[\s\S]*agentSessionPresentation=\{designVariants\.panel \? "panel" : "column"\}/u,
+	);
 	assert.match(
 		PAGE_SOURCE,
 		/<ExperimentalJiraKanbanPage[\s\S]*agentSessionPresentation=\{designVariants\.panel \? "panel" : "column"\}/u,

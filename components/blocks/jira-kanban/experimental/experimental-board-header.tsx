@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import BoardIcon from "@atlaskit/icon/core/board";
+import CustomizeIcon from "@atlaskit/icon/core/customize";
 import PersonAddIcon from "@atlaskit/icon/core/person-add";
 import SearchIcon from "@atlaskit/icon/core/search";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
@@ -20,6 +21,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { JiraProjectAvatar } from "@/components/blocks/product-sidebar/variants/jira";
 import { JIRA_DESIGN_PROJECT } from "@/components/blocks/product-sidebar/data/jira-navigation";
+import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import type { JiraKanbanAssigneeData } from "../index";
 import { BoardViewMenu } from "./components/board-view-menu";
@@ -40,8 +42,10 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	/**
 	 * Trailing inset in px for the control row, matching the width of a docked
 	 * side panel. The panel covers this band, so without it the row's trailing
-	 * cluster (the view switcher) would sit underneath and be unclickable. Board
-	 * columns below still slide under the panel.
+	 * cluster (the view switcher) would sit underneath and be unclickable. The
+	 * row still keeps its `px-6` end gutter on top of that inset so the cluster
+	 * does not sit flush against the rail's notches. Board columns below still
+	 * slide under the panel.
 	 */
 	controlsInsetEnd?: number;
 	onSelectedAssigneeIdsChange: (assigneeIds: Set<string>) => void;
@@ -68,6 +72,22 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	 * Trailing cluster end slot — after the board/list view switcher.
 	 */
 	endSlot?: ReactNode;
+	/**
+	 * Where the overflow ("…") control sits when it is shown. `"inline"` keeps
+	 * it with Filter / Group (2000 years later). `"end"` parks it with
+	 * Customize on the far right, which is Team EU's shipping chrome.
+	 */
+	moreControlsPlacement?: "inline" | "end";
+	/**
+	 * Overflow ("…") control. Simple views omits it; missing capability stays
+	 * display-only when the control is shown.
+	 */
+	showMoreControls?: boolean;
+	/**
+	 * Outline Customize control on the far right. Team EU shows it when Simple
+	 * views is off; missing capability stays display-only.
+	 */
+	showCustomizeControl?: boolean;
 	surfaceLabel?: string;
 	shownSessionStateIds?: ReadonlySet<BoardAgentSessionStateId>;
 	onShownSessionStateIdsChange?: (shownSessionStateIds: Set<BoardAgentSessionStateId>) => void;
@@ -145,6 +165,9 @@ export function ExperimentalJiraKanbanBoardHeader({
 	filterControl,
 	modeToggle,
 	endSlot,
+	moreControlsPlacement = "inline",
+	showMoreControls = true,
+	showCustomizeControl = false,
 	surfaceLabel = "board",
 	shownSessionStateIds,
 	onShownSessionStateIdsChange,
@@ -164,6 +187,17 @@ export function ExperimentalJiraKanbanBoardHeader({
 		}
 		onSelectedAssigneeIdsChange(nextSelection);
 	};
+
+	const moreControls = showMoreControls ? (
+		<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
+			<Icon render={<ShowMoreHorizontalIcon label="" />} />
+		</Button>
+	) : null;
+	const customizeControl = showCustomizeControl ? (
+		<Button aria-disabled aria-label="Customize" size="icon" variant="outline">
+			<Icon render={<CustomizeIcon label="" />} />
+		</Button>
+	) : null;
 
 	return (
 		<header className={cn("shrink-0 pt-3", showBoardControls ? "pb-4" : "pb-0")}>
@@ -185,8 +219,14 @@ export function ExperimentalJiraKanbanBoardHeader({
 				<div
 					className="mt-6 flex flex-wrap items-center gap-2 px-6"
 					// Board columns are meant to slide under the panel, but the row's
-					// trailing cluster (view switcher, panel toggle) must stay clickable.
-					style={controlsInsetEnd > 0 ? { paddingInlineEnd: controlsInsetEnd } : undefined}
+					// trailing cluster (view switcher) must stay clickable. `px-6` is
+					// overridden by this inline padding, so add the same 24px gutter
+					// back on top of the panel width or the cluster sits on the rail.
+					style={
+						controlsInsetEnd > 0
+							? { paddingInlineEnd: `calc(${controlsInsetEnd}px + ${token("space.300")})` }
+							: undefined
+					}
 				>
 					<InputGroup className="w-44">
 						<InputGroupAddon>
@@ -238,11 +278,9 @@ export function ExperimentalJiraKanbanBoardHeader({
 					/>
 
 					{modeToggle}
-					<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
-						<Icon render={<ShowMoreHorizontalIcon label="" />} />
-					</Button>
+					{moreControlsPlacement === "inline" ? moreControls : null}
 
-					<div className={cn("flex items-center gap-1", compact ? undefined : "ml-auto")}>
+					<div className={cn("flex items-center gap-2", compact ? undefined : "ml-auto")}>
 						{onViewChange ? (
 							<Tabs
 								onValueChange={(value) => {
@@ -264,6 +302,8 @@ export function ExperimentalJiraKanbanBoardHeader({
 								</TabsList>
 							</Tabs>
 						) : null}
+						{moreControlsPlacement === "end" ? moreControls : null}
+						{customizeControl}
 						{endSlot ? endSlot : null}
 					</div>
 				</div>

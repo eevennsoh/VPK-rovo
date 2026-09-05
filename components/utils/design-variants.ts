@@ -28,7 +28,10 @@
 
 export const DESIGN_VARIANTS_STORAGE_KEY = "ui-design-variants";
 
-export const DESIGN_VARIANTS = [{ id: "panel", label: "Panel" }] as const;
+export const DESIGN_VARIANTS = [
+	{ id: "panel", label: "Panel" },
+	{ id: "simple-views", label: "Simple views" },
+] as const;
 
 export type DesignVariantId = (typeof DESIGN_VARIANTS)[number]["id"];
 
@@ -40,8 +43,15 @@ export type DesignVariantState = Readonly<Record<DesignVariantId, boolean>>;
  *
  * Panel starts on: Golden Journeys v4 ships untracked work in the floating
  * side surface unless the user turns it off.
+ *
+ * Simple views starts on: Team EU (the default variation) ships one Work items
+ * tab and moves Board/List into the board header, unless the user turns it off
+ * to restore Board and List as sibling space tabs.
  */
-const DEFAULT_DESIGN_VARIANTS: DesignVariantState = Object.freeze({ panel: true });
+const DEFAULT_DESIGN_VARIANTS: DesignVariantState = Object.freeze({
+	panel: true,
+	"simple-views": true,
+});
 
 export function isDesignVariantId(value: unknown): value is DesignVariantId {
 	return DESIGN_VARIANTS.some((variant) => variant.id === value);

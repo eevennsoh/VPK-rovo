@@ -8,7 +8,7 @@ const {
 	selectJiraTabs,
 } = require("./jira-tab-model.ts");
 
-/** Team EU: Board and List are sibling destinations. */
+/** Team EU without Simple views: Board and List are sibling destinations. */
 const TEAM_EU_TABS = [
 	{ label: "Summary", hasContent: false },
 	{ label: "Board", hasContent: true, view: "board" },
@@ -16,7 +16,7 @@ const TEAM_EU_TABS = [
 	{ label: "Calendar", hasContent: false },
 ];
 
-/** 2000 years later: one Work items destination, header owns the view. */
+/** Collapsed catalog (Simple views or 2000 years later): one Work items destination, header owns the view. */
 const LATER_TABS = [
 	{ label: "Summary", hasContent: false },
 	{ label: "Work items", hasContent: true },
