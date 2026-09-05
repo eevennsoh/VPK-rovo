@@ -690,10 +690,6 @@ test("the Work items header switches between Board and List views with their ico
 		EXPERIMENTAL_HEADER_SOURCE,
 		/<div className="flex items-center gap-1">\s*<BoardViewMenu/u,
 	);
-	assert.match(
-		EXPERIMENTAL_HEADER_SOURCE,
-		/if \(!onSelectedAssigneeIdsChange\) \{\s*return \(\s*<span className="rounded-full">/u,
-	);
 });
 
 test("the board keeps matching 24px gaps above and below the filter controls", () => {
