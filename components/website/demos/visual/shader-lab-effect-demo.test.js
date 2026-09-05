@@ -54,7 +54,7 @@ const PATTERN_DEMO_SOURCE = fs.readFileSync(
 
 const SHADER_LAB_EFFECT_COUNTS = {
 	bloom: 6,
-	"blob-tracking": 23,
+	"blob-tracking": 25,
 	"circuit-bent": 14,
 	"directional-blur": 5,
 	"chromatic-aberration": 4,
@@ -158,6 +158,23 @@ test("generated Shader Lab schema exposes all upstream effect params", () => {
 	for (const [slug, count] of Object.entries(SHADER_LAB_SOURCE_COUNTS)) {
 		assert.equal(countSourceParams(slug), count, slug);
 	}
+});
+
+test("blob tracking controls follow the Shader Lab 3 output contract", () => {
+	const definitions = parseDefinitions();
+	const params = Object.fromEntries(
+		definitions["blob-tracking"].params.map((param) => [param.key, param]),
+	);
+
+	assert.equal(params.sensitivity.defaultValue, 0.8);
+	assert.equal(params.motionMaskThreshold.defaultValue, 0.08);
+	assert.equal(params.motionPersistence.defaultValue, 0.82);
+	assert.equal(params.outputMode.defaultValue, "decorated");
+	assert.deepEqual(
+		params.outputMode.options.map((option) => option.value),
+		["decorated", "motion"],
+	);
+	assert.equal(definitions.bloom.params[0].max, 2);
 });
 
 test("Shader Lab source layers use the runtime source-pass wrapper", () => {

@@ -125,7 +125,9 @@ export const SHADER_LAB_EFFECT_DEFINITIONS = {
 			], "group": "Detection" },
 			{ "key": "minBlobSize", "label": "Minimum Blob Size", "type": "number", "defaultValue": 3, "min": 1, "max": 64, "step": 1, "group": "Detection" },
 			{ "key": "motionThreshold", "label": "Motion Threshold", "type": "number", "defaultValue": 0.12, "min": 0, "max": 1, "step": 0.01, "group": "Detection" },
-			{ "key": "sensitivity", "label": "Sensitivity", "type": "number", "defaultValue": 0.5, "min": 0, "max": 1, "step": 0.01, "group": "Tracking" },
+			{ "key": "motionMaskThreshold", "label": "Motion Mask Threshold", "type": "number", "defaultValue": 0.08, "min": 0, "max": 0.5, "step": 0.01, "group": "Detection" },
+			{ "key": "motionPersistence", "label": "Motion Persistence", "type": "number", "defaultValue": 0.82, "min": 0, "max": 0.99, "step": 0.01, "group": "Detection" },
+			{ "key": "sensitivity", "label": "Sensitivity", "type": "number", "defaultValue": 0.8, "min": 0, "max": 1, "step": 0.01, "group": "Tracking" },
 			{ "key": "smoothing", "label": "Smoothing", "type": "number", "defaultValue": 0.6, "min": 0, "max": 1, "step": 0.01, "group": "Tracking" },
 			{ "key": "persistentTracking", "label": "Persistent Tracking", "type": "boolean", "defaultValue": true, "group": "Tracking" },
 			{ "key": "shapeType", "label": "Shape", "type": "select", "defaultValue": "square", "options": [
@@ -149,9 +151,9 @@ export const SHADER_LAB_EFFECT_DEFINITIONS = {
 			{ "key": "strokeWidth", "label": "Stroke Width", "type": "number", "defaultValue": 2, "min": 1, "max": 8, "step": 0.25, "group": "Decoration" },
 			{ "key": "trailDecay", "label": "Trail Decay", "type": "number", "defaultValue": 0.35, "min": 0, "max": 1, "step": 0.01, "group": "Decoration" },
 			{ "key": "invert", "label": "Invert", "type": "boolean", "defaultValue": false, "group": "Output" },
-			{ "key": "outputMode", "label": "Output Mode", "type": "select", "defaultValue": "color", "options": [
-				{ "label": "Color", "value": "color" },
-				{ "label": "Mask", "value": "mask" }
+			{ "key": "outputMode", "label": "Output Mode", "type": "select", "defaultValue": "decorated", "options": [
+				{ "label": "Decorated", "value": "decorated" },
+				{ "label": "Motion mask", "value": "motion" }
 			], "group": "Output" },
 			{ "key": "innerEffectType", "label": "Inner Effect", "type": "select", "defaultValue": "none", "options": [
 				{ "label": "None", "value": "none" },
@@ -175,7 +177,7 @@ export const SHADER_LAB_EFFECT_DEFINITIONS = {
 				"type": "number",
 				"defaultValue": 1.25,
 				"min": 0,
-				"max": 8,
+				"max": 2,
 				"step": 0.01,
 				"group": "Bloom"
 			},
