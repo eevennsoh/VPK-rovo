@@ -30,6 +30,7 @@ Load only the references needed for the requested document:
 | Editorial long-form patterns | [editorial patterns](references/editorial-patterns.md) |
 | Accessibility | [accessibility](references/accessibility.md) |
 | Quality checks | [quality gates](references/quality-gates.md) and [production](references/production.md) |
+| Improve this skill or run comparison rounds | [evaluation](references/evaluation.md) |
 | Derived PDF | [PDF export](references/pdf-export.md) |
 | Landing/product site | [landing](references/landing.md) |
 | GitHub Pages | [GitHub Pages](references/github-pages.md) |
@@ -66,12 +67,14 @@ HTML source first and then use the relevant derived track.
 
 ## Workflow
 
-### 1. Extract intent and choose a template
+### 1. Frame the reader's job and choose a template
 
-Infer purpose, audience, format/tone constraints, and success criteria. Ask one
-compact question only if two or more cannot be inferred. Match the request to a
-template under `assets/templates/`; the complete general and engineering
-template map is in [authoring detail](references/authoring-detail.md).
+Infer purpose, audience, format/tone constraints, and success criteria. Define
+the reader's job in two parts: what they must understand, decide, or change in a
+30-second scan, and what evidence they must be able to audit in a deeper read.
+Ask one compact question only if two or more cannot be inferred. Then match the
+job to a template under `assets/templates/`; the complete general and
+engineering template map is in [authoring detail](references/authoring-detail.md).
 
 ### 2. Distill and source the material
 
@@ -111,7 +114,8 @@ requires them to fail validation.
 
 ### 5. Produce optional derivatives
 
-Only after the HTML passes:
+Only after the HTML passes. The `/vpk-html --github` invocation authorizes the
+GitHub Pages track; do not publish from an ordinary render request.
 
 ```bash
 # PDF
@@ -134,3 +138,9 @@ For changes to shared templates, tokens, runtime injection, demos, or catalog
 assets, read [production](references/production.md) and use the existing scripts
 in place. Do not rename or move `scripts/`, `styles.css`, assets, or existing
 references; these paths are coupled to runtime code and repository validators.
+
+For changes to authoring judgment, templates, shared mechanics, or quality
+gates, also read [evaluation](references/evaluation.md). Run `--check-evals`,
+then compare the affected frozen scenarios against the prior skill revision.
+Put judgment in prose, reusable mechanics in templates/shared code, and
+observable failures in deterministic checks.

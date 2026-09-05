@@ -1,0 +1,188 @@
+{
+	"version": 1,
+	"skill_name": "vpk-html",
+	"evals": [
+		{
+			"id": 1,
+			"name": "renewal-recommendation",
+			"category": "executive-proposal",
+			"template": "one-pager.html",
+			"viewport": { "width": 1440, "height": 1000 },
+			"reader_job": {
+				"quick_read": "Decide whether Northstar Labs should renew for twelve months.",
+				"deep_audit": "Verify the commercial terms, adoption evidence, peer comparison, and stated caveat."
+			},
+			"prompt": "/vpk-html one-pager Create an offline renewal proposal for Northstar Labs. The audience is its CFO and VP Engineering. Lead with the recommendation: renew for twelve months. Supplied facts: 240 seats; 87% weekly active users versus an 80% target and an 82% peer benchmark; current annual price $216,000; proposed annual price $228,000; support tickets fell from 31 to 24 per month; median support response improved from 3.8 hours to 2.1 hours; the usage export excludes 18 contractors. Put comparable values on common scales, keep the contractor limitation visible, and do not invent evidence or quotations.",
+			"expected_output": "A single offline HTML proposal whose recommendation is immediately legible and whose commercial evidence remains auditable.",
+			"files": [],
+			"expectations": [
+				"The output is one self-contained HTML file under artifacts/vpk-html.",
+				"The page preserves every supplied number and the twelve-month renewal recommendation.",
+				"The contractor exclusion is presented as a visible caveat rather than omitted or softened.",
+				"The artifact passes the required placeholder, render, and HTML checks."
+			],
+			"human_rubric": [
+				"A decision-maker can find the recommendation within thirty seconds.",
+				"The commercial and adoption evidence supports comparison instead of becoming generic cards.",
+				"Supporting detail remains available without competing with the recommendation.",
+				"The page feels Algebrica editorial rather than like a SaaS dashboard."
+			]
+		},
+		{
+			"id": 2,
+			"name": "api-performance-status",
+			"category": "performance-report",
+			"template": "status-report.html",
+			"viewport": { "width": 1440, "height": 1000 },
+			"reader_job": {
+				"quick_read": "Decide whether the API optimization can advance from 25% to 50% rollout.",
+				"deep_audit": "Verify latency, error-rate, capacity, and unresolved regional-risk evidence."
+			},
+			"prompt": "/vpk-html status-report Create an offline Q2 API performance report for an engineering leadership review. Recommendation: advance the optimization from 25% to 50% rollout, but keep ap-southeast-2 capped at 25%. Supplied facts: p50 latency moved from 182 ms to 141 ms; p95 from 640 ms to 402 ms; p99 from 1,480 ms to 910 ms; error rate from 0.42% to 0.31%; tested capacity increased from 8,000 to 10,500 requests per second. In ap-southeast-2, p99 remains 1,320 ms during cache rebalancing. The sample covers 14 days and 3.2 billion requests. Do not claim causality beyond these measurements.",
+			"expected_output": "A single offline HTML status report that makes the rollout decision and regional exception unmistakable.",
+			"files": [],
+			"expectations": [
+				"The output is one self-contained HTML file under artifacts/vpk-html.",
+				"All latency, error-rate, capacity, duration, and request-volume values are preserved.",
+				"The 50% rollout recommendation and ap-southeast-2 cap are both explicit.",
+				"The artifact passes the required placeholder, render, and HTML checks."
+			],
+			"human_rubric": [
+				"The rollout state and exception can be understood within thirty seconds.",
+				"The hierarchy distinguishes decision evidence from diagnostic detail.",
+				"The regional risk is not visually buried by aggregate improvements.",
+				"Charts or tables earn their space by improving comparison."
+			]
+		},
+		{
+			"id": 3,
+			"name": "runtime-benchmark",
+			"category": "benchmark-report",
+			"template": "research-feature-explainer.html",
+			"viewport": { "width": 1366, "height": 900 },
+			"reader_job": {
+				"quick_read": "Choose which of three runtimes should become the default for scheduled transformations.",
+				"deep_audit": "Compare cold start, warm execution, memory, compatibility, and test conditions."
+			},
+			"prompt": "/vpk-html research-feature-explainer Create an offline benchmark report comparing three runtimes for scheduled JSON transformations. The recommendation is Runtime B. Results from the same 2 vCPU, 4 GB runner over 100 cold and 1,000 warm executions: Runtime A cold start 420 ms, warm p95 84 ms, peak memory 310 MB, compatibility 100%; Runtime B cold start 190 ms, warm p95 71 ms, peak memory 260 MB, compatibility 98%; Runtime C cold start 95 ms, warm p95 109 ms, peak memory 180 MB, compatibility 76%. Runtime B's two compatibility failures are XML namespace edge cases with documented fallbacks. Explain the trade-off without turning the recommendation into an absolute claim.",
+			"expected_output": "A single offline HTML benchmark report with comparable evidence and a qualified recommendation.",
+			"files": [],
+			"expectations": [
+				"The output is one self-contained HTML file under artifacts/vpk-html.",
+				"Every runtime measurement, sample size, and compatibility percentage is preserved.",
+				"Runtime B is recommended while its two XML namespace failures remain visible.",
+				"The artifact passes the required placeholder, render, and HTML checks."
+			],
+			"human_rubric": [
+				"The three runtimes can be compared on common visual scales.",
+				"The recommendation follows from the reader's stated operational job.",
+				"The compatibility caveat has appropriate weight.",
+				"The report supports both a quick choice and a detailed audit."
+			]
+		},
+		{
+			"id": 4,
+			"name": "capacity-planning-control",
+			"category": "interactive-planning",
+			"template": "prototype-interaction.html",
+			"viewport": { "width": 1440, "height": 1000 },
+			"reader_job": {
+				"quick_read": "Adjust growth and headroom assumptions to see when another database shard is required.",
+				"deep_audit": "Verify the formula, default assumptions, threshold, and all computed outputs."
+			},
+			"prompt": "/vpk-html prototype-interaction Create an offline interactive capacity-planning page. Inputs: current peak load 6,400 requests per second; monthly growth slider from 0% to 20%, default 8%; planning horizon from 1 to 12 months, default 6; safety headroom from 10% to 40%, default 25%. A shard supports 10,000 requests per second. Calculate projected peak as current peak multiplied by (1 + monthly growth) to the power of horizon, then multiply by (1 + headroom). Show the projected load, utilization of one shard, and required shard count. Keep the formula and assumptions visible. All controls must work without network access and support keyboard input.",
+			"expected_output": "A single offline interactive HTML planning page with functioning controls and transparent calculations.",
+			"files": [],
+			"expectations": [
+				"The output is one self-contained HTML file under artifacts/vpk-html.",
+				"The default inputs and calculation formula exactly match the prompt.",
+				"Changing any control updates projected load, utilization, and shard count without network access.",
+				"The artifact passes the required placeholder, render, and HTML checks."
+			],
+			"human_rubric": [
+				"The controls are the visual focus because the reader came to change assumptions.",
+				"Results update clearly without hiding the calculation method.",
+				"The page remains an editorial planning tool rather than a generic dashboard.",
+				"Keyboard and reduced-motion behavior feel complete."
+			]
+		},
+		{
+			"id": 5,
+			"name": "build-versus-buy",
+			"category": "technical-decision",
+			"template": "exploration-code-approaches.html",
+			"viewport": { "width": 1440, "height": 1000 },
+			"reader_job": {
+				"quick_read": "Choose whether to build, buy, or extend the current feature-flag service.",
+				"deep_audit": "Compare delivery time, three-year cost, staffing, lock-in, and migration constraints."
+			},
+			"prompt": "/vpk-html exploration-code-approaches Create an offline build-versus-buy brief for feature-flag infrastructure. Recommend extending the current service for twelve months, then reassessing. Supplied options: Build new requires 4 engineers for 9 months and $1.35M estimated three-year cost; Buy vendor requires 2 engineers for 3 months, $1.08M three-year cost, and a 24-month contract; Extend current requires 2 engineers for 4 months and $760k three-year cost. The current service handles 22 million evaluations per minute but lacks multi-region failover and audit-log export. A vendor proof of concept met failover needs but exported only 13 months of audit history versus the required 24. Treat all costs as estimates and keep the audit-history gap visible.",
+			"expected_output": "A single offline HTML decision brief with a qualified recommendation and comparable options.",
+			"files": [],
+			"expectations": [
+				"The output is one self-contained HTML file under artifacts/vpk-html.",
+				"All staffing, timing, cost, throughput, contract, and audit-history facts are preserved.",
+				"The twelve-month extend-and-reassess recommendation is explicit and qualified.",
+				"The artifact passes the required placeholder, render, and HTML checks."
+			],
+			"human_rubric": [
+				"A technical leader can choose an approach within thirty seconds.",
+				"Options are compared across the same dimensions.",
+				"Estimated figures and hard requirements are visually distinguishable.",
+				"The recommendation does not erase the missing capabilities."
+			]
+		},
+		{
+			"id": 6,
+			"name": "security-governance",
+			"category": "governance-brief",
+			"template": "one-pager.html",
+			"viewport": { "width": 1366, "height": 900 },
+			"reader_job": {
+				"quick_read": "Decide whether the AI assistant pilot can expand from 50 to 300 users.",
+				"deep_audit": "Verify control coverage, open risks, ownership, and the proposed expansion conditions."
+			},
+			"prompt": "/vpk-html one-pager Create an offline security-governance brief for an AI assistant pilot. Recommendation: expand from 50 to 300 users only after two named conditions are met. Supplied evidence: SSO coverage 100%; audit logging 100%; prompt retention set to 30 days; 12 of 12 high-risk connectors disabled; 46 of 50 users completed training; 3 policy exceptions were requested and 1 remains open. Conditions: close the remaining exception owned by Security Operations by 2026-09-18, and reach 100% training completion owned by Workplace Technology. The pilot recorded no severity-one or severity-two incidents during 42 days. State that absence of incidents is not proof of future safety.",
+			"expected_output": "A single offline HTML governance brief that makes conditional approval, owners, and residual uncertainty clear.",
+			"files": [],
+			"expectations": [
+				"The output is one self-contained HTML file under artifacts/vpk-html.",
+				"All control, training, exception, incident, duration, owner, and date facts are preserved.",
+				"Expansion is conditional on exactly the two supplied requirements.",
+				"The artifact passes the required placeholder, render, and HTML checks."
+			],
+			"human_rubric": [
+				"The approval state and two blockers are obvious within thirty seconds.",
+				"Owners and deadlines are actionable rather than decorative metadata.",
+				"The no-incident result is not presented as proof of safety.",
+				"The page balances executive brevity with audit-ready evidence."
+			]
+		},
+		{
+			"id": 7,
+			"name": "migration-decision-deck",
+			"category": "presentation-deck",
+			"template": "slide-deck.html",
+			"viewport": { "width": 1440, "height": 900 },
+			"reader_job": {
+				"quick_read": "Approve or reject the proposed three-wave database migration.",
+				"deep_audit": "Verify scope, wave criteria, rollback thresholds, ownership, and residual risk."
+			},
+			"prompt": "/vpk-html slide-deck Create an offline six-slide decision deck for a PostgreSQL 15 to 17 migration. Audience: architecture review board. Recommendation: approve three waves. Supplied facts: 142 databases; 38 low-risk databases in wave 1, 64 medium-risk in wave 2, 40 customer-critical in wave 3; rehearsals migrated 17 databases with median downtime 4 minutes and maximum 11 minutes; rollback threshold is any rehearsal above 15 minutes or replication lag above 60 seconds; estimated engineering effort is 18 person-weeks. Wave 1 owner is Data Platform, wave 2 owner is Product Infrastructure, and wave 3 requires joint approval from Data Platform and SRE. Open risk: two extensions are not yet certified for PostgreSQL 17. Include speaker notes, but do not put private notes into visible slide content.",
+			"expected_output": "A single offline six-slide HTML deck with a clear approval ask and auditable rollout evidence.",
+			"files": [],
+			"expectations": [
+				"The output is one self-contained HTML file under artifacts/vpk-html.",
+				"The deck contains exactly six slides and preserves all supplied migration facts.",
+				"Wave ownership, rollback thresholds, and the two uncertified extensions remain visible.",
+				"The artifact passes the required placeholder, render, and HTML checks."
+			],
+			"human_rubric": [
+				"The approval ask is clear before detailed rollout mechanics.",
+				"Each slide has a distinct job instead of repeating one layout.",
+				"The deck supports both presentation flow and later audit.",
+				"Speaker notes add presenter value without duplicating visible content."
+			]
+		}
+	]
+}
