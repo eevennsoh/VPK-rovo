@@ -989,6 +989,7 @@ function ExperimentalJiraKanbanView({
 													agentSessionDragControl={agentSessionDragControl}
 												capturedItemIds={proximityActions.capturedItemIds}
 												card={card}
+												chrome={chrome.cardChrome}
 												columnTitle={column.title}
 													detachedAgentSessions={detachedAgentSessions}
 													detachedSessionDrag={detachedSessionDragBinding}

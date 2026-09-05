@@ -922,7 +922,7 @@ export function ExperimentalV2JiraKanban({
 											>
 											<JiraIssue
 												active={isActive}
-												chrome="stroke"
+												chrome={chrome.cardChrome}
 												summary={card.title}
 												issueKey={card.code}
 												tags={card.tags}

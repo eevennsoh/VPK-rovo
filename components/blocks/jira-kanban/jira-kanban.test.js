@@ -684,10 +684,17 @@ test("Experimental kanban column headers keep bottom padding without top padding
 	);
 });
 
-test("Experimental kanban cards use stroke chrome instead of raised elevation", () => {
-	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*chrome="stroke"/u);
+test("Kanban cards take issue chrome from the column well recipe", () => {
+	assert.match(SOURCE, /chrome=\{chrome\.cardChrome\}/u);
+	assert.match(EXPERIMENTAL_SOURCE, /chrome=\{chrome\.cardChrome\}/u);
+	assert.match(EXPERIMENTAL_V2_SOURCE, /chrome=\{chrome\.cardChrome\}/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*chrome=\{chrome\}/u);
 	assert.match(EXPERIMENTAL_PULSE_RAIL_SOURCE, /<JiraIssue[\s\S]*chrome="stroke"/u);
 	assert.doesNotMatch(SOURCE, /chrome="stroke"/u);
+	assert.doesNotMatch(EXPERIMENTAL_CARD_SOURCE, /chrome="stroke"/u);
+	assert.doesNotMatch(EXPERIMENTAL_V2_SOURCE, /chrome="stroke"/u);
+	assert.doesNotMatch(EXPERIMENTAL_SOURCE, /issueChrome/u);
+	assert.doesNotMatch(SOURCE, /issueChrome/u);
 });
 
 test("Experimental kanban cards forward their configured agent activity layout", () => {

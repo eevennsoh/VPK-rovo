@@ -1,6 +1,7 @@
+import type { JiraIssueChrome } from "@/components/blocks/jira-issue/types";
 import { token } from "@/lib/tokens";
 
-/** Expanded status-column backdrop. Not card chrome. Not collapse. Not drag highlight. */
+/** Expanded status-column backdrop. The well recipe also names the implied issue card chrome. Not collapse. Not drag highlight. */
 export type KanbanColumnChrome = "default" | "simple";
 
 export const DEFAULT_KANBAN_COLUMN_CHROME: KanbanColumnChrome = "default";
@@ -16,6 +17,7 @@ export const DEFAULT_KANBAN_COLUMN_CHROME: KanbanColumnChrome = "default";
  */
 export interface KanbanColumnChromeStyles {
 	readonly columnClassName: string;
+	readonly cardChrome: JiraIssueChrome;
 	readonly header: {
 		readonly paddingTop: string | undefined;
 		readonly paddingInline: string | undefined;
@@ -32,6 +34,7 @@ export interface KanbanColumnChromeStyles {
 
 const DEFAULT_KANBAN_COLUMN_CHROME_STYLES: KanbanColumnChromeStyles = Object.freeze({
 	columnClassName: "bg-surface-sunken",
+	cardChrome: "raised",
 	header: Object.freeze({
 		paddingTop: token("space.150"),
 		paddingInline: token("space.150"),
@@ -48,6 +51,7 @@ const DEFAULT_KANBAN_COLUMN_CHROME_STYLES: KanbanColumnChromeStyles = Object.fre
 
 const SIMPLE_KANBAN_COLUMN_CHROME_STYLES: KanbanColumnChromeStyles = Object.freeze({
 	columnClassName: "",
+	cardChrome: "stroke",
 	header: Object.freeze({
 		paddingTop: undefined,
 		paddingInline: undefined,

@@ -40,6 +40,7 @@ test("default names bg-surface-sunken and the well tokens", async () => {
 
 	assert.equal(harness.DEFAULT_KANBAN_COLUMN_CHROME, "default");
 	assert.equal(chrome.columnClassName, "bg-surface-sunken");
+	assert.equal(chrome.cardChrome, "raised");
 	assert.equal(chrome.header.paddingTop, harness.token("space.150"));
 	assert.equal(chrome.header.paddingInline, harness.token("space.150"));
 	assert.equal("paddingBottom" in chrome.header, false);
@@ -54,6 +55,7 @@ test("simple has an empty class and undefined insets", async () => {
 	const chrome = harness.resolveKanbanColumnChrome("simple");
 
 	assert.equal(chrome.columnClassName, "");
+	assert.equal(chrome.cardChrome, "stroke");
 	assert.equal(chrome.header.paddingTop, undefined);
 	assert.equal(chrome.header.paddingInline, undefined);
 	assert.equal("paddingBottom" in chrome.header, false);
@@ -75,6 +77,7 @@ test("omit and undefined resolve to the default well", async () => {
 	assert.equal(omitted, namedDefault);
 	assert.equal(explicitUndefined, namedDefault);
 	assert.equal(omitted.columnClassName, "bg-surface-sunken");
+	assert.equal(omitted.cardChrome, "raised");
 });
 
 test("repeated resolve returns the same frozen object", async () => {
