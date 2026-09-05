@@ -26,6 +26,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/projects/shared/components/floating-rovo-button/daily-insights-row-classes.test.js",
 		"components/projects/shared/components/floating-rovo-button/focus-restore.test.js",
 		"components/projects/shared/components/floating-rovo-button/motion.test.js",
+		"components/blocks/jira-issue/chrome.test.js",
 		"components/blocks/jira-kanban/column-chrome.test.js",
 		"components/blocks/jira-kanban/experimental/lib/board-insights-nudge.test.js",
 		"components/blocks/jira-kanban/experimental/lib/board-agent-session-drag.test.js",
