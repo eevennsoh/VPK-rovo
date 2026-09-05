@@ -16,7 +16,10 @@ const JIRA_TABS_SOURCE = readProjectFile("components/projects/jira/data/tabs.ts"
 const EXPERIMENTAL_HEADER_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/experimental-board-header.tsx",
 );
-const EXPERIMENTAL_PAGE_SOURCE = readProjectFile("components/blocks/jira-kanban/experimental/page.tsx");
+const EXPERIMENTAL_PAGE_SOURCE = [
+	readProjectFile("components/blocks/jira-kanban/experimental/page.tsx"),
+	readProjectFile("components/blocks/jira-kanban/experimental/experimental-page-types.ts"),
+].join("\n");
 const EXPERIMENTAL_BOARD_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/experimental-jira-kanban.tsx",
 );

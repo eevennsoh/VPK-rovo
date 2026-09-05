@@ -11,7 +11,10 @@ const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const HEADER_SOURCE = readFileSync(join(__dirname, "board-header.tsx"), "utf8");
 const EXPERIMENTAL_SOURCE = readFileSync(join(__dirname, "experimental", "experimental-jira-kanban.tsx"), "utf8");
 const EXPERIMENTAL_CARD_SOURCE = readFileSync(join(__dirname, "experimental", "experimental-jira-kanban-card.tsx"), "utf8");
-const EXPERIMENTAL_PAGE_SOURCE = readFileSync(join(__dirname, "experimental", "page.tsx"), "utf8");
+const EXPERIMENTAL_PAGE_SOURCE = [
+	readFileSync(join(__dirname, "experimental", "page.tsx"), "utf8"),
+	readFileSync(join(__dirname, "experimental", "experimental-page-types.ts"), "utf8"),
+].join("\n");
 const EXPERIMENTAL_HEADER_SOURCE = readFileSync(join(__dirname, "experimental", "experimental-board-header.tsx"), "utf8");
 const EXPERIMENTAL_V2_SOURCE = readFileSync(join(__dirname, "experimental-v2", "experimental-v2-jira-kanban.tsx"), "utf8");
 const EXPERIMENTAL_V2_PAGE_SOURCE = readFileSync(join(__dirname, "experimental-v2", "page.tsx"), "utf8");
