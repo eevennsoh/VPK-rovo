@@ -141,7 +141,7 @@ export default function BoardToolbar({ avatars, onReset }: Readonly<BoardToolbar
 						<span>Group: RFP stage</span>
 						<ChevronDownIcon label="" size="small" />
 					</Button>
-					<Button aria-label="More board controls" size="icon" variant="outline">
+					<Button aria-disabled aria-label="More board controls" size="icon" variant="outline">
 						<ShowMoreHorizontalIcon label="" />
 					</Button>
 					<Button aria-label="Customize" size="icon" variant="ghost">

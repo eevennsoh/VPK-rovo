@@ -26,7 +26,7 @@ const LATER_TABS = [
 test("a tab shared by both variations resolves to itself", () => {
 	assert.equal(resolveJiraTab(TEAM_EU_TABS, "Calendar", "board").label, "Calendar");
 	assert.equal(resolveJiraTab(LATER_TABS, "Calendar", "list").label, "Calendar");
-	assert.equal(resolveJiraTab(TEAM_EU_TABS, "List", "board").label, "List");
+	assert.equal(resolveJiraTab(TEAM_EU_TABS, "List", "list").label, "List");
 });
 
 test("flipping variations carries the board/list choice in both directions", () => {
@@ -36,6 +36,15 @@ test("flipping variations carries the board/list choice in both directions", () 
 	// Coming back, the view is what identifies the tab again.
 	assert.equal(resolveJiraTab(TEAM_EU_TABS, "Work items", "list").label, "List");
 	assert.equal(resolveJiraTab(TEAM_EU_TABS, "Work items", "board").label, "Board");
+});
+
+test("a header view switch while Simple views is on survives expanding the tabs", () => {
+	// List with Simple views off, then collapse: the stale List label still
+	// lands on Work items. Switching the header to Board updates the view
+	// without rewriting the label.
+	assert.equal(resolveJiraTab(LATER_TABS, "List", "board").label, "Work items");
+	// Expanding again must follow the header view, not the leftover List label.
+	assert.equal(resolveJiraTab(TEAM_EU_TABS, "List", "board").label, "Board");
 });
 
 test("an unknown tab falls back to the work items destination", () => {

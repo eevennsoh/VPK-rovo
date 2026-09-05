@@ -48,15 +48,20 @@ export function selectJiraTabs<Tab extends JiraTabSelection>(
  * Falls through label → matching work item view → first content tab, so a
  * variation flip carries the reader's board/list choice with them in both
  * directions: `List` becomes `Work items` showing the list, and `Work items`
- * showing the list becomes `List`.
+ * showing the list becomes `List`. A view-tab label that disagrees with the
+ * current view is stale (the header switcher moved the view while the catalog
+ * was collapsed) and yields to `workItemView`.
  */
 export function resolveJiraTab<Tab extends JiraTabSelection>(
 	tabs: readonly Tab[],
 	label: string,
 	workItemView: JiraWorkItemView,
 ): Tab | undefined {
-	return tabs.find((tab) => tab.label === label)
-		?? tabs.find((tab) => tab.view === workItemView)
+	const labeled = tabs.find((tab) => tab.label === label);
+	if (labeled && (labeled.view === undefined || labeled.view === workItemView)) {
+		return labeled;
+	}
+	return tabs.find((tab) => tab.view === workItemView)
 		?? tabs.find((tab) => tab.hasContent);
 }
 
