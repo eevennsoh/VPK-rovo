@@ -1,7 +1,7 @@
 "use client";
 
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- DropdownMenuTrigger uses a render-node so the View button owns the visual state.
-import { Fragment, useMemo, useState, type ComponentType, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import DevicesIcon from "@atlaskit/icon/core/devices";
@@ -330,8 +330,16 @@ export function BoardViewMenu({
 	);
 	const [shownFieldIds, setShownFieldIds] = useState(() => toShownIds(BOARD_FIELD_OPTIONS));
 	const [agentHostId, setAgentHostId] = useState<BoardAgentHostId>(BOARD_AGENT_HOST_DEFAULT_ID);
-	// Default mode locks these so a Simple-views customization cannot linger
-	// after the checkbox is turned off.
+	useEffect(() => {
+		if (showSimpleViewSettings) {
+			return;
+		}
+		setColumnSizeId(BOARD_COLUMN_SIZE_DEFAULT_ID);
+		setHideDoneId(BOARD_HIDE_DONE_DEFAULT_ID);
+		setShownFieldIds(toShownIds(BOARD_FIELD_OPTIONS));
+	}, [showSimpleViewSettings]);
+	// Default mode also substitutes defaults on the current paint so a leftover
+	// customization cannot linger for a frame before the reset commits.
 	const resolvedColumnSizeId = showSimpleViewSettings ? columnSizeId : BOARD_COLUMN_SIZE_DEFAULT_ID;
 	const resolvedHideDoneId = showSimpleViewSettings ? hideDoneId : BOARD_HIDE_DONE_DEFAULT_ID;
 	const resolvedShownFieldIds = showSimpleViewSettings ? shownFieldIds : DEFAULT_SHOWN_FIELD_IDS;

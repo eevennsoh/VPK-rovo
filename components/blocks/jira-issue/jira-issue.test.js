@@ -692,6 +692,11 @@ test("Jira issue aggregates completed agents into a Finished row with failure pr
 	);
 	assert.match(COMPLETED_RUNS_SOURCE, /<HoverCard open=\{aggregateOpen\} onOpenChange=\{handleAggregateOpenChange\}>[\s\S]*aria-label=\{hasFailedRun \? `\$\{finishedLabel\}, includes errors` : finishedLabel\}[\s\S]*data-slot="jira-issue-agent-row"[\s\S]*usesStrokeChrome \? \(\s*<IconTile[\s\S]*icon=\{<AiAgentIcon label="" size="small" \/>\}[\s\S]*: \([\s\S]*<AiAgentIcon label="" \/>[\s\S]*\{finishedLabel\}[\s\S]*hasFailedRun \? \([\s\S]*<StatusErrorIcon[\s\S]*: finishedIndicator \? \(\s*<span[\s\S]*\{finishedIndicator\}/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /className="flex h-6 w-full[^"]*rounded-b-\[6px\] rounded-t-sm[^"]*"/u);
+	assert.equal(
+		(COMPLETED_RUNS_SOURCE.match(/transition-colors duration-fast ease-out[\s\S]*?motion-reduce:transition-none/gu) ?? []).length,
+		2,
+		"completed-run row and aggregate trigger should drop the pressed color transition under reduced motion",
+	);
 	assert.match(COMPLETED_RUNS_SOURCE, /<AgentList[\s\S]*className="w-full border-0 bg-surface-overlay shadow-2xl"[\s\S]*flyout="session"[\s\S]*items=\{completedItems\}[\s\S]*variant="compact"/u);
 	assert.match(SOURCE, /onAgentDoneRunReview\?: \(run: JiraIssueCompletedAgentRun\) => void;/u);
 	assert.match(SOURCE, /<JiraIssueAgentDone[\s\S]*onReview=\{onAgentDoneRunReview\}[\s\S]*usesStrokeChrome=\{usesCompactVisual\}/u);

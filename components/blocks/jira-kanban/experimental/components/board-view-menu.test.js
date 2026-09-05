@@ -76,6 +76,10 @@ test("Experimental board header opens the production View picker without changin
 		viewMenu,
 		/const resolvedShownFieldIds = showSimpleViewSettings \? shownFieldIds : DEFAULT_SHOWN_FIELD_IDS;/u,
 	);
+	assert.match(
+		viewMenu,
+		/useEffect\(\(\) => \{[\s\S]*if \(showSimpleViewSettings\) \{\s*return;\s*\}\s*setColumnSizeId\(BOARD_COLUMN_SIZE_DEFAULT_ID\);\s*setHideDoneId\(BOARD_HIDE_DONE_DEFAULT_ID\);\s*setShownFieldIds\(toShownIds\(BOARD_FIELD_OPTIONS\)\);\s*\}, \[showSimpleViewSettings\]\);/u,
+	);
 	// Every dimension sits behind its own submenu so the top level stays scannable.
 	// Single-select dimensions keep their radio group inline...
 	for (const [trigger, list] of [
