@@ -76,7 +76,7 @@ async function loadDesignVariantsHarness(t, { localStorage } = {}) {
 	return harness;
 }
 
-test("exposes Panel and Simple kanban, with Panel on and Simple kanban off", async (t) => {
+test("exposes Panel and Simple kanban, with both defaulted off", async (t) => {
 	const harness = await loadDesignVariantsHarness(t);
 
 	assert.deepEqual(
@@ -84,7 +84,7 @@ test("exposes Panel and Simple kanban, with Panel on and Simple kanban off", asy
 		[["panel", "Panel"], ["simpleKanban", "Simple kanban"]],
 	);
 	assert.equal(harness.DESIGN_VARIANTS_STORAGE_KEY, "ui-design-variants");
-	assert.deepEqual(harness.getDesignVariants(), { panel: true, simpleKanban: false });
+	assert.deepEqual(harness.getDesignVariants(), { panel: false, simpleKanban: false });
 	assert.equal(harness.isDesignVariantId("panel"), true);
 	assert.equal(harness.isDesignVariantId("simpleKanban"), true);
 	assert.equal(harness.isDesignVariantId("pane"), false);
@@ -100,12 +100,12 @@ test("snapshot getters keep a stable identity for useSyncExternalStore", async (
 	assert.equal(harness.getDesignVariants(), harness.getDesignVariants());
 	assert.equal(harness.getDesignVariants(), harness.getDefaultDesignVariants());
 
-	harness.setDesignVariant("panel", false);
+	harness.setDesignVariant("panel", true);
 
 	// Only a real change swaps the reference, and the new one is stable too.
 	assert.notEqual(harness.getDesignVariants(), harness.getDefaultDesignVariants());
 	assert.equal(harness.getDesignVariants(), harness.getDesignVariants());
-	assert.deepEqual(harness.getDefaultDesignVariants(), { panel: true, simpleKanban: false });
+	assert.deepEqual(harness.getDefaultDesignVariants(), { panel: false, simpleKanban: false });
 });
 
 test("toggling a variant persists it and notifies subscribers exactly once", async (t) => {
@@ -117,22 +117,22 @@ test("toggling a variant persists it and notifies subscribers exactly once", asy
 		seen.push(harness.getDesignVariants());
 	});
 
-	harness.setDesignVariant("panel", false);
-
-	assert.deepEqual(harness.getDesignVariants(), { panel: false, simpleKanban: false });
-	assert.deepEqual(seen, [{ panel: false, simpleKanban: false }]);
-	assert.deepEqual(
-		JSON.parse(localStorage.getItem(harness.DESIGN_VARIANTS_STORAGE_KEY)),
-		{ panel: false, simpleKanban: false },
-	);
-
 	harness.setDesignVariant("panel", true);
 
 	assert.deepEqual(harness.getDesignVariants(), { panel: true, simpleKanban: false });
-	assert.equal(seen.length, 2);
+	assert.deepEqual(seen, [{ panel: true, simpleKanban: false }]);
 	assert.deepEqual(
 		JSON.parse(localStorage.getItem(harness.DESIGN_VARIANTS_STORAGE_KEY)),
 		{ panel: true, simpleKanban: false },
+	);
+
+	harness.setDesignVariant("panel", false);
+
+	assert.deepEqual(harness.getDesignVariants(), { panel: false, simpleKanban: false });
+	assert.equal(seen.length, 2);
+	assert.deepEqual(
+		JSON.parse(localStorage.getItem(harness.DESIGN_VARIANTS_STORAGE_KEY)),
+		{ panel: false, simpleKanban: false },
 	);
 });
 
@@ -147,20 +147,20 @@ test("no-op writes and no-op hydrations never notify subscribers", async (t) => 
 
 	// Setting the already-active value is a no-op for subscribers, but still
 	// (re)asserts the persisted payload.
-	harness.setDesignVariant("panel", true);
+	harness.setDesignVariant("panel", false);
 	assert.equal(notifications, 0);
 	assert.deepEqual(
 		JSON.parse(localStorage.getItem(harness.DESIGN_VARIANTS_STORAGE_KEY)),
-		{ panel: true, simpleKanban: false },
+		{ panel: false, simpleKanban: false },
 	);
 
-	harness.setDesignVariant("panel", false);
+	harness.setDesignVariant("panel", true);
 	assert.equal(notifications, 1);
 
 	// Hydration compares by value, not identity — a freshly built but equal
 	// object must not push a new snapshot to every subscriber.
 	const before = harness.getDesignVariants();
-	harness.hydrateDesignVariants({ panel: false, simpleKanban: false });
+	harness.hydrateDesignVariants({ panel: true, simpleKanban: false });
 	assert.equal(notifications, 1);
 	assert.equal(harness.getDesignVariants(), before);
 });
@@ -204,15 +204,12 @@ test("normalises unknown keys and non-boolean values in stored payloads", async 
 	// complete state object rather than one with a missing key, and absent
 	// keys keep the store default.
 	localStorage.setItem("ui-design-variants", JSON.stringify({ retired: true }));
-	assert.deepEqual(harness.readStoredDesignVariants(), { panel: true, simpleKanban: false });
+	assert.deepEqual(harness.readStoredDesignVariants(), { panel: false, simpleKanban: false });
 
+	// An explicit on must beat the off default, or turning Panel on could not
+	// survive a reload.
 	localStorage.setItem("ui-design-variants", JSON.stringify({ panel: true }));
 	assert.deepEqual(harness.readStoredDesignVariants(), { panel: true, simpleKanban: false });
-
-	// An explicit off must beat the on default, or turning Panel off could not
-	// survive a reload.
-	localStorage.setItem("ui-design-variants", JSON.stringify({ panel: false }));
-	assert.deepEqual(harness.readStoredDesignVariants(), { panel: false, simpleKanban: false });
 
 	// Truthy-but-not-`true` values coerce to off rather than leaking through.
 	for (const value of ["true", 1, {}, [], null]) {
@@ -241,13 +238,13 @@ test("toggling Simple kanban preserves Panel", async (t) => {
 
 	harness.setDesignVariant("simpleKanban", true);
 
-	assert.deepEqual(harness.getDesignVariants(), { panel: true, simpleKanban: true });
+	assert.deepEqual(harness.getDesignVariants(), { panel: false, simpleKanban: true });
 	assert.deepEqual(
 		JSON.parse(localStorage.getItem(harness.DESIGN_VARIANTS_STORAGE_KEY)),
-		{ panel: true, simpleKanban: true },
+		{ panel: false, simpleKanban: true },
 	);
 
 	harness.setDesignVariant("simpleKanban", false);
 
-	assert.deepEqual(harness.getDesignVariants(), { panel: true, simpleKanban: false });
+	assert.deepEqual(harness.getDesignVariants(), { panel: false, simpleKanban: false });
 });

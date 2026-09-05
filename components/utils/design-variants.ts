@@ -41,12 +41,13 @@ export type DesignVariantState = Readonly<Record<DesignVariantId, boolean>>;
  * The baseline state. Frozen and held in one place so the server/hydration
  * snapshot keeps a stable identity across renders.
  *
- * Panel starts on: Golden Journeys v4 ships untracked work in the floating
- * side surface unless the user turns it off. Simple kanban starts off: expanded
- * columns keep the sunken well unless the user turns it on.
+ * Panel starts off: Golden Journeys v4 ships untracked work in the in-flow
+ * board column unless the user turns the floating side surface on. Simple
+ * kanban starts off: expanded columns keep the sunken well unless the user
+ * turns it on.
  */
 const DEFAULT_DESIGN_VARIANTS: DesignVariantState = Object.freeze({
-	panel: true,
+	panel: false,
 	simpleKanban: false,
 });
 

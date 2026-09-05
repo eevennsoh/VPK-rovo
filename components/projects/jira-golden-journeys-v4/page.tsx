@@ -63,9 +63,9 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 	// collapses them into one Work items tab and the switcher owns it instead.
 	// Both write the same state, so the choice survives flipping variations.
 	const tabs = useJiraTabs();
-	// The one place the global variant store meets the board. Panel is on by
-	// default, so untracked work starts in the floating side surface the list
-	// view gets too; off, it stays the in-flow column.
+	// The one place the global variant store meets the board. Panel is off by
+	// default, so untracked work starts as the in-flow column on both Board
+	// and List; on, it lifts into the floating side surface both views share.
 	const { designVariants } = useDesignVariants();
 	// Chin-row status glyphs are a variation choice too: Team EU keeps the stock
 	// spinner (question circle while an agent waits on an answer), 2000 years
@@ -284,6 +284,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 							columns,
 							{
 								agentSessionDropIntent,
+								inFlowAgentSessionColumn,
 								onTrailingContentUnderlapChange,
 								scrollEndInset,
 								trailingOverlayRef,
@@ -296,7 +297,8 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 							return (
 								<div
 									className={cn(
-										"min-h-0 flex-1 overflow-hidden py-4 ps-4 md:py-5 md:ps-5",
+										"min-h-0 flex-1 overflow-hidden pb-4 md:pb-5",
+										inFlowAgentSessionColumn ? "ps-2" : "ps-4 md:ps-5",
 										scrollEndInset > 0 ? "pe-0" : "pe-4 md:pe-5",
 									)}
 								>
