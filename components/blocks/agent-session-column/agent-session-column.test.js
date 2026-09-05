@@ -288,10 +288,14 @@ test("the catalog page shows a Panel wrap and an in-flow kanban host", () => {
 
 test("the collapsed count lives in the header above the plane, not on the rail", () => {
 	// Same header slot as expanded (`space.100` below, 24px row) so the number
-	// does not jump. Collapsed adds matching top pad so the count is not flush
-	// under the panel header. The rail is notches only.
+	// does not jump. In-flow matches CollapsedBoardColumn (no top pad) so the
+	// count shares a baseline with `To do`. Panel keeps matching top pad so
+	// the count is not flush under the docked chrome. The rail is notches only.
 	assert.match(INDEX_SOURCE, /paddingBottom: token\("space\.100"\)/u);
-	assert.match(INDEX_SOURCE, /paddingTop: token\("space\.100"\)/u);
+	assert.match(
+		INDEX_SOURCE,
+		/paddingTop: headerSurface === "panel" \? token\("space\.100"\) : undefined/u,
+	);
 	assert.match(INDEX_SOURCE, /relative flex h-6 w-full min-w-0 items-center justify-center/u);
 	assert.match(INDEX_SOURCE, /absolute inset-0 flex items-center justify-center text-xs/u);
 	assert.match(INDEX_SOURCE, /HEADER_COUNT_AT_REST/u);

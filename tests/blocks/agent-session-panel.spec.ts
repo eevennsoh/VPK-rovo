@@ -290,25 +290,65 @@ test("with the variant off the column stays in flow and no panel renders", async
 	expect(inFlowMetrics.paddingLeft).toBe(0);
 });
 
-test("the settings menu toggles the Panel variant on the live board", async ({ page }) => {
-	await openBoard(page);
-	const panel = getPanel(page);
-	await expect(panel).toBeVisible();
-	const panelSpan = await readSpan(panel);
+test("the collapsed in-flow count shares a baseline with To do", async ({ page }) => {
+	await openBoard(page, { panelVariant: false });
 
-	await page.getByRole("button", { name: "Settings" }).click();
-	const panelVariantItem = page.getByRole("menuitemcheckbox", { name: "Panel" });
-	await expect(panelVariantItem).toBeChecked();
-	await panelVariantItem.click();
+	const sessionCount = getAgentSessionColumn(page).locator("span[aria-hidden='true']").first();
+	const todoLabel = page.locator("[data-jira-kanban-column='To do']").getByText("To do", { exact: true });
+	await expect(sessionCount).toBeVisible();
+	await expect(todoLabel).toBeVisible();
+
+	const [countBox, todoBox] = await Promise.all([
+		sessionCount.boundingBox(),
+		todoLabel.boundingBox(),
+	]);
+	expect(countBox).not.toBeNull();
+	expect(todoBox).not.toBeNull();
+	if (!countBox || !todoBox) {
+		return;
+	}
+
+	// Same 24px header slot as CollapsedBoardColumn: vertical centers must
+	// agree, or the extra top pad is back and `16` sits off `To do`.
+	const countMid = countBox.y + countBox.height / 2;
+	const todoMid = todoBox.y + todoBox.height / 2;
+	expect(Math.abs(countMid - todoMid)).toBeLessThanOrEqual(2);
+});
+
+test("with the variant off the column stays in flow on the list", async ({ page }) => {
+	await openBoard(page, { panelVariant: false });
+	await page.getByRole("tab", { name: "List", exact: true }).click();
+	await expect(page.getByTestId("jira-list")).toBeVisible();
 
 	await expect(getPanel(page)).toHaveCount(0);
-	// The presentations never coexist: the one column returned to the board.
+	const column = getAgentSessionColumn(page);
+	await expect(column).toHaveCount(1);
+	await expect(column).toBeVisible();
+
+	const columnSpan = await readSpan(column);
+	const listSpan = await readSpan(page.getByTestId("jira-list"));
+	expect(listSpan.left).toBeGreaterThanOrEqual(columnSpan.right);
+});
+
+test("the settings menu toggles the Panel variant on the live board", async ({ page }) => {
+	await openBoard(page);
+	await expect(getPanel(page)).toHaveCount(0);
 	const column = getAgentSessionColumn(page);
 	await expect(column).toHaveCount(1);
 	const inFlowColumnSpan = await readSpan(column);
-	// Turning the variant off moves the column from the trailing overlay back
-	// to the board's leading edge.
-	expect(inFlowColumnSpan.left).toBeLessThan(panelSpan.left);
+
+	await page.getByRole("button", { name: "Settings" }).click();
+	const panelVariantItem = page.getByRole("menuitemcheckbox", { name: "Panel" });
+	await expect(panelVariantItem).not.toBeChecked();
+	await panelVariantItem.click();
+
+	const panel = getPanel(page);
+	await expect(panel).toBeVisible();
+	const panelSpan = await readSpan(panel);
+	// Turning the variant on lifts the column from the board's leading edge
+	// into the trailing overlay. The presentations never coexist.
+	await expect(getAgentSessionColumn(page)).toHaveCount(1);
+	expect(panelSpan.left).toBeGreaterThan(inFlowColumnSpan.left);
 
 	// The choice is persisted under the shared storage key.
 	expect(
@@ -316,7 +356,7 @@ test("the settings menu toggles the Panel variant on the live board", async ({ p
 			(key) => window.localStorage.getItem(key),
 			DESIGN_VARIANTS_STORAGE_KEY,
 		),
-	).toBe(JSON.stringify({ panel: false }));
+	).toBe(JSON.stringify({ panel: true }));
 });
 
 const FLOATING_ROVO_BUTTON_EDGE_GAP = 24;

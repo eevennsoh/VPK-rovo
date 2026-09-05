@@ -41,6 +41,7 @@ import {
 	AGENT_SESSION_PANEL_WIDTH_PX,
 	AgentSessionPanel,
 } from "./components/agent-session-panel";
+import { InFlowAgentSessionColumn } from "./components/in-flow-agent-session-column";
 import { BoardFilterPopover } from "./components/board-filter-popover";
 import {
 	ALL_BOARD_AGENT_SESSION_STATE_IDS,
@@ -135,6 +136,11 @@ const EMPTY_ANSWERS: readonly PulseAnswer[] = [];
 
 export interface ExperimentalJiraKanbanListRenderContext {
 	agentSessionDropIntent?: JiraListAgentSessionDropIntent;
+	/**
+	 * True when Untracked is the in-flow column (Panel off). The list drops
+	 * its leading inset so it sits on the same rhythm as board statuses.
+	 */
+	inFlowAgentSessionColumn: boolean;
 	onTrailingContentUnderlapChange: (hasUnderlap: boolean) => void;
 	scrollEndInset: number;
 	trailingOverlayRef: RefObject<HTMLElement | null>;
@@ -160,10 +166,10 @@ export interface ExperimentalJiraKanbanPageProps {
 	 * Where untracked work lives on this board.
 	 *
 	 * `"column"` keeps it in flow, as a 280px column left of the status
-	 * scrollport — board view only. `"panel"` lifts the same column into a
-	 * floating side surface pinned to the inline-start edge of the content
-	 * region, which the board *and* the list scroll beneath, so untracked work
-	 * survives a view switch.
+	 * scrollport and of the work items list. `"panel"` lifts the same column
+	 * into a floating side surface pinned to the trailing edge of the content
+	 * region, which the board *and* the list scroll beneath. Either
+	 * presentation survives a view switch.
 	 *
 	 * The choice is a prop rather than a read of the global variant store: this
 	 * block stays generic and unit-testable, and the route that owns the store
@@ -569,6 +575,8 @@ export default function ExperimentalJiraKanbanPage({
 		&& agentSessionColumnConfig !== undefined
 		&& showBoardContent
 		&& !showPulseContent;
+	const showInFlowAgentSessionColumn = agentSessionPresentation === "column"
+		&& agentSessionColumnConfig !== undefined;
 	// The panel is absolute, so board content passes *under* it by design. But at
 	// maximum scroll the trailing column would land flush with the scrollport's
 	// edge and stay under the panel with no scroll left to free it. Extending the
@@ -887,12 +895,27 @@ export default function ExperimentalJiraKanbanPage({
 			) : (
 				<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 					{isListContent ? (
-						renderListContent?.(filteredBoardColumns, {
-							agentSessionDropIntent: boardSessionDrag.listDropIntent,
-							onTrailingContentUnderlapChange: setListContentUnderlapsPanel,
-							scrollEndInset: boardScrollEndInset,
-							trailingOverlayRef: agentSessionPanelRef,
-						})
+						<div className="flex min-h-0 min-w-0 flex-1 items-stretch">
+							{showInFlowAgentSessionColumn && agentSessionColumnConfig ? (
+								<InFlowAgentSessionColumn
+									agentSessionColumn={{
+										...agentSessionColumnConfig,
+										draggingIds: boardSessionDrag.draggingIds,
+										sessionDrag: boardSessionDrag.untrackedBinding,
+									}}
+									className="pb-4 md:pb-5"
+									sessionFlyoutsSuspended={boardSessionDrag.transaction !== null}
+									untrackedDropArmed={boardSessionDrag.transaction?.target?.kind === "untracked"}
+								/>
+							) : null}
+							{renderListContent?.(filteredBoardColumns, {
+								agentSessionDropIntent: boardSessionDrag.listDropIntent,
+								inFlowAgentSessionColumn: showInFlowAgentSessionColumn,
+								onTrailingContentUnderlapChange: setListContentUnderlapsPanel,
+								scrollEndInset: boardScrollEndInset,
+								trailingOverlayRef: agentSessionPanelRef,
+							})}
+						</div>
 					) : (
 						<div className="flex min-h-0 min-w-0 flex-1">
 							<ExperimentalJiraKanban
