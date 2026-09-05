@@ -41,6 +41,8 @@ Each feature file starts with an H1 title and one paragraph describing the user-
 
 Keep implementation details out of the map. Name only user paths, stable handles, required state, commands, and observable proof.
 
+After changing this index or a feature file, run `pnpm run verify:vpk-feature-map`. The verifier checks index parity, the required section order, unique sub-feature IDs, and user-entry routes against the generated repo map.
+
 ## Features
 
 - [Browse the catalog](./browse-catalog.md) covers home projects, category tabs, and returning via the VPK logo.
