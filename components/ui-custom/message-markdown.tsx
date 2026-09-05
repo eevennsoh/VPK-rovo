@@ -158,6 +158,7 @@ const CODE_TITLE_PATTERN =
 	/(?:^|\s)(?:title|filename)=["']([^"']+)["']/u;
 const CODE_NO_LINE_NUMBERS_PATTERN = /(?:^|\s)noLineNumbers(?:\s|$)/u;
 const INLINE_CODE_BACKTICK_PATTERN = /`+/gu;
+type StreamdownCodeLanguage = Parameters<typeof safeCodePlugin.supportsLanguage>[0];
 
 const getCodeFenceLanguage = (className?: string) => {
 	const match = className?.match(CODE_LANGUAGE_PATTERN);
@@ -196,7 +197,7 @@ const getInlineCodeFence = (content: string) => {
 };
 
 const toBundledLanguage = (language: string): BundledLanguage =>
-	safeCodePlugin.supportsLanguage(language as BundledLanguage)
+	safeCodePlugin.supportsLanguage(language as StreamdownCodeLanguage)
 		? (language as BundledLanguage)
 		: "markdown";
 

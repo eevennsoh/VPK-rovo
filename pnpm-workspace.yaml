@@ -29,6 +29,9 @@ minimumReleaseAgeExclude:
   # gate by explicit request (minor CSP update). Version-pinned so the gate
   # re-applies automatically on any future helmet bump.
   - helmet@8.3.0
+  # Security fix for the Express/MCP dependency tree. Version-pinned so the
+  # seven-day gate re-applies automatically on any future qs bump.
+  - qs@6.16.0
   # Adopted before the maturity gate by explicit request. Version-pinned so
   # the gate re-applies automatically on any future cn bump.
   - cn@0.2.4
@@ -57,11 +60,15 @@ trustPolicyExclude:
   # downgrade (lost provenance a later-published version carries). Reputable
   # (Redux/reselect), no advisory. Version-pinned so the guard re-applies on change.
   - reselect@5.1.1
-  # Transitive of @pierre/diffs; latest lacks provenance attestations so the
-  # publish-date trust heuristic flags it as a downgrade. Same maintainer set as
-  # @pierre/diffs itself (pierre.co team), normal release cadence, no advisory.
+  # Transitive of @pierre/diffs; 2.0.0 lacks provenance attestations so the
+  # publish-date trust heuristic flags it as a downgrade. Verified as the same
+  # pierrecomputer/pierre repository and maintainer group, with no advisory.
   # Version-pinned so the guard re-applies on any future change.
-  - "@pierre/theme@1.1.0"
+  - "@pierre/theme@2.0.0"
+  # Transitive of @tobilu/qmd via fast-glob. Verified as the same long-running
+  # mcollina/fastq repository and sole maintainer, with no advisory. Version-
+  # pinned so the trust guard re-applies on any future release.
+  - fastq@1.20.2
 # Dependency pinning tiers (see Engineering Standards in AGENTS.md):
 #   Float   ^x.y.z  - stable libs; `pnpm update` may take patch + minor
 #   Cautious ~x.y.z - libs where minors have broken us; patch only
@@ -71,46 +78,63 @@ trustPolicyExclude:
 # and every member updates in lockstep.
 catalog:
   # tiptap - all @tiptap/* must share one version
-  '@tiptap/core': 3.30.0
-  '@tiptap/extension-code-block': 3.30.0
-  '@tiptap/extension-color': 3.30.0
-  '@tiptap/extension-highlight': 3.30.0
-  '@tiptap/extension-link': 3.30.0
-  '@tiptap/extension-list': 3.30.0
-  '@tiptap/extension-mention': 3.30.0
-  '@tiptap/extension-table': 3.30.0
-  '@tiptap/extension-text-align': 3.30.0
-  '@tiptap/extension-text-style': 3.30.0
-  '@tiptap/extension-underline': 3.30.0
-  '@tiptap/markdown': 3.30.0
-  '@tiptap/pm': 3.30.0
-  '@tiptap/react': 3.30.0
-  '@tiptap/starter-kit': 3.30.0
-  '@tiptap/suggestion': 3.30.0
+  '@tiptap/core': 3.30.5
+  '@tiptap/extension-code-block': 3.30.5
+  '@tiptap/extension-color': 3.30.5
+  '@tiptap/extension-highlight': 3.30.5
+  '@tiptap/extension-link': 3.30.5
+  '@tiptap/extension-list': 3.30.5
+  '@tiptap/extension-mention': 3.30.5
+  '@tiptap/extension-table': 3.30.5
+  '@tiptap/extension-text-align': 3.30.5
+  '@tiptap/extension-text-style': 3.30.5
+  '@tiptap/extension-underline': 3.30.5
+  '@tiptap/markdown': 3.30.5
+  '@tiptap/pm': 3.30.5
+  '@tiptap/react': 3.30.5
+  '@tiptap/starter-kit': 3.30.5
+  '@tiptap/suggestion': 3.30.5
   # json-render - published from one monorepo at a single version
-  '@json-render/codegen': 0.19.0
-  '@json-render/core': 0.19.0
-  '@json-render/image': 0.19.0
-  '@json-render/ink': 0.19.0
-  '@json-render/react': 0.19.0
-  '@json-render/react-pdf': 0.19.0
-  '@json-render/react-three-fiber': 0.19.0
-  '@json-render/remotion': 0.19.0
-  '@json-render/yaml': 0.19.0
+  '@json-render/codegen': 0.20.0
+  '@json-render/core': 0.20.0
+  '@json-render/image': 0.20.0
+  '@json-render/ink': 0.20.0
+  '@json-render/react': 0.20.0
+  '@json-render/react-pdf': 0.20.0
+  '@json-render/react-three-fiber': 0.20.0
+  '@json-render/remotion': 0.20.0
+  '@json-render/yaml': 0.20.0
   # remotion - remotion + every @remotion/* must match exactly
-  'remotion': 4.0.508
-  '@remotion/player': 4.0.508
+  'remotion': 4.0.518
+  '@remotion/player': 4.0.518
 overrides:
-  '@hono/node-server': ^1.19.10
-  dompurify: ^3.4.11
+  '@hono/node-server': ^1.19.15
+  '@pierre/trees>@pierre/theming': 1.0.1
+  '@xmldom/xmldom': ^0.9.12
+  'brace-expansion@^1.0.0': 1.1.18
+  'brace-expansion@^5.0.0': 5.0.9
+  browserslist: ^4.28.7
+  dompurify: ^3.4.13
   express-rate-limit: ^8.2.2
-  fast-uri: 3.1.5
-  hono: ^4.12.25
+  fast-uri: 3.1.6
+  'fflate@^0.6.0': 0.6.11
+  'fflate@^0.7.0': 0.7.5
+  hono: ^4.12.34
+  immutable: ^4.3.9
+  ip-address: ^10.3.1
+  js-yaml: ^4.3.1
+  linkify-it: 5.0.2
   lodash-es: ^4.18.1
+  mermaid: ^11.16.1
+  'nanoid@^3.0.0': 3.3.18
+  'nanoid@^4.0.0': 5.1.16
   postcss: ^8.5.18
-  qs: 6.15.2
-  undici@^7.0.0: 7.28.0
-  undici@^8.0.0: 8.5.0
+  protobufjs: ^7.6.5
+  qs: 6.16.0
+  sanitize-html: ^2.17.7
+  tar: 7.5.21
+  undici@^7.0.0: 7.29.0
+  undici@^8.0.0: 8.9.0
   ws: ^8.21.0
 allowBuilds:
   '@google/genai': false
