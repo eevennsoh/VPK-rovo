@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentType, ReactElement } from "react";
+import type { ComponentType, CSSProperties, ReactElement } from "react";
 
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
 import AddIcon from "@atlaskit/icon/core/add";
@@ -21,7 +21,20 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
+import {
+	DEFAULT_AGENT_SESSION_COLUMN_FRAME,
+	type AgentSessionColumnFrame,
+} from "./agent-session-column-frame";
 import type { SelectionActionId, SelectionActionModel, UntrackedHeaderModel } from "./untracked-selection";
+
+const AGENT_SESSION_COLUMN_HEADER_STYLE: Record<AgentSessionColumnFrame, CSSProperties> = {
+	caption: { paddingBottom: token("space.100") },
+	enclosed: {
+		paddingTop: token("space.100"),
+		paddingInline: token("space.150"),
+		paddingBottom: token("space.050"),
+	},
+};
 
 const HEADER_ACTIONS_REVEAL = cn(
 	"ms-auto flex shrink-0 items-center",
@@ -132,6 +145,7 @@ function CollapseButton({
 
 export function AgentSessionColumnHeader({
 	collapseLabel,
+	frame = DEFAULT_AGENT_SESSION_COLUMN_FRAME,
 	model,
 	onAction,
 	onCollapse,
@@ -139,6 +153,7 @@ export function AgentSessionColumnHeader({
 	surface,
 }: Readonly<{
 	collapseLabel: string;
+	frame?: AgentSessionColumnFrame;
 	model: UntrackedHeaderModel;
 	onAction: (id: SelectionActionId) => void;
 	onCollapse: () => void;
@@ -150,7 +165,7 @@ export function AgentSessionColumnHeader({
 			return (
 				<div
 					className="flex min-w-0 items-center gap-1.5"
-					style={{ paddingBottom: token("space.100") }}
+					style={AGENT_SESSION_COLUMN_HEADER_STYLE[frame]}
 				>
 					{renderColumnChrome({
 						collapseLabel,

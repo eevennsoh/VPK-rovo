@@ -868,6 +868,9 @@ test("Experimental v2 is exposed as an independently owned copy of Experimental"
 	assert.match(DETAIL_SOURCE, /demoSlug: "jira-kanban-demo-experimental-v2"/u);
 	assert.match(DEMO_SOURCE, /import ExperimentalV2Page from "@\/components\/blocks\/jira-kanban\/experimental-v2\/page";/u);
 	assert.match(DEMO_SOURCE, /export function JiraKanbanDemoExperimentalV2\(\)/u);
+	assert.match(DEMO_SOURCE, /aria-label="Kanban column chrome"/u);
+	assert.match(DEMO_SOURCE, /<ToggleGroupItem value="default">Default<\/ToggleGroupItem>/u);
+	assert.match(DEMO_SOURCE, /<ToggleGroupItem value="simple">Simple<\/ToggleGroupItem>/u);
 	assert.match(VARIANT_REGISTRY_SOURCE, /"jira-kanban-demo-experimental-v2"/u);
 	assert.equal(
 		existsSync(join(__dirname, "..", "..", "..", "app", "preview", "blocks", "jira-kanban-experimental-v2", "page.tsx")),

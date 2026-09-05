@@ -118,9 +118,10 @@ test("a collapsed status pill hugs its label while the shell keeps the drop lane
 	// lane with a caption on top, so the pill sizes to its own content. The
 	// Agent Session column is the deliberate exception — it collapses into a
 	// rail of notches, which is content, and keeps `h-full`.
-	assert.doesNotMatch(pillSource, /\bh-full\b/u);
+	assert.doesNotMatch(pillSource, /(?:^|[^-\w])h-full\b/u);
 	// The shell around it still stretches, so a collapsed column is as easy to
-	// drop onto as an expanded one.
+	// drop onto as an expanded one. `min-h-full` on the row is the shell, not
+	// the pill — do not treat that as the pill stretching.
 	assert.match(BOARD_SOURCE, /className=\{cn\(\s*"flex min-h-full w-max min-w-full items-stretch"/u);
 
 	// The expand control's focus ring extends 3px past a 24px button, which is
@@ -134,44 +135,77 @@ test("a collapsed status pill hugs its label while the shell keeps the drop lane
 	assert.match(BOARD_SOURCE, /collapsed \|\| isResizing \? "overflow-hidden" : "overflow-visible"/u);
 });
 
-test("a collapsed status count sits in the header outside the pill", () => {
-	const pillStart = COLLAPSED_COLUMN_SOURCE.indexOf("function CollapsedBoardColumn");
-	const pillEnd = COLLAPSED_COLUMN_SOURCE.length;
-	assert.ok(pillStart !== -1, "expected to find CollapsedBoardColumn");
-	const pillSource = COLLAPSED_COLUMN_SOURCE.slice(pillStart, pillEnd);
+test("caption chrome keeps the collapsed count above the pill border", () => {
+	const captionStart = COLLAPSED_COLUMN_SOURCE.indexOf('case "caption":');
+	const enclosedStart = COLLAPSED_COLUMN_SOURCE.indexOf('case "enclosed":');
+	assert.ok(captionStart !== -1, "expected a caption branch");
+	assert.ok(enclosedStart > captionStart, "expected enclosed after caption");
+	const captionSource = COLLAPSED_COLUMN_SOURCE.slice(captionStart, enclosedStart);
 
-	// Same header geometry as expanded: `space.100` below a 24px row, so the
-	// tally does not jump when the column collapses. Count and expand share
-	// one centered 32px slot — the number is not left-aligned, and the
-	// expand icon must not sit on top of it.
-	assert.match(pillSource, /paddingBottom: token\("space\.100"\)/u);
-	assert.match(pillSource, /relative flex h-6 w-full items-center justify-center/u);
-	assert.match(pillSource, /COLLAPSED_HEAD_COUNT_AT_REST/u);
-	assert.match(COLLAPSED_COLUMN_SOURCE, /group-hover\/collapsed-column:opacity-0/u);
-	assert.match(COLLAPSED_COLUMN_SOURCE, /group-has-\[:focus-visible\]\/collapsed-column:opacity-0/u);
-	assert.match(pillSource, /BOARD_COLUMN_ACTION_REVEAL/u);
-	assert.doesNotMatch(pillSource, /BOARD_COLUMN_ACTION_REVEAL,\s*"absolute"/u);
-	const countIndex = pillSource.indexOf("{count}");
-	const borderIndex = pillSource.indexOf("border border-border-disabled");
-	const writingModeIndex = pillSource.indexOf("[writing-mode:vertical-rl]");
+	assert.match(captionSource, /paddingBottom: chrome\.captionPaddingBottom/u);
+	assert.match(COLLAPSED_COLUMN_SOURCE, /relative flex h-6 w-full items-center justify-center/u);
+	const countRowIndex = captionSource.indexOf("{countRow}");
+	const pillClassIndex = captionSource.indexOf("chrome.pillClassName");
+	const writingModeIndex = COLLAPSED_COLUMN_SOURCE.indexOf("[writing-mode:vertical-rl]");
 	assert.ok(
-		countIndex > 0 && borderIndex > countIndex,
-		"expected the count above the bordered pill",
+		countRowIndex > 0 && pillClassIndex > countRowIndex,
+		"expected the count above the pill paint",
+	);
+	assert.ok(writingModeIndex > 0, "expected the rotated title");
+	assert.match(captionSource, /style=\{pillStyle\}/u);
+	assert.match(captionSource, /flex-col items-center justify-center/u);
+	assert.doesNotMatch(captionSource, /paddingBlockStart: token\("space\.150"\)/u);
+	assert.doesNotMatch(captionSource, /paddingBlockEnd: token\("space\.050"\)/u);
+});
+
+test("enclosed chrome puts the collapsed count inside the framed box", () => {
+	const enclosedStart = COLLAPSED_COLUMN_SOURCE.indexOf('case "enclosed":');
+	assert.ok(enclosedStart !== -1, "expected an enclosed branch");
+	const enclosedSource = COLLAPSED_COLUMN_SOURCE.slice(enclosedStart);
+
+	const pillClassIndex = enclosedSource.indexOf("chrome.pillClassName");
+	const countRowIndex = enclosedSource.indexOf("{countRow}");
+	const titleIndex = enclosedSource.indexOf("{titleLabel}");
+	assert.ok(pillClassIndex > 0, "expected pill paint on the framed box");
+	assert.ok(
+		countRowIndex > pillClassIndex,
+		"expected the count inside the framed box",
 	);
 	assert.ok(
-		writingModeIndex > borderIndex,
-		"expected the rotated title inside the pill",
+		titleIndex > countRowIndex,
+		"expected the rotated title after the count, still inside the box",
 	);
-	assert.doesNotMatch(pillSource, /group\/collapsed-column[^"]*\[writing-mode:vertical-rl\]/u);
-	assert.doesNotMatch(pillSource, /writing-mode:vertical-rl.*\{count\}/u);
-	assert.match(pillSource, /paddingBlock: token\("space\.150"\)/u);
-	assert.match(pillSource, /flex-col items-center justify-center/u);
-	assert.doesNotMatch(pillSource, /paddingBlockStart: token\("space\.150"\)/u);
-	assert.doesNotMatch(pillSource, /paddingBlockEnd: token\("space\.050"\)/u);
+	assert.match(enclosedSource, /paddingBlock: chrome\.pillPaddingBlock/u);
+	assert.match(enclosedSource, /paddingTop: chrome\.countPaddingTop/u);
+	assert.ok(
+		enclosedSource.indexOf("paddingTop: chrome.countPaddingTop") < countRowIndex,
+		"expected the expanded-header inset above the count",
+	);
+	assert.ok(
+		enclosedSource.indexOf("paddingBlock: chrome.pillPaddingBlock") > countRowIndex,
+		"expected title padding below the count so the number shares Untracked's 24px slot",
+	);
+	assert.doesNotMatch(enclosedSource, /captionPaddingBottom/u);
+	assert.doesNotMatch(enclosedSource, /overflow-hidden/u);
+	assert.match(COLLAPSED_COLUMN_SOURCE, /chrome: KanbanCollapsedChromeStyles/u);
+	assert.match(COLLAPSED_COLUMN_SOURCE, /headerFrame: AgentSessionColumnFrame/u);
+	assert.match(
+		BOARD_SOURCE,
+		/chrome=\{chrome\.collapsed\}[\s\S]*headerFrame=\{chrome\.headerFrame\}/u,
+	);
+	assert.match(BOARD_SOURCE, /data-kanban-column-chrome=\{columnChrome\}/u);
+});
 
+test("experimental-v2 reuses the shared collapsed column and threads chrome", () => {
 	assert.match(
 		V2_BOARD_SOURCE,
 		/from "\.\.\/experimental\/components\/collapsed-board-column"/u,
 		"experimental-v2 must reuse the extracted collapsed column, not fork another copy",
 	);
+	assert.match(
+		V2_BOARD_SOURCE,
+		/chrome=\{chrome\.collapsed\}[\s\S]*headerFrame=\{chrome\.headerFrame\}/u,
+	);
+	assert.match(V2_BOARD_SOURCE, /data-kanban-column-chrome=\{columnChrome\}/u);
+	assert.doesNotMatch(V2_BOARD_SOURCE, /function CollapsedBoardColumn/u);
 });

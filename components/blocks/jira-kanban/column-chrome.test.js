@@ -9,6 +9,14 @@ const COLUMN_CHROME_SOURCE = readFileSync(
 	path.join(__dirname, "column-chrome.ts"),
 	"utf8",
 );
+const SESSION_COLUMN_SOURCE = readFileSync(
+	path.join(__dirname, "../agent-session-column/index.tsx"),
+	"utf8",
+);
+const SESSION_HEADER_SOURCE = readFileSync(
+	path.join(__dirname, "../agent-session-column/agent-session-column-header.tsx"),
+	"utf8",
+);
 
 async function loadColumnChromeHarness() {
 	const result = await esbuild.build({
@@ -39,7 +47,10 @@ test("default names bg-surface-sunken and the well tokens", async () => {
 	const chrome = harness.resolveKanbanColumnChrome("default");
 
 	assert.equal(harness.DEFAULT_KANBAN_COLUMN_CHROME, "default");
-	assert.equal(chrome.columnClassName, "bg-surface-sunken");
+	assert.equal(
+		chrome.columnClassName,
+		"bg-surface-sunken border border-solid border-transparent",
+	);
 	assert.equal(chrome.cardChrome, "raised");
 	assert.equal(chrome.header.paddingTop, harness.token("space.100"));
 	assert.equal(chrome.header.paddingInline, harness.token("space.150"));
@@ -50,6 +61,36 @@ test("default names bg-surface-sunken and the well tokens", async () => {
 	assert.equal(chrome.cardList.gap, harness.token("space.050"));
 	assert.equal(chrome.footer.paddingInline, harness.token("space.050"));
 	assert.equal(chrome.resizeButtonClassName, "pt-2 pb-1");
+	assert.equal(chrome.headerFrame, "enclosed");
+	assert.equal(
+		chrome.collapsed.pillClassName,
+		"bg-surface-sunken border border-solid border-transparent",
+	);
+	assert.equal(chrome.collapsed.captionPaddingBottom, undefined);
+	assert.equal(chrome.collapsed.countPaddingTop, harness.token("space.100"));
+	assert.equal(chrome.collapsed.pillRadius, harness.token("radius.large"));
+	assert.equal(chrome.collapsed.pillPaddingBlock, harness.token("space.150"));
+	assert.equal("headerFrame" in chrome.collapsed, false);
+});
+
+test("default well and Untracked enclosed well share a 1px border box", () => {
+	assert.match(
+		COLUMN_CHROME_SOURCE,
+		/columnClassName: "bg-surface-sunken border border-solid border-transparent"/u,
+	);
+	assert.match(
+		SESSION_COLUMN_SOURCE,
+		/AGENT_SESSION_WELL_PAINT = cn\(\s*AGENT_SESSION_PLANE,\s*"rounded-xl border border-solid border-border-disabled",\s*\)/u,
+	);
+	assert.match(
+		SESSION_HEADER_SOURCE,
+		/enclosed: \{\s*\n\s*paddingTop: token\("space\.100"\),\s*\n\s*paddingInline: token\("space\.150"\),\s*\n\s*paddingBottom: token\("space\.050"\),\s*\n\s*\}/u,
+	);
+	assert.match(
+		SESSION_COLUMN_SOURCE,
+		/layout === "enclosed" \? "border border-solid border-transparent" : null/u,
+	);
+	assert.match(COLUMN_CHROME_SOURCE, /countPaddingTop: token\("space\.100"\)/u);
 });
 
 test("simple has an empty class and undefined insets", async () => {
@@ -70,6 +111,13 @@ test("simple has an empty class and undefined insets", async () => {
 	assert.equal(Object.hasOwn(chrome.header, "paddingTop"), true);
 	assert.notEqual(chrome.header.paddingTop, 0);
 	assert.notEqual(chrome.cardList.paddingInline, 0);
+	assert.equal(chrome.headerFrame, "caption");
+	assert.equal(chrome.collapsed.pillClassName, "border border-border-disabled");
+	assert.equal(chrome.collapsed.captionPaddingBottom, harness.token("space.100"));
+	assert.equal(chrome.collapsed.countPaddingTop, undefined);
+	assert.equal(chrome.collapsed.pillRadius, harness.token("radius.large"));
+	assert.equal(chrome.collapsed.pillPaddingBlock, harness.token("space.150"));
+	assert.equal("headerFrame" in chrome.collapsed, false);
 });
 
 test("omit and undefined resolve to the default well", async () => {
@@ -80,7 +128,10 @@ test("omit and undefined resolve to the default well", async () => {
 
 	assert.equal(omitted, namedDefault);
 	assert.equal(explicitUndefined, namedDefault);
-	assert.equal(omitted.columnClassName, "bg-surface-sunken");
+	assert.equal(
+		omitted.columnClassName,
+		"bg-surface-sunken border border-solid border-transparent",
+	);
 	assert.equal(omitted.cardChrome, "raised");
 });
 
@@ -102,4 +153,17 @@ test("the recipe module does not import design-variants", () => {
 	assert.doesNotMatch(COLUMN_CHROME_SOURCE, /design-variants/u);
 	assert.doesNotMatch(COLUMN_CHROME_SOURCE, /useDesignVariants/u);
 	assert.doesNotMatch(COLUMN_CHROME_SOURCE, /isKanbanColumnChrome/u);
+});
+
+test("the recipe type-imports the session-column frame, not a duplicated union", () => {
+	assert.match(
+		COLUMN_CHROME_SOURCE,
+		/import type \{ AgentSessionColumnFrame \} from "@\/components\/blocks\/agent-session-column\/agent-session-column-frame"/u,
+	);
+	assert.doesNotMatch(COLUMN_CHROME_SOURCE, /export type KanbanColumnHeaderFrame/u);
+	assert.match(COLUMN_CHROME_SOURCE, /readonly headerFrame: AgentSessionColumnFrame;/u);
+	assert.doesNotMatch(
+		COLUMN_CHROME_SOURCE,
+		/interface KanbanCollapsedChromeStyles \{[^}]*headerFrame/u,
+	);
 });

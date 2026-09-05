@@ -86,6 +86,27 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"agent-session-column-demo": dynamic(
+		() =>
+			import("../demos/blocks/agent-session-column-demo").then((mod) => ({
+				default: mod.default,
+			})),
+		{ ssr: false },
+	),
+	"agent-session-column-demo-simple": dynamic(
+		() =>
+			import("../demos/blocks/agent-session-column-demo").then((mod) => ({
+				default: mod.AgentSessionColumnDemoSimple,
+			})),
+		{ ssr: false },
+	),
+	"agent-session-column-demo-panel": dynamic(
+		() =>
+			import("../demos/blocks/agent-session-column-demo").then((mod) => ({
+				default: mod.AgentSessionColumnDemoPanel,
+			})),
+		{ ssr: false },
+	),
 	"jira-kanban-demo-standard": dynamic(
 		() =>
 			import("../demos/blocks/jira-kanban-demo").then((mod) => ({
@@ -104,6 +125,13 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 		() =>
 			import("../demos/blocks/jira-kanban-demo").then((mod) => ({
 				default: mod.JiraKanbanDemoExperimentalV2,
+			})),
+		{ ssr: false },
+	),
+	"jira-kanban-demo-experimental-v2-simple": dynamic(
+		() =>
+			import("../demos/blocks/jira-kanban-demo").then((mod) => ({
+				default: mod.JiraKanbanDemoExperimentalV2Simple,
 			})),
 		{ ssr: false },
 	),

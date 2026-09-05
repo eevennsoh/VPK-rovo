@@ -631,9 +631,10 @@ test("ships demo data and catalog entries for every attachment and size variant"
 });
 
 test("large uncaptured-work cards are borderless and flush in-flow", () => {
-	// In-flow large list is `gap-0`. Panel hosts override via `listClassName`.
-	// Cards stay `rounded-lg` with no stroke. Adjacent marked rows fuse;
-	// the rest of the list does not share edges.
+	// The block default is `gap-0`. Column and panel hosts override via
+	// `listClassName` (`gap-1 p-1`) so adjacent marked rows can fuse.
+	// Cards stay `rounded-lg` with no stroke. The rest of the list does
+	// not share edges.
 	assert.match(INDEX_SOURCE, /variant === "large"\s*\n\s*\? "gap-0"\s*\n\s*: variant === "medium-detached"/u);
 	assert.match(INDEX_SOURCE, /gap: token\("space\.025"\)/u);
 	assert.doesNotMatch(INDEX_SOURCE, /data-stack=/u);

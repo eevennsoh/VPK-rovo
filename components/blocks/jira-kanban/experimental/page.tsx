@@ -816,7 +816,7 @@ export default function ExperimentalJiraKanbanPage({
 									sessionDrag: boardSessionDrag.untrackedBinding,
 								}}
 								className="pb-4 md:pb-5"
-								paddingTop={columnChromeStyles.header.paddingTop}
+								columnFrame={columnChromeStyles.headerFrame}
 								sessionFlyoutsSuspended={boardSessionDrag.transaction !== null}
 								untrackedDropArmed={boardSessionDrag.transaction?.target?.kind === "untracked"}
 							/>

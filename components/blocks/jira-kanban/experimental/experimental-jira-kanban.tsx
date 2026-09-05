@@ -496,7 +496,9 @@ function BoardColumn({
 
 function BoardColumnShell({
 	children,
+	chrome,
 	collapsed,
+	columnChrome,
 	count,
 	onDragLeave,
 	onDragOver,
@@ -506,7 +508,9 @@ function BoardColumnShell({
 }: Readonly<{
 	/** Receives the collapse handler so the column header can render the control. */
 	children: (onCollapse: () => void) => ReactNode;
+	chrome: KanbanColumnChromeStyles;
 	collapsed: boolean;
+	columnChrome: KanbanColumnChrome;
 	count: number;
 	onDragLeave: (event: React.DragEvent<HTMLDivElement>) => void;
 	onDragOver: (event: React.DragEvent<HTMLDivElement>) => void;
@@ -537,6 +541,7 @@ function BoardColumnShell({
 	return (
 		<div
 			data-jira-kanban-column={title}
+			data-kanban-column-chrome={columnChrome}
 			data-collapsed={collapsed || undefined}
 			className={cn(
 				"min-w-0 border-2 border-transparent",
@@ -555,7 +560,13 @@ function BoardColumnShell({
 			}}
 		>
 			{collapsed ? (
-				<CollapsedBoardColumn count={count} onExpand={handleToggleCollapsed} title={title} />
+				<CollapsedBoardColumn
+					chrome={chrome.collapsed}
+					count={count}
+					headerFrame={chrome.headerFrame}
+					onExpand={handleToggleCollapsed}
+					title={title}
+				/>
 			) : (
 				children(handleToggleCollapsed)
 			)}
@@ -830,8 +841,9 @@ function ExperimentalJiraKanbanView({
 								? boardSessionDrag.untrackedBinding
 								: agentSessionColumn.sessionDrag,
 						}}
+						columnFrame={chrome.headerFrame}
 						paddingBottom={paddingBottom}
-						paddingTop={chrome.header.paddingTop ?? paddingTop}
+						paddingTop={paddingTop}
 						sessionFlyoutsSuspended={sessionFlyoutsSuspended}
 						untrackedDropArmed={untrackedDropArmed}
 					/>
@@ -863,7 +875,9 @@ function ExperimentalJiraKanbanView({
 						<div className="flex min-h-full flex-1 items-stretch gap-2">
 						{boardColumns.map((column) => (
 						<BoardColumnShell
+							chrome={chrome}
 							collapsed={isBoardColumnCollapsed(collapsedColumns, column.title)}
+							columnChrome={columnChrome}
 							count={column.cards.length}
 							key={column.title}
 							onDragOver={handleColumnDragOver}
