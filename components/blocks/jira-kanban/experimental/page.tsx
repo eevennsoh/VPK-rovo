@@ -26,6 +26,7 @@ import type {
 	JiraKanbanCardSelectModifiers,
 	JiraKanbanColumnData,
 } from "../index";
+import { resolveKanbanColumnChrome } from "../column-chrome";
 import { createJiraKanbanColumns } from "../jira-kanban-data";
 import {
 	AGENT_SESSION_PANEL_WIDTH_PX,
@@ -181,6 +182,7 @@ export default function ExperimentalJiraKanbanPage({
 	moreControlsPlacement,
 	showMoreControls,
 	showCustomizeControl,
+	simpleViews,
 }: Readonly<ExperimentalJiraKanbanPageProps>) {
 	const [localBoardColumns, setLocalBoardColumns] = useState<JiraKanbanColumnData[]>(
 		() => createJiraKanbanColumns(BOARD_COLUMNS),
@@ -481,6 +483,7 @@ export default function ExperimentalJiraKanbanPage({
 		&& !showPulseContent;
 	const showInFlowAgentSessionColumn = agentSessionPresentation === "column"
 		&& agentSessionColumnConfig !== undefined;
+	const columnChromeStyles = resolveKanbanColumnChrome(columnChrome);
 	// The panel is absolute, so board content passes *under* it by design. But at
 	// maximum scroll the trailing column would land flush with the scrollport's
 	// edge and stay under the panel with no scroll left to free it. Extending the
@@ -780,6 +783,7 @@ export default function ExperimentalJiraKanbanPage({
 				moreControlsPlacement={moreControlsPlacement}
 				showMoreControls={showMoreControls}
 				showCustomizeControl={showCustomizeControl}
+				simpleViews={simpleViews}
 			/>
 			{showBoardContent ? (showPulseContent ? (
 				<ExperimentalPulse
@@ -812,6 +816,7 @@ export default function ExperimentalJiraKanbanPage({
 									sessionDrag: boardSessionDrag.untrackedBinding,
 								}}
 								className="pb-4 md:pb-5"
+								paddingTop={columnChromeStyles.header.paddingTop}
 								sessionFlyoutsSuspended={boardSessionDrag.transaction !== null}
 								untrackedDropArmed={boardSessionDrag.transaction?.target?.kind === "untracked"}
 							/>
@@ -826,6 +831,7 @@ export default function ExperimentalJiraKanbanPage({
 							})
 						) : (
 							<ExperimentalJiraKanban
+								inFlowAgentSessionColumn={showInFlowAgentSessionColumn}
 								activeCardCode={activeCardCode}
 								agentActivityLayout={agentActivityLayout}
 								boardAgentSessionDrag={boardSessionDrag}

@@ -265,7 +265,7 @@ test("Untracked stays frozen beside the independently scrolling Jira status pane
 		BOARD_SOURCE,
 		/<InFlowAgentSessionColumn[\s\S]*\) : null\}\s*<JiraSessionFlyoutSuspensionProvider suspended>\s*<section[\s\S]*ref=\{boardScrollportRef\}[\s\S]*data-jira-kanban-scrollport=""[\s\S]*overflowX: "auto"/u,
 	);
-	assert.doesNotMatch(statusScrollportSource, /AgentSessionColumn|InFlowAgentSessionColumn/u);
+	assert.doesNotMatch(statusScrollportSource, /<(?:InFlow)?AgentSessionColumn/u);
 	assert.match(BOARD_SOURCE, /data-jira-kanban-card-list=""/u);
 });
 
@@ -279,6 +279,8 @@ test("column presentation pins Untracked beside the list as well as the board", 
 		/\{showInFlowAgentSessionColumn && agentSessionColumnConfig \? \(\s*<InFlowAgentSessionColumn/u,
 	);
 	assert.match(PAGE_SOURCE, /inFlowAgentSessionColumn: showInFlowAgentSessionColumn,/u);
+	assert.match(PAGE_SOURCE, /inFlowAgentSessionColumn=\{showInFlowAgentSessionColumn\}/u);
+	assert.match(PAGE_SOURCE, /paddingTop=\{columnChromeStyles\.header\.paddingTop\}/u);
 	assert.match(
 		PAGE_SOURCE,
 		/<InFlowAgentSessionColumn[\s\S]*\{isListContent \? \(/u,
