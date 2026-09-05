@@ -20,9 +20,9 @@ import {
 import { cn } from "@/lib/utils";
 
 const AGENT_LOADING_HOLD_MS = 2_000;
-const AGENT_LOADING_SWAP_MS = 400; // duration-slower
-const AGENT_LOADING_MOTION_SWAP: Transition = { duration: 0.4, ease: [0.4, 0, 0, 1] }; // duration-slower + ease-in-out
-const AGENT_LOADING_MOTION_EXIT: Transition = { duration: 0.25, ease: [0.6, 0, 0.8, 0.6] }; // duration-slow + ease-in
+const AGENT_LOADING_SWAP_MS = 150; // duration-normal
+const AGENT_LOADING_MOTION_SWAP: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] }; // duration-normal + ease-out-practical
+const AGENT_LOADING_MOTION_EXIT: Transition = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] }; // duration-fast + ease-in
 const AGENT_LOADING_MOTION_REDUCED: Transition = { duration: 0 };
 const AGENT_LOADING_SLOT_STYLE: MotionStyle = {
 	originX: 0,
