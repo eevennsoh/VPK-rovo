@@ -53,7 +53,10 @@ const SOURCES = {
 	stream: readFileSync(join(PULSE_DIR, "components", "pulse-stream.tsx"), "utf8"),
 };
 
-const EXPERIMENTAL_PAGE_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "page.tsx"), "utf8");
+const EXPERIMENTAL_PAGE_SOURCE = [
+	readFileSync(join(EXPERIMENTAL_DIR, "page.tsx"), "utf8"),
+	readFileSync(join(EXPERIMENTAL_DIR, "experimental-page-types.ts"), "utf8"),
+].join("\n");
 const EXPERIMENTAL_HEADER_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "experimental-board-header.tsx"), "utf8");
 const PULSE_MODE_CONTROLS_SOURCE = readFileSync(join(PULSE_DIR, "components", "pulse-mode-controls.tsx"), "utf8");
 const DEFAULT_BOARD_SOURCE = readFileSync(join(KANBAN_DIR, "index.tsx"), "utf8");

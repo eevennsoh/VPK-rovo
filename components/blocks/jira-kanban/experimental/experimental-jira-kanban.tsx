@@ -9,7 +9,7 @@ import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import AddIcon from "@atlaskit/icon/core/add";
 
-import { AgentSessionColumn, type AgentSessionColumnProps } from "@/components/blocks/agent-session-column";
+import { type AgentSessionColumnProps } from "@/components/blocks/agent-session-column";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import {
 	type JiraIssueAgentActivityLayout,
@@ -52,6 +52,7 @@ import {
 } from "./components/collapsed-board-column";
 import { BoardColumnCreateAction } from "./components/create-work-item-drop-zone";
 import { ExclusiveCreateWellProximityProvider } from "./components/create-work-item-exclusive-proximity-context";
+import { InFlowAgentSessionColumn } from "./components/in-flow-agent-session-column";
 import { BOARD_COLUMN_ACTION_REVEAL } from "./lib/board-column-action-reveal";
 import {
 	EMPTY_COLLAPSED_BOARD_COLUMNS,
@@ -142,6 +143,12 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	 * Keeps the board drag hook able to resolve a drop onto an issue.
 	 */
 	untrackedSessions?: readonly AgentSessionItem[];
+	/**
+	 * Hovered Untracked session id from a host-owned column. Lights the board
+	 * twin when the in-flow column lives outside this tree so it can survive
+	 * a Board/List switch.
+	 */
+	proximityHighlightedSessionId?: string | null;
 	/**
 	 * Injected board-session drag API. The page supplies this when the
 	 * floating panel also needs `untrackedBinding`; omit to let the board
@@ -632,6 +639,7 @@ function ExperimentalJiraKanbanView({
 	onToggleColumnAgent,
 	boardSessionDrag,
 	proximityAgentSession,
+	proximityHighlightedSessionId = null,
 	renderAgentActivityIndicator,
 	paddingBottom = token("space.150"),
 	paddingTop = token("space.150"),
@@ -651,6 +659,7 @@ function ExperimentalJiraKanbanView({
 	);
 	const [focusedIssueKey, setFocusedIssueKey] = useState<string | null>(null);
 	const [hoveredSessionId, setHoveredSessionId] = useState<string | null>(null);
+	const highlightedSessionId = hoveredSessionId ?? proximityHighlightedSessionId;
 	const spotlightIssueKey = resolveVisibleFocusedIssueKey(focusedIssueKey, boardColumns);
 	const collapsedColumns = controlledCollapsedColumns ?? uncontrolledCollapsedColumns;
 	const selectedCount = selectedCardCodes?.size ?? 0;
@@ -821,32 +830,22 @@ function ExperimentalJiraKanbanView({
 		>
 			<div className="flex min-h-0 min-w-0 flex-1 items-stretch">
 				{agentSessionColumn ? (
-					// Top/left/bottom match the status columns' 2px drop-target
-					// box so the headers share a baseline. No right border: a
-					// 2px stroke there reads as a white seam on `bg-surface`.
-					// The column itself is the Untracked drop zone.
-					<JiraSessionFlyoutSuspensionProvider suspended={sessionFlyoutsSuspended}>
-					<div
-						className={cn(
-							"flex min-h-0 shrink-0 border-2 border-r-0 ps-6",
-							untrackedDropArmed ? "border-ring" : "border-transparent",
-						)}
-						data-board-agent-session-drop-zone="untracked"
-						data-board-agent-session-target={untrackedDropArmed ? "untracked" : undefined}
-						style={{ paddingTop, paddingBottom }}
-					>
-						<AgentSessionColumn
-							{...agentSessionColumn}
-							highlightedItemId={hoveredSessionId}
-							onItemHover={handleSessionHover}
-							onSelectedItemIdChange={handleSessionSelectionChange}
-							onView={handleSessionView}
-							sessionDrag={boardSessionDrag.enablement.transferable
+					<InFlowAgentSessionColumn
+						agentSessionColumn={{
+							...agentSessionColumn,
+							highlightedItemId: highlightedSessionId,
+							onItemHover: handleSessionHover,
+							onSelectedItemIdChange: handleSessionSelectionChange,
+							onView: handleSessionView,
+							sessionDrag: boardSessionDrag.enablement.transferable
 								? boardSessionDrag.untrackedBinding
-								: agentSessionColumn.sessionDrag}
-						/>
-					</div>
-					</JiraSessionFlyoutSuspensionProvider>
+								: agentSessionColumn.sessionDrag,
+						}}
+						paddingBottom={paddingBottom}
+						paddingTop={paddingTop}
+						sessionFlyoutsSuspended={sessionFlyoutsSuspended}
+						untrackedDropArmed={untrackedDropArmed}
+					/>
 				) : null}
 				<JiraSessionFlyoutSuspensionProvider suspended>
 				<section
@@ -978,7 +977,7 @@ function ExperimentalJiraKanbanView({
 												generativeActionAgents={generativeActionAgents}
 												generativeActionPresentation={cardGenerativeActionPresentation}
 												generativeActionSkills={generativeActionSkills}
-												highlightedSessionId={hoveredSessionId}
+												highlightedSessionId={highlightedSessionId}
 												onAgentActivityOpenChange={onCardAgentActivityOpenChange}
 												onAgentActivityViewChat={onCardAgentActivityViewChat}
 												onAgentDoneRunReview={onCardAgentDoneRunReview}

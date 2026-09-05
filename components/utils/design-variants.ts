@@ -38,10 +38,10 @@ export type DesignVariantState = Readonly<Record<DesignVariantId, boolean>>;
  * The baseline state. Frozen and held in one place so the server/hydration
  * snapshot keeps a stable identity across renders.
  *
- * Panel starts on: Golden Journeys v4 ships untracked work in the floating
- * side surface unless the user turns it off.
+ * Panel starts off: Golden Journeys v4 ships untracked work in the in-flow
+ * board column unless the user turns the floating side surface on.
  */
-const DEFAULT_DESIGN_VARIANTS: DesignVariantState = Object.freeze({ panel: true });
+const DEFAULT_DESIGN_VARIANTS: DesignVariantState = Object.freeze({ panel: false });
 
 export function isDesignVariantId(value: unknown): value is DesignVariantId {
 	return DESIGN_VARIANTS.some((variant) => variant.id === value);
