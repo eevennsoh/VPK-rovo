@@ -82,7 +82,7 @@ test("Jira issue stroke chrome drops the raised shadow and uses the disabled bor
 test("Jira issue label tags rest as default gray and reveal color on card hover", () => {
 	assert.match(
 		SUMMARY_SOURCE,
-		/const ISSUE_TAG_IDLE_BORDER_CLASS =\s*\n\t"duration-fast ease-out-practical \[@media\(hover:hover\)\]:group-\[:not\(:hover\):not\(:focus-within\)\]\/jira-issue:border-border-accent-gray-subtle";/u,
+		/const ISSUE_TAG_IDLE_BORDER_CLASS =\s*\n\t"duration-fast ease-out-practical motion-reduce:transition-none \[@media\(hover:hover\)\]:group-\[:not\(:hover\):not\(:focus-within\)\]\/jira-issue:border-border-accent-gray-subtle";/u,
 	);
 	assert.match(
 		SUMMARY_SOURCE,

@@ -39,7 +39,7 @@ const PRIORITY_ICONS = {
 
 /** Rest as the default gray Tag; reveal the label color while the issue card is hovered or focused. */
 const ISSUE_TAG_IDLE_BORDER_CLASS =
-	"duration-fast ease-out-practical [@media(hover:hover)]:group-[:not(:hover):not(:focus-within)]/jira-issue:border-border-accent-gray-subtle";
+	"duration-fast ease-out-practical motion-reduce:transition-none [@media(hover:hover)]:group-[:not(:hover):not(:focus-within)]/jira-issue:border-border-accent-gray-subtle";
 
 const PRIORITY_COLORS = {
 	major: token("color.icon.danger"),
