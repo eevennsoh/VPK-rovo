@@ -129,16 +129,17 @@ export type ExperimentalJiraKanbanView = "board" | "list";
 
 /**
  * Offset in px from the board root's top edge to the *underside of the tab
- * strip's rule* — the header's `pt-3` (12) plus the title+tabs band (93), plus
- * one for the rule itself (106). The Spaces label sits above the heading, so
- * this band is taller than the previous 71px title+tabs stack.
+ * strip's rule* — the header's `pt-3` (12) plus the title+tabs band (89), plus
+ * one for the rule itself (102). The Spaces label sits above the heading, so
+ * this band is taller than the previous 71px title+tabs stack: 16px `text-xs`
+ * line-height plus 2px `gap-0.5`.
  *
  * That last pixel is the whole point of this constant, and is why it is not
  * simply the band's height. The `line` tabs variant draws its rule as an inset
  * box-shadow on the list's own bottom edge, and the list carries `-mb-px pb-px`
  * so that edge hangs 1px *below* the band's content box. A docked side panel
- * placed at the band height (105) therefore starts on the rule's own row and
- * punches a hole in it for the panel's width. Landing at 106 is immediately
+ * placed at the band height (101) therefore starts on the rule's own row and
+ * punches a hole in it for the panel's width. Landing at 102 is immediately
  * beneath the rule, so the rule runs unbroken across the board.
  *
  * The untracked-work rail takes this as a real `top` offset rather than
@@ -152,7 +153,7 @@ export type ExperimentalJiraKanbanView = "board" | "list";
  * tolerance there is zero precisely because a 1px drift is invisible to
  * review but very visible on screen.
  */
-export const BOARD_HEADER_TAB_STRIP_BOTTOM_PX = 106;
+export const BOARD_HEADER_TAB_STRIP_BOTTOM_PX = 102;
 
 function AssigneeAvatar({
 	assignee,
@@ -207,93 +208,31 @@ export function ExperimentalJiraKanbanBoardHeader({
 	viewTabs,
 	title = JIRA_DESIGN_PROJECT.name,
 }: Readonly<ExperimentalJiraKanbanBoardHeaderProps>) {
-	const moreControls = showMoreControls ? (
-		<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
-			<Icon render={<ShowMoreHorizontalIcon label="" />} />
-		</Button>
-	) : null;
-	const customizeControl = showCustomizeControl ? (
-		<Button aria-disabled aria-label="Customize" size="icon" variant="outline">
-			<Icon render={<CustomizeIcon label="" />} />
-		</Button>
-	) : null;
-
 	return (
 		<header className={cn("shrink-0 pt-3", showBoardControls ? "pb-6" : "pb-0")}>
 			<BoardHeaderTitleCluster surfaceLabel={surfaceLabel} title={title} />
 			{viewTabs ? <div className="mt-2">{viewTabs}</div> : null}
-
 			{showBoardControls ? (
-				<div
-					className="mt-6 flex flex-wrap items-center gap-2 px-6"
-					// Board columns are meant to slide under the panel, but the row's
-					// trailing cluster (view switcher) must stay clickable. `px-6` is
-					// overridden by this inline padding, so add the same 24px gutter
-					// back on top of the panel width or the cluster sits on the rail.
-					style={
-						controlsInsetEnd > 0
-							? { paddingInlineEnd: `calc(${controlsInsetEnd}px + ${token("space.300")})` }
-							: undefined
-					}
-				>
-					<InputGroup className="w-44">
-						<InputGroupAddon>
-							<Icon render={<SearchIcon label="" size="small" />} />
-						</InputGroupAddon>
-						<InputGroupInput aria-label={searchPlaceholder} placeholder={searchPlaceholder} readOnly />
-					</InputGroup>
-
-					{facepile ?? (
-						<BoardHeaderDefaultFacepile
-							assignees={assignees}
-							onSelectedAssigneeIdsChange={onSelectedAssigneeIdsChange}
-							selectedAssigneeIds={selectedAssigneeIds}
-							surfaceLabel={surfaceLabel}
-						/>
-					)}
-
-					{filterControl}
-
-					<BoardViewMenu
-						compact={compact}
-						onShownSessionStateIdsChange={onShownSessionStateIdsChange}
-						onShowUntrackedChange={onShowUntrackedChange}
-						shownSessionStateIds={shownSessionStateIds}
-						showUntracked={showUntracked}
-						simpleViews={simpleViews}
-						surfaceLabel={surfaceLabel}
-					/>
-
-					{modeToggle}
-					{moreControlsPlacement === "inline" ? moreControls : null}
-
-					<div className={cn("flex items-center gap-2", compact ? undefined : "ml-auto")}>
-						{onViewChange ? (
-							<Tabs
-								onValueChange={(value) => {
-									if (value === "board" || value === "list") {
-										onViewChange(value);
-									}
-								}}
-								value={activeView}
-							>
-								<TabsList aria-label="Work items view">
-									<TabsTrigger value="board">
-										<Icon aria-hidden render={<BoardIcon label="" />} />
-										Board
-									</TabsTrigger>
-									<TabsTrigger value="list">
-										<Icon aria-hidden render={<TableIcon label="" />} />
-										List
-									</TabsTrigger>
-								</TabsList>
-							</Tabs>
-						) : null}
-						{endSlot ? endSlot : null}
-						{customizeControl}
-						{moreControlsPlacement === "end" ? moreControls : null}
-					</div>
-				</div>
+				<BoardHeaderControlsRow
+					activeView={activeView}
+					assignees={assignees}
+					compact={compact}
+					controlsInsetEnd={controlsInsetEnd}
+					moreControlsPlacement={moreControlsPlacement}
+					onSelectedAssigneeIdsChange={onSelectedAssigneeIdsChange}
+					onShowUntrackedChange={onShowUntrackedChange}
+					onShownSessionStateIdsChange={onShownSessionStateIdsChange}
+					onViewChange={onViewChange}
+					searchPlaceholder={searchPlaceholder}
+					selectedAssigneeIds={selectedAssigneeIds}
+					showCustomizeControl={showCustomizeControl}
+					showMoreControls={showMoreControls}
+					showUntracked={showUntracked}
+					shownSessionStateIds={shownSessionStateIds}
+					simpleViews={simpleViews}
+					surfaceLabel={surfaceLabel}
+					{...{ endSlot, facepile, filterControl, modeToggle }}
+				/>
 			) : null}
 		</header>
 	);
@@ -361,28 +300,193 @@ function BoardHeaderDefaultFacepile({
 			>
 				<AvatarUnassigned kind="person" label="Unassigned" size="sm" />
 				{assignees.slice(0, JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS - 1).map((assignee) => (
-					<button
-						aria-label={`Filter ${surfaceLabel} by ${assignee.name}`}
-						aria-pressed={selectedAssigneeIds.has(assignee.id)}
-						className="rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+					<BoardHeaderAssigneeFacepileItem
+						assignee={assignee}
 						key={assignee.id}
-						onClick={() => {
-							toggleSelectedAssigneeId(
-								selectedAssigneeIds,
-								assignee.id,
-								onSelectedAssigneeIdsChange,
-							);
-						}}
-						type="button"
-					>
-						<AssigneeAvatar
-							assignee={assignee}
-							muted={hasSelection && !selectedAssigneeIds.has(assignee.id)}
-							selected={selectedAssigneeIds.has(assignee.id)}
-						/>
-					</button>
+						muted={hasSelection && !selectedAssigneeIds.has(assignee.id)}
+						onSelectedAssigneeIdsChange={onSelectedAssigneeIdsChange}
+						selected={selectedAssigneeIds.has(assignee.id)}
+						selectedAssigneeIds={selectedAssigneeIds}
+						surfaceLabel={surfaceLabel}
+					/>
 				))}
 			</AvatarGroup>
 		</>
+	);
+}
+
+function BoardHeaderAssigneeFacepileItem({
+	assignee,
+	muted,
+	onSelectedAssigneeIdsChange,
+	selected,
+	selectedAssigneeIds,
+	surfaceLabel,
+}: Readonly<{
+	assignee: JiraKanbanAssigneeData;
+	muted: boolean;
+	onSelectedAssigneeIdsChange?: (assigneeIds: Set<string>) => void;
+	selected: boolean;
+	selectedAssigneeIds: ReadonlySet<string>;
+	surfaceLabel: string;
+}>) {
+	const avatar = (
+		<AssigneeAvatar assignee={assignee} muted={muted} selected={selected} />
+	);
+
+	if (!onSelectedAssigneeIdsChange) {
+		return (
+			<span className="rounded-full">
+				{avatar}
+			</span>
+		);
+	}
+
+	return (
+		<button
+			aria-label={`Filter ${surfaceLabel} by ${assignee.name}`}
+			aria-pressed={selected}
+			className="rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+			onClick={() => {
+				toggleSelectedAssigneeId(
+					selectedAssigneeIds,
+					assignee.id,
+					onSelectedAssigneeIdsChange,
+				);
+			}}
+			type="button"
+		>
+			{avatar}
+		</button>
+	);
+}
+
+function BoardHeaderControlsRow({
+	activeView,
+	assignees,
+	compact,
+	controlsInsetEnd,
+	endSlot,
+	facepile,
+	filterControl,
+	modeToggle,
+	moreControlsPlacement,
+	onSelectedAssigneeIdsChange,
+	onShowUntrackedChange,
+	onShownSessionStateIdsChange,
+	onViewChange,
+	searchPlaceholder,
+	selectedAssigneeIds,
+	showCustomizeControl,
+	showMoreControls,
+	showUntracked,
+	shownSessionStateIds,
+	simpleViews,
+	surfaceLabel,
+}: Readonly<{
+	activeView: ExperimentalJiraKanbanView;
+	assignees: readonly JiraKanbanAssigneeData[];
+	compact: boolean;
+	controlsInsetEnd: number;
+	endSlot?: ReactNode;
+	facepile?: ReactNode;
+	filterControl?: ReactNode;
+	modeToggle?: ReactNode;
+	moreControlsPlacement: "inline" | "end";
+	onSelectedAssigneeIdsChange?: (assigneeIds: Set<string>) => void;
+	onShowUntrackedChange?: (showUntracked: boolean) => void;
+	onShownSessionStateIdsChange?: (shownSessionStateIds: Set<BoardAgentSessionStateId>) => void;
+	onViewChange?: (view: ExperimentalJiraKanbanView) => void;
+	searchPlaceholder: string;
+	selectedAssigneeIds: ReadonlySet<string>;
+	showCustomizeControl: boolean;
+	showMoreControls: boolean;
+	showUntracked?: boolean;
+	shownSessionStateIds?: ReadonlySet<BoardAgentSessionStateId>;
+	simpleViews?: boolean;
+	surfaceLabel: string;
+}>) {
+	const moreControls = showMoreControls ? (
+		<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
+			<Icon render={<ShowMoreHorizontalIcon label="" />} />
+		</Button>
+	) : null;
+	const customizeControl = showCustomizeControl ? (
+		<Button aria-disabled aria-label="Customize" size="icon" variant="outline">
+			<Icon render={<CustomizeIcon label="" />} />
+		</Button>
+	) : null;
+
+	return (
+		<div
+			className="mt-6 flex flex-wrap items-center gap-2 px-6"
+			// Board columns are meant to slide under the panel, but the row's
+			// trailing cluster (view switcher) must stay clickable. `px-6` is
+			// overridden by this inline padding, so add the same 24px gutter
+			// back on top of the panel width or the cluster sits on the rail.
+			style={
+				controlsInsetEnd > 0
+					? { paddingInlineEnd: `calc(${controlsInsetEnd}px + ${token("space.300")})` }
+					: undefined
+			}
+		>
+			<InputGroup className="w-44">
+				<InputGroupAddon>
+					<Icon render={<SearchIcon label="" size="small" />} />
+				</InputGroupAddon>
+				<InputGroupInput aria-label={searchPlaceholder} placeholder={searchPlaceholder} readOnly />
+			</InputGroup>
+
+			{facepile ?? (
+				<BoardHeaderDefaultFacepile
+					assignees={assignees}
+					onSelectedAssigneeIdsChange={onSelectedAssigneeIdsChange}
+					selectedAssigneeIds={selectedAssigneeIds}
+					surfaceLabel={surfaceLabel}
+				/>
+			)}
+
+			{filterControl}
+
+			<BoardViewMenu
+				compact={compact}
+				onShownSessionStateIdsChange={onShownSessionStateIdsChange}
+				onShowUntrackedChange={onShowUntrackedChange}
+				shownSessionStateIds={shownSessionStateIds}
+				showUntracked={showUntracked}
+				simpleViews={simpleViews}
+				surfaceLabel={surfaceLabel}
+			/>
+
+			{modeToggle}
+			{moreControlsPlacement === "inline" ? moreControls : null}
+
+			<div className={cn("flex items-center gap-2", compact ? undefined : "ml-auto")}>
+				{onViewChange ? (
+					<Tabs
+						onValueChange={(value) => {
+							if (value === "board" || value === "list") {
+								onViewChange(value);
+							}
+						}}
+						value={activeView}
+					>
+						<TabsList aria-label="Work items view">
+							<TabsTrigger value="board">
+								<Icon aria-hidden render={<BoardIcon label="" />} />
+								Board
+							</TabsTrigger>
+							<TabsTrigger value="list">
+								<Icon aria-hidden render={<TableIcon label="" />} />
+								List
+							</TabsTrigger>
+						</TabsList>
+					</Tabs>
+				) : null}
+				{endSlot ? endSlot : null}
+				{customizeControl}
+				{moreControlsPlacement === "end" ? moreControls : null}
+			</div>
+		</div>
 	);
 }
