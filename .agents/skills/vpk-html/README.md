@@ -1,5 +1,7 @@
 # vpk-html
 
+<!-- vpk-html-catalog-counts: templates=33 diagrams=61 demos=105 -->
+
 > Render structured material into offline, single-file HTML documents with the
 > vpk-html Algebrica editorial identity. **[See the index →](index.html)**
 
@@ -30,22 +32,24 @@ status readouts, and implementation briefs.
 
 ## What you get
 
-- **28 document templates** at `assets/templates/`: 8 base document shells
+- **33 document templates** at `assets/templates/`: 13 general document shells
   plus 20 Phase 2 engineering templates patterned after the
   [ThariqS/html-effectiveness](https://github.com/ThariqS/html-effectiveness)
   use-case catalog. Each is a complete standalone HTML file with inline CSS
   and fonts.
-- **39 SVG diagram/chart primitives** at `assets/diagrams/` — architecture,
+- **61 SVG diagram/chart primitives** at `assets/diagrams/` — architecture,
   flowchart, swimlane, tree, distribution charts, comparison charts,
   time-series charts, intensity charts, hierarchy charts, and relationship
   diagrams. Extract the `<svg>` block and embed inside any long-form template.
 - **5 technical illustration exemplars** at `assets/illustrations/` —
   isometric, exploded, annotated, cross-section, and pipeline SVGs built for
   remixing inside technical docs.
-- **77 demos** at `assets/demos/`: filled document showcases, Phase 2
+- **105 HTML demos** at `assets/demos/`: filled document showcases, Phase 2
   `html-effectiveness` ports, diagram previews, technical illustration previews,
   and vpk-native examples.
 - **A reference-manual homepage** at [`index.html`](index.html).
+- **A frozen evaluation corpus** at `evals/evals.json` for matched first-attempt
+  comparisons across seven recurring reader jobs.
 - **LLM-facing reference docs** for writing, anti-patterns, diagrams,
   illustrations, charts, SVG grammar, presentation mode, video export with a
   worked example at `assets/video/landing-demo-separation/`, PDF export,
@@ -90,6 +94,7 @@ to template file.
 node scripts/build.mjs                            # check every template
 node scripts/build.mjs --check-placeholders <file>
 node scripts/build.mjs --check-templates          # CSS / token / font sanity
+node scripts/build.mjs --check-evals              # frozen scenarios + catalog snapshot
 node scripts/build.mjs --verify <file>            # Playwright render + load check
 
 node scripts/check-html.mjs <file>                # static HTML validity
@@ -120,15 +125,16 @@ node scripts/build-index.mjs                      # regenerate the local Algebri
 | `README.md` | This file |
 | `index.html` | Local Algebrica-style demo catalog |
 | `LICENSE`, `llms.txt`, `.gitignore`, `.claude-plugin/` | Top-level metadata |
-| `assets/templates/` | 28 offline HTML templates: 8 base document shells + 20 Phase 2 engineering shells |
-| `assets/diagrams/` | 39 standalone SVG diagram/chart primitives |
+| `assets/templates/` | 33 offline HTML templates: 13 general document shells + 20 Phase 2 engineering shells |
+| `assets/diagrams/` | 61 standalone SVG diagram/chart primitives |
 | `assets/illustrations/` | 5 technical illustration exemplars for remixing |
 | `assets/html-effectiveness/` | Snapshot of the 20 upstream html-effectiveness HTML demos plus index |
-| `assets/demos/` | 77 demo HTML outputs plus the embedded media needed by individual demos |
+| `assets/demos/` | 105 demo HTML outputs plus the embedded media needed by individual demos |
+| `evals/evals.json` | Frozen prompts, reader jobs, expectations, viewports, and human rubrics |
 | `assets/fonts/` | Geist and Geist Mono (inlined as base64 at port time, with a numeric Geist Mono face) |
 | `artifacts/vpk-html/<slug>/` | Ignored per-artifact folders for generated user HTML, PDFs, screenshots, and review captures |
 | `styles.css` | Shared root stylesheet, matching Kami's top-level CSS contract |
-| `references/` | Anti-patterns, diagrams, illustrations, SVG style, presentation, video-export (worked example: `assets/video/landing-demo-separation/`), resume-writing, writing, design, GitHub Pages publishing, production, source-policy, accessibility, tokens.json |
+| `references/` | Anti-patterns, diagrams, illustrations, SVG style, presentation, evaluation, video-export (worked example: `assets/video/landing-demo-separation/`), resume-writing, writing, design, GitHub Pages publishing, production, source-policy, accessibility, tokens.json |
 | `scripts/` | build (validator), check-html, shared helpers, presentation, retrofit, port-*.mjs, build-demos, build-illustrations, build-index, landing, gates, pdf, ensure-fonts |
 
 ## Rules of the road
@@ -169,8 +175,8 @@ The visual identity diverges; the workflow does not.
 | Render pipeline | Template edit (kami-style) | Template edit |
 | Build toolchain | Node ESM | Python (WeasyPrint, python-pptx) |
 | Output | Single offline HTML | HTML + PDF + optional PPTX + PNG |
-| Templates | 28 (8 kami-ported base shells + 20 original Phase 2 engineering shells) | 8 |
-| Diagrams and charts | 39 SVG primitives (14 kami-ported, 25 vpk-native chart additions) | 14 SVG primitives |
+| Templates | 33 (13 general shells + 20 original Phase 2 engineering shells) | 8 |
+| Diagrams and charts | 61 SVG primitives | 14 SVG primitives |
 | Technical illustrations | 5 vpk-native exemplars | N/A |
 | Languages | EN | CN primary, EN, JA best-effort |
 

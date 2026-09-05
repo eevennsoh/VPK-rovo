@@ -10,6 +10,7 @@
  *   node scripts/build.mjs --check-placeholders <file>
  *   node scripts/build.mjs --sync                  # check CSS token drift
  *   node scripts/build.mjs --check-templates       # CSS / token / font sanity across templates
+ *   node scripts/build.mjs --check-evals           # eval corpus + catalog documentation health
  *   node scripts/build.mjs --verify <file>         # Playwright render + load check
  *   node scripts/build.mjs --pdf <file> [--out <f.pdf>]  # optional derived PDF export
  *   node scripts/build.mjs --github <file> [--repo owner/name] [--private]  # publish to GitHub Pages
@@ -72,6 +73,7 @@ function parseArgs(argv) {
 		else if (arg === "--sync" || arg === "--check-theme") { args.mode = "sync"; }
 		else if (arg === "--write-styles" || arg === "--write-theme") { args.mode = "write-styles"; }
 		else if (arg === "--check-templates") { args.mode = "templates"; }
+		else if (arg === "--check-evals") { args.mode = "evals"; }
 		else if (arg === "--verify") { args.mode = "verify"; args.file = argv[++i]; }
 		else if (arg === "--pdf") { args.mode = "pdf"; args.file = argv[++i]; }
 		else if (arg === "--landing") { args.mode = "landing"; args.file = argv[++i]; }
@@ -314,6 +316,7 @@ Usage:
   node scripts/build.mjs --check-placeholders <file>
   node scripts/build.mjs --sync                    # check CSS token drift
   node scripts/build.mjs --check-templates
+  node scripts/build.mjs --check-evals
   node scripts/build.mjs --verify <file>
   node scripts/build.mjs --pdf <file> [--out <file.pdf>]   # optional derived PDF export
   node scripts/build.mjs --landing <file> [--out <dir>] [--origin <url>]   # emit companions + responsive verify
@@ -352,6 +355,19 @@ async function main() {
 	if (args.mode === "templates") {
 		const result = checkTemplates();
 		if (!result.ok) process.exitCode = 1;
+		return;
+	}
+	if (args.mode === "evals") {
+		const { checkEvaluationSystem } = await import("./evals.mjs");
+		const result = checkEvaluationSystem();
+		if (!result.ok) {
+			console.log(`✗ vpk-html evaluation system: ${result.issues.length} issue${result.issues.length === 1 ? "" : "s"}`);
+			for (const issue of result.issues) console.log(`  ${issue}`);
+			process.exitCode = 1;
+			return;
+		}
+		const { demos, diagrams, templates } = result.catalogCounts;
+		console.log(`✓ vpk-html evaluation system: ${result.evalCount} scenarios; ${templates} templates, ${diagrams} diagrams, ${demos} demos`);
 		return;
 	}
 	if (args.mode === "verify") {

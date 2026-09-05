@@ -1,8 +1,7 @@
 # Diagrams
 
-vpk-html ships 39 standalone SVG diagram and chart primitives at
-`assets/diagrams/*.html`: 14 original structural/chart primitives plus 25 Phase
-E chart additions. They are data-shape diagrams in the Algebrica figure
+vpk-html ships 61 standalone SVG diagram and chart primitives at
+`assets/diagrams/*.html`. They are data-shape diagrams in the Algebrica figure
 language: grayscale, token-only, flat, precise, and typography-led. For
 object/assembly/mechanism drawings, use `references/illustrations.md` and
 `assets/illustrations/`.
