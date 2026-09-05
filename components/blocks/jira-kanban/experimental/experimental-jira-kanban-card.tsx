@@ -188,6 +188,7 @@ export function ExperimentalJiraKanbanCard({
 			assigneePulse={card.avatarPulse}
 			assigneeUnassignedKind={card.avatarUnassignedKind}
 			chrome={chrome}
+			compact
 			dragging={dragging}
 			generativeAction={{
 				agents: generativeActionAgents,

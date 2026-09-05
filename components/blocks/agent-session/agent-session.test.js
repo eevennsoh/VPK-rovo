@@ -288,6 +288,12 @@ test("medium attached reuses the Jira issue agent activity row", () => {
 	assert.match(COMPACT_CARD_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
 	assert.match(COMPACT_CARD_SOURCE, /data-new=\{isNew \|\| undefined\}/u);
 	assert.match(COMPACT_CARD_SOURCE, /isNew \? "ring-1 ring-border-discovery" : null/u);
+	assert.match(COMPACT_CARD_SOURCE, /relative w-\[276px\] rounded-\[10px\] bg-bg-neutral/u);
+	assert.doesNotMatch(
+		COMPACT_CARD_SOURCE,
+		/relative w-\[276px\][^"]*bg-bg-neutral-subtle/u,
+	);
+	assert.doesNotMatch(COMPACT_CARD_SOURCE, /bg-bg-accent-gray-subtlest/u);
 	assert.match(COMPACT_CARD_SOURCE, /Newly synced, not yet reviewed/u);
 	assert.match(COMPACT_CARD_SOURCE, /initial=\{shouldPlayArrival \? \{ opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX \} : false\}/u);
 	assert.match(INDEX_SOURCE, /const isAttached = variant === "medium-attached";/u);
@@ -598,6 +604,8 @@ test("ships demo data and catalog entries for every attachment and size variant"
 	assert.doesNotMatch(DATA_SOURCE, /timeLabel: "3 mins ago"/u);
 	assert.match(DATA_SOURCE, /issueKey: "PAY-101"/u);
 	assert.match(PAGE_SOURCE, /<AgentSession/u);
+	assert.doesNotMatch(PAGE_SOURCE, /data-slot="agent-session-attached-backdrop"/u);
+	assert.doesNotMatch(PAGE_SOURCE, /rounded-lg bg-bg-neutral p-1/u);
 	assert.match(DEMO_SOURCE, /@\/components\/blocks\/agent-session\/page/u);
 	assert.match(REGISTRY_SOURCE, /"agent-session": dynamic/u);
 	assert.match(MANIFEST_SOURCE, /blockComponent\("agent-session", "Agent Session"\)/u);

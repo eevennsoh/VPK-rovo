@@ -178,6 +178,8 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	active?: boolean;
 	/** Raised elevation is the default card chrome. Stroke is a 1px border with no shadow. */
 	chrome?: JiraIssueChrome;
+	/** Compact experimental internals. Implied by stroke chrome; pair with raised chrome to change only elevation. */
+	compact?: boolean;
 	selected?: boolean;
 	dragging?: boolean;
 	showPriorityIndicator?: boolean;
@@ -249,6 +251,7 @@ function JiraIssueDefault({
 	assigneePulse = false,
 	assigneeUnassignedKind,
 	chrome = "raised",
+	compact = false,
 	className,
 	defaultSubtasksExpanded = false,
 	dragging = false,
@@ -376,7 +379,8 @@ function JiraIssueDefault({
 	const usesAgentActivityShell = hasAgentActivityPresentation || Boolean(agentSessionTransfer);
 	const chromeStyles = resolveJiraIssueChrome(chrome);
 	const usesStrokeChrome = chrome === "stroke";
-	const hasInteractiveContent = showMoreAction || hasSubtasks || Boolean(parentEpicControl) || hasAgentActivityPresentation || Boolean(generativeAction) || Boolean(agentSessionTransfer) || usesStrokeChrome;
+	const usesCompactVisual = compact || usesStrokeChrome;
+	const hasInteractiveContent = showMoreAction || hasSubtasks || Boolean(parentEpicControl) || hasAgentActivityPresentation || Boolean(generativeAction) || Boolean(agentSessionTransfer) || usesCompactVisual;
 	const shouldRenderIssueClickButton = Boolean(props.onClick && !parentEpicControl);
 	const issueRowsClassName = cn("pt-1", !(hasSubtasks && resolvedSubtasksExpanded) && "pb-1");
 	const layoutTransition = getJiraIssueLayoutTransition(shouldReduceMotion);
@@ -389,7 +393,7 @@ function JiraIssueDefault({
 	// The resting surface hairline only reads as gutter while the card sits on the
 	// grey agent backdrop: `border-border-disabled` is a 6%-alpha dark tint, and
 	// composited over the card's own white it lands within a hair of
-	// `bg-bg-accent-gray-subtlest`, so the card's edge appeared to start 1px inside
+	// `bg-bg-neutral`, so the card's edge appeared to start 1px inside
 	// the chin rows. With no active shell the card is on the page background and
 	// still needs its stroke outline. Selected and active keep their own treatment
 	// because they do not sit on a white fill.
@@ -582,7 +586,7 @@ function JiraIssueDefault({
 			showPriorityIndicator={showPriorityIndicator}
 			summary={summary}
 			tags={tags}
-			usesStrokeChrome={usesStrokeChrome}
+			usesStrokeChrome={usesCompactVisual}
 		/>
 	);
 	const moreActionMenu = showMoreAction ? (
@@ -599,7 +603,7 @@ function JiraIssueDefault({
 	const richIssueContent = (
 		<div className="relative z-10 flex flex-col">
 			{shouldRenderIssueClickButton ? (
-				usesStrokeChrome ? (
+				usesCompactVisual ? (
 					<div className="relative w-full px-3 pt-3 pb-2 text-left outline-none transition-colors duration-normal ease-out has-[:focus-visible]:border-ring has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50">
 						<button
 							aria-pressed={ariaPressed ?? selected}
@@ -628,7 +632,7 @@ function JiraIssueDefault({
 					</button>
 				)
 			) : (
-				<div className={usesStrokeChrome ? "px-3 pt-3 pb-2" : "p-3"}>{summaryContent}</div>
+				<div className={usesCompactVisual ? "px-3 pt-3 pb-2" : "p-3"}>{summaryContent}</div>
 			)}
 			{moreActionMenu}
 			<AnimatePresence initial={false} mode="popLayout">
@@ -644,11 +648,12 @@ function JiraIssueDefault({
 					>
 						<JiraIssueSeparator
 							inset={usesAgentActivityShell ? agentActivitySurfaceInset : 0}
-							usesStrokeChrome={usesStrokeChrome}
+							usesStrokeChrome={usesCompactVisual}
 						/>
 						<div className={issueRowsClassName}>
 							<JiraIssueSubtasks
 								chrome={chrome}
+								compact={usesCompactVisual}
 								completedCount={completedSubtaskCount}
 								controlId={subtasksPanelId}
 								expanded={resolvedSubtasksExpanded}
@@ -692,7 +697,7 @@ function JiraIssueDefault({
 			<motion.div
 				aria-hidden="true"
 				animate={shouldReduceMotion ? undefined : agentActivityBackdropAnimation}
-				className="pointer-events-none absolute bg-bg-accent-gray-subtlest"
+				className="pointer-events-none absolute bg-bg-neutral"
 				data-slot="jira-issue-agent-backdrop"
 				initial={false}
 				style={shouldReduceMotion ? { ...AGENT_ACTIVITY_BACKDROP_STYLE, ...agentActivityBackdropAnimation } : AGENT_ACTIVITY_BACKDROP_STYLE}
@@ -729,7 +734,7 @@ function JiraIssueDefault({
 					sessionFlyout={agentSessionFlyout}
 					sessionDrag={agentSessionDragBinding}
 					shouldReduceMotion={shouldReduceMotion}
-					usesStrokeChrome={usesStrokeChrome}
+					usesStrokeChrome={usesCompactVisual}
 				/>
 				{isAttachingSession ? (
 					<div className="px-1 py-1" data-slot="jira-issue-attach-chin">
@@ -759,7 +764,7 @@ function JiraIssueDefault({
 								onView={onAgentDoneRunView}
 								renderAgentActivityIndicator={renderAgentActivityIndicator}
 								runs={agentDoneRuns}
-								usesStrokeChrome={usesStrokeChrome}
+								usesStrokeChrome={usesCompactVisual}
 							/>
 						</motion.div>
 					) : null}

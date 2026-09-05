@@ -128,6 +128,11 @@ export interface ExperimentalJiraKanbanPageProps {
 	 */
 	showMoreControls?: boolean;
 	/**
+	 * Simple views reveals Column size, Hide done, and Show fields in View.
+	 * Off (default mode) hides those items and locks their defaults.
+	 */
+	simpleViews?: boolean;
+	/**
 	 * Outline Customize control on the far right of the header. Display-only
 	 * unless a later owner supplies a real configure capability.
 	 */

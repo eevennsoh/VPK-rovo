@@ -12,8 +12,9 @@ export const DEFAULT_KANBAN_COLUMN_CHROME: KanbanColumnChrome = "default";
  * `default`: sunken fill plus the standard well's inner padding.
  * `simple`: no fill; inset slots stay unset.
  *
- * Header owns `paddingTop` and `paddingInline` only. Boards own
- * `paddingBottom`. `undefined` slots mean "do not set".
+ * Header owns `paddingTop` and `paddingInline`. Default also sets
+ * `paddingBottom` (4px). Boards supply a fallback `paddingBottom`.
+ * `undefined` slots mean "do not set".
  */
 export interface KanbanColumnChromeStyles {
 	readonly columnClassName: string;
@@ -21,32 +22,40 @@ export interface KanbanColumnChromeStyles {
 	readonly header: {
 		readonly paddingTop: string | undefined;
 		readonly paddingInline: string | undefined;
+		readonly paddingBottom?: string;
 	};
 	readonly cardList: {
 		readonly paddingTop: string | undefined;
 		readonly paddingBottom: string | undefined;
 		readonly paddingInline: string | undefined;
+		/** Default well: 4px stack. Omitted on simple so boards keep their own gap. */
+		readonly gap?: string;
 	};
 	readonly footer: {
 		readonly paddingInline: string | undefined;
 	};
+	/** Default well only: collapse control `pt-2`/`pb-1` (8px/4px). Empty on simple. */
+	readonly resizeButtonClassName: string;
 }
 
 const DEFAULT_KANBAN_COLUMN_CHROME_STYLES: KanbanColumnChromeStyles = Object.freeze({
 	columnClassName: "bg-surface-sunken",
 	cardChrome: "raised",
 	header: Object.freeze({
-		paddingTop: token("space.150"),
+		paddingTop: token("space.100"),
 		paddingInline: token("space.150"),
+		paddingBottom: token("space.050"),
 	}),
 	cardList: Object.freeze({
 		paddingTop: token("space.050"),
 		paddingBottom: token("space.100"),
 		paddingInline: token("space.050"),
+		gap: token("space.050"),
 	}),
 	footer: Object.freeze({
 		paddingInline: token("space.050"),
 	}),
+	resizeButtonClassName: "pt-2 pb-1",
 });
 
 const SIMPLE_KANBAN_COLUMN_CHROME_STYLES: KanbanColumnChromeStyles = Object.freeze({
@@ -64,6 +73,7 @@ const SIMPLE_KANBAN_COLUMN_CHROME_STYLES: KanbanColumnChromeStyles = Object.free
 	footer: Object.freeze({
 		paddingInline: undefined,
 	}),
+	resizeButtonClassName: "",
 });
 
 const KANBAN_COLUMN_CHROME_STYLES: Readonly<Record<KanbanColumnChrome, KanbanColumnChromeStyles>> = Object.freeze({

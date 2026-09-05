@@ -7,8 +7,6 @@ import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "rea
 import { LayoutGroup, motion, useReducedMotion, type Transition } from "motion/react";
 import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
-import AddIcon from "@atlaskit/icon/core/add";
-
 import { type AgentSessionColumnProps } from "@/components/blocks/agent-session-column";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import {
@@ -144,6 +142,12 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	 * left of the board. Omit to render only Jira status columns.
 	 */
 	agentSessionColumn?: AgentSessionColumnProps;
+	/**
+	 * True when Untracked is already pinned beside this board (page-owned
+	 * column). Drops the leading inset to the inter-column `ps-2` / `space.100`
+	 * so the rail-to-To-do gap matches status-to-status.
+	 */
+	inFlowAgentSessionColumn?: boolean;
 	/**
 	 * Untracked sessions when the in-flow column is omitted (panel mode).
 	 * Keeps the board drag hook able to resolve a drop onto an issue.
@@ -429,7 +433,7 @@ function BoardColumn({
 		>
 			<div
 				className="flex min-w-0 items-center justify-between gap-2"
-				style={{ ...chrome.header, paddingBottom: token("space.100") }}
+				style={{ paddingBottom: token("space.100"), ...chrome.header }}
 			>
 				<div className="flex min-w-0 items-center gap-1.5">
 					<span className="truncate text-xs font-medium leading-4 text-text-subtle">
@@ -452,6 +456,7 @@ function BoardColumn({
 					<BoardColumnResizeButton
 						className={cn(
 							BOARD_COLUMN_ACTION_REVEAL,
+							chrome.resizeButtonClassName,
 							"group-hover/board-column:pointer-events-auto group-hover/board-column:opacity-100",
 							"group-has-[:focus-visible]/board-column:pointer-events-auto group-has-[:focus-visible]/board-column:opacity-100",
 						)}
@@ -558,39 +563,6 @@ function BoardColumnShell({
 	);
 }
 
-function BoardAddColumnButton() {
-	return (
-		<div className="flex shrink-0 flex-col self-start overflow-visible border-2 border-transparent">
-			<div
-				aria-hidden
-				className="flex items-center"
-				style={{ paddingBottom: token("space.100") }}
-			>
-				<span className="size-6" />
-			</div>
-			<TooltipProvider>
-				<Tooltip>
-					<TooltipTrigger
-						render={
-							<Button
-								aria-label="Create column"
-								className="shrink-0"
-								data-jira-kanban-add-column=""
-								size="icon"
-								type="button"
-								variant="outline"
-							/>
-						}
-					>
-						<Icon render={<AddIcon label="" />} />
-					</TooltipTrigger>
-					<TooltipContent>Create column</TooltipContent>
-				</Tooltip>
-			</TooltipProvider>
-		</div>
-	);
-}
-
 function getCommonSelectedCardStatus(
 	columns: readonly JiraKanbanColumnData[],
 	selectedCardCodes: ReadonlySet<string>,
@@ -621,6 +593,7 @@ function ExperimentalJiraKanbanView({
 	activeCardCode,
 	agentActivityLayout = "merged",
 	agentSessionColumn,
+	inFlowAgentSessionColumn = false,
 	agents,
 	animateCardMoves = false,
 	ariaLabel = "Experimental Jira kanban columns. Scroll horizontally to review all statuses.",
@@ -858,7 +831,7 @@ function ExperimentalJiraKanbanView({
 								: agentSessionColumn.sessionDrag,
 						}}
 						paddingBottom={paddingBottom}
-						paddingTop={paddingTop}
+						paddingTop={chrome.header.paddingTop ?? paddingTop}
 						sessionFlyoutsSuspended={sessionFlyoutsSuspended}
 						untrackedDropArmed={untrackedDropArmed}
 					/>
@@ -883,7 +856,7 @@ function ExperimentalJiraKanbanView({
 						<div
 							className={cn(
 								"flex min-h-full w-max min-w-full items-stretch",
-								agentSessionColumn ? "ps-2" : "ps-6",
+								agentSessionColumn || inFlowAgentSessionColumn ? "ps-2" : "ps-6",
 							)}
 						>
 						<ExclusiveCreateWellProximityProvider>
@@ -1023,7 +996,6 @@ function ExperimentalJiraKanbanView({
 							)}
 						</BoardColumnShell>
 						))}
-						<BoardAddColumnButton />
 						</div>
 						</ExclusiveCreateWellProximityProvider>
 						{/* Trailing gutter. It also absorbs `scrollEndInset`: the outer

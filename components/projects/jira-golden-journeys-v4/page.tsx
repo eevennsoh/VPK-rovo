@@ -319,6 +319,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						moreControlsPlacement={designVariation === "team-eu" ? "end" : "inline"}
 						showMoreControls={!designVariants["simple-views"]}
 						showCustomizeControl={designVariation === "team-eu" && !designVariants["simple-views"]}
+						simpleViews={designVariants["simple-views"]}
 						viewTabs={(
 							<JiraViewTabs
 								selectedTabLabel={selectedTabLabel}
