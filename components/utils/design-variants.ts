@@ -41,15 +41,15 @@ export type DesignVariantState = Readonly<Record<DesignVariantId, boolean>>;
  * The baseline state. Frozen and held in one place so the server/hydration
  * snapshot keeps a stable identity across renders.
  *
- * Panel starts on: Golden Journeys v4 ships untracked work in the floating
- * side surface unless the user turns it off.
+ * Panel starts off: Golden Journeys v4 ships untracked work in the in-flow
+ * board column unless the user turns the floating side surface on.
  *
  * Simple views starts on: Team EU (the default variation) ships one Work items
  * tab and moves Board/List into the board header, unless the user turns it off
  * to restore Board and List as sibling space tabs.
  */
 const DEFAULT_DESIGN_VARIANTS: DesignVariantState = Object.freeze({
-	panel: true,
+	panel: false,
 	"simple-views": true,
 });
 

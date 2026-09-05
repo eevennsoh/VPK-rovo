@@ -391,7 +391,11 @@ export function AgentSessionColumn({
 					className="flex min-w-0 items-center gap-1.5"
 					style={{
 						paddingBottom: token("space.100"),
-						paddingTop: token("space.100"),
+						// In-flow matches CollapsedBoardColumn: `space.100` below a
+						// 24px row, no top pad, so the count sits on the same
+						// baseline as `To do`. Panel keeps the extra top pad so
+						// the count is not flush under the docked chrome.
+						paddingTop: headerSurface === "panel" ? token("space.100") : undefined,
 					}}
 				>
 					<div className="relative flex h-6 w-full min-w-0 items-center justify-center">

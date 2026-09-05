@@ -13,8 +13,15 @@ const { join } = require("node:path");
 const { test } = require("node:test");
 
 const EXPERIMENTAL_DIR = __dirname;
-const PAGE_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "page.tsx"), "utf8");
+const PAGE_SOURCE = [
+	readFileSync(join(EXPERIMENTAL_DIR, "page.tsx"), "utf8"),
+	readFileSync(join(EXPERIMENTAL_DIR, "experimental-page-types.ts"), "utf8"),
+].join("\n");
 const BOARD_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "experimental-jira-kanban.tsx"), "utf8");
+const IN_FLOW_SOURCE = readFileSync(
+	join(EXPERIMENTAL_DIR, "components", "in-flow-agent-session-column.tsx"),
+	"utf8",
+);
 const CARD_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "experimental-jira-kanban-card.tsx"), "utf8");
 const DRAG_HOOK_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "use-board-agent-session-drag.ts"), "utf8");
 const HELPER_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "lib", "board-untracked-sessions.ts"), "utf8");
@@ -93,8 +100,9 @@ test("one board transaction coordinates every session source and suppresses prev
 	assert.match(DRAG_HOOK_SOURCE, /resolveBoardAgentSessionDropAction/u);
 	assert.match(BOARD_SOURCE, /JiraSessionFlyoutSuspensionProvider/u);
 	assert.match(BOARD_SOURCE, /const sessionFlyoutsSuspended = boardSessionDrag\.transaction !== null \|\| draggedCardCode !== null;/u);
-	assert.match(BOARD_SOURCE, /suspended=\{sessionFlyoutsSuspended\}/u);
-	assert.match(BOARD_SOURCE, /sessionDrag=\{boardSessionDrag\.enablement\.transferable[\s\S]*\? boardSessionDrag\.untrackedBinding[\s\S]*: agentSessionColumn\.sessionDrag\}/u);
+	assert.match(BOARD_SOURCE, /sessionFlyoutsSuspended=\{sessionFlyoutsSuspended\}/u);
+	assert.match(IN_FLOW_SOURCE, /suspended=\{sessionFlyoutsSuspended\}/u);
+	assert.match(BOARD_SOURCE, /sessionDrag: boardSessionDrag\.enablement\.transferable[\s\S]*\? boardSessionDrag\.untrackedBinding[\s\S]*: agentSessionColumn\.sessionDrag/u);
 	assert.match(PAGE_SOURCE, /boardAgentSessionDrag=\{boardSessionDrag\}/u);
 	assert.match(PAGE_SOURCE, /sessionDrag: boardSessionDrag\.untrackedBinding/u);
 	assert.match(
@@ -111,7 +119,7 @@ test("one board transaction coordinates every session source and suppresses prev
 	);
 	assert.match(BOARD_SOURCE, /untrackedSessions: props\.agentSessionColumn\?\.items \?\? props\.untrackedSessions/u);
 	assert.match(BOARD_SOURCE, /data-board-agent-session-drop-zone="issue"/u);
-	assert.match(BOARD_SOURCE, /data-board-agent-session-drop-zone="untracked"/u);
+	assert.match(IN_FLOW_SOURCE, /data-board-agent-session-drop-zone="untracked"/u);
 	assert.match(PAGE_SOURCE, /ref=\{boardSessionDrag\.boardRootRef\}/u);
 	assert.match(BOARD_SOURCE, /captureBoardSessionDragRoot=\{false\}/u);
 	assert.match(
@@ -176,7 +184,7 @@ test("column card hover lights related board sessions without scrolling or spotl
 	assert.doesNotMatch(hoverHandlerBody, /setFocusedIssueKey/u);
 	assert.doesNotMatch(hoverHandlerBody, /scrollBoardIssueIntoView/u);
 	assert.doesNotMatch(BOARD_SOURCE, /hoveredIssueKey/u);
-	assert.match(BOARD_SOURCE, /highlightedSessionId=\{hoveredSessionId\}/u);
+	assert.match(BOARD_SOURCE, /highlightedSessionId=\{highlightedSessionId\}/u);
 	assert.match(CARD_SOURCE, /highlightedItemId=\{highlightedSessionId\}/u);
 });
 
@@ -204,7 +212,7 @@ test("a hovered detached board session lights its column twin", () => {
 	// owns the shared id and feeds it to the column, while the medium row
 	// reports pointer entry/exit through the same session callback as the
 	// column's large row.
-	assert.match(BOARD_SOURCE, /highlightedItemId=\{hoveredSessionId\}/u);
+	assert.match(BOARD_SOURCE, /highlightedItemId: highlightedSessionId,/u);
 	assert.match(CARD_SOURCE, /onItemHover=\{onItemHover\}/u);
 	assert.match(MEDIUM_CARD_SOURCE, /onPointerEnter=\{\(\) => \{\s*[\s\S]*?onItemHover\?\.\(item\);\s*\}\}/u);
 	assert.match(MEDIUM_CARD_SOURCE, /onPointerLeave=\{\(\) => \{\s*[\s\S]*?onItemHover\?\.\(null\);\s*\}\}/u);
@@ -213,8 +221,8 @@ test("a hovered detached board session lights its column twin", () => {
 });
 
 test("column card click scrolls the related issue and applies the blue-subtlest spotlight", () => {
-	assert.match(BOARD_SOURCE, /onView=\{handleSessionView\}/u);
-	assert.match(BOARD_SOURCE, /onSelectedItemIdChange=\{handleSessionSelectionChange\}/u);
+	assert.match(BOARD_SOURCE, /onView: handleSessionView,/u);
+	assert.match(BOARD_SOURCE, /onSelectedItemIdChange: handleSessionSelectionChange,/u);
 	assert.match(
 		withoutComments(BOARD_SOURCE),
 		/const handleSessionSelectionChange = \(itemId: string \| null\) => \{\s*if \(itemId === null\) \{\s*setFocusedIssueKey\(null\);/u,
@@ -255,8 +263,30 @@ test("Untracked stays frozen beside the independently scrolling Jira status pane
 	assert.match(BOARD_SOURCE, /const boardScrollportRef = useRef<HTMLElement \| null>\(null\)/u);
 	assert.match(
 		BOARD_SOURCE,
-		/<AgentSessionColumn[\s\S]*<\/div>\s*<\/JiraSessionFlyoutSuspensionProvider>\s*\) : null\}\s*<JiraSessionFlyoutSuspensionProvider suspended>\s*<section[\s\S]*ref=\{boardScrollportRef\}[\s\S]*data-jira-kanban-scrollport=""[\s\S]*overflowX: "auto"/u,
+		/<InFlowAgentSessionColumn[\s\S]*\) : null\}\s*<JiraSessionFlyoutSuspensionProvider suspended>\s*<section[\s\S]*ref=\{boardScrollportRef\}[\s\S]*data-jira-kanban-scrollport=""[\s\S]*overflowX: "auto"/u,
 	);
-	assert.doesNotMatch(statusScrollportSource, /AgentSessionColumn/u);
+	assert.doesNotMatch(statusScrollportSource, /AgentSessionColumn|InFlowAgentSessionColumn/u);
 	assert.match(BOARD_SOURCE, /data-jira-kanban-card-list=""/u);
+});
+
+test("column presentation pins Untracked beside the list as well as the board", () => {
+	assert.match(
+		PAGE_SOURCE,
+		/const showInFlowAgentSessionColumn = agentSessionPresentation === "column"\s*&& agentSessionColumnConfig !== undefined;/u,
+	);
+	assert.match(
+		PAGE_SOURCE,
+		/\{showInFlowAgentSessionColumn && agentSessionColumnConfig \? \(\s*<InFlowAgentSessionColumn/u,
+	);
+	assert.match(PAGE_SOURCE, /inFlowAgentSessionColumn: showInFlowAgentSessionColumn,/u);
+	assert.match(
+		PAGE_SOURCE,
+		/<InFlowAgentSessionColumn[\s\S]*\{isListContent \? \(/u,
+		"one Untracked column instance must wrap both Board and List so hide/archive state survives the switch",
+	);
+	assert.doesNotMatch(
+		PAGE_SOURCE,
+		/agentSessionColumn=\{agentSessionPresentation === "panel"/u,
+		"the page-owned column must not also mount inside ExperimentalJiraKanban",
+	);
 });

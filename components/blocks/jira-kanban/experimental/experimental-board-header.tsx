@@ -217,7 +217,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 
 			{showBoardControls ? (
 				<div
-					className="mt-6 flex flex-wrap items-center gap-2 px-6"
+					className="mt-4 flex flex-wrap items-center gap-2 px-6"
 					// Board columns are meant to slide under the panel, but the row's
 					// trailing cluster (view switcher) must stay clickable. `px-6` is
 					// overridden by this inline padding, so add the same 24px gutter

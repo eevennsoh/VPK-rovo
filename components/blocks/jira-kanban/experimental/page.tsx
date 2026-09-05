@@ -8,9 +8,6 @@ import {
 	useRef,
 	useState,
 	type CSSProperties,
-	type ReactNode,
-	type Ref,
-	type RefObject,
 } from "react";
 
 import { useOptionalRovoChat } from "@/app/contexts";
@@ -18,29 +15,23 @@ import {
 	resolveAgentSessionWorkItemKey,
 	type AgentSessionItem,
 } from "@/components/blocks/agent-session";
-import type {
-	JiraListAgentSessionDropIntent,
-	JiraListInsertion,
-} from "@/components/blocks/jira-list";
+import type { JiraListInsertion } from "@/components/blocks/jira-list";
 import {
 	AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX,
 	type AgentSessionColumnProps,
 } from "@/components/blocks/agent-session-column";
-import type { JiraIssueAgentActivityLayout, JiraIssueGenerativeActionPresentation } from "@/components/blocks/jira-issue";
 import { JiraSessionFlyoutSuspensionProvider } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import type {
-	JiraKanbanAgentData,
-	JiraKanbanAssigneeData,
 	JiraKanbanCardData,
 	JiraKanbanCardSelectModifiers,
 	JiraKanbanColumnData,
-	JiraKanbanProps,
 } from "../index";
 import { createJiraKanbanColumns } from "../jira-kanban-data";
 import {
 	AGENT_SESSION_PANEL_WIDTH_PX,
 	AgentSessionPanel,
 } from "./components/agent-session-panel";
+import { InFlowAgentSessionColumn } from "./components/in-flow-agent-session-column";
 import { BoardFilterPopover } from "./components/board-filter-popover";
 import {
 	ALL_BOARD_AGENT_SESSION_STATE_IDS,
@@ -65,8 +56,8 @@ import {
 import {
 	BOARD_HEADER_TAB_STRIP_BOTTOM_PX,
 	ExperimentalJiraKanbanBoardHeader,
-	type ExperimentalJiraKanbanView,
 } from "./experimental-board-header";
+import type { ExperimentalJiraKanbanPageProps } from "./experimental-page-types";
 import { useBoardFilter, type BoardFilterActions } from "./hooks/use-board-filter";
 import {
 	BOARD_FILTER_DEMO_NOW_ISO,
@@ -105,7 +96,7 @@ import {
 	toPulseSessionHandlers,
 	toPulseSessionItems,
 } from "./pulse/lib/pulse-sessions";
-import type { PulseAnswer, PulseLooseWork, PulseWorkItem } from "./pulse/types";
+import type { PulseAnswer } from "./pulse/types";
 import {
 	createJiraKanbanSelectionState,
 	filterJiraKanbanColumnsByAssignee,
@@ -117,6 +108,12 @@ import {
 } from "../state";
 import { BOARD_AGENTS } from "@/components/projects/jira/data/board-agents";
 import { BOARD_COLUMNS } from "@/components/projects/jira/data/board-data";
+
+export type {
+	ExperimentalJiraKanbanListRenderContext,
+	ExperimentalJiraKanbanPageHandle,
+	ExperimentalJiraKanbanPageProps,
+} from "./experimental-page-types";
 
 const DEFAULT_CREATED_COLUMN_AGENT_ID = "readiness-checker";
 const PULSE_MEMBER_IDS = new Set(PULSE_TIMELINE.members.map((member) => member.id));
@@ -132,113 +129,6 @@ const UNTRACKED_PANEL_WIDTH_CSS_VAR = "--untracked-panel-width";
 
 /** Stable identity, so an unscoped article does not re-render on every tick. */
 const EMPTY_ANSWERS: readonly PulseAnswer[] = [];
-
-export interface ExperimentalJiraKanbanListRenderContext {
-	agentSessionDropIntent?: JiraListAgentSessionDropIntent;
-	onTrailingContentUnderlapChange: (hasUnderlap: boolean) => void;
-	scrollEndInset: number;
-	trailingOverlayRef: RefObject<HTMLElement | null>;
-}
-
-export interface ExperimentalJiraKanbanPageHandle {
-	/**
-	 * Open Insights, mark the timeline viewed, and land on `snapshotId`.
-	 * Omit the id to open at the top of the article, as the toggle does.
-	 */
-	openTimeline: (snapshotId?: string | null) => void;
-}
-
-export interface ExperimentalJiraKanbanPageProps {
-	activeView?: ExperimentalJiraKanbanView;
-	activeCardCode?: string;
-	agentActivityLayout?: JiraIssueAgentActivityLayout;
-	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;
-	createWorkItemDropZoneLabel?: ExperimentalJiraKanbanProps["createWorkItemDropZoneLabel"];
-	detachedAgentSessionsByCard?: ExperimentalJiraKanbanProps["detachedAgentSessionsByCard"];
-	agentSessionAssigneeIdAliases?: Readonly<Record<string, string>>;
-	/**
-	 * Where untracked work lives on this board.
-	 *
-	 * `"column"` keeps it in flow, as a 280px column left of the status
-	 * scrollport — board view only. `"panel"` lifts the same column into a
-	 * floating side surface pinned to the inline-start edge of the content
-	 * region, which the board *and* the list scroll beneath, so untracked work
-	 * survives a view switch.
-	 *
-	 * The choice is a prop rather than a read of the global variant store: this
-	 * block stays generic and unit-testable, and the route that owns the store
-	 * decides. Only one presentation ever mounts, so the two can never drift.
-	 */
-	agentSessionPresentation?: "column" | "panel";
-	agents?: readonly JiraKanbanAgentData[];
-	ariaLabel?: string;
-	boardColumns?: readonly JiraKanbanColumnData[];
-	compactHeader?: boolean;
-	defaultAgentSessionColumnCollapsed?: boolean;
-	/**
-	 * Whether Untracked sessions also sit next to related Jira cards.
-	 *
-	 * The View menu can still hide them after mount. The route owns the
-	 * starting value so a design variation can land on "attached sessions
-	 * only" without this block reading the global store. Switching the
-	 * default resets the menu back to that variation's starting point.
-	 */
-	defaultShowUntracked?: boolean;
-	headerAssignees?: readonly JiraKanbanAssigneeData[];
-	insightsEnabled?: boolean;
-	insightsDefaultAssigneeIds?: readonly string[];
-	isInsightsWorkItemInteractive?: (workItem: PulseWorkItem) => boolean;
-	isLooseWorkResumable?: (item: PulseLooseWork) => boolean;
-	mode?: ExperimentalJiraKanbanMode;
-	onBoardColumnsChange?: (columns: readonly JiraKanbanColumnData[]) => void;
-	onCardClick?: (card: JiraKanbanCardData, columnTitle: string) => void;
-	onCardAgentActivityViewChat?: JiraKanbanProps["onCardAgentActivityViewChat"];
-	onCardAgentDoneRunView?: JiraKanbanProps["onCardAgentDoneRunView"];
-	onCardAgentSessionLink?: ExperimentalJiraKanbanProps["onCardAgentSessionLink"];
-	onCardAgentSessionMove?: ExperimentalJiraKanbanProps["onCardAgentSessionMove"];
-	onCardAgentSessionUnlink?: ExperimentalJiraKanbanProps["onCardAgentSessionUnlink"];
-	onListAgentSessionCreate?: (
-		session: AgentSessionItem,
-		insertion: JiraListInsertion,
-	) => void;
-	showAgentSessionUnlinkWell?: ExperimentalJiraKanbanProps["showAgentSessionUnlinkWell"];
-	onInsightsWorkItemClick?: (workItem: PulseWorkItem) => void;
-	onModeChange?: (mode: ExperimentalJiraKanbanMode) => void;
-	onResumeLooseWork?: (item: PulseLooseWork) => void;
-	onViewChange?: (view: ExperimentalJiraKanbanView) => void;
-	renderListContent?: (
-		columns: readonly JiraKanbanColumnData[],
-		context: ExperimentalJiraKanbanListRenderContext,
-	) => ReactNode;
-	renderAgentActivityIndicator?: ExperimentalJiraKanbanProps["renderAgentActivityIndicator"];
-	showBoardContent?: boolean;
-	showAgentSessionColumn?: boolean;
-	/**
-	 * Controlled unread watermark, so an owner rendering its own insights
-	 * affordance counts the same unread snapshots the toggle's badge does.
-	 * Omit to let this page own it; `null` is a real value meaning "nothing
-	 * viewed yet", so it cannot be spelled the same way as "uncontrolled".
-	 */
-	onTimelineLastViewedAtChange?: (lastViewedAt: string) => void;
-	ref?: Ref<ExperimentalJiraKanbanPageHandle>;
-	timelineLastViewedAt?: string | null;
-	viewTabs?: ReactNode;
-	/**
-	 * Where the overflow ("…") control sits in the board header. The route
-	 * owns the choice so Team EU can park it on the far right without this
-	 * block reading the global variation store.
-	 */
-	moreControlsPlacement?: "inline" | "end";
-	/**
-	 * Whether the overflow ("…") control mounts. Simple views omits it.
-	 */
-	showMoreControls?: boolean;
-	/**
-	 * Outline Customize control on the far right of the header. Display-only
-	 * unless a later owner supplies a real configure capability.
-	 */
-	showCustomizeControl?: boolean;
-}
 
 interface DraggedCardState {
 	card: JiraKanbanCardData;
@@ -338,6 +228,7 @@ export default function ExperimentalJiraKanbanPage({
 	const [agentSessionPanelWidthPx, setAgentSessionPanelWidthPx] = useState(AGENT_SESSION_PANEL_WIDTH_PX);
 	const agentSessionPanelRef = useRef<HTMLDivElement | null>(null);
 	const [listContentUnderlapsPanel, setListContentUnderlapsPanel] = useState(false);
+	const [untrackedHoveredSessionId, setUntrackedHoveredSessionId] = useState<string | null>(null);
 	const [collapsedColumns, setCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
 	const [showUntracked, setShowUntracked] = useState(defaultShowUntracked);
 	const [appliedShowUntrackedDefault, setAppliedShowUntrackedDefault] = useState(defaultShowUntracked);
@@ -587,6 +478,8 @@ export default function ExperimentalJiraKanbanPage({
 		&& agentSessionColumnConfig !== undefined
 		&& showBoardContent
 		&& !showPulseContent;
+	const showInFlowAgentSessionColumn = agentSessionPresentation === "column"
+		&& agentSessionColumnConfig !== undefined;
 	// The panel is absolute, so board content passes *under* it by design. But at
 	// maximum scroll the trailing column would land flush with the scrollport's
 	// edge and stay under the panel with no scroll left to free it. Extending the
@@ -907,29 +800,36 @@ export default function ExperimentalJiraKanbanPage({
 				/>
 			) : (
 				<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-					{isListContent ? (
-						renderListContent?.(filteredBoardColumns, {
-							agentSessionDropIntent: boardSessionDrag.listDropIntent,
-							onTrailingContentUnderlapChange: setListContentUnderlapsPanel,
-							scrollEndInset: boardScrollEndInset,
-							trailingOverlayRef: agentSessionPanelRef,
-						})
-					) : (
-						<div className="flex min-h-0 min-w-0 flex-1">
+					<div className="flex min-h-0 min-w-0 flex-1 items-stretch">
+						{showInFlowAgentSessionColumn && agentSessionColumnConfig ? (
+							<InFlowAgentSessionColumn
+								agentSessionColumn={{
+									...agentSessionColumnConfig,
+									draggingIds: boardSessionDrag.draggingIds,
+									highlightedItemId: untrackedHoveredSessionId,
+									onItemHover: (item) => setUntrackedHoveredSessionId(item?.id ?? null),
+									sessionDrag: boardSessionDrag.untrackedBinding,
+								}}
+								className="pb-4 md:pb-5"
+								sessionFlyoutsSuspended={boardSessionDrag.transaction !== null}
+								untrackedDropArmed={boardSessionDrag.transaction?.target?.kind === "untracked"}
+							/>
+						) : null}
+						{isListContent ? (
+							renderListContent?.(filteredBoardColumns, {
+								agentSessionDropIntent: boardSessionDrag.listDropIntent,
+								inFlowAgentSessionColumn: showInFlowAgentSessionColumn,
+								onTrailingContentUnderlapChange: setListContentUnderlapsPanel,
+								scrollEndInset: boardScrollEndInset,
+								trailingOverlayRef: agentSessionPanelRef,
+							})
+						) : (
 							<ExperimentalJiraKanban
 								activeCardCode={activeCardCode}
 								agentActivityLayout={agentActivityLayout}
 								boardAgentSessionDrag={boardSessionDrag}
 								untrackedSessions={agentSessionColumnConfig?.items}
-								// Panel mode hands the column to the overlay instead, so
-								// the two presentations can never render at once.
-								agentSessionColumn={agentSessionPresentation === "panel"
-									|| agentSessionColumnConfig === undefined
-									? undefined
-									: {
-										...agentSessionColumnConfig,
-										draggingIds: boardSessionDrag.draggingIds,
-									}}
+								proximityHighlightedSessionId={untrackedHoveredSessionId}
 								scrollEndInset={boardScrollEndInset}
 								proximityAgentSession={{
 									actionableSessionIds: proximityActionableSessionIds,
@@ -977,8 +877,8 @@ export default function ExperimentalJiraKanbanPage({
 									selectedAgentIds,
 								}}
 							/>
-						</div>
-					)}
+						)}
+					</div>
 				</div>
 			)) : null}
 			{/*

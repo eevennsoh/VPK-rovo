@@ -17,7 +17,10 @@ const USE_JIRA_TABS_SOURCE = readProjectFile("components/projects/jira/hooks/use
 const EXPERIMENTAL_HEADER_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/experimental-board-header.tsx",
 );
-const EXPERIMENTAL_PAGE_SOURCE = readProjectFile("components/blocks/jira-kanban/experimental/page.tsx");
+const EXPERIMENTAL_PAGE_SOURCE = [
+	readProjectFile("components/blocks/jira-kanban/experimental/page.tsx"),
+	readProjectFile("components/blocks/jira-kanban/experimental/experimental-page-types.ts"),
+].join("\n");
 const EXPERIMENTAL_BOARD_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/experimental-jira-kanban.tsx",
 );
@@ -482,7 +485,11 @@ test("Jira session flyouts are suspended for both session and whole-card drags",
 		EXPERIMENTAL_BOARD_SOURCE,
 		/const sessionFlyoutsSuspended = boardSessionDrag\.transaction !== null \|\| draggedCardCode !== null;/u,
 	);
-	assert.match(EXPERIMENTAL_BOARD_SOURCE, /<JiraSessionFlyoutSuspensionProvider[\s\S]*suspended=\{sessionFlyoutsSuspended\}[\s\S]*<ExperimentalJiraKanbanCard/u);
+	assert.match(EXPERIMENTAL_BOARD_SOURCE, /sessionFlyoutsSuspended=\{sessionFlyoutsSuspended\}/u);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/<JiraSessionFlyoutSuspensionProvider suspended>\s*<section[\s\S]*<ExperimentalJiraKanbanCard/u,
+	);
 	assert.match(EXPERIMENTAL_BOARD_SOURCE, /<\/JiraSessionFlyoutSuspensionProvider>/u);
 });
 
@@ -541,7 +548,7 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(PAGE_SOURCE, /onViewChange=\{tabOwnsView \? undefined : setWorkItemView\}/u);
 	assert.match(
 		PAGE_SOURCE,
-		/renderListContent=\{\(\s*columns,\s*\{\s*agentSessionDropIntent,\s*onTrailingContentUnderlapChange,\s*scrollEndInset,\s*trailingOverlayRef,\s*\},\s*\) =>/u,
+		/renderListContent=\{\(\s*columns,\s*\{\s*agentSessionDropIntent,\s*inFlowAgentSessionColumn,\s*onTrailingContentUnderlapChange,\s*scrollEndInset,\s*trailingOverlayRef,\s*\},\s*\) =>/u,
 	);
 	assert.match(PAGE_SOURCE, /useJiraGoldenJourneysV4List/u);
 	assert.match(PAGE_SOURCE, /<JiraList\s+\{\.\.\.listProps\}/u);
@@ -573,7 +580,7 @@ test("the Work items header switches between Board and List views with their ico
 	);
 	assert.match(
 		PAGE_SOURCE,
-		/"min-h-0 flex-1 overflow-hidden py-4 ps-4 md:py-5 md:ps-5"[\s\S]*scrollEndInset > 0 \? "pe-0" : "pe-4 md:pe-5"[\s\S]*<JiraList\s+\{\.\.\.listProps\}/u,
+		/"min-h-0 flex-1 overflow-hidden pb-4 md:pb-5"[\s\S]*inFlowAgentSessionColumn \? "ps-2" : "ps-4 md:ps-5"[\s\S]*scrollEndInset > 0 \? "pe-0" : "pe-4 md:pe-5"[\s\S]*<JiraList\s+\{\.\.\.listProps\}/u,
 	);
 	assert.doesNotMatch(
 		PAGE_SOURCE,
@@ -596,6 +603,9 @@ test("the Work items header switches between Board and List views with their ico
 		EXPERIMENTAL_PAGE_SOURCE,
 		/renderListContent\?: \(\s*columns: readonly JiraKanbanColumnData\[\],\s*context: ExperimentalJiraKanbanListRenderContext,\s*\) => ReactNode;/u,
 	);
+	assert.match(PAGE_SOURCE, /inFlowAgentSessionColumn \? "ps-2" : "ps-4 md:ps-5"/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /inFlowAgentSessionColumn: boolean;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /inFlowAgentSessionColumn: showInFlowAgentSessionColumn,/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /agentSessionDropIntent: boardSessionDrag\.listDropIntent/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCreate: agentSessionHandlers.onCreateWorkItem/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onListCreate: onListAgentSessionCreate \? handleListAgentSessionCreate : undefined/u);
@@ -673,13 +683,17 @@ test("the Work items header switches between Board and List views with their ico
 	);
 });
 
-test("the board keeps 24px between the Jira tabs and filter controls", () => {
+test("the board keeps matching 16px gaps above and below the filter controls", () => {
 	// The control row's opening tag is multi-line (it carries `controlsInsetEnd`
 	// as a style), so match the className string rather than the whole tag —
-	// `mt-6` after the tabs is the contract, its formatting is not.
+	// `mt-4` after the tabs must match the header's `pb-4` below the row.
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
-		/\{viewTabs \? <div className="mt-2">\{viewTabs\}<\/div> : null\}[\s\S]*className="mt-6 flex flex-wrap items-center gap-2 px-6"/u,
+		/\{viewTabs \? <div className="mt-2">\{viewTabs\}<\/div> : null\}[\s\S]*className="mt-4 flex flex-wrap items-center gap-2 px-6"/u,
+	);
+	assert.match(
+		EXPERIMENTAL_HEADER_SOURCE,
+		/className=\{cn\("shrink-0 pt-3", showBoardControls \? "pb-4" : "pb-0"\)\}/u,
 	);
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
@@ -702,7 +716,7 @@ test("the route pins the shared Agent Session column beside Jira statuses", () =
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /capturedItemIds: capturedLooseWorkIds,/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /toPulseSessionHandlers/u);
 
-	const columnIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<AgentSessionColumn");
+	const columnIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<InFlowAgentSessionColumn");
 	const scrollportIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<section");
 	assert.ok(columnIndex > 0, "expected the board to render the Agent Session column");
 	assert.ok(columnIndex < scrollportIndex, "expected untracked work to stay pinned before the status scrollport");
@@ -739,14 +753,29 @@ test("the Panel design variant floats untracked work over the board and the list
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/agentSessionColumn=\{agentSessionPresentation === "panel"\s*\|\| agentSessionColumnConfig === undefined\s*\?\s*undefined\s*:\s*\{/u,
-		"panel mode must suppress the in-flow column so the two presentations cannot coexist",
+		/\{showInFlowAgentSessionColumn && agentSessionColumnConfig \? \(\s*<InFlowAgentSessionColumn/u,
+		"panel mode must not mount the in-flow column; column mode keeps one instance above Board and List",
+	);
+	assert.doesNotMatch(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/agentSessionColumn=\{agentSessionPresentation === "panel"/u,
+		"the page-owned column must not also mount inside ExperimentalJiraKanban",
 	);
 	// Insights swaps the whole content region for an article, and a tab with no
 	// content renders nothing — neither has a board to float over.
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
 		/const showAgentSessionPanel = agentSessionPresentation === "panel"\s*&& agentSessionColumnConfig !== undefined\s*&& showBoardContent\s*&& !showPulseContent;/u,
+	);
+
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/const showInFlowAgentSessionColumn = agentSessionPresentation === "column"\s*&& agentSessionColumnConfig !== undefined;/u,
+	);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<InFlowAgentSessionColumn/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/<InFlowAgentSessionColumn[\s\S]*\{isListContent \? \(/u,
 	);
 
 	// The rail is persistent: it is its own entry point, so there is deliberately

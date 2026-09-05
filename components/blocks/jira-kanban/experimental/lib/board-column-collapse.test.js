@@ -7,6 +7,10 @@ const BOARD_SOURCE = readFileSync(
 	join(__dirname, "../experimental-jira-kanban.tsx"),
 	"utf8",
 );
+const IN_FLOW_SOURCE = readFileSync(
+	join(__dirname, "../components/in-flow-agent-session-column.tsx"),
+	"utf8",
+);
 const COLLAPSED_COLUMN_SOURCE = readFileSync(
 	join(__dirname, "../components/collapsed-board-column.tsx"),
 	"utf8",
@@ -98,10 +102,10 @@ test("the pinned session column shares the status columns' box model", () => {
 	// right edge — a 2px stroke there reads as a white seam against `bg-surface`.
 	// The column itself is the Untracked drop zone; the ring lights when armed.
 	assert.match(
-		BOARD_SOURCE,
-		/className=\{cn\(\s*"flex min-h-0 shrink-0 border-2 border-r-0 ps-6",\s*untrackedDropArmed \? "border-ring" : "border-transparent",\s*\)\}/u,
+		IN_FLOW_SOURCE,
+		/className=\{cn\(\s*"flex min-h-0 shrink-0 border-2 border-r-0 ps-6",\s*untrackedDropArmed \? "border-ring" : "border-transparent",\s*className,\s*\)\}/u,
 	);
-	assert.match(BOARD_SOURCE, /data-board-agent-session-drop-zone="untracked"/u);
+	assert.match(IN_FLOW_SOURCE, /data-board-agent-session-drop-zone="untracked"/u);
 });
 
 test("a collapsed status pill hugs its label while the shell keeps the drop lane", () => {

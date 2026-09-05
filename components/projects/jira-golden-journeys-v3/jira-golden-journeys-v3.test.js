@@ -9,7 +9,10 @@ function readProjectFile(relativePath) {
 
 const PAGE_SOURCE = readProjectFile("components/projects/jira-golden-journeys-v3/page.tsx");
 const CONTROLS_SOURCE = readProjectFile("components/projects/jira-golden-journeys-v3/story-controls.tsx");
-const EXPERIMENTAL_PAGE_SOURCE = readProjectFile("components/blocks/jira-kanban/experimental/page.tsx");
+const EXPERIMENTAL_PAGE_SOURCE = [
+	readProjectFile("components/blocks/jira-kanban/experimental/page.tsx"),
+	readProjectFile("components/blocks/jira-kanban/experimental/experimental-page-types.ts"),
+].join("\n");
 
 test("the route starts and resets at Track in the four-chapter presentation", () => {
 	assert.match(
