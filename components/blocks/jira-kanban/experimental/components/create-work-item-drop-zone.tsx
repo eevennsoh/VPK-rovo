@@ -15,6 +15,9 @@ import { useExclusiveCreateWellProximity } from "./create-work-item-exclusive-pr
 import { CREATE_WORK_ITEM_PROXIMITY_HOVER_AREA_PX } from "../lib/create-work-item-exclusive-proximity";
 import type { BoardAgentSessionDrag } from "../use-board-agent-session-drag";
 
+/** Dashed well chrome shared by the create button and the session-drag dropzone. */
+const CREATE_WORK_ITEM_WELL_CHROME_CLASS = "rounded-lg border border-dashed";
+
 export function BoardColumnCreateAction({
 	dropZoneLabel,
 	sessionDragTransaction,
@@ -42,6 +45,10 @@ export function BoardColumnCreateAction({
 					aria-label={`Create in ${title}`}
 					className={cn(
 						"w-full",
+						CREATE_WORK_ITEM_WELL_CHROME_CLASS,
+						"[&_[data-slot=icon]]:text-icon-subtlest [&_svg]:text-icon-subtlest",
+						"hover:border-solid hover:[&_[data-slot=icon]]:text-icon-subtle hover:[&_svg]:text-icon-subtle",
+						"focus-visible:border-solid focus-visible:[&_[data-slot=icon]]:text-icon-subtle focus-visible:[&_svg]:text-icon-subtle",
 						"pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical",
 						"group-hover/board-column:pointer-events-auto group-hover/board-column:opacity-100",
 						"group-has-[:focus-visible]/board-column:pointer-events-auto group-has-[:focus-visible]/board-column:opacity-100",
@@ -87,7 +94,8 @@ function CreateWorkItemDropZone({
 			<div
 				aria-label={`${label} in ${title}${armed ? ", selected drop target" : ""}`}
 				className={cn(
-					"flex w-full select-none items-center justify-center rounded-lg border border-dashed px-3 text-center",
+					"flex w-full select-none items-center justify-center px-3 text-center",
+					CREATE_WORK_ITEM_WELL_CHROME_CLASS,
 					"transition-[height,background-color] duration-normal ease-out-practical motion-reduce:transition-none",
 					expanded ? "h-16 text-sm leading-5" : "h-6 text-xs leading-4",
 					armed ? "border-border-selected bg-bg-selected text-text-selected" : "border-border bg-surface text-text-subtlest",

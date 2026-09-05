@@ -79,6 +79,17 @@ test("Jira issue stroke chrome drops the raised shadow and uses the disabled bor
 	assert.match(SUMMARY_SOURCE, /<TagGroup className="min-w-0 gap-1 overflow-hidden">/u);
 });
 
+test("Jira issue label tags rest as default gray and reveal color on card hover", () => {
+	assert.match(
+		SUMMARY_SOURCE,
+		/const ISSUE_TAG_IDLE_BORDER_CLASS =\s*\n\t"duration-fast ease-out-practical motion-reduce:transition-none \[@media\(hover:hover\)\]:group-\[:not\(:hover\):not\(:focus-within\)\]\/jira-issue:border-border-accent-gray-subtle";/u,
+	);
+	assert.match(
+		SUMMARY_SOURCE,
+		/<Tag\s+key=\{`\$\{tag\.text\}-\$\{index\}`\}\s+className=\{ISSUE_TAG_IDLE_BORDER_CLASS\}\s+color=\{tag\.color\}/u,
+	);
+});
+
 test("Jira issue compact visual keeps stroke internals when chrome is raised", () => {
 	assert.match(SOURCE, /compact\?: boolean;/u);
 	assert.match(SOURCE, /const usesCompactVisual = compact \|\| usesStrokeChrome;/u);

@@ -246,6 +246,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/jira-kanban/experimental/pulse/pulse.test.js",
 		"components/blocks/jira-kanban/experimental/pulse/pulse-source-contracts.test.js",
 		"components/blocks/jira-kanban/experimental/components/board-view-menu.test.js",
+		"components/blocks/jira-kanban/experimental/components/create-work-item-drop-zone.test.js",
 		"components/blocks/jira-kanban/experimental/board-untracked-proximity.test.js",
 		"components/blocks/jira-kanban/experimental/pulse/pulse-prose.test.js",
 		"components/blocks/jira-kanban/experimental/pulse/pulse-source-attribution.test.js",
