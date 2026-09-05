@@ -135,43 +135,43 @@ test("a collapsed status pill hugs its label while the shell keeps the drop lane
 });
 
 test("a collapsed status count sits in the header outside the pill", () => {
-	for (const [label, source] of [
-		["experimental", COLLAPSED_COLUMN_SOURCE],
-		["experimental-v2", V2_BOARD_SOURCE],
-	]) {
-		const pillStart = source.indexOf("function CollapsedBoardColumn");
-		const nextBoardColumn = source.indexOf("function BoardColumn(", pillStart);
-		const pillEnd = nextBoardColumn === -1 ? source.length : nextBoardColumn;
-		assert.ok(pillStart !== -1 && pillEnd > pillStart, `expected to find CollapsedBoardColumn in ${label}`);
-		const pillSource = source.slice(pillStart, pillEnd);
+	const pillStart = COLLAPSED_COLUMN_SOURCE.indexOf("function CollapsedBoardColumn");
+	const pillEnd = COLLAPSED_COLUMN_SOURCE.length;
+	assert.ok(pillStart !== -1, "expected to find CollapsedBoardColumn");
+	const pillSource = COLLAPSED_COLUMN_SOURCE.slice(pillStart, pillEnd);
 
-		// Same header geometry as expanded: `space.100` below a 24px row, so the
-		// tally does not jump when the column collapses. Count and expand share
-		// one centered 32px slot — the number is not left-aligned, and the
-		// expand icon must not sit on top of it.
-		assert.match(pillSource, /paddingBottom: token\("space\.100"\)/u);
-		assert.match(pillSource, /relative flex h-6 w-full items-center justify-center/u);
-		assert.match(pillSource, /COLLAPSED_HEAD_COUNT_AT_REST/u);
-		assert.match(source, /group-hover\/collapsed-column:opacity-0/u);
-		assert.match(source, /group-has-\[:focus-visible\]\/collapsed-column:opacity-0/u);
-		assert.match(pillSource, /BOARD_COLUMN_ACTION_REVEAL/u);
-		assert.doesNotMatch(pillSource, /BOARD_COLUMN_ACTION_REVEAL,\s*"absolute"/u);
-		const countIndex = pillSource.indexOf("{count}");
-		const borderIndex = pillSource.indexOf("border border-border-disabled");
-		const writingModeIndex = pillSource.indexOf("[writing-mode:vertical-rl]");
-		assert.ok(
-			countIndex > 0 && borderIndex > countIndex,
-			`expected the ${label} count above the bordered pill`,
-		);
-		assert.ok(
-			writingModeIndex > borderIndex,
-			`expected the ${label} rotated title inside the pill`,
-		);
-		assert.doesNotMatch(pillSource, /group\/collapsed-column[^"]*\[writing-mode:vertical-rl\]/u);
-		assert.doesNotMatch(pillSource, /writing-mode:vertical-rl.*\{count\}/u);
-		assert.match(pillSource, /paddingBlock: token\("space\.150"\)/u);
-		assert.match(pillSource, /flex-col items-center justify-center/u);
-		assert.doesNotMatch(pillSource, /paddingBlockStart: token\("space\.150"\)/u);
-		assert.doesNotMatch(pillSource, /paddingBlockEnd: token\("space\.050"\)/u);
-	}
+	// Same header geometry as expanded: `space.100` below a 24px row, so the
+	// tally does not jump when the column collapses. Count and expand share
+	// one centered 32px slot — the number is not left-aligned, and the
+	// expand icon must not sit on top of it.
+	assert.match(pillSource, /paddingBottom: token\("space\.100"\)/u);
+	assert.match(pillSource, /relative flex h-6 w-full items-center justify-center/u);
+	assert.match(pillSource, /COLLAPSED_HEAD_COUNT_AT_REST/u);
+	assert.match(COLLAPSED_COLUMN_SOURCE, /group-hover\/collapsed-column:opacity-0/u);
+	assert.match(COLLAPSED_COLUMN_SOURCE, /group-has-\[:focus-visible\]\/collapsed-column:opacity-0/u);
+	assert.match(pillSource, /BOARD_COLUMN_ACTION_REVEAL/u);
+	assert.doesNotMatch(pillSource, /BOARD_COLUMN_ACTION_REVEAL,\s*"absolute"/u);
+	const countIndex = pillSource.indexOf("{count}");
+	const borderIndex = pillSource.indexOf("border border-border-disabled");
+	const writingModeIndex = pillSource.indexOf("[writing-mode:vertical-rl]");
+	assert.ok(
+		countIndex > 0 && borderIndex > countIndex,
+		"expected the count above the bordered pill",
+	);
+	assert.ok(
+		writingModeIndex > borderIndex,
+		"expected the rotated title inside the pill",
+	);
+	assert.doesNotMatch(pillSource, /group\/collapsed-column[^"]*\[writing-mode:vertical-rl\]/u);
+	assert.doesNotMatch(pillSource, /writing-mode:vertical-rl.*\{count\}/u);
+	assert.match(pillSource, /paddingBlock: token\("space\.150"\)/u);
+	assert.match(pillSource, /flex-col items-center justify-center/u);
+	assert.doesNotMatch(pillSource, /paddingBlockStart: token\("space\.150"\)/u);
+	assert.doesNotMatch(pillSource, /paddingBlockEnd: token\("space\.050"\)/u);
+
+	assert.match(
+		V2_BOARD_SOURCE,
+		/from "\.\.\/experimental\/components\/collapsed-board-column"/u,
+		"experimental-v2 must reuse the extracted collapsed column, not fork another copy",
+	);
 });

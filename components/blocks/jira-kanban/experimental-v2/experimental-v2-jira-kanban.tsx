@@ -8,8 +8,6 @@ import { LayoutGroup, motion, useReducedMotion, type Transition } from "motion/r
 import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import AddIcon from "@atlaskit/icon/core/add";
-import GrowHorizontalIcon from "@atlaskit/icon/core/grow-horizontal";
-import ShrinkHorizontalIcon from "@atlaskit/icon/core/shrink-horizontal";
 
 import { AgentSessionColumn, type AgentSessionColumnProps } from "@/components/blocks/agent-session-column";
 import {
@@ -44,6 +42,11 @@ import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
+import {
+	BoardColumnResizeButton,
+	CollapsedBoardColumn,
+} from "../experimental/components/collapsed-board-column";
+import { BOARD_COLUMN_ACTION_REVEAL } from "../experimental/lib/board-column-action-reveal";
 import {
 	EMPTY_COLLAPSED_BOARD_COLUMNS,
 	getBoardColumnOuterWidthPx,
@@ -110,19 +113,6 @@ const BOARD_COLUMN_SHELL_TRANSITION = [
 	"max-width var(--duration-medium) var(--ease-in-out)",
 	"border-color var(--duration-normal) var(--ease-out-practical)",
 ].join(", ");
-
-const BOARD_COLUMN_ACTION_REVEAL = cn(
-	"pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical",
-	"motion-reduce:transition-none",
-);
-
-const COLLAPSED_HEAD_COUNT_AT_REST = cn(
-	"pointer-events-none absolute inset-0 flex items-center justify-center",
-	"text-xs font-normal text-text-subtlest",
-	"transition-opacity duration-normal ease-out-practical",
-	"group-hover/collapsed-column:opacity-0 group-has-[:focus-visible]/collapsed-column:opacity-0",
-	"motion-reduce:transition-none",
-);
 
 function getJiraKanbanCardScale(
 	phase: JiraKanbanCardMoveAnimation["phase"] | undefined,
@@ -301,102 +291,6 @@ function ColumnAgentAssignment({
 					/>
 				</DropdownMenuContent>
 			</DropdownMenu>
-		</div>
-	);
-}
-
-/**
- * Hover/focus revealed control that collapses a column into its pill, or grows
- * the pill back into a column. The collapsed head is already horizontal, so
- * the glyph stays upright without a writing-mode override — the class remains
- * so the same control is safe if it is ever nested in a vertical title again.
- */
-function BoardColumnResizeButton({
-	className,
-	collapsed,
-	onToggle,
-	title,
-}: Readonly<{
-	className?: string;
-	collapsed: boolean;
-	onToggle: () => void;
-	title: string;
-}>) {
-	return (
-		<TooltipProvider>
-			<Tooltip>
-				<TooltipTrigger
-					render={
-						<Button
-							aria-label={collapsed ? `Expand ${title} column` : `Collapse ${title} column`}
-							className={cn("shrink-0 [writing-mode:horizontal-tb]", className)}
-							onClick={onToggle}
-							size="icon-compact"
-							type="button"
-							variant="ghost"
-						/>
-					}
-				>
-					<Icon
-						className="text-icon-subtle"
-						render={
-							collapsed
-								? <GrowHorizontalIcon label="" />
-								: <ShrinkHorizontalIcon label="" />
-						}
-					/>
-				</TooltipTrigger>
-				<TooltipContent>{collapsed ? "Expand" : "Collapse"}</TooltipContent>
-			</Tooltip>
-		</TooltipProvider>
-	);
-}
-
-/**
- * The collapsed form of a board column: the count stays in the same header
- * row the expanded column uses (`space.100` below, `text-xs` tally), and the
- * title reads top-to-bottom inside the full-height pill under that header. A
- * number painted on the pill would sit inside the bordered container instead
- * of on the board surface next to the session count.
- */
-function CollapsedBoardColumn({
-	count,
-	onExpand,
-	title,
-}: Readonly<{ count: number; onExpand: () => void; title: string }>) {
-	return (
-		<div className="flex h-full w-full min-w-0 flex-col">
-			<div
-				className="group/collapsed-column w-full shrink-0"
-				style={{ paddingBottom: token("space.100") }}
-			>
-				<div className="relative flex h-6 w-full items-center justify-center">
-					<span className={COLLAPSED_HEAD_COUNT_AT_REST}>
-						{count}
-					</span>
-					<BoardColumnResizeButton
-						className={cn(
-							BOARD_COLUMN_ACTION_REVEAL,
-							"group-hover/collapsed-column:pointer-events-auto group-hover/collapsed-column:opacity-100",
-							"group-has-[:focus-visible]/collapsed-column:pointer-events-auto group-has-[:focus-visible]/collapsed-column:opacity-100",
-						)}
-						collapsed
-						onToggle={onExpand}
-						title={title}
-					/>
-				</div>
-			</div>
-			<div
-				className="flex min-h-0 w-full flex-1 flex-col items-center justify-center overflow-hidden border border-border-disabled"
-				style={{
-					borderRadius: token("radius.large"),
-					paddingBlock: token("space.150"),
-				}}
-			>
-				<span className="min-h-0 truncate text-xs font-medium leading-4 text-text-subtle [writing-mode:vertical-rl]">
-					{title}
-				</span>
-			</div>
 		</div>
 	);
 }

@@ -26,6 +26,7 @@ export default function AgentSessionColumnPage() {
 				<div className="min-h-[560px] h-[640px] overflow-hidden">
 					<ExperimentalJiraKanbanPage
 						agentSessionPresentation="column"
+						columnChrome="simple"
 						insightsEnabled={false}
 						showAgentSessionColumn
 					/>
