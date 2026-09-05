@@ -624,7 +624,7 @@ function JiraIssueAgentActivityRow({
 				"group/agent-chin-row flex min-w-0 items-center",
 				isDraggedOut
 					? "h-auto w-fit max-w-full justify-start bg-transparent p-0"
-					: "h-6 w-full justify-between rounded-md px-2 py-1 hover:bg-bg-neutral-subtle-hovered",
+					: "h-6 w-full justify-between rounded-md px-2 py-1 hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed",
 			)}
 			data-session-chin=""
 			data-slot="jira-issue-agent-row"

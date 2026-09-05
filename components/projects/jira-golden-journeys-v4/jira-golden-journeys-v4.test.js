@@ -620,15 +620,18 @@ test("the Work items header switches between Board and List views with their ico
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /<TabsList[^>]*className=|<TabsTrigger[^>]*className=/u);
 	assert.match(PAGE_SOURCE, /moreControlsPlacement=\{designVariation === "team-eu" \? "end" : "inline"\}/u);
 	assert.match(PAGE_SOURCE, /showMoreControls=\{!designVariants\["simple-views"\]\}/u);
+	assert.match(PAGE_SOURCE, /simpleViews=\{designVariants\["simple-views"\]\}/u);
 	assert.match(
 		PAGE_SOURCE,
 		/showCustomizeControl=\{designVariation === "team-eu" && !designVariants\["simple-views"\]\}/u,
 	);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /moreControlsPlacement\?: "inline" \| "end";/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showMoreControls\?: boolean;/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /simpleViews\?: boolean;/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showCustomizeControl\?: boolean;/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /moreControlsPlacement=\{moreControlsPlacement\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showMoreControls=\{showMoreControls\}/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /simpleViews=\{simpleViews\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showCustomizeControl=\{showCustomizeControl\}/u);
 	assert.doesNotMatch(
 		EXPERIMENTAL_PAGE_SOURCE,
@@ -683,17 +686,17 @@ test("the Work items header switches between Board and List views with their ico
 	);
 });
 
-test("the board keeps matching 16px gaps above and below the filter controls", () => {
+test("the board keeps matching 24px gaps above and below the filter controls", () => {
 	// The control row's opening tag is multi-line (it carries `controlsInsetEnd`
 	// as a style), so match the className string rather than the whole tag —
-	// `mt-4` after the tabs must match the header's `pb-4` below the row.
+	// `mt-6` after the tabs must match the header's `pb-6` below the row.
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
-		/\{viewTabs \? <div className="mt-2">\{viewTabs\}<\/div> : null\}[\s\S]*className="mt-4 flex flex-wrap items-center gap-2 px-6"/u,
+		/\{viewTabs \? <div className="mt-2">\{viewTabs\}<\/div> : null\}[\s\S]*className="mt-6 flex flex-wrap items-center gap-2 px-6"/u,
 	);
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
-		/className=\{cn\("shrink-0 pt-3", showBoardControls \? "pb-4" : "pb-0"\)\}/u,
+		/className=\{cn\("shrink-0 pt-3", showBoardControls \? "pb-6" : "pb-0"\)\}/u,
 	);
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
@@ -720,7 +723,11 @@ test("the route pins the shared Agent Session column beside Jira statuses", () =
 	const scrollportIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<section");
 	assert.ok(columnIndex > 0, "expected the board to render the Agent Session column");
 	assert.ok(columnIndex < scrollportIndex, "expected untracked work to stay pinned before the status scrollport");
-	assert.match(EXPERIMENTAL_BOARD_SOURCE, /agentSessionColumn \? "ps-2" : "ps-6"/u);
+	assert.match(EXPERIMENTAL_BOARD_SOURCE, /agentSessionColumn \|\| inFlowAgentSessionColumn \? "ps-2" : "ps-6"/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/<ExperimentalJiraKanban[\s\S]*inFlowAgentSessionColumn=\{showInFlowAgentSessionColumn\}/u,
+	);
 });
 
 test("the Panel design variant floats untracked work over the board and the list", () => {
@@ -977,4 +984,8 @@ test("the Simple kanban design variant reaches the board as column chrome", () =
 		EXPERIMENTAL_PAGE_SOURCE,
 		/<ExperimentalJiraKanban[\s\S]*columnChrome=\{columnChrome\}/u,
 	);
+	// Simple kanban only swaps card chrome (stroke hairline vs raised elevation).
+	// Experimental internals stay compact in both column recipes.
+	assert.match(EXPERIMENTAL_BOARD_SOURCE, /chrome=\{chrome\.cardChrome\}/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*chrome=\{chrome\}[\s\S]*compact/u);
 });

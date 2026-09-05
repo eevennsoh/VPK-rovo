@@ -35,22 +35,20 @@ test("Experimental board header opens the production View picker without changin
 	const viewOptions = readFileSync(join(EXPERIMENTAL_DIR, "data", "board-view-options.ts"), "utf8");
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
-		/<BoardViewMenu\s+compact=\{compact\}\s+onShownSessionStateIdsChange=\{onShownSessionStateIdsChange\}\s+onShowUntrackedChange=\{onShowUntrackedChange\}\s+shownSessionStateIds=\{shownSessionStateIds\}\s+showUntracked=\{showUntracked\}\s+surfaceLabel=\{surfaceLabel\}\s+\/>/u,
+		/<BoardViewMenu\s+compact=\{compact\}\s+onShownSessionStateIdsChange=\{onShownSessionStateIdsChange\}\s+onShowUntrackedChange=\{onShowUntrackedChange\}\s+shownSessionStateIds=\{shownSessionStateIds\}\s+showUntracked=\{showUntracked\}\s+simpleViews=\{simpleViews\}\s+surfaceLabel=\{surfaceLabel\}\s+\/>/u,
 	);
 	assert.doesNotMatch(
 		EXPERIMENTAL_HEADER_SOURCE,
 		/aria-disabled[\s\S]*Configure \$\{surfaceLabel\} view/u,
 	);
-	// Trigger reads as the configure affordance Jira uses for View settings.
-	assert.match(viewMenu, /import CustomizeIcon from "@atlaskit\/icon\/core\/customize"/u);
+	// Trigger uses ADS Group (grouping data) with the View label.
+	assert.match(viewMenu, /import GroupIcon from "@atlaskit\/icon-lab\/core\/group"/u);
 	assert.match(viewMenu, /import AiAgentIcon from "@atlaskit\/icon\/core\/ai-agent"/u);
 	assert.match(viewMenu, /import DevicesIcon from "@atlaskit\/icon\/core\/devices"/u);
 	assert.match(viewMenu, /import CloudIcon from "@atlaskit\/icon-lab\/core\/cloud"/u);
-	assert.match(viewMenu, /render=\{<CustomizeIcon label="" \/>\}/u);
-	// View settings keep that glyph on the View trigger. Team EU without Simple
-	// views also parks a display-only Customize control on the far right; it is
-	// a different job (board chrome, not the picker) and stays `aria-disabled`
-	// until a real configure capability exists.
+	assert.match(viewMenu, /render=\{<GroupIcon label="" \/>\}/u);
+	// The far-right Customize control is a different job (board chrome, not the
+	// picker) and stays `aria-disabled` until a real configure capability exists.
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /import CustomizeIcon from "@atlaskit\/icon\/core\/customize"/u);
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,
@@ -60,6 +58,28 @@ test("Experimental board header opens the production View picker without changin
 	assert.match(viewMenu, /aria-label=\{`Configure \$\{surfaceLabel\} view`\}/u);
 	assert.match(viewMenu, /\{compact \? null : "View"\}/u);
 	assert.doesNotMatch(viewMenu, /aria-disabled/u);
+	assert.match(viewMenu, /simpleViews\?: boolean;/u);
+	assert.match(viewMenu, /const \{ designVariants \} = useDesignVariants\(\);/u);
+	assert.match(
+		viewMenu,
+		/const showSimpleViewSettings = simpleViews \?\? designVariants\["simple-views"\];/u,
+	);
+	assert.match(
+		viewMenu,
+		/const resolvedColumnSizeId = showSimpleViewSettings \? columnSizeId : BOARD_COLUMN_SIZE_DEFAULT_ID;/u,
+	);
+	assert.match(
+		viewMenu,
+		/const resolvedHideDoneId = showSimpleViewSettings \? hideDoneId : BOARD_HIDE_DONE_DEFAULT_ID;/u,
+	);
+	assert.match(
+		viewMenu,
+		/const resolvedShownFieldIds = showSimpleViewSettings \? shownFieldIds : DEFAULT_SHOWN_FIELD_IDS;/u,
+	);
+	assert.match(
+		viewMenu,
+		/useEffect\(\(\) => \{[\s\S]*if \(showSimpleViewSettings\) \{\s*return;\s*\}\s*setColumnSizeId\(BOARD_COLUMN_SIZE_DEFAULT_ID\);\s*setHideDoneId\(BOARD_HIDE_DONE_DEFAULT_ID\);\s*setShownFieldIds\(toShownIds\(BOARD_FIELD_OPTIONS\)\);\s*\}, \[showSimpleViewSettings\]\);/u,
+	);
 	// Every dimension sits behind its own submenu so the top level stays scannable.
 	// Single-select dimensions keep their radio group inline...
 	for (const [trigger, list] of [
@@ -93,11 +113,16 @@ test("Experimental board header opens the production View picker without changin
 		"checkbox rows should be defined once, in the shared submenu",
 	);
 	assert.doesNotMatch(withoutComments(viewMenu), /Sort by|BOARD_SORT_|label="Columns"|BOARD_COLUMN_OPTIONS/u);
-	// Pull request and Agent lead the menu, then grouping, then column/card chrome.
+	// Pull request and Agent lead the menu, then grouping. Column/card chrome is
+	// Simple views only, so default mode cannot keep a stale Column size / Hide
+	// done / Show fields choice after the checkbox is turned off.
 	assert.match(
 		viewMenu,
-		/<VisibilityToggleSubmenu[\s\S]*label="Pull request"[\s\S]*label="Agent"[\s\S]*<DropdownMenuSeparator \/>[\s\S]*<DropdownMenuSubTrigger>Group by<\/DropdownMenuSubTrigger>[\s\S]*<DropdownMenuSeparator \/>[\s\S]*Column size[\s\S]*Hide done work items[\s\S]*label="Show fields"/u,
+		/<VisibilityToggleSubmenu[\s\S]*label="Pull request"[\s\S]*label="Agent"[\s\S]*<DropdownMenuSeparator \/>[\s\S]*<DropdownMenuSubTrigger>Group by<\/DropdownMenuSubTrigger>[\s\S]*\{showSimpleViewSettings \? \([\s\S]*Column size[\s\S]*Hide done work items[\s\S]*label="Show fields"[\s\S]*\) : null\}/u,
 	);
+	assert.match(viewMenu, /value=\{resolvedColumnSizeId\}/u);
+	assert.match(viewMenu, /value=\{resolvedHideDoneId\}/u);
+	assert.match(viewMenu, /checkedIds=\{resolvedShownFieldIds\}/u);
 	assert.match(
 		groupOptions,
 		/"Agent"[\s\S]*"Assignee"[\s\S]*"Atlassian Project"[\s\S]*"Epic"[\s\S]*"Labels"[\s\S]*"Priority"[\s\S]*"Subtask"/u,

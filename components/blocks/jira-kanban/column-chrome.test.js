@@ -41,13 +41,15 @@ test("default names bg-surface-sunken and the well tokens", async () => {
 	assert.equal(harness.DEFAULT_KANBAN_COLUMN_CHROME, "default");
 	assert.equal(chrome.columnClassName, "bg-surface-sunken");
 	assert.equal(chrome.cardChrome, "raised");
-	assert.equal(chrome.header.paddingTop, harness.token("space.150"));
+	assert.equal(chrome.header.paddingTop, harness.token("space.100"));
 	assert.equal(chrome.header.paddingInline, harness.token("space.150"));
-	assert.equal("paddingBottom" in chrome.header, false);
+	assert.equal(chrome.header.paddingBottom, harness.token("space.050"));
 	assert.equal(chrome.cardList.paddingTop, harness.token("space.050"));
 	assert.equal(chrome.cardList.paddingBottom, harness.token("space.100"));
 	assert.equal(chrome.cardList.paddingInline, harness.token("space.050"));
+	assert.equal(chrome.cardList.gap, harness.token("space.050"));
 	assert.equal(chrome.footer.paddingInline, harness.token("space.050"));
+	assert.equal(chrome.resizeButtonClassName, "pt-2 pb-1");
 });
 
 test("simple has an empty class and undefined insets", async () => {
@@ -62,7 +64,9 @@ test("simple has an empty class and undefined insets", async () => {
 	assert.equal(chrome.cardList.paddingTop, undefined);
 	assert.equal(chrome.cardList.paddingBottom, undefined);
 	assert.equal(chrome.cardList.paddingInline, undefined);
+	assert.equal("gap" in chrome.cardList, false);
 	assert.equal(chrome.footer.paddingInline, undefined);
+	assert.equal(chrome.resizeButtonClassName, "");
 	assert.equal(Object.hasOwn(chrome.header, "paddingTop"), true);
 	assert.notEqual(chrome.header.paddingTop, 0);
 	assert.notEqual(chrome.cardList.paddingInline, 0);

@@ -1,10 +1,9 @@
 "use client";
 
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- DropdownMenuTrigger uses a render-node so the View button owns the visual state.
-import { Fragment, useMemo, useState, type ComponentType, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
-import CustomizeIcon from "@atlaskit/icon/core/customize";
 import DevicesIcon from "@atlaskit/icon/core/devices";
 import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
@@ -13,6 +12,7 @@ import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 import TaskInProgressIcon from "@atlaskit/icon/core/task-in-progress";
 import TaskToDoIcon from "@atlaskit/icon/core/task-to-do";
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
+import GroupIcon from "@atlaskit/icon-lab/core/group";
 import MergeQueueIcon from "@atlaskit/icon-lab/core/merge-queue";
 import QuestionCircleFilledIcon from "@atlaskit/icon-lab/core/question-circle-filled";
 
@@ -35,6 +35,7 @@ import {
 	isBoardAgentSessionStateId,
 	type BoardPrStateId,
 } from "../data/board-view-options";
+import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -53,6 +54,12 @@ import { token } from "@/lib/tokens";
 
 interface BoardViewMenuProps {
 	compact?: boolean;
+	/**
+	 * Simple views reveals Column size, Hide done, and Show fields. Omit to
+	 * follow the global `simple-views` design variant so experimental and v2
+	 * headers stay on the same checkbox.
+	 */
+	simpleViews?: boolean;
 	surfaceLabel?: string;
 	/**
 	 * Whether Untracked sessions surface next to related Jira cards.
@@ -146,6 +153,9 @@ const AGENT_HOST_ICONS = {
 function toShownIds(options: readonly VisibilityOption[]) {
 	return new Set(options.filter((option) => option.shown).map((option) => option.id));
 }
+
+/** Field visibility when Simple views is off — labels and the rest of the shown defaults. */
+const DEFAULT_SHOWN_FIELD_IDS: ReadonlySet<string> = toShownIds(BOARD_FIELD_OPTIONS);
 
 type SetIds = (update: (previous: Set<string>) => Set<string>) => void;
 
@@ -300,12 +310,15 @@ function AgentHostFilterSubmenu({
  */
 export function BoardViewMenu({
 	compact = false,
+	simpleViews,
 	surfaceLabel = "board",
 	showUntracked,
 	onShowUntrackedChange,
 	shownSessionStateIds,
 	onShownSessionStateIdsChange,
 }: Readonly<BoardViewMenuProps>) {
+	const { designVariants } = useDesignVariants();
+	const showSimpleViewSettings = simpleViews ?? designVariants["simple-views"];
 	const [groupId, setGroupId] = useState<string>(BOARD_GROUP_DEFAULT_ID);
 	const [hideDoneId, setHideDoneId] = useState<string>(BOARD_HIDE_DONE_DEFAULT_ID);
 	const [columnSizeId, setColumnSizeId] = useState<string>(BOARD_COLUMN_SIZE_DEFAULT_ID);
@@ -317,6 +330,19 @@ export function BoardViewMenu({
 	);
 	const [shownFieldIds, setShownFieldIds] = useState(() => toShownIds(BOARD_FIELD_OPTIONS));
 	const [agentHostId, setAgentHostId] = useState<BoardAgentHostId>(BOARD_AGENT_HOST_DEFAULT_ID);
+	useEffect(() => {
+		if (showSimpleViewSettings) {
+			return;
+		}
+		setColumnSizeId(BOARD_COLUMN_SIZE_DEFAULT_ID);
+		setHideDoneId(BOARD_HIDE_DONE_DEFAULT_ID);
+		setShownFieldIds(toShownIds(BOARD_FIELD_OPTIONS));
+	}, [showSimpleViewSettings]);
+	// Default mode also substitutes defaults on the current paint so a leftover
+	// customization cannot linger for a frame before the reset commits.
+	const resolvedColumnSizeId = showSimpleViewSettings ? columnSizeId : BOARD_COLUMN_SIZE_DEFAULT_ID;
+	const resolvedHideDoneId = showSimpleViewSettings ? hideDoneId : BOARD_HIDE_DONE_DEFAULT_ID;
+	const resolvedShownFieldIds = showSimpleViewSettings ? shownFieldIds : DEFAULT_SHOWN_FIELD_IDS;
 	const isUntrackedControlled = showUntracked !== undefined && onShowUntrackedChange !== undefined;
 	const isSessionStatesControlled = (
 		shownSessionStateIds !== undefined && onShownSessionStateIdsChange !== undefined
@@ -385,7 +411,7 @@ export function BoardViewMenu({
 					/>
 				}
 			>
-				<Icon render={<CustomizeIcon label="" />} />
+				<Icon render={<GroupIcon label="" />} />
 				{compact ? null : "View"}
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="min-w-56">
@@ -427,51 +453,55 @@ export function BoardViewMenu({
 					</DropdownMenuSubContent>
 				</DropdownMenuSub>
 
-				<DropdownMenuSeparator />
+				{showSimpleViewSettings ? (
+					<>
+						<DropdownMenuSeparator />
 
-				<DropdownMenuSub>
-					<DropdownMenuSubTrigger>Column size</DropdownMenuSubTrigger>
-					<DropdownMenuSubContent>
-						<DropdownMenuRadioGroup
-							aria-label="Column size"
-							onValueChange={setColumnSizeId}
-							value={columnSizeId}
-						>
-							{BOARD_COLUMN_SIZE_OPTIONS.map((option) => (
-								<DropdownMenuRadioItem indicatorPlacement="end" key={option.id} value={option.id}>
-									{option.label}
-								</DropdownMenuRadioItem>
-							))}
-						</DropdownMenuRadioGroup>
-					</DropdownMenuSubContent>
-				</DropdownMenuSub>
+						<DropdownMenuSub>
+							<DropdownMenuSubTrigger>Column size</DropdownMenuSubTrigger>
+							<DropdownMenuSubContent>
+								<DropdownMenuRadioGroup
+									aria-label="Column size"
+									onValueChange={setColumnSizeId}
+									value={resolvedColumnSizeId}
+								>
+									{BOARD_COLUMN_SIZE_OPTIONS.map((option) => (
+										<DropdownMenuRadioItem indicatorPlacement="end" key={option.id} value={option.id}>
+											{option.label}
+										</DropdownMenuRadioItem>
+									))}
+								</DropdownMenuRadioGroup>
+							</DropdownMenuSubContent>
+						</DropdownMenuSub>
 
-				<DropdownMenuSub>
-					<DropdownMenuSubTrigger>Hide done work items</DropdownMenuSubTrigger>
-					<DropdownMenuSubContent>
-						{/* Single-section submenu: the sub-trigger already names it, so a
-						    group label would just repeat itself. The name moves to
-						    `aria-label` so the radio group keeps an accessible name. */}
-						<DropdownMenuRadioGroup
-							aria-label="Hide done work items after"
-							onValueChange={setHideDoneId}
-							value={hideDoneId}
-						>
-							{BOARD_HIDE_DONE_OPTIONS.map((option) => (
-								<DropdownMenuRadioItem indicatorPlacement="end" key={option.id} value={option.id}>
-									{option.label}
-								</DropdownMenuRadioItem>
-							))}
-						</DropdownMenuRadioGroup>
-					</DropdownMenuSubContent>
-				</DropdownMenuSub>
+						<DropdownMenuSub>
+							<DropdownMenuSubTrigger>Hide done work items</DropdownMenuSubTrigger>
+							<DropdownMenuSubContent>
+								{/* Single-section submenu: the sub-trigger already names it, so a
+								    group label would just repeat itself. The name moves to
+								    `aria-label` so the radio group keeps an accessible name. */}
+								<DropdownMenuRadioGroup
+									aria-label="Hide done work items after"
+									onValueChange={setHideDoneId}
+									value={resolvedHideDoneId}
+								>
+									{BOARD_HIDE_DONE_OPTIONS.map((option) => (
+										<DropdownMenuRadioItem indicatorPlacement="end" key={option.id} value={option.id}>
+											{option.label}
+										</DropdownMenuRadioItem>
+									))}
+								</DropdownMenuRadioGroup>
+							</DropdownMenuSubContent>
+						</DropdownMenuSub>
 
-				<VisibilityToggleSubmenu
-					checkedIds={shownFieldIds}
-					label="Show fields"
-					onToggle={toggleIn(setShownFieldIds)}
-					options={BOARD_FIELD_OPTIONS}
-				/>
+						<VisibilityToggleSubmenu
+							checkedIds={resolvedShownFieldIds}
+							label="Show fields"
+							onToggle={toggleIn(setShownFieldIds)}
+							options={BOARD_FIELD_OPTIONS}
+						/>
+					</>
+				) : null}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

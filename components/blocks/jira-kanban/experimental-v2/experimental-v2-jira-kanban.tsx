@@ -347,7 +347,7 @@ function BoardColumn({
 		>
 			<div
 				className="flex min-w-0 items-center justify-between gap-2"
-				style={{ ...chrome.header, paddingBottom: token("space.100") }}
+				style={{ paddingBottom: token("space.100"), ...chrome.header }}
 			>
 				<div className="flex min-w-0 items-center gap-1.5">
 					<span className="truncate text-xs font-medium leading-4 text-text-subtle">
@@ -370,6 +370,7 @@ function BoardColumn({
 					<BoardColumnResizeButton
 						className={cn(
 							BOARD_COLUMN_ACTION_REVEAL,
+							chrome.resizeButtonClassName,
 							"group-hover/board-column:pointer-events-auto group-hover/board-column:opacity-100",
 							"group-has-[:focus-visible]/board-column:pointer-events-auto group-has-[:focus-visible]/board-column:opacity-100",
 						)}
@@ -481,39 +482,6 @@ function BoardColumnShell({
 			) : (
 				children(handleToggleCollapsed)
 			)}
-		</div>
-	);
-}
-
-function BoardAddColumnButton() {
-	return (
-		<div className="flex shrink-0 flex-col self-start overflow-visible border-2 border-transparent">
-			<div
-				aria-hidden
-				className="flex items-center"
-				style={{ paddingBottom: token("space.100") }}
-			>
-				<span className="size-6" />
-			</div>
-			<TooltipProvider>
-				<Tooltip>
-					<TooltipTrigger
-						render={
-							<Button
-								aria-label="Create column"
-								className="shrink-0"
-								data-jira-kanban-add-column=""
-								size="icon"
-								type="button"
-								variant="outline"
-							/>
-						}
-					>
-						<Icon render={<AddIcon label="" />} />
-					</TooltipTrigger>
-					<TooltipContent>Create column</TooltipContent>
-				</Tooltip>
-			</TooltipProvider>
 		</div>
 	);
 }
@@ -874,7 +842,6 @@ export function ExperimentalV2JiraKanban({
 							)}
 						</BoardColumnShell>
 						))}
-						<BoardAddColumnButton />
 						</div>
 						<div aria-hidden className="w-6 shrink-0" />
 					</div>

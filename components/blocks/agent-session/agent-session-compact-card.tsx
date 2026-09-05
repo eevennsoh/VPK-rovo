@@ -34,7 +34,7 @@ function AttachedAgentSession({
 		<motion.div
 			animate={shouldPlayArrival ? { opacity: 1, y: 0 } : undefined}
 			className={cn(
-				"relative w-[276px] rounded-[10px] bg-bg-accent-gray-subtlest",
+				"relative w-[276px] rounded-[10px] bg-bg-neutral",
 				isNew ? "ring-1 ring-border-discovery" : null,
 			)}
 			data-new={isNew || undefined}

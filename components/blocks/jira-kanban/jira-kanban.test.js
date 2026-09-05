@@ -238,10 +238,30 @@ test("Experimental kanban card lists drop scroller padding while the default kee
 	);
 });
 
+test("Experimental kanban default card gap and collapse padding come from the column recipe", () => {
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/gap: token\("space\.100"\),\n\s+\.\.\.cardListScrollMaskStyle,\n\s+\.\.\.chrome\.cardList,/u,
+	);
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/BOARD_COLUMN_ACTION_REVEAL,\n\s+chrome\.resizeButtonClassName,/u,
+	);
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/paddingBottom: token\("space\.100"\), \.\.\.chrome\.header/u,
+	);
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/paddingTop=\{chrome\.header\.paddingTop \?\? paddingTop\}/u,
+	);
+	assert.doesNotMatch(EXPERIMENTAL_SOURCE, /gap: token\("space\.025"\)/u);
+});
+
 test("Experimental kanban card gap matches the column gutter", () => {
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/"flex min-h-full w-max min-w-full items-stretch",\s*agentSessionColumn \? "ps-2" : "ps-6"/u,
+		/"flex min-h-full w-max min-w-full items-stretch",\s*agentSessionColumn \|\| inFlowAgentSessionColumn \? "ps-2" : "ps-6"/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
@@ -280,21 +300,13 @@ test("Experimental kanban cards cap at 280px so generative agent chrome cannot s
 	assert.match(EXPERIMENTAL_SOURCE, /className="w-full min-w-0 max-w-\[280px\]"/u);
 });
 
-test("Experimental kanban shows a create-column control after the last column", () => {
-	assert.match(EXPERIMENTAL_SOURCE, /<BoardAddColumnButton \/>/u);
-	assert.match(
-		EXPERIMENTAL_SOURCE,
-		/aria-label="Create column"[\s\S]*data-jira-kanban-add-column=""[\s\S]*size="icon"[\s\S]*variant="outline"/u,
-	);
-	assert.match(
-		EXPERIMENTAL_SOURCE,
-		/className="flex shrink-0 flex-col self-start overflow-visible border-2 border-transparent"/u,
-	);
-	assert.match(
-		EXPERIMENTAL_SOURCE,
-		/className="flex items-center"\n\s+style=\{\{ paddingBottom: token\("space\.100"\) \}\}/u,
-	);
-	assert.match(EXPERIMENTAL_SOURCE, /className="size-6"/u);
+test("Experimental kanban does not show a create-column control", () => {
+	assert.doesNotMatch(EXPERIMENTAL_SOURCE, /BoardAddColumnButton/u);
+	assert.doesNotMatch(EXPERIMENTAL_SOURCE, /aria-label="Create column"/u);
+	assert.doesNotMatch(EXPERIMENTAL_SOURCE, /data-jira-kanban-add-column/u);
+	assert.doesNotMatch(EXPERIMENTAL_V2_SOURCE, /BoardAddColumnButton/u);
+	assert.doesNotMatch(EXPERIMENTAL_V2_SOURCE, /aria-label="Create column"/u);
+	assert.doesNotMatch(SOURCE, /aria-label="Create column"/u);
 });
 
 test("Kanban column drop targets expose a stable browser selector", () => {
@@ -672,10 +684,10 @@ test("Kanban column wells come from the shared chrome recipe", () => {
 	assert.doesNotMatch(EXPERIMENTAL_SOURCE, /backgroundColor: token\("elevation.surface.sunken"\)/u);
 });
 
-test("Experimental kanban column headers keep bottom padding without top padding", () => {
+test("Experimental kanban column headers apply the chrome recipe over a board fallback", () => {
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/style=\{\{ \.\.\.chrome\.header, paddingBottom: token\("space\.100"\) \}\}/u,
+		/style=\{\{ paddingBottom: token\("space\.100"\), \.\.\.chrome\.header \}\}/u,
 	);
 	assert.doesNotMatch(
 		EXPERIMENTAL_SOURCE,
@@ -691,7 +703,7 @@ test("Kanban cards take issue chrome from the column well recipe", () => {
 	assert.match(SOURCE, /chrome=\{chrome\.cardChrome\}/u);
 	assert.match(EXPERIMENTAL_SOURCE, /chrome=\{chrome\.cardChrome\}/u);
 	assert.match(EXPERIMENTAL_V2_SOURCE, /chrome=\{chrome\.cardChrome\}/u);
-	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*chrome=\{chrome\}/u);
+	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*chrome=\{chrome\}[\s\S]*compact/u);
 	assert.match(EXPERIMENTAL_PULSE_RAIL_SOURCE, /<JiraIssue[\s\S]*chrome="stroke"/u);
 	assert.doesNotMatch(SOURCE, /chrome="stroke"/u);
 	assert.doesNotMatch(EXPERIMENTAL_CARD_SOURCE, /chrome="stroke"/u);
@@ -941,7 +953,7 @@ test("Experimental kanban keeps 24px column gutters on the scrollable row, not t
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/"flex min-h-full w-max min-w-full items-stretch",\s*agentSessionColumn \? "ps-2" : "ps-6"/u,
+		/"flex min-h-full w-max min-w-full items-stretch",\s*agentSessionColumn \|\| inFlowAgentSessionColumn \? "ps-2" : "ps-6"/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,

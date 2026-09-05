@@ -93,6 +93,11 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	onShownSessionStateIdsChange?: (shownSessionStateIds: Set<BoardAgentSessionStateId>) => void;
 	showUntracked?: boolean;
 	onShowUntrackedChange?: (showUntracked: boolean) => void;
+	/**
+	 * Reveals Column size, Hide done, and Show fields in View. The route owns
+	 * Simple views so this header does not read the design-variant store.
+	 */
+	simpleViews?: boolean;
 	viewTabs?: ReactNode;
 }
 
@@ -173,6 +178,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 	onShownSessionStateIdsChange,
 	showUntracked,
 	onShowUntrackedChange,
+	simpleViews,
 	viewTabs,
 }: Readonly<ExperimentalJiraKanbanBoardHeaderProps>) {
 	const hasSelection = selectedAssigneeIds.size > 0;
@@ -200,7 +206,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 	) : null;
 
 	return (
-		<header className={cn("shrink-0 pt-3", showBoardControls ? "pb-4" : "pb-0")}>
+		<header className={cn("shrink-0 pt-3", showBoardControls ? "pb-6" : "pb-0")}>
 			<div className="flex min-w-0 items-center gap-2 px-6">
 				<JiraProjectAvatar label={JIRA_DESIGN_PROJECT.name} src={JIRA_DESIGN_PROJECT.imageSrc} />
 				<Heading as="h1" className="truncate" size="large">Jira Design</Heading>
@@ -217,7 +223,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 
 			{showBoardControls ? (
 				<div
-					className="mt-4 flex flex-wrap items-center gap-2 px-6"
+					className="mt-6 flex flex-wrap items-center gap-2 px-6"
 					// Board columns are meant to slide under the panel, but the row's
 					// trailing cluster (view switcher) must stay clickable. `px-6` is
 					// overridden by this inline padding, so add the same 24px gutter
@@ -274,6 +280,7 @@ export function ExperimentalJiraKanbanBoardHeader({
 						onShowUntrackedChange={onShowUntrackedChange}
 						shownSessionStateIds={shownSessionStateIds}
 						showUntracked={showUntracked}
+						simpleViews={simpleViews}
 						surfaceLabel={surfaceLabel}
 					/>
 
