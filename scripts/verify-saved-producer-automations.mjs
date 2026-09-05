@@ -17,6 +17,7 @@ export const EXPECTED_PRODUCER_AUTOMATION_IDS = [
 	"test-coverage",
 	"ui-design-quality-audit",
 	"update-agents-md",
+	"verification-maintenance",
 ];
 
 const SHARED_POLICY_PATTERN = /^Invoke `\$vpk-scheduled-automation`(?:[,.]?\s|$)/u;

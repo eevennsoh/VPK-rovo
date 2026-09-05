@@ -28,49 +28,33 @@ was not pushed in this run, inspect current status without waiting.
 
 ## Fetch every review surface
 
-`gh pr view` does not expose thread-resolution state. Page through GraphQL
-`reviewThreads` until `hasNextPage` is false:
+Run the repo-owned read-only status helper from the VPK-rovo checkout:
 
 ```bash
-gh api graphql \
-  -f owner="<owner>" -f name="<repo>" -F number=<pr> -f after=null \
-  -f query='query($owner:String!,$name:String!,$number:Int!,$after:String){
-    repository(owner:$owner,name:$name){pullRequest(number:$number){
-      reviewDecision mergeStateStatus
-      reviewThreads(first:100,after:$after){
-        pageInfo{hasNextPage endCursor}
-        nodes{id isResolved isOutdated path line startLine
-          comments(first:20){nodes{id body author{login} url createdAt}}}
-      }
-    }}
-  }'
+node .agents/skills/vpk-git-ship/scripts/review-gate-status.js \
+  --pr <number> --repo <owner>/<repo> --json
 ```
 
-Repeat with `after=<endCursor>`. An empty or short GraphQL result can be stale,
-especially while `mergeStateStatus` is `BLOCKED`. Reconcile it against REST:
+The helper captures the current head and check rollup, pages GraphQL
+`reviewThreads` until `hasNextPage` is false, fetches paginated REST comments and
+reviews, and maps every top-level REST comment to a GraphQL thread by database
+ID. When GraphQL temporarily omits a REST comment, it re-fetches every surface
+at five-second intervals for up to 30 seconds. Its JSON is the rerunnable review
+artifact; do not replace it with an ad-hoc partial query.
 
-```bash
-gh api repos/<owner>/<repo>/pulls/<pr>/comments --paginate \
-  --jq '.[] | {id, author: .user.login, in_reply_to: .in_reply_to_id, url}'
-gh api repos/<owner>/<repo>/pulls/<pr>/reviews --paginate \
-  --jq '.[] | select(.state != "APPROVED") | {id, author: .user.login, state}'
-```
+Inspect `unresolvedThreads`, `missingRestCommentIds`, and
+`nonApprovingReviews`. Classify every listed non-approving review using its ID
+and the current PR before proceeding; the helper cannot decide product judgment.
+Only declare the review gate clear when `reviewGateClear` is true and those
+reviews are classified. Older-commit conversations still block when unresolved.
+`mergeStateStatus: CLEAN` and passing checks are separate supporting evidence.
 
-REST comments have no resolution field, so their presence alone does not mean a
-thread is unresolved. Reconcile by comment identity, review state, and GraphQL
-`isResolved`, not by author or head SHA. Every top-level REST comment must map
-to a GraphQL thread, and every non-approving REST review must be represented or
-classified. Older-commit conversations still block when unresolved.
-
-If GraphQL omits a top-level REST comment or non-approving review, repeat the PR
-view, paginated GraphQL query, and REST queries every five seconds for up to 30
-seconds. If it remains hidden, stop and report the exact comment/review URL or
-ID. Do not use scraped HTML, undocumented endpoints, or browser automation to
-manufacture a thread ID.
-
-Only declare the gate clear after every GraphQL page and REST surface agrees and
-no thread has `isResolved == false`. `mergeStateStatus: CLEAN` is supporting
-evidence, not proof by itself.
+Immediately before merge, add `--require-clear`. Exit 2 means at least one
+review, check, or merge-state condition remains; inspect the same JSON rather
+than weakening the gate. An API/schema failure exits 1. If a REST comment stays
+missing after the bounded retries, or any surface cannot be fetched, stop and
+report its ID. Do not use scraped HTML, undocumented endpoints, or browser
+automation to manufacture a thread ID.
 
 ## Classify and remediate
 

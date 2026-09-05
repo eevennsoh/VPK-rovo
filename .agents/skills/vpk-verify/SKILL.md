@@ -142,4 +142,5 @@ All invocations are from the worktree root. The script is executable.
 .agents/skills/vpk-verify/scripts/control-vpk evidence-dir
 .agents/skills/vpk-verify/scripts/control-vpk browser open "$ORIGIN/ui"
 .agents/skills/vpk-verify/scripts/control-vpk cleanup
+pnpm run verify:vpk-feature-map
 ```

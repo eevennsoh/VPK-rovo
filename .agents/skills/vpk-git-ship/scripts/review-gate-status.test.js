@@ -1,0 +1,181 @@
+const assert = require("node:assert/strict");
+const test = require("node:test");
+
+const {
+	collectReviewGateStatus,
+} = require("./review-gate-status");
+
+function fixtureRunner({
+	checks = [{ conclusion: "SUCCESS", name: "CI / PR checks", status: "COMPLETED" }],
+	comments = [{ id: 101, html_url: "https://example.test/comment/101", in_reply_to_id: null }],
+	graphPages,
+	mergeStateStatus = "CLEAN",
+	reviewDecision = "APPROVED",
+	reviews = [{ id: 201, state: "APPROVED", user: { login: "reviewer" } }],
+} = {}) {
+	const calls = [];
+	const pages = graphPages ?? [{
+		pageInfo: { endCursor: null, hasNextPage: false },
+		threads: [{
+			comments: { nodes: [{ author: { login: "reviewer" }, databaseId: 101, url: "https://example.test/comment/101" }] },
+			id: "PRRT_1",
+			isOutdated: false,
+			isResolved: true,
+			line: 10,
+			path: "src/example.js",
+		}],
+	}];
+	let graphPage = 0;
+	const runGh = async (args) => {
+		calls.push(args);
+		if (args[0] === "repo") return { nameWithOwner: "owner/repo" };
+		if (args[0] === "pr") {
+			return {
+				headRefOid: "abc123",
+				mergeStateStatus,
+				number: 42,
+				reviewDecision,
+				statusCheckRollup: checks,
+				updatedAt: "2026-09-05T00:00:00Z",
+				url: "https://github.com/owner/repo/pull/42",
+			};
+		}
+		if (args[0] === "api" && args[1] === "graphql") {
+			const page = pages[graphPage++];
+			return {
+				data: {
+					repository: {
+						pullRequest: {
+							mergeStateStatus,
+							reviewDecision,
+							reviewThreads: {
+								nodes: page.threads,
+								pageInfo: page.pageInfo,
+							},
+						},
+					},
+				},
+			};
+		}
+		if (args[0] === "api" && args[1].endsWith("/comments")) return [comments];
+		if (args[0] === "api" && args[1].endsWith("/reviews")) return [reviews];
+		throw new Error(`Unexpected gh call: ${args.join(" ")}`);
+	};
+	return { calls, runGh };
+}
+
+test("paginates GraphQL threads and reconciles every top-level REST comment", async () => {
+	const runner = fixtureRunner({
+		comments: [
+			{ id: 101, html_url: "https://example.test/comment/101", in_reply_to_id: null },
+			{ id: 102, html_url: "https://example.test/comment/102", in_reply_to_id: null },
+		],
+		graphPages: [
+			{
+				pageInfo: { endCursor: "CURSOR_1", hasNextPage: true },
+				threads: [{
+					comments: { nodes: [{ databaseId: 101, url: "https://example.test/comment/101" }] },
+					id: "PRRT_1",
+					isOutdated: false,
+					isResolved: true,
+					path: "src/one.js",
+				}],
+			},
+			{
+				pageInfo: { endCursor: null, hasNextPage: false },
+				threads: [{
+					comments: { nodes: [{ databaseId: 102, url: "https://example.test/comment/102" }] },
+					id: "PRRT_2",
+					isOutdated: false,
+					isResolved: true,
+					path: "src/two.js",
+				}],
+			},
+		],
+	});
+
+	const status = await collectReviewGateStatus({
+		consistencyRetries: 0,
+		prNumber: 42,
+		runGh: runner.runGh,
+	});
+
+	assert.equal(status.graphqlPageCount, 2);
+	assert.equal(status.threadCount, 2);
+	assert.deepEqual(status.missingRestCommentIds, []);
+	assert.equal(status.reviewGateClear, true);
+	assert.equal(status.checks.state, "passing");
+	assert.equal(status.readyToMerge, true);
+	assert.equal(
+		runner.calls.filter((args) => args[0] === "api" && args[1] === "graphql").length,
+		2,
+	);
+});
+
+test("reports unresolved threads, REST mismatches, change requests, and failed checks", async () => {
+	const runner = fixtureRunner({
+		checks: [{ conclusion: "FAILURE", name: "CI / PR checks", status: "COMPLETED" }],
+		comments: [{ id: 999, html_url: "https://example.test/comment/999", in_reply_to_id: null }],
+		graphPages: [{
+			pageInfo: { endCursor: null, hasNextPage: false },
+			threads: [{
+				comments: { nodes: [{ databaseId: 101, url: "https://example.test/comment/101" }] },
+				id: "PRRT_open",
+				isOutdated: false,
+				isResolved: false,
+				path: "src/broken.js",
+			}],
+		}],
+		mergeStateStatus: "BLOCKED",
+		reviewDecision: "CHANGES_REQUESTED",
+		reviews: [{ id: 202, state: "CHANGES_REQUESTED", user: { login: "reviewer" } }],
+	});
+
+	const status = await collectReviewGateStatus({
+		consistencyRetries: 0,
+		prNumber: 42,
+		runGh: runner.runGh,
+	});
+
+	assert.deepEqual(status.unresolvedThreads.map((thread) => thread.id), ["PRRT_open"]);
+	assert.deepEqual(status.missingRestCommentIds, [999]);
+	assert.deepEqual(status.nonApprovingReviews, [{ id: 202, state: "CHANGES_REQUESTED", user: "reviewer" }]);
+	assert.equal(status.reviewGateClear, false);
+	assert.equal(status.checks.state, "failing");
+	assert.equal(status.readyToMerge, false);
+});
+
+test("retries a temporarily incomplete GraphQL-to-REST reconciliation", async () => {
+	let attempt = 0;
+	const delays = [];
+	const runner = fixtureRunner({ comments: [{ id: 101, in_reply_to_id: null }] });
+	const runGh = async (args) => {
+		if (args[0] === "api" && args[1] === "graphql") {
+			attempt += 1;
+			if (attempt === 1) {
+				return {
+					data: { repository: { pullRequest: {
+						mergeStateStatus: "CLEAN",
+						reviewDecision: "APPROVED",
+						reviewThreads: {
+							nodes: [],
+							pageInfo: { endCursor: null, hasNextPage: false },
+						},
+					} } },
+				};
+			}
+		}
+		return runner.runGh(args);
+	};
+
+	const status = await collectReviewGateStatus({
+		consistencyRetries: 1,
+		delay: async (ms) => delays.push(ms),
+		prNumber: 42,
+		runGh,
+	});
+
+	assert.equal(status.consistencyAttempts, 2);
+	assert.deepEqual(status.missingRestCommentIds, []);
+	assert.deepEqual(delays, [5000]);
+});
