@@ -1,6 +1,7 @@
 "use client";
 
 import ArrowRightIcon from "@atlaskit/icon/core/arrow-right";
+import FileIcon from "@atlaskit/icon/core/file";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -120,6 +121,29 @@ function PullRequestGitHubMark() {
 	return (
 		<span className="shrink-0">
 			<BrandLogoMark frame="chip" label="GitHub" name="github" />
+		</span>
+	);
+}
+
+/** `#N` + title as one wrapping text run so line 2 starts under the number. */
+function PullRequestInlineTitle({
+	number,
+	title,
+	className,
+}: Readonly<{ number: number; title: string; className?: string }>) {
+	return (
+		<span className={cn("min-w-0 whitespace-normal text-sm leading-5", className)}>
+			<span className="text-text-subtlest">#{number} </span>
+			<span className="text-text">{title}</span>
+		</span>
+	);
+}
+
+/** Leading file glyph matching session-flyout `DetailsMetaRow`. */
+function PullRequestMetaLeadingIcon() {
+	return (
+		<span className="grid size-4 shrink-0 place-items-center text-icon-subtlest" aria-hidden="true">
+			<Icon aria-hidden render={<FileIcon label="" size="small" />} />
 		</span>
 	);
 }
@@ -248,10 +272,11 @@ function PullRequestSpaciousBody({
 		<>
 			<div className="flex min-w-0 items-start gap-2">
 				<PullRequestStatusLozenge status={status} withIcon />
-				<span className="flex min-w-0 flex-1 items-start gap-1 text-sm font-medium leading-5">
-					<span className="shrink-0 text-text-subtlest">#{number}</span>
-					<span className="min-w-0 whitespace-normal text-text">{title}</span>
-				</span>
+				<PullRequestInlineTitle
+					className="flex-1 font-medium"
+					number={number}
+					title={title}
+				/>
 			</div>
 			<div className="flex min-w-0 flex-nowrap items-center gap-1.5 overflow-hidden">
 				<PullRequestGitHubMark />
@@ -332,10 +357,7 @@ function PullRequestFlyoutBody({
 		<>
 			<div className="flex w-full min-w-0 items-start gap-3 px-3">
 				<div className="flex min-w-0 flex-1 flex-col gap-1">
-					<span className="flex min-w-0 items-start gap-1 text-sm leading-5">
-						<span className="shrink-0 text-text-subtlest">#{number}</span>
-						<span className="min-w-0 whitespace-normal text-text">{title}</span>
-					</span>
+					<PullRequestInlineTitle number={number} title={title} />
 					{authorMeta}
 				</div>
 				<PullRequestStatusLozenge status={status} />
@@ -345,7 +367,8 @@ function PullRequestFlyoutBody({
 					<PullRequestGitHubMark />
 					<PullRequestBranchPath branch={branch} targetBranch={targetBranch} />
 				</div>
-				<div className="flex items-center gap-1.5">
+				<div className="flex min-w-0 items-center gap-1 text-xs leading-5">
+					<PullRequestMetaLeadingIcon />
 					{filesChanged != null ? (
 						<span className="text-xs leading-4 text-text-subtle tabular-nums">
 							{filesChanged} {filesChanged === 1 ? "file" : "files"}

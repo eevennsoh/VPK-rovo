@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 const TRAILING_ICON_TONE_CLASS = {
 	subtlest: "text-icon-subtlest",
 	subtle: "text-icon-subtle",
+	information: "text-icon-information",
 	success: "text-icon-success",
 	discovery: "text-icon-discovery",
 	danger: "text-icon-danger",
@@ -55,7 +56,7 @@ function trailingIcon(
 /**
  * Compact list glyphs match the board View PR legend: green open, purple
  * merged, red closed. Branch-only rows use `text-icon-subtlest`; needs-input
- * stays muted.
+ * uses the information (blue) icon token.
  */
 function AgentSessionFlyoutTrailingIcon({
 	session,
@@ -81,7 +82,7 @@ function AgentSessionFlyoutTrailingIcon({
 			return trailingIcon(
 				<StatusInformationIcon color="currentColor" label="Needs input" size="small" />,
 				"Needs input",
-				"subtle",
+				"information",
 			);
 		case "running":
 			return <Spinner label="Running" size="xs" />;
