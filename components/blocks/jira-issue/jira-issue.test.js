@@ -291,6 +291,17 @@ test("Jira issue exposes separate Work Item agent and skill pickers in the More 
 	assert.match(MORE_MENU_SOURCE, /onRequestClose=\{\(\) => handleOpenChange\(false\)\}/u);
 });
 
+test("Jira issue only renders picker footer actions when real capabilities are supplied", () => {
+	for (const capability of ["onBrowseAgents", "onCreateAgent", "onBrowseSkills", "onCreateSkill"]) {
+		assert.match(GENERATIVE_SOURCE, new RegExp(`${capability}\\?: \\(\\) => void;`, "u"));
+	}
+	assert.match(GENERATIVE_SOURCE, /onBrowseAgents=\{browseAgents \? \(\) => closeThenRun\(browseAgents\) : undefined\}/u);
+	assert.match(GENERATIVE_SOURCE, /onCreateAgent=\{createAgent \? \(\) => closeThenRun\(createAgent\) : undefined\}/u);
+	assert.match(GENERATIVE_SOURCE, /onBrowseSkills=\{browseSkills \? \(\) => closeThenRun\(browseSkills\) : undefined\}/u);
+	assert.match(GENERATIVE_SOURCE, /onCreateSkill=\{createSkill \? \(\) => closeThenRun\(createSkill\) : undefined\}/u);
+	assert.doesNotMatch(GENERATIVE_SOURCE, /on(?:BrowseAgents|CreateAgent|BrowseSkills|CreateSkill)=\{onRequestClose\}/u);
+});
+
 test("Jira issue renders the more-actions button as a sibling of the card button", () => {
 	assert.doesNotMatch(SUMMARY_BLOCK, /<JiraIssueMoreMenu/u);
 	assert.match(

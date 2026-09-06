@@ -50,6 +50,10 @@ export interface JiraIssueGenerativeActionRequest {
 export interface JiraIssueGenerativeActionConfig {
 	agents?: readonly RovoSparkleItem[];
 	ariaLabel?: string;
+	onBrowseAgents?: () => void;
+	onBrowseSkills?: () => void;
+	onCreateAgent?: () => void;
+	onCreateSkill?: () => void;
 	onSubmit: (request: JiraIssueGenerativeActionRequest) => void | Promise<void>;
 	skills?: readonly RovoSparkleItem[];
 }
@@ -188,6 +192,15 @@ export function JiraIssueAgentAndSkillSubmenus({
 	const [pinnedSkillIds, setPinnedSkillIds] = useState<readonly string[]>(() => (
 		resolvePinnedItemIds(skills, DEFAULT_PINNED_WORK_ITEM_SKILL_IDS)
 	));
+	const browseAgents = action.onBrowseAgents;
+	const browseSkills = action.onBrowseSkills;
+	const createAgent = action.onCreateAgent;
+	const createSkill = action.onCreateSkill;
+
+	function closeThenRun(callback: () => void) {
+		onRequestClose();
+		callback();
+	}
 
 	function handleAgentToggle(agentId: string) {
 		const agent = agents.find((candidate) => candidate.id === agentId);
@@ -229,8 +242,8 @@ export function JiraIssueAgentAndSkillSubmenus({
 					<AgentSelector
 						agents={agents}
 						onAgentToggle={handleAgentToggle}
-						onBrowseAgents={onRequestClose}
-						onCreateAgent={onRequestClose}
+						onBrowseAgents={browseAgents ? () => closeThenRun(browseAgents) : undefined}
+						onCreateAgent={createAgent ? () => closeThenRun(createAgent) : undefined}
 						onPinnedAgentIdsChange={setPinnedAgentIds}
 						onQueryChange={setAgentQuery}
 						pinnedAgentIds={pinnedAgentIds}
@@ -248,8 +261,8 @@ export function JiraIssueAgentAndSkillSubmenus({
 					onClick={(event) => event.stopPropagation()}
 				>
 					<SkillSelector
-						onBrowseSkills={onRequestClose}
-						onCreateSkill={onRequestClose}
+						onBrowseSkills={browseSkills ? () => closeThenRun(browseSkills) : undefined}
+						onCreateSkill={createSkill ? () => closeThenRun(createSkill) : undefined}
 						onPinnedSkillIdsChange={setPinnedSkillIds}
 						onQueryChange={setSkillQuery}
 						onSkillToggle={handleSkillToggle}
