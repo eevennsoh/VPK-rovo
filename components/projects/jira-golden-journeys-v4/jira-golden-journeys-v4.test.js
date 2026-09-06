@@ -45,11 +45,17 @@ const PANEL_RESIZE_HOOK_SOURCE = readProjectFile(
 const INDICATORS_SOURCE = readProjectFile(
 	"components/projects/jira-golden-journeys-v4/data/agent-activity-indicators.tsx",
 );
+const GENERATIVE_ACTIONS_SOURCE = readProjectFile(
+	"components/projects/jira-golden-journeys-v4/hooks/use-jira-golden-journeys-v4-generative-actions.ts",
+);
 const COMPLETED_RUNS_SOURCE = readProjectFile(
 	"components/blocks/jira-issue/completed-agent-runs.tsx",
 );
 const AGENT_ACTIVITY_SOURCE = readProjectFile(
 	"components/blocks/jira-issue/agent-activity.tsx",
+);
+const AGENT_ACTIVITY_STARTUP_SOURCE = readProjectFile(
+	"components/blocks/jira-issue/agent-activity-startup.tsx",
 );
 const TRANSFER_SOURCE = readProjectFile(
 	"components/blocks/jira-issue/agent-session-transfer.tsx",
@@ -162,7 +168,7 @@ test("chin-row agent activity indicators follow the design variation", () => {
 	assert.match(INDICATORS_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
 	assert.match(
 		INDICATORS_SOURCE,
-		/renderTeamEuAgentActivityIndicator[\s\S]*state === "awaiting-input" \? \(\s*<QuestionCircleFilledIcon color=\{token\("color\.icon\.information"\)\} label="" size="small" \/>\s*\) : \(\s*<Spinner label="" size="xs" \/>\s*\)/u,
+		/renderTeamEuAgentActivityIndicator[\s\S]*state === "awaiting-input" \? \(\s*<QuestionCircleFilledIcon color=\{token\("color\.icon\.information"\)\} label="" size="small" \/>\s*\) : \(\s*<Spinner label="" size="xs" variant="experimental" \/>\s*\)/u,
 	);
 	// A finished run gets the filled success status in the ADS success green,
 	// pairing with the filled error status a failed run already shows. The
@@ -220,6 +226,39 @@ test("chin-row agent activity indicators follow the design variation", () => {
 	assert.match(
 		COMPLETED_RUNS_SOURCE,
 		/hasFailedRun \? \([\s\S]*<StatusErrorIcon[\s\S]*: finishedIndicator \? \(\s*<span[\s\S]*\{finishedIndicator\}/u,
+	);
+});
+
+test("new Jira agent and skill sessions opt into the staged startup presentation", () => {
+	assert.match(
+		GENERATIVE_ACTIONS_SOURCE,
+		/startupSequence: "jira-work-item-start"/u,
+	);
+	assert.match(
+		GENERATIVE_ACTIONS_SOURCE,
+		/progressJiraGoldenJourneysV4WorkItemOnStart\(\s*linkJiraKanbanAgentSession\(columns, card\.code, activity\),\s*card\.code,\s*\)/u,
+	);
+	assert.match(
+		AGENT_ACTIVITY_STARTUP_SOURCE,
+		/import TextEffects from "@\/components\/visual\/text-effects";/u,
+	);
+	assert.match(
+		AGENT_ACTIVITY_STARTUP_SOURCE,
+		/import \{ configForEffect \} from "@\/components\/visual\/text-effects\/data";/u,
+	);
+	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /text="Let's get started"/u);
+	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /presentation="inline"/u);
+	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /splitBy: "word"/u);
+	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /className="jira-agent-wave-motion/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /Gathering context/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<TWGLoader label="" size="small" \/>/u);
+	assert.match(
+		AGENT_ACTIVITY_STARTUP_SOURCE,
+		/<Shimmer[\s\S]*>\s*\{label\}\s*<\/Shimmer>/u,
+	);
+	assert.match(
+		AGENT_ACTIVITY_STARTUP_SOURCE,
+		/shouldReduceMotion \? "working"/u,
 	);
 });
 
