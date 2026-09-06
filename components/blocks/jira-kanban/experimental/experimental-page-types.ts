@@ -19,7 +19,7 @@ import type {
 import type { ExperimentalJiraKanbanProps } from "./experimental-jira-kanban";
 import type { ExperimentalJiraKanbanView } from "./experimental-board-header";
 import type { ExperimentalJiraKanbanMode } from "./pulse/components/pulse-mode-controls";
-import type { PulseLooseWork, PulseWorkItem } from "./pulse/types";
+import type { PulseAgentSession, PulseLooseWork, PulseWorkItem } from "./pulse/types";
 
 export interface ExperimentalJiraKanbanListRenderContext {
 	agentSessionDropIntent?: JiraListAgentSessionDropIntent;
@@ -44,6 +44,8 @@ export interface ExperimentalJiraKanbanPageHandle {
 export interface ExperimentalJiraKanbanPageProps {
 	activeView?: ExperimentalJiraKanbanView;
 	activeCardCode?: string;
+	/** Extra local sessions discovered after the static Pulse fixture loaded. */
+	additionalAgentSessions?: readonly PulseAgentSession[];
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	cardGenerativeActionPresentation?: JiraIssueGenerativeActionPresentation;
 	createWorkItemDropZoneLabel?: ExperimentalJiraKanbanProps["createWorkItemDropZoneLabel"];
@@ -84,6 +86,9 @@ export interface ExperimentalJiraKanbanPageProps {
 	isInsightsWorkItemInteractive?: (workItem: PulseWorkItem) => boolean;
 	isLooseWorkResumable?: (item: PulseLooseWork) => boolean;
 	mode?: ExperimentalJiraKanbanMode;
+	/** Newly discovered session ids that keep the shared arrival mark visible. */
+	newAgentSessionIds?: ReadonlySet<string>;
+	onAgentSessionsReviewed?: (sessionIds?: readonly string[]) => void;
 	onBoardColumnsChange?: (columns: readonly JiraKanbanColumnData[]) => void;
 	onCardClick?: (card: JiraKanbanCardData, columnTitle: string) => void;
 	onCardAgentActivityViewChat?: JiraKanbanProps["onCardAgentActivityViewChat"];

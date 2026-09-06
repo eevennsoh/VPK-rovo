@@ -39,6 +39,7 @@ import {
 	JIRA_GOLDEN_JOURNEYS_V4_PAY_HEADER_ASSIGNEES,
 	JIRA_GOLDEN_JOURNEYS_V4_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID,
 } from "./data/presentation-story";
+import { useJiraGoldenJourneysV4AgentSessionSync } from "./hooks/use-jira-golden-journeys-v4-agent-session-sync";
 import { useJiraGoldenJourneysV4List } from "./hooks/use-jira-golden-journeys-v4-list";
 
 const JIRA_LIST_PANEL_END_GAP_PX = 24;
@@ -87,6 +88,12 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 	const activeTab = resolveJiraTab(tabs, selectedTabLabel, workItemView);
 	const tabOwnsView = activeTab?.view !== undefined;
 	const activeView = activeTab?.view ?? workItemView;
+	const showBoardContent = activeTab?.hasContent === true;
+	const {
+		reviewAgentSessions,
+		newAgentSessionIds,
+		syncedAgentSessions,
+	} = useJiraGoldenJourneysV4AgentSessionSync({ active: showBoardContent });
 	const handleTabChange = useCallback((tabLabel: string) => {
 		setSelectedTabLabel(tabLabel);
 		const tabView = tabs.find((tab) => tab.label === tabLabel)?.view;
@@ -255,6 +262,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 				<div className="h-full min-h-0 min-w-0 overflow-hidden bg-surface [&>div]:min-h-0">
 					<ExperimentalJiraKanbanPage
 						activeView={activeView}
+						additionalAgentSessions={syncedAgentSessions}
 						agentActivityLayout={agentActivityLayout}
 						cardGenerativeActionPresentation="more-actions"
 						createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
@@ -269,6 +277,8 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						detachedAgentSessionsByCard={detachedAgentSessionsByCard}
 						headerAssignees={JIRA_GOLDEN_JOURNEYS_V4_PAY_HEADER_ASSIGNEES}
 						insightsEnabled={false}
+						newAgentSessionIds={newAgentSessionIds}
+						onAgentSessionsReviewed={reviewAgentSessions}
 						onBoardColumnsChange={(columns: readonly JiraKanbanColumnData[]) => {
 							setBoardColumns([...columns]);
 						}}
@@ -315,7 +325,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						}}
 						renderAgentActivityIndicator={renderAgentActivityIndicator}
 						showAgentSessionColumn
-						showBoardContent={activeTab?.hasContent === true}
+						showBoardContent={showBoardContent}
 						moreControlsPlacement={designVariation === "team-eu" ? "end" : "inline"}
 						showMoreControls={!designVariants["simple-views"]}
 						showCustomizeControl={designVariation === "team-eu" && !designVariants["simple-views"]}

@@ -107,7 +107,11 @@ export type PulseLooseWork =
 			machineName: string;
 			/** Static stamp. Local rows must not tick. */
 			timeLabel: string;
+			/** Authoritative Jira status when this session comes from a live board owner. */
+			issueStatus?: string;
 	  });
+
+export type PulseAgentSession = Extract<PulseLooseWork, { kind: "agent-session" }>;
 
 export type PulseGithubLooseWork = Exclude<PulseLooseWork, { kind: "agent-session" }>;
 
