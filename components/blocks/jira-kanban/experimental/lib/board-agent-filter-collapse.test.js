@@ -4,6 +4,8 @@ const test = require("node:test");
 const {
 	agentSessionColumnCollapsedForAgentFilter,
 	collapsedColumnsForAgentFilter,
+	displayedAgentSessionColumnCollapsedForAgentFilter,
+	displayedCollapsedColumnsForAgentFilter,
 } = require("./board-agent-filter-collapse.ts");
 const { shownSessionStateIdsForAgentFilter } = require("../data/board-view-options.ts");
 const { filterJiraKanbanColumnsByAssignee } = require("../../state.ts");
@@ -156,6 +158,70 @@ test("Untracked expands the session column; linked states collapse it", () => {
 	assert.equal(agentSessionColumnCollapsedForAgentFilter("working"), true);
 	assert.equal(agentSessionColumnCollapsedForAgentFilter("needs-input"), true);
 	assert.equal(agentSessionColumnCollapsedForAgentFilter("finished"), true);
+});
+
+test("an active focus overlays viewer collapse without mutating the saved set", () => {
+	const viewer = new Set(["In review"]);
+	const displayed = displayedCollapsedColumnsForAgentFilter({
+		columns: columnsFixture(),
+		filterId: "needs-input",
+		viewerCollapsed: viewer,
+	});
+
+	assert.deepEqual([...displayed].sort(), ["Done", "In progress", "To do"]);
+	assert.deepEqual([...viewer], ["In review"]);
+});
+
+test("clearing the overlay returns the viewer's collapse set by identity", () => {
+	const viewer = new Set(["Done"]);
+	const displayed = displayedCollapsedColumnsForAgentFilter({
+		columns: columnsFixture(),
+		filterId: null,
+		viewerCollapsed: viewer,
+	});
+
+	assert.equal(displayed, viewer);
+});
+
+test("assignee scope changes which focused columns stay expanded", () => {
+	const columns = [
+		{
+			title: "In review",
+			count: 2,
+			cards: [
+				card({
+					assignee: { id: "jordan", name: "Jordan", avatarSrc: "/jordan.png" },
+					code: "PAY-112",
+					agentActivities: [activity("blocked-agent", "awaiting-input")],
+				}),
+				card({
+					assignee: { id: "maya", name: "Maya", avatarSrc: "/maya.png" },
+					code: "PAY-121",
+					agentActivities: [activity("release-agent", "working")],
+				}),
+			],
+		},
+	];
+
+	const jordan = displayedCollapsedColumnsForAgentFilter({
+		columns: filterJiraKanbanColumnsByAssignee(columns, new Set(["jordan"])),
+		filterId: "working",
+		viewerCollapsed: new Set(),
+	});
+	const maya = displayedCollapsedColumnsForAgentFilter({
+		columns: filterJiraKanbanColumnsByAssignee(columns, new Set(["maya"])),
+		filterId: "working",
+		viewerCollapsed: new Set(),
+	});
+
+	assert.equal(jordan.has("In review"), true);
+	assert.equal(maya.has("In review"), false);
+});
+
+test("Untracked overlay expands the session column without writing viewer collapse", () => {
+	assert.equal(displayedAgentSessionColumnCollapsedForAgentFilter("untracked", true), false);
+	assert.equal(displayedAgentSessionColumnCollapsedForAgentFilter("working", false), true);
+	assert.equal(displayedAgentSessionColumnCollapsedForAgentFilter(null, true), true);
 });
 
 test("shown session ids for a focus row are a singleton, or empty for Untracked", () => {

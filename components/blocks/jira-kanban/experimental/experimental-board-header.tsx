@@ -25,10 +25,9 @@ import { JiraProjectAvatar } from "@/components/blocks/product-sidebar/variants/
 import { JIRA_DESIGN_PROJECT } from "@/components/blocks/product-sidebar/data/jira-navigation";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
-import type { JiraKanbanAssigneeData, JiraKanbanColumnData } from "../index";
+import type { JiraKanbanAssigneeData } from "../index";
 import { BoardViewMenu } from "./components/board-view-menu";
-import type { BoardAgentSessionStateId } from "./data/board-view-options";
-import type { CollapsedBoardColumns } from "./lib/board-column-collapse";
+import type { BoardAgentFilterId, BoardAgentSessionStateId } from "./data/board-view-options";
 import {
 	JIRA_KANBAN_HEADER_FACEPILE_CLASS_NAME,
 	JIRA_KANBAN_HEADER_FACEPILE_MAX_ITEMS,
@@ -116,11 +115,8 @@ interface ExperimentalJiraKanbanBoardHeaderProps {
 	onShownSessionStateIdsChange?: (shownSessionStateIds: Set<BoardAgentSessionStateId>) => void;
 	showUntracked?: boolean;
 	onShowUntrackedChange?: (showUntracked: boolean) => void;
-	boardColumns?: readonly JiraKanbanColumnData[];
-	collapsedColumns?: CollapsedBoardColumns;
-	onCollapsedColumnsChange?: (collapsedColumns: CollapsedBoardColumns) => void;
-	agentSessionColumnCollapsed?: boolean;
-	onAgentSessionColumnCollapsedChange?: (collapsed: boolean) => void;
+	agentFilterId?: BoardAgentFilterId | null;
+	onAgentFilterIdChange?: (agentFilterId: BoardAgentFilterId | null) => void;
 	/**
 	 * Reveals Column size, Hide done, and Show fields in View. The route owns
 	 * Simple views so this header does not read the design-variant store.
@@ -210,11 +206,8 @@ export function ExperimentalJiraKanbanBoardHeader({
 	onShownSessionStateIdsChange,
 	showUntracked,
 	onShowUntrackedChange,
-	boardColumns,
-	collapsedColumns,
-	onCollapsedColumnsChange,
-	agentSessionColumnCollapsed,
-	onAgentSessionColumnCollapsedChange,
+	agentFilterId,
+	onAgentFilterIdChange,
 	simpleViews,
 	viewTabs,
 	title = JIRA_DESIGN_PROJECT.name,
@@ -240,11 +233,8 @@ export function ExperimentalJiraKanbanBoardHeader({
 					showMoreControls={showMoreControls}
 					showUntracked={showUntracked}
 					shownSessionStateIds={shownSessionStateIds}
-					boardColumns={boardColumns}
-					collapsedColumns={collapsedColumns}
-					onCollapsedColumnsChange={onCollapsedColumnsChange}
-					agentSessionColumnCollapsed={agentSessionColumnCollapsed}
-					onAgentSessionColumnCollapsedChange={onAgentSessionColumnCollapsedChange}
+					agentFilterId={agentFilterId}
+					onAgentFilterIdChange={onAgentFilterIdChange}
 					simpleViews={simpleViews}
 					surfaceLabel={surfaceLabel}
 					{...{ endSlot, facepile, filterControl, modeToggle }}
@@ -379,10 +369,8 @@ function BoardHeaderAssigneeFacepileItem({
 
 function BoardHeaderControlsRow({
 	activeView,
-	agentSessionColumnCollapsed,
+	agentFilterId,
 	assignees,
-	boardColumns,
-	collapsedColumns,
 	compact,
 	controlsInsetEnd,
 	endSlot,
@@ -390,8 +378,7 @@ function BoardHeaderControlsRow({
 	filterControl,
 	modeToggle,
 	moreControlsPlacement,
-	onAgentSessionColumnCollapsedChange,
-	onCollapsedColumnsChange,
+	onAgentFilterIdChange,
 	onSelectedAssigneeIdsChange,
 	onShowUntrackedChange,
 	onShownSessionStateIdsChange,
@@ -406,10 +393,8 @@ function BoardHeaderControlsRow({
 	surfaceLabel,
 }: Readonly<{
 	activeView: ExperimentalJiraKanbanView;
-	agentSessionColumnCollapsed?: boolean;
+	agentFilterId?: BoardAgentFilterId | null;
 	assignees: readonly JiraKanbanAssigneeData[];
-	boardColumns?: readonly JiraKanbanColumnData[];
-	collapsedColumns?: CollapsedBoardColumns;
 	compact: boolean;
 	controlsInsetEnd: number;
 	endSlot?: ReactNode;
@@ -417,8 +402,7 @@ function BoardHeaderControlsRow({
 	filterControl?: ReactNode;
 	modeToggle?: ReactNode;
 	moreControlsPlacement: "inline" | "end";
-	onAgentSessionColumnCollapsedChange?: (collapsed: boolean) => void;
-	onCollapsedColumnsChange?: (collapsedColumns: CollapsedBoardColumns) => void;
+	onAgentFilterIdChange?: (agentFilterId: BoardAgentFilterId | null) => void;
 	onSelectedAssigneeIdsChange?: (assigneeIds: Set<string>) => void;
 	onShowUntrackedChange?: (showUntracked: boolean) => void;
 	onShownSessionStateIdsChange?: (shownSessionStateIds: Set<BoardAgentSessionStateId>) => void;
@@ -476,14 +460,10 @@ function BoardHeaderControlsRow({
 
 			<BoardViewMenu
 				compact={compact}
-				agentSessionColumnCollapsed={agentSessionColumnCollapsed}
-				boardColumns={boardColumns}
-				collapsedColumns={collapsedColumns}
-				onAgentSessionColumnCollapsedChange={onAgentSessionColumnCollapsedChange}
-				onCollapsedColumnsChange={onCollapsedColumnsChange}
+				agentFilterId={agentFilterId}
+				onAgentFilterIdChange={onAgentFilterIdChange}
 				onShownSessionStateIdsChange={onShownSessionStateIdsChange}
 				onShowUntrackedChange={onShowUntrackedChange}
-				selectedAssigneeIds={selectedAssigneeIds}
 				shownSessionStateIds={shownSessionStateIds}
 				showUntracked={showUntracked}
 				simpleViews={simpleViews}

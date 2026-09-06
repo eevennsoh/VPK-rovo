@@ -53,7 +53,7 @@ test("the experimental page groups Pulse sessions onto the board when Untracked 
 	);
 	assert.match(
 		PAGE_SOURCE,
-		/showUntracked\s*\?\s*groupBoardUntrackedSessions\(\{\s*archivedItemIds: archivedLooseWorkIds,\s*boardIssueKeys,\s*capturedItemIds: capturedLooseWorkIds,\s*detachedByCard: detachedAgentSessionsByCard,\s*sessions: agentSessionItems,\s*\}\)\s*:\s*EMPTY_PROXIMITY_SESSIONS/u,
+		/displayedShowUntracked\s*\?\s*groupBoardUntrackedSessions\(\{\s*archivedItemIds: archivedLooseWorkIds,\s*boardIssueKeys,\s*capturedItemIds: capturedLooseWorkIds,\s*detachedByCard: detachedAgentSessionsByCard,\s*sessions: agentSessionItems,\s*\}\)\s*:\s*EMPTY_PROXIMITY_SESSIONS/u,
 	);
 	assert.match(PAGE_SOURCE, /detachedAgentSessionsByCard=\{proximityAgentSessionsByCard\}/u);
 	assert.match(HELPER_SOURCE, /session\.sessionDetails\?\.issueKey/u);
@@ -100,7 +100,7 @@ test("the experimental page can prepend newly synced agent sessions with arrival
 	assert.match(PAGE_SOURCE, /looseWork: agentSessionLooseWork/u);
 	assert.match(PAGE_SOURCE, /newItemIds: newAgentSessionIds/u);
 	assert.match(PAGE_SOURCE, /onItemHover: handleUntrackedItemHover/u);
-	assert.match(PAGE_SOURCE, /collapsed: agentSessionColumnCollapsed,/u);
+	assert.match(PAGE_SOURCE, /collapsed: displayedAgentSessionColumnCollapsed,/u);
 	assert.match(PAGE_SOURCE, /onCollapsedChange: handleAgentSessionColumnCollapsedChange/u);
 	assert.doesNotMatch(PAGE_SOURCE, /defaultCollapsed: agentSessionColumnCollapsed/u);
 });

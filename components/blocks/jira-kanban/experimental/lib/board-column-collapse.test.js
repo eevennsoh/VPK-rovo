@@ -73,11 +73,16 @@ test("collapse survives a switch to the list or Pulse view", () => {
 	assert.match(BOARD_SOURCE, /if \(controlledCollapsedColumns === undefined\) \{/u);
 	// The page that owns the view switch owns the state.
 	assert.match(PAGE_SOURCE, /const \[collapsedColumns, setCollapsedColumns\] = useState\(\s*EMPTY_COLLAPSED_BOARD_COLUMNS,?\s*\)/u);
-	assert.match(PAGE_SOURCE, /collapsedColumns=\{collapsedColumns\}/u);
+	assert.match(PAGE_SOURCE, /collapsedColumns=\{displayedCollapsedColumns\}/u);
 	assert.match(PAGE_SOURCE, /onCollapsedColumnsChange=\{setCollapsedColumns\}/u);
+	assert.match(PAGE_SOURCE, /useAgentFilterDisplay\(/u);
 	assert.match(
 		PAGE_SOURCE,
-		/<ExperimentalJiraKanbanBoardHeader[\s\S]*boardColumns=\{boardColumns\}[\s\S]*collapsedColumns=\{collapsedColumns\}[\s\S]*onCollapsedColumnsChange=\{setCollapsedColumns\}/u,
+		/const \[agentFilterId, setAgentFilterId\] = useState<BoardAgentFilterId \| null>\(null\)/u,
+	);
+	assert.match(
+		PAGE_SOURCE,
+		/<ExperimentalJiraKanbanBoardHeader[\s\S]*agentFilterId=\{agentFilterId\}[\s\S]*onAgentFilterIdChange=\{setAgentFilterId\}/u,
 	);
 });
 

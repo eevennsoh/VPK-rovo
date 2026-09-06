@@ -1,7 +1,7 @@
 "use client";
 
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- DropdownMenuTrigger uses a render-node so the View button owns the visual state.
-import { useRef, useState, type ComponentType } from "react";
+import { useState, type ComponentType } from "react";
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
 import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
@@ -15,8 +15,6 @@ import GroupIcon from "@atlaskit/icon-lab/core/group";
 import MergeQueueIcon from "@atlaskit/icon-lab/core/merge-queue";
 import QuestionCircleFilledIcon from "@atlaskit/icon-lab/core/question-circle-filled";
 
-import type { JiraKanbanColumnData } from "../../index";
-import { filterJiraKanbanColumnsByAssignee } from "../../state";
 import { BOARD_GROUP_OPTIONS, type BoardGroupOptionId } from "../data/board-group-options";
 import {
 	BOARD_AGENT_HOST_OPTIONS,
@@ -26,13 +24,7 @@ import {
 	BOARD_PR_STATE_OPTIONS,
 	type BoardPrStateId,
 	isBoardAgentSessionStateId,
-	shownSessionStateIdsForAgentFilter,
 } from "../data/board-view-options";
-import {
-	agentSessionColumnCollapsedForAgentFilter,
-	collapsedColumnsForAgentFilter,
-} from "../lib/board-agent-filter-collapse";
-import type { CollapsedBoardColumns } from "../lib/board-column-collapse";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -60,23 +52,13 @@ interface BoardViewMenuProps {
 	shownSessionStateIds?: ReadonlySet<BoardAgentSessionStateId>;
 	onShownSessionStateIdsChange?: (shownSessionStateIds: Set<BoardAgentSessionStateId>) => void;
 	/**
-	 * Status columns used to decide which ones can collapse while an Agents
-	 * focus row is selected. Omit to leave collapse unchanged (chrome-only hosts).
+	 * Agents focus row. The page owns this so a temporary tab switch does not
+	 * drop the overlay or the Clear restore path.
 	 */
-	boardColumns?: readonly JiraKanbanColumnData[];
-	selectedAssigneeIds?: ReadonlySet<string>;
-	collapsedColumns?: CollapsedBoardColumns;
-	onCollapsedColumnsChange?: (collapsedColumns: CollapsedBoardColumns) => void;
-	agentSessionColumnCollapsed?: boolean;
-	onAgentSessionColumnCollapsedChange?: (collapsed: boolean) => void;
+	agentFilterId?: BoardAgentFilterId | null;
+	onAgentFilterIdChange?: (agentFilterId: BoardAgentFilterId | null) => void;
 }
 
-interface AgentFilterBaseline {
-	showUntracked?: boolean;
-	shownSessionStateIds?: ReadonlySet<BoardAgentSessionStateId>;
-	collapsedColumns?: CollapsedBoardColumns;
-	agentSessionColumnCollapsed?: boolean;
-}
 type BoardSessionTypeOption = Exclude<(typeof BOARD_AGENT_HOST_OPTIONS)[number], { id: "all" }>;
 type BoardSessionTypeId = BoardSessionTypeOption["id"];
 
@@ -163,22 +145,24 @@ function QuickViewActionSubmenu<TId extends string>({
 export function BoardViewMenu({
 	compact = false,
 	surfaceLabel = "board",
-	showUntracked,
-	onShowUntrackedChange,
-	shownSessionStateIds,
-	onShownSessionStateIdsChange,
-	boardColumns,
-	selectedAssigneeIds,
-	collapsedColumns,
-	onCollapsedColumnsChange,
-	agentSessionColumnCollapsed,
-	onAgentSessionColumnCollapsedChange,
+	agentFilterId: controlledAgentFilterId,
+	onAgentFilterIdChange,
 }: Readonly<BoardViewMenuProps>) {
 	const [pullRequestFilterId, setPullRequestFilterId] = useState<BoardPrStateId | null>(null);
 	const [sessionTypeFilterId, setSessionTypeFilterId] = useState<BoardSessionTypeId | null>(null);
-	const [agentFilterId, setAgentFilterId] = useState<BoardAgentFilterId | null>(null);
+	const [uncontrolledAgentFilterId, setUncontrolledAgentFilterId] = useState<BoardAgentFilterId | null>(null);
 	const [groupByFilterId, setGroupByFilterId] = useState<BoardGroupOptionId | null>(null);
-	const agentFilterBaselineRef = useRef<AgentFilterBaseline | null>(null);
+	const isAgentFilterControlled = onAgentFilterIdChange !== undefined;
+	const agentFilterId = isAgentFilterControlled
+		? (controlledAgentFilterId ?? null)
+		: uncontrolledAgentFilterId;
+	const setAgentFilterId = (nextFilterId: BoardAgentFilterId | null) => {
+		if (isAgentFilterControlled) {
+			onAgentFilterIdChange(nextFilterId);
+			return;
+		}
+		setUncontrolledAgentFilterId(nextFilterId);
+	};
 	const selectedQuickViewCount = [
 		pullRequestFilterId,
 		agentFilterId,
@@ -195,45 +179,11 @@ export function BoardViewMenu({
 		setSessionTypeFilterId(id);
 	};
 
-	const applyAgentFilter = (filterId: BoardAgentFilterId) => {
-		setAgentFilterId(filterId);
-		onShownSessionStateIdsChange?.(shownSessionStateIdsForAgentFilter(filterId));
-		onShowUntrackedChange?.(filterId === "untracked");
-		if (boardColumns !== undefined) {
-			onCollapsedColumnsChange?.(collapsedColumnsForAgentFilter({
-				columns: selectedAssigneeIds === undefined
-					? boardColumns
-					: filterJiraKanbanColumnsByAssignee(boardColumns, selectedAssigneeIds),
-				filterId,
-			}));
-		}
-		if (onAgentSessionColumnCollapsedChange === undefined) {
-			return;
-		}
-		const nextAgentSessionColumnCollapsed = agentSessionColumnCollapsedForAgentFilter(filterId);
-		if (nextAgentSessionColumnCollapsed !== agentSessionColumnCollapsed) {
-			onAgentSessionColumnCollapsedChange(nextAgentSessionColumnCollapsed);
-		}
-	};
-
 	const handleAgentSelect = (id: string) => {
 		if (id !== "untracked" && !isBoardAgentSessionStateId(id)) {
 			return;
 		}
-		const filterId: BoardAgentFilterId = id;
-		if (agentFilterId === null) {
-			agentFilterBaselineRef.current = {
-				showUntracked,
-				shownSessionStateIds: shownSessionStateIds === undefined
-					? undefined
-					: new Set(shownSessionStateIds),
-				collapsedColumns: collapsedColumns === undefined
-					? undefined
-					: new Set(collapsedColumns),
-				agentSessionColumnCollapsed,
-			};
-		}
-		applyAgentFilter(filterId);
+		setAgentFilterId(id);
 	};
 
 	const handleGroupBySelect = (id: BoardGroupOptionId) => {
@@ -241,25 +191,6 @@ export function BoardViewMenu({
 	};
 
 	const clearQuickViewSelection = () => {
-		if (agentFilterId !== null) {
-			const baseline = agentFilterBaselineRef.current;
-			if (baseline?.shownSessionStateIds !== undefined) {
-				onShownSessionStateIdsChange?.(new Set(baseline.shownSessionStateIds));
-			}
-			if (baseline?.showUntracked !== undefined) {
-				onShowUntrackedChange?.(baseline.showUntracked);
-			}
-			if (baseline?.collapsedColumns !== undefined) {
-				onCollapsedColumnsChange?.(new Set(baseline.collapsedColumns));
-			}
-			if (
-				baseline?.agentSessionColumnCollapsed !== undefined
-				&& baseline.agentSessionColumnCollapsed !== agentSessionColumnCollapsed
-			) {
-				onAgentSessionColumnCollapsedChange?.(baseline.agentSessionColumnCollapsed);
-			}
-			agentFilterBaselineRef.current = null;
-		}
 		setPullRequestFilterId(null);
 		setAgentFilterId(null);
 		setSessionTypeFilterId(null);

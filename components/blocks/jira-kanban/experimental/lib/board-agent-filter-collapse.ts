@@ -71,3 +71,32 @@ export function agentSessionColumnCollapsedForAgentFilter(
 		}
 	}
 }
+
+/**
+ * Overlay the Agents focus on top of the viewer's collapse set. The viewer
+ * set is left untouched so a tab switch or Clear can restore it.
+ *
+ * `columns` should already be assignee-scoped.
+ */
+export function displayedCollapsedColumnsForAgentFilter({
+	columns,
+	filterId,
+	viewerCollapsed,
+}: {
+	columns: readonly JiraKanbanColumnData[];
+	filterId: BoardAgentFilterId | null;
+	viewerCollapsed: CollapsedBoardColumns;
+}): CollapsedBoardColumns {
+	return filterId === null
+		? viewerCollapsed
+		: collapsedColumnsForAgentFilter({ columns, filterId });
+}
+
+export function displayedAgentSessionColumnCollapsedForAgentFilter(
+	filterId: BoardAgentFilterId | null,
+	viewerCollapsed: boolean,
+): boolean {
+	return filterId === null
+		? viewerCollapsed
+		: agentSessionColumnCollapsedForAgentFilter(filterId);
+}
