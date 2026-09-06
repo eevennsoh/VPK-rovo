@@ -48,7 +48,7 @@ test("new Jira agent and skill sessions use the staged startup presentation", ()
 	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /text="Let's get started"/u);
 	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /presentation="inline"/u);
 	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /splitBy: "word"/u);
-	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /styles\.wave/u);
+	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /jira-agent-wave-motion/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /Gathering context/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<TWGLoader label="" size="small" \/>/u);
 	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /<Shimmer[\s\S]*>\s*\{label\}\s*<\/Shimmer>/u);

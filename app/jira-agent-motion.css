@@ -1,33 +1,28 @@
-.scale {
-	transform-origin: 10px 10px;
-	transform: scale(1.1);
+@keyframes jira-agent-wave {
+	0%, 100% { transform: rotate(0deg); }
+	20% { transform: rotate(12deg); }
+	45% { transform: rotate(-8deg); }
+	70% { transform: rotate(8deg); }
 }
 
-.scaleMotion {
-	animation: enter-scale var(--duration-slowest) var(--ease-in-out) both;
+@utility jira-agent-wave-motion {
+	display: inline-block;
+	transform-origin: 70% 70%;
+	animation: jira-agent-wave calc(var(--duration-slower) * 2) var(--ease-in-out) 1;
 }
 
-.rotatorMotion {
-	transform-origin: 10px 10px;
-	animation: rotate-shape calc(var(--duration-slowest) * 5) var(--ease-linear) infinite;
-}
-
-.morphMotion {
-	animation: morph-shape calc(var(--duration-slowest) * 5) var(--ease-linear) infinite;
-}
-
-@keyframes enter-scale {
+@keyframes spinner-experimental-enter-scale {
 	from { transform: scale(0.75); }
 	to { transform: scale(1.1); }
 }
 
-@keyframes rotate-shape {
+@keyframes spinner-experimental-rotate {
 	0% { transform: rotate(0deg); }
 	28% { transform: rotate(90deg); }
 	28.01%, 100% { transform: rotate(0deg); }
 }
 
-@keyframes morph-shape {
+@keyframes spinner-experimental-shape {
 	0%, 28% {
 		d: path("M 10 4 L 10.64 5.36 L 11.27 6.73 L 11.91 8.09 L 13.27 8.73 L 14.64 9.36 L 16 10 L 14.64 10.64 L 13.27 11.27 L 11.91 11.91 L 11.27 13.27 L 10.64 14.64 L 10 16 L 9.36 14.64 L 8.73 13.27 L 8.09 11.91 L 6.73 11.27 L 5.36 10.64 L 4 10 L 5.36 9.36 L 6.73 8.73 L 8.09 8.09 L 8.73 6.73 L 9.36 5.36 Z");
 	}
@@ -37,4 +32,22 @@
 	82%, 100% {
 		d: path("M 10 4 L 10.64 5.36 L 11.27 6.73 L 11.91 8.09 L 13.27 8.73 L 14.64 9.36 L 16 10 L 14.64 10.64 L 13.27 11.27 L 11.91 11.91 L 11.27 13.27 L 10.64 14.64 L 10 16 L 9.36 14.64 L 8.73 13.27 L 8.09 11.91 L 6.73 11.27 L 5.36 10.64 L 4 10 L 5.36 9.36 L 6.73 8.73 L 8.09 8.09 L 8.73 6.73 L 9.36 5.36 Z");
 	}
+}
+
+@utility spinner-experimental-scale {
+	transform-origin: 10px 10px;
+	transform: scale(1.1);
+}
+
+@utility spinner-experimental-scale-motion {
+	animation: spinner-experimental-enter-scale var(--duration-slowest) var(--ease-in-out) both;
+}
+
+@utility spinner-experimental-rotator-motion {
+	transform-origin: 10px 10px;
+	animation: spinner-experimental-rotate calc(var(--duration-slowest) * 5) var(--ease-linear) infinite;
+}
+
+@utility spinner-experimental-morph-motion {
+	animation: spinner-experimental-shape calc(var(--duration-slowest) * 5) var(--ease-linear) infinite;
 }

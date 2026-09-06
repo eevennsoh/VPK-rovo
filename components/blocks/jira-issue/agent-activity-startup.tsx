@@ -7,8 +7,6 @@ import TextEffects from "@/components/visual/text-effects";
 import { configForEffect } from "@/components/visual/text-effects/data";
 import { cn } from "@/lib/utils";
 
-import styles from "./agent-activity-startup.module.css";
-
 const STARTUP_INTRO_MS = 1800;
 const STARTUP_CONTEXT_MS = 2200;
 const INTRO_TEXT_CONFIG = {
@@ -85,7 +83,7 @@ export function JiraIssueAgentIntroLabel({ usesStrokeChrome }: Readonly<{ usesSt
 				presentation="inline"
 				text="Let's get started"
 			/>
-			<span aria-hidden className={cn(styles.wave, "shrink-0 motion-reduce:animate-none")}>
+			<span aria-hidden className="jira-agent-wave-motion shrink-0 motion-reduce:animate-none">
 				👋
 			</span>
 		</span>

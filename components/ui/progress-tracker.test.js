@@ -6,7 +6,7 @@ const test = require("node:test");
 const PROGRESS_TRACKER_SOURCE = fs.readFileSync(path.join(__dirname, "progress-tracker.tsx"), "utf8");
 const SPINNER_SOURCE = fs.readFileSync(path.join(__dirname, "spinner.tsx"), "utf8");
 const EXPERIMENTAL_SPINNER_SOURCE = fs.readFileSync(path.join(__dirname, "spinner-experimental.tsx"), "utf8");
-const EXPERIMENTAL_SPINNER_STYLES = fs.readFileSync(path.join(__dirname, "spinner-experimental.module.css"), "utf8");
+const EXPERIMENTAL_SPINNER_STYLES = fs.readFileSync(path.join(__dirname, "../../app/jira-agent-motion.css"), "utf8");
 const SPINNER_DETAIL_SOURCE = fs.readFileSync(path.join(__dirname, "../../app/data/details/ui/spinner.ts"), "utf8");
 const TAILWIND_THEME_SOURCE = fs.readFileSync(path.join(__dirname, "../../app/tailwind-theme.css"), "utf8");
 
@@ -77,10 +77,10 @@ test("Spinner exposes the Jira prototype morph only as an experimental variant",
 	assert.match(SPINNER_SOURCE, /<ExperimentalSpinner/u);
 	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /const HEX =/u);
 	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /const SPARKLE =/u);
-	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /styles\.rotatorMotion/u);
-	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /styles\.morphMotion/u);
-	assert.match(EXPERIMENTAL_SPINNER_STYLES, /@keyframes rotate-shape/u);
-	assert.match(EXPERIMENTAL_SPINNER_STYLES, /@keyframes morph-shape/u);
+	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /spinner-experimental-rotator-motion/u);
+	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /spinner-experimental-morph-motion/u);
+	assert.match(EXPERIMENTAL_SPINNER_STYLES, /@keyframes spinner-experimental-rotate/u);
+	assert.match(EXPERIMENTAL_SPINNER_STYLES, /@keyframes spinner-experimental-shape/u);
 	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /shouldReduceMotion \? HEX : SPARKLE/u);
 	assert.match(SPINNER_DETAIL_SOURCE, /`experimental`/u);
 	assert.match(SPINNER_DETAIL_SOURCE, /spinner-demo-experimental/u);
