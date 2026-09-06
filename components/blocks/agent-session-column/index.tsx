@@ -308,16 +308,25 @@ export function AgentSessionColumn({
 
 		return {
 			...triage,
-			// Header Archive must land in the same well as the row control: the
-			// column-owned hidden set that the Archived footer reads. Host
-			// `triage.archive` removes the session from `items`, which would
-			// empty that well instead of filling it.
+			// Header Archive hides into the column-owned well the footer reads.
+			// In the archived view the same control Unarchives, matching the row.
 			archive: (session: AgentSessionItem) => {
-				hideHidden(session);
+				switch (view) {
+					case "hidden":
+						toggleHidden(session);
+						break;
+					case "active":
+						hideHidden(session);
+						break;
+					default: {
+						const exhaustive: never = view;
+						return exhaustive;
+					}
+				}
 				onToggleVisibility?.(session);
 			},
 		};
-	}, [hideHidden, onToggleVisibility, triage]);
+	}, [hideHidden, onToggleVisibility, toggleHidden, triage, view]);
 	const displayTitle = view === "hidden" ? "Archived" : title;
 	// The rail and the card list have very different intrinsic widths, so the
 	// overflow has to be clipped for the duration of the width transition. Any
@@ -339,6 +348,7 @@ export function AgentSessionColumn({
 		getSuggestedWorkItemKeys: sessionProps.getSuggestedWorkItemKeys,
 		title: displayTitle,
 		triage: selectionTriage,
+		visibilityLabel: view === "hidden" ? "Unarchive" : "Archive",
 		visibleItems: viewItems,
 	});
 	const overflowMenu = (

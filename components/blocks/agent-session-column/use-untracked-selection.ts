@@ -19,6 +19,7 @@ import {
 	selectEffectiveSelection,
 	type SelectionActionId,
 	type UntrackedHeaderModel,
+	type VisibilityActionLabel,
 } from "./untracked-selection";
 
 export interface UntrackedSelection {
@@ -35,6 +36,7 @@ export function useUntrackedSelection<T>(
 		getSuggestedWorkItemKeys?: (item: AgentSessionItem) => readonly string[] | undefined;
 		title: string;
 		triage?: UntrackedWorkTriage<T>;
+		visibilityLabel?: VisibilityActionLabel;
 		visibleItems: readonly AgentSessionItem[];
 	}>,
 ): UntrackedSelection {
@@ -78,8 +80,9 @@ export function useUntrackedSelection<T>(
 			count: input.count,
 			selection,
 			title: input.title,
+			visibilityLabel: input.visibilityLabel,
 		}),
-		[approveTargetById, input.count, input.title, selection],
+		[approveTargetById, input.count, input.title, input.visibilityLabel, selection],
 	);
 
 	const rows = useMemo(() => {

@@ -800,6 +800,9 @@ test("the column owns a hidden-id set and filters items before AgentSession", ()
 	assert.match(INDEX_SOURCE, /const viewItems = view === "hidden" \? hiddenItems : visibleItems/u);
 	assert.match(INDEX_SOURCE, /items=\{viewItems\}/u);
 	assert.match(INDEX_SOURCE, /hideHidden\(session\)/u);
+	assert.match(INDEX_SOURCE, /case "hidden":\s*\n\s*toggleHidden\(session\)/u);
+	assert.match(INDEX_SOURCE, /case "active":\s*\n\s*hideHidden\(session\)/u);
+	assert.match(INDEX_SOURCE, /visibilityLabel: view === "hidden" \? "Unarchive" : "Archive"/u);
 	assert.match(INDEX_SOURCE, /onToggleVisibility\?\.\(session\)/u);
 	assert.doesNotMatch(INDEX_SOURCE, /triage\.archive\(session\)/u);
 	assert.doesNotMatch(INDEX_SOURCE, /forgetHidden\(session\.id\)/u);
@@ -950,8 +953,9 @@ test("selecting header hover copy comes from the selectedCount table", () => {
 	assert.match(SELECTION_COPY_SOURCE, /Link agent sessions/u);
 	assert.match(SELECTION_COPY_SOURCE, /Create \$\{selectedCount\} work item/u);
 	assert.match(SELECTION_COPY_SOURCE, /Create \$\{selectedCount\} work items/u);
-	assert.match(SELECTION_COPY_SOURCE, /Archive \$\{selectedCount\} agent session/u);
-	assert.match(SELECTION_COPY_SOURCE, /Archive \$\{selectedCount\} agent sessions/u);
+	assert.match(SELECTION_COPY_SOURCE, /\$\{verb\} \$\{selectedCount\} agent session/u);
+	assert.match(SELECTION_COPY_SOURCE, /\$\{verb\} \$\{selectedCount\} agent sessions/u);
+	assert.match(SELECTION_COPY_SOURCE, /describeVisibilityAction\("Archive", selectedCount\)/u);
 	assert.match(SELECTION_COPY_SOURCE, /clear: \(\) => "Clear"/u);
 	assert.match(SELECTION_COPY_SOURCE, /No selected sessions have a work item to link/u);
 	assert.match(SELECTION_COPY_SOURCE, /No selected sessions can create a work item/u);
