@@ -116,7 +116,7 @@ test("PullRequest spacious variant restores the original three-row dropdown card
 	assert.match(COMPONENT_SOURCE, /<PullRequestStatusLozenge status=\{status\} withIcon \/>/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/function PullRequestSpaciousBody[\s\S]*text-sm font-medium leading-5/u,
+		/function PullRequestSpaciousBody[\s\S]*<PullRequestInlineTitle[\s\S]*className="flex-1 font-medium"/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,
@@ -129,18 +129,27 @@ test("PullRequest spacious variant restores the original three-row dropdown card
 	assert.doesNotMatch(COMPONENT_SOURCE, /function PullRequestCompactBody|variant = "compact"/u);
 });
 
-test("PullRequest flyout and spacious titles wrap instead of truncating", () => {
+test("PullRequest flyout and spacious titles wrap as one inline text run", () => {
 	assert.match(
 		COMPONENT_SOURCE,
 		/function PullRequestDropdownBody[\s\S]*min-w-0 truncate text-text[\s\S]*function PullRequestSpaciousBody/u,
 	);
+	assert.match(COMPONENT_SOURCE, /function PullRequestInlineTitle/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/function PullRequestSpaciousBody[\s\S]*min-w-0 whitespace-normal text-text[\s\S]*function PullRequestFlyoutBody/u,
+		/<span className="text-text-subtlest">#\{number\} <\/span>\s*<span className="text-text">\{title\}<\/span>/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/function PullRequestFlyoutBody[\s\S]*min-w-0 whitespace-normal text-text/u,
+		/function PullRequestSpaciousBody[\s\S]*<PullRequestInlineTitle[\s\S]*function PullRequestFlyoutBody/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/function PullRequestFlyoutBody[\s\S]*<PullRequestInlineTitle number=\{number\} title=\{title\} \/>/u,
+	);
+	assert.doesNotMatch(
+		COMPONENT_SOURCE,
+		/function PullRequestFlyoutBody[\s\S]*shrink-0 text-text-subtlest">#\{number\}/u,
 	);
 	assert.doesNotMatch(
 		COMPONENT_SOURCE,
@@ -171,7 +180,7 @@ test("PullRequest flyout variant matches the overlay summary card", () => {
 	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/function PullRequestFlyoutBody[\s\S]*text-sm leading-5/u,
+		/function PullRequestFlyoutBody[\s\S]*<PullRequestInlineTitle number=\{number\} title=\{title\} \/>/u,
 	);
 	assert.doesNotMatch(
 		COMPONENT_SOURCE,
@@ -190,6 +199,10 @@ test("PullRequest flyout variant matches the overlay summary card", () => {
 	);
 	assert.doesNotMatch(
 		COMPONENT_SOURCE,
+		/function PullRequestFlyoutBody[\s\S]*<PullRequestMetaLeadingIcon \/>[\s\S]*<PullRequestGitHubMark \/>/u,
+	);
+	assert.doesNotMatch(
+		COMPONENT_SOURCE,
 		/function PullRequestFlyoutBody[\s\S]*<PullRequestRepositoryTag /u,
 	);
 	assert.match(
@@ -197,10 +210,16 @@ test("PullRequest flyout variant matches the overlay summary card", () => {
 		/\{filesChanged\} \{filesChanged === 1 \? "file" : "files"\}/u,
 	);
 	assert.match(COMPONENT_SOURCE, /border-t border-border-disabled/u);
-	// Session-flyout DetailsPullRequestRow wrapper: no fixed h-5 clip.
+	// File icon leads the files/diff row, not the GitHub branch row.
+	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/file"/u);
+	assert.match(COMPONENT_SOURCE, /function PullRequestMetaLeadingIcon/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/function PullRequestFlyoutBody[\s\S]*flex min-w-0 items-center gap-1 text-xs leading-5[\s\S]*<PullRequestGitHubMark \/>/u,
+		/grid size-4 shrink-0 place-items-center text-icon-subtlest/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/function PullRequestFlyoutBody[\s\S]*<PullRequestMetaLeadingIcon \/>[\s\S]*\{filesChanged\} \{filesChanged === 1 \? "file" : "files"\}/u,
 	);
 	assert.doesNotMatch(
 		COMPONENT_SOURCE,

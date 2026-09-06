@@ -413,16 +413,16 @@ test("flyout list trailing icons follow the board View PR legend colors", () => 
 		source,
 		/<MergeSuccessIcon color="currentColor" label="Pull request merged"[\s\S]*"Pull request merged",\s*"discovery"/u,
 	);
+	assert.match(source, /information: "text-icon-information"/u);
 	assert.match(
 		source,
-		/<StatusInformationIcon color="currentColor" label="Needs input"[\s\S]*"Needs input",\s*"subtle"/u,
+		/<StatusInformationIcon color="currentColor" label="Needs input"[\s\S]*"Needs input",\s*"information"/u,
 	);
 	assert.match(
 		source,
 		/session\.pullRequestNumber && session\.status === "stopped"[\s\S]*<MergeFailureIcon color="currentColor" label="Pull request failed"[\s\S]*"Pull request failed",\s*"danger"/u,
 	);
 	assert.doesNotMatch(source, /text-icon-accent-purple/u);
-	assert.doesNotMatch(source, /text-icon-information/u);
 	assert.doesNotMatch(source, /JiraSessionLifecycle/u);
 });
 
