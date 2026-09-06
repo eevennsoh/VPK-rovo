@@ -97,6 +97,22 @@ test("View picker exposes unselected filter-action submenus with a selected coun
 		/untracked: \{ glyph: PriorityTrivialIcon, color: token\("color\.icon\.subtlest"\) \}/u,
 	);
 	assert.doesNotMatch(VIEW_MENU_SOURCE, /TaskToDoIcon|@atlaskit\/icon\/core\/task-to-do/u);
+	assert.match(
+		VIEW_MENU_SOURCE,
+		/const agentFilterBaselineRef = useRef<AgentFilterBaseline \| null>\(null\)/u,
+	);
+	assert.match(
+		VIEW_MENU_SOURCE,
+		/if \(agentFilterId === null\) \{[\s\S]*agentFilterBaselineRef\.current = \{[\s\S]*showUntracked,[\s\S]*shownSessionStateIds:/u,
+	);
+	assert.match(
+		VIEW_MENU_SOURCE,
+		/if \(agentFilterId !== null\) \{[\s\S]*agentFilterBaselineRef\.current[\s\S]*onShownSessionStateIdsChange[\s\S]*onShowUntrackedChange[\s\S]*agentFilterBaselineRef\.current = null/u,
+	);
+	assert.doesNotMatch(
+		VIEW_MENU_SOURCE,
+		/onShownSessionStateIdsChange\?\.\(new Set\(BOARD_AGENT_SESSION_STATE_IDS\)\);[\s\S]*onShowUntrackedChange\?\.\(true\);/u,
+	);
 	assert.match(VIEW_MENU_SOURCE, /import ScreenIcon from "@atlaskit\/icon\/core\/screen";/u);
 	assert.match(
 		VIEW_MENU_SOURCE,

@@ -1,7 +1,7 @@
 "use client";
 
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- DropdownMenuTrigger uses a render-node so the View button owns the visual state.
-import { useState, type ComponentType } from "react";
+import { useRef, useState, type ComponentType } from "react";
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
 import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
@@ -18,7 +18,6 @@ import QuestionCircleFilledIcon from "@atlaskit/icon-lab/core/question-circle-fi
 import { BOARD_GROUP_OPTIONS, type BoardGroupOptionId } from "../data/board-group-options";
 import {
 	BOARD_AGENT_HOST_OPTIONS,
-	BOARD_AGENT_SESSION_STATE_IDS,
 	BOARD_AGENT_STATE_OPTIONS,
 	type BoardAgentSessionStateId,
 	BOARD_PR_STATE_OPTIONS,
@@ -51,6 +50,11 @@ interface BoardViewMenuProps {
 	/** Writes linked session-state visibility. */
 	shownSessionStateIds?: ReadonlySet<BoardAgentSessionStateId>;
 	onShownSessionStateIdsChange?: (shownSessionStateIds: Set<BoardAgentSessionStateId>) => void;
+}
+
+interface AgentFilterBaseline {
+	showUntracked?: boolean;
+	shownSessionStateIds?: ReadonlySet<BoardAgentSessionStateId>;
 }
 
 type BoardAgentFilterId = BoardAgentSessionStateId | "untracked";
@@ -140,13 +144,16 @@ function QuickViewActionSubmenu<TId extends string>({
 export function BoardViewMenu({
 	compact = false,
 	surfaceLabel = "board",
+	showUntracked,
 	onShowUntrackedChange,
+	shownSessionStateIds,
 	onShownSessionStateIdsChange,
 }: Readonly<BoardViewMenuProps>) {
 	const [pullRequestFilterId, setPullRequestFilterId] = useState<BoardPrStateId | null>(null);
 	const [sessionTypeFilterId, setSessionTypeFilterId] = useState<BoardSessionTypeId | null>(null);
 	const [agentFilterId, setAgentFilterId] = useState<BoardAgentFilterId | null>(null);
 	const [groupByFilterId, setGroupByFilterId] = useState<BoardGroupOptionId | null>(null);
+	const agentFilterBaselineRef = useRef<AgentFilterBaseline | null>(null);
 	const selectedQuickViewCount = [
 		pullRequestFilterId,
 		agentFilterId,
@@ -164,6 +171,14 @@ export function BoardViewMenu({
 	};
 
 	const handleAgentSelect = (id: string) => {
+		if (agentFilterId === null) {
+			agentFilterBaselineRef.current = {
+				showUntracked,
+				shownSessionStateIds: shownSessionStateIds === undefined
+					? undefined
+					: new Set(shownSessionStateIds),
+			};
+		}
 		if (id === "untracked") {
 			setAgentFilterId(id);
 			onShownSessionStateIdsChange?.(new Set());
@@ -183,12 +198,20 @@ export function BoardViewMenu({
 	};
 
 	const clearQuickViewSelection = () => {
+		if (agentFilterId !== null) {
+			const baseline = agentFilterBaselineRef.current;
+			if (baseline?.shownSessionStateIds !== undefined) {
+				onShownSessionStateIdsChange?.(new Set(baseline.shownSessionStateIds));
+			}
+			if (baseline?.showUntracked !== undefined) {
+				onShowUntrackedChange?.(baseline.showUntracked);
+			}
+			agentFilterBaselineRef.current = null;
+		}
 		setPullRequestFilterId(null);
 		setAgentFilterId(null);
 		setSessionTypeFilterId(null);
 		setGroupByFilterId(null);
-		onShownSessionStateIdsChange?.(new Set(BOARD_AGENT_SESSION_STATE_IDS));
-		onShowUntrackedChange?.(true);
 	};
 
 	return (
