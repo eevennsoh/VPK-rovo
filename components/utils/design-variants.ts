@@ -31,8 +31,8 @@ export const DESIGN_VARIANTS_STORAGE_KEY = "ui-design-variants";
 /**
  * Written next to the variant booleans. Missing or older payloads are treated
  * as schema 1: Simple kanban was still an off default then, so a stored
- * `false` is incidental (the whole map is persisted on any toggle) and must
- * not block the on-default rollout.
+ * `false` is incidental — the whole map is persisted when a variant is
+ * toggled — and must not block the on-default rollout.
  */
 export const DESIGN_VARIANTS_STORAGE_SCHEMA_VERSION = 2;
 

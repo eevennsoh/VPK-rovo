@@ -222,9 +222,9 @@ test("normalises unknown keys and non-boolean values in stored payloads", async 
 	localStorage.setItem("ui-design-variants", JSON.stringify({ "simple-views": false }));
 	assert.deepEqual(harness.readStoredDesignVariants(), { panel: false, "simple-views": false, simpleKanban: true });
 
-	// Schema 1 (or missing) Simple kanban values are incidental: any toggle
-	// persisted the whole map while the default was still off, so they must
-	// not block the on-default rollout.
+	// Schema 1 (or missing) Simple kanban values are incidental: toggling a
+	// sibling persisted the whole map while the default was still off, so they
+	// must not block the on-default rollout.
 	localStorage.setItem("ui-design-variants", JSON.stringify({ simpleKanban: false }));
 	assert.deepEqual(harness.readStoredDesignVariants(), { panel: false, "simple-views": true, simpleKanban: true });
 
