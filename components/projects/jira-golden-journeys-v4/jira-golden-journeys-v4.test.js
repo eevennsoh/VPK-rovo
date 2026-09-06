@@ -68,21 +68,6 @@ test("the route renders the Payments board directly inside Jira app chrome", () 
 	assert.match(PAGE_SOURCE, /overflow-hidden bg-surface \[&>div\]:min-h-0/u);
 });
 
-test("the route periodically syncs one or two new agent sessions into Untracked work", () => {
-	assert.match(
-		PAGE_SOURCE,
-		/import \{ useJiraGoldenJourneysV4AgentSessionSync \} from "\.\/hooks\/use-jira-golden-journeys-v4-agent-session-sync";/u,
-	);
-	assert.match(
-		PAGE_SOURCE,
-		/const \{ newAgentSessionIds, syncedAgentSessions \} = useJiraGoldenJourneysV4AgentSessionSync\(\);/u,
-	);
-	assert.match(
-		PAGE_SOURCE,
-		/<ExperimentalJiraKanbanPage[\s\S]*additionalAgentSessions=\{syncedAgentSessions\}[\s\S]*newAgentSessionIds=\{newAgentSessionIds\}/u,
-	);
-});
-
 test("the route no longer renders gallery or presentation phases", () => {
 	assert.doesNotMatch(PAGE_SOURCE, /Gallery|GalleryItem/u);
 	assert.doesNotMatch(PAGE_SOURCE, /StoryControls|PresentationChapter/u);

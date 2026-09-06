@@ -2,7 +2,13 @@ const assert = require("node:assert/strict");
 const path = require("node:path");
 const { test } = require("node:test");
 const esbuild = require("esbuild");
+const { readFileSync } = require("node:fs");
 const { loadCjsModuleFromText } = require(process.cwd() + "/scripts/lib/esbuild-cjs-loader.js");
+
+const PAGE_SOURCE = readFileSync(
+	path.join(__dirname, "../page.tsx"),
+	"utf8",
+);
 
 let syncModulePromise;
 
@@ -56,4 +62,19 @@ test("every queued Jira v4 session has a unique stable identity", async () => {
 	assert.equal(new Set(sessions.map((session) => session.id)).size, sessions.length);
 	assert.ok(sessions.every((session) => session.kind === "agent-session"));
 	assert.ok(sessions.every((session) => session.timeLabel === "just now"));
+});
+
+test("the route periodically syncs one or two new agent sessions into Untracked work", () => {
+	assert.match(
+		PAGE_SOURCE,
+		/import \{ useJiraGoldenJourneysV4AgentSessionSync \} from "\.\/hooks\/use-jira-golden-journeys-v4-agent-session-sync";/u,
+	);
+	assert.match(
+		PAGE_SOURCE,
+		/const \{ newAgentSessionIds, syncedAgentSessions \} = useJiraGoldenJourneysV4AgentSessionSync\(\);/u,
+	);
+	assert.match(
+		PAGE_SOURCE,
+		/<ExperimentalJiraKanbanPage[\s\S]*additionalAgentSessions=\{syncedAgentSessions\}[\s\S]*newAgentSessionIds=\{newAgentSessionIds\}/u,
+	);
 });
