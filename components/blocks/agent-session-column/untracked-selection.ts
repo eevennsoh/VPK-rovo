@@ -90,15 +90,22 @@ export type SelectionActionHint =
 	| { readonly kind: "available"; readonly text: string }
 	| { readonly kind: "unavailable"; readonly text: string };
 
+export type VisibilityActionLabel = "Archive" | "Unarchive";
+
+export function describeVisibilityAction(
+	verb: VisibilityActionLabel,
+	selectedCount: number,
+): string {
+	return selectedCount === 1
+		? `${verb} ${selectedCount} agent session`
+		: `${verb} ${selectedCount} agent sessions`;
+}
+
 export const SELECTION_ACTION_AVAILABLE_COPY: Readonly<
 	Record<SelectionActionId, (selectedCount: number) => string>
 > = {
 	approve: () => "Link agent sessions",
-	archive: (selectedCount: number) => (
-		selectedCount === 1
-			? `Archive ${selectedCount} agent session`
-			: `Archive ${selectedCount} agent sessions`
-	),
+	archive: (selectedCount: number) => describeVisibilityAction("Archive", selectedCount),
 	clear: () => "Clear",
 	create: (selectedCount: number) => (
 		selectedCount === 1
@@ -163,6 +170,7 @@ export function buildUntrackedHeaderModel<T>(
 		selection: EffectiveSelection;
 		title: string;
 		visibleCount: number;
+		visibilityLabel?: VisibilityActionLabel;
 	}>,
 ): UntrackedHeaderModel {
 	if (input.selection.kind === "empty") {
@@ -205,7 +213,10 @@ export function buildUntrackedHeaderModel<T>(
 			{
 				id: "archive",
 				eligibleCount: selectedCount,
-				hint: describeSelectionAction("archive", { eligibleCount: selectedCount, selectedCount }),
+				hint: {
+					kind: "available",
+					text: describeVisibilityAction(input.visibilityLabel ?? "Archive", selectedCount),
+				},
 			},
 			{
 				id: "clear",

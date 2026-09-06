@@ -67,6 +67,7 @@ import type {
 } from "../index";
 import {
 	DEFAULT_KANBAN_COLUMN_CHROME,
+	KANBAN_COLUMN_DROP_TARGET_GROUP_CLASS,
 	resolveKanbanColumnChrome,
 	type KanbanColumnChrome,
 	type KanbanColumnChromeStyles,
@@ -347,7 +348,10 @@ function BoardColumn({
 			}}
 		>
 			<div
-				className="flex min-w-0 items-center justify-between gap-2"
+				className={cn(
+					"flex min-w-0 items-center justify-between gap-2",
+					chrome.headerDropArmedClassName,
+				)}
 				style={{ paddingBottom: token("space.100"), ...chrome.header }}
 			>
 				<div className="flex min-w-0 items-center gap-1.5">
@@ -468,6 +472,7 @@ function BoardColumnShell({
 			data-kanban-column-chrome={columnChrome}
 			data-collapsed={collapsed || undefined}
 			className={cn(
+				KANBAN_COLUMN_DROP_TARGET_GROUP_CLASS,
 				"min-w-0 border-2 border-transparent",
 				collapsed || isResizing ? "overflow-hidden" : "overflow-visible",
 			)}

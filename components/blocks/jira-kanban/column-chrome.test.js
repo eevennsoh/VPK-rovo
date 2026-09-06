@@ -24,6 +24,8 @@ async function loadColumnChromeHarness() {
 			contents: `
 				export {
 					DEFAULT_KANBAN_COLUMN_CHROME,
+					KANBAN_COLUMN_DROP_TARGET_GROUP_CLASS,
+					SIMPLE_KANBAN_DROP_ARMED_HEADER_CLASS_NAME,
 					resolveKanbanColumnChrome,
 				} from "./components/blocks/jira-kanban/column-chrome";
 				export { token } from "./lib/tokens";
@@ -60,6 +62,7 @@ test("default names bg-surface-sunken and the well tokens", async () => {
 	assert.equal(chrome.cardList.paddingInline, harness.token("space.050"));
 	assert.equal(chrome.cardList.gap, harness.token("space.050"));
 	assert.equal(chrome.footer.paddingInline, harness.token("space.050"));
+	assert.equal(chrome.headerDropArmedClassName, "");
 	assert.equal(chrome.resizeButtonClassName, "pt-2 pb-1");
 	assert.equal(chrome.headerFrame, "enclosed");
 	assert.equal(
@@ -107,6 +110,7 @@ test("simple has an empty class and undefined insets", async () => {
 	assert.equal(chrome.cardList.paddingInline, undefined);
 	assert.equal("gap" in chrome.cardList, false);
 	assert.equal(chrome.footer.paddingInline, undefined);
+	assert.equal(chrome.headerDropArmedClassName, harness.SIMPLE_KANBAN_DROP_ARMED_HEADER_CLASS_NAME);
 	assert.equal(chrome.resizeButtonClassName, "");
 	assert.equal(Object.hasOwn(chrome.header, "paddingTop"), true);
 	assert.notEqual(chrome.header.paddingTop, 0);
@@ -147,6 +151,38 @@ test("repeated resolve returns the same frozen object", async () => {
 	assert.notEqual(firstDefault, firstSimple);
 	assert.equal(Object.isFrozen(firstDefault), true);
 	assert.equal(Object.isFrozen(firstSimple), true);
+});
+
+test("simple drop-armed header inset matches stroke-card summary text and the drop ring motion", async () => {
+	const harness = await loadColumnChromeHarness();
+	const issueSource = readFileSync(
+		path.join(__dirname, "../jira-issue/index.tsx"),
+		"utf8",
+	);
+
+	assert.match(
+		issueSource,
+		/"group\/jira-issue relative w-full min-w-0 border outline-none focus-visible:border-ring"/u,
+	);
+	assert.match(issueSource, /usesCompactVisual \? "px-3 pt-3 pb-2" : "p-3"/u);
+	assert.equal(
+		harness.SIMPLE_KANBAN_DROP_ARMED_HEADER_CLASS_NAME,
+		[
+			"transition-[padding-inline] duration-normal ease-out-practical",
+			"motion-reduce:transition-none",
+			"group-[&.border-ring]/kanban-column-drop:[padding-inline:calc(1px+var(--ds-space-150))]",
+		].join(" "),
+	);
+	assert.equal(
+		harness.resolveKanbanColumnChrome("simple").headerDropArmedClassName,
+		harness.SIMPLE_KANBAN_DROP_ARMED_HEADER_CLASS_NAME,
+	);
+	assert.equal(harness.resolveKanbanColumnChrome("default").headerDropArmedClassName, "");
+	assert.equal(harness.KANBAN_COLUMN_DROP_TARGET_GROUP_CLASS, "group/kanban-column-drop");
+	assert.match(
+		COLUMN_CHROME_SOURCE,
+		/Same duration\/easing as the drag-target border/u,
+	);
 });
 
 test("the recipe module does not import design-variants", () => {
