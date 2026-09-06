@@ -85,7 +85,7 @@ test("renders each session as a solid uncaptured-work card around the shared row
 	// The row presenter stays owned by Agent List; this block only frames it.
 	assert.match(
 		CARD_SOURCE,
-		/import \{\s*AgentListRow,\s*type AgentListRowHoverActions,\s*\} from "@\/components\/blocks\/agent-list\/agent-list-card";/u,
+		/import \{\s*AgentListIdentity,\s*AgentListRow,\s*type AgentListRowHoverActions,\s*\} from "@\/components\/blocks\/agent-list\/agent-list-card";/u,
 	);
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*hoverActions=\{hoverActions\}/u);
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*isCompact=\{false\}/u);
@@ -94,19 +94,17 @@ test("renders each session as a solid uncaptured-work card around the shared row
 	assert.doesNotMatch(CARD_SOURCE, /isSelected=\{false\}/u);
 });
 
-test("large uncaptured-work Rovo rows use the same 32px hexagon as other agents", () => {
-	const listCardSource = readFileSync(
-		join(__dirname, "../agent-list/agent-list-card.tsx"),
-		"utf8",
-	);
-	assert.match(
-		listCardSource,
-		/<AgentAvatarVisual[\s\S]*avatarSrc=\{agent\.avatarSrc\}[\s\S]*sizePx=\{sizePx\}/u,
-	);
-	assert.match(listCardSource, /vpkLogo=\{agent\.vpkLogo\}/u);
-	assert.match(listCardSource, /<AgentListIdentity[\s\S]*sizePx=\{isCompact \? 24 : 32\}/u);
-	assert.doesNotMatch(listCardSource, /CATALOG_VPK_LOGO_SIZE_PX|agentVisualSizePx/u);
-	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*isCompact=\{false\}/u);
+test("large uncaptured-work rows lead with the human invoker while retaining agent semantics", () => {
+	assert.match(LIST_CARD_SOURCE, /export function AgentListIdentity/u);
+	assert.match(CARD_SOURCE, /const visibleIdentity = toAgentSessionVisibleIdentity\(item\);/u);
+	assert.match(CARD_SOURCE, /<AgentListIdentity[\s\S]*agent=\{visibleIdentity\}[\s\S]*sizePx=\{24\}/u);
+	assert.match(CARD_SOURCE, /renderIdentity=\{\(\) =>/u);
+	assert.doesNotMatch(CARD_SOURCE, /sizePx=\{32\}/u);
+	assert.match(TYPES_SOURCE, /export function toAgentSessionVisibleIdentity/u);
+	assert.match(TYPES_SOURCE, /kind: "person"/u);
+	assert.match(TYPES_SOURCE, /avatarSrc: item\.invokedBy\.avatarSrc/u);
+	assert.match(TYPES_SOURCE, /return item\.agent;/u);
+	assert.doesNotMatch(DATA_SOURCE, /name: "person A"/u);
 });
 
 test("large remains the default while every card receives the selected size variant", () => {
@@ -339,7 +337,7 @@ test("the row reveals Resume plus Archive / Unarchive where Agent List puts Arch
 	// markup — the card only supplies the two action descriptors.
 	assert.match(
 		CARD_SOURCE,
-		/import \{\s*AgentListRow,\s*type AgentListRowHoverActions,\s*\} from "@\/components\/blocks\/agent-list\/agent-list-card";/u,
+		/import \{\s*AgentListIdentity,\s*AgentListRow,\s*type AgentListRowHoverActions,\s*\} from "@\/components\/blocks\/agent-list\/agent-list-card";/u,
 	);
 	assert.match(CARD_SOURCE, /const hoverActions: AgentListRowHoverActions = \{/u);
 	assert.match(CARD_SOURCE, /label: copiedResume \? "Copied" : "Resume",/u);
@@ -532,7 +530,7 @@ test("Resume is gated on host capability before the clipboard write", () => {
 test("reuses the Agent List row model instead of forking a parallel one", () => {
 	assert.match(
 		TYPES_SOURCE,
-		/import type \{ AgentListItem \} from "@\/components\/blocks\/agent-list";/u,
+		/import type \{ AgentListAgent, AgentListItem \} from "@\/components\/blocks\/agent-list";/u,
 	);
 	assert.match(TYPES_SOURCE, /export type AgentSessionItem = AgentListItem;/u);
 	assert.match(INDEX_SOURCE, /isCodingAgentListItem\(item\)/u);

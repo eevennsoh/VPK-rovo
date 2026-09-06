@@ -120,7 +120,8 @@ export function toPulseSessionItems(
 			.map((id) => byId.get(id))
 			.find((member) => member !== undefined && member.kind === "human");
 		const worktree = toPulseSessionWorktree(item.detail);
-		const issueStatus = toPulseSessionIssueStatus(item.sourceTitle, workItems);
+		const issueStatus = item.issueStatus
+			?? toPulseSessionIssueStatus(item.sourceTitle, workItems);
 
 		return [{
 			agent: toPulseSessionAgent(item.agentId),
