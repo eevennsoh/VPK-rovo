@@ -8,6 +8,24 @@ export type KanbanColumnChrome = "default" | "simple";
 export const DEFAULT_KANBAN_COLUMN_CHROME: KanbanColumnChrome = "default";
 
 /**
+ * Named group on the column drop shell. Simple headers key their drop-armed
+ * inset off this group's `.border-ring` class.
+ */
+export const KANBAN_COLUMN_DROP_TARGET_GROUP_CLASS = "group/kanban-column-drop";
+
+/**
+ * Simple captions sit flush with the card edge. While the 2px drop ring is
+ * visible, inset the header by the stroke-card summary gutter so the label
+ * left-aligns with `JiraIssueSummary` text: 1px issue `border` plus compact
+ * `px-3` (`space.150`). Same duration/easing as the drag-target border.
+ */
+export const SIMPLE_KANBAN_DROP_ARMED_HEADER_CLASS_NAME = [
+	"transition-[padding-inline] duration-normal ease-out-practical",
+	"motion-reduce:transition-none",
+	"group-[&.border-ring]/kanban-column-drop:[padding-inline:calc(1px+var(--ds-space-150))]",
+].join(" ");
+
+/**
  * Collapsed status-column paint and caption spacing. Framing lives on
  * `KanbanColumnChromeStyles.headerFrame`, not here — one board decision.
  */
@@ -62,6 +80,11 @@ export interface KanbanColumnChromeStyles {
 	readonly footer: {
 		readonly paddingInline: string | undefined;
 	};
+	/**
+	 * Simple only: transitions the caption away from the drop ring. Empty on
+	 * default — the well already insets the header.
+	 */
+	readonly headerDropArmedClassName: string;
 	/** Default well only: collapse control `pt-2`/`pb-1` (8px/4px). Empty on simple. */
 	readonly resizeButtonClassName: string;
 	readonly collapsed: KanbanCollapsedChromeStyles;
@@ -101,6 +124,7 @@ const DEFAULT_KANBAN_COLUMN_CHROME_STYLES: KanbanColumnChromeStyles = Object.fre
 	footer: Object.freeze({
 		paddingInline: token("space.050"),
 	}),
+	headerDropArmedClassName: "",
 	resizeButtonClassName: "pt-2 pb-1",
 	collapsed: DEFAULT_KANBAN_COLLAPSED_CHROME_STYLES,
 });
@@ -121,6 +145,7 @@ const SIMPLE_KANBAN_COLUMN_CHROME_STYLES: KanbanColumnChromeStyles = Object.free
 	footer: Object.freeze({
 		paddingInline: undefined,
 	}),
+	headerDropArmedClassName: SIMPLE_KANBAN_DROP_ARMED_HEADER_CLASS_NAME,
 	resizeButtonClassName: "",
 	collapsed: SIMPLE_KANBAN_COLLAPSED_CHROME_STYLES,
 });
