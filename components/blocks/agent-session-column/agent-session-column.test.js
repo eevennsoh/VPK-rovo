@@ -5,6 +5,10 @@ const { test } = require("node:test");
 
 const INDEX_SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 const HOOK_SOURCE = readFileSync(join(__dirname, "use-agent-session-column-hidden.ts"), "utf8");
+const SELECTION_HOOK_SOURCE = readFileSync(
+	join(__dirname, "use-untracked-selection.ts"),
+	"utf8",
+);
 const FOOTER_SOURCE = readFileSync(
 	join(__dirname, "agent-session-column-hidden-footer.tsx"),
 	"utf8",
@@ -654,7 +658,9 @@ test("an arrival is a transient beat plus a mark that outlives it", () => {
 	// The mark is the load-bearing half: it has to survive a backgrounded tab, a
 	// collapsed column, and reduced motion, so it is never the animation alone.
 	assert.match(CARD_SOURCE, /<span className="sr-only">Newly synced, not yet reviewed<\/span>/u);
-	assert.match(CARD_SOURCE, /size-1\.5 rounded-full bg-icon-discovery/u);
+	assert.match(CARD_SOURCE, /size-1\.5 -translate-y-1\/2 rounded-full bg-icon-discovery/u);
+	assert.match(CARD_SOURCE, /absolute left-1\.5 top-1\/2/u);
+	assert.doesNotMatch(CARD_SOURCE, /top-1\.5/u);
 	assert.match(RAIL_COLUMN_SOURCE, /backgroundColor: AGENT_SESSION_NOTCH_TONE\.rest/u);
 	assert.doesNotMatch(
 		RAIL_COLUMN_SOURCE,
@@ -926,17 +932,45 @@ test("the selecting header Link action uses a CheckMark icon", () => {
 	assert.doesNotMatch(HEADER_SOURCE, /LinkIcon/u);
 });
 
-test("the selecting header omits collapse so Clear is the only exit", () => {
-	const columnSelecting = HEADER_SOURCE.slice(
+test("selecting a session slides in a check-circle select-all control", () => {
+	assert.match(
+		HEADER_SOURCE,
+		/import CheckCircleUncheckedIcon from "@atlaskit\/icon\/core\/check-circle-unchecked";/u,
+	);
+	assert.match(HEADER_SOURCE, /import CheckCircleIcon from "@atlaskit\/icon\/core\/check-circle";/u);
+	assert.match(HEADER_SOURCE, /allSelected \? CheckCircleIcon : CheckCircleUncheckedIcon/u);
+	assert.match(HEADER_SOURCE, /transition-\[width,margin\] duration-normal ease-in-out/u);
+	assert.match(HEADER_SOURCE, /motion-reduce:transition-none/u);
+	assert.match(HEADER_SOURCE, /inert=\{!expanded\}/u);
+	assert.match(HEADER_SOURCE, /aria-hidden=\{expanded \? undefined : true\}/u);
+	assert.match(HEADER_SOURCE, /onAction\("select-all"\)/u);
+	assert.match(HEADER_SOURCE, /case "enclosed":\s*\n\s*return "ms-2 me-4 w-6 has-\[:focus-visible\]:overflow-visible";/u);
+	assert.match(HEADER_SOURCE, /case "caption":\s*\n\s*return "ms-5 me-4 w-6 has-\[:focus-visible\]:overflow-visible";/u);
+	assert.match(HEADER_SOURCE, /pointer-events-none ms-0 me-0 w-0/u);
+	assert.doesNotMatch(HEADER_SOURCE, /me-1\.5 w-6/u);
+	assert.match(HEADER_SOURCE, /\[&>span:last-child\]:pl-4/u);
+	assert.match(SELECTION_COPY_SOURCE, /select: "Select all"/u);
+	assert.match(SELECTION_COPY_SOURCE, /deselect: "Deselect all"/u);
+	assert.doesNotMatch(HEADER_SOURCE, /select-all: CheckCircle/u);
+	assert.match(SELECTION_HOOK_SOURCE, /id === "select-all"/u);
+	assert.match(SELECTION_HOOK_SOURCE, /type: "select-all"/u);
+	assert.match(SELECTION_HOOK_SOURCE, /dispatch\(\{ type: "clear" \}\)/u);
+});
+
+test("the selecting header omits collapse so Clear and Deselect all can exit", () => {
+	const columnChrome = HEADER_SOURCE.slice(
 		HEADER_SOURCE.indexOf("function renderColumnChrome"),
 		HEADER_SOURCE.indexOf("function renderPanelChrome"),
 	);
-	const columnSelectingBranch = columnSelecting.slice(columnSelecting.lastIndexOf('case "selecting":'));
-	assert.doesNotMatch(columnSelectingBranch, /<CollapseButton/u);
+	assert.match(columnChrome, /<SelectAllSlot/u);
+	assert.match(
+		columnChrome,
+		/isSelecting \? \([\s\S]*<HeaderIconButton[\s\S]*\) : \([\s\S]*<CollapseButton/u,
+	);
 	const panelSelecting = HEADER_SOURCE.slice(HEADER_SOURCE.indexOf("function renderPanelChrome"));
 	const panelSelectingBranch = panelSelecting.slice(panelSelecting.lastIndexOf('case "selecting":'));
 	assert.doesNotMatch(panelSelectingBranch, /ShrinkHorizontalIcon/u);
-	assert.match(columnSelectingBranch, /<HeaderIconButton/u);
+	assert.match(panelSelectingBranch, /<SelectAllButton/u);
 	assert.match(panelSelectingBranch, /<PanelAction/u);
 });
 
