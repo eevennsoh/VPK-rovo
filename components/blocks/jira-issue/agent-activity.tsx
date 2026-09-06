@@ -594,18 +594,14 @@ function JiraIssueAgentActivityRow({
 							usesStrokeChrome ? "text-xs leading-4" : "text-sm leading-5",
 						)}
 					>
-						<Shimmer
-							as="span"
+						<span
 							className={cn(
 								"block min-w-0 truncate",
 								usesStrokeChrome ? "text-xs leading-4" : "text-sm leading-5",
 							)}
-							duration={JIRA_ISSUE_AGENT_SHIMMER_DURATION}
-							spread={JIRA_ISSUE_AGENT_SHIMMER_SPREAD}
-							wave={false}
 						>
 							{summary.label}
-						</Shimmer>
+						</span>
 						<AnimatedDots className={usesStrokeChrome ? "[&>span]:text-xs" : undefined} />
 					</span>
 				) : startupPhase === "intro" ? (
@@ -703,9 +699,14 @@ function JiraIssueCyclingAgentLabelContent({
 	const shouldReduceMotion = useReducedMotion();
 	const [labelIndex, setLabelIndex] = useState(0);
 	const label = labels[labelIndex % labels.length] ?? "";
+	const isCycling = !shouldReduceMotion && labels.length > 1;
+	const labelClassName = cn(
+		"block min-w-0 truncate",
+		usesStrokeChrome ? "text-xs leading-4" : "text-sm leading-5",
+	);
 
 	useEffect(() => {
-		if (shouldReduceMotion || labels.length <= 1) {
+		if (!isCycling) {
 			return undefined;
 		}
 
@@ -724,7 +725,7 @@ function JiraIssueCyclingAgentLabelContent({
 				window.clearTimeout(timeoutId);
 			}
 		};
-	}, [cycleIntervalJitterMs, cycleIntervalMs, labels.length, shouldReduceMotion]);
+	}, [cycleIntervalJitterMs, cycleIntervalMs, isCycling, labels.length]);
 
 	return (
 		<span
@@ -738,15 +739,22 @@ function JiraIssueCyclingAgentLabelContent({
 					<motion.span
 						key={label}
 						animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
-						className={cn("block min-w-0 truncate", usesStrokeChrome ? "text-xs leading-4" : "text-sm leading-5")}
+						className={labelClassName}
 						exit={shouldReduceMotion ? undefined : { opacity: 0, y: 4 }}
 						initial={shouldReduceMotion ? false : { opacity: 0, y: -4 }}
 						transition={JIRA_ISSUE_AGENT_LABEL_TRANSITION}
 					>
-						<JiraIssueShimmeringAgentLabel
-							label={label}
-							usesStrokeChrome={usesStrokeChrome}
-						/>
+						{isCycling ? (
+							<Shimmer
+								as="span"
+								className={labelClassName}
+								duration={JIRA_ISSUE_AGENT_SHIMMER_DURATION}
+								spread={JIRA_ISSUE_AGENT_SHIMMER_SPREAD}
+								wave={false}
+							>
+								{label}
+							</Shimmer>
+						) : label}
 					</motion.span>
 				</AnimatePresence>
 			</span>

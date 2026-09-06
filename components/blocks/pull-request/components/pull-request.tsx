@@ -86,7 +86,7 @@ function PullRequestDiffStats({
 		<span
 			aria-label={`${additions} additions, ${deletions} deletions`}
 			className={cn(
-				"inline-flex shrink-0 items-center gap-1 text-xs font-medium tabular-nums leading-4",
+				"inline-flex shrink-0 items-center text-xs font-medium tabular-nums leading-4",
 				className,
 			)}
 			role="group"

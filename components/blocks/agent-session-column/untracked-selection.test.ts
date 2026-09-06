@@ -38,6 +38,32 @@ test("clear is a no-op on an empty mark set", () => {
 	assert.equal(reduceSelectionMarks(NO_SELECTION_MARKS, { type: "clear" }), NO_SELECTION_MARKS);
 });
 
+test("select-all adds visible ids and keeps marks that are already there", () => {
+	const marked = reduceSelectionMarks(NO_SELECTION_MARKS, { type: "toggle", id: "lw-a" });
+	const selected = reduceSelectionMarks(marked, {
+		type: "select-all",
+		ids: ["lw-a", "lw-b", "lw-c"],
+	});
+
+	assert.deepEqual([...selected.markedIds], ["lw-a", "lw-b", "lw-c"]);
+});
+
+test("select-all is a no-op when every id is already marked", () => {
+	const marked = reduceSelectionMarks(
+		reduceSelectionMarks(NO_SELECTION_MARKS, { type: "toggle", id: "lw-a" }),
+		{ type: "toggle", id: "lw-b" },
+	);
+
+	assert.equal(
+		reduceSelectionMarks(marked, { type: "select-all", ids: ["lw-a", "lw-b"] }),
+		marked,
+	);
+	assert.equal(
+		reduceSelectionMarks(NO_SELECTION_MARKS, { type: "select-all", ids: [] }),
+		NO_SELECTION_MARKS,
+	);
+});
+
 test("clear empties marks and does not invent a spotlight field", () => {
 	const marked = reduceSelectionMarks(NO_SELECTION_MARKS, { type: "toggle", id: "lw-a" });
 	const cleared = reduceSelectionMarks(marked, { type: "clear" });
@@ -96,6 +122,7 @@ test("the browsing header keeps the host title and count", () => {
 			count: 4,
 			selection: { kind: "empty" },
 			title: "Untracked work",
+			visibleCount: 4,
 		}),
 		{ kind: "browsing", title: "Untracked work", count: 4 },
 	);
@@ -116,6 +143,7 @@ test("the selecting header counts only rows Approve can attach", () => {
 		count: 8,
 		selection: { kind: "active", items: [linkable, unknown, captured] },
 		title: "Untracked work",
+		visibleCount: 8,
 	});
 
 	assert.equal(model.kind, "selecting");
@@ -124,6 +152,7 @@ test("the selecting header counts only rows Approve can attach", () => {
 	}
 
 	assert.equal(model.count, 3);
+	assert.equal(model.allSelected, false);
 	assert.deepEqual(model.actions, [
 		{
 			id: "approve",
@@ -159,6 +188,7 @@ test("header Create copy uses selectedCount, not eligibleCount", () => {
 		count: 2,
 		selection: { kind: "active", items: [linkable, captured] },
 		title: "Untracked work",
+		visibleCount: 2,
 	});
 
 	assert.equal(model.kind, "selecting");
@@ -171,6 +201,34 @@ test("header Create copy uses selectedCount, not eligibleCount", () => {
 	assert.deepEqual(create?.hint, { kind: "available", text: "Create 2 work items" });
 });
 
+test("the selecting header is all-selected only when every visible row is marked", () => {
+	const first = session("lw-a", "PAY-101");
+	const second = session("lw-b", "PAY-102");
+	const partial = buildUntrackedHeaderModel({
+		approveTargetById: new Map(),
+		count: 2,
+		selection: { kind: "active", items: [first] },
+		title: "Untracked work",
+		visibleCount: 2,
+	});
+	const complete = buildUntrackedHeaderModel({
+		approveTargetById: new Map(),
+		count: 2,
+		selection: { kind: "active", items: [first, second] },
+		title: "Untracked work",
+		visibleCount: 2,
+	});
+
+	assert.equal(partial.kind, "selecting");
+	assert.equal(complete.kind, "selecting");
+	if (partial.kind !== "selecting" || complete.kind !== "selecting") {
+		return;
+	}
+
+	assert.equal(partial.allSelected, false);
+	assert.equal(complete.allSelected, true);
+});
+
 test("header copy table pins exact available and unavailable strings", () => {
 	const captured = session("lw-c", "PAY-102");
 	const model = buildUntrackedHeaderModel({
@@ -180,6 +238,7 @@ test("header copy table pins exact available and unavailable strings", () => {
 		count: 1,
 		selection: { kind: "active", items: [captured] },
 		title: "Untracked work",
+		visibleCount: 1,
 	});
 
 	assert.equal(model.kind, "selecting");
@@ -193,6 +252,28 @@ test("header copy table pins exact available and unavailable strings", () => {
 		{ kind: "available", text: "Archive 1 agent session" },
 		{ kind: "available", text: "Clear" },
 	]);
+});
+
+test("the selecting header Unarchives when the archived view is open", () => {
+	const captured = session("lw-c", "PAY-102");
+	const model = buildUntrackedHeaderModel({
+		approveTargetById: new Map([
+			["lw-c", { kind: "unavailable", reason: "already-attached" }],
+		]),
+		count: 1,
+		selection: { kind: "active", items: [captured] },
+		title: "Archived",
+		visibleCount: 1,
+		visibilityLabel: "Unarchive",
+	});
+
+	assert.equal(model.kind, "selecting");
+	if (model.kind !== "selecting") {
+		return;
+	}
+
+	const archive = model.actions.find((action) => action.id === "archive");
+	assert.deepEqual(archive?.hint, { kind: "available", text: "Unarchive 1 agent session" });
 });
 
 test("bulk approve attaches the located target and skips unavailable rows", () => {

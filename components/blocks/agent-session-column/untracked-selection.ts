@@ -11,6 +11,7 @@ export const NO_SELECTION_MARKS: SelectionMarks = {
 
 export type SelectionEvent =
 	| { readonly type: "toggle"; readonly id: string }
+	| { readonly type: "select-all"; readonly ids: readonly string[] }
 	| { readonly type: "clear" };
 
 export function reduceSelectionMarks(
@@ -27,6 +28,22 @@ export function reduceSelectionMarks(
 
 			next.add(event.id);
 			return { markedIds: next };
+		}
+		case "select-all": {
+			if (event.ids.length === 0) {
+				return marks;
+			}
+
+			const next = new Set(marks.markedIds);
+			let added = false;
+			for (const id of event.ids) {
+				if (!next.has(id)) {
+					next.add(id);
+					added = true;
+				}
+			}
+
+			return added ? { markedIds: next } : marks;
 		}
 		case "clear":
 			return marks.markedIds.size === 0 ? marks : NO_SELECTION_MARKS;
@@ -60,21 +77,35 @@ export function selectEffectiveSelection(
 
 export type SelectionActionId = "approve" | "create" | "archive" | "clear";
 
+export type HeaderActionId = SelectionActionId | "select-all";
+
 export type BulkActionId = Exclude<SelectionActionId, "clear">;
+
+export const SELECT_ALL_ACTION_COPY = {
+	deselect: "Deselect all",
+	select: "Select all",
+} as const;
 
 export type SelectionActionHint =
 	| { readonly kind: "available"; readonly text: string }
 	| { readonly kind: "unavailable"; readonly text: string };
 
+export type VisibilityActionLabel = "Archive" | "Unarchive";
+
+export function describeVisibilityAction(
+	verb: VisibilityActionLabel,
+	selectedCount: number,
+): string {
+	return selectedCount === 1
+		? `${verb} ${selectedCount} agent session`
+		: `${verb} ${selectedCount} agent sessions`;
+}
+
 export const SELECTION_ACTION_AVAILABLE_COPY: Readonly<
 	Record<SelectionActionId, (selectedCount: number) => string>
 > = {
 	approve: () => "Link agent sessions",
-	archive: (selectedCount: number) => (
-		selectedCount === 1
-			? `Archive ${selectedCount} agent session`
-			: `Archive ${selectedCount} agent sessions`
-	),
+	archive: (selectedCount: number) => describeVisibilityAction("Archive", selectedCount),
 	clear: () => "Clear",
 	create: (selectedCount: number) => (
 		selectedCount === 1
@@ -119,6 +150,7 @@ export type UntrackedHeaderModel =
 	}
 	| {
 		readonly kind: "selecting";
+		readonly allSelected: boolean;
 		readonly count: number;
 		readonly actions: readonly SelectionActionModel[];
 	};
@@ -137,6 +169,8 @@ export function buildUntrackedHeaderModel<T>(
 		count: number;
 		selection: EffectiveSelection;
 		title: string;
+		visibleCount: number;
+		visibilityLabel?: VisibilityActionLabel;
 	}>,
 ): UntrackedHeaderModel {
 	if (input.selection.kind === "empty") {
@@ -163,6 +197,7 @@ export function buildUntrackedHeaderModel<T>(
 
 	return {
 		kind: "selecting",
+		allSelected: input.visibleCount > 0 && selectedCount === input.visibleCount,
 		count: selectedCount,
 		actions: [
 			{
@@ -178,7 +213,10 @@ export function buildUntrackedHeaderModel<T>(
 			{
 				id: "archive",
 				eligibleCount: selectedCount,
-				hint: describeSelectionAction("archive", { eligibleCount: selectedCount, selectedCount }),
+				hint: {
+					kind: "available",
+					text: describeVisibilityAction(input.visibilityLabel ?? "Archive", selectedCount),
+				},
 			},
 			{
 				id: "clear",
