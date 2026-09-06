@@ -465,7 +465,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"One-percent targeting rule, staged in a local Rovo session",
 		"PAY-121",
 		"host local · worktree .worktrees/pay-121-targeting · the agent will not arm it",
-		["release-agent"],
+		["release-agent", "jordan"],
 		{ agentId: "rovo", machineName: "Jordan’s MacBook Pro", shortTitle: "One-percent targeting", timeLabel: "Just now" },
 	),
 	pullRequest(

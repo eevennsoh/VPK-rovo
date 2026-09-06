@@ -40,8 +40,8 @@ export const AGENT_SESSION_ITEMS: readonly AgentSessionItem[] = [
 		agent: CLAUDE_AGENT,
 		host: "local",
 		invokedBy: {
-			avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
-			name: "person A",
+			avatarSrc: "/avatar-user/ting-chen/color/asow-teamwork-blue.png",
+			name: "Priya Raman",
 		},
 		machineName: "Priya’s MacBook",
 		timeLabel: "Last week",
@@ -61,8 +61,8 @@ export const AGENT_SESSION_ITEMS: readonly AgentSessionItem[] = [
 		agent: CURSOR_AGENT,
 		host: "local",
 		invokedBy: {
-			avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
-			name: "person A",
+			avatarSrc: "/avatar-user/issac-varghese/color/asow-dev-lime.png",
+			name: "Jordan Okafor",
 		},
 		machineName: "Work Laptop",
 		timeLabel: "18 mins ago",
@@ -82,8 +82,8 @@ export const AGENT_SESSION_ITEMS: readonly AgentSessionItem[] = [
 		agent: createRovoAgent(),
 		host: "local",
 		invokedBy: {
-			avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
-			name: "person A",
+			avatarSrc: "/avatar-user/chloe-lee/color/asow-dev-lime.png",
+			name: "Maya Ferreira",
 		},
 		machineName: "MBP-M4-MAX",
 		timeLabel: "Yesterday",

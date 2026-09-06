@@ -242,7 +242,9 @@ const AGENT_SESSION_PLANE_FADE_SIZE = "3rem";
  *
  * It collapses like the status columns beside it, but not *into* the same thing:
  * a status pill is a rotated label, while this becomes a full-height rail of
- * per-session notches that still open the session flyout on hover. See
+ * per-session markers. Circular user dots are the default; `notchShape="line"`
+ * preserves the original horizontal marks. Both open the session flyout on
+ * hover or keyboard focus. See
  * {@link AgentSessionColumnRail}. Collapsed drops the well so the count
  * shares the status pill's 24px header slot instead of sitting inside a
  * full-height bordered rail.
@@ -265,6 +267,7 @@ export function AgentSessionColumn({
 	items = AGENT_SESSION_ITEMS,
 	listClassName,
 	newItemIds,
+	notchShape = "circle",
 	onCollapsedChange,
 	onSelectedItemIdChange,
 	onToggleVisibility,
@@ -423,7 +426,7 @@ export function AgentSessionColumn({
 			closeHiddenView();
 		}
 	}, [closeHiddenView, collapsed, shouldReduceMotion]);
-	// The rail's notches activate on the same terms the cards do: coding sessions
+	// The rail's user dots activate on the same terms the cards do: coding sessions
 	// are always activatable, person rows only when `canViewItem` allows it.
 	const canActivateNotch = (item: AgentSessionItem) =>
 		isCodingAgentListItem(item) || (sessionProps.canViewItem?.(item) ?? true);
@@ -487,9 +490,8 @@ export function AgentSessionColumn({
 					aria-hidden="true"
 					className={cn(
 						"absolute inset-0 flex items-center justify-center text-xs",
-						newCount > 0
-							? "font-medium text-text-discovery"
-							: "font-normal text-text-subtlest",
+						"text-text-subtlest",
+						newCount > 0 ? "font-medium" : "font-normal",
 						HEADER_COUNT_AT_REST,
 					)}
 				>
@@ -547,6 +549,7 @@ export function AgentSessionColumn({
 			highlightedItemId={sessionProps.highlightedItemId}
 			items={visibleItems}
 			newItemIds={newItemIds}
+			notchShape={notchShape}
 			onArrivalComplete={handleArrivalComplete}
 			onCreateWorkItem={sessionProps.onCreateWorkItem}
 			onItemHover={sessionProps.onItemHover}
@@ -657,4 +660,7 @@ export type {
 	AgentSessionColumnFrame,
 	AgentSessionColumnLayout,
 } from "./agent-session-column-frame";
-export type { AgentSessionColumnProps } from "./agent-session-column-types";
+export type {
+	AgentSessionColumnNotchShape,
+	AgentSessionColumnProps,
+} from "./agent-session-column-types";
