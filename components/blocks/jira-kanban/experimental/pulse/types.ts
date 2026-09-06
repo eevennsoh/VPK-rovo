@@ -109,6 +109,8 @@ export type PulseLooseWork =
 			timeLabel: string;
 	  });
 
+export type PulseAgentSession = Extract<PulseLooseWork, { kind: "agent-session" }>;
+
 export type PulseGithubLooseWork = Exclude<PulseLooseWork, { kind: "agent-session" }>;
 
 export function isPulseGithubLooseWork(item: PulseLooseWork): item is PulseGithubLooseWork {

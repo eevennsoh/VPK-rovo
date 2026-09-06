@@ -39,6 +39,7 @@ import {
 	JIRA_GOLDEN_JOURNEYS_V4_PAY_HEADER_ASSIGNEES,
 	JIRA_GOLDEN_JOURNEYS_V4_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID,
 } from "./data/presentation-story";
+import { useJiraGoldenJourneysV4AgentSessionSync } from "./hooks/use-jira-golden-journeys-v4-agent-session-sync";
 import { useJiraGoldenJourneysV4List } from "./hooks/use-jira-golden-journeys-v4-list";
 
 const JIRA_LIST_PANEL_END_GAP_PX = 24;
@@ -53,6 +54,7 @@ export default function JiraGoldenJourneysV4Page(): React.ReactElement {
 
 function JiraGoldenJourneysV4App(): React.ReactElement {
 	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useJgpAgentChatDemo();
+	const { newAgentSessionIds, syncedAgentSessions } = useJiraGoldenJourneysV4AgentSessionSync();
 	const [boardColumns, setBoardColumns] = useState(createJiraGoldenJourneysV4PayBoardColumns);
 	const [detachedAgentSessionsByCard, setDetachedAgentSessionsByCard] = useState<
 		Readonly<Record<string, readonly AgentSessionItem[]>>
@@ -255,6 +257,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 				<div className="h-full min-h-0 min-w-0 overflow-hidden bg-surface [&>div]:min-h-0">
 					<ExperimentalJiraKanbanPage
 						activeView={activeView}
+						additionalAgentSessions={syncedAgentSessions}
 						agentActivityLayout={agentActivityLayout}
 						cardGenerativeActionPresentation="more-actions"
 						createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
@@ -269,6 +272,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						detachedAgentSessionsByCard={detachedAgentSessionsByCard}
 						headerAssignees={JIRA_GOLDEN_JOURNEYS_V4_PAY_HEADER_ASSIGNEES}
 						insightsEnabled={false}
+						newAgentSessionIds={newAgentSessionIds}
 						onBoardColumnsChange={(columns: readonly JiraKanbanColumnData[]) => {
 							setBoardColumns([...columns]);
 						}}

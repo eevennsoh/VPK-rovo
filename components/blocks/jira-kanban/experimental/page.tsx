@@ -97,7 +97,7 @@ import {
 	toPulseSessionHandlers,
 	toPulseSessionItems,
 } from "./pulse/lib/pulse-sessions";
-import type { PulseAnswer } from "./pulse/types";
+import type { PulseAgentSession, PulseAnswer } from "./pulse/types";
 import {
 	createJiraKanbanSelectionState,
 	filterJiraKanbanColumnsByAssignee,
@@ -118,6 +118,7 @@ export type {
 
 const DEFAULT_CREATED_COLUMN_AGENT_ID = "readiness-checker";
 const PULSE_MEMBER_IDS = new Set(PULSE_TIMELINE.members.map((member) => member.id));
+const EMPTY_ADDITIONAL_AGENT_SESSIONS: readonly PulseAgentSession[] = [];
 const EMPTY_PROXIMITY_SESSIONS: Readonly<Record<string, readonly AgentSessionItem[]>> = {};
 
 /**
@@ -139,6 +140,7 @@ interface DraggedCardState {
 export default function ExperimentalJiraKanbanPage({
 	activeView = "board",
 	activeCardCode,
+	additionalAgentSessions = EMPTY_ADDITIONAL_AGENT_SESSIONS,
 	agentActivityLayout,
 	cardGenerativeActionPresentation,
 	createWorkItemDropZoneLabel,
@@ -158,6 +160,7 @@ export default function ExperimentalJiraKanbanPage({
 	isInsightsWorkItemInteractive,
 	isLooseWorkResumable = isPulseLooseWorkOnViewerMachine,
 	mode: controlledMode,
+	newAgentSessionIds,
 	onBoardColumnsChange,
 	onCardClick,
 	onCardAgentActivityViewChat,
@@ -391,13 +394,19 @@ export default function ExperimentalJiraKanbanPage({
 		PULSE_TIMELINE.snapshots,
 		timelineLastViewedAt,
 	);
+	const agentSessionLooseWork = useMemo(
+		() => additionalAgentSessions.length === 0
+			? pulseTimeline.looseWork
+			: [...additionalAgentSessions, ...pulseTimeline.looseWork],
+		[additionalAgentSessions, pulseTimeline.looseWork],
+	);
 	const agentSessionItems = useMemo(
 		() => toPulseSessionItems(
-			filterPulseLooseWorkByMember(pulseTimeline.looseWork, agentSessionMemberId),
+			filterPulseLooseWorkByMember(agentSessionLooseWork, agentSessionMemberId),
 			PULSE_TIMELINE.members,
 			PULSE_TIMELINE.workItems,
 		),
-		[agentSessionMemberId, pulseTimeline.looseWork],
+		[agentSessionLooseWork, agentSessionMemberId],
 	);
 	const untrackedAgentSessionItems = useMemo(
 		() => selectBoardUntrackedSessions({
@@ -411,15 +420,15 @@ export default function ExperimentalJiraKanbanPage({
 	const agentSessionHandlers = useMemo(
 		() => toPulseSessionHandlers({
 			isLooseWorkResumable,
-			looseWork: pulseTimeline.looseWork,
+			looseWork: agentSessionLooseWork,
 			onCapture: handleCaptureLooseWork,
 			onResume: onResumeLooseWork,
 		}),
 		[
 			handleCaptureLooseWork,
+			agentSessionLooseWork,
 			isLooseWorkResumable,
 			onResumeLooseWork,
-			pulseTimeline.looseWork,
 		],
 	);
 	const proximityActionableSessionIds = useMemo(
@@ -466,6 +475,7 @@ export default function ExperimentalJiraKanbanPage({
 		capturedItemIds: capturedLooseWorkIds,
 		defaultCollapsed: agentSessionColumnCollapsed,
 		items: untrackedAgentSessionItems,
+		newItemIds: newAgentSessionIds,
 		...agentSessionHandlers,
 		onCollapsedChange: setAgentSessionColumnCollapsed,
 		onLinkWorkItem: onCardAgentSessionLink === undefined

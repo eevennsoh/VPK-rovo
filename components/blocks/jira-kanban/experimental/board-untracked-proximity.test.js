@@ -78,6 +78,21 @@ test("the Untracked column follows card session link and unlink state", () => {
 	assert.match(PAGE_SOURCE, /onCardAgentSessionUnlink\?\.\(session, card, columnTitle\)/u);
 });
 
+test("the experimental page can prepend newly synced agent sessions with arrival marks", () => {
+	assert.match(PAGE_SOURCE, /additionalAgentSessions\?: readonly PulseAgentSession\[\];/u);
+	assert.match(PAGE_SOURCE, /newAgentSessionIds\?: ReadonlySet<string>;/u);
+	assert.match(
+		PAGE_SOURCE,
+		/const agentSessionLooseWork = useMemo\([\s\S]*additionalAgentSessions[\s\S]*\.\.\.pulseTimeline\.looseWork/u,
+	);
+	assert.match(
+		PAGE_SOURCE,
+		/filterPulseLooseWorkByMember\(agentSessionLooseWork, agentSessionMemberId\)/u,
+	);
+	assert.match(PAGE_SOURCE, /looseWork: agentSessionLooseWork/u);
+	assert.match(PAGE_SOURCE, /newItemIds: newAgentSessionIds/u);
+});
+
 test("proximity AgentSession forwards the Pulse flyout attach handlers", () => {
 	assert.match(CARD_SOURCE, /capturedItemIds=\{capturedItemIds\}/u);
 	assert.match(CARD_SOURCE, /onCreateWorkItem=\{onCreateWorkItem\}/u);
