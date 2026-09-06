@@ -174,6 +174,13 @@ function useAgentSessionReview(
 	};
 }
 
+function isExperimentalJiraListContent(
+	activeView: ExperimentalJiraKanbanPageProps["activeView"],
+	renderListContent: ExperimentalJiraKanbanPageProps["renderListContent"],
+): boolean {
+	return activeView === "list" && renderListContent !== undefined;
+}
+
 export default function ExperimentalJiraKanbanPage({
 	activeView = "board",
 	activeCardCode,
@@ -521,7 +528,7 @@ export default function ExperimentalJiraKanbanPage({
 			: handleUntrackedLinkWorkItem,
 		triage: untrackedTriage,
 	} : undefined;
-	const isListContent = activeView === "list" && renderListContent !== undefined;
+	const isListContent = isExperimentalJiraListContent(activeView, renderListContent);
 	// Insights replaces the whole content region with an article; a floating
 	// untracked-work surface over prose is chrome with nothing to attach to.
 	const showPulseContent = isPulse && !isListContent;
