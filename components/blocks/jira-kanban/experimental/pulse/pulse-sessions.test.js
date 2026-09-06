@@ -346,3 +346,16 @@ test("session flyout status resolves from the unscoped work-item collection", as
 	assert.match(SOURCES.shell, /workItems=\{sourceTimeline\.workItems\}/u);
 	assert.doesNotMatch(SOURCES.shell, /workItems=\{pulse\.workItems\}/u);
 });
+
+test("an authored session status overrides the static Pulse work-item collection", async () => {
+	const { PULSE_TIMELINE, toPulseSessionItems } = await loadSessionsHarness();
+	const session = PULSE_TIMELINE.looseWork.find((item) => item.kind === "agent-session");
+	assert.ok(session !== undefined, "fixture should include a local session");
+
+	const [item] = toPulseSessionItems(
+		[{ ...session, issueStatus: "In review" }],
+		PULSE_TIMELINE.members,
+		[],
+	);
+	assert.equal(item.sessionDetails.issueStatus, "In review");
+});

@@ -97,7 +97,7 @@ import {
 	toPulseSessionHandlers,
 	toPulseSessionItems,
 } from "./pulse/lib/pulse-sessions";
-import type { PulseAgentSession, PulseAnswer } from "./pulse/types";
+import type { PulseAgentSession, PulseAnswer, PulseLooseWork } from "./pulse/types";
 import {
 	createJiraKanbanSelectionState,
 	filterJiraKanbanColumnsByAssignee,
@@ -137,10 +137,20 @@ interface DraggedCardState {
 	sourceColumnTitle: string;
 }
 
+function useAgentSessionLooseWork(
+	additionalAgentSessions: readonly PulseAgentSession[] | undefined,
+	pulseLooseWork: readonly PulseLooseWork[],
+): readonly PulseLooseWork[] {
+	return useMemo(
+		() => [...(additionalAgentSessions ?? EMPTY_ADDITIONAL_AGENT_SESSIONS), ...pulseLooseWork],
+		[additionalAgentSessions, pulseLooseWork],
+	);
+}
+
 export default function ExperimentalJiraKanbanPage({
 	activeView = "board",
 	activeCardCode,
-	additionalAgentSessions = EMPTY_ADDITIONAL_AGENT_SESSIONS,
+	additionalAgentSessions,
 	agentActivityLayout,
 	cardGenerativeActionPresentation,
 	createWorkItemDropZoneLabel,
@@ -161,6 +171,7 @@ export default function ExperimentalJiraKanbanPage({
 	isLooseWorkResumable = isPulseLooseWorkOnViewerMachine,
 	mode: controlledMode,
 	newAgentSessionIds,
+	onAgentSessionsReviewed,
 	onBoardColumnsChange,
 	onCardClick,
 	onCardAgentActivityViewChat,
@@ -235,6 +246,18 @@ export default function ExperimentalJiraKanbanPage({
 	const agentSessionPanelRef = useRef<HTMLDivElement | null>(null);
 	const [listContentUnderlapsPanel, setListContentUnderlapsPanel] = useState(false);
 	const [untrackedHoveredSessionId, setUntrackedHoveredSessionId] = useState<string | null>(null);
+	const handleUntrackedItemHover = useCallback((item: AgentSessionItem | null) => {
+		setUntrackedHoveredSessionId(item?.id ?? null);
+		if (item !== null) {
+			onAgentSessionsReviewed?.([item.id]);
+		}
+	}, [onAgentSessionsReviewed]);
+	const handleAgentSessionColumnCollapsedChange = useCallback((nextCollapsed: boolean) => {
+		setAgentSessionColumnCollapsed(nextCollapsed);
+		if (!nextCollapsed) {
+			onAgentSessionsReviewed?.();
+		}
+	}, [onAgentSessionsReviewed]);
 	const [collapsedColumns, setCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
 	const [showUntracked, setShowUntracked] = useState(defaultShowUntracked);
 	const [appliedShowUntrackedDefault, setAppliedShowUntrackedDefault] = useState(defaultShowUntracked);
@@ -394,10 +417,7 @@ export default function ExperimentalJiraKanbanPage({
 		PULSE_TIMELINE.snapshots,
 		timelineLastViewedAt,
 	);
-	const agentSessionLooseWork = useMemo(
-		() => [...additionalAgentSessions, ...pulseTimeline.looseWork],
-		[additionalAgentSessions, pulseTimeline.looseWork],
-	);
+	const agentSessionLooseWork = useAgentSessionLooseWork(additionalAgentSessions, pulseTimeline.looseWork);
 	const agentSessionItems = useMemo(
 		() => toPulseSessionItems(
 			filterPulseLooseWorkByMember(agentSessionLooseWork, agentSessionMemberId),
@@ -474,8 +494,9 @@ export default function ExperimentalJiraKanbanPage({
 		defaultCollapsed: agentSessionColumnCollapsed,
 		items: untrackedAgentSessionItems,
 		newItemIds: newAgentSessionIds,
+		onCollapsedChange: handleAgentSessionColumnCollapsedChange,
+		onItemHover: handleUntrackedItemHover,
 		...agentSessionHandlers,
-		onCollapsedChange: setAgentSessionColumnCollapsed,
 		onLinkWorkItem: onCardAgentSessionLink === undefined
 			? undefined
 			: handleUntrackedLinkWorkItem,
@@ -820,7 +841,6 @@ export default function ExperimentalJiraKanbanPage({
 									...agentSessionColumnConfig,
 									draggingIds: boardSessionDrag.draggingIds,
 									highlightedItemId: untrackedHoveredSessionId,
-									onItemHover: (item) => setUntrackedHoveredSessionId(item?.id ?? null),
 									sessionDrag: boardSessionDrag.untrackedBinding,
 								}}
 								className="pb-4 md:pb-5"
@@ -918,7 +938,7 @@ export default function ExperimentalJiraKanbanPage({
 							sessionDrag: boardSessionDrag.untrackedBinding,
 						}}
 						collapsed={agentSessionColumnCollapsed}
-						onCollapsedChange={setAgentSessionColumnCollapsed}
+						onCollapsedChange={handleAgentSessionColumnCollapsedChange}
 						onExpandedWidthChange={setAgentSessionPanelWidthPx}
 						ref={agentSessionPanelRef}
 						sessionDragging={boardSessionDrag.transaction !== null}

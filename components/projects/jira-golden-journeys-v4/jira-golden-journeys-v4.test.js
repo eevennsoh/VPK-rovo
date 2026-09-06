@@ -535,7 +535,8 @@ test("the Jira tab bar splits or collapses work items per design variation", () 
 		PAGE_SOURCE,
 		/viewTabs=\{\(\s*<JiraViewTabs\s+selectedTabLabel=\{selectedTabLabel\}\s+onTabChange=\{handleTabChange\}\s+workItemView=\{workItemView\}\s*\/>\s*\)\}/u,
 	);
-	assert.match(PAGE_SOURCE, /showBoardContent=\{activeTab\?\.hasContent === true\}/u);
+	assert.match(PAGE_SOURCE, /const showBoardContent = activeTab\?\.hasContent === true;/u);
+	assert.match(PAGE_SOURCE, /showBoardContent=\{showBoardContent\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showBoardContent\?: boolean;/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showBoardControls=\{showBoardContent\}/u);
 });
@@ -721,7 +722,10 @@ test("the route pins the shared Agent Session column beside Jira statuses", () =
 		/const \[agentSessionColumnCollapsed, setAgentSessionColumnCollapsed\] = useState\(defaultAgentSessionColumnCollapsed\);/u,
 	);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /defaultCollapsed: agentSessionColumnCollapsed,/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCollapsedChange: setAgentSessionColumnCollapsed,/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/onCollapsedChange: handleAgentSessionColumnCollapsedChange,/u,
+	);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /capturedItemIds: capturedLooseWorkIds,/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /toPulseSessionHandlers/u);
 

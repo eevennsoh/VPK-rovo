@@ -83,7 +83,13 @@ test("the experimental page can prepend newly synced agent sessions with arrival
 	assert.match(PAGE_SOURCE, /newAgentSessionIds\?: ReadonlySet<string>;/u);
 	assert.match(
 		PAGE_SOURCE,
-		/const agentSessionLooseWork = useMemo\([\s\S]*additionalAgentSessions[\s\S]*\.\.\.pulseTimeline\.looseWork/u,
+		/onAgentSessionsReviewed\?: \(sessionIds\?: readonly string\[\]\) => void;/u,
+	);
+	assert.match(PAGE_SOURCE, /function useAgentSessionLooseWork\(/u);
+	assert.doesNotMatch(PAGE_SOURCE, /additionalAgentSessions = EMPTY_ADDITIONAL_AGENT_SESSIONS/u);
+	assert.match(
+		PAGE_SOURCE,
+		/const agentSessionLooseWork = useAgentSessionLooseWork\(additionalAgentSessions, pulseTimeline\.looseWork\)/u,
 	);
 	assert.match(
 		PAGE_SOURCE,
@@ -91,6 +97,8 @@ test("the experimental page can prepend newly synced agent sessions with arrival
 	);
 	assert.match(PAGE_SOURCE, /looseWork: agentSessionLooseWork/u);
 	assert.match(PAGE_SOURCE, /newItemIds: newAgentSessionIds/u);
+	assert.match(PAGE_SOURCE, /onItemHover: handleUntrackedItemHover/u);
+	assert.match(PAGE_SOURCE, /onCollapsedChange: handleAgentSessionColumnCollapsedChange/u);
 });
 
 test("proximity AgentSession forwards the Pulse flyout attach handlers", () => {

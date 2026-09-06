@@ -54,7 +54,6 @@ export default function JiraGoldenJourneysV4Page(): React.ReactElement {
 
 function JiraGoldenJourneysV4App(): React.ReactElement {
 	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useJgpAgentChatDemo();
-	const { newAgentSessionIds, syncedAgentSessions } = useJiraGoldenJourneysV4AgentSessionSync();
 	const [boardColumns, setBoardColumns] = useState(createJiraGoldenJourneysV4PayBoardColumns);
 	const [detachedAgentSessionsByCard, setDetachedAgentSessionsByCard] = useState<
 		Readonly<Record<string, readonly AgentSessionItem[]>>
@@ -89,6 +88,12 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 	const activeTab = resolveJiraTab(tabs, selectedTabLabel, workItemView);
 	const tabOwnsView = activeTab?.view !== undefined;
 	const activeView = activeTab?.view ?? workItemView;
+	const showBoardContent = activeTab?.hasContent === true;
+	const {
+		reviewAgentSessions,
+		newAgentSessionIds,
+		syncedAgentSessions,
+	} = useJiraGoldenJourneysV4AgentSessionSync({ active: showBoardContent });
 	const handleTabChange = useCallback((tabLabel: string) => {
 		setSelectedTabLabel(tabLabel);
 		const tabView = tabs.find((tab) => tab.label === tabLabel)?.view;
@@ -273,6 +278,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						headerAssignees={JIRA_GOLDEN_JOURNEYS_V4_PAY_HEADER_ASSIGNEES}
 						insightsEnabled={false}
 						newAgentSessionIds={newAgentSessionIds}
+						onAgentSessionsReviewed={reviewAgentSessions}
 						onBoardColumnsChange={(columns: readonly JiraKanbanColumnData[]) => {
 							setBoardColumns([...columns]);
 						}}
@@ -319,7 +325,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						}}
 						renderAgentActivityIndicator={renderAgentActivityIndicator}
 						showAgentSessionColumn
-						showBoardContent={activeTab?.hasContent === true}
+						showBoardContent={showBoardContent}
 						moreControlsPlacement={designVariation === "team-eu" ? "end" : "inline"}
 						showMoreControls={!designVariants["simple-views"]}
 						showCustomizeControl={designVariation === "team-eu" && !designVariants["simple-views"]}

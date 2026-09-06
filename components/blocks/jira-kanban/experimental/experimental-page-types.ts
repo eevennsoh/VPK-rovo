@@ -88,6 +88,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	mode?: ExperimentalJiraKanbanMode;
 	/** Newly discovered session ids that keep the shared arrival mark visible. */
 	newAgentSessionIds?: ReadonlySet<string>;
+	onAgentSessionsReviewed?: (sessionIds?: readonly string[]) => void;
 	onBoardColumnsChange?: (columns: readonly JiraKanbanColumnData[]) => void;
 	onCardClick?: (card: JiraKanbanCardData, columnTitle: string) => void;
 	onCardAgentActivityViewChat?: JiraKanbanProps["onCardAgentActivityViewChat"];

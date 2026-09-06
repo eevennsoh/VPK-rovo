@@ -11,6 +11,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS = [
 		detail: "host local · worktree .worktrees/pay-107-webhook-gap · findings have not been linked yet",
 		host: "local",
 		id: "lw-sync-webhook-gap",
+		issueStatus: "In progress",
 		kind: "agent-session",
 		machineName: "MacBook-Pro.local",
 		memberIds: ["maya", "venn"],
@@ -24,6 +25,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS = [
 		detail: "host local · worktree .worktrees/pay-112-sandbox-401 · the root cause is still untracked",
 		host: "local",
 		id: "lw-sync-sandbox-root-cause",
+		issueStatus: "In review",
 		kind: "agent-session",
 		machineName: "H13XSGKLS1",
 		memberIds: ["jordan", "venn"],
@@ -37,6 +39,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS = [
 		detail: "host local · worktree .worktrees/pay-118-replay-risk · the blast radius is not on the item",
 		host: "local",
 		id: "lw-sync-replay-blast-radius",
+		issueStatus: "To do",
 		kind: "agent-session",
 		machineName: "DESKTOP-7K2M9Q1",
 		memberIds: ["priya", "jordan"],
@@ -50,6 +53,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS = [
 		detail: "host local · worktree .worktrees/pay-121-kill-switch · rollout notes still need a work item link",
 		host: "local",
 		id: "lw-sync-kill-switch-rollout",
+		issueStatus: "In review",
 		kind: "agent-session",
 		machineName: "Venn’s MacBook",
 		memberIds: ["venn", "jordan"],
@@ -63,6 +67,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS = [
 		detail: "host local · worktree .worktrees/pay-115-retry-telemetry · the verification summary is still local",
 		host: "local",
 		id: "lw-sync-retry-telemetry",
+		issueStatus: "In review",
 		kind: "agent-session",
 		machineName: "Maya’s Studio",
 		memberIds: ["maya", "priya"],
@@ -76,6 +81,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS = [
 		detail: "host local · worktree .worktrees/pay-119-contract-tests · uncovered cases have not been captured",
 		host: "local",
 		id: "lw-sync-contract-test-gaps",
+		issueStatus: "In review",
 		kind: "agent-session",
 		machineName: "MacBook-Pro.local",
 		memberIds: ["jordan", "maya"],
@@ -89,6 +95,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS = [
 		detail: "host local · worktree .worktrees/pay-104-deprecation-copy · the migration copy is still untracked",
 		host: "local",
 		id: "lw-sync-deprecation-copy",
+		issueStatus: "In review",
 		kind: "agent-session",
 		machineName: "DESKTOP-7K2M9Q1",
 		memberIds: ["priya", "venn"],
@@ -102,6 +109,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS = [
 		detail: "host local · worktree .worktrees/pay-132-release-gate · the final gate decision is not linked",
 		host: "local",
 		id: "lw-sync-release-gate",
+		issueStatus: "In review",
 		kind: "agent-session",
 		machineName: "Venn’s MacBook",
 		memberIds: ["venn", "priya"],
@@ -135,4 +143,20 @@ export function takeJiraGoldenJourneysV4SyncBatch(
 		nextIndex: nextIndex + sessions.length,
 		sessions,
 	};
+}
+
+export function removeReviewedJiraGoldenJourneysV4AgentSessionIds(
+	currentIds: ReadonlySet<string>,
+	reviewedIds?: readonly string[],
+): ReadonlySet<string> {
+	if (currentIds.size === 0) {
+		return currentIds;
+	}
+	if (reviewedIds === undefined) {
+		return new Set();
+	}
+
+	const reviewed = new Set(reviewedIds);
+	const nextIds = new Set([...currentIds].filter((id) => !reviewed.has(id)));
+	return nextIds.size === currentIds.size ? currentIds : nextIds;
 }

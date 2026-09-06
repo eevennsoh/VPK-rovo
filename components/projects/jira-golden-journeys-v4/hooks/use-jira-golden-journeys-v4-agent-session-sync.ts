@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import type { PulseAgentSession } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 
 import {
 	getJiraGoldenJourneysV4SyncDelayMs,
 	JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS,
+	removeReviewedJiraGoldenJourneysV4AgentSessionIds,
 	takeJiraGoldenJourneysV4SyncBatch,
 } from "../data/agent-session-sync";
 
@@ -22,14 +23,28 @@ function createInitialSyncState(): JiraGoldenJourneysV4AgentSessionSyncState {
 	};
 }
 
-export function useJiraGoldenJourneysV4AgentSessionSync(): Readonly<{
+export function useJiraGoldenJourneysV4AgentSessionSync({
+	active,
+}: Readonly<{ active: boolean }>): Readonly<{
 	newAgentSessionIds: ReadonlySet<string>;
+	reviewAgentSessions: (sessionIds?: readonly string[]) => void;
 	syncedAgentSessions: readonly PulseAgentSession[];
 }> {
 	const [syncState, setSyncState] = useState(createInitialSyncState);
+	const reviewAgentSessions = useCallback((sessionIds?: readonly string[]) => {
+		setSyncState((current) => {
+			const newAgentSessionIds = removeReviewedJiraGoldenJourneysV4AgentSessionIds(
+				current.newAgentSessionIds,
+				sessionIds,
+			);
+			return newAgentSessionIds === current.newAgentSessionIds
+				? current
+				: { ...current, newAgentSessionIds };
+		});
+	}, []);
 
 	useEffect(() => {
-		if (syncState.nextIndex >= JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS.length) {
+		if (!active || syncState.nextIndex >= JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS.length) {
 			return undefined;
 		}
 
@@ -79,10 +94,11 @@ export function useJiraGoldenJourneysV4AgentSessionSync(): Readonly<{
 			clearPendingSync();
 			document.removeEventListener("visibilitychange", handleVisibilityChange);
 		};
-	}, [syncState]);
+	}, [active, syncState]);
 
 	return {
 		newAgentSessionIds: syncState.newAgentSessionIds,
+		reviewAgentSessions,
 		syncedAgentSessions: syncState.syncedAgentSessions,
 	};
 }

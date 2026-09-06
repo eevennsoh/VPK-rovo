@@ -9,6 +9,10 @@ const PAGE_SOURCE = readFileSync(
 	path.join(__dirname, "../page.tsx"),
 	"utf8",
 );
+const HOOK_SOURCE = readFileSync(
+	path.join(__dirname, "../hooks/use-jira-golden-journeys-v4-agent-session-sync.ts"),
+	"utf8",
+);
 
 let syncModulePromise;
 
@@ -62,6 +66,25 @@ test("every queued Jira v4 session has a unique stable identity", async () => {
 	assert.equal(new Set(sessions.map((session) => session.id)).size, sessions.length);
 	assert.ok(sessions.every((session) => session.kind === "agent-session"));
 	assert.ok(sessions.every((session) => session.timeLabel === "just now"));
+	assert.ok(sessions.every((session) => session.issueStatus.length > 0));
+	assert.equal(
+		sessions.find((session) => session.sourceTitle === "PAY-132")?.issueStatus,
+		"In review",
+	);
+});
+
+test("reviewing synced sessions clears all or only the named arrival marks", async () => {
+	const sync = await loadSyncModule();
+	const current = new Set(["first", "second", "third"]);
+
+	assert.deepEqual(
+		[...sync.removeReviewedJiraGoldenJourneysV4AgentSessionIds(current, ["second"])],
+		["first", "third"],
+	);
+	assert.deepEqual(
+		[...sync.removeReviewedJiraGoldenJourneysV4AgentSessionIds(current)],
+		[],
+	);
 });
 
 test("the route periodically syncs one or two new agent sessions into Untracked work", () => {
@@ -71,10 +94,12 @@ test("the route periodically syncs one or two new agent sessions into Untracked 
 	);
 	assert.match(
 		PAGE_SOURCE,
-		/const \{ newAgentSessionIds, syncedAgentSessions \} = useJiraGoldenJourneysV4AgentSessionSync\(\);/u,
+		/const \{\s*reviewAgentSessions,\s*newAgentSessionIds,\s*syncedAgentSessions,\s*\} = useJiraGoldenJourneysV4AgentSessionSync\(\{ active: showBoardContent \}\);/u,
 	);
 	assert.match(
 		PAGE_SOURCE,
-		/<ExperimentalJiraKanbanPage[\s\S]*additionalAgentSessions=\{syncedAgentSessions\}[\s\S]*newAgentSessionIds=\{newAgentSessionIds\}/u,
+		/<ExperimentalJiraKanbanPage[\s\S]*additionalAgentSessions=\{syncedAgentSessions\}[\s\S]*newAgentSessionIds=\{newAgentSessionIds\}[\s\S]*onAgentSessionsReviewed=\{reviewAgentSessions\}/u,
 	);
+	assert.match(HOOK_SOURCE, /if \(!active[\s\S]*return undefined;/u);
+	assert.match(HOOK_SOURCE, /removeReviewedJiraGoldenJourneysV4AgentSessionIds/u);
 });
