@@ -49,7 +49,7 @@ export const AGENT_SESSION_NOTCH_LENGTH = {
 
 /** Circular user-dot diameter in px; the revealed photo is capped at 12px. */
 export const AGENT_SESSION_USER_NOTCH_DIAMETER = {
-	newRest: 4,
+	newRest: 8,
 	peak: 12,
 	rest: 4,
 } as const;

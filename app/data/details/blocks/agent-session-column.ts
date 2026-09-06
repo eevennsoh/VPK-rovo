@@ -111,7 +111,7 @@ export const AGENT_SESSION_COLUMN_DETAIL: ComponentDetail = {
 			name: "newItemIds",
 			type: "ReadonlySet<string>",
 			description:
-				"Ids that arrived in the last sync and have not been reviewed. Each one plays a one-shot arrival beat and carries a persistent unreviewed mark: expanded, the card steps in from above and its dashed border recolours to discovery with a dot in the corner; collapsed, the chosen marker grows from its centre while the markers below slide down to make room, and the rail's head counts the unread as +N. Circle mode keeps every dot on `icon.disabled` and reveals the same human avatar used by the expanded card, capped at 12px. Line mode retains its original new-state tone. The mark is the load-bearing half — it survives a backgrounded tab, a collapsed column, and prefers-reduced-motion, where the beat does not.",
+				"Ids that arrived in the last sync and have not been reviewed. Each one plays a one-shot arrival beat and carries a persistent unreviewed mark: expanded, the card steps in from above and its dashed border recolours to discovery with a dot in the corner; collapsed, the chosen marker grows from its centre while the markers below slide down to make room, and the rail's head counts the unread as +N. Circle mode keeps every dot on `icon.disabled`, with newly synced dots resting at 8px instead of the default 4px, and reveals the same human avatar used by the expanded card, capped at 12px. Line mode retains its original new-state tone. The mark is the load-bearing half — it survives a backgrounded tab, a collapsed column, and prefers-reduced-motion, where the beat does not.",
 		},
 		{
 			name: "onLinkWorkItem",
