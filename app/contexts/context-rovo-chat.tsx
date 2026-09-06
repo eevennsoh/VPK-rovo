@@ -83,8 +83,7 @@ import {
 import {
 	buildSelectableAgents,
 	buildCompactThreadPersistKey,
-	buildSendMessageBody,
-	clearSkillInvocationForEdit,
+	buildSendMessageBody, clearSkillInvocationForEdit,
 	createAssistantThinkingStatusMessage,
 	createQueueItemId,
 	deriveCompactThreadTitle,
