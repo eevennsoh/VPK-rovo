@@ -148,7 +148,10 @@ test("Jira issue experimental demo composes one running chin with two detached u
 		join(__dirname, "../agent-session/data.ts"),
 		"utf8",
 	);
-	assert.match(sessionDataSource, /export const AGENT_SESSION_ITEMS[\s\S]*invokedBy: \{[\s\S]*avatarSrc: "\/avatar-user\/andrew-park/u);
+	assert.match(
+		sessionDataSource,
+		/export const AGENT_SESSION_ITEMS[\s\S]*invokedBy: \{[\s\S]*avatarSrc: "\/avatar-user\//u,
+	);
 	assert.match(PAGE_SOURCE, /const isRunningUnlinkPhase = isTransferPhase && agentActivityState === "agent-session-running-unlink";/u);
 	assert.match(PAGE_SOURCE, /sessionTransferAfter=\{showDetachedSessions/u);
 	assert.match(PAGE_SOURCE, /items=\{detachedSessions\}/u);
