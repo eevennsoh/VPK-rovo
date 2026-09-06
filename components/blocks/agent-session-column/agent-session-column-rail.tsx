@@ -1,13 +1,17 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent, type RefCallback } from "react";
-import { animate, motion, useMotionValue, useReducedMotion } from "motion/react";
+import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 
 import type { AgentListState } from "@/components/blocks/agent-list";
 import { AGENT_SESSION_ARRIVAL_TRANSITION } from "@/components/blocks/agent-session/agent-session-arrival-motion";
 import { AgentSessionMediumDrag } from "@/components/blocks/agent-session/agent-session-medium-drag";
 import { AgentSessionNotchMark } from "@/components/blocks/agent-session/agent-session-notch";
-import type { AgentSessionItem } from "@/components/blocks/agent-session/agent-session-types";
+import {
+	toAgentSessionVisibleIdentity,
+	type AgentSessionItem,
+} from "@/components/blocks/agent-session/agent-session-types";
 import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
 import {
 	bindAgentSessionFlyoutActions,
@@ -20,6 +24,9 @@ import {
 	AGENT_SESSION_NOTCH_MAGNIFY_OUT,
 	AGENT_SESSION_NOTCH_NO_NEAREST,
 	AGENT_SESSION_NOTCH_POINTER_AWAY,
+	AGENT_SESSION_NOTCH_TONE,
+	toAgentSessionNotchMagnification,
+	toAgentSessionUserNotchDiameter,
 	toNearestAgentSessionNotchIndex,
 	type AgentSessionNotchProximity,
 } from "@/components/blocks/agent-session/agent-session-notch-magnify";
@@ -31,6 +38,9 @@ import {
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
+import { cn } from "@/lib/utils";
+
+import type { AgentSessionColumnNotchShape } from "./agent-session-column-types";
 
 /**
  * The collapsed form of the Agent Session column.
@@ -38,30 +48,25 @@ import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
  * The board's status columns collapse into a vertical pill under a header that
  * keeps the count in the same slot it uses when expanded. This column is
  * different: its contents are sessions, each of which is a live thing worth
- * reaching, so it collapses into a rail of notches instead of a label — one
- * notch per session, in list order. The count and expand control live in the
+ * reaching, so it collapses into a rail of compact markers instead of a label —
+ * one per session, in list order. The count and expand control live in the
  * column header above this plane, not on the rail.
  *
- * The notch is the same idea as a Pulse ruler mark: a 1px rule that swells under
- * the pointer and names the thing behind it. It swells as part of a dock, not on
- * its own — the notch nearest the cursor grows longest and its neighbours taper
- * off with distance, so the rail reads as one surface being pushed rather than a
- * row lighting up under the hand. Here the name is the full session flyout — the
- * same payload-driven surface Agent List rows open — so the collapsed column
- * loses the cards but keeps every session one hover away.
+ * Circular markers are the default and are the compact form of the same human
+ * avatar shown on the expanded card. The dock grows nearby dots from 4px toward
+ * a 12px cap; the dot under the pointer or keyboard focus reveals that person's
+ * face. Line markers retain the original horizontal treatment and falloff.
  *
- * A notch paints one distinction only: reviewed or not. Reviewed notches rest
- * quiet and light up on hover; a newly synced one is simply already lit, as
- * though the rail were holding the hover open for you. Session lifecycle is
- * spoken rather than painted — at 12×2px a fourth hue was a legend to memorise,
- * and the flyout carries the state the moment you reach for it.
+ * Circle dots always use `icon.disabled`; size carries proximity and the face
+ * carries direct interest. Newness and lifecycle remain spoken, while line mode
+ * retains its previous selected/new tone treatment.
  *
  * The rail is the plane below the header and, because the board pins this
  * column outside its horizontal scrollport, it stays put while the reader
  * scrolls to the last status column.
  */
 
-/** Reach centered 1px marks: a 3rem band ends before the last visible notch. */
+/** Reach centered dots: a 3rem band ends before the last visible session. */
 const AGENT_SESSION_RAIL_FADE_SIZE = "6rem";
 
 /** Spoken state, so the rail still names a lifecycle it no longer paints. */
@@ -191,12 +196,96 @@ function useNotchDock(itemCount: number, enabled: boolean) {
 	return { centersRef, handlePointerEnter, handlePointerLeave, handlePointerMove, handleScroll, listRef, magnify, nearestIndex, pointerY };
 }
 
+/** Resting dot that reveals the expanded card's human avatar on interest. */
+function AgentSessionUserNotch({
+	avatarSrc,
+	isArriving,
+	isHighlighted,
+	isNew,
+	onArrivalComplete,
+	proximity,
+}: Readonly<{
+	avatarSrc?: string;
+	isArriving: boolean;
+	isHighlighted: boolean;
+	isNew: boolean;
+	onArrivalComplete?: () => void;
+	proximity?: AgentSessionNotchProximity;
+}>) {
+	const shouldReduceMotion = useReducedMotion();
+	const shouldPlayArrival = isArriving && !shouldReduceMotion;
+	const parkedPointerY = useMotionValue(AGENT_SESSION_NOTCH_POINTER_AWAY);
+	const parkedMagnify = useMotionValue(0);
+	const pointerY = proximity?.pointerY ?? parkedPointerY;
+	const magnify = proximity?.magnify ?? parkedMagnify;
+	const centersRef = proximity?.centersRef ?? null;
+	const index = proximity?.index ?? AGENT_SESSION_NOTCH_NO_NEAREST;
+	const falloff = useTransform([pointerY, magnify], ([pointer, amount]: number[]) => {
+		if (centersRef === null || pointer < 0 || amount <= 0) {
+			return 0;
+		}
+		const center = centersRef.current[index];
+		return center === undefined
+			? 0
+			: toAgentSessionNotchMagnification(pointer - center) * amount;
+	});
+	const dotScale = useTransform(
+		falloff,
+		(value) => `scale(${toAgentSessionUserNotchDiameter(value, isNew) / 4})`,
+	);
+	const restingScale = toAgentSessionUserNotchDiameter(0, isNew) / 4;
+
+	return (
+		<motion.span
+			animate={shouldPlayArrival ? { scale: 1 } : undefined}
+			aria-hidden="true"
+			className="relative grid size-3 shrink-0 place-items-center"
+			initial={shouldPlayArrival ? { scale: 0 } : false}
+			onAnimationComplete={() => {
+				if (shouldPlayArrival) {
+					onArrivalComplete?.();
+				}
+			}}
+			style={{ willChange: shouldPlayArrival ? "transform" : undefined }}
+			transition={AGENT_SESSION_ARRIVAL_TRANSITION}
+		>
+			<motion.span
+				className={cn(
+					"size-1 rounded-full transition-opacity duration-normal ease-out-practical motion-reduce:transition-none",
+					avatarSrc
+						? "group-hover/notch:opacity-0 group-has-[:focus-visible]/notch:opacity-0"
+						: null,
+					isHighlighted && avatarSrc ? "opacity-0" : null,
+				)}
+				style={{
+					backgroundColor: AGENT_SESSION_NOTCH_TONE.rest,
+					transform: proximity === undefined
+						? `scale(${restingScale})`
+						: dotScale,
+				}}
+			/>
+			{avatarSrc ? (
+				<Image
+					alt=""
+					className={cn(
+						"absolute inset-0 size-3 scale-75 rounded-full object-cover opacity-0 transition-[opacity,scale] duration-normal ease-out-practical",
+						"group-hover/notch:scale-100 group-hover/notch:opacity-100 group-has-[:focus-visible]/notch:scale-100 group-has-[:focus-visible]/notch:opacity-100",
+						"motion-reduce:transition-none",
+						isHighlighted ? "opacity-100 scale-100" : null,
+					)}
+					height={12}
+					src={avatarSrc}
+					width={12}
+				/>
+			) : null}
+		</motion.span>
+	);
+}
+
 /**
- * One session, as a mini rule. The whole 20px row is the hover target so the
- * flyout opens from anywhere across the 32px rail, but only the rule is painted.
- * Length comes from the rail's dock, so a notch answers the pointer's distance
- * rather than only its own row's hover, and the selected one alone takes the
- * darker mark.
+ * One session, as a user dot. The whole 20px row is the hover target so the
+ * flyout opens from anywhere across the 32px rail, while the visible face stays
+ * capped at 12px.
  *
  * Arrival layout lives on the list item, not the flyout trigger. Base UI closes
  * a preview card when its active trigger unmounts, and Motion's layout
@@ -222,6 +311,7 @@ function AgentSessionNotch({
 	isHighlighted,
 	isNew,
 	item,
+	notchShape,
 	onArrivalComplete,
 	onItemHover,
 	onView,
@@ -234,6 +324,7 @@ function AgentSessionNotch({
 	isHighlighted: boolean;
 	isNew: boolean;
 	item: AgentSessionItem;
+	notchShape: AgentSessionColumnNotchShape;
 	onArrivalComplete?: () => void;
 	onItemHover?: (item: AgentSessionItem | null) => void;
 	onView?: (item: AgentSessionItem) => void;
@@ -243,6 +334,7 @@ function AgentSessionNotch({
 	const shouldReduceMotion = useReducedMotion();
 	const isHoveredRef = useRef(false);
 	const onItemHoverRef = useRef(onItemHover);
+	const visibleIdentity = toAgentSessionVisibleIdentity(item);
 
 	useEffect(() => {
 		onItemHoverRef.current = onItemHover;
@@ -306,13 +398,24 @@ function AgentSessionNotch({
 								<span className="sr-only">
 									{`${item.title} — ${NOTCH_STATE_LABEL[item.state]}${isNew ? ", newly synced" : ""}`}
 								</span>
-								<AgentSessionNotchMark
-									isArriving={isArriving}
-									isHighlighted={isHighlighted}
-									isNew={isNew}
-									onArrivalComplete={onArrivalComplete}
-									proximity={proximity}
-								/>
+								{notchShape === "line" ? (
+									<AgentSessionNotchMark
+										isArriving={isArriving}
+										isHighlighted={isHighlighted}
+										isNew={isNew}
+										onArrivalComplete={onArrivalComplete}
+										proximity={proximity}
+									/>
+								) : (
+									<AgentSessionUserNotch
+										avatarSrc={visibleIdentity.avatarSrc}
+										isArriving={isArriving}
+										isHighlighted={isHighlighted}
+										isNew={isNew}
+										onArrivalComplete={onArrivalComplete}
+										proximity={proximity}
+									/>
+								)}
 							</button>
 						</JiraSessionFlyoutTrigger>
 					)}
@@ -330,6 +433,7 @@ export function AgentSessionColumnRail({
 	highlightedItemId,
 	items,
 	newItemIds,
+	notchShape = "circle",
 	onArrivalComplete,
 	onCreateWorkItem,
 	onItemHover,
@@ -346,6 +450,7 @@ export function AgentSessionColumnRail({
 	highlightedItemId?: string | null;
 	items: readonly AgentSessionItem[];
 	newItemIds?: ReadonlySet<string>;
+	notchShape?: AgentSessionColumnNotchShape;
 	onArrivalComplete?: (itemId: string) => void;
 	onCreateWorkItem?: (item: AgentSessionItem) => void;
 	onItemHover?: (item: AgentSessionItem | null) => void;
@@ -441,6 +546,7 @@ export function AgentSessionColumnRail({
 						isNew={newItemIds?.has(item.id) ?? false}
 						item={item}
 						key={item.id}
+						notchShape={notchShape}
 						onArrivalComplete={onArrivalComplete === undefined
 							? undefined
 							: () => onArrivalComplete(item.id)}

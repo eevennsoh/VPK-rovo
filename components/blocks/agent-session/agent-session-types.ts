@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 
-import type { AgentListItem } from "@/components/blocks/agent-list";
+import type { AgentListAgent, AgentListItem } from "@/components/blocks/agent-list";
 import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
 
 import type { ApproveTarget } from "./agent-session-approve";
@@ -16,6 +16,25 @@ import type { SessionCohort } from "./session-cohort";
  * conversion step.
  */
 export type AgentSessionItem = AgentListItem;
+
+/**
+ * Visible identity for an agent session.
+ *
+ * Session behavior still belongs to `item.agent`; the leading face belongs to
+ * the person who invoked it. Returning the original object when no invoker is
+ * known keeps agent-only payloads backward compatible.
+ */
+export function toAgentSessionVisibleIdentity(item: AgentSessionItem): AgentListAgent {
+	if (item.invokedBy === undefined) {
+		return item.agent;
+	}
+
+	return {
+		avatarSrc: item.invokedBy.avatarSrc,
+		kind: "person",
+		name: item.invokedBy.name,
+	};
+}
 
 /** Visual footprint and work-item relationship of each session. */
 export type AgentSessionVariant = "large" | "medium-detached" | "medium-attached" | "small";

@@ -216,6 +216,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/agent-selector/agent-selector.test.js",
 		"components/blocks/agent-session/agent-session.test.js",
 		"components/blocks/agent-session-flyout/agent-session-flyout.test.js",
+		"components/blocks/agent-session-column/agent-session-column-markers.test.js",
 		"components/blocks/agent-session-column/agent-session-column.test.js",
 		"components/blocks/artifact-pane/artifact-pane.test.js",
 		"components/blocks/chatgpt/create-project-form.test.js",

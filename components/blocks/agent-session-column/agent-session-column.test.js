@@ -411,9 +411,9 @@ test("a notch is a drag handle, so a session leaves the collapsed rail too", () 
 test("each notch opens the shared session flyout rather than a forked preview", () => {
 	assert.match(
 		RAIL_COLUMN_SOURCE,
-		/import \{ AgentSessionNotchMark \} from "@\/components\/blocks\/agent-session\/agent-session-notch";/u,
+		/import Image from "next\/image";/u,
 	);
-	assert.match(RAIL_COLUMN_SOURCE, /<AgentSessionNotchMark/u);
+	assert.match(RAIL_COLUMN_SOURCE, /<AgentSessionUserNotch/u);
 	assert.match(
 		RAIL_COLUMN_SOURCE,
 		/from "@\/components\/blocks\/product-sidebar\/variants\/jira-session-flyout"/u,
@@ -454,8 +454,8 @@ test("collapsed motion is tokenised and honours reduced motion", () => {
 	// in-place profile; the notch swell is a list-item interaction.
 	assert.match(INDEX_SOURCE, /width var\(--duration-medium\) var\(--ease-in-out\)/u);
 	assert.match(INDEX_SOURCE, /transition: shouldReduceMotion \? "none" : AGENT_SESSION_COLUMN_TRANSITION/u);
-	assert.match(NOTCH_MARK_SOURCE, /duration-xxshort ease-out-practical/u);
-	assert.match(NOTCH_MARK_SOURCE, /motion-reduce:transition-none/u);
+	assert.match(RAIL_COLUMN_SOURCE, /duration-normal ease-out-practical/u);
+	assert.match(RAIL_COLUMN_SOURCE, /motion-reduce:transition-none/u);
 	// The dock's fade in and out are tokenised as resolved cubic-beziers, because
 	// Motion cannot read `var()`: duration-normal + ease-out-practical arriving,
 	// and the shorter duration-fast + ease-in leaving, as every exit is.
@@ -646,8 +646,8 @@ test("the collapsed rail preserves session twin hover previews", () => {
 	assert.match(RAIL_COLUMN_SOURCE, /onPointerEnter=\{\(\) => \{[\s\S]{0,150}?onItemHover\?\.\(item\)/u);
 	assert.match(RAIL_COLUMN_SOURCE, /onPointerLeave=\{\(\) => \{[\s\S]{0,150}?onItemHover\?\.\(null\)/u);
 	assert.match(RAIL_COLUMN_SOURCE, /data-highlighted=\{isHighlighted \|\| undefined\}/u);
-	assert.match(NOTCH_MARK_SOURCE, /isHighlighted\s*\? AGENT_SESSION_NOTCH_TONE\.selected/u);
-	assert.match(NOTCH_MARK_SOURCE, /isHighlighted[\s\S]{0,100}?AGENT_SESSION_NOTCH_LENGTH\.peak/u);
+	assert.match(RAIL_COLUMN_SOURCE, /isHighlighted=\{isHighlighted\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /isHighlighted \? "opacity-100 scale-100"/u);
 });
 
 test("an arrival is a transient beat plus a mark that outlives it", () => {
@@ -655,21 +655,26 @@ test("an arrival is a transient beat plus a mark that outlives it", () => {
 	// collapsed column, and reduced motion, so it is never the animation alone.
 	assert.match(CARD_SOURCE, /<span className="sr-only">Newly synced, not yet reviewed<\/span>/u);
 	assert.match(CARD_SOURCE, /size-1\.5 rounded-full bg-icon-discovery/u);
-	assert.match(NOTCH_MARK_SOURCE, /isNew \|\| isHighlighted \? NOTCH_EMPHASIS : NOTCH_AT_REST/u);
-	// A reviewed notch rests quiet and lights up on hover or focus; a new one is
-	// already lit, so "new" reuses the hover vocabulary instead of adding one.
-	assert.match(NOTCH_MARK_SOURCE, /const NOTCH_EMPHASIS = "scale-x-\[1\.6\] bg-icon";/u);
-	assert.match(NOTCH_MARK_SOURCE, /"bg-icon-disabled",/u);
-	assert.match(NOTCH_MARK_SOURCE, /group-hover\/notch:bg-icon/u);
-	assert.match(NOTCH_MARK_SOURCE, /group-has-\[:focus-visible\]\/notch:bg-icon/u);
-	// State is spoken, not painted — no per-lifecycle hue at 12x2px.
+	assert.match(RAIL_COLUMN_SOURCE, /backgroundColor: AGENT_SESSION_NOTCH_TONE\.rest/u);
+	assert.doesNotMatch(
+		RAIL_COLUMN_SOURCE,
+		/backgroundColor: isNew\s*\? AGENT_SESSION_NOTCH_TONE\.selected/u,
+	);
+	// A reviewed session rests as a quiet dot; hover and keyboard focus reveal
+	// the same human face used by the expanded card, capped at 12x12.
+	assert.match(RAIL_COLUMN_SOURCE, /size-3[^"\n]*rounded-full object-cover/u);
+	assert.match(RAIL_COLUMN_SOURCE, /group-hover\/notch:opacity-100/u);
+	assert.match(RAIL_COLUMN_SOURCE, /group-has-\[:focus-visible\]\/notch:opacity-100/u);
+	assert.match(RAIL_COLUMN_SOURCE, /avatarSrc=\{visibleIdentity\.avatarSrc\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /toAgentSessionVisibleIdentity\(item\)/u);
+	// State is spoken, not painted — no per-lifecycle hue on the dot.
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /bg-icon-warning|bg-icon-information/u);
 	// Arrival recolours the same solid frame rather than replacing the border.
 	assert.doesNotMatch(CARD_SOURCE, /dash-4-2/u);
 	// Reduced motion drops the beat and keeps the mark. The beat is keyed on
 	// `isArriving`, never on `isNew` — see the one-shot test below.
 	assert.match(CARD_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
-	assert.match(NOTCH_MARK_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
+	assert.match(RAIL_COLUMN_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
 	// A settled card must not replay its entrance on an unrelated re-render.
 	assert.match(CARD_SOURCE, /initial=\{shouldPlayArrival \? \{ opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX \} : false\}/u);
 });
@@ -710,10 +715,10 @@ test("arrival motion is tokenised, capped, and spatially anchored", () => {
 	assert.match(SESSION_INDEX_SOURCE, /shouldStagger \? index \* ARRIVAL_STAGGER_SECONDS : 0/u);
 	// The rail's arrival grows from the centre to full size — no overshoot
 	// keyframes, and no second property competing with the scale.
-	assert.match(NOTCH_MARK_SOURCE, /initial=\{shouldPlayArrival \? \{ scaleX: 0 \} : false\}/u);
-	assert.match(NOTCH_MARK_SOURCE, /animate=\{shouldPlayArrival \? \{ scaleX: 1 \} : undefined\}/u);
-	assert.doesNotMatch(NOTCH_MARK_SOURCE, /scaleX: \[/u);
-	assert.doesNotMatch(NOTCH_MARK_SOURCE, /times:/u);
+	assert.match(RAIL_COLUMN_SOURCE, /initial=\{shouldPlayArrival \? \{ scale: 0 \} : false\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /animate=\{shouldPlayArrival \? \{ scale: 1 \} : undefined\}/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /scale: \[/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /times:/u);
 	// Arriving notches push the ones below them down instead of teleporting.
 	// The scrollport stays a plain `ul` so mask-image can fade the marks;
 	// layout lives on each notch, not on a Motion scroll host.
