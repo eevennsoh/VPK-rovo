@@ -413,11 +413,11 @@ test("Jira issue shows PR metadata with the specified summary-row spacing", () =
 	assert.match(SOURCE, /pullRequestStatus=\{pullRequestStatus\}/u);
 	assert.match(SOURCE, /pullRequestTitle=\{pullRequestTitle\}/u);
 	// Raised chrome still shows the PR number beside the icon. Stroke chrome
-	// drops the visible #N label and reveals the spacious Pull Request card.
+	// drops the visible #N label and reveals the flyout Pull Request card.
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /if \(!usesStrokeChrome\) \{[\s\S]*#\{pullRequestNumber\}/u);
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /<HoverCard>[\s\S]*render=\{\(\s*<Button[\s\S]*aria-label=\{accessibleName\}[\s\S]*onClick=\{stopNestedActivation\}[\s\S]*onPointerDown=\{stopNestedActivation\}[\s\S]*size="icon-compact"[\s\S]*type="button"[\s\S]*variant="ghost"/u);
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /<Button[\s\S]*size="icon-compact"[\s\S]*variant="ghost"/u);
-	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /<PullRequest[\s\S]*variant="spacious"/u);
+	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /<PullRequest[\s\S]*variant="flyout"/u);
 	assert.doesNotMatch(PULL_REQUEST_CLUSTER_SOURCE, /onActivate=/u);
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /className="w-\[320px\] max-w-\[calc\(100vw-48px\)\] overflow-hidden rounded-xl border-none bg-surface-overlay p-0 text-text shadow-none"/u);
 	assert.match(PULL_REQUEST_CLUSTER_SOURCE, /boxShadow: token\("elevation\.shadow\.overlay"\)/u);

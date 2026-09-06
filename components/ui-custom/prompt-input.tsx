@@ -115,6 +115,7 @@ import {
 export {
   PromptInputDictationControl,
   type PromptInputDictationControlProps,
+  type PromptInputDictationControlSize,
   type PromptInputDictationState,
 } from "@/components/ui-custom/prompt-input-dictation";
 export {
@@ -2049,7 +2050,12 @@ export const PromptInputSubmit = ({
     ? "border-border bg-surface-raised text-icon-danger hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed"
     : undefined;
 
-  let Icon = <ArrowUpIcon className="size-4" />;
+  const glyphSize = size === "icon-xs" ? "small" : undefined;
+  let Icon = glyphSize ? (
+    <ArrowUpIcon size={glyphSize} />
+  ) : (
+    <ArrowUpIcon className="size-4" />
+  );
 
   if (status === "submitted" || status === "streaming") {
     Icon = <span aria-hidden className="size-3 rounded-[2px] bg-current" />;

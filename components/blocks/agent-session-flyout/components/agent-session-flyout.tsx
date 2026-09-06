@@ -1,10 +1,16 @@
 "use client";
 
-import { useState, type ComponentProps } from "react";
+import { useState, type ComponentProps, type ReactNode } from "react";
+
+import BranchIcon from "@atlaskit/icon/core/branch";
+import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
+import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
+import PullRequestIcon from "@atlaskit/icon/core/pull-request";
+import StatusInformationIcon from "@atlaskit/icon/core/status-information";
+import VideoStopIcon from "@atlaskit/icon/core/video-stop";
 
 import {
 	JiraSessionLabel,
-	JiraSessionLifecycle,
 	type JiraSidebarSessionItem,
 } from "@/components/blocks/product-sidebar/variants/jira";
 import {
@@ -15,7 +21,84 @@ import {
 	type JiraSessionFlyoutSurfaceProps,
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import { AGENT_SESSION_FLYOUT_SESSIONS } from "@/components/blocks/agent-session-flyout/agent-session-flyout-data";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
+
+function trailingIcon(
+	icon: ReactNode,
+	title: string,
+	tone: "subtle" | "danger",
+) {
+	return (
+		<span
+			className={cn(
+				"grid size-4 shrink-0 place-items-center",
+				tone === "danger" ? "text-icon-danger" : "text-icon-subtle",
+			)}
+			title={title}
+		>
+			{icon}
+		</span>
+	);
+}
+
+/** Compact list glyphs: muted `text-icon-subtle`, except PR failed which stays danger red. */
+function AgentSessionFlyoutTrailingIcon({
+	session,
+}: Readonly<{ session: JiraSidebarSessionItem }>) {
+	if (session.branch && !session.pullRequestNumber) {
+		return trailingIcon(
+			<BranchIcon color="currentColor" label="Branch created" size="small" />,
+			"Branch created",
+			"subtle",
+		);
+	}
+
+	if (session.pullRequestNumber && session.status === "stopped") {
+		return trailingIcon(
+			<MergeFailureIcon color="currentColor" label="Pull request failed" size="small" />,
+			"Pull request failed",
+			"danger",
+		);
+	}
+
+	switch (session.status) {
+		case "awaiting-input":
+			return trailingIcon(
+				<StatusInformationIcon color="currentColor" label="Needs input" size="small" />,
+				"Needs input",
+				"subtle",
+			);
+		case "running":
+			return <Spinner label="Running" size="xs" />;
+		case "pr-open":
+			return trailingIcon(
+				<PullRequestIcon color="currentColor" label="Pull request open" size="small" />,
+				"Pull request open",
+				"subtle",
+			);
+		case "merged":
+			return trailingIcon(
+				<MergeSuccessIcon color="currentColor" label="Pull request merged" size="small" />,
+				"Pull request merged",
+				"subtle",
+			);
+		case "stopped":
+			return trailingIcon(
+				<VideoStopIcon color="currentColor" label="Stopped" size="small" />,
+				"Stopped",
+				"subtle",
+			);
+		default: {
+			const _exhaustive: never = session.status;
+			return _exhaustive;
+		}
+	}
+}
+
+/** Compact bordered list chrome shared by catalog session lists. */
+export const AGENT_SESSION_FLYOUT_LIST_CLASSNAME =
+	"flex max-w-sm flex-col gap-1 rounded-lg border border-border bg-surface p-1";
 
 /**
  * The `/jira-golden-journeys-v0` queue session flyout showcase. The compact session list feeds the
@@ -68,7 +151,7 @@ function AgentSessionFlyoutTrigger({
 				</span>
 			</span>
 			<span className="grid size-6 shrink-0 place-items-center">
-				<JiraSessionLifecycle status={session.status} />
+				<AgentSessionFlyoutTrailingIcon session={session} />
 			</span>
 		</button>
 	);
@@ -90,7 +173,7 @@ export function AgentSessionFlyout({
 	const [flyoutHandle] = useState(createJiraSessionFlyoutHandle);
 
 	return (
-		<div className={cn("flex max-w-sm flex-col gap-0.5 rounded-lg border border-border bg-surface p-1", className)}>
+		<div className={cn(AGENT_SESSION_FLYOUT_LIST_CLASSNAME, className)}>
 			{sessions.map((session) => (
 				<JiraSessionFlyoutTrigger
 					closeDelay={160}
