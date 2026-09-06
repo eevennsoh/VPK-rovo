@@ -73,7 +73,7 @@ const ARRIVAL_BATCHES: readonly (readonly AgentSessionItem[])[] = [
 				name: "Maya Ferreira",
 			},
 			machineName: "MacBook-Pro.local",
-			timeLabel: "just now",
+			timeLabel: "Just now",
 			sessionDetails: {
 				host: "local",
 				issueKey: "PAY-107",
@@ -92,7 +92,7 @@ const ARRIVAL_BATCHES: readonly (readonly AgentSessionItem[])[] = [
 				name: "Venn",
 			},
 			machineName: "H13XSGKLS1",
-			timeLabel: "just now",
+			timeLabel: "Just now",
 			sessionDetails: {
 				host: "local",
 				issueKey: "PAY-112",
@@ -113,7 +113,7 @@ const ARRIVAL_BATCHES: readonly (readonly AgentSessionItem[])[] = [
 				name: "Diego Santos",
 			},
 			machineName: "DESKTOP-7K2M9Q1",
-			timeLabel: "just now",
+			timeLabel: "Just now",
 			sessionDetails: {
 				host: "local",
 				issueKey: "PAY-118",

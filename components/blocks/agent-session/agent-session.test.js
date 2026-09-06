@@ -609,7 +609,7 @@ test("ships demo data and catalog entries for every attachment and size variant"
 	assert.match(DATA_SOURCE, /brandName: "cursor"/u);
 	assert.match(DATA_SOURCE, /vpkLogo: "rovo"/u);
 	assert.doesNotMatch(DATA_SOURCE, /Venn’s MacBook/u);
-	assert.doesNotMatch(DATA_SOURCE, /timeLabel: "3 mins ago"/u);
+	assert.match(DATA_SOURCE, /timeLabel: "18m ago"/u);
 	assert.match(DATA_SOURCE, /issueKey: "PAY-101"/u);
 	assert.match(PAGE_SOURCE, /<AgentSession/u);
 	assert.doesNotMatch(PAGE_SOURCE, /data-slot="agent-session-attached-backdrop"/u);

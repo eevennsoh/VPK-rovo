@@ -65,7 +65,7 @@ export const AGENT_SESSION_ITEMS: readonly AgentSessionItem[] = [
 			name: "Jordan Okafor",
 		},
 		machineName: "Work Laptop",
-		timeLabel: "18 mins ago",
+		timeLabel: "18m ago",
 		sessionDetails: {
 			host: "local",
 			issueKey: "PAY-121",
