@@ -194,6 +194,11 @@ test("enclosed chrome puts the collapsed count inside the framed box", () => {
 		/chrome=\{chrome\.collapsed\}[\s\S]*headerFrame=\{chrome\.headerFrame\}/u,
 	);
 	assert.match(BOARD_SOURCE, /data-kanban-column-chrome=\{columnChrome\}/u);
+	assert.match(BOARD_SOURCE, /KANBAN_COLUMN_DROP_TARGET_GROUP_CLASS/u);
+	assert.match(
+		BOARD_SOURCE,
+		/chrome\.headerDropArmedClassName/u,
+	);
 });
 
 test("experimental-v2 reuses the shared collapsed column and threads chrome", () => {
@@ -207,5 +212,7 @@ test("experimental-v2 reuses the shared collapsed column and threads chrome", ()
 		/chrome=\{chrome\.collapsed\}[\s\S]*headerFrame=\{chrome\.headerFrame\}/u,
 	);
 	assert.match(V2_BOARD_SOURCE, /data-kanban-column-chrome=\{columnChrome\}/u);
+	assert.match(V2_BOARD_SOURCE, /KANBAN_COLUMN_DROP_TARGET_GROUP_CLASS/u);
+	assert.match(V2_BOARD_SOURCE, /chrome\.headerDropArmedClassName/u);
 	assert.doesNotMatch(V2_BOARD_SOURCE, /function CollapsedBoardColumn/u);
 });
