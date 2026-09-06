@@ -147,6 +147,33 @@ function useAgentSessionLooseWork(
 	);
 }
 
+function useAgentSessionReview(
+	defaultCollapsed: boolean,
+	onAgentSessionsReviewed: ExperimentalJiraKanbanPageProps["onAgentSessionsReviewed"],
+) {
+	const [agentSessionColumnCollapsed, setAgentSessionColumnCollapsed] = useState(defaultCollapsed);
+	const [untrackedHoveredSessionId, setUntrackedHoveredSessionId] = useState<string | null>(null);
+	const handleUntrackedItemHover = useCallback((item: AgentSessionItem | null) => {
+		setUntrackedHoveredSessionId(item?.id ?? null);
+		if (item !== null) {
+			onAgentSessionsReviewed?.([item.id]);
+		}
+	}, [onAgentSessionsReviewed]);
+	const handleAgentSessionColumnCollapsedChange = useCallback((nextCollapsed: boolean) => {
+		setAgentSessionColumnCollapsed(nextCollapsed);
+		if (!nextCollapsed) {
+			onAgentSessionsReviewed?.();
+		}
+	}, [onAgentSessionsReviewed]);
+
+	return {
+		agentSessionColumnCollapsed,
+		handleAgentSessionColumnCollapsedChange,
+		handleUntrackedItemHover,
+		untrackedHoveredSessionId,
+	};
+}
+
 export default function ExperimentalJiraKanbanPage({
 	activeView = "board",
 	activeCardCode,
@@ -241,23 +268,15 @@ export default function ExperimentalJiraKanbanPage({
 	// always on the board's trailing edge, and the viewer expands it to the panel
 	// or collapses it back to the 32px notch rail. There is deliberately no
 	// closed state — nothing outside the rail could bring it back.
-	const [agentSessionColumnCollapsed, setAgentSessionColumnCollapsed] = useState(defaultAgentSessionColumnCollapsed);
+	const {
+		agentSessionColumnCollapsed,
+		handleAgentSessionColumnCollapsedChange,
+		handleUntrackedItemHover,
+		untrackedHoveredSessionId,
+	} = useAgentSessionReview(defaultAgentSessionColumnCollapsed, onAgentSessionsReviewed);
 	const [agentSessionPanelWidthPx, setAgentSessionPanelWidthPx] = useState(AGENT_SESSION_PANEL_WIDTH_PX);
 	const agentSessionPanelRef = useRef<HTMLDivElement | null>(null);
 	const [listContentUnderlapsPanel, setListContentUnderlapsPanel] = useState(false);
-	const [untrackedHoveredSessionId, setUntrackedHoveredSessionId] = useState<string | null>(null);
-	const handleUntrackedItemHover = useCallback((item: AgentSessionItem | null) => {
-		setUntrackedHoveredSessionId(item?.id ?? null);
-		if (item !== null) {
-			onAgentSessionsReviewed?.([item.id]);
-		}
-	}, [onAgentSessionsReviewed]);
-	const handleAgentSessionColumnCollapsedChange = useCallback((nextCollapsed: boolean) => {
-		setAgentSessionColumnCollapsed(nextCollapsed);
-		if (!nextCollapsed) {
-			onAgentSessionsReviewed?.();
-		}
-	}, [onAgentSessionsReviewed]);
 	const [collapsedColumns, setCollapsedColumns] = useState(EMPTY_COLLAPSED_BOARD_COLUMNS);
 	const [showUntracked, setShowUntracked] = useState(defaultShowUntracked);
 	const [appliedShowUntrackedDefault, setAppliedShowUntrackedDefault] = useState(defaultShowUntracked);

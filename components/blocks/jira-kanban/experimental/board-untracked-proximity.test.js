@@ -86,6 +86,7 @@ test("the experimental page can prepend newly synced agent sessions with arrival
 		/onAgentSessionsReviewed\?: \(sessionIds\?: readonly string\[\]\) => void;/u,
 	);
 	assert.match(PAGE_SOURCE, /function useAgentSessionLooseWork\(/u);
+	assert.match(PAGE_SOURCE, /function useAgentSessionReview\(/u);
 	assert.doesNotMatch(PAGE_SOURCE, /additionalAgentSessions = EMPTY_ADDITIONAL_AGENT_SESSIONS/u);
 	assert.match(
 		PAGE_SOURCE,
