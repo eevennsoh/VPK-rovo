@@ -11,7 +11,6 @@ export {
 	type AgentSessionFlyoutProps,
 } from "@/components/blocks/agent-session-flyout/components/agent-session-flyout";
 export {
-	AGENT_SESSION_FLYOUT_CODING_BRANCH_SESSIONS,
 	AGENT_SESSION_FLYOUT_CODING_LIFECYCLE_SESSIONS,
 	AGENT_SESSION_FLYOUT_SESSIONS,
 } from "@/components/blocks/agent-session-flyout/agent-session-flyout-data";

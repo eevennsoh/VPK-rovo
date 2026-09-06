@@ -54,15 +54,16 @@ function detailsHostIcon(host: JiraSidebarSessionHost): ReactNode {
 }
 
 /**
- * PR glyph + color matching the session-list trailing icons: green open,
- * purple merged. Stopped sessions with a PR use the failed-merge glyph in
- * danger red — the list uses a stop icon for the session, not the PR row.
+ * PR glyph + color matching the board View legend and session-list trailing
+ * icons: green open, discovery purple merged. Stopped sessions with a PR use
+ * the failed-merge glyph in danger red — the list uses a stop icon for the
+ * session, not the PR row.
  */
 function detailsPullRequestGlyph(status: JiraSidebarSessionStatus): ReactNode {
 	switch (status) {
 		case "merged":
 			return (
-				<span className="grid size-4 shrink-0 place-items-center text-icon-accent-purple" title="Pull request merged">
+				<span className="grid size-4 shrink-0 place-items-center text-icon-discovery" title="Pull request merged">
 					<MergeSuccessIcon color="currentColor" label="Pull request merged" size="small" />
 				</span>
 			);

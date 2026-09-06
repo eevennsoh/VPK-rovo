@@ -93,6 +93,7 @@ export interface ExperimentalJiraKanbanPageProps {
 	onCardClick?: (card: JiraKanbanCardData, columnTitle: string) => void;
 	onCardAgentActivityViewChat?: JiraKanbanProps["onCardAgentActivityViewChat"];
 	onCardAgentDoneRunView?: JiraKanbanProps["onCardAgentDoneRunView"];
+	onCardGenerativeActionSubmit?: JiraKanbanProps["onCardGenerativeActionSubmit"];
 	onCardAgentSessionLink?: ExperimentalJiraKanbanProps["onCardAgentSessionLink"];
 	onCardAgentSessionMove?: ExperimentalJiraKanbanProps["onCardAgentSessionMove"];
 	onCardAgentSessionUnlink?: ExperimentalJiraKanbanProps["onCardAgentSessionUnlink"];

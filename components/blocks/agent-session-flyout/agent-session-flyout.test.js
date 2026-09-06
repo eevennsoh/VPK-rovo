@@ -135,7 +135,7 @@ test("details hover card uses Figma chrome without panel property rows", () => {
 		/<Tag[\s\S]*color="gray"[\s\S]*type="agent"[\s\S]*variant="editor"/u,
 	);
 	assert.match(detailsSource, /text-icon-success[\s\S]*<PullRequestIcon color="currentColor" label="Pull request open"/u);
-	assert.match(detailsSource, /text-icon-accent-purple[\s\S]*<MergeSuccessIcon color="currentColor" label="Pull request merged"/u);
+	assert.match(detailsSource, /text-icon-discovery[\s\S]*<MergeSuccessIcon color="currentColor" label="Pull request merged"/u);
 	assert.match(detailsSource, /text-icon-danger[\s\S]*<MergeFailureIcon color="currentColor" label="Pull request failed"/u);
 	assert.match(
 		detailsSource,
@@ -372,7 +372,7 @@ test("/jira-golden-journeys-v0 seeds provide the four expected states with PR fi
 
 test("coding lifecycle demo seeds cover branch-only through merged PR", () => {
 	const dataSource = readRepoFile(FLYOUT_DEMO_DATA_PATH);
-	assert.match(dataSource, /export const AGENT_SESSION_FLYOUT_CODING_BRANCH_SESSIONS/u);
+	assert.doesNotMatch(dataSource, /AGENT_SESSION_FLYOUT_CODING_BRANCH_SESSIONS/u);
 	assert.match(dataSource, /export const AGENT_SESSION_FLYOUT_CODING_LIFECYCLE_SESSIONS/u);
 	assert.match(dataSource, /id: "coding-lifecycle-branch"/u);
 	assert.match(dataSource, /title: "Branch created"/u);
@@ -394,21 +394,24 @@ test("coding lifecycle demo seeds cover branch-only through merged PR", () => {
 	assert.match(dataSource, /name: "Jordan Lee"/u);
 });
 
-test("flyout list trailing icons stay subtle except PR failed in danger red", () => {
+test("flyout list trailing icons follow the board View PR legend colors", () => {
 	const source = readBlockFile("components/agent-session-flyout.tsx");
 
-	assert.match(source, /tone === "danger" \? "text-icon-danger" : "text-icon-subtle"/u);
+	assert.match(source, /subtlest: "text-icon-subtlest"/u);
+	assert.match(source, /success: "text-icon-success"/u);
+	assert.match(source, /discovery: "text-icon-discovery"/u);
+	assert.match(source, /danger: "text-icon-danger"/u);
 	assert.match(
 		source,
-		/<BranchIcon color="currentColor" label="Branch created"[\s\S]*"Branch created",\s*"subtle"/u,
+		/<BranchIcon color="currentColor" label="Branch created"[\s\S]*"Branch created",\s*"subtlest"/u,
 	);
 	assert.match(
 		source,
-		/<PullRequestIcon color="currentColor" label="Pull request open"[\s\S]*"Pull request open",\s*"subtle"/u,
+		/<PullRequestIcon color="currentColor" label="Pull request open"[\s\S]*"Pull request open",\s*"success"/u,
 	);
 	assert.match(
 		source,
-		/<MergeSuccessIcon color="currentColor" label="Pull request merged"[\s\S]*"Pull request merged",\s*"subtle"/u,
+		/<MergeSuccessIcon color="currentColor" label="Pull request merged"[\s\S]*"Pull request merged",\s*"discovery"/u,
 	);
 	assert.match(
 		source,
@@ -418,7 +421,6 @@ test("flyout list trailing icons stay subtle except PR failed in danger red", ()
 		source,
 		/session\.pullRequestNumber && session\.status === "stopped"[\s\S]*<MergeFailureIcon color="currentColor" label="Pull request failed"[\s\S]*"Pull request failed",\s*"danger"/u,
 	);
-	assert.doesNotMatch(source, /text-icon-success/u);
 	assert.doesNotMatch(source, /text-icon-accent-purple/u);
 	assert.doesNotMatch(source, /text-icon-information/u);
 	assert.doesNotMatch(source, /JiraSessionLifecycle/u);
@@ -467,8 +469,8 @@ test("catalog examples are separate surfaces without content tabs", () => {
 		/data-variant="uncaptured-work"/u,
 	);
 	assert.doesNotMatch(demoSource, /<Page content="untracked-work" \/>/u);
-	assert.match(demoSource, /export function AgentSessionFlyoutDemoCodingBranch/u);
-	assert.match(demoSource, /<Page sessions=\{AGENT_SESSION_FLYOUT_CODING_BRANCH_SESSIONS\} \/>/u);
+	assert.doesNotMatch(demoSource, /AgentSessionFlyoutDemoCodingBranch/u);
+	assert.doesNotMatch(demoSource, /AGENT_SESSION_FLYOUT_CODING_BRANCH_SESSIONS/u);
 	assert.match(demoSource, /export function AgentSessionFlyoutDemoCodingLifecycle/u);
 	assert.match(demoSource, /<Page sessions=\{AGENT_SESSION_FLYOUT_CODING_LIFECYCLE_SESSIONS\} \/>/u);
 	assert.match(detailSource, /name: "content"/u);
@@ -480,8 +482,8 @@ test("catalog examples are separate surfaces without content tabs", () => {
 	assert.match(detailSource, /demoSlug: "agent-session-flyout-demo-composer"/u);
 	assert.match(detailSource, /title: "Untracked work"/u);
 	assert.match(detailSource, /demoSlug: "agent-session-flyout-demo-untracked-work"/u);
-	assert.match(detailSource, /title: "Coding — branch created"/u);
-	assert.match(detailSource, /demoSlug: "agent-session-flyout-demo-coding-branch"/u);
+	assert.doesNotMatch(detailSource, /title: "Coding — branch created"/u);
+	assert.doesNotMatch(detailSource, /agent-session-flyout-demo-coding-branch/u);
 	assert.match(detailSource, /title: "Coding lifecycle"/u);
 	assert.match(detailSource, /demoSlug: "agent-session-flyout-demo-coding-lifecycle"/u);
 	assert.match(variantRegistry, /"agent-session-flyout-demo-details": dynamic/u);
@@ -490,8 +492,8 @@ test("catalog examples are separate surfaces without content tabs", () => {
 	assert.match(variantRegistry, /default: mod\.AgentSessionFlyoutDemoComposer/u);
 	assert.match(variantRegistry, /"agent-session-flyout-demo-untracked-work": dynamic/u);
 	assert.match(variantRegistry, /default: mod\.AgentSessionFlyoutDemoUntrackedWork/u);
-	assert.match(variantRegistry, /"agent-session-flyout-demo-coding-branch": dynamic/u);
-	assert.match(variantRegistry, /default: mod\.AgentSessionFlyoutDemoCodingBranch/u);
+	assert.doesNotMatch(variantRegistry, /agent-session-flyout-demo-coding-branch/u);
+	assert.doesNotMatch(variantRegistry, /AgentSessionFlyoutDemoCodingBranch/u);
 	assert.match(variantRegistry, /"agent-session-flyout-demo-coding-lifecycle": dynamic/u);
 	assert.match(variantRegistry, /default: mod\.AgentSessionFlyoutDemoCodingLifecycle/u);
 });

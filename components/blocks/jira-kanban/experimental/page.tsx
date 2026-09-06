@@ -210,6 +210,7 @@ export default function ExperimentalJiraKanbanPage({
 	onCardClick,
 	onCardAgentActivityViewChat,
 	onCardAgentDoneRunView,
+	onCardGenerativeActionSubmit,
 	onCardAgentSessionLink,
 	onCardAgentSessionMove,
 	onCardAgentSessionUnlink,
@@ -914,6 +915,7 @@ export default function ExperimentalJiraKanbanPage({
 								onCardClick={handleCardClick}
 								onCardAgentActivityViewChat={onCardAgentActivityViewChat}
 								onCardAgentDoneRunView={onCardAgentDoneRunView}
+								onCardGenerativeActionSubmit={onCardGenerativeActionSubmit}
 								onCardAgentSessionLink={onCardAgentSessionLink
 									? handleCardAgentSessionLink
 									: undefined}
