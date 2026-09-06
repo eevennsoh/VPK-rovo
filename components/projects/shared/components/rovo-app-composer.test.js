@@ -203,17 +203,22 @@ test("Rovo Cursor is gated behind active live voice in shared composer chrome", 
 	assert.match(SEND_CONTROLS_SOURCE, /const glyphSize = size === "icon-xs" \? "small" : undefined;/u);
 	assert.match(SEND_CONTROLS_SOURCE, /<ArrowUpIcon label="" size=\{glyphSize\} \/>/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /shouldShowRegionPaintControl/u);
-	assert.match(SEND_CONTROLS_SOURCE, /"relative flex h-9 w-\[68px\] items-center justify-center overflow-hidden rounded-\[8px\]"/u);
+	assert.match(SEND_CONTROLS_SOURCE, /"icon-sm": "relative flex h-9 w-\[68px\] items-center justify-center overflow-hidden rounded-\[8px\]"/u);
+	assert.match(SEND_CONTROLS_SOURCE, /"icon-xs": "relative flex h-6 w-\[52px\] items-center justify-center overflow-hidden rounded-md"/u);
+	assert.match(SEND_CONTROLS_SOURCE, /CURSOR_RAIL_FRAME_CLASS_NAME_BY_SIZE\[size\]/u);
 	assert.match(SEND_CONTROLS_SOURCE, /<span aria-hidden="true" className="absolute inset-0 rounded-\[8px\] bg-bg-neutral" \/>/u);
-	assert.match(SEND_CONTROLS_SOURCE, /"absolute top-0\.5 right-0\.5 bottom-0\.5 rounded-md bg-bg-neutral-bold shadow-sm transition-\[width\] duration-medium ease-in-out motion-reduce:transition-none"[\s\S]*clickyActive \? "w-16" : "w-8"/u);
-	assert.match(SEND_CONTROLS_SOURCE, /<div className="relative z-10 flex h-8 w-16 items-center gap-0">/u);
+	assert.match(SEND_CONTROLS_SOURCE, /clickyActive[\s\S]*CURSOR_RAIL_PILL_WIDTH_CLASS_NAME_BY_SIZE\[size\]\.active[\s\S]*CURSOR_RAIL_PILL_WIDTH_CLASS_NAME_BY_SIZE\[size\]\.idle/u);
+	assert.match(SEND_CONTROLS_SOURCE, /<div className=\{CURSOR_RAIL_INNER_CLASS_NAME_BY_SIZE\[size\]\}>/u);
+	assert.match(SEND_CONTROLS_SOURCE, /"icon-sm": \{ active: "w-16", idle: "w-8" \}/u);
+	assert.match(SEND_CONTROLS_SOURCE, /"icon-xs": \{ active: "w-12", idle: "w-6" \}/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /aria-label="Paint screen area"/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /HighlightIcon/u);
 	assert.match(SEND_CONTROLS_SOURCE, /<ComposerActionFrame size=\{size\}>[\s\S]*<div className=\{ACTION_CLUSTER_CLASS_NAME_BY_SIZE\[size\]\}>[\s\S]*aria-label="Start live voice"[\s\S]*className=\{cn\(ACTION_ICON_BUTTON_CLASS_NAME_BY_SIZE\[size\], liveVoiceCtaClassName, voiceStartButtonClassName\)\}/u);
 	assert.match(SEND_CONTROLS_SOURCE, /className=\{cn\("flex h-9 min-w-0 shrink-0 items-center justify-end gap-1", className\)\}/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /className="flex h-8 w-16 overflow-hidden rounded-md bg-bg-neutral-bold text-text-inverse shadow-sm"/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /import \{ RovoCursor \} from "@\/components\/ui-custom\/rovo-cursor";/u);
-	assert.match(SEND_CONTROLS_SOURCE, /aria-label="Rovo cursor"[\s\S]*aria-pressed=\{clickyActive\}[\s\S]*"group\/rovo-cursor-button flex size-8 shrink-0 items-center justify-center rounded-md/u);
+	assert.match(SEND_CONTROLS_SOURCE, /aria-label="Rovo cursor"[\s\S]*aria-pressed=\{clickyActive\}[\s\S]*"group\/rovo-cursor-button flex shrink-0 items-center justify-center rounded-md/u);
+	assert.match(SEND_CONTROLS_SOURCE, /LIVE_VOICE_STOP_BUTTON_SIZE_CLASS_NAME_BY_SIZE\[size\]/u);
 	assert.match(SEND_CONTROLS_SOURCE, /clickyActive \? \([\s\S]*<RovoCursorTrackingIcon active \/>[\s\S]*\) : \(/u);
 	assert.match(SEND_CONTROLS_SOURCE, /clickyActive \? \([\s\S]*<RovoCursorTrackingIcon active \/>[\s\S]*\) : \([\s\S]*<RovoCursorTrackingIcon active=\{false\} \/>[\s\S]*\)/u);
 	assert.match(SEND_CONTROLS_SOURCE, /<motion\.button[\s\S]*aria-label="Rovo cursor"/u);
@@ -246,7 +251,10 @@ test("Rovo Cursor is gated behind active live voice in shared composer chrome", 
 	assert.match(ROVO_CURSOR_SOURCE, /data-rovo-cursor-rainbow-fill/u);
 	assert.doesNotMatch(ROVO_CURSOR_SOURCE, /data-rovo-cursor-rainbow-halo/u);
 	assert.doesNotMatch(ROVO_CURSOR_SOURCE, /borderRadius: barWidth \/ 2/u);
-	assert.match(SEND_CONTROLS_SOURCE, /aria-label="Stop live voice"[\s\S]*className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md/u);
+	assert.match(SEND_CONTROLS_SOURCE, /"icon-sm": "size-8"/u);
+	assert.match(SEND_CONTROLS_SOURCE, /"icon-xs": "size-6"/u);
+	assert.match(SEND_CONTROLS_SOURCE, /aria-label="Stop live voice"[\s\S]*LIVE_VOICE_STOP_BUTTON_SIZE_CLASS_NAME_BY_SIZE\[size\]/u);
+	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /aria-label="Stop live voice"[\s\S]*className="flex size-8/u);
 	assert.match(CARD_BODY_SOURCE, /rounded-xl border border-border bg-surface p-3/u);
 	assert.match(CARD_BODY_SOURCE, /compact \? "pb-2 pt-3" : "pt-4"/u);
 	// The shell owns the horizontal gutter — see the dedicated test below.
