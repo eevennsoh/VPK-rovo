@@ -49,13 +49,13 @@ export type DesignVariantState = Readonly<Record<DesignVariantId, boolean>>;
  * tab and moves Board/List into the board header, unless the user turns it off
  * to restore Board and List as sibling space tabs.
  *
- * Simple kanban starts off: expanded columns keep the sunken well unless the
- * user turns it on.
+ * Simple kanban starts on: expanded columns drop the sunken well unless the
+ * user turns it off to restore the default column chrome.
  */
 const DEFAULT_DESIGN_VARIANTS: DesignVariantState = Object.freeze({
 	panel: false,
 	"simple-views": true,
-	simpleKanban: false,
+	simpleKanban: true,
 });
 
 export function isDesignVariantId(value: unknown): value is DesignVariantId {
