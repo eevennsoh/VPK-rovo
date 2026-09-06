@@ -1,7 +1,6 @@
 "use client";
 
 import ArrowRightIcon from "@atlaskit/icon/core/arrow-right";
-import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
@@ -96,21 +95,11 @@ function PullRequestDiffStats({
 	);
 }
 
-/** Status lozenge. The spacious card leads with it, so it also carries a glyph. */
 function PullRequestStatusLozenge({
 	status,
-	withIcon = false,
-}: Readonly<{ status: PullRequestStatus; withIcon?: boolean }>) {
+}: Readonly<{ status: PullRequestStatus }>) {
 	return (
-		<Lozenge
-			elemBefore={
-				withIcon ? (
-					<Icon aria-hidden render={<PullRequestIcon label="" size="small" />} />
-				) : undefined
-			}
-			size="compact"
-			variant={statusLozengeVariant(status)}
-		>
+		<Lozenge size="compact" variant={statusLozengeVariant(status)}>
 			{status}
 		</Lozenge>
 	);
@@ -124,7 +113,7 @@ function PullRequestGitHubMark() {
 	);
 }
 
-/** GitHub-marked repository pill. Compact density only. */
+/** GitHub-marked repository pill. Dropdown card only. */
 function PullRequestRepositoryTag({
 	repository,
 }: Readonly<{ repository?: string }>) {
@@ -155,6 +144,7 @@ function PullRequestBranchPath({
 					: (branch ?? targetBranch)
 			}
 			className="inline-flex min-w-0 shrink items-center gap-1 overflow-hidden text-xs leading-5"
+			role="group"
 		>
 			{/* Source truncates; target/base stays full (`main`, not `m…`). */}
 			{branch ? <BranchName name={branch} /> : null}
@@ -170,7 +160,7 @@ function PullRequestBranchPath({
 	);
 }
 
-function PullRequestCompactBody({
+function PullRequestDropdownBody({
 	number,
 	title,
 	status,
@@ -216,10 +206,11 @@ function PullRequestCompactBody({
 }
 
 /**
- * Spacious body: status + `#N` + title on row one, GitHub mark + branch path on
- * row two, and an author / changed-files / diff footer on row three.
+ * Flyout body (Figma 3134:2238): `#N` + title with the status lozenge trailing,
+ * author avatar + `Name · relativeTime`, then a divided GitHub branch path and
+ * files / diff footer.
  */
-function PullRequestSpaciousBody({
+function PullRequestFlyoutBody({
 	number,
 	title,
 	status,
@@ -229,6 +220,7 @@ function PullRequestSpaciousBody({
 	additions,
 	deletions,
 	filesChanged,
+	relativeTime,
 }: Readonly<
 	Pick<
 		PullRequestProps,
@@ -241,30 +233,42 @@ function PullRequestSpaciousBody({
 		| "additions"
 		| "deletions"
 		| "filesChanged"
+		| "relativeTime"
 	>
 >) {
+	const authorMeta = author ? (
+		<span className="flex min-w-0 items-center gap-1 overflow-hidden text-xs leading-4 text-text-subtlest">
+			<PullRequestAuthorAvatar author={author} size="xs" />
+			<span className="min-w-0 truncate">{author.name}</span>
+			{relativeTime ? (
+				<>
+					<span className="shrink-0">·</span>
+					<span className="shrink-0">{relativeTime}</span>
+				</>
+			) : null}
+		</span>
+	) : relativeTime ? (
+		<span className="text-xs leading-4 text-text-subtlest">{relativeTime}</span>
+	) : null;
+
 	return (
 		<>
-			<div className="flex min-w-0 items-center gap-2">
-				<PullRequestStatusLozenge status={status} withIcon />
-				<span className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden text-sm font-medium leading-5">
-					<span className="shrink-0 text-text-subtlest">#{number}</span>
-					<span className="min-w-0 truncate text-text">{title}</span>
-				</span>
-			</div>
-			<div className="flex min-w-0 flex-nowrap items-center gap-1.5 overflow-hidden">
-				<PullRequestGitHubMark />
-				<PullRequestBranchPath branch={branch} targetBranch={targetBranch} />
-			</div>
-			<div className="flex min-w-0 items-center gap-2">
-				{author ? (
-					<span className="flex min-w-0 items-center gap-1.5 text-xs leading-4 text-text-subtle">
-						<PullRequestAuthorAvatar author={author} size="xs" />
-						<span className="min-w-0 truncate">{author.name}</span>
+			<div className="flex w-full min-w-0 items-start gap-3 px-3">
+				<div className="flex min-w-0 flex-1 flex-col gap-1">
+					<span className="flex min-w-0 items-center gap-1 overflow-hidden text-sm leading-5">
+						<span className="shrink-0 text-text-subtlest">#{number}</span>
+						<span className="min-w-0 truncate text-text">{title}</span>
 					</span>
-				) : null}
-				{/* `ms-auto` keeps the metrics trailing-aligned even without an author. */}
-				<span className="ms-auto flex shrink-0 items-center gap-1.5">
+					{authorMeta}
+				</div>
+				<PullRequestStatusLozenge status={status} />
+			</div>
+			<div className="flex w-full min-w-0 flex-col gap-2 border-t border-border-disabled p-3">
+				<div className="flex h-5 min-w-0 flex-nowrap items-center gap-1.5 overflow-hidden">
+					<PullRequestGitHubMark />
+					<PullRequestBranchPath branch={branch} targetBranch={targetBranch} />
+				</div>
+				<div className="flex items-center gap-1.5">
 					{filesChanged != null ? (
 						<span className="text-xs leading-4 text-text-subtle tabular-nums">
 							{filesChanged} {filesChanged === 1 ? "file" : "files"}
@@ -275,23 +279,23 @@ function PullRequestSpaciousBody({
 						deletions={deletions}
 						className="font-normal"
 					/>
-				</span>
+				</div>
 			</div>
 		</>
 	);
 }
 
 /**
- * Pull-request summary card in two densities.
+ * Pull-request summary card in two layouts.
  *
- * - `compact`: one row — author avatar, split `#N` + title, diff stats, then a
+ * - `dropdown`: one row — author avatar, split `#N` + title, diff stats, then a
  *   metadata line of status lozenge, repo pill, and `source → target` path.
- * - `spacious`: three rows — status lozenge (with glyph) + `#N` + title, then
- *   GitHub mark + `source → target` path, then an author / changed-files /
- *   diff footer.
+ * - `flyout`: overlay card — `#N` + title with a trailing status lozenge,
+ *   author · time, then a divided GitHub mark + `source → target` path and
+ *   files / diff footer.
  */
 export function PullRequest({
-	variant = "compact",
+	variant = "dropdown",
 	number,
 	title,
 	status,
@@ -302,6 +306,7 @@ export function PullRequest({
 	additions,
 	deletions,
 	filesChanged,
+	relativeTime,
 	selected = false,
 	onActivate,
 	className,
@@ -310,21 +315,22 @@ export function PullRequest({
 	// cards with onActivate). Dropdown options should omit `selected` and keep
 	// an idle surface — SelectItem owns activation; the trigger shows state.
 	const activeSelected = selected;
-	const isSpacious = variant === "spacious";
-	const body = isSpacious ? (
-		<PullRequestSpaciousBody
+	const isFlyout = variant === "flyout";
+	const body = isFlyout ? (
+		<PullRequestFlyoutBody
 			additions={additions}
 			author={author}
 			branch={branch}
 			deletions={deletions}
 			filesChanged={filesChanged}
 			number={number}
+			relativeTime={relativeTime}
 			status={status}
 			targetBranch={targetBranch}
 			title={title}
 		/>
 	) : (
-		<PullRequestCompactBody
+		<PullRequestDropdownBody
 			additions={additions}
 			author={author}
 			branch={branch}
@@ -339,16 +345,16 @@ export function PullRequest({
 
 	const surfaceClassName = cn(
 		"flex w-full min-w-0 text-text",
-		isSpacious
-			? "flex-col items-stretch gap-2 rounded-xl border border-border p-3"
+		isFlyout
+			? "flex-col items-stretch gap-3 rounded-lg bg-surface-raised pt-3 shadow-2xl"
 			: "items-center gap-2 rounded-lg border border-border px-3 py-1.5",
 		onActivate
 			? "cursor-pointer text-left outline-none transition-[background-color,border-color] duration-normal ease-out-practical hover:bg-surface-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
 			: null,
-		activeSelected
+		activeSelected && !isFlyout
 			? "border-border-selected bg-bg-selected text-text-selected"
 			: null,
-		onActivate && activeSelected
+		onActivate && activeSelected && !isFlyout
 			? "hover:bg-bg-selected-hovered"
 			: null,
 		className,

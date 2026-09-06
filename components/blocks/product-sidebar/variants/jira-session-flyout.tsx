@@ -21,7 +21,6 @@ import FolderClosedIcon from "@atlaskit/icon/core/folder-closed";
 import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
-import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import TaskIcon from "@atlaskit/icon/core/task";
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import IfElseIcon from "@atlaskit/icon-lab/core/if-else";
@@ -30,15 +29,6 @@ import { AgentStates, type AgentStatesState } from "@/components/blocks/agent-st
 import { AgentProfileCard } from "@/components/blocks/agent-profile-card";
 import { SmartLink, SMART_LINK_MODAL_ACTIONS, type SmartLinkItem } from "@/components/blocks/smart-link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
 	HoverCard,
 	HoverCardContent,
@@ -54,15 +44,20 @@ import { Tag } from "@/components/ui/tag";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { ProgressCircle } from "@/components/ui-custom/progress-circle";
 import { getAgentProfileBannerSrc } from "@/lib/agent-avatars";
-import { cn } from "@/lib/utils";
 
 import type {
 	JiraSidebarSessionHost,
-	JiraSidebarSessionChecks,
 	JiraSidebarSessionItem,
 	JiraSidebarSessionStatus,
 } from "./jira";
-import { createJiraSessionFlyoutHandle, prStateLozenge } from "./jira-session-flyout-data";
+import { JiraSessionDetailsCard } from "./jira-session-details-card";
+import {
+	createJiraSessionFlyoutHandle,
+	formatSessionChecks,
+	JIRA_SESSION_UPDATED_LABEL,
+	prStateLozenge,
+} from "./jira-session-flyout-data";
+import { JiraSessionUntrackedWorkCard } from "./jira-session-untracked-work-card";
 
 export { createJiraSessionFlyoutHandle, prStateLozenge };
 
@@ -81,7 +76,7 @@ export type JiraSessionFlyoutContent = "details" | "composer" | "untracked-work"
 export interface JiraSessionFlyoutSurfaceProps {
 	handle: JiraSessionFlyoutHandle;
 	/**
-	 * Flyout body. `details` (default) is the session property card, `composer`
+	 * Flyout body. `details` (default) is the compact session hover card, `composer`
 	 * is the Agent States card, and `untracked-work` suggests a related Jira item.
 	 */
 	content?: JiraSessionFlyoutContent;
@@ -180,8 +175,8 @@ export function JiraSessionFlyoutTrigger({
 }
 
 /**
- * The rich Jira agent-session detail body used by hover flyouts (the default
- * session-details surface) plus the queue and For You detail panels. The
+ * The rich Jira agent-session detail body used by the queue and For You detail
+ * panels. Hover session details use `JiraSessionDetailsCard` instead. The
  * composer Agent States card is an opt-in on the shared hover surface.
  *
  * The body reuses the shared design-system components: the work item is a
@@ -192,15 +187,6 @@ export function JiraSessionFlyoutTrigger({
  * It depends on `./jira` for TYPES ONLY (erased at build time) so that `./jira`
  * can import this body back without creating a runtime import cycle.
  */
-
-/** Stable relative "updated" label per session state (demo data only). */
-const STATUS_UPDATED_LABEL: Record<JiraSidebarSessionStatus, string> = {
-	"awaiting-input": "2d ago",
-	running: "3m ago",
-	"pr-open": "1h ago",
-	merged: "5h ago",
-	stopped: "1d ago",
-};
 
 /** Queue lifecycle mapped onto the compact, property-free agent card states. */
 function toAgentStatesState(status: JiraSidebarSessionStatus): AgentStatesState {
@@ -213,13 +199,6 @@ function toAgentStatesState(status: JiraSidebarSessionStatus): AgentStatesState 
 function toAgentStatesMessage(status: JiraSidebarSessionStatus): string | undefined {
 	if (status !== "stopped") return undefined;
 	return "This session was stopped before the requested work was completed.";
-}
-
-function formatSessionChecks(checks: JiraSidebarSessionChecks): string {
-	const total = checks.passed + checks.failed;
-	return checks.failed > 0
-		? `${checks.passed}/${total} passed ${checks.failed} failed`
-		: `${checks.passed}/${total} passed`;
 }
 
 function actorInitials(name: string): string {
@@ -317,7 +296,6 @@ const WORK_ITEM_STATUS_OPTIONS: ReadonlyArray<{ label: string; variant: LozengeP
  * and an interactive status dropdown). */
 function toWorkItem(
 	session: JiraSidebarSessionItem,
-	relationship: "primary" | "suggested",
 ): SmartLinkItem {
 	const workItemStatus = toWorkItemStatus(session);
 
@@ -328,15 +306,15 @@ function toWorkItem(
 		variant: "jira",
 		provider: { name: "Jira", logo: { kind: "atlassian", name: "jira" } },
 		icon: { kind: "atlassian", name: "jira" },
-		description: `${relationship === "suggested" ? "Suggested" : "Primary"} work item for ${session.title}.`,
+		description: `Primary work item for ${session.title}.`,
 		assignee: session.assignee,
 		priority: session.priority,
 		status: {
 			label: workItemStatus.label,
 			variant: workItemStatus.variant,
-			...(relationship === "primary" ? { options: WORK_ITEM_STATUS_OPTIONS } : {}),
+			options: WORK_ITEM_STATUS_OPTIONS,
 		},
-		...(relationship === "primary" ? { actions: SMART_LINK_MODAL_ACTIONS } : {}),
+		actions: SMART_LINK_MODAL_ACTIONS,
 	};
 }
 
@@ -359,7 +337,7 @@ export function FlyoutRow({
 	);
 }
 
-/** A section heading shared by detail panels and the untracked-work suggestion. */
+/** A section heading shared by Jira detail panels. */
 export function JiraSessionSectionHeading({
 	id,
 	children,
@@ -380,75 +358,6 @@ export function JiraSessionSectionHeading({
 	);
 }
 
-function JiraSessionUntrackedWorkActions({
-	issueKey,
-	onAddAsSubtask,
-	onCreateWorkItem,
-	onLinkWorkItem,
-}: Readonly<{
-	issueKey: string;
-	onAddAsSubtask?: (workItemKey: string) => void;
-	onCreateWorkItem?: () => void;
-	onLinkWorkItem?: (workItemKey: string) => void;
-}>) {
-	const addAsSubtaskUnavailable = onAddAsSubtask === undefined;
-	const createUnavailable = onCreateWorkItem === undefined;
-	const linkUnavailable = onLinkWorkItem === undefined;
-	const hasIssueKey = issueKey.length > 0;
-	const linkLabel = hasIssueKey ? `Link to ${issueKey}` : "Link work item";
-
-	return (
-		<div className="w-full pt-2">
-			<ButtonGroup aria-label={hasIssueKey ? `Link ${issueKey}` : "Link work item"} className="w-full" variant="separated">
-				<Button
-					aria-disabled={linkUnavailable}
-					aria-label={linkUnavailable ? `${linkLabel} unavailable` : undefined}
-					className={cn(
-						"w-full flex-1 justify-center text-center",
-						linkUnavailable ? "cursor-not-allowed opacity-(--opacity-disabled)" : undefined,
-					)}
-					onClick={() => onLinkWorkItem?.(issueKey)}
-					size="compact"
-					type="button"
-					variant="outline"
-				>
-					{linkLabel}
-				</Button>
-				<DropdownMenu>
-					<DropdownMenuTrigger
-						render={(
-							<Button
-								aria-label={hasIssueKey ? `More actions for ${issueKey}` : "More work item actions"}
-								size="icon-compact"
-								type="button"
-								variant="outline"
-							>
-								<ShowMoreHorizontalIcon label="" size="small" />
-							</Button>
-						)}
-					/>
-					<DropdownMenuContent align="end">
-						<DropdownMenuGroup>
-							<DropdownMenuItem
-								disabled={addAsSubtaskUnavailable || !hasIssueKey}
-								onSelect={() => onAddAsSubtask?.(issueKey)}
-							>
-								{hasIssueKey ? `Add new subtask to ${issueKey}` : "Add new subtask"}
-							</DropdownMenuItem>
-							<DropdownMenuItem
-								disabled={createUnavailable}
-								onSelect={() => onCreateWorkItem?.()}
-							>
-								Create new work item
-							</DropdownMenuItem>
-						</DropdownMenuGroup>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			</ButtonGroup>
-		</div>
-	);
-}
-
 type JiraSessionPreviewPosition = Pick<
 	ComponentProps<typeof HoverCardContent>,
 	"align" | "alignOffset" | "side"
@@ -459,11 +368,7 @@ export function JiraSessionFlyoutBody({
 	session,
 	hideAgentRow = false,
 	hideHeader = false,
-	onAddAsSubtask,
-	onCreateWorkItem,
-	onLinkWorkItem,
 	previewPosition,
-	variant = "details",
 }: Readonly<{
 	session: JiraSidebarSessionItem;
 	/** Hide the Agent metadata row when the surrounding surface owns agent selection. */
@@ -471,20 +376,11 @@ export function JiraSessionFlyoutBody({
 	/**
 	 * Hide the in-body title + relative-time header. Used by the queue detail
 	 * panel, which already surfaces the session title in its own PanelHeader, so
-	 * repeating it inside the body is redundant. The sidebar hover flyout leaves
-	 * this `false` because it has no separate header.
+	 * repeating it inside the body is redundant.
 	 */
 	hideHeader?: boolean;
-	/** Adds this session below the suggested work item. */
-	onAddAsSubtask?: (workItemKey: string) => void;
-	/** Creates a work item from this session. */
-	onCreateWorkItem?: () => void;
-	/** Links this session to the suggested work item. */
-	onLinkWorkItem?: (workItemKey: string) => void;
 	/** Override nested Agent and Work item preview placement for constrained surfaces. */
 	previewPosition?: JiraSessionPreviewPosition;
-	/** Replace development metadata with a suggested Jira link rationale. */
-	variant?: "details" | "untracked-work";
 }>) {
 	const agentBannerSrc = getAgentProfileBannerSrc(session.agentAvatarSrc);
 	preload(agentBannerSrc, { as: "image" });
@@ -499,7 +395,6 @@ export function JiraSessionFlyoutBody({
 	const prState = prStateLozenge(session.status);
 	const hasCodeChanges = session.additions !== undefined && session.deletions !== undefined;
 	const checksTotal = session.checks ? session.checks.passed + session.checks.failed : 0;
-	const workItemRelationship = variant === "untracked-work" ? "suggested" : "primary";
 
 	return (
 		<div className="flex flex-col gap-2">
@@ -513,7 +408,7 @@ export function JiraSessionFlyoutBody({
 							<Lozenge variant="information">Needs input</Lozenge>
 						) : (
 							<span className="text-[12px] leading-5 text-text-subtlest">
-								{STATUS_UPDATED_LABEL[session.status]}
+								{JIRA_SESSION_UPDATED_LABEL[session.status]}
 							</span>
 						)}
 						{session.invokedBy && session.status !== "awaiting-input" ? (
@@ -584,38 +479,14 @@ export function JiraSessionFlyoutBody({
 						align={previewPosition?.align ?? "center"}
 						alignOffset={previewPosition?.alignOffset ?? 0}
 						className="min-w-0 max-w-full"
-						item={toWorkItem(session, workItemRelationship)}
+						item={toWorkItem(session)}
 						showStatus
 						side={previewPosition?.side ?? "right"}
 					/>
 				</FlyoutRow>
 			</div>
 
-			{variant === "untracked-work" ? (
-				<section
-					aria-label={
-						session.issueKey.length > 0
-							? `Link to ${session.issueKey}, High confidence`
-							: "Link work item, High confidence"
-					}
-					className="flex flex-col gap-2 pt-2"
-				>
-					<JiraSessionSectionHeading meta="High confidence" showSeparator>
-						{session.issueKey.length > 0 ? `Link to ${session.issueKey}` : "Link work item"}
-					</JiraSessionSectionHeading>
-					<p className="text-sm leading-5 text-text">
-						{session.issueKey.length > 0
-							? `This session appears related to ${session.issueKey} because the work item matches its activity and context.`
-							: "This session appears related to a work item because it matches its activity and context."}
-					</p>
-					<JiraSessionUntrackedWorkActions
-						issueKey={session.issueKey}
-						onAddAsSubtask={onAddAsSubtask}
-						onCreateWorkItem={onCreateWorkItem}
-						onLinkWorkItem={onLinkWorkItem}
-					/>
-				</section>
-			) : hasDevelopment ? (
+			{hasDevelopment ? (
 				<div className="flex flex-col gap-2">
 					{session.pullRequestNumber ? (
 						<FlyoutRow icon={prStateIcon(session.status)} label="Pull request">
@@ -728,34 +599,27 @@ function JiraSessionFlyoutPayload({
 			);
 		case "untracked-work":
 			return (
-				<div className="w-[320px] bg-surface-overlay p-4 text-text">
-					<JiraSessionFlyoutBody
-						onAddAsSubtask={
-							captureLocked || onAddAsSubtask === undefined
-								? undefined
-								: (workItemKey) => onAddAsSubtask(session, workItemKey)
-						}
-						onCreateWorkItem={
-							captureLocked || onCreateWorkItem === undefined
-								? undefined
-								: () => onCreateWorkItem(session)
-						}
-						onLinkWorkItem={
-							captureLocked || onLinkWorkItem === undefined
-								? undefined
-								: (workItemKey) => onLinkWorkItem(session, workItemKey)
-						}
-						session={session}
-						variant="untracked-work"
-					/>
-				</div>
+				<JiraSessionUntrackedWorkCard
+					onAddAsSubtask={
+						captureLocked || onAddAsSubtask === undefined
+							? undefined
+							: (workItemKey) => onAddAsSubtask(session, workItemKey)
+					}
+					onCreateWorkItem={
+						captureLocked || onCreateWorkItem === undefined
+							? undefined
+							: () => onCreateWorkItem(session)
+					}
+					onLinkWorkItem={
+						captureLocked || onLinkWorkItem === undefined
+							? undefined
+							: (workItemKey) => onLinkWorkItem(session, workItemKey)
+					}
+					session={session}
+				/>
 			);
 		case "details":
-			return (
-				<div className="w-[320px] bg-surface-overlay p-4 text-text">
-					<JiraSessionFlyoutBody session={session} />
-				</div>
-			);
+			return <JiraSessionDetailsCard session={session} />;
 		default: {
 			const _exhaustive: never = content;
 			return _exhaustive;
@@ -765,7 +629,7 @@ function JiraSessionFlyoutPayload({
 
 /**
  * One payload-aware flyout shared by every session row in a list. Defaults to
- * the session-details card; pass `content="composer"` for the Agent States
+ * the compact session hover card; pass `content="composer"` for the Agent States
  * prompt composer or `content="untracked-work"` for a Jira-link suggestion.
  * Base UI's viewport keeps the popup mounted while the anchor
  * changes. The shell follows the new row, immediately adopts its measured size,

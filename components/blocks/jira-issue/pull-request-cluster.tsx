@@ -137,7 +137,7 @@ export function JiraIssuePullRequestCluster({
 					status={toPullRequestCardStatus(pullRequestStatus)}
 					targetBranch={pullRequestPreview?.targetBranch}
 					title={overlayTitle}
-					variant="spacious"
+					variant="flyout"
 				/>
 			</HoverCardContent>
 		</HoverCard>

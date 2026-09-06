@@ -16,6 +16,20 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"pull-request-demo-dropdown": dynamic(
+		() =>
+			import("../demos/blocks/pull-request-demo").then((mod) => ({
+				default: mod.PullRequestDemoDropdown,
+			})),
+		{ ssr: false },
+	),
+	"pull-request-demo-flyout": dynamic(
+		() =>
+			import("../demos/blocks/pull-request-demo").then((mod) => ({
+				default: mod.PullRequestDemoFlyout,
+			})),
+		{ ssr: false },
+	),
 	"omnibar-demo-expanded": dynamic(
 		() =>
 			import("../demos/blocks/omnibar-demo").then((mod) => ({
@@ -51,6 +65,13 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"agent-session-flyout-demo-details": dynamic(
+		() =>
+			import("../demos/blocks/agent-session-flyout-demo").then((mod) => ({
+				default: mod.AgentSessionFlyoutDemoDetails,
+			})),
+		{ ssr: false },
+	),
 	"agent-session-flyout-demo-composer": dynamic(
 		() =>
 			import("../demos/blocks/agent-session-flyout-demo").then((mod) => ({
@@ -62,6 +83,20 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 		() =>
 			import("../demos/blocks/agent-session-flyout-demo").then((mod) => ({
 				default: mod.AgentSessionFlyoutDemoUntrackedWork,
+			})),
+		{ ssr: false },
+	),
+	"agent-session-flyout-demo-coding-branch": dynamic(
+		() =>
+			import("../demos/blocks/agent-session-flyout-demo").then((mod) => ({
+				default: mod.AgentSessionFlyoutDemoCodingBranch,
+			})),
+		{ ssr: false },
+	),
+	"agent-session-flyout-demo-coding-lifecycle": dynamic(
+		() =>
+			import("../demos/blocks/agent-session-flyout-demo").then((mod) => ({
+				default: mod.AgentSessionFlyoutDemoCodingLifecycle,
 			})),
 		{ ssr: false },
 	),

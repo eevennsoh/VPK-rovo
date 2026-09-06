@@ -104,22 +104,42 @@ test("Prompt Input demos run dictation and live chat through the realtime voice 
 		PROMPT_INPUT_DEMO_SOURCE,
 		/function FloatingBarDemo[\s\S]*<RovoComposerActionButton[\s\S]*dictationState=\{voice\.dictationState\}[\s\S]*liveVoiceEnabled[\s\S]*onStartDictation=\{voice\.handleStartDictation\}[\s\S]*onStopDictation=\{voice\.handleStopDictation\}/u,
 	);
+	const compactTextSendHelperStart = PROMPT_INPUT_DEMO_SOURCE.indexOf("function FloatingBarTextSendDemo(");
 	const compactTextSendStart = PROMPT_INPUT_DEMO_SOURCE.indexOf("export function PromptInputDemoFloatingBarTextSend()");
+	const iconXsTextSendStart = PROMPT_INPUT_DEMO_SOURCE.indexOf("export function PromptInputDemoFloatingBarTextSendIconXs()");
+	assert.notEqual(compactTextSendHelperStart, -1);
 	assert.notEqual(compactTextSendStart, -1);
-	const compactTextSendSource = PROMPT_INPUT_DEMO_SOURCE.slice(compactTextSendStart);
-	assert.match(
-		compactTextSendSource,
-		/<RovoComposerActionButton[\s\S]*dictationState=\{voice\.dictationState\}[\s\S]*micStream=\{voice\.micStream\}[\s\S]*onStartDictation=\{voice\.handleStartDictation\}[\s\S]*onStopDictation=\{voice\.handleStopDictation\}[\s\S]*showSubmitWhenEmpty/u,
+	assert.notEqual(iconXsTextSendStart, -1);
+	const compactTextSendHelperSource = PROMPT_INPUT_DEMO_SOURCE.slice(
+		compactTextSendHelperStart,
+		compactTextSendStart,
 	);
-	assert.doesNotMatch(compactTextSendSource, /liveVoiceEnabled/u);
+	assert.match(
+		compactTextSendHelperSource,
+		/<RovoComposerActionButton[\s\S]*dictationState=\{voice\.dictationState\}[\s\S]*micStream=\{voice\.micStream\}[\s\S]*onStartDictation=\{voice\.handleStartDictation\}[\s\S]*onStopDictation=\{voice\.handleStopDictation\}[\s\S]*showSubmitWhenEmpty[\s\S]*size=\{size\}/u,
+	);
+	assert.doesNotMatch(compactTextSendHelperSource, /liveVoiceEnabled/u);
+	assert.match(
+		PROMPT_INPUT_DEMO_SOURCE.slice(compactTextSendStart, iconXsTextSendStart),
+		/<FloatingBarTextSendDemo size="icon-sm" \/>/u,
+	);
+	assert.match(
+		PROMPT_INPUT_DEMO_SOURCE.slice(iconXsTextSendStart),
+		/<FloatingBarTextSendDemo size="icon-xs" \/>/u,
+	);
 	assert.match(
 		PROMPT_INPUT_VARIANTS_SOURCE,
 		/"prompt-input-demo-chat-composer-live-voice"[\s\S]*PromptInputDemoChatComposerLiveVoice/u,
+	);
+	assert.match(
+		PROMPT_INPUT_VARIANTS_SOURCE,
+		/"prompt-input-demo-floating-bar-text-send-icon-xs"[\s\S]*PromptInputDemoFloatingBarTextSendIconXs/u,
 	);
 	for (const slug of [
 		"prompt-input-demo-chat-composer",
 		"prompt-input-demo-chat-composer-live-voice",
 		"prompt-input-demo-floating-bar-text-send",
+		"prompt-input-demo-floating-bar-text-send-icon-xs",
 	]) {
 		assert.match(PROMPT_INPUT_DETAILS_SOURCE, new RegExp(`demoSlug: "${slug}"`, "u"));
 	}
@@ -175,7 +195,13 @@ test("Rovo Cursor is gated behind active live voice in shared composer chrome", 
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /live-voice-cursor-active/u);
 	assert.match(SEND_CONTROLS_SOURCE, /const shouldShowRealtimeVoiceRail = resolvedRealtimeVoiceActive && Boolean\(onToggleClicky\);/u);
 	assert.match(SEND_CONTROLS_SOURCE, /const ACTION_FRAME_CLASS_NAME = "flex h-9 shrink-0 items-center justify-center";/u);
+	assert.match(SEND_CONTROLS_SOURCE, /export type RovoComposerActionSize = "icon-sm" \| "icon-xs";/u);
 	assert.match(SEND_CONTROLS_SOURCE, /function ComposerActionFrame/u);
+	assert.match(SEND_CONTROLS_SOURCE, /size = "icon-sm"/u);
+	assert.match(SEND_CONTROLS_SOURCE, /ACTION_FRAME_CLASS_NAME_BY_SIZE\[size\]/u);
+	assert.match(SEND_CONTROLS_SOURCE, /ACTION_CLUSTER_CLASS_NAME_BY_SIZE\[size\]/u);
+	assert.match(SEND_CONTROLS_SOURCE, /const glyphSize = size === "icon-xs" \? "small" : undefined;/u);
+	assert.match(SEND_CONTROLS_SOURCE, /<ArrowUpIcon label="" size=\{glyphSize\} \/>/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /shouldShowRegionPaintControl/u);
 	assert.match(SEND_CONTROLS_SOURCE, /"relative flex h-9 w-\[68px\] items-center justify-center overflow-hidden rounded-\[8px\]"/u);
 	assert.match(SEND_CONTROLS_SOURCE, /<span aria-hidden="true" className="absolute inset-0 rounded-\[8px\] bg-bg-neutral" \/>/u);
@@ -183,7 +209,7 @@ test("Rovo Cursor is gated behind active live voice in shared composer chrome", 
 	assert.match(SEND_CONTROLS_SOURCE, /<div className="relative z-10 flex h-8 w-16 items-center gap-0">/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /aria-label="Paint screen area"/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /HighlightIcon/u);
-	assert.match(SEND_CONTROLS_SOURCE, /<ComposerActionFrame>[\s\S]*<div className="flex h-9 items-center gap-1">[\s\S]*aria-label="Start live voice"[\s\S]*className=\{cn\("size-8 hover:opacity-90 active:opacity-80", liveVoiceCtaClassName, voiceStartButtonClassName\)\}/u);
+	assert.match(SEND_CONTROLS_SOURCE, /<ComposerActionFrame size=\{size\}>[\s\S]*<div className=\{ACTION_CLUSTER_CLASS_NAME_BY_SIZE\[size\]\}>[\s\S]*aria-label="Start live voice"[\s\S]*className=\{cn\(ACTION_ICON_BUTTON_CLASS_NAME_BY_SIZE\[size\], liveVoiceCtaClassName, voiceStartButtonClassName\)\}/u);
 	assert.match(SEND_CONTROLS_SOURCE, /className=\{cn\("flex h-9 min-w-0 shrink-0 items-center justify-end gap-1", className\)\}/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /className="flex h-8 w-16 overflow-hidden rounded-md bg-bg-neutral-bold text-text-inverse shadow-sm"/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /import \{ RovoCursor \} from "@\/components\/ui-custom\/rovo-cursor";/u);

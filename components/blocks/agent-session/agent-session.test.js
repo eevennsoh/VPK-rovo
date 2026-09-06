@@ -43,6 +43,10 @@ const FLYOUT_SOURCE = readFileSync(
 	join(__dirname, "../product-sidebar/variants/jira-session-flyout.tsx"),
 	"utf8",
 );
+const UNTRACKED_CARD_SOURCE = readFileSync(
+	join(__dirname, "../product-sidebar/variants/jira-session-untracked-work-card.tsx"),
+	"utf8",
+);
 const DEMO_SOURCE = readFileSync(
 	join(__dirname, "../../website/demos/blocks/agent-session-demo.tsx"),
 	"utf8",
@@ -677,7 +681,7 @@ test("the untracked-work flyout offers the first candidate key", () => {
 	);
 	assert.match(WORK_ITEM_SOURCE, /return \{ \.\.\.session, issueKey: trimmed \};/u);
 	assert.match(FLYOUT_SOURCE, /capturedSessionIds\?: ReadonlySet<string>;/u);
-	assert.match(FLYOUT_SOURCE, /const linkLabel = hasIssueKey \? `Link to \$\{issueKey\}` : "Link work item";/u);
+	assert.match(UNTRACKED_CARD_SOURCE, /const linkLabel = hasIssueKey \? `Link to \$\{issueKey\}` : "Link work item";/u);
 	assert.match(FLYOUT_SOURCE, /captureLocked \|\| onLinkWorkItem === undefined/u);
 });
 

@@ -1,9 +1,24 @@
 "use client";
 
+import { useCallback, useState } from "react";
+
+import {
+	AgentSession,
+	type AgentSessionItem,
+} from "@/components/blocks/agent-session";
+import { AGENT_SESSION_FLYOUT_LIST_CLASSNAME } from "@/components/blocks/agent-session-flyout";
+import {
+	AGENT_SESSION_FLYOUT_CODING_BRANCH_SESSIONS,
+	AGENT_SESSION_FLYOUT_CODING_LIFECYCLE_SESSIONS,
+} from "@/components/blocks/agent-session-flyout/agent-session-flyout-data";
 import Page from "@/components/blocks/agent-session-flyout/page";
 
 export default function AgentSessionFlyoutDemo() {
 	return <Page />;
+}
+
+export function AgentSessionFlyoutDemoDetails() {
+	return <Page content="details" />;
 }
 
 export function AgentSessionFlyoutDemoComposer() {
@@ -11,5 +26,28 @@ export function AgentSessionFlyoutDemoComposer() {
 }
 
 export function AgentSessionFlyoutDemoUntrackedWork() {
-	return <Page content="untracked-work" />;
+	const [capturedIds, setCapturedIds] = useState<ReadonlySet<string>>(() => new Set());
+	const handleCapture = useCallback((item: AgentSessionItem) => {
+		setCapturedIds((current) => new Set(current).add(item.id));
+	}, []);
+
+	return (
+		<div className="flex h-full w-full flex-col items-center justify-center gap-6 p-6">
+			<AgentSession
+				capturedItemIds={capturedIds}
+				className={AGENT_SESSION_FLYOUT_LIST_CLASSNAME}
+				onCreateWorkItem={handleCapture}
+				onLinkWorkItem={handleCapture}
+				onSubtasks={handleCapture}
+			/>
+		</div>
+	);
+}
+
+export function AgentSessionFlyoutDemoCodingLifecycle() {
+	return <Page sessions={AGENT_SESSION_FLYOUT_CODING_LIFECYCLE_SESSIONS} />;
+}
+
+export function AgentSessionFlyoutDemoCodingBranch() {
+	return <Page sessions={AGENT_SESSION_FLYOUT_CODING_BRANCH_SESSIONS} />;
 }
