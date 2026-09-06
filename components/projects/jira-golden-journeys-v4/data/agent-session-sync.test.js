@@ -65,7 +65,7 @@ test("every queued Jira v4 session has a unique stable identity", async () => {
 	assert.ok(sessions.length >= 8);
 	assert.equal(new Set(sessions.map((session) => session.id)).size, sessions.length);
 	assert.ok(sessions.every((session) => session.kind === "agent-session"));
-	assert.ok(sessions.every((session) => session.timeLabel === "just now"));
+	assert.ok(sessions.every((session) => session.timeLabel === "Just now"));
 	assert.ok(sessions.every((session) => session.issueStatus.length > 0));
 	assert.equal(
 		sessions.find((session) => session.sourceTitle === "PAY-132")?.issueStatus,
