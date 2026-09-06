@@ -40,6 +40,7 @@ import {
 	JIRA_GOLDEN_JOURNEYS_V4_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID,
 } from "./data/presentation-story";
 import { useJiraGoldenJourneysV4AgentSessionSync } from "./hooks/use-jira-golden-journeys-v4-agent-session-sync";
+import { useJiraGoldenJourneysV4GenerativeActions } from "./hooks/use-jira-golden-journeys-v4-generative-actions";
 import { useJiraGoldenJourneysV4List } from "./hooks/use-jira-golden-journeys-v4-list";
 
 const JIRA_LIST_PANEL_END_GAP_PX = 24;
@@ -55,6 +56,11 @@ export default function JiraGoldenJourneysV4Page(): React.ReactElement {
 function JiraGoldenJourneysV4App(): React.ReactElement {
 	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useJgpAgentChatDemo();
 	const [boardColumns, setBoardColumns] = useState(createJiraGoldenJourneysV4PayBoardColumns);
+	const { composerPrefillRequest, handleCardGenerativeActionSubmit } =
+		useJiraGoldenJourneysV4GenerativeActions({
+			openAgentChat,
+			setBoardColumns,
+		});
 	const [detachedAgentSessionsByCard, setDetachedAgentSessionsByCard] = useState<
 		Readonly<Record<string, readonly AgentSessionItem[]>>
 	>({});
@@ -284,6 +290,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						}}
 						onCardAgentActivityViewChat={handleViewChat}
 						onCardAgentDoneRunView={handleViewCompletedRun}
+						onCardGenerativeActionSubmit={handleCardGenerativeActionSubmit}
 						onCardAgentSessionLink={handleAgentSessionLink}
 						onCardAgentSessionMove={handleAgentSessionMove}
 						onCardAgentSessionUnlink={handleAgentSessionUnlink}
@@ -347,6 +354,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 			</span>
 			<JgpRovoOverlay
 				chatContextBar={chatContextBar}
+				composerPrefillRequest={composerPrefillRequest}
 				externalThinkingMessageId={externalThinkingMessageId}
 			/>
 		</>
