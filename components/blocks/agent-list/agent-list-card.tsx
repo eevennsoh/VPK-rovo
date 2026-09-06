@@ -139,7 +139,7 @@ const PX_TO_PERSON_AVATAR_SIZE: Record<number, NonNullable<AvatarProps["size"]>>
  * agents waiting on an answer beside teammates who @mentioned you — is
  * separable at a glance without reading a word.
  */
-function AgentListIdentity({
+export function AgentListIdentity({
 	agent,
 	className,
 	sizePx,

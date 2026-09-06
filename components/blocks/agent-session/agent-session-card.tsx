@@ -8,6 +8,7 @@ import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import LibraryIcon from "@atlaskit/icon/core/library";
 
 import {
+	AgentListIdentity,
 	AgentListRow,
 	type AgentListRowHoverActions,
 } from "@/components/blocks/agent-list/agent-list-card";
@@ -30,7 +31,11 @@ import { SESSION_DRAG_INTERACTIVE_SELECTOR } from "./agent-session-drag-interact
 import { AgentSessionMediumDrag } from "./agent-session-medium-drag";
 import { AgentSessionSelectMark } from "./agent-session-select-mark";
 import { isTransferSourceFaded } from "./session-cohort";
-import type { AgentSessionItem, AgentSessionTriageRow } from "./agent-session-types";
+import {
+	toAgentSessionVisibleIdentity,
+	type AgentSessionItem,
+	type AgentSessionTriageRow,
+} from "./agent-session-types";
 
 /** How long Resume reads "Copied" after it writes the command to the clipboard. */
 const COPIED_RESET_MS = 2000;
@@ -136,6 +141,7 @@ export function AgentSessionCard({
 	const mark = triageRow?.mark;
 	const isMarked = mark?.isMarked ?? false;
 	const showSelectedFill = isMarked || (isSelected && mark == null);
+	const visibleIdentity = toAgentSessionVisibleIdentity(item);
 
 	// The same hover/focus-revealed pair Agent List rows use, with Archive /
 	// Unarchive in the slot Agent List gives to Archive. The control always
@@ -317,16 +323,25 @@ export function AgentSessionCard({
 								isSelected={showSelectedFill}
 								item={item}
 								onView={undefined}
-								renderIdentity={mark === undefined || mark === null
-									? undefined
-									: (identity) => (
-										<AgentSessionSelectMark
-											identity={identity}
-											isMarked={mark.isMarked}
-											label={`Select "${item.title}"`}
-											onToggle={activateCard ?? mark.onToggle}
+								renderIdentity={() => {
+									const sessionIdentity = (
+										<AgentListIdentity
+											agent={visibleIdentity}
+											sizePx={24}
 										/>
-									)}
+									);
+
+									return mark === undefined || mark === null
+										? sessionIdentity
+										: (
+											<AgentSessionSelectMark
+												identity={sessionIdentity}
+												isMarked={mark.isMarked}
+												label={`Select "${item.title}"`}
+												onToggle={activateCard ?? mark.onToggle}
+											/>
+										);
+								}}
 								showHoverActionsWhenSelected
 							/>
 						</article>

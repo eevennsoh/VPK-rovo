@@ -175,6 +175,19 @@ test("session rows name a human invoker when the roster can place one", async ()
 	});
 });
 
+test("every catalog session has a human invoker for its visible avatar", async () => {
+	const { PULSE_TIMELINE, toPulseSessionItems } = await loadSessionsHarness();
+	const items = toPulseSessionItems(
+		PULSE_TIMELINE.looseWork,
+		PULSE_TIMELINE.members,
+		PULSE_TIMELINE.workItems,
+	);
+
+	for (const item of items) {
+		assert.ok(item.invokedBy?.avatarSrc, `${item.id} needs a human avatar`);
+	}
+});
+
 test("session activation is omitted when the host cannot resume it", async () => {
 	const { PULSE_TIMELINE, toPulseSessionHandlers, toPulseSessionItems } = await loadSessionsHarness();
 	const session = PULSE_TIMELINE.looseWork.find((item) => item.kind === "agent-session");
