@@ -100,7 +100,9 @@ test("the experimental page can prepend newly synced agent sessions with arrival
 	assert.match(PAGE_SOURCE, /looseWork: agentSessionLooseWork/u);
 	assert.match(PAGE_SOURCE, /newItemIds: newAgentSessionIds/u);
 	assert.match(PAGE_SOURCE, /onItemHover: handleUntrackedItemHover/u);
+	assert.match(PAGE_SOURCE, /collapsed: agentSessionColumnCollapsed,/u);
 	assert.match(PAGE_SOURCE, /onCollapsedChange: handleAgentSessionColumnCollapsedChange/u);
+	assert.doesNotMatch(PAGE_SOURCE, /defaultCollapsed: agentSessionColumnCollapsed/u);
 });
 
 test("proximity AgentSession forwards the Pulse flyout attach handlers", () => {

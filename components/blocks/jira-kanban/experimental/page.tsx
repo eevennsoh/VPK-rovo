@@ -518,7 +518,9 @@ export default function ExperimentalJiraKanbanPage({
 	// building it once is what stops them drifting as either host evolves.
 	const agentSessionColumnConfig: AgentSessionColumnProps | undefined = showAgentSessionColumn ? {
 		capturedItemIds: capturedLooseWorkIds,
-		defaultCollapsed: agentSessionColumnCollapsed,
+		// Controlled so View → Agents can expand or collapse Untracked without
+		// fighting the column's own post-mount state.
+		collapsed: agentSessionColumnCollapsed,
 		items: untrackedAgentSessionItems,
 		newItemIds: newAgentSessionIds,
 		onCollapsedChange: handleAgentSessionColumnCollapsedChange,
@@ -798,6 +800,11 @@ export default function ExperimentalJiraKanbanPage({
 				onSelectedAssigneeIdsChange={handleAssigneeFilterChange}
 				onShownSessionStateIdsChange={setShownSessionStateIds}
 				onShowUntrackedChange={setShowUntracked}
+				boardColumns={boardColumns}
+				collapsedColumns={collapsedColumns}
+				onCollapsedColumnsChange={setCollapsedColumns}
+				agentSessionColumnCollapsed={agentSessionColumnCollapsed}
+				onAgentSessionColumnCollapsedChange={handleAgentSessionColumnCollapsedChange}
 				onViewChange={renderListContent ? onViewChange : undefined}
 				searchPlaceholder={`Search ${activeView}`}
 				selectedAssigneeIds={selectedAssigneeIds}

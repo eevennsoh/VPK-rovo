@@ -28,6 +28,10 @@ test("Experimental board header mounts the shared View picker", () => {
 	);
 	assert.match(VIEW_MENU_SOURCE, /aria-label=\{`Configure \$\{surfaceLabel\} view`\}/u);
 	assert.match(VIEW_MENU_SOURCE, /\{compact \? null : "View"\}/u);
+	assert.match(
+		HEADER_SOURCE,
+		/boardColumns=\{boardColumns\}[\s\S]*collapsedColumns=\{collapsedColumns\}[\s\S]*onCollapsedColumnsChange=\{onCollapsedColumnsChange\}/u,
+	);
 });
 
 test("View picker exposes unselected filter-action submenus with a selected count and clear action", () => {
@@ -108,6 +112,22 @@ test("View picker exposes unselected filter-action submenus with a selected coun
 	assert.match(
 		VIEW_MENU_SOURCE,
 		/if \(agentFilterId !== null\) \{[\s\S]*agentFilterBaselineRef\.current[\s\S]*onShownSessionStateIdsChange[\s\S]*onShowUntrackedChange[\s\S]*agentFilterBaselineRef\.current = null/u,
+	);
+	assert.match(
+		VIEW_MENU_SOURCE,
+		/collapsedColumns: collapsedColumns === undefined[\s\S]*agentSessionColumnCollapsed,/u,
+	);
+	assert.match(
+		VIEW_MENU_SOURCE,
+		/collapsedColumnsForAgentFilter\(\{[\s\S]*columns: selectedAssigneeIds === undefined[\s\S]*filterId,/u,
+	);
+	assert.match(
+		VIEW_MENU_SOURCE,
+		/if \(baseline\?\.collapsedColumns !== undefined\) \{[\s\S]*onCollapsedColumnsChange\?\.\(new Set\(baseline\.collapsedColumns\)\)/u,
+	);
+	assert.match(
+		VIEW_MENU_SOURCE,
+		/baseline\?\.agentSessionColumnCollapsed !== undefined[\s\S]*onAgentSessionColumnCollapsedChange\?\.\(baseline\.agentSessionColumnCollapsed\)/u,
 	);
 	assert.doesNotMatch(
 		VIEW_MENU_SOURCE,

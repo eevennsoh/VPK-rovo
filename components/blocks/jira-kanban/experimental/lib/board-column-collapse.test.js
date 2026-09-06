@@ -75,6 +75,10 @@ test("collapse survives a switch to the list or Pulse view", () => {
 	assert.match(PAGE_SOURCE, /const \[collapsedColumns, setCollapsedColumns\] = useState\(\s*EMPTY_COLLAPSED_BOARD_COLUMNS,?\s*\)/u);
 	assert.match(PAGE_SOURCE, /collapsedColumns=\{collapsedColumns\}/u);
 	assert.match(PAGE_SOURCE, /onCollapsedColumnsChange=\{setCollapsedColumns\}/u);
+	assert.match(
+		PAGE_SOURCE,
+		/<ExperimentalJiraKanbanBoardHeader[\s\S]*boardColumns=\{boardColumns\}[\s\S]*collapsedColumns=\{collapsedColumns\}[\s\S]*onCollapsedColumnsChange=\{setCollapsedColumns\}/u,
+	);
 });
 
 test("the resize button swaps its icon without using selected button state", () => {
