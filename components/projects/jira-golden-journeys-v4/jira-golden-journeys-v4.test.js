@@ -718,8 +718,9 @@ test("the route pins the shared Agent Session column beside Jira statuses", () =
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showAgentSessionColumn\?: boolean;/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /defaultAgentSessionColumnCollapsed\?: boolean;/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /function useAgentSessionReview[\s\S]*useState\(defaultCollapsed\)/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /defaultCollapsed: agentSessionColumnCollapsed,/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /collapsed: displayedAgentSessionColumnCollapsed,/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCollapsedChange: handleAgentSessionColumnCollapsedChange,/u);
+	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /defaultCollapsed: agentSessionColumnCollapsed/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /capturedItemIds: capturedLooseWorkIds,/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /toPulseSessionHandlers/u);
 
@@ -911,7 +912,7 @@ test("the Panel design variant floats untracked work over the board and the list
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /rounded-lg bg-surface/u);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/agentSessionColumnCollapsed\s*\?\s*AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX\s*:\s*agentSessionPanelWidthPx/u,
+		/displayedAgentSessionColumnCollapsed\s*\?\s*AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX\s*:\s*agentSessionPanelWidthPx/u,
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
@@ -952,7 +953,7 @@ test("the untracked panel publishes its occupied width for the floating Rovo but
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const UNTRACKED_PANEL_WIDTH_CSS_VAR = "--untracked-panel-width";/u);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/const untrackedPanelFabInsetPx = showAgentSessionPanel && !agentSessionColumnCollapsed\s*\?\s*agentSessionPanelWidthPx\s*:\s*0;/u,
+		/const untrackedPanelFabInsetPx = showAgentSessionPanel && !displayedAgentSessionColumnCollapsed\s*\?\s*agentSessionPanelWidthPx\s*:\s*0;/u,
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,

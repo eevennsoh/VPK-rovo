@@ -28,6 +28,10 @@ test("Experimental board header mounts the shared View picker", () => {
 	);
 	assert.match(VIEW_MENU_SOURCE, /aria-label=\{`Configure \$\{surfaceLabel\} view`\}/u);
 	assert.match(VIEW_MENU_SOURCE, /\{compact \? null : "View"\}/u);
+	assert.match(
+		HEADER_SOURCE,
+		/agentFilterId=\{agentFilterId\}[\s\S]*onAgentFilterIdChange=\{onAgentFilterIdChange\}/u,
+	);
 });
 
 test("View picker exposes unselected filter-action submenus with a selected count and clear action", () => {
@@ -99,16 +103,16 @@ test("View picker exposes unselected filter-action submenus with a selected coun
 	assert.doesNotMatch(VIEW_MENU_SOURCE, /TaskToDoIcon|@atlaskit\/icon\/core\/task-to-do/u);
 	assert.match(
 		VIEW_MENU_SOURCE,
-		/const agentFilterBaselineRef = useRef<AgentFilterBaseline \| null>\(null\)/u,
+		/onAgentFilterIdChange\?: \(agentFilterId: BoardAgentFilterId \| null\) => void;/u,
 	);
 	assert.match(
 		VIEW_MENU_SOURCE,
-		/if \(agentFilterId === null\) \{[\s\S]*agentFilterBaselineRef\.current = \{[\s\S]*showUntracked,[\s\S]*shownSessionStateIds:/u,
+		/const isAgentFilterControlled = onAgentFilterIdChange !== undefined;/u,
 	);
-	assert.match(
-		VIEW_MENU_SOURCE,
-		/if \(agentFilterId !== null\) \{[\s\S]*agentFilterBaselineRef\.current[\s\S]*onShownSessionStateIdsChange[\s\S]*onShowUntrackedChange[\s\S]*agentFilterBaselineRef\.current = null/u,
-	);
+	assert.match(VIEW_MENU_SOURCE, /setAgentFilterId\(id\)/u);
+	assert.doesNotMatch(VIEW_MENU_SOURCE, /collapsedColumnsForAgentFilter/u);
+	assert.doesNotMatch(VIEW_MENU_SOURCE, /onCollapsedColumnsChange/u);
+	assert.doesNotMatch(VIEW_MENU_SOURCE, /agentFilterBaselineRef/u);
 	assert.doesNotMatch(
 		VIEW_MENU_SOURCE,
 		/onShownSessionStateIdsChange\?\.\(new Set\(BOARD_AGENT_SESSION_STATE_IDS\)\);[\s\S]*onShowUntrackedChange\?\.\(true\);/u,

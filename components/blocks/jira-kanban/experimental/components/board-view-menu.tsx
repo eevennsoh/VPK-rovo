@@ -1,7 +1,7 @@
 "use client";
 
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- DropdownMenuTrigger uses a render-node so the View button owns the visual state.
-import { useRef, useState, type ComponentType } from "react";
+import { useState, type ComponentType } from "react";
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
 import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
@@ -19,6 +19,7 @@ import { BOARD_GROUP_OPTIONS, type BoardGroupOptionId } from "../data/board-grou
 import {
 	BOARD_AGENT_HOST_OPTIONS,
 	BOARD_AGENT_STATE_OPTIONS,
+	type BoardAgentFilterId,
 	type BoardAgentSessionStateId,
 	BOARD_PR_STATE_OPTIONS,
 	type BoardPrStateId,
@@ -50,14 +51,14 @@ interface BoardViewMenuProps {
 	/** Writes linked session-state visibility. */
 	shownSessionStateIds?: ReadonlySet<BoardAgentSessionStateId>;
 	onShownSessionStateIdsChange?: (shownSessionStateIds: Set<BoardAgentSessionStateId>) => void;
+	/**
+	 * Agents focus row. The page owns this so a temporary tab switch does not
+	 * drop the overlay or the Clear restore path.
+	 */
+	agentFilterId?: BoardAgentFilterId | null;
+	onAgentFilterIdChange?: (agentFilterId: BoardAgentFilterId | null) => void;
 }
 
-interface AgentFilterBaseline {
-	showUntracked?: boolean;
-	shownSessionStateIds?: ReadonlySet<BoardAgentSessionStateId>;
-}
-
-type BoardAgentFilterId = BoardAgentSessionStateId | "untracked";
 type BoardSessionTypeOption = Exclude<(typeof BOARD_AGENT_HOST_OPTIONS)[number], { id: "all" }>;
 type BoardSessionTypeId = BoardSessionTypeOption["id"];
 
@@ -144,16 +145,24 @@ function QuickViewActionSubmenu<TId extends string>({
 export function BoardViewMenu({
 	compact = false,
 	surfaceLabel = "board",
-	showUntracked,
-	onShowUntrackedChange,
-	shownSessionStateIds,
-	onShownSessionStateIdsChange,
+	agentFilterId: controlledAgentFilterId,
+	onAgentFilterIdChange,
 }: Readonly<BoardViewMenuProps>) {
 	const [pullRequestFilterId, setPullRequestFilterId] = useState<BoardPrStateId | null>(null);
 	const [sessionTypeFilterId, setSessionTypeFilterId] = useState<BoardSessionTypeId | null>(null);
-	const [agentFilterId, setAgentFilterId] = useState<BoardAgentFilterId | null>(null);
+	const [uncontrolledAgentFilterId, setUncontrolledAgentFilterId] = useState<BoardAgentFilterId | null>(null);
 	const [groupByFilterId, setGroupByFilterId] = useState<BoardGroupOptionId | null>(null);
-	const agentFilterBaselineRef = useRef<AgentFilterBaseline | null>(null);
+	const isAgentFilterControlled = onAgentFilterIdChange !== undefined;
+	const agentFilterId = isAgentFilterControlled
+		? (controlledAgentFilterId ?? null)
+		: uncontrolledAgentFilterId;
+	const setAgentFilterId = (nextFilterId: BoardAgentFilterId | null) => {
+		if (isAgentFilterControlled) {
+			onAgentFilterIdChange(nextFilterId);
+			return;
+		}
+		setUncontrolledAgentFilterId(nextFilterId);
+	};
 	const selectedQuickViewCount = [
 		pullRequestFilterId,
 		agentFilterId,
@@ -171,26 +180,10 @@ export function BoardViewMenu({
 	};
 
 	const handleAgentSelect = (id: string) => {
-		if (agentFilterId === null) {
-			agentFilterBaselineRef.current = {
-				showUntracked,
-				shownSessionStateIds: shownSessionStateIds === undefined
-					? undefined
-					: new Set(shownSessionStateIds),
-			};
-		}
-		if (id === "untracked") {
-			setAgentFilterId(id);
-			onShownSessionStateIdsChange?.(new Set());
-			onShowUntrackedChange?.(true);
-			return;
-		}
-		if (!isBoardAgentSessionStateId(id)) {
+		if (id !== "untracked" && !isBoardAgentSessionStateId(id)) {
 			return;
 		}
 		setAgentFilterId(id);
-		onShownSessionStateIdsChange?.(new Set([id]));
-		onShowUntrackedChange?.(false);
 	};
 
 	const handleGroupBySelect = (id: BoardGroupOptionId) => {
@@ -198,16 +191,6 @@ export function BoardViewMenu({
 	};
 
 	const clearQuickViewSelection = () => {
-		if (agentFilterId !== null) {
-			const baseline = agentFilterBaselineRef.current;
-			if (baseline?.shownSessionStateIds !== undefined) {
-				onShownSessionStateIdsChange?.(new Set(baseline.shownSessionStateIds));
-			}
-			if (baseline?.showUntracked !== undefined) {
-				onShowUntrackedChange?.(baseline.showUntracked);
-			}
-			agentFilterBaselineRef.current = null;
-		}
 		setPullRequestFilterId(null);
 		setAgentFilterId(null);
 		setSessionTypeFilterId(null);

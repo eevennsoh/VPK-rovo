@@ -346,7 +346,8 @@ test("Kanban tracks the active workspace card separately from bulk selection", (
 });
 
 test("Kanban drag-over column border stays inside the column and uses the focused border token", () => {
-	assert.match(COLUMN_DRAG_SOURCE, /className="border-2 border-transparent transition-colors"/);
+	assert.match(COLUMN_DRAG_SOURCE, /KANBAN_COLUMN_DROP_TARGET_GROUP_CLASS/u);
+	assert.match(COLUMN_DRAG_SOURCE, /"border-2 border-transparent transition-colors"/);
 	assert.match(COLUMN_DRAG_SOURCE, /classList\.add\("border-ring"\)/);
 	assert.doesNotMatch(COLUMN_DRAG_SOURCE, /ring-offset-2/);
 	assert.doesNotMatch(COLUMN_DRAG_SOURCE, /ring-border-bold/);
@@ -678,8 +679,10 @@ test("Kanban derives visible column counts from rendered cards", () => {
 test("Kanban column wells come from the shared chrome recipe", () => {
 	assert.match(SOURCE, /resolveKanbanColumnChrome\(columnChrome\)/u);
 	assert.match(SOURCE, /data-kanban-column-chrome=\{columnChrome\}/u);
+	assert.match(SOURCE, /chrome\.headerDropArmedClassName/u);
 	assert.match(EXPERIMENTAL_SOURCE, /resolveKanbanColumnChrome\(columnChrome\)/u);
 	assert.match(EXPERIMENTAL_SOURCE, /data-kanban-column-chrome=\{columnChrome\}/u);
+	assert.match(EXPERIMENTAL_SOURCE, /chrome\.headerDropArmedClassName/u);
 	assert.doesNotMatch(SOURCE, /backgroundColor: token\("elevation.surface.sunken"\)/u);
 	assert.doesNotMatch(EXPERIMENTAL_SOURCE, /backgroundColor: token\("elevation.surface.sunken"\)/u);
 });
