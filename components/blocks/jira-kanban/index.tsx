@@ -52,6 +52,7 @@ import { cn } from "@/lib/utils";
 
 import {
 	DEFAULT_KANBAN_COLUMN_CHROME,
+	KANBAN_COLUMN_DROP_TARGET_GROUP_CLASS,
 	resolveKanbanColumnChrome,
 	type KanbanColumnChrome,
 	type KanbanColumnChromeStyles,
@@ -405,7 +406,10 @@ function BoardColumn({
 				borderRadius: token("radius.xlarge"),
 			}}
 		>
-			<div style={{ ...chrome.header, paddingBottom: headerPaddingBlock }}>
+			<div
+				className={chrome.headerDropArmedClassName || undefined}
+				style={{ ...chrome.header, paddingBottom: headerPaddingBlock }}
+			>
 				<div className={cn("flex min-w-0 items-center gap-2", showAgentAssignment && "justify-between")}>
 					<div className="flex min-w-0 items-center gap-2">
 						<span
@@ -651,7 +655,10 @@ export function JiraKanban({
 						<div
 							data-jira-kanban-column={column.title}
 							key={column.title}
-							className="border-2 border-transparent transition-colors"
+							className={cn(
+								KANBAN_COLUMN_DROP_TARGET_GROUP_CLASS,
+								"border-2 border-transparent transition-colors",
+							)}
 							onDragOver={handleColumnDragOver}
 							onDragLeave={handleColumnDragLeave}
 							onDrop={(event) => handleColumnDrop(event, column.title)}
