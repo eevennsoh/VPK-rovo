@@ -12,11 +12,18 @@ test("animation styles do not leak CSS into parent accessible names", () => {
 	assert.match(SOURCE, /<span[\s\S]*aria-hidden="true"/u);
 });
 
-test("neutral is the default variant and uses text-subtlest currentColor dots", () => {
+test("neutral is the default variant and inherits surrounding text colour", () => {
 	assert.match(SOURCE, /export type AnimatedDotsVariant = "neutral" \| "color"/u);
 	assert.match(SOURCE, /variant = "neutral"/u);
-	assert.match(SOURCE, /resolvedVariant === "neutral" \? "text-text-subtlest"/u);
 	assert.match(SOURCE, /case "neutral":[\s\S]*NEUTRAL_DOT_COLORS/u);
+	assert.match(
+		SOURCE,
+		/className=\{cn\("shrink-0 inline-flex items-baseline", className\)\}/u,
+	);
+	assert.doesNotMatch(
+		SOURCE,
+		/className=\{cn\([\s\S]*text-text-subtlest/u,
+	);
 	assert.doesNotMatch(
 		SOURCE,
 		/variant = "neutral"[\s\S]*colors = COLOR_VARIANT_COLORS/u,

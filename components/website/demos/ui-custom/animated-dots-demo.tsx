@@ -24,7 +24,7 @@ export function AnimatedDotsDemoVariants() {
 			</span>
 			<span className="inline-flex items-baseline text-sm text-text-subtle">
 				Matching subtle text
-				<AnimatedDots className="text-text-subtle" />
+				<AnimatedDots />
 			</span>
 			<span className="inline-flex items-baseline text-sm text-text-subtlest">
 				Color

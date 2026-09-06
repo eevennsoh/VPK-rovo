@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const ANIMATED_DOTS_DETAIL: ComponentDetail = {
 	description:
-		"Animated dots with staggered opacity reveal, used as a loading or thinking indicator alongside text labels. Neutral (default) matches surrounding text and falls back to text-subtlest; color uses the Rovo palette.",
+		"Animated dots with staggered opacity reveal, used as a loading or thinking indicator alongside text labels. Neutral (default) inherits surrounding text color; color uses the Rovo palette.",
 	usage: `import { AnimatedDots } from "@/components/ui-custom/animated-dots";
 
 <span className="inline-flex items-baseline text-sm text-text-subtlest">
@@ -16,7 +16,7 @@ export const ANIMATED_DOTS_DETAIL: ComponentDetail = {
 			type: '"neutral" | "color"',
 			default: '"neutral"',
 			description:
-				'"neutral" paints every dot with the surrounding text colour, defaulting to text-subtlest. "color" uses the Rovo palette (or `colors` when provided). Passing `colors` selects the color variant.',
+				'"neutral" inherits the surrounding text colour so dots match adjacent copy. "color" uses the Rovo palette (or `colors` when provided). Passing `colors` selects the color variant.',
 		},
 		{
 			name: "colors",
@@ -41,7 +41,7 @@ export const ANIMATED_DOTS_DETAIL: ComponentDetail = {
 			name: "className",
 			type: "string",
 			description:
-				"Additional classes applied to the wrapper span. On the neutral variant, pass a text colour class to match adjacent copy.",
+				"Additional classes applied to the wrapper span. Neutral dots inherit colour; pass a text class only when the parent does not already set one.",
 		},
 	],
 	examples: [

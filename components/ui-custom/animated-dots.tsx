@@ -12,9 +12,9 @@ const DEFAULT_STAGGER_DELAY = 0.2;
 
 export interface AnimatedDotsProps {
 	/**
-	 * `"neutral"` (default) paints every dot with the surrounding text colour,
-	 * falling back to `text-text-subtlest`. `"color"` uses the Rovo palette
-	 * (or `colors` when provided).
+	 * `"neutral"` (default) inherits the surrounding text colour so dots match
+	 * the label they sit beside. Pair with `text-text-subtlest` when no parent
+	 * colour is set. `"color"` uses the Rovo palette (or `colors` when provided).
 	 */
 	variant?: AnimatedDotsVariant;
 	colors?: readonly string[];
@@ -59,11 +59,7 @@ export const AnimatedDots = memo(
 
 		return (
 			<span
-				className={cn(
-					"shrink-0 inline-flex items-baseline",
-					resolvedVariant === "neutral" ? "text-text-subtlest" : null,
-					className,
-				)}
+				className={cn("shrink-0 inline-flex items-baseline", className)}
 				aria-hidden="true"
 			>
 				{dotColors.map((color, i) => (
