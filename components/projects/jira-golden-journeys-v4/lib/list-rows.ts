@@ -195,6 +195,7 @@ function createAssignedActivity(
 		agentBrandName: agent.brandName,
 		label: `Assigned to ${card.title}`,
 		message: `${agent.name} is working and will post the next result to the Jira work item.`,
+		startedAtMs: Date.now(),
 		startupSequence: "jira-work-item-start",
 		state: "working",
 	};

@@ -202,6 +202,7 @@ test("applyAssignedAgentIdsToColumns archives and assigns against board columns"
 	assert.equal(assignedCard?.agentActivities?.[0]?.name, "Test Author Agent");
 	assert.equal(assignedCard?.agentActivities?.[0]?.state, "working");
 	assert.equal(assignedCard?.agentActivities?.[0]?.startupSequence, "jira-work-item-start");
+	assert.equal(typeof assignedCard?.agentActivities?.[0]?.startedAtMs, "number");
 
 	const unchanged = applyAssignedAgentIdsToColumns(
 		COLUMNS,

@@ -290,7 +290,11 @@ function JiraIssueAgentActivityRow({
 	const startupSequenceKey = isSingleAgent && featuredActivity?.startupSequence === "jira-work-item-start"
 		? activityKey
 		: null;
-	const startupPhase = useJiraIssueAgentStartupPhase(startupSequenceKey, shouldReduceMotion);
+	const startupPhase = useJiraIssueAgentStartupPhase(
+		startupSequenceKey,
+		shouldReduceMotion,
+		featuredActivity?.startedAtMs,
+	);
 	const [assignedIdDraft, setAssignedIdDraft] = useState<{
 		key: string;
 		ids: readonly string[];

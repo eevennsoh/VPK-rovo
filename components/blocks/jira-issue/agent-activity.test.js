@@ -35,6 +35,7 @@ test("Needs input titles stay solid; only cycling tool-call labels shimmer", () 
 
 test("new Jira agent and skill sessions use the staged startup presentation", () => {
 	assert.match(GENERATIVE_ACTIONS_SOURCE, /startupSequence: "jira-work-item-start"/u);
+	assert.match(GENERATIVE_ACTIONS_SOURCE, /startedAtMs: Date\.now\(\)/u);
 	assert.match(
 		GENERATIVE_ACTIONS_SOURCE,
 		/progressJiraGoldenJourneysV4WorkItemOnStart\(\s*linkJiraKanbanAgentSession\(columns, card\.code, activity\),\s*card\.code,\s*\)/u,
@@ -52,4 +53,6 @@ test("new Jira agent and skill sessions use the staged startup presentation", ()
 	assert.match(AGENT_ACTIVITY_SOURCE, /<TWGLoader label="" size="small" \/>/u);
 	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /<Shimmer[\s\S]*>\s*\{label\}\s*<\/Shimmer>/u);
 	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /shouldReduceMotion \? "working"/u);
+	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /Date\.now\(\) - startedAtMs/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /featuredActivity\?\.startedAtMs/u);
 });

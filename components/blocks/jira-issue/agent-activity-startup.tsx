@@ -20,38 +20,53 @@ const SHIMMER_SPREAD = 2;
 
 export type JiraIssueAgentStartupPhase = "intro" | "gathering-context" | "working";
 
+function getStartupPhase(startedAtMs: number | undefined): JiraIssueAgentStartupPhase {
+	const elapsedMs = startedAtMs === undefined ? 0 : Math.max(0, Date.now() - startedAtMs);
+	if (elapsedMs >= STARTUP_INTRO_MS + STARTUP_CONTEXT_MS) {
+		return "working";
+	}
+	return elapsedMs >= STARTUP_INTRO_MS ? "gathering-context" : "intro";
+}
+
 export function useJiraIssueAgentStartupPhase(
 	sequenceKey: string | null,
 	shouldReduceMotion: boolean | null,
+	startedAtMs?: number,
 ): JiraIssueAgentStartupPhase {
 	const [state, setState] = useState<{
 		key: string;
 		phase: JiraIssueAgentStartupPhase;
 	}>(() => ({
 		key: sequenceKey ?? "",
-		phase: sequenceKey ? "intro" : "working",
+		phase: sequenceKey ? getStartupPhase(startedAtMs) : "working",
 	}));
+	const currentPhase = sequenceKey ? getStartupPhase(startedAtMs) : "working";
 	const phase: JiraIssueAgentStartupPhase = shouldReduceMotion ? "working"
 		: sequenceKey === null ? "working"
-			: state.key === sequenceKey ? state.phase : "intro";
+			: state.key === sequenceKey ? state.phase : currentPhase;
 
 	useEffect(() => {
 		if (!sequenceKey || shouldReduceMotion) {
 			return undefined;
 		}
 
-		const contextTimer = window.setTimeout(() => {
+		const elapsedMs = startedAtMs === undefined ? 0 : Math.max(0, Date.now() - startedAtMs);
+		const contextDelayMs = STARTUP_INTRO_MS - elapsedMs;
+		const workingDelayMs = STARTUP_INTRO_MS + STARTUP_CONTEXT_MS - elapsedMs;
+		const contextTimer = contextDelayMs > 0 ? window.setTimeout(() => {
 			setState({ key: sequenceKey, phase: "gathering-context" });
-		}, STARTUP_INTRO_MS);
+		}, contextDelayMs) : undefined;
 		const workingTimer = window.setTimeout(() => {
 			setState({ key: sequenceKey, phase: "working" });
-		}, STARTUP_INTRO_MS + STARTUP_CONTEXT_MS);
+		}, Math.max(0, workingDelayMs));
 
 		return () => {
-			window.clearTimeout(contextTimer);
+			if (contextTimer !== undefined) {
+				window.clearTimeout(contextTimer);
+			}
 			window.clearTimeout(workingTimer);
 		};
-	}, [sequenceKey, shouldReduceMotion]);
+	}, [sequenceKey, shouldReduceMotion, startedAtMs]);
 
 	return phase;
 }

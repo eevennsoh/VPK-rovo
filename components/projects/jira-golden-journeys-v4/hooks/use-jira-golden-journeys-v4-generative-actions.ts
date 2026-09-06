@@ -40,6 +40,7 @@ function createAssignedActivity(
 			skillName ? { ...selection, name: "Rovo" } : selection,
 			`${card.code}:${selection.id}`,
 		),
+		startedAtMs: Date.now(),
 		startupSequence: "jira-work-item-start",
 	};
 
