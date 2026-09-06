@@ -9,7 +9,6 @@ import PriorityTrivialIcon from "@atlaskit/icon/core/priority-trivial";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import ScreenIcon from "@atlaskit/icon/core/screen";
 import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
-import TaskInProgressIcon from "@atlaskit/icon/core/task-in-progress";
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import GroupIcon from "@atlaskit/icon-lab/core/group";
 import MergeQueueIcon from "@atlaskit/icon-lab/core/merge-queue";
@@ -38,6 +37,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
+import { Spinner } from "@/components/ui/spinner";
 import { token } from "@/lib/tokens";
 
 interface BoardViewMenuProps {
@@ -71,17 +71,41 @@ interface QuickViewOption<TId extends string = string> {
 	label: string;
 }
 
-interface StateIcon {
+interface GlyphStateIcon {
 	glyph: ComponentType<NewCoreIconProps>;
 	color: NewCoreIconProps["color"];
 }
 
+interface ExperimentalSpinnerStateIcon {
+	spinner: "experimental";
+}
+
+type StateIcon = GlyphStateIcon | ExperimentalSpinnerStateIcon;
+
 type StateIcons = Readonly<Record<string, StateIcon>>;
 
+const MENU_LEADING_ICON_CLASS_NAME = "size-3 [&_svg]:size-3!";
+
 function MenuLeadingIcon({ icon }: Readonly<{ icon: StateIcon }>) {
+	if ("spinner" in icon) {
+		switch (icon.spinner) {
+			case "experimental":
+				return (
+					<Icon
+						className={MENU_LEADING_ICON_CLASS_NAME}
+						render={<Spinner label="" size="xs" variant="experimental" />}
+					/>
+				);
+			default: {
+				const _exhaustive: never = icon.spinner;
+				return _exhaustive;
+			}
+		}
+	}
+
 	return (
 		<Icon
-			className="size-3 [&_svg]:size-3!"
+			className={MENU_LEADING_ICON_CLASS_NAME}
 			render={<icon.glyph color={icon.color} label="" size="small" />}
 		/>
 	);
@@ -96,7 +120,7 @@ const PR_STATE_ICONS = {
 } as const satisfies Record<BoardPrStateId, StateIcon>;
 
 const AGENT_STATE_ICONS = {
-	working: { glyph: TaskInProgressIcon, color: token("color.icon.subtlest") },
+	working: { spinner: "experimental" },
 	"needs-input": { glyph: QuestionCircleFilledIcon, color: token("color.icon.information") },
 	finished: { glyph: StatusSuccessIcon, color: token("color.icon.success") },
 	untracked: { glyph: PriorityTrivialIcon, color: token("color.icon.subtlest") },

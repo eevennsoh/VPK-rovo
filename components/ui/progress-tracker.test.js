@@ -71,18 +71,21 @@ test("Spinner preserves the CodePen chasing-tail motion without competing rotati
 	assert.match(SPINNER_SOURCE, /const tailAnimations = shouldReduceMotion \? null : \(/u);
 });
 
-test("Spinner exposes the Jira prototype morph only as an experimental variant", () => {
+test("Spinner exposes the Jira prototype iconic orb only as an experimental variant", () => {
 	assert.match(SPINNER_SOURCE, /experimental: ""/u);
 	assert.match(SPINNER_SOURCE, /variant === "experimental"/u);
 	assert.match(SPINNER_SOURCE, /<ExperimentalSpinner/u);
-	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /const HEX =/u);
-	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /const SPARKLE =/u);
-	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /spinner-experimental-rotator-motion/u);
-	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /spinner-experimental-morph-motion/u);
-	assert.match(EXPERIMENTAL_SPINNER_STYLES, /@keyframes spinner-experimental-rotate/u);
-	assert.match(EXPERIMENTAL_SPINNER_STYLES, /@keyframes spinner-experimental-shape/u);
-	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /shouldReduceMotion \? HEX : SPARKLE/u);
-	assert.match(SPINNER_DETAIL_SOURCE, /`experimental`/u);
+	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /data-iconic-orb=""/u);
+	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /spinner-experimental-orb-rotator-motion/u);
+	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /spinner-experimental-orb-dot-motion/u);
+	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /spinner-experimental-orb-dot-top-right/u);
+	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /ORB_DOTS/u);
+	assert.match(EXPERIMENTAL_SPINNER_STYLES, /@keyframes spinner-experimental-orb-morph/u);
+	assert.match(EXPERIMENTAL_SPINNER_STYLES, /@keyframes spinner-experimental-orb-opacity/u);
+	assert.match(EXPERIMENTAL_SPINNER_STYLES, /@keyframes spinner-experimental-orb-rotate/u);
+	assert.doesNotMatch(EXPERIMENTAL_SPINNER_SOURCE, /const HEX =/u);
+	assert.doesNotMatch(EXPERIMENTAL_SPINNER_SOURCE, /const SPARKLE =/u);
+	assert.match(SPINNER_DETAIL_SOURCE, /six-dot iconic orb/u);
 	assert.match(SPINNER_DETAIL_SOURCE, /spinner-demo-experimental/u);
 });
 

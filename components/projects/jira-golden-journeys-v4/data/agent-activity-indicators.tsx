@@ -10,7 +10,7 @@ import { token } from "@/lib/tokens";
 
 /**
  * Team EU is the "what ships today" variation. Its working chin uses the
- * explicit experimental sparkle-to-hex spinner from the Jira prototype.
+ * explicit experimental six-dot iconic orb from the Jira prototype.
  * The two departures are the outcome glyphs. Awaiting-input: a question circle
  * says the agent is blocked on an answer, which a neutral status dot does not.
  * Finished: the filled success status names the outcome and pairs with the
@@ -36,7 +36,7 @@ const renderTeamEuAgentActivityIndicator: JiraIssueAgentActivityIndicatorRendere
 	return state === "awaiting-input" ? (
 		<QuestionCircleFilledIcon color={token("color.icon.information")} label="" size="small" />
 	) : (
-		<Spinner label="" size="xs" variant="experimental" />
+		<Spinner label="" size="default" variant="experimental" />
 	);
 };
 

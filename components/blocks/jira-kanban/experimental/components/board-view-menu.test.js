@@ -101,6 +101,16 @@ test("View picker exposes unselected filter-action submenus with a selected coun
 		/untracked: \{ glyph: PriorityTrivialIcon, color: token\("color\.icon\.subtlest"\) \}/u,
 	);
 	assert.doesNotMatch(VIEW_MENU_SOURCE, /TaskToDoIcon|@atlaskit\/icon\/core\/task-to-do/u);
+	assert.doesNotMatch(
+		VIEW_MENU_SOURCE,
+		/TaskInProgressIcon|@atlaskit\/icon\/core\/task-in-progress/u,
+	);
+	assert.match(VIEW_MENU_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
+	assert.match(VIEW_MENU_SOURCE, /working: \{ spinner: "experimental" \}/u);
+	assert.match(
+		VIEW_MENU_SOURCE,
+		/render=\{<Spinner label="" size="xs" variant="experimental" \/>\}/u,
+	);
 	assert.match(
 		VIEW_MENU_SOURCE,
 		/onAgentFilterIdChange\?: \(agentFilterId: BoardAgentFilterId \| null\) => void;/u,

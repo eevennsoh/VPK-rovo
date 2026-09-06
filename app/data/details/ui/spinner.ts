@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const SPINNER_DETAIL: ComponentDetail = {
     description:
-      "A loading spinner with an icon-subtlest default arc that sweeps around the circle. Supports `inherit`, `invert`, and `rainbow` treatments plus an explicit `experimental` sparkle-to-hex morph ported from Jira's agent status prototype.",
+      "A loading spinner with an icon-subtlest default arc that sweeps around the circle. Supports `inherit`, `invert`, and `rainbow` treatments plus an explicit `experimental` six-dot iconic orb ported from Jira's agent status prototype.",
     adsUrl: "https://atlassian.design/components/spinner",
     usage: `import { Spinner } from "@/components/ui/spinner";
 
@@ -22,7 +22,7 @@ export const SPINNER_DETAIL: ComponentDetail = {
         type: `"default" | "experimental" | "inherit" | "invert" | "rainbow"`,
         default: `"default"`,
         description:
-          "Treatment. `default` uses icon subtlest, `experimental` morphs a sparkle into a hex, `inherit` follows currentColor, `invert` paints the background token, and `rainbow` uses the Rovo brand gradient.",
+          "Treatment. `default` uses icon subtlest, `experimental` pulses a six-dot orb in and out, `inherit` follows currentColor, `invert` paints the background token, and `rainbow` uses the Rovo brand gradient.",
       },
       {
         name: "className",
@@ -44,7 +44,7 @@ export const SPINNER_DETAIL: ComponentDetail = {
       },
       {
         title: "Experimental",
-        description: "Sparkle-to-hex loader from the Jira agent status prototype.",
+        description: "Six-dot iconic orb from the Jira agent status prototype.",
         demoSlug: "spinner-demo-experimental",
       },
       { title: "Basic", demoSlug: "spinner-demo-basic" },
