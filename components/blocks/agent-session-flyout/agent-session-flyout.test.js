@@ -120,7 +120,7 @@ test("details hover card uses Figma chrome without panel property rows", () => {
 	assert.doesNotMatch(detailsSource, /session\.repository/u);
 	assert.doesNotMatch(detailsSource, /session\.worktreePath/u);
 	assert.match(detailsSource, /import BranchIcon from "@atlaskit\/icon\/core\/branch"/u);
-	assert.match(detailsSource, /session\.branch && !session\.pullRequestNumber/u);
+	assert.match(detailsSource, /if \(!session\.branch \|\| session\.pullRequestNumber\) \{\s*return null;/u);
 	assert.match(
 		detailsSource,
 		/<Avatar[\s\S]*label=\{session\.invokedBy\.name\}[\s\S]*shape="circle"[\s\S]*size="xs"/u,
@@ -144,7 +144,7 @@ test("details hover card uses Figma chrome without panel property rows", () => {
 	assert.match(detailsSource, /text-xs leading-5">\s*<span className="text-text-success">\+\{session\.additions\}/u);
 	assert.match(detailsSource, /text-text-danger">-\{session\.deletions\}/u);
 	assert.match(detailsSource, /const visibleChecks = session\.status === "merged" && session\.checks\?\.failed === 0/u);
-	assert.match(detailsSource, /\{visibleChecks \?/u);
+	assert.match(detailsSource, /if \(!visibleChecks\) \{\s*return null;/u);
 	assert.match(detailsSource, /formatSessionChecks\(visibleChecks\)/u);
 	assert.match(detailsSource, /<span aria-hidden="true" className="shrink-0 text-xs leading-4 text-text-subtlest">/u);
 	assert.match(source, /function hostIcon\(/u);

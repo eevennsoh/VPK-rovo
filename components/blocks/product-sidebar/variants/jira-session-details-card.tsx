@@ -103,6 +103,159 @@ function DetailsMetaRow({
 	);
 }
 
+function DetailsInvokerMeta({ session }: Readonly<{ session: JiraSidebarSessionItem }>) {
+	return (
+		<div className="flex h-4 min-w-0 items-center gap-1">
+			{session.invokedBy ? (
+				<>
+					<Avatar
+						className="shrink-0"
+						label={session.invokedBy.name}
+						shape="circle"
+						size="xs"
+					>
+						{session.invokedBy.src ? (
+							<AvatarImage alt="" src={session.invokedBy.src} />
+						) : null}
+						<AvatarFallback>{actorInitials(session.invokedBy.name)}</AvatarFallback>
+					</Avatar>
+					<p className="min-w-0 truncate text-xs leading-4 text-text-subtlest">
+						{session.invokedBy.name}
+					</p>
+					<span aria-hidden="true" className="shrink-0 text-xs leading-4 text-text-subtlest">
+						·
+					</span>
+				</>
+			) : null}
+			<p className="shrink-0 text-xs leading-4 text-text-subtlest">
+				{JIRA_SESSION_UPDATED_LABEL[session.status]}
+			</p>
+		</div>
+	);
+}
+
+function DetailsAgentTag({ session }: Readonly<{ session: JiraSidebarSessionItem }>) {
+	return (
+		<div className="flex min-w-0 items-center">
+			<span className="sr-only">Agent</span>
+			<HoverCard closeDelay={120} openDelay={0}>
+				<HoverCardTrigger
+					closeDelay={120}
+					delay={0}
+					render={
+						<Tag
+							color="gray"
+							elemBefore={
+								<span aria-hidden>
+									<AgentAvatarVisual
+										avatarClassName="after:border-0"
+										avatarSrc={session.agentAvatarSrc}
+										brandName={session.brandName}
+										fallbackText={session.agentName}
+										label={session.agentName}
+										sizePx={16}
+										vpkLogo={session.vpkLogo}
+									/>
+								</span>
+							}
+							type="agent"
+							variant="editor"
+						>
+							{session.agentName}
+						</Tag>
+					}
+				/>
+				<HoverCardContent
+					align="center"
+					alignOffset={0}
+					className="w-[360px] max-w-[calc(100vw-48px)] rounded-xl border-0 bg-transparent p-0 shadow-none"
+					side="right"
+					sideOffset={8}
+				>
+					<AgentProfileCard
+						avatarSrc={session.agentAvatarSrc}
+						name={session.agentName}
+						surface="overlay"
+					/>
+				</HoverCardContent>
+			</HoverCard>
+		</div>
+	);
+}
+
+function detailsPullRequestTitle(session: JiraSidebarSessionItem): string | null {
+	if (session.pullRequestTitle) {
+		return `#${session.pullRequestNumber}: ${session.pullRequestTitle}`;
+	}
+	return session.pullRequestNumber ? `#${session.pullRequestNumber}` : null;
+}
+
+function DetailsPullRequestRow({ session }: Readonly<{ session: JiraSidebarSessionItem }>) {
+	const pullRequestTitle = detailsPullRequestTitle(session);
+	if (!session.pullRequestNumber || !pullRequestTitle) {
+		return null;
+	}
+	const hasCodeChanges = session.additions !== undefined && session.deletions !== undefined;
+	return (
+		<div className="flex min-w-0 items-center gap-1 text-xs leading-5">
+			{detailsPullRequestGlyph(session.status)}
+			<MetadataPathLink
+				className="min-w-0 flex-1 truncate text-xs leading-5 text-text"
+				title={pullRequestTitle}
+			>
+				{pullRequestTitle}
+			</MetadataPathLink>
+			{hasCodeChanges ? (
+				<span className="flex shrink-0 items-center gap-1 text-xs leading-5">
+					<span className="text-text-success">+{session.additions}</span>
+					<span className="text-text-danger">-{session.deletions}</span>
+				</span>
+			) : null}
+		</div>
+	);
+}
+
+function DetailsBranchRow({ session }: Readonly<{ session: JiraSidebarSessionItem }>) {
+	if (!session.branch || session.pullRequestNumber) {
+		return null;
+	}
+	return (
+		<DetailsMetaRow icon={<BranchIcon label="" size="small" />} label="Branch">
+			<MetadataPathLink className="min-w-0 truncate text-xs leading-5" segmented title={session.branch}>
+				<MetadataPathValue path={session.branch} />
+			</MetadataPathLink>
+		</DetailsMetaRow>
+	);
+}
+
+function DetailsChecksRow({ session }: Readonly<{ session: JiraSidebarSessionItem }>) {
+	const visibleChecks = session.status === "merged" && session.checks?.failed === 0
+		? undefined
+		: session.checks;
+	if (!visibleChecks) {
+		return null;
+	}
+	const checksTotal = visibleChecks.passed + visibleChecks.failed;
+	return (
+		<DetailsMetaRow
+			icon={(
+				<ProgressCircle
+					aria-hidden
+					animated={false}
+					size="xs"
+					value={checksTotal > 0 ? Math.round((visibleChecks.passed / checksTotal) * 100) : 0}
+					variant="outline"
+				/>
+			)}
+			label="Checks"
+		>
+			<span className="shrink-0 text-xs font-normal text-text">
+				{formatSessionChecks(visibleChecks)}
+			</span>
+		</DetailsMetaRow>
+	);
+}
+
 /**
  * Compact session hover card: title, invoker meta, Local/Cloud, agent Tag,
  * PR icon + title + diffs, and checks when present. Branch appears only when
@@ -116,48 +269,10 @@ export function JiraSessionDetailsCard({
 	const agentBannerSrc = getAgentProfileBannerSrc(session.agentAvatarSrc);
 	preload(agentBannerSrc, { as: "image" });
 
-	const hasCodeChanges = session.additions !== undefined && session.deletions !== undefined;
-	const pullRequestTitle = session.pullRequestTitle
-		? `#${session.pullRequestNumber}: ${session.pullRequestTitle}`
-		: session.pullRequestNumber
-			? `#${session.pullRequestNumber}`
-			: null;
-	const visibleChecks = session.status === "merged" && session.checks?.failed === 0
-		? undefined
-		: session.checks;
-	const checksTotal = visibleChecks ? visibleChecks.passed + visibleChecks.failed : 0;
-
 	return (
 		<JiraSessionFlyoutCard
 			footerClassName="gap-1"
-			meta={
-				<div className="flex h-4 min-w-0 items-center gap-1">
-					{session.invokedBy ? (
-						<>
-							<Avatar
-								className="shrink-0"
-								label={session.invokedBy.name}
-								shape="circle"
-								size="xs"
-							>
-								{session.invokedBy.src ? (
-									<AvatarImage alt="" src={session.invokedBy.src} />
-								) : null}
-								<AvatarFallback>{actorInitials(session.invokedBy.name)}</AvatarFallback>
-							</Avatar>
-							<p className="min-w-0 truncate text-xs leading-4 text-text-subtlest">
-								{session.invokedBy.name}
-							</p>
-							<span aria-hidden="true" className="shrink-0 text-xs leading-4 text-text-subtlest">
-								·
-							</span>
-						</>
-					) : null}
-					<p className="shrink-0 text-xs leading-4 text-text-subtlest">
-						{JIRA_SESSION_UPDATED_LABEL[session.status]}
-					</p>
-				</div>
-			}
+			meta={<DetailsInvokerMeta session={session} />}
 			title={session.title}
 			titleId={titleId}
 			trailing={
@@ -169,92 +284,10 @@ export function JiraSessionDetailsCard({
 			<DetailsMetaRow icon={detailsHostIcon(session.host)} label="Session">
 				{session.host === "cloud" ? "Cloud" : "Local"}
 			</DetailsMetaRow>
-			<div className="flex min-w-0 items-center">
-				<span className="sr-only">Agent</span>
-				<HoverCard closeDelay={120} openDelay={0}>
-					<HoverCardTrigger
-						closeDelay={120}
-						delay={0}
-						render={
-							<Tag
-								color="gray"
-								elemBefore={
-									<span aria-hidden>
-										<AgentAvatarVisual
-											avatarClassName="after:border-0"
-											avatarSrc={session.agentAvatarSrc}
-											brandName={session.brandName}
-											fallbackText={session.agentName}
-											label={session.agentName}
-											sizePx={16}
-											vpkLogo={session.vpkLogo}
-										/>
-									</span>
-								}
-								type="agent"
-								variant="editor"
-							>
-								{session.agentName}
-							</Tag>
-						}
-					/>
-					<HoverCardContent
-						align="center"
-						alignOffset={0}
-						className="w-[360px] max-w-[calc(100vw-48px)] rounded-xl border-0 bg-transparent p-0 shadow-none"
-						side="right"
-						sideOffset={8}
-					>
-						<AgentProfileCard
-							avatarSrc={session.agentAvatarSrc}
-							name={session.agentName}
-							surface="overlay"
-						/>
-					</HoverCardContent>
-				</HoverCard>
-			</div>
-			{session.pullRequestNumber ? (
-				<div className="flex min-w-0 items-center gap-1 text-xs leading-5">
-					{detailsPullRequestGlyph(session.status)}
-					<MetadataPathLink
-						className="min-w-0 flex-1 truncate text-xs leading-5 text-text"
-						title={pullRequestTitle ?? undefined}
-					>
-						{pullRequestTitle}
-					</MetadataPathLink>
-					{hasCodeChanges ? (
-						<span className="flex shrink-0 items-center gap-1 text-xs leading-5">
-							<span className="text-text-success">+{session.additions}</span>
-							<span className="text-text-danger">-{session.deletions}</span>
-						</span>
-					) : null}
-				</div>
-			) : null}
-			{session.branch && !session.pullRequestNumber ? (
-				<DetailsMetaRow icon={<BranchIcon label="" size="small" />} label="Branch">
-					<MetadataPathLink className="min-w-0 truncate text-xs leading-5" segmented title={session.branch}>
-						<MetadataPathValue path={session.branch} />
-					</MetadataPathLink>
-				</DetailsMetaRow>
-			) : null}
-			{visibleChecks ? (
-				<DetailsMetaRow
-					icon={(
-						<ProgressCircle
-							aria-hidden
-							animated={false}
-							size="xs"
-							value={checksTotal > 0 ? Math.round((visibleChecks.passed / checksTotal) * 100) : 0}
-							variant="outline"
-						/>
-					)}
-					label="Checks"
-				>
-					<span className="shrink-0 text-xs font-normal text-text">
-						{formatSessionChecks(visibleChecks)}
-					</span>
-				</DetailsMetaRow>
-			) : null}
+			<DetailsAgentTag session={session} />
+			<DetailsPullRequestRow session={session} />
+			<DetailsBranchRow session={session} />
+			<DetailsChecksRow session={session} />
 		</JiraSessionFlyoutCard>
 	);
 }
