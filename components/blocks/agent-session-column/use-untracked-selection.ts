@@ -17,7 +17,7 @@ import {
 	NO_SELECTION_MARKS,
 	reduceSelectionMarks,
 	selectEffectiveSelection,
-	type SelectionActionId,
+	type HeaderActionId,
 	type UntrackedHeaderModel,
 	type VisibilityActionLabel,
 } from "./untracked-selection";
@@ -25,7 +25,7 @@ import {
 export interface UntrackedSelection {
 	readonly header: UntrackedHeaderModel;
 	readonly rows: ReadonlyMap<string, AgentSessionTriageRow>;
-	readonly onHeaderAction: (id: SelectionActionId) => void;
+	readonly onHeaderAction: (id: HeaderActionId) => void;
 }
 
 export function useUntrackedSelection<T>(
@@ -80,9 +80,10 @@ export function useUntrackedSelection<T>(
 			count: input.count,
 			selection,
 			title: input.title,
+			visibleCount: input.visibleItems.length,
 			visibilityLabel: input.visibilityLabel,
 		}),
-		[approveTargetById, input.count, input.title, input.visibilityLabel, selection],
+		[approveTargetById, input.count, input.title, input.visibilityLabel, input.visibleItems, selection],
 	);
 
 	const rows = useMemo(() => {
@@ -121,9 +122,25 @@ export function useUntrackedSelection<T>(
 		return next;
 	}, [approveTargetById, input.visibleItems, marks, triage]);
 
-	const onHeaderAction = useCallback((id: SelectionActionId) => {
+	const onHeaderAction = useCallback((id: HeaderActionId) => {
 		if (id === "clear") {
 			dispatch({ type: "clear" });
+			return;
+		}
+
+		if (id === "select-all") {
+			if (
+				selection.kind === "active"
+				&& selection.items.length === input.visibleItems.length
+			) {
+				dispatch({ type: "clear" });
+				return;
+			}
+
+			dispatch({
+				ids: input.visibleItems.map((item: AgentSessionItem) => item.id),
+				type: "select-all",
+			});
 			return;
 		}
 
@@ -133,7 +150,7 @@ export function useUntrackedSelection<T>(
 
 		runBulkAction(id, selection, { approveTargetById, triage });
 		dispatch({ type: "clear" });
-	}, [approveTargetById, selection, triage]);
+	}, [approveTargetById, input.visibleItems, selection, triage]);
 
 	return {
 		header,
