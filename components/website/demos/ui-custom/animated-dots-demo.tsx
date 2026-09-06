@@ -3,33 +3,48 @@ import { AnimatedDots } from "@/components/ui-custom/animated-dots";
 export default function AnimatedDotsDemo() {
 	return (
 		<div className="flex flex-col gap-4">
-			<span className="inline-flex items-baseline text-sm text-text-subtlest">
-				Thinking
-				<AnimatedDots />
-			</span>
-			<span className="inline-flex items-baseline text-sm text-text-subtlest">
-				Thinking
-				<AnimatedDots variant="color" />
-			</span>
+			<div className="flex flex-col gap-1">
+				<span className="text-xs text-text-subtlest">Neutral</span>
+				<span className="inline-flex items-baseline text-sm text-text-subtlest">
+					Thinking
+					<AnimatedDots variant="neutral" />
+				</span>
+			</div>
+			<div className="flex flex-col gap-1">
+				<span className="text-xs text-text-subtlest">Color</span>
+				<span className="inline-flex items-baseline text-sm text-text-subtlest">
+					Thinking
+					<AnimatedDots variant="color" />
+				</span>
+			</div>
 		</div>
 	);
 }
 
 export function AnimatedDotsDemoVariants() {
 	return (
-		<div className="flex flex-col gap-4">
-			<span className="inline-flex items-baseline text-sm text-text-subtlest">
-				Neutral (default)
-				<AnimatedDots />
-			</span>
-			<span className="inline-flex items-baseline text-sm text-text-subtle">
-				Matching subtle text
-				<AnimatedDots />
-			</span>
-			<span className="inline-flex items-baseline text-sm text-text-subtlest">
-				Color
-				<AnimatedDots variant="color" />
-			</span>
+		<div className="flex flex-col gap-6">
+			<div className="flex flex-col gap-1">
+				<span className="text-xs text-text-subtlest">Neutral — text subtlest</span>
+				<span className="inline-flex items-baseline text-sm text-text-subtlest">
+					Thinking
+					<AnimatedDots variant="neutral" />
+				</span>
+			</div>
+			<div className="flex flex-col gap-1">
+				<span className="text-xs text-text-subtlest">Neutral — matching label color</span>
+				<span className="inline-flex items-baseline text-sm text-text-subtle">
+					Thinking
+					<AnimatedDots variant="neutral" />
+				</span>
+			</div>
+			<div className="flex flex-col gap-1">
+				<span className="text-xs text-text-subtlest">Color — Rovo palette</span>
+				<span className="inline-flex items-baseline text-sm text-text-subtlest">
+					Thinking
+					<AnimatedDots variant="color" />
+				</span>
+			</div>
 		</div>
 	);
 }

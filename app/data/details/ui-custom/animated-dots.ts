@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const ANIMATED_DOTS_DETAIL: ComponentDetail = {
 	description:
-		"Animated dots with staggered opacity reveal, used as a loading or thinking indicator alongside text labels. Neutral (default) inherits surrounding text color; color uses the Rovo palette.",
+		"Animated dots with staggered opacity reveal, used as a loading or thinking indicator alongside text labels. Neutral (default) uses text-subtlest or the surrounding label color; Color uses the Rovo palette.",
 	usage: `import { AnimatedDots } from "@/components/ui-custom/animated-dots";
 
 <span className="inline-flex items-baseline text-sm text-text-subtlest">
@@ -16,7 +16,7 @@ export const ANIMATED_DOTS_DETAIL: ComponentDetail = {
 			type: '"neutral" | "color"',
 			default: '"neutral"',
 			description:
-				'"neutral" inherits the surrounding text colour so dots match adjacent copy. "color" uses the Rovo palette (or `colors` when provided). Passing `colors` selects the color variant.',
+				'"neutral" uses text-subtlest when that is the label colour, or inherits whatever text colour the label uses. "color" uses the Rovo palette (or `colors` when provided). Passing `colors` selects the color variant.',
 		},
 		{
 			name: "colors",
@@ -45,7 +45,7 @@ export const ANIMATED_DOTS_DETAIL: ComponentDetail = {
 		},
 	],
 	examples: [
-		{ title: "Variants", description: "Neutral (default), matching nearby text, and the color palette.", demoSlug: "animated-dots-demo-variants" },
+		{ title: "Variants", description: "Neutral (text-subtlest or matching the label colour) and Color (Rovo palette).", demoSlug: "animated-dots-demo-variants" },
 		{ title: "Custom colors", description: "Dots with alternative color palettes.", demoSlug: "animated-dots-demo-custom-colors" },
 		{ title: "Timing", description: "Fast, default, and slow animation speeds.", demoSlug: "animated-dots-demo-timing" },
 		{ title: "Sizes", description: "Dots at various text sizes from xs to lg.", demoSlug: "animated-dots-demo-sizes" },
