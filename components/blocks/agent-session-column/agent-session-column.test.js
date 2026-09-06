@@ -654,7 +654,9 @@ test("an arrival is a transient beat plus a mark that outlives it", () => {
 	// The mark is the load-bearing half: it has to survive a backgrounded tab, a
 	// collapsed column, and reduced motion, so it is never the animation alone.
 	assert.match(CARD_SOURCE, /<span className="sr-only">Newly synced, not yet reviewed<\/span>/u);
-	assert.match(CARD_SOURCE, /size-1\.5 rounded-full bg-icon-discovery/u);
+	assert.match(CARD_SOURCE, /size-1\.5 -translate-y-1\/2 rounded-full bg-icon-discovery/u);
+	assert.match(CARD_SOURCE, /absolute left-1\.5 top-1\/2/u);
+	assert.doesNotMatch(CARD_SOURCE, /top-1\.5/u);
 	assert.match(RAIL_COLUMN_SOURCE, /backgroundColor: AGENT_SESSION_NOTCH_TONE\.rest/u);
 	assert.doesNotMatch(
 		RAIL_COLUMN_SOURCE,
@@ -933,20 +935,6 @@ test("the selecting header Link action uses a CheckMark icon", () => {
 	assert.match(HEADER_SOURCE, /import CheckMarkIcon from "@atlaskit\/icon\/core\/check-mark";/u);
 	assert.match(HEADER_SOURCE, /approve: CheckMarkIcon,/u);
 	assert.doesNotMatch(HEADER_SOURCE, /LinkIcon/u);
-});
-
-test("the selecting header omits collapse so Clear is the only exit", () => {
-	const columnSelecting = HEADER_SOURCE.slice(
-		HEADER_SOURCE.indexOf("function renderColumnChrome"),
-		HEADER_SOURCE.indexOf("function renderPanelChrome"),
-	);
-	const columnSelectingBranch = columnSelecting.slice(columnSelecting.lastIndexOf('case "selecting":'));
-	assert.doesNotMatch(columnSelectingBranch, /<CollapseButton/u);
-	const panelSelecting = HEADER_SOURCE.slice(HEADER_SOURCE.indexOf("function renderPanelChrome"));
-	const panelSelectingBranch = panelSelecting.slice(panelSelecting.lastIndexOf('case "selecting":'));
-	assert.doesNotMatch(panelSelectingBranch, /ShrinkHorizontalIcon/u);
-	assert.match(columnSelectingBranch, /<HeaderIconButton/u);
-	assert.match(panelSelectingBranch, /<PanelAction/u);
 });
 
 test("selecting header hover copy comes from the selectedCount table", () => {

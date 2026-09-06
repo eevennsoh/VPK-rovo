@@ -309,11 +309,11 @@ export function AgentSessionCard({
 						<>
 							{/* Colour never carries it alone. */}
 							<span className="sr-only">Newly synced, not yet reviewed</span>
-							{/* Parked in the body's 12px padding, so it clears the
-							    avatar on the left and the hover actions on the right. */}
+							{/* Parked in the body's 12px padding, vertically centered
+							    with the avatar + two text lines. */}
 							<span
 								aria-hidden="true"
-								className="absolute left-1.5 top-1.5 size-1.5 rounded-full bg-icon-discovery"
+								className="absolute left-1.5 top-1/2 size-1.5 -translate-y-1/2 rounded-full bg-icon-discovery"
 							/>
 						</>
 							) : null}
