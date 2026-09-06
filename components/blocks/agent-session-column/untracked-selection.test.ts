@@ -195,6 +195,27 @@ test("header copy table pins exact available and unavailable strings", () => {
 	]);
 });
 
+test("the selecting header Unarchives when the archived view is open", () => {
+	const captured = session("lw-c", "PAY-102");
+	const model = buildUntrackedHeaderModel({
+		approveTargetById: new Map([
+			["lw-c", { kind: "unavailable", reason: "already-attached" }],
+		]),
+		count: 1,
+		selection: { kind: "active", items: [captured] },
+		title: "Archived",
+		visibilityLabel: "Unarchive",
+	});
+
+	assert.equal(model.kind, "selecting");
+	if (model.kind !== "selecting") {
+		return;
+	}
+
+	const archive = model.actions.find((action) => action.id === "archive");
+	assert.deepEqual(archive?.hint, { kind: "available", text: "Unarchive 1 agent session" });
+});
+
 test("bulk approve attaches the located target and skips unavailable rows", () => {
 	const linkable = session("lw-a", "PAY-101");
 	const unknown = session("lw-b", "PAY-999");
