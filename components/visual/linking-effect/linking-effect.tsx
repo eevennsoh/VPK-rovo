@@ -1,0 +1,120 @@
+"use client";
+
+import { useReducedMotion } from "motion/react";
+import dynamic from "next/dynamic";
+import { createPortal } from "react-dom";
+
+import { isLinkingEffectActive, type LinkingEffectTarget } from "./lifecycle";
+import {
+	useLinkingEffectAtlas,
+	type LinkingEffectIdentity,
+} from "./use-linking-effect-atlas";
+import {
+	useLinkingEffectFrame,
+	type LinkingEffectRelease,
+} from "./use-linking-effect-frame";
+
+// Keeps the GLSL out of the host's initial bundle; it only loads once a subject
+// actually approaches a target.
+const LinkingEffectCanvas = dynamic(
+	() => import("./linking-effect-canvas").then((module) => module.LinkingEffectCanvas),
+	{ ssr: false },
+);
+
+/** Default portal stacking order: below a typical drag layer, above the page. */
+const DEFAULT_Z_INDEX = 290;
+
+export interface LinkingEffectProps {
+	/**
+	 * CSS selector for the travelling element, re-measured every frame. It is a
+	 * selector rather than a ref because the element is usually a portal the host
+	 * mounts and unmounts mid-gesture, so there is no stable node to hold.
+	 *
+	 * Resolved against the whole document, so it must be unique per instance.
+	 * Two effects sharing one attribute both measure the first match and only one
+	 * of them ever draws.
+	 */
+	sourceSelector: string;
+	/** Where the source is being pulled, or null when nothing is targeted. */
+	target: LinkingEffectTarget | null;
+	/** 0-1 closeness of source to target. Drives the neck width and field alpha. */
+	nearness: number;
+	/**
+	 * Subjects that melt together. Keep this referentially stable for the whole
+	 * gesture — it is re-read every frame and the texture atlas is rebuilt when
+	 * the array identity changes.
+	 */
+	identities: readonly LinkingEffectIdentity[] | null;
+	/** Set on release to run the fuse. Bump `id` to restart it. */
+	release: LinkingEffectRelease | null;
+	/** Called once the fuse has fully collapsed, so the host can clear its state. */
+	onFuseSettled?: () => void;
+	/** Theme variable both blobs are tinted from. */
+	surfaceVariable?: string;
+	zIndex?: number;
+}
+
+/**
+ * A metaball field that necks a travelling element into the thing it is being
+ * linked to, then fuses the two together on release.
+ *
+ * The effect is purely decorative: it draws behind the real drag element and
+ * never intercepts a pointer, so the host's drop path commits whether or not
+ * this ever paints. That also makes reduced motion a clean unmount rather than a
+ * degraded animation.
+ */
+export function LinkingEffect(props: Readonly<LinkingEffectProps>) {
+	const shouldReduceMotion = useReducedMotion();
+	const active = isLinkingEffectActive({
+		hasRelease: props.release !== null,
+		nearness: props.nearness,
+		shouldReduceMotion,
+	});
+
+	// Unmounted rather than hidden: no RAF loop, no WebGL context, no lazy chunk,
+	// and no atlas work for a user who opted out of motion.
+	return active ? <LinkingEffectField {...props} /> : null;
+}
+
+function LinkingEffectField({
+	identities,
+	nearness,
+	onFuseSettled,
+	release,
+	sourceSelector,
+	surfaceVariable,
+	target,
+	zIndex = DEFAULT_Z_INDEX,
+}: Readonly<LinkingEffectProps>) {
+	const atlas = useLinkingEffectAtlas(identities);
+	const { frame, velocity } = useLinkingEffectFrame({
+		members: atlas.members,
+		nearness,
+		onFuseSettled,
+		release,
+		sourceSelector,
+		surfaceVariable,
+		target,
+	});
+
+	if (!frame) {
+		return null;
+	}
+
+	return createPortal(
+		<div
+			aria-hidden="true"
+			className="pointer-events-none fixed inset-0"
+			data-slot="linking-effect"
+			style={{ zIndex }}
+		>
+			<LinkingEffectCanvas
+				atlas={atlas.atlas}
+				atlasCells={atlas.atlasCells}
+				frame={frame}
+				velocity={velocity}
+			/>
+		</div>,
+		document.body,
+	);
+}
