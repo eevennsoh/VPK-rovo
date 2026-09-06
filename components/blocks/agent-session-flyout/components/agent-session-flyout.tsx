@@ -24,16 +24,26 @@ import { AGENT_SESSION_FLYOUT_SESSIONS } from "@/components/blocks/agent-session
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
+const TRAILING_ICON_TONE_CLASS = {
+	subtlest: "text-icon-subtlest",
+	subtle: "text-icon-subtle",
+	success: "text-icon-success",
+	discovery: "text-icon-discovery",
+	danger: "text-icon-danger",
+} as const;
+
+type TrailingIconTone = keyof typeof TRAILING_ICON_TONE_CLASS;
+
 function trailingIcon(
 	icon: ReactNode,
 	title: string,
-	tone: "subtle" | "danger",
+	tone: TrailingIconTone,
 ) {
 	return (
 		<span
 			className={cn(
 				"grid size-4 shrink-0 place-items-center",
-				tone === "danger" ? "text-icon-danger" : "text-icon-subtle",
+				TRAILING_ICON_TONE_CLASS[tone],
 			)}
 			title={title}
 		>
@@ -42,7 +52,11 @@ function trailingIcon(
 	);
 }
 
-/** Compact list glyphs: muted `text-icon-subtle`, except PR failed which stays danger red. */
+/**
+ * Compact list glyphs match the board View PR legend: green open, purple
+ * merged, red closed. Branch-only rows use `text-icon-subtlest`; needs-input
+ * stays muted.
+ */
 function AgentSessionFlyoutTrailingIcon({
 	session,
 }: Readonly<{ session: JiraSidebarSessionItem }>) {
@@ -50,7 +64,7 @@ function AgentSessionFlyoutTrailingIcon({
 		return trailingIcon(
 			<BranchIcon color="currentColor" label="Branch created" size="small" />,
 			"Branch created",
-			"subtle",
+			"subtlest",
 		);
 	}
 
@@ -75,13 +89,13 @@ function AgentSessionFlyoutTrailingIcon({
 			return trailingIcon(
 				<PullRequestIcon color="currentColor" label="Pull request open" size="small" />,
 				"Pull request open",
-				"subtle",
+				"success",
 			);
 		case "merged":
 			return trailingIcon(
 				<MergeSuccessIcon color="currentColor" label="Pull request merged" size="small" />,
 				"Pull request merged",
-				"subtle",
+				"discovery",
 			);
 		case "stopped":
 			return trailingIcon(

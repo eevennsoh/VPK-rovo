@@ -7,10 +7,7 @@ import {
 	type AgentSessionItem,
 } from "@/components/blocks/agent-session";
 import { AGENT_SESSION_FLYOUT_LIST_CLASSNAME } from "@/components/blocks/agent-session-flyout";
-import {
-	AGENT_SESSION_FLYOUT_CODING_BRANCH_SESSIONS,
-	AGENT_SESSION_FLYOUT_CODING_LIFECYCLE_SESSIONS,
-} from "@/components/blocks/agent-session-flyout/agent-session-flyout-data";
+import { AGENT_SESSION_FLYOUT_CODING_LIFECYCLE_SESSIONS } from "@/components/blocks/agent-session-flyout/agent-session-flyout-data";
 import Page from "@/components/blocks/agent-session-flyout/page";
 
 export default function AgentSessionFlyoutDemo() {
@@ -46,8 +43,4 @@ export function AgentSessionFlyoutDemoUntrackedWork() {
 
 export function AgentSessionFlyoutDemoCodingLifecycle() {
 	return <Page sessions={AGENT_SESSION_FLYOUT_CODING_LIFECYCLE_SESSIONS} />;
-}
-
-export function AgentSessionFlyoutDemoCodingBranch() {
-	return <Page sessions={AGENT_SESSION_FLYOUT_CODING_BRANCH_SESSIONS} />;
 }

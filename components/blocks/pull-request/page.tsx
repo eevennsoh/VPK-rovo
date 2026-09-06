@@ -40,7 +40,8 @@ export default function PullRequestPage({
 						value={[variant]}
 						variant="outline"
 					>
-						<ToggleGroupItem value="dropdown">Dropdown</ToggleGroupItem>
+						<ToggleGroupItem value="dropdown">Dropdown compact</ToggleGroupItem>
+						<ToggleGroupItem value="spacious">Dropdown spacious</ToggleGroupItem>
 						<ToggleGroupItem value="flyout">Flyout</ToggleGroupItem>
 					</ToggleGroup>
 				)}

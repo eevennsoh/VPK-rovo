@@ -102,8 +102,3 @@ export const AGENT_SESSION_FLYOUT_CODING_LIFECYCLE_SESSIONS: readonly JiraSideba
 		title: "PR failed",
 	}),
 ];
-
-/** Standalone catalog seed: branch exists, no pull request yet. */
-export const AGENT_SESSION_FLYOUT_CODING_BRANCH_SESSIONS: readonly JiraSidebarSessionItem[] = [
-	CODING_LIFECYCLE_BRANCH_SESSION,
-];

@@ -28,12 +28,6 @@ export const AGENT_SESSION_FLYOUT_DETAIL: ComponentDetail = {
 			demoSlug: "agent-session-flyout-demo-untracked-work",
 		},
 		{
-			title: "Coding — branch created",
-			description:
-				"A local coding session after the branch exists but before a pull request is opened. The details hover shows Local, the agent Tag, and the branch name — no PR or CI row.",
-			demoSlug: "agent-session-flyout-demo-coding-branch",
-		},
-		{
 			title: "Coding lifecycle",
 			description:
 				"Local coding sessions sharing one details flyout: branch only, PR open with CI, CI failed, PR merged, and PR failed. Hovering between rows moves and crossfades the card as the PR icon and checks change.",

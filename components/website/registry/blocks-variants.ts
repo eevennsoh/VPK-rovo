@@ -26,6 +26,13 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"pull-request-demo-spacious": dynamic(
+		() =>
+			import("../demos/blocks/pull-request-demo").then((mod) => ({
+				default: mod.PullRequestDemoSpacious,
+			})),
+		{ ssr: false },
+	),
 	"pull-request-demo-flyout": dynamic(
 		() =>
 			import("../demos/blocks/pull-request-demo").then((mod) => ({
@@ -86,13 +93,6 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 		() =>
 			import("../demos/blocks/agent-session-flyout-demo").then((mod) => ({
 				default: mod.AgentSessionFlyoutDemoUntrackedWork,
-			})),
-		{ ssr: false },
-	),
-	"agent-session-flyout-demo-coding-branch": dynamic(
-		() =>
-			import("../demos/blocks/agent-session-flyout-demo").then((mod) => ({
-				default: mod.AgentSessionFlyoutDemoCodingBranch,
 			})),
 		{ ssr: false },
 	),

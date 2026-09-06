@@ -4,7 +4,6 @@ export {
 	type AgentSessionFlyoutProps,
 } from "./components/agent-session-flyout";
 export {
-	AGENT_SESSION_FLYOUT_CODING_BRANCH_SESSIONS,
 	AGENT_SESSION_FLYOUT_CODING_LIFECYCLE_SESSIONS,
 	AGENT_SESSION_FLYOUT_SESSIONS,
 } from "./agent-session-flyout-data";
