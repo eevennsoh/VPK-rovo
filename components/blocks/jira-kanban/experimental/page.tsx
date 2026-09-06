@@ -395,9 +395,7 @@ export default function ExperimentalJiraKanbanPage({
 		timelineLastViewedAt,
 	);
 	const agentSessionLooseWork = useMemo(
-		() => additionalAgentSessions.length === 0
-			? pulseTimeline.looseWork
-			: [...additionalAgentSessions, ...pulseTimeline.looseWork],
+		() => [...additionalAgentSessions, ...pulseTimeline.looseWork],
 		[additionalAgentSessions, pulseTimeline.looseWork],
 	);
 	const agentSessionItems = useMemo(
