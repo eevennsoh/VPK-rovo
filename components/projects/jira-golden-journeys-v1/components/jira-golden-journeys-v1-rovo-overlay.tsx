@@ -15,6 +15,7 @@ import type { RichTextMentionItem } from "@/components/ui-custom/rich-text-edito
 interface JgpRovoOverlayProps {
 	chatContextBar?: ChatContextBarDescriptor | null;
 	composerPrefillRequest?: { mention: RichTextMentionItem; requestKey: number };
+	onComposerPrefillConsumed?: (requestKey: number) => void;
 	externalThinkingMessageId?: string | null;
 	/**
 	 * Hide the viewport floating chat. Work-item and Pulse Insights surfaces
@@ -38,6 +39,7 @@ interface JgpRovoOverlayProps {
 export function JgpRovoOverlay({
 	chatContextBar,
 	composerPrefillRequest,
+	onComposerPrefillConsumed,
 	externalThinkingMessageId,
 	chat = "auto",
 	insights = null,
@@ -106,6 +108,7 @@ export function JgpRovoOverlay({
 						key="floating-chat"
 						chatContextBar={chatContextBar}
 						composerPrefillRequest={composerPrefillRequest}
+						onComposerPrefillConsumed={onComposerPrefillConsumed}
 						externalThinkingMessageId={externalThinkingMessageId}
 						hideComposerSourceAndModelControls
 						interceptClarificationAnswers={Boolean(onInterceptSubmit || onQuestionAnswer)}

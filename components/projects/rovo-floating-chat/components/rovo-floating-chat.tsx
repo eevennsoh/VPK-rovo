@@ -23,6 +23,7 @@ interface RovoFloatingChatProps {
 	onSurfaceSwitch?: ChatSurfaceSwitchHandler;
 	chatContextBar?: ChatContextBarDescriptor | null;
 	composerPrefillRequest?: { mention: RichTextMentionItem; requestKey: number };
+	onComposerPrefillConsumed?: (requestKey: number) => void;
 	greeting?: ChatPanelGreetingProps;
 	customAgentTabs?: ChatPanelCustomAgentTabs;
 	hideComposerSourceAndModelControls?: boolean;
@@ -54,6 +55,7 @@ export default function RovoFloatingChat({
 	onSurfaceSwitch,
 	chatContextBar,
 	composerPrefillRequest,
+	onComposerPrefillConsumed,
 	greeting,
 	customAgentTabs,
 	hideComposerSourceAndModelControls = false,
@@ -135,6 +137,7 @@ export default function RovoFloatingChat({
 					onSurfaceSwitch={onSurfaceSwitch}
 					chatContextBar={chatContextBar}
 					composerPrefillRequest={composerPrefillRequest}
+					onComposerPrefillConsumed={onComposerPrefillConsumed}
 					onArtifactDialogOpen={onArtifactDialogOpen}
 					preserveFloatingSurfaceOnArtifactDialogOpen={preserveFloatingSurfaceOnArtifactDialogOpen}
 					startRealtimeVoiceRequestKey={startRealtimeVoiceRequestKey}

@@ -60,6 +60,11 @@ export function useJiraGoldenJourneysV4GenerativeActions({
 }: Readonly<UseJiraGoldenJourneysV4GenerativeActionsOptions>) {
 	const prefillRequestKeyRef = useRef(0);
 	const [composerPrefillRequest, setComposerPrefillRequest] = useState<ComposerPrefillRequest>();
+	const handleComposerPrefillConsumed = useCallback((requestKey: number) => {
+		setComposerPrefillRequest((current) => (
+			current?.requestKey === requestKey ? undefined : current
+		));
+	}, []);
 
 	const handleCardGenerativeActionSubmit = useCallback((
 		request: JiraIssueGenerativeActionRequest,
@@ -107,5 +112,9 @@ export function useJiraGoldenJourneysV4GenerativeActions({
 		}
 	}, [openAgentChat, setBoardColumns]);
 
-	return { composerPrefillRequest, handleCardGenerativeActionSubmit };
+	return {
+		composerPrefillRequest,
+		handleCardGenerativeActionSubmit,
+		handleComposerPrefillConsumed,
+	};
 }

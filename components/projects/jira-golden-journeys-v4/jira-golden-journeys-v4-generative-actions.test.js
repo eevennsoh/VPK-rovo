@@ -40,6 +40,12 @@ test("card agent and skill actions start an issue session and stage the selected
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCardGenerativeActionSubmit\?: JiraKanbanProps\["onCardGenerativeActionSubmit"\]/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<ExperimentalJiraKanban[\s\S]*onCardGenerativeActionSubmit=\{onCardGenerativeActionSubmit\}/u);
 	assert.match(PAGE_SOURCE, /<JgpRovoOverlay[\s\S]*composerPrefillRequest=\{composerPrefillRequest\}/u);
+	assert.match(
+		GENERATIVE_ACTIONS_HOOK_SOURCE,
+		/handleComposerPrefillConsumed = useCallback\(\(requestKey: number\)[\s\S]*current\?\.requestKey === requestKey \? undefined : current/u,
+	);
+	assert.match(PAGE_SOURCE, /onComposerPrefillConsumed=\{handleComposerPrefillConsumed\}/u);
 	assert.match(JGP_ROVO_OVERLAY_SOURCE, /<RovoFloatingChat[\s\S]*composerPrefillRequest=\{composerPrefillRequest\}/u);
-	assert.match(ROVO_FLOATING_CHAT_SOURCE, /<ChatPanel[\s\S]*composerPrefillRequest=\{composerPrefillRequest\}/u);
+	assert.match(JGP_ROVO_OVERLAY_SOURCE, /<RovoFloatingChat[\s\S]*onComposerPrefillConsumed=\{onComposerPrefillConsumed\}/u);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /<ChatPanel[\s\S]*composerPrefillRequest=\{composerPrefillRequest\}[\s\S]*onComposerPrefillConsumed=\{onComposerPrefillConsumed\}/u);
 });

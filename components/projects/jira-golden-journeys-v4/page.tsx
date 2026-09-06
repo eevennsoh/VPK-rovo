@@ -56,7 +56,11 @@ export default function JiraGoldenJourneysV4Page(): React.ReactElement {
 function JiraGoldenJourneysV4App(): React.ReactElement {
 	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useJgpAgentChatDemo();
 	const [boardColumns, setBoardColumns] = useState(createJiraGoldenJourneysV4PayBoardColumns);
-	const { composerPrefillRequest, handleCardGenerativeActionSubmit } =
+	const {
+		composerPrefillRequest,
+		handleCardGenerativeActionSubmit,
+		handleComposerPrefillConsumed,
+	} =
 		useJiraGoldenJourneysV4GenerativeActions({
 			openAgentChat,
 			setBoardColumns,
@@ -356,6 +360,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 				chatContextBar={chatContextBar}
 				composerPrefillRequest={composerPrefillRequest}
 				externalThinkingMessageId={externalThinkingMessageId}
+				onComposerPrefillConsumed={handleComposerPrefillConsumed}
 			/>
 		</>
 	);

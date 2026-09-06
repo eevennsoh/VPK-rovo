@@ -1065,6 +1065,8 @@ export type PromptInputTextareaProps = ComponentProps<
   directoryAutocompleteLimit?: number;
   /** Keyed request to replace the composer draft with a rich mention token. */
   prefillMentionRequest?: { mention: RichTextMentionItem; requestKey: number };
+  /** Acknowledges a rich mention request after the editor applies it. */
+  onPrefillMentionConsumed?: (requestKey: number) => void;
   /** Receives composer-owned autocomplete state for external list rendering. */
   onDirectoryAutocompleteChange?: (state: DirectoryAutocompleteState | null) => void;
   /** Receives imperative insertion/selection actions for external rows. */
@@ -1125,6 +1127,7 @@ export const PromptInputTextarea = ({
   directoryAutocompleteListVisible = false,
   directoryAutocompleteLimit,
   prefillMentionRequest,
+  onPrefillMentionConsumed,
   onDirectoryAutocompleteChange,
   onDirectoryAutocompleteControllerChange,
   onChange,
@@ -1670,6 +1673,7 @@ export const PromptInputTextarea = ({
       lastMentionPrefillTextRef.current = prefillText;
       publishText(prefillText, editor.view.dom, true);
       editor.commands.focus("end");
+      onPrefillMentionConsumed?.(requestKey);
     });
 
     return () => {
@@ -1682,6 +1686,7 @@ export const PromptInputTextarea = ({
   }, [
     clearPendingAutoTagging,
     editor,
+    onPrefillMentionConsumed,
     prefillMentionRequest,
     publishText,
     resetVisualTraceEditorState,
