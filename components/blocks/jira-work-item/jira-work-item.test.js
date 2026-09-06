@@ -491,7 +491,7 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 
 test("the activity skill picker uses work-item skills and space-managed defaults", () => {
 	const skillPickerSource = readBlockFile("experimental/components/activity-composer-skill-context-pill.tsx");
-	const pickerOptionsSource = readBlockFile("experimental/lib/work-item-picker-options.ts");
+	const pickerOptionsSource = readBlockFile("lib/work-item-picker-options.ts");
 
 	for (const label of [
 		"Summarize work item",
@@ -513,7 +513,7 @@ test("the activity skill picker uses work-item skills and space-managed defaults
 
 test("the activity agent picker uses space-managed defaults", () => {
 	const agentPickerSource = readBlockFile("experimental/components/activity-composer-agent-context-pill.tsx");
-	const pickerOptionsSource = readBlockFile("experimental/lib/work-item-picker-options.ts");
+	const pickerOptionsSource = readBlockFile("lib/work-item-picker-options.ts");
 
 	assert.match(
 		pickerOptionsSource,

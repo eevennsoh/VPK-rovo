@@ -269,20 +269,24 @@ test("Jira issue reserves a stable title action slot and opens the built-in acti
 	assert.doesNotMatch(MORE_MENU_SOURCE, /Lozenge|>New</u);
 });
 
-test("Jira issue can move agent and skill assignment into the More actions menu", () => {
+test("Jira issue exposes separate Work Item agent and skill pickers in the More actions menu", () => {
 	assert.match(SOURCE, /export type JiraIssueGenerativeActionPresentation = "sparkle" \| "more-actions";/u);
 	assert.match(SOURCE, /generativeActionPresentation\?: JiraIssueGenerativeActionPresentation;/u);
 	assert.match(SOURCE, /generativeActionPresentation = "sparkle",/u);
 	assert.match(SOURCE, /const generativeActionMenu = generativeAction && \(generativeActionPresentation === "sparkle" \|\| !showMoreAction\) \?/u);
 	assert.match(SOURCE, /<JiraIssueMoreMenu[\s\S]*generativeAction=\{generativeActionPresentation === "more-actions" \? generativeAction : undefined\}[\s\S]*generativeActionIssue=\{\{ issueKey, summary \}\}/u);
-	assert.match(MORE_MENU_SOURCE, /<JiraIssueAgentAndSkillSubmenu[\s\S]*action=\{generativeAction\}[\s\S]*issue=\{generativeActionIssue\}/u);
-	assert.match(MORE_MENU_SOURCE, /<JiraIssueAgentAndSkillSubmenu[\s\S]*action=\{generativeAction\}[\s\S]*issue=\{generativeActionIssue\}[\s\S]*onRequestClose=\{\(\) => handleOpenChange\(false\)\}[\s\S]*<DropdownMenuSeparator \/>[\s\S]*Move work item/u);
+	assert.match(MORE_MENU_SOURCE, /<JiraIssueAgentAndSkillSubmenus[\s\S]*action=\{generativeAction\}[\s\S]*issue=\{generativeActionIssue\}/u);
+	assert.match(MORE_MENU_SOURCE, /<JiraIssueAgentAndSkillSubmenus[\s\S]*action=\{generativeAction\}[\s\S]*issue=\{generativeActionIssue\}[\s\S]*onRequestClose=\{\(\) => handleOpenChange\(false\)\}[\s\S]*<DropdownMenuSeparator \/>[\s\S]*Move work item/u);
 	assert.match(MORE_MENU_SOURCE, /generativeAction \? null : <DropdownMenuItem[\s\S]*Add agent/u);
-	assert.match(GENERATIVE_SOURCE, /export function JiraIssueAgentAndSkillSubmenu/u);
-	assert.match(GENERATIVE_SOURCE, /<DropdownMenuSubTrigger>Assign agent and use skill<\/DropdownMenuSubTrigger>/u);
-	assert.match(GENERATIVE_SOURCE, /<RovoSparkleMenu[\s\S]*agents=\{agents\}[\s\S]*skills=\{skills\}/u);
-	assert.doesNotMatch(GENERATIVE_SOURCE, /agents\.map|skills\.map/u);
-	assert.match(GENERATIVE_SOURCE, /<DropdownMenuSubContent\s*\n\s*className="[^"]+"\s*\n\s*onClick=\{\(event\) => event\.stopPropagation\(\)\}/u);
+	assert.match(GENERATIVE_SOURCE, /export function JiraIssueAgentAndSkillSubmenus/u);
+	assert.match(GENERATIVE_SOURCE, /<DropdownMenuSubTrigger>Assign agents<\/DropdownMenuSubTrigger>/u);
+	assert.match(GENERATIVE_SOURCE, /<DropdownMenuSubTrigger>Use skills<\/DropdownMenuSubTrigger>/u);
+	assert.doesNotMatch(GENERATIVE_SOURCE, /<DropdownMenuSubTrigger>Assign agent and use skill<\/DropdownMenuSubTrigger>/u);
+	assert.match(GENERATIVE_SOURCE, /<AgentSelector[\s\S]*agents=\{agents\}[\s\S]*pinnedItemsLabel=\{WORK_ITEM_PINNED_ITEMS_LABEL\}[\s\S]*selectionMode="single"/u);
+	assert.match(GENERATIVE_SOURCE, /<SkillSelector[\s\S]*pinnedItemsLabel=\{WORK_ITEM_PINNED_ITEMS_LABEL\}[\s\S]*selectionMode="single"[\s\S]*skills=\{skills\}/u);
+	assert.match(GENERATIVE_SOURCE, /<AgentSelector[\s\S]*searchVariant="palette"[\s\S]*selectionMode="single"/u);
+	assert.match(GENERATIVE_SOURCE, /<SkillSelector[\s\S]*searchVariant="palette"[\s\S]*selectionMode="single"/u);
+	assert.match(GENERATIVE_SOURCE, /className="max-h-none w-\[360px\] overflow-hidden p-0"/u);
 	assert.match(MORE_MENU_SOURCE, /<DropdownMenu open=\{open\} onOpenChange=\{handleOpenChange\}>/u);
 	assert.match(MORE_MENU_SOURCE, /onRequestClose=\{\(\) => handleOpenChange\(false\)\}/u);
 });
