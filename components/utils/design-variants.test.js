@@ -48,6 +48,7 @@ async function loadDesignVariantsHarness(t, { localStorage } = {}) {
 				export {
 					DESIGN_VARIANTS,
 					DESIGN_VARIANTS_STORAGE_KEY,
+					DESIGN_VARIANTS_STORAGE_SCHEMA_VERSION,
 					getDefaultDesignVariants,
 					getDesignVariants,
 					hydrateDesignVariants,
@@ -89,6 +90,7 @@ test("exposes Panel, Simple views, and Simple kanban", async (t) => {
 		],
 	);
 	assert.equal(harness.DESIGN_VARIANTS_STORAGE_KEY, "ui-design-variants");
+	assert.equal(harness.DESIGN_VARIANTS_STORAGE_SCHEMA_VERSION, 2);
 	assert.deepEqual(harness.getDesignVariants(), { panel: false, "simple-views": true, simpleKanban: true });
 	assert.equal(harness.isDesignVariantId("panel"), true);
 	assert.equal(harness.isDesignVariantId("simple-views"), true);
@@ -129,7 +131,7 @@ test("toggling a variant persists it and notifies subscribers exactly once", asy
 	assert.deepEqual(seen, [{ panel: true, "simple-views": true, simpleKanban: true }]);
 	assert.deepEqual(
 		JSON.parse(localStorage.getItem(harness.DESIGN_VARIANTS_STORAGE_KEY)),
-		{ panel: true, "simple-views": true, simpleKanban: true },
+		{ panel: true, "simple-views": true, simpleKanban: true, schemaVersion: 2 },
 	);
 
 	harness.setDesignVariant("panel", false);
@@ -138,7 +140,7 @@ test("toggling a variant persists it and notifies subscribers exactly once", asy
 	assert.equal(seen.length, 2);
 	assert.deepEqual(
 		JSON.parse(localStorage.getItem(harness.DESIGN_VARIANTS_STORAGE_KEY)),
-		{ panel: false, "simple-views": true, simpleKanban: true },
+		{ panel: false, "simple-views": true, simpleKanban: true, schemaVersion: 2 },
 	);
 });
 
@@ -157,7 +159,7 @@ test("no-op writes and no-op hydrations never notify subscribers", async (t) => 
 	assert.equal(notifications, 0);
 	assert.deepEqual(
 		JSON.parse(localStorage.getItem(harness.DESIGN_VARIANTS_STORAGE_KEY)),
-		{ panel: false, "simple-views": true, simpleKanban: true },
+		{ panel: false, "simple-views": true, simpleKanban: true, schemaVersion: 2 },
 	);
 
 	harness.setDesignVariant("panel", true);
@@ -212,15 +214,32 @@ test("normalises unknown keys and non-boolean values in stored payloads", async 
 	localStorage.setItem("ui-design-variants", JSON.stringify({ retired: true }));
 	assert.deepEqual(harness.readStoredDesignVariants(), { panel: false, "simple-views": true, simpleKanban: true });
 
-	// An explicit off must beat the on default, or turning Panel / Simple views /
-	// Simple kanban off could not survive a reload.
+	// An explicit off must beat the on default, or turning Panel / Simple views
+	// off could not survive a reload.
 	localStorage.setItem("ui-design-variants", JSON.stringify({ panel: false }));
 	assert.deepEqual(harness.readStoredDesignVariants(), { panel: false, "simple-views": true, simpleKanban: true });
 
 	localStorage.setItem("ui-design-variants", JSON.stringify({ "simple-views": false }));
 	assert.deepEqual(harness.readStoredDesignVariants(), { panel: false, "simple-views": false, simpleKanban: true });
 
+	// Schema 1 (or missing) Simple kanban values are incidental: any toggle
+	// persisted the whole map while the default was still off, so they must
+	// not block the on-default rollout.
 	localStorage.setItem("ui-design-variants", JSON.stringify({ simpleKanban: false }));
+	assert.deepEqual(harness.readStoredDesignVariants(), { panel: false, "simple-views": true, simpleKanban: true });
+
+	localStorage.setItem(
+		"ui-design-variants",
+		JSON.stringify({ panel: true, "simple-views": true, simpleKanban: false }),
+	);
+	assert.deepEqual(harness.readStoredDesignVariants(), { panel: true, "simple-views": true, simpleKanban: true });
+
+	// A current-schema explicit off must beat the on default, or turning Simple
+	// kanban off could not survive a reload.
+	localStorage.setItem(
+		"ui-design-variants",
+		JSON.stringify({ simpleKanban: false, schemaVersion: 2 }),
+	);
 	assert.deepEqual(harness.readStoredDesignVariants(), { panel: false, "simple-views": true, simpleKanban: false });
 
 	// An explicit on must beat the off default, or turning Panel on could not
@@ -258,7 +277,7 @@ test("toggling Simple kanban preserves Panel and Simple views", async (t) => {
 	assert.deepEqual(harness.getDesignVariants(), { panel: false, "simple-views": true, simpleKanban: false });
 	assert.deepEqual(
 		JSON.parse(localStorage.getItem(harness.DESIGN_VARIANTS_STORAGE_KEY)),
-		{ panel: false, "simple-views": true, simpleKanban: false },
+		{ panel: false, "simple-views": true, simpleKanban: false, schemaVersion: 2 },
 	);
 
 	harness.setDesignVariant("simpleKanban", true);

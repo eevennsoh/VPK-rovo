@@ -28,6 +28,17 @@
 
 export const DESIGN_VARIANTS_STORAGE_KEY = "ui-design-variants";
 
+/**
+ * Written next to the variant booleans. Missing or older payloads are treated
+ * as schema 1: Simple kanban was still an off default then, so a stored
+ * `false` is incidental (the whole map is persisted on any toggle) and must
+ * not block the on-default rollout.
+ */
+export const DESIGN_VARIANTS_STORAGE_SCHEMA_VERSION = 2;
+
+/** Schema that first shipped Simple kanban as an on default. */
+const SIMPLE_KANBAN_ON_DEFAULT_SCHEMA_VERSION = 2;
+
 export const DESIGN_VARIANTS = [
 	{ id: "panel", label: "Panel" },
 	{ id: "simple-views", label: "Simple views" },
@@ -92,12 +103,18 @@ export function getDefaultDesignVariants(): DesignVariantState {
 	return DEFAULT_DESIGN_VARIANTS;
 }
 
+function storedSchemaVersion(record: Record<string, unknown>): number {
+	const value = record.schemaVersion;
+	return typeof value === "number" && Number.isInteger(value) && value >= 1 ? value : 1;
+}
+
 /**
  * Read the persisted map, normalising it against the known variant ids so a
  * partial, stale, or hostile payload can never produce a state object with a
  * missing key. Unknown keys are dropped. Present non-boolean values coerce to
- * off; absent keys keep the store default. Returns `null` only when there is
- * nothing usable to adopt.
+ * off; absent keys keep the store default. Schema 1 (or missing) Simple kanban
+ * values are ignored so an incidental stored `false` cannot block the on
+ * default. Returns `null` only when there is nothing usable to adopt.
  */
 export function readStoredDesignVariants(): DesignVariantState | null {
 	try {
@@ -112,11 +129,16 @@ export function readStoredDesignVariants(): DesignVariantState | null {
 		}
 
 		const record = parsed as Record<string, unknown>;
+		const schemaVersion = storedSchemaVersion(record);
 		const next: Record<DesignVariantId, boolean> = { ...DEFAULT_DESIGN_VARIANTS };
 		for (const variant of DESIGN_VARIANTS) {
-			if (Object.hasOwn(record, variant.id)) {
-				next[variant.id] = record[variant.id] === true;
+			if (!Object.hasOwn(record, variant.id)) {
+				continue;
 			}
+			if (variant.id === "simpleKanban" && schemaVersion < SIMPLE_KANBAN_ON_DEFAULT_SCHEMA_VERSION) {
+				continue;
+			}
+			next[variant.id] = record[variant.id] === true;
 		}
 		return Object.freeze(next);
 	} catch {
@@ -144,7 +166,10 @@ export function setDesignVariant(id: DesignVariantId, enabled: boolean) {
 	const next: DesignVariantState = Object.freeze({ ...currentDesignVariants, [id]: enabled });
 
 	try {
-		globalThis.localStorage?.setItem(DESIGN_VARIANTS_STORAGE_KEY, JSON.stringify(next));
+		globalThis.localStorage?.setItem(
+			DESIGN_VARIANTS_STORAGE_KEY,
+			JSON.stringify({ ...next, schemaVersion: DESIGN_VARIANTS_STORAGE_SCHEMA_VERSION }),
+		);
 	} catch {
 		// Non-fatal: the selection still applies for this session.
 	}
