@@ -722,10 +722,7 @@ test("the route pins the shared Agent Session column beside Jira statuses", () =
 		/const \[agentSessionColumnCollapsed, setAgentSessionColumnCollapsed\] = useState\(defaultAgentSessionColumnCollapsed\);/u,
 	);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /defaultCollapsed: agentSessionColumnCollapsed,/u);
-	assert.match(
-		EXPERIMENTAL_PAGE_SOURCE,
-		/onCollapsedChange: handleAgentSessionColumnCollapsedChange,/u,
-	);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCollapsedChange: handleAgentSessionColumnCollapsedChange,/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /capturedItemIds: capturedLooseWorkIds,/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /toPulseSessionHandlers/u);
 
