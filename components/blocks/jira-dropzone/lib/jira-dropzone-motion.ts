@@ -10,6 +10,15 @@ export const JIRA_DROPZONE_WELL_ENTER = {
 export const JIRA_DROPZONE_WELL_ENTER_REDUCED = { duration: 0 } as const;
 export const JIRA_DROPZONE_WELL_ENTER_SCALE = 0.95;
 
+/**
+ * Shared flight recipe for create-well and card-link drops.
+ *
+ * `durationMs` is duration-slower so the arc can be tracked. `staggerMs` is
+ * duration-normal so each chip is visibly queued before the next leaves —
+ * 70ms read as one pile on short board drops (pointer already on the well or
+ * chin). `launchSpreadPx` is space.600 so ~80px mention chips fan into a pack
+ * instead of overlapping at 14px.
+ */
 export const JIRA_DROPZONE_FULL_MOTION_PROFILE: FlightProfile = {
 	arcPeak: 0.5,
 	arcStrength: 0.42,
@@ -21,9 +30,9 @@ export const JIRA_DROPZONE_FULL_MOTION_PROFILE: FlightProfile = {
 		impulseYPx: 10,
 		stiffness: 500,
 	},
-	launchSpreadPx: 14,
+	launchSpreadPx: 48,
 	settleHoldMs: 250,
-	staggerMs: 70,
+	staggerMs: 150,
 	travel: "arc",
 };
 
