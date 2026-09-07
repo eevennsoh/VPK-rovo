@@ -104,9 +104,14 @@ export function BoardCardInsertionLine({
 				data-board-insertion-marker={position}
 				style={{
 					boxShadow: token("elevation.shadow.overlay"),
-					left: "anchor(left)",
+					// This node mounts in the same commit as its anchor. Until the
+					// browser resolves that anchor, bare anchor() insets compute to
+					// `auto` and paint the fixed node at its clipped static position.
+					// Keep that unresolved frame offscreen and non-painting instead.
+					left: "anchor(left, -100vw)",
 					positionAnchor: anchorName,
-					top: "anchor(center)",
+					positionVisibility: "anchors-visible",
+					top: "anchor(center, -100vh)",
 				}}
 			>
 				{/*
