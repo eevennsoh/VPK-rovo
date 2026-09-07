@@ -119,7 +119,7 @@ test("large uncaptured-work rows keep timestamps after a truncating linked PR wh
 	assert.match(CARD_SOURCE, /pullRequestNumber/u);
 	assert.match(CARD_SOURCE, /pullRequestTitle/u);
 	assert.match(CARD_SOURCE, /pullRequestUrl/u);
-	assert.match(CARD_SOURCE, /AGENT_LIST_PR_STATUS_META/u);
+	assert.match(CARD_SOURCE, /AgentListPrStatusIcon/u);
 	assert.match(CARD_SOURCE, /<MetadataPathLink[\s\S]*className="min-w-0 flex-1 truncate text-text-subtle"[\s\S]*href=\{pullRequestUrl\}[\s\S]*\{pullRequestLabel\}[\s\S]*<\/MetadataPathLink>/u);
 	assert.match(CARD_SOURCE, /pullRequestLabel \? \([\s\S]*<\/MetadataPathLink>[\s\S]*<span aria-hidden="true" className="shrink-0 text-text-subtlest">\s*·\s*<\/span>[\s\S]*\) : null\}[\s\S]*<AgentListTime item=\{item\} \/>/u);
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*metadata=\{<AgentSessionPullRequestMetadata item=\{item\} \/>\}/u);

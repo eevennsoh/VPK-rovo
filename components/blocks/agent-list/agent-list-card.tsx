@@ -104,7 +104,7 @@ const NEEDS_INPUT_STATUS_LABEL = "Needs input";
  * Pull-request status → icon + color, matching the Jira queue card
  * (`components/blocks/product-sidebar/variants/jira.tsx`).
  */
-export const AGENT_LIST_PR_STATUS_META: Record<
+const PR_STATUS_META: Record<
 	AgentListPrStatus,
 	{ Icon: typeof PullRequestIcon; label: string; colorClass: string }
 > = {
@@ -124,6 +124,23 @@ export const AGENT_LIST_PR_STATUS_META: Record<
 		colorClass: "text-icon-danger",
 	},
 };
+
+export function AgentListPrStatusIcon({
+	status,
+}: Readonly<{ status: AgentListPrStatus }>) {
+	const { Icon: PrIcon, colorClass, label } = PR_STATUS_META[status];
+
+	return (
+		<span
+			aria-label={label}
+			className={cn("grid size-4 shrink-0 place-items-center", colorClass)}
+			role="img"
+			title={label}
+		>
+			<PrIcon color="currentColor" label="" size="small" />
+		</span>
+	);
+}
 
 function MetadataDot() {
 	return (
@@ -374,7 +391,7 @@ export function AgentListActivityHeader({
 	timeFallback?: string;
 }>) {
 	const stateMeta = STATE_META[item.state];
-	const prMeta = item.prStatus ? AGENT_LIST_PR_STATUS_META[item.prStatus] : null;
+	const prMeta = item.prStatus ? PR_STATUS_META[item.prStatus] : null;
 	const PrIcon = prMeta?.Icon ?? null;
 	const title = leadWithAgentName ? item.agent.name : getSessionTitle(item);
 	const needsInput = item.state === "needs-input";
@@ -653,7 +670,7 @@ export function AgentListRow({
 	showHoverActionsWhenSelected?: boolean;
 }>) {
 	const stateMeta = STATE_META[item.state];
-	const prMeta = item.prStatus ? AGENT_LIST_PR_STATUS_META[item.prStatus] : null;
+	const prMeta = item.prStatus ? PR_STATUS_META[item.prStatus] : null;
 	const PrIcon = prMeta?.Icon ?? null;
 	// A session row is one line tall by contract, so its title truncates. A row
 	// with body copy is already a paragraph — truncating its title there hides the

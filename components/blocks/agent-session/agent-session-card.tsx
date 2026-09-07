@@ -7,8 +7,8 @@ import ArchiveBoxIcon from "@atlaskit/icon/core/archive-box";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import LibraryIcon from "@atlaskit/icon/core/library";
 import {
-	AGENT_LIST_PR_STATUS_META,
 	AgentListIdentity,
+	AgentListPrStatusIcon,
 	AgentListRow,
 	AgentListTime,
 	type AgentListRowHoverActions,
@@ -55,25 +55,11 @@ function AgentSessionPullRequestMetadata({ item }: Readonly<{ item: AgentSession
 			? `#${pullRequestNumber}`
 			: `#${pullRequestNumber}: ${pullRequestTitle}`;
 
-	const prMeta = pullRequestLabel
-		? AGENT_LIST_PR_STATUS_META[item.prStatus ?? "created"]
-		: undefined;
-	const PrIcon = prMeta?.Icon;
-
 	return (
 		<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
 			{pullRequestLabel ? (
 				<>
-					{PrIcon && prMeta ? (
-						<span
-							aria-label={prMeta.label}
-							className={cn("grid size-4 shrink-0 place-items-center", prMeta.colorClass)}
-							role="img"
-							title={prMeta.label}
-						>
-							<PrIcon color="currentColor" label="" size="small" />
-						</span>
-					) : null}
+					<AgentListPrStatusIcon status={item.prStatus ?? "created"} />
 					{pullRequestUrl ? (
 						<MetadataPathLink
 							className="min-w-0 flex-1 truncate text-text-subtle"
