@@ -207,9 +207,10 @@ test("unchecking Untracked exits board-adjacent sessions through the issue prese
 		/import \{\s*getJiraIssuePresenceMotion,\s*JIRA_ISSUE_MOTION_STYLE,\s*\} from "@\/components\/blocks\/jira-issue\/lib"/u,
 	);
 	assert.match(CARD_SOURCE, /const proximityMotion = getJiraIssuePresenceMotion\(shouldReduceMotion\)/u);
+	assert.match(CARD_SOURCE, /sessionTransferAfter=\{detachedAgentSessions\.length > 0/u);
 	assert.match(
 		withoutComments(CARD_SOURCE),
-		/<AnimatePresence>\s*\{detachedAgentSessions\.length > 0 \? \(\s*<motion\.div[\s\S]*exit=\{proximityMotion\.exit\}/u,
+		/<AnimatePresence>\s*<motion\.div[\s\S]*exit=\{proximityMotion\.exit\}/u,
 	);
 	assert.doesNotMatch(BOARD_SOURCE, /data-agent-session-column[\s\S]*showUntracked/u);
 });
