@@ -193,6 +193,24 @@ test("insertWorkItemCard appends to the named status column", () => {
 	assert.equal(next.find((column) => column.title === "To do")?.count, 2);
 });
 
+test("toKanbanCardFromDraft keeps a selected subagent avatar kind", () => {
+	const card = toKanbanCardFromDraft({
+		issueKey: "PAY-201",
+		summary: "Agent-owned work",
+		assignee: {
+			id: "review-agent",
+			name: "Codex",
+			avatarShape: "hexagon",
+			avatarUnassignedKind: "agent",
+		},
+	});
+
+	assert.equal(card.assignee?.id, "review-agent");
+	assert.equal(card.avatarSrc, undefined);
+	assert.equal(card.avatarShape, "hexagon");
+	assert.equal(card.avatarUnassignedKind, "agent");
+});
+
 test("applyAssignedAgentIdsToColumns archives and assigns against board columns", () => {
 	const archived = applyAssignedAgentIdsToColumns(COLUMNS, "PAY-101", ["review-agent"], PAY_BOARD_CATALOG);
 	const archivedCard = archived

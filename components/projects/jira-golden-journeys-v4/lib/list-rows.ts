@@ -453,8 +453,11 @@ export function toKanbanCardFromDraft(input: Readonly<{
 
 	return {
 		assignee,
+		avatarShape: input.assignee?.avatarShape,
 		avatarSrc: assignee?.avatarSrc || undefined,
-		avatarUnassignedKind: assignee ? undefined : "person",
+		avatarUnassignedKind: input.assignee
+			? input.assignee.avatarUnassignedKind
+			: "person",
 		code: input.issueKey,
 		dueDate: input.dueDate,
 		issueType: input.issueType ?? "task",
