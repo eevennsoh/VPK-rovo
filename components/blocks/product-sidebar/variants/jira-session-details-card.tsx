@@ -136,6 +136,9 @@ function DetailsInvokerMeta({ session }: Readonly<{ session: JiraSidebarSessionI
 }
 
 function DetailsAgentTag({ session }: Readonly<{ session: JiraSidebarSessionItem }>) {
+	const agentBannerSrc = getAgentProfileBannerSrc(session.agentAvatarSrc);
+	preload(agentBannerSrc, { as: "image" });
+
 	return (
 		<div className="flex min-w-0 items-center">
 			<span className="sr-only">Agent</span>
@@ -257,6 +260,31 @@ function DetailsChecksRow({ session }: Readonly<{ session: JiraSidebarSessionIte
 	);
 }
 
+/** Shared middle layer used by both details and untracked-work flyouts. */
+export function JiraSessionDetailsBody({
+	hideAgentRow = false,
+	hideSessionRow = false,
+	session,
+}: Readonly<{
+	hideAgentRow?: boolean;
+	hideSessionRow?: boolean;
+	session: JiraSidebarSessionItem;
+}>) {
+	return (
+		<>
+			{hideSessionRow ? null : (
+				<DetailsMetaRow icon={detailsHostIcon(session.host)} label="Session">
+					{session.host === "cloud" ? "Cloud" : "Local"}
+				</DetailsMetaRow>
+			)}
+			{hideAgentRow ? null : <DetailsAgentTag session={session} />}
+			<DetailsPullRequestRow session={session} />
+			<DetailsBranchRow session={session} />
+			<DetailsChecksRow session={session} />
+		</>
+	);
+}
+
 /**
  * Compact session hover card: title, invoker meta, Local/Cloud, agent Tag,
  * PR icon + title + diffs, and checks when present. Branch appears only when
@@ -267,12 +295,11 @@ export function JiraSessionDetailsCard({
 	session,
 }: Readonly<{ session: JiraSidebarSessionItem }>) {
 	const titleId = useId();
-	const agentBannerSrc = getAgentProfileBannerSrc(session.agentAvatarSrc);
-	preload(agentBannerSrc, { as: "image" });
 
 	return (
 		<JiraSessionFlyoutCard
-			footerClassName="gap-1"
+			body={<JiraSessionDetailsBody session={session} />}
+			bodyClassName="gap-1"
 			meta={<DetailsInvokerMeta session={session} />}
 			title={session.title}
 			titleId={titleId}
@@ -281,14 +308,6 @@ export function JiraSessionDetailsCard({
 					<Lozenge className="shrink-0" variant="information">Needs input</Lozenge>
 				) : null
 			}
-		>
-			<DetailsMetaRow icon={detailsHostIcon(session.host)} label="Session">
-				{session.host === "cloud" ? "Cloud" : "Local"}
-			</DetailsMetaRow>
-			<DetailsAgentTag session={session} />
-			<DetailsPullRequestRow session={session} />
-			<DetailsBranchRow session={session} />
-			<DetailsChecksRow session={session} />
-		</JiraSessionFlyoutCard>
+		/>
 	);
 }
