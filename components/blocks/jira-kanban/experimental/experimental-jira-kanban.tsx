@@ -653,6 +653,9 @@ function ExperimentalJiraKanbanView({
 	const chrome = resolveKanbanColumnChrome(columnChrome);
 	const scrollportPaddingTop = withKanbanDropRingClipGutter(paddingTop, chrome).paddingTop;
 	const untrackedPaddingTop = withKanbanDropContentGutter(paddingTop, chrome).paddingTop;
+	const columnRowPaddingInlineStart = chrome.dropContentPadding
+		? `calc(${token("space.300")} - 2px - ${chrome.dropContentPadding.paddingInline})`
+		: token("space.300");
 	const cardLayoutGroupId = useId();
 	const shouldReduceMotion = useReducedMotion();
 	const shouldAnimateCardMoves = animateCardMoves && !shouldReduceMotion;
@@ -867,7 +870,8 @@ function ExperimentalJiraKanbanView({
 				>
 				<LayoutGroup id={cardLayoutGroupId}>
 						<div
-							className="flex min-h-full w-max min-w-full items-stretch ps-6"
+							className="flex min-h-full w-max min-w-full items-stretch"
+							style={{ paddingInlineStart: columnRowPaddingInlineStart }}
 						>
 						<ExclusiveCreateWellProximityProvider>
 						<div className="flex min-h-full flex-1 items-stretch gap-2">

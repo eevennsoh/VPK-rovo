@@ -274,8 +274,10 @@ export function AgentSessionColumn({
 	newItemIds,
 	notchShape = "circle",
 	onCollapsedChange,
+	onGutterIntroComplete,
 	onSelectedItemIdChange,
 	onToggleVisibility,
+	playGutterIntro = false,
 	selectedItemId: selectedItemIdProp,
 	title = "Untracked work",
 	triage,
@@ -620,9 +622,11 @@ export function AgentSessionColumn({
 			onArrivalComplete={handleArrivalComplete}
 			onCreateWorkItem={sessionProps.onCreateWorkItem}
 			onItemHover={sessionProps.onItemHover}
+			onIntroComplete={onGutterIntroComplete}
 			onLinkWorkItem={sessionProps.onLinkWorkItem}
 			onSubtasks={sessionProps.onSubtasks}
 			onView={handleNotchView}
+			playIntro={isGutterCollapsed ? playGutterIntro : false}
 			sessionDrag={sessionProps.sessionDrag}
 		/>
 	) : (
