@@ -37,11 +37,9 @@ export function isPulseLooseWorkOnViewerMachine(item: PulseLooseWork): boolean {
 }
 
 /**
- * Row identity for a Pulse coding agent. Claude / Codex / Cursor use third-party
- * brand marks already in the logo catalog; Rovo uses the VPK product mark.
- * Directory profiles are not imported here so this mapper stays a test-harness
- * leaf — ids and marks match `getRovoAgentProfile("rovo-dev")` and the existing
- * Claude / Codex / Cursor brand objects elsewhere in the repo.
+ * Row identity for a Pulse coding agent. Claude, Codex, Copilot, and Cursor use
+ * third-party brand marks already in the logo catalog. Directory profiles are
+ * not imported here so this mapper stays a test-harness leaf.
  */
 export function toPulseSessionAgent(agentId: PulseCodingAgentId): AgentListAgent {
 	switch (agentId) {
@@ -59,19 +57,19 @@ export function toPulseSessionAgent(agentId: PulseCodingAgentId): AgentListAgent
 				kind: "agent",
 				name: "Codex",
 			};
+		case "copilot":
+			return {
+				brandName: "github-copilot",
+				id: "github-copilot",
+				kind: "agent",
+				name: "GitHub Copilot",
+			};
 		case "cursor":
 			return {
 				brandName: "cursor",
 				id: "cursor",
 				kind: "agent",
 				name: "Cursor",
-			};
-		case "rovo":
-			return {
-				id: "rovo-dev",
-				kind: "agent",
-				name: "Rovo",
-				vpkLogo: "rovo",
 			};
 		default: {
 			const _exhaustive: never = agentId;

@@ -175,11 +175,11 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 	),
 	session(
 		"lw-spike-webhook-session",
-		"Challenge webhook gap notes still live in a local Rovo session",
+		"Challenge webhook gap notes still live in a local GitHub Copilot session",
 		"PAY-107",
 		"host local · worktree .worktrees/pay-107-webhook · payments-api still has no handler",
 		["maya", "review-agent", "venn"],
-		{ agentId: "rovo", machineName: "MacBook-Pro.local", shortTitle: "Challenge webhook gap", timeLabel: "2d ago" },
+		{ agentId: "copilot", machineName: "MacBook-Pro.local", shortTitle: "Challenge webhook gap", timeLabel: "2d ago" },
 	),
 	pullRequest(
 		"lw-spike-retry-pr",
@@ -286,11 +286,11 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 	),
 	session(
 		"lw-night-suite-session",
-		"Overnight contract-suite session never captured on PAY-113",
+		"Overnight contract-suite Cursor session never captured on PAY-113",
 		"PAY-113",
 		"host local · worktree .worktrees/pay-113-contract-suite · 214 assertions, no work item",
 		["test-agent", "venn"],
-		{ agentId: "rovo", machineName: "MBP-M4-MAX", shortTitle: "3-D Secure suite run", timeLabel: "2hr ago" },
+		{ agentId: "cursor", machineName: "MBP-M4-MAX", shortTitle: "3-D Secure suite run", timeLabel: "2hr ago" },
 	),
 	session(
 		"lw-night-killswitch-session",
@@ -350,11 +350,11 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 	),
 	session(
 		"lw-wallet-ship-session",
-		"Ship-note rewrite after the wallet cut, still a local Rovo session",
+		"Ship-note rewrite after the wallet cut, still a local Claude session",
 		"PAY-130",
 		"host local · worktree .worktrees/pay-130-ship-note · customer-facing line is not on the item",
 		["venn", "priya"],
-		{ agentId: "rovo", machineName: "MacBookPro.lan", shortTitle: "Ship note after the cut", timeLabel: "8m ago" },
+		{ agentId: "claude", machineName: "MacBookPro.lan", shortTitle: "Ship note after the cut", timeLabel: "8m ago" },
 	),
 	pullRequest(
 		"lw-wallet-ship-pr",
@@ -462,11 +462,11 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 	),
 	session(
 		"lw-ship-approval-session",
-		"One-percent targeting rule, staged in a local Rovo session",
+		"One-percent targeting rule, staged in a local Codex session",
 		"PAY-121",
 		"host local · worktree .worktrees/pay-121-targeting · the agent will not arm it",
 		["release-agent", "jordan"],
-		{ agentId: "rovo", machineName: "Jordan’s MacBook Pro", shortTitle: "One-percent targeting", timeLabel: "Just now" },
+		{ agentId: "codex", machineName: "Jordan’s MacBook Pro", shortTitle: "One-percent targeting", timeLabel: "Just now" },
 	),
 	pullRequest(
 		"lw-ship-targeting-pr",

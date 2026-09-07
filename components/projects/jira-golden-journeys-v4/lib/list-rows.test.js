@@ -24,21 +24,21 @@ const PAY_BOARD_CATALOG = [
 	},
 	{
 		id: "review-agent",
-		name: "Review Agent",
+		name: "Codex",
 		byline: "Reviews every pull request",
-		avatarSrc: "/avatar-agent/teamwork-agents/decision-director.svg",
+		brandName: "openai-codex",
 	},
 	{
 		id: "test-agent",
-		name: "Test Author Agent",
+		name: "Cursor",
 		byline: "Writes and repairs tests",
-		avatarSrc: "/avatar-agent/service-agents/rca-agent.svg",
+		brandName: "cursor",
 	},
 	{
 		id: "release-agent",
-		name: "Release Captain Agent",
+		name: "GitHub Copilot",
 		byline: "Owns the flag and rollout",
-		avatarSrc: "/avatar-agent/strategy-agents/strategic-insight.svg",
+		brandName: "github-copilot",
 	},
 ];
 
@@ -72,7 +72,7 @@ const COLUMNS = [
 				priority: "minor",
 				tags: [],
 				agentActivities: [{ id: "claude", name: "Claude Code", state: "working" }],
-				agentDoneRuns: [{ agentName: "Review Agent", state: "done" }],
+			agentDoneRuns: [{ agentName: "Codex", state: "done" }],
 			},
 		],
 	},
@@ -97,9 +97,9 @@ test("createListRows flattens board columns and maps agent sessions", () => {
 		},
 		{
 			id: "review-agent",
-			name: "Review Agent",
+			name: "Codex",
 			byline: "Reviews every pull request",
-			avatarSrc: "/avatar-agent/teamwork-agents/decision-director.svg",
+			brandName: "openai-codex",
 			statusKind: "finished",
 			statusLabel: "Finished",
 		},
@@ -191,7 +191,7 @@ test("applyAssignedAgentIdsToColumns archives and assigns against board columns"
 		?.cards.find((card) => card.code === "PAY-101");
 
 	assert.equal(archivedCard?.agentActivities, undefined);
-	assert.deepEqual(archivedCard?.agentDoneRuns?.map((run) => run.agentName), ["Review Agent"]);
+	assert.deepEqual(archivedCard?.agentDoneRuns?.map((run) => run.agentName), ["Codex"]);
 
 	const assigned = applyAssignedAgentIdsToColumns(COLUMNS, "PAY-118", ["test-agent"], PAY_BOARD_CATALOG);
 	const assignedCard = assigned
@@ -199,7 +199,7 @@ test("applyAssignedAgentIdsToColumns archives and assigns against board columns"
 		?.cards.find((card) => card.code === "PAY-118");
 
 	assert.equal(assignedCard?.agentActivities?.[0]?.id, "PAY-118:test-agent");
-	assert.equal(assignedCard?.agentActivities?.[0]?.name, "Test Author Agent");
+	assert.equal(assignedCard?.agentActivities?.[0]?.name, "Cursor");
 	assert.equal(assignedCard?.agentActivities?.[0]?.state, "working");
 	assert.equal(assignedCard?.agentActivities?.[0]?.startupSequence, "jira-work-item-start");
 	assert.equal(typeof assignedCard?.agentActivities?.[0]?.startedAtMs, "number");
@@ -214,7 +214,7 @@ test("applyAssignedAgentIdsToColumns archives and assigns against board columns"
 		.find((column) => column.title === "In progress")
 		?.cards.find((card) => card.code === "PAY-101");
 	assert.equal(unchangedCard?.agentActivities?.[0]?.name, "Claude Code");
-	assert.equal(unchangedCard?.agentDoneRuns?.[0]?.agentName, "Review Agent");
+	assert.equal(unchangedCard?.agentDoneRuns?.[0]?.agentName, "Codex");
 });
 
 test("starting an agent session progresses only To do and Done work items", () => {
@@ -227,7 +227,7 @@ test("starting an agent session progresses only To do and Done work items", () =
 	const activity = {
 		id: "test-agent",
 		label: "Reading the Jira context",
-		name: "Test Author Agent",
+		name: "Cursor",
 		state: "working",
 	};
 
