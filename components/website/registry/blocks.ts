@@ -415,6 +415,9 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	"jira-issue": dynamic(() => import("../demos/blocks/jira-issue-demo"), {
 		ssr: false,
 	}),
+	"jira-linking": dynamic(() => import("../demos/blocks/jira-linking-demo"), {
+		ssr: false,
+	}),
 	"jira-list": dynamic(() => import("../demos/blocks/jira-list-demo"), {
 		ssr: false,
 	}),
@@ -444,4 +447,12 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 
 export const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
 	...BLOCK_VARIANT_DEMO_ENTRIES,
+	"jira-linking-drag-to-link": dynamic(
+		() => import("../demos/blocks/jira-linking-demo").then((mod) => ({ default: mod.JiraLinkingDragToLinkExample })),
+		{ ssr: false },
+	),
+	"jira-linking-colour-melt": dynamic(
+		() => import("../demos/blocks/jira-linking-demo").then((mod) => ({ default: mod.JiraLinkingColourMeltExample })),
+		{ ssr: false },
+	),
 };

@@ -1,14 +1,14 @@
 /**
- * Board-side geometry and link acknowledgement for the work item linking effect.
+ * Board-side geometry and link acknowledgement for the work item Jira linking.
  *
  * The reusable field, its timing and its gating live in
- * `@/components/visual/linking-effect`. What stays here is the only part that is
+ * `@/components/blocks/jira-linking`. What stays here is the only part that is
  * genuinely Jira's: turning a card into the shape the field grows into, and
  * deciding which drops count as the attach-to-card path this effect covers.
  * Pure, so the contract can be tested without a DOM.
  */
 
-import type { LinkingEffectTarget } from "@/components/visual/linking-effect";
+import type { JiraLinkingTarget } from "@/components/blocks/jira-linking";
 
 import type { JiraIssueAgentLinkFlash } from "@/components/blocks/jira-issue";
 import type {
@@ -35,7 +35,7 @@ export const SESSION_FUSION_SHELL_RADIUS_PX = 10;
 function toTargetFromBounds(
 	bounds: Readonly<BoardAgentSessionDropBounds>,
 	radius: number,
-): LinkingEffectTarget {
+): JiraLinkingTarget {
 	return {
 		anchor: {
 			x: (bounds.left + bounds.right) / 2,
@@ -56,7 +56,7 @@ function toTargetFromBounds(
  */
 export function toSessionFusionTarget(
 	proximity: BoardAgentSessionAttachProximity | null,
-): LinkingEffectTarget | null {
+): JiraLinkingTarget | null {
 	if (!proximity) {
 		return null;
 	}

@@ -5,17 +5,17 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { parseColor } from "@/components/ui-custom/lib/shimmer-colors";
 
 import {
-	resolveLinkingEffectFrame,
-	type LinkingEffectFrame,
-	type LinkingEffectMember,
+	resolveJiraLinkingFrame,
+	type JiraLinkingFrame,
+	type JiraLinkingMember,
 } from "./field";
 import {
-	advanceLinkingEffectVelocity,
-	lerpLinkingEffectTarget,
-	resolveLinkingEffectFuseNearness,
-	resolveLinkingEffectFuseProgress,
-	type LinkingEffectTarget,
-	type LinkingEffectVector,
+	advanceJiraLinkingVelocity,
+	lerpJiraLinkingTarget,
+	resolveJiraLinkingFuseNearness,
+	resolveJiraLinkingFuseProgress,
+	type JiraLinkingTarget,
+	type JiraLinkingVector,
 } from "./lifecycle";
 
 /**
@@ -26,7 +26,7 @@ import {
  * the card underneath made the goo invisible on exactly the surface it matters
  * on. Resolved from a theme variable so dark mode gets its own grey.
  */
-export const LINKING_EFFECT_DEFAULT_SURFACE_VARIABLE = "--color-bg-accent-gray-subtlest";
+export const JIRA_LINKING_DEFAULT_SURFACE_VARIABLE = "--color-bg-accent-gray-subtlest";
 
 /** Light-theme `--ds-background-accent-gray-subtlest`; only reached when a variable cannot be parsed. */
 const FALLBACK_SURFACE_TINT: readonly [number, number, number] = [
@@ -49,17 +49,17 @@ function resolveSurfaceTint(variable: string): readonly [number, number, number]
 	return [parsed.r / 255, parsed.g / 255, parsed.b / 255];
 }
 
-interface LinkingEffectSourceRect {
+interface JiraLinkingSourceRect {
 	height: number;
 	left: number;
 	top: number;
 	width: number;
 }
 
-export interface LinkingEffectRenderState {
-	frame: LinkingEffectFrame | null;
+export interface JiraLinkingRenderState {
+	frame: JiraLinkingFrame | null;
 	/** Echoed alongside the frame so the shader can aim its chromatic split. */
-	velocity: LinkingEffectVector;
+	velocity: JiraLinkingVector;
 }
 
 /**
@@ -69,10 +69,10 @@ export interface LinkingEffectRenderState {
  * in the same commit as the drop: the fuse has to keep animating from geometry
  * that no longer has a DOM node behind it.
  */
-export interface LinkingEffectRelease {
+export interface JiraLinkingRelease {
 	/** Monotonic, so a second drop on the same target restarts the fuse. */
 	id: number;
-	target: LinkingEffectTarget | null;
+	target: JiraLinkingTarget | null;
 	/**
 	 * Shape the fuse starts from, when the landing shape differs from the one the
 	 * approach grew into.
@@ -81,26 +81,26 @@ export interface LinkingEffectRelease {
 	 * subject in one row of it. Snapshotting the approach shape here lets the two
 	 * be interpolated instead of swapped, which would pop on the release frame.
 	 */
-	fromTarget?: LinkingEffectTarget | null;
+	fromTarget?: JiraLinkingTarget | null;
 }
 
-export interface LinkingEffectFrameSource {
-	members: readonly LinkingEffectMember[];
+export interface JiraLinkingFrameSource {
+	members: readonly JiraLinkingMember[];
 	nearness: number;
 	onFuseSettled?: () => void;
-	release: LinkingEffectRelease | null;
+	release: JiraLinkingRelease | null;
 	/** Measured every frame; the source element may move, resize, or vanish. */
 	sourceSelector: string;
 	surfaceVariable?: string;
-	target: LinkingEffectTarget | null;
+	target: JiraLinkingTarget | null;
 }
 
-const IDLE_RENDER_STATE: LinkingEffectRenderState = {
+const IDLE_RENDER_STATE: JiraLinkingRenderState = {
 	frame: null,
 	velocity: { x: 0, y: 0 },
 };
 
-function measureSourceRect(selector: string): LinkingEffectSourceRect | null {
+function measureSourceRect(selector: string): JiraLinkingSourceRect | null {
 	const node = document.querySelector<HTMLElement>(selector);
 	if (!node) {
 		return null;
@@ -123,10 +123,10 @@ function measureSourceRect(selector: string): LinkingEffectSourceRect | null {
  * dependencies — they change on every pointer move and the loop must not be torn
  * down and rebuilt each frame.
  */
-export function useLinkingEffectFrame(
-	source: Readonly<LinkingEffectFrameSource>,
-): LinkingEffectRenderState {
-	const [render, setRender] = useState<LinkingEffectRenderState>(IDLE_RENDER_STATE);
+export function useJiraLinkingFrame(
+	source: Readonly<JiraLinkingFrameSource>,
+): JiraLinkingRenderState {
+	const [render, setRender] = useState<JiraLinkingRenderState>(IDLE_RENDER_STATE);
 	const liveRef = useRef(source);
 	// Changes at most once per gesture, so it is safe as an effect dependency
 	// where the rest of `source` is not.
@@ -139,16 +139,16 @@ export function useLinkingEffectFrame(
 	useEffect(() => {
 		let handle = 0;
 		let cancelled = false;
-		let sourceRect: LinkingEffectSourceRect | null = null;
-		let previousCenter: LinkingEffectVector | null = null;
-		let velocity: LinkingEffectVector = { x: 0, y: 0 };
+		let sourceRect: JiraLinkingSourceRect | null = null;
+		let previousCenter: JiraLinkingVector | null = null;
+		let velocity: JiraLinkingVector = { x: 0, y: 0 };
 		let lastNearness = 0;
 		let fuseStartedAt = 0;
 		let fusingReleaseId: number | null = null;
 		let settledReleaseId: number | null = null;
 		// Resolved once per mount, which is once per gesture.
 		const surfaceTint = resolveSurfaceTint(
-			liveRef.current.surfaceVariable ?? LINKING_EFFECT_DEFAULT_SURFACE_VARIABLE,
+			liveRef.current.surfaceVariable ?? JIRA_LINKING_DEFAULT_SURFACE_VARIABLE,
 		);
 
 		const tick = (now: number) => {
@@ -167,7 +167,7 @@ export function useLinkingEffectFrame(
 					y: sourceRect.top + sourceRect.height / 2,
 				}
 				: null;
-			velocity = advanceLinkingEffectVelocity(
+			velocity = advanceJiraLinkingVelocity(
 				velocity,
 				center && previousCenter
 					? { x: center.x - previousCenter.x, y: center.y - previousCenter.y }
@@ -185,13 +185,13 @@ export function useLinkingEffectFrame(
 			}
 			const fuseProgress = releaseId === null
 				? 0
-				: resolveLinkingEffectFuseProgress(now - fuseStartedAt);
+				: resolveJiraLinkingFuseProgress(now - fuseStartedAt);
 			// The release snapshot wins once it exists: by then the approach's own
 			// target has already been cleared by the host. When that snapshot names
 			// a different shape to start from, the fuse morphs between the two
 			// rather than swapping them on its first frame.
 			const target = live.release
-				? lerpLinkingEffectTarget(
+				? lerpJiraLinkingTarget(
 					live.release.fromTarget,
 					live.release.target,
 					fuseProgress,
@@ -199,7 +199,7 @@ export function useLinkingEffectFrame(
 				: live.target;
 
 			setRender({
-				frame: resolveLinkingEffectFrame({
+				frame: resolveJiraLinkingFrame({
 					sourceRect: sourceRect,
 					sourceTint: surfaceTint,
 					targetAnchor: target?.anchor ?? null,
@@ -211,7 +211,7 @@ export function useLinkingEffectFrame(
 					members: live.members,
 					nearness: releaseId === null
 						? lastNearness
-						: resolveLinkingEffectFuseNearness(lastNearness, fuseProgress),
+						: resolveJiraLinkingFuseNearness(lastNearness, fuseProgress),
 					pointer: center ?? { x: 0, y: 0 },
 					velocity,
 				}),

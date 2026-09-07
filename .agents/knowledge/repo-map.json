@@ -5445,7 +5445,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 111,
+				"entryCount": 112,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5740,6 +5740,12 @@
 						"slug": "jira-kanban",
 						"name": "Jira Kanban",
 						"importPath": "@/components/blocks/jira-kanban"
+					},
+					{
+						"category": "blocks",
+						"slug": "jira-linking",
+						"name": "Jira Linking",
+						"importPath": "@/components/blocks/jira-linking"
 					},
 					{
 						"category": "blocks",
@@ -7449,7 +7455,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 104,
+				"entryCount": 103,
 				"entries": [
 					{
 						"category": "visual",
@@ -7624,12 +7630,6 @@
 						"slug": "ink-wash",
 						"name": "Ink Wash",
 						"importPath": "@/components/visual/ink-wash"
-					},
-					{
-						"category": "visual",
-						"slug": "linking-effect",
-						"name": "Linking Effect",
-						"importPath": "@/components/visual/linking-effect"
 					},
 					{
 						"category": "visual",

@@ -11,8 +11,8 @@
  */
 
 import {
-	LINKING_EFFECT_MAX_BALLS,
-	type LinkingEffectFrame,
+	JIRA_LINKING_MAX_BALLS,
+	type JiraLinkingFrame,
 	// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 } from "./field.ts";
 
@@ -20,15 +20,15 @@ import {
  * Edge length of one avatar cell in the atlas, in device px.
  *
  * The atlas is a SINGLE HORIZONTAL ROW of `atlasCells` square cells, so its
- * intrinsic size is `atlasCells * LINKING_EFFECT_ATLAS_CELL_PX` wide by
- * `LINKING_EFFECT_ATLAS_CELL_PX` tall. Producers must match this layout.
+ * intrinsic size is `atlasCells * JIRA_LINKING_ATLAS_CELL_PX` wide by
+ * `JIRA_LINKING_ATLAS_CELL_PX` tall. Producers must match this layout.
  */
-export const LINKING_EFFECT_ATLAS_CELL_PX = 128;
+export const JIRA_LINKING_ATLAS_CELL_PX = 128;
 
 /** Sentinel written into `atlas` for slots that must sample `tint` instead. */
-export const LINKING_EFFECT_NO_ATLAS_INDEX = -1;
+export const JIRA_LINKING_NO_ATLAS_INDEX = -1;
 
-export interface LinkingEffectUniformBuffers {
+export interface JiraLinkingUniformBuffers {
 	/** float[8] — atlas cell index, or -1 to use `tint`. */
 	atlas: Float32Array;
 	/** vec2[8] — ball centre in region-local CSS px. */
@@ -45,15 +45,15 @@ export interface LinkingEffectUniformBuffers {
 	uvRect: Float32Array;
 }
 
-export function createLinkingEffectUniformBuffers(): LinkingEffectUniformBuffers {
+export function createJiraLinkingUniformBuffers(): JiraLinkingUniformBuffers {
 	return {
-		atlas: new Float32Array(LINKING_EFFECT_MAX_BALLS),
-		center: new Float32Array(LINKING_EFFECT_MAX_BALLS * 2),
-		half: new Float32Array(LINKING_EFFECT_MAX_BALLS * 2),
-		radius: new Float32Array(LINKING_EFFECT_MAX_BALLS),
-		shape: new Float32Array(LINKING_EFFECT_MAX_BALLS),
-		tint: new Float32Array(LINKING_EFFECT_MAX_BALLS * 3),
-		uvRect: new Float32Array(LINKING_EFFECT_MAX_BALLS * 4),
+		atlas: new Float32Array(JIRA_LINKING_MAX_BALLS),
+		center: new Float32Array(JIRA_LINKING_MAX_BALLS * 2),
+		half: new Float32Array(JIRA_LINKING_MAX_BALLS * 2),
+		radius: new Float32Array(JIRA_LINKING_MAX_BALLS),
+		shape: new Float32Array(JIRA_LINKING_MAX_BALLS),
+		tint: new Float32Array(JIRA_LINKING_MAX_BALLS * 3),
+		uvRect: new Float32Array(JIRA_LINKING_MAX_BALLS * 4),
 	};
 }
 
@@ -69,9 +69,9 @@ function clamp01(value: number): number {
  * filtering cannot bleed a neighbouring agent's face across the seam.
  *
  * Returns a full-texture rect for out-of-range input; callers should already
- * have written `LINKING_EFFECT_NO_ATLAS_INDEX` in that case.
+ * have written `JIRA_LINKING_NO_ATLAS_INDEX` in that case.
  */
-export function resolveLinkingEffectAtlasUvRect(
+export function resolveJiraLinkingAtlasUvRect(
 	atlasIndex: number,
 	atlasCells: number,
 ): readonly [number, number, number, number] {
@@ -82,8 +82,8 @@ export function resolveLinkingEffectAtlasUvRect(
 	const cells = Math.floor(atlasCells);
 	const index = Math.min(Math.floor(atlasIndex), cells - 1);
 	const cellWidth = 1 / cells;
-	const insetU = 0.5 / (cells * LINKING_EFFECT_ATLAS_CELL_PX);
-	const insetV = 0.5 / LINKING_EFFECT_ATLAS_CELL_PX;
+	const insetU = 0.5 / (cells * JIRA_LINKING_ATLAS_CELL_PX);
+	const insetV = 0.5 / JIRA_LINKING_ATLAS_CELL_PX;
 
 	return [
 		index * cellWidth + insetU,
@@ -97,15 +97,15 @@ export function resolveLinkingEffectAtlasUvRect(
  * Axis the chromatic split smears along, in client px (magnitude is ignored —
  * the shader normalises it).
  *
- * `LinkingEffectFrame` folds velocity into `dispersion` and does not echo the
+ * `JiraLinkingFrame` folds velocity into `dispersion` and does not echo the
  * vector, so the renderer needs the caller's velocity to know which way the
  * field is travelling. When none is supplied, the chip-to-dock axis is the
  * honest stand-in: it is the direction the whole field is collapsing along.
  * Returns `[0, 0]` when neither is available, which the shader reads as no
  * split at all.
  */
-export function resolveLinkingEffectSplitAxis(
-	frame: Readonly<LinkingEffectFrame>,
+export function resolveJiraLinkingSplitAxis(
+	frame: Readonly<JiraLinkingFrame>,
 	velocity?: Readonly<{ x: number; y: number }> | null,
 ): readonly [number, number] {
 	const x = Number.isFinite(velocity?.x) ? Number(velocity?.x) : 0;
@@ -129,23 +129,23 @@ export function resolveLinkingEffectSplitAxis(
  * Slots past the live count are zeroed and flagged `-1` so a shorter frame can
  * never inherit the previous frame's geometry through the shared buffers.
  */
-export function packLinkingEffectUniforms(
-	buffers: LinkingEffectUniformBuffers,
-	frame: Readonly<LinkingEffectFrame>,
+export function packJiraLinkingUniforms(
+	buffers: JiraLinkingUniformBuffers,
+	frame: Readonly<JiraLinkingFrame>,
 	atlasCells: number,
 ): number {
 	const { left, top } = frame.region;
 	const cells = Number.isFinite(atlasCells) ? Math.max(0, Math.floor(atlasCells)) : 0;
-	const count = Math.min(frame.balls.length, LINKING_EFFECT_MAX_BALLS);
+	const count = Math.min(frame.balls.length, JIRA_LINKING_MAX_BALLS);
 
-	for (let index = 0; index < LINKING_EFFECT_MAX_BALLS; index += 1) {
+	for (let index = 0; index < JIRA_LINKING_MAX_BALLS; index += 1) {
 		const ball = index < count ? frame.balls[index] : undefined;
 		const pair = index * 2;
 		const triple = index * 3;
 		const quad = index * 4;
 
 		if (!ball) {
-			buffers.atlas[index] = LINKING_EFFECT_NO_ATLAS_INDEX;
+			buffers.atlas[index] = JIRA_LINKING_NO_ATLAS_INDEX;
 			buffers.center[pair] = 0;
 			buffers.center[pair + 1] = 0;
 			buffers.half[pair] = 0;
@@ -163,14 +163,14 @@ export function packLinkingEffectUniforms(
 		}
 
 		const isTextured = cells > 0 && ball.atlasIndex >= 0 && ball.atlasIndex < cells;
-		const [u, v, uvWidth, uvHeight] = resolveLinkingEffectAtlasUvRect(
-			isTextured ? ball.atlasIndex : LINKING_EFFECT_NO_ATLAS_INDEX,
+		const [u, v, uvWidth, uvHeight] = resolveJiraLinkingAtlasUvRect(
+			isTextured ? ball.atlasIndex : JIRA_LINKING_NO_ATLAS_INDEX,
 			cells,
 		);
 
 		buffers.atlas[index] = isTextured
 			? Math.floor(ball.atlasIndex)
-			: LINKING_EFFECT_NO_ATLAS_INDEX;
+			: JIRA_LINKING_NO_ATLAS_INDEX;
 		buffers.center[pair] = ball.cx - left;
 		buffers.center[pair + 1] = ball.cy - top;
 		buffers.half[pair] = Math.max(0, ball.halfWidth);

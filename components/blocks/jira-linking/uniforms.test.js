@@ -2,15 +2,15 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
-	createLinkingEffectUniformBuffers,
-	packLinkingEffectUniforms,
-	resolveLinkingEffectAtlasUvRect,
-	resolveLinkingEffectSplitAxis,
-	LINKING_EFFECT_ATLAS_CELL_PX,
-	LINKING_EFFECT_NO_ATLAS_INDEX,
+	createJiraLinkingUniformBuffers,
+	packJiraLinkingUniforms,
+	resolveJiraLinkingAtlasUvRect,
+	resolveJiraLinkingSplitAxis,
+	JIRA_LINKING_ATLAS_CELL_PX,
+	JIRA_LINKING_NO_ATLAS_INDEX,
 } = require("./uniforms.ts");
 
-const { LINKING_EFFECT_MAX_BALLS } = require("./field.ts");
+const { JIRA_LINKING_MAX_BALLS } = require("./field.ts");
 
 // Region origin is deliberately negative so the client -> region translation
 // cannot pass by accident on a zero origin.
@@ -42,8 +42,8 @@ function frame(balls) {
 }
 
 test("ball centres are translated from client space into region-local px", () => {
-	const buffers = createLinkingEffectUniformBuffers();
-	const count = packLinkingEffectUniforms(
+	const buffers = createJiraLinkingUniformBuffers();
+	const count = packJiraLinkingUniforms(
 		buffers,
 		frame([ball({ cx: 80, cy: 60 })]),
 		0,
@@ -55,8 +55,8 @@ test("ball centres are translated from client space into region-local px", () =>
 });
 
 test("pill balls flag shape 1 and circles flag shape 0", () => {
-	const buffers = createLinkingEffectUniformBuffers();
-	packLinkingEffectUniforms(
+	const buffers = createJiraLinkingUniformBuffers();
+	packJiraLinkingUniforms(
 		buffers,
 		frame([
 			ball({ halfHeight: 16, halfWidth: 80, radius: 12, shape: "pill" }),
@@ -72,27 +72,27 @@ test("pill balls flag shape 1 and circles flag shape 0", () => {
 });
 
 test("an atlas index only survives when the atlas actually has that many cells", () => {
-	const buffers = createLinkingEffectUniformBuffers();
-	packLinkingEffectUniforms(
+	const buffers = createJiraLinkingUniformBuffers();
+	packJiraLinkingUniforms(
 		buffers,
 		frame([ball({ atlasIndex: 0 }), ball({ atlasIndex: 3 })]),
 		2,
 	);
 
 	assert.equal(buffers.atlas[0], 0);
-	assert.equal(buffers.atlas[1], LINKING_EFFECT_NO_ATLAS_INDEX);
+	assert.equal(buffers.atlas[1], JIRA_LINKING_NO_ATLAS_INDEX);
 });
 
 test("no atlas cells means every ball falls back to its tint", () => {
-	const buffers = createLinkingEffectUniformBuffers();
-	packLinkingEffectUniforms(buffers, frame([ball({ atlasIndex: 0 })]), 0);
+	const buffers = createJiraLinkingUniformBuffers();
+	packJiraLinkingUniforms(buffers, frame([ball({ atlasIndex: 0 })]), 0);
 
-	assert.equal(buffers.atlas[0], LINKING_EFFECT_NO_ATLAS_INDEX);
+	assert.equal(buffers.atlas[0], JIRA_LINKING_NO_ATLAS_INDEX);
 });
 
 test("tints are clamped into 0..1 so the shader can never receive out-of-gamut input", () => {
-	const buffers = createLinkingEffectUniformBuffers();
-	packLinkingEffectUniforms(
+	const buffers = createJiraLinkingUniformBuffers();
+	packJiraLinkingUniforms(
 		buffers,
 		frame([ball({ tint: [-1, 0.5, 4] })]),
 		0,
@@ -102,54 +102,54 @@ test("tints are clamped into 0..1 so the shader can never receive out-of-gamut i
 });
 
 test("slots past the live ball count are zeroed and flagged untextured", () => {
-	const buffers = createLinkingEffectUniformBuffers();
-	packLinkingEffectUniforms(
+	const buffers = createJiraLinkingUniformBuffers();
+	packJiraLinkingUniforms(
 		buffers,
 		frame([ball({ atlasIndex: 0, cx: 900, cy: 900 }), ball({ cx: 800, cy: 800 })]),
 		4,
 	);
-	const count = packLinkingEffectUniforms(buffers, frame([ball({ cx: 0, cy: 0 })]), 4);
+	const count = packJiraLinkingUniforms(buffers, frame([ball({ cx: 0, cy: 0 })]), 4);
 
 	assert.equal(count, 1);
 	assert.equal(buffers.center[2], 0);
 	assert.equal(buffers.center[3], 0);
 	assert.equal(buffers.radius[1], 0);
-	assert.equal(buffers.atlas[1], LINKING_EFFECT_NO_ATLAS_INDEX);
+	assert.equal(buffers.atlas[1], JIRA_LINKING_NO_ATLAS_INDEX);
 });
 
 test("packing never writes past the shader's const loop bound", () => {
-	const buffers = createLinkingEffectUniformBuffers();
-	const overflowing = Array.from({ length: LINKING_EFFECT_MAX_BALLS + 4 }, () => ball());
-	const count = packLinkingEffectUniforms(buffers, frame(overflowing), 0);
+	const buffers = createJiraLinkingUniformBuffers();
+	const overflowing = Array.from({ length: JIRA_LINKING_MAX_BALLS + 4 }, () => ball());
+	const count = packJiraLinkingUniforms(buffers, frame(overflowing), 0);
 
-	assert.equal(count, LINKING_EFFECT_MAX_BALLS);
-	assert.equal(buffers.atlas.length, LINKING_EFFECT_MAX_BALLS);
-	assert.equal(buffers.uvRect.length, LINKING_EFFECT_MAX_BALLS * 4);
+	assert.equal(count, JIRA_LINKING_MAX_BALLS);
+	assert.equal(buffers.atlas.length, JIRA_LINKING_MAX_BALLS);
+	assert.equal(buffers.uvRect.length, JIRA_LINKING_MAX_BALLS * 4);
 });
 
 test("atlas cells tile the strip horizontally with a half-texel inset", () => {
-	const inset = 0.5 / (4 * LINKING_EFFECT_ATLAS_CELL_PX);
-	const [u, v, width] = resolveLinkingEffectAtlasUvRect(2, 4);
+	const inset = 0.5 / (4 * JIRA_LINKING_ATLAS_CELL_PX);
+	const [u, v, width] = resolveJiraLinkingAtlasUvRect(2, 4);
 
 	assert.equal(u, 0.5 + inset);
 	assert.equal(width, 0.25 - inset * 2);
-	assert.equal(v, 0.5 / LINKING_EFFECT_ATLAS_CELL_PX);
+	assert.equal(v, 0.5 / JIRA_LINKING_ATLAS_CELL_PX);
 });
 
 test("an untextured or out-of-range cell resolves to the whole texture", () => {
-	assert.deepEqual(resolveLinkingEffectAtlasUvRect(-1, 4), [0, 0, 1, 1]);
-	assert.deepEqual(resolveLinkingEffectAtlasUvRect(0, 0), [0, 0, 1, 1]);
+	assert.deepEqual(resolveJiraLinkingAtlasUvRect(-1, 4), [0, 0, 1, 1]);
+	assert.deepEqual(resolveJiraLinkingAtlasUvRect(0, 0), [0, 0, 1, 1]);
 });
 
 test("an index past the last cell clamps onto the last cell", () => {
 	assert.deepEqual(
-		resolveLinkingEffectAtlasUvRect(9, 3),
-		resolveLinkingEffectAtlasUvRect(2, 3),
+		resolveJiraLinkingAtlasUvRect(9, 3),
+		resolveJiraLinkingAtlasUvRect(2, 3),
 	);
 });
 
 test("a supplied velocity is the split axis verbatim", () => {
-	const axis = resolveLinkingEffectSplitAxis(
+	const axis = resolveJiraLinkingSplitAxis(
 		frame([ball({ cx: 0, cy: 0 }), ball({ cx: 300, cy: 0 })]),
 		{ x: -4, y: 7 },
 	);
@@ -158,7 +158,7 @@ test("a supplied velocity is the split axis verbatim", () => {
 });
 
 test("no velocity falls back to the chip-to-dock axis", () => {
-	const axis = resolveLinkingEffectSplitAxis(
+	const axis = resolveJiraLinkingSplitAxis(
 		frame([ball({ cx: 100, cy: 50 }), ball({ cx: 340, cy: 210 })]),
 		null,
 	);
@@ -168,14 +168,14 @@ test("no velocity falls back to the chip-to-dock axis", () => {
 
 test("a still chip with nowhere to dock produces no split axis at all", () => {
 	assert.deepEqual(
-		resolveLinkingEffectSplitAxis(frame([ball({ cx: 12, cy: 12 })]), { x: 0, y: 0 }),
+		resolveJiraLinkingSplitAxis(frame([ball({ cx: 12, cy: 12 })]), { x: 0, y: 0 }),
 		[0, 0],
 	);
 });
 
 test("a non-finite velocity component cannot poison the split axis", () => {
 	assert.deepEqual(
-		resolveLinkingEffectSplitAxis(frame([ball()]), { x: Number.NaN, y: Number.NaN }),
+		resolveJiraLinkingSplitAxis(frame([ball()]), { x: Number.NaN, y: Number.NaN }),
 		[0, 0],
 	);
 });

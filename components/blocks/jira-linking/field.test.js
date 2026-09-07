@@ -2,9 +2,9 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
-	resolveLinkingEffectFrame,
-	LINKING_EFFECT_MAX_TINT_SUBJECTS,
-	LINKING_EFFECT_REGION_PADDING_PX,
+	resolveJiraLinkingFrame,
+	JIRA_LINKING_MAX_TINT_SUBJECTS,
+	JIRA_LINKING_REGION_PADDING_PX,
 } = require("./field.ts");
 
 // 160x32 chip centred at (480, 316); its pill corner radius caps at 12.
@@ -21,7 +21,7 @@ function member(id, atlasIndex = -1, tint = [0.2, 0.4, 0.6]) {
 }
 
 function frame(overrides = {}) {
-	return resolveLinkingEffectFrame({
+	return resolveJiraLinkingFrame({
 		sourceRect: SOURCE_RECT,
 		sourceTint: SOURCE_TINT,
 		targetAnchor: TARGET_ANCHOR,
@@ -154,7 +154,7 @@ test("only the first two subjects tint the field, however many are linked", () =
 
 	// chip + 2 avatars + target, no matter how big the cohort is.
 	const docked = frame({ members: crowd });
-	assert.equal(docked.balls.length, LINKING_EFFECT_MAX_TINT_SUBJECTS + 2);
+	assert.equal(docked.balls.length, JIRA_LINKING_MAX_TINT_SUBJECTS + 2);
 	assert.deepEqual(
 		docked.balls.filter((ball) => ball.shape === "circle").map((ball) => ball.atlasIndex),
 		[0, 1],
@@ -164,7 +164,7 @@ test("only the first two subjects tint the field, however many are linked", () =
 	const undocked = frame({ targetAnchor: null, members: crowd });
 	assert.equal(
 		undocked.balls.filter((ball) => ball.shape === "circle").length,
-		LINKING_EFFECT_MAX_TINT_SUBJECTS,
+		JIRA_LINKING_MAX_TINT_SUBJECTS,
 	);
 
 	// A pair is exactly the cap, and a lone subject is untouched by it.
@@ -180,7 +180,7 @@ test("only the first two subjects tint the field, however many are linked", () =
 });
 
 test("the region is the padded bounding box of every ball extent", () => {
-	assert.equal(LINKING_EFFECT_REGION_PADDING_PX, 120);
+	assert.equal(JIRA_LINKING_REGION_PADDING_PX, 120);
 
 	const chipOnly = frame({ targetAnchor: null, members: [] });
 	assert.deepEqual(chipOnly.region, {
@@ -311,7 +311,7 @@ test("the frame names its landing shape so the renderer can fade the interior", 
 	const crowd = Array.from({ length: 12 }, (_, index) => member(`agent-${index}`));
 	const packed = frame({ fuseProgress: 0, members: crowd, nearness: 1 });
 	assert.equal(packed.targetIndex, packed.balls.length - 1);
-	assert.equal(packed.balls.length, LINKING_EFFECT_MAX_TINT_SUBJECTS + 2);
+	assert.equal(packed.balls.length, JIRA_LINKING_MAX_TINT_SUBJECTS + 2);
 });
 
 test("the target blob takes the caller's shape, and stays a chin-sized pill without one", () => {

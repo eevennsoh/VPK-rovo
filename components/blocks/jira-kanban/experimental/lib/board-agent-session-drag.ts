@@ -12,11 +12,11 @@ import {
 	// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 } from "./create-work-item-exclusive-proximity.ts";
 import {
-	resolveLinkingEffectNearness,
+	resolveJiraLinkingNearness,
 	// Leaf module, not the package barrel: the barrel pulls in the React
 	// component and this file is loaded raw by a node:test suite.
 	// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
-} from "../../../../visual/linking-effect/lifecycle.ts";
+} from "../../../jira-linking/lifecycle.ts";
 
 export interface BoardAgentSessionDragPointer {
 	x: number;
@@ -281,7 +281,7 @@ export interface BoardAgentSessionAttachProximity {
 }
 
 function attachNearnessFromDistance(distance: number): number {
-	return resolveLinkingEffectNearness(distance, SESSION_ATTACH_PROXIMITY_RANGE_PX);
+	return resolveJiraLinkingNearness(distance, SESSION_ATTACH_PROXIMITY_RANGE_PX);
 }
 
 /**

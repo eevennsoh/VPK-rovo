@@ -1,5 +1,5 @@
 /**
- * Timing, gating and easing rules for the linking effect.
+ * Timing, gating and easing rules for the Jira linking.
  *
  * `field.ts` owns what one frame of the metaball field looks like; this module
  * owns the surrounding lifecycle — when the effect is allowed to exist at all,
@@ -12,22 +12,22 @@
  */
 
 /** Fuse ramp length, in ms. The `duration-slower` token. */
-export const LINKING_EFFECT_FUSE_DURATION_MS = 400;
+export const JIRA_LINKING_FUSE_DURATION_MS = 400;
 
 /**
  * Smallest value an armed fuse ever reports.
  *
- * `resolveLinkingEffectFrame` returns null when nearness and fuseProgress are
+ * `resolveJiraLinkingFrame` returns null when nearness and fuseProgress are
  * both 0, so an exact 0 on the frame the fuse arms would blink the field out
  * for one frame between the approach and the fuse.
  */
-export const LINKING_EFFECT_FUSE_MIN_PROGRESS = 0.001;
+export const JIRA_LINKING_FUSE_MIN_PROGRESS = 0.001;
 
 /** Per-frame catch-up applied to the source's smoothed velocity. */
-export const LINKING_EFFECT_VELOCITY_SMOOTHING = 0.35;
+export const JIRA_LINKING_VELOCITY_SMOOTHING = 0.35;
 
 /** Distance at which a target starts reacting to an approaching source. */
-export const LINKING_EFFECT_DEFAULT_RANGE_PX = 120;
+export const JIRA_LINKING_DEFAULT_RANGE_PX = 120;
 
 /**
  * Turn a source-to-target distance into the 0-1 `nearness` the field consumes.
@@ -35,9 +35,9 @@ export const LINKING_EFFECT_DEFAULT_RANGE_PX = 120;
  * Smoothstep, not linear: a linear ramp makes the field creep in from too far
  * away and reads as mush rather than as the target noticing the source.
  */
-export function resolveLinkingEffectNearness(
+export function resolveJiraLinkingNearness(
 	distance: number,
-	rangePx: number = LINKING_EFFECT_DEFAULT_RANGE_PX,
+	rangePx: number = JIRA_LINKING_DEFAULT_RANGE_PX,
 ): number {
 	if (!Number.isFinite(distance) || rangePx <= 0) {
 		return 0;
@@ -46,7 +46,7 @@ export function resolveLinkingEffectNearness(
 	return ramp * ramp * (3 - 2 * ramp);
 }
 
-export interface LinkingEffectVector {
+export interface JiraLinkingVector {
 	x: number;
 	y: number;
 }
@@ -58,7 +58,7 @@ export interface LinkingEffectVector {
  * target's actual shape: a host linking into a whole card wants the goo to
  * become that card, not a pill floating inside it.
  */
-export interface LinkingEffectTarget {
+export interface JiraLinkingTarget {
 	anchor: { x: number; y: number };
 	width: number;
 	height: number;
@@ -66,7 +66,7 @@ export interface LinkingEffectTarget {
 	radius?: number;
 }
 
-export interface LinkingEffectGate {
+export interface JiraLinkingGate {
 	hasRelease: boolean;
 	nearness: number;
 	shouldReduceMotion: boolean | null;
@@ -86,7 +86,7 @@ function clamp01(value: number): number {
  * decoration with no informational content, so the honest reduced-motion
  * treatment is no field, no RAF loop, and no WebGL context.
  */
-export function isLinkingEffectActive(gate: Readonly<LinkingEffectGate>): boolean {
+export function isJiraLinkingActive(gate: Readonly<JiraLinkingGate>): boolean {
 	if (gate.shouldReduceMotion) {
 		return false;
 	}
@@ -97,12 +97,12 @@ export function isLinkingEffectActive(gate: Readonly<LinkingEffectGate>): boolea
  * Fuse ramp from the ms elapsed since release. Only called while the fuse is
  * armed, so it never reports a clean 0 — see the constant's note.
  */
-export function resolveLinkingEffectFuseProgress(elapsedMs: number): number {
+export function resolveJiraLinkingFuseProgress(elapsedMs: number): number {
 	if (!Number.isFinite(elapsedMs) || elapsedMs <= 0) {
-		return LINKING_EFFECT_FUSE_MIN_PROGRESS;
+		return JIRA_LINKING_FUSE_MIN_PROGRESS;
 	}
 	return Math.min(
-		Math.max(elapsedMs / LINKING_EFFECT_FUSE_DURATION_MS, LINKING_EFFECT_FUSE_MIN_PROGRESS),
+		Math.max(elapsedMs / JIRA_LINKING_FUSE_DURATION_MS, JIRA_LINKING_FUSE_MIN_PROGRESS),
 		1,
 	);
 }
@@ -116,7 +116,7 @@ export function resolveLinkingEffectFuseProgress(elapsedMs: number): number {
  * by the end is what lets the field's own alpha collapse term win instead of
  * being pinned open by `max(nearness, …)`.
  */
-export function resolveLinkingEffectFuseNearness(
+export function resolveJiraLinkingFuseNearness(
 	lastNearness: number,
 	fuseProgress: number,
 ): number {
@@ -124,11 +124,11 @@ export function resolveLinkingEffectFuseNearness(
 }
 
 /** Exponential catch-up so a single jittery frame cannot spike the dispersion. */
-export function advanceLinkingEffectVelocity(
-	previous: Readonly<LinkingEffectVector>,
-	sample: Readonly<LinkingEffectVector>,
-	smoothing: number = LINKING_EFFECT_VELOCITY_SMOOTHING,
-): LinkingEffectVector {
+export function advanceJiraLinkingVelocity(
+	previous: Readonly<JiraLinkingVector>,
+	sample: Readonly<JiraLinkingVector>,
+	smoothing: number = JIRA_LINKING_VELOCITY_SMOOTHING,
+): JiraLinkingVector {
 	const amount = clamp01(smoothing);
 	return {
 		x: previous.x + (sample.x - previous.x) * amount,
@@ -157,11 +157,11 @@ function easeInOut(t: number): number {
  *
  * `from` absent means no morph: the fuse simply lands on `to`.
  */
-export function lerpLinkingEffectTarget(
-	from: LinkingEffectTarget | null | undefined,
-	to: LinkingEffectTarget | null,
+export function lerpJiraLinkingTarget(
+	from: JiraLinkingTarget | null | undefined,
+	to: JiraLinkingTarget | null,
 	progress: number,
-): LinkingEffectTarget | null {
+): JiraLinkingTarget | null {
 	if (!to) {
 		return from ?? null;
 	}

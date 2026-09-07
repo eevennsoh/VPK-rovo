@@ -4,27 +4,27 @@ import { useReducedMotion } from "motion/react";
 import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
 
-import { isLinkingEffectActive, type LinkingEffectTarget } from "./lifecycle";
+import { isJiraLinkingActive, type JiraLinkingTarget } from "./lifecycle";
 import {
-	useLinkingEffectAtlas,
-	type LinkingEffectIdentity,
-} from "./use-linking-effect-atlas";
+	useJiraLinkingAtlas,
+	type JiraLinkingIdentity,
+} from "./use-jira-linking-atlas";
 import {
-	useLinkingEffectFrame,
-	type LinkingEffectRelease,
-} from "./use-linking-effect-frame";
+	useJiraLinkingFrame,
+	type JiraLinkingRelease,
+} from "./use-jira-linking-frame";
 
 // Keeps the GLSL out of the host's initial bundle; it only loads once a subject
 // actually approaches a target.
-const LinkingEffectCanvas = dynamic(
-	() => import("./linking-effect-canvas").then((module) => module.LinkingEffectCanvas),
+const JiraLinkingCanvas = dynamic(
+	() => import("./jira-linking-canvas").then((module) => module.JiraLinkingCanvas),
 	{ ssr: false },
 );
 
 /** Default portal stacking order: below a typical drag layer, above the page. */
 const DEFAULT_Z_INDEX = 290;
 
-export interface LinkingEffectProps {
+export interface JiraLinkingProps {
 	/**
 	 * CSS selector for the travelling element, re-measured every frame. It is a
 	 * selector rather than a ref because the element is usually a portal the host
@@ -36,7 +36,7 @@ export interface LinkingEffectProps {
 	 */
 	sourceSelector: string;
 	/** Where the source is being pulled, or null when nothing is targeted. */
-	target: LinkingEffectTarget | null;
+	target: JiraLinkingTarget | null;
 	/** 0-1 closeness of source to target. Drives the neck width and field alpha. */
 	nearness: number;
 	/**
@@ -44,9 +44,9 @@ export interface LinkingEffectProps {
 	 * gesture — it is re-read every frame and the texture atlas is rebuilt when
 	 * the array identity changes.
 	 */
-	identities: readonly LinkingEffectIdentity[] | null;
+	identities: readonly JiraLinkingIdentity[] | null;
 	/** Set on release to run the fuse. Bump `id` to restart it. */
-	release: LinkingEffectRelease | null;
+	release: JiraLinkingRelease | null;
 	/** Called once the fuse has fully collapsed, so the host can clear its state. */
 	onFuseSettled?: () => void;
 	/** Theme variable both blobs are tinted from. */
@@ -63,9 +63,9 @@ export interface LinkingEffectProps {
  * this ever paints. That also makes reduced motion a clean unmount rather than a
  * degraded animation.
  */
-export function LinkingEffect(props: Readonly<LinkingEffectProps>) {
+export function JiraLinking(props: Readonly<JiraLinkingProps>) {
 	const shouldReduceMotion = useReducedMotion();
-	const active = isLinkingEffectActive({
+	const active = isJiraLinkingActive({
 		hasRelease: props.release !== null,
 		nearness: props.nearness,
 		shouldReduceMotion,
@@ -73,10 +73,10 @@ export function LinkingEffect(props: Readonly<LinkingEffectProps>) {
 
 	// Unmounted rather than hidden: no RAF loop, no WebGL context, no lazy chunk,
 	// and no atlas work for a user who opted out of motion.
-	return active ? <LinkingEffectField {...props} /> : null;
+	return active ? <JiraLinkingField {...props} /> : null;
 }
 
-function LinkingEffectField({
+function JiraLinkingField({
 	identities,
 	nearness,
 	onFuseSettled,
@@ -85,9 +85,9 @@ function LinkingEffectField({
 	surfaceVariable,
 	target,
 	zIndex = DEFAULT_Z_INDEX,
-}: Readonly<LinkingEffectProps>) {
-	const atlas = useLinkingEffectAtlas(identities);
-	const { frame, velocity } = useLinkingEffectFrame({
+}: Readonly<JiraLinkingProps>) {
+	const atlas = useJiraLinkingAtlas(identities);
+	const { frame, velocity } = useJiraLinkingFrame({
 		members: atlas.members,
 		nearness,
 		onFuseSettled,
@@ -108,10 +108,10 @@ function LinkingEffectField({
 		<div
 			aria-hidden="true"
 			className="pointer-events-none fixed inset-0"
-			data-slot="linking-effect"
+			data-slot="jira-linking"
 			style={{ zIndex }}
 		>
-			<LinkingEffectCanvas
+			<JiraLinkingCanvas
 				atlas={atlas.atlas}
 				atlasCells={atlas.atlasCells}
 				frame={frame}

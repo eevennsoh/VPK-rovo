@@ -103,6 +103,7 @@ import { AGENT_LIST_DETAIL } from "./blocks/agent-list";
 import { JIRA_ACTIVITY_DETAIL } from "./blocks/jira-activity";
 import { JIRA_INSIGHTS_DETAIL } from "./blocks/jira-insights";
 import { JIRA_ISSUE_DETAIL } from "./blocks/jira-issue";
+import { JIRA_LINKING_DETAIL } from "./blocks/jira-linking";
 import { JIRA_LIST_DETAIL } from "./blocks/jira-list";
 import { JIRA_KANBAN_DETAIL } from "./blocks/jira-kanban";
 import { JIRA_DROPZONE_DETAIL } from "./blocks/jira-dropzone";
@@ -216,6 +217,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"jira-activity": JIRA_ACTIVITY_DETAIL,
 	"jira-insights": JIRA_INSIGHTS_DETAIL,
 	"jira-issue": JIRA_ISSUE_DETAIL,
+	"jira-linking": JIRA_LINKING_DETAIL,
 	"jira-list": JIRA_LIST_DETAIL,
 	"jira-kanban": JIRA_KANBAN_DETAIL,
 	"jira-dropzone": JIRA_DROPZONE_DETAIL,
