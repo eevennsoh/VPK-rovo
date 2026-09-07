@@ -84,6 +84,40 @@ test("touch can intentionally expand the otherwise pointer-inert gutter", () => 
 	assert.match(IN_FLOW_COLUMN_SOURCE, /onPointerDown=\{handleGutterPointerDown\}/u);
 });
 
+test("gutter rest keeps the overlay and rail visually transparent", () => {
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/className="absolute inset-y-0 start-0 z-30"/u,
+	);
+	assert.doesNotMatch(
+		IN_FLOW_COLUMN_SOURCE,
+		/className="absolute inset-y-0 start-0 z-30 bg-surface"/u,
+	);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/isEmbedded[\s\S]{0,100}?\? "pointer-events-auto bg-surface"[\s\S]{0,140}?: "pointer-events-none bg-transparent \[&_\[data-agent-session-notch\]\]:pointer-events-auto"/u,
+	);
+	assert.doesNotMatch(
+		IN_FLOW_COLUMN_SOURCE,
+		/"group\/in-flow-agent-session-column[^"]*bg-surface"/u,
+	);
+});
+
+test("horizontal scrolling fades the 24px gutter with ScrollMask, not a hard cut", () => {
+	assert.match(IN_FLOW_COLUMN_SOURCE, /import \{ ScrollMaskEdgeOverlay \} from "@\/components\/visual\/scroll-mask"/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /useInFlowGutterScrollMask\(hostRef\)/u);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/showGutterScrollMask \? \(\s*<ScrollMaskEdgeOverlay\s+data-agent-session-column-gutter-mask=""\s+edge="left"\s+fadeSize=\{IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX\}/u,
+	);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX = 24/u);
+	assert.doesNotMatch(
+		IN_FLOW_COLUMN_SOURCE,
+		/data-agent-session-column-gutter-mask=""[\s\S]{0,80}?bg-surface/u,
+	);
+	assert.doesNotMatch(IN_FLOW_COLUMN_SOURCE, /bg-white/u);
+});
+
 test("the entire visible gutter is a hover target without covering To do", () => {
 	assert.match(IN_FLOW_COLUMN_SOURCE, /data-agent-session-column-hit-area=""/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /absolute inset-y-0 start-0 z-30/u);
@@ -98,6 +132,10 @@ test("the entire visible gutter is a hover target without covering To do", () =>
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
 		/isEmbedded[\s\S]{0,100}?\? "pointer-events-auto bg-surface"[\s\S]{0,140}?: "pointer-events-none bg-transparent \[&_\[data-agent-session-notch\]\]:pointer-events-auto"/u,
+	);
+	assert.doesNotMatch(
+		IN_FLOW_COLUMN_SOURCE,
+		/className="absolute inset-y-0 start-0 z-30 bg-surface"/u,
 	);
 	assert.match(RAIL_SOURCE, /className="group\/notch flex h-6 w-full shrink-0 items-center"/u);
 	assert.match(
