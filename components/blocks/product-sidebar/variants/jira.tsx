@@ -115,6 +115,7 @@ export interface JiraSidebarSessionItem {
 	priority?: JiraSidebarWorkItemPriority;
 	pullRequestNumber?: number;
 	pullRequestTitle?: string;
+	pullRequestUrl?: string;
 	repository?: string;
 	status: JiraSidebarSessionStatus;
 	startedAtMs?: number;

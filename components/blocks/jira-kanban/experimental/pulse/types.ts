@@ -67,6 +67,13 @@ export interface PulseLooseWorkPullRequest {
 	branch?: string;
 }
 
+/** Pull request linked to a local coding session. */
+export interface PulseAgentSessionPullRequest {
+	number: number;
+	status: "created" | "merged" | "failed";
+	title: string;
+}
+
 interface PulseLooseWorkBase {
 	id: string;
 	title: string;
@@ -107,6 +114,8 @@ export type PulseLooseWork =
 			machineName: string;
 			/** Static stamp. Local rows must not tick. */
 			timeLabel: string;
+			/** Linked PR replaces the row timestamp when present. */
+			pullRequest?: PulseAgentSessionPullRequest;
 			/** Authoritative Jira status when this session comes from a live board owner. */
 			issueStatus?: string;
 	  });
