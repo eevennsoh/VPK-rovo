@@ -89,6 +89,10 @@ export interface ExperimentalJiraKanbanPageProps {
 	newAgentSessionIds?: ReadonlySet<string>;
 	onAgentSessionsReviewed?: (sessionIds?: readonly string[]) => void;
 	onBoardColumnsChange?: (columns: readonly JiraKanbanColumnData[]) => void;
+	onBoardAgentSessionCreate?: (
+		session: AgentSessionItem,
+		columnTitle: string,
+	) => string | undefined;
 	onCardClick?: (card: JiraKanbanCardData, columnTitle: string) => void;
 	onCardAgentActivityViewChat?: JiraKanbanProps["onCardAgentActivityViewChat"];
 	onCardAgentDoneRunView?: JiraKanbanProps["onCardAgentDoneRunView"];

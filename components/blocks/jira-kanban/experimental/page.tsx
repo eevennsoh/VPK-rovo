@@ -42,6 +42,7 @@ import {
 } from "./data/board-view-options";
 import {
 	ExperimentalJiraKanban,
+	type JiraKanbanCreatedCardArrival,
 	type ExperimentalJiraKanbanProps,
 } from "./experimental-jira-kanban";
 import { EMPTY_COLLAPSED_BOARD_COLUMNS } from "./lib/board-column-collapse";
@@ -211,6 +212,7 @@ function ExperimentalJiraKanbanPageContent({
 	mode: controlledMode,
 	newAgentSessionIds,
 	onAgentSessionsReviewed,
+	onBoardAgentSessionCreate,
 	onBoardColumnsChange,
 	onCardClick,
 	onCardAgentActivityViewChat,
@@ -316,6 +318,8 @@ function ExperimentalJiraKanbanPageContent({
 	// that is prevented without an effect that resets state behind the reader.
 	const [answersByScope, setAnswersByScope] = useState<Readonly<Record<string, readonly PulseAnswer[]>>>({});
 	const [draggedCard, setDraggedCard] = useState<DraggedCardState | null>(null);
+	const [createdCardArrival, setCreatedCardArrival] = useState<JiraKanbanCreatedCardArrival | null>(null);
+	const createdCardArrivalIdRef = useRef(0);
 	const [selection, setSelection] = useState(createJiraKanbanSelectionState);
 	const [assignedAgentIdsByCard, setAssignedAgentIdsByCard] = useState<Record<string, string[]>>({});
 	const boardFilter = useBoardFilter();
@@ -489,6 +493,31 @@ function ExperimentalJiraKanbanPageContent({
 			onResumeLooseWork,
 		],
 	);
+	const handleBoardAgentSessionCreate = useCallback((
+		session: AgentSessionItem,
+		columnTitle: string,
+	) => {
+		if (onBoardAgentSessionCreate === undefined) {
+			return;
+		}
+
+		agentSessionHandlers.onCreateWorkItem(session);
+		const cardCode = onBoardAgentSessionCreate(session, columnTitle);
+		if (cardCode === undefined) {
+			return;
+		}
+
+		createdCardArrivalIdRef.current += 1;
+		const id = createdCardArrivalIdRef.current;
+		setCreatedCardArrival((current) => (
+			current?.columnTitle === columnTitle
+				? { id, columnTitle, cardCodes: [...current.cardCodes, cardCode] }
+				: { id, columnTitle, cardCodes: [cardCode] }
+		));
+	}, [agentSessionHandlers, onBoardAgentSessionCreate]);
+	const handleCreatedCardArrivalComplete = useCallback((arrivalId: number) => {
+		setCreatedCardArrival((current) => current?.id === arrivalId ? null : current);
+	}, []);
 	const proximityActionableSessionIds = useMemo(
 		() => new Set(agentSessionItems.map((session) => session.id)),
 		[agentSessionItems],
@@ -792,7 +821,7 @@ function ExperimentalJiraKanbanPageContent({
 	const boardSessionDrag = useBoardAgentSessionDrag({
 		boardColumns: filteredBoardColumns,
 		detachedSessionsByCard: proximityAgentSessionsByCard,
-		onCreate: agentSessionHandlers.onCreateWorkItem,
+		onCreate: onBoardAgentSessionCreate ? handleBoardAgentSessionCreate : undefined,
 		onCreateWellReceive: receiveCreateWell,
 		onListCreate: onListAgentSessionCreate ? handleListAgentSessionCreate : undefined,
 		onLink: onCardAgentSessionLink ? handleCardAgentSessionLink : undefined,
@@ -927,9 +956,13 @@ function ExperimentalJiraKanbanPageContent({
 								cardGenerativeActionPresentation={cardGenerativeActionPresentation}
 								collapsedColumns={displayedCollapsedColumns}
 								columnChrome={columnChrome}
-								createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
+								createdCardArrival={createdCardArrival ?? undefined}
+								createWorkItemDropZoneLabel={onBoardAgentSessionCreate
+									? createWorkItemDropZoneLabel
+									: undefined}
 								detachedAgentSessionsByCard={proximityAgentSessionsByCard}
 								onCollapsedColumnsChange={setCollapsedColumns}
+								onCreatedCardArrivalComplete={handleCreatedCardArrivalComplete}
 								draggedCardCode={draggedCard?.card.code ?? null}
 								selectedCardCodes={selection.selectedCardCodes}
 								onCardClick={handleCardClick}

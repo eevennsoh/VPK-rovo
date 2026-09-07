@@ -184,7 +184,11 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 			issueSummary: card.title,
 		});
 	}, [boardColumns, handleViewChat, handleViewCompletedRun, openAgentChat]);
-	const { createFromAgentSession, getProps: getListProps } = useJiraGoldenJourneysV4List({
+	const {
+		createBoardFromAgentSession,
+		createFromAgentSession,
+		getProps: getListProps,
+	} = useJiraGoldenJourneysV4List({
 		boardColumns,
 		onAssignedAgentSelect: handleListAssignedAgentSelect,
 		setBoardColumns,
@@ -236,6 +240,17 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 		const activity = consumeDetachedAgentSession(session);
 		setBoardColumns((columns) => linkJiraKanbanAgentSession(columns, card.code, activity));
 	}, [consumeDetachedAgentSession]);
+	const handleBoardAgentSessionCreate = useCallback((
+		session: AgentSessionItem,
+		columnTitle: string,
+	) => {
+		const activity = consumeDetachedAgentSession(session);
+		return createBoardFromAgentSession({
+			activity,
+			columnTitle,
+			session,
+		});
+	}, [consumeDetachedAgentSession, createBoardFromAgentSession]);
 	const handleListAgentSessionCreate = useCallback((
 		session: AgentSessionItem,
 		insertion: JiraListInsertion,
@@ -289,6 +304,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						insightsEnabled={false}
 						newAgentSessionIds={newAgentSessionIds}
 						onAgentSessionsReviewed={reviewAgentSessions}
+						onBoardAgentSessionCreate={handleBoardAgentSessionCreate}
 						onBoardColumnsChange={(columns: readonly JiraKanbanColumnData[]) => {
 							setBoardColumns([...columns]);
 						}}

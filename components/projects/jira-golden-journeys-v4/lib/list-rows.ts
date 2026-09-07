@@ -446,6 +446,30 @@ export interface CreateListWorkItemFromSessionInput {
 	visibleKeys: readonly string[];
 }
 
+export interface CreateBoardWorkItemFromSessionInput {
+	activity: JiraIssueAgentActivity;
+	columns: readonly JiraKanbanColumnData[];
+	columnTitle: string;
+	linkSession: (
+		columns: readonly JiraKanbanColumnData[],
+		issueKey: string,
+		activity: JiraIssueAgentActivity,
+	) => readonly JiraKanbanColumnData[];
+	session: Readonly<{ id: string; title: string }>;
+}
+
+export type CreateBoardWorkItemFromSessionResult =
+	| {
+		kind: "created";
+		columns: readonly JiraKanbanColumnData[];
+		issueKey: string;
+	}
+	| {
+		kind: "already-attached";
+		columns: readonly JiraKanbanColumnData[];
+		issueKey: string;
+	};
+
 export type CreateListWorkItemFromSessionResult =
 	| {
 		kind: "created";
@@ -460,9 +484,9 @@ export type CreateListWorkItemFromSessionResult =
 		listOrder: readonly string[];
 	};
 
-export function createListWorkItemFromSession(
-	input: CreateListWorkItemFromSessionInput,
-): CreateListWorkItemFromSessionResult {
+export function createBoardWorkItemFromSession(
+	input: CreateBoardWorkItemFromSessionInput,
+): CreateBoardWorkItemFromSessionResult {
 	const attachedCard = input.columns
 		.flatMap((column) => column.cards)
 		.find((card) => card.agentActivities?.some((activity) => activity.id === input.activity.id));
@@ -471,7 +495,6 @@ export function createListWorkItemFromSession(
 			kind: "already-attached",
 			columns: input.columns,
 			issueKey: attachedCard.code,
-			listOrder: input.listOrder,
 		};
 	}
 
@@ -481,19 +504,46 @@ export function createListWorkItemFromSession(
 		issueType: "task",
 		summary: input.session.title,
 	});
-	const columnsWithCard = insertWorkItemCard(input.columns, card, "To do");
+	const columnsWithCard = insertWorkItemCard(input.columns, card, input.columnTitle);
 	const columns = input.linkSession(columnsWithCard, issueKey, input.activity);
-	const listOrder = insertListOrderKey(
-		input.listOrder,
-		input.visibleKeys,
-		issueKey,
-		input.insertion.insertAtIndex,
-	);
 
 	return {
 		kind: "created",
 		columns,
 		issueKey,
+	};
+}
+
+export function createListWorkItemFromSession(
+	input: CreateListWorkItemFromSessionInput,
+): CreateListWorkItemFromSessionResult {
+	const result = createBoardWorkItemFromSession({
+		activity: input.activity,
+		columns: input.columns,
+		columnTitle: "To do",
+		linkSession: input.linkSession,
+		session: input.session,
+	});
+	if (result.kind === "already-attached") {
+		return {
+			kind: "already-attached",
+			columns: result.columns,
+			issueKey: result.issueKey,
+			listOrder: input.listOrder,
+		};
+	}
+
+	const listOrder = insertListOrderKey(
+		input.listOrder,
+		input.visibleKeys,
+		result.issueKey,
+		input.insertion.insertAtIndex,
+	);
+
+	return {
+		kind: "created",
+		columns: result.columns,
+		issueKey: result.issueKey,
 		listOrder,
 	};
 }

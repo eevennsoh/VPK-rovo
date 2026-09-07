@@ -5,6 +5,7 @@ const { linkJiraKanbanAgentSession } = require("../../../blocks/jira-kanban/stat
 const {
 	applyAssignedAgentIdsToColumns,
 	applyListOrder,
+	createBoardWorkItemFromSession,
 	createListRows,
 	createListWorkItemFromSession,
 	getNextPayIssueKey,
@@ -352,4 +353,83 @@ test("two session creates on one gap keep both issue keys", () => {
 		?.cards ?? [];
 	assert.equal(todoCards.some((card) => card.code === "PAY-119"), true);
 	assert.equal(todoCards.some((card) => card.code === "PAY-120"), true);
+});
+
+test("createBoardWorkItemFromSession appends a task to the requested status and attaches its session", () => {
+	const activity = {
+		id: "lw-board-review",
+		label: "Review the board drop behavior",
+		name: "Claude Code",
+		state: "complete",
+	};
+	const created = createBoardWorkItemFromSession({
+		activity,
+		columns: COLUMNS,
+		columnTitle: "In progress",
+		linkSession: linkJiraKanbanAgentSession,
+		session: { id: "lw-board-review", title: "Review the board drop behavior" },
+	});
+
+	assert.equal(created.kind, "created");
+	assert.equal(created.issueKey, "PAY-119");
+	const inProgress = created.columns.find((column) => column.title === "In progress");
+	const createdCard = inProgress?.cards.at(-1);
+	assert.equal(inProgress?.count, 2);
+	assert.equal(createdCard?.code, "PAY-119");
+	assert.equal(createdCard?.title, "Review the board drop behavior");
+	assert.equal(createdCard?.issueType, "task");
+	assert.equal(createdCard?.agentActivities?.[0], activity);
+
+	const again = createBoardWorkItemFromSession({
+		activity,
+		columns: created.columns,
+		columnTitle: "To do",
+		linkSession: linkJiraKanbanAgentSession,
+		session: { id: "lw-board-review", title: "Review the board drop behavior" },
+	});
+	assert.equal(again.kind, "already-attached");
+	assert.equal(again.issueKey, "PAY-119");
+	assert.equal(again.columns, created.columns);
+	assert.equal(
+		again.columns.flatMap((column) => column.cards).filter((card) => card.code === "PAY-119").length,
+		1,
+	);
+});
+
+test("sequential board session creates mint distinct PAY keys in the requested status", () => {
+	const first = createBoardWorkItemFromSession({
+		activity: {
+			id: "lw-board-first",
+			label: "First board session",
+			name: "Claude Code",
+			state: "complete",
+		},
+		columns: COLUMNS,
+		columnTitle: "In progress",
+		linkSession: linkJiraKanbanAgentSession,
+		session: { id: "lw-board-first", title: "First board session" },
+	});
+	const second = createBoardWorkItemFromSession({
+		activity: {
+			id: "lw-board-second",
+			label: "Second board session",
+			name: "Claude Code",
+			state: "complete",
+		},
+		columns: first.columns,
+		columnTitle: "In progress",
+		linkSession: linkJiraKanbanAgentSession,
+		session: { id: "lw-board-second", title: "Second board session" },
+	});
+
+	assert.equal(first.kind, "created");
+	assert.equal(second.kind, "created");
+	assert.equal(first.issueKey, "PAY-119");
+	assert.equal(second.issueKey, "PAY-120");
+	assert.deepEqual(
+		second.columns
+			.find((column) => column.title === "In progress")
+			?.cards.slice(-2).map((card) => card.code),
+		["PAY-119", "PAY-120"],
+	);
 });

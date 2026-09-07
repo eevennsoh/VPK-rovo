@@ -20,6 +20,7 @@ import { JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS } from "../data/presentation-s
 import {
 	applyAssignedAgentIdsToColumns,
 	applyListOrder,
+	createBoardWorkItemFromSession,
 	createListRows,
 	createListWorkItemFromSession,
 	getNextPayIssueKey,
@@ -45,7 +46,14 @@ export interface CreateFromAgentSessionInput {
 	session: Readonly<{ id: string; title: string }>;
 }
 
+export interface CreateBoardFromAgentSessionInput {
+	activity: JiraIssueAgentActivity;
+	columnTitle: string;
+	session: Readonly<{ id: string; title: string }>;
+}
+
 export interface UseJiraGoldenJourneysV4ListResult {
+	createBoardFromAgentSession: (input: CreateBoardFromAgentSessionInput) => string | undefined;
 	createFromAgentSession: (input: CreateFromAgentSessionInput) => void;
 	getProps: (columns: readonly JiraKanbanColumnData[]) => JiraListProps;
 }
@@ -212,6 +220,32 @@ export function useJiraGoldenJourneysV4List({
 		setSelectedIssueKeys(new Set([result.issueKey]));
 	}, [setBoardColumns]);
 
+	const createBoardFromAgentSession = useCallback((input: CreateBoardFromAgentSessionInput) => {
+		const result = createBoardWorkItemFromSession({
+			activity: input.activity,
+			columns: boardColumnsRef.current,
+			columnTitle: input.columnTitle,
+			linkSession: linkJiraKanbanAgentSession,
+			session: input.session,
+		});
+		if (result.kind === "already-attached") {
+			return undefined;
+		}
+
+		const nextListOrder = insertListOrderKey(
+			listOrderRef.current,
+			visibleKeysRef.current,
+			result.issueKey,
+			null,
+		);
+		boardColumnsRef.current = result.columns;
+		listOrderRef.current = nextListOrder;
+		setBoardColumns([...result.columns]);
+		setListOrder(nextListOrder);
+		setSelectedIssueKeys(new Set([result.issueKey]));
+		return result.issueKey;
+	}, [setBoardColumns]);
+
 	const getProps = useCallback((columns: readonly JiraKanbanColumnData[]): JiraListProps => {
 		const rows = applyListOrder(
 			createListRows(columns, JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS),
@@ -294,5 +328,5 @@ export function useJiraGoldenJourneysV4List({
 		selectedIssueKeys,
 	]);
 
-	return { createFromAgentSession, getProps };
+	return { createBoardFromAgentSession, createFromAgentSession, getProps };
 }

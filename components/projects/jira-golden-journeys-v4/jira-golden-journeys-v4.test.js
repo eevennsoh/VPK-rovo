@@ -262,7 +262,7 @@ test("both design variations reveal compact magnetic create targets that expand 
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/<ExperimentalJiraKanban[\s\S]*createWorkItemDropZoneLabel=\{createWorkItemDropZoneLabel\}/u,
+		/<ExperimentalJiraKanban[\s\S]*createWorkItemDropZoneLabel=\{onBoardAgentSessionCreate\s*\? createWorkItemDropZoneLabel\s*: undefined\}/u,
 	);
 	assert.doesNotMatch(
 		EXPERIMENTAL_BOARD_SOURCE,
@@ -357,7 +357,101 @@ test("both design variations reveal compact magnetic create targets that expand 
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/useBoardAgentSessionDrag\(\{[\s\S]*onCreate: agentSessionHandlers\.onCreateWorkItem,/u,
+		/useBoardAgentSessionDrag\(\{[\s\S]*onCreate: onBoardAgentSessionCreate \? handleBoardAgentSessionCreate : undefined,/u,
+	);
+});
+
+test("board session creation is route-owned and reveals the created cards once", () => {
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/onBoardAgentSessionCreate\?: \(\s*session: AgentSessionItem,\s*columnTitle: string,\s*\) => string \| undefined;/u,
+	);
+	assert.match(
+		PAGE_SOURCE,
+		/const handleBoardAgentSessionCreate = useCallback\([\s\S]*consumeDetachedAgentSession\(session\)[\s\S]*createBoardFromAgentSession\(\{\s*activity,\s*columnTitle,\s*session,\s*\}\)/u,
+	);
+	assert.match(PAGE_SOURCE, /onBoardAgentSessionCreate=\{handleBoardAgentSessionCreate\}/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/const handleBoardAgentSessionCreate = useCallback\([\s\S]*agentSessionHandlers\.onCreateWorkItem\(session\)[\s\S]*const cardCode = onBoardAgentSessionCreate\(session, columnTitle\)/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/createdCardArrivalIdRef\.current \+= 1;[\s\S]*setCreatedCardArrival\(\(current\) => \([\s\S]*cardCodes: \[\.\.\.current\.cardCodes, cardCode\][\s\S]*cardCodes: \[cardCode\]/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/<ExperimentalJiraKanban[\s\S]*createdCardArrival=\{createdCardArrival \?\? undefined\}[\s\S]*onCreatedCardArrivalComplete=\{handleCreatedCardArrivalComplete\}/u,
+	);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/setCreatedCardArrival\(\(current\) => current\?\.id === arrivalId \? null : current\)/u,
+	);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/const completedCreatedCardArrivalIdsRef = useRef\(new Set<number>\(\)\);/u,
+	);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/if \(completedCreatedCardArrivalIdsRef\.current\.has\(arrivalId\)\) \{\s*return;\s*\}[\s\S]*completedCreatedCardArrivalIdsRef\.current\.add\(arrivalId\);[\s\S]*onCreatedCardArrivalComplete\?\.\(arrivalId\)/u,
+	);
+});
+
+test("the created-card arrival scrolls its column to the bottom and uses reduced-motion-safe Motion", () => {
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/function BoardColumn\([\s\S]*createdCardArrival[\s\S]*const cardListElementRef = useRef<HTMLDivElement \| null>\(null\)[\s\S]*const lastScrolledArrivalIdRef = useRef<number \| null>\(null\)/u,
+	);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/useLayoutEffect\(\(\) => \{[\s\S]*createdCardArrival\.columnTitle !== title[\s\S]*lastScrolledArrivalIdRef\.current === createdCardArrival\.id[\s\S]*arrivedCardCount < createdCardArrival\.cardCodes\.length[\s\S]*cardList\.scrollTo\(\{\s*behavior: "auto",\s*top: cardList\.scrollHeight,\s*\}\)[\s\S]*lastScrolledArrivalIdRef\.current = createdCardArrival\.id/u,
+	);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/createdCardArrival=\{createdCardArrival\?\.columnTitle === column\.title\s*\? createdCardArrival\s*: undefined\}/u,
+	);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/const isCreatedCardArriving = Boolean\([\s\S]*createdCardArrival\.cardCodes\.includes\(card\.code\)[\s\S]*\);/u,
+	);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/animate=\{isCreatedCardArriving\s*\? \{ opacity: 1, y: 0 \}/u,
+	);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/initial=\{isCreatedCardArriving && !shouldReduceMotion\s*\? \{ opacity: 0, y: 8 \}\s*: false\}/u,
+	);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/const JIRA_KANBAN_CARD_ARRIVE_REDUCED: Transition = \{ duration: 0 \};[\s\S]*transition=\{isCreatedCardArriving[\s\S]*shouldReduceMotion\s*\? JIRA_KANBAN_CARD_ARRIVE_REDUCED\s*: JIRA_KANBAN_CARD_ARRIVE/u,
+	);
+});
+
+test("the created-card arrival briefly highlights its grey agent backdrop", () => {
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/const JIRA_KANBAN_CREATED_CARD_BACKDROP_HOLD_MS = 600; \/\/ duration-slowest/u,
+	);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/\[&_\[data-slot=jira-issue-agent-backdrop\]\]:transition-colors[\s\S]*\[&_\[data-slot=jira-issue-agent-backdrop\]\]:duration-normal[\s\S]*\[&_\[data-slot=jira-issue-agent-backdrop\]\]:ease-out-practical/u,
+	);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/isCreatedCardArriving && "\[&_\[data-slot=jira-issue-agent-backdrop\]\]:bg-bg-accent-blue-subtlest"/u,
+	);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/motion-reduce:\[&_\[data-slot=jira-issue-agent-backdrop\]\]:transition-none[\s\S]*data-created-card-backdrop=\{isCreatedCardArriving \|\| undefined\}/u,
+	);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/window\.setTimeout\(\(\) => \{[\s\S]*onCreatedCardArrivalComplete\?\.\(arrivalId\)[\s\S]*JIRA_KANBAN_CREATED_CARD_BACKDROP_HOLD_MS/u,
+	);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/window\.clearTimeout\(createdCardArrivalHoldTimeoutRef\.current\)/u,
 	);
 });
 
@@ -608,7 +702,10 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(PAGE_SOURCE, /pb-4 ps-6 md:pb-5/u);
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /inFlowAgentSessionColumn/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /agentSessionDropIntent: boardSessionDrag\.listDropIntent/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCreate: agentSessionHandlers.onCreateWorkItem/u);
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/onCreate: onBoardAgentSessionCreate \? handleBoardAgentSessionCreate : undefined/u,
+	);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onListCreate: onListAgentSessionCreate \? handleListAgentSessionCreate : undefined/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /activeView === "list" && renderListContent/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<BoardFilterPopover[\s\S]*surfaceLabel=\{activeView\}/u);

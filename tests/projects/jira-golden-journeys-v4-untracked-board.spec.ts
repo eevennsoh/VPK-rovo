@@ -11,8 +11,14 @@ async function openBoard(page: Page): Promise<void> {
 	});
 	const expandUntracked = page.getByRole("button", { name: "Expand Untracked work column" });
 	if (await expandUntracked.isVisible()) {
-		await expandUntracked.click();
+		// The collapsed rail intentionally owns the surrounding pointer hit area.
+		// Focus and activate the visible button without relying on pointer hit-testing.
+		await expandUntracked.focus();
+		await expandUntracked.press("Enter");
 	}
+	await expect(
+		page.locator("[data-agent-session-column]").getByTestId("agent-session-row-lw-scope-thread"),
+	).toBeVisible();
 }
 
 async function openCollapsedBoard(page: Page): Promise<void> {
@@ -292,6 +298,132 @@ test("an Untracked work card attaches to any Jira work item and leaves the colum
 	await expect(getIssueArticle(page, "PAY-118").getByRole("button", {
 		name: /^Open Claude in Rovo chat:/u,
 	})).toBeVisible();
+});
+
+test("dropping an Untracked session on Create new work item appends and reveals the Jira card", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await openBoard(page);
+
+	const sessionId = "lw-scope-thread";
+	const sessionTitle = "The adapter keep-or-delete argument still lives in a local Claude session";
+	const untrackedColumn = page.locator("[data-agent-session-column]");
+	const untrackedSession = untrackedColumn.getByTestId(`agent-session-row-${sessionId}`);
+	const targetColumn = page.locator('[data-jira-kanban-column="In review"]');
+	await targetColumn.scrollIntoViewIfNeeded();
+
+	const cardList = targetColumn.locator("[data-jira-kanban-card-list]");
+	await expect(cardList).toBeVisible();
+	const initialOverflow = await cardList.evaluate((element) => ({
+		clientHeight: element.clientHeight,
+		scrollHeight: element.scrollHeight,
+	}));
+	expect(initialOverflow.scrollHeight).toBeGreaterThan(initialOverflow.clientHeight);
+	await cardList.evaluate((element) => {
+		element.scrollTop = 0;
+	});
+
+	const issueCards = targetColumn.locator(
+		'[data-board-agent-session-drop-zone="issue"][data-issue-key]',
+	);
+	const initialCardCount = await issueCards.count();
+	const initialLastIssueKey = await issueCards.last().getAttribute("data-issue-key");
+	const restingCreateButton = targetColumn.getByRole("button", { name: "Create in In review" });
+	const restingTargetBox = await restingCreateButton.boundingBox();
+	const sourceBox = await untrackedSession.boundingBox();
+	expect(restingTargetBox).not.toBeNull();
+	expect(sourceBox).not.toBeNull();
+	if (!restingTargetBox || !sourceBox) return;
+
+	const sourcePoint = {
+		x: sourceBox.x + sourceBox.width / 2,
+		y: sourceBox.y + sourceBox.height / 2,
+	};
+	await page.mouse.move(sourcePoint.x, sourcePoint.y);
+	await page.mouse.down();
+	await page.mouse.move(sourcePoint.x + 4, sourcePoint.y + 4);
+	await page.mouse.move(
+		restingTargetBox.x + restingTargetBox.width / 2,
+		restingTargetBox.y + restingTargetBox.height / 2,
+		{ steps: 12 },
+	);
+
+	// Create wells replace their resting buttons only after the session drag starts.
+	const createDropZone = targetColumn.getByRole("img", {
+		name: /^Create new work item in In review/u,
+	});
+	await expect(createDropZone).toBeVisible();
+	const armedTargetBox = await createDropZone.boundingBox();
+	expect(armedTargetBox).not.toBeNull();
+	if (!armedTargetBox) return;
+	await page.mouse.move(
+		armedTargetBox.x + armedTargetBox.width / 2,
+		armedTargetBox.y + armedTargetBox.height / 2,
+		{ steps: 12 },
+	);
+	await expect(createDropZone).toHaveAttribute("data-armed", "true");
+	await page.evaluate(() => {
+		let pulseStartedAt: number | null = null;
+		const observeBackdropPulse = () => {
+			const pulse = document.querySelector("[data-created-card-backdrop]");
+			if (pulse && pulseStartedAt === null) {
+				pulseStartedAt = performance.now();
+				document.documentElement.setAttribute("data-created-card-backdrop-observed", "true");
+				return;
+			}
+			if (!pulse && pulseStartedAt !== null) {
+				document.documentElement.setAttribute(
+					"data-created-card-backdrop-duration",
+					String(performance.now() - pulseStartedAt),
+				);
+				observer.disconnect();
+			}
+		};
+		const observer = new MutationObserver(observeBackdropPulse);
+		observer.observe(document.body, {
+			attributeFilter: ["class", "data-created-card-backdrop"],
+			attributes: true,
+			childList: true,
+			subtree: true,
+		});
+	});
+	await page.mouse.up();
+	await expect(page.locator("html")).toHaveAttribute("data-created-card-backdrop-observed", "true");
+	await expect.poll(async () => Number(
+		await page.locator("html").getAttribute("data-created-card-backdrop-duration"),
+	)).toBeGreaterThanOrEqual(600);
+
+	await expect(issueCards).toHaveCount(initialCardCount + 1);
+	const createdCard = issueCards.last();
+	const createdIssueKey = await createdCard.getAttribute("data-issue-key");
+	expect(createdIssueKey).toMatch(/^PAY-\d+$/u);
+	expect(createdIssueKey).not.toBe(initialLastIssueKey);
+	if (!createdIssueKey) return;
+	await expect(createdCard.getByRole("button", {
+		name: `${createdIssueKey}: ${sessionTitle}`,
+	})).toBeVisible();
+	await expect(createdCard.getByRole("button", {
+		name: /^Open Claude in Rovo chat:/u,
+	})).toBeVisible();
+	await expect(untrackedColumn.getByTestId(`agent-session-row-${sessionId}`)).toHaveCount(0);
+
+	await expect.poll(
+		() => cardList.evaluate((element) => element.scrollTop),
+	).toBeGreaterThan(0);
+	await expect.poll(
+		() => cardList.evaluate((element) => (
+			Math.ceil(element.scrollHeight - element.clientHeight - element.scrollTop)
+		)),
+	).toBeLessThanOrEqual(1);
+	await expect.poll(
+		() => createdCard.evaluate((element) => {
+			const scrollport = element.closest<HTMLElement>("[data-jira-kanban-card-list]");
+			if (!scrollport) return false;
+			const cardRect = element.getBoundingClientRect();
+			const scrollportRect = scrollport.getBoundingClientRect();
+			return cardRect.bottom >= scrollportRect.top
+				&& cardRect.bottom <= scrollportRect.bottom + 1;
+		}),
+	).toBe(true);
 });
 
 test("releasing an Untracked work drag outside a Jira target makes no change", async ({ page }) => {
