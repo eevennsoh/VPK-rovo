@@ -188,6 +188,7 @@ export function AgentSessionCard({
 	const mark = triageRow?.mark;
 	const isMarked = mark?.isMarked ?? false;
 	const isLead = mark?.isLead ?? false;
+	const isTransferSource = Boolean(draggingIds?.has(item.id));
 	const showSelectedFill = isMarked || (isSelected && mark == null);
 	const visibleIdentity = toAgentSessionVisibleIdentity(item);
 
@@ -280,6 +281,8 @@ export function AgentSessionCard({
 	return (
 		<motion.li
 			animate={shouldPlayArrival ? { opacity: 1, y: 0 } : undefined}
+			aria-hidden={isTransferSource || undefined}
+			aria-selected={mark == null ? undefined : isMarked}
 			className={cn(
 				isMarked ? "has-[+[data-marked]]:[&_article]:rounded-b-none" : null,
 				"[[data-marked]+&[data-marked]]:[&_article]:rounded-t-none",
@@ -287,7 +290,7 @@ export function AgentSessionCard({
 			)}
 			data-marked={isMarked || undefined}
 			data-testid={"agent-session-row-" + item.id}
-			aria-selected={mark == null ? undefined : isMarked}
+			inert={isTransferSource || undefined}
 			role={mark == null ? undefined : "row"}
 			onAnimationComplete={handleArrivalComplete}
 			onPointerEnter={() => {
