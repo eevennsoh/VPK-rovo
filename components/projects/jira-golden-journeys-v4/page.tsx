@@ -280,7 +280,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 			<AppLayout
 				chatContextBar={chatContextBar}
 				chatPanelFlush
-				defaultSidebarOpen={false}
+				defaultSidebarOpen={true}
 				hideFloatingRovo
 				product="jira"
 			>
