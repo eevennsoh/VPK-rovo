@@ -4,6 +4,7 @@ import type {
 	JiraKanbanCardData,
 	JiraKanbanColumnData,
 } from "@/components/blocks/jira-kanban";
+import type { BoardCardInsertion } from "@/components/blocks/jira-kanban/experimental/lib/board-agent-session-drag";
 import type {
 	JiraListAssignedAgent,
 	JiraListInsertion,
@@ -382,10 +383,32 @@ export function getNextPayIssueKey(columns: readonly JiraKanbanColumnData[]): st
 	return `PAY-${highestIssueNumber + 1}`;
 }
 
+function withCardAtIndex(
+	cards: readonly JiraKanbanCardData[],
+	card: JiraKanbanCardData,
+	insertAtIndex: number | undefined,
+): JiraKanbanCardData[] {
+	if (insertAtIndex === undefined) {
+		return [...cards, card];
+	}
+
+	const boundedIndex = Math.min(Math.max(insertAtIndex, 0), cards.length);
+	const nextCards = [...cards];
+	nextCards.splice(boundedIndex, 0, card);
+	return nextCards;
+}
+
+/**
+ * Adds a card to the named status column. Omit `insertAtIndex` to append, which
+ * is what the create editor and the list-view session create both want. Pass an
+ * index — clamped to the column's own bounds — when the gesture named a gap in
+ * the card stack, as a board drop does.
+ */
 export function insertWorkItemCard(
 	columns: readonly JiraKanbanColumnData[],
 	card: JiraKanbanCardData,
 	columnTitle: string,
+	insertAtIndex?: number,
 ): JiraKanbanColumnData[] {
 	const targetTitle = columns.some((column) => column.title === columnTitle)
 		? columnTitle
@@ -399,7 +422,7 @@ export function insertWorkItemCard(
 			return column;
 		}
 
-		const cards = [...column.cards, card];
+		const cards = withCardAtIndex(column.cards, card, insertAtIndex);
 		return {
 			...column,
 			cards,
@@ -446,7 +469,7 @@ export interface CreateListWorkItemFromSessionInput {
 	visibleKeys: readonly string[];
 }
 
-export type CreateListWorkItemFromSessionResult =
+export type CreateWorkItemFromSessionResult =
 	| {
 		kind: "created";
 		columns: readonly JiraKanbanColumnData[];
@@ -460,12 +483,19 @@ export type CreateListWorkItemFromSessionResult =
 		listOrder: readonly string[];
 	};
 
+function findCardWithActivity(
+	columns: readonly JiraKanbanColumnData[],
+	activityId: string,
+): JiraKanbanCardData | undefined {
+	return columns
+		.flatMap((column) => column.cards)
+		.find((card) => card.agentActivities?.some((activity) => activity.id === activityId));
+}
+
 export function createListWorkItemFromSession(
 	input: CreateListWorkItemFromSessionInput,
-): CreateListWorkItemFromSessionResult {
-	const attachedCard = input.columns
-		.flatMap((column) => column.cards)
-		.find((card) => card.agentActivities?.some((activity) => activity.id === input.activity.id));
+): CreateWorkItemFromSessionResult {
+	const attachedCard = findCardWithActivity(input.columns, input.activity.id);
 	if (attachedCard) {
 		return {
 			kind: "already-attached",
@@ -496,4 +526,114 @@ export function createListWorkItemFromSession(
 		issueKey,
 		listOrder,
 	};
+}
+
+export interface BoardWorkItemSessionEntry {
+	activity: JiraIssueAgentActivity;
+	session: Readonly<{ id: string; title: string }>;
+}
+
+export interface CreateBoardWorkItemsFromSessionsInput {
+	columns: readonly JiraKanbanColumnData[];
+	/** The dragged cohort, in drag order. */
+	entries: readonly BoardWorkItemSessionEntry[];
+	insertion: BoardCardInsertion;
+	linkSession: (
+		columns: readonly JiraKanbanColumnData[],
+		issueKey: string,
+		activity: JiraIssueAgentActivity,
+	) => readonly JiraKanbanColumnData[];
+	listOrder: readonly string[];
+	visibleKeys: readonly string[];
+}
+
+export interface CreateBoardWorkItemsFromSessionsResult {
+	columns: readonly JiraKanbanColumnData[];
+	/** Keys minted by this drop, in drag order; empty when every session was already attached. */
+	issueKeys: readonly string[];
+	listOrder: readonly string[];
+}
+
+/**
+ * The gesture measured a gap in the column the viewer can see, which the
+ * assignee filter may have thinned. Re-find the named neighbour in the real
+ * column so the card lands beside the same card the insertion line drew
+ * against, and only fall back to the raw index when there is no neighbour to
+ * anchor to — an empty column, or a neighbour that has since moved away.
+ *
+ * Resolved once per drop, never once per session: re-resolving after each
+ * insert would return the same slot every time and stack a cohort in reverse.
+ */
+function resolveBoardInsertIndex(
+	cards: readonly JiraKanbanCardData[],
+	insertion: BoardCardInsertion,
+): number {
+	if (insertion.relativeToCardCode === null) {
+		return insertion.insertAtIndex;
+	}
+
+	const neighbourIndex = cards.findIndex((card) => card.code === insertion.relativeToCardCode);
+	if (neighbourIndex < 0) {
+		return insertion.insertAtIndex;
+	}
+
+	return insertion.position === "after" ? neighbourIndex + 1 : neighbourIndex;
+}
+
+/**
+ * The board twin of `createListWorkItemFromSession`: sessions dragged from the
+ * Untracked rail into a gap in a column's card stack mint work items there,
+ * already linked, in drag order.
+ *
+ * Cohort-at-a-time on purpose. The anchor is resolved once against the column
+ * as it stood when the gesture ended, and each member lands one slot past the
+ * last, so the visible order matches the order they were picked up in.
+ *
+ * The list keeps its own ordering array, so a board-origin create appends the
+ * new keys rather than placing them — the board's column position is the source
+ * of truth for the board, and appending keeps `listOrder` complete for the next
+ * list reorder instead of leaving a hole the trailing pass has to patch. An
+ * empty `listOrder` means "follow board order", so it is left empty: writing
+ * one here would freeze today's row order against every later board change.
+ */
+export function createBoardWorkItemsFromSessions(
+	input: CreateBoardWorkItemsFromSessionsInput,
+): CreateBoardWorkItemsFromSessionsResult {
+	const targetColumn = input.columns.find((column) => column.title === input.insertion.columnTitle);
+	const anchorIndex = targetColumn
+		? resolveBoardInsertIndex(targetColumn.cards, input.insertion)
+		: undefined;
+
+	let columns = input.columns;
+	let listOrder = input.listOrder;
+	const issueKeys: string[] = [];
+
+	for (const entry of input.entries) {
+		if (findCardWithActivity(columns, entry.activity.id)) {
+			continue;
+		}
+
+		const issueKey = getNextPayIssueKey(columns);
+		const card = toKanbanCardFromDraft({
+			issueKey,
+			issueType: "task",
+			summary: entry.session.title,
+		});
+		columns = input.linkSession(
+			insertWorkItemCard(
+				columns,
+				card,
+				input.insertion.columnTitle,
+				anchorIndex === undefined ? undefined : anchorIndex + issueKeys.length,
+			),
+			issueKey,
+			entry.activity,
+		);
+		listOrder = listOrder.length === 0
+			? listOrder
+			: insertListOrderKey(listOrder, input.visibleKeys, issueKey, null);
+		issueKeys.push(issueKey);
+	}
+
+	return { columns, issueKeys, listOrder };
 }

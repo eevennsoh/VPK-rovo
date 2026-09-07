@@ -45,6 +45,7 @@ import {
 	type ExperimentalJiraKanbanProps,
 } from "./experimental-jira-kanban";
 import { EMPTY_COLLAPSED_BOARD_COLUMNS } from "./lib/board-column-collapse";
+import { toBoardGapCreatePort } from "./lib/board-card-insertion";
 import { useBoardAgentSessionDrag } from "./use-board-agent-session-drag";
 import {
 	collectBoardIssueKeys,
@@ -219,6 +220,7 @@ function ExperimentalJiraKanbanPageContent({
 	onCardAgentSessionLink,
 	onCardAgentSessionMove,
 	onCardAgentSessionUnlink,
+	onBoardAgentSessionCreate,
 	onListAgentSessionCreate,
 	showAgentSessionUnlinkWell = true,
 	onInsightsWorkItemClick,
@@ -305,7 +307,9 @@ function ExperimentalJiraKanbanPageContent({
 		setRequestedActionIds((current) => new Set(current).add(action.id));
 	}, []);
 	const handleCaptureLooseWork = useCallback((item: { id: string }) => {
-		setCapturedLooseWorkIds((current) => new Set(current).add(item.id));
+		setCapturedLooseWorkIds((current) => (
+			current.has(item.id) ? current : new Set(current).add(item.id)
+		));
 	}, []);
 	const handleArchiveLooseWork = useCallback((item: { id: string }) => {
 		setArchivedLooseWorkIds((current) => new Set(current).add(item.id));
@@ -792,6 +796,7 @@ function ExperimentalJiraKanbanPageContent({
 	const boardSessionDrag = useBoardAgentSessionDrag({
 		boardColumns: filteredBoardColumns,
 		detachedSessionsByCard: proximityAgentSessionsByCard,
+		onBoardGapCreate: toBoardGapCreatePort(handleCaptureLooseWork, onBoardAgentSessionCreate),
 		onCreate: agentSessionHandlers.onCreateWorkItem,
 		onCreateWellReceive: receiveCreateWell,
 		onListCreate: onListAgentSessionCreate ? handleListAgentSessionCreate : undefined,

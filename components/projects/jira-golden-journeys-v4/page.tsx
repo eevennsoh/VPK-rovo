@@ -12,6 +12,7 @@ import { toJiraIssueDemoAttachedActivity } from "@/components/blocks/jira-issue/
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
+import type { BoardCardInsertion } from "@/components/blocks/jira-kanban/experimental/lib/board-agent-session-drag";
 import { isPulseAgentSession, type PulseLooseWork } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { linkJiraKanbanAgentSession, moveJiraKanbanAgentSession, unlinkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
 import { JiraList, type JiraListAssignedAgent, type JiraListInsertion } from "@/components/blocks/jira-list";
@@ -184,7 +185,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 			issueSummary: card.title,
 		});
 	}, [boardColumns, handleViewChat, handleViewCompletedRun, openAgentChat]);
-	const { createFromAgentSession, getProps: getListProps } = useJiraGoldenJourneysV4List({
+	const { createFromAgentSession, createFromBoardAgentSession, getProps: getListProps } = useJiraGoldenJourneysV4List({
 		boardColumns,
 		onAssignedAgentSelect: handleListAssignedAgentSelect,
 		setBoardColumns,
@@ -247,6 +248,22 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 			session,
 		});
 	}, [consumeDetachedAgentSession, createFromAgentSession]);
+	// Sessions dropped into a gap between board cards mint work items in that
+	// column at that gap, already linked and in drag order. Same reclaim as the
+	// list create: each detached activity comes back so the card gets the
+	// original session, not a fresh stand-in.
+	const handleBoardAgentSessionCreate = useCallback((
+		sessions: readonly [AgentSessionItem, ...AgentSessionItem[]],
+		insertion: BoardCardInsertion,
+	) => {
+		createFromBoardAgentSession({
+			entries: sessions.map((session) => ({
+				activity: consumeDetachedAgentSession(session),
+				session,
+			})),
+			insertion,
+		});
+	}, [consumeDetachedAgentSession, createFromBoardAgentSession]);
 	const handleAgentSessionMove = useCallback((
 		session: JiraIssueAgentSessionRef,
 		sourceCard: JiraKanbanCardData,
@@ -299,6 +316,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						onCardAgentSessionMove={handleAgentSessionMove}
 						onCardAgentSessionUnlink={handleAgentSessionUnlink}
 						onListAgentSessionCreate={handleListAgentSessionCreate}
+						onBoardAgentSessionCreate={handleBoardAgentSessionCreate}
 						showAgentSessionUnlinkWell={designVariation !== "team-eu"}
 						onResumeLooseWork={handleResumeLooseWork}
 						onViewChange={tabOwnsView ? undefined : setWorkItemView}

@@ -3,7 +3,7 @@
 // oxlint-disable react-doctor/no-noninteractive-tabindex -- These surfaces intentionally receive keyboard focus for application-style keyboard handling or card-level shortcuts.
 // oxlint-disable react-doctor/prefer-module-scope-pure-function -- These helpers are intentionally local to the component/demo because they depend on the surrounding interaction contract.
 
-import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { LayoutGroup, motion, useReducedMotion, type Transition } from "motion/react";
 import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
@@ -49,6 +49,12 @@ import {
 	CollapsedBoardColumn,
 } from "./components/collapsed-board-column";
 import { BoardColumnCreateAction } from "./components/create-work-item-drop-zone";
+import {
+	BoardCardInsertionLine,
+	BoardEmptyColumnInsertionSlot,
+	getBoardCardInsertionAnchorClassName,
+} from "./components/board-card-insertion-line";
+import { resolveBoardCardInsertionPosition } from "./lib/board-card-insertion";
 import { ExclusiveCreateWellProximityProvider } from "./components/create-work-item-exclusive-proximity-context";
 import { InFlowAgentSessionColumn } from "./components/in-flow-agent-session-column";
 import { BOARD_COLUMN_ACTION_REVEAL } from "./lib/board-column-action-reveal";
@@ -379,6 +385,7 @@ function ColumnAgentAssignment({
 function BoardColumn({
 	agents,
 	assignedAgentIds,
+	cardInsertion,
 	children,
 	chrome,
 	columnChrome,
@@ -392,6 +399,7 @@ function BoardColumn({
 }: Readonly<{
 	agents?: readonly JiraKanbanAgentData[];
 	assignedAgentIds: readonly string[];
+	cardInsertion: BoardAgentSessionDrag["cardInsertion"];
 	children: ReactNode;
 	chrome: KanbanColumnChromeStyles;
 	columnChrome: KanbanColumnChrome;
@@ -404,6 +412,7 @@ function BoardColumn({
 	title: string;
 }>) {
 	const showAgentAssignment = Boolean(agents?.length && onCreateAgent && onToggleAgent);
+	const insertionArmed = cardInsertion?.columnTitle === title;
 	const { ref: cardListRef, showBottomScrollMask, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const cardListScrollMaskStyle = useMemo(
 		() => buildScrollMaskStyle({
@@ -470,7 +479,17 @@ function BoardColumn({
 			<div
 				ref={cardListRef}
 				data-jira-kanban-card-list=""
-				className="min-w-0 overflow-y-auto has-[[data-session-dragging]]:overflow-visible"
+				className={cn(
+					"min-w-0 overflow-y-auto has-[[data-session-dragging]]:overflow-visible",
+					// The scroll mask fades the top and bottom 3rem, which would wash out
+					// an insertion line drawn near a scrolled edge. Stand the mask down
+					// while this column is showing one — and ONLY the mask. Dropping
+					// `overflow-y-auto` would stop this being a scroll container, and the
+					// browser discards the scroll offset of an element that stops
+					// scrolling, so every scrolled column would jump to its first card
+					// mid-gesture.
+					insertionArmed && "[mask-image:none]! [-webkit-mask-image:none]!",
+				)}
 				style={{
 					flexGrow: 1,
 					display: "flex",
@@ -478,8 +497,16 @@ function BoardColumn({
 					gap: token("space.100"),
 					...cardListScrollMaskStyle,
 					...chrome.cardList,
-				}}
+					// Publish the gap an insertion line has to centre itself in. It is
+					// chrome-dependent — the default well overrides the base gap, simple
+					// keeps it — and a child cannot read its parent's `gap` in CSS, so the
+					// resolved value has to be handed down explicitly.
+					"--board-card-gap": chrome.cardList.gap ?? token("space.100"),
+				} as CSSProperties}
 			>
+				{count === 0 ? (
+					<BoardEmptyColumnInsertionSlot armed={insertionArmed} columnTitle={title} />
+				) : null}
 				{children}
 			</div>
 
@@ -888,6 +915,7 @@ function ExperimentalJiraKanbanView({
 							<BoardColumn
 								agents={agents}
 								assignedAgentIds={assignedAgentIdsByColumn[column.title] ?? []}
+								cardInsertion={boardSessionDrag.cardInsertion}
 								chrome={chrome}
 								columnChrome={columnChrome}
 								count={column.cards.length}
@@ -926,6 +954,10 @@ function ExperimentalJiraKanbanView({
 											detachedBinding: detachedSessionDragBinding,
 											dropTarget: cardDropTarget,
 										} = boardSessionDrag.getCardDragState(card, column.title);
+										const insertionPosition = resolveBoardCardInsertionPosition(
+											boardSessionDrag.cardInsertion,
+											{ cardCount: column.cards.length, cardIndex, columnTitle: column.title },
+										);
 										const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
 										const modifiers: JiraKanbanCardSelectModifiers = {
 											shiftKey: event.shiftKey,
@@ -959,14 +991,28 @@ function ExperimentalJiraKanbanView({
 													"motion-reduce:transition-none",
 													spotlightIssueKey === card.code && "bg-bg-accent-blue-subtlest",
 													spotlightIssueKey !== null && spotlightIssueKey !== card.code && "opacity-40",
+													getBoardCardInsertionAnchorClassName(insertionPosition),
 												)}
 												data-board-agent-session-drop-zone="issue"
 												data-board-agent-session-target={cardDropTarget ?? undefined}
+												data-board-card-count={column.cards.length}
+												data-board-card-index={cardIndex}
+												data-board-column-title={column.title}
 												data-issue-key={card.code}
 												initial={false}
 												style={cardMovePhase ? { willChange: "transform" } : undefined}
 												transition={cardMovePhase === "departing" ? JIRA_KANBAN_CARD_DEPART : JIRA_KANBAN_CARD_MOVE}
 											>
+												{insertionPosition ? (
+													<BoardCardInsertionLine
+														position={insertionPosition}
+														// Only a `before` seam below the first card has a real
+														// gap track above it to centre in. The leading seam of
+														// card 0 and the trailing seam of the last card sit
+														// against the card list's own boundary instead.
+														seam={insertionPosition === "before" && cardIndex > 0 ? "gap" : "edge"}
+													/>
+												) : null}
 												<ExperimentalJiraKanbanCard
 												active={isActive}
 													agentActivityLayout={agentActivityLayout}
