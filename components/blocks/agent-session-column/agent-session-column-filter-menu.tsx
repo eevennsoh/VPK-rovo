@@ -14,6 +14,7 @@ import {
 	agentSessionFilterToggleTriState,
 	collectAgentSessionFilterOwners,
 	countAgentSessionColumnFilterSelections,
+	shouldKeepAgentSessionFilterMenuOpen,
 	toggleFilterId,
 	type AgentSessionColumnFilterState,
 	type AgentSessionFilterAgentId,
@@ -52,8 +53,15 @@ export function AgentSessionColumnFilterMenu({
 
 	return (
 		<Popover
-			onOpenChange={(nextOpen) => {
-				if (!nextOpen && customCalendarOpen) {
+			onOpenChange={(nextOpen, eventDetails) => {
+				if (
+					shouldKeepAgentSessionFilterMenuOpen({
+						customCalendarOpen,
+						nextOpen,
+						reason: eventDetails.reason,
+					})
+				) {
+					eventDetails.cancel();
 					return;
 				}
 				setOpen(nextOpen);
@@ -80,7 +88,7 @@ export function AgentSessionColumnFilterMenu({
 			</PopoverTrigger>
 			<PopoverContent
 				align="end"
-				className="w-80 max-w-[calc(100vw-32px)] gap-0 rounded-xl p-1"
+				className="w-max min-w-80 max-w-[calc(100vw-32px)] gap-0 rounded-xl p-1"
 			>
 				<PopoverTitle className="sr-only">Filter sessions</PopoverTitle>
 				<div className="flex flex-col">

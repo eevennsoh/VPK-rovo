@@ -71,6 +71,36 @@ export const EMPTY_AGENT_SESSION_COLUMN_FILTER_DAYS: AgentSessionColumnFilterDay
 	preset: null,
 };
 
+/**
+ * The filter popover is a multi-select surface. Close on Escape, the trigger,
+ * or a true outside press; keep it open for in-menu clicks (including the
+ * focus-out Base UI emits when option buttons re-render) and for outside
+ * presses that belong to the nested custom-range calendar portal.
+ */
+export function shouldKeepAgentSessionFilterMenuOpen({
+	customCalendarOpen,
+	nextOpen,
+	reason,
+}: Readonly<{
+	customCalendarOpen: boolean;
+	nextOpen: boolean;
+	reason: string | undefined;
+}>): boolean {
+	if (nextOpen) {
+		return false;
+	}
+	switch (reason) {
+		case "close-press":
+		case "escape-key":
+		case "trigger-press":
+			return false;
+		case "outside-press":
+			return customCalendarOpen;
+		default:
+			return true;
+	}
+}
+
 export interface AgentSessionColumnFilterContext {
 	readonly getSuggestedWorkItemKey?: (item: AgentSessionItem) => string | undefined;
 	readonly getSuggestedWorkItemKeys?: (
