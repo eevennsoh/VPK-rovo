@@ -362,11 +362,8 @@ test("the row reveals Resume plus Archive / Unarchive where Agent List puts Arch
 	assert.match(CARD_SOURCE, /import ArchiveBoxIcon from "@atlaskit\/icon\/core\/archive-box";/u);
 	assert.match(CARD_SOURCE, /import LibraryIcon from "@atlaskit\/icon\/core\/library";/u);
 	assert.doesNotMatch(CARD_SOURCE, /EyeOpenIcon|EyeOpenStrikethroughIcon|visibilityLabel = "Hide"|visibilityLabel === "Show"/u);
-	assert.match(CARD_SOURCE, /group\/agent-row relative flex w-full rounded-lg p-3 text-left text-text/u);
-	assert.match(CARD_SOURCE, /bind \? "cursor-grab" : "cursor-pointer"/u);
+	assert.match(CARD_SOURCE, /group\/agent-row relative flex w-full cursor-default rounded-lg p-3 text-left text-text/u);
 	assert.match(CARD_SOURCE, /aria-roledescription=\{bind \? "Draggable agent session" : undefined\}/u);
-	assert.match(MEDIUM_DRAG_SOURCE, /sessionDragBind && "cursor-grab touch-none select-none"/u);
-	assert.match(MEDIUM_DRAG_SOURCE, /isDragging && "cursor-grabbing \[&_article\]:cursor-grabbing"/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /z-\[400\]/u);
 	assert.doesNotMatch(CARD_SOURCE, /hover:border-border(?!-disabled)/u);
 	assert.doesNotMatch(CARD_SOURCE, /focus-within:border-border(?!-disabled)/u);
@@ -409,6 +406,15 @@ test("the row reveals Resume plus Archive / Unarchive where Agent List puts Arch
 	// The shared row fades actions in; uncaptured-work snaps them on.
 	assert.match(LIST_CARD_SOURCE, /group-data-\[variant=uncaptured-work\]\/agent-row:transition-none/u);
 	assert.match(CARD_SOURCE, /data-variant="uncaptured-work"/u);
+});
+
+test("agent session hover keeps the default cursor instead of a drag-handle cursor", () => {
+	assert.match(CARD_SOURCE, /group\/agent-row relative flex w-full cursor-default rounded-lg p-3 text-left text-text/u);
+	assert.doesNotMatch(CARD_SOURCE, /cursor-grab(?!bing)/u);
+	assert.doesNotMatch(CARD_SOURCE, /cursor-pointer/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /sessionDragBind && "touch-none select-none"/u);
+	assert.doesNotMatch(MEDIUM_DRAG_SOURCE, /cursor-grab(?!bing)/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /isDragging && "cursor-grabbing \[&_article\]:cursor-grabbing"/u);
 });
 
 test("the hover checkbox replaces the avatar instantly, with no opacity transition", () => {
