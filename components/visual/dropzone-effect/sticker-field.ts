@@ -41,6 +41,16 @@ export interface StickerField {
 export interface StickerFieldOptions {
 	/** Fixes the field's randomness, so a scene replays identically. */
 	seed?: number;
+	/**
+	 * Simulation time the field is being built at.
+	 *
+	 * Required whenever a field is rebuilt mid-scene — a resize, a density or
+	 * orb-size change. Staggering against zero instead would leave every seed
+	 * already past its duration, so the first update respawns all of them at the
+	 * same instant and the river collapses into one synchronised clump at the
+	 * spawn edge until it spreads out again.
+	 */
+	now?: number;
 }
 
 /** Builds the field. `atlas` must already be baked. */
@@ -49,7 +59,7 @@ export function createStickerField(
 	atlas: StickerAtlas,
 	options: StickerFieldOptions = {},
 ): StickerField {
-	const { seed = 20260906 } = options;
+	const { seed = 20260906, now = 0 } = options;
 	const count = layout.stickerCount;
 	const rng = mulberry32(seed);
 
@@ -102,7 +112,7 @@ export function createStickerField(
 	const seeds: StickerSeed[] = [];
 	for (let i = 0; i < count; i += 1) {
 		const trip = createSeed(rng, layout, 0, atlas.count);
-		trip.startTime = -rng() * trip.duration;
+		trip.startTime = now - rng() * trip.duration;
 		seeds.push(trip);
 	}
 

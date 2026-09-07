@@ -102,7 +102,9 @@ void main() {
 	float core = exp(-d * d * 9.0);
 	float halo = exp(-d * d * 1.6) * 0.085;
 	// The sprite is square; fade the skirt out before its corners can show.
-	float shape = (core + halo) * smoothstep(1.0, 0.72, d);
+	// Inverted rather than descending: GLSL leaves smoothstep undefined when
+	// edge0 >= edge1.
+	float shape = (core + halo) * (1.0 - smoothstep(0.72, 1.0, d));
 
 	// Premultiplied at zero alpha, so the field composites additively over the
 	// black backdrop instead of punching holes in whatever is behind it.

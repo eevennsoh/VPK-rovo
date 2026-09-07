@@ -129,7 +129,9 @@ vec3 environment(vec3 reflected) {
 	vec3 sky = mix(vec3(0.014, 0.018, 0.028), vec3(0.30, 0.36, 0.47), smoothstep(-0.35, 0.55, up));
 	sky += vec3(0.85, 0.9, 1.0) * smoothstep(0.72, 1.0, up) * 0.85;
 	// A dim warm bounce from below keeps the undersides from going pure black.
-	sky += vec3(0.16, 0.12, 0.1) * smoothstep(-0.2, -0.95, up);
+	// Inverted rather than descending: GLSL leaves smoothstep undefined when
+	// edge0 >= edge1.
+	sky += vec3(0.16, 0.12, 0.1) * (1.0 - smoothstep(-0.95, -0.2, up));
 	return sky;
 }
 

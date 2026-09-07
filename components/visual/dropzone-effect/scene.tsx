@@ -56,17 +56,36 @@ export function DropzoneScene({ reducedMotion, tuning }: Readonly<DropzoneSceneP
 
 	const settings = useMemo(() => ({ ...DROPZONE_TUNING_DEFAULTS, ...tuning }), [tuning]);
 
+	// Only `density` and `orbScale` reach `resolveLayout`, so the layout depends
+	// on those two scalars rather than on the whole settings object. Keying it on
+	// the object would rebuild the field, the starfield and the orb on every
+	// bloom or grain tick — a slider drag would thrash GPU allocation and restart
+	// the scene for changes that are pure uniform writes.
+	const { density, orbScale } = settings;
 	const layout = useMemo(
-		() => resolveLayout(size.width, size.height, settings),
-		[size.width, size.height, settings],
+		() =>
+			resolveLayout(size.width, size.height, {
+				...DROPZONE_TUNING_DEFAULTS,
+				density,
+				orbScale,
+			}),
+		[size.width, size.height, density, orbScale],
 	);
 
 	// The atlas is viewport-independent, so it survives every resize. Baking it
 	// costs a few milliseconds of canvas work and must not repeat on a drag.
+	/** Simulation time this scene owns. See the note in the frame loop. */
+	const clockRef = useRef(0);
+
 	const atlas = useMemo(() => buildStickerAtlas(ATLAS_CELL), []);
 	useEffect(() => () => atlas.dispose(), [atlas]);
 
-	const field = useMemo(() => createStickerField(layout, atlas), [layout, atlas]);
+	// Seeded at the live clock so a rebuild mid-scene — a resize, a density
+	// change — staggers from now rather than from zero.
+	const field = useMemo(
+		() => createStickerField(layout, atlas, { now: clockRef.current }),
+		[layout, atlas],
+	);
 	useEffect(() => () => field.dispose(), [field]);
 
 	const stars = useMemo(() => createStarfield(layout), [layout]);
@@ -119,11 +138,20 @@ export function DropzoneScene({ reducedMotion, tuning }: Readonly<DropzoneSceneP
 	const orbSpan = layout.orbRadius * ORB_HALO_REACH * 2;
 
 	const feedRef = useRef(0);
-	const orbViewRef = useRef(new THREE.Vector3());
+	// `useMemo`, not `useRef(new Vector3())`: the latter constructs a vector on
+	// every render and throws it away.
+	const orbView = useMemo(() => new THREE.Vector3(), []);
 
-	useFrame((state, delta) => {
+	useFrame((_state, delta) => {
 		const step = Math.min(delta, MAX_DELTA);
-		const time = reducedMotion ? STATIC_TIME : state.clock.elapsedTime * settings.speed;
+		// Accumulated here rather than read off `state.clock`. Toggling the
+		// frameloop between "always" and "demand" — which pausing, losing
+		// visibility, or scrolling out of view all do — restarts that clock and
+		// resets `elapsedTime` to zero, while the field's seeds hold absolute
+		// start times. Resuming would jump the whole river backwards. Owning the
+		// clock also means a speed change ramps instead of stepping.
+		clockRef.current += step * settings.speed;
+		const time = reducedMotion ? STATIC_TIME : clockRef.current;
 
 		const swallowed = field.update(time);
 		// The feed decays geometrically per second, so the flare fades at the
@@ -135,7 +163,6 @@ export function DropzoneScene({ reducedMotion, tuning }: Readonly<DropzoneSceneP
 		stars.update(time);
 
 		camera.updateMatrixWorld();
-		const orbView = orbViewRef.current;
 		orbView.set(layout.orbX, layout.orbY, 0).applyMatrix4(camera.matrixWorldInverse);
 		field.material.uniforms.uOrbViewPos.value.copy(orbView);
 

@@ -94,12 +94,15 @@ void main() {
 
 		// A broad internal bloom, offset toward the upper left, so the glass
 		// reads as a volume rather than a filled circle.
-		float bloom = exp(-pow(length(p - vec2(-0.24, 0.3)) * 1.15, 2.0));
+		float bloomFalloff = length(p - vec2(-0.24, 0.3)) * 1.15;
+		float bloom = exp(-bloomFalloff * bloomFalloff);
 		body += vec3(0.055, 0.062, 0.075) * bloom;
 
 		// The caustic: light gathering at the crown. In the reference this
 		// answers force; here the only force is ingestion, so it answers feed.
-		float crown = smoothstep(0.1, 0.95, p.y) * smoothstep(1.0, 0.55, r);
+		// Inverted rather than descending: GLSL leaves smoothstep undefined when
+		// edge0 >= edge1, and drivers are free to disagree about it.
+		float crown = smoothstep(0.1, 0.95, p.y) * (1.0 - smoothstep(0.55, 1.0, r));
 		body += vec3(0.5, 0.58, 0.78) * crown * (0.05 + uFeed * 0.55);
 
 		// Inner shadow, hugging the rim, which is what sells the meniscus.
@@ -131,14 +134,16 @@ void main() {
 	// of the radius. Wider than this reads as a glowing donut; tighter reads as
 	// a drawn stroke rather than a lit edge.
 	float rimWidth = max(px * 1.4, 0.016);
-	float rim = exp(-pow((r - 0.972) / rimWidth, 2.0));
+	float rimBand = (r - 0.972) / rimWidth;
+	float rim = exp(-rimBand * rimBand);
 	// Measured: the reference rim runs about 1.7x brighter at the crown and base
 	// than at the flanks. A uniform ring reads as a drawn circle, not as glass.
 	rim *= 0.3 + 0.7 * abs(sine);
 	colour += rimHue * rim * (0.95 + uFeed * 1.5);
 
 	// A second, much dimmer and wider pass reads as the thickness of the glass.
-	float rim2 = exp(-pow((r - 0.9) / (rimWidth * 4.5), 2.0)) * 0.09;
+	float rim2Band = (r - 0.9) / (rimWidth * 4.5);
+	float rim2 = exp(-rim2Band * rim2Band) * 0.09;
 	colour += rimHue * rim2;
 
 	gl_FragColor = vec4(colour, disc);

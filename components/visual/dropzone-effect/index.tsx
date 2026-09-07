@@ -72,10 +72,20 @@ export function DropzoneEffect({
 		<div
 			ref={wrapperRef}
 			aria-hidden="true"
-			className={cn("absolute inset-0 overflow-hidden bg-black", className)}
+			className={cn(
+				"absolute inset-0 overflow-hidden bg-black",
+				// Decorative, so it must never be a hit target when it sits behind
+				// interactive content. `aria-hidden` only hides it from assistive
+				// technology. The descendant selector is load-bearing: React Three
+				// Fiber inserts its own container div and canvas, and both set
+				// `pointer-events` themselves.
+				"pointer-events-none [&_*]:pointer-events-none",
+				className,
+			)}
 		>
 			<Canvas
 				frameloop={animating ? "always" : "demand"}
+				style={{ pointerEvents: "none" }}
 				dpr={[1, 2]}
 				// The composite pass owns tone mapping and the sRGB encode, so
 				// three's own output conversion has to stay out of the way.
