@@ -62,7 +62,7 @@ export function JiraLinkingDropFlights({
 		onSettled?.();
 	}, [flights.length, onSettled]);
 
-	if (typeof document === "undefined" || flights.length === 0) {
+	if (flights.length === 0) {
 		return null;
 	}
 
@@ -127,7 +127,7 @@ function JiraLinkingFlight({
 		};
 	}, [flight.key, onLanded, resolveLandingPoint]);
 
-	if (typeof document === "undefined" || landing === undefined || landing === null) {
+	if (landing === undefined || landing === null) {
 		return null;
 	}
 
