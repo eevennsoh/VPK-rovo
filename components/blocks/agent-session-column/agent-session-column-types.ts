@@ -86,4 +86,6 @@ export interface AgentSessionColumnProps extends Omit<
 	 * surface instead of leaving a 280px column inside a larger panel.
 	 */
 	expandedWidthPx?: number;
+	/** Disable the column's width transition while a host drives live resizing. */
+	widthTransitionDisabled?: boolean;
 }

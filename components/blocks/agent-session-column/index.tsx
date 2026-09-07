@@ -269,6 +269,7 @@ export function AgentSessionColumn({
 	defaultCollapsed = false,
 	emptyLabel = "No untracked sessions",
 	expandedWidthPx = AGENT_SESSION_COLUMN_WIDTH_PX,
+	widthTransitionDisabled = false,
 	items = AGENT_SESSION_ITEMS,
 	listClassName,
 	newItemIds,
@@ -707,7 +708,10 @@ export function AgentSessionColumn({
 			onTransitionEnd={handleTransitionEnd}
 			tabIndex={-1}
 			style={{
-				transition: shouldReduceMotion ? "none" : AGENT_SESSION_COLUMN_TRANSITION,
+				transition:
+					shouldReduceMotion || widthTransitionDisabled
+						? "none"
+						: AGENT_SESSION_COLUMN_TRANSITION,
 				width: collapsed
 					? `${AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX}px`
 					: `${expandedWidthPx}px`,
