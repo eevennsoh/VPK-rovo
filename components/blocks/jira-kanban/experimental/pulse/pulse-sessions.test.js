@@ -158,9 +158,10 @@ test("every local session becomes one agent-list row with fixture identity", asy
 		allItems.filter((item) => item.machineName === "Venn’s MacBook").length < allItems.length / 2,
 		"do not stamp every row as Venn’s MacBook",
 	);
-	for (const name of ["Claude", "Codex", "Cursor", "Rovo"]) {
+	for (const name of ["Claude", "Codex", "Cursor", "GitHub Copilot"]) {
 		assert.ok(agentNames.has(name), `timeline is missing ${name}`);
 	}
+	assert.ok(!agentNames.has("Rovo"), "Jira v4 examples should use coding agents instead of Rovo");
 
 	const metadataIdentitySource = /function AgentListMetadataIdentity[\s\S]*?(?=\nexport function AgentListActivityHeader)/u.exec(
 		CARD_SOURCE,
@@ -309,19 +310,20 @@ test("the uncaptured column renders sessions through the Agent Session block", (
 	assert.doesNotMatch(SOURCES.rail, /JiraIssueUncapturedWork/u);
 });
 
-test("lw-spike-webhook-session is the Rovo session that uses the catalog VPK mark", async () => {
+test("lw-spike-webhook-session is the Copilot session that uses its third-party brand mark", async () => {
 	const { PULSE_TIMELINE, toPulseSessionAgent, toPulseSessionItems } = await loadSessionsHarness();
 	const session = PULSE_TIMELINE.looseWork.find((item) => item.id === "lw-spike-webhook-session");
 	assert.ok(session !== undefined, "fixture should include lw-spike-webhook-session");
 	assert.equal(session.kind, "agent-session");
-	assert.equal(session.agentId, "rovo");
-	const agent = toPulseSessionAgent("rovo");
-	assert.equal(agent.vpkLogo, "rovo");
-	assert.equal(agent.brandName, undefined);
+	assert.equal(session.agentId, "copilot");
+	const agent = toPulseSessionAgent("copilot");
+	assert.equal(agent.name, "GitHub Copilot");
+	assert.equal(agent.vpkLogo, undefined);
+	assert.equal(agent.brandName, "github-copilot");
 	const [item] = toPulseSessionItems([session], PULSE_TIMELINE.members);
 	assert.equal(item.id, "lw-spike-webhook-session");
-	assert.equal(item.agent.vpkLogo, "rovo");
-	assert.equal(item.agent.brandName, undefined);
+	assert.equal(item.agent.vpkLogo, undefined);
+	assert.equal(item.agent.brandName, "github-copilot");
 });
 
 test("the roster filter narrows sessions the way the header narrows board cards", async () => {
