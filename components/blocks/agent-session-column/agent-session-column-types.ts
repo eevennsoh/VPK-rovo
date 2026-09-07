@@ -42,7 +42,6 @@ export interface AgentSessionColumnProps extends Omit<
 	notchShape?: AgentSessionColumnNotchShape;
 	/**
 	 * `"gutter"` hides the visual count while leaving the rail top-aligned.
-	 * Newly synced sessions reveal that same total with the digit-slot morph.
 	 * The expand control remains keyboard-reachable. Defaults to `"column"`.
 	 */
 	collapsedPresentation?: "column" | "gutter";
@@ -73,8 +72,7 @@ export interface AgentSessionColumnProps extends Omit<
 	 *
 	 * `"column"` is the in-flow board title row. `"panel"` is the docked
 	 * rail's PanelHeader skin. The collapsed rail normally keeps its compact
-	 * header in both modes; `collapsedPresentation="gutter"` hides the count
-	 * until newly synced sessions reveal it.
+	 * header in both modes; `collapsedPresentation="gutter"` hides the count.
 	 */
 	headerSurface?: "column" | "panel";
 	/**
