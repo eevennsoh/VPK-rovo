@@ -58,17 +58,23 @@ test("an arrival is a transient beat plus a mark that outlives it", () => {
 	// The mark is the load-bearing half: it has to survive a backgrounded tab, a
 	// collapsed column, and reduced motion, so it is never the animation alone.
 	assert.match(CARD_SOURCE, /<span className="sr-only">Newly synced, not yet reviewed<\/span>/u);
-	assert.match(CARD_SOURCE, /size-1\.5 -translate-y-1\/2 rounded-full bg-icon-discovery/u);
+	assert.match(CARD_SOURCE, /size-1\.5 -translate-y-1\/2 rounded-full bg-icon-information/u);
 	assert.match(CARD_SOURCE, /absolute left-1\.5 top-1\/2/u);
 	assert.doesNotMatch(CARD_SOURCE, /top-1\.5/u);
-	assert.match(RAIL_COLUMN_SOURCE, /backgroundColor: AGENT_SESSION_NOTCH_TONE\.rest/u);
-	assert.doesNotMatch(
+	assert.doesNotMatch(CARD_SOURCE, /bg-icon-discovery/u);
+	assert.match(
 		RAIL_COLUMN_SOURCE,
 		/backgroundColor: isNew\s*\? AGENT_SESSION_NOTCH_TONE\.selected/u,
 	);
-	// A reviewed session rests as a quiet dot; hover and keyboard focus reveal
-	// the same human face used by the expanded card, capped at 12x12.
+	assert.match(RAIL_COLUMN_SOURCE, /AGENT_SESSION_NOTCH_TONE\.rest/u);
+	// A reviewed session rests as a quiet 4px `icon.disabled` dot; hover and
+	// keyboard focus reveal the same human face used by the expanded card,
+	// capped at 12x12. Newly synced sessions rest at that same 4px in
+	// `color.icon` after the arrival face morphs down.
 	assert.match(RAIL_COLUMN_SOURCE, /size-3[^"\n]*rounded-full object-cover/u);
+	assert.match(RAIL_COLUMN_SOURCE, /"size-1 rounded-full/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /isNew \? "size-3" : "size-1"/u);
+	assert.match(RAIL_COLUMN_SOURCE, /isNew=\{isNew\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /group-hover\/notch:opacity-100/u);
 	assert.match(RAIL_COLUMN_SOURCE, /group-has-\[:focus-visible\]\/notch:opacity-100/u);
 	assert.match(RAIL_COLUMN_SOURCE, /avatarSrc=\{visibleIdentity\.avatarSrc\}/u);
@@ -87,9 +93,52 @@ test("an arrival is a transient beat plus a mark that outlives it", () => {
 	assert.match(CARD_SOURCE, /initial=\{shouldPlayArrival \? \{ opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX \} : false\}/u);
 });
 
-test("colour never carries newness on its own", () => {
+test("the rest disc stays hidden while the arrival face is on screen", () => {
+	// The regression: a 4px rest sitting under a 12px fading face reads as two
+	// layers. Reveal stays on through the shrink, and the rest disc is hidden
+	// for that whole beat so only one disc is visible.
+	assert.match(
+		ARRIVAL_HOOK_SOURCE,
+		/hideTimer = window\.setTimeout\(\(\) => \{\s*setArrivalExiting\(true\);/u,
+	);
+	assert.doesNotMatch(
+		ARRIVAL_HOOK_SOURCE,
+		/setArrivalReveal\(false\);\s*setArrivalExiting\(true\);/u,
+	);
+	assert.match(ARRIVAL_HOOK_SOURCE, /arrivalPending/u);
+	assert.match(
+		RAIL_COLUMN_SOURCE,
+		/const hideRestDisc = Boolean\(avatarSrc\) && \(/u,
+	);
+	assert.match(
+		RAIL_COLUMN_SOURCE,
+		/arrivalPending \|\| arrivalReveal \|\| arrivalExiting \|\| isHighlighted/u,
+	);
+	assert.match(RAIL_COLUMN_SOURCE, /hideRestDisc \? "opacity-0" : null/u);
+	assert.match(RAIL_COLUMN_SOURCE, /data-arrival-rest-hidden=\{hideRestDisc \|\| undefined\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /data-arrival-reveal=\{arrivalReveal \|\| undefined\}/u);
+	assert.match(
+		RAIL_COLUMN_SOURCE,
+		/transform: `scale\(\$\{arrivalMorphScale\}\)`/u,
+	);
+	assert.match(
+		RAIL_COLUMN_SOURCE,
+		/AGENT_SESSION_USER_NOTCH_DIAMETER\.rest\s*\/ AGENT_SESSION_USER_NOTCH_DIAMETER\.peak/u,
+	);
+});
+
+test("circle unread rest uses default icon color", () => {
 	assert.match(CARD_SOURCE, /<span className="sr-only">Newly synced, not yet reviewed<\/span>/u);
 	assert.match(RAIL_COLUMN_SOURCE, /isNew \? ", newly synced" : ""/u);
+	// Size is no longer the persistent unread mark. Circle rests stay 4px;
+	// unread paints `color.icon`, reviewed stays `icon.disabled`. Line mode
+	// already used selected/new tone.
+	assert.match(
+		RAIL_COLUMN_SOURCE,
+		/backgroundColor: isNew\s*\? AGENT_SESSION_NOTCH_TONE\.selected/u,
+	);
+	assert.match(NOTCH_MAGNIFY_SOURCE, /toAgentSessionNotchTone\(isSelected: boolean, isNew: boolean\)/u);
+	assert.match(NOTCH_MAGNIFY_SOURCE, /return isNew \|\| isSelected/u);
 	// The collapsed header answers "how many did I miss" for notches below the
 	// fold, and the spoken form keeps the total the visible `+N` gives up.
 	assert.match(INDEX_SOURCE, /\$\{sessionCount\} sessions, \$\{newCount\} newly synced/u);
@@ -104,24 +153,35 @@ test("arrival motion is tokenised, capped, and spatially anchored", () => {
 	// Past the cap the group lands together instead of stepping in.
 	assert.match(SESSION_INDEX_SOURCE, /ARRIVAL_STAGGER_LIMIT = 4/u);
 	assert.match(SESSION_INDEX_SOURCE, /shouldStagger \? index \* ARRIVAL_STAGGER_SECONDS : 0/u);
-	// The rail's avatar arrival reuses hover's face, then fades back to the rest
-	// dot. Scale-from-zero stays only for notches with no face to reveal.
+	// The rail's avatar arrival reuses hover's face, then shrinks that same
+	// disc to the 4px rest. Scale-from-zero stays only for notches with no
+	// face to reveal.
 	assert.match(RAIL_COLUMN_SOURCE, /initial=\{shouldPlayScaleArrival \? \{ scale: 0 \} : false\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /animate=\{shouldPlayScaleArrival \? \{ scale: 1 \} : undefined\}/u);
-	assert.match(RAIL_COLUMN_SOURCE, /showAvatar \? "opacity-100 scale-100"/u);
-	assert.match(ARRIVAL_MOTION_SOURCE, /lingerMs: 400/u);
-	assert.match(ARRIVAL_MOTION_SOURCE, /enterMs: 150/u);
-	assert.match(ARRIVAL_MOTION_SOURCE, /exitMs: 100/u);
 	assert.match(
+		RAIL_COLUMN_SOURCE,
+		/showAvatar\s*\n?\s*\? "opacity-100 scale-100 transition-\[opacity,scale\] duration-normal ease-out-practical"/u,
+	);
+	assert.match(ARRIVAL_MOTION_SOURCE, /lingerMs: 800/u);
+	assert.match(ARRIVAL_MOTION_SOURCE, /enterMs: 150/u);
+	assert.match(ARRIVAL_MOTION_SOURCE, /exitMs: 150/u);
+	assert.match(
+		RAIL_COLUMN_SOURCE,
+		/arrivalExiting\s*\n?\s*\? "opacity-100 transition-transform duration-normal ease-in-out"/u,
+	);
+	assert.doesNotMatch(
 		RAIL_COLUMN_SOURCE,
 		/arrivalExiting\s*\n?\s*\? "transition-\[opacity,scale\] duration-fast ease-in"/u,
 	);
 	assert.doesNotMatch(NOTCH_MAGNIFY_SOURCE, /newRest: 8/u);
+	assert.doesNotMatch(NOTCH_MAGNIFY_SOURCE, /newRest: 12/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /toAgentSessionUserNotchDiameter\(value, isNew\)/u);
 	assert.match(RAIL_COLUMN_SOURCE, /useAgentSessionUserNotchArrival/u);
 	assert.match(RAIL_COLUMN_SOURCE, /data-arrival-reveal=\{arrivalReveal \|\| undefined\}/u);
-	assert.match(DETAIL_SOURCE, /briefly reveal the same human avatar/u);
+	assert.match(DETAIL_SOURCE, /morph — the face shrinks 12→4 as one disc/u);
 	assert.doesNotMatch(DETAIL_SOURCE, /resting at 8px/u);
+	assert.doesNotMatch(DETAIL_SOURCE, /fade to a 12px grey rest/u);
+	assert.doesNotMatch(DETAIL_SOURCE, /fade to a 4px rest in default icon color/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /scale: \[/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /times:/u);
 	// Arriving notches push the ones below them down instead of teleporting.

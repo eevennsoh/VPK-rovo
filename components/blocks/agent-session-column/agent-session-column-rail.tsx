@@ -25,6 +25,7 @@ import {
 	AGENT_SESSION_NOTCH_NO_NEAREST,
 	AGENT_SESSION_NOTCH_POINTER_AWAY,
 	AGENT_SESSION_NOTCH_TONE,
+	AGENT_SESSION_USER_NOTCH_DIAMETER,
 	toAgentSessionNotchMagnification,
 	toAgentSessionUserNotchDiameter,
 	toNearestAgentSessionNotchIndex,
@@ -56,13 +57,15 @@ import { useAgentSessionUserNotchArrival } from "./use-agent-session-user-notch-
  * Circular markers are the default and are the compact form of the same human
  * avatar shown on the expanded card. The dock grows nearby dots from 4px toward
  * a 12px cap; the dot under the pointer or keyboard focus reveals that person's
- * face. An arriving session flashes that same face, then fades back to the rest
- * dot — newness is not a permanently bigger grey mark. Line markers retain the
- * original horizontal treatment and falloff.
+ * face. An arriving session flashes that same face, holds, then morphs —
+ * the face shrinks 12→4 as one disc — before the photo is dropped and the
+ * unread rest takes default icon color. Reviewed sessions rest at 4px
+ * `icon.disabled`. Line markers retain the original horizontal treatment
+ * and falloff.
  *
- * Circle dots always use `icon.disabled`; size carries proximity and the face
- * carries direct interest. Newness and lifecycle remain spoken, while line mode
- * retains its previous selected/new tone treatment.
+ * Circle unread uses `color.icon`; reviewed dots stay `icon.disabled`. Size
+ * carries proximity and the face carries direct interest. Lifecycle remains
+ * spoken, while line mode retains its previous selected/new tone treatment.
  *
  * The rail is the plane below the header and, because the board pins this
  * column outside its horizontal scrollport, it stays put while the reader
@@ -210,23 +213,30 @@ function AgentSessionUserNotch({
 	avatarSrc,
 	isArriving,
 	isHighlighted,
+	isNew,
 	onArrivalComplete,
 	proximity,
 }: Readonly<{
 	avatarSrc?: string;
 	isArriving: boolean;
 	isHighlighted: boolean;
+	isNew: boolean;
 	onArrivalComplete?: () => void;
 	proximity?: AgentSessionNotchProximity;
 }>) {
 	const shouldReduceMotion = useReducedMotion();
-	const { arrivalExiting, arrivalReveal, shouldPlayScaleArrival } = useAgentSessionUserNotchArrival({
+	const { arrivalExiting, arrivalPending, arrivalReveal, shouldPlayScaleArrival } = useAgentSessionUserNotchArrival({
 		hasAvatar: Boolean(avatarSrc),
 		isArriving,
 		onArrivalComplete,
 		shouldReduceMotion,
 	});
 	const showAvatar = isHighlighted || arrivalReveal;
+	const hideRestDisc = Boolean(avatarSrc) && (
+		arrivalPending || arrivalReveal || arrivalExiting || isHighlighted
+	);
+	const arrivalMorphScale = AGENT_SESSION_USER_NOTCH_DIAMETER.rest
+		/ AGENT_SESSION_USER_NOTCH_DIAMETER.peak;
 	const parkedPointerY = useMotionValue(AGENT_SESSION_NOTCH_POINTER_AWAY);
 	const parkedMagnify = useMotionValue(0);
 	const pointerY = proximity?.pointerY ?? parkedPointerY;
@@ -270,10 +280,13 @@ function AgentSessionUserNotch({
 					avatarSrc
 						? "group-hover/notch:opacity-0 group-has-[:focus-visible]/notch:opacity-0"
 						: null,
-					showAvatar && avatarSrc ? "opacity-0" : null,
+					hideRestDisc ? "opacity-0" : null,
 				)}
+				data-arrival-rest-hidden={hideRestDisc || undefined}
 				style={{
-					backgroundColor: AGENT_SESSION_NOTCH_TONE.rest,
+					backgroundColor: isNew
+						? AGENT_SESSION_NOTCH_TONE.selected
+						: AGENT_SESSION_NOTCH_TONE.rest,
 					transform: proximity === undefined
 						? `scale(${restingScale})`
 						: dotScale,
@@ -283,16 +296,24 @@ function AgentSessionUserNotch({
 				<Image
 					alt=""
 					className={cn(
-						"absolute inset-0 size-3 scale-75 rounded-full object-cover opacity-0",
-						"group-hover/notch:scale-100 group-hover/notch:opacity-100 group-has-[:focus-visible]/notch:scale-100 group-has-[:focus-visible]/notch:opacity-100",
+						"absolute inset-0 size-3 rounded-full object-cover",
 						"motion-reduce:transition-none",
 						arrivalExiting
-							? "transition-[opacity,scale] duration-fast ease-in"
-							: "transition-[opacity,scale] duration-normal ease-out-practical",
-						showAvatar ? "opacity-100 scale-100" : null,
+							? "opacity-100 transition-transform duration-normal ease-in-out"
+							: showAvatar
+								? "opacity-100 scale-100 transition-[opacity,scale] duration-normal ease-out-practical"
+								: cn(
+									"scale-75 opacity-0",
+									"group-hover/notch:scale-100 group-hover/notch:opacity-100",
+									"group-has-[:focus-visible]/notch:scale-100 group-has-[:focus-visible]/notch:opacity-100",
+									"transition-[opacity,scale] duration-normal ease-out-practical",
+								),
 					)}
 					height={12}
 					src={avatarSrc}
+					style={arrivalExiting
+						? { transform: `scale(${arrivalMorphScale})` }
+						: undefined}
 					width={12}
 				/>
 			) : null}
@@ -429,6 +450,7 @@ function AgentSessionNotch({
 										avatarSrc={visibleIdentity.avatarSrc}
 										isArriving={isArriving}
 										isHighlighted={isHighlighted}
+										isNew={isNew}
 										onArrivalComplete={onArrivalComplete}
 										proximity={proximity}
 									/>
