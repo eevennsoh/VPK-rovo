@@ -469,6 +469,14 @@ test("collapsed motion is tokenised and honours reduced motion", () => {
 	// Clipping is scoped to the resize, so a focused card's ring is never cut.
 	assert.match(INDEX_SOURCE, /collapsed \|\| isResizing \? "overflow-hidden" : null/u);
 	assert.match(INDEX_SOURCE, /event\.propertyName === "width"/u);
+	// A host-driven pointer resize must bypass this transition so the column edge
+	// tracks the pointer instead of easing toward every intermediate width.
+	assert.match(TYPES_SOURCE, /widthTransitionDisabled\?: boolean;/u);
+	assert.match(INDEX_SOURCE, /expandedWidthPx = AGENT_SESSION_COLUMN_WIDTH_PX,\s*widthTransitionDisabled = false,/u);
+	assert.match(
+		INDEX_SOURCE,
+		/shouldReduceMotion \|\| widthTransitionDisabled\s*\? "none"\s*: AGENT_SESSION_COLUMN_TRANSITION/u,
+	);
 });
 
 test("the resting notch paints icon.disabled, not an alpha of icon", () => {

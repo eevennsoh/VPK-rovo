@@ -90,6 +90,7 @@ export function AgentSession({
 	isResumable,
 	newItemIds,
 	onCopyResume,
+	onArchiveSession,
 	onCreateWorkItem,
 	onArrivalComplete,
 	onLinkWorkItem,
@@ -141,11 +142,12 @@ export function AgentSession({
 	const flyoutActions = useMemo(
 		() => bindAgentSessionFlyoutActions(items, {
 			capturedItemIds,
+			onArchiveSession,
 			onCreateWorkItem,
 			onLinkWorkItem,
 			onSubtasks,
 		}),
-		[capturedItemIds, items, onCreateWorkItem, onLinkWorkItem, onSubtasks],
+		[capturedItemIds, items, onArchiveSession, onCreateWorkItem, onLinkWorkItem, onSubtasks],
 	);
 	const isMultiSelectList = items.some(
 		(item: AgentSessionItem) => rowTriage?.get(item.id)?.mark != null,
@@ -284,6 +286,7 @@ export function AgentSession({
 				content={isAttached ? "details" : "untracked-work"}
 				handle={flyoutHandle}
 				onAddAsSubtask={flyoutActions.onAddAsSubtask}
+				onArchiveSession={flyoutActions.onArchiveSession}
 				onCreateWorkItem={flyoutActions.onCreateWorkItem}
 				onLinkWorkItem={flyoutActions.onLinkWorkItem}
 			/>

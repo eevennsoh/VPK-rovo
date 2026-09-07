@@ -244,6 +244,75 @@ test("Untracked stays frozen while the status pane scrolls", async ({ page }) =>
 	expect((await untrackedColumn.boundingBox())?.x).toBe(frozenLeft);
 });
 
+test("the Untracked resize handle reveals on column hover and widens the pinned column", async ({ page }) => {
+	await openBoard(page);
+
+	const untrackedColumn = page.getByLabel(/^Untracked work,/u);
+	const resizeHandle = page.getByRole("separator", {
+		name: "Resize Untracked work column",
+	});
+	const resizeNotch = resizeHandle.locator(":scope > div");
+	const untrackedSurface = page.locator(
+		'[data-board-agent-session-drop-zone="untracked"]',
+	).first();
+	const widthFootprint = page.locator('[data-agent-session-column-footprint="width"]');
+	const statusColumns = page.locator("[data-jira-kanban-column]");
+	const [initialBox, untrackedSurfaceBox, firstStatusBox, secondStatusBox] = await Promise.all([
+		untrackedColumn.boundingBox(),
+		untrackedSurface.boundingBox(),
+		statusColumns.nth(0).boundingBox(),
+		statusColumns.nth(1).boundingBox(),
+	]);
+	expect(initialBox).not.toBeNull();
+	expect(untrackedSurfaceBox).not.toBeNull();
+	expect(firstStatusBox).not.toBeNull();
+	expect(secondStatusBox).not.toBeNull();
+	if (!initialBox || !untrackedSurfaceBox || !firstStatusBox || !secondStatusBox) return;
+
+	const untrackedToFirstGap = Math.round(
+		firstStatusBox.x - untrackedSurfaceBox.x - untrackedSurfaceBox.width,
+	);
+	const statusColumnGap = Math.round(
+		secondStatusBox.x - firstStatusBox.x - firstStatusBox.width,
+	);
+	expect(untrackedToFirstGap).toBe(statusColumnGap);
+	expect(untrackedToFirstGap).toBe(8);
+
+	await expect(resizeHandle).toHaveAttribute("aria-orientation", "vertical");
+	await expect(resizeHandle).toHaveAttribute("aria-valuemin", "280");
+	await expect(resizeHandle).toHaveAttribute("aria-valuemax", "560");
+	await page.getByRole("heading", { name: "Jira Design" }).hover();
+	await expect(resizeHandle).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	await expect(resizeNotch).toHaveCSS("height", "64px");
+	await expect(resizeNotch).toHaveCSS("opacity", "0");
+
+	await untrackedColumn.hover();
+	await expect(resizeNotch).toHaveCSS("opacity", "1");
+	await resizeHandle.hover();
+	await expect(resizeNotch).toHaveCSS("scale", "1.05");
+	const handleBox = await resizeHandle.boundingBox();
+	expect(handleBox).not.toBeNull();
+	if (!handleBox) return;
+
+	await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + 80);
+	await page.mouse.down();
+	await expect(untrackedColumn).toHaveCSS("transition-property", "none");
+	await expect(widthFootprint).toHaveCSS("transition-property", "none");
+	await page.mouse.move(handleBox.x + handleBox.width / 2 + 96, handleBox.y + 80, {
+		steps: 8,
+	});
+	await expect.poll(async () => (await resizeHandle.boundingBox())?.x ?? 0)
+		.toBeGreaterThan(handleBox.x + 80);
+	await page.mouse.up();
+
+	await expect.poll(async () => (await untrackedColumn.boundingBox())?.width ?? 0)
+		.toBeGreaterThan(initialBox.width + 80);
+	await expect(resizeHandle).toHaveAttribute("aria-valuenow", "376");
+
+	await page.getByRole("heading", { name: "Jira Design" }).hover();
+	await expect(resizeNotch).toHaveCSS("opacity", "0");
+});
+
 test("a linked session moves atomically to another Jira work item", async ({ page }) => {
 	await openBoard(page);
 

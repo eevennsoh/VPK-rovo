@@ -12,6 +12,7 @@ const { join } = require("node:path");
 const { test } = require("node:test");
 
 const FOOTER = readFileSync(join(__dirname, "create-work-item-drop-zone.tsx"), "utf8");
+const BOARD = readFileSync(join(__dirname, "../experimental-jira-kanban.tsx"), "utf8");
 const DROPZONE = readFileSync(
 	join(__dirname, "../../../jira-dropzone/jira-dropzone.tsx"),
 	"utf8",
@@ -33,6 +34,36 @@ test("create button and dropzone share dashed well chrome", () => {
 	assert.match(
 		DROPZONE,
 		/className=\{cn\([\s\S]*JIRA_DROPZONE_WELL_CHROME_CLASS[\s\S]*selected[\s\S]*\? "border-border-selected bg-bg-selected text-text-selected"[\s\S]*: "border-border bg-surface text-text-subtlest"/u,
+	);
+});
+
+test("empty columns keep the create well at the top and always visible", () => {
+	const createAction = BOARD.indexOf("const createAction = <BoardColumnCreateAction");
+	const cardList = BOARD.indexOf('data-jira-kanban-card-list=""');
+	const cards = BOARD.indexOf("{children}", cardList);
+	const actionRender = BOARD.indexOf("{createAction}", cardList);
+
+	assert.ok(createAction >= 0);
+	assert.ok(cardList > createAction);
+	assert.ok(cards > cardList);
+	assert.ok(actionRender > cards);
+	assert.equal((BOARD.match(/\{createAction\}/gu) ?? []).length, 1);
+	assert.match(
+		BOARD,
+		/reveal=\{isEmptyColumn \? "always" : "column-hover"\}[\s\S]*sessionDragTransaction=\{sessionDragTransaction\}/u,
+	);
+	assert.match(BOARD, /order: isEmptyColumn \? 1 : 0/u);
+	assert.match(BOARD, /order: isEmptyColumn \? 0 : 1/u);
+});
+
+test("drop receipts leave the create-well copy clear of the flight chip", () => {
+	assert.match(
+		DROPZONE,
+		/const JIRA_DROPZONE_FLIGHT_LANDING_INSET_PX = 16;/u,
+	);
+	assert.match(
+		DROPZONE,
+		/x: rect\.left \+ JIRA_DROPZONE_FLIGHT_LANDING_INSET_PX/u,
 	);
 });
 
