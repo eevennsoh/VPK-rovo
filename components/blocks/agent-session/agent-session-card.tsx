@@ -30,10 +30,12 @@ import { approveActionLabel } from "./agent-session-approve";
 import { SESSION_DRAG_INTERACTIVE_SELECTOR } from "./agent-session-drag-interactive";
 import { AgentSessionMediumDrag } from "./agent-session-medium-drag";
 import { AgentSessionSelectMark } from "./agent-session-select-mark";
+import { selectionGestureFromModifierKeys } from "./agent-session-selection-gesture";
 import { isTransferSourceFaded } from "./session-cohort";
 import {
 	toAgentSessionVisibleIdentity,
 	type AgentSessionItem,
+	type AgentSessionSelectionGesture,
 	type AgentSessionTriageRow,
 } from "./agent-session-types";
 
@@ -140,6 +142,7 @@ export function AgentSessionCard({
 	const approve = triageRow?.approve;
 	const mark = triageRow?.mark;
 	const isMarked = mark?.isMarked ?? false;
+	const isLead = mark?.isLead ?? false;
 	const showSelectedFill = isMarked || (isSelected && mark == null);
 	const visibleIdentity = toAgentSessionVisibleIdentity(item);
 
@@ -149,16 +152,12 @@ export function AgentSessionCard({
 	// The article is the hit area. RowBody would otherwise wrap only the title
 	// column, leaving avatar and padding inert. A triage mark uses that same
 	// path so selection is not avatar-only. Hover actions stay buttons so they
-	// can stop the article from toggling.
+	// can stop the article from changing the selection.
 	const activateCard = onView === undefined && mark == null
 		? undefined
-		: () => {
+		: (gesture: AgentSessionSelectionGesture) => {
 			if (mark != null) {
-				const selecting = !mark.isMarked;
-				mark.onToggle();
-				if (selecting !== isSelected) {
-					onView?.(item);
-				}
+				mark.onActivate(gesture);
 				return;
 			}
 			onView?.(item);
@@ -172,7 +171,7 @@ export function AgentSessionCard({
 			) {
 				return;
 			}
-			activateCard();
+			activateCard(selectionGestureFromModifierKeys(event));
 		};
 	const handleArticleKeyDown = activateCard === undefined
 		? undefined
@@ -182,9 +181,19 @@ export function AgentSessionCard({
 			}
 			if (event.key === "Enter" || event.key === " ") {
 				event.preventDefault();
-				activateCard();
+				activateCard(selectionGestureFromModifierKeys(event));
 			}
 		};
+	const articleRole = activateCard === undefined
+		? undefined
+		: mark == null
+			? "button"
+			: "gridcell";
+	const articleTabIndex = activateCard === undefined
+		? undefined
+		: mark == null || isLead
+			? 0
+			: -1;
 	const hoverActions: AgentListRowHoverActions = {
 		primary: approve
 			? {
@@ -241,6 +250,8 @@ export function AgentSessionCard({
 			)}
 			data-marked={isMarked || undefined}
 			data-testid={"agent-session-row-" + item.id}
+			aria-selected={mark == null ? undefined : isMarked}
+			role={mark == null ? undefined : "row"}
 			onAnimationComplete={handleArrivalComplete}
 			onPointerEnter={() => {
 				isHoveredRef.current = true;
@@ -278,11 +289,10 @@ export function AgentSessionCard({
 						<article
 							{...bind}
 							aria-current={isSelected ? "true" : undefined}
-							aria-pressed={activateCard === undefined ? undefined : showSelectedFill}
+							aria-pressed={articleRole === "button" ? showSelectedFill : undefined}
 							aria-roledescription={bind ? "Draggable agent session" : undefined}
 							className={cn(
-						"group/agent-row relative flex w-full rounded-lg p-3 text-left text-text",
-						bind ? "cursor-grab" : "cursor-pointer",
+						"group/agent-row relative flex w-full cursor-default rounded-lg p-3 text-left text-text",
 						// Borderless tiles, 8px radius — same chrome as editor-palette
 						// suggestion rows. The list owns the gap between them.
 						"transition-[background-color,border-radius] duration-xxshort ease-out-practical",
@@ -302,8 +312,8 @@ export function AgentSessionCard({
 							data-variant="uncaptured-work"
 							onClick={handleArticleClick}
 							onKeyDown={handleArticleKeyDown}
-							role={activateCard === undefined ? undefined : "button"}
-							tabIndex={activateCard === undefined ? undefined : 0}
+							role={articleRole}
+							tabIndex={articleTabIndex}
 						>
 							{isNew ? (
 						<>
@@ -338,7 +348,7 @@ export function AgentSessionCard({
 												identity={sessionIdentity}
 												isMarked={mark.isMarked}
 												label={`Select "${item.title}"`}
-												onToggle={activateCard ?? mark.onToggle}
+												onActivate={activateCard ?? mark.onActivate}
 											/>
 										);
 								}}

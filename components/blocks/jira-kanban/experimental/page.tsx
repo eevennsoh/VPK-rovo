@@ -27,7 +27,7 @@ import type {
 	JiraKanbanCardSelectModifiers,
 	JiraKanbanColumnData,
 } from "../index";
-import { resolveKanbanColumnChrome } from "../column-chrome";
+import { resolveKanbanColumnChrome, withKanbanDropContentGutter } from "../column-chrome";
 import { createJiraKanbanColumns } from "../jira-kanban-data";
 import {
 	AGENT_SESSION_PANEL_WIDTH_PX,
@@ -891,6 +891,9 @@ function ExperimentalJiraKanbanPageContent({
 								}}
 								className="pb-4 md:pb-5"
 								columnFrame={columnChromeStyles.headerFrame}
+								paddingTop={isListContent
+									? undefined
+									: withKanbanDropContentGutter(0, columnChromeStyles).paddingTop}
 								sessionFlyoutsSuspended={boardSessionDrag.transaction !== null}
 								untrackedDropArmed={boardSessionDrag.transaction?.target?.kind === "untracked"}
 							/>
@@ -898,14 +901,12 @@ function ExperimentalJiraKanbanPageContent({
 						{isListContent ? (
 							renderListContent?.(filteredBoardColumns, {
 								agentSessionDropIntent: boardSessionDrag.listDropIntent,
-								inFlowAgentSessionColumn: showInFlowAgentSessionColumn,
 								onTrailingContentUnderlapChange: setListContentUnderlapsPanel,
 								scrollEndInset: boardScrollEndInset,
 								trailingOverlayRef: agentSessionPanelRef,
 							})
 						) : (
 							<ExperimentalJiraKanban
-								inFlowAgentSessionColumn={showInFlowAgentSessionColumn}
 								activeCardCode={activeCardCode}
 								agentActivityLayout={agentActivityLayout}
 								boardAgentSessionDrag={boardSessionDrag}

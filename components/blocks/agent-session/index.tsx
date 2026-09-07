@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 
 import {
 	isCodingAgentListItem,
@@ -147,10 +147,24 @@ export function AgentSession({
 		}),
 		[capturedItemIds, items, onCreateWorkItem, onLinkWorkItem, onSubtasks],
 	);
+	const isMultiSelectList = items.some(
+		(item: AgentSessionItem) => rowTriage?.get(item.id)?.mark != null,
+	);
+	const selectionHintId = useId();
 
 	return (
 		<>
+			{isMultiSelectList ? (
+				<p className="sr-only" id={selectionHintId}>
+					Shift-click selects a range. Command-click on a Mac, or Control-click
+					on Windows, adds or removes individual sessions. Arrow keys move the
+					selection. Shift-arrow extends it. Command-A or Control-A selects all.
+					Escape clears.
+				</p>
+			) : null}
 			<ul
+				aria-describedby={isMultiSelectList ? selectionHintId : undefined}
+				aria-multiselectable={isMultiSelectList ? true : undefined}
 				className={cn(
 					"flex flex-col",
 					variant === "large"
@@ -158,9 +172,11 @@ export function AgentSession({
 						: variant === "medium-detached"
 							? undefined
 							: "gap-2",
+					isMultiSelectList ? "select-none" : null,
 					className,
 				)}
 				data-variant={variant}
+				role={isMultiSelectList ? "grid" : undefined}
 				// Large defaults to flush. Column and panel hosts override
 				// `gap-0` via `listClassName` (`gap-1 p-1`) so marked rows can
 				// fuse. Detached compact rows sit 2px apart (`space.025`).
@@ -288,6 +304,7 @@ export {
 export type {
 	AgentSessionItem,
 	AgentSessionProps,
+	AgentSessionSelectionGesture,
 	AgentSessionTriageRow,
 	AgentSessionVariant,
 } from "./agent-session-types";

@@ -362,11 +362,8 @@ test("the row reveals Resume plus Archive / Unarchive where Agent List puts Arch
 	assert.match(CARD_SOURCE, /import ArchiveBoxIcon from "@atlaskit\/icon\/core\/archive-box";/u);
 	assert.match(CARD_SOURCE, /import LibraryIcon from "@atlaskit\/icon\/core\/library";/u);
 	assert.doesNotMatch(CARD_SOURCE, /EyeOpenIcon|EyeOpenStrikethroughIcon|visibilityLabel = "Hide"|visibilityLabel === "Show"/u);
-	assert.match(CARD_SOURCE, /group\/agent-row relative flex w-full rounded-lg p-3 text-left text-text/u);
-	assert.match(CARD_SOURCE, /bind \? "cursor-grab" : "cursor-pointer"/u);
+	assert.match(CARD_SOURCE, /group\/agent-row relative flex w-full cursor-default rounded-lg p-3 text-left text-text/u);
 	assert.match(CARD_SOURCE, /aria-roledescription=\{bind \? "Draggable agent session" : undefined\}/u);
-	assert.match(MEDIUM_DRAG_SOURCE, /sessionDragBind && "cursor-grab touch-none select-none"/u);
-	assert.match(MEDIUM_DRAG_SOURCE, /isDragging && "cursor-grabbing \[&_article\]:cursor-grabbing"/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /z-\[400\]/u);
 	assert.doesNotMatch(CARD_SOURCE, /hover:border-border(?!-disabled)/u);
 	assert.doesNotMatch(CARD_SOURCE, /focus-within:border-border(?!-disabled)/u);
@@ -411,10 +408,20 @@ test("the row reveals Resume plus Archive / Unarchive where Agent List puts Arch
 	assert.match(CARD_SOURCE, /data-variant="uncaptured-work"/u);
 });
 
+test("agent session hover keeps the default cursor instead of a drag-handle cursor", () => {
+	assert.match(CARD_SOURCE, /group\/agent-row relative flex w-full cursor-default rounded-lg p-3 text-left text-text/u);
+	assert.doesNotMatch(CARD_SOURCE, /cursor-grab(?!bing)/u);
+	assert.doesNotMatch(CARD_SOURCE, /cursor-pointer/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /sessionDragBind && "touch-none select-none"/u);
+	assert.doesNotMatch(MEDIUM_DRAG_SOURCE, /cursor-grab(?!bing)/u);
+	assert.match(MEDIUM_DRAG_SOURCE, /isDragging && "cursor-grabbing \[&_article\]:cursor-grabbing"/u);
+});
+
 test("the hover checkbox replaces the avatar instantly, with no opacity transition", () => {
 	assert.match(CARD_SOURCE, /<AgentSessionSelectMark/u);
 	assert.match(CARD_SOURCE, /selection is not avatar-only/u);
-	assert.match(SELECT_MARK_SOURCE, /role="checkbox"/u);
+	assert.match(SELECT_MARK_SOURCE, /aria-hidden="true"/u);
+	assert.match(SELECT_MARK_SOURCE, /onActivate\(selectionGestureFromModifierKeys\(event\)\)/u);
 	assert.match(SELECT_MARK_SOURCE, /group-hover\/agent-row:opacity-100/u);
 	assert.match(SELECT_MARK_SOURCE, /group-hover\/agent-row:opacity-0/u);
 	assert.match(SELECT_MARK_SOURCE, /col-start-1 row-start-1 transition-none/u);
@@ -556,6 +563,9 @@ test("a coding session body is read-only when the host omits onView", () => {
 test("a card body click toggles a single selected session on the selected token", () => {
 	assert.match(TYPES_SOURCE, /selectedItemId\?: string \| null;/u);
 	assert.match(TYPES_SOURCE, /onSelectedItemIdChange\?: \(itemId: string \| null\) => void;/u);
+	assert.match(TYPES_SOURCE, /export interface AgentSessionSelectionGesture/u);
+	assert.match(TYPES_SOURCE, /readonly isLead: boolean;/u);
+	assert.match(TYPES_SOURCE, /onActivate: \(gesture: AgentSessionSelectionGesture\) => void;/u);
 	assert.match(INDEX_SOURCE, /selectedItemId: selectedItemIdProp,/u);
 	assert.match(INDEX_SOURCE, /const isSelectionControlled = selectedItemIdProp !== undefined;/u);
 	assert.match(
@@ -589,13 +599,19 @@ test("a card body click toggles a single selected session on the selected token"
 	assert.match(CARD_SOURCE, /onClick=\{handleArticleClick\}/u);
 	assert.match(CARD_SOURCE, /onKeyDown=\{handleArticleKeyDown\}/u);
 	assert.match(CARD_SOURCE, /onView === undefined && mark == null/u);
-	assert.match(CARD_SOURCE, /mark\.onToggle\(\)/u);
-	assert.match(CARD_SOURCE, /if \(selecting !== isSelected\)/u);
-	assert.match(CARD_SOURCE, /role=\{activateCard === undefined \? undefined : "button"\}/u);
-	assert.match(CARD_SOURCE, /aria-pressed=\{activateCard === undefined \? undefined : showSelectedFill\}/u);
+	assert.match(CARD_SOURCE, /mark\.onActivate\(gesture\)/u);
+	assert.match(CARD_SOURCE, /selectionGestureFromModifierKeys\(event\)/u);
+	assert.match(CARD_SOURCE, /role=\{articleRole\}/u);
+	assert.match(CARD_SOURCE, /: "gridcell"/u);
+	assert.match(CARD_SOURCE, /aria-pressed=\{articleRole === "button" \? showSelectedFill : undefined\}/u);
+	assert.match(CARD_SOURCE, /aria-selected=\{mark == null \? undefined : isMarked\}/u);
+	assert.match(CARD_SOURCE, /role=\{mark == null \? undefined : "row"\}/u);
+	assert.match(CARD_SOURCE, /articleRole === "button" \? showSelectedFill/u);
+	assert.match(INDEX_SOURCE, /role=\{isMultiSelectList \? "grid" : undefined\}/u);
+	assert.match(INDEX_SOURCE, /aria-multiselectable=\{isMultiSelectList \? true : undefined\}/u);
 	assert.match(CARD_SOURCE, /event\.target\.closest\(SESSION_DRAG_INTERACTIVE_SELECTOR\) !== null/u);
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*onView=\{undefined\}/u);
-	assert.match(CARD_SOURCE, /onToggle=\{activateCard \?\? mark\.onToggle\}/u);
+	assert.match(CARD_SOURCE, /onActivate=\{activateCard \?\? mark\.onActivate\}/u);
 	assert.match(LIST_ROW_ACTION_SOURCE, /event\.stopPropagation\(\);\s*\n\s*action\.onClick\(\)/u);
 	assert.doesNotMatch(CARD_SOURCE, /isSelected=\{false\}/u);
 	assert.doesNotMatch(CARD_SOURCE, /bg-bg-accent-blue-subtlest/u);

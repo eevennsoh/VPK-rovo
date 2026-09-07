@@ -30,6 +30,7 @@ import {
 import type { AgentSessionColumnProps } from "./agent-session-column-types";
 import { useAgentSessionColumnHidden } from "./use-agent-session-column-hidden";
 import { useUntrackedSelection } from "./use-untracked-selection";
+import { focusAgentSessionRow } from "./untracked-selection-keyboard";
 
 /** Expanded column width in px. Exported so a host surface can size itself to match. */
 export const AGENT_SESSION_COLUMN_WIDTH_PX = 280;
@@ -44,9 +45,9 @@ export const AGENT_SESSION_COLUMN_WIDTH_PX = 280;
 export const AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX = 32;
 
 /**
- * Collapsing repositions the whole board to the right of it, so the width change
- * uses the bold in-place profile (`duration-medium` + `ease-in-out`) the status
- * columns use.
+ * Hover preview keeps this column collapsed, so the width transition runs only
+ * after a deliberate expand/collapse action. Hosts mirror the same timing for
+ * their reserved footprint.
  */
 const AGENT_SESSION_COLUMN_TRANSITION = "width var(--duration-medium) var(--ease-in-out)";
 
@@ -177,13 +178,13 @@ function resolveCollapsedHeaderStyle(
  */
 const HEADER_COUNT_AT_REST = cn(
 	"pointer-events-none transition-opacity duration-normal ease-out-practical",
-	"group-hover/session-column:opacity-0 group-has-[:focus-visible]/session-column:opacity-0",
+	"peer-hover/expand-control:opacity-0 peer-focus-visible/expand-control:opacity-0",
 	"motion-reduce:transition-none",
 );
 
 const HEADER_CONTROL_ON_REVEAL = cn(
-	"opacity-0 transition-opacity duration-normal ease-out-practical",
-	"group-hover/session-column:opacity-100 group-has-[:focus-visible]/session-column:opacity-100",
+	"peer/expand-control opacity-0 transition-opacity duration-normal ease-out-practical",
+	"hover:opacity-100 focus-visible:opacity-100",
 	"motion-reduce:transition-none",
 );
 
@@ -260,6 +261,7 @@ export function AgentSessionColumn({
 	columnFrame = DEFAULT_AGENT_SESSION_COLUMN_FRAME,
 	className,
 	collapsed: collapsedProp,
+	collapsedPresentation = "column",
 	count,
 	defaultCollapsed = false,
 	emptyLabel = "No untracked sessions",
@@ -290,6 +292,8 @@ export function AgentSessionColumn({
 		null,
 	);
 	const selectedItemId = isSelectionControlled ? selectedItemIdProp : uncontrolledSelectedItemId;
+	const canViewItem = sessionProps.canViewItem;
+	const onViewSession = sessionProps.onView;
 	const {
 		closeHiddenView,
 		hideHidden,
@@ -341,11 +345,37 @@ export function AgentSessionColumn({
 	const untrackedCount = count ?? visibleItems.length;
 	const showWellFooter = view === "hidden" || hiddenCount > 0;
 	const sessionCount = view === "hidden" ? hiddenItems.length : untrackedCount;
+	// Coding sessions are always activatable; person rows only when `canViewItem`
+	// allows it. Selection, notches, and board spotlight share this gate.
+	const canActivateItem = useCallback((item: AgentSessionItem) => (
+		isCodingAgentListItem(item) || (canViewItem?.(item) ?? true)
+	), [canViewItem]);
+	const handleSelectedItemIdChange = useCallback((itemId: string | null) => {
+		if (!isSelectionControlled) {
+			setUncontrolledSelectedItemId(itemId);
+		}
+		onSelectedItemIdChange?.(itemId);
+	}, [isSelectionControlled, onSelectedItemIdChange]);
+	const handleLeadItem = useCallback((item: AgentSessionItem | null) => {
+		if (item === null) {
+			handleSelectedItemIdChange(null);
+			return;
+		}
+		handleSelectedItemIdChange(item.id);
+		if (canActivateItem(item)) {
+			onViewSession?.(item);
+		}
+	}, [canActivateItem, handleSelectedItemIdChange, onViewSession]);
+	const handleFocusRow = useCallback((itemId: string | null) => {
+		focusAgentSessionRow(columnRef.current, itemId);
+	}, []);
 	const untrackedSelection = useUntrackedSelection({
 		capturedItemIds: sessionProps.capturedItemIds,
 		count: sessionCount,
+		focusRow: handleFocusRow,
 		getSuggestedWorkItemKey: sessionProps.getSuggestedWorkItemKey,
 		getSuggestedWorkItemKeys: sessionProps.getSuggestedWorkItemKeys,
+		onLeadItem: handleLeadItem,
 		title: displayTitle,
 		triage: selectionTriage,
 		visibilityLabel: view === "hidden" ? "Unarchive" : "Archive",
@@ -440,15 +470,11 @@ export function AgentSessionColumn({
 			closeHiddenView();
 		}
 	}, [closeHiddenView, collapsed, shouldReduceMotion]);
-	// The rail's user dots activate on the same terms the cards do: coding sessions
-	// are always activatable, person rows only when `canViewItem` allows it.
-	const canActivateNotch = (item: AgentSessionItem) =>
-		isCodingAgentListItem(item) || (sessionProps.canViewItem?.(item) ?? true);
-	const handleNotchView = sessionProps.onView === undefined
+	const handleNotchView = onViewSession === undefined
 		? undefined
 		: (item: AgentSessionItem) => {
-			if (canActivateNotch(item)) {
-				sessionProps.onView?.(item);
+			if (canActivateItem(item)) {
+				onViewSession(item);
 			}
 		};
 
@@ -476,13 +502,6 @@ export function AgentSessionColumn({
 		onToggleVisibility?.(item);
 	};
 
-	const handleSelectedItemIdChange = (itemId: string | null) => {
-		if (!isSelectionControlled) {
-			setUncontrolledSelectedItemId(itemId);
-		}
-		onSelectedItemIdChange?.(itemId);
-	};
-
 	const handleTransitionEnd = (event: React.TransitionEvent<HTMLElement>) => {
 		if (event.target === event.currentTarget && event.propertyName === "width") {
 			setIsResizing(false);
@@ -490,7 +509,35 @@ export function AgentSessionColumn({
 	};
 
 	const layout = resolveAgentSessionColumnLayout(headerSurface, columnFrame);
-	const planeClassName = resolveAgentSessionPlaneClassName(layout, collapsed);
+	const isGutterCollapsed = collapsed && collapsedPresentation === "gutter";
+	const planeClassName = cn(
+		resolveAgentSessionPlaneClassName(layout, collapsed),
+		isGutterCollapsed ? "bg-transparent" : null,
+	);
+	const collapsedCountLabel = newCount > 0
+		? `${sessionCount} sessions, ${newCount} newly synced`
+		: `${sessionCount} sessions`;
+	const collapsedExpandControl = (
+		<TooltipProvider>
+			<Tooltip>
+				<TooltipTrigger
+					render={
+						<Button
+							aria-label={`Expand ${title} column`}
+							className={HEADER_CONTROL_ON_REVEAL}
+							onClick={handleToggleCollapsed}
+							size="icon-compact"
+							type="button"
+							variant="ghost"
+						/>
+					}
+				>
+					<Icon className="text-icon-subtle" render={<GrowHorizontalIcon label="" />} />
+				</TooltipTrigger>
+				<TooltipContent>Expand</TooltipContent>
+			</Tooltip>
+		</TooltipProvider>
+	);
 	const collapsedHeader = (
 		<div
 			className={cn(
@@ -500,6 +547,7 @@ export function AgentSessionColumn({
 			style={resolveCollapsedHeaderStyle(layout)}
 		>
 			<div className="relative flex h-6 w-full min-w-0 items-center justify-center">
+				{collapsedExpandControl}
 				<span
 					aria-hidden="true"
 					className={cn(
@@ -514,30 +562,21 @@ export function AgentSessionColumn({
 						text={newCount > 0 ? `+${newCount}` : String(sessionCount)}
 					/>
 				</span>
-				<span className="sr-only">
-					{newCount > 0
-						? `${sessionCount} sessions, ${newCount} newly synced`
-						: `${sessionCount} sessions`}
-				</span>
-				<TooltipProvider>
-					<Tooltip>
-						<TooltipTrigger
-							render={
-								<Button
-									aria-label={`Expand ${title} column`}
-									className={HEADER_CONTROL_ON_REVEAL}
-									onClick={handleToggleCollapsed}
-									size="icon-compact"
-									type="button"
-									variant="ghost"
-								/>
-							}
-						>
-							<Icon className="text-icon-subtle" render={<GrowHorizontalIcon label="" />} />
-						</TooltipTrigger>
-						<TooltipContent>Expand</TooltipContent>
-					</Tooltip>
-				</TooltipProvider>
+				<span className="sr-only">{collapsedCountLabel}</span>
+			</div>
+		</div>
+	);
+	const gutterHeader = (
+		<div
+			className={cn(
+				"flex min-w-0 items-center gap-1.5",
+				layout === "enclosed" ? "border border-solid border-transparent" : null,
+			)}
+			style={resolveCollapsedHeaderStyle(layout)}
+		>
+			<div className="relative flex h-6 w-full min-w-0 items-center justify-center">
+				<span className="sr-only">{collapsedCountLabel}</span>
+				{collapsedExpandControl}
 			</div>
 		</div>
 	);
@@ -638,13 +677,14 @@ export function AgentSessionColumn({
 			ref={columnRef}
 			aria-label={`${displayTitle}, ${sessionCount} sessions`}
 			className={cn(
-				"group/session-column flex min-h-0 shrink-0 flex-col",
+				"group/session-column relative flex min-h-0 shrink-0 flex-col",
 				collapsed || isResizing ? "overflow-hidden" : null,
 				className,
 			)}
 			data-agent-session-column={title}
 			data-collapsed={collapsed || undefined}
 			data-column-frame={layout === "panel" ? undefined : layout}
+			onKeyDown={untrackedSelection.onKeyDown}
 			onTransitionEnd={handleTransitionEnd}
 			tabIndex={-1}
 			style={{
@@ -657,7 +697,9 @@ export function AgentSessionColumn({
 			{renderAgentSessionColumnFrame({
 				body,
 				collapsed,
-				header: collapsed ? collapsedHeader : expandedHeader,
+				header: collapsed
+					? (isGutterCollapsed ? gutterHeader : collapsedHeader)
+					: expandedHeader,
 				layout,
 				planeClassName,
 			})}

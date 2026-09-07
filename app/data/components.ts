@@ -519,12 +519,14 @@ export const UTILITY_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 
 export const VISUAL_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	visualComponent("gooey", "Gooey", "@/components/visual/gooey"),
+	visualComponent("linking-effect", "Linking Effect", "@/components/visual/linking-effect"),
 	visualComponent("typography", "Typography", "@/lib/tokens"),
 	visualComponent("color", "Color", "@/app/tailwind-theme.css\n@/app/shadcn-theme.css"),
 	visualComponent("shadow", "Shadow", "@/lib/tokens"),
 	visualComponent("shadow-overlay", "Shadow Overlay", "@/components/website/demos/visual/shadow-overlay"),
 	visualComponent("card-glow", "Card Glow", "@/components/website/demos/visual/card-glow-demo"),
 	visualComponent("border-beam", "Border Beam", "@/components/visual/border-beam"),
+	visualComponent("dropzone-effect", "Dropzone Effect", "@/components/visual/dropzone-effect"),
 	visualComponent("scribbles", "Scribbles", "@/components/website/demos/visual/scribbles"),
 	visualComponent("melt", "Melt", "@/components/website/demos/visual/melt"),
 	visualComponent("squircle", "Squircle", "@/components/website/demos/visual/shaders/squircle"),

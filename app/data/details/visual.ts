@@ -51,10 +51,12 @@ import { MESH_V2_DETAIL } from "./visual/mesh-v2";
 import { CHROMATIC_ABERRATION_DETAIL } from "./visual/chromatic-aberration";
 import { PATTERN_TILE_DETAIL } from "./visual/pattern-tile";
 import { BORDER_BEAM_DETAIL } from "./visual/border-beam";
+import { DROPZONE_EFFECT_DETAIL } from "./visual/dropzone-effect";
 import { INK_WASH_DETAIL } from "./visual/ink-wash";
 import { LIQUID_METAL_DETAIL } from "./visual/liquid-metal";
 import { NOISE_DETAIL } from "./visual/noise";
 import { GOOEY_DETAIL } from "./visual/gooey";
+import { LINKING_EFFECT_DETAIL } from "./visual/linking-effect";
 
 const SHADER_LAB_V2_EFFECT_TYPES = new Set<ShaderLabRuntimeEffectType>([
 	"chromatic-aberration",
@@ -170,6 +172,7 @@ export const VISUAL_DETAILS: Record<string, ComponentDetail> = {
 	color: COLOR_DETAIL,
 	shadow: SHADOW_DETAIL,
 	"shadow-overlay": SHADOW_OVERLAY_DETAIL,
+	"dropzone-effect": DROPZONE_EFFECT_DETAIL,
 	"card-glow": CARD_GLOW_DETAIL,
 	melt: MELT_DETAIL,
 	scribbles: SCRIBBLES_DETAIL,
@@ -212,6 +215,7 @@ export const VISUAL_DETAILS: Record<string, ComponentDetail> = {
 	"liquid-metal": LIQUID_METAL_DETAIL,
 	noise: NOISE_DETAIL,
 	gooey: GOOEY_DETAIL,
+	"linking-effect": LINKING_EFFECT_DETAIL,
 	...PAPER_SHADER_DETAILS,
 	...SHADER_LAB_LAYER_DETAILS,
 	...SHADER_LAB_V2_EFFECT_DETAILS,

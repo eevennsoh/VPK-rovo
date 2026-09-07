@@ -316,7 +316,10 @@ function renderColumnChrome({
 			<span className="min-w-0 truncate text-xs font-medium leading-4 text-text-subtle">
 				{model.kind === "selecting" ? "Selected" : model.title}
 			</span>
-			<span className="ms-1.5 shrink-0 text-xs font-normal text-text-subtlest">
+			<span
+				aria-live={isSelecting ? "polite" : undefined}
+				className="ms-1.5 shrink-0 text-xs font-normal text-text-subtlest"
+			>
 				{model.count}
 			</span>
 			{isSelecting ? (

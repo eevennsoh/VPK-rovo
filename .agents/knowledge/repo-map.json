@@ -5403,7 +5403,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 434,
+			"manifestEntryCount": 436,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -7449,7 +7449,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 102,
+				"entryCount": 104,
 				"entries": [
 					{
 						"category": "visual",
@@ -7549,6 +7549,12 @@
 					},
 					{
 						"category": "visual",
+						"slug": "dropzone-effect",
+						"name": "Dropzone Effect",
+						"importPath": "@/components/visual/dropzone-effect"
+					},
+					{
+						"category": "visual",
 						"slug": "edge-detect",
 						"name": "Edge Detect",
 						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
@@ -7618,6 +7624,12 @@
 						"slug": "ink-wash",
 						"name": "Ink Wash",
 						"importPath": "@/components/visual/ink-wash"
+					},
+					{
+						"category": "visual",
+						"slug": "linking-effect",
+						"name": "Linking Effect",
+						"importPath": "@/components/visual/linking-effect"
 					},
 					{
 						"category": "visual",

@@ -550,7 +550,7 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(PAGE_SOURCE, /onViewChange=\{tabOwnsView \? undefined : setWorkItemView\}/u);
 	assert.match(
 		PAGE_SOURCE,
-		/renderListContent=\{\(\s*columns,\s*\{\s*agentSessionDropIntent,\s*inFlowAgentSessionColumn,\s*onTrailingContentUnderlapChange,\s*scrollEndInset,\s*trailingOverlayRef,\s*\},\s*\) =>/u,
+		/renderListContent=\{\(\s*columns,\s*\{\s*agentSessionDropIntent,\s*onTrailingContentUnderlapChange,\s*scrollEndInset,\s*trailingOverlayRef,\s*\},\s*\) =>/u,
 	);
 	assert.match(PAGE_SOURCE, /useJiraGoldenJourneysV4List/u);
 	assert.match(PAGE_SOURCE, /<JiraList\s+\{\.\.\.listProps\}/u);
@@ -582,7 +582,7 @@ test("the Work items header switches between Board and List views with their ico
 	);
 	assert.match(
 		PAGE_SOURCE,
-		/"min-h-0 flex-1 overflow-hidden pb-4 md:pb-5"[\s\S]*inFlowAgentSessionColumn \? "ps-2" : "ps-4 md:ps-5"[\s\S]*scrollEndInset > 0 \? "pe-0" : "pe-4 md:pe-5"[\s\S]*<JiraList\s+\{\.\.\.listProps\}/u,
+		/"min-h-0 flex-1 overflow-hidden pb-4 ps-6 md:pb-5"[\s\S]*scrollEndInset > 0 \? "pe-0" : "pe-4 md:pe-5"[\s\S]*<JiraList\s+\{\.\.\.listProps\}/u,
 	);
 	assert.doesNotMatch(
 		PAGE_SOURCE,
@@ -605,9 +605,8 @@ test("the Work items header switches between Board and List views with their ico
 		EXPERIMENTAL_PAGE_SOURCE,
 		/renderListContent\?: \(\s*columns: readonly JiraKanbanColumnData\[\],\s*context: ExperimentalJiraKanbanListRenderContext,\s*\) => ReactNode;/u,
 	);
-	assert.match(PAGE_SOURCE, /inFlowAgentSessionColumn \? "ps-2" : "ps-4 md:ps-5"/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /inFlowAgentSessionColumn: boolean;/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /inFlowAgentSessionColumn: showInFlowAgentSessionColumn,/u);
+	assert.match(PAGE_SOURCE, /pb-4 ps-6 md:pb-5/u);
+	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /inFlowAgentSessionColumn/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /agentSessionDropIntent: boardSessionDrag\.listDropIntent/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCreate: agentSessionHandlers.onCreateWorkItem/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onListCreate: onListAgentSessionCreate \? handleListAgentSessionCreate : undefined/u);
@@ -729,11 +728,8 @@ test("the route pins the shared Agent Session column beside Jira statuses", () =
 	const scrollportIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<section");
 	assert.ok(columnIndex > 0, "expected the board to render the Agent Session column");
 	assert.ok(columnIndex < scrollportIndex, "expected untracked work to stay pinned before the status scrollport");
-	assert.match(EXPERIMENTAL_BOARD_SOURCE, /agentSessionColumn \|\| inFlowAgentSessionColumn \? "ps-2" : "ps-6"/u);
-	assert.match(
-		EXPERIMENTAL_PAGE_SOURCE,
-		/<ExperimentalJiraKanban[\s\S]*inFlowAgentSessionColumn=\{showInFlowAgentSessionColumn\}/u,
-	);
+	assert.match(EXPERIMENTAL_BOARD_SOURCE, /flex min-h-full w-max min-w-full items-stretch ps-6/u);
+	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /inFlowAgentSessionColumn/u);
 });
 
 test("the Panel design variant floats untracked work over the board and the list", () => {
