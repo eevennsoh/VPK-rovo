@@ -24,6 +24,9 @@ export interface JiraLinkingDropMember {
 
 export type JiraLinkingDropPlayback = "cohort" | "stagger";
 
+/** Motion `arc()` side. `"automatic"` omits `direction` so Motion picks a stable screen-space bulge. */
+export type JiraLinkingArcDirection = "automatic" | "ccw" | "cw";
+
 export type JiraLinkingFlightKey = string & { readonly __brand: "JiraLinkingFlightKey" };
 
 export interface JiraLinkingDrop {
@@ -37,11 +40,18 @@ export type JiraLinkingDropTravel = "arc" | "none";
 export interface JiraLinkingDropProfile {
 	readonly arcPeak: number;
 	readonly arcStrength: number;
+	readonly direction: JiraLinkingArcDirection;
 	readonly durationMs: number;
 	readonly ease: readonly [number, number, number, number];
 	readonly launchSpreadPx: number;
 	readonly staggerMs: number;
 	readonly travel: JiraLinkingDropTravel;
+}
+
+export interface JiraLinkingArcOptions {
+	readonly peak: number;
+	readonly strength: number;
+	readonly direction?: Exclude<JiraLinkingArcDirection, "automatic">;
 }
 
 export interface JiraLinkingFlight {
@@ -53,12 +63,13 @@ export interface JiraLinkingFlight {
 
 /**
  * `duration-slower` + `ease-out-practical`, matching the create-well flights.
- * Strength is negative so the Motion `arc()` bows clockwise into the chin;
- * the create well keeps its own sign.
+ * Strength stays positive and `direction` is `"automatic"` so Motion picks a
+ * stable screen-space bulge instead of locking clockwise or counter-clockwise.
  */
 export const JIRA_LINKING_FULL_DROP_PROFILE: JiraLinkingDropProfile = {
 	arcPeak: 0.5,
-	arcStrength: -0.42,
+	arcStrength: 0.42,
+	direction: "automatic",
 	durationMs: 400,
 	ease: [0.4, 1, 0.6, 1],
 	launchSpreadPx: 14,
@@ -69,6 +80,7 @@ export const JIRA_LINKING_FULL_DROP_PROFILE: JiraLinkingDropProfile = {
 export const JIRA_LINKING_REDUCED_DROP_PROFILE: JiraLinkingDropProfile = {
 	arcPeak: 0.5,
 	arcStrength: 0,
+	direction: "automatic",
 	durationMs: 0,
 	ease: [0, 0, 1, 1],
 	launchSpreadPx: 0,
@@ -86,6 +98,27 @@ export function resolveJiraLinkingDropPlayback(
 	drop: Readonly<JiraLinkingDrop>,
 ): JiraLinkingDropPlayback {
 	return drop.playback ?? "stagger";
+}
+
+export function resolveJiraLinkingArcOptions(
+	profile: Readonly<JiraLinkingDropProfile>,
+): JiraLinkingArcOptions {
+	const { direction } = profile;
+	switch (direction) {
+		case "automatic":
+			return { peak: profile.arcPeak, strength: profile.arcStrength };
+		case "ccw":
+		case "cw":
+			return {
+				direction,
+				peak: profile.arcPeak,
+				strength: profile.arcStrength,
+			};
+		default: {
+			const exhaustive: never = direction;
+			return exhaustive;
+		}
+	}
 }
 
 export function flightsFromLinkingDrop(

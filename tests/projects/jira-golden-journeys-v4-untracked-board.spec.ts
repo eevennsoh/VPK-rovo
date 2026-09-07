@@ -137,11 +137,33 @@ test("the collapsed Untracked rail blues the plain Jira issue suggested by a ses
 
 test("the gutter preview supports timeline traversal across wider session targets", async ({ page }) => {
 	await openCollapsedBoard(page);
-	await revealCollapsedAgentSessionColumn(page);
 	const column = page.locator("[data-agent-session-column]");
+	const count = column.locator("[data-agent-session-column-count]");
+	const railList = column.locator("ul");
 	const notches = column.locator("[data-agent-session-notch]");
+	const sessionCount = await getUntrackedSessionCount(page);
+	await expect(count).toHaveCSS("opacity", "0");
+	await expect(railList).toHaveCSS("max-height", "244px");
+	await expect(notches).toHaveCount(sessionCount);
+	expect(sessionCount).toBeGreaterThan(10);
+	await revealCollapsedAgentSessionColumn(page);
 	await expect(column).toHaveCSS("width", "32px");
 	await expect(notches.first()).toHaveCSS("width", "56px");
+	await expect(count).toHaveCSS("opacity", "1");
+	await expect(railList).toHaveCSS("max-height", "none");
+	await expect(notches).toHaveCount(sessionCount);
+	await notches.last().scrollIntoViewIfNeeded();
+	await expect(notches.last()).toBeVisible();
+	const expandControl = page.getByRole("button", { name: "Expand Untracked work column" });
+	const countBox = await count.boundingBox();
+	const expandBox = await expandControl.boundingBox();
+	expect(countBox).not.toBeNull();
+	expect(expandBox).not.toBeNull();
+	if (!countBox || !expandBox) return;
+	expect(countBox.height).toBe(24);
+	expect(expandBox.height).toBe(24);
+	expect(expandBox.width).toBe(56);
+	expect(countBox.width).toBe(56);
 	await expect(column.locator("..")).toHaveCSS("transform", "matrix(1, 0, 0, 1, 24, 0)");
 	const columnBox = await column.boundingBox();
 	const firstBox = await notches.first().boundingBox();
@@ -173,6 +195,8 @@ test("the gutter preview supports timeline traversal across wider session target
 	await todoCard.hover();
 	await expect(page.locator("[data-agent-session-column-hit-area]")).toBeVisible();
 	await expect(notches.first()).toHaveCSS("width", "24px");
+	await expect(count).toHaveCSS("opacity", "0");
+	await expect(railList).toHaveCSS("max-height", "244px");
 });
 
 test("the rail preserves flyout spacing and assigns the gaps to neighboring dots", async ({ page }) => {

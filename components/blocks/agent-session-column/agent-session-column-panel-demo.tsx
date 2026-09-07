@@ -159,8 +159,7 @@ export function AgentSessionColumnPanelDemo() {
 		},
 	}), [handleCapture]);
 
-	// Arrivals land at the top, under the header, because that is where sync sits
-	// and where the entrance animation starts from.
+	// Arrivals land at the top, under the header, because that is where sync sits.
 	const handleSync = useCallback(() => {
 		const batch = ARRIVAL_BATCHES[syncedBatches];
 		if (batch === undefined) {
