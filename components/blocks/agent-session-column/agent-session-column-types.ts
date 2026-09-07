@@ -45,6 +45,8 @@ export interface AgentSessionColumnProps extends Omit<
 	 * The expand control remains keyboard-reachable. Defaults to `"column"`.
 	 */
 	collapsedPresentation?: "column" | "gutter";
+	/** Extra horizontal pointer space on each side of the collapsed rail, without moving its markers. */
+	collapsedRailHitSlopPx?: number;
 	/** Plays the collapsed gutter rail's one-time staggered dot introduction. */
 	playGutterIntro?: boolean;
 	/** Called after the final dot finishes the gutter introduction. */

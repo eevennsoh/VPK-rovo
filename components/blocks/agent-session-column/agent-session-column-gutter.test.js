@@ -83,10 +83,10 @@ test("the entire visible gutter is a hover target without covering To do", () =>
 		IN_FLOW_COLUMN_SOURCE,
 		/isEmbedded[\s\S]{0,100}?\? "pointer-events-auto bg-surface"[\s\S]{0,140}?: "pointer-events-none bg-transparent \[&_\[data-agent-session-notch\]\]:pointer-events-auto"/u,
 	);
-	assert.match(RAIL_SOURCE, /className="group\/notch flex h-5 w-full shrink-0 items-center"/u);
+	assert.match(RAIL_SOURCE, /className="group\/notch flex h-6 w-full shrink-0 items-center"/u);
 	assert.match(
 		RAIL_SOURCE,
-		/className="focus-visible:ring-ring flex h-5 w-full items-center justify-center[\s\S]{0,120}?data-agent-session-notch=""/u,
+		/className="flex h-6 shrink-0 items-center justify-center[\s\S]{0,120}?data-agent-session-notch=""/u,
 	);
 });
 

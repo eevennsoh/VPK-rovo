@@ -285,6 +285,7 @@ export function AgentSessionColumn({
 	className,
 	collapsed: collapsedProp,
 	collapsedPresentation = "column",
+	collapsedRailHitSlopPx = 0,
 	count,
 	defaultCollapsed = false,
 	emptyLabel = "No untracked sessions",
@@ -650,6 +651,7 @@ export function AgentSessionColumn({
 			getSuggestedWorkItemKey={sessionProps.getSuggestedWorkItemKey}
 			getSuggestedWorkItemKeys={sessionProps.getSuggestedWorkItemKeys}
 			highlightedItemId={sessionProps.highlightedItemId}
+			hitSlopPx={collapsedRailHitSlopPx}
 			items={filteredViewItems}
 			maxVisibleItems={collapsedPresentation === "gutter"
 				? AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS
@@ -750,7 +752,7 @@ export function AgentSessionColumn({
 			aria-label={`${displayTitle}, ${sessionCount} sessions`}
 			className={cn(
 				"group/session-column relative flex min-h-0 shrink-0 flex-col",
-				collapsed || isResizing ? "overflow-hidden" : null,
+				(collapsed && collapsedRailHitSlopPx === 0) || isResizing ? "overflow-hidden" : null,
 				className,
 			)}
 			data-agent-session-column={title}

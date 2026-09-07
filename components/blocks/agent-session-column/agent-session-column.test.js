@@ -378,7 +378,7 @@ test("notch flyouts use a stable trigger host so the shared popup follows the ra
 	// `div` as the HoverCard trigger. Putting `layout` on the trigger remounts
 	// the host and opens a new flyout per notch.
 	assert.match(RAIL_COLUMN_SOURCE, /layout=\{shouldReduceMotion \? false : "position"\}/u);
-	assert.match(RAIL_COLUMN_SOURCE, /<JiraSessionFlyoutTrigger[\s\S]{0,200}?render=\{\s*<div className="w-full" \/>/u);
+	assert.match(RAIL_COLUMN_SOURCE, /<JiraSessionFlyoutTrigger[\s\S]{0,200}?render=\{\s*<div\s*className="mx-auto flex h-5 items-center/u);
 	assert.match(RAIL_COLUMN_SOURCE, /closeDelay=\{160\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /delay=\{0\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /content="untracked-work"/u);
@@ -441,8 +441,8 @@ test("each notch opens the shared session flyout rather than a forked preview", 
 	assert.match(RAIL_COLUMN_SOURCE, /flyoutSession=\{toAgentSessionUntrackedWorkFlyoutItem\(/u);
 	assert.match(RAIL_COLUMN_SOURCE, /session=\{flyoutSession\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /closeDelay=\{160\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /render=\{\s*<div\s*className="mx-auto flex h-5 items-center/u);
 	assert.match(RAIL_COLUMN_SOURCE, /delay=\{0\}/u);
-	assert.match(RAIL_COLUMN_SOURCE, /render=\{\s*<div className="w-full" \/>/u);
 	assert.match(RAIL_COLUMN_SOURCE, /<motion\.li/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /createHoverCardHandle|<HoverCard\b/u);
 	assert.match(INDEX_SOURCE, /capturedItemIds=\{sessionProps\.capturedItemIds\}/u);
@@ -453,7 +453,7 @@ test("a notch is reachable and legible without a pointer", () => {
 	// Keyboard focus opens the flyout through the trigger's focus-visible path,
 	// so the notch has to be a real focusable control with a ring and a name.
 	assert.match(RAIL_COLUMN_SOURCE, /<button/u);
-	assert.match(RAIL_COLUMN_SOURCE, /focus-visible:ring-2/u);
+	assert.match(RAIL_COLUMN_SOURCE, /has-\[:focus-visible\]:ring-2/u);
 	assert.match(RAIL_COLUMN_SOURCE, /\$\{item\.title\} — \$\{NOTCH_STATE_LABEL\[item\.state\]\}/u);
 	// Colour alone never carries the state.
 	assert.match(RAIL_COLUMN_SOURCE, /const NOTCH_STATE_LABEL: Record<AgentListState, string>/u);
@@ -489,7 +489,7 @@ test("collapsed motion is tokenised and honours reduced motion", () => {
 	assert.match(NOTCH_MARK_SOURCE, /group-has-\[:focus-visible\]\/notch:scale-x-\[1\.6\]/u);
 	assert.doesNotMatch(NOTCH_MARK_SOURCE, /group-focus-visible\/notch:/u);
 	// Clipping is scoped to the resize, so a focused card's ring is never cut.
-	assert.match(INDEX_SOURCE, /collapsed \|\| isResizing \? "overflow-hidden" : null/u);
+	assert.match(INDEX_SOURCE, /\(collapsed && collapsedRailHitSlopPx === 0\) \|\| isResizing \? "overflow-hidden" : null/u);
 	assert.match(INDEX_SOURCE, /event\.propertyName === "width"/u);
 	// A host-driven pointer resize must bypass this transition so the column edge
 	// tracks the pointer instead of easing toward every intermediate width.
@@ -658,8 +658,9 @@ test("the collapsed rail preserves session twin hover previews", () => {
 	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,800}?highlightedItemId=\{sessionProps\.highlightedItemId\}/u);
 	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,800}?onItemHover=\{sessionProps\.onItemHover\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /isHighlighted=\{item\.id === highlightedItemId\}/u);
-	assert.match(RAIL_COLUMN_SOURCE, /onPointerEnter=\{\(\) => \{[\s\S]{0,150}?onItemHover\?\.\(item\)/u);
-	assert.match(RAIL_COLUMN_SOURCE, /onPointerLeave=\{\(\) => \{[\s\S]{0,150}?onItemHover\?\.\(null\)/u);
+	assert.match(RAIL_COLUMN_SOURCE, /publishItemHover\(hoveredItem\)/u);
+	assert.match(RAIL_COLUMN_SOURCE, /return \(\) => publishItemHover\(null\)/u);
+	assert.match(RAIL_COLUMN_SOURCE, /isHovered=\{item\.id === hoverIntent\.activeItemId\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /data-highlighted=\{isHighlighted \|\| undefined\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /isHighlighted=\{isHighlighted\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /showAvatar \? "opacity-100 scale-100"/u);
@@ -790,7 +791,7 @@ test("the collapsed rail keeps a focus-ring gutter on its scrollport", () => {
 	// vertical padding preserves the ring at the capped scroll boundary.
 	assert.match(
 		RAIL_COLUMN_SOURCE,
-		/overflow-y-auto overscroll-contain px-1 py-1/u,
+		/overflow-y-auto overscroll-contain px-1 py-0\.5/u,
 	);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /-mx-1/u);
 });
@@ -807,7 +808,7 @@ test("the collapsed rail fades notches with ScrollMask viewport mask-image", () 
 	);
 	assert.match(
 		RAIL_COLUMN_SOURCE,
-		/style=\{railViewportMaxHeight === undefined\s*\? scrollMaskStyle\s*: \{ \.\.\.scrollMaskStyle, maxHeight: railViewportMaxHeight \}\}/u,
+		/style=\{\{\s*\.\.\.scrollMaskStyle,[\s\S]{0,150}?maxHeight: railViewportMaxHeight/u,
 	);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /<motion\.ul/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /ScrollMaskEdgeOverlay/u);
@@ -834,7 +835,7 @@ test("the embedded column rail does not cap the viewport to ten notches", () => 
 	);
 	assert.match(
 		RAIL_COLUMN_SOURCE,
-		/style=\{railViewportMaxHeight === undefined\s*\? scrollMaskStyle\s*: \{ \.\.\.scrollMaskStyle, maxHeight: railViewportMaxHeight \}\}/u,
+		/style=\{\{\s*\.\.\.scrollMaskStyle,[\s\S]{0,150}?maxHeight: railViewportMaxHeight/u,
 	);
 	assert.doesNotMatch(
 		RAIL_COLUMN_SOURCE,

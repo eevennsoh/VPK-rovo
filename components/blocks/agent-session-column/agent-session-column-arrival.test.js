@@ -79,7 +79,7 @@ test("an arrival is a transient beat plus a mark that outlives it", () => {
 	assert.match(RAIL_COLUMN_SOURCE, /"size-1 rounded-full/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /isNew \? "size-3" : "size-1"/u);
 	assert.match(RAIL_COLUMN_SOURCE, /isNew=\{isNew\}/u);
-	assert.match(RAIL_COLUMN_SOURCE, /group-hover\/notch:opacity-100/u);
+	assert.match(RAIL_COLUMN_SOURCE, /group-data-\[hovered\]\/notch:opacity-100/u);
 	assert.match(RAIL_COLUMN_SOURCE, /group-has-\[:focus-visible\]\/notch:opacity-100/u);
 	assert.match(RAIL_COLUMN_SOURCE, /avatarSrc=\{visibleIdentity\.avatarSrc\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /toAgentSessionVisibleIdentity\(item\)/u);
@@ -183,7 +183,7 @@ test("arrival motion is tokenised, capped, and spatially anchored", () => {
 	);
 	assert.match(
 		RAIL_COLUMN_SOURCE,
-		/group-hover\/notch:scale-100 group-hover\/notch:opacity-100/u,
+		/group-data-\[hovered\]\/notch:scale-100 group-data-\[hovered\]\/notch:opacity-100/u,
 	);
 	assert.match(
 		RAIL_COLUMN_SOURCE,

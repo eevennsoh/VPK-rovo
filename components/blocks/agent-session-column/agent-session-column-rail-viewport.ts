@@ -1,8 +1,9 @@
 /** The tucked gutter rail shows the latest ten sessions; older sessions stay scrollable. */
 export const AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS = 10;
-export const AGENT_SESSION_RAIL_ITEM_HEIGHT_PX = 20;
-export const AGENT_SESSION_RAIL_ITEM_GAP_PX = 4;
-export const AGENT_SESSION_RAIL_FOCUS_GUTTER_PX = 8;
+export const AGENT_SESSION_RAIL_ITEM_HEIGHT_PX = 24;
+export const AGENT_SESSION_RAIL_ITEM_GAP_PX = 0;
+// The visual 20px anchors add another 2px at each end inside their targets.
+export const AGENT_SESSION_RAIL_FOCUS_GUTTER_PX = 4;
 
 /**
  * Caps the collapsed gutter rail to a ten-notch window. Embedded / column
