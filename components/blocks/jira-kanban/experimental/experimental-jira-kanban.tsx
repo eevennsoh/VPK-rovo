@@ -9,6 +9,7 @@ import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import { type AgentSessionColumnProps } from "@/components/blocks/agent-session-column";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import { resolveAgentSessionWorkItemKey } from "@/components/blocks/agent-session/agent-session-work-item";
 import {
 	type JiraIssueAgentActivityLayout,
 	type JiraIssueAgentActivityIndicatorRenderer,
@@ -65,6 +66,7 @@ import { SessionFusionOverlay } from "./components/session-fusion-overlay";
 import {
 	bindBoardProximitySessionActions,
 	resolveBoardUntrackedIssueKey,
+	resolveHoveredBoardIssueKey,
 	resolveVisibleFocusedIssueKey,
 	scrollBoardIssueIntoView,
 } from "./lib/board-untracked-sessions";
@@ -157,6 +159,8 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	 * a Board/List switch.
 	 */
 	proximityHighlightedSessionId?: string | null;
+	/** Resolved suggested Jira key from a host-owned Agent Session column. */
+	proximityHighlightedWorkItemKey?: string | null;
 	/**
 	 * Injected board-session drag API. The page supplies this when the
 	 * floating panel also needs `untrackedBinding`; omit to let the board
@@ -641,11 +645,13 @@ function ExperimentalJiraKanbanView({
 	boardSessionDrag,
 	proximityAgentSession,
 	proximityHighlightedSessionId = null,
+	proximityHighlightedWorkItemKey,
 	renderAgentActivityIndicator,
 	paddingBottom = token("space.150"),
 	paddingTop = token("space.150"),
 	selectionToolbar,
 	captureBoardSessionDragRoot = true,
+	untrackedSessions,
 }: Readonly<ExperimentalJiraKanbanProps> & {
 	boardSessionDrag: BoardAgentSessionDrag;
 	captureBoardSessionDragRoot?: boolean;
@@ -666,7 +672,29 @@ function ExperimentalJiraKanbanView({
 	);
 	const [focusedIssueKey, setFocusedIssueKey] = useState<string | null>(null);
 	const [hoveredSessionId, setHoveredSessionId] = useState<string | null>(null);
-	const highlightedSessionId = hoveredSessionId ?? proximityHighlightedSessionId;
+	const [hoveredColumnSessionId, setHoveredColumnSessionId] = useState<string | null>(null);
+	const highlightedSessionId = hoveredSessionId
+		?? hoveredColumnSessionId
+		?? proximityHighlightedSessionId;
+	const hostHoveredIssueKey = proximityHighlightedWorkItemKey === undefined
+		? resolveHoveredBoardIssueKey(
+			proximityHighlightedSessionId,
+			untrackedSessions,
+			boardColumns,
+		)
+		: resolveVisibleFocusedIssueKey(proximityHighlightedWorkItemKey, boardColumns);
+	const hoveredIssueKey = hoveredColumnSessionId === null
+		? hostHoveredIssueKey
+		: resolveHoveredBoardIssueKey(
+			hoveredColumnSessionId,
+			agentSessionColumn?.items,
+			boardColumns,
+			(item) => resolveAgentSessionWorkItemKey(
+				item,
+				agentSessionColumn?.getSuggestedWorkItemKey,
+				agentSessionColumn?.getSuggestedWorkItemKeys,
+			),
+		);
 	const spotlightIssueKey = resolveVisibleFocusedIssueKey(focusedIssueKey, boardColumns);
 	const collapsedColumns = controlledCollapsedColumns ?? uncontrolledCollapsedColumns;
 	const selectedCount = selectedCardCodes?.size ?? 0;
@@ -803,6 +831,10 @@ function ExperimentalJiraKanbanView({
 		setHoveredSessionId(item?.id ?? null);
 		agentSessionColumn?.onItemHover?.(item);
 	};
+	const handleColumnSessionHover = (item: AgentSessionItem | null) => {
+		setHoveredColumnSessionId(item?.id ?? null);
+		agentSessionColumn?.onItemHover?.(item);
+	};
 
 	const handleSessionSelectionChange = (itemId: string | null) => {
 		// Card deselect is not a view. Clear the session-driven spotlight so
@@ -838,7 +870,7 @@ function ExperimentalJiraKanbanView({
 						agentSessionColumn={{
 							...agentSessionColumn,
 							highlightedItemId: highlightedSessionId,
-							onItemHover: handleSessionHover,
+							onItemHover: handleColumnSessionHover,
 							onSelectedItemIdChange: handleSessionSelectionChange,
 							onView: handleSessionView,
 							sessionDrag: boardSessionDrag.enablement.transferable
@@ -978,6 +1010,7 @@ function ExperimentalJiraKanbanView({
 														? boardSessionDrag.linkFlash.flash
 														: undefined}
 													agentSessionDragControl={agentSessionDragControl}
+													agentSessionTargetHighlighted={hoveredIssueKey === card.code}
 												capturedItemIds={proximityActions.capturedItemIds}
 												card={card}
 												chrome={chrome.cardChrome}

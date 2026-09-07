@@ -216,6 +216,8 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	agentActivities?: readonly JiraIssueAgentActivity[];
 	agentDoneRuns?: readonly JiraIssueCompletedAgentRun[];
 	agentActivityMode?: JiraIssueAgentActivityMode;
+	/** Stable preview capability for Agent Session column targeting. Keep present while highlighted changes. */
+	agentSessionTargetPreview?: Readonly<{ highlighted: boolean }>;
 	/** Merged collapses active agents into one prioritized chin row; split gives each agent its own row. */
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	/** One-shot brand sweep across the chin row a session was just linked into. */
@@ -267,6 +269,7 @@ function JiraIssueDefault({
 	agentActivityLayout = "merged",
 	agentSessionFlyout,
 	agentSessionDragControl,
+	agentSessionTargetPreview,
 	agentDoneRuns = [],
 	agentLinkFlash,
 	agentSessionTransfer,
@@ -382,6 +385,7 @@ function JiraIssueDefault({
 		? []
 		: nonCompletedAgentActivities;
 	const hasAgentDoneNotification = resolvedAgentActivityMode === "completed" && agentDoneRuns.length > 0;
+	const agentSessionTargetHighlighted = agentSessionTargetPreview?.highlighted ?? false;
 	const inferredPullRequestNumber = agentDoneRuns.find((run) => run.pullRequestNumber)?.pullRequestNumber;
 	const resolvedPullRequestNumber = pullRequestNumber ?? inferredPullRequestNumber;
 	// A session travelling toward this card publishes a continuous 0..1 ramp.
@@ -409,7 +413,8 @@ function JiraIssueDefault({
 	const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working"
 		|| resolvedAgentActivityMode === "awaiting-input"
 		|| hasAgentDoneNotification
-		|| isAttachingSession;
+		|| isAttachingSession
+		|| agentSessionTargetHighlighted;
 	const hasAgentActivityChin = activeAgentActivities.length > 0
 		|| hasAgentDoneNotification
 		|| isAttachingSession;
@@ -419,18 +424,20 @@ function JiraIssueDefault({
 	// a shell that only appears once the pointer is already inside the rect has
 	// nothing to fade from and snaps to full grey. Mounting early is visually
 	// neutral: `hasActiveAgentActivityShell` is still false, so the surface layer
-	// paints the same card chrome at the same inset. It keys off the drag control
-	// rather than the live ramp because swapping the shell in is a React
+	// paints the same card chrome at the same inset. It keys off stable drag and
+	// target-preview capabilities rather than the live ramp or hover because
+	// swapping the shell in is a React
 	// element-type change on the article's first child: a per-frame gate would
 	// remount the whole card — dropping keyboard focus — every time a pointer
 	// passed within the proximity range.
 	const usesAgentActivityShell = hasAgentActivityPresentation
 		|| Boolean(agentSessionTransfer)
-		|| agentSessionDragControl !== undefined;
+		|| agentSessionDragControl !== undefined
+		|| Boolean(agentSessionTargetPreview);
 	const chromeStyles = resolveJiraIssueChrome(chrome);
 	const usesStrokeChrome = chrome === "stroke";
 	const usesCompactVisual = compact || usesStrokeChrome;
-	const hasInteractiveContent = showMoreAction || hasSubtasks || Boolean(parentEpicControl) || hasAgentActivityPresentation || Boolean(generativeAction) || Boolean(agentSessionTransfer) || usesCompactVisual;
+	const hasInteractiveContent = showMoreAction || hasSubtasks || Boolean(parentEpicControl) || hasAgentActivityPresentation || Boolean(generativeAction) || Boolean(agentSessionTransfer) || usesCompactVisual || Boolean(agentSessionTargetPreview);
 	const shouldRenderIssueClickButton = Boolean(props.onClick && !parentEpicControl);
 	const issueRowsClassName = cn("pt-1", !(hasSubtasks && resolvedSubtasksExpanded) && "pb-1");
 	const layoutTransition = getJiraIssueLayoutTransition(shouldReduceMotion);
@@ -753,7 +760,10 @@ function JiraIssueDefault({
 			<motion.div
 				aria-hidden="true"
 				animate={shouldReduceMotion ? undefined : agentActivityBackdropAnimation}
-				className="pointer-events-none absolute bg-bg-neutral"
+				className={cn(
+					"pointer-events-none absolute transition-colors duration-xxshort ease-out-practical motion-reduce:transition-none",
+					agentSessionTargetHighlighted ? "bg-bg-accent-blue-subtlest" : "bg-bg-neutral",
+				)}
 				data-slot="jira-issue-agent-backdrop"
 				initial={false}
 				style={shouldReduceMotion ? { ...AGENT_ACTIVITY_BACKDROP_STYLE, ...agentActivityBackdropAnimation } : AGENT_ACTIVITY_BACKDROP_STYLE}
