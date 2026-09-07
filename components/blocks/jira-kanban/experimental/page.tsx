@@ -15,6 +15,7 @@ import {
 	resolveAgentSessionWorkItemKey,
 	type AgentSessionItem,
 } from "@/components/blocks/agent-session";
+import { JiraDropzoneField, useJiraDropzoneReceive } from "@/components/blocks/jira-dropzone";
 import type { JiraListInsertion } from "@/components/blocks/jira-list";
 import {
 	AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX,
@@ -181,7 +182,11 @@ function isExperimentalJiraListContent(
 	return activeView === "list" && renderListContent !== undefined;
 }
 
-export default function ExperimentalJiraKanbanPage({
+export default function ExperimentalJiraKanbanPage(props: ExperimentalJiraKanbanPageProps) {
+	return <JiraDropzoneField><ExperimentalJiraKanbanPageContent {...props} /></JiraDropzoneField>;
+}
+
+function ExperimentalJiraKanbanPageContent({
 	activeView = "board",
 	activeCardCode,
 	additionalAgentSessions,
@@ -783,10 +788,12 @@ export default function ExperimentalJiraKanbanPage({
 		});
 	};
 
+	const receiveCreateWell = useJiraDropzoneReceive();
 	const boardSessionDrag = useBoardAgentSessionDrag({
 		boardColumns: filteredBoardColumns,
 		detachedSessionsByCard: proximityAgentSessionsByCard,
 		onCreate: agentSessionHandlers.onCreateWorkItem,
+		onCreateWellReceive: receiveCreateWell,
 		onListCreate: onListAgentSessionCreate ? handleListAgentSessionCreate : undefined,
 		onLink: onCardAgentSessionLink ? handleCardAgentSessionLink : undefined,
 		onMove: onCardAgentSessionMove ? handleCardAgentSessionMove : undefined,
@@ -958,16 +965,7 @@ export default function ExperimentalJiraKanbanPage({
 					</div>
 				</div>
 			)) : null}
-			{/*
-			 * A board-root child, not a content-region one: the panel is a docked
-			 * rail whose top edge is the tab strip's bottom border, so it spans
-			 * from the tabs to the page bottom. Title+tabs stay above it — a
-			 * real `top`, never `inset-y-0` through the tabs.
-			 *
-			 * Still the last child. `jira-list-column-controls` also sits at z-40 and
-			 * neither the region nor this root creates a stacking context between
-			 * them, so a tie is broken by DOM order.
-			 */}
+			{/* Docked rail: last child so it stacks above list column controls at the same z. */}
 			{showAgentSessionPanel && agentSessionColumnConfig ? (
 				<JiraSessionFlyoutSuspensionProvider
 					suspended={boardSessionDrag.transaction !== null}

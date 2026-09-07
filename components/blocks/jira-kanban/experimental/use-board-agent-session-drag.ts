@@ -28,6 +28,9 @@ import {
 	type BoardAgentSessionDropBounds,
 	type BoardAgentSessionDropZone,
 } from "./lib/board-agent-session-drag";
+import type { SessionDropReceipt } from "@/components/blocks/jira-dropzone";
+
+import { toSessionDropReceipt } from "./lib/session-drop-receipt";
 import {
 	executeSessionTransferPlan,
 	planSessionTransfer,
@@ -182,6 +185,7 @@ export function useBoardAgentSessionDrag({
 	boardColumns,
 	detachedSessionsByCard,
 	onCreate,
+	onCreateWellReceive,
 	onListCreate,
 	onLink,
 	onMove,
@@ -191,6 +195,7 @@ export function useBoardAgentSessionDrag({
 	boardColumns: readonly JiraKanbanColumnData[];
 	detachedSessionsByCard?: Readonly<Record<string, readonly AgentSessionItem[]>>;
 	onCreate?: (session: AgentSessionItem, columnTitle: string) => void;
+	onCreateWellReceive?: (receipt: SessionDropReceipt) => void;
 	onListCreate?: (
 		session: AgentSessionItem,
 		insertion: JiraListInsertion,
@@ -214,13 +219,13 @@ export function useBoardAgentSessionDrag({
 	);
 	const [linkFlash, setLinkFlash] = useState<BoardAgentSessionLinkFlash | null>(null);
 	const linkFlashTokenRef = useRef(0);
-	const ports: SessionTransferPorts = {
+	const ports: SessionTransferPorts = useMemo(() => ({
 		onCreate,
 		onLink,
 		onListCreate,
 		onMove,
 		onUnlink,
-	};
+	}), [onCreate, onLink, onListCreate, onMove, onUnlink]);
 	const enablement = resolveDragEnablement(ports);
 
 	const commitDrop = useCallback((
@@ -243,15 +248,26 @@ export function useBoardAgentSessionDrag({
 				return undefined;
 			},
 		};
-		executeSessionTransferPlan(
-			planSessionTransfer(
-				resolveBoardAgentSessionDropAction(current),
-				current.origin,
-				lookups,
-			),
-			ports,
+		const plan = planSessionTransfer(
+			resolveBoardAgentSessionDropAction(current),
+			current.origin,
+			lookups,
 		);
-	}, [boardColumns, detachedSessionsByCard, onCreate, onLink, onListCreate, onMove, onUnlink, untrackedSessions]);
+		executeSessionTransferPlan(plan, ports);
+		const receipt = toSessionDropReceipt({
+			plan,
+			pointer: current.pointer,
+		});
+		if (receipt) {
+			onCreateWellReceive?.(receipt);
+		}
+	}, [
+		boardColumns,
+		detachedSessionsByCard,
+		onCreateWellReceive,
+		ports,
+		untrackedSessions,
+	]);
 
 	const onDragStateChange = useCallback((
 		origin: BoardAgentSessionDragOrigin,
