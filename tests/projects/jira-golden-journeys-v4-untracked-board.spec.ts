@@ -433,7 +433,7 @@ test("the Untracked resize handle reveals on column hover and widens the pinned 
 		if (!well || !handle || columns.length < 2) {
 			return null;
 		}
-		const contentLeft = (column) => {
+		const contentLeft = (column: Element) => {
 			const title = column.getAttribute("data-jira-kanban-column");
 			const label = [...column.querySelectorAll("span")].find((element) => (
 				element.textContent === title
