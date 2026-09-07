@@ -159,6 +159,8 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	 * a Board/List switch.
 	 */
 	proximityHighlightedSessionId?: string | null;
+	/** Resolved suggested Jira key from a host-owned Agent Session column. */
+	proximityHighlightedWorkItemKey?: string | null;
 	/**
 	 * Injected board-session drag API. The page supplies this when the
 	 * floating panel also needs `untrackedBinding`; omit to let the board
@@ -643,6 +645,7 @@ function ExperimentalJiraKanbanView({
 	boardSessionDrag,
 	proximityAgentSession,
 	proximityHighlightedSessionId = null,
+	proximityHighlightedWorkItemKey,
 	renderAgentActivityIndicator,
 	paddingBottom = token("space.150"),
 	paddingTop = token("space.150"),
@@ -673,16 +676,25 @@ function ExperimentalJiraKanbanView({
 	const highlightedSessionId = hoveredSessionId
 		?? hoveredColumnSessionId
 		?? proximityHighlightedSessionId;
-	const hoveredIssueKey = resolveHoveredBoardIssueKey(
-		hoveredColumnSessionId ?? proximityHighlightedSessionId,
-		agentSessionColumn?.items ?? untrackedSessions,
-		boardColumns,
-		(item) => resolveAgentSessionWorkItemKey(
-			item,
-			agentSessionColumn?.getSuggestedWorkItemKey,
-			agentSessionColumn?.getSuggestedWorkItemKeys,
-		),
-	);
+	const hostHoveredIssueKey = proximityHighlightedWorkItemKey === undefined
+		? resolveHoveredBoardIssueKey(
+			proximityHighlightedSessionId,
+			untrackedSessions,
+			boardColumns,
+		)
+		: resolveVisibleFocusedIssueKey(proximityHighlightedWorkItemKey, boardColumns);
+	const hoveredIssueKey = hoveredColumnSessionId === null
+		? hostHoveredIssueKey
+		: resolveHoveredBoardIssueKey(
+			hoveredColumnSessionId,
+			agentSessionColumn?.items,
+			boardColumns,
+			(item) => resolveAgentSessionWorkItemKey(
+				item,
+				agentSessionColumn?.getSuggestedWorkItemKey,
+				agentSessionColumn?.getSuggestedWorkItemKeys,
+			),
+		);
 	const spotlightIssueKey = resolveVisibleFocusedIssueKey(focusedIssueKey, boardColumns);
 	const collapsedColumns = controlledCollapsedColumns ?? uncontrolledCollapsedColumns;
 	const selectedCount = selectedCardCodes?.size ?? 0;

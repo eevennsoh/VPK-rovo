@@ -221,8 +221,12 @@ test("column session hover previews its suggested Jira issue in blue without scr
 	assert.match(BOARD_SOURCE, /onItemHover: handleColumnSessionHover,/u);
 	assert.match(hoverHandlerBody, /setHoveredColumnSessionId\(item\?\.id \?\? null\)/u);
 	assert.match(hoverHandlerBody, /agentSessionColumn\?\.onItemHover\?\.\(item\)/u);
-	assert.match(BOARD_SOURCE, /const hoveredIssueKey = resolveHoveredBoardIssueKey\(/u);
-	assert.match(CARD_SOURCE, /agentSessionTargetHighlighted=\{agentSessionTargetHighlighted\}/u);
+	assert.match(BOARD_SOURCE, /const hoveredIssueKey = hoveredColumnSessionId === null/u);
+	assert.match(PAGE_SOURCE, /const untrackedHoveredWorkItemKey = untrackedHoveredSession/u);
+	assert.match(PAGE_SOURCE, /proximityHighlightedWorkItemKey=\{untrackedHoveredWorkItemKey\}/u);
+	assert.match(BOARD_SOURCE, /proximityHighlightedWorkItemKey\?: string \| null;/u);
+	assert.match(BOARD_SOURCE, /const hostHoveredIssueKey = proximityHighlightedWorkItemKey === undefined/u);
+	assert.match(CARD_SOURCE, /agentSessionTargetPreview=\{\{ highlighted: agentSessionTargetHighlighted \}\}/u);
 	assert.match(JIRA_ISSUE_SOURCE, /agentSessionTargetHighlighted \? "bg-bg-accent-blue-subtlest" : "bg-bg-neutral"/u);
 	// Hover previews the relationship with color only. Only a click owns focus,
 	// scroll, and the `opacity-40` veil, so the hover handler stays out of all three.

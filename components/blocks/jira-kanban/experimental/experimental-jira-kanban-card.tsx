@@ -163,7 +163,7 @@ export function ExperimentalJiraKanbanCard({
 			agentLinkFlash={agentLinkFlash}
 			agentActivityMode={agentActivityMode}
 			agentSessionDragControl={agentSessionDragControl}
-			agentSessionTargetHighlighted={agentSessionTargetHighlighted}
+			agentSessionTargetPreview={{ highlighted: agentSessionTargetHighlighted }}
 			agentSessionFlyout={{
 			assignee: card.assignee
 				? { name: card.assignee.name, src: card.assignee.avatarSrc }
