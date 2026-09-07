@@ -790,34 +790,23 @@ function JiraIssueDefault({
 					/>
 					{richIssueContent}
 				</motion.div>
-				{/* Running sessions already occupy the chin; attach copy replaces that row instead of stacking. */}
-				{isAttachingSession ? (
-					<div className="px-1 py-1" data-slot="jira-issue-attach-chin">
-						<div
-							aria-hidden
-							className="pointer-events-none flex h-6 w-full items-center justify-center rounded-md"
-							data-slot="jira-issue-attach-chin-slot"
-						>
-							<span className="text-xs font-normal text-text-subtlest">
-								{linkAgentSessionChinCopy(attachSessionCount)}
-							</span>
-						</div>
-					</div>
-				) : (
-					<JiraIssueAgentActivityRows
-						activities={activeAgentActivities}
-						linkFlash={agentLinkFlash}
-						instantSessionTransfer={agentSessionDragControl !== undefined}
-						layout={agentActivityLayout}
-						onOpenChange={handleAgentActivityOpenChange}
-						onViewChat={onAgentActivityViewChat}
-						renderAgentActivityIndicator={renderAgentActivityIndicator}
-						sessionFlyout={agentSessionFlyout}
-						sessionDrag={agentSessionDragBinding}
-						shouldReduceMotion={shouldReduceMotion}
-						usesStrokeChrome={usesCompactVisual}
-					/>
-				)}
+				{/* Running sessions already occupy the chin; attach copy takes the last
+				    row instead of stacking. Split layouts keep the other rows so the
+				    card height — and drop-zone geometry — stays put. */}
+				<JiraIssueAgentActivityRows
+					activities={activeAgentActivities}
+					attachPreviewCopy={isAttachingSession ? linkAgentSessionChinCopy(attachSessionCount) : undefined}
+					linkFlash={agentLinkFlash}
+					instantSessionTransfer={agentSessionDragControl !== undefined}
+					layout={agentActivityLayout}
+					onOpenChange={handleAgentActivityOpenChange}
+					onViewChat={onAgentActivityViewChat}
+					renderAgentActivityIndicator={renderAgentActivityIndicator}
+					sessionFlyout={agentSessionFlyout}
+					sessionDrag={agentSessionDragBinding}
+					shouldReduceMotion={shouldReduceMotion}
+					usesStrokeChrome={usesCompactVisual}
+				/>
 				<AnimatePresence initial={false} mode="popLayout">
 					{hasAgentDoneNotification ? (
 						<motion.div
