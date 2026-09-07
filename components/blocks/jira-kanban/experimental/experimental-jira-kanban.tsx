@@ -418,7 +418,12 @@ function BoardColumn({
 		}),
 		[showBottomScrollMask, showTopScrollMask],
 	);
-
+	const createAction = <BoardColumnCreateAction
+		dropZoneLabel={createWorkItemDropZoneLabel}
+		reveal={count === 0 ? "always" : "column-hover"}
+		sessionDragTransaction={sessionDragTransaction}
+		title={title}
+	/>;
 	return (
 		<div
 			className={cn("group/board-column min-w-0 overflow-visible", chrome.columnClassName)}
@@ -471,14 +476,7 @@ function BoardColumn({
 				</div>
 			</div>
 
-			{count === 0 ? (
-				<BoardColumnCreateAction
-					dropZoneLabel={createWorkItemDropZoneLabel}
-					reveal="always"
-					sessionDragTransaction={sessionDragTransaction}
-					title={title}
-				/>
-			) : null}
+			{count === 0 ? createAction : null}
 
 			<div
 				ref={cardListRef}
@@ -496,15 +494,7 @@ function BoardColumn({
 				{children}
 			</div>
 
-			{count > 0 ? (
-				<div style={chrome.footer}>
-					<BoardColumnCreateAction
-						dropZoneLabel={createWorkItemDropZoneLabel}
-						sessionDragTransaction={sessionDragTransaction}
-						title={title}
-					/>
-				</div>
-			) : null}
+			{count > 0 ? <div style={chrome.footer}>{createAction}</div> : null}
 		</div>
 	);
 }

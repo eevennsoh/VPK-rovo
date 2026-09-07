@@ -38,7 +38,7 @@ test("create button and dropzone share dashed well chrome", () => {
 });
 
 test("empty columns keep the create well at the top and always visible", () => {
-	const emptyColumnAction = BOARD.indexOf("{count === 0 ?");
+	const emptyColumnAction = BOARD.indexOf("{count === 0 ? createAction");
 	const cardList = BOARD.indexOf('data-jira-kanban-card-list=""');
 	const cards = BOARD.indexOf("{children}", cardList);
 	const populatedColumnFooter = BOARD.indexOf("{count > 0 ?", cards);
@@ -48,8 +48,8 @@ test("empty columns keep the create well at the top and always visible", () => {
 	assert.ok(cards > cardList);
 	assert.ok(populatedColumnFooter > cards);
 	assert.match(
-		BOARD.slice(emptyColumnAction, cards),
-		/reveal="always"[\s\S]*sessionDragTransaction=\{sessionDragTransaction\}/u,
+		BOARD,
+		/reveal=\{count === 0 \? "always" : "column-hover"\}[\s\S]*sessionDragTransaction=\{sessionDragTransaction\}/u,
 	);
 });
 

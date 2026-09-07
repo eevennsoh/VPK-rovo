@@ -20,7 +20,13 @@ import {
 	resolveJiraDropzoneSurface,
 	shouldImpulseDropzoneChrome,
 } from "./lib/jira-dropzone-receipts";
-import type { JiraDropzoneDragState, ViewportPoint } from "./lib/jira-dropzone-types";
+import type {
+	FlightProfile,
+	JiraDropzoneChannel,
+	JiraDropzoneDragState,
+	SessionFlight,
+	ViewportPoint,
+} from "./lib/jira-dropzone-types";
 import { useJiraDropzoneCollapseHold } from "./use-jira-dropzone-collapse-hold";
 
 export const JIRA_DROPZONE_WELL_CHROME_CLASS = "rounded-lg border border-dashed";
@@ -89,6 +95,77 @@ export function JiraDropzone({
 		impacts,
 		receiving,
 	}) ? impact : null;
+
+	return (
+		<JiraDropzoneOpenSurface
+			bounce={bounce}
+			bouncePlayback={bouncePlayback}
+			channel={channel}
+			copy={copy}
+			drop={drop}
+			expanded={expanded}
+			exclusiveWinner={exclusiveWinner}
+			flyPath={flyPath}
+			label={label}
+			magnet={magnet}
+			onLanded={onLanded}
+			phase={phase}
+			pinMagnet={pinMagnet}
+			profile={profile}
+			proximity={proximity}
+			receiving={receiving}
+			resolveLandingPoint={resolveLandingPoint}
+			selected={selected}
+			targetRef={targetRef}
+			title={title}
+		/>
+	);
+}
+
+function JiraDropzoneOpenSurface({
+	bounce,
+	bouncePlayback,
+	channel,
+	copy,
+	drop,
+	expanded,
+	exclusiveWinner,
+	flyPath,
+	label,
+	magnet,
+	onLanded,
+	phase,
+	pinMagnet,
+	profile,
+	proximity,
+	receiving,
+	resolveLandingPoint,
+	selected,
+	targetRef,
+	title,
+}: Readonly<{
+	bounce: FlightProfile["impact"];
+	bouncePlayback: ReturnType<typeof resolveJiraDropzoneBounce>;
+	channel: JiraDropzoneChannel | undefined;
+	copy: ReturnType<typeof resolveJiraDropzoneCopy>;
+	drop: ReturnType<typeof resolveJiraDropzoneDrop>;
+	expanded: boolean;
+	exclusiveWinner: boolean;
+	flyPath: ReturnType<typeof arc>;
+	label: string;
+	magnet: ReturnType<typeof useMagneticProximity>;
+	onLanded: (key: SessionFlight["key"]) => void;
+	phase: ReturnType<typeof resolveJiraDropzonePhase>;
+	pinMagnet: boolean;
+	profile: FlightProfile;
+	proximity: MagneticPointerRelation;
+	receiving: boolean;
+	resolveLandingPoint: () => ViewportPoint | null;
+	selected: boolean;
+	targetRef: RefObject<HTMLDivElement | null>;
+	title: string;
+}>): ReactElement {
+	const impacts = channel?.impacts ?? 0;
 
 	return (
 		<>
