@@ -277,26 +277,6 @@ test("Experimental kanban card gap matches the column gutter", () => {
 	);
 });
 
-test("Experimental first collapsed column restores only its missing leading chrome", () => {
-	assert.match(
-		EXPERIMENTAL_SOURCE,
-		/const columnRowPaddingInlineStart = chrome\.dropContentPadding[\s\S]*token\("space\.300"\)/u,
-	);
-	assert.match(
-		EXPERIMENTAL_SOURCE,
-		/const isFirstColumnCollapsed = Boolean\(\s*firstColumnTitle\s*&& chrome\.dropContentPadding\s*&& isBoardColumnCollapsed\(collapsedColumns, firstColumnTitle\),\s*\)/u,
-	);
-	assert.match(
-		EXPERIMENTAL_SOURCE,
-		/const resolvedColumnRowPaddingInlineStart = isFirstColumnCollapsed\s*\? `calc\(\$\{columnRowPaddingInlineStart\} \+ \$\{BOARD_FIRST_COLLAPSED_COLUMN_INSET_PX\}px\)`\s*: columnRowPaddingInlineStart;/u,
-	);
-	assert.match(
-		EXPERIMENTAL_SOURCE,
-		/style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart \}\}/u,
-	);
-	assert.match(EXPERIMENTAL_SOURCE, /\.\.\.chrome\.dropContentPadding,/u);
-});
-
 test("Kanban columns retain a readable minimum width when the board narrows", () => {
 	assert.match(SOURCE, /style=\{\{ flex: "1 1 0", minWidth: "280px", borderRadius: token\("radius\.xlarge"\) \}\}/u);
 });

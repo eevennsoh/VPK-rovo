@@ -34,6 +34,23 @@ export function isBoardColumnCollapsed(
 	return collapsedColumns.has(columnTitle);
 }
 
+export function resolveBoardColumnRowPaddingInlineStart(
+	columnRowPaddingInlineStart: string,
+	firstColumnTitle: string | undefined,
+	hasDropContentPadding: boolean,
+	collapsedColumns: CollapsedBoardColumns,
+): string {
+	if (
+		!firstColumnTitle
+		|| !hasDropContentPadding
+		|| !isBoardColumnCollapsed(collapsedColumns, firstColumnTitle)
+	) {
+		return columnRowPaddingInlineStart;
+	}
+
+	return `calc(${columnRowPaddingInlineStart} + ${BOARD_FIRST_COLLAPSED_COLUMN_INSET_PX}px)`;
+}
+
 export function toggleCollapsedBoardColumn(
 	collapsedColumns: CollapsedBoardColumns,
 	columnTitle: string,

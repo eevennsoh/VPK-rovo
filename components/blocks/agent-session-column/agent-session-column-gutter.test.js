@@ -165,11 +165,11 @@ test("Board visible cards and List share the header's 24px leading alignment", (
 test("a collapsed first status column clears the fixed Untracked gutter without moving it", () => {
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
-		/import \{[\s\S]*BOARD_FIRST_COLLAPSED_COLUMN_INSET_PX,[\s\S]*\} from "\.\/lib\/board-column-collapse";/u,
+		/import \{[\s\S]*resolveBoardColumnRowPaddingInlineStart,[\s\S]*\} from "\.\/lib\/board-column-collapse";/u,
 	);
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
-		/const resolvedColumnRowPaddingInlineStart = isFirstColumnCollapsed\s*\? `calc\(\$\{columnRowPaddingInlineStart\} \+ \$\{BOARD_FIRST_COLLAPSED_COLUMN_INSET_PX\}px\)`\s*: columnRowPaddingInlineStart;/u,
+		/const resolvedColumnRowPaddingInlineStart = resolveBoardColumnRowPaddingInlineStart\(columnRowPaddingInlineStart, boardColumns\[0\]\?\.title, Boolean\(chrome\.dropContentPadding\), collapsedColumns\);/u,
 	);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /absolute inset-y-0 start-0 z-40/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /style=\{\{ width: IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX \+ 2 \}\}/u);

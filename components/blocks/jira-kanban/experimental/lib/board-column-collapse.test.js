@@ -28,6 +28,7 @@ const {
 	EMPTY_COLLAPSED_BOARD_COLUMNS,
 	getBoardColumnOuterWidthPx,
 	isBoardColumnCollapsed,
+	resolveBoardColumnRowPaddingInlineStart,
 	toggleCollapsedBoardColumn,
 } = require("./board-column-collapse.ts");
 
@@ -65,6 +66,22 @@ test("outer width reserves the transparent drop-target border on both edges", ()
 
 test("the first collapsed column restores the simple chrome content inset", () => {
 	assert.equal(BOARD_FIRST_COLLAPSED_COLUMN_INSET_PX, 4);
+	assert.equal(
+		resolveBoardColumnRowPaddingInlineStart("24px", "To do", true, new Set(["To do"])),
+		`calc(24px + ${BOARD_FIRST_COLLAPSED_COLUMN_INSET_PX}px)`,
+	);
+	assert.equal(
+		resolveBoardColumnRowPaddingInlineStart("24px", "To do", true, EMPTY_COLLAPSED_BOARD_COLUMNS),
+		"24px",
+	);
+	assert.equal(
+		resolveBoardColumnRowPaddingInlineStart("24px", "To do", false, new Set(["To do"])),
+		"24px",
+	);
+	assert.match(
+		BOARD_SOURCE,
+		/const resolvedColumnRowPaddingInlineStart = resolveBoardColumnRowPaddingInlineStart\(columnRowPaddingInlineStart, boardColumns\[0\]\?\.title, Boolean\(chrome\.dropContentPadding\), collapsedColumns\);/u,
+	);
 });
 
 test("collapse survives a switch to the list or Pulse view", () => {
