@@ -637,6 +637,51 @@
 	}
 }
 
+/* Link acknowledgement: one pass of the linked agent's brand colour across the
+   chin row it landed in. The gradient itself is inline, because the colour is
+   per-agent; only the motion lives here.
+
+   Deliberately a CSS animation rather than Motion's `initial` -> `animate`.
+   The chin rows sit inside an `AnimatePresence` that the board re-keys on the
+   very commit that adds the row, and `initial={false}` makes every child of a
+   freshly-keyed presence skip its enter animation — so a Motion sweep rendered
+   already finished. CSS keyframes run on mount regardless of React context.
+
+   The plateau tops out well below 1: the gradient carries the agent's raw brand
+   hex, and at full alpha that reads as a colour block dropped on the row rather
+   than light passing over it. */
+@keyframes jira-issue-link-flash {
+	0% {
+		opacity: 0;
+		transform: translateX(-100%);
+	}
+	25% {
+		opacity: 0.4;
+	}
+	70% {
+		opacity: 0.4;
+	}
+	100% {
+		opacity: 0;
+		transform: translateX(100%);
+	}
+}
+
+/* Slower than any duration token: `--duration-slowest` (600ms) is scaled for a
+   full-screen transition, and this sweep crosses a 260px row as a deliberate,
+   low-frequency flourish. Derived from the scale rather than hard-coded so it
+   still moves with the token. */
+@utility jira-issue-link-flash {
+	animation: jira-issue-link-flash calc(var(--duration-slowest) * 1.5) var(--ease-in-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.jira-issue-link-flash {
+		animation: none;
+		opacity: 0;
+	}
+}
+
 /* -----------------------------------------------------------------
    Unlayered Overrides
 
