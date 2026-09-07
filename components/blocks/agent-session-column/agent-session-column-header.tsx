@@ -44,11 +44,21 @@ const AGENT_SESSION_COLUMN_HEADER_STYLE: Record<AgentSessionColumnFrame, CSSProp
 };
 
 const HEADER_ACTIONS_REVEAL = cn(
-	"ms-auto flex shrink-0 items-center",
-	"opacity-0 transition-opacity duration-normal ease-out-practical",
+	"flex shrink-0 items-center",
+	"opacity-0 transition-[width,opacity] duration-normal ease-out-practical",
 	"group-hover/session-column:opacity-100 group-has-[:focus-visible]/session-column:opacity-100",
 	"motion-reduce:transition-none",
 	"has-[[data-popup-open]]:opacity-100",
+);
+
+const HEADER_ACTIONS_PINNED = cn(
+	HEADER_ACTIONS_REVEAL,
+	"overflow-hidden",
+	"w-0",
+	"group-hover/session-column:w-12 group-has-[:focus-visible]/session-column:w-12",
+	"group-has-[[data-popup-open]]/header-actions:w-12",
+	"has-[[data-popup-open]]:w-12",
+	"has-[:focus-visible]:w-12 has-[:focus-visible]:overflow-visible",
 );
 
 const HEADER_ACTION_ICON: Record<SelectionActionId, ComponentType<NewCoreIconProps>> = {
@@ -239,7 +249,9 @@ function CollapseButton({
 
 export function AgentSessionColumnHeader({
 	collapseLabel,
+	filter,
 	frame = DEFAULT_AGENT_SESSION_COLUMN_FRAME,
+	hasActiveFilters = false,
 	model,
 	onAction,
 	onCollapse,
@@ -247,7 +259,9 @@ export function AgentSessionColumnHeader({
 	surface,
 }: Readonly<{
 	collapseLabel: string;
+	filter: ReactElement;
 	frame?: AgentSessionColumnFrame;
+	hasActiveFilters?: boolean;
 	model: UntrackedHeaderModel;
 	onAction: (id: HeaderActionId) => void;
 	onCollapse: () => void;
@@ -258,12 +272,14 @@ export function AgentSessionColumnHeader({
 		case "column":
 			return (
 				<div
-					className="flex min-w-0 items-center"
+					className="flex min-w-0 flex-nowrap items-center"
 					style={AGENT_SESSION_COLUMN_HEADER_STYLE[frame]}
 				>
 					{renderColumnChrome({
 						collapseLabel,
+						filter,
 						frame,
+						hasActiveFilters,
 						model,
 						onAction,
 						onCollapse,
@@ -274,6 +290,7 @@ export function AgentSessionColumnHeader({
 		case "panel":
 			return renderPanelChrome({
 				collapseLabel,
+				filter,
 				model,
 				onAction,
 				onCollapse,
@@ -288,20 +305,25 @@ export function AgentSessionColumnHeader({
 
 function renderColumnChrome({
 	collapseLabel,
+	filter,
 	frame,
+	hasActiveFilters,
 	model,
 	onAction,
 	onCollapse,
 	overflow,
 }: Readonly<{
 	collapseLabel: string;
+	filter: ReactElement;
 	frame: AgentSessionColumnFrame;
+	hasActiveFilters: boolean;
 	model: UntrackedHeaderModel;
 	onAction: (id: HeaderActionId) => void;
 	onCollapse: () => void;
 	overflow: ReactElement;
 }>): ReactElement {
 	const isSelecting = model.kind === "selecting";
+	const pinFilterEnd = hasActiveFilters && !isSelecting;
 
 	return (
 		<>
@@ -331,9 +353,22 @@ function renderColumnChrome({
 					))}
 				</div>
 			) : (
-				<div className={HEADER_ACTIONS_REVEAL}>
-					{overflow}
-					<CollapseButton label={collapseLabel} onCollapse={onCollapse} />
+				<div className="group/header-actions ms-auto flex shrink-0 items-center">
+					{pinFilterEnd ? (
+						<>
+							{filter}
+							<div className={HEADER_ACTIONS_PINNED} data-session-header-reveal="">
+								{overflow}
+								<CollapseButton label={collapseLabel} onCollapse={onCollapse} />
+							</div>
+						</>
+					) : (
+						<div className={HEADER_ACTIONS_REVEAL} data-session-header-reveal="">
+							{filter}
+							{overflow}
+							<CollapseButton label={collapseLabel} onCollapse={onCollapse} />
+						</div>
+					)}
 				</div>
 			)}
 		</>
@@ -342,12 +377,14 @@ function renderColumnChrome({
 
 function renderPanelChrome({
 	collapseLabel,
+	filter,
 	model,
 	onAction,
 	onCollapse,
 	overflow,
 }: Readonly<{
 	collapseLabel: string;
+	filter: ReactElement;
 	model: UntrackedHeaderModel;
 	onAction: (id: HeaderActionId) => void;
 	onCollapse: () => void;
@@ -365,6 +402,7 @@ function renderPanelChrome({
 						</span>
 					</PanelTitle>
 					<PanelActionGroup>
+						{filter}
 						{overflow}
 						<PanelAction
 							icon={ShrinkHorizontalIcon}
