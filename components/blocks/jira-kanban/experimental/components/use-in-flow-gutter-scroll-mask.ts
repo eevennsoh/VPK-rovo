@@ -41,6 +41,7 @@ export function useInFlowGutterScrollMask(
 				return;
 			}
 			scrollport.removeEventListener("scroll", syncMask);
+			scrollport.removeEventListener("transitionend", syncMask);
 			resizeObserver.unobserve(scrollport);
 			scrollport = null;
 		};
@@ -56,6 +57,8 @@ export function useInFlowGutterScrollMask(
 			scrollport = nextScrollport;
 			if (scrollport) {
 				scrollport.addEventListener("scroll", syncMask, { passive: true });
+				// Status columns animate max-width after childList; remeasure when that ends.
+				scrollport.addEventListener("transitionend", syncMask);
 				resizeObserver.observe(scrollport);
 			}
 			syncMask();

@@ -86,6 +86,8 @@ test("the gutter fill watches painted Board/List UI inside the existing scrollpo
 	assert.match(HOOK_SOURCE, /findInFlowGutterScrollport\(host\)/u);
 	assert.match(HOOK_SOURCE, /readInFlowGutterMaskRect\(host\)/u);
 	assert.match(HOOK_SOURCE, /collectInFlowGutterUnderlapRects\(scrollport\)/u);
+	assert.match(HOOK_SOURCE, /scrollport\.addEventListener\("transitionend", syncMask\)/u);
+	assert.match(HOOK_SOURCE, /scrollport\.removeEventListener\("transitionend", syncMask\)/u);
 	assert.match(HOOK_SOURCE, /subtree: true/u);
 	assert.doesNotMatch(HOOK_SOURCE, /applyInFlowGutterScrollportFade/u);
 	assert.doesNotMatch(HOOK_SOURCE, /window\.addEventListener\("scroll"/u);
