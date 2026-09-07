@@ -884,7 +884,7 @@ test("the collapsed rail fades notches with ScrollMask viewport mask-image", () 
 		RAIL_COLUMN_SOURCE,
 		/buildScrollMaskStyle\(\{\s*fadeBottom: showBottomScrollMask,\s*fadeSize: AGENT_SESSION_RAIL_FADE_SIZE,\s*fadeTop: showTopScrollMask,\s*scrollbarWidth: 0,\s*\}\)/u,
 	);
-	assert.match(RAIL_COLUMN_SOURCE, /style=\{\{ \.\.\.scrollMaskStyle, height: railViewportHeight \}\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /style=\{\{ \.\.\.scrollMaskStyle, maxHeight: railViewportHeight \}\}/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /<motion\.ul/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /ScrollMaskEdgeOverlay/u);
 });
@@ -892,7 +892,9 @@ test("the collapsed rail fades notches with ScrollMask viewport mask-image", () 
 test("the collapsed rail shows at most ten dots before it scrolls under the mask", () => {
 	assert.match(RAIL_COLUMN_SOURCE, /AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS = 10/u);
 	assert.match(RAIL_COLUMN_SOURCE, /Math\.min\(items\.length, AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS\)/u);
-	assert.match(RAIL_COLUMN_SOURCE, /height: railViewportHeight/u);
+	assert.match(RAIL_COLUMN_SOURCE, /maxHeight: railViewportHeight/u);
+	assert.match(RAIL_COLUMN_SOURCE, /w-full flex-1 flex-col/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /w-full flex-none flex-col/u);
 	assert.match(RAIL_COLUMN_SOURCE, /items\.map\(/u);
 });
 

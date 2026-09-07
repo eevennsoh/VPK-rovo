@@ -27,8 +27,10 @@ test("the v2 board pins the column outside its horizontal scrollport", () => {
 
 test("the in-flow host previews the compact rail before a click pins the full column", () => {
 	assert.match(IN_FLOW_COLUMN_SOURCE, /const \[isHovered, setIsHovered\] = useState\(false\)/u);
-	assert.match(IN_FLOW_COLUMN_SOURCE, /const \[isPersistentExpanded, setIsPersistentExpanded\] = useState\(false\)/u);
-	assert.match(IN_FLOW_COLUMN_SOURCE, /setIsPersistentExpanded\(!collapsed\)/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /const isCollapsedControlled = collapsed !== undefined/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /const isPersistentExpanded = isCollapsedControlled/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /\? !collapsed/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /: uncontrolledPersistentExpanded/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsed=\{!isPersistentExpanded\}/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /isEmbedded: isHovered \|\| isPersistentExpanded/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsedPresentation=\{isEmbedded \? "column" : "gutter"\}/u);
@@ -39,6 +41,14 @@ test("the in-flow host previews the compact rail before a click pins the full co
 		/const handlePointerEnter = \([\s\S]*?\n\t\};/u,
 	)?.[0] ?? "";
 	assert.doesNotMatch(pointerEnterSource, /onCollapsedChange/u);
+});
+
+test("touch can intentionally expand the otherwise pointer-inert gutter", () => {
+	assert.match(IN_FLOW_COLUMN_SOURCE, /const handleGutterPointerDown = \(event: PointerEvent<HTMLDivElement>\)/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /if \(event\.pointerType !== "touch"\)/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /event\.preventDefault\(\)/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /handleCollapsedChange\(false\)/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /onPointerDown=\{handleGutterPointerDown\}/u);
 });
 
 test("the entire visible gutter is a hover target without covering To do", () => {

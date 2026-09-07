@@ -47,10 +47,15 @@ export interface InFlowAgentSessionColumnProps {
 }
 
 function useInFlowAgentSessionColumnInteraction(
+	collapsed: AgentSessionColumnProps["collapsed"],
 	onCollapsedChange: AgentSessionColumnProps["onCollapsedChange"],
 ) {
 	const [isHovered, setIsHovered] = useState(false);
-	const [isPersistentExpanded, setIsPersistentExpanded] = useState(false);
+	const [uncontrolledPersistentExpanded, setUncontrolledPersistentExpanded] = useState(false);
+	const isCollapsedControlled = collapsed !== undefined;
+	const isPersistentExpanded = isCollapsedControlled
+		? !collapsed
+		: uncontrolledPersistentExpanded;
 
 	const handlePointerEnter = (event: PointerEvent<HTMLDivElement>) => {
 		if (event.pointerType !== "touch") {
@@ -65,12 +70,23 @@ function useInFlowAgentSessionColumnInteraction(
 	};
 
 	const handleCollapsedChange = (collapsed: boolean) => {
-		setIsPersistentExpanded(!collapsed);
+		if (!isCollapsedControlled) {
+			setUncontrolledPersistentExpanded(!collapsed);
+		}
 		onCollapsedChange?.(collapsed);
+	};
+
+	const handleGutterPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+		if (event.pointerType !== "touch") {
+			return;
+		}
+		event.preventDefault();
+		handleCollapsedChange(false);
 	};
 
 	return {
 		handleCollapsedChange,
+		handleGutterPointerDown,
 		handlePointerEnter,
 		handlePointerLeave,
 		isEmbedded: isHovered || isPersistentExpanded,
@@ -184,12 +200,16 @@ export function InFlowAgentSessionColumn({
 	const shouldReduceMotion = useReducedMotion();
 	const {
 		handleCollapsedChange,
+		handleGutterPointerDown,
 		handlePointerEnter,
 		handlePointerLeave,
 		isEmbedded,
 		isHovered,
 		isPersistentExpanded,
-	} = useInFlowAgentSessionColumnInteraction(agentSessionColumn.onCollapsedChange);
+	} = useInFlowAgentSessionColumnInteraction(
+		agentSessionColumn.collapsed,
+		agentSessionColumn.onCollapsedChange,
+	);
 	const expandedWidthPx = agentSessionColumn.expandedWidthPx ?? AGENT_SESSION_COLUMN_WIDTH_PX;
 	const columnWidthPx = isPersistentExpanded
 		? expandedWidthPx
@@ -210,6 +230,7 @@ export function InFlowAgentSessionColumn({
 						className="absolute inset-y-0 start-0 z-50"
 						data-agent-session-column-hit-area=""
 						onPointerEnter={handlePointerEnter}
+						onPointerDown={handleGutterPointerDown}
 						style={{ width: IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX + 2 }}
 					/>
 				)}

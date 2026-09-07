@@ -534,13 +534,13 @@ export function AgentSessionColumnRail({
 			    the collapsed section clips overflow. Arrival layout stays on each
 			    `motion.li`. */}
 			<ul
-				className="scrollbar-none flex min-h-0 w-full flex-none flex-col items-center gap-1 overflow-y-auto overscroll-contain px-1 py-1"
+				className="scrollbar-none flex min-h-0 w-full flex-1 flex-col items-center gap-1 overflow-y-auto overscroll-contain px-1 py-1"
 				onPointerEnter={isDocked ? dock.handlePointerEnter : undefined}
 				onPointerLeave={isDocked ? dock.handlePointerLeave : undefined}
 				onPointerMove={isDocked ? dock.handlePointerMove : undefined}
 				onScroll={isDocked ? dock.handleScroll : undefined}
 				ref={setListRef}
-				style={{ ...scrollMaskStyle, height: railViewportHeight }}
+				style={{ ...scrollMaskStyle, maxHeight: railViewportHeight }}
 			>
 				{items.map((item: AgentSessionItem, index: number) => (
 					<AgentSessionNotch
