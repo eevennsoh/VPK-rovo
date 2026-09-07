@@ -306,7 +306,6 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 							columns,
 							{
 								agentSessionDropIntent,
-								inFlowAgentSessionColumn,
 								onTrailingContentUnderlapChange,
 								scrollEndInset,
 								trailingOverlayRef,
@@ -319,8 +318,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 							return (
 								<div
 									className={cn(
-										"min-h-0 flex-1 overflow-hidden pb-4 md:pb-5",
-										inFlowAgentSessionColumn ? "ps-2" : "ps-4 md:ps-5",
+										"min-h-0 flex-1 overflow-hidden pb-4 ps-6 md:pb-5",
 										scrollEndInset > 0 ? "pe-0" : "pe-4 md:pe-5",
 									)}
 								>

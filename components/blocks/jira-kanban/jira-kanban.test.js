@@ -261,7 +261,7 @@ test("Experimental kanban default card gap and collapse padding come from the co
 test("Experimental kanban card gap matches the column gutter", () => {
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/"flex min-h-full w-max min-w-full items-stretch",\s*agentSessionColumn \|\| inFlowAgentSessionColumn \? "ps-2" : "ps-6"/u,
+		/"flex min-h-full w-max min-w-full items-stretch ps-6"/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
@@ -953,14 +953,14 @@ test("Insights keeps the seven-item header facepile at one reserved width", () =
 	);
 });
 
-test("Experimental kanban keeps 24px column gutters on the scrollable row, not the overflow section", () => {
+test("Experimental kanban keeps its column or session-rail gutter on the scroll row", () => {
 	assert.doesNotMatch(
 		EXPERIMENTAL_SOURCE.match(/<section[\s\S]*?<\/section>/u)?.[0] ?? "",
 		/paddingInline: token\("space\.200"\)/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/"flex min-h-full w-max min-w-full items-stretch",\s*agentSessionColumn \|\| inFlowAgentSessionColumn \? "ps-2" : "ps-6"/u,
+		/"flex min-h-full w-max min-w-full items-stretch ps-6"/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,

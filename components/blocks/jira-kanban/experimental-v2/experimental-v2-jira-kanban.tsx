@@ -716,12 +716,7 @@ export function ExperimentalV2JiraKanban({
 					}}
 				>
 				<LayoutGroup id={cardLayoutGroupId}>
-					<div
-						className={cn(
-							"flex min-h-full w-max min-w-full items-stretch",
-							agentSessionColumn ? "ps-2" : "ps-6",
-						)}
-					>
+					<div className="flex min-h-full w-max min-w-full items-stretch ps-6">
 						<div className="flex min-h-full flex-1 items-stretch gap-2">
 						{boardColumns.map((column) => (
 						<BoardColumnShell

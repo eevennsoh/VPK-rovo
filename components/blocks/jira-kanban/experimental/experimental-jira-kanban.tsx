@@ -143,12 +143,6 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	 */
 	agentSessionColumn?: AgentSessionColumnProps;
 	/**
-	 * True when Untracked is already pinned beside this board (page-owned
-	 * column). Drops the leading inset to the inter-column `ps-2` / `space.100`
-	 * so the rail-to-To-do gap matches status-to-status.
-	 */
-	inFlowAgentSessionColumn?: boolean;
-	/**
 	 * Untracked sessions when the in-flow column is omitted (panel mode).
 	 * Keeps the board drag hook able to resolve a drop onto an issue.
 	 */
@@ -604,7 +598,6 @@ function ExperimentalJiraKanbanView({
 	activeCardCode,
 	agentActivityLayout = "merged",
 	agentSessionColumn,
-	inFlowAgentSessionColumn = false,
 	agents,
 	animateCardMoves = false,
 	ariaLabel = "Experimental Jira kanban columns. Scroll horizontally to review all statuses.",
@@ -866,10 +859,7 @@ function ExperimentalJiraKanbanView({
 				>
 				<LayoutGroup id={cardLayoutGroupId}>
 						<div
-							className={cn(
-								"flex min-h-full w-max min-w-full items-stretch",
-								agentSessionColumn || inFlowAgentSessionColumn ? "ps-2" : "ps-6",
-							)}
+							className="flex min-h-full w-max min-w-full items-stretch ps-6"
 						>
 						<ExclusiveCreateWellProximityProvider>
 						<div className="flex min-h-full flex-1 items-stretch gap-2">

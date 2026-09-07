@@ -65,6 +65,10 @@ const BOARD_PAGE_SOURCE = readFileSync(
 	join(__dirname, "../jira-kanban/experimental-v2/page.tsx"),
 	"utf8",
 );
+const IN_FLOW_COLUMN_SOURCE = readFileSync(
+	join(__dirname, "../jira-kanban/experimental/components/in-flow-agent-session-column.tsx"),
+	"utf8",
+);
 const RAIL_SOURCE = readFileSync(
 	join(__dirname, "../jira-kanban/experimental/pulse/components/pulse-rail.tsx"),
 	"utf8",
@@ -214,10 +218,77 @@ test("the v2 board pins the column outside its horizontal scrollport", () => {
 	const sectionIndex = BOARD_SOURCE.indexOf("<section");
 	assert.ok(columnIndex > 0, "expected the board to render the pinned column");
 	assert.ok(columnIndex < sectionIndex, "expected the pinned column before the scrollport");
-	// The pinned column supplies the board's left inset, so the scroll row drops
-	// to the inter-column gap and every column keeps one rhythm.
-	assert.match(BOARD_SOURCE, /agentSessionColumn \? "ps-2" : "ps-6"/u);
+	// The gutter host contributes zero width at rest, so the first status column
+	// keeps the normal page inset and aligns with the search control above it.
+	assert.doesNotMatch(BOARD_SOURCE, /agentSessionColumn \? "ps-2" : "ps-6"/u);
+	assert.match(BOARD_SOURCE, /"flex min-h-full w-max min-w-full items-stretch ps-6"/u);
 	assert.match(BOARD_SOURCE, /columnFrame=\{chrome\.headerFrame\}/u);
+});
+
+test("the in-flow host previews the compact rail before a click pins the full column", () => {
+	assert.match(IN_FLOW_COLUMN_SOURCE, /const \[isHovered, setIsHovered\] = useState\(false\)/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /const \[isPersistentExpanded, setIsPersistentExpanded\] = useState\(false\)/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /onPointerEnter=\{handlePointerEnter\}/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /onPointerLeave=\{handlePointerLeave\}/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /setIsHovered\(true\)/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /setIsHovered\(false\)/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /setIsPersistentExpanded\(!collapsed\)/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsed=\{!isPersistentExpanded\}/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /const isEmbedded = isHovered \|\| isPersistentExpanded/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsedPresentation=\{isEmbedded \? "column" : "gutter"\}/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /IN_FLOW_AGENT_SESSION_COLUMN_GAP_PX = 8/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /width: isEmbedded \? IN_FLOW_AGENT_SESSION_COLUMN_GAP_PX : 0/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /width: isEmbedded \? columnWidthPx : 0/u);
+	assert.doesNotMatch(IN_FLOW_COLUMN_SOURCE, /handlePointerEnter[\s\S]{0,250}?onCollapsedChange/u);
+});
+
+test("the entire visible gutter is a hover target without covering To do", () => {
+	assert.match(IN_FLOW_COLUMN_SOURCE, /data-agent-session-column-hit-area=""/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /absolute inset-y-0 start-0 z-50/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /onPointerEnter=\{handlePointerEnter\}/u);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/width: IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX \+ 2/u,
+	);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/isEmbedded[\s\S]{0,100}?\? "pointer-events-auto bg-surface"[\s\S]{0,100}?: "pointer-events-none bg-transparent"/u,
+	);
+});
+
+test("the gutter omits the visible count but keeps the compact rail top-aligned", () => {
+	assert.match(TYPES_SOURCE, /collapsedPresentation\?: "column" \| "gutter";/u);
+	assert.match(INDEX_SOURCE, /const isGutterCollapsed = collapsed && collapsedPresentation === "gutter"/u);
+	assert.doesNotMatch(INDEX_SOURCE, /isGutterCollapsed \? "justify-center" : null/u);
+	assert.match(INDEX_SOURCE, /const gutterHeader = \(/u);
+	assert.match(INDEX_SOURCE, /style=\{resolveCollapsedHeaderStyle\(layout\)\}/u);
+	assert.doesNotMatch(INDEX_SOURCE, /absolute inset-x-0 top-0 z-10/u);
+	assert.doesNotMatch(
+		INDEX_SOURCE.match(/const gutterHeader = \([\s\S]*?\n\t\);/u)?.[0] ?? "",
+		/<TextMorphing/u,
+	);
+	assert.match(INDEX_SOURCE, /isGutterCollapsed \? gutterHeader : collapsedHeader/u);
+	assert.match(INDEX_SOURCE, /isGutterCollapsed \? "bg-transparent" : null/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /isEmbedded \? "bg-surface" : "bg-transparent"/u);
+});
+
+test("flyouts stay suspended throughout the transient compact hover-preview", () => {
+	assert.doesNotMatch(IN_FLOW_COLUMN_SOURCE, /isEmbeddingTransition/u);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/JiraSessionFlyoutSuspensionProvider[\s\S]{0,120}?suspended=\{sessionFlyoutsSuspended \|\| \(isHovered && !isPersistentExpanded\)\}/u,
+	);
+});
+
+test("the gutter preview moves into the old in-flow inset with Motion", () => {
+	assert.match(IN_FLOW_COLUMN_SOURCE, /import \{ motion, useReducedMotion, type Variants \} from "motion\/react";/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /<motion\.div/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX = 24/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /IN_FLOW_AGENT_SESSION_COLUMN_GUTTER_OFFSET_PX = -5/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /animate=\{isEmbedded \? "embedded" : "gutter"\}/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /transform: `translateX\(\$\{IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX\}px\)`/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /willChange: shouldReduceMotion \? undefined : "transform"/u);
+	assert.doesNotMatch(IN_FLOW_COLUMN_SOURCE, /animate=\{\{ width:/u);
 });
 
 test("the board column and the Insights rail share one loose-work adapter", () => {
@@ -360,6 +431,11 @@ test("column resize buttons swap icons without using selected button state", () 
 	assert.doesNotMatch(INDEX_SOURCE, /<TooltipContent>Expand column<\/TooltipContent>/u);
 	assert.doesNotMatch(INDEX_SOURCE, /\baria-(?:expanded|pressed)(?:\s|=)/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /\baria-(?:expanded|pressed)(?:\s|=)/u);
+	assert.match(INDEX_SOURCE, /peer\/expand-control opacity-0/u);
+	assert.match(INDEX_SOURCE, /hover:opacity-100 focus-visible:opacity-100/u);
+	assert.match(INDEX_SOURCE, /peer-hover\/expand-control:opacity-0/u);
+	assert.match(INDEX_SOURCE, /peer-focus-visible\/expand-control:opacity-0/u);
+	assert.doesNotMatch(INDEX_SOURCE, /group-hover\/session-column:opacity-100/u);
 });
 
 test("notch flyouts use a stable trigger host so the shared popup follows the rail", () => {
@@ -450,10 +526,10 @@ test("a notch is reachable and legible without a pointer", () => {
 });
 
 test("collapsed motion is tokenised and honours reduced motion", () => {
-	// The width change repositions the whole board, so it takes the bold
-	// in-place profile; the notch swell is a list-item interaction.
+	// Standalone/panel resize keeps the tokenized width recipe; hover keeps the
+	// rail compact while its flex footprint rejoins the board rhythm.
 	assert.match(INDEX_SOURCE, /width var\(--duration-medium\) var\(--ease-in-out\)/u);
-	assert.match(INDEX_SOURCE, /transition: shouldReduceMotion \? "none" : AGENT_SESSION_COLUMN_TRANSITION/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /width var\(--duration-normal\) var\(--ease-out-practical\)/u);
 	assert.match(RAIL_COLUMN_SOURCE, /duration-normal ease-out-practical/u);
 	assert.match(RAIL_COLUMN_SOURCE, /motion-reduce:transition-none/u);
 	// The dock's fade in and out are tokenised as resolved cubic-beziers, because
@@ -609,11 +685,10 @@ test("headerSurface panel keeps the column-owned header and drops the nested wel
 	assert.match(INDEX_SOURCE, /columnRef\.current\?\.focus\(\)/u);
 });
 
-test("the collapsed rail keeps its compact header whatever the host asks for", () => {
-	// At 32px that header *is* the chrome, and it carries the only control that
-	// can expand the column again — gating it on `headerSurface` would strand the rail.
-	assert.match(INDEX_SOURCE, /header: collapsed \? collapsedHeader : expandedHeader/u);
+test("the gutter rail keeps a keyboard expand control without a visible count", () => {
+	assert.match(INDEX_SOURCE, /header: collapsed[\s\S]{0,160}?isGutterCollapsed \? gutterHeader : collapsedHeader/u);
 	assert.match(INDEX_SOURCE, /aria-label=\{`Expand \$\{title\} column`\}/u);
+	assert.match(INDEX_SOURCE, /relative flex h-6 w-full min-w-0 items-center justify-center/u);
 	// The rail itself still has no header of its own to fall back on.
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /onExpand/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /sessionCount/u);
@@ -860,11 +935,11 @@ test("the archived view keeps Archived in the header and a back footer", () => {
 });
 
 test("the collapsed rail keeps a focus-ring gutter on its scrollport", () => {
-	// Internal padding only: `-mx-1` on a 32px overflow-hidden column shifts
-	// the notches 4px off center. The clip lifts for `:focus-visible` instead.
+	// Internal padding only: horizontal padding keeps the dots centred, while
+	// vertical padding preserves the ring at the capped scroll boundary.
 	assert.match(
 		RAIL_COLUMN_SOURCE,
-		/overflow-y-auto px-1 has-\[:focus-visible\]:overflow-visible/u,
+		/overflow-y-auto overscroll-contain px-1 py-1/u,
 	);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /-mx-1/u);
 });
@@ -879,9 +954,16 @@ test("the collapsed rail fades notches with ScrollMask viewport mask-image", () 
 		RAIL_COLUMN_SOURCE,
 		/buildScrollMaskStyle\(\{\s*fadeBottom: showBottomScrollMask,\s*fadeSize: AGENT_SESSION_RAIL_FADE_SIZE,\s*fadeTop: showTopScrollMask,\s*scrollbarWidth: 0,\s*\}\)/u,
 	);
-	assert.match(RAIL_COLUMN_SOURCE, /style=\{scrollMaskStyle\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /style=\{\{ \.\.\.scrollMaskStyle, height: railViewportHeight \}\}/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /<motion\.ul/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /ScrollMaskEdgeOverlay/u);
+});
+
+test("the collapsed rail shows at most ten dots before it scrolls under the mask", () => {
+	assert.match(RAIL_COLUMN_SOURCE, /AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS = 10/u);
+	assert.match(RAIL_COLUMN_SOURCE, /Math\.min\(items\.length, AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS\)/u);
+	assert.match(RAIL_COLUMN_SOURCE, /height: railViewportHeight/u);
+	assert.match(RAIL_COLUMN_SOURCE, /items\.map\(/u);
 });
 
 test("the collapsed rail receives visible items only and collapse leaves hidden view", () => {

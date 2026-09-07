@@ -879,14 +879,12 @@ export default function ExperimentalJiraKanbanPage({
 						{isListContent ? (
 							renderListContent?.(filteredBoardColumns, {
 								agentSessionDropIntent: boardSessionDrag.listDropIntent,
-								inFlowAgentSessionColumn: showInFlowAgentSessionColumn,
 								onTrailingContentUnderlapChange: setListContentUnderlapsPanel,
 								scrollEndInset: boardScrollEndInset,
 								trailingOverlayRef: agentSessionPanelRef,
 							})
 						) : (
 							<ExperimentalJiraKanban
-								inFlowAgentSessionColumn={showInFlowAgentSessionColumn}
 								activeCardCode={activeCardCode}
 								agentActivityLayout={agentActivityLayout}
 								boardAgentSessionDrag={boardSessionDrag}
