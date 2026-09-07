@@ -86,12 +86,13 @@ export interface JiraDropzoneChannel {
 	readonly flights: readonly SessionFlight[];
 	readonly impacts: number;
 	readonly lastReceipt: SessionDropReceipt | null;
-	readonly queued: QueuedDropzoneReceive | null;
+	readonly queued: readonly QueuedDropzoneReceive[];
 	readonly settling: boolean;
 }
 
 export interface JiraDropzoneFieldState {
 	readonly channels: ReadonlyMap<string, JiraDropzoneChannel>;
+	readonly latestReceipt: SessionDropReceipt | null;
 	readonly seen: ReadonlySet<SessionReceiptId>;
 }
 

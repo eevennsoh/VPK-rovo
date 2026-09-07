@@ -19,6 +19,7 @@ import {
 	classifyReceipt,
 	isReceiving,
 	jiraDropzoneFieldReducer,
+	settlingChannelTitles,
 } from "./lib/jira-dropzone-receipts";
 import type {
 	FlightProfile,
@@ -63,27 +64,24 @@ export function JiraDropzoneField({
 		return outcome;
 	}, [dispatch, profile]);
 
-	const settlingSignature = [...state.channels]
-		.filter(([, channel]) => channel.settling && channel.flights.length === 0)
-		.map(([title, channel]) => `${title}:${channel.impacts}`)
-		.join(",");
+	const settlingKey = JSON.stringify(settlingChannelTitles(state));
 
 	useEffect(() => {
-		if (!settlingSignature) {
+		const titles = JSON.parse(settlingKey) as string[];
+		if (titles.length === 0) {
 			return;
 		}
-		const timers = settlingSignature.split(",").map((entry) => {
-			const title = entry.replace(/:\d+$/u, "");
-			return window.setTimeout(() => {
+		const timers = titles.map((title) => (
+			window.setTimeout(() => {
 				dispatch({ kind: "settle", title });
-			}, profile.settleHoldMs);
-		});
+			}, profile.settleHoldMs)
+		));
 		return () => {
 			for (const timer of timers) {
 				window.clearTimeout(timer);
 			}
 		};
-	}, [dispatch, profile.settleHoldMs, settlingSignature]);
+	}, [dispatch, profile.settleHoldMs, settlingKey]);
 
 	const value = useMemo(
 		() => ({ dispatch, profile, receive, state }),
@@ -144,12 +142,7 @@ export function useJiraDropzoneChannel(title: string): {
 }
 
 function latestAnnouncement(state: JiraDropzoneFieldState): string {
-	let latest: SessionDropReceipt | null = null;
-	for (const channel of state.channels.values()) {
-		if (channel.lastReceipt && (!latest || channel.lastReceipt.id >= latest.id)) {
-			latest = channel.lastReceipt;
-		}
-	}
+	const latest = state.latestReceipt;
 	if (!latest) {
 		return "";
 	}

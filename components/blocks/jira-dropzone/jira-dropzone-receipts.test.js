@@ -11,6 +11,7 @@ const {
 	flightsFromReceipt,
 	isReceiving,
 	jiraDropzoneFieldReducer,
+	settlingChannelTitles,
 	resolveJiraDropzoneBounce,
 	resolveJiraDropzoneCollapseMs,
 	resolveJiraDropzoneCopy,
@@ -82,7 +83,7 @@ test("duplicate receipt id is a no-op", () => {
 	]);
 	assert.equal(classifyReceipt(state, next), "duplicate");
 	assert.equal(state.channels.get("To Do").flights.length, 1);
-	assert.equal(state.channels.get("To Do").queued, null);
+	assert.deepEqual(state.channels.get("To Do").queued, []);
 });
 
 test("a new id arriving mid-flight queues", () => {
@@ -99,7 +100,8 @@ test("a new id arriving mid-flight queues", () => {
 	const channel = state.channels.get("To Do");
 	assert.equal(channel.flights.length, 1);
 	assert.equal(channel.flights[0].members[0].id, "s1");
-	assert.equal(channel.queued.receipt.id, second.id);
+	assert.equal(channel.queued.length, 1);
+	assert.equal(channel.queued[0].receipt.id, second.id);
 	assert.equal(isReceiving(channel), true);
 });
 
@@ -146,7 +148,7 @@ test("settle dequeues a waiting receipt", () => {
 		started,
 	);
 	const channel = settled.channels.get("To Do");
-	assert.equal(channel.queued, null);
+	assert.deepEqual(channel.queued, []);
 	assert.equal(channel.settling, false);
 	assert.equal(channel.flights.length, 1);
 	assert.equal(channel.flights[0].members[0].id, "s2");
@@ -230,7 +232,88 @@ test("reduced profile still emits one flight with no bounce", () => {
 	assert.equal(flights.length, 1);
 	assert.equal(flights[0].delayMs, 0);
 	assert.equal(JIRA_DROPZONE_REDUCED_MOTION_PROFILE.travel, "none");
+	assert.equal(JIRA_DROPZONE_REDUCED_MOTION_PROFILE.durationMs, 0);
 	assert.equal(JIRA_DROPZONE_REDUCED_MOTION_PROFILE.impact, null);
+});
+
+test("a third receipt queues behind the second instead of replacing it", () => {
+	const first = receipt();
+	const second = receipt({
+		from: { x: 11, y: 20 },
+		members: [member("s2")],
+	});
+	const third = receipt({
+		from: { x: 12, y: 20 },
+		members: [member("s3")],
+	});
+	const started = reduce([
+		{ kind: "register", title: "To Do" },
+		{ kind: "receive", profile: JIRA_DROPZONE_FULL_MOTION_PROFILE, receipt: first },
+		{ kind: "receive", profile: JIRA_DROPZONE_FULL_MOTION_PROFILE, receipt: second },
+		{ kind: "receive", profile: JIRA_DROPZONE_FULL_MOTION_PROFILE, receipt: third },
+	]);
+	assert.deepEqual(
+		started.channels.get("To Do").queued.map((item) => item.receipt.members[0].id),
+		["s2", "s3"],
+	);
+	const afterFirst = reduce(
+		[
+			{ flightKey: started.channels.get("To Do").flights[0].key, kind: "land", title: "To Do" },
+			{ kind: "settle", title: "To Do" },
+		],
+		started,
+	);
+	assert.equal(afterFirst.channels.get("To Do").flights[0].members[0].id, "s2");
+	assert.equal(afterFirst.channels.get("To Do").queued[0].receipt.members[0].id, "s3");
+	const afterSecond = reduce(
+		[
+			{ flightKey: afterFirst.channels.get("To Do").flights[0].key, kind: "land", title: "To Do" },
+			{ kind: "settle", title: "To Do" },
+		],
+		afterFirst,
+	);
+	assert.equal(afterSecond.channels.get("To Do").flights[0].members[0].id, "s3");
+	assert.deepEqual(afterSecond.channels.get("To Do").queued, []);
+});
+
+test("comma-bearing titles stay one settle channel", () => {
+	const title = "Review, blocked";
+	const next = receipt({ title });
+	const started = reduce([
+		{ kind: "register", title },
+		{ kind: "receive", profile: JIRA_DROPZONE_FULL_MOTION_PROFILE, receipt: next },
+	]);
+	const afterLand = jiraDropzoneFieldReducer(started, {
+		flightKey: started.channels.get(title).flights[0].key,
+		kind: "land",
+		title,
+	});
+	assert.deepEqual(settlingChannelTitles(afterLand), [title]);
+	const settled = jiraDropzoneFieldReducer(afterLand, { kind: "settle", title });
+	assert.equal(settled.channels.get(title).settling, false);
+	assert.deepEqual(settlingChannelTitles(settled), []);
+});
+
+test("latestReceipt follows receive order, not lexicographic ids", () => {
+	const older = receipt({
+		from: { x: 1, y: 1 },
+		members: [member("z")],
+		title: "To Do",
+	});
+	const newer = receipt({
+		from: { x: 9, y: 9 },
+		members: [member("a")],
+		title: "In Progress",
+	});
+	assert.equal(newer.id < older.id, true);
+	const state = reduce([
+		{ kind: "register", title: "To Do" },
+		{ kind: "register", title: "In Progress" },
+		{ kind: "receive", profile: JIRA_DROPZONE_FULL_MOTION_PROFILE, receipt: older },
+		{ kind: "receive", profile: JIRA_DROPZONE_FULL_MOTION_PROFILE, receipt: newer },
+	]);
+	assert.equal(state.latestReceipt.id, newer.id);
+	assert.equal(state.latestReceipt.title, "In Progress");
 });
 
 function landAll(started, title = "To Do") {

@@ -219,13 +219,13 @@ export function useBoardAgentSessionDrag({
 	);
 	const [linkFlash, setLinkFlash] = useState<BoardAgentSessionLinkFlash | null>(null);
 	const linkFlashTokenRef = useRef(0);
-	const ports: SessionTransferPorts = {
+	const ports: SessionTransferPorts = useMemo(() => ({
 		onCreate,
 		onLink,
 		onListCreate,
 		onMove,
 		onUnlink,
-	};
+	}), [onCreate, onLink, onListCreate, onMove, onUnlink]);
 	const enablement = resolveDragEnablement(ports);
 
 	const commitDrop = useCallback((
@@ -264,12 +264,8 @@ export function useBoardAgentSessionDrag({
 	}, [
 		boardColumns,
 		detachedSessionsByCard,
-		onCreate,
 		onCreateWellReceive,
-		onLink,
-		onListCreate,
-		onMove,
-		onUnlink,
+		ports,
 		untrackedSessions,
 	]);
 

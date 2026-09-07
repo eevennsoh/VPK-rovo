@@ -22,7 +22,7 @@ export const JIRA_DROPZONE_FULL_MOTION_PROFILE: FlightProfile = {
 export const JIRA_DROPZONE_REDUCED_MOTION_PROFILE: FlightProfile = {
 	arcPeak: 0.5,
 	arcStrength: 0,
-	durationMs: 100,
+	durationMs: 0,
 	ease: [0, 0, 1, 1],
 	impact: null,
 	launchSpreadPx: 0,

@@ -8,6 +8,7 @@ import type {
 	JiraDropzonePhase,
 	JiraDropzonePhaseInput,
 	JiraDropzoneReceiveOutcome,
+	QueuedDropzoneReceive,
 	SessionDropReceipt,
 	SessionFlight,
 	SessionFlightKey,
@@ -20,12 +21,13 @@ const EMPTY_CHANNEL: JiraDropzoneChannel = {
 	flights: [],
 	impacts: 0,
 	lastReceipt: null,
-	queued: null,
+	queued: [],
 	settling: false,
 };
 
 export const JIRA_DROPZONE_FIELD_INITIAL_STATE: JiraDropzoneFieldState = {
 	channels: new Map(),
+	latestReceipt: null,
 	seen: new Set(),
 };
 
@@ -90,7 +92,13 @@ export function isReceiving(channel: JiraDropzoneChannel | undefined): boolean {
 	if (!channel) {
 		return false;
 	}
-	return channel.flights.length > 0 || channel.settling || channel.queued !== null;
+	return channel.flights.length > 0 || channel.settling || channel.queued.length > 0;
+}
+
+export function settlingChannelTitles(state: JiraDropzoneFieldState): readonly string[] {
+	return [...state.channels]
+		.filter(([, channel]) => channel.settling && channel.flights.length === 0)
+		.map(([title]) => title);
 }
 
 export function classifyReceipt(
@@ -164,10 +172,10 @@ function receiveReceipt(
 	channels.set(
 		receipt.title,
 		isReceiving(channel)
-			? { ...channel, queued: { profile, receipt } }
+			? { ...channel, queued: [...channel.queued, { profile, receipt }] }
 			: startReceive(channel, receipt, profile),
 	);
-	return { channels, seen };
+	return { channels, latestReceipt: receipt, seen };
 }
 
 function landFlight(
@@ -200,11 +208,11 @@ function settleChannel(state: JiraDropzoneFieldState, title: string): JiraDropzo
 		return state;
 	}
 	const channels = new Map(state.channels);
-	const queued = channel.queued;
+	const [nextQueued, ...remaining] = channel.queued;
 	channels.set(
 		title,
-		queued
-			? startReceive(channel, queued.receipt, queued.profile)
+		nextQueued
+			? startReceive(channel, nextQueued.receipt, nextQueued.profile, remaining)
 			: { ...channel, settling: false },
 	);
 	return { ...state, channels };
@@ -214,12 +222,13 @@ function startReceive(
 	channel: JiraDropzoneChannel,
 	receipt: SessionDropReceipt,
 	profile: FlightProfile,
+	queued: readonly QueuedDropzoneReceive[] = [],
 ): JiraDropzoneChannel {
 	return {
 		...channel,
 		flights: flightsFromReceipt(receipt, profile),
 		lastReceipt: receipt,
-		queued: null,
+		queued,
 		settling: false,
 	};
 }
