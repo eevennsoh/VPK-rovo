@@ -20,6 +20,7 @@ const EXPERIMENTAL_HEADER_SOURCE = readProjectFile(
 const EXPERIMENTAL_PAGE_SOURCE = [
 	readProjectFile("components/blocks/jira-kanban/experimental/page.tsx"),
 	readProjectFile("components/blocks/jira-kanban/experimental/experimental-page-types.ts"),
+	readProjectFile("components/blocks/jira-kanban/experimental/hooks/use-page-content-model.ts"),
 ].join("\n");
 const EXPERIMENTAL_BOARD_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/experimental-jira-kanban.tsx",
@@ -261,7 +262,7 @@ test("both design variations reveal compact magnetic create targets that expand 
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/<ExperimentalJiraKanban[\s\S]*createWorkItemDropZoneLabel=\{createWorkItemDropZoneLabel\}/u,
+		/<ExperimentalJiraKanban[\s\S]*createWorkItemDropZoneLabel=\{onBoardAgentSessionCreate\s*\? createWorkItemDropZoneLabel\s*: undefined\}/u,
 	);
 	assert.doesNotMatch(
 		EXPERIMENTAL_BOARD_SOURCE,
@@ -356,7 +357,7 @@ test("both design variations reveal compact magnetic create targets that expand 
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/useBoardAgentSessionDrag\(\{[\s\S]*onCreate: agentSessionHandlers\.onCreateWorkItem,/u,
+		/useBoardAgentSessionDrag\(\{[\s\S]*onCreate: onBoardAgentSessionCreate \? handleBoardAgentSessionCreate : undefined,/u,
 	);
 });
 
@@ -607,7 +608,7 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(PAGE_SOURCE, /pb-4 ps-6 md:pb-5/u);
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /inFlowAgentSessionColumn/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /agentSessionDropIntent: boardSessionDrag\.listDropIntent/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCreate: agentSessionHandlers.onCreateWorkItem/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCreate: onBoardAgentSessionCreate \? handleBoardAgentSessionCreate : undefined/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onListCreate: onListAgentSessionCreate \? handleListAgentSessionCreate : undefined/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /activeView === "list" && renderListContent/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<BoardFilterPopover[\s\S]*surfaceLabel=\{activeView\}/u);

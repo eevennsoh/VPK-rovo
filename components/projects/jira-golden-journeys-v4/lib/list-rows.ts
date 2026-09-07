@@ -1,3 +1,4 @@
+import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
 import type {
 	JiraKanbanAgentData,
@@ -373,6 +374,24 @@ export function insertListOrderKey(
 	];
 }
 
+export function appendBoardCreatedListOrder({
+	columns,
+	issueKey,
+	listOrder,
+	visibleKeys,
+}: Readonly<{
+	columns: readonly JiraKanbanColumnData[];
+	issueKey: string;
+	listOrder: readonly string[];
+	visibleKeys: readonly string[];
+}>): string[] {
+	const insertionKeys = visibleKeys.length > 0
+		? visibleKeys
+		: columns.flatMap((column) => column.cards.map((card) => card.code));
+
+	return insertListOrderKey(listOrder, insertionKeys, issueKey, null);
+}
+
 export function getNextPayIssueKey(columns: readonly JiraKanbanColumnData[]): string {
 	const highestIssueNumber = columns.flatMap((column) => column.cards).reduce((maxIssueNumber, card) => {
 		const parsedIssueNumber = Number.parseInt(card.code.split("-")[1] ?? "0", 10);
@@ -442,9 +461,33 @@ export interface CreateListWorkItemFromSessionInput {
 		activity: JiraIssueAgentActivity,
 	) => readonly JiraKanbanColumnData[];
 	listOrder: readonly string[];
-	session: Readonly<{ id: string; title: string }>;
+	session: Readonly<Pick<AgentSessionItem, "id" | "invokedBy" | "title">>;
 	visibleKeys: readonly string[];
 }
+
+export interface CreateBoardWorkItemFromSessionInput {
+	activity: JiraIssueAgentActivity;
+	columns: readonly JiraKanbanColumnData[];
+	columnTitle: string;
+	linkSession: (
+		columns: readonly JiraKanbanColumnData[],
+		issueKey: string,
+		activity: JiraIssueAgentActivity,
+	) => readonly JiraKanbanColumnData[];
+	session: Readonly<Pick<AgentSessionItem, "id" | "invokedBy" | "title">>;
+}
+
+export type CreateBoardWorkItemFromSessionResult =
+	| {
+		kind: "created";
+		columns: readonly JiraKanbanColumnData[];
+		issueKey: string;
+	}
+	| {
+		kind: "already-attached";
+		columns: readonly JiraKanbanColumnData[];
+		issueKey: string;
+	};
 
 export type CreateListWorkItemFromSessionResult =
 	| {
@@ -460,9 +503,9 @@ export type CreateListWorkItemFromSessionResult =
 		listOrder: readonly string[];
 	};
 
-export function createListWorkItemFromSession(
-	input: CreateListWorkItemFromSessionInput,
-): CreateListWorkItemFromSessionResult {
+export function createBoardWorkItemFromSession(
+	input: CreateBoardWorkItemFromSessionInput,
+): CreateBoardWorkItemFromSessionResult {
 	const attachedCard = input.columns
 		.flatMap((column) => column.cards)
 		.find((card) => card.agentActivities?.some((activity) => activity.id === input.activity.id));
@@ -471,29 +514,62 @@ export function createListWorkItemFromSession(
 			kind: "already-attached",
 			columns: input.columns,
 			issueKey: attachedCard.code,
-			listOrder: input.listOrder,
 		};
 	}
 
 	const issueKey = getNextPayIssueKey(input.columns);
 	const card = toKanbanCardFromDraft({
+		assignee: input.session.invokedBy
+			? {
+				avatarSrc: input.session.invokedBy.avatarSrc,
+				id: slugAgentName(input.session.invokedBy.name),
+				name: input.session.invokedBy.name,
+			}
+			: undefined,
 		issueKey,
 		issueType: "task",
 		summary: input.session.title,
 	});
-	const columnsWithCard = insertWorkItemCard(input.columns, card, "To do");
+	const columnsWithCard = insertWorkItemCard(input.columns, card, input.columnTitle);
 	const columns = input.linkSession(columnsWithCard, issueKey, input.activity);
-	const listOrder = insertListOrderKey(
-		input.listOrder,
-		input.visibleKeys,
-		issueKey,
-		input.insertion.insertAtIndex,
-	);
 
 	return {
 		kind: "created",
 		columns,
 		issueKey,
+	};
+}
+
+export function createListWorkItemFromSession(
+	input: CreateListWorkItemFromSessionInput,
+): CreateListWorkItemFromSessionResult {
+	const result = createBoardWorkItemFromSession({
+		activity: input.activity,
+		columns: input.columns,
+		columnTitle: "To do",
+		linkSession: input.linkSession,
+		session: input.session,
+	});
+	if (result.kind === "already-attached") {
+		return {
+			kind: "already-attached",
+			columns: result.columns,
+			issueKey: result.issueKey,
+			listOrder: input.listOrder,
+		};
+	}
+
+	const listOrder = insertListOrderKey(
+		input.listOrder,
+		input.visibleKeys,
+		result.issueKey,
+		input.insertion.insertAtIndex,
+	);
+
+	return {
+		kind: "created",
+		columns: result.columns,
+		issueKey: result.issueKey,
 		listOrder,
 	};
 }

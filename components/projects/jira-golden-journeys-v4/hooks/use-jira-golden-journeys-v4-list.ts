@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 
+import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
 import { linkJiraKanbanAgentSession, moveJiraKanbanCardsToColumn } from "@/components/blocks/jira-kanban/state";
 import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
@@ -20,6 +21,8 @@ import { JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS } from "../data/presentation-s
 import {
 	applyAssignedAgentIdsToColumns,
 	applyListOrder,
+	appendBoardCreatedListOrder,
+	createBoardWorkItemFromSession,
 	createListRows,
 	createListWorkItemFromSession,
 	getNextPayIssueKey,
@@ -42,10 +45,17 @@ interface ListDraftWorkItem {
 export interface CreateFromAgentSessionInput {
 	activity: JiraIssueAgentActivity;
 	insertion: JiraListInsertion;
-	session: Readonly<{ id: string; title: string }>;
+	session: Readonly<Pick<AgentSessionItem, "id" | "invokedBy" | "title">>;
+}
+
+export interface CreateBoardFromAgentSessionInput {
+	activity: JiraIssueAgentActivity;
+	columnTitle: string;
+	session: Readonly<Pick<AgentSessionItem, "id" | "invokedBy" | "title">>;
 }
 
 export interface UseJiraGoldenJourneysV4ListResult {
+	createBoardFromAgentSession: (input: CreateBoardFromAgentSessionInput) => string | undefined;
 	/** Returns the row the session landed in, so the caller can acknowledge it. */
 	createFromAgentSession: (input: CreateFromAgentSessionInput) => string;
 	getProps: (columns: readonly JiraKanbanColumnData[]) => JiraListProps;
@@ -229,6 +239,32 @@ export function useJiraGoldenJourneysV4List({
 		return result.issueKey;
 	}, [setBoardColumns]);
 
+	const createBoardFromAgentSession = useCallback((input: CreateBoardFromAgentSessionInput) => {
+		const columnsBeforeCreate = boardColumnsRef.current;
+		const result = createBoardWorkItemFromSession({
+			activity: input.activity,
+			columns: columnsBeforeCreate,
+			columnTitle: input.columnTitle,
+			linkSession: linkJiraKanbanAgentSession,
+			session: input.session,
+		});
+		if (result.kind === "already-attached") {
+			return undefined;
+		}
+
+		const nextListOrder = appendBoardCreatedListOrder({
+			columns: columnsBeforeCreate,
+			issueKey: result.issueKey,
+			listOrder: listOrderRef.current,
+			visibleKeys: visibleKeysRef.current,
+		});
+		boardColumnsRef.current = result.columns;
+		listOrderRef.current = nextListOrder;
+		setBoardColumns([...result.columns]);
+		setListOrder(nextListOrder);
+		return result.issueKey;
+	}, [setBoardColumns]);
+
 	const getProps = useCallback((columns: readonly JiraKanbanColumnData[]): JiraListProps => {
 		const rows = applyListOrder(
 			createListRows(columns, JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS),
@@ -311,5 +347,5 @@ export function useJiraGoldenJourneysV4List({
 		selectedIssueKeys,
 	]);
 
-	return { createFromAgentSession, getProps };
+	return { createBoardFromAgentSession, createFromAgentSession, getProps };
 }

@@ -189,7 +189,11 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 			issueSummary: card.title,
 		});
 	}, [boardColumns, handleViewChat, handleViewCompletedRun, openAgentChat]);
-	const { createFromAgentSession, getProps: getListProps } = useJiraGoldenJourneysV4List({
+	const {
+		createBoardFromAgentSession,
+		createFromAgentSession,
+		getProps: getListProps,
+	} = useJiraGoldenJourneysV4List({
 		boardColumns,
 		onAssignedAgentSelect: handleListAssignedAgentSelect,
 		setBoardColumns,
@@ -198,12 +202,9 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 	// leave a badge behind, so the flash carries the acknowledgement. One drop of
 	// three marked sessions publishes one flash covering all three rows.
 	//
-	// It only reaches rows the list is rendering. A created card arrives
-	// unassigned, and `filterJiraKanbanColumnsByAssignee` drops unassigned cards
-	// outright, so a create-drop under an active assignee filter lands a row the
-	// viewer cannot see. That gap predates the flash — the row used to be
-	// selected and equally hidden — and closing it is a separate decision about
-	// what a filtered drop should do.
+	// It only reaches rows the list is rendering. Board-created cards inherit
+	// the dropped session's invoker, so the matching assignee filter keeps the
+	// new row visible long enough for this acknowledgement.
 	const { flash: listRowFlash, flashRow: flashListRow } = useJiraListRowFlashSource();
 	// Unlink always lands in `detachedAgentSessionsByCard`. The Untracked list
 	// reads that map, so the session reappears there immediately. Team EU keeps
@@ -253,6 +254,17 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 		setBoardColumns((columns) => linkJiraKanbanAgentSession(columns, card.code, activity));
 		flashListRow(card.code);
 	}, [consumeDetachedAgentSession, flashListRow]);
+	const handleBoardAgentSessionCreate = useCallback((
+		session: AgentSessionItem,
+		columnTitle: string,
+	) => {
+		const activity = consumeDetachedAgentSession(session);
+		return createBoardFromAgentSession({
+			activity,
+			columnTitle,
+			session,
+		});
+	}, [consumeDetachedAgentSession, createBoardFromAgentSession]);
 	const handleListAgentSessionCreate = useCallback((
 		session: AgentSessionItem,
 		insertion: JiraListInsertion,
@@ -306,6 +318,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						insightsEnabled={false}
 						newAgentSessionIds={newAgentSessionIds}
 						onAgentSessionsReviewed={reviewAgentSessions}
+						onBoardAgentSessionCreate={handleBoardAgentSessionCreate}
 						onBoardColumnsChange={(columns: readonly JiraKanbanColumnData[]) => {
 							setBoardColumns([...columns]);
 						}}

@@ -1,10 +1,15 @@
 const assert = require("node:assert/strict");
 const { test } = require("node:test");
 
-const { linkJiraKanbanAgentSession } = require("../../../blocks/jira-kanban/state.ts");
+const {
+	filterJiraKanbanColumnsByAssignee,
+	linkJiraKanbanAgentSession,
+} = require("../../../blocks/jira-kanban/state.ts");
 const {
 	applyAssignedAgentIdsToColumns,
 	applyListOrder,
+	appendBoardCreatedListOrder,
+	createBoardWorkItemFromSession,
 	createListRows,
 	createListWorkItemFromSession,
 	getNextPayIssueKey,
@@ -352,6 +357,117 @@ test("two session creates on one gap keep both issue keys", () => {
 		?.cards ?? [];
 	assert.equal(todoCards.some((card) => card.code === "PAY-119"), true);
 	assert.equal(todoCards.some((card) => card.code === "PAY-120"), true);
+});
+
+test("createBoardWorkItemFromSession appends a task to the requested status and attaches its session", () => {
+	const activity = {
+		id: "lw-board-review",
+		label: "Review the board drop behavior",
+		name: "Claude Code",
+		state: "complete",
+	};
+	const created = createBoardWorkItemFromSession({
+		activity,
+		columns: COLUMNS,
+		columnTitle: "In progress",
+		linkSession: linkJiraKanbanAgentSession,
+		session: {
+			id: "lw-board-review",
+			invokedBy: { avatarSrc: "/maya.png", name: "Maya Ferreira" },
+			title: "Review the board drop behavior",
+		},
+	});
+
+	assert.equal(created.kind, "created");
+	assert.equal(created.issueKey, "PAY-119");
+	const inProgress = created.columns.find((column) => column.title === "In progress");
+	const createdCard = inProgress?.cards.at(-1);
+	assert.equal(inProgress?.count, 2);
+	assert.equal(createdCard?.code, "PAY-119");
+	assert.equal(createdCard?.title, "Review the board drop behavior");
+	assert.equal(createdCard?.issueType, "task");
+	assert.equal(createdCard?.agentActivities?.[0], activity);
+	assert.deepEqual(createdCard?.assignee, {
+		avatarSrc: "/maya.png",
+		id: "maya-ferreira",
+		name: "Maya Ferreira",
+	});
+	assert.equal(
+		filterJiraKanbanColumnsByAssignee(
+			created.columns,
+			new Set(["maya-ferreira"]),
+		).find((column) => column.title === "In progress")?.cards.at(-1)?.code,
+		"PAY-119",
+	);
+
+	const again = createBoardWorkItemFromSession({
+		activity,
+		columns: created.columns,
+		columnTitle: "To do",
+		linkSession: linkJiraKanbanAgentSession,
+		session: {
+			id: "lw-board-review",
+			invokedBy: { avatarSrc: "/maya.png", name: "Maya Ferreira" },
+			title: "Review the board drop behavior",
+		},
+	});
+	assert.equal(again.kind, "already-attached");
+	assert.equal(again.issueKey, "PAY-119");
+	assert.equal(again.columns, created.columns);
+	assert.equal(
+		again.columns.flatMap((column) => column.cards).filter((card) => card.code === "PAY-119").length,
+		1,
+	);
+});
+
+test("the first board create seeds List order from existing board rows before appending", () => {
+	assert.deepEqual(
+		appendBoardCreatedListOrder({
+			columns: COLUMNS,
+			issueKey: "PAY-119",
+			listOrder: [],
+			visibleKeys: [],
+		}),
+		["PAY-118", "PAY-107", "PAY-101", "PAY-119"],
+	);
+});
+
+test("sequential board session creates mint distinct PAY keys in the requested status", () => {
+	const first = createBoardWorkItemFromSession({
+		activity: {
+			id: "lw-board-first",
+			label: "First board session",
+			name: "Claude Code",
+			state: "complete",
+		},
+		columns: COLUMNS,
+		columnTitle: "In progress",
+		linkSession: linkJiraKanbanAgentSession,
+		session: { id: "lw-board-first", title: "First board session" },
+	});
+	const second = createBoardWorkItemFromSession({
+		activity: {
+			id: "lw-board-second",
+			label: "Second board session",
+			name: "Claude Code",
+			state: "complete",
+		},
+		columns: first.columns,
+		columnTitle: "In progress",
+		linkSession: linkJiraKanbanAgentSession,
+		session: { id: "lw-board-second", title: "Second board session" },
+	});
+
+	assert.equal(first.kind, "created");
+	assert.equal(second.kind, "created");
+	assert.equal(first.issueKey, "PAY-119");
+	assert.equal(second.issueKey, "PAY-120");
+	assert.deepEqual(
+		second.columns
+			.find((column) => column.title === "In progress")
+			?.cards.slice(-2).map((card) => card.code),
+		["PAY-119", "PAY-120"],
+	);
 });
 
 test("a multi-session drop keeps its created rows adjacent when other rows are hidden", () => {

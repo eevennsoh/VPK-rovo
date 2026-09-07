@@ -10,10 +10,11 @@ const IN_FLOW_COLUMN_SOURCE = readFileSync(
 	join(__dirname, "../jira-kanban/experimental/components/in-flow-agent-session-column.tsx"),
 	"utf8",
 );
-const EXPERIMENTAL_BOARD_SOURCE = readFileSync(
-	join(__dirname, "../jira-kanban/experimental/experimental-jira-kanban.tsx"),
-	"utf8",
-);
+const EXPERIMENTAL_BOARD_SOURCE = [
+	readFileSync(join(__dirname, "../jira-kanban/experimental/experimental-jira-kanban.tsx"), "utf8"),
+	readFileSync(join(__dirname, "../jira-kanban/experimental/components/created-card-arrival-motion.tsx"), "utf8"),
+	readFileSync(join(__dirname, "../jira-kanban/experimental/lib/card-motion.ts"), "utf8"),
+].join("\n");
 const EXPERIMENTAL_PAGE_SOURCE = readFileSync(
 	join(__dirname, "../jira-kanban/experimental/page.tsx"),
 	"utf8",
@@ -199,7 +200,10 @@ test("the first collapsed gutter mount plays a reduced-motion-safe staggered sca
 		EXPERIMENTAL_BOARD_SOURCE,
 		/JIRA_KANBAN_CARD_MOVE: Transition = \{ duration: 0\.6, ease: \[0\.4, 0, 0, 1\] \}/u,
 	);
-	assert.match(EXPERIMENTAL_BOARD_SOURCE, /initial=\{false\}/u);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/initial=\{isArriving && !shouldReduceMotion \? \{ opacity: 0, y: 8 \} : false\}/u,
+	);
 	assert.match(RAIL_SOURCE, /AGENT_SESSION_GUTTER_INTRO_VISUAL_DURATION_SECONDS = 0\.3/u);
 	assert.match(RAIL_SOURCE, /AGENT_SESSION_GUTTER_INTRO_STAGGER_SECONDS = 0\.04/u);
 	assert.match(RAIL_SOURCE, /overlap each 300ms visual settle by 260ms/u);

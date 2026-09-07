@@ -16,8 +16,12 @@ const EXPERIMENTAL_DIR = __dirname;
 const PAGE_SOURCE = [
 	readFileSync(join(EXPERIMENTAL_DIR, "page.tsx"), "utf8"),
 	readFileSync(join(EXPERIMENTAL_DIR, "experimental-page-types.ts"), "utf8"),
+	readFileSync(join(EXPERIMENTAL_DIR, "hooks", "use-page-content-model.ts"), "utf8"),
 ].join("\n");
-const BOARD_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "experimental-jira-kanban.tsx"), "utf8");
+const BOARD_SOURCE = [
+	readFileSync(join(EXPERIMENTAL_DIR, "experimental-jira-kanban.tsx"), "utf8"),
+	readFileSync(join(EXPERIMENTAL_DIR, "components", "created-card-arrival-motion.tsx"), "utf8"),
+].join("\n");
 const IN_FLOW_SOURCE = readFileSync(
 	join(EXPERIMENTAL_DIR, "components", "in-flow-agent-session-column.tsx"),
 	"utf8",
@@ -275,7 +279,7 @@ test("column card click scrolls the related issue and applies the blue-subtlest 
 		withoutComments(BOARD_SOURCE),
 		/const handleSessionSelectionChange = \(itemId: string \| null\) => \{\s*if \(itemId === null\) \{\s*setFocusedIssueKey\(null\);/u,
 	);
-	assert.match(BOARD_SOURCE, /data-issue-key=\{card\.code\}/u);
+	assert.match(BOARD_SOURCE, /data-issue-key=\{cardCode\}/u);
 	assert.match(BOARD_SOURCE, /spotlightIssueKey === card\.code && "bg-bg-accent-blue-subtlest"/u);
 	assert.match(
 		BOARD_SOURCE,
