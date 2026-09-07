@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent, type RefCallback } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type RefCallback } from "react";
 import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 
 import type { AgentListState } from "@/components/blocks/agent-list";
@@ -298,22 +298,19 @@ function AgentSessionUserNotch({
 					className={cn(
 						"absolute inset-0 size-3 rounded-full object-cover",
 						"motion-reduce:transition-none",
-						arrivalExiting
-							? "opacity-100 transition-transform duration-normal ease-in-out"
+						"group-hover/notch:scale-100 group-hover/notch:opacity-100",
+						"group-has-[:focus-visible]/notch:scale-100 group-has-[:focus-visible]/notch:opacity-100",
+						arrivalExiting && !isHighlighted
+							? "opacity-100 scale-[var(--agent-session-user-notch-morph)] transition-transform duration-normal ease-in-out"
 							: showAvatar
 								? "opacity-100 scale-100 transition-[opacity,scale] duration-normal ease-out-practical"
-								: cn(
-									"scale-75 opacity-0",
-									"group-hover/notch:scale-100 group-hover/notch:opacity-100",
-									"group-has-[:focus-visible]/notch:scale-100 group-has-[:focus-visible]/notch:opacity-100",
-									"transition-[opacity,scale] duration-normal ease-out-practical",
-								),
+								: "scale-[var(--agent-session-user-notch-morph)] opacity-0 transition-[opacity,scale] duration-normal ease-out-practical",
 					)}
 					height={12}
 					src={avatarSrc}
-					style={arrivalExiting
-						? { transform: `scale(${arrivalMorphScale})` }
-						: undefined}
+					style={{
+						"--agent-session-user-notch-morph": String(arrivalMorphScale),
+					} as CSSProperties}
 					width={12}
 				/>
 			) : null}

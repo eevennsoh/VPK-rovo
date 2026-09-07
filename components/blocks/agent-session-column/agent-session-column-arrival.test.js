@@ -119,12 +119,17 @@ test("the rest disc stays hidden while the arrival face is on screen", () => {
 	assert.match(RAIL_COLUMN_SOURCE, /data-arrival-reveal=\{arrivalReveal \|\| undefined\}/u);
 	assert.match(
 		RAIL_COLUMN_SOURCE,
-		/transform: `scale\(\$\{arrivalMorphScale\}\)`/u,
+		/"--agent-session-user-notch-morph": String\(arrivalMorphScale\)/u,
 	);
 	assert.match(
 		RAIL_COLUMN_SOURCE,
 		/AGENT_SESSION_USER_NOTCH_DIAMETER\.rest\s*\/ AGENT_SESSION_USER_NOTCH_DIAMETER\.peak/u,
 	);
+	assert.match(
+		RAIL_COLUMN_SOURCE,
+		/scale-\[var\(--agent-session-user-notch-morph\)\] opacity-0/u,
+	);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /scale-75/u);
 });
 
 test("circle unread rest uses default icon color", () => {
@@ -167,7 +172,15 @@ test("arrival motion is tokenised, capped, and spatially anchored", () => {
 	assert.match(ARRIVAL_MOTION_SOURCE, /exitMs: 150/u);
 	assert.match(
 		RAIL_COLUMN_SOURCE,
-		/arrivalExiting\s*\n?\s*\? "opacity-100 transition-transform duration-normal ease-in-out"/u,
+		/arrivalExiting && !isHighlighted\s*\n?\s*\? "opacity-100 scale-\[var\(--agent-session-user-notch-morph\)\] transition-transform duration-normal ease-in-out"/u,
+	);
+	assert.match(
+		RAIL_COLUMN_SOURCE,
+		/group-hover\/notch:scale-100 group-hover\/notch:opacity-100/u,
+	);
+	assert.match(
+		RAIL_COLUMN_SOURCE,
+		/group-has-\[:focus-visible\]\/notch:scale-100 group-has-\[:focus-visible\]\/notch:opacity-100/u,
 	);
 	assert.doesNotMatch(
 		RAIL_COLUMN_SOURCE,
