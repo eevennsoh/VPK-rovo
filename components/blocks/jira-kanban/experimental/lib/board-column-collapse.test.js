@@ -107,12 +107,12 @@ test("the resize button swaps its icon without using selected button state", () 
 
 test("the pinned session column shares the status columns' box model", () => {
 	// Status columns carry a 2px transparent drop-target border, so the pinned
-	// wrapper keeps top/left/bottom or the headers sit 2px apart. It drops the
-	// right edge — a 2px stroke there reads as a white seam against `bg-surface`.
-	// The column itself is the Untracked drop zone; the ring lights when armed.
+	// surface keeps top/left/bottom and drops the right edge. The surface is
+	// absolutely positioned so its gutter state does not push board content;
+	// the column itself remains the Untracked drop zone and lights when armed.
 	assert.match(
 		IN_FLOW_SOURCE,
-		/className=\{cn\(\s*"flex min-h-0 shrink-0 border-2 border-r-0 ps-6",\s*untrackedDropArmed \? "border-ring" : "border-transparent",\s*className,\s*\)\}/u,
+		/className=\{cn\(\s*"absolute inset-y-0 start-0 z-40 flex min-h-0 border-2 border-r-0",[\s\S]*?untrackedDropArmed \? "border-ring" : "border-transparent",\s*className,\s*\)\}/u,
 	);
 	assert.match(IN_FLOW_SOURCE, /data-board-agent-session-drop-zone="untracked"/u);
 });
@@ -130,8 +130,9 @@ test("a collapsed status pill hugs its label while the shell keeps the drop lane
 	assert.doesNotMatch(pillSource, /(?:^|[^-\w])h-full\b/u);
 	// The shell around it still stretches, so a collapsed column is as easy to
 	// drop onto as an expanded one. `min-h-full` on the row is the shell, not
-	// the pill — do not treat that as the pill stretching.
-	assert.match(BOARD_SOURCE, /className=\{cn\(\s*"flex min-h-full w-max min-w-full items-stretch"/u);
+	// the pill — do not treat that as the pill stretching. The row's `ps-6`
+	// inset keeps the status columns clear of the gutter rail.
+	assert.match(BOARD_SOURCE, /className="flex min-h-full w-max min-w-full items-stretch ps-6"/u);
 
 	// The expand control's focus ring extends 3px past a 24px button, which is
 	// exactly the 30px inside this 32px pill's border. Clipping to the padding
