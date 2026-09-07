@@ -706,3 +706,17 @@ test("Jira issue attach has no dashed well and grows the backdrop chin instead",
 		/ref=\{\(node\) => \{\s*\n\s*setGenerativeActionAnchor\(node\);\s*\n\s*cardMeasureRef\.current = node;/u,
 	);
 });
+
+test("attach chin replaces a running agent session row instead of stacking a second chin row", () => {
+	// Cards that already have a live session must keep one chin row: the
+	// "Link N agent session" placeholder takes that slot rather than
+	// growing a second row underneath it.
+	assert.match(
+		SOURCE,
+		/\{isAttachingSession \? \(\s*\n\s*<div className="px-1 py-1" data-slot="jira-issue-attach-chin">[\s\S]*\) : \(\s*\n\s*<JiraIssueAgentActivityRows/u,
+	);
+	assert.doesNotMatch(
+		SOURCE,
+		/<JiraIssueAgentActivityRows[\s\S]*\{isAttachingSession \? \(/u,
+	);
+});

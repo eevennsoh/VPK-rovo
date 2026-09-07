@@ -790,19 +790,7 @@ function JiraIssueDefault({
 					/>
 					{richIssueContent}
 				</motion.div>
-					<JiraIssueAgentActivityRows
-						activities={activeAgentActivities}
-						linkFlash={agentLinkFlash}
-						instantSessionTransfer={agentSessionDragControl !== undefined}
-					layout={agentActivityLayout}
-					onOpenChange={handleAgentActivityOpenChange}
-					onViewChat={onAgentActivityViewChat}
-					renderAgentActivityIndicator={renderAgentActivityIndicator}
-					sessionFlyout={agentSessionFlyout}
-					sessionDrag={agentSessionDragBinding}
-					shouldReduceMotion={shouldReduceMotion}
-					usesStrokeChrome={usesCompactVisual}
-				/>
+				{/* Running sessions already occupy the chin; attach copy replaces that row instead of stacking. */}
 				{isAttachingSession ? (
 					<div className="px-1 py-1" data-slot="jira-issue-attach-chin">
 						<div
@@ -815,7 +803,21 @@ function JiraIssueDefault({
 							</span>
 						</div>
 					</div>
-				) : null}
+				) : (
+					<JiraIssueAgentActivityRows
+						activities={activeAgentActivities}
+						linkFlash={agentLinkFlash}
+						instantSessionTransfer={agentSessionDragControl !== undefined}
+						layout={agentActivityLayout}
+						onOpenChange={handleAgentActivityOpenChange}
+						onViewChat={onAgentActivityViewChat}
+						renderAgentActivityIndicator={renderAgentActivityIndicator}
+						sessionFlyout={agentSessionFlyout}
+						sessionDrag={agentSessionDragBinding}
+						shouldReduceMotion={shouldReduceMotion}
+						usesStrokeChrome={usesCompactVisual}
+					/>
+				)}
 				<AnimatePresence initial={false} mode="popLayout">
 					{hasAgentDoneNotification ? (
 						<motion.div
