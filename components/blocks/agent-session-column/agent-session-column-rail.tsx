@@ -41,6 +41,7 @@ import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { cn } from "@/lib/utils";
 
 import type { AgentSessionColumnNotchShape } from "./agent-session-column-types";
+import { useAgentSessionUserNotchArrival } from "./use-agent-session-user-notch-arrival";
 
 /**
  * The collapsed form of the Agent Session column.
@@ -55,7 +56,9 @@ import type { AgentSessionColumnNotchShape } from "./agent-session-column-types"
  * Circular markers are the default and are the compact form of the same human
  * avatar shown on the expanded card. The dock grows nearby dots from 4px toward
  * a 12px cap; the dot under the pointer or keyboard focus reveals that person's
- * face. Line markers retain the original horizontal treatment and falloff.
+ * face. An arriving session flashes that same face, then fades back to the rest
+ * dot — newness is not a permanently bigger grey mark. Line markers retain the
+ * original horizontal treatment and falloff.
  *
  * Circle dots always use `icon.disabled`; size carries proximity and the face
  * carries direct interest. Newness and lifecycle remain spoken, while line mode
@@ -201,19 +204,23 @@ function AgentSessionUserNotch({
 	avatarSrc,
 	isArriving,
 	isHighlighted,
-	isNew,
 	onArrivalComplete,
 	proximity,
 }: Readonly<{
 	avatarSrc?: string;
 	isArriving: boolean;
 	isHighlighted: boolean;
-	isNew: boolean;
 	onArrivalComplete?: () => void;
 	proximity?: AgentSessionNotchProximity;
 }>) {
 	const shouldReduceMotion = useReducedMotion();
-	const shouldPlayArrival = isArriving && !shouldReduceMotion;
+	const { arrivalReveal, shouldPlayScaleArrival } = useAgentSessionUserNotchArrival({
+		hasAvatar: Boolean(avatarSrc),
+		isArriving,
+		onArrivalComplete,
+		shouldReduceMotion,
+	});
+	const showAvatar = isHighlighted || arrivalReveal;
 	const parkedPointerY = useMotionValue(AGENT_SESSION_NOTCH_POINTER_AWAY);
 	const parkedMagnify = useMotionValue(0);
 	const pointerY = proximity?.pointerY ?? parkedPointerY;
@@ -231,22 +238,23 @@ function AgentSessionUserNotch({
 	});
 	const dotScale = useTransform(
 		falloff,
-		(value) => `scale(${toAgentSessionUserNotchDiameter(value, isNew) / 4})`,
+		(value) => `scale(${toAgentSessionUserNotchDiameter(value) / 4})`,
 	);
-	const restingScale = toAgentSessionUserNotchDiameter(0, isNew) / 4;
+	const restingScale = toAgentSessionUserNotchDiameter(0) / 4;
 
 	return (
 		<motion.span
-			animate={shouldPlayArrival ? { scale: 1 } : undefined}
+			animate={shouldPlayScaleArrival ? { scale: 1 } : undefined}
 			aria-hidden="true"
 			className="relative grid size-3 shrink-0 place-items-center"
-			initial={shouldPlayArrival ? { scale: 0 } : false}
+			data-arrival-reveal={arrivalReveal || undefined}
+			initial={shouldPlayScaleArrival ? { scale: 0 } : false}
 			onAnimationComplete={() => {
-				if (shouldPlayArrival) {
+				if (shouldPlayScaleArrival) {
 					onArrivalComplete?.();
 				}
 			}}
-			style={{ willChange: shouldPlayArrival ? "transform" : undefined }}
+			style={{ willChange: shouldPlayScaleArrival ? "transform" : undefined }}
 			transition={AGENT_SESSION_ARRIVAL_TRANSITION}
 		>
 			<motion.span
@@ -255,7 +263,7 @@ function AgentSessionUserNotch({
 					avatarSrc
 						? "group-hover/notch:opacity-0 group-has-[:focus-visible]/notch:opacity-0"
 						: null,
-					isHighlighted && avatarSrc ? "opacity-0" : null,
+					showAvatar && avatarSrc ? "opacity-0" : null,
 				)}
 				style={{
 					backgroundColor: AGENT_SESSION_NOTCH_TONE.rest,
@@ -271,7 +279,7 @@ function AgentSessionUserNotch({
 						"absolute inset-0 size-3 scale-75 rounded-full object-cover opacity-0 transition-[opacity,scale] duration-normal ease-out-practical",
 						"group-hover/notch:scale-100 group-hover/notch:opacity-100 group-has-[:focus-visible]/notch:scale-100 group-has-[:focus-visible]/notch:opacity-100",
 						"motion-reduce:transition-none",
-						isHighlighted ? "opacity-100 scale-100" : null,
+						showAvatar ? "opacity-100 scale-100" : null,
 					)}
 					height={12}
 					src={avatarSrc}
@@ -411,7 +419,6 @@ function AgentSessionNotch({
 										avatarSrc={visibleIdentity.avatarSrc}
 										isArriving={isArriving}
 										isHighlighted={isHighlighted}
-										isNew={isNew}
 										onArrivalComplete={onArrivalComplete}
 										proximity={proximity}
 									/>

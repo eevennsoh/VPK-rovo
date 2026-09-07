@@ -68,13 +68,11 @@ test("length interpolates between the resting mark and the rail's 24px channel",
 });
 
 test("user dots grow from four pixels to a twelve pixel avatar without exceeding it", () => {
-	assert.equal(toAgentSessionUserNotchDiameter(0, false), AGENT_SESSION_USER_NOTCH_DIAMETER.rest);
-	assert.equal(toAgentSessionUserNotchDiameter(1, false), 12);
-	assert.equal(AGENT_SESSION_USER_NOTCH_DIAMETER.newRest, 8);
-	assert.equal(toAgentSessionUserNotchDiameter(0, true), AGENT_SESSION_USER_NOTCH_DIAMETER.newRest);
-	assert.equal(toAgentSessionUserNotchDiameter(0.5, false), 8);
-	assert.equal(toAgentSessionUserNotchDiameter(4, false), 12);
-	assert.equal(toAgentSessionUserNotchDiameter(Number.NaN, false), AGENT_SESSION_USER_NOTCH_DIAMETER.rest);
+	assert.equal(toAgentSessionUserNotchDiameter(0), AGENT_SESSION_USER_NOTCH_DIAMETER.rest);
+	assert.equal(toAgentSessionUserNotchDiameter(1), 12);
+	assert.equal(toAgentSessionUserNotchDiameter(0.5), 8);
+	assert.equal(toAgentSessionUserNotchDiameter(4), 12);
+	assert.equal(toAgentSessionUserNotchDiameter(Number.NaN), AGENT_SESSION_USER_NOTCH_DIAMETER.rest);
 });
 
 test("out-of-range magnification is clamped, never extrapolated", () => {

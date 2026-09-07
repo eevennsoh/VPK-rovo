@@ -9,6 +9,10 @@ const FOOTER_SOURCE = readFileSync(
 	join(__dirname, "agent-session-column-hidden-footer.tsx"),
 	"utf8",
 );
+const ARRIVAL_HOOK_SOURCE = readFileSync(
+	join(__dirname, "use-agent-session-user-notch-arrival.ts"),
+	"utf8",
+);
 const RAIL_COLUMN_SOURCE = readFileSync(join(__dirname, "agent-session-column-rail.tsx"), "utf8");
 const NOTCH_MARK_SOURCE = readFileSync(
 	join(__dirname, "../agent-session/agent-session-notch.tsx"),
@@ -647,7 +651,8 @@ test("the collapsed rail preserves session twin hover previews", () => {
 	assert.match(RAIL_COLUMN_SOURCE, /onPointerLeave=\{\(\) => \{[\s\S]{0,150}?onItemHover\?\.\(null\)/u);
 	assert.match(RAIL_COLUMN_SOURCE, /data-highlighted=\{isHighlighted \|\| undefined\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /isHighlighted=\{isHighlighted\}/u);
-	assert.match(RAIL_COLUMN_SOURCE, /isHighlighted \? "opacity-100 scale-100"/u);
+	assert.match(RAIL_COLUMN_SOURCE, /showAvatar \? "opacity-100 scale-100"/u);
+	assert.match(RAIL_COLUMN_SOURCE, /const showAvatar = isHighlighted \|\| arrivalReveal;/u);
 });
 
 test("an arrival is a transient beat plus a mark that outlives it", () => {
@@ -676,7 +681,9 @@ test("an arrival is a transient beat plus a mark that outlives it", () => {
 	// Reduced motion drops the beat and keeps the mark. The beat is keyed on
 	// `isArriving`, never on `isNew` — see the one-shot test below.
 	assert.match(CARD_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
-	assert.match(RAIL_COLUMN_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
+	assert.match(ARRIVAL_HOOK_SOURCE, /const shouldPlayArrival = isArriving && !shouldReduceMotion;/u);
+	assert.match(ARRIVAL_HOOK_SOURCE, /AGENT_SESSION_USER_NOTCH_ARRIVAL_HIDE_MS/u);
+	assert.match(ARRIVAL_HOOK_SOURCE, /AGENT_SESSION_USER_NOTCH_ARRIVAL_COMPLETE_MS/u);
 	// A settled card must not replay its entrance on an unrelated re-render.
 	assert.match(CARD_SOURCE, /initial=\{shouldPlayArrival \? \{ opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX \} : false\}/u);
 });
@@ -715,10 +722,19 @@ test("arrival motion is tokenised, capped, and spatially anchored", () => {
 	// Past the cap the group lands together instead of stepping in.
 	assert.match(SESSION_INDEX_SOURCE, /ARRIVAL_STAGGER_LIMIT = 4/u);
 	assert.match(SESSION_INDEX_SOURCE, /shouldStagger \? index \* ARRIVAL_STAGGER_SECONDS : 0/u);
-	// The rail's arrival grows from the centre to full size — no overshoot
-	// keyframes, and no second property competing with the scale.
-	assert.match(RAIL_COLUMN_SOURCE, /initial=\{shouldPlayArrival \? \{ scale: 0 \} : false\}/u);
-	assert.match(RAIL_COLUMN_SOURCE, /animate=\{shouldPlayArrival \? \{ scale: 1 \} : undefined\}/u);
+	// The rail's avatar arrival reuses hover's face, then fades back to the rest
+	// dot. Scale-from-zero stays only for notches with no face to reveal.
+	assert.match(RAIL_COLUMN_SOURCE, /initial=\{shouldPlayScaleArrival \? \{ scale: 0 \} : false\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /animate=\{shouldPlayScaleArrival \? \{ scale: 1 \} : undefined\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /showAvatar \? "opacity-100 scale-100"/u);
+	assert.match(ARRIVAL_MOTION_SOURCE, /lingerMs: 400/u);
+	assert.match(ARRIVAL_MOTION_SOURCE, /enterMs: 150/u);
+	assert.doesNotMatch(NOTCH_MAGNIFY_SOURCE, /newRest: 8/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /toAgentSessionUserNotchDiameter\(value, isNew\)/u);
+	assert.match(RAIL_COLUMN_SOURCE, /useAgentSessionUserNotchArrival/u);
+	assert.match(RAIL_COLUMN_SOURCE, /data-arrival-reveal=\{arrivalReveal \|\| undefined\}/u);
+	assert.match(DETAIL_SOURCE, /briefly reveal the same human avatar/u);
+	assert.doesNotMatch(DETAIL_SOURCE, /resting at 8px/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /scale: \[/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /times:/u);
 	// Arriving notches push the ones below them down instead of teleporting.
