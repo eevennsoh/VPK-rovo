@@ -180,6 +180,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/agent-session/session-cohort.test.js",
 		"components/blocks/agent-session-column/agent-session-column-overflow.test.ts",
 		"components/blocks/agent-session-column/untracked-selection.test.ts",
+		"components/blocks/agent-session-column/untracked-selection-keyboard.test.ts",
 		"components/blocks/agent-session-column/use-agent-session-column-hidden.test.ts",
 		"components/ui-audio/live-waveform-layout.test.js",
 		"components/website/demos/utils/gui-demo.test.js",
