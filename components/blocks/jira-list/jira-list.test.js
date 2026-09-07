@@ -553,6 +553,8 @@ test("JiraList exposes keyboard-accessible create controls at both row boundarie
 	assert.match(SOURCE, /onFocus=/u);
 	assert.match(SOURCE, /focus-visible:opacity-100/u);
 	assert.match(SOURCE, /data-insertion-line=/u);
+	assert.match(SOURCE, /onCreate\s*&&\s*hoveredRowTarget\?\.issueKey === row\.issueKey/u);
+	assert.match(SOURCE, /hoverInsertionPosition \?\? dragInsertionPosition/u);
 });
 
 test("JiraList uses equal top, drag, and bottom row interaction zones", () => {
@@ -586,7 +588,7 @@ test("JiraList middle zone exposes an anchored accessible drag handle", () => {
 	assert.match(SOURCE, /<DragHandleVerticalIcon/u);
 	assert.match(dragHandleClass, /cursor-grab touch-none border border-border bg-surface-overlay! text-icon-subtle/u);
 	assert.doesNotMatch(dragHandleClass, /shadow-/u);
-	assert.match(SOURCE, /absolute z-30 size-6 -translate-x-1\/2 -translate-y-1\/2/u);
+	assert.match(SOURCE, /fixed z-30 size-6 -translate-x-1\/2 -translate-y-1\/2/u);
 	assert.match(SOURCE, /hover:bg-surface-overlay-hovered!/u);
 	assert.match(SOURCE, /active:cursor-grabbing active:bg-surface-overlay-pressed!/u);
 	assert.match(SOURCE, /top: "anchor\(center\)"/u);
@@ -637,12 +639,12 @@ test("JiraList sticky selection cells remain opaque while preserving row state t
 	assert.match(SOURCE, /className="relative z-10 flex items-center justify-center"/u);
 });
 
-test("JiraList row boundary controls are absolute opaque overlays", () => {
+test("JiraList row boundary controls are fixed opaque overlays", () => {
 	const controlsSource = SOURCE.match(
 		/function RowBoundaryCreateControls\([\s\S]*?\n\}\n\n(?:export )?function JiraListSortableRow/u,
 	)?.[0] ?? "";
 
-	assert.match(controlsSource, /absolute z-30 size-6 -translate-x-1\/2 -translate-y-1\/2/u);
+	assert.match(controlsSource, /fixed z-30 size-6 -translate-x-1\/2 -translate-y-1\/2/u);
 	assert.match(controlsSource, /border border-border bg-surface-overlay! text-icon-subtle/u);
 	assert.doesNotMatch(controlsSource, /shadow-/u);
 	assert.match(controlsSource, /hover:bg-surface-overlay-hovered!/u);
