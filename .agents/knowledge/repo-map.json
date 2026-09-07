@@ -5403,7 +5403,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 434,
+			"manifestEntryCount": 435,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -7443,7 +7443,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 103,
+				"entryCount": 104,
 				"entries": [
 					{
 						"category": "visual",
