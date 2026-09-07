@@ -419,31 +419,47 @@ test("the Untracked resize handle reveals on column hover and widens the pinned 
 		name: "Resize Untracked work column",
 	});
 	const resizeNotch = resizeHandle.locator(":scope > div");
-	const untrackedSurface = page.locator(
-		'[data-board-agent-session-drop-zone="untracked"]',
-	).first();
 	const widthFootprint = page.locator('[data-agent-session-column-footprint="width"]');
-	const statusColumns = page.locator("[data-jira-kanban-column]");
-	const [initialBox, untrackedSurfaceBox, firstStatusBox, secondStatusBox] = await Promise.all([
-		untrackedColumn.boundingBox(),
-		untrackedSurface.boundingBox(),
-		statusColumns.nth(0).boundingBox(),
-		statusColumns.nth(1).boundingBox(),
-	]);
+	const initialBox = await untrackedColumn.boundingBox();
 	expect(initialBox).not.toBeNull();
-	expect(untrackedSurfaceBox).not.toBeNull();
-	expect(firstStatusBox).not.toBeNull();
-	expect(secondStatusBox).not.toBeNull();
-	if (!initialBox || !untrackedSurfaceBox || !firstStatusBox || !secondStatusBox) return;
+	if (!initialBox) return;
 
-	const untrackedToFirstGap = Math.round(
-		firstStatusBox.x - untrackedSurfaceBox.x - untrackedSurfaceBox.width,
+	const visualGutters = await page.evaluate(() => {
+		const well = document.querySelector("[data-agent-session-column]");
+		const handle = document.querySelector(
+			"[data-testid='jira-kanban-agent-session-column-resize-handle']",
+		);
+		const columns = [...document.querySelectorAll("[data-jira-kanban-column]")];
+		if (!well || !handle || columns.length < 2) {
+			return null;
+		}
+		const contentLeft = (column: Element) => {
+			const title = column.getAttribute("data-jira-kanban-column");
+			const label = [...column.querySelectorAll("span")].find((element) => (
+				element.textContent === title
+			));
+			return (label ?? column).getBoundingClientRect().left;
+		};
+		const firstCards = columns[0].querySelectorAll("article");
+		const firstContentRight = firstCards.length > 0
+			? firstCards[firstCards.length - 1].getBoundingClientRect().right
+			: columns[0].getBoundingClientRect().right;
+		const wellRight = well.getBoundingClientRect().right;
+		const firstLeft = contentLeft(columns[0]);
+		const handleBox = handle.getBoundingClientRect();
+		return {
+			untrackedToFirst: firstLeft - wellRight,
+			statusContentGap: contentLeft(columns[1]) - firstContentRight,
+			handleCenter: handleBox.left + handleBox.width / 2,
+			gapMid: wellRight + (firstLeft - wellRight) / 2,
+		};
+	});
+	expect(visualGutters).not.toBeNull();
+	if (!visualGutters) return;
+	expect(Math.round(visualGutters.untrackedToFirst)).toBe(
+		Math.round(visualGutters.statusContentGap),
 	);
-	const statusColumnGap = Math.round(
-		secondStatusBox.x - firstStatusBox.x - firstStatusBox.width,
-	);
-	expect(untrackedToFirstGap).toBe(statusColumnGap);
-	expect(untrackedToFirstGap).toBe(8);
+	expect(Math.abs(visualGutters.handleCenter - visualGutters.gapMid)).toBeLessThanOrEqual(1);
 
 	await expect(resizeHandle).toHaveAttribute("aria-orientation", "vertical");
 	await expect(resizeHandle).toHaveAttribute("aria-valuemin", "280");
