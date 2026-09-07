@@ -22,6 +22,7 @@ const V2_BOARD_SOURCE = readFileSync(
 const PAGE_SOURCE = readFileSync(join(__dirname, "../page.tsx"), "utf8");
 
 const {
+	BOARD_FIRST_COLLAPSED_COLUMN_INSET_PX,
 	BOARD_COLUMN_COLLAPSED_WIDTH_PX,
 	BOARD_COLUMN_WIDTH_PX,
 	EMPTY_COLLAPSED_BOARD_COLUMNS,
@@ -60,6 +61,10 @@ test("outer width reserves the transparent drop-target border on both edges", ()
 	assert.equal(getBoardColumnOuterWidthPx(true), BOARD_COLUMN_COLLAPSED_WIDTH_PX + 4);
 	assert.equal(getBoardColumnOuterWidthPx(false), 280);
 	assert.equal(getBoardColumnOuterWidthPx(true), 36);
+});
+
+test("the first collapsed column restores the simple chrome content inset", () => {
+	assert.equal(BOARD_FIRST_COLLAPSED_COLUMN_INSET_PX, 4);
 });
 
 test("collapse survives a switch to the list or Pulse view", () => {
@@ -134,7 +139,7 @@ test("a collapsed status pill hugs its label while the shell keeps the drop lane
 	// inset keeps visible simple-column content on the 24px header line.
 	assert.match(
 		BOARD_SOURCE,
-		/className="flex min-h-full w-max min-w-full items-stretch"\s*style=\{\{ paddingInlineStart: columnRowPaddingInlineStart \}\}/u,
+		/className="flex min-h-full w-max min-w-full items-stretch"\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart \}\}/u,
 	);
 
 	// The expand control's focus ring extends 3px past a 24px button, which is
