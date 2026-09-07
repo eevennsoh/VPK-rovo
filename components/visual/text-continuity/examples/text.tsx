@@ -11,7 +11,7 @@ import TextContinuity from "..";
 import { useCycle } from "../hooks";
 import { Split, SplitItem, Stage } from "./primitives";
 
-export const INSTALL = ["npm i torph", "pnpm add torph", "yarn add torph", "bun add torph"];
+const INSTALL = ["npm i torph", "pnpm add torph", "yarn add torph", "bun add torph"];
 
 /** Four package managers over one command: the shared suffix never moves. */
 export function Install() {
@@ -25,7 +25,7 @@ export function Install() {
 	);
 }
 
-export const VERSIONS = ["v1.2.3", "v1.3.0", "v2.0.0", "v2.0.1"];
+const VERSIONS = ["v1.2.3", "v1.3.0", "v2.0.0", "v2.0.1"];
 
 /** A semver bump: only the places that actually changed move. */
 export function Versions() {
@@ -38,8 +38,8 @@ export function Versions() {
 	);
 }
 
-export const GLUED = ["819K", "990K", "9.9M", "19.4M"];
-export const SPACED = ["910 KB", "1.2 MB", "12 MB", "1.25 GB"];
+const GLUED = ["819K", "990K", "9.9M", "19.4M"];
+const SPACED = ["910 KB", "1.2 MB", "12 MB", "1.25 GB"];
 
 /** A unit glued to its figure, and one spaced away from it — matched differently. */
 export function Units() {
@@ -106,7 +106,7 @@ export function HexColour() {
 	);
 }
 
-export const CURRENCIES = ["$99.00", "€99.00", "£99.00", "¥99.00"];
+const CURRENCIES = ["$99.00", "€99.00", "£99.00", "¥99.00"];
 
 /** The symbol changes and the amount holds still — the symbol is its own segment. */
 export function CurrencySwap() {

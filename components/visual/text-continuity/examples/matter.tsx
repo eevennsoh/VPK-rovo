@@ -16,7 +16,7 @@ import { useMotionLoop } from "../hooks";
 import { clamp } from "../lib";
 import { FOCUS_RING } from "./primitives";
 
-export const BUDGET = 1000;
+const BUDGET = 1000;
 
 const SPLIT_MIN = 0.14;
 const SPLIT_STIFFNESS = 0.24;

@@ -14,7 +14,7 @@ import { useCycle } from "../hooks";
 import { Badge, Caption, SplitItem, Stage } from "./primitives";
 
 /** U+2212, not a hyphen — it is the width of the plus it replaces. */
-export const DELTAS = ["+2.4%", "−0.8%", "+11.2%", "0.0%", "−13.6%"];
+const DELTAS = ["+2.4%", "−0.8%", "+11.2%", "0.0%", "−13.6%"];
 
 /** A signed percentage: the sign is its own segment, so it swaps in place. */
 export function Delta() {
@@ -29,7 +29,7 @@ export function Delta() {
 	);
 }
 
-export const DIMENSIONS = ["320 × 240", "640 × 480", "1280 × 720", "1920 × 1080"];
+const DIMENSIONS = ["320 × 240", "640 × 480", "1280 × 720", "1920 × 1080"];
 
 /** Two numbers around a fixed separator, each resizing independently. */
 export function Dimensions() {
@@ -43,9 +43,9 @@ export function Dimensions() {
 }
 
 // Fixed, so the server and the first client paint agree; accrual is client-only.
-export const DEPOSIT = 1204.42172398;
-export const APY = 0.0418;
-export const PER_SECOND = (DEPOSIT * APY) / 31_536_000;
+const DEPOSIT = 1204.42172398;
+const APY = 0.0418;
+const PER_SECOND = (DEPOSIT * APY) / 31_536_000;
 
 const money = (value: number) =>
 	value.toLocaleString("en", {

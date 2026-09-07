@@ -19,7 +19,7 @@ import TextContinuity from "..";
 import { caretAfterFormat, formatAmount, toRaw, valueCharsBefore } from "../lib";
 
 /** The value the demo types out on its own before handing over. */
-export const SCRIPT = "1234567.89";
+const SCRIPT = "1234567.89";
 
 const TYPE_MS = 220;
 const HOLD = 1800; // Beat on the formatted total before it clears and starts over

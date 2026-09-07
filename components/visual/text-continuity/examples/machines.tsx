@@ -16,7 +16,7 @@ import { useMotionLoop } from "../hooks";
 import { clamp } from "../lib";
 import { FOCUS_RING } from "./primitives";
 
-export const LEVELS = [0.72, 0.52, 0.95, 0.46];
+const LEVELS = [0.72, 0.52, 0.95, 0.46];
 
 const TANK_W = 100; // viewBox units; the SVG stretches to the tank
 const TANK_H = 60;

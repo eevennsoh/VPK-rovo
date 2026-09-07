@@ -19,7 +19,7 @@ import { FOCUS_RING } from "./primitives";
 
 // ── A dial you flick ──
 
-export const DIAL_MAX = 500;
+const DIAL_MAX = 500;
 
 const STEP_DEG = 7; // One unit of value per this much turn
 const DIAL_SPAN = DIAL_MAX * STEP_DEG;
@@ -194,8 +194,8 @@ export function SpinDial({ duration, ease }: Readonly<{ duration?: number; ease?
 
 // ── A chip you pull ──
 
-export const PULL_MIN = -199;
-export const PULL_MAX = 999;
+const PULL_MIN = -199;
+const PULL_MAX = 999;
 
 const PULL_LIMIT = 74; // px of travel before the rubber band saturates
 const PULL_RATE = 30; // units per second at a full pull

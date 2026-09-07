@@ -18,7 +18,7 @@ import { FOCUS_RING, ResizeFrame } from "./primitives";
 
 // ── A figure you squash ──
 
-export const FIGURES = ["1,248,392", "1,248K", "1.2M", "1M"];
+const FIGURES = ["1,248,392", "1,248K", "1.2M", "1M"];
 
 const SQUISH_FLOOR = 0.84; // How far a form squashes before it gives
 const SQUISH_CEILING = 1.15;
@@ -176,7 +176,7 @@ export function SquishyNumber() {
 
 // ── A sentence you squeeze ──
 
-export const PHRASES = ["3 hours 24 minutes ago", "3 hr 24 min ago", "3h 24m ago", "3h ago", "now"];
+const PHRASES = ["3 hours 24 minutes ago", "3 hr 24 min ago", "3h 24m ago", "3h ago", "now"];
 
 const SQUEEZE_EVERY = 3000;
 const SQUEEZE_STIFFNESS = 0.22;

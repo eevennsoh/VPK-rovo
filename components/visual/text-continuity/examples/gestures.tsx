@@ -18,7 +18,7 @@ import { FOCUS_RING } from "./primitives";
 
 // ── A button you hold ──
 
-export const HOLD_STEPS = [
+const HOLD_STEPS = [
 	{ at: 0, label: "Hold to Delete" },
 	{ at: 0.12, label: "Holding to Delete" },
 	{ at: 0.62, label: "Deleting" },
@@ -148,7 +148,7 @@ export function HoldToConfirm() {
 // ── A word that pops ──
 
 // One family, so every step has letters to hand over: Al, Al, Aig, Anig.
-export const RATINGS = [
+const RATINGS = [
 	{ word: "Abysmal", tone: "var(--ds-text-danger)" },
 	{ word: "Awful", tone: "var(--ds-text-accent-orange)" },
 	{ word: "Alright", tone: "var(--ds-text-warning)" },
@@ -347,7 +347,7 @@ export function RatingSlider() {
 
 // ── A tag that trails ──
 
-export const ZONES = ["North End", "The Harbour", "Old Town", "Riverside", "The Docks", "Hillside"];
+const ZONES = ["North End", "The Harbour", "Old Town", "Riverside", "The Docks", "Hillside"];
 
 const COLS = 3;
 const TAG_STIFFNESS = 0.18;

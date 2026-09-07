@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import TextContinuity from "..";
 import { FOCUS_RING } from "./primitives";
 
-export const TRACKS = ["Ambient loops", "Field recordings", "Tape hiss"];
+const TRACKS = ["Ambient loops", "Field recordings", "Tape hiss"];
 
 const RIPPLE = 0.025; // Seconds a row waits per row of distance from the one that moved
 const SHUFFLE_EVERY = 2600;

@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import TextContinuity from "..";
 import { useMotionLoop } from "../hooks";
 
-export const BRIGHTNESS = [72, 18, 94, 41, 63];
+const BRIGHTNESS = [72, 18, 94, 41, 63];
 
 const MAX = 100;
 const AUTOPLAY_MS = 1700;
@@ -292,7 +292,7 @@ export function BubbleSlider() {
 	);
 }
 
-export const SHOVE_GAP = 8; // Units held between the thumbs, so both stay grabbable
+const SHOVE_GAP = 8; // Units held between the thumbs, so both stay grabbable
 
 const SHOVE_PAD = 10; // px of closeness at which the pair start to squash
 const SHOVE_CLEAR = 2; // px of daylight they hold once they meet

@@ -15,7 +15,7 @@ import { useCycle } from "../hooks";
 import { wrap } from "../lib";
 import { Chip, Stage } from "./primitives";
 
-export const FILTERS = ["All Markets", "Markets (1)", "Markets (2)", "Markets (3)"];
+const FILTERS = ["All Markets", "Markets (1)", "Markets (2)", "Markets (3)"];
 
 /** A count appearing inside a label that was previously a word. */
 export function Filters() {
@@ -28,7 +28,7 @@ export function Filters() {
 	);
 }
 
-export const WALLET = ["Connect wallet", "Connecting…", "0xd55a…d2685", "lochie.eth"];
+const WALLET = ["Connect wallet", "Connecting…", "0xd55a…d2685", "lochie.eth"];
 
 /** A control whose label changes length at every step, with an avatar joining late. */
 export function Wallet() {
@@ -36,27 +36,35 @@ export function Wallet() {
 
 	return (
 		<Chip>
-			<div className="flex items-center">
-				<AnimatePresence>
+			{/*
+			 * `layout` + `mode="popLayout"` rather than animating the avatar's width:
+			 * the exiting element pops out of flow immediately and Motion projects the
+			 * row's size change as a transform, so the chip still shrinks around the
+			 * avatar without the browser redoing layout every frame.
+			 */}
+			<motion.div layout className="flex items-center">
+				<AnimatePresence initial={false} mode="popLayout">
 					{index >= 2 ? (
-						<motion.div
-							initial={{ opacity: 0, scale: 0.5, width: 0 }}
-							animate={{ opacity: 1, scale: 1, width: "auto" }}
-							exit={{ opacity: 0, scale: 0.5, width: 0 }}
+						<motion.span
+							key="avatar"
+							layout
+							aria-hidden
+							className="mr-2 block size-5 shrink-0 rounded-full bg-bg-brand-boldest"
+							initial={{ opacity: 0, scale: 0.5 }}
+							animate={{ opacity: 1, scale: 1 }}
+							exit={{ opacity: 0, scale: 0.5 }}
 							transition={{ duration: 0.2 }}
 							style={{ willChange: "opacity, transform" }}
-						>
-							<span aria-hidden className="mr-2 block size-5 rounded-full bg-bg-brand-boldest" />
-						</motion.div>
+						/>
 					) : null}
 				</AnimatePresence>
 				<TextContinuity>{WALLET[index]!}</TextContinuity>
-			</div>
+			</motion.div>
 		</Chip>
 	);
 }
 
-export const RESULTS = [
+const RESULTS = [
 	{ shown: 24, total: 1208 },
 	{ shown: 24, total: 986 },
 	{ shown: 12, total: 986 },
@@ -77,8 +85,8 @@ export function ResultsSummary() {
 	);
 }
 
-export const DOWNLOAD_RUN = 2000;
-export const DOWNLOAD_TICK = 100;
+const DOWNLOAD_RUN = 2000;
+const DOWNLOAD_TICK = 100;
 
 const easeInQuad = (t: number) => t * t;
 
@@ -141,9 +149,9 @@ export function Download() {
 	);
 }
 
-export const STREAM =
+const STREAM =
 	"The capital of Australia is Canberra, which sits in the Australian Capital Territory between Sydney and Melbourne. It was chosen in 1908 as a compromise between the two rival cities, and Walter Burley Griffin and Marion Mahony Griffin won the competition to design it. Their plan set the city around a lake and a grid of axes and circles, and today it holds Parliament House, the High Court, and the National Gallery.";
-export const STREAM_WORDS = STREAM.split(" ");
+const STREAM_WORDS = STREAM.split(" ");
 
 const STREAM_MS = 110;
 const STREAM_HOLD = 2400; // Beat on the finished passage before it starts over
