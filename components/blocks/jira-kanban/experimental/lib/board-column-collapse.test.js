@@ -130,9 +130,12 @@ test("a collapsed status pill hugs its label while the shell keeps the drop lane
 	assert.doesNotMatch(pillSource, /(?:^|[^-\w])h-full\b/u);
 	// The shell around it still stretches, so a collapsed column is as easy to
 	// drop onto as an expanded one. `min-h-full` on the row is the shell, not
-	// the pill — do not treat that as the pill stretching. The row's `ps-6`
-	// inset keeps the status columns clear of the gutter rail.
-	assert.match(BOARD_SOURCE, /className="flex min-h-full w-max min-w-full items-stretch ps-6"/u);
+	// the pill — do not treat that as the pill stretching. The row's resolved
+	// inset keeps visible simple-column content on the 24px header line.
+	assert.match(
+		BOARD_SOURCE,
+		/className="flex min-h-full w-max min-w-full items-stretch"\s*style=\{\{ paddingInlineStart: columnRowPaddingInlineStart \}\}/u,
+	);
 
 	// The expand control's focus ring extends 3px past a 24px button, which is
 	// exactly the 30px inside this 32px pill's border. Clipping to the padding
@@ -242,9 +245,13 @@ test("experimental-v2 reuses the shared collapsed column and threads chrome", ()
 	assert.doesNotMatch(V2_BOARD_SOURCE, /function CollapsedBoardColumn/u);
 });
 
-test("simple Untracked drop gutter stays on the board and is omitted in List", () => {
+test("simple Untracked gutter keeps identical padding in Board and List", () => {
 	assert.match(
 		PAGE_SOURCE,
-		/paddingTop=\{isListContent\s*\?\s*undefined\s*:\s*withKanbanDropContentGutter\(0, columnChromeStyles\)\.paddingTop\}/u,
+		/paddingTop=\{withKanbanDropContentGutter\(0, columnChromeStyles\)\.paddingTop\}/u,
+	);
+	assert.doesNotMatch(
+		PAGE_SOURCE,
+		/paddingTop=\{isListContent/u,
 	);
 });

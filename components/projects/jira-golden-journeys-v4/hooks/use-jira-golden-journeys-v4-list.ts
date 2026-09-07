@@ -54,7 +54,8 @@ export interface CreateBoardFromAgentSessionInput {
 
 export interface UseJiraGoldenJourneysV4ListResult {
 	createBoardFromAgentSession: (input: CreateBoardFromAgentSessionInput) => string | undefined;
-	createFromAgentSession: (input: CreateFromAgentSessionInput) => void;
+	/** Returns the row the session landed in, so the caller can acknowledge it. */
+	createFromAgentSession: (input: CreateFromAgentSessionInput) => string;
 	getProps: (columns: readonly JiraKanbanColumnData[]) => JiraListProps;
 }
 
@@ -203,6 +204,14 @@ export function useJiraGoldenJourneysV4List({
 		));
 	}, [setBoardColumns]);
 
+	// One drop can carry several marked sessions, and the transfer plan replays
+	// this callback once per session inside a single event. Every read is
+	// therefore taken from a ref and written straight back: `visibleKeys`
+	// included, because the second session's insertion index is measured against
+	// a list that already contains the first session's new row.
+	//
+	// The created rows are deliberately left unselected — the caller flashes them
+	// instead. Checking them would claim the drop made a bulk selection.
 	const createFromAgentSession = useCallback((input: CreateFromAgentSessionInput) => {
 		const result = createListWorkItemFromSession({
 			activity: input.activity,
@@ -215,9 +224,17 @@ export function useJiraGoldenJourneysV4List({
 		});
 		boardColumnsRef.current = result.columns;
 		listOrderRef.current = result.listOrder;
+		if (result.kind === "created") {
+			visibleKeysRef.current = insertListOrderKey(
+				visibleKeysRef.current,
+				visibleKeysRef.current,
+				result.issueKey,
+				input.insertion.insertAtIndex,
+			);
+		}
 		setBoardColumns([...result.columns]);
 		setListOrder(result.listOrder);
-		setSelectedIssueKeys(new Set([result.issueKey]));
+		return result.issueKey;
 	}, [setBoardColumns]);
 
 	const createBoardFromAgentSession = useCallback((input: CreateBoardFromAgentSessionInput) => {
@@ -242,7 +259,6 @@ export function useJiraGoldenJourneysV4List({
 		listOrderRef.current = nextListOrder;
 		setBoardColumns([...result.columns]);
 		setListOrder(nextListOrder);
-		setSelectedIssueKeys(new Set([result.issueKey]));
 		return result.issueKey;
 	}, [setBoardColumns]);
 

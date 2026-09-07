@@ -11,10 +11,8 @@ async function openBoard(page: Page): Promise<void> {
 	});
 	const expandUntracked = page.getByRole("button", { name: "Expand Untracked work column" });
 	if (await expandUntracked.isVisible()) {
-		// The collapsed rail intentionally owns the surrounding pointer hit area.
-		// Focus and activate the visible button without relying on pointer hit-testing.
-		await expandUntracked.focus();
-		await expandUntracked.press("Enter");
+		await revealCollapsedAgentSessionColumn(page);
+		await expandUntracked.click();
 	}
 	await expect(
 		page.locator("[data-agent-session-column]").getByTestId("agent-session-row-lw-scope-thread"),
@@ -33,6 +31,30 @@ async function openAgentViewMenu(page: Page): Promise<void> {
 	await page.getByRole("button", { name: "Configure board view" }).click();
 	// Click, not hover: Base UI does not reliably expand this submenu on hover.
 	await page.getByRole("menuitem", { name: "Agent" }).click();
+}
+
+async function revealCollapsedAgentSessionColumn(page: Page): Promise<void> {
+	const hitArea = page.locator("[data-agent-session-column-hit-area]");
+	const hitAreaBox = await hitArea.boundingBox();
+	expect(hitAreaBox).not.toBeNull();
+	if (!hitAreaBox) return;
+
+	await page.mouse.move(
+		hitAreaBox.x + hitAreaBox.width / 2,
+		hitAreaBox.y + hitAreaBox.height / 2,
+	);
+	await expect(hitArea).toHaveCount(0);
+}
+
+async function hoverCollapsedAgentSession(page: Page, sessionId: string): Promise<void> {
+	await revealCollapsedAgentSessionColumn(page);
+	const notch = page.getByTestId(`agent-session-notch-${sessionId}`);
+	const notchBox = await notch.boundingBox();
+	expect(notchBox).not.toBeNull();
+	if (!notchBox) return;
+
+	await page.mouse.move(notchBox.x + notchBox.width / 2, notchBox.y + notchBox.height / 2);
+	expect(await notch.evaluate((element) => element.matches(":hover"))).toBe(true);
 }
 
 function getIssueArticle(page: Page, issueKey: string): Locator {
@@ -96,25 +118,21 @@ test("Untracked is on by default and PAY-101 shows a nearby untracked row", asyn
 	await expect(page.getByRole("menuitemcheckbox", { name: "Untracked" })).toBeChecked();
 });
 
-test("the collapsed Untracked rail previews matching board sessions in both directions", async ({ page }) => {
+test("the collapsed Untracked rail blues the plain Jira issue suggested by a session", async ({ page }) => {
 	await openCollapsedBoard(page);
 
 	const sessionId = "lw-figma-parked";
-	const boardSession = page.locator("[data-issue-key='PAY-118']")
-		.getByTestId(`agent-session-row-${sessionId}`);
-	const boardSessionSurface = boardSession.locator("[data-highlighted]");
 	const railNotch = page.getByTestId(`agent-session-notch-${sessionId}`);
-	const railMark = railNotch.locator("[aria-hidden='true']");
+	const pay118Backdrop = page.locator("[data-issue-key='PAY-118']")
+		.locator("[data-slot='jira-issue-agent-backdrop']");
 
-	await boardSession.getByRole("button", { name: /^Preview Why the wallet was cut/u }).hover();
-	await expect(railNotch).toHaveAttribute("data-highlighted", "true");
-	await expect(railMark).toHaveCSS("width", "24px");
+	await expect(pay118Backdrop).toHaveClass(/bg-bg-neutral/);
+	await hoverCollapsedAgentSession(page, sessionId);
+	await expect(pay118Backdrop).toHaveClass(/bg-bg-accent-blue-subtlest/);
 
 	await page.getByRole("heading", { name: "Jira Design" }).hover();
-	await expect(railNotch).not.toHaveAttribute("data-highlighted", "true");
-
-	await railNotch.hover();
-	await expect(boardSessionSurface).toHaveAttribute("data-highlighted", "true");
+	expect(await railNotch.evaluate((element) => element.matches(":hover"))).toBe(false);
+	await expect(pay118Backdrop).toHaveClass(/bg-bg-neutral/);
 });
 
 test("unchecking Untracked hides board-adjacent rows and leaves the column", async ({ page }) => {
@@ -135,7 +153,7 @@ test("unchecking Untracked hides board-adjacent rows and leaves the column", asy
 	).toBeVisible();
 });
 
-test("hovering a column session leaves Jira issues unfocused and unmoved", async ({ page }) => {
+test("hovering a column session blues the matching existing-agent backdrop without focus or movement", async ({ page }) => {
 	await openBoard(page);
 
 	const statusScrollport = page.locator("[data-jira-kanban-scrollport]");
@@ -151,6 +169,8 @@ test("hovering a column session leaves Jira issues unfocused and unmoved", async
 	await columnSession.hover();
 
 	await expect(pay121).not.toHaveClass(/bg-bg-accent-blue-subtlest/);
+	await expect(pay121.locator("[data-slot='jira-issue-agent-backdrop']"))
+		.toHaveClass(/bg-bg-accent-blue-subtlest/);
 	await expect(pay101).not.toHaveClass(/opacity-40/);
 	expect(await statusScrollport.evaluate((element) => element.scrollLeft)).toBe(scrollLeftBefore);
 	expect(await pay121ColumnScrollport.evaluate((element) => element.scrollTop)).toBe(scrollTopBefore);

@@ -9,6 +9,10 @@ const ARRIVAL_HOOK_SOURCE = readFileSync(
 	"utf8",
 );
 const RAIL_COLUMN_SOURCE = readFileSync(join(__dirname, "agent-session-column-rail.tsx"), "utf8");
+const USER_NOTCH_SOURCE = RAIL_COLUMN_SOURCE.slice(
+	RAIL_COLUMN_SOURCE.indexOf("function AgentSessionUserNotch"),
+	RAIL_COLUMN_SOURCE.indexOf("function AgentSessionNotch"),
+);
 const NOTCH_MARK_SOURCE = readFileSync(
 	join(__dirname, "../agent-session/agent-session-notch.tsx"),
 	"utf8",
@@ -46,7 +50,7 @@ const DETAIL_SOURCE = readFileSync(
 test("newly synced work reaches both the cards and the rail", () => {
 	// One set, threaded to both forms — a collapsed column must not go quiet
 	// about arrivals just because it has no cards to mark.
-	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,400}?newItemIds=\{newItemIds\}/u);
+	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,700}?newItemIds=\{newItemIds\}/u);
 	assert.match(INDEX_SOURCE, /<AgentSession[^>]*newItemIds=\{newItemIds\}/u);
 	// Destructured rather than left in `...sessionProps`, or the rail could not
 	// see it.
@@ -144,8 +148,10 @@ test("circle unread rest uses default icon color", () => {
 	);
 	assert.match(NOTCH_MAGNIFY_SOURCE, /toAgentSessionNotchTone\(isSelected: boolean, isNew: boolean\)/u);
 	assert.match(NOTCH_MAGNIFY_SOURCE, /return isNew \|\| isSelected/u);
-	// The collapsed header answers "how many did I miss" for notches below the
-	// fold, and the spoken form keeps the total the visible `+N` gives up.
+	// Gutter rest can still flash +N. An inspected rail (column presentation)
+	// increments the pool total instead; the spoken form keeps both numbers.
+	assert.match(INDEX_SOURCE, /collapsedPresentation === "gutter" && newCount > 0/u);
+	assert.match(INDEX_SOURCE, /String\(sessionCount\)/u);
 	assert.match(INDEX_SOURCE, /\$\{sessionCount\} sessions, \$\{newCount\} newly synced/u);
 });
 
@@ -195,8 +201,8 @@ test("arrival motion is tokenised, capped, and spatially anchored", () => {
 	assert.doesNotMatch(DETAIL_SOURCE, /resting at 8px/u);
 	assert.doesNotMatch(DETAIL_SOURCE, /fade to a 12px grey rest/u);
 	assert.doesNotMatch(DETAIL_SOURCE, /fade to a 4px rest in default icon color/u);
-	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /scale: \[/u);
-	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /times:/u);
+	assert.doesNotMatch(USER_NOTCH_SOURCE, /scale: \[/u);
+	assert.doesNotMatch(USER_NOTCH_SOURCE, /times:/u);
 	// Arriving notches push the ones below them down instead of teleporting.
 	// The scrollport stays a plain `ul` so mask-image can fade the marks;
 	// layout lives on each notch, not on a Motion scroll host.
@@ -235,7 +241,7 @@ test("the arrival target survives until Motion finishes, then stays one-shot", (
 	// Both branches report completion and keep the beat set distinct from the mark.
 	assert.match(
 		INDEX_SOURCE,
-		/<AgentSessionColumnRail[\s\S]{0,400}?onArrivalComplete=\{handleArrivalComplete\}/u,
+		/<AgentSessionColumnRail[\s\S]{0,800}?onArrivalComplete=\{handleArrivalComplete\}/u,
 	);
 	assert.match(
 		INDEX_SOURCE,

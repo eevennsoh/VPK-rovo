@@ -41,6 +41,7 @@ const MANIFEST_SOURCE = readFileSync(
 	join(process.cwd(), "app/data/component-manifest.ts"),
 	"utf8",
 );
+const GLOBALS_SOURCE = readFileSync(join(process.cwd(), "app/globals.css"), "utf8");
 
 test("JiraList demo preserves the rounded docs frame without adding another scroll owner", () => {
 	assert.match(PAGE_SOURCE, /rounded-lg bg-surface p-4 md:p-5/u);
@@ -769,10 +770,44 @@ test("JiraList stamps list-row session drop metadata only when an intent is pass
 	assert.match(SOURCE, /function getInsertionFromRowZone/u);
 	assert.match(SOURCE, /getAgentSessionInsertionTarget\(agentSessionDropIntent\)/u);
 	assert.match(SOURCE, /sessionInsertionTarget \?\? focusedCreateTarget \?\? hoveredCreateTarget/u);
-	assert.match(SOURCE, /column\.id === "agentSessions"/u);
-	assert.match(SOURCE, /bg-bg-selected ring-1 ring-inset ring-border-selected/u);
 	assert.match(SOURCE, /data-drop-target=\{isDropTarget \|\| undefined\}/u);
 	assert.doesNotMatch(SOURCE, /jira-kanban\/experimental/u);
+});
+
+test("JiraList lights the whole row an agent session would attach to", () => {
+	// The Agent sessions column is often scrolled out of view, so the attach
+	// affordance has to reach the sticky checkbox cell and every body cell —
+	// never just the cell the session would land in.
+	assert.match(SOURCE, /isAgentSessionAttachTarget\(\s*agentSessionDropIntent,\s*row\.issueKey,\s*\)/u);
+	assert.match(
+		SOURCE,
+		/getAgentSessionAttachCellClassName\(isSessionAttachTarget, "sticky"\)/u,
+	);
+	assert.match(SOURCE, /getAgentSessionAttachCellClassName\(isSessionAttachTarget\)/u);
+	assert.doesNotMatch(SOURCE, /column\.id === "agentSessions"\s*\?\s*getAgentSessionAttachCellClassName/u);
+	assert.match(SOURCE, /before:bg-bg-selected-hovered!/u);
+	assert.match(SOURCE, /return slot === "sticky"[\s\S]*?: "bg-bg-selected-hovered!";/u);
+});
+
+test("JiraList acknowledges a session drop with a row flash instead of a checkmark", () => {
+	assert.match(TYPES_SOURCE, /export interface JiraListRowFlash \{/u);
+	assert.match(TYPES_SOURCE, /rowFlash\?: JiraListRowFlash;/u);
+	assert.match(SOURCE, /const flashingIssueKeys = useJiraListRowFlashKeys\(rowFlash\);/u);
+	assert.match(SOURCE, /const isFlashing = flashingIssueKeys\.has\(row\.issueKey\);/u);
+	assert.match(SOURCE, /getRowFlashCellClassName\(isFlashing, "sticky"\)/u);
+	assert.match(SOURCE, /getRowFlashCellClassName\(isFlashing\)/u);
+	// The utility, its keyframes, and the reduced-motion fallback have to exist
+	// together: the animation is the only signal the drop leaves behind.
+	assert.match(GLOBALS_SOURCE, /@keyframes jira-list-row-flash \{/u);
+	assert.match(GLOBALS_SOURCE, /@utility jira-list-row-flash \{/u);
+	assert.match(
+		GLOBALS_SOURCE,
+		/animation: jira-list-row-flash var\(--duration-slowest\) var\(--ease-in\);/u,
+	);
+	assert.match(
+		GLOBALS_SOURCE,
+		/prefers-reduced-motion: reduce[\s\S]*?\.before\\:jira-list-row-flash::before \{\s*animation: none;/u,
+	);
 });
 
 test("JiraList is registered in block docs and manifests", () => {

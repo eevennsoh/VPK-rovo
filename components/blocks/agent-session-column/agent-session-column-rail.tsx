@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type RefCallback } from "react";
-import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode, type RefCallback } from "react";
+import { animate, motion, useMotionValue, useReducedMotion, useTransform, type Variants } from "motion/react";
 
 import type { AgentListState } from "@/components/blocks/agent-list";
 import { AGENT_SESSION_ARRIVAL_TRANSITION } from "@/components/blocks/agent-session/agent-session-arrival-motion";
@@ -41,8 +41,11 @@ import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-over
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { cn } from "@/lib/utils";
 
+import { toAgentSessionRailViewportMaxHeight } from "./agent-session-column-rail-viewport";
 import type { AgentSessionColumnNotchShape } from "./agent-session-column-types";
 import { useAgentSessionUserNotchArrival } from "./use-agent-session-user-notch-arrival";
+
+export { AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS } from "./agent-session-column-rail-viewport";
 
 /**
  * The collapsed form of the Agent Session column.
@@ -75,11 +78,27 @@ import { useAgentSessionUserNotchArrival } from "./use-agent-session-user-notch-
 /** Reach centered dots: a 3rem band ends before the last visible session. */
 const AGENT_SESSION_RAIL_FADE_SIZE = "6rem";
 
-/** The tucked rail shows the latest ten sessions; older sessions stay scrollable. */
-const AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS = 10;
-const AGENT_SESSION_RAIL_ITEM_HEIGHT_PX = 20;
-const AGENT_SESSION_RAIL_ITEM_GAP_PX = 4;
-const AGENT_SESSION_RAIL_FOCUS_GUTTER_PX = 8;
+// Wait out the board's longest surrounding motion window (duration-slowest)
+// before the gutter claims attention as the final first-visit animation.
+const AGENT_SESSION_GUTTER_INTRO_LEAD_DELAY_SECONDS = 0.6;
+const AGENT_SESSION_GUTTER_INTRO_VISUAL_DURATION_SECONDS = 0.3;
+// 40ms steps overlap each 300ms visual settle by 260ms, so sibling dots move together.
+const AGENT_SESSION_GUTTER_INTRO_STAGGER_SECONDS = 0.04;
+const AGENT_SESSION_GUTTER_INTRO_VARIANTS: Variants = {
+	rest: { opacity: 1, transform: "scale(1)" },
+	wave: (index: number) => ({
+		opacity: [0, 1],
+		transform: ["scale(3)", "scale(1)"],
+		transition: {
+			bounce: 0,
+			delay: AGENT_SESSION_GUTTER_INTRO_LEAD_DELAY_SECONDS
+				+ index * AGENT_SESSION_GUTTER_INTRO_STAGGER_SECONDS,
+			type: "spring",
+			visualDuration: AGENT_SESSION_GUTTER_INTRO_VISUAL_DURATION_SECONDS,
+		},
+	}),
+};
+
 
 /** Spoken state, so the rail still names a lifecycle it no longer paints. */
 const NOTCH_STATE_LABEL: Record<AgentListState, string> = {
@@ -208,20 +227,65 @@ function useNotchDock(itemCount: number, enabled: boolean) {
 	return { centersRef, handlePointerEnter, handlePointerLeave, handlePointerMove, handleScroll, listRef, magnify, nearestIndex, pointerY };
 }
 
+function AgentSessionGutterIntro({
+	children,
+	index,
+	onComplete,
+	play,
+	shouldReduceMotion,
+}: Readonly<{
+	children: ReactNode;
+	index: number;
+	onComplete?: () => void;
+	play: boolean;
+	shouldReduceMotion: boolean | null;
+}>) {
+	const shouldPlayIntro = play && shouldReduceMotion === false;
+	let animationState: "rest" | "wave" | undefined;
+	if (shouldReduceMotion === null) {
+		animationState = undefined;
+	} else if (shouldPlayIntro) {
+		animationState = "wave";
+	} else {
+		animationState = "rest";
+	}
+
+	return (
+		<motion.span
+			animate={animationState}
+			className="grid size-3 shrink-0 place-items-center opacity-0 motion-reduce:opacity-100"
+			custom={index}
+			data-agent-session-gutter-intro=""
+			initial={false}
+			onAnimationComplete={shouldPlayIntro ? onComplete : undefined}
+			style={{ willChange: shouldPlayIntro ? "opacity, transform" : undefined }}
+			variants={AGENT_SESSION_GUTTER_INTRO_VARIANTS}
+		>
+			{children}
+		</motion.span>
+	);
+}
+
 /** Resting dot that reveals the expanded card's human avatar on interest. */
 function AgentSessionUserNotch({
 	avatarSrc,
+	introIndex,
 	isArriving,
 	isHighlighted,
 	isNew,
 	onArrivalComplete,
+	onIntroComplete,
+	playIntro,
 	proximity,
 }: Readonly<{
 	avatarSrc?: string;
+	introIndex: number;
 	isArriving: boolean;
 	isHighlighted: boolean;
 	isNew: boolean;
 	onArrivalComplete?: () => void;
+	onIntroComplete?: () => void;
+	playIntro: boolean;
 	proximity?: AgentSessionNotchProximity;
 }>) {
 	const shouldReduceMotion = useReducedMotion();
@@ -254,68 +318,76 @@ function AgentSessionUserNotch({
 	});
 	const dotScale = useTransform(
 		falloff,
-		(value) => `scale(${toAgentSessionUserNotchDiameter(value) / 4})`,
+		(value) => `scale(${toAgentSessionUserNotchDiameter(value) / AGENT_SESSION_USER_NOTCH_DIAMETER.rest})`,
 	);
-	const restingScale = toAgentSessionUserNotchDiameter(0) / 4;
+	const restingScale = toAgentSessionUserNotchDiameter(0)
+		/ AGENT_SESSION_USER_NOTCH_DIAMETER.rest;
 
 	return (
-		<motion.span
-			animate={shouldPlayScaleArrival ? { scale: 1 } : undefined}
-			aria-hidden="true"
-			className="relative grid size-3 shrink-0 place-items-center"
-			data-arrival-exiting={arrivalExiting || undefined}
-			data-arrival-reveal={arrivalReveal || undefined}
-			initial={shouldPlayScaleArrival ? { scale: 0 } : false}
-			onAnimationComplete={() => {
-				if (shouldPlayScaleArrival) {
-					onArrivalComplete?.();
-				}
-			}}
-			style={{ willChange: shouldPlayScaleArrival ? "transform" : undefined }}
-			transition={AGENT_SESSION_ARRIVAL_TRANSITION}
+		<AgentSessionGutterIntro
+			index={introIndex}
+			onComplete={onIntroComplete}
+			play={playIntro}
+			shouldReduceMotion={shouldReduceMotion}
 		>
 			<motion.span
-				className={cn(
-					"size-1 rounded-full transition-opacity duration-normal ease-out-practical motion-reduce:transition-none",
-					avatarSrc
-						? "group-hover/notch:opacity-0 group-has-[:focus-visible]/notch:opacity-0"
-						: null,
-					hideRestDisc ? "opacity-0" : null,
-				)}
-				data-arrival-rest-hidden={hideRestDisc || undefined}
-				style={{
-					backgroundColor: isNew
-						? AGENT_SESSION_NOTCH_TONE.selected
-						: AGENT_SESSION_NOTCH_TONE.rest,
-					transform: proximity === undefined
-						? `scale(${restingScale})`
-						: dotScale,
+				animate={shouldPlayScaleArrival ? { scale: 1 } : undefined}
+				aria-hidden="true"
+				className="relative grid size-3 shrink-0 place-items-center"
+				data-arrival-exiting={arrivalExiting || undefined}
+				data-arrival-reveal={arrivalReveal || undefined}
+				initial={shouldPlayScaleArrival ? { scale: 0 } : false}
+				onAnimationComplete={() => {
+					if (shouldPlayScaleArrival) {
+						onArrivalComplete?.();
+					}
 				}}
-			/>
-			{avatarSrc ? (
-				<Image
-					alt=""
+				style={{ willChange: shouldPlayScaleArrival ? "transform" : undefined }}
+				transition={AGENT_SESSION_ARRIVAL_TRANSITION}
+			>
+				<motion.span
 					className={cn(
-						"absolute inset-0 size-3 rounded-full object-cover",
-						"motion-reduce:transition-none",
-						"group-hover/notch:scale-100 group-hover/notch:opacity-100",
-						"group-has-[:focus-visible]/notch:scale-100 group-has-[:focus-visible]/notch:opacity-100",
-						arrivalExiting && !isHighlighted
-							? "opacity-100 scale-[var(--agent-session-user-notch-morph)] transition-transform duration-normal ease-in-out"
-							: showAvatar ? "opacity-100 scale-100" : "scale-[var(--agent-session-user-notch-morph)] opacity-0",
-						arrivalExiting && !isHighlighted
-							? null
-							: "transition-[opacity,scale] duration-normal ease-out-practical",
+						"size-1 rounded-full transition-opacity duration-normal ease-out-practical motion-reduce:transition-none",
+						avatarSrc
+							? "group-hover/notch:opacity-0 group-has-[:focus-visible]/notch:opacity-0"
+							: null,
+						hideRestDisc ? "opacity-0" : null,
 					)}
-					height={12}
-					src={avatarSrc}
+					data-arrival-rest-hidden={hideRestDisc || undefined}
 					style={{
-						"--agent-session-user-notch-morph": String(arrivalMorphScale),
-					} as CSSProperties}
-					width={12}
+						backgroundColor: isNew
+							? AGENT_SESSION_NOTCH_TONE.selected
+							: AGENT_SESSION_NOTCH_TONE.rest,
+						transform: proximity === undefined
+							? `scale(${restingScale})`
+							: dotScale,
+					}}
 				/>
-			) : null}
-		</motion.span>
+				{avatarSrc ? (
+					<Image
+						alt=""
+						className={cn(
+							"absolute inset-0 size-3 rounded-full object-cover",
+							"motion-reduce:transition-none",
+							"group-hover/notch:scale-100 group-hover/notch:opacity-100",
+							"group-has-[:focus-visible]/notch:scale-100 group-has-[:focus-visible]/notch:opacity-100",
+							arrivalExiting && !isHighlighted
+								? "opacity-100 scale-[var(--agent-session-user-notch-morph)] transition-transform duration-normal ease-in-out"
+								: showAvatar ? "opacity-100 scale-100" : "scale-[var(--agent-session-user-notch-morph)] opacity-0",
+							arrivalExiting && !isHighlighted
+								? null
+								: "transition-[opacity,scale] duration-normal ease-out-practical",
+						)}
+						height={12}
+						src={avatarSrc}
+						style={{
+							"--agent-session-user-notch-morph": String(arrivalMorphScale),
+						} as CSSProperties}
+						width={12}
+					/>
+				) : null}
+			</motion.span>
+		</AgentSessionGutterIntro>
 	);
 }
 
@@ -344,27 +416,33 @@ function AgentSessionUserNotch({
 function AgentSessionNotch({
 	flyoutHandle,
 	flyoutSession,
+	introIndex,
 	isArriving,
 	isHighlighted,
 	isNew,
 	item,
 	notchShape,
 	onArrivalComplete,
+	onIntroComplete,
 	onItemHover,
 	onView,
+	playIntro,
 	proximity,
 	sessionDrag,
 }: Readonly<{
 	flyoutHandle: JiraSessionFlyoutHandle;
 	flyoutSession: JiraSidebarSessionItem;
+	introIndex: number;
 	isArriving: boolean;
 	isHighlighted: boolean;
 	isNew: boolean;
 	item: AgentSessionItem;
 	notchShape: AgentSessionColumnNotchShape;
 	onArrivalComplete?: () => void;
+	onIntroComplete?: () => void;
 	onItemHover?: (item: AgentSessionItem | null) => void;
 	onView?: (item: AgentSessionItem) => void;
+	playIntro: boolean;
 	proximity?: AgentSessionNotchProximity;
 	sessionDrag?: JiraIssueAgentSessionDragBinding;
 }>) {
@@ -413,6 +491,7 @@ function AgentSessionNotch({
 								{...bind}
 								aria-roledescription={bind ? "Draggable agent session" : undefined}
 								className="focus-visible:ring-ring flex h-5 w-full items-center justify-center rounded-xs outline-none focus-visible:ring-2"
+								data-agent-session-notch=""
 								data-highlighted={isHighlighted || undefined}
 								data-new={isNew || undefined}
 								data-testid={"agent-session-notch-" + item.id}
@@ -446,10 +525,13 @@ function AgentSessionNotch({
 								) : (
 									<AgentSessionUserNotch
 										avatarSrc={visibleIdentity.avatarSrc}
+										introIndex={introIndex}
 										isArriving={isArriving}
 										isHighlighted={isHighlighted}
 										isNew={isNew}
 										onArrivalComplete={onArrivalComplete}
+										onIntroComplete={onIntroComplete}
+										playIntro={playIntro}
 										proximity={proximity}
 									/>
 								)}
@@ -469,14 +551,17 @@ export function AgentSessionColumnRail({
 	getSuggestedWorkItemKeys,
 	highlightedItemId,
 	items,
+	maxVisibleItems,
 	newItemIds,
 	notchShape = "circle",
 	onArrivalComplete,
 	onCreateWorkItem,
+	onIntroComplete,
 	onItemHover,
 	onLinkWorkItem,
 	onSubtasks,
 	onView,
+	playIntro = false,
 	sessionDrag,
 }: Readonly<{
 	/** Subset of `newItemIds` whose arrival beat has not played yet. */
@@ -486,14 +571,21 @@ export function AgentSessionColumnRail({
 	getSuggestedWorkItemKeys?: (item: AgentSessionItem) => readonly string[] | undefined;
 	highlightedItemId?: string | null;
 	items: readonly AgentSessionItem[];
+	/**
+	 * Caps the scrollport to this many notches. Gutter rest passes ten;
+	 * embedded column presentation omits it so every session can show.
+	 */
+	maxVisibleItems?: number;
 	newItemIds?: ReadonlySet<string>;
 	notchShape?: AgentSessionColumnNotchShape;
 	onArrivalComplete?: (itemId: string) => void;
 	onCreateWorkItem?: (item: AgentSessionItem) => void;
+	onIntroComplete?: () => void;
 	onItemHover?: (item: AgentSessionItem | null) => void;
 	onLinkWorkItem?: (item: AgentSessionItem, workItemKey?: string) => void;
 	onSubtasks?: (item: AgentSessionItem) => void;
 	onView?: (item: AgentSessionItem) => void;
+	playIntro?: boolean;
 	/**
 	 * Makes each notch a drag handle, so a session can be pulled onto a work item
 	 * without expanding the column first. The same binding the expanded cards
@@ -515,12 +607,10 @@ export function AgentSessionColumnRail({
 		[capturedItemIds, items, onCreateWorkItem, onLinkWorkItem, onSubtasks],
 	);
 	const shouldReduceMotion = useReducedMotion();
-	const visibleItemCount = Math.min(items.length, AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS);
-	const railViewportHeight = visibleItemCount === 0
-		? 0
-		: visibleItemCount * AGENT_SESSION_RAIL_ITEM_HEIGHT_PX
-			+ (visibleItemCount - 1) * AGENT_SESSION_RAIL_ITEM_GAP_PX
-			+ AGENT_SESSION_RAIL_FOCUS_GUTTER_PX;
+	const railViewportMaxHeight = toAgentSessionRailViewportMaxHeight(
+		items.length,
+		maxVisibleItems,
+	);
 	// Under reduced motion the rail keeps its dock switched off entirely and the
 	// marks fall back to their own row's hover treatment, which resolves
 	// instantly. A slope that follows the cursor is exactly the kind of ambient
@@ -560,10 +650,12 @@ export function AgentSessionColumnRail({
 			    rail, rather than a hover handler per notch, because the swell is a
 			    property of the distance between them. `p-1` keeps the 4px
 			    focus-ring gutter *inside* the 32px column so the notches stay
-			    centered and remain unclipped at the ten-item scroll boundary.
+			    centered and remain unclipped at the scroll boundary.
 			    A negative horizontal margin here would shift them 4px left once
-			    the collapsed section clips overflow. Arrival layout stays on each
-			    `motion.li`. */}
+			    the collapsed section clips overflow. Gutter rest still caps the
+			    viewport at ten notches; embedded column presentation omits that
+			    cap so every session can show inside the column height. Arrival
+			    layout stays on each `motion.li`. */}
 			<ul
 				className="scrollbar-none flex min-h-0 w-full flex-1 flex-col items-center gap-1 overflow-y-auto overscroll-contain px-1 py-1"
 				onPointerEnter={isDocked ? dock.handlePointerEnter : undefined}
@@ -571,7 +663,9 @@ export function AgentSessionColumnRail({
 				onPointerMove={isDocked ? dock.handlePointerMove : undefined}
 				onScroll={isDocked ? dock.handleScroll : undefined}
 				ref={setListRef}
-				style={{ ...scrollMaskStyle, maxHeight: railViewportHeight }}
+				style={railViewportMaxHeight === undefined
+					? scrollMaskStyle
+					: { ...scrollMaskStyle, maxHeight: railViewportMaxHeight }}
 			>
 				{items.map((item: AgentSessionItem, index: number) => (
 					<AgentSessionNotch
@@ -584,6 +678,7 @@ export function AgentSessionColumnRail({
 								getSuggestedWorkItemKeys,
 							),
 						)}
+						introIndex={index}
 						isArriving={(arrivingItemIds ?? newItemIds)?.has(item.id) ?? false}
 						isHighlighted={item.id === highlightedItemId}
 						isNew={newItemIds?.has(item.id) ?? false}
@@ -593,8 +688,12 @@ export function AgentSessionColumnRail({
 						onArrivalComplete={onArrivalComplete === undefined
 							? undefined
 							: () => onArrivalComplete(item.id)}
+						onIntroComplete={index === items.length - 1
+							? onIntroComplete
+							: undefined}
 						onItemHover={onItemHover}
 						onView={onView}
+						playIntro={playIntro}
 						proximity={isDocked ? {
 							centersRef: dock.centersRef,
 							index,

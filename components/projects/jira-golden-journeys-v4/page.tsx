@@ -14,7 +14,12 @@ import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/bloc
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
 import { isPulseAgentSession, type PulseLooseWork } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { linkJiraKanbanAgentSession, moveJiraKanbanAgentSession, unlinkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
-import { JiraList, type JiraListAssignedAgent, type JiraListInsertion } from "@/components/blocks/jira-list";
+import {
+	JiraList,
+	useJiraListRowFlashSource,
+	type JiraListAssignedAgent,
+	type JiraListInsertion,
+} from "@/components/blocks/jira-list";
 import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { useDesignVariation } from "@/components/hooks/use-design-variation";
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
@@ -193,6 +198,17 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 		onAssignedAgentSelect: handleListAssignedAgentSelect,
 		setBoardColumns,
 	});
+	// Sessions dropped into the list neither select the rows they land in nor
+	// leave a badge behind, so the flash carries the acknowledgement. One drop of
+	// three marked sessions publishes one flash covering all three rows.
+	//
+	// It only reaches rows the list is rendering. A created card arrives
+	// unassigned, and `filterJiraKanbanColumnsByAssignee` drops unassigned cards
+	// outright, so a create-drop under an active assignee filter lands a row the
+	// viewer cannot see. That gap predates the flash — the row used to be
+	// selected and equally hidden — and closing it is a separate decision about
+	// what a filtered drop should do.
+	const { flash: listRowFlash, flashRow: flashListRow } = useJiraListRowFlashSource();
 	// Unlink always lands in `detachedAgentSessionsByCard`. The Untracked list
 	// reads that map, so the session reappears there immediately. Team EU keeps
 	// `showUntrackedProximity` off, so it never parks beside the card.
@@ -239,7 +255,8 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 	const handleAgentSessionLink = useCallback((session: AgentSessionItem, card: JiraKanbanCardData) => {
 		const activity = consumeDetachedAgentSession(session);
 		setBoardColumns((columns) => linkJiraKanbanAgentSession(columns, card.code, activity));
-	}, [consumeDetachedAgentSession]);
+		flashListRow(card.code);
+	}, [consumeDetachedAgentSession, flashListRow]);
 	const handleBoardAgentSessionCreate = useCallback((
 		session: AgentSessionItem,
 		columnTitle: string,
@@ -256,12 +273,12 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 		insertion: JiraListInsertion,
 	) => {
 		const activity = consumeDetachedAgentSession(session);
-		createFromAgentSession({
+		flashListRow(createFromAgentSession({
 			activity,
 			insertion,
 			session,
-		});
-	}, [consumeDetachedAgentSession, createFromAgentSession]);
+		}));
+	}, [consumeDetachedAgentSession, createFromAgentSession, flashListRow]);
 	const handleAgentSessionMove = useCallback((
 		session: JiraIssueAgentSessionRef,
 		sourceCard: JiraKanbanCardData,
@@ -342,6 +359,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 										{...listProps}
 										agentSessionDropIntent={agentSessionDropIntent}
 										onTrailingContentUnderlapChange={onTrailingContentUnderlapChange}
+										rowFlash={listRowFlash}
 										scrollEndInset={listScrollEndInset}
 										trailingOverlayRef={trailingOverlayRef}
 									/>

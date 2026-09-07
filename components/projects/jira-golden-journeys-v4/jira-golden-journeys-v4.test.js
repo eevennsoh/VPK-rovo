@@ -58,7 +58,6 @@ const TRANSFER_SOURCE = readProjectFile(
 const FAB_GEOMETRY_SOURCE = readProjectFile(
 	"components/projects/shared/components/floating-rovo-button/geometry.ts",
 );
-
 test("the route renders the Payments board directly inside Jira app chrome", () => {
 	assert.match(PAGE_SOURCE, /import AppLayout from "@\/components\/projects\/page"/u);
 	assert.match(PAGE_SOURCE, /<AppLayout[\s\S]*defaultSidebarOpen=\{false\}[\s\S]*product="jira"/u);
@@ -825,7 +824,14 @@ test("the route pins the shared Agent Session column beside Jira statuses", () =
 	const scrollportIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<section");
 	assert.ok(columnIndex > 0, "expected the board to render the Agent Session column");
 	assert.ok(columnIndex < scrollportIndex, "expected untracked work to stay pinned before the status scrollport");
-	assert.match(EXPERIMENTAL_BOARD_SOURCE, /flex min-h-full w-max min-w-full items-stretch ps-6/u);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/className="flex min-h-full w-max min-w-full items-stretch"\s*style=\{\{ paddingInlineStart: columnRowPaddingInlineStart \}\}/u,
+	);
+	assert.doesNotMatch(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/"flex min-h-full w-max min-w-full items-stretch ps-6"/u,
+	);
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /inFlowAgentSessionColumn/u);
 });
 

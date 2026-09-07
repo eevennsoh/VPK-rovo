@@ -73,6 +73,18 @@ test("every queued Jira v4 session has a unique stable identity", async () => {
 	);
 });
 
+test("half of the queued Jira v4 sessions arrive with linked PR metadata", async () => {
+	const sync = await loadSyncModule();
+	const sessions = sync.JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS;
+	const pullRequestSessions = sessions.filter((session) => session.pullRequest !== undefined);
+
+	assert.equal(pullRequestSessions.length, sessions.length / 2);
+	assert.deepEqual(
+		new Set(pullRequestSessions.map((session) => session.pullRequest.status)),
+		new Set(["created", "merged", "failed"]),
+	);
+});
+
 test("reviewing synced sessions clears all or only the named arrival marks", async () => {
 	const sync = await loadSyncModule();
 	const current = new Set(["first", "second", "third"]);

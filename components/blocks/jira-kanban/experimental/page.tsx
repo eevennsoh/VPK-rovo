@@ -154,9 +154,9 @@ function useAgentSessionReview(
 	onAgentSessionsReviewed: ExperimentalJiraKanbanPageProps["onAgentSessionsReviewed"],
 ) {
 	const [agentSessionColumnCollapsed, setAgentSessionColumnCollapsed] = useState(defaultCollapsed);
-	const [untrackedHoveredSessionId, setUntrackedHoveredSessionId] = useState<string | null>(null);
+	const [untrackedHoveredSession, setUntrackedHoveredSession] = useState<AgentSessionItem | null>(null);
 	const handleUntrackedItemHover = useCallback((item: AgentSessionItem | null) => {
-		setUntrackedHoveredSessionId(item?.id ?? null);
+		setUntrackedHoveredSession(item);
 		if (item !== null) {
 			onAgentSessionsReviewed?.([item.id]);
 		}
@@ -172,7 +172,7 @@ function useAgentSessionReview(
 		agentSessionColumnCollapsed,
 		handleAgentSessionColumnCollapsedChange,
 		handleUntrackedItemHover,
-		untrackedHoveredSessionId,
+		untrackedHoveredSession,
 	};
 }
 
@@ -287,8 +287,9 @@ function ExperimentalJiraKanbanPageContent({
 		agentSessionColumnCollapsed,
 		handleAgentSessionColumnCollapsedChange,
 		handleUntrackedItemHover,
-		untrackedHoveredSessionId,
+		untrackedHoveredSession,
 	} = useAgentSessionReview(defaultAgentSessionColumnCollapsed, onAgentSessionsReviewed);
+	const untrackedHoveredSessionId = untrackedHoveredSession?.id ?? null;
 	const [agentSessionPanelWidthPx, setAgentSessionPanelWidthPx] = useState(AGENT_SESSION_PANEL_WIDTH_PX);
 	const agentSessionPanelRef = useRef<HTMLDivElement | null>(null);
 	const [listContentUnderlapsPanel, setListContentUnderlapsPanel] = useState(false);
@@ -573,6 +574,13 @@ function ExperimentalJiraKanbanPageContent({
 			: handleUntrackedLinkWorkItem,
 		triage: untrackedTriage,
 	} : undefined;
+	const untrackedHoveredWorkItemKey = untrackedHoveredSession === null
+		? null
+		: resolveAgentSessionWorkItemKey(
+			untrackedHoveredSession,
+			agentSessionColumnConfig?.getSuggestedWorkItemKey,
+			agentSessionColumnConfig?.getSuggestedWorkItemKeys,
+		) ?? null;
 	const isListContent = isExperimentalJiraListContent(activeView, renderListContent);
 	// Insights replaces the whole content region with an article; a floating
 	// untracked-work surface over prose is chrome with nothing to attach to.
@@ -920,9 +928,7 @@ function ExperimentalJiraKanbanPageContent({
 								}}
 								className="pb-4 md:pb-5"
 								columnFrame={columnChromeStyles.headerFrame}
-								paddingTop={isListContent
-									? undefined
-									: withKanbanDropContentGutter(0, columnChromeStyles).paddingTop}
+								paddingTop={withKanbanDropContentGutter(0, columnChromeStyles).paddingTop}
 								sessionFlyoutsSuspended={boardSessionDrag.transaction !== null}
 								untrackedDropArmed={boardSessionDrag.transaction?.target?.kind === "untracked"}
 							/>
@@ -941,6 +947,7 @@ function ExperimentalJiraKanbanPageContent({
 								boardAgentSessionDrag={boardSessionDrag}
 								untrackedSessions={agentSessionColumnConfig?.items}
 								proximityHighlightedSessionId={untrackedHoveredSessionId}
+								proximityHighlightedWorkItemKey={untrackedHoveredWorkItemKey}
 								scrollEndInset={boardScrollEndInset}
 								proximityAgentSession={{
 									actionableSessionIds: proximityActionableSessionIds,

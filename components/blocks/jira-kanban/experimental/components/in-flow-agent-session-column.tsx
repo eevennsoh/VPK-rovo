@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 
 import {
@@ -90,7 +90,6 @@ function useInFlowAgentSessionColumnInteraction(
 		handlePointerEnter,
 		handlePointerLeave,
 		isEmbedded: isHovered || isPersistentExpanded,
-		isHovered,
 		isPersistentExpanded,
 	};
 }
@@ -138,14 +137,18 @@ function InFlowAgentSessionColumnSurface({
 	isEmbedded,
 	isPersistentExpanded,
 	onCollapsedChange,
+	onGutterIntroComplete,
 	paddingBottom,
 	paddingTop,
+	playGutterIntro,
 	shouldReduceMotion,
 	untrackedDropArmed,
 }: Readonly<InFlowAgentSessionColumnProps & {
 	isEmbedded: boolean;
 	isPersistentExpanded: boolean;
 	onCollapsedChange: (collapsed: boolean) => void;
+	onGutterIntroComplete: () => void;
+	playGutterIntro: boolean;
 	shouldReduceMotion: boolean | null;
 }>) {
 	return (
@@ -155,7 +158,7 @@ function InFlowAgentSessionColumnSurface({
 				"absolute inset-y-0 start-0 z-40 flex min-h-0 border-2 border-r-0",
 				isEmbedded
 					? "pointer-events-auto bg-surface"
-					: "pointer-events-none bg-transparent",
+					: "pointer-events-none bg-transparent [&_[data-agent-session-notch]]:pointer-events-auto",
 				untrackedDropArmed ? "border-ring" : "border-transparent",
 				className,
 			)}
@@ -177,6 +180,8 @@ function InFlowAgentSessionColumnSurface({
 				collapsedPresentation={isEmbedded ? "column" : "gutter"}
 				columnFrame={columnFrame}
 				onCollapsedChange={onCollapsedChange}
+				onGutterIntroComplete={onGutterIntroComplete}
+				playGutterIntro={playGutterIntro}
 			/>
 		</motion.div>
 	);
@@ -186,7 +191,9 @@ function InFlowAgentSessionColumnSurface({
  * The Untracked rail rests in the page's leading gutter. Hover temporarily
  * returns that same compact timeline to the board's original 24px column inset;
  * it never swaps dots for cards. Only the column's expand control promotes the
- * full column, and that deliberate state persists after the pointer leaves.
+ * full column, and that deliberate state persists after the pointer leaves. The
+ * full-height gutter target sits behind each session row so a row can own its
+ * whole 24px band while empty gutter space still opens the column preview.
  */
 export function InFlowAgentSessionColumn({
 	agentSessionColumn,
@@ -198,13 +205,18 @@ export function InFlowAgentSessionColumn({
 	untrackedDropArmed,
 }: Readonly<InFlowAgentSessionColumnProps>): ReactNode {
 	const shouldReduceMotion = useReducedMotion();
+	const [playGutterIntro, setPlayGutterIntro] = useState(true);
+	useEffect(() => {
+		if (shouldReduceMotion) {
+			setPlayGutterIntro(false);
+		}
+	}, [shouldReduceMotion]);
 	const {
 		handleCollapsedChange,
 		handleGutterPointerDown,
 		handlePointerEnter,
 		handlePointerLeave,
 		isEmbedded,
-		isHovered,
 		isPersistentExpanded,
 	} = useInFlowAgentSessionColumnInteraction(
 		agentSessionColumn.collapsed,
@@ -217,17 +229,18 @@ export function InFlowAgentSessionColumn({
 
 	return (
 		<JiraSessionFlyoutSuspensionProvider
-			suspended={sessionFlyoutsSuspended || (isHovered && !isPersistentExpanded)}
+			suspended={sessionFlyoutsSuspended || !isEmbedded}
 		>
 			<div
 				className="relative flex min-h-0 shrink-0 self-stretch"
+				onPointerDown={isEmbedded ? undefined : handleGutterPointerDown}
 				onPointerEnter={handlePointerEnter}
 				onPointerLeave={handlePointerLeave}
 			>
 				{isEmbedded ? null : (
 					<div
 						aria-hidden="true"
-						className="absolute inset-y-0 start-0 z-50"
+						className="absolute inset-y-0 start-0 z-30"
 						data-agent-session-column-hit-area=""
 						onPointerEnter={handlePointerEnter}
 						onPointerDown={handleGutterPointerDown}
@@ -246,8 +259,10 @@ export function InFlowAgentSessionColumn({
 					isEmbedded={isEmbedded}
 					isPersistentExpanded={isPersistentExpanded}
 					onCollapsedChange={handleCollapsedChange}
+					onGutterIntroComplete={() => setPlayGutterIntro(false)}
 					paddingBottom={paddingBottom}
 					paddingTop={paddingTop}
+					playGutterIntro={playGutterIntro}
 					sessionFlyoutsSuspended={sessionFlyoutsSuspended}
 					shouldReduceMotion={shouldReduceMotion}
 					untrackedDropArmed={untrackedDropArmed}
