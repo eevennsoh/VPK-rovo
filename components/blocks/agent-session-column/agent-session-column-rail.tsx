@@ -476,6 +476,7 @@ function AgentSessionNotch({
 						<JiraSessionFlyoutTrigger
 							closeDelay={160}
 							data-session-id={item.id}
+							delay={0}
 							handle={flyoutHandle}
 							render={
 								<div

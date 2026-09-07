@@ -52,6 +52,9 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.doesNotMatch(source, /<span aria-hidden="true"> · <\/span>/u);
 	assert.match(cardShellSource, /flex w-\[320px\] max-w-\[calc\(100vw-48px\)\] flex-col gap-3 pt-3 text-text/u);
 	assert.match(cardShellSource, /border-t border-border-disabled p-3/u);
+	assert.match(cardShellSource, /body\?: ReactNode;/u);
+	assert.match(cardShellSource, /\{body \|\| footer \? \(/u);
+	assert.match(cardShellSource, /\{body \? \(/u);
 	assert.match(
 		cardShellSource,
 		/\{footer \? \(\s*<div className=\{cn\("flex flex-col border-t border-border-disabled p-3", footerClassName\)\}/u,
@@ -63,7 +66,7 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.match(cardSource, /bodyClassName="gap-1"/u);
 	assert.match(
 		cardSource,
-		/body=\{\s*<>[\s\S]*?<JiraSessionDetailsBody hideAgentRow hideSessionRow session=\{session\} \/>[\s\S]*?footer=\{/u,
+		/body=\{\s*artifacts\.length > 0 \? \(\s*<>[\s\S]*?<JiraSessionDetailsBody hideAgentRow hideSessionRow session=\{session\} \/>[\s\S]*?\) : undefined/u,
 	);
 	assert.match(cardSource, /import \{[\s\S]*SmartLink[\s\S]*\} from "@\/components\/blocks\/smart-link";/u);
 	assert.match(
@@ -346,6 +349,14 @@ test("demo sessions share one moving shell with a fade-only content viewport", (
 	assert.doesNotMatch(flyoutSource, /transition-\[[^\]]*(?:width|height)/u);
 	assert.match(flyoutSource, /instantPosition\?: boolean/u);
 	assert.match(flyoutSource, /instantPosition\s*\? "transition-none"\s*: "transition-\[top,left,right,bottom\] duration-medium ease-in-out motion-reduce:transition-none data-instant:transition-none"/u);
+	assert.match(
+		flyoutSource,
+		/instantPosition\s*\?\s*"transition-none data-starting-style:opacity-100 data-starting-style:scale-100 data-ending-style:opacity-100 data-ending-style:scale-100"/u,
+	);
+	assert.match(
+		flyoutSource,
+		/instantPosition\s*\?\s*"\[&_\[data-current\]\]:transition-none \[&_\[data-previous\]\]:transition-none \[&_\[data-previous\]\[data-ending-style\]\]:opacity-0"/u,
+	);
 	assert.doesNotMatch(flyoutSource, /\[&_\[(?:data-current|data-previous)\]\]:h-\(--popup-height\)/u);
 	assert.match(flyoutSource, /overflow-clip rounded-\[inherit\]/u);
 	assert.match(flyoutSource, /motion-reduce:\[&_\[data-current\]\]:transition-none/u);
