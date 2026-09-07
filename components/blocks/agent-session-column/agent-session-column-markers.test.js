@@ -41,24 +41,19 @@ test("collapsed markers default to circles and can retain the previous line trea
 });
 
 test("the increment count keeps the default collapsed-count color", () => {
-	assert.match(INDEX_SOURCE, /collapsedPresentation === "gutter" && newCount > 0/u);
-	assert.match(INDEX_SOURCE, /text=\{collapsedCountText\}/u);
+	assert.match(INDEX_SOURCE, /hideGutterCount = isGutterCollapsed && newCount === 0/u);
+	assert.match(INDEX_SOURCE, /text=\{String\(sessionCount\)\}/u);
 	assert.match(INDEX_SOURCE, /"text-text-subtlest",/u);
 	assert.doesNotMatch(INDEX_SOURCE, /text-text-discovery/u);
 });
 
-test("an inspected collapsed rail increments the pool total instead of flashing +N", () => {
+test("collapsed rails increment the pool total instead of flashing +N", () => {
 	assert.match(
 		INDEX_SOURCE,
-		/const showCollapsedUnreadIncrement = collapsedPresentation === "gutter" && newCount > 0/u,
+		/const hideGutterCount = isGutterCollapsed && newCount === 0/u,
 	);
-	assert.match(
-		INDEX_SOURCE,
-		/const collapsedCountText = showCollapsedUnreadIncrement\s*\? `\+\$\{newCount\}`\s*: String\(sessionCount\)/u,
-	);
-	assert.match(INDEX_SOURCE, /showCollapsedUnreadIncrement \? "font-medium" : "font-normal"/u);
-	assert.doesNotMatch(
-		INDEX_SOURCE,
-		/text=\{newCount > 0 \? `\+\$\{newCount\}` : String\(sessionCount\)\}/u,
-	);
+	assert.match(INDEX_SOURCE, /text=\{String\(sessionCount\)\}/u);
+	assert.doesNotMatch(INDEX_SOURCE, /`\+\$\{newCount\}`/u);
+	assert.match(INDEX_SOURCE, /text-xs font-normal/u);
+	assert.doesNotMatch(INDEX_SOURCE, /showCollapsedUnreadIncrement \? "font-medium"/u);
 });
