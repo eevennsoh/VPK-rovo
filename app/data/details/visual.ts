@@ -51,6 +51,7 @@ import { MESH_V2_DETAIL } from "./visual/mesh-v2";
 import { CHROMATIC_ABERRATION_DETAIL } from "./visual/chromatic-aberration";
 import { PATTERN_TILE_DETAIL } from "./visual/pattern-tile";
 import { BORDER_BEAM_DETAIL } from "./visual/border-beam";
+import { HEATMAP_DETAIL } from "./visual/heatmap";
 import { INK_WASH_DETAIL } from "./visual/ink-wash";
 import { LIQUID_METAL_DETAIL } from "./visual/liquid-metal";
 import { NOISE_DETAIL } from "./visual/noise";
@@ -208,6 +209,7 @@ export const VISUAL_DETAILS: Record<string, ComponentDetail> = {
 	"chromatic-aberration": CHROMATIC_ABERRATION_DETAIL,
 	"pattern-tile": PATTERN_TILE_DETAIL,
 	"border-beam": BORDER_BEAM_DETAIL,
+	heatmap: HEATMAP_DETAIL,
 	"ink-wash": INK_WASH_DETAIL,
 	"liquid-metal": LIQUID_METAL_DETAIL,
 	noise: NOISE_DETAIL,

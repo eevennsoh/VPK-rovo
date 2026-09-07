@@ -17,6 +17,9 @@ export const VISUAL_DEMOS: Record<string, ComponentType> = {
 	"border-beam": dynamic(() => import("../demos/visual/border-beam-demo"), {
 		ssr: false,
 	}),
+	heatmap: dynamic(() => import("../demos/visual/heatmap-demo"), {
+		ssr: false,
+	}),
 	squircle: dynamic(() => import("../demos/visual/squircle-demo"), {
 		ssr: false,
 	}),
@@ -482,6 +485,41 @@ export const VISUAL_VARIANT_DEMOS: Record<string, ComponentType> = {
 		() =>
 			import("../demos/visual/ink-wash-demo").then((mod) => ({
 				default: mod.InkWashDemoLandscapeWash,
+			})),
+		{ ssr: false },
+	),
+	"heatmap-demo-shapes": dynamic(
+		() =>
+			import("../demos/visual/heatmap-demo").then((mod) => ({
+				default: mod.HeatmapDemoShapes,
+			})),
+		{ ssr: false },
+	),
+	"heatmap-demo-color-ramp": dynamic(
+		() =>
+			import("../demos/visual/heatmap-demo").then((mod) => ({
+				default: mod.HeatmapDemoColorRamp,
+			})),
+		{ ssr: false },
+	),
+	"heatmap-demo-glow-balance": dynamic(
+		() =>
+			import("../demos/visual/heatmap-demo").then((mod) => ({
+				default: mod.HeatmapDemoGlowBalance,
+			})),
+		{ ssr: false },
+	),
+	"heatmap-demo-contour-and-grain": dynamic(
+		() =>
+			import("../demos/visual/heatmap-demo").then((mod) => ({
+				default: mod.HeatmapDemoContourAndGrain,
+			})),
+		{ ssr: false },
+	),
+	"heatmap-demo-angle": dynamic(
+		() =>
+			import("../demos/visual/heatmap-demo").then((mod) => ({
+				default: mod.HeatmapDemoAngle,
 			})),
 		{ ssr: false },
 	),

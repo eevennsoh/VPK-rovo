@@ -5403,7 +5403,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 433,
+			"manifestEntryCount": 434,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -7443,7 +7443,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 102,
+				"entryCount": 103,
 				"entries": [
 					{
 						"category": "visual",
@@ -7594,6 +7594,12 @@
 						"slug": "halftone",
 						"name": "Halftone",
 						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
+					},
+					{
+						"category": "visual",
+						"slug": "heatmap",
+						"name": "Heatmap",
+						"importPath": "@/components/visual/heatmap"
 					},
 					{
 						"category": "visual",
