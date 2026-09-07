@@ -180,6 +180,16 @@ test("release re-hit-tests the current pointer against current board geometry", 
 	assert.match(DRAG_HOOK_SOURCE, /commitDrop\(finalTransaction\)/u);
 });
 
+test("card-link drops commit the transfer before decorative flights start", () => {
+	const source = withoutComments(DRAG_HOOK_SOURCE);
+	assert.match(
+		source,
+		/commitDrop\(finalTransaction\);\s*if \(release && finalTransaction\.proximity && !shouldReduceMotion\)/u,
+	);
+	assert.doesNotMatch(source, /pendingAttachRef\.current = \{ flash, transaction:/u);
+	assert.doesNotMatch(source, /commitDrop\(pending\.transaction\)/u);
+});
+
 test("unchecking Untracked exits board-adjacent sessions through the issue presence recipe", () => {
 	assert.match(CARD_SOURCE, /import \{ AnimatePresence, motion, useReducedMotion \} from "motion\/react"/u);
 	assert.match(

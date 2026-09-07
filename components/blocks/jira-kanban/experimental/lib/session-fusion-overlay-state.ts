@@ -134,8 +134,9 @@ export interface SessionFusionLinkFlashInput {
  * Staggered chip flights into the card's agent session row, or `null` when
  * this drop is not the attach-to-card path the linking effect covers.
  *
- * The host holds the transfer until the flights land, so the chin rows appear
- * as the chips arrive rather than under them. Unlink, create-well, create-list
+ * The host commits the transfer on pointer-up and animates this snapshot
+ * afterward, so a Board/List switch cannot drop a successful attach. The chin
+ * sweep still waits until the flights land. Unlink, create-well, create-list
  * and untracked drops still skip this: they never resolve attach proximity.
  */
 export function toSessionFusionDrop(input: Readonly<{

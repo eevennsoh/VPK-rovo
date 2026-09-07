@@ -260,7 +260,6 @@ export function useBoardAgentSessionDrag({
 	const linkFlashTokenRef = useRef(0);
 	const pendingAttachRef = useRef<{
 		flash: BoardAgentSessionLinkFlash | null;
-		transaction: BoardAgentSessionDragTransaction<JiraIssueAgentSessionTransferMember>;
 	} | null>(null);
 	const ports: SessionTransferPorts = useMemo(() => ({
 		onCreate,
@@ -319,9 +318,8 @@ export function useBoardAgentSessionDrag({
 		if (!pending) {
 			return;
 		}
-		commitDrop(pending.transaction);
 		setLinkFlash(pending.flash);
-	}, [commitDrop]);
+	}, []);
 
 	const onDragStateChange = useCallback((
 		origin: BoardAgentSessionDragOrigin,
@@ -376,15 +374,15 @@ export function useBoardAgentSessionDrag({
 					proximity: finalTransaction.proximity,
 				})
 				: null;
+			commitDrop(finalTransaction);
 			if (release && finalTransaction.proximity && !shouldReduceMotion) {
-				pendingAttachRef.current = { flash, transaction: finalTransaction };
+				pendingAttachRef.current = { flash };
 				setFusionDrop({
 					members: finalTransaction.cohort.members,
 					proximity: finalTransaction.proximity,
 					release,
 				});
 			} else {
-				commitDrop(finalTransaction);
 				setLinkFlash(flash);
 			}
 		}
