@@ -3,8 +3,8 @@
 // oxlint-disable react-doctor/no-noninteractive-tabindex -- These surfaces intentionally receive keyboard focus for application-style keyboard handling or card-level shortcuts.
 // oxlint-disable react-doctor/prefer-module-scope-pure-function -- These helpers are intentionally local to the component/demo because they depend on the surrounding interaction contract.
 
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { LayoutGroup, motion, useReducedMotion, type Transition } from "motion/react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import { type AgentSessionColumnProps } from "@/components/blocks/agent-session-column";
@@ -50,9 +50,19 @@ import {
 	CollapsedBoardColumn,
 } from "./components/collapsed-board-column";
 import { BoardColumnCreateAction } from "./components/create-work-item-drop-zone";
+import {
+	CreatedCardArrivalMotion,
+	JIRA_KANBAN_CARD_MOVE,
+} from "./components/created-card-arrival-motion";
 import { ExclusiveCreateWellProximityProvider } from "./components/create-work-item-exclusive-proximity-context";
 import { InFlowAgentSessionColumn } from "./components/in-flow-agent-session-column";
+import {
+	useCreatedCardArrivalCompletion,
+	useCreatedCardArrivalScroll,
+	type JiraKanbanCreatedCardArrival,
+} from "./hooks/use-created-card-arrival";
 import { BOARD_COLUMN_ACTION_REVEAL } from "./lib/board-column-action-reveal";
+import { getCommonSelectedCardStatus } from "./lib/board-selection-status";
 import {
 	EMPTY_COLLAPSED_BOARD_COLUMNS,
 	getBoardColumnOuterWidthPx,
@@ -78,9 +88,7 @@ import {
 import type {
 	JiraKanbanAgentData,
 	JiraKanbanCardData,
-	JiraKanbanCardMoveAnimation,
 	JiraKanbanCardSelectModifiers,
-	JiraKanbanColumnData,
 	JiraKanbanProps,
 } from "../index";
 import {
@@ -101,12 +109,6 @@ import {
  * contracts (`JiraKanban*` types, `state.ts`, `jira-kanban-data.ts`) stay
  * shared so both variants remain interchangeable inside an owning surface.
  */
-export interface JiraKanbanCreatedCardArrival {
-	readonly id: number;
-	readonly columnTitle: string;
-	readonly cardCodes: readonly string[];
-}
-
 export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	/** One-shot card entrance requested by the host after creating cards from sessions. */
@@ -203,12 +205,6 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	onCollapsedColumnsChange?: (collapsedColumns: CollapsedBoardColumns) => void;
 }
 
-const JIRA_KANBAN_CARD_MOVE: Transition = { duration: 0.6, ease: [0.4, 0, 0, 1] }; // duration-slowest + ease-in-out
-const JIRA_KANBAN_CARD_DEPART: Transition = { duration: 0.4, ease: [0.6, 0, 0.8, 0.6] }; // duration-slower + ease-in
-const JIRA_KANBAN_CARD_ARRIVE: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] }; // duration-normal + ease-out-practical
-const JIRA_KANBAN_CARD_ARRIVE_REDUCED: Transition = { duration: 0 };
-const JIRA_KANBAN_CREATED_CARD_BACKDROP_HOLD_MS = 600; // duration-slowest
-
 /**
  * Collapsing a column repositions everything to its right, so the width change
  * uses the bold in-place transition profile (`duration-medium` + `ease-in-out`).
@@ -220,14 +216,6 @@ const BOARD_COLUMN_SHELL_TRANSITION = [
 	"border-color var(--duration-normal) var(--ease-out-practical)",
 	"outline-color var(--duration-normal) var(--ease-out-practical)",
 ].join(", ");
-function getJiraKanbanCardScale(
-	phase: JiraKanbanCardMoveAnimation["phase"] | undefined,
-): number {
-	if (phase === "arriving") return 0.9;
-	if (phase === "departing") return 0.96;
-	return 1;
-}
-
 function orderPickerItems<T extends Readonly<{ id: string }>>(
 	items: readonly T[],
 	pinnedIds: readonly string[] | undefined,
@@ -424,12 +412,12 @@ function BoardColumn({
 }>) {
 	const showAgentAssignment = Boolean(agents?.length && onCreateAgent && onToggleAgent);
 	const { ref: cardListRef, showBottomScrollMask, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
-	const cardListElementRef = useRef<HTMLDivElement | null>(null);
-	const lastScrolledArrivalIdRef = useRef<number | null>(null);
-	const setCardListRef = useCallback((node: HTMLDivElement | null) => {
-		cardListElementRef.current = node;
-		cardListRef(node);
-	}, [cardListRef]);
+	const setCardListRef = useCreatedCardArrivalScroll({
+		arrival: createdCardArrival,
+		cardCount: count,
+		onCardListRef: cardListRef,
+		title,
+	});
 	const cardListScrollMaskStyle = useMemo(
 		() => buildScrollMaskStyle({
 			fadeBottom: showBottomScrollMask,
@@ -439,34 +427,6 @@ function BoardColumn({
 		}),
 		[showBottomScrollMask, showTopScrollMask],
 	);
-
-	useLayoutEffect(() => {
-		if (
-			createdCardArrival === undefined
-			|| createdCardArrival.columnTitle !== title
-			|| createdCardArrival.cardCodes.length === 0
-			|| lastScrolledArrivalIdRef.current === createdCardArrival.id
-		) {
-			return;
-		}
-
-		const cardList = cardListElementRef.current;
-		if (cardList === null) {
-			return;
-		}
-		const arrivedCardCount = cardList.querySelectorAll(
-			`[data-created-card-arrival-id="${createdCardArrival.id}"]`,
-		).length;
-		if (arrivedCardCount < createdCardArrival.cardCodes.length) {
-			return;
-		}
-
-		cardList.scrollTo({
-			behavior: "auto",
-			top: cardList.scrollHeight,
-		});
-		lastScrolledArrivalIdRef.current = createdCardArrival.id;
-	}, [count, createdCardArrival, title]);
 
 	return (
 		<div
@@ -631,32 +591,6 @@ function BoardColumnShell({
 	);
 }
 
-function getCommonSelectedCardStatus(
-	columns: readonly JiraKanbanColumnData[],
-	selectedCardCodes: ReadonlySet<string>,
-): string | null {
-	let commonStatus: string | null = null;
-	let foundSelectedCard = false;
-
-	for (const column of columns) {
-		for (const card of column.cards) {
-			if (!selectedCardCodes.has(card.code)) {
-				continue;
-			}
-			if (!foundSelectedCard) {
-				commonStatus = column.title;
-				foundSelectedCard = true;
-				continue;
-			}
-			if (commonStatus !== column.title) {
-				return null;
-			}
-		}
-	}
-
-	return foundSelectedCard ? commonStatus : null;
-}
-
 function ExperimentalJiraKanbanView({
 	activeCardCode,
 	agentActivityLayout = "merged",
@@ -719,8 +653,9 @@ function ExperimentalJiraKanbanView({
 	const shouldAnimateCardMoves = animateCardMoves && !shouldReduceMotion;
 	const boardScrollportRef = useRef<HTMLElement | null>(null);
 	const dragImageRef = useRef<HTMLDivElement | null>(null);
-	const completedCreatedCardArrivalIdsRef = useRef(new Set<number>());
-	const createdCardArrivalHoldTimeoutRef = useRef<number | null>(null);
+	const handleCreatedCardArrivalComplete = useCreatedCardArrivalCompletion(
+		onCreatedCardArrivalComplete,
+	);
 	const [uncontrolledCollapsedColumns, setUncontrolledCollapsedColumns] = useState(
 		EMPTY_COLLAPSED_BOARD_COLUMNS,
 	);
@@ -862,26 +797,6 @@ function ExperimentalJiraKanbanView({
 	const handleCardDragEndInternal = () => {
 		onCardDragEnd?.();
 	};
-
-	useEffect(() => () => {
-		if (createdCardArrivalHoldTimeoutRef.current !== null) {
-			window.clearTimeout(createdCardArrivalHoldTimeoutRef.current);
-		}
-	}, []);
-
-	const handleCreatedCardArrivalComplete = useCallback((arrivalId: number) => {
-		if (completedCreatedCardArrivalIdsRef.current.has(arrivalId)) {
-			return;
-		}
-		completedCreatedCardArrivalIdsRef.current.add(arrivalId);
-		if (createdCardArrivalHoldTimeoutRef.current !== null) {
-			window.clearTimeout(createdCardArrivalHoldTimeoutRef.current);
-		}
-		createdCardArrivalHoldTimeoutRef.current = window.setTimeout(() => {
-			createdCardArrivalHoldTimeoutRef.current = null;
-			onCreatedCardArrivalComplete?.(arrivalId);
-		}, JIRA_KANBAN_CREATED_CARD_BACKDROP_HOLD_MS);
-	}, [onCreatedCardArrivalComplete]);
 
 	const handleSessionView = (item: AgentSessionItem) => {
 		const nextKey = resolveVisibleFocusedIssueKey(
@@ -1026,14 +941,6 @@ function ExperimentalJiraKanbanView({
 										: undefined;
 									const shouldAnimateCardPosition = shouldAnimateCardMoves && cardMovePhase === undefined;
 									const detachedAgentSessions = detachedAgentSessionsByCard?.[card.code] ?? [];
-									const isCreatedCardArriving = Boolean(
-										createdCardArrival?.columnTitle === column.title
-										&& createdCardArrival.cardCodes.includes(card.code),
-									);
-									const isFinalCreatedCardArriving = Boolean(
-										isCreatedCardArriving
-										&& createdCardArrival?.cardCodes.at(-1) === card.code,
-									);
 										const proximityActions = bindBoardProximitySessionActions({
 										actionableSessionIds: proximityAgentSession?.actionableSessionIds,
 										capturedItemIds: proximityAgentSession?.capturedItemIds,
@@ -1068,45 +975,20 @@ function ExperimentalJiraKanbanView({
 											style={shouldAnimateCardPosition ? { willChange: "transform" } : undefined}
 											transition={JIRA_KANBAN_CARD_MOVE}
 										>
-											<motion.div
-												animate={isCreatedCardArriving
-													? { opacity: 1, y: 0 }
-													: shouldAnimateCardMoves
-														? { scale: getJiraKanbanCardScale(cardMovePhase) }
-														: undefined
-												}
+											<CreatedCardArrivalMotion
+												arrival={createdCardArrival?.columnTitle === column.title
+													? createdCardArrival
+													: undefined}
+												cardCode={card.code}
+												cardMovePhase={cardMovePhase}
 												className={cn(
-													"flex w-full min-w-0 max-w-[280px] flex-col gap-2 rounded-lg",
-													"transition-[background-color,opacity] duration-normal ease-out-practical",
-													"motion-reduce:transition-none",
-													"[&_[data-slot=jira-issue-agent-backdrop]]:transition-colors [&_[data-slot=jira-issue-agent-backdrop]]:duration-normal [&_[data-slot=jira-issue-agent-backdrop]]:ease-out-practical",
-													"motion-reduce:[&_[data-slot=jira-issue-agent-backdrop]]:transition-none",
-													isCreatedCardArriving && "[&_[data-slot=jira-issue-agent-backdrop]]:bg-bg-accent-blue-subtlest",
 													spotlightIssueKey === card.code && "bg-bg-accent-blue-subtlest",
 													spotlightIssueKey !== null && spotlightIssueKey !== card.code && "opacity-40",
 												)}
-												data-board-agent-session-drop-zone="issue"
-												data-board-agent-session-target={cardDropTarget ?? undefined}
-												data-created-card-backdrop={isCreatedCardArriving || undefined}
-												data-created-card-arrival-id={isCreatedCardArriving
-													? createdCardArrival?.id
-													: undefined}
-												data-created-card-arrival-last={isFinalCreatedCardArriving || undefined}
-												data-issue-key={card.code}
-												initial={isCreatedCardArriving && !shouldReduceMotion
-													? { opacity: 0, y: 8 }
-													: false}
-												onAnimationComplete={isFinalCreatedCardArriving && createdCardArrival
-													? () => handleCreatedCardArrivalComplete(createdCardArrival.id)
-													: undefined}
-												style={isCreatedCardArriving && !shouldReduceMotion
-													? { willChange: "transform, opacity" }
-													: cardMovePhase ? { willChange: "transform" } : undefined}
-												transition={isCreatedCardArriving
-													? shouldReduceMotion
-														? JIRA_KANBAN_CARD_ARRIVE_REDUCED
-														: JIRA_KANBAN_CARD_ARRIVE
-													: cardMovePhase === "departing" ? JIRA_KANBAN_CARD_DEPART : JIRA_KANBAN_CARD_MOVE}
+												dropTarget={cardDropTarget}
+												onArrivalComplete={handleCreatedCardArrivalComplete}
+												shouldAnimateCardMoves={shouldAnimateCardMoves}
+												shouldReduceMotion={shouldReduceMotion}
 											>
 												<ExperimentalJiraKanbanCard
 												active={isActive}
@@ -1145,7 +1027,7 @@ function ExperimentalJiraKanbanView({
 												showUnlinkWell={showAgentSessionUnlinkWell}
 												selected={isSelected}
 											/>
-											</motion.div>
+											</CreatedCardArrivalMotion>
 										</motion.div>
 									);
 								})}

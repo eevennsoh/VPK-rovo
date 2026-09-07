@@ -260,6 +260,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/projects/jira-golden-journeys-v2/jira-golden-journeys-v2.test.js",
 		"components/projects/jira-golden-journeys-v3/jira-golden-journeys-v3.test.js",
 		"components/projects/jira-golden-journeys-v4/jira-golden-journeys-v4-generative-actions.test.js",
+		"components/projects/jira-golden-journeys-v4/jira-golden-journeys-v4-create-session.test.js",
 		"components/projects/jira-golden-journeys-v4/jira-golden-journeys-v4.test.js",
 		"components/ui/icon-tile.test.js",
 		"components/projects/jira-for-you/jira-for-you.test.js",
