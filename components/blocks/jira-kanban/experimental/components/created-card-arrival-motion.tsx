@@ -7,6 +7,12 @@ import type { JiraKanbanCardMoveAnimation } from "@/components/blocks/jira-kanba
 import { cn } from "@/lib/utils";
 
 import type { JiraKanbanCreatedCardArrival } from "../hooks/use-created-card-arrival";
+import type { BoardCardInsertion } from "../lib/board-agent-session-drag";
+import { BoardCardInsertionLine } from "./board-card-insertion-line";
+import {
+	getBoardCardInsertionAnchorClassName,
+	resolveBoardCardInsertionPosition,
+} from "../lib/board-card-insertion";
 import {
 	getJiraKanbanCardScale,
 	JIRA_KANBAN_CARD_ARRIVE,
@@ -17,11 +23,17 @@ import {
 
 interface CreatedCardArrivalMotionProps {
 	arrival?: JiraKanbanCreatedCardArrival;
+	/** Column size and slot, so a session drag can resolve the gaps around this card. */
+	cardCount: number;
 	cardCode: string;
+	cardIndex: number;
 	cardMovePhase: JiraKanbanCardMoveAnimation["phase"] | undefined;
 	children: ReactNode;
 	className?: string;
+	columnTitle: string;
 	dropTarget: "attach" | "unlink" | null | undefined;
+	/** The board-wide armed insertion; this card resolves whether it owns a seam. */
+	cardInsertion: BoardCardInsertion | null | undefined;
 	onArrivalComplete: (arrivalId: number) => void;
 	shouldAnimateCardMoves: boolean;
 	shouldReduceMotion: boolean | null;
@@ -96,14 +108,23 @@ function getCardMotionTransition(
 export function CreatedCardArrivalMotion({
 	arrival,
 	cardCode,
+	cardCount,
+	cardIndex,
+	cardInsertion,
 	cardMovePhase,
 	children,
 	className,
+	columnTitle,
 	dropTarget,
 	onArrivalComplete,
 	shouldAnimateCardMoves,
 	shouldReduceMotion,
 }: Readonly<CreatedCardArrivalMotionProps>) {
+	const insertionPosition = resolveBoardCardInsertionPosition(cardInsertion, {
+		cardCount,
+		cardIndex,
+		columnTitle,
+	});
 	const isArriving = isCardArriving(arrival, cardCode);
 	const isFinalArrivingCard = isLastArrivingCard(arrival, cardCode, isArriving);
 	const cardMoveAnimation = getCardMoveAnimation(shouldAnimateCardMoves, cardMovePhase);
@@ -127,10 +148,14 @@ export function CreatedCardArrivalMotion({
 				"[&_[data-slot=jira-issue-agent-backdrop]]:transition-colors [&_[data-slot=jira-issue-agent-backdrop]]:duration-normal [&_[data-slot=jira-issue-agent-backdrop]]:ease-out-practical",
 				"motion-reduce:[&_[data-slot=jira-issue-agent-backdrop]]:transition-none",
 				isArriving && "[&_[data-slot=jira-issue-agent-backdrop]]:bg-bg-accent-blue-subtlest",
+				getBoardCardInsertionAnchorClassName(insertionPosition),
 				className,
 			)}
 			data-board-agent-session-drop-zone="issue"
 			data-board-agent-session-target={dropTarget ?? undefined}
+			data-board-card-count={cardCount}
+			data-board-card-index={cardIndex}
+			data-board-column-title={columnTitle}
 			data-created-card-backdrop={isArriving || undefined}
 			data-created-card-arrival-id={arrivalId}
 			data-created-card-arrival-last={isFinalArrivingCard || undefined}
@@ -140,6 +165,9 @@ export function CreatedCardArrivalMotion({
 			style={motionStyle}
 			transition={motionTransition}
 		>
+			{insertionPosition ? (
+				<BoardCardInsertionLine position={insertionPosition} seam={insertionPosition === "before" && cardIndex > 0 ? "gap" : "edge"} />
+			) : null}
 			{children}
 		</motion.div>
 	);

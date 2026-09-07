@@ -7,12 +7,15 @@ const {
 	cancelBoardAgentSessionDragTransaction,
 	createBoardAgentSessionDragTransaction,
 	isCreateZoneEligible,
+	parseBoardCardGapZones,
+	parseBoardEmptyColumnGapZone,
 	parseListRowDropZone,
 	resolveBoardAgentSessionAttachProximity,
 	resolveBoardAgentSessionDropAction,
 	resolveBoardAgentSessionDropTarget,
 	resolveBoardCreateDropzoneDrag,
 	SESSION_ATTACH_PROXIMITY_RANGE_PX,
+	toChinFreeBoardCardBounds,
 	toListSessionDropIntent,
 	updateBoardAgentSessionDragTransaction,
 } = require("./board-agent-session-drag.ts");
@@ -501,6 +504,7 @@ test("malformed list-row attributes yield no zone", () => {
 		{ bounds, issueKey: "PAY-118", kind: "list-row", rowIndex: 0 },
 	);
 });
+
 
 test("cancelling a transaction clears its armed target and resolves to no action", () => {
 	const transaction = createBoardAgentSessionDragTransaction(

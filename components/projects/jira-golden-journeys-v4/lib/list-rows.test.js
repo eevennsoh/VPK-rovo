@@ -510,3 +510,60 @@ test("a multi-session drop keeps its created rows adjacent when other rows are h
 		["PAY-118", "PAY-119", "PAY-120", "PAY-121", "PAY-107", "PAY-101"],
 	);
 });
+
+test("insertWorkItemCard splices at a named slot and still appends without one", () => {
+	const card = { code: "PAY-900", title: "Gap", priority: "medium", tags: [] };
+	const toDo = (columns) => columns.find((column) => column.title === "To do");
+
+	assert.deepEqual(
+		toDo(insertWorkItemCard(COLUMNS, card, "To do", 1)).cards.map((entry) => entry.code),
+		["PAY-118", "PAY-900", "PAY-107"],
+	);
+	assert.deepEqual(
+		toDo(insertWorkItemCard(COLUMNS, card, "To do", 0)).cards.map((entry) => entry.code),
+		["PAY-900", "PAY-118", "PAY-107"],
+	);
+	// The column can change between the drag resolving and the drop committing,
+	// so an out-of-range slot clamps rather than tearing a hole in the array.
+	assert.deepEqual(
+		toDo(insertWorkItemCard(COLUMNS, card, "To do", 99)).cards.map((entry) => entry.code),
+		["PAY-118", "PAY-107", "PAY-900"],
+	);
+	assert.equal(toDo(insertWorkItemCard(COLUMNS, card, "To do", 1)).count, 3);
+	// Omitting the slot is what every create-well caller does.
+	assert.deepEqual(
+		toDo(insertWorkItemCard(COLUMNS, card, "To do")).cards.map((entry) => entry.code),
+		["PAY-118", "PAY-107", "PAY-900"],
+	);
+});
+
+test("createBoardWorkItemFromSession lands a cohort in drag order at one gap", () => {
+	// Replays what the board page does per cohort member: the slot advances and
+	// the columns from the previous create feed the next one.
+	let columns = COLUMNS;
+	const created = [];
+
+	["lw-a", "lw-b", "lw-c"].forEach((sessionId, memberIndex) => {
+		const result = createBoardWorkItemFromSession({
+			activity: { id: sessionId, label: sessionId, name: "Claude Code", state: "complete" },
+			columns,
+			columnTitle: "To do",
+			insertAtIndex: 1 + memberIndex,
+			linkSession: linkJiraKanbanAgentSession,
+			session: { id: sessionId, title: `Session ${sessionId}` },
+		});
+		columns = result.columns;
+		created.push(result.issueKey);
+	});
+
+	assert.deepEqual(
+		columns.find((column) => column.title === "To do").cards.map((card) => card.code),
+		["PAY-118", created[0], created[1], created[2], "PAY-107"],
+	);
+	assert.deepEqual(
+		columns
+			.find((column) => column.title === "To do")
+			.cards.flatMap((card) => (card.agentActivities ?? []).map((activity) => activity.id)),
+		["lw-a", "lw-b", "lw-c"],
+	);
+});

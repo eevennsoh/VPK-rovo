@@ -15,6 +15,12 @@ export interface JiraKanbanCreatedCardArrival {
 	readonly id: number;
 	readonly columnTitle: string;
 	readonly cardCodes: readonly string[];
+	/**
+	 * Whether the cards landed at the end of the column. The create well always
+	 * appends, so scrolling to the bottom reveals what it made. A gap drop lands
+	 * mid-column, already under the pointer, and must not yank the column away.
+	 */
+	readonly appended: boolean;
 }
 
 const JIRA_KANBAN_CREATED_CARD_BACKDROP_HOLD_MS = 600; // duration-slowest
@@ -24,24 +30,33 @@ export function useBoardCreatedCardArrival({
 	onCreate,
 }: Readonly<{
 	captureSession: (session: AgentSessionItem) => void;
-	onCreate?: (session: AgentSessionItem, columnTitle: string) => string | undefined;
+	onCreate?: (
+		session: AgentSessionItem,
+		columnTitle: string,
+		insertAtIndex?: number,
+	) => string | undefined;
 }>) {
 	const [createdCardArrival, setCreatedCardArrival] = useState<JiraKanbanCreatedCardArrival | null>(null);
 	const createdCardArrivalIdRef = useRef(0);
 
-	const handleCreate = useCallback((session: AgentSessionItem, columnTitle: string) => {
+	const handleCreate = useCallback((
+		session: AgentSessionItem,
+		columnTitle: string,
+		insertAtIndex?: number,
+	) => {
 		if (onCreate === undefined) return;
 
 		captureSession(session);
-		const cardCode = onCreate(session, columnTitle);
+		const cardCode = onCreate(session, columnTitle, insertAtIndex);
 		if (cardCode === undefined) return;
 
+		const appended = insertAtIndex === undefined;
 		createdCardArrivalIdRef.current += 1;
 		const id = createdCardArrivalIdRef.current;
 		setCreatedCardArrival((current) => (
 			current?.columnTitle === columnTitle
-				? { id, columnTitle, cardCodes: [...current.cardCodes, cardCode] }
-				: { id, columnTitle, cardCodes: [cardCode] }
+				? { id, columnTitle, cardCodes: [...current.cardCodes, cardCode], appended }
+				: { id, columnTitle, cardCodes: [cardCode], appended }
 		));
 	}, [captureSession, onCreate]);
 
@@ -100,6 +115,9 @@ export function useCreatedCardArrivalScroll({
 			arrival === undefined
 			|| arrival.columnTitle !== title
 			|| arrival.cardCodes.length === 0
+			// A gap drop lands where the pointer already is; scrolling to the end
+			// would pull the new card out from under the user.
+			|| !arrival.appended
 			|| lastScrolledArrivalIdRef.current === arrival.id
 		) return;
 
