@@ -51,7 +51,9 @@ test("the in-flow host previews the compact rail before a click pins the full co
 	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsed=\{!isPersistentExpanded\}/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /isEmbedded: isHovered \|\| isPersistentExpanded/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsedPresentation=\{isEmbedded \? "column" : "gutter"\}/u);
-	assert.match(IN_FLOW_COLUMN_SOURCE, /IN_FLOW_AGENT_SESSION_COLUMN_GAP_PX = 8/u);
+	// The absolute surface is translated into the leading gutter; a 16px
+	// footprint spacer resolves to the same visible 8px gap as status columns.
+	assert.match(IN_FLOW_COLUMN_SOURCE, /IN_FLOW_AGENT_SESSION_COLUMN_GAP_PX = 16/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /width: isEmbedded \? IN_FLOW_AGENT_SESSION_COLUMN_GAP_PX : 0/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /width: isEmbedded \? columnWidthPx : 0/u);
 	const pointerEnterSource = IN_FLOW_COLUMN_SOURCE.match(

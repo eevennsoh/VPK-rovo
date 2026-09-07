@@ -10,6 +10,7 @@ import { AGENT_SESSION_ITEMS, AgentSession } from "@/components/blocks/agent-ses
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { Button } from "@/components/ui/button";
+import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Icon } from "@/components/ui/icon";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollMaskEdgeOverlay } from "@/components/visual/scroll-mask";
@@ -18,6 +19,7 @@ import type { TextMorphConfig } from "@/components/visual/text-morphing/data";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
+import { AgentSessionColumnFilterMenu } from "./agent-session-column-filter-menu";
 import { AgentSessionColumnHeader } from "./agent-session-column-header";
 import { AgentSessionColumnHiddenFooter } from "./agent-session-column-hidden-footer";
 import { AgentSessionColumnOverflowMenu } from "./agent-session-column-overflow-menu";
@@ -31,6 +33,7 @@ import {
 	type AgentSessionColumnLayout,
 } from "./agent-session-column-frame";
 import type { AgentSessionColumnProps } from "./agent-session-column-types";
+import { useAgentSessionColumnFilter } from "./use-agent-session-column-filter";
 import { useAgentSessionColumnHidden } from "./use-agent-session-column-hidden";
 import { useUntrackedSelection } from "./use-untracked-selection";
 import { focusAgentSessionRow } from "./untracked-selection-keyboard";
@@ -269,6 +272,7 @@ export function AgentSessionColumn({
 	defaultCollapsed = false,
 	emptyLabel = "No untracked sessions",
 	expandedWidthPx = AGENT_SESSION_COLUMN_WIDTH_PX,
+	widthTransitionDisabled = false,
 	items = AGENT_SESSION_ITEMS,
 	listClassName,
 	newItemIds,
@@ -310,6 +314,16 @@ export function AgentSessionColumn({
 		visibleItems,
 	} = useAgentSessionColumnHidden(items);
 	const viewItems = view === "hidden" ? hiddenItems : visibleItems;
+	const {
+		filter,
+		filteredViewItems,
+		selectedCount: selectedFilterCount,
+		setFilter,
+	} = useAgentSessionColumnFilter({
+		getSuggestedWorkItemKey: sessionProps.getSuggestedWorkItemKey,
+		getSuggestedWorkItemKeys: sessionProps.getSuggestedWorkItemKeys,
+		viewItems,
+	});
 	const selectionTriage = useMemo(() => {
 		if (triage === undefined) {
 			return undefined;
@@ -349,7 +363,10 @@ export function AgentSessionColumn({
 	const columnRef = useRef<HTMLElement>(null);
 	const untrackedCount = count ?? visibleItems.length;
 	const showWellFooter = view === "hidden" || hiddenCount > 0;
-	const sessionCount = view === "hidden" ? hiddenItems.length : untrackedCount;
+	const hasActiveFilters = selectedFilterCount > 0;
+	const sessionCount = hasActiveFilters
+		? filteredViewItems.length
+		: (view === "hidden" ? hiddenItems.length : untrackedCount);
 	// Coding sessions are always activatable; person rows only when `canViewItem`
 	// allows it. Selection, notches, and board spotlight share this gate.
 	const canActivateItem = useCallback((item: AgentSessionItem) => (
@@ -384,17 +401,25 @@ export function AgentSessionColumn({
 		title: displayTitle,
 		triage: selectionTriage,
 		visibilityLabel: view === "hidden" ? "Unarchive" : "Archive",
-		visibleItems: viewItems,
+		visibleItems: filteredViewItems,
 	});
 	const overflowMenu = (
 		<AgentSessionColumnOverflowMenu
 			capturedItemIds={sessionProps.capturedItemIds}
 			getSuggestedWorkItemKey={sessionProps.getSuggestedWorkItemKey}
 			getSuggestedWorkItemKeys={sessionProps.getSuggestedWorkItemKeys}
-			items={viewItems}
+			items={filteredViewItems}
 			onLinkWorkItem={sessionProps.onLinkWorkItem}
 			size={headerSurface === "column" ? "icon-compact" : "icon"}
 			title={title}
+		/>
+	);
+	const filterMenu = (
+		<AgentSessionColumnFilterMenu
+			filter={filter}
+			items={viewItems}
+			onFilterChange={setFilter}
+			size={headerSurface === "column" ? "icon-compact" : "icon"}
 		/>
 	);
 	const newCount = newItemIds === undefined
@@ -580,7 +605,9 @@ export function AgentSessionColumn({
 			collapseLabel={headerSurface === "panel"
 				? "Collapse panel"
 				: `Collapse ${title} column`}
+			filter={filterMenu}
 			frame={columnFrame}
+			hasActiveFilters={hasActiveFilters}
 			model={untrackedSelection.header}
 			onAction={untrackedSelection.onHeaderAction}
 			onCollapse={handleToggleCollapsed}
@@ -595,13 +622,14 @@ export function AgentSessionColumn({
 			getSuggestedWorkItemKey={sessionProps.getSuggestedWorkItemKey}
 			getSuggestedWorkItemKeys={sessionProps.getSuggestedWorkItemKeys}
 			highlightedItemId={sessionProps.highlightedItemId}
-			items={visibleItems}
+			items={filteredViewItems}
 			maxVisibleItems={collapsedPresentation === "gutter"
 				? AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS
 				: undefined}
 			newItemIds={newItemIds}
 			notchShape={notchShape}
 			onArrivalComplete={handleArrivalComplete}
+			onArchiveSession={sessionProps.onArchiveSession}
 			onCreateWorkItem={sessionProps.onCreateWorkItem}
 			onItemHover={sessionProps.onItemHover}
 			onIntroComplete={onGutterIntroComplete}
@@ -614,8 +642,16 @@ export function AgentSessionColumn({
 	) : (
 		<>
 			<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-				{viewItems.length === 0 ? (
-					<p className="text-xs text-text-subtlest">{emptyLabel}</p>
+				{filteredViewItems.length === 0 ? (
+					hasActiveFilters ? (
+						<Empty width="narrow">
+							<EmptyHeader>
+								<EmptyTitle headingSize="xsmall">No matching sessions</EmptyTitle>
+							</EmptyHeader>
+						</Empty>
+					) : (
+						<p className="text-xs text-text-subtlest">{emptyLabel}</p>
+					)
 				) : (
 					<div
 						ref={listRef}
@@ -627,7 +663,7 @@ export function AgentSessionColumn({
 								headerSurface === "column" ? AGENT_SESSION_LIST_SPACING : null,
 								listClassName,
 							)}
-							items={viewItems}
+							items={filteredViewItems}
 							newItemIds={newItemIds}
 							onArrivalComplete={handleArrivalComplete}
 							{...sessionProps}
@@ -688,7 +724,10 @@ export function AgentSessionColumn({
 			onTransitionEnd={handleTransitionEnd}
 			tabIndex={-1}
 			style={{
-				transition: shouldReduceMotion ? "none" : AGENT_SESSION_COLUMN_TRANSITION,
+				transition:
+					shouldReduceMotion || widthTransitionDisabled
+						? "none"
+						: AGENT_SESSION_COLUMN_TRANSITION,
 				width: collapsed
 					? `${AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX}px`
 					: `${expandedWidthPx}px`,
