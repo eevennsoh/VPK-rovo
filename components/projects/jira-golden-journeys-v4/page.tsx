@@ -195,8 +195,15 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 		setBoardColumns,
 	});
 	// Sessions dropped into the list neither select the rows they land in nor
-	// leave a badge behind, so the flash is the whole acknowledgement. One drop
-	// of three marked sessions publishes one flash covering all three rows.
+	// leave a badge behind, so the flash carries the acknowledgement. One drop of
+	// three marked sessions publishes one flash covering all three rows.
+	//
+	// It only reaches rows the list is rendering. A created card arrives
+	// unassigned, and `filterJiraKanbanColumnsByAssignee` drops unassigned cards
+	// outright, so a create-drop under an active assignee filter lands a row the
+	// viewer cannot see. That gap predates the flash — the row used to be
+	// selected and equally hidden — and closing it is a separate decision about
+	// what a filtered drop should do.
 	const { flash: listRowFlash, flashRow: flashListRow } = useJiraListRowFlashSource();
 	// Unlink always lands in `detachedAgentSessionsByCard`. The Untracked list
 	// reads that map, so the session reappears there immediately. Team EU keeps

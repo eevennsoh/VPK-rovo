@@ -93,8 +93,8 @@ export function getAgentSessionAttachCellClassName(
 
 /**
  * One-shot acknowledgement after a session drop. Created rows are deliberately
- * left unchecked, so this flash is the only thing that says "here it is" — and
- * it is the same signal whether the row was created or attached to.
+ * left unchecked, so this flash is what says "here it is" — and it is the same
+ * signal whether the row was created or attached to.
  */
 export function getRowFlashCellClassName(
 	isFlashing: boolean,
