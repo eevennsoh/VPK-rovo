@@ -13,8 +13,10 @@ import { motion } from "motion/react";
 
 import {
 	sessionDragChipViewportStyle,
+	sessionTransferTintSeed,
 	type JiraIssueAgentSessionDragBinding,
 	type JiraIssueAgentSessionDragSource,
+	type JiraIssueAgentSessionTransferMember,
 } from "@/components/blocks/jira-issue/agent-session-drag";
 import { useSessionDragChipPointer } from "@/components/blocks/jira-issue/use-session-drag-chip-pointer";
 import {
@@ -33,6 +35,26 @@ const SESSION_DRAG_ORIGIN: PointerDragPosition = { x: 0, y: 0 };
 /** Same 2px threshold as `usePointerDrag` — publish/arm only after a real move. */
 const SESSION_DRAG_PUBLISH_THRESHOLD_PX = 2;
 const SESSION_DRAG_CHIP_DISTANCE_PX = 12;
+
+/**
+ * Identity the fusion overlay needs to draw this member: the avatar URL when
+ * one exists, and a stable seed for the deterministic colour fallback when it
+ * does not — most agents identify by a brand logo component, not an image.
+ */
+function toSessionTransferMember(
+	member: AgentSessionItem,
+): JiraIssueAgentSessionTransferMember {
+	return {
+		avatarSrc: member.agent.avatarSrc,
+		id: member.id,
+		name: member.agent.name,
+		tintSeed: sessionTransferTintSeed(
+			member.agent.brandName,
+			member.agent.vpkLogo,
+			member.agent.name,
+		),
+	};
+}
 
 export function AgentSessionMediumDrag({
 	cohort,
@@ -87,11 +109,8 @@ export function AgentSessionMediumDrag({
 				transfer: {
 					key: next.key,
 					members: [
-						{ id: first.id, name: first.agent.name },
-						...rest.map((member) => ({
-							id: member.id,
-							name: member.agent.name,
-						})),
+						toSessionTransferMember(first),
+						...rest.map(toSessionTransferMember),
 					],
 				},
 			});
@@ -251,6 +270,7 @@ export function AgentSessionMediumDrag({
 			aria-hidden
 			className="pointer-events-none flex w-fit max-w-full -translate-x-1/2 -translate-y-1/2 items-center justify-start"
 			data-session-chip-centered=""
+			data-session-fusion-chip=""
 		>
 			<AgentSessionCohortChip
 				cohort={ghostCohort ?? singletonSessionCohort(item)}
@@ -279,7 +299,7 @@ export function AgentSessionMediumDrag({
 				className={cn(
 					"min-w-0",
 					(isDragging || isFollower) && "pointer-events-none absolute inset-x-0 top-0 opacity-0",
-					sessionDragBind && "cursor-grab touch-none select-none",
+					sessionDragBind && "touch-none select-none",
 					isDragging && "cursor-grabbing [&_article]:cursor-grabbing",
 				)}
 				inert={isDragging || isFollower || undefined}

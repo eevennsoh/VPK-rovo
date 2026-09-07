@@ -30,6 +30,7 @@ const EXPERIMENTAL_CARD_SOURCE = readProjectFile(
 const CREATE_WORK_ITEM_DROP_ZONE_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/components/create-work-item-drop-zone.tsx",
 );
+const JIRA_DROPZONE_SOURCE = readProjectFile("components/blocks/jira-dropzone/jira-dropzone.tsx");
 const CREATE_WORK_ITEM_EXCLUSIVE_PROXIMITY_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/lib/create-work-item-exclusive-proximity.ts",
 );
@@ -162,7 +163,7 @@ test("chin-row agent activity indicators follow the design variation", () => {
 	assert.match(INDICATORS_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
 	assert.match(
 		INDICATORS_SOURCE,
-		/renderTeamEuAgentActivityIndicator[\s\S]*state === "awaiting-input" \? \(\s*<QuestionCircleFilledIcon color=\{token\("color\.icon\.information"\)\} label="" size="small" \/>\s*\) : \(\s*<Spinner label="" size="xs" \/>\s*\)/u,
+		/renderTeamEuAgentActivityIndicator[\s\S]*state === "awaiting-input" \? \(\s*<QuestionCircleFilledIcon color=\{token\("color\.icon\.information"\)\} label="" size="small" \/>\s*\) : \(\s*<Spinner label="" pulse size="default" variant="experimental" \/>\s*\)/u,
 	);
 	// A finished run gets the filled success status in the ADS success green,
 	// pairing with the filled error status a failed run already shows. The
@@ -274,27 +275,27 @@ test("both design variations reveal compact magnetic create targets that expand 
 	);
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
-		/sessionDragTransaction && dropZoneLabel \? \(/u,
+		/dropZoneLabel \? \([\s\S]*<JiraDropzone[\s\S]*drag=\{drag\}[\s\S]*label=\{dropZoneLabel\}[\s\S]*title=\{title\}/u,
 	);
 	assert.match(
-		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
-		/const expanded = proximity !== "outside";/u,
+		JIRA_DROPZONE_SOURCE,
+		/const expanded = receiving \|\| proximity !== "outside";/u,
 	);
 	assert.match(
-		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		JIRA_DROPZONE_SOURCE,
 		/expanded \? "h-16 text-sm leading-5" : "h-6 text-xs leading-4"/u,
 	);
 	assert.match(
-		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
-		/armed \? "border-border-selected bg-bg-selected text-text-selected" : "border-border bg-surface text-text-subtlest"/u,
+		JIRA_DROPZONE_SOURCE,
+		/selected[\s\S]*\? "border-border-selected bg-bg-selected text-text-selected"[\s\S]*: "border-border bg-surface text-text-subtlest"/u,
 	);
 	assert.doesNotMatch(
-		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		JIRA_DROPZONE_SOURCE,
 		/bg-\[var\(--ds-|transparent|bg-transparent/u,
 		"create wells must use an opaque semantic surface fill, not a raw token or transparent hole",
 	);
 	assert.match(
-		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		JIRA_DROPZONE_SOURCE,
 		/transition-\[height,background-color\] duration-normal ease-out-practical motion-reduce:transition-none/u,
 	);
 	assert.match(
@@ -306,7 +307,7 @@ test("both design variations reveal compact magnetic create targets that expand 
 		/export const CREATE_WORK_ITEM_PROXIMITY_HOVER_AREA_PX = 120;/u,
 	);
 	assert.match(
-		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		JIRA_DROPZONE_SOURCE,
 		/import \{ useMagneticProximity \} from "@\/components\/ui-custom\/hooks\/use-magnetic-proximity";/u,
 	);
 	assert.match(
@@ -314,11 +315,11 @@ test("both design variations reveal compact magnetic create targets that expand 
 		/import \{ useExclusiveCreateWellProximity \} from "\.\/create-work-item-exclusive-proximity-context";/u,
 	);
 	assert.match(
-		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
-		/const magnet = useMagneticProximity\(targetRef, \{\s*hoverArea: CREATE_WORK_ITEM_PROXIMITY_HOVER_AREA_PX,\s*\}\);/u,
+		JIRA_DROPZONE_SOURCE,
+		/const magnet = useMagneticProximity\(targetRef, \{\s*hoverArea: JIRA_DROPZONE_HOVER_AREA_PX,\s*\}\);/u,
 	);
 	assert.match(
-		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		JIRA_DROPZONE_SOURCE,
 		/useMotionValueEvent\(magnet\.proximity, "change", setRawProximity\);/u,
 	);
 	assert.match(
@@ -326,8 +327,8 @@ test("both design variations reveal compact magnetic create targets that expand 
 		/const isExclusiveWinner = useExclusiveCreateWellProximity\(title, targetRef\);/u,
 	);
 	assert.match(
-		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
-		/const proximity = isExclusiveWinner \? rawProximity : "outside";/u,
+		JIRA_DROPZONE_SOURCE,
+		/const proximity = exclusiveWinner \? rawProximity : "outside";/u,
 	);
 	assert.match(
 		CREATE_WORK_ITEM_EXCLUSIVE_PROXIMITY_SOURCE,
@@ -346,12 +347,12 @@ test("both design variations reveal compact magnetic create targets that expand 
 		/const armed = Boolean\([\s\S]*sessionDragTransaction\?\.target\?\.kind === "create"[\s\S]*sessionDragTransaction\.target\.columnTitle === title,/u,
 	);
 	assert.match(
-		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
-		/<motion\.div[\s\S]*x: isExclusiveWinner \? magnet\.x : 0,[\s\S]*ref=\{targetRef\}[\s\S]*<motion\.span[\s\S]*x: isExclusiveWinner \? magnet\.labelX : 0,/u,
+		JIRA_DROPZONE_SOURCE,
+		/<motion\.div[\s\S]*x: pinMagnet \? 0 : magnet\.x,[\s\S]*ref=\{targetRef\}[\s\S]*<motion\.span[\s\S]*x: pinMagnet \? 0 : magnet\.labelX,/u,
 	);
-	assert.match(CREATE_WORK_ITEM_DROP_ZONE_SOURCE, /data-board-agent-session-drop-zone="create"/u);
+	assert.match(JIRA_DROPZONE_SOURCE, /data-board-agent-session-drop-zone="create"/u);
 	assert.match(
-		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		JIRA_DROPZONE_SOURCE,
 		/data-board-agent-session-column-title=\{title\}/u,
 	);
 	assert.match(
@@ -549,7 +550,7 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(PAGE_SOURCE, /onViewChange=\{tabOwnsView \? undefined : setWorkItemView\}/u);
 	assert.match(
 		PAGE_SOURCE,
-		/renderListContent=\{\(\s*columns,\s*\{\s*agentSessionDropIntent,\s*inFlowAgentSessionColumn,\s*onTrailingContentUnderlapChange,\s*scrollEndInset,\s*trailingOverlayRef,\s*\},\s*\) =>/u,
+		/renderListContent=\{\(\s*columns,\s*\{\s*agentSessionDropIntent,\s*onTrailingContentUnderlapChange,\s*scrollEndInset,\s*trailingOverlayRef,\s*\},\s*\) =>/u,
 	);
 	assert.match(PAGE_SOURCE, /useJiraGoldenJourneysV4List/u);
 	assert.match(PAGE_SOURCE, /<JiraList\s+\{\.\.\.listProps\}/u);
@@ -581,7 +582,7 @@ test("the Work items header switches between Board and List views with their ico
 	);
 	assert.match(
 		PAGE_SOURCE,
-		/"min-h-0 flex-1 overflow-hidden pb-4 md:pb-5"[\s\S]*inFlowAgentSessionColumn \? "ps-2" : "ps-4 md:ps-5"[\s\S]*scrollEndInset > 0 \? "pe-0" : "pe-4 md:pe-5"[\s\S]*<JiraList\s+\{\.\.\.listProps\}/u,
+		/"min-h-0 flex-1 overflow-hidden pb-4 ps-6 md:pb-5"[\s\S]*scrollEndInset > 0 \? "pe-0" : "pe-4 md:pe-5"[\s\S]*<JiraList\s+\{\.\.\.listProps\}/u,
 	);
 	assert.doesNotMatch(
 		PAGE_SOURCE,
@@ -604,9 +605,8 @@ test("the Work items header switches between Board and List views with their ico
 		EXPERIMENTAL_PAGE_SOURCE,
 		/renderListContent\?: \(\s*columns: readonly JiraKanbanColumnData\[\],\s*context: ExperimentalJiraKanbanListRenderContext,\s*\) => ReactNode;/u,
 	);
-	assert.match(PAGE_SOURCE, /inFlowAgentSessionColumn \? "ps-2" : "ps-4 md:ps-5"/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /inFlowAgentSessionColumn: boolean;/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /inFlowAgentSessionColumn: showInFlowAgentSessionColumn,/u);
+	assert.match(PAGE_SOURCE, /pb-4 ps-6 md:pb-5/u);
+	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /inFlowAgentSessionColumn/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /agentSessionDropIntent: boardSessionDrag\.listDropIntent/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCreate: agentSessionHandlers.onCreateWorkItem/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onListCreate: onListAgentSessionCreate \? handleListAgentSessionCreate : undefined/u);
@@ -728,11 +728,15 @@ test("the route pins the shared Agent Session column beside Jira statuses", () =
 	const scrollportIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<section");
 	assert.ok(columnIndex > 0, "expected the board to render the Agent Session column");
 	assert.ok(columnIndex < scrollportIndex, "expected untracked work to stay pinned before the status scrollport");
-	assert.match(EXPERIMENTAL_BOARD_SOURCE, /agentSessionColumn \|\| inFlowAgentSessionColumn \? "ps-2" : "ps-6"/u);
 	assert.match(
-		EXPERIMENTAL_PAGE_SOURCE,
-		/<ExperimentalJiraKanban[\s\S]*inFlowAgentSessionColumn=\{showInFlowAgentSessionColumn\}/u,
+		EXPERIMENTAL_BOARD_SOURCE,
+		/className="flex min-h-full w-max min-w-full items-stretch"\s*style=\{\{ paddingInlineStart: columnRowPaddingInlineStart \}\}/u,
 	);
+	assert.doesNotMatch(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/"flex min-h-full w-max min-w-full items-stretch ps-6"/u,
+	);
+	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /inFlowAgentSessionColumn/u);
 });
 
 test("the Panel design variant floats untracked work over the board and the list", () => {

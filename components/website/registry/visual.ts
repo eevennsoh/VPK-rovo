@@ -17,6 +17,9 @@ export const VISUAL_DEMOS: Record<string, ComponentType> = {
 	"border-beam": dynamic(() => import("../demos/visual/border-beam-demo"), {
 		ssr: false,
 	}),
+	"dropzone-effect": dynamic(() => import("../demos/visual/dropzone-effect-demo"), {
+		ssr: false,
+	}),
 	heatmap: dynamic(() => import("../demos/visual/heatmap-demo"), {
 		ssr: false,
 	}),

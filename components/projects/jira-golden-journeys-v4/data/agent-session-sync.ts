@@ -17,7 +17,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS = [
 		memberIds: ["maya", "venn"],
 		shortTitle: "Challenge webhook gap",
 		sourceTitle: "PAY-107",
-		timeLabel: "just now",
+		timeLabel: "Just now",
 		title: "Challenge webhook gap notes just landed from a local Cursor session",
 	},
 	{
@@ -31,7 +31,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS = [
 		memberIds: ["jordan", "venn"],
 		shortTitle: "Sandbox 401 root cause",
 		sourceTitle: "PAY-112",
-		timeLabel: "just now",
+		timeLabel: "Just now",
 		title: "Sandbox 401 root cause just arrived from a local Codex session",
 	},
 	{
@@ -45,7 +45,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS = [
 		memberIds: ["priya", "jordan"],
 		shortTitle: "Replay-risk blast radius",
 		sourceTitle: "PAY-118",
-		timeLabel: "just now",
+		timeLabel: "Just now",
 		title: "Replay-risk blast radius just synced from a local Rovo session",
 	},
 	{
@@ -59,7 +59,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS = [
 		memberIds: ["venn", "jordan"],
 		shortTitle: "Kill switch rollout notes",
 		sourceTitle: "PAY-121",
-		timeLabel: "just now",
+		timeLabel: "Just now",
 		title: "Kill switch rollout notes just appeared from a local Claude session",
 	},
 	{
@@ -73,7 +73,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS = [
 		memberIds: ["maya", "priya"],
 		shortTitle: "Retry telemetry review",
 		sourceTitle: "PAY-115",
-		timeLabel: "just now",
+		timeLabel: "Just now",
 		title: "Retry telemetry review just synced from a local Codex session",
 	},
 	{
@@ -87,7 +87,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS = [
 		memberIds: ["jordan", "maya"],
 		shortTitle: "Contract test gaps",
 		sourceTitle: "PAY-119",
-		timeLabel: "just now",
+		timeLabel: "Just now",
 		title: "Contract test gaps just landed from a local Cursor session",
 	},
 	{
@@ -101,7 +101,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS = [
 		memberIds: ["priya", "venn"],
 		shortTitle: "Deprecation copy pass",
 		sourceTitle: "PAY-104",
-		timeLabel: "just now",
+		timeLabel: "Just now",
 		title: "Deprecation copy pass just arrived from a local Rovo session",
 	},
 	{
@@ -115,7 +115,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS = [
 		memberIds: ["venn", "priya"],
 		shortTitle: "Release gate decision",
 		sourceTitle: "PAY-132",
-		timeLabel: "just now",
+		timeLabel: "Just now",
 		title: "Release gate decision just synced from a local Claude session",
 	},
 ] as const satisfies readonly JiraGoldenJourneysV4SyncSession[];

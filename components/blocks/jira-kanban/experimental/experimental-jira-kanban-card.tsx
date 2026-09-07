@@ -9,6 +9,7 @@ import {
 	type JiraIssueAgentActivityIndicatorRenderer,
 	type JiraIssueAgentActivityLayout,
 	type JiraIssueAgentSessionDragControl,
+	type JiraIssueAgentLinkFlash,
 	type JiraIssueChrome,
 	type JiraIssueGenerativeActionConfig,
 	type JiraIssueGenerativeActionPresentation,
@@ -30,7 +31,10 @@ import type {
 interface ExperimentalJiraKanbanCardProps {
 	active: boolean;
 	agentActivityLayout: JiraIssueAgentActivityLayout;
+	/** One-shot brand sweep across the chin rows a drop just added. */
+	agentLinkFlash?: JiraIssueAgentLinkFlash;
 	agentSessionDragControl?: JiraIssueAgentSessionDragControl;
+	agentSessionTargetHighlighted: boolean;
 	card: JiraKanbanCardData;
 	chrome: JiraIssueChrome;
 	columnTitle: string;
@@ -87,7 +91,9 @@ function toSessionFlyoutPriority(priority: JiraKanbanCardData["priority"]) {
 export function ExperimentalJiraKanbanCard({
 	active,
 	agentActivityLayout,
+	agentLinkFlash,
 	agentSessionDragControl,
+	agentSessionTargetHighlighted,
 	capturedItemIds,
 	card,
 	chrome,
@@ -154,8 +160,10 @@ export function ExperimentalJiraKanbanCard({
 			active={active}
 			agentActivities={card.agentActivities}
 			agentActivityLayout={agentActivityLayout}
+			agentLinkFlash={agentLinkFlash}
 			agentActivityMode={agentActivityMode}
 			agentSessionDragControl={agentSessionDragControl}
+			agentSessionTargetPreview={{ highlighted: agentSessionTargetHighlighted }}
 			agentSessionFlyout={{
 			assignee: card.assignee
 				? { name: card.assignee.name, src: card.assignee.avatarSrc }

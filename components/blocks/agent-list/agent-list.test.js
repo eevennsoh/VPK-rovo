@@ -795,7 +795,7 @@ test("local sessions show a static timestamp, devices icon, and machine name", (
 	assert.doesNotMatch(invokerAvatarSource, /Tooltip/u);
 	assert.match(DATA_SOURCE, /host: "local"/u);
 	assert.match(DATA_SOURCE, /machineName: "Geoff’s MacBook"/u);
-	assert.match(DATA_SOURCE, /timeLabel: "3 mins ago"/u);
+	assert.match(DATA_SOURCE, /timeLabel: "3m ago"/u);
 	assert.match(DETAIL_SOURCE, /Local sessions swap the live runtime and agent name/u);
 	assert.match(DETAIL_SOURCE, /a devices icon, and the machine name/u);
 	assert.doesNotMatch(DETAIL_SOURCE, /16px invoker avatar, and the machine name/u);

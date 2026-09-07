@@ -40,6 +40,18 @@ export function toAgentSessionVisibleIdentity(item: AgentSessionItem): AgentList
 export type AgentSessionVariant = "large" | "medium-detached" | "medium-attached" | "small";
 
 /**
+ * Finder-style modifiers for a selection gesture.
+ *
+ * `additive` is Command on macOS and Control elsewhere. `range` is Shift.
+ * Together they match file browsing: click replaces, Shift selects the
+ * span from the anchor, Command toggles, Shift+Command unions the span.
+ */
+export interface AgentSessionSelectionGesture {
+	readonly additive: boolean;
+	readonly range: boolean;
+}
+
+/**
  * Per-row triage affordances, or `null` on a surface that has none.
  *
  * Mark and Approve fail independently: a captured row can still be marked
@@ -54,8 +66,9 @@ export interface AgentSessionTriageRow {
 		readonly cohort: () => SessionCohort<AgentSessionItem>;
 	} | null;
 	readonly mark: {
+		readonly isLead: boolean;
 		readonly isMarked: boolean;
-		readonly onToggle: () => void;
+		readonly onActivate: (gesture: AgentSessionSelectionGesture) => void;
 	} | null;
 }
 

@@ -5403,7 +5403,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 434,
+			"manifestEntryCount": 437,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5445,7 +5445,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 110,
+				"entryCount": 112,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5713,6 +5713,12 @@
 					},
 					{
 						"category": "blocks",
+						"slug": "jira-dropzone",
+						"name": "Jira Dropzone",
+						"importPath": "@/components/blocks/jira-dropzone"
+					},
+					{
+						"category": "blocks",
 						"slug": "jira-epic",
 						"name": "Jira Epic",
 						"importPath": "@/components/blocks/jira-epic"
@@ -5734,6 +5740,12 @@
 						"slug": "jira-kanban",
 						"name": "Jira Kanban",
 						"importPath": "@/components/blocks/jira-kanban"
+					},
+					{
+						"category": "blocks",
+						"slug": "jira-linking",
+						"name": "Jira Linking",
+						"importPath": "@/components/blocks/jira-linking"
 					},
 					{
 						"category": "blocks",
@@ -7443,7 +7455,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 103,
+				"entryCount": 104,
 				"entries": [
 					{
 						"category": "visual",
@@ -7540,6 +7552,12 @@
 						"slug": "dithering",
 						"name": "Dithering",
 						"importPath": "@/components/website/demos/visual/shaders/dithering"
+					},
+					{
+						"category": "visual",
+						"slug": "dropzone-effect",
+						"name": "Dropzone Effect",
+						"importPath": "@/components/visual/dropzone-effect"
 					},
 					{
 						"category": "visual",

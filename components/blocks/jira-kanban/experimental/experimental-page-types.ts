@@ -27,7 +27,6 @@ export interface ExperimentalJiraKanbanListRenderContext {
 	 * True when Untracked is the in-flow column (Panel off). The list drops
 	 * its leading inset so it sits on the same rhythm as board statuses.
 	 */
-	inFlowAgentSessionColumn: boolean;
 	onTrailingContentUnderlapChange: (hasUnderlap: boolean) => void;
 	scrollEndInset: number;
 	trailingOverlayRef: RefObject<HTMLElement | null>;

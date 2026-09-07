@@ -49,7 +49,6 @@ export const AGENT_SESSION_NOTCH_LENGTH = {
 
 /** Circular user-dot diameter in px; the revealed photo is capped at 12px. */
 export const AGENT_SESSION_USER_NOTCH_DIAMETER = {
-	newRest: 8,
 	peak: 12,
 	rest: 4,
 } as const;
@@ -144,15 +143,9 @@ export function toAgentSessionNotchLength(magnification: number, isNew: boolean)
 }
 
 /** Diameter in px for a collapsed user dot at `magnification`. */
-export function toAgentSessionUserNotchDiameter(
-	magnification: number,
-	isNew: boolean,
-): number {
-	const rest = isNew
-		? AGENT_SESSION_USER_NOTCH_DIAMETER.newRest
-		: AGENT_SESSION_USER_NOTCH_DIAMETER.rest;
-	return rest + (
-		AGENT_SESSION_USER_NOTCH_DIAMETER.peak - rest
+export function toAgentSessionUserNotchDiameter(magnification: number): number {
+	return AGENT_SESSION_USER_NOTCH_DIAMETER.rest + (
+		AGENT_SESSION_USER_NOTCH_DIAMETER.peak - AGENT_SESSION_USER_NOTCH_DIAMETER.rest
 	) * toClampedMagnification(magnification);
 }
 
