@@ -21,6 +21,7 @@ import {
 	NO_SELECTION_MARKS,
 	reduceSelectionMarks,
 	resolveLeadSpotlight,
+	resolveUntrackedSelectionGesture,
 	resolveVisibleLeadId,
 	selectEffectiveSelection,
 	type HeaderActionId,
@@ -102,15 +103,16 @@ export function useUntrackedSelection<T>(
 	);
 
 	const activate = useCallback((id: string, gesture: AgentSessionSelectionGesture) => {
+		const effectiveGesture = resolveUntrackedSelectionGesture(gesture, selection);
 		const event: SelectionEvent = {
-			gesture,
+			gesture: effectiveGesture,
 			id,
 			orderedIds,
 			type: "activate",
 		};
 		const next = reduceSelectionMarks(marks, event);
 		dispatch(event);
-		const spotlight = resolveLeadSpotlight(marks, next, gesture, id);
+		const spotlight = resolveLeadSpotlight(marks, next, effectiveGesture, id);
 		switch (spotlight.kind) {
 			case "clear":
 				input.onLeadItem?.(null);
@@ -129,7 +131,7 @@ export function useUntrackedSelection<T>(
 				return exhaustive;
 			}
 		}
-	}, [input, marks, orderedIds]);
+	}, [input, marks, orderedIds, selection]);
 
 	const rows = useMemo(() => {
 		const next = new Map<string, AgentSessionTriageRow>();

@@ -156,10 +156,11 @@ export function AgentSession({
 		<>
 			{isMultiSelectList ? (
 				<p className="sr-only" id={selectionHintId}>
-					Shift-click selects a range. Command-click on a Mac, or Control-click
-					on Windows, adds or removes individual sessions. Arrow keys move the
-					selection. Shift-arrow extends it. Command-A or Control-A selects all.
-					Escape clears.
+					Click additional sessions to add or remove them. Shift-click selects
+					a range. Command-click on a Mac, or Control-click on Windows, also
+					adds or removes individual sessions. Arrow keys move the selection.
+					Shift-arrow extends it. Command-A or Control-A selects all. Escape
+					clears.
 				</p>
 			) : null}
 			<ul

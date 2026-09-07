@@ -5,11 +5,10 @@ import type { ComponentType, CSSProperties, ReactElement } from "react";
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
 import AddIcon from "@atlaskit/icon/core/add";
 import ArchiveBoxIcon from "@atlaskit/icon/core/archive-box";
-import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
-import CheckCircleUncheckedIcon from "@atlaskit/icon/core/check-circle-unchecked";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import ShrinkHorizontalIcon from "@atlaskit/icon/core/shrink-horizontal";
+import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -129,7 +128,6 @@ function SelectAllButton({
 	allSelected: boolean;
 	onAction: (id: HeaderActionId) => void;
 }>): ReactElement {
-	const IconComponent = allSelected ? CheckCircleIcon : CheckCircleUncheckedIcon;
 	const label = allSelected ? SELECT_ALL_ACTION_COPY.deselect : SELECT_ALL_ACTION_COPY.select;
 
 	return (
@@ -146,8 +144,8 @@ function SelectAllButton({
 						variant="ghost"
 					>
 						<Icon
-							className={allSelected ? "text-icon-selected" : "text-icon-subtle"}
-							render={<IconComponent label="" />}
+							className="text-icon-selected"
+							render={<StatusSuccessIcon label="" />}
 						/>
 					</Button>
 				</TooltipTrigger>
