@@ -216,6 +216,8 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	agentActivities?: readonly JiraIssueAgentActivity[];
 	agentDoneRuns?: readonly JiraIssueCompletedAgentRun[];
 	agentActivityMode?: JiraIssueAgentActivityMode;
+	/** Blue-subtlest relationship preview while an Agent Session column row targets this issue. */
+	agentSessionTargetHighlighted?: boolean;
 	/** Merged collapses active agents into one prioritized chin row; split gives each agent its own row. */
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
 	/** One-shot brand sweep across the chin row a session was just linked into. */
@@ -267,6 +269,7 @@ function JiraIssueDefault({
 	agentActivityLayout = "merged",
 	agentSessionFlyout,
 	agentSessionDragControl,
+	agentSessionTargetHighlighted = false,
 	agentDoneRuns = [],
 	agentLinkFlash,
 	agentSessionTransfer,
@@ -409,7 +412,8 @@ function JiraIssueDefault({
 	const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working"
 		|| resolvedAgentActivityMode === "awaiting-input"
 		|| hasAgentDoneNotification
-		|| isAttachingSession;
+		|| isAttachingSession
+		|| agentSessionTargetHighlighted;
 	const hasAgentActivityChin = activeAgentActivities.length > 0
 		|| hasAgentDoneNotification
 		|| isAttachingSession;
@@ -426,11 +430,12 @@ function JiraIssueDefault({
 	// passed within the proximity range.
 	const usesAgentActivityShell = hasAgentActivityPresentation
 		|| Boolean(agentSessionTransfer)
-		|| agentSessionDragControl !== undefined;
+		|| agentSessionDragControl !== undefined
+		|| agentSessionTargetHighlighted;
 	const chromeStyles = resolveJiraIssueChrome(chrome);
 	const usesStrokeChrome = chrome === "stroke";
 	const usesCompactVisual = compact || usesStrokeChrome;
-	const hasInteractiveContent = showMoreAction || hasSubtasks || Boolean(parentEpicControl) || hasAgentActivityPresentation || Boolean(generativeAction) || Boolean(agentSessionTransfer) || usesCompactVisual;
+	const hasInteractiveContent = showMoreAction || hasSubtasks || Boolean(parentEpicControl) || hasAgentActivityPresentation || Boolean(generativeAction) || Boolean(agentSessionTransfer) || usesCompactVisual || agentSessionTargetHighlighted;
 	const shouldRenderIssueClickButton = Boolean(props.onClick && !parentEpicControl);
 	const issueRowsClassName = cn("pt-1", !(hasSubtasks && resolvedSubtasksExpanded) && "pb-1");
 	const layoutTransition = getJiraIssueLayoutTransition(shouldReduceMotion);
@@ -753,7 +758,10 @@ function JiraIssueDefault({
 			<motion.div
 				aria-hidden="true"
 				animate={shouldReduceMotion ? undefined : agentActivityBackdropAnimation}
-				className="pointer-events-none absolute bg-bg-neutral"
+				className={cn(
+					"pointer-events-none absolute transition-colors duration-xxshort ease-out-practical motion-reduce:transition-none",
+					agentSessionTargetHighlighted ? "bg-bg-accent-blue-subtlest" : "bg-bg-neutral",
+				)}
 				data-slot="jira-issue-agent-backdrop"
 				initial={false}
 				style={shouldReduceMotion ? { ...AGENT_ACTIVITY_BACKDROP_STYLE, ...agentActivityBackdropAnimation } : AGENT_ACTIVITY_BACKDROP_STYLE}

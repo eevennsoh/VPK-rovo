@@ -34,6 +34,7 @@ interface ExperimentalJiraKanbanCardProps {
 	/** One-shot brand sweep across the chin rows a drop just added. */
 	agentLinkFlash?: JiraIssueAgentLinkFlash;
 	agentSessionDragControl?: JiraIssueAgentSessionDragControl;
+	agentSessionTargetHighlighted: boolean;
 	card: JiraKanbanCardData;
 	chrome: JiraIssueChrome;
 	columnTitle: string;
@@ -92,6 +93,7 @@ export function ExperimentalJiraKanbanCard({
 	agentActivityLayout,
 	agentLinkFlash,
 	agentSessionDragControl,
+	agentSessionTargetHighlighted,
 	capturedItemIds,
 	card,
 	chrome,
@@ -161,6 +163,7 @@ export function ExperimentalJiraKanbanCard({
 			agentLinkFlash={agentLinkFlash}
 			agentActivityMode={agentActivityMode}
 			agentSessionDragControl={agentSessionDragControl}
+			agentSessionTargetHighlighted={agentSessionTargetHighlighted}
 			agentSessionFlyout={{
 			assignee: card.assignee
 				? { name: card.assignee.name, src: card.assignee.avatarSrc }
