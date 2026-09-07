@@ -765,6 +765,7 @@ test("the untracked-work flyout offers the first candidate key", () => {
 	assert.match(UNTRACKED_CARD_SOURCE, /const linkLabel = hasIssueKey \? `Link to \$\{issueKey\}` : "Link work item";/u);
 	assert.match(FLYOUT_SOURCE, /captureLocked \|\| onLinkWorkItem === undefined/u);
 	assert.match(INDEX_SOURCE, /onArchiveSession=\{flyoutActions\.onArchiveSession\}/u);
+	assert.match(INDEX_SOURCE, /archiveActionLabel=\{visibilityLabel\}/u);
 });
 
 test("collapsed session rail forwards archive capability to its shared flyout", () => {

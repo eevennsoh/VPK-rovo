@@ -91,6 +91,8 @@ export interface JiraSessionFlyoutSurfaceProps {
 	capturedSessionIds?: ReadonlySet<string>;
 	/** Archives the session from the untracked-work flyout. Omit to expose the action as unavailable. */
 	onArchiveSession?: (session: JiraSidebarSessionItem) => void;
+	/** Flyout Archive control copy. Defaults to Archive; pass Unarchive in the archived view. */
+	archiveActionLabel?: string;
 	/** Adds the session below the suggested work item. Omit to expose the menu option as unavailable. */
 	onAddAsSubtask?: (session: JiraSidebarSessionItem, workItemKey: string) => void;
 	/** Creates a work item from the session. Omit to expose the action as unavailable. */
@@ -571,6 +573,7 @@ export function JiraSessionFlyoutBody({
 type JiraSessionFlyoutPayloadProps = Readonly<
 	Pick<
 		JiraSessionFlyoutSurfaceProps,
+		| "archiveActionLabel"
 		| "capturedSessionIds"
 		| "onArchiveSession"
 		| "onAddAsSubtask"
@@ -584,6 +587,7 @@ type JiraSessionFlyoutPayloadProps = Readonly<
 >;
 
 type JiraSessionUntrackedWorkActions = Readonly<{
+	archiveActionLabel: string;
 	onArchiveSession?: () => void;
 	onAddAsSubtask?: (workItemKey: string) => void;
 	onCreateWorkItem?: () => void;
@@ -591,6 +595,7 @@ type JiraSessionUntrackedWorkActions = Readonly<{
 }>;
 
 function resolveJiraSessionUntrackedWorkActions({
+	archiveActionLabel = "Archive",
 	capturedSessionIds,
 	onArchiveSession,
 	onAddAsSubtask,
@@ -601,6 +606,7 @@ function resolveJiraSessionUntrackedWorkActions({
 	const captureLocked = capturedSessionIds?.has(session.id) ?? false;
 
 	return {
+		archiveActionLabel,
 		onArchiveSession: onArchiveSession === undefined
 			? undefined
 			: () => onArchiveSession(session),
@@ -670,6 +676,7 @@ function JiraSessionFlyoutPayload({ content, ...props }: JiraSessionFlyoutPayloa
  * the shell snaps with no enter, exit, position, or content-switch motion.
  */
 export function JiraSessionFlyoutSurface({
+	archiveActionLabel,
 	capturedSessionIds,
 	content = "details",
 	handle,
@@ -723,6 +730,7 @@ export function JiraSessionFlyoutSurface({
 					>
 						{payload ? (
 							<JiraSessionFlyoutPayload
+								archiveActionLabel={archiveActionLabel}
 								capturedSessionIds={capturedSessionIds}
 								content={content}
 								onArchiveSession={onArchiveSession}

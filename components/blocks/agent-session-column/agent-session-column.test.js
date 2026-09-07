@@ -730,6 +730,8 @@ test("the column owns a hidden-id set and filters items before AgentSession", ()
 	assert.match(INDEX_SOURCE, /onToggleVisibility\?\.\(item\)/u);
 	assert.match(INDEX_SOURCE, /onToggleVisibility=\{handleToggleVisibility\}/u);
 	assert.match(INDEX_SOURCE, /onArchiveSession=\{handleArchiveSession\}/u);
+	assert.match(INDEX_SOURCE, /onArchiveSession: onArchiveSessionProp,/u);
+	assert.match(INDEX_SOURCE, /onArchiveSessionProp\?\.\(session\)/u);
 	assert.match(INDEX_SOURCE, /visibilityLabel=\{view === "hidden" \? "Unarchive" : "Archive"\}/u);
 });
 

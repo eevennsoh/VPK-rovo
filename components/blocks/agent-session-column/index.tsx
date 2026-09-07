@@ -299,6 +299,7 @@ export function AgentSessionColumn({
 	notchShape = "circle",
 	onCollapsedChange,
 	onGutterIntroComplete,
+	onArchiveSession: onArchiveSessionProp,
 	onSelectedItemIdChange,
 	onToggleVisibility,
 	playGutterIntro = false,
@@ -361,7 +362,8 @@ export function AgentSessionColumn({
 			}
 		}
 		onToggleVisibility?.(session);
-	}, [hideHidden, onToggleVisibility, toggleHidden, view]);
+		onArchiveSessionProp?.(session);
+	}, [hideHidden, onArchiveSessionProp, onToggleVisibility, toggleHidden, view]);
 	const selectionTriage = useMemo(() => {
 		if (triage === undefined) {
 			return undefined;

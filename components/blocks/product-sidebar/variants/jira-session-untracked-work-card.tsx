@@ -27,11 +27,13 @@ import {
 } from "./jira-session-flyout-data";
 
 function JiraSessionUntrackedWorkActions({
+	archiveActionLabel = "Archive",
 	issueKey,
 	onArchiveSession,
 	onCreateWorkItem,
 	onLinkWorkItem,
 }: Readonly<{
+	archiveActionLabel?: string;
 	issueKey: string;
 	onAddAsSubtask?: (workItemKey: string) => void;
 	onArchiveSession?: () => void;
@@ -57,7 +59,7 @@ function JiraSessionUntrackedWorkActions({
 	);
 	const archiveButton = (
 		<Button
-			aria-label={archiveUnavailable ? "Archive unavailable" : "Archive"}
+			aria-label={archiveUnavailable ? `${archiveActionLabel} unavailable` : archiveActionLabel}
 			disabled={archiveUnavailable}
 			onClick={() => onArchiveSession?.()}
 			size="icon-compact"
@@ -115,7 +117,7 @@ function JiraSessionUntrackedWorkActions({
 									disabled={archiveUnavailable}
 									onSelect={() => onArchiveSession?.()}
 								>
-									Archive
+									{archiveActionLabel}
 								</DropdownMenuItem>
 							</DropdownMenuGroup>
 						</DropdownMenuContent>
@@ -138,12 +140,14 @@ function JiraSessionUntrackedWorkActions({
  * The footer contains the link rationale and actions.
  */
 export function JiraSessionUntrackedWorkCard({
+	archiveActionLabel,
 	onAddAsSubtask,
 	onArchiveSession,
 	onCreateWorkItem,
 	onLinkWorkItem,
 	session,
 }: Readonly<{
+	archiveActionLabel?: string;
 	onAddAsSubtask?: (workItemKey: string) => void;
 	onArchiveSession?: () => void;
 	onCreateWorkItem?: () => void;
@@ -180,6 +184,7 @@ export function JiraSessionUntrackedWorkCard({
 						</p>
 					</div>
 					<JiraSessionUntrackedWorkActions
+						archiveActionLabel={archiveActionLabel}
 						issueKey={session.issueKey}
 						onAddAsSubtask={onAddAsSubtask}
 						onArchiveSession={onArchiveSession}
