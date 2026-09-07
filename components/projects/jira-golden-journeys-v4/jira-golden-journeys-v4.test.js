@@ -58,7 +58,6 @@ const TRANSFER_SOURCE = readProjectFile(
 const FAB_GEOMETRY_SOURCE = readProjectFile(
 	"components/projects/shared/components/floating-rovo-button/geometry.ts",
 );
-
 test("the route renders the Payments board directly inside Jira app chrome", () => {
 	assert.match(PAGE_SOURCE, /import AppLayout from "@\/components\/projects\/page"/u);
 	assert.match(PAGE_SOURCE, /<AppLayout[\s\S]*defaultSidebarOpen=\{false\}[\s\S]*product="jira"/u);

@@ -327,9 +327,11 @@ test("the session adapter derives flyout payloads the row model does not carry",
 	// session borrows it from prStatus.
 	assert.match(SESSION_SOURCE, /case "needs-input":\s*case "attention":\s*return "awaiting-input";/u);
 	assert.match(SESSION_SOURCE, /case "running":\s*return "running";/u);
+	assert.match(TYPES_SOURCE, /export type AgentListPrStatus = "created" \| "merged" \| "failed";/u);
+	assert.match(CARD_SOURCE, /failed:[\s\S]*MergeFailureIcon[\s\S]*PR failed[\s\S]*text-icon-danger/u);
 	assert.match(
 		SESSION_SOURCE,
-		/case "complete":\s*return item\.prStatus === "created" \? "pr-open" : "merged";/u,
+		/case "complete":[\s\S]*case "created":[\s\S]*return "pr-open";[\s\S]*case "failed":[\s\S]*return "stopped";[\s\S]*return "merged";/u,
 	);
 	// Explicit sessionDetails win for flyout-only fields; host prefers the row.
 	assert.match(SESSION_SOURCE, /branch: details\?\.branch \?\? item\.branch,/u);

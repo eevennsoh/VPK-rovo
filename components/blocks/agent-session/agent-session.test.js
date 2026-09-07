@@ -89,7 +89,7 @@ test("renders each session as a solid uncaptured-work card around the shared row
 	// The row presenter stays owned by Agent List; this block only frames it.
 	assert.match(
 		CARD_SOURCE,
-		/import \{\s*AgentListIdentity,\s*AgentListRow,\s*type AgentListRowHoverActions,\s*\} from "@\/components\/blocks\/agent-list\/agent-list-card";/u,
+		/import \{[\s\S]*AgentListIdentity,[\s\S]*AgentListRow,[\s\S]*type AgentListRowHoverActions,[\s\S]*\} from "@\/components\/blocks\/agent-list\/agent-list-card";/u,
 	);
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*hoverActions=\{hoverActions\}/u);
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*isCompact=\{false\}/u);
@@ -111,6 +111,27 @@ test("large uncaptured-work rows lead with the human invoker while retaining age
 	assert.match(TYPES_SOURCE, /avatarSrc: item\.invokedBy\.avatarSrc/u);
 	assert.match(TYPES_SOURCE, /return item\.agent;/u);
 	assert.doesNotMatch(DATA_SOURCE, /name: "person A"/u);
+});
+
+test("large uncaptured-work rows keep timestamps after a truncating linked PR when present", () => {
+	assert.match(CARD_SOURCE, /AgentListTime,/u);
+	assert.match(CARD_SOURCE, /function AgentSessionPullRequestMetadata/u);
+	assert.match(CARD_SOURCE, /pullRequestNumber/u);
+	assert.match(CARD_SOURCE, /pullRequestTitle/u);
+	assert.match(CARD_SOURCE, /pullRequestUrl/u);
+	assert.match(CARD_SOURCE, /AGENT_LIST_PR_STATUS_META/u);
+	assert.match(CARD_SOURCE, /<MetadataPathLink[\s\S]*className="min-w-0 flex-1 truncate text-text-subtle"[\s\S]*href=\{pullRequestUrl\}[\s\S]*\{pullRequestLabel\}[\s\S]*<\/MetadataPathLink>/u);
+	assert.match(CARD_SOURCE, /pullRequestLabel \? \([\s\S]*<\/MetadataPathLink>[\s\S]*<span aria-hidden="true" className="shrink-0 text-text-subtlest">\s*·\s*<\/span>[\s\S]*\) : null\}[\s\S]*<AgentListTime item=\{item\} \/>/u);
+	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*metadata=\{<AgentSessionPullRequestMetadata item=\{item\} \/>\}/u);
+	assert.doesNotMatch(CARD_SOURCE, /machineName/u);
+	assert.match(DATA_SOURCE, /pullRequestNumber: 1306,/u);
+	assert.match(DATA_SOURCE, /pullRequestTitle: "Add guest checkout to the storefront",/u);
+	assert.match(DATA_SOURCE, /pullRequestUrl: "https:\/\/github\.com\/eevensoh\/vpk-rovo\/pull\/1306",/u);
+	assert.match(DATA_SOURCE, /prStatus: "created"/u);
+	assert.match(DATA_SOURCE, /prStatus: "merged"/u);
+	assert.match(DATA_SOURCE, /prStatus: "failed"/u);
+	assert.match(DATA_SOURCE, /id: "lw-no-pr-session"[\s\S]*timeLabel: "7m ago"[\s\S]*sessionDetails:/u);
+	assert.doesNotMatch(/id: "lw-no-pr-session"[\s\S]*?\n\t\},/u.exec(DATA_SOURCE)?.[0] ?? "", /pullRequestNumber/u);
 });
 
 test("large remains the default while every card receives the selected size variant", () => {
@@ -347,7 +368,7 @@ test("the row reveals Resume plus Archive / Unarchive where Agent List puts Arch
 	// markup — the card only supplies the two action descriptors.
 	assert.match(
 		CARD_SOURCE,
-		/import \{\s*AgentListIdentity,\s*AgentListRow,\s*type AgentListRowHoverActions,\s*\} from "@\/components\/blocks\/agent-list\/agent-list-card";/u,
+		/import \{[\s\S]*AgentListIdentity,[\s\S]*AgentListRow,[\s\S]*type AgentListRowHoverActions,[\s\S]*\} from "@\/components\/blocks\/agent-list\/agent-list-card";/u,
 	);
 	assert.match(CARD_SOURCE, /const hoverActions: AgentListRowHoverActions = \{/u);
 	assert.match(CARD_SOURCE, /label: copiedResume \? "Copied" : "Resume",/u);

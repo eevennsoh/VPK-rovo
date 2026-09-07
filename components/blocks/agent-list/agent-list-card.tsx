@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 
 import ArchiveBoxIcon from "@atlaskit/icon/core/archive-box";
 import DevicesIcon from "@atlaskit/icon/core/devices";
+import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import StatusInformationIcon from "@atlaskit/icon/core/status-information";
@@ -103,7 +104,7 @@ const NEEDS_INPUT_STATUS_LABEL = "Needs input";
  * Pull-request status → icon + color, matching the Jira queue card
  * (`components/blocks/product-sidebar/variants/jira.tsx`).
  */
-const PR_STATUS_META: Record<
+export const AGENT_LIST_PR_STATUS_META: Record<
 	AgentListPrStatus,
 	{ Icon: typeof PullRequestIcon; label: string; colorClass: string }
 > = {
@@ -116,6 +117,11 @@ const PR_STATUS_META: Record<
 		Icon: MergeSuccessIcon,
 		label: "PR merged",
 		colorClass: "text-icon-accent-purple",
+	},
+	failed: {
+		Icon: MergeFailureIcon,
+		label: "PR failed",
+		colorClass: "text-icon-danger",
 	},
 };
 
@@ -261,7 +267,7 @@ function LifecycleIndicator({
  * not a ticking runtime. Otherwise only genuinely live cloud states count up;
  * everything settled reads as a relative timestamp.
  */
-function AgentListTime({
+export function AgentListTime({
 	item,
 	fallback = "Just now",
 }: Readonly<{
@@ -368,7 +374,7 @@ export function AgentListActivityHeader({
 	timeFallback?: string;
 }>) {
 	const stateMeta = STATE_META[item.state];
-	const prMeta = item.prStatus ? PR_STATUS_META[item.prStatus] : null;
+	const prMeta = item.prStatus ? AGENT_LIST_PR_STATUS_META[item.prStatus] : null;
 	const PrIcon = prMeta?.Icon ?? null;
 	const title = leadWithAgentName ? item.agent.name : getSessionTitle(item);
 	const needsInput = item.state === "needs-input";
@@ -622,6 +628,7 @@ export function AgentListRow({
 	isCompact,
 	isSelected,
 	item,
+	metadata,
 	onView,
 	renderIdentity,
 	showHoverActionsWhenSelected = false,
@@ -631,6 +638,8 @@ export function AgentListRow({
 	isCompact: boolean;
 	isSelected: boolean;
 	item: AgentListItem;
+	/** Caller-owned metadata for a specialized row, such as Agent Session's PR summary. */
+	metadata?: ReactNode;
 	onView?: (item: AgentListItem) => void;
 	/**
 	 * Wrap the row's leading identity. Agent List never passes it.
@@ -644,7 +653,7 @@ export function AgentListRow({
 	showHoverActionsWhenSelected?: boolean;
 }>) {
 	const stateMeta = STATE_META[item.state];
-	const prMeta = item.prStatus ? PR_STATUS_META[item.prStatus] : null;
+	const prMeta = item.prStatus ? AGENT_LIST_PR_STATUS_META[item.prStatus] : null;
 	const PrIcon = prMeta?.Icon ?? null;
 	// A session row is one line tall by contract, so its title truncates. A row
 	// with body copy is already a paragraph — truncating its title there hides the
@@ -722,35 +731,37 @@ export function AgentListRow({
 							)}
 							{stateMeta.showDots ? <AnimatedDots /> : null}
 						</span>
-						<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
-							{item.metadataPrefix ? (
-								<>
-									<span className="shrink-0">{item.metadataPrefix}</span>
-									<MetadataDot />
-								</>
-							) : null}
-							<AgentListMetadataIdentity item={item} />
-							{prMeta && PrIcon ? (
-								<>
-									<MetadataDot />
-									<span className="flex min-w-0 shrink items-center gap-1">
-										<span
-											className={cn(
-												"grid size-4 shrink-0 place-items-center",
-												prMeta.colorClass,
-											)}
-										>
-											<PrIcon color="currentColor" label="" size="small" />
+						{metadata ?? (
+							<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
+								{item.metadataPrefix ? (
+									<>
+										<span className="shrink-0">{item.metadataPrefix}</span>
+										<MetadataDot />
+									</>
+								) : null}
+								<AgentListMetadataIdentity item={item} />
+								{prMeta && PrIcon ? (
+									<>
+										<MetadataDot />
+										<span className="flex min-w-0 shrink items-center gap-1">
+											<span
+												className={cn(
+													"grid size-4 shrink-0 place-items-center",
+													prMeta.colorClass,
+												)}
+											>
+												<PrIcon color="currentColor" label="" size="small" />
+											</span>
+											<span className="truncate text-text-subtle">{prMeta.label}</span>
 										</span>
-										<span className="truncate text-text-subtle">{prMeta.label}</span>
-									</span>
-								</>
-							) : null}
-							<MetadataDot />
-							<span className="shrink-0" title={timeSlotTitle(item)}>
-								<AgentListTime item={item} />
+									</>
+								) : null}
+								<MetadataDot />
+								<span className="shrink-0" title={timeSlotTitle(item)}>
+									<AgentListTime item={item} />
+								</span>
 							</span>
-						</span>
+						)}
 					</RowBody>
 					{stateMeta.showLifecycle ? (
 						<span

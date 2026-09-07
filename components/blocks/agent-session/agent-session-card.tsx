@@ -6,10 +6,11 @@ import { motion, useReducedMotion } from "motion/react";
 import ArchiveBoxIcon from "@atlaskit/icon/core/archive-box";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import LibraryIcon from "@atlaskit/icon/core/library";
-
 import {
+	AGENT_LIST_PR_STATUS_META,
 	AgentListIdentity,
 	AgentListRow,
+	AgentListTime,
 	type AgentListRowHoverActions,
 } from "@/components/blocks/agent-list/agent-list-card";
 import { toAgentListResumeCommand } from "@/components/blocks/agent-list/agent-list-session";
@@ -20,6 +21,7 @@ import {
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import type { JiraIssueAgentSessionDragBinding } from "@/components/blocks/jira-issue/agent-session-drag";
 import { Icon } from "@/components/ui/icon";
+import { MetadataPathLink } from "@/components/ui/metadata-path-link";
 import { cn } from "@/lib/utils";
 
 import {
@@ -41,6 +43,63 @@ import {
 
 /** How long Resume reads "Copied" after it writes the command to the clipboard. */
 const COPIED_RESET_MS = 2000;
+
+/** PR-first session metadata. Local device names stay in the flyout, not the work row. */
+function AgentSessionPullRequestMetadata({ item }: Readonly<{ item: AgentSessionItem }>) {
+	const pullRequestNumber = item.sessionDetails?.pullRequestNumber;
+	const pullRequestTitle = item.sessionDetails?.pullRequestTitle;
+	const pullRequestUrl = item.sessionDetails?.pullRequestUrl;
+	const pullRequestLabel = pullRequestNumber === undefined
+		? undefined
+		: pullRequestTitle === undefined
+			? `#${pullRequestNumber}`
+			: `#${pullRequestNumber}: ${pullRequestTitle}`;
+
+	const prMeta = pullRequestLabel
+		? AGENT_LIST_PR_STATUS_META[item.prStatus ?? "created"]
+		: undefined;
+	const PrIcon = prMeta?.Icon;
+
+	return (
+		<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
+			{pullRequestLabel ? (
+				<>
+					{PrIcon && prMeta ? (
+						<span
+							aria-label={prMeta.label}
+							className={cn("grid size-4 shrink-0 place-items-center", prMeta.colorClass)}
+							role="img"
+							title={prMeta.label}
+						>
+							<PrIcon color="currentColor" label="" size="small" />
+						</span>
+					) : null}
+					{pullRequestUrl ? (
+						<MetadataPathLink
+							className="min-w-0 flex-1 truncate text-text-subtle"
+							href={pullRequestUrl}
+							rel="noreferrer"
+							target="_blank"
+							title={pullRequestLabel}
+						>
+							{pullRequestLabel}
+						</MetadataPathLink>
+					) : (
+						<span className="min-w-0 truncate text-text-subtle" title={pullRequestLabel}>
+							{pullRequestLabel}
+						</span>
+					)}
+					<span aria-hidden="true" className="shrink-0 text-text-subtlest">
+						·
+					</span>
+				</>
+			) : null}
+			<span className="shrink-0" title="Last update">
+				<AgentListTime item={item} />
+			</span>
+		</span>
+	);
+}
 
 async function copyResumeCommand(command: string): Promise<void> {
 	if (typeof navigator === "undefined" || navigator.clipboard?.writeText === undefined) {
@@ -332,6 +391,7 @@ export function AgentSessionCard({
 								isCompact={false}
 								isSelected={showSelectedFill}
 								item={item}
+								metadata={<AgentSessionPullRequestMetadata item={item} />}
 								onView={undefined}
 								renderIdentity={() => {
 									const sessionIdentity = (
