@@ -322,8 +322,8 @@ test("the collapsed count lives in the header above the plane, not on the rail",
 		INDEX_SOURCE,
 		/layout === "enclosed" \? "border border-solid border-transparent" : null/u,
 	);
-	assert.match(INDEX_SOURCE, /relative flex h-6 w-full min-w-0 items-center justify-center/u);
-	assert.match(INDEX_SOURCE, /absolute inset-0 flex items-center justify-center text-xs/u);
+	assert.match(INDEX_SOURCE, /relative flex h-6 w-full min-w-0 items-center justify-center px-1/u);
+	assert.match(INDEX_SOURCE, /absolute inset-x-1 inset-y-0 flex items-center justify-center text-xs/u);
 	assert.match(INDEX_SOURCE, /HEADER_COUNT_AT_REST/u);
 	assert.match(INDEX_SOURCE, /HEADER_CONTROL_ON_REVEAL/u);
 	assert.doesNotMatch(INDEX_SOURCE, /className=\{cn\("absolute shrink-0", HEADER_CONTROL_ON_REVEAL\)\}/u);
@@ -637,9 +637,12 @@ test("headerSurface panel keeps the column-owned header and drops the nested wel
 
 test("the gutter rail keeps a keyboard expand control and hides the count", () => {
 	assert.match(INDEX_SOURCE, /header: collapsed \? collapsedHeader : expandedHeader/u);
-	assert.match(INDEX_SOURCE, /const hideGutterCount = isGutterCollapsed/u);
+	assert.match(
+		INDEX_SOURCE,
+		/const hideGutterCount = isGutterCollapsed && collapsedRailHitSlopPx === 0/u,
+	);
 	assert.match(INDEX_SOURCE, /aria-label=\{`Expand \$\{title\} column`\}/u);
-	assert.match(INDEX_SOURCE, /relative flex h-6 w-full min-w-0 items-center justify-center/u);
+	assert.match(INDEX_SOURCE, /relative flex h-6 w-full min-w-0 items-center justify-center px-1/u);
 	// The rail itself still has no header of its own to fall back on.
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /onExpand/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /sessionCount/u);
@@ -819,7 +822,7 @@ test("the gutter-collapsed rail shows at most ten dots before it scrolls under t
 	assert.match(RAIL_COLUMN_SOURCE, /AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS/u);
 	assert.match(
 		INDEX_SOURCE,
-		/maxVisibleItems=\{collapsedPresentation === "gutter"\s*\? AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS\s*: undefined\}/u,
+		/maxVisibleItems=\{isGutterCollapsed && collapsedRailHitSlopPx === 0\s*\? AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS\s*: undefined\}/u,
 	);
 	assert.match(RAIL_COLUMN_SOURCE, /toAgentSessionRailViewportMaxHeight\(/u);
 	assert.match(RAIL_COLUMN_SOURCE, /maxHeight: railViewportMaxHeight/u);
@@ -831,7 +834,7 @@ test("the gutter-collapsed rail shows at most ten dots before it scrolls under t
 test("the embedded column rail does not cap the viewport to ten notches", () => {
 	assert.match(
 		INDEX_SOURCE,
-		/maxVisibleItems=\{collapsedPresentation === "gutter"\s*\? AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS\s*: undefined\}/u,
+		/maxVisibleItems=\{isGutterCollapsed && collapsedRailHitSlopPx === 0\s*\? AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS\s*: undefined\}/u,
 	);
 	assert.match(
 		RAIL_COLUMN_SOURCE,

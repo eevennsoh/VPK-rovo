@@ -5,6 +5,7 @@ const {
 	JIRA_LINKING_FULL_DROP_PROFILE,
 	JIRA_LINKING_REDUCED_DROP_PROFILE,
 	flightsFromLinkingDrop,
+	resolveJiraLinkingArcOptions,
 	resolveJiraLinkingDropPlayback,
 	resolveJiraLinkingDropProfile,
 } = require("./drop.ts");
@@ -98,11 +99,33 @@ test("the drop profile follows reduced motion the way the well does", () => {
 	assert.equal(resolveJiraLinkingDropProfile(null), JIRA_LINKING_FULL_DROP_PROFILE);
 });
 
-test("card-drop flights arc clockwise; peak and stagger stay with the well", () => {
+test("card-drop flights use automatic arc direction; peak and stagger stay with the well", () => {
 	assert.equal(JIRA_LINKING_FULL_DROP_PROFILE.arcPeak, 0.5);
-	assert.equal(JIRA_LINKING_FULL_DROP_PROFILE.arcStrength, -0.42);
+	assert.equal(JIRA_LINKING_FULL_DROP_PROFILE.arcStrength, 0.42);
+	assert.equal(JIRA_LINKING_FULL_DROP_PROFILE.direction, "automatic");
 	assert.equal(JIRA_LINKING_FULL_DROP_PROFILE.durationMs, 400);
 	assert.equal(JIRA_LINKING_FULL_DROP_PROFILE.staggerMs, 70);
+	assert.deepEqual(resolveJiraLinkingArcOptions(JIRA_LINKING_FULL_DROP_PROFILE), {
+		peak: 0.5,
+		strength: 0.42,
+	});
+});
+
+test("locked cw and ccw directions pass through to Motion arc options", () => {
+	assert.deepEqual(
+		resolveJiraLinkingArcOptions({
+			...JIRA_LINKING_FULL_DROP_PROFILE,
+			direction: "cw",
+		}),
+		{ direction: "cw", peak: 0.5, strength: 0.42 },
+	);
+	assert.deepEqual(
+		resolveJiraLinkingArcOptions({
+			...JIRA_LINKING_FULL_DROP_PROFILE,
+			direction: "ccw",
+		}),
+		{ direction: "ccw", peak: 0.5, strength: 0.42 },
+	);
 });
 
 test("flight keys are stable for identical input and unique per member", () => {

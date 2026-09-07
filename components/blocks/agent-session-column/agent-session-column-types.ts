@@ -41,11 +41,17 @@ export interface AgentSessionColumnProps extends Omit<
 	/** Collapsed marker treatment. Defaults to circular user dots. */
 	notchShape?: AgentSessionColumnNotchShape;
 	/**
-	 * `"gutter"` hides the visual count while leaving the rail top-aligned.
-	 * The expand control remains keyboard-reachable. Defaults to `"column"`.
+	 * `"gutter"` hides the visual count at rest while leaving the rail
+	 * top-aligned. A non-zero {@link AgentSessionColumnProps.collapsedRailHitSlopPx}
+	 * reveals the same header count while the hit area is scaled. The expand
+	 * control remains keyboard-reachable. Defaults to `"column"`.
 	 */
 	collapsedPresentation?: "column" | "gutter";
-	/** Extra horizontal pointer space on each side of the collapsed rail, without moving its markers. */
+	/**
+	 * Extra horizontal pointer space on each side of the collapsed rail,
+	 * without moving its markers. In gutter presentation, a non-zero value
+	 * also reveals the header session count.
+	 */
 	collapsedRailHitSlopPx?: number;
 	/** Plays the collapsed gutter rail's one-time staggered dot introduction. */
 	playGutterIntro?: boolean;
@@ -74,7 +80,8 @@ export interface AgentSessionColumnProps extends Omit<
 	 *
 	 * `"column"` is the in-flow board title row. `"panel"` is the docked
 	 * rail's PanelHeader skin. The collapsed rail normally keeps its compact
-	 * header in both modes; `collapsedPresentation="gutter"` hides the count.
+	 * header in both modes; `collapsedPresentation="gutter"` hides the count
+	 * at rest and reveals it while the collapsed rail's hit area is scaled.
 	 */
 	headerSurface?: "column" | "panel";
 	/**
@@ -83,8 +90,8 @@ export interface AgentSessionColumnProps extends Omit<
 	 */
 	columnFrame?: AgentSessionColumnFrame;
 	/**
-	 * Enables the stacked entrance, bottom depth tail, scroll fade, and end
-	 * summary on the expanded list. Defaults to `false`.
+	 * Enables the bottom depth tail, scroll fade, and end summary on the
+	 * expanded list. Defaults to `false`.
 	 */
 	hasScrollingEffect?: boolean;
 	/**

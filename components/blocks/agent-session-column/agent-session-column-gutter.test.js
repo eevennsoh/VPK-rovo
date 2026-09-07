@@ -94,7 +94,10 @@ test("the gutter hides the count", () => {
 	assert.match(TYPES_SOURCE, /collapsedPresentation\?: "column" \| "gutter";/u);
 	assert.match(INDEX_SOURCE, /const isGutterCollapsed = collapsed && collapsedPresentation === "gutter"/u);
 	assert.doesNotMatch(INDEX_SOURCE, /isGutterCollapsed \? "justify-center" : null/u);
-	assert.match(INDEX_SOURCE, /const hideGutterCount = isGutterCollapsed/u);
+	assert.match(
+		INDEX_SOURCE,
+		/const hideGutterCount = isGutterCollapsed && collapsedRailHitSlopPx === 0/u,
+	);
 	assert.match(INDEX_SOURCE, /hideGutterCount \? "opacity-0" : "opacity-100"/u);
 	assert.match(INDEX_SOURCE, /style=\{resolveCollapsedHeaderStyle\(layout\)\}/u);
 	assert.match(INDEX_SOURCE, /header: collapsed \? collapsedHeader : expandedHeader/u);
@@ -115,21 +118,35 @@ test("flyouts stay suspended in the gutter and open once the compact rail is emb
 	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsedPresentation="gutter"/u);
 });
 
-test("gutter presentation caps the rail; column presentation shows every notch", () => {
+test("gutter rest caps the rail; hover preview and column presentation show every notch", () => {
 	assert.match(
 		INDEX_SOURCE,
-		/maxVisibleItems=\{collapsedPresentation === "gutter"\s*\? AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS\s*: undefined\}/u,
+		/maxVisibleItems=\{isGutterCollapsed && collapsedRailHitSlopPx === 0\s*\? AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS\s*: undefined\}/u,
 	);
 });
 
-test("the tucked gutter hides the session total, including the hover preview", () => {
+test("the tucked gutter hides the session total until the hover hit area scales", () => {
 	assert.match(
 		INDEX_SOURCE,
-		/const hideGutterCount = isGutterCollapsed/u,
+		/const hideGutterCount = isGutterCollapsed && collapsedRailHitSlopPx === 0/u,
 	);
+	assert.match(INDEX_SOURCE, /<TextMorphing\s+config=\{HEAD_COUNT_MORPH\}/u);
 	assert.match(INDEX_SOURCE, /text=\{String\(sessionCount\)\}/u);
 	assert.doesNotMatch(INDEX_SOURCE, /`\+\$\{newCount\}`/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsedPresentation="gutter"/u);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/collapsedRailHitSlopPx=\{isEmbedded && !isPersistentExpanded\s*\? IN_FLOW_AGENT_SESSION_COLUMN_RAIL_HIT_SLOP_PX\s*: 0\}/u,
+	);
+	assert.match(INDEX_SOURCE, /data-agent-session-column-count=""/u);
+	assert.match(
+		INDEX_SOURCE,
+		/toAgentSessionRailHitSlopStyle\(collapsedRailHitSlopPx\)/u,
+	);
+	assert.match(
+		RAIL_SOURCE,
+		/toAgentSessionRailHitSlopStyle\(hitSlopPx\)/u,
+	);
 });
 
 test("the gutter preview moves into the old in-flow inset with Motion", () => {

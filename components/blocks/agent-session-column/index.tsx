@@ -36,6 +36,7 @@ import {
 	AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS,
 	AgentSessionColumnRail,
 } from "./agent-session-column-rail";
+import { toAgentSessionRailHitSlopStyle } from "./agent-session-column-rail-viewport";
 import {
 	DEFAULT_AGENT_SESSION_COLUMN_FRAME,
 	resolveAgentSessionColumnLayout,
@@ -219,8 +220,9 @@ const HEADER_CONTROL_ON_REVEAL = cn(
  *
  * `slots` spins each digit behind a fade mask, which suits a value that changes
  * because work arrived rather than because the viewer acted. Gutter presentation
- * keeps this renderer mounted while the digits stay hidden, so a column
- * presentation can still roll the total without remounting.
+ * keeps this renderer mounted while the digits stay hidden at rest, so a hover
+ * hit-area scale (or a column presentation) can still roll the total without
+ * remounting.
  *
  * `autoSize` eases the slot's width as the total crosses a digit. `initial:
  * false` keeps a column that mounts already collapsed from spinning its count
@@ -271,7 +273,9 @@ const AGENT_SESSION_PLANE_BOTTOM_FADE_SIZE = `${AGENT_SESSION_DECK_END_SPACE_PX}
  * {@link AgentSessionColumnRail}. Collapsed drops the well so the count
  * shares the status pill's 24px header slot instead of sitting inside a
  * full-height bordered rail. `collapsedPresentation="gutter"` hides that
- * count while keeping the expand control in the same slot.
+ * count at rest while keeping the expand control in the same slot; a
+ * non-zero {@link AgentSessionColumnProps.collapsedRailHitSlopPx} reveals
+ * the count while the hit area is scaled.
  *
  * Two capabilities exist for hosts that dock the column into their own surface
  * rather than stand it on the board: `collapsed` makes the rail state
@@ -572,11 +576,12 @@ export function AgentSessionColumn({
 		resolveAgentSessionPlaneClassName(layout, collapsed),
 		isGutterCollapsed ? "bg-transparent" : null,
 	);
-	// Gutter presentation hides the digits so the rail can sit in the page
-	// inset — at rest, during the hover preview, and when newly synced
-	// sessions arrive. The expand control stays in the same 24px slot.
-	// Screen-reader copy still names the pool count.
-	const hideGutterCount = isGutterCollapsed;
+	// Gutter presentation hides the digits at rest so the rail can sit in the
+	// page inset. When the host widens the rail's hit area (hover preview),
+	// reveal the same header count morphing used by column presentation. The
+	// expand control stays in the same 24px slot. Screen-reader copy still
+	// names the pool count.
+	const hideGutterCount = isGutterCollapsed && collapsedRailHitSlopPx === 0;
 	const collapsedCountLabel = newCount > 0
 		? `${sessionCount} sessions, ${newCount} newly synced`
 		: `${sessionCount} sessions`;
@@ -590,6 +595,7 @@ export function AgentSessionColumn({
 							className={HEADER_CONTROL_ON_REVEAL}
 							onClick={handleToggleCollapsed}
 							size="icon-compact"
+							style={{ width: "100%" }}
 							type="button"
 							variant="ghost"
 						/>
@@ -609,16 +615,22 @@ export function AgentSessionColumn({
 			)}
 			style={resolveCollapsedHeaderStyle(layout)}
 		>
-			<div className="relative flex h-6 w-full min-w-0 items-center justify-center">
+			<div
+				className="relative flex h-6 w-full min-w-0 items-center justify-center px-1"
+				style={collapsedRailHitSlopPx === 0
+					? undefined
+					: toAgentSessionRailHitSlopStyle(collapsedRailHitSlopPx)}
+			>
 				{collapsedExpandControl}
 				<span
 					aria-hidden="true"
 					className={cn(
-						"absolute inset-0 flex items-center justify-center text-xs font-normal",
+						"absolute inset-x-1 inset-y-0 flex items-center justify-center text-xs font-normal",
 						"text-text-subtlest",
 						HEADER_COUNT_AT_REST,
 						hideGutterCount ? "opacity-0" : "opacity-100",
 					)}
+					data-agent-session-column-count=""
 				>
 					<TextMorphing
 						config={HEAD_COUNT_MORPH}
@@ -653,7 +665,7 @@ export function AgentSessionColumn({
 			highlightedItemId={sessionProps.highlightedItemId}
 			hitSlopPx={collapsedRailHitSlopPx}
 			items={filteredViewItems}
-			maxVisibleItems={collapsedPresentation === "gutter"
+			maxVisibleItems={isGutterCollapsed && collapsedRailHitSlopPx === 0
 				? AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS
 				: undefined}
 			newItemIds={newItemIds}

@@ -242,11 +242,12 @@ function InFlowAgentSessionColumnSurface({
 /**
  * The Untracked rail rests in the page's leading gutter. Hover temporarily
  * returns that same compact timeline to the board's original 24px column inset;
- * it never swaps dots for cards, and the session total stays hidden. Only the
- * column's expand control promotes the full column, and that deliberate state
- * persists after the pointer leaves. The full-height gutter target sits behind
- * each session row so a row can own its whole 24px band while empty gutter
- * space still opens the column preview.
+ * it never swaps dots for cards. The session total stays hidden at rest and
+ * appears in the header slot while that hover-scaled hit area is showing extra
+ * space. Only the column's expand control promotes the full column, and that
+ * deliberate state persists after the pointer leaves. The full-height gutter
+ * target sits behind each session row so a row can own its whole 24px band
+ * while empty gutter space still opens the column preview.
  */
 export function InFlowAgentSessionColumn({
 	agentSessionColumn,
