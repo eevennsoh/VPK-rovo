@@ -1,10 +1,14 @@
 const assert = require("node:assert/strict");
 const { test } = require("node:test");
 
-const { linkJiraKanbanAgentSession } = require("../../../blocks/jira-kanban/state.ts");
+const {
+	filterJiraKanbanColumnsByAssignee,
+	linkJiraKanbanAgentSession,
+} = require("../../../blocks/jira-kanban/state.ts");
 const {
 	applyAssignedAgentIdsToColumns,
 	applyListOrder,
+	appendBoardCreatedListOrder,
 	createBoardWorkItemFromSession,
 	createListRows,
 	createListWorkItemFromSession,
@@ -367,7 +371,11 @@ test("createBoardWorkItemFromSession appends a task to the requested status and 
 		columns: COLUMNS,
 		columnTitle: "In progress",
 		linkSession: linkJiraKanbanAgentSession,
-		session: { id: "lw-board-review", title: "Review the board drop behavior" },
+		session: {
+			id: "lw-board-review",
+			invokedBy: { avatarSrc: "/maya.png", name: "Maya Ferreira" },
+			title: "Review the board drop behavior",
+		},
 	});
 
 	assert.equal(created.kind, "created");
@@ -379,13 +387,29 @@ test("createBoardWorkItemFromSession appends a task to the requested status and 
 	assert.equal(createdCard?.title, "Review the board drop behavior");
 	assert.equal(createdCard?.issueType, "task");
 	assert.equal(createdCard?.agentActivities?.[0], activity);
+	assert.deepEqual(createdCard?.assignee, {
+		avatarSrc: "/maya.png",
+		id: "maya-ferreira",
+		name: "Maya Ferreira",
+	});
+	assert.equal(
+		filterJiraKanbanColumnsByAssignee(
+			created.columns,
+			new Set(["maya-ferreira"]),
+		).find((column) => column.title === "In progress")?.cards.at(-1)?.code,
+		"PAY-119",
+	);
 
 	const again = createBoardWorkItemFromSession({
 		activity,
 		columns: created.columns,
 		columnTitle: "To do",
 		linkSession: linkJiraKanbanAgentSession,
-		session: { id: "lw-board-review", title: "Review the board drop behavior" },
+		session: {
+			id: "lw-board-review",
+			invokedBy: { avatarSrc: "/maya.png", name: "Maya Ferreira" },
+			title: "Review the board drop behavior",
+		},
 	});
 	assert.equal(again.kind, "already-attached");
 	assert.equal(again.issueKey, "PAY-119");
@@ -393,6 +417,18 @@ test("createBoardWorkItemFromSession appends a task to the requested status and 
 	assert.equal(
 		again.columns.flatMap((column) => column.cards).filter((card) => card.code === "PAY-119").length,
 		1,
+	);
+});
+
+test("the first board create seeds List order from existing board rows before appending", () => {
+	assert.deepEqual(
+		appendBoardCreatedListOrder({
+			columns: COLUMNS,
+			issueKey: "PAY-119",
+			listOrder: [],
+			visibleKeys: [],
+		}),
+		["PAY-118", "PAY-107", "PAY-101", "PAY-119"],
 	);
 });
 

@@ -1,3 +1,4 @@
+import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
 import type {
 	JiraKanbanAgentData,
@@ -373,6 +374,24 @@ export function insertListOrderKey(
 	];
 }
 
+export function appendBoardCreatedListOrder({
+	columns,
+	issueKey,
+	listOrder,
+	visibleKeys,
+}: Readonly<{
+	columns: readonly JiraKanbanColumnData[];
+	issueKey: string;
+	listOrder: readonly string[];
+	visibleKeys: readonly string[];
+}>): string[] {
+	const insertionKeys = visibleKeys.length > 0
+		? visibleKeys
+		: columns.flatMap((column) => column.cards.map((card) => card.code));
+
+	return insertListOrderKey(listOrder, insertionKeys, issueKey, null);
+}
+
 export function getNextPayIssueKey(columns: readonly JiraKanbanColumnData[]): string {
 	const highestIssueNumber = columns.flatMap((column) => column.cards).reduce((maxIssueNumber, card) => {
 		const parsedIssueNumber = Number.parseInt(card.code.split("-")[1] ?? "0", 10);
@@ -442,7 +461,7 @@ export interface CreateListWorkItemFromSessionInput {
 		activity: JiraIssueAgentActivity,
 	) => readonly JiraKanbanColumnData[];
 	listOrder: readonly string[];
-	session: Readonly<{ id: string; title: string }>;
+	session: Readonly<Pick<AgentSessionItem, "id" | "invokedBy" | "title">>;
 	visibleKeys: readonly string[];
 }
 
@@ -455,7 +474,7 @@ export interface CreateBoardWorkItemFromSessionInput {
 		issueKey: string,
 		activity: JiraIssueAgentActivity,
 	) => readonly JiraKanbanColumnData[];
-	session: Readonly<{ id: string; title: string }>;
+	session: Readonly<Pick<AgentSessionItem, "id" | "invokedBy" | "title">>;
 }
 
 export type CreateBoardWorkItemFromSessionResult =
@@ -500,6 +519,13 @@ export function createBoardWorkItemFromSession(
 
 	const issueKey = getNextPayIssueKey(input.columns);
 	const card = toKanbanCardFromDraft({
+		assignee: input.session.invokedBy
+			? {
+				avatarSrc: input.session.invokedBy.avatarSrc,
+				id: slugAgentName(input.session.invokedBy.name),
+				name: input.session.invokedBy.name,
+			}
+			: undefined,
 		issueKey,
 		issueType: "task",
 		summary: input.session.title,
