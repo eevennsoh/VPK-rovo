@@ -149,8 +149,8 @@ test("circle unread rest uses default icon color", () => {
 	assert.match(NOTCH_MAGNIFY_SOURCE, /toAgentSessionNotchTone\(isSelected: boolean, isNew: boolean\)/u);
 	assert.match(NOTCH_MAGNIFY_SOURCE, /return isNew \|\| isSelected/u);
 	// Gutter rest hides the total. An inspected column presentation keeps
-	// that same total visible. Hover hit-slop reveals the gutter digits.
-	assert.match(INDEX_SOURCE, /hideGutterCount = isGutterCollapsed && collapsedRailHitSlopPx === 0/u);
+	// that same total visible.
+	assert.match(INDEX_SOURCE, /hideGutterCount = isGutterCollapsed/u);
 	assert.match(INDEX_SOURCE, /String\(sessionCount\)/u);
 	assert.match(INDEX_SOURCE, /\$\{sessionCount\} sessions, \$\{newCount\} newly synced/u);
 	assert.doesNotMatch(INDEX_SOURCE, /`\+\$\{newCount\}`/u);

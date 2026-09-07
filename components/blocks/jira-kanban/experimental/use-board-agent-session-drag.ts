@@ -35,6 +35,7 @@ import {
 	type BoardAgentSessionDropZone,
 	type BoardCardInsertion,
 } from "./lib/board-agent-session-drag";
+import { BOARD_CARD_INSERTION_BAND_PX } from "./lib/board-card-insertion";
 import { toSessionDropReceipt } from "./lib/session-drop-receipt";
 import {
 	executeSessionTransferPlan,
@@ -50,14 +51,6 @@ import {
 } from "./lib/session-fusion-overlay-state";
 
 const SESSION_UNLINK_DROP_HALO_PX = 24;
-
-/**
- * How far a card-gap insertion band reaches either side of the card edge it
- * straddles. Board cards are separated by a real gutter (4px on the default
- * column chrome, 8px on simple), which belongs to no card's rect, so the band
- * has to reach outward to cover the pixels the pointer actually aims at.
- */
-const BOARD_CARD_GAP_BAND_PX = 12;
 
 /**
  * The card's agent shell rect, so the fusion field knows what shape it is
@@ -180,7 +173,7 @@ function collectCardGapZones(
 		node.dataset.boardCardIndex,
 		node.dataset.boardCardCount,
 		toChinFreeBoardCardBounds(bounds, chin?.getBoundingClientRect().height ?? 0),
-		BOARD_CARD_GAP_BAND_PX,
+		BOARD_CARD_INSERTION_BAND_PX,
 	).flatMap((zone) => {
 		const top = Math.max(zone.bounds.top, clip.top);
 		const bottom = Math.min(zone.bounds.bottom, clip.bottom);

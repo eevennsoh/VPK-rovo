@@ -717,9 +717,16 @@ export function JiraList({
 									draggingIndex,
 									dragOverIndex,
 								);
+								const hoverInsertionPosition = (
+									onCreate
+									&& hoveredRowTarget?.issueKey === row.issueKey
+									&& hoveredRowTarget.zone !== "drag"
+								)
+									? hoveredRowTarget.zone
+									: undefined;
 								const insertionLinePosition = activeInsertionTarget?.issueKey === row.issueKey
 									? activeInsertionTarget.position
-									: dragInsertionPosition;
+									: hoverInsertionPosition ?? dragInsertionPosition;
 								const insertionLineClassName = getInsertionLineClassName(insertionLinePosition);
 								const isSessionAttachTarget = isAgentSessionAttachTarget(
 									agentSessionDropIntent,

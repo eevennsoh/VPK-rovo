@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { use, type ReactNode } from "react";
 import { motion, type MotionProps } from "motion/react";
 
 import type { JiraKanbanCardMoveAnimation } from "@/components/blocks/jira-kanban";
@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 
 import type { JiraKanbanCreatedCardArrival } from "../hooks/use-created-card-arrival";
 import type { BoardCardInsertion } from "../lib/board-agent-session-drag";
-import { BoardCardInsertionLine } from "./board-card-insertion-line";
 import {
 	getBoardCardInsertionAnchorClassName,
 	resolveBoardCardInsertionPosition,
@@ -20,6 +19,8 @@ import {
 	JIRA_KANBAN_CARD_DEPART,
 	JIRA_KANBAN_CARD_MOVE,
 } from "../lib/card-motion";
+import { BoardCardHoverInsertionContext } from "./board-card-hover-insertion-context";
+import { BoardCardInsertionLine } from "./board-card-insertion-line";
 
 interface CreatedCardArrivalMotionProps {
 	arrival?: JiraKanbanCreatedCardArrival;
@@ -120,7 +121,8 @@ export function CreatedCardArrivalMotion({
 	shouldAnimateCardMoves,
 	shouldReduceMotion,
 }: Readonly<CreatedCardArrivalMotionProps>) {
-	const insertionPosition = resolveBoardCardInsertionPosition(cardInsertion, {
+	const hoverInsertion = use(BoardCardHoverInsertionContext);
+	const insertionPosition = resolveBoardCardInsertionPosition(cardInsertion ?? hoverInsertion, {
 		cardCount,
 		cardIndex,
 		columnTitle,

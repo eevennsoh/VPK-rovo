@@ -108,6 +108,51 @@ async function dragPointer(
 	await page.mouse.up();
 }
 
+test("attaching onto a running session replaces that chin row instead of stacking", async ({ page }) => {
+	await openBoard(page);
+
+	const targetCard = getIssueArticle(page, "PAY-107");
+	await targetCard.scrollIntoViewIfNeeded();
+	const runningSession = targetCard.getByRole("button", {
+		name: /^Open Claude Code in Rovo chat:/u,
+	});
+	await expect(runningSession).toBeVisible();
+	const restingBox = await targetCard.boundingBox();
+	expect(restingBox).not.toBeNull();
+	if (!restingBox) return;
+
+	const untrackedSession = page.locator("[data-agent-session-column]")
+		.getByTestId("agent-session-row-lw-scope-thread");
+	const sourceBox = await untrackedSession.boundingBox();
+	const dropZone = getIssueDropZone(page, "PAY-107");
+	const targetBox = await dropZone.boundingBox();
+	expect(sourceBox).not.toBeNull();
+	expect(targetBox).not.toBeNull();
+	if (!sourceBox || !targetBox) return;
+
+	await page.mouse.move(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(sourceBox.x + sourceBox.width / 2 + 4, sourceBox.y + sourceBox.height / 2 + 4);
+	await page.mouse.move(
+		targetBox.x + targetBox.width / 2,
+		targetBox.y + targetBox.height / 2,
+		{ steps: 12 },
+	);
+	await expect(dropZone).toHaveAttribute("data-board-agent-session-target", "attach");
+	await expect(targetCard.locator('[data-slot="jira-issue-attach-chin"]')).toBeVisible();
+	await expect(targetCard.getByText("Link 1 agent session")).toBeVisible();
+	await expect(runningSession).toHaveCount(0);
+	await expect(targetCard.locator('[data-slot="jira-issue-agent-row"]')).toHaveCount(0);
+
+	const attachingBox = await targetCard.boundingBox();
+	expect(attachingBox).not.toBeNull();
+	if (!attachingBox) return;
+	// One extra chin row is 24px plus 8px of gutter. Stay well under that.
+	expect(attachingBox.height).toBeLessThan(restingBox.height + 16);
+
+	await page.mouse.up();
+});
+
 test("Untracked is on by default and PAY-101 shows a nearby untracked row", async ({ page }) => {
 	await openBoard(page);
 
@@ -374,31 +419,47 @@ test("the Untracked resize handle reveals on column hover and widens the pinned 
 		name: "Resize Untracked work column",
 	});
 	const resizeNotch = resizeHandle.locator(":scope > div");
-	const untrackedSurface = page.locator(
-		'[data-board-agent-session-drop-zone="untracked"]',
-	).first();
 	const widthFootprint = page.locator('[data-agent-session-column-footprint="width"]');
-	const statusColumns = page.locator("[data-jira-kanban-column]");
-	const [initialBox, untrackedSurfaceBox, firstStatusBox, secondStatusBox] = await Promise.all([
-		untrackedColumn.boundingBox(),
-		untrackedSurface.boundingBox(),
-		statusColumns.nth(0).boundingBox(),
-		statusColumns.nth(1).boundingBox(),
-	]);
+	const initialBox = await untrackedColumn.boundingBox();
 	expect(initialBox).not.toBeNull();
-	expect(untrackedSurfaceBox).not.toBeNull();
-	expect(firstStatusBox).not.toBeNull();
-	expect(secondStatusBox).not.toBeNull();
-	if (!initialBox || !untrackedSurfaceBox || !firstStatusBox || !secondStatusBox) return;
+	if (!initialBox) return;
 
-	const untrackedToFirstGap = Math.round(
-		firstStatusBox.x - untrackedSurfaceBox.x - untrackedSurfaceBox.width,
+	const visualGutters = await page.evaluate(() => {
+		const well = document.querySelector("[data-agent-session-column]");
+		const handle = document.querySelector(
+			"[data-testid='jira-kanban-agent-session-column-resize-handle']",
+		);
+		const columns = [...document.querySelectorAll("[data-jira-kanban-column]")];
+		if (!well || !handle || columns.length < 2) {
+			return null;
+		}
+		const contentLeft = (column: Element) => {
+			const title = column.getAttribute("data-jira-kanban-column");
+			const label = [...column.querySelectorAll("span")].find((element) => (
+				element.textContent === title
+			));
+			return (label ?? column).getBoundingClientRect().left;
+		};
+		const firstCards = columns[0].querySelectorAll("article");
+		const firstContentRight = firstCards.length > 0
+			? firstCards[firstCards.length - 1].getBoundingClientRect().right
+			: columns[0].getBoundingClientRect().right;
+		const wellRight = well.getBoundingClientRect().right;
+		const firstLeft = contentLeft(columns[0]);
+		const handleBox = handle.getBoundingClientRect();
+		return {
+			untrackedToFirst: firstLeft - wellRight,
+			statusContentGap: contentLeft(columns[1]) - firstContentRight,
+			handleCenter: handleBox.left + handleBox.width / 2,
+			gapMid: wellRight + (firstLeft - wellRight) / 2,
+		};
+	});
+	expect(visualGutters).not.toBeNull();
+	if (!visualGutters) return;
+	expect(Math.round(visualGutters.untrackedToFirst)).toBe(
+		Math.round(visualGutters.statusContentGap),
 	);
-	const statusColumnGap = Math.round(
-		secondStatusBox.x - firstStatusBox.x - firstStatusBox.width,
-	);
-	expect(untrackedToFirstGap).toBe(statusColumnGap);
-	expect(untrackedToFirstGap).toBe(8);
+	expect(Math.abs(visualGutters.handleCenter - visualGutters.gapMid)).toBeLessThanOrEqual(1);
 
 	await expect(resizeHandle).toHaveAttribute("aria-orientation", "vertical");
 	await expect(resizeHandle).toHaveAttribute("aria-valuemin", "280");
