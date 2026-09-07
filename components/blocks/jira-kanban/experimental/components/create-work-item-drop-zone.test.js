@@ -38,19 +38,22 @@ test("create button and dropzone share dashed well chrome", () => {
 });
 
 test("empty columns keep the create well at the top and always visible", () => {
-	const emptyColumnAction = BOARD.indexOf("{count === 0 ? createAction");
+	const createAction = BOARD.indexOf("const createAction = <BoardColumnCreateAction");
 	const cardList = BOARD.indexOf('data-jira-kanban-card-list=""');
 	const cards = BOARD.indexOf("{children}", cardList);
-	const populatedColumnFooter = BOARD.indexOf("{count > 0 ?", cards);
+	const actionRender = BOARD.indexOf("{createAction}", cardList);
 
-	assert.ok(emptyColumnAction >= 0);
-	assert.ok(cardList > emptyColumnAction);
+	assert.ok(createAction >= 0);
+	assert.ok(cardList > createAction);
 	assert.ok(cards > cardList);
-	assert.ok(populatedColumnFooter > cards);
+	assert.ok(actionRender > cards);
+	assert.equal((BOARD.match(/\{createAction\}/gu) ?? []).length, 1);
 	assert.match(
 		BOARD,
-		/reveal=\{count === 0 \? "always" : "column-hover"\}[\s\S]*sessionDragTransaction=\{sessionDragTransaction\}/u,
+		/reveal=\{isEmptyColumn \? "always" : "column-hover"\}[\s\S]*sessionDragTransaction=\{sessionDragTransaction\}/u,
 	);
+	assert.match(BOARD, /order: isEmptyColumn \? 1 : 0/u);
+	assert.match(BOARD, /order: isEmptyColumn \? 0 : 1/u);
 });
 
 test("drop receipts leave the create-well copy clear of the flight chip", () => {

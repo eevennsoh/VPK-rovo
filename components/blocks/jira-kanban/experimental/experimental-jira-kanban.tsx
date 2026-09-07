@@ -418,9 +418,10 @@ function BoardColumn({
 		}),
 		[showBottomScrollMask, showTopScrollMask],
 	);
+	const isEmptyColumn = count === 0;
 	const createAction = <BoardColumnCreateAction
 		dropZoneLabel={createWorkItemDropZoneLabel}
-		reveal={count === 0 ? "always" : "column-hover"}
+		reveal={isEmptyColumn ? "always" : "column-hover"}
 		sessionDragTransaction={sessionDragTransaction}
 		title={title}
 	/>;
@@ -476,13 +477,12 @@ function BoardColumn({
 				</div>
 			</div>
 
-			{count === 0 ? createAction : null}
-
 			<div
 				ref={cardListRef}
 				data-jira-kanban-card-list=""
 				className="min-w-0 overflow-y-auto has-[[data-session-dragging]]:overflow-visible"
 				style={{
+					order: isEmptyColumn ? 1 : 0,
 					flexGrow: 1,
 					display: "flex",
 					flexDirection: "column",
@@ -494,7 +494,7 @@ function BoardColumn({
 				{children}
 			</div>
 
-			{count > 0 ? <div style={chrome.footer}>{createAction}</div> : null}
+			<div style={{ order: isEmptyColumn ? 0 : 1, ...(!isEmptyColumn ? chrome.footer : {}) }}>{createAction}</div>
 		</div>
 	);
 }
