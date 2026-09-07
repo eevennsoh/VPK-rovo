@@ -416,6 +416,7 @@ test("each notch opens the shared session flyout rather than a forked preview", 
 	assert.equal(RAIL_COLUMN_SOURCE.match(/<JiraSessionFlyoutSurface\b/gu)?.length, 1);
 	assert.match(RAIL_COLUMN_SOURCE, /content="untracked-work"/u);
 	assert.match(RAIL_COLUMN_SOURCE, /<JiraSessionFlyoutSurface[\s\S]*handle=\{flyoutHandle\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /<JiraSessionFlyoutSurface[\s\S]*instantPosition/u);
 	assert.match(RAIL_COLUMN_SOURCE, /flyoutSession=\{toAgentSessionUntrackedWorkFlyoutItem\(/u);
 	assert.match(RAIL_COLUMN_SOURCE, /session=\{flyoutSession\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /closeDelay=\{160\}/u);

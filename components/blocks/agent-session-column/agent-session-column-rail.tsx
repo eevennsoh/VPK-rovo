@@ -709,6 +709,7 @@ export function AgentSessionColumnRail({
 				capturedSessionIds={capturedItemIds}
 				content="untracked-work"
 				handle={flyoutHandle}
+				instantPosition
 				onAddAsSubtask={flyoutActions.onAddAsSubtask}
 				onCreateWorkItem={flyoutActions.onCreateWorkItem}
 				onLinkWorkItem={flyoutActions.onLinkWorkItem}
