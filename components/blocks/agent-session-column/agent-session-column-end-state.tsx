@@ -13,8 +13,8 @@ import { AGENT_SESSION_DECK_END_SPACE_PX } from "./deck/deck-model";
 const END_STATE_TEXT_EFFECT = {
 	...configForEffect("per-word-crossfade"),
 	autoLoop: false,
-	durationMs: 400,
-	staggerMs: 45,
+	durationMs: 900,
+	staggerMs: 120,
 } satisfies TextEffectConfig;
 
 const END_STATE_COUNT_MORPH = {
