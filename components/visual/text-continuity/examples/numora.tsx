@@ -79,15 +79,18 @@ export function NumoraField() {
 		<label className="flex w-full max-w-72 cursor-text flex-col items-center gap-4">
 			<span className="sr-only">Amount</span>
 
-			{/* A rendering of the field's own value; reading it back would double it. */}
-			<TextContinuity
-				aria-hidden
-				className="text-4xl font-bold tabular-nums text-text"
-				cursorIndex={caret}
-				style={{ opacity: raw ? 1 : 0.5 }}
-			>
-				{formatted || "0"}
-			</TextContinuity>
+			{/*
+			 * A rendering of the field's own value; reading it back would announce the
+			 * amount twice. `aria-hidden` has to sit on a real wrapper — neither this
+			 * wrapper component nor torph's binding forwards DOM props to the morph
+			 * host, and a hyphenated JSX attribute is not type-checked, so passing it
+			 * to `TextContinuity` would silently do nothing.
+			 */}
+			<span aria-hidden className="text-4xl font-bold tabular-nums text-text">
+				<TextContinuity cursorIndex={caret} style={{ opacity: raw ? 1 : 0.5 }}>
+					{formatted || "0"}
+				</TextContinuity>
+			</span>
 
 			<input
 				ref={inputRef}

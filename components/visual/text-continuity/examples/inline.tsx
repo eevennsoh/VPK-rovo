@@ -35,28 +35,37 @@ const ACTION_TRANSITION = {
 	restDelta: 0.0001,
 };
 
-const SpinnerIcon = () => (
-	<svg width="23" height="23" viewBox="0 0 23 23" fill="none" aria-hidden>
-		<motion.g
-			animate={{ rotate: 360 }}
-			transition={{ repeat: Infinity, duration: 0.5, ease: "linear" }}
-			style={{ originX: "50%", originY: "50%", willChange: "transform" }}
-		>
-			<path
-				d="M21.313 11.4062C21.313 16.8775 16.8777 21.3128 11.4065 21.3128"
-				stroke="currentColor"
-				strokeWidth="3"
-				strokeLinecap="round"
-			/>
-			<path
-				opacity="0.1"
-				d="M11.4065 21.313C16.8777 21.313 21.313 16.8777 21.313 11.4065C21.313 5.93529 16.8777 1.5 11.4065 1.5C5.93529 1.5 1.5 5.93529 1.5 11.4065C1.5 16.8777 5.93529 21.313 11.4065 21.313Z"
-				stroke="currentColor"
-				strokeWidth="3"
-			/>
-		</motion.g>
-	</svg>
-);
+/**
+ * The one continuous animation in the gallery, so it needs its own guard:
+ * `useCycle` rests this example on the spinner state, and an indefinite spin is
+ * exactly what `prefers-reduced-motion` is asking us not to do.
+ */
+const SpinnerIcon = () => {
+	const reduced = useReducedMotion();
+
+	return (
+		<svg width="23" height="23" viewBox="0 0 23 23" fill="none" aria-hidden>
+			<motion.g
+				animate={reduced ? undefined : { rotate: 360 }}
+				transition={reduced ? undefined : { repeat: Infinity, duration: 0.5, ease: "linear" }}
+				style={{ originX: "50%", originY: "50%", willChange: "transform" }}
+			>
+				<path
+					d="M21.313 11.4062C21.313 16.8775 16.8777 21.3128 11.4065 21.3128"
+					stroke="currentColor"
+					strokeWidth="3"
+					strokeLinecap="round"
+				/>
+				<path
+					opacity="0.1"
+					d="M11.4065 21.313C16.8777 21.313 21.313 16.8777 21.313 11.4065C21.313 5.93529 16.8777 1.5 11.4065 1.5C5.93529 1.5 1.5 5.93529 1.5 11.4065C1.5 16.8777 5.93529 21.313 11.4065 21.313Z"
+					stroke="currentColor"
+					strokeWidth="3"
+				/>
+			</motion.g>
+		</svg>
+	);
+};
 
 const CheckIcon = () => (
 	<svg width="21" height="21" viewBox="0 0 21 21" fill="none" aria-hidden>

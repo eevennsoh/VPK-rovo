@@ -111,25 +111,39 @@ export function ReorderList() {
 						tabIndex={0}
 						aria-label={`${TRACKS[id]}, position ${slot + 1}`}
 						// Rows nearest the one that moved set off first, which is the ripple.
-						transition={{
-							...(id === carried ? CARRY : SETTLE),
-							delay: id === dragging || id === carried ? 0 : Math.abs(slot - pivot) * RIPPLE,
-							path: arc({ strength: 2 }),
-							opacity: { duration: 0.22, delay: 0 },
-							scale: { type: "spring", stiffness: 420, damping: 30, delay: 0 },
-							boxShadow: { duration: 0.22, delay: 0 },
-							x: { duration: 0.55, ease: "easeInOut", times: [0, 0.5, 1], delay: LIFT / 1000 },
-						}}
-						animate={{
-							scale: id === carried ? 1.03 : 1,
-							opacity: carried < 0 || id === carried ? 1 : DIMMED,
-							boxShadow: id === carried ? "0 0.75rem 1.5rem rgba(0, 0, 0, 0.45)" : "0 0rem 0rem rgba(0, 0, 0, 0)",
-							// `transition.path` only curves layout moves, and Reorder.Item drives
-							// the row it is carrying off `x`/`y` instead — so bow that by hand.
-							x: id === carried ? [0, BOW, 0] : 0,
-						}}
+						// Under reduced motion every row lands instantly instead: the idle
+						// timer is only half of it, since a drag or an Arrow key still
+						// drives these transitions directly.
+						transition={
+							reduced
+								? { duration: 0 }
+								: {
+										...(id === carried ? CARRY : SETTLE),
+										delay: id === dragging || id === carried ? 0 : Math.abs(slot - pivot) * RIPPLE,
+										path: arc({ strength: 2 }),
+										opacity: { duration: 0.22, delay: 0 },
+										scale: { type: "spring", stiffness: 420, damping: 30, delay: 0 },
+										boxShadow: { duration: 0.22, delay: 0 },
+										x: { duration: 0.55, ease: "easeInOut", times: [0, 0.5, 1], delay: LIFT / 1000 },
+									}
+						}
+						animate={
+							reduced
+								? { scale: 1, opacity: 1, boxShadow: "0 0rem 0rem rgba(0, 0, 0, 0)", x: 0 }
+								: {
+										scale: id === carried ? 1.03 : 1,
+										opacity: carried < 0 || id === carried ? 1 : DIMMED,
+										boxShadow:
+											id === carried ? "0 0.75rem 1.5rem rgba(0, 0, 0, 0.45)" : "0 0rem 0rem rgba(0, 0, 0, 0)",
+										// `transition.path` only curves layout moves, and Reorder.Item drives
+										// the row it is carrying off `x`/`y` instead — so bow that by hand.
+										x: id === carried ? [0, BOW, 0] : 0,
+									}
+						}
 						// Lifted, so a row still catching up passes underneath it.
-						whileDrag={{ scale: 1.03, zIndex: 2, boxShadow: "0 0.75rem 1.5rem rgba(0, 0, 0, 0.45)" }}
+						whileDrag={
+							reduced ? undefined : { scale: 1.03, zIndex: 2, boxShadow: "0 0.75rem 1.5rem rgba(0, 0, 0, 0.45)" }
+						}
 						onDragStart={() => {
 							setTaken(true);
 							setDragging(id);
