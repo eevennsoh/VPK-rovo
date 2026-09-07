@@ -35,6 +35,7 @@ import {
 	HoverCardTrigger,
 	HoverCardViewport,
 	type HoverCardHandle,
+	type HoverCardProps,
 	type HoverCardTriggerProps,
 } from "@/components/ui/hover-card";
 import { GithubLogo } from "@/components/ui/logo-third-party";
@@ -76,6 +77,9 @@ export type JiraSessionFlyoutContent = "details" | "composer" | "untracked-work"
 
 export interface JiraSessionFlyoutSurfaceProps {
 	handle: JiraSessionFlyoutHandle;
+	/** Lets dense trigger groups defer a switch while the pointer travels into the popup. */
+	onOpenChange?: HoverCardProps<JiraSidebarSessionItem>["onOpenChange"];
+	popupRef?: ComponentProps<typeof HoverCardContent>["ref"];
 	/** Moves directly between detached triggers instead of easing through stale positions. */
 	instantPosition?: boolean;
 	/**
@@ -670,6 +674,8 @@ export function JiraSessionFlyoutSurface({
 	content = "details",
 	handle,
 	instantPosition = false,
+	onOpenChange,
+	popupRef,
 	onArchiveSession,
 	onAddAsSubtask,
 	onCreateWorkItem,
@@ -686,9 +692,10 @@ export function JiraSessionFlyoutSurface({
 	}, [handle, suspended]);
 
 	return (
-		<HoverCard<JiraSidebarSessionItem> handle={handle}>
+		<HoverCard<JiraSidebarSessionItem> handle={handle} onOpenChange={onOpenChange}>
 			{({ payload }) => (
 				<HoverCardContent
+					ref={popupRef}
 					align="start"
 					alignOffset={0}
 					className="h-(--popup-height) w-(--popup-width) border-0 bg-surface-overlay p-0 text-text shadow-overlay transition-[opacity,scale,translate] duration-medium ease-in-out motion-reduce:transition-none data-ending-style:duration-normal data-ending-style:ease-in data-[side=right]:data-starting-style:translate-x-0 data-[side=right]:data-ending-style:translate-x-0"
