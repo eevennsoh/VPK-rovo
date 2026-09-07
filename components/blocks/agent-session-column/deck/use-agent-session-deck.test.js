@@ -40,8 +40,13 @@ test("the deck hook does not store scroll in React state", () => {
 	);
 	assert.match(
 		source,
-		/if \(port === null\)[\s\S]*subscribeToAgentSessionDeckScrollActivity\(port\)[\s\S]*if \(!active\) \{\s*return unsubscribeScrollActivity;/u,
+		/if \(port === null\)[\s\S]*subscribeToAgentSessionDeckScrollActivity\(port\)[\s\S]*if \(!active\) \{\s*clearAgentSessionDeck\(port\);\s*return unsubscribeScrollActivity;/u,
 		"flat columns must still publish scroll activity for the auto-hiding scrollbar",
+	);
+	assert.equal(
+		(source.match(/clearAgentSessionDeck\(port\)/gu) ?? []).length,
+		2,
+		"disabling or cleaning up the deck must remove every inline deck style",
 	);
 	assert.match(
 		source,

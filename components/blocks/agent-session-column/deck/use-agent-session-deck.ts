@@ -16,6 +16,7 @@ import {
 	type AgentSessionDeck,
 } from "./deck-model";
 import {
+	clearAgentSessionDeck,
 	measureAgentSessionDeck,
 	writeMeasuredAgentSessionDeck,
 	type MeasuredDeckItem,
@@ -65,6 +66,7 @@ export function useAgentSessionDeck(deck: AgentSessionDeck): RefCallback<HTMLEle
 		const unsubscribeScrollActivity =
 			subscribeToAgentSessionDeckScrollActivity(port);
 		if (!active) {
+			clearAgentSessionDeck(port);
 			return unsubscribeScrollActivity;
 		}
 
@@ -156,6 +158,8 @@ export function useAgentSessionDeck(deck: AgentSessionDeck): RefCallback<HTMLEle
 				rafRef.current = null;
 			}
 			entranceControls?.stop();
+			clearAgentSessionDeck(port);
+			itemsRef.current = [];
 			if (playedRef.current) {
 				collapse.set(0);
 			} else {

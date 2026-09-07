@@ -4,20 +4,19 @@ import test from "node:test";
 // @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { AGENT_SESSION_DECK_STACKED, deckRunFrame, groupDeckRuns } from "./deck-model.ts";
 // @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
-import { applyDeckHostStyle, deckHostStyle, deckRowFromRect, deckRunZIndex, shouldMeasureDeckItem, type DeckStyleTarget } from "./deck-write.ts";
+import { applyDeckHostStyle, deckHostStyle, deckRowFromLayout, deckRunZIndex, shouldMeasureDeckItem, type DeckStyleTarget } from "./deck-write.ts";
 
-test("deckRowFromRect is content-space, not viewport-space", () => {
+test("deckRowFromLayout subtracts the scrollport layout origin", () => {
 	assert.deepEqual(
-		deckRowFromRect(100, 40, true, { height: 62, top: 180 }),
+		deckRowFromLayout(100, 220, true, 62),
 		{ height: 62, marked: true, top: 120 },
 	);
 });
 
-test("content-space top is unchanged when the viewport rect moves with scroll", () => {
-	const rested = deckRowFromRect(100, 40, false, { height: 62, top: 180 });
-	const scrolled = deckRowFromRect(100, 80, false, { height: 62, top: 140 });
-	assert.equal(rested.top, scrolled.top);
-	assert.equal(rested.top, 120);
+test("layout rows are independent of transient viewport transforms", () => {
+	const row = deckRowFromLayout(100, 220, false, 62);
+	assert.equal(row.top, 120);
+	assert.equal(row.height, 62);
 });
 
 test("shouldMeasureDeckItem skips placeholders, missing hosts, and zero height", () => {

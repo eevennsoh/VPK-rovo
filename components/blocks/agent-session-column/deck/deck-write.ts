@@ -22,20 +22,17 @@ export interface DeckStyleTarget {
 	zIndex: string;
 }
 
-/**
- * Layout `top` in the scrollport's content space. Rects, not `offsetTop`: the
- * column scrollport is `position: static`, so offsetParent would include the header.
- */
-export function deckRowFromRect(
-	portTop: number,
-	scrollTop: number,
+/** Layout `top` in the scrollport's content space, before visual transforms. */
+export function deckRowFromLayout(
+	portLayoutTop: number,
+	rowLayoutTop: number,
 	marked: boolean,
-	rect: Readonly<{ height: number; top: number }>,
+	height: number,
 ): DeckRow {
 	return {
-		height: rect.height,
+		height,
 		marked,
-		top: rect.top - portTop + scrollTop,
+		top: rowLayoutTop - portLayoutTop,
 	};
 }
 
@@ -104,13 +101,37 @@ function clearDeckItem(host: HTMLElement, li: HTMLElement): void {
 	li.style.zIndex = "";
 }
 
+export function clearAgentSessionDeck(port: HTMLElement): void {
+	for (const node of port.querySelectorAll(DECK_ITEM_SELECTOR)) {
+		if (!(node instanceof HTMLElement)) {
+			continue;
+		}
+		const host = node.firstElementChild;
+		if (host instanceof HTMLElement) {
+			clearDeckItem(host, node);
+		}
+	}
+}
+
+function layoutTopWithoutTransforms(element: HTMLElement): number {
+	let top = 0;
+	let current: HTMLElement | null = element;
+	while (current !== null) {
+		top += current.offsetTop;
+		current = current.offsetParent instanceof HTMLElement
+			? current.offsetParent
+			: null;
+	}
+	return top;
+}
+
 /**
- * Content-space row geometry. `row.top` stays put when `rect.top` and
- * `scrollTop` move together, so this is safe to cache across scroll.
+ * Content-space row geometry from layout offsets. Motion's transient
+ * translate/scale styles affect client rects, not `offsetTop` / `offsetHeight`,
+ * so a prepended row cannot poison the cached settled positions.
  */
 export function measureAgentSessionDeck(port: HTMLElement): MeasuredDeckItem[] {
-	const portTop = port.getBoundingClientRect().top;
-	const scrollTop = port.scrollTop;
+	const portLayoutTop = layoutTopWithoutTransforms(port);
 	const measured: MeasuredDeckItem[] = [];
 
 	for (const node of port.querySelectorAll(DECK_ITEM_SELECTOR)) {
@@ -121,12 +142,12 @@ export function measureAgentSessionDeck(port: HTMLElement): MeasuredDeckItem[] {
 		if (!(host instanceof HTMLElement)) {
 			continue;
 		}
-		const rect = node.getBoundingClientRect();
+		const height = node.offsetHeight;
 		if (
 			!shouldMeasureDeckItem(
 				node.hasAttribute(DECK_PLACEHOLDER_ATTR),
 				true,
-				rect.height,
+				height,
 			)
 		) {
 			clearDeckItem(host, node);
@@ -135,11 +156,11 @@ export function measureAgentSessionDeck(port: HTMLElement): MeasuredDeckItem[] {
 		measured.push({
 			host,
 			li: node,
-			row: deckRowFromRect(
-				portTop,
-				scrollTop,
+			row: deckRowFromLayout(
+				portLayoutTop,
+				layoutTopWithoutTransforms(node),
 				node.hasAttribute(DECK_MARKED_ATTR),
-				rect,
+				height,
 			),
 		});
 	}
