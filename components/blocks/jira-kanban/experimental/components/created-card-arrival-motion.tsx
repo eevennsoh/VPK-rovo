@@ -19,7 +19,8 @@ import {
 	JIRA_KANBAN_CARD_DEPART,
 	JIRA_KANBAN_CARD_MOVE,
 } from "../lib/card-motion";
-import { BoardCardHoverInsertionContext, BoardCardInsertionLine } from "./board-card-insertion-line";
+import { BoardCardHoverInsertionContext } from "./board-card-hover-insertion-context";
+import { BoardCardInsertionLine } from "./board-card-insertion-line";
 
 interface CreatedCardArrivalMotionProps {
 	arrival?: JiraKanbanCreatedCardArrival;

@@ -30,10 +30,8 @@ import {
 	BOARD_CARD_INSERTION_BAND_PX,
 	pickBoardCardInsertionAtPoint,
 } from "../lib/board-card-insertion";
-import {
-	BoardCardHoverInsertionContext,
-	BoardEmptyColumnInsertionSlot,
-} from "./board-card-insertion-line";
+import { BoardCardHoverInsertionContext } from "./board-card-hover-insertion-context";
+import { BoardEmptyColumnInsertionSlot } from "./board-card-insertion-line";
 
 function toDropBounds(rect: DOMRectReadOnly): BoardAgentSessionDropBounds {
 	return {

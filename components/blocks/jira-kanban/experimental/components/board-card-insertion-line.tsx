@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, use, useId, type CSSProperties } from "react";
+import { use, useId, type CSSProperties } from "react";
 import AddIcon from "@atlaskit/icon/core/add";
 
 import { Icon } from "@/components/ui/icon";
@@ -9,12 +9,7 @@ import { cn } from "@/lib/utils";
 
 import type { BoardCardInsertion } from "../lib/board-agent-session-drag";
 import type { BoardCardInsertionSeam } from "../lib/board-card-insertion";
-
-/**
- * Hover-armed insertion for one column's card list. Drag insertions stay on
- * the `cardInsertion` prop so a session drop never fights a pointer hover.
- */
-export const BoardCardHoverInsertionContext = createContext<BoardCardInsertion | null>(null);
+import { BoardCardHoverInsertionContext } from "./board-card-hover-insertion-context";
 
 /**
  * The single insertion seam of a column that holds no cards.
