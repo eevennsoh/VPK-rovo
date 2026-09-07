@@ -315,7 +315,11 @@ test("the board reveals compact magnetic create targets that expand and arm duri
 	);
 	assert.match(
 		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
-		/const armed = Boolean\([\s\S]*sessionDragTransaction\?\.target\?\.kind === "create"[\s\S]*sessionDragTransaction\.target\.columnTitle === title,/u,
+		/import \{ resolveBoardCreateDropzoneDrag \} from "\.\.\/lib\/board-agent-session-drag";/u,
+	);
+	assert.match(
+		CREATE_WORK_ITEM_DROP_ZONE_SOURCE,
+		/const drag: JiraDropzoneDragState = resolveBoardCreateDropzoneDrag\(\s*sessionDragTransaction,\s*title,\s*\);/u,
 	);
 	assert.match(
 		JIRA_DROPZONE_SOURCE,

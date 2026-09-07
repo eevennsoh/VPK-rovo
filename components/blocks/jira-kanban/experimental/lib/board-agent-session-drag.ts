@@ -35,6 +35,43 @@ export type BoardAgentSessionDragOrigin =
 	| { kind: "detached"; sourceCardCode: string }
 	| { kind: "untracked" };
 
+/** Create wells accept drops only from the Untracked rail. */
+export function isCreateZoneEligible(origin: BoardAgentSessionDragOrigin): boolean {
+	switch (origin.kind) {
+		case "untracked":
+			return true;
+		case "attached":
+		case "detached":
+			return false;
+		default: {
+			const exhaustive: never = origin;
+			return exhaustive;
+		}
+	}
+}
+
+export type BoardCreateDropzoneDrag = "active" | "armed" | "idle";
+
+/**
+ * Open labeled create wells on every column only when this drag can actually
+ * land in one. Attached and detached origins keep the resting plus button.
+ */
+export function resolveBoardCreateDropzoneDrag(
+	transaction: BoardAgentSessionDragTransaction | null,
+	columnTitle: string,
+): BoardCreateDropzoneDrag {
+	if (!transaction || !isCreateZoneEligible(transaction.origin)) {
+		return "idle";
+	}
+	if (
+		transaction.target?.kind === "create"
+		&& transaction.target.columnTitle === columnTitle
+	) {
+		return "armed";
+	}
+	return "active";
+}
+
 export type BoardAgentSessionDropZone =
 	| {
 		bounds: BoardAgentSessionDropBounds;
@@ -141,7 +178,7 @@ function toEligibleTarget(
 ): BoardAgentSessionDropTarget | null {
 	switch (zone.kind) {
 		case "create":
-			return origin.kind === "untracked"
+			return isCreateZoneEligible(origin)
 				? { columnTitle: zone.columnTitle, kind: "create" }
 				: null;
 		case "untracked":
@@ -427,7 +464,7 @@ export function resolveBoardAgentSessionDropAction(
 
 	switch (target.kind) {
 		case "create":
-			return origin.kind === "untracked"
+			return isCreateZoneEligible(origin)
 				? { columnTitle: target.columnTitle, kind: "create", sessionIds }
 				: { kind: "none" };
 		case "untracked":
