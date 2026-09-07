@@ -147,6 +147,13 @@ test("the expanded pinned session column reuses the accessible sidebar resize co
 	assert.match(resizeClassSource, /motion-reduce:\[&>div\]:scale-100/u);
 	assert.match(
 		IN_FLOW_SOURCE,
+		/const transition = shouldReduceMotion \|\| isResizing[\s\S]*const expansionTransition = shouldReduceMotion \|\| isResizing/u,
+	);
+	assert.match(IN_FLOW_SOURCE, /data-agent-session-column-footprint="width"/u);
+	assert.match(IN_FLOW_SOURCE, /widthTransitionDisabled=\{resize\.isResizing\}/u);
+	assert.match(IN_FLOW_SOURCE, /isResizing=\{resize\.isResizing\}/u);
+	assert.match(
+		IN_FLOW_SOURCE,
 		/useSidebarResize\(\{[\s\S]*defaultWidth: agentSessionColumn\.expandedWidthPx \?\? AGENT_SESSION_COLUMN_WIDTH_PX,[\s\S]*maxWidth: IN_FLOW_AGENT_SESSION_COLUMN_MAX_WIDTH_PX,[\s\S]*minWidth: AGENT_SESSION_COLUMN_WIDTH_PX,[\s\S]*minWidthResistance: true,/u,
 	);
 	assert.match(

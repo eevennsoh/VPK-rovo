@@ -112,14 +112,18 @@ function useInFlowAgentSessionColumnInteraction(
 function InFlowAgentSessionColumnFootprint({
 	columnWidthPx,
 	isEmbedded,
+	isResizing,
 	shouldReduceMotion,
 }: Readonly<{
 	columnWidthPx: number;
 	isEmbedded: boolean;
+	isResizing: boolean;
 	shouldReduceMotion: boolean | null;
 }>) {
-	const transition = shouldReduceMotion ? "none" : IN_FLOW_AGENT_SESSION_COLUMN_WIDTH_TRANSITION;
-	const expansionTransition = shouldReduceMotion
+	const transition = shouldReduceMotion || isResizing
+		? "none"
+		: IN_FLOW_AGENT_SESSION_COLUMN_WIDTH_TRANSITION;
+	const expansionTransition = shouldReduceMotion || isResizing
 		? "none"
 		: IN_FLOW_AGENT_SESSION_COLUMN_EXPANSION_TRANSITION;
 
@@ -128,6 +132,7 @@ function InFlowAgentSessionColumnFootprint({
 			<div
 				aria-hidden="true"
 				className="shrink-0"
+				data-agent-session-column-footprint="width"
 				style={{
 					transition,
 					width: isEmbedded ? IN_FLOW_AGENT_SESSION_COLUMN_GAP_PX : 0,
@@ -201,6 +206,7 @@ function InFlowAgentSessionColumnSurface({
 				collapsedPresentation={isEmbedded ? "column" : "gutter"}
 				columnFrame={columnFrame}
 				expandedWidthPx={expandedWidthPx}
+				widthTransitionDisabled={resize.isResizing}
 				onCollapsedChange={onCollapsedChange}
 				onGutterIntroComplete={onGutterIntroComplete}
 				playGutterIntro={playGutterIntro}
@@ -296,6 +302,7 @@ export function InFlowAgentSessionColumn({
 				<InFlowAgentSessionColumnFootprint
 					columnWidthPx={columnWidthPx}
 					isEmbedded={isEmbedded}
+					isResizing={resize.isResizing}
 					shouldReduceMotion={shouldReduceMotion}
 				/>
 				<InFlowAgentSessionColumnSurface

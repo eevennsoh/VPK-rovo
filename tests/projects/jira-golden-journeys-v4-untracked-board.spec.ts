@@ -252,6 +252,7 @@ test("the Untracked resize handle reveals on column hover and widens the pinned 
 	const untrackedSurface = page.locator(
 		'[data-board-agent-session-drop-zone="untracked"]',
 	).first();
+	const widthFootprint = page.locator('[data-agent-session-column-footprint="width"]');
 	const statusColumns = page.locator("[data-jira-kanban-column]");
 	const [initialBox, untrackedSurfaceBox, firstStatusBox, secondStatusBox] = await Promise.all([
 		untrackedColumn.boundingBox(),
@@ -292,9 +293,13 @@ test("the Untracked resize handle reveals on column hover and widens the pinned 
 
 	await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + 80);
 	await page.mouse.down();
+	await expect(untrackedColumn).toHaveCSS("transition-property", "none");
+	await expect(widthFootprint).toHaveCSS("transition-property", "none");
 	await page.mouse.move(handleBox.x + handleBox.width / 2 + 96, handleBox.y + 80, {
 		steps: 8,
 	});
+	await expect.poll(async () => (await resizeHandle.boundingBox())?.x ?? 0)
+		.toBeGreaterThan(handleBox.x + 80);
 	await page.mouse.up();
 
 	await expect.poll(async () => (await untrackedColumn.boundingBox())?.width ?? 0)
