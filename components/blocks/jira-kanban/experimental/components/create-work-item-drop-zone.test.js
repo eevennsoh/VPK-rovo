@@ -37,6 +37,17 @@ test("create button and dropzone share dashed well chrome", () => {
 	);
 });
 
+test("session drag pops the create well in on every column", () => {
+	assert.match(
+		DROPZONE,
+		/initial=\{shouldReduceMotion[\s\S]*false[\s\S]*opacity: 0, scale: JIRA_DROPZONE_WELL_ENTER_SCALE[\s\S]*JIRA_DROPZONE_WELL_ENTER/u,
+	);
+	assert.match(
+		DROPZONE,
+		/useReducedMotion\(\)/u,
+	);
+});
+
 test("empty columns keep the create well at the top and always visible", () => {
 	const createAction = BOARD.indexOf("const createAction = <BoardColumnCreateAction");
 	const cardList = BOARD.indexOf('data-jira-kanban-card-list=""');
