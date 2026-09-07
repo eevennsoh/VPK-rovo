@@ -353,3 +353,44 @@ test("two session creates on one gap keep both issue keys", () => {
 	assert.equal(todoCards.some((card) => card.code === "PAY-119"), true);
 	assert.equal(todoCards.some((card) => card.code === "PAY-120"), true);
 });
+
+test("a multi-session drop keeps its created rows adjacent when other rows are hidden", () => {
+	// Replays the loop `createFromAgentSession` runs once per marked session:
+	// board columns, list order, and visible keys all advance in refs so the
+	// second session's insertion index is measured against a list that already
+	// holds the first session's row. Skipping the visible-keys advance is what
+	// used to land the second row one gap too far down.
+	const hiddenKey = "PAY-999";
+	let columns = COLUMNS;
+	let listOrder = ["PAY-118", hiddenKey, "PAY-107", "PAY-101"];
+	let visibleKeys = ["PAY-118", "PAY-107", "PAY-101"];
+	const dropInsertion = { insertAtIndex: 1, position: "after", relativeToIssueKey: "PAY-118" };
+	const created = [];
+
+	["lw-a", "lw-b", "lw-c"].forEach((sessionId, index) => {
+		const insertion = { ...dropInsertion, insertAtIndex: dropInsertion.insertAtIndex + index };
+		const result = createListWorkItemFromSession({
+			activity: { id: sessionId, label: sessionId, name: "Claude Code", state: "complete" },
+			columns,
+			insertion,
+			linkSession: linkJiraKanbanAgentSession,
+			listOrder,
+			session: { id: sessionId, title: `Session ${sessionId}` },
+			visibleKeys,
+		});
+		columns = result.columns;
+		listOrder = result.listOrder;
+		visibleKeys = insertListOrderKey(visibleKeys, visibleKeys, result.issueKey, insertion.insertAtIndex);
+		created.push(result.issueKey);
+	});
+
+	assert.deepEqual(created, ["PAY-119", "PAY-120", "PAY-121"]);
+	assert.deepEqual(visibleKeys, ["PAY-118", "PAY-119", "PAY-120", "PAY-121", "PAY-107", "PAY-101"]);
+	// The hidden row keeps its rank; what matters is that no visible row is left
+	// stranded between the three the drop created.
+	assert.equal(listOrder.includes(hiddenKey), true);
+	assert.deepEqual(
+		listOrder.filter((key) => key !== hiddenKey),
+		["PAY-118", "PAY-119", "PAY-120", "PAY-121", "PAY-107", "PAY-101"],
+	);
+});

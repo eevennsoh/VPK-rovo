@@ -41,6 +41,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/jira-dropzone/jira-dropzone-demo-drag.test.js",
 		"components/blocks/jira-kanban/experimental/lib/board-untracked-sessions.test.js",
 		"components/blocks/jira-list/jira-list-horizontal-underlap.test.js",
+		"components/blocks/jira-list/jira-list-row-flash.test.js",
 		"components/blocks/omnibar/omnibar.test.js",
 		"components/blocks/scrubber/scrubber.test.js",
 		"components/blocks/top-navigation/layout-constants.test.js",
