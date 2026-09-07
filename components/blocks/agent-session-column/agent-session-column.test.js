@@ -380,6 +380,7 @@ test("notch flyouts use a stable trigger host so the shared popup follows the ra
 	assert.match(RAIL_COLUMN_SOURCE, /layout=\{shouldReduceMotion \? false : "position"\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /<JiraSessionFlyoutTrigger[\s\S]{0,200}?render=\{\s*<div className="w-full" \/>/u);
 	assert.match(RAIL_COLUMN_SOURCE, /closeDelay=\{160\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /delay=\{0\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /content="untracked-work"/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /render=\{\s*<motion\.li/u);
 });
@@ -431,7 +432,7 @@ test("each notch opens the shared session flyout rather than a forked preview", 
 	);
 	assert.match(RAIL_COLUMN_SOURCE, /<JiraSessionFlyoutTrigger/u);
 	// One payload-aware surface for the whole rail, as Agent List does, so
-	// sliding down the notches crossfades instead of remounting a card each time.
+	// sliding down the notches retargets the shared popup instead of remounting.
 	assert.match(RAIL_COLUMN_SOURCE, /const \[flyoutHandle\] = useState\(createJiraSessionFlyoutHandle\);/u);
 	assert.equal(RAIL_COLUMN_SOURCE.match(/<JiraSessionFlyoutSurface\b/gu)?.length, 1);
 	assert.match(RAIL_COLUMN_SOURCE, /content="untracked-work"/u);
@@ -440,6 +441,7 @@ test("each notch opens the shared session flyout rather than a forked preview", 
 	assert.match(RAIL_COLUMN_SOURCE, /flyoutSession=\{toAgentSessionUntrackedWorkFlyoutItem\(/u);
 	assert.match(RAIL_COLUMN_SOURCE, /session=\{flyoutSession\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /closeDelay=\{160\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /delay=\{0\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /render=\{\s*<div className="w-full" \/>/u);
 	assert.match(RAIL_COLUMN_SOURCE, /<motion\.li/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /createHoverCardHandle|<HoverCard\b/u);

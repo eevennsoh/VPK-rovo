@@ -76,7 +76,7 @@ export type JiraSessionFlyoutContent = "details" | "composer" | "untracked-work"
 
 export interface JiraSessionFlyoutSurfaceProps {
 	handle: JiraSessionFlyoutHandle;
-	/** Moves directly between detached triggers instead of easing through stale positions. */
+	/** Snaps between detached triggers: no position, enter/exit, or content-switch motion. */
 	instantPosition?: boolean;
 	/**
 	 * Flyout body. `details` (default) is the compact session hover card, `composer`
@@ -660,10 +660,10 @@ function JiraSessionFlyoutPayload({ content, ...props }: JiraSessionFlyoutPayloa
  * the compact session hover card; pass `content="composer"` for the Agent States
  * prompt composer or `content="untracked-work"` for a Jira-link suggestion.
  * Base UI's viewport keeps the popup mounted while the anchor
- * changes. The shell follows the new row, immediately adopts its measured size,
- * and crossfades the old and new content without letting rapid hovers restart a
- * stale size transition. High-frequency pointer surfaces can opt out of the
- * position transition so the shell never eases through stale triggers.
+ * changes. The shell follows the new row and immediately adopts its measured
+ * size without letting rapid hovers restart a stale size transition. List
+ * surfaces crossfade payload; high-frequency rails pass `instantPosition` so
+ * the shell snaps with no enter, exit, position, or content-switch motion.
  */
 export function JiraSessionFlyoutSurface({
 	capturedSessionIds,
@@ -691,7 +691,12 @@ export function JiraSessionFlyoutSurface({
 				<HoverCardContent
 					align="start"
 					alignOffset={0}
-					className="h-(--popup-height) w-(--popup-width) border-0 bg-surface-overlay p-0 text-text shadow-overlay transition-[opacity,scale,translate] duration-medium ease-in-out motion-reduce:transition-none data-ending-style:duration-normal data-ending-style:ease-in data-[side=right]:data-starting-style:translate-x-0 data-[side=right]:data-ending-style:translate-x-0"
+					className={cn(
+						"h-(--popup-height) w-(--popup-width) border-0 bg-surface-overlay p-0 text-text shadow-overlay data-[side=right]:data-starting-style:translate-x-0 data-[side=right]:data-ending-style:translate-x-0",
+						instantPosition
+							? "transition-none data-starting-style:opacity-100 data-starting-style:scale-100 data-ending-style:opacity-100 data-ending-style:scale-100"
+							: "transition-[opacity,scale,translate] duration-medium ease-in-out motion-reduce:transition-none data-ending-style:duration-normal data-ending-style:ease-in",
+					)}
 					positionerClassName={cn(
 						"h-(--positioner-height) w-(--positioner-width) max-w-(--available-width)",
 						instantPosition
@@ -701,7 +706,14 @@ export function JiraSessionFlyoutSurface({
 					side="right"
 					sideOffset={8}
 				>
-					<HoverCardViewport className="relative size-full overflow-clip rounded-[inherit] [&_[data-current]]:w-(--popup-width) [&_[data-current]]:opacity-100 [&_[data-current]]:transition-opacity [&_[data-current]]:duration-medium [&_[data-current]]:ease-in-out [&_[data-current]]:[will-change:opacity] [&_[data-current][data-starting-style]]:opacity-0 [&_[data-previous]]:w-(--popup-width) [&_[data-previous]]:opacity-100 [&_[data-previous]]:transition-opacity [&_[data-previous]]:duration-medium [&_[data-previous]]:ease-in-out [&_[data-previous]]:[will-change:opacity] [&_[data-previous][data-ending-style]]:opacity-0 motion-reduce:[&_[data-current]]:transition-none motion-reduce:[&_[data-current]]:[will-change:auto] motion-reduce:[&_[data-previous]]:transition-none motion-reduce:[&_[data-previous]]:[will-change:auto] data-instant:[&_[data-current]]:transition-none data-instant:[&_[data-previous]]:transition-none">
+					<HoverCardViewport
+						className={cn(
+							"relative size-full overflow-clip rounded-[inherit] [&_[data-current]]:w-(--popup-width) [&_[data-current]]:opacity-100 [&_[data-previous]]:w-(--popup-width) [&_[data-previous]]:opacity-100",
+							instantPosition
+								? "[&_[data-current]]:transition-none [&_[data-previous]]:transition-none [&_[data-previous][data-ending-style]]:opacity-0"
+								: "[&_[data-current]]:transition-opacity [&_[data-current]]:duration-medium [&_[data-current]]:ease-in-out [&_[data-current]]:[will-change:opacity] [&_[data-current][data-starting-style]]:opacity-0 [&_[data-previous]]:transition-opacity [&_[data-previous]]:duration-medium [&_[data-previous]]:ease-in-out [&_[data-previous]]:[will-change:opacity] [&_[data-previous][data-ending-style]]:opacity-0 motion-reduce:[&_[data-current]]:transition-none motion-reduce:[&_[data-current]]:[will-change:auto] motion-reduce:[&_[data-previous]]:transition-none motion-reduce:[&_[data-previous]]:[will-change:auto] data-instant:[&_[data-current]]:transition-none data-instant:[&_[data-previous]]:transition-none",
+						)}
+					>
 						{payload ? (
 							<JiraSessionFlyoutPayload
 								capturedSessionIds={capturedSessionIds}
