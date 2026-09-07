@@ -5403,7 +5403,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 434,
+			"manifestEntryCount": 435,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -7443,7 +7443,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 103,
+				"entryCount": 104,
 				"entries": [
 					{
 						"category": "visual",
@@ -7540,6 +7540,12 @@
 						"slug": "dithering",
 						"name": "Dithering",
 						"importPath": "@/components/website/demos/visual/shaders/dithering"
+					},
+					{
+						"category": "visual",
+						"slug": "dropzone-effect",
+						"name": "Dropzone Effect",
+						"importPath": "@/components/visual/dropzone-effect"
 					},
 					{
 						"category": "visual",
