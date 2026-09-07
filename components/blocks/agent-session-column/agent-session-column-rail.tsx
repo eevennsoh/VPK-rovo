@@ -72,6 +72,12 @@ import { useAgentSessionUserNotchArrival } from "./use-agent-session-user-notch-
 /** Reach centered dots: a 3rem band ends before the last visible session. */
 const AGENT_SESSION_RAIL_FADE_SIZE = "6rem";
 
+/** The tucked rail shows the latest ten sessions; older sessions stay scrollable. */
+const AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS = 10;
+const AGENT_SESSION_RAIL_ITEM_HEIGHT_PX = 20;
+const AGENT_SESSION_RAIL_ITEM_GAP_PX = 4;
+const AGENT_SESSION_RAIL_FOCUS_GUTTER_PX = 8;
+
 /** Spoken state, so the rail still names a lifecycle it no longer paints. */
 const NOTCH_STATE_LABEL: Record<AgentListState, string> = {
 	attention: "needs attention",
@@ -485,6 +491,12 @@ export function AgentSessionColumnRail({
 		[capturedItemIds, items, onCreateWorkItem, onLinkWorkItem, onSubtasks],
 	);
 	const shouldReduceMotion = useReducedMotion();
+	const visibleItemCount = Math.min(items.length, AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS);
+	const railViewportHeight = visibleItemCount === 0
+		? 0
+		: visibleItemCount * AGENT_SESSION_RAIL_ITEM_HEIGHT_PX
+			+ (visibleItemCount - 1) * AGENT_SESSION_RAIL_ITEM_GAP_PX
+			+ AGENT_SESSION_RAIL_FOCUS_GUTTER_PX;
 	// Under reduced motion the rail keeps its dock switched off entirely and the
 	// marks fall back to their own row's hover treatment, which resolves
 	// instantly. A slope that follows the cursor is exactly the kind of ambient
@@ -522,20 +534,20 @@ export function AgentSessionColumnRail({
 
 			    It is also the dock's pointer surface — one listener for the whole
 			    rail, rather than a hover handler per notch, because the swell is a
-			    property of the distance between them. `px-1` keeps the 4px
+			    property of the distance between them. `p-1` keeps the 4px
 			    focus-ring gutter *inside* the 32px column so the notches stay
-			    centered; a negative horizontal margin here shifts them 4px left
-			    once the collapsed section clips overflow. Focused-notch rings
-			    still paint past the scrollport because the clip lifts for
-			    `:focus-visible`. Arrival layout stays on each `motion.li`. */}
+			    centered and remain unclipped at the ten-item scroll boundary.
+			    A negative horizontal margin here would shift them 4px left once
+			    the collapsed section clips overflow. Arrival layout stays on each
+			    `motion.li`. */}
 			<ul
-				className="flex min-h-0 w-full flex-1 flex-col items-center gap-1 overflow-y-auto px-1 has-[:focus-visible]:overflow-visible"
+				className="scrollbar-none flex min-h-0 w-full flex-1 flex-col items-center gap-1 overflow-y-auto overscroll-contain px-1 py-1"
 				onPointerEnter={isDocked ? dock.handlePointerEnter : undefined}
 				onPointerLeave={isDocked ? dock.handlePointerLeave : undefined}
 				onPointerMove={isDocked ? dock.handlePointerMove : undefined}
 				onScroll={isDocked ? dock.handleScroll : undefined}
 				ref={setListRef}
-				style={scrollMaskStyle}
+				style={{ ...scrollMaskStyle, maxHeight: railViewportHeight }}
 			>
 				{items.map((item: AgentSessionItem, index: number) => (
 					<AgentSessionNotch
