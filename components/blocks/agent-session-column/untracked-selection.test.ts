@@ -8,7 +8,7 @@ import type { UntrackedWorkTriage } from "../agent-session/untracked-work-triage
 // @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { runBulkAction } from "./untracked-selection-actions.ts";
 // @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
-import { buildUntrackedHeaderModel, NO_SELECTION_MARKS, reduceSelectionMarks, selectEffectiveSelection } from "./untracked-selection.ts";
+import { buildUntrackedHeaderModel, NO_SELECTION_MARKS, reduceSelectionMarks, resolveLeadSpotlight, resolveVisibleLeadId, selectEffectiveSelection } from "./untracked-selection.ts";
 
 function session(id: string, issueKey?: string): AgentSessionItem {
 	return {
@@ -168,6 +168,59 @@ test("an additive activate toggles without moving the shift anchor", () => {
 	});
 	assert.deepEqual([...removed.markedIds], ["lw-c"]);
 	assert.equal(removed.anchorId, "lw-a");
+});
+
+test("visible lead stays on a present row and otherwise falls back to the first", () => {
+	assert.equal(resolveVisibleLeadId(ORDERED_IDS, "lw-c"), "lw-c");
+	assert.equal(resolveVisibleLeadId(ORDERED_IDS, "lw-hidden"), "lw-a");
+	assert.equal(resolveVisibleLeadId(ORDERED_IDS, null), "lw-a");
+	assert.equal(resolveVisibleLeadId([], "lw-a"), null);
+});
+
+test("additive unmark of the lead clears the spotlight; other toggles keep it", () => {
+	const exclusive = reduceSelectionMarks(NO_SELECTION_MARKS, {
+		gesture: { additive: false, range: false },
+		id: "lw-a",
+		orderedIds: ORDERED_IDS,
+		type: "activate",
+	});
+	assert.deepEqual(
+		resolveLeadSpotlight(NO_SELECTION_MARKS, exclusive, { additive: false, range: false }, "lw-a"),
+		{ kind: "item", id: "lw-a" },
+	);
+
+	const added = reduceSelectionMarks(exclusive, {
+		gesture: { additive: true, range: false },
+		id: "lw-c",
+		orderedIds: ORDERED_IDS,
+		type: "activate",
+	});
+	assert.deepEqual(
+		resolveLeadSpotlight(exclusive, added, { additive: true, range: false }, "lw-c"),
+		{ kind: "item", id: "lw-c" },
+	);
+
+	const unmarkedLead = reduceSelectionMarks(added, {
+		gesture: { additive: true, range: false },
+		id: "lw-c",
+		orderedIds: ORDERED_IDS,
+		type: "activate",
+	});
+	assert.deepEqual(
+		resolveLeadSpotlight(added, unmarkedLead, { additive: true, range: false }, "lw-c"),
+		{ kind: "clear" },
+	);
+
+	const unmarkedOther = reduceSelectionMarks(added, {
+		gesture: { additive: true, range: false },
+		id: "lw-a",
+		orderedIds: ORDERED_IDS,
+		type: "activate",
+	});
+	assert.deepEqual(
+		resolveLeadSpotlight(added, unmarkedOther, { additive: true, range: false }, "lw-a"),
+		{ kind: "none" },
+	);
 });
 
 test("a range activate selects every visible id between the anchor and the lead", () => {

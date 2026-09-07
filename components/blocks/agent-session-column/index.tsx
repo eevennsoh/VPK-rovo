@@ -291,6 +291,8 @@ export function AgentSessionColumn({
 		null,
 	);
 	const selectedItemId = isSelectionControlled ? selectedItemIdProp : uncontrolledSelectedItemId;
+	const canViewItem = sessionProps.canViewItem;
+	const onViewSession = sessionProps.onView;
 	const {
 		closeHiddenView,
 		hideHidden,
@@ -342,16 +344,27 @@ export function AgentSessionColumn({
 	const untrackedCount = count ?? visibleItems.length;
 	const showWellFooter = view === "hidden" || hiddenCount > 0;
 	const sessionCount = view === "hidden" ? hiddenItems.length : untrackedCount;
+	// Coding sessions are always activatable; person rows only when `canViewItem`
+	// allows it. Selection, notches, and board spotlight share this gate.
+	const canActivateItem = useCallback((item: AgentSessionItem) => (
+		isCodingAgentListItem(item) || (canViewItem?.(item) ?? true)
+	), [canViewItem]);
 	const handleSelectedItemIdChange = useCallback((itemId: string | null) => {
 		if (!isSelectionControlled) {
 			setUncontrolledSelectedItemId(itemId);
 		}
 		onSelectedItemIdChange?.(itemId);
 	}, [isSelectionControlled, onSelectedItemIdChange]);
-	const handleLeadItem = useCallback((item: AgentSessionItem) => {
+	const handleLeadItem = useCallback((item: AgentSessionItem | null) => {
+		if (item === null) {
+			handleSelectedItemIdChange(null);
+			return;
+		}
 		handleSelectedItemIdChange(item.id);
-		sessionProps.onView?.(item);
-	}, [handleSelectedItemIdChange, sessionProps.onView]);
+		if (canActivateItem(item)) {
+			onViewSession?.(item);
+		}
+	}, [canActivateItem, handleSelectedItemIdChange, onViewSession]);
 	const handleFocusRow = useCallback((itemId: string | null) => {
 		focusAgentSessionRow(columnRef.current, itemId);
 	}, []);
@@ -456,15 +469,11 @@ export function AgentSessionColumn({
 			closeHiddenView();
 		}
 	}, [closeHiddenView, collapsed, shouldReduceMotion]);
-	// The rail's user dots activate on the same terms the cards do: coding sessions
-	// are always activatable, person rows only when `canViewItem` allows it.
-	const canActivateNotch = (item: AgentSessionItem) =>
-		isCodingAgentListItem(item) || (sessionProps.canViewItem?.(item) ?? true);
-	const handleNotchView = sessionProps.onView === undefined
+	const handleNotchView = onViewSession === undefined
 		? undefined
 		: (item: AgentSessionItem) => {
-			if (canActivateNotch(item)) {
-				sessionProps.onView?.(item);
+			if (canActivateItem(item)) {
+				onViewSession(item);
 			}
 		};
 

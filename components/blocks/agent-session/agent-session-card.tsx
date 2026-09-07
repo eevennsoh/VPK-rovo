@@ -188,7 +188,7 @@ export function AgentSessionCard({
 		? undefined
 		: mark == null
 			? "button"
-			: "option";
+			: "gridcell";
 	const articleTabIndex = activateCard === undefined
 		? undefined
 		: mark == null || isLead
@@ -250,7 +250,8 @@ export function AgentSessionCard({
 			)}
 			data-marked={isMarked || undefined}
 			data-testid={"agent-session-row-" + item.id}
-			role={mark == null ? undefined : "presentation"}
+			aria-selected={mark == null ? undefined : isMarked}
+			role={mark == null ? undefined : "row"}
 			onAnimationComplete={handleArrivalComplete}
 			onPointerEnter={() => {
 				isHoveredRef.current = true;
@@ -290,7 +291,6 @@ export function AgentSessionCard({
 							aria-current={isSelected ? "true" : undefined}
 							aria-pressed={articleRole === "button" ? showSelectedFill : undefined}
 							aria-roledescription={bind ? "Draggable agent session" : undefined}
-							aria-selected={articleRole === "option" ? isMarked : undefined}
 							className={cn(
 						"group/agent-row relative flex w-full rounded-lg p-3 text-left text-text",
 						bind ? "cursor-grab" : "cursor-pointer",

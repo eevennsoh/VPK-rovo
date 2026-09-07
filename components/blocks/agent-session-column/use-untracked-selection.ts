@@ -20,6 +20,8 @@ import {
 	buildUntrackedHeaderModel,
 	NO_SELECTION_MARKS,
 	reduceSelectionMarks,
+	resolveLeadSpotlight,
+	resolveVisibleLeadId,
 	selectEffectiveSelection,
 	type HeaderActionId,
 	type SelectionEvent,
@@ -41,7 +43,7 @@ export function useUntrackedSelection<T>(
 		focusRow: (id: string | null) => void;
 		getSuggestedWorkItemKey?: (item: AgentSessionItem) => string | undefined;
 		getSuggestedWorkItemKeys?: (item: AgentSessionItem) => readonly string[] | undefined;
-		onLeadItem?: (item: AgentSessionItem) => void;
+		onLeadItem?: (item: AgentSessionItem | null) => void;
 		title: string;
 		triage?: UntrackedWorkTriage<T>;
 		visibilityLabel?: VisibilityActionLabel;
@@ -54,7 +56,7 @@ export function useUntrackedSelection<T>(
 		() => input.visibleItems.map((item: AgentSessionItem) => item.id),
 		[input.visibleItems],
 	);
-	const leadId = marks.leadId ?? input.visibleItems[0]?.id ?? null;
+	const leadId = resolveVisibleLeadId(orderedIds, marks.leadId);
 
 	const approveTargetById = useMemo(() => {
 		const next = new Map<string, ApproveTarget<T>>();
@@ -108,9 +110,24 @@ export function useUntrackedSelection<T>(
 		};
 		const next = reduceSelectionMarks(marks, event);
 		dispatch(event);
-		const lead = input.visibleItems.find((item: AgentSessionItem) => item.id === next.leadId);
-		if (lead !== undefined && (!gesture.additive || next.markedIds.has(lead.id))) {
-			input.onLeadItem?.(lead);
+		const spotlight = resolveLeadSpotlight(marks, next, gesture, id);
+		switch (spotlight.kind) {
+			case "clear":
+				input.onLeadItem?.(null);
+				break;
+			case "item": {
+				const lead = input.visibleItems.find((item: AgentSessionItem) => item.id === spotlight.id);
+				if (lead !== undefined) {
+					input.onLeadItem?.(lead);
+				}
+				break;
+			}
+			case "none":
+				break;
+			default: {
+				const exhaustive: never = spotlight;
+				return exhaustive;
+			}
 		}
 	}, [input, marks, orderedIds]);
 

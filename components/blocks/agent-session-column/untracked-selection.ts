@@ -107,6 +107,47 @@ export function resolveSelectionMoveId(
 	}
 }
 
+export function resolveVisibleLeadId(
+	orderedIds: readonly string[],
+	leadId: string | null,
+): string | null {
+	if (leadId !== null && orderedIds.includes(leadId)) {
+		return leadId;
+	}
+
+	return orderedIds[0] ?? null;
+}
+
+export type LeadSpotlight =
+	| { readonly kind: "clear" }
+	| { readonly kind: "item"; readonly id: string }
+	| { readonly kind: "none" };
+
+export function resolveLeadSpotlight(
+	previous: SelectionMarks,
+	next: SelectionMarks,
+	gesture: AgentSessionSelectionGesture,
+	activatedId: string,
+): LeadSpotlight {
+	if (
+		gesture.additive
+		&& !next.markedIds.has(activatedId)
+		&& previous.leadId === activatedId
+	) {
+		return { kind: "clear" };
+	}
+
+	if (next.leadId === null) {
+		return { kind: "none" };
+	}
+
+	if (!gesture.additive || next.markedIds.has(next.leadId)) {
+		return { kind: "item", id: next.leadId };
+	}
+
+	return { kind: "none" };
+}
+
 function visibleAnchorId(
 	orderedIds: readonly string[],
 	anchorId: string | null,

@@ -176,7 +176,7 @@ export function AgentSession({
 					className,
 				)}
 				data-variant={variant}
-				role={isMultiSelectList ? "listbox" : undefined}
+				role={isMultiSelectList ? "grid" : undefined}
 				// Large defaults to flush. Column and panel hosts override
 				// `gap-0` via `listClassName` (`gap-1 p-1`) so marked rows can
 				// fuse. Detached compact rows sit 2px apart (`space.025`).
