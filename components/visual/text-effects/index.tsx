@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { motion, type Transition, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, type Transition, useReducedMotion } from "motion/react";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
 
 import { Button } from "@/components/ui/button";
@@ -188,10 +188,15 @@ export default function TextEffects({
 	);
 
 	if (presentation === "inline") {
+		// Inline consumers can live inside an `AnimatePresence initial={false}`
+		// boundary. Start a fresh presence context so this component's own entrance
+		// is not inherited as blocked by the surrounding layout transition.
 		return (
-			<span className={cn("inline-block", className)} lang="en">
-				{renderedText}
-			</span>
+			<AnimatePresence initial>
+				<span key={animationKey} className={cn("inline-block", className)} lang="en">
+					{renderedText}
+				</span>
+			</AnimatePresence>
 		);
 	}
 

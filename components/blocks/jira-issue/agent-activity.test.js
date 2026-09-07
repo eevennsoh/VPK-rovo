@@ -5,6 +5,7 @@ const { test } = require("node:test");
 
 const AGENT_ACTIVITY_SOURCE = readFileSync(join(__dirname, "agent-activity.tsx"), "utf8");
 const AGENT_ACTIVITY_STARTUP_SOURCE = readFileSync(join(__dirname, "agent-activity-startup.tsx"), "utf8");
+const TEXT_EFFECTS_SOURCE = readFileSync(join(__dirname, "../../visual/text-effects/index.tsx"), "utf8");
 const GENERATIVE_ACTIONS_SOURCE = readFileSync(
 	join(__dirname, "../../projects/jira-golden-journeys-v4/hooks/use-jira-golden-journeys-v4-generative-actions.ts"),
 	"utf8",
@@ -55,4 +56,9 @@ test("new Jira agent and skill sessions use the staged startup presentation", ()
 	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /shouldReduceMotion \? "working"/u);
 	assert.match(AGENT_ACTIVITY_STARTUP_SOURCE, /Date\.now\(\) - startedAtMs/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /featuredActivity\?\.startedAtMs/u);
+	assert.match(TEXT_EFFECTS_SOURCE, /import \{ AnimatePresence, motion,/u);
+	assert.match(
+		TEXT_EFFECTS_SOURCE,
+		/presentation === "inline"[\s\S]*<AnimatePresence initial>[\s\S]*key=\{animationKey\}[\s\S]*\{renderedText\}[\s\S]*<\/AnimatePresence>/u,
+	);
 });
