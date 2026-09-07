@@ -193,7 +193,7 @@ export default function TextEffects({
 		// is not inherited as blocked by the surrounding layout transition.
 		return (
 			<AnimatePresence initial>
-				<span key={animationKey} className={cn("inline-block", className)} lang="en">
+				<span className={cn("inline-block", className)} lang="en">
 					{renderedText}
 				</span>
 			</AnimatePresence>

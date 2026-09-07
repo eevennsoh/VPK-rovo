@@ -59,6 +59,7 @@ test("new Jira agent and skill sessions use the staged startup presentation", ()
 	assert.match(TEXT_EFFECTS_SOURCE, /import \{ AnimatePresence, motion,/u);
 	assert.match(
 		TEXT_EFFECTS_SOURCE,
-		/presentation === "inline"[\s\S]*<AnimatePresence initial>[\s\S]*key=\{animationKey\}[\s\S]*\{renderedText\}[\s\S]*<\/AnimatePresence>/u,
+		/presentation === "inline"[\s\S]*<AnimatePresence initial>\s*<span className=\{cn\("inline-block", className\)\} lang="en">\s*\{renderedText\}[\s\S]*<\/AnimatePresence>/u,
 	);
+	assert.doesNotMatch(TEXT_EFFECTS_SOURCE, /<AnimatePresence initial>\s*<span key=\{animationKey\}/u);
 });
