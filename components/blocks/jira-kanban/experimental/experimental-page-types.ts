@@ -90,6 +90,15 @@ export interface ExperimentalJiraKanbanPageProps {
 	newAgentSessionIds?: ReadonlySet<string>;
 	onAgentSessionsReviewed?: (sessionIds?: readonly string[]) => void;
 	onBoardColumnsChange?: (columns: readonly JiraKanbanColumnData[]) => void;
+	onBoardAgentSessionCreate?: (
+		session: AgentSessionItem,
+		columnTitle: string,
+		/**
+		 * Slot within the column. Omitted by the create well, which appends;
+		 * supplied when the session is dropped in the gap between two cards.
+		 */
+		insertAtIndex?: number,
+	) => string | undefined;
 	onCardClick?: (card: JiraKanbanCardData, columnTitle: string) => void;
 	onCardAgentActivityViewChat?: JiraKanbanProps["onCardAgentActivityViewChat"];
 	onCardAgentDoneRunView?: JiraKanbanProps["onCardAgentDoneRunView"];
@@ -106,10 +115,6 @@ export interface ExperimentalJiraKanbanPageProps {
 	 * The whole cohort arrives in one call, in drag order, so the host resolves
 	 * the gap once instead of re-resolving it per session and reversing them.
 	 */
-	onBoardAgentSessionCreate?: (
-		sessions: readonly [AgentSessionItem, ...AgentSessionItem[]],
-		insertion: BoardCardInsertion,
-	) => void;
 	onListAgentSessionCreate?: (
 		session: AgentSessionItem,
 		insertion: JiraListInsertion,

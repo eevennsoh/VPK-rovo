@@ -10,10 +10,11 @@ const IN_FLOW_COLUMN_SOURCE = readFileSync(
 	join(__dirname, "../jira-kanban/experimental/components/in-flow-agent-session-column.tsx"),
 	"utf8",
 );
-const EXPERIMENTAL_BOARD_SOURCE = readFileSync(
-	join(__dirname, "../jira-kanban/experimental/experimental-jira-kanban.tsx"),
-	"utf8",
-);
+const EXPERIMENTAL_BOARD_SOURCE = [
+	readFileSync(join(__dirname, "../jira-kanban/experimental/experimental-jira-kanban.tsx"), "utf8"),
+	readFileSync(join(__dirname, "../jira-kanban/experimental/components/created-card-arrival-motion.tsx"), "utf8"),
+	readFileSync(join(__dirname, "../jira-kanban/experimental/lib/card-motion.ts"), "utf8"),
+].join("\n");
 const EXPERIMENTAL_PAGE_SOURCE = readFileSync(
 	join(__dirname, "../jira-kanban/experimental/page.tsx"),
 	"utf8",
@@ -89,17 +90,15 @@ test("the entire visible gutter is a hover target without covering To do", () =>
 	);
 });
 
-test("the gutter omits the visible count but keeps the compact rail top-aligned", () => {
+test("the gutter hides the count until newly synced sessions reveal the total", () => {
 	assert.match(TYPES_SOURCE, /collapsedPresentation\?: "column" \| "gutter";/u);
 	assert.match(INDEX_SOURCE, /const isGutterCollapsed = collapsed && collapsedPresentation === "gutter"/u);
 	assert.doesNotMatch(INDEX_SOURCE, /isGutterCollapsed \? "justify-center" : null/u);
-	assert.match(INDEX_SOURCE, /const gutterHeader = \(/u);
+	assert.match(INDEX_SOURCE, /const hideGutterCount = isGutterCollapsed && newCount === 0/u);
+	assert.match(INDEX_SOURCE, /hideGutterCount \? "opacity-0" : "opacity-100"/u);
 	assert.match(INDEX_SOURCE, /style=\{resolveCollapsedHeaderStyle\(layout\)\}/u);
-	assert.doesNotMatch(
-		INDEX_SOURCE.match(/const gutterHeader = \([\s\S]*?\n\t\);/u)?.[0] ?? "",
-		/<TextMorphing/u,
-	);
-	assert.match(INDEX_SOURCE, /isGutterCollapsed \? gutterHeader : collapsedHeader/u);
+	assert.match(INDEX_SOURCE, /header: collapsed \? collapsedHeader : expandedHeader/u);
+	assert.doesNotMatch(INDEX_SOURCE, /const gutterHeader = \(/u);
 	assert.match(INDEX_SOURCE, /isGutterCollapsed \? "bg-transparent" : null/u);
 });
 
@@ -123,12 +122,13 @@ test("gutter rest caps the rail; embedded column presentation shows every notch"
 	);
 });
 
-test("gutter rest can flash +N; an embedded rail increments the session total", () => {
+test("gutter rest reveals the session total; an embedded rail keeps that total visible", () => {
 	assert.match(
 		INDEX_SOURCE,
-		/const showCollapsedUnreadIncrement = collapsedPresentation === "gutter" && newCount > 0/u,
+		/const hideGutterCount = isGutterCollapsed && newCount === 0/u,
 	);
-	assert.match(INDEX_SOURCE, /text=\{collapsedCountText\}/u);
+	assert.match(INDEX_SOURCE, /text=\{String\(sessionCount\)\}/u);
+	assert.doesNotMatch(INDEX_SOURCE, /`\+\$\{newCount\}`/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsedPresentation=\{isEmbedded \? "column" : "gutter"\}/u);
 });
 
@@ -200,7 +200,10 @@ test("the first collapsed gutter mount plays a reduced-motion-safe staggered sca
 		EXPERIMENTAL_BOARD_SOURCE,
 		/JIRA_KANBAN_CARD_MOVE: Transition = \{ duration: 0\.6, ease: \[0\.4, 0, 0, 1\] \}/u,
 	);
-	assert.match(EXPERIMENTAL_BOARD_SOURCE, /initial=\{false\}/u);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/initial=\{isArriving && !shouldReduceMotion \? \{ opacity: 0, y: 8 \} : false\}/u,
+	);
 	assert.match(RAIL_SOURCE, /AGENT_SESSION_GUTTER_INTRO_VISUAL_DURATION_SECONDS = 0\.3/u);
 	assert.match(RAIL_SOURCE, /AGENT_SESSION_GUTTER_INTRO_STAGGER_SECONDS = 0\.04/u);
 	assert.match(RAIL_SOURCE, /overlap each 300ms visual settle by 260ms/u);

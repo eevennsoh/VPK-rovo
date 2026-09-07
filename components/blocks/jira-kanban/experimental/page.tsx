@@ -45,7 +45,6 @@ import {
 	type ExperimentalJiraKanbanProps,
 } from "./experimental-jira-kanban";
 import { EMPTY_COLLAPSED_BOARD_COLUMNS } from "./lib/board-column-collapse";
-import { toBoardGapCreatePort } from "./lib/board-card-insertion";
 import { useBoardAgentSessionDrag } from "./use-board-agent-session-drag";
 import {
 	collectBoardIssueKeys,
@@ -61,8 +60,13 @@ import {
 	ExperimentalJiraKanbanBoardHeader,
 } from "./experimental-board-header";
 import type { ExperimentalJiraKanbanPageProps } from "./experimental-page-types";
+import { useBoardCreatedCardArrival } from "./hooks/use-created-card-arrival";
 import { useAgentFilterDisplay } from "./hooks/use-agent-filter-display";
 import { useBoardFilter, type BoardFilterActions } from "./hooks/use-board-filter";
+import {
+	isExperimentalJiraListContent,
+	useAgentSessionLooseWork,
+} from "./hooks/use-page-content-model";
 import {
 	BOARD_FILTER_DEMO_NOW_ISO,
 	filterPulseTimelineByDays,
@@ -100,7 +104,7 @@ import {
 	toPulseSessionHandlers,
 	toPulseSessionItems,
 } from "./pulse/lib/pulse-sessions";
-import type { PulseAgentSession, PulseAnswer, PulseLooseWork } from "./pulse/types";
+import type { PulseAnswer } from "./pulse/types";
 import {
 	createJiraKanbanSelectionState,
 	getCommonJiraKanbanAgentIds,
@@ -120,7 +124,6 @@ export type {
 
 const DEFAULT_CREATED_COLUMN_AGENT_ID = "readiness-checker";
 const PULSE_MEMBER_IDS = new Set(PULSE_TIMELINE.members.map((member) => member.id));
-const EMPTY_ADDITIONAL_AGENT_SESSIONS: readonly PulseAgentSession[] = [];
 const EMPTY_PROXIMITY_SESSIONS: Readonly<Record<string, readonly AgentSessionItem[]>> = {};
 
 /**
@@ -137,16 +140,6 @@ const EMPTY_ANSWERS: readonly PulseAnswer[] = [];
 interface DraggedCardState {
 	card: JiraKanbanCardData;
 	sourceColumnTitle: string;
-}
-
-function useAgentSessionLooseWork(
-	additionalAgentSessions: readonly PulseAgentSession[] | undefined,
-	pulseLooseWork: readonly PulseLooseWork[],
-): readonly PulseLooseWork[] {
-	return useMemo(
-		() => [...(additionalAgentSessions ?? EMPTY_ADDITIONAL_AGENT_SESSIONS), ...pulseLooseWork],
-		[additionalAgentSessions, pulseLooseWork],
-	);
 }
 
 function useAgentSessionReview(
@@ -174,13 +167,6 @@ function useAgentSessionReview(
 		handleUntrackedItemHover,
 		untrackedHoveredSession,
 	};
-}
-
-function isExperimentalJiraListContent(
-	activeView: ExperimentalJiraKanbanPageProps["activeView"],
-	renderListContent: ExperimentalJiraKanbanPageProps["renderListContent"],
-): boolean {
-	return activeView === "list" && renderListContent !== undefined;
 }
 
 export default function ExperimentalJiraKanbanPage(props: ExperimentalJiraKanbanPageProps) {
@@ -212,6 +198,7 @@ function ExperimentalJiraKanbanPageContent({
 	mode: controlledMode,
 	newAgentSessionIds,
 	onAgentSessionsReviewed,
+	onBoardAgentSessionCreate,
 	onBoardColumnsChange,
 	onCardClick,
 	onCardAgentActivityViewChat,
@@ -220,7 +207,6 @@ function ExperimentalJiraKanbanPageContent({
 	onCardAgentSessionLink,
 	onCardAgentSessionMove,
 	onCardAgentSessionUnlink,
-	onBoardAgentSessionCreate,
 	onListAgentSessionCreate,
 	showAgentSessionUnlinkWell = true,
 	onInsightsWorkItemClick,
@@ -308,7 +294,7 @@ function ExperimentalJiraKanbanPageContent({
 		setRequestedActionIds((current) => new Set(current).add(action.id));
 	}, []);
 	const handleCaptureLooseWork = useCallback((item: { id: string }) => {
-		setCapturedLooseWorkIds((current) => current.has(item.id) ? current : new Set(current).add(item.id));
+		setCapturedLooseWorkIds((current) => new Set(current).add(item.id));
 	}, []);
 	const handleArchiveLooseWork = useCallback((item: { id: string }) => {
 		setArchivedLooseWorkIds((current) => new Set(current).add(item.id));
@@ -492,6 +478,14 @@ function ExperimentalJiraKanbanPageContent({
 			onResumeLooseWork,
 		],
 	);
+	const {
+		createdCardArrival,
+		handleComplete: handleCreatedCardArrivalComplete,
+		handleCreate: handleBoardAgentSessionCreate,
+	} = useBoardCreatedCardArrival({
+		captureSession: agentSessionHandlers.onCreateWorkItem,
+		onCreate: onBoardAgentSessionCreate,
+	});
 	const proximityActionableSessionIds = useMemo(
 		() => new Set(agentSessionItems.map((session) => session.id)),
 		[agentSessionItems],
@@ -802,8 +796,19 @@ function ExperimentalJiraKanbanPageContent({
 	const boardSessionDrag = useBoardAgentSessionDrag({
 		boardColumns: filteredBoardColumns,
 		detachedSessionsByCard: proximityAgentSessionsByCard,
-		onBoardGapCreate: toBoardGapCreatePort(handleCaptureLooseWork, onBoardAgentSessionCreate),
-		onCreate: agentSessionHandlers.onCreateWorkItem,
+		onCreate: onBoardAgentSessionCreate ? handleBoardAgentSessionCreate : undefined,
+		// Same create path as the well, with a slot. Each cohort member advances
+		// the index, and the refs behind `handleBoardAgentSessionCreate` grow with
+		// every call, so the sessions land in drag order rather than reversed.
+		onBoardGapCreate: onBoardAgentSessionCreate
+			? (sessions, insertion) => sessions.forEach((session, memberIndex) => (
+				handleBoardAgentSessionCreate(
+					session,
+					insertion.columnTitle,
+					insertion.insertAtIndex + memberIndex,
+				)
+			))
+			: undefined,
 		onCreateWellReceive: receiveCreateWell,
 		onListCreate: onListAgentSessionCreate ? handleListAgentSessionCreate : undefined,
 		onLink: onCardAgentSessionLink ? handleCardAgentSessionLink : undefined,
@@ -937,9 +942,13 @@ function ExperimentalJiraKanbanPageContent({
 								cardGenerativeActionPresentation={cardGenerativeActionPresentation}
 								collapsedColumns={displayedCollapsedColumns}
 								columnChrome={columnChrome}
-								createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
+								createdCardArrival={createdCardArrival ?? undefined}
+								createWorkItemDropZoneLabel={onBoardAgentSessionCreate
+									? createWorkItemDropZoneLabel
+									: undefined}
 								detachedAgentSessionsByCard={proximityAgentSessionsByCard}
 								onCollapsedColumnsChange={setCollapsedColumns}
+								onCreatedCardArrivalComplete={handleCreatedCardArrivalComplete}
 								draggedCardCode={draggedCard?.card.code ?? null}
 								selectedCardCodes={selection.selectedCardCodes}
 								onCardClick={handleCardClick}

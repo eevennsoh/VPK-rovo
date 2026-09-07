@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 
+import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue";
 import { linkJiraKanbanAgentSession, moveJiraKanbanCardsToColumn } from "@/components/blocks/jira-kanban/state";
 import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
-import type { BoardCardInsertion } from "@/components/blocks/jira-kanban/experimental/lib/board-agent-session-drag";
 import type {
 	JiraListAssignedAgent,
 	JiraListDraftWorkItem,
@@ -18,11 +18,11 @@ import type {
 } from "@/components/blocks/jira-list";
 
 import { JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS } from "../data/presentation-story";
-import type { BoardWorkItemSessionEntry } from "../lib/list-rows";
 import {
 	applyAssignedAgentIdsToColumns,
 	applyListOrder,
-	createBoardWorkItemsFromSessions,
+	appendBoardCreatedListOrder,
+	createBoardWorkItemFromSession,
 	createListRows,
 	createListWorkItemFromSession,
 	getNextPayIssueKey,
@@ -45,19 +45,21 @@ interface ListDraftWorkItem {
 export interface CreateFromAgentSessionInput {
 	activity: JiraIssueAgentActivity;
 	insertion: JiraListInsertion;
-	session: Readonly<{ id: string; title: string }>;
+	session: Readonly<Pick<AgentSessionItem, "id" | "invokedBy" | "title">>;
 }
 
-export interface CreateFromBoardAgentSessionInput {
-	/** The dragged cohort, in drag order, each with the activity it reclaimed. */
-	entries: readonly BoardWorkItemSessionEntry[];
-	insertion: BoardCardInsertion;
+export interface CreateBoardFromAgentSessionInput {
+	activity: JiraIssueAgentActivity;
+	columnTitle: string;
+	/** Slot within the column. Omitted by the create well, which appends. */
+	insertAtIndex?: number;
+	session: Readonly<Pick<AgentSessionItem, "id" | "invokedBy" | "title">>;
 }
 
 export interface UseJiraGoldenJourneysV4ListResult {
+	createBoardFromAgentSession: (input: CreateBoardFromAgentSessionInput) => string | undefined;
 	/** Returns the row the session landed in, so the caller can acknowledge it. */
 	createFromAgentSession: (input: CreateFromAgentSessionInput) => string;
-	createFromBoardAgentSession: (input: CreateFromBoardAgentSessionInput) => void;
 	getProps: (columns: readonly JiraKanbanColumnData[]) => JiraListProps;
 }
 
@@ -239,20 +241,31 @@ export function useJiraGoldenJourneysV4List({
 		return result.issueKey;
 	}, [setBoardColumns]);
 
-	const createFromBoardAgentSession = useCallback((input: CreateFromBoardAgentSessionInput) => {
-		const result = createBoardWorkItemsFromSessions({
-			columns: boardColumnsRef.current,
-			entries: input.entries,
-			insertion: input.insertion,
+	const createBoardFromAgentSession = useCallback((input: CreateBoardFromAgentSessionInput) => {
+		const columnsBeforeCreate = boardColumnsRef.current;
+		const result = createBoardWorkItemFromSession({
+			activity: input.activity,
+			columns: columnsBeforeCreate,
+			columnTitle: input.columnTitle,
+			insertAtIndex: input.insertAtIndex,
 			linkSession: linkJiraKanbanAgentSession,
+			session: input.session,
+		});
+		if (result.kind === "already-attached") {
+			return undefined;
+		}
+
+		const nextListOrder = appendBoardCreatedListOrder({
+			columns: columnsBeforeCreate,
+			issueKey: result.issueKey,
 			listOrder: listOrderRef.current,
 			visibleKeys: visibleKeysRef.current,
 		});
 		boardColumnsRef.current = result.columns;
-		listOrderRef.current = result.listOrder;
+		listOrderRef.current = nextListOrder;
 		setBoardColumns([...result.columns]);
-		setListOrder(result.listOrder);
-		setSelectedIssueKeys(new Set(result.issueKeys));
+		setListOrder(nextListOrder);
+		return result.issueKey;
 	}, [setBoardColumns]);
 
 	const getProps = useCallback((columns: readonly JiraKanbanColumnData[]): JiraListProps => {
@@ -337,5 +350,5 @@ export function useJiraGoldenJourneysV4List({
 		selectedIssueKeys,
 	]);
 
-	return { createFromAgentSession, createFromBoardAgentSession, getProps };
+	return { createBoardFromAgentSession, createFromAgentSession, getProps };
 }

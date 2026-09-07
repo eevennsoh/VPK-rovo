@@ -11,33 +11,44 @@ const PAGE_SOURCE = readProjectFile("components/projects/jira-golden-journeys-v4
 const LIST_HOOK_SOURCE = readProjectFile(
 	"components/projects/jira-golden-journeys-v4/hooks/use-jira-golden-journeys-v4-list.ts",
 );
-const EXPERIMENTAL_PAGE_SOURCE = [
-	readProjectFile("components/blocks/jira-kanban/experimental/page.tsx"),
-	readProjectFile("components/blocks/jira-kanban/experimental/experimental-page-types.ts"),
-].join("\n");
+const LIST_ROWS_SOURCE = readProjectFile(
+	"components/projects/jira-golden-journeys-v4/lib/list-rows.ts",
+);
+const EXPERIMENTAL_PAGE_SOURCE = readProjectFile(
+	"components/blocks/jira-kanban/experimental/page.tsx",
+);
+const ARRIVAL_HOOK_SOURCE = readProjectFile(
+	"components/blocks/jira-kanban/experimental/hooks/use-created-card-arrival.ts",
+);
 
-test("dropping an untracked session in a board gap creates a work item at that index", () => {
-	// The board twin of the list create: dropping an untracked session into a
-	// card gap mints a work item at that index with the session already linked.
-	assert.match(PAGE_SOURCE, /onBoardAgentSessionCreate=\{handleBoardAgentSessionCreate\}/u);
-	assert.match(PAGE_SOURCE, /createFromBoardAgentSession/u);
-	assert.match(LIST_HOOK_SOURCE, /createBoardWorkItemsFromSessions/u);
+test("a gap drop reuses the create-well path with a slot rather than a second creator", () => {
+	// One owner for "a board drop makes a work item". The create well omits the
+	// index and appends; a gap drop names the slot it landed in.
+	assert.match(LIST_ROWS_SOURCE, /insertAtIndex\?: number;/u);
+	assert.match(LIST_ROWS_SOURCE, /cards\.splice\(Math\.min\(Math\.max\(insertAtIndex, 0\), cards\.length\), 0, card\)/u);
+	assert.match(LIST_HOOK_SOURCE, /insertAtIndex: input\.insertAtIndex/u);
+	assert.match(PAGE_SOURCE, /insertAtIndex\?: number,/u);
+	assert.match(PAGE_SOURCE, /createBoardFromAgentSession\(\{[\s\S]*insertAtIndex,/u);
 });
 
-test("a board-gap cohort travels in one call so the sessions land in drag order", () => {
-	// The whole cohort travels in one call, so the gap anchor is resolved once
-	// and the sessions land in drag order instead of stacking in reverse.
-	assert.match(LIST_HOOK_SOURCE, /entries: input\.entries/u);
-	assert.match(LIST_HOOK_SOURCE, /setSelectedIssueKeys\(new Set\(result\.issueKeys\)\)/u);
-	assert.match(PAGE_SOURCE, /entries: sessions\.map\(\(session\) => \(\{/u);
+test("each cohort member advances the slot so the sessions land in drag order", () => {
+	assert.match(
+		EXPERIMENTAL_PAGE_SOURCE,
+		/onBoardGapCreate: onBoardAgentSessionCreate[\s\S]*insertion\.insertAtIndex \+ memberIndex/u,
+	);
 });
 
 test("a board without the create capability never draws an insertion line", () => {
-	// `toBoardGapCreatePort` returns undefined when the host supplies no create
-	// callback, so a board without the capability never draws an insertion line
-	// it cannot honour.
-	assert.match(
-		EXPERIMENTAL_PAGE_SOURCE,
-		/onBoardGapCreate: toBoardGapCreatePort\(handleCaptureLooseWork, onBoardAgentSessionCreate\)/u,
-	);
+	// The gap port is undefined without the host callback, and the drag hook only
+	// publishes card-gap zones when that port exists.
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onBoardGapCreate: onBoardAgentSessionCreate\s*\?/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /: undefined,/u);
+});
+
+test("a gap arrival does not scroll the column away from the pointer", () => {
+	// The create well appends, so scrolling to the end reveals what it made. A
+	// gap drop lands mid-column, already under the pointer.
+	assert.match(ARRIVAL_HOOK_SOURCE, /readonly appended: boolean;/u);
+	assert.match(ARRIVAL_HOOK_SOURCE, /const appended = insertAtIndex === undefined;/u);
+	assert.match(ARRIVAL_HOOK_SOURCE, /\|\| !arrival\.appended/u);
 });

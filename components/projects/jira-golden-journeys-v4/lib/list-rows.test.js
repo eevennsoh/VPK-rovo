@@ -1,11 +1,15 @@
 const assert = require("node:assert/strict");
 const { test } = require("node:test");
 
-const { linkJiraKanbanAgentSession } = require("../../../blocks/jira-kanban/state.ts");
+const {
+	filterJiraKanbanColumnsByAssignee,
+	linkJiraKanbanAgentSession,
+} = require("../../../blocks/jira-kanban/state.ts");
 const {
 	applyAssignedAgentIdsToColumns,
 	applyListOrder,
-	createBoardWorkItemsFromSessions,
+	appendBoardCreatedListOrder,
+	createBoardWorkItemFromSession,
 	createListRows,
 	createListWorkItemFromSession,
 	getNextPayIssueKey,
@@ -185,40 +189,6 @@ test("insertWorkItemCard appends to the named status column", () => {
 	assert.equal(next.find((column) => column.title === "To do")?.count, 2);
 });
 
-test("insertWorkItemCard without an index still appends every existing caller's card", () => {
-	const card = toKanbanCardFromDraft({ issueKey: "PAY-200", summary: "New work" });
-	const next = insertWorkItemCard(COLUMNS, card, "To do");
-	const todo = next.find((column) => column.title === "To do");
-
-	assert.deepEqual(todo?.cards.map((existing) => existing.code), ["PAY-118", "PAY-107", "PAY-200"]);
-	assert.equal(todo?.count, 3);
-});
-
-test("insertWorkItemCard splices at the given index and clamps out-of-range indexes", () => {
-	const card = toKanbanCardFromDraft({ issueKey: "PAY-200", summary: "New work" });
-
-	const atStart = insertWorkItemCard(COLUMNS, card, "To do", 0)
-		.find((column) => column.title === "To do");
-	assert.deepEqual(atStart?.cards.map((existing) => existing.code), ["PAY-200", "PAY-118", "PAY-107"]);
-	assert.equal(atStart?.count, 3);
-
-	const inMiddle = insertWorkItemCard(COLUMNS, card, "To do", 1)
-		.find((column) => column.title === "To do");
-	assert.deepEqual(inMiddle?.cards.map((existing) => existing.code), ["PAY-118", "PAY-200", "PAY-107"]);
-	assert.equal(inMiddle?.count, 3);
-
-	const pastEnd = insertWorkItemCard(COLUMNS, card, "To do", 9)
-		.find((column) => column.title === "To do");
-	assert.deepEqual(pastEnd?.cards.map((existing) => existing.code), ["PAY-118", "PAY-107", "PAY-200"]);
-	assert.equal(pastEnd?.count, 3);
-
-	const belowStart = insertWorkItemCard(COLUMNS, card, "To do", -4)
-		.find((column) => column.title === "To do");
-	assert.deepEqual(belowStart?.cards.map((existing) => existing.code), ["PAY-200", "PAY-118", "PAY-107"]);
-	assert.equal(insertWorkItemCard(COLUMNS, card, "To do", 0)
-		.find((column) => column.title === "In progress")?.count, 1);
-});
-
 test("applyAssignedAgentIdsToColumns archives and assigns against board columns", () => {
 	const archived = applyAssignedAgentIdsToColumns(COLUMNS, "PAY-101", ["review-agent"], PAY_BOARD_CATALOG);
 	const archivedCard = archived
@@ -389,222 +359,114 @@ test("two session creates on one gap keep both issue keys", () => {
 	assert.equal(todoCards.some((card) => card.code === "PAY-120"), true);
 });
 
-test("createBoardWorkItemsFromSessions mints the card at the named board gap and links the session", () => {
+test("createBoardWorkItemFromSession appends a task to the requested status and attaches its session", () => {
 	const activity = {
-		id: "lw-scope-thread",
-		label: "Scope the adapter thread",
+		id: "lw-board-review",
+		label: "Review the board drop behavior",
 		name: "Claude Code",
-		state: "working",
+		state: "complete",
 	};
-	const created = createBoardWorkItemsFromSessions({
+	const created = createBoardWorkItemFromSession({
+		activity,
 		columns: COLUMNS,
-		entries: [{
-			activity,
-			session: { id: "lw-scope-thread", title: "Scope the adapter keep-or-delete argument" },
-		}],
-		insertion: {
-			columnTitle: "To do",
-			insertAtIndex: 1,
-			position: "after",
-			relativeToCardCode: "PAY-118",
-		},
+		columnTitle: "In progress",
 		linkSession: linkJiraKanbanAgentSession,
-		listOrder: [],
-		visibleKeys: ["PAY-118", "PAY-107", "PAY-101"],
+		session: {
+			id: "lw-board-review",
+			invokedBy: { avatarSrc: "/maya.png", name: "Maya Ferreira" },
+			title: "Review the board drop behavior",
+		},
 	});
 
-	assert.deepEqual(created.issueKeys, ["PAY-119"]);
-	const todo = created.columns.find((column) => column.title === "To do");
-	assert.deepEqual(todo?.cards.map((card) => card.code), ["PAY-118", "PAY-119", "PAY-107"]);
-	assert.equal(todo?.count, 3);
-	const createdCard = todo?.cards.find((card) => card.code === "PAY-119");
-	assert.equal(createdCard?.title, "Scope the adapter keep-or-delete argument");
+	assert.equal(created.kind, "created");
+	assert.equal(created.issueKey, "PAY-119");
+	const inProgress = created.columns.find((column) => column.title === "In progress");
+	const createdCard = inProgress?.cards.at(-1);
+	assert.equal(inProgress?.count, 2);
+	assert.equal(createdCard?.code, "PAY-119");
+	assert.equal(createdCard?.title, "Review the board drop behavior");
 	assert.equal(createdCard?.issueType, "task");
 	assert.equal(createdCard?.agentActivities?.[0], activity);
-	// An empty list order means "follow board order", so a board create leaves it
-	// empty instead of freezing today's rows against every later board change.
-	assert.deepEqual(created.listOrder, []);
-});
-
-test("createBoardWorkItemsFromSessions lands before the neighbour and in the named column", () => {
-	const activity = { id: "lw-figma-parked", name: "Claude Code", state: "complete" };
-	const created = createBoardWorkItemsFromSessions({
-		columns: COLUMNS,
-		entries: [{ activity, session: { id: "lw-figma-parked", title: "Park the Figma handoff" } }],
-		insertion: {
-			columnTitle: "In progress",
-			insertAtIndex: 0,
-			position: "before",
-			relativeToCardCode: "PAY-101",
-		},
-		linkSession: linkJiraKanbanAgentSession,
-		listOrder: ["PAY-118", "PAY-107", "PAY-101"],
-		visibleKeys: ["PAY-118", "PAY-107", "PAY-101"],
+	assert.deepEqual(createdCard?.assignee, {
+		avatarSrc: "/maya.png",
+		id: "maya-ferreira",
+		name: "Maya Ferreira",
 	});
-
-	const inProgress = created.columns.find((column) => column.title === "In progress");
-	assert.deepEqual(inProgress?.cards.map((card) => card.code), ["PAY-119", "PAY-101"]);
-	assert.equal(inProgress?.count, 2);
-	assert.deepEqual(created.columns.find((column) => column.title === "To do")?.cards.length, 2);
-	// A non-empty order is a viewer-owned ranking, so the new key joins the end
-	// rather than going missing from it.
-	assert.deepEqual(created.listOrder, ["PAY-118", "PAY-107", "PAY-101", "PAY-119"]);
-});
-
-test("createBoardWorkItemsFromSessions follows the named neighbour when the drawn index is filtered", () => {
-	// The gesture measured a column the assignee filter had thinned, so the raw
-	// index points one card short of where the insertion line was drawn.
-	const created = createBoardWorkItemsFromSessions({
-		columns: COLUMNS,
-		entries: [{
-			activity: { id: "lw-a", name: "Claude Code", state: "complete" },
-			session: { id: "lw-a", title: "Filtered gap create" },
-		}],
-		insertion: {
-			columnTitle: "To do",
-			insertAtIndex: 0,
-			position: "after",
-			relativeToCardCode: "PAY-107",
-		},
-		linkSession: linkJiraKanbanAgentSession,
-		listOrder: [],
-		visibleKeys: ["PAY-107"],
-	});
-
-	assert.deepEqual(
-		created.columns.find((column) => column.title === "To do")?.cards.map((card) => card.code),
-		["PAY-118", "PAY-107", "PAY-119"],
+	assert.equal(
+		filterJiraKanbanColumnsByAssignee(
+			created.columns,
+			new Set(["maya-ferreira"]),
+		).find((column) => column.title === "In progress")?.cards.at(-1)?.code,
+		"PAY-119",
 	);
-});
 
-// Regression: the anchor used to be re-resolved from `relativeToCardCode` for
-// every member, so each one landed back in the same slot and pushed the last
-// drop to the front. A tail gap is the sharpest case because its position is
-// "after" — the neighbour never shifts, so nothing masked the bug.
-test("createBoardWorkItemsFromSessions keeps a cohort in drag order at a tail gap", () => {
-	const created = createBoardWorkItemsFromSessions({
-		columns: COLUMNS,
-		entries: ["lw-a", "lw-b", "lw-c"].map((id) => ({
-			activity: { id, name: "Claude Code", state: "complete" },
-			session: { id, title: `${id} title` },
-		})),
-		insertion: {
-			columnTitle: "To do",
-			insertAtIndex: 2,
-			position: "after",
-			relativeToCardCode: "PAY-107",
-		},
-		linkSession: linkJiraKanbanAgentSession,
-		listOrder: [],
-		visibleKeys: ["PAY-118", "PAY-107", "PAY-101"],
-	});
-
-	assert.deepEqual(created.issueKeys, ["PAY-119", "PAY-120", "PAY-121"]);
-	const todo = created.columns.find((column) => column.title === "To do");
-	assert.deepEqual(
-		todo?.cards.map((card) => card.code),
-		["PAY-118", "PAY-107", "PAY-119", "PAY-120", "PAY-121"],
-	);
-	assert.equal(todo?.count, 5);
-	assert.deepEqual(
-		todo?.cards.slice(2).map((card) => card.agentActivities?.[0]?.id),
-		["lw-a", "lw-b", "lw-c"],
-	);
-});
-
-test("createBoardWorkItemsFromSessions keeps a cohort in drag order at an interior gap", () => {
-	const created = createBoardWorkItemsFromSessions({
-		columns: COLUMNS,
-		entries: ["lw-a", "lw-b"].map((id) => ({
-			activity: { id, name: "Claude Code", state: "complete" },
-			session: { id, title: `${id} title` },
-		})),
-		insertion: {
-			columnTitle: "To do",
-			insertAtIndex: 1,
-			position: "before",
-			relativeToCardCode: "PAY-107",
-		},
-		linkSession: linkJiraKanbanAgentSession,
-		listOrder: [],
-		visibleKeys: ["PAY-118", "PAY-107", "PAY-101"],
-	});
-
-	assert.deepEqual(
-		created.columns.find((column) => column.title === "To do")?.cards.map((card) => card.code),
-		["PAY-118", "PAY-119", "PAY-120", "PAY-107"],
-	);
-});
-
-test("createBoardWorkItemsFromSessions skips a session already attached to a card", () => {
-	const activity = {
-		id: "lw-scope-thread",
-		label: "Scope the adapter thread",
-		name: "Claude Code",
-		state: "working",
-	};
-	const entries = [{
+	const again = createBoardWorkItemFromSession({
 		activity,
-		session: { id: "lw-scope-thread", title: "Scope the adapter keep-or-delete argument" },
-	}];
-	const created = createBoardWorkItemsFromSessions({
-		columns: COLUMNS,
-		entries,
-		insertion: {
-			columnTitle: "To do",
-			insertAtIndex: 1,
-			position: "after",
-			relativeToCardCode: "PAY-118",
-		},
-		linkSession: linkJiraKanbanAgentSession,
-		listOrder: [],
-		visibleKeys: ["PAY-118", "PAY-107", "PAY-101"],
-	});
-	const again = createBoardWorkItemsFromSessions({
 		columns: created.columns,
-		entries,
-		insertion: {
-			columnTitle: "In progress",
-			insertAtIndex: 0,
-			position: "before",
-			relativeToCardCode: "PAY-101",
-		},
+		columnTitle: "To do",
 		linkSession: linkJiraKanbanAgentSession,
-		listOrder: created.listOrder,
-		visibleKeys: ["PAY-118", "PAY-119", "PAY-107", "PAY-101"],
+		session: {
+			id: "lw-board-review",
+			invokedBy: { avatarSrc: "/maya.png", name: "Maya Ferreira" },
+			title: "Review the board drop behavior",
+		},
 	});
-
-	assert.deepEqual(again.issueKeys, []);
+	assert.equal(again.kind, "already-attached");
+	assert.equal(again.issueKey, "PAY-119");
 	assert.equal(again.columns, created.columns);
-	assert.equal(again.listOrder, created.listOrder);
 	assert.equal(
 		again.columns.flatMap((column) => column.cards).filter((card) => card.code === "PAY-119").length,
 		1,
 	);
 });
 
-test("createBoardWorkItemsFromSessions appends when the column names no neighbour", () => {
-	const created = createBoardWorkItemsFromSessions({
-		columns: COLUMNS,
-		entries: [{
-			activity: { id: "lw-a", name: "Claude Code", state: "complete" },
-			session: { id: "lw-a", title: "Empty column create" },
-		}],
-		// An empty column has no card to describe its one gap against.
-		insertion: {
-			columnTitle: "In progress",
-			insertAtIndex: 0,
-			position: "before",
-			relativeToCardCode: null,
+test("the first board create seeds List order from existing board rows before appending", () => {
+	assert.deepEqual(
+		appendBoardCreatedListOrder({
+			columns: COLUMNS,
+			issueKey: "PAY-119",
+			listOrder: [],
+			visibleKeys: [],
+		}),
+		["PAY-118", "PAY-107", "PAY-101", "PAY-119"],
+	);
+});
+
+test("sequential board session creates mint distinct PAY keys in the requested status", () => {
+	const first = createBoardWorkItemFromSession({
+		activity: {
+			id: "lw-board-first",
+			label: "First board session",
+			name: "Claude Code",
+			state: "complete",
 		},
+		columns: COLUMNS,
+		columnTitle: "In progress",
 		linkSession: linkJiraKanbanAgentSession,
-		listOrder: [],
-		visibleKeys: ["PAY-118", "PAY-107", "PAY-101"],
+		session: { id: "lw-board-first", title: "First board session" },
+	});
+	const second = createBoardWorkItemFromSession({
+		activity: {
+			id: "lw-board-second",
+			label: "Second board session",
+			name: "Claude Code",
+			state: "complete",
+		},
+		columns: first.columns,
+		columnTitle: "In progress",
+		linkSession: linkJiraKanbanAgentSession,
+		session: { id: "lw-board-second", title: "Second board session" },
 	});
 
+	assert.equal(first.kind, "created");
+	assert.equal(second.kind, "created");
+	assert.equal(first.issueKey, "PAY-119");
+	assert.equal(second.issueKey, "PAY-120");
 	assert.deepEqual(
-		created.columns.find((column) => column.title === "In progress")?.cards.map((card) => card.code),
-		["PAY-119", "PAY-101"],
+		second.columns
+			.find((column) => column.title === "In progress")
+			?.cards.slice(-2).map((card) => card.code),
+		["PAY-119", "PAY-120"],
 	);
 });
 
@@ -646,5 +508,62 @@ test("a multi-session drop keeps its created rows adjacent when other rows are h
 	assert.deepEqual(
 		listOrder.filter((key) => key !== hiddenKey),
 		["PAY-118", "PAY-119", "PAY-120", "PAY-121", "PAY-107", "PAY-101"],
+	);
+});
+
+test("insertWorkItemCard splices at a named slot and still appends without one", () => {
+	const card = { code: "PAY-900", title: "Gap", priority: "medium", tags: [] };
+	const toDo = (columns) => columns.find((column) => column.title === "To do");
+
+	assert.deepEqual(
+		toDo(insertWorkItemCard(COLUMNS, card, "To do", 1)).cards.map((entry) => entry.code),
+		["PAY-118", "PAY-900", "PAY-107"],
+	);
+	assert.deepEqual(
+		toDo(insertWorkItemCard(COLUMNS, card, "To do", 0)).cards.map((entry) => entry.code),
+		["PAY-900", "PAY-118", "PAY-107"],
+	);
+	// The column can change between the drag resolving and the drop committing,
+	// so an out-of-range slot clamps rather than tearing a hole in the array.
+	assert.deepEqual(
+		toDo(insertWorkItemCard(COLUMNS, card, "To do", 99)).cards.map((entry) => entry.code),
+		["PAY-118", "PAY-107", "PAY-900"],
+	);
+	assert.equal(toDo(insertWorkItemCard(COLUMNS, card, "To do", 1)).count, 3);
+	// Omitting the slot is what every create-well caller does.
+	assert.deepEqual(
+		toDo(insertWorkItemCard(COLUMNS, card, "To do")).cards.map((entry) => entry.code),
+		["PAY-118", "PAY-107", "PAY-900"],
+	);
+});
+
+test("createBoardWorkItemFromSession lands a cohort in drag order at one gap", () => {
+	// Replays what the board page does per cohort member: the slot advances and
+	// the columns from the previous create feed the next one.
+	let columns = COLUMNS;
+	const created = [];
+
+	["lw-a", "lw-b", "lw-c"].forEach((sessionId, memberIndex) => {
+		const result = createBoardWorkItemFromSession({
+			activity: { id: sessionId, label: sessionId, name: "Claude Code", state: "complete" },
+			columns,
+			columnTitle: "To do",
+			insertAtIndex: 1 + memberIndex,
+			linkSession: linkJiraKanbanAgentSession,
+			session: { id: sessionId, title: `Session ${sessionId}` },
+		});
+		columns = result.columns;
+		created.push(result.issueKey);
+	});
+
+	assert.deepEqual(
+		columns.find((column) => column.title === "To do").cards.map((card) => card.code),
+		["PAY-118", created[0], created[1], created[2], "PAY-107"],
+	);
+	assert.deepEqual(
+		columns
+			.find((column) => column.title === "To do")
+			.cards.flatMap((card) => (card.agentActivities ?? []).map((activity) => activity.id)),
+		["lw-a", "lw-b", "lw-c"],
 	);
 });

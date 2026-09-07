@@ -39,9 +39,8 @@ test("create button and dropzone share dashed well chrome", () => {
 });
 
 test("empty columns keep the create well at the top and always visible", () => {
-	// The card list moved to `BoardColumnCardList`, so the ordering contract now
-	// spans two files: the board still declares the action, renders the list and
-	// then the action; the list owns its own `order` and the scrollport marker.
+	// The ordering contract now spans two files: the board declares the action,
+	// renders the list, then the action; the list owns its own `order` and marker.
 	const createAction = BOARD.indexOf("const createAction = <BoardColumnCreateAction");
 	const cardList = BOARD.indexOf("<BoardColumnCardList");
 	const cards = BOARD.indexOf("{children}", cardList);
@@ -57,20 +56,14 @@ test("empty columns keep the create well at the top and always visible", () => {
 		/reveal=\{isEmptyColumn \? "always" : "column-hover"\}[\s\S]*sessionDragTransaction=\{sessionDragTransaction\}/u,
 	);
 	assert.match(BOARD, /isEmpty=\{isEmptyColumn\}/u);
-	assert.match(BOARD, /order: isEmptyColumn \? 0 : 1/u);
-	assert.match(CARD_LIST, /data-jira-kanban-card-list=""/u);
 	assert.match(CARD_LIST, /order: isEmpty \? 1 : 0/u);
+	assert.match(CARD_LIST, /data-jira-kanban-card-list=""/u);
+	assert.match(BOARD, /order: isEmptyColumn \? 0 : 1/u);
 });
 
-test("drop receipts leave the create-well copy clear of the flight chip", () => {
-	assert.match(
-		DROPZONE,
-		/const JIRA_DROPZONE_FLIGHT_LANDING_INSET_PX = 16;/u,
-	);
-	assert.match(
-		DROPZONE,
-		/x: rect\.left \+ JIRA_DROPZONE_FLIGHT_LANDING_INSET_PX/u,
-	);
+test("drop receipts land in the geometric center of the well", () => {
+	assert.match(DROPZONE, /resolveJiraDropzoneLandingPoint\(rect\)/u);
+	assert.doesNotMatch(DROPZONE, /JIRA_DROPZONE_FLIGHT_LANDING_INSET_PX/u);
 });
 
 test("create button rests icon-subtlest and solidifies on hover", () => {

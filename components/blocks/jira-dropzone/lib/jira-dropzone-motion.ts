@@ -1,4 +1,4 @@
-import type { FlightProfile } from "./jira-dropzone-types";
+import type { FlightProfile, ViewportPoint } from "./jira-dropzone-types";
 
 export const JIRA_DROPZONE_HOVER_AREA_PX = 120;
 
@@ -33,4 +33,13 @@ export const JIRA_DROPZONE_REDUCED_MOTION_PROFILE: FlightProfile = {
 
 export function resolveFlightProfile(shouldReduceMotion: boolean | null): FlightProfile {
 	return shouldReduceMotion ? JIRA_DROPZONE_REDUCED_MOTION_PROFILE : JIRA_DROPZONE_FULL_MOTION_PROFILE;
+}
+
+export function resolveJiraDropzoneLandingPoint(
+	rect: Pick<DOMRectReadOnly, "height" | "left" | "top" | "width">,
+): ViewportPoint {
+	return {
+		x: rect.left + rect.width / 2,
+		y: rect.top + rect.height / 2,
+	};
 }

@@ -4,7 +4,7 @@
 // oxlint-disable react-doctor/prefer-module-scope-pure-function -- These helpers are intentionally local to the component/demo because they depend on the surrounding interaction contract.
 
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
-import { LayoutGroup, motion, useReducedMotion, type Transition } from "motion/react";
+import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import { type AgentSessionColumnProps } from "@/components/blocks/agent-session-column";
@@ -47,13 +47,18 @@ import {
 	BoardColumnResizeButton,
 	CollapsedBoardColumn,
 } from "./components/collapsed-board-column";
-import { BoardColumnCardList } from "./components/board-column-card-list";
 import { BoardColumnCreateAction } from "./components/create-work-item-drop-zone";
-import { BoardCardInsertionLine, getBoardCardInsertionAnchorClassName } from "./components/board-card-insertion-line";
-import { resolveBoardCardInsertionPosition } from "./lib/board-card-insertion";
+import { CreatedCardArrivalMotion } from "./components/created-card-arrival-motion";
+import { BoardColumnCardList } from "./components/board-column-card-list";
 import { ExclusiveCreateWellProximityProvider } from "./components/create-work-item-exclusive-proximity-context";
 import { InFlowAgentSessionColumn } from "./components/in-flow-agent-session-column";
+import {
+	useCreatedCardArrivalCompletion,
+	type JiraKanbanCreatedCardArrival,
+} from "./hooks/use-created-card-arrival";
 import { BOARD_COLUMN_ACTION_REVEAL } from "./lib/board-column-action-reveal";
+import { getCommonSelectedCardStatus } from "./lib/board-selection-status";
+import { JIRA_KANBAN_CARD_MOVE } from "./lib/card-motion";
 import {
 	EMPTY_COLLAPSED_BOARD_COLUMNS,
 	getBoardColumnOuterWidthPx,
@@ -80,9 +85,7 @@ import {
 import type {
 	JiraKanbanAgentData,
 	JiraKanbanCardData,
-	JiraKanbanCardMoveAnimation,
 	JiraKanbanCardSelectModifiers,
-	JiraKanbanColumnData,
 	JiraKanbanProps,
 } from "../index";
 import {
@@ -105,6 +108,10 @@ import {
  */
 export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
+	/** One-shot card entrance requested by the host after creating cards from sessions. */
+	createdCardArrival?: JiraKanbanCreatedCardArrival;
+	/** Called once after the final card in the current arrival finishes entering. */
+	onCreatedCardArrivalComplete?: (arrivalId: number) => void;
 	/**
 	 * Replaces each status column's resting create button with a visible drop
 	 * target while an agent session is being dragged. The owning route supplies
@@ -195,9 +202,6 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	onCollapsedColumnsChange?: (collapsedColumns: CollapsedBoardColumns) => void;
 }
 
-const JIRA_KANBAN_CARD_MOVE: Transition = { duration: 0.6, ease: [0.4, 0, 0, 1] }; // duration-slowest + ease-in-out
-const JIRA_KANBAN_CARD_DEPART: Transition = { duration: 0.4, ease: [0.6, 0, 0.8, 0.6] }; // duration-slower + ease-in
-
 /**
  * Collapsing a column repositions everything to its right, so the width change
  * uses the bold in-place transition profile (`duration-medium` + `ease-in-out`).
@@ -209,14 +213,6 @@ const BOARD_COLUMN_SHELL_TRANSITION = [
 	"border-color var(--duration-normal) var(--ease-out-practical)",
 	"outline-color var(--duration-normal) var(--ease-out-practical)",
 ].join(", ");
-function getJiraKanbanCardScale(
-	phase: JiraKanbanCardMoveAnimation["phase"] | undefined,
-): number {
-	if (phase === "arriving") return 0.9;
-	if (phase === "departing") return 0.96;
-	return 1;
-}
-
 function orderPickerItems<T extends Readonly<{ id: string }>>(
 	items: readonly T[],
 	pinnedIds: readonly string[] | undefined,
@@ -390,6 +386,7 @@ function BoardColumn({
 	chrome,
 	columnChrome,
 	count,
+	createdCardArrival,
 	createWorkItemDropZoneLabel,
 	onCollapse,
 	onCreateAgent,
@@ -404,6 +401,7 @@ function BoardColumn({
 	chrome: KanbanColumnChromeStyles;
 	columnChrome: KanbanColumnChrome;
 	count: number;
+	createdCardArrival?: JiraKanbanCreatedCardArrival;
 	createWorkItemDropZoneLabel?: string;
 	onCollapse: () => void;
 	onCreateAgent?: (columnTitle: string) => void;
@@ -474,6 +472,8 @@ function BoardColumn({
 			<BoardColumnCardList
 				chrome={chrome}
 				columnTitle={title}
+				count={count}
+				createdCardArrival={createdCardArrival}
 				insertionArmed={insertionArmed}
 				isEmpty={isEmptyColumn}
 			>
@@ -568,32 +568,6 @@ function BoardColumnShell({
 	);
 }
 
-function getCommonSelectedCardStatus(
-	columns: readonly JiraKanbanColumnData[],
-	selectedCardCodes: ReadonlySet<string>,
-): string | null {
-	let commonStatus: string | null = null;
-	let foundSelectedCard = false;
-
-	for (const column of columns) {
-		for (const card of column.cards) {
-			if (!selectedCardCodes.has(card.code)) {
-				continue;
-			}
-			if (!foundSelectedCard) {
-				commonStatus = column.title;
-				foundSelectedCard = true;
-				continue;
-			}
-			if (commonStatus !== column.title) {
-				return null;
-			}
-		}
-	}
-
-	return foundSelectedCard ? commonStatus : null;
-}
-
 function ExperimentalJiraKanbanView({
 	activeCardCode,
 	agentActivityLayout = "merged",
@@ -608,6 +582,7 @@ function ExperimentalJiraKanbanView({
 	cardMoveAnimation,
 	collapsedColumns: controlledCollapsedColumns,
 	columnChrome = DEFAULT_KANBAN_COLUMN_CHROME,
+	createdCardArrival,
 	createWorkItemDropZoneLabel,
 	detachedAgentSessionsByCard,
 	draggedCardCode = null,
@@ -627,6 +602,7 @@ function ExperimentalJiraKanbanView({
 	onCardAgentDoneRunReview,
 	onCardAgentDoneRunView,
 	onCreateAgent,
+	onCreatedCardArrivalComplete,
 	onCollapsedColumnsChange,
 	onToggleColumnAgent,
 	boardSessionDrag,
@@ -654,6 +630,9 @@ function ExperimentalJiraKanbanView({
 	const shouldAnimateCardMoves = animateCardMoves && !shouldReduceMotion;
 	const boardScrollportRef = useRef<HTMLElement | null>(null);
 	const dragImageRef = useRef<HTMLDivElement | null>(null);
+	const handleCreatedCardArrivalComplete = useCreatedCardArrivalCompletion(
+		onCreatedCardArrivalComplete,
+	);
 	const [uncontrolledCollapsedColumns, setUncontrolledCollapsedColumns] = useState(
 		EMPTY_COLLAPSED_BOARD_COLUMNS,
 	);
@@ -916,6 +895,9 @@ function ExperimentalJiraKanbanView({
 								chrome={chrome}
 								columnChrome={columnChrome}
 								count={column.cards.length}
+								createdCardArrival={createdCardArrival?.columnTitle === column.title
+									? createdCardArrival
+									: undefined}
 								createWorkItemDropZoneLabel={createWorkItemDropZoneLabel}
 								onCollapse={handleCollapseColumn}
 								onCreateAgent={onCreateAgent}
@@ -951,10 +933,6 @@ function ExperimentalJiraKanbanView({
 											detachedBinding: detachedSessionDragBinding,
 											dropTarget: cardDropTarget,
 										} = boardSessionDrag.getCardDragState(card, column.title);
-										const insertionPosition = resolveBoardCardInsertionPosition(
-											boardSessionDrag.cardInsertion,
-											{ cardCount: column.cards.length, cardIndex, columnTitle: column.title },
-										);
 										const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
 										const modifiers: JiraKanbanCardSelectModifiers = {
 											shiftKey: event.shiftKey,
@@ -976,33 +954,25 @@ function ExperimentalJiraKanbanView({
 											style={shouldAnimateCardPosition ? { willChange: "transform" } : undefined}
 											transition={JIRA_KANBAN_CARD_MOVE}
 										>
-											<motion.div
-												animate={
-													shouldAnimateCardMoves
-														? { scale: getJiraKanbanCardScale(cardMovePhase) }
-														: undefined
-												}
+											<CreatedCardArrivalMotion
+												arrival={createdCardArrival?.columnTitle === column.title
+													? createdCardArrival
+													: undefined}
+												cardCode={card.code}
+												cardCount={column.cards.length}
+												cardIndex={cardIndex}
+												cardInsertion={boardSessionDrag.cardInsertion}
+												cardMovePhase={cardMovePhase}
 												className={cn(
-													"flex w-full min-w-0 max-w-[280px] flex-col gap-2 rounded-lg",
-													"transition-[background-color,opacity] duration-normal ease-out-practical",
-													"motion-reduce:transition-none",
 													spotlightIssueKey === card.code && "bg-bg-accent-blue-subtlest",
 													spotlightIssueKey !== null && spotlightIssueKey !== card.code && "opacity-40",
-													getBoardCardInsertionAnchorClassName(insertionPosition),
 												)}
-												data-board-agent-session-drop-zone="issue"
-												data-board-agent-session-target={cardDropTarget ?? undefined}
-												data-board-card-count={column.cards.length}
-												data-board-card-index={cardIndex}
-												data-board-column-title={column.title}
-												data-issue-key={card.code}
-												initial={false}
-												style={cardMovePhase ? { willChange: "transform" } : undefined}
-												transition={cardMovePhase === "departing" ? JIRA_KANBAN_CARD_DEPART : JIRA_KANBAN_CARD_MOVE}
+												columnTitle={column.title}
+												dropTarget={cardDropTarget}
+												onArrivalComplete={handleCreatedCardArrivalComplete}
+												shouldAnimateCardMoves={shouldAnimateCardMoves}
+												shouldReduceMotion={shouldReduceMotion}
 											>
-												{insertionPosition ? (
-													<BoardCardInsertionLine position={insertionPosition} seam={insertionPosition === "before" && cardIndex > 0 ? "gap" : "edge"} />
-												) : null}
 												<ExperimentalJiraKanbanCard
 												active={isActive}
 													agentActivityLayout={agentActivityLayout}
@@ -1040,7 +1010,7 @@ function ExperimentalJiraKanbanView({
 												showUnlinkWell={showAgentSessionUnlinkWell}
 												selected={isSelected}
 											/>
-											</motion.div>
+											</CreatedCardArrivalMotion>
 										</motion.div>
 									);
 								})}

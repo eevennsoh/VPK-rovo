@@ -12,7 +12,6 @@ import { toJiraIssueDemoAttachedActivity } from "@/components/blocks/jira-issue/
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
 import type { JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experimental/page";
-import type { BoardCardInsertion } from "@/components/blocks/jira-kanban/experimental/lib/board-agent-session-drag";
 import { isPulseAgentSession, type PulseLooseWork } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { linkJiraKanbanAgentSession, moveJiraKanbanAgentSession, unlinkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
 import {
@@ -190,7 +189,11 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 			issueSummary: card.title,
 		});
 	}, [boardColumns, handleViewChat, handleViewCompletedRun, openAgentChat]);
-	const { createFromAgentSession, createFromBoardAgentSession, getProps: getListProps } = useJiraGoldenJourneysV4List({
+	const {
+		createBoardFromAgentSession,
+		createFromAgentSession,
+		getProps: getListProps,
+	} = useJiraGoldenJourneysV4List({
 		boardColumns,
 		onAssignedAgentSelect: handleListAssignedAgentSelect,
 		setBoardColumns,
@@ -199,12 +202,9 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 	// leave a badge behind, so the flash carries the acknowledgement. One drop of
 	// three marked sessions publishes one flash covering all three rows.
 	//
-	// It only reaches rows the list is rendering. A created card arrives
-	// unassigned, and `filterJiraKanbanColumnsByAssignee` drops unassigned cards
-	// outright, so a create-drop under an active assignee filter lands a row the
-	// viewer cannot see. That gap predates the flash — the row used to be
-	// selected and equally hidden — and closing it is a separate decision about
-	// what a filtered drop should do.
+	// It only reaches rows the list is rendering. Board-created cards inherit
+	// the dropped session's invoker, so the matching assignee filter keeps the
+	// new row visible long enough for this acknowledgement.
 	const { flash: listRowFlash, flashRow: flashListRow } = useJiraListRowFlashSource();
 	// Unlink always lands in `detachedAgentSessionsByCard`. The Untracked list
 	// reads that map, so the session reappears there immediately. Team EU keeps
@@ -254,6 +254,19 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 		setBoardColumns((columns) => linkJiraKanbanAgentSession(columns, card.code, activity));
 		flashListRow(card.code);
 	}, [consumeDetachedAgentSession, flashListRow]);
+	const handleBoardAgentSessionCreate = useCallback((
+		session: AgentSessionItem,
+		columnTitle: string,
+		insertAtIndex?: number,
+	) => {
+		const activity = consumeDetachedAgentSession(session);
+		return createBoardFromAgentSession({
+			activity,
+			columnTitle,
+			insertAtIndex,
+			session,
+		});
+	}, [consumeDetachedAgentSession, createBoardFromAgentSession]);
 	const handleListAgentSessionCreate = useCallback((
 		session: AgentSessionItem,
 		insertion: JiraListInsertion,
@@ -265,22 +278,6 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 			session,
 		}));
 	}, [consumeDetachedAgentSession, createFromAgentSession, flashListRow]);
-	// Sessions dropped into a gap between board cards mint work items in that
-	// column at that gap, already linked and in drag order. Same reclaim as the
-	// list create: each detached activity comes back so the card gets the
-	// original session, not a fresh stand-in.
-	const handleBoardAgentSessionCreate = useCallback((
-		sessions: readonly [AgentSessionItem, ...AgentSessionItem[]],
-		insertion: BoardCardInsertion,
-	) => {
-		createFromBoardAgentSession({
-			entries: sessions.map((session) => ({
-				activity: consumeDetachedAgentSession(session),
-				session,
-			})),
-			insertion,
-		});
-	}, [consumeDetachedAgentSession, createFromBoardAgentSession]);
 	const handleAgentSessionMove = useCallback((
 		session: JiraIssueAgentSessionRef,
 		sourceCard: JiraKanbanCardData,
@@ -323,6 +320,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						insightsEnabled={false}
 						newAgentSessionIds={newAgentSessionIds}
 						onAgentSessionsReviewed={reviewAgentSessions}
+						onBoardAgentSessionCreate={handleBoardAgentSessionCreate}
 						onBoardColumnsChange={(columns: readonly JiraKanbanColumnData[]) => {
 							setBoardColumns([...columns]);
 						}}
@@ -333,7 +331,6 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 						onCardAgentSessionMove={handleAgentSessionMove}
 						onCardAgentSessionUnlink={handleAgentSessionUnlink}
 						onListAgentSessionCreate={handleListAgentSessionCreate}
-						onBoardAgentSessionCreate={handleBoardAgentSessionCreate}
 						showAgentSessionUnlinkWell={designVariation !== "team-eu"}
 						onResumeLooseWork={handleResumeLooseWork}
 						onViewChange={tabOwnsView ? undefined : setWorkItemView}
