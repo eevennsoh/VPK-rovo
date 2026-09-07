@@ -371,6 +371,22 @@ export function selectEffectiveSelection(
 	return { kind: "active", items: [first, ...rest] };
 }
 
+/**
+ * Once an untracked-work selection is active, a plain click adds or removes
+ * that row. Modifiers still refine the gesture, but are no longer required to
+ * build a multi-selection from the card column.
+ */
+export function resolveUntrackedSelectionGesture(
+	gesture: AgentSessionSelectionGesture,
+	selection: EffectiveSelection,
+): AgentSessionSelectionGesture {
+	if (selection.kind !== "active" || gesture.additive || gesture.range) {
+		return gesture;
+	}
+
+	return { ...gesture, additive: true };
+}
+
 export type SelectionActionId = "approve" | "create" | "archive" | "clear";
 
 export type HeaderActionId = SelectionActionId | "select-all";

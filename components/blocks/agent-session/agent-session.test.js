@@ -25,6 +25,10 @@ const MEDIUM_DRAG_SOURCE = readFileSync(
 	join(__dirname, "agent-session-medium-drag.tsx"),
 	"utf8",
 );
+const COHORT_CHIP_SOURCE = readFileSync(
+	join(__dirname, "agent-session-cohort-chip.tsx"),
+	"utf8",
+);
 const MORE_MENU_SOURCE = readFileSync(
 	join(__dirname, "agent-session-medium-more-menu.tsx"),
 	"utf8",
@@ -235,11 +239,37 @@ test("medium drag keeps pointer capture on the motion host instead of swapping a
 	// so the card stuck on an empty grey attach chin.
 	assert.doesNotMatch(MEDIUM_DRAG_SOURCE, /isDragging \? chip : children\(sessionDragBind\)/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /\{children\(sessionDragBind\)\}/u);
-	assert.match(MEDIUM_DRAG_SOURCE, /pointer-events-none absolute inset-x-0 top-0 opacity-0/u);
+	assert.match(
+		MEDIUM_DRAG_SOURCE,
+		/isDragging && preserveSourceFootprint && "pointer-events-none absolute inset-x-0 top-0 opacity-\(--opacity-disabled\)"/u,
+	);
+	assert.match(
+		MEDIUM_DRAG_SOURCE,
+		/isFollower && preserveSourceFootprint && "pointer-events-none opacity-\(--opacity-disabled\)"/u,
+	);
+	assert.match(
+		MEDIUM_DRAG_SOURCE,
+		/isFollower && !preserveSourceFootprint && "h-0 overflow-hidden"/u,
+	);
+	assert.match(
+		MEDIUM_DRAG_SOURCE,
+		/\(isFollower && !preserveSourceFootprint \|\| \(isDragging && !preserveSourceFootprint\)\) && "pointer-events-none absolute inset-x-0 top-0 opacity-0"/u,
+	);
 	assert.match(MEDIUM_DRAG_SOURCE, /aria-hidden=\{isDragging \|\| isFollower \|\| undefined\}/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /inert=\{isDragging \|\| isFollower \|\| undefined\}/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /window\.addEventListener\("pointerup", onPointerUp\)/u);
 	assert.match(MEDIUM_DRAG_SOURCE, /window\.addEventListener\("pointercancel", onPointerCancel\)/u);
+});
+
+test("multi-session drag chips use the concise sessions count", () => {
+	assert.match(COHORT_CHIP_SOURCE, /const label = `\$\{cohort\.members\.length\} sessions`;/u);
+	assert.doesNotMatch(COHORT_CHIP_SOURCE, /agent sessions/u);
+});
+
+test("drag-source ghosts leave the grid accessibility tree while inert", () => {
+	assert.match(CARD_SOURCE, /const isTransferSource = Boolean\(draggingIds\?\.has\(item\.id\)\);/u);
+	assert.match(CARD_SOURCE, /aria-hidden=\{isTransferSource \|\| undefined\}/u);
+	assert.match(CARD_SOURCE, /inert=\{isTransferSource \|\| undefined\}/u);
 });
 
 test("medium drag publishes the attach transfer only after the pointer moves", () => {
