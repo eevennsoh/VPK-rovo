@@ -96,8 +96,10 @@ function JiraLinkingFlight({
 	resolveLandingPoint: () => JiraLinkingPoint | null;
 }>): ReactElement | null {
 	const [landing, setLanding] = useState<JiraLinkingPoint | null | undefined>(undefined);
+	const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
 
 	useLayoutEffect(() => {
+		setPortalRoot(document.body);
 		let cancelled = false;
 		const tryMeasure = (): boolean => {
 			const point = resolveLandingPoint();
@@ -127,7 +129,7 @@ function JiraLinkingFlight({
 		};
 	}, [flight.key, onLanded, resolveLandingPoint]);
 
-	if (landing === undefined || landing === null) {
+	if (portalRoot === null || landing === undefined || landing === null) {
 		return null;
 	}
 
@@ -171,6 +173,6 @@ function JiraLinkingFlight({
 				/>
 			</div>
 		</motion.div>,
-		document.body,
+		portalRoot,
 	);
 }
