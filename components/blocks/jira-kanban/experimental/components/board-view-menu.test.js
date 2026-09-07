@@ -51,6 +51,7 @@ test("View picker exposes unselected filter-action submenus with a selected coun
 	assert.match(VIEW_MENU_SOURCE, /<Badge variant="information">\{selectedQuickViewCount\}<\/Badge>/u);
 	assert.match(VIEW_MENU_SOURCE, /<DropdownMenuSeparator \/>[\s\S]*Clear selection/u);
 	assert.match(VIEW_MENU_SOURCE, /<DropdownMenuSubTrigger>\{label\}<\/DropdownMenuSubTrigger>/u);
+	assert.doesNotMatch(VIEW_MENU_SOURCE, /<DropdownMenuSubTrigger selected=/u);
 	assert.match(
 		VIEW_MENU_SOURCE,
 		/label="Pull request"[\s\S]*onSelect=\{handlePullRequestSelect\}[\s\S]*options=\{BOARD_PR_STATE_OPTIONS\}/u,
@@ -75,7 +76,14 @@ test("View picker exposes unselected filter-action submenus with a selected coun
 		VIEW_MENU_SOURCE,
 		/const BOARD_SESSION_TYPE_OPTIONS[\s\S]*BOARD_AGENT_HOST_OPTIONS\.filter\([\s\S]*option\.id !== "all"/u,
 	);
-	assert.match(VIEW_MENU_SOURCE, /<DropdownMenuItem[\s\S]*onSelect=\{\(\) => onSelect\(option\.id\)\}/u);
+	assert.match(
+		VIEW_MENU_SOURCE,
+		/<DropdownMenuItem[\s\S]*onSelect=\{\(\) => onSelect\(option\.id\)\}[\s\S]*selected=\{option\.id === selectedId\}/u,
+	);
+	assert.match(VIEW_MENU_SOURCE, /selectedId=\{pullRequestFilterId\}/u);
+	assert.match(VIEW_MENU_SOURCE, /selectedId=\{agentFilterId\}/u);
+	assert.match(VIEW_MENU_SOURCE, /selectedId=\{sessionTypeFilterId\}/u);
+	assert.match(VIEW_MENU_SOURCE, /selectedId=\{groupByFilterId\}/u);
 	assert.match(
 		VIEW_MENU_SOURCE,
 		/className=\{stateIcon \? "gap-2 \[&>span:first-child\]:size-3" : undefined\}/u,
