@@ -492,7 +492,10 @@ test("collapsed motion is tokenised and honours reduced motion", () => {
 	// A host-driven pointer resize must bypass this transition so the column edge
 	// tracks the pointer instead of easing toward every intermediate width.
 	assert.match(TYPES_SOURCE, /widthTransitionDisabled\?: boolean;/u);
-	assert.match(INDEX_SOURCE, /expandedWidthPx = AGENT_SESSION_COLUMN_WIDTH_PX,\s*widthTransitionDisabled = false,/u);
+	assert.match(
+		INDEX_SOURCE,
+		/expandedWidthPx = AGENT_SESSION_COLUMN_WIDTH_PX,\s*(?:hasScrollingEffect = false,\s*)?widthTransitionDisabled = false,/u,
+	);
 	assert.match(
 		INDEX_SOURCE,
 		/shouldReduceMotion \|\| widthTransitionDisabled\s*\? "none"\s*: AGENT_SESSION_COLUMN_TRANSITION/u,
@@ -755,7 +758,7 @@ test("the sticky footer reads Archived N in the active view", () => {
 	// is pinned to the list wrapper so it sits on the last cards, not the footer.
 	assert.match(
 		INDEX_SOURCE,
-		/flex-1 overflow-y-auto has-\[:focus-visible\]:overflow-visible"[\s\S]*?<\/div>\s*\)\}\s*\{showTopScrollMask \|\| showBottomScrollMask \?/u,
+		/flex-1 overflow-y-auto has-\[:focus-visible\]:overflow-visible[^"]*"[\s\S]*?<\/div>\s*\)\}\s*\{showTopScrollMask \|\| showBottomScrollMask \?/u,
 	);
 	assert.match(
 		INDEX_SOURCE,
