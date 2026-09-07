@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState, type ReactElement, type RefObject } from "react";
-import { arc, motion, useMotionValueEvent } from "motion/react";
+import { arc, motion, useMotionValueEvent, useReducedMotion } from "motion/react";
 import AddIcon from "@atlaskit/icon/core/add";
 
 import { Icon } from "@/components/ui/icon";
@@ -13,6 +13,9 @@ import { JiraDropzoneFlight } from "./jira-dropzone-flight";
 import { useJiraDropzoneChannel } from "./jira-dropzone-field";
 import {
 	JIRA_DROPZONE_HOVER_AREA_PX,
+	JIRA_DROPZONE_WELL_ENTER,
+	JIRA_DROPZONE_WELL_ENTER_REDUCED,
+	JIRA_DROPZONE_WELL_ENTER_SCALE,
 	resolveJiraDropzoneLandingPoint,
 } from "./lib/jira-dropzone-motion";
 import {
@@ -241,13 +244,23 @@ function JiraDropzoneWell({
 	targetRef,
 	title,
 }: JiraDropzoneWellProps): ReactElement {
+	const shouldReduceMotion = useReducedMotion();
+	// Exit is the existing collapse-hold height shrink; this pop-in only runs when
+	// the open well mounts at drag start.
 	return (
 		<motion.div
-			className="w-full will-change-transform"
+			animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+			className="w-full will-change-[opacity,transform]"
+			initial={shouldReduceMotion
+				? false
+				: { opacity: 0, scale: JIRA_DROPZONE_WELL_ENTER_SCALE }}
 			style={{
 				x: pinMagnet ? 0 : magnet.x,
 				y: pinMagnet ? 0 : magnet.y,
 			}}
+			transition={shouldReduceMotion
+				? JIRA_DROPZONE_WELL_ENTER_REDUCED
+				: JIRA_DROPZONE_WELL_ENTER}
 		>
 			<div
 				aria-label={`${label} in ${title}${selected ? ", selected drop target" : ""}`}

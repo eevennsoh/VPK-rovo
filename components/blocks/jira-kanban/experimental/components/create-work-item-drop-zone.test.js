@@ -13,6 +13,7 @@ const { test } = require("node:test");
 
 const FOOTER = readFileSync(join(__dirname, "create-work-item-drop-zone.tsx"), "utf8");
 const BOARD = readFileSync(join(__dirname, "../experimental-jira-kanban.tsx"), "utf8");
+const CARD_LIST = readFileSync(join(__dirname, "board-column-card-list.tsx"), "utf8");
 const DROPZONE = readFileSync(
 	join(__dirname, "../../../jira-dropzone/jira-dropzone.tsx"),
 	"utf8",
@@ -37,9 +38,26 @@ test("create button and dropzone share dashed well chrome", () => {
 	);
 });
 
+test("session drag pops the create well in on every column", () => {
+	assert.match(
+		DROPZONE,
+		/initial=\{shouldReduceMotion[\s\S]*false[\s\S]*opacity: 0, scale: JIRA_DROPZONE_WELL_ENTER_SCALE[\s\S]*JIRA_DROPZONE_WELL_ENTER/u,
+	);
+	assert.match(
+		DROPZONE,
+		/useReducedMotion\(\)/u,
+	);
+	assert.match(
+		FOOTER,
+		/const drag: JiraDropzoneDragState = resolveBoardCreateDropzoneDrag\(\s*sessionDragTransaction,\s*title,\s*\);/u,
+	);
+});
+
 test("empty columns keep the create well at the top and always visible", () => {
+	// The ordering contract now spans two files: the board declares the action,
+	// renders the list, then the action; the list owns its own `order` and marker.
 	const createAction = BOARD.indexOf("const createAction = <BoardColumnCreateAction");
-	const cardList = BOARD.indexOf('data-jira-kanban-card-list=""');
+	const cardList = BOARD.indexOf("<BoardColumnCardList");
 	const cards = BOARD.indexOf("{children}", cardList);
 	const actionRender = BOARD.indexOf("{createAction}", cardList);
 
@@ -52,7 +70,9 @@ test("empty columns keep the create well at the top and always visible", () => {
 		BOARD,
 		/reveal=\{isEmptyColumn \? "always" : "column-hover"\}[\s\S]*sessionDragTransaction=\{sessionDragTransaction\}/u,
 	);
-	assert.match(BOARD, /order: isEmptyColumn \? 1 : 0/u);
+	assert.match(BOARD, /isEmpty=\{isEmptyColumn\}/u);
+	assert.match(CARD_LIST, /order: isEmpty \? 1 : 0/u);
+	assert.match(CARD_LIST, /data-jira-kanban-card-list=""/u);
 	assert.match(BOARD, /order: isEmptyColumn \? 0 : 1/u);
 });
 

@@ -466,6 +466,15 @@ test("reduced stagger profile keeps member flights without delay or spread", () 
 	assert.deepEqual(flights.map((flight) => flight.from), [next.from, next.from]);
 });
 
+test("an active session drag opens every well before proximity", () => {
+	assert.equal(
+		resolveJiraDropzonePhase({ drag: "active", proximate: false, receiving: false }),
+		"active",
+	);
+	assert.equal(resolveJiraDropzoneSurface("active", false), "open");
+	assert.equal(resolveJiraDropzoneCopy("active"), "label");
+});
+
 test("receiving outranks armed and proximate", () => {
 	assert.equal(
 		resolveJiraDropzonePhase({ drag: "armed", proximate: true, receiving: true }),
@@ -494,6 +503,7 @@ test("resting keeps the open well while collapse is holding", () => {
 	assert.equal(resolveJiraDropzoneSurface("resting", true), "open");
 	assert.equal(resolveJiraDropzoneSurface("receiving", false), "open");
 	assert.equal(resolveJiraDropzoneSurface("armed", true), "open");
+	assert.equal(resolveJiraDropzoneSurface("active", false), "open");
 });
 
 test("collapse hold matches duration-normal unless motion is reduced", () => {
@@ -506,6 +516,7 @@ test("expanded copy unmounts on the first resting frame", () => {
 	assert.equal(resolveJiraDropzoneCopy("receiving"), "label");
 	assert.equal(resolveJiraDropzoneCopy("armed"), "label");
 	assert.equal(resolveJiraDropzoneCopy("proximate"), "label");
+	assert.equal(resolveJiraDropzoneCopy("active"), "label");
 	assert.equal(resolveJiraDropzoneCopy("resting"), "none");
 });
 

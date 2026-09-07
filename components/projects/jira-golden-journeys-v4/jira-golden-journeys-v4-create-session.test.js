@@ -12,9 +12,10 @@ const EXPERIMENTAL_PAGE_SOURCE = [
 	readProjectFile("components/blocks/jira-kanban/experimental/page.tsx"),
 	readProjectFile("components/blocks/jira-kanban/experimental/experimental-page-types.ts"),
 ].join("\n");
-const EXPERIMENTAL_BOARD_SOURCE = readProjectFile(
-	"components/blocks/jira-kanban/experimental/experimental-jira-kanban.tsx",
-);
+const EXPERIMENTAL_BOARD_SOURCE = [
+	readProjectFile("components/blocks/jira-kanban/experimental/experimental-jira-kanban.tsx"),
+	readProjectFile("components/blocks/jira-kanban/experimental/components/board-column-card-list.tsx"),
+].join("\n");
 const ARRIVAL_HOOK_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/hooks/use-created-card-arrival.ts",
 );
@@ -26,11 +27,11 @@ const ARRIVAL_MOTION_SOURCE = [
 test("board session creation is route-owned and reveals the created cards once", () => {
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/onBoardAgentSessionCreate\?: \(\s*session: AgentSessionItem,\s*columnTitle: string,\s*\) => string \| undefined;/u,
+		/onBoardAgentSessionCreate\?: \(\s*session: AgentSessionItem,\s*columnTitle: string,[\s\S]*?insertAtIndex\?: number,\s*\) => string \| undefined;/u,
 	);
 	assert.match(
 		PAGE_SOURCE,
-		/const handleBoardAgentSessionCreate = useCallback\([\s\S]*consumeDetachedAgentSession\(session\)[\s\S]*createBoardFromAgentSession\(\{\s*activity,\s*columnTitle,\s*session,\s*\}\)/u,
+		/const handleBoardAgentSessionCreate = useCallback\([\s\S]*consumeDetachedAgentSession\(session\)[\s\S]*createBoardFromAgentSession\(\{\s*activity,\s*columnTitle,\s*insertAtIndex,\s*session,\s*\}\)/u,
 	);
 	assert.match(PAGE_SOURCE, /onBoardAgentSessionCreate=\{handleBoardAgentSessionCreate\}/u);
 	assert.match(
@@ -54,7 +55,7 @@ test("board session creation is route-owned and reveals the created cards once",
 test("the created-card arrival scrolls its column to the bottom and uses reduced-motion-safe Motion", () => {
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
-		/useCreatedCardArrivalScroll\(\{[\s\S]*arrival: createdCardArrival,[\s\S]*cardCount: count,[\s\S]*onCardListRef: cardListRef,[\s\S]*title,/u,
+		/useCreatedCardArrivalScroll\(\{[\s\S]*arrival: createdCardArrival,[\s\S]*cardCount: count,[\s\S]*onCardListRef: ref,[\s\S]*title: columnTitle,/u,
 	);
 	assert.match(
 		ARRIVAL_HOOK_SOURCE,

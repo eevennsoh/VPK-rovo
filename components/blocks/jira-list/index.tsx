@@ -614,7 +614,7 @@ export function JiraList({
 			)}
 			data-testid="jira-list"
 		>
-			<div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[inherit]">
+			<div className="relative z-0 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[inherit]">
 				{/* Positioned wrapper so the fades stay on the scrollport
 				    edges instead of scrolling away with the rows. The footer
 				    itself must stay unpositioned, because its centred

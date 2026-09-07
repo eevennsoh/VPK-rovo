@@ -21,6 +21,7 @@ const PAGE_SOURCE = [
 const BOARD_SOURCE = [
 	readFileSync(join(EXPERIMENTAL_DIR, "experimental-jira-kanban.tsx"), "utf8"),
 	readFileSync(join(EXPERIMENTAL_DIR, "components", "created-card-arrival-motion.tsx"), "utf8"),
+	readFileSync(join(EXPERIMENTAL_DIR, "components", "board-column-card-list.tsx"), "utf8"),
 ].join("\n");
 const IN_FLOW_SOURCE = readFileSync(
 	join(EXPERIMENTAL_DIR, "components", "in-flow-agent-session-column.tsx"),

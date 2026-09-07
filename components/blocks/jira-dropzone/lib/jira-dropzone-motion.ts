@@ -2,6 +2,14 @@ import type { FlightProfile, ViewportPoint } from "./jira-dropzone-types";
 
 export const JIRA_DROPZONE_HOVER_AREA_PX = 120;
 
+/** Compact well pop-in while a session drag is active. */
+export const JIRA_DROPZONE_WELL_ENTER = {
+	duration: 0.15,
+	ease: [0.4, 1, 0.6, 1],
+} as const; // duration-normal + ease-out-practical
+export const JIRA_DROPZONE_WELL_ENTER_REDUCED = { duration: 0 } as const;
+export const JIRA_DROPZONE_WELL_ENTER_SCALE = 0.95;
+
 export const JIRA_DROPZONE_FULL_MOTION_PROFILE: FlightProfile = {
 	arcPeak: 0.5,
 	arcStrength: 0.42,

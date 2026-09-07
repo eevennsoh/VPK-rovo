@@ -20,6 +20,9 @@ const IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX = 24;
 // inside its scrollport. A 16px footprint spacer resolves to the same visible
 // 8px edge gap that `gap-2` creates between adjacent Jira status columns.
 const IN_FLOW_AGENT_SESSION_COLUMN_GAP_PX = 16;
+// Extend the preview's 24px session targets to 56px, within the empty gutter.
+// The 32px column footprint and marker axis stay fixed; To do remains clickable.
+const IN_FLOW_AGENT_SESSION_COLUMN_RAIL_HIT_SLOP_PX = 16;
 const IN_FLOW_AGENT_SESSION_COLUMN_TITLE = "Untracked work";
 // Centers the rail's 16px dot axis in the 26px visible gutter (24px inset + border).
 const IN_FLOW_AGENT_SESSION_COLUMN_GUTTER_OFFSET_PX = -5;
@@ -203,7 +206,10 @@ function InFlowAgentSessionColumnSurface({
 			<AgentSessionColumn
 				{...agentSessionColumn}
 				collapsed={!isPersistentExpanded}
-				collapsedPresentation={isEmbedded ? "column" : "gutter"}
+				collapsedPresentation="gutter"
+				collapsedRailHitSlopPx={isEmbedded && !isPersistentExpanded
+					? IN_FLOW_AGENT_SESSION_COLUMN_RAIL_HIT_SLOP_PX
+					: 0}
 				columnFrame={columnFrame}
 				expandedWidthPx={expandedWidthPx}
 				widthTransitionDisabled={resize.isResizing}
@@ -236,10 +242,11 @@ function InFlowAgentSessionColumnSurface({
 /**
  * The Untracked rail rests in the page's leading gutter. Hover temporarily
  * returns that same compact timeline to the board's original 24px column inset;
- * it never swaps dots for cards. Only the column's expand control promotes the
- * full column, and that deliberate state persists after the pointer leaves. The
- * full-height gutter target sits behind each session row so a row can own its
- * whole 24px band while empty gutter space still opens the column preview.
+ * it never swaps dots for cards, and the session total stays hidden. Only the
+ * column's expand control promotes the full column, and that deliberate state
+ * persists after the pointer leaves. The full-height gutter target sits behind
+ * each session row so a row can own its whole 24px band while empty gutter
+ * space still opens the column preview.
  */
 export function InFlowAgentSessionColumn({
 	agentSessionColumn,
