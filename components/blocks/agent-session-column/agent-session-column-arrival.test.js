@@ -148,11 +148,12 @@ test("circle unread rest uses default icon color", () => {
 	);
 	assert.match(NOTCH_MAGNIFY_SOURCE, /toAgentSessionNotchTone\(isSelected: boolean, isNew: boolean\)/u);
 	assert.match(NOTCH_MAGNIFY_SOURCE, /return isNew \|\| isSelected/u);
-	// Gutter rest can still flash +N. An inspected rail (column presentation)
-	// increments the pool total instead; the spoken form keeps both numbers.
-	assert.match(INDEX_SOURCE, /collapsedPresentation === "gutter" && newCount > 0/u);
+	// Gutter rest hides the total until newly synced sessions reveal it.
+	// An inspected rail (column presentation) keeps that same total visible.
+	assert.match(INDEX_SOURCE, /hideGutterCount = isGutterCollapsed && newCount === 0/u);
 	assert.match(INDEX_SOURCE, /String\(sessionCount\)/u);
 	assert.match(INDEX_SOURCE, /\$\{sessionCount\} sessions, \$\{newCount\} newly synced/u);
+	assert.doesNotMatch(INDEX_SOURCE, /`\+\$\{newCount\}`/u);
 });
 
 test("arrival motion is tokenised, capped, and spatially anchored", () => {
