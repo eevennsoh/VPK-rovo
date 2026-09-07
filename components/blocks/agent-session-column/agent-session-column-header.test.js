@@ -51,6 +51,14 @@ test("the selecting header omits collapse so Clear and Deselect all can exit", (
 		HEADER_SOURCE.indexOf("function renderColumnChrome"),
 		HEADER_SOURCE.indexOf("function renderPanelChrome"),
 	);
+	assert.match(columnChrome, /\{filter\}/u);
+	assert.match(columnChrome, /hasActiveFilters/u);
+	assert.match(columnChrome, /pinFilterEnd/u);
+	assert.match(columnChrome, /HEADER_ACTIONS_PINNED/u);
+	assert.match(HEADER_SOURCE, /group\/header-actions/u);
+	assert.match(HEADER_SOURCE, /w-0/u);
+	assert.match(HEADER_SOURCE, /group-has-\[\[data-popup-open\]\]\/header-actions:w-12/u);
+	assert.match(HEADER_SOURCE, /has-\[\[data-popup-open\]\]:w-12/u);
 	assert.match(columnChrome, /<SelectAllSlot/u);
 	assert.match(
 		columnChrome,
@@ -61,4 +69,24 @@ test("the selecting header omits collapse so Clear and Deselect all can exit", (
 	assert.doesNotMatch(panelSelectingBranch, /ShrinkHorizontalIcon/u);
 	assert.match(panelSelectingBranch, /<SelectAllButton/u);
 	assert.match(panelSelectingBranch, /<PanelAction/u);
+});
+
+test("selected filters pin the browsing filter to the far right until hover reveals overflow", () => {
+	assert.match(HEADER_SOURCE, /hasActiveFilters\?: boolean/u);
+	assert.match(HEADER_SOURCE, /const pinFilterEnd = hasActiveFilters && !isSelecting/u);
+	assert.match(HEADER_SOURCE, /const HEADER_ACTIONS_PINNED/u);
+	assert.match(HEADER_SOURCE, /group\/header-actions/u);
+	assert.match(HEADER_SOURCE, /\{pinFilterEnd \? \(/u);
+	assert.match(HEADER_SOURCE, /className=\{HEADER_ACTIONS_PINNED\}/u);
+	assert.match(HEADER_SOURCE, /className=\{HEADER_ACTIONS_REVEAL\}/u);
+	assert.match(
+		HEADER_SOURCE,
+		/HEADER_ACTIONS_REVEAL\} data-session-header-reveal="">\s*\{filter\}/u,
+	);
+	assert.match(HEADER_SOURCE, /group-hover\/session-column:w-12/u);
+	assert.match(HEADER_SOURCE, /group-has-\[\[data-popup-open\]\]\/header-actions:w-12/u);
+	assert.match(HEADER_SOURCE, /has-\[\[data-popup-open\]\]:w-12/u);
+	assert.match(HEADER_SOURCE, /has-\[:focus-visible\]:w-12/u);
+	assert.match(HEADER_SOURCE, /flex-nowrap/u);
+	assert.match(HEADER_SOURCE, /motion-reduce:transition-none/u);
 });
