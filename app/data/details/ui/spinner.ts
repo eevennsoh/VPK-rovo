@@ -9,7 +9,8 @@ export const SPINNER_DETAIL: ComponentDetail = {
 <Spinner />
 <Spinner size="xl" />
 <Spinner variant="rainbow" />
-<Spinner variant="experimental" />`,
+<Spinner variant="experimental" />
+<Spinner variant="experimental" pulse />`,
     props: [
       {
         name: "size",
@@ -22,7 +23,14 @@ export const SPINNER_DETAIL: ComponentDetail = {
         type: `"default" | "experimental" | "inherit" | "invert" | "rainbow"`,
         default: `"default"`,
         description:
-          "Treatment. `default` uses icon subtlest, `experimental` pulses a six-dot orb in and out, `inherit` follows currentColor, `invert` paints the background token, and `rainbow` uses the Rovo brand gradient.",
+          "Treatment. `default` uses icon subtlest, `experimental` keeps a six-dot orb at full ring size and rotates it using icon subtlest, `inherit` follows currentColor, `invert` paints the background token, and `rainbow` uses the Rovo brand gradient.",
+      },
+      {
+        name: "pulse",
+        type: "boolean",
+        default: "false",
+        description:
+          "Experimental only. When true, the six dots converge to one center dot and grow back out into a uniform icon-subtlest ring. Default stays at full ring size and rotates.",
       },
       {
         name: "className",
@@ -44,7 +52,7 @@ export const SPINNER_DETAIL: ComponentDetail = {
       },
       {
         title: "Experimental",
-        description: "Six-dot iconic orb from the Jira agent status prototype.",
+        description: "Six-dot iconic orb from the Jira agent status prototype. Toggle grow in/out to restore the original pulse.",
         demoSlug: "spinner-demo-experimental",
       },
       { title: "Basic", demoSlug: "spinner-demo-basic" },

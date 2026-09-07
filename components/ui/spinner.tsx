@@ -20,7 +20,7 @@ const spinnerVariants = cva(
 			},
 			variant: {
 				default: "text-icon-subtlest",
-				experimental: "",
+				experimental: "text-icon-subtlest!",
 				inherit: "",
 				invert: "text-background",
 				rainbow: "",
@@ -39,6 +39,8 @@ interface SpinnerProps
 	label?: string
 	/** Deterministic offset into the animation loop, used to desynchronise nearby spinners. */
 	phaseOffsetMs?: number
+	/** Experimental only. Converges the six dots to one center dot, then grows them back into the ring. */
+	pulse?: boolean
 	style?: React.CSSProperties
 }
 
@@ -70,6 +72,7 @@ function Spinner({
 	variant = "default",
 	label = "Loading",
 	phaseOffsetMs = 0,
+	pulse = false,
 	style,
 }: Readonly<SpinnerProps>) {
 	const spinnerId = useId()
@@ -110,6 +113,7 @@ function Spinner({
 			<ExperimentalSpinner
 				className={cn(spinnerVariants({ size, variant }), className)}
 				label={label}
+				pulse={pulse}
 				style={style}
 			/>
 		)

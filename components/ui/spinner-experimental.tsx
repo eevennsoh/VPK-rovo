@@ -16,15 +16,18 @@ const ORB_DOTS = [
 interface ExperimentalSpinnerProps {
 	className?: string;
 	label: string;
+	pulse?: boolean;
 	style?: React.CSSProperties;
 }
 
 export function ExperimentalSpinner({
 	className,
 	label,
+	pulse = false,
 	style,
 }: Readonly<ExperimentalSpinnerProps>): React.ReactElement {
 	const shouldReduceMotion = useReducedMotion();
+	const canAnimate = !shouldReduceMotion;
 
 	return (
 		<svg
@@ -39,14 +42,15 @@ export function ExperimentalSpinner({
 		>
 			<g className={cn(
 				"spinner-experimental-orb-rotator",
-				!shouldReduceMotion && "spinner-experimental-orb-rotator-motion",
+				canAnimate && "spinner-experimental-orb-rotator-motion",
+				canAnimate && pulse && "spinner-experimental-orb-rotator-pulse-delay",
 			)}>
 				{ORB_DOTS.map((dot) => (
 					<circle
 						className={cn(
 							"spinner-experimental-orb-dot",
 							dot.className,
-							!shouldReduceMotion && "spinner-experimental-orb-dot-motion",
+							canAnimate && pulse && "spinner-experimental-orb-dot-motion",
 						)}
 						cx="10"
 						cy="10"
