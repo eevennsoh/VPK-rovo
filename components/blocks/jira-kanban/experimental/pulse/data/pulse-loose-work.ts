@@ -108,7 +108,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-121",
 		"host local · worktree .worktrees/pay-121-kill-switch · Jordan asked; the answer is not on the item",
 		["venn", "jordan"],
-		{ agentId: "cursor", machineName: PULSE_VIEWER_MACHINE_NAME, shortTitle: "Kill switch as port gate", timeLabel: "5 days ago" },
+		{ agentId: "cursor", machineName: PULSE_VIEWER_MACHINE_NAME, shortTitle: "Kill switch as port gate", timeLabel: "5d ago" },
 	),
 	pullRequest(
 		"lw-kickoff-inventory-pr",
@@ -171,7 +171,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-102",
 		"host local · worktree .worktrees/pay-102-spike · the yes-and-asterisk is not on the item",
 		["maya"],
-		{ agentId: "codex", machineName: "Maya’s Studio", shortTitle: "Adapter deletion proof", timeLabel: "3 days ago" },
+		{ agentId: "codex", machineName: "Maya’s Studio", shortTitle: "Adapter deletion proof", timeLabel: "3d ago" },
 	),
 	session(
 		"lw-spike-webhook-session",
@@ -179,7 +179,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-107",
 		"host local · worktree .worktrees/pay-107-webhook · payments-api still has no handler",
 		["maya", "review-agent", "venn"],
-		{ agentId: "rovo", machineName: "MacBook-Pro.local", shortTitle: "Challenge webhook gap", timeLabel: "2 days ago" },
+		{ agentId: "rovo", machineName: "MacBook-Pro.local", shortTitle: "Challenge webhook gap", timeLabel: "2d ago" },
 	),
 	pullRequest(
 		"lw-spike-retry-pr",
@@ -242,7 +242,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-112",
 		"host local · worktree .worktrees/pay-112-replay-risk · retention window still unknown",
 		["jordan", "priya"],
-		{ agentId: "cursor", machineName: "DESKTOP-7K2M9Q1", shortTitle: "Key replay blast radius", timeLabel: "5 hrs ago" },
+		{ agentId: "cursor", machineName: "DESKTOP-7K2M9Q1", shortTitle: "Key replay blast radius", timeLabel: "5hr ago" },
 	),
 	pullRequest(
 		"lw-regression-reject-pr",
@@ -290,7 +290,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-113",
 		"host local · worktree .worktrees/pay-113-contract-suite · 214 assertions, no work item",
 		["test-agent", "venn"],
-		{ agentId: "rovo", machineName: "MBP-M4-MAX", shortTitle: "3-D Secure suite run", timeLabel: "2 hrs ago" },
+		{ agentId: "rovo", machineName: "MBP-M4-MAX", shortTitle: "3-D Secure suite run", timeLabel: "2hr ago" },
 	),
 	session(
 		"lw-night-killswitch-session",
@@ -298,7 +298,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-121",
 		"host local · worktree .worktrees/pay-121-per-account · read out of PAY-112, never filed",
 		["release-agent", "priya"],
-		{ agentId: "codex", machineName: "esoh-mbp", shortTitle: "Per-account kill switch", timeLabel: "1 hr ago" },
+		{ agentId: "codex", machineName: "esoh-mbp", shortTitle: "Per-account kill switch", timeLabel: "1hr ago" },
 	),
 	pullRequest(
 		"lw-night-reject-pr",
@@ -321,7 +321,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-113",
 		"host local · worktree .worktrees/pay-113-link-merges · six merges, none on the board",
 		["venn"],
-		{ agentId: "claude", machineName: "Studio", shortTitle: "Link overnight merges", timeLabel: "42 mins ago" },
+		{ agentId: "claude", machineName: "Studio", shortTitle: "Link overnight merges", timeLabel: "42m ago" },
 	),
 	pullRequest(
 		"lw-night-link-pr",
@@ -339,7 +339,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-118",
 		"host local · worktree .worktrees/pay-118-wallet-cut · the reason we cut it is not on the item",
 		["diego"],
-		{ agentId: "cursor", machineName: "Diego’s MacBook Air", shortTitle: "Why the wallet was cut", timeLabel: "18 mins ago" },
+		{ agentId: "cursor", machineName: "Diego’s MacBook Air", shortTitle: "Why the wallet was cut", timeLabel: "18m ago" },
 	),
 	commit(
 		"lw-copy-doc",
@@ -354,7 +354,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-130",
 		"host local · worktree .worktrees/pay-130-ship-note · customer-facing line is not on the item",
 		["venn", "priya"],
-		{ agentId: "rovo", machineName: "MacBookPro.lan", shortTitle: "Ship note after the cut", timeLabel: "8 mins ago" },
+		{ agentId: "rovo", machineName: "MacBookPro.lan", shortTitle: "Ship note after the cut", timeLabel: "8m ago" },
 	),
 	pullRequest(
 		"lw-wallet-ship-pr",
@@ -418,7 +418,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-121",
 		"host local · worktree .worktrees/pay-121-pager · the runbook is a worktree, not the epic",
 		["maya", "jordan"],
-		{ agentId: "cursor", machineName: "MAYA-MBP16", shortTitle: "3am pager handover", timeLabel: "3 mins ago" },
+		{ agentId: "cursor", machineName: "MAYA-MBP16", shortTitle: "3am pager handover", timeLabel: "3m ago" },
 	),
 	pullRequest(
 		"lw-rehearsal-harness-pr",
@@ -458,14 +458,14 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-126",
 		"host local · worktree .worktrees/pay-126-p95 · strongest argument for going faster, unfiled",
 		["maya"],
-		{ agentId: "codex", machineName: "Gaming PC", shortTitle: "42 ms p95 win on v2", timeLabel: "18 mins ago" },
+		{ agentId: "codex", machineName: "Gaming PC", shortTitle: "42 ms p95 win on v2", timeLabel: "18m ago" },
 	),
 	session(
 		"lw-ship-approval-session",
 		"One-percent targeting rule, staged in a local Rovo session",
 		"PAY-121",
 		"host local · worktree .worktrees/pay-121-targeting · the agent will not arm it",
-		["release-agent"],
+		["release-agent", "jordan"],
 		{ agentId: "rovo", machineName: "Jordan’s MacBook Pro", shortTitle: "One-percent targeting", timeLabel: "Just now" },
 	),
 	pullRequest(
@@ -490,7 +490,7 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-121",
 		"host local · worktree .worktrees/pay-121-english-only · the Monday path is not on the item",
 		["venn"],
-		{ agentId: "codex", machineName: "C02Y91N8JGH5", shortTitle: "English-only first slice", timeLabel: "3 mins ago" },
+		{ agentId: "codex", machineName: "C02Y91N8JGH5", shortTitle: "English-only first slice", timeLabel: "3m ago" },
 	),
 	pullRequest(
 		"lw-ship-retention-pr",

@@ -12,10 +12,12 @@ import {
 	PanelContainer,
 	PanelContent,
 } from "@/components/ui/panel";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 import {
 	AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX,
 	AgentSessionColumn,
+	type AgentSessionColumnNotchShape,
 } from "./index";
 
 /**
@@ -24,6 +26,11 @@ import {
  * Declared locally so this block demo does not import kanban internals.
  */
 const AGENT_SESSION_PANEL_DEMO_WIDTH_PX = 360;
+
+function readNotchShape(values: readonly string[]): AgentSessionColumnNotchShape | undefined {
+	const next = values[0];
+	return next === "circle" || next === "line" ? next : undefined;
+}
 
 const CODEX_AGENT = {
 	brandName: "openai-codex",
@@ -61,8 +68,12 @@ const ARRIVAL_BATCHES: readonly (readonly AgentSessionItem[])[] = [
 			state: "needs-input",
 			agent: CURSOR_AGENT,
 			host: "local",
+			invokedBy: {
+				avatarSrc: "/avatar-user/chloe-lee/color/asow-dev-lime.png",
+				name: "Maya Ferreira",
+			},
 			machineName: "MacBook-Pro.local",
-			timeLabel: "just now",
+			timeLabel: "Just now",
 			sessionDetails: {
 				host: "local",
 				issueKey: "PAY-107",
@@ -76,8 +87,12 @@ const ARRIVAL_BATCHES: readonly (readonly AgentSessionItem[])[] = [
 			state: "running",
 			agent: CODEX_AGENT,
 			host: "local",
+			invokedBy: {
+				avatarSrc: "/avatar-user/venn/venn.png",
+				name: "Venn",
+			},
 			machineName: "H13XSGKLS1",
-			timeLabel: "just now",
+			timeLabel: "Just now",
 			sessionDetails: {
 				host: "local",
 				issueKey: "PAY-112",
@@ -93,8 +108,12 @@ const ARRIVAL_BATCHES: readonly (readonly AgentSessionItem[])[] = [
 			state: "attention",
 			agent: ROVO_AGENT,
 			host: "local",
+			invokedBy: {
+				avatarSrc: "/avatar-user/dev-rana/color/asow-product-purple.png",
+				name: "Diego Santos",
+			},
 			machineName: "DESKTOP-7K2M9Q1",
-			timeLabel: "just now",
+			timeLabel: "Just now",
 			sessionDetails: {
 				host: "local",
 				issueKey: "PAY-118",
@@ -114,6 +133,7 @@ export function AgentSessionColumnPanelDemo() {
 	const [collapsed, setCollapsed] = useState(false);
 	const [items, setItems] = useState<readonly AgentSessionItem[]>(AGENT_SESSION_ITEMS);
 	const [newIds, setNewIds] = useState<ReadonlySet<string>>(() => new Set());
+	const [notchShape, setNotchShape] = useState<AgentSessionColumnNotchShape>("circle");
 	const [syncedBatches, setSyncedBatches] = useState(0);
 
 	const handleCapture = useCallback((item: AgentSessionItem) => {
@@ -165,6 +185,7 @@ export function AgentSessionColumnPanelDemo() {
 	const handleReset = useCallback(() => {
 		setItems(AGENT_SESSION_ITEMS);
 		setNewIds(new Set());
+		setNotchShape("circle");
 		setCapturedIds(new Set());
 		setCollapsed(false);
 		setSyncedBatches(0);
@@ -193,11 +214,27 @@ export function AgentSessionColumnPanelDemo() {
 				<Button onClick={handleReset} size="compact" variant="ghost">
 					Reset
 				</Button>
+				<ToggleGroup
+					aria-label="Collapsed marker shape"
+					className="ml-auto"
+					onValueChange={(values) => {
+						const nextShape = readNotchShape(values);
+						if (nextShape !== undefined) {
+							setNotchShape(nextShape);
+						}
+					}}
+					size="sm"
+					value={[notchShape]}
+					variant="outline"
+				>
+					<ToggleGroupItem value="circle">Circle</ToggleGroupItem>
+					<ToggleGroupItem value="line">Line</ToggleGroupItem>
+				</ToggleGroup>
 				<p className="text-xs text-text-subtlest">
 					Sync prepends untracked work: the cards step in from above and hold a
-					discovery-toned dash, while each new notch grows from its centre and
-					pushes the ones below it down, then stays lit — exactly the state a
-					reviewed notch reaches on hover. Mark reviewed decays the mark, which
+					discovery-toned dash, while each new user dot grows from its centre and
+					pushes the ones below it down, then settles to icon.disabled. Hovering
+					or focusing a dot reveals the same human avatar as its card. Mark reviewed decays the mark, which
 					is what the watermark does when the column is expanded. Hover a card
 					to select it; the header then offers Link, Create, Archive, and Clear.
 				</p>
@@ -221,6 +258,7 @@ export function AgentSessionColumnPanelDemo() {
 							items={items}
 							listClassName="gap-1 p-1"
 							newItemIds={newIds}
+							notchShape={notchShape}
 							onCollapsedChange={setCollapsed}
 							onCreateWorkItem={handleCapture}
 							onLinkWorkItem={handleCapture}

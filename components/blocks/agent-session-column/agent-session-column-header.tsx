@@ -5,6 +5,8 @@ import type { ComponentType, CSSProperties, ReactElement } from "react";
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
 import AddIcon from "@atlaskit/icon/core/add";
 import ArchiveBoxIcon from "@atlaskit/icon/core/archive-box";
+import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
+import CheckCircleUncheckedIcon from "@atlaskit/icon/core/check-circle-unchecked";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import ShrinkHorizontalIcon from "@atlaskit/icon/core/shrink-horizontal";
@@ -25,7 +27,13 @@ import {
 	DEFAULT_AGENT_SESSION_COLUMN_FRAME,
 	type AgentSessionColumnFrame,
 } from "./agent-session-column-frame";
-import type { SelectionActionId, SelectionActionModel, UntrackedHeaderModel } from "./untracked-selection";
+import {
+	SELECT_ALL_ACTION_COPY,
+	type HeaderActionId,
+	type SelectionActionId,
+	type SelectionActionModel,
+	type UntrackedHeaderModel,
+} from "./untracked-selection";
 
 const AGENT_SESSION_COLUMN_HEADER_STYLE: Record<AgentSessionColumnFrame, CSSProperties> = {
 	caption: { paddingBottom: token("space.100") },
@@ -59,7 +67,7 @@ interface HeaderActionAffordance {
 
 function toHeaderActionAffordance(
 	action: SelectionActionModel,
-	onAction: (id: SelectionActionId) => void,
+	onAction: (id: HeaderActionId) => void,
 ): HeaderActionAffordance {
 	switch (action.hint.kind) {
 		case "unavailable":
@@ -88,7 +96,7 @@ function HeaderIconButton({
 	onAction,
 }: Readonly<{
 	action: SelectionActionModel;
-	onAction: (id: SelectionActionId) => void;
+	onAction: (id: HeaderActionId) => void;
 }>): ReactElement {
 	const IconComponent = HEADER_ACTION_ICON[action.id];
 	const affordance = toHeaderActionAffordance(action, onAction);
@@ -111,6 +119,94 @@ function HeaderIconButton({
 				<TooltipContent>{affordance.text}</TooltipContent>
 			</Tooltip>
 		</TooltipProvider>
+	);
+}
+
+function SelectAllButton({
+	allSelected,
+	onAction,
+}: Readonly<{
+	allSelected: boolean;
+	onAction: (id: HeaderActionId) => void;
+}>): ReactElement {
+	const IconComponent = allSelected ? CheckCircleIcon : CheckCircleUncheckedIcon;
+	const label = allSelected ? SELECT_ALL_ACTION_COPY.deselect : SELECT_ALL_ACTION_COPY.select;
+
+	return (
+		<TooltipProvider>
+			<Tooltip>
+				<TooltipTrigger render={<span className="inline-flex" />}>
+					<Button
+						aria-label={label}
+						onClick={() => {
+							onAction("select-all");
+						}}
+						size="icon-compact"
+						type="button"
+						variant="ghost"
+					>
+						<Icon
+							className={allSelected ? "text-icon-selected" : "text-icon-subtle"}
+							render={<IconComponent label="" />}
+						/>
+					</Button>
+				</TooltipTrigger>
+				<TooltipContent>{label}</TooltipContent>
+			</Tooltip>
+		</TooltipProvider>
+	);
+}
+
+/**
+ * Select-all is `icon-compact` (`size-6`, 24px). Card identity / select-mark
+ * is `size-8` (32px) after list `p-1` (4px) + card `p-3` (12px), then `mr-3`
+ * (12px) before the title. Align button center to that 32px box, and the
+ * Selected label to the title — not equal left padding.
+ *
+ * Enclosed header already has `paddingInline: space.150` (12px), so the slot
+ * adds `ms-2` (8px): 4px list inset plus 4px to center 24px in 32px. `me-4`
+ * (16px) is the remaining 4px of that box plus the row's `mr-3`.
+ * Caption sits outside the well, so it also absorbs the 1px stroke + 16px
+ * card origin (`ms-5` ≈ 20px; the leftover 1px is the well border).
+ */
+function selectAllSlotExpandedClass(frame: AgentSessionColumnFrame): string {
+	switch (frame) {
+		case "enclosed":
+			return "ms-2 me-4 w-6 has-[:focus-visible]:overflow-visible";
+		case "caption":
+			return "ms-5 me-4 w-6 has-[:focus-visible]:overflow-visible";
+		default: {
+			const exhaustive: never = frame;
+			return exhaustive;
+		}
+	}
+}
+
+function SelectAllSlot({
+	allSelected,
+	expanded,
+	frame,
+	onAction,
+}: Readonly<{
+	allSelected: boolean;
+	expanded: boolean;
+	frame: AgentSessionColumnFrame;
+	onAction: (id: HeaderActionId) => void;
+}>): ReactElement {
+	return (
+		<div
+			aria-hidden={expanded ? undefined : true}
+			className={cn(
+				"flex shrink-0 items-center overflow-hidden",
+				"transition-[width,margin] duration-normal ease-in-out motion-reduce:transition-none",
+				expanded
+					? selectAllSlotExpandedClass(frame)
+					: "pointer-events-none ms-0 me-0 w-0",
+			)}
+			inert={!expanded}
+		>
+			<SelectAllButton allSelected={allSelected} onAction={onAction} />
+		</div>
 	);
 }
 
@@ -155,7 +251,7 @@ export function AgentSessionColumnHeader({
 	collapseLabel: string;
 	frame?: AgentSessionColumnFrame;
 	model: UntrackedHeaderModel;
-	onAction: (id: SelectionActionId) => void;
+	onAction: (id: HeaderActionId) => void;
 	onCollapse: () => void;
 	overflow: ReactElement;
 	surface: "column" | "panel";
@@ -164,11 +260,12 @@ export function AgentSessionColumnHeader({
 		case "column":
 			return (
 				<div
-					className="flex min-w-0 items-center gap-1.5"
+					className="flex min-w-0 items-center"
 					style={AGENT_SESSION_COLUMN_HEADER_STYLE[frame]}
 				>
 					{renderColumnChrome({
 						collapseLabel,
+						frame,
 						model,
 						onAction,
 						onCollapse,
@@ -193,58 +290,56 @@ export function AgentSessionColumnHeader({
 
 function renderColumnChrome({
 	collapseLabel,
+	frame,
 	model,
 	onAction,
 	onCollapse,
 	overflow,
 }: Readonly<{
 	collapseLabel: string;
+	frame: AgentSessionColumnFrame;
 	model: UntrackedHeaderModel;
-	onAction: (id: SelectionActionId) => void;
+	onAction: (id: HeaderActionId) => void;
 	onCollapse: () => void;
 	overflow: ReactElement;
 }>): ReactElement {
-	switch (model.kind) {
-		case "browsing":
-			return (
-				<>
-					<span className="truncate text-xs font-medium leading-4 text-text-subtle">
-						{model.title}
-					</span>
-					<span className="shrink-0 text-xs font-normal text-text-subtlest">
-						{model.count}
-					</span>
-					<div className={HEADER_ACTIONS_REVEAL}>
-						{overflow}
-						<CollapseButton label={collapseLabel} onCollapse={onCollapse} />
-					</div>
-				</>
-			);
-		case "selecting":
-			return (
-				<>
-					<span className="truncate text-xs font-medium leading-4 text-text-subtle">
-						Selected
-					</span>
-					<span className="shrink-0 text-xs font-normal text-text-subtlest">
-						{model.count}
-					</span>
-					<div className="ms-auto flex shrink-0 items-center">
-						{model.actions.map((action: SelectionActionModel) => (
-							<HeaderIconButton
-								action={action}
-								key={action.id}
-								onAction={onAction}
-							/>
-						))}
-					</div>
-				</>
-			);
-		default: {
-			const exhaustive: never = model;
-			return exhaustive;
-		}
-	}
+	const isSelecting = model.kind === "selecting";
+
+	return (
+		<>
+			<SelectAllSlot
+				allSelected={isSelecting ? model.allSelected : false}
+				expanded={isSelecting}
+				frame={frame}
+				onAction={onAction}
+			/>
+			<span className="min-w-0 truncate text-xs font-medium leading-4 text-text-subtle">
+				{model.kind === "selecting" ? "Selected" : model.title}
+			</span>
+			<span
+				aria-live={isSelecting ? "polite" : undefined}
+				className="ms-1.5 shrink-0 text-xs font-normal text-text-subtlest"
+			>
+				{model.count}
+			</span>
+			{isSelecting ? (
+				<div className="ms-auto flex shrink-0 items-center">
+					{model.actions.map((action: SelectionActionModel) => (
+						<HeaderIconButton
+							action={action}
+							key={action.id}
+							onAction={onAction}
+						/>
+					))}
+				</div>
+			) : (
+				<div className={HEADER_ACTIONS_REVEAL}>
+					{overflow}
+					<CollapseButton label={collapseLabel} onCollapse={onCollapse} />
+				</div>
+			)}
+		</>
+	);
 }
 
 function renderPanelChrome({
@@ -256,7 +351,7 @@ function renderPanelChrome({
 }: Readonly<{
 	collapseLabel: string;
 	model: UntrackedHeaderModel;
-	onAction: (id: SelectionActionId) => void;
+	onAction: (id: HeaderActionId) => void;
 	onCollapse: () => void;
 	overflow: ReactElement;
 }>): ReactElement {
@@ -284,7 +379,10 @@ function renderPanelChrome({
 		case "selecting":
 			return (
 				<PanelHeader>
-					<PanelTitle>
+					<PanelTitle
+						className="[&>span:last-child]:pl-4"
+						icon={<SelectAllButton allSelected={model.allSelected} onAction={onAction} />}
+					>
 						Selected
 						{" "}
 						<span className="ms-1.5 shrink-0 font-normal text-text-subtlest">

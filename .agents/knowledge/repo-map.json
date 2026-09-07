@@ -7621,6 +7621,12 @@
 					},
 					{
 						"category": "visual",
+						"slug": "linking-effect",
+						"name": "Linking Effect",
+						"importPath": "@/components/visual/linking-effect"
+					},
+					{
+						"category": "visual",
 						"slug": "liquid-glass",
 						"name": "Liquid Glass",
 						"importPath": "@/components/website/demos/visual/shaders/liquid-glass"

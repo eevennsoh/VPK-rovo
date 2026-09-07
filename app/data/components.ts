@@ -518,6 +518,7 @@ export const UTILITY_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 
 export const VISUAL_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	visualComponent("gooey", "Gooey", "@/components/visual/gooey"),
+	visualComponent("linking-effect", "Linking Effect", "@/components/visual/linking-effect"),
 	visualComponent("typography", "Typography", "@/lib/tokens"),
 	visualComponent("color", "Color", "@/app/tailwind-theme.css\n@/app/shadcn-theme.css"),
 	visualComponent("shadow", "Shadow", "@/lib/tokens"),

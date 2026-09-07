@@ -5,6 +5,8 @@ const test = require("node:test");
 
 const PROGRESS_TRACKER_SOURCE = fs.readFileSync(path.join(__dirname, "progress-tracker.tsx"), "utf8");
 const SPINNER_SOURCE = fs.readFileSync(path.join(__dirname, "spinner.tsx"), "utf8");
+const EXPERIMENTAL_SPINNER_SOURCE = fs.readFileSync(path.join(__dirname, "spinner-experimental.tsx"), "utf8");
+const EXPERIMENTAL_SPINNER_STYLES = fs.readFileSync(path.join(__dirname, "../../app/jira-agent-motion.css"), "utf8");
 const SPINNER_DETAIL_SOURCE = fs.readFileSync(path.join(__dirname, "../../app/data/details/ui/spinner.ts"), "utf8");
 const TAILWIND_THEME_SOURCE = fs.readFileSync(path.join(__dirname, "../../app/tailwind-theme.css"), "utf8");
 
@@ -67,6 +69,24 @@ test("Spinner preserves the CodePen chasing-tail motion without competing rotati
 		/<animate[\s\S]*attributeName="stroke-dashoffset"[\s\S]*dur="1\.2s"[\s\S]*keyTimes="0;0\.5;1"[\s\S]*repeatCount="indefinite"[\s\S]*values="0;-35;-124"/u,
 	);
 	assert.match(SPINNER_SOURCE, /const tailAnimations = shouldReduceMotion \? null : \(/u);
+});
+
+test("Spinner exposes the Jira prototype iconic orb only as an experimental variant", () => {
+	assert.match(SPINNER_SOURCE, /experimental: ""/u);
+	assert.match(SPINNER_SOURCE, /variant === "experimental"/u);
+	assert.match(SPINNER_SOURCE, /<ExperimentalSpinner/u);
+	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /data-iconic-orb=""/u);
+	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /spinner-experimental-orb-rotator-motion/u);
+	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /spinner-experimental-orb-dot-motion/u);
+	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /spinner-experimental-orb-dot-top-right/u);
+	assert.match(EXPERIMENTAL_SPINNER_SOURCE, /ORB_DOTS/u);
+	assert.match(EXPERIMENTAL_SPINNER_STYLES, /@keyframes spinner-experimental-orb-morph/u);
+	assert.match(EXPERIMENTAL_SPINNER_STYLES, /@keyframes spinner-experimental-orb-opacity/u);
+	assert.match(EXPERIMENTAL_SPINNER_STYLES, /@keyframes spinner-experimental-orb-rotate/u);
+	assert.doesNotMatch(EXPERIMENTAL_SPINNER_SOURCE, /const HEX =/u);
+	assert.doesNotMatch(EXPERIMENTAL_SPINNER_SOURCE, /const SPARKLE =/u);
+	assert.match(SPINNER_DETAIL_SOURCE, /six-dot iconic orb/u);
+	assert.match(SPINNER_DETAIL_SOURCE, /spinner-demo-experimental/u);
 });
 
 test("Shimmer keeps its token-backed CSS sweep animation", () => {

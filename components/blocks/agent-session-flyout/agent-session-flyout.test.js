@@ -18,6 +18,9 @@ function readRepoFile(relativePath) {
 // row as accessible labels only — never as a visible label column.
 const FLYOUT_BODY_PATH = "components/blocks/product-sidebar/variants/jira-session-flyout.tsx";
 const FLYOUT_HANDLE_PATH = "components/blocks/product-sidebar/variants/jira-session-flyout-data.ts";
+const FLYOUT_CARD_PATH = "components/blocks/product-sidebar/variants/jira-session-flyout-card.tsx";
+const DETAILS_CARD_PATH = "components/blocks/product-sidebar/variants/jira-session-details-card.tsx";
+const UNTRACKED_CARD_PATH = "components/blocks/product-sidebar/variants/jira-session-untracked-work-card.tsx";
 const FLYOUT_DEMO_DATA_PATH = "components/blocks/agent-session-flyout/agent-session-flyout-data.ts";
 const QUEUE_SESSION_DATA_PATH = "components/projects/jira-queue/data/queue-sessions.ts";
 const HOVER_CARD_PATH = "components/ui/hover-card.tsx";
@@ -27,58 +30,61 @@ const QUEUE_DETAIL_PANEL_PATH = "components/projects/jira-queue/components/queue
 
 test("shared hover flyout defaults to session details and exposes composer and untracked-work variants", () => {
 	const source = readRepoFile(FLYOUT_BODY_PATH);
+	const cardShellSource = readRepoFile(FLYOUT_CARD_PATH);
+	const cardSource = readRepoFile(UNTRACKED_CARD_PATH);
 	assert.match(source, /export type JiraSessionFlyoutContent = "details" \| "composer" \| "untracked-work";/u);
 	assert.match(source, /content = "details"/u);
 	assert.match(source, /case "details":/u);
-	assert.match(source, /<JiraSessionFlyoutBody session=\{session\} \/>/u);
+	assert.match(source, /import \{ JiraSessionDetailsCard \} from "\.\/jira-session-details-card";/u);
+	assert.match(source, /<JiraSessionDetailsCard session=\{session\} \/>/u);
+	assert.doesNotMatch(source, /<JiraSessionFlyoutBody session=\{session\} \/>/u);
 	assert.match(source, /case "composer":/u);
 	assert.match(source, /case "untracked-work":/u);
-	assert.match(source, /<JiraSessionFlyoutBody[\s\S]*session=\{session\}[\s\S]*variant="untracked-work"/u);
+	assert.match(source, /import \{ JiraSessionUntrackedWorkCard \} from "\.\/jira-session-untracked-work-card";/u);
+	assert.match(source, /<JiraSessionUntrackedWorkCard[\s\S]*session=\{session\}/u);
+	assert.doesNotMatch(source, /variant="untracked-work"/u);
 	assert.match(source, /className="w-\[320px\] max-w-\[calc\(100vw-48px\)\] rounded-none shadow-none"/u);
-	assert.equal(source.match(/className="w-\[320px\] bg-surface-overlay p-4 text-text"/gu)?.length, 2);
+	assert.equal(source.match(/className="w-\[320px\] bg-surface-overlay p-4 text-text"/gu)?.length ?? 0, 0);
 	assert.doesNotMatch(source, /w-\[400px\]/u);
 	assert.match(source, /showSeparator/u);
-	assert.match(source, /<JiraSessionSectionHeading meta="High confidence" showSeparator>/u);
 	assert.match(source, /flex min-w-0 shrink-0 items-center gap-1\.5 text-xs font-medium leading-4 text-text-subtle/u);
 	assert.match(source, /className="shrink-0 text-xs font-normal text-text-subtlest"/u);
 	assert.doesNotMatch(source, /<span aria-hidden="true"> · <\/span>/u);
-	assert.match(
-		source,
-		/session\.issueKey\.length > 0\s*\? `Link to \$\{session\.issueKey\}, High confidence`\s*: "Link work item, High confidence"/u,
-	);
-	assert.match(
-		source,
-		/session\.issueKey\.length > 0 \? `Link to \$\{session\.issueKey\}` : "Link work item"/u,
-	);
-	assert.match(source, /This session appears related to \$\{session\.issueKey\}/u);
+	assert.match(cardShellSource, /flex w-\[320px\] max-w-\[calc\(100vw-48px\)\] flex-col gap-3 pt-3 text-text/u);
+	assert.match(cardShellSource, /border-t border-border-disabled p-3/u);
+	assert.match(cardSource, /import \{ JiraSessionFlyoutCard \} from "\.\/jira-session-flyout-card";/u);
+	assert.match(cardSource, /<JiraSessionFlyoutCard/u);
+	assert.match(cardSource, /High confidence to link/u);
+	assert.match(cardSource, /<Lozenge className="shrink-0" variant="success">High<\/Lozenge>/u);
+	assert.match(cardSource, /This session appears related to \$\{session\.issueKey\}/u);
 	assert.match(source, /capturedSessionIds\?: ReadonlySet<string>;/u);
-	assert.match(source, /const linkLabel = hasIssueKey \? `Link to \$\{issueKey\}` : "Link work item";/u);
+	assert.match(cardSource, /const linkLabel = hasIssueKey \? `Link to \$\{issueKey\}` : "Link work item";/u);
 	assert.match(
-		source,
-		/<ButtonGroup aria-label=\{hasIssueKey \? `Link \$\{issueKey\}` : "Link work item"\} className="w-full" variant="separated">/u,
+		cardSource,
+		/<ButtonGroup aria-label=\{hasIssueKey \? `Link \$\{issueKey\}` : "Link work item"\} className="w-full gap-2" variant="separated">/u,
 	);
-	assert.match(source, /aria-disabled=\{linkUnavailable\}/u);
-	assert.match(source, /"w-full flex-1 justify-center text-center"/u);
-	assert.match(source, /onClick=\{\(\) => onLinkWorkItem\?\.\(issueKey\)\}/u);
-	assert.match(source, /onClick=\{\(\) => onLinkWorkItem\?\.\(issueKey\)\}\s*size="compact"/u);
-	assert.match(source, /size="icon-compact"/u);
-	assert.doesNotMatch(source, /size="icon"/u);
-	assert.match(source, /ShowMoreHorizontalIcon/u);
-	assert.doesNotMatch(source, /ChevronDownIcon/u);
+	assert.match(cardSource, /aria-disabled=\{linkUnavailable\}/u);
+	assert.match(cardSource, /"w-full flex-1 justify-center text-center"/u);
+	assert.match(cardSource, /onClick=\{\(\) => onLinkWorkItem\?\.\(issueKey\)\}/u);
+	assert.match(cardSource, /onClick=\{\(\) => onLinkWorkItem\?\.\(issueKey\)\}\s*size="compact"/u);
+	assert.match(cardSource, /size="icon-compact"/u);
+	assert.doesNotMatch(cardSource, /size="icon"/u);
+	assert.match(cardSource, /ShowMoreHorizontalIcon/u);
+	assert.doesNotMatch(cardSource, /ChevronDownIcon/u);
 	assert.match(
-		source,
+		cardSource,
 		/aria-label=\{hasIssueKey \? `More actions for \$\{issueKey\}` : "More work item actions"\}/u,
 	);
 	assert.match(
-		source,
+		cardSource,
 		/<DropdownMenuItem[\s\S]*disabled=\{addAsSubtaskUnavailable \|\| !hasIssueKey\}[\s\S]*onSelect=\{\(\) => onAddAsSubtask\?\.\(issueKey\)\}[\s\S]*>\s*\{hasIssueKey \? `Add new subtask to \$\{issueKey\}` : "Add new subtask"\}/u,
 	);
 	assert.match(
-		source,
+		cardSource,
 		/<DropdownMenuItem[\s\S]*disabled=\{createUnavailable\}[\s\S]*onSelect=\{\(\) => onCreateWorkItem\?\.\(\)\}[\s\S]*>\s*Create new work item/u,
 	);
-	assert.doesNotMatch(source, /onClick=\{onCreateWorkItem\}/u);
-	assert.doesNotMatch(source, /aria-disabled=\{createUnavailable\}/u);
+	assert.doesNotMatch(cardSource, /onClick=\{onCreateWorkItem\}/u);
+	assert.doesNotMatch(cardSource, /aria-disabled=\{createUnavailable\}/u);
 	assert.match(source, /onLinkWorkItem\?: \(session: JiraSidebarSessionItem, workItemKey: string\) => void;/u);
 	assert.match(source, /onCreateWorkItem\?: \(session: JiraSidebarSessionItem\) => void;/u);
 	assert.match(source, /onAddAsSubtask\?: \(session: JiraSidebarSessionItem, workItemKey: string\) => void;/u);
@@ -90,6 +96,60 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.match(source, /status === "awaiting-input"\) return "awaiting-input"/u);
 	assert.match(source, /status === "running"\) return "working"/u);
 	assert.match(source, /return "completed"/u);
+});
+
+test("details hover card uses Figma chrome without panel property rows", () => {
+	const source = readRepoFile(FLYOUT_BODY_PATH);
+	const cardShellSource = readRepoFile(FLYOUT_CARD_PATH);
+	const detailsSource = readRepoFile(DETAILS_CARD_PATH);
+
+	assert.match(source, /<JiraSessionDetailsCard session=\{session\} \/>/u);
+	assert.match(cardShellSource, /flex w-\[320px\] max-w-\[calc\(100vw-48px\)\] flex-col gap-3 pt-3 text-text/u);
+	assert.match(cardShellSource, /border-t border-border-disabled p-3/u);
+	assert.match(detailsSource, /footerClassName="gap-1"/u);
+	assert.match(detailsSource, /import ScreenIcon from "@atlaskit\/icon\/core\/screen"/u);
+	assert.match(detailsSource, /<ScreenIcon label="" size="small" \/>/u);
+	assert.doesNotMatch(detailsSource, /DevicesIcon/u);
+	assert.doesNotMatch(detailsSource, /FlyoutRow/u);
+	assert.doesNotMatch(detailsSource, /SmartLink/u);
+	assert.doesNotMatch(detailsSource, /AiAgentIcon/u);
+	assert.doesNotMatch(detailsSource, /prStateLozenge/u);
+	assert.doesNotMatch(detailsSource, /variant=\{prState\.variant\}/u);
+	assert.doesNotMatch(detailsSource, /GithubLogo/u);
+	assert.doesNotMatch(detailsSource, /IfElseIcon/u);
+	assert.doesNotMatch(detailsSource, /session\.repository/u);
+	assert.doesNotMatch(detailsSource, /session\.worktreePath/u);
+	assert.match(detailsSource, /import BranchIcon from "@atlaskit\/icon\/core\/branch"/u);
+	assert.match(detailsSource, /if \(!session\.branch \|\| session\.pullRequestNumber\) \{\s*return null;/u);
+	assert.match(
+		detailsSource,
+		/<Avatar[\s\S]*label=\{session\.invokedBy\.name\}[\s\S]*shape="circle"[\s\S]*size="xs"/u,
+	);
+	assert.match(detailsSource, /JIRA_SESSION_UPDATED_LABEL\[session\.status\]/u);
+	assert.match(
+		detailsSource,
+		/session\.status === "awaiting-input" \? \(\s*<Lozenge className="shrink-0" variant="information">Needs input<\/Lozenge>/u,
+	);
+	assert.match(
+		detailsSource,
+		/<Tag[\s\S]*color="gray"[\s\S]*type="agent"[\s\S]*variant="editor"/u,
+	);
+	assert.match(detailsSource, /text-icon-success[\s\S]*<PullRequestIcon color="currentColor" label="Pull request open"/u);
+	assert.match(detailsSource, /text-icon-discovery[\s\S]*<MergeSuccessIcon color="currentColor" label="Pull request merged"/u);
+	assert.match(detailsSource, /text-icon-danger[\s\S]*<MergeFailureIcon color="currentColor" label="Pull request failed"/u);
+	assert.match(
+		detailsSource,
+		/<MetadataPathLink[\s\S]*className="min-w-0 flex-1 truncate text-xs leading-5 text-text"/u,
+	);
+	assert.match(detailsSource, /text-xs leading-5">\s*<span className="text-text-success">\+\{session\.additions\}/u);
+	assert.match(detailsSource, /text-text-danger">-\{session\.deletions\}/u);
+	assert.match(detailsSource, /const visibleChecks = session\.status === "merged" && session\.checks\?\.failed === 0/u);
+	assert.match(detailsSource, /if \(!visibleChecks\) \{\s*return null;/u);
+	assert.match(detailsSource, /formatSessionChecks\(visibleChecks\)/u);
+	assert.match(detailsSource, /<span aria-hidden="true" className="shrink-0 text-xs leading-4 text-text-subtlest">/u);
+	assert.match(source, /function hostIcon\(/u);
+	assert.match(source, /<DevicesIcon label="" size="small" \/>/u);
+	assert.doesNotMatch(source, /ScreenIcon/u);
 });
 
 test("shared Agent States flyout forwards submission, timing, and stopped lifecycle data", () => {
@@ -115,6 +175,7 @@ test("shared Agent States flyout forwards submission, timing, and stopped lifecy
 // than re-implementing them inside each panel.
 test("shared detail body renders the session invoker beside its timestamp", () => {
 	const source = readRepoFile(FLYOUT_BODY_PATH);
+	const flyoutHandleSource = readRepoFile(FLYOUT_HANDLE_PATH);
 	const jiraSource = readRepoFile("components/blocks/product-sidebar/variants/jira.tsx");
 	const queueSessionSource = readRepoFile(QUEUE_SESSION_DATA_PATH);
 	assert.match(source, /export function JiraSessionFlyoutBody\b/u);
@@ -133,7 +194,7 @@ test("shared detail body renders the session invoker beside its timestamp", () =
 	);
 	assert.match(
 		source,
-		/session\.status === "awaiting-input" \? \(\s*<Lozenge variant="information">Needs input<\/Lozenge>\s*\) : \(\s*<span className="text-\[12px\] leading-5 text-text-subtlest">\s*\{STATUS_UPDATED_LABEL\[session\.status\]\}\s*<\/span>/u,
+		/session\.status === "awaiting-input" \? \(\s*<Lozenge variant="information">Needs input<\/Lozenge>\s*\) : \(\s*<span className="text-\[12px\] leading-5 text-text-subtlest">\s*\{JIRA_SESSION_UPDATED_LABEL\[session\.status\]\}\s*<\/span>/u,
 	);
 	assert.match(queueSessionSource, /invokedBy\?: AsxQueueAssignee;/u);
 	assert.match(queueSessionSource, /invokedBy: ASX_QUEUE_INVOKER,/u);
@@ -149,14 +210,13 @@ test("shared detail body renders the session invoker beside its timestamp", () =
 	assert.match(jiraSource, /vpkLogo\?: "rovo";/u);
 	assert.match(jiraSource, /issueStatus\?: string;/u);
 	assert.match(jiraSource, /invokedBy\?: JiraSidebarAssignee;/u);
-	assert.match(source, /const workItemRelationship = variant === "untracked-work" \? "suggested" : "primary";/u);
-	assert.match(source, /<SmartLink[\s\S]*className="min-w-0 max-w-full"[\s\S]*item=\{toWorkItem\(session, workItemRelationship\)\}[\s\S]*showStatus/u);
+	assert.match(source, /<SmartLink[\s\S]*className="min-w-0 max-w-full"[\s\S]*item=\{toWorkItem\(session\)\}[\s\S]*showStatus/u);
 	assert.doesNotMatch(source, /showStatus=\{workItemRelationship === "primary"\}/u);
 	assert.match(source, /function toWorkItemStatus\(/u);
 	assert.match(source, /session\.issueStatus\?\.trim\(\)/u);
 	assert.match(source, /status: \{\s*label: workItemStatus\.label/u);
-	assert.match(source, /relationship === "suggested" \? "Suggested" : "Primary"/u);
-	assert.match(source, /\.\.\.\(relationship === "primary" \? \{ actions: SMART_LINK_MODAL_ACTIONS \} : \{\}\)/u);
+	assert.match(source, /description: `Primary work item for \$\{session\.title\}\.`/u);
+	assert.match(source, /actions: SMART_LINK_MODAL_ACTIONS,/u);
 	// Agent renders as the canonical at-mention Tag; PR state renders as a Lozenge.
 	assert.match(
 		source,
@@ -172,8 +232,10 @@ test("shared detail body renders the session invoker beside its timestamp", () =
 		source,
 		/<ProgressCircle[\s\S]*aria-hidden[\s\S]*animated=\{false\}[\s\S]*size="xs"[\s\S]*value=\{checksTotal > 0 \? Math\.round\(\(session\.checks\.passed \/ checksTotal\) \* 100\) : 0\}[\s\S]*variant="outline"/u,
 	);
-	assert.match(source, /`\$\{checks\.passed\}\/\$\{total\} passed \$\{checks\.failed\} failed`/u);
-	assert.match(source, /`\$\{checks\.passed\}\/\$\{total\} passed`/u);
+	assert.match(flyoutHandleSource, /export function formatSessionChecks\(/u);
+	assert.match(flyoutHandleSource, /`\$\{checks\.passed\}\/\$\{total\} passed \$\{checks\.failed\} failed`/u);
+	assert.match(flyoutHandleSource, /`\$\{checks\.passed\}\/\$\{total\} passed`/u);
+	assert.match(source, /formatSessionChecks\(session\.checks\)/u);
 	assert.match(source, /className="shrink-0 text-xs font-normal text-text"/u);
 	assert.doesNotMatch(source, /CheckCircleIcon/u);
 });
@@ -223,7 +285,11 @@ test("demo sessions share one moving shell with a fade-only content viewport", (
 
 	assert.match(source, /useState\(createJiraSessionFlyoutHandle\)/u);
 	assert.equal(source.match(/<JiraSessionFlyoutSurface\b/gu)?.length, 1);
-	assert.match(source, /flex max-w-sm flex-col gap-0\.5 rounded-lg border/u);
+	assert.match(source, /export const AGENT_SESSION_FLYOUT_LIST_CLASSNAME/u);
+	assert.match(source, /flex max-w-sm flex-col gap-1 rounded-lg border/u);
+	assert.match(source, /cn\(AGENT_SESSION_FLYOUT_LIST_CLASSNAME, className\)/u);
+	assert.match(source, /session\.branch && !session\.pullRequestNumber/u);
+	assert.match(source, /<BranchIcon color="currentColor" label="Branch created"/u);
 	assert.doesNotMatch(source, /<HoverCard\b/u);
 	assert.match(flyoutHandleSource, /createHoverCardHandle<JiraSidebarSessionItem>\(\)/u);
 	assert.match(flyoutSource, /cloneElement\(childElement, \{[\s\S]*onFocusCapture: \(event\) => \{[\s\S]*handle\.open\(triggerId\);/u);
@@ -304,6 +370,62 @@ test("/jira-golden-journeys-v0 seeds provide the four expected states with PR fi
 	assert.match(seeds, /checks:\s*\{ passed: 6, failed: 0 \}/u);
 });
 
+test("coding lifecycle demo seeds cover branch-only through merged PR", () => {
+	const dataSource = readRepoFile(FLYOUT_DEMO_DATA_PATH);
+	assert.doesNotMatch(dataSource, /AGENT_SESSION_FLYOUT_CODING_BRANCH_SESSIONS/u);
+	assert.match(dataSource, /export const AGENT_SESSION_FLYOUT_CODING_LIFECYCLE_SESSIONS/u);
+	assert.match(dataSource, /id: "coding-lifecycle-branch"/u);
+	assert.match(dataSource, /title: "Branch created"/u);
+	assert.match(dataSource, /title: "PR open with checks"/u);
+	assert.match(dataSource, /title: "CI checks failed"/u);
+	assert.match(dataSource, /title: "PR merged"/u);
+	assert.match(dataSource, /title: "PR failed"/u);
+	assert.match(
+		dataSource,
+		/id: "coding-lifecycle-branch",\s*jiraColumn: "In progress",\s*status: "running",\s*title: "Branch created",/u,
+	);
+	assert.match(dataSource, /checks: \{ passed: 2, failed: 0 \}/u);
+	assert.match(dataSource, /checks: \{ passed: 2, failed: 1 \}/u);
+	assert.match(dataSource, /checks: \{ passed: 3, failed: 0 \}/u);
+	assert.match(dataSource, /checks: \{ passed: 0, failed: 3 \}/u);
+	assert.match(dataSource, /status: "merged"/u);
+	assert.match(dataSource, /status: "stopped"/u);
+	assert.match(dataSource, /agentId: "pipeline-troubleshooter"/u);
+	assert.match(dataSource, /name: "Jordan Lee"/u);
+});
+
+test("flyout list trailing icons follow the board View PR legend colors", () => {
+	const source = readBlockFile("components/agent-session-flyout.tsx");
+
+	assert.match(source, /subtlest: "text-icon-subtlest"/u);
+	assert.match(source, /success: "text-icon-success"/u);
+	assert.match(source, /discovery: "text-icon-discovery"/u);
+	assert.match(source, /danger: "text-icon-danger"/u);
+	assert.match(
+		source,
+		/<BranchIcon color="currentColor" label="Branch created"[\s\S]*"Branch created",\s*"subtlest"/u,
+	);
+	assert.match(
+		source,
+		/<PullRequestIcon color="currentColor" label="Pull request open"[\s\S]*"Pull request open",\s*"success"/u,
+	);
+	assert.match(
+		source,
+		/<MergeSuccessIcon color="currentColor" label="Pull request merged"[\s\S]*"Pull request merged",\s*"discovery"/u,
+	);
+	assert.match(source, /information: "text-icon-information"/u);
+	assert.match(
+		source,
+		/<StatusInformationIcon color="currentColor" label="Needs input"[\s\S]*"Needs input",\s*"information"/u,
+	);
+	assert.match(
+		source,
+		/session\.pullRequestNumber && session\.status === "stopped"[\s\S]*<MergeFailureIcon color="currentColor" label="Pull request failed"[\s\S]*"Pull request failed",\s*"danger"/u,
+	);
+	assert.doesNotMatch(source, /text-icon-accent-purple/u);
+	assert.doesNotMatch(source, /JiraSessionLifecycle/u);
+});
+
 test("block is registered across catalog, manifest, details, and demo registry", () => {
 	assert.match(readRepoFile("components/website/registry/blocks.ts"), /"agent-session-flyout":\s*dynamic\(/u);
 	assert.match(readRepoFile("app/data/details/blocks.ts"), /"agent-session-flyout":\s*AGENT_SESSION_FLYOUT_DETAIL/u);
@@ -311,7 +433,7 @@ test("block is registered across catalog, manifest, details, and demo registry",
 	assert.match(readRepoFile("app/data/components.ts"), /blockComponent\("agent-session-flyout", "Agent Session Flyout"\)/u);
 });
 
-test("catalog defaults to session details and exposes composer and untracked-work options", () => {
+test("catalog examples are separate surfaces without content tabs", () => {
 	const source = readBlockFile("components/agent-session-flyout.tsx");
 	const pageSource = readBlockFile("page.tsx");
 	const demoSource = readRepoFile("components/website/demos/blocks/agent-session-flyout-demo.tsx");
@@ -321,27 +443,57 @@ test("catalog defaults to session details and exposes composer and untracked-wor
 	assert.match(source, /content = "details"/u);
 	assert.match(source, /content\?: JiraSessionFlyoutContent/u);
 	assert.match(pageSource, /content = "details"/u);
-	assert.match(pageSource, /\{ label: "Details", value: "details" \}/u);
-	assert.match(pageSource, /\{ label: "Composer", value: "composer" \}/u);
-	assert.match(pageSource, /\{ label: "Untracked work", value: "untracked-work" \}/u);
-	assert.match(pageSource, /<AgentSessionFlyout[\s\S]*content=\{flyoutContent\}/u);
+	assert.doesNotMatch(pageSource, /FLYOUT_CONTENT/u);
+	assert.doesNotMatch(pageSource, /label: "Details"/u);
+	assert.doesNotMatch(pageSource, /label: "Composer"/u);
+	assert.doesNotMatch(pageSource, /label: "Untracked work"/u);
+	assert.doesNotMatch(pageSource, /aria-pressed/u);
+	assert.doesNotMatch(pageSource, /from "@\/components\/ui\/button"/u);
+	assert.match(pageSource, /sessions\?: readonly JiraSidebarSessionItem\[\]/u);
+	assert.match(pageSource, /<AgentSessionFlyout[\s\S]*content=\{content\}[\s\S]*sessions=\{sessions\}/u);
 	assert.match(pageSource, /onLinkWorkItem=\{/u);
 	assert.match(pageSource, /onCreateWorkItem=\{/u);
 	assert.match(pageSource, /onAddAsSubtask=\{/u);
 	assert.match(pageSource, /aria-live="polite"/u);
+	assert.match(demoSource, /export default function AgentSessionFlyoutDemo/u);
+	assert.match(demoSource, /return <Page \/>;/u);
+	assert.match(demoSource, /export function AgentSessionFlyoutDemoDetails/u);
+	assert.match(demoSource, /<Page content="details" \/>/u);
 	assert.match(demoSource, /export function AgentSessionFlyoutDemoComposer/u);
 	assert.match(demoSource, /<Page content="composer" \/>/u);
+	assert.match(demoSource, /from "@\/components\/blocks\/agent-session"/u);
 	assert.match(demoSource, /export function AgentSessionFlyoutDemoUntrackedWork/u);
-	assert.match(demoSource, /<Page content="untracked-work" \/>/u);
+	assert.match(demoSource, /className=\{AGENT_SESSION_FLYOUT_LIST_CLASSNAME\}/u);
+	assert.match(
+		readRepoFile("components/blocks/agent-session/agent-session-card.tsx"),
+		/data-variant="uncaptured-work"/u,
+	);
+	assert.doesNotMatch(demoSource, /<Page content="untracked-work" \/>/u);
+	assert.doesNotMatch(demoSource, /AgentSessionFlyoutDemoCodingBranch/u);
+	assert.doesNotMatch(demoSource, /AGENT_SESSION_FLYOUT_CODING_BRANCH_SESSIONS/u);
+	assert.match(demoSource, /export function AgentSessionFlyoutDemoCodingLifecycle/u);
+	assert.match(demoSource, /<Page sessions=\{AGENT_SESSION_FLYOUT_CODING_LIFECYCLE_SESSIONS\} \/>/u);
 	assert.match(detailSource, /name: "content"/u);
 	assert.match(detailSource, /type: '"details" \| "composer" \| "untracked-work"'/u);
 	assert.match(detailSource, /default: '"details"'/u);
+	assert.match(detailSource, /title: "Details"/u);
+	assert.match(detailSource, /demoSlug: "agent-session-flyout-demo-details"/u);
 	assert.match(detailSource, /title: "Composer flyout"/u);
 	assert.match(detailSource, /demoSlug: "agent-session-flyout-demo-composer"/u);
 	assert.match(detailSource, /title: "Untracked work"/u);
 	assert.match(detailSource, /demoSlug: "agent-session-flyout-demo-untracked-work"/u);
+	assert.doesNotMatch(detailSource, /title: "Coding — branch created"/u);
+	assert.doesNotMatch(detailSource, /agent-session-flyout-demo-coding-branch/u);
+	assert.match(detailSource, /title: "Coding lifecycle"/u);
+	assert.match(detailSource, /demoSlug: "agent-session-flyout-demo-coding-lifecycle"/u);
+	assert.match(variantRegistry, /"agent-session-flyout-demo-details": dynamic/u);
+	assert.match(variantRegistry, /default: mod\.AgentSessionFlyoutDemoDetails/u);
 	assert.match(variantRegistry, /"agent-session-flyout-demo-composer": dynamic/u);
 	assert.match(variantRegistry, /default: mod\.AgentSessionFlyoutDemoComposer/u);
 	assert.match(variantRegistry, /"agent-session-flyout-demo-untracked-work": dynamic/u);
 	assert.match(variantRegistry, /default: mod\.AgentSessionFlyoutDemoUntrackedWork/u);
+	assert.doesNotMatch(variantRegistry, /agent-session-flyout-demo-coding-branch/u);
+	assert.doesNotMatch(variantRegistry, /AgentSessionFlyoutDemoCodingBranch/u);
+	assert.match(variantRegistry, /"agent-session-flyout-demo-coding-lifecycle": dynamic/u);
+	assert.match(variantRegistry, /default: mod\.AgentSessionFlyoutDemoCodingLifecycle/u);
 });

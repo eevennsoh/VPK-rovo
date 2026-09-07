@@ -162,7 +162,7 @@ test("chin-row agent activity indicators follow the design variation", () => {
 	assert.match(INDICATORS_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
 	assert.match(
 		INDICATORS_SOURCE,
-		/renderTeamEuAgentActivityIndicator[\s\S]*state === "awaiting-input" \? \(\s*<QuestionCircleFilledIcon color=\{token\("color\.icon\.information"\)\} label="" size="small" \/>\s*\) : \(\s*<Spinner label="" size="xs" \/>\s*\)/u,
+		/renderTeamEuAgentActivityIndicator[\s\S]*state === "awaiting-input" \? \(\s*<QuestionCircleFilledIcon color=\{token\("color\.icon\.information"\)\} label="" size="small" \/>\s*\) : \(\s*<Spinner label="" size="default" variant="experimental" \/>\s*\)/u,
 	);
 	// A finished run gets the filled success status in the ADS success green,
 	// pairing with the filled error status a failed run already shows. The
@@ -535,7 +535,8 @@ test("the Jira tab bar splits or collapses work items per design variation", () 
 		PAGE_SOURCE,
 		/viewTabs=\{\(\s*<JiraViewTabs\s+selectedTabLabel=\{selectedTabLabel\}\s+onTabChange=\{handleTabChange\}\s+workItemView=\{workItemView\}\s*\/>\s*\)\}/u,
 	);
-	assert.match(PAGE_SOURCE, /showBoardContent=\{activeTab\?\.hasContent === true\}/u);
+	assert.match(PAGE_SOURCE, /const showBoardContent = activeTab\?\.hasContent === true;/u);
+	assert.match(PAGE_SOURCE, /showBoardContent=\{showBoardContent\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showBoardContent\?: boolean;/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showBoardControls=\{showBoardContent\}/u);
 });
@@ -716,12 +717,10 @@ test("the route pins the shared Agent Session column beside Jira statuses", () =
 	assert.match(PAGE_SOURCE, /agentSessionAssigneeIdAliases=\{JIRA_GOLDEN_JOURNEYS_V4_PAY_SESSION_MEMBER_ID_BY_ASSIGNEE_ID\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showAgentSessionColumn\?: boolean;/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /defaultAgentSessionColumnCollapsed\?: boolean;/u);
-	assert.match(
-		EXPERIMENTAL_PAGE_SOURCE,
-		/const \[agentSessionColumnCollapsed, setAgentSessionColumnCollapsed\] = useState\(defaultAgentSessionColumnCollapsed\);/u,
-	);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /defaultCollapsed: agentSessionColumnCollapsed,/u);
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCollapsedChange: setAgentSessionColumnCollapsed,/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /function useAgentSessionReview[\s\S]*useState\(defaultCollapsed\)/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /collapsed: displayedAgentSessionColumnCollapsed,/u);
+	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCollapsedChange: handleAgentSessionColumnCollapsedChange,/u);
+	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /defaultCollapsed: agentSessionColumnCollapsed/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /capturedItemIds: capturedLooseWorkIds,/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /toPulseSessionHandlers/u);
 
@@ -913,7 +912,7 @@ test("the Panel design variant floats untracked work over the board and the list
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /rounded-lg bg-surface/u);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/agentSessionColumnCollapsed\s*\?\s*AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX\s*:\s*agentSessionPanelWidthPx/u,
+		/displayedAgentSessionColumnCollapsed\s*\?\s*AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX\s*:\s*agentSessionPanelWidthPx/u,
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
@@ -954,7 +953,7 @@ test("the untracked panel publishes its occupied width for the floating Rovo but
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /const UNTRACKED_PANEL_WIDTH_CSS_VAR = "--untracked-panel-width";/u);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/const untrackedPanelFabInsetPx = showAgentSessionPanel && !agentSessionColumnCollapsed\s*\?\s*agentSessionPanelWidthPx\s*:\s*0;/u,
+		/const untrackedPanelFabInsetPx = showAgentSessionPanel && !displayedAgentSessionColumnCollapsed\s*\?\s*agentSessionPanelWidthPx\s*:\s*0;/u,
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,

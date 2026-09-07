@@ -61,6 +61,7 @@ import {
 	type CollapsedBoardColumns,
 } from "./lib/board-column-collapse";
 import { ExperimentalJiraKanbanCard } from "./experimental-jira-kanban-card";
+import { SessionFusionOverlay } from "./components/session-fusion-overlay";
 import {
 	bindBoardProximitySessionActions,
 	resolveBoardUntrackedIssueKey,
@@ -83,6 +84,9 @@ import type {
 import {
 	DEFAULT_KANBAN_COLUMN_CHROME,
 	resolveKanbanColumnChrome,
+	setKanbanColumnDropArmed,
+	withKanbanDropContentGutter,
+	withKanbanDropRingClipGutter,
 	type KanbanColumnChrome,
 	type KanbanColumnChromeStyles,
 } from "../column-chrome";
@@ -197,12 +201,13 @@ const JIRA_KANBAN_CARD_DEPART: Transition = { duration: 0.4, ease: [0.6, 0, 0.8,
 /**
  * Collapsing a column repositions everything to its right, so the width change
  * uses the bold in-place transition profile (`duration-medium` + `ease-in-out`).
- * The drag-target border keeps its own interaction profile.
+ * The drag-target ring keeps its own interaction profile.
  */
 const BOARD_COLUMN_SHELL_TRANSITION = [
 	"min-width var(--duration-medium) var(--ease-in-out)",
 	"max-width var(--duration-medium) var(--ease-in-out)",
 	"border-color var(--duration-normal) var(--ease-out-practical)",
+	"outline-color var(--duration-normal) var(--ease-out-practical)",
 ].join(", ");
 function getJiraKanbanCardScale(
 	phase: JiraKanbanCardMoveAnimation["phase"] | undefined,
@@ -429,6 +434,7 @@ function BoardColumn({
 				minWidth: `${BOARD_COLUMN_WIDTH_PX}px`,
 				height: "100%",
 				borderRadius: token("radius.xlarge"),
+				...chrome.dropContentPadding,
 			}}
 		>
 			<div
@@ -544,7 +550,8 @@ function BoardColumnShell({
 			data-kanban-column-chrome={columnChrome}
 			data-collapsed={collapsed || undefined}
 			className={cn(
-				"min-w-0 border-2 border-transparent",
+				chrome.dropShellClassName,
+				"min-w-0",
 				collapsed || isResizing ? "overflow-hidden" : "overflow-visible",
 			)}
 			onDragOver={onDragOver}
@@ -560,13 +567,15 @@ function BoardColumnShell({
 			}}
 		>
 			{collapsed ? (
-				<CollapsedBoardColumn
-					chrome={chrome.collapsed}
-					count={count}
-					headerFrame={chrome.headerFrame}
-					onExpand={handleToggleCollapsed}
-					title={title}
-				/>
+				<div style={{ paddingTop: chrome.dropContentPadding?.paddingTop }}>
+					<CollapsedBoardColumn
+						chrome={chrome.collapsed}
+						count={count}
+						headerFrame={chrome.headerFrame}
+						onExpand={handleToggleCollapsed}
+						title={title}
+					/>
+				</div>
 			) : (
 				children(handleToggleCollapsed)
 			)}
@@ -649,6 +658,8 @@ function ExperimentalJiraKanbanView({
 	captureBoardSessionDragRoot?: boolean;
 }) {
 	const chrome = resolveKanbanColumnChrome(columnChrome);
+	const scrollportPaddingTop = withKanbanDropRingClipGutter(paddingTop, chrome).paddingTop;
+	const untrackedPaddingTop = withKanbanDropContentGutter(paddingTop, chrome).paddingTop;
 	const cardLayoutGroupId = useId();
 	const shouldReduceMotion = useReducedMotion();
 	const shouldAnimateCardMoves = animateCardMoves && !shouldReduceMotion;
@@ -699,19 +710,16 @@ function ExperimentalJiraKanbanView({
 	const handleColumnDragOver = (event: React.DragEvent<HTMLDivElement>) => {
 		event.preventDefault();
 		event.dataTransfer.dropEffect = "move";
-		event.currentTarget.classList.add("border-ring");
-		event.currentTarget.classList.remove("border-transparent");
+		setKanbanColumnDropArmed(event.currentTarget, chrome, true);
 	};
 
 	const handleColumnDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
-		event.currentTarget.classList.add("border-transparent");
-		event.currentTarget.classList.remove("border-ring");
+		setKanbanColumnDropArmed(event.currentTarget, chrome, false);
 	};
 
 	const handleColumnDrop = (event: React.DragEvent<HTMLDivElement>, targetColumnTitle: string) => {
 		event.preventDefault();
-		event.currentTarget.classList.add("border-transparent");
-		event.currentTarget.classList.remove("border-ring");
+		setKanbanColumnDropArmed(event.currentTarget, chrome, false);
 		onCardDrop?.(targetColumnTitle);
 	};
 
@@ -843,7 +851,7 @@ function ExperimentalJiraKanbanView({
 						}}
 						columnFrame={chrome.headerFrame}
 						paddingBottom={paddingBottom}
-						paddingTop={paddingTop}
+						paddingTop={untrackedPaddingTop}
 						sessionFlyoutsSuspended={sessionFlyoutsSuspended}
 						untrackedDropArmed={untrackedDropArmed}
 					/>
@@ -857,7 +865,7 @@ function ExperimentalJiraKanbanView({
 					className="flex min-h-0 min-w-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
 					style={{
 						flex: 1,
-						paddingTop,
+						paddingTop: scrollportPaddingTop,
 						paddingBottom,
 						overflowX: "auto",
 						overflowY: "hidden",
@@ -972,6 +980,9 @@ function ExperimentalJiraKanbanView({
 												<ExperimentalJiraKanbanCard
 												active={isActive}
 													agentActivityLayout={agentActivityLayout}
+													agentLinkFlash={boardSessionDrag.linkFlash?.cardCode === card.code
+														? boardSessionDrag.linkFlash.flash
+														: undefined}
 													agentSessionDragControl={agentSessionDragControl}
 												capturedItemIds={proximityActions.capturedItemIds}
 												card={card}
@@ -1050,6 +1061,10 @@ function ExperimentalJiraKanbanView({
 						statusOptions={boardColumns.map((column) => column.title)}
 					/>
 				) : null}
+			<SessionFusionOverlay
+				members={boardSessionDrag.transaction?.cohort.members ?? null}
+				proximity={boardSessionDrag.transaction?.proximity ?? null}
+			/>
 		</div>
 	);
 }

@@ -53,7 +53,7 @@ test("the experimental page groups Pulse sessions onto the board when Untracked 
 	);
 	assert.match(
 		PAGE_SOURCE,
-		/showUntracked\s*\?\s*groupBoardUntrackedSessions\(\{\s*archivedItemIds: archivedLooseWorkIds,\s*boardIssueKeys,\s*capturedItemIds: capturedLooseWorkIds,\s*detachedByCard: detachedAgentSessionsByCard,\s*sessions: agentSessionItems,\s*\}\)\s*:\s*EMPTY_PROXIMITY_SESSIONS/u,
+		/displayedShowUntracked\s*\?\s*groupBoardUntrackedSessions\(\{\s*archivedItemIds: archivedLooseWorkIds,\s*boardIssueKeys,\s*capturedItemIds: capturedLooseWorkIds,\s*detachedByCard: detachedAgentSessionsByCard,\s*sessions: agentSessionItems,\s*\}\)\s*:\s*EMPTY_PROXIMITY_SESSIONS/u,
 	);
 	assert.match(PAGE_SOURCE, /detachedAgentSessionsByCard=\{proximityAgentSessionsByCard\}/u);
 	assert.match(HELPER_SOURCE, /session\.sessionDetails\?\.issueKey/u);
@@ -76,6 +76,33 @@ test("the Untracked column follows card session link and unlink state", () => {
 	);
 	assert.match(PAGE_SOURCE, /onCardAgentSessionLink\?\.\(session, card, columnTitle\)/u);
 	assert.match(PAGE_SOURCE, /onCardAgentSessionUnlink\?\.\(session, card, columnTitle\)/u);
+});
+
+test("the experimental page can prepend newly synced agent sessions with arrival marks", () => {
+	assert.match(PAGE_SOURCE, /additionalAgentSessions\?: readonly PulseAgentSession\[\];/u);
+	assert.match(PAGE_SOURCE, /newAgentSessionIds\?: ReadonlySet<string>;/u);
+	assert.match(
+		PAGE_SOURCE,
+		/onAgentSessionsReviewed\?: \(sessionIds\?: readonly string\[\]\) => void;/u,
+	);
+	assert.match(PAGE_SOURCE, /function useAgentSessionLooseWork\(/u);
+	assert.match(PAGE_SOURCE, /function useAgentSessionReview\(/u);
+	assert.match(PAGE_SOURCE, /function isExperimentalJiraListContent\(/u);
+	assert.doesNotMatch(PAGE_SOURCE, /additionalAgentSessions = EMPTY_ADDITIONAL_AGENT_SESSIONS/u);
+	assert.match(
+		PAGE_SOURCE,
+		/const agentSessionLooseWork = useAgentSessionLooseWork\(additionalAgentSessions, pulseTimeline\.looseWork\)/u,
+	);
+	assert.match(
+		PAGE_SOURCE,
+		/filterPulseLooseWorkByMember\(agentSessionLooseWork, agentSessionMemberId\)/u,
+	);
+	assert.match(PAGE_SOURCE, /looseWork: agentSessionLooseWork/u);
+	assert.match(PAGE_SOURCE, /newItemIds: newAgentSessionIds/u);
+	assert.match(PAGE_SOURCE, /onItemHover: handleUntrackedItemHover/u);
+	assert.match(PAGE_SOURCE, /collapsed: displayedAgentSessionColumnCollapsed,/u);
+	assert.match(PAGE_SOURCE, /onCollapsedChange: handleAgentSessionColumnCollapsedChange/u);
+	assert.doesNotMatch(PAGE_SOURCE, /defaultCollapsed: agentSessionColumnCollapsed/u);
 });
 
 test("proximity AgentSession forwards the Pulse flyout attach handlers", () => {

@@ -128,7 +128,7 @@ test("every local session becomes one agent-list row with fixture identity", asy
 	const machineNames = new Set(allItems.map((item) => item.machineName));
 	const agentNames = new Set(allItems.map((item) => item.agent.name));
 	const calendarStamp = /Aug|Mon |Tue |Wed |Thu |Fri /u;
-	const relativeStamp = /^(Just now|\d+ mins? ago|\d+ hrs? ago|Yesterday|\d+ days? ago|Last week)$/u;
+	const relativeStamp = /^(Just now|\d+m ago|\d+hr ago|Yesterday|\d+d ago|Last week)$/u;
 	for (const item of allItems) {
 		assert.doesNotMatch(item.timeLabel, calendarStamp, `${item.id} must not use a calendar stamp`);
 		assert.match(item.timeLabel, relativeStamp, `${item.id} timeLabel "${item.timeLabel}" is not relative`);
@@ -173,6 +173,19 @@ test("session rows name a human invoker when the roster can place one", async ()
 		assert.equal(item.invokedBy.name, invoker.name, session.id);
 		assert.equal(item.invokedBy.avatarSrc, invoker.avatarSrc, session.id);
 	});
+});
+
+test("every catalog session has a human invoker for its visible avatar", async () => {
+	const { PULSE_TIMELINE, toPulseSessionItems } = await loadSessionsHarness();
+	const items = toPulseSessionItems(
+		PULSE_TIMELINE.looseWork,
+		PULSE_TIMELINE.members,
+		PULSE_TIMELINE.workItems,
+	);
+
+	for (const item of items) {
+		assert.ok(item.invokedBy?.avatarSrc, `${item.id} needs a human avatar`);
+	}
 });
 
 test("session activation is omitted when the host cannot resume it", async () => {
@@ -341,8 +354,21 @@ test("session flyout status resolves from the unscoped work-item collection", as
 	assert.equal(scopedIn.sessionDetails.issueStatus, fullStatus);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
-		/toPulseSessionItems\(\s*filterPulseLooseWorkByMember\(pulseTimeline\.looseWork, agentSessionMemberId\),\s*PULSE_TIMELINE\.members,\s*PULSE_TIMELINE\.workItems,/u,
+		/toPulseSessionItems\(\s*filterPulseLooseWorkByMember\(agentSessionLooseWork, agentSessionMemberId\),\s*PULSE_TIMELINE\.members,\s*PULSE_TIMELINE\.workItems,/u,
 	);
 	assert.match(SOURCES.shell, /workItems=\{sourceTimeline\.workItems\}/u);
 	assert.doesNotMatch(SOURCES.shell, /workItems=\{pulse\.workItems\}/u);
+});
+
+test("an authored session status overrides the static Pulse work-item collection", async () => {
+	const { PULSE_TIMELINE, toPulseSessionItems } = await loadSessionsHarness();
+	const session = PULSE_TIMELINE.looseWork.find((item) => item.kind === "agent-session");
+	assert.ok(session !== undefined, "fixture should include a local session");
+
+	const [item] = toPulseSessionItems(
+		[{ ...session, issueStatus: "In review" }],
+		PULSE_TIMELINE.members,
+		[],
+	);
+	assert.equal(item.sessionDetails.issueStatus, "In review");
 });

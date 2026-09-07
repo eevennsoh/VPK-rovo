@@ -8,6 +8,7 @@ import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import LibraryIcon from "@atlaskit/icon/core/library";
 
 import {
+	AgentListIdentity,
 	AgentListRow,
 	type AgentListRowHoverActions,
 } from "@/components/blocks/agent-list/agent-list-card";
@@ -29,8 +30,14 @@ import { approveActionLabel } from "./agent-session-approve";
 import { SESSION_DRAG_INTERACTIVE_SELECTOR } from "./agent-session-drag-interactive";
 import { AgentSessionMediumDrag } from "./agent-session-medium-drag";
 import { AgentSessionSelectMark } from "./agent-session-select-mark";
+import { selectionGestureFromModifierKeys } from "./agent-session-selection-gesture";
 import { isTransferSourceFaded } from "./session-cohort";
-import type { AgentSessionItem, AgentSessionTriageRow } from "./agent-session-types";
+import {
+	toAgentSessionVisibleIdentity,
+	type AgentSessionItem,
+	type AgentSessionSelectionGesture,
+	type AgentSessionTriageRow,
+} from "./agent-session-types";
 
 /** How long Resume reads "Copied" after it writes the command to the clipboard. */
 const COPIED_RESET_MS = 2000;
@@ -135,7 +142,9 @@ export function AgentSessionCard({
 	const approve = triageRow?.approve;
 	const mark = triageRow?.mark;
 	const isMarked = mark?.isMarked ?? false;
+	const isLead = mark?.isLead ?? false;
 	const showSelectedFill = isMarked || (isSelected && mark == null);
+	const visibleIdentity = toAgentSessionVisibleIdentity(item);
 
 	// The same hover/focus-revealed pair Agent List rows use, with Archive /
 	// Unarchive in the slot Agent List gives to Archive. The control always
@@ -143,16 +152,12 @@ export function AgentSessionCard({
 	// The article is the hit area. RowBody would otherwise wrap only the title
 	// column, leaving avatar and padding inert. A triage mark uses that same
 	// path so selection is not avatar-only. Hover actions stay buttons so they
-	// can stop the article from toggling.
+	// can stop the article from changing the selection.
 	const activateCard = onView === undefined && mark == null
 		? undefined
-		: () => {
+		: (gesture: AgentSessionSelectionGesture) => {
 			if (mark != null) {
-				const selecting = !mark.isMarked;
-				mark.onToggle();
-				if (selecting !== isSelected) {
-					onView?.(item);
-				}
+				mark.onActivate(gesture);
 				return;
 			}
 			onView?.(item);
@@ -166,7 +171,7 @@ export function AgentSessionCard({
 			) {
 				return;
 			}
-			activateCard();
+			activateCard(selectionGestureFromModifierKeys(event));
 		};
 	const handleArticleKeyDown = activateCard === undefined
 		? undefined
@@ -176,9 +181,19 @@ export function AgentSessionCard({
 			}
 			if (event.key === "Enter" || event.key === " ") {
 				event.preventDefault();
-				activateCard();
+				activateCard(selectionGestureFromModifierKeys(event));
 			}
 		};
+	const articleRole = activateCard === undefined
+		? undefined
+		: mark == null
+			? "button"
+			: "gridcell";
+	const articleTabIndex = activateCard === undefined
+		? undefined
+		: mark == null || isLead
+			? 0
+			: -1;
 	const hoverActions: AgentListRowHoverActions = {
 		primary: approve
 			? {
@@ -235,6 +250,8 @@ export function AgentSessionCard({
 			)}
 			data-marked={isMarked || undefined}
 			data-testid={"agent-session-row-" + item.id}
+			aria-selected={mark == null ? undefined : isMarked}
+			role={mark == null ? undefined : "row"}
 			onAnimationComplete={handleArrivalComplete}
 			onPointerEnter={() => {
 				isHoveredRef.current = true;
@@ -272,11 +289,10 @@ export function AgentSessionCard({
 						<article
 							{...bind}
 							aria-current={isSelected ? "true" : undefined}
-							aria-pressed={activateCard === undefined ? undefined : showSelectedFill}
+							aria-pressed={articleRole === "button" ? showSelectedFill : undefined}
 							aria-roledescription={bind ? "Draggable agent session" : undefined}
 							className={cn(
-						"group/agent-row relative flex w-full rounded-lg p-3 text-left text-text",
-						bind ? "cursor-grab" : "cursor-pointer",
+						"group/agent-row relative flex w-full cursor-default rounded-lg p-3 text-left text-text",
 						// Borderless tiles, 8px radius — same chrome as editor-palette
 						// suggestion rows. The list owns the gap between them.
 						"transition-[background-color,border-radius] duration-xxshort ease-out-practical",
@@ -296,18 +312,18 @@ export function AgentSessionCard({
 							data-variant="uncaptured-work"
 							onClick={handleArticleClick}
 							onKeyDown={handleArticleKeyDown}
-							role={activateCard === undefined ? undefined : "button"}
-							tabIndex={activateCard === undefined ? undefined : 0}
+							role={articleRole}
+							tabIndex={articleTabIndex}
 						>
 							{isNew ? (
 						<>
 							{/* Colour never carries it alone. */}
 							<span className="sr-only">Newly synced, not yet reviewed</span>
-							{/* Parked in the body's 12px padding, so it clears the
-							    avatar on the left and the hover actions on the right. */}
+							{/* Parked in the body's 12px padding, vertically centered
+							    with the avatar + two text lines. */}
 							<span
 								aria-hidden="true"
-								className="absolute left-1.5 top-1.5 size-1.5 rounded-full bg-icon-discovery"
+								className="absolute left-1.5 top-1/2 size-1.5 -translate-y-1/2 rounded-full bg-icon-discovery"
 							/>
 						</>
 							) : null}
@@ -317,16 +333,25 @@ export function AgentSessionCard({
 								isSelected={showSelectedFill}
 								item={item}
 								onView={undefined}
-								renderIdentity={mark === undefined || mark === null
-									? undefined
-									: (identity) => (
-										<AgentSessionSelectMark
-											identity={identity}
-											isMarked={mark.isMarked}
-											label={`Select "${item.title}"`}
-											onToggle={activateCard ?? mark.onToggle}
+								renderIdentity={() => {
+									const sessionIdentity = (
+										<AgentListIdentity
+											agent={visibleIdentity}
+											sizePx={24}
 										/>
-									)}
+									);
+
+									return mark === undefined || mark === null
+										? sessionIdentity
+										: (
+											<AgentSessionSelectMark
+												identity={sessionIdentity}
+												isMarked={mark.isMarked}
+												label={`Select "${item.title}"`}
+												onActivate={activateCard ?? mark.onActivate}
+											/>
+										);
+								}}
 								showHoverActionsWhenSelected
 							/>
 						</article>
