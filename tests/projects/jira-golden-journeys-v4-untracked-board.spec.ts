@@ -108,6 +108,51 @@ async function dragPointer(
 	await page.mouse.up();
 }
 
+test("attaching onto a running session replaces that chin row instead of stacking", async ({ page }) => {
+	await openBoard(page);
+
+	const targetCard = getIssueArticle(page, "PAY-107");
+	await targetCard.scrollIntoViewIfNeeded();
+	const runningSession = targetCard.getByRole("button", {
+		name: /^Open Claude Code in Rovo chat:/u,
+	});
+	await expect(runningSession).toBeVisible();
+	const restingBox = await targetCard.boundingBox();
+	expect(restingBox).not.toBeNull();
+	if (!restingBox) return;
+
+	const untrackedSession = page.locator("[data-agent-session-column]")
+		.getByTestId("agent-session-row-lw-scope-thread");
+	const sourceBox = await untrackedSession.boundingBox();
+	const dropZone = getIssueDropZone(page, "PAY-107");
+	const targetBox = await dropZone.boundingBox();
+	expect(sourceBox).not.toBeNull();
+	expect(targetBox).not.toBeNull();
+	if (!sourceBox || !targetBox) return;
+
+	await page.mouse.move(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(sourceBox.x + sourceBox.width / 2 + 4, sourceBox.y + sourceBox.height / 2 + 4);
+	await page.mouse.move(
+		targetBox.x + targetBox.width / 2,
+		targetBox.y + targetBox.height / 2,
+		{ steps: 12 },
+	);
+	await expect(dropZone).toHaveAttribute("data-board-agent-session-target", "attach");
+	await expect(targetCard.locator('[data-slot="jira-issue-attach-chin"]')).toBeVisible();
+	await expect(targetCard.getByText("Link 1 agent session")).toBeVisible();
+	await expect(runningSession).toHaveCount(0);
+	await expect(targetCard.locator('[data-slot="jira-issue-agent-row"]')).toHaveCount(0);
+
+	const attachingBox = await targetCard.boundingBox();
+	expect(attachingBox).not.toBeNull();
+	if (!attachingBox) return;
+	// One extra chin row is 24px plus 8px of gutter. Stay well under that.
+	expect(attachingBox.height).toBeLessThan(restingBox.height + 16);
+
+	await page.mouse.up();
+});
+
 test("Untracked is on by default and PAY-101 shows a nearby untracked row", async ({ page }) => {
 	await openBoard(page);
 
