@@ -61,7 +61,7 @@ const FAB_GEOMETRY_SOURCE = readProjectFile(
 );
 test("the route renders the Payments board directly inside Jira app chrome", () => {
 	assert.match(PAGE_SOURCE, /import AppLayout from "@\/components\/projects\/page"/u);
-	assert.match(PAGE_SOURCE, /<AppLayout[\s\S]*defaultSidebarOpen=\{false\}[\s\S]*product="jira"/u);
+	assert.match(PAGE_SOURCE, /<AppLayout[\s\S]*defaultSidebarOpen=\{true\}[\s\S]*product="jira"/u);
 	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage/u);
 	assert.match(PAGE_SOURCE, /createJiraGoldenJourneysV4PayBoardColumns/u);
 	assert.match(PAGE_SOURCE, /JIRA_GOLDEN_JOURNEYS_V4_PAY_BOARD_AGENTS/u);
@@ -103,15 +103,11 @@ test("the route imports the Pulse session guard used by its resume callback", ()
 	assert.match(PAGE_SOURCE, /if \(!isPulseAgentSession\(item\)\) return;/u);
 });
 
-test("chin-row layout follows the design variation", () => {
-	// Team EU groups every active agent into one merged chin. 2000 years later
-	// keeps a row per agent. The route owns the choice; the shared board stays
-	// variation-agnostic, matching Panel and untracked proximity.
-	assert.match(
-		PAGE_SOURCE,
-		/const agentActivityLayout = designVariation === "team-eu" \? "merged" : "split";/u,
-	);
-	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage[\s\S]*agentActivityLayout=\{agentActivityLayout\}/u);
+test("chin-row layout uses Team EU's merged grouping", () => {
+	// Team EU groups every active agent into one merged chin. The route owns
+	// the choice; the shared board stays agnostic, matching Panel and
+	// untracked proximity.
+	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage[\s\S]*agentActivityLayout="merged"/u);
 	assert.doesNotMatch(
 		PAGE_SOURCE,
 		/agentActivityLayout="split"/u,
@@ -120,7 +116,7 @@ test("chin-row layout follows the design variation", () => {
 	assert.doesNotMatch(
 		EXPERIMENTAL_PAGE_SOURCE,
 		/useDesignVariation|design-variation/u,
-		"the shared block must take an agentActivityLayout prop, not read the global variation store",
+		"the shared block must take an agentActivityLayout prop, not read a global variation store",
 	);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /agentActivityLayout\?: JiraIssueAgentActivityLayout;/u);
 	assert.match(
@@ -147,7 +143,7 @@ test("chin-row layout follows the design variation", () => {
 	assert.match(AGENT_ACTIVITY_SOURCE, /rowSessionFlyout \? \(\s*<JiraSessionFlyoutTrigger/u);
 });
 
-test("chin-row agent activity indicators follow the design variation", () => {
+test("chin-row agent activity indicators use the Team EU renderer", () => {
 	// Team EU is the baseline, so working rows keep the block's own spinner.
 	// Awaiting-input departs from it: a question circle reads as "blocked on
 	// you", which the pixel loader's solo dot did not. The filled glyph lives in
@@ -163,7 +159,7 @@ test("chin-row agent activity indicators follow the design variation", () => {
 	assert.match(INDICATORS_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
 	assert.match(
 		INDICATORS_SOURCE,
-		/renderTeamEuAgentActivityIndicator[\s\S]*state === "awaiting-input" \? \(\s*<QuestionCircleFilledIcon color=\{token\("color\.icon\.information"\)\} label="" size="small" \/>\s*\) : \(\s*<Spinner label="" pulse size="default" variant="experimental" \/>\s*\)/u,
+		/renderJiraGoldenJourneysV4AgentActivityIndicator[\s\S]*state === "awaiting-input" \? \(\s*<QuestionCircleFilledIcon color=\{token\("color\.icon\.information"\)\} label="" size="small" \/>\s*\) : \(\s*<Spinner label="" pulse size="default" variant="experimental" \/>\s*\)/u,
 	);
 	// A finished run gets the filled success status in the ADS success green,
 	// pairing with the filled error status a failed run already shows. The
@@ -171,41 +167,18 @@ test("chin-row agent activity indicators follow the design variation", () => {
 	assert.match(INDICATORS_SOURCE, /import StatusSuccessIcon from "@atlaskit\/icon\/core\/status-success";/u);
 	assert.match(
 		INDICATORS_SOURCE,
-		/renderTeamEuAgentActivityIndicator[\s\S]*if \(state === "finished"\) \{\s*return <StatusSuccessIcon color=\{token\("color\.icon\.success"\)\} label="" size="small" \/>;\s*\}/u,
+		/renderJiraGoldenJourneysV4AgentActivityIndicator[\s\S]*if \(state === "finished"\) \{\s*return <StatusSuccessIcon color=\{token\("color\.icon\.success"\)\} label="" size="small" \/>;\s*\}/u,
 	);
-	// Only the exploration keeps the pixel aesthetic — and only for the live
-	// states. A finished run has nothing left to animate, so it restates the
-	// block's own neutral dot rather than borrowing a loader glyph.
-	assert.match(INDICATORS_SOURCE, /import \{ PixelLoader \} from "@\/components\/ui-custom\/pixel-loader";/u);
-	assert.match(
-		INDICATORS_SOURCE,
-		/render2000YearsLaterAgentActivityIndicator[\s\S]*pattern=\{state === "awaiting-input" \? "solo" : "diagonal-top-left"\}[\s\S]*shape="dot"/u,
-	);
-	assert.match(
-		INDICATORS_SOURCE,
-		/render2000YearsLaterAgentActivityIndicator[\s\S]*if \(state === "finished"\) \{\s*return <StrokeWeightExtraLargeIcon color="currentColor" label="" size="small" \/>;\s*\}/u,
-	);
-	assert.match(
-		INDICATORS_SOURCE,
-		/Record<DesignVariationId, JiraIssueAgentActivityIndicatorRenderer>\s*> = \{\s*"team-eu": renderTeamEuAgentActivityIndicator,\s*"2000-years-later": render2000YearsLaterAgentActivityIndicator,\s*\};/u,
-	);
-	assert.match(
-		INDICATORS_SOURCE,
-		/export function getJiraGoldenJourneysV4AgentActivityIndicator\(\s*variation: DesignVariationId,\s*\): JiraIssueAgentActivityIndicatorRenderer/u,
-	);
-	// The route reads the variation; the shared block still takes a plain prop.
-	assert.doesNotMatch(PAGE_SOURCE, /PixelLoader/u);
-	assert.match(PAGE_SOURCE, /import \{ useDesignVariation \} from "@\/components\/hooks\/use-design-variation";/u);
+	assert.doesNotMatch(INDICATORS_SOURCE, /PixelLoader|2000-years-later|DesignVariationId/u);
+	assert.doesNotMatch(PAGE_SOURCE, /PixelLoader|useDesignVariation|design-variation/u);
 	assert.match(
 		PAGE_SOURCE,
-		/import \{ getJiraGoldenJourneysV4AgentActivityIndicator \} from "\.\/data\/agent-activity-indicators";/u,
+		/import \{ renderJiraGoldenJourneysV4AgentActivityIndicator \} from "\.\/data\/agent-activity-indicators";/u,
 	);
-	assert.match(PAGE_SOURCE, /const \{ designVariation \} = useDesignVariation\(\);/u);
 	assert.match(
 		PAGE_SOURCE,
-		/const renderAgentActivityIndicator = getJiraGoldenJourneysV4AgentActivityIndicator\(designVariation\);/u,
+		/<ExperimentalJiraKanbanPage[\s\S]*renderAgentActivityIndicator=\{renderJiraGoldenJourneysV4AgentActivityIndicator\}/u,
 	);
-	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage[\s\S]*renderAgentActivityIndicator=\{renderAgentActivityIndicator\}/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /renderAgentActivityIndicator\?: ExperimentalJiraKanbanProps\["renderAgentActivityIndicator"\];/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<ExperimentalJiraKanban[\s\S]*renderAgentActivityIndicator=\{renderAgentActivityIndicator\}/u);
 	assert.match(EXPERIMENTAL_BOARD_SOURCE, /<ExperimentalJiraKanbanCard[\s\S]*renderAgentActivityIndicator=\{renderAgentActivityIndicator\}/u);
@@ -227,15 +200,13 @@ test("chin-row agent activity indicators follow the design variation", () => {
 test("Team EU keeps only attached agent sessions on status columns", () => {
 	// Team EU is "what ships today": Pulse proximity rows leave the status
 	// columns so only chin rows attached to a work item remain. Untracked work
-	// still lives in its dedicated column/panel. 2000 years later keeps the
-	// proximity rows. The route owns the default; the shared block stays
-	// variation-agnostic, matching Panel.
-	assert.match(PAGE_SOURCE, /const showUntrackedProximity = designVariation !== "team-eu";/u);
-	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage[\s\S]*defaultShowUntracked=\{showUntrackedProximity\}/u);
+	// still lives in its dedicated column/panel. The route owns the default;
+	// the shared block stays agnostic, matching Panel.
+	assert.match(PAGE_SOURCE, /<ExperimentalJiraKanbanPage[\s\S]*defaultShowUntracked=\{false\}/u);
 	assert.doesNotMatch(
 		EXPERIMENTAL_PAGE_SOURCE,
 		/useDesignVariation|design-variation/u,
-		"the shared block must take a defaultShowUntracked prop, not read the global variation store",
+		"the shared block must take a defaultShowUntracked prop, not read a global variation store",
 	);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /defaultShowUntracked\?: boolean;/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /defaultShowUntracked = true,/u);
@@ -246,7 +217,7 @@ test("Team EU keeps only attached agent sessions on status columns", () => {
 	);
 });
 
-test("both design variations reveal compact magnetic create targets that expand and arm during an agent-session drag", () => {
+test("the board reveals compact magnetic create targets that expand and arm during an agent-session drag", () => {
 	assert.match(
 		PAGE_SOURCE,
 		/const createWorkItemDropZoneLabel = "Create new work item";/u,
@@ -267,7 +238,7 @@ test("both design variations reveal compact magnetic create targets that expand 
 	assert.doesNotMatch(
 		EXPERIMENTAL_BOARD_SOURCE,
 		/useDesignVariation|design-variation/u,
-		"the shared board must receive variation-owned copy through a prop",
+		"the shared board must receive route-owned copy through a prop",
 	);
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
@@ -398,19 +369,18 @@ test("the board enables board-wide Jira issue agent-session transfer", () => {
 });
 
 test("Team EU returns unlinked sessions to Untracked without parking them on status columns", () => {
-	// Both variations pass the same transfer handlers so Untracked sessions
-	// can attach to issues and chins can drag. Team EU hides the dashed
+	// Both Untracked attach and chin drag stay wired. Team EU hides the dashed
 	// unlink well, and still turns proximity off: unlinked copies go into
 	// detachedByCard, which the Untracked list reads.
 	assert.doesNotMatch(PAGE_SOURCE, /allowAgentSessionUnlink/u);
 	assert.match(PAGE_SOURCE, /onCardAgentSessionUnlink=\{handleAgentSessionUnlink\}/u);
-	assert.match(PAGE_SOURCE, /showAgentSessionUnlinkWell=\{designVariation !== "team-eu"\}/u);
-	assert.match(PAGE_SOURCE, /const showUntrackedProximity = designVariation !== "team-eu";/u);
+	assert.match(PAGE_SOURCE, /showAgentSessionUnlinkWell=\{false\}/u);
+	assert.doesNotMatch(PAGE_SOURCE, /const showUntrackedProximity/u);
 	assert.match(PAGE_SOURCE, /const handleAgentSessionUnlink = useCallback/u);
 	assert.doesNotMatch(
 		EXPERIMENTAL_PAGE_SOURCE,
 		/useDesignVariation|design-variation/u,
-		"the shared block must take unlink as an optional handler, not read the global variation store",
+		"the shared block must take unlink as an optional handler, not read a global variation store",
 	);
 	assert.match(
 		EXPERIMENTAL_PAGE_SOURCE,
@@ -503,7 +473,7 @@ test("the board puts agent and skill assignment in each card's More actions menu
 	assert.match(EXPERIMENTAL_CARD_SOURCE, /<JiraIssue[\s\S]*generativeActionPresentation=\{generativeActionPresentation\}/u);
 });
 
-test("the Jira tab bar splits or collapses work items per design variation", () => {
+test("the Jira tab bar splits or collapses work items per Simple views", () => {
 	assert.match(JIRA_HEADER_SOURCE, /export function JiraViewTabs/u);
 	assert.match(JIRA_HEADER_SOURCE, /className=\{isFirst \? "ml-4 flex-none" : "flex-none"\}/u);
 	assert.match(JIRA_HEADER_SOURCE, /<IconComponent[\s\S]*label=""/u);
@@ -511,26 +481,24 @@ test("the Jira tab bar splits or collapses work items per design variation", () 
 	assert.match(JIRA_HEADER_SOURCE, /const activeTab = resolveJiraTab\(tabs, selectedTabLabel, workItemView\)/u);
 	assert.match(JIRA_HEADER_SOURCE, /<JiraViewTabs\s+selectedTabLabel=\{selectedTabLabel\}/u);
 	// Team EU without Simple views restores Board and List as sibling
-	// destinations; Simple views (default on) and 2000 years later keep the
-	// single Work items tab and let the board header switch views.
+	// destinations; Simple views (default on) keeps the single Work items tab
+	// and lets the board header switch views.
 	assert.match(JIRA_TABS_SOURCE, /import WorkItemIcon from "@atlaskit\/icon\/core\/work-item"/u);
-	assert.match(JIRA_TABS_SOURCE, /"team-eu": \[[\s\S]*\{ label: "Board", icon: BoardIcon, hasContent: true, view: "board" \}[\s\S]*\{ label: "List", icon: TableIcon, hasContent: true, view: "list" \}/u);
-	assert.match(JIRA_TABS_SOURCE, /"2000-years-later": \[[\s\S]*\{ label: "Work items", icon: WorkItemIcon, hasContent: true \}/u);
+	assert.match(JIRA_TABS_SOURCE, /const TEAM_EU_TABS: readonly TabDefinition\[\] = \[[\s\S]*\{ label: "Board", icon: BoardIcon, hasContent: true, view: "board" \}[\s\S]*\{ label: "List", icon: TableIcon, hasContent: true, view: "list" \}/u);
+	assert.match(JIRA_TABS_SOURCE, /const SIMPLE_VIEWS_TABS: readonly TabDefinition\[\] = \[[\s\S]*\{ label: "Work items", icon: WorkItemIcon, hasContent: true \}/u);
 	assert.match(JIRA_TABS_SOURCE, /export function getJiraTabs\(/u);
 	assert.match(JIRA_TABS_SOURCE, /simpleViews = false/u);
 	assert.match(
 		JIRA_TABS_SOURCE,
-		/if \(simpleViews\) \{\s*return JIRA_TABS_BY_DESIGN_VARIATION\["2000-years-later"\];/u,
+		/return simpleViews \? SIMPLE_VIEWS_TABS : TEAM_EU_TABS;/u,
 	);
 	assert.match(USE_JIRA_TABS_SOURCE, /designVariants\["simple-views"\]/u);
 	assert.match(
 		USE_JIRA_TABS_SOURCE,
-		/getJiraTabs\(designVariation, designVariants\["simple-views"\]\)/u,
+		/getJiraTabs\(designVariants\["simple-views"\]\)/u,
 	);
-	assert.doesNotMatch(
-		JIRA_TABS_SOURCE,
-		/"2000-years-later": \[[\s\S]*label: "(?:Board|List)"/u,
-	);
+	assert.doesNotMatch(JIRA_TABS_SOURCE, /2000-years-later|DesignVariationId/u);
+	assert.doesNotMatch(USE_JIRA_TABS_SOURCE, /useDesignVariation|design-variation/u);
 	assert.match(PAGE_SOURCE, /import \{ JiraViewTabs \} from "@\/components\/projects\/jira\/components\/jira-header"/u);
 	assert.match(
 		PAGE_SOURCE,
@@ -619,12 +587,12 @@ test("the Work items header switches between Board and List views with their ico
 		/<TabsList aria-label="Work items view">[\s\S]*<TabsTrigger value="board">[\s\S]*<BoardIcon[\s\S]*Board[\s\S]*<TabsTrigger value="list">[\s\S]*<TableIcon[\s\S]*List/u,
 	);
 	assert.doesNotMatch(EXPERIMENTAL_HEADER_SOURCE, /<TabsList[^>]*className=|<TabsTrigger[^>]*className=/u);
-	assert.match(PAGE_SOURCE, /moreControlsPlacement=\{designVariation === "team-eu" \? "end" : "inline"\}/u);
+	assert.match(PAGE_SOURCE, /moreControlsPlacement="end"/u);
 	assert.match(PAGE_SOURCE, /showMoreControls=\{!designVariants\["simple-views"\]\}/u);
 	assert.match(PAGE_SOURCE, /simpleViews=\{designVariants\["simple-views"\]\}/u);
 	assert.match(
 		PAGE_SOURCE,
-		/showCustomizeControl=\{designVariation === "team-eu" && !designVariants\["simple-views"\]\}/u,
+		/showCustomizeControl=\{!designVariants\["simple-views"\]\}/u,
 	);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /moreControlsPlacement\?: "inline" \| "end";/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /showMoreControls\?: boolean;/u);
@@ -637,7 +605,7 @@ test("the Work items header switches between Board and List views with their ico
 	assert.doesNotMatch(
 		EXPERIMENTAL_PAGE_SOURCE,
 		/useDesignVariation|design-variation/u,
-		"the shared block must take moreControlsPlacement, not read the global variation store",
+		"the shared block must take moreControlsPlacement, not read a global variation store",
 	);
 	assert.match(
 		EXPERIMENTAL_HEADER_SOURCE,

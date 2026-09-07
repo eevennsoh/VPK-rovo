@@ -4,6 +4,7 @@ const { test } = require("node:test");
 const {
 	JIRA_DROPZONE_FULL_MOTION_PROFILE,
 	JIRA_DROPZONE_REDUCED_MOTION_PROFILE,
+	resolveJiraDropzoneLandingPoint,
 } = require("./lib/jira-dropzone-motion.ts");
 const {
 	JIRA_DROPZONE_FIELD_INITIAL_STATE,
@@ -506,4 +507,16 @@ test("expanded copy unmounts on the first resting frame", () => {
 	assert.equal(resolveJiraDropzoneCopy("armed"), "label");
 	assert.equal(resolveJiraDropzoneCopy("proximate"), "label");
 	assert.equal(resolveJiraDropzoneCopy("resting"), "none");
+});
+
+test("flight landing is the geometric center of the well", () => {
+	assert.deepEqual(
+		resolveJiraDropzoneLandingPoint({
+			height: 64,
+			left: 100,
+			top: 40,
+			width: 240,
+		}),
+		{ x: 220, y: 72 },
+	);
 });
