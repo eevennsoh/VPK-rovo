@@ -281,7 +281,14 @@ test("column card click scrolls the related issue and applies the blue-subtlest 
 		/const handleSessionSelectionChange = \(itemId: string \| null\) => \{\s*if \(itemId === null\) \{\s*setFocusedIssueKey\(null\);/u,
 	);
 	assert.match(BOARD_SOURCE, /data-issue-key=\{cardCode\}/u);
-	assert.match(BOARD_SOURCE, /spotlightIssueKey === card\.code && "bg-bg-accent-blue-subtlest"/u);
+	assert.match(
+		BOARD_SOURCE,
+		/spotlightIssueKey === card\.code && "bg-bg-accent-blue-subtlest \[&_\[data-slot=jira-issue-agent-backdrop\]\]:bg-bg-accent-blue-subtlest"/u,
+	);
+	assert.match(
+		BOARD_SOURCE,
+		/agentSessionTargetHighlighted=\{hoveredIssueKey === card\.code && spotlightIssueKey !== card\.code\}/u,
+	);
 	assert.match(
 		BOARD_SOURCE,
 		/spotlightIssueKey !== null && spotlightIssueKey !== card\.code && "opacity-40"/u,
