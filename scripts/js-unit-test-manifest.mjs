@@ -192,6 +192,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/agent-session/agent-session-approve.test.js",
 		"components/blocks/agent-session/session-cohort.test.js",
 		"components/blocks/agent-session-column/agent-session-column-overflow.test.ts",
+		"components/blocks/agent-session-column/agent-session-column-filter.test.ts",
 		"components/blocks/agent-session-column/agent-session-column-rail-viewport.test.ts",
 		"components/blocks/agent-session-column/untracked-selection.test.ts",
 		"components/blocks/agent-session-column/untracked-selection-keyboard.test.ts",
