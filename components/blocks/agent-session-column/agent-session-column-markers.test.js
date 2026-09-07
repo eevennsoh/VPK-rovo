@@ -25,7 +25,7 @@ test("collapsed markers default to circles and can retain the previous line trea
 	assert.match(RAIL_SOURCE, /:\s*\(\s*<AgentSessionUserNotch/u);
 	assert.match(
 		RAIL_SOURCE,
-		/`scale\(\$\{toAgentSessionUserNotchDiameter\(value, isNew\) \/ 4\}\)`/u,
+		/`scale\(\$\{toAgentSessionUserNotchDiameter\(value\) \/ 4\}\)`/u,
 	);
 	assert.match(
 		RAIL_SOURCE,
