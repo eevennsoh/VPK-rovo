@@ -16,7 +16,7 @@ import {
 	type JiraIssueAgentSessionDragState,
 } from "@/components/blocks/jira-issue/agent-activity";
 import { JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE } from "@/components/blocks/jira-issue/agent-session-drag";
-import { JiraIssueDetachedAttachChinSlot } from "@/components/blocks/jira-issue/attach-chin";
+import { JiraIssueDetachedSessionTransferSlot } from "@/components/blocks/jira-issue/attach-chin";
 import {
 	linkAgentSessionChinCopy,
 	resolveLinkAgentSessionChinCount,
@@ -863,12 +863,17 @@ function JiraIssueDefault({
 					sessionLabel={resolvedAgentSessionDragState.activities[0]?.name}
 					source={resolvedAgentSessionDragState.source}
 			/>
-			{/* Detached/proximity pills sit under the shell. Attach copy takes
-			    that occupied slot so the chin does not grow a second row. */}
+			{/* Detached/proximity pills sit under the shell. Attach copy covers
+			    that occupied slot so the chin does not grow a second row, but
+			    the drag source stays mounted through pointer release. */}
 			{agentSessionDragBinding && sessionTransferAfter
-				? (replaceDetachedTransfer && attachChinCopy
-					? <JiraIssueDetachedAttachChinSlot copy={attachChinCopy} />
-					: sessionTransferAfter(agentSessionDragBinding))
+				? (
+					<JiraIssueDetachedSessionTransferSlot
+						attachCopy={replaceDetachedTransfer ? attachChinCopy : undefined}
+					>
+						{sessionTransferAfter(agentSessionDragBinding)}
+					</JiraIssueDetachedSessionTransferSlot>
+				)
 				: null}
 		</div>
 	) : agentActivityShell;

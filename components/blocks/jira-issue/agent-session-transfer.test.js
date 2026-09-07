@@ -740,10 +740,22 @@ test("attach chin replaces the last occupied session row instead of stacking or 
 		ATTACH_CHIN_SOURCE,
 		/export function JiraIssueDetachedAttachChinSlot\([\s\S]*h-\[33px\][\s\S]*data-slot="jira-issue-attach-chin"/u,
 	);
-	// Nearby/detached pills already occupy the last chin. Attach copy takes
-	// that slot instead of opening a second row under the shell.
+	// Nearby/detached pills already occupy the last chin. Attach copy covers
+	// that slot, but `AgentSessionMediumDrag` stays mounted so pointer capture
+	// and the window pointerup fallback survive the first armed move.
 	assert.match(
 		SOURCE,
-		/\{agentSessionDragBinding && sessionTransferAfter\s*\n\s*\? \(replaceDetachedTransfer && attachChinCopy\s*\n\s*\? <JiraIssueDetachedAttachChinSlot copy=\{attachChinCopy\} \/>\s*\n\s*: sessionTransferAfter\(agentSessionDragBinding\)\)\s*\n\s*: null\}/u,
+		/<JiraIssueDetachedSessionTransferSlot\s*\n\s*attachCopy=\{replaceDetachedTransfer \? attachChinCopy : undefined\}\s*\n\s*>\s*\n\s*\{sessionTransferAfter\(agentSessionDragBinding\)\}/u,
+	);
+	assert.doesNotMatch(
+		SOURCE,
+		/replaceDetachedTransfer && attachChinCopy\s*\n\s*\? <JiraIssueDetachedAttachChinSlot copy=\{attachChinCopy\} \/>/u,
+	);
+	assert.match(ATTACH_CHIN_SOURCE, /export function JiraIssueDetachedSessionTransferSlot/u);
+	assert.match(ATTACH_CHIN_SOURCE, /inert=\{replace \|\| undefined\}/u);
+	assert.match(ATTACH_CHIN_SOURCE, /invisible col-start-1 row-start-1/u);
+	assert.match(
+		ATTACH_CHIN_SOURCE,
+		/attachCopy \? \(\s*\n\s*<div className="pointer-events-none col-start-1 row-start-1">\s*\n\s*<JiraIssueDetachedAttachChinSlot copy=\{attachCopy\} \/>/u,
 	);
 });

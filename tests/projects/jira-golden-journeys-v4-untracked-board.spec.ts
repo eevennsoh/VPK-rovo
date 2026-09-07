@@ -179,10 +179,10 @@ test("attaching onto PAY-118 replaces any session chin instead of stacking the d
 	await expect(dropZone).toHaveAttribute("data-board-agent-session-target", "attach");
 	await expect(targetCard.locator('[data-slot="jira-issue-attach-chin"]')).toHaveCount(1);
 	await expect(targetCard.getByText("Link 1 agent session")).toBeVisible();
-	await expect(targetCard.locator('[data-testid^="agent-session-row-"]')).toHaveCount(0);
-	await expect(targetCard.getByText("Why the wallet was cut")).toHaveCount(0);
-	await expect(targetCard.getByText("The adapter keep-or-delete")).toHaveCount(0);
-	await expect(targetCard.getByText("Keep or delete the adapter")).toHaveCount(0);
+	await expect(targetCard.locator('[data-testid^="agent-session-row-"]:visible')).toHaveCount(0);
+	await expect(targetCard.getByText("Why the wallet was cut")).not.toBeVisible();
+	await expect(targetCard.getByText("The adapter keep-or-delete")).not.toBeVisible();
+	await expect(targetCard.getByText("Keep or delete the adapter")).not.toBeVisible();
 
 	await page.mouse.up();
 });
