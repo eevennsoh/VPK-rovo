@@ -4,12 +4,15 @@ import { cn } from "@/lib/utils";
 
 /**
  * Shared 320px overlay chrome for Jira session hover cards: title + meta header,
- * optional trailing lozenge, and a top-bordered footer. Hover surfaces get
- * overlay background + shadow from the parent flyout — no extra outer border.
+ * optional trailing lozenge, and top-bordered body content with an optional
+ * footer. Hover surfaces get overlay background + shadow from the parent
+ * flyout — no extra outer border.
  */
 export function JiraSessionFlyoutCard({
 	"aria-labelledby": ariaLabelledBy,
-	children,
+	body,
+	bodyClassName = "gap-3",
+	footer,
 	footerClassName = "gap-3",
 	meta,
 	title,
@@ -17,7 +20,9 @@ export function JiraSessionFlyoutCard({
 	trailing,
 }: Readonly<{
 	"aria-labelledby"?: string;
-	children: ReactNode;
+	body: ReactNode;
+	bodyClassName?: string;
+	footer?: ReactNode;
 	footerClassName?: string;
 	meta: ReactNode;
 	title: string;
@@ -38,8 +43,15 @@ export function JiraSessionFlyoutCard({
 				</div>
 				{trailing ?? null}
 			</div>
-			<div className={cn("flex flex-col border-t border-border-disabled p-3", footerClassName)}>
-				{children}
+			<div className="flex flex-col">
+				<div className={cn("flex flex-col border-t border-border-disabled p-3", bodyClassName)}>
+					{body}
+				</div>
+				{footer ? (
+					<div className={cn("flex flex-col border-t border-border-disabled p-3", footerClassName)}>
+						{footer}
+					</div>
+				) : null}
 			</div>
 		</section>
 	);

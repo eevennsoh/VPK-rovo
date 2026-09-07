@@ -621,6 +621,7 @@ export function AgentSessionColumn({
 			newItemIds={newItemIds}
 			notchShape={notchShape}
 			onArrivalComplete={handleArrivalComplete}
+			onArchiveSession={sessionProps.onArchiveSession}
 			onCreateWorkItem={sessionProps.onCreateWorkItem}
 			onItemHover={sessionProps.onItemHover}
 			onIntroComplete={onGutterIntroComplete}
