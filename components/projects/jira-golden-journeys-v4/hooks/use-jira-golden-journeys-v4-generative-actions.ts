@@ -10,6 +10,7 @@ import type { RichTextMentionItem } from "@/components/ui-custom/rich-text-edito
 import {
 	createJgpKanbanActivity,
 	getJgpGenerativeAgentSelection,
+	JGP_KANBAN_DEFAULT_AGENT_ID,
 } from "@/components/projects/jira-golden-journeys-v1/data/kanban-activity-data";
 import type { UseJgpAgentChatDemoResult } from "@/components/projects/jira-golden-journeys-v1/hooks/use-jira-golden-journeys-v1-agent-chat-demo";
 import { progressJiraGoldenJourneysV4WorkItemOnStart } from "@/components/projects/jira-golden-journeys-v4/lib/list-rows";
@@ -37,9 +38,10 @@ function createAssignedActivity(
 	const activity: JiraIssueAgentActivity = {
 		...createJgpKanbanActivity(
 			selection.id,
-			skillName ? { ...selection, name: "Rovo" } : selection,
+			skillName ? { ...selection, name: "Claude Code" } : selection,
 			`${card.code}:${selection.id}`,
 		),
+		...(skillName ? { agentBrandName: "claude" as const } : {}),
 		startedAtMs: Date.now(),
 		startupSequence: "jira-work-item-start",
 	};
@@ -55,7 +57,7 @@ function createAssignedActivity(
 			`Reading ${card.code} context`,
 			"Preparing the skill result",
 		],
-		message: `Rovo is applying ${skillName} to ${card.code}.`,
+		message: `Claude Code is applying ${skillName} to ${card.code}.`,
 	};
 }
 
@@ -96,8 +98,8 @@ export function useJiraGoldenJourneysV4GenerativeActions({
 			if (request.kind !== "skill") return;
 
 			openAgentChat({
-				agentId: ROVO_AGENT_ID,
-				agentName: "Rovo",
+				agentId: JGP_KANBAN_DEFAULT_AGENT_ID,
+				agentName: "Claude Code",
 				issueKey: card.code,
 				issueSummary: card.title,
 				request: request.prompt,

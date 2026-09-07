@@ -284,7 +284,7 @@ export function AgentSessionMediumDrag({
 			className={cn(
 				"min-w-0",
 				isDragging && "relative w-full",
-				isFollower && "h-0 overflow-hidden",
+				isFollower && !preserveSourceFootprint && "h-0 overflow-hidden",
 				isDragging && !preserveSourceFootprint && (isDraggedOut ? "h-0" : "h-[33px]"),
 			)}
 			data-session-chip-out={isDraggedOut || undefined}
@@ -292,13 +292,16 @@ export function AgentSessionMediumDrag({
 			data-session-transfer-faded={isFollower || undefined}
 			style={{ height: isDragging && preserveSourceFootprint ? sourceHeight : undefined }}
 		>
-			{/* The bound source stays mounted (but transparent) for the whole
-			    gesture, preserving pointer capture while the chip travels. */}
+			{/* The bound source stays mounted for the whole gesture, preserving
+			    pointer capture while the chip travels. Retained list sources keep a
+			    disabled-opacity ghost so their reserved space never reads as a hole. */}
 			<div
 				aria-hidden={isDragging || isFollower || undefined}
 				className={cn(
 					"min-w-0",
-					(isDragging || isFollower) && "pointer-events-none absolute inset-x-0 top-0 opacity-0",
+					isDragging && preserveSourceFootprint && "pointer-events-none absolute inset-x-0 top-0 opacity-(--opacity-disabled)",
+					isFollower && preserveSourceFootprint && "pointer-events-none opacity-(--opacity-disabled)",
+					(isFollower && !preserveSourceFootprint || (isDragging && !preserveSourceFootprint)) && "pointer-events-none absolute inset-x-0 top-0 opacity-0",
 					sessionDragBind && "touch-none select-none",
 					isDragging && "cursor-grabbing [&_article]:cursor-grabbing",
 				)}
