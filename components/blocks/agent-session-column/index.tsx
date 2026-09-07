@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+	type ReactNode,
+	type RefCallback,
+} from "react";
 import { useReducedMotion } from "motion/react";
 
 import GrowHorizontalIcon from "@atlaskit/icon/core/grow-horizontal";
@@ -21,6 +29,7 @@ import { cn } from "@/lib/utils";
 
 import { AgentSessionColumnFilterMenu } from "./agent-session-column-filter-menu";
 import { AgentSessionColumnHeader } from "./agent-session-column-header";
+import { AgentSessionColumnEndState } from "./agent-session-column-end-state";
 import { AgentSessionColumnHiddenFooter } from "./agent-session-column-hidden-footer";
 import { AgentSessionColumnOverflowMenu } from "./agent-session-column-overflow-menu";
 import {
@@ -33,6 +42,12 @@ import {
 	type AgentSessionColumnLayout,
 } from "./agent-session-column-frame";
 import type { AgentSessionColumnProps } from "./agent-session-column-types";
+import {
+	AGENT_SESSION_DECK_END_SPACE_PX,
+	AGENT_SESSION_DECK_FLAT,
+	AGENT_SESSION_DECK_STACKED,
+} from "./deck/deck-model";
+import { useAgentSessionDeck } from "./deck/use-agent-session-deck";
 import { useAgentSessionColumnFilter } from "./use-agent-session-column-filter";
 import { useAgentSessionColumnHidden } from "./use-agent-session-column-hidden";
 import { useUntrackedSelection } from "./use-untracked-selection";
@@ -226,7 +241,8 @@ const HEAD_COUNT_MORPH: TextMorphConfig = {
 /** Matches `bg-surface` so edge fades dissolve into the plane. */
 const AGENT_SESSION_PLANE_FADE_COLOR = "var(--color-surface)";
 
-const AGENT_SESSION_PLANE_FADE_SIZE = "3rem";
+const AGENT_SESSION_PLANE_TOP_FADE_SIZE = "3rem";
+const AGENT_SESSION_PLANE_BOTTOM_FADE_SIZE = `${AGENT_SESSION_DECK_END_SPACE_PX}px`;
 
 /**
  * A kanban column of agent sessions that never became work items.
@@ -273,6 +289,7 @@ export function AgentSessionColumn({
 	defaultCollapsed = false,
 	emptyLabel = "No untracked sessions",
 	expandedWidthPx = AGENT_SESSION_COLUMN_WIDTH_PX,
+	hasScrollingEffect = false,
 	widthTransitionDisabled = false,
 	items = AGENT_SESSION_ITEMS,
 	listClassName,
@@ -356,11 +373,20 @@ export function AgentSessionColumn({
 	// overflow has to be clipped for the duration of the width transition. Any
 	// longer and it would clip the 4px focus rings on the cards inside.
 	const [isResizing, setIsResizing] = useState(false);
+	const deck = hasScrollingEffect
+		? AGENT_SESSION_DECK_STACKED
+		: AGENT_SESSION_DECK_FLAT;
+	const deckListRef = useAgentSessionDeck(deck);
 	const {
-		ref: listRef,
+		hasScrolledToBottom,
+		ref: overflowListRef,
 		showBottomScrollMask,
 		showTopScrollMask,
 	} = useHasVerticalOverflow<HTMLDivElement>();
+	const listRef = useCallback<RefCallback<HTMLDivElement>>((node) => {
+		overflowListRef(node);
+		deckListRef(node);
+	}, [deckListRef, overflowListRef]);
 	const columnRef = useRef<HTMLElement>(null);
 	const untrackedCount = count ?? visibleItems.length;
 	const showWellFooter = view === "hidden" || hiddenCount > 0;
@@ -657,7 +683,7 @@ export function AgentSessionColumn({
 				) : (
 					<div
 						ref={listRef}
-						className="min-h-0 min-w-0 flex-1 overflow-y-auto has-[:focus-visible]:overflow-visible"
+						className="min-h-0 min-w-0 flex-1 overflow-y-auto has-[:focus-visible]:overflow-visible relative z-0 scrollbar-auto-hide [&[data-scrolling]>ul]:pointer-events-none"
 					>
 						<AgentSession
 							arrivingItemIds={arrivingItemIds}
@@ -675,25 +701,33 @@ export function AgentSessionColumn({
 							selectedItemId={selectedItemId}
 							visibilityLabel={view === "hidden" ? "Unarchive" : "Archive"}
 						/>
+						{hasScrollingEffect ? (
+							<AgentSessionColumnEndState
+								count={sessionCount}
+								visible={view === "active" && hasScrolledToBottom}
+							/>
+						) : null}
 					</div>
 				)}
 				{showTopScrollMask || showBottomScrollMask ? (
 					<div
 						aria-hidden="true"
-						className="pointer-events-none absolute inset-0"
+						className="pointer-events-none absolute inset-0 z-10"
 					>
 						{showTopScrollMask ? (
 							<ScrollMaskEdgeOverlay
 								color={AGENT_SESSION_PLANE_FADE_COLOR}
 								edge="top"
-								fadeSize={AGENT_SESSION_PLANE_FADE_SIZE}
+								fadeSize={AGENT_SESSION_PLANE_TOP_FADE_SIZE}
 							/>
 						) : null}
 						{showBottomScrollMask ? (
 							<ScrollMaskEdgeOverlay
 								color={AGENT_SESSION_PLANE_FADE_COLOR}
 								edge="bottom"
-								fadeSize={AGENT_SESSION_PLANE_FADE_SIZE}
+								fadeSize={hasScrollingEffect
+									? AGENT_SESSION_PLANE_BOTTOM_FADE_SIZE
+									: AGENT_SESSION_PLANE_TOP_FADE_SIZE}
 							/>
 						) : null}
 					</div>

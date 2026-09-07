@@ -255,6 +255,7 @@ export function AgentSessionColumnPanelDemo() {
 							className="flex-1"
 							collapsed={collapsed}
 							expandedWidthPx={AGENT_SESSION_PANEL_DEMO_WIDTH_PX}
+							hasScrollingEffect
 							headerSurface="panel"
 							items={items}
 							listClassName="gap-1 p-1"
