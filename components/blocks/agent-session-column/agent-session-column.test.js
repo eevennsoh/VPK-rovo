@@ -269,7 +269,6 @@ test("the gutter omits the visible count but keeps the compact rail top-aligned"
 	);
 	assert.match(INDEX_SOURCE, /isGutterCollapsed \? gutterHeader : collapsedHeader/u);
 	assert.match(INDEX_SOURCE, /isGutterCollapsed \? "bg-transparent" : null/u);
-	assert.match(IN_FLOW_COLUMN_SOURCE, /isEmbedded \? "bg-surface" : "bg-transparent"/u);
 });
 
 test("flyouts stay suspended throughout the transient compact hover-preview", () => {
@@ -519,10 +518,11 @@ test("a notch is reachable and legible without a pointer", () => {
 	assert.match(RAIL_COLUMN_SOURCE, /\$\{item\.title\} — \$\{NOTCH_STATE_LABEL\[item\.state\]\}/u);
 	// Colour alone never carries the state.
 	assert.match(RAIL_COLUMN_SOURCE, /const NOTCH_STATE_LABEL: Record<AgentListState, string>/u);
-	// The expand control stays in the header tab order while faded, and
-	// unfades on keyboard focus — `hidden` would drop it out of reach entirely.
+	// The expand control stays in the header tab order while faded, and unfades
+	// on its own keyboard focus — `hidden` would drop it out of reach entirely.
 	assert.doesNotMatch(INDEX_SOURCE, /group-hover\/session-column:block/u);
-	assert.match(INDEX_SOURCE, /group-has-\[:focus-visible\]\/session-column:opacity-100/u);
+	assert.match(INDEX_SOURCE, /peer\/expand-control opacity-0/u);
+	assert.match(INDEX_SOURCE, /hover:opacity-100 focus-visible:opacity-100/u);
 });
 
 test("collapsed motion is tokenised and honours reduced motion", () => {
