@@ -210,6 +210,10 @@ test("enclosed chrome puts the collapsed count inside the framed box", () => {
 	assert.match(BOARD_SOURCE, /paddingTop: scrollportPaddingTop/u);
 	assert.match(BOARD_SOURCE, /paddingTop=\{untrackedPaddingTop\}/u);
 	assert.match(BOARD_SOURCE, /\.\.\.chrome\.dropContentPadding,/u);
+	assert.match(
+		BOARD_SOURCE,
+		/collapsed \? \(\s*<div style=\{\{ paddingTop: chrome\.dropContentPadding\?\.paddingTop \}\}>/u,
+	);
 });
 
 test("experimental-v2 reuses the shared collapsed column and threads chrome", () => {
@@ -230,5 +234,16 @@ test("experimental-v2 reuses the shared collapsed column and threads chrome", ()
 	assert.match(V2_BOARD_SOURCE, /paddingTop: scrollportPaddingTop/u);
 	assert.match(V2_BOARD_SOURCE, /paddingTop=\{untrackedPaddingTop\}/u);
 	assert.match(V2_BOARD_SOURCE, /\.\.\.chrome\.dropContentPadding,/u);
+	assert.match(
+		V2_BOARD_SOURCE,
+		/collapsed \? \(\s*<div style=\{\{ paddingTop: chrome\.dropContentPadding\?\.paddingTop \}\}>/u,
+	);
 	assert.doesNotMatch(V2_BOARD_SOURCE, /function CollapsedBoardColumn/u);
+});
+
+test("simple Untracked drop gutter stays on the board and is omitted in List", () => {
+	assert.match(
+		PAGE_SOURCE,
+		/paddingTop=\{isListContent\s*\?\s*undefined\s*:\s*withKanbanDropContentGutter\(0, columnChromeStyles\)\.paddingTop\}/u,
+	);
 });

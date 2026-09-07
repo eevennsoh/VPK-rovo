@@ -490,13 +490,15 @@ function BoardColumnShell({
 			}}
 		>
 			{collapsed ? (
-				<CollapsedBoardColumn
-					chrome={chrome.collapsed}
-					count={count}
-					headerFrame={chrome.headerFrame}
-					onExpand={handleToggleCollapsed}
-					title={title}
-				/>
+				<div style={{ paddingTop: chrome.dropContentPadding?.paddingTop }}>
+					<CollapsedBoardColumn
+						chrome={chrome.collapsed}
+						count={count}
+						headerFrame={chrome.headerFrame}
+						onExpand={handleToggleCollapsed}
+						title={title}
+					/>
+				</div>
 			) : (
 				children(handleToggleCollapsed)
 			)}

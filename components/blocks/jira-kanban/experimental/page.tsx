@@ -884,7 +884,9 @@ export default function ExperimentalJiraKanbanPage({
 								}}
 								className="pb-4 md:pb-5"
 								columnFrame={columnChromeStyles.headerFrame}
-								paddingTop={withKanbanDropContentGutter(0, columnChromeStyles).paddingTop}
+								paddingTop={isListContent
+									? undefined
+									: withKanbanDropContentGutter(0, columnChromeStyles).paddingTop}
 								sessionFlyoutsSuspended={boardSessionDrag.transaction !== null}
 								untrackedDropArmed={boardSessionDrag.transaction?.target?.kind === "untracked"}
 							/>
