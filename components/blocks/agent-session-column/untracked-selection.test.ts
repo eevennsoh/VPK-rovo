@@ -8,7 +8,7 @@ import type { UntrackedWorkTriage } from "../agent-session/untracked-work-triage
 // @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
 import { runBulkAction } from "./untracked-selection-actions.ts";
 // @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
-import { buildUntrackedHeaderModel, NO_SELECTION_MARKS, reduceSelectionMarks, resolveLeadSpotlight, resolveVisibleLeadId, selectEffectiveSelection } from "./untracked-selection.ts";
+import { buildUntrackedHeaderModel, NO_SELECTION_MARKS, reduceSelectionMarks, resolveLeadSpotlight, resolveUntrackedSelectionGesture, resolveVisibleLeadId, selectEffectiveSelection } from "./untracked-selection.ts";
 
 function session(id: string, issueKey?: string): AgentSessionItem {
 	return {
@@ -141,6 +141,44 @@ test("a plain activate replaces the selection and sets the shift anchor", () => 
 	});
 	assert.deepEqual([...replaced.markedIds], ["lw-d"]);
 	assert.equal(replaced.anchorId, "lw-d");
+});
+
+test("plain clicks add and remove rows after the first selection", () => {
+	const first = reduceSelectionMarks(NO_SELECTION_MARKS, {
+		gesture: { additive: false, range: false },
+		id: "lw-a",
+		orderedIds: ORDERED_IDS,
+		type: "activate",
+	});
+	const firstSelection = selectEffectiveSelection(first, ORDERED_IDS.map((id) => session(id)));
+	const addedGesture = resolveUntrackedSelectionGesture(
+		{ additive: false, range: false },
+		firstSelection,
+	);
+	const added = reduceSelectionMarks(first, {
+		gesture: addedGesture,
+		id: "lw-c",
+		orderedIds: ORDERED_IDS,
+		type: "activate",
+	});
+	assert.deepEqual([...added.markedIds], ["lw-a", "lw-c"]);
+
+	const addedSelection = selectEffectiveSelection(added, ORDERED_IDS.map((id) => session(id)));
+	const removedGesture = resolveUntrackedSelectionGesture(
+		{ additive: false, range: false },
+		addedSelection,
+	);
+	const removed = reduceSelectionMarks(added, {
+		gesture: removedGesture,
+		id: "lw-c",
+		orderedIds: ORDERED_IDS,
+		type: "activate",
+	});
+	assert.deepEqual([...removed.markedIds], ["lw-a"]);
+	assert.deepEqual(
+		resolveLeadSpotlight(added, removed, removedGesture, "lw-c"),
+		{ kind: "clear" },
+	);
 });
 
 test("an additive activate toggles without moving the shift anchor", () => {
