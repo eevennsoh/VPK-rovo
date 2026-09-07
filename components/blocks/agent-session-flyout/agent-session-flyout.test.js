@@ -52,6 +52,9 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.doesNotMatch(source, /<span aria-hidden="true"> · <\/span>/u);
 	assert.match(cardShellSource, /flex w-\[320px\] max-w-\[calc\(100vw-48px\)\] flex-col gap-3 pt-3 text-text/u);
 	assert.match(cardShellSource, /border-t border-border-disabled p-3/u);
+	assert.match(cardShellSource, /body\?: ReactNode;/u);
+	assert.match(cardShellSource, /\{body \|\| footer \? \(/u);
+	assert.match(cardShellSource, /\{body \? \(/u);
 	assert.match(
 		cardShellSource,
 		/\{footer \? \(\s*<div className=\{cn\("flex flex-col border-t border-border-disabled p-3", footerClassName\)\}/u,
@@ -63,7 +66,7 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.match(cardSource, /bodyClassName="gap-1"/u);
 	assert.match(
 		cardSource,
-		/body=\{\s*<>[\s\S]*?<JiraSessionDetailsBody hideAgentRow hideSessionRow session=\{session\} \/>[\s\S]*?footer=\{/u,
+		/body=\{\s*artifacts\.length > 0 \? \(\s*<>[\s\S]*?<JiraSessionDetailsBody hideAgentRow hideSessionRow session=\{session\} \/>[\s\S]*?\) : undefined/u,
 	);
 	assert.match(cardSource, /import \{[\s\S]*SmartLink[\s\S]*\} from "@\/components\/blocks\/smart-link";/u);
 	assert.match(

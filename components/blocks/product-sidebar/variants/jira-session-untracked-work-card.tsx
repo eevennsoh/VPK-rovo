@@ -147,8 +147,9 @@ function JiraSessionUntrackedWorkActions({
 
 /**
  * Hover-card suggestion for linking an untracked agent session to a Jira work
- * item. The body is the shared session-details middle layer; the footer
- * contains the link rationale and actions.
+ * item. The body is the shared session-details middle layer plus artifacts, and
+ * is omitted when there are none. The footer contains the link rationale and
+ * actions.
  */
 export function JiraSessionUntrackedWorkCard({
 	onAddAsSubtask,
@@ -180,9 +181,9 @@ export function JiraSessionUntrackedWorkCard({
 		<JiraSessionFlyoutCard
 			aria-labelledby={ariaLabelledBy}
 			body={
-				<>
-					<JiraSessionDetailsBody hideAgentRow hideSessionRow session={session} />
-					{artifacts.length > 0 ? (
+				artifacts.length > 0 ? (
+					<>
+						<JiraSessionDetailsBody hideAgentRow hideSessionRow session={session} />
 						<div className="flex flex-col gap-2">
 							<h3 className="text-xs leading-4 font-medium text-text" id={artifactsId}>
 								Artifacts
@@ -195,8 +196,8 @@ export function JiraSessionUntrackedWorkCard({
 								))}
 							</ul>
 						</div>
-					) : null}
-				</>
+					</>
+				) : undefined
 			}
 			bodyClassName="gap-1"
 			footer={
