@@ -122,6 +122,29 @@ export function JiraDropzone({
 	);
 }
 
+type JiraDropzoneOpenSurfaceProps = Readonly<{
+	bounce: FlightProfile["impact"];
+	bouncePlayback: ReturnType<typeof resolveJiraDropzoneBounce>;
+	channel: JiraDropzoneChannel | undefined;
+	copy: ReturnType<typeof resolveJiraDropzoneCopy>;
+	drop: ReturnType<typeof resolveJiraDropzoneDrop>;
+	expanded: boolean;
+	exclusiveWinner: boolean;
+	flyPath: ReturnType<typeof arc>;
+	label: string;
+	magnet: ReturnType<typeof useMagneticProximity>;
+	onLanded: (key: SessionFlight["key"]) => void;
+	phase: ReturnType<typeof resolveJiraDropzonePhase>;
+	pinMagnet: boolean;
+	profile: FlightProfile;
+	proximity: MagneticPointerRelation;
+	receiving: boolean;
+	resolveLandingPoint: () => ViewportPoint | null;
+	selected: boolean;
+	targetRef: RefObject<HTMLDivElement | null>;
+	title: string;
+}>;
+
 function JiraDropzoneOpenSurface({
 	bounce,
 	bouncePlayback,
@@ -143,96 +166,29 @@ function JiraDropzoneOpenSurface({
 	selected,
 	targetRef,
 	title,
-}: Readonly<{
-	bounce: FlightProfile["impact"];
-	bouncePlayback: ReturnType<typeof resolveJiraDropzoneBounce>;
-	channel: JiraDropzoneChannel | undefined;
-	copy: ReturnType<typeof resolveJiraDropzoneCopy>;
-	drop: ReturnType<typeof resolveJiraDropzoneDrop>;
-	expanded: boolean;
-	exclusiveWinner: boolean;
-	flyPath: ReturnType<typeof arc>;
-	label: string;
-	magnet: ReturnType<typeof useMagneticProximity>;
-	onLanded: (key: SessionFlight["key"]) => void;
-	phase: ReturnType<typeof resolveJiraDropzonePhase>;
-	pinMagnet: boolean;
-	profile: FlightProfile;
-	proximity: MagneticPointerRelation;
-	receiving: boolean;
-	resolveLandingPoint: () => ViewportPoint | null;
-	selected: boolean;
-	targetRef: RefObject<HTMLDivElement | null>;
-	title: string;
-}>): ReactElement {
+}: JiraDropzoneOpenSurfaceProps): ReactElement {
 	const impacts = channel?.impacts ?? 0;
 
 	return (
 		<>
-			<motion.div
-				className="w-full will-change-transform"
-				style={{
-					x: pinMagnet ? 0 : magnet.x,
-					y: pinMagnet ? 0 : magnet.y,
-				}}
-			>
-				<div
-					aria-label={`${label} in ${title}${selected ? ", selected drop target" : ""}`}
-					className="relative w-full overflow-visible"
-					data-armed={selected || undefined}
-					data-board-agent-session-column-title={title}
-					data-board-agent-session-create-work-item-drop-zone={title}
-					data-board-agent-session-drop-zone="create"
-					data-exclusive-winner={exclusiveWinner || undefined}
-					data-jira-dropzone-collapsing={phase === "resting" || undefined}
-					data-jira-dropzone-copy={copy}
-					data-jira-dropzone-bounce={bouncePlayback}
-					data-jira-dropzone-drop={drop}
-					data-jira-dropzone-impacts={String(impacts)}
-					data-proximity={proximity}
-					data-receiving={receiving || undefined}
-					ref={targetRef}
-					role="img"
-				>
-					<motion.div
-						animate={{ x: 0, y: 0 }}
-						className={cn(
-							"flex w-full select-none items-center justify-center px-3 text-center will-change-transform",
-							expanded ? "h-16 text-sm leading-5" : "h-6 text-xs leading-4",
-							phase === "resting" ? "h-6 text-xs leading-4" : null,
-							JIRA_DROPZONE_WELL_CHROME_CLASS,
-							"transition-[height,background-color] duration-normal ease-out-practical motion-reduce:transition-none [transition-property:height,background-color,border-color]",
-							selected
-								? "border-border-selected bg-bg-selected text-text-selected"
-								: "border-border bg-surface text-text-subtlest",
-						)}
-						initial={bounce
-							? { x: bounce.impulseXPx, y: bounce.impulseYPx }
-							: { x: 0, y: 0 }}
-						key={impacts}
-						transition={bounce
-							? { damping: bounce.damping, stiffness: bounce.stiffness, type: "spring" }
-							: { duration: 0 }}
-					>
-						{copy === "label" ? (
-							<motion.span
-								className="inline-block will-change-transform"
-								style={{
-									x: pinMagnet ? 0 : magnet.labelX,
-									y: pinMagnet ? 0 : magnet.labelY,
-								}}
-							>
-								{label}
-							</motion.span>
-						) : (
-							<Icon
-								className="text-icon-subtlest"
-								render={<AddIcon label="" size="small" />}
-							/>
-						)}
-					</motion.div>
-				</div>
-			</motion.div>
+			<JiraDropzoneWell
+				bounce={bounce}
+				bouncePlayback={bouncePlayback}
+				copy={copy}
+				drop={drop}
+				expanded={expanded}
+				exclusiveWinner={exclusiveWinner}
+				impacts={impacts}
+				label={label}
+				magnet={magnet}
+				phase={phase}
+				pinMagnet={pinMagnet}
+				proximity={proximity}
+				receiving={receiving}
+				selected={selected}
+				targetRef={targetRef}
+				title={title}
+			/>
 			{channel ? channel.flights.map((flight) => (
 				<JiraDropzoneFlight
 					flyPath={flyPath}
@@ -244,5 +200,165 @@ function JiraDropzoneOpenSurface({
 				/>
 			)) : null}
 		</>
+	);
+}
+
+type JiraDropzoneWellProps = Pick<
+	JiraDropzoneOpenSurfaceProps,
+	| "bouncePlayback"
+	| "copy"
+	| "drop"
+	| "expanded"
+	| "exclusiveWinner"
+	| "label"
+	| "magnet"
+	| "phase"
+	| "pinMagnet"
+	| "proximity"
+	| "receiving"
+	| "selected"
+	| "targetRef"
+	| "title"
+> & {
+	bounce: FlightProfile["impact"];
+	impacts: number;
+};
+
+function JiraDropzoneWell({
+	bounce,
+	bouncePlayback,
+	copy,
+	drop,
+	expanded,
+	exclusiveWinner,
+	impacts,
+	label,
+	magnet,
+	phase,
+	pinMagnet,
+	proximity,
+	receiving,
+	selected,
+	targetRef,
+	title,
+}: JiraDropzoneWellProps): ReactElement {
+	return (
+		<motion.div
+			className="w-full will-change-transform"
+			style={{
+				x: pinMagnet ? 0 : magnet.x,
+				y: pinMagnet ? 0 : magnet.y,
+			}}
+		>
+			<div
+				aria-label={`${label} in ${title}${selected ? ", selected drop target" : ""}`}
+				className="relative w-full overflow-visible"
+				data-armed={selected || undefined}
+				data-board-agent-session-column-title={title}
+				data-board-agent-session-create-work-item-drop-zone={title}
+				data-board-agent-session-drop-zone="create"
+				data-exclusive-winner={exclusiveWinner || undefined}
+				data-jira-dropzone-collapsing={phase === "resting" || undefined}
+				data-jira-dropzone-copy={copy}
+				data-jira-dropzone-bounce={bouncePlayback}
+				data-jira-dropzone-drop={drop}
+				data-jira-dropzone-impacts={String(impacts)}
+				data-proximity={proximity}
+				data-receiving={receiving || undefined}
+				ref={targetRef}
+				role="img"
+			>
+				<JiraDropzoneWellChrome
+					bounce={bounce}
+					copy={copy}
+					expanded={expanded}
+					impacts={impacts}
+					label={label}
+					magnet={magnet}
+					phase={phase}
+					pinMagnet={pinMagnet}
+					selected={selected}
+				/>
+			</div>
+		</motion.div>
+	);
+}
+
+type JiraDropzoneWellChromeProps = Pick<
+	JiraDropzoneWellProps,
+	| "bounce"
+	| "copy"
+	| "expanded"
+	| "impacts"
+	| "label"
+	| "magnet"
+	| "phase"
+	| "pinMagnet"
+	| "selected"
+>;
+
+function JiraDropzoneWellChrome({
+	bounce,
+	copy,
+	expanded,
+	impacts,
+	label,
+	magnet,
+	phase,
+	pinMagnet,
+	selected,
+}: JiraDropzoneWellChromeProps): ReactElement {
+	return (
+		<motion.div
+			animate={{ x: 0, y: 0 }}
+			className={cn(
+				"flex w-full select-none items-center justify-center px-3 text-center will-change-transform",
+				expanded ? "h-16 text-sm leading-5" : "h-6 text-xs leading-4",
+				phase === "resting" ? "h-6 text-xs leading-4" : null,
+				JIRA_DROPZONE_WELL_CHROME_CLASS,
+				"transition-[height,background-color] duration-normal ease-out-practical motion-reduce:transition-none [transition-property:height,background-color,border-color]",
+				selected
+					? "border-border-selected bg-bg-selected text-text-selected"
+					: "border-border bg-surface text-text-subtlest",
+			)}
+			initial={bounce
+				? { x: bounce.impulseXPx, y: bounce.impulseYPx }
+				: { x: 0, y: 0 }}
+			key={impacts}
+			transition={bounce
+				? { damping: bounce.damping, stiffness: bounce.stiffness, type: "spring" }
+				: { duration: 0 }}
+		>
+			<JiraDropzoneWellCopy
+				copy={copy}
+				label={label}
+				magnet={magnet}
+				pinMagnet={pinMagnet}
+			/>
+		</motion.div>
+	);
+}
+
+function JiraDropzoneWellCopy({
+	copy,
+	label,
+	magnet,
+	pinMagnet,
+}: Pick<JiraDropzoneWellProps, "copy" | "label" | "magnet" | "pinMagnet">): ReactElement {
+	return copy === "label" ? (
+		<motion.span
+			className="inline-block will-change-transform"
+			style={{
+				x: pinMagnet ? 0 : magnet.labelX,
+				y: pinMagnet ? 0 : magnet.labelY,
+			}}
+		>
+			{label}
+		</motion.span>
+	) : (
+		<Icon
+			className="text-icon-subtlest"
+			render={<AddIcon label="" size="small" />}
+		/>
 	);
 }
