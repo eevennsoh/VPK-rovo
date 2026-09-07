@@ -215,7 +215,7 @@ test("unchecking Untracked exits board-adjacent sessions through the issue prese
 	assert.doesNotMatch(BOARD_SOURCE, /data-agent-session-column[\s\S]*showUntracked/u);
 });
 
-test("column session hover previews its suggested Jira issue in blue without scrolling or spotlighting", () => {
+test("column session hover previews its suggested Jira issue at the grey hover rung without scrolling or spotlighting", () => {
 	const boardWithoutComments = withoutComments(BOARD_SOURCE);
 	const hoverHandlerStart = boardWithoutComments.indexOf("const handleColumnSessionHover");
 	const hoverHandlerBody = boardWithoutComments.slice(
@@ -233,7 +233,7 @@ test("column session hover previews its suggested Jira issue in blue without scr
 	assert.match(BOARD_SOURCE, /proximityHighlightedWorkItemKey\?: string \| null;/u);
 	assert.match(BOARD_SOURCE, /const hostHoveredIssueKey = proximityHighlightedWorkItemKey === undefined/u);
 	assert.match(CARD_SOURCE, /agentSessionTargetPreview=\{\{ highlighted: agentSessionTargetHighlighted \}\}/u);
-	assert.match(JIRA_ISSUE_SOURCE, /agentSessionTargetHighlighted \? "bg-bg-accent-blue-subtlest" : "bg-bg-neutral"/u);
+	assert.match(JIRA_ISSUE_SOURCE, /agentSessionTargetHighlighted \? "bg-bg-neutral-hovered" : "bg-bg-neutral"/u);
 	// Hover previews the relationship with color only. Only a click owns focus,
 	// scroll, and the `opacity-40` veil, so the hover handler stays out of all three.
 	assert.doesNotMatch(hoverHandlerBody, /setFocusedIssueKey/u);
@@ -282,7 +282,14 @@ test("column card click scrolls the related issue and applies the blue-subtlest 
 		/const handleSessionSelectionChange = \(itemId: string \| null\) => \{\s*if \(itemId === null\) \{\s*setFocusedIssueKey\(null\);/u,
 	);
 	assert.match(BOARD_SOURCE, /data-issue-key=\{cardCode\}/u);
-	assert.match(BOARD_SOURCE, /spotlightIssueKey === card\.code && "bg-bg-accent-blue-subtlest"/u);
+	assert.match(
+		BOARD_SOURCE,
+		/spotlightIssueKey === card\.code && "bg-bg-accent-blue-subtlest \[&_\[data-slot=jira-issue-agent-backdrop\]\]:bg-bg-accent-blue-subtlest"/u,
+	);
+	assert.match(
+		BOARD_SOURCE,
+		/agentSessionTargetHighlighted=\{hoveredIssueKey === card\.code && spotlightIssueKey !== card\.code\}/u,
+	);
 	assert.match(
 		BOARD_SOURCE,
 		/spotlightIssueKey !== null && spotlightIssueKey !== card\.code && "opacity-40"/u,
