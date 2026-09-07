@@ -960,7 +960,7 @@ test("the expanded header filter popover covers owner, agent, date, artifacts, a
 	assert.match(FILTER_SECTIONS_SOURCE, /className="rich-text-command-menu-heading"/u);
 	assert.match(FILTER_SECTIONS_SOURCE, /role="presentation"/u);
 	assert.doesNotMatch(FILTER_SECTIONS_SOURCE, /uppercase leading-4/u);
-	assert.match(FILTER_MENU_SOURCE, /w-max min-w-80 max-w-\[calc\(100vw-32px\)\] gap-0 rounded-xl p-1/u);
+	assert.match(FILTER_MENU_SOURCE, /w-max min-w-\[min\(20rem,calc\(100vw-32px\)\)\] max-w-\[calc\(100vw-32px\)\] gap-0 rounded-xl p-1/u);
 	assert.doesNotMatch(FILTER_MENU_SOURCE, /className="w-80 max-w-\[calc\(100vw-32px\)\] p-3"/u);
 	assert.doesNotMatch(FILTER_SECTIONS_SOURCE, /label="Yes"/u);
 	assert.doesNotMatch(FILTER_SECTIONS_SOURCE, /label="No"/u);
@@ -985,8 +985,9 @@ test("the expanded header filter popover covers owner, agent, date, artifacts, a
 	assert.match(FILTER_SECTIONS_SOURCE, /<PopoverTitle className="sr-only">Custom date range/u);
 	assert.match(FILTER_MENU_SOURCE, /customCalendarOpen/u);
 	assert.match(FILTER_MENU_SOURCE, /shouldKeepAgentSessionFilterMenuOpen/u);
+	assert.match(FILTER_MENU_SOURCE, /focusOutStayedInside: didFilterFocusOutStayInside\(eventDetails\.event\)/u);
 	assert.match(FILTER_MENU_SOURCE, /eventDetails\.cancel\(\)/u);
-	assert.match(FILTER_SECTIONS_SOURCE, /flex flex-nowrap gap-1\.5 pb-2/u);
+	assert.match(FILTER_SECTIONS_SOURCE, /flex flex-wrap gap-1\.5 pb-2 min-\[22rem\]:flex-nowrap/u);
 	assert.match(FILTER_SECTIONS_SOURCE, /onCalendarOpenChange/u);
 	assert.doesNotMatch(FILTER_MENU_SOURCE, /overflow-y-auto/u);
 	assert.doesNotMatch(FILTER_MENU_SOURCE, /max-h-\[min\(36rem/u);

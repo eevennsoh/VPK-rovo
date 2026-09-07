@@ -53,10 +53,19 @@ test("the filter menu stays open for in-menu clicks and nested calendar presses"
 	assert.equal(
 		shouldKeepAgentSessionFilterMenuOpen({
 			customCalendarOpen: false,
+			focusOutStayedInside: true,
 			nextOpen: false,
 			reason: "focus-out",
 		}),
 		true,
+	);
+	assert.equal(
+		shouldKeepAgentSessionFilterMenuOpen({
+			customCalendarOpen: false,
+			nextOpen: false,
+			reason: "focus-out",
+		}),
+		false,
 	);
 	assert.equal(
 		shouldKeepAgentSessionFilterMenuOpen({

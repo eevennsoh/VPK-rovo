@@ -241,7 +241,7 @@ export function DaysFilterSection({
 
 	return (
 		<FilterSection title="Date/time range">
-			<div className="flex flex-nowrap gap-1.5 pb-2">
+			<div className="flex flex-wrap gap-1.5 pb-2 min-[22rem]:flex-nowrap">
 				{AGENT_SESSION_FILTER_DAYS_PRESETS.filter((preset) => preset !== "custom").map((preset) => (
 					<FilterChoice
 						ariaLabel={`Date/time range: ${DAYS_PRESET_LABELS[preset]}`}

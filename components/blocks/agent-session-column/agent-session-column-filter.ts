@@ -73,16 +73,19 @@ export const EMPTY_AGENT_SESSION_COLUMN_FILTER_DAYS: AgentSessionColumnFilterDay
 
 /**
  * The filter popover is a multi-select surface. Close on Escape, the trigger,
- * or a true outside press; keep it open for in-menu clicks (including the
- * focus-out Base UI emits when option buttons re-render) and for outside
+ * a true outside press, or a genuine focus-out (Tab past the last control).
+ * Keep it open for in-menu clicks — including the focus-out Base UI emits
+ * when option buttons remount with no related target — and for outside
  * presses that belong to the nested custom-range calendar portal.
  */
 export function shouldKeepAgentSessionFilterMenuOpen({
 	customCalendarOpen,
+	focusOutStayedInside = false,
 	nextOpen,
 	reason,
 }: Readonly<{
 	customCalendarOpen: boolean;
+	focusOutStayedInside?: boolean;
 	nextOpen: boolean;
 	reason: string | undefined;
 }>): boolean {
@@ -96,6 +99,8 @@ export function shouldKeepAgentSessionFilterMenuOpen({
 			return false;
 		case "outside-press":
 			return customCalendarOpen;
+		case "focus-out":
+			return focusOutStayedInside;
 		default:
 			return true;
 	}
