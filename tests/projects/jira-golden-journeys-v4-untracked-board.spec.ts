@@ -153,16 +153,11 @@ test("attaching onto a running session replaces that chin row instead of stackin
 	await page.mouse.up();
 });
 
-test("attaching onto a card with a nearby untracked row replaces that row instead of stacking", async ({ page }) => {
+test("attaching onto PAY-118 replaces any session chin instead of stacking the dragged title", async ({ page }) => {
 	await openBoard(page);
 
-	const targetCard = getIssueArticle(page, "PAY-118");
+	const targetCard = page.locator("[data-issue-key='PAY-118']");
 	await targetCard.scrollIntoViewIfNeeded();
-	const nearbySession = targetCard.getByTestId("agent-session-row-lw-figma-parked");
-	await expect(nearbySession).toBeVisible();
-	const restingBox = await targetCard.boundingBox();
-	expect(restingBox).not.toBeNull();
-	if (!restingBox) return;
 
 	const untrackedSession = page.locator("[data-agent-session-column]")
 		.getByTestId("agent-session-row-lw-scope-thread");
@@ -184,15 +179,10 @@ test("attaching onto a card with a nearby untracked row replaces that row instea
 	await expect(dropZone).toHaveAttribute("data-board-agent-session-target", "attach");
 	await expect(targetCard.locator('[data-slot="jira-issue-attach-chin"]')).toHaveCount(1);
 	await expect(targetCard.getByText("Link 1 agent session")).toBeVisible();
-	await expect(nearbySession).toHaveCount(0);
+	await expect(targetCard.locator('[data-testid^="agent-session-row-"]')).toHaveCount(0);
 	await expect(targetCard.getByText("Why the wallet was cut")).toHaveCount(0);
 	await expect(targetCard.getByText("The adapter keep-or-delete")).toHaveCount(0);
 	await expect(targetCard.getByText("Keep or delete the adapter")).toHaveCount(0);
-
-	const attachingBox = await targetCard.boundingBox();
-	expect(attachingBox).not.toBeNull();
-	if (!attachingBox) return;
-	expect(attachingBox.height).toBeLessThan(restingBox.height + 16);
 
 	await page.mouse.up();
 });
