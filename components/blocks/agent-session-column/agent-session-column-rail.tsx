@@ -483,6 +483,7 @@ function AgentSessionNotch({
 					{(bind) => (
 						<JiraSessionFlyoutTrigger
 							closeDelay={160}
+							delay={0}
 							handle={flyoutHandle}
 							render={<div className="w-full" />}
 							session={flyoutSession}
