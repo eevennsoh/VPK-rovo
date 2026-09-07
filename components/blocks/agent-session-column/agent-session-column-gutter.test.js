@@ -75,12 +75,33 @@ test("the gutter omits the visible count but keeps the compact rail top-aligned"
 	assert.match(INDEX_SOURCE, /isGutterCollapsed \? "bg-transparent" : null/u);
 });
 
-test("flyouts stay suspended throughout the transient compact hover-preview", () => {
+test("flyouts stay suspended in the gutter and open once the compact rail is embedded", () => {
 	assert.doesNotMatch(IN_FLOW_COLUMN_SOURCE, /isEmbeddingTransition/u);
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
-		/JiraSessionFlyoutSuspensionProvider[\s\S]{0,120}?suspended=\{sessionFlyoutsSuspended \|\| \(isHovered && !isPersistentExpanded\)\}/u,
+		/JiraSessionFlyoutSuspensionProvider[\s\S]{0,120}?suspended=\{sessionFlyoutsSuspended \|\| !isEmbedded\}/u,
 	);
+	assert.doesNotMatch(
+		IN_FLOW_COLUMN_SOURCE,
+		/isHovered && !isPersistentExpanded/u,
+	);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsedPresentation=\{isEmbedded \? "column" : "gutter"\}/u);
+});
+
+test("gutter rest caps the rail; embedded column presentation shows every notch", () => {
+	assert.match(
+		INDEX_SOURCE,
+		/maxVisibleItems=\{collapsedPresentation === "gutter"\s*\? AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS\s*: undefined\}/u,
+	);
+});
+
+test("gutter rest can flash +N; an embedded rail increments the session total", () => {
+	assert.match(
+		INDEX_SOURCE,
+		/const showCollapsedUnreadIncrement = collapsedPresentation === "gutter" && newCount > 0/u,
+	);
+	assert.match(INDEX_SOURCE, /text=\{collapsedCountText\}/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsedPresentation=\{isEmbedded \? "column" : "gutter"\}/u);
 });
 
 test("the gutter preview moves into the old in-flow inset with Motion", () => {
