@@ -82,6 +82,8 @@ export interface JiraSessionFlyoutSurfaceProps {
 	content?: JiraSessionFlyoutContent;
 	/** Captured sessions hide Link / Create / subtask so capture cannot run twice. */
 	capturedSessionIds?: ReadonlySet<string>;
+	/** Archives the session from the untracked-work flyout. Omit to expose the action as unavailable. */
+	onArchiveSession?: (session: JiraSidebarSessionItem) => void;
 	/** Adds the session below the suggested work item. Omit to expose the menu option as unavailable. */
 	onAddAsSubtask?: (session: JiraSidebarSessionItem, workItemKey: string) => void;
 	/** Creates a work item from the session. Omit to expose the action as unavailable. */
@@ -562,6 +564,7 @@ export function JiraSessionFlyoutBody({
 function JiraSessionFlyoutPayload({
 	capturedSessionIds,
 	content,
+	onArchiveSession,
 	onAddAsSubtask,
 	onCreateWorkItem,
 	onLinkWorkItem,
@@ -570,7 +573,12 @@ function JiraSessionFlyoutPayload({
 }: Readonly<
 	Pick<
 		JiraSessionFlyoutSurfaceProps,
-		"capturedSessionIds" | "onAddAsSubtask" | "onCreateWorkItem" | "onLinkWorkItem" | "onSubmitPrompt"
+		| "capturedSessionIds"
+		| "onArchiveSession"
+		| "onAddAsSubtask"
+		| "onCreateWorkItem"
+		| "onLinkWorkItem"
+		| "onSubmitPrompt"
 	> & {
 		content: JiraSessionFlyoutContent;
 		session: JiraSidebarSessionItem;
@@ -600,6 +608,11 @@ function JiraSessionFlyoutPayload({
 		case "untracked-work":
 			return (
 				<JiraSessionUntrackedWorkCard
+					onArchiveSession={
+						captureLocked || onArchiveSession === undefined
+							? undefined
+							: () => onArchiveSession(session)
+					}
 					onAddAsSubtask={
 						captureLocked || onAddAsSubtask === undefined
 							? undefined
@@ -640,6 +653,7 @@ export function JiraSessionFlyoutSurface({
 	capturedSessionIds,
 	content = "details",
 	handle,
+	onArchiveSession,
 	onAddAsSubtask,
 	onCreateWorkItem,
 	onLinkWorkItem,
@@ -670,6 +684,7 @@ export function JiraSessionFlyoutSurface({
 							<JiraSessionFlyoutPayload
 								capturedSessionIds={capturedSessionIds}
 								content={content}
+								onArchiveSession={onArchiveSession}
 								onAddAsSubtask={onAddAsSubtask}
 								onCreateWorkItem={onCreateWorkItem}
 								onLinkWorkItem={onLinkWorkItem}

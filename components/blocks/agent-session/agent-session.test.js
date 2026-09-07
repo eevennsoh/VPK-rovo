@@ -684,6 +684,7 @@ test("the untracked-work flyout offers the first candidate key", () => {
 	assert.match(DATA_SOURCE, /issueStatus: "In review"/u);
 	assert.match(TYPES_SOURCE, /getSuggestedWorkItemKeys\?: \(item: AgentSessionItem\) => readonly string\[\] \| undefined;/u);
 	assert.match(TYPES_SOURCE, /onLinkWorkItem\?: \(item: AgentSessionItem, workItemKey\?: string\) => void;/u);
+	assert.match(TYPES_SOURCE, /onArchiveSession\?: \(item: AgentSessionItem\) => void;/u);
 	assert.match(WORK_ITEM_SOURCE, /export function resolveAgentSessionWorkItemKey/u);
 	assert.match(WORK_ITEM_SOURCE, /const firstKey = getSuggestedWorkItemKeys\?\.\(item\)\?\.\[0\];/u);
 	assert.match(INDEX_SOURCE, /onLinkWorkItem=\{flyoutActions\.onLinkWorkItem\}/u);
@@ -694,6 +695,7 @@ test("the untracked-work flyout offers the first candidate key", () => {
 		WORK_ITEM_SOURCE,
 		/actions\.onLinkWorkItem\?\.\(item, workItemKey\.length > 0 \? workItemKey : undefined\)/u,
 	);
+	assert.match(WORK_ITEM_SOURCE, /actions\.onArchiveSession\?\.\(item\)/u);
 	assert.match(WORK_ITEM_SOURCE, /actions\.onCreateWorkItem\?\.\(item\)/u);
 	assert.match(WORK_ITEM_SOURCE, /actions\.onSubtasks\?\.\(item\)/u);
 	assert.match(WORK_ITEM_SOURCE, /if \(isCaptured\(session\)\) \{\s*return;/u);
@@ -705,6 +707,7 @@ test("the untracked-work flyout offers the first candidate key", () => {
 	assert.match(FLYOUT_SOURCE, /capturedSessionIds\?: ReadonlySet<string>;/u);
 	assert.match(UNTRACKED_CARD_SOURCE, /const linkLabel = hasIssueKey \? `Link to \$\{issueKey\}` : "Link work item";/u);
 	assert.match(FLYOUT_SOURCE, /captureLocked \|\| onLinkWorkItem === undefined/u);
+	assert.match(INDEX_SOURCE, /onArchiveSession=\{flyoutActions\.onArchiveSession\}/u);
 });
 
 test("Pulse's uncaptured column renders sessions through this block", () => {
