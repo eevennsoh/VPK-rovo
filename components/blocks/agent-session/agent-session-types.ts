@@ -124,6 +124,8 @@ export interface AgentSessionProps {
 	 * the menu option as unavailable.
 	 */
 	onSubtasks?: (item: AgentSessionItem) => void;
+	/** Archives a session from the untracked-work flyout. Omit to expose the action as unavailable. */
+	onArchiveSession?: (item: AgentSessionItem) => void;
 	/** Overrides the shell command the hover Resume control copies. */
 	getResumeCommand?: (item: AgentSessionItem) => string | undefined;
 	/**
