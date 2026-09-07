@@ -718,7 +718,8 @@ export function JiraList({
 									dragOverIndex,
 								);
 								const hoverInsertionPosition = (
-									hoveredRowTarget?.issueKey === row.issueKey
+									onCreate
+									&& hoveredRowTarget?.issueKey === row.issueKey
 									&& hoveredRowTarget.zone !== "drag"
 								)
 									? hoveredRowTarget.zone

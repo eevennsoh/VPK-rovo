@@ -553,6 +553,7 @@ test("JiraList exposes keyboard-accessible create controls at both row boundarie
 	assert.match(SOURCE, /onFocus=/u);
 	assert.match(SOURCE, /focus-visible:opacity-100/u);
 	assert.match(SOURCE, /data-insertion-line=/u);
+	assert.match(SOURCE, /onCreate\s*&&\s*hoveredRowTarget\?\.issueKey === row\.issueKey/u);
 	assert.match(SOURCE, /hoverInsertionPosition \?\? dragInsertionPosition/u);
 });
 
