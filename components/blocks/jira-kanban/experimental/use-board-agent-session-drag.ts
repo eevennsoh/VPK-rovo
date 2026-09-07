@@ -35,8 +35,42 @@ import {
 	type SessionTransferLookups,
 	type SessionTransferPorts,
 } from "./lib/session-transfer-plan";
+import {
+	toBoardAgentSessionLinkFlash,
+	type BoardAgentSessionLinkFlash,
+} from "./lib/session-fusion-overlay-state";
 
 const SESSION_UNLINK_DROP_HALO_PX = 24;
+
+/**
+ * The card's agent shell rect, so the fusion field knows what shape it is
+ * becoming. The shell is the whole card surface — the grey backdrop, the card
+ * body and any chin rows — which is what the session is actually being absorbed
+ * into. Targeting the 24px chin instead made the goo morph into a strip floating
+ * at the card's lip rather than into the card itself.
+ *
+ * Falls back to the drop-zone bounds when the shell cannot be measured, which is
+ * the same rect a beat before the shell mounts.
+ */
+function resolveIssueDockRect(
+	node: HTMLElement,
+	bounds: BoardAgentSessionDropBounds,
+): BoardAgentSessionDropBounds {
+	const shell = node
+		.closest<HTMLElement>("[data-issue-key]")
+		?.querySelector<HTMLElement>('[data-slot="jira-issue-agent-shell"]');
+	if (!shell) {
+		return bounds;
+	}
+
+	const rect = shell.getBoundingClientRect();
+	if (rect.width <= 0 || rect.height <= 0) {
+		return bounds;
+	}
+
+	return { bottom: rect.bottom, left: rect.left, right: rect.right, top: rect.top };
+}
+
 
 function clipBoundsToScrollport(
 	node: HTMLElement,
@@ -106,15 +140,28 @@ function collectDropZones(root: HTMLElement | null): BoardAgentSessionDropZone[]
 			return zone ? [zone] : [];
 		}
 		if (!issueKey || (kind !== "issue" && kind !== "unlink")) return [];
-		const halo = kind === "unlink" ? SESSION_UNLINK_DROP_HALO_PX : 0;
+		if (kind === "unlink") {
+			return [{
+				bounds: {
+					bottom: rect.bottom + SESSION_UNLINK_DROP_HALO_PX,
+					left: rect.left - SESSION_UNLINK_DROP_HALO_PX,
+					right: rect.right + SESSION_UNLINK_DROP_HALO_PX,
+					top: rect.top - SESSION_UNLINK_DROP_HALO_PX,
+				},
+				cardCode: issueKey,
+				kind,
+			}];
+		}
+		const bounds = {
+			bottom: rect.bottom,
+			left: rect.left,
+			right: rect.right,
+			top: rect.top,
+		};
 		return [{
-			bounds: {
-				bottom: rect.bottom + halo,
-				left: rect.left - halo,
-				right: rect.right + halo,
-				top: rect.top - halo,
-			},
+			bounds,
 			cardCode: issueKey,
+			dockRect: resolveIssueDockRect(node, bounds),
 			kind,
 		}];
 	});
@@ -165,6 +212,8 @@ export function useBoardAgentSessionDrag({
 	const [dragState, setDragState] = useState<JiraIssueAgentSessionDragState>(
 		JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE,
 	);
+	const [linkFlash, setLinkFlash] = useState<BoardAgentSessionLinkFlash | null>(null);
+	const linkFlashTokenRef = useRef(0);
 	const ports: SessionTransferPorts = {
 		onCreate,
 		onLink,
@@ -221,6 +270,8 @@ export function useBoardAgentSessionDrag({
 			transactionRef.current = next;
 			setTransaction(next);
 			setDragState(state);
+			// A fresh gesture clears the acknowledgement the previous drop left behind.
+			setLinkFlash(null);
 			return;
 		}
 
@@ -234,6 +285,15 @@ export function useBoardAgentSessionDrag({
 				)
 				: current;
 			commitDrop(finalTransaction);
+			linkFlashTokenRef.current += 1;
+			setLinkFlash(toBoardAgentSessionLinkFlash({
+				members: finalTransaction.cohort.members,
+				proximity: finalTransaction.proximity,
+				targetCardCode: finalTransaction.target?.kind === "attach"
+					? finalTransaction.target.cardCode
+					: null,
+				token: linkFlashTokenRef.current,
+			}));
 		}
 		transactionRef.current = null;
 		setTransaction(null);
@@ -268,6 +328,8 @@ export function useBoardAgentSessionDrag({
 			&& target.cardCode === card.code
 			? target.kind
 			: null;
+		const proximity = transaction?.proximity;
+		const attachNearness = proximity?.cardCode === card.code ? proximity.nearness : 0;
 		const attachedBinding = createBinding(
 			{ kind: "attached", sourceCardCode: card.code },
 			(session) => {
@@ -276,6 +338,7 @@ export function useBoardAgentSessionDrag({
 		);
 		const control: JiraIssueAgentSessionDragControl | undefined = enablement.attached
 			? {
+				attachNearness,
 				binding: attachedBinding,
 				dropTarget,
 				sourceActive,
@@ -284,6 +347,7 @@ export function useBoardAgentSessionDrag({
 			: undefined;
 
 		return {
+			attachNearness,
 			control,
 			detachedBinding: enablement.transferable
 				? createBinding({ kind: "detached", sourceCardCode: card.code })
@@ -304,6 +368,7 @@ export function useBoardAgentSessionDrag({
 		draggingIds,
 		dragState,
 		enablement,
+		linkFlash,
 		getCardDragState,
 		listDropIntent: onLink || onListCreate
 			? toListSessionDropIntent(transaction?.target ?? null)

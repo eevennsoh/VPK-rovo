@@ -292,8 +292,7 @@ export function AgentSessionCard({
 							aria-pressed={articleRole === "button" ? showSelectedFill : undefined}
 							aria-roledescription={bind ? "Draggable agent session" : undefined}
 							className={cn(
-						"group/agent-row relative flex w-full rounded-lg p-3 text-left text-text",
-						bind ? "cursor-grab" : "cursor-pointer",
+						"group/agent-row relative flex w-full cursor-default rounded-lg p-3 text-left text-text",
 						// Borderless tiles, 8px radius — same chrome as editor-palette
 						// suggestion rows. The list owns the gap between them.
 						"transition-[background-color,border-radius] duration-xxshort ease-out-practical",

@@ -5403,7 +5403,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 433,
+			"manifestEntryCount": 434,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -7443,7 +7443,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 102,
+				"entryCount": 103,
 				"entries": [
 					{
 						"category": "visual",
@@ -7612,6 +7612,12 @@
 						"slug": "ink-wash",
 						"name": "Ink Wash",
 						"importPath": "@/components/visual/ink-wash"
+					},
+					{
+						"category": "visual",
+						"slug": "linking-effect",
+						"name": "Linking Effect",
+						"importPath": "@/components/visual/linking-effect"
 					},
 					{
 						"category": "visual",

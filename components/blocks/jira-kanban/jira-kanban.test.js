@@ -282,13 +282,10 @@ test("Kanban columns retain a readable minimum width when the board narrows", ()
 });
 
 test("Experimental kanban columns lock a 280px min and max width", () => {
+	assert.match(EXPERIMENTAL_SOURCE, /const outerWidth = `\$\{getBoardColumnOuterWidthPx\(collapsed\)\}px`;/u);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/style=\{\{ flex: "1 1 0", minWidth: "280px", maxWidth: "280px", borderRadius: token\("radius\.xlarge"\) \}\}/u,
-	);
-	assert.match(
-		EXPERIMENTAL_SOURCE,
-		/className="min-w-0 overflow-visible border-2 border-transparent transition-colors"/u,
+		/chrome\.dropShellClassName,\s*"min-w-0",\s*collapsed \|\| isResizing \? "overflow-hidden" : "overflow-visible"/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
@@ -345,11 +342,13 @@ test("Kanban tracks the active workspace card separately from bulk selection", (
 	assert.match(PAGE_SOURCE, /<JiraKanban[\s\S]*activeCardCode=\{activeCardCode\}/u);
 });
 
-test("Kanban drag-over column border stays inside the column and uses the focused border token", () => {
-	assert.match(COLUMN_DRAG_SOURCE, /KANBAN_COLUMN_DROP_TARGET_GROUP_CLASS/u);
-	assert.match(COLUMN_DRAG_SOURCE, /"border-2 border-transparent transition-colors"/);
-	assert.match(COLUMN_DRAG_SOURCE, /classList\.add\("border-ring"\)/);
-	assert.doesNotMatch(COLUMN_DRAG_SOURCE, /ring-offset-2/);
+test("Kanban drag-over uses the chrome drop-shell recipe instead of a hardcoded ring", () => {
+	assert.match(COLUMN_DRAG_SOURCE, /setKanbanColumnDropArmed\(event\.currentTarget, chrome, true\)/u);
+	assert.match(COLUMN_DRAG_SOURCE, /setKanbanColumnDropArmed\(event\.currentTarget, chrome, false\)/u);
+	assert.match(COLUMN_DRAG_SOURCE, /className=\{chrome\.dropShellClassName\}/u);
+	assert.match(SOURCE, /withKanbanDropRingClipGutter\(paddingTop, chrome\)/u);
+	assert.match(SOURCE, /\.\.\.chrome\.dropContentPadding,/u);
+	assert.doesNotMatch(COLUMN_DRAG_SOURCE, /classList\.add\("border-ring"\)/);
 	assert.doesNotMatch(COLUMN_DRAG_SOURCE, /ring-border-bold/);
 });
 
@@ -679,10 +678,10 @@ test("Kanban derives visible column counts from rendered cards", () => {
 test("Kanban column wells come from the shared chrome recipe", () => {
 	assert.match(SOURCE, /resolveKanbanColumnChrome\(columnChrome\)/u);
 	assert.match(SOURCE, /data-kanban-column-chrome=\{columnChrome\}/u);
-	assert.match(SOURCE, /chrome\.headerDropArmedClassName/u);
+	assert.match(SOURCE, /chrome\.dropShellClassName/u);
 	assert.match(EXPERIMENTAL_SOURCE, /resolveKanbanColumnChrome\(columnChrome\)/u);
 	assert.match(EXPERIMENTAL_SOURCE, /data-kanban-column-chrome=\{columnChrome\}/u);
-	assert.match(EXPERIMENTAL_SOURCE, /chrome\.headerDropArmedClassName/u);
+	assert.match(EXPERIMENTAL_SOURCE, /chrome\.dropShellClassName/u);
 	assert.doesNotMatch(SOURCE, /backgroundColor: token\("elevation.surface.sunken"\)/u);
 	assert.doesNotMatch(EXPERIMENTAL_SOURCE, /backgroundColor: token\("elevation.surface.sunken"\)/u);
 });
@@ -785,7 +784,10 @@ test("Experimental kanban cards use the hexagon avatar for agent assignees", () 
 
 test("Experimental kanban column wrappers stay overflow-visible so card strokes are not clipped", () => {
 	assert.match(EXPERIMENTAL_SOURCE, /className=\{cn\("group\/board-column min-w-0 overflow-visible", chrome\.columnClassName\)\}/u);
-	assert.match(EXPERIMENTAL_SOURCE, /className="min-w-0 overflow-visible border-2 border-transparent transition-colors"/u);
+	assert.match(
+		EXPERIMENTAL_SOURCE,
+		/collapsed \|\| isResizing \? "overflow-hidden" : "overflow-visible"/u,
+	);
 	assert.doesNotMatch(SOURCE, /group\/board-column overflow-visible/u);
 });
 
