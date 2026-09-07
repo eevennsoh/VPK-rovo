@@ -8,7 +8,11 @@
  * Pure, so the contract can be tested without a DOM.
  */
 
-import type { JiraLinkingTarget } from "@/components/blocks/jira-linking";
+import type {
+	JiraLinkingDropMember,
+	JiraLinkingRelease,
+	JiraLinkingTarget,
+} from "@/components/blocks/jira-linking";
 
 import type { JiraIssueAgentLinkFlash } from "@/components/blocks/jira-issue";
 import type {
@@ -31,6 +35,16 @@ import type {
  * second shape sitting behind the card instead of as the card itself.
  */
 export const SESSION_FUSION_SHELL_RADIUS_PX = 10;
+
+/**
+ * Matches `rounded-md` on `JiraIssueAgentActivityRow` and the attach-chin
+ * slot. Flights land in that row, not the whole card, so a card-sized radius
+ * would overshoot the destination.
+ */
+export const SESSION_FUSION_ROW_RADIUS_PX = 6;
+
+/** Height of `jira-issue-attach-chin-slot` (`h-6`) when the chin is not measured. */
+export const SESSION_FUSION_CHIN_HEIGHT_PX = 24;
 
 function toTargetFromBounds(
 	bounds: Readonly<BoardAgentSessionDropBounds>,
@@ -67,6 +81,41 @@ export function toSessionFusionTarget(
 	);
 }
 
+/**
+ * Where drop flights land: the attach chin or activity row at the bottom of
+ * the card. Falls back to a chin-height strip of the shell so an unmeasured
+ * slot still aims at the agent session area, not the card's centre.
+ */
+export function toSessionFusionLandTarget(
+	proximity: BoardAgentSessionAttachProximity | null,
+): JiraLinkingTarget | null {
+	if (!proximity) {
+		return null;
+	}
+
+	return toTargetFromBounds(
+		proximity.landRect ?? bottomStrip(
+			proximity.dockRect ?? proximity.bounds,
+			SESSION_FUSION_CHIN_HEIGHT_PX,
+		),
+		SESSION_FUSION_ROW_RADIUS_PX,
+	);
+}
+
+function bottomStrip(
+	bounds: Readonly<BoardAgentSessionDropBounds>,
+	height: number,
+): BoardAgentSessionDropBounds {
+	const available = Math.max(0, bounds.bottom - bounds.top);
+	const strip = Math.min(Math.max(0, height), available);
+	return {
+		bottom: bounds.bottom,
+		left: bounds.left,
+		right: bounds.right,
+		top: bounds.bottom - strip,
+	};
+}
+
 /** A link flash pinned to the card whose chin rows should sweep. */
 export interface BoardAgentSessionLinkFlash {
 	cardCode: string;
@@ -82,17 +131,55 @@ export interface SessionFusionLinkFlashInput {
 }
 
 /**
+ * Staggered chip flights into the card's agent session row, or `null` when
+ * this drop is not the attach-to-card path the linking effect covers.
+ *
+ * The host holds the transfer until the flights land, so the chin rows appear
+ * as the chips arrive rather than under them. Unlink, create-well, create-list
+ * and untracked drops still skip this: they never resolve attach proximity.
+ */
+export function toSessionFusionDrop(input: Readonly<{
+	from: { readonly x: number; readonly y: number };
+	id: number;
+	members: readonly JiraIssueAgentSessionTransferMember[];
+	proximity: BoardAgentSessionAttachProximity | null;
+}>): JiraLinkingRelease | null {
+	const target = toSessionFusionLandTarget(input.proximity);
+	const [first, ...rest] = input.members;
+	if (!target || !first) {
+		return null;
+	}
+
+	return {
+		drop: {
+			from: { x: input.from.x, y: input.from.y },
+			members: [toDropMember(first), ...rest.map(toDropMember)],
+			playback: "stagger",
+		},
+		id: input.id,
+		target,
+	};
+}
+
+function toDropMember(
+	member: JiraIssueAgentSessionTransferMember,
+): JiraLinkingDropMember {
+	return {
+		avatarSrc: member.avatarSrc,
+		id: member.id,
+		name: member.name,
+	};
+}
+
+/**
  * What acknowledges a drop, or `null` when this drop is not the attach-to-card
  * path this effect covers.
  *
- * The link has already committed by the time this resolves — the chin rows
- * exist. So the acknowledgement belongs on those rows rather than on something
- * travelling to reach them, and nothing here carries travel geometry.
- *
- * Requiring the proximity winner to be the drop target is what keeps unlink,
- * create-well, create-list and untracked drops on their existing treatment: a
- * jira-list row attach registers no issue zone, so it resolves no proximity and
- * therefore no flash.
+ * Fired once the staggered flights have landed, so the sweep plays on rows that
+ * already exist. Requiring the proximity winner to be the drop target is what
+ * keeps unlink, create-well, create-list and untracked drops on their existing
+ * treatment: a jira-list row attach registers no issue zone, so it resolves no
+ * proximity and therefore no flash.
  */
 export function toBoardAgentSessionLinkFlash(
 	input: Readonly<SessionFusionLinkFlashInput>,

@@ -17,6 +17,10 @@ import {
 } from "@/components/blocks/jira-issue/agent-activity";
 import { JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE } from "@/components/blocks/jira-issue/agent-session-drag";
 import {
+	linkAgentSessionChinCopy,
+	resolveLinkAgentSessionChinCount,
+} from "@/components/blocks/jira-issue/attach-chin-copy";
+import {
 	isJiraIssueAttachChinArmed,
 	JIRA_ISSUE_MOTION_BACKDROP_NEARNESS,
 	resolveJiraIssueAttachNearness,
@@ -140,6 +144,12 @@ export interface JiraIssueAgentSessionDragControl {
 	 */
 	attachNearness?: number;
 	binding: JiraIssueAgentSessionDragBinding;
+	/**
+	 * Sessions in the current drag transfer. Needed on receiving cards (their
+	 * `state` stays idle) and during fusion after pointer-up. Falls back to
+	 * `state.transfer.members.length` on a live source drag.
+	 */
+	dragCount?: number;
 	dropTarget?: "attach" | "unlink" | null;
 	sourceActive: boolean;
 	state: JiraIssueAgentSessionDragState;
@@ -388,6 +398,12 @@ function JiraIssueDefault({
 			resolvedAgentSessionDragState.dragging,
 			resolvedAgentSessionDragState.source,
 		);
+	const attachSessionCount = resolveLinkAgentSessionChinCount(
+		agentSessionDragControl?.dragCount,
+		resolvedAgentSessionDragState.dragging
+			? resolvedAgentSessionDragState.transfer.members.length
+			: undefined,
+	);
 	// Unlink keeps `working` with an empty chin so the grey backdrop stays
 	// around the issue. The shell keys off mode, not a mounted row.
 	const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working"
@@ -781,9 +797,13 @@ function JiraIssueDefault({
 					<div className="px-1 py-1" data-slot="jira-issue-attach-chin">
 						<div
 							aria-hidden
-							className="pointer-events-none h-6 w-full rounded-md"
+							className="pointer-events-none flex h-6 w-full items-center justify-center rounded-md"
 							data-slot="jira-issue-attach-chin-slot"
-						/>
+						>
+							<span className="text-xs font-normal text-text-subtlest">
+								{linkAgentSessionChinCopy(attachSessionCount)}
+							</span>
+						</div>
 					</div>
 				) : null}
 				<AnimatePresence initial={false} mode="popLayout">

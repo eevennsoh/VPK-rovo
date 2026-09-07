@@ -3,10 +3,10 @@
  * the thing it is being linked to.
  *
  * Three beats: the field fades in as `nearness` rises, the two silhouettes neck
- * together through a signed-distance smooth union, and on release they collapse
- * into the target with velocity-driven chromatic dispersion. Subject colours
- * blend in OKLab across the neck, so differently-coloured subjects marble
- * together instead of averaging to grey.
+ * together through a signed-distance smooth union, and on release subjects fly
+ * into the target — staggered like the create well, or as one cohort chip.
+ * Subject colours blend in OKLab across the neck, so differently-coloured
+ * subjects marble together instead of averaging to grey.
  *
  * The host owns the gesture: this component only draws. It never intercepts a
  * pointer, and it unmounts entirely under `prefers-reduced-motion`.
@@ -27,6 +27,19 @@ export {
 	type JiraLinkingTarget,
 	type JiraLinkingVector,
 } from "./lifecycle";
+export {
+	JIRA_LINKING_FULL_DROP_PROFILE,
+	JIRA_LINKING_REDUCED_DROP_PROFILE,
+	flightsFromLinkingDrop,
+	resolveJiraLinkingDropPlayback,
+	resolveJiraLinkingDropProfile,
+	type JiraLinkingDrop,
+	type JiraLinkingDropMember,
+	type JiraLinkingDropPlayback,
+	type JiraLinkingDropProfile,
+	type JiraLinkingFlight,
+	type JiraLinkingPoint,
+} from "./drop";
 export {
 	useJiraLinkingAtlas,
 	type JiraLinkingAtlas,

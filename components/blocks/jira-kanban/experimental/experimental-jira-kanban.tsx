@@ -1052,8 +1052,14 @@ function ExperimentalJiraKanbanView({
 					/>
 				) : null}
 			<SessionFusionOverlay
-				members={boardSessionDrag.transaction?.cohort.members ?? null}
-				proximity={boardSessionDrag.transaction?.proximity ?? null}
+				members={boardSessionDrag.transaction?.cohort.members
+					?? boardSessionDrag.fusionDrop?.members
+					?? null}
+				onFuseSettled={boardSessionDrag.onFusionSettled}
+				proximity={boardSessionDrag.transaction?.proximity
+					?? boardSessionDrag.fusionDrop?.proximity
+					?? null}
+				release={boardSessionDrag.fusionDrop?.release ?? null}
 			/>
 		</div>
 	);
