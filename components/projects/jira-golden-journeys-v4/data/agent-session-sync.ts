@@ -37,7 +37,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS = [
 		title: "Sandbox 401 root cause just arrived from a local Codex session",
 	},
 	{
-		agentId: "rovo",
+		agentId: "copilot",
 		detail: "host local · worktree .worktrees/pay-118-replay-risk · the blast radius is not on the item",
 		host: "local",
 		id: "lw-sync-replay-blast-radius",
@@ -49,7 +49,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS = [
 		shortTitle: "Replay-risk blast radius",
 		sourceTitle: "PAY-118",
 		timeLabel: "Just now",
-		title: "Replay-risk blast radius just synced from a local Rovo session",
+		title: "Replay-risk blast radius just synced from a local GitHub Copilot session",
 	},
 	{
 		agentId: "claude",
@@ -95,7 +95,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS = [
 		title: "Contract test gaps just landed from a local Cursor session",
 	},
 	{
-		agentId: "rovo",
+		agentId: "cursor",
 		detail: "host local · worktree .worktrees/pay-104-deprecation-copy · the migration copy is still untracked",
 		host: "local",
 		id: "lw-sync-deprecation-copy",
@@ -106,7 +106,7 @@ export const JIRA_GOLDEN_JOURNEYS_V4_SYNC_SESSIONS = [
 		shortTitle: "Deprecation copy pass",
 		sourceTitle: "PAY-104",
 		timeLabel: "Just now",
-		title: "Deprecation copy pass just arrived from a local Rovo session",
+		title: "Deprecation copy pass just arrived from a local Cursor session",
 	},
 	{
 		agentId: "claude",
