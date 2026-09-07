@@ -1,4 +1,5 @@
 import type {
+	PulseAgentSessionPullRequest,
 	PulseCodingAgentId,
 	PulseLooseWork,
 	PulseLooseWorkPullRequest,
@@ -42,6 +43,7 @@ function session(
 	fields: Readonly<{
 		agentId: PulseCodingAgentId;
 		machineName: string;
+		pullRequest?: PulseAgentSessionPullRequest;
 		shortTitle: string;
 		timeLabel: string;
 	}>,
@@ -56,6 +58,7 @@ function session(
 		host: "local",
 		agentId: fields.agentId,
 		machineName: fields.machineName,
+		...(fields.pullRequest === undefined ? {} : { pullRequest: fields.pullRequest }),
 		shortTitle: fields.shortTitle,
 		timeLabel: fields.timeLabel,
 	};
@@ -100,7 +103,13 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-101",
 		"host local · worktree .worktrees/pay-101-adapter · the decision itself is not written down",
 		["priya", "maya", "jordan", "venn"],
-		{ agentId: "claude", machineName: PULSE_VIEWER_MACHINE_NAME, shortTitle: "Keep or delete the adapter", timeLabel: "Last week" },
+		{
+			agentId: "claude",
+			machineName: PULSE_VIEWER_MACHINE_NAME,
+			pullRequest: { number: 1839, status: "merged", title: "Call-site inventory across four services" },
+			shortTitle: "Keep or delete the adapter",
+			timeLabel: "Last week",
+		},
 	),
 	session(
 		"lw-kickoff-killswitch-session",
@@ -171,15 +180,21 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-102",
 		"host local · worktree .worktrees/pay-102-spike · the yes-and-asterisk is not on the item",
 		["maya"],
-		{ agentId: "codex", machineName: "Maya’s Studio", shortTitle: "Adapter deletion proof", timeLabel: "3d ago" },
+		{
+			agentId: "codex",
+			machineName: "Maya’s Studio",
+			pullRequest: { number: 1847, status: "merged", title: "Prove LegacyGatewayAdapter can be deleted outright" },
+			shortTitle: "Adapter deletion proof",
+			timeLabel: "3d ago",
+		},
 	),
 	session(
 		"lw-spike-webhook-session",
-		"Challenge webhook gap notes still live in a local Rovo session",
+		"Challenge webhook gap notes still live in a local GitHub Copilot session",
 		"PAY-107",
 		"host local · worktree .worktrees/pay-107-webhook · payments-api still has no handler",
 		["maya", "review-agent", "venn"],
-		{ agentId: "rovo", machineName: "MacBook-Pro.local", shortTitle: "Challenge webhook gap", timeLabel: "2d ago" },
+		{ agentId: "copilot", machineName: "MacBook-Pro.local", shortTitle: "Challenge webhook gap", timeLabel: "2d ago" },
 	),
 	pullRequest(
 		"lw-spike-retry-pr",
@@ -212,7 +227,13 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-112",
 		"host local · worktree .worktrees/pay-112-sandbox-401 · PAY-112 still reads “investigating”",
 		["jordan", "review-agent", "venn"],
-		{ agentId: "claude", machineName: "H13XSGKLS1", shortTitle: "Sandbox 401 root cause", timeLabel: "Yesterday" },
+		{
+			agentId: "claude",
+			machineName: "H13XSGKLS1",
+			pullRequest: { number: 1858, status: "failed", title: "Confirm the sandbox key retention window before replay" },
+			shortTitle: "Sandbox 401 root cause",
+			timeLabel: "Yesterday",
+		},
 	),
 	commit(
 		"lw-oncall-note",
@@ -286,11 +307,17 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 	),
 	session(
 		"lw-night-suite-session",
-		"Overnight contract-suite session never captured on PAY-113",
+		"Overnight contract-suite Cursor session never captured on PAY-113",
 		"PAY-113",
 		"host local · worktree .worktrees/pay-113-contract-suite · 214 assertions, no work item",
 		["test-agent", "venn"],
-		{ agentId: "rovo", machineName: "MBP-M4-MAX", shortTitle: "3-D Secure suite run", timeLabel: "2hr ago" },
+		{
+			agentId: "cursor",
+			machineName: "MBP-M4-MAX",
+			pullRequest: { number: 1863, status: "merged", title: "Land the 3-D Secure contract suite with 214 assertions" },
+			shortTitle: "3-D Secure suite run",
+			timeLabel: "2hr ago",
+		},
 	),
 	session(
 		"lw-night-killswitch-session",
@@ -321,7 +348,13 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-113",
 		"host local · worktree .worktrees/pay-113-link-merges · six merges, none on the board",
 		["venn"],
-		{ agentId: "claude", machineName: "Studio", shortTitle: "Link overnight merges", timeLabel: "42m ago" },
+		{
+			agentId: "claude",
+			machineName: "Studio",
+			pullRequest: { number: 1869, status: "created", title: "Map overnight merges to PAY-113 and PAY-105" },
+			shortTitle: "Link overnight merges",
+			timeLabel: "42m ago",
+		},
 	),
 	pullRequest(
 		"lw-night-link-pr",
@@ -350,11 +383,17 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 	),
 	session(
 		"lw-wallet-ship-session",
-		"Ship-note rewrite after the wallet cut, still a local Rovo session",
+		"Ship-note rewrite after the wallet cut, still a local Claude session",
 		"PAY-130",
 		"host local · worktree .worktrees/pay-130-ship-note · customer-facing line is not on the item",
 		["venn", "priya"],
-		{ agentId: "rovo", machineName: "MacBookPro.lan", shortTitle: "Ship note after the cut", timeLabel: "8m ago" },
+		{
+			agentId: "claude",
+			machineName: "MacBookPro.lan",
+			pullRequest: { number: 1872, status: "created", title: "Rewrite the customer ship note after the wallet cut" },
+			shortTitle: "Ship note after the cut",
+			timeLabel: "8m ago",
+		},
 	),
 	pullRequest(
 		"lw-wallet-ship-pr",
@@ -418,7 +457,13 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 		"PAY-121",
 		"host local · worktree .worktrees/pay-121-pager · the runbook is a worktree, not the epic",
 		["maya", "jordan"],
-		{ agentId: "cursor", machineName: "MAYA-MBP16", shortTitle: "3am pager handover", timeLabel: "3m ago" },
+		{
+			agentId: "cursor",
+			machineName: "MAYA-MBP16",
+			pullRequest: { number: 1876, status: "created", title: "Publish the kill-switch runbook for pager holders" },
+			shortTitle: "3am pager handover",
+			timeLabel: "3m ago",
+		},
 	),
 	pullRequest(
 		"lw-rehearsal-harness-pr",
@@ -462,11 +507,17 @@ export const PULSE_LOOSE_WORK: readonly PulseLooseWork[] = [
 	),
 	session(
 		"lw-ship-approval-session",
-		"One-percent targeting rule, staged in a local Rovo session",
+		"One-percent targeting rule, staged in a local Codex session",
 		"PAY-121",
 		"host local · worktree .worktrees/pay-121-targeting · the agent will not arm it",
 		["release-agent", "jordan"],
-		{ agentId: "rovo", machineName: "Jordan’s MacBook Pro", shortTitle: "One-percent targeting", timeLabel: "Just now" },
+		{
+			agentId: "codex",
+			machineName: "Jordan’s MacBook Pro",
+			pullRequest: { number: 1882, status: "created", title: "Stage the one-percent English-only targeting rule" },
+			shortTitle: "One-percent targeting",
+			timeLabel: "Just now",
+		},
 	),
 	pullRequest(
 		"lw-ship-targeting-pr",

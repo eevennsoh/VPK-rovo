@@ -11,6 +11,7 @@ async function openBoard(page: Page): Promise<void> {
 	});
 	const expandUntracked = page.getByRole("button", { name: "Expand Untracked work column" });
 	if (await expandUntracked.isVisible()) {
+		await revealCollapsedAgentSessionColumn(page);
 		await expandUntracked.click();
 	}
 }
@@ -27,6 +28,30 @@ async function openAgentViewMenu(page: Page): Promise<void> {
 	await page.getByRole("button", { name: "Configure board view" }).click();
 	// Click, not hover: Base UI does not reliably expand this submenu on hover.
 	await page.getByRole("menuitem", { name: "Agent" }).click();
+}
+
+async function revealCollapsedAgentSessionColumn(page: Page): Promise<void> {
+	const hitArea = page.locator("[data-agent-session-column-hit-area]");
+	const hitAreaBox = await hitArea.boundingBox();
+	expect(hitAreaBox).not.toBeNull();
+	if (!hitAreaBox) return;
+
+	await page.mouse.move(
+		hitAreaBox.x + hitAreaBox.width / 2,
+		hitAreaBox.y + hitAreaBox.height / 2,
+	);
+	await expect(hitArea).toHaveCount(0);
+}
+
+async function hoverCollapsedAgentSession(page: Page, sessionId: string): Promise<void> {
+	await revealCollapsedAgentSessionColumn(page);
+	const notch = page.getByTestId(`agent-session-notch-${sessionId}`);
+	const notchBox = await notch.boundingBox();
+	expect(notchBox).not.toBeNull();
+	if (!notchBox) return;
+
+	await page.mouse.move(notchBox.x + notchBox.width / 2, notchBox.y + notchBox.height / 2);
+	expect(await notch.evaluate((element) => element.matches(":hover"))).toBe(true);
 }
 
 function getIssueArticle(page: Page, issueKey: string): Locator {
@@ -90,25 +115,21 @@ test("Untracked is on by default and PAY-101 shows a nearby untracked row", asyn
 	await expect(page.getByRole("menuitemcheckbox", { name: "Untracked" })).toBeChecked();
 });
 
-test("the collapsed Untracked rail previews matching board sessions in both directions", async ({ page }) => {
+test("the collapsed Untracked rail blues the plain Jira issue suggested by a session", async ({ page }) => {
 	await openCollapsedBoard(page);
 
 	const sessionId = "lw-figma-parked";
-	const boardSession = page.locator("[data-issue-key='PAY-118']")
-		.getByTestId(`agent-session-row-${sessionId}`);
-	const boardSessionSurface = boardSession.locator("[data-highlighted]");
 	const railNotch = page.getByTestId(`agent-session-notch-${sessionId}`);
-	const railMark = railNotch.locator("[aria-hidden='true']");
+	const pay118Backdrop = page.locator("[data-issue-key='PAY-118']")
+		.locator("[data-slot='jira-issue-agent-backdrop']");
 
-	await boardSession.getByRole("button", { name: /^Preview Why the wallet was cut/u }).hover();
-	await expect(railNotch).toHaveAttribute("data-highlighted", "true");
-	await expect(railMark).toHaveCSS("width", "24px");
+	await expect(pay118Backdrop).toHaveClass(/bg-bg-neutral/);
+	await hoverCollapsedAgentSession(page, sessionId);
+	await expect(pay118Backdrop).toHaveClass(/bg-bg-accent-blue-subtlest/);
 
 	await page.getByRole("heading", { name: "Jira Design" }).hover();
-	await expect(railNotch).not.toHaveAttribute("data-highlighted", "true");
-
-	await railNotch.hover();
-	await expect(boardSessionSurface).toHaveAttribute("data-highlighted", "true");
+	expect(await railNotch.evaluate((element) => element.matches(":hover"))).toBe(false);
+	await expect(pay118Backdrop).toHaveClass(/bg-bg-neutral/);
 });
 
 test("unchecking Untracked hides board-adjacent rows and leaves the column", async ({ page }) => {
@@ -129,7 +150,7 @@ test("unchecking Untracked hides board-adjacent rows and leaves the column", asy
 	).toBeVisible();
 });
 
-test("hovering a column session leaves Jira issues unfocused and unmoved", async ({ page }) => {
+test("hovering a column session blues the matching existing-agent backdrop without focus or movement", async ({ page }) => {
 	await openBoard(page);
 
 	const statusScrollport = page.locator("[data-jira-kanban-scrollport]");
@@ -145,6 +166,8 @@ test("hovering a column session leaves Jira issues unfocused and unmoved", async
 	await columnSession.hover();
 
 	await expect(pay121).not.toHaveClass(/bg-bg-accent-blue-subtlest/);
+	await expect(pay121.locator("[data-slot='jira-issue-agent-backdrop']"))
+		.toHaveClass(/bg-bg-accent-blue-subtlest/);
 	await expect(pay101).not.toHaveClass(/opacity-40/);
 	expect(await statusScrollport.evaluate((element) => element.scrollLeft)).toBe(scrollLeftBefore);
 	expect(await pay121ColumnScrollport.evaluate((element) => element.scrollTop)).toBe(scrollTopBefore);
@@ -218,21 +241,90 @@ test("Untracked stays frozen while the status pane scrolls", async ({ page }) =>
 	expect((await untrackedColumn.boundingBox())?.x).toBe(frozenLeft);
 });
 
+test("the Untracked resize handle reveals on column hover and widens the pinned column", async ({ page }) => {
+	await openBoard(page);
+
+	const untrackedColumn = page.getByLabel(/^Untracked work,/u);
+	const resizeHandle = page.getByRole("separator", {
+		name: "Resize Untracked work column",
+	});
+	const resizeNotch = resizeHandle.locator(":scope > div");
+	const untrackedSurface = page.locator(
+		'[data-board-agent-session-drop-zone="untracked"]',
+	).first();
+	const widthFootprint = page.locator('[data-agent-session-column-footprint="width"]');
+	const statusColumns = page.locator("[data-jira-kanban-column]");
+	const [initialBox, untrackedSurfaceBox, firstStatusBox, secondStatusBox] = await Promise.all([
+		untrackedColumn.boundingBox(),
+		untrackedSurface.boundingBox(),
+		statusColumns.nth(0).boundingBox(),
+		statusColumns.nth(1).boundingBox(),
+	]);
+	expect(initialBox).not.toBeNull();
+	expect(untrackedSurfaceBox).not.toBeNull();
+	expect(firstStatusBox).not.toBeNull();
+	expect(secondStatusBox).not.toBeNull();
+	if (!initialBox || !untrackedSurfaceBox || !firstStatusBox || !secondStatusBox) return;
+
+	const untrackedToFirstGap = Math.round(
+		firstStatusBox.x - untrackedSurfaceBox.x - untrackedSurfaceBox.width,
+	);
+	const statusColumnGap = Math.round(
+		secondStatusBox.x - firstStatusBox.x - firstStatusBox.width,
+	);
+	expect(untrackedToFirstGap).toBe(statusColumnGap);
+	expect(untrackedToFirstGap).toBe(8);
+
+	await expect(resizeHandle).toHaveAttribute("aria-orientation", "vertical");
+	await expect(resizeHandle).toHaveAttribute("aria-valuemin", "280");
+	await expect(resizeHandle).toHaveAttribute("aria-valuemax", "560");
+	await page.getByRole("heading", { name: "Jira Design" }).hover();
+	await expect(resizeHandle).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+	await expect(resizeNotch).toHaveCSS("height", "64px");
+	await expect(resizeNotch).toHaveCSS("opacity", "0");
+
+	await untrackedColumn.hover();
+	await expect(resizeNotch).toHaveCSS("opacity", "1");
+	await resizeHandle.hover();
+	await expect(resizeNotch).toHaveCSS("scale", "1.05");
+	const handleBox = await resizeHandle.boundingBox();
+	expect(handleBox).not.toBeNull();
+	if (!handleBox) return;
+
+	await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + 80);
+	await page.mouse.down();
+	await expect(untrackedColumn).toHaveCSS("transition-property", "none");
+	await expect(widthFootprint).toHaveCSS("transition-property", "none");
+	await page.mouse.move(handleBox.x + handleBox.width / 2 + 96, handleBox.y + 80, {
+		steps: 8,
+	});
+	await expect.poll(async () => (await resizeHandle.boundingBox())?.x ?? 0)
+		.toBeGreaterThan(handleBox.x + 80);
+	await page.mouse.up();
+
+	await expect.poll(async () => (await untrackedColumn.boundingBox())?.width ?? 0)
+		.toBeGreaterThan(initialBox.width + 80);
+	await expect(resizeHandle).toHaveAttribute("aria-valuenow", "376");
+
+	await page.getByRole("heading", { name: "Jira Design" }).hover();
+	await expect(resizeNotch).toHaveCSS("opacity", "0");
+});
+
 test("a linked session moves atomically to another Jira work item", async ({ page }) => {
 	await openBoard(page);
 
 	const sourceCard = getIssueArticle(page, "PAY-112");
 	const sourceSession = sourceCard.getByRole("button", {
-		name: /^Open Review Agent in Rovo chat:/u,
+		name: /^Open Codex in Rovo chat:/u,
 	});
 
 	await dragPointer(sourceSession, getIssueDropZone(page, "PAY-118"), page);
 
 	await expect(sourceCard.getByRole("button", {
-		name: /^Open Review Agent in Rovo chat:/u,
+		name: /^Open Codex in Rovo chat:/u,
 	})).toHaveCount(0);
 	await expect(getIssueArticle(page, "PAY-118").getByRole("button", {
-		name: /^Open Review Agent in Rovo chat:/u,
+		name: /^Open Codex in Rovo chat:/u,
 	})).toBeVisible();
 });
 
@@ -241,7 +333,7 @@ test("a linked session can detach and then attach to a different work item", asy
 
 	const sourceCard = getIssueArticle(page, "PAY-112");
 	const sourceSession = sourceCard.getByRole("button", {
-		name: /^Open Review Agent in Rovo chat:/u,
+		name: /^Open Codex in Rovo chat:/u,
 	});
 	const sourceBox = await sourceSession.boundingBox();
 	expect(sourceBox).not.toBeNull();
@@ -255,7 +347,7 @@ test("a linked session can detach and then attach to a different work item", asy
 	await page.mouse.down();
 	await page.mouse.move(sourcePoint.x + 4, sourcePoint.y + 4);
 	const unlinkWell = sourceCard.getByRole("img", {
-		name: /Unlink Review Agent from this work item/u,
+		name: /Unlink Codex from this work item/u,
 	});
 	await expect(unlinkWell).toBeVisible();
 	const unlinkBox = await unlinkWell.boundingBox();
@@ -274,7 +366,7 @@ test("a linked session can detach and then attach to a different work item", asy
 
 	await expect(detachedSession).toHaveCount(0);
 	await expect(getIssueArticle(page, "PAY-118").getByRole("button", {
-		name: /^Open Review Agent in Rovo chat:/u,
+		name: /^Open Codex in Rovo chat:/u,
 	})).toBeVisible();
 });
 
@@ -309,12 +401,83 @@ test("releasing an Untracked work drag outside a Jira target makes no change", a
 	})).toHaveCount(0);
 });
 
+test("dragging an Untracked session leaves a disabled-opacity source ghost", async ({ page }) => {
+	await openBoard(page);
+
+	const session = page.locator("[data-agent-session-column]")
+		.getByTestId("agent-session-row-lw-scope-thread");
+	const surface = session.locator("article");
+	const sourceBox = await surface.boundingBox();
+	expect(sourceBox).not.toBeNull();
+	if (!sourceBox) return;
+
+	const sourcePoint = {
+		x: sourceBox.x + sourceBox.width / 2,
+		y: sourceBox.y + sourceBox.height / 2,
+	};
+	await page.mouse.move(sourcePoint.x, sourcePoint.y);
+	await page.mouse.down();
+	await page.mouse.move(sourcePoint.x + 80, sourcePoint.y, { steps: 4 });
+
+	const placeholder = session.locator("[data-session-drag-placeholder]");
+	const ghost = placeholder.locator(":scope > div").first();
+	await expect(session).toHaveAttribute("aria-hidden", "true");
+	await expect(session).toHaveAttribute("inert", "");
+	await expect(ghost).toHaveCSS("opacity", "0.4");
+	await expect(ghost).toHaveAttribute("aria-hidden", "true");
+	await expect(ghost).toHaveAttribute("inert", "");
+	await expect(placeholder).toHaveCSS("height", `${sourceBox.height}px`);
+	await expect(page.locator("[data-session-drag-overlay]")).toHaveCount(1);
+
+	await page.mouse.move(sourcePoint.x, sourcePoint.y);
+	await page.mouse.up();
+});
+
+test("dragging two selected sessions uses the concise count", async ({ page }) => {
+	await openBoard(page);
+
+	const first = page.getByTestId("agent-session-row-lw-scope-thread");
+	const second = page.getByTestId("agent-session-row-lw-kickoff-killswitch-session");
+	await first.locator("article").click();
+	await second.locator("article").click({ modifiers: ["Meta"] });
+	await expect(first.locator("article")).toHaveAttribute("data-marked", "true");
+	await expect(second.locator("article")).toHaveAttribute("data-marked", "true");
+
+	const firstBoxBefore = await first.boundingBox();
+	const secondBoxBefore = await second.boundingBox();
+	const sourceBox = await first.locator("article").boundingBox();
+	expect(firstBoxBefore).not.toBeNull();
+	expect(secondBoxBefore).not.toBeNull();
+	expect(sourceBox).not.toBeNull();
+	if (!firstBoxBefore || !secondBoxBefore || !sourceBox) return;
+	const sourcePoint = {
+		x: sourceBox.x + sourceBox.width / 2,
+		y: sourceBox.y + sourceBox.height / 2,
+	};
+	await page.mouse.move(sourcePoint.x, sourcePoint.y);
+	await page.mouse.down();
+	await page.mouse.move(sourcePoint.x + 80, sourcePoint.y, { steps: 4 });
+
+	const overlay = page.locator("[data-session-drag-overlay]");
+	await expect(overlay).toContainText("2 sessions");
+	await expect(overlay.locator('[data-session-cohort-chip][aria-label="2 sessions"]')).toBeVisible();
+	const firstGhost = first.locator("[data-session-drag-placeholder] > div").first();
+	const secondGhost = second.locator("[data-session-drag-placeholder] > div").first();
+	await expect(firstGhost).toHaveCSS("opacity", "0.4");
+	await expect(secondGhost).toHaveCSS("opacity", "0.4");
+	expect((await first.boundingBox())?.height).toBe(firstBoxBefore.height);
+	expect((await second.boundingBox())?.height).toBe(secondBoxBefore.height);
+
+	await page.mouse.move(sourcePoint.x, sourcePoint.y);
+	await page.mouse.up();
+});
+
 test("session flyouts close for a Jira card drag and recover after drag end", async ({ page }) => {
 	await openBoard(page);
 
 	const sourceCard = getIssueArticle(page, "PAY-112");
 	const sourceSession = sourceCard.getByRole("button", {
-		name: /^Open Review Agent in Rovo chat:/u,
+		name: /^Open Codex in Rovo chat:/u,
 	});
 	const nextSession = getIssueArticle(page, "PAY-123").getByRole("button", {
 		name: "Open Claude Code in Rovo chat: Working",
@@ -341,7 +504,7 @@ test("a stationary linked-session click still opens Rovo chat without detaching"
 
 	const sourceCard = getIssueArticle(page, "PAY-112");
 	const sourceSession = sourceCard.getByRole("button", {
-		name: /^Open Review Agent in Rovo chat:/u,
+		name: /^Open Codex in Rovo chat:/u,
 	});
 	await sourceSession.click();
 

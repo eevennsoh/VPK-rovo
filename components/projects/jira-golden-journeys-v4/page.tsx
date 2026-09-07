@@ -15,7 +15,12 @@ import ExperimentalJiraKanbanPage from "@/components/blocks/jira-kanban/experime
 import type { BoardCardInsertion } from "@/components/blocks/jira-kanban/experimental/lib/board-agent-session-drag";
 import { isPulseAgentSession, type PulseLooseWork } from "@/components/blocks/jira-kanban/experimental/pulse/types";
 import { linkJiraKanbanAgentSession, moveJiraKanbanAgentSession, unlinkJiraKanbanAgentSession } from "@/components/blocks/jira-kanban/state";
-import { JiraList, type JiraListAssignedAgent, type JiraListInsertion } from "@/components/blocks/jira-list";
+import {
+	JiraList,
+	useJiraListRowFlashSource,
+	type JiraListAssignedAgent,
+	type JiraListInsertion,
+} from "@/components/blocks/jira-list";
 import { useDesignVariants } from "@/components/hooks/use-design-variants";
 import { useDesignVariation } from "@/components/hooks/use-design-variation";
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journeys-v1/components/jira-golden-journeys-v1-rovo-overlay";
@@ -190,6 +195,17 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 		onAssignedAgentSelect: handleListAssignedAgentSelect,
 		setBoardColumns,
 	});
+	// Sessions dropped into the list neither select the rows they land in nor
+	// leave a badge behind, so the flash carries the acknowledgement. One drop of
+	// three marked sessions publishes one flash covering all three rows.
+	//
+	// It only reaches rows the list is rendering. A created card arrives
+	// unassigned, and `filterJiraKanbanColumnsByAssignee` drops unassigned cards
+	// outright, so a create-drop under an active assignee filter lands a row the
+	// viewer cannot see. That gap predates the flash — the row used to be
+	// selected and equally hidden — and closing it is a separate decision about
+	// what a filtered drop should do.
+	const { flash: listRowFlash, flashRow: flashListRow } = useJiraListRowFlashSource();
 	// Unlink always lands in `detachedAgentSessionsByCard`. The Untracked list
 	// reads that map, so the session reappears there immediately. Team EU keeps
 	// `showUntrackedProximity` off, so it never parks beside the card.
@@ -236,18 +252,19 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 	const handleAgentSessionLink = useCallback((session: AgentSessionItem, card: JiraKanbanCardData) => {
 		const activity = consumeDetachedAgentSession(session);
 		setBoardColumns((columns) => linkJiraKanbanAgentSession(columns, card.code, activity));
-	}, [consumeDetachedAgentSession]);
+		flashListRow(card.code);
+	}, [consumeDetachedAgentSession, flashListRow]);
 	const handleListAgentSessionCreate = useCallback((
 		session: AgentSessionItem,
 		insertion: JiraListInsertion,
 	) => {
 		const activity = consumeDetachedAgentSession(session);
-		createFromAgentSession({
+		flashListRow(createFromAgentSession({
 			activity,
 			insertion,
 			session,
-		});
-	}, [consumeDetachedAgentSession, createFromAgentSession]);
+		}));
+	}, [consumeDetachedAgentSession, createFromAgentSession, flashListRow]);
 	// Sessions dropped into a gap between board cards mint work items in that
 	// column at that gap, already linked and in drag order. Same reclaim as the
 	// list create: each detached activity comes back so the card gets the
@@ -344,6 +361,7 @@ function JiraGoldenJourneysV4App(): React.ReactElement {
 										{...listProps}
 										agentSessionDropIntent={agentSessionDropIntent}
 										onTrailingContentUnderlapChange={onTrailingContentUnderlapChange}
+										rowFlash={listRowFlash}
 										scrollEndInset={listScrollEndInset}
 										trailingOverlayRef={trailingOverlayRef}
 									/>

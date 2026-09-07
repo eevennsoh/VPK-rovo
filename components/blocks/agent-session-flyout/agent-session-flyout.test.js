@@ -36,12 +36,12 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.match(source, /content = "details"/u);
 	assert.match(source, /case "details":/u);
 	assert.match(source, /import \{ JiraSessionDetailsCard \} from "\.\/jira-session-details-card";/u);
-	assert.match(source, /<JiraSessionDetailsCard session=\{session\} \/>/u);
+	assert.match(source, /<JiraSessionDetailsCard session=\{props\.session\} \/>/u);
 	assert.doesNotMatch(source, /<JiraSessionFlyoutBody session=\{session\} \/>/u);
 	assert.match(source, /case "composer":/u);
 	assert.match(source, /case "untracked-work":/u);
 	assert.match(source, /import \{ JiraSessionUntrackedWorkCard \} from "\.\/jira-session-untracked-work-card";/u);
-	assert.match(source, /<JiraSessionUntrackedWorkCard[\s\S]*session=\{session\}/u);
+	assert.match(source, /<JiraSessionUntrackedWorkCard[\s\S]*session=\{props\.session\}/u);
 	assert.doesNotMatch(source, /variant="untracked-work"/u);
 	assert.match(source, /className="w-\[320px\] max-w-\[calc\(100vw-48px\)\] rounded-none shadow-none"/u);
 	assert.equal(source.match(/className="w-\[320px\] bg-surface-overlay p-4 text-text"/gu)?.length ?? 0, 0);
@@ -52,16 +52,42 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.doesNotMatch(source, /<span aria-hidden="true"> · <\/span>/u);
 	assert.match(cardShellSource, /flex w-\[320px\] max-w-\[calc\(100vw-48px\)\] flex-col gap-3 pt-3 text-text/u);
 	assert.match(cardShellSource, /border-t border-border-disabled p-3/u);
+	assert.match(
+		cardShellSource,
+		/\{footer \? \(\s*<div className=\{cn\("flex flex-col border-t border-border-disabled p-3", footerClassName\)\}/u,
+	);
 	assert.match(cardSource, /import \{ JiraSessionFlyoutCard \} from "\.\/jira-session-flyout-card";/u);
+	assert.match(cardSource, /import \{ JiraSessionDetailsBody \} from "\.\/jira-session-details-card";/u);
 	assert.match(cardSource, /<JiraSessionFlyoutCard/u);
+	assert.match(cardSource, /<JiraSessionDetailsBody hideAgentRow hideSessionRow session=\{session\} \/>/u);
+	assert.match(cardSource, /bodyClassName="gap-1"/u);
+	assert.match(
+		cardSource,
+		/body=\{\s*<>[\s\S]*?<JiraSessionDetailsBody hideAgentRow hideSessionRow session=\{session\} \/>[\s\S]*?footer=\{/u,
+	);
+	assert.match(cardSource, /import \{[\s\S]*SmartLink[\s\S]*\} from "@\/components\/blocks\/smart-link";/u);
+	assert.match(
+		cardSource,
+		/<h3 className="text-xs leading-4 font-medium text-text" id=\{artifactsId\}>[\s\S]*?Artifacts[\s\S]*?<\/h3>/u,
+	);
+	assert.match(cardSource, /session\.pullRequestNumber === undefined \|\| session\.pullRequestUrl === undefined/u);
+	assert.match(cardSource, /href: session\.pullRequestUrl/u);
+	assert.match(cardSource, /variant: "pull-request"/u);
+	assert.doesNotMatch(cardSource, /variant: "confluence"/u);
+	assert.match(cardSource, /artifacts\.length > 0 \?/u);
 	assert.match(cardSource, /High confidence to link/u);
+	assert.match(cardSource, /Nothing available to link to/u);
+	assert.match(cardSource, /Create a work item to track it\./u);
+	assert.doesNotMatch(cardSource, /Create a new work item to start tracking this session\./u);
+	assert.match(cardSource, /const archiveUnavailable = onArchiveSession === undefined;/u);
+	assert.match(cardSource, /import ArchiveBoxIcon from "@atlaskit\/icon\/core\/archive-box";/u);
 	assert.match(cardSource, /<Lozenge className="shrink-0" variant="success">High<\/Lozenge>/u);
 	assert.match(cardSource, /This session appears related to \$\{session\.issueKey\}/u);
 	assert.match(source, /capturedSessionIds\?: ReadonlySet<string>;/u);
 	assert.match(cardSource, /const linkLabel = hasIssueKey \? `Link to \$\{issueKey\}` : "Link work item";/u);
 	assert.match(
 		cardSource,
-		/<ButtonGroup aria-label=\{hasIssueKey \? `Link \$\{issueKey\}` : "Link work item"\} className="w-full gap-2" variant="separated">/u,
+		/<ButtonGroup[\s\S]*aria-label=\{hasIssueKey \? `Link \$\{issueKey\}` : "Create work item actions"\}[\s\S]*className="w-full gap-2"[\s\S]*variant="separated"/u,
 	);
 	assert.match(cardSource, /aria-disabled=\{linkUnavailable\}/u);
 	assert.match(cardSource, /"w-full flex-1 justify-center text-center"/u);
@@ -73,21 +99,37 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.doesNotMatch(cardSource, /ChevronDownIcon/u);
 	assert.match(
 		cardSource,
-		/aria-label=\{hasIssueKey \? `More actions for \$\{issueKey\}` : "More work item actions"\}/u,
+		/aria-label=\{`More actions for \$\{issueKey\}`\}/u,
 	);
 	assert.match(
 		cardSource,
-		/<DropdownMenuItem[\s\S]*disabled=\{addAsSubtaskUnavailable \|\| !hasIssueKey\}[\s\S]*onSelect=\{\(\) => onAddAsSubtask\?\.\(issueKey\)\}[\s\S]*>\s*\{hasIssueKey \? `Add new subtask to \$\{issueKey\}` : "Add new subtask"\}/u,
+		/<DropdownMenuItem[\s\S]*disabled=\{createUnavailable\}[\s\S]*onSelect=\{\(\) => onCreateWorkItem\?\.\(\)\}[\s\S]*>\s*Create new work item[\s\S]*?<\/DropdownMenuItem>\s*<DropdownMenuItem[\s\S]*disabled=\{archiveUnavailable\}[\s\S]*>\s*Archive\s*<\/DropdownMenuItem>/u,
 	);
 	assert.match(
 		cardSource,
-		/<DropdownMenuItem[\s\S]*disabled=\{createUnavailable\}[\s\S]*onSelect=\{\(\) => onCreateWorkItem\?\.\(\)\}[\s\S]*>\s*Create new work item/u,
+		/<DropdownMenuItem[\s\S]*disabled=\{archiveUnavailable\}[\s\S]*onSelect=\{\(\) => onArchiveSession\?\.\(\)\}[\s\S]*>\s*Archive\s*<\/DropdownMenuItem>/u,
 	);
+	assert.match(
+		cardSource,
+		/const createButton = \([\s\S]*?size="compact"[\s\S]*?type="button"[\s\S]*?variant="outline"[\s\S]*?Create new work item/u,
+	);
+	assert.match(
+		cardSource,
+		/\{hasIssueKey \? \([\s\S]*?<DropdownMenu>[\s\S]*?<\/DropdownMenu>[\s\S]*?\) : \([\s\S]*?\{createButton\}[\s\S]*?\{archiveButton\}[\s\S]*?\)\}/u,
+	);
+	assert.match(cardSource, /const createButton = \([\s\S]*?Create new work item/u);
+	assert.match(cardSource, /const archiveButton = \([\s\S]*?aria-label=\{archiveUnavailable \? "Archive unavailable" : "Archive"\}/u);
+	assert.doesNotMatch(cardSource, /Add new subtask to|onSelect=\{\(\) => onAddAsSubtask/u);
 	assert.doesNotMatch(cardSource, /onClick=\{onCreateWorkItem\}/u);
 	assert.doesNotMatch(cardSource, /aria-disabled=\{createUnavailable\}/u);
 	assert.match(source, /onLinkWorkItem\?: \(session: JiraSidebarSessionItem, workItemKey: string\) => void;/u);
 	assert.match(source, /onCreateWorkItem\?: \(session: JiraSidebarSessionItem\) => void;/u);
+	assert.match(source, /onArchiveSession\?: \(session: JiraSidebarSessionItem\) => void;/u);
 	assert.match(source, /onAddAsSubtask\?: \(session: JiraSidebarSessionItem, workItemKey: string\) => void;/u);
+	assert.match(
+		source,
+		/function resolveJiraSessionUntrackedWorkActions[\s\S]*captureLocked \|\| onArchiveSession === undefined[\s\S]*\(\) => onArchiveSession\(session\)/u,
+	);
 	assert.match(
 		source,
 		/<AgentStates[\s\S]*agent=\{\{[\s\S]*brandName: session\.brandName,[\s\S]*id: session\.id,[\s\S]*name: session\.agentName,[\s\S]*state=\{toAgentStatesState\(session\.status\)\}/u,
@@ -103,10 +145,10 @@ test("details hover card uses Figma chrome without panel property rows", () => {
 	const cardShellSource = readRepoFile(FLYOUT_CARD_PATH);
 	const detailsSource = readRepoFile(DETAILS_CARD_PATH);
 
-	assert.match(source, /<JiraSessionDetailsCard session=\{session\} \/>/u);
+	assert.match(source, /<JiraSessionDetailsCard session=\{props\.session\} \/>/u);
 	assert.match(cardShellSource, /flex w-\[320px\] max-w-\[calc\(100vw-48px\)\] flex-col gap-3 pt-3 text-text/u);
 	assert.match(cardShellSource, /border-t border-border-disabled p-3/u);
-	assert.match(detailsSource, /footerClassName="gap-1"/u);
+	assert.match(detailsSource, /bodyClassName="gap-1"/u);
 	assert.match(detailsSource, /import ScreenIcon from "@atlaskit\/icon\/core\/screen"/u);
 	assert.match(detailsSource, /<ScreenIcon label="" size="small" \/>/u);
 	assert.doesNotMatch(detailsSource, /DevicesIcon/u);
@@ -302,7 +344,8 @@ test("demo sessions share one moving shell with a fade-only content viewport", (
 	assert.doesNotMatch(flyoutSource, /data-\[activation-direction|translate-y-\[50%\]|will-change:transform/u);
 	assert.match(flyoutSource, /transition-\[opacity,scale,translate\] duration-medium ease-in-out/u);
 	assert.doesNotMatch(flyoutSource, /transition-\[[^\]]*(?:width|height)/u);
-	assert.match(flyoutSource, /transition-\[top,left,right,bottom\] duration-medium ease-in-out/u);
+	assert.match(flyoutSource, /instantPosition\?: boolean/u);
+	assert.match(flyoutSource, /instantPosition\s*\? "transition-none"\s*: "transition-\[top,left,right,bottom\] duration-medium ease-in-out motion-reduce:transition-none data-instant:transition-none"/u);
 	assert.doesNotMatch(flyoutSource, /\[&_\[(?:data-current|data-previous)\]\]:h-\(--popup-height\)/u);
 	assert.match(flyoutSource, /overflow-clip rounded-\[inherit\]/u);
 	assert.match(flyoutSource, /motion-reduce:\[&_\[data-current\]\]:transition-none/u);
@@ -453,6 +496,7 @@ test("catalog examples are separate surfaces without content tabs", () => {
 	assert.match(pageSource, /<AgentSessionFlyout[\s\S]*content=\{content\}[\s\S]*sessions=\{sessions\}/u);
 	assert.match(pageSource, /onLinkWorkItem=\{/u);
 	assert.match(pageSource, /onCreateWorkItem=\{/u);
+	assert.match(pageSource, /onArchiveSession=\{/u);
 	assert.match(pageSource, /onAddAsSubtask=\{/u);
 	assert.match(pageSource, /aria-live="polite"/u);
 	assert.match(demoSource, /export default function AgentSessionFlyoutDemo/u);
@@ -463,6 +507,10 @@ test("catalog examples are separate surfaces without content tabs", () => {
 	assert.match(demoSource, /<Page content="composer" \/>/u);
 	assert.match(demoSource, /from "@\/components\/blocks\/agent-session"/u);
 	assert.match(demoSource, /export function AgentSessionFlyoutDemoUntrackedWork/u);
+	assert.match(demoSource, /id: "lw-no-link-demo"/u);
+	assert.match(demoSource, /issueKey: ""/u);
+	assert.match(demoSource, /items=\{AGENT_SESSION_FLYOUT_UNTRACKED_WORK_ITEMS\.filter\(/u);
+	assert.match(demoSource, /onArchiveSession=\{handleArchive\}/u);
 	assert.match(demoSource, /className=\{AGENT_SESSION_FLYOUT_LIST_CLASSNAME\}/u);
 	assert.match(
 		readRepoFile("components/blocks/agent-session/agent-session-card.tsx"),

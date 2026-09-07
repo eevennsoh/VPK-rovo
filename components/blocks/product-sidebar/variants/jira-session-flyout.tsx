@@ -44,6 +44,7 @@ import { Tag } from "@/components/ui/tag";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { ProgressCircle } from "@/components/ui-custom/progress-circle";
 import { getAgentProfileBannerSrc } from "@/lib/agent-avatars";
+import { cn } from "@/lib/utils";
 
 import type {
 	JiraSidebarSessionHost,
@@ -75,6 +76,8 @@ export type JiraSessionFlyoutContent = "details" | "composer" | "untracked-work"
 
 export interface JiraSessionFlyoutSurfaceProps {
 	handle: JiraSessionFlyoutHandle;
+	/** Moves directly between detached triggers instead of easing through stale positions. */
+	instantPosition?: boolean;
 	/**
 	 * Flyout body. `details` (default) is the compact session hover card, `composer`
 	 * is the Agent States card, and `untracked-work` suggests a related Jira item.
@@ -82,6 +85,8 @@ export interface JiraSessionFlyoutSurfaceProps {
 	content?: JiraSessionFlyoutContent;
 	/** Captured sessions hide Link / Create / subtask so capture cannot run twice. */
 	capturedSessionIds?: ReadonlySet<string>;
+	/** Archives the session from the untracked-work flyout. Omit to expose the action as unavailable. */
+	onArchiveSession?: (session: JiraSidebarSessionItem) => void;
 	/** Adds the session below the suggested work item. Omit to expose the menu option as unavailable. */
 	onAddAsSubtask?: (session: JiraSidebarSessionItem, workItemKey: string) => void;
 	/** Creates a work item from the session. Omit to expose the action as unavailable. */
@@ -559,67 +564,90 @@ export function JiraSessionFlyoutBody({
 	);
 }
 
-function JiraSessionFlyoutPayload({
-	capturedSessionIds,
-	content,
-	onAddAsSubtask,
-	onCreateWorkItem,
-	onLinkWorkItem,
-	onSubmitPrompt,
-	session,
-}: Readonly<
+type JiraSessionFlyoutPayloadProps = Readonly<
 	Pick<
 		JiraSessionFlyoutSurfaceProps,
-		"capturedSessionIds" | "onAddAsSubtask" | "onCreateWorkItem" | "onLinkWorkItem" | "onSubmitPrompt"
+		| "capturedSessionIds"
+		| "onArchiveSession"
+		| "onAddAsSubtask"
+		| "onCreateWorkItem"
+		| "onLinkWorkItem"
+		| "onSubmitPrompt"
 	> & {
 		content: JiraSessionFlyoutContent;
 		session: JiraSidebarSessionItem;
 	}
->) {
+>;
+
+type JiraSessionUntrackedWorkActions = Readonly<{
+	onArchiveSession?: () => void;
+	onAddAsSubtask?: (workItemKey: string) => void;
+	onCreateWorkItem?: () => void;
+	onLinkWorkItem?: (workItemKey: string) => void;
+}>;
+
+function resolveJiraSessionUntrackedWorkActions({
+	capturedSessionIds,
+	onArchiveSession,
+	onAddAsSubtask,
+	onCreateWorkItem,
+	onLinkWorkItem,
+	session,
+}: Omit<JiraSessionFlyoutPayloadProps, "content">): JiraSessionUntrackedWorkActions {
 	const captureLocked = capturedSessionIds?.has(session.id) ?? false;
+
+	return {
+		onArchiveSession: captureLocked || onArchiveSession === undefined
+			? undefined
+			: () => onArchiveSession(session),
+		onAddAsSubtask: captureLocked || onAddAsSubtask === undefined
+			? undefined
+			: (workItemKey) => onAddAsSubtask(session, workItemKey),
+		onCreateWorkItem: captureLocked || onCreateWorkItem === undefined
+			? undefined
+			: () => onCreateWorkItem(session),
+		onLinkWorkItem: captureLocked || onLinkWorkItem === undefined
+			? undefined
+			: (workItemKey) => onLinkWorkItem(session, workItemKey),
+	};
+}
+
+function JiraSessionComposerFlyout({
+	onSubmitPrompt,
+	session,
+}: Pick<JiraSessionFlyoutPayloadProps, "onSubmitPrompt" | "session">) {
+	return (
+		<AgentStates
+			agent={{
+				avatarSrc: session.agentAvatarSrc,
+				brandName: session.brandName,
+				id: session.id,
+				name: session.agentName,
+			}}
+			className="w-[320px] max-w-[calc(100vw-48px)] rounded-none shadow-none"
+			completedAtMs={session.completedAtMs}
+			completedSecondsAgo={session.completedSecondsAgo}
+			initialElapsedSeconds={session.initialElapsedSeconds}
+			message={toAgentStatesMessage(session.status)}
+			onSubmit={onSubmitPrompt ? (prompt) => onSubmitPrompt(session, prompt) : undefined}
+			startedAtMs={session.startedAtMs}
+			state={toAgentStatesState(session.status)}
+		/>
+	);
+}
+
+function JiraSessionUntrackedWorkFlyout(props: Omit<JiraSessionFlyoutPayloadProps, "content">) {
+	return <JiraSessionUntrackedWorkCard {...resolveJiraSessionUntrackedWorkActions(props)} session={props.session} />;
+}
+
+function JiraSessionFlyoutPayload({ content, ...props }: JiraSessionFlyoutPayloadProps) {
 	switch (content) {
 		case "composer":
-			return (
-				<AgentStates
-					agent={{
-						avatarSrc: session.agentAvatarSrc,
-						brandName: session.brandName,
-						id: session.id,
-						name: session.agentName,
-					}}
-					className="w-[320px] max-w-[calc(100vw-48px)] rounded-none shadow-none"
-					completedAtMs={session.completedAtMs}
-					completedSecondsAgo={session.completedSecondsAgo}
-					initialElapsedSeconds={session.initialElapsedSeconds}
-					message={toAgentStatesMessage(session.status)}
-					onSubmit={onSubmitPrompt ? (prompt) => onSubmitPrompt(session, prompt) : undefined}
-					startedAtMs={session.startedAtMs}
-					state={toAgentStatesState(session.status)}
-				/>
-			);
+			return <JiraSessionComposerFlyout {...props} />;
 		case "untracked-work":
-			return (
-				<JiraSessionUntrackedWorkCard
-					onAddAsSubtask={
-						captureLocked || onAddAsSubtask === undefined
-							? undefined
-							: (workItemKey) => onAddAsSubtask(session, workItemKey)
-					}
-					onCreateWorkItem={
-						captureLocked || onCreateWorkItem === undefined
-							? undefined
-							: () => onCreateWorkItem(session)
-					}
-					onLinkWorkItem={
-						captureLocked || onLinkWorkItem === undefined
-							? undefined
-							: (workItemKey) => onLinkWorkItem(session, workItemKey)
-					}
-					session={session}
-				/>
-			);
+			return <JiraSessionUntrackedWorkFlyout {...props} />;
 		case "details":
-			return <JiraSessionDetailsCard session={session} />;
+			return <JiraSessionDetailsCard session={props.session} />;
 		default: {
 			const _exhaustive: never = content;
 			return _exhaustive;
@@ -634,12 +662,15 @@ function JiraSessionFlyoutPayload({
  * Base UI's viewport keeps the popup mounted while the anchor
  * changes. The shell follows the new row, immediately adopts its measured size,
  * and crossfades the old and new content without letting rapid hovers restart a
- * stale size transition.
+ * stale size transition. High-frequency pointer surfaces can opt out of the
+ * position transition so the shell never eases through stale triggers.
  */
 export function JiraSessionFlyoutSurface({
 	capturedSessionIds,
 	content = "details",
 	handle,
+	instantPosition = false,
+	onArchiveSession,
 	onAddAsSubtask,
 	onCreateWorkItem,
 	onLinkWorkItem,
@@ -661,7 +692,12 @@ export function JiraSessionFlyoutSurface({
 					align="start"
 					alignOffset={0}
 					className="h-(--popup-height) w-(--popup-width) border-0 bg-surface-overlay p-0 text-text shadow-overlay transition-[opacity,scale,translate] duration-medium ease-in-out motion-reduce:transition-none data-ending-style:duration-normal data-ending-style:ease-in data-[side=right]:data-starting-style:translate-x-0 data-[side=right]:data-ending-style:translate-x-0"
-					positionerClassName="h-(--positioner-height) w-(--positioner-width) max-w-(--available-width) transition-[top,left,right,bottom] duration-medium ease-in-out motion-reduce:transition-none data-instant:transition-none"
+					positionerClassName={cn(
+						"h-(--positioner-height) w-(--positioner-width) max-w-(--available-width)",
+						instantPosition
+							? "transition-none"
+							: "transition-[top,left,right,bottom] duration-medium ease-in-out motion-reduce:transition-none data-instant:transition-none",
+					)}
 					side="right"
 					sideOffset={8}
 				>
@@ -670,6 +706,7 @@ export function JiraSessionFlyoutSurface({
 							<JiraSessionFlyoutPayload
 								capturedSessionIds={capturedSessionIds}
 								content={content}
+								onArchiveSession={onArchiveSession}
 								onAddAsSubtask={onAddAsSubtask}
 								onCreateWorkItem={onCreateWorkItem}
 								onLinkWorkItem={onLinkWorkItem}

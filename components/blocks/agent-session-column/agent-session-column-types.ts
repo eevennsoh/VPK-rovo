@@ -45,6 +45,10 @@ export interface AgentSessionColumnProps extends Omit<
 	 * The expand control remains keyboard-reachable. Defaults to `"column"`.
 	 */
 	collapsedPresentation?: "column" | "gutter";
+	/** Plays the collapsed gutter rail's one-time staggered dot introduction. */
+	playGutterIntro?: boolean;
+	/** Called after the final dot finishes the gutter introduction. */
+	onGutterIntroComplete?: () => void;
 	/**
 	 * Controlled collapse. Supply it when the host renders its own collapse
 	 * affordance — a docked surface with a minimise control, say — and needs the
@@ -82,4 +86,6 @@ export interface AgentSessionColumnProps extends Omit<
 	 * surface instead of leaving a 280px column inside a larger panel.
 	 */
 	expandedWidthPx?: number;
+	/** Disable the column's width transition while a host drives live resizing. */
+	widthTransitionDisabled?: boolean;
 }

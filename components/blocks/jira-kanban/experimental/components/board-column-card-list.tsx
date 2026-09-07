@@ -58,6 +58,9 @@ export function BoardColumnCardList({
 				insertionArmed && "[mask-image:none]! [-webkit-mask-image:none]!",
 			)}
 			style={{
+				// An empty column puts its create action first, so the always-visible
+				// well reads as the column's content rather than sitting under a void.
+				order: isEmpty ? 1 : 0,
 				flexGrow: 1,
 				display: "flex",
 				flexDirection: "column",

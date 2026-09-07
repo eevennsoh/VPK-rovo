@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 
 import {
@@ -11,16 +11,31 @@ import {
 	type AgentSessionColumnProps,
 } from "@/components/blocks/agent-session-column";
 import { JiraSessionFlyoutSuspensionProvider } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
+import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
+import { SidebarResizeHandle } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
 const IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX = 24;
-const IN_FLOW_AGENT_SESSION_COLUMN_GAP_PX = 8;
+// The surface is translated into the page gutter while the status row starts
+// inside its scrollport. A 16px footprint spacer resolves to the same visible
+// 8px edge gap that `gap-2` creates between adjacent Jira status columns.
+const IN_FLOW_AGENT_SESSION_COLUMN_GAP_PX = 16;
+const IN_FLOW_AGENT_SESSION_COLUMN_TITLE = "Untracked work";
 // Centers the rail's 16px dot axis in the 26px visible gutter (24px inset + border).
 const IN_FLOW_AGENT_SESSION_COLUMN_GUTTER_OFFSET_PX = -5;
+const IN_FLOW_AGENT_SESSION_COLUMN_MAX_WIDTH_PX = 560;
 const IN_FLOW_AGENT_SESSION_COLUMN_WIDTH_TRANSITION =
 	"width var(--duration-normal) var(--ease-out-practical)";
 const IN_FLOW_AGENT_SESSION_COLUMN_EXPANSION_TRANSITION =
 	"width var(--duration-medium) var(--ease-in-out)";
+const IN_FLOW_AGENT_SESSION_COLUMN_RESIZE_HANDLE_CLASS_NAME = [
+	"bg-transparent! hover:bg-transparent! data-[active]:bg-transparent! focus-visible:bg-transparent! focus-visible:outline-none focus-visible:ring-0",
+	"duration-normal ease-out-practical",
+	"[&>div]:h-16 [&>div]:origin-center [&>div]:transition-[opacity,background-color,scale]",
+	"group-hover/in-flow-agent-session-column:[&>div]:opacity-100 hover:[&>div]:scale-105",
+	"data-[active]:[&>div]:scale-105 focus-visible:[&>div]:scale-105 focus-visible:[&>div]:bg-bg-selected-bold focus-visible:[&>div]:opacity-100",
+	"[&>div]:duration-medium [&>div]:ease-out-practical motion-reduce:transition-none motion-reduce:[&>div]:scale-100 motion-reduce:[&>div]:transition-none",
+].join(" ");
 const IN_FLOW_AGENT_SESSION_COLUMN_VARIANTS: Variants = {
 	embedded: {
 		transform: `translateX(${IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX}px)`,
@@ -97,14 +112,18 @@ function useInFlowAgentSessionColumnInteraction(
 function InFlowAgentSessionColumnFootprint({
 	columnWidthPx,
 	isEmbedded,
+	isResizing,
 	shouldReduceMotion,
 }: Readonly<{
 	columnWidthPx: number;
 	isEmbedded: boolean;
+	isResizing: boolean;
 	shouldReduceMotion: boolean | null;
 }>) {
-	const transition = shouldReduceMotion ? "none" : IN_FLOW_AGENT_SESSION_COLUMN_WIDTH_TRANSITION;
-	const expansionTransition = shouldReduceMotion
+	const transition = shouldReduceMotion || isResizing
+		? "none"
+		: IN_FLOW_AGENT_SESSION_COLUMN_WIDTH_TRANSITION;
+	const expansionTransition = shouldReduceMotion || isResizing
 		? "none"
 		: IN_FLOW_AGENT_SESSION_COLUMN_EXPANSION_TRANSITION;
 
@@ -113,6 +132,7 @@ function InFlowAgentSessionColumnFootprint({
 			<div
 				aria-hidden="true"
 				className="shrink-0"
+				data-agent-session-column-footprint="width"
 				style={{
 					transition,
 					width: isEmbedded ? IN_FLOW_AGENT_SESSION_COLUMN_GAP_PX : 0,
@@ -134,27 +154,37 @@ function InFlowAgentSessionColumnSurface({
 	agentSessionColumn,
 	className,
 	columnFrame,
+	expandedWidthPx,
 	isEmbedded,
 	isPersistentExpanded,
+	resize,
 	onCollapsedChange,
+	onGutterIntroComplete,
 	paddingBottom,
 	paddingTop,
+	playGutterIntro,
 	shouldReduceMotion,
 	untrackedDropArmed,
 }: Readonly<InFlowAgentSessionColumnProps & {
+	expandedWidthPx: number;
 	isEmbedded: boolean;
 	isPersistentExpanded: boolean;
+	resize: ReturnType<typeof useSidebarResize>;
 	onCollapsedChange: (collapsed: boolean) => void;
+	onGutterIntroComplete: () => void;
+	playGutterIntro: boolean;
 	shouldReduceMotion: boolean | null;
 }>) {
+	const title = agentSessionColumn.title ?? IN_FLOW_AGENT_SESSION_COLUMN_TITLE;
+
 	return (
 		<motion.div
 			animate={isEmbedded ? "embedded" : "gutter"}
 			className={cn(
-				"absolute inset-y-0 start-0 z-40 flex min-h-0 border-2 border-r-0",
+				"group/in-flow-agent-session-column absolute inset-y-0 start-0 z-40 flex min-h-0 border-2 border-r-0",
 				isEmbedded
 					? "pointer-events-auto bg-surface"
-					: "pointer-events-none bg-transparent",
+					: "pointer-events-none bg-transparent [&_[data-agent-session-notch]]:pointer-events-auto",
 				untrackedDropArmed ? "border-ring" : "border-transparent",
 				className,
 			)}
@@ -175,8 +205,30 @@ function InFlowAgentSessionColumnSurface({
 				collapsed={!isPersistentExpanded}
 				collapsedPresentation={isEmbedded ? "column" : "gutter"}
 				columnFrame={columnFrame}
+				expandedWidthPx={expandedWidthPx}
+				widthTransitionDisabled={resize.isResizing}
 				onCollapsedChange={onCollapsedChange}
+				onGutterIntroComplete={onGutterIntroComplete}
+				playGutterIntro={playGutterIntro}
 			/>
+			{isPersistentExpanded ? (
+				<SidebarResizeHandle
+					aria-label={`Resize ${title} column`}
+					aria-orientation="vertical"
+					aria-valuemax={resize.maxWidth}
+					aria-valuemin={resize.minWidth}
+					aria-valuenow={expandedWidthPx}
+					className={IN_FLOW_AGENT_SESSION_COLUMN_RESIZE_HANDLE_CLASS_NAME}
+					data-active={resize.isResizing ? "" : undefined}
+					data-testid="jira-kanban-agent-session-column-resize-handle"
+					onDoubleClick={resize.onResizeHandleDoubleClick}
+					onKeyDown={resize.onResizeHandleKeyDown}
+					onPointerDown={resize.onResizeHandlePointerDown}
+					role="separator"
+					side="right"
+					tabIndex={0}
+				/>
+			) : null}
 		</motion.div>
 	);
 }
@@ -185,7 +237,9 @@ function InFlowAgentSessionColumnSurface({
  * The Untracked rail rests in the page's leading gutter. Hover temporarily
  * returns that same compact timeline to the board's original 24px column inset;
  * it never swaps dots for cards. Only the column's expand control promotes the
- * full column, and that deliberate state persists after the pointer leaves.
+ * full column, and that deliberate state persists after the pointer leaves. The
+ * full-height gutter target sits behind each session row so a row can own its
+ * whole 24px band while empty gutter space still opens the column preview.
  */
 export function InFlowAgentSessionColumn({
 	agentSessionColumn,
@@ -197,6 +251,12 @@ export function InFlowAgentSessionColumn({
 	untrackedDropArmed,
 }: Readonly<InFlowAgentSessionColumnProps>): ReactNode {
 	const shouldReduceMotion = useReducedMotion();
+	const [playGutterIntro, setPlayGutterIntro] = useState(true);
+	useEffect(() => {
+		if (shouldReduceMotion) {
+			setPlayGutterIntro(false);
+		}
+	}, [shouldReduceMotion]);
 	const {
 		handleCollapsedChange,
 		handleGutterPointerDown,
@@ -208,7 +268,13 @@ export function InFlowAgentSessionColumn({
 		agentSessionColumn.collapsed,
 		agentSessionColumn.onCollapsedChange,
 	);
-	const expandedWidthPx = agentSessionColumn.expandedWidthPx ?? AGENT_SESSION_COLUMN_WIDTH_PX;
+	const resize = useSidebarResize({
+		defaultWidth: agentSessionColumn.expandedWidthPx ?? AGENT_SESSION_COLUMN_WIDTH_PX,
+		maxWidth: IN_FLOW_AGENT_SESSION_COLUMN_MAX_WIDTH_PX,
+		minWidth: AGENT_SESSION_COLUMN_WIDTH_PX,
+		minWidthResistance: true,
+	});
+	const expandedWidthPx = resize.sidebarWidth;
 	const columnWidthPx = isPersistentExpanded
 		? expandedWidthPx
 		: AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX;
@@ -219,13 +285,14 @@ export function InFlowAgentSessionColumn({
 		>
 			<div
 				className="relative flex min-h-0 shrink-0 self-stretch"
+				onPointerDown={isEmbedded ? undefined : handleGutterPointerDown}
 				onPointerEnter={handlePointerEnter}
 				onPointerLeave={handlePointerLeave}
 			>
 				{isEmbedded ? null : (
 					<div
 						aria-hidden="true"
-						className="absolute inset-y-0 start-0 z-50"
+						className="absolute inset-y-0 start-0 z-30"
 						data-agent-session-column-hit-area=""
 						onPointerEnter={handlePointerEnter}
 						onPointerDown={handleGutterPointerDown}
@@ -235,17 +302,22 @@ export function InFlowAgentSessionColumn({
 				<InFlowAgentSessionColumnFootprint
 					columnWidthPx={columnWidthPx}
 					isEmbedded={isEmbedded}
+					isResizing={resize.isResizing}
 					shouldReduceMotion={shouldReduceMotion}
 				/>
 				<InFlowAgentSessionColumnSurface
 					agentSessionColumn={agentSessionColumn}
 					className={className}
 					columnFrame={columnFrame}
+					expandedWidthPx={expandedWidthPx}
 					isEmbedded={isEmbedded}
 					isPersistentExpanded={isPersistentExpanded}
+					resize={resize}
 					onCollapsedChange={handleCollapsedChange}
+					onGutterIntroComplete={() => setPlayGutterIntro(false)}
 					paddingBottom={paddingBottom}
 					paddingTop={paddingTop}
+					playGutterIntro={playGutterIntro}
 					sessionFlyoutsSuspended={sessionFlyoutsSuspended}
 					shouldReduceMotion={shouldReduceMotion}
 					untrackedDropArmed={untrackedDropArmed}

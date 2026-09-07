@@ -22,11 +22,13 @@ const V2_BOARD_SOURCE = readFileSync(
 const PAGE_SOURCE = readFileSync(join(__dirname, "../page.tsx"), "utf8");
 
 const {
+	BOARD_FIRST_COLLAPSED_COLUMN_INSET_PX,
 	BOARD_COLUMN_COLLAPSED_WIDTH_PX,
 	BOARD_COLUMN_WIDTH_PX,
 	EMPTY_COLLAPSED_BOARD_COLUMNS,
 	getBoardColumnOuterWidthPx,
 	isBoardColumnCollapsed,
+	resolveBoardColumnRowPaddingInlineStart,
 	toggleCollapsedBoardColumn,
 } = require("./board-column-collapse.ts");
 
@@ -60,6 +62,26 @@ test("outer width reserves the transparent drop-target border on both edges", ()
 	assert.equal(getBoardColumnOuterWidthPx(true), BOARD_COLUMN_COLLAPSED_WIDTH_PX + 4);
 	assert.equal(getBoardColumnOuterWidthPx(false), 280);
 	assert.equal(getBoardColumnOuterWidthPx(true), 36);
+});
+
+test("the first collapsed column restores the simple chrome content inset", () => {
+	assert.equal(BOARD_FIRST_COLLAPSED_COLUMN_INSET_PX, 4);
+	assert.equal(
+		resolveBoardColumnRowPaddingInlineStart("24px", "To do", true, new Set(["To do"])),
+		`calc(24px + ${BOARD_FIRST_COLLAPSED_COLUMN_INSET_PX}px)`,
+	);
+	assert.equal(
+		resolveBoardColumnRowPaddingInlineStart("24px", "To do", true, EMPTY_COLLAPSED_BOARD_COLUMNS),
+		"24px",
+	);
+	assert.equal(
+		resolveBoardColumnRowPaddingInlineStart("24px", "To do", false, new Set(["To do"])),
+		"24px",
+	);
+	assert.match(
+		BOARD_SOURCE,
+		/const resolvedColumnRowPaddingInlineStart = resolveBoardColumnRowPaddingInlineStart\(columnRowPaddingInlineStart, boardColumns\[0\]\?\.title, Boolean\(chrome\.dropContentPadding\), collapsedColumns\);/u,
+	);
 });
 
 test("collapse survives a switch to the list or Pulse view", () => {
@@ -112,9 +134,54 @@ test("the pinned session column shares the status columns' box model", () => {
 	// the column itself remains the Untracked drop zone and lights when armed.
 	assert.match(
 		IN_FLOW_SOURCE,
-		/className=\{cn\(\s*"absolute inset-y-0 start-0 z-40 flex min-h-0 border-2 border-r-0",[\s\S]*?untrackedDropArmed \? "border-ring" : "border-transparent",\s*className,\s*\)\}/u,
+		/className=\{cn\(\s*"group\/in-flow-agent-session-column absolute inset-y-0 start-0 z-40 flex min-h-0 border-2 border-r-0",[\s\S]*?untrackedDropArmed \? "border-ring" : "border-transparent",\s*className,\s*\)\}/u,
 	);
 	assert.match(IN_FLOW_SOURCE, /data-board-agent-session-drop-zone="untracked"/u);
+});
+
+test("the expanded pinned session column reuses the accessible sidebar resize contract", () => {
+	const resizeClassStart = IN_FLOW_SOURCE.indexOf(
+		"const IN_FLOW_AGENT_SESSION_COLUMN_RESIZE_HANDLE_CLASS_NAME",
+	);
+	const resizeClassEnd = IN_FLOW_SOURCE.indexOf(
+		"const IN_FLOW_AGENT_SESSION_COLUMN_VARIANTS",
+		resizeClassStart,
+	);
+	const resizeClassSource = IN_FLOW_SOURCE.slice(resizeClassStart, resizeClassEnd);
+
+	assert.match(
+		IN_FLOW_SOURCE,
+		/import \{ useSidebarResize \} from "@\/components\/projects\/rovo-core\/hooks\/use-sidebar-resize";/u,
+	);
+	assert.match(IN_FLOW_SOURCE, /const IN_FLOW_AGENT_SESSION_COLUMN_GAP_PX = 16;/u);
+	assert.match(IN_FLOW_SOURCE, /const IN_FLOW_AGENT_SESSION_COLUMN_MAX_WIDTH_PX = 560;/u);
+	assert.match(
+		resizeClassSource,
+		/bg-transparent! hover:bg-transparent! data-\[active\]:bg-transparent! focus-visible:bg-transparent!/u,
+	);
+	assert.match(resizeClassSource, /\[&>div\]:h-16/u);
+	assert.match(
+		resizeClassSource,
+		/group-hover\/in-flow-agent-session-column:\[&>div\]:opacity-100 hover:\[&>div\]:scale-105/u,
+	);
+	assert.match(resizeClassSource, /data-\[active\]:\[&>div\]:scale-105/u);
+	assert.match(resizeClassSource, /focus-visible:\[&>div\]:scale-105/u);
+	assert.match(resizeClassSource, /motion-reduce:\[&>div\]:scale-100/u);
+	assert.match(
+		IN_FLOW_SOURCE,
+		/const transition = shouldReduceMotion \|\| isResizing[\s\S]*const expansionTransition = shouldReduceMotion \|\| isResizing/u,
+	);
+	assert.match(IN_FLOW_SOURCE, /data-agent-session-column-footprint="width"/u);
+	assert.match(IN_FLOW_SOURCE, /widthTransitionDisabled=\{resize\.isResizing\}/u);
+	assert.match(IN_FLOW_SOURCE, /isResizing=\{resize\.isResizing\}/u);
+	assert.match(
+		IN_FLOW_SOURCE,
+		/useSidebarResize\(\{[\s\S]*defaultWidth: agentSessionColumn\.expandedWidthPx \?\? AGENT_SESSION_COLUMN_WIDTH_PX,[\s\S]*maxWidth: IN_FLOW_AGENT_SESSION_COLUMN_MAX_WIDTH_PX,[\s\S]*minWidth: AGENT_SESSION_COLUMN_WIDTH_PX,[\s\S]*minWidthResistance: true,/u,
+	);
+	assert.match(
+		IN_FLOW_SOURCE,
+		/const title = agentSessionColumn\.title \?\? IN_FLOW_AGENT_SESSION_COLUMN_TITLE;[\s\S]*\{isPersistentExpanded \? \([\s\S]*<SidebarResizeHandle[\s\S]*aria-label=\{`Resize \$\{title\} column`\}[\s\S]*aria-valuemax=\{resize\.maxWidth\}[\s\S]*aria-valuemin=\{resize\.minWidth\}[\s\S]*aria-valuenow=\{expandedWidthPx\}[\s\S]*className=\{IN_FLOW_AGENT_SESSION_COLUMN_RESIZE_HANDLE_CLASS_NAME\}[\s\S]*onKeyDown=\{resize\.onResizeHandleKeyDown\}[\s\S]*onPointerDown=\{resize\.onResizeHandlePointerDown\}[\s\S]*role="separator"[\s\S]*side="right"[\s\S]*tabIndex=\{0\}/u,
+	);
 });
 
 test("a collapsed status pill hugs its label while the shell keeps the drop lane", () => {
@@ -130,9 +197,12 @@ test("a collapsed status pill hugs its label while the shell keeps the drop lane
 	assert.doesNotMatch(pillSource, /(?:^|[^-\w])h-full\b/u);
 	// The shell around it still stretches, so a collapsed column is as easy to
 	// drop onto as an expanded one. `min-h-full` on the row is the shell, not
-	// the pill — do not treat that as the pill stretching. The row's `ps-6`
-	// inset keeps the status columns clear of the gutter rail.
-	assert.match(BOARD_SOURCE, /className="flex min-h-full w-max min-w-full items-stretch ps-6"/u);
+	// the pill — do not treat that as the pill stretching. The row's resolved
+	// inset keeps visible simple-column content on the 24px header line.
+	assert.match(
+		BOARD_SOURCE,
+		/className="flex min-h-full w-max min-w-full items-stretch"\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart \}\}/u,
+	);
 
 	// The expand control's focus ring extends 3px past a 24px button, which is
 	// exactly the 30px inside this 32px pill's border. Clipping to the padding
@@ -242,9 +312,13 @@ test("experimental-v2 reuses the shared collapsed column and threads chrome", ()
 	assert.doesNotMatch(V2_BOARD_SOURCE, /function CollapsedBoardColumn/u);
 });
 
-test("simple Untracked drop gutter stays on the board and is omitted in List", () => {
+test("simple Untracked gutter keeps identical padding in Board and List", () => {
 	assert.match(
 		PAGE_SOURCE,
-		/paddingTop=\{isListContent\s*\?\s*undefined\s*:\s*withKanbanDropContentGutter\(0, columnChromeStyles\)\.paddingTop\}/u,
+		/paddingTop=\{withKanbanDropContentGutter\(0, columnChromeStyles\)\.paddingTop\}/u,
+	);
+	assert.doesNotMatch(
+		PAGE_SOURCE,
+		/paddingTop=\{isListContent/u,
 	);
 });

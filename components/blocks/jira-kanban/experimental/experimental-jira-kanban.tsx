@@ -9,6 +9,7 @@ import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import { type AgentSessionColumnProps } from "@/components/blocks/agent-session-column";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
+import { resolveAgentSessionWorkItemKey } from "@/components/blocks/agent-session/agent-session-work-item";
 import {
 	type JiraIssueAgentActivityLayout,
 	type JiraIssueAgentActivityIndicatorRenderer,
@@ -48,10 +49,7 @@ import {
 } from "./components/collapsed-board-column";
 import { BoardColumnCardList } from "./components/board-column-card-list";
 import { BoardColumnCreateAction } from "./components/create-work-item-drop-zone";
-import {
-	BoardCardInsertionLine,
-	getBoardCardInsertionAnchorClassName,
-} from "./components/board-card-insertion-line";
+import { BoardCardInsertionLine, getBoardCardInsertionAnchorClassName } from "./components/board-card-insertion-line";
 import { resolveBoardCardInsertionPosition } from "./lib/board-card-insertion";
 import { ExclusiveCreateWellProximityProvider } from "./components/create-work-item-exclusive-proximity-context";
 import { InFlowAgentSessionColumn } from "./components/in-flow-agent-session-column";
@@ -61,6 +59,7 @@ import {
 	getBoardColumnOuterWidthPx,
 	isBoardColumnCollapsed,
 	toggleCollapsedBoardColumn,
+	resolveBoardColumnRowPaddingInlineStart,
 	BOARD_COLUMN_WIDTH_PX,
 	type CollapsedBoardColumns,
 } from "./lib/board-column-collapse";
@@ -69,6 +68,7 @@ import { SessionFusionOverlay } from "./components/session-fusion-overlay";
 import {
 	bindBoardProximitySessionActions,
 	resolveBoardUntrackedIssueKey,
+	resolveHoveredBoardIssueKey,
 	resolveVisibleFocusedIssueKey,
 	scrollBoardIssueIntoView,
 } from "./lib/board-untracked-sessions";
@@ -161,6 +161,8 @@ export interface ExperimentalJiraKanbanProps extends JiraKanbanProps {
 	 * a Board/List switch.
 	 */
 	proximityHighlightedSessionId?: string | null;
+	/** Resolved suggested Jira key from a host-owned Agent Session column. */
+	proximityHighlightedWorkItemKey?: string | null;
 	/**
 	 * Injected board-session drag API. The page supplies this when the
 	 * floating panel also needs `untrackedBinding`; omit to let the board
@@ -411,7 +413,13 @@ function BoardColumn({
 }>) {
 	const showAgentAssignment = Boolean(agents?.length && onCreateAgent && onToggleAgent);
 	const insertionArmed = cardInsertion?.columnTitle === title;
-
+	const isEmptyColumn = count === 0;
+	const createAction = <BoardColumnCreateAction
+		dropZoneLabel={createWorkItemDropZoneLabel}
+		reveal={isEmptyColumn ? "always" : "column-hover"}
+		sessionDragTransaction={sessionDragTransaction}
+		title={title}
+	/>;
 	return (
 		<div
 			className={cn("group/board-column min-w-0 overflow-visible", chrome.columnClassName)}
@@ -463,23 +471,16 @@ function BoardColumn({
 					/>
 				</div>
 			</div>
-
 			<BoardColumnCardList
 				chrome={chrome}
 				columnTitle={title}
 				insertionArmed={insertionArmed}
-				isEmpty={count === 0}
+				isEmpty={isEmptyColumn}
 			>
 				{children}
 			</BoardColumnCardList>
 
-			<div style={chrome.footer}>
-				<BoardColumnCreateAction
-					dropZoneLabel={createWorkItemDropZoneLabel}
-					sessionDragTransaction={sessionDragTransaction}
-					title={title}
-				/>
-			</div>
+			<div style={{ order: isEmptyColumn ? 0 : 1, ...(!isEmptyColumn ? chrome.footer : {}) }}>{createAction}</div>
 		</div>
 	);
 }
@@ -631,11 +632,13 @@ function ExperimentalJiraKanbanView({
 	boardSessionDrag,
 	proximityAgentSession,
 	proximityHighlightedSessionId = null,
+	proximityHighlightedWorkItemKey,
 	renderAgentActivityIndicator,
 	paddingBottom = token("space.150"),
 	paddingTop = token("space.150"),
 	selectionToolbar,
 	captureBoardSessionDragRoot = true,
+	untrackedSessions,
 }: Readonly<ExperimentalJiraKanbanProps> & {
 	boardSessionDrag: BoardAgentSessionDrag;
 	captureBoardSessionDragRoot?: boolean;
@@ -643,6 +646,9 @@ function ExperimentalJiraKanbanView({
 	const chrome = resolveKanbanColumnChrome(columnChrome);
 	const scrollportPaddingTop = withKanbanDropRingClipGutter(paddingTop, chrome).paddingTop;
 	const untrackedPaddingTop = withKanbanDropContentGutter(paddingTop, chrome).paddingTop;
+	const columnRowPaddingInlineStart = chrome.dropContentPadding
+		? `calc(${token("space.300")} - 2px - ${chrome.dropContentPadding.paddingInline})`
+		: token("space.300");
 	const cardLayoutGroupId = useId();
 	const shouldReduceMotion = useReducedMotion();
 	const shouldAnimateCardMoves = animateCardMoves && !shouldReduceMotion;
@@ -653,9 +659,32 @@ function ExperimentalJiraKanbanView({
 	);
 	const [focusedIssueKey, setFocusedIssueKey] = useState<string | null>(null);
 	const [hoveredSessionId, setHoveredSessionId] = useState<string | null>(null);
-	const highlightedSessionId = hoveredSessionId ?? proximityHighlightedSessionId;
+	const [hoveredColumnSessionId, setHoveredColumnSessionId] = useState<string | null>(null);
+	const highlightedSessionId = hoveredSessionId
+		?? hoveredColumnSessionId
+		?? proximityHighlightedSessionId;
+	const hostHoveredIssueKey = proximityHighlightedWorkItemKey === undefined
+		? resolveHoveredBoardIssueKey(
+			proximityHighlightedSessionId,
+			untrackedSessions,
+			boardColumns,
+		)
+		: resolveVisibleFocusedIssueKey(proximityHighlightedWorkItemKey, boardColumns);
+	const hoveredIssueKey = hoveredColumnSessionId === null
+		? hostHoveredIssueKey
+		: resolveHoveredBoardIssueKey(
+			hoveredColumnSessionId,
+			agentSessionColumn?.items,
+			boardColumns,
+			(item) => resolveAgentSessionWorkItemKey(
+				item,
+				agentSessionColumn?.getSuggestedWorkItemKey,
+				agentSessionColumn?.getSuggestedWorkItemKeys,
+			),
+		);
 	const spotlightIssueKey = resolveVisibleFocusedIssueKey(focusedIssueKey, boardColumns);
 	const collapsedColumns = controlledCollapsedColumns ?? uncontrolledCollapsedColumns;
+	const resolvedColumnRowPaddingInlineStart = resolveBoardColumnRowPaddingInlineStart(columnRowPaddingInlineStart, boardColumns[0]?.title, Boolean(chrome.dropContentPadding), collapsedColumns);
 	const selectedCount = selectedCardCodes?.size ?? 0;
 	const selectedStatus = selectedCardCodes
 		? getCommonSelectedCardStatus(boardColumns, selectedCardCodes)
@@ -790,6 +819,10 @@ function ExperimentalJiraKanbanView({
 		setHoveredSessionId(item?.id ?? null);
 		agentSessionColumn?.onItemHover?.(item);
 	};
+	const handleColumnSessionHover = (item: AgentSessionItem | null) => {
+		setHoveredColumnSessionId(item?.id ?? null);
+		agentSessionColumn?.onItemHover?.(item);
+	};
 
 	const handleSessionSelectionChange = (itemId: string | null) => {
 		// Card deselect is not a view. Clear the session-driven spotlight so
@@ -825,7 +858,7 @@ function ExperimentalJiraKanbanView({
 						agentSessionColumn={{
 							...agentSessionColumn,
 							highlightedItemId: highlightedSessionId,
-							onItemHover: handleSessionHover,
+							onItemHover: handleColumnSessionHover,
 							onSelectedItemIdChange: handleSessionSelectionChange,
 							onView: handleSessionView,
 							sessionDrag: boardSessionDrag.enablement.transferable
@@ -857,7 +890,8 @@ function ExperimentalJiraKanbanView({
 				>
 				<LayoutGroup id={cardLayoutGroupId}>
 						<div
-							className="flex min-h-full w-max min-w-full items-stretch ps-6"
+							className="flex min-h-full w-max min-w-full items-stretch"
+							style={{ paddingInlineStart: resolvedColumnRowPaddingInlineStart }}
 						>
 						<ExclusiveCreateWellProximityProvider>
 						<div className="flex min-h-full flex-1 items-stretch gap-2">
@@ -967,14 +1001,7 @@ function ExperimentalJiraKanbanView({
 												transition={cardMovePhase === "departing" ? JIRA_KANBAN_CARD_DEPART : JIRA_KANBAN_CARD_MOVE}
 											>
 												{insertionPosition ? (
-													<BoardCardInsertionLine
-														position={insertionPosition}
-														// Only a `before` seam below the first card has a real
-														// gap track above it to centre in. The leading seam of
-														// card 0 and the trailing seam of the last card sit
-														// against the card list's own boundary instead.
-														seam={insertionPosition === "before" && cardIndex > 0 ? "gap" : "edge"}
-													/>
+													<BoardCardInsertionLine position={insertionPosition} seam={insertionPosition === "before" && cardIndex > 0 ? "gap" : "edge"} />
 												) : null}
 												<ExperimentalJiraKanbanCard
 												active={isActive}
@@ -983,6 +1010,7 @@ function ExperimentalJiraKanbanView({
 														? boardSessionDrag.linkFlash.flash
 														: undefined}
 													agentSessionDragControl={agentSessionDragControl}
+													agentSessionTargetHighlighted={hoveredIssueKey === card.code}
 												capturedItemIds={proximityActions.capturedItemIds}
 												card={card}
 												chrome={chrome.cardChrome}

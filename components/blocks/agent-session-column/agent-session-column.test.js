@@ -374,7 +374,7 @@ test("a notch is a drag handle, so a session leaves the collapsed rail too", () 
 		TYPES_SOURCE,
 		/extends Omit<\s*AgentSessionProps,\s*"arrivingItemIds" \| "className" \| "onArrivalComplete" \| "rowTriage"\s*>/u,
 	);
-	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,800}?sessionDrag=\{sessionProps\.sessionDrag\}/u);
+	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,1600}?sessionDrag=\{sessionProps\.sessionDrag\}/u);
 	assert.match(
 		RAIL_COLUMN_SOURCE,
 		/import \{ AgentSessionMediumDrag \} from "@\/components\/blocks\/agent-session\/agent-session-medium-drag";/u,
@@ -416,6 +416,7 @@ test("each notch opens the shared session flyout rather than a forked preview", 
 	assert.equal(RAIL_COLUMN_SOURCE.match(/<JiraSessionFlyoutSurface\b/gu)?.length, 1);
 	assert.match(RAIL_COLUMN_SOURCE, /content="untracked-work"/u);
 	assert.match(RAIL_COLUMN_SOURCE, /<JiraSessionFlyoutSurface[\s\S]*handle=\{flyoutHandle\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /<JiraSessionFlyoutSurface[\s\S]*instantPosition/u);
 	assert.match(RAIL_COLUMN_SOURCE, /flyoutSession=\{toAgentSessionUntrackedWorkFlyoutItem\(/u);
 	assert.match(RAIL_COLUMN_SOURCE, /session=\{flyoutSession\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /closeDelay=\{160\}/u);
@@ -468,6 +469,14 @@ test("collapsed motion is tokenised and honours reduced motion", () => {
 	// Clipping is scoped to the resize, so a focused card's ring is never cut.
 	assert.match(INDEX_SOURCE, /collapsed \|\| isResizing \? "overflow-hidden" : null/u);
 	assert.match(INDEX_SOURCE, /event\.propertyName === "width"/u);
+	// A host-driven pointer resize must bypass this transition so the column edge
+	// tracks the pointer instead of easing toward every intermediate width.
+	assert.match(TYPES_SOURCE, /widthTransitionDisabled\?: boolean;/u);
+	assert.match(INDEX_SOURCE, /expandedWidthPx = AGENT_SESSION_COLUMN_WIDTH_PX,\s*widthTransitionDisabled = false,/u);
+	assert.match(
+		INDEX_SOURCE,
+		/shouldReduceMotion \|\| widthTransitionDisabled\s*\? "none"\s*: AGENT_SESSION_COLUMN_TRANSITION/u,
+	);
 });
 
 test("the resting notch paints icon.disabled, not an alpha of icon", () => {
