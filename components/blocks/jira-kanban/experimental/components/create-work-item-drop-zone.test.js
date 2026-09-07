@@ -46,6 +46,10 @@ test("session drag pops the create well in on every column", () => {
 		DROPZONE,
 		/useReducedMotion\(\)/u,
 	);
+	assert.match(
+		FOOTER,
+		/const drag: JiraDropzoneDragState = resolveBoardCreateDropzoneDrag\(\s*sessionDragTransaction,\s*title,\s*\);/u,
+	);
 });
 
 test("empty columns keep the create well at the top and always visible", () => {

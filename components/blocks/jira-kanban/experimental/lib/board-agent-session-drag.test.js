@@ -6,10 +6,12 @@ const { moveJiraKanbanAgentSession } = require("../../state.ts");
 const {
 	cancelBoardAgentSessionDragTransaction,
 	createBoardAgentSessionDragTransaction,
+	isCreateZoneEligible,
 	parseListRowDropZone,
 	resolveBoardAgentSessionAttachProximity,
 	resolveBoardAgentSessionDropAction,
 	resolveBoardAgentSessionDropTarget,
+	resolveBoardCreateDropzoneDrag,
 	SESSION_ATTACH_PROXIMITY_RANGE_PX,
 	toListSessionDropIntent,
 	updateBoardAgentSessionDragTransaction,
@@ -185,6 +187,54 @@ test("only untracked sessions resolve a create-work-item column target", () => {
 		),
 		null,
 	);
+});
+
+test("create wells stay idle unless the drag origin can land in them", () => {
+	const pointer = { x: 0, y: 0 };
+	const cohort = cohortOf();
+	assert.equal(isCreateZoneEligible({ kind: "untracked" }), true);
+	assert.equal(isCreateZoneEligible({ kind: "attached", sourceCardCode: "PAY-121" }), false);
+	assert.equal(isCreateZoneEligible({ kind: "detached", sourceCardCode: "PAY-121" }), false);
+	assert.equal(resolveBoardCreateDropzoneDrag(null, "To do"), "idle");
+	assert.equal(
+		resolveBoardCreateDropzoneDrag(
+			createBoardAgentSessionDragTransaction(
+				cohort,
+				{ kind: "attached", sourceCardCode: "PAY-121" },
+				pointer,
+				[],
+			),
+			"To do",
+		),
+		"idle",
+	);
+	assert.equal(
+		resolveBoardCreateDropzoneDrag(
+			createBoardAgentSessionDragTransaction(
+				cohort,
+				{ kind: "detached", sourceCardCode: "PAY-121" },
+				pointer,
+				[],
+			),
+			"To do",
+		),
+		"idle",
+	);
+	assert.equal(
+		resolveBoardCreateDropzoneDrag(
+			createBoardAgentSessionDragTransaction(cohort, { kind: "untracked" }, pointer, []),
+			"To do",
+		),
+		"active",
+	);
+	const armed = createBoardAgentSessionDragTransaction(
+		cohort,
+		{ kind: "untracked" },
+		{ x: 300, y: 250 },
+		[CREATE_WORK_ITEM],
+	);
+	assert.equal(resolveBoardCreateDropzoneDrag(armed, "In review"), "armed");
+	assert.equal(resolveBoardCreateDropzoneDrag(armed, "To do"), "active");
 });
 
 test("an explicit create target wins over an overlapping issue card", () => {

@@ -6,7 +6,7 @@ export const JIRA_DROPZONE_DETAIL: ComponentDetail = {
 	demoLayout: { previewHeight: "fit" },
 	importStatement: `import { JiraDropzone, JiraDropzoneField, useJiraDropzoneReceive } from "@/components/blocks/jira-dropzone";`,
 	props: [
-		{ name: "drag", type: '"idle" | "active" | "armed"', required: true, description: "What the surrounding session drag is doing to this well. Idle shows renderResting; active or armed opens the labeled drop target on every column." },
+		{ name: "drag", type: '"idle" | "active" | "armed"', required: true, description: "What the surrounding session drag is doing to this well. Idle shows renderResting; active or armed opens the labeled drop target. The host must pass active only when this well is an eligible drop." },
 		{ name: "label", type: "string", required: true, description: "Copy shown inside the open well." },
 		{ name: "title", type: "string", required: true, description: "Column identity used as the hit-test key and receipt address." },
 		{ name: "renderResting", type: "() => ReactElement", required: true, description: "Host chrome for the idle slot. The block decides when resting ends." },
