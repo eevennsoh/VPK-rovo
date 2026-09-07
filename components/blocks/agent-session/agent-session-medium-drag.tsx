@@ -299,7 +299,7 @@ export function AgentSessionMediumDrag({
 				className={cn(
 					"min-w-0",
 					(isDragging || isFollower) && "pointer-events-none absolute inset-x-0 top-0 opacity-0",
-					sessionDragBind && "cursor-grab touch-none select-none",
+					sessionDragBind && "touch-none select-none",
 					isDragging && "cursor-grabbing [&_article]:cursor-grabbing",
 				)}
 				inert={isDragging || isFollower || undefined}
