@@ -54,7 +54,13 @@ test("Jira issue exposes selected and dragging states on the root button", () =>
 	assert.match(SOURCE, /aria-pressed=\{ariaPressed \?\? selected\}/);
 	assert.match(SOURCE, /data-selected=\{selected \|\| undefined\}/);
 	assert.match(SOURCE, /data-dragging=\{dragging \|\| undefined\}/);
-	assert.match(SOURCE, /cursor: dragging \? "grabbing" : draggable \? "grab" : "default"/);
+});
+
+test("Jira issue hover keeps the default cursor instead of a drag-handle cursor", () => {
+	assert.match(SOURCE, /cursor: dragging \? "grabbing" : "default"/);
+	assert.doesNotMatch(SOURCE, /draggable \? "grab"/);
+	assert.doesNotMatch(SOURCE, /cursor-grab/);
+	assert.doesNotMatch(SOURCE, /cursor:\s*"move"/);
 });
 
 test("Jira issue stroke chrome drops the raised shadow and uses the disabled border token", () => {

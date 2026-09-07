@@ -439,7 +439,7 @@ function JiraIssueDefault({
 	const rootBaseStyle: CSSProperties = {
 		borderRadius: token("radius.large"),
 		boxShadow: chromeStyles.boxShadow,
-		cursor: dragging ? "grabbing" : draggable ? "grab" : "default",
+		cursor: dragging ? "grabbing" : "default",
 		opacity: dragging ? 0.5 : 1,
 		textAlign: "left",
 		transformOrigin: "top center",
