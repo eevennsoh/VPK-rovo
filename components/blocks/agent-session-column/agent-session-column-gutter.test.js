@@ -51,7 +51,7 @@ test("the in-flow host previews the compact rail before a click pins the full co
 	assert.match(IN_FLOW_COLUMN_SOURCE, /: uncontrolledPersistentExpanded/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsed=\{!isPersistentExpanded\}/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /isEmbedded: isHovered \|\| isPersistentExpanded/u);
-	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsedPresentation=\{isEmbedded \? "column" : "gutter"\}/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsedPresentation="gutter"/u);
 	// The absolute surface is translated into the leading gutter; a 16px
 	// footprint spacer resolves to the same visible 8px gap as status columns.
 	assert.match(IN_FLOW_COLUMN_SOURCE, /IN_FLOW_AGENT_SESSION_COLUMN_GAP_PX = 16/u);
@@ -83,18 +83,18 @@ test("the entire visible gutter is a hover target without covering To do", () =>
 		IN_FLOW_COLUMN_SOURCE,
 		/isEmbedded[\s\S]{0,100}?\? "pointer-events-auto bg-surface"[\s\S]{0,140}?: "pointer-events-none bg-transparent \[&_\[data-agent-session-notch\]\]:pointer-events-auto"/u,
 	);
-	assert.match(RAIL_SOURCE, /className="group\/notch flex h-5 w-full shrink-0 items-center"/u);
+	assert.match(RAIL_SOURCE, /className="group\/notch flex h-6 w-full shrink-0 items-center"/u);
 	assert.match(
 		RAIL_SOURCE,
-		/className="focus-visible:ring-ring flex h-5 w-full items-center justify-center[\s\S]{0,120}?data-agent-session-notch=""/u,
+		/className="flex h-6 shrink-0 items-center justify-center[\s\S]{0,120}?data-agent-session-notch=""/u,
 	);
 });
 
-test("the gutter hides the count until newly synced sessions reveal the total", () => {
+test("the gutter hides the count", () => {
 	assert.match(TYPES_SOURCE, /collapsedPresentation\?: "column" \| "gutter";/u);
 	assert.match(INDEX_SOURCE, /const isGutterCollapsed = collapsed && collapsedPresentation === "gutter"/u);
 	assert.doesNotMatch(INDEX_SOURCE, /isGutterCollapsed \? "justify-center" : null/u);
-	assert.match(INDEX_SOURCE, /const hideGutterCount = isGutterCollapsed && newCount === 0/u);
+	assert.match(INDEX_SOURCE, /const hideGutterCount = isGutterCollapsed/u);
 	assert.match(INDEX_SOURCE, /hideGutterCount \? "opacity-0" : "opacity-100"/u);
 	assert.match(INDEX_SOURCE, /style=\{resolveCollapsedHeaderStyle\(layout\)\}/u);
 	assert.match(INDEX_SOURCE, /header: collapsed \? collapsedHeader : expandedHeader/u);
@@ -112,24 +112,24 @@ test("flyouts stay suspended in the gutter and open once the compact rail is emb
 		IN_FLOW_COLUMN_SOURCE,
 		/isHovered && !isPersistentExpanded/u,
 	);
-	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsedPresentation=\{isEmbedded \? "column" : "gutter"\}/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsedPresentation="gutter"/u);
 });
 
-test("gutter rest caps the rail; embedded column presentation shows every notch", () => {
+test("gutter presentation caps the rail; column presentation shows every notch", () => {
 	assert.match(
 		INDEX_SOURCE,
 		/maxVisibleItems=\{collapsedPresentation === "gutter"\s*\? AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS\s*: undefined\}/u,
 	);
 });
 
-test("gutter rest reveals the session total; an embedded rail keeps that total visible", () => {
+test("the tucked gutter hides the session total, including the hover preview", () => {
 	assert.match(
 		INDEX_SOURCE,
-		/const hideGutterCount = isGutterCollapsed && newCount === 0/u,
+		/const hideGutterCount = isGutterCollapsed/u,
 	);
 	assert.match(INDEX_SOURCE, /text=\{String\(sessionCount\)\}/u);
 	assert.doesNotMatch(INDEX_SOURCE, /`\+\$\{newCount\}`/u);
-	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsedPresentation=\{isEmbedded \? "column" : "gutter"\}/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsedPresentation="gutter"/u);
 });
 
 test("the gutter preview moves into the old in-flow inset with Motion", () => {

@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+	type ReactNode,
+	type RefCallback,
+} from "react";
 import { useReducedMotion } from "motion/react";
 
 import GrowHorizontalIcon from "@atlaskit/icon/core/grow-horizontal";
@@ -21,6 +29,7 @@ import { cn } from "@/lib/utils";
 
 import { AgentSessionColumnFilterMenu } from "./agent-session-column-filter-menu";
 import { AgentSessionColumnHeader } from "./agent-session-column-header";
+import { AgentSessionColumnEndState } from "./agent-session-column-end-state";
 import { AgentSessionColumnHiddenFooter } from "./agent-session-column-hidden-footer";
 import { AgentSessionColumnOverflowMenu } from "./agent-session-column-overflow-menu";
 import {
@@ -33,6 +42,12 @@ import {
 	type AgentSessionColumnLayout,
 } from "./agent-session-column-frame";
 import type { AgentSessionColumnProps } from "./agent-session-column-types";
+import {
+	AGENT_SESSION_DECK_END_SPACE_PX,
+	AGENT_SESSION_DECK_FLAT,
+	AGENT_SESSION_DECK_STACKED,
+} from "./deck/deck-model";
+import { useAgentSessionDeck } from "./deck/use-agent-session-deck";
 import { useAgentSessionColumnFilter } from "./use-agent-session-column-filter";
 import { useAgentSessionColumnHidden } from "./use-agent-session-column-hidden";
 import { useUntrackedSelection } from "./use-untracked-selection";
@@ -203,9 +218,9 @@ const HEADER_CONTROL_ON_REVEAL = cn(
  * Count morphing for the collapsed header.
  *
  * `slots` spins each digit behind a fade mask, which suits a value that changes
- * because work arrived rather than because the viewer acted. The gutter keeps
- * this renderer mounted while the digits are hidden, so a tucked rail can fade
- * the total in and roll 7 → 8 instead of mounting on the new number.
+ * because work arrived rather than because the viewer acted. Gutter presentation
+ * keeps this renderer mounted while the digits stay hidden, so a column
+ * presentation can still roll the total without remounting.
  *
  * `autoSize` eases the slot's width as the total crosses a digit. `initial:
  * false` keeps a column that mounts already collapsed from spinning its count
@@ -226,7 +241,8 @@ const HEAD_COUNT_MORPH: TextMorphConfig = {
 /** Matches `bg-surface` so edge fades dissolve into the plane. */
 const AGENT_SESSION_PLANE_FADE_COLOR = "var(--color-surface)";
 
-const AGENT_SESSION_PLANE_FADE_SIZE = "3rem";
+const AGENT_SESSION_PLANE_TOP_FADE_SIZE = "3rem";
+const AGENT_SESSION_PLANE_BOTTOM_FADE_SIZE = `${AGENT_SESSION_DECK_END_SPACE_PX}px`;
 
 /**
  * A kanban column of agent sessions that never became work items.
@@ -254,7 +270,8 @@ const AGENT_SESSION_PLANE_FADE_SIZE = "3rem";
  * hover or keyboard focus. See
  * {@link AgentSessionColumnRail}. Collapsed drops the well so the count
  * shares the status pill's 24px header slot instead of sitting inside a
- * full-height bordered rail.
+ * full-height bordered rail. `collapsedPresentation="gutter"` hides that
+ * count while keeping the expand control in the same slot.
  *
  * Two capabilities exist for hosts that dock the column into their own surface
  * rather than stand it on the board: `collapsed` makes the rail state
@@ -268,10 +285,12 @@ export function AgentSessionColumn({
 	className,
 	collapsed: collapsedProp,
 	collapsedPresentation = "column",
+	collapsedRailHitSlopPx = 0,
 	count,
 	defaultCollapsed = false,
 	emptyLabel = "No untracked sessions",
 	expandedWidthPx = AGENT_SESSION_COLUMN_WIDTH_PX,
+	hasScrollingEffect = false,
 	widthTransitionDisabled = false,
 	items = AGENT_SESSION_ITEMS,
 	listClassName,
@@ -355,11 +374,20 @@ export function AgentSessionColumn({
 	// overflow has to be clipped for the duration of the width transition. Any
 	// longer and it would clip the 4px focus rings on the cards inside.
 	const [isResizing, setIsResizing] = useState(false);
+	const deck = hasScrollingEffect
+		? AGENT_SESSION_DECK_STACKED
+		: AGENT_SESSION_DECK_FLAT;
+	const deckListRef = useAgentSessionDeck(deck);
 	const {
-		ref: listRef,
+		hasScrolledToBottom,
+		ref: overflowListRef,
 		showBottomScrollMask,
 		showTopScrollMask,
 	} = useHasVerticalOverflow<HTMLDivElement>();
+	const listRef = useCallback<RefCallback<HTMLDivElement>>((node) => {
+		overflowListRef(node);
+		deckListRef(node);
+	}, [deckListRef, overflowListRef]);
 	const columnRef = useRef<HTMLElement>(null);
 	const untrackedCount = count ?? visibleItems.length;
 	const showWellFooter = view === "hidden" || hiddenCount > 0;
@@ -544,10 +572,11 @@ export function AgentSessionColumn({
 		resolveAgentSessionPlaneClassName(layout, collapsed),
 		isGutterCollapsed ? "bg-transparent" : null,
 	);
-	// Gutter rest hides the digits so the rail can sit in the page inset.
-	// Newly synced sessions reveal that same total — still the pool count,
-	// never a +N unread increment — so the tucked expand slot can roll.
-	const hideGutterCount = isGutterCollapsed && newCount === 0;
+	// Gutter presentation hides the digits so the rail can sit in the page
+	// inset — at rest, during the hover preview, and when newly synced
+	// sessions arrive. The expand control stays in the same 24px slot.
+	// Screen-reader copy still names the pool count.
+	const hideGutterCount = isGutterCollapsed;
 	const collapsedCountLabel = newCount > 0
 		? `${sessionCount} sessions, ${newCount} newly synced`
 		: `${sessionCount} sessions`;
@@ -622,6 +651,7 @@ export function AgentSessionColumn({
 			getSuggestedWorkItemKey={sessionProps.getSuggestedWorkItemKey}
 			getSuggestedWorkItemKeys={sessionProps.getSuggestedWorkItemKeys}
 			highlightedItemId={sessionProps.highlightedItemId}
+			hitSlopPx={collapsedRailHitSlopPx}
 			items={filteredViewItems}
 			maxVisibleItems={collapsedPresentation === "gutter"
 				? AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS
@@ -655,7 +685,7 @@ export function AgentSessionColumn({
 				) : (
 					<div
 						ref={listRef}
-						className="min-h-0 min-w-0 flex-1 overflow-y-auto has-[:focus-visible]:overflow-visible"
+						className="min-h-0 min-w-0 flex-1 overflow-y-auto has-[:focus-visible]:overflow-visible relative z-0 scrollbar-auto-hide [&[data-scrolling]>ul]:pointer-events-none"
 					>
 						<AgentSession
 							arrivingItemIds={arrivingItemIds}
@@ -673,25 +703,33 @@ export function AgentSessionColumn({
 							selectedItemId={selectedItemId}
 							visibilityLabel={view === "hidden" ? "Unarchive" : "Archive"}
 						/>
+						{hasScrollingEffect ? (
+							<AgentSessionColumnEndState
+								count={sessionCount}
+								visible={view === "active" && hasScrolledToBottom}
+							/>
+						) : null}
 					</div>
 				)}
 				{showTopScrollMask || showBottomScrollMask ? (
 					<div
 						aria-hidden="true"
-						className="pointer-events-none absolute inset-0"
+						className="pointer-events-none absolute inset-0 z-10"
 					>
 						{showTopScrollMask ? (
 							<ScrollMaskEdgeOverlay
 								color={AGENT_SESSION_PLANE_FADE_COLOR}
 								edge="top"
-								fadeSize={AGENT_SESSION_PLANE_FADE_SIZE}
+								fadeSize={AGENT_SESSION_PLANE_TOP_FADE_SIZE}
 							/>
 						) : null}
 						{showBottomScrollMask ? (
 							<ScrollMaskEdgeOverlay
 								color={AGENT_SESSION_PLANE_FADE_COLOR}
 								edge="bottom"
-								fadeSize={AGENT_SESSION_PLANE_FADE_SIZE}
+								fadeSize={hasScrollingEffect
+									? AGENT_SESSION_PLANE_BOTTOM_FADE_SIZE
+									: AGENT_SESSION_PLANE_TOP_FADE_SIZE}
 							/>
 						) : null}
 					</div>
@@ -714,7 +752,7 @@ export function AgentSessionColumn({
 			aria-label={`${displayTitle}, ${sessionCount} sessions`}
 			className={cn(
 				"group/session-column relative flex min-h-0 shrink-0 flex-col",
-				collapsed || isResizing ? "overflow-hidden" : null,
+				(collapsed && collapsedRailHitSlopPx === 0) || isResizing ? "overflow-hidden" : null,
 				className,
 			)}
 			data-agent-session-column={title}

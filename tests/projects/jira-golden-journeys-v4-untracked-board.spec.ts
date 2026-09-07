@@ -135,6 +135,104 @@ test("the collapsed Untracked rail blues the plain Jira issue suggested by a ses
 	await expect(pay118Backdrop).toHaveClass(/bg-bg-neutral/);
 });
 
+test("the gutter preview supports timeline traversal across wider session targets", async ({ page }) => {
+	await openCollapsedBoard(page);
+	await revealCollapsedAgentSessionColumn(page);
+	const column = page.locator("[data-agent-session-column]");
+	const notches = column.locator("[data-agent-session-notch]");
+	await expect(column).toHaveCSS("width", "32px");
+	await expect(notches.first()).toHaveCSS("width", "56px");
+	await expect(column.locator("..")).toHaveCSS("transform", "matrix(1, 0, 0, 1, 24, 0)");
+	const columnBox = await column.boundingBox();
+	const firstBox = await notches.first().boundingBox();
+	expect(columnBox).not.toBeNull();
+	expect(firstBox).not.toBeNull();
+	if (!columnBox || !firstBox) return;
+	expect(firstBox.x + firstBox.width / 2).toBeCloseTo(columnBox.x + columnBox.width / 2, 0);
+
+	// Traverse real buttons at both horizontal edges, beyond the old 24px target.
+	// The restored flyout overlaps the last 8px on the popup-facing side.
+	for (const x of [firstBox.x + 2, firstBox.x + firstBox.width - 10]) {
+		for (let index = 0; index < 3; index += 1) {
+			const notch = notches.nth(index);
+			const box = await notch.boundingBox();
+			expect(box).not.toBeNull();
+			if (!box) return;
+			await page.mouse.move(x, box.y + box.height / 2);
+			await expect.poll(() => notch.evaluate((element) => element.matches(":hover"))).toBe(true);
+			await expect(page.locator("[data-agent-session-column-hit-area]")).toHaveCount(0);
+		}
+	}
+
+	// The extra width must stop before the adjacent board cards.
+	const todoCard = getIssueArticle(page, "PAY-118");
+	const todoBox = await todoCard.boundingBox();
+	expect(todoBox).not.toBeNull();
+	if (!todoBox) return;
+	expect(firstBox.x + firstBox.width).toBeLessThanOrEqual(todoBox.x);
+	await todoCard.hover();
+	await expect(page.locator("[data-agent-session-column-hit-area]")).toBeVisible();
+	await expect(notches.first()).toHaveCSS("width", "24px");
+});
+
+test("the rail preserves flyout spacing and assigns the gaps to neighboring dots", async ({ page }) => {
+	await openCollapsedBoard(page);
+	await revealCollapsedAgentSessionColumn(page);
+	const column = page.locator("[data-agent-session-column]");
+	await expect(column.locator("..")).toHaveCSS("transform", "matrix(1, 0, 0, 1, 24, 0)");
+	const first = column.locator("[data-agent-session-notch]").first();
+	const second = column.locator("[data-agent-session-notch]").nth(1);
+	await first.hover();
+	const popup = page.locator('[data-slot="hover-card-content"]');
+	await expect(popup).toBeVisible();
+	const box = (await first.boundingBox())!;
+	const columnBox = (await column.boundingBox())!;
+	await expect.poll(async () => (await popup.boundingBox())!.x)
+		.toBeCloseTo(columnBox.x + 32 - 4 + 8, 0);
+	const nextBox = (await second.boundingBox())!;
+	const boundary = (box.y + box.height / 2 + nextBox.y + nextBox.height / 2) / 2;
+	for (const [y, expected] of [[boundary - 1, first], [boundary + 1, second]] as const) {
+		await page.mouse.move(columnBox.x + 16, y);
+		await expect.poll(() => expected.evaluate((element) => element.matches(":hover"))).toBe(true);
+		await expect(expected.locator("img")).toHaveCSS("opacity", "1");
+	}
+});
+
+test("diagonal travel keeps the current flyout while vertical scrubbing switches immediately", async ({ page }) => {
+	await openCollapsedBoard(page);
+	await revealCollapsedAgentSessionColumn(page);
+	const column = page.locator("[data-agent-session-column]");
+	await expect(column.locator("..")).toHaveCSS("transform", "matrix(1, 0, 0, 1, 24, 0)");
+	const first = column.locator("[data-agent-session-notch]").first();
+	const second = column.locator("[data-agent-session-notch]").nth(1);
+	const firstBox = (await first.boundingBox())!;
+	const secondBox = (await second.boundingBox())!;
+	const x = firstBox.x + firstBox.width / 2;
+	const y = firstBox.y + firstBox.height / 2;
+	await page.mouse.move(x, y);
+	const popup = page.locator('[data-slot="hover-card-content"]');
+	await expect(popup).toBeVisible();
+	const firstText = (await popup.textContent())!;
+	const popupBox = (await popup.boundingBox())!;
+	// Cross the next dot's band on the way toward a lower action in this popup.
+	await page.mouse.move(x + 10, secondBox.y + 3);
+	expect(await popup.textContent()).toBe(firstText);
+	await page.mouse.move(popupBox.x + 20, popupBox.y + 90, { steps: 5 });
+	await expect(popup).toHaveText(firstText);
+	await page.mouse.move(x, y);
+	await page.mouse.move(x, secondBox.y + secondBox.height / 2);
+	await expect(popup).not.toHaveText(firstText);
+	// Stopping on a crossed row must not leave the previous session locked.
+	await page.mouse.move(x, y);
+	await expect(popup).toHaveText(firstText);
+	await page.mouse.move(x + 10, secondBox.y + 3);
+	await expect(popup).not.toHaveText(firstText, { timeout: 1000 });
+	await page.keyboard.press("Escape");
+	await expect(popup).toBeHidden();
+	await first.focus();
+	await expect(popup).toHaveText(firstText);
+});
+
 test("unchecking Untracked hides board-adjacent rows and leaves the column", async ({ page }) => {
 	await openBoard(page);
 

@@ -38,7 +38,7 @@ export interface SessionReceiptIdParts {
 
 export type JiraDropzoneDragState = "active" | "armed" | "idle";
 
-export type JiraDropzonePhase = "armed" | "proximate" | "receiving" | "resting";
+export type JiraDropzonePhase = "active" | "armed" | "proximate" | "receiving" | "resting";
 
 export interface JiraDropzonePhaseInput {
 	readonly drag: JiraDropzoneDragState;

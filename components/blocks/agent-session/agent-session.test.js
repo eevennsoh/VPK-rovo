@@ -520,7 +520,7 @@ test("drag suspension keeps the shared flyout consistently uncontrolled", () => 
 	// changed Base UI from uncontrolled to controlled and back after every drag.
 	assert.match(
 		FLYOUT_SOURCE,
-		/<HoverCard<JiraSidebarSessionItem> handle=\{handle\}>/u,
+		/<HoverCard<JiraSidebarSessionItem> handle=\{handle\} onOpenChange=\{onOpenChange\}>/u,
 	);
 	assert.doesNotMatch(
 		FLYOUT_SOURCE,

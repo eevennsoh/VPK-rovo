@@ -75,9 +75,9 @@ export interface ExperimentalJiraKanbanPageProps {
 	 * Whether Untracked sessions also sit next to related Jira cards.
 	 *
 	 * The View menu can still hide them after mount. The route owns the
-	 * starting value so a design variation can land on "attached sessions
-	 * only" without this block reading the global store. Switching the
-	 * default resets the menu back to that variation's starting point.
+	 * starting value so it can land on "attached sessions only" without this
+	 * block reading a global store. Switching the default resets the menu
+	 * back to that starting point.
 	 */
 	defaultShowUntracked?: boolean;
 	headerAssignees?: readonly JiraKanbanAssigneeData[];
@@ -143,8 +143,8 @@ export interface ExperimentalJiraKanbanPageProps {
 	viewTabs?: ReactNode;
 	/**
 	 * Where the overflow ("…") control sits in the board header. The route
-	 * owns the choice so Team EU can park it on the far right without this
-	 * block reading the global variation store.
+	 * owns the choice so it can park it on the far right without this block
+	 * reading a global store.
 	 */
 	moreControlsPlacement?: "inline" | "end";
 	/**

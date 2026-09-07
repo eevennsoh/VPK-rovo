@@ -38,6 +38,21 @@ test("create button and dropzone share dashed well chrome", () => {
 	);
 });
 
+test("session drag pops the create well in on every column", () => {
+	assert.match(
+		DROPZONE,
+		/initial=\{shouldReduceMotion[\s\S]*false[\s\S]*opacity: 0, scale: JIRA_DROPZONE_WELL_ENTER_SCALE[\s\S]*JIRA_DROPZONE_WELL_ENTER/u,
+	);
+	assert.match(
+		DROPZONE,
+		/useReducedMotion\(\)/u,
+	);
+	assert.match(
+		FOOTER,
+		/const drag: JiraDropzoneDragState = resolveBoardCreateDropzoneDrag\(\s*sessionDragTransaction,\s*title,\s*\);/u,
+	);
+});
+
 test("empty columns keep the create well at the top and always visible", () => {
 	// The ordering contract now spans two files: the board declares the action,
 	// renders the list, then the action; the list owns its own `order` and marker.

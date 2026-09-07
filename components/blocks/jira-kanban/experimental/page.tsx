@@ -531,6 +531,7 @@ function ExperimentalJiraKanbanPageContent({
 		// Controlled so View → Agents can expand or collapse Untracked without
 		// fighting the column's own post-mount state.
 		collapsed: displayedAgentSessionColumnCollapsed,
+		hasScrollingEffect: true,
 		items: untrackedAgentSessionItems,
 		newItemIds: newAgentSessionIds,
 		onCollapsedChange: handleAgentSessionColumnCollapsedChange,
