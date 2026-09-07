@@ -11,7 +11,10 @@ import { cn } from "@/lib/utils";
 
 import { JiraDropzoneFlight } from "./jira-dropzone-flight";
 import { useJiraDropzoneChannel } from "./jira-dropzone-field";
-import { JIRA_DROPZONE_HOVER_AREA_PX } from "./lib/jira-dropzone-motion";
+import {
+	JIRA_DROPZONE_HOVER_AREA_PX,
+	resolveJiraDropzoneLandingPoint,
+} from "./lib/jira-dropzone-motion";
 import {
 	resolveJiraDropzoneBounce,
 	resolveJiraDropzoneCopy,
@@ -30,7 +33,6 @@ import type {
 import { useJiraDropzoneCollapseHold } from "./use-jira-dropzone-collapse-hold";
 
 export const JIRA_DROPZONE_WELL_CHROME_CLASS = "rounded-lg border border-dashed";
-const JIRA_DROPZONE_FLIGHT_LANDING_INSET_PX = 16;
 
 export function JiraDropzone({
 	drag,
@@ -70,10 +72,7 @@ export function JiraDropzone({
 	);
 	const resolveLandingPoint = useCallback((): ViewportPoint | null => {
 		const rect = targetRef.current?.getBoundingClientRect();
-		if (!rect) {
-			return null;
-		}
-		return { x: rect.left + JIRA_DROPZONE_FLIGHT_LANDING_INSET_PX, y: rect.top + rect.height / 2 };
+		return rect ? resolveJiraDropzoneLandingPoint(rect) : null;
 	}, [targetRef]);
 
 	if (surface === "resting") {
