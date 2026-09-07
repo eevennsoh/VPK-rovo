@@ -769,7 +769,7 @@ function JiraIssueDefault({
 				animate={shouldReduceMotion ? undefined : agentActivityBackdropAnimation}
 				className={cn(
 					"pointer-events-none absolute transition-colors duration-xxshort ease-out-practical motion-reduce:transition-none",
-					agentSessionTargetHighlighted ? "bg-bg-accent-blue-subtlest" : "bg-bg-neutral",
+					agentSessionTargetHighlighted ? "bg-bg-neutral-hovered" : "bg-bg-neutral",
 				)}
 				data-slot="jira-issue-agent-backdrop"
 				initial={false}
