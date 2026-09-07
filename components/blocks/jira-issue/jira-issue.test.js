@@ -784,7 +784,7 @@ test("Jira issue animates agent state transitions with Motion", () => {
 	assert.match(SOURCE, /<motion\.div[\s\S]*className=\{agentActivityShellClassName\}[\s\S]*initial=\{false\}[\s\S]*layout=\{shouldReduceMotion \? false : "size"\}/);
 	assert.match(
 		SOURCE,
-		/className=\{cn\(\s*"pointer-events-none absolute transition-colors duration-xxshort ease-out-practical motion-reduce:transition-none",\s*agentSessionTargetHighlighted \? "bg-bg-accent-blue-subtlest" : "bg-bg-neutral",\s*\)\}/u,
+		/className=\{cn\(\s*"pointer-events-none absolute transition-colors duration-xxshort ease-out-practical motion-reduce:transition-none",\s*agentSessionTargetHighlighted \? "bg-bg-neutral-hovered" : "bg-bg-neutral",\s*\)\}/u,
 	);
 	assert.match(SOURCE, /<motion\.div[\s\S]*animate=\{shouldReduceMotion \? undefined : agentActivitySurfaceAnimation\}[\s\S]*className=\{agentActivitySurfaceClassName\}[\s\S]*data-slot="jira-issue-surface"/);
 	assert.doesNotMatch(SOURCE, /padding: shouldReduceMotion/);

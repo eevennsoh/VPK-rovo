@@ -163,7 +163,7 @@ test("Untracked is on by default and PAY-101 shows a nearby untracked row", asyn
 	await expect(page.getByRole("menuitemcheckbox", { name: "Untracked" })).toBeChecked();
 });
 
-test("the collapsed Untracked rail blues the plain Jira issue suggested by a session", async ({ page }) => {
+test("the collapsed Untracked rail hovers the plain Jira issue suggested by a session", async ({ page }) => {
 	await openCollapsedBoard(page);
 
 	const sessionId = "lw-figma-parked";
@@ -172,11 +172,13 @@ test("the collapsed Untracked rail blues the plain Jira issue suggested by a ses
 		.locator("[data-slot='jira-issue-agent-backdrop']");
 
 	await expect(pay118Backdrop).toHaveClass(/bg-bg-neutral/);
+	await expect(pay118Backdrop).not.toHaveClass(/bg-bg-neutral-hovered/);
 	await hoverCollapsedAgentSession(page, sessionId);
-	await expect(pay118Backdrop).toHaveClass(/bg-bg-accent-blue-subtlest/);
+	await expect(pay118Backdrop).toHaveClass(/bg-bg-neutral-hovered/);
 
 	await page.getByRole("heading", { name: "Jira Design" }).hover();
 	expect(await railNotch.evaluate((element) => element.matches(":hover"))).toBe(false);
+	await expect(pay118Backdrop).not.toHaveClass(/bg-bg-neutral-hovered/);
 	await expect(pay118Backdrop).toHaveClass(/bg-bg-neutral/);
 });
 
@@ -320,7 +322,7 @@ test("unchecking Untracked hides board-adjacent rows and leaves the column", asy
 	).toBeVisible();
 });
 
-test("hovering a column session blues the matching existing-agent backdrop without focus or movement", async ({ page }) => {
+test("hovering a column session lights the matching existing-agent backdrop without focus or movement", async ({ page }) => {
 	await openBoard(page);
 
 	const statusScrollport = page.locator("[data-jira-kanban-scrollport]");
@@ -337,7 +339,7 @@ test("hovering a column session blues the matching existing-agent backdrop witho
 
 	await expect(pay121).not.toHaveClass(/bg-bg-accent-blue-subtlest/);
 	await expect(pay121.locator("[data-slot='jira-issue-agent-backdrop']"))
-		.toHaveClass(/bg-bg-accent-blue-subtlest/);
+		.toHaveClass(/bg-bg-neutral-hovered/);
 	await expect(pay101).not.toHaveClass(/opacity-40/);
 	expect(await statusScrollport.evaluate((element) => element.scrollLeft)).toBe(scrollLeftBefore);
 	expect(await pay121ColumnScrollport.evaluate((element) => element.scrollTop)).toBe(scrollTopBefore);
