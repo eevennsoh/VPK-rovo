@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 
 import {
@@ -13,6 +13,7 @@ import {
 import { JiraSessionFlyoutSuspensionProvider } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
 import { SidebarResizeHandle } from "@/components/ui/sidebar";
+import { ScrollMaskEdgeOverlay } from "@/components/visual/scroll-mask";
 import { cn } from "@/lib/utils";
 
 import {
@@ -21,6 +22,7 @@ import {
 	resolveInFlowAgentSessionColumnGapPx,
 	resolveInFlowResizeHandleOffsetPx,
 } from "../lib/in-flow-agent-session-column-geometry";
+import { useInFlowGutterScrollMask } from "./use-in-flow-gutter-scroll-mask";
 
 // Extend the preview's 24px session targets to 56px, within the empty gutter.
 // The 32px column footprint and marker axis stay fixed; To do remains clickable.
@@ -268,6 +270,8 @@ export function InFlowAgentSessionColumn({
 	untrackedDropArmed,
 }: Readonly<InFlowAgentSessionColumnProps>): ReactNode {
 	const shouldReduceMotion = useReducedMotion();
+	const hostRef = useRef<HTMLDivElement>(null);
+	const showGutterScrollMask = useInFlowGutterScrollMask(hostRef);
 	const [playGutterIntro, setPlayGutterIntro] = useState(true);
 	useEffect(() => {
 		if (shouldReduceMotion) {
@@ -301,11 +305,19 @@ export function InFlowAgentSessionColumn({
 			suspended={sessionFlyoutsSuspended || !isEmbedded}
 		>
 			<div
+				ref={hostRef}
 				className="relative flex min-h-0 shrink-0 self-stretch"
 				onPointerDown={isEmbedded ? undefined : handleGutterPointerDown}
 				onPointerEnter={handlePointerEnter}
 				onPointerLeave={handlePointerLeave}
 			>
+				{showGutterScrollMask ? (
+					<ScrollMaskEdgeOverlay
+						data-agent-session-column-gutter-mask=""
+						edge="left"
+						fadeSize={IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX}
+					/>
+				) : null}
 				{isEmbedded ? null : (
 					<div
 						aria-hidden="true"
