@@ -83,6 +83,11 @@ export interface AgentSessionColumnProps extends Omit<
 	 */
 	columnFrame?: AgentSessionColumnFrame;
 	/**
+	 * Enables the stacked entrance, bottom depth tail, scroll fade, and end
+	 * summary on the expanded list. Defaults to `false`.
+	 */
+	hasScrollingEffect?: boolean;
+	/**
 	 * Expanded width in px. Defaults to the board column's 280. A wider host
 	 * (the docked rail) passes its content-box width so the well fills that
 	 * surface instead of leaving a 280px column inside a larger panel.
