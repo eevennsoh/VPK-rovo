@@ -131,7 +131,7 @@ export function AgentSessionCard({
 	// the clipboard before `onCopyResume` ever runs.
 	const canResume = (isResumable?.(item) ?? true) && resumeCommand.length > 0;
 	// The beat, not the mark: a card remounted while still unreviewed keeps the
-	// discovery dot but must not replay its entrance.
+	// information dot but must not replay its entrance.
 	const shouldPlayArrival = isArriving && !shouldReduceMotion;
 	const handleArrivalComplete = () => {
 		if (shouldPlayArrival) {
@@ -323,7 +323,7 @@ export function AgentSessionCard({
 							    with the avatar + two text lines. */}
 							<span
 								aria-hidden="true"
-								className="absolute left-1.5 top-1/2 size-1.5 -translate-y-1/2 rounded-full bg-icon-discovery"
+								className="absolute left-1.5 top-1/2 size-1.5 -translate-y-1/2 rounded-full bg-icon-information"
 							/>
 						</>
 							) : null}

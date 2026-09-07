@@ -96,7 +96,7 @@ test("renders each session as a solid uncaptured-work card around the shared row
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*isSelected=\{showSelectedFill\}/u);
 	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*showHoverActionsWhenSelected/u);
 	assert.doesNotMatch(CARD_SOURCE, /isSelected=\{false\}/u);
-	assert.match(CARD_SOURCE, /absolute left-1\.5 top-1\/2 size-1\.5 -translate-y-1\/2 rounded-full bg-icon-discovery/u);
+	assert.match(CARD_SOURCE, /absolute left-1\.5 top-1\/2 size-1\.5 -translate-y-1\/2 rounded-full bg-icon-information/u);
 	assert.doesNotMatch(CARD_SOURCE, /top-1\.5/u);
 });
 
@@ -299,7 +299,7 @@ test("medium attached reuses the Jira issue agent activity row", () => {
 	);
 	assert.doesNotMatch(COMPACT_CARD_SOURCE, /bg-bg-accent-gray-subtlest/u);
 	assert.match(COMPACT_CARD_SOURCE, /Newly synced, not yet reviewed/u);
-	assert.match(COMPACT_CARD_SOURCE, /absolute left-1 top-1\/2 size-1 -translate-y-1\/2 rounded-full bg-icon-discovery/u);
+	assert.match(COMPACT_CARD_SOURCE, /absolute left-1 top-1\/2 size-1 -translate-y-1\/2 rounded-full bg-icon-information/u);
 	assert.doesNotMatch(COMPACT_CARD_SOURCE, /absolute left-1 top-1 /u);
 	assert.match(COMPACT_CARD_SOURCE, /initial=\{shouldPlayArrival \? \{ opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX \} : false\}/u);
 	assert.match(INDEX_SOURCE, /const isAttached = variant === "medium-attached";/u);
@@ -311,7 +311,7 @@ test("medium preserves newly synced state and its one-shot arrival beat", () => 
 	assert.match(MEDIUM_CARD_SOURCE, /data-new=\{isNew \|\| undefined\}/u);
 	assert.match(MEDIUM_CARD_SOURCE, /!captured && isNew \? "border-border-discovery" : "border-border-disabled"/u);
 	assert.match(MEDIUM_CARD_SOURCE, /Newly synced, not yet reviewed/u);
-	assert.match(MEDIUM_CARD_SOURCE, /absolute left-1 top-1\/2 size-1 -translate-y-1\/2 rounded-full bg-icon-discovery/u);
+	assert.match(MEDIUM_CARD_SOURCE, /absolute left-1 top-1\/2 size-1 -translate-y-1\/2 rounded-full bg-icon-information/u);
 	assert.doesNotMatch(MEDIUM_CARD_SOURCE, /absolute left-1 top-1 /u);
 	assert.match(MEDIUM_CARD_SOURCE, /initial=\{shouldPlayArrival \? \{ opacity: 0, y: AGENT_SESSION_ARRIVAL_OFFSET_PX \} : false\}/u);
 	assert.match(MEDIUM_CARD_SOURCE, /animate=\{shouldPlayArrival \? \{ opacity: 1, y: 0 \} : undefined\}/u);

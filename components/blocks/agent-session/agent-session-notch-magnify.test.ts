@@ -75,6 +75,14 @@ test("user dots grow from four pixels to a twelve pixel avatar without exceeding
 	assert.equal(toAgentSessionUserNotchDiameter(Number.NaN), AGENT_SESSION_USER_NOTCH_DIAMETER.rest);
 });
 
+test("a newly synced user dot rests at four pixels; newness is color, not size", () => {
+	assert.equal(toAgentSessionUserNotchDiameter(0), AGENT_SESSION_USER_NOTCH_DIAMETER.rest);
+	assert.equal(toAgentSessionUserNotchDiameter(1), AGENT_SESSION_USER_NOTCH_DIAMETER.peak);
+	assert.equal(toAgentSessionUserNotchDiameter(0.5), 8);
+	assert.equal(toAgentSessionNotchTone(false, true), AGENT_SESSION_NOTCH_TONE.selected);
+	assert.equal(toAgentSessionNotchTone(false, false), AGENT_SESSION_NOTCH_TONE.rest);
+});
+
 test("out-of-range magnification is clamped, never extrapolated", () => {
 	// The transform multiplies falloff by the swell amount; a stray value must not
 	// be able to grow a notch past the 24px channel or invert it.
