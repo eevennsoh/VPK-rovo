@@ -3,7 +3,7 @@
 // oxlint-disable react-doctor/no-noninteractive-tabindex -- These surfaces intentionally receive keyboard focus for application-style keyboard handling or card-level shortcuts.
 // oxlint-disable react-doctor/prefer-module-scope-pure-function -- These helpers are intentionally local to the component/demo because they depend on the surrounding interaction contract.
 
-import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { LayoutGroup, motion, useReducedMotion, type Transition } from "motion/react";
 import AiAgentAddIcon from "@atlaskit/icon-lab/core/ai-agent-add";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
@@ -39,8 +39,6 @@ import {
 import { Icon } from "@/components/ui/icon";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getMentionChildItems } from "@/components/ui-custom/rich-text-editor";
-import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
-import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
@@ -48,10 +46,10 @@ import {
 	BoardColumnResizeButton,
 	CollapsedBoardColumn,
 } from "./components/collapsed-board-column";
+import { BoardColumnCardList } from "./components/board-column-card-list";
 import { BoardColumnCreateAction } from "./components/create-work-item-drop-zone";
 import {
 	BoardCardInsertionLine,
-	BoardEmptyColumnInsertionSlot,
 	getBoardCardInsertionAnchorClassName,
 } from "./components/board-card-insertion-line";
 import { resolveBoardCardInsertionPosition } from "./lib/board-card-insertion";
@@ -413,16 +411,6 @@ function BoardColumn({
 }>) {
 	const showAgentAssignment = Boolean(agents?.length && onCreateAgent && onToggleAgent);
 	const insertionArmed = cardInsertion?.columnTitle === title;
-	const { ref: cardListRef, showBottomScrollMask, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
-	const cardListScrollMaskStyle = useMemo(
-		() => buildScrollMaskStyle({
-			fadeBottom: showBottomScrollMask,
-			fadeSize: "3rem",
-			fadeTop: showTopScrollMask,
-			scrollbarWidth: 0,
-		}),
-		[showBottomScrollMask, showTopScrollMask],
-	);
 
 	return (
 		<div
@@ -476,39 +464,14 @@ function BoardColumn({
 				</div>
 			</div>
 
-			<div
-				ref={cardListRef}
-				data-jira-kanban-card-list=""
-				className={cn(
-					"min-w-0 overflow-y-auto has-[[data-session-dragging]]:overflow-visible",
-					// The scroll mask fades the top and bottom 3rem, which would wash out
-					// an insertion line drawn near a scrolled edge. Stand the mask down
-					// while this column is showing one — and ONLY the mask. Dropping
-					// `overflow-y-auto` would stop this being a scroll container, and the
-					// browser discards the scroll offset of an element that stops
-					// scrolling, so every scrolled column would jump to its first card
-					// mid-gesture.
-					insertionArmed && "[mask-image:none]! [-webkit-mask-image:none]!",
-				)}
-				style={{
-					flexGrow: 1,
-					display: "flex",
-					flexDirection: "column",
-					gap: token("space.100"),
-					...cardListScrollMaskStyle,
-					...chrome.cardList,
-					// Publish the gap an insertion line has to centre itself in. It is
-					// chrome-dependent — the default well overrides the base gap, simple
-					// keeps it — and a child cannot read its parent's `gap` in CSS, so the
-					// resolved value has to be handed down explicitly.
-					"--board-card-gap": chrome.cardList.gap ?? token("space.100"),
-				} as CSSProperties}
+			<BoardColumnCardList
+				chrome={chrome}
+				columnTitle={title}
+				insertionArmed={insertionArmed}
+				isEmpty={count === 0}
 			>
-				{count === 0 ? (
-					<BoardEmptyColumnInsertionSlot armed={insertionArmed} columnTitle={title} />
-				) : null}
 				{children}
-			</div>
+			</BoardColumnCardList>
 
 			<div style={chrome.footer}>
 				<BoardColumnCreateAction

@@ -257,6 +257,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/jira-work-item/jira-work-item-experimental-v6.test.js",
 		"components/projects/jira-golden-journeys-v2/jira-golden-journeys-v2.test.js",
 		"components/projects/jira-golden-journeys-v3/jira-golden-journeys-v3.test.js",
+		"components/projects/jira-golden-journeys-v4/jira-golden-journeys-v4-board-gap.test.js",
 		"components/projects/jira-golden-journeys-v4/jira-golden-journeys-v4-generative-actions.test.js",
 		"components/projects/jira-golden-journeys-v4/jira-golden-journeys-v4.test.js",
 		"components/ui/icon-tile.test.js",

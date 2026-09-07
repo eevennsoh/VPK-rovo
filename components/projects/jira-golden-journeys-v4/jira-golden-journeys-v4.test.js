@@ -567,16 +567,6 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(PAGE_SOURCE, /scrollEndInset=\{listScrollEndInset\}/u);
 	assert.match(PAGE_SOURCE, /trailingOverlayRef=\{trailingOverlayRef\}/u);
 	assert.match(PAGE_SOURCE, /onListAgentSessionCreate=\{handleListAgentSessionCreate\}/u);
-	// The board twin of the list create: dropping an untracked session into a
-	// card gap mints a work item at that index with the session already linked.
-	assert.match(PAGE_SOURCE, /onBoardAgentSessionCreate=\{handleBoardAgentSessionCreate\}/u);
-	assert.match(PAGE_SOURCE, /createFromBoardAgentSession/u);
-	assert.match(LIST_HOOK_SOURCE, /createBoardWorkItemsFromSessions/u);
-	// The whole cohort travels in one call, so the gap anchor is resolved once
-	// and the sessions land in drag order instead of stacking in reverse.
-	assert.match(LIST_HOOK_SOURCE, /entries: input\.entries/u);
-	assert.match(LIST_HOOK_SOURCE, /setSelectedIssueKeys\(new Set\(result\.issueKeys\)\)/u);
-	assert.match(PAGE_SOURCE, /entries: sessions\.map\(\(session\) => \(\{/u);
 	assert.match(PAGE_SOURCE, /createFromAgentSession/u);
 	assert.match(PAGE_SOURCE, /consumeDetachedAgentSession/u);
 	assert.match(LIST_HOOK_SOURCE, /createFromAgentSession/u);
@@ -620,10 +610,6 @@ test("the Work items header switches between Board and List views with their ico
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /agentSessionDropIntent: boardSessionDrag\.listDropIntent/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onCreate: agentSessionHandlers.onCreateWorkItem/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onListCreate: onListAgentSessionCreate \? handleListAgentSessionCreate : undefined/u);
-	// `toBoardGapCreatePort` returns undefined when the host supplies no create
-	// callback, so a board without the capability never draws an insertion line
-	// it cannot honour.
-	assert.match(EXPERIMENTAL_PAGE_SOURCE, /onBoardGapCreate: toBoardGapCreatePort\(handleCaptureLooseWork, onBoardAgentSessionCreate\)/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /activeView === "list" && renderListContent/u);
 	assert.match(EXPERIMENTAL_PAGE_SOURCE, /<BoardFilterPopover[\s\S]*surfaceLabel=\{activeView\}/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs"/u);

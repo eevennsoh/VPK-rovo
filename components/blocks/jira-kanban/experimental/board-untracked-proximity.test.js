@@ -18,6 +18,10 @@ const PAGE_SOURCE = [
 	readFileSync(join(EXPERIMENTAL_DIR, "experimental-page-types.ts"), "utf8"),
 ].join("\n");
 const BOARD_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "experimental-jira-kanban.tsx"), "utf8");
+const CARD_LIST_SOURCE = readFileSync(
+	join(EXPERIMENTAL_DIR, "components", "board-column-card-list.tsx"),
+	"utf8",
+);
 const IN_FLOW_SOURCE = readFileSync(
 	join(EXPERIMENTAL_DIR, "components", "in-flow-agent-session-column.tsx"),
 	"utf8",
@@ -304,7 +308,10 @@ test("Untracked stays frozen beside the independently scrolling Jira status pane
 		/<InFlowAgentSessionColumn[\s\S]*\) : null\}\s*<JiraSessionFlyoutSuspensionProvider suspended>\s*<section[\s\S]*ref=\{boardScrollportRef\}[\s\S]*data-jira-kanban-scrollport=""[\s\S]*overflowX: "auto"/u,
 	);
 	assert.doesNotMatch(statusScrollportSource, /<(?:InFlow)?AgentSessionColumn/u);
-	assert.match(BOARD_SOURCE, /data-jira-kanban-card-list=""/u);
+	// The per-column card scrollport moved to its own owner when the card list
+	// was split out of the board; the board renders it via `BoardColumnCardList`.
+	assert.match(BOARD_SOURCE, /<BoardColumnCardList/u);
+	assert.match(CARD_LIST_SOURCE, /data-jira-kanban-card-list=""/u);
 });
 
 test("column presentation pins Untracked beside the list as well as the board", () => {
