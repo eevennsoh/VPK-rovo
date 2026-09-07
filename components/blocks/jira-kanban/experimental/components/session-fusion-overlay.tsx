@@ -6,6 +6,7 @@ import type { JiraIssueAgentSessionTransferMember } from "@/components/blocks/ji
 import {
 	JiraLinking,
 	type JiraLinkingIdentity,
+	type JiraLinkingRelease,
 } from "@/components/blocks/jira-linking";
 
 import { resolveAgentBrandTint } from "../lib/agent-brand-tint";
@@ -49,31 +50,37 @@ function toLinkingIdentities(
 export interface SessionFusionOverlayProps {
 	/** Cohort being dragged, or null between drags. */
 	members: readonly JiraIssueAgentSessionTransferMember[] | null;
+	/** Called once every drop flight has landed, so the host can commit the link. */
+	onFuseSettled?: () => void;
 	/** Nearest eligible issue card during the approach. */
 	proximity: BoardAgentSessionAttachProximity | null;
+	/** Armed on an attach drop so subjects fly into the card. */
+	release?: JiraLinkingRelease | null;
 }
 
 /**
  * Board adapter for the reusable Jira linking.
  *
- * Approach only. The drop is acknowledged by a brand sweep across the chin rows
- * the sessions land in — see `toBoardAgentSessionLinkFlash` — rather than by
- * animating the field across the card to reach them, so this never arms the
- * effect's release fuse.
+ * Approach is the metaball field. An attach drop arms `release.drop` so the
+ * subjects fly into the card's agent session row with the same stagger as the
+ * create well, and the chin-row sweep waits until those flights have landed.
  */
 export function SessionFusionOverlay({
 	members,
+	onFuseSettled,
 	proximity,
+	release = null,
 }: Readonly<SessionFusionOverlayProps>) {
 	const identities = useMemo(() => toLinkingIdentities(members), [members]);
 
 	return (
 		<JiraLinking
 			identities={identities}
-			nearness={proximity?.nearness ?? 0}
-			release={null}
+			nearness={release ? 0 : proximity?.nearness ?? 0}
+			onFuseSettled={onFuseSettled}
+			release={release}
 			sourceSelector={CHIP_SELECTOR}
-			target={toSessionFusionTarget(proximity)}
+			target={release?.target ?? toSessionFusionTarget(proximity)}
 			zIndex={FUSION_Z_INDEX}
 		/>
 	);

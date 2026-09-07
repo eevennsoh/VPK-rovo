@@ -21,7 +21,10 @@ import { cn } from "@/lib/utils";
 import { AgentSessionColumnHeader } from "./agent-session-column-header";
 import { AgentSessionColumnHiddenFooter } from "./agent-session-column-hidden-footer";
 import { AgentSessionColumnOverflowMenu } from "./agent-session-column-overflow-menu";
-import { AgentSessionColumnRail } from "./agent-session-column-rail";
+import {
+	AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS,
+	AgentSessionColumnRail,
+} from "./agent-session-column-rail";
 import {
 	DEFAULT_AGENT_SESSION_COLUMN_FRAME,
 	resolveAgentSessionColumnLayout,
@@ -271,8 +274,10 @@ export function AgentSessionColumn({
 	newItemIds,
 	notchShape = "circle",
 	onCollapsedChange,
+	onGutterIntroComplete,
 	onSelectedItemIdChange,
 	onToggleVisibility,
+	playGutterIntro = false,
 	selectedItemId: selectedItemIdProp,
 	title = "Untracked work",
 	triage,
@@ -514,6 +519,14 @@ export function AgentSessionColumn({
 		resolveAgentSessionPlaneClassName(layout, collapsed),
 		isGutterCollapsed ? "bg-transparent" : null,
 	);
+	// Gutter rest can still flash +N for unread. Once the rail is out of the
+	// gutter — hover-embed, catalog column, or the docked panel — the head
+	// increments the pool total so a viewer already looking at the dots is
+	// not yanked to a +N increment.
+	const showCollapsedUnreadIncrement = collapsedPresentation === "gutter" && newCount > 0;
+	const collapsedCountText = showCollapsedUnreadIncrement
+		? `+${newCount}`
+		: String(sessionCount);
 	const collapsedCountLabel = newCount > 0
 		? `${sessionCount} sessions, ${newCount} newly synced`
 		: `${sessionCount} sessions`;
@@ -553,13 +566,13 @@ export function AgentSessionColumn({
 					className={cn(
 						"absolute inset-0 flex items-center justify-center text-xs",
 						"text-text-subtlest",
-						newCount > 0 ? "font-medium" : "font-normal",
+						showCollapsedUnreadIncrement ? "font-medium" : "font-normal",
 						HEADER_COUNT_AT_REST,
 					)}
 				>
 					<TextMorphing
 						config={HEAD_COUNT_MORPH}
-						text={newCount > 0 ? `+${newCount}` : String(sessionCount)}
+						text={collapsedCountText}
 					/>
 				</span>
 				<span className="sr-only">{collapsedCountLabel}</span>
@@ -601,14 +614,19 @@ export function AgentSessionColumn({
 			getSuggestedWorkItemKeys={sessionProps.getSuggestedWorkItemKeys}
 			highlightedItemId={sessionProps.highlightedItemId}
 			items={visibleItems}
+			maxVisibleItems={collapsedPresentation === "gutter"
+				? AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS
+				: undefined}
 			newItemIds={newItemIds}
 			notchShape={notchShape}
 			onArrivalComplete={handleArrivalComplete}
 			onCreateWorkItem={sessionProps.onCreateWorkItem}
 			onItemHover={sessionProps.onItemHover}
+			onIntroComplete={onGutterIntroComplete}
 			onLinkWorkItem={sessionProps.onLinkWorkItem}
 			onSubtasks={sessionProps.onSubtasks}
 			onView={handleNotchView}
+			playIntro={isGutterCollapsed ? playGutterIntro : false}
 			sessionDrag={sessionProps.sessionDrag}
 		/>
 	) : (

@@ -26,13 +26,13 @@ export const JIRA_LINKING_DETAIL: ComponentDetail = {
 		{
 			title: "Drag to link",
 			description:
-				"Drag the session pill onto the work item. The chin bleeds in with proximity, the two silhouettes neck together, and the drop fuses them.",
+				"Drag one session onto the work item, or Command-click to mark several and drag them together. The chin bleeds in with proximity, and the drop flies each session into the card's agent session row — then the chin row sweeps.",
 			demoSlug: "jira-linking-drag-to-link",
 		},
 		{
 			title: "Multi-subject colour melt",
 			description:
-				"Three sessions travel together. Only the first two tint the field — a pair makes a legible gradient across the neck, where three or more average out in OKLab into a muddy neutral.",
+				"Command-click two or three sessions, then drag them onto the card. Only the first two tint the field — a pair makes a legible gradient across the neck, where three or more average out in OKLab into a muddy neutral. On drop they fly into the card's agent session row one after another, the same stagger as the create well.",
 			demoSlug: "jira-linking-colour-melt",
 		},
 	],
@@ -70,12 +70,12 @@ export const JIRA_LINKING_DETAIL: ComponentDetail = {
 			type: "JiraLinkingRelease | null",
 			required: true,
 			description:
-				"Set on drop to run the 400ms fuse: `{ id, target }`. Carries its own target snapshot because the source normally unmounts in the same commit. Bump `id` to restart.",
+				"Set on drop to run the 400ms fuse (`{ id, target }`) or to fly subjects into the landing (`{ id, target, drop }`). `drop.playback` defaults to `stagger` — one chip per subject, delayed by 70ms, matching the create well. For a card attach, `target` is the agent session row at the bottom, not the card centre. Bump `id` to restart.",
 		},
 		{
 			name: "onFuseSettled",
 			type: "() => void",
-			description: "Fires once the fuse has fully collapsed, so the host can clear its release state.",
+			description: "Fires once the fuse has collapsed, or once every drop flight has landed, so the host can clear its release state.",
 		},
 		{
 			name: "surfaceVariable",

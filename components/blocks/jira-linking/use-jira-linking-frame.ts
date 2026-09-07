@@ -9,6 +9,7 @@ import {
 	type JiraLinkingFrame,
 	type JiraLinkingMember,
 } from "./field";
+import type { JiraLinkingDrop } from "./drop";
 import {
 	advanceJiraLinkingVelocity,
 	lerpJiraLinkingTarget,
@@ -82,6 +83,12 @@ export interface JiraLinkingRelease {
 	 * be interpolated instead of swapped, which would pop on the release frame.
 	 */
 	fromTarget?: JiraLinkingTarget | null;
+	/**
+	 * When set, subjects fly into `target` as chips after drop — staggered
+	 * like the create well, instead of only running the goo fuse. For a card
+	 * attach, pass the agent session row as `target`, not the whole card.
+	 */
+	drop?: JiraLinkingDrop;
 }
 
 export interface JiraLinkingFrameSource {

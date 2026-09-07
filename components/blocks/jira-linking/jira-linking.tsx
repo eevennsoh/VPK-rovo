@@ -4,6 +4,7 @@ import { useReducedMotion } from "motion/react";
 import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
 
+import { JiraLinkingDropFlights } from "./jira-linking-flight";
 import { isJiraLinkingActive, type JiraLinkingTarget } from "./lifecycle";
 import {
 	useJiraLinkingAtlas,
@@ -45,9 +46,9 @@ export interface JiraLinkingProps {
 	 * the array identity changes.
 	 */
 	identities: readonly JiraLinkingIdentity[] | null;
-	/** Set on release to run the fuse. Bump `id` to restart it. */
+	/** Set on release to run the fuse, or to fly subjects into the target. Bump `id` to restart. */
 	release: JiraLinkingRelease | null;
-	/** Called once the fuse has fully collapsed, so the host can clear its state. */
+	/** Called once the fuse has collapsed, or once every drop flight has landed. */
 	onFuseSettled?: () => void;
 	/** Theme variable both blobs are tinted from. */
 	surfaceVariable?: string;
@@ -73,7 +74,24 @@ export function JiraLinking(props: Readonly<JiraLinkingProps>) {
 
 	// Unmounted rather than hidden: no RAF loop, no WebGL context, no lazy chunk,
 	// and no atlas work for a user who opted out of motion.
-	return active ? <JiraLinkingField {...props} /> : null;
+	if (!active) {
+		return null;
+	}
+
+	// Chip flights replace the goo fuse: they don't need a GL context, and
+	// mounting the field would keep its RAF loop alive behind them.
+	if (props.release?.drop) {
+		return (
+			<JiraLinkingDropFlights
+				drop={props.release.drop}
+				key={props.release.id}
+				onSettled={props.onFuseSettled}
+				target={props.release.target}
+			/>
+		);
+	}
+
+	return <JiraLinkingField {...props} />;
 }
 
 function JiraLinkingField({

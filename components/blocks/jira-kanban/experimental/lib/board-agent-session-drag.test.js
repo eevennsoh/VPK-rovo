@@ -562,14 +562,16 @@ test("attach proximity ignores unlink zones and the card the session is dragged 
 	);
 });
 
-test("attach proximity passes a measured shell rect through and falls back to null", () => {
+test("attach proximity passes a measured shell and land rect through and falls back to null", () => {
 	const dockRect = { bottom: 220, left: 200, right: 440, top: 160 };
+	const landRect = { bottom: 220, left: 208, right: 432, top: 196 };
 	const docked = resolveBoardAgentSessionAttachProximity(
 		UNTRACKED_ORIGIN,
 		{ x: 300, y: 80 },
-		[{ ...TARGET_ISSUE, dockRect }],
+		[{ ...TARGET_ISSUE, dockRect, landRect }],
 	);
 	assert.deepEqual(docked.dockRect, dockRect);
+	assert.deepEqual(docked.landRect, landRect);
 	assert.deepEqual(docked.bounds, TARGET_ISSUE.bounds);
 
 	assert.equal(
@@ -577,10 +579,14 @@ test("attach proximity passes a measured shell rect through and falls back to nu
 		null,
 	);
 	assert.equal(
+		resolveBoardAgentSessionAttachProximity(UNTRACKED_ORIGIN, { x: 300, y: 80 }, ZONES).landRect,
+		null,
+	);
+	assert.equal(
 		resolveBoardAgentSessionAttachProximity(
 			UNTRACKED_ORIGIN,
 			{ x: 300, y: 80 },
-			[{ ...TARGET_ISSUE, dockRect: null }],
+			[{ ...TARGET_ISSUE, dockRect: null, landRect: null }],
 		).dockRect,
 		null,
 	);

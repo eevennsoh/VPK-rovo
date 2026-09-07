@@ -162,7 +162,7 @@ test("chin-row agent activity indicators follow the design variation", () => {
 	assert.match(INDICATORS_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
 	assert.match(
 		INDICATORS_SOURCE,
-		/renderTeamEuAgentActivityIndicator[\s\S]*state === "awaiting-input" \? \(\s*<QuestionCircleFilledIcon color=\{token\("color\.icon\.information"\)\} label="" size="small" \/>\s*\) : \(\s*<Spinner label="" size="default" variant="experimental" \/>\s*\)/u,
+		/renderTeamEuAgentActivityIndicator[\s\S]*state === "awaiting-input" \? \(\s*<QuestionCircleFilledIcon color=\{token\("color\.icon\.information"\)\} label="" size="small" \/>\s*\) : \(\s*<Spinner label="" pulse size="default" variant="experimental" \/>\s*\)/u,
 	);
 	// A finished run gets the filled success status in the ADS success green,
 	// pairing with the filled error status a failed run already shows. The
@@ -727,7 +727,14 @@ test("the route pins the shared Agent Session column beside Jira statuses", () =
 	const scrollportIndex = EXPERIMENTAL_BOARD_SOURCE.indexOf("<section");
 	assert.ok(columnIndex > 0, "expected the board to render the Agent Session column");
 	assert.ok(columnIndex < scrollportIndex, "expected untracked work to stay pinned before the status scrollport");
-	assert.match(EXPERIMENTAL_BOARD_SOURCE, /flex min-h-full w-max min-w-full items-stretch ps-6/u);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/className="flex min-h-full w-max min-w-full items-stretch"\s*style=\{\{ paddingInlineStart: columnRowPaddingInlineStart \}\}/u,
+	);
+	assert.doesNotMatch(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/"flex min-h-full w-max min-w-full items-stretch ps-6"/u,
+	);
 	assert.doesNotMatch(EXPERIMENTAL_PAGE_SOURCE, /inFlowAgentSessionColumn/u);
 });
 

@@ -51,9 +51,11 @@ export type BoardAgentSessionDropZone =
 		 */
 		dockRect?: BoardAgentSessionDropBounds | null;
 		/**
-		 * The card's attach chin slot — the row the session actually lands in.
-		 * Absent until the chin has opened, so consumers must fall back.
+		 * The attach chin or agent-activity row the session actually lands in.
+		 * Absent until that slot can be measured, so consumers fall back to the
+		 * bottom of the shell.
 		 */
+		landRect?: BoardAgentSessionDropBounds | null;
 		kind: "issue";
 	}
 	| {
@@ -275,7 +277,8 @@ export interface BoardAgentSessionAttachProximity {
 	distance: number;
 	/** The card's agent shell rect, or null when it is not measured. */
 	dockRect: BoardAgentSessionDropBounds | null;
-	/** The attach chin slot the session lands in, or null before it opens. */
+	/** The attach chin or agent-activity row the session lands in. */
+	landRect: BoardAgentSessionDropBounds | null;
 	/** Smoothstep ramp: 1 at distance 0, 0 at or beyond the range. */
 	nearness: number;
 }
@@ -359,6 +362,7 @@ export function resolveBoardAgentSessionAttachProximity(
 				cardCode: zone.cardCode,
 				distance,
 				dockRect: zone.dockRect ?? null,
+				landRect: zone.landRect ?? null,
 				nearness: attachNearnessFromDistance(distance),
 			};
 		}

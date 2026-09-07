@@ -8,9 +8,13 @@ import {
 } from "@/components/blocks/agent-session/agent-session-arrival-motion";
 
 /**
- * Drives the collapsed circle-rail's arrival beat: briefly reveal the session's
- * face, then fade back to the rest dot. A missing face still grows in with the
- * shared scale beat. Reduced motion skips both and leaves the rest dot.
+ * Drives the collapsed circle-rail's arrival beat: reveal the session's face,
+ * hold, then shrink that same disc to the 4px rest. `arrivalPending` is true
+ * from the first arriving paint so the rest disc never sits under the face.
+ * `arrivalReveal` stays true through the shrink. `arrivalExiting` is the
+ * shrink itself. A missing face still grows in with the shared scale beat.
+ * Reduced motion skips both and leaves the rest disc, which stays in default
+ * icon color while unread.
  */
 export function useAgentSessionUserNotchArrival({
 	hasAvatar,
@@ -24,12 +28,14 @@ export function useAgentSessionUserNotchArrival({
 	shouldReduceMotion: boolean | null;
 }>): {
 	arrivalExiting: boolean;
+	arrivalPending: boolean;
 	arrivalReveal: boolean;
 	shouldPlayScaleArrival: boolean;
 } {
 	const shouldPlayArrival = isArriving && !shouldReduceMotion;
 	const shouldRevealAvatar = shouldPlayArrival && hasAvatar;
 	const [arrivalExiting, setArrivalExiting] = useState(false);
+	const [arrivalPending, setArrivalPending] = useState(shouldRevealAvatar);
 	const [arrivalReveal, setArrivalReveal] = useState(false);
 	const onArrivalCompleteRef = useRef(onArrivalComplete);
 
@@ -40,20 +46,23 @@ export function useAgentSessionUserNotchArrival({
 	useEffect(() => {
 		if (!shouldRevealAvatar) {
 			setArrivalExiting(false);
+			setArrivalPending(false);
 			setArrivalReveal(false);
 			return;
 		}
 
+		setArrivalPending(true);
 		let hideTimer = 0;
 		let doneTimer = 0;
 		const showFrame = window.requestAnimationFrame(() => {
 			setArrivalExiting(false);
 			setArrivalReveal(true);
 			hideTimer = window.setTimeout(() => {
-				setArrivalReveal(false);
 				setArrivalExiting(true);
 			}, AGENT_SESSION_USER_NOTCH_ARRIVAL_HIDE_MS);
 			doneTimer = window.setTimeout(() => {
+				setArrivalPending(false);
+				setArrivalReveal(false);
 				setArrivalExiting(false);
 				onArrivalCompleteRef.current?.();
 			}, AGENT_SESSION_USER_NOTCH_ARRIVAL_COMPLETE_MS);
@@ -68,6 +77,7 @@ export function useAgentSessionUserNotchArrival({
 
 	return {
 		arrivalExiting,
+		arrivalPending,
 		arrivalReveal,
 		shouldPlayScaleArrival: shouldPlayArrival && !hasAvatar,
 	};

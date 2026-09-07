@@ -2,8 +2,11 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
+	SESSION_FUSION_ROW_RADIUS_PX,
 	SESSION_FUSION_SHELL_RADIUS_PX,
 	toBoardAgentSessionLinkFlash,
+	toSessionFusionDrop,
+	toSessionFusionLandTarget,
 	toSessionFusionTarget,
 } = require("./session-fusion-overlay-state.ts");
 
@@ -18,6 +21,7 @@ function proximityOf(overrides = {}) {
 		cardCode: "PAY-121",
 		distance: 0,
 		dockRect: null,
+		landRect: null,
 		nearness: 1,
 		...overrides,
 	};
@@ -98,6 +102,71 @@ test("an unmapped brand still flashes, on a neutral accent", () => {
 		token: 9,
 	});
 	assert.equal(flash.flash.tint, "var(--color-bg-accent-gray-bolder)");
+});
+
+test("an attach drop arms staggered flights into the chin row, not the shell centre", () => {
+	const landRect = { bottom: 444, left: 108, right: 372, top: 420 };
+	const release = toSessionFusionDrop({
+		from: { x: 48, y: 90 },
+		id: 3,
+		members: [CODEX, CLAUDE],
+		proximity: proximityOf({ dockRect: SHELL_RECT, landRect }),
+	});
+	assert.equal(SESSION_FUSION_ROW_RADIUS_PX, 6);
+	assert.deepEqual(release?.target, {
+		anchor: { x: 240, y: 432 },
+		height: 24,
+		radius: 6,
+		width: 264,
+	});
+	assert.deepEqual(
+		toSessionFusionLandTarget(proximityOf({ dockRect: SHELL_RECT, landRect })),
+		release?.target,
+	);
+	assert.equal(release?.id, 3);
+	assert.equal(release?.drop.playback, "stagger");
+	assert.deepEqual(release?.drop.from, { x: 48, y: 90 });
+	assert.deepEqual(
+		release?.drop.members.map((member) => [member.id, member.name]),
+		[["codex-1", "Codex"], ["claude-1", "Claude"]],
+	);
+});
+
+test("an unmeasured chin still aims at the bottom of the shell", () => {
+	assert.deepEqual(toSessionFusionLandTarget(proximityOf({ dockRect: SHELL_RECT })), {
+		anchor: { x: 240, y: 432 },
+		height: 24,
+		radius: 6,
+		width: 272,
+	});
+	assert.deepEqual(toSessionFusionLandTarget(proximityOf()), {
+		anchor: { x: 240, y: 408 },
+		height: 24,
+		radius: 6,
+		width: 280,
+	});
+	assert.equal(toSessionFusionLandTarget(null), null);
+});
+
+test("flights do not arm without a card or a member", () => {
+	assert.equal(
+		toSessionFusionDrop({
+			from: { x: 1, y: 1 },
+			id: 1,
+			members: [CLAUDE],
+			proximity: null,
+		}),
+		null,
+	);
+	assert.equal(
+		toSessionFusionDrop({
+			from: { x: 1, y: 1 },
+			id: 1,
+			members: [],
+			proximity: proximityOf(),
+		}),
+		null,
+	);
 });
 
 test("an empty cohort has no row to acknowledge", () => {

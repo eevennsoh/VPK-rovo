@@ -9,15 +9,17 @@ export const AGENT_SESSION_ARRIVAL_OFFSET_PX = -8;
 
 /**
  * Circle-rail arrival: the face pops in on the avatar recipe, holds, then
- * crossfades back to the 4px rest dot. Enter matches the hover CSS
- * (`duration-normal` + `ease-out-practical`); exit is the avatar recipe's
- * `duration-fast` + `ease-in`. The hold is `duration-slower` so a 12px face
- * can register.
+ * morphs — one disc shrinking 12→4 — before the photo is dropped and the
+ * unread rest takes `color.icon`. Enter matches the hover CSS
+ * (`duration-normal` + `ease-out-practical`). The shrink is an in-place
+ * scale (`duration-normal` + `ease-in-out`), not a fade over a rest disc
+ * that was already sitting underneath. The hold is `2 × duration-slower`
+ * so a 12px face can register before the shape changes.
  */
 export const AGENT_SESSION_USER_NOTCH_ARRIVAL = {
 	enterMs: 150, // duration-normal
-	exitMs: 100, // duration-fast
-	lingerMs: 400, // duration-slower
+	exitMs: 150, // duration-normal — in-place shrink
+	lingerMs: 800, // 2 × duration-slower
 } as const;
 
 export const AGENT_SESSION_USER_NOTCH_ARRIVAL_HIDE_MS =
