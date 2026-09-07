@@ -81,7 +81,7 @@ test("drop receipts land in the geometric center of the well", () => {
 	assert.doesNotMatch(DROPZONE, /JIRA_DROPZONE_FLIGHT_LANDING_INSET_PX/u);
 });
 
-test("board insertion marker hangs halfway outside the card left edge", () => {
+test("board insertion marker avoids clipped paint before its anchor resolves", () => {
 	const lineSource = readFileSync(join(__dirname, "board-card-insertion-line.tsx"), "utf8");
 	const contextSource = readFileSync(
 		join(__dirname, "board-card-hover-insertion-context.tsx"),
@@ -90,9 +90,10 @@ test("board insertion marker hangs halfway outside the card left edge", () => {
 	const motionSource = readFileSync(join(__dirname, "created-card-arrival-motion.tsx"), "utf8");
 
 	assert.match(lineSource, /fixed z-30 flex size-6 -translate-x-1\/2 -translate-y-1\/2/u);
-	assert.match(lineSource, /left: "anchor\(left\)"/u);
+	assert.match(lineSource, /left: "anchor\(left, -100vw\)"/u);
 	assert.match(lineSource, /positionAnchor: anchorName/u);
-	assert.match(lineSource, /top: "anchor\(center\)"/u);
+	assert.match(lineSource, /positionVisibility: "anchors-visible"/u);
+	assert.match(lineSource, /top: "anchor\(center, -100vh\)"/u);
 	assert.doesNotMatch(lineSource, /absolute left-0 top-1\/2 flex size-6 -translate-y-1\/2/u);
 	assert.doesNotMatch(lineSource, /export const BoardCardHoverInsertionContext/u);
 	assert.match(contextSource, /export const BoardCardHoverInsertionContext/u);
