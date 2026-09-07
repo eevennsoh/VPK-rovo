@@ -26,3 +26,46 @@ export function resolveBoardCardInsertionPosition(
 		? "after"
 		: undefined;
 }
+
+/**
+ * The board analogue of the list view's `getInsertionLineClassName`
+ * (`components/blocks/jira-list/jira-list-dnd.ts`): the 2px accent rule that
+ * shows where an untracked agent session will land when it is dropped in the
+ * gap between two kanban cards.
+ *
+ * Two exports rather than one, because the anchor and the paint live on
+ * different owners:
+ *
+ * - `getBoardCardInsertionAnchorClassName` returns `relative` for the card
+ *   wrapper. The wrapper is a flex item in the column stack and is NOT
+ *   positioned at rest, so an absolutely positioned child would otherwise
+ *   escape to some far ancestor. Shipping `relative` only while the line shows
+ *   keeps every other card's paint order untouched.
+ * - `BoardCardInsertionLine` is the line itself. It is absolutely positioned,
+ *   so it adds no flex child, consumes no `gap` track, and changes no card's
+ *   size — the gesture must show where the card *will* go without moving
+ *   anything that is already on the board.
+ *
+ * Both are driven by the same `position`, so the wiring agent computes it once
+ * per card and passes it to both.
+ */
+export function getBoardCardInsertionAnchorClassName(
+	position: BoardCardInsertion["position"] | undefined,
+): string | undefined {
+	return position ? "relative" : undefined;
+}
+
+/**
+ * Where the rule sits relative to the card it rides.
+ *
+ * - `gap` — an interior seam, with a real `gap` track between two cards. The
+ *   rule centres itself in that track so it reads as belonging to the space
+ *   between the cards rather than to either one of them.
+ * - `edge` — the leading seam of the first card or the trailing seam of the
+ *   last. There is no gap track there, only the card list's own boundary, and
+ *   the list stays a real scrollport for the whole gesture (dropping
+ *   `overflow-y-auto` would make the browser discard its scroll offset and
+ *   jump every scrolled column to its first card). So these sit flush inside
+ *   the card, where nothing can clip them at any scroll position.
+ */
+export type BoardCardInsertionSeam = "edge" | "gap";

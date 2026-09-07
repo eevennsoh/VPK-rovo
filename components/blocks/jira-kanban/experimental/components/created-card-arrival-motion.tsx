@@ -8,11 +8,11 @@ import { cn } from "@/lib/utils";
 
 import type { JiraKanbanCreatedCardArrival } from "../hooks/use-created-card-arrival";
 import type { BoardCardInsertion } from "../lib/board-agent-session-drag";
+import { BoardCardInsertionLine } from "./board-card-insertion-line";
 import {
-	BoardCardInsertionLine,
 	getBoardCardInsertionAnchorClassName,
-} from "./board-card-insertion-line";
-import { resolveBoardCardInsertionPosition } from "../lib/board-card-insertion";
+	resolveBoardCardInsertionPosition,
+} from "../lib/board-card-insertion";
 import {
 	getJiraKanbanCardScale,
 	JIRA_KANBAN_CARD_ARRIVE,
