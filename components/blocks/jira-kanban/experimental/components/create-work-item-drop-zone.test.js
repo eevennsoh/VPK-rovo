@@ -56,15 +56,9 @@ test("empty columns keep the create well at the top and always visible", () => {
 	assert.match(BOARD, /order: isEmptyColumn \? 0 : 1/u);
 });
 
-test("drop receipts leave the create-well copy clear of the flight chip", () => {
-	assert.match(
-		DROPZONE,
-		/const JIRA_DROPZONE_FLIGHT_LANDING_INSET_PX = 16;/u,
-	);
-	assert.match(
-		DROPZONE,
-		/x: rect\.left \+ JIRA_DROPZONE_FLIGHT_LANDING_INSET_PX/u,
-	);
+test("drop receipts land in the geometric center of the well", () => {
+	assert.match(DROPZONE, /resolveJiraDropzoneLandingPoint\(rect\)/u);
+	assert.doesNotMatch(DROPZONE, /JIRA_DROPZONE_FLIGHT_LANDING_INSET_PX/u);
 });
 
 test("create button rests icon-subtlest and solidifies on hover", () => {

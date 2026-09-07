@@ -88,13 +88,13 @@ function JiraDropzoneDemoStage() {
 
 	return (
 		<div
-			className="flex w-full max-w-3xl flex-col gap-6 rounded-lg bg-surface p-6"
+			className="mx-auto flex w-full max-w-3xl flex-col items-center gap-6 rounded-lg bg-surface p-6"
 			data-jira-dropzone-bounce={staggeredBounce ? "each" : "once"}
 			data-jira-dropzone-demo-dragging={demoDrag.dragging || undefined}
 			data-jira-dropzone-drop={staggeredDrop ? "stagger" : "cohort"}
 			ref={stageRef}
 		>
-			<div className="flex flex-wrap items-center gap-2" ref={launchRef}>
+			<div className="flex flex-wrap items-center justify-center gap-2" ref={launchRef}>
 				<Button onClick={() => fire(1, "To Do")} variant="outline">
 					Drop one session
 				</Button>
@@ -104,6 +104,8 @@ function JiraDropzoneDemoStage() {
 				<Button onClick={() => fire(1, "In Progress")} variant="outline">
 					Drop into In Progress
 				</Button>
+			</div>
+			<div className="flex flex-wrap items-center justify-center gap-2">
 				<DemoFlagSwitch
 					checked={staggeredDrop}
 					id="jira-dropzone-staggered-drop"
@@ -117,7 +119,7 @@ function JiraDropzoneDemoStage() {
 					onCheckedChange={setStaggeredBounce}
 				/>
 			</div>
-			<div className="flex flex-wrap items-center gap-2">
+			<div className="flex flex-wrap items-center justify-center gap-2">
 				{DEMO_MEMBERS.map((member) => (
 					<JiraDropzoneDemoChip
 						key={member.id}
@@ -137,7 +139,7 @@ function JiraDropzoneDemoStage() {
 				/>
 			</div>
 			<ExclusiveCreateWellProximityProvider>
-				<div className="grid grid-cols-2 gap-4">
+				<div className="grid w-full grid-cols-2 gap-4">
 					{DEMO_COLUMNS.map((title) => (
 						<DemoColumn
 							drag={demoDrag.dragFor(title)}
