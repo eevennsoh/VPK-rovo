@@ -607,7 +607,7 @@ test("Jira issue card hugs its content the moment the chip leaves the chin", () 
 	// The row flags itself; the list closes its gutter off that flag with `:has()`.
 	assert.match(AGENT_ACTIVITY_SOURCE, /data-session-chip-out=\{isDraggedOut \|\| undefined\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /data-slot="jira-issue-agent-row-wrap"/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /hasActivities && "px-1 py-1 has-\[\[data-session-chip-out\]\]:py-0",/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /\(hasActivities \|\| hasAttachPreview\) && "px-1 py-1 has-\[\[data-session-chip-out\]\]:py-0",/u);
 	assert.match(
 		SOURCE,
 		/has-\[\[data-session-chip-out\]\]:not-has-\[\[data-slot=jira-issue-agent-row-wrap\]:not\(\[data-session-chip-out\]\)\]:pb-1/u,
@@ -693,9 +693,9 @@ test("Jira issue attach has no dashed well and grows the backdrop chin instead",
 	);
 	assert.match(SOURCE, /const isAttachingSession = agentSessionDragControl[\s\S]*isJiraIssueSessionAttachPreview\(\s*\n\s*resolvedAgentSessionDragState\.dragging,\s*\n\s*resolvedAgentSessionDragState\.source,/u);
 	assert.match(SOURCE, /\|\| isAttachingSession;/u);
-	assert.match(SOURCE, /data-slot="jira-issue-attach-chin"/u);
 	assert.match(SOURCE, /data-slot="jira-issue-agent-shell"/u);
 	assert.match(SOURCE, /data-session-dragging=\{resolvedAgentSessionDragState\.dragging \|\| undefined\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /data-slot="jira-issue-attach-chin"/u);
 	// Attach hit-tests the shell, not the article that also wraps detached pills.
 	assert.match(
 		SOURCE,
@@ -704,5 +704,27 @@ test("Jira issue attach has no dashed well and grows the backdrop chin instead",
 	assert.doesNotMatch(
 		SOURCE,
 		/ref=\{\(node\) => \{\s*\n\s*setGenerativeActionAnchor\(node\);\s*\n\s*cardMeasureRef\.current = node;/u,
+	);
+});
+
+test("attach chin replaces the last occupied session row instead of stacking or collapsing split rows", () => {
+	// Occupied cards keep their chin height: the placeholder takes the last
+	// row. Split layouts keep every earlier row so drop-zone geometry stays put.
+	assert.match(
+		SOURCE,
+		/attachPreviewCopy=\{isAttachingSession \? linkAgentSessionChinCopy\(attachSessionCount\) : undefined\}/u,
+	);
+	assert.match(AGENT_ACTIVITY_SOURCE, /attachPreviewCopy\?: string;/u);
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/const replaceLastRowWithAttach = hasAttachPreview && index === rowGroups.length - 1;/u,
+	);
+	assert.match(
+		AGENT_ACTIVITY_SOURCE,
+		/\{rowGroups.length === 0 && attachPreviewCopy \? \([\s\S]*data-slot="jira-issue-attach-chin"[\s\S]*<JiraIssueAttachChinSlot copy=\{attachPreviewCopy\} \/>/u,
+	);
+	assert.doesNotMatch(
+		SOURCE,
+		/\{isAttachingSession \? \(\s*\n\s*<div className="px-1 py-1" data-slot="jira-issue-attach-chin">/u,
 	);
 });
