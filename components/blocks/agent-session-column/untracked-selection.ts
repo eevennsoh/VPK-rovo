@@ -380,7 +380,7 @@ export function resolveUntrackedSelectionGesture(
 	gesture: AgentSessionSelectionGesture,
 	selection: EffectiveSelection,
 ): AgentSessionSelectionGesture {
-	if (selection.kind !== "active" || gesture.additive) {
+	if (selection.kind !== "active" || gesture.additive || gesture.range) {
 		return gesture;
 	}
 

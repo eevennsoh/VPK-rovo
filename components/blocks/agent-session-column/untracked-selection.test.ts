@@ -181,6 +181,38 @@ test("plain clicks add and remove rows after the first selection", () => {
 	);
 });
 
+test("range clicks keep replacing the active range", () => {
+	const anchor = reduceSelectionMarks(NO_SELECTION_MARKS, {
+		gesture: { additive: false, range: false },
+		id: "lw-a",
+		orderedIds: ORDERED_IDS,
+		type: "activate",
+	});
+	const selectedThroughD = reduceSelectionMarks(anchor, {
+		gesture: { additive: false, range: true },
+		id: "lw-d",
+		orderedIds: ORDERED_IDS,
+		type: "activate",
+	});
+	const selection = selectEffectiveSelection(
+		selectedThroughD,
+		ORDERED_IDS.map((id) => session(id)),
+	);
+	const rangeGesture = resolveUntrackedSelectionGesture(
+		{ additive: false, range: true },
+		selection,
+	);
+	assert.deepEqual(rangeGesture, { additive: false, range: true });
+
+	const shrunk = reduceSelectionMarks(selectedThroughD, {
+		gesture: rangeGesture,
+		id: "lw-b",
+		orderedIds: ORDERED_IDS,
+		type: "activate",
+	});
+	assert.deepEqual([...shrunk.markedIds], ["lw-a", "lw-b"]);
+});
+
 test("an additive activate toggles without moving the shift anchor", () => {
 	const anchor = reduceSelectionMarks(NO_SELECTION_MARKS, {
 		gesture: { additive: false, range: false },
