@@ -103,19 +103,37 @@ test("gutter rest keeps the overlay and rail visually transparent", () => {
 	);
 });
 
-test("horizontal scrolling fades the 24px gutter with ScrollMask, not a hard cut", () => {
-	assert.match(IN_FLOW_COLUMN_SOURCE, /import \{ ScrollMaskEdgeOverlay \} from "@\/components\/visual\/scroll-mask"/u);
+test("underlap paints a solid 24px surface gutter fill with no fade", () => {
+	assert.doesNotMatch(IN_FLOW_COLUMN_SOURCE, /ScrollMaskEdgeOverlay/u);
+	assert.doesNotMatch(IN_FLOW_COLUMN_SOURCE, /@\/components\/visual\/scroll-mask/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /useInFlowGutterScrollMask\(hostRef\)/u);
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
-		/showGutterScrollMask \? \(\s*<ScrollMaskEdgeOverlay\s+data-agent-session-column-gutter-mask=""\s+edge="left"\s+fadeSize=\{IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX\}/u,
+		/className="pointer-events-none absolute inset-y-0 start-0 z-40 bg-surface"[\s\S]*?data-agent-session-column-gutter-fill=""[\s\S]*?width: IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX/u,
+	);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /ref=\{hostRef\}/u);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/className="relative z-30 flex min-h-0 shrink-0 self-stretch"/u,
+	);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
+		/data-agent-session-column-hit-area=""[\s\S]*?showGutterScrollMask \? \(/u,
 	);
 	assert.match(IN_FLOW_GEOMETRY_SOURCE, /export const IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX = 24/u);
+	assert.doesNotMatch(IN_FLOW_COLUMN_SOURCE, /data-agent-session-column-gutter-mask=/u);
+	assert.doesNotMatch(IN_FLOW_COLUMN_SOURCE, /bg-white/u);
+	assert.doesNotMatch(IN_FLOW_COLUMN_SOURCE, /fadeSize/u);
+	assert.doesNotMatch(IN_FLOW_COLUMN_SOURCE, /linear-gradient/u);
+	assert.doesNotMatch(IN_FLOW_COLUMN_SOURCE, /mask-image/u);
+	assert.equal(
+		IN_FLOW_COLUMN_SOURCE.match(/data-agent-session-column-gutter-fill=""/gu)?.length,
+		1,
+	);
 	assert.doesNotMatch(
 		IN_FLOW_COLUMN_SOURCE,
-		/data-agent-session-column-gutter-mask=""[\s\S]{0,80}?bg-surface/u,
+		/className="absolute inset-y-0 start-0 z-30 bg-surface"/u,
 	);
-	assert.doesNotMatch(IN_FLOW_COLUMN_SOURCE, /bg-white/u);
 });
 
 test("the entire visible gutter is a hover target without covering To do", () => {
