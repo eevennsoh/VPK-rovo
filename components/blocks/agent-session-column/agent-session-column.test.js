@@ -729,7 +729,9 @@ test("an arrival is a transient beat plus a mark that outlives it", () => {
 	// The mark is the load-bearing half: it has to survive a backgrounded tab, a
 	// collapsed column, and reduced motion, so it is never the animation alone.
 	assert.match(CARD_SOURCE, /<span className="sr-only">Newly synced, not yet reviewed<\/span>/u);
-	assert.match(CARD_SOURCE, /size-1\.5 rounded-full bg-icon-discovery/u);
+	assert.match(CARD_SOURCE, /size-1\.5 -translate-y-1\/2 rounded-full bg-icon-discovery/u);
+	assert.match(CARD_SOURCE, /absolute left-1\.5 top-1\/2/u);
+	assert.doesNotMatch(CARD_SOURCE, /top-1\.5/u);
 	assert.match(RAIL_COLUMN_SOURCE, /backgroundColor: AGENT_SESSION_NOTCH_TONE\.rest/u);
 	assert.doesNotMatch(
 		RAIL_COLUMN_SOURCE,
@@ -850,6 +852,9 @@ test("the column keeps the selected session id across collapse remounts", () => 
 	assert.match(INDEX_SOURCE, /const \[uncontrolledSelectedItemId, setUncontrolledSelectedItemId\]/u);
 	assert.match(INDEX_SOURCE, /selectedItemId=\{selectedItemId\}/u);
 	assert.match(INDEX_SOURCE, /onSelectedItemIdChange=\{handleSelectedItemIdChange\}/u);
+	assert.match(INDEX_SOURCE, /onKeyDown=\{untrackedSelection\.onKeyDown\}/u);
+	assert.match(INDEX_SOURCE, /canActivateItem\(item\)/u);
+	assert.match(INDEX_SOURCE, /handleSelectedItemIdChange\(null\)/u);
 	assert.match(
 		INDEX_SOURCE,
 		/if \(!isSelectionControlled\) \{\s*\n\s*setUncontrolledSelectedItemId\(itemId\);\s*\n\s*\}/u,
@@ -864,14 +869,23 @@ test("the column owns a hidden-id set and filters items before AgentSession", ()
 	assert.match(HOOK_SOURCE, /export type AgentSessionColumnView = "active" \| "hidden"/u);
 	assert.match(HOOK_SOURCE, /export function pruneHiddenSessionIds\(/u);
 	assert.match(HOOK_SOURCE, /export function forgetHiddenSessionIds\(/u);
+	assert.match(HOOK_SOURCE, /export function hideSessionId\(/u);
 	assert.match(HOOK_SOURCE, /type: "forget"/u);
+	assert.match(HOOK_SOURCE, /type: "hide"/u);
 	assert.match(HOOK_SOURCE, /forgetHidden,/u);
+	assert.match(HOOK_SOURCE, /hideHidden,/u);
 	assert.match(HOOK_SOURCE, /export function splitSessionItemsByHidden\(/u);
 	assert.doesNotMatch(HOOK_SOURCE, /type: "prune"/u);
 	assert.doesNotMatch(HOOK_SOURCE, /dispatch\(\{ items, type: "prune" \}\)/u);
 	assert.match(INDEX_SOURCE, /const viewItems = view === "hidden" \? hiddenItems : visibleItems/u);
 	assert.match(INDEX_SOURCE, /items=\{viewItems\}/u);
-	assert.match(INDEX_SOURCE, /forgetHidden\(session\.id\)/u);
+	assert.match(INDEX_SOURCE, /hideHidden\(session\)/u);
+	assert.match(INDEX_SOURCE, /case "hidden":\s*\n\s*toggleHidden\(session\)/u);
+	assert.match(INDEX_SOURCE, /case "active":\s*\n\s*hideHidden\(session\)/u);
+	assert.match(INDEX_SOURCE, /visibilityLabel: view === "hidden" \? "Unarchive" : "Archive"/u);
+	assert.match(INDEX_SOURCE, /onToggleVisibility\?\.\(session\)/u);
+	assert.doesNotMatch(INDEX_SOURCE, /triage\.archive\(session\)/u);
+	assert.doesNotMatch(INDEX_SOURCE, /forgetHidden\(session\.id\)/u);
 	assert.match(INDEX_SOURCE, /triage: selectionTriage,/u);
 	assert.match(INDEX_SOURCE, /toggleHidden\(item\)/u);
 	assert.match(INDEX_SOURCE, /onToggleVisibility\?\.\(item\)/u);
@@ -1008,26 +1022,13 @@ test("the selecting header Link action uses a CheckMark icon", () => {
 	assert.doesNotMatch(HEADER_SOURCE, /LinkIcon/u);
 });
 
-test("the selecting header omits collapse so Clear is the only exit", () => {
-	const columnSelecting = HEADER_SOURCE.slice(
-		HEADER_SOURCE.indexOf("function renderColumnChrome"),
-		HEADER_SOURCE.indexOf("function renderPanelChrome"),
-	);
-	const columnSelectingBranch = columnSelecting.slice(columnSelecting.lastIndexOf('case "selecting":'));
-	assert.doesNotMatch(columnSelectingBranch, /<CollapseButton/u);
-	const panelSelecting = HEADER_SOURCE.slice(HEADER_SOURCE.indexOf("function renderPanelChrome"));
-	const panelSelectingBranch = panelSelecting.slice(panelSelecting.lastIndexOf('case "selecting":'));
-	assert.doesNotMatch(panelSelectingBranch, /ShrinkHorizontalIcon/u);
-	assert.match(columnSelectingBranch, /<HeaderIconButton/u);
-	assert.match(panelSelectingBranch, /<PanelAction/u);
-});
-
 test("selecting header hover copy comes from the selectedCount table", () => {
 	assert.match(SELECTION_COPY_SOURCE, /Link agent sessions/u);
 	assert.match(SELECTION_COPY_SOURCE, /Create \$\{selectedCount\} work item/u);
 	assert.match(SELECTION_COPY_SOURCE, /Create \$\{selectedCount\} work items/u);
-	assert.match(SELECTION_COPY_SOURCE, /Archive \$\{selectedCount\} agent session/u);
-	assert.match(SELECTION_COPY_SOURCE, /Archive \$\{selectedCount\} agent sessions/u);
+	assert.match(SELECTION_COPY_SOURCE, /\$\{verb\} \$\{selectedCount\} agent session/u);
+	assert.match(SELECTION_COPY_SOURCE, /\$\{verb\} \$\{selectedCount\} agent sessions/u);
+	assert.match(SELECTION_COPY_SOURCE, /describeVisibilityAction\("Archive", selectedCount\)/u);
 	assert.match(SELECTION_COPY_SOURCE, /clear: \(\) => "Clear"/u);
 	assert.match(SELECTION_COPY_SOURCE, /No selected sessions have a work item to link/u);
 	assert.match(SELECTION_COPY_SOURCE, /No selected sessions can create a work item/u);

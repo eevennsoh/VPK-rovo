@@ -30,6 +30,7 @@ import {
 import type { AgentSessionColumnProps } from "./agent-session-column-types";
 import { useAgentSessionColumnHidden } from "./use-agent-session-column-hidden";
 import { useUntrackedSelection } from "./use-untracked-selection";
+import { focusAgentSessionRow } from "./untracked-selection-keyboard";
 
 /** Expanded column width in px. Exported so a host surface can size itself to match. */
 export const AGENT_SESSION_COLUMN_WIDTH_PX = 280;
@@ -291,9 +292,11 @@ export function AgentSessionColumn({
 		null,
 	);
 	const selectedItemId = isSelectionControlled ? selectedItemIdProp : uncontrolledSelectedItemId;
+	const canViewItem = sessionProps.canViewItem;
+	const onViewSession = sessionProps.onView;
 	const {
 		closeHiddenView,
-		forgetHidden,
+		hideHidden,
 		hiddenCount,
 		hiddenItems,
 		openHiddenView,
@@ -309,12 +312,25 @@ export function AgentSessionColumn({
 
 		return {
 			...triage,
+			// Header Archive hides into the column-owned well the footer reads.
+			// In the archived view the same control Unarchives, matching the row.
 			archive: (session: AgentSessionItem) => {
-				triage.archive(session);
-				forgetHidden(session.id);
+				switch (view) {
+					case "hidden":
+						toggleHidden(session);
+						break;
+					case "active":
+						hideHidden(session);
+						break;
+					default: {
+						const exhaustive: never = view;
+						return exhaustive;
+					}
+				}
+				onToggleVisibility?.(session);
 			},
 		};
-	}, [forgetHidden, triage]);
+	}, [hideHidden, onToggleVisibility, toggleHidden, triage, view]);
 	const displayTitle = view === "hidden" ? "Archived" : title;
 	// The rail and the card list have very different intrinsic widths, so the
 	// overflow has to be clipped for the duration of the width transition. Any
@@ -329,13 +345,40 @@ export function AgentSessionColumn({
 	const untrackedCount = count ?? visibleItems.length;
 	const showWellFooter = view === "hidden" || hiddenCount > 0;
 	const sessionCount = view === "hidden" ? hiddenItems.length : untrackedCount;
+	// Coding sessions are always activatable; person rows only when `canViewItem`
+	// allows it. Selection, notches, and board spotlight share this gate.
+	const canActivateItem = useCallback((item: AgentSessionItem) => (
+		isCodingAgentListItem(item) || (canViewItem?.(item) ?? true)
+	), [canViewItem]);
+	const handleSelectedItemIdChange = useCallback((itemId: string | null) => {
+		if (!isSelectionControlled) {
+			setUncontrolledSelectedItemId(itemId);
+		}
+		onSelectedItemIdChange?.(itemId);
+	}, [isSelectionControlled, onSelectedItemIdChange]);
+	const handleLeadItem = useCallback((item: AgentSessionItem | null) => {
+		if (item === null) {
+			handleSelectedItemIdChange(null);
+			return;
+		}
+		handleSelectedItemIdChange(item.id);
+		if (canActivateItem(item)) {
+			onViewSession?.(item);
+		}
+	}, [canActivateItem, handleSelectedItemIdChange, onViewSession]);
+	const handleFocusRow = useCallback((itemId: string | null) => {
+		focusAgentSessionRow(columnRef.current, itemId);
+	}, []);
 	const untrackedSelection = useUntrackedSelection({
 		capturedItemIds: sessionProps.capturedItemIds,
 		count: sessionCount,
+		focusRow: handleFocusRow,
 		getSuggestedWorkItemKey: sessionProps.getSuggestedWorkItemKey,
 		getSuggestedWorkItemKeys: sessionProps.getSuggestedWorkItemKeys,
+		onLeadItem: handleLeadItem,
 		title: displayTitle,
 		triage: selectionTriage,
+		visibilityLabel: view === "hidden" ? "Unarchive" : "Archive",
 		visibleItems: viewItems,
 	});
 	const overflowMenu = (
@@ -427,15 +470,11 @@ export function AgentSessionColumn({
 			closeHiddenView();
 		}
 	}, [closeHiddenView, collapsed, shouldReduceMotion]);
-	// The rail's user dots activate on the same terms the cards do: coding sessions
-	// are always activatable, person rows only when `canViewItem` allows it.
-	const canActivateNotch = (item: AgentSessionItem) =>
-		isCodingAgentListItem(item) || (sessionProps.canViewItem?.(item) ?? true);
-	const handleNotchView = sessionProps.onView === undefined
+	const handleNotchView = onViewSession === undefined
 		? undefined
 		: (item: AgentSessionItem) => {
-			if (canActivateNotch(item)) {
-				sessionProps.onView?.(item);
+			if (canActivateItem(item)) {
+				onViewSession(item);
 			}
 		};
 
@@ -461,13 +500,6 @@ export function AgentSessionColumn({
 	const handleToggleVisibility = (item: AgentSessionItem) => {
 		toggleHidden(item);
 		onToggleVisibility?.(item);
-	};
-
-	const handleSelectedItemIdChange = (itemId: string | null) => {
-		if (!isSelectionControlled) {
-			setUncontrolledSelectedItemId(itemId);
-		}
-		onSelectedItemIdChange?.(itemId);
 	};
 
 	const handleTransitionEnd = (event: React.TransitionEvent<HTMLElement>) => {
@@ -652,6 +684,7 @@ export function AgentSessionColumn({
 			data-agent-session-column={title}
 			data-collapsed={collapsed || undefined}
 			data-column-frame={layout === "panel" ? undefined : layout}
+			onKeyDown={untrackedSelection.onKeyDown}
 			onTransitionEnd={handleTransitionEnd}
 			tabIndex={-1}
 			style={{

@@ -3,6 +3,9 @@ import type { ComponentType } from "react";
 
 export const VISUAL_DEMOS: Record<string, ComponentType> = {
 	gooey: dynamic(() => import("../demos/visual/gooey-demo"), { ssr: false }),
+	"linking-effect": dynamic(() => import("../demos/visual/linking-effect-demo"), {
+		ssr: false,
+	}),
 	typography: dynamic(() => import("../demos/visual/typography-demo"), {
 		ssr: false,
 	}),
@@ -15,6 +18,9 @@ export const VISUAL_DEMOS: Record<string, ComponentType> = {
 		ssr: false,
 	}),
 	"border-beam": dynamic(() => import("../demos/visual/border-beam-demo"), {
+		ssr: false,
+	}),
+	"dropzone-effect": dynamic(() => import("../demos/visual/dropzone-effect-demo"), {
 		ssr: false,
 	}),
 	squircle: dynamic(() => import("../demos/visual/squircle-demo"), {
@@ -303,6 +309,14 @@ export const VISUAL_DEMOS: Record<string, ComponentType> = {
 };
 
 export const VISUAL_VARIANT_DEMOS: Record<string, ComponentType> = {
+	"linking-effect-drag-to-link": dynamic(
+		() => import("../demos/visual/linking-effect-demo").then((mod) => ({ default: mod.LinkingEffectDragToLinkExample })),
+		{ ssr: false },
+	),
+	"linking-effect-colour-melt": dynamic(
+		() => import("../demos/visual/linking-effect-demo").then((mod) => ({ default: mod.LinkingEffectColourMeltExample })),
+		{ ssr: false },
+	),
 	"gooey-morph-menu": dynamic(
 		() => import("../demos/visual/gooey-demo").then((mod) => ({ default: mod.GooeyMorphMenuExample })),
 		{ ssr: false },

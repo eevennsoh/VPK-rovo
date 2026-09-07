@@ -73,8 +73,17 @@ test("collapse survives a switch to the list or Pulse view", () => {
 	assert.match(BOARD_SOURCE, /if \(controlledCollapsedColumns === undefined\) \{/u);
 	// The page that owns the view switch owns the state.
 	assert.match(PAGE_SOURCE, /const \[collapsedColumns, setCollapsedColumns\] = useState\(\s*EMPTY_COLLAPSED_BOARD_COLUMNS,?\s*\)/u);
-	assert.match(PAGE_SOURCE, /collapsedColumns=\{collapsedColumns\}/u);
+	assert.match(PAGE_SOURCE, /collapsedColumns=\{displayedCollapsedColumns\}/u);
 	assert.match(PAGE_SOURCE, /onCollapsedColumnsChange=\{setCollapsedColumns\}/u);
+	assert.match(PAGE_SOURCE, /useAgentFilterDisplay\(/u);
+	assert.match(
+		PAGE_SOURCE,
+		/const \[agentFilterId, setAgentFilterId\] = useState<BoardAgentFilterId \| null>\(null\)/u,
+	);
+	assert.match(
+		PAGE_SOURCE,
+		/<ExperimentalJiraKanbanBoardHeader[\s\S]*agentFilterId=\{agentFilterId\}[\s\S]*onAgentFilterIdChange=\{setAgentFilterId\}/u,
+	);
 });
 
 test("the resize button swaps its icon without using selected button state", () => {
@@ -194,6 +203,17 @@ test("enclosed chrome puts the collapsed count inside the framed box", () => {
 		/chrome=\{chrome\.collapsed\}[\s\S]*headerFrame=\{chrome\.headerFrame\}/u,
 	);
 	assert.match(BOARD_SOURCE, /data-kanban-column-chrome=\{columnChrome\}/u);
+	assert.match(BOARD_SOURCE, /chrome\.dropShellClassName/u);
+	assert.match(BOARD_SOURCE, /setKanbanColumnDropArmed/u);
+	assert.match(BOARD_SOURCE, /withKanbanDropRingClipGutter\(paddingTop, chrome\)/u);
+	assert.match(BOARD_SOURCE, /withKanbanDropContentGutter\(paddingTop, chrome\)/u);
+	assert.match(BOARD_SOURCE, /paddingTop: scrollportPaddingTop/u);
+	assert.match(BOARD_SOURCE, /paddingTop=\{untrackedPaddingTop\}/u);
+	assert.match(BOARD_SOURCE, /\.\.\.chrome\.dropContentPadding,/u);
+	assert.match(
+		BOARD_SOURCE,
+		/collapsed \? \(\s*<div style=\{\{ paddingTop: chrome\.dropContentPadding\?\.paddingTop \}\}>/u,
+	);
 });
 
 test("experimental-v2 reuses the shared collapsed column and threads chrome", () => {
@@ -207,5 +227,23 @@ test("experimental-v2 reuses the shared collapsed column and threads chrome", ()
 		/chrome=\{chrome\.collapsed\}[\s\S]*headerFrame=\{chrome\.headerFrame\}/u,
 	);
 	assert.match(V2_BOARD_SOURCE, /data-kanban-column-chrome=\{columnChrome\}/u);
+	assert.match(V2_BOARD_SOURCE, /chrome\.dropShellClassName/u);
+	assert.match(V2_BOARD_SOURCE, /setKanbanColumnDropArmed/u);
+	assert.match(V2_BOARD_SOURCE, /withKanbanDropRingClipGutter\(paddingTop, chrome\)/u);
+	assert.match(V2_BOARD_SOURCE, /withKanbanDropContentGutter\(paddingTop, chrome\)/u);
+	assert.match(V2_BOARD_SOURCE, /paddingTop: scrollportPaddingTop/u);
+	assert.match(V2_BOARD_SOURCE, /paddingTop=\{untrackedPaddingTop\}/u);
+	assert.match(V2_BOARD_SOURCE, /\.\.\.chrome\.dropContentPadding,/u);
+	assert.match(
+		V2_BOARD_SOURCE,
+		/collapsed \? \(\s*<div style=\{\{ paddingTop: chrome\.dropContentPadding\?\.paddingTop \}\}>/u,
+	);
 	assert.doesNotMatch(V2_BOARD_SOURCE, /function CollapsedBoardColumn/u);
+});
+
+test("simple Untracked drop gutter stays on the board and is omitted in List", () => {
+	assert.match(
+		PAGE_SOURCE,
+		/paddingTop=\{isListContent\s*\?\s*undefined\s*:\s*withKanbanDropContentGutter\(0, columnChromeStyles\)\.paddingTop\}/u,
+	);
 });

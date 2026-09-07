@@ -135,8 +135,13 @@ test("the PAY board fills every existing status with coding work and the full st
 			&& preview.repository
 			&& preview.branch
 			&& preview.author?.name
+			&& Boolean(preview.relativeTime)
 		);
 	}));
+	assert.equal(
+		prCards.find((card) => card.code === "PAY-105")?.pullRequestPreview.relativeTime,
+		"2h ago",
+	);
 	assert.notEqual(
 		prCards.find((card) => card.code === "PAY-105")?.pullRequestPreview.title,
 		prCards.find((card) => card.code === "PAY-104")?.pullRequestPreview.title,
