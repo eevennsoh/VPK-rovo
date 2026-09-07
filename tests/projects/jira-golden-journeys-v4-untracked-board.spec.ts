@@ -153,6 +153,40 @@ test("attaching onto a running session replaces that chin row instead of stackin
 	await page.mouse.up();
 });
 
+test("attaching onto PAY-118 replaces any session chin instead of stacking the dragged title", async ({ page }) => {
+	await openBoard(page);
+
+	const targetCard = page.locator("[data-issue-key='PAY-118']");
+	await targetCard.scrollIntoViewIfNeeded();
+
+	const untrackedSession = page.locator("[data-agent-session-column]")
+		.getByTestId("agent-session-row-lw-scope-thread");
+	const sourceBox = await untrackedSession.boundingBox();
+	const dropZone = getIssueDropZone(page, "PAY-118");
+	const targetBox = await dropZone.boundingBox();
+	expect(sourceBox).not.toBeNull();
+	expect(targetBox).not.toBeNull();
+	if (!sourceBox || !targetBox) return;
+
+	await page.mouse.move(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(sourceBox.x + sourceBox.width / 2 + 4, sourceBox.y + sourceBox.height / 2 + 4);
+	await page.mouse.move(
+		targetBox.x + targetBox.width / 2,
+		targetBox.y + targetBox.height / 2,
+		{ steps: 12 },
+	);
+	await expect(dropZone).toHaveAttribute("data-board-agent-session-target", "attach");
+	await expect(targetCard.locator('[data-slot="jira-issue-attach-chin"]')).toHaveCount(1);
+	await expect(targetCard.getByText("Link 1 agent session")).toBeVisible();
+	await expect(targetCard.locator('[data-testid^="agent-session-row-"]:visible')).toHaveCount(0);
+	await expect(targetCard.getByText("Why the wallet was cut")).not.toBeVisible();
+	await expect(targetCard.getByText("The adapter keep-or-delete")).not.toBeVisible();
+	await expect(targetCard.getByText("Keep or delete the adapter")).not.toBeVisible();
+
+	await page.mouse.up();
+});
+
 test("Untracked is on by default and PAY-101 shows a nearby untracked row", async ({ page }) => {
 	await openBoard(page);
 

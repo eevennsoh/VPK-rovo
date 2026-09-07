@@ -232,9 +232,9 @@ export function ExperimentalJiraKanbanCard({
 			pullRequestStatus={card.pullRequestStatus}
 			selected={selected}
 			renderAgentActivityIndicator={renderAgentActivityIndicator}
-			sessionTransferAfter={(localSessionDrag) => (
-				<AnimatePresence>
-					{detachedAgentSessions.length > 0 ? (
+			sessionTransferAfter={detachedAgentSessions.length > 0
+				? (localSessionDrag) => (
+					<AnimatePresence>
 						<motion.div
 							animate={proximityMotion.animate}
 							className="has-[[data-session-dragging]]:relative has-[[data-session-dragging]]:z-30"
@@ -261,9 +261,9 @@ export function ExperimentalJiraKanbanCard({
 								variant="medium-detached"
 							/>
 						</motion.div>
-					) : null}
-				</AnimatePresence>
-			)}
+					</AnimatePresence>
+				)
+				: undefined}
 			summary={card.title}
 			tags={card.tags}
 		/>
