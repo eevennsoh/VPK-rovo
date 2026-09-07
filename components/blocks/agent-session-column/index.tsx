@@ -218,9 +218,9 @@ const HEADER_CONTROL_ON_REVEAL = cn(
  * Count morphing for the collapsed header.
  *
  * `slots` spins each digit behind a fade mask, which suits a value that changes
- * because work arrived rather than because the viewer acted. The gutter keeps
- * this renderer mounted while the digits are hidden, so a tucked rail can fade
- * the total in and roll 7 → 8 instead of mounting on the new number.
+ * because work arrived rather than because the viewer acted. Gutter presentation
+ * keeps this renderer mounted while the digits stay hidden, so a column
+ * presentation can still roll the total without remounting.
  *
  * `autoSize` eases the slot's width as the total crosses a digit. `initial:
  * false` keeps a column that mounts already collapsed from spinning its count
@@ -270,7 +270,8 @@ const AGENT_SESSION_PLANE_BOTTOM_FADE_SIZE = `${AGENT_SESSION_DECK_END_SPACE_PX}
  * hover or keyboard focus. See
  * {@link AgentSessionColumnRail}. Collapsed drops the well so the count
  * shares the status pill's 24px header slot instead of sitting inside a
- * full-height bordered rail.
+ * full-height bordered rail. `collapsedPresentation="gutter"` hides that
+ * count while keeping the expand control in the same slot.
  *
  * Two capabilities exist for hosts that dock the column into their own surface
  * rather than stand it on the board: `collapsed` makes the rail state
@@ -570,10 +571,11 @@ export function AgentSessionColumn({
 		resolveAgentSessionPlaneClassName(layout, collapsed),
 		isGutterCollapsed ? "bg-transparent" : null,
 	);
-	// Gutter rest hides the digits so the rail can sit in the page inset.
-	// Newly synced sessions reveal that same total — still the pool count,
-	// never a +N unread increment — so the tucked expand slot can roll.
-	const hideGutterCount = isGutterCollapsed && newCount === 0;
+	// Gutter presentation hides the digits so the rail can sit in the page
+	// inset — at rest, during the hover preview, and when newly synced
+	// sessions arrive. The expand control stays in the same 24px slot.
+	// Screen-reader copy still names the pool count.
+	const hideGutterCount = isGutterCollapsed;
 	const collapsedCountLabel = newCount > 0
 		? `${sessionCount} sessions, ${newCount} newly synced`
 		: `${sessionCount} sessions`;
