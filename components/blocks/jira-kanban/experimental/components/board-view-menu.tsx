@@ -39,6 +39,7 @@ import {
 import { Icon } from "@/components/ui/icon";
 import { Spinner } from "@/components/ui/spinner";
 import { token } from "@/lib/tokens";
+import { cn } from "@/lib/utils";
 
 interface BoardViewMenuProps {
 	compact?: boolean;
@@ -85,6 +86,8 @@ type StateIcon = GlyphStateIcon | ExperimentalSpinnerStateIcon;
 type StateIcons = Readonly<Record<string, StateIcon>>;
 
 const MENU_LEADING_ICON_CLASS_NAME = "size-3 [&_svg]:size-3!";
+/** Scale the 20px orb so its ~13.4px ring fills the 12px leading slot. */
+const MENU_LEADING_SPINNER_CLASS_NAME = "origin-center scale-[1.49]";
 
 function MenuLeadingIcon({ icon }: Readonly<{ icon: StateIcon }>) {
 	if ("spinner" in icon) {
@@ -92,8 +95,18 @@ function MenuLeadingIcon({ icon }: Readonly<{ icon: StateIcon }>) {
 			case "experimental":
 				return (
 					<Icon
-						className={MENU_LEADING_ICON_CLASS_NAME}
-						render={<Spinner label="" size="xs" variant="experimental" />}
+						className={cn(
+							MENU_LEADING_ICON_CLASS_NAME,
+							"overflow-hidden text-icon-subtlest! [&_svg]:text-icon-subtlest!",
+						)}
+						render={(
+							<Spinner
+								className={MENU_LEADING_SPINNER_CLASS_NAME}
+								label=""
+								size="xs"
+								variant="experimental"
+							/>
+						)}
 					/>
 				);
 			default: {
