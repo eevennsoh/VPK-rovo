@@ -192,6 +192,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/agent-assignment/components/use-assigned-agent-attention.test.js",
 		"components/blocks/agent-states/agent-states.test.js",
 		"components/blocks/jira-issue/agent-activity-model.test.ts",
+		"components/blocks/jira-issue/lib.test.ts",
 		"components/blocks/jira-issue/agent-session-drag.test.ts",
 		"components/blocks/jira-issue/attach-proximity.test.ts",
 		"components/blocks/jira-issue/attach-chin-copy.test.ts",

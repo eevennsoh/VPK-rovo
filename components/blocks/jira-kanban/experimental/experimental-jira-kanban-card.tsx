@@ -75,11 +75,15 @@ interface ExperimentalJiraKanbanCardProps {
 	selected: boolean;
 }
 
+function getCardAssigneeAvatarSrc(card: JiraKanbanCardData) {
+	return card.avatarSrc ?? card.assignee?.avatarSrc;
+}
+
 function getCardAssigneeAvatarShape(card: JiraKanbanCardData) {
 	if (card.avatarShape) {
 		return card.avatarShape;
 	}
-	return card.avatarSrc?.startsWith("/avatar-agent/") ? "hexagon" as const : undefined;
+	return getCardAssigneeAvatarSrc(card)?.startsWith("/avatar-agent/") ? "hexagon" as const : undefined;
 }
 
 function toSessionFlyoutPriority(priority: JiraKanbanCardData["priority"]) {
@@ -192,7 +196,7 @@ export function ExperimentalJiraKanbanCard({
 			} : undefined}
 			assigneeAvatarLabel={card.assignee?.name}
 			assigneeAvatarShape={getCardAssigneeAvatarShape(card)}
-			assigneeAvatarSrc={card.avatarSrc}
+			assigneeAvatarSrc={getCardAssigneeAvatarSrc(card)}
 			assigneePulse={card.avatarPulse}
 			assigneeUnassignedKind={card.avatarUnassignedKind}
 			chrome={chrome}
