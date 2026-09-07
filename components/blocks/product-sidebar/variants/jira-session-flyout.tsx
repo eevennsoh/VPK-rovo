@@ -44,6 +44,7 @@ import { Tag } from "@/components/ui/tag";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { ProgressCircle } from "@/components/ui-custom/progress-circle";
 import { getAgentProfileBannerSrc } from "@/lib/agent-avatars";
+import { cn } from "@/lib/utils";
 
 import type {
 	JiraSidebarSessionHost,
@@ -75,6 +76,8 @@ export type JiraSessionFlyoutContent = "details" | "composer" | "untracked-work"
 
 export interface JiraSessionFlyoutSurfaceProps {
 	handle: JiraSessionFlyoutHandle;
+	/** Moves directly between detached triggers instead of easing through stale positions. */
+	instantPosition?: boolean;
 	/**
 	 * Flyout body. `details` (default) is the compact session hover card, `composer`
 	 * is the Agent States card, and `untracked-work` suggests a related Jira item.
@@ -647,12 +650,14 @@ function JiraSessionFlyoutPayload({
  * Base UI's viewport keeps the popup mounted while the anchor
  * changes. The shell follows the new row, immediately adopts its measured size,
  * and crossfades the old and new content without letting rapid hovers restart a
- * stale size transition.
+ * stale size transition. High-frequency pointer surfaces can opt out of the
+ * position transition so the shell never eases through stale triggers.
  */
 export function JiraSessionFlyoutSurface({
 	capturedSessionIds,
 	content = "details",
 	handle,
+	instantPosition = false,
 	onArchiveSession,
 	onAddAsSubtask,
 	onCreateWorkItem,
@@ -675,7 +680,12 @@ export function JiraSessionFlyoutSurface({
 					align="start"
 					alignOffset={0}
 					className="h-(--popup-height) w-(--popup-width) border-0 bg-surface-overlay p-0 text-text shadow-overlay transition-[opacity,scale,translate] duration-medium ease-in-out motion-reduce:transition-none data-ending-style:duration-normal data-ending-style:ease-in data-[side=right]:data-starting-style:translate-x-0 data-[side=right]:data-ending-style:translate-x-0"
-					positionerClassName="h-(--positioner-height) w-(--positioner-width) max-w-(--available-width) transition-[top,left,right,bottom] duration-medium ease-in-out motion-reduce:transition-none data-instant:transition-none"
+					positionerClassName={cn(
+						"h-(--positioner-height) w-(--positioner-width) max-w-(--available-width)",
+						instantPosition
+							? "transition-none"
+							: "transition-[top,left,right,bottom] duration-medium ease-in-out motion-reduce:transition-none data-instant:transition-none",
+					)}
 					side="right"
 					sideOffset={8}
 				>

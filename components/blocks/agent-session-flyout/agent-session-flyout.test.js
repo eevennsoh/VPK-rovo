@@ -341,7 +341,8 @@ test("demo sessions share one moving shell with a fade-only content viewport", (
 	assert.doesNotMatch(flyoutSource, /data-\[activation-direction|translate-y-\[50%\]|will-change:transform/u);
 	assert.match(flyoutSource, /transition-\[opacity,scale,translate\] duration-medium ease-in-out/u);
 	assert.doesNotMatch(flyoutSource, /transition-\[[^\]]*(?:width|height)/u);
-	assert.match(flyoutSource, /transition-\[top,left,right,bottom\] duration-medium ease-in-out/u);
+	assert.match(flyoutSource, /instantPosition\?: boolean/u);
+	assert.match(flyoutSource, /instantPosition\s*\? "transition-none"\s*: "transition-\[top,left,right,bottom\] duration-medium ease-in-out motion-reduce:transition-none data-instant:transition-none"/u);
 	assert.doesNotMatch(flyoutSource, /\[&_\[(?:data-current|data-previous)\]\]:h-\(--popup-height\)/u);
 	assert.match(flyoutSource, /overflow-clip rounded-\[inherit\]/u);
 	assert.match(flyoutSource, /motion-reduce:\[&_\[data-current\]\]:transition-none/u);

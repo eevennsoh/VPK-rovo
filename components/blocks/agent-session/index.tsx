@@ -64,7 +64,7 @@ function buildArrivalDelays(
  * Local coding sessions that never became work items.
  *
  * Large sessions are solid uncaptured-work cards: the shared Agent List row
- * (identity, static stamp, viewer machine) sits on a single surface and reveals
+ * (identity, optional linked PR metadata, and timestamp) sits on a single surface and reveals
  * the same hover/focus action pair Agent List rows use — Resume, plus
  * Archive / Unarchive where Agent List puts Archive. Work-item capture lives on the
  * shared untracked-work session flyout, the same surface
@@ -158,10 +158,11 @@ export function AgentSession({
 		<>
 			{isMultiSelectList ? (
 				<p className="sr-only" id={selectionHintId}>
-					Shift-click selects a range. Command-click on a Mac, or Control-click
-					on Windows, adds or removes individual sessions. Arrow keys move the
-					selection. Shift-arrow extends it. Command-A or Control-A selects all.
-					Escape clears.
+					Click additional sessions to add or remove them. Shift-click selects
+					a range. Command-click on a Mac, or Control-click on Windows, also
+					adds or removes individual sessions. Arrow keys move the selection.
+					Shift-arrow extends it. Command-A or Control-A selects all. Escape
+					clears.
 				</p>
 			) : null}
 			<ul

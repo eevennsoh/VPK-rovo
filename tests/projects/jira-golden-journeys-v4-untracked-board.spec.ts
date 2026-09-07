@@ -246,16 +246,16 @@ test("a linked session moves atomically to another Jira work item", async ({ pag
 
 	const sourceCard = getIssueArticle(page, "PAY-112");
 	const sourceSession = sourceCard.getByRole("button", {
-		name: /^Open Review Agent in Rovo chat:/u,
+		name: /^Open Codex in Rovo chat:/u,
 	});
 
 	await dragPointer(sourceSession, getIssueDropZone(page, "PAY-118"), page);
 
 	await expect(sourceCard.getByRole("button", {
-		name: /^Open Review Agent in Rovo chat:/u,
+		name: /^Open Codex in Rovo chat:/u,
 	})).toHaveCount(0);
 	await expect(getIssueArticle(page, "PAY-118").getByRole("button", {
-		name: /^Open Review Agent in Rovo chat:/u,
+		name: /^Open Codex in Rovo chat:/u,
 	})).toBeVisible();
 });
 
@@ -264,7 +264,7 @@ test("a linked session can detach and then attach to a different work item", asy
 
 	const sourceCard = getIssueArticle(page, "PAY-112");
 	const sourceSession = sourceCard.getByRole("button", {
-		name: /^Open Review Agent in Rovo chat:/u,
+		name: /^Open Codex in Rovo chat:/u,
 	});
 	const sourceBox = await sourceSession.boundingBox();
 	expect(sourceBox).not.toBeNull();
@@ -278,7 +278,7 @@ test("a linked session can detach and then attach to a different work item", asy
 	await page.mouse.down();
 	await page.mouse.move(sourcePoint.x + 4, sourcePoint.y + 4);
 	const unlinkWell = sourceCard.getByRole("img", {
-		name: /Unlink Review Agent from this work item/u,
+		name: /Unlink Codex from this work item/u,
 	});
 	await expect(unlinkWell).toBeVisible();
 	const unlinkBox = await unlinkWell.boundingBox();
@@ -297,7 +297,7 @@ test("a linked session can detach and then attach to a different work item", asy
 
 	await expect(detachedSession).toHaveCount(0);
 	await expect(getIssueArticle(page, "PAY-118").getByRole("button", {
-		name: /^Open Review Agent in Rovo chat:/u,
+		name: /^Open Codex in Rovo chat:/u,
 	})).toBeVisible();
 });
 
@@ -332,12 +332,83 @@ test("releasing an Untracked work drag outside a Jira target makes no change", a
 	})).toHaveCount(0);
 });
 
+test("dragging an Untracked session leaves a disabled-opacity source ghost", async ({ page }) => {
+	await openBoard(page);
+
+	const session = page.locator("[data-agent-session-column]")
+		.getByTestId("agent-session-row-lw-scope-thread");
+	const surface = session.locator("article");
+	const sourceBox = await surface.boundingBox();
+	expect(sourceBox).not.toBeNull();
+	if (!sourceBox) return;
+
+	const sourcePoint = {
+		x: sourceBox.x + sourceBox.width / 2,
+		y: sourceBox.y + sourceBox.height / 2,
+	};
+	await page.mouse.move(sourcePoint.x, sourcePoint.y);
+	await page.mouse.down();
+	await page.mouse.move(sourcePoint.x + 80, sourcePoint.y, { steps: 4 });
+
+	const placeholder = session.locator("[data-session-drag-placeholder]");
+	const ghost = placeholder.locator(":scope > div").first();
+	await expect(session).toHaveAttribute("aria-hidden", "true");
+	await expect(session).toHaveAttribute("inert", "");
+	await expect(ghost).toHaveCSS("opacity", "0.4");
+	await expect(ghost).toHaveAttribute("aria-hidden", "true");
+	await expect(ghost).toHaveAttribute("inert", "");
+	await expect(placeholder).toHaveCSS("height", `${sourceBox.height}px`);
+	await expect(page.locator("[data-session-drag-overlay]")).toHaveCount(1);
+
+	await page.mouse.move(sourcePoint.x, sourcePoint.y);
+	await page.mouse.up();
+});
+
+test("dragging two selected sessions uses the concise count", async ({ page }) => {
+	await openBoard(page);
+
+	const first = page.getByTestId("agent-session-row-lw-scope-thread");
+	const second = page.getByTestId("agent-session-row-lw-kickoff-killswitch-session");
+	await first.locator("article").click();
+	await second.locator("article").click({ modifiers: ["Meta"] });
+	await expect(first.locator("article")).toHaveAttribute("data-marked", "true");
+	await expect(second.locator("article")).toHaveAttribute("data-marked", "true");
+
+	const firstBoxBefore = await first.boundingBox();
+	const secondBoxBefore = await second.boundingBox();
+	const sourceBox = await first.locator("article").boundingBox();
+	expect(firstBoxBefore).not.toBeNull();
+	expect(secondBoxBefore).not.toBeNull();
+	expect(sourceBox).not.toBeNull();
+	if (!firstBoxBefore || !secondBoxBefore || !sourceBox) return;
+	const sourcePoint = {
+		x: sourceBox.x + sourceBox.width / 2,
+		y: sourceBox.y + sourceBox.height / 2,
+	};
+	await page.mouse.move(sourcePoint.x, sourcePoint.y);
+	await page.mouse.down();
+	await page.mouse.move(sourcePoint.x + 80, sourcePoint.y, { steps: 4 });
+
+	const overlay = page.locator("[data-session-drag-overlay]");
+	await expect(overlay).toContainText("2 sessions");
+	await expect(overlay.locator('[data-session-cohort-chip][aria-label="2 sessions"]')).toBeVisible();
+	const firstGhost = first.locator("[data-session-drag-placeholder] > div").first();
+	const secondGhost = second.locator("[data-session-drag-placeholder] > div").first();
+	await expect(firstGhost).toHaveCSS("opacity", "0.4");
+	await expect(secondGhost).toHaveCSS("opacity", "0.4");
+	expect((await first.boundingBox())?.height).toBe(firstBoxBefore.height);
+	expect((await second.boundingBox())?.height).toBe(secondBoxBefore.height);
+
+	await page.mouse.move(sourcePoint.x, sourcePoint.y);
+	await page.mouse.up();
+});
+
 test("session flyouts close for a Jira card drag and recover after drag end", async ({ page }) => {
 	await openBoard(page);
 
 	const sourceCard = getIssueArticle(page, "PAY-112");
 	const sourceSession = sourceCard.getByRole("button", {
-		name: /^Open Review Agent in Rovo chat:/u,
+		name: /^Open Codex in Rovo chat:/u,
 	});
 	const nextSession = getIssueArticle(page, "PAY-123").getByRole("button", {
 		name: "Open Claude Code in Rovo chat: Working",
@@ -364,7 +435,7 @@ test("a stationary linked-session click still opens Rovo chat without detaching"
 
 	const sourceCard = getIssueArticle(page, "PAY-112");
 	const sourceSession = sourceCard.getByRole("button", {
-		name: /^Open Review Agent in Rovo chat:/u,
+		name: /^Open Codex in Rovo chat:/u,
 	});
 	await sourceSession.click();
 

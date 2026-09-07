@@ -7,6 +7,10 @@ const HEADER_SOURCE = readFileSync(
 	join(__dirname, "agent-session-column-header.tsx"),
 	"utf8",
 );
+const SELECT_MARK_SOURCE = readFileSync(
+	join(__dirname, "../agent-session/agent-session-select-mark.tsx"),
+	"utf8",
+);
 const SELECTION_COPY_SOURCE = readFileSync(
 	join(__dirname, "untracked-selection.ts"),
 	"utf8",
@@ -16,13 +20,14 @@ const SELECTION_HOOK_SOURCE = readFileSync(
 	"utf8",
 );
 
-test("selecting a session slides in a check-circle select-all control", () => {
-	assert.match(
-		HEADER_SOURCE,
-		/import CheckCircleUncheckedIcon from "@atlaskit\/icon\/core\/check-circle-unchecked";/u,
-	);
-	assert.match(HEADER_SOURCE, /import CheckCircleIcon from "@atlaskit\/icon\/core\/check-circle";/u);
-	assert.match(HEADER_SOURCE, /allSelected \? CheckCircleIcon : CheckCircleUncheckedIcon/u);
+test("selecting a session slides in the shared filled success select-all control", () => {
+	assert.match(HEADER_SOURCE, /import StatusSuccessIcon from "@atlaskit\/icon\/core\/status-success";/u);
+	assert.match(HEADER_SOURCE, /render=\{<StatusSuccessIcon label="" \/>\}/u);
+	assert.match(HEADER_SOURCE, /className="text-icon-selected"/u);
+	assert.match(SELECT_MARK_SOURCE, /import StatusSuccessIcon from "@atlaskit\/icon\/core\/status-success";/u);
+	assert.match(SELECT_MARK_SOURCE, /<Icon render=\{<StatusSuccessIcon label="" \/>\} \/>/u);
+	assert.doesNotMatch(HEADER_SOURCE, /import CheckCircleIcon from "@atlaskit\/icon\/core\/check-circle";/u);
+	assert.doesNotMatch(HEADER_SOURCE, /CheckCircleUncheckedIcon/u);
 	assert.match(HEADER_SOURCE, /transition-\[width,margin\] duration-normal ease-in-out/u);
 	assert.match(HEADER_SOURCE, /motion-reduce:transition-none/u);
 	assert.match(HEADER_SOURCE, /inert=\{!expanded\}/u);
