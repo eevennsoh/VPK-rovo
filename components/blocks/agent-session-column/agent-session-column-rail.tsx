@@ -41,7 +41,10 @@ import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-over
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { cn } from "@/lib/utils";
 
-import { toAgentSessionRailViewportMaxHeight } from "./agent-session-column-rail-viewport";
+import {
+	toAgentSessionRailHitSlopStyle,
+	toAgentSessionRailViewportMaxHeight,
+} from "./agent-session-column-rail-viewport";
 import type { AgentSessionColumnNotchShape } from "./agent-session-column-types";
 import { useAgentSessionUserNotchArrival } from "./use-agent-session-user-notch-arrival";
 import { useAgentSessionRailHoverIntent } from "./use-agent-session-rail-hover-intent";
@@ -495,7 +498,7 @@ function AgentSessionNotch({
 								data-new={isNew || undefined}
 								data-testid={"agent-session-notch-" + item.id}
 								draggable={false}
-								style={{ width: `calc(100% + ${hitSlopPx * 2}px)`, marginInline: -hitSlopPx }}
+								style={toAgentSessionRailHitSlopStyle(hitSlopPx)}
 								// Spread first, then override: `usePointerDrag`'s own
 								// `onClick` is not the activation guard here — the drag
 								// host's `onClickCapture` already swallows the click that
@@ -569,7 +572,7 @@ export function AgentSessionColumnRail({
 	items: readonly AgentSessionItem[];
 	/**
 	 * Caps the scrollport to this many notches. Gutter rest passes ten;
-	 * embedded column presentation omits it so every session can show.
+	 * hover preview and column presentation omit it so every session can show.
 	 */
 	maxVisibleItems?: number;
 	newItemIds?: ReadonlySet<string>;
@@ -659,9 +662,9 @@ export function AgentSessionColumnRail({
 			    Hosts can add equal hit slop with a wider list and matching negative
 			    margins; those hosts must allow the rail past the section edges.
 			    Gutter rest still caps the
-			    viewport at ten notches; embedded column presentation omits that
-			    cap so every session can show inside the column height. Arrival
-			    layout stays on each `motion.li`. */}
+			    viewport at ten notches; a hover-scaled hit area and column
+			    presentation omit that cap so every session can show inside the
+			    column height. Arrival layout stays on each `motion.li`. */}
 			<ul
 				className="scrollbar-none flex min-h-0 w-full flex-1 flex-col items-center overflow-y-auto overscroll-contain px-1 py-0.5"
 				onPointerEnter={isDocked ? dock.handlePointerEnter : undefined}
@@ -671,9 +674,8 @@ export function AgentSessionColumnRail({
 				ref={setListRef}
 				style={{
 					...scrollMaskStyle,
-					marginInline: hitSlopPx === 0 ? undefined : -hitSlopPx,
+					...(hitSlopPx === 0 ? {} : toAgentSessionRailHitSlopStyle(hitSlopPx)),
 					maxHeight: railViewportMaxHeight,
-					width: hitSlopPx === 0 ? undefined : `calc(100% + ${hitSlopPx * 2}px)`,
 				}}
 			>
 				{items.map((item: AgentSessionItem, index: number) => (
