@@ -13,6 +13,7 @@ const IN_FLOW_COLUMN_SOURCE = readFileSync(
 const EXPERIMENTAL_BOARD_SOURCE = [
 	readFileSync(join(__dirname, "../jira-kanban/experimental/experimental-jira-kanban.tsx"), "utf8"),
 	readFileSync(join(__dirname, "../jira-kanban/experimental/components/created-card-arrival-motion.tsx"), "utf8"),
+	readFileSync(join(__dirname, "../jira-kanban/experimental/lib/card-motion.ts"), "utf8"),
 ].join("\n");
 const EXPERIMENTAL_PAGE_SOURCE = readFileSync(
 	join(__dirname, "../jira-kanban/experimental/page.tsx"),

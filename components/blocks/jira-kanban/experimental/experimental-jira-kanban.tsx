@@ -50,10 +50,7 @@ import {
 	CollapsedBoardColumn,
 } from "./components/collapsed-board-column";
 import { BoardColumnCreateAction } from "./components/create-work-item-drop-zone";
-import {
-	CreatedCardArrivalMotion,
-	JIRA_KANBAN_CARD_MOVE,
-} from "./components/created-card-arrival-motion";
+import { CreatedCardArrivalMotion } from "./components/created-card-arrival-motion";
 import { ExclusiveCreateWellProximityProvider } from "./components/create-work-item-exclusive-proximity-context";
 import { InFlowAgentSessionColumn } from "./components/in-flow-agent-session-column";
 import {
@@ -63,6 +60,7 @@ import {
 } from "./hooks/use-created-card-arrival";
 import { BOARD_COLUMN_ACTION_REVEAL } from "./lib/board-column-action-reveal";
 import { getCommonSelectedCardStatus } from "./lib/board-selection-status";
+import { JIRA_KANBAN_CARD_MOVE } from "./lib/card-motion";
 import {
 	EMPTY_COLLAPSED_BOARD_COLUMNS,
 	getBoardColumnOuterWidthPx,

@@ -1,25 +1,19 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { motion, type Transition } from "motion/react";
+import { motion } from "motion/react";
 
 import type { JiraKanbanCardMoveAnimation } from "@/components/blocks/jira-kanban";
 import { cn } from "@/lib/utils";
 
 import type { JiraKanbanCreatedCardArrival } from "../hooks/use-created-card-arrival";
-
-export const JIRA_KANBAN_CARD_MOVE: Transition = { duration: 0.6, ease: [0.4, 0, 0, 1] }; // duration-slowest + ease-in-out
-const JIRA_KANBAN_CARD_DEPART: Transition = { duration: 0.4, ease: [0.6, 0, 0.8, 0.6] }; // duration-slower + ease-in
-const JIRA_KANBAN_CARD_ARRIVE: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] }; // duration-normal + ease-out-practical
-const JIRA_KANBAN_CARD_ARRIVE_REDUCED: Transition = { duration: 0 };
-
-function getJiraKanbanCardScale(
-	phase: JiraKanbanCardMoveAnimation["phase"] | undefined,
-): number {
-	if (phase === "arriving") return 0.9;
-	if (phase === "departing") return 0.96;
-	return 1;
-}
+import {
+	getJiraKanbanCardScale,
+	JIRA_KANBAN_CARD_ARRIVE,
+	JIRA_KANBAN_CARD_ARRIVE_REDUCED,
+	JIRA_KANBAN_CARD_DEPART,
+	JIRA_KANBAN_CARD_MOVE,
+} from "../lib/card-motion";
 
 export function CreatedCardArrivalMotion({
 	arrival,

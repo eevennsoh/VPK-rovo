@@ -18,9 +18,10 @@ const EXPERIMENTAL_BOARD_SOURCE = readProjectFile(
 const ARRIVAL_HOOK_SOURCE = readProjectFile(
 	"components/blocks/jira-kanban/experimental/hooks/use-created-card-arrival.ts",
 );
-const ARRIVAL_MOTION_SOURCE = readProjectFile(
-	"components/blocks/jira-kanban/experimental/components/created-card-arrival-motion.tsx",
-);
+const ARRIVAL_MOTION_SOURCE = [
+	readProjectFile("components/blocks/jira-kanban/experimental/lib/card-motion.ts"),
+	readProjectFile("components/blocks/jira-kanban/experimental/components/created-card-arrival-motion.tsx"),
+].join("\n");
 
 test("board session creation is route-owned and reveals the created cards once", () => {
 	assert.match(
