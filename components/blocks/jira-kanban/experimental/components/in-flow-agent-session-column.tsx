@@ -46,6 +46,126 @@ export interface InFlowAgentSessionColumnProps {
 	untrackedDropArmed: boolean;
 }
 
+function useInFlowAgentSessionColumnInteraction(
+	onCollapsedChange: AgentSessionColumnProps["onCollapsedChange"],
+) {
+	const [isHovered, setIsHovered] = useState(false);
+	const [isPersistentExpanded, setIsPersistentExpanded] = useState(false);
+
+	const handlePointerEnter = (event: PointerEvent<HTMLDivElement>) => {
+		if (event.pointerType !== "touch") {
+			setIsHovered(true);
+		}
+	};
+
+	const handlePointerLeave = (event: PointerEvent<HTMLDivElement>) => {
+		if (event.pointerType !== "touch") {
+			setIsHovered(false);
+		}
+	};
+
+	const handleCollapsedChange = (collapsed: boolean) => {
+		setIsPersistentExpanded(!collapsed);
+		onCollapsedChange?.(collapsed);
+	};
+
+	return {
+		handleCollapsedChange,
+		handlePointerEnter,
+		handlePointerLeave,
+		isEmbedded: isHovered || isPersistentExpanded,
+		isHovered,
+		isPersistentExpanded,
+	};
+}
+
+function InFlowAgentSessionColumnFootprint({
+	columnWidthPx,
+	isEmbedded,
+	shouldReduceMotion,
+}: Readonly<{
+	columnWidthPx: number;
+	isEmbedded: boolean;
+	shouldReduceMotion: boolean | null;
+}>) {
+	const transition = shouldReduceMotion ? "none" : IN_FLOW_AGENT_SESSION_COLUMN_WIDTH_TRANSITION;
+	const expansionTransition = shouldReduceMotion
+		? "none"
+		: IN_FLOW_AGENT_SESSION_COLUMN_EXPANSION_TRANSITION;
+
+	return (
+		<>
+			<div
+				aria-hidden="true"
+				className="shrink-0"
+				style={{
+					transition,
+					width: isEmbedded ? IN_FLOW_AGENT_SESSION_COLUMN_GAP_PX : 0,
+				}}
+			/>
+			<div
+				aria-hidden="true"
+				className="shrink-0"
+				style={{
+					transition: expansionTransition,
+					width: isEmbedded ? columnWidthPx : 0,
+				}}
+			/>
+		</>
+	);
+}
+
+function InFlowAgentSessionColumnSurface({
+	agentSessionColumn,
+	className,
+	columnFrame,
+	isEmbedded,
+	isPersistentExpanded,
+	onCollapsedChange,
+	paddingBottom,
+	paddingTop,
+	shouldReduceMotion,
+	untrackedDropArmed,
+}: Readonly<InFlowAgentSessionColumnProps & {
+	isEmbedded: boolean;
+	isPersistentExpanded: boolean;
+	onCollapsedChange: (collapsed: boolean) => void;
+	shouldReduceMotion: boolean | null;
+}>) {
+	return (
+		<motion.div
+			animate={isEmbedded ? "embedded" : "gutter"}
+			className={cn(
+				"absolute inset-y-0 start-0 z-40 flex min-h-0 border-2 border-r-0",
+				isEmbedded
+					? "pointer-events-auto bg-surface"
+					: "pointer-events-none bg-transparent",
+				untrackedDropArmed ? "border-ring" : "border-transparent",
+				className,
+			)}
+			data-board-agent-session-drop-zone="untracked"
+			data-board-agent-session-target={untrackedDropArmed ? "untracked" : undefined}
+			initial={false}
+			style={{
+				paddingTop,
+				paddingBottom,
+				willChange: shouldReduceMotion ? undefined : "transform",
+			}}
+			variants={shouldReduceMotion
+				? IN_FLOW_AGENT_SESSION_COLUMN_REDUCED_MOTION_VARIANTS
+				: IN_FLOW_AGENT_SESSION_COLUMN_VARIANTS}
+		>
+			<AgentSessionColumn
+				{...agentSessionColumn}
+				collapsed={!isPersistentExpanded}
+				collapsedPresentation={isEmbedded ? "column" : "gutter"}
+				columnFrame={columnFrame}
+				onCollapsedChange={onCollapsedChange}
+			/>
+		</motion.div>
+	);
+}
+
 /**
  * The Untracked rail rests in the page's leading gutter. Hover temporarily
  * returns that same compact timeline to the board's original 24px column inset;
@@ -62,32 +182,18 @@ export function InFlowAgentSessionColumn({
 	untrackedDropArmed,
 }: Readonly<InFlowAgentSessionColumnProps>): ReactNode {
 	const shouldReduceMotion = useReducedMotion();
-	const [isHovered, setIsHovered] = useState(false);
-	const [isPersistentExpanded, setIsPersistentExpanded] = useState(false);
-	const isEmbedded = isHovered || isPersistentExpanded;
+	const {
+		handleCollapsedChange,
+		handlePointerEnter,
+		handlePointerLeave,
+		isEmbedded,
+		isHovered,
+		isPersistentExpanded,
+	} = useInFlowAgentSessionColumnInteraction(agentSessionColumn.onCollapsedChange);
 	const expandedWidthPx = agentSessionColumn.expandedWidthPx ?? AGENT_SESSION_COLUMN_WIDTH_PX;
 	const columnWidthPx = isPersistentExpanded
 		? expandedWidthPx
 		: AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX;
-
-	const handlePointerEnter = (event: PointerEvent<HTMLDivElement>) => {
-		if (event.pointerType === "touch") {
-			return;
-		}
-		setIsHovered(true);
-	};
-
-	const handlePointerLeave = (event: PointerEvent<HTMLDivElement>) => {
-		if (event.pointerType === "touch") {
-			return;
-		}
-		setIsHovered(false);
-	};
-
-	const handleCollapsedChange = (collapsed: boolean) => {
-		setIsPersistentExpanded(!collapsed);
-		agentSessionColumn.onCollapsedChange?.(collapsed);
-	};
 
 	return (
 		<JiraSessionFlyoutSuspensionProvider
@@ -107,56 +213,24 @@ export function InFlowAgentSessionColumn({
 						style={{ width: IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX + 2 }}
 					/>
 				)}
-				<div
-					aria-hidden="true"
-					className="shrink-0"
-					style={{
-						transition: shouldReduceMotion
-							? "none"
-							: IN_FLOW_AGENT_SESSION_COLUMN_WIDTH_TRANSITION,
-						width: isEmbedded ? IN_FLOW_AGENT_SESSION_COLUMN_GAP_PX : 0,
-					}}
+				<InFlowAgentSessionColumnFootprint
+					columnWidthPx={columnWidthPx}
+					isEmbedded={isEmbedded}
+					shouldReduceMotion={shouldReduceMotion}
 				/>
-				<div
-					aria-hidden="true"
-					className="shrink-0"
-					style={{
-						transition: shouldReduceMotion
-							? "none"
-							: IN_FLOW_AGENT_SESSION_COLUMN_EXPANSION_TRANSITION,
-						width: isEmbedded ? columnWidthPx : 0,
-					}}
+				<InFlowAgentSessionColumnSurface
+					agentSessionColumn={agentSessionColumn}
+					className={className}
+					columnFrame={columnFrame}
+					isEmbedded={isEmbedded}
+					isPersistentExpanded={isPersistentExpanded}
+					onCollapsedChange={handleCollapsedChange}
+					paddingBottom={paddingBottom}
+					paddingTop={paddingTop}
+					sessionFlyoutsSuspended={sessionFlyoutsSuspended}
+					shouldReduceMotion={shouldReduceMotion}
+					untrackedDropArmed={untrackedDropArmed}
 				/>
-				<motion.div
-					animate={isEmbedded ? "embedded" : "gutter"}
-					className={cn(
-						"absolute inset-y-0 start-0 z-40 flex min-h-0 border-2 border-r-0",
-						isEmbedded
-							? "pointer-events-auto bg-surface"
-							: "pointer-events-none bg-transparent",
-						untrackedDropArmed ? "border-ring" : "border-transparent",
-						className,
-					)}
-					data-board-agent-session-drop-zone="untracked"
-					data-board-agent-session-target={untrackedDropArmed ? "untracked" : undefined}
-					initial={false}
-					style={{
-						paddingTop,
-						paddingBottom,
-						willChange: shouldReduceMotion ? undefined : "transform",
-					}}
-					variants={shouldReduceMotion
-						? IN_FLOW_AGENT_SESSION_COLUMN_REDUCED_MOTION_VARIANTS
-						: IN_FLOW_AGENT_SESSION_COLUMN_VARIANTS}
-				>
-					<AgentSessionColumn
-						{...agentSessionColumn}
-						collapsed={!isPersistentExpanded}
-						collapsedPresentation={isEmbedded ? "column" : "gutter"}
-						columnFrame={columnFrame}
-						onCollapsedChange={handleCollapsedChange}
-					/>
-				</motion.div>
 			</div>
 		</JiraSessionFlyoutSuspensionProvider>
 	);

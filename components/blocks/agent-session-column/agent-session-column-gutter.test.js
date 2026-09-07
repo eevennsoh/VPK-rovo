@@ -30,12 +30,15 @@ test("the in-flow host previews the compact rail before a click pins the full co
 	assert.match(IN_FLOW_COLUMN_SOURCE, /const \[isPersistentExpanded, setIsPersistentExpanded\] = useState\(false\)/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /setIsPersistentExpanded\(!collapsed\)/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsed=\{!isPersistentExpanded\}/u);
-	assert.match(IN_FLOW_COLUMN_SOURCE, /const isEmbedded = isHovered \|\| isPersistentExpanded/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /isEmbedded: isHovered \|\| isPersistentExpanded/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsedPresentation=\{isEmbedded \? "column" : "gutter"\}/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /IN_FLOW_AGENT_SESSION_COLUMN_GAP_PX = 8/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /width: isEmbedded \? IN_FLOW_AGENT_SESSION_COLUMN_GAP_PX : 0/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /width: isEmbedded \? columnWidthPx : 0/u);
-	assert.doesNotMatch(IN_FLOW_COLUMN_SOURCE, /handlePointerEnter[\s\S]{0,250}?onCollapsedChange/u);
+	const pointerEnterSource = IN_FLOW_COLUMN_SOURCE.match(
+		/const handlePointerEnter = \([\s\S]*?\n\t\};/u,
+	)?.[0] ?? "";
+	assert.doesNotMatch(pointerEnterSource, /onCollapsedChange/u);
 });
 
 test("the entire visible gutter is a hover target without covering To do", () => {
