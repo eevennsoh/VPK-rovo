@@ -87,7 +87,7 @@ export interface JiraSessionFlyoutSurfaceProps {
 	 * is the Agent States card, and `untracked-work` suggests a related Jira item.
 	 */
 	content?: JiraSessionFlyoutContent;
-	/** Captured sessions hide Link / Create / subtask so capture cannot run twice. */
+	/** Captured sessions hide Link / Create / subtask so capture cannot run twice. Archive stays available. */
 	capturedSessionIds?: ReadonlySet<string>;
 	/** Archives the session from the untracked-work flyout. Omit to expose the action as unavailable. */
 	onArchiveSession?: (session: JiraSidebarSessionItem) => void;
@@ -601,7 +601,7 @@ function resolveJiraSessionUntrackedWorkActions({
 	const captureLocked = capturedSessionIds?.has(session.id) ?? false;
 
 	return {
-		onArchiveSession: captureLocked || onArchiveSession === undefined
+		onArchiveSession: onArchiveSession === undefined
 			? undefined
 			: () => onArchiveSession(session),
 		onAddAsSubtask: captureLocked || onAddAsSubtask === undefined

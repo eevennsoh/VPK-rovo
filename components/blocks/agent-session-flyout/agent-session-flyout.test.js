@@ -131,7 +131,11 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.match(source, /onAddAsSubtask\?: \(session: JiraSidebarSessionItem, workItemKey: string\) => void;/u);
 	assert.match(
 		source,
-		/function resolveJiraSessionUntrackedWorkActions[\s\S]*captureLocked \|\| onArchiveSession === undefined[\s\S]*\(\) => onArchiveSession\(session\)/u,
+		/function resolveJiraSessionUntrackedWorkActions[\s\S]*onArchiveSession: onArchiveSession === undefined[\s\S]*\(\) => onArchiveSession\(session\)/u,
+	);
+	assert.match(
+		source,
+		/onArchiveSession: onArchiveSession === undefined\s*\n\s*\? undefined\s*\n\s*: \(\) => onArchiveSession\(session\),/u,
 	);
 	assert.match(
 		source,

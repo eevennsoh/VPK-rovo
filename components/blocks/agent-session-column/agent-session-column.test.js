@@ -728,9 +728,11 @@ test("the column owns a hidden-id set and filters items before AgentSession", ()
 	assert.doesNotMatch(INDEX_SOURCE, /triage\.archive\(session\)/u);
 	assert.doesNotMatch(INDEX_SOURCE, /forgetHidden\(session\.id\)/u);
 	assert.match(INDEX_SOURCE, /triage: selectionTriage,/u);
+	assert.match(INDEX_SOURCE, /archive: handleArchiveSession,/u);
 	assert.match(INDEX_SOURCE, /toggleHidden\(item\)/u);
 	assert.match(INDEX_SOURCE, /onToggleVisibility\?\.\(item\)/u);
 	assert.match(INDEX_SOURCE, /onToggleVisibility=\{handleToggleVisibility\}/u);
+	assert.match(INDEX_SOURCE, /onArchiveSession=\{handleArchiveSession\}/u);
 	assert.match(INDEX_SOURCE, /visibilityLabel=\{view === "hidden" \? "Unarchive" : "Archive"\}/u);
 });
 

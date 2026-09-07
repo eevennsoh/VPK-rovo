@@ -347,6 +347,24 @@ export function AgentSessionColumn({
 		getSuggestedWorkItemKeys: sessionProps.getSuggestedWorkItemKeys,
 		viewItems,
 	});
+	// Header Archive, the untracked-work flyout Archive, and the rail flyout
+	// all hide into the column-owned well the footer reads. In the archived
+	// view the same control Unarchives, matching the row.
+	const handleArchiveSession = useCallback((session: AgentSessionItem) => {
+		switch (view) {
+			case "hidden":
+				toggleHidden(session);
+				break;
+			case "active":
+				hideHidden(session);
+				break;
+			default: {
+				const exhaustive: never = view;
+				return exhaustive;
+			}
+		}
+		onToggleVisibility?.(session);
+	}, [hideHidden, onToggleVisibility, toggleHidden, view]);
 	const selectionTriage = useMemo(() => {
 		if (triage === undefined) {
 			return undefined;
@@ -354,25 +372,9 @@ export function AgentSessionColumn({
 
 		return {
 			...triage,
-			// Header Archive hides into the column-owned well the footer reads.
-			// In the archived view the same control Unarchives, matching the row.
-			archive: (session: AgentSessionItem) => {
-				switch (view) {
-					case "hidden":
-						toggleHidden(session);
-						break;
-					case "active":
-						hideHidden(session);
-						break;
-					default: {
-						const exhaustive: never = view;
-						return exhaustive;
-					}
-				}
-				onToggleVisibility?.(session);
-			},
+			archive: handleArchiveSession,
 		};
-	}, [hideHidden, onToggleVisibility, toggleHidden, triage, view]);
+	}, [handleArchiveSession, triage]);
 	const displayTitle = view === "hidden" ? "Archived" : title;
 	// The rail and the card list have very different intrinsic widths, so the
 	// overflow has to be clipped for the duration of the width transition. Any
@@ -671,7 +673,7 @@ export function AgentSessionColumn({
 			newItemIds={newItemIds}
 			notchShape={notchShape}
 			onArrivalComplete={handleArrivalComplete}
-			onArchiveSession={sessionProps.onArchiveSession}
+			onArchiveSession={handleArchiveSession}
 			onCreateWorkItem={sessionProps.onCreateWorkItem}
 			onItemHover={sessionProps.onItemHover}
 			onIntroComplete={onGutterIntroComplete}
@@ -709,6 +711,7 @@ export function AgentSessionColumn({
 							newItemIds={newItemIds}
 							onArrivalComplete={handleArrivalComplete}
 							{...sessionProps}
+							onArchiveSession={handleArchiveSession}
 							onSelectedItemIdChange={handleSelectedItemIdChange}
 							onToggleVisibility={handleToggleVisibility}
 							rowTriage={untrackedSelection.rows}

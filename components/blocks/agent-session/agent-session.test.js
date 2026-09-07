@@ -768,7 +768,7 @@ test("the untracked-work flyout offers the first candidate key", () => {
 });
 
 test("collapsed session rail forwards archive capability to its shared flyout", () => {
-	assert.match(COLUMN_SOURCE, /onArchiveSession=\{sessionProps\.onArchiveSession\}/u);
+	assert.match(COLUMN_SOURCE, /onArchiveSession=\{handleArchiveSession\}/u);
 	assert.match(COLUMN_RAIL_SOURCE, /onArchiveSession\?: \(item: AgentSessionItem\) => void;/u);
 	assert.match(COLUMN_RAIL_SOURCE, /onArchiveSession,\s*onCreateWorkItem,/u);
 	assert.match(COLUMN_RAIL_SOURCE, /onArchiveSession=\{flyoutActions\.onArchiveSession\}/u);
