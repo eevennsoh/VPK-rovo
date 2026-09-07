@@ -55,7 +55,7 @@ test("the in-flow host previews the compact rail before a click pins the full co
 	assert.match(IN_FLOW_COLUMN_SOURCE, /: uncontrolledPersistentExpanded/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsed=\{!isPersistentExpanded\}/u);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /isEmbedded: isHovered \|\| isPersistentExpanded/u);
-	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsedPresentation="gutter"/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsedPresentation=\{isEmbedded \? "column" : "gutter"\}/u);
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
 		/from "\.\.\/lib\/in-flow-agent-session-column-geometry"/u,
@@ -166,7 +166,7 @@ test("flyouts stay suspended in the gutter and open once the compact rail is emb
 		IN_FLOW_COLUMN_SOURCE,
 		/isHovered && !isPersistentExpanded/u,
 	);
-	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsedPresentation="gutter"/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsedPresentation=\{isEmbedded \? "column" : "gutter"\}/u);
 });
 
 test("gutter rest caps the rail; hover preview and column presentation show every notch", () => {
@@ -176,7 +176,7 @@ test("gutter rest caps the rail; hover preview and column presentation show ever
 	);
 });
 
-test("the tucked gutter hides the session total, including the hover preview", () => {
+test("the tucked gutter hides the session total; hover preview shows collapsed header chrome", () => {
 	assert.match(
 		INDEX_SOURCE,
 		/const hideGutterCount = isGutterCollapsed/u,
@@ -184,7 +184,7 @@ test("the tucked gutter hides the session total, including the hover preview", (
 	assert.match(INDEX_SOURCE, /<TextMorphing\s+config=\{HEAD_COUNT_MORPH\}/u);
 	assert.match(INDEX_SOURCE, /text=\{String\(sessionCount\)\}/u);
 	assert.doesNotMatch(INDEX_SOURCE, /`\+\$\{newCount\}`/u);
-	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsedPresentation="gutter"/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /collapsedPresentation=\{isEmbedded \? "column" : "gutter"\}/u);
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
 		/collapsedRailHitSlopPx=\{isEmbedded && !isPersistentExpanded\s*\? IN_FLOW_AGENT_SESSION_COLUMN_RAIL_HIT_SLOP_PX\s*: 0\}/u,
