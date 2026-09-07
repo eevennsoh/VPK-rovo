@@ -36,12 +36,12 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.match(source, /content = "details"/u);
 	assert.match(source, /case "details":/u);
 	assert.match(source, /import \{ JiraSessionDetailsCard \} from "\.\/jira-session-details-card";/u);
-	assert.match(source, /<JiraSessionDetailsCard session=\{session\} \/>/u);
+	assert.match(source, /<JiraSessionDetailsCard session=\{props\.session\} \/>/u);
 	assert.doesNotMatch(source, /<JiraSessionFlyoutBody session=\{session\} \/>/u);
 	assert.match(source, /case "composer":/u);
 	assert.match(source, /case "untracked-work":/u);
 	assert.match(source, /import \{ JiraSessionUntrackedWorkCard \} from "\.\/jira-session-untracked-work-card";/u);
-	assert.match(source, /<JiraSessionUntrackedWorkCard[\s\S]*session=\{session\}/u);
+	assert.match(source, /<JiraSessionUntrackedWorkCard[\s\S]*session=\{props\.session\}/u);
 	assert.doesNotMatch(source, /variant="untracked-work"/u);
 	assert.match(source, /className="w-\[320px\] max-w-\[calc\(100vw-48px\)\] rounded-none shadow-none"/u);
 	assert.equal(source.match(/className="w-\[320px\] bg-surface-overlay p-4 text-text"/gu)?.length ?? 0, 0);
@@ -70,8 +70,11 @@ test("shared hover flyout defaults to session details and exposes composer and u
 		cardSource,
 		/<h3 className="text-xs leading-4 font-medium text-text" id=\{artifactsId\}>[\s\S]*?Artifacts[\s\S]*?<\/h3>/u,
 	);
+	assert.match(cardSource, /session\.pullRequestNumber === undefined \|\| session\.pullRequestUrl === undefined/u);
+	assert.match(cardSource, /href: session\.pullRequestUrl/u);
 	assert.match(cardSource, /variant: "pull-request"/u);
-	assert.match(cardSource, /variant: "confluence"/u);
+	assert.doesNotMatch(cardSource, /variant: "confluence"/u);
+	assert.match(cardSource, /artifacts\.length > 0 \?/u);
 	assert.match(cardSource, /High confidence to link/u);
 	assert.match(cardSource, /Nothing available to link to/u);
 	assert.match(cardSource, /Create a work item to track it\./u);
@@ -125,7 +128,7 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	assert.match(source, /onAddAsSubtask\?: \(session: JiraSidebarSessionItem, workItemKey: string\) => void;/u);
 	assert.match(
 		source,
-		/<JiraSessionUntrackedWorkCard[\s\S]*onArchiveSession=\{[\s\S]*captureLocked \|\| onArchiveSession === undefined[\s\S]*\(\) => onArchiveSession\(session\)/u,
+		/function resolveJiraSessionUntrackedWorkActions[\s\S]*captureLocked \|\| onArchiveSession === undefined[\s\S]*\(\) => onArchiveSession\(session\)/u,
 	);
 	assert.match(
 		source,
@@ -142,7 +145,7 @@ test("details hover card uses Figma chrome without panel property rows", () => {
 	const cardShellSource = readRepoFile(FLYOUT_CARD_PATH);
 	const detailsSource = readRepoFile(DETAILS_CARD_PATH);
 
-	assert.match(source, /<JiraSessionDetailsCard session=\{session\} \/>/u);
+	assert.match(source, /<JiraSessionDetailsCard session=\{props\.session\} \/>/u);
 	assert.match(cardShellSource, /flex w-\[320px\] max-w-\[calc\(100vw-48px\)\] flex-col gap-3 pt-3 text-text/u);
 	assert.match(cardShellSource, /border-t border-border-disabled p-3/u);
 	assert.match(detailsSource, /bodyClassName="gap-1"/u);

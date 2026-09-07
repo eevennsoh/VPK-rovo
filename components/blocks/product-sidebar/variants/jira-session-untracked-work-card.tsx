@@ -5,11 +5,7 @@ import { useId } from "react";
 import ArchiveBoxIcon from "@atlaskit/icon/core/archive-box";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
-import {
-	SMART_LINK_MODAL_ACTIONS,
-	SmartLink,
-	type SmartLinkItem,
-} from "@/components/blocks/smart-link";
+import { SMART_LINK_MODAL_ACTIONS, SmartLink, type SmartLinkItem } from "@/components/blocks/smart-link";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
@@ -29,30 +25,19 @@ import { JiraSessionDetailsBody } from "./jira-session-details-card";
 import { JIRA_SESSION_UPDATED_LABEL } from "./jira-session-flyout-data";
 
 function sessionArtifactItems(session: JiraSidebarSessionItem): SmartLinkItem[] {
-	const pullRequestTitle = session.pullRequestNumber
-		? `#${session.pullRequestNumber}: ${session.pullRequestTitle ?? `${session.issueKey}: ${session.issueSummary}`}`
-		: "Pull request";
+	if (session.pullRequestNumber === undefined || session.pullRequestUrl === undefined) {
+		return [];
+	}
 
-	return [
-		{
-			id: `${session.id}-pull-request`,
-			href: `#${session.id}-pull-request`,
-			title: pullRequestTitle,
-			variant: "pull-request",
-			provider: { name: "GitHub", logo: { kind: "third-party", name: "github" } },
-			icon: { kind: "third-party", name: "github" },
-			actions: SMART_LINK_MODAL_ACTIONS,
-		},
-		{
-			id: `${session.id}-confluence`,
-			href: `#${session.id}-confluence`,
-			title: `Confluence page: ${session.issueSummary}`,
-			variant: "confluence",
-			provider: { name: "Confluence", logo: { kind: "atlassian", name: "confluence" } },
-			icon: { kind: "atlassian", name: "confluence" },
-			actions: SMART_LINK_MODAL_ACTIONS,
-		},
-	];
+	return [{
+		id: `${session.id}-pull-request`,
+		href: session.pullRequestUrl,
+		title: `#${session.pullRequestNumber}: ${session.pullRequestTitle ?? `${session.issueKey}: ${session.issueSummary}`}`,
+		variant: "pull-request",
+		provider: { name: "GitHub", logo: { kind: "third-party", name: "github" } },
+		icon: { kind: "third-party", name: "github" },
+		actions: SMART_LINK_MODAL_ACTIONS,
+	}];
 }
 
 function JiraSessionUntrackedWorkActions({
@@ -182,29 +167,35 @@ export function JiraSessionUntrackedWorkCard({
 	const artifactsId = useId();
 	const rationaleId = useId();
 	const hasIssueKey = session.issueKey.length > 0;
+	const artifacts = sessionArtifactItems(session);
 	const rationaleTitle = hasIssueKey ? "High confidence to link" : "Nothing available to link to";
 	const confidenceRationale = hasIssueKey
 		? `This session appears related to ${session.issueKey} because the work item matches its activity and context.`
 		: "Create a work item to track it.";
+	const ariaLabelledBy = artifacts.length > 0
+		? `${titleId} ${artifactsId} ${rationaleId}`
+		: `${titleId} ${rationaleId}`;
 
 	return (
 		<JiraSessionFlyoutCard
-			aria-labelledby={`${titleId} ${artifactsId} ${rationaleId}`}
+			aria-labelledby={ariaLabelledBy}
 			body={
 				<>
 					<JiraSessionDetailsBody hideAgentRow hideSessionRow session={session} />
-					<div className="flex flex-col gap-2">
-						<h3 className="text-xs leading-4 font-medium text-text" id={artifactsId}>
-							Artifacts
-						</h3>
-						<ul className="flex flex-col gap-1">
-							{sessionArtifactItems(session).map((item) => (
-								<li className="flex min-w-0" key={item.id}>
-									<SmartLink className="max-w-full" item={item} side="right" />
-								</li>
-							))}
-						</ul>
-					</div>
+					{artifacts.length > 0 ? (
+						<div className="flex flex-col gap-2">
+							<h3 className="text-xs leading-4 font-medium text-text" id={artifactsId}>
+								Artifacts
+							</h3>
+							<ul className="flex flex-col gap-1">
+								{artifacts.map((item) => (
+									<li className="flex min-w-0" key={item.id}>
+										<SmartLink className="max-w-full" item={item} side="right" />
+									</li>
+								))}
+							</ul>
+						</div>
+					) : null}
 				</>
 			}
 			bodyClassName="gap-1"

@@ -74,6 +74,14 @@ const RAIL_SOURCE = readFileSync(
 	),
 	"utf8",
 );
+const COLUMN_SOURCE = readFileSync(
+	join(__dirname, "../agent-session-column/index.tsx"),
+	"utf8",
+);
+const COLUMN_RAIL_SOURCE = readFileSync(
+	join(__dirname, "../agent-session-column/agent-session-column-rail.tsx"),
+	"utf8",
+);
 const VARIANT_REGISTRY_SOURCE = readFileSync(
 	join(__dirname, "../../website/registry/blocks-variants.ts"),
 	"utf8",
@@ -757,6 +765,13 @@ test("the untracked-work flyout offers the first candidate key", () => {
 	assert.match(UNTRACKED_CARD_SOURCE, /const linkLabel = hasIssueKey \? `Link to \$\{issueKey\}` : "Link work item";/u);
 	assert.match(FLYOUT_SOURCE, /captureLocked \|\| onLinkWorkItem === undefined/u);
 	assert.match(INDEX_SOURCE, /onArchiveSession=\{flyoutActions\.onArchiveSession\}/u);
+});
+
+test("collapsed session rail forwards archive capability to its shared flyout", () => {
+	assert.match(COLUMN_SOURCE, /onArchiveSession=\{sessionProps\.onArchiveSession\}/u);
+	assert.match(COLUMN_RAIL_SOURCE, /onArchiveSession\?: \(item: AgentSessionItem\) => void;/u);
+	assert.match(COLUMN_RAIL_SOURCE, /onArchiveSession,\s*onCreateWorkItem,/u);
+	assert.match(COLUMN_RAIL_SOURCE, /onArchiveSession=\{flyoutActions\.onArchiveSession\}/u);
 });
 
 test("Pulse's uncaptured column renders sessions through this block", () => {

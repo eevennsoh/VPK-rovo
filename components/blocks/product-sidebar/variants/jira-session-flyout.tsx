@@ -564,16 +564,7 @@ export function JiraSessionFlyoutBody({
 	);
 }
 
-function JiraSessionFlyoutPayload({
-	capturedSessionIds,
-	content,
-	onArchiveSession,
-	onAddAsSubtask,
-	onCreateWorkItem,
-	onLinkWorkItem,
-	onSubmitPrompt,
-	session,
-}: Readonly<
+type JiraSessionFlyoutPayloadProps = Readonly<
 	Pick<
 		JiraSessionFlyoutSurfaceProps,
 		| "capturedSessionIds"
@@ -586,56 +577,77 @@ function JiraSessionFlyoutPayload({
 		content: JiraSessionFlyoutContent;
 		session: JiraSidebarSessionItem;
 	}
->) {
+>;
+
+type JiraSessionUntrackedWorkActions = Readonly<{
+	onArchiveSession?: () => void;
+	onAddAsSubtask?: (workItemKey: string) => void;
+	onCreateWorkItem?: () => void;
+	onLinkWorkItem?: (workItemKey: string) => void;
+}>;
+
+function resolveJiraSessionUntrackedWorkActions({
+	capturedSessionIds,
+	onArchiveSession,
+	onAddAsSubtask,
+	onCreateWorkItem,
+	onLinkWorkItem,
+	session,
+}: Omit<JiraSessionFlyoutPayloadProps, "content">): JiraSessionUntrackedWorkActions {
 	const captureLocked = capturedSessionIds?.has(session.id) ?? false;
+
+	return {
+		onArchiveSession: captureLocked || onArchiveSession === undefined
+			? undefined
+			: () => onArchiveSession(session),
+		onAddAsSubtask: captureLocked || onAddAsSubtask === undefined
+			? undefined
+			: (workItemKey) => onAddAsSubtask(session, workItemKey),
+		onCreateWorkItem: captureLocked || onCreateWorkItem === undefined
+			? undefined
+			: () => onCreateWorkItem(session),
+		onLinkWorkItem: captureLocked || onLinkWorkItem === undefined
+			? undefined
+			: (workItemKey) => onLinkWorkItem(session, workItemKey),
+	};
+}
+
+function JiraSessionComposerFlyout({
+	onSubmitPrompt,
+	session,
+}: Pick<JiraSessionFlyoutPayloadProps, "onSubmitPrompt" | "session">) {
+	return (
+		<AgentStates
+			agent={{
+				avatarSrc: session.agentAvatarSrc,
+				brandName: session.brandName,
+				id: session.id,
+				name: session.agentName,
+			}}
+			className="w-[320px] max-w-[calc(100vw-48px)] rounded-none shadow-none"
+			completedAtMs={session.completedAtMs}
+			completedSecondsAgo={session.completedSecondsAgo}
+			initialElapsedSeconds={session.initialElapsedSeconds}
+			message={toAgentStatesMessage(session.status)}
+			onSubmit={onSubmitPrompt ? (prompt) => onSubmitPrompt(session, prompt) : undefined}
+			startedAtMs={session.startedAtMs}
+			state={toAgentStatesState(session.status)}
+		/>
+	);
+}
+
+function JiraSessionUntrackedWorkFlyout(props: Omit<JiraSessionFlyoutPayloadProps, "content">) {
+	return <JiraSessionUntrackedWorkCard {...resolveJiraSessionUntrackedWorkActions(props)} session={props.session} />;
+}
+
+function JiraSessionFlyoutPayload({ content, ...props }: JiraSessionFlyoutPayloadProps) {
 	switch (content) {
 		case "composer":
-			return (
-				<AgentStates
-					agent={{
-						avatarSrc: session.agentAvatarSrc,
-						brandName: session.brandName,
-						id: session.id,
-						name: session.agentName,
-					}}
-					className="w-[320px] max-w-[calc(100vw-48px)] rounded-none shadow-none"
-					completedAtMs={session.completedAtMs}
-					completedSecondsAgo={session.completedSecondsAgo}
-					initialElapsedSeconds={session.initialElapsedSeconds}
-					message={toAgentStatesMessage(session.status)}
-					onSubmit={onSubmitPrompt ? (prompt) => onSubmitPrompt(session, prompt) : undefined}
-					startedAtMs={session.startedAtMs}
-					state={toAgentStatesState(session.status)}
-				/>
-			);
+			return <JiraSessionComposerFlyout {...props} />;
 		case "untracked-work":
-			return (
-				<JiraSessionUntrackedWorkCard
-					onArchiveSession={
-						captureLocked || onArchiveSession === undefined
-							? undefined
-							: () => onArchiveSession(session)
-					}
-					onAddAsSubtask={
-						captureLocked || onAddAsSubtask === undefined
-							? undefined
-							: (workItemKey) => onAddAsSubtask(session, workItemKey)
-					}
-					onCreateWorkItem={
-						captureLocked || onCreateWorkItem === undefined
-							? undefined
-							: () => onCreateWorkItem(session)
-					}
-					onLinkWorkItem={
-						captureLocked || onLinkWorkItem === undefined
-							? undefined
-							: (workItemKey) => onLinkWorkItem(session, workItemKey)
-					}
-					session={session}
-				/>
-			);
+			return <JiraSessionUntrackedWorkFlyout {...props} />;
 		case "details":
-			return <JiraSessionDetailsCard session={session} />;
+			return <JiraSessionDetailsCard session={props.session} />;
 		default: {
 			const _exhaustive: never = content;
 			return _exhaustive;

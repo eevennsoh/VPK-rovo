@@ -555,6 +555,7 @@ export function AgentSessionColumnRail({
 	newItemIds,
 	notchShape = "circle",
 	onArrivalComplete,
+	onArchiveSession,
 	onCreateWorkItem,
 	onIntroComplete,
 	onItemHover,
@@ -579,6 +580,7 @@ export function AgentSessionColumnRail({
 	newItemIds?: ReadonlySet<string>;
 	notchShape?: AgentSessionColumnNotchShape;
 	onArrivalComplete?: (itemId: string) => void;
+	onArchiveSession?: (item: AgentSessionItem) => void;
 	onCreateWorkItem?: (item: AgentSessionItem) => void;
 	onIntroComplete?: () => void;
 	onItemHover?: (item: AgentSessionItem | null) => void;
@@ -600,11 +602,12 @@ export function AgentSessionColumnRail({
 	const flyoutActions = useMemo(
 		() => bindAgentSessionFlyoutActions(items, {
 			capturedItemIds,
+			onArchiveSession,
 			onCreateWorkItem,
 			onLinkWorkItem,
 			onSubtasks,
 		}),
-		[capturedItemIds, items, onCreateWorkItem, onLinkWorkItem, onSubtasks],
+		[capturedItemIds, items, onArchiveSession, onCreateWorkItem, onLinkWorkItem, onSubtasks],
 	);
 	const shouldReduceMotion = useReducedMotion();
 	const railViewportMaxHeight = toAgentSessionRailViewportMaxHeight(
@@ -711,6 +714,7 @@ export function AgentSessionColumnRail({
 				handle={flyoutHandle}
 				instantPosition
 				onAddAsSubtask={flyoutActions.onAddAsSubtask}
+				onArchiveSession={flyoutActions.onArchiveSession}
 				onCreateWorkItem={flyoutActions.onCreateWorkItem}
 				onLinkWorkItem={flyoutActions.onLinkWorkItem}
 			/>
