@@ -63,33 +63,39 @@ export function useJiraListRowFlashSource(): Readonly<{
  * The class has to be absent before it can be applied again, otherwise the CSS
  * animation never restarts — so the keys are held for one flash and dropped,
  * rather than mirrored from the prop for as long as it is set.
+ *
+ * Two effects rather than one. Adopting a publish and expiring it are separate
+ * jobs with separate triggers, and folding them together would tie the expiry
+ * timer's lifetime to the prop's identity: a re-render that changed `flash`
+ * without changing its token would cancel the running timer on cleanup and
+ * leave the row lit for good.
  */
 export function useJiraListRowFlashKeys(
 	flash: JiraListRowFlash | undefined,
 ): ReadonlySet<string> {
-	const [flashed, setFlashed] = useState<Readonly<{
-		keys: ReadonlySet<string>;
-		token: number;
-	}>>(() => ({
-		keys: NO_FLASHING_KEYS,
-		token: flash?.token ?? NO_JIRA_LIST_ROW_FLASH.token,
-	}));
-
-	if (flash !== undefined && flash.token !== flashed.token) {
-		setFlashed({ keys: new Set(flash.issueKeys), token: flash.token });
-	}
+	const [flashedKeys, setFlashedKeys] = useState<ReadonlySet<string>>(NO_FLASHING_KEYS);
+	// The token already seen. A ref, not state: it is bookkeeping for the effect
+	// below, never something the row treatment renders from.
+	const adoptedTokenRef = useRef(flash?.token ?? NO_JIRA_LIST_ROW_FLASH.token);
 
 	useEffect(() => {
-		if (flashed.keys.size === 0) {
+		if (flash === undefined || flash.token === adoptedTokenRef.current) {
 			return;
 		}
 
-		const timer = window.setTimeout(() => {
-			setFlashed((current) => ({ ...current, keys: NO_FLASHING_KEYS }));
-		}, JIRA_LIST_ROW_FLASH_HOLD_MS);
+		adoptedTokenRef.current = flash.token;
+		setFlashedKeys(new Set(flash.issueKeys));
+	}, [flash]);
+
+	useEffect(() => {
+		if (flashedKeys.size === 0) {
+			return;
+		}
+
+		const timer = window.setTimeout(() => setFlashedKeys(NO_FLASHING_KEYS), JIRA_LIST_ROW_FLASH_HOLD_MS);
 
 		return () => window.clearTimeout(timer);
-	}, [flashed]);
+	}, [flashedKeys]);
 
-	return flashed.keys;
+	return flashedKeys;
 }
