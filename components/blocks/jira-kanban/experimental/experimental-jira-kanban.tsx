@@ -477,7 +477,6 @@ function BoardColumn({
 					/>
 				</div>
 			</div>
-
 			<div
 				ref={cardListRef}
 				data-jira-kanban-card-list=""
