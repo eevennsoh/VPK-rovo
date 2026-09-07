@@ -539,6 +539,7 @@ export const VISUAL_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	visualComponent("motion", "Motion", "@/components/visual/motion"),
 	visualComponent("text-effects", "Text Effects", "@/components/visual/text-effects"),
 	visualComponent("text-morphing", "Text Morphing", "@/components/visual/text-morphing"),
+	visualComponent("text-continuity", "Text Continuity", "@/components/visual/text-continuity"),
 	visualComponent("ascii", "ASCII", "@/components/website/demos/visual/shaders/ascii"),
 	visualComponent("bloom", "Bloom", "@/components/website/demos/visual/shader-lab-effect-demo"),
 	visualComponent("blob-tracking", "Blob Tracking", "@/components/website/demos/visual/shader-lab-effect-demo"),

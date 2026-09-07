@@ -154,6 +154,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/code-review/lib/filter-changed-files-by-scope.test.js",
 		"components/blocks/code-review/lib/sum-changed-file-diff-stats.test.js",
 		"components/visual/text-morphing/lib.test.js",
+		"components/visual/text-continuity/lib.test.ts",
 		"components/visual/svg-tracing/lib.test.js",
 		"components/visual/scrolling/lib.test.ts",
 		"components/visual/scrolling/stack-layout.test.ts",
