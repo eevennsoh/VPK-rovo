@@ -61,6 +61,7 @@ import {
 	type CollapsedBoardColumns,
 } from "./lib/board-column-collapse";
 import { ExperimentalJiraKanbanCard } from "./experimental-jira-kanban-card";
+import { SessionFusionOverlay } from "./components/session-fusion-overlay";
 import {
 	bindBoardProximitySessionActions,
 	resolveBoardUntrackedIssueKey,
@@ -977,6 +978,9 @@ function ExperimentalJiraKanbanView({
 												<ExperimentalJiraKanbanCard
 												active={isActive}
 													agentActivityLayout={agentActivityLayout}
+													agentLinkFlash={boardSessionDrag.linkFlash?.cardCode === card.code
+														? boardSessionDrag.linkFlash.flash
+														: undefined}
 													agentSessionDragControl={agentSessionDragControl}
 												capturedItemIds={proximityActions.capturedItemIds}
 												card={card}
@@ -1055,6 +1059,10 @@ function ExperimentalJiraKanbanView({
 						statusOptions={boardColumns.map((column) => column.title)}
 					/>
 				) : null}
+			<SessionFusionOverlay
+				members={boardSessionDrag.transaction?.cohort.members ?? null}
+				proximity={boardSessionDrag.transaction?.proximity ?? null}
+			/>
 		</div>
 	);
 }

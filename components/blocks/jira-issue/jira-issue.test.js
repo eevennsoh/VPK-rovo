@@ -343,7 +343,9 @@ test("Jira issue keeps generic activity rows composer-free unless board flyout c
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AvatarFallback[\s\S]*\{summary\.activityCount\}/u);
 	// At rest the row shell is the full-width chin row; dragged out it collapses
 	// to the at-mention chip, so the width/shape classes live on the two branches.
-	assert.match(AGENT_ACTIVITY_SOURCE, /"group\/agent-chin-row flex min-w-0 items-center"/u);
+	// `relative` is load-bearing: the link-flash overlay is absolutely positioned
+	// against this row, and without it the sweep escapes to a further ancestor.
+	assert.match(AGENT_ACTIVITY_SOURCE, /"group\/agent-chin-row relative flex min-w-0 items-center"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /: "h-6 w-full justify-between rounded-md px-2 py-1 hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed"/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /className="flex h-6 w-full[^"]*rounded-b-\[6px\] rounded-t-sm[^"]*"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const isSingleAgent = summary\.activityCount === 1;/u);
@@ -748,8 +750,8 @@ test("Jira issue animates agent state transitions with Motion", () => {
 	assert.match(SOURCE, /const hasIssueRows = hasSubtasks;/);
 	assert.match(SOURCE, /const issueRowsClassName = cn\("pt-1", !\(hasSubtasks && resolvedSubtasksExpanded\) && "pb-1"\);/);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*key="agent-review"[\s\S]*<JiraIssueAgentDone[\s\S]*runs=\{agentDoneRuns\}/u);
-	assert.match(SOURCE, /const usesAgentActivityShell = hasAgentActivityPresentation \|\| Boolean\(agentSessionTransfer\);/);
-	assert.match(SOURCE, /const agentActivityBackdropAnimation = \{[\s\S]*left: 0,[\s\S]*opacity: hasActiveAgentActivityShell \? 1 : 0,[\s\S]*right: 0,[\s\S]*top: 0/);
+	assert.match(SOURCE, /const usesAgentActivityShell = hasAgentActivityPresentation\s*\n\t\t\|\| Boolean\(agentSessionTransfer\)\s*\n\t\t\|\| agentSessionDragControl !== undefined;/);
+	assert.match(SOURCE, /const agentActivityBackdropAnimation = \{[\s\S]*left: 0,[\s\S]*opacity: hasActiveAgentActivityShell \? 1 : attachNearness,[\s\S]*right: 0,[\s\S]*top: 0/);
 	assert.match(SOURCE, /an inset of 4\s*\n\t\/\/ puts them 4px from the article edge, flush with the `px-1` gutter the chin/);
 	assert.match(SOURCE, /const agentActivitySurfacePosition = agentActivitySurfaceInset - 1;/);
 	assert.match(SOURCE, /const agentActivitySurfaceAnimation = \{[\s\S]*bottom: -1,[\s\S]*left: agentActivitySurfacePosition,[\s\S]*right: agentActivitySurfacePosition,[\s\S]*top: agentActivitySurfacePosition/);

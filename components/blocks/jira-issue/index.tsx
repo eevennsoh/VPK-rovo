@@ -3,6 +3,8 @@
 import { useId, useRef, useState, type ComponentProps, type CSSProperties, type FocusEvent, type PointerEvent, type ReactNode } from "react";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
 
+export type { JiraIssueAgentLinkFlash } from "@/components/blocks/jira-issue/agent-link-flash";
+import type { JiraIssueAgentLinkFlash } from "@/components/blocks/jira-issue/agent-link-flash";
 import {
 	JiraIssueAgentActivityRows,
 	type JiraIssueAgentActivity,
@@ -14,6 +16,11 @@ import {
 	type JiraIssueAgentSessionDragState,
 } from "@/components/blocks/jira-issue/agent-activity";
 import { JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE } from "@/components/blocks/jira-issue/agent-session-drag";
+import {
+	isJiraIssueAttachChinArmed,
+	JIRA_ISSUE_MOTION_BACKDROP_NEARNESS,
+	resolveJiraIssueAttachNearness,
+} from "@/components/blocks/jira-issue/attach-proximity";
 import { isJiraIssueSessionAttachPreview } from "@/components/blocks/jira-issue/agent-session-transfer-model";
 import {
 	JIRA_ISSUE_SESSION_TRANSFER_GROUP_CLASS,
@@ -127,6 +134,11 @@ export interface JiraIssueParticipant {
  * their local transfer state when this is absent.
  */
 export interface JiraIssueAgentSessionDragControl {
+	/**
+	 * 0..1 approach ramp for the travelling session. Drives only the grey
+	 * backdrop's opacity continuously; the chin and shell switch at a threshold.
+	 */
+	attachNearness?: number;
 	binding: JiraIssueAgentSessionDragBinding;
 	dropTarget?: "attach" | "unlink" | null;
 	sourceActive: boolean;
@@ -196,6 +208,8 @@ export interface JiraIssueDefaultProps extends Omit<ComponentProps<"button">, "c
 	agentActivityMode?: JiraIssueAgentActivityMode;
 	/** Merged collapses active agents into one prioritized chin row; split gives each agent its own row. */
 	agentActivityLayout?: JiraIssueAgentActivityLayout;
+	/** One-shot brand sweep across the chin row a session was just linked into. */
+	agentLinkFlash?: JiraIssueAgentLinkFlash;
 	/** Optional board context that makes attached activity rows open session details on hover. */
 	agentSessionFlyout?: JiraIssueAgentSessionFlyoutContext;
 	onAgentActivityOpenChange?: (open: boolean) => void;
@@ -244,6 +258,7 @@ function JiraIssueDefault({
 	agentSessionFlyout,
 	agentSessionDragControl,
 	agentDoneRuns = [],
+	agentLinkFlash,
 	agentSessionTransfer,
 	assigneeAvatarLabel,
 	assigneeAvatarShape = "circle",
@@ -359,8 +374,16 @@ function JiraIssueDefault({
 	const hasAgentDoneNotification = resolvedAgentActivityMode === "completed" && agentDoneRuns.length > 0;
 	const inferredPullRequestNumber = agentDoneRuns.find((run) => run.pullRequestNumber)?.pullRequestNumber;
 	const resolvedPullRequestNumber = pullRequestNumber ?? inferredPullRequestNumber;
+	// A session travelling toward this card publishes a continuous 0..1 ramp.
+	// Only the grey backdrop's opacity follows it; the chin below flips once, at
+	// a threshold, so the card's height change stays one crisp transition.
+	const attachNearness = resolveJiraIssueAttachNearness(
+		agentSessionDragControl?.attachNearness,
+		shouldReduceMotion,
+	);
 	const isAttachingSession = agentSessionDragControl
 		? agentSessionDragControl.dropTarget === "attach"
+			|| isJiraIssueAttachChinArmed(attachNearness)
 		: isJiraIssueSessionAttachPreview(
 			resolvedAgentSessionDragState.dragging,
 			resolvedAgentSessionDragState.source,
@@ -376,7 +399,18 @@ function JiraIssueDefault({
 		|| isAttachingSession;
 	const hasIssueRows = hasSubtasks;
 	const hasAgentActivityPresentation = agentActivityMode !== undefined || Boolean(agentActivities?.length) || hasAgentDoneNotification;
-	const usesAgentActivityShell = hasAgentActivityPresentation || Boolean(agentSessionTransfer);
+	// The approach also mounts the shell. With `initial={false}` on the backdrop,
+	// a shell that only appears once the pointer is already inside the rect has
+	// nothing to fade from and snaps to full grey. Mounting early is visually
+	// neutral: `hasActiveAgentActivityShell` is still false, so the surface layer
+	// paints the same card chrome at the same inset. It keys off the drag control
+	// rather than the live ramp because swapping the shell in is a React
+	// element-type change on the article's first child: a per-frame gate would
+	// remount the whole card — dropping keyboard focus — every time a pointer
+	// passed within the proximity range.
+	const usesAgentActivityShell = hasAgentActivityPresentation
+		|| Boolean(agentSessionTransfer)
+		|| agentSessionDragControl !== undefined;
 	const chromeStyles = resolveJiraIssueChrome(chrome);
 	const usesStrokeChrome = chrome === "stroke";
 	const usesCompactVisual = compact || usesStrokeChrome;
@@ -485,10 +519,16 @@ function JiraIssueDefault({
 	const agentActivityBackdropAnimation = {
 		bottom: 0,
 		left: 0,
-		opacity: hasActiveAgentActivityShell ? 1 : 0,
+		opacity: hasActiveAgentActivityShell ? 1 : attachNearness,
 		right: 0,
 		top: 0,
 	};
+	// Opacity is the one value here that chases a pointer, so it gets its own
+	// per-value timing. The reduced-motion branch keeps the object plain numbers
+	// because it is spread straight into `style`.
+	const agentActivityBackdropTransition = shouldReduceMotion
+		? layoutTransition
+		: { ...layoutTransition, opacity: JIRA_ISSUE_MOTION_BACKDROP_NEARNESS };
 	const agentActivitySurfacePosition = agentActivitySurfaceInset - 1;
 	const agentActivitySurfaceAnimation = {
 		bottom: -1,
@@ -701,7 +741,7 @@ function JiraIssueDefault({
 				data-slot="jira-issue-agent-backdrop"
 				initial={false}
 				style={shouldReduceMotion ? { ...AGENT_ACTIVITY_BACKDROP_STYLE, ...agentActivityBackdropAnimation } : AGENT_ACTIVITY_BACKDROP_STYLE}
-				transition={layoutTransition}
+				transition={agentActivityBackdropTransition}
 			/>
 			<LayoutGroup id={agentActivityLayoutGroupId}>
 				<motion.div
@@ -726,6 +766,7 @@ function JiraIssueDefault({
 				</motion.div>
 					<JiraIssueAgentActivityRows
 						activities={activeAgentActivities}
+						linkFlash={agentLinkFlash}
 						instantSessionTransfer={agentSessionDragControl !== undefined}
 					layout={agentActivityLayout}
 					onOpenChange={handleAgentActivityOpenChange}

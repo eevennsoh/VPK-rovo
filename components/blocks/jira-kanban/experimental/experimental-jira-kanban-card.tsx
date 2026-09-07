@@ -9,6 +9,7 @@ import {
 	type JiraIssueAgentActivityIndicatorRenderer,
 	type JiraIssueAgentActivityLayout,
 	type JiraIssueAgentSessionDragControl,
+	type JiraIssueAgentLinkFlash,
 	type JiraIssueChrome,
 	type JiraIssueGenerativeActionConfig,
 	type JiraIssueGenerativeActionPresentation,
@@ -30,6 +31,8 @@ import type {
 interface ExperimentalJiraKanbanCardProps {
 	active: boolean;
 	agentActivityLayout: JiraIssueAgentActivityLayout;
+	/** One-shot brand sweep across the chin rows a drop just added. */
+	agentLinkFlash?: JiraIssueAgentLinkFlash;
 	agentSessionDragControl?: JiraIssueAgentSessionDragControl;
 	card: JiraKanbanCardData;
 	chrome: JiraIssueChrome;
@@ -87,6 +90,7 @@ function toSessionFlyoutPriority(priority: JiraKanbanCardData["priority"]) {
 export function ExperimentalJiraKanbanCard({
 	active,
 	agentActivityLayout,
+	agentLinkFlash,
 	agentSessionDragControl,
 	capturedItemIds,
 	card,
@@ -154,6 +158,7 @@ export function ExperimentalJiraKanbanCard({
 			active={active}
 			agentActivities={card.agentActivities}
 			agentActivityLayout={agentActivityLayout}
+			agentLinkFlash={agentLinkFlash}
 			agentActivityMode={agentActivityMode}
 			agentSessionDragControl={agentSessionDragControl}
 			agentSessionFlyout={{
