@@ -5403,7 +5403,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 433,
+			"manifestEntryCount": 434,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5445,7 +5445,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 110,
+				"entryCount": 111,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5710,6 +5710,12 @@
 						"slug": "jira-activity",
 						"name": "Jira Activity",
 						"importPath": "@/components/blocks/jira-activity"
+					},
+					{
+						"category": "blocks",
+						"slug": "jira-dropzone",
+						"name": "Jira Dropzone",
+						"importPath": "@/components/blocks/jira-dropzone"
 					},
 					{
 						"category": "blocks",

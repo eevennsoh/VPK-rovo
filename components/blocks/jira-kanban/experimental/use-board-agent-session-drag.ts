@@ -28,6 +28,9 @@ import {
 	type BoardAgentSessionDropBounds,
 	type BoardAgentSessionDropZone,
 } from "./lib/board-agent-session-drag";
+import type { SessionDropReceipt } from "@/components/blocks/jira-dropzone";
+
+import { toSessionDropReceipt } from "./lib/session-drop-receipt";
 import {
 	executeSessionTransferPlan,
 	planSessionTransfer,
@@ -135,6 +138,7 @@ export function useBoardAgentSessionDrag({
 	boardColumns,
 	detachedSessionsByCard,
 	onCreate,
+	onCreateWellReceive,
 	onListCreate,
 	onLink,
 	onMove,
@@ -144,6 +148,7 @@ export function useBoardAgentSessionDrag({
 	boardColumns: readonly JiraKanbanColumnData[];
 	detachedSessionsByCard?: Readonly<Record<string, readonly AgentSessionItem[]>>;
 	onCreate?: (session: AgentSessionItem, columnTitle: string) => void;
+	onCreateWellReceive?: (receipt: SessionDropReceipt) => void;
 	onListCreate?: (
 		session: AgentSessionItem,
 		insertion: JiraListInsertion,
@@ -194,15 +199,30 @@ export function useBoardAgentSessionDrag({
 				return undefined;
 			},
 		};
-		executeSessionTransferPlan(
-			planSessionTransfer(
-				resolveBoardAgentSessionDropAction(current),
-				current.origin,
-				lookups,
-			),
-			ports,
+		const plan = planSessionTransfer(
+			resolveBoardAgentSessionDropAction(current),
+			current.origin,
+			lookups,
 		);
-	}, [boardColumns, detachedSessionsByCard, onCreate, onLink, onListCreate, onMove, onUnlink, untrackedSessions]);
+		executeSessionTransferPlan(plan, ports);
+		const receipt = toSessionDropReceipt({
+			plan,
+			pointer: current.pointer,
+		});
+		if (receipt) {
+			onCreateWellReceive?.(receipt);
+		}
+	}, [
+		boardColumns,
+		detachedSessionsByCard,
+		onCreate,
+		onCreateWellReceive,
+		onLink,
+		onListCreate,
+		onMove,
+		onUnlink,
+		untrackedSessions,
+	]);
 
 	const onDragStateChange = useCallback((
 		origin: BoardAgentSessionDragOrigin,
