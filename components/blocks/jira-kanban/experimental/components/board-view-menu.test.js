@@ -78,7 +78,11 @@ test("View picker exposes unselected filter-action submenus with a selected coun
 	);
 	assert.match(
 		VIEW_MENU_SOURCE,
-		/<DropdownMenuItem[\s\S]*onSelect=\{\(\) => onSelect\(option\.id\)\}[\s\S]*selected=\{option\.id === selectedId\}/u,
+		/<DropdownMenuRadioGroup[\s\S]*aria-label=\{label\}[\s\S]*value=\{selectedId \?\? ""\}/u,
+	);
+	assert.match(
+		VIEW_MENU_SOURCE,
+		/<DropdownMenuRadioItem[\s\S]*indicatorPlacement="end"[\s\S]*value=\{option\.id\}/u,
 	);
 	assert.match(VIEW_MENU_SOURCE, /selectedId=\{pullRequestFilterId\}/u);
 	assert.match(VIEW_MENU_SOURCE, /selectedId=\{agentFilterId\}/u);
@@ -86,7 +90,7 @@ test("View picker exposes unselected filter-action submenus with a selected coun
 	assert.match(VIEW_MENU_SOURCE, /selectedId=\{groupByFilterId\}/u);
 	assert.match(
 		VIEW_MENU_SOURCE,
-		/className=\{stateIcon \? "gap-2 \[&>span:first-child\]:size-3" : undefined\}/u,
+		/className=\{stateIcon \? "gap-2" : undefined\}/u,
 	);
 	assert.match(VIEW_MENU_SOURCE, /setSessionTypeFilterId\(id\)/u);
 	assert.doesNotMatch(VIEW_MENU_SOURCE, /AiAgentIcon/u);
@@ -96,7 +100,7 @@ test("View picker exposes unselected filter-action submenus with a selected coun
 	);
 	assert.doesNotMatch(
 		VIEW_MENU_SOURCE,
-		/DropdownMenuCheckboxItem|DropdownMenuRadioGroup|DropdownMenuRadioItem|checked=|defaultChecked|CheckMarkIcon/u,
+		/DropdownMenuCheckboxItem|checked=|defaultChecked|CheckMarkIcon/u,
 	);
 	assert.doesNotMatch(VIEW_MENU_SOURCE, /<DropdownMenuSubTrigger onClick=/u);
 	assert.doesNotMatch(VIEW_MENU_SOURCE, /option\.separatorBefore/u);

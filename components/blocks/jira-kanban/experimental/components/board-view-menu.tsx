@@ -30,6 +30,8 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
 	DropdownMenuSeparator,
 	DropdownMenuSub,
 	DropdownMenuSubContent,
@@ -163,20 +165,31 @@ function QuickViewActionSubmenu<TId extends string>({
 		<DropdownMenuSub>
 			<DropdownMenuSubTrigger>{label}</DropdownMenuSubTrigger>
 			<DropdownMenuSubContent>
-				{options.map((option) => {
-					const stateIcon = icons?.[option.id];
-					return (
-						<DropdownMenuItem
-							className={stateIcon ? "gap-2 [&>span:first-child]:size-3" : undefined}
-							elemBefore={stateIcon ? <MenuLeadingIcon icon={stateIcon} /> : undefined}
-							key={option.id}
-							onSelect={() => onSelect(option.id)}
-							selected={option.id === selectedId}
-						>
-							{option.label}
-						</DropdownMenuItem>
-					);
-				})}
+				<DropdownMenuRadioGroup
+					aria-label={label}
+					onValueChange={(id) => {
+						const option = options.find((entry) => entry.id === id);
+						if (option) {
+							onSelect(option.id);
+						}
+					}}
+					value={selectedId ?? ""}
+				>
+					{options.map((option) => {
+						const stateIcon = icons?.[option.id];
+						return (
+							<DropdownMenuRadioItem
+								className={stateIcon ? "gap-2" : undefined}
+								indicatorPlacement="end"
+								key={option.id}
+								value={option.id}
+							>
+								{stateIcon ? <MenuLeadingIcon icon={stateIcon} /> : null}
+								{option.label}
+							</DropdownMenuRadioItem>
+						);
+					})}
+				</DropdownMenuRadioGroup>
 			</DropdownMenuSubContent>
 		</DropdownMenuSub>
 	);
