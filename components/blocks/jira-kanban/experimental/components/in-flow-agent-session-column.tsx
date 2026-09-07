@@ -233,6 +233,8 @@ export function InFlowAgentSessionColumn({
 		>
 			<div
 				className="relative flex min-h-0 shrink-0 self-stretch"
+				onPointerDown={isEmbedded ? undefined : handleGutterPointerDown}
+				onPointerEnter={handlePointerEnter}
 				onPointerLeave={handlePointerLeave}
 			>
 				{isEmbedded ? null : (

@@ -74,6 +74,10 @@ test("the entire visible gutter is a hover target without covering To do", () =>
 	assert.match(IN_FLOW_COLUMN_SOURCE, /width: IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX \+ 2/u);
 	assert.match(
 		IN_FLOW_COLUMN_SOURCE,
+		/onPointerDown=\{isEmbedded \? undefined : handleGutterPointerDown\}\s*onPointerEnter=\{handlePointerEnter\}\s*onPointerLeave=\{handlePointerLeave\}/u,
+	);
+	assert.match(
+		IN_FLOW_COLUMN_SOURCE,
 		/isEmbedded[\s\S]{0,100}?\? "pointer-events-auto bg-surface"[\s\S]{0,140}?: "pointer-events-none bg-transparent \[&_\[data-agent-session-notch\]\]:pointer-events-auto"/u,
 	);
 	assert.match(RAIL_SOURCE, /className="group\/notch flex h-5 w-full shrink-0 items-center"/u);
