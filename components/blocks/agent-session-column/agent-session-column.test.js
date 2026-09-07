@@ -637,10 +637,7 @@ test("headerSurface panel keeps the column-owned header and drops the nested wel
 
 test("the gutter rail keeps a keyboard expand control and hides the count", () => {
 	assert.match(INDEX_SOURCE, /header: collapsed \? collapsedHeader : expandedHeader/u);
-	assert.match(
-		INDEX_SOURCE,
-		/const hideGutterCount = isGutterCollapsed && collapsedRailHitSlopPx === 0/u,
-	);
+	assert.match(INDEX_SOURCE, /const hideGutterCount = isGutterCollapsed/u);
 	assert.match(INDEX_SOURCE, /aria-label=\{`Expand \$\{title\} column`\}/u);
 	assert.match(INDEX_SOURCE, /relative flex h-6 w-full min-w-0 items-center justify-center px-1/u);
 	// The rail itself still has no header of its own to fall back on.
@@ -728,9 +725,13 @@ test("the column owns a hidden-id set and filters items before AgentSession", ()
 	assert.doesNotMatch(INDEX_SOURCE, /triage\.archive\(session\)/u);
 	assert.doesNotMatch(INDEX_SOURCE, /forgetHidden\(session\.id\)/u);
 	assert.match(INDEX_SOURCE, /triage: selectionTriage,/u);
+	assert.match(INDEX_SOURCE, /archive: handleArchiveSession,/u);
 	assert.match(INDEX_SOURCE, /toggleHidden\(item\)/u);
 	assert.match(INDEX_SOURCE, /onToggleVisibility\?\.\(item\)/u);
 	assert.match(INDEX_SOURCE, /onToggleVisibility=\{handleToggleVisibility\}/u);
+	assert.match(INDEX_SOURCE, /onArchiveSession=\{handleArchiveSession\}/u);
+	assert.match(INDEX_SOURCE, /onArchiveSession: onArchiveSessionProp,/u);
+	assert.match(INDEX_SOURCE, /onArchiveSessionProp\?\.\(session\)/u);
 	assert.match(INDEX_SOURCE, /visibilityLabel=\{view === "hidden" \? "Unarchive" : "Archive"\}/u);
 });
 

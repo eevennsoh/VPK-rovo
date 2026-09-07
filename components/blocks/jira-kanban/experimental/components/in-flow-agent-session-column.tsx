@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 
 import {
@@ -13,13 +13,17 @@ import {
 import { JiraSessionFlyoutSuspensionProvider } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
 import { SidebarResizeHandle } from "@/components/ui/sidebar";
+import { ScrollMaskEdgeOverlay } from "@/components/visual/scroll-mask";
 import { cn } from "@/lib/utils";
 
-const IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX = 24;
-// The surface is translated into the page gutter while the status row starts
-// inside its scrollport. A 16px footprint spacer resolves to the same visible
-// 8px edge gap that `gap-2` creates between adjacent Jira status columns.
-const IN_FLOW_AGENT_SESSION_COLUMN_GAP_PX = 16;
+import {
+	IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX,
+	IN_FLOW_AGENT_SESSION_COLUMN_SURFACE_LEADING_BORDER_PX,
+	resolveInFlowAgentSessionColumnGapPx,
+	resolveInFlowResizeHandleOffsetPx,
+} from "../lib/in-flow-agent-session-column-geometry";
+import { useInFlowGutterScrollMask } from "./use-in-flow-gutter-scroll-mask";
+
 // Extend the preview's 24px session targets to 56px, within the empty gutter.
 // The 32px column footprint and marker axis stay fixed; To do remains clickable.
 const IN_FLOW_AGENT_SESSION_COLUMN_RAIL_HIT_SLOP_PX = 16;
@@ -32,6 +36,7 @@ const IN_FLOW_AGENT_SESSION_COLUMN_WIDTH_TRANSITION =
 const IN_FLOW_AGENT_SESSION_COLUMN_EXPANSION_TRANSITION =
 	"width var(--duration-medium) var(--ease-in-out)";
 const IN_FLOW_AGENT_SESSION_COLUMN_RESIZE_HANDLE_CLASS_NAME = [
+	"right-auto -translate-x-1/2",
 	"bg-transparent! hover:bg-transparent! data-[active]:bg-transparent! focus-visible:bg-transparent! focus-visible:outline-none focus-visible:ring-0",
 	"duration-normal ease-out-practical",
 	"[&>div]:h-16 [&>div]:origin-center [&>div]:transition-[opacity,background-color,scale]",
@@ -113,11 +118,13 @@ function useInFlowAgentSessionColumnInteraction(
 }
 
 function InFlowAgentSessionColumnFootprint({
+	columnFrame,
 	columnWidthPx,
 	isEmbedded,
 	isResizing,
 	shouldReduceMotion,
 }: Readonly<{
+	columnFrame: AgentSessionColumnFrame;
 	columnWidthPx: number;
 	isEmbedded: boolean;
 	isResizing: boolean;
@@ -138,7 +145,7 @@ function InFlowAgentSessionColumnFootprint({
 				data-agent-session-column-footprint="width"
 				style={{
 					transition,
-					width: isEmbedded ? IN_FLOW_AGENT_SESSION_COLUMN_GAP_PX : 0,
+					width: isEmbedded ? resolveInFlowAgentSessionColumnGapPx(columnFrame) : 0,
 				}}
 			/>
 			<div
@@ -232,6 +239,10 @@ function InFlowAgentSessionColumnSurface({
 					onPointerDown={resize.onResizeHandlePointerDown}
 					role="separator"
 					side="right"
+					style={{
+						left: `calc(100% + ${resolveInFlowResizeHandleOffsetPx(columnFrame)}px)`,
+						right: "auto",
+					}}
 					tabIndex={0}
 				/>
 			) : null}
@@ -242,9 +253,9 @@ function InFlowAgentSessionColumnSurface({
 /**
  * The Untracked rail rests in the page's leading gutter. Hover temporarily
  * returns that same compact timeline to the board's original 24px column inset;
- * it never swaps dots for cards. The session total stays hidden at rest and
- * appears in the header slot while that hover-scaled hit area is showing extra
- * space. Only the column's expand control promotes the full column, and that
+ * it never swaps dots for cards, and the session total stays hidden. The
+ * hover-scaled hit area shows extra space without revealing the header count.
+ * Only the column's expand control promotes the full column, and that
  * deliberate state persists after the pointer leaves. The full-height gutter
  * target sits behind each session row so a row can own its whole 24px band
  * while empty gutter space still opens the column preview.
@@ -259,6 +270,8 @@ export function InFlowAgentSessionColumn({
 	untrackedDropArmed,
 }: Readonly<InFlowAgentSessionColumnProps>): ReactNode {
 	const shouldReduceMotion = useReducedMotion();
+	const hostRef = useRef<HTMLDivElement>(null);
+	const showGutterScrollMask = useInFlowGutterScrollMask(hostRef);
 	const [playGutterIntro, setPlayGutterIntro] = useState(true);
 	useEffect(() => {
 		if (shouldReduceMotion) {
@@ -292,11 +305,19 @@ export function InFlowAgentSessionColumn({
 			suspended={sessionFlyoutsSuspended || !isEmbedded}
 		>
 			<div
+				ref={hostRef}
 				className="relative flex min-h-0 shrink-0 self-stretch"
 				onPointerDown={isEmbedded ? undefined : handleGutterPointerDown}
 				onPointerEnter={handlePointerEnter}
 				onPointerLeave={handlePointerLeave}
 			>
+				{showGutterScrollMask ? (
+					<ScrollMaskEdgeOverlay
+						data-agent-session-column-gutter-mask=""
+						edge="left"
+						fadeSize={IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX}
+					/>
+				) : null}
 				{isEmbedded ? null : (
 					<div
 						aria-hidden="true"
@@ -304,10 +325,14 @@ export function InFlowAgentSessionColumn({
 						data-agent-session-column-hit-area=""
 						onPointerEnter={handlePointerEnter}
 						onPointerDown={handleGutterPointerDown}
-						style={{ width: IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX + 2 }}
+						style={{
+							width: IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX
+								+ IN_FLOW_AGENT_SESSION_COLUMN_SURFACE_LEADING_BORDER_PX,
+						}}
 					/>
 				)}
 				<InFlowAgentSessionColumnFootprint
+					columnFrame={columnFrame}
 					columnWidthPx={columnWidthPx}
 					isEmbedded={isEmbedded}
 					isResizing={resize.isResizing}
