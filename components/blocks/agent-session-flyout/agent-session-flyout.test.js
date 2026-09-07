@@ -108,11 +108,11 @@ test("shared hover flyout defaults to session details and exposes composer and u
 	);
 	assert.match(
 		cardSource,
-		/<DropdownMenuItem[\s\S]*disabled=\{createUnavailable\}[\s\S]*onSelect=\{\(\) => onCreateWorkItem\?\.\(\)\}[\s\S]*>\s*Create new work item[\s\S]*?<\/DropdownMenuItem>\s*<DropdownMenuItem[\s\S]*disabled=\{archiveUnavailable\}[\s\S]*>\s*Archive\s*<\/DropdownMenuItem>/u,
+		/<DropdownMenuItem[\s\S]*disabled=\{createUnavailable\}[\s\S]*onSelect=\{\(\) => onCreateWorkItem\?\.\(\)\}[\s\S]*>\s*Create new work item[\s\S]*?<\/DropdownMenuItem>\s*<DropdownMenuItem[\s\S]*disabled=\{archiveUnavailable\}[\s\S]*>\s*\{archiveActionLabel\}\s*<\/DropdownMenuItem>/u,
 	);
 	assert.match(
 		cardSource,
-		/<DropdownMenuItem[\s\S]*disabled=\{archiveUnavailable\}[\s\S]*onSelect=\{\(\) => onArchiveSession\?\.\(\)\}[\s\S]*>\s*Archive\s*<\/DropdownMenuItem>/u,
+		/<DropdownMenuItem[\s\S]*disabled=\{archiveUnavailable\}[\s\S]*onSelect=\{\(\) => onArchiveSession\?\.\(\)\}[\s\S]*>\s*\{archiveActionLabel\}\s*<\/DropdownMenuItem>/u,
 	);
 	assert.match(
 		cardSource,
@@ -123,17 +123,24 @@ test("shared hover flyout defaults to session details and exposes composer and u
 		/\{hasIssueKey \? \([\s\S]*?<DropdownMenu>[\s\S]*?<\/DropdownMenu>[\s\S]*?\) : \([\s\S]*?\{createButton\}[\s\S]*?\{archiveButton\}[\s\S]*?\)\}/u,
 	);
 	assert.match(cardSource, /const createButton = \([\s\S]*?Create new work item/u);
-	assert.match(cardSource, /const archiveButton = \([\s\S]*?aria-label=\{archiveUnavailable \? "Archive unavailable" : "Archive"\}/u);
+	assert.match(cardSource, /const archiveButton = \([\s\S]*?aria-label=\{archiveUnavailable \? `\$\{archiveActionLabel\} unavailable` : archiveActionLabel\}/u);
 	assert.doesNotMatch(cardSource, /Add new subtask to|onSelect=\{\(\) => onAddAsSubtask/u);
 	assert.doesNotMatch(cardSource, /onClick=\{onCreateWorkItem\}/u);
 	assert.doesNotMatch(cardSource, /aria-disabled=\{createUnavailable\}/u);
 	assert.match(source, /onLinkWorkItem\?: \(session: JiraSidebarSessionItem, workItemKey: string\) => void;/u);
 	assert.match(source, /onCreateWorkItem\?: \(session: JiraSidebarSessionItem\) => void;/u);
 	assert.match(source, /onArchiveSession\?: \(session: JiraSidebarSessionItem\) => void;/u);
+	assert.match(source, /archiveActionLabel\?: string;/u);
+	assert.match(source, /archiveActionLabel = "Archive",/u);
+	assert.match(cardSource, /archiveActionLabel = "Archive",/u);
 	assert.match(source, /onAddAsSubtask\?: \(session: JiraSidebarSessionItem, workItemKey: string\) => void;/u);
 	assert.match(
 		source,
-		/function resolveJiraSessionUntrackedWorkActions[\s\S]*captureLocked \|\| onArchiveSession === undefined[\s\S]*\(\) => onArchiveSession\(session\)/u,
+		/function resolveJiraSessionUntrackedWorkActions[\s\S]*onArchiveSession: onArchiveSession === undefined[\s\S]*\(\) => onArchiveSession\(session\)/u,
+	);
+	assert.match(
+		source,
+		/onArchiveSession: onArchiveSession === undefined\s*\n\s*\? undefined\s*\n\s*: \(\) => onArchiveSession\(session\),/u,
 	);
 	assert.match(
 		source,
