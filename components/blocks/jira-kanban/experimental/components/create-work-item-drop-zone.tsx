@@ -20,10 +20,12 @@ const CREATE_WORK_ITEM_WELL_CHROME_CLASS = "rounded-lg border border-dashed";
 
 export function BoardColumnCreateAction({
 	dropZoneLabel,
+	reveal,
 	sessionDragTransaction,
 	title,
 }: Readonly<{
 	dropZoneLabel?: string;
+	reveal?: "always" | "column-hover";
 	sessionDragTransaction: BoardAgentSessionDrag["transaction"];
 	title: string;
 }>) {
@@ -47,11 +49,11 @@ export function BoardColumnCreateAction({
 					exclusiveWinner={isExclusiveWinner}
 					label={dropZoneLabel}
 					measuredRef={targetRef}
-					renderResting={() => <BoardColumnAddButton title={title} />}
+					renderResting={() => <BoardColumnAddButton reveal={reveal} title={title} />}
 					title={title}
 				/>
 			) : (
-				<BoardColumnAddButton title={title} />
+				<BoardColumnAddButton reveal={reveal} title={title} />
 			)}
 		</div>
 	);

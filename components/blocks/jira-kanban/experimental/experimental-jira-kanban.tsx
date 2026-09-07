@@ -471,6 +471,15 @@ function BoardColumn({
 				</div>
 			</div>
 
+			{count === 0 ? (
+				<BoardColumnCreateAction
+					dropZoneLabel={createWorkItemDropZoneLabel}
+					reveal="always"
+					sessionDragTransaction={sessionDragTransaction}
+					title={title}
+				/>
+			) : null}
+
 			<div
 				ref={cardListRef}
 				data-jira-kanban-card-list=""
@@ -487,13 +496,15 @@ function BoardColumn({
 				{children}
 			</div>
 
-			<div style={chrome.footer}>
-				<BoardColumnCreateAction
-					dropZoneLabel={createWorkItemDropZoneLabel}
-					sessionDragTransaction={sessionDragTransaction}
-					title={title}
-				/>
-			</div>
+			{count > 0 ? (
+				<div style={chrome.footer}>
+					<BoardColumnCreateAction
+						dropZoneLabel={createWorkItemDropZoneLabel}
+						sessionDragTransaction={sessionDragTransaction}
+						title={title}
+					/>
+				</div>
+			) : null}
 		</div>
 	);
 }
