@@ -200,13 +200,13 @@ const HEADER_CONTROL_ON_REVEAL = cn(
  * Count morphing for the collapsed header.
  *
  * `slots` spins each digit behind a fade mask, which suits a value that changes
- * because work arrived rather than because the viewer acted. It also survives
- * the `+N` ↔ total swap: the `+` is a non-digit prefix that slides via layout
- * while the digits spin, so `4` → `+2` is one motion rather than a hard cut.
+ * because work arrived rather than because the viewer acted. The gutter keeps
+ * this renderer mounted while the digits are hidden, so a tucked rail can fade
+ * the total in and roll 7 → 8 instead of mounting on the new number.
  *
- * `autoSize` eases the slot's width across that swap so the header never jumps.
- * `initial: false` keeps a column that mounts already collapsed from spinning
- * its count in on first paint. `TextMorphing` degrades to static text under
+ * `autoSize` eases the slot's width as the total crosses a digit. `initial:
+ * false` keeps a column that mounts already collapsed from spinning its count
+ * in on first paint. `TextMorphing` degrades to static text under
  * `prefers-reduced-motion`.
  */
 const HEAD_COUNT_MORPH: TextMorphConfig = {
@@ -519,14 +519,10 @@ export function AgentSessionColumn({
 		resolveAgentSessionPlaneClassName(layout, collapsed),
 		isGutterCollapsed ? "bg-transparent" : null,
 	);
-	// Gutter rest can still flash +N for unread. Once the rail is out of the
-	// gutter — hover-embed, catalog column, or the docked panel — the head
-	// increments the pool total so a viewer already looking at the dots is
-	// not yanked to a +N increment.
-	const showCollapsedUnreadIncrement = collapsedPresentation === "gutter" && newCount > 0;
-	const collapsedCountText = showCollapsedUnreadIncrement
-		? `+${newCount}`
-		: String(sessionCount);
+	// Gutter rest hides the digits so the rail can sit in the page inset.
+	// Newly synced sessions reveal that same total — still the pool count,
+	// never a +N unread increment — so the tucked expand slot can roll.
+	const hideGutterCount = isGutterCollapsed && newCount === 0;
 	const collapsedCountLabel = newCount > 0
 		? `${sessionCount} sessions, ${newCount} newly synced`
 		: `${sessionCount} sessions`;
@@ -564,32 +560,18 @@ export function AgentSessionColumn({
 				<span
 					aria-hidden="true"
 					className={cn(
-						"absolute inset-0 flex items-center justify-center text-xs",
+						"absolute inset-0 flex items-center justify-center text-xs font-normal",
 						"text-text-subtlest",
-						showCollapsedUnreadIncrement ? "font-medium" : "font-normal",
 						HEADER_COUNT_AT_REST,
+						hideGutterCount ? "opacity-0" : "opacity-100",
 					)}
 				>
 					<TextMorphing
 						config={HEAD_COUNT_MORPH}
-						text={collapsedCountText}
+						text={String(sessionCount)}
 					/>
 				</span>
 				<span className="sr-only">{collapsedCountLabel}</span>
-			</div>
-		</div>
-	);
-	const gutterHeader = (
-		<div
-			className={cn(
-				"flex min-w-0 items-center gap-1.5",
-				layout === "enclosed" ? "border border-solid border-transparent" : null,
-			)}
-			style={resolveCollapsedHeaderStyle(layout)}
-		>
-			<div className="relative flex h-6 w-full min-w-0 items-center justify-center">
-				<span className="sr-only">{collapsedCountLabel}</span>
-				{collapsedExpandControl}
 			</div>
 		</div>
 	);
@@ -715,9 +697,7 @@ export function AgentSessionColumn({
 			{renderAgentSessionColumnFrame({
 				body,
 				collapsed,
-				header: collapsed
-					? (isGutterCollapsed ? gutterHeader : collapsedHeader)
-					: expandedHeader,
+				header: collapsed ? collapsedHeader : expandedHeader,
 				layout,
 				planeClassName,
 			})}

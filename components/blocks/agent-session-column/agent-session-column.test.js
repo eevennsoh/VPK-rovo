@@ -602,8 +602,9 @@ test("headerSurface panel keeps the column-owned header and drops the nested wel
 	assert.match(INDEX_SOURCE, /columnRef\.current\?\.focus\(\)/u);
 });
 
-test("the gutter rail keeps a keyboard expand control without a visible count", () => {
-	assert.match(INDEX_SOURCE, /header: collapsed[\s\S]{0,160}?isGutterCollapsed \? gutterHeader : collapsedHeader/u);
+test("the gutter rail keeps a keyboard expand control and hides the count until arrivals", () => {
+	assert.match(INDEX_SOURCE, /header: collapsed \? collapsedHeader : expandedHeader/u);
+	assert.match(INDEX_SOURCE, /const hideGutterCount = isGutterCollapsed && newCount === 0/u);
 	assert.match(INDEX_SOURCE, /aria-label=\{`Expand \$\{title\} column`\}/u);
 	assert.match(INDEX_SOURCE, /relative flex h-6 w-full min-w-0 items-center justify-center/u);
 	// The rail itself still has no header of its own to fall back on.
@@ -637,7 +638,7 @@ test("the collapsed header count rolls through the shared Text Morphing slots ef
 	assert.match(INDEX_SOURCE, /import TextMorphing from "@\/components\/visual\/text-morphing"/u);
 	assert.match(INDEX_SOURCE, /<TextMorphing\s+config=\{HEAD_COUNT_MORPH\}/u);
 	assert.match(INDEX_SOURCE, /variant: "slots"/u);
-	// `autoSize` eases the slot's width across the `+N` ↔ total swap.
+	// `autoSize` eases the slot's width as the total crosses a digit.
 	assert.match(INDEX_SOURCE, /autoSize: true/u);
 	// A column that mounts already collapsed must not spin its count in.
 	assert.match(INDEX_SOURCE, /initial: false/u);
