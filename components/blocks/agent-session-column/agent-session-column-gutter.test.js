@@ -110,7 +110,7 @@ test("horizontal scrolling fades the 24px gutter with ScrollMask, not a hard cut
 		IN_FLOW_COLUMN_SOURCE,
 		/showGutterScrollMask \? \(\s*<ScrollMaskEdgeOverlay\s+data-agent-session-column-gutter-mask=""\s+edge="left"\s+fadeSize=\{IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX\}/u,
 	);
-	assert.match(IN_FLOW_COLUMN_SOURCE, /IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX = 24/u);
+	assert.match(IN_FLOW_GEOMETRY_SOURCE, /export const IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX = 24/u);
 	assert.doesNotMatch(
 		IN_FLOW_COLUMN_SOURCE,
 		/data-agent-session-column-gutter-mask=""[\s\S]{0,80}?bg-surface/u,
