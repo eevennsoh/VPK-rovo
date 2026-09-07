@@ -220,7 +220,7 @@ function AgentSessionUserNotch({
 	proximity?: AgentSessionNotchProximity;
 }>) {
 	const shouldReduceMotion = useReducedMotion();
-	const { arrivalReveal, shouldPlayScaleArrival } = useAgentSessionUserNotchArrival({
+	const { arrivalExiting, arrivalReveal, shouldPlayScaleArrival } = useAgentSessionUserNotchArrival({
 		hasAvatar: Boolean(avatarSrc),
 		isArriving,
 		onArrivalComplete,
@@ -253,6 +253,7 @@ function AgentSessionUserNotch({
 			animate={shouldPlayScaleArrival ? { scale: 1 } : undefined}
 			aria-hidden="true"
 			className="relative grid size-3 shrink-0 place-items-center"
+			data-arrival-exiting={arrivalExiting || undefined}
 			data-arrival-reveal={arrivalReveal || undefined}
 			initial={shouldPlayScaleArrival ? { scale: 0 } : false}
 			onAnimationComplete={() => {
@@ -282,9 +283,12 @@ function AgentSessionUserNotch({
 				<Image
 					alt=""
 					className={cn(
-						"absolute inset-0 size-3 scale-75 rounded-full object-cover opacity-0 transition-[opacity,scale] duration-normal ease-out-practical",
+						"absolute inset-0 size-3 scale-75 rounded-full object-cover opacity-0",
 						"group-hover/notch:scale-100 group-hover/notch:opacity-100 group-has-[:focus-visible]/notch:scale-100 group-has-[:focus-visible]/notch:opacity-100",
 						"motion-reduce:transition-none",
+						arrivalExiting
+							? "transition-[opacity,scale] duration-fast ease-in"
+							: "transition-[opacity,scale] duration-normal ease-out-practical",
 						showAvatar ? "opacity-100 scale-100" : null,
 					)}
 					height={12}

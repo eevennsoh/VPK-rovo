@@ -9,12 +9,14 @@ export const AGENT_SESSION_ARRIVAL_OFFSET_PX = -8;
 
 /**
  * Circle-rail arrival: the face pops in on the avatar recipe, holds, then
- * crossfades back to the 4px rest dot. Enter and exit match the hover CSS
- * (`duration-normal`); the hold is `duration-slower` so a 12px face can register.
+ * crossfades back to the 4px rest dot. Enter matches the hover CSS
+ * (`duration-normal` + `ease-out-practical`); exit is the avatar recipe's
+ * `duration-fast` + `ease-in`. The hold is `duration-slower` so a 12px face
+ * can register.
  */
 export const AGENT_SESSION_USER_NOTCH_ARRIVAL = {
 	enterMs: 150, // duration-normal
-	exitMs: 150, // duration-normal
+	exitMs: 100, // duration-fast
 	lingerMs: 400, // duration-slower
 } as const;
 
