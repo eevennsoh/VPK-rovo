@@ -41,6 +41,11 @@ export interface AgentSessionColumnProps extends Omit<
 	/** Collapsed marker treatment. Defaults to circular user dots. */
 	notchShape?: AgentSessionColumnNotchShape;
 	/**
+	 * `"gutter"` removes the visual count while leaving the rail top-aligned.
+	 * The expand control remains keyboard-reachable. Defaults to `"column"`.
+	 */
+	collapsedPresentation?: "column" | "gutter";
+	/**
 	 * Controlled collapse. Supply it when the host renders its own collapse
 	 * affordance — a docked surface with a minimise control, say — and needs the
 	 * two to agree. The column then never writes the state itself; it still
@@ -62,9 +67,8 @@ export interface AgentSessionColumnProps extends Omit<
 	 * Which chrome the header wears.
 	 *
 	 * `"column"` is the in-flow board title row. `"panel"` is the docked
-	 * rail's PanelHeader skin. The collapsed rail keeps its compact header
-	 * in both modes, because at 32px that header is the chrome and it
-	 * carries the only control that can expand the column again.
+	 * rail's PanelHeader skin. The collapsed rail normally keeps its compact
+	 * header in both modes; `collapsedPresentation="gutter"` visually removes it.
 	 */
 	headerSurface?: "column" | "panel";
 	/**

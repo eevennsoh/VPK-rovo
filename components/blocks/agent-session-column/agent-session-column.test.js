@@ -57,12 +57,12 @@ const SESSION_TYPES_SOURCE = readFileSync(
 	join(__dirname, "../agent-session/agent-session-types.ts"),
 	"utf8",
 );
-const BOARD_SOURCE = readFileSync(
-	join(__dirname, "../jira-kanban/experimental-v2/experimental-v2-jira-kanban.tsx"),
-	"utf8",
-);
 const BOARD_PAGE_SOURCE = readFileSync(
 	join(__dirname, "../jira-kanban/experimental-v2/page.tsx"),
+	"utf8",
+);
+const IN_FLOW_COLUMN_SOURCE = readFileSync(
+	join(__dirname, "../jira-kanban/experimental/components/in-flow-agent-session-column.tsx"),
 	"utf8",
 );
 const RAIL_SOURCE = readFileSync(
@@ -206,20 +206,6 @@ test("an empty column says so rather than rendering an empty list", () => {
 	assert.match(INDEX_SOURCE, /emptyLabel = "No untracked sessions"/u);
 });
 
-test("the v2 board pins the column outside its horizontal scrollport", () => {
-	assert.match(BOARD_SOURCE, /agentSessionColumn\?: AgentSessionColumnProps;/u);
-	// Pinned, so it precedes the <section> scrollport rather than joining the
-	// boardColumns map inside it.
-	const columnIndex = BOARD_SOURCE.indexOf("<InFlowAgentSessionColumn");
-	const sectionIndex = BOARD_SOURCE.indexOf("<section");
-	assert.ok(columnIndex > 0, "expected the board to render the pinned column");
-	assert.ok(columnIndex < sectionIndex, "expected the pinned column before the scrollport");
-	// The pinned column supplies the board's left inset, so the scroll row drops
-	// to the inter-column gap and every column keeps one rhythm.
-	assert.match(BOARD_SOURCE, /agentSessionColumn \? "ps-2" : "ps-6"/u);
-	assert.match(BOARD_SOURCE, /columnFrame=\{chrome\.headerFrame\}/u);
-});
-
 test("the board column and the Insights rail share one loose-work adapter", () => {
 	assert.match(SESSIONS_SOURCE, /export function toPulseSessionHandlers\(/u);
 	assert.match(RAIL_SOURCE, /toPulseSessionHandlers/u);
@@ -360,6 +346,11 @@ test("column resize buttons swap icons without using selected button state", () 
 	assert.doesNotMatch(INDEX_SOURCE, /<TooltipContent>Expand column<\/TooltipContent>/u);
 	assert.doesNotMatch(INDEX_SOURCE, /\baria-(?:expanded|pressed)(?:\s|=)/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /\baria-(?:expanded|pressed)(?:\s|=)/u);
+	assert.match(INDEX_SOURCE, /peer\/expand-control opacity-0/u);
+	assert.match(INDEX_SOURCE, /hover:opacity-100 focus-visible:opacity-100/u);
+	assert.match(INDEX_SOURCE, /peer-hover\/expand-control:opacity-0/u);
+	assert.match(INDEX_SOURCE, /peer-focus-visible\/expand-control:opacity-0/u);
+	assert.doesNotMatch(INDEX_SOURCE, /group-hover\/session-column:opacity-100/u);
 });
 
 test("notch flyouts use a stable trigger host so the shared popup follows the rail", () => {
@@ -443,17 +434,18 @@ test("a notch is reachable and legible without a pointer", () => {
 	assert.match(RAIL_COLUMN_SOURCE, /\$\{item\.title\} — \$\{NOTCH_STATE_LABEL\[item\.state\]\}/u);
 	// Colour alone never carries the state.
 	assert.match(RAIL_COLUMN_SOURCE, /const NOTCH_STATE_LABEL: Record<AgentListState, string>/u);
-	// The expand control stays in the header tab order while faded, and
-	// unfades on keyboard focus — `hidden` would drop it out of reach entirely.
+	// The expand control stays in the header tab order while faded, and unfades
+	// on its own keyboard focus — `hidden` would drop it out of reach entirely.
 	assert.doesNotMatch(INDEX_SOURCE, /group-hover\/session-column:block/u);
-	assert.match(INDEX_SOURCE, /group-has-\[:focus-visible\]\/session-column:opacity-100/u);
+	assert.match(INDEX_SOURCE, /peer\/expand-control opacity-0/u);
+	assert.match(INDEX_SOURCE, /hover:opacity-100 focus-visible:opacity-100/u);
 });
 
 test("collapsed motion is tokenised and honours reduced motion", () => {
-	// The width change repositions the whole board, so it takes the bold
-	// in-place profile; the notch swell is a list-item interaction.
+	// Standalone/panel resize keeps the tokenized width recipe; hover keeps the
+	// rail compact while its flex footprint rejoins the board rhythm.
 	assert.match(INDEX_SOURCE, /width var\(--duration-medium\) var\(--ease-in-out\)/u);
-	assert.match(INDEX_SOURCE, /transition: shouldReduceMotion \? "none" : AGENT_SESSION_COLUMN_TRANSITION/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /width var\(--duration-normal\) var\(--ease-out-practical\)/u);
 	assert.match(RAIL_COLUMN_SOURCE, /duration-normal ease-out-practical/u);
 	assert.match(RAIL_COLUMN_SOURCE, /motion-reduce:transition-none/u);
 	// The dock's fade in and out are tokenised as resolved cubic-beziers, because
@@ -609,11 +601,10 @@ test("headerSurface panel keeps the column-owned header and drops the nested wel
 	assert.match(INDEX_SOURCE, /columnRef\.current\?\.focus\(\)/u);
 });
 
-test("the collapsed rail keeps its compact header whatever the host asks for", () => {
-	// At 32px that header *is* the chrome, and it carries the only control that
-	// can expand the column again — gating it on `headerSurface` would strand the rail.
-	assert.match(INDEX_SOURCE, /header: collapsed \? collapsedHeader : expandedHeader/u);
+test("the gutter rail keeps a keyboard expand control without a visible count", () => {
+	assert.match(INDEX_SOURCE, /header: collapsed[\s\S]{0,160}?isGutterCollapsed \? gutterHeader : collapsedHeader/u);
 	assert.match(INDEX_SOURCE, /aria-label=\{`Expand \$\{title\} column`\}/u);
+	assert.match(INDEX_SOURCE, /relative flex h-6 w-full min-w-0 items-center justify-center/u);
 	// The rail itself still has no header of its own to fall back on.
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /onExpand/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /sessionCount/u);
@@ -874,11 +865,11 @@ test("the archived view keeps Archived in the header and a back footer", () => {
 });
 
 test("the collapsed rail keeps a focus-ring gutter on its scrollport", () => {
-	// Internal padding only: `-mx-1` on a 32px overflow-hidden column shifts
-	// the notches 4px off center. The clip lifts for `:focus-visible` instead.
+	// Internal padding only: horizontal padding keeps the dots centred, while
+	// vertical padding preserves the ring at the capped scroll boundary.
 	assert.match(
 		RAIL_COLUMN_SOURCE,
-		/overflow-y-auto px-1 has-\[:focus-visible\]:overflow-visible/u,
+		/overflow-y-auto overscroll-contain px-1 py-1/u,
 	);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /-mx-1/u);
 });
@@ -893,9 +884,18 @@ test("the collapsed rail fades notches with ScrollMask viewport mask-image", () 
 		RAIL_COLUMN_SOURCE,
 		/buildScrollMaskStyle\(\{\s*fadeBottom: showBottomScrollMask,\s*fadeSize: AGENT_SESSION_RAIL_FADE_SIZE,\s*fadeTop: showTopScrollMask,\s*scrollbarWidth: 0,\s*\}\)/u,
 	);
-	assert.match(RAIL_COLUMN_SOURCE, /style=\{scrollMaskStyle\}/u);
+	assert.match(RAIL_COLUMN_SOURCE, /style=\{\{ \.\.\.scrollMaskStyle, maxHeight: railViewportHeight \}\}/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /<motion\.ul/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /ScrollMaskEdgeOverlay/u);
+});
+
+test("the collapsed rail shows at most ten dots before it scrolls under the mask", () => {
+	assert.match(RAIL_COLUMN_SOURCE, /AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS = 10/u);
+	assert.match(RAIL_COLUMN_SOURCE, /Math\.min\(items\.length, AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS\)/u);
+	assert.match(RAIL_COLUMN_SOURCE, /maxHeight: railViewportHeight/u);
+	assert.match(RAIL_COLUMN_SOURCE, /w-full flex-1 flex-col/u);
+	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /w-full flex-none flex-col/u);
+	assert.match(RAIL_COLUMN_SOURCE, /items\.map\(/u);
 });
 
 test("the collapsed rail receives visible items only and collapse leaves hidden view", () => {

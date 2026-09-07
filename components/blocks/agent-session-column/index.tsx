@@ -45,9 +45,9 @@ export const AGENT_SESSION_COLUMN_WIDTH_PX = 280;
 export const AGENT_SESSION_COLUMN_COLLAPSED_WIDTH_PX = 32;
 
 /**
- * Collapsing repositions the whole board to the right of it, so the width change
- * uses the bold in-place profile (`duration-medium` + `ease-in-out`) the status
- * columns use.
+ * Hover preview keeps this column collapsed, so the width transition runs only
+ * after a deliberate expand/collapse action. Hosts mirror the same timing for
+ * their reserved footprint.
  */
 const AGENT_SESSION_COLUMN_TRANSITION = "width var(--duration-medium) var(--ease-in-out)";
 
@@ -178,13 +178,13 @@ function resolveCollapsedHeaderStyle(
  */
 const HEADER_COUNT_AT_REST = cn(
 	"pointer-events-none transition-opacity duration-normal ease-out-practical",
-	"group-hover/session-column:opacity-0 group-has-[:focus-visible]/session-column:opacity-0",
+	"peer-hover/expand-control:opacity-0 peer-focus-visible/expand-control:opacity-0",
 	"motion-reduce:transition-none",
 );
 
 const HEADER_CONTROL_ON_REVEAL = cn(
-	"opacity-0 transition-opacity duration-normal ease-out-practical",
-	"group-hover/session-column:opacity-100 group-has-[:focus-visible]/session-column:opacity-100",
+	"peer/expand-control opacity-0 transition-opacity duration-normal ease-out-practical",
+	"hover:opacity-100 focus-visible:opacity-100",
 	"motion-reduce:transition-none",
 );
 
@@ -261,6 +261,7 @@ export function AgentSessionColumn({
 	columnFrame = DEFAULT_AGENT_SESSION_COLUMN_FRAME,
 	className,
 	collapsed: collapsedProp,
+	collapsedPresentation = "column",
 	count,
 	defaultCollapsed = false,
 	emptyLabel = "No untracked sessions",
@@ -508,7 +509,35 @@ export function AgentSessionColumn({
 	};
 
 	const layout = resolveAgentSessionColumnLayout(headerSurface, columnFrame);
-	const planeClassName = resolveAgentSessionPlaneClassName(layout, collapsed);
+	const isGutterCollapsed = collapsed && collapsedPresentation === "gutter";
+	const planeClassName = cn(
+		resolveAgentSessionPlaneClassName(layout, collapsed),
+		isGutterCollapsed ? "bg-transparent" : null,
+	);
+	const collapsedCountLabel = newCount > 0
+		? `${sessionCount} sessions, ${newCount} newly synced`
+		: `${sessionCount} sessions`;
+	const collapsedExpandControl = (
+		<TooltipProvider>
+			<Tooltip>
+				<TooltipTrigger
+					render={
+						<Button
+							aria-label={`Expand ${title} column`}
+							className={HEADER_CONTROL_ON_REVEAL}
+							onClick={handleToggleCollapsed}
+							size="icon-compact"
+							type="button"
+							variant="ghost"
+						/>
+					}
+				>
+					<Icon className="text-icon-subtle" render={<GrowHorizontalIcon label="" />} />
+				</TooltipTrigger>
+				<TooltipContent>Expand</TooltipContent>
+			</Tooltip>
+		</TooltipProvider>
+	);
 	const collapsedHeader = (
 		<div
 			className={cn(
@@ -518,6 +547,7 @@ export function AgentSessionColumn({
 			style={resolveCollapsedHeaderStyle(layout)}
 		>
 			<div className="relative flex h-6 w-full min-w-0 items-center justify-center">
+				{collapsedExpandControl}
 				<span
 					aria-hidden="true"
 					className={cn(
@@ -532,30 +562,21 @@ export function AgentSessionColumn({
 						text={newCount > 0 ? `+${newCount}` : String(sessionCount)}
 					/>
 				</span>
-				<span className="sr-only">
-					{newCount > 0
-						? `${sessionCount} sessions, ${newCount} newly synced`
-						: `${sessionCount} sessions`}
-				</span>
-				<TooltipProvider>
-					<Tooltip>
-						<TooltipTrigger
-							render={
-								<Button
-									aria-label={`Expand ${title} column`}
-									className={HEADER_CONTROL_ON_REVEAL}
-									onClick={handleToggleCollapsed}
-									size="icon-compact"
-									type="button"
-									variant="ghost"
-								/>
-							}
-						>
-							<Icon className="text-icon-subtle" render={<GrowHorizontalIcon label="" />} />
-						</TooltipTrigger>
-						<TooltipContent>Expand</TooltipContent>
-					</Tooltip>
-				</TooltipProvider>
+				<span className="sr-only">{collapsedCountLabel}</span>
+			</div>
+		</div>
+	);
+	const gutterHeader = (
+		<div
+			className={cn(
+				"flex min-w-0 items-center gap-1.5",
+				layout === "enclosed" ? "border border-solid border-transparent" : null,
+			)}
+			style={resolveCollapsedHeaderStyle(layout)}
+		>
+			<div className="relative flex h-6 w-full min-w-0 items-center justify-center">
+				<span className="sr-only">{collapsedCountLabel}</span>
+				{collapsedExpandControl}
 			</div>
 		</div>
 	);
@@ -656,7 +677,7 @@ export function AgentSessionColumn({
 			ref={columnRef}
 			aria-label={`${displayTitle}, ${sessionCount} sessions`}
 			className={cn(
-				"group/session-column flex min-h-0 shrink-0 flex-col",
+				"group/session-column relative flex min-h-0 shrink-0 flex-col",
 				collapsed || isResizing ? "overflow-hidden" : null,
 				className,
 			)}
@@ -676,7 +697,9 @@ export function AgentSessionColumn({
 			{renderAgentSessionColumnFrame({
 				body,
 				collapsed,
-				header: collapsed ? collapsedHeader : expandedHeader,
+				header: collapsed
+					? (isGutterCollapsed ? gutterHeader : collapsedHeader)
+					: expandedHeader,
 				layout,
 				planeClassName,
 			})}
