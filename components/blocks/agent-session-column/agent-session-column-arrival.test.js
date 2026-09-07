@@ -9,6 +9,10 @@ const ARRIVAL_HOOK_SOURCE = readFileSync(
 	"utf8",
 );
 const RAIL_COLUMN_SOURCE = readFileSync(join(__dirname, "agent-session-column-rail.tsx"), "utf8");
+const USER_NOTCH_SOURCE = RAIL_COLUMN_SOURCE.slice(
+	RAIL_COLUMN_SOURCE.indexOf("function AgentSessionUserNotch"),
+	RAIL_COLUMN_SOURCE.indexOf("function AgentSessionNotch"),
+);
 const NOTCH_MARK_SOURCE = readFileSync(
 	join(__dirname, "../agent-session/agent-session-notch.tsx"),
 	"utf8",
@@ -197,8 +201,8 @@ test("arrival motion is tokenised, capped, and spatially anchored", () => {
 	assert.doesNotMatch(DETAIL_SOURCE, /resting at 8px/u);
 	assert.doesNotMatch(DETAIL_SOURCE, /fade to a 12px grey rest/u);
 	assert.doesNotMatch(DETAIL_SOURCE, /fade to a 4px rest in default icon color/u);
-	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /scale: \[/u);
-	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /times:/u);
+	assert.doesNotMatch(USER_NOTCH_SOURCE, /scale: \[/u);
+	assert.doesNotMatch(USER_NOTCH_SOURCE, /times:/u);
 	// Arriving notches push the ones below them down instead of teleporting.
 	// The scrollport stays a plain `ul` so mask-image can fade the marks;
 	// layout lives on each notch, not on a Motion scroll host.

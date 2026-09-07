@@ -24,8 +24,8 @@ export type AgentListState = "running" | "complete" | "needs-input" | "attention
  */
 export type AgentListActorKind = "agent" | "person";
 
-/** Pull-request status shown in the metadata row, when a PR exists. */
-export type AgentListPrStatus = "created" | "merged";
+/** Pull-request lifecycle shown in the metadata row, when a PR exists. */
+export type AgentListPrStatus = "created" | "merged" | "failed";
 
 /** Visual density for Jira agent-session rows. */
 export type AgentListVariant = "default" | "compact";

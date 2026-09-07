@@ -99,6 +99,23 @@ test("every local session becomes one agent-list row with fixture identity", asy
 		PULSE_TIMELINE.workItems,
 	);
 	assert.equal(allItems.length, 16, "the untracked-work column should have sixteen sessions");
+	const pullRequestItems = allItems.filter(
+		(item) => item.sessionDetails.pullRequestNumber !== undefined,
+	);
+	assert.equal(pullRequestItems.length, 8, "half of baseline sessions should expose linked PRs");
+	assert.deepEqual(
+		new Set(pullRequestItems.map((item) => item.prStatus)),
+		new Set(["created", "merged", "failed"]),
+		"baseline session PRs should cover open, merged, and failed lifecycles",
+	);
+	for (const item of pullRequestItems) {
+		assert.ok(item.sessionDetails.pullRequestTitle, `${item.id} needs a PR title`);
+		assert.equal(
+			item.sessionDetails.pullRequestUrl,
+			`https://github.com/eevensoh/vpk-rovo/pull/${item.sessionDetails.pullRequestNumber}`,
+			`${item.id} should link to its PR`,
+		);
+	}
 	assert.equal(
 		allItems.find((item) => item.sessionDetails.issueKey === "PAY-101")?.sessionDetails.issueStatus,
 		"Done",

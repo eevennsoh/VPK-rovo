@@ -1,7 +1,10 @@
 import type { AgentListAgent } from "@/components/blocks/agent-list";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 
-import { PULSE_VIEWER_MACHINE_NAME } from "../data/pulse-loose-work";
+import {
+	PULSE_SPACE_REPOSITORY,
+	PULSE_VIEWER_MACHINE_NAME,
+} from "../data/pulse-loose-work";
 import {
 	isPulseAgentSession,
 	type PulseCodingAgentId,
@@ -132,11 +135,19 @@ export function toPulseSessionItems(
 					name: invoker.name,
 				},
 			machineName: item.machineName,
+			prStatus: item.pullRequest?.status,
 			sessionDetails: {
 				host: "local",
 				issueKey: item.sourceTitle,
 				issueSummary: item.title,
 				...(issueStatus === undefined ? {} : { issueStatus }),
+				...(item.pullRequest === undefined
+					? {}
+					: {
+						pullRequestNumber: item.pullRequest.number,
+						pullRequestTitle: item.pullRequest.title,
+						pullRequestUrl: `https://github.com/${PULSE_SPACE_REPOSITORY}/pull/${item.pullRequest.number}`,
+					}),
 				worktreePath: worktree,
 			},
 			shortTitle: item.shortTitle,

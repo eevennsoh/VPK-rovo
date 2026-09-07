@@ -23,6 +23,10 @@ const IN_FLOW_SOURCE = readFileSync(
 	"utf8",
 );
 const CARD_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "experimental-jira-kanban-card.tsx"), "utf8");
+const JIRA_ISSUE_SOURCE = readFileSync(
+	join(EXPERIMENTAL_DIR, "..", "..", "jira-issue", "index.tsx"),
+	"utf8",
+);
 const DRAG_HOOK_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "use-board-agent-session-drag.ts"), "utf8");
 const HELPER_SOURCE = readFileSync(join(EXPERIMENTAL_DIR, "lib", "board-untracked-sessions.ts"), "utf8");
 const SESSION_INDEX_SOURCE = readFileSync(
@@ -205,23 +209,29 @@ test("unchecking Untracked exits board-adjacent sessions through the issue prese
 	assert.doesNotMatch(BOARD_SOURCE, /data-agent-session-column[\s\S]*showUntracked/u);
 });
 
-test("column card hover lights related board sessions without scrolling or spotlighting", () => {
+test("column session hover previews its suggested Jira issue in blue without scrolling or spotlighting", () => {
 	const boardWithoutComments = withoutComments(BOARD_SOURCE);
-	const hoverHandlerStart = boardWithoutComments.indexOf("const handleSessionHover");
+	const hoverHandlerStart = boardWithoutComments.indexOf("const handleColumnSessionHover");
 	const hoverHandlerBody = boardWithoutComments.slice(
 		hoverHandlerStart,
 		boardWithoutComments.indexOf("};", hoverHandlerStart),
 	);
 
 	assert.notStrictEqual(hoverHandlerStart, -1);
-	assert.match(BOARD_SOURCE, /onItemHover=\{handleSessionHover\}/u);
-	assert.match(hoverHandlerBody, /setHoveredSessionId\(item\?\.id \?\? null\)/u);
+	assert.match(BOARD_SOURCE, /onItemHover: handleColumnSessionHover,/u);
+	assert.match(hoverHandlerBody, /setHoveredColumnSessionId\(item\?\.id \?\? null\)/u);
 	assert.match(hoverHandlerBody, /agentSessionColumn\?\.onItemHover\?\.\(item\)/u);
-	// Hover previews a relationship. Only a click owns focus, scroll, and the
-	// `opacity-40` veil, so the hover handler must stay out of all three.
+	assert.match(BOARD_SOURCE, /const hoveredIssueKey = hoveredColumnSessionId === null/u);
+	assert.match(PAGE_SOURCE, /const untrackedHoveredWorkItemKey = untrackedHoveredSession/u);
+	assert.match(PAGE_SOURCE, /proximityHighlightedWorkItemKey=\{untrackedHoveredWorkItemKey\}/u);
+	assert.match(BOARD_SOURCE, /proximityHighlightedWorkItemKey\?: string \| null;/u);
+	assert.match(BOARD_SOURCE, /const hostHoveredIssueKey = proximityHighlightedWorkItemKey === undefined/u);
+	assert.match(CARD_SOURCE, /agentSessionTargetPreview=\{\{ highlighted: agentSessionTargetHighlighted \}\}/u);
+	assert.match(JIRA_ISSUE_SOURCE, /agentSessionTargetHighlighted \? "bg-bg-accent-blue-subtlest" : "bg-bg-neutral"/u);
+	// Hover previews the relationship with color only. Only a click owns focus,
+	// scroll, and the `opacity-40` veil, so the hover handler stays out of all three.
 	assert.doesNotMatch(hoverHandlerBody, /setFocusedIssueKey/u);
 	assert.doesNotMatch(hoverHandlerBody, /scrollBoardIssueIntoView/u);
-	assert.doesNotMatch(BOARD_SOURCE, /hoveredIssueKey/u);
 	assert.match(BOARD_SOURCE, /highlightedSessionId=\{highlightedSessionId\}/u);
 	assert.match(CARD_SOURCE, /highlightedItemId=\{highlightedSessionId\}/u);
 });
