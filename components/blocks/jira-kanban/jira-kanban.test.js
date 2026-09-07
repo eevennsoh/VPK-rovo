@@ -261,7 +261,7 @@ test("Experimental kanban default card gap and collapse padding come from the co
 test("Experimental kanban card gap matches the column gutter", () => {
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/"flex min-h-full w-max min-w-full items-stretch ps-6"/u,
+		/className="flex min-h-full w-max min-w-full items-stretch"\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart \}\}/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
@@ -965,7 +965,7 @@ test("Experimental kanban keeps its column or session-rail gutter on the scroll 
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/"flex min-h-full w-max min-w-full items-stretch ps-6"/u,
+		/className="flex min-h-full w-max min-w-full items-stretch"\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart \}\}/u,
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
@@ -973,7 +973,7 @@ test("Experimental kanban keeps its column or session-rail gutter on the scroll 
 	);
 	assert.match(
 		EXPERIMENTAL_SOURCE,
-		/<div aria-hidden className="w-6 shrink-0" \/>/u,
+		/style=\{\{ width: `calc\(var\(--spacing\) \* 6 \+ \$\{scrollEndInset\}px\)` \}\}/u,
 	);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /items-center gap-2 px-6/u);
 	assert.match(EXPERIMENTAL_HEADER_SOURCE, /flex-wrap items-center gap-2 px-6/u);
