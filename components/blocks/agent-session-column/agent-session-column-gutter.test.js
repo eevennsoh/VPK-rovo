@@ -150,7 +150,7 @@ test("Board visible cards and List share the header's 24px leading alignment", (
 	);
 	assert.match(
 		EXPERIMENTAL_BOARD_SOURCE,
-		/className="flex min-h-full w-max min-w-full items-stretch"\s*style=\{\{ paddingInlineStart: columnRowPaddingInlineStart \}\}/u,
+		/className="flex min-h-full w-max min-w-full items-stretch"\s*style=\{\{ paddingInlineStart: resolvedColumnRowPaddingInlineStart \}\}/u,
 	);
 	assert.doesNotMatch(
 		EXPERIMENTAL_BOARD_SOURCE,
@@ -161,6 +161,19 @@ test("Board visible cards and List share the header's 24px leading alignment", (
 		/"min-h-0 flex-1 overflow-hidden pb-4 ps-6 md:pb-5"/u,
 	);
 	assert.match(IN_FLOW_COLUMN_SOURCE, /IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX = 24/u);
+});
+
+test("a collapsed first status column clears the fixed Untracked gutter without moving it", () => {
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/import \{[\s\S]*resolveBoardColumnRowPaddingInlineStart,[\s\S]*\} from "\.\/lib\/board-column-collapse";/u,
+	);
+	assert.match(
+		EXPERIMENTAL_BOARD_SOURCE,
+		/const resolvedColumnRowPaddingInlineStart = resolveBoardColumnRowPaddingInlineStart\(columnRowPaddingInlineStart, boardColumns\[0\]\?\.title, Boolean\(chrome\.dropContentPadding\), collapsedColumns\);/u,
+	);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /absolute inset-y-0 start-0 z-40/u);
+	assert.match(IN_FLOW_COLUMN_SOURCE, /style=\{\{ width: IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX \+ 2 \}\}/u);
 });
 
 test("Board and List give the in-flow column identical geometry props", () => {

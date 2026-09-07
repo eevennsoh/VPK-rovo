@@ -66,6 +66,7 @@ import {
 	getBoardColumnOuterWidthPx,
 	isBoardColumnCollapsed,
 	toggleCollapsedBoardColumn,
+	resolveBoardColumnRowPaddingInlineStart,
 	BOARD_COLUMN_WIDTH_PX,
 	type CollapsedBoardColumns,
 } from "./lib/board-column-collapse";
@@ -684,6 +685,7 @@ function ExperimentalJiraKanbanView({
 		);
 	const spotlightIssueKey = resolveVisibleFocusedIssueKey(focusedIssueKey, boardColumns);
 	const collapsedColumns = controlledCollapsedColumns ?? uncontrolledCollapsedColumns;
+	const resolvedColumnRowPaddingInlineStart = resolveBoardColumnRowPaddingInlineStart(columnRowPaddingInlineStart, boardColumns[0]?.title, Boolean(chrome.dropContentPadding), collapsedColumns);
 	const selectedCount = selectedCardCodes?.size ?? 0;
 	const selectedStatus = selectedCardCodes
 		? getCommonSelectedCardStatus(boardColumns, selectedCardCodes)
@@ -890,7 +892,7 @@ function ExperimentalJiraKanbanView({
 				<LayoutGroup id={cardLayoutGroupId}>
 						<div
 							className="flex min-h-full w-max min-w-full items-stretch"
-							style={{ paddingInlineStart: columnRowPaddingInlineStart }}
+							style={{ paddingInlineStart: resolvedColumnRowPaddingInlineStart }}
 						>
 						<ExclusiveCreateWellProximityProvider>
 						<div className="flex min-h-full flex-1 items-stretch gap-2">
