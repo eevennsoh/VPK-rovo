@@ -11,9 +11,9 @@ export const LINKING_EFFECT_DETAIL: ComponentDetail = {
 } from "@/components/visual/linking-effect";`,
 	usage: `<LinkingEffect
 	sourceSelector="[data-drag-chip]"
-	target={{ anchor: { x: 240, y: 404 }, width: 272 }}
+	target={{ anchor: { x: 240, y: 372 }, height: 144, radius: 10, width: 272 }}
 	nearness={resolveLinkingEffectNearness(distanceToCard)}
-	identities={[{ id: "claude", tintVariable: "--color-purple-500" }]}
+	identities={[{ id: "claude", tint: [0.85, 0.47, 0.34] }]}
 	release={dropped ? { id: releaseId, target } : null}
 	onFuseSettled={clearRelease}
 />`,

@@ -128,6 +128,9 @@ export function useLinkingEffectFrame(
 ): LinkingEffectRenderState {
 	const [render, setRender] = useState<LinkingEffectRenderState>(IDLE_RENDER_STATE);
 	const liveRef = useRef(source);
+	// Changes at most once per gesture, so it is safe as an effect dependency
+	// where the rest of `source` is not.
+	const releaseKey = source.release?.id ?? null;
 
 	useLayoutEffect(() => {
 		liveRef.current = source;
@@ -220,6 +223,15 @@ export function useLinkingEffectFrame(
 				live.onFuseSettled?.();
 			}
 
+			// Park once the fuse has landed. `onFuseSettled` is optional, so a host
+			// may legitimately leave `release` set — without this the loop would
+			// keep resolving frames, and the canvas would keep its RAF and GL
+			// context alive, for an effect that is finished and invisible. A new
+			// release id re-runs this effect, which restarts the loop.
+			if (releaseId !== null && settledReleaseId === releaseId) {
+				return;
+			}
+
 			handle = requestAnimationFrame(tick);
 		};
 
@@ -228,7 +240,9 @@ export function useLinkingEffectFrame(
 			cancelled = true;
 			cancelAnimationFrame(handle);
 		};
-	}, []);
+		// `release.id` is the only prop allowed to restart the loop. The rest
+		// change on every pointer move and must not tear it down each frame.
+	}, [releaseKey]);
 
 	return render;
 }

@@ -97,7 +97,10 @@ function LinkingEffectField({
 		target,
 	});
 
-	if (!frame) {
+	// `document` is read below for the portal target. The frame is null on the
+	// server and on the hydration pass, so this already returns first — the
+	// explicit guard states that contract instead of relying on it.
+	if (!frame || typeof document === "undefined") {
 		return null;
 	}
 
