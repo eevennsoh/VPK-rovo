@@ -41,8 +41,11 @@ import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-over
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { cn } from "@/lib/utils";
 
+import { toAgentSessionRailViewportMaxHeight } from "./agent-session-column-rail-viewport";
 import type { AgentSessionColumnNotchShape } from "./agent-session-column-types";
 import { useAgentSessionUserNotchArrival } from "./use-agent-session-user-notch-arrival";
+
+export { AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS } from "./agent-session-column-rail-viewport";
 
 /**
  * The collapsed form of the Agent Session column.
@@ -74,12 +77,6 @@ import { useAgentSessionUserNotchArrival } from "./use-agent-session-user-notch-
 
 /** Reach centered dots: a 3rem band ends before the last visible session. */
 const AGENT_SESSION_RAIL_FADE_SIZE = "6rem";
-
-/** The tucked rail shows the latest ten sessions; older sessions stay scrollable. */
-const AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS = 10;
-const AGENT_SESSION_RAIL_ITEM_HEIGHT_PX = 20;
-const AGENT_SESSION_RAIL_ITEM_GAP_PX = 4;
-const AGENT_SESSION_RAIL_FOCUS_GUTTER_PX = 8;
 
 /** Spoken state, so the rail still names a lifecycle it no longer paints. */
 const NOTCH_STATE_LABEL: Record<AgentListState, string> = {
@@ -469,6 +466,7 @@ export function AgentSessionColumnRail({
 	getSuggestedWorkItemKeys,
 	highlightedItemId,
 	items,
+	maxVisibleItems,
 	newItemIds,
 	notchShape = "circle",
 	onArrivalComplete,
@@ -486,6 +484,11 @@ export function AgentSessionColumnRail({
 	getSuggestedWorkItemKeys?: (item: AgentSessionItem) => readonly string[] | undefined;
 	highlightedItemId?: string | null;
 	items: readonly AgentSessionItem[];
+	/**
+	 * Caps the scrollport to this many notches. Gutter rest passes ten;
+	 * embedded column presentation omits it so every session can show.
+	 */
+	maxVisibleItems?: number;
 	newItemIds?: ReadonlySet<string>;
 	notchShape?: AgentSessionColumnNotchShape;
 	onArrivalComplete?: (itemId: string) => void;
@@ -515,12 +518,10 @@ export function AgentSessionColumnRail({
 		[capturedItemIds, items, onCreateWorkItem, onLinkWorkItem, onSubtasks],
 	);
 	const shouldReduceMotion = useReducedMotion();
-	const visibleItemCount = Math.min(items.length, AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS);
-	const railViewportHeight = visibleItemCount === 0
-		? 0
-		: visibleItemCount * AGENT_SESSION_RAIL_ITEM_HEIGHT_PX
-			+ (visibleItemCount - 1) * AGENT_SESSION_RAIL_ITEM_GAP_PX
-			+ AGENT_SESSION_RAIL_FOCUS_GUTTER_PX;
+	const railViewportMaxHeight = toAgentSessionRailViewportMaxHeight(
+		items.length,
+		maxVisibleItems,
+	);
 	// Under reduced motion the rail keeps its dock switched off entirely and the
 	// marks fall back to their own row's hover treatment, which resolves
 	// instantly. A slope that follows the cursor is exactly the kind of ambient
@@ -560,10 +561,12 @@ export function AgentSessionColumnRail({
 			    rail, rather than a hover handler per notch, because the swell is a
 			    property of the distance between them. `p-1` keeps the 4px
 			    focus-ring gutter *inside* the 32px column so the notches stay
-			    centered and remain unclipped at the ten-item scroll boundary.
+			    centered and remain unclipped at the scroll boundary.
 			    A negative horizontal margin here would shift them 4px left once
-			    the collapsed section clips overflow. Arrival layout stays on each
-			    `motion.li`. */}
+			    the collapsed section clips overflow. Gutter rest still caps the
+			    viewport at ten notches; embedded column presentation omits that
+			    cap so every session can show inside the column height. Arrival
+			    layout stays on each `motion.li`. */}
 			<ul
 				className="scrollbar-none flex min-h-0 w-full flex-1 flex-col items-center gap-1 overflow-y-auto overscroll-contain px-1 py-1"
 				onPointerEnter={isDocked ? dock.handlePointerEnter : undefined}
@@ -571,7 +574,9 @@ export function AgentSessionColumnRail({
 				onPointerMove={isDocked ? dock.handlePointerMove : undefined}
 				onScroll={isDocked ? dock.handleScroll : undefined}
 				ref={setListRef}
-				style={{ ...scrollMaskStyle, maxHeight: railViewportHeight }}
+				style={railViewportMaxHeight === undefined
+					? scrollMaskStyle
+					: { ...scrollMaskStyle, maxHeight: railViewportMaxHeight }}
 			>
 				{items.map((item: AgentSessionItem, index: number) => (
 					<AgentSessionNotch

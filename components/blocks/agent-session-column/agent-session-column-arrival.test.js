@@ -46,7 +46,7 @@ const DETAIL_SOURCE = readFileSync(
 test("newly synced work reaches both the cards and the rail", () => {
 	// One set, threaded to both forms — a collapsed column must not go quiet
 	// about arrivals just because it has no cards to mark.
-	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,400}?newItemIds=\{newItemIds\}/u);
+	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,700}?newItemIds=\{newItemIds\}/u);
 	assert.match(INDEX_SOURCE, /<AgentSession[^>]*newItemIds=\{newItemIds\}/u);
 	// Destructured rather than left in `...sessionProps`, or the rail could not
 	// see it.
@@ -144,8 +144,10 @@ test("circle unread rest uses default icon color", () => {
 	);
 	assert.match(NOTCH_MAGNIFY_SOURCE, /toAgentSessionNotchTone\(isSelected: boolean, isNew: boolean\)/u);
 	assert.match(NOTCH_MAGNIFY_SOURCE, /return isNew \|\| isSelected/u);
-	// The collapsed header answers "how many did I miss" for notches below the
-	// fold, and the spoken form keeps the total the visible `+N` gives up.
+	// Gutter rest can still flash +N. An inspected rail (column presentation)
+	// increments the pool total instead; the spoken form keeps both numbers.
+	assert.match(INDEX_SOURCE, /collapsedPresentation === "gutter" && newCount > 0/u);
+	assert.match(INDEX_SOURCE, /String\(sessionCount\)/u);
 	assert.match(INDEX_SOURCE, /\$\{sessionCount\} sessions, \$\{newCount\} newly synced/u);
 });
 
@@ -235,7 +237,7 @@ test("the arrival target survives until Motion finishes, then stays one-shot", (
 	// Both branches report completion and keep the beat set distinct from the mark.
 	assert.match(
 		INDEX_SOURCE,
-		/<AgentSessionColumnRail[\s\S]{0,400}?onArrivalComplete=\{handleArrivalComplete\}/u,
+		/<AgentSessionColumnRail[\s\S]{0,800}?onArrivalComplete=\{handleArrivalComplete\}/u,
 	);
 	assert.match(
 		INDEX_SOURCE,

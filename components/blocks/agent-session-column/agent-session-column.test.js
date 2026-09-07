@@ -10,6 +10,10 @@ const FOOTER_SOURCE = readFileSync(
 	"utf8",
 );
 const RAIL_COLUMN_SOURCE = readFileSync(join(__dirname, "agent-session-column-rail.tsx"), "utf8");
+const RAIL_VIEWPORT_SOURCE = readFileSync(
+	join(__dirname, "agent-session-column-rail-viewport.ts"),
+	"utf8",
+);
 const NOTCH_MARK_SOURCE = readFileSync(
 	join(__dirname, "../agent-session/agent-session-notch.tsx"),
 	"utf8",
@@ -616,8 +620,8 @@ test("both column widths are exported so a host surface can size itself to them"
 });
 
 test("the collapsed rail preserves session twin hover previews", () => {
-	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,500}?highlightedItemId=\{sessionProps\.highlightedItemId\}/u);
-	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,500}?onItemHover=\{sessionProps\.onItemHover\}/u);
+	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,800}?highlightedItemId=\{sessionProps\.highlightedItemId\}/u);
+	assert.match(INDEX_SOURCE, /<AgentSessionColumnRail[\s\S]{0,800}?onItemHover=\{sessionProps\.onItemHover\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /isHighlighted=\{item\.id === highlightedItemId\}/u);
 	assert.match(RAIL_COLUMN_SOURCE, /onPointerEnter=\{\(\) => \{[\s\S]{0,150}?onItemHover\?\.\(item\)/u);
 	assert.match(RAIL_COLUMN_SOURCE, /onPointerLeave=\{\(\) => \{[\s\S]{0,150}?onItemHover\?\.\(null\)/u);
@@ -766,18 +770,41 @@ test("the collapsed rail fades notches with ScrollMask viewport mask-image", () 
 		RAIL_COLUMN_SOURCE,
 		/buildScrollMaskStyle\(\{\s*fadeBottom: showBottomScrollMask,\s*fadeSize: AGENT_SESSION_RAIL_FADE_SIZE,\s*fadeTop: showTopScrollMask,\s*scrollbarWidth: 0,\s*\}\)/u,
 	);
-	assert.match(RAIL_COLUMN_SOURCE, /style=\{\{ \.\.\.scrollMaskStyle, maxHeight: railViewportHeight \}\}/u);
+	assert.match(
+		RAIL_COLUMN_SOURCE,
+		/style=\{railViewportMaxHeight === undefined\s*\? scrollMaskStyle\s*: \{ \.\.\.scrollMaskStyle, maxHeight: railViewportMaxHeight \}\}/u,
+	);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /<motion\.ul/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /ScrollMaskEdgeOverlay/u);
 });
 
-test("the collapsed rail shows at most ten dots before it scrolls under the mask", () => {
-	assert.match(RAIL_COLUMN_SOURCE, /AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS = 10/u);
-	assert.match(RAIL_COLUMN_SOURCE, /Math\.min\(items\.length, AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS\)/u);
-	assert.match(RAIL_COLUMN_SOURCE, /maxHeight: railViewportHeight/u);
+test("the gutter-collapsed rail shows at most ten dots before it scrolls under the mask", () => {
+	assert.match(RAIL_VIEWPORT_SOURCE, /AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS = 10/u);
+	assert.match(RAIL_COLUMN_SOURCE, /AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS/u);
+	assert.match(
+		INDEX_SOURCE,
+		/maxVisibleItems=\{collapsedPresentation === "gutter"\s*\? AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS\s*: undefined\}/u,
+	);
+	assert.match(RAIL_COLUMN_SOURCE, /toAgentSessionRailViewportMaxHeight\(/u);
+	assert.match(RAIL_COLUMN_SOURCE, /maxHeight: railViewportMaxHeight/u);
 	assert.match(RAIL_COLUMN_SOURCE, /w-full flex-1 flex-col/u);
 	assert.doesNotMatch(RAIL_COLUMN_SOURCE, /w-full flex-none flex-col/u);
 	assert.match(RAIL_COLUMN_SOURCE, /items\.map\(/u);
+});
+
+test("the embedded column rail does not cap the viewport to ten notches", () => {
+	assert.match(
+		INDEX_SOURCE,
+		/maxVisibleItems=\{collapsedPresentation === "gutter"\s*\? AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS\s*: undefined\}/u,
+	);
+	assert.match(
+		RAIL_COLUMN_SOURCE,
+		/style=\{railViewportMaxHeight === undefined\s*\? scrollMaskStyle\s*: \{ \.\.\.scrollMaskStyle, maxHeight: railViewportMaxHeight \}\}/u,
+	);
+	assert.doesNotMatch(
+		RAIL_COLUMN_SOURCE,
+		/Math\.min\(items\.length, AGENT_SESSION_RAIL_MAX_VISIBLE_ITEMS\)/u,
+	);
 });
 
 test("the collapsed rail receives visible items only and collapse leaves hidden view", () => {

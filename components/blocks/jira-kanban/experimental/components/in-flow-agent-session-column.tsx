@@ -90,7 +90,6 @@ function useInFlowAgentSessionColumnInteraction(
 		handlePointerEnter,
 		handlePointerLeave,
 		isEmbedded: isHovered || isPersistentExpanded,
-		isHovered,
 		isPersistentExpanded,
 	};
 }
@@ -204,7 +203,6 @@ export function InFlowAgentSessionColumn({
 		handlePointerEnter,
 		handlePointerLeave,
 		isEmbedded,
-		isHovered,
 		isPersistentExpanded,
 	} = useInFlowAgentSessionColumnInteraction(
 		agentSessionColumn.collapsed,
@@ -217,7 +215,7 @@ export function InFlowAgentSessionColumn({
 
 	return (
 		<JiraSessionFlyoutSuspensionProvider
-			suspended={sessionFlyoutsSuspended || (isHovered && !isPersistentExpanded)}
+			suspended={sessionFlyoutsSuspended || !isEmbedded}
 		>
 			<div
 				className="relative flex min-h-0 shrink-0 self-stretch"
