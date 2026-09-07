@@ -12,7 +12,7 @@
  */
 
 /** WebGL loops are const-bounded, so the shader and this model share one cap. */
-export const LINKING_EFFECT_MAX_BALLS = 8;
+export const JIRA_LINKING_MAX_BALLS = 8;
 
 /**
  * How many subjects tint the field, however many are being linked.
@@ -22,10 +22,10 @@ export const LINKING_EFFECT_MAX_BALLS = 8;
  * field says about any of them — so a large cohort mixes its first two and the
  * rest ride along in the source pill's own surface colour.
  */
-export const LINKING_EFFECT_MAX_TINT_SUBJECTS = 2;
+export const JIRA_LINKING_MAX_TINT_SUBJECTS = 2;
 
 /** Slack around the field so the smooth-union neck is never clipped. */
-export const LINKING_EFFECT_REGION_PADDING_PX = 120;
+export const JIRA_LINKING_REGION_PADDING_PX = 120;
 
 const AVATAR_RADIUS_PX = 11;
 /** Less than a diameter, so avatars overlap the way an avatar group does. */
@@ -59,32 +59,32 @@ const ALPHA_COLLAPSE_SPAN = 0.3;
 const AVATAR_DISSOLVE_START = 0.6;
 const AVATAR_DISSOLVE_SPAN = 0.4;
 
-export type LinkingEffectBallShape = "circle" | "pill";
+export type JiraLinkingBallShape = "circle" | "pill";
 
-export interface LinkingEffectBall {
+export interface JiraLinkingBall {
 	cx: number;
 	cy: number;
 	/** Circle radius, or the corner radius when `shape` is `"pill"`. */
 	radius: number;
 	halfWidth: number;
 	halfHeight: number;
-	shape: LinkingEffectBallShape;
+	shape: JiraLinkingBallShape;
 	/** Avatar atlas cell, or -1 when this ball has no texture and uses `tint`. */
 	atlasIndex: number;
 	/** 0..1 sRGB fallback colour. */
 	tint: readonly [number, number, number];
 }
 
-export interface LinkingEffectRegion {
+export interface JiraLinkingRegion {
 	left: number;
 	top: number;
 	width: number;
 	height: number;
 }
 
-export interface LinkingEffectFrame {
-	balls: readonly LinkingEffectBall[];
-	region: LinkingEffectRegion;
+export interface JiraLinkingFrame {
+	balls: readonly JiraLinkingBall[];
+	region: JiraLinkingRegion;
 	/** The `k` handed to `opSmoothUnion`, in px. */
 	smoothness: number;
 	/** 0..1 chromatic split strength. */
@@ -111,13 +111,13 @@ export interface LinkingEffectFrame {
 	tintStrength: number;
 }
 
-export interface LinkingEffectMember {
+export interface JiraLinkingMember {
 	id: string;
 	atlasIndex: number;
 	tint: readonly [number, number, number];
 }
 
-export interface LinkingEffectFrameInput {
+export interface JiraLinkingFrameInput {
 	pointer: { x: number; y: number };
 	sourceRect: { left: number; top: number; width: number; height: number } | null;
 	/**
@@ -140,7 +140,7 @@ export interface LinkingEffectFrameInput {
 	fuseProgress: number;
 	/** px/frame of the travelling chip. */
 	velocity: { x: number; y: number };
-	members: readonly LinkingEffectMember[];
+	members: readonly JiraLinkingMember[];
 }
 
 function clamp01(value: number): number {
@@ -165,7 +165,7 @@ function smoothstep01(t: number): number {
 	return x * x * (3 - 2 * x);
 }
 
-function toRegion(balls: readonly LinkingEffectBall[]): LinkingEffectRegion {
+function toRegion(balls: readonly JiraLinkingBall[]): JiraLinkingRegion {
 	let minX = Number.POSITIVE_INFINITY;
 	let minY = Number.POSITIVE_INFINITY;
 	let maxX = Number.NEGATIVE_INFINITY;
@@ -179,10 +179,10 @@ function toRegion(balls: readonly LinkingEffectBall[]): LinkingEffectRegion {
 	}
 
 	return {
-		height: Math.max(0, maxY - minY + LINKING_EFFECT_REGION_PADDING_PX * 2),
-		left: minX - LINKING_EFFECT_REGION_PADDING_PX,
-		top: minY - LINKING_EFFECT_REGION_PADDING_PX,
-		width: Math.max(0, maxX - minX + LINKING_EFFECT_REGION_PADDING_PX * 2),
+		height: Math.max(0, maxY - minY + JIRA_LINKING_REGION_PADDING_PX * 2),
+		left: minX - JIRA_LINKING_REGION_PADDING_PX,
+		top: minY - JIRA_LINKING_REGION_PADDING_PX,
+		width: Math.max(0, maxX - minX + JIRA_LINKING_REGION_PADDING_PX * 2),
 	};
 }
 
@@ -192,9 +192,9 @@ function toRegion(balls: readonly LinkingEffectBall[]): LinkingEffectRegion {
  * Returns `null` when there is nothing to draw: no measured chip, or the chip
  * is neither near a card nor mid-fuse.
  */
-export function resolveLinkingEffectFrame(
-	input: Readonly<LinkingEffectFrameInput>,
-): LinkingEffectFrame | null {
+export function resolveJiraLinkingFrame(
+	input: Readonly<JiraLinkingFrameInput>,
+): JiraLinkingFrame | null {
 	const { sourceRect, targetAnchor } = input;
 	const nearness = clamp01(input.nearness);
 	const fuseProgress = clamp01(input.fuseProgress);
@@ -216,7 +216,7 @@ export function resolveLinkingEffectFrame(
 	const chipHalfHeight = sourceRect.height / 2;
 	const chipCy = sourceRect.top + chipHalfHeight;
 
-	const balls: LinkingEffectBall[] = [{
+	const balls: JiraLinkingBall[] = [{
 		atlasIndex: -1,
 		cx: towardDockX(sourceRect.left + chipHalfWidth),
 		cy: towardDockY(chipCy),
@@ -232,8 +232,8 @@ export function resolveLinkingEffectFrame(
 	const avatarCapacity = Math.max(
 		0,
 		Math.min(
-			LINKING_EFFECT_MAX_TINT_SUBJECTS,
-			LINKING_EFFECT_MAX_BALLS - 1 - (targetAnchor ? 1 : 0),
+			JIRA_LINKING_MAX_TINT_SUBJECTS,
+			JIRA_LINKING_MAX_BALLS - 1 - (targetAnchor ? 1 : 0),
 		),
 	);
 	const avatars = input.members.slice(0, avatarCapacity);
@@ -309,8 +309,8 @@ export function resolveLinkingEffectFrame(
  * `TINT_FADE_DEPTH_PX` inside on both axes.
  */
 function resolveTintStrength(
-	source: LinkingEffectBall | undefined,
-	target: LinkingEffectBall | null,
+	source: JiraLinkingBall | undefined,
+	target: JiraLinkingBall | null,
 ): number {
 	if (!source || !target) {
 		return 1;
@@ -344,8 +344,8 @@ function resolveTintStrength(
  * far away when it is nearly touching.
  */
 function resolveNeckSmoothness(
-	source: LinkingEffectBall | undefined,
-	target: LinkingEffectBall | null,
+	source: JiraLinkingBall | undefined,
+	target: JiraLinkingBall | null,
 ): number {
 	if (!source || !target) {
 		return SMOOTHNESS_MAX_PX;

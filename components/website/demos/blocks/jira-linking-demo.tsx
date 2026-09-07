@@ -27,11 +27,11 @@ import {
 import type { PointerDragPosition } from "@/components/ui-custom/hooks/use-pointer-drag";
 import { Button } from "@/components/ui/button";
 import {
-	LinkingEffect,
-	resolveLinkingEffectNearness,
-	type LinkingEffectIdentity,
-	type LinkingEffectTarget,
-} from "@/components/visual/linking-effect";
+	JiraLinking,
+	resolveJiraLinkingNearness,
+	type JiraLinkingIdentity,
+	type JiraLinkingTarget,
+} from "@/components/blocks/jira-linking";
 
 /**
  * The travelling at-mention chip `AgentSessionMediumDrag` portals to the body.
@@ -63,7 +63,7 @@ interface Approach {
 	inside: boolean;
 	nearness: number;
 	/** The whole shell — what the field grows into during the approach. */
-	target: LinkingEffectTarget | null;
+	target: JiraLinkingTarget | null;
 }
 
 const IDLE_APPROACH: Approach = {
@@ -89,7 +89,7 @@ function toRect(node: Element | null | undefined): Rect | null {
 	return { bottom, left, right, top };
 }
 
-function toTarget(shell: Rect): LinkingEffectTarget {
+function toTarget(shell: Rect): JiraLinkingTarget {
 	return {
 		anchor: { x: (shell.left + shell.right) / 2, y: (shell.top + shell.bottom) / 2 },
 		height: shell.bottom - shell.top,
@@ -100,7 +100,7 @@ function toTarget(shell: Rect): LinkingEffectTarget {
 
 function toIdentities(
 	sessions: readonly AgentSessionItem[],
-): readonly LinkingEffectIdentity[] {
+): readonly JiraLinkingIdentity[] {
 	return sessions.map((session) => ({
 		id: session.id,
 		imageSrc: session.agent.avatarSrc,
@@ -120,7 +120,7 @@ function ExampleStage({ children, label }: Readonly<{ children: ReactNode; label
 	);
 }
 
-interface LinkingEffectStageProps {
+interface JiraLinkingStageProps {
 	label: string;
 	/** The first session leads the drag; every session tints the field. */
 	sessions: readonly AgentSessionItem[];
@@ -134,7 +134,7 @@ interface LinkingEffectStageProps {
  * travels an at-mention chip, and the card supplies its own grey shell, attach
  * chin and chin row. The effect only has to supply the goo.
  */
-function LinkingEffectStage({ label, sessions }: Readonly<LinkingEffectStageProps>) {
+function JiraLinkingStage({ label, sessions }: Readonly<JiraLinkingStageProps>) {
 	// `AgentSessionCard` owns a hover flyout, so it needs a handle and a session
 	// even though this stage never opens one. Both are per-stage and stable.
 	const [flyoutHandle] = useState(createJiraSessionFlyoutHandle);
@@ -174,7 +174,7 @@ function LinkingEffectStage({ label, sessions }: Readonly<LinkingEffectStageProp
 			const next = shell
 				? {
 					inside: distance === 0,
-					nearness: resolveLinkingEffectNearness(distance),
+					nearness: resolveJiraLinkingNearness(distance),
 					target: toTarget(shell),
 				}
 				: IDLE_APPROACH;
@@ -261,7 +261,7 @@ function LinkingEffectStage({ label, sessions }: Readonly<LinkingEffectStageProp
 				</div>
 			</div>
 
-			<LinkingEffect
+			<JiraLinking
 				identities={identities}
 				nearness={linked ? 0 : approach.nearness}
 				// Approach only. The drop is acknowledged by the chin row's own
@@ -295,14 +295,14 @@ const LEAD_SESSION = AGENT_SESSION_ITEMS[0];
  */
 const COHORT = AGENT_SESSION_ITEMS.slice(1, 4);
 
-export function LinkingEffectDragToLinkExample() {
-	return <LinkingEffectStage label="Drag to link" sessions={[LEAD_SESSION]} />;
+export function JiraLinkingDragToLinkExample() {
+	return <JiraLinkingStage label="Drag to link" sessions={[LEAD_SESSION]} />;
 }
 
-export function LinkingEffectColourMeltExample() {
-	return <LinkingEffectStage label="Multi-subject colour melt" sessions={COHORT} />;
+export function JiraLinkingColourMeltExample() {
+	return <JiraLinkingStage label="Multi-subject colour melt" sessions={COHORT} />;
 }
 
-export default function LinkingEffectDemo() {
-	return <LinkingEffectDragToLinkExample />;
+export default function JiraLinkingDemo() {
+	return <JiraLinkingDragToLinkExample />;
 }

@@ -4,9 +4,9 @@ import { useMemo } from "react";
 
 import type { JiraIssueAgentSessionTransferMember } from "@/components/blocks/jira-issue/agent-session-drag";
 import {
-	LinkingEffect,
-	type LinkingEffectIdentity,
-} from "@/components/visual/linking-effect";
+	JiraLinking,
+	type JiraLinkingIdentity,
+} from "@/components/blocks/jira-linking";
 
 import { resolveAgentBrandTint } from "../lib/agent-brand-tint";
 import type { BoardAgentSessionAttachProximity } from "../lib/board-agent-session-drag";
@@ -33,7 +33,7 @@ const FUSION_Z_INDEX = 290;
  */
 function toLinkingIdentities(
 	members: readonly JiraIssueAgentSessionTransferMember[] | null,
-): readonly LinkingEffectIdentity[] | null {
+): readonly JiraLinkingIdentity[] | null {
 	if (!members) {
 		return null;
 	}
@@ -54,7 +54,7 @@ export interface SessionFusionOverlayProps {
 }
 
 /**
- * Board adapter for the reusable linking effect.
+ * Board adapter for the reusable Jira linking.
  *
  * Approach only. The drop is acknowledged by a brand sweep across the chin rows
  * the sessions land in — see `toBoardAgentSessionLinkFlash` — rather than by
@@ -68,7 +68,7 @@ export function SessionFusionOverlay({
 	const identities = useMemo(() => toLinkingIdentities(members), [members]);
 
 	return (
-		<LinkingEffect
+		<JiraLinking
 			identities={identities}
 			nearness={proximity?.nearness ?? 0}
 			release={null}

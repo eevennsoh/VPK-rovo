@@ -1,18 +1,18 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
-export const LINKING_EFFECT_DETAIL: ComponentDetail = {
+export const JIRA_LINKING_DETAIL: ComponentDetail = {
 	description:
 		"A WebGL2 metaball field that fuses a travelling element into the thing it is being linked to. The two silhouettes neck together through a signed-distance smooth union as they close, subject colours blend in OKLab across the neck, and on release they collapse into the target with velocity-driven chromatic dispersion. The host owns the gesture; this only draws.",
 	importStatement: `import {
-	LinkingEffect,
-	resolveLinkingEffectNearness,
-	type LinkingEffectIdentity,
-	type LinkingEffectTarget,
-} from "@/components/visual/linking-effect";`,
-	usage: `<LinkingEffect
+	JiraLinking,
+	resolveJiraLinkingNearness,
+	type JiraLinkingIdentity,
+	type JiraLinkingTarget,
+} from "@/components/blocks/jira-linking";`,
+	usage: `<JiraLinking
 	sourceSelector="[data-drag-chip]"
 	target={{ anchor: { x: 240, y: 372 }, height: 144, radius: 10, width: 272 }}
-	nearness={resolveLinkingEffectNearness(distanceToCard)}
+	nearness={resolveJiraLinkingNearness(distanceToCard)}
 	identities={[{ id: "claude", tint: [0.85, 0.47, 0.34] }]}
 	release={dropped ? { id: releaseId, target } : null}
 	onFuseSettled={clearRelease}
@@ -27,13 +27,13 @@ export const LINKING_EFFECT_DETAIL: ComponentDetail = {
 			title: "Drag to link",
 			description:
 				"Drag the session pill onto the work item. The chin bleeds in with proximity, the two silhouettes neck together, and the drop fuses them.",
-			demoSlug: "linking-effect-drag-to-link",
+			demoSlug: "jira-linking-drag-to-link",
 		},
 		{
 			title: "Multi-subject colour melt",
 			description:
 				"Three sessions travel together. Only the first two tint the field — a pair makes a legible gradient across the neck, where three or more average out in OKLab into a muddy neutral.",
-			demoSlug: "linking-effect-colour-melt",
+			demoSlug: "jira-linking-colour-melt",
 		},
 	],
 	props: [
@@ -46,7 +46,7 @@ export const LINKING_EFFECT_DETAIL: ComponentDetail = {
 		},
 		{
 			name: "target",
-			type: "LinkingEffectTarget | null",
+			type: "JiraLinkingTarget | null",
 			required: true,
 			description:
 				"Where the field is pulling: `{ anchor: { x, y }, width }` in client coordinates. Null when nothing is targeted.",
@@ -56,18 +56,18 @@ export const LINKING_EFFECT_DETAIL: ComponentDetail = {
 			type: "number",
 			required: true,
 			description:
-				"0-1 closeness of source to target. Drives field alpha and how wide the neck reaches. Use `resolveLinkingEffectNearness(distance)` for the house smoothstep ramp.",
+				"0-1 closeness of source to target. Drives field alpha and how wide the neck reaches. Use `resolveJiraLinkingNearness(distance)` for the house smoothstep ramp.",
 		},
 		{
 			name: "identities",
-			type: "readonly LinkingEffectIdentity[] | null",
+			type: "readonly JiraLinkingIdentity[] | null",
 			required: true,
 			description:
-				"Subjects that melt together. Only the first two tint the field (`LINKING_EFFECT_MAX_TINT_SUBJECTS`) — more than that averages into a muddy neutral. Keep referentially stable per gesture; the texture atlas rebuilds when the array identity changes.",
+				"Subjects that melt together. Only the first two tint the field (`JIRA_LINKING_MAX_TINT_SUBJECTS`) — more than that averages into a muddy neutral. Keep referentially stable per gesture; the texture atlas rebuilds when the array identity changes.",
 		},
 		{
 			name: "release",
-			type: "LinkingEffectRelease | null",
+			type: "JiraLinkingRelease | null",
 			required: true,
 			description:
 				"Set on drop to run the 400ms fuse: `{ id, target }`. Carries its own target snapshot because the source normally unmounts in the same commit. Bump `id` to restart.",
@@ -93,7 +93,7 @@ export const LINKING_EFFECT_DETAIL: ComponentDetail = {
 	],
 	subComponents: [
 		{
-			name: "LinkingEffectIdentity",
+			name: "JiraLinkingIdentity",
 			description:
 				"One subject's identity. Colour is the primary channel and the image is opportunistic — most hosts identify a subject with a brand logo component rather than an image URL.",
 			props: [

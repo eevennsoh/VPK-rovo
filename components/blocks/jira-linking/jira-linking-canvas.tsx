@@ -3,12 +3,12 @@
 import { useReducedMotion } from "motion/react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
-import type { LinkingEffectFrame } from "./field";
+import type { JiraLinkingFrame } from "./field";
 import {
-	createLinkingEffectUniformBuffers,
-	packLinkingEffectUniforms,
-	resolveLinkingEffectSplitAxis,
-	type LinkingEffectUniformBuffers,
+	createJiraLinkingUniformBuffers,
+	packJiraLinkingUniforms,
+	resolveJiraLinkingSplitAxis,
+	type JiraLinkingUniformBuffers,
 } from "./uniforms";
 
 /**
@@ -228,7 +228,7 @@ float hash21(vec2 p) {
 
 void main() {
 	// v_uv is GL-oriented; client space runs y-down. Ball centres are already
-	// region-local (packLinkingEffectUniforms does the translation in f64, so
+	// region-local (packJiraLinkingUniforms does the translation in f64, so
 	// highp never has to difference two four-digit client coordinates).
 	vec2 fragCoord = vec2(v_uv.x, 1.0 - v_uv.y) * u_resolution;
 	vec2 p = fragCoord / max(u_pixelRatio, 0.0001);
@@ -448,7 +448,7 @@ function disposeFusionPipeline(gl: WebGL2RenderingContext, pipeline: FusionPipel
 function uploadUniforms(
 	gl: WebGL2RenderingContext,
 	uniforms: FusionUniforms,
-	buffers: LinkingEffectUniformBuffers,
+	buffers: JiraLinkingUniformBuffers,
 	ballCount: number,
 ) {
 	if (uniforms.ballCount) gl.uniform1i(uniforms.ballCount, ballCount);
@@ -461,9 +461,9 @@ function uploadUniforms(
 	if (uniforms.ballTint) gl.uniform3fv(uniforms.ballTint, buffers.tint);
 }
 
-export interface LinkingEffectCanvasProps {
+export interface JiraLinkingCanvasProps {
 	/** Live field for this frame, in client coordinates. */
-	frame: LinkingEffectFrame;
+	frame: JiraLinkingFrame;
 	/** Horizontal strip of square avatar cells, or null while none exist. */
 	atlas: HTMLCanvasElement | null;
 	/** How many cells `atlas` actually holds. */
@@ -471,7 +471,7 @@ export interface LinkingEffectCanvasProps {
 	/**
 	 * Chip velocity in px/frame. `frame` folds velocity into `dispersion` and
 	 * does not echo the vector, so pass the same value handed to
-	 * `resolveLinkingEffectFrame` to aim the chromatic split. Omitting it falls
+	 * `resolveJiraLinkingFrame` to aim the chromatic split. Omitting it falls
 	 * back to the chip-to-dock axis.
 	 */
 	velocity?: Readonly<{ x: number; y: number }> | null;
@@ -485,12 +485,12 @@ export interface LinkingEffectCanvasProps {
  * ref rather than the effect's dependency list — relinking the program 60
  * times a second would jank the drag it is supposed to make feel good.
  */
-export function LinkingEffectCanvas({
+export function JiraLinkingCanvas({
 	atlas,
 	atlasCells,
 	frame,
 	velocity = null,
-}: Readonly<LinkingEffectCanvasProps>) {
+}: Readonly<JiraLinkingCanvasProps>) {
 	const prefersReducedMotion = useReducedMotion() === true;
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const propsRef = useRef({ atlas, atlasCells, frame, velocity });
@@ -521,7 +521,7 @@ export function LinkingEffectCanvas({
 			return;
 		}
 
-		const uniformBuffers = createLinkingEffectUniformBuffers();
+		const uniformBuffers = createJiraLinkingUniformBuffers();
 		const start = performance.now();
 		let animationFrame = 0;
 		let cancelled = false;
@@ -570,7 +570,7 @@ export function LinkingEffectCanvas({
 
 			syncAtlas(active, live.atlas, now);
 
-			const ballCount = packLinkingEffectUniforms(
+			const ballCount = packJiraLinkingUniforms(
 				uniformBuffers,
 				live.frame,
 				live.atlasCells,
@@ -593,7 +593,7 @@ export function LinkingEffectCanvas({
 					gl.uniform1f(uniforms.tintStrength, live.frame.tintStrength);
 				}
 				if (uniforms.velocity) {
-					const [axisX, axisY] = resolveLinkingEffectSplitAxis(live.frame, live.velocity);
+					const [axisX, axisY] = resolveJiraLinkingSplitAxis(live.frame, live.velocity);
 					gl.uniform2f(uniforms.velocity, axisX, axisY);
 				}
 				uploadUniforms(gl, uniforms, uniformBuffers, ballCount);
@@ -642,7 +642,7 @@ export function LinkingEffectCanvas({
 	return (
 		<canvas
 			aria-hidden="true"
-			data-slot="linking-effect-canvas"
+			data-slot="jira-linking-canvas"
 			ref={canvasRef}
 			style={{
 				display: "block",

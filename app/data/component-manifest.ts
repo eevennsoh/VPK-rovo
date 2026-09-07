@@ -418,6 +418,7 @@ export const BLOCK_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	blockComponent("jira-activity", "Jira Activity"),
 	blockComponent("jira-insights", "Jira Insights"),
 	blockComponent("jira-issue", "Jira Issue"),
+	blockComponent("jira-linking", "Jira Linking"),
 	blockComponent("jira-list", "Jira List"),
 	blockComponent("jira-kanban", "Jira Kanban"),
 	blockComponent("jira-dropzone", "Jira Dropzone"),
@@ -651,7 +652,6 @@ export const UTILITY_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 
 export const VISUAL_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	visualComponent("gooey", "Gooey", "@/components/visual/gooey"),
-	visualComponent("linking-effect", "Linking Effect", "@/components/visual/linking-effect"),
 	visualComponent("typography", "Typography", "@/lib/tokens"),
 	visualComponent("color", "Color", "@/app/tailwind-theme.css\n@/app/shadcn-theme.css"),
 	visualComponent("shadow", "Shadow", "@/lib/tokens"),

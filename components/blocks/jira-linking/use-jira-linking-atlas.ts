@@ -4,10 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 
 import { parseColor } from "@/components/ui-custom/lib/shimmer-colors";
 
-import type { LinkingEffectMember } from "./field";
+import type { JiraLinkingMember } from "./field";
 import {
-	LINKING_EFFECT_ATLAS_CELL_PX,
-	LINKING_EFFECT_NO_ATLAS_INDEX,
+	JIRA_LINKING_ATLAS_CELL_PX,
+	JIRA_LINKING_NO_ATLAS_INDEX,
 } from "./uniforms";
 
 /**
@@ -21,7 +21,7 @@ import {
  * grey. Pass `tint` when the host already has a palette; otherwise one is
  * derived from `id` so the same subject is always the same colour.
  */
-export interface LinkingEffectIdentity {
+export interface JiraLinkingIdentity {
 	id: string;
 	/** Same-origin image drawn into the texture atlas. */
 	imageSrc?: string;
@@ -57,11 +57,11 @@ const TINT_VARIABLES = [
 	"--color-yellow-500",
 ] as const;
 
-export interface LinkingEffectAtlas {
+export interface JiraLinkingAtlas {
 	/** One horizontal row of square image cells, or null when none decoded. */
 	atlas: HTMLCanvasElement | null;
 	atlasCells: number;
-	members: readonly LinkingEffectMember[];
+	members: readonly JiraLinkingMember[];
 }
 
 /** FNV-1a, so the same seed always lands on the same accent. */
@@ -89,7 +89,7 @@ function resolveTintVariable(variable: string): readonly [number, number, number
 }
 
 function resolveIdentityTint(
-	identity: Readonly<LinkingEffectIdentity>,
+	identity: Readonly<JiraLinkingIdentity>,
 ): readonly [number, number, number] {
 	if (identity.tint) {
 		return identity.tint;
@@ -103,7 +103,7 @@ function resolveIdentityTint(
 }
 
 function toImageSources(
-	identities: readonly LinkingEffectIdentity[] | null,
+	identities: readonly JiraLinkingIdentity[] | null,
 ): readonly string[] {
 	const sources: string[] = [];
 	for (const identity of identities ?? []) {
@@ -115,11 +115,11 @@ function toImageSources(
 }
 
 function toFusionMembers(
-	identities: readonly LinkingEffectIdentity[] | null,
-): readonly LinkingEffectMember[] {
+	identities: readonly JiraLinkingIdentity[] | null,
+): readonly JiraLinkingMember[] {
 	let atlasIndex = 0;
 	return (identities ?? []).map((identity) => ({
-		atlasIndex: identity.imageSrc ? atlasIndex++ : LINKING_EFFECT_NO_ATLAS_INDEX,
+		atlasIndex: identity.imageSrc ? atlasIndex++ : JIRA_LINKING_NO_ATLAS_INDEX,
 		id: identity.id,
 		tint: resolveIdentityTint(identity),
 	}));
@@ -132,9 +132,9 @@ function toFusionMembers(
  * gesture — it is re-read on every pointer move otherwise, and the atlas would
  * be rebuilt each frame.
  */
-export function useLinkingEffectAtlas(
-	identities: readonly LinkingEffectIdentity[] | null,
-): LinkingEffectAtlas {
+export function useJiraLinkingAtlas(
+	identities: readonly JiraLinkingIdentity[] | null,
+): JiraLinkingAtlas {
 	const members = useMemo(() => toFusionMembers(identities), [identities]);
 	const sources = useMemo(() => toImageSources(identities), [identities]);
 	const [atlas, setAtlas] = useState<HTMLCanvasElement | null>(null);
@@ -146,8 +146,8 @@ export function useLinkingEffectAtlas(
 		}
 
 		const canvas = document.createElement("canvas");
-		canvas.width = sources.length * LINKING_EFFECT_ATLAS_CELL_PX;
-		canvas.height = LINKING_EFFECT_ATLAS_CELL_PX;
+		canvas.width = sources.length * JIRA_LINKING_ATLAS_CELL_PX;
+		canvas.height = JIRA_LINKING_ATLAS_CELL_PX;
 		const context = canvas.getContext("2d");
 		if (!context) {
 			setAtlas(null);
@@ -159,17 +159,17 @@ export function useLinkingEffectAtlas(
 			const image = new Image();
 			// SVGs without an intrinsic size draw nothing unless told how big they
 			// are, and the atlas can only take same-origin images without tainting.
-			image.width = LINKING_EFFECT_ATLAS_CELL_PX;
-			image.height = LINKING_EFFECT_ATLAS_CELL_PX;
+			image.width = JIRA_LINKING_ATLAS_CELL_PX;
+			image.height = JIRA_LINKING_ATLAS_CELL_PX;
 			image.decoding = "async";
 			image.onload = () => {
 				if (cancelled) return;
 				context.drawImage(
 					image,
-					index * LINKING_EFFECT_ATLAS_CELL_PX,
+					index * JIRA_LINKING_ATLAS_CELL_PX,
 					0,
-					LINKING_EFFECT_ATLAS_CELL_PX,
-					LINKING_EFFECT_ATLAS_CELL_PX,
+					JIRA_LINKING_ATLAS_CELL_PX,
+					JIRA_LINKING_ATLAS_CELL_PX,
 				);
 			};
 			image.src = source;
