@@ -13,7 +13,6 @@ import {
 import { JiraSessionFlyoutSuspensionProvider } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
 import { SidebarResizeHandle } from "@/components/ui/sidebar";
-import { ScrollMaskEdgeOverlay } from "@/components/visual/scroll-mask";
 import { cn } from "@/lib/utils";
 
 import {
@@ -306,18 +305,11 @@ export function InFlowAgentSessionColumn({
 		>
 			<div
 				ref={hostRef}
-				className="relative flex min-h-0 shrink-0 self-stretch"
+				className="relative z-30 flex min-h-0 shrink-0 self-stretch"
 				onPointerDown={isEmbedded ? undefined : handleGutterPointerDown}
 				onPointerEnter={handlePointerEnter}
 				onPointerLeave={handlePointerLeave}
 			>
-				{showGutterScrollMask ? (
-					<ScrollMaskEdgeOverlay
-						data-agent-session-column-gutter-mask=""
-						edge="left"
-						fadeSize={IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX}
-					/>
-				) : null}
 				{isEmbedded ? null : (
 					<div
 						aria-hidden="true"
@@ -329,7 +321,16 @@ export function InFlowAgentSessionColumn({
 							width: IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX
 								+ IN_FLOW_AGENT_SESSION_COLUMN_SURFACE_LEADING_BORDER_PX,
 						}}
-					/>
+					>
+						{showGutterScrollMask ? (
+							<div
+								aria-hidden="true"
+								className="pointer-events-none absolute inset-y-0 start-0 z-40 bg-surface"
+								data-agent-session-column-gutter-fill=""
+								style={{ width: IN_FLOW_AGENT_SESSION_COLUMN_INSET_PX }}
+							/>
+						) : null}
+					</div>
 				)}
 				<InFlowAgentSessionColumnFootprint
 					columnFrame={columnFrame}

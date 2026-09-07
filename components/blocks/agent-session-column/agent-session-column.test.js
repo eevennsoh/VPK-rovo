@@ -880,6 +880,7 @@ test("the expanded header sizes its overflow trigger for the host surface", () =
 	);
 	assert.doesNotMatch(HEADER_SOURCE, /group-hover\/session-column:block/u);
 	assert.match(HEADER_SOURCE, /has-\[\[data-popup-open\]\]:opacity-100/u);
+	assert.match(HEADER_SOURCE, /group-has-\[\[data-popup-open\]\]\/header-actions:opacity-100/u);
 	assert.match(INDEX_SOURCE, /items=\{filteredViewItems\}/u);
 	assert.match(INDEX_SOURCE, /onLinkWorkItem=\{sessionProps\.onLinkWorkItem\}/u);
 });
@@ -949,6 +950,10 @@ test("the expanded header filter popover covers owner, agent, date, artifacts, a
 	assert.match(FILTER_MENU_SOURCE, /title="Session owner"/u);
 	assert.match(FILTER_MENU_SOURCE, /title="Agents"/u);
 	assert.match(FILTER_SECTIONS_SOURCE, /title="Date\/time range"/u);
+	assert.match(FILTER_SECTIONS_SOURCE, /"last-7-days": "Last 7d"/u);
+	assert.match(FILTER_SECTIONS_SOURCE, /"last-30-days": "Last 30d"/u);
+	assert.doesNotMatch(FILTER_SECTIONS_SOURCE, /Last 7 days/u);
+	assert.doesNotMatch(FILTER_SECTIONS_SOURCE, /Last 30 days/u);
 	assert.match(FILTER_MENU_SOURCE, /label="Contains artifacts"/u);
 	assert.match(FILTER_MENU_SOURCE, /label="Link suggestions"/u);
 	assert.match(FILTER_SOURCE, /name: "Claude"/u);
@@ -960,7 +965,7 @@ test("the expanded header filter popover covers owner, agent, date, artifacts, a
 	assert.match(FILTER_SECTIONS_SOURCE, /className="rich-text-command-menu-heading"/u);
 	assert.match(FILTER_SECTIONS_SOURCE, /role="presentation"/u);
 	assert.doesNotMatch(FILTER_SECTIONS_SOURCE, /uppercase leading-4/u);
-	assert.match(FILTER_MENU_SOURCE, /gap-0 rounded-xl p-1/u);
+	assert.match(FILTER_MENU_SOURCE, /w-max min-w-\[min\(20rem,calc\(100vw-32px\)\)\] max-w-\[calc\(100vw-32px\)\] gap-0 rounded-xl p-1/u);
 	assert.doesNotMatch(FILTER_MENU_SOURCE, /className="w-80 max-w-\[calc\(100vw-32px\)\] p-3"/u);
 	assert.doesNotMatch(FILTER_SECTIONS_SOURCE, /label="Yes"/u);
 	assert.doesNotMatch(FILTER_SECTIONS_SOURCE, /label="No"/u);
@@ -984,6 +989,10 @@ test("the expanded header filter popover covers owner, agent, date, artifacts, a
 	assert.match(FILTER_SECTIONS_SOURCE, /mode="range"/u);
 	assert.match(FILTER_SECTIONS_SOURCE, /<PopoverTitle className="sr-only">Custom date range/u);
 	assert.match(FILTER_MENU_SOURCE, /customCalendarOpen/u);
+	assert.match(FILTER_MENU_SOURCE, /shouldKeepAgentSessionFilterMenuOpen/u);
+	assert.match(FILTER_MENU_SOURCE, /focusOutStayedInside: didFilterFocusOutStayInside\(eventDetails\.event\)/u);
+	assert.match(FILTER_MENU_SOURCE, /eventDetails\.cancel\(\)/u);
+	assert.match(FILTER_SECTIONS_SOURCE, /flex flex-wrap gap-1\.5 pb-2 min-\[22rem\]:flex-nowrap/u);
 	assert.match(FILTER_SECTIONS_SOURCE, /onCalendarOpenChange/u);
 	assert.doesNotMatch(FILTER_MENU_SOURCE, /overflow-y-auto/u);
 	assert.doesNotMatch(FILTER_MENU_SOURCE, /max-h-\[min\(36rem/u);
