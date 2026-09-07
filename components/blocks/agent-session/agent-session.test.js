@@ -613,25 +613,23 @@ test("a card body click toggles a single selected session on the selected token"
 		LIST_CARD_SOURCE,
 		/const showHoverActions = \(!isSelected \|\| showHoverActionsWhenSelected\) &&/u,
 	);
-	// The article owns activation so padding, title, and avatar toggle. A
-	// triage mark uses that same path — the hover checkbox is not the only
-	// select hit target. RowBody must not also fire handleView, or one click
-	// would select then immediately clear.
+	// The article keeps pointer activation so padding and avatar toggle. Ordinary
+	// keyboard activation belongs to RowBody's real button, leaving the PR anchor
+	// outside any button role. Multi-select rows retain gridcell keyboard handling.
 	assert.match(CARD_SOURCE, /onClick=\{handleArticleClick\}/u);
 	assert.match(CARD_SOURCE, /onKeyDown=\{handleArticleKeyDown\}/u);
 	assert.match(CARD_SOURCE, /onView === undefined && mark == null/u);
 	assert.match(CARD_SOURCE, /mark\.onActivate\(gesture\)/u);
 	assert.match(CARD_SOURCE, /selectionGestureFromModifierKeys\(event\)/u);
+	assert.match(CARD_SOURCE, /const articleRole = mark == null \? undefined : "gridcell";/u);
 	assert.match(CARD_SOURCE, /role=\{articleRole\}/u);
-	assert.match(CARD_SOURCE, /: "gridcell"/u);
-	assert.match(CARD_SOURCE, /aria-pressed=\{articleRole === "button" \? showSelectedFill : undefined\}/u);
+	assert.doesNotMatch(CARD_SOURCE, /articleRole === "button"|\? "button"/u);
 	assert.match(CARD_SOURCE, /aria-selected=\{mark == null \? undefined : isMarked\}/u);
 	assert.match(CARD_SOURCE, /role=\{mark == null \? undefined : "row"\}/u);
-	assert.match(CARD_SOURCE, /articleRole === "button" \? showSelectedFill/u);
 	assert.match(INDEX_SOURCE, /role=\{isMultiSelectList \? "grid" : undefined\}/u);
 	assert.match(INDEX_SOURCE, /aria-multiselectable=\{isMultiSelectList \? true : undefined\}/u);
 	assert.match(CARD_SOURCE, /event\.target\.closest\(SESSION_DRAG_INTERACTIVE_SELECTOR\) !== null/u);
-	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*onView=\{undefined\}/u);
+	assert.match(CARD_SOURCE, /<AgentListRow[\s\S]*onView=\{mark == null \? onView : undefined\}/u);
 	assert.match(CARD_SOURCE, /onActivate=\{activateCard \?\? mark\.onActivate\}/u);
 	assert.match(LIST_ROW_ACTION_SOURCE, /event\.stopPropagation\(\);\s*\n\s*action\.onClick\(\)/u);
 	assert.doesNotMatch(CARD_SOURCE, /isSelected=\{false\}/u);

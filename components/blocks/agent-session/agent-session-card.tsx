@@ -229,16 +229,8 @@ export function AgentSessionCard({
 				activateCard(selectionGestureFromModifierKeys(event));
 			}
 		};
-	const articleRole = activateCard === undefined
-		? undefined
-		: mark == null
-			? "button"
-			: "gridcell";
-	const articleTabIndex = activateCard === undefined
-		? undefined
-		: mark == null || isLead
-			? 0
-			: -1;
+	const articleRole = mark == null ? undefined : "gridcell";
+	const articleTabIndex = mark == null ? undefined : isLead ? 0 : -1;
 	const hoverActions: AgentListRowHoverActions = {
 		primary: approve
 			? {
@@ -334,7 +326,6 @@ export function AgentSessionCard({
 						<article
 							{...bind}
 							aria-current={isSelected ? "true" : undefined}
-							aria-pressed={articleRole === "button" ? showSelectedFill : undefined}
 							aria-roledescription={bind ? "Draggable agent session" : undefined}
 							className={cn(
 						"group/agent-row relative flex w-full cursor-default rounded-lg p-3 text-left text-text",
@@ -378,7 +369,7 @@ export function AgentSessionCard({
 								isSelected={showSelectedFill}
 								item={item}
 								metadata={<AgentSessionPullRequestMetadata item={item} />}
-								onView={undefined}
+								onView={mark == null ? onView : undefined}
 								renderIdentity={() => {
 									const sessionIdentity = (
 										<AgentListIdentity
