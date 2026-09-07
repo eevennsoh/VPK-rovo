@@ -20,6 +20,9 @@ export const VISUAL_DEMOS: Record<string, ComponentType> = {
 	"border-beam": dynamic(() => import("../demos/visual/border-beam-demo"), {
 		ssr: false,
 	}),
+	"dropzone-effect": dynamic(() => import("../demos/visual/dropzone-effect-demo"), {
+		ssr: false,
+	}),
 	squircle: dynamic(() => import("../demos/visual/squircle-demo"), {
 		ssr: false,
 	}),
