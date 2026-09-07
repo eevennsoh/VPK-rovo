@@ -5403,7 +5403,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 437,
+			"manifestEntryCount": 438,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -7455,7 +7455,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 104,
+				"entryCount": 105,
 				"entries": [
 					{
 						"category": "visual",
@@ -8026,6 +8026,12 @@
 						"slug": "svg-tracing",
 						"name": "SVG Tracing",
 						"importPath": "@/components/visual/svg-tracing"
+					},
+					{
+						"category": "visual",
+						"slug": "text-continuity",
+						"name": "Text Continuity",
+						"importPath": "@/components/visual/text-continuity"
 					},
 					{
 						"category": "visual",
