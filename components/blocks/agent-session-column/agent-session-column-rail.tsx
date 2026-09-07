@@ -302,9 +302,10 @@ function AgentSessionUserNotch({
 						"group-has-[:focus-visible]/notch:scale-100 group-has-[:focus-visible]/notch:opacity-100",
 						arrivalExiting && !isHighlighted
 							? "opacity-100 scale-[var(--agent-session-user-notch-morph)] transition-transform duration-normal ease-in-out"
-							: showAvatar
-								? "opacity-100 scale-100 transition-[opacity,scale] duration-normal ease-out-practical"
-								: "scale-[var(--agent-session-user-notch-morph)] opacity-0 transition-[opacity,scale] duration-normal ease-out-practical",
+							: showAvatar ? "opacity-100 scale-100" : "scale-[var(--agent-session-user-notch-morph)] opacity-0",
+						arrivalExiting && !isHighlighted
+							? null
+							: "transition-[opacity,scale] duration-normal ease-out-practical",
 					)}
 					height={12}
 					src={avatarSrc}

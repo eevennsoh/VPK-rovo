@@ -165,7 +165,7 @@ test("arrival motion is tokenised, capped, and spatially anchored", () => {
 	assert.match(RAIL_COLUMN_SOURCE, /animate=\{shouldPlayScaleArrival \? \{ scale: 1 \} : undefined\}/u);
 	assert.match(
 		RAIL_COLUMN_SOURCE,
-		/showAvatar\s*\n?\s*\? "opacity-100 scale-100 transition-\[opacity,scale\] duration-normal ease-out-practical"/u,
+		/showAvatar \? "opacity-100 scale-100" : "scale-\[var\(--agent-session-user-notch-morph\)\] opacity-0"/u,
 	);
 	assert.match(ARRIVAL_MOTION_SOURCE, /lingerMs: 800/u);
 	assert.match(ARRIVAL_MOTION_SOURCE, /enterMs: 150/u);
